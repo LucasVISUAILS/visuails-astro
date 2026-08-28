@@ -406,7 +406,6 @@ const COPY = {
        round" herhaalt AFTERCARE uit pricing.js. Verandert die belofte ooit van
        één ronde naar iets anders, dan valt de BUILD om in plaats van dat deze
        zin stil blijft staan liegen. */
-    heroClaim: 'Human quality control on every image and video — backed by one full revision round included with your order to perfect your set.',
 
     /*
      * ══════════════════════════════════════════════════════════════════════
@@ -513,7 +512,7 @@ const COPY = {
     ladCountCol: 'Products',
     // [column heading, what one product of that kind gets]
     ladKinds: [
-      ['Complete', counted('complete', PER_PRODUCT_VISUALS, 'en')],
+      ['Complete bundle', counted('complete', PER_PRODUCT_VISUALS, 'en')],
       /* countedShort() en niet counted(): de kop ernaast NOEMT de categorie al.
          "Catalog set — 4 catalog images" zet het woord twee keer neer. Zie de
          noot bij SHORTER in lexicon.js. */
@@ -521,10 +520,20 @@ const COPY = {
       ['Lifestyle', countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')],
     ],
     ladPer: 'per product',
+    /* WAT HET GROENE GETAL IS, OP DE PLEK WAAR HET OOG HET EERST LANDT.
+       Lucas: *"inclusief de korting want dat is nu wat vaag."* Het stond er
+       als kaal "−\u20ac49" zonder waar het van AF gaat, en de zin die dat
+       uitlegde stond onder de tabel — voorbij de plek waar iemand die naar
+       tarieven kijkt nog leest.
+
+       Eén keer en niet vier keer: op de bovenste trede erachter, waar de blik
+       de kolom binnenkomt. Vier keer dezelfde bijzin naast vier bedragen maakt
+       van een tabel een alinea. */
+    ladSaveUnit: 'less than the two apart',
     // The bundle argument, without the arithmetic: the table prints all three
     // rates in one row, so a reader who wants to check that the pair is cheaper
     // than the halves can read across instead of being told the subtraction.
-    ladNote: `Taking both sets on the same product is one bundled rate, not two fees added together — about a quarter less than ordering them apart. The green figure under each Complete rate is what that comes to per product; on ${EX_FULL} products it is ${euro(completeSaving(EX_FULL).saved * EX_FULL, 'en')}.`,
+    ladNote: `The Complete bundle is one rate for both sets on the same product — not the catalog fee and the lifestyle fee added together. It works out about a quarter below the two apart, on every rung. The lime figure under each bundle rate is that difference per product; over ${EX_FULL} products it comes to ${euro(completeSaving(EX_FULL).saved * EX_FULL, 'en')}.`,
     // Was "First order: 20% off." The discount is gone; this says why, which
     // is a stronger line than the discount was. See pricing.js.
     firstLead: 'Our pricing is fixed and transparent.',
@@ -1041,10 +1050,6 @@ const COPY = {
     ctaSampleNote: `Proefvisual: Upload je eigen product en ontvang ${sample.deliverable} terug. Maximaal: ${sample.unit}.`,
     // Zie de EN-tabel voor waarom dit geen plint meer is, en waarom deze drie
     // sinds 20 augustus de korte vorm gebruiken.
-    /* Zie de noot bij de Engelse heroClaim. */
-    /* Zie de noot bij de Engelse heroClaim, en de bouwcontrole bovenaan. */
-    heroClaim: 'Menselijke kwaliteitscontrole op elke afbeelding en video \u2014 inclusief \u00e9\u00e9n volledige revisieronde om je set perfect af te werken.',
-
     /* Zie de noot bij de Engelse tabel. */
     heroSlideLabel: 'Wat we maken',
     heroCarouselName: 'Wat VISUAILS maakt',
@@ -1071,12 +1076,14 @@ const COPY = {
     priceVat: `Alle bedragen in dit blok zijn ${vatLabel('excl', 'nl')}.`,
     ladCountCol: 'Producten',
     ladKinds: [
-      ['Compleet', counted('complete', PER_PRODUCT_VISUALS, 'nl')],
+      ['Complete bundel', counted('complete', PER_PRODUCT_VISUALS, 'nl')],
       ['Catalogset', countedShort('catalog', CATALOG_IMAGES, 'nl')],
       ['Lifestyle', countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')],
     ],
     ladPer: 'per product',
-    ladNote: `Beide sets op hetzelfde product is één gebundeld tarief en niet twee losse prijzen opgeteld — ongeveer een kwart minder dan los bestellen. Het groene bedrag onder elk Compleet-tarief is wat dat per product scheelt; bij ${EX_FULL} producten is dat ${euro(completeSaving(EX_FULL).saved * EX_FULL, 'nl')}.`,
+    /* Zie de noot bij ladSaveUnit aan de Engelse kant. */
+    ladSaveUnit: 'minder dan de twee los',
+    ladNote: `De Complete bundel is één tarief voor beide sets op hetzelfde product — niet het catalogtarief en het lifestyletarief bij elkaar opgeteld. Op elke trede komt dat ongeveer een kwart onder de twee los uit. Het groene bedrag onder elk bundeltarief is dat verschil per product; over ${EX_FULL} producten is dat ${euro(completeSaving(EX_FULL).saved * EX_FULL, 'nl')}.`,
     firstLead: 'Onze tarieven staan vast.',
     firstBody: `Geen welkomstkortingen en geen onderhandelingen — ${EX_SMALL} complete producten kosten ${euro(Q_SMALL.net, 'nl')}, voor iedereen en op elk moment.`,
     addOnNote: `Een videoclip kost ${euro(AMOUNT.video, 'nl')}, zowel los te boeken als toegevoegd aan een bestelling. Jouw merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')} — niet per beeld, niet per order en niet per jaar.`,
@@ -1412,25 +1419,32 @@ const obItems = OB_BRON.map(({ faq, href }) => {
   return { antwoord: { en: obEn[i].a, nl: obNl[i].a }, href };
 });
 
-/* ── DE HEROREGEL HERHAALT EEN BELOFTE DIE ELDERS WOONT ─────────────────────
-   `heroClaim` zegt "one full revision round included with your order". Dat
-   getal staat niet hier maar in AFTERCARE in pricing.js, en dat bestand is er
-   uitdrukkelijk over hoe duur zo'n herhaling is: *"eleven surfaces used to type
-   a revision count, every one of them had to be found and rewritten by hand
-   when the count went away."*
+/* ── DE HOMEPAGE TYPT EEN REVISIEAANTAL DAT ELDERS WOONT ────────────────────
+   `dashPortalN` zegt "send it as one revision round". Dat getal staat niet hier
+   maar in AFTERCARE in pricing.js, en dat bestand is er uitdrukkelijk over hoe
+   duur zo'n herhaling is: *"eleven surfaces used to type a revision count,
+   every one of them had to be found and rewritten by hand when the count went
+   away."*
 
-   Deze zin is de twaalfde. Hij staat er voluit omdat Lucas hem zo geformuleerd
-   wil hebben, dus in plaats van hem af te leiden staat er een SLOT op: gaat de
-   belofte ooit van één ronde naar iets anders, dan valt de build om met deze
-   melding in plaats van dat de homepage stil iets blijft beloven wat niet meer
-   geldt. Een bouwfout is het goedkoopste moment om dit te ontdekken.
+   Deze zin is de twaalfde. Hij staat er voluit omdat de portalband hem in zijn
+   eigen woorden vertelt, dus in plaats van hem af te leiden staat er een SLOT
+   op: gaat de belofte ooit van één ronde naar iets anders, dan valt de build om
+   met deze melding in plaats van dat de homepage stil iets blijft beloven wat
+   niet meer geldt. Een bouwfout is het goedkoopste moment om dit te ontdekken.
+
+   ── HET SLOT HING EERST AAN `heroClaim` ────────────────────────────────────
+   Die regel is op 27 augustus 2026 uit de hero gehaald — zie de noot bij de
+   markup. Het slot ging NIET mee: de belofte verdween niet van de pagina,
+   alleen uit die ene zin. Een controle weghalen omdat de tekst die er
+   aanleiding toe gaf verdwenen is, is precies hoe een pagina stil uit de pas
+   gaat lopen.
 
    Op 'en' en niet op beide talen: AFTERCARE is één bron met twee vertalingen,
    dus als het getal verandert verandert het aan allebei de kanten. */
 if (!/\b1 revision round\b/i.test(aftercare('attended', 'en'))) {
   throw new Error(
-    'HomeV2.astro: heroClaim belooft "one full revision round", maar AFTERCARE in '
-    + 'pricing.js zegt inmiddels iets anders — pas heroClaim in BEIDE talen aan '
+    'HomeV2.astro: dashPortalN belooft "one revision round", maar AFTERCARE in '
+    + 'pricing.js zegt inmiddels iets anders — pas dashPortalN in BEIDE talen aan '
     + `voordat je verder gaat. AFTERCARE zegt nu: "${aftercare('attended', 'en')}"`
   );
 }
@@ -1604,8 +1618,38 @@ const nl = lang === 'nl';
           op de knop wijst hiernaar, dus hij MOET in de toegankelijkheidsboom
           blijven. `display: none` zou de beschrijving weghalen bij precies de
           bezoeker die hem nodig heeft. Voluit staan ze op /test-sample, en de
-          knop noemt het bedrag zelf. */}
-      <p class="hv-cta-claim">{c.heroClaim}</p>
+          knop noemt het bedrag zelf.
+
+          ── EN TOEN GING DE LAATSTE ER OOK AF — 27 AUGUSTUS 2026 ────────────
+          Lucas: *"Voor mijn gevoel maakt dit stuk tekst de header wat druk,
+          wellicht kan je dit verwijderen of verplaatsen."*
+
+          Het is verwijderen geworden en niet verplaatsen, en de reden is dat er
+          niets te verplaatsen viel. `heroClaim` beloofde twee dingen, en de
+          GEBOUWDE pagina is op allebei nagelezen:
+
+            · "human quality control on every image and video" staat als stap 04
+              in de pijplijn ("A person checks it — Human oversight on every
+              frame. Every asset is thoroughly reviewed by a quality specialist
+              before it ships; nothing is ever auto-delivered") en nog een keer
+              in de beloftestrook ("Human-checked quality on every single
+              visual").
+            · "one full revision round included" staat in de portalband, in de
+              dashboardfiguur, en in het bezwaar dat zijn antwoord uit faq.js
+              haalt ("1 revision round included per order").
+
+          Vijf plaatsen op dezelfde pagina, alle vijf uitvoeriger dan deze regel
+          en drie ervan uit een bron in plaats van uit een copytabel. Deze zin
+          voegde daar niets aan toe behalve een derde tekstblok onder een kop
+          die er al twee had — en op 1440px liep hij ook nog achter de
+          WhatsApp-knop langs.
+
+          Wat WEL blijft is het slot: zie de bouwcontrole bovenaan dit bestand.
+          Die controleerde of AFTERCARE nog "1 revision round" zegt omdát deze
+          regel dat beloofde. De belofte staat er nog steeds, alleen nu in
+          `dashPortalN`, dus wijst de controle daarheen. Een slot weghalen omdat
+          de zin die er aanleiding toe gaf verdwenen is, is precies hoe een
+          pagina stil uit de pas gaat lopen. */}
       <span class="hv-sr" id="hv-cta-note">{c.ctaSampleNote}</span>
     </div>
 
@@ -2113,7 +2157,7 @@ const nl = lang === 'nl';
           </tr>
         </thead>
         <tbody>
-          {RUNGS.map((r) => (
+          {RUNGS.map((r, ri) => (
             <tr>
               <th scope="row">{r.label}</th>
               {/* ── DE KORTING STAAT IN DE CEL, NIET IN EEN ZIN ────────────────
@@ -2130,7 +2174,9 @@ const nl = lang === 'nl';
                 <td>
                   {euro(ladderRate(id, r.at), lang)}
                   {id === 'complete' && (
-                    <span class="hv-lad-save">−{euro(completeSaving(r.at).saved, lang)}</span>
+                    <span class="hv-lad-save">−{euro(completeSaving(r.at).saved, lang)}
+                      {ri === 0 && <em> {c.ladSaveUnit}</em>}
+                    </span>
                   )}
                 </td>
               ))}
@@ -4075,9 +4121,9 @@ var vOpruim = (function () {
      De marge is klein aan de bovenkant: dat is wat de regel aan de knoppen
      vastplakt in plaats van hem een eigen blok te laten worden. Nabijheid doet
      het groeperingswerk, geen lijn en geen kader. */
-  .hv-cta-claim { margin: .85rem 0 0; max-width: 52ch;
-    font-size: .875rem; line-height: 1.5; text-wrap: pretty;
-    color: var(--paper-soft-on-dark); }
+  /* Hier stond `.hv-cta-claim` — de regel onder de heroknoppen. Zie de noot bij
+     de verwijdering in de markup: hij herhaalde twee beloftes die verderop op
+     dezelfde pagina al uit hun eigen bron komen. */
 
   /* ── ALLEEN VOOR EEN SCHERMLEZER ─────────────────────────────────────────
      De klassieke afkniptruc, en met opzet niet `display: none`: `aria-describedby`
@@ -4151,10 +4197,8 @@ var vOpruim = (function () {
        verwijzing dat door de scoping kan glippen. Twee regels dupliceren is
        goedkoper dan een animatie die in de build stil niets doet. */
     .js .hv-hero .hv-cta > .btn,
-    .js .hv-hero .hv-cta-claim { animation: hv-in var(--dur-2) var(--ease-out-expo) both; }
     .js .hv-hero .hv-cta > .btn:nth-child(1) { animation-delay: 0ms; }
     .js .hv-hero .hv-cta > .btn:nth-child(2) { animation-delay: 80ms; }
-    .js .hv-hero .hv-cta-claim { animation-delay: 160ms; }
 
     .js .hv-hero .hv-slide-card {
       animation: hv-in-far var(--dur-2) var(--ease-out-expo) both;
@@ -4275,6 +4319,35 @@ var vOpruim = (function () {
      enige getal in de tabel is dat een VOORDEEL uitdrukt in plaats van een
      prijs; alle andere cijfers zijn wat je betaalt. */
   .hv-lad-save { display: block; margin-top: .2rem; font-size: .72rem; font-weight: 600; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* De bijzin achter het bovenste bedrag. Lichter dan het getal en niet cursief
+     gezet als nadruk maar als TOELICHTING — hij hoort bij het getal, hij
+     concurreert er niet mee. `white-space: normal` want anders duwt hij de
+     kolom breder dan het tarief erboven. */
+  .hv-lad-save em { font-style: normal; font-weight: 400; color: var(--ink-3); white-space: normal; }
+
+  /* ══ DE BUNDEL KRIJGT DE KOLOM ═══════════════════════════════════════════
+     Lucas: *"[Complete] mag ook wel wat beter uitgelegd worden en meer in de
+     spotlight staan dan de losse opties."*
+
+     Drie kolommen die er alle drie hetzelfde uitzien, zeggen dat de keuze aan
+     jou is en dat er geen aanbeveling in zit. Die is er wel: de bundel is op
+     elke trede goedkoper dan de twee los, en dat is de reden dat hij vooraan
+     staat.
+
+     WAT HET NIET IS: geen kader, geen badge, geen tweede kleur. Een omkaderde
+     kolom in een tabel zonder kaders trekt de aandacht naar de LIJN in plaats
+     van naar de cijfers, en Lucas heeft de omkaderde blokken elders juist
+     laten weghalen. Wat er wel is: een streep bovenop de kolom in de merkkleur
+     — dezelfde streep die op deze site "dit is gekozen" betekent — en een
+     limewas van 3,5% over de hele kolom. Gemeten blijft wit daarop 15,4:1; op
+     de omliggende kolommen is dat 15,7:1, dus de leesbaarheid beweegt niet.
+
+     nth-child(2) en niet een klasse: de hoekcel is kolom 1 en de bundel staat
+     per definitie vooraan. Een klasse zou hetzelfde zeggen, maar dan op twee
+     plekken en met de kans dat er ooit één meeverhuist en de ander niet. */
+  .hv-lad thead th:nth-child(2) { box-shadow: inset 0 2px 0 var(--accent); }
+  .hv-lad thead th:nth-child(2),
+  .hv-lad tbody td:nth-child(2) { background: rgb(198 241 0 / .035); }
   .hv-lad-note { margin: 1rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }  /* The discount, on its own line with a rule above it, because it is a
      condition on every figure in the band and not a fourth worked example. */
   .hv-price-first {

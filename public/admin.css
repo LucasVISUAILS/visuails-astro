@@ -78,15 +78,26 @@
      "paper" is the ground, and the ground is now dark. The name is kept
      because forty rules in this file read it; what it means is "the surface
      the page is printed on", which is the role it always had. */
-  --paper:      #08090B;               /* body ground                       */
-  --paper-2:    #101216;               /* recessed / banded                 */
-  --paper-lift: #17191E;               /* raised — a card off the ground    */
+  /* ── DE GRONDTRAP, STAP TWEE — 27 augustus 2026 ────────────────────────────
+     Lucas koos uit vier varianten de donkerste: de panelen komen nauwelijks nog
+     van de pagina af. Dit is dezelfde trap als in global.css; dit blok is met
+     opzet een handkopie ("honest duplication, not a system") en moet dus
+     mee-veranderen, anders lopen de vier stylesheets uit elkaar.
+
+     LET OP HET GEVOLG. Met panelen die bijna samenvallen met de grond is een
+     rand het enige wat een blok nog aftekent — en juist die randen wil hij weg.
+     Die twee wensen samen betekenen dat een blok niet meer als DOOS mag lezen
+     maar als CEL: gescheiden door een haarlijn, niet omsloten door een kader.
+     Zie .statrow verderop, waar dat als eerste is uitgevoerd. */
+  --paper:      #030406;               /* body ground                       */
+  --paper-2:    #060709;               /* recessed / banded                 */
+  --paper-lift: #08090B;               /* raised — a card off the ground    */
 
   /* Espresso's two names, kept as aliases so .btn-dark and the raised panels
      keep resolving. There is no espresso any more; these are the two surface
      steps above the ground. */
-  --ink-850:  #17191E;
-  --ink-800:  #1F2229;
+  --ink-850:  #08090B;
+  --ink-800:  #0C0E11;
 
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
@@ -791,3 +802,21 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   overflow-wrap: anywhere;    /* en soms plakt hij er een url in */
   max-width: 68ch;
 }
+
+/* ── DE WACHTRIJ VAN EEN ABONNEE ────────────────────────────────────────────
+ *
+ * De lijst in het paneel "Abonnementsweek" op een klantpagina. Zie de kop van
+ * src/lib/planStart.js voor waarom dat paneel bestaat.
+ *
+ * Rijen met een haarlijn ertussen en geen kader eromheen — dezelfde vorm als op
+ * de klantkant, waar Lucas de omkaderde blokken juist heeft laten weghalen. Twee
+ * kolommen: wat het is, en of de foto's er zijn. Dat tweede is het enige wat
+ * bepaalt of een item vandaag meegaat, dus staat het ernaast en niet eronder.
+ */
+.qlist { list-style: none; margin: .8rem 0 0; padding: 0; }
+.qlist li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  padding: .55rem 0; box-shadow: inset 0 1px 0 var(--line);
+}
+.qlist li:first-child { box-shadow: none; }
+.qlist li > span:first-child { color: var(--ink); font-weight: 600; }

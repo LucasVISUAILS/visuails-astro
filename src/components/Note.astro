@@ -86,11 +86,20 @@ interface Props {
   term?: string;
   /** Een bredere notitie, voor de paar gevallen met meer dan een paar zinnen. */
   wide?: boolean;
+  /**
+   * Eerst BOVEN de knop proberen in plaats van eronder.
+   *
+   * Voor een vraagteken in iets dat aan de onderkant van het venster vastzit —
+   * de proefbalk. Zie de noot bij de plaatsing hieronder: daar is "past het
+   * eronder in het venster" de verkeerde vraag, want de balk zelf staat in de
+   * weg en die telt niet mee in een viewportberekening.
+   */
+  up?: boolean;
   /** Extra klassen op de buitenkant. */
   class?: string;
 }
 
-const { lang = 'en', term = '', wide = false, class: extra = '' } = Astro.props;
+const { lang = 'en', term = '', wide = false, up = false, class: extra = '' } = Astro.props;
 
 /* Een id dat uniek is binnen de pagina zonder dat de aanroeper er iets voor hoeft
    te doen. Astro geeft elke component-instantie een eigen scope; deze teller loopt
@@ -102,7 +111,7 @@ const label = lang === 'nl'
   : (term ? `What ${term} means` : 'What this means');
 ---
 
-<span class={`nt ${wide ? 'nt-wide' : ''} ${extra}`.trim()}>
+<span class={`nt ${wide ? 'nt-wide' : ''} ${extra}`.trim()} data-note-up={up ? '' : undefined}>
   <button
     type="button"
     class="nt-btn"
@@ -335,11 +344,29 @@ const label = lang === 'nl'
       let x = b.left + b.width / 2 - p.width / 2;
       x = Math.max(marge, Math.min(x, vw - p.width - marge));
 
-      let y = b.bottom + 8;
-      if (y + p.height > vh - marge) {
-        const boven = b.top - p.height - 8;
-        if (boven > marge) y = boven;
-        else y = Math.max(marge, vh - p.height - marge);
+      /* ── `up`: EERST BOVEN PROBEREN — 27 AUGUSTUS 2026 ────────────────────
+         Normaal opent de notitie onder de knop en springt hij alleen naar boven
+         als hij anders buiten beeld valt. Voor een knop in een balk die aan de
+         ONDERKANT van het venster vastzit, klopt die volgorde niet: er is onder
+         de knop meestal ruimte genoeg in het venster, dus sprong hij niet — en
+         landde hij half over de balk heen, met de rest onder een element dat
+         daar permanent staat. Gemeten in de proefbalk op 390×844: notitie op
+         y 593 terwijl de balk van 545 tot 601 loopt.
+
+         `up` draait de voorkeur om en houdt dezelfde terugval: past het boven
+         niet, dan alsnog eronder, en past dat ook niet dan tegen de rand. */
+      const wilBoven = pop.closest('[data-note-up]') !== null;
+      const boven = b.top - p.height - 8;
+      const onder = b.bottom + 8;
+      let y;
+      if (wilBoven) {
+        y = boven > marge ? boven
+          : (onder + p.height <= vh - marge ? onder : Math.max(marge, vh - p.height - marge));
+      } else {
+        y = onder;
+        if (y + p.height > vh - marge) {
+          y = boven > marge ? boven : Math.max(marge, vh - p.height - marge);
+        }
       }
       pop.style.setProperty('--nt-x', `${Math.round(x - oorsprongX)}px`);
       pop.style.setProperty('--nt-y', `${Math.round(y - oorsprongY)}px`);
@@ -373,6 +400,20 @@ const label = lang === 'nl'
     const knopVan = (e) => e.target && e.target.closest && e.target.closest('[data-note-btn]');
 
     document.addEventListener('pointerover', (e) => {
+      /* ── AANWIJZEN IS ALLEEN VOOR EEN MUIS — 27 AUGUSTUS 2026 ─────────────
+         Op een aanraakscherm vuurt de browser `pointerover` vóór `pointerdown`,
+         ook bij een gewone tik. Zonder deze regel opende de notitie dus op de
+         pointerover en zag de pointerdown eronder `open === btn` — waarna hij
+         hem meteen weer sloot. Netto: de EERSTE tik deed niets zichtbaars en de
+         tweede opende hem. Gemeten met een echt touch-profiel op 390×844:
+         aria-expanded bleef 'false' na één tik.
+
+         Dit gold voor elk vraagteken op de site en niet alleen voor het nieuwe
+         in de proefbalk; het viel daar alleen op omdat Lucas er expres op tikte.
+         De pointerdown hieronder doet het openen op aanraking al — dat stond er
+         met zoveel woorden bij ("tikken opent en tikken sluit") — dus hier hoeft
+         alleen de muis over te blijven. */
+      if (e.pointerType && e.pointerType !== 'mouse') return;
       const btn = knopVan(e);
       if (onderdrukt && onderdrukt !== btn) onderdrukt = null;
       if (btn) return toon(btn);

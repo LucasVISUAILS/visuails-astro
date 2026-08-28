@@ -7,6 +7,10 @@ import { WA_CHROME, WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
 // astro:page-load re-init hook that keeps reveal/magnetic/etc. working
 // after a transition.
 import { ClientRouter } from 'astro:transitions';
+/* Het vraagteken met de zwevende notitie. Zie Note.astro: op deze site klapt een
+   vraagteken niet uit maar legt hij een blok over de pagina heen. De balk had zijn
+   eigen uitklapper, en dat was de enige plek waar dat nog zo was. */
+import Note from '../components/Note.astro';
 import '../styles/global.css';
 // Self-hosted Archivo (Fontsource) — served from our own build instead of
 // Google's servers (AVG/GDPR-clean, no third-party connection). font-display
@@ -1156,20 +1160,53 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   <div class="convbar" role="complementary" aria-label={t('cb_region')}>
     <svg class="mk brand-mark cb-logo" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
     <em class="cb-note">{t('cb_note')}</em>
-    {/* ── HET VRAAGTEKEN — 23 AUGUSTUS 2026 ─────────────────────────────────
+    {/* ── TWEE ZINNEN, ÉÉN OP HET SCHERM ────────────────────────────────────
+        Zelfde afspraak als bij `.cb-cta-vol` / `.cb-cta-kort` hieronder: de
+        ongebruikte helft gaat op `display: none` en dus uit de toegankelijk-
+        heidsboom, zodat een schermlezer op elke breedte precies één zin hoort.
+
+        Lucas, 27 augustus: *"Wellicht toch wel een hele korte zin die test
+        sample uitlegt."* De lange vorm noemt de aantallen en past niet naast een
+        knop op 390px; deze zegt alleen waarom je zou klikken. De aantallen staan
+        achter het vraagteken. */}
+    <em class="cb-note-kort">{t('cb_note_kort')}</em>
+    {/* ── HET VRAAGTEKEN — 23 AUGUSTUS 2026, HERZIEN 27 AUGUSTUS ────────────
         Lucas: *"wellicht kan je een vraagteken icoon toevoegen om de klant meer
         informatie erover te laten lezen zonder het daar allemaal neer te zetten."*
 
-        Een knop en geen link, want er wordt niets genavigeerd: de uitleg klapt
-        onder de zin open, in dezelfde balk. Naar /test-sample sturen zou de
-        bezoeker wegleiden van de knop ernaast die daar toch al heen gaat.
+        Hier stond daarvoor een eigen knop met een eigen uitklapper: `.cb-why`
+        plus een `<p class="cb-detail">` die onder de zin openklapte en de balk
+        een rij hoger maakte. Lucas, 27 augustus: *"Dat vraagteken moet geen
+        dropdown zijn maar net als de andere vraagtekens moet hij een blok
+        tonen."*
 
-        `aria-expanded` en `aria-controls` doen het werk voor wie het niet ziet;
-        zonder JavaScript staat de uitleg gewoon open (het script zet hem dicht
-        bij het opstarten), zodat de tekst nooit onbereikbaar is. */}
-    <button class="cb-why" type="button" aria-label={t('cb_why')} aria-expanded="true" aria-controls="cb-detail">
-      <span aria-hidden="true">?</span>
-    </button>
+        Hij heeft gelijk en het was ook de enige plek op de site waar een
+        vraagteken nog uitklapte. <Note> is precies daarvoor gemaakt — zie de kop
+        van Note.astro, met Lucas' eigen formulering erin: *"niet uitklapt maar
+        een floating note blok laat zien om ruimte op de site te besparen."* Een
+        uitklapper in een balk die onderaan het scherm vastzit is bovendien de
+        slechtste variant: hij duwt de balk omhoog over de pagina heen.
+
+        `wide`, want hier staan twee zinnen in plaats van één woord uitleg.
+
+        ALLEEN `cb_detail`, EN NIET OOK `cb_note`. Eerst stonden ze allebei in
+        de notitie, zodat de zin die op een telefoon van het scherm gaat ergens
+        zou blijven. Op de schermafdruk las dat als "…carousel van 3.4
+        catalogfoto's of een…": `cb_note` eindigt op "van 3." en `cb_detail`
+        begint met "4 catalogfoto's". Twee zinnen die hetzelfde zeggen, met een
+        getal op de naad. `cb_detail` zegt het volledig — dat is genoeg. */}
+    {/* EEN EIGEN OMHULSEL, EN DAT IS GEEN OVERBODIGE SPAN. Astro scopet elke
+        selector in het <style>-blok hieronder met een attribuut, en dat
+        attribuut komt niet op de wortel van een component die zijn stijl met
+        `is:global` schrijft — zoals <Note>. `.convbar .cb-why { order: 4 }`
+        werd dus `.cb-why[data-astro-cid-…]` en sloeg nergens op: gemeten bleef
+        `order` op 0 staan en stond het vraagteken vooraan in plaats van rechts.
+        Een span die dit bestand zelf rendert, draagt het attribuut wél. */}
+    <span class="cb-why">
+      <Note lang={lang} term={t('cb_why_term')} wide up>
+        {t('cb_detail')}
+      </Note>
+    </span>
     {/* TWEE LABELS, ÉÉN LINK. Op een telefoon staat de balk op één rij (zie de
         noot bij de media-query hieronder) en past de lange vorm niet. `display:
         none` haalt de ongebruikte helft uit de toegankelijkheidsboom, dus een
@@ -1180,7 +1217,6 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <span class="cb-cta-kort">{t('cb_cta_kort')}</span>
     </a>
     <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
-    <p class="cb-detail" id="cb-detail">{t('cb_detail')}</p>
   </div>
 
   {/* Our own WhatsApp launcher — a square block, not a third-party circular
@@ -2337,7 +2373,22 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      getal dat een afstand probeerde te bewaren tot een element dat er niet lag.
 
      `overflow: hidden` blijft: dat is wat de foto de pilvorm laat aannemen. */
-  .convbar { overflow: hidden; }
+  /* ── GEEN `overflow: hidden` MEER OP DE BALK ZELF — 27 AUGUSTUS 2026 ──────
+     Hier stond `overflow: hidden`, om de twee sierlagen hieronder binnen de
+     pilvorm te houden. Dat werkte, en het knipte sinds vandaag ook de uitleg
+     weg: het vraagteken is een <Note>, en die zet zijn notitie op
+     `position: fixed`. Normaal ontsnapt dat aan elke `overflow` van een
+     voorouder — maar niet aan deze, want `.convbar` draagt een `transform` en
+     daarmee is hij zélf het bevattende blok voor alles wat `fixed` is. Gemeten:
+     de notitie stond op opacity 1, zichtbaar, met de goede tekst erin, en was
+     op de schermafdruk nergens te bekennen.
+
+     De clip verhuist naar de lagen die hem nodig hebben. `border-radius:
+     inherit` geeft ze dezelfde pilvorm als de balk, dus ze steken nergens meer
+     uit — en de balk knipt niets meer weg wat erbovenop hoort te liggen. */
+  .convbar { overflow: visible; }
+  .convbar::before,
+  .convbar::after { border-radius: inherit; }
   .convbar::before {
     content: '';
     position: absolute; inset: 0;
@@ -2364,40 +2415,51 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      als de knop verandert. */
   .convbar { --cb-row: 40px; }
 
-  /* ── HET VRAAGTEKEN EN DE UITLEG ERONDER ────────────────────────────────
-     De knop is een cirkel van 26px binnen een raakvlak van --cb-row, zodat hij
-     naast de zin staat als een teken en niet als een tweede knop. Gedempt tot
-     hij wordt aangewezen: er staat al een limoen knop op deze balk, en twee
-     dingen die om aandacht vragen is er één te veel. */
-  .convbar .cb-why {
-    width: var(--cb-row); height: var(--cb-row);
-    display: grid; place-items: center;
-    background: none; border: 0; padding: 0; cursor: pointer;
-    color: var(--ink-3); font: inherit; line-height: 1;
-  }
-  .convbar .cb-why > span {
-    display: grid; place-items: center;
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 1px solid currentColor;
-    font-size: .72rem; font-weight: 700;
-    transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
-  }
-  .convbar .cb-why:hover, .convbar .cb-why:focus-visible { color: var(--accent); }
-  .convbar .cb-why[aria-expanded='true'] > span { color: var(--accent); border-color: var(--accent); }
+  /* ── HET VRAAGTEKEN ─────────────────────────────────────────────────────
+     Hier stonden veertig regels: een eigen ronde knop, een eigen open/dicht-
+     staat, en een `.cb-detail` die als derde rij in de balk uitklapte. Dat is
+     allemaal weg — <Note> doet het, net als op de rest van de site. Zie de noot
+     bij de markup.
 
-  /* Over de volle breedte, onder de rij. `grid-column: 1 / -1` en niet een eigen
-     doos eromheen: dan blijft het één pil en niet een pil met een kaartje eraan. */
-  .convbar .cb-detail {
-    grid-column: 1 / -1;
-    margin: 2px 8px 6px 0;
-    max-width: 62ch;
-    font-size: .78rem; line-height: 1.5;
-    color: var(--ink-2);
+     Wat er overblijft is de PLAATSING. Note komt met zijn eigen 24×24 knop en
+     zijn eigen notitie; het enige wat deze balk erover te zeggen heeft, is dat
+     hij in de rij van 40px moet passen zoals het kruisje ernaast. */
+  /* `width: 24px` en niet `auto`: <Note> is een `inline-grid` met de notitie als
+     tweede kind. Die notitie staat absoluut gepositioneerd en telt dus niet mee
+     voor de hoogte — maar wél voor de intrinsieke BREEDTE van de grid, en op
+     `nt-wide` is dat 140px. Gemeten kreeg het vraagteken daardoor 140 van de 366
+     pixels in de balk en werd de knop ernaast platgedrukt. De knop zelf is 24×24
+     (SC 2.5.8), en dat is precies wat deze cel moet zijn. */
+  .convbar .cb-why { display: inline-grid; place-items: center; width: 24px; height: var(--cb-row); }
+  /* ── BOVEN DE BALK, MET :global() EN DAAR IS EEN REDEN VOOR ──────────────
+     De notitie staat op z-index 60 (zie Note.astro) en deze balk op --z-bar
+     (250). Zonder deze regel opent de uitleg ACHTER de balk waar hij bij hoort:
+     in de meting een blok met opacity 1 dat je op de schermafdruk nergens ziet.
+
+     `:global()` en niet `.convbar .nt-pop`. Astro scopet elke selector in dit
+     blok met een eigen attribuut, dus dat zou `.convbar[data-astro-cid-…]
+     .nt-pop[data-astro-cid-…]` worden — en `.nt-pop` komt uit Note.astro en
+     draagt dat attribuut niet. De regel zou dus nergens op slaan. Eerst zo
+     geschreven, en de meting gaf gewoon weer 60 terug. */
+  .convbar :global(.nt-pop) { z-index: calc(var(--z-bar) + 1); }
+  /* ── DE NOTITIE LIJNT UIT MET DE BALK ───────────────────────────────────
+     Lucas: *"Maak alles wat consistenter en beter gecentreerd."* De notitie was
+     354px breed onder een balk van 366 en stond op zijn eigen middelpunt — dus
+     nét niet op de randen van de balk eronder, en met een andere hoekradius dan
+     alles eromheen. Twee blokken die bij elkaar horen en geen van beide lijnen
+     uit: dat leest als een fout.
+
+     Dezelfde breedte als de balk (de balk staat op `left: 12px; right: 12px`,
+     dus 100vw − 24) en dezelfde marge. Het script klemt de x-positie al op
+     precies 12px van de rand, dus met deze breedte valt hij vanzelf op de balk.
+
+     `--r-md` en niet de pilvorm: een pil om vier regels tekst leest als een bel,
+     en dat is dezelfde afweging die hier al voor de balk zelf stond. */
+  .convbar :global(.nt-pop) {
+    max-inline-size: calc(100vw - 24px);
+    border-radius: var(--r-md);
+    padding: .85rem 1rem;
   }
-  .convbar .cb-detail[hidden] { display: none; }
-  /* Uitgeklapt is de pil geen pil meer: een stadionvorm van honderd pixels hoog
-     leest als een bel en niet als een balk. */
-  .convbar:has(.cb-detail:not([hidden])) { border-radius: var(--r-md); }
 
   /* ── DE BREEDTE VAN HET TEKEN STAAT ER EXPLICIET, EN DAT MOET ────────────
      `.brand-mark` heeft `width: auto` en de svg leidt zijn breedte af uit de
@@ -2423,6 +2485,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      Onder 900px valt hij weg. Twee redenen: daar zou hij de balk breder maken dan
      het scherm, en de knop zegt met "test sample · €1" al genoeg om op te kunnen
      klikken. */
+  .convbar .cb-note-kort { display: none; }
   .convbar .cb-note { font-style: normal; font-size: .85rem; font-weight: 400; line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
   /* ── DE NOTE BLIJFT STAAN, OOK OP EEN TELEFOON ─────────────────────────────
      Hier stond `@media (max-width: 900px) { .cb-note { display: none } }`, en
@@ -2514,42 +2577,90 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      De uitleg mag nog steeds uitklappen; die krijgt dan een tweede rij over de
      volle breedte, en dat is precies het moment waarop hij ruimte verdient. */
   @media (max-width: 700px) {
+    /* ── ÉÉN RIJ, NET ALS OP EEN BREED SCHERM — 27 AUGUSTUS 2026 ────────────
+       Lucas, met een schermafdruk van zijn telefoon: *"test sample pop up ziet
+       er niet uit op telefoon, maak deze meer gelijk aan hoe hij op
+       computerscherm eruit ziet. Mag minder tekst op komen bijvoorbeeld alleen
+       knop met vraagteken voor meer info."*
+
+       Wat er stond waren twee rijen: de zin over de volle breedte, en daaronder
+       de knop met het vraagteken en het kruisje. Op zijn scherm liep de zin over
+       twee regels, werd de balk 86px hoog, en kwam de WhatsApp-knop er half
+       overheen te staan.
+
+       ── EN DIT DRAAIT EEN EERDERE BESLISSING TERUG ────────────────────────
+       Op 26 augustus stond hier het omgekeerde, met een reden die ik toen zo
+       opschreef: *"de knop zonder zin is geen duwtje maar een advertentie."* Dat
+       argument klopte, en het klopt nog steeds — alleen ging het uit van een
+       vraagteken dat de zin niet kon dragen. Dat vraagteken klapte de balk open
+       en werd daarom als noodoplossing gebruikt; nu opent het een blok dat over
+       de pagina heen ligt en waar de zin gewoon in past. `cb_note` staat er
+       voluit in, op elke breedte.
+
+       De zin is dus niet weg, hij staat een tik verderop. Dat is precies het
+       verschil dat het argument van 26 augustus toen niet kon maken.
+
+       tests/nav.test.mjs verbood `display: none` op `.cb-note` na die ronde. Die
+       toets is meegegaan met de reden erachter: hij bewaakt nu dat de tekst
+       BEREIKBAAR is, en niet meer dat hij op het scherm staat. */
     .convbar {
       left: 12px; right: 12px; max-width: none;
       transform: translateY(120%);
-      grid-template-columns: auto minmax(0, 1fr) auto auto;
-      column-gap: 8px; row-gap: 10px;
-      padding: 8px 8px 8px 14px; border-radius: var(--r-pill);
+      /* Vijf cellen: teken, korte zin, knop, vraagteken, kruisje. De ZIN krijgt
+         de vrije ruimte en de knop precies wat hij nodig heeft — andersom duwt
+         een knop die meegroeit de zin weg, en dan staat er weer een kale knop.
+
+         HET VRAAGTEKEN STAAT RECHTS. Lucas: *"Staat het vraagteken naar links
+         terwijl ik rechts aangaf?"* Het stond links omdat het in de DOM vóór de
+         knop komt — die volgorde is er voor een schermlezer (eerst waarover het
+         gaat, dan wat je kunt doen) en hoort niet om te draaien. `order` zet hem
+         visueel rechts zonder de leesvolgorde te raken. */
+      /* FLEX EN GEEN GRID OP DEZE BREEDTE. `order` verplaatst in een grid wel de
+         auto-plaatsing, maar de kolommen uit `grid-template-columns` blijven op
+         hun oorspronkelijke plek staan — gemeten kreeg de korte zin de kolom van
+         98px die voor de knop bedoeld was, en de 1fr belandde bij het teken.
+         Vijf items op één rij waarvan er één mag groeien, is precies waar flex
+         voor is; grid is hier de verkeerde doos. */
+      display: flex; align-items: center;
+      grid-template-columns: none;
+      gap: 8px;
+      padding: 7px 7px 7px 13px; border-radius: var(--r-pill);
     }
     .convbar.show { transform: translateY(0); }
-    /* ── DE ZIN BLIJFT STAAN — 26 augustus 2026 ────────────────────────────
-       Hier stond `.cb-note { display: none }`, gezet in de ronde waarin deze
-       balk van 161px naar 58px moest. Dat is precies de wijziging waar Lucas
-       eerder over schreef — *"ook mist hier tekst en logo bij de pop up"* —
-       en waar tests/nav.test.mjs sindsdien een VERBOD op is. Ik heb hem
-       opnieuw gemaakt zonder die toets te kunnen draaien; hij stond niet in
-       deze werkkopie. Nu wel, en hij vond het.
-
-       Wat er nu staat is de kortste vorm die de zin houdt: twee rijen in
-       plaats van vier. Rij 1 is merkteken plus zin, rij 2 is de knop met het
-       vraagteken en het kruisje ernaast. De zin mag over twee regels lopen
-       op .78rem — dat is wat hem leesbaar houdt op 360px.
-
-       DE KNOP ZONDER ZIN IS GEEN DUWTJE MAAR EEN ADVERTENTIE. Dat is het
-       hele argument: "Test sample · €1" alleen zegt niet wat je krijgt, en
-       dat was ook Lucas' bezwaar. Liever 40px hoger dan betekenisloos. */
-    .convbar .cb-logo  { grid-column: 1; grid-row: 1; --cb-mark-h: 18px; align-self: center; }
-    .convbar .cb-note  { grid-column: 2 / -1; grid-row: 1; white-space: normal; font-size: .78rem; line-height: 1.3; align-self: center; }
-    .convbar .cb-cta   { grid-column: 1 / 3; grid-row: 2; justify-content: center; padding: 0 14px; font-size: .82rem; }
-    .convbar .cb-why   { grid-column: 3; grid-row: 2; }
-    .convbar .cb-close { grid-column: 4; grid-row: 2; }
+    .convbar .cb-logo { --cb-mark-h: 17px; align-self: center; order: 1; flex: 0 0 auto; }
+    /* VAN HET SCHERM, NIET UIT DE PAGINA. De lange zin blijft staan voor bredere
+       schermen; hier staat de korte, en de aantallen achter het vraagteken. */
+    .convbar .cb-note { display: none; }
+    .convbar .cb-note-kort {
+      display: block; order: 2; flex: 1 1 auto; min-width: 0;
+      font-style: normal; font-size: .76rem; line-height: 1.25;
+      font-weight: 400; color: var(--ink-2);
+      align-self: center; text-wrap: balance;
+    }
+    /* Kleiner dan hij was: Lucas vroeg om *"de knop iets kleiner"*, en er moet
+       nu ook een zin naast passen. 36 in plaats van 40 hoog, en de vulling
+       eromheen mee terug — het blijft ruim boven de 24px van SC 2.5.8. */
+    .convbar .cb-cta {
+      order: 3; flex: 0 0 auto; justify-content: center;
+      min-height: 36px; padding: 0 13px; font-size: .78rem;
+    }
+    /* HET VRAAGTEKEN EN HET KRUISJE ZIJN ÉÉN PAAR. Ze staan naast elkaar, doen
+       allebei niets aan de bestelling, en hoorden dus dezelfde maat te hebben —
+       ze stonden op 24 en 30. Eén variabele voor allebei, en de tekens erin
+       optisch even groot. */
+    .convbar { --cb-icoon: 30px; }
+    .convbar .cb-why,
+    .convbar .cb-close {
+      order: 4; flex: 0 0 auto;
+      width: var(--cb-icoon); height: var(--cb-icoon);
+      display: inline-grid; place-items: center;
+    }
+    .convbar .cb-close { order: 5; }
     /* De korte naam wint hier van de lange. */
     .convbar .cb-cta-vol  { display: none; }
     .convbar .cb-cta-kort { display: inline; }
-    /* Klapt de uitleg open, dan mag hij de hele breedte hebben en wordt de
-       pilvorm een blok — een pil om twee regels leest als een fout. */
-    .convbar .cb-detail { grid-column: 1 / -1; grid-row: 3; }
-    .convbar:has(.cb-detail:not([hidden])) { border-radius: 14px; padding-bottom: 12px; }
+    /* Exact de breedte van de balk, niet "hooguit". Zie de noot hierboven. */
+    .convbar :global(.nt-pop) { inline-size: calc(100vw - 24px); }
   }
 
 

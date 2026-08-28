@@ -321,12 +321,39 @@ console.log('\nde privacyverklaring dekt het');
  */
 console.log('\nde balk onderaan houdt zijn uitleg');
 {
-  const css = codeOnly(read('src/layouts/Layout.astro'));
-  // Alles wat .cb-note of .cb-logo op display:none zet, in welke query dan ook.
-  const hidesNote = /\.cb-note[^{}]*\{[^}]*display:\s*none/.test(css);
+  const bron = read('src/layouts/Layout.astro');
+  const css = codeOnly(bron);
+  /* ── DE BELOFTE IS VERHUISD, NIET VERVALLEN — 27 AUGUSTUS 2026 ────────────
+     Deze toets verbood `display: none` op `.cb-note`. Dat was de goede toets bij
+     de vorm van toen: de zin stond op het scherm of nergens.
+
+     Lucas, met een schermafdruk van zijn telefoon: *"test sample pop up ziet er
+     niet uit op telefoon [...] Mag minder tekst op komen bijvoorbeeld alleen
+     knop met vraagteken voor meer info."* De balk is nu één rij op een telefoon
+     en de zin staat achter het vraagteken.
+
+     Wat Lucas' oorspronkelijke bezwaar was — *"ook mist hier tekst en logo bij
+     de pop up"* — ging niet over wáár de tekst staat maar over of hij er is. Dus
+     bewaakt deze toets dat nu: er moet een <Note> in de balk staan, hij moet
+     `cb_detail` dragen, en het merkteken mag nog steeds nergens verdwijnen. Een
+     verbod op `display: none` bij `.cb-note` zou vandaag de reparatie tegen-
+     houden in plaats van een fout. */
   const hidesLogo = /\.cb-logo[^{}]*\{[^}]*display:\s*none/.test(css);
-  check('de tekst wordt nergens verborgen', hidesNote, false);
-  check('het teken ook niet', hidesLogo, false);
+  check('het teken wordt nergens verborgen', hidesLogo, false);
+  /* Op de SPAN en niet op <Note> zelf: de klasse zit sinds 27 augustus op een
+     omhulsel dat Layout.astro rendert, omdat een component met `is:global`-stijl
+     het scope-attribuut van zijn ouder niet draagt en de order-regels dan nergens
+     op sloegen. Zie de noot bij de markup. */
+  check('de uitleg zit in een Note in de balk',
+    /<span class="cb-why">\s*<Note/.test(bron), true);
+  check('en die Note draagt cb_detail',
+    /<span class="cb-why">\s*<Note[^>]*>\s*\{t\('cb_detail'\)\}/.test(bron), true);
+  /* De korte zin die Lucas terugvroeg: hij moet ergens vandaan komen. */
+  check('de korte zin staat in de balk', /class="cb-note-kort">\{t\('cb_note_kort'\)\}/.test(bron), true);
+  /* Op `codeOnly()` en niet op de ruwe bron: de noot bij de markup NOEMT de oude
+     `<p class="cb-detail">` om uit te leggen wat er verdween, en een toets die
+     over zijn eigen documentatie struikelt is een toets die je uitzet. */
+  check('het vraagteken klapt niets meer uit', /class="cb-detail"/.test(css), false);
   /* ── DE KNOP MOET WIJKEN, NIET OP 142px STAAN — 26 augustus 2026 ─────────
      Hier stond `/--wa-bottom: 142px/`, en dat is een SPELLING en geen belofte.
      Het getal was met de hand gemeten tegen een balk die door de

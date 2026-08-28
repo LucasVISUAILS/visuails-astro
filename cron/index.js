@@ -50,6 +50,8 @@
  */
 
 import { EXPIRED_FILES_SQL, UPLOAD_DAYS, DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { planState } from '../src/lib/subscription.js';
+import { klaarOmTeStarten } from '../src/lib/planStart.js';
 
 /**
  * Hoeveel bestanden per nacht maximaal.
@@ -89,7 +91,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, checkBackupAge]) {
+    for (const task of [releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -1081,6 +1083,108 @@ async function checkPlanQueues(env) {
   return delen.join(' · ');
 }
 
+/* ══ 6 · WIENS WEEK BEGONNEN IS EN NOG NIET GESTART ═════════════════════════
+ *
+ * ── DE LAATSTE SCHAKEL, EN HIJ IS EXPRES GEEN KNOP DIE VANZELF INDRUKT ──────
+ *
+ * startPlanWindow() maakt van een lijst een bestelling. Lucas koos er op
+ * 27 augustus voor dat een MENS die handeling doet — het is een geldpad, er
+ * wordt saldo afgeschreven, en een geldpad dat om 03:10 draait zonder dat iemand
+ * meekijkt ontdek je pas als een klant vraagt waar zijn foto's blijven. Zie de
+ * kop van src/lib/planStart.js.
+ *
+ * Wat er dan wél ontbrak is het omgekeerde probleem: een knop die niemand
+ * indrukt omdat niemand weet dát hij ingedrukt moet worden. checkPlanQueues()
+ * waarschuwt de KLANT vijf dagen vooraf dat zijn lijst leeg is; er was niets dat
+ * LUCAS vertelt dat een lijst juist vol staat en zijn week begonnen is.
+ *
+ * Deze taak stuurt dus geen mail naar de klant en verandert niets. Hij zet één
+ * regel in het nachtrapport dat er toch al is.
+ *
+ * ── ELKE NACHT OPNIEUW, TOT HET GEBEURD IS ──────────────────────────────────
+ *
+ * Geen `app_settings`-slot zoals bij de lege-wachtrijmail. Dat slot bestaat daar
+ * omdat het om een MAIL AAN EEN KLANT gaat en die hoort één keer te komen; dit
+ * is een regel in een rapport aan de studio, en die hoort te blijven staan tot
+ * het werk gedaan is. Een herinnering die één keer voorbijkomt en dan zwijgt, is
+ * precies hoe een week ongemerkt overgeslagen wordt.
+ *
+ * ── WAT "AL GESTART" BETEKENT ───────────────────────────────────────────────
+ *
+ * Een bestelling van deze klant, in deze kalendermaand, met `payment_status =
+ * 'plan'`. Dat is de vorm die startPlanWindow() en niets anders maakt: 'plan'
+ * wordt nergens anders in dit project geschreven (payOrder weigert het zelfs
+ * expliciet). Er hoeft dus geen tweede administratie bij te komen om te weten of
+ * de week gestart is — de bestelling zelf is het bewijs.
+ */
+async function weekTeStarten(env) {
+  if (!env.DB) return '';
+  const nu = new Date();
+  const vandaag = nu.getUTCDate();
+  const maand = nu.toISOString().slice(0, 7);
+
+  /* Eén query voor de kandidaten, en pas daarna planState() per kandidaat.
+     planState() is drie queries per abonnee; die over alle abonnementen heen
+     draaien om er daarna twee over te houden, is werk dat elke nacht duurder
+     wordt naarmate het beter gaat. */
+  const kandidaten = await env.DB.prepare(
+    `SELECT s.id, s.ref, s.customer_id, s.window_day, c.brand, c.email
+       FROM subscriptions s
+       JOIN customers c ON c.id = s.customer_id
+      WHERE s.status = 'active'
+        AND s.window_day IS NOT NULL
+        AND s.window_day <= ?1
+        AND EXISTS (
+          SELECT 1 FROM plan_queue q
+           WHERE q.customer_id = s.customer_id
+             AND q.order_id IS NULL
+             AND q.upload_batch IS NOT NULL AND q.upload_batch <> ''
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM orders o
+           WHERE o.customer_id = s.customer_id
+             AND o.payment_status = 'plan'
+             AND substr(o.created_at, 1, 7) = ?2
+        )`
+  ).bind(vandaag, maand).all().then((r) => r?.results || []).catch((e) => {
+    console.error('[abonnement] kandidaten lezen mislukt:', e?.message || e);
+    return [];
+  });
+  if (!kandidaten.length) return '';
+
+  const klaar = [];
+  const zonderSaldo = [];
+  for (const k of kandidaten) {
+    /* planState() heeft het laatste woord over het saldo — de query hierboven
+       weet alleen dat er iets op de lijst staat, niet of het betaald kan worden.
+       Een regel die zegt "3 klaar" terwijl het saldo op nul staat, stuurt Lucas
+       naar een knop die weigert. */
+    const state = await planState(env, k.customer_id).catch(() => null);
+    if (!state?.sub) continue;
+    const kan = klaarOmTeStarten(state);
+    const naam = k.brand || k.email || k.ref;
+    if (kan.items.length) {
+      klaar.push(`${naam} (${kan.items.length}${kan.wachtend ? `, ${kan.wachtend} schuift door` : ''})`);
+    } else {
+      /* De query hierboven eist al minstens één item MET foto's, dus "niets
+         klaar" kan hier maar één ding betekenen: het saldo is op. Een aparte tak
+         voor "geen foto's" stond hier eerst en was onbereikbaar — en een tak die
+         nooit loopt, is een melding die je denkt te hebben. Wie geen foto's
+         aanlevert, hoort al van checkPlanQueues(). */
+      zonderSaldo.push(naam);
+    }
+  }
+
+  const delen = [];
+  if (klaar.length) {
+    delen.push(`${klaar.length} week${klaar.length === 1 ? '' : 'en'} klaar om te starten in /admin: ${klaar.join(', ')}`);
+  }
+  if (zonderSaldo.length) {
+    delen.push(`${zonderSaldo.length} begonnen week${zonderSaldo.length === 1 ? '' : 'en'} met werk klaar maar geen saldo: ${zonderSaldo.join(', ')}`);
+  }
+  return delen.join(' · ');
+}
+
 /**
  * De mail naar de klant. Nederlands, want er is geen taalkolom op `customers` en
  * de klantenkring is Nederlands; komt die kolom er, dan hoort deze tekst mee te
@@ -1161,6 +1265,6 @@ async function sendReport(env, report, problems) {
 }
 
 /* Voor de tests: de taken los aanroepbaar, zonder de scheduled-handler. */
-export const tasks = { releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, checkBackupAge };
+export const tasks = { releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge };
 export const QUEUE_WATCH = { QUEUE_WARN_DAYS, weekBeginntOver };
 export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };

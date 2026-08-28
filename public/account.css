@@ -102,15 +102,26 @@
      "paper" is the ground, and the ground is now dark. The name is kept
      because forty rules in this file read it; what it means is "the surface
      the page is printed on", which is the role it always had. */
-  --paper:      #08090B;               /* body ground                       */
-  --paper-2:    #101216;               /* recessed / banded                 */
-  --paper-lift: #17191E;               /* raised — a card off the ground    */
+  /* ── DE GRONDTRAP, STAP TWEE — 27 augustus 2026 ────────────────────────────
+     Lucas koos uit vier varianten de donkerste: de panelen komen nauwelijks nog
+     van de pagina af. Dit is dezelfde trap als in global.css; dit blok is met
+     opzet een handkopie ("honest duplication, not a system") en moet dus
+     mee-veranderen, anders lopen de vier stylesheets uit elkaar.
+
+     LET OP HET GEVOLG. Met panelen die bijna samenvallen met de grond is een
+     rand het enige wat een blok nog aftekent — en juist die randen wil hij weg.
+     Die twee wensen samen betekenen dat een blok niet meer als DOOS mag lezen
+     maar als CEL: gescheiden door een haarlijn, niet omsloten door een kader.
+     Zie .statrow verderop, waar dat als eerste is uitgevoerd. */
+  --paper:      #030406;               /* body ground                       */
+  --paper-2:    #060709;               /* recessed / banded                 */
+  --paper-lift: #08090B;               /* raised — a card off the ground    */
 
   /* Espresso's two names, kept as aliases so .btn-dark and the raised panels
      keep resolving. There is no espresso any more; these are the two surface
      steps above the ground. */
-  --ink-850:  #17191E;
-  --ink-800:  #1F2229;
+  --ink-850:  #08090B;
+  --ink-800:  #0C0E11;
 
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
@@ -208,18 +219,7 @@
   --ink:        var(--ink-900);
   --ink-2:      var(--ink-700);
   --ink-3:      var(--ink-500);
-  /* ── DEZELFDE NAAM, TWEE BETEKENISSEN — RECHTGEZET 27 augustus 2026 ──────
-     Dit stond op `var(--ink-300)`, en --ink-300 draagt twee regels hoger het
-     bijschrift "rules, never text". In src/styles/global.css — waar dit blok een
-     handkopie van is — betekent --ink-4 iets anders: de vierde INKTTREDE, wit op
-     52%, gemeten op 5,30:1. Hier was het de randwaarde, wit op 22%.
-     Gevolg: `.facts-kv dd.leeg` zette "nog niet ingesteld" op 2,03:1. Gemeten op
-     /account/plan in beide talen. Eén lezer in dit bestand, dus de alias
-     rechtzetten is de kleinste reparatie én de enige die de naam weer laat
-     kloppen met de site.
-     public/portal.css en public/admin.css dragen dezelfde alias; daar staat hij
-     nog. */
-  --ink-4:      rgb(255 255 255 / 0.52);
+  --ink-4:      var(--ink-300);
   /* Captions and microcopy resolve to MUTED, not faint: --ink-300 is the rule
      value and it is 2.4:1 here — a hairline, not a sentence. */
   --ink-faint:  var(--ink-500);
@@ -342,7 +342,8 @@ a { color: inherit; }
   background: var(--paper-lift);
 }
 .sidebrand { margin-bottom: 2rem; }
-.sidebrand .mark { display: inline-block; }
+.sidebrand .mark { display: inline-flex; align-items: center; }
+.markglyph { height: 26px; width: auto; fill: currentColor; display: block; flex: 0 0 auto; }
 .sidebrand-sub { display: block; margin-top: .2rem; font-size: .78rem; color: var(--ink-3); }
 
 .sidenav { display: flex; flex-direction: column; gap: .1rem; flex: 1 0 auto; }
@@ -391,19 +392,52 @@ a { color: inherit; }
 .nav-dicht .sideuser-email,
 .nav-dicht .sidelang { display: none; }
 
-/* De merknaam wordt zijn eigen eerste letter. Weglaten zou een balk opleveren die
-   niet meer van VISUAILS is; hem laten staan zou hem laten afbreken. */
-.nav-dicht .sidebrand .mark { font-size: 0; }
-.nav-dicht .sidebrand .mark::before { content: 'V'; font-size: 1.1rem; letter-spacing: 0; }
+/* Ingeklapt blijft het merk staan en gaat alleen het woord weg. Dat is de hele
+   wijziging: er wordt niets vervangen door een letter meer. */
+.nav-dicht .sidebrand { margin-bottom: 1.4rem; }
+.nav-dicht .sidebrand .mark { justify-content: center; }
+.nav-dicht .markglyph { height: 24px; }
 
+/* ── DE INGEKLAPTE BALK, HERZIEN ────────────────────────────────────────────
+   Lucas: *"Het ingeklapte menu mag sowieso wel een stuk mooier gemaakt worden."*
+   Wat er stond was een stapel losse tekens op verschillende breedtes, met de
+   actieve pil half tegen de rand aan geknipt en een knop die alleen uit tekst
+   bestond die je niet meer kon lezen.
+
+   Wat er nu staat is één maat. Elk item is een vierkant van 40 bij 40, gecentreerd
+   in de balk, met evenveel lucht ertussen — dus de rij leest als een kolom
+   tekens en niet als brokken van verschillende grootte. De actieve staat is een
+   vlak achter het teken en niet een streep aan de rand die eraf valt.
+
+   40px is geen smaak: WCAG 2.5.8 zet de ondergrens voor een raakvlak op 24, en
+   voor iets dat je met een muis in een smalle kolom moet raken is 40 het
+   verschil tussen mikken en klikken. */
+.nav-dicht .sidebar { align-items: center; }
+.nav-dicht .sidenav { gap: .25rem; width: 100%; align-items: center; }
 .nav-dicht .navlink,
-.nav-dicht .navtoggle { justify-content: center; gap: 0; padding-left: .4rem; padding-right: .4rem; }
+.nav-dicht .navtoggle {
+  justify-content: center; gap: 0;
+  width: 40px; height: 40px; padding: 0;
+  border-left: 0; border-radius: var(--r-sm, 6px);
+}
+/* De actieve staat: een vlak achter het teken. De streep van 2px die uitgeklapt
+   de actieve rij aanwijst kan hier niet — die zit op de rand waar geen ruimte
+   meer is, en werd afgeknipt. */
+.nav-dicht .navlink.is-active { background: var(--ghost); color: var(--ink); }
+.nav-dicht .navtoggle { margin: 0 0 1rem; opacity: .7; }
+.nav-dicht .navtoggle:hover { opacity: 1; }
 
-/* De uitloggen-knop wordt een vierkant. `font-size: 0` op de knop en het icoon in
-   ::before, dezelfde truc als bij de merknaam — een knop zonder inhoud zou
-   inklappen tot niets en niet meer aan te klikken zijn. */
-.nav-dicht .sideuser form .btn { font-size: 0; padding: .55rem 0; min-height: 38px; }
-.nav-dicht .sideuser form .btn::before { content: '\2192'; font-size: 1rem; }
+/* De twee knoppen onderin krijgen dezelfde maat als de navigatie erboven, zodat
+   de hele kolom één ritme heeft. De uitloggen-knop houdt zijn pijl; die stond er
+   al en zegt precies genoeg. */
+.nav-dicht .sideuser { align-items: center; width: 100%; }
+.nav-dicht .sideuser form { width: 40px; }
+.nav-dicht .sideuser form .btn {
+  font-size: 0; width: 40px; height: 40px; padding: 0; min-height: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm, 6px);
+}
+.nav-dicht .sideuser form .btn::before { content: '\2192'; font-size: 1.05rem; }
 /* The one deliberate exception to "no side-stripe borders": this is a 2px
    active-tab indicator on a nav item, the same role an underline plays on a
    tab strip, not a decorative accent — it exists on exactly one item at a
@@ -480,7 +514,11 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .ovhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
 .ovhead h1 { margin-top: 0; }
 
-.statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin: 2rem 0 0; border: 1px solid var(--line); background: var(--line); }
+/* Deze regel stond hier al en gebruikte de oude truc: een raster met gap 1px op
+   een lijnkleurige ondergrond, plus een rand eromheen — zo werden de voegen
+   vanzelf lijnen. Dat is precies het kader dat weg moest. De scheiding zit nu
+   in de cellen zelf (zie .stat verderop); hier blijft alleen het raster over. */
+.statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; margin: 2rem 0 0; border: 0; background: none; }
 .stat { display: flex; flex-direction: column; gap: .3rem; padding: 1.1rem 1.3rem; background: var(--paper-lift); }
 .stat-n { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
 .stat-label { font-size: .82rem; color: var(--ink-3); }
@@ -501,12 +539,40 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
    A card per order, the same "list of records with a status" shape admin.css
    solved for Lucas's dashboard — the only place in this codebase that shape
    was needed before. Colors are portal.css's own, not copied from admin.css. */
+/* ── EEN KAART IS EEN CEL GEWORDEN — 27 AUGUSTUS 2026 ───────────────────────
+   Lucas: *"Ook zitten er een soort grijze lijnen om [de statistieken] heen, dit
+   gebeurt op best veel plekken op de website en het stoort me en wil ze weg
+   hebben dus redesign deze blokken"* en *"Ik vind het dashboard over het
+   algemeen nogal druk."*
+
+   Geteld over zes schermen stonden er 220 volledig omkaderde blokken, en op
+   /account/orders zaten ze vier lagen diep: een kaart om een bestelling, een
+   doos om de betaalstatus, een doos om de voortgang, een doos om elk product.
+   Vier randen tussen de lezer en één zin tekst.
+
+   De regel staat al bovenaan dit bestand, bij de kleurentrap: een blok mag niet
+   als DOOS lezen maar als CEL — gescheiden door een haarlijn, niet omsloten
+   door een kader. `.statrow` was de eerste uitvoering; dit is dezelfde ingreep
+   op de kaarten zelf.
+
+   GEEN OPGETILD VLAK ALS VERVANGING. Dat was de eerste poging: rand eraf,
+   `--paper-lift` erop. Op #030406 grond is #08090B een verschil van 1,06:1 —
+   gemeten leest dat als een vlek en niet als een vlak, en bij afgeronde hoeken
+   krijg je een grijze schim in plaats van een blok. Dus ook het vlak eraf: wat
+   een kaart aftekent is de RUIMTE eromheen en de haarlijn ertussen.
+
+   De hoekradius kan daarmee ook weg. Een radius zonder rand en zonder vlak
+   tekent niets; hij stond er alleen omdat er een doos was. */
 .card {
-  border: 1px solid var(--line);
-  background: var(--paper-lift);
-  padding: 1.3rem 1.4rem;
-  margin-bottom: 1rem;
+  border: 0;
+  background: none;
+  border-radius: 0;
+  padding: 1.4rem 0;
+  margin-bottom: 0;
 }
+/* De scheiding tussen twee kaarten, en alleen tússen: geen lijn boven de eerste
+   en geen onder de laatste, want dat zou het kader zijn dat net weg is. */
+.card + .card { box-shadow: inset 0 1px 0 var(--line); }
 .row-head {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: .8rem; flex-wrap: wrap; margin-bottom: .6rem;
@@ -611,6 +677,14 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .state.revision { color: var(--warn-ink); }
 .state.revision::before { content: "\2014\00a0"; }
 .said { margin: .3rem 0 0; width: 100%; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .86rem; color: var(--ink-2); font-style: italic; }
+/* Het antwoord van de studio, direct onder wat de klant zelf schreef. Dezelfde
+   vorm als .said — een streep links en ingesprongen — maar rechtop en in het
+   accent, want dit is een antwoord en geen citaat. Zo lezen vraag en antwoord
+   als één paar in plaats van als twee losse mededelingen. */
+.fixed { margin: .3rem 0 0; width: 100%; padding-left: .9rem;
+  box-shadow: inset 2px 0 0 var(--accent); font-size: .86rem; color: var(--ink-2); }
+.fixed b { color: var(--ink); font-weight: 600; }
+.prod .fixed { font-size: .78rem; }
 
 .review-form { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; width: 100%; margin-top: .5rem; }
 /* .btn-quiet itself is defined down with the other .btn variants — it only
@@ -618,22 +692,49 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
    as portal.css), so it has to come AFTER .btn in the cascade or .btn's own
    padding/text-decoration would win back. */
 
+/* ── AANMERKEN GAAT PER RONDE — 25 AUGUSTUS 2026 ────────────────────────────
+   `details.ask` was de uitklapper met een notitieveld en een eigen verzendknop:
+   elk beeld verzond meteen, en er werd nooit een ronde afgeschreven. Zie de noot
+   bij reviewControls() in src/lib/account.js.
+
+   Wat ervoor in de plaats komt is een vinkje en een notitieveld die via het
+   `form`-attribuut bij het formulier ONDERAAN de bestelling horen. Ze staan
+   altijd open: een veld dat pas verschijnt na een klik is één beweging meer om
+   te begrijpen, en Lucas vroeg om een simpele flow.
+
+   De regels voor `details.ask` blijven staan — portal.js gebruikt dezelfde
+   uitklapper nog, en die is (nog) niet omgebouwd. */
+details.ask { flex-basis: 100%; margin-top: .3rem; }
+details.ask > summary { cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--ink-3); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
+details.ask > summary::-webkit-details-marker { display: none; }
+details.ask > summary:hover { color: var(--ink); }
+details.ask textarea { display: block; width: 100%; max-width: 32rem; margin-top: .6rem; }
+details.ask .btn { margin-top: .6rem; }
+
+.ask-mark { width: 100%; margin-top: .45rem; }
+.ask-tick { display: inline-flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; color: var(--ink-3); cursor: pointer; }
+.ask-tick input { width: 1rem; height: 1rem; accent-color: var(--accent, #C6F100); cursor: pointer; }
+.ask-tick:hover { color: var(--ink); }
+.ask-mark textarea { display: block; width: 100%; max-width: 32rem; margin-top: .4rem; }
 /* Een aangevinkt beeld krijgt zijn notitieveld nadrukkelijker, zodat je in één
    blik ziet waar je nog iets moet schrijven. `:has()` en geen script — dit
    dashboard draait onder `default-src 'none'`. */
+.ask-mark:has(input:checked) textarea { border-color: var(--accent, #C6F100); }
+.ask-mark:has(input:checked) .ask-tick { color: var(--ink); }
 
 /* ── HET FORMULIER DAT DE HELE RONDE VERSTUURT ──────────────────────────────
    Staat onder de productkaarten, buiten elke kaart, want het gaat over de
    bestelling en niet over één beeld. De vinkjes erboven horen erbij via
    `form="ronde-<id>"`. */
-.ronde { margin: 1.2rem 0 0; padding: 1rem 1.1rem; border: 1px solid var(--line, rgb(0 0 0 / .12)); border-radius: 10px; background: var(--surface-2, rgb(0 0 0 / .02)); }
+.ronde { margin: 1.2rem 0 0; padding: 1.2rem 0 0; border: 0; border-radius: 0; background: none; box-shadow: inset 0 1px 0 var(--line); }
 .ronde h3 { margin: 0 0 .5rem; font-size: 1rem; font-weight: 700; color: var(--ink); }
 .ronde p { margin: 0 0 .6rem; font-size: .88rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
 /* De waarschuwing is het enige dat de klant vóór de klik moet begrijpen, dus hij
    krijgt de amberkleur die dit dashboard al gebruikt voor "let op" en niet voor
    "er ging iets mis". */
 .ronde-warn { color: var(--ink-2, #444); border-left: 3px solid #E5B45C; padding-left: .75rem; }
-.ronde.is-done { border-color: rgb(143 209 79 / .5); }
+/* Afgerond: de haarlijn wordt groen in plaats van dat er een groene doos komt. */
+.ronde.is-done { box-shadow: inset 0 1px 0 rgb(143 209 79 / .5); }
 
 textarea {
   font: inherit; padding: .7rem .8rem; background: var(--surface); color: var(--ink);
@@ -806,11 +907,13 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
    and thirty. The first card ships open: a page whose subject is photographs
    must not open on three closed rows. */
 .bk-cards { display: grid; gap: .8rem; }
+/* De drie uitklappers van de vaste look zijn een lijst — zelfde vorm als
+   `.prod`, zelfde reden. */
 .bk-card {
-  border: 1px solid var(--line); border-radius: var(--r-lg);
-  background: var(--paper-lift); overflow: hidden;
+  border: 0; border-radius: 0; background: none; overflow: hidden;
 }
-.bk-card[open] { border-color: var(--line-strong); }
+.bk-card + .bk-card { box-shadow: inset 0 1px 0 var(--line); }
+.bk-card[open] { background: rgb(255 255 255 / .022); }
 
 .bk-sum {
   display: flex; align-items: center; gap: clamp(.7rem, 2vw, 1rem);
@@ -846,10 +949,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-sum-text { display: grid; gap: .15rem; min-width: 0; flex: 1 1 auto; }
 .bk-sum-h { font-size: 1rem; font-weight: 700; color: var(--ink); }
 .bk-sum-now { font-size: .82rem; color: var(--ink-3); overflow-wrap: anywhere; }
-/* Een scheidingsteken in een tekstregel is tekst en geen streep: --ink-300 is de
-   randwaarde (2,03:1) en stond hier als kleur van een zichtbaar punt tussen twee
-   woorden. Zie de noot bij --ink-4 hierboven — dezelfde verwisseling. */
-.bk-sum-dot { color: var(--ink-3); }
+.bk-sum-dot { color: var(--ink-300); }
 .bk-sum-cta {
   flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35rem;
   font-size: .78rem; letter-spacing: .05em; text-transform: uppercase;
@@ -1189,7 +1289,12 @@ form.login input[type="email"] {
    The blanket reset is gone (see :root). These are the surfaces the scale is
    for, and nothing else takes a corner: not a table cell, not a rule, not a
    bare <img> that is already clipped by its frame. */
-.card, .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg); }
+/* `.card` STOND HIER OOK, EN DAT WON VAN DE REGEL DIE HEM PLAT ZETTE.
+   Deze regel staat 750 regels ná `.card` en heeft dezelfde specificiteit, dus
+   won hij. In de render bleef er daardoor een afgeronde hoek zweven boven een
+   kaart die verder geen kader meer had — een boogje zonder doos eromheen. Een
+   radius hoort bij een RAND of een VLAK; een cel heeft geen van beide. */
+.facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg); }
 input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md); }
 /* Buttons are fully round since August 2026, at Lucas's direction — see the
    --r-pill note in src/styles/global.css for why buttons and nothing else.
@@ -1216,7 +1321,9 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
    CORNERS. --r-lg on the panel, --r-md on the fields, --r-sm on nothing
    smaller — the three tokens :root defines and this file applies per
    primitive. Nothing here is square. */
-.detpanel { margin: 0 0 clamp(2.4rem,5vw,3.4rem); padding: clamp(1.3rem,3vw,1.8rem); border: 1px solid var(--line); background: var(--paper-lift); border-radius: var(--r-lg); }
+/* Zie de noot bij `.card`: geen kader, geen vlak, geen radius. De ruimte
+   eronder doet het scheidingswerk dat de rand deed. */
+.detpanel { margin: 0 0 clamp(2.4rem,5vw,3.4rem); padding: 0; border: 0; background: none; border-radius: 0; }
 .detpanel .lede { font-size: 1rem; }
 .det-h2 { margin-top: 0; }
 .detform { display: grid; gap: 1.1rem; margin-top: 0; }
@@ -1451,27 +1558,61 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
    het laatste wat je ziet in plaats van het eerste. Een rij van vier getallen
    zonder label erboven dwingt je elke keer terug naar boven om te weten wat je
    leest. */
-.statrow { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0; }
-.stat, .stat.is-link {
-  border: 1px solid var(--line); border-radius: var(--r-sm, 6px);
-  background: var(--surface-2); padding: 1rem 1.05rem; display: block;
+/* ── VAN VIER DOZEN NAAR ÉÉN GEMETEN RIJ — 27 augustus 2026 ─────────────────
+   Lucas: *"Ook zitten er een soort grijze lijnen om de 'In production …' heen,
+   dit gebeurt op best veel plekken op de website en het stoort me."*
+
+   Hij koos tegelijk de donkerste grondtrap, waarin een paneel nauwelijks nog
+   van de pagina afkomt. Die twee wensen samen sluiten de doos uit: zonder rand
+   én zonder vulling is er niets meer dat een blok aftekent.
+
+   Dus geen doos maar een CEL. Vier cellen naast elkaar, gescheiden door één
+   haarlijn ertussen — geen kader eromheen, geen rand aan de buitenkant, geen
+   vulling. Dat is dezelfde taal als een tabelkop of een datablad: de scheiding
+   staat TUSSEN de dingen en niet eromheen, en daarom leest de rij als één
+   geheel in plaats van als vier losse kaartjes.
+
+   `gap: 0` en de lijn als border-left op alles behalve de eerste: zo is er per
+   scheiding precies één lijn, ook als de rij afbreekt naar twee kolommen. Een
+   border-right op elke cel zou bij de laatste een lijn tegen de leegte zetten.
+
+   De hover vult wél, want daar moet zichtbaar zijn dat de cel ergens heen gaat.
+   Dat is het enige moment dat er een vlak verschijnt. */
+.statrow {
+  display: grid; gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0;
 }
+.stat, .stat.is-link {
+  border: 0; border-radius: 0; background: none;
+  padding: 1rem 1.3rem; display: block;
+  position: relative;
+}
+.stat + .stat { box-shadow: inset 1px 0 0 var(--line); }
+/* Het icoon had zijn eigen grijze vierkantje — een doosje in een doosje. Nu
+   staat het teken er kaal, op dezelfde hoogte als het label, en draagt het
+   alleen nog de SOORT werk. Eén grijstint minder op het scherm. */
 .stat-i {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; margin-bottom: .75rem;
-  border-radius: var(--r-sm, 6px);
-  background: var(--ghost); color: var(--ink-2);
+  width: 18px; height: 18px; margin-bottom: .7rem;
+  border-radius: 0; background: none; color: var(--ink-4);
+  transition: color 120ms ease;
 }
 .stat-i .i { width: 16px; height: 16px; }
 .stat-label {
   display: block; font-size: .7rem; font-weight: 700;
   letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
 }
-.stat-n { display: block; margin-top: .25rem; font-family: var(--font-display); font-weight: 800;
+/* Hier stond var(--font-display), en dat token wordt in dit blad nergens gezet:
+   de regel viel stil terug op het geerfde lettertype. Nu staat er wat er echt
+   gebeurt — deze pagina's laden geen webfont, met opzet. */
+.stat-n { display: block; margin-top: .25rem; font-family: var(--font); font-weight: 800;
   font-size: 1.9rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (hover: hover) {
-  .stat.is-link:hover { border-color: var(--line-strong); background: var(--surface); }
-  .stat.is-link:hover .stat-i { color: var(--signal-ink); }
+  /* Het enige moment dat er een vlak verschijnt: als je erop staat. Geen
+     randkleur meer om te veranderen — die is er niet. */
+  .stat.is-link:hover { background: var(--ghost); }
+  .stat.is-link:hover .stat-i { color: var(--ink); background: var(--accent); }
 }
 
 /* .ovhead was de kop van het overzicht: <h1> links, knop rechts. Hij is
@@ -1519,10 +1660,9 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 .folder {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem 1.4rem;
   align-items: center;
-  margin: 1.2rem 0 0; padding: 1.05rem 1.15rem;
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-md, 10px);
+  margin: 1.2rem 0 0; padding: 1.2rem 0 0;
+  background: none; border: 0; border-radius: 0;
+  box-shadow: inset 0 1px 0 var(--line);
 }
 .folder h3 { margin: 0 0 .3rem; font-size: .96rem; font-weight: 700; color: var(--ink); }
 .folder-n { margin: 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
@@ -1535,12 +1675,18 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   .folder-btn { width: 100%; text-align: center; }
 }
 
+/* Producten zijn een LIJST en geen stapel dozen — zie de noot bij `.flowbox`.
+   Een lijst hoort scheidingen te hebben en geen omhulsels: haarlijn tussen twee
+   rijen, niets eromheen. `overflow: hidden` blijft nodig voor de fotohoek van
+   `.prod-cover`. */
 .prod {
-  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
-  background: var(--surface-2); overflow: hidden;
-  transition: border-color .2s ease, box-shadow .2s ease;
+  border: 0; border-radius: 0; background: none; overflow: hidden;
+  transition: background .2s ease;
 }
-.prod[open] { border-color: var(--line-strong); }
+.prod + .prod { box-shadow: inset 0 1px 0 var(--line); }
+/* Open staat wordt aangewezen door het vlak en niet door een sterkere rand: er
+   is geen rand meer om te versterken. Nét genoeg om te zien welke openstaat. */
+.prod[open] { background: rgb(255 255 255 / .022); }
 
 /* De kop is de knop. list-style weg in beide dialecten, want Safari gebruikt
    nog ::-webkit-details-marker en de rest ::marker — mist er één, dan staat er
@@ -1726,10 +1872,21 @@ details.ask { margin-top: 0; }
    Drie lagen informatie, aflopend in nadruk: één zin over nu, vier stappen als
    spoor, en de datums dichtgeklapt. Wie inlogt wil de eerste regel; de rest is
    er voor wie doorvraagt. */
+ /* ── DE DOZEN IN EEN BESTELLING ZIJN SECTIES GEWORDEN ──────────────────────
+   Zie de noot bij `.card`. Op /account/orders zat de opmaak vier lagen diep:
+   een kaart om de bestelling, en daarbinnen een doos om het geld, een doos om
+   de voortgang en een doos om elk product. De kaart is al een cel geworden; als
+   de dozen erin blijven staan, is het enige wat er verandert dat de buitenste
+   rand weg is en de binnenste harder gaat spreken. Gemeten in de render was dat
+   ook precies wat er gebeurde.
+
+   Dus dezelfde ingreep, één laag dieper: geen rand, geen vlak, geen radius. Wat
+   twee secties scheidt is een haarlijn bóven de tweede, en wat ze bij elkaar
+   houdt is dat ze onder dezelfde kop staan. */
 .flowbox {
-  margin: 1rem 0 0; padding: .85rem 1rem;
-  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
-  background: var(--surface-2);
+  margin: 1.2rem 0 0; padding: 1.2rem 0 0;
+  border: 0; border-radius: 0; background: none;
+  box-shadow: inset 0 1px 0 var(--line);
 }
 .flowbox.is-cancelled { opacity: .7; }
 .flow-now { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--ink-2); }
@@ -1776,9 +1933,11 @@ details.ask { margin-top: 0; }
 .tl-note { display: block; color: var(--ink-3); font-style: italic; margin-top: .1rem; }
 
 /* ---- de uitgelichte bestelling op het overzicht ---------------------------- */
+/* De bestelling op het overzicht: zelfde ingreep als `.card`, zie de noot daar. */
 .ovorder {
-  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
-  background: var(--surface-2); padding: .9rem 1rem 1rem; margin-top: .6rem;
+  border: 0; border-radius: 0; background: none;
+  padding: 1.2rem 0 0; margin-top: .6rem;
+  box-shadow: inset 0 1px 0 var(--line);
 }
 .ovorder-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .ovorder-head .ref { font-weight: 700; letter-spacing: .04em; }
@@ -1837,8 +1996,8 @@ details.ask { margin-top: 0; }
 .section-head { margin: 3rem 0 .3rem; }
 .section-head:first-child { margin-top: 0; }
 .statrow { margin-top: 1.8rem; }
-.flowbox { margin-top: 1.3rem; padding: 1rem 1.1rem; }
-.ovorder { padding: 1.05rem 1.15rem 1.15rem; margin-top: .9rem; }
+.flowbox { margin-top: 1.4rem; padding: 1.4rem 0 0; }
+.ovorder { padding: 1.35rem 0 0; margin-top: .9rem; }
 .more-orders { margin-top: 1.1rem; }
 .latest { margin: 1rem 0 .5rem; }
 .card + .card { margin-top: 1.4rem; }
@@ -1889,14 +2048,20 @@ details.ask { margin-top: 0; }
  * bestelling, niet over een beeld — en twee vormtalen naast elkaar zou de kaart
  * in stukken hakken. */
 .paybox {
-  margin-top: 1.3rem; padding: 1rem 1.1rem;
-  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
-  background: var(--surface-2);
+  margin-top: 1.2rem; padding: 1.2rem 0 0;
+  border: 0; border-radius: 0; background: none;
+  box-shadow: inset 0 1px 0 var(--line);
   display: grid; gap: .6rem;
 }
 /* Onbetaald krijgt de accentrand. Niet rood: er is niets misgegaan, er moet
    alleen nog iets gebeuren — en rood is hier gereserveerd voor een terugbetaling
    en voor het onomkeerbare vak in admin. */
+/* De signaalkleur blijft en wordt een LINKERREGEL. Dat is dezelfde vorm die
+   `.fixed` en `.ronde-warn` in dit bestand al gebruiken: een streep naast de
+   tekst zegt "let hier op" zonder er een doos omheen te zetten. De opvulling
+   links komt erbij zodat de tekst niet tegen de streep aan komt te staan. */
+.paybox.is-unpaid,
+.paybox.is-refunded { padding-left: .95rem; }
 .paybox.is-unpaid { border-left: 2px solid var(--accent); }
 .paybox.is-refunded { border-left: 2px solid var(--warn); }
 
@@ -2696,13 +2861,32 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .dash-right strong { display: block; margin-top: .3rem; white-space: nowrap; }
 
 /* Wat nog niet is ingesteld, is informatie en geen fout — maar het mag niet
-   klinken als een waarde. */
-.facts-kv dd.leeg { color: var(--ink-4, var(--ink-3)); font-style: italic; }
+   klinken als een waarde.
+
+   ── EN HET STOND OP EEN LIJNKLEUR — 28 AUGUSTUS 2026 ──────────────────────
+   Hier stond `var(--ink-4)`. Die trede is `--ink-300`, en twee regels boven de
+   plek waar hij wordt toegewezen staat letterlijk: *"rules, never text"*, met
+   het getal erbij. Gemeten op de vaste-lookkaart haalde "nog niet ingesteld"
+   1,84:1 — de enige tekst op het hele dashboard die niet te lezen was, en
+   uitgerekend de tekst die zegt dat je nog iets moet doen.
+
+   `--ink-3` is de trede die voor gedempte tekst bedoeld is: 5,3:1 gemeten. De
+   cursief blijft het verschil met een echte waarde dragen. Gevonden door de
+   veeg die nu als tests/dashboard-leesbaar.test.mjs meedraait. */
+.facts-kv dd.leeg { color: var(--ink-3); font-style: italic; }
 
 /* De nudge verdwijnt zodra de brand kit af is; hij is dus nooit lang zichtbaar en
    mag opvallen. Een rand en geen vlak: een gevuld blok bovenaan een dashboard
    leest als een storing. */
-.card.nudge { border-color: var(--signal-ink, var(--ink-2)); }
+/* De aandachtkaart had een gekleurde RAND, en die rand bestaat niet meer sinds
+   `.card` een cel is — `border-color` op een `border: 0` doet niets. Zelfde
+   oplossing als bij `.paybox.is-unpaid`: een linkerregel in de signaalkleur,
+   met opvulling ernaast zodat de tekst er niet tegenaan staat. Dat is ook de
+   vorm die `.fixed` en `.ronde-warn` in dit bestand al gebruiken. */
+.card.nudge {
+  border-left: 2px solid var(--signal-ink, var(--ink-2));
+  padding-left: .95rem;
+}
 
 /* De regels die in de eerstvolgende week starten, staan aangezet. Niet met een
    label erbij — de tekst onder de lijst zegt hoeveel het zijn, en twee keer
@@ -2772,475 +2956,155 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
    van het stylesheet wél. Eén toestand, één kleur, één plek om hem te
    veranderen. Zie HERONTWERP.md §2.3. */
 
-/* ── DE DODE `.ask-*`-REGELS ZIJN HIER WEGGEHAALD — 26 AUGUSTUS 2026 ─────────
-   `.ask-mark`, `.ask-tick` en `.ask-mark:has(input:checked)` stonden hier voor
-   de uitklapper met een notitieveld per beeld. Die is op 25 augustus vervangen
-   door de ene revisieronde, en sindsdien zendt geen enkele regel in
-   src/lib/account.js of src/lib/portal.js die klassen nog uit — gecontroleerd
-   met een grep over allebei.
-
-   ── EN HET BLOK DAT ER WÉL BIJ HOORT ONTBRAK ────────────────────────────────
-   Omgekeerd stond `.pick` — het vinkje dat de klant nu aanklikt, uitgezonden op
-   account.js:7242 en portal.js:1519 — in dit bestand NIET. De knop stond dus
-   ongestyled op het dashboard terwijl de opmaak voor zijn voorganger er nog
-   volop in stond. Beide helften zijn hieronder rechtgezet. */
-/* ---- de ene revisieronde -------------------------------------------------
-   Sinds 24 augustus 2026 vraagt een klant niet meer per beeld een revisie maar
-   één ronde per bestelling: aanvinken wat niet klopt, één notitie, één keer
-   versturen. Woordelijk dezelfde constructie als in het gemailde portaal —
-   zie roundBlock() in src/lib/account.js en de tegenhanger in portal.js. */
-.pick {
-  display: inline-flex; align-items: center; gap: .45rem;
-  margin-top: .5rem; cursor: pointer;
-  font-size: .82rem; color: var(--ink-2);
-  /* Een raakvlak dat een duim haalt; .82rem met een vinkje ernaast is anders
-     een doel van elf pixels op een telefoon. */
-  padding: .3rem 0; min-height: 2.1rem;
-}
-.pick input { inline-size: 1rem; block-size: 1rem; accent-color: var(--accent-bright, #c8f31d); cursor: pointer; margin: 0; }
-.pick:hover span { color: var(--ink); }
-.pick:has(input:checked) span { color: var(--ink); font-weight: 600; }
-.shots li:has(.pick input:checked) { box-shadow: inset 0 0 0 2px var(--accent-bright, #c8f31d); }
-
-.rr { margin-top: 1.6rem; padding-top: 1.2rem; box-shadow: inset 0 1px 0 var(--line); }
-.rr h3 { font-size: .98rem; margin: 0 0 .45rem; }
-.rr p { margin: 0 0 .8rem; color: var(--ink-2); font-size: .88rem; line-height: 1.6; }
-.rr textarea {
-  inline-size: 100%; box-sizing: border-box; resize: vertical;
-  padding: .6rem .7rem; border: 1px solid var(--line-strong); border-radius: 8px;
-  background: var(--surface-2, #1F2229); color: var(--ink); font: inherit; font-size: .88rem;
-}
-.rr textarea:focus-visible { outline: 2px solid var(--accent-bright, #c8f31d); outline-offset: 2px; }
-.rr .acts { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .7rem; }
-.rr-used { color: var(--ink-2); }
-
-/* ══════════════════════════════════════════════════════════════════════════════
- * DE STATUSKOLOM — 27 augustus 2026
- * ══════════════════════════════════════════════════════════════════════════════
+/* ── DE TABBEN VAN HET ABONNEMENTSSCHERM ────────────────────────────────────
  *
- * De derde kolom. Links waar je heen kunt, midden waar je bent, rechts wat er van
- * je toestand te zeggen valt — en die rechterkolom is op elke route dezelfde. Zie
- * de noot bij statusKolom() in src/lib/account.js voor waarom hij bestaat.
+ * Zie de kop bij planTabs() in src/lib/account.js: dit zijn navigatielinks naar
+ * vier weergaven van /account/plan, geen knoppen die een paneel wisselen.
  *
- * `.shell` blijft flex en wordt geen grid. Een grid zou hier nettere code geven en
- * elke bestaande regel in dit bestand die op de flexverdeling rekent opnieuw laten
- * bewijzen — de ingeklapte zijbalk, de telefoonbalk, de drie doorbraakpunten. Een
- * derde flexitem met een vaste basis doet hetzelfde werk en raakt niets.
- * ══════════════════════════════════════════════════════════════════════════════ */
-
-.status {
-  /* Meebewegend en niet vast op 300. Op 1280 — zijbalk 232 plus deze kolom — bleef
-     er 646 over voor de middenkolom en had de tabel er 649 nodig: drie pixels, en
-     dus een schuifbalk op precies de meest voorkomende laptopbreedte. Liever een
-     kolom die een paar procent meegeeft dan een tabel die krapper moet. Onder de
-     272 wordt hij zelf onleesbaar, boven de 300 wint hij niets meer. */
-  flex: 0 0 clamp(272px, 21vw, 300px);
-  border-left: 1px solid var(--line);
-  /* Dezelfde grond als de zijbalk: de twee randkolommen horen bij elkaar en de
-     middenkolom is waar het werk staat. Zonder dit leest de kolom als inhoud. */
-  background: var(--paper-lift);
-  align-self: stretch;
-}
-/* De binnenlaag plakt, de buitenlaag vult. Zie de noot bij statusKolom(): sticky
-   op de <aside> zelf zou `align-self: flex-start` vragen, en dan houdt de
-   scheidingslijn halverwege een lange pagina op. */
-.status-in {
-  position: sticky; top: 0;
-  display: flex; flex-direction: column; gap: .8rem;
-  padding: 1.6rem 1.2rem 2rem;
-  max-height: 100vh; overflow-y: auto; overscroll-behavior: contain;
-}
-
-.st-kaart {
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--paper);
-  padding: .85rem .95rem;
-  display: block; text-decoration: none; color: inherit;
-}
-/* De enige kaart met kleur is de kaart die iets van je wil. Eén per kolom, en
-   alleen als er echt iets openstaat — een kolom die altijd oranje is, is geen
-   melding meer maar een lijst. */
-.st-kaart.let { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 6%, var(--paper)); }
-
-.st-k {
-  margin: 0 0 .55rem;
-  font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
-  font-weight: 700; color: var(--ink-3);
-}
-.st-kaart.let .st-k { color: var(--warn-ink); }
-.st-zin { margin: 0; font-size: .9rem; line-height: 1.45; font-weight: 600; color: var(--ink); }
-.st-sub { margin: .4rem 0 0; font-size: .79rem; line-height: 1.45; color: var(--ink-2); }
-.st-kaart .btn { margin-top: .75rem; }
-
-/* Het saldogetal. Tabellarisch, want het verandert en mag niet verspringen. */
-.st-groot {
-  /* `var(--font)` en niet `var(--font-display)`. Dat tweede token bestaat in
-     global.css maar NIET in dit bestand, en `.stat-n` hierboven gebruikt het al
-     — die regel valt dus stil terug op de body-letter zonder dat iemand het
-     ziet. Eén zo'n regel is genoeg; zie de noot boven --font in :root. */
-  margin: 0; font-family: var(--font); font-weight: 900;
-  font-size: 1.85rem; line-height: 1; letter-spacing: -.035em; color: var(--ink);
-  font-variant-numeric: tabular-nums lining-nums;
-}
-.st-groot span { font-size: .8rem; font-weight: 600; color: var(--ink-3); letter-spacing: 0; }
-/* De meter erft .meter/.pip uit het abonnementsblok hierboven — één tekening,
-   twee plekken. Alleen wat kleiner, want deze kolom is smaller dan die pagina. */
-.status .meter { gap: 3px; margin-top: .7rem; }
-.status .pip { width: 12px; height: 18px; }
-
-.st-lijst { display: flex; flex-direction: column; gap: .5rem; }
-.st-rij { display: flex; align-items: baseline; gap: .55rem; margin: 0; font-size: .82rem; min-width: 0; }
-.st-rij b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.st-rij .r { margin-left: auto; color: var(--ink-3); white-space: nowrap; }
-.st-rij .r.is-vast { color: var(--signal-ink); }
-.st-rij .r.is-open { color: var(--warn-ink); }
-
-.st-kaart-link { transition: border-color var(--dur-1) var(--ease); }
-.st-kaart-link:hover { border-color: var(--line-strong); }
-
-/* Twee pilvarianten erbij, in dezelfde `is-`-familie als de vijf statuslabels:
-   ze zeggen niet WAT er met een bestelling gebeurt maar bij WIE hij ligt. Dat is
-   de enige vraag die deze kolom beantwoordt en hij staat nergens anders. */
-.pill.is-jij { border-color: var(--warn); color: var(--warn-ink); }
-.pill.is-wij { border-color: var(--line-strong); color: var(--ink-3); }
-
-/* De navigatiegroepen. Twee koppen, en ze zijn klein genoeg om te negeren
-   zolang je weet waar je heen wilt — dat is wat een groepskop hoort te doen. */
-.sidenav { flex: 0 0 auto; }
-.sidenav + .sidenav { margin-top: 1.1rem; }
-.sidenav-kop {
-  margin: 0 0 .3rem .7rem;
-  font-size: .63rem; letter-spacing: .13em; text-transform: uppercase;
-  font-weight: 700; color: var(--ink-3);
-}
-/* De aanvraagknop staat nu bovenin het gebruikersblok en niet meer in de
-   navigatie: het is een handeling en geen pagina. */
-.sideuser > .btn:first-child { margin-bottom: 1rem; }
-.nav-dicht .sidenav-kop { display: none; }
-
-/* ── SMALLER DAN 1180px: DE KOLOM GAAT ONDER DE INHOUD ──────────────────────
-   Niet weg. Wat erin staat is precies wat iemand op een telefoon óók wil weten,
-   en de eerste kaart is er de belangrijkste van. Onder de inhoud in plaats van
-   ernaast, als een rij kaarten die meebeweegt. */
-/* ── WRAP ALLEEN ZOLANG DE SCHIL EEN RIJ IS — 27 augustus 2026 ──────────────
+ * DE VORM IS EEN RIJ MET ÉÉN ONDERSTREEP, en dat is met opzet niet de pilvorm
+ * die de filterchips op /account/orders gebruiken. Die chips filteren binnen één
+ * scherm; deze verplaatsen je náár een scherm. Twee verschillende handelingen
+ * horen er niet hetzelfde uit te zien — dat is precies de verwarring waar het
+ * slotsysteem aan onderdoor ging.
  *
- * `flex-wrap: wrap` stond hier zonder ondergrens, en onder 780px zet de regel
- * verderop `.shell { flex-direction: column }`. Wrappen in een KOLOM maakt geen
- * tweede rij maar een tweede KOLOM: op 390px werd de schil 783 breed — twee
- * kolommen van 390 naast elkaar — en schoof de hele pagina zijwaarts. Gemeten op
- * de bestellingenpagina, waar de inhoud lang genoeg is om de omslag te halen; op
- * een kort scherm viel het niet op, wat precies is waarom dit met een meting
- * boven water kwam en niet met een schermafdruk.
+ * En het is de vorm die de rest van dit bestand sinds 27 augustus aanhoudt: een
+ * haarlijn scheidt, een kader omsluit, en hier hoort scheiden. De actieve tab
+ * krijgt de merkkleur onder zich — hetzelfde signaal als de limestreep boven de
+ * bundelkolom op de prijstabel.
  *
- * Tussen 781 en 1180 is de schil nog een rij en hoort de statuskolom onder de
- * inhoud te wrappen. Daaronder stapelt de kolomrichting alles al. */
-@media (min-width: 781px) and (max-width: 1180px) {
-  .shell.shell-3 { flex-wrap: wrap; }
+ * `overflow-x: auto` want vier woorden passen op 320px net niet altijd, en een
+ * rij die afbreekt naar twee regels leest niet meer als één rij.
+ */
+.plantabs {
+  display: flex; gap: 1.4rem;
+  margin: 0 0 clamp(1.6rem, 3vw, 2.2rem);
+  padding: 0 0 .1rem;
+  box-shadow: inset 0 -1px 0 var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-@media (max-width: 1180px) {
-  .status { flex: 1 1 100%; border-left: 0; box-shadow: inset 0 1px 0 var(--line); }
-  /* Onder de inhoud plakt er niets meer: er is geen kolom om naast te blijven staan. */
-  .status-in {
-    position: static; max-height: none; overflow: visible;
-    flex-direction: row; flex-wrap: wrap;
-    padding: 1.4rem clamp(1.4rem, 4vw, 3.2rem) 3rem;
-    gap: 1rem;
-  }
-  .st-kaart { flex: 1 1 260px; }
+.plantabs::-webkit-scrollbar { display: none; }
+.plantab {
+  flex: 0 0 auto;
+  padding: .7rem 0 .75rem;
+  font-size: .95rem; font-weight: 600; line-height: 1;
+  color: var(--ink-3); white-space: nowrap;
+  box-shadow: inset 0 -2px 0 transparent;
+  transition: color var(--dur-1, .15s) ease, box-shadow var(--dur-1, .15s) ease;
 }
-@media (max-width: 720px) {
-  .status-in { flex-direction: column; }
-  .st-kaart { flex: 1 1 auto; }
-}
+.plantab:hover { color: var(--ink); }
+.plantab.is-nu { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+/* Het paneel draagt zelf niets: de blokken erin brengen hun eigen ruimte mee.
+   Een doos om de tabinhoud zou het kader zijn dat er net overal af is. */
+.planpaneel > :first-child { margin-top: 0; }
 
-/* ── DE TWEE NAVIGATIEGROEPEN OP DE TELEFOON ────────────────────────────────
+
+/* ── NOG GEEN ABONNEMENT ────────────────────────────────────────────────────
  *
- * Onder 780px is de zijbalk een bovenbalk en een raster, en de regel daarvoor
- * (`.sidenav { grid-row: 3 }`) was geschreven toen er precies één .sidenav was.
- * Met twee groepen landen ze allebei in rij 3 en tekenen ze over elkaar heen —
- * zichtbaar in een render als "WORK" dwars door "Overview".
+ * Het enige beeldvlak in het hele dashboard, en dat is met opzet. Overal
+ * anders scheidt een haarlijn en omsluit niets; hier staat één foto die het
+ * werk zelf laat zien, want dit is de enige plek waar de pagina iets AANBIEDT
+ * in plaats van iets TOONT wat de klant al heeft. Een kader om een foto is
+ * geen doos maar de rand van het beeld.
  *
- * De koppen gaan hier weg en de twee groepen krijgen elk een eigen rij. Wat je
- * dan ziet is precies wat er stond: zes links in twee kolommen. Een groepskop
- * verdient op een telefoon geen regel — de zes links passen in één blik, en dan
- * groepeert het oog vanzelf.
- * ─────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 780px) {
-  .sidenav-kop { display: none; }
-  .sidenav:nth-of-type(1) { grid-row: 3; margin-top: .5rem; }
-  .sidenav:nth-of-type(2) { grid-row: 4; margin-top: .25rem; }
-  .sidenav + .sidenav { margin-top: 0; }
-
-  /* De aanvraagknop staat op elke pagina al in de bovenbalk van de inhoud zelf.
-     Twee keer dezelfde knop binnen één schermhoogte is geen nadruk maar ruis, en
-     op een telefoon is die schermhoogte het schaarse goed. */
-  .sideuser > .btn:first-child { display: none; }
+ * De tekst staat linksonder en de bundel loopt rechtsboven het beeld uit. Twee
+ * verlopen leggen de grond onder de letters: één van onder (de vloer op de
+ * foto is olijfgroen en niet zwart) en één van links. Zonder die twee haalt
+ * witte tekst op dat groen ruim de 4,5 niet — met allebei zit hij boven de 12.
+ *
+ * Geen `background-attachment: fixed` en geen parallax: er draait geen script
+ * op deze pagina, en een vast beeld schuift op iOS toch niet mee.
+ */
+.leegabo {
+  position: relative;
+  isolation: isolate;
+  margin: 0 0 clamp(1.4rem, 3vw, 2rem);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  min-block-size: clamp(320px, 40vw, 420px);
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg-deep) url('/img/plan-beam.webp') no-repeat right center / cover;
 }
-
-/* ══════════════════════════════════════════════════════════════════════════════
- * DE BESTELLINGENTABEL, HET VINKJE EN DE NAKIJKSTAP — 27 augustus 2026
- * ══════════════════════════════════════════════════════════════════════════════ */
-
-.ordtab {
-  border: 1px solid var(--line); border-radius: var(--r-md);
-  background: var(--paper-lift); overflow-x: auto; margin-bottom: 1.6rem;
-}
-.ordtab table { width: 100%; border-collapse: collapse; min-width: 620px; }
-.ordtab th[scope="col"] {
-  text-align: left; font-size: .66rem; letter-spacing: .11em; text-transform: uppercase;
-  color: var(--ink-3); font-weight: 700; padding: .7rem .9rem;
-  border-bottom: 1px solid var(--line); white-space: nowrap;
-}
-.ordtab td, .ordtab th[scope="row"] {
-  padding: .7rem .9rem; border-bottom: 1px solid var(--line);
-  font-size: .88rem; color: var(--ink-2); vertical-align: middle; text-align: left; font-weight: 400;
-}
-.ordtab tr:last-child td, .ordtab tr:last-child th { border-bottom: 0; }
-.ordtab .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ordtab .acties { text-align: right; white-space: nowrap; }
-.ordtab .ref { font-weight: 700; color: var(--ink); text-decoration: none; white-space: nowrap; }
-.ordtab .ref:hover { text-decoration: underline; }
-.ordtab tbody tr:hover td, .ordtab tbody tr:hover th { background: rgb(255 255 255 / .03); }
-/* De open rij en de rij die iets van je wil. Allebei een vulling en geen streep
-   opzij: dit is een tabel, en een gekleurde rand aan één kant van een rij leest
-   als een defect in de lijnen. */
-.ordtab tr.is-open td, .ordtab tr.is-open th { background: rgb(255 255 255 / .05); }
-.ordtab tr.let td, .ordtab tr.let th { background: color-mix(in srgb, var(--warn) 7%, transparent); }
-.ordtab tr.let:hover td, .ordtab tr.let:hover th { background: color-mix(in srgb, var(--warn) 11%, transparent); }
-.ordtab .is-gone { color: var(--ink-3); text-decoration: line-through; }
-
-/* ── HET VINKJE ALS RIJ ─────────────────────────────────────────────────────
- * Het notitieveld is uit de tegel (zie shotTile), dus wat er overblijft is één
- * keuze: dit beeld klopt niet. Een rij over de volle breedte onder de
- * goedkeurknop, even hoog en even breed — de twee zijn alternatieven en horen
- * er ook zo uit te zien. Aangevinkt kleurt hij amber, want vanaf dat moment
- * hangt er iets aan dit beeld. */
-.ask-tick {
-  display: flex; align-items: center; gap: .5rem;
-  padding: .45rem .6rem; margin-top: .3rem;
-  border: 1px solid var(--line); border-radius: var(--r-sm);
-  font-size: .78rem; font-weight: 600; color: var(--ink-2); cursor: pointer;
-  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
-}
-.ask-tick:hover { border-color: var(--line-strong); color: var(--ink); }
-.ask-tick input { accent-color: var(--warn); margin: 0; flex: none; }
-.ask-tick:has(input:checked) {
-  border-color: var(--warn); color: var(--warn-ink);
-  background: color-mix(in srgb, var(--warn) 8%, transparent);
-}
-
-/* ── DE AMBERBAND OM DE WAARSCHUWING ────────────────────────────────────────
- * Stond als `border-left: 3px solid #E5B45C` — een streep opzij, en een hex die
- * in geen enkel palet van dit project voorkomt. De site heeft één attentiekleur
- * (--warn) en dit is er een gebruik van, geen tweede. Een hele rand plus een
- * vulling zegt hetzelfde zonder de streep. */
-.ronde { background: color-mix(in srgb, var(--warn) 5%, var(--paper-lift)); border-color: color-mix(in srgb, var(--warn) 38%, var(--line)); }
-.ronde-warn {
-  border-left: 0; padding-left: 0;
-  color: var(--warn-ink); font-weight: 600;
-}
-.ronde-warn.is-los { margin-bottom: 1.2rem; max-width: 74ch; }
-
-/* ── DE NAKIJKSTAP ──────────────────────────────────────────────────────────
- * Eén beeld per rij, groot genoeg om te herkennen en klein genoeg om er zes
- * boven elkaar te zien. Het notitieveld staat ernaast en niet eronder: je
- * schrijft over wat je links ziet. */
-.nakijk { max-width: 62rem; }
-.nk-lijst { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-lift); }
-.nk { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 1.1rem; padding: 1.1rem 1.2rem; align-items: start; }
-.nk + .nk { border-top: 1px solid var(--line); }
-.nk-beeld { display: block; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
-.nk-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.nk-kop { margin: 0 0 .5rem; font-size: .9rem; }
-.nk-kop b { color: var(--ink); font-weight: 700; }
-.nk-tekst label { display: block; font-size: .78rem; font-weight: 700; color: var(--ink-3); margin-bottom: .3rem; }
-.nk-tekst textarea {
-  width: 100%; background: var(--paper); border: 1px solid var(--line);
-  border-radius: var(--r-sm); padding: .55rem .7rem; font: inherit; font-size: .88rem;
-  line-height: 1.55; color: var(--ink); resize: vertical; min-height: 4.6rem;
-}
-.nk-tekst textarea:focus-visible { border-color: var(--signal); }
-/* Een leeg verplicht veld wijst zichzelf aan zodra de browser het afkeurt — dat
-   is precies de aanwijzing die de oude `?ronde=notitie#f<id>` niet kon geven. */
-.nk-tekst textarea:invalid:not(:placeholder-shown) { border-color: var(--warn); }
-.nk-slot { margin-top: 1.3rem; padding: 1.1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-lift); }
-.nk-slot p { margin: 0; font-size: .88rem; line-height: 1.6; color: var(--ink-2); max-width: 72ch; }
-.nk-knoppen { margin-top: 1.1rem; display: flex; gap: .55rem; flex-wrap: wrap; }
-
+/* Kleiner beeld op smalle schermen. Eén regel, geen srcset-gedoe: dit is een
+   achtergrond en geen <img>, en 760px is ruim genoeg voor 2x op een telefoon. */
 @media (max-width: 560px) {
-  .nk { grid-template-columns: 64px minmax(0, 1fr); gap: .8rem; padding: .9rem; }
+  .leegabo { background-image: url('/img/plan-beam-w760.webp'); }
 }
-
-/* ── TWEE STREPEN OPZIJ, VERVANGEN — 27 augustus 2026 ───────────────────────
- * `.paybox` markeerde onbetaald en terugbetaald met een `border-left` van 2px in
- * de accent- en de attentiekleur. Dat is dezelfde vorm die hierboven bij
- * `.ronde-warn` al weg is, en om dezelfde reden: op een kaart leest een gekleurde
- * rand aan één kant als een tekenfout in het kader, niet als een signaal. Een
- * hele rand plus een lichte vulling zegt het onmiskenbaar en blijft een kader. */
-.paybox.is-unpaid {
-  border-left-width: 1px;
-  border-color: color-mix(in srgb, var(--signal) 42%, var(--line));
-  background: color-mix(in srgb, var(--signal) 5%, transparent);
+/* EEN VERLOOP EN NIET TWEE, EN HIJ KOMT VAN LINKS. De eerste versie legde er
+   ook een van onderaf overheen, en die maakte precies het verkeerde donker: de
+   bundel loopt naar RECHTSONDER, dus een zwarte voet dooft hem uit op de plek
+   waar hij fel hoort te zijn. Nu dekt hij de linkerhelft af — waar de letters
+   staan — en laat hij de rechterhelft ongemoeid. */
+.leegabo::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(102deg,
+    rgb(3 4 6 / .97) 0, rgb(3 4 6 / .96) 42%, rgb(3 4 6 / .80) 58%,
+    rgb(3 4 6 / .30) 74%, rgb(3 4 6 / 0) 90%);
 }
-.paybox.is-refunded {
-  border-left-width: 1px;
-  border-color: color-mix(in srgb, var(--warn) 42%, var(--line));
-  background: color-mix(in srgb, var(--warn) 5%, transparent);
-}
-
-/* ── DE TEGEL: TWEE ACTIES ONDER ELKAAR, ALTIJD ─────────────────────────────
- * Dit stond al zo onder een doorbraakpunt, maar het is geen telefoonkwestie:
- * "Goedkeuren" naast "Er klopt iets niet" past op geen enkele tegelbreedte, en
- * juist die tweede zin afkappen zou de verzachting die Lucas vroeg ongedaan
- * maken. Onder elkaar is bovendien eerlijker — goedkeuren is wat de meeste
- * mensen doen en dat hoort niet even breed te zijn als de uitzondering. */
-.shot-actions { flex-direction: column; align-items: stretch; gap: .3rem; }
-.shot-actions .btn { width: 100%; }
-.shots { grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); }
-.shot-cap { font-size: .74rem; color: var(--ink-3); }
-
-/* ── DE ACCENTKLEUR IS NIET VOOR ACHTTIEN DINGEN TEGELIJK ───────────────────
- * "Goedkeuren" was een gevulde accentknop, en op een levering van achttien
- * beelden staan er dan achttien op één scherm. PRODUCT.md zegt het zelf:
- * *"Applied to everything it would be applied to nothing."* Binnen een tegel is
- * de knop bovendien niet de belangrijkste keuze van de pagina maar de gewone —
- * de verzendknop van de ronde eronder is dat wel, en die verliest zijn nadruk
- * als er achttien even luide knoppen boven staan.
- *
- * De vorm blijft, de vulling gaat eraf. Bij aanwijzen komt de accentkleur terug,
- * zodat het nog steeds de bevestigende handeling is. Buiten de tegel — de
- * betaalknop, de verzendknop, de aanvraagknop — verandert er niets. */
-.shot-actions .btn-primary {
-  background: transparent;
-  color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
-}
-.shot-actions .btn-primary:hover,
-.shot-actions .btn-primary:focus-visible {
-  background: var(--signal);
-  color: var(--accent-ink, #08090B);
-  box-shadow: none;
-}
-.nk-kop { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; }
-.nk-weg {
-  margin-left: auto; background: none; border: 0; padding: 0; cursor: pointer;
-  font: inherit; font-size: .78rem; color: var(--ink-3);
-  border-bottom: 1px solid var(--line-strong);
-}
-.nk-weg:hover { color: var(--ink); }
-
-/* ══════════════════════════════════════════════════════════════════════════════
- * DE BESTELLINGENTABEL OP EEN TELEFOON — 27 augustus 2026
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * Zeven kolommen achter een zijwaartse schuif is op 390px geen tabel maar een
- * kijkgaatje: je ziet drie kolommen en moet schuiven om te weten of je de goede
- * regel leest. En `min-width: 620px` binnen `overflow-x: auto` bleek de pagina
- * hier bovendien écht zijwaarts te laten schuiven — gemeten met
- * `window.scrollTo(300,0)`, en `window.scrollX` bleef op 300 staan. Geen enkele
- * clip op een voorouder hielp daartegen; alleen de tabelopmaak zelf.
- *
- * Allebei die problemen verdwijnen door onder 780px geen tabel te tekenen. Elke
- * regel wordt een blok met het kenmerk bovenaan, de status ernaast en de rest
- * als etiket-en-waarde. De kolomkoppen gaan weg — ze staan nu voor de waarden —
- * en `<th scope="row">` blijft staan, zodat een schermlezer de rij nog steeds
- * bij zijn kenmerk noemt.
- * ══════════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 780px) {
-  .ordtab { overflow-x: visible; }
-  .ordtab table { min-width: 0; display: block; }
-  .ordtab thead { display: none; }
-  .ordtab tbody { display: block; }
-  .ordtab tr {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto;
-    gap: .3rem .8rem; padding: .8rem .9rem;
-    border-bottom: 1px solid var(--line);
+/* Op een smal scherm staat de tekst niet NAAST maar OP het beeld, en dan is een
+   verloop van links waardeloos. Daar keert hij dus om naar onderaf — de bundel
+   verliest zijn onderkant, maar onleesbare tekst verliest meer. */
+@media (max-width: 700px) {
+  /* En hoger, want de tekst vult op een telefoon het hele vlak: zonder extra
+     hoogte blijft er van de foto niets over dan de rand om de letters. De
+     bundel krijgt de bovenste helft, de tekst staat eronder. */
+  .leegabo { min-block-size: clamp(430px, 118vw, 560px); background-position: center; }
+  .leegabo::before {
+    background: linear-gradient(to top,
+      rgb(3 4 6 / .97) 0, rgb(3 4 6 / .96) 56%, rgb(3 4 6 / .55) 74%, rgb(3 4 6 / 0) 94%);
   }
-  .ordtab tr:last-child { border-bottom: 0; }
-  /* De vulling hoort op de RIJ en niet op elke cel. Op breed scherm is een rij
-     een tabelrij en kan hij zelf geen achtergrond dragen die de celranden vult;
-     hier is hij een grid en kan dat wél. Per cel gaf strepen: elke waarde een
-     eigen bandje, met de gaten ertussen open. */
-  .ordtab tr.is-open td, .ordtab tr.is-open th,
-  .ordtab tr.let td, .ordtab tr.let th,
-  .ordtab tbody tr:hover td, .ordtab tbody tr:hover th { background: none; }
-  .ordtab tr.is-open { background: rgb(255 255 255 / .05); }
-  .ordtab tr.let { background: color-mix(in srgb, var(--warn) 7%, transparent); }
-  .ordtab td, .ordtab th[scope="row"] { display: block; border: 0; padding: 0; }
-  .ordtab th[scope="row"] { grid-column: 1; font-size: .95rem; }
-  /* De status hoort naast het kenmerk: dat zijn de twee dingen waarop je scant. */
-  .ordtab td:nth-of-type(4) { grid-column: 2; grid-row: 1; justify-self: end; }
-  .ordtab td:nth-of-type(1),
-  .ordtab td:nth-of-type(2),
-  .ordtab td:nth-of-type(3),
-  .ordtab td:nth-of-type(5) { grid-column: 1; font-size: .8rem; color: var(--ink-3); text-align: left; }
-  /* Etiketten erbij, want zonder kolomkop zegt "18" niets. `data-etiket` wordt in
-     account.js op de cel gezet; staat het er niet, dan komt er ook geen streepje. */
-  .ordtab td[data-etiket]::before { content: attr(data-etiket) ": "; color: var(--ink-3); }
-  .ordtab .num { text-align: left; }
 }
-
-/* Een raakvlak van 24 bij 24 (WCAG 2.2, 2.5.8). De kenmerklink in de tabel was
-   105×15: breed genoeg, twee pixels te laag. De celvulling maakt de RIJ hoog
-   genoeg maar niet de link zelf, en het is de link die je raakt. */
-.ordtab .ref { display: inline-block; padding-block: .28rem; }
-
-/* ══════════════════════════════════════════════════════════════════════════════
- * RAAKVLAKKEN VAN 24 BIJ 24 — WCAG 2.2, 2.5.8, NIVEAU AA — 27 augustus 2026
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * src/styles/global.css draagt deze regel al voor de publieke site, met een eigen
- * kop en een meting erbij. Het dashboard heeft die ronde nooit gehad: vijf
- * raakvlakken zaten tussen de 15 en 22 pixels hoog — twee tot negen pixels te
- * kort, stuk voor stuk de regelhoogte van hun tekst en verder niets.
- *
- * Gemeten op /account, /account/orders en /account/details in beide talen. Het
- * zijn geen brede knoppen: ze zijn ALLEMAAL breed genoeg en alleen te laag, dus
- * verticale vulling is genoeg en er verschuift verder niets in de opmaak.
- * ══════════════════════════════════════════════════════════════════════════════ */
-.sidelang { display: inline-block; padding-block: .15rem; }
-.tl > summary { padding-block: .15rem; }
-/* 15 px: de WhatsApp-link in de producthulp was de kortste van allemaal. */
-.prod-help a { display: inline-block; padding-block: .28rem; }
-.viewall { display: inline-block; padding-block: .12rem; }
-/* Het vinkje zelf is 18×18 en het etiket eromheen was 22 hoog. Het etiket is het
-   raakvlak — een label dat zijn vinkje omsluit, schakelt hem ook — dus dat is
-   waar de twee pixels bij horen. */
-.det-check { display: flex; align-items: center; min-height: 24px; }
-
-/* ── DE TABEL MOET PASSEN NAAST DE STATUSKOLOM ──────────────────────────────
- * Op 1280 is de middenkolom ongeveer 700 breed: zijbalk 232, statuskolom 300.
- * Daar liep de tabel overheen, en `overflow-x: auto` verstopte dat netjes — met
- * als gevolg dat de laatste kolom, de knop naar de map, onzichtbaar was. Een
- * knop die je alleen vindt door te schuiven in iets wat niet als schuifbaar
- * leest, is een knop die er niet is.
- *
- * Drie maten kleiner in plaats van een schuifbalk: de statuspil breekt niet meer
- * over twee regels (dat maakte de rijen hoog én de kolom breder dan nodig), de
- * celvulling gaat van .9 naar .7rem, en de dienstnaam mag afbreken. De
- * schuifbalk blijft als vangnet staan voor smalle vensters tussen 780 en 900. */
-.ordtab .pill { white-space: nowrap; }
-.ordtab th[scope="col"], .ordtab td, .ordtab th[scope="row"] { padding-inline: .7rem; }
-.ordtab td:nth-of-type(1) { overflow-wrap: anywhere; }
-/* Aan de BREEDTE gehangen en niet aan de volgorde in dit bestand. Deze regel
-   stond eerst kaal, ná het telefoonblok dat `min-width: 0` zet, en won daardoor
-   terug: op 390px was de tabel weer 560 breed en schoof de Engelse pagina
-   zijwaarts. In een stylesheet van bijna drieduizend regels is "later in het
-   bestand" geen betrouwbare afspraak. */
-@media (min-width: 781px) { .ordtab table { min-width: 560px; } }
-
-/* Een bestelkenmerk breekt niet af. "VIS-2608-" op de ene regel en "4471" op de
-   volgende is geen kenmerk meer maar twee stukken tekst; het statuswoord ernaast
-   mag wél inschikken, want dat lees je als woord en niet als code. */
-.st-rij b { white-space: nowrap; }
-/* Het statuswoord gaat onder het kenmerk staan in plaats van ernaast. In een
-   kolom van 272 bleef er naast "VIS-2607-3312" te weinig over: "Wordt" en
-   "nagekeken" kwamen op twee regels rechts uitgelijnd, en dat leest als twee
-   losse woorden. Eronder is het één regel en één zin. */
-.st-rij { flex-wrap: wrap; }
-.st-rij .r { flex-basis: 100%; margin-left: 0; padding-left: 2.6rem; white-space: normal; }
-/* Iets kleinere vakjes in deze kolom: bij vijftien producten plus doorgeschoven
-   liep de meter anders om naar een tweede regel met twee vakjes erop. */
-.status .pip { width: 11px; height: 17px; }
-.status .meter { gap: 2px; }
+.leegabo-in {
+  position: relative; z-index: 1;
+  padding: clamp(1.5rem, 4vw, 2.6rem);
+  /* Breed genoeg dat de twee knoppen NAAST elkaar passen. Op 34rem viel de
+     tweede eronder zodra de padding meegroeide, en twee knoppen onder elkaar
+     lezen als een keuze met een tweede keus in plaats van als twee wegen. De
+     regel eronder houdt de lopende tekst wel smal. */
+  max-inline-size: 42rem;
+}
+/* .leegabo p EN .leegabo-eyebrow hebben allebei één klasse, en p stond eronder:
+   de aanhef kwam er wit uit in plaats van in de merkkleur. Twee klassen maken de
+   volgorde onbelangrijk. */
+.leegabo .leegabo-eyebrow {
+  inline-size: fit-content;
+  margin: 0 0 .7rem;
+  font-size: .74rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent);
+}
+/* De globale h2 draagt een onderlijn en padding — een kopje boven een blok. Dit
+   is een titel op een foto en geen blokkop; de lijn liep dwars door het beeld. */
+.leegabo h2 {
+  inline-size: fit-content;
+  margin: 0 0 .6rem;
+  padding-bottom: 0; box-shadow: none;
+  /* var(--font) en niet var(--font-display): dit blad laadt geen enkele webfont,
+     zie de .btn-notitie verderop. Een koplettertype noemen dat er niet is,
+     levert Impact op en geen Big Shoulders. */
+  font-family: var(--font);
+  font-size: clamp(1.7rem, 4.2vw, 2.6rem); line-height: 1.04;
+  color: #FFFFFF; text-wrap: balance;
+}
+.leegabo p {
+  margin: 0 0 1.4rem;
+  font-size: clamp(.95rem, 1.6vw, 1.02rem); line-height: 1.55;
+  color: rgb(255 255 255 / .84);
+  max-inline-size: 32rem;
+}
+/* Wrap en niet nowrap: twee knoppen naast elkaar passen op 320px niet, en een
+   knop die half buiten beeld valt is erger dan een knop op een eigen regel. */
+.leegabo-knoppen { display: flex; flex-wrap: wrap; gap: .7rem; }
+/* De tweede knop staat op een foto en niet op een vlak, dus hij kan niet op
+   --btn-ghost-fill leunen: die is doorzichtig en zou het beeld erdoorheen
+   laten. Eigen vulling, eigen haarlijn. */
+.leegabo .btn-tweede {
+  background: rgb(255 255 255 / .10);
+  color: #FFFFFF;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .38);
+}
+.leegabo .btn-tweede:hover, .leegabo .btn-tweede:focus-visible {
+  background: rgb(255 255 255 / .18);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .60);
+}

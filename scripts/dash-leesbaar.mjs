@@ -1,24 +1,31 @@
-/* Het klantdashboard als plaatje. `npm run account:render`
+/* Leesbaarheid van het klantdashboard, gemeten in een echte browser.
  *
- * WAAROM DIT BESTAAT. Het dashboard is de enige plek in dit project waar de
- * opmaak niet te zien is zonder een echte sessie, een echte database en een
- * deploy. Dat is precies de reden dat de fotogalerij in augustus 2026 op volle
- * breedte live ging: de HTML klopte, de CSS klopte, en niemand had het gezien.
- * Een pagina die je pas na een deploy kunt beoordelen, beoordeel je niet.
+ *   node scripts/dash-leesbaar.mjs
  *
- * WAT HET DOET. Het roept accountGet() aan met dezelfde domme D1-stub als
- * tests/account-brand-kit.test.mjs — geen wrangler, geen miniflare — vangt de
- * HTML op, en zet die in Chromium neer met public/account.css ervoor en echte
- * foto's op de plek van /account/files/<id>/f. Uit komt een PNG per taal en per
- * breedte, in .render/ (niet in public/, dit is gereedschap en geen bestand dat
- * de site uitserveert).
+ * ── WAAROM DIT NAAST tests/leesbaar.test.mjs BESTAAT ────────────────────────
  *
- * WAT HET NIET IS. Geen test. Er wordt niets beweerd en niets afgekeurd; het
- * enige wat dit script levert is een beeld waar een mens naar kan kijken. De
- * beweringen staan in tests/.
+ * Die toets loopt over de 91 GEBOUWDE pagina's in dist/. Het dashboard staat
+ * daar niet bij: dat wordt per verzoek door een Worker gerenderd en bestaat dus
+ * nergens als bestand. Precies daar zit de meeste kans op deze fout, want daar
+ * staan de meeste tinten uit een trap die voor drie verschillende vlakken moet
+ * kloppen.
  *
- *   node scripts/account-render.mjs                 → /account, nl + en, 1280 en 420
- *   node scripts/account-render.mjs /account/orders → een andere sectie
+ * Deze veeg vond op 28 augustus 2026 één echte fout: "nog niet ingesteld" op de
+ * vaste-lookkaart stond op `--ink-4`, en die trede is `--ink-300` — twee regels
+ * boven zijn eigen toewijzing in account.css staat *"rules, never text"*.
+ * Gemeten 1,84:1. De enige onleesbare tekst op het hele dashboard, en
+ * uitgerekend de tekst die zegt dat je nog iets moet doen.
+ *
+ * ── EEN GEREEDSCHAP EN GEEN TOETS, EN DAT IS EEN KEUZE ─────────────────────
+ *
+ * Het draait op dezelfde nepdata-opstelling als scripts/account-render.mjs — een
+ * paar honderd regels fixture. Die naar tests/ kopiëren zou betekenen dat er
+ * twee opstellingen zijn die uit elkaar kunnen lopen, en dan meet de toets een
+ * dashboard dat niemand ziet. Zolang die fixture hier staat, hoort de meting
+ * hier ook te staan.
+ *
+ * Uitvoer: één regel per bevinding, of niets. Sluit af met code 1 als er iets
+ * is, zodat hij in een keten wél kan meedoen.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -195,11 +202,7 @@ const TAKEN = [
 function makeDb() {
   const pick = (sql) => {
     const s = sql.replace(/\s+/g, ' ');
-    /* VISUAILS_GEEN_ABO=1 laat de klant zonder abonnement zien. Dat scherm
-       (de .leegabo-sectie in planBody) is anders alleen te bekijken door de
-       proefklant een abonnement af te nemen, en dat is precies het soort
-       opmaak dat je pas na een deploy ontdekt. */
-    if (s.includes('FROM subscriptions')) return process.env.VISUAILS_GEEN_ABO ? null : SUBSCRIPTION;
+    if (s.includes('FROM subscriptions')) return SUBSCRIPTION;
     if (s.includes('FROM subscription_months')) return SUB_MONTHS;
     if (s.includes('FROM plan_queue q')) return TAKEN;
     if (s.includes('FROM plan_queue')) return QUEUE;
@@ -293,18 +296,6 @@ await context.route('**/*', async (route) => {
     const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
     if (fs.existsSync(file)) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(file) });
   }
-  /* /img/* uit public/img. Zonder deze regel viel elk beeld dat de CSS zelf
-     ophaalt stil weg — het achtergrondvlak van .leegabo kwam er zwart uit, en
-     dat is precies het soort "ziet er prima uit" dat dit script hoort te
-     voorkomen. */
-  if (u.pathname.startsWith('/img/')) {
-    const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
-    if (fs.existsSync(file)) {
-      const ext = path.extname(file).slice(1).toLowerCase();
-      const type = ext === 'svg' ? 'image/svg+xml' : ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
-      return route.fulfill({ contentType: type, body: fs.readFileSync(file) });
-    }
-  }
   if (/^\/account\/files\/(\d+)\//.test(u.pathname)) {
     const n = Number(u.pathname.match(/^\/account\/files\/(\d+)\//)[1]);
     return route.fulfill({ contentType: 'image/webp', body: fs.readFileSync(PHOTOS[n % PHOTOS.length]) });
@@ -331,28 +322,82 @@ await context.route('**/*', async (route) => {
   return route.fulfill({ status: 204, body: '' });
 });
 
-for (const lang of ['nl', 'en']) {
-  globalThis.__html = await render(SECTION, lang);
-  for (const [w, name] of WIDTHS) {
-    const page = await context.newPage();
-    /* EEN HOOG VENSTER, EXPRES. De tegels staan op loading="lazy", en een
-     * fullPage-opname rekt het beeld op zonder alsnog te laden wat buiten het
-     * oorspronkelijke venster viel — dan komen de onderste tegels als zwarte
-     * vlakken op de foto en lijkt de opmaak stuk. Met een venster van 2000px
-     * valt alles binnen bereik en wacht networkidle ze netjes af. */
-    await page.setViewportSize({ width: w, height: 2000 });
-    await page.goto('https://visuails.com/__page', { waitUntil: 'networkidle' });
 
-    /* Terug naar een normale hoogte voordat de opname wordt gemaakt, anders
-     * krijgt de PNG onderaan honderden pixels leegte van het hoge venster. */
-    await page.setViewportSize({ width: w, height: 900 });
-    const slug = SECTION.replace(/\W+/g, '-').replace(/^-|-$/g, '') || 'account';
-    const file = path.join(OUT, `${slug}-${lang}-${name}.png`);
-    await page.screenshot({ path: file, fullPage: true });
+let gevonden = 0;
+const SECTIES = ['/account', '/account/orders', '/account/brand-kit', '/account/details',
+                 '/account/invoices', '/account/plan', '/account/plan?tab=bestellen',
+                 '/account/plan?tab=look', '/account/plan?tab=geld'];
+const VEEG = () => {
+  const nr = c => { if(!c) return null; const g=c.startsWith('color('); const m=c.match(/-?[\d.]+/g); if(!m) return null;
+    const v=m.map(Number); return g ? v.slice(0,3).map(x=>x*255).concat(v.length>3?[v[3]]:[]) : v; };
+  const lin = v => { v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4) };
+  const lum = ([r,g,b]) => 0.2126*lin(r)+0.7152*lin(g)+0.0722*lin(b);
+  const meng = (f,a) => { const al=f.length>3?f[3]:1; return [0,1,2].map(i=>f[i]*al+a[i]*(1-al)) };
+  const grond = el => { let n=el, st=[]; while(n && n!==document.documentElement){ const bg=nr(getComputedStyle(n).backgroundColor);
+    if(bg){const a=bg.length>3?bg[3]:1; if(a>0){st.push(bg); if(a>=.999) break}} n=n.parentElement }
+    let u=(nr(getComputedStyle(document.documentElement).backgroundColor)||[255,255,255]).slice(0,3);
+    for(let i=st.length-1;i>=0;i--) u=meng(st[i],u); return u };
+  const uit=[];
+  document.querySelectorAll('body *').forEach(el=>{
+    const cs=getComputedStyle(el); if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0) return;
+    const r=el.getBoundingClientRect(); if(r.width<3||r.height<3) return;
+    if(![...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim().length>1)) return;
+    const g=grond(el), v=meng(nr(cs.color),g);
+    const L1=lum(v)+.05, L2=lum(g)+.05, ratio=L1>L2?L1/L2:L2/L1;
+    const px=parseFloat(cs.fontSize)||16;
+    const eis=(px>=24||(px>=18.66&&+cs.fontWeight>=700))?3:4.5;
+    if(ratio<eis) uit.push(`${(el.className||el.tagName).toString().slice(0,30)} ${ratio.toFixed(2)}:1 (eis ${eis}) "${el.textContent.trim().slice(0,30)}"`);
+  });
+  const de=document.documentElement;
+  if(de.scrollWidth>de.clientWidth+1) uit.push('HORIZONTALE OVERLOOP '+de.scrollWidth+' > '+de.clientWidth);
+  return [...new Set(uit)];
+};
+
+
+for (const sec of SECTIES) {
+  for (const [w, naam] of [[1280,'breed'],[420,'telefoon']]) {
+    globalThis.__html = await render(sec, 'nl');
+    const page = await context.newPage();
+    const fout = [];
+    page.on('pageerror', e => fout.push('JS: ' + e.message));
+    await page.setViewportSize({ width: w, height: 1400 });
+    await page.goto('https://visuails.com/__page', { waitUntil: 'networkidle' });
+    /* ── WACHTEN OP DE OPMAAK, NIET OP HET NETWERK — 28 AUGUSTUS 2026 ────────
+       `networkidle` zegt dat er niets meer binnenkomt, niet dat de stylesheet
+       is toegepast. Zonder de twee regels hieronder gaf dezelfde veeg drie keer
+       achter elkaar 0, 1 en 2 bevindingen: soms werd een knop gemeten vóórdat
+       account.css hem zijn vulling gaf, en dan staat er donkere tekst op de
+       kale grond in plaats van op lime. Een meting die per run iets anders
+       zegt, is erger dan geen meting — je gaat een fout repareren die er niet
+       is, of je wuift er één weg die er wél is.
+
+       De eerste wacht tot de body zijn eigen grond heeft (dus: de stylesheet is
+       binnen én toegepast), de tweede tot de letters klaar zijn, want een
+       terugvalletter kan een andere grootte hebben en die bepaalt de eis. */
+    await page.waitForFunction(
+      () => getComputedStyle(document.body).backgroundColor !== 'rgba(0, 0, 0, 0)',
+      null, { timeout: 5000 },
+    ).catch(() => {});
+    await page.evaluate(() => document.fonts?.ready).catch(() => {});
+    /* ── OVERGANGEN UIT VOOR DE METING ──────────────────────────────────────
+       Ook mét de twee wachters hierboven bleef dezelfde knop soms wél en soms
+       niet opduiken: `.btn` heeft een `transition` op zijn achtergrond, en wie
+       midden in die overgang meet, leest een tussenkleur. Nagemeten met een
+       eigen probe stond de knop op #08090B op #C6F100 — 14,5:1 — terwijl de
+       veeg 2,18:1 rapporteerde. Het was dus geen fout op de pagina maar een
+       fout in de meting, en dat is het gevaarlijkste soort: hij stuurt je naar
+       een reparatie van iets wat klopt.
+
+       `* { transition: none !important; animation: none !important }` bevriest
+       alles op zijn eindwaarde. Dat is precies wat een contrastmeting moet
+       zien: waar het op uitkomt, niet waar het onderweg was. */
+    await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' });
+    await page.waitForTimeout(150);
+    const bev = await page.evaluate(VEEG);
+    [...fout, ...bev].forEach(x => { gevonden += 1; console.log(`${sec} @${naam} — ${x}`); });
     await page.close();
-    console.log(`  .render/${path.basename(file)}  ${(fs.statSync(file).size / 1024).toFixed(0)} kB`);
   }
 }
-
 await browser.close();
-console.log('\n▶ nepdata, echte CSS — dit is om naar te kijken, niet om iets mee te bewijzen');
+console.log(gevonden ? `\n${gevonden} bevinding(en)` : '\ngeen onleesbare tekst op het dashboard');
+process.exit(gevonden ? 1 : 0);

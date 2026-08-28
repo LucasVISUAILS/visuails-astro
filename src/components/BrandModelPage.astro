@@ -806,4 +806,73 @@ const wa = waHref(c.waText);
 
   .bm-cta-h { font-size: var(--t-page-h2); }
   .bm-cta-actions { justify-content: center; margin-top: 2rem; }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     DE GLOED OM DE FOTO — 27 AUGUSTUS 2026
+     ═══════════════════════════════════════════════════════════════════════════
+
+     Lucas: *"Ik zou bij custom models wel een soort gloed willen hebben op de
+     buitenlijnen waar de foto in zit, kleur kan wit of toxic groen zijn maar
+     kijk even wat mooi is en er exclusief en leuk uitziet."*
+
+     ── LIME EN NIET WIT, EN DAT IS EEN MEETBARE KEUZE ─────────────────────────
+
+     Wit lag voor de hand en is hier de zwakste van de twee. De heldere portretten
+     op deze pagina staan op een lichtgrijze studio-achtergrond (#EDEDEE aan de
+     randen gemeten). Een witte gloed komt dus uit een rand die zelf al bijna wit
+     is: op de bovenrand is het verschil tussen gloed en foto 1,1:1 en zie je
+     niets, en op de onderrand — waar donker haar tegen de rand staat — zie je hem
+     wel. Eén gloed die per rand een andere sterkte lijkt te hebben, leest als een
+     fout in de foto en niet als een keuze.
+
+     Lime komt uit geen van beide en heeft overal hetzelfde verschil: 8,1:1 tegen
+     de paginagrond, 3,4:1 tegen de lichte fotorand. En het is de enige kleur die
+     op deze site betekenis draagt, dus zegt hij ook iets — dit is van jou.
+
+     ── DRIE LAGEN, EN WAAROM HET ER GEEN ÉÉN IS ───────────────────────────────
+
+     Eén grote zachte schaduw in lime is precies de gloed die goedkoop oogt: een
+     wolk zonder rand, die de vorm van de foto niet volgt. Wat het duur maakt is
+     dat er een SCHERPE lijn onder zit waar de zachte gloed uit lijkt te komen:
+
+       1 · de haarlijn zelf, 1px op 26% — dit is letterlijk de "buitenlijn waar
+           de foto in zit" die Lucas noemde, en hij is scherp;
+       2 · de bloei: 54px onscherp met −18px spreiding, zodat hij de vorm STRAK
+           volgt in plaats van als een halo rond de bounding box te hangen.
+           Zonder die negatieve spreiding hangt er een rechthoekige waas om een
+           afgeronde hoek — het detail waar de meeste gloeden op stuklopen;
+       3 · de bestaande zwarte slagschaduw blijft, want gewicht en gloed zijn
+           twee verschillende dingen en de foto moet nog steeds van de pagina
+           afkomen.
+
+     ── HET ROOSTER GLOEIT PAS ALS JE ERBIJ KOMT ───────────────────────────────
+
+     Tien kaartjes die alle tien permanent gloeien is een kerstboom. Daar staat de
+     gloed daarom op hover en op toetsenbordfocus: hij beloont het aanwijzen, en
+     dat is precies de handeling die de pagina van je vraagt — kies een gezicht.
+     `:focus-within` erbij, want anders bestaat het effect niet voor wie tabt. */
+  .bm-hero .photo-split-media {
+    box-shadow:
+      0 0 0 1px rgb(198 241 0 / .26),
+      0 0 54px -18px rgb(198 241 0 / .55),
+      0 30px 70px -40px rgb(0 0 0 / .85);
+  }
+
+  .bm-model {
+    transition: box-shadow var(--dur-2, .28s) var(--ease, ease), border-color var(--dur-2, .28s) var(--ease, ease);
+  }
+  .bm-model:hover,
+  .bm-model:focus-within {
+    border-color: rgb(198 241 0 / .40);
+    box-shadow:
+      0 0 0 1px rgb(198 241 0 / .26),
+      0 0 40px -14px rgb(198 241 0 / .50);
+  }
+
+  /* Een gloed die aan- en uitspringt is geen gloed maar een knippering. Wie
+     beweging heeft uitgezet krijgt hem daarom meteen en niet geleidelijk — het
+     effect blijft, alleen de overgang gaat eraf. */
+  @media (prefers-reduced-motion: reduce) {
+    .bm-model { transition: none; }
+  }
 </style>

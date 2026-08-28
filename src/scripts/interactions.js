@@ -514,41 +514,11 @@ function initConvbar() {
       if (bar) bar.classList.remove('show');
       return;
     }
-    /* ── HET VRAAGTEKEN ─────────────────────────────────────────────────────
-       Gedelegeerd, net als het kruisje, omdat de balk per pagina opnieuw wordt
-       gerenderd en een luisteraar op het element zelf een zachte navigatie niet
-       overleeft. */
-    const why = e.target.closest('.cb-why');
-    if (why) {
-      const uitleg = document.getElementById('cb-detail');
-      if (!uitleg) return;
-      const open = uitleg.hidden;
-      uitleg.hidden = !open;
-      why.setAttribute('aria-expanded', open ? 'true' : 'false');
-      /* De balk wordt een rij hoger of lager, dus de knop ernaast moet mee.
-         Zie de noot bij meetHoogte() hierboven. */
-      const bar = why.closest('.convbar');
-      if (bar) meetHoogte(bar);
-    }
   });
-  /* DICHT BIJ HET OPSTARTEN, EN NIET IN DE HTML. In de opmaak staat de uitleg
-     open met `aria-expanded="true"`: zonder JavaScript is er geen knop die hem
-     ooit opent, en dan hoort de tekst er gewoon te staan. Dit script neemt de
-     bediening over en klapt hem dicht — dezelfde afspraak als bij de pauzeknop
-     van de hero-carrousel, die pas zichtbaar wordt gemaakt door het script dat
-     de beweging aanzet. */
-  const uitlegStart = document.getElementById('cb-detail');
-  if (uitlegStart) {
-    uitlegStart.hidden = true;
-    const knop = document.querySelector('.cb-why');
-    if (knop) knop.setAttribute('aria-expanded', 'false');
-  }
-  document.addEventListener('astro:page-load', () => {
-    const u = document.getElementById('cb-detail');
-    if (u) u.hidden = true;
-    const k = document.querySelector('.cb-why');
-    if (k) k.setAttribute('aria-expanded', 'false');
-  });
+  /* Hier stond het dichtklappen van `.cb-detail` bij het opstarten en na elke
+     zachte navigatie. Die uitklapper bestaat niet meer — het vraagteken in de
+     balk is sinds 27 augustus 2026 een <Note>, en die regelt zijn eigen staat.
+     Zie de noot bij de markup in Layout.astro. */
 }
 
 // Multi-step form wizards — handled here via document-level delegation so

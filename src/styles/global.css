@@ -78,8 +78,8 @@
      moet als er ooit iets DONKERS op een van deze treden komt te staan, is dat
      ene geval — en dat staat er nu niet. */
   --bg-0:        #030406;   /* page ground                                  */
-  --bg-raise:    #0A0C10;   /* a band that lifts off the page               */
-  --surface:     #101318;   /* tiles and panels                             */
+  --bg-raise:    #060709;   /* a band that lifts off the page               */
+  --surface:     #08090B;   /* tiles and panels                             */
   /* ── DE GROND VAN EEN ZWEVEND PANEEL — 18 augustus 2026 ──────────────────
      Dezelfde waarde als --surface en met opzet een EIGEN naam. De koptekst
      heeft een scope voor "balk boven een foto" die --surface op een scrim van
@@ -90,7 +90,7 @@
      Een paneel dat over onbekende inhoud zweeft, is de ene plek die ondoorzichtig
      MOET zijn. Vandaar een token dat door geen enkele scope wordt herschreven. */
   --menu-surface: #17191E;
-  --surface-2:   #171A20;   /* an inset, or a tile on a tile                */
+  --surface-2:   #0C0E11;   /* an inset, or a tile on a tile                */
 
   /* ---- ink: white at four alphas ---------------------------------------
      Alphas rather than solids so the ramp composites correctly on any of the

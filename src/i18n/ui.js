@@ -71,7 +71,6 @@ export const ui = {
     // Het abonnement kreeg op 20 augustus 2026 een eigen pagina en dus een eigen
     // ingang. Naast Prijzen en niet erin: het zijn twee manieren om te kopen, en
     // een menu dat de tweede verstopt onder de eerste zegt dat hij een detail is.
-    nav_plans: 'Plans',
     nav_gallery: 'Gallery',
     nav_contact: 'Contact',
     nav_start: 'Order',
@@ -191,13 +190,10 @@ export const ui = {
     // kolommen links en moet als handeling lezen en niet als vierde lijst.
     foot_cta: 'Start an order',
     foot_drops: 'What we make',
-    foot_brandmodel: 'Your Brand Model',
     foot_aiact: 'AI Act',
     foot_company: 'Company',
     foot_touch: 'Get in touch',
     foot_about: 'About',
-    foot_how: 'How it works',
-    foot_portal: 'VISUAILS Studio',
     foot_studio: 'How an order is run',
     foot_guides: 'Guides',
     // /compare is now "a shoot day, or a drop" (AUDIT §F). The AI-tools
@@ -208,7 +204,6 @@ export const ui = {
     foot_sample: `Test sample · ${TEST_SAMPLE.en.price}`,
     foot_gallery: 'Gallery',
     foot_pricing: 'Pricing',
-    foot_plans: 'Plans',
     foot_faq: 'FAQ',
     foot_contact: 'Contact',
     foot_privacy: 'Privacy',
@@ -293,6 +288,16 @@ export const ui = {
        te lezen is zonder dat hij er altijd staat. */
     cb_note: `Your product — ${TEST_SAMPLE.en.deliverableShort}.`,
     cb_why: 'What a test sample is',
+    /* <Note> bouwt zijn eigen onzichtbare label als `What ${term} means`, dus dit
+       MOET een zelfstandig naamwoord zijn zonder werkwoord — zie de noot bij
+       Props in Note.astro, en de toets in tests/nav.test.mjs die daarop staat. */
+    cb_why_term: 'a test sample',
+    /* ── DE KORTE VORM, VOOR EEN TELEFOON ─────────────────────────────────
+       `cb_note` noemt de aantallen en is daarmee te lang voor één rij op 390px.
+       Deze zegt alleen WAAROM je zou klikken; de aantallen staan een tik verder,
+       achter het vraagteken. Vier woorden is de grens: alles daarboven breekt af
+       naast een knop van 120px. */
+    cb_note_kort: 'See the work first.',
     cb_detail: `${TEST_SAMPLE.en.line} ${TEST_SAMPLE.en.unit.charAt(0).toUpperCase()}${TEST_SAMPLE.en.unit.slice(1)}.`,
     /* ── DE KORTE VORM, VOOR OP EEN TELEFOON — 25 AUGUSTUS 2026 ──────────
        De balk was daar 161px hoog omdat hij drie regels nodig had. In de nieuwe
@@ -312,7 +317,6 @@ export const ui = {
     nav_drops: 'Wat we maken',
     nav_brandmodel: 'Jouw merkmodel',
     nav_pricing: 'Prijzen',
-    nav_plans: 'Abonnementen',
     nav_gallery: 'Galerij',
     nav_contact: 'Contact',
     nav_start: 'Bestellen',
@@ -347,20 +351,16 @@ export const ui = {
     foot_tagline: 'De studio voor productvisuals voor kledingmerken en moderne e-commerce — voor ondernemers die liever groeien dan nóg een fotoshoot boeken.',
     foot_cta: 'Start een bestelling',
     foot_drops: 'Wat we maken',
-    foot_brandmodel: 'Jouw merkmodel',
     foot_aiact: 'AI Act',
     foot_company: 'Bedrijf',
     foot_touch: 'Contact',
     foot_about: 'Over ons',
-    foot_how: 'Hoe het werkt',
-    foot_portal: 'VISUAILS Studio',
     foot_studio: 'Hoe een bestelling draait',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
     foot_sample: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
     foot_gallery: 'Galerij',
     foot_pricing: 'Prijzen',
-    foot_plans: 'Abonnementen',
     foot_faq: 'FAQ',
     foot_contact: 'Contact',
     foot_privacy: 'Privacy',
@@ -395,6 +395,10 @@ export const ui = {
     // Zie de noot bij de Engelse cb_note.
     cb_note: `Jouw product — ${TEST_SAMPLE.nl.deliverableShort}.`,
     cb_why: 'Wat een proefvisual is',
+    /* Zie de noot bij de Engelse cb_why_term. */
+    cb_why_term: 'de proefvisual',
+    /* Zie de noot bij de Engelse cb_note_kort. */
+    cb_note_kort: 'Zie eerst het werk.',
     cb_detail: `${TEST_SAMPLE.nl.line} ${TEST_SAMPLE.nl.unit.charAt(0).toUpperCase()}${TEST_SAMPLE.nl.unit.slice(1)}.`,
     // Zie de noot bij de Engelse cb_cta_kort.
     cb_cta: `Vraag een proefvisual aan · ${TEST_SAMPLE.nl.price}`,

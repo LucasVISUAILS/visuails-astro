@@ -16,12 +16,20 @@
    Verandert een token van naam, dan valt dit blok mee om in plaats van stil af te
    wijken van de pagina eromheen. Dat is de bedoeling. */
 
+/* ── GEEN DOOS MEER — 27 AUGUSTUS 2026 ──────────────────────────────────────
+   Dit blok staat binnen een bestelling op /account/orders, en daar zijn de
+   kaart en alle dozen erin op dezelfde dag cellen geworden; zie de noot bij
+   `.card` in account.css. Bleef dit een omkaderd vlak, dan was het het enige
+   kader op het scherm — en dan trekt het de aandacht omdát het afwijkt, niet
+   omdat het belangrijk is. Zelfde vorm als de secties ernaast: haarlijn boven,
+   verder niets. */
 .fb {
   margin-top: 1.4rem;
-  padding: 1.3rem 1.4rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  padding: 1.4rem 0 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 var(--line);
 }
 .fb h3 { margin: 0; font-size: 1.05rem; }
 .fb h4 { margin: 0 0 .3rem; font-size: .95rem; }

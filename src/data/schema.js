@@ -209,7 +209,7 @@ function organizationNode() {
 // NOTHING HERE IS A NUMBER, and nothing here is a delivery promise.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const COMPLETE_NAME = { en: 'Complete', nl: 'Compleet' };
+const COMPLETE_NAME = { en: 'Complete bundle', nl: 'Complete bundel' };
 
 const COMPLETE_LEAD = {
   en: 'A catalog set and a lifestyle carousel for every product in the order.',
@@ -601,13 +601,9 @@ const CRUMBS = {
 };
 
 /*
- * WAT ER MET OPZET NIET IN STAAT. /portal, /studio en /thank-you zijn pagina's
- * waar je terechtkomt en niet naartoe zoekt: een kruimelpad in een zoekresultaat
- * van een bedankpagina nodigt uit tot een klik die niets oplevert.
- *
- * (/demo stond hier tot 24 augustus 2026 als vierde bij. Die pagina bestaat niet
- * meer, dus hij hoort hier niet meer thuis als uitzondering — een uitzondering op
- * een route die niet bestaat, is een regel die niemand meer kan nalopen.)
+ * WAT ER MET OPZET NIET IN STAAT. /portal, /studio, /thank-you en /demo zijn
+ * pagina's waar je terechtkomt en niet naartoe zoekt: een kruimelpad in een
+ * zoekresultaat van een bedankpagina nodigt uit tot een klik die niets oplevert.
  * En /nl-varianten staan er niet apart in, want buildGraph krijgt het
  * TAALNEUTRALE pad — zie de `path`-parameter daar — dus /nl/lifestyle/glow en
  * /lifestyle/glow zijn hier één regel met twee namen.

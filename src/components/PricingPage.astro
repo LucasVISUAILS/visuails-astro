@@ -183,7 +183,8 @@ const COPY = {
          tabellen over hetzelfde horen niet in twee schrijfwijzen te staan.
 
          counted() zet er meteen het juiste woord achter — zie lexicon.js. */
-      complete: { name: 'Complete', sub: `Catalog set and lifestyle carousel — ${counted('complete', COMPLETE_IMAGES, 'en')}` },
+      saveUnit: 'less than the two apart',
+      complete: { name: 'Complete bundle', sub: `One rate for the catalog set and the lifestyle carousel together — ${counted('complete', COMPLETE_IMAGES, 'en')}` },
       /* countedShort() en niet counted(): de kop ernaast NOEMT de categorie al.
          "Catalog set — 4 catalog images" zet het woord twee keer neer. Zie de
          noot bij SHORTER in lexicon.js. */
@@ -288,7 +289,8 @@ const COPY = {
       // Zie de EN-tabel: 'per product' werd twee keer geprint.
       /* Zie de noot bij de Engelse tabel. Hier stond bovendien "beelden" waar
          het over catalog en lifestyle gaat; dat hoort "foto's" te zijn. */
-      complete: { name: 'Compleet', sub: `Catalogset en lifestyle-carousel — ${counted('complete', COMPLETE_IMAGES, 'nl')}` },
+      saveUnit: 'minder dan de twee los',
+      complete: { name: 'Complete bundel', sub: `Eén tarief voor de catalogset en de lifestyle-carousel samen — ${counted('complete', COMPLETE_IMAGES, 'nl')}` },
       catalog: { name: 'Catalogset', sub: `Vanaf ${countedShort('catalog', CATALOG_IMAGES, 'nl')}` },
       lifestyle: { name: 'Lifestyle-carousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl') },
     },
@@ -452,7 +454,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
         </tr>
       </thead>
       <tbody>
-        {rungs.map((r) => (
+        {rungs.map((r, ri) => (
           <tr>
             <th scope="row">{r.label}</th>
             {KIND_IDS.map((id) => (
@@ -463,7 +465,12 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
                     kopen, en zonder dit getal doet de lezer die aftrekking
                     zelf of niet. Per trede uitgerekend uit LADDER. */}
                 {id === 'complete' && (
-                  <span class="lad-save">−{euro(completeSaving(r.at).saved, lang)}</span>
+                  <span class="lad-save">−{euro(completeSaving(r.at).saved, lang)}
+                    {/* Waar het van AF gaat, één keer, op de bovenste trede.
+                        Zie de noot bij ladSaveUnit in HomeV2.astro: het bedrag
+                        stond er kaal en de zin die hem uitlegde stond elders. */}
+                    {ri === 0 && <em> {c.kinds.saveUnit}</em>}
+                  </span>
                 )}
               </td>
             ))}
@@ -755,6 +762,15 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     letter-spacing: -0.02em;
   }
   .lad-save { display: block; margin-top: .2rem; font-size: .74rem; font-weight: 600; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .lad-save em { font-style: normal; font-weight: 400; color: var(--ink-3); white-space: normal; }
+
+  /* DE BUNDELKOLOM, NET ALS OP DE HOMEPAGE. Twee tabellen over hetzelfde
+     onderwerp horen hetzelfde te wijzen; zie de uitgeschreven motivering bij
+     .hv-lad thead th:nth-child(2) in HomeV2.astro. De hoekcel is kolom 1, dus
+     de bundel is kolom 2. */
+  .ladder thead th:nth-child(2) { box-shadow: inset 0 2px 0 var(--accent); }
+  .ladder thead th:nth-child(2),
+  .ladder tbody td:nth-child(2) { background: rgb(198 241 0 / .035); }
   .lad-incl { display: block; margin-top: .3rem; font-size: .75rem; color: var(--ink-3); white-space: nowrap; }
 
   /* ── The worked totals ───────────────────────────────────────────────── */

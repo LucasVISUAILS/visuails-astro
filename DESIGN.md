@@ -38,9 +38,9 @@ allowed on panels and never under body copy.
 | Token | Value | Role | Measured |
 |---|---|---|---|
 | `--bg-0` | `#030406` | The page ground | one step down, 27 aug 2026 — see the note below the table |
-| `--bg-raise` | `#0A0C10` | Raised band, recessed panel | — |
-| `--surface` | `#101318` | A card off the ground | — |
-| `--surface-2` | `#171A20` | The step above that | — |
+| `--bg-raise` | `#060709` | Raised band, recessed panel | — |
+| `--surface` | `#08090B` | A card off the ground | — |
+| `--surface-2` | `#0C0E11` | The step above that | — |
 | `--ink-1` | `#FFFFFF` | Headings and primary text | 16.75:1 on `--surface` |
 | `--ink-2` | white 80% | Body / secondary | 10.94:1 |
 | `--ink-3` | white 66% | Muted, captions | 7.53:1 |

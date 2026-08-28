@@ -152,7 +152,11 @@ console.log('\nde aanwijzer degradeert veilig');
   check('en opnieuw gestart na een zachte navigatie',
     /astro:page-load/.test(huid), true);
 
-  check('de aanwijzer is aria-hidden', /class="aw"[^>]*aria-hidden="true"/.test(huid), true);
+  /* TWEE LAGEN sinds 27 augustus 2026 — de omgekeerde en de vlakke — en ze
+     moeten allebei voor een schermlezer onzichtbaar zijn. Deze toets ging af
+     toen de klasse van `aw` naar `aw aw-om` ging: precies waar hij voor is. */
+  check('beide aanwijzerlagen zijn aria-hidden',
+    (huid.match(/class="aw [a-z-]+" id="aw2?" aria-hidden="true"/g) || []).length, 2);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

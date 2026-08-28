@@ -422,6 +422,15 @@ export async function verbruikBoeken(env, subId, maand, aantal, plafond, soort =
 
 const QUEUE_MAX = 40;
 
+/**
+ * Hoeveel er op de lijst mag. Als functie naar buiten en niet als los getal,
+ * zodat de grens op één plek staat: het dashboard dat de klant WAARSCHUWT dat
+ * zijn lijst vol is en de queueAdd die hem WEIGERT lezen nu hetzelfde getal.
+ * Twee keer veertig intypen is precies hoe een melding gaat liegen zodra er
+ * ooit vijftig van wordt gemaakt.
+ */
+export function queueMax() { return QUEUE_MAX; }
+
 /** Achteraan toevoegen. Geeft de nieuwe rij terug, of null als de rij vol is. */
 export async function queueAdd(env, customerId, { name, note = '', uploadBatch = null }) {
   const naam = String(name || '').trim().slice(0, 120);
@@ -493,11 +502,32 @@ export async function queueTake(env, customerId, n) {
   const open = await loadQueue(env, customerId);
   const pakken = open.slice(0, aantal);
   if (!pakken.length) return [];
-  const stmts = pakken.map((q) => env.DB
-    .prepare('UPDATE plan_queue SET taken_at = datetime(\'now\') WHERE id = ?1 AND taken_at IS NULL')
-    .bind(q.id));
-  await stil(() => env.DB.batch(stmts));
+  await queueTakeIds(env, customerId, pakken.map((q) => q.id));
   return pakken;
+}
+
+/**
+ * Dezelfde handeling, maar op AANGEWEZEN items in plaats van op de bovenste N.
+ *
+ * Nodig sinds startPlanWindow() in planStart.js: die slaat items zonder foto's
+ * over, dus "de bovenste drie" en "de drie die opgepakt worden" zijn niet meer
+ * hetzelfde rijtje. Beide wegen delen deze ene UPDATE — twee plekken met
+ * dezelfde SQL is één plek die ooit vergeten wordt.
+ *
+ * `taken_at IS NULL` in de WHERE is het slot: twee keer starten pakt niets
+ * dubbel, en dat is precies wat een knop nodig heeft die per ongeluk twee keer
+ * kan worden ingedrukt. `customer_id` staat erbij om dezelfde reden als bij
+ * queueRemove(): eigendom hoort in de WHERE en niet in een controle ervoor.
+ */
+export async function queueTakeIds(env, customerId, ids) {
+  const lijst = (Array.isArray(ids) ? ids : []).map(Number).filter(Boolean);
+  if (!lijst.length) return 0;
+  const stmts = lijst.map((id) => env.DB
+    .prepare(`UPDATE plan_queue SET taken_at = datetime('now')
+               WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL`)
+    .bind(id, customerId));
+  await stil(() => env.DB.batch(stmts));
+  return lijst.length;
 }
 
 /** De bestelling aan de opgehaalde items hangen, zodra die bestaat. */

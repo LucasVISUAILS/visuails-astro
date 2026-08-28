@@ -43,10 +43,12 @@ import { hashToken, mintToken, portalUrl } from './token.js';
    komen als de nachtelijke opruiming en de juridische pagina's. */
 import { stampDeliveryRetention, DELIVERY_MONTHS } from './retention.js';
 import { serviceLabel } from '../data/services.js';
-/* Alleen voor de voorbeeldweergave op /admin/diagnose — zie de noot bij
-   invoiceHeaderPreview() onderaan. Dezelfde functie als de echte factuur. */
-import { sellerOf } from './invoice.js';
 import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from '../data/modelChecks.js';
+/* DE ABONNEMENTSWEEK. Zie de kop van planStart.js: deze twee functies zijn het
+   stuk dat van een klantenlijst werk maakt, en Lucas' keuze was uitdrukkelijk
+   dat een MENS daarop drukt. Vandaar dat ze hier binnenkomen en niet in cron/. */
+import { startPlanWindow, klaarOmTeStarten } from './planStart.js';
+import { planState } from './subscription.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
    verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
    zodat de sleutel hier niet wordt overgetypt. Zie src/data/ratios.js. */
@@ -261,6 +263,12 @@ export async function adminPost(context) {
   const modelMatch = path.match(/^\/admin\/orders\/(\d+)\/models$/);
   if (modelMatch) return handleAddCustomModel(context, Number(modelMatch[1]));
 
+  /* DE WEEK VAN EEN ABONNEE STARTEN. Achter dezelfde poort als alles hierboven:
+     een sessie én een Origin die klopt. Dat is hier geen formaliteit — dit is de
+     enige knop in dit dashboard die saldo afschrijft én werk laat ontstaan. */
+  const weekMatch = path.match(/^\/admin\/customers\/(\d+)\/week$/);
+  if (weekMatch) return handleStartWeek(context, Number(weekMatch[1]), admin);
+
   // Delivery upload — August 2026. The studio's own files going the other way.
   const uploadMatch = path.match(/^\/admin\/orders\/(\d+)\/deliver$/);
   if (uploadMatch) return handleDeliveryUpload(context, Number(uploadMatch[1]));
@@ -428,9 +436,20 @@ async function dummyHash() {
  * nog niet gezien hebben, en dat is precies het soort stille aanname waar een
  * discussie over "ik heb dit nooit goedgekeurd" uit ontstaat.
  *
- * De notitie wordt gewist omdat hij bij die vorige ronde hoorde. Hij is niet
- * weg: revision_requests bewaart hem met datum, en dat is waar de geschiedenis
- * hoort te staan in plaats van in een veld dat de volgende aanvraag overschrijft.
+ * DE NOTITIE WORDT NIET MEER GEWIST — 27 augustus 2026. Hier stond dat hij bij
+ * de vorige ronde hoorde en dat revision_requests hem toch bewaart. Dat tweede
+ * klopt, maar het eerste bleek in de praktijk een gat: elk scherm dat naar
+ * files.review_note kijkt — de revisiekaart om te beginnen — meldde daarna
+ * "Geen notitie achtergelaten" over een klant die wel degelijk iets had
+ * opgeschreven. De toestand hoort terug naar 'pending'; de tekst hoort te
+ * blijven staan. Zie tests/revisie-antwoord.test.mjs.
+ *
+ * EN DEZE ROUTE VERVANGT GEEN BEELD. Dat was de tweede helft van dezelfde
+ * klacht. Wie een andere foto wil terugsturen, uploadt die op hetzelfde product
+ * en dezelfde shot — dan zet resupersede() het oude beeld op superseded_at en
+ * sluit closeReplacedRevisions() dit verzoek bij het aankondigen. Die knop staat
+ * sinds vandaag op de revisiekaart zelf; deze route is wat overblijft voor
+ * "er hoeft niets vervangen te worden, en dit is waarom".
  */
 async function handleRevisionResolve({ request, env }, fileId) {
   const row = await env.DB.prepare(
@@ -465,8 +484,17 @@ async function handleRevisionResolve({ request, env }, fileId) {
     .bind(row.order_id).first().catch(() => null);
 
   await env.DB.batch([
+    /* DE NOTITIE VAN DE KLANT BLIJFT STAAN. Hier stond `review_note = NULL`, en
+       dat wiste op het moment van afhandelen precies de zin waaróm er een ronde
+       was. Alles wat daarna naar files.review_note kijkt — de revisiekaart
+       hierboven om te beginnen — zei dan "Geen notitie achtergelaten" over een
+       klant die wel degelijk iets had opgeschreven.
+
+       De toestand hoort wel terug: 'pending' betekent "nog niet beoordeeld", en
+       dat is na een antwoord de juiste stand. Maar de toestand en de tekst zijn
+       twee dingen, en alleen de eerste hoorde te wijzigen. */
     env.DB.prepare(
-      "UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1"
+      "UPDATE files SET review_state = 'pending', reviewed_at = NULL WHERE id = ?1"
     ).bind(fileId),
     // Alleen de nog openstaande regels, zodat een tweede ronde later niet de
     // afhandeldatum van de eerste overschrijft.
@@ -4066,6 +4094,37 @@ async function handleCustomerCredit(context, customerId) {
  * EEN GEDEACTIVEERD ACCOUNT KRIJGT NIETS. Anders is deactiveren een woord op een
  * scherm: de link zou werken en de klant zou binnen zijn.
  */
+/*
+ * ── DE WEEK STARTEN ─────────────────────────────────────────────────────────
+ *
+ * Eén klik, en er ontstaat een bestelling en er gaat saldo af. Al het rekenwerk
+ * staat in startPlanWindow(); hier staat alleen wat er met de uitkomst gebeurt.
+ *
+ * WAAROM DE MELDING VOLUIT WORDT UITGESCHREVEN. De functie geeft een reden terug
+ * als sleutel ('geen-saldo', 'niets-klaar', 'abonnement-paused'). Die sleutel op
+ * het scherm zetten zou Lucas laten raden waarom er niets gebeurde — en juist bij
+ * een knop die soms terecht niets doet, is "waarom" het hele antwoord.
+ *
+ * `admin` gaat mee naar het logboek, om dezelfde reden als bij de btw-beslissing:
+ * dit is een handeling met geld eraan vast.
+ */
+async function handleStartWeek(context, customerId, admin) {
+  const { env } = context;
+  const terug = `/admin/customers/${customerId}#week`;
+  if (!Number.isInteger(customerId)) return seeOther('/admin/customers');
+
+  const r = await startPlanWindow(env, customerId);
+  if (r.ok) {
+    await logAdmin(env, admin, 'plan-week-start', {
+      customerId, orderId: r.orderId,
+      detail: `${r.aantal} product(en) → ${r.ref}${r.wachtend ? `, ${r.wachtend} wacht nog` : ''}`,
+    });
+    return seeOther(terug);
+  }
+  await logAdmin(env, admin, 'plan-week-geen-start', { customerId, detail: r.reden || 'onbekend' });
+  return seeOther(terug);
+}
+
 async function handleCustomerSigninLink(context, customerId) {
   const { env } = context;
   const admin = await currentAdmin(context);
@@ -4295,6 +4354,57 @@ async function renderCustomer(context, customerId) {
    * De reden is verplicht bij intrekken; teruggeven kan met één klik, omdat de
    * stap na intrekken meestal een gesprek is en dat gesprek vaak goed afloopt.
    */
+  /*
+   * ── DE ABONNEMENTSWEEK ───────────────────────────────────────────────────
+   *
+   * Lucas: *"Hoe werkt 'jouw lijst' nou precies want hier zit toch helemaal geen
+   * werkend systeem achter."* Hij had gelijk — zie de kop van planStart.js. Dit
+   * paneel is de andere helft van die reparatie: zonder een plek waar hij ZIET
+   * wat er op iemands lijst staat, is een knop om die lijst te starten een knop
+   * in het donker.
+   *
+   * WAT ER STAAT, EN IN DEZE VOLGORDE: hoeveel er klaarstaat (met foto's),
+   * hoeveel er wacht omdat het saldo op is, hoeveel er hangt omdat er geen
+   * foto's zijn, en dan pas de knop. De uitzondering staat vóór de handeling,
+   * want juist die twee getallen bepalen of drukken nu verstandig is.
+   *
+   * GEEN PANEEL ZONDER ABONNEMENT. Een lege doos met "geen abonnement" erin is
+   * ruis op een pagina die Lucas dagelijks doorbladert.
+   */
+  const abo = await planState(env, customerId).catch(() => null);
+  const weekPanel = !abo?.sub ? '' : (() => {
+    const klaar = klaarOmTeStarten(abo);
+    const open = (abo.wachtrij || []).filter((q) => !q.taken_at && !q.order_id);
+    const rijen = open.length
+      ? `<ol class="qlist">${open.map((q) => `<li>
+           <span>${esc(q.name || '')}</span>
+           <span class="meta">${String(q.upload_batch || '').trim()
+             ? 'foto&rsquo;s klaar' : 'nog geen foto&rsquo;s'}</span>
+         </li>`).join('')}</ol>`
+      : '<p class="empty">De lijst is leeg.</p>';
+    const kan = abo.sub.status === 'active' && klaar.items.length > 0;
+    return `
+  <div class="card" id="week">
+    <div class="row-head">
+      <span class="ref">Abonnement &middot; ${esc(abo.sub.plan)}</span>
+      <span class="meta">${esc(abo.sub.status)}${abo.sub.window_day ? ` &middot; week vanaf de ${abo.sub.window_day}e` : ''}
+        &middot; ${abo.saldo} credit${abo.saldo === 1 ? '' : 's'} over</span>
+    </div>
+    ${rijen}
+    <p class="meta">${klaar.items.length} klaar om te starten${
+      klaar.wachtend ? ` &middot; ${klaar.wachtend} wacht op saldo` : ''}${
+      klaar.zonderFotos ? ` &middot; ${klaar.zonderFotos} zonder foto&rsquo;s` : ''}</p>
+    ${kan
+      ? `<form method="post" action="/admin/customers/${customer.id}/week">
+           <button class="btn btn-primary" type="submit">Start deze week &middot; ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}</button>
+         </form>
+         <p class="meta">Maakt &eacute;&eacute;n bestelling met ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'} en schrijft evenveel credits af. Twee keer drukken pakt niets dubbel.</p>`
+      : `<p class="meta">Er valt nu niets te starten.${
+          abo.sub.status !== 'active' ? ' Het abonnement staat niet op actief.' : ''}${
+          abo.sub.status === 'active' && !abo.saldo ? ' Het saldo is op.' : ''}</p>`}
+  </div>`;
+  })();
+
   const revoked = Boolean(customer.revisions_revoked_at);
   const revisionsPanel = `
   <div class="card${revoked ? ' is-attention' : ''}">
@@ -4528,6 +4638,8 @@ async function renderCustomer(context, customerId) {
 
   <h2>Tegoed</h2>
   ${creditPanel}
+
+  ${weekPanel ? `<h2>Abonnementsweek</h2>${weekPanel}` : ''}
 
   <h2>Revisies</h2>
   ${revisionsPanel}
@@ -4922,37 +5034,8 @@ function later(waitUntil, promise) {
  * het verschil tussen "normale klant met een terecht punt" en "deze belt elke
  * levering" is af te lezen zonder ergens anders te gaan kijken.
  */
-/*
- * ── EN DEZE VALT NIET OM OP EEN ONTBREKENDE MIGRATIE — 24 augustus 2026 ─────
- *
- * Zelfde reparatie als in portal.js, op dezelfde dag en om dezelfde reden: 0034
- * werd uitgerold zonder `npm run migrate`, en deze query staat vooraan in de
- * Promise.all die het hele dashboard opbouwt. Eén ontbrekende kolom in de
- * revisie-inbox nam dus /admin in zijn geheel mee — de bestellingen, de tellers,
- * de btw-wachtrij, alles.
- *
- * Dat is de verkeerde verhouding tussen oorzaak en gevolg. De inbox mag leeg
- * zijn; het dashboard hoort te blijven staan.
- */
-const RONDE_IN_INBOX = 'o.revision_round_at, o.revision_round_note, o.revision_round_count,';
-
 async function loadRevisionInbox(env) {
-  const bouw = (metRonde) => INBOX_SQL.replace('$RONDE$', metRonde ? RONDE_IN_INBOX : '');
-  try {
-    const res = await env.DB.prepare(bouw(true)).all();
-    return res.results || [];
-  } catch (err) {
-    if (!/no such column|revision_round/i.test(String(err?.message || err))) throw err;
-    console.error(
-      '[admin] orders.revision_round_* ontbreekt — draai `npm run migrate`. '
-      + 'De revisie-inbox toont losse aanvragen in plaats van rondes.'
-    );
-    const res = await env.DB.prepare(bouw(false)).all();
-    return res.results || [];
-  }
-}
-
-const INBOX_SQL =
+  const res = await env.DB.prepare(
     // product_key en shot komen sinds augustus 2026 mee: een revisie op
     // "IMG_8841.webp" is een zoekopdracht, een revisie op "product 3 ·
     // achterkant" is een opdracht. Dat is precies wat Lucas vroeg — meteen
@@ -4961,7 +5044,6 @@ const INBOX_SQL =
             f.product_key, f.shot,
             o.id AS order_id, o.ref, o.brand, o.email, o.lang,
             o.customer_id,
-            $RONDE$
             c.revisions_revoked_at,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = o.customer_id) AS asked,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.file_id = f.id) AS asked_here
@@ -4971,7 +5053,10 @@ const INBOX_SQL =
       WHERE f.review_state = 'revision_requested'
         AND o.hidden_at IS NULL AND f.superseded_at IS NULL
       ORDER BY f.reviewed_at DESC
-      LIMIT 100`;
+      LIMIT 100`
+  ).all();
+  return res.results || [];
+}
 
 /**
  * Recent orders, active ones first — "duidelijk overzicht van wat er gedaan
@@ -5319,27 +5404,10 @@ async function handleDiagnoseProbe(context) {
       mode: raw ? (String(raw).trim().startsWith('live_') ? 'LIVE' : String(raw).trim().startsWith('test_') ? 'test' : 'unrecognised') : null,
       problems: mollieKeyProblems(env),
     },
-    /* SELLER_ADDRESS, VISUAILS_VAT en VISUAILS_KVK staan hier sinds 24 augustus
-       2026 bij. Ze zijn geen sleutel en er gaat niets mee stuk als ze ontbreken —
-       en dat is precies waarom ze hier horen. sellerOf() in src/lib/invoice.js
-       valt bij een ontbrekend secret terug op zichtbaar onjuiste waarden
-       ("Voorbeeldstraat 12", "NL000000000B00") en schrijft één regel naar het
-       Workers-logboek. Wie dat logboek niet leest, verstuurt een factuur met
-       plaatshouders erop — een belastingdocument met een verzonnen btw-nummer.
-
-       Deze pagina is de plek waar je dat kunt ZIEN in plaats van erover te
-       moeten worden ingelicht. `secretShape` toont nooit de waarde zelf, alleen
-       of hij er is en hoe hij eruitziet. */
     secrets: Object.fromEntries(
-      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET',
-       'SELLER_ADDRESS', 'VISUAILS_VAT', 'VISUAILS_KVK']
+      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
         .map((naam) => [naam, secretShape(env?.[naam])])
     ),
-    /* En de factuurkop zoals hij er straks op komt te staan, opgebouwd uit
-       precies dezelfde functie die de echte factuur gebruikt. Een lijst met
-       "gezet: ja" bewijst dat er iets stáát; dit laat zien WAT er staat, en dat
-       is de enige manier om een adres met een typefout erin te betrappen. */
-    invoiceHeader: null,
     probes: {},
     reading: null,
   };
@@ -5388,34 +5456,6 @@ async function handleDiagnoseProbe(context) {
     at_large_order: await mollieMethodList(key, ladderTotal('complete', 30).toFixed(2)),
   };
 
-  /*
-   * ── STAAT RECURRING AAN? — 24 augustus 2026 ────────────────────────────────
-   *
-   * De abonnementen op deze site draaien op Mollie Recurring: een eerste
-   * betaling met `sequenceType: 'first'` die een mandaat oplevert, en daarna
-   * incasso's op dat mandaat (zie src/lib/mollie.js en subscribe.js). Dat werkt
-   * alleen als SEPA-incasso of creditcard op het Mollie-profiel geactiveerd is,
-   * en dat is een instelling bij MOLLIE — niet iets wat in deze code staat.
-   *
-   * ER WAS GEEN MANIER OM HET TE ZIEN. Je merkte het pas bij de eerste echte
-   * abonnee, op de stap waar het mandaat gemaakt moet worden, met een klant die
-   * al betaald heeft. Dat is de duurst mogelijke plek om erachter te komen.
-   *
-   * `/methods?sequenceType=…` is Mollie's eigen antwoord op deze vraag —
-   * `first` geeft de methodes waarmee een mandaat mag beginnen, `recurring` de
-   * methodes waarmee er daarna afgeschreven mag worden. Staat Recurring niet
-   * aan, dan is die tweede lijst leeg. Eén verzoek, geen betaling, niets
-   * onomkeerbaars.
-   */
-  out.recurring = {
-    note: 'Abonnementen draaien op deze twee lijsten. `first` is waarmee een mandaat kan beginnen; `recurring` is waarmee er daarna afgeschreven wordt. Is `recurring` leeg, dan staat Mollie Recurring (SEPA-incasso of creditcard) niet aan op dit profiel.',
-    first: await mollieSequenceMethods(key, 'first'),
-    recurring: await mollieSequenceMethods(key, 'recurring'),
-  };
-
-  /* De factuurkop, uit dezelfde functie als de echte factuur. */
-  out.invoiceHeader = invoiceHeaderPreview(env);
-
   out.reading = readDiagnose(out);
   return diagnoseJson(out);
 }
@@ -5433,70 +5473,6 @@ async function mollieMethodList(key, value) {
     count: list.length,
     methods: list.map((m) => `${m.description} (${m.id})`),
   };
-}
-
-/*
- * De methodes die Mollie voor één stap van een terugkerende reeks aanbiedt.
- *
- * `sequenceType` staat in Mollie's eigen API-referentie bij "List payment
- * methods" en kent drie waarden: `oneoff`, `first` en `recurring`. Wij vragen de
- * laatste twee, want dat zijn de twee stappen die een abonnement zet.
- *
- * DE LEGE LIJST IS HET ANTWOORD en niet een fout. Mollie geeft netjes 200 met
- * nul methodes terug wanneer er voor die stap niets geactiveerd is; dat is
- * precies wat "Recurring staat niet aan" eruit ziet. Vandaar dat een leeg
- * resultaat hier geen `error` krijgt maar een telling van nul — een fout zou
- * suggereren dat de vraag niet beantwoord is, terwijl hij dat wel is.
- */
-async function mollieSequenceMethods(key, sequenceType) {
-  const pad = `/methods?sequenceType=${encodeURIComponent(sequenceType)}`;
-  const res = await mollieProbe('GET', pad, key);
-  if (res.threw || res.status !== 200) {
-    return { sequenceType, error: res.error || `HTTP ${res.status}`, body: res.body };
-  }
-  const full = await fetch(MOLLIE_API + pad, {
-    headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
-  }).then((r) => r.json()).catch(() => null);
-  const list = full?._embedded?.methods || [];
-  return {
-    sequenceType,
-    count: list.length,
-    methods: list.map((m) => `${m.description} (${m.id})`),
-  };
-}
-
-/*
- * De kop van een factuur zoals hij er nu uit zou komen.
- *
- * WAAROM DIT ER STAAT. sellerOf() valt bij een ontbrekend secret terug op
- * waarden die zichtbaar onjuist zijn — "Voorbeeldstraat 12", "NL000000000B00",
- * KVK "00000000" — juist zodat een fout opvalt. Alleen valt hij pas op als
- * iemand naar een verstuurde factuur kijkt, en dan is hij al verstuurd.
- *
- * Hier staat hij vóór die tijd, en naast de vlag `placeholders` die zegt of er
- * iets terugvalt. Geen enkel secret wordt getoond: dit ZIJN de waarden die
- * sowieso op de factuur van de klant komen te staan.
- */
-function invoiceHeaderPreview(env) {
-  try {
-    const s = sellerOf(env);
-    const nep = {
-      address: s.address.join(' ').includes('Voorbeeldstraat 12'),
-      vat: s.vat === 'NL000000000B00',
-      kvk: s.kvk === '00000000',
-    };
-    return {
-      name: s.name,
-      address: s.address,
-      vat: s.vat,
-      kvk: s.kvk,
-      email: s.email,
-      iban: s.iban,
-      placeholders: Object.entries(nep).filter(([, v]) => v).map(([k]) => k),
-    };
-  } catch (e) {
-    return { error: String(e && e.message ? e.message : e) };
-  }
 }
 
 async function mollieProbe(method, path, key, body) {
@@ -5576,44 +5552,9 @@ function readDiagnose(out) {
   if (D && D.status >= 400) return `The real payload was refused: ${JSON.stringify(D.body)}. Field to look at: ${D.body?.field || 'see detail'}.`;
 
   if (C?.status === 201 && D?.status === 201) {
-    /* ── EN DE TWEE VRAGEN DIE GEEN BETALING ZIJN — 24 augustus 2026 ────────
-       Losse betalingen kunnen werken terwijl abonnementen dat niet doen, en een
-       factuur kan verstuurd worden met plaatshouders erop. Allebei stil, allebei
-       pas zichtbaar bij de eerste echte klant. Ze horen dus in dezelfde
-       samenvatting als de rest, en niet ergens onderin de JSON. */
-    const staarten = [];
-
-    const r = out.recurring;
-    if (r?.recurring?.error) {
-      staarten.push(`De controle op terugkerende methodes liep vast (${r.recurring.error}) — abonnementen zijn hiermee NIET bevestigd.`);
-    } else if (r && r.recurring?.count === 0) {
-      staarten.push(
-        'LET OP — Mollie biedt NUL methodes aan voor terugkerende betalingen, dus Recurring staat niet aan op dit profiel. '
-        + 'Losse bestellingen werken gewoon; een abonnement loopt vast op het moment dat het mandaat gemaakt moet worden, '
-        + 'bij een klant die dan al betaald heeft. Vraag SEPA-incasso aan in je Mollie-dashboard en herhaal deze probe.'
-      );
-    } else if (r?.recurring?.count > 0) {
-      staarten.push(
-        `Recurring staat AAN: Mollie accepteert ${r.first?.count ?? '?'} methode(s) om een mandaat mee te beginnen `
-        + `en ${r.recurring.count} om daarna mee af te schrijven (${r.recurring.methods.join(', ')}). Abonnementen kunnen dus draaien.`
-      );
-    }
-
-    const h = out.invoiceHeader;
-    if (h?.placeholders?.length) {
-      staarten.push(
-        `LET OP — de factuurkop draagt plaatshouders voor: ${h.placeholders.join(', ')}. `
-        + 'Elke factuur die nu uitgaat is een belastingdocument met verzonnen gegevens erop. '
-        + 'Zet SELLER_ADDRESS, VISUAILS_VAT en/of VISUAILS_KVK als Pages-secret en deploy opnieuw.'
-      );
-    } else if (h && !h.error) {
-      staarten.push(`De factuurkop staat goed: ${h.name}, ${h.address.join(', ')}, btw ${h.vat}, KVK ${h.kvk}.`);
-    }
-
     return `All four probes pass and Mollie created both test payments (${C.body?.id}, ${D.body?.id}, mode ${D.body?.mode}). ` +
       `Payment creation works from this deployment. Those two are diagnostic payments — they sit "open" in your Mollie dashboard, ` +
-      `nobody will pay them, and they expire on their own.` +
-      (staarten.length ? `\n\n${staarten.join('\n\n')}` : '');
+      `nobody will pay them, and they expire on their own.`;
   }
 
   return 'Inconclusive — send the whole of this JSON over and I will read it.';
@@ -6502,7 +6443,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
 ${counts ? todayStrip(counts) : ''}
 
 <h2>Revision requests</h2>
-${revisions.length ? revisionInbox(revisions) : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
+${revisions.length ? revisions.map(revisionCard).join('') : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
 
 <h2>Orders${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
 ${searchRow}
@@ -6545,108 +6486,6 @@ function statusFilterRow(statusCounts, statusFilter) {
 }
 
 /*
- * ══════════════════════════════════════════════════════════════════════════════
- * DE INBOX: ÉÉN RONDE IS ÉÉN KAART
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * Lucas, 24 augustus 2026: de klant *"moet alle foto's selecteren/doorgeven wat
- * niet goed is waarna ik ze bekijk en beoordeel."* Vier beelden in één ronde
- * hoorden dus als één stapel op dit scherm te komen, en niet als vier losse
- * kaarten met vier keer dezelfde notitie eronder.
- *
- * ── EN DE OUDE LOSSE AANVRAGEN BLIJVEN LOSSE KAARTEN ───────────────────────
- *
- * Elke revisie van vóór 24 augustus is er één per beeld, met een eigen notitie
- * per beeld — dat waren echt losse aanvragen. Die alsnog per bestelling op één
- * hoop gooien zou een verband suggereren dat er niet was, en de notitie van beeld
- * A onder beeld B zetten. Dus beslist `revision_round_at` het: is die er, dan
- * hoort deze stapel bij één ronde; is die er niet, dan is het wat het was.
- *
- * Dat is meteen de reden dat er niet op `reviewed_at` gegroepeerd wordt. Twee
- * losse aanvragen binnen dezelfde minuut zouden dan één ronde worden, en dat is
- * raden in plaats van weten.
- */
-function revisionInbox(rows) {
-  /* Volgorde bewaren: de query levert nieuwste eerst, en een Map houdt de
-     invoegvolgorde vast. Sorteren op bestelnummer zou de nieuwste ronde
-     ergens in het midden laten belanden. */
-  const perOrder = new Map();
-  for (const r of rows) {
-    if (!perOrder.has(r.order_id)) perOrder.set(r.order_id, []);
-    perOrder.get(r.order_id).push(r);
-  }
-
-  const uit = [];
-  for (const [, groep] of perOrder) {
-    const eerste = groep[0];
-    /* Eén ronde: één kaart. Ook bij één beeld — dan is het nog steeds DE ronde
-       van die bestelling, en dat de klant er geen tweede kan indienen is precies
-       wat op deze kaart hoort te staan. */
-    if (eerste.revision_round_at) uit.push(revisionRoundCard(eerste, groep));
-    else uit.push(...groep.map(revisionCard));
-  }
-  return uit.join('');
-}
-
-/*
- * Eén ronde, met alle beelden erin en de notitie één keer bovenaan.
- *
- * DE NOTITIE STAAT BOVEN DE BEELDEN EN NIET ERONDER PER STUK. De klant schrijft
- * één toelichting voor de hele ronde ("de kleur van het jasje klopt op geen van
- * deze"), en die hoort te lezen als wat hij is: één opmerking over deze stapel.
- *
- * ELK BEELD HOUDT ZIJN EIGEN "OPGELOST"-KNOP. Verleidelijk om er één knop van te
- * maken voor de hele ronde, en fout: de beelden worden één voor één opnieuw
- * gemaakt, en de regel die naar de klant gaat ("wat heb je aangepast") verschilt
- * per beeld. Eén knop zou dwingen om vier aanpassingen in één zin te persen, of
- * om te wachten tot alles klaar is voordat er iets terug kan.
- */
-function revisionRoundCard(o, rows) {
-  const often = o.asked > rows.length ? `<span class="meta">${o.asked}× door dit merk</span>` : '';
-  const revoked = o.revisions_revoked_at ? '<span class="pill">revisierechten ingetrokken</span>' : '';
-  const aantal = o.revision_round_count || rows.length;
-
-  const beelden = rows.map((r) => `
-    <div class="rev-body" id="rev-${r.file_id}">
-      <a class="rev-shot" href="/admin/files/${r.file_id}" target="_blank" rel="noopener">
-        <img src="/admin/files/${r.file_id}" alt="${esc(r.filename || 'beeld ' + r.file_id)}" loading="lazy" decoding="async">
-      </a>
-      <div class="rev-text">
-        <p class="rev-what">${r.product_key
-          ? `<strong>Product ${esc(r.product_key.replace(/^p/, ''))}${r.shot ? ` &middot; ${esc(r.shot)}` : ''}</strong>`
-          : '<strong class="muted">niet aan een product gekoppeld</strong>'}</p>
-        <p class="meta">${esc(r.filename || 'bestand #' + r.file_id)}</p>
-        <form method="post" action="/admin/revisions/${r.file_id}/resolve" class="rev-actions">
-          <input type="text" name="fixed" maxlength="${ANNOUNCE_NOTE_MAX}" required
-                 placeholder="Wat heb je aangepast? Deze regel gaat naar de klant."
-                 class="in-grow">
-          <button class="btn btn-primary" type="submit">Opgelost — terug naar de klant</button>
-        </form>
-      </div>
-    </div>`).join('');
-
-  return `
-<div class="card is-attention" id="round-${o.order_id}">
-  <div class="row-head">
-    <span class="ref"><a href="/admin/orders/${o.order_id}/files">${esc(o.ref)}</a></span>
-    <span class="meta">${esc(o.brand || o.email)} · ${esc(when(o.revision_round_at))}</span>
-  </div>
-  <p class="meta">
-    <span class="pill is-attention">revisieronde · ${aantal} beeld${aantal === 1 ? '' : 'en'}</span>
-    ${often} ${revoked}
-  </p>
-  <!-- DE ENE RONDE, EN DAT STAAT ER OOK. Zonder deze regel is niet te zien dat
-       er geen tweede aanvraag meer kan komen, en dat is nu juist wat bepaalt hoe
-       je hiernaar kijkt: dit is alles wat deze klant over deze levering te
-       zeggen heeft. -->
-  <p class="meta">Dit is de ene ronde die bij deze bestelling hoort. De klant kan er geen tweede indienen; hij ziet nu een WhatsApp-link.</p>
-  ${o.revision_round_note ? `<div class="note">${esc(o.revision_round_note)}</div>` : '<p class="meta">Geen toelichting achtergelaten.</p>'}
-  ${beelden}
-  <p class="meta"><a href="/admin/customers/${o.customer_id}">Klant bekijken</a></p>
-</div>`;
-}
-
-/*
  * WAAROM ER EEN THUMBNAIL OP MOET. Lucas: *"in /admin willen zien bij elke order
  * en foto waar een revisie voor is aangevraagd."* Een bestandsnaam plus een
  * notitie dwingt je om in een ander scherm te gaan zoeken welk beeld het is,
@@ -6685,11 +6524,46 @@ function revisionCard(r) {
         : '<strong class="muted">not mapped to a product</strong>'}</p>
       <p class="meta">${esc(r.filename || 'file #' + r.file_id)} ${repeat} ${often} ${revoked}</p>
       ${r.review_note ? `<div class="note">${esc(r.review_note)}</div>` : '<p class="meta">Geen notitie achtergelaten.</p>'}
+
+      <!-- ── DE VERVANGENDE FOTO, HIER EN NIET DRIE SCHERMEN VERDEROP ────────
+           Lucas, 27 augustus 2026: *"als de klant een revisie aanvraagt en een
+           foto dus wil aanpassen kan ik niet de foto vervangen naar een andere
+           foto (...) de klant krijgt dan dezelfde foto weer terug."*
+
+           Dat klopte, en de oorzaak was niet dat het niet KON maar dat het hier
+           niet stond. De juiste weg bestaat al helemaal: upload een nieuw beeld
+           op hetzelfde product en dezelfde shot, dan zet resupersede() het oude
+           op superseded_at, verdwijnt het uit het portaal van de klant, en sluit
+           closeReplacedRevisions() bij het aankondigen het verzoek. Die weg
+           begon alleen op de bestandenpagina, terwijl de knop hier stond.
+
+           Deze knop stuurt naar precies diezelfde route, met product en shot al
+           ingevuld — dus er valt niets meer te kiezen of te hernoemen. -->
+      ${r.product_key && r.shot ? `
+      <form method="post" action="/admin/orders/${r.order_id}/deliver"
+            enctype="multipart/form-data" class="rev-vervang">
+        <input type="hidden" name="product" value="${esc(r.product_key)}">
+        <input type="hidden" name="shot" value="${esc(r.shot)}">
+        <input type="file" name="files" accept="image/*" required>
+        <button class="btn btn-primary" type="submit">Vervangende foto uploaden</button>
+      </form>
+      <p class="meta">Daarna aankondigen op de bestelling — dan gaat de mail eruit en sluit dit verzoek vanzelf.</p>
+      ` : `
+      <p class="meta">Dit beeld is nog niet ingedeeld op een product en een shot, dus een
+      vervanging kan er niet automatisch overheen. Deel het eerst in op
+      <a href="/admin/orders/${r.order_id}/files">de bestandenpagina</a>.</p>
+      `}
+
+      <!-- ── EN DE UITWEG VOOR "ER HOEFT NIETS VERVANGEN TE WORDEN" ──────────
+           Deze knop heette "Opgelost — terug naar de klant" en dat was precies
+           de val: hij klinkt als het einde van het werk terwijl hij het beeld
+           niet aanraakt. Hij zet alleen de toestand terug, dus de klant kreeg
+           dezelfde foto opnieuw ter beoordeling. Nu zegt hij wat hij doet. -->
       <form method="post" action="/admin/revisions/${r.file_id}/resolve" class="rev-actions">
         <input type="text" name="fixed" maxlength="${ANNOUNCE_NOTE_MAX}" required
-               placeholder="Wat heb je aangepast? Deze regel gaat naar de klant."
+               placeholder="Waarom hoeft er niets vervangen te worden? Dit komt op de tijdlijn van de klant."
                class="in-grow">
-        <button class="btn btn-primary" type="submit">Opgelost — terug naar de klant</button>
+        <button class="btn btn-ghost" type="submit">Geen nieuw beeld nodig</button>
       </form>
       <p class="meta"><a href="/admin/customers/${r.customer_id}">Klant bekijken</a></p>
     </div>

@@ -1,4 +1,6 @@
 ---
+import { useTranslations } from '../i18n/ui.js';
+
 // VISUAILS — Compare: the working before/after. Replaces the old drag-slider
 // (.ba) and cursor-lens (.spot), which shipped blank because they were gated
 // behind a scroll-reveal clip that didn't always fire. This one is always
@@ -36,7 +38,12 @@ const _lbl = { en: ['Before', 'After'], nl: ['Voor', 'Na'] }[_lang];
 // The slider handle's own label. It was hardcoded English on every Dutch page —
 // and unlike a visible label, this string has exactly one audience: someone
 // using a screen reader, for whom the wrong language is the whole message.
-const _drag = { en: 'Drag to compare before and after', nl: 'Sleep om voor en na te vergelijken' }[_lang];
+//
+// It then sat here as its own two-language object while cmp_drag held the exact
+// same two sentences in src/i18n/ui.js, where every other string on the site
+// lives. Two copies of one sentence is how a translation goes stale without
+// anything failing: change one, and nothing anywhere reports the other.
+const _drag = useTranslations(_lang)('cmp_drag');
 const {
   before,
   after,
