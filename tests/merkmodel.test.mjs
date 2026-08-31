@@ -30,6 +30,7 @@
  * ziet. Draai `npm run build` voordat dit draait.
  */
 import { readFileSync } from 'node:fs';
+import { buildStaat } from './lib/build.mjs';
 import {
   quoteBrandModel, quoteOrder, isPayableService, paymentDescription,
   PAYABLE_SERVICES, FIXED_PRICE_SERVICES,
@@ -155,6 +156,19 @@ console.log('\nde kolommen bestaan in het schema');
     ['at', 'engines', 'result', 'by', 'note'].every((k) => migratie.includes(`ADD COLUMN model_check_${k} `)), true);
 }
 
+/* ── DEZE TWEE GROEPEN LEZEN dist/, DUS EERST DE LEEFTIJD ──────────────────
+   30 augustus 2026. Ze deden dat zonder enige controle: geen build betekende een
+   ERR bij de eerste read, en een OUDE build betekende iets ergers. De groep
+   "wat er nergens meer mag staan" hieronder is namelijk een NEGATIEVE controle —
+   hij kijkt of de terugverdienbelofte nergens meer staat — en die geeft op een
+   build van vóór de prijswijziging vrolijk groen over tien pagina's die de
+   belofte nog wél dragen. Dat is de stille valse goedkeuring waar de kop van
+   tests/lib/build.mjs over gaat: een overgeslagen controle merk je, een groene
+   controle over de verkeerde bestanden niet. */
+const bouw = buildStaat(new URL('../dist/start/brand-model/index.html', import.meta.url));
+if (!bouw.er || bouw.oud) console.log(`\n --   de gebouwde pagina's niet gecontroleerd: ${bouw.uitleg}`);
+
+if (bouw.er && !bouw.oud) {
 console.log('\nde gebouwde pagina, in twee talen');
 for (const [pad, taal] of [['dist/start/brand-model/index.html', 'en'], ['dist/nl/start/brand-model/index.html', 'nl']]) {
   const h = read(pad);
@@ -221,6 +235,7 @@ console.log('\nwat er nergens meer mag staan');
     ok('  en geen "hier niet af te rekenen"',
       /no checkout for this|niet afrekenen, en dat komt voorlopig/.test(h), false);
   }
+}
 }
 
 const w = Math.max(...R.map((r) => r.naam.length));

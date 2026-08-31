@@ -66,13 +66,34 @@ for (const lang of LANGS) {
   check(`${lang}: elk item heeft een titel en een beschrijving`, drops.every((d) => d.title && d.desc), true);
   /*
    * EEN href IS OPTIONEEL SINDS 9 AUGUSTUS 2026, en alleen wanneer `soon` erop
-   * staat. Dat paar is de hele regel: een item zonder href is een dienst die nog
-   * geen pagina heeft, en Layout.astro tekent hem dan als uitgeschakeld. Een item
-   * zonder href én zonder `soon` zou een gewone dienst zijn die stil nergens meer
-   * naartoe wijst — dat is de fout die deze twee regels onmogelijk maken.
+   * staat. Een item zonder href én zonder `soon` zou een gewone dienst zijn die
+   * stil nergens meer naartoe wijst — dat is de fout die deze regel onmogelijk
+   * maakt.
    */
   check(`${lang}: alleen een "binnenkort" mag zonder href`, drops.every((d) => d.href || d.soon), true);
-  check(`${lang}: en een dienst met een href is niet binnenkort`, drops.every((d) => !(d.href && d.soon)), true);
+
+  /* ── HREF EN "BINNENKORT" MOGEN SINDS 30 AUGUSTUS 2026 SAMEN ──────────────
+   *
+   * Hier stond het omgekeerde: `!(d.href && d.soon)` — een dienst met een link
+   * kón niet binnenkort zijn. Die regel klopte toen ze geschreven werd, want
+   * "binnenkort" betekende toen letterlijk "er is geen pagina".
+   *
+   * Dat is nu twee dingen geworden en die vallen niet meer samen. De uitleg van
+   * Hooks en Editions stond ruim 450 woorden lang alleen op de homepage; sinds
+   * de inkorting van 30 augustus staat hij op /plans#binnenkort, en deze twee
+   * menu-items wijzen daarheen. Er is dus wél iets te LEZEN en nog steeds niets
+   * te BESTELLEN, en het label hoort bij het tweede.
+   *
+   * WAT DEZE REGEL NU BEWAAKT is het paar dat nog wél moet kloppen: een
+   * `soon`-item mag alleen naar een pagina wijzen die het ook echt uitlegt.
+   * Wijst er ooit een naar /start of naar een bestelformulier, dan belooft het
+   * menu een bestelling die er niet is — en dan valt dit om. */
+  const UITLEGPAD = /^\/plans(#|$)/;
+  check(`${lang}: een dienst met "binnenkort" wijst naar een uitlegpagina`,
+    drops.every((d) => !d.soon || !d.href || UITLEGPAD.test(d.href)), true);
+  check(`${lang}: en Hooks en Editions wijzen naar het ankerblok`,
+    drops.filter((d) => d.soon).map((d) => d.href),
+    drops.filter((d) => d.soon).map(() => '/plans#binnenkort'));
   const linked = drops.filter((d) => d.href);
   check(`${lang}: elke href begint met een schuine streep`, linked.every((d) => d.href.startsWith('/')), true);
   // Geen taal in de href: localizedPath() zet /nl/ ervoor. Stond er ooit /nl/ in,
@@ -448,19 +469,33 @@ console.log('\nverborgen, maar niet onzichtbaar');
     console.log(` --   sitemap niet gecontroleerd: ${staat.uitleg}`);
   }
 
-  // Het item staat er nog, zonder href, in beide talen.
+  /* Het item staat er nog, in beide talen — en sinds 30 augustus 2026 wijst het
+     naar de plek waar hij wordt uitgelegd. Zie de noot bij de vormregels
+     bovenaan: "binnenkort" ging over de PAGINA en gaat sindsdien over de
+     BESTELLING. */
   for (const lang of LANGS) {
     const hooks = ui[lang].drops.find((d) => d.title === 'Hooks');
     check(`${lang}: het item staat in het menu`, Boolean(hooks), true);
-    check(`${lang}: en heeft geen href`, hooks?.href, undefined);
+    check(`${lang}: en wijst naar de uitleg op /plans`, hooks?.href, '/plans#binnenkort');
+    check(`${lang}: en draagt nog steeds het label`, hooks?.soon, true);
     check(`${lang}: en is als binnenkort gemarkeerd`, hooks?.soon, true);
   }
 
   // Layout tekent een item zonder href als iets anders dan een link.
   const layout = read('src/layouts/Layout.astro');
   check('een item zonder href wordt geen link', /aria-disabled="true"/.test(layout), true);
-  check('en de strook op de homepage heeft een uitgeschakelde knop',
-    /<button[^>]*hv-soon-btn[^>]*disabled/.test(read('src/components/HomeV2.astro')), true);
+  /* De uitgeschakelde knop stond op de homepage-kaart en is met die kaart mee
+     verdwenen. Op /plans staat geen knop: daar is de hele sectie uitleg en is
+     "je kunt dit nog niet bestellen" de voetregel eronder — zie soonFoot. Wat
+     hier overblijft is de eis die er werkelijk toe doet: nergens een knop of
+     link die doet alsof je Hooks of Editions kunt bestellen. */
+  for (const pagina of ['dist/plans/index.html', 'dist/nl/plans/index.html', 'dist/index.html', 'dist/nl/index.html']) {
+    const h = read(pagina);
+    const blok = h.slice(h.indexOf('id="binnenkort"'));
+    check(`${pagina}: geen bestelknop bij de aangekondigde diensten`,
+      /id="binnenkort"[\s\S]{0,4000}?href="[^"]*\/start/.test(h), false);
+    void blok;
+  }
 }
 
 /* ══ 9 · HET VRAAGTEKEN NAAST HOOKS ═════════════════════════════════════════
@@ -503,9 +538,53 @@ console.log('\nhet vraagteken naast hooks');
      onder lag — het vraagteken is decoratie, de knop heeft een naam voor wie
      hem niet ziet, en de tekst staat er in beide talen — geldt onverkort, en
      staat hieronder. */
-  check('Hooks krijgt een zwevende notitie', /<Note lang=\{lang\} term=\{soon\.name\} wide>/.test(home), true);
-  check('de titelregel is de naam plus het vraagteken', /<span class="hv-svc-card-t hv-q-t">/.test(home), true);
-  check('en de stroken worden uit één lus getekend', /c\.svcSoonList\.map/.test(home), true);
+  /* ── DE STROOK IS OP 30 AUGUSTUS 2026 VAN DE HOMEPAGE GEHAALD ───────────
+     Hier stonden drie eisen aan de kaart met de zwevende notitie: dat Hooks een
+     <Note> kreeg, dat de titelregel de naam plus het vraagteken was, en dat de
+     twee stroken uit één lus werden getekend.
+
+     Alle drie waren gevolgen van "de uitleg staat op de homepage", en dat is
+     niet meer zo. Die uitleg was ruim 450 woorden op een pagina van 2044, over
+     twee diensten die er zelf bij zeiden dat je ze niet kunt bestellen; hij
+     staat nu op /plans#binnenkort, uitgeklapt, en het menu wijst erheen.
+
+     WAT ER VOOR IN DE PLAATS KOMT is dezelfde vraag op de nieuwe plek: staat de
+     uitleg er, in beide talen, en zegt de homepage nog waar hij te vinden is.
+     De INHOUDELIJKE eisen — één foto is niet genoeg, geen prijs, geen belofte
+     over bereik — staan hieronder en zijn ongewijzigd; die lezen alleen een
+     ander bestand. */
+  check('de homepage noemt de twee nog wel', /binnenkortNamen\(lang\)/.test(home), true);
+  check('en wijst naar de plek waar ze staan', /plans#binnenkort/.test(home), true);
+  check('en draagt de uitleg zelf niet meer', /svcSoonList/.test(home), false);
+  /* ── EN DEZE ZES LEZEN dist/, DUS MET DE LEEFTIJDSCONTROLE ERVOOR ───────
+     30 augustus 2026, 20:12. Deze zes stonden hier zonder buildStaat en gaven
+     bij Lucas zes rode regels:
+
+       FAIL en: /plans draagt het ankerblok    expected true got false
+       FAIL en: met Hooks erin                 expected true got false
+       FAIL en: en Editions erin               expected true got false   (×2 talen)
+
+     Er was niets mis. Zijn dist/ was van vóór de verhuizing van de uitleg naar
+     /plans, dus las deze toets een pagina waarop dat blok inderdaad niet stond
+     — en meldde dat als een gat in de site. Precies het geval waarvoor
+     tests/lib/build.mjs op 13 augustus is geschreven, in een toets die ik zelf
+     twee weken later zonder die controle heb bijgeschreven.
+
+     Sinds vandaag bouwt `npm test` eerst (package.json → test:bouw), dus in de
+     keten kán dit niet meer gebeuren. Deze controle blijft staan voor de andere
+     manier waarop deze suite wordt gestart: `npm run test:nav` los, en dan is er
+     geen build aan voorafgegaan. */
+  const plansStaat = buildStaat(new URL('../dist/plans/index.html', import.meta.url));
+  if (plansStaat.er && !plansStaat.oud) {
+    for (const [taal, pad] of [['en', 'dist/plans/index.html'], ['nl', 'dist/nl/plans/index.html']]) {
+      const pagina = read(pad);
+      check(`${taal}: /plans draagt het ankerblok`, /id="binnenkort"/.test(pagina), true);
+      check(`${taal}: met Hooks erin`, /id="hooks"/.test(pagina), true);
+      check(`${taal}: en Editions erin`, /id="editions"/.test(pagina), true);
+    }
+  } else {
+    console.log(` --   /plans niet gecontroleerd: ${plansStaat.uitleg}`);
+  }
 
   /* ── GEEN <p> IN EEN NOTITIE, EN DIT IS EEN GEMETEN FOUT ────────────────
      <Note> is inline en staat dus binnen een <p>. Een <p> daarbinnen sluit de
@@ -534,9 +613,18 @@ console.log('\nhet vraagteken naast hooks');
   });
   check('er staan minstens twee zwevende notities op de homepage', popjes.length >= 2, true);
   check('en geen enkele is leeg', popjes.filter((n) => woordenIn(n) === 0).length, 0);
-  check('de Hooks-notitie draagt haar hele paneel', Math.max(...popjes.map(woordenIn)) > 150, true);
+  /* "De Hooks-notitie draagt haar hele paneel" stond hier: de zwaarste notitie
+     op de homepage moest meer dan 150 woorden hebben. Dat was Hooks, en die
+     staat er niet meer — het zou nu een eis zijn dat er érgens nog een blok van
+     150 woorden op deze pagina staat, en dat is precies het tegenovergestelde
+     van wat er op 30 augustus 2026 is besloten.
+
+     De eis die blijft, is de eis die de echte fout ving: geen enkele notitie is
+     leeg (hierboven), want dat is wat er gebeurt als een <p> de omhullende span
+     sluit. Die geldt onverkort en voor elke notitie die er nog is. */
   check('het rondje is decoratie', /class="nt-mark" aria-hidden="true">\?</.test(gebouwd), true);
-  check('en de knop draagt een naam voor wie hem niet ziet', /class="nt-say">What Hooks means</.test(gebouwd), true);
+  check('en elke knop draagt een naam voor wie hem niet ziet',
+    [...gebouwd.matchAll(/class="nt-say">([^<]*)</g)].every((m) => m[1].trim().length > 3), true);
   check('de notitie hangt aan de knop via aria-describedby', /aria-describedby="nt-\d+"/.test(gebouwd), true);
 
   /*
@@ -620,7 +708,16 @@ console.log('\nhet vraagteken naast hooks');
      eigen eisen getoetst, en de Editions-blokken daarna op de hunne — want de
      twee diensten beloven niet hetzelfde en één gedeelde lijst eisen zou de
      zwakste van de twee worden. */
-  const alle = [...home.matchAll(/qBody: \[([\s\S]*?)\n {8}\],/g)].map((m) => m[1]);
+  /* ── DE PANELEN STAAN SINDS 30 AUGUSTUS IN EEN EIGEN DATABESTAND ────────
+     Ze stonden in de copytabel van HomeV2.astro, en dit patroon las die tabel.
+     Sinds de inkorting staan ze in src/data/binnenkort.js — zelfde vorm,
+     zelfde sleutel, andere plek — en leest dit patroon dat bestand.
+
+     De inspringing verschilt: in de copytabel stonden ze acht spaties diep, in
+     het databestand zes. Vandaar `\n {6,8}\]` in plaats van een vast getal;
+     een toets die op inspringing pint, valt om bij de eerste opmaakronde. */
+  const binnenkortBron = read('src/data/binnenkort.js');
+  const alle = [...binnenkortBron.matchAll(/qBody: \[([\s\S]*?)\n {6,8}\],/g)].map((m) => m[1]);
   check('vier panelen: twee diensten, twee talen', alle.length, 4);
   const blocks = [alle[0], alle[2]].filter(Boolean);   // Hooks: en, nl
   const edities = [alle[1], alle[3]].filter(Boolean);  // Editions: en, nl
@@ -717,7 +814,9 @@ console.log('\nhet vraagteken naast hooks');
   /* De voetregel is gedeeld geworden: hij zei bij elke aangekondigde dienst
      hetzelfde, en twee kopieën van dezelfde zin is hoe er straks één wordt
      bijgewerkt en de ander niet. Eén per taal dus. */
-  const feet = [...home.matchAll(/svcSoonFoot: '([^']*)'/g)].map((m) => m[1]);
+  /* De voetregel staat sinds 30 augustus 2026 op /plans (soonFoot) en niet meer
+     op de homepage (svcSoonFoot). Zelfde mededeling, zelfde eis eronder. */
+  const feet = [...read('src/components/PlansPage.astro').matchAll(/soonFoot: '([^']*)'/g)].map((m) => m[1]);
   check('beide talen hebben een voetregel', feet.length, 2);
   /* ── DE CLAIM EN NIET DE WOORDEN — 24 augustus 2026 ────────────────────
      Hier stond `/(not settled|niet vast)/`. Lucas herschreef de regel naar

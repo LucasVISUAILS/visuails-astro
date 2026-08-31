@@ -69,6 +69,7 @@ import { notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptio
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
 import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
+import { grantSlots } from '../../../src/lib/slots.js';
 import { pauseSubscription } from '../../../src/lib/subscription.js';
 import { payerHash } from '../../../src/lib/payer.js';
 
@@ -387,11 +388,6 @@ async function recordSubscriptionPaid(env, payment, mode) {
      RETURNING id`
   ).bind(sub.id, month, granted, payment.id).first();
 
-  if (!toegekend) {
-    console.log(`[mollie-webhook] abonnement ${sub.id} had ${month} al — niets toegekend (${mode})`);
-    return;
-  }
-
   /* EEN GESLAAGDE AFSCHRIJVING HEFT EEN PAUZE OP. Dat is de tegenhanger van de
      zelfherstelregel: een abonnement dat op 'paused' stond wegens een mislukte
      betaling, hoort weer te lopen zodra er wél betaald is — zonder dat Lucas
@@ -403,7 +399,59 @@ async function recordSubscriptionPaid(env, payment, mode) {
       WHERE id = ?1 AND (status <> 'paused' OR pause_reason = 'payment_failed')`
   ).bind(sub.id).run();
 
-  console.log(`[mollie-webhook] abonnement ${sub.id}: ${month} toegekend, ${granted} producten (${mode})`);
+  /* ── EN DE SLOTS PER SOORT — migratie 0035, 29 augustus 2026 ──────────────
+   *
+   * `subscription_months` blijft de idempotentie-anker voor de FACTUUR: die rij
+   * hangt aan de betaling en aan het document, en een document hoort één keer uit
+   * te gaan. De slots zijn een ander soort ding, en daarom staan ze aan deze kant
+   * van die grens.
+   *
+   * ── WAAROM VÓÓR DE VROEGE RETURN EN NIET ERNA — 30 augustus 2026 ──────────
+   *
+   * Ze stonden erna, met de redenering dat een dubbele aflevering dan vanzelf
+   * niets doet. Dat klopt, maar het dekt het verkeerde geval af. Wat er stuk kan
+   * gaan is dit: de maandrij is geschreven, en daarna valt grantSlots() om — een
+   * hapering van D1, een time-out. Mollie levert netjes opnieuw af, de maandrij
+   * bestaat inmiddels, de functie keert hier terug… en de slots komen er nooit.
+   * De klant heeft betaald, zijn maand staat toegekend, en zijn scherm zegt nul.
+   *
+   * Dat is precies het soort stille fout waar deze hele keten op gebouwd is om te
+   * vermijden, en de oplossing is gratis: grantSlots() is per soort een
+   * `INSERT OR IGNORE` op een UNIQUE-sleutel, dus hem bij ELKE aflevering
+   * proberen kan nooit verdubbelen en repareert wel. De webhook geneest zichzelf
+   * op Mollie's eigen herhaling in plaats van op een telefoontje.
+   *
+   * MISLUKT HET ALSNOG, dan logt het luid en gaat de rest door. Sinds 30 augustus
+   * is het ook met de hand recht te zetten: /admin/customers/<id> heeft onder het
+   * abonnementspaneel een knop om slots bij te stellen, met reden en logregel. */
+  const slots = await grantSlots(env, sub.id, month, sub.plan, payment.id);
+
+  /* ── DRIE UITKOMSTEN, EN MAAR ÉÉN ERVAN IS EEN FOUT ────────────────────────
+   *
+   * grantSlots() geeft terug hoeveel rijen hij ECHT heeft neergezet, en sinds hij
+   * bij elke aflevering draait betekent nul meestal "stonden er al". Dat als fout
+   * loggen zou bij iedere herhaling van Mollie een rood regel opleveren — en een
+   * log die bij normaal gedrag alarm slaat, is een log die niemand meer leest.
+   *
+   * Dus: nul bij een NIEUWE maand is een echte fout, nul bij een herhaling is de
+   * verwachte uitkomst, en meer dan nul bij een herhaling betekent dat deze
+   * aflevering een gat heeft gedicht — dat is goed nieuws en hoort zichtbaar te
+   * zijn, want het zegt dat er eerder iets is misgegaan. */
+  if (toegekend && !slots) {
+    console.error('[mollie-webhook] GEEN slots toegekend voor abonnement', sub.id, month,
+      '— zet ze bij via het abonnementspaneel in /admin, of wacht op de volgende aflevering van Mollie.');
+  }
+
+  if (!toegekend) {
+    if (slots) {
+      console.log(`[mollie-webhook] abonnement ${sub.id} had ${month} al, maar de slots ontbraken — ${slots} soort(en) alsnog gezet (${mode})`);
+    } else {
+      console.log(`[mollie-webhook] abonnement ${sub.id} had ${month} al — niets toegekend (${mode})`);
+    }
+    return;
+  }
+
+  console.log(`[mollie-webhook] abonnement ${sub.id}: ${month} toegekend, ${granted} producten, ${slots} soort(en) slots (${mode})`);
 
   /* ── EN DE FACTUUR — 20 AUGUSTUS 2026 ──────────────────────────────────────
      Tot vandaag hield het hier op: betaling vastgelegd, maand toegekend, klaar.

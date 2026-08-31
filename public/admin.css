@@ -820,3 +820,50 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 }
 .qlist li:first-child { box-shadow: none; }
 .qlist li > span:first-child { color: var(--ink); font-weight: 600; }
+
+/* ── SLOTS BIJSTELLEN ────────────────────────────────────────────────────────
+ *
+ * Dichtgeklapt, want dit is de handeling die je twee keer per jaar doet. Een
+ * <details> en geen knop met een paneel eronder: hij werkt zonder script en met
+ * een toetsenbord, en dat is op dit dashboard de regel en niet de uitzondering.
+ *
+ * De velden staan op één regel zolang dat past en vallen daarna onder elkaar.
+ * De reden krijgt de ruimte, want dat is het veld dat er over drie maanden nog
+ * toe doet — de andere twee zijn dan af te lezen uit het saldo. */
+.slotfix { margin-top: 1rem; padding-top: .8rem; box-shadow: inset 0 1px 0 var(--line); }
+.slotfix > summary {
+  cursor: pointer; font-size: .88rem; color: var(--ink-2);
+  padding: .2rem 0; list-style-position: inside;
+}
+.slotfix > summary:hover { color: var(--ink); }
+.slotfix form {
+  display: flex; flex-wrap: wrap; align-items: end; gap: .5rem .8rem; margin: .7rem 0 .5rem;
+}
+.slotfix label {
+  display: block; font-size: .74rem; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: .25rem;
+}
+.slotfix select, .slotfix input {
+  font: inherit; font-size: .9rem; padding: .4rem .5rem;
+  background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px;
+}
+/* ZONDER `appearance: none` WINT DE BROWSER. Chromium tekent een dichtgeklapte
+   <select> met zijn eigen witte vlak, en dan staat er één lichtvlak in een
+   verder donker paneel — precies de fout die je op een schermafdruk ziet en in
+   de code niet, want de regel hierboven staat er wel degelijk. Het pijltje komt
+   terug als achtergrondtekening, in dezelfde inkt als de rest. */
+.slotfix select {
+  appearance: none; padding-right: 1.8rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+                    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.slotfix input[type="number"] { width: 5.5rem; }
+.slotfix input[type="text"] { flex: 1 1 16rem; min-width: 0; }
+.slotfix .meta { margin: 0; }
+@media (max-width: 620px) {
+  .slotfix form > * { flex: 1 1 100%; }
+  .slotfix input[type="number"] { width: 100%; }
+}

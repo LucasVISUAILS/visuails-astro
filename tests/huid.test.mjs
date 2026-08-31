@@ -37,6 +37,7 @@
  */
 
 import { readFileSync, existsSync, globSync } from 'node:fs';
+import { buildStaat } from './lib/build.mjs';
 
 let goed = 0;
 let totaal = 0;
@@ -86,9 +87,17 @@ console.log('\nelke regel in het stijlblad is gescoped');
      dat er niet is. Dat gebeurde ook meteen bij de eerste keer draaien. De
      inhoud van :is/:where/:not doet er voor de vraag "is dit gescoped" niet
      toe, want de scope staat er altijd vóór, dus hij mag weg. */
+  /* WEGHALEN EN NIET VERVANGEN DOOR `()`. Die eerste versie stond hier tot
+     28 augustus en had een stil vast punt: `\([^()]*\)` vervangen door `()`
+     laat de haakjes staan, dus zodra er NESTING in het spel is — bijvoorbeeld
+     `:is(.btn-ghost, .nav-cta:not(.btn-primary), .lang-switch)` — matcht de
+     regex meteen dat lege binnenste paar, verandert er niets, en stopt de lus
+     met de buitenste haakjes en hun komma's nog intact. De toets meldde toen
+     een lek in een selector die keurig gescoped was. Nu blijft er niets van de
+     groep over en loopt hij door tot alle niveaus weg zijn. */
   const kaal = (sel) => {
     let vorig;
-    do { vorig = sel; sel = sel.replace(/\([^()]*\)/g, '()'); } while (sel !== vorig);
+    do { vorig = sel; sel = sel.replace(/\([^()]*\)/g, ''); } while (sel !== vorig);
     return sel;
   };
   const vrij = selectors.filter((s) => {
@@ -162,10 +171,10 @@ console.log('\nde aanwijzer degradeert veilig');
 /* ─────────────────────────────────────────────────────────────────────────────
    4 · DE SCHAKELAAR IN LAYOUT.ASTRO
    ───────────────────────────────────────────────────────────────────────────── */
-console.log('\nde huid komt alleen op pagina’s die erom vragen');
+console.log('\nde schakelaar staat er nog, met de huid als standaard');
 {
   check('Layout kent de prop', /huid\?:\s*'geen'\s*\|\s*'kantig'/.test(layout), true);
-  check('en heeft "geen" als standaard', /huid\s*=\s*'geen'/.test(layout), true);
+  check('en heeft "kantig" als standaard', /huid\s*=\s*'kantig'/.test(layout), true);
   check('de body-klasse hangt aan de prop', /huid === "kantig" && "huid-kantig"/.test(layout), true);
   check('het component wordt voorwaardelijk gerenderd',
     /\{huid === 'kantig' && <HuidKantig \/>\}/.test(layout), true);
@@ -175,29 +184,78 @@ console.log('\nde huid komt alleen op pagina’s die erom vragen');
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   5 · DE HOMEPAGE VRAAGT ER NIET OM
+   5 · ELKE PAGINA DRAAGT DE HUID, BEHALVE DE TWEE VERGELIJKINGSPAGINA'S
    ───────────────────────────────────────────────────────────────────────────── */
-console.log('\nde huid staat op de homepage en nergens anders');
+console.log('\nde huid staat op elke gebouwde pagina, op twee na');
 {
-  /* DIT STOND ANDERSOM. Tot 27 augustus 2026 droeg /proef de stijl en was de
-     homepage onaangeroerd; die volgorde is omgedraaid op Lucas' verzoek. Wat
-     hetzelfde blijft is wat deze toets bewaakt: de huid staat op precies twee
-     pagina's en op geen enkele andere. */
-  check('/ vraagt de huid', /huid="kantig"/.test(indexEN), true);
-  check('/nl vraagt de huid', /huid="kantig"/.test(indexNL), true);
+  /* DEZE GROEP IS TWEE KEER OMGEDRAAID EN DAT IS HET VERHAAL VAN DE HUID.
+   *
+   * Eerst droeg /proef de stijl en was de homepage onaangeroerd. Op 27 augustus
+   * werd dat omgekeerd: de stijl op / en /nl, en deze toets bewaakte dat hij
+   * NERGENS anders stond. Op 28 augustus vroeg Lucas hem over te zetten naar de
+   * hele site, en dus bewaakt hij nu het omgekeerde.
+   *
+   * ── OP DE GEBOUWDE PAGINA'S EN NIET OP DE BRON ──────────────────────────────
+   *
+   * De vorige versie las `huid="kantig"` uit de bestanden in src/pages. Dat kan
+   * nu niet meer: de huid komt uit de STANDAARD van de prop, dus geen enkele
+   * pagina noemt hem nog, en een broncontrole zou vrolijk melden dat niemand hem
+   * gebruikt. Belangrijker: een bronregel bewijst hoe dan ook niet dat de klasse
+   * ook echt op <body> belandt. Deze groep leest daarom dist/ — wat er staat in
+   * plaats van wat de bedoeling was.
+   */
+  /* ── MET DE LEEFTIJDSCONTROLE ERVOOR, 30 AUGUSTUS 2026 ──────────────────
+     Deze groep noemt de pagina's die de huid MISSEN bij naam, en die lijst komt
+     uit dist/. Op een oude build is dat een uitspraak over een site die niet
+     meer bestaat: een pagina die je vandaag toevoegt staat er nog niet in en
+     wordt dus niet gecontroleerd, en een pagina die je gisteren hernoemde staat
+     er nog wél in en geeft rood over een bestand dat niemand publiceert. Zie
+     tests/lib/build.mjs voor het geval waarin dat voor het eerst misging. */
+  const huidStaat = buildStaat(new URL('../dist/index.html', import.meta.url));
+  if (!huidStaat.er || huidStaat.oud) {
+    console.log(` --   niet gecontroleerd: ${huidStaat.uitleg}`);
+  } else {
+    /* ── EN MET SCHUINE STREPEN, WANT DIT DRAAIT OOK OP WINDOWS ──────────
+       30 augustus 2026, 20:45, op Lucas' scherm:
 
-  /* De proefroutes zijn nu juist de versie ZONDER. Ze bestaan om te kunnen
-     vergelijken zonder een bestand weg te hoeven halen. */
-  check('/proef vraagt hem NIET', /huid\s*=/.test(proefEN), false);
-  check('/nl/proef vraagt hem NIET', /huid\s*=/.test(proefNL), false);
+         FAIL alleen /proef en /nl/proef missen de huid
+              verwacht ["/nl/proef/","/proef/"] kreeg ["\\nl\\proef\\","\\proef\\"]
 
-  /* De toets die afgaat op de dag dat iemand de stijl ergens anders "even"
-     probeert en het laat staan. Dit is de hele afspraak met Lucas: eerst de
-     homepage goed, daarna pas de rest — en dan pas met zijn akkoord. */
-  const anders = globSync('src/pages/**/*.astro')
-    .filter((f) => !/[\\/](index|proef)\.astro$/.test(f))
-    .filter((f) => /huid\s*=\s*["']kantig["']/.test(readFileSync(f, 'utf8')));
-  check('geen andere pagina gebruikt de huid', anders, []);
+       globSync geeft de paden terug zoals het besturingssysteem ze schrijft, en
+       op Windows is dat met backslashes. Bij mij op Linux niet, dus deze regel
+       is nooit rood geweest in de sandbox waar hij is geschreven — hij kon alleen
+       op zijn machine omvallen. Zelfde familie als de `.pathname`-fout die
+       tests/paths.test.mjs bewaakt: een pad dat op één van de twee platforms
+       klopt, en waar de bron er goed uitziet.
+
+       Hier normaliseren en niet verderop bij de vergelijking, want dan geldt het
+       voor alles wat er nog met deze lijst gebeurt. */
+    const gebouwd = globSync('dist/**/index.html').map((f) => f.replace(/\\/g, '/'));
+    check('er is een gebouwde site om te controleren', gebouwd.length > 50, true);
+
+    const zonder = gebouwd
+      .filter((f) => !/class="[^"]*huid-kantig/.test(readFileSync(f, 'utf8')))
+      .map((f) => f.replace(/^dist/, '').replace(/index\.html$/, ''))
+      .sort();
+    /* Precies twee, en met naam. Een toets die alleen "hoogstens twee" zegt, laat
+       de dag door waarop het de verkeerde twee zijn. */
+    check('alleen /proef en /nl/proef missen de huid', zonder, ['/nl/proef/', '/proef/']);
+  }
+
+  /* De regels hieronder lezen de BRON en niet dist/, dus ze staan buiten de
+     leeftijdscontrole hierboven: ze blijven ook zonder verse build gewoon gelden. */
+
+  /* En die twee missen hem omdat ze er expliciet om vragen, niet omdat iemand
+     vergat de prop mee te geven. Zonder deze twee regels is "de huid staat er
+     niet op" niet te onderscheiden van "er is iets stukgegaan". */
+  check('/proef vraagt expliciet om GEEN huid', /huid="geen"/.test(proefEN), true);
+  check('/nl/proef vraagt expliciet om GEEN huid', /huid="geen"/.test(proefNL), true);
+
+  /* De homepage noemt de prop juist NIET meer: hij komt uit de standaard. Stond
+     hij er nog wel, dan waren er twee plekken die hetzelfde zeggen, en dan is de
+     dag dat ze elkaar tegenspreken alleen een kwestie van tijd. */
+  check('/ leunt op de standaard', /huid\s*=/.test(indexEN), false);
+  check('/nl leunt op de standaard', /huid\s*=/.test(indexNL), false);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -233,8 +291,12 @@ console.log('\nde afwijkingen van DESIGN.md staan opgeschreven');
    8 · EN IN DE GEBOUWDE PAGINA'S OOK ECHT
    ───────────────────────────────────────────────────────────────────────────── */
 console.log('\nin dist/ staat het er ook zo');
-if (!existsSync('dist/index.html')) {
-  console.log(' --   dist/ ontbreekt — draai npm run build om deze groep te meten');
+/* Bestaan was hier de enige eis, en dat is te weinig: een build van vóór de
+   laatste wijziging in src/ bestaat prima en zegt nog steeds iets over de site
+   van gisteren. Dezelfde controle als hierboven, om dezelfde reden. */
+const distStaat = buildStaat(new URL('../dist/index.html', import.meta.url));
+if (!distStaat.er || distStaat.oud) {
+  console.log(` --   niet gecontroleerd: ${distStaat.uitleg}`);
 } else {
   const lees = (f) => (existsSync(f) ? readFileSync(f, 'utf8') : null);
   const home = lees('dist/index.html');

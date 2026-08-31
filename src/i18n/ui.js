@@ -117,7 +117,14 @@ export const ui = {
        * HoldingPage.astro: een gat dat een bezoeker kan zien, is erger dan een
        * onafgemaakt ding dat zegt wat het is.
        */
-      { title: 'Hooks', desc: 'Not ready yet — a short video on a proven format, soon', soon: true },
+      /* HREF ERBIJ, 30 AUGUSTUS 2026 — en `soon` blijft staan.
+          De uitleg van deze twee stond ruim 450 woorden lang op de homepage en
+          nergens anders. Sinds vandaag staat hij op /plans#binnenkort, en dit
+          menu-item is de weg ernaartoe. Het label "nog niet klaar" verandert
+          daar niet door: er is nu iets te lézen, er is nog niets te bestellen.
+          Layout.astro hangt het label sindsdien aan `soon` en niet meer aan het
+          ontbreken van een href — zie de noot daar. */
+      { href: '/plans#binnenkort', title: 'Hooks', desc: 'Not ready yet — a short video on a proven format, soon', soon: true },
       /* EDITIONS — aangekondigd op 18 augustus 2026, zelfde behandeling als
          Hooks: in het menu waar de diensten staan, zonder href, en Layout.astro
          tekent hem daarom als uitgeschakeld menu-item.
@@ -128,7 +135,7 @@ export const ui = {
          document laat zien dat "stock" de vergelijking opzoekt die je verliest
          terwijl een editie precies zegt wat het is — een oplage, gedateerd en
          voor deze maand gemaakt. */
-      { title: 'Editions', desc: 'Not ready yet — a set of visuals made for your brand, every month', soon: true },
+      { href: '/plans#binnenkort', title: 'Editions', desc: 'Not ready yet — a set of visuals made for your brand, every month', soon: true },
     ],
     /*
      * ── DE TWEEDE LAAG, 18 AUGUSTUS 2026 ──────────────────────────────────
@@ -329,8 +336,8 @@ export const ui = {
          in het menu waar staat wat we maken. */
       { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt' },
       { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, onder het tarief per product' },
-      { title: 'Hooks', desc: 'Nog niet klaar — een korte video op een bewezen format, binnenkort', soon: true },
-      { title: 'Editions', desc: 'Nog niet klaar — elke maand een set beelden op jouw merk, binnenkort', soon: true },
+      { href: '/plans#binnenkort', title: 'Hooks', desc: 'Nog niet klaar — een korte video op een bewezen format, binnenkort', soon: true },
+      { href: '/plans#binnenkort', title: 'Editions', desc: 'Nog niet klaar — elke maand een set beelden op jouw merk, binnenkort', soon: true },
     ],
     nav_how: 'Hoe het werkt',
     how: [

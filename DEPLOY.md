@@ -1,5 +1,11 @@
 # Deploying visuails-astro to GitHub + Cloudflare Pages
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `HomePage.astro` → `HomeV2.astro` — de homepage is bij het herontwerp van augustus 2026 herbouwd en meteen hernoemd
+
+
 *Rewritten after the site-wide check. The previous version of this file was
 written before the repositioning and had gone wrong in ways that mattered: it
 said the site had ~27 pages when it has 48, and it said the forms didn't submit

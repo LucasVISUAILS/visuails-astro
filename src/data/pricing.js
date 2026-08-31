@@ -267,6 +267,48 @@ export const PLAN_AMOUNT = { starter: 390, studio: 790, brand: 1690 };
 export const PLAN_PRODUCTS = { starter: 5, studio: 12, brand: 30 };
 /** Video clips included in a plan, per month. */
 export const PLAN_CLIPS = { starter: 0, studio: 2, brand: 0 };
+
+/* ── WAT EEN PLAN PER MAAND GEEFT, PER SOORT — 29 augustus 2026 ─────────────
+ *
+ * Lucas: *"Alle slots moeten gesorteerd worden op service categorie waardoor we
+ * echt gericht abonnementen kunnen maken, bijvoorbeeld iets van een reclame of
+ * motion abonnement waarbij een klant alleen maar video content kan aanvragen."*
+ *
+ * De twee regels hierboven zijn precies dat idee, maar met de soort in de
+ * VARIABELENAAM in plaats van in de gegevens: PLAN_PRODUCTS is de soort
+ * 'complete' en PLAN_CLIPS is de soort video. Een derde soort erbij kost dan een
+ * derde constante, een derde kolom en een migratie. Hieronder is de soort een
+ * sleutel, en is een nieuw abonnement één regel.
+ *
+ * DE GETALLEN ZIJN NIET VERANDERD, EN DAT IS EEN KEUZE. Wat een plan bevat is
+ * een commerciële beslissing en geen refactor. Dit is dus de bestaande inhoud,
+ * letterlijk overgezet: 'complete' is wat PLAN_PRODUCTS gaf (een catalogset PLUS
+ * een lifestylecarrousel — zie PLAN_SERVICE), 'video-motion' is wat PLAN_CLIPS
+ * gaf. Wil Lucas 'complete' straks splitsen in losse catalog- en
+ * lifestyleslots, of een Motion-plan toevoegen met hooks erin, dan is dat vanaf
+ * nu een regel in deze tabel en verder niets.
+ *
+ * De twee constanten hierboven blijven staan zolang de prijspagina en de
+ * vergelijkingen ze gebruiken; assertPlans() bewaakt dat ze niet uit elkaar
+ * lopen met wat hier staat.
+ */
+export const PLAN_SLOTS = {
+  starter: { complete: PLAN_PRODUCTS.starter },
+  studio:  { complete: PLAN_PRODUCTS.studio, 'video-motion': PLAN_CLIPS.studio },
+  brand:   { complete: PLAN_PRODUCTS.brand },
+};
+
+/* Elke soort die in een bundel mag staan, met hoe hij heet en waaruit hij
+   bestaat. Vrije tekst in de database, een gesloten lijst hier — zodat een
+   typefout in een plan bij de bouw omvalt en niet bij een klant. */
+export const SLOT_KINDS = {
+  complete:        { en: 'Complete bundle',  nl: 'Complete bundel',    per: { en: '4 catalog images and a 3-image lifestyle carousel', nl: '4 catalogbeelden en een lifestylecarrousel van 3' } },
+  catalog:         { en: 'Catalog set',      nl: 'Catalogset',         per: { en: '4 images — front, back, detail, on model',          nl: '4 beelden — front, back, detail, op model' } },
+  lifestyle:       { en: 'Lifestyle carousel', nl: 'Lifestylecarrousel', per: { en: '3 images in your fixed look',                     nl: '3 beelden in jouw vaste look' } },
+  'video-motion':  { en: 'Motion clip',      nl: 'Motion-clip',        per: { en: 'the product in motion, 8 seconds',                  nl: 'het product in beweging, 8 seconden' } },
+  'video-lifestyle': { en: 'Lifestyle clip', nl: 'Lifestyle-clip',     per: { en: 'a clip in a styled scene',                          nl: 'een clip in een gestileerde scène' } },
+  hooks:           { en: 'Hook',             nl: 'Hook',               per: { en: 'a short vertical clip, 6 to 8 seconds',             nl: 'een korte verticale clip, 6 tot 8 seconden' } },
+};
 /* ── GEEN MINIMALE LOOPTIJD MEER — 18 augustus 2026 ────────────────────────
    PLAN_MIN_MONTHS stond hier op 3 en zes plekken in de copy zeiden "minimaal
    3 maanden". DE CODE HEEFT DAT NOOIT AFGEDWONGEN: handlePlanCancel() zegt

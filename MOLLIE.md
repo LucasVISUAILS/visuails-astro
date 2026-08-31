@@ -1,5 +1,11 @@
 # Mollie — how it is wired, and how to test the €1 sample
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `functions/admin/debug-mollie.js` → `/admin/diagnose` in de padtabel van `src/lib/admin.js` — op 23 augustus 2026 verplaatst, juist omdat een statisch routebestand onder functions/admin/ de centrale originIsSelf()-controle omzeilde
+
+
 Mollie is connected for exactly one thing: the **€1 test sample**. Every
 other service on the site still goes straight to the thank-you page with no
 payment step, on purpose — see "What is deliberately not wired" at the bottom.

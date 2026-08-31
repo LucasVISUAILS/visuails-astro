@@ -627,8 +627,30 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
   }
   ok('er worden cookies gezet om te noemen', namen.size > 0, true, [...namen].join(' '));
 
+  /* ── ALLEEN DE PAGINA, NIET DE VERANTWOORDING — 30 augustus 2026 ───────────
+   *
+   * Zesde keer dit jaar dat een controle op zijn eigen uitleg aansloeg, en deze
+   * keer sloeg hij aan op de uitleg van een BESLUIT dat hij hoort te bewaken.
+   *
+   * Op 24 augustus is de regel over `vis_admin` bewust uit de cookieverklaring
+   * gehaald, met de reden erboven in het bestand: een cookieverklaring gaat over
+   * wat er op het apparaat van de LEZER terechtkomt, en dat cookie komt daar
+   * nooit. Die noot noemt het cookie natuurlijk bij naam — anders legt hij niets
+   * uit. Twee dagen later kreeg deze toets de regel "tel `vis_admin` mee zodra de
+   * pagina hem noemt", en die vond hem dus in de noot. Uitkomst: hij eiste "alle
+   * vijf" onder een lijst van vier, op een pagina die het precies goed doet, en
+   * hij eiste daarmee het tegenovergestelde van het besluit van 24 augustus.
+   *
+   * Dezelfde helper en dezelfde reden als in tests/subscription.test.mjs en
+   * tests/ratio.test.mjs. `[^:]` vóór de dubbele schuine streep, zodat een
+   * `https://`-adres geen halve regel wegneemt. */
+  const zonderUitleg = (bron) => bron
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+
   for (const pad of ['src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro']) {
-    const pagina = read(pad);
+    const pagina = zonderUitleg(read(pad));
     const kort = pad.replace('src/pages/', '');
     for (const naam of [...namen].sort()) {
       ok(`${kort} noemt ${naam}`, pagina.includes(naam), true);
@@ -644,9 +666,14 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
        controle dat admin.js er precies één zet en geen tweede.
 
        De toets telde die niet mee en eiste dus "all four" onder een lijst van
-       vijf. Hij stond rood op een pagina die het goed doet. Sinds vandaag telt
+       vijf. Hij stond rood op een pagina die het goed doet. Sinds die dag telt
        hij de admincookie mee zodra de pagina hem noemt — en noemt de pagina
-       hem niet, dan valt het aantal vanzelf terug op vier en klopt het weer. */
+       hem niet, dan valt het aantal vanzelf terug op vier en klopt het weer.
+
+       ── EN "NOEMT" IS SINDS 30 AUGUSTUS: IN DE TEKST — zie de noot hierboven.
+       De regel is op 24 augustus juist WEGGEHAALD, en de uitleg daarvan noemt
+       het cookie bij naam. Zonder die uitsluiting bewaakt deze telling de
+       verantwoording in plaats van de pagina. */
     const totaal = namen.size + (pagina.includes('vis_admin') ? 1 : 0);
     const woord = { 2: '(two|twee)', 3: '(three|drie)', 4: '(four|vier)', 5: '(five|vijf)', 6: '(six|zes)' }[totaal];
     if (woord) {
@@ -765,6 +792,34 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
     //     te veel.
     ok(`${lang}: geleverd werk blijft van de klant, met verwijzing naar §8`,
       /(section 8|paragraaf 8)/.test(tekst));
+
+    /* ── 9 · HET SLOTMODEL — migratie 0035, 30 augustus 2026 ─────────────────
+     *
+     * Deze paragraaf beschreef "een vast aantal complete producten" en
+     * "wat je niet besteld hebt schuift door". Allebei waar tot 29 augustus en
+     * daarna niet meer: er zijn sindsdien slots per SOORT, en wat doorschuift
+     * is wat je niet hebt VASTGEZET.
+     *
+     * Dat verschil is niet cosmetisch. Vastzetten is het moment waarop de klant
+     * zijn slot uitgeeft en wij de opdracht krijgen — het is de handeling waar
+     * geld aan hangt. Voorwaarden die dat niet noemen, beschrijven een dienst
+     * die niet meer bestaat, en dat is precies het soort verschil waar een
+     * geschil op draait. */
+    ok(`${lang}: de voorwaarden noemen slots en niet alleen producten`,
+      /(<strong>slots<\/strong>)/.test(tekst));
+    ok(`${lang}: en leggen uit dat vastzetten het slot kost`,
+      /(one slot of that kind is used|gaat er één slot van die soort af)/.test(tekst));
+    ok(`${lang}: en dat losmaken het slot terugbrengt tot de week begint`,
+      /(the slot comes straight back|dan komt het slot direct terug)/.test(tekst));
+    /* Het dak van twee maanden staat in de code als het venster van
+       rolloverMonths(); het hoorde ook in de tekst te staan, want het is de
+       enige grens die de klant kan verrassen. */
+    ok(`${lang}: het dak van twee maanden staat er`,
+      /(two months of slots|twee maanden aan slots)/.test(tekst));
+    /* En Lucas' eigen regel van 29 augustus: opzeggen neemt het doorschuiven
+       weg, want er is geen volgende maand meer. vensterVoor() doet dat. */
+    ok(`${lang}: opzeggen neemt het doorschuiven weg`,
+      /(do not survive the cancellation|gaan met de opzegging mee weg)/.test(tekst));
   }
 
   /* ── EN DE CODE MAAKT DIE BELOFTES OOK ECHT WAAR ────────────────────────
@@ -775,6 +830,14 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
 
   ok('opzeggen laat de betaalde maand staan (de query zegt het)',
     /status = 'cancelled' AND EXISTS/.test(subscription));
+  /* En het doorschuiven stopt er wél. Eén functie, en de voorwaarden hierboven
+     beloven precies wat hij doet. */
+  const slots = read('src/lib/slots.js');
+  ok('en het doorschuifvenster is nul zodra er opgezegd is',
+    /status \|\| ''\) === 'cancelled'\) return 0/.test(slots));
+  ok('vastzetten schrijft het slot af en losmaken geeft het terug',
+    /verbruikSlot\(env, sub\.id, vensterVoor\(sub\)/.test(subscription)
+    && /geefSlotTerug\(env, sub\.id, vensterVoor\(sub\)/.test(subscription));
   ok('en dat saldo mag dan besteed worden',
     /state\?\.sub\?\.status === 'cancelled'/.test(subscription));
   ok('een gepauzeerd abonnement mag dat niet',

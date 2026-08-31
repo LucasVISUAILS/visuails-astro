@@ -1,67 +1,39 @@
-62 bestanden
-       2 kB  public/img/mail/mark-wit.png
-       3 kB  public/img/logo-mark.avif
-       5 kB  public/img/logo-wordmark-light.avif
-       5 kB  public/img/sub-light-1400.avif
-       8 kB  public/img/logo-wordmark-light.webp
-      16 kB  public/img/lifestyle-glow-05-w1560.avif
-      16 kB  public/img/logo-wordmark.avif
-      19 kB  public/img/hero-dunes.avif
-      25 kB  public/img/banners-13-w960.avif
-      27 kB  public/img/sub-light-1400.webp
-      27 kB  public/img/sub-light-2400.avif
-      30 kB  public/img/lifestyle-phone-made-04-w1560.avif
-      35 kB  public/img/banners-10.avif
-      35 kB  public/img/lifestyle-glow-05-w1560.webp
-      38 kB  public/img/lifestyle-phone-made-03-w1560.avif
-      39 kB  public/img/banners-12.avif
-      39 kB  public/img/lifestyle-phone-made-01-w1560.avif
-      40 kB  public/img/logo-wordmark.webp
-      51 kB  public/img/lifestyle-phone-made-02-w1560.avif
-      51 kB  public/img/lifestyle-phone-made-08-w1560.avif
-      52 kB  public/img/hero-dunes.webp
-      54 kB  public/img/lifestyle-phone-made-09-w1560.avif
-      55 kB  public/img/lifestyle-flash-04-w1560.avif
-      56 kB  public/img/lifestyle-phone-made-06-w1560.avif
-      63 kB  public/img/lifestyle-phone-made-13-w1560.avif
-      63 kB  public/img/lifestyle-phone-made-14-w1560.avif
-      65 kB  public/img/banners-10.webp
-      65 kB  public/img/lifestyle-glow-06-w1560.avif
-      65 kB  public/img/lifestyle-phone-made-04-w1560.webp
-      69 kB  public/img/lifestyle-flash-08-w1560.avif
-      70 kB  public/img/lifestyle-flash-06-w1560.avif
-      70 kB  public/img/lifestyle-glow-02-w1560.avif
-      71 kB  public/img/lifestyle-phone-made-01-w1560.webp
-      72 kB  public/img/lifestyle-phone-made-03-w1560.webp
-      76 kB  public/img/lifestyle-phone-made-11-w1560.avif
-      78 kB  public/img/banners-15.avif
-      99 kB  public/img/lifestyle-phone-made-07-w1560.avif
-     100 kB  public/img/lifestyle-phone-made-08-w1560.webp
-     103 kB  public/img/lifestyle-flash-04-w1560.webp
-     104 kB  public/img/lifestyle-phone-made-09-w1560.webp
-     105 kB  public/img/lifestyle-phone-made-06-w1560.webp
-     108 kB  public/img/lifestyle-phone-made-02-w1560.webp
-     109 kB  public/img/banners-09.avif
-     111 kB  public/img/lifestyle-flash-07-w1560.avif
-     112 kB  public/img/lifestyle-glow-06-w1560.webp
-     115 kB  public/img/lifestyle-glow-02-w1560.webp
-     117 kB  public/img/sub-light-2400.webp
-     118 kB  public/img/lifestyle-phone-made-13-w1560.webp
-     121 kB  public/img/banners-12.webp
-     121 kB  public/img/lifestyle-phone-made-14-w1560.webp
-     126 kB  public/img/lifestyle-flash-08-w1560.webp
-     138 kB  public/img/lifestyle-phone-made-10-w1560.avif
-     140 kB  public/img/lifestyle-phone-made-11-w1560.webp
-     143 kB  public/img/lifestyle-flash-06-w1560.webp
-     168 kB  public/img/lifestyle-phone-made-07-w1560.webp
-     175 kB  public/img/lifestyle-flash-07-w1560.webp
-     180 kB  public/img/banners-15.webp
-     219 kB  public/img/lifestyle-phone-made-10-w1560.webp
-     281 kB  public/img/banners-17.avif
-     553 kB  public/img/banners-17.webp
+INGETROKKEN — 30 augustus 2026. Deze lijst was fout, en de fout was gevaarlijk.
 
-De twee hieronder staan alleen nog op jouw schijf en op de server, niet meer
-in de bouw. Ze zijn hernoemd omdat er een ANDERE foto onder die naam kwam en
-een vaste naam zeven dagen gecachet wordt — zie de noot in public/_headers.
-  (op E:) public/img/brand-car.avif   — vervangen door brand-car-lens.avif
-  (op E:) public/img/brand-car.webp   — vervangen door brand-car-lens.webp
+Wat hier stond: "62 bestanden", gevolgd door tweeënzestig paden in public/img die
+volgens de meting van 22 augustus nergens werden gebruikt.
+
+Nagemeten op 30 augustus: het zijn er één of twee. ZESTIG van die tweeënzestig
+waren `.avif`-bestanden.
+
+WAAROM DIE METING FOUT WAS
+Een AVIF wordt nooit bij naam genoemd in de bron. scripts/avif-naast-webp.mjs
+zet hem bij de bouw naast de gelijknamige .webp en de pagina krijgt een <picture>
+met twee bronnen. Een zoekopdracht op de bestandsnaam vindt hem dus per definitie
+niet — niet omdat hij ongebruikt is, maar omdat hij automatisch wordt gekoppeld.
+
+WAT ER WAS GEBEURD ALS IEMAND DEZE LIJST HAD GEVOLGD
+Dan was de hele AVIF-set gewist en was de site ruwweg twee keer zo zwaar
+geworden. Dat is precies waar de bouw sinds 30 augustus voor waarschuwt, met de
+bestandsnamen erbij: "N beeld(en) hebben geen AVIF naast zich en gaan dus als
+losse webp de deur uit".
+
+WAT ER VOOR IN DE PLAATS KOMT
+    npm run beelden
+
+scripts/beeldtelling.mjs doet dezelfde vraag opnieuw, en telt een beeld als
+gebruikt zodra zijn naam, zijn stam of zijn kern zonder -w380/-w760/-w960/-w1560
+ergens in de bron voorkomt. Een inventaris van augustus is in september een
+bewering; dit is een meting die je opnieuw kunt draaien.
+
+DE ENIGE TREFFER DIE OVERBLIJFT, en die is nog niet zeker
+    public/img/mark-contour-lime.png  (57 kB)
+
+Gemeten op een werkkopie waarin een deel van scripts/ ontbrak — make-og.mjs
+bijvoorbeeld. Draai `npm run beelden` op je eigen machine voordat je hem
+weggooit: het is een contourversie van het merkteken, en dat is precies het
+soort bestand dat door een beeldbouwstap wordt ingelezen in plaats van door een
+pagina.
+
+Dit bestand blijft staan als verantwoording van wat er misging. De lijst zelf is
+weg, want een lijst die je niet mag volgen hoort niet leesbaar te blijven.

@@ -71,12 +71,28 @@ export function buildStaat(bestandUrl, bronUrl = new URL('../../src/', import.me
   const bron = jongsteBestand(bronUrl);
   if (!bron.ms || bron.ms <= gebouwdOp) return { er: true, oud: false, uitleg: '' };
 
-  const dagen = Math.round((bron.ms - gebouwdOp) / 86400000 * 10) / 10;
+  /* IN DE EENHEID DIE ERBIJ PAST, 30 AUGUSTUS 2026. Hier stond altijd het aantal
+     DAGEN, en het gewone geval is dat je net iets in src/ hebt aangepast en de
+     build vergeten bent. Dan las die regel "is 0 dag(en) ouder dan HomeV2.astro"
+     — een melding die zichzelf tegenspreekt op precies het moment dat hij moet
+     uitleggen waarom een suite is overgeslagen. */
   return {
     er: true,
     oud: true,
-    uitleg: `${pad(bestandUrl)} is ${dagen} dag(en) ouder dan ${bron.naam} — draai \`npx astro build\` en dan \`npm test\` opnieuw`,
+    uitleg: `${pad(bestandUrl)} is ${verschil(bron.ms - gebouwdOp)} ouder dan ${bron.naam} — draai \`npx astro build\` en dan \`npm test\` opnieuw`,
   };
+}
+
+/** Een tijdsverschil in de grootste eenheid die er nog een heel getal van maakt. */
+function verschil(ms) {
+  const sec = Math.max(1, Math.round(ms / 1000));
+  if (sec < 90) return `${sec} seconde${sec === 1 ? '' : 'n'}`;
+  const min = Math.round(sec / 60);
+  if (min < 90) return min === 1 ? '1 minuut' : `${min} minuten`;
+  const uur = Math.round(min / 60);
+  if (uur < 36) return `${uur} uur`;
+  const dag = Math.round(uur / 24);
+  return `${dag} dag${dag === 1 ? '' : 'en'}`;
 }
 
 /** Alleen de laatste twee stukjes van een pad, want de rest zegt niets. */

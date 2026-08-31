@@ -68,8 +68,13 @@ const MAPPEN = ['src/components', 'src/pages', 'src/data', 'src/i18n', 'src/layo
    hele bestand valt daarom buiten de apostrofregel; per regel uitzonderen wérkte
    niet, want daar staat het woord "whatsapp" niet noodzakelijk op de regel zelf. */
 const WA_BESTAND = 'src/data/whatsapp.js';
+/* Met schuine strepen, ook op Windows: `join()` plakt met de scheiding van het
+   besturingssysteem, en deze namen worden verderop met `src/data/whatsapp.js`
+   vergeleken en in meldingen afgedrukt. Zie tests/paths.test.mjs §2b voor de
+   keer dat een ongenormaliseerd globresultaat een suite op één platform liet
+   omvallen. */
 const bestanden = MAPPEN.flatMap((m) =>
-  globSync('**/*.{astro,js}', { cwd: join(ROOT, m) }).map((f) => join(m, f))
+  globSync('**/*.{astro,js}', { cwd: join(ROOT, m) }).map((f) => join(m, f).replace(/\\/g, '/'))
 );
 
 console.log(`\nde tekenconventies, over ${bestanden.length} bronbestanden`);

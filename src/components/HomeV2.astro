@@ -47,13 +47,22 @@ import { counted, countedShort, noun } from '../data/lexicon.js';
 import { faqPageItems } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import { TAGLINE } from '../data/brand.js';
+import { testimonialsToShow } from '../data/testimonials.js';
+/* Alleen de NAMEN. De uitleg van Hooks en Editions staat sinds 30 augustus 2026
+   op /plans; zie de kop van dit databestand. */
+import { binnenkortNamen } from '../data/binnenkort.js';
 import { waHref } from '../data/whatsapp.js';
 import Disclose from './Disclose.astro';
 import Compare from './Compare.astro';
+/* De voor/na-paren. Eén vandaag, en de sectie groeit mee zodra het er meer
+   worden — zie de kop van dat bestand. */
+import { voorbeelden } from '../data/voorbeelden.js';
 import Placeholder from './Placeholder.astro';
 // De doorlooptour van het klantdashboard. Zie FigDash.astro: hij verving een
 // grijs vlak met een productienotitie erin.
-import FigDash from './FigDash.astro';
+/* FigDash stond hier: de volledige dashboardrondleiding. Sinds 30 augustus 2026
+   tekent alleen /portal hem nog — zie de noot bij de figuur in sectie 12. */
+import FigApproval from './FigApproval.astro';
 // FigStudio.astro stond hier tot augustus 2026 — onze kant van dezelfde
 // bestelling. Hij is uit deze band gehaald omdat hij dezelfde capaciteitsbalken
 // tekende die FigGate op /studio al tekent (HERONTWERP.md §2.6). Zie de noot bij
@@ -67,6 +76,7 @@ import Note from './Note.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
+const VB = voorbeelden(lang);
 const sample = TEST_SAMPLE[lang];
 // SHOOT_DAY came out with the "What an order replaces" band — see the comment
 // where that band used to be, above the week band.
@@ -130,29 +140,29 @@ const SLIDE_ICON = [
   'M4 7.5 12 4l8 3.5-8 3.5-8-3.5z M4 12l8 3.5 8-3.5 M4 16.5 12 20l8-3.5',
 ];
 
-/*
- * De twee aangekondigde diensten staan sinds 20 augustus 2026 in dezelfde rij
- * als de vier die je kunt bestellen, dus hebben ze ook een pictogram nodig.
- * Apart van SLIDE_ICON gehouden: die rij hoort bij de vijf dia's van de hero en
- * die vijf zijn niet dezelfde vijf.
- */
-const SOON_ICON = [
-  // haak · Hooks
-  'M8 4h5a4 4 0 0 1 4 4v9 M17 17l-3-3 M17 17l3-3',
-  // stapel bladen met een kalenderstreep · Editions
-  'M4 8h16v12H4z M8 4h12v12 M8 12h8 M8 16h5',
-];
+/* SOON_ICON STOND HIER — twee pictogrammen voor de kaarten van Hooks en
+   Editions. Die kaarten zijn op 30 augustus 2026 van de homepage gehaald (de
+   uitleg staat nu op /plans#binnenkort), en twee pictogrammen die nergens meer
+   getekend worden zijn geen reserve maar ruis: de volgende die ze tegenkomt
+   moet uitzoeken waar ze horen. Komt er ooit weer een kaart, dan is een pad van
+   twee regels sneller opnieuw getekend dan teruggevonden. */
 
 const SERVICE_IMG = [
   { src: '/img/banners-11.webp', w: 1200, h: 896 },
   { src: '/img/lifestyle-glow-02.webp', w: 2400, h: 1792 },
   { src: '/img/banners-16.webp', w: 2400, h: 1792 },
   { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
-  /* Twee erbij voor Hooks en Editions — 23 augustus 2026. Ze staan hier en niet
-     in een eigen lijst, zodat de kaartrij en de hero uit dezelfde bron putten en
-     een kaart niet iets anders kan tonen dan de dia die eronder hangt. */
-  { src: '/img/lifestyle-phone-made-09-w1560.webp', w: 1560, h: 1165 },
-  { src: '/img/lifestyle-glow-05-w1560.webp', w: 1560, h: 1165 },
+  /* HIER STONDEN ER TWEE MEER, voor de kaarten van Hooks en Editions, met de
+     noot: "ze staan hier en niet in een eigen lijst, zodat de kaartrij en de
+     hero uit dezelfde bron putten." Die redenering klopte zolang die kaarten
+     bestonden. Ze zijn op 30 augustus 2026 van de homepage gehaald — de uitleg
+     staat nu op /plans#binnenkort — en toen werden deze twee regels twee
+     bestanden die de bezoeker nooit ziet.
+     Nagemeten op de gebouwde homepage: de vier hierboven staan er alle vier op,
+     `lifestyle-phone-made-09` en `lifestyle-glow-05` geen van beide. Zelfde
+     opruiming als SOON_ICON hierboven, en om dezelfde reden: een lijst die
+     langer is dan wat hij voedt, laat de volgende lezer zoeken naar een kaart
+     die er niet is. */
 ];
 
 /*
@@ -645,6 +655,14 @@ const COPY = {
     creditAskCta: 'Reach out — we’ll walk through the best options for your brand together',
     creditWa: 'Hi! I have a plan and I would like to think through what to spend this month\u2019s credits on.',
 
+    /* ── DE PRIJS IN TWEE GETALLEN ─────────────────────────────────────────
+       De bovenste en de onderste trede van de bundelstaffel, gelezen uit
+       LADDER. Alles ertussen staat op /pricing. */
+    priceFrom: 'From',
+    priceTo: 'down to',
+    priceUnit: `per complete product — ${PER_PRODUCT_VISUALS} finished images, a catalog set plus a lifestyle carousel. ${vatLabel('excl', 'en')}, and the rate falls with the number of products in the order.`,
+    planLine: 'Rather have it every month? A plan holds a fixed number of products and a week on the calendar that is yours.',
+    planLink: 'See the monthly plans',
     priceCta: 'Start an order',
     priceCta2: 'The full price list',
 
@@ -755,7 +773,7 @@ const COPY = {
     pipeH: 'From folder to launch.',
     pipeLede: 'A 4-step workflow designed for speed: you send and approve, we handle everything in between.',
     pipe: [
-      ['You send a folder', 'One folder per product, named by SKU. A quick smartphone photo is all we need to get started.'],
+      ['You send a folder', 'One folder per product, named by SKU. Two quick smartphone photos — front and back — are all we need to get started.'],
       ['The date is cleared', 'Our calendar syncs with real studio capacity. If your preferred week is full, you’ll instantly get the next open slot.'],
       // The four house styles are named HERE now. They were a stat in the
       // "What the numbers actually are" band, which went with the price merge;
@@ -776,7 +794,21 @@ const COPY = {
       ['The rest is built', 'Lighting, background, model, and cropping are built around your product to match your brand’s house style.'],
       ['A person signs it off', 'We review the final visual side-by-side with your original photo, verifying every detail before delivery.'],
     ],
-    baNote: 'A well-lit phone photo is all you need to get started. Unsure about your photos? Send them over via WhatsApp or email — we’ll give you an honest assessment.',
+    /* ── TWEE FOTO'S, EN DAT IS GEEN TEKSTKEUZE — 30 AUGUSTUS 2026 ──────────
+       Hier stond dat ÉÉN goed belichte telefoonfoto genoeg is. Dat is sinds
+       shots.js voorkant én achterkant verplicht maakte niet meer waar, en het
+       is geen schoonheidsfoutje: `cardReady()` in pipeline.js laat een product
+       pas door als allebei de foto's er zijn, voor elke dienst. Een klant die
+       deze regel gelooft, loopt bij het uploaden tegen een harde poort aan —
+       precies het moment waarop je hem niet wil verrassen.
+
+       Deze claim stond op DRIE plekken in beide talen en liep drie keer mee bij
+       een wijziging in shots.js. Daarom staat er sinds vandaag een toets op:
+       tests/uploadbelofte.test.mjs telt de verplichte hoeken en legt ze naast
+       elke plek waar de homepage er een getal over noemt. */
+    baNote: 'Two well-lit phone photos per product — the front and the back — are all you need to get started. Unsure about your photos? Send them over via WhatsApp or email — we’ll give you an honest assessment.',
+    baMore: 'That is one job end to end. The finished work from the rest sits in the gallery.',
+    baMoreLink: 'See the gallery',
     baNoteLink: 'What makes a usable photo?',
 
     dreamKicker: 'What it all comes down to',
@@ -833,7 +865,18 @@ const COPY = {
     // price cannot make — that the face is yours and nobody else’s.
     bmH: ['Pick a face from our roster —', 'or build one that’s exclusively yours.'],
     bmLede: 'Pick from our curated roster today, or claim your own Brand Model: a signature face tailored to your brand identity and used by no one else.',
-    bmNote: 'A returning face is the most cost-effective way to build visual continuity — it’s why top brands stick with the same models for years.',
+    /* ── WAT ER BEWAARD BLIJFT, IN PLAATS VAN WAT ANDERE MERKEN DOEN ────────
+       Hier stond: *"it's why top brands stick with the same models for years."*
+       Dat is de zwakste soort bewijs die deze site kan geven — een verwijzing
+       naar iemand anders — en het antwoordt niet op de vraag die een tweede
+       bestelling oproept: begin ik weer overnieuw?
+
+       Nee, en dat is na te kijken: customer_style_locks bewaart per dienst het
+       model, de achtergrondkleur, de kanalen en de beeldverhouding, en /start
+       vult ze bij een volgende bestelling voor. Dat feit stond nergens op de
+       site. Het is ook de geruststellende helft van hetzelfde argument: niet
+       "elk seizoen begint opnieuw", maar "de vorige keer staat er nog". */
+    bmNote: 'The face, the background and the format you approve are saved to your brand, so the next order starts where the last one ended.',
     bmCta: 'How Your Brand Model works',
 
 
@@ -846,6 +889,11 @@ const COPY = {
     // dashPortalPh en dashPortalNote stonden hier: de bijschriften van het
     // grijze vlak dat FigDash heeft vervangen. Een figuur die het scherm zelf
     // tekent, heeft geen onderschrift nodig dat vertelt wat erop zou staan.
+    dashFigH: 'Your delivered images, one by one',
+    dashFigOk: 'Approved',
+    dashFigRev: 'Sent back',
+    dashFigWait: 'Still coming',
+    dashFigNote: 'A drawing of the review screen, not a screenshot. One image going back does not hold up the rest.',
     dashPortalK: 'VISUAILS Studio',
     /* ── TWEE BELOFTES DIE DE CODE MET OPZET NIET DOET — 23 AUGUSTUS 2026 ─────
      *
@@ -907,64 +955,8 @@ const COPY = {
        zetten is een openbaar aanbod op iets wat niet te kopen is. Eén regel
        toevoegen kan later in tien seconden. */
     svcSoonTag: 'Not ready yet',
-    svcSoonFoot: 'This is a preview of the concept as it stands. Pricing and ordering details are still being finalized, which is why booking is currently inactive.',
-    svcSoonList: [
-      {
-        id: 'hooks',
-        name: 'Hooks',
-        desc: 'Short-form product video, designed around eye-catching, high-performing social formats.',
-        cta: 'See Hooks',
-        qLabel: 'What Hooks is',
-        /* De tekst hieronder komt uit HOOKS-COPY-CONCEPT.md en niet uit de oude
-           HooksPage.astro. Die tekst overtrad de toonregels op acht punten,
-           waaronder de ene die Lucas expliciet had aangewezen ("één product en
-           één idee is genoeg" — dat suggereert dat één foto genoeg is). Die fout
-           mag niet via een uitklapper terug de site op komen; hier staat de
-           gecorrigeerde versie, expliciet dat één foto NIET genoeg is. */
-        qBody: [
-          ['You send photos', 'We require a full visual set: at least a clear front and back view, along with detail or fit photos if you have them. One photo alone isn’t sufficient because our formats build scene depth around the entire product.'],
-          ['We build the video', 'Scroll-stopping, short-form vertical video, built to give a post its best chance at more engagement and new followers.'],
-          ['A specialist checks it', `Before final delivery, we verify product accuracy and ensure every image transition aligns seamlessly. Your assets land in VISUAILS Studio within ${turnaroundShort('unattended', 'en')} for your review, feedback, or instant approval.`],
-          ['What we sell', 'We guarantee the format and the execution — not the reach. How far a post travels depends on timing and algorithms, and those aren’t ours to promise.'],
-        ],
-      },
-      {
-        id: 'editions',
-        /* ── WAAROM DE NAAM "EDITIONS" IS ───────────────────────────────────
-           Het idee staat in STOCK-IDEE.md: elke maand een set beelden, op het
-           kleurenschema van één merk gemaakt, plus een goedkopere gedeelde set.
+    svcSoonLink: 'read what they are',
 
-           HET WOORD "STOCK" KOMT ER NIET IN, en dat is de kern van de keuze.
-           Het onderzoek in dat document wijst twee dingen aan: Death to Stock
-           zet zich met zoveel woorden af tegen AI ("made by real creators, not
-           AI"), en op hun eigen terrein — vijftienduizend beelden voor $20 —
-           win je niet. Jezelf "stock" noemen is de vergelijking opzoeken die je
-           verliest, terwijl de helft die zíj niet kunnen (per merk afgestemd)
-           precies de helft is die jij wel kunt.
-
-           EN EDITIE IS EEN DRUKWERKWOORD. Een editie is een oplage: een set die
-           in één keer gemaakt is, gedateerd en genummerd. Dat is per definitie
-           maandelijks, het zegt "gemaakt" in plaats van "geoogst", en het staat
-           in dezelfde taal als de rest van deze site — zie de lane bovenaan dit
-           bestand, de drukkerij en de kleurproef. Het blijft in beide talen
-           onvertaald staan, net als Catalog, Lifestyle en Hooks.
-
-           NIET GEKOZEN: "Drops" botst met de wire-waarde 'drop' in
-           ORDER_SERVICES; "Library" is precies wat §6 van STOCK-IDEE.md verbiedt
-           (geen tweede bibliotheek naast de bestelstroom); "Feed" is een
-           platformwoord en zegt niets over wat je krijgt. */
-        name: 'Editions',
-        desc: 'Monthly visual drops tailored to your brand identity. Keep your channels active and consistent, even between collection releases.',
-        cta: 'See Editions',
-        qLabel: 'What Editions is',
-        qBody: [
-          ['What lands', 'A fresh set of finished visuals delivered to VISUAILS Studio at the start of every month — ready to post. They arrive whether you launched a new product or not, right when brands usually run out of content.'],
-          ['Made for your brand', 'Built around your style, locations, and brand colors so they fit seamlessly into your feed. That’s what a stock library structurally cannot do — and why this is anything but stock.'],
-          ['Or the shared set', 'A more accessible option that is not exclusive to your brand — the same set also goes to other brands. We state exclusivity clearly, just like shared rosters are explicitly labeled on our model picker.'],
-          ['Where it arrives', 'Integrated right alongside your balance and order history. Downloading works exactly like a regular order — no second library, complex search tools, or extra folders to manage.'],
-        ],
-      },
-    ],
 
     // Wat hier stond: twee volledige panelen met een eigen kop, een eigen
     // alinea en een eigen knop — "Onze kant" en "Het logboek". Beide feiten
@@ -987,6 +979,11 @@ const COPY = {
     dashFootNote: 'Every approval and revision is timestamped and linked directly to its image for a full audit trail.',
 
     promiseH: ['No wall of reviews yet —', 'so we earn your trust the honest way.'],
+    /* De kop die de vorige vervangt zodra er wél iets staat. Zie de noot bij
+       `zegt` verderop: een belofte die niet meer waar is, hoort niet te blijven
+       staan omdat niemand hem komt weghalen. */
+    saidH: ['Not our words —', 'theirs.'],
+    saidAnon: 'a VISUAILS client',
     promiseQuote: `"Every single visual is personally checked before it reaches your portal. Not convinced? See the quality on your actual product for only ${sample.price}."`,
     promiseSign: 'founder, VISUAILS',
     // The test sample was the first check as well as the last line of the
@@ -1015,10 +1012,22 @@ const COPY = {
     trust: ['Made in Enschede, NL', 'KVK-registered business', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
 
     obH: 'Direct answers to your questions.',
-    obLede: 'Three answers suppliers usually make you book a call to get.',
-    // THREE, not four. "Who owns the visuals?" is now one of the promise
-    // checks below, where it sits beside the other things the studio commits
-    // to rather than as a risk to be talked down. It is not said twice.
+    /* ── DE LEDE IS ERUIT, EN ER STAAT EEN VRAAG VOOR IN DE PLAATS — 30 AUGUSTUS
+       Hier stond: *"Three answers suppliers usually make you book a call to
+       get."* Tien woorden die twee dingen deden, en allebei niet goed genoeg om
+       de ruimte te houden. Het eerste zegt de kop erboven al ("Direct answers to
+       your questions."). Het tweede zet leveranciers weg, en dat is dezelfde
+       toon die deze band juist niet moet hebben — iemand die hier leest, heeft
+       een vraag, geen vijand.
+
+       Wat ervoor terugkomt is de vierde vraag hieronder: −10 woorden, +7. Netto
+       staat er dus minder op de pagina dan gisteren, met één antwoord erbij dat
+       er niet was. */
+    // VIER, en dat was drie. "Who owns the visuals?" staat nog steeds NIET in
+    // deze rij — die zit bij de beloftes hieronder en wordt niet twee keer
+    // gezegd. De vierde is het zelf-doen-bezwaar: het stond volledig
+    // uitgeschreven op /compare en nergens anders, en /compare bezoekt iemand
+    // pas als hij al twijfelt. Zie de noot bij die vraag in faq.js.
     /* Alleen de vraag en de linktekst; het antwoord komt uit faq.js — zie de
        noot bij OB_BRON bovenaan dit bestand. De volgorde hier moet die van
        OB_BRON volgen. */
@@ -1026,7 +1035,8 @@ const COPY = {
       ['What if they aren’t right?', 'See VISUAILS Studio'],
       ['Will customers notice it’s AI?', 'Read the AI Act page'],
       ['My photos are low quality.', 'What makes a usable photo?',
-        'A well-lit phone photo on a plain background is all you need to start. Detailed two-page guidelines on lighting are available if you want to dive deeper.'],
+        'Two well-lit phone photos per product — the front and the back — on a plain background are enough to start. Detailed two-page guidelines on lighting are available if you want to dive deeper.'],
+      ['Why not do this myself with an AI tool?', 'The honest comparison'],
     ],
 
     // HERSCHREVEN toen de accordeon eronder verdween. Deze regel zei "de vijf
@@ -1116,6 +1126,12 @@ const COPY = {
     creditAskCta: 'Neem contact op — we lopen de opties graag samen met je door',
     creditWa: 'Hoi! Ik heb een abonnement en wil graag even doornemen waar ik de credits van deze maand aan kan besteden.',
 
+    /* Zie de noot bij de Engelse tabel. */
+    priceFrom: 'Van',
+    priceTo: 'tot',
+    priceUnit: `per compleet product — ${PER_PRODUCT_VISUALS} afgewerkte foto’s, een catalogset plus een lifestyle-carousel. ${vatLabel('excl', 'nl')}, en het tarief daalt met het aantal producten in de bestelling.`,
+    planLine: 'Liever elke maand? Een abonnement legt een vast aantal producten vast, en een week op de kalender die van jou is.',
+    planLink: 'Bekijk de maandplannen',
     priceCta: 'Start een bestelling',
     priceCta2: 'De volledige prijslijst',
 
@@ -1170,7 +1186,7 @@ const COPY = {
     pipeH: 'Van map tot lancering.',
     pipeLede: 'Een proces van 4 stappen waarin jij maar 2 dingen doet: versturen en goedkeuren. Wij regelen de rest.',
     pipe: [
-      ['Jij stuurt een map', 'Eén map per product, genoemd naar de SKU. Een simpele telefoonfoto is al genoeg om te beginnen.'],
+      ['Jij stuurt een map', 'Eén map per product, genoemd naar de SKU. Twee simpele telefoonfoto’s — voorkant en achterkant — zijn al genoeg om te beginnen.'],
       ['Je leverdatum komt vast te staan', 'Onze kalender is gekoppeld aan onze echte studiocapaciteit. Is een week vol? Dan krijg je direct de eerstvolgende beschikbare week te zien.'],
       // De vier huisstijlen staan nu hier — ze waren een cijfer in de band
       // "Wat de getallen werkelijk zijn", die met de prijsfusie is vervallen.
@@ -1201,7 +1217,10 @@ const COPY = {
          van 25 augustus; die drie zijn aan Lucas voorgelegd en niet gewijzigd. */
       ['Een specialist keurt het goed', 'We leggen het eindresultaat naast jouw originele foto en checken alle details zorgvuldig voordat we opleveren.'],
     ],
-    baNote: 'Een goed belichte telefoonfoto is al genoeg om te beginnen. Twijfel je over je foto’s? Stuur ze door via WhatsApp of e-mail — we geven je een eerlijk advies.',
+    /* Zie de noot bij de Engelse baNote. */
+    baNote: 'Twee goed belichte telefoonfoto’s per product — de voorkant en de achterkant — zijn al genoeg om te beginnen. Twijfel je over je foto’s? Stuur ze door via WhatsApp of e-mail — we geven je een eerlijk advies.',
+    baMore: 'Dat is één opdracht van begin tot eind. Het afgewerkte werk van de rest staat in de galerij.',
+    baMoreLink: 'Bekijk de galerij',
     baNoteLink: 'Wat maakt een foto bruikbaar?',
 
     dreamKicker: 'Waar het uiteindelijk allemaal om draait',
@@ -1236,46 +1255,25 @@ const COPY = {
     // Geen bedragen meer in deze band — die staan één keer in de prijsband.
     bmH: ['Kies een model uit onze roster —', 'of claim een gezicht dat uniek is voor jouw merk.'],
     bmLede: 'Kies direct uit ons actuele model-roster, of ga voor een Brand Model: een exclusief gezicht dat speciaal voor jouw merk is ontwikkeld en door niemand anders wordt gebruikt.',
-    bmNote: 'Een vast gezicht is de slimste manier om visuele herkenbaarheid te bouwen — dat is waarom topmerken al jaren met vaste modellen werken.',
+    /* Zie de noot bij de Engelse bmNote. */
+    bmNote: 'Het gezicht, de achtergrond en het formaat die je goedkeurt worden bij je merk bewaard, dus een volgende bestelling begint waar de vorige ophield.',
     bmCta: 'Hoe een eigen merkmodel werkt',
 
 
     dashH: ['Wat kun je verwachten', 'na je bestelling.'],
     dashLede: 'Volg je orderstatus en bekijk al je beelden direct in de portal.',
+    dashFigH: 'Je geleverde beelden, stuk voor stuk',
+    dashFigOk: 'Goedgekeurd',
+    dashFigRev: 'Teruggestuurd',
+    dashFigWait: 'Nog onderweg',
+    dashFigNote: 'Een tekening van het beoordeelscherm, geen schermafdruk. Eén beeld dat teruggaat, houdt de rest niet op.',
     dashPortalK: 'VISUAILS Studio',
     // Zie de noot bij de Engelse dashPortalN.
     dashPortalN: 'Eén privélink voor het complete overzicht: live status, beeld voor beeld goedkeuren, aanvinken wat niet klopt en dat als één revisieronde versturen, en downloaden in alle drie de formaten en de beeldverhouding die je koos.',
     dashPortalCta: 'Bekijk VISUAILS Studio',
     svcSoonTag: 'Nog niet klaar',
-    svcSoonFoot: 'Dit is het concept zoals het er nu voorstaat. Omdat we de tarieven en het bestelproces nog afronden, is deze service tijdelijk niet actief.',
-    svcSoonList: [
-      {
-        id: 'hooks',
-        name: 'Hooks',
-        desc: 'Korte productvideo’s, vormgegeven in een opvallend format dat direct de aandacht trekt in de feed.',
-        cta: 'Bekijk Hooks',
-        qLabel: 'Wat Hooks is',
-        qBody: [
-          ['Je stuurt foto’s', 'We hebben een complete set nodig: sowieso voor- en achterkant, plus eventueel een detail- of pasfoto. Met één foto red je het niet, omdat de uiteindelijke weergave om het product heen beweegt.'],
-          ['Wij bouwen de video', 'Korte, verticale video’s die opvallen — gebouwd om je post de beste kans te geven op meer betrokkenheid en nieuwe volgers.'],
-          ['Een specialist kijkt hem na', `Vóór oplevering garanderen we dat het product waarheidsgetrouw is en alle aansluitingen naadloos overlopen. Binnen ${turnaroundShort('unattended', 'nl')} staat het resultaat klaar in VISUAILS Studio voor jouw goedkeuring of feedback.`],
-          ['Wat wij verkopen', 'Wij garanderen het format en de uitvoering — niet het bereik. Of een post viraal gaat hangt af van het platform en de timing, en dat is iets wat we nooit valselijk zullen beloven.'],
-        ],
-      },
-      {
-        id: 'editions',
-        name: 'Editions',
-        desc: 'Maandelijkse contentdrops afgestemd op jouw merk. Zo blijven je kanalen altijd actief, juist in de periodes tussen nieuwe collecties door.',
-        cta: 'Bekijk Editions',
-        qLabel: 'Wat Editions is',
-        qBody: [
-          ['Wat je krijgt', 'Elke eerste van de maand een nieuwe set beelden in VISUAILS Studio, direct klaar om te posten. Ze arriveren ook als je die maand geen nieuw product hebt — precies op het moment dat de meeste merken door hun content heen zijn.'],
-          ['Gemaakt voor jouw merk', 'Afgestemd op jouw stijl, locaties en merkkleuren, zodat ze naadloos aansluiten op je feed. Dat is precies wat een stockbibliotheek nooit kan bieden — en waarom dit absoluut geen stock is.'],
-          ['Of de gedeelde set', 'Een toegankelijkere optie die niet exclusief voor jouw merk is — dezelfde set gaat ook naar andere merken. We zijn helder over wat gedeeld is, net zoals het gedeelde bestand expliciet vermeld staat bij de modelkiezer.'],
-          ['Waar hij binnenkomt', 'Overzichtelijk geplaatst naast je saldo en besteloverzicht. Downloaden werkt exact zoals je gewend bent van een reguliere order — geen tweede mediabibliotheek met een eigen zoekfunctie of losse mappen.'],
-        ],
-      },
-    ],
+    svcSoonLink: 'lees wat ze zijn',
+
 
     dashFoot: [
       'Live status-sync: verandert er iets aan onze kant, dan beweegt jouw tijdlijn direct mee — ',
@@ -1288,6 +1286,8 @@ const COPY = {
     dashFootNote: 'Elke goedkeuring en revisie krijgt een tijdstempel en blijft gekoppeld aan het beeld voor een heldere historie.',
 
     promiseH: ['Nog geen muur vol reviews —', 'dus verdienen we je vertrouwen op de eerlijke manier.'],
+    saidH: ['Niet onze woorden —', 'die van hen.'],
+    saidAnon: 'een klant van VISUAILS',
     promiseQuote: `"Elk beeld krijgt een persoonlijke check voordat het in je portal staat. Niet overtuigd? Bekijk het resultaat op je eigen product voor slechts ${sample.price}."`,
     promiseSign: 'oprichter, VISUAILS',
     // De proefvisual stond hier én in het citaat erboven — hetzelfde aanbod
@@ -1299,15 +1299,16 @@ const COPY = {
     trust: ['Gemaakt in Enschede, NL', 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
 
     obH: 'Direct antwoord op al je vragen.',
-    obLede: 'Drie antwoorden die je normaal gesproken pas in een telefoongesprek krijgt.',
-    // DRIE, niet vier: "Van wie zijn de beelden?" staat nu bij de beloftes
-    // hierboven, en dus niet twee keer op één pagina.
+    /* Zie de noot bij de Engelse tabel: de lede is eruit en de vierde vraag
+       staat ervoor in de plaats. "Van wie zijn de beelden?" staat nog steeds bij
+       de beloftes hierboven en dus niet twee keer op één pagina. */
     /* Zie de noot bij de Engelse ob. */
     ob: [
       ['Wat als ze niet goed zijn?', 'Bekijk VISUAILS Studio'],
       ['Ziet een klant dat het AI is?', 'Lees de AI Act-pagina'],
       ['Mijn foto’s zijn van lage kwaliteit.', 'Wat maakt een foto bruikbaar?',
-        'Een goed belichte telefoonfoto op een neutrale ondergrond is al genoeg om te beginnen. Onze uitgebreide richtlijnen van twee pagina’s focussen op de ideale belichting.'],
+        'Twee goed belichte telefoonfoto’s per product — de voorkant en de achterkant — op een neutrale ondergrond zijn al genoeg om te beginnen. Onze uitgebreide richtlijnen van twee pagina’s focussen op de ideale belichting.'],
+      ['Waarom zou ik dit niet zelf doen?', 'De eerlijke vergelijking'],
     ],
 
     faqLede: 'Al het andere — levering, revisies, rechten en verwerking van je foto’s — staat overzichtelijk op één pagina.',
@@ -1333,9 +1334,10 @@ const c = COPY[lang];
    één ding had gezien dat er wel is.
 
    ZE VERDWIJNEN NIET VAN DE PAGINA, en dat is de hele reden dat dit mag. Ze
-   staan verderop in `hv-svc-rail`, uit `svcSoonList`, met hun eigen uitleg, hun
-   eigen tag en de uitgeschakelde knop — de plek die voor ze gemaakt is en die
-   ongemoeid blijft. Wat hier weggaat is hun TWEEDE optreden, bovenaan.
+   stonden verderop in `hv-svc-rail` met hun eigen uitleg. Sinds 30 augustus
+   2026 staat die uitleg op /plans#binnenkort en houdt deze pagina één regel
+   over met hun namen erin; het menu wijst er ook naartoe. Wat hier al sinds
+   augustus weggaat is hun TWEEDE optreden, bovenaan.
 
    FILTEREN EN NIET SCHRAPPEN uit de tabel. `heroSlides` voedt drie dingen: de
    <img>-stapel, de kaartrij, en via `data-note` de wisselende regel. De twee
@@ -1397,6 +1399,12 @@ const OB_BRON = [
   { faq: 'What if the visuals are not right?', href: '/portal' },
   { faq: 'Are the visuals AI-generated?', href: '/ai-act' },
   { faq: null, href: '/upload-guidelines' },
+  /* De vierde, 30 augustus 2026, en hij hoort bij de EERSTE twee en niet bij de
+     derde: er staat wél een antwoord in faq.js, dus dit is er geen dat in de
+     copytabel hieronder mag blijven wonen. De link wijst naar /compare en niet
+     naar /faq — daar staat het uitgeschreven met beide kanten naast elkaar, en
+     dat is wat iemand die deze vraag stelt wil zien. */
+  { faq: 'Why not just do this myself with an AI tool?', href: '/compare' },
 ];
 
 const obEn = faqPageItems('en');
@@ -1449,6 +1457,24 @@ if (!/\b1 revision round\b/i.test(aftercare('attended', 'en'))) {
   );
 }
 const nl = lang === 'nl';
+
+/* ── DE AANBEVELINGEN, ALS ZE ER ZIJN ────────────────────────────────────────
+ *
+ * Deze kop heet "Nog geen muur vol reviews" en dat is al maanden waar. Zodra hij
+ * niet meer waar is, moet hij ook niet meer blijven staan — en dat is precies de
+ * soort belofte die blijft hangen omdat niemand hem komt weghalen.
+ *
+ * Daarom hangt de kop aan de data en niet aan een besluit: staan er goedgekeurde
+ * aanbevelingen in src/data/testimonials.js, dan verandert de kop mee en komen ze
+ * onder het citaat te staan. Staat er niets, dan blijft de eerlijke regel.
+ *
+ * DRIE EN NIET ALLES. Een muur vol citaten onder een kop die zegt dat er nog geen
+ * muur is, is precies de tegenstrijdigheid die dit blok moet vermijden. En drie
+ * echte aanbevelingen lezen mensen; twaalf scrollen ze voorbij.
+ *
+ * Het bestand wordt geschreven door `npm run testimonials` en gecommit — zie de
+ * kop daar voor waarom het geen fetch is. */
+const zegt = testimonialsToShow(3);
 
 // De vijf FAQ-vragen die hier werden uitgekozen (FAQ_GROUPS / FAQ_PICK) zijn
 // weg met de accordeon die ze toonde — zie de noot bij sectie 16. Ze werden
@@ -1785,39 +1811,36 @@ const nl = lang === 'nl';
       <h2>{c.baH[0]} <em class="hv-accent">{c.baH[1]}</em></h2>
       <p class="lede">{c.baLede}</p>
     </div>
-    <div class="hv-ba">
-      {/* ── 3/4 EN NIET 4/5 — 20 augustus 2026 ──────────────────────────────
-          Lucas: *"sommige foto’s zijn veel te groot."* Gemeten op 1920 was dit
-          vlak 685 bij 857 pixels, terwijl de tekstkolom ernaast op y=1040
-          ophield en het beeld doorliep tot 1320. Bijna 300 pixels beeld naast
-          niets. Het blijft het overtuigendste beeld op de pagina — een echte
-          klantfoto naast wat eruit kwam — dus het gaat niet weg. Het wordt
-          alleen zo hoog als de tekst ernaast.
+    {/* ── ÉÉN PAAR, EN GEBOUWD OM ER MEER TE WORDEN — 30 AUGUSTUS 2026 ────
+        Lucas: *"1 foto als bewijs in de tweede is natuurlijk niet genoeg."*
+        Klopt: deze hele pagina vraagt te geloven dat een telefoonfoto van je
+        eigen product genoeg is, en dit is het enige beeld dat dat bewíjst. Eén
+        paar is een voorbeeld, drie paren zijn een werkwijze.
 
-          TWEE DINGEN DIE IK HIER FOUT DEED, ALLEBEI STIL:
+        Er staat er vandaag één omdat er op schijf één ECHT paar is — zie de kop
+        van src/data/voorbeelden.js voor wat er per extra paar nodig is, en
+        waarom twee losse beelden onder een pijl geen bewijs maar een bewering
+        zouden zijn.
 
-          1 · Deze noot stond eerst TUSSEN de props van <Compare>. Een
-              accolade-commentaar tussen de attributen van een Astro-component
-              is geen commentaar maar een expressie-attribuut.
-          2 · En hij bevatte een genest sterretje-slash. Dat sluit het
-              commentaar vroegtijdig, waarna de rest als gewone TEKST in de
-              pagina belandde — een naamloos tekstblok dat als derde item in
-              dit raster ging staan en er een tweede rij van maakte. Gemeten:
-              `grid-template-rows: 640px 355px`, sectie 1634 hoog in plaats van
-              1050, met het beeld boven de tekst in plaats van ernaast.
-
-          Geen van beide gaf een bouwfout. Allebei alleen te zien door de
-          gebouwde pagina op te meten. */}
+        De opmaak leest de lijst: één paar staat naast de tekst, twee of meer
+        vallen in een raster eronder. Een tweede paar is vier regels in dat
+        databestand en verder niets. */}
+    <div class={`hv-ba${VB.length > 1 ? ' is-meer' : ''}`}>
       <div class="hv-ba-media">
-        <Compare
-          before="/img/catalog-before-1x1.webp"
-          after="/img/catalog-after.webp"
-          beforeAlt={c.baBeforeAlt}
-          afterAlt={c.baAfterAlt}
-          beforeLabel={c.baBefore}
-          afterLabel={c.baAfter}
-          ratio="1/1"
-        />
+        {VB.map((v) => (
+          <figure class="hv-ba-fig">
+            <Compare
+              before={v.voor.src}
+              after={v.na.src}
+              beforeAlt={v.alt[0]}
+              afterAlt={v.alt[1]}
+              beforeLabel={c.baBefore}
+              afterLabel={c.baAfter}
+              ratio="1/1"
+            />
+            <figcaption class="hv-ba-cap">{v.cap}</figcaption>
+          </figure>
+        ))}
       </div>
       <div class="hv-ba-copy">
         <ol class="hv-ba-points">
@@ -1831,6 +1854,15 @@ const nl = lang === 'nl';
         <p class="hv-ba-note">
           {c.baNote} <a href={lp('/upload-guidelines')}>{c.baNoteLink}</a>
         </p>
+        {/* ── DE TWEEDE SOORT BEWIJS ────────────────────────────────────────
+            Van het bronmateriaal is er één paar; van het RESULTAAT staan er
+            tientallen in de galerij. Die twee bewijzen niet hetzelfde — het
+            paar bewijst de afleiding, de galerij bewijst het vakmanschap — en
+            zolang het eerste er maar één is, hoort het tweede erbij te staan.
+
+            Eén regel, geen strook beelden: een tweede rij foto's hier zou de
+            vergelijking waar deze band om draait naar beneden duwen. */}
+        <p class="hv-ba-meer">{c.baMore} <a href={lp('/gallery')}>{c.baMoreLink}</a></p>
       </div>
     </div>
   </div>
@@ -2013,62 +2045,29 @@ const nl = lang === 'nl';
         </a>
       ))}
 
-      {c.svcSoonList.map((soon, i) => (
-        <div class="hv-svc-card is-soon" id={soon.id} role="listitem">
-          <span class="hv-svc-card-head">
-            <svg class="hv-svc-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SOON_ICON[i]} /></svg>
-            <em class="hv-soon-tag">{c.svcSoonTag}</em>
-          </span>
-          {/* EEN LEEG BEELDVLAK EN GEEN WEGGELATEN BEELDVLAK. Zonder dit is de
-              kaart 450px korter dan de vier ernaast en leest de rij als een rij
-              met twee gaten erin. Met een leeg vlak staan alle zes op dezelfde
-              maat en zegt de kaart wat hij te zeggen heeft: er is nog niets van
-              te laten zien. Het merkteken erin, sterk gedempt — geen
-              placeholder-opdracht, want dit wacht niet op een foto maar op een
-              dienst. */}
-          <span class="hv-svc-card-media is-empty">
-            <svg class="hv-svc-card-mark" viewBox="0 0 702 813.25" aria-hidden="true" focusable="false"><use href="#markglyph" /></svg>
-          </span>
-          <span class="hv-svc-card-body">
-            {/* ── VAN UITKLAPPER NAAR ZWEVENDE NOTITIE — 21 augustus 2026 ────
-                Lucas: *"wanneer een klant over een vraagteken gaat dat het niet
-                uitklapt maar een floating note blok laat zien om ruimte op de
-                site te besparen."* Dit was precies het geval dat hij aanwees.
-
-                Wat er stond: een <details> met 173 (Hooks) en 195 (Editions)
-                woorden erin. Open duwde hij de rij kaarten uit elkaar; dicht was
-                het nog steeds tekst die in de pagina stond en meetelde. Samen
-                waren die twee panelen 380 van de 529 woorden van deze band — de
-                zwaarste sectie van de homepage, over twee diensten die nog niet
-                eens te koop zijn.
-
-                De notitie zweeft erboven en verandert niets aan de hoogte. De
-                inhoud is ongewijzigd: wie het wil lezen, leest hetzelfde. */}
-            {/* SPANS EN GEEN <p>, binnen én buiten de notitie. Buiten, omdat
-                deze regel in een <span class="hv-svc-card-body"> staat; binnen,
-                omdat <Note> inline is en een <p> in een <p> de hele notitie uit
-                de boom trekt — zie de noot daarover in Note.astro. Dat kostte
-                één ronde: de notitie kwam leeg tevoorschijn en de tekst stond
-                gewoon uitgeklapt in de kaart. */}
-            <span class="hv-svc-card-t hv-q-t">
-              <span>{soon.name}</span>
-              <Note lang={lang} term={soon.name} wide>
-                {soon.qBody.map(([k, v]) => (
-                  <span class="nt-p hv-q-row"><b class="hv-q-k">{k}</b> <span class="hv-q-v">{v}</span></span>
-                ))}
-                <span class="nt-p hv-q-foot">{c.svcSoonFoot}</span>
-              </Note>
-            </span>
-            <span class="hv-svc-card-p">{soon.desc}</span>
-            {/* EEN ECHTE <button disabled> EN GEEN GRIJZE SPAN: `disabled` wordt
-                door elke schermlezer aangekondigd als niet-beschikbaar, is niet
-                met tab te bereiken, en kan niet per ongeluk toch iets doen. */}
-            <button class="btn btn-ghost hv-soon-btn" type="button" disabled>{soon.cta}</button>
-          </span>
-        </div>
-      ))}
     </div>
     </div>{/* /.hv-svc-float */}
+
+    {/* ── DE TWEE DIE ERAAN KOMEN, IN ÉÉN REGEL — 30 AUGUSTUS 2026 ─────────
+        Hier stonden twee volledige kaarten met elk een zwevende notitie van
+        vier alinea's: samen ruim 450 woorden, over diensten die er zelf bij
+        zeiden dat je ze niet kunt bestellen. Op een homepage van 2401 woorden
+        was dat het grootste blok dat weg kon zonder dat er een argument
+        sneuvelt.
+
+        De uitleg is niet weg maar verhuisd naar /plans#binnenkort, woord voor
+        woord, en de menu-items voor Hooks en Editions wijzen daar sinds vandaag
+        ook naartoe. Wat hier overblijft is de aankondiging zelf — want die
+        hoort op de pagina die de vraag "wat maken jullie" beantwoordt — in de
+        vorm die daarbij past: één regel.
+
+        De namen komen uit binnenkortNamen() en staan hier niet getypt. Een
+        tweede lijst met "Hooks, Editions" erin is precies het soort kopie dat in
+        dit project al drie keer stil is uitgelopen op het origineel. */}
+    <p class="hv-svc-soon">
+      <span class="hv-svc-soon-tag">{c.svcSoonTag}</span>
+      {binnenkortNamen(lang).join(' & ')} — <a href={lp('/plans#binnenkort')}>{c.svcSoonLink}</a>
+    </p>
 
     <div class="hv-svc-foot">
       <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
@@ -2141,75 +2140,40 @@ const nl = lang === 'nl';
         cost should be able to find the row and the column and stop reading.
         The rungs are read off LADDER, and the assertion in the frontmatter is
         what allows one set of row labels to head three columns. */}
-    <div class="hv-lad-wrap">
-      <table class="hv-lad">
-        <thead>
-          <tr>
-            <th scope="col" class="hv-lad-corner">{c.ladCountCol}</th>
-            {KIND_IDS.map((id, i) => (
-              <th scope="col">
-                <span class="hv-lad-kind">
-                  {KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id] as string)}>{c.ladKinds[i][0]}</a> : c.ladKinds[i][0]}
-                </span>
-                <span class="hv-lad-sub">{c.ladKinds[i][1]} · {c.ladPer}</span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {RUNGS.map((r, ri) => (
-            <tr>
-              <th scope="row">{r.label}</th>
-              {/* ── DE KORTING STAAT IN DE CEL, NIET IN EEN ZIN ────────────────
-                  De complete kolom is de duurste kolom om naar te kijken en de
-                  goedkoopste om te kopen. Wie €149 naast €89 en €109 ziet en
-                  niet gaat rekenen, ziet alleen het eerste. Deze regel doet de
-                  aftrekking op de plek waar het oog al is.
+    {/* ── DE STAFFEL IS EEN TABEL AF — 30 AUGUSTUS 2026 ────────────────────
+        Hier stond de hele ladder: vier treden × drie kolommen, met per bundel
+        de besparing eronder, plus drie voetnoten (ladNote, de eerste-bestelling
+        regel, addOnNote). 212 woorden en een tabel met achttien getallen erin,
+        op de pagina waar iemand nog aan het uitzoeken is óf hij dit wil.
 
-                  PER TREDE UITGEREKEND en niet één percentage voor de hele
-                  tabel: het verschil loopt van €49 op de eerste trede naar €23
-                  op de laatste, en een gemiddelde zou op geen enkele rij
-                  kloppen. completeSaving() leest LADDER — zie de noot daar. */}
-              {KIND_IDS.map((id) => (
-                <td>
-                  {euro(ladderRate(id, r.at), lang)}
-                  {id === 'complete' && (
-                    <span class="hv-lad-save">−{euro(completeSaving(r.at).saved, lang)}
-                      {ri === 0 && <em> {c.ladSaveUnit}</em>}
-                    </span>
-                  )}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    <p class="hv-lad-note">{c.ladNote}</p>
+        Wat een homepage over prijs moet zeggen zijn twee dingen: er is een prijs
+        per product, en hij daalt. Dat zijn twee getallen — de bovenste en de
+        onderste trede — en die staan hieronder. De achttien andere staan op
+        /pricing, dat er al is, dezelfde LADDER leest, en er de ruimte voor
+        heeft.
 
-    {/* ── WAT HIER STOND EN WAAROM HET NU OP /pricing STAAT ──────────────────
-        DRIE UITGEWERKTE TOTALEN. Drie tegels die de vermenigvuldiging voordeden
-        voor 10, 14 en 30 producten. Ze staan één op één op /pricing, in
-        dezelfde vorm en uit dezelfde quote() — dat is precies de reden dat ze
-        hier weg konden: de ladder hierboven zegt al wat een product kost, de
-        knop eronder gaat naar de pagina die het uitrekent, en de homepage was
-        de derde plek waar hetzelfde bedrag stond.
+        DE GETALLEN WORDEN NIET GETYPT. `ladderRate()` leest ze uit dezelfde
+        bron als de tabel op /pricing en als de offerte in de bestelflow. Een
+        prijs die met de hand op de homepage staat, is de prijs die achterloopt
+        — en op deze site is dat drie keer eerder gebeurd (zie de noot bij
+        AMOUNT.brandModel in WERKLIJST.md). */}
+    {/* `.bedrag-*` staat in global.css en niet hier — zie de noot daar. Deze
+        vorm bestond op 30 augustus 2026 vier keer onder vier namen, waarvan er
+        één van diezelfde ochtend was. */}
+    <p class="bedrag-reeks">
+      <span class="bedrag-label">{c.priceFrom}</span>
+      <span class="bedrag-cijfer">{euro(ladderRate('complete', 1), lang)}</span>
+      <span class="bedrag-label">{c.priceTo}</span>
+      <span class="bedrag-cijfer">{euro(ladderRate('complete', 20), lang)}</span>
+    </p>
+    <p class="bedrag-eenheid hv-price-unit">{c.priceUnit}</p>
 
-        DE BTW-UITKLAPPER. vatNote() in een <details>. Ook die staat op
-        /pricing, waar hij hoort — de regel "excl. btw" boven de tabel blijft
-        hier staan, want die kwalificeert de getallen die hier écht staan. Wat
-        weg is, is de veertig woorden uitleg eronder.
-
-        DE ZIN OVER MAANDPLANNEN (planNote). Die is niet weggehaald maar
-        VERVANGEN: er staat vanaf nu een eigen abonnementsband direct onder deze
-        band. Eén zin in de kleine lettertjes was te weinig voor de tweede
-        manier waarop je kunt betalen.
-
-        WAT BLIJFT: de ladder zelf, de regel over meerprijzen (addOnNote) en de
-        regel dat het tarief het tarief is (firstLead/firstBody). Die laatste
-        is de enige plek op de site waar staat dat er níét onderhandeld wordt,
-        en dat is een uitspraak, geen prijsopgave. ─────────────────────────── */}
-    <p class="hv-price-first"><strong>{c.firstLead}</strong> {c.firstBody}</p>
+    {/* ── EN HET ABONNEMENT, IN ÉÉN REGEL — de tweede as ────────────────────
+        Sectie 5b was een eigen band met een kop, een lede, drie beelden en een
+        knop: 94 woorden om te zeggen dat je het ook maandelijks kunt doen. Dat
+        is één feit, en één feit is een zin. /plans verkoopt het, en die pagina
+        heeft sinds vandaag ook Hooks en Editions. */}
+    <p class="hv-price-plan">{c.planLine} <a href={lp('/plans')}>{c.planLink}</a></p>
 
     <div class="hv-price-foot">
       <div class="hv-price-notes">
@@ -2223,227 +2187,31 @@ const nl = lang === 'nl';
   </div>
 </section>
 
-{/* ── 5b · HET ABONNEMENT ───────────────────────────────────────────────
-    NIEUW, augustus 2026. HERONTWERP.md §1.4: abonnementen bestonden op de
-    voorkant praktisch niet. Er stond één zin in de kleine lettertjes onder de
-    prijstabel — planNote — voor de tweede manier waarop een klant kan betalen,
-    en de aanmeldstroom die er inmiddels achter zit was vanaf de homepage
-    onvindbaar.
+{/* ── 5b · HET ABONNEMENT — TERUG NAAR ÉÉN REGEL, 30 AUGUSTUS 2026 ──────
+    Een eigen band met kop, lede, drie beelden en een knop: 94 woorden om te
+    zeggen dat je het ook maandelijks kunt doen. Dat is één feit, en dit is de
+    tweede keer dat het van deze pagina af gaat — sectie 13 hieronder beschrijft
+    de eerste, toen er nog drie prijskaarten stonden.
 
-    WAAROM PRECIES HIER. Tussen de prijs en de proefvisual. Een abonnement is
-    geen vijfde dienst maar een andere manier van betalen voor wat je net hebt
-    gelezen, en dat argument werkt alleen als het direct onder de prijs staat.
-    Boven de dienstenband zou het een product suggereren dat het niet is; onder
-    de proefvisual zou het na de afsluitende handeling komen.
+    Hij staat nu als één zin onder de prijs, waar hij hoort: het abonnement is de
+    tweede as van dezelfde vraag ("wat kost dit"), en niet een apart onderwerp
+    negen secties verderop. /plans verkoopt het, met de drie plannen, wat erin
+    zit en de besparing — en sinds vandaag ook met Hooks en Editions eronder. */}
 
-    WAT ER NIET STAAT: DRIE TEGELS MET DRIE PRIJZEN. Er heeft hier eerder een
-    volledig plannenraster gestaan, gelezen uit plans(), dat /pricing woord
-    voor woord dupliceerde — 278 woorden. Dat is er destijds uitgehaald en die
-    reden is niet veranderd: een tweede prijsraster veroudert op de plek waar
-    niemand het bijhoudt, en twee rasters die het oneens zijn is erger dan één
-    dat je moet aanklikken. Dus ÉÉN getal, uit plans.js, en de rest op de
-    prijspagina.
+{/* ── 6 · DE PROEFVISUAL — NAAR DE AFSLUITER, 30 AUGUSTUS 2026 ──────────
+    Een eigen band halverwege de pagina: kop, uitleg, een uitklapper met wat je
+    krijgt, en een knop. 107 woorden.
 
-    TWEE KNOPPEN EN DE VOLGORDE IS EXPRES. "Sluit een abonnement af" gaat naar
-    /start/plan — de echte kiezer, die sinds deze week bestaat — en staat
-    voorop, want dat is de handeling. "Vergelijk de abonnementen" gaat naar
-    /plans, de eigen abonnementenpagina sinds 20 augustus 2026, waar de drie
-    plannen naast elkaar staan met alles erbij.
+    HIJ VERDWIJNT NIET — hij verhuist naar het laatste blok, en dat is een
+    verbetering en geen concessie. De proefvisual is het sterkste middel dat
+    deze site heeft: de bezoeker hoeft niets te geloven, hij kan het voor één
+    euro op zijn eigen product uitproberen. Zo'n aanbod hoort aan het EIND van
+    een pagina te staan, na alles wat je hebt laten zien — niet halverwege,
+    waar het de lezer wegtrekt uit het verhaal dat hij nog aan het lezen is.
 
-    HET GETAL IS AFGELEID. Zie PLAN_CHEAPEST hierboven: bedrag én aantal komen
-    uit hetzelfde plan, zodat "vanaf € 390 · 5 producten" niet twee losse
-    minima kan worden die bij elkaar niet bestaan. */}
-<section class="band-tight hv-sub-band">
-  {/* ── DE FOTO ACHTER HET BLOK IS WEG — 20 augustus 2026 ──────────────────
-      Hier stond een volle-breedte foto achter de band, verduisterd tot bijna de
-      paginagrond. Lucas: *"verwijder de achtergrond foto achter het blok."*
-
-      Hij is weg omdat de foto VERHUISD is: het paneel zelf draagt hem nu (zie
-      .lime-panel in global.css). Twee lagen beeld boven elkaar — een verduisterd
-      beeld achter een paneel met hetzelfde beeld erop — is waar een blok troebel
-      van wordt, en het paneel is het ding dat de aandacht moet hebben.
-
-      De band houdt zijn ruimere marges: die stonden er om licht om het paneel te
-      laten vallen, en dat is nu juist méér waard, want het paneel is donker
-      geworden en heeft die lucht nodig om van de pagina los te komen. */}
-
-  <div class="container">
-    {/* ── ÉÉN ZWEVEND BLOK OP HET ACCENT — 20 augustus 2026 ──────────────────
-        Lucas: *"dit moet het logo worden voor bij het abonnement blok dat in de
-        achtergrond dus opgaat, het blok moet er echt uit springen en de tekst
-        mag zwart zijn op dat stuk. Het is een los floating blok als sectie met
-        alle informatie erin."*
-
-        DIT IS GEEN TWEEDE ONDERGROND. De huisregel van dit stylesheet (zie ONE
-        GROUND in global.css) verbiedt een tweede paginakleur en noemt in
-        dezelfde adem wat het antwoord wél is: *"a tile, a panel, a rule, or more
-        space"*. Dit is dat paneel — het loopt niet van rand tot rand, het heeft
-        ronde hoeken en een slagschaduw, en de paginagrond loopt er omheen door.
-        Een blok dat op de pagina LIGT, niet een stuk pagina dat een andere
-        kleur heeft.
-
-        WAAROM UITGEREKEND HIER. Op een pagina die van boven tot onder bijna
-        zwart is, is één limoen vlak het luidste wat er te doen valt. Dat mag
-        precies één keer, en dit is de sectie die het verdient: het abonnement
-        is het enige aanbod op deze pagina waar een bezoeker een gewoonte van
-        maakt in plaats van een aankoop.
-
-        DE INKT DRAAIT MEE, EN NIET MET DE HAND. `.on-bright` is de bestaande
-        scope die zegt "de grond onder mij is helder, herbereken alles wat van
-        bijna-zwart uitging": de inktladder, de lijnen, het accent én alle zes
-        de knop-tokens. Zelf zwarte kleuren intypen zou een tweede plek maken
-        waar dat gebeurt, en dan drijven de twee uit elkaar — precies wat die
-        scope bestaat om te voorkomen.
-
-        DE SPOTLIGHTS VAN GISTEREN ZIJN WEG. Die waren een lamp op een donkere
-        grond; op een limoen paneel is een accentlamp onzichtbaar en een witte
-        lamp vuil. Wat het paneel nu doet oplichten is het paneel zelf. */}
-    <div class="lime-panel">
-      {/* HET MERKTEKEN IS HIER WEG. Het stond als tegel rechtsonder, afgesneden
-          en scheef, precies zoals gevraagd — en toen was het er te veel aan:
-          *"Verwijder dat logo maar, het is overkill."* Het paneel draagt nu al
-          een bovenkop, een prijsplaat, drie abonnementen en een beeldbank; een
-          merkteken erbij is de vierde stem in een blok dat er drie heeft.
-
-          Het bestand blijft in public/img/mark-contour-lime.png staan: hetzelfde
-          middel doet elders op deze pagina wél zijn werk (zie .mark-depth in
-          global.css) en het is de tekening die Lucas zelf aanleverde. */}
-
-      {/* Het licht en de korrel, als echte laag en niet als pseudo-element:
-          een ::before valt vóór alle kinderen en zou dus ónder het merkteken
-          liggen. Zie de noot hierboven. */}
-      <div class="lime-panel-light" aria-hidden="true"></div>
-
-      {/* TWEE ELEMENTEN, ELK ÉÉN TAAK, EN DAT IS GEEN OMWEG. Eerste poging was
-          `.hv-sub-panel.on-bright` met `background: var(--accent)` erop, en dat
-          gaf een ZWART paneel: `.on-bright` herdefinieert `--accent` naar inkt
-          op het element zelf, dus las de achtergrond zijn eigen omkering. Een
-          custom property wordt opgelost waar hij gebruikt wordt, niet waar hij
-          gezet is. Het paneel schildert nu, de binnenkant draait de inkt. */}
-      {/* `.on-bright` STOND HIER EN IS ERAF. Die scope draait de inktladder om
-          voor een HELDERE grond, en de grond van dit paneel is sinds 20 augustus
-          een donkere foto met een limoen bundel. Met .on-bright erop stond er
-          bijna-zwarte tekst op een bijna-zwarte foto. Zie de noot bij
-          .lime-panel in global.css: half omdraaien is hier het gevaar. */}
-      <div class="lime-panel-in">
-
-    <div class="hv-sub">
-      <div class="hv-sub-copy">
-        {/* DE BOVENKOP MAAKT ER EEN SECTIE VAN. Lucas: *"mag echt een titel kop
-            en dergelijke krijgen."* Het blok zweeft los op de pagina en begon
-            met "Or run it every month." — een zin, geen titel, en daardoor las
-            het als een alinea die toevallig groot stond. Eén woord erboven zegt
-            waar je bent voordat je de zin leest. Dezelfde vorm als .eyebrow-page
-            elders op de site; hier los uitgeschreven omdat de inkt op dit paneel
-            omgedraaid is en de bestaande klasse zijn stip in het accent zet, dat
-            hier de grond IS. */}
-        <p class="hv-sub-eyebrow">{c.subEyebrow}</p>
-        <h2>{c.subH[0]} <em class="hv-accent">{c.subH[1]}</em></h2>
-        <p class="lede">{c.subLede}</p>
-        <ul class="hv-sub-facts">
-          {c.subFacts.map((f) => (
-            <li>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5" /></svg>
-              <span>{f}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      {/* Het bedrag is een <p> en geen kop: het is een getal en geen titel, en
-          een derde <h2> in deze band zou de koppenboom van de pagina laten
-          zeggen dat er hier drie onderwerpen staan. */}
-      <div class="hv-sub-right">
-        <div class="lime-plate plaat-vol">
-          <p class="hv-sub-from">{c.subFrom}</p>
-          <p class="hv-sub-fig">{euro(PLAN_FROM, lang)}</p>
-          <p class="hv-sub-unit">{c.subUnit}</p>
-          <p class="hv-sub-vat">{c.subVat}</p>
-          <div class="hv-sub-cta">
-            <a class="btn btn-primary" href={lp('/start/plan')}>{c.subCta}</a>
-            <a class="btn btn-ghost" href={lp('/plans')}>{c.subCta2}</a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-      {/* ── HET CREDITBLOK EN DE BEELDBANK ZIJN WEG — 25 AUGUSTUS 2026 ─────
-          Lucas, na een sectie-voor-sectie vergelijking: deze band mag korter.
-
-          WAT HIER STOND, EN WAAR HET NOG STAAT. Twee blokken, allebei bijna
-          woordelijk gelijk aan /plans:
-
-          · Het CREDITBLOK — "N slots, niet N nieuwe producten" plus de uitleg
-            en de WhatsApp-vraag. `creditWa` was WOORD VOOR WOORD identiek aan
-            PlansPage; `creditH` en `creditBody` scheelden een handvol woorden.
-
-          · De DRIE ABONNEMENTEN als kaartjes. Beide bestanden lezen `plans()`
-            uit pricing.js, dus de bedragen konden niet uit elkaar lopen — maar
-            het was wel dezelfde keuze twee keer voorleggen, één scherm voordat
-            /plans hem opnieuw stelt.
-
-          · De BEELDBANK — het maandraster met de twee regels over off-brand en
-            on-brand beeld. De labels `Not running yet` en `With Editions` stonden
-            in beide bestanden verbatim gelijk.
-
-          PlansPage.astro erkende de dubbeling zelf al, in zijn eigen noot:
-          *"Zelfde afleiding als in HomeV2."* Twee bestanden die van elkaar weten
-          dat ze hetzelfde zeggen, is geen redundantie meer maar een afspraak dat
-          iemand ze allebei bijwerkt — en dat gebeurt niet.
-
-          WAT ER OVERBLIJFT is de verkoop: waarvoor een abonnement is, wat het
-          kost, en twee knoppen. Wie meer wil weten, klikt door naar /plans, waar
-          allebei deze blokken voluit staan met de ruimte die ze verdienen.
-
-          DE COPYSLEUTELS BLIJVEN STAAN in beide talen — `creditH`, `creditBody`,
-          `creditAsk`, `creditAskCta`, `creditWa`, `stockH`, `stockNow`,
-          `stockSoon`, `moodCap` en de twee tags. Ze worden hier niet meer gelezen.
-          Bewust niet opgeruimd in dezelfde beweging: dit is een indelingskeuze en
-          geen tekstwijziging, en als de band ooit terugkomt hoort hij dezelfde
-          woorden te dragen. Een opruiming hoort een eigen beslissing te zijn.
-
-          WAT DIT ZOU TERUGDRAAIEN: bewijs dat bezoekers hier afhaken omdat ze
-          niet begrijpen wat een credit is. Dan hoort díé uitleg hier terug — en
-          dan uit één bron, niet als tweede kopie. */}
-      </div>
-    </div>
-  </div>
-</section>
-
-{/* ── 6 · THE TEST SAMPLE ─────────────────────────────────────────────────
-    NEW, and it belongs exactly here. The €1 sample existed only as a button
-    hung off other sections' CTAs — it had no section of its own on the page,
-    which for a studio with no reviews and no client logos was the wrong thing
-    to leave implicit: it is the one offer that lets a buyer produce their OWN
-    proof, and their own is worth more than anybody else’s.
-
-    Directly after the price table on purpose. The moment a reader has just
-    absorbed a figure is the moment "see it on your own product first" is worth
-    most — it answers the question the number just raised instead of arguing
-    with it. */}
-<section class="band-tight hv-ts-band">
-  <div class="container">
-    <div class="hv-ts">
-      <div class="hv-ts-copy">
-        <p class="hv-kicker">{c.tsKicker}</p>
-        <h2 class="hv-ts-h">{c.tsH[0]} <em class="hv-accent">{c.tsH[1]}</em></h2>
-        <p class="lede">{c.tsLede}</p>
-        <div class="hv-cta hv-ts-cta">
-          <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.tsCta}</a>
-          <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.tsAlt}</a>
-        </div>
-      </div>
-      <dl class="hv-ts-points">
-        {c.tsPoints.map(([t, b]) => (
-          <div>
-            <dt>{t}</dt>
-            <dd>{b}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  </div>
-</section>
+    De knop stond er trouwens al: het afsluitblok had hem al als tweede knop
+    naast "start een bestelling". Wat erbij komt is de zin die zegt wat je
+    krijgt. */}
 
 {/* ── 6 · THE PIPELINE ──────────────────────────────────────────────────
     A real ordered sequence, so it is the one place on the page numbers are
@@ -2474,82 +2242,47 @@ const nl = lang === 'nl';
   </div>
 </section>
 
-{/* ── 7 · THE DREAM ─────────────────────────────────────────────────────
-    Lucas asked for this one by name: the page explains the mechanism well and
-    never once says what the mechanism is FOR. Full-bleed photograph, one
-    sentence, no tiles and no figures — the only band on the page with nothing
-    to compare or count, which is what makes it read as a pause rather than
-    another argument.
+{/* ── 7 · DE SFEERBAND — WEGGEHAALD OP 30 AUGUSTUS 2026 ─────────────────
+    Een beeld van rand tot rand, een kicker, een kop en een lede: 55 woorden die
+    zeiden dat visuele content "moeiteloos" is en je merk "in constante
+    beweging" houdt, met een knop naar de galerij eronder.
 
-    The claim is deliberately about perception rather than results ("looks like
-    a brand that has its act together", not "sells more"), because a conversion
-    claim here would be a number this studio cannot yet evidence. */}
-{/* ── DE FOTO IS EEN MERKBEELD GEWORDEN — 22 augustus 2026 ────────────────
-    Hier stond /img/lifestyle-glow-06.webp: een gestylede lifestyle-scène uit de
-    Glow-stijl. Prima beeld, verkeerde band. Deze band is de enige op de pagina
-    die niets vergelijkt en niets telt — hij gaat niet over wat je krijgt maar
-    over waar het naartoe leidt, en dan is een voorbeeld van het PRODUCT precies
-    het argument dat hier niet hoort.
+    WAAROM UITGEREKEND DEZE ALS EERSTE. Omdat het de enige sectie van de dertien
+    was waar niets in stond dat je kunt nakijken. Elke andere band draagt een
+    feit — een prijs, een termijn, een stap, een controle — en deze droeg een
+    gevoel. Op een pagina die te druk is, gaat de sectie zonder feiten eerst.
 
-    Lucas leverde daar een reeks voor aan: donkere ruimtes met één zuurgroene
-    bron. Deze is de sterkste van de acht om schermvullend te staan — een figuur
-    in een trappenhuis, half in het licht, met de harde rand van de bundel over
-    de vloer. Het is dezelfde lichttaal als de bundel achter het abonnementsblok
-    en als `.beam` in global.css, nu als foto in plaats van als CSS.
+    DE GALERIJ VERLIEST NIETS. Die knop was niet de enige weg ernaartoe: /gallery
+    staat in de voettekst en de bezoeker komt er ook via de vier dienstkaarten.
+    Het beeld zelf (brand-stair) staat in de galerij.
 
-    De sluier eroverheen (.hv-dream-scrim) staat er al en is niet aangepast; de
-    leesbaarheidsmeting bevestigt dat de kop en de knop erop blijven kloppen. */}
-<section class="hv-dream foto-licht" style="--fl-o: .9; --fl-x: 58%; --fl-y: 74%;">
-  <div class="foto-licht-laag" aria-hidden="true"></div>
-  <img class="hv-dream-bg rand-los" src="/img/brand-stair.webp" alt={c.dreamAlt} width="1872" height="1248" loading="lazy" decoding="async" />
-  <div class="hv-dream-scrim rand-los" aria-hidden="true"></div>
-  <div class="korrel-mee rand-los" aria-hidden="true"></div>
-  <div class="container hv-dream-inner">
-    <p class="hv-kicker">{c.dreamKicker}</p>
-    <h2 class="hv-dream-h">{c.dreamH}</h2>
-    <p class="hv-dream-lede">{c.dreamLede}</p>
-    <a class="btn btn-primary btn-lg" href={lp('/gallery')}>{c.dreamCta}</a>
-  </div>
-</section>
+    WAT DIT ZOU TERUGDRAAIEN: een homepage die na het inkorten te zakelijk leest
+    en nergens meer ademt. Dat is een echt risico en het antwoord is dan niet
+    deze band terug, maar meer lucht tussen de acht die er staan — zie de noot
+    bij sectie 2 over wat er met de vrijgekomen ruimte moet gebeuren. */}
 
-{/* ── 8 · THE WEEK YOU GET BACK ─────────────────────────────────────────
-    The second thing Lucas asked for: time, expressed as time rather than as
-    money. It used to be the first half of a pair — the band under it argued the
-    same case in euros, because a shoot costs a day AND a fee and only one of
-    those is on the invoice. That sentence is now the last line of this band and
-    the second half is a link, for the reason in the note below.
+{/* ── 8 · DE WEEK DIE JE TERUGKRIJGT — VERHUISD NAAR /compare, 30 AUGUSTUS ──
+    Maandag/woensdag/vrijdag, plus "wat dat vrijmaakt" met vier koppen en de
+    zin over de dag die niet op de factuur staat. 149 woorden.
 
-    Three weekdays rather than a duration ("saves you 20 hours") because an
-    hours-saved figure is a claim about the reader's business that this studio
-    has no way to know. A named Monday is a story; a saved hour is arithmetic
-    someone else did. */}
-<section class="band-tight">
-  <div class="container">
-    <div class="statement statement-left statement-split">
-      <h2>{c.weekH}</h2>
-      <p class="lede">{c.weekLede}</p>
-    </div>
-    <ol class="hv-week">
-      {c.week.map(([d, b], i) => (
-        <li>
-          {/* Zelfde reden als bij de vier stappen hierboven: maandag stond op
-              het accent, woensdag op het gedempte accent en vrijdag op wit met
-              40% — terwijl vrijdag de dag is waarop het live staat. De dag met
-              de uitkomst was de flauwste van de drie. */}
-          <span class="hv-week-d">{d}</span>
-          <p>{b}</p>
-        </li>
-      ))}
-    </ol>
-    <div class="hv-back">
-      <p class="hv-back-h">{c.backH}</p>
-      <ul class="hv-back-list">
-        {c.back.map((t) => <li>{t}</li>)}
-      </ul>
-      <p class="hv-back-note">{c.backNote} <a href={lp('/compare')}>{c.backNoteLink}</a></p>
-    </div>
-  </div>
-</section>
+    DEZE VERHUIZING IS AL EEN KEER MISGEGAAN, en daarom staat hier meer dan een
+    verwijzing. Op 18 augustus 2026 is hij ook naar /compare gestuurd, met
+    dezelfde redenering; bij het nakijken van de GEBOUWDE pagina bleek hij daar
+    niet te staan, in geen van beide talen. Weghalen was gelukt, neerzetten
+    niet. Hij is toen teruggezet met een noot erboven dat dit de enige plek op de
+    site was waar stond waaruit een shootweek bestaat.
+
+    Nu is de volgorde omgekeerd: eerst is hij op /compare gezet en in de build
+    gecontroleerd, daarna pas hier weggehaald. En tests/vergelijk-week.test.mjs
+    leest de gebouwde /compare op de vijf dingen die hij moet noemen — casting,
+    boeking, de samples heen en terug, het uitstel, de avonden schiften — én op
+    het feit dat deze pagina hem niet meer draagt. Die toets is wat de volgorde
+    de volgende keer afdwingt.
+
+    WAAROM DAAR EN NIET HIER. Het is de tweede helft van dezelfde vergelijking:
+    de eerste helft is geld en staat op /compare, deze is uren. Ze horen naast
+    elkaar, en de bezoeker die deze vraag heeft, is precies de bezoeker die die
+    pagina opzoekt. */}
 
 {/* ── 9 · WHAT AN ORDER REPLACES — DELETED, and this note is what it left ───
     The band was a shoot day's cost (SHOOT_DAY, itemised) beside a 30-product
@@ -2588,73 +2321,29 @@ const nl = lang === 'nl';
     in plaats van `ch*`, want `ch` betekende "channels" en dat woord staat
     nergens meer in de tekst. ────────────────────────────────────────────── */}
 
-{/* ── 11 · THE ROSTER AND YOUR BRAND MODEL ──────────────────────────────
-    Your Brand Model is the most expensive single line the studio sells and,
-    until this band, the homepage sold it with a price in the corner of a tile.
-    Faces are the one thing that cannot be argued in prose, so the rail is the
-    argument and the copy underneath is the offer.
+{/* ── 11 · DE MODELLENRIJ — WEGGEHAALD OP 30 AUGUSTUS 2026 ──────────────
+    Een band met de roster als rij gezichten, een kop over het eigen merkmodel,
+    een regel over wat een vast gezicht oplevert en een knop naar
+    /custom-models. 87 woorden en dertien beelden.
 
-    Read straight from ROSTER in src/data/models.js — the same source /models
-    and /custom-models use, so the homepage cannot advertise a face that has
-    been retired from the roster. */}
-<section class="band-chapter hv-bm-band mark-depth" style="--md-o: .10; --md-w: min(26%, 21rem); --md-r: 60%; --md-b: -8%;">
-  {/* Het merk als diepte achter deze band — zie .mark-depth in global.css. Een
-      lijntekening op 10%, geen grond. */}
-  <div class="mark-depth-lay" aria-hidden="true">
-    <svg class="mark-depth-v" viewBox="0 0 702 813.25" focusable="false"><use href="#markglyph" /></svg>
-  </div>
+    WAAROM DEZE EN NIET EEN ANDERE. Omdat het merkmodel op deze pagina TWEE KEER
+    stond: als vierde kaart in de dienstenrij hierboven — met een eigen foto, een
+    eigen regel en dezelfde link — en nog een keer als eigen band, negen secties
+    later. Twee keer hetzelfde ding verkopen op één pagina is geen nadruk maar
+    ruis, en het was bovendien de tweede keer dat deze pagina dat deed (zie
+    sectie 13 over de abonnementsroosters).
 
-  <div class="container">
-    <div class="rail-head">
-      <div class="statement statement-left statement-split">
-        <h2>{c.bmH[0]} <em class="hv-accent">{c.bmH[1]}</em></h2>
-        <p class="lede">{c.bmLede}</p>
-      </div>
-      <div class="rail-nav" data-rail-nav="faces">
-        <button type="button" data-rail-prev aria-label={c.railPrev}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg></button>
-        <button type="button" data-rail-next aria-label={c.railNext}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
-      </div>
-    </div>
-  </div>
-  <div class="container">
-    {/* transition:name pairs each portrait with the same face on /models — see
-        global.css's view-transition note. The name is derived from the roster
-        id rather than from the index, so re-ordering the rail cannot silently
-        pair Ava's plate with Elias's. The rail draws `photo` (1195px) and the
-        grid draws `thumb` (800px): different files, one photograph, which is
-        exactly what a view transition is for.
+    ER VERDWIJNT NIETS VAN DE SITE. De gezichten staan op /models, het merkmodel
+    op /custom-models, en beide pagina's lezen dezelfde ROSTER uit
+    src/data/models.js — nagekeken in de gebouwde site, niet aangenomen.
 
-        WAARSCHUWING — DIT COMMENTAAR LEKTE. Hier stond de tekens van een JSX-
-        commentaar letterlijk uitgeschreven, midden in dit commentaar. Het
-        afsluitende teken sloot dit blok toen te vroeg, en de rest van de zin
-        stond als gewone leestekst op de homepage — in beide talen, direct boven
-        de gezichtenrij, en zo ook live. Gevonden 8 augustus 2026.
-
-        Schrijf de tekens dus nooit uit binnen een commentaar. Wat de noot moest
-        zeggen: dit commentaar staat hier en niet binnen de map, omdat een
-        JSX-commentaar als eerste kind van een arrow-body de expressie twee
-        wortels geeft en Astro dan afbreekt op een parse-fout. */}
-    <div class="rail hv-faces" data-rail="faces">
-      {FACES.map((m) => (
-        <a class="hv-face" href={lp('/models')}>
-          {/* traitWords() en niet m.traits: die array bevat SLEUTELS, geen woorden.
-              Rechtstreeks joinen zette hier "warm · approachable" op de
-              Nederlandse pagina — ruwe Engelse sleutels, ook in de alt-tekst,
-              terwijl /nl/models netjes "Warm · Toegankelijk" toont. Gevonden 8
-              augustus 2026; ModelsPage.astro deed het al goed. */}
-          <span class="plate"><img src={m.photo} alt={`${m.name} — ${traitWords(m).join(', ')}`} width={m.w} height={m.h} loading="lazy" decoding="async" transition:name={`face-${modelId(m.name)}`} /></span>
-          <span class="plate-cap"><b>{m.name}</b><span>{traitWords(m).join(' · ')}</span></span>
-        </a>
-      ))}
-    </div>
-  </div>
-  <div class="container">
-    <div class="hv-bm-foot">
-      <p>{c.bmNote}</p>
-      <a class="btn btn-ghost" href={lp('/custom-models')}>{c.bmCta}</a>
-    </div>
-  </div>
-</section>
+    WAT ER WÉL VERDWIJNT is het enige wat deze band uniek maakte: dertien echte
+    gezichten op de homepage. Dat is een verlies aan BEELD op een pagina die het
+    van beeld moet hebben, en het is de reden dat dit de laatste van de drie
+    geschrapte banden was in plaats van de eerste. Vind je bij het terugkijken
+    dat de pagina te weinig gezicht heeft, dan is dit de band om terug te zetten
+    — en dan gaat de vierde dienstkaart eruit, niet andersom: de band toont er
+    dertien en de kaart één. */}
 
 {/* ── 12 · THE DASHBOARD ────────────────────────────────────────────────
     New, and the reason this band exists at all: a drop is bought partly on the
@@ -2725,9 +2414,34 @@ const nl = lang === 'nl';
           <p>{c.dashPortalN}</p>
           <a class="btn btn-ghost" href={lp('/portal')}>{c.dashPortalCta}</a>
         </div>
+        {/* ── DE KLEINE FIGUUR IN PLAATS VAN DE HELE RONDLEIDING ────────────
+            Hier stond <FigDash>: het volledige klantdashboard, nagetekend met
+            vier panelen, een besteloverzicht, een factuurregel, de modelkiezer,
+            de achtergrondkleuren, de marktplaatsen en het adresformulier.
+            Alleen die figuur was ruim 350 woorden — meer dan de hele nieuwe
+            homepage aan één sectie kwijt mag zijn.
+
+            NAGEKEKEN VOORDAT HIJ WEGGING, en dat is de les van de shootweek:
+            <FigDash> staat óók op /portal (PortalPage.astro), met dezelfde
+            gegevens en meer ruimte eromheen. De rondleiding verdwijnt dus niet
+            van de site, hij staat alleen niet meer op de pagina waar iemand nog
+            aan het kijken is wát je maakt.
+
+            WAT ERVOOR TERUGKOMT is de ene bewering die deze band moet dragen:
+            je keurt goed per beeld, en het beeld dat teruggaat houdt de rest
+            niet op. FigApproval tekent precies dat — acht tegels, drie
+            toestanden, in een oogopslag — en kost vier labels aan tekst. Hij lag
+            er al: hij is in augustus van /how-it-works gehaald en is sindsdien
+            nergens meer getekend. */}
         <div class="hv-stage">
           <div class="hv-float">
-            <FigDash lang={lang} />
+            <FigApproval
+              head={c.dashFigH}
+              okLabel={c.dashFigOk}
+              revLabel={c.dashFigRev}
+              waitLabel={c.dashFigWait}
+              note={c.dashFigNote}
+            />
           </div>
         </div>
       </div>
@@ -2835,7 +2549,6 @@ const nl = lang === 'nl';
   <div class="container">
     <div class="statement statement-left statement-split">
       <h2>{c.obH}</h2>
-      <p class="lede">{c.obLede}</p>
     </div>
     {/* ── DRIE VRAGEN, INGEKLAPT — 20 augustus 2026 ──────────────────────────
         Lucas, voor de derde keer: *"homepage is veel te druk."*
@@ -2904,7 +2617,9 @@ const nl = lang === 'nl';
           op de breedte van de kolom en valt de knip midden in een zin — "No
           wall of reviews / yet. So we earn it" leest als twee halve gedachten.
           Twee zinnen, twee regels: de knip staat waar de punt staat. */}
-      <h2 class="hv-promise-h"><span>{c.promiseH[0]}</span><em class="hv-accent">{c.promiseH[1]}</em></h2>
+      <h2 class="hv-promise-h">{zegt.length
+        ? (<><span>{c.saidH[0]}</span><em class="hv-accent">{c.saidH[1]}</em></>)
+        : (<><span>{c.promiseH[0]}</span><em class="hv-accent">{c.promiseH[1]}</em></>)}</h2>
     </div>
     {/* ── HET GEZICHT BIJ HET CITAAT ─────────────────────────────────────────
         Lucas: *"No wall of reviews yet moet nog een foto van mij krijgen"*, en
@@ -2943,6 +2658,16 @@ const nl = lang === 'nl';
             breedte. Hij hoort bij wat er hierboven beloofd wordt, en in deze
             kolom doet hij twee dingen tegelijk: hij staat waar hij hoort, en hij
             geeft de tekstkolom de hoogte die het portret ernaast verdient. */}
+        {zegt.length > 0 && (
+          <ul class="hv-said">
+            {zegt.map((r) => (
+              <li>
+                <blockquote>{r.text}</blockquote>
+                <cite>{r.name || c.saidAnon}{r.month ? ` · ${r.month}` : ''}</cite>
+              </li>
+            ))}
+          </ul>
+        )}
         <ul class="hv-trust">{c.trust.map((t) => (<li>{t}</li>))}</ul>
       </div>
 
@@ -4251,6 +3976,26 @@ var vOpruim = (function () {
     box-shadow: inset 0 1px 0 var(--line);
     font-size: .82rem; font-weight: 700; letter-spacing: .01em; color: var(--ink-2);
   }
+  /* ── DE PRIJS IN TWEE GETALLEN ─────────────────────────────────────────
+     De staffel als tabel is op 30 augustus 2026 naar /pricing gegaan; hier
+     staan de bovenste en de onderste trede. Twee cijfers in de displayletter,
+     want een getal is hier het onderwerp en niet een detail in een zin — en
+     `tabular-nums` zodat ze even breed zijn en de regel niet gaat wiebelen als
+     de staffel ooit een cijfer langer wordt. */
+  /* De vorm zelf staat in global.css onder `.bedrag-*`. Wat hier overblijft is
+     wat van DEZE band is: de ruimte eromheen. */
+  .bedrag-reeks { margin: clamp(1.6rem, 3vw, 2.4rem) 0 0; }
+  .hv-price-unit { margin: clamp(.8rem, 1.6vw, 1.1rem) 0 0; }
+  /* Het abonnement staat onder de prijs en niet in een eigen band. Een
+     haarlijn erboven omdat het een tweede antwoord is op dezelfde vraag —
+     zichtbaar apart, niet apart genoeg voor een eigen sectie. */
+  .hv-price-plan {
+    margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0;
+    padding-top: clamp(1rem, 2vw, 1.4rem);
+    box-shadow: inset 0 1px 0 var(--line);
+    font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 60ch;
+  }
+
   /* The rate card. Radius on the wrapper rather than the table, because a
      table cannot clip its own corners and --r-md is the step this system gives
      a surface inside a band. overflow-x so four columns survive a 320px
@@ -4306,83 +4051,6 @@ var vOpruim = (function () {
 
   @media (max-width: 30rem) {
     .hv-lad th, .hv-lad td { padding-inline: .45rem; }
-    .hv-lad td { font-size: .95rem; }
-    .hv-lad thead th:first-child, .hv-lad tbody th { padding-left: .7rem; }
-    .hv-lad-kind { font-size: .88rem; }
-    .hv-lad-sub { white-space: normal; }
-    .hv-lad tbody th { font-size: .88rem; }
-  }
-
-  .hv-lad tbody th { font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--ink); white-space: nowrap; }
-  .hv-lad td { font-family: var(--font-display); font-weight: 800; font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1; letter-spacing: -0.02em; color: var(--ink); }
-  /* Kleiner en groen, onder het tarief in dezelfde cel. Groen omdat het het
-     enige getal in de tabel is dat een VOORDEEL uitdrukt in plaats van een
-     prijs; alle andere cijfers zijn wat je betaalt. */
-  .hv-lad-save { display: block; margin-top: .2rem; font-size: .72rem; font-weight: 600; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  /* De bijzin achter het bovenste bedrag. Lichter dan het getal en niet cursief
-     gezet als nadruk maar als TOELICHTING — hij hoort bij het getal, hij
-     concurreert er niet mee. `white-space: normal` want anders duwt hij de
-     kolom breder dan het tarief erboven. */
-  .hv-lad-save em { font-style: normal; font-weight: 400; color: var(--ink-3); white-space: normal; }
-
-  /* ══ DE BUNDEL KRIJGT DE KOLOM ═══════════════════════════════════════════
-     Lucas: *"[Complete] mag ook wel wat beter uitgelegd worden en meer in de
-     spotlight staan dan de losse opties."*
-
-     Drie kolommen die er alle drie hetzelfde uitzien, zeggen dat de keuze aan
-     jou is en dat er geen aanbeveling in zit. Die is er wel: de bundel is op
-     elke trede goedkoper dan de twee los, en dat is de reden dat hij vooraan
-     staat.
-
-     WAT HET NIET IS: geen kader, geen badge, geen tweede kleur. Een omkaderde
-     kolom in een tabel zonder kaders trekt de aandacht naar de LIJN in plaats
-     van naar de cijfers, en Lucas heeft de omkaderde blokken elders juist
-     laten weghalen. Wat er wel is: een streep bovenop de kolom in de merkkleur
-     — dezelfde streep die op deze site "dit is gekozen" betekent — en een
-     limewas van 3,5% over de hele kolom. Gemeten blijft wit daarop 15,4:1; op
-     de omliggende kolommen is dat 15,7:1, dus de leesbaarheid beweegt niet.
-
-     nth-child(2) en niet een klasse: de hoekcel is kolom 1 en de bundel staat
-     per definitie vooraan. Een klasse zou hetzelfde zeggen, maar dan op twee
-     plekken en met de kans dat er ooit één meeverhuist en de ander niet. */
-  .hv-lad thead th:nth-child(2) { box-shadow: inset 0 2px 0 var(--accent); }
-  .hv-lad thead th:nth-child(2),
-  .hv-lad tbody td:nth-child(2) { background: rgb(198 241 0 / .035); }
-  .hv-lad-note { margin: 1rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }  /* The discount, on its own line with a rule above it, because it is a
-     condition on every figure in the band and not a fourth worked example. */
-  .hv-price-first {
-    margin: clamp(1.6rem, 3vw, 2.2rem) 0 0;
-    padding-top: clamp(1.1rem, 2vw, 1.5rem);
-    box-shadow: inset 0 1px 0 var(--line);
-    font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch;
-  }
-  .hv-price-first strong { color: var(--ink); font-weight: 700; }
-  /* ── DE VOET VAN DE PRIJSBAND — UITGELIJND, 18 augustus 2026 ──────────────
-     Gemeten op de gebouwde pagina: onder de tabel van 940px stonden drie
-     verschillende tekstbreedtes (520, 490 en 400px) en een knoppenrij die op
-     niets uitlijnde. Vier linkerkanten die wel klopten, vier rechterkanten die
-     nergens op eindigden. Dat is wat "rommelige marges" betekent als je het
-     opmeet.
-
-     Nu: één raster met twee kolommen die op de RANDEN VAN DE TABEL eindigen.
-     De noten links, de knoppen rechts uitgelijnd op de rechterrand van de
-     tabel erboven, en beide meten met dezelfde maat als de rest van de band.
-     `align-items: end` zet de knoppen op de onderregel van de noten in plaats
-     van te laten zweven op een hoogte die uit niets volgt. */
-  .hv-price-foot {
-    margin-top: clamp(1.4rem, 2.6vw, 2rem);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: clamp(1.2rem, 3vw, 2.5rem);
-    align-items: end;
-  }
-  .hv-price-notes { display: grid; gap: .7rem; }
-  .hv-price-notes p { margin: 0; max-width: 62ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
-  @media (max-width: 52rem) {
-    /* Onder de 52rem past een knoppenrij niet meer naast tekst zonder dat er
-       één woord per regel overblijft. Dan onder elkaar, en de knoppen links —
-       uitlijnen op rechts heeft geen betekenis meer als er geen tweede kolom is. */
-    .hv-price-foot { grid-template-columns: 1fr; }
   }
     /* `flex: 0 0 auto` refused to shrink, so at 360px the Dutch ghost button
      ("De volledige prijslijst", 174px against the English 138px) pushed the row
@@ -5059,6 +4727,29 @@ var vOpruim = (function () {
   .hv-checks li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
   .hv-checks strong { color: var(--ink); }
   .hv-checks svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--ink-2); stroke-width: 2; }
+  /* ── WAT KLANTEN ZEGGEN ────────────────────────────────────────────────────
+     Alleen zichtbaar als er goedgekeurde aanbevelingen zijn — zie `zegt` in de
+     frontmatter. Geen kaders en geen sterretjes: dit blok staat onder een citaat
+     van Lucas zelf, en drie omkaderde blokjes ernaast zouden er een widget van
+     maken. Een haarlijn per citaat, dezelfde vorm als de lijstjes erboven.
+
+     Het aanhalingsteken staat in de opmaak en niet in de tekst: wat de klant
+     typte is van hem, en er hoort geen leesteken bij te komen dat hij niet
+     geschreven heeft. */
+  .hv-said { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(.9rem, 1.8vw, 1.3rem); }
+  .hv-said li { padding-top: clamp(.9rem, 1.8vw, 1.3rem); box-shadow: inset 0 1px 0 var(--line); }
+  .hv-said li:first-child { padding-top: 0; box-shadow: none; }
+  .hv-said blockquote {
+    margin: 0; font-size: clamp(.98rem, 1.4vw, 1.08rem); line-height: 1.55; color: var(--ink-1);
+    text-wrap: pretty;
+  }
+  .hv-said blockquote::before { content: "\201C"; }
+  .hv-said blockquote::after  { content: "\201D"; }
+  .hv-said cite {
+    display: block; margin-top: .45rem; font-style: normal;
+    font-size: .8rem; letter-spacing: .02em; color: var(--ink-3);
+  }
+
   .hv-trust { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; margin: auto 0 0; padding: clamp(1.2rem, 2.2vw, 1.7rem) 0 0; box-shadow: inset 0 1px 0 var(--line); font-size: .82rem; color: var(--ink-3); }
 
 
@@ -5099,135 +4790,32 @@ var vOpruim = (function () {
   .hv-ba-points li + li { box-shadow: inset 0 1px 0 var(--line); }
   .hv-ba-points h3 { margin: 0 0 .4rem; font-size: 1.02rem; font-weight: 700; color: var(--ink); }
   .hv-ba-points p { margin: 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  /* ── HET RASTER GROEIT MEE ─────────────────────────────────────────────
+     Bij één paar staat het beeld naast de tekst, zoals het altijd deed. Vanaf
+     twee vallen de paren in een raster onder de tekst: naast elkaar in een
+     halve kolom worden ze te klein om nog een vergelijking te zijn, en dat is
+     het enige wat ze moeten doen. `.is-meer` staat op het blok en niet op de
+     media, zodat de tekstkolom mee terugvalt naar de volle breedte. */
+  .hv-ba-fig { margin: 0; }
+  .hv-ba-cap {
+    margin: .7rem 0 0; font-size: .84rem; line-height: 1.5; color: var(--ink-3);
+  }
+  .hv-ba.is-meer { grid-template-columns: 1fr; }
+  .hv-ba.is-meer .hv-ba-media {
+    display: grid; gap: clamp(1rem, 2.4vw, 1.8rem);
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+  .hv-ba-meer {
+    margin: clamp(.9rem, 2vw, 1.3rem) 0 0;
+    padding-top: clamp(.9rem, 2vw, 1.2rem);
+    box-shadow: inset 0 1px 0 var(--line);
+    font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 56ch;
+  }
+
   .hv-ba-note { margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0; padding-top: clamp(1.1rem, 2vw, 1.5rem); box-shadow: inset 0 1px 0 var(--line); font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
   .hv-ba-note a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--line-strong); white-space: nowrap; }
   .hv-ba-note a:hover { text-decoration-color: var(--accent); }
-  @media (max-width: 900px) { .hv-ba { grid-template-columns: 1fr; } }
-
-  /* ── the dream ─────────────────────────────────────────────────────────── */
-  /* The page's second full-bleed photograph, and the only band with nothing to
-     count. The scrim is horizontal rather than the hero's vertical one so the
-     photograph stays open on the right where there is no copy over it — the
-     picture is the argument, the text just names it. */
-  /* Geen `background: var(--ink-900)` meer, en geen `.ground-blend`: de foto
-     dooft aan zijn eigen boven- en onderrand uit en de paginagrond loopt
-     eronder gewoon door. Zie `.rand-los` in global.css. */
-  .hv-dream { position: relative; isolation: isolate; overflow: hidden; display: grid; align-items: center; min-height: min(84svh, 44rem); padding-block: clamp(4.5rem, 10vw, 8rem); }
-  .hv-dream-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; --los: clamp(4rem, 9vw, 9rem); }
-  .hv-dream-scrim { --los: clamp(1.4rem, 3vw, 2.6rem); }
-  .hv-dream-scrim { position: absolute; inset: 0; z-index: -1; background:
-    linear-gradient(90deg, rgb(var(--scrim) / 0.94) 0%, rgb(var(--scrim) / 0.78) 44%, rgb(var(--scrim) / 0.24) 100%); }
-  .hv-kicker { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fill-blue); }
-  /* --t-statement en niet --t-hero: op 96px stond deze kop even groot als de
-     <h1> van de hero, en twee grootste dingen zijn geen grootste ding. Zie de
-     noot bij --t-statement in global.css. */
-  .hv-dream-h { margin: .9rem 0 0; max-width: 15ch; font-size: var(--t-statement); line-height: .98; letter-spacing: -0.04em; color: var(--paper-on-dark); text-wrap: balance; }
-  .hv-dream-lede { margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0; max-width: 50ch; font-size: var(--t-lg); line-height: 1.6; color: var(--paper-soft-on-dark); }
-  .hv-dream .btn { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
-  @media (max-width: 700px) {
-    .hv-dream-scrim { background: linear-gradient(180deg, rgb(var(--scrim) / 0.60) 0%, rgb(var(--scrim) / 0.92) 55%); }
-  }
-
-  /* ── the week you get back ─────────────────────────────────────────────── */
-  /* ── minmax(min(16rem, 100%), 1fr) EN NIET minmax(16rem, 1fr) ────────────
-     Een ondergrens in `rem` groeit mee met de tekstinstelling van de bezoeker.
-     Bij 150 % is 16rem 384 px, en dat is breder dan de 332 px die deze lijst op
-     een telefoon van 390 px krijgt: de baan werd 384 px, de lijst liep buiten
-     beeld en er was niets om naartoe te scrollen, dus de rechterkant van elke
-     regel viel gewoon weg. `min(…, 100%)` zegt: deze ondergrens, tenzij de
-     container smaller is. Bij normale tekst verandert er niets. Deze correctie
-     staat op alle 23 rasters van dit type op de site. */
-  .hv-week { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); gap: 1px; background: var(--line); }
-  .hv-week > li { background: var(--bg); padding: clamp(1.3rem, 2.4vw, 2rem); }
-  .hv-week-d { display: block; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.5rem, 2.4vw, 1.9rem); line-height: 1; letter-spacing: -0.03em; color: var(--accent-bright); }
-  .hv-week p { margin: .9rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
-  .hv-back { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
-  .hv-back-h { margin: 0 0 clamp(1.2rem, 2.4vw, 1.8rem); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-  /* Vier koppen zonder uitleg eronder — zie de noot bij `back` in de copy.
-     Geen raster meer maar een rij: een kolomraster geeft elke kop een even
-     brede baan, en op 1440 werd dat 320px per baan voor ~200px tekst. Vier
-     losse eilanden dus, waar het één zin in vieren hoort te zijn. Flex laat ze
-     op hun eigen breedte staan en houdt ze bij elkaar; op een telefoon vallen
-     ze vanzelf om. Geen opsommingstekens: het zijn koppen, geen lijstje. */
-  .hv-back-list {
-    display: flex; flex-wrap: wrap;
-    gap: .7rem clamp(1.5rem, 3vw, 2.75rem);
-    margin: 0; padding: 0; list-style: none;
-  }
-  .hv-back-list li { margin: 0; font-size: .95rem; font-weight: 700; line-height: 1.35; color: var(--ink); text-wrap: balance; }
-  /* The euro half of the shoot-day argument, in one line, handing off to
-     /compare. Same treatment the deleted .hv-vs-note had, because it is the
-     same sentence doing the same job in a quarter of the space. */
-  .hv-back-note { margin: clamp(1.4rem, 2.6vw, 2rem) 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 64ch; }
-  .hv-back-note a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
-  .hv-back-note a:hover { text-decoration-color: var(--accent); }
-
-  /* ── where the visuals land ────────────────────────────────────────────── */
-
-  /* ── the roster and your brand model ───────────────────────────────────── */
-  /* ── DE BESCHRIJVING ZAT OPGEKROPT — 20 augustus 2026 ────────────────────
-     Lucas: *"ook bij de modellen sectie voelt de beschrijving heel erg
-     opgekropt."*
-
-     Hier stond `.hv-bm-band .statement-left { max-width: 46rem }`. Die regel is
-     specifieker dan `.statement-split { max-width: none }` in global.css en won
-     dus: de kop-en-lede-verdeling van deze band moest in 736 pixels passen
-     terwijl er 1566 beschikbaar waren. Gemeten: de lede was 312 pixels breed en
-     liep over ZES regels, terwijl dezelfde soort lede in vijf andere banden 562
-     breed is en er twee nodig heeft.
-
-     `flex: 1 1 auto` erbij, want in `.rail-head` (een flexrij) krimpt een item
-     zonder die regel alsnog naar zijn inhoud. Zie de noot bij .statement-split
-     in global.css. */
-  .hv-bm-band .rail-head > .statement-left,
-  .hv-svc-band .rail-head > .statement-left { max-width: none; flex: 1 1 auto; }
-
-  /* ══ DE RAND WAAR DE RIJ DOORLOOPT ═══════════════════════════════════════
-     Lucas: *"bij What we make een soort schaduw fade creëren om de site wat
-     meer editorial te maken en doe dit op nog meer plekken waar dat toegepast
-     kan worden en subtiel blijft."*
-
-     Dit is de plek waar het ook een FUNCTIE heeft en niet alleen een sfeer.
-     De rij loopt aan de rechterkant het beeld uit; zonder iets aan die rand
-     eindigt hij daar met een harde snee die eruitziet als een fout in de
-     opmaak. Een verloop op de laatste kolom zegt "hier gaat het door" — het is
-     dezelfde afspraak die een tijdschrift met een aflopende pagina maakt.
-
-     `mask-image` en geen laag met een gradiënt eroverheen: een overlay met de
-     paginakleur werkt alleen zolang de grond precies die kleur is, en dat is op
-     deze site nadrukkelijk niet zo — de grond heeft een lamp en een vignet (zie
-     ONE GROUND in global.css). Een masker snijdt de RIJ zelf weg en laat de
-     grond doen wat hij doet, wat hij ook is.
-
-     Links geen verloop zolang je aan het begin staat: de eerste kaart hoort op
-     de bladspiegel te beginnen, niet uit het niets te komen. De klasse
-     `is-scrolled` komt van railNav() zodra er iets weggeschoven is. */
-  .hv-svc-rail {
-    --fade: clamp(2rem, 5vw, 5rem);
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent 100%);
-            mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent 100%);
-  }
-  .hv-svc-rail.is-scrolled {
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade), #000 calc(100% - var(--fade)), transparent 100%);
-            mask-image: linear-gradient(to right, transparent 0, #000 var(--fade), #000 calc(100% - var(--fade)), transparent 100%);
-  }
-  .hv-svc-rail.is-end {
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade), #000 100%);
-            mask-image: linear-gradient(to right, transparent 0, #000 var(--fade), #000 100%);
-  }
-  .hv-faces { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
-  /* Narrower than the output rail on purpose: a face needs less width than a
-     garment, and ten of them at rail width would be a scroll with no end. */
-  .hv-faces > * { flex: 0 0 clamp(8.5rem, 14vw, 11.5rem); }
-  .hv-face { display: block; color: inherit; }
-  .hv-face .plate { display: block; aspect-ratio: 3 / 4; }
-  .hv-face .plate img { transition: transform var(--dur-3) var(--ease); }
-  .hv-face:hover .plate img { transform: scale(1.03); }
-  .hv-face .plate-cap span { text-transform: lowercase; }
-  .hv-bm-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
-  .hv-bm-foot p { margin: 0; max-width: 58ch; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
-  @media (prefers-reduced-motion: reduce) {
-    .hv-face .plate img, .hv-face:hover .plate img { transition: none; transform: none; }
+  @media (max-width: 900px) { .hv-ba { grid-template-columns: 1fr; }
   }
 
   /* The .hv-pr* rules went with the monthly-plan grid — see the note where
@@ -5355,203 +4943,7 @@ var vOpruim = (function () {
      van links niet genoeg: daar gaat de sluier over de hele band. */
   @media (max-width: 900px) {
     .hv-dash-scrim { background: linear-gradient(180deg, rgb(var(--scrim) / 0.72) 0%, rgb(var(--scrim) / 0.58) 52%, rgb(var(--scrim) / 0.72) 100%); }
-    .hv-dash-bg { opacity: .22; }
-  }
-
-  /* ── het abonnement ──────────────────────────────────────────────────────
-     Tekst links, het bedrag op een plaat rechts. Dat is dezelfde tweedeling
-     als de proefvisualband eronder gebruikt, met opzet: de twee banden vragen
-     allebei één beslissing en horen er hetzelfde uit te zien. */
-  .hv-sub { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.6rem, 3.2vw, 3rem); align-items: start; }
-  .hv-sub-right { display: grid; gap: clamp(1.2rem, 2.2vw, 1.8rem); align-content: start; }
-  /* De beeldbank onder de plaat en niet ernaast: het bedrag en de beelden zijn
-     twee argumenten, geen twee kolommen van één argument. Een haarlijn ertussen
-     zegt dat, en verder niets. */
-  .hv-stock {
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    padding-top: clamp(1.4rem, 2.6vw, 2rem);
-    box-shadow: inset 0 1px 0 var(--line);
-    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: clamp(1.6rem, 3.5vw, 3rem); align-items: center;
-  }
-  /* Afgetopt zodat het vlak niet met de kolom mee blijft groeien: op 1920 was
-     het 633 bij 474 naast een tekstkolom van 289 hoog, en dan is het beeld het
-     onderwerp geworden in plaats van het bewijs. */
-  .hv-stock-shot { width: min(100%, 23rem); }
-  /* ── HET SFEERRASTER ─────────────────────────────────────────────────────
-     Vier beelden in een vierkant raster, met de verhouding van de doos vast op
-     4/3 zodat het blok geen sprong maakt terwijl de foto's laden — dezelfde
-     maat als de plaatshouder die hier stond.
-
-     `object-fit: cover` op elk beeld: de vier hebben verschillende
-     verhoudingen (een liggende trui, twee vierkanten, een staand paar laarzen)
-     en in een raster horen ze even groot te zijn. Bijsnijden is hier goed —
-     het zijn sfeerbeelden, er is geen onderwerp dat je niet mag afsnijden.
-
-     De hairline tussen de cellen komt uit `gap` op de paginagrond en niet uit
-     een rand: vier randen naast elkaar geven een dubbele lijn in het midden. */
-  .hv-mood {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 2px;
-    aspect-ratio: 4 / 3;
-    border-radius: var(--r-md);
-    overflow: hidden;
-    background: var(--bg-0);
-  }
-  .hv-mood img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .hv-mood-cap { margin: .6rem 0 0; font-size: .78rem; line-height: 1.5; color: var(--ink-3); }
-  .hv-stock-h { margin: 0 0 clamp(.8rem, 1.6vw, 1.1rem); font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
-  .hv-stock-item + .hv-stock-item { margin-top: clamp(.8rem, 1.6vw, 1.1rem); padding-top: clamp(.8rem, 1.6vw, 1.1rem); box-shadow: inset 0 1px 0 var(--line); }
-  .hv-stock-n { margin: 0; font-size: 1.02rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
-  .hv-stock-b { margin: .4rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
-  /* Wat er nog niet is, staat een stap zachter — dezelfde afspraak als bij de
-     twee kaarten in de dienstenrij. */
-  .hv-stock-item.is-soon .hv-stock-n { color: var(--ink-2); }
-  @media (max-width: 820px) { .hv-stock { grid-template-columns: 1fr; } }
-  .hv-sub-copy h2 { margin: 0; }
-  .hv-sub-copy .lede { margin-top: .7rem; }
-  .hv-sub-facts { list-style: none; margin: clamp(1.1rem, 2.2vw, 1.6rem) 0 0; padding: 0; display: grid; gap: .6rem; }
-  .hv-sub-facts li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
-  .hv-sub-facts svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--accent); stroke-width: 2; }
-  /* ══ HET ZWEVENDE PANEEL ═════════════════════════════════════════════════
-     Zie de lange noot bij de markup. Hier stonden tot vanochtend drie lagen
-     spotlight op de BAND — een lamp op accent, een tweede in wit, en een
-     randlicht op de plaat. Die zijn weg: ze waren gemaakt om een donkere grond
-     te laten leven, en dit is geen donkere grond meer.
-
-     `overflow: hidden` omdat het merkteken bewust groter is dan het paneel en
-     er aan twee kanten uit loopt. Dat afsnijden is wat het van een logo een
-     drukwerkmerk maakt — dezelfde afspraak als bij het woordmerk in de footer.
-
-     De schaduw is ruim en zacht (70px, 55% zwart): een blok dat op de pagina
-     ligt heeft er een, en zonder schaduw is limoen op zwart een gat in plaats
-     van een voorwerp. */
-  /* Het paneel, de lichtlaag, de korrel en de prijsplaat staan sinds 20 augustus
-     in global.css als `.lime-panel` — zie de noot daar. Ze zijn hierheen
-     verhuisd omdat de abonnementenpagina hetzelfde blok gebruikt, en één blok
-     dat er op twee plekken hetzelfde uitziet mag niet op twee plekken
-     gedefinieerd staan. Wat hier blijft, is wat alleen deze band doet. */
-
-  /* ── DE BOVENKOP ─────────────────────────────────────────────────────────
-     Klein, gespatieerd en in de inkt van het paneel — niet in het accent, want
-     het accent IS hier de grond. Zie de noot bij de markup. */
-  .hv-sub-eyebrow {
-    margin: 0 0 .55rem;
-    font-size: .72rem; font-weight: 700;
-    letter-spacing: .16em; text-transform: uppercase;
-    color: var(--ink-3);
-  }
-
-  /* HET MERKTEKEN, ALS LIJN. `fill: none` op de <use> plus een streek maakt van
-     de twee gevulde paden van #markglyph precies de dunne omtrek die Lucas
-     stuurde. Geen tweede symbool in de sprite, geen tweede bestand.
-
-     `vector-effect: non-scaling-stroke` houdt de lijn even dik hoe groot het
-     teken ook wordt geschaald — zonder dat wordt hij op een breed scherm een
-     balk en op een telefoon een haar.
-
-     Rechtsonder en half buiten beeld: linksboven zou hij achter de kop komen te
-     staan, en een merkteken achter een kop is ruis. Hier staat hij in de hoek
-     die anders leeg was. */
-  /* ── DE BAND WAAR HET PANEEL OP LIGT ──────────────────────────────────────
-     De foto ligt over de volle breedte achter het paneel en wordt door twee
-     dingen teruggebracht tot sfeer: een dekking van 55 procent en een verloop
-     eroverheen dat de boven- en onderrand naar de paginagrond trekt. Zonder dat
-     verloop heeft de band een zichtbare naad met de sectie erboven, en een naad
-     is precies wat een tweede grond verraadt.
-
-     `.hv-sub-band` krijgt hiervoor een stapelcontext (position + isolation), en
-     de container erin staat erboven. */
-  /* Ruimer dan een `band-tight` normaal is, en dat is de hele reden dat de foto
-     erachter iets doet: met de standaardmarges bedekte het paneel bijna de hele
-     band en zag je van het beeld alleen een randje. Nu ligt er licht omheen. */
-  .hv-sub-band { position: relative; isolation: isolate; overflow: hidden; padding-block: clamp(3.5rem, 8vw, 7rem); }
-  .hv-sub-band > .container { position: relative; z-index: 1; }
-  /* .hv-sub-bg, .hv-sub-bg img en .hv-sub-bg::after stonden hier en zijn weg —
-     de foto zit sinds 20 augustus in het paneel zelf. Zie de noot bij de markup
-     hierboven en bij .lime-panel in global.css. */
-
-  .hv-sub-from { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-  .hv-sub-fig { margin: .3rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(2.6rem, 6vw, 3.8rem); line-height: 1; color: var(--ink); }
-  .hv-sub-unit { margin: .5rem 0 0; font-size: .9rem; color: var(--ink-2); }
-  .hv-sub-vat { margin: .35rem 0 0; font-size: .78rem; color: var(--ink-3); }
-  .hv-sub-cta { margin-top: clamp(1.4rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .7rem; }
-
-  /* ── DE DRIE ABONNEMENTEN ────────────────────────────────────────────────
-     Drie tegels op de heldere grond, in de vulling van de plaat maar lichter:
-     ze horen bij het bedrag erboven en mogen er niet mee wedijveren. Vandaar
-     ook geen knoppen erin — er staat er al één in de plaat, en drie kaarten met
-     elk een eigen knop maakt van dit blok een prijspagina. */
-  .hv-plans {
-    list-style: none;
-    margin: clamp(1.3rem, 2.4vw, 1.9rem) 0 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
-    gap: clamp(.7rem, 1.4vw, 1rem);
-  }
-  .hv-plan {
-    padding: clamp(.85rem, 1.6vw, 1.15rem);
-    border-radius: var(--r-md);
-    background: rgb(8 9 11 / 0.07);
-    box-shadow: inset 0 0 0 1px rgb(8 9 11 / 0.14);
-  }
-  .hv-plan-n { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
-  .hv-plan-p { margin: .3rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.5rem, 2.6vw, 1.95rem); line-height: 1; color: var(--ink); display: flex; align-items: baseline; gap: .4rem; flex-wrap: wrap; }
-  .hv-plan-p span { font-family: var(--font-body); font-weight: 400; font-size: .8rem; color: var(--ink-3); }
-  .hv-plan-b { margin: .55rem 0 0; font-size: .88rem; font-weight: 700; color: var(--ink); }
-  .hv-plan-x { margin: .2rem 0 0; font-size: .84rem; line-height: 1.5; color: var(--ink-2); }
-
-  /* ── WAT EEN CREDIT IS ───────────────────────────────────────────────────
-     Onder de plaat en op zijn eigen breedte, met een lijn links. Die lijn doet
-     hetzelfde werk als bij .pl-ctx in de bestelstroom: hij zegt dat dit bij het
-     getal erboven hoort en er een gevolg van is, in plaats van een nieuw
-     onderwerp op hetzelfde niveau. Accentkleur, want dit is de regel die het
-     bezwaar wegneemt en niet een voetnoot. */
-  .hv-credit {
-    margin-top: clamp(1.3rem, 2.4vw, 1.9rem);
-    padding-left: clamp(1rem, 2vw, 1.4rem);
-    border-left: 2px solid var(--accent);
-    max-width: 80ch;
-  }
-  .hv-credit-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
-  .hv-credit-b { margin: .5rem 0 0; font-size: .95rem; line-height: 1.65; color: var(--ink-2); }
-  .hv-credit-ask {
-    margin: .9rem 0 0;
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem;
-    font-size: .9rem; color: var(--ink-3);
-  }
-  /* `inline` en niet `inline-flex`: als flexdoos werd de link op een telefoon
-     zo breed als de regel, brak de tekst over twee regels en bleef het pijltje
-     alleen aan de rechterrand achter — gemeten op 390, het pijltje stond op
-     x=378 terwijl het laatste woord op x=150 eindigde. Inline volgt hij het
-     woord waar hij bij hoort. */
-  .hv-credit-a {
-    display: inline;
-    font-weight: 700; color: var(--accent-bright);
-  }
-  /* HET PIJLTJE STOND ALLEEN OP EEN REGEL, EN DE OORZAAK WAS NIET DE AFBREKING.
-     Eerst gelezen als een gewone woordafbreking en opgelost met een harde spatie
-     in een nowrap-omhulsel. Dat hielp niet, en de meting liet zien waarom: de
-     reset op regel 964 van global.css zet `img, svg, video { display: block }`,
-     dus dit pijltje was een BLOKDOOS in een regel tekst. Een blok in een inline
-     stroom dwingt altijd zijn eigen regel af, hoeveel ruimte er ook over is —
-     gemeten: de link 296px breed en 38px hoog, twee regels, met de <svg> op
-     x=370 onder de zin in plaats van erachter.
-
-     `display: inline-block` is dus de echte reparatie. Het omhulsel blijft
-     staan: de harde spatie erin vervangt de `margin-left` die hier weg is en
-     nowrap houdt hem aan het laatste woord vast als de zin ooit langer wordt.
-
-     Dat maakt dit de tweede keer in dit bestand dat een globale reset stil iets
-     anders deed dan de plaatselijke CSS suggereerde. Waard om te onthouden: een
-     <svg> in lopende tekst heeft op deze site altijd een eigen display nodig. */
-  .hv-nb { white-space: nowrap; }
-  .hv-credit-a .i { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; fill: none; stroke: currentColor; stroke-width: 1.8; transition: transform var(--dur-1) var(--ease); }
-  .hv-credit-a:hover .i { transform: translateX(3px); }
-  @media (prefers-reduced-motion: reduce) { .hv-credit-a .i { transition: none; } }
+    .hv-dash-bg { opacity: .22; } }
   @media (max-width: 60rem) {
     .hv-sub { grid-template-columns: 1fr; }
   }

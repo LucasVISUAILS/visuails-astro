@@ -133,7 +133,27 @@ export const WALK_SERVICES = [
  * site op leunt, en een doorloop die het andersom tekent maakt er een gewone
  * webshop van.
  */
-export const WALK_STEPS = ['order', 'upload', 'look', 'window', 'pay', 'model', 'make', 'portal', 'result'];
+/* ── VAN NEGEN NAAR ZES — 30 AUGUSTUS 2026 ──────────────────────────────────
+ *
+ * Lucas vroeg /how-it-works in te korten. Gemeten stond de doorloop op 5346px
+ * van de 11.232 die de pagina lang was: negen blokken van 594px. Zijn keuze was
+ * "kortere blokken én zes stappen".
+ *
+ * DRIE PAREN ZIJN ÉÉN GEWORDEN, en telkens omdat de twee helften dezelfde
+ * handeling zijn, uitgevoerd door dezelfde partij, op hetzelfde moment:
+ *
+ *   order + upload  → `upload`  · allebei "jij, op de site, voor je betaalt"
+ *   model + make    → `model`   · allebei "wij, in productie"
+ *   portal + result → `result`  · allebei "jij, in je account, na de productie"
+ *
+ * WAT ER NIET IS SAMENGEVOEGD is `window` en `pay`, en dat is de enige plek waar
+ * ik het niet heb gedaan terwijl het kon. Die twee staan los omdat de volgorde
+ * ertussen de belofte IS: het venster wordt bevestigd vóór de betaling. Twee
+ * stappen zeggen dat door hun bestaan; één stap zou het alleen nog beweren.
+ *
+ * DE VOLGORDE IS VERDER ONVERANDERD en mag dat blijven. Zie de noot hieronder.
+ */
+export const WALK_STEPS = ['upload', 'look', 'window', 'pay', 'model', 'result'];
 
 /** De drie achtergronden uit src/data/backgrounds.js, hier alleen met hun kleur
  *  erbij zodat de walkthrough een staal kan tekenen. */
@@ -257,15 +277,10 @@ export const WALK_COPY = {
     // Every number in here comes from pricing.js through the constants
     // imported at the top of this file. Nothing is typed twice.
     steps: {
-      order: {
-        n: 'You, on the site',
-        h: 'You fill in the order form',
-        b: `Five screens: what you want made, your photos, a short note on the look, when you need it, and a confirmation. What you choose applies to every product in the order, so you set it once rather than product by product. Nothing is charged at this point and nothing is booked — you are describing the job, not buying it.`,
-      },
       upload: {
         n: 'You, on the site',
-        h: 'You upload the photos',
-        b: `Drag a folder in and we read the folder name as the product; send loose files and we sort them by filename. Two shots per product are required — the front and the back — and a detail and a worn shot are welcome if you have them. Phone photos on a table in daylight are exactly right. Five minutes, however many products you have; the effort does not grow with the size of the order.`,
+        h: 'You fill in the form and send your photos',
+        b: `Five screens: what you want made, your photos, a note on the look, when you need it, and a confirmation — one set of choices for the whole order rather than product by product. Drag a folder in and we read the folder name as the product. Two shots per product are required, the front and the back; a detail and a worn shot are welcome if you have them. Phone photos on a table in daylight are exactly right. Five minutes, however many products you have, and nothing is charged or booked yet.`,
       },
       look: {
         n: 'You, on the site',
@@ -284,13 +299,8 @@ export const WALK_COPY = {
       },
       model: {
         n: 'Us, in production',
-        h: 'A face is added, at no extra cost',
-        b: 'Every order includes a model from the shared roster. There is no per-model fee and no upgrade to unlock one. In this walkthrough it is one face; on a real order you pick from ten, or we design one that is only yours and never appears anywhere else.',
-      },
-      make: {
-        n: 'Us, in production',
-        h: 'Produced together, then finished by hand',
-        b: 'Every product in the order runs through as one batch, which is what makes the lighting, the angle and the grade match across all of them — run separately they would not. Then it is hand-finished in professional editing tools, colour-graded to your brand, and a person checks fit, colour against your own photo, and framing before anything leaves.',
+        h: 'A face is added, and every product runs as one batch',
+        b: 'Every order includes a model from the shared roster: no per-model fee, no upgrade to unlock one. In this walkthrough it is one face; on a real order you pick from ten, or we design one that is only yours. Then every product in the order runs through together, which is what makes the lighting, the angle and the grade match across all of them — run separately they would not. Each image is finished by hand in professional editing tools, colour-graded to your brand, and a specialist checks fit, colour against your own photo, and framing before anything leaves.',
       },
       /* ── DE DREMPEL STOND HIER NOG, EN HIJ IS ER SINDS 7 AUGUSTUS AF ────────
          Deze twee zinnen zeiden dat per beeld goedkeuren pas vanaf
@@ -304,38 +314,28 @@ export const WALK_COPY = {
          proberen, leest hier dat het dan een zip krijgt in plaats van het scherm
          waar deze hele pagina over gaat, en dat is precies het merk dat je binnen
          wilt halen. De drempel blijft staan waar hij wél geldt: de leverdatum. */
-      portal: {
-        n: 'You, in your account',
-        h: 'It arrives image by image, and you approve it',
-        b: 'Every paid order lands in a portal grouped by product — three products or three hundred. Each image is approved on its own, and a revision is requested on its own, with a note saying what is wrong, while the rest of the order keeps moving. Nothing waits on anything else, and nothing is final until you say so.',
-      },
       result: {
-        n: 'You, at the end',
-        h: 'You download the set',
-        b: 'High-resolution, e-commerce-ready files, sized for shop listings, marketplaces and ads, with full commercial usage rights to everything we deliver. Download them one at a time or take the whole approved set as a zip.',
+        n: 'You, in your account',
+        h: 'It arrives image by image, you approve it, you download it',
+        b: 'Every paid order lands in a portal grouped by product — three products or three hundred. Each image is approved on its own, and what is not right goes back in one go, as the single revision round the order carries, with a note saying what is wrong — while the rest of the order keeps moving; nothing waits on anything else, and nothing is final until you say so. What you approve downloads as high-resolution, e-commerce-ready files, sized for shop listings, marketplaces and ads, with full commercial usage rights — one at a time, or the whole approved set as a zip.',
       },
     },
 
     lookCustom: 'Something else in mind? A style of your own goes in a note with your order and we look at it together.',
     modelLocked: 'Locked in this walkthrough',
     modelRoster: 'See the ten models',
-    checks: ['Fit checked against your photo', 'Colour compared', 'Background clean'],
     outCount: function outCount(n) { return n === 1 ? 'One clip, from that one photo.' : `${n} images, from that one photo.`; },
     shotNames: { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On a model' },
     backgroundNames: { white: 'White', 'off-white': 'Off-white', beige: 'Beige' },
 
     // The captions under the frame. Short — the frame is not the argument, the
     // step beside it is.
-    capOrder: 'The order form',
     capUpload: 'What you send',
     capWindow: 'The calendar check',
     capPay: 'Paid — production starts',
-    capPortal: 'Your order, in the portal',
     windowPass: 'The calendar can hold it — reserved and confirmed before you pay',
     windowRefuse: 'Or it cannot, and you are told that with the next delivery date that can',
     payLine: 'Nothing is produced before this is completed.',
-    orderLines: ['What', 'Material', 'Notes', 'Timing', 'Confirm'],
-    portalStates: { ok: 'Approved by you', rev: 'Revision requested — this image only', wait: 'Still coming' },
 
     ctaPrimary: 'Start an order with your own products',
     ctaGhost: 'Start an order',
@@ -356,15 +356,10 @@ export const WALK_COPY = {
     },
 
     steps: {
-      order: {
-        n: 'Jij, op de site',
-        h: 'Je vult het bestelformulier in',
-        b: 'Vijf schermen: wat je wilt laten maken, je foto\u2019s, een korte notitie over de look, wanneer je het nodig hebt, en een bevestiging. Wat je kiest geldt voor elk product in de bestelling, dus je kiest één keer en niet per product. Er wordt op dit moment niets in rekening gebracht en niets vastgelegd — je beschrijft de opdracht, je koopt hem nog niet.',
-      },
       upload: {
         n: 'Jij, op de site',
-        h: 'Je uploadt de foto\u2019s',
-        b: 'Sleep een map erin en we lezen de mapnaam als het product; sleep losse bestanden en we sorteren ze op bestandsnaam. Twee shots per product zijn verplicht — voorkant en achterkant — en een detail en een gedragen shot zijn welkom als je ze hebt. Telefoonfoto\u2019s op tafel bij daglicht zijn precies goed. Vijf minuten, hoeveel producten het ook zijn; de moeite groeit niet mee met de omvang van de bestelling.',
+        h: 'Je vult het formulier in en stuurt je foto\u2019s',
+        b: 'Vijf schermen: wat je wilt laten maken, je foto\u2019s, een notitie over de look, wanneer je het nodig hebt, en een bevestiging — één set keuzes voor de hele bestelling en niet per product. Sleep een map erin en we lezen de mapnaam als het product. Twee shots per product zijn verplicht, voorkant en achterkant; een detail en een gedragen shot zijn welkom als je ze hebt. Telefoonfoto\u2019s op tafel bij daglicht zijn precies goed. Vijf minuten, hoeveel producten het ook zijn, en er wordt nog niets in rekening gebracht en niets vastgelegd.',
       },
       look: {
         n: 'Jij, op de site',
@@ -383,45 +378,30 @@ export const WALK_COPY = {
       },
       model: {
         n: 'Wij, in productie',
-        h: 'Er komt een gezicht bij, zonder meerprijs',
-        b: 'Elke bestelling bevat een model uit de gedeelde bibliotheek. Er zijn geen kosten per model en geen upgrade om er een vrij te spelen. In deze doorloop is het één gezicht; bij een echte bestelling kies je uit tien, of we ontwerpen er één die alleen van jou is en nergens anders verschijnt.',
+        h: 'Er komt een gezicht bij, en alles gaat als één batch door',
+        b: 'Elke bestelling bevat een model uit de gedeelde bibliotheek: geen kosten per model, geen upgrade om er een vrij te spelen. In deze doorloop is het één gezicht; bij een echte bestelling kies je uit tien, of we ontwerpen er één die alleen van jou is. Daarna gaat elk product in de bestelling samen door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar — los gedraaid lukt dat niet. Elk beeld wordt met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en een specialist controleert de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
       },
-      make: {
-        n: 'Wij, in productie',
-        h: 'Samen geproduceerd, daarna met de hand afgewerkt',
-        b: 'Elk product in de bestelling gaat als één batch door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar. Los gedraaid lukt dat niet. Daarna wordt het met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en controleert een specialist de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
-      },
-      // Zie de noot bij de Engelse portal-tekst hierboven.
-      portal: {
-        n: 'Jij, in je account',
-        h: 'Het komt beeld voor beeld binnen, en jij keurt goed',
-        b: 'Elke betaalde bestelling komt in een portaal, gegroepeerd per product — of het er nu drie zijn of driehonderd. Elk beeld keur je apart goed. Wat niet goed is vink je aan en stuur je in één keer op als de ene revisieronde die bij de bestelling hoort, met een notitie waarin staat wat er mis is, terwijl de rest van de bestelling gewoon doorloopt. Niets wacht op iets anders, en niets is definitief tot jij dat zegt.',
-      },
+      // Zie de noot bij de Engelse result-tekst hierboven.
       result: {
-        n: 'Jij, aan het eind',
-        h: 'Je downloadt de set',
-        b: 'Hogeresolutiebestanden, klaar voor e-commerce, op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten op alles wat we leveren. Download ze los, of neem de hele goedgekeurde set als zip.',
+        n: 'Jij, in je account',
+        h: 'Het komt beeld voor beeld binnen, jij keurt goed, jij downloadt',
+        b: 'Elke betaalde bestelling komt in een portaal, gegroepeerd per product — of het er nu drie zijn of driehonderd. Elk beeld keur je apart goed. Wat niet goed is vink je aan en stuur je in één keer op als de ene revisieronde die bij de bestelling hoort, met een notitie erbij, terwijl de rest van de bestelling gewoon doorloopt; niets wacht op iets anders, en niets is definitief tot jij dat zegt. Wat je goedkeurt download je als hogeresolutiebestanden, klaar voor e-commerce, op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten — los, of de hele goedgekeurde set als zip.',
       },
     },
 
     lookCustom: 'Iets anders voor ogen? Een eigen stijl gaat in een notitie bij je bestelling, en dan kijken we er samen naar.',
     modelLocked: 'Vast in deze doorloop',
     modelRoster: 'Bekijk de tien modellen',
-    checks: ['Pasvorm vergeleken met je foto', 'Kleur gecontroleerd', 'Achtergrond schoon'],
     outCount: function outCount(n) { return n === 1 ? 'Eén clip, uit die ene foto.' : `${n} beelden, uit die ene foto.`; },
     shotNames: { front: 'Voorkant', back: 'Achterkant', detail: 'Detail', worn: 'Op een model' },
     backgroundNames: { white: 'Wit', 'off-white': 'Gebroken wit', beige: 'Beige' },
 
-    capOrder: 'Het bestelformulier',
     capUpload: 'Wat jij stuurt',
     capWindow: 'De agendacheck',
     capPay: 'Betaald — de productie start',
-    capPortal: 'Jouw bestelling, in het portaal',
     windowPass: 'De agenda kan het vasthouden — gereserveerd en bevestigd voordat je betaalt',
     windowRefuse: 'Of niet, en dan hoor je dat met de eerstvolgende leverdatum die het wél kan',
     payLine: 'Er wordt niets geproduceerd voordat dit is voltooid.',
-    orderLines: ['Wat', 'Materiaal', 'Notitie', 'Timing', 'Bevestigen'],
-    portalStates: { ok: 'Door jou goedgekeurd', rev: 'Revisie aangevraagd — alleen dit beeld', wait: 'Nog onderweg' },
 
     ctaPrimary: 'Start een bestelling met je eigen producten',
     ctaGhost: 'Start een bestelling',

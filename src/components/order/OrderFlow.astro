@@ -43,7 +43,7 @@ import {
   WINDOW_THRESHOLD,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
-  AMOUNT,
+  AMOUNT, clause,
 } from '../../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
@@ -255,8 +255,8 @@ const PIPE = {
       many: `{add} more products and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
     },
     level: {
-      attended: `${WINDOW_THRESHOLD} products or more, so this order goes in the calendar. ${turnaround('attended', 'en')}.`,
-      unattended: `${TIERS.unattended.queue.en}. From ${WINDOW_THRESHOLD} products we hold a delivery date for you instead.`,
+      attended: `${WINDOW_THRESHOLD} products or more, so this order goes in the calendar. ${clause(turnaround('attended', 'en'))}.`,
+      unattended: `${clause(TIERS.unattended.queue.en)}. From ${WINDOW_THRESHOLD} products we hold a delivery date for you instead.`,
     },
     kind: {
       complete: 'Catalog set and lifestyle carousel',
@@ -380,8 +380,8 @@ const PIPE = {
       many: `Nog {add} producten en het tarief zakt van {now} naar {rate} per product — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
     },
     level: {
-      attended: `${WINDOW_THRESHOLD} producten of meer, dus we zetten voor deze bestelling een leverdatum vast. ${turnaround('attended', 'nl')}.`,
-      unattended: `${TIERS.unattended.queue.nl}. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling in plaats daarvan een vastgezette leverdatum.`,
+      attended: `${WINDOW_THRESHOLD} producten of meer, dus we zetten voor deze bestelling een leverdatum vast. ${clause(turnaround('attended', 'nl'))}.`,
+      unattended: `${clause(TIERS.unattended.queue.nl)}. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling in plaats daarvan een vastgezette leverdatum.`,
     },
     kind: {
       complete: 'Catalogset en lifestyle-carousel',
@@ -899,7 +899,7 @@ const FORM = {
     sharedH: 'What is identical at every count',
     shared: [
       ['The production', `The same production run at one product and at ${ATTENDED_PER_WINDOW}.`],
-      ['The review', `${reviewClaim('unattended', 'en')}. At every count.`],
+      ['The review', `${clause(reviewClaim('unattended', 'en'))}. At every count.`],
       ['The files', 'High-resolution and e-commerce-ready, with no per-use licence.'],
     ],
     footH: 'Not ready to order?',
@@ -1088,7 +1088,7 @@ const FORM = {
     sharedH: 'Wat bij elk aantal hetzelfde is',
     shared: [
       ['De productie', `Dezelfde productie bij één product en bij ${ATTENDED_PER_WINDOW}.`],
-      ['De controle', `${reviewClaim('unattended', 'nl')}. Bij elk aantal.`],
+      ['De controle', `${clause(reviewClaim('unattended', 'nl'))}. Bij elk aantal.`],
       ['De bestanden', 'Hoge resolutie en klaar voor je webshop, zonder licentie per gebruik.'],
     ],
     footH: 'Nog niet klaar om te bestellen?',

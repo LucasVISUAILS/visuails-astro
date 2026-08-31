@@ -1,12 +1,42 @@
 # VISUAILS — analyse en herontwerp van de voorkant
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt bestanden die inmiddels anders heten of niet meer bestaan. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `HooksPage.astro` → niets — verwijderd op 18 augustus 2026 — de tekst overtrad de toonregels op acht punten; de gecorrigeerde versie staat in `src/data/binnenkort.js` en wordt getoond op /plans#binnenkort
+> - `FigHook.astro` → niets — verwijderd met HooksPage mee
+> - `FigStudio.astro` → niets — verwijderd in augustus 2026 — hij tekende dezelfde capaciteitsbalken die FigGate op /studio al tekent
+> - `DemoGame.astro` → niets — nooit gebouwd — het plan staat in PLAN-DEMO-SPEL.md en is niet uitgevoerd
+
+
 Lucas, 17 augustus 2026: *"De website voelt enorm chaotisch en ik zelf weet soms
 niet eens waar alles staat en wat belangrijk is. […] Wat ik uiteindelijk wil
 ervaren is een rustigere site en op de homepage wat minder tekst."*
 
-Dit document is de diagnose en het plan. Niets hiervan is gebouwd; er staat wat er
-mis is, waarom het mis is, en wat de opbouw wordt. De uitvoering volgt daarna, in
-stukken die elk apart te bekijken zijn.
+Dit document is de diagnose en het plan. De uitvoering volgde daarna, in stukken
+die elk apart te bekijken zijn.
+
+> ## Stand van zaken, 30 augustus 2026
+>
+> **Hier stond "Niets hiervan is gebouwd."** Dat was waar op 17 augustus en het is
+> het al twee weken niet meer. Wie dit document nu voor het eerst leest, leest een
+> plan alsof het nog moet gebeuren — en dat is precies het soort verouderde
+> informatie waar de map niet in moet vervallen.
+>
+> Wat er sindsdien is gedaan, in het kort. De navigatie is herbouwd (het menu
+> draagt de diensten, de voettekst is geordend). De homepage is twee keer
+> ingekort: eerst van 24 naar 13 secties, en op 30 augustus van 13 naar acht —
+> gemeten van 2044 naar 890 zichtbare woorden en van 11.978 naar 8.132 pixels.
+> Daarbij zijn de sfeerband, de modellenrij en de losse proefvisualband
+> verdwenen, is de prijstabel naar /pricing gegaan, de shootweek naar /compare,
+> de dashboardrondleiding naar /portal en de uitleg van Hooks en Editions naar
+> /plans#binnenkort.
+>
+> **De diagnose in deel 1 is niet bijgewerkt en dat is met opzet.** Die
+> beschrijft de site zoals hij op 17 augustus was, en dat is wat een diagnose
+> hoort te doen. Gebruik dit document dus om te lezen WAAROM iets zo is
+> geworden, niet om te weten hoe het nu staat. Voor dat laatste zijn
+> `ARCHITECTURE.md` en `WERKLIJST.md` de plek.
 
 ---
 

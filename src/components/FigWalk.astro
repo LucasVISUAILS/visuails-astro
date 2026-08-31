@@ -191,20 +191,25 @@ const START = SERVICES[0].id;
       <div class="wk-stage">
         <div class="wk-frame">
 
-          {/* order — the form. No photograph: there is nothing to photograph
-              about a form, and a fake screenshot of one would be the invented
-              proof every figure on this site has refused. */}
-          <figure class="wk-layer is-panel" data-walk-layer="order">
-            <ol class="wk-rail">
-              {t.orderLines.map((l) => (
-                <li><span class="wk-dot" aria-hidden="true"></span>{l}</li>
-              ))}
-            </ol>
-            <figcaption class="wk-cap">{t.capOrder}</figcaption>
-          </figure>
+          {/* ── DRIE LAGEN ZIJN ER OP 30 AUGUSTUS 2026 UITGEGAAN ──────────────
+              Het formulierspoor (`order`), het vinkjespaneel (`make`) en de
+              tegels van het portaal (`portal`). Niet om ruimte te winnen — een
+              laag in dit kader kost geen hoogte, want alle lagen op één na
+              staan `hidden` — maar omdat de stappen die ze aanriepen zijn
+              samengevoegd, en één stap toont één laag. Zie WALK_STEPS in
+              src/data/demo.js voor welke drie paren dat waren.
 
-          {/* upload — the four shots the customer sends */}
-          <figure class="wk-layer is-shots" data-walk-layer="upload" hidden>
+              WAT ER MET DE TEKENING VAN HET PORTAAL IS GEBEURD: die is niet
+              verdwenen maar verhuisd. FigApproval tekent hetzelfde — dezelfde
+              drie toestanden naast elkaar — en staat sinds vandaag in de sectie
+              van /how-it-works die de goedkeuringsbelofte doet en die daarvoor
+              nul beelden had. De andere twee waren panelen met tekst, en wat ze
+              zeiden staat elders op diezelfde pagina al: het vinkjespaneel in
+              "Finished by hand", het formulierspoor in de stap zelf. */}
+
+          {/* upload — the four shots the customer sends. De eerste laag die je
+              ziet, en daarom niet `hidden`. */}
+          <figure class="wk-layer is-shots" data-walk-layer="upload">
             <ul class="wk-src">
               {svc.shots.map((shot, i) => (
                 <li>
@@ -250,35 +255,6 @@ const START = SERVICES[0].id;
             <img src={svc.looks[0].preview.src} alt="" width="900" height="1200" loading="lazy" decoding="async" data-walk-model-look />
             <img src={DEMO_MODEL.photo} alt="" width="800" height="1000" loading="lazy" decoding="async" />
             <figcaption class="wk-cap">{DEMO_MODEL.name}</figcaption>
-          </figure>
-
-          {/* make */}
-          <figure class="wk-layer is-panel" data-walk-layer="make" hidden>
-            <ul class="wk-checks">
-              {t.checks.map((c) => (
-                <li><span class="wk-tick" aria-hidden="true"></span>{c}</li>
-              ))}
-            </ul>
-          </figure>
-
-          {/* portal — three states at once. FigApproval's parallelism, kept:
-              a column of bullets is a picture of the opposite. The tile grid
-              is aria-hidden and the legend carries the meaning as text. */}
-          <figure class="wk-layer is-panel" data-walk-layer="portal" hidden>
-            <ul class="wk-tiles" aria-hidden="true">
-              <li class="wk-tile is-ok"></li>
-              <li class="wk-tile is-rev"></li>
-              <li class="wk-tile is-wait"></li>
-              <li class="wk-tile is-ok"></li>
-              <li class="wk-tile is-wait"></li>
-              <li class="wk-tile is-ok"></li>
-            </ul>
-            <ul class="wk-legend">
-              <li><span class="wk-key is-ok" aria-hidden="true"></span>{t.portalStates.ok}</li>
-              <li><span class="wk-key is-rev" aria-hidden="true"></span>{t.portalStates.rev}</li>
-              <li><span class="wk-key is-wait" aria-hidden="true"></span>{t.portalStates.wait}</li>
-            </ul>
-            <figcaption class="wk-cap">{t.capPortal}</figcaption>
           </figure>
 
           {/* result — one grid per look */}
@@ -508,11 +484,10 @@ const START = SERVICES[0].id;
     background: var(--surface);
   }
 
-  .wk-rail { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: .85rem; }
-  .wk-rail li,
-  .wk-checks li { display: flex; align-items: center; gap: .7rem; font-size: .92rem; color: var(--ink-2); }
-  .wk-checks { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: .85rem; }
-  .wk-dot { flex: 0 0 auto; width: .45rem; height: .45rem; border-radius: 50%; background: var(--line-ui); }
+  /* `.wk-rail`, `.wk-dot` en `.wk-checks` stonden hier en zijn op 30 augustus
+     2026 mee weggegaan met de lagen die ze tekenden. Een regel die niets meer
+     raakt is geen dode letter maar een valstrik: de volgende die deze stijlen
+     leest denkt dat er een formulierspoor bestaat. */
   .wk-tick { flex: 0 0 auto; width: .8rem; height: .8rem; border-radius: 50%; background: var(--accent); }
   .wk-ring { flex: 0 0 auto; width: .8rem; height: .8rem; border-radius: 50%; border: 1px solid var(--line-strong); }
 
@@ -542,17 +517,9 @@ const START = SERVICES[0].id;
   }
   .wk-src-t { font-size: .7rem; color: var(--ink-4); }
 
-  /* the portal */
-  .wk-tiles { list-style: none; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; max-width: 17rem; }
-  .wk-tile { aspect-ratio: 4 / 5; border-radius: var(--r-sm); border: 1px solid var(--line); }
-  .wk-tile.is-ok { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 13%, transparent); }
-  .wk-tile.is-rev { border-color: #E0A33A; background: color-mix(in srgb, #E0A33A 13%, transparent); }
-  .wk-tile.is-wait { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
-  .wk-legend { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: .35rem; font-size: .76rem; color: var(--ink-4); justify-items: start; }
-  .wk-legend li { display: flex; align-items: center; gap: .45rem; }
-  .wk-key { width: .65rem; height: .65rem; border-radius: 3px; border: 1px solid var(--line); }
-  .wk-key.is-ok { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 30%, transparent); }
-  .wk-key.is-rev { border-color: #E0A33A; background: color-mix(in srgb, #E0A33A 30%, transparent); }
+  /* De tegels van het portaal stonden hier. Die tekening staat sinds 30
+     augustus 2026 als FigApproval op /how-it-works zelf; zie de noot bij de
+     lagen hierboven. */
 
   /* the result */
   .wk-layer.is-out { display: flex; flex-direction: column; justify-content: center; }
@@ -590,9 +557,23 @@ const START = SERVICES[0].id;
      left edge — centred prose at this length is unreadable. */
   .wk-steps { list-style: none; margin: 0 auto; padding: 0; max-width: 34rem; }
   .wk-step { padding: clamp(1.6rem, 4vw, 2.4rem) 0; }
-  /* The scroll distance IS the pacing, and the request was for rest. Each step
-     gets more than half a screen, so only one is ever near the middle. */
-  :global(.js) .wk-step { min-height: 66svh; display: flex; flex-direction: column; justify-content: center; }
+  /* De scrollafstand IS het tempo, en er was om rust gevraagd. Elke stap krijgt
+     daarom bijna een half scherm, zodat er nooit meer dan één tegelijk bij de
+     leeslijn staat.
+
+     ── 66svh WERD 48svh OP 30 AUGUSTUS 2026 ──────────────────────────────────
+     Gemeten op een venster van 900px waren negen stappen van 594px samen
+     5346px — bijna de helft van /how-it-works. Lucas koos "kortere blokken én
+     zes stappen"; zes van 432px is 2592px, dus samen scheelt dat 2754px.
+
+     48 EN NIET MINDER, en dat getal hangt vast aan walk.js. Die verdeelt de
+     stappen over een band en kiest de stap die het dichtst bij de leeslijn
+     staat; wordt een stap veel korter dan die band, dan zijn er twee tegelijk
+     halverwege hun verschuiving en leest de beweging als drift in plaats van
+     als tempo. De band leest sinds vandaag de échte staphoogte in plaats van
+     een vast deel van het venster, dus de twee kunnen niet meer uit de pas
+     lopen — zie de noot bij `band` in src/scripts/walk.js. */
+  :global(.js) .wk-step { min-height: 48svh; display: flex; flex-direction: column; justify-content: center; }
 
   /* THE LEFT-TO-RIGHT SLIDE. `--wk-t` and `--wk-o` are written by walk.js from
      the scroll position, once per frame, on the inner element only — never on

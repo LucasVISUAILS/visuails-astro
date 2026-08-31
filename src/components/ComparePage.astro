@@ -186,7 +186,7 @@ const COPY = {
         // the exact reflex #246 is about. What stays is the part a picture
         // cannot say: how long, and that the retouching is after.
         a: 'Weeks. A date has to be agreed before anyone shoots, and the retouching starts after the day ends.',
-        b: `${turnaround(tier, 'en')}. The delivery date is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
+        b: `${clause(turnaround(tier, 'en'))}. The delivery date is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
       },
       {
         label: 'Who checks it',
@@ -243,6 +243,31 @@ const COPY = {
     ],
     seqOut: 'Nothing has to be in one place at one time. A revision is one image, not another arrangement.',
     convNote: 'The bars are uneven because four schedules do not naturally line up, and they are not to scale — there is nothing here to measure.',
+
+    /* ── DE SHOOTWEEK, 30 AUGUSTUS 2026 ────────────────────────────────────
+       Deze opsomming stond op de HOMEPAGE en nergens anders: hij is daar op 18
+       augustus al eens weggehaald richting deze pagina, en toen bleek bij het
+       nakijken van de gebouwde site dat hij hier helemaal niet stond. De
+       verhuizing is toen teruggedraaid met de juiste reden — "het is de enige
+       plek op de site waar staat waaruit een shootweek bestaat".
+
+       Nu staat hij hier wél, en pas daarna gaat hij van de homepage af. De
+       volgorde is het punt: eerst een thuis, dan de schaar.
+
+       WAAROM HIER EN NIET IN DE MATRIX. De matrix bovenaan vergelijkt wat je
+       KRIJGT. Dit gaat over wat het je KOST aan uren, en dat is de tweede helft
+       van dezelfde vergelijking — de helft die niet op de factuur staat.
+       tests/vergelijk-week.test.mjs bewaakt dat hij hier blijft. */
+    weekHead: 'And the week around the day',
+    weekSub: 'A shoot is not one day on your calendar. It is the week that has to be cleared around it, and only one of those two shows up on the invoice.',
+    weekList: [
+      'The casting, and the shortlist that comes back with someone unavailable.',
+      'The booking: a studio, a photographer, a date the three of you share.',
+      'Shipping the samples there, and getting them back.',
+      'The reschedule when it rains, or when the shipment is a day late.',
+      'The two evenings afterwards, culling frames.',
+    ],
+    weekOrder: 'An order takes twenty minutes of your time, whether it is one product or thirty: sort the photos by SKU, drop them in, and pick a week. Everything above is not done faster — it is not done at all.',
 
     winsHead: 'Where a shoot day still wins',
     winsSub: 'We would rather you knew. If any of these is the job, book the day — an order with us is the wrong tool for it.',
@@ -311,7 +336,7 @@ const COPY = {
       {
         label: 'Wanneer het er is',
         a: 'Weken. Er moet eerst een datum vastliggen voordat er iemand fotografeert, en de retouche begint pas als de dag voorbij is.',
-        b: `${turnaround(tier, 'nl')}. We kijken eerst in de agenda of de week die je nodig hebt nog kan. Kan die niet, dan hoor je dat meteen, in plaats van dat je een datum krijgt.`,
+        b: `${clause(turnaround(tier, 'nl'))}. We kijken eerst in de agenda of de week die je nodig hebt nog kan. Kan die niet, dan hoor je dat meteen, in plaats van dat je een datum krijgt.`,
       },
       {
         label: 'Wie het controleert',
@@ -357,6 +382,18 @@ const COPY = {
     ],
     seqOut: 'Niets hoeft op één plek op één moment te zijn. Een revisie is één beeld, niet opnieuw die hele afstemming.',
     convNote: 'De balken zijn ongelijk omdat vier planningen niet vanzelf op één lijn liggen, en ze staan niet op schaal — er valt hier niets te meten.',
+
+    /* Zie de noot bij de Engelse tabel. */
+    weekHead: 'En de week eromheen',
+    weekSub: 'Een shoot is niet één dag in je agenda. Het is de week die eromheen vrijgemaakt moet worden, en maar één van die twee staat op de factuur.',
+    weekList: [
+      'De casting, en de shortlist die terugkomt met iemand die net niet kan.',
+      'De boeking: een studio, een fotograaf, en een datum die jullie drieën delen.',
+      'De samples ernaartoe sturen, en weer terug.',
+      'Het uitstel als het regent, of als de zending een dag te laat is.',
+      'De twee avonden erna, met het schiften van de frames.',
+    ],
+    weekOrder: 'Een bestelling kost je twintig minuten, of het nu één product is of dertig: foto’s op SKU sorteren, erin zetten, en een week kiezen. Alles hierboven gaat niet sneller — het gaat helemaal niet.',
 
     winsHead: 'Waar een shootdag nog steeds wint',
     winsSub: 'We vertellen het je liever eerlijk. Is dit de opdracht? Boek dan de dag — een bestelling bij ons is er het verkeerde gereedschap voor.',
@@ -500,6 +537,20 @@ const t = COPY[lang];
       note={t.convNote}
     />
   </div>
+</div></section>
+
+<!-- DE WEEK OM DE DAG HEEN. Verhuisd van de homepage op 30 augustus 2026; zie
+     de noot bij weekHead in de copytabel voor waarom hij eerst hier moest staan
+     voordat hij daar weg mocht. -->
+<section class="section-tight"><div class="container">
+  <div class="section-head">
+    <h2>{t.weekHead}</h2>
+    <p>{t.weekSub}</p>
+  </div>
+  <ul class="weeklijst reveal-group">
+    {t.weekList.map((r) => (<li class="reveal pending">{r}</li>))}
+  </ul>
+  <p class="weekslot">{t.weekOrder}</p>
 </div></section>
 
 <!-- WHERE A SHOOT DAY STILL WINS — the page is not credible without it. -->
@@ -686,6 +737,22 @@ const t = COPY[lang];
     box-shadow: inset 0 -1px 0 var(--line);
   }
   .tool-close { margin: 1.8rem 0 1rem; font-size: 1.05rem; color: var(--ink); max-width: 60ch; }
+
+  /* De week om de dag heen. Zelfde vorm als .tool-list hierboven — het is
+     dezelfde soort inhoud (een opsomming van wat er werkelijk gebeurt) en twee
+     verschillende lijstvormen op één pagina zouden suggereren dat er een
+     verschil is dat er niet is. In twee kolommen zodra er ruimte voor is: vijf
+     regels onder elkaar leest als een waslijst, twee kolommen als een lijst. */
+  .weeklijst { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: 0; }
+  @media (min-width: 720px) { .weeklijst { grid-template-columns: 1fr 1fr; column-gap: 2.4rem; } }
+  .weeklijst li {
+    padding: .85rem 0;
+    font-size: .95rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .weekslot { margin: 1.6rem 0 0; font-size: 1.02rem; color: var(--ink); max-width: 62ch; }
 
   .cta-reply { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
 </style>

@@ -355,19 +355,34 @@ Ja. Mollie heeft een Subscriptions API bovenop mandaten: je laat de klant één 
 
 ## 3 · Creditsysteem
 
+> **DIT HOOFDSTUK IS ACHTERHAALD — 29 augustus 2026.** Het beschrijft een
+> creditsysteem: een saldo dat je afrekent bij het bestellen, met een grootboek
+> eronder. Dat is niet wat er gebouwd is. Lucas' slotmodel (migratie `0035`) zet
+> het andersom — een slot is een RECHT dat de klant zelf inneemt door een product
+> in te vullen en vast te zetten, en dat gebeurt vóór het bestellen en niet
+> erbij. De noten hieronder van 23 augustus wijzen naar `verbruikBoeken()` en
+> `subscription_months`, en die zijn sinds 0035 niet meer het geldpad.
+>
+> Wat er van dit hoofdstuk overeind blijft staat onderaan bij 29 augustus. Ik
+> laat de rest staan in plaats van hem weg te gooien: de vragen die hier gesteld
+> worden zijn nog steeds de goede vragen, alleen zijn vier van de acht inmiddels
+> beantwoord door de bouw en niet door een besluit.
+
 Het model: een abonnement is een vast maandbedrag bij Mollie, en de credits zijn van jou. Drie tabellen en je bent er.
 
 - [ ] Datamodel ontwerpen: `subscriptions`, `credit_balances`, `credit_ledger` (elke mutatie een regel, nooit een saldo overschrijven)
   — *Deels, nagekeken 23 augustus:* `subscriptions` bestaat (migratie `0030`) en het géldgrootboek is echt alleen-toevoegen. De creditkant niet: die leeft als een bij te werken totaal op `subscription_months`, en `verbruikBoeken()` doet `SET used = used + ?` (`src/lib/subscription.js:359`) — precies het overschrijven dat dit punt uitsluit. `credit_balances` en `credit_ledger` bestaan niet.
 - [ ] Per soort apart tellen — catalogproducten, lifestyleproducten, videoclips — want ze kosten niet hetzelfde
   — *Deels, nagekeken 23 augustus:* producten en videoclips worden apart geteld, elk met een eigen doorrol (`migrations/0030-abonnementen.sql:157`). Catalog en lifestyle delen nog één teller, dus het is een tweedeling in plaats van een driedeling — en er boekt vandaag niets verbruik: `verbruikBoeken()` heeft buiten de tests geen aanroeper.
-- [ ] 🟡 Beslissen wat er aan het eind van de maand gebeurt: vervallen, doorrollen, of doorrollen met een plafond
+- [x] ~~🟡 Beslissen wat er aan het eind van de maand gebeurt: vervallen, doorrollen, of doorrollen met een plafond~~
+  — *Gevallen 29 augustus:* doorrollen met een plafond. Eén maand voor een maandabonnement, drie voor een jaarcontract, en het dak is dus twee maanden toekenning. Lucas' eigen vergelijking: de belastingaangifte die je uiterlijk eind volgende maand inlevert.
 - [ ] Bestelformulier laten weten dat er credits zijn en ze automatisch aftrekken vóór de betaalstap
 - [ ] Wat als een bestelling groter is dan het saldo — bijbetalen tegen staffeltarief, of weigeren
-- [ ] Saldo tonen in het klantportaal en in de accountpagina
+- [x] ~~Saldo tonen in het klantportaal en in de accountpagina~~
+  — *Af sinds 29 augustus voor de accountpagina:* één regel per soort met wat er deze maand is, wat er doorschoof, en de datum waarop dat vervalt. Het klantportaal op `/o/<token>` toont nog steeds niets, en dat is met opzet — dat portaal hoort bij één bestelling en niet bij een abonnement.
   — *Deels, nagekeken 23 augustus:* de plannenpagina toont beide saldi met een meter, resterend-van-toegekend en de vervaldatum van de doorrol (`src/lib/account.js:5652`). Het klantportaal op `/o/<token>` toont geen saldo, en het geldtegoed uit `customer_credits` ziet de klant nergens.
 - [ ] Saldo tonen en handmatig kunnen bijstellen in admin (er gaat een keer iets mis en dan wil je het kunnen rechtzetten)
-- [ ] Credits terugboeken als een bestelling geannuleerd wordt
+- [ ] 🔴 **Slots terugboeken als een bestelling geannuleerd wordt.** *Nagekeken 29 augustus en dit is een echt gat.* Losmaken en weghalen op de lijst geven het slot netjes terug (`queueUnlock`, `queueRemove` → `geefSlotTerug`), maar `handleOrderCancel()` in admin.js doet dat niet: annuleer je een abonnementsbestelling, dan zijn de slots weg en de producten ook. Erger nog, diezelfde handler zegt de klant *"Nothing was paid"* op zijn tijdlijn, want een planbestelling draagt `total_cents = 0` — terwijl hij er wél voor betaald heeft, via zijn maandtermijn.
 
 ---
 
@@ -504,13 +519,13 @@ Je noemt twee modellen. Ze sluiten elkaar niet uit, maar ze vragen wel een ander
 - [x] ~~D1-aanroepen zonder guard die een 500 geven in plaats van een nette foutmelding~~ — elke ingang controleert de binding vóór de eerste query en geeft een nette foutmelding: `src/lib/admin.js:113`, `src/lib/account.js:1129` en `:2196`, `src/lib/portal.js:323`, `functions/api/order-status.js:128`, `functions/api/step.js:97`.
 - [x] ~~Het woord "drop" staat nog in klantteksten op ongeveer vijf pagina's terwijl het intern is afgeschaft~~ — het zelfstandig naamwoord is uit de klantteksten; wat er nog staat is het werkwoord (“you drop a folder”) en een klassenaam. Als wire-waarde leeft `drop` nog in `src/data/pricing.js:348`, en daar hoort hij.
 - [x] ~~De AI Act-pagina spreekt in zijn hero zijn eigen §6 tegen~~ — §6 is herschreven en zegt nu hetzelfde als de hero (`AiActPage.astro:181` en `:268`); `tests/promises.test.mjs:351` houdt de oude tekst tegen.
-- [ ] 🟡 Prijs van het merkmodel (€1.250) staat nog niet vast
+- [x] ~~🟡 Prijs van het merkmodel (€1.250) staat nog niet vast~~ *(gevallen 23 augustus: één product van € 450, zie `AMOUNT.brandModel`)*
   — *Niet uit code vast te stellen:* een prijsbesluit.
 - [ ] Beslissen wat er met `orders@visuails.com` gebeurt: echte gebruiker aanmaken, of mail versturen vanaf `hello@` en die profielfoto meteen goed hebben
   — *Open, nagekeken 23 augustus:* nog geen besluit: `FROM_EMAIL` is nog `VISUAILS <orders@visuails.com>` (`src/lib/mail.js:57`, `wrangler.toml:56`) met `reply_to` op `hello@`.
 - [x] ~~Interne meldingsmail (die jij krijgt bij een bestelling) ook in het nieuwe briefhoofd, als je dat wilt~~
   — *Gedaan 23 augustus.* Alle drie: de bestelmelding (`notifyEmail()`), de checklist-aanmelding en het contactbericht gaan nu door `shell()`, met `h1()`, `rows()` en `quote()` in plaats van met de hand nagebouwde tabellen. De inhoud is niet veranderd — de banner, het btw-blok en de bestandstabel zijn eigen bouwsels en die staan er nog precies zo.
-- [ ] Back-up van D1 en R2 regelen — er is er nu geen
+- [x] ~~Back-up van D1 en R2 regelen — er is er nu geen~~ *(`scripts/backup.mjs` draait, en de nachtelijke taak klaagt via `BACKUP_STALE_DAYS` als hij ouder dan tien dagen is)*
   — *Deels, nagekeken 23 augustus:* er is een dump van heel D1 plus een R2-sleutellijst (`scripts/backup.mjs`), met een bewaking op de ouderdom in de cron (`checkBackupAge`, `cron/index.js:606`). Wat er niet is: de R2-bestanden zélf gaan alleen mee met `--files`, en het draait als geplande taak op één Windows-machine — er is geen automatische kopie buiten de deur.
 - [x] ~~Meten wat er gebeurt: hoeveel mensen starten een bestelling en hoeveel maken hem af~~ — `funnel_hits` (migratie `0025-funnel.sql`), `src/scripts/pipeline.js:613` meldt elke stap aan `/api/step`, en `/admin/funnel` (`src/lib/admin.js:5061`) toont de trechter van start tot afronding.
 
@@ -629,10 +644,12 @@ voorbehoud noemt welke producten de twee kolommen beschrijven.
 
 ### Drie punten die ik heb uitgezocht en NIET gebouwd
 
-- [ ] **De tegoedlaag — en mijn eerdere antwoord hierover was fout.**
+- [x] ~~**De tegoedlaag — en mijn eerdere antwoord hierover was fout.**~~ *(gebouwd 27 augustus als `startPlanStart()`, en op 29 augustus vervangen door het slotmodel — zie onderaan.)*
   Ik schreef dat `verbruikBoeken()` "één aanroep in de bestelstroom" verwijderd is. Dat klopt niet. `/api/order` is anoniem: de sessiecookie staat op `Path=/account` (`account.js:3952`, met de reden erbij — "a narrower path is a smaller surface") en wordt dus nooit naar `/api/order` gestuurd. Saldo afschrijven op een getypt e-mailadres zou iedereen het saldo van een ander laten uitgeven. `verbruikToestaan`, `verbruikBoeken`, `queueTake` en `queueLinkOrder` hebben alle vier geen aanroeper omdat ze bij één en dezelfde ontbrekende functie horen: **een wachtrij-item van een abonnee omzetten in een bestelling.** De plek daarvoor is een adminhandeling ("pak de bovenste N van deze abonnee en maak er een bestelling van"), waar de vier functies in die volgorde achter elkaar staan. Dat is een nieuw geldpad en geen ontbrekende regel.
 - [ ] **Reviews op de homepage.** De regel "We hebben nog weinig reviews" is op dit moment wáár, en een leeg blok eronder zou slechter zijn dan de regel. Belangrijker: `ARCHITECTURE.md` §1 verbiedt met zoveel woorden client-side ophalen van paginainhoud, dus dit blok kan niet met een fetch. De vorm die wél past is een bouwstapscript dat de goedgekeurde set uit D1 in `src/data/` schrijft (zoals `visual/referentie.json` er ook staat), dat jij lokaal draait en meecommit. De index `idx_feedback_live` in migratie 0020 staat er al voor klaar.
-- [ ] **De galerij bijvullen.** De elf `brand-*.webp` worden alle elf gebruikt (HomeV2, StudioPage, Layout) — alleen niet in `gallery.astro`. Ze erin zetten vraagt drie keuzes die van jou zijn: een nieuwe filtercategorie naast campaign/dunes/flash/glow/phone-made, in twee talen, en nieuwe `-w380`/`-w760`-derivaten. Zonder die derivaten serveert de galerij ze op volle grootte in een cel van 375 px — precies het gemeten probleem van 3,12 MB dat daar is opgelost.
+- [x] ~~**De galerij bijvullen.** De elf `brand-*.webp` worden alle elf gebruikt (HomeV2, StudioPage, Layout) — alleen niet in `gallery.astro`.~~
+  — *Gedaan, 30 augustus 2026.* `gallery.astro` noemt de `brand-`-beelden nu veertien keer, met een eigen categorie en `-w380`-derivaten ernaast; `tests/galerij.test.mjs` leest de webp-koppen om te controleren dat elke bron ook echt op het opgegeven formaat staat. De oorspronkelijke tekst hieronder blijft staan omdat de drie keuzes die erin genoemd worden precies de keuzes zijn die gemaakt zijn.
+  <br>Oorspronkelijk: Ze erin zetten vraagt drie keuzes die van jou zijn: een nieuwe filtercategorie naast campaign/dunes/flash/glow/phone-made, in twee talen, en nieuwe `-w380`/`-w760`-derivaten. Zonder die derivaten serveert de galerij ze op volle grootte in een cel van 375 px — precies het gemeten probleem van 3,12 MB dat daar is opgelost.
 
 ### En wat er van de jargonronde nog ligt
 
@@ -640,3 +657,114 @@ voorbehoud noemt welke producten de twee kolommen beschrijven.
 
 - **`/studio`, 13× `venster`.** Die pagina staat in de sitemap en in de voettekst als "Hoe een bestelling draait", dus §3 geldt er. Maar het is de pagina die uitlegt hóé de agenda werkt, en daar is "venster" het onderwerp. Dertien vervangingen op één pagina is een tekstronde, met precies de valkuil die §3 zelf noemt: "het venster" wordt "de leverdatum" en dan moeten het lidwoord en het verwijswoord mee.
 - **`briefing`, 9× op `/terms`, `/privacy`, `/data-processing-agreement` en `/contact`.** Op de juridische pagina's is het bijna een gedefinieerde term. Dat is jouw en de jurist zijn keuze, niet de mijne.
+
+---
+
+## 29 augustus 2026 — het abonnement werd slots per soort
+
+Lucas keek naar `/account/plan` en zei wat er mis was: *"voelt heel saai en
+onduidelijk"*, en daarna het echte probleem — *"bezoekers gaven aan er niks van
+te snappen."* Eén getal met een balk eronder ("12 van de 12 over") zegt niet
+waarvan, en een klant die niet weet wat hij heeft, gebruikt het niet.
+
+Zijn eigen model bleek het antwoord, en het is scherper dan wat er stond:
+
+> *"Klanten krijgen 5 catalog/lifestyle slots per maand die ze zelf kunnen
+> invullen. De klant voert alle informatie van het product in en klikt op
+> confirm, waardoor ze een slot hebben gelockt. 5 slots betekenen ook 5
+> producten. Alle slots moeten gesorteerd worden op service categorie waardoor we
+> echt gericht abonnementen kunnen maken — bijvoorbeeld een motion-abonnement met
+> 4 hooks, 2 motion en 1 lifestyle video per maand."*
+
+Plus de doorschuifregel, met zijn eigen vergelijking erbij: *"net als
+belastingaangifte die je uiterlijk het eind van de volgende maand moet
+inleveren."* Vijf slots, niets gebruikt, betekent begin volgende maand tien — en
+tien is dan ook het dak, want de maand daarna loopt het weer over.
+
+### Wat er gebouwd is
+
+**Migratie `0035-slots-per-soort.sql`.** Eén tabel, `subscription_slots`, met één
+rij per abonnement per maand per soort. Verval, het dak van twee maanden en
+"oudste eerst" vallen daar alle drie uit — er is geen vervalkolom en geen
+plafondkolom, want beide zijn af te leiden uit de maand plus het venster van de
+termijn. `plan_queue` kreeg `kind` en `locked_at`.
+
+**`src/lib/slots.js`.** Toekennen (idempotent, want de Mollie-webhook mag twee
+keer binnenkomen), lezen, afschrijven vanaf de OUDSTE maand, en teruggeven aan de
+NIEUWSTE. Die twee volgordes zijn elkaars spiegel met opzet: afschrijven vanaf de
+nieuwste zou slots laten vervallen die de klant nog had kunnen gebruiken, en
+teruggeven aan de oudste zou losmaken-en-opnieuw-vastzetten de vervaldatum
+stilletjes naar voren halen.
+
+**Vastzetten is de handeling en het moment van betalen.** Een item op de lijst is
+een CONCEPT tot de klant erop drukt; dan gaat het slot eraf. `startPlanWindow()`
+schrijft daarom niets meer af — dat stond er nog wel, en zou de klant twee keer
+voor hetzelfde product hebben laten betalen.
+
+**Opzeggen schuift niet door.** Lucas wees die rand zelf aan. `vensterVoor()`
+geeft een opgezegd abonnement een venster van nul: zijn betaalde maand mag hij
+nog opmaken — daar heeft hij voor betaald — maar wat hij dan niet gebruikt,
+verdwijnt met de opzegging mee. Er is geen volgende maand om naar door te
+schuiven.
+
+### Wat het nalopen erna opleverde
+
+Vijf dingen die stil fout waren gegaan, en alle vijf op dezelfde manier: code die
+klopte bij het oude model en daarna een leugen werd.
+
+1. **`checkPlanQueues()` telde concepten mee als "klaar".** De mail die vijf dagen
+   voor de week waarschuwt dat er niets klaarstaat, zou juist dán zwijgen als de
+   lijst vol concepten stond — precies de stille lege week waarvoor die taak
+   bestaat.
+2. **Het adminpaneel sprak nog van credits.** "12 credits over", "wacht op saldo"
+   (een teller die sinds het slotmodel altijd nul is) en "schrijft evenveel
+   credits af" bij een knop die niets meer afschrijft.
+3. **`verbruikToestaan()` in `startPlanWindow()` heeft nooit gelopen.** `if (!verbruikToestaan(...))`
+   op een functie die een OBJECT teruggeeft, is altijd onwaar. Zou hij wél
+   gelopen hebben, dan had hij het verkeerde getoetst: doorgeschoven slots vallen
+   buiten de toekenning van deze maand, dus een klant met vijf doorgeschoven
+   producten had zijn eigen, betaalde werk geweigerd gezien.
+4. **De clipsmeter tekende het volgende plan half.** Een vaste tweede balk voor
+   video kent precies de soorten die hij bij naam kent. Een motionplan met hooks,
+   motion én lifestyle zou er één van de drie laten zien. Er staat nu één regel
+   per soort, uit de balans, zonder één soort bij naam in de opmaak — en
+   `tests/subscription.test.mjs` toetst dat er ook geen bij naam terugkomt.
+5. **Een `<progress>` in plaats van een breedte.** Derde keer dit jaar dat
+   `style="width:…"` op de CSP van dit dashboard stukliep (na `swatch()` en de
+   beeldverhoudingen). `value` en `max` zijn attributen, dus gegevens, en die
+   weigert `style-src 'self'` niet. Bijkomend: een schermlezer leest hem voor.
+
+Daarnaast liepen er vier toetsbestanden mee die nergens in `npm test` stonden
+(`bundel`, `leestekens`, `model-checks`, `woorden`) plus `test:slots` zelf. Die
+staan nu in de ketting; ze waren alle vijf groen, wat het niet minder maar juist
+meer een probleem maakt — een toets die niet draait, is een toets die je denkt te
+hebben.
+
+### Wat Lucas nog moet doen
+
+- [x] ~~`npx wrangler d1 execute visuails --remote --file=migrations/0035-slots-per-soort.sql`~~ *(gedraaid 29 augustus)*
+- [x] ~~Pages opnieuw deployen, en daarna `npm run cron:deploy`~~ *(gedaan 29 augustus)*
+- [x] ~~`npx wrangler secret list --config cron/wrangler.toml` — `RESEND_API_KEY`~~ *(staat erop; het nachtrapport komt aan)*
+
+### En wat er nog ligt
+
+- [ ] 🟡 **Het eigen samengestelde abonnement.** Lucas' wens, en het model kan het
+  nu dragen: `PLAN_SLOTS` is een kaart van soort naar aantal, dus een custom plan
+  is een rij in diezelfde vorm. Wat er eerst moet vallen is een ONDERGRENS — een
+  plan van één slot per maand kost meer aan administratie dan het opbrengt.
+- [ ] 🟡 **Stripe.** `functions/api/webhook/stripe.js` is een openbaar eindpunt voor
+  een aanbieder die nergens gebruikt wordt; `createTestSampleCheckoutSession()`
+  heeft geen aanroeper. 23 toetsen bewaken dode code. Weg of aanzetten — allebei
+  goed, alleen niet zo laten.
+- [ ] 🟡 **Testimonials — de bouwstap staat klaar, jij moet hem één keer draaien.**
+  *Bijgewerkt 30 augustus 2026.* De regel hierboven ("niets leest
+  `testimonial_approved`") klopt niet meer. `scripts/testimonials.mjs` leest de
+  goedgekeurde set uit D1 en schrijft `src/data/testimonials.js`; `HomeV2.astro`
+  leest dat met `testimonialsToShow(3)` en toont het blok alleen als er iets in
+  staat. Wat er nog ontbreekt is de INHOUD: dat databestand is vandaag leeg,
+  dus de homepage toont nog steeds de eerlijke regel dat er nog geen reviews
+  zijn — en dat is precies wat de bedoeling is zolang er geen goedgekeurde
+  testimonial is.
+  <br>Wat jij moet doen: één goedgekeurde review in /admin, dan
+  `npm run testimonials -- --dry` om te zien wat eruit komt, dan zonder `--dry`,
+  en het gewijzigde `src/data/testimonials.js` meecommitten.

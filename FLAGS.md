@@ -1,5 +1,11 @@
 # Flag register
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `HomePage.astro` → `HomeV2.astro` — de homepage is bij het herontwerp van augustus 2026 herbouwd en meteen hernoemd
+
+
 Every positioning, pricing, security, correctness and tooling problem raised
 during the reposition, in one place. Consolidated 26 July 2026, at the end of
 section 12.

@@ -33,6 +33,15 @@ const OUT = path.join(ROOT, '.render');
 fs.mkdirSync(OUT, { recursive: true });
 
 const SECTION = process.argv[2] || '/account';
+/* VISUAILS_THEMA=licht zet de themacookie mee, zodat het lichte scherm ook op
+   een afdruk te beoordelen is. Zonder deze regel is er geen manier om ernaar te
+   kijken zonder in te loggen — en dan beoordeel je hem niet, precies waar dit
+   script tegen bestaat. */
+const THEMA = process.env.VISUAILS_THEMA === 'licht' ? 'licht' : 'donker';
+/* VISUAILS_THEMA=licht zet de themacookie mee, zodat het lichte scherm ook op
+   een afdruk te beoordelen is. Zonder deze regel is er geen manier om ernaar te
+   kijken zonder in te loggen — en dan beoordeel je hem niet, precies waar dit
+   script tegen bestaat. */
 
 /* Letterlijk de header uit html() in src/lib/account.js. Verandert die daar, dan
    hoort hij hier mee te veranderen — en scripts/csp-probe.mjs draagt dezelfde
@@ -182,11 +191,28 @@ const SUB_MONTHS = [
   { month: VORIGE, granted: 12, used: 9, clips_granted: 2, clips_used: 2 },
   { month: NU, granted: 12, used: 7, clips_granted: 2, clips_used: 1 },
 ];
+/* ── DRIE RIJEN, DRIE TOESTANDEN — en dat is de hele reden dat er drie staan.
+   Ze waren alle drie hetzelfde (concept, geen foto's), en dan toont het beeld
+   precies één van de vier standen die deze lijst kan hebben: het merkje kent
+   twee waarden, de vastzetknop drie (aan, uit, losmaken). Wat je niet rendert,
+   beoordeel je niet — dezelfde reden waarom dit script überhaupt bestaat. */
 const QUEUE = [
-  { id: 21, position: 0, name: 'Winterjas, zwart', note: 'graag op straat, niet in de studio', upload_batch: null, created_at: '2026-08-14' },
-  { id: 22, position: 1, name: 'Wollen sjaal — drie kleuren', note: null, upload_batch: null, created_at: '2026-08-14' },
-  { id: 23, position: 2, name: 'Handschoenen', note: 'detailopname van de naad', upload_batch: null, created_at: '2026-08-15' },
+  { id: 21, position: 0, name: 'Winterjas, zwart', note: 'graag op straat, niet in de studio', upload_batch: 'b-21', kind: 'complete', locked_at: '2026-08-14 09:12', created_at: '2026-08-14' },
+  { id: 22, position: 1, name: 'Wollen sjaal — drie kleuren', note: null, upload_batch: 'b-22', kind: 'complete', locked_at: null, created_at: '2026-08-14' },
+  { id: 23, position: 2, name: 'Handschoenen', note: 'detailopname van de naad', upload_batch: null, kind: 'video-motion', locked_at: null, created_at: '2026-08-15' },
 ];
+
+/* Vorige maand en deze maand, uitgerekend en niet vastgezet — anders valt dit
+   beeld buiten het doorschuifvenster zodra de maand omslaat. */
+const _nu = new Date();
+const _dezeMaand = _nu.toISOString().slice(0, 7);
+const _vorige = new Date(Date.UTC(_nu.getUTCFullYear(), _nu.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
+const SUB_SLOTS = [
+  { month: _vorige,    kind: 'complete',     granted: 12, used: 9 },
+  { month: _dezeMaand, kind: 'complete',     granted: 12, used: 2 },
+  { month: _dezeMaand, kind: 'video-motion', granted: 2,  used: 1 },
+];
+
 const TAKEN = [
   { id: 19, name: 'Regenjas, olijf', taken_at: '2026-08-08', order_id: 91, order_ref: 'VIS-2608-4471' },
   { id: 18, name: 'Trui, gebroken wit', taken_at: '2026-07-08', order_id: 90, order_ref: 'VIS-2607-9920' },
@@ -201,6 +227,10 @@ function makeDb() {
        opmaak dat je pas na een deploy ontdekt. */
     if (s.includes('FROM subscriptions')) return process.env.VISUAILS_GEEN_ABO ? null : SUBSCRIPTION;
     if (s.includes('FROM subscription_months')) return SUB_MONTHS;
+    /* De slots per soort — migratie 0035. Twee soorten, en bij de eerste is een
+       deel doorgeschoven uit vorige maand: dat is de stand waar de opmaak het
+       moeilijkst van wordt en dus de stand die je wilt zien. */
+    if (s.includes('FROM subscription_slots')) return SUB_SLOTS;
     if (s.includes('FROM plan_queue q')) return TAKEN;
     if (s.includes('FROM plan_queue')) return QUEUE;
     if (s.includes('FROM account_sessions')) return { ...CUSTOMER, expires_at: '2099-01-01' };
@@ -247,7 +277,7 @@ async function render(section, lang) {
       /* Met VISUAILS_NAV=dicht rendert dit script de INGEKLAPTE balk. Dat is de
          enige manier om die stand te zien: hij komt uit een cookie, want de CSP van
          dit dashboard laat geen script toe. Zie navCookie() in account.js. */
-      cookie: `vis_account=${token}; vis_lang=${lang}`
+      cookie: `vis_account=${token}; vis_lang=${lang}; vis_thema=${THEMA}`
         + (process.env.VISUAILS_NAV === 'dicht' ? '; vis_nav=dicht' : ''),
       'accept-language': lang === 'nl' ? 'nl-NL,nl;q=0.9' : 'en-GB,en;q=0.9',
     },

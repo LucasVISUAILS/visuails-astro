@@ -1,5 +1,11 @@
 # Report — section 14, VAT / BTW
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `HomePage.astro` → `HomeV2.astro` — de homepage is bij het herontwerp van augustus 2026 herbouwd en meteen hernoemd
+
+
 Written 26 July 2026, against `BRIEF-14-VAT-BTW.md` and commit `11d0eb8`.
 
 You asked two things: what still needs to happen, and whether section 14 can be

@@ -154,6 +154,81 @@ const gefilterd = nepBestand
 ok('de wacht vindt de fout nog wél als hij er echt staat',
   /import\.meta\.url/.test(gefilterd) && /\.pathname/.test(gefilterd), true);
 
+/* ── 2b · EN EEN GLOBRESULTAAT WORDT GENORMALISEERD ─────────────────────────
+ *
+ * 30 augustus 2026, 20:45. `npm test` bij Lucas:
+ *
+ *   FAIL alleen /proef en /nl/proef missen de huid
+ *        verwacht ["/nl/proef/","/proef/"] kreeg ["\\nl\\proef\\","\\proef\\"]
+ *
+ * De glob geeft paden terug met de scheiding van het besturingssysteem. Bij mij
+ * is dat `/`, bij hem `\`. Die regel stond er sinds 28 augustus en is bij mij
+ * nooit rood geweest, want hij KAN bij mij niet rood worden.
+ *
+ * Dezelfde soort fout als de `.pathname` hierboven, en om dezelfde reden
+ * gevaarlijk: de bron ziet er goed uit, de toets is groen op de machine waar hij
+ * geschreven is, en hij valt om op de enige machine die telt.
+ *
+ * ── WAT DEZE WACHT WEL EN NIET ZIET ────────────────────────────────────────
+ *
+ * Hij eist dat elke globregel binnen drie regels een normalisatie heeft:
+ * `replace(/\\/g, '/')` of `split(sep).join('/')`. Dat is grover dan de echte
+ * regel, die luidt: een pad uit het bestandssysteem dat als tekst wordt
+ * vergeleken of afgedrukt, hoort schuine strepen te hebben. Die is statisch niet
+ * te zien. Wat deze wacht vooral doet is een herinnering afdwingen op het moment
+ * dat iemand een nieuwe glob schrijft — precies het moment waarop het misging.
+ *
+ * ── EN WAAROM DE ZOEKTERM UIT STUKKEN WORDT GEPLAKT ────────────────────────
+ *
+ * Omdat deze wacht zichzelf anders vindt. De regel die de zoekterm toepast, en
+ * de twee sabotagecontroles onderaan, bevatten die term zelf; uitgeschreven zijn
+ * dat drie vondsten in dit bestand. Dat is voor de zesde keer dezelfde val in
+ * deze repo — een controle die op zijn eigen tekst matcht.
+ *
+ * En daarom leest hij de ruwe regels in plaats van eerst het commentaar weg te
+ * halen, zoals de wacht hierboven doet. Die knipt op `/*` en `*​/`, en de eerste
+ * echte glob in deze repo zoekt naar `**​/*.{astro,js}` — een patroon met `/*`
+ * erin. De commentaarknipper at die regel op en de wacht meldde vervolgens een
+ * bestand dat het gewoon goed deed. Regels die eruitzien als commentaar worden
+ * daarom overgeslagen op vorm, niet weggeknipt.
+ */
+console.log('\nelk globresultaat krijgt schuine strepen, ook op Windows');
+
+const GLOB = new RegExp(['glob', 'Sync\\('].join(''));
+const NORMALISEERT = /replace\(\/\\\\+\/g,\s*['"]\/['"]\)|split\((path\.)?sep\)\.join\(['"]\/['"]\)/;
+const isCommentaar = (regel) => /^\s*(\*|\/\/|\/\*)/.test(regel);
+
+const ruweGlobs = [];
+const globLoop = (dir) => {
+  for (const naam of fs.readdirSync(dir, { withFileTypes: true })) {
+    const q = path.join(dir, naam.name);
+    if (naam.isDirectory()) { globLoop(q); continue; }
+    if (!naam.name.endsWith('.mjs') && !naam.name.endsWith('.js')) continue;
+    const regels = fs.readFileSync(q, 'utf8').split('\n');
+    regels.forEach((regel, i) => {
+      if (isCommentaar(regel) || !GLOB.test(regel)) return;
+      const venster = regels.slice(i, i + 3).join('\n');
+      if (!NORMALISEERT.test(venster)) ruweGlobs.push(`${path.relative(ROOT, q)}:${i + 1}: ${regel.trim().slice(0, 60)}`);
+    });
+  }
+};
+for (const map of ['scripts', 'tests', 'cron']) {
+  const d = path.join(ROOT, map);
+  if (fs.existsSync(d)) globLoop(d);
+}
+ok('elke glob wordt binnen drie regels genormaliseerd', ruweGlobs.length, 0, ruweGlobs.slice(0, 3));
+
+/* Dezelfde sabotagecontrole als hierboven, en om dezelfde reden: een wacht die
+   niets vindt is niet te onderscheiden van een wacht die niet werkt. Beide
+   kanten op, en de voorbeelden in stukken zodat ze pas bestaan wanneer ze
+   gedraaid worden. */
+const kaal = ['const f = glob', "Sync('dist/**/index.html');"].join('');
+ok('de wacht ziet een kale glob', GLOB.test(kaal) && !NORMALISEERT.test(kaal), true);
+const netjes = ['const f = glob', "Sync('dist/**/index.html').map((x) => x.replace(/", "\\\\/g, '/'));"].join('');
+ok('en laat een genormaliseerde met rust', GLOB.test(netjes) && NORMALISEERT.test(netjes), true);
+/* En dat het overslaan op vorm werkt: deze wacht mag zijn eigen kop niet vinden. */
+ok('en betrapt zichzelf niet op zijn eigen toelichting', ruweGlobs.some((v) => v.startsWith('tests/paths')), false);
+
 /* ── 3 · _redirects MAG GEEN BESTAANDE ROUTE OVERSCHADUWEN ──────────────────
  *
  * public/_redirects schrijft het zelf op, in zijn eigen regel 2:

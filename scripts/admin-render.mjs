@@ -28,6 +28,10 @@ const ORDER = {
   lang: 'nl', product_count: 3, payment_status: 'paid', created_at: '2026-07-28',
   delivered_at: '2026-08-02', delivery_mailed_at: '2026-08-02 09:30',
   redelivery_mailed_at: null, redelivery_count: 0, file_count: 9,
+  /* Stond niet in de nepdata, en het paneel zette er `undefined\u00d7 aangevraagd`
+     neer. Een schermafdruk die iets toont wat in productie nooit zo staat, is
+     een schermafdruk waar je de verkeerde dingen op nakijkt. */
+  revision_count: 1, revisions_revoked_at: null,
 };
 
 /* Product 1 compleet en gemeld, product 2 half af met één revisie, product 3
@@ -70,6 +74,19 @@ function makeEnv() {
       return { admin_id: 1, id: 1, email: 'hello@visuails.com', expires_at: '2099-01-01' };
     }
     if (s.includes('FROM rate_limits')) return null;
+    /* ── HET ABONNEMENTSPANEEL — 30 augustus 2026 ─────────────────────────────
+       Zonder deze rijen rendert /admin/customers/<id> het paneel helemaal niet,
+       en dan staat er op de schermafdruk precies niets van het scherm waar sinds
+       migratie 0035 het meeste aan veranderd is: het saldo per soort, de lijst
+       met vastgezet-of-concept, en de knop om slots bij te stellen.
+
+       Dezelfde les als bij scripts/account-render.mjs eerder deze week: een
+       fixture die de code niet bereikt, is een controle die niets controleert. */
+    if (s.includes('FROM subscriptions')) return SUB;
+    if (s.includes('FROM subscription_months')) return SUB_MONTHS;
+    if (s.includes('FROM subscription_slots')) return SUB_SLOTS;
+    if (s.includes('FROM plan_queue')) return QUEUE;
+    if (s.includes('FROM customers WHERE id')) return KLANT;
     /* De aanbevelingen — 14 augustus 2026. Twee rijen en niet één: het scherm
        splitst op "wacht op je" en "goedgekeurd", en met alleen een wachtende rij
        is de helft van de opmaak op de schermafdruk niet te zien. Zie de kop van
@@ -99,6 +116,36 @@ function makeEnv() {
   };
   return { DB };
 }
+
+/* ── DE ABONNEE ──────────────────────────────────────────────────────────────
+   Uitgerekende maanden en geen vaste strings, om dezelfde reden als in
+   tests/account-brand-kit.test.mjs: een vast '2026-08' valt buiten het
+   doorschuifvenster zodra de maand omslaat, en dan tekent het paneel stilletjes
+   iets anders dan waar je naar denkt te kijken. */
+const _nu = new Date();
+const _deze = _nu.toISOString().slice(0, 7);
+const _vorig = new Date(Date.UTC(_nu.getUTCFullYear(), _nu.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
+const KLANT = { id: 8, email: 'studio@voltbrand.nl', name: 'Mara', brand: 'VOLT', created_at: '2026-06-01' };
+const SUB = {
+  id: 3, ref: 'SUB-2608-001', customer_id: 8, plan: 'studio', term: 'monthly',
+  status: 'active', window_day: 8, created_at: `${_deze}-01`,
+};
+const SUB_MONTHS = [
+  { month: _vorig, granted: 12, used: 9, clips_granted: 2, clips_used: 0 },
+  { month: _deze, granted: 12, used: 2, clips_granted: 2, clips_used: 1 },
+];
+const SUB_SLOTS = [
+  { month: _vorig, kind: 'complete', granted: 12, used: 9 },
+  { month: _deze, kind: 'complete', granted: 12, used: 2 },
+  { month: _deze, kind: 'video-motion', granted: 2, used: 1 },
+];
+/* Drie toestanden, want het paneel kan er drie tonen: vastgezet, concept met
+   foto's, en concept zonder. Alle drie op de afdruk of geen van drieën. */
+const QUEUE = [
+  { id: 61, position: 0, name: 'Winterjas, zwart', note: null, upload_batch: 'b-1', kind: 'complete', locked_at: `${_deze}-02 10:00:00`, order_id: null, taken_at: null, created_at: `${_deze}-01` },
+  { id: 62, position: 1, name: 'Cargobroek, sand', note: null, upload_batch: 'b-2', kind: 'complete', locked_at: null, order_id: null, taken_at: null, created_at: `${_deze}-01` },
+  { id: 63, position: 2, name: 'Motion voor de winterjas', note: null, upload_batch: null, kind: 'video-motion', locked_at: null, order_id: null, taken_at: null, created_at: `${_deze}-02` },
+];
 
 const PHOTOS = fs.readdirSync(path.join(ROOT, 'public/img'))
   .filter((f) => /^(banners|lifestyle|custom-models|catalog)/.test(f) && /\.webp$/.test(f))

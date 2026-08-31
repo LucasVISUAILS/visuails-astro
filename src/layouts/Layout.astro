@@ -88,16 +88,25 @@ interface Props {
    *  the last one is over, .ground-espresso's contents become :root and this
    *  prop is deleted. The migration lives in the markup, not in a head. */
   ground?: 'paper' | 'espresso';
-  /** Zet een PROEFHUID op deze pagina. 'kantig' is de hoekige variant met de
-   *  pilvormige knoppen en de eigen muisaanwijzer — zie HuidKantig.astro voor
-   *  wat hij doet en waarom hij een huid is en geen verbouwing.
+  /** DE HUID VAN DE SITE. 'kantig' is de hoekige stijl met de eigen
+   *  muisaanwijzer — zie HuidKantig.astro voor wat hij doet.
    *
-   *  DIT IS EEN SCHAKELAAR EN GEEN MIGRATIE. Hij staat alleen op /proef en
-   *  /nl/proef. De homepage geeft hem niet mee en verandert dus niet: geen
-   *  token, geen regel en geen script uit die huid bereikt een pagina die er
-   *  niet om vraagt, en tests/huid.test.mjs zet dat vast. Bevalt de huid, dan
-   *  is het overzetten deze prop op index.astro en niets anders; bevalt hij
-   *  niet, dan is het de twee proefpagina's weggooien. */
+   *  ── HIJ IS DE STANDAARD GEWORDEN — 28 augustus 2026 ──────────────────────
+   *
+   *  Dit was een schakelaar met 'geen' als standaard: eerst alleen op /proef,
+   *  daarna alleen op / en /nl. Lucas: *"kijk wat er allemaal is veranderd qua
+   *  style aan de homepage en zet dit op de juiste manier over naar de andere
+   *  pagina's."*
+   *
+   *  DE STANDAARD OMDRAAIEN EN NIET DERTIG BESTANDEN AANRAKEN. De huid op elke
+   *  pagina zetten kan ook door dertig keer `huid="kantig"` te typen, en dan is
+   *  de pagina die je volgende maand toevoegt de enige die hem mist — zonder dat
+   *  iets dat meldt. Eén standaard hier kan niet vergeten worden.
+   *
+   *  'geen' bestaat nog en heeft precies één gebruiker: /proef en /nl/proef, de
+   *  vergelijkingspagina's die laten zien wat de laag doet. Die zijn nu MEER
+   *  waard dan eerst, want ze zijn de enige plek waar de site nog zonder huid
+   *  te zien is. */
   huid?: 'geen' | 'kantig';
 }
 
@@ -113,7 +122,7 @@ interface Props {
 // `noindex, nofollow, noarchive` as a meta tag AND an x-robots-tag response
 // header, because a portal URL contains a token and a meta tag alone is only
 // read by something that parses HTML. See src/lib/portal.js.
-const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper', huid = 'geen' } = Astro.props;
+const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper', huid = 'kantig' } = Astro.props;
 
 // Privacy-first analytics — Cloudflare Web Analytics, which is cookieless and
 // sets nothing on the visitor’s device.
@@ -630,7 +639,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
                   toetsenbordronde: er is niets te activeren. */}
               {drops.map((s) => (s.href
                 ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
-                    <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
+                    <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                   </a>
                 : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
                     <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
@@ -663,7 +672,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
                   PLAN-DEMO-SPEL.md), dan is het één `href` terugzetten. */}
               {how.map((s) => (s.href
                 ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
-                    <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
+                    <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                   </a>
                 : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
                     <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
@@ -776,7 +785,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
     </a>
     {drops.map((s) => (s.href
-      ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+      ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</a>
       : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
     ))}
     {/* Merkmodel en Abonnement stonden hier ook los; ze zitten nu in `drops`
@@ -788,7 +797,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
     <p class="mobile-group">{t('nav_how')}</p>
     {how.map((s) => (s.href
-      ? <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+      ? <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</a>
       : <span class="mobile-sub mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
     ))}
     <div class="mobile-cta">
@@ -1022,7 +1031,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <h2 class="footer-h">{t('foot_drops')}</h2>
           <ul>
             {drops.map((s) => <li>{s.href
-              ? <a href={lp(s.href)}>{s.title}</a>
+              ? <a href={lp(s.href)}>{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</a>
               : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>}</li>)}
             {/* Jouw merkmodel staat sinds 21 augustus in `drops` hierboven en
                 stond hier dus twee keer in dezelfde kolom. */}

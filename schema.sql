@@ -1117,6 +1117,30 @@ CREATE TABLE IF NOT EXISTS subscription_months (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_submonths_unique
   ON subscription_months(subscription_id, month);
 
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0035 · SLOTS PER SOORT
+-- Zie migrations/0035-slots-per-soort.sql. De twee tellerparen hierboven
+-- (`granted/used` en `clips_granted/clips_used`) zijn de goede gedachte met de
+-- soort in een kolomnaam gegoten; deze tabel is dezelfde gedachte met de soort
+-- als gegeven. De vervaldatum staat er NIET in: een rij is de toekenning van één
+-- maand, en wanneer die vervalt volgt uit `month` plus het doorschuifvenster van
+-- de termijn. Daarmee bewaakt het maximum zichzelf en is er niets op te ruimen.
+-- ────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS subscription_slots (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  subscription_id  INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+  month            TEXT NOT NULL,              -- 'YYYY-MM'
+  kind             TEXT NOT NULL,              -- 'complete' | 'catalog' | 'video-motion' | …
+  granted          INTEGER NOT NULL DEFAULT 0,
+  used             INTEGER NOT NULL DEFAULT 0,
+  payment_id       TEXT,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subslots_unique
+  ON subscription_slots(subscription_id, month, kind);
+CREATE INDEX IF NOT EXISTS idx_subslots_saldo
+  ON subscription_slots(subscription_id, month);
+
 -- Eén rij per afschrijving. Een eigen tabel en niet `payments`, want die heeft
 -- order_id NOT NULL en ombouwen van een financiele tabel is de duurste migratie
 -- die er is. Zie de kop in migrations/0030-abonnementen.sql.
@@ -1169,6 +1193,18 @@ CREATE TABLE IF NOT EXISTS plan_queue (
   -- foto's, en dan slaat de nachtelijke taak dit item over met een mail naar de
   -- KLANT — niet naar Lucas. Zie §7 van ABONNEMENT-ONTWERP.md.
   upload_batch     TEXT,
+  -- ── 0035 · WELKE SOORT, EN WANNEER VASTGEZET ──────────────────────────────
+  -- `kind` zegt welke teller dit item aanspreekt; zonder dat is een lijst met een
+  -- catalogset en een video weer één ononderscheiden hoop.
+  --
+  -- `locked_at` is het hart van het model: zolang die leeg is, is het item een
+  -- CONCEPT — het staat op de lijst, het kost geen slot en het gaat niet mee.
+  -- Zodra de klant op vastzetten drukt, wordt hier de tijd gezet en gaat er één
+  -- slot van de OUDSTE nog geldige maand af. De deadline zit dus op dit moment en
+  -- niet op de levering, om dezelfde reden als bij een aangifte: op tijd
+  -- ingediend, niet op tijd beoordeeld.
+  kind             TEXT,
+  locked_at        TEXT,
   -- Zodra hij is opgepakt: naar welke bestelling. Niet verwijderen maar
   -- markeren, want een klant hoort te kunnen zien wat er met zijn item gebeurd
   -- is, en een verdwenen rij is niet te onderscheiden van een rij die er nooit
@@ -1183,6 +1219,12 @@ CREATE TABLE IF NOT EXISTS plan_queue (
 CREATE INDEX IF NOT EXISTS idx_queue_open
   ON plan_queue(customer_id, position)
   WHERE taken_at IS NULL;
+
+-- De open lijst van één klant, per soort. Alleen de items die nog niet zijn
+-- opgepakt: een afgehandeld item hoeft nooit meer per soort geteld te worden.
+CREATE INDEX IF NOT EXISTS idx_planqueue_soort
+  ON plan_queue(customer_id, kind)
+  WHERE order_id IS NULL;
 
 -- ── migratie 0031: het e-mailadres wijzigen ─────────────────────────────────
 

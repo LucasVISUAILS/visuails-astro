@@ -167,10 +167,15 @@ import { waHref } from '../data/whatsapp.js';
 // Drawing constants — ratios, block widths, tile patterns, glyph paths — live
 // inside the figure components, because they are the same in every language.
 import Compare from './Compare.astro';
-// FigFanOut, FigPipeline, FigCapacity, FigApproval and FigFormats used to be
-// imported here, and then FigFlow was, for about a day. All six are gone and
-// all six files still exist, imported by nothing; deleting them is a separate,
-// reversible decision and this page is not the place to make it.
+// FigApproval IS ER OP 30 AUGUSTUS 2026 WEER BIJ GEKOMEN, en dat is de enige
+// van de zes die terugkeert. Zie de noot bij de portaalsectie: die stap in de
+// doorloop is samengevoegd, en de tekening hoort bij de sectie die de belofte
+// doet in plaats van bij een stap die er niet meer is.
+import FigApproval from './FigApproval.astro';
+// FigFanOut, FigPipeline, FigCapacity and FigFormats used to be imported here,
+// and then FigFlow was, for about a day. Those five are gone and all five files
+// still exist, imported by nothing; deleting them is a separate, reversible
+// decision and this page is not the place to make it.
 //
 // FigFlow put all three services on screen at once, as switches you could
 // combine, with a product-count slider and the capacity gate. Lucas asked for
@@ -182,7 +187,7 @@ import Compare from './Compare.astro';
 import FigWalk from './FigWalk.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
-  WINDOW_THRESHOLD, vatLabel, vatLead, vatDetail, TEST_SAMPLE,
+  WINDOW_THRESHOLD, vatLabel, vatLead, vatDetail, TEST_SAMPLE, clause,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -239,16 +244,29 @@ const COPY = {
     afterAlt: 'The same scene, finished and human-checked by VISUAILS',
 
     portalH: 'You approve it, image by image.',
-    portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}.`,
-    portalNote: `Smaller orders work differently and more simply. ${TIERS.unattended.delivery.en}.`,
+    portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${clause(TIERS.attended.delivery.en)}.`,
+    portalNote: `Smaller orders work differently and more simply. ${clause(TIERS.unattended.delivery.en)}.`,
+    /* ── DE TEKENING VAN HET PORTAAL STAAT SINDS 30 AUGUSTUS 2026 HIER ────────
+       Ze zat in de doorloop hierboven, als de laag bij de portaalstap. Die stap
+       is samengevoegd met de downloadstap om de pagina in te korten, en één
+       stap toont één laag — dus de tekening had geen plek meer.
+       Deze sectie was de plek waar ze hoort: hij DOET de goedkeuringsbelofte en
+       had nul beelden. Wat een lijst het slechtst kan laten zien is dat er
+       dingen NAAST elkaar gebeuren, en dat is nu juist de belofte. Zelfde
+       component als op de homepage, met eigen woorden. */
+    portalFigH: 'Your order, image by image',
+    portalFigOk: 'Approved by you',
+    portalFigRev: 'Sent back with a note',
+    portalFigWait: 'Still coming',
+    portalFigNote: 'A drawing of the review screen, not a screenshot. One image going back does not hold up the rest.',
 
-    verderH: 'Want more of the working?',
+    verderH: 'Want to see more of the inner workings?',
     verderDemo: 'Walk through an order',
     verderStudio: 'The studio day and the calendar',
     verderAbout: 'Who is behind it',
     detailsH: 'The details that matter',
     details: [
-      { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${turnaround('attended', 'en').toLowerCase()}. Below that: ${turnaround('unattended', 'en').toLowerCase()}, ${TIERS.unattended.queue.en.toLowerCase()}.` },
+      { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that: ${clause(turnaround('unattended', 'en')).toLowerCase()}, ${clause(TIERS.unattended.queue.en).toLowerCase()}.` },
       /* ── DEZE REGEL BELOOFDE EEN VERSCHIL DAT NIET BESTAAT — 25 aug 2026 ──
          Er stond: "From N products: {aftercare(attended)}. Below that:
          {aftercare(unattended)}." Twee dingen mis.
@@ -323,8 +341,13 @@ const COPY = {
     afterAlt: 'Dezelfde scène, afgewerkt en met de hand gecontroleerd door VISUAILS',
 
     portalH: 'Jij keurt goed, beeld voor beeld.',
-    portalBody: `Een bestelling van ${WINDOW_THRESHOLD} producten of meer komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}.`,
-    portalNote: `Kleinere bestellingen werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
+    portalBody: `Een bestelling van ${WINDOW_THRESHOLD} producten of meer komt niet aan als een zipbestand en een goede hoop. ${clause(TIERS.attended.delivery.nl)}.`,
+    portalNote: `Kleinere bestellingen werken anders en simpeler. ${clause(TIERS.unattended.delivery.nl)}.`,
+    portalFigH: 'Jouw bestelling, beeld voor beeld',
+    portalFigOk: 'Door jou goedgekeurd',
+    portalFigRev: 'Teruggestuurd met een notitie',
+    portalFigWait: 'Nog onderweg',
+    portalFigNote: 'Een tekening van het beoordeelscherm, geen schermafdruk. Eén beeld dat teruggaat, houdt de rest niet op.',
 
     verderH: 'Wil je meer van het binnenwerk zien?',
     verderDemo: 'Loop een bestelling door',
@@ -332,7 +355,7 @@ const COPY = {
     verderAbout: 'Wie erachter zit',
     detailsH: 'De details die ertoe doen',
     details: [
-      { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${turnaround('attended', 'nl').toLowerCase()}. Daaronder: ${turnaround('unattended', 'nl').toLowerCase()}, ${TIERS.unattended.queue.nl.toLowerCase()}.` },
+      { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, ${clause(TIERS.unattended.queue.nl).toLowerCase()}.` },
       /* Zie de noot bij de Engelse tegenhanger: dezelfde dubbele punt en
          hetzelfde verzonnen verschil tussen de twee treden. */
       { t: 'Als iets niet klopt', b: `${aftercare('attended', 'nl')}` },
@@ -440,11 +463,15 @@ const c = COPY[lang];
   </div>
 </div></section>
 
-<!-- THE PORTAL, IN WORDS. The drawing of it — three states at once — is now
-     the delivery stage of the rail above, so what is left here is the claim
-     itself. One column, not two: a two-column block with nothing in the right
-     half is a layout waiting for an image that is not coming. -->
-<section class="section-tight"><div class="container narrow">
+<!-- THE PORTAL, MET DE TEKENING ERBIJ — 30 AUGUSTUS 2026.
+     Hier stond: "de tekening ervan staat nu in de doorloop hierboven, dus wat
+     hier overblijft is de claim zelf." Dat klopte tot vandaag. De portaalstap
+     is samengevoegd met de downloadstap om die doorloop in te korten, en toen
+     was deze sectie de enige plek op de pagina die over goedkeuren gaat én de
+     enige sectie zonder één beeld.
+     Twee kolommen dus, en niet meer één: er is nu wél iets voor de rechterhelft
+     — precies de reden die hier stond om het níet te doen. -->
+<section class="section-tight"><div class="container two-col hiw-portal">
   <div class="reveal pending">
     <h2>{c.portalH}</h2>
     <p class="lead" style="margin-top:1.1rem">{c.portalBody}</p>
@@ -464,6 +491,15 @@ const c = COPY[lang];
       <a href={lp('/studio')}>{c.verderStudio}</a>{' · '}
       <a href={lp('/about')}>{c.verderAbout}</a>
     </p>
+  </div>
+  <div class="reveal pending">
+    <FigApproval
+      head={c.portalFigH}
+      okLabel={c.portalFigOk}
+      revLabel={c.portalFigRev}
+      waitLabel={c.portalFigWait}
+      note={c.portalFigNote}
+    />
   </div>
 </div></section>
 

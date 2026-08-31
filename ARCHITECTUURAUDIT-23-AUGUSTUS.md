@@ -1,5 +1,11 @@
 # Architectuuraudit — VISUAILS
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `functions/admin/debug-mollie.js` → `/admin/diagnose` in de padtabel van `src/lib/admin.js` — op 23 augustus 2026 verplaatst, juist omdat een statisch routebestand onder functions/admin/ de centrale originIsSelf()-controle omzeilde
+
+
 **23 augustus 2026 · read-only · er is niets gewijzigd**
 
 Onderzocht: `visuails-astro` (Astro 6.4.8, `output: 'static'`, Cloudflare Pages),

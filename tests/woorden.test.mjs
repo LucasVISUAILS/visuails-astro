@@ -241,8 +241,13 @@ console.log('\nde voorraadregels zeggen stockfoto’s en niet visuals');
       opMerk.every((r) => /noun\('visual'/.test(r)), true);
   }
 
-  /* En het Editions-paneel zelf, waar de tegenspraak stond. */
-  const paneel = home.slice(home.indexOf("id: 'editions'"), home.indexOf("id: 'editions'") + 3000);
+  /* En het Editions-paneel zelf, waar de tegenspraak stond.
+     Sinds 30 augustus 2026 staat dat paneel in src/data/binnenkort.js en niet
+     meer in de copytabel van de homepage — de uitleg van Hooks en Editions is
+     naar /plans#binnenkort verhuisd toen de homepage werd ingekort. Zelfde
+     tekst, zelfde sleutel, ander bestand. */
+  const binnenkortBron = lees('src/data/binnenkort.js');
+  const paneel = binnenkortBron.slice(binnenkortBron.indexOf("id: 'editions'"), binnenkortBron.indexOf("id: 'editions'") + 4000);
   check('het Editions-paneel noemt zichzelf nergens stock',
     /\bstock (photo|photos|visuals)\b/i.test(paneel), false);
   check('en zegt nog steeds dat het geen stock is',

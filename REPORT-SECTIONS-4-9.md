@@ -1,5 +1,11 @@
 # Report — sections 4–9
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `ThreeWay.astro` → niets — verwijderd, samen met de Duitse site
+
+
 Written 25 July 2026, after commits `a3767af`, `55f845f` and `63e01bd`.
 
 The brief says to flag anything I consider a positioning or pricing mistake instead

@@ -264,11 +264,13 @@ const COPY = {
     libMeta: '( Or start here )',
     libH: 'The standard library',
     libAlt: 'a VISUAILS standard model',
-    libLead: 'Ten models, shared across brands, included in every order at no extra cost. Pick one, or let us match one to your product and your customer. You can move to a Brand Model later without redoing anything.',
-    libChooseH: 'Let us match one',
-    libChooseBody: 'Tell us the product and the customer when you start an order, and we pick the model that fits — then keep using it.',
-    libNote: 'Standard models are included in the rate you already pay per product. There is no per-model fee and no upgrade to unlock one.',
-    libAllCta: 'See all ten models',
+    /* Drie regels waar er vijf stonden. "Laat ons matchen" was een eigen tegel
+       met een eigen kop; het is nu de tweede helft van deze zin, want het is een
+       tweede antwoord op dezelfde vraag. */
+    libLead: 'Ten models, shared across brands, included in every order at no extra cost. Pick one yourself, or tell us the product and the customer when you order and we match one — then keep using it.',
+    libNote: 'Three of the ten are shown here. They cost nothing extra, and moving to a Brand Model later does not mean redoing anything.',
+    libAllCta: 'See all ten',
+    libOwnCta: 'Or have one made for you',
     traits: {
       warm: 'Warm', approachable: 'Approachable', editorial: 'Editorial', elegant: 'Elegant',
       refined: 'Refined', classic: 'Classic', sporty: 'Sporty', energetic: 'Energetic',
@@ -381,11 +383,11 @@ const COPY = {
     libMeta: '( Of begin hier )',
     libH: 'De standaardbibliotheek',
     libAlt: 'een VISUAILS-standaardmodel',
-    libLead: 'Tien modellen die we voor alle merken gebruiken, inbegrepen in elke bestelling zonder extra kosten. Kies er een, of vertel ons wat je verkoopt en wie je klant is, dan kiezen wij er een dat past. Je kunt later alsnog overstappen op een eigen merkmodel, zonder iets over te doen.',
-    libChooseH: 'Laat ons matchen',
-    libChooseBody: 'Vertel ons het product en de klant wanneer je een bestelling start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
-    libNote: 'Standaardmodellen zitten in de prijs per product die je toch al betaalt. Je betaalt niets extra per model en er is geen upgrade voor nodig.',
-    libAllCta: 'Bekijk alle tien modellen',
+    /* Zie de noot bij de Engelse tabel. */
+    libLead: 'Tien modellen die we voor alle merken gebruiken, inbegrepen in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons bij het bestellen wat je verkoopt en wie je klant is — dan kiezen wij er een dat past en blijven we dat gebruiken.',
+    libNote: 'Drie van de tien staan hier. Ze kosten niets extra, en later overstappen op een eigen merkmodel betekent niet dat je iets over moet doen.',
+    libAllCta: 'Bekijk alle tien',
+    libOwnCta: 'Of laat er een voor je maken',
     traits: {
       warm: 'Warm', approachable: 'Toegankelijk', editorial: 'Editorial', elegant: 'Elegant',
       refined: 'Verfijnd', classic: 'Klassiek', sporty: 'Sportief', energetic: 'Energiek',
@@ -511,11 +513,16 @@ const wa = waHref(c.waText);
 
   <div class="bmcost reveal pending">
     <div class="bmcost-figures">
-      <div class="bmcost-fig">
-        <span class="bmcost-key">{c.costSetupLabel}</span>
-        <span class="bmcost-amount">{brandModel.price}</span>
-        <span class="bmcost-unit">{brandModel.unit}</span>
-        <span class="bmcost-vat">{c.costSetupVat}</span>
+      {/* Op de gedeelde `.bedrag`-vorm sinds 30 augustus 2026. Zie de kop van
+          dat blok in global.css: label, cijfer, eenheid, btw — vier onderdelen
+          die op vier pagina's met vier verschillende klassenamen bestonden en
+          daardoor uit elkaar liepen. Wat hier eigen blijft is de MAAT en de
+          padding, en die staan als variabele op `.bmcost-fig`. */}
+      <div class="bmcost-fig bedrag">
+        <span class="bedrag-label">{c.costSetupLabel}</span>
+        <span class="bedrag-cijfer">{brandModel.price}</span>
+        <span class="bedrag-eenheid">{brandModel.unit}</span>
+        <span class="bedrag-btw bmcost-vat">{c.costSetupVat}</span>
       </div>
     </div>
 
@@ -557,10 +564,18 @@ const wa = waHref(c.waText);
        claim die je in twee alinea's kunt uitleggen of in één beeld kunt
        bewijzen — en de tweede alinea van `fitWhat` deed het eerste. Die is
        ingekort tot één regel; dit vlak doet nu het bewijs. -->
+  {/* ── DE VERHOUDING VOLGT DE OPDRACHT, 30 AUGUSTUS 2026 ──────────────────
+      Stond op 21/9 en dat is 2,33:1. De opdracht eronder vraagt om ZES kaders
+      naast elkaar, en zes portretkaders van 3:4 naast elkaar zijn samen 4,5:1.
+      Op 21/9 was de gereserveerde plek dus bijna twee keer zo hoog als het
+      beeld dat erin komt — en dat is precies wat een placeholder niet mag doen,
+      want zijn hele reden van bestaan is dat de pagina niet verspringt zodra de
+      foto er is. Dat het ook 267px scheelt op een pagina die ingekort moest
+      worden, is meegenomen en niet de reden. */}
   <Placeholder
     lang={lang}
     space
-    ratio="21 / 9"
+    ratio="9 / 2"
     subject={nl ? 'Zes beelden naast elkaar met hetzelfde merkmodel: twee producten uit de webshop, een advertentie, een e-mailheader, een socialpost en een campagnebeeld'
                 : 'Six frames side by side with the same brand model: two webshop products, an ad, an email header, a social post and a campaign image'}
     message={nl
@@ -617,10 +632,13 @@ const wa = waHref(c.waText);
        het eruitziet terwijl het gebeurt. Het staat vóór de stappen en niet
        erna: wie het proces al herkent hoeft de vijf regels niet meer te
        lezen. -->
+  {/* 16/9 was 1,78:1, en dat gaf de grootste lege doos van de site: 698px.
+      Drie portretten naast elkaar plus een kolom aantekeningen is vier kolommen
+      van 3:4, oftewel 3:1. Zelfde redenering als bij het vlak hierboven. */}
   <Placeholder
     lang={lang}
     space
-    ratio="16 / 9"
+    ratio="3 / 1"
     subject={nl ? 'Een richtingenblad: drie voorgestelde gezichten naast elkaar, met aantekeningen van de klant erbij en één ervan aangekruist'
                 : 'A directions sheet: three proposed faces side by side, the client’s notes beside them and one of them ticked'}
     message={nl
@@ -662,7 +680,7 @@ const wa = waHref(c.waText);
      file header for why). It sits below the Brand Model argument rather than
      above it because this page's job is the exclusive face; the library is
      the alternative you already have, and saying so plainly is what makes
-     the Brand Model an honest upsell rather than a gate. Four of the ten,
+     the Brand Model an honest upsell rather than a gate. Three of the ten,
      not all ten: the full roster now has its own page at /models, and
      showing all ten here again would put the same ten portraits on two
      pages for search engines to index as duplicate content. -->
@@ -675,28 +693,71 @@ const wa = waHref(c.waText);
     </div>
   </div>
 
-  <div class="bm-roster reveal-group">
-    {ROSTER.slice(0, 4).map((m) => (
-      <figure class="bm-model reveal pending">
-        <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
-        <figcaption>
-          <span class="bm-model-name">{m.name}</span>
-          <span class="bm-model-traits">{m.traits.map((t) => c.traits[t]).join(' · ')}</span>
-        </figcaption>
-      </figure>
-    ))}
-    <div class="bm-model bm-model-choose reveal pending">
-      <div class="bm-choose-inner">
-        <h3>{c.libChooseH}</h3>
-        <p>{c.libChooseBody}</p>
-        <a href={lp('/start/brand-model')} class="link-arrow">{c.ctaPrimary}
+  {/* ── DRIE GEZICHTEN, EN TWEE WEGEN ERVANDAAN — 30 AUGUSTUS 2026 ─────────
+      Lucas: *"modellen sectie ook visueel inkorten door 3 model fotos te laten
+      zien, klanten kunnen er dan meer over lezen en op die pagina alle 10 de
+      inclusieve modellen bekijken of voor een custom tailored model gaan."*
+
+      Wat hier stond: vier portretten plus een vijfde tegel "laat ons matchen"
+      met een eigen kop, een eigen alinea en een eigen link. Vijf cellen, 114
+      woorden, 817 pixels — op een pagina die met elf secties en 11.194 pixels
+      tot de drukste van de site hoorde.
+
+      DRIE EN NIET VIER, en dat is niet alleen "één minder". Drie portretten in
+      dit raster vullen op elke breedte precies één rij; vier klapten op een
+      middenbreedte naar 2×2 en dan stond er een halve rij wit onder een sectie
+      die alleen maar een voorproefje is.
+
+      MINDER TEGELS IS NIET VANZELF MINDER HOOGTE, en dat is de val waar dit
+      bijna in liep. Drie portretten over de volle schil zijn breder dan vijf,
+      en met `aspect-ratio: 4/5` dus ook hóger: de eerste versie van deze cel
+      werd 1038px waar er 817px stond. De maat op de rij en de noot ernaast
+      staan in global.css uitgelegd; het resultaat is 690px op 1280 en 1087px
+      op 390 — waar dat laatste 2071px was toen ze op smal onder elkaar
+      stonden.
+
+      DE VIJFDE TEGEL IS EEN REGEL GEWORDEN. "Laat ons er een kiezen" is een
+      tweede antwoord op dezelfde vraag — welk gezicht — en dat hoort geen eigen
+      tegel te zijn met een eigen kop. Zelfde regel als op de homepage bij het
+      abonnement onder de prijs. Het aanbod is niet weg: het staat nu in de
+      lead, waar het bij de andere twee keuzes staat.
+
+      EN TWEE WEGEN ERVANDAAN, allebei zichtbaar: alle tien op /models, of een
+      gezicht dat alleen van jou is. Dat tweede is de pagina waar de bezoeker al
+      staat, dus wijst die link naar de bestelstap en niet naar de pagina zelf. */}
+  {/* DE NOOT STAAT ERNAAST EN NIET ERONDER.
+      Drie portretten vullen de schil niet meer — ze zijn met opzet zo breed
+      als de vier van gisteren, anders wordt een voorproefje van drie hóger
+      dan de vier die het vervangt. Daardoor bleef rechts een halve kolom wit
+      staan, en een noot van dertig woorden past daar precies in. Dat is
+      dezelfde regel als op de ingekorte homepage bij het voor/na-paar: bewijs
+      links, wat je erover moet weten ernaast, niet eronder. Onder 62rem
+      stapelt het en krijgt de noot zijn scheidingslijn terug. */}
+  <div class="bm-lib-split">
+    <div class="bm-roster bm-roster-kort reveal-group">
+      {ROSTER.slice(0, 3).map((m) => (
+        <figure class="bm-model reveal pending">
+          <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
+          <figcaption>
+            <span class="bm-model-name">{m.name}</span>
+            <span class="bm-model-traits">{m.traits.map((t) => c.traits[t]).join(' · ')}</span>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+
+    <p class="bm-lib-note">
+      {c.libNote}
+      <span class="bm-lib-wegen">
+        <a class="link-arrow" href={lp('/models')}>{c.libAllCta}
           <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
-      </div>
-    </div>
+        <a class="link-arrow" href={lp('/start/brand-model')}>{c.libOwnCta}
+          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </span>
+    </p>
   </div>
-
-  <p class="bm-lib-note">{c.libNote} <a class="link-arrow" href={lp('/models')}>{c.libAllCta} &rarr;</a></p>
 </div></section>
 
 <!-- WHY NOT A GENERATOR.
@@ -757,15 +818,18 @@ const wa = waHref(c.waText);
      sum rather than as two unrelated prices. */
   .bmcost { display: grid; grid-template-columns: minmax(280px, 26rem) 1fr; border: 1px solid var(--line-strong); }
   .bmcost-figures { display: grid; grid-template-rows: 1fr auto 1fr; border-right: 1px solid var(--line-strong); }
-  .bmcost-fig { display: flex; flex-direction: column; gap: .35rem; padding: clamp(1.4rem, 3vw, 2.2rem); }
+  /* `.bmcost-key`, `-amount` en `-unit` stonden hier en zijn `.bedrag-label`,
+     `.bedrag-cijfer` en `.bedrag-eenheid` geworden. Wat overblijft is wat aan
+     DEZE plek hoort: de padding van de cel, en een eigen cijfermaat — 3rem in
+     plaats van de 3,6rem die de vorm standaard geeft, want dit bedrag staat in
+     een kolom van 26rem en niet over de volle breedte. */
+  .bmcost-fig { padding: clamp(1.4rem, 3vw, 2.2rem); --bedrag-maat: clamp(2rem, 4.4vw, 3rem); }
   .bmcost-rule { height: 1px; background: var(--line-strong); }
-  .bmcost-key { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-  .bmcost-amount { font-family: var(--font-display); font-weight: 900; font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1; letter-spacing: -0.03em; color: var(--ink); }
-  .bmcost-unit { font-size: .92rem; color: var(--ink-3); }
   /* Under the figure, not beside it: at this type size a trailing "excl. VAT"
      either shrinks the price or wraps, and an unreadable VAT label is the same
-     failure as no VAT label. Same call /pricing's .anchor-vat makes. */
-  .bmcost-vat { display: block; margin-top: .45rem; font-size: .78rem; color: var(--ink-3); }
+     failure as no VAT label. Same call /pricing's .anchor-vat makes. Alleen de
+     marge is nog eigen; de rest komt van `.bedrag-btw`. */
+  .bmcost-vat { display: block; margin-top: .45rem; }
   .bmcost-body { padding: clamp(1.4rem, 3vw, 2.2rem); display: flex; flex-direction: column; gap: 1rem; }
   .bmcost-inc-h { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
   .bmcost-inc { margin: 0; }

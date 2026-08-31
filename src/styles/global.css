@@ -2873,6 +2873,29 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    real "clean product on white" photography (see IMAGES.md). */
 .vis { position: relative; aspect-ratio: 4/5; overflow: hidden; background: radial-gradient(125% 90% at 50% 6%, oklch(1 0 0), oklch(0.95 0.004 255) 58%, oklch(0.88 0.004 255) 100%); display: grid; place-items: center; isolation: isolate; }
 .vis.wide { aspect-ratio: 4/3; }
+/* ── EEN LAGERE BAND VOOR DE STIJLKAARTEN OP /catalog: GEPROBEERD, TERUG ───
+   30 augustus 2026. De twee kaarten op /catalog geven elk 407px aan een
+   getekende fles op een grijs verloop, en dat is de grootste beeldplek van die
+   pagina besteed aan het beeld dat het minst zegt. Een `.vis.band` op 21/9
+   maakte er 232px van — 174px winst op een pagina die ingekort moest worden.
+
+   TWEE REDENEN WAAROM HIJ ER WEER UIT IS.
+
+   1 · Hij zag er slechter uit. De tekening staat op een basislijn onderin haar
+       eigen viewBox, dus in een lage band hangt het voorwerp onderaan en klein
+       in het midden, met een leeg vlak eromheen. Op 62% en op 74% hoogte
+       allebei geprobeerd en allebei nagekeken op een schermafdruk.
+   2 · Hij brak de pagina op een telefoon. `npm run kruip` mat 403px in een
+       venster van 390: een rastercel heeft `min-width: auto`, oftewel
+       min-content, en bij 21/9 rekent de browser de minimale hoogte van de
+       inhoud terug naar een minimale breedte van ruim twee keer zoveel. Dat was
+       met `.grid > *:has(.vis.band) { min-width: 0 }` te repareren, maar een
+       reparatie voor een verbetering die er niet mooier van werd, is geen goede
+       ruil.
+
+   WAT HET WÉL OPLOST is een foto per stijl. catalogStyles.js heeft er twee en
+   geen van beide heeft een `cardPhoto`. Zolang die er niet zijn, is de tekening
+   op zijn volle 4/3 nog altijd het beste van de slechte opties. */
 .vis::before { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(70% 45% at 50% 2%, oklch(1 0 0 / 0.7), transparent 55%); }
 .vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, rgb(var(--scrim) / 0.13)); }
 .vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px rgb(var(--scrim) / 0.24)); }
@@ -3821,6 +3844,61 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .bm-choose-inner h3 { font-size: 1rem; margin: 0; }
 .bm-choose-inner p { font-size: .85rem; color: var(--ink-3); margin: 0; }
 .bm-lib-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; }
+
+/* ── DRIE PORTRETTEN, ÉÉN RIJ — 30 augustus 2026 ───────────────────────────
+   De voorproefsectie op /custom-models toont er sinds vandaag drie in plaats
+   van vier plus een tegel. `auto-fit` met een minimum van 11.875em klapt bij
+   vier op een middenbreedte naar 2×2 en laat dan een halve rij wit staan; bij
+   precies drie kolommen kan dat niet gebeuren. Vandaar een eigen regel in
+   plaats van hetzelfde auto-fit: het aantal is hier een ontwerpbeslissing en
+   geen toeval.
+
+   OP SMAL TWEE EN NIET ÉÉN. `auto-fit` levert onder 46rem één kolom, en dan is
+   elk portret 350px breed en 437px hoog: drie gezichten die je alleen door te
+   scrollen ziet, in een sectie die juist een voorproefje moet zijn. Twee naast
+   elkaar halveert dat (gemeten op 390px: 2071px werd 1087px), en de derde die
+   dan alleen op de tweede rij staat is dezelfde 2-op-smal als de galerij in
+   `.photo-grid`. */
+.bm-roster-kort { grid-template-columns: repeat(3, 1fr); max-width: 44rem; }
+@media (max-width: 46rem) { .bm-roster-kort { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── EN DAAROM STAAT ER EEN MAAT OP ────────────────────────────────────────
+   Drie cellen in een schil van 1180px zijn 390px breed, en met `aspect-ratio:
+   4/5` is dat 488px hoog: het voorproefje werd 221px HOGER dan de vier plus de
+   tegel die het verving. Gemeten, niet geschat — 817px werd 1038px. Met 44rem
+   houden de portretten de maat die ze hadden (220px in plaats van 226px) en is
+   de winst van drie in plaats van vijf ook echt winst. Het getal hoort dus bij
+   `aspect-ratio: 4/5` hierboven: verandert die, dan moet dit mee. */
+
+/* De noot naast de rij in plaats van eronder. Rechts blijft door die 44rem een
+   halve kolom over, en dertig woorden passen daar precies in — dat scheelt de
+   volle hoogte van de noot plus zijn marge. Zelfde ordening als het voor/na-
+   paar op de homepage: het bewijs links, wat je erover moet weten ernaast.
+   ONDER 70rem STAPELT HET, en dat getal komt uit een meting en niet uit de
+   gebruikelijke rij breekpunten. De rij houdt zijn 44rem, dus de noot krijgt
+   wat er overblijft — en dat wordt hard smal zodra de schil krimpt: op 1024px
+   was die kolom nog 239px breed en 160px hoog, een lint van vier woorden per
+   regel. Op 1120px is hij 331px, ruim veertig tekens per regel, en dat is de
+   ondergrens waaronder ernaast slechter leest dan eronder. Gestapeld krijgt
+   de noot zijn scheidingslijn terug, die hem dan wél van de rij scheidt. */
+.bm-lib-split { display: grid; grid-template-columns: minmax(0, 44rem) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3.2rem); align-items: center; margin-top: clamp(1.8rem, 4vw, 2.8rem); }
+.bm-lib-split .bm-roster-kort { margin-top: 0; }
+.bm-lib-split .bm-lib-note { margin-top: 0; border-top: 0; padding-top: 0; }
+@media (max-width: 70rem) {
+  .bm-lib-split { grid-template-columns: minmax(0, 1fr); }
+  /* De rij houdt ook hier zijn 44rem. De portretten laten uitgroeien tot de
+     volle schil kost 65px hoogte (gemeten op 900px: 794 wordt 859), en dat is
+     precies de winst die deze sectie moest opleveren. De noot krijgt daarom
+     dezelfde maat mee: dan staan de rij en de streep erboven op dezelfde twee
+     randen en is het wit rechts één kolom in plaats van drie losse einden. */
+  .bm-lib-split .bm-lib-note { margin-top: 1.6rem; border-top: 1px solid var(--line); padding-top: 1rem; max-width: 44rem; }
+}
+
+/* De twee wegen weg uit deze sectie staan op één regel onder de noot: alle
+   tien bekijken, of er een laten maken. Naast elkaar zodra het past, want het
+   is één keuze met twee antwoorden en niet twee losse links. */
+.bm-lib-wegen { display: flex; flex-wrap: wrap; gap: .5rem 1.6rem; margin-top: .8rem; }
+.bm-lib-wegen .link-arrow { font-size: .92rem; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAX-WIDTH OP PROZA — 19 augustus 2026
@@ -4829,6 +4907,68 @@ body::before {
   --btn-ghost-fill: rgb(255 255 255 / 0.08);
   --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
 }
+
+/* ══ EEN BEDRAG, ÉÉN VORM ══════════════════════════════════════════════════
+ *
+ * Lucas, 30 augustus 2026, na het inkorten van de homepage: *"kijken wat er qua
+ * look en regels veranderd zijn aan de homepage en dit over alle pagina's
+ * toepassen om alles consistent te maken."*
+ *
+ * Nagemeten: de vorm die hier staat bestond al VIER keer, in vier bestanden,
+ * onder vier namen, en één daarvan had ik die ochtend zelf gemaakt.
+ *
+ *   .pl-from / .pl-fig / .pl-unit / .pl-vat            PlansPage.astro
+ *   .hv-price-from / .hv-price-fig / .hv-price-unit    HomeV2.astro   (30 aug)
+ *   .bmcost-key / .bmcost-amount / .bmcost-unit / …    BrandModelPage.astro
+ *   .anchor-tag / .anchor-price / .anchor-vat          PricingPage.astro
+ *
+ * Vier keer dezelfde anatomie: een label in kapitalen, een groot getal in de
+ * displayletter, de eenheid eronder, de btw-regel daaronder. Vier definities die
+ * bij de volgende wijziging uit elkaar lopen — en dat is niet hypothetisch, ze
+ * lopen nu al uiteen in korpsgrootte (3,8rem / 3,6rem / 3rem) zonder dat iemand
+ * dat besloten heeft.
+ *
+ * ── DE MAAT IS EEN VARIABELE EN GEEN VARIANT ───────────────────────────────
+ *
+ * Een bedrag in een prijsplaat mag groter zijn dan een bedrag in een kolom naast
+ * drie andere. Dat is een echt verschil, dus staat het als `--bedrag-maat` op de
+ * plek waar het gebruikt wordt — en niet als `.bedrag--groot`, want dan komt er
+ * na verloop van tijd een `--klein` en een `--midden` bij en is het weer een
+ * lijstje.
+ *
+ * ── tabular-nums, EN DAAR IS EEN REDEN VOOR ────────────────────────────────
+ *
+ * Twee bedragen onder elkaar of naast elkaar in een staffel horen op dezelfde
+ * cijferbreedte te staan; anders wiebelt de kolom zodra er een 1 in staat. Dat
+ * gold voor de tabel op /pricing altijd al en geldt nu ook voor de twee getallen
+ * op de homepage.
+ *
+ * ── WAT ER (NOG) NIET OP OVER IS ───────────────────────────────────────────
+ *
+ * `.bmcost-*` en `.anchor-*` doen naast typografie ook de opbouw van hun eigen
+ * paneel — randen, een raster, een haarlijn tussen twee bedragen. Die migreren
+ * is een verbouwing van twee panelen en niet het overzetten van vier
+ * typeregels, en dat hoort een eigen ronde met een eigen controle te zijn. Ze
+ * staan hierboven met naam genoemd zodat het geen zoekplaatje is.
+ */
+.bedrag { display: flex; flex-direction: column; gap: .35rem; }
+.bedrag-label {
+  font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.bedrag-cijfer {
+  font-family: var(--font-display); font-weight: 900; line-height: 1;
+  font-size: var(--bedrag-maat, clamp(2.4rem, 6vw, 3.6rem));
+  letter-spacing: -0.03em; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.bedrag-eenheid { font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 56ch; }
+.bedrag-btw { font-size: .78rem; color: var(--ink-3); }
+
+/* Twee bedragen op één regel — "van X tot Y". Alleen de homepage doet dit
+   vandaag; het staat hier en niet daar omdat het bij de vorm hoort en niet bij
+   die ene pagina. */
+.bedrag-reeks { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .7rem; }
 
 /* ══ .plaat-vol — DE PRIJSPLAAT OP EEN DONKERE GROND ══════════════════════
  *

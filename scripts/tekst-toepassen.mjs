@@ -107,9 +107,16 @@ for (const it of items) {
    verkeerde bestand wordt gezocht, wordt niet gevonden, en dat is een melding.
    Een zin die nergens wordt gezocht, is een stille misser. */
 const MAPPEN = ['src/components', 'src/pages', 'src/data', 'src/i18n', 'src/layouts', 'src/lib'];
+/* Met schuine strepen, ook op Windows. `join()` plakt met de scheiding van het
+   besturingssysteem, en deze namen worden hier sleutel van een Map én worden
+   afgedrukt in het verslag dat dit script achterlaat. Op mijn machine leverde
+   dat `src/components/X.astro`, op die van Lucas `src\components\X.astro` —
+   twee vormen van dezelfde lijst, afhankelijk van waar je hem draait.
+   Zie tests/paths.test.mjs §2b: die wacht is er op 30 augustus 2026 bij gekomen
+   nadat exact deze fout een suite op één van de twee platforms liet omvallen. */
 const { globSync } = await import('node:fs');
 const bestanden = MAPPEN.flatMap((m) =>
-  globSync('**/*.{astro,js,ts}', { cwd: join(ROOT, m) }).map((f) => join(m, f))
+  globSync('**/*.{astro,js,ts}', { cwd: join(ROOT, m) }).map((f) => join(m, f).replace(/\\/g, '/'))
 );
 
 const inhoud = new Map(bestanden.map((f) => [f, readFileSync(join(ROOT, f), 'utf8')]));

@@ -133,7 +133,7 @@ import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
  * catalog- en lifestyleregels de ladder al lazen, en om dezelfde reden — een
  * prijs die op twee plekken staat, staat er over een half jaar verschillend.
  */
-import { AMOUNT } from '../data/pricing.js';
+import { AMOUNT, clause } from '../data/pricing.js';
 import { PLAN_IDS, monthlyCents } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
 
@@ -144,8 +144,12 @@ const planLo = Math.min(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
 const planHi = Math.max(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
 const planLoNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planLo), 'en');
 const planHiNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planHi), 'en');
-const t0 = turnaround('unattended', 'en').toLowerCase();
-const t1 = turnaround('attended', 'en').toLowerCase();
+/* clause() eromheen: turnaround() geeft een AFGERONDE ZIN terug, met een punt.
+   Hier staat hij middenin een zin — "loopt in {t1}, en houdt die plek" — en dat
+   werd "voordat je betaalt., en houdt". Zie de kop van tests/leestekens.test.mjs;
+   dit is dezelfde fout, in het ene bestand waar hij juridisch telt. */
+const t0 = clause(turnaround('unattended', 'en')).toLowerCase();
+const t1 = clause(turnaround('attended', 'en')).toLowerCase();
 
 // The two ends of each ladder §4 quotes, and the count the floor starts at.
 // Read, never typed — the one file on the site where a stale price is actually
@@ -262,19 +266,21 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>A test sample is charged at checkout, because it is a fixed &euro;1. Every other order is placed first and priced second: you send the brief, we confirm the order and the amount, and you pay that amount in full from one payment link in VISUAILS Studio. There are no instalments. We do not hold a production slot, and we do not release finished files, before that payment has reached us.</p>
 
       <h2>9a. Subscriptions</h2>
-      <p>A subscription is a standing arrangement under which you receive a fixed number of complete products every month — a catalog set and a lifestyle carousel per product — in a week we keep free for you. One of the plans also includes video clips each month, and the largest includes your Brand Model. What each plan contains and what it costs is set out on the <a href="/plans/">pricing page</a>; those figures apply as they stand there at the moment you subscribe.</p>
+      <p>A subscription is a standing arrangement under which you receive a fixed number of <strong>slots</strong> every month, in a week we keep free for you. A slot is one product of one kind: a complete product is a catalog set and a lifestyle carousel, a video slot is one clip. Your plan says how many slots of which kind you get each month; one of the plans also includes video clips, and the largest includes your Brand Model. What each plan contains and what it costs is set out on the <a href="/plans/">pricing page</a>; those figures apply as they stand there at the moment you subscribe.</p>
+
+      <p><strong>Filling a slot in, and confirming it.</strong> You put what you want made on your list in VISUAILS Studio and add your photos. That costs nothing: an item on the list is a draft. It becomes work when you confirm it, and at that moment one slot of that kind is used. Confirming is what tells us to make it, so an item that is still a draft when your week begins is not made and stays on your list. You can release a confirmed item again, and the slot comes straight back, up to the moment your week starts. After that it is in production.</p>
 
       <p><strong>How it starts.</strong> When you subscribe you pay a one-off &euro;1. That is not a first month but the transaction by which your bank issues the mandate — without it nothing can be collected at all. Your first monthly term falls a month later. From then on our payment provider collects the monthly amount automatically under that mandate.</p>
 
       <p><strong>Two terms.</strong> The monthly term can be <strong>cancelled in any month</strong>; there is no minimum duration. The twelve-month term is fixed: it runs for twelve terms and then ends by itself. In return, the yearly term gives four things the monthly one does not — the same reserved week every month, three months of roll-over instead of one, your rate held for twelve months regardless of our price list, and on one of the plans the Brand Model included.</p>
 
-      <p><strong>Unused products.</strong> What you have not ordered in a month rolls over to the next — one month on the monthly term, three months on the yearly term. VISUAILS Studio shows, for rolled-over products, the month through which you can still use them. After that they lapse. They do not stack up further, because a subscription is capacity reserved in our calendar and a month that has passed has passed.</p>
+      <p><strong>Unused slots.</strong> What you have not confirmed in a month rolls over to the next — one month on the monthly term, three months on the yearly term. VISUAILS Studio shows, per kind, the date through which you can still use rolled-over slots. After that they lapse. They do not stack up further: on the monthly term the most you can ever hold is two months of slots, and the oldest ones are always used first. A subscription is capacity reserved in our calendar, and a month that has passed has passed.</p>
 
-      <p><strong>Cancelling.</strong> You cancel it yourself in VISUAILS Studio; you do not have to email us and there is no notice period. As soon as you cancel we stop the collection, and nothing further is charged. The month you have already paid for remains yours: you can still spend that month’s balance until the end of it. After that the subscription closes. We do not refund the current month — it has been supplied in the form of capacity held available — and nothing is given in its place.</p>
+      <p><strong>Cancelling.</strong> You cancel it yourself in VISUAILS Studio; you do not have to email us and there is no notice period. As soon as you cancel we stop the collection, and nothing further is charged. The month you have already paid for remains yours: you can still confirm that month’s slots until the end of it. Slots that rolled over from earlier months do not survive the cancellation, because rolling over is a promise about a following month and after cancelling there is no following month. After that the subscription closes. We do not refund the current month — it has been supplied in the form of capacity held available — and nothing is given in its place.</p>
 
       <p><strong>Pausing.</strong> You can pause your subscription yourself. That stops the next collection. Your balance stays where it is and rolls over under the same rule as always, and once you resume, collection starts again from the next term. You do not have to give a new mandate for that.</p>
 
-      <p><strong>If a collection fails.</strong> We put the subscription on pause and let you know. Your balance stays, but it cannot be spent while the month is unpaid. If the payment comes in after all, the subscription carries on as though nothing had happened.</p>
+      <p><strong>If a collection fails.</strong> We put the subscription on pause and let you know. Your slots stay where they are, but nothing can be confirmed while the month is unpaid. If the payment comes in after all, the subscription carries on as though nothing had happened.</p>
 
       <p><strong>What happens to what has already been made.</strong> Everything you had made and delivered during your subscription stays yours under the same usage rights as any other order — see section 8. Cancelling changes nothing about that. How long we keep your files is governed by section 7.</p>
 
@@ -282,7 +288,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <p><strong>Price changes.</strong> We may change the price of a subscription. On the yearly term your rate is unchanged for twelve months. On the monthly term we give at least one full month’s notice of a change, so that you can still cancel before the next collection. We never change a price retroactively.</p>
 
-      <p><strong>What a subscription is not.</strong> It is not a voucher and not a prepayment against one-off work: each month you buy a fixed number of products and a place in the calendar, and that place is there even in a month when you order nothing. If you order more than your subscription grants, the excess is charged at the ordinary price per product.</p>
+      <p><strong>What a subscription is not.</strong> It is not a voucher and not a prepayment against one-off work: each month you buy a fixed number of slots and a place in the calendar, and that place is there even in a month when you order nothing. Anything your plan does not cover — a kind of work it grants no slots for, or more than it grants — can be ordered separately at the ordinary price.</p>
 
       <h2>10. Cancellations, refunds and putting it right</h2>
       <p>Because visuals are produced to your specific brief, work that has already started or been delivered generally cannot be cancelled for a refund.</p>

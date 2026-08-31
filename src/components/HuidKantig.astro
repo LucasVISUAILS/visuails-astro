@@ -79,6 +79,12 @@ const AANWIJZER = [
     te animeren. De vulling van de bovenste vloeit daarbovenop nog eens van
     lime naar zwart, zodat ook de sprong tussen die twee zacht is.
 
+    NASCHRIFT 28 AUGUSTUS. Dat overlopen was het goede antwoord op de verkeerde
+    vraag: op limeTEKST hoort hij helemaal niet zwart te worden, zacht noch
+    hard. Zie de noot bij opAccent() onderin dit bestand. Deze twee lagen
+    blijven nodig voor het echte geval — een limeVLAK — en daar vloeit hij nog
+    steeds over in plaats van te springen.
+
     Ze moeten allebei direct onder <body> hangen: een menging bereikt alleen de
     grond als er geen stapelcontext tussen zit, en een gedeelde ouder zou er
     een maken. */}
@@ -190,8 +196,20 @@ const AANWIJZER = [
      op de ORDER-knop: `.site-header .nav-cta.btn-ghost` weegt zwaarder dan de
      lijst hieronder, dus die won. Gemeten kwam die ring uit op grijs 123 tegen
      de foto — en het is bovendien precies de lijn eromheen die weg moest. */
-  body.huid-kantig:has(.hv-hero) .site-header:not(.scrolled) :is(.btn-ghost, .nav-cta, .lang-switch),
-  body.huid-kantig .site-header :is(.btn-ghost, .nav-cta, .lang-switch),
+  /* `.nav-cta:not(.btn-primary)` EN NIET `.nav-cta` — 28 augustus 2026.
+   *
+   * Deze twee regels zijn geschreven toen de huid alleen op de homepage stond,
+   * en daar is de ORDER-knop een `.btn-ghost`. Op elke ANDERE pagina is diezelfde
+   * knop een `.btn-primary`: lime vlak, tekst in --accent-ink. Deze selector
+   * weegt zwaarder dan `.btn-primary` en haalde dus het lime weg terwijl de
+   * bijna-zwarte tekst bleef staan — grijs 16,17,18 met letters van 8,9,11
+   * erop, gemeten 1,05:1. Onzichtbaar, op 85 van de 91 pagina's, en pas zichtbaar
+   * op de dag dat de huid van de homepage af kwam.
+   *
+   * Het glasrecept hoort bij de STILLE chrome: spookknoppen, de taalschakelaar,
+   * de menulade. Een primaire knop is per definitie geen stille chrome. */
+  body.huid-kantig:has(.hv-hero) .site-header:not(.scrolled) :is(.btn-ghost, .nav-cta:not(.btn-primary), .lang-switch),
+  body.huid-kantig .site-header :is(.btn-ghost, .nav-cta:not(.btn-primary), .lang-switch),
   body.huid-kantig :is(
     .btn-ghost, .btn-2nd, .cc-btn,
     .convbar,
@@ -773,7 +791,33 @@ const AANWIJZER = [
      een vaste kleur nodig is. Allebei met dezelfde overgangstijd, zodat het
      één beweging is en geen twee. */
   body.huid-kantig .aw-om { mix-blend-mode: difference; }
-  body.huid-kantig .aw-om svg { fill: #fff; }
+  body.huid-kantig .aw-om svg { fill: #fff; transition: fill .2s var(--ease); }
+  /* ── OP LIME KRIJGT DE OMGEKEERDE LAAG EEN LIME VULLING — 30 augustus 2026 ──
+   *
+   * Lucas: *"de muis is bij groene onderdelen gelijk zwart waardoor hij lastig
+   * zichtbaar is. Ik wil dat hij overloopt van kleur, dus dat het gedeelte dat
+   * nog op de donkere achtergrond is een lichte kleur heeft."*
+   *
+   * Dat kan geen VLAKKE kleur, en dat is de kern. De pijl ligt op de rand van een
+   * knop op twee ondergronden tegelijk: de punt op lime, de staart op de donkere
+   * pagina. Welke ene kleur je ook kiest, één helft valt weg. De haarlijn van
+   * eergisteren maakte dat draaglijk en loste het niet op.
+   *
+   * `difference` lost het wél op, en per pixel: de laag toont |grond − vulling|,
+   * dus hij rekent voor elke pixel apart uit wat het tegendeel van zijn eigen
+   * ondergrond is. Met LIME als vulling komt daar precies uit wat Lucas vraagt:
+   *
+   *   op de pagina (#030406)  →  |3−198|, |4−241|, |6−0|   ≈ lime, goed te zien
+   *   op een limeknop         →  |198−198|, |241−241|, 0   =  zwart, goed te zien
+   *   op de rand              →  het omslagpunt ligt exáct waar de knop ophoudt
+   *
+   * En het is geen extra kleur in de huisstijl: allebei de uitkomsten zijn de
+   * twee kleuren die dit merk al draagt.
+   *
+   * WAAROM DE VLAKKE LAAG HIERVOOR NIET MEER AANGAAT: zie de noot bij `vast` in
+   * het script. Hij blijft bestaan voor een aanklikbaar vlak dat NIET lime is —
+   * daar ligt de pijl wel op één ondergrond en is één kleur het goede antwoord. */
+  body.huid-kantig .aw-om.oplime svg { fill: var(--accent); }
   body.huid-kantig .aw-plat { opacity: 0; }
   body.huid-kantig .aw-plat svg {
     fill: var(--accent);
@@ -789,6 +833,30 @@ const AANWIJZER = [
   /* Op een limevlak wordt de vlakke laag zwart in plaats van lime. Dit is het
      enige verschil tussen "boven iets aanklikbaars" en "op het accent zelf". */
   body.huid-kantig .aw-plat.oplime svg { fill: var(--accent-ink); }
+
+  /* ══ DE RAND VAN DE KNOP ═══════════════════════════════════════════════════
+     Eén vlakke kleur klopt alleen als de pijl HELEMAAL op één ondergrond ligt,
+     en dat is precies wat er op een knoprand niet gebeurt. De punt zit dan op de
+     lime en de staart hangt op de donkere pagina — en welke van de twee kleuren
+     je ook kiest, één helft van de pijl valt weg. Op Lucas' uitsnede is dat goed
+     te zien: de punt in de knop, de staart eronder in het zwart.
+
+     Vandaar een haarlijn in de tegenkleur, ONDER de vulling geschilderd
+     (`paint-order: stroke`), zodat de vorm zelf niet dikker wordt maar wel
+     overal een randje meedraagt. Dat is dezelfde oplossing als de witte pijl met
+     zwarte omlijning die Windows en macOS al veertig jaar gebruiken, en om
+     precies dezelfde reden: een aanwijzer weet niet waar hij landt.
+
+     12 in kadereenheden. Het kader is 93 breed en wordt op 14px getekend, dus
+     dat is ruwweg 1,8px lijn, ofwel 0,9px zichtbaar aan weerszijden van de
+     vulling. Genoeg om te zien, te weinig om de pijl bot te maken. */
+  body.huid-kantig .aw-plat svg path {
+    stroke: var(--accent-ink);
+    stroke-width: 12;
+    paint-order: stroke;
+    stroke-linejoin: round;
+  }
+  body.huid-kantig .aw-plat.oplime svg path { stroke: var(--accent); }
 
   /* De punt van het pad ligt op deze breuk van het kader — daar wordt hij
      naartoe geschoven en daar staat de oorsprong van de schaal, zodat hij bij
@@ -1040,17 +1108,60 @@ const AANWIJZER = [
       document.body.appendChild(d);
       const v = getComputedStyle(d).color;
       d.remove();
-      const m = v.match(/[\d.]+/g);
-      return m ? m.slice(0, 3).map(Number) : [198, 241, 0];
-    })();
-    // [\d.]+ en niet \d+ : op "rgba(198, 241, 0, 0.9)" splitst \d+ de alpha in
-    // "0" en "9", en dan valt elke half-doorzichtige limeknop af op dekking nul.
-    const bijna = (v) => {
       const m = String(v).match(/[\d.]+/g);
-      if (!m) return false;
-      const a = m[3] !== undefined ? parseFloat(m[3]) : 1;
-      if (a < 0.5) return false;
-      return Math.abs(+m[0] - acc[0]) < 44 && Math.abs(+m[1] - acc[1]) < 44 && Math.abs(+m[2] - acc[2]) < 44;
+      /* Deze ene mag nog wél een regex zijn: `color` van een span die de token
+         draagt komt er als rgb() uit. Wijkt dat ooit af, dan is [198,241,0] de
+         terugval en dat IS de merkkleur — zie --accent in global.css. */
+      return m && +m[0] > 1 ? m.slice(0, 3).map(Number) : [198, 241, 0];
+    })();
+    /* ── DE KLEUR DOOR EEN CANVAS EN NIET DOOR EEN REGEX — 28 augustus 2026 ────
+     *
+     * Hier stond een regex over de berekende kleur: pak de eerste drie getallen
+     * en vergelijk ze met 198, 241, 0. Dat werkte zolang de browser
+     * `rgb(198, 241, 0)` teruggaf, en het brak stil op de dag dat ik
+     * .btn-primary op `color-mix(in srgb, var(--accent) 90%, transparent)` zette
+     * om die knop op Safari zichtbaar te krijgen. Chrome berekent dat namelijk
+     * niet naar rgb() maar naar `color(srgb 0.776471 0.945098 0 / 0.9)` — en dan
+     * leest dezelfde regex 0.78 waar hij 198 verwacht, en is een limeknop
+     * ineens geen limeknop meer. Gevolg: de aanwijzer bleef lime op een lime
+     * knop. Lucas: *"Groene muis kleur op groene knoppen is ook niet zo handig."*
+     *
+     * Een tweede tak voor color(srgb …) erbij schrijven lost precies dit ene
+     * geval op en wacht op het volgende — oklch(), lab(), color-mix in een
+     * andere ruimte. De browser kan het zelf: één pixel tekenen en teruglezen
+     * geeft ALTIJD 0-255 sRGB, welke schrijfwijze er ook in ging.
+     *
+     * `globalCompositeOperation = 'copy'` want anders mengt een half-doorzichtige
+     * vulling met wat er al stond en klopt de alpha niet meer. En een geheugen
+     * erbij: dit wordt tot dertien keer per muisbeweging aangeroepen, terwijl een
+     * pagina maar een handvol verschillende kleuren heeft.
+     */
+    const doek = document.createElement('canvas');
+    doek.width = 1; doek.height = 1;
+    const pen = doek.getContext('2d', { willReadFrequently: true });
+    const onthouden = new Map();
+    const naarRgb = (v) => {
+      const t = String(v);
+      if (onthouden.has(t)) return onthouden.get(t);
+      let uit = null;
+      try {
+        /* Een ongeldige waarde laat fillStyle ONGEWIJZIGD staan. Zonder deze
+           twee regels zou 'bananen' dus de vorige kleur opleveren in plaats van
+           niets. Nu is de vorige kleur doorzichtig zwart en valt hij af op alpha. */
+        pen.fillStyle = 'rgba(0,0,0,0)';
+        pen.fillStyle = t;
+        pen.globalCompositeOperation = 'copy';
+        pen.fillRect(0, 0, 1, 1);
+        const d = pen.getImageData(0, 0, 1, 1).data;
+        uit = [d[0], d[1], d[2], d[3] / 255];
+      } catch { uit = null; }
+      onthouden.set(t, uit);
+      return uit;
+    };
+    const bijna = (v) => {
+      const c = naarRgb(v);
+      if (!c || c[3] < 0.5) return false;
+      return Math.abs(c[0] - acc[0]) < 44 && Math.abs(c[1] - acc[1]) < 44 && Math.abs(c[2] - acc[2]) < 44;
     };
     // TOT DE EERSTE ECHTE GROND, EN NIET VIER VOOROUDERS VER. Op het limevlak
     // van de voet zat de lime meer dan vier niveaus boven de tekst waar de muis
@@ -1058,13 +1169,38 @@ const AANWIJZER = [
     // stand — die op lime blauwviolet is. Nu klimt hij tot hij een vlak vindt
     // dat werkelijk een kleur heeft; alles daarboven doet er niet meer toe,
     // want dat is precies wat de bezoeker ook niet ziet.
+    /* DE GROND BESLIST, NIET DE LETTER — 28 augustus 2026.
+     *
+     * Hier stond als eerste regel `if (bijna(getComputedStyle(t).color)) return true;`
+     * en dat was de fout. Lucas: *"Wanneer je groene tekst aanraakt of in de
+     * buurt komt wordt de gehele muis gelijk donker waardoor hij moeilijk te
+     * zien is. Bij witte tekst loopt hij gewoon mooi over."*
+     *
+     * Precies wat er gebeurde. `oplime` schildert de vlakke pijl in
+     * --accent-ink, bijna zwart. Dat is de goede kleur op een limeVLAK: zwart
+     * op lime lees je. Het is de slechtste kleur op limeTEKST, want daar is de
+     * grond gewoon de donkere pagina — en dan is de pijl zwart op zwart.
+     *
+     * En "in de buurt" is geen gevoel maar de rechthoek: een woord staat in een
+     * link of een kop die breder is dan de letters, dus zodra je die doos
+     * binnenkomt sloeg de omkering al aan, ruim voordat je een letter raakte.
+     *
+     * De pijl is 14 bij 29 pixels en een letterstreek is er twee breed. Wat
+     * eronder ligt is dus vrijwel altijd de grond en vrijwel nooit de letter.
+     * Daarom kijkt deze functie alleen nog naar het eerste DEKKENDE vlak. Boven
+     * limetekst blijft de omgekeerde laag liggen — die is op de donkere pagina
+     * wit, en loopt over de letters heen precies zoals hij dat over witte tekst
+     * doet. Dat is het gedrag dat Lucas goed noemde.
+     */
     const opAccent = (t) => {
-      if (bijna(getComputedStyle(t).color)) return true;
       for (let i = 0, el = t; el && i < 12; el = el.parentElement, i += 1) {
         const bg = getComputedStyle(el).backgroundColor;
-        const m = String(bg).match(/[\d.]+/g);
-        const dekt = m && (m[3] === undefined || parseFloat(m[3]) > 0.5);
-        if (dekt) return bijna(bg);   // de eerste dekkende laag IS de grond
+        /* Ook deze dekkingsvraag door naarRgb(), en om dezelfde reden als
+           hierboven: op `color(srgb … / 0.9)` gaf de oude regex het goede
+           antwoord per ongeluk — het vierde getal stond toevallig op de plek waar
+           hij de alpha zocht. Per ongeluk goed is de vervelendste soort goed. */
+        const c = naarRgb(bg);
+        if (c && c[3] > 0.5) return bijna(bg);   // de eerste dekkende laag IS de grond
       }
       return false;
     };
@@ -1100,13 +1236,27 @@ const AANWIJZER = [
       // en daar moet hij zwart zijn en niet lime-op-lime.
       const lime = opAccent(t);
       const raakt = !!t.closest('a, button, summary, label, [role="button"], .btn, .sel');
-      // `vast` betekent: er moet een vaste kleur komen, dus de omgekeerde laag
-      // vloeit weg en de vlakke komt op. Welke kleur dat wordt zegt `oplime`.
+      /* ── OP LIME BLIJFT DE OMGEKEERDE LAAG LIGGEN — 30 augustus 2026 ────────
+       *
+       * Hier stond `vast = lime || raakt`: op een limevlak zakte de omgekeerde
+       * laag weg en kwam de vlakke op, zwart. Dat is leesbaar zolang de héle
+       * pijl op de knop ligt, en precies dat is op een knoprand niet zo — de
+       * staart hangt op de donkere pagina en werd daar onzichtbaar.
+       *
+       * Een vlakke kleur kan die twee niet allebei bedienen. De omgekeerde laag
+       * wel, want die rekent per pixel. Op lime krijgt hij daarom een lime
+       * vulling (zie het stijlblad) en blijft hij liggen: `vast` gaat nu alleen
+       * nog aan voor iets aanklikbaars dat NIET lime is.
+       *
+       * `oplime` verhuist mee naar de omgekeerde laag, want die draagt sinds
+       * vandaag de kleurkeuze. De vlakke houdt hem ook — hij is daar onschadelijk
+       * zolang die laag onzichtbaar is, en hij houdt de twee lagen gelijk voor
+       * wie ernaar kijkt in de inspector. */
       [c, c2].forEach((el) => {
-        el.classList.toggle('vast', lime || raakt);
+        el.classList.toggle('vast', raakt && !lime);
         el.classList.toggle('raakt', raakt);
+        el.classList.toggle('oplime', lime);
       });
-      c2.classList.toggle('oplime', lime);
     };
     const weg = () => { c.classList.remove('wakker'); c2.classList.remove('wakker'); };
     const terug = () => { c.classList.add('wakker'); c2.classList.add('wakker'); };

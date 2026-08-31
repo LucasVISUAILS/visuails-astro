@@ -57,6 +57,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD, PLAN_CLIPS, plans,
   reviewClaim, turnaround,
+  clause,
 } from '../data/pricing.js';
 /* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
    schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
@@ -174,7 +175,7 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Clips run in the ${t0.queue.en.toLowerCase()}. A held delivery date comes with an order of ${WINDOW_THRESHOLD} products or more — clips can ride inside one, but a clip request on its own does not get a date.`,
+    queueNote: `Clips run in the ${clause(t0.queue.en).toLowerCase()}. A held delivery date comes with an order of ${WINDOW_THRESHOLD} products or more — clips can ride inside one, but a clip request on its own does not get a date.`,
     // The qualifier above TierCompare. That component is shared with /catalog,
     // /lifestyle and /pricing and prints the ladder's two service levels; on
     // THIS page it needs one sentence of context, because neither column is
@@ -259,7 +260,7 @@ const COPY = {
       ['8s', 'strakke productvideo’s'],
       [clip, `per clip · ${vatLabel('excl', 'nl')}`],
     ],
-    queueNote: `Clips lopen mee in de ${t0.queue.nl.toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
+    queueNote: `Clips lopen mee in de ${clause(t0.queue.nl).toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
     // Zie de Engelse kant voor waarom deze regel er staat.
     tierNote: `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
     reviewNote: reviewClaim('unattended', 'nl'),

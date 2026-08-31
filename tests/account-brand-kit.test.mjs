@@ -49,6 +49,31 @@ const DETAILS = {
   default_background: 'white', default_background_hex: null, details_saved_at: '2026-07-20',
 };
 
+/* ── HET ABONNEMENT VOOR /account/plan ──────────────────────────────────────
+   Uitgerekende maanden en geen vaste strings: een vast '2026-08' valt buiten het
+   doorschuifvenster zodra de maand omslaat, en dan tekent het scherm stilletjes
+   iets anders dan deze toets denkt te controleren. */
+const _nu = new Date();
+const _deze = _nu.toISOString().slice(0, 7);
+const _vorig = new Date(Date.UTC(_nu.getUTCFullYear(), _nu.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
+const SUBSCRIPTION = {
+  id: 3, ref: 'SUB-TEST-001', customer_id: 1, plan: 'studio', term: 'monthly',
+  status: 'active', window_day: 8, created_at: `${_deze}-01`,
+};
+const SUB_MONTHS = [
+  { month: _vorig, granted: 12, used: 9, clips_granted: 2, clips_used: 0 },
+  { month: _deze,  granted: 12, used: 2, clips_granted: 2, clips_used: 1 },
+];
+const SUB_SLOTS = [
+  { month: _vorig, kind: 'complete',     granted: 12, used: 9 },
+  { month: _deze,  kind: 'complete',     granted: 12, used: 2 },
+  { month: _deze,  kind: 'video-motion', granted: 2,  used: 1 },
+];
+const QUEUE = [
+  { id: 91, position: 0, name: 'Winterjas, zwart', note: null, upload_batch: 'b-1', kind: 'complete', locked_at: `${_deze}-02 10:00:00`, created_at: `${_deze}-01` },
+  { id: 92, position: 1, name: 'Cargobroek, sand', note: null, upload_batch: null,  kind: 'complete', locked_at: null, created_at: `${_deze}-01` },
+];
+
 function makeDb({ locks = [], models = MODELS, files = [], events = [], finish = null } = {}) {
   const writes = [];
   const pick = (sql, binds) => {
@@ -58,6 +83,22 @@ function makeDb({ locks = [], models = MODELS, files = [], events = [], finish =
     // daarvan zijn goedgekeurd.
     if (s.includes('AS live') && s.includes('AS approved')) return finish;
     if (s.includes('FROM rate_limits')) return null;
+    /* ── HET ABONNEMENT, ZODAT /account/plan ZIJN SLOTS TEKENT ────────────────
+     *
+     * Deze stub gaf hier niets terug, en daardoor rendeerde /account/plan het
+     * lege scherm — het scherm zonder abonnement. Alle controles hieronder
+     * (geen script, geen inline style, één h1) liepen dus over een pagina die de
+     * helft van zijn code niet aanraakte.
+     *
+     * Dat is precies hoe een inline `style="width:17%"` er op 29 augustus 2026
+     * doorheen kwam terwijl de controle op style-attributen er al stond: de
+     * bewaking was in orde, de fixture bereikte de code niet. Vandaar deze drie
+     * regels, met opzet in een plan dat doorschuift — dan tekent hij én de balk
+     * van deze maand én die van vorige. */
+    if (s.includes('FROM subscriptions')) return SUBSCRIPTION;
+    if (s.includes('FROM subscription_months')) return SUB_MONTHS;
+    if (s.includes('FROM subscription_slots')) return SUB_SLOTS;
+    if (s.includes('FROM plan_queue')) return QUEUE;
     if (s.includes('FROM order_events')) return events;
     if (s.includes('FROM files f JOIN orders')) return files;
     if (s.includes('FROM custom_models WHERE id')) {
@@ -719,7 +760,7 @@ section('§9 · het dashboard is tweetalig, en de klant mag kiezen');
  *    terug op style-src — een `style=""` wordt dus GEBLOKKEERD. Dat heeft in
  *    2026 twee keer een leeg vak opgeleverd, en beide keren was het pas op de
  *    live site te zien. Elke dynamische waarde hoort een SVG-attribuut of een
- *    vaste klasse te zijn, zoals swatch(), ratioShape() en saldoMeter() doen.
+ *    vaste klasse te zijn, zoals swatch(), ratioShape() en slotRegels() doen.
  *
  * 4. GEEN <script>. Er staat geen `script-src` in de CSP van dit dashboard;
  *    de header is `default-src 'none'`. Eén scripttag betekent niet "een klein
@@ -744,6 +785,57 @@ console.log('\nde vorm van elke sectie');
        met een <link> geladen en die mag blijven. */
     check(`${pad} heeft geen inline style-attribuut`, tel(/\sstyle="/g) === 0);
     check(`${pad} heeft geen script`, tel(/<script/g) === 0);
+  }
+  /* ── EN /account/plan MOET ZIJN SLOTS ECHT GETEKEND HEBBEN ─────────────────
+     Zonder deze twee regels bewijzen de controles hierboven alleen dat er niets
+     verkeerds STAAT — niet dat de code die het fout kon doen ook gelopen heeft.
+     Dat onderscheid is precies waar de inline style doorheen glipte. */
+  {
+    const { html } = await get('/account/plan');
+    check('/account/plan tekent zijn slots per soort', /class="slotrij/.test(html));
+    check('en de balk is een <progress> met attributen', /<progress class="slotbalk" value="\d+" max="\d+"/.test(html));
+  }
+  {
+    /* De lijst staat op de besteltab en niet op de maandtab — zie planTabs().
+       Een controle op /account/plan zonder tab zou hier altijd falen om de
+       verkeerde reden. */
+    const { html } = await get('/account/plan?tab=bestellen');
+    check('de besteltab draagt een vastzetknop', /name="do" value="lock"/.test(html));
+    check('en een merkje concept of vastgezet', /class="q-merk/.test(html));
+    check('en ook daar geen inline style', (html.match(/\sstyle="/g) || []).length === 0);
+  }
+  /* ── DE EDITIONS-TAB — 30 augustus 2026 ────────────────────────────────────
+   *
+   * Deze tab staat in het dashboard van een BETALENDE klant en beschrijft iets
+   * dat nog niet geleverd wordt. Dat is precies de plek waar een belofte kan
+   * ontstaan die niemand bedoeld heeft, dus staan er drie dingen vast:
+   *
+   *   · het label "nog niet leverbaar" STAAT er — dezelfde stand die de
+   *     homepage sinds 23 augustus draagt met `stockNowTag`;
+   *   · er staat GEEN bedrag. Lucas weet de prijs nog niet, en een "vanaf"-getal
+   *     op het scherm van iemand die al betaalt, leest later als een verhoging;
+   *   · en de knop is een mailto en geen formulier — er komt geen tabel bij voor
+   *     iets zonder prijs en zonder leverdatum.
+   *
+   * De beelden worden op hun KLEINE versie getoetst. De strook is vier kolommen
+   * breed op een dashboard; brand-stair.webp is 1872 px en 148 kB, en dat is
+   * dezelfde fout die de galerij in augustus 3,12 MB kostte. */
+  {
+    const { html } = await get('/account/plan?tab=edities');
+    check('de Editions-tab staat in de navigatie', /href="\/account\/plan\?tab=edities"/.test(html));
+    check('en draagt het label dat hij nog niet leverbaar is', /is-wacht/.test(html));
+    check('er staat geen euroteken en geen bedrag op', /€|EUR\b/.test(html) === false);
+    /* Op het PANEEL en niet op de pagina: de bovenbalk en het uitlogblok dragen
+       hun eigen formulieren, en die horen er te zijn. Een controle op de hele
+       pagina zou daarop afgaan en niets zeggen over deze tab. */
+    const paneel = (html.split('<div class="planpaneel">')[1] || '').split('</div>').slice(0, -1).join('</div>');
+    check('de interesseknop is een mailto', /href="mailto:hello@visuails\.com\?subject=/.test(paneel));
+    check('en er komt geen formulier bij kijken', /<form/.test(paneel) === false);
+    check('de sfeerbeelden staan er in hun kleine versie',
+      (html.match(/\/img\/brand-[a-z-]+-w380\.webp/g) || []).length === 4);
+    check('elk beeld draagt een eigen alt', (html.match(/<img[^>]+alt="[^"]+"/g) || []).length === 4);
+    check('en ook deze tab heeft geen inline style', (html.match(/\sstyle="/g) || []).length === 0);
+    check('en geen script', (html.match(/<script/g) || []).length === 0);
   }
 }
 

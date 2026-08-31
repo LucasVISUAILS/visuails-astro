@@ -150,10 +150,37 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
     for (const [sel, m] of Object.entries(meting)) {
       check(`${naam} — ${sel} scrollt niet omhoog`, m.v, 0);
     }
-    /* EN DE ZIJWAARTSE SCROLL MOET BLIJVEN. Een rij dichtzetten met
-       `overflow: hidden` haalt de klacht ook weg en sloopt de carrousel; deze
-       regel is het verschil tussen die twee oplossingen. */
-    check(`${naam} — de dienstenrij schuift nog wél opzij`, meting['.hv-svc-rail'].h > 100, true);
+    /* ── SCHUIVEN OF PASSEN, MAAR NOOIT AFGEKNIPT — herzien 30 augustus 2026
+       Hier stond: de rij MOET zijwaarts schuiven (`h > 100`). Die eis was het
+       verschil tussen de klacht oplossen en de carrousel slopen — een rij
+       dichtzetten met `overflow: hidden` haalt de verticale scroll ook weg en
+       maakt de kaarten onbereikbaar.
+
+       Sinds de inkorting van 30 augustus staan er vier kaarten in plaats van
+       zes: Hooks en Editions zijn eruit (hun uitleg staat op /plans). Op een
+       breed scherm PASSEN die vier, en dan is er niets te schuiven — de oude
+       eis ging daar rood op precies de uitkomst die de bedoeling was.
+
+       Wat er werkelijk moet gelden is dit: elke kaart is bereikbaar. Dat kan op
+       twee manieren waar — hij past, of je kunt ernaartoe schuiven — en de
+       enige verboden derde is dat hij is afgeknipt. Dat wordt hieronder
+       gemeten aan de kaarten zelf en niet meer aan de scrollbalk. */
+    const kaarten = await page.evaluate(() => {
+      const rail = document.querySelector('.hv-svc-rail');
+      if (!rail) return null;
+      const r = rail.getBoundingClientRect();
+      const items = [...rail.children].map((el) => el.getBoundingClientRect());
+      return {
+        aantal: items.length,
+        schuift: rail.scrollWidth - rail.clientWidth,
+        // Bereikbaar = past binnen de zichtbare rij, of ligt binnen wat je kunt scrollen.
+        onbereikbaar: items.filter((b) => b.width < 20 || b.right > r.left + rail.scrollWidth + 2).length,
+      };
+    });
+    check(`${naam} — de rij heeft nog kaarten`, kaarten.aantal >= 4, true);
+    check(`${naam} — en geen enkele is afgeknipt of onbereikbaar`, kaarten.onbereikbaar, 0);
+    check(`${naam} — schuiven of passen, nooit iets ertussenin`,
+      kaarten.schuift > 100 || kaarten.schuift === 0, true);
     await ctx.close();
   }
 }
@@ -169,7 +196,23 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
  * de scroll wegneemt met `overflow-y: clip` zonder de oorzaak aan te pakken).
  * Die tweede is de reden dat er ook gemeten wordt dat hij ONDER de rij uitsteekt
  * — een notitie die netjes binnen de rij past, bewijst niets. */
-console.log('\nde notitie in de dienstenrij valt binnen het venster en wordt niet afgeknipt');
+/* ── DE NOTITIE STOND IN DE DIENSTENRIJ, EN STAAT DAAR NIET MEER ───────────
+ *
+ * Deze controle klikte de zwevende notitie van Hooks open, IN de dienstenrij, en
+ * mat of hij buiten die rij uitstak zonder afgeknipt te worden. Dat was de
+ * echte fout van 22 augustus 2026: een <Note> binnen een voorouder met een
+ * transform hangt aan die voorouder in plaats van aan het venster, stak 29px
+ * onder de rij uit, en die 29px werden scrollbare hoogte.
+ *
+ * Die notitie is op 30 augustus met de kaart mee verdwenen — de uitleg van
+ * Hooks en Editions staat sinds die dag op /plans#binnenkort.
+ *
+ * DE FOUT KAN NOG STEEDS TERUGKOMEN, en daarom is deze controle niet geschrapt
+ * maar verbreed. Hij pinde één notitie op één plek; hij loopt nu ALLE notities
+ * op de homepage langs. Dat is strenger dan wat er stond: elke notitie die er
+ * ooit bijkomt, in welke container dan ook, wordt vanaf nu meegemeten zonder
+ * dat iemand deze toets hoeft aan te passen. */
+console.log('\nelke zwevende notitie op de homepage valt binnen het venster');
 {
   for (const [naam, opties] of [
     ['telefoon 390', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }],
@@ -182,29 +225,33 @@ console.log('\nde notitie in de dienstenrij valt binnen het venster en wordt nie
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(400);
 
-    const knop = page.locator('.hv-svc-rail .nt-btn').first();
-    check(`${naam} — er staat een notitie in de rij`, await knop.count(), 1);
-    await knop.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(300);
-    await knop.click({ force: true });
-    await page.waitForTimeout(300);
+    const knoppen = page.locator('.nt-btn');
+    const n = await knoppen.count();
+    check(`${naam} — er staan notities op de pagina`, n >= 1, true);
 
-    const m = await page.evaluate(() => {
-      const pop = document.querySelector('.hv-svc-rail .nt-pop');
-      const rail = document.querySelector('.hv-svc-rail');
-      const r = pop.getBoundingClientRect();
-      const rr = rail.getBoundingClientRect();
-      return {
-        open: getComputedStyle(pop).visibility === 'visible',
-        binnen: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight,
-        steektUitDeRij: Math.round(r.bottom - rr.bottom) > 0 || Math.round(rr.top - r.top) > 0,
-        breedte: Math.round(r.width),
-      };
-    });
-    check(`${naam} — hij gaat open`, m.open, true);
-    check(`${naam} — en valt volledig binnen het venster`, m.binnen, true);
-    check(`${naam} — en steekt buiten de rij uit zonder afgeknipt te worden`, m.steektUitDeRij, true);
-    check(`${naam} — met een leesbare breedte`, m.breedte > 200, true);
+    for (let i = 0; i < n; i++) {
+      const knop = knoppen.nth(i);
+      await knop.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200);
+      await knop.click({ force: true });
+      await page.waitForTimeout(250);
+      const m = await page.evaluate((idx) => {
+        const btn = document.querySelectorAll('.nt-btn')[idx];
+        const pop = btn.closest('.nt') ? btn.closest('.nt').querySelector('.nt-pop') : null;
+        if (!pop) return null;
+        const r = pop.getBoundingClientRect();
+        return {
+          open: getComputedStyle(pop).visibility === 'visible',
+          binnen: r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1,
+          breedte: Math.round(r.width),
+        };
+      }, i);
+      check(`${naam} — notitie ${i + 1} gaat open`, m && m.open, true);
+      check(`${naam} — notitie ${i + 1} valt binnen het venster`, m && m.binnen, true);
+      check(`${naam} — notitie ${i + 1} is leesbaar breed`, m && m.breedte > 200, true);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(120);
+    }
     await ctx.close();
   }
 }

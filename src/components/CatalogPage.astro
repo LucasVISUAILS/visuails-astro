@@ -45,6 +45,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
   WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
+  clause,
 } from '../data/pricing.js';
 /* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
    schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
@@ -93,18 +94,49 @@ const t0 = TIERS.unattended;
 // structurally identical, which is what check_lang_parity reads. The
 // .photo-band box crops them, so nothing moves; they just stop the row
 // reflowing as each file arrives (§12).
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE VIER SHOTS — EN WAAROM ER MAAR ÉÉN EEN FOTO IS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * 30 augustus 2026. Deze rij is het EERSTE bewijs dat een bezoeker op /catalog
+ * ziet, en het is de sectie die belooft dat één product vier beelden oplevert.
+ * Wat er stond, met een schermafdruk ernaast gelegd:
+ *
+ *   1 · "Front"       catalog-after.webp
+ *   2 · "Back"        catalog-after.webp   ← hetzelfde bestand als 1
+ *   3 · "Detail"      catalog-before.webp  ← de TELEFOONFOTO van de klant,
+ *                                            bureaustoelen en al
+ *   4 · "On a model"  custom-models-02.webp ← een portret. Geen product in beeld.
+ *
+ * Eén beeld twee keer onder twee namen, de bronfoto gepresenteerd als geleverd
+ * werk, en een gezicht waar het product hoort te staan. Dat is drie keer bewijs
+ * verzinnen in de sectie die het bewijs IS, en het staat er tot vandaag.
+ *
+ * ── WAT ERVOOR IN DE PLAATS KOMT ───────────────────────────────────────────
+ *
+ * Wat waar is: er is één echte geleverde catalogfoto op schijf. Die staat op
+ * plek 1. De andere drie zijn <Placeholder> — de vorm die deze site al gebruikt
+ * voor beeld dat nog geschoten moet worden, met de opdracht erbij en met
+ * `npm run placeholders` die ze telt. Dezelfde oplossing die FigWalk voor
+ * exact dezelfde vraag koos: "Only the first slot has a photograph; the other
+ * three are hatched, and the caption under the figure says why."
+ *
+ * Dit maakt de sectie zwakker om naar te kijken, en dat is de bedoeling: de
+ * sectie WAS zwakker, je zag het alleen niet. Drie foto's schieten van één
+ * product lost het op, en tot die tijd staat er wat er is.
+ */
 const SHOTS = {
   en: [
     { n: '1', label: 'Front', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Front catalog shot of the product' },
-    { n: '2', label: 'Back', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Back catalog shot of the product' },
-    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', w: 1350, h: 1800, alt: 'Detail close-up of the logo or fabric' },
-    { n: '4', label: 'On a model', img: '/img/custom-models-02.webp', w: 800, h: 1071, alt: 'On-model shot of the product, worn for fit and scale' },
+    { n: '2', label: 'Back', brief: 'The same garment photographed from the back, on the same white ground, same light, same framing as shot 1 — so the two sit next to each other on a product page without a jump.' },
+    { n: '3', label: 'Detail', brief: 'A close-up of the logo or the fabric of that same garment, cut out on the same ground. Close enough to read the stitching; the point is texture, not the whole product.' },
+    { n: '4', label: 'On a model', brief: 'That same garment worn by one of the roster models, full or three-quarter length, so a shopper can judge fit and scale. The PRODUCT is the subject — a portrait with no product in it is not this shot.' },
   ],
   nl: [
     { n: '1', label: 'Voorkant', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Voorkant-shot van het product voor de catalogus' },
-    { n: '2', label: 'Achterkant', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Achterkant-shot van het product voor de catalogus' },
-    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', w: 1350, h: 1800, alt: 'Detailclose-up van het logo of de stof' },
-    { n: '4', label: 'Op een model', img: '/img/custom-models-02.webp', w: 800, h: 1071, alt: 'Het product op een model, zodat je de pasvorm en de maatverhouding ziet' },
+    { n: '2', label: 'Achterkant', brief: 'Hetzelfde kledingstuk van achteren, op dezelfde witte ondergrond, met hetzelfde licht en dezelfde kadrering als shot 1 — zodat ze op een productpagina naast elkaar staan zonder sprong.' },
+    { n: '3', label: 'Detail', brief: 'Een close-up van het logo of de stof van datzelfde kledingstuk, uitgesneden op dezelfde ondergrond. Dichtbij genoeg om het stiksel te zien; het gaat om de textuur, niet om het hele product.' },
+    { n: '4', label: 'Op een model', brief: 'Datzelfde kledingstuk gedragen door een model uit de bibliotheek, ten voeten uit of driekwart, zodat een bezoeker de pasvorm en de maatverhouding kan zien. Het PRODUCT is het onderwerp — een portret zonder product erin is dit shot niet.' },
   ],
 };
 
@@ -142,7 +174,7 @@ const COPY = {
     // must be VISIBLE, and it is a bigger difference now that size decides it
     // — so this line names the count as well as the promise. A visitor should
     // not be able to leave this page believing a date was promised.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
     packH: 'One product. Four images, or more. The rate falls as the count rises.',
     ladderH: 'What a catalog set costs',
     ladderProductsCol: 'Products',
@@ -152,6 +184,7 @@ const COPY = {
     // the obvious next question, so the upsell is woven into the sentence that
     // already raises it rather than parked in a block of its own. §1 of the
     // brief: every service page links to /custom-models.
+    packOpen: 'One delivered image, three still being shot. The set is real; the photographs of it are not all here yet, and we would rather show you that than fill the gaps with something else.',
     packP: `Every product comes back as a complete set — including a real on-model shot, not just flat-lays. That shot can use a face from the standard roster, or <a href="${lp('/custom-models')}">a Brand Model made only for you</a>, so the same person carries your whole range.`,
     // The button used to carry the tier label and one flat rate — "Order
     // individual products · €89 / product". Both halves are retired: the tier
@@ -206,7 +239,6 @@ const COPY = {
     // /lifestyle and /video carried both. Three service pages making two
     // different promises above the fold is the inconsistency, not the wording.
     reviewNote: reviewClaim('unattended', 'en'),
-    reviewAlt: 'A clean, marketplace-ready catalog image by VISUAILS',
     faqH: 'Catalog questions, answered',
     faqs: serviceFaqs('catalog', 'en'),
     ctaH: 'Build a catalog that<br>looks like one brand.',
@@ -224,12 +256,13 @@ const COPY = {
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['Vanaf 4 foto’s', 'per product'],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
     packH: 'Eén product. Vier foto’s of meer. Het tarief daalt naarmate het aantal stijgt.',
     ladderH: 'Wat een catalogset kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
     ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
+    packOpen: 'Eén geleverd beeld, drie die nog geschoten worden. De set bestaat; de foto\u2019s ervan staan er nog niet allemaal, en we laten dat liever zien dan dat we de gaten met iets anders vullen.',
     packP: `Elk product komt terug als een complete set — met een echte foto op een model, niet alleen het product plat op een ondergrond. Op die foto staat een gezicht uit de standaardbibliotheek, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
     packCta: 'Bestel catalogfoto’s',
     edMeta: '( Waar het past )',
@@ -274,7 +307,6 @@ const COPY = {
     reviewP: 'We maken elke catalogfoto, en daarna controleert een specialist hem voordat je hem krijgt — kleur en detail moeten kloppen, en dat laten we niet aan het toeval over.',
     reviewChips: ['Consistente belichting & uitsnede', 'Klaar voor marktplaatsen', reviewClaim('unattended', 'nl')],
     reviewNote: reviewClaim('unattended', 'nl'),
-    reviewAlt: 'Een strakke, voor marktplaatsen klare catalogfoto van VISUAILS',
     faqH: 'Catalog-vragen, beantwoord',
     faqs: serviceFaqs('catalog', 'nl'),
     ctaH: 'Bouw een catalogus die<br>eruitziet als één merk.',
@@ -331,13 +363,23 @@ const nl = lang === 'nl';
       <h2>{c.packH}</h2>
       <p class="pack-p" style="margin-inline:auto" set:html={c.packP} />
     </div>
+    {/* Zie de kop bij SHOTS: één plek draagt een foto, de andere drie een
+        <Placeholder> met de opdracht erbij. `bijschrift={false}` omdat het
+        nummer en de naam al op de badge staan; de opdracht zelf is voor Lucas
+        en staat in de bron, niet op het scherm. */}
     <div class="pack-row reveal-group" style="margin-top:2rem">
       {shots.map((s) => (
         <div class="pack-card reveal pending">
-          <div class="photo-band"><img src={s.img} alt={s.alt} loading="lazy" decoding="async" width={s.w} height={s.h} /><span class="pack-badge">{s.n} · {s.label}</span></div>
+          <div class="photo-band">
+            {s.img
+              ? <img src={s.img} alt={s.alt} loading="lazy" decoding="async" width={s.w} height={s.h} />
+              : <Placeholder lang={lang} ratio="1 / 1" caption={false} subject={`${c.eyebrow} · ${s.label}`} message={s.brief} />}
+            <span class="pack-badge">{s.n} · {s.label}</span>
+          </div>
         </div>
       ))}
     </div>
+    <p class="pack-open">{c.packOpen}</p>
     <!-- THE RUNG LIST. Five rows, not a "from €x": this page sells one kind
          of thing, so it has the room to print the whole ladder, and a reader
          who wants to know what twelve products cost each should be able to
@@ -364,6 +406,43 @@ const nl = lang === 'nl';
 
     <div class="flex" style="justify-content:center;margin-top:1.8rem">
       <a href={lp('/start/catalog')} class="btn btn-primary">{c.packCta}</a>
+    </div>
+  </div>
+</section>
+
+{/* ── DE STIJLEN STAAN NU VÓÓR HET UITLEGBLOK — 30 AUGUSTUS 2026 ──────────
+    Lucas: *"zorg dat de catalog pagina ook consistent is met alle andere
+    services zodat het als een geheel voelt."*
+
+    /lifestyle en /video zetten allebei de keuze — de moods, de manieren om
+    beweging toe te voegen — direct onder wat je krijgt, en pas daarna het
+    uitlegblok met `whatH`/`whereH`. Deze pagina deed het andersom, en dat is
+    de enige plek waar de drie uit de pas liepen. Twee van de drie hadden het
+    al zo, dus deze verhuist.
+
+    Het is ook de volgorde die het meest visueel is: je ziet eerst waaruit je
+    kiest en leest daarna waarom. */}
+<section>
+  <div class="container">
+    <h2 style="margin-bottom:2rem">{c.stylesH}</h2>
+    <div class="grid grid-2">
+      {styles.map((s) => (
+        <div class="card card-hover reveal pending">
+          {/* Een lagere band is hier geprobeerd en weer teruggedraaid; de reden
+              staat bij `.vis.band` in global.css. */}
+          <div class="svc-media">
+            <ProductScene icon={s.cardIcon} width={s.cardWidth} badge={`Catalog · ${s.name}`} wide />
+          </div>
+          <div class="svc-body">
+            <h3>{s.name}</h3>
+            <span class="svc-price">{s.cardPrice}</span>
+            <p>{s.cardDesc}</p>
+            <div class="flex" style="margin-top:1.2rem">
+              <a href={lp(`/catalog/${s.slug}`)} class="btn btn-primary">{c.exploreLabel(s.name)}</a>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   </div>
 </section>
@@ -413,29 +492,6 @@ const nl = lang === 'nl';
   </div>
 </section>
 
-<section>
-  <div class="container">
-    <h2 style="margin-bottom:2rem">{c.stylesH}</h2>
-    <div class="grid grid-2">
-      {styles.map((s) => (
-        <div class="card card-hover reveal pending">
-          <div class="svc-media">
-            <ProductScene icon={s.cardIcon} width={s.cardWidth} badge={`Catalog · ${s.name}`} wide />
-          </div>
-          <div class="svc-body">
-            <h3>{s.name}</h3>
-            <span class="svc-price">{s.cardPrice}</span>
-            <p>{s.cardDesc}</p>
-            <div class="flex" style="margin-top:1.2rem">
-              <a href={lp(`/catalog/${s.slug}`)} class="btn btn-primary">{c.exploreLabel(s.name)}</a>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
-
 <section class="section-tight">
   <div class="container">
     <div class="photo-split reveal pending">
@@ -473,35 +529,45 @@ const nl = lang === 'nl';
   </div>
 </section>
 
+{/* ── HET BEWIJS EN DE CONTROLE STONDEN IN TWEE SECTIES ──────────────────
+    30 augustus 2026, bij het gelijktrekken van deze pagina met /lifestyle en
+    /video. Hier stonden twee secties onder elkaar, samen 1703px:
+
+      "One photo in. A clean catalog image out."   de Compare, 840px
+      "Fast means nothing if it isn't right."      catalog-after.webp, 863px
+
+    Twee keer hetzelfde bestand, twee keer achter elkaar. De Compare TOONT dat
+    beeld al, met de telefoonfoto ernaast; de sectie eronder zette datzelfde
+    beeld er nog een keer neer om te zeggen dat een specialist het nakijkt.
+    Dat is één claim in twee secties, en de tweede voegt geen beeld toe dat je
+    niet net hebt gezien.
+
+    Nu één sectie: het paar staat er, en wat de specialist eraan doet staat
+    ernaast in plaats van eronder — dezelfde ordening als bij de modellenrij op
+    /custom-models en het voor/na-paar op de homepage. */}
 <section class="section-tight">
   <div class="container">
     <div class="section-head" style="text-align:center;margin-inline:auto"><h2>{c.baH}</h2><p style="margin-inline:auto">{c.baP}</p></div>
-    <div style="max-width:520px;margin:2rem auto 0">
-      <Compare
-        before="/img/catalog-before-1x1.webp"
-        after="/img/catalog-after.webp"
-        ratio="1/1"
-        beforeLabel={c.baBefore}
-        afterLabel="VISUAILS"
-        beforeAlt={c.baBeforeAlt}
-        afterAlt={c.baAfterAlt}
-      />
-    </div>
-  </div>
-</section>
-
-<section class="section-tight">
-  <div class="container two-col">
-    <div class="reveal pending">
-      <div class="photo-split-media"><img src="/img/catalog-after.webp" alt={c.reviewAlt} loading="lazy" decoding="async" width="1800" height="1800" /></div>
-    </div>
-    <div class="reveal pending">
-      <h2>{c.reviewH}</h2>
-      <p class="lead" style="margin-top:1.2rem">{c.reviewP}</p>
-      <div class="chip-row" style="margin-top:1.6rem">
-        {c.reviewChips.map((chip) => (
-          <span class="chip"><span class="dot"></span>{chip}</span>
-        ))}
+    <div class="cat-bewijs">
+      <div class="reveal pending">
+        <Compare
+          before="/img/catalog-before-1x1.webp"
+          after="/img/catalog-after.webp"
+          ratio="1/1"
+          beforeLabel={c.baBefore}
+          afterLabel="VISUAILS"
+          beforeAlt={c.baBeforeAlt}
+          afterAlt={c.baAfterAlt}
+        />
+      </div>
+      <div class="reveal pending">
+        <h3 class="cat-bewijs-h">{c.reviewH}</h3>
+        <p>{c.reviewP}</p>
+        <div class="chip-row" style="margin-top:1.4rem">
+          {c.reviewChips.map((chip) => (
+            <span class="chip"><span class="dot"></span>{chip}</span>
+          ))}
+        </div>
       </div>
     </div>
   </div>
@@ -629,5 +695,24 @@ const nl = lang === 'nl';
   @media (max-width: 720px) { .pack-row { grid-template-columns: 1fr 1fr; } }
   .pack-card .photo-band { position: relative; aspect-ratio: 3 / 4; overflow: hidden; border: 1px solid var(--line); }
   .pack-card .photo-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* De <Placeholder> vult de cel net zo als een foto zou doen, en de badge komt
+     er overheen. Zonder deze twee regels staat hij op zijn eigen 1/1 midden in
+     een cel van 3/4 en valt de rij uit elkaar. */
+  .pack-card .photo-band :global([data-placeholder]) { position: absolute; inset: 0; margin: 0; }
+  .pack-card .photo-band :global([data-placeholder] > *) { width: 100%; height: 100%; }
+
+  /* De regel onder de rij die zegt waarom er drie open staan. Klein en grijs:
+     het is een mededeling, geen verkoopargument. */
+  .pack-open { margin: 1rem 0 0; font-size: .84rem; color: var(--ink-4); max-width: 52ch; }
+
+  /* Het bewijspaar en wat de specialist eraan doet, naast elkaar. Zie de noot
+     bij die sectie: het waren twee secties met hetzelfde beeld erin. Onder
+     62rem stapelt het, en dan staat de uitleg weer onder het paar. */
+  .cat-bewijs { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3rem); align-items: center; margin-top: 2rem; }
+  .cat-bewijs-h { font-size: clamp(1.3rem, 2.4vw, 1.7rem); margin: 0 0 .8rem; }
+  @media (max-width: 62rem) {
+    .cat-bewijs { grid-template-columns: minmax(0, 1fr); max-width: 520px; margin-inline: auto; }
+  }
+
   .pack-badge { position: absolute; left: 10px; bottom: 10px; padding: .35rem .7rem; border-radius: var(--r-pill); background: rgb(var(--scrim) / 0.86); color: var(--paper-on-dark); font-size: .78rem; font-weight: 600; }
 </style>

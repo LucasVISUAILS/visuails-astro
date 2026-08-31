@@ -37,8 +37,8 @@ allowed on panels and never under body copy.
 
 | Token | Value | Role | Measured |
 |---|---|---|---|
-| `--bg-0` | `#030406` | The page ground | one step down, 27 aug 2026 — see the note below the table |
-| `--bg-raise` | `#060709` | Raised band, recessed panel | — |
+| `--bg-0` | `#030406` | The page ground | — |
+| `--bg-raise` | `#060709` | Raised band, recessed panel — a no-op since §19 | — |
 | `--surface` | `#08090B` | A card off the ground | — |
 | `--surface-2` | `#0C0E11` | The step above that | — |
 | `--ink-1` | `#FFFFFF` | Headings and primary text | 16.75:1 on `--surface` |
@@ -48,27 +48,24 @@ allowed on panels and never under body copy.
 | `--line` | white 12% | Hairline | — |
 | `--line-strong` | white 22% | Rule, control border — **never text** | — |
 | `--accent` | `#C6F100` | Primary fill, links, the accent word | 15.16:1 both directions |
-| `--accent-ink` | `#08090B` | What sits ON an accent fill (was equal to `--bg-0`; since 27 aug 2026 it is not, and that is correct — this is ink, not ground) | white on the accent is 1.31:1 and is never correct |
+| `--accent-ink` | `#08090B` | What sits ON an accent fill | white on the accent is 1.31:1 and is never correct |
 | `--accent-dim` | `#ABD200` | Hover / pressed | — |
 | `--scrim` | `8 9 11` (channels) | Every veil over a photograph | see below |
 
-**De grondtrap ging één stap omlaag, 27 augustus 2026.** Lucas: *"Ik wil de
-achtergrond kleur van de website denk ik een stuk donkerder hebben. Pas dit niet
-alleen aan op de website maar ook in het kleurenschema."* Vandaar hier en niet
-met een overschrijving op één pagina.
-
-De ONDERLINGE afstanden zijn bewaakt: er zat 8, 7 en 8 punten tussen de vier
-treden en dat is nu 7, 6 en 7. De trap is wat een paneel van de grond
-onderscheidt; alleen naar beneden schuiven zonder die afstanden te bewaken maakt
-van vier treden één vlak. De grond zakt het hardst (5 punten), de bovenste trede
-het minst (8), zodat het zichtbare verschil tussen een tegel en de pagina eerder
-groter dan kleiner wordt. De 'whisper of blue' uit sectie 18 blijft: elke trede
-houdt 3 tot 9 punten meer blauw dan rood.
-
-Voor lichte tekst kan dit alleen gunstig zijn — elke verhouding die in
-Layout.astro tegen deze waarden is gemeten wordt ruimer, niet krapper. Wat wél
-opnieuw gemeten moet worden is het moment dat er iets DONKERS op een van deze
-treden komt te staan; dat geval bestaat op dit moment niet.
+> **De vier grondwaarden zijn bijgewerkt, 30 augustus 2026.** Ze stonden hier één
+> stap lichter dan wat `global.css` schildert: `#08090B / #101216 / #17191E /
+> #1F2229` tegen de werkelijke `#030406 / #060709 / #08090B / #0C0E11`. De
+> grond is bij §19 hieronder donkerder geworden — "één grond, en kleur als
+> nadruk" — en deze tabel is toen niet meegegaan. De rollen zijn ongewijzigd;
+> `--bg-raise` is sinds diezelfde §19 bovendien een no-op, want elke volle
+> grond is `--bg-0`.
+>
+> `tests/promises.test.mjs` ving er maar twee van de vier: hij keurt een hex goed
+> zodra die *ergens* in `global.css` voorkomt, en `#08090B` en `#17191E` bestaan
+> allebei nog — als `--surface` en als `--menu-surface`. Twee foute regels
+> stonden dus jarenlang groen omdat hun waarde toevallig op een andere token
+> zat. De controle is daarmee zwakker dan hij eruitziet; wie hem ooit aanscherpt,
+> koppelt de token aan zijn eigen waarde in plaats van aan de verzameling.
 
 Two things about this table are counter-intuitive and are the reason it is written down:
 
@@ -108,6 +105,33 @@ codebase were doing two jobs each, and the second job is invisible until it brea
 - **`::selection`** inverted ink and paper, and needed a second rule for the dark scope.
   On a near-black-everywhere palette that inversion collapses — both values are
   near-black. Selection is the accent now, and there is one rule.
+
+### Een bedrag — één vorm, vier plekken
+
+*(Toegevoegd 30 augustus 2026, na de inkorting van de homepage.)*
+
+Een prijs op deze site heeft altijd dezelfde anatomie: een label in kapitalen, een
+groot getal in de displayletter, de eenheid eronder, de btw-regel daaronder. Die
+vorm bestond op 30 augustus **vier keer**, in vier bestanden, onder vier namen —
+`.pl-*` op /plans, `.hv-price-*` op de homepage, `.bmcost-*` op /custom-models en
+`.anchor-*` op /pricing — en ze liepen al uiteen in korpsgrootte (3,8 / 3,6 /
+3 rem) zonder dat iemand dat besloten had.
+
+Hij staat nu één keer, in `global.css`, als `.bedrag` / `.bedrag-label` /
+`.bedrag-cijfer` / `.bedrag-eenheid` / `.bedrag-btw`, plus `.bedrag-reeks` voor
+twee bedragen op één regel.
+
+- **De maat is een variabele, geen variant.** Een bedrag in een prijsplaat mag
+  groter zijn dan een bedrag naast drie andere; dat zet je met `--bedrag-maat` op
+  het blok. Geen `--groot` en `--klein`, want dan is het na drie maanden weer een
+  lijstje.
+- **`tabular-nums` hoort erbij.** Twee bedragen onder of naast elkaar staan op
+  dezelfde cijferbreedte; anders wiebelt de kolom zodra er een 1 in staat.
+- **Twee zijn er overgezet, twee nog niet.** `.bmcost-*` en `.anchor-*` doen naast
+  typografie ook de opbouw van hun eigen paneel — randen, een raster, een haarlijn
+  tussen twee bedragen. Die migreren is een verbouwing van twee panelen en hoort
+  een eigen ronde met een eigen controle te zijn. Ze staan bij naam genoemd in de
+  noot boven `.bedrag` in global.css, zodat het geen zoekplaatje is.
 
 ### Radius — a three-step scale, and one place it is written
 
@@ -831,8 +855,15 @@ overshoot is playfulness, and this brand's argument is control.
 - Stagger within a single list is legitimate. One identical entrance applied uniformly to
   every section is the tell, and the current site has it — it goes.
 - Do not animate layout properties. `transform`, `opacity`, `filter`, `clip-path`, `mask`.
-- GSAP + ScrollTrigger stay in `src/scripts/motion.js`, inside a `gsap.context()` reverted
+- GSAP + ScrollTrigger stay in `src/scripts/interactions.js`, inside a `gsap.context()` reverted
   on `astro:before-swap` — `<ClientRouter />` makes page-local scripts unreliable, so all
+
+  > *Bestandsnaam bijgewerkt, 30 augustus 2026.* Hier stond `src/scripts/motion.js`.
+  > Dat bestand bestaat niet meer: de bewegingscode is opgegaan in
+  > `src/scripts/interactions.js`, waar GSAP en ScrollTrigger vandaag ook echt
+  > staan. De regel eromheen — één `gsap.context()`, en alles teruggedraaid bij
+  > een zachte navigatie — is ongewijzigd.
+
   JS lives in shared modules re-inited on `astro:page-load`.
 
 ---
@@ -905,6 +936,15 @@ behouden." Measured before deciding anything: the homepage carried 2,435 words
 across 24 sections, step 1 of the order flow 1,212, `/ai-act` 1,567 with nothing
 folded — against a median of 346 words across 41 pages. Three places, not a
 sitewide disease, and the fix is disclosure rather than deletion.)*
+
+> *Nagemeten 30 augustus 2026.* De homepage staat inmiddels op **890 zichtbare
+> woorden in acht secties** (2044 en dertien secties vlak vóór die ronde; de
+> 2.435 hierboven is de meting van augustus). De maatregel is sindsdien niet
+> alleen "uitklappen in plaats van weghalen" geworden maar ook echt weghalen:
+> wat een pagina UITLEGT is naar de pagina gegaan die er al over ging, wat een
+> pagina BEWIJST is blijven staan. Zie de noten in `HomeV2.astro` per geschrapte
+> sectie voor welke afweging per band is gemaakt, en `HERONTWERP.md` voor de
+> stand van het hele herontwerp.
 
 `src/components/Disclose.astro` is the only disclosure on this site. It replaced
 five near-identical ones — `.faq-item` on /catalog, `.acc-item` on /faq,

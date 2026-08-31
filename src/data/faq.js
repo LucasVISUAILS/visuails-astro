@@ -235,6 +235,36 @@ export function faqPageGroups(lang = 'en') {
             q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
             a: `Op twee manieren. Een proefvisual van ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit}: je krijgt ${sample.deliverable} terug. Die loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn.`,
           },
+          {
+            /* ── HET MEEST GESTELDE BEZWAAR, EN HET STOND NERGENS — 30 AUGUSTUS 2026
+             *
+             * Een buitenstaander die alleen naar de gepubliceerde pagina's keek,
+             * viel hierover: het zelf-doen-argument staat volledig uitgeschreven op
+             * /compare en nergens anders, en /compare bezoekt iemand pas als hij al
+             * twijfelt. Voor een jong merk is een AI-tool de echte concurrent, niet
+             * een shootdag.
+             *
+             * Hij hoort HIER omdat deze pagina als FAQPage in JSON-LD staat
+             * (schema.js) — dit is het formaat dat een AI-zoekmachine citeert — en
+             * omdat het antwoord dan één bron heeft die de homepage kan lezen (zie
+             * OB_BRON in HomeV2.astro).
+             *
+             * DE VOLGORDE IS EEN KEUZE. Eerst wanneer een tool wél genoeg is, en pas
+             * daarna wat wij eraan toevoegen. Andersom leest het als bangmakerij, en
+             * dat is precies wat het niet moet doen: iemand die hier komt met een
+             * tool in gedachten moet opgelucht weglopen, niet ongerust.
+             *
+             * ELKE CONCRETE CLAIM HIERIN IS NA TE KIJKEN. Het bewaren van model,
+             * achtergrond en beeldverhouding is customer_style_locks (schema.sql);
+             * zuiver wit is `requiresWhite` in channels.js en wordt in de bestelflow
+             * afgedwongen; de AI Act-regel bij het bestand staat op /ai-act. De
+             * slotzin is letterlijk `toolClose` van /compare, zodat de twee pagina's
+             * op hetzelfde eindigen in plaats van elk hun eigen slot te verzinnen. */
+            q: 'Waarom zou ik dit niet zelf doen met een AI-tool?',
+            a: 'Voor een deel moet je dat ook doen. Een snelle mock om een idee te testen, een schets van een layout, alles wat niet bij een klant terechtkomt — daar is een tool genoeg voor, en goedkoper. Hij kost je stilletjes geld zodra de beelden naast elkaar moeten staan: de kleur verschuift bij elke run een beetje, en over een hele catalogus is dat wat een shop onsamenhangend maakt. Wat je hier koopt is alles wat er ná het genereren van een beeld gebeurt. Een specialist controleert elk beeld voordat het weggaat. Het model, de achtergrond en de beeldverhouding die je hebt goedgekeurd worden bewaard en bij je volgende bestelling opnieuw gebruikt. Waar een marktplaats zuiver wit eist, krijg je zuiver wit. De AI Act-regel komt bij het bestand mee. Is een tool genoeg voor wat je nodig hebt, gebruik dan de tool — en zo niet, dan is de enige test die iets waard is je eigen product.',
+            linkText: 'De eerlijke vergelijking',
+            linkHref: '/compare',
+          },
         ],
       },
       {
@@ -375,6 +405,17 @@ export function faqPageGroups(lang = 'en') {
         {
           q: 'Can I try it before ordering a whole collection?',
           a: `Two ways. A ${sample.price} ${vatLabel('excl', 'en')} test sample on one of your own products, ${sample.unit}: you get back ${sample.deliverable}. It runs through the same production as a paid order, so what you see is what you would get. Or simply start small: the rate is per product, so a first order can be a handful of pieces.`,
+        },
+        {
+          /* Zie de Nederlandse tegenhanger voor waarom deze vraag hier staat en
+             waarom hij in deze volgorde is geschreven. De twee lijsten moeten
+             even lang blijven en dezelfde volgorde houden — HomeV2.astro zoekt
+             het antwoord op de Engelse vraagtekst op en gebruikt de index die
+             dat oplevert voor beide talen. */
+          q: 'Why not just do this myself with an AI tool?',
+          a: 'For some of it you should. A quick mock to test an idea, a layout sketch, anything that is not going in front of a customer — a tool is enough for that, and it is cheaper. It starts to cost you once the images have to sit next to each other: the colour shifts a little on every run, and across a full catalog that is what makes a shop look inconsistent. What you buy here is everything that happens after the image is generated. A specialist checks every image before it ships. The model, the background and the aspect ratio you approved are stored and reused on your next order. Where a marketplace demands pure white, you get pure white. The AI Act line comes with the file. If a tool is enough for what you need, use the tool — and if it is not, the only test worth anything is your own product.',
+          linkText: 'The honest comparison',
+          linkHref: '/compare',
         },
       ],
     },

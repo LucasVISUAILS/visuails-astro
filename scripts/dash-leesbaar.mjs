@@ -40,6 +40,11 @@ const OUT = path.join(ROOT, '.render');
 fs.mkdirSync(OUT, { recursive: true });
 
 const SECTION = process.argv[2] || '/account';
+/* VISUAILS_THEMA=licht veegt het LICHTE scherm door. Zonder deze regel toetst
+   deze veeg maar de helft van wat er sinds 30 augustus bestaat — en juist de
+   helft die nieuw is, en waar de kleuren dus nog niet door de praktijk zijn
+   gegaan. Zie het themablok in public/account.css. */
+const THEMA = process.env.VISUAILS_THEMA === 'licht' ? 'licht' : 'donker';
 
 /* Letterlijk de header uit html() in src/lib/account.js. Verandert die daar, dan
    hoort hij hier mee te veranderen — en scripts/csp-probe.mjs draagt dezelfde
@@ -250,7 +255,7 @@ async function render(section, lang) {
       /* Met VISUAILS_NAV=dicht rendert dit script de INGEKLAPTE balk. Dat is de
          enige manier om die stand te zien: hij komt uit een cookie, want de CSP van
          dit dashboard laat geen script toe. Zie navCookie() in account.js. */
-      cookie: `vis_account=${token}; vis_lang=${lang}`
+      cookie: `vis_account=${token}; vis_lang=${lang}; vis_thema=${THEMA}`
         + (process.env.VISUAILS_NAV === 'dicht' ? '; vis_nav=dicht' : ''),
       'accept-language': lang === 'nl' ? 'nl-NL,nl;q=0.9' : 'en-GB,en;q=0.9',
     },
@@ -292,6 +297,14 @@ const context = await browser.newContext();
 
 await context.route('**/*', async (route) => {
   const u = new URL(route.request().url());
+  /* De vriesbladzijde. Zie de noot bij het invoegen ervan verderop: hij MOET
+     als eigen stylesheet komen en niet als addStyleTag, want dit dashboard
+     draait met `style-src 'self'` en dat weigert inline opmaak — ook die van een
+     meetgereedschap. */
+  if (u.pathname === '/__vries.css') {
+    return route.fulfill({ contentType: 'text/css',
+      body: '*,*::before,*::after{transition:none !important;animation:none !important}' });
+  }
   if (u.pathname === '/account.css' || u.pathname.endsWith('.css')) {
     const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
     if (fs.existsSync(file)) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(file) });
@@ -326,7 +339,13 @@ await context.route('**/*', async (route) => {
 let gevonden = 0;
 const SECTIES = ['/account', '/account/orders', '/account/brand-kit', '/account/details',
                  '/account/invoices', '/account/plan', '/account/plan?tab=bestellen',
-                 '/account/plan?tab=look', '/account/plan?tab=geld'];
+                 '/account/plan?tab=edities',
+                 '/account/plan?tab=look', '/account/plan?tab=facturering'];
+/* `?tab=geld` stond hier tot 30 augustus 2026, en die tab heet 'facturering' —
+   zie PLAN_TABS in src/lib/account.js. Een onbekende waarde valt terug op de
+   maandtab, dus deze veeg controleerde de facturerings- en opzegtab helemaal
+   niet en meldde intussen dat hij dat wél deed. Precies het soort groene vinkje
+   dat je minder weet laat dan geen vinkje. */
 const VEEG = () => {
   const nr = c => { if(!c) return null; const g=c.startsWith('color('); const m=c.match(/-?[\d.]+/g); if(!m) return null;
     const v=m.map(Number); return g ? v.slice(0,3).map(x=>x*255).concat(v.length>3?[v[3]]:[]) : v; };
@@ -391,7 +410,18 @@ for (const sec of SECTIES) {
        `* { transition: none !important; animation: none !important }` bevriest
        alles op zijn eindwaarde. Dat is precies wat een contrastmeting moet
        zien: waar het op uitkomt, niet waar het onderweg was. */
-    await page.addStyleTag({ content: '*,*::before,*::after{transition:none !important;animation:none !important}' });
+    /* ALS <link> EN NIET ALS addStyleTag — 29 augustus 2026.
+       addStyleTag zet een inline <style> neer, en dat is precies wat de CSP van
+       dit dashboard weigert: `style-src 'self'`. Dit gereedschap viel er hard op
+       om, wat op zich het goede nieuws is — het bewijst dat het meet met de
+       echte header op. De vriesregels komen nu van /__vries.css, dat de route
+       hierboven uitserveert, en dat is same-origin en dus toegestaan. */
+    await page.evaluate(() => new Promise((klaar) => {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = '/__vries.css';
+      l.onload = klaar; l.onerror = klaar;
+      document.head.appendChild(l);
+    }));
     await page.waitForTimeout(150);
     const bev = await page.evaluate(VEEG);
     [...fout, ...bev].forEach(x => { gevonden += 1; console.log(`${sec} @${naam} — ${x}`); });
@@ -399,5 +429,5 @@ for (const sec of SECTIES) {
   }
 }
 await browser.close();
-console.log(gevonden ? `\n${gevonden} bevinding(en)` : '\ngeen onleesbare tekst op het dashboard');
+console.log(gevonden ? `\n${gevonden} bevinding(en)` : `\ngeen onleesbare tekst op het dashboard (${THEMA})`);
 process.exit(gevonden ? 1 : 0);

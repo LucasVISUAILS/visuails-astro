@@ -1,5 +1,12 @@
 # Hooks — copyconcept
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt bestanden die inmiddels anders heten of niet meer bestaan. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `HooksPage.astro` → niets — verwijderd op 18 augustus 2026 — de tekst overtrad de toonregels op acht punten; de gecorrigeerde versie staat in `src/data/binnenkort.js` en wordt getoond op /plans#binnenkort
+> - `FigHook.astro` → niets — verwijderd met HooksPage mee
+
+
 Ter beoordeling. Nog niets hiervan staat op de site.
 
 Twee talen, want de pagina bestaat in twee talen en één taal beoordelen is een halve

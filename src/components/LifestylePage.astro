@@ -36,6 +36,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
   WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
+  clause,
 } from '../data/pricing.js';
 /* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
    schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
@@ -136,7 +137,7 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
     setH: 'One product. Three photos. <em>A carousel.</em>',
     setP: 'Every lifestyle order is your product in one styled look, delivered as three shots that belong together — ready to post as a carousel on Instagram, your shop and ads.',
     // Numbered because a carousel genuinely is an ordered sequence: this is
@@ -223,7 +224,7 @@ const COPY = {
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['3 foto’s', 'per product'],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
     setH: 'Eén product. Drie foto’s. <em>Een carousel.</em>',
     setP: 'Elke lifestyle-bestelling is je product in één gestylede look, geleverd als drie foto’s die bij elkaar horen — klaar voor een carousel op Instagram, voor je shop en voor je advertenties.',
     set: [
@@ -387,15 +388,30 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
 <section>
   <div class="container">
     <h2 style="margin-bottom:2rem" set:html={c.moodsH} />
-    <div class="grid grid-2 reveal-group">
+  {/* ── DRIE KOLOMMEN EN EEN VIERKANTE BAND — 30 AUGUSTUS 2026 ─────────────
+      Lucas, over /lifestyle: *"raster naar drie kolommen, banden lager."* De
+      lengte van deze pagina zat in beeld en niet in tekst — 12.878px met 1250
+      woorden — en dit blok was er in zijn eentje 2794px van.
+
+      Het waren VIJF tegels in twee kolommen, dus drie rijen, elk 3/4 hoog. In
+      drie kolommen zijn het twee rijen, en met een vierkante band is elke rij
+      een derde lager. Vijf in drie kolommen laat één plek op de tweede rij
+      open, en dat is hier juist goed: de vijfde is Custom, en die staat dan
+      apart in plaats van als vierde-uit-vier.
+
+      DE KOP GAAT MEE OMLAAG. 1,6rem was gekozen voor een tegel van 580px
+      breed; op 380px liep die naam over twee regels heen. Hij staat nu in een
+      eigen klasse in plaats van in een style-attribuut, want een maat die van
+      de tegelbreedte afhangt is geen losse uitzondering maar een regel. */}
+    <div class="grid grid-3 reveal-group mood-raster">
       {moods.map((s) => (
         <a href={lp(`/lifestyle/${s.slug}`)} class="reveal pending" style="display:block">
-          <div class="photo-band tall">
+          <div class="photo-band square">
             <img src={s.cardPhoto} alt={c.exampleAlt(s.name)} loading="lazy" decoding="async" width={cardSize(s.cardPhoto)[0]} height={cardSize(s.cardPhoto)[1]} />
             <div class="scrim"></div>
             <div class="caption">
-              <h3 style="font-size:1.6rem"><em>{s.name}</em> &rarr;</h3>
-              <p style="font-size:.92rem">{s.tagline} &middot; {moodPrice(s.slug)}</p>
+              <h3 class="mood-naam"><em>{s.name}</em> &rarr;</h3>
+              <p class="mood-regel">{s.tagline} &middot; {moodPrice(s.slug)}</p>
             </div>
           </div>
         </a>
@@ -495,7 +511,22 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
       <h2>{c.gradeH}</h2>
       <p style="margin-inline:auto">{c.gradeP}</p>
     </div>
-    <div class="compare-grid reveal-group" style="margin-top:2.2rem">
+    {/* ── VIER OP EEN RIJ IN PLAATS VAN TWEE BIJ TWEE — 30 AUGUSTUS 2026 ────
+        Dit blok was 1614px: vier schuifvergelijkingen van 604 bij 755 in twee
+        kolommen, dus twee rijen die je moest scrollen om alle vier te zien.
+
+        En dat scrollen was niet alleen lang, het was ook de claim ondermijnen.
+        De kop zegt "vier moods, vier transformaties" — dat is een uitspraak
+        over VERSCHIL, en verschil zie je door dingen naast elkaar te zetten.
+        Twee per keer laat je twee grades vergelijken en de andere twee uit je
+        hoofd erbij halen. Vier naast elkaar is één blik.
+
+        Ze worden er wel kleiner van: 294px in plaats van 604. Voor een
+        kleurverschil is dat ruim genoeg — een grade zie je niet aan detail maar
+        aan de hele toon — en de schuifknop blijft met zijn 40px bedienbaar.
+        Onder 75rem worden het er weer twee, onder 700px één; dat laatste is
+        hetzelfde breekpunt als `.compare-grid` sitebreed gebruikt. */}
+    <div class="compare-grid compare-grade reveal-group" style="margin-top:2.2rem">
       {grades.map((g) => (
         <div class="reveal pending">
           <Compare
@@ -625,4 +656,27 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   /* `.drop-note` lived here, and identically in CatalogPage.astro and
      VideoPage.astro. Three copies of one block is what TierCompare.astro
      replaced; its styles are scoped to that component now. */
+
+  /* ── DE MOODTEGELS, 30 AUGUSTUS 2026 ──────────────────────────────────────
+     Zie de noot bij het raster hierboven. Deze twee maten stonden als
+     style-attribuut op de elementen zelf; ze horen bij de tegelbreedte en niet
+     bij één regel markup. `clamp` en geen mediaquery: de tegel krimpt vloeiend
+     mee met de schil, dus de kop hoort dat ook te doen. */
+  /* Zie de noot bij het raster: vier naast elkaar, en de eigen regel voor elk
+     breekpunt omdat `.compare-grid.compare-grade` de sitebrede regel op 700px
+     in specificiteit verslaat en die dus niet meer voor ons zorgt. */
+  .compare-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 75rem) { .compare-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 43.75rem) { .compare-grade { grid-template-columns: minmax(0, 1fr); } }
+
+  .mood-naam { font-size: clamp(1.15rem, 2.2vw, 1.5rem); }
+  .mood-regel { font-size: .88rem; }
+
+  /* Twee kolommen zodra drie te smal worden om een naam op één regel te
+     houden, en pas daaronder één. Zonder deze regel sprong het raster van drie
+     ineens naar één (de sitebrede regel bij 860px) en werd elke tegel de volle
+     schilbreedte — precies de hoogte die dit blok moest verliezen. */
+  @media (max-width: 61rem) and (min-width: 53.76rem) {
+    .mood-raster { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>

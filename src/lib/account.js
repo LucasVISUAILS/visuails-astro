@@ -76,7 +76,7 @@
 // point; this file is where it turns into code.
 
 import { hashToken, isWellFormedToken, mintToken, isExpired } from './token.js';
-import { notifyRevision, notifyRevisionRound } from './notify.js';
+import { notifyRevisionRound } from './notify.js';
 import { clearUploadRetention } from './retention.js';
 /* De uploadgrenzen uit dezelfde module die /api/upload gebruikt. Zie de kop bij
    stageerFotos(): één lijst met toegestane types, niet twee die uit elkaar
@@ -123,6 +123,7 @@ import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT, REVIEW } from '../data/vat.js';
 import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '../data/address.js';
 import { createOrderMolliePayment } from './mollie.js';
+import { kindLabel, kindPer, slotBalans, slotsFor } from './slots.js';
 /*
  * HET ABONNEMENT. src/data/plans.js is het contract (wat een plan kost en geeft),
  * src/lib/subscription.js zijn de rijen (wie er een heeft en wat er nog van over
@@ -132,10 +133,12 @@ import { createOrderMolliePayment } from './mollie.js';
 import { handleSubscribeStart, handleSubscribeReturn, stopIncasso, hervatIncasso } from './subscribe.js';
 import {
   planState, loadQueue, queueAdd, queueRemove, queueReorder, queueMax,
+  queueLock, queueUnlock,
   pauseSubscription, activateSubscription, cancelSubscription, subscriptionShape,
   clearMollieSubscriptionId,
 } from './subscription.js';
 import { planName } from '../data/planNames.js';
+import { STOCK_ON_BRAND, STOCK_OFF_BRAND } from '../data/pricing.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
 import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
@@ -600,6 +603,8 @@ const COPY = {
     navPlan: 'Plan & billing',
     navCollapse: 'Collapse menu',
     navExpand: 'Expand menu',
+    themaNaarLicht: 'Light screen',
+    themaNaarDonker: 'Dark screen',
 
     // Overview — the landing section. Counts are real, all-time totals, not
     // a monthly figure: there is no billing cycle to anchor "this month" to
@@ -639,6 +644,12 @@ const COPY = {
     rdWarn: 'This is the one revision round that comes with this order. Images you do not mark now cannot be marked afterwards, so go through all of them first.',
     rdAfter: 'Still not right after this round? Message us on WhatsApp or by email and we will pick it up from there.',
     rdSend: 'Send revision round',
+    rdCheckH: 'Check your revision round',
+    rdCheckB: 'Nothing has been sent yet. This is what will go to the studio — read it over, adjust a note, or take an image back out.',
+    rdCount: (n) => `${n} ${n === 1 ? 'image' : 'images'} marked`,
+    rdDrop: 'Take back out',
+    rdBack: 'Back to the order',
+    rdConfirm: 'Send this revision round',
     rdUsedH: 'Your revision round has been sent',
     rdUsedB: 'We are on it. Anything else about this order goes through WhatsApp or email — that reaches us just as fast.',
     rdEmptyErr: 'Nothing was marked, so nothing was sent. Your revision round is still open.',
@@ -707,6 +718,31 @@ const COPY = {
        en geen knoppen. */
     planTabMaand: 'This month',
     planTabBestellen: 'Order',
+    planTabEdities: 'Editions',
+    /* ── DE EDITIONS-TAB ──────────────────────────────────────────────────────
+     * Dezelfde stand als op de homepage, en die is met zorg gekozen: GEEN van
+     * beide helften loopt al. Off-brand draagt daar `stockNowTag: 'Not running
+     * yet'` sinds 23 augustus, precies omdat het in het blok stond waarmee een
+     * abonnement verkocht wordt — een toezegging binnen iets waarvoor betaald
+     * wordt, die de klant pas mist nadat de eerste termijn is afgeschreven.
+     *
+     * Deze tab staat in het dashboard van een BETALENDE klant. Daar weegt dat
+     * dubbel, dus staat het label boven de kop en niet ergens onderaan. */
+    edH: 'Imagery for your feed, in your brand',
+    edTag: 'Not running yet',
+    edLede: `Editions is the set that arrives alongside your products: mood, texture and light in your style, your locations and your brand colours. For the weeks when there is nothing new to shoot and your feed still has to keep going.`,
+    edWhatH: 'What would land',
+    edWhat: [
+      [`${STOCK_ON_BRAND} visuals a month, built on your brand`, 'Ready in VISUAILS Studio at the start of the month, downloadable like any other order. No second library and no separate folders.'],
+      [`${STOCK_OFF_BRAND} shared visuals a month`, 'Brand-neutral and not exclusive: the same set also goes to other brands. We say so, exactly as we do for the shared model roster.'],
+    ],
+    edHowH: 'How it gets made',
+    edHow: `We set your brand up once: style, locations and colour palette are locked into a fixed setup. Every month that same setup runs again with different angles in it. That is where the work sits — a set that stays recognisably yours month after month without becoming the same picture twelve times.`,
+    edPriceH: 'What it costs',
+    edPrice: `Not settled yet, and we would rather not put up a figure we have to revise. The setup is per brand and the monthly run has to stand first; a price comes once we know what it actually costs to make. You will hear it here first.`,
+    edCta: 'Tell us you are interested',
+    edCtaNote: 'That is not an order and costs nothing — you go on the list and we email you the moment Editions is there.',
+    edMailSubject: 'Editions — keep me posted',
     planTabLook: 'Your look',
     planTabFacturering: 'Billing',
     planTabsLabel: 'Sections of your plan',
@@ -723,14 +759,11 @@ const COPY = {
     planNoneCta: 'See the plans',
     planNoneAlt: 'Order one-off',
     planBalanceH: 'Your plan',
-    planPerMonth: 'products a month',
     planNextCharge: 'Next payment',
-    planProductsH: 'Products',
-    planClipsH: 'Video clips',
     planRequest: 'Request',
     planOfN: 'of',
-    planLeftShort: 'left',
     planEachProduct: 'Each product is a catalog set and a lifestyle carousel',
+    planExtraNote: 'Anything outside your plan can be ordered separately',
     planQPhotos: 'photos added',
     planQNoPhotos: 'no photos yet',
     planLookUnset: 'not set yet',
@@ -744,7 +777,7 @@ const COPY = {
     planBkNudgeCta: 'Complete your look',
     planWindowH: 'Your week',
     planWindowNone: 'No fixed week set yet.',
-    planWindowNote: 'Your products are picked up from your list in this week, in the order you put them in.',
+    planWindowNote: 'In this week we pick up what you locked, in the order you put it in. Drafts stay on your list.',
     planQueueH: 'Your list',
     planQueueLede: 'Your list, your order. We work from the top down — we never decide what goes on it.',
     planQueueEmpty: 'Your list is empty. Add what you want photographed next, and it will be picked up in your week without you having to be there.',
@@ -752,12 +785,34 @@ const COPY = {
     planQueuePhotosHint: 'Optional now — a product without photos stays on the list and is skipped in your week until you add them. jpg, png or webp.',
     planQueueAdd: 'Add to the list',
     planQueueName: 'What is it',
+    planQueueKind: 'Which kind of slot',
+    planQueueKindLeft: 'left',
     planQueueNamePh: 'e.g. winter coat, black',
     planQueueNote: 'Anything we should know (optional)',
     planQueueUp: 'Move up',
     planQueueDown: 'Move down',
     planQueueRemove: 'Remove',
     planQueueFull: 'Your list is full. Remove something before adding more.',
+    /* ── SLOTS PER SOORT — migratie 0035, 29 augustus 2026 ────────────────────
+       Lucas: *"5 slots betekenen ook 5 producten."* Het woord slot blijft dus
+       staan, maar het krijgt eindelijk een soort erbij — en dat is precies wat
+       er ontbrak toen bezoekers zeiden het niet te snappen. */
+    planSlotsH: 'What you have this month',
+    planSlotsLede: 'You lock a slot by filling the product in and confirming it. What you do not use this month stays usable until the end of next month.',
+    planSlotThis: 'this month',
+    planSlotCarried: 'carried over',
+    planSlotLocked: 'locked',
+    planSlotFull: 'full',
+    planSlotFill: 'Fill one in',
+    planSlotExpiryOne: 'from last month — confirm before',
+    planQConcept: 'Draft',
+    planQLocked: 'Locked',
+    planQLock: 'Confirm',
+    planQUnlock: 'Unlock',
+    planQLockHint: 'Confirming uses one slot. You can undo it until your week starts.',
+    planQLockNoPhotos: 'Add photos first — without them we cannot make this product, so it cannot take a slot.',
+    planQLockNoSlot: 'No slots left for this type this month. Unlock something, or order it separately.',
+    planQLockNoPlan: 'Your plan is not running, so nothing can be confirmed right now.',
     planQueueNameMissing: 'Give the product a name, then it can go on the list.',
     planBuiltH: 'What you have built',
     planBuiltEmpty: 'Nothing picked up yet.',
@@ -766,6 +821,8 @@ const COPY = {
     planLookCta: 'Change your look',
     planBillingH: 'Billing',
     planBillingTerm: 'Term',
+    planTermMonthly: 'billed monthly',
+    planTermYearly: 'billed yearly',
     planBillingMonthly: 'Monthly',
     planBillingYearly: '12 months',
     planBillingAmount: 'Per month',
@@ -973,6 +1030,8 @@ const COPY = {
     navPlan: 'Abonnement & facturering',
     navCollapse: 'Menu inklappen',
     navExpand: 'Menu uitklappen',
+    themaNaarLicht: 'Licht scherm',
+    themaNaarDonker: 'Donker scherm',
 
     ovWelcome: 'Welkom terug',
     ovLede: 'Een snel overzicht van je bestellingen en bestanden.',
@@ -999,6 +1058,12 @@ const COPY = {
     rdWarn: 'Dit is de ene revisieronde die bij deze bestelling hoort. Beelden die je nu niet aanmerkt, kun je daarna niet meer aanmerken — loop ze dus eerst allemaal langs.',
     rdAfter: 'Na deze ronde nog iets mis? Stuur ons een bericht via WhatsApp of e-mail, dan pakken we het daar op.',
     rdSend: 'Revisieronde versturen',
+    rdCheckH: 'Je revisieronde nakijken',
+    rdCheckB: 'Er is nog niets verstuurd. Dit is wat er naar de studio gaat — lees het na, pas een notitie aan, of haal een beeld er weer uit.',
+    rdCount: (n) => `${n} ${n === 1 ? 'beeld' : 'beelden'} aangemerkt`,
+    rdDrop: 'Terugnemen',
+    rdBack: 'Terug naar de bestelling',
+    rdConfirm: 'Deze revisieronde versturen',
     rdUsedH: 'Je revisieronde is verstuurd',
     rdUsedB: 'We zijn ermee bezig. Verder iets over deze bestelling loopt via WhatsApp of e-mail — dat komt net zo snel aan.',
     rdEmptyErr: 'Er was niets aangemerkt, dus er is niets verstuurd. Je revisieronde staat nog open.',
@@ -1051,6 +1116,23 @@ const COPY = {
     /* Zie de noot bij de Engelse planTabMaand. */
     planTabMaand: 'Deze maand',
     planTabBestellen: 'Bestellen',
+    planTabEdities: 'Editions',
+    /* Zie de noot bij de Engelse edH. */
+    edH: 'Beeld voor je feed, in jouw merk',
+    edTag: 'Nog niet leverbaar',
+    edLede: `Editions is de set beelden die er los van je producten bijkomt: sfeer, textuur en licht in jouw stijl, jouw locaties en jouw merkkleuren. Voor de dagen waarop er niets nieuws te fotograferen valt en je feed toch door moet.`,
+    edWhatH: 'Wat er zou komen',
+    edWhat: [
+      [`${STOCK_ON_BRAND} beelden per maand, op jouw merk gezet`, 'Aan het begin van de maand klaar in VISUAILS Studio, te downloaden zoals een gewone bestelling. Geen tweede bibliotheek en geen aparte mappen.'],
+      [`${STOCK_OFF_BRAND} gedeelde beelden per maand`, 'Merkneutraal en niet exclusief: dezelfde set gaat ook naar andere merken. Dat zeggen we erbij, net zoals bij de gedeelde modellen.'],
+    ],
+    edHowH: 'Hoe het gemaakt wordt',
+    edHow: `Eenmalig zetten we je merk op: stijl, locaties en kleurenpalet worden vastgelegd tot een vaste opzet. Daarna draait elke maand dezelfde opzet opnieuw, met steeds andere invalshoeken erin. Dat is waar het werk zit — een set die maand na maand herkenbaar van jou blijft zonder dat het twaalf keer hetzelfde beeld wordt.`,
+    edPriceH: 'Wat het kost',
+    edPrice: `Dat staat nog niet vast, en we zetten er liever geen bedrag neer dat we daarna moeten bijstellen. De opzet is per merk en de maandelijkse ronde moet eerst staan; pas als we weten wat die werkelijk kost, komt er een prijs. Je hoort het hier als eerste.`,
+    edCta: 'Laat weten dat je interesse hebt',
+    edCtaNote: 'Dat is geen bestelling en kost niets — je komt op de lijst en we mailen je zodra Editions er is.',
+    edMailSubject: 'Editions — houd me op de hoogte',
     planTabLook: 'Je look',
     planTabFacturering: 'Facturering',
     planTabsLabel: 'Onderdelen van je abonnement',
@@ -1065,14 +1147,11 @@ const COPY = {
     planNoneCta: 'Bekijk de abonnementen',
     planNoneAlt: 'Los bestellen',
     planBalanceH: 'Je abonnement',
-    planPerMonth: 'producten per maand',
     planNextCharge: 'Volgende afschrijving',
-    planProductsH: 'Producten',
-    planClipsH: 'Videoclips',
     planRequest: 'Bestellen',
     planOfN: 'van de',
-    planLeftShort: 'over',
     planEachProduct: 'Elk product is een catalogset én een lifestyle-carousel',
+    planExtraNote: 'Wat niet in je plan zit, kun je los bijbestellen',
     planQPhotos: "foto’s toegevoegd",
     planQNoPhotos: "nog geen foto’s",
     planLookUnset: 'nog niet ingesteld',
@@ -1086,7 +1165,7 @@ const COPY = {
     planBkNudgeCta: 'Je look afmaken',
     planWindowH: 'Jouw week',
     planWindowNone: 'Nog geen vaste week ingesteld.',
-    planWindowNote: 'In deze week worden je producten van je lijst gepakt, in de volgorde die jij hebt gezet.',
+    planWindowNote: 'In deze week pakken we op wat je hebt vastgezet, in de volgorde die jij hebt gezet. Concepten blijven op je lijst staan.',
     /* NIET "wat er aan de beurt is". Dat is letterlijk de zin die Lucas op
        17 augustus afwees — *"Ik wil niet dat VISUAILS zegt wat er aan de beurt
        is"* — en ook al is dit zijn eigen lijst, een kop die zo klinkt, wekt
@@ -1098,12 +1177,30 @@ const COPY = {
     planQueuePhotosHint: 'Mag ook later \u2014 een product zonder foto\u2019s blijft op de lijst staan en wordt in je week overgeslagen tot je ze erbij doet. jpg, png of webp.',
     planQueueAdd: 'Aan de lijst toevoegen',
     planQueueName: 'Wat is het',
+    planQueueKind: 'Welk soort slot',
+    planQueueKindLeft: 'over',
     planQueueNamePh: 'bijv. winterjas, zwart',
     planQueueNote: 'Iets wat we moeten weten (mag leeg)',
     planQueueUp: 'Omhoog',
     planQueueDown: 'Omlaag',
     planQueueRemove: 'Verwijderen',
     planQueueFull: 'Je lijst is vol. Haal er iets af voordat je meer toevoegt.',
+    planSlotsH: 'Wat je deze maand hebt',
+    planSlotsLede: 'Een slot zet je vast door het product in te vullen en te bevestigen. Wat je deze maand niet gebruikt, blijft bruikbaar tot het eind van volgende maand.',
+    planSlotThis: 'deze maand',
+    planSlotCarried: 'doorgeschoven',
+    planSlotLocked: 'vastgezet',
+    planSlotFull: 'vol',
+    planSlotFill: 'Er een invullen',
+    planSlotExpiryOne: 'van vorige maand — vastzetten vóór',
+    planQConcept: 'Concept',
+    planQLocked: 'Vastgezet',
+    planQLock: 'Vastzetten',
+    planQUnlock: 'Losmaken',
+    planQLockHint: 'Vastzetten kost één slot. Je kunt het terugdraaien tot je week begint.',
+    planQLockNoPhotos: 'Zet er eerst foto\u2019s bij — zonder foto\u2019s kunnen we dit product niet maken, dus kan het geen slot kosten.',
+    planQLockNoSlot: 'Geen slots meer van deze soort deze maand. Maak er een los, of bestel dit los bij.',
+    planQLockNoPlan: 'Je abonnement loopt niet, dus er valt nu niets vast te zetten.',
     planQueueNameMissing: 'Geef het product een naam, dan kan het op de lijst.',
     planBuiltH: 'Wat je hebt opgebouwd',
     planBuiltEmpty: 'Nog niets opgepakt.',
@@ -1112,6 +1209,8 @@ const COPY = {
     planLookCta: 'Je look aanpassen',
     planBillingH: 'Facturering',
     planBillingTerm: 'Termijn',
+    planTermMonthly: 'maandelijks afgeschreven',
+    planTermYearly: 'jaarlijks afgeschreven',
     planBillingMonthly: 'Maandelijks',
     planBillingYearly: '12 maanden',
     planBillingAmount: 'Per maand',
@@ -1191,7 +1290,7 @@ export async function accountGet(context) {
 
   if (!env?.DB) {
     const lang = negotiate(request);
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
+    return html(page({ thema: themaCookie(context.request), lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
   }
 
   const verifyMatch = path.match(/^\/account\/verify\/([^/]+)$/);
@@ -1287,7 +1386,7 @@ export async function accountGet(context) {
     const customer = await currentCustomer(env, request);
     if (customer) return seeOther('/account');
     const lang = negotiate(request);
-    return html(page({ lang, title: COPY[lang].loginTitle, body: loginBody(COPY[lang], lang) }));
+    return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].loginTitle, body: loginBody(COPY[lang], lang) }));
   }
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-page', limit: PAGE_LIMIT });
@@ -1317,7 +1416,7 @@ export async function accountGet(context) {
   if (path === '/account/plan/return') {
     const uitkomst = await handleSubscribeReturn(context, customer);
     const lang2 = langCookie(request) || negotiate(request);
-    return html(page({
+    return html(page({ thema: themaCookie(context.request),
       lang: lang2,
       title: COPY[lang2].planHeading,
       body: shellBody(COPY[lang2], lang2, customer, 'plan',
@@ -1327,7 +1426,7 @@ export async function accountGet(context) {
   }
 
   const lang = negotiate(request);
-  return html(page({ lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
+  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
 }
 
 export async function accountPost(context) {
@@ -1349,7 +1448,7 @@ export async function accountPost(context) {
   if (!env?.DB) {
     const lang = negotiate(request);
     if (asJson) return json({ error: 'unavailable' }, 503);
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
+    return html(page({ thema: themaCookie(context.request), lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
   }
 
   // No Origin check here — see the file header. Sending a login email requires
@@ -1385,7 +1484,7 @@ export async function accountPost(context) {
     // te zeggen wat de lezer ermee moest. Nu staat er eerst wat er is en wat
     // hij kan doen, en dan de twee waarden mét de reden dat ze er staan.
     const detail = originMismatchDetail(request);
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang], (lang === 'nl'
+    return html(page({ thema: themaCookie(context.request), lang, title: 'VISUAILS', body: errorBody(COPY[lang], (lang === 'nl'
       ? 'Deze pagina is vanaf een andere site geopend, dus we hebben hem voor de zekerheid niet uitgevoerd. Ga terug naar je accountpagina en probeer het daar opnieuw. Blijft het gebeuren, stuur ons dan deze regel mee: '
       : 'This page was opened from another site, so we did not run it. Go back to your account page and try again there. If it keeps happening, send us this line: ') + detail) }), 403);
   }
@@ -1422,12 +1521,18 @@ export async function accountPost(context) {
 
   if (path === '/account/feedback') return handleFeedback(context, customer);
 
+  /* DE NAKIJKSTAP. Een POST die HTML teruggeeft in plaats van om te leiden —
+     zie de kop van handleRondeNakijken() voor waarom dat hier de juiste vorm
+     is, en waarom hij met opzet niets opslaat. */
+  const ronde = /^\/account\/orders\/(\d+)\/ronde$/.exec(path);
+  if (ronde) return handleRondeNakijken(context, customer, Number(ronde[1]));
+
   const pay = /^\/account\/orders\/(\d+)\/pay$/.exec(path);
   if (pay) return handleOrderPay(context, customer, Number(pay[1]));
 
   const lang = negotiate(request);
   if (asJson) return json({ error: 'not-found' }, 404);
-  return html(page({ lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
+  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
 }
 
 /**
@@ -1459,7 +1564,7 @@ async function handleLoginPost({ request, env }) {
   const t = COPY[lang];
 
   if (!gate.allowed) {
-    return html(page({ lang, title: t.loginTitle, body: loginBody(t, lang, t.loginTooMany) }), 429);
+    return html(page({ thema: themaCookie(request), lang, title: t.loginTitle, body: loginBody(t, lang, t.loginTooMany) }), 429);
   }
 
   const email = String(form?.get('email') || '').trim().toLowerCase();
@@ -1471,7 +1576,7 @@ async function handleLoginPost({ request, env }) {
     await sendLoginLink(env, request, email, lang).catch(() => {});
   }
 
-  return html(page({ lang, title: t.checkTitle, body: checkEmailBody(t, lang, isEmail(email) ? email : '') }));
+  return html(page({ thema: themaCookie(request), lang, title: t.checkTitle, body: checkEmailBody(t, lang, isEmail(email) ? email : '') }));
 }
 
 /**
@@ -1730,7 +1835,7 @@ async function handleCodePost({ request, env }) {
    */
   if (!originIsSelf(request, env)) {
     const lang = negotiate(request);
-    return html(page({ lang, title: COPY[lang].loginTitle, body: loginBody(COPY[lang], lang, originMismatchDetail(request)) }), 403);
+    return html(page({ thema: themaCookie(request), lang, title: COPY[lang].loginTitle, body: loginBody(COPY[lang], lang, originMismatchDetail(request)) }), 403);
   }
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-code', limit: CODE_LIMIT });
@@ -1743,7 +1848,7 @@ async function handleCodePost({ request, env }) {
 
   // Eén pagina voor elke afloop behalve de goede, met één zin die verschilt.
   const again = (message, status = 400) =>
-    html(page({ lang, title: t.checkTitle, body: checkEmailBody(t, lang, email, message) }), status);
+    html(page({ thema: themaCookie(request), lang, title: t.checkTitle, body: checkEmailBody(t, lang, email, message) }), status);
 
   if (!gate.allowed) return again(t.codeTooMany, 429);
   if (!isEmail(email)) return again(t.codeWrong);
@@ -1765,7 +1870,7 @@ async function handleCodePost({ request, env }) {
     // Zonder migratie 0017 bestaat code_hash niet. Dan is er geen code om in te
     // vullen, en zegt het scherm dat — met de link ernaast die het wél doet.
     if (/no such column/i.test(String(err?.message || err))) return again(t.codeUnavailable);
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(t) }), 503);
+    return html(page({ thema: themaCookie(request), lang, title: 'VISUAILS', body: errorBody(t) }), 503);
   }
 
   if (!row || isExpired(row.code_expires_at, null)) return again(t.codeWrong);
@@ -1800,7 +1905,7 @@ async function handleCodePost({ request, env }) {
       env.DB.prepare('UPDATE customers SET email_verified = 1 WHERE id = ?1').bind(row.customer_id),
     ]);
   } catch {
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(t) }), 503);
+    return html(page({ thema: themaCookie(request), lang, title: 'VISUAILS', body: errorBody(t) }), 503);
   }
 
   // Het vinkje van bij de bestelling, nu het bewezen is. Zie promoteSaveRequest.
@@ -1816,7 +1921,7 @@ async function handleVerify(context, token) {
   const lang = negotiate(request);
   const t = COPY[lang];
 
-  if (!isWellFormedToken(token)) return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 404);
+  if (!isWellFormedToken(token)) return html(page({ thema: themaCookie(context.request), lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 404);
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-verify', limit: VERIFY_LIMIT });
   if (!gate.allowed) return new Response(null, { status: 429, headers: { 'retry-after': String(Math.max(1, gate.retryAfter || 60)), 'content-type': 'text/plain' } });
@@ -1828,7 +1933,7 @@ async function handleVerify(context, token) {
       'SELECT id, customer_id, expires_at, used_at FROM account_tokens WHERE token_hash = ?1'
     ).bind(hash).first();
   } catch {
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(t) }), 503);
+    return html(page({ thema: themaCookie(context.request), lang, title: 'VISUAILS', body: errorBody(t) }), 503);
   }
 
   // Expiry is absolute and comes first: a link past its hour is dead however it
@@ -1836,10 +1941,10 @@ async function handleVerify(context, token) {
   // LOGIN_TOKEN_GRACE_MINUTES for why, and why fifteen minutes gives up almost
   // nothing.
   if (!row || isExpired(row.expires_at, null)) {
-    return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 410);
+    return html(page({ thema: themaCookie(context.request), lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 410);
   }
   if (row.used_at && !withinGrace(row.used_at)) {
-    return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 410);
+    return html(page({ thema: themaCookie(context.request), lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 410);
   }
 
   const { token: sessionToken, tokenHash: sessionHash } = await mintCredential();
@@ -1961,6 +2066,31 @@ function navCookie(request) {
   return m ? m[1] : null;
 }
 
+/*
+ * ── HET THEMA UIT DE COOKIE ─────────────────────────────────────────────────
+ *
+ * Zelfde vorm als navCookie() hierboven, en om dezelfde reden: dit dashboard
+ * draait op nul JavaScript — er staat geen `script-src` in de CSP, alleen
+ * `default-src 'none'`. Een schakelaar met een klikhandler zou hier niets doen.
+ * Dus: een link met `?thema=`, de keuze in een cookie, en terug naar dezelfde
+ * pagina zónder de parameter.
+ *
+ * ── DONKER BLIJFT DE STANDAARD, OOK OP EEN LICHT BESTURINGSSYSTEEM ──────────
+ *
+ * De verleiding is `prefers-color-scheme` als beginstand te nemen. Dat is hier
+ * de verkeerde keuze: dit dashboard is sinds dag één donker, het staat op de
+ * schermafdrukken, in de mails en in het hoofd van elke klant die het kent. Wie
+ * morgen inlogt op een Mac die op licht staat, zou zonder iets te doen een
+ * ander product zien. Een OPTIE hoort een keuze te zijn en geen verrassing.
+ *
+ * Wie hem ooit toch als beginstand wil, zet één media-query in account.css om —
+ * de kleuren staan er al klaar. Die keuze staat hier bewust niet.
+ */
+function themaCookie(request) {
+  const raw = request?.headers?.get('cookie') || '';
+  return /(?:^|;\s*)vis_thema=licht(?:;|$)/.test(raw) ? 'licht' : 'donker';
+}
+
 async function sectionGet(context, customer, section) {
   const { env, request } = context;
 
@@ -1984,6 +2114,13 @@ async function sectionGet(context, customer, section) {
       const back = `${url.pathname}${url.search}${url.hash}`;
       return seeOther(back, [`vis_nav=${balk}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`]);
     }
+    /* En het thema, langs precies dezelfde weg. Zie themaCookie(). */
+    const kleur = url.searchParams.get('thema');
+    if (kleur === 'licht' || kleur === 'donker') {
+      url.searchParams.delete('thema');
+      const back = `${url.pathname}${url.search}${url.hash}`;
+      return seeOther(back, [`vis_thema=${kleur}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`]);
+    }
   } catch { /* geen geldige URL: dan is er ook niets te kiezen */ }
   let orders, files, models, locks, details, events;
   try {
@@ -2001,7 +2138,7 @@ async function sectionGet(context, customer, section) {
     ]);
   } catch {
     const lang = negotiate(request);
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
+    return html(page({ thema: themaCookie(context.request), lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
   }
 
   // The customer's own most recent order decides the language, same as
@@ -2173,8 +2310,8 @@ async function sectionGet(context, customer, section) {
   // stylesheet's own header always said they belonged. style-src is plain 'self'
   // again — one fewer moving part, and no inline <style> to keep in step with a
   // CSP set in a different function.
-  const body = shellBody(t, lang, customer, section, inner, navCookie(request) === 'dicht');
-  return html(page({ lang, title, body, full: true }), 200);
+  const body = shellBody(t, lang, customer, section, inner, navCookie(request) === 'dicht', themaCookie(request));
+  return html(page({ thema: themaCookie(context.request), lang, title, body, full: true }), 200);
 }
 
 async function currentCustomer(env, request) {
@@ -2420,6 +2557,18 @@ async function handleMe({ request, env }) {
  */
 async function handleModelPreviewImage({ request, env }, modelId) {
   if (!env?.DB || !Number.isInteger(modelId)) return new Response('Not found', { status: 404 });
+
+  // DEZELFDE METER ALS ELK ANDER BESTAND, 30 AUGUSTUS 2026. Deze route stond als
+  // enige bestandsroute ongemeten. Ownership was wel dicht — de query hieronder
+  // leest op (id, customer_id) en een vreemde id geeft 404 — maar de weg ernaartoe
+  // liep zonder teller langs currentCustomer(), en dat is een sessie-lookup in D1
+  // per verzoek. Een uitgelogde bezoeker kon die dus onbeperkt afvuren. Niet omdat
+  // hij er iets mee ziet, maar omdat het leest. Nu telt hij mee in dezelfde emmer
+  // als de zip, de factuur en het bestand; FILE_LIMIT is ruim genoeg dat een
+  // dashboardpagina met meerdere gezichten er niet tegenaan loopt.
+  const gate = await checkRate(env, { ip: clientIp(request), action: 'account-file', limit: FILE_LIMIT });
+  if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
+
   const customer = await currentCustomer(env, request);
   if (!customer) return new Response('Not found', { status: 404 });
 
@@ -3535,7 +3684,16 @@ async function handleFileReview({ request, env }, customer) {
   if (action === 'round') return handleRevisionRound({ form, env }, customer, home);
 
   const fileId = Number.parseInt(String(form?.get('file') || ''), 10);
-  if (!Number.isInteger(fileId) || !['approve', 'revise', 'undo'].includes(action)) return seeOther(home);
+  /* ── 'revise' STAAT HIER NIET MEER — 30 AUGUSTUS 2026 ─────────────────────
+     De losse aanmerking per beeld was tot 24 augustus de manier om een revisie
+     te vragen: onbeperkt herhaalbaar, en precies wat Lucas niet meer wilde. Het
+     SCHERM bood hem al niet meer aan, maar de handler nam hem nog steeds aan —
+     en een handler die een verouderd formulier accepteert, is niet "oude code
+     die niemand meer bereikt": het is een tabblad dat sinds gisteren openstaat,
+     en het is een POST die iemand met de hand kan sturen. Langs die weg werd de
+     ronde niet afgeschreven, dus hij was zo vaak te herhalen als je wilde.
+     Aanmerken loopt sinds vandaag ALLEEN nog via handleRevisionRound(). */
+  if (!Number.isInteger(fileId) || !['approve', 'undo'].includes(action)) return seeOther(home);
 
   // Het bestand moet horen bij een bestelling van DEZE klant, en die bestelling
   // mag geen proefvisual zijn. De tier-eis is er op 7 augustus 2026 uit (zie
@@ -3627,57 +3785,160 @@ async function handleFileReview({ request, env }, customer) {
         );
       }
       await env.DB.batch(undo);
-    } else {
-      // INGETROKKEN RECHTEN WORDEN HIER GEHANDHAAFD, niet in de UI. Goedkeuren
-      // en terugdraaien blijven wél kunnen: die kosten ons niets en een klant
-      // die zijn revisierechten kwijt is, moet nog steeds kunnen zeggen dat
-      // iets goed is.
-      if (owned.revisions_revoked_at) return seeOther(anchor);
-
-      const note = String(form.get('note') || '').trim().slice(0, NOTE_MAX);
-      if (!note) return seeOther(anchor);
-
-      // TWEE SCHRIJFACTIES IN ÉÉN BATCH. files.review_state is de huidige
-      // toestand van dit beeld; revision_requests is de geschiedenis waar admin
-      // op stuurt en waaruit de telling komt. Zouden ze los gaan, dan bestaat er
-      // een toestand waarin een beeld op 'revision_requested' staat zonder dat
-      // iemand weet wanneer of waarom het gevraagd is — precies de situatie die
-      // migration 0010 beschrijft.
-      await env.DB.batch([
-        env.DB.prepare(
-          `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
-        ).bind(fileId, note),
-        env.DB.prepare(
-          `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
-        ).bind(fileId, owned.order_id, customer.customer_id, note),
-      ]);
-      /*
-       * ── EN DE STUDIO KRIJGT ER BERICHT VAN, 9 AUGUSTUS 2026 ─────────────────
-       *
-       * Deze route schreef netjes naar de database en zweeg. Een klant die om elf uur
-       * 's avonds een revisie aanvroeg, produceerde geen enkel signaal — je moest het
-       * zelf gaan zoeken in het dashboard.
-       *
-       * De notitie gaat mee IN de mail. /studio belooft dat een revisieverzoek
-       * binnenkomt "met de notitie die de klant schreef, in diens eigen woorden", en
-       * een bericht dat alleen zegt "er is een revisie" dwingt je alsnog het dashboard
-       * te openen om te weten of het dringend is.
-       *
-       * NA de batch, en de fouten blijven binnen notifyRevision(): het verzoek van de
-       * klant mag niet omvallen omdat Resend even niet bereikbaar is.
-       */
-      await notifyRevision(env, {
-        orderId: owned.order_id,
-        fileId,
-        note,
-      });
-
     }
+    /* De `else`-tak stond hier: de losse revisie per beeld, met zijn eigen
+       notitie, zijn eigen batch en zijn eigen mail. Hij is met de actie zelf
+       verdwenen (zie de noot bij de actielijst hierboven). Wat hij deed doet
+       handleRevisionRound() nu voor de hele ronde tegelijk, inclusief het
+       bericht naar de studio — notifyRevisionRound() in plaats van
+       notifyRevision(). */
   } catch {
     return seeOther(home);
   }
 
   return seeOther(anchor);
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE NAKIJKSTAP — POST /account/orders/<id>/ronde
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Eén revisieronde per bestelling is niet terug te draaien. Tot vandaag zat er
+ * tussen "ik vink drie beelden aan" en "mijn ronde is op" precies één klik, op
+ * een scherm waar de aangevinkte beelden verspreid tussen alle andere stonden.
+ * Wie halverwege de galerij op versturen drukte, verstuurde wat hij tot dan toe
+ * had aangevinkt — en las pas daarna dat dat het was.
+ *
+ * Deze stap zet er een pagina tussen die uitschrijft WAT er verstuurd wordt: de
+ * aangemerkte beelden op een rij, met per beeld het notitieveld en een knop om
+ * hem er weer uit te halen.
+ *
+ * ── HET IS EEN POST DIE HTML TERUGGEEFT, EN DAT IS EEN KEUZE ───────────────
+ *
+ * Een GET was makkelijker geweest, maar dan zouden de aangevinkte id's in de URL
+ * staan — deelbaar, deelbaar per ongeluk, en terug te sturen door iemand anders.
+ * Een POST die rendert houdt de lijst in het bericht waar hij hoort. De prijs is
+ * dat de pagina niet ververst kan worden zonder de browser om herverzending te
+ * laten vragen, en dat is voor een tussenstap van tien seconden een prima ruil.
+ *
+ * ── HIJ SLAAT NIETS OP. HELEMAAL NIETS ─────────────────────────────────────
+ *
+ * Dat is de hele voorwaarde waaronder deze stap mag bestaan. Een tussenscherm
+ * dat alvast een halve ronde vastlegt, is een tussenscherm dat je niet kunt
+ * wegklikken — en dan is het een val in plaats van een bevestiging. Wie deze
+ * pagina sluit, heeft niets verbruikt.
+ *
+ * ── EN HIJ STELT DEZELFDE EISEN ALS DE VERZENDSTAP ─────────────────────────
+ *
+ * Twee keer dezelfde vraag, met opzet: deze pagina mag niets tonen wat
+ * handleRevisionRound() daarna zou weigeren. Zou hij milder zijn, dan leest de
+ * klant een bevestiging van een verzending die niet doorgaat. Dus dezelfde
+ * eigendomsquery, dezelfde levendheidseis, dezelfde poort — en één eis erbij die
+ * daar niet nodig is: alles moet bij de bestelling uit de URL horen.
+ *
+ * ── TERUGNEMEN ZONDER SCRIPT ───────────────────────────────────────────────
+ *
+ * De knop "Terugnemen" is een submit met `name="drop"` en een `formaction` terug
+ * naar deze route. Het formulier post dus zichzelf opnieuw, met één id erbij dat
+ * eruit moet. Gewone HTML — dit dashboard draait onder `default-src 'none'` en
+ * heeft geen script tot zijn beschikking. `formnovalidate` staat erop omdat de
+ * notitievelden verplicht zijn en een beeld terugnemen niet mag stranden op een
+ * leeg veld van een ander beeld.
+ */
+async function handleRondeNakijken({ request, env }, customer, orderId) {
+  const home = '/account/orders';
+  const lang = negotiate(request);
+  const t = COPY[lang];
+  const terugNaarKaart = `${home}?order=${orderId}#order-${orderId}`;
+
+  const form = await request.formData().catch(() => null);
+  if (!form || !Number.isInteger(orderId) || orderId <= 0) return seeOther(home);
+
+  const getal = (v) => Number.parseInt(String(v), 10);
+  const eruit = new Set(form.getAll('drop').map(getal).filter(Number.isInteger));
+  const uniek = [...new Set(form.getAll('file').map(getal).filter((n) => Number.isInteger(n) && n > 0))]
+    .filter((id) => !eruit.has(id));
+
+  /* Niets over is hetzelfde als niets aangevinkt: terug naar het overzicht met
+     de melding dat er niets is verstuurd. Alles terugnemen komt hier ook uit. */
+  if (!uniek.length) return seeOther(`${home}?ronde=leeg`);
+
+  let rijen = [];
+  try {
+    const gaten = uniek.map((_, i) => `?${i + 4}`).join(', ');
+    const res = await env.DB.prepare(
+      `SELECT f.id, f.filename, f.product_key, f.shot,
+              o.closed_at, o.service, o.revision_round_at, c.revisions_revoked_at
+         FROM files f
+         JOIN orders o ON o.id = f.order_id
+         JOIN customers c ON c.id = o.customer_id
+        WHERE o.customer_id = ?1
+          AND o.id = ?2
+          AND o.service <> ?3
+          AND f.kind = 'delivery'
+          AND f.superseded_at IS NULL
+          AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
+          AND f.id IN (${gaten})
+        ORDER BY f.id`
+    ).bind(customer.customer_id, orderId, SAMPLE_SERVICE, ...uniek).all();
+    rijen = res.results || [];
+  } catch {
+    /* Zonder migratie 0034 valt deze query om op `revision_round_at`. Stil terug
+       naar de kaart: er is niets ingediend en niets verbruikt. Zelfde afspraak
+       als in handleRevisionRound(). */
+    return seeOther(terugNaarKaart);
+  }
+
+  /* Alles of niets, net als bij de verzendstap: één beeld dat niet bij deze
+     bestelling en deze klant hoort, maakt de hele lijst ongeldig. Half tonen zou
+     een pagina opleveren die zegt "dit gaat weg" over een verzending die daarna
+     alsnog wordt geweigerd. */
+  if (rijen.length !== uniek.length) return seeOther(`${home}?ronde=mislukt`);
+
+  /* De poort. Is de ronde op, ingetrokken of de bestelling gesloten, dan is er
+     niets na te kijken — terug naar de kaart, waar in gewone woorden staat
+     waarom (zie revisionRound()). */
+  if (!canRequestRevisionRound(rijen[0])) return seeOther(terugNaarKaart);
+
+  const regels = rijen.map((f) => {
+    const naam = f.filename || `#${f.id}`;
+    const notitie = String(form.get(`note-${f.id}`) || '').slice(0, NOTE_MAX);
+    return `
+    <li class="nakijk-item">
+      <p class="nakijk-naam">${esc(naam)}</p>
+      <input type="hidden" name="file" value="${f.id}">
+      <label class="sr-only" for="k${f.id}">${esc(t.rdNote)}</label>
+      <textarea id="k${f.id}" name="note-${f.id}" rows="3" required
+                maxlength="${NOTE_MAX}" placeholder="${esc(t.rdHint)}">${esc(notitie)}</textarea>
+      <button class="btn btn-ghost btn-sm" type="submit" name="drop" value="${f.id}"
+              formaction="/account/orders/${orderId}/ronde" formnovalidate>${esc(t.rdDrop)}</button>
+    </li>`;
+  }).join('');
+
+  const body = `
+<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+<div class="authcard nakijk">
+  <h1>${esc(t.rdCheckH)}</h1>
+  <p class="lede">${esc(t.rdCheckB)}</p>
+  <p class="nakijk-telling">${esc(t.rdCount(rijen.length))}</p>
+  <p class="ronde-warn">${esc(t.rdWarn)}</p>
+  <form method="post" action="/account/review">
+    <input type="hidden" name="action" value="round">
+    <ul class="nakijk-lijst">${regels}</ul>
+    <p class="nakijk-knoppen">
+      <button class="btn btn-primary" type="submit">${esc(t.rdConfirm)}</button>
+      <a class="btn btn-ghost" href="${terugNaarKaart}">${esc(t.rdBack)}</a>
+    </p>
+  </form>
+</div>`;
+
+  /* Geen cache, op geen enkele laag. Deze pagina hoort bij één POST en bevat de
+     lijst die de klant net heeft aangewezen; hem terugkrijgen op een 'terug'-knop
+     van een gedeelde computer is niet de bedoeling. */
+  const res = html(page({ thema: themaCookie(request), lang, title: t.rdCheckH, body }), 200);
+  res.headers.set('cache-control', 'no-store');
+  return res;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -4440,6 +4701,13 @@ const ICON_PLAN = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x
    rechts. Geen hamburger — die betekent "hier zit een menu", en het menu is in
    beide standen zichtbaar; alleen de woorden ernaast verdwijnen. */
 const ICON_COLLAPSE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M4 4v16"/></svg>';
+/* Zon en maan, in dezelfde vorm als de andere pictogrammen hier: één pad, geen
+   vulling, currentColor. Geen emoji — die worden door het besturingssysteem
+   getekend en zijn op een dashboard zonder webfont het enige wat niet meebeweegt
+   met de rest. */
+const ICON_ZON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const ICON_MAAN = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z"/></svg>';
+
 const ICON_EXPAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/><path d="M20 4v16"/></svg>';
 const ICON_DETAILS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>';
 // Een blad met regels en een omgeslagen hoek. Bewust géén euroteken: dat staat
@@ -4498,7 +4766,7 @@ const ICON_TICK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d
      · `style-src 'self'` blokkeert ook inline stijl-ATTRIBUTEN (style-src-attr
        valt in CSP3 terug op style-src). Elke dynamische waarde blijft dus uit
        `style=""` — vaste klassen of SVG-attributen, zoals swatch(),
-       ratioShape() en saldoMeter() al doen. Dit heeft dit jaar twee keer een
+       ratioShape() en slotRegels() al doen. Dit heeft dit jaar twee keer een
        leeg vak opgeleverd; het is geen theorie.
      · De <h1> blijft de <h1>. De balk is opmaak, geen koppenboom: precies één
        <h1> per pagina, en dat is de paginanaam in deze balk.
@@ -4583,7 +4851,7 @@ function statTegel(icon, label, getal, href = '') {
 const MERK_V = 'M 0 16 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119 A 201.21 201.21 0 0 0 101 15.75 L 0 16 Z';
 const MERK_VLAG = 'M 701.75 0 L 543.25 366.25 L 507.25 453.75 L 652 259.25 L 702 338.25 L 701.75 0 Z';
 
-function shellBody(t, lang, customer, active, inner, navDicht = false) {
+function shellBody(t, lang, customer, active, inner, navDicht = false, thema = 'donker') {
   const items = [
     { key: 'overview', href: '/account', label: t.navOverview, icon: ICON_OVERVIEW },
     { key: 'new', href: '/start/', label: t.navNewRequest, icon: ICON_NEW },
@@ -4661,6 +4929,20 @@ function shellBody(t, lang, customer, active, inner, navDicht = false) {
            er één de huidige is: "Nederlands · English" met de actieve grijs is
            twee dingen om te lezen voor een keuze met twee uitkomsten. -->
       <a class="sidelang" href="?lang=${lang === 'nl' ? 'en' : 'nl'}">${lang === 'nl' ? 'English' : 'Nederlands'}</a>
+      ${/* ── DE THEMAKNOP ─────────────────────────────────────────────────────
+            Naast de taalknop, en om precies dezelfde reden in dezelfde vorm: het
+            zijn de twee dingen die je één keer instelt en daarna nooit meer
+            aanraakt. Eén link naar de ANDERE stand en niet twee knoppen waarvan
+            er één de huidige is — dat zijn twee dingen om te lezen voor een
+            keuze met twee uitkomsten. Zie de noot bij de taalknop hierboven.
+
+            Het pictogram is de stand waar je NAARTOE gaat, net als de tekst.
+            Een maan terwijl je al in het donker zit, is een knop die zegt waar
+            je bent in plaats van wat hij doet. */''}
+      <a class="sidethema" href="?thema=${thema === 'licht' ? 'donker' : 'licht'}"
+         title="${esc(thema === 'licht' ? t.themaNaarDonker : t.themaNaarLicht)}">
+        ${thema === 'licht' ? ICON_MAAN : ICON_ZON}<span>${esc(thema === 'licht' ? t.themaNaarDonker : t.themaNaarLicht)}</span>
+      </a>
       <form method="post" action="/account/logout"><button class="btn btn-ghost btn-block" type="submit">${esc(t.signOut)}</button></form>
     </div>
   </aside>
@@ -5718,55 +6000,27 @@ ${topBar(t.invHeading, { lede: t.invLede })}
 </div>`;
 }
 
-/**
- * ── DE METER IS EEN RIJ VAKJES EN GEEN BALK ─────────────────────────────────
+/* ── saldoMeter() STOND HIER, EN IS OPGEGAAN IN slotRegels() — 0035 ──────────
  *
- * Eerst stond hier een balk met een percentage erin. Die is vervangen naar het
- * voorbeeld van de mockup, en om een reden die sterker is dan smaak: vijf lege
- * vakjes zijn vijf dingen die je nog kunt laten maken. Een balk op 58% is een
- * getal waar een merk niets mee doet — het moet eerst terugrekenen hoeveel
- * producten dat zijn, en dat is precies de vraag die de meter hoorde te
- * beantwoorden.
+ * Hij tekende één rij vakjes voor één budget: het aantal producten van de maand,
+ * met de doorgeschoven achteraan. Die vorm was goed en is niet weggegooid — hij
+ * staat nu in slotRegels(), per soort, met de twee groepjes uit elkaar getrokken
+ * omdat "deze maand" en "doorgeschoven" niet dezelfde haast hebben.
  *
- * Drie soorten vakje, en het derde is het hele punt: `roll` markeert de
- * producten die uit een vorige maand zijn doorgeschoven. Lucas koos op 17
- * augustus voor doorschuiven MÉT een zichtbare afloopmaand, en dit is waar dat
- * zichtbaar wordt — niet in een waarschuwing eronder maar in de meter zelf.
+ * Twee dingen zijn meeverhuisd en horen niet verloren te gaan:
  *
- * ── WAAROM GEEN INLINE STIJL, ALWEER ────────────────────────────────────────
+ *   · GEEN INLINE STIJL. Dit dashboard draait onder `style-src 'self'`, en in
+ *     CSP3 valt `style-src-attr` daarop terug: `style="width:58%"` wordt
+ *     geweigerd en de klant ziet een lege doos. Dit jaar drie keer gebeurd —
+ *     swatch(), de beeldverhoudingen, en op 29 augustus de slotbalk zelf.
+ *   · EEN BOVENGRENS AAN HET AANTAL VAKJES. Boven een stuk of acht is tellen
+ *     niet meer wat iemand doet, en dan hoort het een balk te zijn. De grens
+ *     stond hier op 40 omdat er één budget was; in slotRegels() ligt hij op 8,
+ *     want daar staan er twee groepjes naast elkaar op één regel.
  *
- * Dit dashboard draait onder `style-src 'self'`, en in CSP3 valt
- * `style-src-attr` daarop terug: `style="width: 58%"` wordt geweigerd en de
- * klant ziet een lege doos. Dit jaar al twee keer gebeurd (swatch(), de
- * beeldverhoudingen). Vakjes hebben dat probleem niet: het zijn <span>s met een
- * klasse, en hun breedte komt uit de stylesheet. De vorige SVG-oplossing was
- * goed; deze is beter omdat er niets te berekenen valt.
- *
- * ── EN WAAROM ER EEN BOVENGRENS AAN HET AANTAL VAKJES ZIT ───────────────────
- *
- * Brand geeft 30 producten per maand en kan er met doorschuiven 120 hebben. 120
- * vakjes zijn geen meter meer maar een muur. Boven de grens valt hij terug op
- * getallen, want dan is tellen niet meer wat iemand doet.
+ * PIP_MAX ging mee naar binnen. Twee constanten met dezelfde naam, waarvan de
+ * ene de andere overschaduwde, is een val die niemand tweemaal hoeft te vinden.
  */
-const PIP_MAX = 40;
-
-function saldoMeter(verbruikt, toegekend, doorgeschoven = 0) {
-  const totaal = Math.max(0, Math.floor(Number(toegekend) || 0));
-  const op = Math.min(totaal, Math.max(0, Math.floor(Number(verbruikt) || 0)));
-  const doorgeschovenN = Math.min(totaal, Math.max(0, Math.floor(Number(doorgeschoven) || 0)));
-  if (!totaal || totaal > PIP_MAX) return '';
-
-  /* De doorgeschoven vakjes staan ACHTERAAN, want ze vervallen het eerst niet —
-   * ze zijn het laatste wat je overhoudt. Wie zijn maand opmaakt, ziet ze als
-   * laatste staan en dat is precies wat er dan waar is. */
-  const vakjes = [];
-  for (let i = 0; i < totaal; i += 1) {
-    const isDoorgeschoven = i >= totaal - doorgeschovenN;
-    const klasse = i < op ? 'pip pip-op' : isDoorgeschoven ? 'pip pip-roll' : 'pip';
-    vakjes.push(`<span class="${klasse}"></span>`);
-  }
-  return `<div class="meter" aria-hidden="true">${vakjes.join('')}</div>`;
-}
 
 /** 'YYYY-MM' als "oktober" / "October" — een maand en geen datum, want een periode is geen moment. */
 function maandNaam(key, lang) {
@@ -5914,12 +6168,17 @@ function brandKitRegels(t, lang, models, lockByStyle, metClips) {
  * vier weergaven van dezelfde route. De rol beloven en de bediening niet leveren
  * is slechter dan de rol niet gebruiken.
  */
-const PLAN_TABS = ['maand', 'bestellen', 'look', 'facturering'];
+/* 'edities' zit er sinds 30 augustus 2026 tussen, en tussen bestellen en look
+   met opzet: het is het tweede antwoord op "ik wil er iets bij" en hoort dus
+   naast het eerste te staan, niet achter "wat ligt er vast" waar niemand meer
+   kijkt. Facturering blijft de laatste, om de reden in de kop hierboven. */
+const PLAN_TABS = ['maand', 'bestellen', 'edities', 'look', 'facturering'];
 
 function planTabs(t, actief) {
   const namen = {
     maand: t.planTabMaand,
     bestellen: t.planTabBestellen,
+    edities: t.planTabEdities,
     look: t.planTabLook,
     facturering: t.planTabFacturering,
   };
@@ -5932,6 +6191,98 @@ function planTabs(t, actief) {
     return `<a class="plantab${nu ? ' is-nu' : ''}" href="${href}"${nu ? ' aria-current="page"' : ''}>${esc(namen[k])}</a>`;
   }).join('');
   return `<nav class="plantabs" aria-label="${esc(t.planTabsLabel)}">${items}</nav>`;
+}
+
+/**
+ * DE SLOTS, EEN REGEL PER SOORT.
+ *
+ * Dit verving één getal met een balk eronder ("12 van 12 over"). Dat getal zei
+ * niet WAARVAN, en dat is precies wat bezoekers niet begrepen — zie de kop van
+ * migratie 0035.
+ *
+ * ── TWEE GROEPJES EN NIET ÉÉN BALK VAN TIEN ────────────────────────────────
+ *
+ * Wie doorgeschoven slots heeft, heeft er twee soorten: die van deze maand en
+ * die van vorige. Eén balk van tien zou kloppen en toch het verkeerde zeggen,
+ * want de helft ervan heeft haast. Twee groepjes naast elkaar, met de oudste
+ * links en zijn vervaldatum eronder, laten in één blik zien wat er verloopt.
+ *
+ * En de oudste staat links omdat hij er ook als eerste afgaat — zie
+ * verbruikSlot() in slots.js. De volgorde op het scherm is de volgorde in de
+ * database, zodat het beeld niet iets anders suggereert dan er gebeurt.
+ */
+function slotRegels(t, lang, state) {
+  const balans = state.slots || [];
+  if (!balans.length) return '';
+  /* PIPS OF EEN BALK, EN DE ROW BESLIST — niet elk groepje apart.
+   *
+   * Losse blokjes hebben één voordeel: je kunt ze tellen. Bij vijf slots is dat
+   * precies wat je wilt. Bij twaalf is het weg, en bij twaalf plus twaalf
+   * doorgeschoven staan er vierentwintig blokjes op één regel — dan is het geen
+   * teller meer maar behang. Dat is dezelfde fout als de twaalf streepjes op het
+   * oude scherm, en die had ik zelf aangewezen.
+   *
+   * Boven de acht wordt het dus één doorlopende balk per groep. De grens ligt op
+   * de RIJ en niet op het groepje, want twee groepjes naast elkaar in twee
+   * verschillende vormen leest als twee verschillende dingen. */
+  const PIP_MAX = 8;
+  const meter = (vast, totaal, alsBalk) => {
+    if (!totaal) return '';
+    if (!alsBalk) {
+      return `<span class="pips">${Array.from({ length: totaal },
+        (_, i) => `<i${i < vast ? ' class="vast"' : ''}></i>`).join('')}</span>`;
+    }
+    /* <progress> EN GEEN DIV MET EEN BREEDTE — 29 augustus 2026.
+     *
+     * De eerste versie was `<i style="width:17%">`. Die vulde de balk voor 100%
+     * in plaats van 17, en de reden is de CSP van dit dashboard: `style-src
+     * 'self'` weigert style-ATTRIBUTEN. Het attribuut deed dus niets en het
+     * blokelement nam gewoon de volle breedte van zijn ouder. Precies dezelfde
+     * fout als de aspect-ratio in de brand kit, opgeschreven in
+     * scripts/account-render.mjs — en daarom rendert dat script mét de echte
+     * header, want anders was dit pas op Lucas' scherm opgevallen.
+     *
+     * <progress> lost het op met ATTRIBUTEN in plaats van opmaak: value en max
+     * zijn gegevens, geen stijl. Bijkomend voordeel dat een div nooit had: een
+     * schermlezer leest hem voor als "9 van 12". */
+    return `<progress class="slotbalk" value="${vast}" max="${totaal}"></progress>`;
+  };
+
+  return `<div class="slotlijst">${balans.map((b) => {
+    const ouderTotaal = b.vervalt.reduce((n, v) => n + v.over, 0);
+    /* Wat er van de OUDE maanden al vast staat, is het verschil tussen wat ze
+       gaven en wat er nog van over is. Dat getal staat nergens los in de balans,
+       en het uitrekenen hier is goedkoper dan er een veld voor bijhouden. */
+    const ouderGaf = b.toegekend - b.dezeMaand;
+    const ouderVast = Math.max(0, ouderGaf - ouderTotaal);
+    const dezeVast = Math.max(0, b.verbruikt - ouderVast);
+    const vol = b.saldo <= 0;
+    const alsBalk = Math.max(ouderGaf, b.dezeMaand) > PIP_MAX;
+    const verval = b.vervalt.length
+      ? `<span class="slot-verval">${b.vervalt[0].over} ${esc(t.planSlotExpiryOne)} ${esc(datumKort(b.vervalt[0].op, lang))}</span>`
+      : '';
+    return `
+    <div class="slotrij${vol ? ' is-vol' : ''}">
+      <span class="slot-naam">
+        <span class="n">${esc(kindLabel(b.kind, lang))}</span>
+        <span class="u">${esc(kindPer(b.kind, lang))}</span>
+        ${verval}
+      </span>
+      <span class="slot-groepen">
+        ${ouderGaf ? `<span class="slot-groep oud">${meter(ouderVast, ouderGaf, alsBalk)}<span class="lab">${esc(t.planSlotCarried)}</span></span>` : ''}
+        <span class="slot-groep">${meter(dezeVast, b.dezeMaand, alsBalk)}<span class="lab">${esc(t.planSlotThis)}</span></span>
+      </span>
+      <span class="slot-tel"><b>${b.verbruikt} ${esc(t.planOfN)} ${b.toegekend}</b> ${esc(vol ? t.planSlotFull : t.planSlotLocked)}</span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/** Een datum als "30 september" / "30 September" — kort, zonder jaar. */
+function datumKort(iso, lang) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return String(iso || '');
+  return d.toLocaleDateString(lang === 'nl' ? 'nl-NL' : 'en-GB',
+    { day: 'numeric', month: 'long', timeZone: 'UTC' });
 }
 
 function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = [], fout = '', tab = 'maand') {
@@ -5959,7 +6310,10 @@ function planBody(t, lang, customer, state, models = [], lockByStyle = {}, order
     : fout === 'hervatten' ? t.planResumeFail
       : fout === 'vol' ? t.planQueueFull
         : fout === 'naam' ? t.planQueueNameMissing
-          : '';
+          : fout === 'lockfoto' ? t.planQLockNoPhotos
+            : fout === 'lockslot' ? t.planQLockNoSlot
+              : fout === 'lockplan' ? t.planQLockNoPlan
+                : '';
   const meldingHtml = melding ? `<p class="det-ok is-warn" role="alert">${esc(melding)}</p>` : '';
 
   const kop = meldingHtml + topBar(t.planHeading, {
@@ -6052,41 +6406,42 @@ ${account}`;
   <p><a class="btn" href="/account/brand-kit">${esc(t.planBkNudgeCta)}</a></p>
 </div>`;
 
-  /* ── DE VERVALREGEL ────────────────────────────────────────────────────────
-   * Dit is de keuze van 17 augustus in één zin: doorschuiven mét een zichtbare
-   * afloopmaand. Een maand en geen afteller op de dag — een afteller maakt de
-   * laatste dag de drukste, en 94 producten in drie dagen kan één persoon niet.
-   * Zie rolloverDetail() in plans.js. */
-  const vervalRegel = !state.vervalt.length ? '' : state.vervalt.map((r) => (lang === 'nl'
-    ? `${r.left} doorgeschoven ${r.left === 1 ? 'product' : 'producten'} uit ${maandNaam(r.from, lang)} — te gebruiken tot en met ${maandNaam(r.until, lang)}`
-    : `${r.left} rolled-over ${r.left === 1 ? 'product' : 'products'} from ${maandNaam(r.from, lang)} — usable through ${maandNaam(r.until, lang)}`)).join(' · ');
-
-  /* ── DE BESTELKNOP NAAST HET GETAL ─────────────────────────────────────────
-   * Uit de mockup: het getal roept een vraag op en het antwoord hoort op dezelfde
-   * kaart te staan. Bij mij stond de weg naar een bestelling ergens anders.
+  /* ── DE VERVALREGEL STAAT HIER NIET MEER — migratie 0035 ──────────────────
+   * Hier stond één zin over doorgeschoven PRODUCTEN, gebouwd op state.vervalt.
+   * Sinds het slotmodel schuift er niet één soort door maar elke soort apart,
+   * en dan is één zin over "producten" niet korter maar onwaar: hij zwijgt over
+   * de video's die volgende maand net zo goed vervallen. slotRegels() zet de
+   * afloopmaand nu per regel, naast het aantal waar hij bij hoort — dezelfde
+   * keuze van 17 augustus (een maand, geen afteller), alleen per soort.
+   * Zie rolloverDetail() in plans.js en vervaltOp() in slots.js. */
+  /* ── EN DE CLIPSMETER OOK NIET — migratie 0035 ────────────────────────────
    *
-   * TWEE METERS EN NIET DRIE. De mockup had catalog, lifestyle en video naast
-   * elkaar, en dat zou hier oneerlijk zijn: een plan geeft COMPLETE producten —
-   * elk mét catalogset én lifestyle-carousel — plus clips. Dat zijn twee
-   * budgetten. Drie balken zouden suggereren dat je catalog kunt opmaken en
-   * lifestyle overhoudt, en dat kan niet. Wat elk product bevat, staat eronder in
-   * woorden. */
-  const clipsMeter = !vorm.clips ? '' : `
-  <div class="saldo-rij">
-    <div class="saldo-kop">
-      <span class="eyebrow">${esc(t.planClipsH)}</span>
-      <a class="btn btn-ghost btn-sm" href="${lang === 'nl' ? '/nl/start/video' : '/start/video'}">${esc(t.planRequest)}</a>
-    </div>
-    <p class="plan-getal"><strong>${state.clips.saldo}</strong> <span>${esc(t.planOfN)} ${state.clips.toegekend} ${esc(t.planLeftShort)}</span></p>
-    ${saldoMeter(state.clips.verbruikt, state.clips.toegekend, 0)}
-  </div>`;
-
+   * Hier stond een tweede meter voor de clips van een Studio-plan, naast die
+   * voor de producten: twee budgetten, twee balken. Dat klopte zolang er precies
+   * twee soorten bestonden.
+   *
+   * Lucas' slotmodel maakt het aantal soorten open — een motionplan met hooks,
+   * motion en lifestyle naast elkaar heeft er drie, en een volgend plan iets
+   * anders. Een vaste tweede meter zou dat plan half tekenen: de soorten die
+   * hij toevallig kent wél, de rest niet. slotRegels() tekent één regel per
+   * soort die het plan écht heeft, uit slotBalans(), en kent er geen enkele bij
+   * naam. Wat elk product bevat, staat er nog steeds in woorden onder.
+   *
+   * (De oude keuze "twee meters en niet drie" blijft daarmee overeind, alleen
+   * niet meer als getal in de code: een plan geeft COMPLETE producten, dus er
+   * komt geen aparte catalog- en lifestyle-balk bij tenzij een plan die soorten
+   * ook echt los toekent.) */
   const saldo = `
 <div class="card plan-saldo">
   <div class="dash-top">
     <div>
       <span class="eyebrow">${esc(t.planBalanceH)}</span>
-      <h3>${esc(planName(state.plan, lang))} · ${vorm.products} ${esc(t.planPerMonth)}</h3>
+      ${/* HIER STOND "· 12 producten per maand". Dat noemde één soort namens
+             allemaal: een Studio geeft óók twee motion-clips, en een motionplan
+             geeft er geen enkele. Wat een plan per maand geeft, staat hieronder
+             per soort — precies één keer, en compleet. Hier hoort dus wat het
+             plan IS: zijn naam en zijn termijn. */''}
+      <h3>${esc(planName(state.plan, lang))} · ${esc(state.sub.term === 'yearly' ? t.planTermYearly : t.planTermMonthly)}</h3>
     </div>
     ${state.volgendeAfschrijving ? `<div class="dash-right">
       <span class="eyebrow">${esc(t.planNextCharge)}</span>
@@ -6096,16 +6451,60 @@ ${account}`;
 
   <div class="saldo-rij">
     <div class="saldo-kop">
-      <span class="eyebrow">${esc(t.planProductsH)}</span>
-      <a class="btn btn-sm" href="${lang === 'nl' ? '/nl/start/complete' : '/start/complete'}">${esc(t.planRequest)}</a>
+      ${/* DE UITLEG STAAT IN DE LINKERKOLOM EN NIET ONDER DE HELE RIJ. Hij
+             stond eronder, en dan valt hij op een telefoon ONDER de knoppen: kop,
+             knoppen, uitleg. Dat leest als een handeling waarvan de reden erna
+             komt. In de kolom stapelt hij mee met de kop en klopt de volgorde op
+             beide breedtes. */''}
+      <span class="saldo-uitleg">
+        <span class="eyebrow">${esc(t.planSlotsH)}</span>
+        <span class="lede">${esc(t.planSlotsLede)}</span>
+      </span>
+      ${/* DE EERSTE KNOP IS "VUL ER EEN IN" EN NIET "BESTELLEN".
+            Hier stond alleen de bestelknop naar /start/complete. Die hoort er nog
+            steeds — Lucas wil dat werk buiten het plan gewoon los bij te bestellen
+            is — maar hij mag niet de enige zijn en zeker niet de eerste. Wie zijn
+            slots ziet en de enige knop op de kaart heet "bestellen", concludeert
+            dat hij moet BETALEN voor iets waar hij al voor betaalt. Dat is precies
+            de verwarring waar migratie 0035 over gaat.
+
+            De hoofdknop gaat dus naar de lijst, waar een slot ingevuld en
+            vastgezet wordt. De bestelknop staat er licht naast, met eronder in
+            woorden wat het verschil is. */''}
+      <span class="saldo-acties">
+        <a class="btn btn-primary btn-sm" href="/account/plan?tab=bestellen">${esc(t.planSlotFill)}</a>
+        <a class="btn btn-ghost btn-sm" href="${lang === 'nl' ? '/nl/start/complete' : '/start/complete'}">${esc(t.planRequest)}</a>
+      </span>
     </div>
-    <p class="plan-getal"><strong>${state.saldo}</strong> <span>${esc(t.planOfN)} ${state.toegekend} ${esc(t.planLeftShort)}</span></p>
-    ${saldoMeter(state.verbruikt, state.toegekend, state.doorgeschoven)}
-    <p class="meta">${esc(t.planEachProduct)}${vervalRegel ? ` · ${esc(vervalRegel)}` : ''}</p>
+    ${slotRegels(t, lang, state)}
+    <p class="meta">${esc(t.planEachProduct)} &middot; ${esc(t.planExtraNote)}</p>
   </div>
-  ${clipsMeter}
   ${state.betaald ? '' : `<p class="note">${esc(t.planUnpaid)}</p>`}
 </div>`;
+
+  /* ── WELKE SOORT — EN ALLEEN ALS ER IETS TE KIEZEN VALT ────────────────────
+   *
+   * Dit is de kant van Lucas' model die op het scherm moet landen: een slot is
+   * er één VAN EEN SOORT, en pas daardoor kan er een motionplan bestaan met vier
+   * hooks, twee motions en één lifestyle naast elkaar.
+   *
+   * De soorten komen uit het PLAN (slotsFor) en niet uit de balans. Die twee
+   * lopen precies één keer uiteen en dat is het moment waarop het uitmaakt: in
+   * de eerste maand vóór de incasso is de balans nog leeg, en dan zou een lijst
+   * uit de balans de klant vertellen dat zijn plan geen enkele soort kent.
+   *
+   * Bij één soort staat er geen keuze maar een verborgen veld. Een keuzelijst
+   * met één optie is geen keuze — het is een handeling erbij die altijd
+   * hetzelfde antwoord geeft. */
+  const soorten = Object.keys(slotsFor(state.plan));
+  const soortKeuze = soorten.length > 1
+    ? `<label for="q-soort">${esc(t.planQueueKind)}</label>
+    <select id="q-soort" name="kind">${soorten.map((k) => {
+      const b = (state.slots || []).find((r) => r.kind === k);
+      const over = b ? ` (${b.saldo} ${esc(t.planQueueKindLeft)})` : '';
+      return `<option value="${esc(k)}">${esc(kindLabel(k, lang))}${over}</option>`;
+    }).join('')}</select>`
+    : `<input type="hidden" name="kind" value="${esc(soorten[0] || 'complete')}">`;
 
   /* DE LIJST. Omhoog/omlaag als gewone formulierknoppen en niet als sleepbare
    * elementen: slepen vraagt JavaScript, werkt slecht op een telefoon en heeft
@@ -6117,21 +6516,46 @@ ${account}`;
    * WAT ER PER REGEL BIJ STAAT: of er foto’s bij zitten. Een item zonder foto’s
    * kan niet gemaakt worden, en dat moet zichtbaar zijn vóór de week aanbreekt —
    * niet erna, want dan is het een mail en die schrijft Lucas met de hand. */
-  /* HOEVEEL ER IN DE EERSTVOLGENDE WEEK STARTEN. Het kleinste van "wat er op de
-   * lijst staat" en "wat het saldo toelaat" — een belofte die groter is dan een
-   * van die twee, is een belofte die niet uitkomt. Staat hier en niet lager, want
-   * de regels zelf hebben hem nodig: alleen bij een item dat bijna start, is een
-   * ontbrekende foto dringend. Bij nummer twaalf is het een mededeling. */
-  const startenNu = Math.min(state.wachtrij.length, state.saldo);
+  /* ── HOEVEEL ER IN DE EERSTVOLGENDE WEEK STARTEN — migratie 0035 ───────────
+   *
+   * Hier stond `Math.min(lijst, saldo)`: de bovenste zoveel, geteld tegen het
+   * maandsaldo. Dat was de goede som in het oude model, waarin wij bepaalden wat
+   * er meeging. In Lucas' slotmodel bepaalt de KLANT dat, door vast te zetten —
+   * en dan is de belofte niet meer "de bovenste vijf" maar "wat je hebt
+   * vastgezet". Die twee lopen zichtbaar uit elkaar zodra iemand nummer zeven
+   * vastzet en nummer één niet, en dan zou de oude som hem het verkeerde
+   * beloven.
+   *
+   * De positie in de lijst zegt sindsdien alleen nog iets over de VOLGORDE. */
+  const vastgezet = state.wachtrij.filter((q) => q.locked_at).length;
 
   const rijen = state.wachtrij.map((q, i) => `
-  <li class="q-rij${i < startenNu ? ' q-nu' : ''}">
+  <li class="q-rij${q.locked_at ? ' q-nu' : ''}">
     <div class="q-tekst">
       <strong>${esc(q.name)}</strong>
       ${q.note ? `<span class="meta">${esc(q.note)}</span>` : ''}
-      <span class="q-staat${q.upload_batch ? ' q-ok' : (i < startenNu ? ' q-wacht' : '')}">${esc(q.upload_batch ? t.planQPhotos : t.planQNoPhotos)}</span>
+      <span class="q-staat${q.upload_batch ? ' q-ok' : ' q-wacht'}">${esc(q.upload_batch ? t.planQPhotos : t.planQNoPhotos)}${
+        /* DE SOORT ERBIJ, MAAR ALLEEN ALS ER MEER DAN ÉÉN IS. Bij een plan met
+           één soort zegt "complete bundel" achter elke regel niets — het staat
+           er dan drie keer en betekent nergens iets. Zodra er twee soorten zijn,
+           is het het antwoord op de vraag welk slot deze regel straks kost. */
+        soorten.length > 1 ? ` · ${esc(kindLabel(q.kind, lang))}` : ''}</span>
     </div>
+    <span class="q-merk${q.locked_at ? ' is-vast' : ''}">${esc(q.locked_at ? t.planQLocked : t.planQConcept)}</span>
     <div class="q-knoppen">
+      ${/* VASTZETTEN OF LOSMAKEN — één knop, want het is één schakelaar met twee
+            standen. Twee knoppen naast elkaar waarvan er altijd één zinloos is,
+            laat de klant kiezen tussen iets doen en niets doen. */''}
+      <form method="post" action="/account/plan/queue">
+        <input type="hidden" name="do" value="${q.locked_at ? 'unlock' : 'lock'}"><input type="hidden" name="id" value="${q.id}">
+        ${/* ZONDER FOTO'S IS DE KNOP UIT. queueLock() weigert het al en stuurt een
+              eigen melding terug, en die blijft staan — dit is de tweede sluiting
+              op dezelfde deur, aan de kant waar de klant hem ziet. Een knop
+              indrukken en een foutmelding terugkrijgen voor iets wat op dezelfde
+              regel al te lezen is ("nog geen foto's"), is een omweg langs een
+              afwijzing. */''}
+        <button class="btn ${q.locked_at ? 'btn-ghost' : 'btn-primary'} btn-sm" type="submit"${!q.locked_at && !String(q.upload_batch || '').trim() ? ' disabled' : ''}>${esc(q.locked_at ? t.planQUnlock : t.planQLock)}</button>
+      </form>
       <form method="post" action="/account/plan/queue">
         <input type="hidden" name="do" value="up"><input type="hidden" name="id" value="${q.id}">
         <button class="btn btn-ghost btn-sm" type="submit"${i === 0 ? ' disabled' : ''} aria-label="${esc(t.planQueueUp)}: ${esc(q.name)}">↑</button>
@@ -6151,6 +6575,7 @@ ${account}`;
 <div class="card">
   <h3>${esc(t.planQueueH)}</h3>
   <p class="lede">${esc(t.planQueueLede)}</p>
+  <p class="meta">${esc(t.planQLockHint)}</p>
   ${state.wachtrij.length
     ? `<ol class="q-lijst">${rijen}</ol>
   <p class="meta">${state.sub.window_day
@@ -6168,8 +6593,12 @@ ${account}`;
        is precies wat checkPlanQueues ook telt. "Je hoeft niets te doen" was
        daarmee dubbel onwaar — je moet je foto's uploaden. */
     ? (lang === 'nl'
-      ? `In je week pakken we de bovenste ${startenNu} op. Een product zonder foto's slaan we over.`
-      : `In your week we pick up the top ${startenNu}. A product without photos is skipped.`)
+      ? (vastgezet
+        ? `In je week pakken we de ${vastgezet} vastgezette ${vastgezet === 1 ? 'product' : 'producten'} op. Een concept blijft staan tot je het zelf vastzet.`
+        : 'Er staat nog niets vastgezet. Zet vast wat je deze maand gemaakt wilt hebben \u2014 dan pakken we het in je week op.')
+      : (vastgezet
+        ? `In your week we pick up the ${vastgezet} locked ${vastgezet === 1 ? 'product' : 'products'}. A draft stays on the list until you lock it.`
+        : 'Nothing is locked yet. Lock what you want made this month and we pick it up in your week.'))
     : esc(t.planWindowNone)}</p>`
     : `<p>${esc(t.planQueueEmpty)}</p>`}
   <!-- ── ENCTYPE, EN DAT IS HIER HET HELE PUNT ───────────────────────────────
@@ -6188,6 +6617,7 @@ ${account}`;
     <input type="hidden" name="do" value="add">
     <label for="q-name">${esc(t.planQueueName)}</label>
     <input id="q-name" name="name" type="text" maxlength="120" required placeholder="${esc(t.planQueueNamePh)}">
+    ${soortKeuze}
     <label for="q-note">${esc(t.planQueueNote)}</label>
     <input id="q-note" name="note" type="text" maxlength="500">
     <label for="q-fotos">${esc(t.planQueuePhotos)}</label>
@@ -6207,6 +6637,87 @@ ${account}`;
     ? `<p class="plan-getal"><strong>${dagVanDeMaand(state.sub.window_day, lang)}</strong></p>`
     : `<p>${esc(t.planWindowNone)}</p>`}
   <p class="meta">${esc(t.planWindowNote)}</p>
+</div>`;
+
+  /* ── DE EDITIONS-TAB ────────────────────────────────────────────────────────
+   *
+   * Lucas, 30 augustus 2026: *"een tab maken voor de on-brand Editions
+   * stockbeelden in het abonnementen dashboard met wat uitleg erbij. Deze zijn
+   * betaald maar ik weet de prijs hiervoor nog niet want dit vereist een hele
+   * workflow om alles consistent maar toch interessant te blijven laten maken."*
+   *
+   * ── ER STAAT GEEN PRIJS, EN DAT IS DE HELE ONTWERPKEUZE ────────────────────
+   *
+   * De verleiding is een bedrag met "vanaf" ervoor. Dat is precies het soort
+   * getal dat op vier andere plekken blijft staan als het verandert — de kop van
+   * pricing.js verbiedt het met zoveel woorden — en erger: dit scherm is van een
+   * klant die AL betaalt. Een bedrag dat later omhoog moet, leest bij hem als
+   * een prijsverhoging en niet als een eerste schatting.
+   *
+   * Wat er wel staat is waaróm er nog geen prijs is. Dat is een echt antwoord en
+   * geen uitvlucht: de opzet is per merk en de maandelijkse ronde moet eerst
+   * staan. Een lezer die dat leest, snapt ook waarom hij moet wachten.
+   *
+   * ── EN ER KOMT GEEN BACKEND BIJ ────────────────────────────────────────────
+   *
+   * De knop is een `mailto:` en geen formulier naar een nieuwe tabel. Voor iets
+   * zonder prijs en zonder leverdatum zou die tabel een half jaar leeg staan en
+   * daarna niemand meer opvallen — en een wachtlijst die niemand leest, is
+   * slechter dan een mail die in de inbox staat waar Lucas toch al kijkt.
+   * `form-action 'self'` raakt een link niet, dus de CSP van dit dashboard blijft
+   * ongemoeid. Komt er ooit een prijs, dan komt er een echte bestelstroom, en
+   * dan hoort die bij /start en niet hier.
+   *
+   * ── DE BEELDEN ZIJN DE UITLEG ──────────────────────────────────────────────
+   *
+   * Lucas over dit soort schermen: *"ik wil het meer visueel maken, met
+   * sfeerbeelden."* Vier van de brand-beelden op een rij zeggen in één oogopslag
+   * wat "sfeer, textuur en licht zonder product" betekent — een alinea heeft daar
+   * drie zinnen voor nodig en overtuigt minder. Ze staan er als `<img>` met een
+   * eigen `alt`, want ze dragen betekenis en zijn geen versiering.
+   *
+   * `img-src 'self'` staat de bestanden toe; ze worden door Pages uitgeserveerd
+   * vanaf dezelfde herkomst als dit dashboard. */
+  /* DE KLEINE VERSIES EN NIET DE ORIGINELEN. Deze vier staan in een strook van
+     vier kolommen; op een breed scherm is dat ruim 150 px per beeld en op een
+     telefoon 160. brand-stair.webp is 1872 px breed en 148 kB — dat is precies
+     de fout die de galerij in augustus 3,12 MB kostte, en het is dezelfde fout
+     als je hem één scherm verderop maakt. De -w380 zijn er nu naast gezet. */
+  const EDITIE_BEELDEN = [
+    ['brand-knit', lang === 'nl' ? 'Textiel van dichtbij, warm licht' : 'Knitwear up close, warm light'],
+    ['brand-stair', lang === 'nl' ? 'Een trappenhuis in hard zonlicht' : 'A stairwell in hard sunlight'],
+    ['brand-pool', lang === 'nl' ? 'Water en beton in de namiddag' : 'Water and concrete in late afternoon'],
+    ['brand-rest', lang === 'nl' ? 'Een rustmoment, zacht tegenlicht' : 'A quiet moment, soft backlight'],
+  ];
+
+  const edities = `
+<div class="card">
+  <div class="ed-kop">
+    <span class="eyebrow">Editions</span>
+    <span class="pill is-wacht">${esc(t.edTag)}</span>
+  </div>
+  <h3>${esc(t.edH)}</h3>
+  <p class="lede">${esc(t.edLede)}</p>
+  <div class="ed-strook">${EDITIE_BEELDEN.map(([naam, alt]) =>
+    `<img src="/img/${naam}-w380.webp" alt="${esc(alt)}" width="380" height="380" loading="lazy" decoding="async">`).join('')}</div>
+</div>
+
+<div class="card">
+  <span class="eyebrow">${esc(t.edWhatH)}</span>
+  <ul class="ed-lijst">${t.edWhat.map(([kop, body]) =>
+    `<li><strong>${esc(kop)}</strong><span>${esc(body)}</span></li>`).join('')}</ul>
+</div>
+
+<div class="card">
+  <span class="eyebrow">${esc(t.edHowH)}</span>
+  <p>${esc(t.edHow)}</p>
+</div>
+
+<div class="card ed-prijs">
+  <span class="eyebrow">${esc(t.edPriceH)}</span>
+  <p>${esc(t.edPrice)}</p>
+  <p><a class="btn btn-primary" href="mailto:hello@visuails.com?subject=${encodeURIComponent(t.edMailSubject)}">${esc(t.edCta)}</a></p>
+  <p class="meta">${esc(t.edCtaNote)}</p>
 </div>`;
 
   const vastgelegd = `
@@ -6294,6 +6805,7 @@ ${account}`;
     maand: `${saldo}
 ${week}`,
     bestellen: lijst,
+    edities: edities,
     look: vastgelegd,
     facturering: `${opgebouwd}
 ${beheer}
@@ -6470,10 +6982,21 @@ async function handlePlanQueue({ request, env }, customer) {
        een nutteloze upload, maar hij is geen garantie — tussen die twee regels
        kan een tweede tabblad hetzelfde formulier posten. De weigering van
        queueAdd is de waarheid, niet mijn peiling ervoor. */
+    /* DE SOORT WORDT GETOETST AAN HET PLAN EN NIET AANGENOMEN. Wat er in het
+       formulier staat, komt van de klant: een verzonnen soort zou een rij
+       opleveren die nooit vast te zetten is, want er is geen slot van die
+       soort. Dat is geen lek maar wel een doodlopende weg, en die kost een mail.
+       Kent het plan de soort niet, dan valt hij terug op de eerste die het plan
+       wél heeft. */
+    const abo = await planState(env, customer.customer_id).catch(() => null);
+    const kanKiezen = Object.keys(slotsFor(abo?.plan));
+    const gevraagd = String(form?.get('kind') || '');
+    const soort = kanKiezen.includes(gevraagd) ? gevraagd : (kanKiezen[0] || 'complete');
     const rij = await queueAdd(env, customer.customer_id, {
       name: naam,
       note: String(form?.get('note') || ''),
       uploadBatch,
+      kind: soort,
     });
     if (!rij) return seeOther(`${lijst}&fout=vol`);
     return seeOther(lijst);
@@ -6484,6 +7007,27 @@ async function handlePlanQueue({ request, env }, customer) {
 
   if (doen === 'remove') {
     await queueRemove(env, customer.customer_id, id);
+    return seeOther(lijst);
+  }
+
+  /* ── VASTZETTEN EN LOSMAKEN — migratie 0035, 29 augustus 2026 ──────────────
+   *
+   * De weigering krijgt een eigen reden mee in de URL, en dat is geen luxe.
+   * queueLock() kan om drie verschillende dingen nee zeggen — geen foto's, geen
+   * slot van deze soort, geen lopend abonnement — en die drie vragen om drie
+   * verschillende handelingen van de klant. Eén algemene melding zou hem laten
+   * gokken welke van de drie het was. */
+  if (doen === 'lock') {
+    const uit = await queueLock(env, customer.customer_id, id);
+    if (uit.ok) return seeOther(lijst);
+    const reden = uit.reden === 'geen-fotos' ? 'lockfoto'
+      : uit.reden === 'geen-slot' ? 'lockslot'
+        : 'lockplan';
+    return seeOther(`${lijst}&fout=${reden}`);
+  }
+
+  if (doen === 'unlock') {
+    await queueUnlock(env, customer.customer_id, id);
     return seeOther(lijst);
   }
 
@@ -7040,9 +7584,21 @@ function revisionRound(t, o, delivered) {
   const levend = delivered.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
   if (!levend.length) return '';
 
+  /* ── EERST NAKIJKEN, DAN PAS VERSTUREN — 30 AUGUSTUS 2026 ────────────────
+     Dit formulier ging rechtstreeks naar /account/review, en dat is de stap die
+     de ronde OPMAAKT. Eén klik tussen "ik heb wat aangevinkt" en "mijn enige
+     ronde is weg, en ik weet niet meer precies wat erin zat" — bij een handeling
+     die niet terug te draaien is en die de site zelf aankondigt als eenmalig.
+
+     Hij post nu naar /account/orders/<id>/ronde: dezelfde velden, één keer door
+     de server heen, en terug als een pagina die uitschrijft wat er verstuurd
+     gaat worden. Daar staat de echte verzendknop. Zie handleRondeNakijken().
+
+     De verborgen `action=round` is hier weg en staat op de nakijkpagina: hij
+     hoort bij de verzendstap, en een formulier dat hem meedraagt naar een route
+     die hem niet leest, suggereert dat deze knop al verstuurt. */
   return `
-  <form class="ronde" id="ronde-${o.id}" method="post" action="/account/review">
-    <input type="hidden" name="action" value="round">
+  <form class="ronde" id="ronde-${o.id}" method="post" action="/account/orders/${o.id}/ronde">
     <h3>${esc(t.rdHead)}</h3>
     <p class="ronde-warn">${esc(t.rdWarn)}</p>
     <p class="ronde-after">${esc(t.rdAfter)}</p>
@@ -7781,7 +8337,19 @@ function reviewControls(t, f, o) {
    * bij het juiste beeld terugvindt; het vinkje heet voor alle beelden `file`,
    * want dat is wat een checkboxgroep in gewone HTML is.
    */
-  const ask = o.revisions_revoked_at
+  /* ── EN HET VINKJE VERDWIJNT MET HET FORMULIER MEE — 30 AUGUSTUS 2026 ─────
+     Het formulier onderaan de bestelling (revisionRound()) verdween netjes
+     zodra de ronde op was, maar de vinkjes en notitievelden ERBOVEN bleven
+     staan. Ze droegen `form="ronde-<id>"` en dat formulier bestond niet meer,
+     dus wat de klant zag was een lijst met aanvinkbare beelden en geen knop:
+     een scherm dat om iets vraagt en het daarna nergens naartoe stuurt.
+     Dezelfde toestand als het formulier dus, uit dezelfde bron — anders lopen
+     de twee helften van hetzelfde blok opnieuw uit elkaar. */
+  const rondeOpen = revisionRoundState(o) === 'beschikbaar';
+
+  const ask = !rondeOpen
+    ? ''
+    : o.revisions_revoked_at
     ? `<p class="meta revoked">${esc(t.revokedNote)}</p>`
     : `<div class="ask-mark">
       <label class="ask-tick">
@@ -7814,14 +8382,39 @@ function errorBody(t, message = null) {
 // check-email and the bad-link page keep `.wrap`: they are single centered
 // cards, not the app shell, same distinction account.css's own header draws
 // between .authcard and everything sectionGet renders.
-function page({ lang, title, body, full = false }) {
+/*
+ * ── LICHT OF DONKER, EN WAAROM HET OP <html> STAAT ──────────────────────────
+ *
+ * Lucas, 30 augustus 2026: *"Ik wil een wit en donker scherm optie voor het
+ * VISUAILS Studio dashboard."*
+ *
+ * Het staat op het WORTELELEMENT en niet op de body, om één reden: het
+ * stijlblad hangt zijn hele palet aan `:root`. Een klasse op de body zou pas
+ * ná de eerste verf gelden voor alles wat aan :root hangt, en dan flitst het
+ * donkere palet nog even voorbij op een licht scherm.
+ *
+ * `data-thema` en geen klasse, omdat het geen stijl is maar een TOESTAND — en
+ * omdat een attribuutselector precies leest als wat hij doet. Dezelfde vorm die
+ * de artefacten elders in dit project gebruiken.
+ *
+ * ── EN color-scheme VOLGT MEE, WANT DIE STOND FOUT ──────────────────────────
+ *
+ * Hier stond onvoorwaardelijk `content="light"`, op een dashboard dat al sinds
+ * dag één donker is. Dat vertelt de browser: teken je eigen onderdelen licht.
+ * Gevolg: een lichte scrollbalk langs een zwarte pagina, en een `<progress>` en
+ * een `<select>` die hun lichte standaardvorm pakken. Het is nooit opgevallen
+ * omdat bijna alles hier zijn eigen opmaak draagt — maar het was een bewering
+ * die niet klopte, en nu klopt hij in allebei de standen.
+ */
+function page({ lang, title, body, full = false, thema = 'donker' }) {
+  const licht = thema === 'licht';
   return `<!doctype html>
-<html lang="${lang}">
+<html lang="${lang}"${licht ? ' data-thema="licht"' : ''}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="${licht ? 'light' : 'dark'}">
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/account.css">
@@ -8131,7 +8724,7 @@ async function handleEmailConfirm(context, token) {
   const lang = langCookie(request) || negotiate(request);
   const t = COPY[lang];
 
-  if (!isWellFormedToken(token)) return emailChangePage(t, lang, 'onbekend');
+  if (!isWellFormedToken(token)) return emailChangePage(t, lang, 'onbekend', themaCookie(context.request));
 
   const hash = await hashToken(token);
   const row = await env.DB.prepare(
@@ -8139,9 +8732,9 @@ async function handleEmailConfirm(context, token) {
        FROM email_changes WHERE confirm_hash = ?1`
   ).bind(hash).first().catch(() => null);
 
-  if (!row) return emailChangePage(t, lang, 'onbekend');
-  if (row.confirmed_at) return emailChangePage(t, lang, 'al-gedaan');
-  if (isExpired(row.confirm_expires)) return emailChangePage(t, lang, 'verlopen');
+  if (!row) return emailChangePage(t, lang, 'onbekend', themaCookie(context.request));
+  if (row.confirmed_at) return emailChangePage(t, lang, 'al-gedaan', themaCookie(context.request));
+  if (isExpired(row.confirm_expires)) return emailChangePage(t, lang, 'verlopen', themaCookie(context.request));
 
   /* Nog één keer kijken of het adres vrij is. Tussen het verzoek en deze klik kan
      een uur liggen, en in dat uur kan iemand anders onder dat adres besteld hebben.
@@ -8150,7 +8743,7 @@ async function handleEmailConfirm(context, token) {
   const bezet = await env.DB.prepare(
     'SELECT id FROM customers WHERE lower(email) = ?1 AND id <> ?2'
   ).bind(String(row.new_email).toLowerCase(), row.customer_id).first().catch(() => null);
-  if (bezet) return emailChangePage(t, lang, 'bezet');
+  if (bezet) return emailChangePage(t, lang, 'bezet', themaCookie(context.request));
 
   const undoToken = await mintToken();
 
@@ -8170,7 +8763,7 @@ async function handleEmailConfirm(context, token) {
     ]);
   } catch (err) {
     console.error('[account] adreswijziging niet doorgevoerd —', err?.message || err);
-    return emailChangePage(t, lang, 'mislukt');
+    return emailChangePage(t, lang, 'mislukt', themaCookie(context.request));
   }
 
   const undoLink = `${requestOrigin(request)}/account/email/undo/${undoToken}`;
@@ -8190,7 +8783,7 @@ async function handleEmailConfirm(context, token) {
     console.error('[account] MELDING AAN OUD ADRES NIET VERSTUURD voor klant', row.customer_id, '—', err?.message || err);
   }
 
-  return emailChangePage(t, lang, 'gelukt', row.new_email);
+  return emailChangePage(t, lang, 'gelukt', row.new_email, themaCookie(context.request));
 }
 
 /**
@@ -8206,7 +8799,7 @@ async function handleEmailUndo(context, token) {
   const lang = langCookie(request) || negotiate(request);
   const t = COPY[lang];
 
-  if (!isWellFormedToken(token)) return emailChangePage(t, lang, 'onbekend');
+  if (!isWellFormedToken(token)) return emailChangePage(t, lang, 'onbekend', themaCookie(context.request));
 
   const hash = await hashToken(token);
   const row = await env.DB.prepare(
@@ -8214,9 +8807,9 @@ async function handleEmailUndo(context, token) {
        FROM email_changes WHERE undo_hash = ?1`
   ).bind(hash).first().catch(() => null);
 
-  if (!row) return emailChangePage(t, lang, 'onbekend');
-  if (row.undone_at) return emailChangePage(t, lang, 'al-terug');
-  if (isExpired(row.undo_expires)) return emailChangePage(t, lang, 'verlopen');
+  if (!row) return emailChangePage(t, lang, 'onbekend', themaCookie(context.request));
+  if (row.undone_at) return emailChangePage(t, lang, 'al-terug', themaCookie(context.request));
+  if (isExpired(row.undo_expires)) return emailChangePage(t, lang, 'verlopen', themaCookie(context.request));
 
   try {
     await env.DB.batch([
@@ -8228,10 +8821,10 @@ async function handleEmailUndo(context, token) {
     ]);
   } catch (err) {
     console.error('[account] terugzetten mislukt —', err?.message || err);
-    return emailChangePage(t, lang, 'mislukt');
+    return emailChangePage(t, lang, 'mislukt', themaCookie(context.request));
   }
 
-  return emailChangePage(t, lang, 'teruggezet', row.previous_email);
+  return emailChangePage(t, lang, 'teruggezet', row.previous_email, themaCookie(context.request));
 }
 
 /**
@@ -8242,7 +8835,7 @@ async function handleEmailUndo(context, token) {
  * is misschien niet ingelogd, en de dashboardschil zou een navigatie tonen die
  * dan nergens heen kan.
  */
-function emailChangePage(t, lang, uitkomst, adres = '') {
+function emailChangePage(t, lang, uitkomst, adres = '', thema = 'donker') {
   const nl = lang === 'nl';
   const M = {
     gelukt: nl
@@ -8287,7 +8880,7 @@ function emailChangePage(t, lang, uitkomst, adres = '') {
      dagen later aangeklikt, twee keer aangeklikt, en door scanners van
      mailservers vooraf opgehaald. Een 404 leest als "je account is stuk" terwijl
      er alleen een link verlopen is. */
-  return html(page({ lang, title: kop, body }), 200);
+  return html(page({ lang, thema, title: kop, body }), 200);
 }
 
 /*

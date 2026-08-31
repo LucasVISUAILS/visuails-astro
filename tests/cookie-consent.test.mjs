@@ -15,10 +15,58 @@
  *     separately with a token configured — 0 requests before an answer, 0
  *     after a refusal, 1 after a yes. */
 import { chromium } from 'playwright';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync, createReadStream } from 'node:fs';
+import { createServer } from 'node:http';
+import { join, extname, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildStaat } from './lib/build.mjs';
 
-/* Needs a preview server on :4321 —  npm run build && npm run preview
-   and a browser once —              npx playwright install chromium */
+/* ── HIJ ZET ZIJN EIGEN SERVER OP — 30 AUGUSTUS 2026 ────────────────────────
+ *
+ * Hier stond: *"Needs a preview server on :4321 — npm run build && npm run
+ * preview"*. Dat is de reden dat deze suite als enige van de tweeëntachtig NIET
+ * in de `npm test`-ketting stond: hij zou omvallen bij iedereen die geen server
+ * had draaien, en dus is hij er ooit uitgelaten.
+ *
+ * Het gevolg is precies de fout die dit project al twee keer heeft opgeschreven
+ * (zie WERKLIJST.md over de vier suites die nergens in `npm test` stonden): een
+ * toets die je denkt te hebben. Achtentwintig controles op de cookiebanner —
+ * een juridisch oppervlak — die alleen liepen als iemand er met de hand aan
+ * dacht.
+ *
+ * Dus doet hij nu wat a11y.test.mjs en de kruipronde al doen: hij serveert
+ * dist/ zelf, op een poort die het besturingssysteem uitdeelt. Geen vaste 4321
+ * meer, dus hij botst ook niet met een `astro dev` die toevallig draait.
+ *
+ * De banner is één script en één stylesheet uit public/ — statisch serveren is
+ * genoeg, en het is bovendien dichter bij wat Cloudflare Pages doet dan een
+ * dev-server met hot reload ertussen. */
+const HIER = dirname(fileURLToPath(import.meta.url));
+const DIST = join(HIER, '..', 'dist');
+
+const staat = buildStaat(new URL('../dist/index.html', import.meta.url));
+if (!staat.er || staat.oud) {
+  console.log(`geen bruikbare build — ${staat.uitleg}`);
+  process.exit(1);
+}
+
+const TYPES = {
+  '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript',
+  '.webp': 'image/webp', '.avif': 'image/avif', '.svg': 'image/svg+xml', '.woff2': 'font/woff2',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.json': 'application/json',
+  '.xml': 'application/xml', '.txt': 'text/plain',
+};
+const srv = createServer((q, r) => {
+  let f = join(DIST, decodeURIComponent(q.url.split('?')[0]));
+  try { if (statSync(f).isDirectory()) f = join(f, 'index.html'); } catch { /* geen map */ }
+  try { statSync(f); } catch { r.writeHead(404); return r.end('404'); }
+  r.writeHead(200, { 'content-type': TYPES[extname(f)] || 'application/octet-stream' });
+  createReadStream(f).pipe(r);
+});
+await new Promise((res) => srv.listen(0, res));
+const BASIS = `http://127.0.0.1:${srv.address().port}`;
+
+/* Een browser is er wel één keer voor nodig — npx playwright install chromium */
 /* ── ZIE scripts/lib/browserpad.mjs — 26 augustus 2026 ──────────────────────
    Dit was een hard pad zonder controle, en dus een toets die op Lucas' machine
    omvalt op de browser in plaats van op de site. De andere browsertoetsen
@@ -38,7 +86,7 @@ async function session(fn) {
   const p = await ctx.newPage();
   const beacon = [];
   p.on('request', (r) => { if (/cloudflareinsights/.test(r.url())) beacon.push(r.url()); });
-  await p.goto('http://localhost:4321/', { waitUntil: 'networkidle' });
+  await p.goto(`${BASIS}/`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(600);
   const out = await fn(p, beacon, ctx);
   await ctx.close();
@@ -145,7 +193,7 @@ await session(async (p) => {
   const p = await ctx.newPage();
   const beacon = [];
   p.on('request', (r) => { if (/cloudflareinsights/.test(r.url())) beacon.push(r.url()); });
-  await p.goto('http://localhost:4321/', { waitUntil: 'load' });
+  await p.goto(`${BASIS}/`, { waitUntil: 'load' });
   check('JS off: no beacon', beacon.length, 0);
   check('JS off: bar stays hidden rather than stuck open', await p.isVisible('#cc-bar'), false);
   check('JS off: the page still renders', (await p.locator('h1').count()) > 0, true);
@@ -153,6 +201,7 @@ await session(async (p) => {
 }
 
 await b.close();
+srv.close();
 const w = Math.max(...results.map((r) => r.name.length));
 for (const r of results) console.log(`${r.pass ? ' ok ' : 'FAIL'}  ${r.name.padEnd(w)}  got ${JSON.stringify(r.got)}`);
 const bad = results.filter((r) => !r.pass).length;

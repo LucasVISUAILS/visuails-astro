@@ -1,5 +1,11 @@
 # Controleronde 20–21 augustus 2026
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `functions/admin/debug-mollie.js` → `/admin/diagnose` in de padtabel van `src/lib/admin.js` — op 23 augustus 2026 verplaatst, juist omdat een statisch routebestand onder functions/admin/ de centrale originIsSelf()-controle omzeilde
+
+
 Dit is het verslag van de ronde die volgde op *"laten we de hele lijst afwerken en
 daarna een gehele controle doen om te kijken of alles succesvol is toegepast.
 Hierna ook de gehele site controleren op bugs, inconsistenties, taalfouten of rare

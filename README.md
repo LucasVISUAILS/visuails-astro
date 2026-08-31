@@ -43,12 +43,21 @@ kijkt op een preview-deploy. `npm run migrate` draait de migraties tegen de
 ## Tests
 
 ```
-npm test             # de hele keten, stopt bij de eerste die faalt
+npm test             # bouwt eerst, draait dan de hele keten, stopt bij de eerste die faalt
 ```
 
+**`npm test` bouwt sinds 30 augustus 2026 zelf.** De eerste schakel is
+`test:bouw` (`astro build`). Zeventien suites lezen uit `dist/`, en een build van
+vóór je laatste wijziging levert geen "je hebt niet gebouwd" op maar een rood
+kruis over een bestand dat niemand meer publiceert — dat is een keer een
+middag kosten geweest. `tests/keten-volledig.test.mjs` houdt die eerste schakel
+op zijn plek.
+
 Daarnaast is er per suite een los script (`npm run test:vat`, `test:geld`,
-`test:order`, …); de volledige lijst staat in `package.json`. De tests draaien
-deels tegen `dist/`, dus **bouw eerst** als je de gebouwde HTML hebt aangeraakt.
+`test:order`, …); de volledige lijst staat in `package.json`. **Los draaien bouwt
+niet**: de suites die uit `dist/` lezen slaan zichzelf dan over met een regel die
+zegt hoe oud de build is. Wil je die controles echt, draai dan eerst
+`npx astro build`.
 
 Naast de tests staat er een rij meetcommando's (`npm run audit`, `naden`,
 `keuring`, `visueel`). De complete tabel, met per commando wat het meet, staat in
@@ -77,6 +86,78 @@ draaien tot je hem los uitrolt:
 npm run cron:check   # wrangler deploy --dry-run: bouwt en controleert bindings
 npm run cron:deploy  # de echte
 ```
+
+## De documenten in deze map
+
+Er staan ruim veertig `.md`-bestanden in de projectmap en ze zijn **niet
+allemaal even oud**. Dat is geen rommel maar een gevolg van hoe er gewerkt is:
+elke grote ronde liet een verslag achter. Het probleem is alleen dat je aan de
+naam niet ziet of je een geldende regel leest of een dagverslag uit augustus.
+
+Deze tabel lost dat op. Lees hem voordat je iets uit een van deze bestanden
+overneemt.
+
+### Levend — hier hoort te staan wat vandaag waar is
+
+| Bestand | Waarvoor |
+|---|---|
+| `ARCHITECTURE.md` | de regels van het project: waar een getal hoort, hoe geld en btw lopen, hoe routes authenticeren. **Begin bij §13**, de openstaande punten |
+| `README.md` | deze: opzet, lokaal draaien, testen, deployen |
+| `WERKLIJST.md` | wat er nog ligt, met per punt de stand. Het langste document en het enige dat als takenlijst bedoeld is |
+| `DESIGN.md` | de vormregels: kleur, ritme, typografie, beweging |
+| `SCHRIJFWIJZER.md` | hoe er geschreven wordt, en welke woorden niet |
+| `DEPLOY.md` | uitrollen, secrets, bindings, de losse cron-Worker |
+| `MOLLIE.md` | de betaalketen en wat er misging |
+| `IMAGES.md` | waarom beeld buiten `astro:assets` om gaat |
+| `AVG-VERWERKINGSREGISTER.md`, `AVG-DATALEKPROCEDURE.md` | de twee AVG-documenten; het register wordt door `npm run test:register` bewaakt |
+| `STOCK-IDEE.md`, `ABONNEMENT-ONTWERP.md`, `MERKMODEL-ONTWERP.md` | het denkwerk achter drie diensten; de uitvoering staat in de code |
+
+### Dagverslag — een beschrijving van één moment, met opzet niet bijgewerkt
+
+Alles met een **datum in de naam** (`AUDIT-*`, `CONTROLE-*`, `RANDEN-*`,
+`MOBIEL-*`, `MERKBEELDEN-*`, `NAVIGATIE-EN-BESTELSTROOM-*`,
+`ARCHITECTUURAUDIT-*`) plus alle `REPORT-SECTION-*` en `TEKST-*`.
+
+Die beschrijven de site zoals hij op díé dag was, en dat is wat ze horen te
+doen. Gebruik ze om te lezen *waarom* iets zo geworden is — nooit om te weten
+hoe het nu staat.
+
+**Namen die sindsdien veranderd zijn, staan er sinds 30 augustus 2026 bij.** Elk
+document dat een verouderde bestandsnaam noemt, draagt bovenaan een blok met wat
+die naam vandaag is. De tekst eronder is niet herschreven: een deel van die namen
+staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs
+vervalsen in plaats van bijwerken.
+
+De volledige kaart:
+
+| Toen | Nu |
+|---|---|
+| `HomePage.astro` | `HomeV2.astro` |
+| `src/scripts/motion.js` | `src/scripts/interactions.js` |
+| `functions/admin/debug-mollie.js` | `/admin/diagnose` in de padtabel van `src/lib/admin.js` |
+| `HooksPage.astro`, `FigHook.astro` | verwijderd 18 aug 2026; de tekst staat in `src/data/binnenkort.js` en op `/plans#binnenkort` |
+| `FigStudio.astro` | verwijderd; `FigGate` op /studio tekende hetzelfde |
+| `DemoGame.astro` | nooit gebouwd; het plan staat in `PLAN-DEMO-SPEL.md` |
+| `ThreeWay.astro` | verwijderd, samen met de Duitse site |
+| `src/pages/order-*.astro` | opgegaan in één `/start`; de 301's staan in `public/_redirects` |
+| `/order-status` | `/o` |
+| `src/components/HomeV2.astro` §3 t/m §13 | de homepage is op 30 aug van dertien naar acht secties gegaan — zie `HERONTWERP.md` |
+
+**Eén dagverslag is ingetrokken in plaats van geannoteerd:**
+`ONGEBRUIKTE-BEELDEN-22-AUGUSTUS.txt` noemde 62 ongebruikte beelden, waarvan er
+zestig `.avif` waren — bestanden die per definitie niet bij naam in de bron
+staan omdat de bouwstap ze koppelt. Wie die lijst had gevolgd, had de hele
+AVIF-set gewist. Er staat nu een verantwoording in dat bestand en een script dat
+de vraag opnieuw stelt: `npm run beelden`.
+
+### Plan — geschreven vóór de uitvoering
+
+`HERONTWERP.md`, `PLAN-PORTALEN.md`, `PLAN-PORTALEN-V2.md`, `PLAN-DEMO-SPEL.md`,
+`PRICING-MODEL-OPTIONS.md`, `HOOKS-COPY-CONCEPT.md`, `BRIEF-*`.
+
+Deze zijn deels uitgevoerd en deels niet. `HERONTWERP.md` heeft bovenaan een
+stand van zaken; de andere niet. Toets een plan altijd aan de code voordat je
+ervan uitgaat dat het er zo in zit.
 
 ## Verder lezen
 

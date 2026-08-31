@@ -62,6 +62,11 @@ const FROM_PRODUCTS = PLAN_PRODUCTS[CHEAPEST];
 
 const planList = plans(lang);
 
+/* De twee concepten die nog niet te bestellen zijn. Verhuisd van de homepage op
+   30 augustus 2026 — zie de kop van src/data/binnenkort.js voor waarom ze hier
+   zijn komen te staan en niet op twee eigen pagina's. */
+import { binnenkort } from '../data/binnenkort.js';
+
 const COPY = {
   en: {
     eyebrow: 'Subscription',
@@ -109,6 +114,11 @@ const COPY = {
     stockSoonTag: 'With Editions',
     stockShot: 'A month grid of visuals for one brand — twenty frames in the same colours and light, with no product in them',
     stockShotMsg: 'Mood, texture, hands, light — no garment and no packshot. If it reads as a stock library it has failed; it has to read as one brand.',
+
+    soonH: 'And two things that are on the way.',
+    soonLede: 'Neither can be ordered yet, so there is no price and no button. What they are is written out here rather than announced with a date we cannot hold.',
+    soonFoot: 'This is the concept as it stands. Pricing and ordering details are still being finalized, which is why booking is currently inactive.',
+    soonTag: 'Not ready yet',
 
     outH: 'Not every month, then.',
     outBody: 'Order by order works too, and the rate falls as the count rises. The price per product is on the pricing page.',
@@ -158,6 +168,11 @@ const COPY = {
     stockSoonTag: 'Met Editions',
     stockShot: 'Een maandraster van beelden voor één merk — twintig foto’s naast elkaar in dezelfde kleuren en hetzelfde licht, zonder product erin',
     stockShotMsg: 'Sfeer, textuur, handen, licht — geen kledingstuk en geen packshot. Leest het als een stockbibliotheek, dan is het mislukt; het moet als één merk lezen.',
+
+    soonH: 'En twee dingen die eraan komen.',
+    soonLede: 'Allebei nog niet te bestellen, dus er staat geen prijs bij en geen knop. Wat ze zijn staat hier uitgeschreven, in plaats van aangekondigd met een datum die we niet kunnen vasthouden.',
+    soonFoot: 'Dit is het concept zoals het er nu voorstaat. Omdat we de tarieven en het bestelproces nog afronden, is deze service tijdelijk niet actief.',
+    soonTag: 'Nog niet klaar',
 
     outH: 'Toch liever niet elke maand.',
     outBody: 'Los bestellen kan net zo goed, en het tarief daalt naarmate het aantal stijgt. De prijs per product staat op de prijzenpagina.',
@@ -225,10 +240,17 @@ const c = COPY[nl ? 'nl' : 'en'];
         </div>
 
         <div class="lime-plate plaat-vol">
-          <p class="pl-from">{c.from}</p>
-          <p class="pl-fig">{euro(FROM_AMOUNT, lang)}</p>
-          <p class="pl-unit">{c.unit}</p>
-          <p class="pl-vat">{vatLabel('excl', lang)}</p>
+          {/* Dezelfde vorm als op de homepage en op /pricing, sinds 30 augustus
+              2026 één keer gedefinieerd in global.css onder `.bedrag-*`. De maat
+              wijkt hier bewust af — dit bedrag staat alleen in zijn kolom, niet
+              naast een tweede — en dat staat als variabele op het blok in plaats
+              van als eigen klasse. */}
+          <div class="bedrag pl-bedrag">
+            <span class="bedrag-label">{c.from}</span>
+            <span class="bedrag-cijfer">{euro(FROM_AMOUNT, lang)}</span>
+            <span class="bedrag-eenheid">{c.unit}</span>
+            <span class="bedrag-btw">{vatLabel('excl', lang)}</span>
+          </div>
           <div class="pl-cta">
             <a class="btn btn-primary" href={lp('/start/plan')}>{c.cta}</a>
             <a class="btn btn-ghost" href={lp('/pricing')}>{c.cta2}</a>
@@ -318,6 +340,40 @@ const c = COPY[nl ? 'nl' : 'en'];
   </div>
 </div></section>
 
+{/* ── HOOKS EN EDITIONS ──────────────────────────────────────────────────────
+    Verhuisd van de homepage op 30 augustus 2026. Daar was dit ruim 450 woorden
+    — bijna een vijfde van de hele pagina — over twee dingen die er zelf bij
+    zeggen dat je ze nog niet kunt bestellen.
+
+    HET ANKER IS EEN AFSPRAAK. In src/i18n/ui.js staan Hooks en Editions bij de
+    diensten in het menu, en die twee wijzen sinds vandaag hierheen. Verandert
+    `#binnenkort`, dan verandert daar de href mee — tests/binnenkort.test.mjs
+    legt de twee naast elkaar.
+
+    UITGEKLAPT EN NIET DICHTGEKLAPT, anders dan op de homepage. Daar was de
+    uitklapper er om ruimte te sparen op een pagina waar iemand nog aan het
+    kijken is wát je maakt. Hier is dat de reden om te komen: wie doorklikt naar
+    /plans#binnenkort heeft de vraag al gesteld, en die dan nog een keer laten
+    klikken is een deur voor een deur. */}
+<section class="section-tight" id="binnenkort"><div class="container">
+  <div class="section-head">
+    <h2>{c.soonH}</h2>
+    <p>{c.soonLede}</p>
+  </div>
+  <div class="pl-soon-grid">
+    {binnenkort(lang).map((b) => (
+      <article class="pl-soon-card" id={b.id}>
+        <p class="pl-soon-n">{b.name} <em class="pl-soon">{c.soonTag}</em></p>
+        <p class="pl-soon-d">{b.desc}</p>
+        <dl class="pl-soon-dl">
+          {b.qBody.map(([kop, tekst]) => (<Fragment><dt>{kop}</dt><dd>{tekst}</dd></Fragment>))}
+        </dl>
+      </article>
+    ))}
+  </div>
+  <p class="pl-soon-foot">{c.soonFoot}</p>
+</div></section>
+
 {/* ── DE UITGANG ─────────────────────────────────────────────────────────────
     Eén regel naar de prijslijst, en dat is de hele verbinding tussen de twee
     pagina's. Wie hier is en géén abonnement wil, hoort niet doodlopend te
@@ -358,10 +414,9 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-facts li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
   .pl-facts svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--accent); stroke-width: 2; }
 
-  .pl-from { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-  .pl-fig { margin: .3rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(2.6rem, 6vw, 3.8rem); line-height: 1; color: var(--ink); }
-  .pl-unit { margin: .5rem 0 0; font-size: .9rem; color: var(--ink-2); }
-  .pl-vat { margin: .35rem 0 0; font-size: .78rem; color: var(--ink-3); }
+  /* Vier eigen regels stonden hier; ze zijn opgegaan in `.bedrag-*` in
+     global.css. Alleen de maat blijft van deze pagina. */
+  .pl-bedrag { --bedrag-maat: clamp(2.6rem, 6vw, 3.8rem); }
   .pl-cta { margin-top: clamp(1.4rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .7rem; }
 
   .pl-credit {
@@ -464,6 +519,21 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-stock-b { margin: .4rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
   .pl-soon { font-style: normal; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: .18rem .55rem; }
   .pl-stock-item.is-soon .pl-stock-n { color: var(--ink-2); }
+
+  /* De twee concepten. Naast elkaar zodra er ruimte is, want het zijn twee
+     dingen van gelijk gewicht en onder elkaar leest de tweede als een voetnoot
+     bij de eerste. De <dl> is de juiste lijst: elk paar is een term en wat hij
+     betekent, en dat is letterlijk wat een definitielijst is. */
+  .pl-soon-grid { display: grid; gap: clamp(1.4rem, 3vw, 2.4rem); grid-template-columns: 1fr; margin-top: clamp(1.4rem, 3vw, 2.2rem); }
+  @media (min-width: 62rem) { .pl-soon-grid { grid-template-columns: 1fr 1fr; } }
+  .pl-soon-card { padding-top: clamp(1rem, 2vw, 1.4rem); box-shadow: inset 0 1px 0 var(--line); }
+  .pl-soon-n { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .pl-soon-d { margin: .5rem 0 0; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 56ch; }
+  .pl-soon-dl { margin: clamp(1rem, 2vw, 1.4rem) 0 0; }
+  .pl-soon-dl dt { font-size: .88rem; font-weight: 700; color: var(--ink); margin-top: 1rem; }
+  .pl-soon-dl dt:first-child { margin-top: 0; }
+  .pl-soon-dl dd { margin: .3rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
+  .pl-soon-foot { margin: clamp(1.4rem, 3vw, 2rem) 0 0; font-size: .85rem; color: var(--ink-3); max-width: 62ch; }
 
   .pl-out { padding: clamp(1.3rem, 2.4vw, 1.9rem); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 34px -26px rgb(0 0 0 / 0.5); }
   .pl-out-h { margin: 0; font-size: var(--t-h3); }

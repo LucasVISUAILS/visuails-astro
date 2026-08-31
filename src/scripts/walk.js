@@ -65,13 +65,18 @@ function initWalk() {
 
   /** Show exactly the layers belonging to (step, look). */
   function paint(body, stepId, look) {
-    // The look step's id is the service's own — 'background', 'style' or
-    // 'videoStyle' — so anything that is not one of the five fixed names is
-    // the look step.
+    /* De id van de look-stap is die van de dienst zelf — 'background', 'style'
+       of 'videoStyle' — dus alles wat niet een van de vaste namen is, is de
+       look-stap.
+     *
+     * DE LIJST TELDE ER ACHT EN TELT ER SINDS 30 AUGUSTUS 2026 VIJF. `order`,
+     * `make` en `portal` zijn met hun stappen samengevoegd; hun lagen bestaan
+     * niet meer. Ze hier laten staan zou geen fout geven, en dat is precies het
+     * bezwaar: een naam in deze lijst die nergens meer bij hoort, leest als een
+     * laag die er nog is. */
     let want = stepId;
-    if (stepId !== 'order' && stepId !== 'upload' && stepId !== 'window'
-      && stepId !== 'pay' && stepId !== 'model' && stepId !== 'make'
-      && stepId !== 'portal' && stepId !== 'result') want = 'look';
+    if (stepId !== 'upload' && stepId !== 'window' && stepId !== 'pay'
+      && stepId !== 'model' && stepId !== 'result') want = 'look';
 
     const layers = body.querySelectorAll('[data-walk-layer]');
     for (let i = 0; i < layers.length; i++) {
@@ -129,10 +134,20 @@ function initWalk() {
     if (!steps.length) return;
 
     const line = readingLine(body);
-    // The band over which a step travels its full distance. Two thirds of the
-    // viewport: shorter and the movement is abrupt, longer and neighbouring
-    // steps are all mid-slide at once, which reads as drift rather than pacing.
-    const band = window.innerHeight * 0.66;
+    /* De band waarover een stap zijn volledige afstand aflegt.
+     *
+     * HIER STOND `window.innerHeight * 0.66`, EN DAT WAS EEN TWEEDE KOPIE VAN
+     * EEN GETAL DAT IN DE CSS STAAT. Die 0.66 was de staphoogte: `.wk-step`
+     * had `min-height: 66svh`. Op 30 augustus 2026 werd dat 48svh om
+     * /how-it-works in te korten, en daarmee liepen de twee uit de pas: een
+     * band die anderhalf keer zo hoog is als een stap heeft er altijd twee
+     * tegelijk halverwege hun verschuiving, en dat leest als drift in plaats
+     * van als tempo.
+     *
+     * Nu wordt de hoogte gemeten in plaats van herhaald. Verandert de CSS, dan
+     * volgt de beweging vanzelf. De ondergrens is er voor het geval een stap
+     * nog geen hoogte heeft — dan is delen door nul de fout die je krijgt. */
+    const band = Math.max(steps[0].getBoundingClientRect().height, 120);
 
     const dist = [];
     let best = 0;
@@ -148,7 +163,19 @@ function initWalk() {
       if (d < -1) d = -1;
       dist.push(d);
       const abs = d < 0 ? -d : d;
-      if (abs < bestAbs) { bestAbs = abs; best = i; }
+      /* GELIJKSPEL BESTAAT HIER, EN HET WERD VERKEERD BESLIST — 30 aug 2026.
+         `d` is geklemd op [-1, 1]. Sta je bóven de doorloop, dan is elke stap
+         nog niet gelezen en heeft elke stap d = 1; sta je eronder, dan is elke
+         stap gelezen en heeft elke stap d = -1. In beide gevallen is `abs`
+         voor alle stappen gelijk, en `<` hield dan altijd de eerste vast.
+         Boven de doorloop klopt dat — de eerste stap is de volgende die je
+         leest. ERONDER niet: dan sprong het kader terug naar de eerste laag op
+         het moment dat je net de laatste had gelezen. Gemeten door in stapjes
+         van 60px langs de hele sectie te scrollen: stap 0, dan 1 t/m 5, en dan
+         480px lang weer stap 0.
+         Bij gelijkspel wint daarom de latere stap zodra `d` negatief is: alles
+         boven de leeslijn is al gelezen, en de laatste daarvan is waar je bent. */
+      if (abs < bestAbs || (abs === bestAbs && d < 0)) { bestAbs = abs; best = i; }
     }
 
     for (let i = 0; i < steps.length; i++) {

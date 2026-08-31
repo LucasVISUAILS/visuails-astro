@@ -18,7 +18,7 @@
  *     kruisen.
  *   · de wachtrij is van de KLANT. Een id van iemand anders mag er niet in, niet
  *     bij verwijderen en niet bij herschikken.
- *   · queueTake() pakt niets twee keer.
+ *   · queueTakeIds() pakt niets twee keer, en een concept nooit.
  */
 import { readFileSync } from 'node:fs';
 import { d1, verseDb } from './lib/d1sqlite.mjs';
@@ -27,10 +27,11 @@ import {
   createSubscriptionRow, loadSubscription, subscriptionByRef,
   setMollieIds, activateSubscription, pauseSubscription, cancelSubscription,
   loadMonths, loadQueue, loadTaken, planState, planSaldo,
-  queueAdd, queueRemove, queueReorder, queueTake, queueLinkOrder,
+  queueAdd, queueRemove, queueReorder, queueTakeIds, queueLock, queueLinkOrder,
   bezetting, subscriptionShape,
 } from '../src/lib/subscription.js';
 import { productsFor, addMonths } from '../src/data/plans.js';
+import { grantSlots } from '../src/lib/slots.js';
 
 let ok_ = 0; let totaal = 0;
 function ok(naam, kreeg, verwacht) {
@@ -220,20 +221,38 @@ ok('verwijderen van een vreemd item lukt niet', await queueRemove(env, 1, vreemd
 ok('verwijderen van een eigen item wel', await queueRemove(env, 1, b.id), true);
 ok('en dan zijn er twee over', (await loadQueue(env, 1)).length, 2);
 
-console.log('\nophalen gebeurt één keer');
-const gepakt = await queueTake(env, 1, 1);
-ok('de bovenste is gepakt', gepakt.map((q) => q.name), ['Handschoenen']);
-ok('en staat niet meer in de open rij', (await loadQueue(env, 1)).map((q) => q.name), ['Wintertrui zwart']);
+console.log('\nophalen gebeurt één keer, en alleen wat vastgezet is');
+/* ── DIT BLOK LIEP OVER queueTake() — omgezet 30 augustus 2026 ──────────────
+   Die functie pakte "de bovenste N", en dat was het model tot migratie 0035.
+   Sindsdien bepaalt de klant wat er meegaat door het vast te zetten, en pakt
+   queueTakeIds() alleen op wat op dát moment nog vastgezet is.
+
+   Wat deze toets nu bewijst is daarmee scherper dan eerst: een CONCEPT wordt
+   niet opgepakt. Zou dat wel gebeuren, dan maken we een product waar geen slot
+   voor is afgeschreven — de fout in de andere richting, en even duur. */
+const boven = (await loadQueue(env, 1))[0];
+ok('een concept wordt niet opgepakt', await queueTakeIds(env, 1, [boven.id]), []);
+ok('en staat dus nog gewoon op de lijst', (await loadQueue(env, 1))[0].id, boven.id);
+
+await grantSlots(env, gemaakt.row.id, maand, 'studio');
+/* ZONDER FOTO'S GAAT HET NIET, en dat is geen opzetdetail maar de tweede
+   voorwaarde van het model: vastzetten is de opdracht geven, en een opdracht
+   zonder beeld kan niet gemaakt worden. Deze items zijn hierboven toegevoegd
+   zonder upload, dus eerst de weigering en dan pas de foto's erbij. */
+ok('vastzetten zonder foto’s weigert', (await queueLock(env, 1, boven.id)).reden, 'geen-fotos');
+db.prepare("UPDATE plan_queue SET upload_batch = 'b-toets' WHERE id = ?").run(boven.id);
+ok('vastzetten lukt met foto’s wel', (await queueLock(env, 1, boven.id)).ok, true);
+const gepakt = await queueTakeIds(env, 1, [boven.id]);
+ok('en dan wordt hij wél opgepakt', gepakt, [boven.id]);
+ok('en staat hij niet meer in de open rij', (await loadQueue(env, 1)).map((q) => q.name), ['Wintertrui zwart']);
 /* Een taak die twee keer draait — een herstart, een handmatige aanroep — mag
    niet twee keer dezelfde bestelling opleveren. */
-ok('een tweede keer pakt niet hetzelfde', (await queueTake(env, 1, 1)).map((q) => q.name), ['Wintertrui zwart']);
-ok('en dan is de rij leeg', await queueTake(env, 1, 5), []);
-ok('nul pakken is geen fout', await queueTake(env, 1, 0), []);
+ok('een tweede keer pakt hem niet nog eens', await queueTakeIds(env, 1, [boven.id]), []);
 
 db.exec("INSERT INTO orders (id, ref, service, email, status) VALUES (900, 'VIS-TEST-001', 'complete', 'een@voorbeeld.test', 'received')");
-ok('de bestelling wordt aan het item gehangen', await queueLinkOrder(env, [gepakt[0].id], 900), 1);
+ok('de bestelling wordt aan het item gehangen', await queueLinkOrder(env, [boven.id], 900), 1);
 const opgehaald = await loadTaken(env, 1);
-ok('en verschijnt in wat is opgebouwd', opgehaald.find((t) => t.id === gepakt[0].id).order_ref, 'VIS-TEST-001');
+ok('en verschijnt in wat is opgebouwd', opgehaald.find((t) => t.id === boven.id).order_ref, 'VIS-TEST-001');
 
 console.log('\nde bezetting wordt geteld en niet aangenomen');
 const bez = await bezetting(env);
@@ -314,14 +333,25 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      dezelfde val (swatch, de beeldverhoudingen). */
   ok('de meter zet geen breedte in een style-attribuut',
     /style="width/.test(acc), false);
-  /* De meter is een rij vakjes geworden naar het voorbeeld van de mockup: vijf
-     lege vakjes zijn vijf dingen die je nog kunt laten maken, waar een balk op
-     58% een getal is waar niemand iets mee doet. */
-  ok('en tekent vakjes', /class="\$\{klasse\}"/.test(acc), true);
-  /* HET DERDE SOORT VAKJE IS HET HELE PUNT. Doorschuiven mét een zichtbare
-     afloopmaand was de keuze van 17 augustus; zonder een eigen vakje is het
-     verschil tussen "van deze maand" en "vervalt volgende maand" onzichtbaar. */
-  ok('en kent een apart vakje voor wat doorgeschoven is', /pip-roll/.test(acc), true);
+  /* De meter is een rij vakjes naar het voorbeeld van de mockup: vijf lege
+     vakjes zijn vijf dingen die je nog kunt laten maken, waar een balk op 58%
+     een getal is waar niemand iets mee doet.
+
+     De vorm is op 29 augustus 2026 met saldoMeter() meeverhuisd naar
+     slotRegels(): dezelfde vakjes, maar één rij per SOORT in plaats van één rij
+     voor het hele abonnement, en met de doorgeschoven slots als een eigen groep
+     ernaast in plaats van als een derde soort vakje in dezelfde rij. */
+  ok('en tekent vakjes', /class="pips"/.test(acc), true);
+  /* DOORGESCHOVEN STAAT APART EN DAT IS HET HELE PUNT. Doorschuiven mét een
+     zichtbare afloopmaand was de keuze van 17 augustus; staat het door de rest
+     heen, dan is het verschil tussen "van deze maand" en "vervalt volgende
+     maand" onzichtbaar. Vandaar een eigen groepje met een eigen label. */
+  ok('en zet wat doorgeschoven is in een eigen groep',
+    /slot-groep oud/.test(acc) && /planSlotCarried/.test(acc), true);
+  /* En met de maand waarin het vervalt erbij — een maand en geen afteller op de
+     dag, want een afteller maakt de laatste dag de drukste. */
+  ok('en noemt de maand waarin het vervalt',
+    /slot-verval/.test(acc) && /planSlotExpiryOne/.test(acc), true);
   /* Boven een bovengrens is tellen niet meer wat iemand doet: Brand kan met
      doorschuiven op 120 producten komen, en 120 vakjes zijn een muur. */
   ok('en valt boven een bovengrens terug op getallen', /PIP_MAX/.test(acc), true);
@@ -338,17 +368,37 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
     /'CANCEL' && \w+ !== 'OPZEGGEN'/.test(acc), true);
 
   const css = zonderUitleg(readFileSync(new URL('../public/account.css', import.meta.url), 'utf8'));
-  ok('de css kent de drie soorten vakje',
-    /\.pip \{/.test(css) && /\.pip-op/.test(css) && /\.pip-roll/.test(css), true);
+  ok('de css kent de vakjes, de balk en het onderscheid met doorgeschoven',
+    /\.slot-groep \.pips i \{/.test(css) && /\.slotbalk \{/.test(css)
+    && /\.slot-groep\.oud \.pips i \{/.test(css), true);
+  /* DE BALK IS EEN <progress> EN GEEN DIV. Zelfde CSP-val als hierboven, en op
+     29 augustus 2026 voor de derde keer dit jaar ingelopen: `style="width:17%"`
+     werd geweigerd en de balk stond vol. value en max zijn attributen, dus
+     gegevens, en die weigert het beleid niet. */
+  ok('en de balk draagt zijn stand in attributen',
+    /<progress class="slotbalk" value="\$\{vast\}" max="\$\{totaal\}"/.test(acc), true);
 
   /* DE BESTELKNOP NAAST HET GETAL. Uit de mockup: het getal roept een vraag op en
      het antwoord hoort op dezelfde kaart. */
   ok('het saldo heeft een bestelknop naast zich', /saldo-kop/.test(acc) && /saldo-kop/.test(css), true);
-  /* TWEE METERS EN NIET DRIE. De mockup had catalog, lifestyle en video naast
-     elkaar; een plan geeft complete producten (catalogset én carousel) plus clips,
-     dus zijn er twee budgetten. Drie balken zouden suggereren dat je catalog kunt
-     opmaken en lifestyle overhoudt. */
-  ok('de clips hebben hun eigen meter', /planClipsH/.test(acc), true);
+  /* ── GEEN SOORT MEER BIJ NAAM IN DE OPMAAK — migratie 0035 ─────────────────
+     Hier stond `ok('de clips hebben hun eigen meter', /planClipsH/)`: een vaste
+     tweede meter naast die voor de producten. Dat klopte zolang er precies twee
+     budgetten waren, en het is precies wat Lucas' model opengooit — een
+     motionplan heeft hooks, motion en lifestyle naast elkaar.
+
+     Wat er nu wordt getoetst is dus het omgekeerde: dat het scherm GEEN soort
+     bij naam kent en er één regel per soort uit de balans tekent. Zou er ooit
+     weer een soort hardgecodeerd worden, dan tekent dit scherm het volgende plan
+     half — de soorten die het toevallig kent wel, de rest niet. */
+  ok('het scherm tekent een regel per soort uit de balans',
+    /slotRegels\(t, lang, state\)/.test(acc) && /balans\.map/.test(acc), true);
+  ok('en noemt geen enkele soort bij naam in de opmaak',
+    /planClipsH|'video-motion'|"video-motion"/.test(acc), false);
+  /* En de soort van een nieuw item komt uit het PLAN en niet uit het formulier:
+     een verzonnen soort levert een rij op die nooit vast te zetten is. */
+  ok('de soort van een nieuw item wordt aan het plan getoetst',
+    /kanKiezen\.includes\(gevraagd\)/.test(acc), true);
   /* De vaste look staat er als FEITEN en niet alleen als een link: het abonnement
      werkt omdat die look een afspraak is, en dan moet hij te lezen zijn. */
   ok('wat vastligt staat er uitgeschreven', /brandKitRegels/.test(acc), true);
@@ -408,7 +458,16 @@ console.log('\nplanSaldo geeft hetzelfde als planState, met minder queries');
        dit rood en niet pas de rekening van Cloudflare. */
     const a = tellend(); await planState(a.env, klant);
     const b = tellend(); await planSaldo(b.env, klant);
-    ok(`${wie} — planState doet ${klant === 1 ? 4 : 1} queries`, a.tel(), klant === 1 ? 4 : 1);
+    /* VIER WERD VIJF OP 29 AUGUSTUS 2026, EN DAT IS EEN BESLISSING EN GEEN
+       AANPASSING. slotBalans() is erbij gekomen in planAanvullen(): sinds
+       migratie 0035 is het saldo niet één getal maar een regel per soort, en elk
+       scherm dat de toestand van een abonnement toont heeft die regels nodig.
+
+       Deze toets deed precies wat hij moest doen — hij werd rood — en het
+       antwoord daarop hoort een geteld getal te zijn en geen "minder dan".
+       planSaldo() blijft op twee: dat is de goedkope die op ELKE route meeloopt,
+       en die mag deze query juist niet erbij krijgen. */
+    ok(`${wie} — planState doet ${klant === 1 ? 5 : 1} queries`, a.tel(), klant === 1 ? 5 : 1);
     ok(`${wie} — planSaldo doet er ${klant === 1 ? 2 : 1}`, b.tel(), klant === 1 ? 2 : 1);
     ok(`${wie} — en dus nooit meer dan planState`, b.tel() <= a.tel(), true);
   }

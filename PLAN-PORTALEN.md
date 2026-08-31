@@ -1,5 +1,11 @@
 # VISUAILS — plan voor het klantenportaal en het adminportaal
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `functions/admin/debug-mollie.js` → `/admin/diagnose` in de padtabel van `src/lib/admin.js` — op 23 augustus 2026 verplaatst, juist omdat een statisch routebestand onder functions/admin/ de centrale originIsSelf()-controle omzeilde
+
+
 Voorstel, augustus 2026. Nog niets gebouwd. Alles hieronder is gecontroleerd tegen de code
 zoals die nu in de repo staat, niet tegen wat de site erover belooft — dat verschil is
 groter dan je zou hopen en het is het eerste onderwerp van dit document.

@@ -23,6 +23,11 @@ const INTRINSIC: Record<string, [number, number]> = Object.fromEntries(
     [[768, 1376], ['lifestyle-glow-03']],
     [[1200, 896], ['lifestyle-glow-04']],
     [[2400, 1792], ['lifestyle-flash-04', 'lifestyle-flash-05', 'lifestyle-flash-06', 'lifestyle-flash-07', 'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05', 'lifestyle-glow-06', 'lifestyle-phone-made-01', 'lifestyle-phone-made-02', 'lifestyle-phone-made-03', 'lifestyle-phone-made-04', 'lifestyle-phone-made-05', 'lifestyle-phone-made-06', 'lifestyle-phone-made-07', 'lifestyle-phone-made-08', 'lifestyle-phone-made-09', 'lifestyle-phone-made-10', 'lifestyle-phone-made-11', 'lifestyle-phone-made-12', 'lifestyle-phone-made-13', 'lifestyle-phone-made-14']],
+    [[760, 1140], ['brand-boots']],
+    [[2048, 1152], ['brand-car-lens']],
+    [[760, 428], ['brand-knit']],
+    [[760, 760], ['brand-rest', 'brand-silhouet']],
+    [[1872, 1248], ['brand-stair']],
   ] as Array<[[number, number], string[]]>).flatMap(([wh, names]) => names.map((n) => [`/img/${n}.webp`, wh] as const)),
 );
 
@@ -33,6 +38,41 @@ const photos = [
   ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/lifestyle-flash-0${i + 1}.webp`, tag: 'flash', alt: `Lifestyle-visual in Flash-stijl ${i + 1}` })),
   ...Array.from({ length: 6 }, (_, i) => ({ src: `/img/lifestyle-glow-0${i + 1}.webp`, tag: 'glow', alt: `Lifestyle-visual in Glow-stijl ${i + 1}` })),
   ...Array.from({ length: 14 }, (_, i) => ({ src: `/img/lifestyle-phone-made-${String(i + 1).padStart(2, '0')}.webp`, tag: 'phone-made', alt: `Lifestyle-visual in Phone-made-stijl ${i + 1}` })),
+  /* ── DE BEAM-REEKS — 30 augustus 2026 ──────────────────────────────────────
+   *
+   * Deze zes stonden al op de site (HomeV2, StudioPage, Layout) en nergens in
+   * deze galerij. Dat is precies andersom: dit is de pagina die laat zien wat we
+   * maken, en dit is het meest herkenbare wat er staat.
+   *
+   * ── DRIE KEUZES DIE HIERONDER VASTLIGGEN ──────────────────────────────────
+   *
+   * 1 · DE NAAM IS 'Beam' EN NIET 'Mood' OF 'Editions'. De andere filters zijn
+   *     LOOKS — Dunes, Flash, Glow, Phone-made — en dit is er ook een: één harde
+   *     lichtbundel in het donker. 'Mood' zou liegen, want er staan producten op
+   *     (laarzen, een gebreide trui, jassen), en de homepage gebruikt dat woord
+   *     juist voor beeld ZONDER product. En 'Editions' zou erger liegen: dat is
+   *     een dienst die nog niet leverbaar is, en een filter met die naam leest
+   *     als iets wat je vandaag kunt bestellen.
+   *
+   * 2 · ZES EN NIET ELF. Van de elf brand-bestanden zijn er vier abstracte
+   *     lichtstudies (beam, desk, glow, pool). Die worden gebruikt als
+   *     ACHTERGROND — onder de kop op /studio, achter het lege abonnementsscherm
+   *     — en dat is goed werk op die plek. In een galerij die "de stijlen die we
+   *     maken" heet, staan het verlopen tussen de foto's, en dan verwatert de
+   *     reeks in plaats van dat hij hem draagt.
+   *
+   * 3 · brand-car.webp STAAT ER NIET BIJ, want hij is byte voor byte hetzelfde
+   *     bestand als brand-car-lens.webp (beide 176.552 bytes, gelijke md5). Twee
+   *     keer dezelfde foto in één raster valt op; twee keer 172 kB op schijf
+   *     niet. Zie de noot hierover in WERKLIJST.md.
+   *
+   * De namen blijven onvertaald, net als Dunes, Flash, Glow en Phone-made. */
+  { src: '/img/brand-silhouet.webp', tag: 'beam', alt: 'Silhouet tegen \u00e9\u00e9n harde lichtbundel' },
+  { src: '/img/brand-boots.webp', tag: 'beam', alt: 'Laarzen op nat asfalt, uitgelicht door \u00e9\u00e9n bundel' },
+  { src: '/img/brand-car-lens.webp', tag: 'beam', alt: 'Outerwear in een auto-interieur, \u00e9\u00e9n lichtbron' },
+  { src: '/img/brand-knit.webp', tag: 'beam', alt: 'Kabelbrei van dichtbij onder strijklicht' },
+  { src: '/img/brand-stair.webp', tag: 'beam', alt: 'Een figuur in een trappenhuis, hard licht en schaduw' },
+  { src: '/img/brand-rest.webp', tag: 'beam', alt: 'Een rustmoment in een auto, \u00e9\u00e9n lichtbron' },
 ].map((p, i) => ({ ...p, wide: i % 7 === 0, w: INTRINSIC[p.src][0], h: INTRINSIC[p.src][1] }));
 
 const filters = [
@@ -42,6 +82,7 @@ const filters = [
   { key: 'flash', label: 'Flash' },
   { key: 'glow', label: 'Glow' },
   { key: 'phone-made', label: 'Phone-made' },
+  { key: 'beam', label: 'Beam' },
 ];
 ---
 

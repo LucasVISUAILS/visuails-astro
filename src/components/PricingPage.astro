@@ -55,7 +55,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   LADDER, ladderRate, completeSaving, quote,
   plans, PLAN_AMOUNT, PLAN_CLIPS,
-  SHOOT_DAY, TEST_SAMPLE,
+  TEST_SAMPLE,
   reviewClaim, aftercare, euro, AMOUNT,
   TIER_ROWS, tierRow, tierRowLabels,
   WINDOW_THRESHOLD, vatLabel, vatNote,
@@ -84,7 +84,10 @@ const lp = (p: string) => localizedPath(lang, p);
 // tierRow() — which is what pricing.js asks for ("pages use this, never a
 // literal"), and what lets a promise be tightened in one place.
 const sample = TEST_SAMPLE[lang];
-const shoot = SHOOT_DAY[lang];
+/* `const shoot = SHOOT_DAY[lang]` stond hier en werd alleen door `anchorNote`
+   gelezen; die tekst is weg (zie de noot verderop), dus deze regel ook. De
+   import van SHOOT_DAY is meegegaan: nagekeken, hij werd alleen hierdoor
+   gelezen. */
 
 // ── The ladder table ───────────────────────────────────────────────────────
 // The three kinds, in the order the table reads them. Complete first because
@@ -140,10 +143,15 @@ for (const id of KIND_IDS) {
 // the middle count is the one the old package model had no answer for, where a
 // brand paid à la carte because it fell between the Pilot and the Full Drop,
 // and it is the count this whole model exists to price properly; the last is a
-// full collection, and it is also what the anchor below compares against a
-// production day, so the two sections cannot quote different sizes.
+// full collection.
+//
+// `const ANCHOR_PRODUCTS = WORKED[WORKED.length - 1]` stond hier, en de zin
+// erboven eindigde met "…en het is ook waar het anker hieronder een productiedag
+// tegen afzet, zodat de twee secties niet van elkaar kunnen afwijken". Dat anker
+// staat sinds enige tijd op /compare en niet meer hier; ComparePage.astro heeft
+// zijn eigen ANCHOR_PRODUCTS. Deze stond nog gedefinieerd en werd door niets
+// gelezen — zie de noot bij de teksten verderop.
 const WORKED = [5, 14, 30];
-const ANCHOR_PRODUCTS = WORKED[WORKED.length - 1];
 
 // The first-order discount as a percentage, computed rather than written. A
 // The worked example under the discount — the same middle count as the tiles,
@@ -207,21 +215,17 @@ const COPY = {
     ladderCta: 'Start an order',
     compareCta: 'A shoot day, priced against an order',
 
-    anchorH: 'What this replaces',
-    anchorWasTag: 'A production day',
-    anchorNowTag: `${ANCHOR_PRODUCTS} products here`,
-    anchorNowMeta: 'Catalog set and lifestyle carousel for each, one order, one invoice',
-    anchorPerProduct: `${euro(ladderRate('complete', ANCHOR_PRODUCTS), 'en')} per product at that count · ${vatLabel('excl', 'en')}`,
-    anchorNowList: [
-      'Nothing to ship, nowhere to travel, no day off the business',
-      'The output is defined before you pay for it',
-      'Run it again next season without rebooking anything',
-    ],
-    // The last sentence carries the only body link on this page to /compare —
-    // the page that runs this same comparison at full length. It is written
-    // into the note rather than added as a related-page block because this is
-    // the exact paragraph where a reader starts wanting the rest of it.
-    anchorNote: `Neither figure tells you what actually comes out of a shoot day — that depends on the day. ${shoot.caveat} What an order here fixes is that its output is agreed before you pay for it. The rest of that comparison — the hours, the risk, what each one leaves you holding — is <a href="${lp('/compare')}">set out side by side</a>.`,
+    /* ── DE ANKERBLOK-TEKSTEN STONDEN HIER — WEG OP 30 AUGUSTUS 2026 ──────
+       Zeven sleutels in beide talen: `anchorH`, `anchorWasTag`, `anchorNowTag`,
+       `anchorNowMeta`, `anchorPerProduct`, `anchorNowList` en `anchorNote`.
+       Ze werden nergens gerenderd. De vergelijking "een productiedag tegenover
+       een bestelling" is naar /compare verhuisd — ComparePage.astro heeft zijn
+       eigen ANCHOR_PRODUCTS en voert hem daar in volle lengte — en de markup is
+       hier toen weggehaald zonder de teksten en de stijlen.
+       Dat is een gevaarlijke soort dode tekst: hij bevat bedragen die uit
+       pricing.js komen en die dus meebewegen met elke prijswijziging, dus het
+       ziet er in de bron levend uit. Een vertaler of een prijsronde kan er
+       eindeloos aan werken zonder dat er ooit iets van op een pagina staat. */
 
     addOnH: 'Added to an order',
     addOnSub: 'Neither of these is a way to buy visuals on its own. Both sit on top of an order you are already running.',
@@ -305,17 +309,7 @@ const COPY = {
     ladderCta: 'Start een bestelling',
     compareCta: 'Een shootdag, afgezet tegen een bestelling',
 
-    anchorH: 'Wat dit vervangt',
-    anchorWasTag: 'Een productiedag',
-    anchorNowTag: `${ANCHOR_PRODUCTS} producten hier`,
-    anchorNowMeta: 'Catalogset en lifestyle-carousel per stuk, één bestelling, één factuur',
-    anchorPerProduct: `${euro(ladderRate('complete', ANCHOR_PRODUCTS), 'nl')} per product bij dat aantal · ${vatLabel('excl', 'nl')}`,
-    anchorNowList: [
-      'Niets opsturen, nergens naartoe, geen dag uit de zaak',
-      'Wat je krijgt staat vast voordat je betaalt',
-      'Volgend seizoen opnieuw draaien zonder iets opnieuw te boeken',
-    ],
-    anchorNote: `Geen van beide bedragen zegt iets over wat er uit een shootdag komt — dat hangt van de dag af. ${shoot.caveat} Wat een bestelling hier vastlegt, is dat de uitkomst vaststaat voordat je betaalt. De rest van die vergelijking — de uren, het risico, wat je aan elk van beide overhoudt — staat <a href="${lp('/compare')}">naast elkaar uitgeschreven</a>.`,
+    /* Zie de noot bij de Engelse tak: deze zeven stonden hier ook. */
 
     addOnH: 'Toe te voegen aan een bestelling',
     addOnSub: 'Deze twee zijn geen bestelling op zichzelf. Ze komen bovenop een bestelling die je al doet.',
@@ -783,53 +777,12 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
   .first-note { max-width: 78ch; }
   .ladder-cta { margin-top: clamp(1.2rem, 2.4vw, 1.6rem); }
 
-  /* ── The anchor ──────────────────────────────────────────────────────── */
-  .anchor {
-    display: grid;
-    grid-template-columns: 1fr 1px 1fr;
-    border: 1px solid var(--line-strong);
-    margin-top: clamp(1.4rem, 3vw, 2.2rem);
-  }
-  .anchor-col { padding: clamp(1.5rem, 3vw, 2.4rem); display: flex; flex-direction: column; }
-  .anchor-rule { background: var(--line-strong); }
-  .anchor-tag {
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .anchor-price {
-    display: block;
-    margin: .5rem 0 .35rem;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(1.8rem, 3.4vw, 2.5rem);
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-  /* The VAT line sits under the figure rather than beside it: at this type
-     size a trailing "excl. VAT" would either shrink the price or wrap, and the
-     label has to be readable — an unreadable VAT label is the same failure as
-     no VAT label. */
-  .anchor-vat { display: block; margin-bottom: .6rem; font-size: .78rem; color: var(--ink-3); }
-  .anchor-meta { font-size: .9rem; color: var(--ink-3); line-height: 1.5; max-width: 34ch; min-height: 3em; }
-  .anchor-list { list-style: none; margin: 1.1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
-  .anchor-list li { position: relative; padding-left: 1.25rem; font-size: .92rem; color: var(--ink-2); line-height: 1.5; }
-  .anchor-list li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: .55em;
-    width: 6px;
-    height: 6px;
-    background: var(--ink-faint);
-  }
-  .anchor-per { margin-top: auto; padding-top: 1.2rem; font-size: .88rem; color: var(--ink-3); }
-  .anchor-note { max-width: 74ch; margin-top: 1.4rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; }
-  /* The /compare link inside the note arrives through set:html and carries no
-     scope attribute, so the descendant needs :global() to be reached. */
-  .anchor-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+  /* ── DE ANKERSTIJLEN STONDEN HIER — WEG OP 30 AUGUSTUS 2026 ──────────────
+     Twaalf regels: `.anchor`, `-col`, `-rule`, `-tag`, `-price`, `-vat`,
+     `-meta`, `-list`, `-list li`, `-list li::before`, `-per` en `-note`. Geen
+     enkele stond nog op een element — `class="anchor` komt in deze hele repo
+     niet meer voor. Zie de noot bij de teksten hierboven voor waar dat blok
+     naartoe is. */
 
   /* ── What rides on top ───────────────────────────────────────────────────
      Two shapes, because two claims. The add-on is a price with a drawing
@@ -1052,10 +1005,6 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     .packs { grid-template-columns: 1fr; }
     .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
     .pack-line { min-height: 0; }
-    .anchor { grid-template-columns: 1fr; }
-    .anchor-rule { height: 1px; }
-    .anchor-meta { min-height: 0; }
-    .anchor-per { margin-top: 1.2rem; }
     .addon { grid-template-columns: 1fr; }
     /* Stacked, the price is no longer opposite anything, so right-aligning it
        would leave it floating against an edge with nothing across from it. */

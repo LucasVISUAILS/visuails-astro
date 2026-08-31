@@ -249,6 +249,19 @@
      ontbrekend concept. */
   --accent-dim:    var(--teal-hover);
   --accent-soft:   rgb(198 241 0 / 0.14);
+  /* ── HET ACCENT ALS LIJN OF TINT, EN NIET ALS VLAK — 30 augustus 2026 ─────
+     Op een donkere grond is een lime haarlijn op 45% prima te zien. Op een
+     lichte grond verdwijnt hij. Deze twee namen dragen dat verschil, zodat de
+     regels eronder in beide standen kloppen zonder ze te verdubbelen. */
+  --accent-rand:   rgb(198 241 0 / 0.45);
+  --accent-vlak:   rgb(198 241 0 / 0.55);
+  /* ── HET ACCENT ALS GEGEVEN ───────────────────────────────────────────────
+     Een gevulde balk of een vakje is geen letter en geen knop: het draagt een
+     GETAL. WCAG 1.4.11 vraagt daar 3:1 tegen wat ernaast ligt, en dat is precies
+     de reden dat dit een eigen naam heeft. Op de donkere grond is lime dat ruim;
+     op een lichte grond is lime tegen een lichtgrijze baan ongeveer 1,3:1 — dan
+     zie je niet meer waar de balk ophoudt, en dat is het enige wat hij zegt. */
+  --accent-data:   var(--teal);
   --accent-line:   var(--ink-300);
 
   --focus-ring:    var(--teal);
@@ -289,6 +302,130 @@
   --dur-3: 450ms;   /* section */
   --dur-4: 900ms;   /* chrome */
 }
+/* ══════════════════════════════════════════════════════════════════════════════
+   HET LICHTE SCHERM
+   ══════════════════════════════════════════════════════════════════════════════
+
+   Lucas, 30 augustus 2026: *"Ik wil een wit en donker scherm optie voor het
+   VISUAILS Studio dashboard."*
+
+   ── WAAROM DIT ÉÉN BLOK IS EN GEEN TWEEDE STIJLBLAD ─────────────────────────
+
+   Het palet hierboven staat in twee lagen: een BASISLAAG met echte kleuren
+   (--paper, de inktladder, --ghost, de knopvullingen) en daarboven een
+   BETEKENISLAAG die daar alleen naar wijst (--bg, --ink, --line, --accent…).
+   Elke regel in dit bestand leest uitsluitend uit die tweede laag.
+
+   Daardoor is een tweede thema niet een tweede stijlblad maar een herdefinitie
+   van de basislaag. Alles wat eronder staat volgt vanzelf, inclusief regels die
+   nog niet bestaan. Zou er ooit één regel rechtstreeks een kleur schrijven, dan
+   valt die hier buiten — en dat is precies wat tests/thema.test.mjs natelt.
+
+   ── WAT ER NIET OMKEERT ─────────────────────────────────────────────────────
+
+   Drie dingen blijven met opzet staan in allebei de standen:
+
+     · --accent (#C6F100) als VLAK, met --accent-ink erop. Lime met bijna-zwarte
+       letters haalt 15,2:1 en dat is op wit net zo waar als op zwart. Wat wél
+       moet wijken is lime als TEKST: op #FAFAF7 is dat 1,26:1, dus daar staat
+       een dieper olijf tegenover (6,6:1).
+     · .btn-dark. Een donkere knop is een donkere knop; --ink-850 en
+       --paper-on-dark hoeven niet mee te draaien.
+     · Het lege abonnementsscherm. Dat is witte tekst op een FOTO en niet op de
+       pagina — daar verandert de grond niet mee.
+
+   ── DE GRONDEN ZIJN NIET ZUIVER WIT ─────────────────────────────────────────
+
+   #FAFAF7 en niet #FFFFFF, met een zweem naar het accent toe. Zuiver wit onder
+   een lime accent leest koud en klinisch, en een kaart die eruit moet springen
+   heeft dan geen lichtere trede meer om naartoe te gaan. Nu is de grond
+   gebroken wit en de KAART wit — dezelfde ordening als in het donker, waar de
+   grond #030406 is en de kaart #08090B.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root[data-thema="licht"] {
+  --paper:      #FAFAF7;               /* body ground                       */
+  --paper-2:    #F1F1EC;               /* recessed / banded                 */
+  --paper-lift: #FFFFFF;               /* raised — a card off the ground    */
+
+  /* De inktladder keert om: bijna-zwart met een zweem olijf, zodat hij bij het
+     accent hoort en niet als een tweede, koudere kleur leest. De verhoudingen
+     zijn dezelfde rollen als in het donker — 18,1:1 / 9,3:1 / 5,2:1 voor tekst,
+     en de onderste twee zijn lijnen en nooit letters. */
+  --ink-900:  #101208;
+  --ink-700:  rgb(16 18 8 / 0.78);
+  --ink-500:  rgb(16 18 8 / 0.62);
+  --ink-300:  rgb(16 18 8 / 0.26);      /* rules, never text */
+  --ink-200:  rgb(16 18 8 / 0.14);      /* hairlines */
+  --ink-100:  #101208;
+
+  /* De vier mistkleuren zijn in het donker één lichtere trede; hier zijn ze één
+     donkerdere. Vier namen, één waarde, om dezelfde reden als hierboven. */
+  --mist-teal:  #EDEDE6;
+  --mist-clay:  #EDEDE6;
+  --mist-slate: #EDEDE6;
+  --mist-stone: #EDEDE6;
+
+  /* Lime als TEKST kan hier niet: 1,26:1 op de grond. Dit is dezelfde kleur,
+     donkerder gestookt tot hij leesbaar is — 6,6:1 op de grond en 6,9:1 op een
+     kaart. Hij draagt --teal-text, --accent-2, --accent-word en --signal-ink,
+     want dat zijn precies de plekken waar het accent een letter is.
+     --teal zelf blijft ongewijzigd: dat is de VULLING. */
+  --teal-text:  #4F6100;
+  --teal-deep:  #4F6100;
+  --teal-grad:  #ABD200;
+  --teal-hover: #B4DC00;
+
+  /* Klei, om dezelfde reden: #E9963B is 2,26:1 op de grond en dus geen tekst. */
+  --clay-text:  #8A4F06;
+
+  /* De vullingen waren paper-alfa's omdat een inkt-alfa op bijna zwart
+     onzichtbaar is. Op een lichte grond geldt het omgekeerde, dus keren ze om. */
+  --ghost:      rgb(16 18 8 / 0.06);
+  --btn-ghost-fill:        var(--ghost);
+  --btn-ghost-fill-hover:  rgb(16 18 8 / 0.12);
+  --btn-2nd-fill:          transparent;
+  --btn-2nd-fill-hover:    rgb(16 18 8 / 0.06);
+  --btn-2nd-ink:           #101208;
+  --btn-2nd-border:        rgb(16 18 8 / 0.24);
+  --btn-2nd-border-hover:  rgb(16 18 8 / 0.50);
+
+  /* De lijn om een bedienbaar element. In het donker een felle witte alfa; hier
+     de donkere tegenhanger, zodat een invoerveld nog steeds een rand heeft. */
+  --line-ui:    rgb(16 18 8 / 0.45);
+
+  /* De focusring moet op de grond te zien zijn en lime is dat hier niet. */
+  --focus-ring: #4F6100;
+
+  /* Het pijltje in een <select> is een tekening in de kleur van de tekst. */
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23101208' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Lime op wit is 1,26:1, dus ook als lijn en tint gaat het accent hier
+     dieper. Zelfde alfa's, andere kleur. */
+  --accent-rand:   rgb(79 97 0 / 0.55);
+  --accent-vlak:   rgb(79 97 0 / 0.62);
+  --accent-data:   #4F6100;
+
+  /* ── DE SYSTEEMKLEUREN ALS LETTER ─────────────────────────────────────────
+     De -ink-varianten zijn volgens hun eigen noot hierboven "de enige die
+     bodytekst mogen zetten". Ze wezen naar --teal en --clay, de VULLINGEN, want
+     op een donkere grond halen die allebei 4,5:1. Op een lichte grond halen ze
+     1,26:1 en 2,26:1 — en dat is precies wat de leesbaarheidsveeg op 30 augustus
+     22 keer meldde: "Loopt", "Wordt nagekeken", "nog geen foto's".
+
+     Hier wijzen ze dus naar de tekstvarianten. --signal en --warn zelf blijven de
+     felle kleuren, want dat zijn de vlakken en de randen. */
+  --signal-ink:  var(--teal-text);
+  --warn-ink:    var(--clay-text);
+  --verify-ink:  var(--teal-text);
+  --flag-ink:    var(--clay-text);
+}
+
+/* De drie plekken die een PAPIER-alfa schrijven in plaats van een token. Ze
+   staan hier en niet hierboven omdat het geen kleuren zijn maar tinten óp een
+   grond: in het donker een vleugje wit, in het licht een vleugje inkt. */
+:root[data-thema="licht"] .bk-card[open],
+:root[data-thema="licht"] .prod[open] { background: rgb(16 18 8 / .028); }
+
 
 /* box-sizing only. The radius half of this reset is gone — see the radius
    note in :root. */
@@ -396,7 +533,20 @@ a { color: inherit; }
    wijziging: er wordt niets vervangen door een letter meer. */
 .nav-dicht .sidebrand { margin-bottom: 1.4rem; }
 .nav-dicht .sidebrand .mark { justify-content: center; }
-.nav-dicht .markglyph { height: 24px; }
+/* GEEN EIGEN HOOGTE MEER — 29 augustus 2026.
+ *
+ * Hier stond `height: 24px` tegenover de 26px van de open stand. Lucas: *"Logo
+ * op dashboard in en uitgeklapt zijn anders van elkaar, hoe kan dit?"*
+ *
+ * Gemeten: 26 x 22,44 open, 24 x 20,70 dicht. De verhouding klopte allebei
+ * (0,863), dus het teken werd niet vervormd — het werd 8% kleiner. Dat is bij
+ * dit glyph genoeg om als een ANDER logo te lezen, want de losse vlag is een
+ * dunne diagonaal van nog geen twee pixels breed: één pixel eraf en hij oogt
+ * langer en scherper, één pixel erbij en de V oogt zwaarder.
+ *
+ * Er was ook geen reden voor die 24. Het teken is in de ingeklapte balk het
+ * enige wat er staat; kleiner maken is precies de verkeerde kant op. Dezelfde
+ * hoogte in beide standen, en daarmee hetzelfde logo. */
 
 /* ── DE INGEKLAPTE BALK, HERZIEN ────────────────────────────────────────────
    Lucas: *"Het ingeklapte menu mag sowieso wel een stuk mooier gemaakt worden."*
@@ -599,6 +749,52 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
    still recedes, without a 2.3:1 word inside it. */
 .pill.is-cancelled     { border-color: var(--ink-300); color: var(--ink-3); text-decoration: line-through; }
 
+/* ── EDITIONS ────────────────────────────────────────────────────────────────
+ *
+ * De tab van 30 augustus 2026. Eén afwijkende pil en verder niets nieuws: de
+ * kaarten, de eyebrow en de lede zijn wat dit dashboard overal gebruikt.
+ *
+ * `is-wacht` is bewust GEEN statuskleur uit de vijf hieronder. Die vijf gaan
+ * over een bestelling en hebben elk een betekenis in de tijdlijn; dit zegt iets
+ * over een DIENST die nog niet bestaat. Zou hij de kleur van `human_check`
+ * lenen, dan leest hij als "er wacht iets op jou" — en dat is precies het
+ * omgekeerde van wat er staat. Een neutrale, teruggetrokken pil dus. */
+.pill.is-wacht { border-color: var(--line-strong); color: var(--ink-3); background: transparent; }
+
+.ed-kop { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }
+
+/* De strook sfeerbeelden. Vier op een rij op een breed scherm, twee op een
+   telefoon — nooit één, want dan is het geen strook meer maar een carrousel
+   zonder knoppen en verdwijnt het verband tussen de vier.
+
+   `aspect-ratio` en geen vaste hoogte: de bestanden hebben niet allemaal
+   dezelfde verhouding, en een strook waarin één beeld uit de pas loopt leest
+   als een fout. De uitsnede doet `object-fit: cover`. */
+.ed-strook {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem;
+  margin-top: clamp(1rem, 2.4vw, 1.4rem);
+}
+.ed-strook img {
+  display: block; width: 100%; height: auto; aspect-ratio: 1 / 1;
+  object-fit: cover; background: var(--paper-2);
+}
+@media (max-width: 620px) {
+  .ed-strook { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Dezelfde vorm als .slotlijst: een haarlijn per regel, kop vet, uitleg eronder
+   in de rustige inkt. Geen bolletjes — dit zijn twee dingen die naast elkaar
+   bestaan en geen opsomming die je afwerkt. */
+.ed-lijst { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .9rem; }
+.ed-lijst li { padding-top: .9rem; box-shadow: inset 0 1px 0 var(--line); }
+.ed-lijst li:first-child { padding-top: 0; box-shadow: none; }
+.ed-lijst strong { display: block; color: var(--ink); }
+.ed-lijst span { display: block; margin-top: .2rem; color: var(--ink-2); }
+
+/* De prijskaart draagt de accentrand die de rest niet heeft: het is het enige
+   blok op deze tab waar iets van de lezer gevraagd wordt. */
+.ed-prijs { border-left: 2px solid var(--accent); }
+
 .facts {
   display: flex; flex-wrap: wrap;
   gap: 1rem 2rem; margin: .8rem 0 0;
@@ -735,6 +931,24 @@ details.ask .btn { margin-top: .6rem; }
 .ronde-warn { color: var(--ink-2, #444); border-left: 3px solid #E5B45C; padding-left: .75rem; }
 /* Afgerond: de haarlijn wordt groen in plaats van dat er een groene doos komt. */
 .ronde.is-done { box-shadow: inset 0 1px 0 rgb(143 209 79 / .5); }
+
+/* ── DE NAKIJKSTAP ─────────────────────────────────────────────────────────
+   POST /account/orders/<id>/ronde. Hij staat in de `.authcard` en niet in de
+   dashboardschil, om dezelfde reden als de bevestigingspagina van een
+   adreswijziging: het is één handeling met één uitkomst, en een navigatie
+   ernaast nodigt uit om weg te klikken halverwege iets wat niet terug kan.
+
+   Geen eigen kleuren, geen eigen doos. De ene amberlijn van .ronde-warn
+   hierboven is het enige accent dat deze pagina nodig heeft — hij zegt al wat
+   er te weten valt, en hij zegt het hier voor de tweede keer. */
+.nakijk { max-width: 44rem; }
+.nakijk-telling { font-size: .86rem; font-weight: 700; color: var(--ink); letter-spacing: .01em; }
+.nakijk-lijst { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .9rem; }
+.nakijk-item { padding: .9rem 0 0; box-shadow: inset 0 1px 0 var(--line); display: grid; gap: .5rem; justify-items: start; }
+.nakijk-item:first-child { padding-top: 0; box-shadow: none; }
+.nakijk-naam { margin: 0; font-size: .88rem; font-weight: 600; color: var(--ink); word-break: break-word; }
+.nakijk-item textarea { width: 100%; min-height: 4.5rem; }
+.nakijk-knoppen { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: 1.2rem; }
 
 textarea {
   font: inherit; padding: .7rem .8rem; background: var(--surface); color: var(--ink);
@@ -1857,8 +2071,15 @@ details.ask { margin-top: 0; }
   font-size: .62rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
   background: rgb(8 9 11 / .78); backdrop-filter: blur(3px);
 }
+/* LIME EN NIET --accent-2, ook in het lichte scherm. Dit badge ligt op
+   `rgb(8 9 11 / .78)` óver een foto — de grond eronder is dus donker in beide
+   standen, en de donkere olijf zou daar juist verdwijnen. Zie de regel erboven
+   voor die achtergrond. */
 .shot-badge.is-approved { color: var(--accent); }
-.shot-badge.is-revision { color: var(--warn-ink); box-shadow: inset 0 0 0 1px var(--warn); }
+/* En om precies dezelfde reden --warn en niet --warn-ink: dit badge ligt op
+   hetzelfde donkere vlak boven de foto. De donkere kleivariant die op een lichte
+   grond leesbaar is, is dat hier juist niet. */
+.shot-badge.is-revision { color: var(--warn); box-shadow: inset 0 0 0 1px var(--warn); }
 
 /* De notitie staat onder de knoppen: extra hoogte trekt daar niets meer
    scheef, en hij hoort bij het vlaggetje op de foto, niet tussen de knoppen. */
@@ -2032,6 +2253,22 @@ details.ask { margin-top: 0; }
   color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px;
 }
 .sidelang:hover { color: var(--ink); }
+
+/* ── DE THEMAKNOP ────────────────────────────────────────────────────────────
+   Naast de taalknop en met dezelfde terughoudendheid: een voorkeur die je één
+   keer zet, hoort niet mee te schreeuwen met de acties eromheen. Pictogram en
+   woord samen — het pictogram alleen is een raadsel en het woord alleen leest
+   als de zoveelste link in een kolom die er al vier heeft. */
+.sidethema {
+  display: inline-flex; align-items: center; gap: .4rem;
+  margin: 0 0 .7rem; font-size: .78rem; color: var(--ink-3);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.sidethema:hover { color: var(--ink); }
+.sidethema svg { width: 14px; height: 14px; flex: none; }
+/* Ingeklapt blijft alleen het pictogram staan, precies zoals de menu-items. */
+.nav-dicht .sidethema { gap: 0; text-decoration: none; }
+.nav-dicht .sidethema span { display: none; }
 
 /* De regel die uitlegt hoe je aan een account komt. Onder het formulier en
    gedempt: het is geen instructie maar een antwoord op de vraag die pas komt
@@ -2488,14 +2725,14 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .pill.is-cancelled     { border-color: var(--ink-300); color: var(--ink-3); background: transparent; text-decoration: line-through; }
 
 .pill.is-in_production {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-2);
+  color: var(--accent-2);
   background: transparent;
   animation: pill-breathe 2.6s cubic-bezier(.45,.05,.55,.95) infinite;
 }
 @keyframes pill-breathe {
   0%, 100% { border-color: var(--accent-dim); }
-  50%      { border-color: var(--accent); }
+  50%      { border-color: var(--accent-2); }
 }
 
 .pill.is-delivered {
@@ -2514,7 +2751,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
  * blijft dan gevuld groen — het onderscheid met geleverd blijft dus staan.
  */
 @media (prefers-reduced-motion: reduce) {
-  .pill.is-in_production { animation: none; border-color: var(--accent); }
+  .pill.is-in_production { animation: none; border-color: var(--accent-2); }
   .ord-chev { transition: none; }
   .card.ord[open] > *:not(summary) { animation: none !important; }
 }
@@ -2827,32 +3064,36 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
    HET ABONNEMENT
    ═══════════════════════════════════════════════════════════════════════════
 
-   DE SALDOMETER IS EEN SVG EN GEEN DIV MET EEN BREEDTE. Dit dashboard draait
-   onder `style-src 'self'`, en in CSP3 valt `style-src-attr` daarop terug: een
-   `style="width: 71%"` wordt geweigerd en de balk blijft leeg. Twee keer eerder
-   dit jaar dezelfde val (swatch(), de beeldverhoudingen). De breedte zit nu in
-   het rect-attribuut binnen een viewBox — dat is de tekening en geen opmaak, dus
-   het beleid raakt hem niet. Zie saldoMeter() in src/lib/account.js.
+   GEEN INLINE STIJL, EN DAT GELDT HIER VOOR ALLES. Dit dashboard draait onder
+   `style-src 'self'`, en in CSP3 valt `style-src-attr` daarop terug: een
+   `style="width: 71%"` wordt geweigerd en de balk blijft leeg. Drie keer dit
+   jaar dezelfde val: swatch(), de beeldverhoudingen, en op 29 augustus de
+   slotbalk. Wat er nu staat heeft geen breedte om te berekenen — vakjes zijn
+   spans met een klasse, en de balk is een <progress> met value en max als
+   ATTRIBUTEN. Zie slotRegels() in src/lib/account.js.
+
+   .meter/.pip stonden hier tot 29 augustus 2026 en zijn met saldoMeter()
+   meegegaan naar .slotlijst verderop: één rij per soort in plaats van één rij
+   voor het hele abonnement.
    ─────────────────────────────────────────────────────────────────────────── */
-/* DE METER IS EEN RIJ VAKJES. Vijf lege vakjes zijn vijf dingen die je nog kunt
-   laten maken; een balk op 58% is een getal waar niemand iets mee doet. En het
-   lost de CSP-val definitief op: er is geen breedte om te berekenen, dus is er
-   ook geen inline stijl nodig. Zie saldoMeter() in src/lib/account.js. */
-.meter { display: flex; flex-wrap: wrap; gap: 4px; margin: .5rem 0 .7rem; }
-.pip {
-  width: 22px; height: 10px; border-radius: 3px;
-  background: var(--paper-2); border: 1px solid var(--line);
-}
-/* Verbruikt is vol, open is leeg, doorgeschoven staat er tussenin: het is er wel,
-   maar niet voor altijd. Vandaar de omlijning en niet de volle vulling. */
-.pip-op   { background: var(--signal-ink, var(--ink-1)); border-color: transparent; }
-.pip-roll { background: transparent; border: 1px dashed var(--signal-ink, var(--ink-2)); }
 
 /* De kop van de balk: het getal links, de bestelknop rechts. Uit de mockup, en om
    de reden die daar staat — het getal roept een vraag op en het antwoord hoort op
    dezelfde regel. */
 .saldo-rij + .saldo-rij { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--line); }
-.saldo-kop { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+.saldo-kop { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }
+/* Twee knoppen, en de tweede is bewust de lichte: invullen is wat het abonnement
+   IS, bijbestellen is de uitzondering. Ze staan naast elkaar en niet onder
+   elkaar, want dan leest de tweede als een vervolgstap in plaats van als een
+   alternatief. Op een telefoon vallen ze samen met de kop op een eigen regel. */
+.saldo-acties { display: flex; gap: .5rem; flex-wrap: wrap; }
+.saldo-uitleg { display: block; flex: 1 1 22rem; min-width: 0; }
+.saldo-uitleg .lede { display: block; margin: .35rem 0 0; }
+@media (max-width: 560px) {
+  .saldo-kop { align-items: flex-start; }
+  .saldo-acties { width: 100%; }
+  .saldo-acties .btn { flex: 1 1 auto; text-align: center; }
+}
 
 /* Plan links, volgende afschrijving rechts. */
 .dash-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
@@ -2994,6 +3235,22 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 }
 .plantab:hover { color: var(--ink); }
 .plantab.is-nu { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* ── VIJF TABBEN PASSEN NET NIET OP EEN TELEFOON — 30 augustus 2026 ──────────
+ *
+ * Met vier paste de rij; met Editions erbij liep "Facturering" op 420 px van
+ * het scherm af. De nav scrollt wel (overflow-x hierboven), maar de scrollbar
+ * staat uit — dus zag je een afgekapt woord zonder enig teken dat er meer is,
+ * en juist achter dat afgekapte woord zit opzeggen.
+ *
+ * Een tab wegnemen was het alternatief en dat is erger: dan is het antwoord op
+ * "waar zeg ik op" helemaal geen tab meer. Iets kleinere ruimte en iets kleinere
+ * letter laten alle vijf staan, en dat is te lezen — de dashboardveeg
+ * (npm run leesbaar) bewaakt of het dat blijft. */
+@media (max-width: 560px) {
+  .plantabs { gap: .8rem; }
+  .plantab { font-size: .88rem; }
+}
 /* Het paneel draagt zelf niets: de blokken erin brengen hun eigen ruimte mee.
    Een doos om de tabinhoud zou het kader zijn dat er net overal af is. */
 .planpaneel > :first-child { margin-top: 0; }
@@ -3108,3 +3365,94 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   background: rgb(255 255 255 / .18);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / .60);
 }
+
+
+/* ══ DE SLOTS PER SOORT — migratie 0035, 29 augustus 2026 ═══════════════════
+ *
+ * Verving één groot getal met een balk eronder. Dat getal zei niet WAARVAN, en
+ * dat is precies wat bezoekers niet begrepen.
+ *
+ * TWEE GROEPJES PIPS EN NIET ÉÉN BALK. Wie doorgeschoven slots heeft, heeft er
+ * twee soorten: die van deze maand en die van vorige. Eén balk zou kloppen en
+ * toch het verkeerde zeggen, want de helft ervan heeft haast. De oude staan
+ * links, want ze gaan er ook als eerste af — het beeld volgt de volgorde in de
+ * database in plaats van er iets anders van te maken.
+ */
+.slotlijst { margin: .2rem 0 0; }
+.slotrij {
+  display: flex; flex-wrap: wrap; gap: .7rem 1.4rem; align-items: center;
+  padding: 1rem 0;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+.slotrij:last-child { box-shadow: none; }
+.slot-naam { flex: 1 1 13rem; min-width: 0; }
+.slot-naam .n { display: block; color: var(--ink); font-size: 1.02rem; font-weight: 600; }
+.slot-naam .u { display: block; font-size: .84rem; color: var(--ink-3); }
+/* De vervalregel draagt de merkkleur, want dit is het enige op deze regel met
+   een datum eraan. Een bolletje ervoor en geen icoon: het is een markering, geen
+   waarschuwing — er gaat niets mis, er loopt alleen iets af. */
+.slot-verval {
+  display: inline-flex; align-items: center; gap: .45rem;
+  margin-top: .25rem; font-size: .82rem; color: var(--accent-2);
+}
+.slot-verval::before { content: ""; width: 6px; height: 6px; background: var(--accent-2); flex: none; }
+.slot-groepen { display: flex; gap: .9rem; align-items: center; flex: 0 0 auto; }
+.slot-groep { display: flex; flex-direction: column; gap: .35rem; }
+.slot-groep .pips { display: flex; gap: 4px; }
+.slot-groep .pips i { width: 20px; height: 9px; background: var(--ink-200); }
+.slot-groep .pips i.vast { background: var(--accent-data); }
+/* De doorgeschoven groep is een omtrek in plaats van een vlak: hetzelfde aantal,
+   ander gewicht. Zo zie je zonder te lezen welke helft de oude is. */
+.slot-groep.oud .pips i { background: transparent; box-shadow: inset 0 0 0 1px var(--accent-rand); }
+.slot-groep.oud .pips i.vast { background: var(--accent-vlak); box-shadow: none; }
+/* De balk voor de grotere plannen. Vaste breedte, want twee balken naast elkaar
+   moeten vergelijkbaar zijn — een balk die met zijn aantal meegroeit, zegt iets
+   over het aantal in plaats van over het deel dat vast staat. */
+.slotbalk {
+  display: block; width: 132px; height: 9px;
+  /* Een <progress> draagt in elke browser zijn eigen uiterlijk. appearance:none
+     zet dat af; daarna is het een gewoon vlak dat we zelf kleuren. De twee
+     pseudo-elementen eronder zijn de enige weg naar de vulling — er is geen
+     gedeelde standaard voor, dus staan ze er allebei. */
+  appearance: none; -webkit-appearance: none;
+  border: 0; background: var(--ink-200); overflow: hidden;
+}
+.slotbalk::-webkit-progress-bar { background: transparent; }
+.slotbalk::-webkit-progress-value { background: var(--accent-data); }
+.slotbalk::-moz-progress-bar { background: var(--accent-data); }
+.slot-groep.oud .slotbalk { background: transparent; box-shadow: inset 0 0 0 1px var(--accent-rand); }
+.slot-groep.oud .slotbalk::-webkit-progress-value { background: var(--accent-vlak); }
+.slot-groep.oud .slotbalk::-moz-progress-bar { background: var(--accent-vlak); }
+@media (max-width: 620px) { .slotbalk { width: 96px; } }
+
+.slot-groep .lab {
+  font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.slot-groep.oud .lab { color: var(--accent-2); }
+.slot-tel { flex: 0 0 auto; min-width: 8.5rem; text-align: right; font-size: .88rem; color: var(--ink-3); }
+.slot-tel b { display: block; color: var(--ink); font-weight: 700; font-size: 1rem; }
+.slotrij.is-vol .slot-tel b { color: var(--ink-3); }
+
+@media (max-width: 620px) {
+  /* Op een telefoon gaat alles onder elkaar: drie kolommen naast elkaar wordt
+     hier drie regels van niets. De meters krijgen een eigen regel en niet "wat
+     er overblijft" — anders staan ze bij een korte naam rechts en bij een lange
+     links, en dan lijken twee regels van hetzelfde soort op twee verschillende
+     dingen. */
+  .slot-groepen { flex: 1 1 100%; }
+  .slot-tel { min-width: 0; text-align: left; flex: 1 1 100%; }
+  .slot-tel b { display: inline; }
+}
+
+/* ══ CONCEPT OF VASTGEZET ══════════════════════════════════════════════════
+   Het merkje op een lijstregel. Een concept is stil — het staat er, het kost
+   niets. Vastgezet draagt de merkkleur, want dat is het moment waarop er een
+   slot af ging. */
+.q-merk {
+  flex: 0 0 auto;
+  font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  padding: .3rem .6rem; border-radius: var(--r-pill, 99px);
+  color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line);
+}
+.q-merk.is-vast { color: var(--accent-2); box-shadow: inset 0 0 0 1px var(--accent-rand); }

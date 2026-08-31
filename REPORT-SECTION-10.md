@@ -1,5 +1,12 @@
 # Report — section 10, and the sync
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt bestanden die inmiddels anders heten of niet meer bestaan. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `ThreeWay.astro` → niets — verwijderd, samen met de Duitse site
+> - `src/pages/order-catalog.astro` → de vier `order-*`-pagina's zijn opgegaan in één `/start` (301's staan in `public/_redirects`) — ook order-custom, order-lifestyle en order-video; /order-status is /o geworden
+
+
 Written 26 July 2026, after commits `4273aa5`, `86e75de`, `a586010` and `30360d5`.
 
 Section 10 of the brief — one order pipeline, a client portal, a capacity gate, and

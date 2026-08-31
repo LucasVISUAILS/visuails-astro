@@ -147,6 +147,7 @@ export default function avifNaastWebp() {
 
         const paginas = await alleHtml(distDir);
         let omgezet = 0, overgeslagen = 0, geraakt = 0;
+        const zonderAvif = new Set(); // welke bestanden precies, niet alleen hoeveel
 
         for (const pad of paginas) {
           const html = await readFile(pad, 'utf8');
@@ -185,7 +186,21 @@ export default function avifNaastWebp() {
             if (!avif) {
               uit += html.slice(i, eind + 1);
               i = eind + 1;
-              if (bron.includes('/img/')) overgeslagen++;
+              if (bron.includes('/img/')) {
+                overgeslagen++;
+                /* NAAM ERBIJ, 30 AUGUSTUS 2026. Hieronder stond alleen een
+                   aantal, en alleen als INFO zolang er érgens nog een AVIF was.
+                   Dat dekt de zeldzame ramp (niets omgezet) en niet het geval
+                   dat werkelijk gebeurt: er komen elf nieuwe beelden bij, `npm
+                   run avif` wordt vergeten, en de build zegt "704 omgezet (12
+                   overgeslagen)" — waar in een regel die op info staat niemand
+                   naar kijkt. Nu staat er wélke bestanden het zijn, en staat het
+                   op warn, want een vergeten stap moet je kunnen zien. */
+                for (const stuk of String(bron).split(',')) {
+                  const url = stuk.trim().split(/\s+/)[0];
+                  if (url.includes('/img/')) zonderAvif.add(url.split('/').pop());
+                }
+              }
               continue;
             }
 
@@ -223,10 +238,20 @@ export default function avifNaastWebp() {
             'De site wordt nu met alleen webp gebouwd — ruwweg twee keer zo zwaar. ' +
             'Draai `npm run avif` en bouw opnieuw.'
           );
+        } else if (zonderAvif.size) {
+          const namen = [...zonderAvif].sort();
+          logger.warn(
+            `avif: ${omgezet} <img> in een <picture> op ${geraakt} pagina's, maar ` +
+            `${namen.length} beeld(en) hebben geen AVIF naast zich en gaan dus ` +
+            'als losse webp de deur uit — ruwweg twee keer zo zwaar:\n  ' +
+            namen.slice(0, 20).join('\n  ') +
+            (namen.length > 20 ? `\n  … en ${namen.length - 20} meer` : '') +
+            '\nDraai `npm run avif` en bouw opnieuw.'
+          );
         } else {
           logger.info(
             `avif: ${omgezet} <img> in een <picture> op ${geraakt} pagina's` +
-            (overgeslagen ? ` (${overgeslagen} overgeslagen — geen AVIF op schijf)` : '')
+            (overgeslagen ? ` (${overgeslagen} overgeslagen — al in een <picture>)` : '')
           );
         }
       },

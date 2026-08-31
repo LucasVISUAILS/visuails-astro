@@ -37,21 +37,23 @@
  *
  * ── DE VIER STAPPEN, IN DEZE VOLGORDE ───────────────────────────────────────
  *
- *   1 · KIJKEN wat er klaarstaat. Alleen items MET foto's; een item zonder
- *       foto's kan niet gemaakt worden en wordt overgeslagen, precies zoals
- *       checkPlanQueues() ze ook al niet meetelt en zoals migratie 0030 het
- *       beschrijft.
- *   2 · SALDO TOETSEN met verbruikToestaan(). Meer op de lijst dan credits
- *       betekent niet "fout" maar "de rest schuift door" — dus wordt het aantal
- *       gekapt op het saldo en niet geweigerd.
+ *   1 · KIJKEN wat er klaarstaat. Alleen items die de klant heeft VASTGEZET —
+ *       en dus met foto's, want queueLock() zet niets vast zonder. Een concept
+ *       blijft staan tot hij het zelf vastzet, precies zoals checkPlanQueues()
+ *       het ook al niet meetelt en zoals migratie 0030 het beschrijft.
+ *   2 · (VERVALLEN, 29 augustus 2026) Hier werd het saldo getoetst en geboekt.
+ *       Dat gebeurt sinds migratie 0035 bij het VASTZETTEN door de klant zelf —
+ *       zie queueLock() in subscription.js. Wat hier binnenkomt is dus al
+ *       betaald; nog een keer afschrijven zou dubbel zijn.
  *   3 · DE BESTELLING MAKEN, en pas daarna
- *   4 · queueLinkOrder() + verbruikBoeken().
+ *   4 · queueLinkOrder().
  *
- * De volgorde is niet willekeurig. Saldo afschrijven vóór de bestelling bestaat,
- * kan credits kosten zonder dat er werk tegenover staat. Andersom kan er een
- * bestelling ontstaan waar geen credit voor is afgeschreven — dat is de goedkope
- * kant van de fout: zichtbaar werk dat te veel is gemaakt, in plaats van
- * onzichtbaar saldo dat verdampt is.
+ * De volgorde was niet willekeurig toen stap 2 hier nog stond: saldo afschrijven
+ * vóórdat de bestelling bestaat, kan credits kosten zonder werk ertegenover.
+ * Sinds het slotmodel valt die afweging bij queueLock(), en die rolt het slot
+ * terug als het vastzetten alsnog niet doorgaat. Wat hier overblijft heeft geen
+ * geldkant meer — het ergste dat hier misgaat is een bestelling zonder items
+ * eraan gekoppeld, en dat is zichtbaar in plaats van stil.
  *
  * ── ÉÉN BESTELLING MET N PRODUCTEN, EN NIET N BESTELLINGEN ──────────────────
  *
@@ -75,8 +77,8 @@
  * bij iets waar hij al voor betaalt.
  */
 import {
-  planState, verbruikToestaan, verbruikBoeken,
-  queueTakeIds, queueLinkOrder, monthKey,
+  planState,
+  queueTakeIds, queueUntakeIds, queueLinkOrder, monthKey,
 } from './subscription.js';
 
 /* Zelfde vorm als makeRef() in functions/api/order.js: VIS-XXXX-XXX. Bewust
@@ -91,19 +93,29 @@ function maakRef() {
 
 /** Het aantal dat vandaag opgepakt kan worden, zonder iets te veranderen. */
 export function klaarOmTeStarten(state) {
-  if (!state?.sub) return { items: [], saldo: 0, zonderFotos: 0 };
+  if (!state?.sub) return { items: [], saldo: 0, zonderFotos: 0, concepten: 0, wachtend: 0 };
   const open = (state.wachtrij || []).filter((q) => !q.taken_at && !q.order_id);
-  const metFotos = open.filter((q) => String(q.upload_batch || '').trim() !== '');
-  const toegestaan = verbruikToestaan(state, metFotos.length) ? metFotos.length : 0;
-  /* verbruikToestaan() is een ja/nee over het HELE aantal. Meer op de lijst dan
-     saldo is geen weigering maar doorschuiven, dus wordt er gekapt en niet
-     afgekeurd — zie de kop. */
-  const n = Math.min(metFotos.length, Math.max(0, Number(state.saldo) || 0));
+  /* ── VASTGEZET, EN NIET "ALLES MET FOTO'S" — migratie 0035, 29 augustus 2026 ──
+   *
+   * Hier stond `open.filter(heeft foto's)`, en dat klopte zolang toevoegen en
+   * betalen hetzelfde moment waren. Sinds Lucas' slotmodel is dat uit elkaar
+   * getrokken: een item is een CONCEPT tot de klant op vastzetten drukt, en op
+   * dát moment wordt het slot afgeschreven.
+   *
+   * Wat hier binnenkomt moet dus vastgezet zijn. Een concept meenemen zou werk
+   * maken waar niet voor betaald is — en erger nog, het saldo zou er hieronder
+   * een tweede keer voor worden afgeschreven.
+   *
+   * Foto's blijven een voorwaarde, maar niet meer hier: queueLock() weigert al
+   * vast te zetten zonder foto's. Deze regel staat er als tweede sluiting op
+   * dezelfde deur, voor een rij die er door een oude import toch zonder in staat. */
+  const vast = open.filter((q) => q.locked_at && String(q.upload_batch || '').trim() !== '');
   return {
-    items: metFotos.slice(0, toegestaan ? n : n),
+    items: vast,
     saldo: Math.max(0, Number(state.saldo) || 0),
-    zonderFotos: open.length - metFotos.length,
-    wachtend: Math.max(0, metFotos.length - n),
+    zonderFotos: open.filter((q) => !String(q.upload_batch || '').trim()).length,
+    concepten: open.filter((q) => !q.locked_at).length,
+    wachtend: 0,
   };
 }
 
@@ -125,9 +137,26 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
   let items = klaar.items;
   if (max != null) items = items.slice(0, Math.max(0, Math.floor(Number(max) || 0)));
   if (!items.length) {
-    return { ok: false, reden: klaar.saldo ? 'niets-klaar' : 'geen-saldo', zonderFotos: klaar.zonderFotos };
+    /* ── ÉÉN REDEN, EN GEEN KEUZE MEER TUSSEN TWEE — migratie 0035 ────────────
+     *
+     * Hier stond `klaar.saldo ? 'niets-klaar' : 'geen-saldo'`. Dat was een
+     * keuze tussen twee redenen die sinds het slotmodel niet meer bestaat: wat
+     * hier binnenkomt is al vastgezet en dus al betaald, en `state.saldo` telt
+     * de oude maandkolom die niemand meer afschrijft. Die zou dus altijd vol
+     * staan en de tak 'geen-saldo' nooit kiezen — een melding die je denkt te
+     * hebben, net als de tak die in cron/index.js om dezelfde reden weg moest.
+     *
+     * Staat er niets klaar, dan is dat de hele reden. */
+    return { ok: false, reden: 'niets-klaar', zonderFotos: klaar.zonderFotos, concepten: klaar.concepten };
   }
-  if (!verbruikToestaan(state, items.length)) return { ok: false, reden: 'geen-saldo' };
+  /* Op deze regel stond `if (!verbruikToestaan(state, items.length))`. Twee
+     dingen waren daar mis mee, en het tweede is het ergere: die functie geeft
+     een OBJECT terug, dus `!` erop was altijd onwaar en de controle heeft nooit
+     één keer gelopen. En zou hij wel lopen, dan toetste hij het verkeerde: de
+     oude maandteller, terwijl doorgeschoven slots juist buiten de toekenning
+     van deze maand vallen. Een klant met vijf doorgeschoven producten zou zijn
+     eigen, betaalde werk geweigerd zien. Wat er wél toe doet — loopt het
+     abonnement — staat drie regels hierboven. */
 
   /* De klantgegevens komen uit de klantrij en niet uit een formulier: er is hier
      geen formulier. E-mail is NOT NULL op orders, dus zonder e-mail geen
@@ -139,8 +168,35 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
   ).bind(customerId).first().catch(() => null);
   if (!klant?.email) return { ok: false, reden: 'geen-klant' };
 
+  /* ── EERST OPPAKKEN, DAN PAS DE BESTELLING BOUWEN — 30 augustus 2026 ───────
+   *
+   * Deze twee stonden andersom: bestelling maken, dan oppakken. Dat is de
+   * volgorde die de kop hierboven verdedigt — een bestelling zonder items is
+   * zichtbaar, items zonder bestelling niet — en hij was goed zolang oppakken
+   * altijd lukte.
+   *
+   * Sinds queueTakeIds() ook `locked_at IS NOT NULL` eist, kan het mislukken, en
+   * wel precies in het geval waar Lucas naar vroeg: de klant maakt een item los
+   * op hetzelfde moment dat deze knop wordt ingedrukt. Met de oude volgorde
+   * stond dat item dan wél in de bestelling — inclusief zijn `product_pN` — en
+   * was zijn slot terug. Product gemaakt, niets betaald.
+   *
+   * Dus wordt er nu eerst opgepakt, en wordt de bestelling gebouwd van wat er
+   * werkelijk is opgepakt. De zorg uit de kop blijft overeind door de tak
+   * hieronder: gaat de INSERT niet door, dan wordt het oppakken teruggedraaid en
+   * staan de items gewoon weer op de lijst van de klant. */
+  const gepakteIds = await queueTakeIds(env, customerId, items.map((q) => q.id));
+  if (!gepakteIds.length) return { ok: false, reden: 'niets-klaar', zonderFotos: klaar.zonderFotos, concepten: klaar.concepten };
+  const mee = items.filter((q) => gepakteIds.includes(q.id));
+  if (mee.length !== items.length) {
+    /* Geen fout, wel het vermelden waard: er is tussen lezen en oppakken iets
+       veranderd. Bijna altijd is dat een klant die net iets losmaakte. */
+    console.log('[abonnement] klant', customerId, '—', items.length - mee.length,
+      'item(s) vielen tussen lezen en oppakken af; de bestelling draagt er', mee.length);
+  }
+
   const details = { bron: 'abonnement', abonnement: state.sub.ref, maand: monthKey() };
-  items.forEach((q, i) => {
+  mee.forEach((q, i) => {
     details[`product_p${i + 1}`] = String(q.name || '').slice(0, 120);
     const note = String(q.note || '').trim();
     if (note) details[`note_p${i + 1}`] = note.slice(0, 500);
@@ -166,21 +222,32 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
      RETURNING id`
   ).bind(
     ref, customerId, klant.name || null, klant.brand || null, klant.email,
-    JSON.stringify(details), taal, items.length,
+    JSON.stringify(details), taal, mee.length,
   ).first().catch((e) => { console.error('[abonnement] bestelling maken mislukt:', e?.message || e); return null; });
-  if (!rij?.id) return { ok: false, reden: 'bestelling-mislukt' };
-
-  /* Pas nu de wachtrij bijwerken en het saldo afschrijven. Mislukt één van de
-     twee, dan staat er zichtbaar werk te veel — zie de kop voor waarom dat de
-     goedkope kant is. Allebei loggen luid. */
-  const gepakt = await queueTakeIds(env, customerId, items.map((q) => q.id));
-  await queueLinkOrder(env, items.map((q) => q.id), rij.id);
-  const geboekt = await verbruikBoeken(
-    env, state.sub.id, monthKey(), items.length, state.toegekend,
-  );
-  if (geboekt !== items.length) {
-    console.error('[abonnement] saldo niet geboekt voor', ref, '—', geboekt, 'van', items.length);
+  if (!rij?.id) {
+    /* TERUGDRAAIEN, want de items staan nu op opgepakt en er is niets om ze aan
+       te hangen. Zonder dit is de klant zijn slot kwijt, is zijn item van zijn
+       lijst verdwenen, en is er geen bestelling — de enige uitkomst die erger is
+       dan het werk te veel maken. */
+    const terug = await queueUntakeIds(env, gepakteIds);
+    console.error('[abonnement] bestelling mislukt voor klant', customerId, '—',
+      terug, 'van', gepakteIds.length, 'item(s) teruggezet op de lijst');
+    return { ok: false, reden: 'bestelling-mislukt' };
   }
 
-  return { ok: true, orderId: rij.id, ref, aantal: items.length, gepakt, geboekt, wachtend: klaar.wachtend };
+  /* ── HIER WORDT NIETS MEER AFGESCHREVEN — migratie 0035, 29 augustus 2026 ────
+   *
+   * Op deze plek stond verbruikBoeken(). Dat was juist zolang het slot pas
+   * afging als er werk van gemaakt werd. In Lucas' slotmodel gebeurt dat al bij
+   * het VASTZETTEN door de klant, in queueLock(), en dat is precies waarom deze
+   * regels weg moesten: hij zou hier een tweede keer betalen voor hetzelfde
+   * product.
+   *
+   * De volgorde in de kop hierboven klopt daarmee nog steeds, alleen zit stap 2
+   * — het saldo toetsen en boeken — nu bij de klant en niet bij ons. Wat hier
+   * overblijft is wat er altijd al hoorde te gebeuren: de items uit de rij halen
+   * en aan de bestelling hangen. */
+  await queueLinkOrder(env, gepakteIds, rij.id);
+
+  return { ok: true, orderId: rij.id, ref, aantal: mee.length, gepakt: gepakteIds.length, geboekt: 0, wachtend: 0 };
 }

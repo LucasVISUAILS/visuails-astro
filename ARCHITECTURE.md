@@ -271,9 +271,16 @@ doet hetzelfde voor POST.
 
 **Er is één ontsnappingsroute en die is een val:** een *statisch* routebestand in
 `functions/admin/` wint van `functions/admin/[[path]].js` en slaat die controle
-dus over. `functions/admin/debug-mollie.js` staat daarin — en maakt op een GET
-twee echte Mollie-betalingen aan. Wie een nieuwe adminroute toevoegt, doet dat in
-de padtabel en niet als eigen bestand.
+dus over. Wie een nieuwe adminroute toevoegt, doet dat in de padtabel en niet als
+eigen bestand.
+
+> *Bijgewerkt 30 augustus 2026.* Hier stond dat `functions/admin/debug-mollie.js`
+> in die val zat en op een GET twee echte Mollie-betalingen aanmaakte. Dat
+> bestand is er sinds 23 augustus niet meer — §13 van dit document beschrijft de
+> oplossing — en deze paragraaf sprak zichzelf dus tegen met de lijst achterin:
+> de regel zei "er staat nu een gat open", de openstaande punten zeiden
+> "opgelost". De regel zelf blijft staan, want de val is echt; alleen het
+> voorbeeld is weg. De route heet nu `/admin/diagnose` en staat in de padtabel.
 
 ### 5.3 · Sessies
 
@@ -462,6 +469,19 @@ hieronder staat is gemeten, met de datum erbij. Wie er iets aan toevoegt, zet er
    het saldo van een ander laten uitgeven. De plek is een adminhandeling of een
    scherm onder `/account`, waar de sessie al bestaat.
 
+   *Opgelost, 29–30 augustus 2026.* Er staat sindsdien een slotmodel onder
+   (migratie 0035, `subscription_slots` per soort per maand) en de ontbrekende
+   handeling bestaat: `startPlanWindow()` in `src/lib/planStart.js` pakt de
+   vastgezette items op en maakt er één bestelling van, met `queueLinkOrder()`
+   als vierde stap. Die aanroep is er dus. `queueTake()` is verwijderd — hij gaf
+   terug wat hij WILDE oppakken in plaats van wat hij oppakte, en dat is
+   gevaarlijker dan geen functie. `verbruikToestaan()` is uit `startPlanWindow()`
+   gehaald omdat de aanroep daar nooit gelopen heeft (`if (!verbruikToestaan(…))`
+   op een functie die een object teruggeeft is altijd onwaar) én het verkeerde
+   toetste: doorgeschoven slots vallen buiten de toekenning van deze maand.
+   Het plafond staat nu in de SQL waar het hoort, en
+   `tests/abo-misbruik.test.mjs` legt vast dát het daar staat.
+
 2. **`migrate.mjs` houdt geen register** van wat er gedraaid is en beslist op
    schema-introspectie — zie §4.4. Voor de genummerde reeks werkt dat; voor de vier
    `MIGRATIE-*-PLAKKEN.sql` bestaat helemaal geen spoor.
@@ -488,6 +508,21 @@ hieronder staat is gemeten, met de datum erbij. Wie er iets aan toevoegt, zet er
    `tests/revisieronde.test.mjs` draait dat tegen een echte SQLite met de echte
    `schema.sql`.
    *Gebouwd en nagemeten 24 augustus 2026.*
+
+   > *Correctie, 30 augustus 2026.* De zin hierboven — "beide klantschermen …
+   > laten de klant in één keer aanvinken" — was op 24 augustus maar voor de
+   > hélft waar. Het gemailde portaal deed het; het ingelogde dashboard niet.
+   > `account.js` nam de oude `action=revise` nog steeds aan (de losse revisie
+   > per beeld, die de ronde niet afschreef en dus onbeperkt herhaalbaar was),
+   > de aanvinkvakjes bleven staan als de ronde al op was, en de nakijkstap
+   > bestond er niet. `tests/revisieronde.test.mjs` wist dat: die suite stond op
+   > 71 van de 92. Alle drie zijn op 30 augustus gebouwd en de suite staat op
+   > 92/92.
+   >
+   > Dit is precies de fout die dit document elders beschrijft als "een belofte
+   > zonder gedrag eronder", en hij stond in de lijst die daarvoor bedoeld is —
+   > afgevinkt, terwijl de toets ernaast rood stond. Een punt is pas klaar als
+   > zijn eigen suite groen is.
 
    **Wat er bewust NIET in zit, en waar je dus op moet letten:**
 

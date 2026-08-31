@@ -48,7 +48,8 @@ import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from 
    stuk dat van een klantenlijst werk maakt, en Lucas' keuze was uitdrukkelijk
    dat een MENS daarop drukt. Vandaar dat ze hier binnenkomen en niet in cron/. */
 import { startPlanWindow, klaarOmTeStarten } from './planStart.js';
-import { planState } from './subscription.js';
+import { kindLabel, slotsFor } from './slots.js';
+import { planState, queueTerugNaAnnulering, loadSubscription, monthKey } from './subscription.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
    verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
    zodat de sleutel hier niet wordt overgetypt. Zie src/data/ratios.js. */
@@ -268,6 +269,11 @@ export async function adminPost(context) {
      enige knop in dit dashboard die saldo afschrijft én werk laat ontstaan. */
   const weekMatch = path.match(/^\/admin\/customers\/(\d+)\/week$/);
   if (weekMatch) return handleStartWeek(context, Number(weekMatch[1]), admin);
+
+  /* SLOTS MET DE HAND BIJSTELLEN. Achter dezelfde poort, en met `admin` mee om
+     dezelfde reden: dit is de tweede knop die aan het saldo van een klant komt. */
+  const slotMatch = path.match(/^\/admin\/customers\/(\d+)\/slots$/);
+  if (slotMatch) return handleSlotCorrectie(context, Number(slotMatch[1]), admin);
 
   // Delivery upload — August 2026. The studio's own files going the other way.
   const uploadMatch = path.match(/^\/admin\/orders\/(\d+)\/deliver$/);
@@ -625,6 +631,18 @@ async function handleOrderCancel(context, orderId) {
   // Betaald? Dan moet er iets over het geld gezegd zijn. Onbetaald? Dan is er
   // niets te kiezen en zou een keuze doen alsof er iets besloten is.
   const paid = order.payment_status === 'paid' && Number(order.total_cents || 0) > 0;
+  /* ── EN EEN ABONNEMENTSWEEK IS GEEN VAN BEIDE — 29 augustus 2026 ────────────
+   *
+   * Een bestelling uit een abonnement draagt `payment_status = 'plan'` en
+   * `total_cents = 0`, want de maandtermijn staat al in subscription_payments en
+   * mag niet dubbel meegeteld worden. Het gevolg hier was dat `paid` onwaar werd
+   * en de tijdlijn — die de KLANT leest — hem *"Nothing was paid"* vertelde over
+   * werk waar hij wel degelijk voor betaald heeft. Alleen niet op deze rij.
+   *
+   * Er valt ook niets te kiezen over geld: restitueren zou de maandtermijn raken
+   * en niet deze bestelling. Wat er teruggaat zijn zijn SLOTS, en dat gebeurt
+   * hieronder. */
+  const uitAbonnement = order.payment_status === 'plan';
   if (paid && !payment) {
     return html(page({ title: 'Admin', body: errorBody(
       'This order is paid, so say what happens with the money: refund, credit, or nothing. Leaving it implicit is how a refund gets forgotten.'
@@ -633,7 +651,9 @@ async function handleOrderCancel(context, orderId) {
 
   const moneyLine = paid
     ? { refund: 'Refund to be issued', credit: 'Credit for a future order', none: 'No refund' }[payment]
-    : 'Nothing was paid';
+    : uitAbonnement
+      ? 'Paid from your subscription \u2014 the slots go back to your plan'
+      : 'Nothing was paid';
 
   /*
    * GEEN STILLE MISLUKKING — 7 augustus 2026. Hier stond `.catch(() => {})`,
@@ -672,6 +692,40 @@ async function handleOrderCancel(context, orderId) {
   await logAdmin(env, admin, 'order.cancel', {
     orderId, detail: `${order.ref}: ${reason} (${moneyLine})`,
   });
+
+  /* ── DE SLOTS TERUG, EN DE PRODUCTEN OOK ───────────────────────────────────
+     Zie de kop van queueTerugNaAnnulering(). Dit staat NA de annulering en met
+     een eigen uitkomst, om dezelfde reden als de restitutie verderop: gaat het
+     terugboeken mis, dan is de annulering nog steeds gedaan en vastgelegd, en
+     hoort er een luide regel te staan in plaats van een omgevallen handeling.
+
+     De klant leest de tijdlijnregel. Daarom staat er wat hij terugkrijgt en niet
+     wat wij intern hebben bijgewerkt. */
+  if (uitAbonnement) {
+    const terug = await queueTerugNaAnnulering(env, orderId).catch((e) => {
+      console.error('[admin] slots na annulering niet teruggeboekt —', e?.message || e);
+      return null;
+    });
+    if (terug?.items) {
+      const nProduct = `${terug.items} product${terug.items === 1 ? '' : 'en'}`;
+      await env.DB.prepare(
+        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+      ).bind(orderId, terug.abonnement
+        ? `${nProduct} staan weer op je lijst en de slots zijn teruggezet op je abonnement. Je kunt ze opnieuw vastzetten wanneer je wilt.`
+        : `${nProduct} staan weer op je lijst. Je abonnement liep al af, dus er zijn geen slots teruggezet.`
+      ).run().catch(() => {});
+      await logAdmin(env, admin, terug.abonnement && terug.slots === terug.items
+        ? 'plan-slots-terug' : 'plan-slots-terug.deels', {
+        orderId,
+        detail: `${order.ref}: ${terug.items} item(s) terug op de lijst, ${terug.slots} slot(s) teruggeboekt`
+          + `${terug.abonnement ? '' : ' — GEEN abonnement meer, slots niet terug te boeken'}`,
+      }).catch(() => {});
+    } else if (terug === null) {
+      await logAdmin(env, admin, 'plan-slots-terug.mislukt', {
+        orderId, detail: `${order.ref}: terugboeken mislukt — doe het met de hand via het abonnementspaneel`,
+      }).catch(() => {});
+    }
+  }
 
   /* ── "CREDIT FOR A FUTURE ORDER" MOET OOK ECHT EEN TEGOED ZIJN ─────────────
      20 augustus 2026. De keuze "tegoed" schreef alleen `cancel_payment` en zette
@@ -4097,17 +4151,119 @@ async function handleCustomerCredit(context, customerId) {
 /*
  * ── DE WEEK STARTEN ─────────────────────────────────────────────────────────
  *
- * Eén klik, en er ontstaat een bestelling en er gaat saldo af. Al het rekenwerk
+ * Eén klik, en er ontstaat een bestelling. Het saldo ging er al af toen de klant
+ * zijn slot vastzette — zie queueLock(). Al het rekenwerk
  * staat in startPlanWindow(); hier staat alleen wat er met de uitkomst gebeurt.
  *
  * WAAROM DE MELDING VOLUIT WORDT UITGESCHREVEN. De functie geeft een reden terug
- * als sleutel ('geen-saldo', 'niets-klaar', 'abonnement-paused'). Die sleutel op
+ * als sleutel ('niets-klaar', 'abonnement-paused'). Die sleutel op
  * het scherm zetten zou Lucas laten raden waarom er niets gebeurde — en juist bij
  * een knop die soms terecht niets doet, is "waarom" het hele antwoord.
  *
  * `admin` gaat mee naar het logboek, om dezelfde reden als bij de btw-beslissing:
  * dit is een handeling met geld eraan vast.
  */
+/*
+ * ── SLOTS MET DE HAND BIJSTELLEN ────────────────────────────────────────────
+ *
+ * "Er gaat een keer iets mis en dan wil je het kunnen rechtzetten" stond al sinds
+ * 6 augustus op de werklijst, en sinds het slotmodel is het geen luxe meer: een
+ * mislukte incasso die later alsnog binnenkomt, een week die per ongeluk twee
+ * keer gestart is, een klant die iets is toegezegd. Zonder deze knop is het
+ * antwoord "log in op D1 en typ een UPDATE", en dat is precies het soort
+ * handeling dat niemand vastlegt.
+ *
+ * ── ER WORDT AAN `granted` GEDRAAID EN NIET AAN `used` ──────────────────────
+ *
+ * Twee manieren om hetzelfde saldo te repareren, en maar één ervan is eerlijk.
+ * `used` verlagen doet alsof er nooit iets is opgemaakt — het wist de
+ * geschiedenis. `granted` verhogen zegt wat er werkelijk gebeurde: wij hebben er
+ * eentje bijgegeven, en waarom staat erbij. Wie later de rij leest, ziet nog
+ * steeds dat de klant zeven producten heeft laten maken.
+ *
+ * ── EN admin_log IS HET GROOTBOEK ───────────────────────────────────────────
+ *
+ * Er komt geen `slot_ledger`-tabel bij. Elke correctie schrijft één regel in
+ * `admin_log` met wie, hoeveel, welke soort en waarom — dat is de alleen-
+ * toevoegen administratie die werklijst §3 vraagt, en hij bestond al. Een tweede
+ * tabel die hetzelfde bijhoudt, is een tweede waarheid.
+ *
+ * ── DE ONDERGRENS ZIT IN DE `WHERE` EN NIET IN JAVASCRIPT ───────────────────
+ *
+ * `granted` mag nooit onder `used` zakken: slots die al vastgezet zijn, kun je
+ * niet meer afnemen — daar staat werk tegenover dat de klant beloofd is. Die
+ * voorwaarde staat in de UPDATE zelf, om dezelfde reden als het plafond in
+ * verbruikBoeken(): een lees-dan-schrijf in JavaScript is hier een race die je
+ * pas ziet als er twee tabbladen open staan.
+ */
+const SLOT_CORRECTIE_MAX = 50;
+
+async function handleSlotCorrectie(context, customerId, admin) {
+  const { request, env } = context;
+  const terug = `/admin/customers/${customerId}#week`;
+  if (!Number.isInteger(customerId)) return seeOther('/admin/customers');
+
+  const form = await request.formData().catch(() => null);
+  const soort = String(form?.get('kind') || '').trim().slice(0, 40);
+  const reden = String(form?.get('reason') || '').trim().slice(0, 200);
+  const ruw = Number.parseInt(String(form?.get('delta') || ''), 10);
+
+  /* Drie weigeringen met drie verschillende meldingen. Eén algemene zou Lucas
+     laten gokken wat er mis was — en dit is een formulier dat hij misschien twee
+     keer per jaar gebruikt, dus hij weet het niet uit zijn hoofd. */
+  if (!soort) return html(page({ title: 'Admin', body: errorBody('Pick which kind of slot to adjust.') }), 400);
+  if (!Number.isInteger(ruw) || ruw === 0 || Math.abs(ruw) > SLOT_CORRECTIE_MAX) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `The adjustment has to be a whole number between -${SLOT_CORRECTIE_MAX} and ${SLOT_CORRECTIE_MAX}, and not zero.`
+    ) }), 400);
+  }
+  if (!reden) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'A slot adjustment needs a reason. It is the only record of why this customer has more or fewer slots than his plan gives, and in three months it is the first thing anyone asks.'
+    ) }), 400);
+  }
+
+  const sub = await loadSubscription(env, customerId);
+  if (!sub) return html(page({ title: 'Admin', body: errorBody('This customer has no subscription to adjust.') }), 400);
+
+  const maand = monthKey();
+  /* De rij van DEZE maand, en aanmaken als hij er nog niet is. Dat laatste is
+     geen zeldzaam geval maar juist het gewone: een klant wiens incasso mislukte
+     heeft geen rij voor deze maand, en dat is precies wanneer je hem met de hand
+     iets wilt geven. INSERT OR IGNORE en daarna de UPDATE — dezelfde vorm als
+     grantSlots(), zodat twee tabbladen samen niet twee rijen maken. */
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO subscription_slots (subscription_id, month, kind, granted, used)
+     VALUES (?1, ?2, ?3, 0, 0)`
+  ).bind(sub.id, maand, soort).run().catch(() => {});
+
+  const gezet = await env.DB.prepare(
+    `UPDATE subscription_slots SET granted = granted + ?4
+      WHERE subscription_id = ?1 AND month = ?2 AND kind = ?3
+        AND granted + ?4 >= used
+        AND granted + ?4 >= 0
+      RETURNING granted, used`
+  ).bind(sub.id, maand, soort, ruw).first().catch((e) => {
+    console.error('[admin] slotcorrectie mislukt —', e?.message || e);
+    return null;
+  });
+
+  if (!gezet) {
+    await logAdmin(env, admin, 'plan-slots-correctie.geweigerd', {
+      customerId, detail: `${sub.ref}: ${ruw > 0 ? '+' : ''}${ruw} ${soort} — geweigerd (er staat al meer vastgezet dan dit toelaat)`,
+    }).catch(() => {});
+    return html(page({ title: 'Admin', body: errorBody(
+      'That would put the balance below what is already locked. Slots that are locked have work promised against them, so they cannot be taken away.'
+    ) }), 400);
+  }
+
+  await logAdmin(env, admin, 'plan-slots-correctie', {
+    customerId,
+    detail: `${sub.ref}: ${ruw > 0 ? '+' : ''}${ruw} ${soort} in ${maand} — ${reden} (nu ${gezet.granted} toegekend, ${gezet.used} vastgezet)`,
+  });
+  return seeOther(terug);
+}
+
 async function handleStartWeek(context, customerId, admin) {
   const { env } = context;
   const terug = `/admin/customers/${customerId}#week`;
@@ -4117,7 +4273,7 @@ async function handleStartWeek(context, customerId, admin) {
   if (r.ok) {
     await logAdmin(env, admin, 'plan-week-start', {
       customerId, orderId: r.orderId,
-      detail: `${r.aantal} product(en) → ${r.ref}${r.wachtend ? `, ${r.wachtend} wacht nog` : ''}`,
+      detail: `${r.aantal} product(en) → ${r.ref}`,
     });
     return seeOther(terug);
   }
@@ -4375,33 +4531,84 @@ async function renderCustomer(context, customerId) {
   const weekPanel = !abo?.sub ? '' : (() => {
     const klaar = klaarOmTeStarten(abo);
     const open = (abo.wachtrij || []).filter((q) => !q.taken_at && !q.order_id);
+    /* ── WAT HIER STAAT IS "VASTGEZET", EN NIET "HEEFT FOTO'S" — 0035 ────────
+       De regel las het uploadveld en noemde dat klaar. Sinds het slotmodel is
+       dat de halve waarheid: foto's zijn een VOORWAARDE om vast te zetten, maar
+       pas het vastzetten door de klant betaalt het slot en geeft ons toestemming
+       om het te maken. Een lijst die "foto's klaar" zegt bij een concept, laat
+       Lucas werk starten waar de klant nog aan sleutelt. */
     const rijen = open.length
       ? `<ol class="qlist">${open.map((q) => `<li>
            <span>${esc(q.name || '')}</span>
-           <span class="meta">${String(q.upload_batch || '').trim()
-             ? 'foto&rsquo;s klaar' : 'nog geen foto&rsquo;s'}</span>
+           <span class="meta">${q.locked_at
+             ? `vastgezet &middot; ${esc(kindLabel(q.kind, 'nl'))}`
+             : (String(q.upload_batch || '').trim() ? 'concept, foto&rsquo;s klaar' : 'concept, nog geen foto&rsquo;s')}</span>
          </li>`).join('')}</ol>`
       : '<p class="empty">De lijst is leeg.</p>';
+    /* Het saldo per soort, uit dezelfde slotBalans() die de klant op zijn eigen
+       scherm ziet. Eén bron, twee schermen — anders gaan ze uit elkaar lopen. */
+    const saldoRegel = (abo.slots || []).length
+      /* `13 × complete bundel` en niet `13 complete bundel`. De labels in
+         SLOT_KINDS staan in het enkelvoud omdat ze op de klantkant als KOP boven
+         een regel staan; er een getal voor plakken maakt er een telling van die
+         niet meer klopt. Het maalteken laat het label met rust en leest in een
+         adminpaneel als wat het is. */
+      ? (abo.slots || []).map((b) => `${b.saldo} &times; ${esc(kindLabel(b.kind, 'nl').toLowerCase())}${b.ouder ? ` (${b.ouder} doorgeschoven)` : ''}`).join(' &middot; ')
+      : 'geen slots deze maand';
     const kan = abo.sub.status === 'active' && klaar.items.length > 0;
+
+    /* ── DE CORRECTIEKNOP, DICHTGEKLAPT ────────────────────────────────────────
+     *
+     * In een <details> en niet open, want dit is de knop die je twee keer per
+     * jaar nodig hebt en de rest van het jaar niet wilt zien. <details> werkt
+     * zonder script en met een toetsenbord — hetzelfde als de accordeons op de
+     * site.
+     *
+     * DE SOORTEN KOMEN UIT HET PLAN ÉN UIT DE BALANS, samengevoegd. Uit het plan
+     * alleen zou een soort missen die ooit met de hand is bijgezet en niet meer
+     * in het plan zit; uit de balans alleen zou een soort missen waarvoor deze
+     * maand nog niets is toegekend — en dat is juist het geval waarin je hier
+     * komt, want een mislukte incasso laat precies zo'n leegte achter. */
+    const soorten = [...new Set([
+      ...Object.keys(slotsFor(abo.plan)),
+      ...(abo.slots || []).map((b) => b.kind),
+    ])];
+    const slotCorrectie = !soorten.length ? '' : `
+    <details class="slotfix">
+      <summary>Slots bijstellen</summary>
+      <form method="post" action="/admin/customers/${customer.id}/slots">
+        <label for="sf-kind">Soort</label>
+        <select id="sf-kind" name="kind">${soorten.map((k) =>
+          `<option value="${esc(k)}">${esc(kindLabel(k, 'nl'))}</option>`).join('')}</select>
+        <label for="sf-delta">Erbij of eraf</label>
+        <input id="sf-delta" name="delta" type="number" step="1" min="-50" max="50" value="1" required>
+        <label for="sf-reason">Waarom</label>
+        <input id="sf-reason" name="reason" type="text" maxlength="200" required
+               placeholder="bv. incasso van juli kwam alsnog binnen">
+        <button class="btn btn-sm" type="submit">Bijstellen</button>
+      </form>
+      <p class="meta">Past <code>granted</code> aan van de lopende maand &mdash; niet <code>used</code>, want wat al vastgezet is hoort zichtbaar te blijven. Eraf halen kan niet onder wat er vastgezet staat: daar is werk tegenover beloofd. Elke bijstelling komt met reden en al in het adminlogboek.</p>
+    </details>`;
+
     return `
   <div class="card" id="week">
     <div class="row-head">
       <span class="ref">Abonnement &middot; ${esc(abo.sub.plan)}</span>
       <span class="meta">${esc(abo.sub.status)}${abo.sub.window_day ? ` &middot; week vanaf de ${abo.sub.window_day}e` : ''}
-        &middot; ${abo.saldo} credit${abo.saldo === 1 ? '' : 's'} over</span>
+        &middot; ${saldoRegel} over</span>
     </div>
     ${rijen}
-    <p class="meta">${klaar.items.length} klaar om te starten${
-      klaar.wachtend ? ` &middot; ${klaar.wachtend} wacht op saldo` : ''}${
-      klaar.zonderFotos ? ` &middot; ${klaar.zonderFotos} zonder foto&rsquo;s` : ''}</p>
+    <p class="meta">${klaar.items.length} vastgezet en klaar om te starten${
+      klaar.concepten ? ` &middot; ${klaar.concepten} nog concept` : ''}</p>
     ${kan
       ? `<form method="post" action="/admin/customers/${customer.id}/week">
            <button class="btn btn-primary" type="submit">Start deze week &middot; ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}</button>
          </form>
-         <p class="meta">Maakt &eacute;&eacute;n bestelling met ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'} en schrijft evenveel credits af. Twee keer drukken pakt niets dubbel.</p>`
+         <p class="meta">Maakt &eacute;&eacute;n bestelling met ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}. De slots zijn al afgeschreven toen de klant ze vastzette, dus hier gaat er niets meer af. Twee keer drukken pakt niets dubbel.</p>`
       : `<p class="meta">Er valt nu niets te starten.${
           abo.sub.status !== 'active' ? ' Het abonnement staat niet op actief.' : ''}${
-          abo.sub.status === 'active' && !abo.saldo ? ' Het saldo is op.' : ''}</p>`}
+          abo.sub.status === 'active' && klaar.concepten ? ` Er staan ${klaar.concepten} concept${klaar.concepten === 1 ? '' : 'en'} op de lijst die de klant nog niet heeft vastgezet.` : ''}</p>`}
+    ${slotCorrectie}
   </div>`;
   })();
 

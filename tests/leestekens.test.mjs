@@ -37,6 +37,8 @@ import {
   faqPageItems, pricingFaqs, serviceFaqs, faqPageGroups,
 } from '../src/data/faq.js';
 import { clause, turnaround, aftercare, reviewClaim } from '../src/data/pricing.js';
+import { globSync, readFileSync } from 'node:fs';
+import { buildStaat } from './lib/build.mjs';
 
 let goed = 0;
 let totaal = 0;
@@ -130,6 +132,56 @@ console.log('\ngeen enkel gerenderd antwoord heeft een leestekenfout');
   for (const [waar, wat, tekst] of stuk) {
     console.log(`      ${waar}  [${wat}]`);
     console.log(`      ${tekst.slice(0, 200)}`);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EN DEZELFDE VRAAG, MAAR DAN OVER DE HELE GEBOUWDE SITE — 30 AUGUSTUS 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Alles hierboven leest de FAQ. Dat was waar de fout in augustus werd gevonden,
+   en het was daarom ook precies zo ver als de controle reikte.
+
+   Vandaag, bij het inkorten van /how-it-works, stond er op het scherm:
+
+     "The same dashboard, plus a dedicated order page tracking every step
+      with key dates.. Smaller orders work differently…"
+
+   Dat is dezelfde fout, in een COPY-tabel van een pagina in plaats van in
+   faq.js. Nagemeten over de gebouwde site waren het er ZEVENTIEN, in beide
+   talen, op /video, /catalog, /lifestyle, /compare, /how-it-works, /terms,
+   /test-sample en vier /start-pagina's. Ze stonden er allemaal al vóór vandaag.
+
+   De les is niet dat er weer een plek was. De les is dat de controle de vorm
+   had van de vindplaats en niet van de fout. Deze leest daarom de HTML die
+   gebouwd is, want dat is de enige plek waar alle samenvoegingen samenkomen —
+   COPY-tabellen, pagina's zonder component, `set:html`, alles.
+
+   ── WAT HIJ NIET AANRAAKT ────────────────────────────────────────────────
+   Script- en style-blokken gaan eruit voordat er gekeken wordt: daar staat
+   JavaScript, en `a..b` is daar geen zin maar code. En er wordt alleen op de
+   twee onmiskenbare vormen gelet — `..` en `.,` — en niet op "spatie voor
+   punt", want tussen twee tags valt een spatie die er in de tekst niet staat. */
+console.log('\nen geen enkele gebouwde pagina heeft er een');
+{
+  const dist = new URL('../dist/index.html', import.meta.url);
+  const staat = buildStaat(dist);
+  if (!staat.er || staat.oud) {
+    console.log(` --   niet gecontroleerd: ${staat.uitleg}`);
+  } else {
+    const paginas = globSync('dist/**/*.html').map((f) => f.replace(/\\/g, '/'));
+    const gevonden = [];
+    for (const f of paginas) {
+      const zonder = readFileSync(f, 'utf8')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ');
+      const tekst = zonder.replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ');
+      for (const m of tekst.matchAll(/.{0,50}(?<!\.)(\.\.(?!\.)|\.,).{0,30}/g)) {
+        gevonden.push(`${f.replace(/^dist\//, '')}: …${m[0].trim()}…`);
+      }
+    }
+    check(`${paginas.length} gebouwde pagina's nagelopen`, gevonden.length, 0);
+    for (const g of gevonden.slice(0, 12)) console.log(`      ${g}`);
   }
 }
 

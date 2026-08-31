@@ -91,12 +91,33 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
 
   /* Klikt hij een dia aan, of navigeert hij weg? Dat laatste is de fout, en het
      is meteen de scherpste meting die er is: het pad in de adresbalk. */
+  /* ── EN ALS HIJ WÉL WEGNAVIGEERT, VERTEL DAN WAAROM — 30 AUGUSTUS 2026 ───
+     Deze regel viel één keer om in een volle `npm test` en daarna niet meer in
+     acht losse runs. "verwacht true kreeg false" is dan alles wat je hebt, en
+     dat is te weinig om te weten wélke van de twee mogelijke oorzaken het was:
+
+       1 · het script had de rol nog niet gezet — dan is het een echte fout, en
+           die zou de regel ervóór (`rol()`) ook moeten zien;
+       2 · de DOM werd tussen het opzoeken en het klikken vervangen door een
+           zachte navigatie die nog liep. Dan klikte Playwright een verse <a>
+           waaraan het script nog niet toe was, en dat is een race in DEZE toets
+           en niet op de site — een bezoeker die dat treft komt gewoon op de
+           dienstpagina uit, precies zoals het zonder script hoort te werken.
+
+     Het verschil zit in de rol op het moment van klikken en in waar hij belandt.
+     Die twee staan er nu bij, zodat de eerstvolgende keer meteen duidelijk is
+     welke van de twee het is in plaats van dat het weer acht runs kost. */
   const klikGeeftDia = async () => {
     const voor = new URL(page.url()).pathname;
+    const rolBijKlik = await page.evaluate(() => document.querySelector('[data-hero-tab="1"]')?.getAttribute('role') ?? null);
     await page.click('[data-hero-tab="1"]');
     await page.waitForTimeout(700);
     const na = new URL(page.url()).pathname;
-    if (voor !== na) { await page.goBack(); await page.waitForTimeout(600); }
+    if (voor !== na) {
+      console.log(`      (weggenavigeerd: ${voor} -> ${na}, rol bij het klikken: ${JSON.stringify(rolBijKlik)})`);
+      await page.goBack();
+      await page.waitForTimeout(600);
+    }
     return voor === na;
   };
   const rol = () => page.evaluate(() => {

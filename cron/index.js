@@ -1048,11 +1048,22 @@ async function checkPlanQueues(env) {
     /* Wat er KLAARSTAAT, en niet wat er ooit op de lijst stond. Een item dat al
        is opgepakt (order_id gezet) telt niet meer mee, en een item zonder foto's
        kan niet gemaakt worden — dat is voor deze telling hetzelfde als leeg,
-       want beide leiden ertoe dat de week begint zonder werk. */
+       want beide leiden ertoe dat de week begint zonder werk.
+
+       ── EN SINDS 0035 OOK: NIET VASTGEZET IS NIET KLAAR ──────────────────────
+       Hier stond alleen de foto-voorwaarde. Dat was compleet zolang alles met
+       foto's meeging; in Lucas' slotmodel gaat alleen mee wat de klant zelf
+       heeft VASTGEZET. Een lijst vol concepten mét foto's telde dus als "klaar"
+       terwijl de week gegarandeerd leeg begint — en dan is dit de mail die de
+       klant niet krijgt, precies op het moment dat hij hem nodig heeft.
+
+       De hele reden dat deze taak bestaat is die stille lege week. Een
+       voorwaarde die de nieuwe stap overslaat, zet hem terug. */
     const klaar = await env.DB.prepare(
       `SELECT COUNT(*) AS n FROM plan_queue
         WHERE customer_id = (SELECT customer_id FROM subscriptions WHERE id = ?1)
           AND order_id IS NULL
+          AND locked_at IS NOT NULL
           AND upload_batch IS NOT NULL AND upload_batch <> ''`
     ).bind(abo.id).first().then((r) => Number(r?.n || 0)).catch(() => -1);
     if (klaar !== 0) continue;   // -1 = niet te lezen; dan liever niets beweren
@@ -1134,10 +1145,18 @@ async function weekTeStarten(env) {
       WHERE s.status = 'active'
         AND s.window_day IS NOT NULL
         AND s.window_day <= ?1
+        /* VASTGEZET, EN NIET ALLEEN MET FOTO'S — migratie 0035, 29 aug 2026.
+           Een item is sinds die migratie een CONCEPT tot de klant op vastzetten
+           drukt; pas dan is er een slot voor afgeschreven en is het werk. Zonder
+           locked_at hier zou dit verslag Lucas naar een knop sturen die weigert,
+           want startPlanWindow() pakt alleen vastgezette items op.
+           GEEN BACKTICKS IN DIT COMMENTAAR: het staat in een template literal,
+           dus een backtick sluit de string af. Derde keer in dit project. */
         AND EXISTS (
           SELECT 1 FROM plan_queue q
            WHERE q.customer_id = s.customer_id
              AND q.order_id IS NULL
+             AND q.locked_at IS NOT NULL
              AND q.upload_batch IS NOT NULL AND q.upload_batch <> ''
         )
         AND NOT EXISTS (
@@ -1153,7 +1172,6 @@ async function weekTeStarten(env) {
   if (!kandidaten.length) return '';
 
   const klaar = [];
-  const zonderSaldo = [];
   for (const k of kandidaten) {
     /* planState() heeft het laatste woord over het saldo — de query hierboven
        weet alleen dat er iets op de lijst staat, niet of het betaald kan worden.
@@ -1163,26 +1181,25 @@ async function weekTeStarten(env) {
     if (!state?.sub) continue;
     const kan = klaarOmTeStarten(state);
     const naam = k.brand || k.email || k.ref;
+    /* GEEN TWEEDE TAK MEER — migratie 0035, 29 augustus 2026.
+     *
+     * Hier stond een tak voor "week begonnen, maar het saldo is op". Die is met
+     * het slotmodel onbereikbaar geworden, en dat is een gevolg dat de moeite
+     * waard is om op te schrijven: vastzetten schrijft het slot AF, dus een
+     * vastgezet item is per definitie al betaald. Staat er iets vastgezet klaar,
+     * dan is er saldo voor geweest.
+     *
+     * Dit is de tweede onbereikbare tak in deze functie in twee dagen — de
+     * eerste was "geen foto's". Allebei ontstaan ze doordat de query hierboven
+     * scherper is dan de tak eronder. Een tak die nooit loopt is een melding die
+     * je denkt te hebben. */
     if (kan.items.length) {
-      klaar.push(`${naam} (${kan.items.length}${kan.wachtend ? `, ${kan.wachtend} schuift door` : ''})`);
-    } else {
-      /* De query hierboven eist al minstens één item MET foto's, dus "niets
-         klaar" kan hier maar één ding betekenen: het saldo is op. Een aparte tak
-         voor "geen foto's" stond hier eerst en was onbereikbaar — en een tak die
-         nooit loopt, is een melding die je denkt te hebben. Wie geen foto's
-         aanlevert, hoort al van checkPlanQueues(). */
-      zonderSaldo.push(naam);
+      klaar.push(`${naam} (${kan.items.length}${kan.concepten ? `, ${kan.concepten} nog concept` : ''})`);
     }
   }
 
-  const delen = [];
-  if (klaar.length) {
-    delen.push(`${klaar.length} week${klaar.length === 1 ? '' : 'en'} klaar om te starten in /admin: ${klaar.join(', ')}`);
-  }
-  if (zonderSaldo.length) {
-    delen.push(`${zonderSaldo.length} begonnen week${zonderSaldo.length === 1 ? '' : 'en'} met werk klaar maar geen saldo: ${zonderSaldo.join(', ')}`);
-  }
-  return delen.join(' · ');
+  if (!klaar.length) return '';
+  return `${klaar.length} week${klaar.length === 1 ? '' : 'en'} klaar om te starten in /admin: ${klaar.join(', ')}`;
 }
 
 /**
@@ -1202,10 +1219,14 @@ async function mailLegeWachtrij(env, abo) {
     '',
     `Over ${QUEUE_WARN_DAYS} dagen begint jouw vaste week — de dagen die we elke maand voor je vrijhouden.`,
     '',
-    'Je lijst in VISUAILS Studio is op dit moment leeg, of de items die erop staan hebben nog geen foto’s.',
-    'Zonder foto’s kunnen we niet beginnen, en dan gaat die week voorbij zonder dat er iets gemaakt is.',
+    'Er staat op dit moment niets vastgezet op je lijst in VISUAILS Studio.',
+    'Wat nog een concept is, of nog geen foto’s heeft, pakken we niet op — en dan gaat die week',
+    'voorbij zonder dat er iets gemaakt is.',
     '',
-    'Je zet er zelf op wat je gemaakt wilt hebben, in je eigen volgorde:',
+    'Vastzetten doe je zelf: doe de foto’s erbij en klik op Vastzetten. Dat kost één slot van je',
+    'abonnement, en je kunt het terugdraaien tot je week begint.',
+    '',
+    'Je lijst staat hier:',
     'https://visuails.com/account/plan',
     '',
     'Lukt het niet, of weet je even niet wat handig is? Stuur gerust een bericht terug.',
@@ -1219,7 +1240,7 @@ async function mailLegeWachtrij(env, abo) {
       body: JSON.stringify({
         from: env.FROM_EMAIL,
         to: [abo.email],
-        subject: 'Je vaste week begint bijna en je lijst is nog leeg',
+        subject: 'Je vaste week begint bijna en er staat nog niets vastgezet',
         text,
       }),
     });

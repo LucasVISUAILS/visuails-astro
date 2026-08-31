@@ -42,7 +42,7 @@ import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../../lib/retention.js';
  * catalog- en lifestyleregels de ladder al lazen, en om dezelfde reden — een
  * prijs die op twee plekken staat, staat er over een half jaar verschillend.
  */
-import { AMOUNT } from '../../data/pricing.js';
+import { AMOUNT, clause } from '../../data/pricing.js';
 import { PLAN_IDS, monthlyCents } from '../../data/plans.js';
 import { planName } from '../../data/planNames.js';
 
@@ -53,8 +53,12 @@ const planLo = Math.min(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
 const planHi = Math.max(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
 const planLoNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planLo), 'nl');
 const planHiNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planHi), 'nl');
-const t0 = turnaround('unattended', 'nl').toLowerCase();
-const t1 = turnaround('attended', 'nl').toLowerCase();
+/* clause() eromheen: turnaround() geeft een AFGERONDE ZIN terug, met een punt.
+   Hier staat hij middenin een zin — "loopt in {t1}, en houdt die plek" — en dat
+   werd "voordat je betaalt., en houdt". Zie de kop van tests/leestekens.test.mjs;
+   dit is dezelfde fout, in het ene bestand waar hij juridisch telt. */
+const t0 = clause(turnaround('unattended', 'nl')).toLowerCase();
+const t1 = clause(turnaround('attended', 'nl')).toLowerCase();
 
 const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 ---
@@ -194,19 +198,21 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>Een proefvisual reken je bij het afrekenen af, omdat het een vast bedrag van &euro;1 is. Elke andere bestelling plaats je eerst en krijgt daarna een prijs: jij stuurt de briefing, wij bevestigen de bestelling en het bedrag, en dat bedrag betaal je in één keer via een betaallink in VISUAILS Studio. Er zijn geen termijnen. Wij houden geen productieplek vast en geven geen afgeronde bestanden vrij voordat die betaling binnen is.</p>
 
       <h2>9a. Abonnementen</h2>
-      <p>Een abonnement is een doorlopende afspraak waarbij je elke maand een vast aantal complete producten krijgt — een catalogset én een lifestyle-carousel per product — in een week die wij voor je vrijhouden. Bij één van de abonnementen horen daarnaast videoclips per maand, en bij het duurste hoort je merkmodel. Wat elk abonnement precies bevat en wat het kost, staat op de <a href="/nl/plans/">prijspagina</a>; die aantallen en bedragen gelden zoals ze daar staan op het moment dat je afsluit.</p>
+      <p>Een abonnement is een doorlopende afspraak waarbij je elke maand een vast aantal <strong>slots</strong> krijgt, in een week die wij voor je vrijhouden. Eén slot is één product van één soort: een compleet product is een catalogset én een lifestyle-carousel, een videoslot is één clip. In je abonnement staat hoeveel slots van welke soort je per maand krijgt; bij één van de abonnementen horen daarnaast videoclips, en bij het duurste hoort je merkmodel. Wat elk abonnement precies bevat en wat het kost, staat op de <a href="/nl/plans/">prijspagina</a>; die aantallen en bedragen gelden zoals ze daar staan op het moment dat je afsluit.</p>
+
+      <p><strong>Een slot invullen en vastzetten.</strong> Je zet in VISUAILS Studio op je lijst wat je gemaakt wilt hebben en doet je foto’s erbij. Dat kost nog niets: een item op de lijst is een concept. Het wordt werk op het moment dat je het vastzet, en dan gaat er één slot van die soort af. Vastzetten is wat ons de opdracht geeft, dus een item dat bij het begin van je week nog een concept is, wordt niet gemaakt en blijft op je lijst staan. Je kunt een vastgezet item weer losmaken, en dan komt het slot direct terug, tot het moment dat je week begint. Daarna is het in productie.</p>
 
       <p><strong>Hoe het begint.</strong> Bij het afsluiten betaal je eenmalig &euro;1. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later. Vanaf dat moment schrijft onze betaaldienst het maandbedrag automatisch af op basis van die machtiging.</p>
 
       <p><strong>Twee termijnen.</strong> De maandelijkse termijn kun je <strong>elke maand opzeggen</strong>; er is geen minimale looptijd. De termijn van twaalf maanden ligt vast: die loopt twaalf termijnen en stopt daarna vanzelf. Daar staat tegenover dat de jaartermijn vier dingen geeft die de maandelijkse niet geeft — dezelfde vaste week elke maand, drie maanden doorschuiven in plaats van één, je tarief dat twaalf maanden lang niet meebeweegt met onze prijslijst, en bij één van de abonnementen het merkmodel erbij.</p>
 
-      <p><strong>Ongebruikte producten.</strong> Wat je in een maand niet besteld hebt, schuift door naar de volgende maand — één maand op de maandelijkse termijn, drie maanden op de jaartermijn. In VISUAILS Studio staat bij doorgeschoven producten tot en met welke maand je ze kunt gebruiken. Daarna vervallen ze. Ze stapelen niet verder op, omdat een abonnement gereserveerde capaciteit in onze agenda is en een maand die voorbij is, voorbij is.</p>
+      <p><strong>Ongebruikte slots.</strong> Wat je in een maand niet hebt vastgezet, schuift door naar de volgende maand — één maand op de maandelijkse termijn, drie maanden op de jaartermijn. In VISUAILS Studio staat per soort tot en met welke datum je doorgeschoven slots kunt gebruiken. Daarna vervallen ze. Ze stapelen niet verder op: op de maandelijkse termijn heb je dus nooit meer dan twee maanden aan slots tegelijk, en de oudste gaan altijd als eerste op. Een abonnement is gereserveerde capaciteit in onze agenda, en een maand die voorbij is, is voorbij.</p>
 
-      <p><strong>Opzeggen.</strong> Je zegt zelf op in VISUAILS Studio; je hoeft ons daarvoor niet te mailen en er is geen opzegtermijn. Zodra je opzegt stoppen wij de incasso, en er wordt daarna niets meer afgeschreven. De maand waarvoor je al betaald hebt, blijft gewoon van jou: het saldo van die maand kun je tot het einde ervan nog besteden. Daarna sluit het abonnement. Wij betalen de lopende maand niet terug — die is geleverd in de vorm van beschikbare capaciteit — en je krijgt er ook niets voor in de plaats.</p>
+      <p><strong>Opzeggen.</strong> Je zegt zelf op in VISUAILS Studio; je hoeft ons daarvoor niet te mailen en er is geen opzegtermijn. Zodra je opzegt stoppen wij de incasso, en er wordt daarna niets meer afgeschreven. De maand waarvoor je al betaald hebt, blijft gewoon van jou: de slots van die maand kun je tot het einde ervan nog vastzetten. Slots die uit eerdere maanden zijn doorgeschoven, gaan met de opzegging mee weg — doorschuiven is een belofte over een volgende maand, en na opzeggen is er geen volgende maand. Daarna sluit het abonnement. Wij betalen de lopende maand niet terug — die is geleverd in de vorm van beschikbare capaciteit — en je krijgt er ook niets voor in de plaats.</p>
 
       <p><strong>Pauzeren.</strong> Je kunt je abonnement zelf pauzeren. Dat stopt de volgende afschrijving. Je saldo blijft staan en schuift door volgens dezelfde regel als altijd, en zodra je hervat begint de incasso opnieuw vanaf de eerstvolgende termijn. Je hoeft daarvoor geen nieuwe machtiging af te geven.</p>
 
-      <p><strong>Als een afschrijving mislukt.</strong> Dan zetten wij het abonnement op pauze en laten we het je weten. Je saldo blijft staan maar is niet te besteden zolang de maand niet betaald is. Komt de betaling alsnog binnen, dan loopt het abonnement door alsof er niets gebeurd is.</p>
+      <p><strong>Als een afschrijving mislukt.</strong> Dan zetten wij het abonnement op pauze en laten we het je weten. Je slots blijven staan, maar er kan niets worden vastgezet zolang de maand niet betaald is. Komt de betaling alsnog binnen, dan loopt het abonnement door alsof er niets gebeurd is.</p>
 
       <p><strong>Wat er gebeurt met wat al gemaakt is.</strong> Alles wat je tijdens je abonnement hebt laten maken en geleverd hebt gekregen, blijft van jou onder dezelfde gebruiksrechten als elke andere bestelling — zie paragraaf 8. Opzeggen verandert daar niets aan. Voor hoe lang wij je bestanden bewaren geldt paragraaf 7.</p>
 
@@ -214,7 +220,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <p><strong>Prijswijzigingen.</strong> Wij kunnen de prijs van een abonnement wijzigen. Op de jaartermijn geldt je tarief twaalf maanden ongewijzigd. Op de maandelijkse termijn laten we een wijziging minimaal één volledige maand van tevoren weten, zodat je nog vóór de eerstvolgende afschrijving kunt opzeggen. Wij wijzigen nooit met terugwerkende kracht.</p>
 
-      <p><strong>Wat een abonnement niet is.</strong> Het is geen tegoedbon en geen vooruitbetaling op los werk: je koopt elke maand een vast aantal producten en een plek in de agenda, en die plek is er ook in een maand waarin je niets bestelt. Bestel je meer dan je abonnement toekent, dan wordt het meerdere afgerekend op de gewone prijs per product.</p>
+      <p><strong>Wat een abonnement niet is.</strong> Het is geen tegoedbon en geen vooruitbetaling op los werk: je koopt elke maand een vast aantal slots en een plek in de agenda, en die plek is er ook in een maand waarin je niets bestelt. Wat je abonnement niet dekt — een soort werk waarvoor het geen slots geeft, of meer dan het toekent — kun je gewoon los bijbestellen tegen de gewone prijs.</p>
 
       <h2>10. Annuleringen, terugbetalingen en herstel</h2>
       <p>Omdat visuals worden gemaakt volgens je specifieke briefing, kan werk dat al is gestart of geleverd doorgaans niet worden geannuleerd voor een terugbetaling.</p>

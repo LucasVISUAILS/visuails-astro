@@ -22,14 +22,15 @@
  *   · een begonnen week met werk klaar staat in het verslag;
  *   · een week die deze maand AL gestart is, staat er niet meer in;
  *   · een week die nog niet begonnen is (window_day later deze maand) ook niet;
- *   · een begonnen week met werk klaar maar een leeg saldo staat er als
- *     zodanig in, en niet als "klaar om te starten";
+ *   · een lijst met alleen CONCEPTEN staat er niet in — pas als de klant een
+ *     product vastzet, is er een slot voor afgeschreven en is het werk;
  *   · en de melding blijft terugkomen zolang er niet gestart is — er zit
  *     bewust geen slot op, anders verdwijnt de herinnering na één nacht.
  */
 import { d1, verseDb } from './lib/d1sqlite.mjs';
 import { tasks } from '../cron/index.js';
-import { createSubscriptionRow, activateSubscription, queueAdd, monthKey } from '../src/lib/subscription.js';
+import { createSubscriptionRow, activateSubscription, queueAdd, queueLock, monthKey } from '../src/lib/subscription.js';
+import { grantSlots } from '../src/lib/slots.js';
 import { productsFor } from '../src/data/plans.js';
 
 let goed = 0; let totaal = 0;
@@ -62,23 +63,32 @@ async function abonnee(id, email, brand, dag) {
   await activateSubscription(env, row.id);
   db.prepare('INSERT INTO subscription_months (subscription_id, month, granted, used) VALUES (?, ?, ?, 0)')
     .run(row.id, maand, toegekend);
+  await grantSlots(env, row.id, maand, 'studio');
   return row;
 }
 
 const a1 = await abonnee(1, 'mara@volt.test', 'VOLT', BEGONNEN);          // klaar om te starten
 const a2 = await abonnee(2, 'sam@ander.test', 'ANDER', BEGONNEN);         // deze maand al gestart
-const a3 = await abonnee(3, 'kim@derde.test', 'DERDE', BEGONNEN);         // werk klaar, saldo op
+const a3 = await abonnee(3, 'kim@derde.test', 'DERDE', BEGONNEN);         // alleen een concept
 const a4 = NOGNIET ? await abonnee(4, 'jo@vier.test', 'VIER', NOGNIET) : null;  // week nog niet begonnen
 
-await queueAdd(env, 1, { name: 'Winterjas', uploadBatch: 'b-1' });
-await queueAdd(env, 1, { name: 'Cargobroek', uploadBatch: 'b-2' });
-await queueAdd(env, 2, { name: 'Trui', uploadBatch: 'b-3' });
+/* VASTZETTEN HOORT ERBIJ — migratie 0035. Sinds het slotmodel is een item pas
+   werk als de klant het heeft vastgezet; een concept telt niet mee en hoort dus
+   ook niet in het nachtverslag te staan. */
+for (const [klant, naam, batch] of [[1, 'Winterjas', 'b-1'], [1, 'Cargobroek', 'b-2'], [2, 'Trui', 'b-3']]) {
+  const q = await queueAdd(env, klant, { name: naam, uploadBatch: batch });
+  await queueLock(env, klant, q.id);
+}
+/* DERDE zet zijn product NIET vast. Sinds migratie 0035 is dat een concept: het
+   staat op de lijst, er is geen slot voor afgeschreven, en het is dus geen werk.
+   Hij hoort daarom niet in het verslag te staan — dat is de vervanger van de
+   oude "geen saldo"-toets, die met het slotmodel onbereikbaar werd omdat
+   vastzetten het slot al afschrijft. */
 await queueAdd(env, 3, { name: 'Sjaal', uploadBatch: 'b-9' });
-/* DERDE heeft zijn hele maand al opgemaakt. Dat is de enige manier waarop
-   "begonnen week, niets te starten" nog kan ontstaan: de query hierboven eist al
-   dat er iets MET foto's klaarstaat. */
-db.prepare('UPDATE subscription_months SET used = granted WHERE subscription_id = ?').run(a3.id);
-if (a4) await queueAdd(env, 4, { name: 'Muts', uploadBatch: 'b-4' });
+if (a4) {
+  const q = await queueAdd(env, 4, { name: 'Muts', uploadBatch: 'b-4' });
+  await queueLock(env, 4, q.id);
+}
 
 /* ANDER is deze maand al gestart: precies de vorm die startPlanWindow() maakt. */
 db.prepare(
@@ -90,7 +100,7 @@ console.log('\nwie er in het nachtverslag komt');
 const regel = await tasks.weekTeStarten(env);
 ok('VOLT staat erin, met het aantal', /VOLT \(2\)/.test(regel));
 ok('ANDER niet — die week is deze maand al gestart', /ANDER/.test(regel), false);
-ok('DERDE staat er wel, als week zonder saldo', /geen saldo: DERDE/.test(regel));
+ok('DERDE niet — dat is nog maar een concept', /DERDE/.test(regel), false);
 if (a4) ok('VIER niet — die week begint pas later deze maand', /VIER/.test(regel), false);
 else console.log(' --   VIER overgeslagen: vandaag is de 28e of later                ');
 
@@ -105,7 +115,7 @@ db.prepare(
 ).run();
 const na = await tasks.weekTeStarten(env);
 ok('VOLT staat er niet meer in', /VOLT/.test(na), false);
-ok('DERDE nog wel — daar is nog steeds geen saldo', /DERDE/.test(na));
+ok('en DERDE nog steeds niet', /DERDE/.test(na), false);
 
 console.log('\nzonder abonnementen zegt de taak niets');
 db.exec('DELETE FROM plan_queue');

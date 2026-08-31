@@ -1,5 +1,11 @@
 # Report — section 11, motion
 
+<!-- namen-bijgewerkt -->
+> **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
+>
+> - `src/scripts/motion.js` → `src/scripts/interactions.js` — de bewegingscode is samengevoegd; GSAP en ScrollTrigger staan daar
+
+
 Written 26 July 2026, against an uncommitted working tree: 18 files changed,
 +388 / −85. Nothing in this report has been synced to your machine yet.
 
