@@ -525,14 +525,25 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
      dat is typografie en geen belofte. */
   const marge = /\b2\s*[–—-]\s*4\b/;
   check('de onbegeleide termijn noemt nog een marge van 2 tot 4', marge.test(en) && marge.test(nl), true);
+  /* DE EENHEID IS "DAG" GEWORDEN EN NIET MEER "WERKDAG" — 31 augustus 2026.
+     Hier stond /working days/ en /werkdagen/. Sinds isOpenDay() in capacity.js
+     alleen nog naar dichtgezette dagen kijkt en het weekend een gewone dag is,
+     zou "werkdag" een LANGERE termijn beloven dan de poort hanteert — de site zou
+     zichzelf trager voordoen dan hij is, en bij de eerste zaterdaglevering staat er
+     iets anders op de site dan er gebeurt. De eenheid moet er nog steeds staan (een
+     kale "2–4" belooft niets), maar het oude woord mag niet terugkomen. */
+  const eenheid = /\bdays\b/i;
+  const eenheidNl = /\bdagen\b/i;
   check('en de eenheid staat erbij, in beide talen',
-    /working days/i.test(en) && /werkdagen/i.test(nl), true);
+    eenheid.test(en) && eenheidNl.test(nl), true);
+  check('en het is niet de oude eenheid met een weekend erin',
+    /working day|werkdag/i.test(`${en} ${nl}`), false);
 
   /* ── EN HET MAG NIET SCHERPER WORDEN ──────────────────────────────────────
      Dit is de eigenlijke bewaking. Een enkel getal zonder marge, een uurbelofte
      of "de volgende dag" zijn allemaal toezeggingen die de capaciteitspoort niet
      kan waarmaken voor een bestelling zonder gereserveerde datum. */
-  const teScherp = /(within \d+ working days|binnen \d+ werkdagen|\b24 hours\b|\b24 uur\b|next (working )?day|volgende (werk)?dag)/i;
+  const teScherp = /(within \d+ (working )?days|binnen \d+ (werk)?dagen|\b24 hours\b|\b24 uur\b|next (working )?day|volgende (werk)?dag)/i;
   check('en belooft niets scherpers dan die marge', teScherp.test(en) || teScherp.test(nl), false);
 
   /* De twee talen moeten dezelfde marge noemen. Toen de Nederlandse regel in
@@ -549,27 +560,39 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
  * ══════════════════════════════════════════════════════════════════════════════ */
 console.log('\neen onbetaalde reservering blokkeert de agenda niet voor altijd');
 {
-  const cap = read('functions/api/capacity.js');
-  check('de capaciteitsquery leest window_expires_at', /window_expires_at <= datetime\('now'\)/.test(cap), true);
-  check('en alleen bij onbetaald', /COALESCE\(payment_status, 'unpaid'\) = 'unpaid'/.test(cap), true);
+  /* ── ÉÉN LEZING VAN DE AGENDA, SINDS 31 AUGUSTUS 2026 ─────────────────────
+   *
+   * Hier stond dezelfde controle twee keer: één keer op functions/api/capacity.js
+   * en één keer op functions/api/order.js, met de noot erbij dat het "twee
+   * bestanden en geen gedeelde module" waren en dat dit dus de plek was waar ze
+   * aan elkaar gehouden werden. Die noot beschreef een echte fout: in augustus
+   * 2026 ontbrak de vervalclausule in de tweede kopie, en toen bood de pagina een
+   * dag aan die het endpoint weigerde.
+   *
+   * De kopieën zijn er niet meer. src/lib/agenda.js is nu de enige lezing van de
+   * agenda, en er is een derde lezer bij gekomen — het abonnementsdashboard,
+   * waar een klant zelf twee dagen aanwijst. Deze toets is daarmee omgedraaid:
+   * de clausule moet in de gedeelde module staan, en NERGENS anders, want een
+   * endpoint dat zijn eigen query terugzet, is precies hoe de kopieën ontstonden. */
+  const agenda = read('src/lib/agenda.js');
+  check('de gedeelde agenda leest window_expires_at',
+    /window_expires_at <= datetime\('now'\)/.test(agenda), true);
+  check('en alleen bij onbetaald',
+    /COALESCE\(payment_status, 'unpaid'\) = 'unpaid'/.test(agenda), true);
 
-  /* ── EN DE BOEKINGSPOORT LEEST HEM OOK — 14 AUGUSTUS 2026 ──────────────────
-   *
-   * Deze toets keek alleen naar capacity.js, en dat was precies de helft. De
-   * kop van readCalendar() in functions/api/order.js beloofde de query van
-   * capacity.js "deliberately and exactly" te spiegelen, en deed dat drie van de
-   * vier filters lang: de vervalclausule ontbrak. De pagina bood een dag dus aan
-   * en het endpoint weigerde hem, met een banner die zei dat het venster net weg
-   * was — en de bestelling werd op dat pad niet weggeschreven.
-   *
-   * Twee bestanden en geen gedeelde module, want het zijn twee Functions. Dus is
-   * dit de plek waar ze aan elkaar gehouden worden: allebei dezelfde twee
-   * regels, woordelijk. */
-  const ord = read('functions/api/order.js');
-  check('de boekingspoort leest window_expires_at ook',
-    /window_expires_at <= datetime\('now'\)/.test(ord), true);
-  check('en ook daar alleen bij onbetaald',
-    /COALESCE\(payment_status, 'unpaid'\) = 'unpaid'/.test(ord), true);
+  for (const pad of ['functions/api/capacity.js', 'functions/api/order.js']) {
+    const bron = read(pad);
+    check(`${pad} heeft geen eigen kopie van de agenda`,
+      /FROM orders\s+WHERE tier = 'attended'/.test(bron), false);
+    check(`  en leest hem uit de gedeelde module`,
+      /from '\.\.\/\.\.\/src\/lib\/agenda\.js'/.test(bron), true);
+  }
+
+  /* EN EEN CONCEPT UIT EEN ABONNEMENTSWACHTRIJ HOUDT NIETS BEZET. Zonder deze
+     voorwaarde kan één klant de agenda dichtzetten met plannen die hij nooit
+     uitvoert — zie de kop van src/lib/agenda.js. */
+  check('alleen een vastgezet wachtrij-item houdt zijn dagen',
+    /FROM plan_queue[\s\S]{0,200}locked_at IS NOT NULL/.test(agenda), true);
 
   const cron = read('cron/index.js');
   check('de cron geeft de reservering ook echt vrij',

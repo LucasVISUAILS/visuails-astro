@@ -20,6 +20,10 @@ export const PLAN_NAMES = {
   starter: { en: 'Starter', nl: 'Starter' },
   studio: { en: 'Studio', nl: 'Studio' },
   brand: { en: 'Brand', nl: 'Merk' },
+  /* De maand op maat. Hij staat hier en niet in PLAN_IDS — zie CUSTOM_MONTH_ID
+     in pricing.js — maar hij heeft wel een naam nodig: hij komt terug op een
+     factuur, in een mail en in het beheerpaneel, en "maat" is daar geen woord. */
+  maat: { en: 'Custom month', nl: 'Maand op maat' },
 };
 
 /** De naam van één plan in één taal. Een onbekend plan geeft zijn eigen id terug en niet 'undefined'. */

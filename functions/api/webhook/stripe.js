@@ -37,6 +37,7 @@
 // re-delivers — that retry schedule is the only thing standing between a D1
 // hiccup and a paid order that is never recorded.
 
+import { betalingGedekt } from '../../../src/lib/invoice.js';
 import { verifyStripeSignature } from '../../../src/lib/stripe.js';
 
 export async function onRequestPost({ request, env }) {
@@ -108,7 +109,7 @@ async function handlePaid(env, session) {
   const ref = session.client_reference_id || session.metadata?.order_ref;
   if (!ref) { console.error('[stripe-webhook] session carries no order reference —', session.id); return; }
 
-  const order = await env.DB.prepare('SELECT id, status, payment_status FROM orders WHERE ref = ?1').bind(ref).first();
+  const order = await env.DB.prepare('SELECT id, customer_id, status, payment_status, total_cents, vat_cents FROM orders WHERE ref = ?1').bind(ref).first();
   if (!order) { console.error('[stripe-webhook] no order for ref', ref, '(session', session.id, ')'); return; }
 
   // The idempotency gate. See the file header — a UNIQUE-constraint failure
@@ -162,6 +163,75 @@ async function handlePaid(env, session) {
       throw e;
     }
     console.log('[stripe-webhook] duplicate delivery for', session.id, '— already processed, skipping');
+    return;
+  }
+
+  /* ── EN 'COMPLETED' IS NIET HETZELFDE ALS BETAALD — 31 augustus 2026 ──────
+   *
+   * Gevonden bij de beveiligingsronde. Het bedrag hierboven wordt weggeschreven
+   * met `session.payment_status || 'paid'`, wat betekent dat de code wéét dat die
+   * waarde iets anders kan zijn dan betaald — en de regel eronder zette de
+   * bestelling er toch onvoorwaardelijk op.
+   *
+   * `checkout.session.completed` betekent dat de klant de kassa heeft doorlopen,
+   * niet dat het geld er is. Bij een uitgestelde betaalwijze komt hij binnen met
+   * `payment_status: 'unpaid'` en volgt er later een tweede gebeurtenis. De
+   * bestelling stond dan al op betaald en niemand zou het merken tot het geld
+   * uitbleef.
+   *
+   * Vandaag is dit LATENT: er wordt in dit hele project nergens een
+   * Stripe-sessie aangemaakt, dus deze handler ziet nooit iets. Hij staat wel
+   * gedeployd, en zijn eigen kop zegt dat hij "niet aanneemt dat dat zo blijft".
+   *
+   * WAT HIER NIET STAAT: een vergelijking van `session.amount_total` met
+   * `orders.total_cents`. Dat is geen fout in één regel maar een keuze over
+   * gedeeltelijke betalingen, valuta en bruto tegenover netto — die ligt bij
+   * Lucas en niet bij mij. */
+  const betaald = String(session.payment_status || 'paid');
+  if (betaald !== 'paid' && betaald !== 'no_payment_required') {
+    console.warn('[stripe-webhook] sessie', session.id, 'is doorlopen maar staat op', betaald,
+      '— de betaling is vastgelegd, de bestelling blijft onbetaald tot er een volgende melding komt.');
+    return;
+  }
+
+  /* ── DEKT WAT ER BINNEN IS DE BESTELLING? — 31 augustus 2026 ─────────────
+   *
+   * Dezelfde keuze, dezelfde functie en dezelfde reden als aan de Mollie-kant —
+   * zie de lange noot bij `betalingGedekt` in functions/api/webhook/mollie.js. De
+   * som gaat over de BESTELLING en niet over deze ene sessie, zodat een bijbetaling
+   * de bestelling alsnog vlot trekt in plaats van haar voor altijd te laten hangen.
+   *
+   * Kan er geen oordeel geveld worden, dan gaat het door zoals het altijd ging, met
+   * een waarschuwing: een bestelling laten hangen omdat WIJ niet weten wat zij kost,
+   * straft de klant voor onze onwetendheid. */
+  const dekking = await betalingGedekt(env, order).catch((e) => {
+    console.warn('[stripe-webhook] dekking niet te bepalen —', e?.message || e);
+    return null;
+  });
+  if (!dekking) {
+    console.warn('[stripe-webhook] sessie', session.id, 'is niet tegen een totaal te leggen —',
+      'de bestelling gaat door op betaald, zoals voorheen.');
+  } else if (!dekking.gedekt) {
+    console.error('[stripe-webhook] sessie', session.id, 'dekt de bestelling niet —',
+      `${dekking.binnen} van ${dekking.bruto} cent op ${ref}. De bestelling blijft onbetaald.`);
+    /* Geen bedragen in de tijdlijn — die is óók van de klant. Zie de langere
+       noot bij dezelfde weigering in functions/api/webhook/mollie.js. */
+    const zichtbaar = 'De betaling voor deze bestelling wordt nagekeken: het betaalde bedrag komt niet overeen met het bedrag van de bestelling. We zoeken het uit en nemen contact op als dat nodig is.';
+    const al = await env.DB.prepare(
+      'SELECT id FROM order_events WHERE order_id = ?1 AND note = ?2 LIMIT 1'
+    ).bind(order.id, zichtbaar).first().catch(() => null);
+    if (!al) {
+      await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+        .bind(order.id, order.status || 'received', zichtbaar, 'system')
+        .run()
+        .catch((e) => console.error('[stripe-webhook] kon de weigering niet op de tijdlijn zetten —', e?.message || e));
+      await env.DB.prepare(
+        `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+         VALUES (NULL, NULL, 'payment.short', ?1, ?2, ?3)`
+      ).bind(order.id, order.customer_id || null,
+        `sessie ${session.id}: binnengekomen ${dekking.binnen} cent op een bestelling van ${dekking.bruto} cent`)
+        .run().catch(() => {});
+    }
     return;
   }
 

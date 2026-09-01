@@ -45,6 +45,55 @@ const MIN_BITS = 128;
 /** "expiring 90 days after order close." */
 export const PORTAL_TTL_DAYS = 90;
 
+/**
+ * De bovengrens die NIET van de bestelling afhangt — een jaar na uitgifte.
+ *
+ * PORTAL_TTL_DAYS hangt aan closed_at, en dat is precies het probleem: zolang een
+ * bestelling openstaat is closed_at null, expiryFrom() geeft null, isExpired()
+ * ziet geen enkele einddatum en het antwoord is "leeft nog". Voor een bestelling
+ * die vorige week binnenkwam is dat het gewenste gedrag. Voor een bestelling die
+ * anderhalf jaar geleden is blijven hangen — geannuleerd zonder afsluiten, of een
+ * klant die nooit meer reageerde — betekent het dat de link uit die ene mail
+ * eeuwig blijft werken. Een inloggegeven zonder einddatum is geen inloggegeven,
+ * het is een sleutel die iemand is kwijtgeraakt.
+ *
+ * Een jaar en niet negentig dagen, omdat dit een andere vraag beantwoordt.
+ * De negentig dagen zeggen "hoe lang na afloop mag je er nog bij"; dit getal zegt
+ * "hoe lang mag dit ding überhaupt bestaan". Een bestelling die na een jaar nog
+ * open is, is geen lopende bestelling meer, en de klant die dan alsnog iets nodig
+ * heeft, krijgt een nieuwe link — admin.js kan er altijd een uitgeven.
+ */
+export const PORTAL_MAX_LIFE_DAYS = 365;
+
+/**
+ * Is dit gegeven voorbij zijn absolute bovengrens?
+ *
+ * WAAROM NAAST isExpired() EN NIET ERIN. isExpired() beantwoordt "is het venster
+ * dicht", en dat venster kan schuiven of nog helemaal niet bestaan. Deze vraag
+ * schuift niet: hij telt vanaf het moment van uitgifte en verder niets. Twee
+ * vragen, twee functies — een vierde positionele parameter aan isExpired() zou
+ * de ene betekenis in de andere hebben verstopt, en dan is bij elke aanroep de
+ * volgorde van de argumenten het enige wat het verschil nog uitlegt.
+ *
+ * ONLEESBARE KLOK → true, dezelfde dichte deur die isExpired() aanhoudt.
+ *
+ * ONBEKENDE UITGIFTEDATUM → false, en dat is bewust de ANDERE kant op. issued_at
+ * is in beide tabellen NOT NULL met een default, dus null betekent hier niet "oud",
+ * het betekent "de query heeft de kolom niet opgehaald". Zou dat true opleveren,
+ * dan zou één vergeten kolom in één SELECT iedereen tegelijk buitensluiten — een
+ * typefout met de blast radius van een storing. Daarom bewaakt een test dat beide
+ * aanroepers hun issued_at daadwerkelijk selecteren; die test is hier de vangrail,
+ * niet dit return-pad.
+ */
+export function pastMaxLife(issuedAt, maxDays, nowIso = new Date().toISOString()) {
+  const now = parseStamp(nowIso);
+  if (now === null) return true;
+  const start = parseStamp(issuedAt);
+  if (start === null) return false;
+  if (!(Number(maxDays) > 0)) return false;
+  return start + Number(maxDays) * 86400000 <= now;
+}
+
 if (TOKEN_BYTES * 8 < MIN_BITS) {
   throw new Error(`token.js: TOKEN_BYTES gives ${TOKEN_BYTES * 8} bits, below the ${MIN_BITS}-bit floor`);
 }

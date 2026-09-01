@@ -150,14 +150,42 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
   // homepage draagt exact dezelfde scripttekst, dus die gold als "al gedraaid".
   /* De taalknop draagt `hreflang`, en dat is meteen de stevigste greep: de href
      zelf is /nl zonder slash en dat soort details verschuift nog wel eens. */
+  /* ── WACHTEN OP DE UITKOMST EN NIET OP DE KLOK — 31 augustus 2026 ────────
+   *
+   * Hier stonden drie taalwissels met elk `waitForTimeout(1100)` erachter, en dat
+   * maakte deze toets flakerig: ongeveer één op de drie volledige runs viel de
+   * regel eronder om, terwijl hij los altijd groen was.
+   *
+   * DE OORZAAK STOND IN ZIJN EIGEN DIAGNOSTIEK. De melding was
+   * "weggenavigeerd: / -> /nl/, rol bij het klikken: tab" — de rol klopte dus, en
+   * de klik werd wel degelijk afgevangen. Wat er misging is dat de TAALWISSEL nog
+   * onderweg was: `voor` werd afgelezen op `/` en `na` een tel later op `/nl/`.
+   * De toets mat de staart van de vorige navigatie en niet zijn eigen klik.
+   *
+   * Elfhonderd milliseconden is op mijn machine genoeg en op een volle
+   * testmachine soms niet, en dat is precies wat een tijdslimiet als voorwaarde
+   * zo slecht maakt: hij faalt op belasting en niet op gedrag. Nu wordt er
+   * gewacht op de twee dingen die echt moeten kloppen — de URL is aangekomen, en
+   * het kaartje is opnieuw als tab bedraad. */
+  const naarTaal = async (taal, pad) => {
+    await page.click(`a.ls[hreflang="${taal}"]`);
+    await page.waitForURL((u) => new URL(u).pathname === pad, { timeout: 10000 });
+    await page.waitForFunction(
+      () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('role') === 'tab',
+      null,
+      { timeout: 10000 }
+    );
+  };
+
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
-  await page.waitForTimeout(700);
-  await page.click('a.ls[hreflang="nl"]');
-  await page.waitForTimeout(1100);
-  await page.click('a.ls[hreflang="en"]');
-  await page.waitForTimeout(1100);
-  await page.click('a.ls[hreflang="nl"]');
-  await page.waitForTimeout(1100);
+  await page.waitForFunction(
+    () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('role') === 'tab',
+    null,
+    { timeout: 10000 }
+  );
+  await naarTaal('nl', '/nl/');
+  await naarTaal('en', '/');
+  await naarTaal('nl', '/nl/');
   ok('en na een taalwissel heen en weer ook', await rol(), 'tab');
   ok('op de Nederlandse homepage wisselt de klik de dia', await klikGeeftDia(), true);
 

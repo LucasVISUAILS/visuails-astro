@@ -3,6 +3,8 @@ import { defineConfig } from 'astro/config';
 import brandLockupGuard from './scripts/brand-lockup-guard.mjs';
 import sitemapAnd404 from './scripts/sitemap-and-404.mjs';
 import avifNaastWebp from './scripts/avif-naast-webp.mjs';
+import stijlUitDePagina from './scripts/stijl-uit-de-pagina.mjs';
+import cspScripts from './scripts/csp-scripts.mjs';
 
 // VISUAILS — Astro v2 rebuild. Fully static output (Cloudflare Pages serves
 // the build/ output directly, same deploy shape as the previous SvelteKit
@@ -25,6 +27,21 @@ export default defineConfig({
   },
   build: {
     format: 'directory',
+    /* ── GEEN ENKELE STIJL IN DE PAGINA — 1 SEPTEMBER 2026 ────────────────────
+     *
+     * Astro zet een kleine componentstylesheet standaard als <style> IN de pagina.
+     * Dat scheelt een verzoek en het kost precies het ding dat we hier willen:
+     * `style-src 'self'` blokkeert een inline <style> net zo goed als een inline
+     * script. Geteld in de build: 302 <style>-elementen, 57 unieke — die zouden
+     * allemaal als hash in de header moeten, ruim drie kilobyte, op elk antwoord
+     * van elke pagina.
+     *
+     * 'never' maakt er gewone bestanden van. Ze worden gecachet (met een hash in
+     * de naam), ze zijn deelbaar tussen pagina's, en `style-src 'self'` heeft
+     * geen enkele hash meer nodig. De prijs is een verzoek erbij op een verbinding
+     * die toch al open staat.
+     */
+    inlineStylesheets: 'never',
   },
   // NO `redirects` BLOCK HERE — deliberately. Retired routes are 301s in
   // public/_redirects, which Cloudflare Pages applies at the edge.
@@ -54,5 +71,14 @@ export default defineConfig({
   // webp blijft als terugval staan. In de build en niet in een component, omdat het
   // om 73 tags in 38 bestanden gaat en om directives (transition:name) die niet door
   // een component heen kunnen — zie de kop van scripts/avif-naast-webp.mjs.
-  integrations: [brandLockupGuard(), sitemapAnd404(), avifNaastWebp()],
+  // En als LAATSTE: de script-src van de publieke site, gehasht uit de gebouwde
+  // HTML. Publieke pagina's hadden wel HSTS en frame-ancestors maar geen CSP, en de
+  // reden daarvoor (1663 inline style-attributen) gaat over stijl en niet over
+  // scripts. Laatste in de rij omdat hij de HTML hasht die de stappen ervóór
+  // eventueel nog herschrijven — zie de kop van scripts/csp-scripts.mjs.
+  // En dan de twee stappen die de CSP mogelijk maken, in deze volgorde: eerst de
+  // stijl uit de pagina halen (1735 attributen → 149 klassen, plus de <style>-
+  // blokjes die Astro voor view-transitions maakt), dan de hashes van de scripts
+  // berekenen op de HTML zoals hij er ná die verhuizing uitziet.
+  integrations: [brandLockupGuard(), sitemapAnd404(), avifNaastWebp(), stijlUitDePagina(), cspScripts()],
 });

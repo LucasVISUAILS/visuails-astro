@@ -38,8 +38,8 @@
  * agenda vol zat — zijn schuld niet. Het slot gaat er dus af zodra hij het
  * product vastzet; wanneer het gemaakt wordt is daarna onze planning.
  */
-import { PLAN_SLOTS, SLOT_KINDS } from '../data/pricing.js';
-import { rolloverMonths } from '../data/plans.js';
+import { PLAN_SLOTS, SLOT_KINDS, CUSTOM_MONTH_ID, slotProducts } from '../data/pricing.js';
+import { monthlyCents, productsFor, rolloverMonths } from '../data/plans.js';
 
 /** De maandsleutel 'YYYY-MM' van vandaag, of van een datum. */
 export function monthKey(d = new Date()) {
@@ -71,6 +71,62 @@ export function vervaltOp(maand, venster) {
 /** Wat dit plan per maand geeft, per soort. Altijd een nieuw object. */
 export function slotsFor(planId) {
   return { ...(PLAN_SLOTS[String(planId || '')] || {}) };
+}
+
+/*
+ * ── DRIE VRAGEN DIE OVER EEN ABONNEMENT GAAN EN NIET OVER EEN PLAN ─────────
+ *
+ * Sinds migratie 0038 kan een abonnement een MAAND OP MAAT zijn: een bundel en
+ * een bedrag die op de rij staan in plaats van in PLAN_SLOTS en PLAN_AMOUNT.
+ * Vanaf dat moment is "wat geeft dit plan" de verkeerde vraag geworden — de
+ * juiste is "wat geeft dit abonnement", en dat is niet hetzelfde.
+ *
+ * Deze drie functies zijn de enige plek waar dat onderscheid gemaakt wordt. Elke
+ * aanroeper die vroeger `slotsFor(sub.plan)` deed, hoort nu `bundelVoor(sub)` te
+ * doen; wie dat vergeet, krijgt bij een maand op maat een LEGE bundel terug —
+ * geen fout, gewoon een dashboard waarop de klant niets heeft. Vandaar dat
+ * tests/maand-op-maat.test.mjs de aanroepplekken bij naam bewaakt.
+ */
+
+/** Wat DIT abonnement per maand geeft. De rij wint van de tabel. */
+export function bundelVoor(sub) {
+  const eigen = String(sub?.slots_json || '').trim();
+  if (eigen) {
+    try {
+      const uit = JSON.parse(eigen);
+      /* Alleen soorten die bestaan. Een sleutel die SLOT_KINDS niet kent, kan het
+         dashboard niet benoemen en de agenda niet wegen; hem stil doorlaten zou
+         een slot opleveren dat nergens naartoe leidt. */
+      const schoon = {};
+      for (const [kind, aantal] of Object.entries(uit || {})) {
+        const n = Math.max(0, Math.floor(Number(aantal) || 0));
+        if (n && kind in SLOT_KINDS) schoon[kind] = n;
+      }
+      if (Object.keys(schoon).length) return schoon;
+    } catch {
+      /* Onleesbare JSON op de rij. Terugvallen op het plan is hier het juiste:
+         bij een maand op maat levert dat een lege bundel op en dus zichtbaar
+         niets, in plaats van een gegokte bundel die de klant te veel of te weinig
+         geeft. De fout hoort in het log en niet in het saldo. */
+      console.error('[slots] slots_json is onleesbaar op abonnement', sub?.id);
+    }
+  }
+  return slotsFor(sub?.plan);
+}
+
+/** Wat er maandelijks van DIT abonnement wordt afgeschreven, in centen, excl. btw. */
+export function subMaandCents(sub) {
+  const eigen = Number(sub?.amount_cents);
+  if (Number.isFinite(eigen) && eigen > 0) return Math.round(eigen);
+  return monthlyCents(sub?.plan, sub?.term);
+}
+
+/** Hoeveel producten DIT abonnement per maand vasthoudt — voor de capaciteitspoort. */
+export function subProducten(sub) {
+  if (String(sub?.plan || '') === CUSTOM_MONTH_ID || String(sub?.slots_json || '').trim()) {
+    return slotProducts(bundelVoor(sub));
+  }
+  return productsFor(sub?.plan);
 }
 
 /** Alle soorten die dit plan kent, in de volgorde van de bundel. */
@@ -107,8 +163,11 @@ async function stil(fn, terug = null) {
  * elke rij om op idx_subslots_unique in plaats van de klant zijn slots dubbel te
  * geven. Zelfde mechanisme als bij subscription_months in migratie 0030.
  */
-export async function grantSlots(env, subId, maand, planId, paymentId = null) {
-  const bundel = slotsFor(planId);
+export async function grantSlots(env, subId, maand, abo, paymentId = null) {
+  /* `abo` is de RIJ en niet de plan-id, sinds migratie 0038. Een maand op maat
+     draagt zijn bundel zelf; wie hier een string doorgeeft krijgt nog steeds het
+     goede antwoord voor een pakket, want bundelVoor() valt daarop terug. */
+  const bundel = typeof abo === 'string' ? slotsFor(abo) : bundelVoor(abo);
   let gezet = 0;
   for (const [kind, aantal] of Object.entries(bundel)) {
     const n = Math.max(0, Math.floor(Number(aantal) || 0));

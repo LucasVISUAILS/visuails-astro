@@ -70,6 +70,7 @@ import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
 
 import ServiceSwitch from './ServiceSwitch.astro';
+import HeroFacts from './HeroFacts.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -168,9 +169,12 @@ const COPY = {
     // on the ladder, and sending someone to look for a falling rate that does
     // not exist for this service is the confusion buyFlat exists to prevent.
     ctaPrices: 'See pricing',
+    /* PRIJS EERST, ZOALS OP /catalog EN /lifestyle. Deze twee stonden
+       omgekeerd — formaat, dan prijs — en dat was de enige pagina van de drie
+       waar de bezoeker de rij in een andere volgorde las. */
     trust: [
-      ['8s', 'clean product videos'],
       [clip, `per clip · ${vatLabel('excl', 'en')}`],
+      ['8s', 'clean product videos'],
     ],
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
@@ -183,6 +187,8 @@ const COPY = {
     // away information a buyer who also orders photos does want.
     tierNote: `The two columns below describe the price per quantity for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request runs at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
     reviewNote: reviewClaim('unattended', 'en'),
+    heroAlt: 'A still from a short VISUAILS product clip',
+    heroCap: 'Video · a frame from an 8-second clip',
     kindsH: 'Ways to add motion.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
     quoted: 'Quoted per project',
@@ -257,13 +263,15 @@ const COPY = {
     waQuoteLabel: 'Offerte voor een campagne',
     ctaPrices: 'Bekijk de prijzen',
     trust: [
-      ['8s', 'strakke productvideo’s'],
       [clip, `per clip · ${vatLabel('excl', 'nl')}`],
+      ['8s', 'strakke productvideo’s'],
     ],
     queueNote: `Clips lopen mee in de ${clause(t0.queue.nl).toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
     // Zie de Engelse kant voor waarom deze regel er staat.
     tierNote: `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
     reviewNote: reviewClaim('unattended', 'nl'),
+    heroAlt: 'Een stilstaand beeld uit een korte productclip van VISUAILS',
+    heroCap: 'Video · een beeld uit een clip van 8 seconden',
     kindsH: 'Manieren om beweging toe te voegen.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
     quoted: 'Offerte per project',
@@ -325,20 +333,31 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 {/* `hero-bright` — deze foto is de lichtste van de site (wit overhemd tegen
     licht beton) en heeft een zwaardere sluier nodig dan de andere twee hero's.
     Zie de noot bij .hero-bright in global.css voor de gemeten waarden. */}
-<section class="hero-editorial compact hero-bright">
-  {/* De foto en de sluier zitten in een STILLE vloer. Het masker dat de
-      onderrand laat oplossen hangt daaraan en niet aan .bg zelf: die laag
-      schuift met de parallax, en een masker schuift met zijn element mee —
-      dan valt de uitdoving naast de rand die ze moet oplossen. */}
-  <div class="hero-vloer rand-los-voet" aria-hidden="true">
-    <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
-    <div class="fade"></div>
-  <div class="korrel-mee" aria-hidden="true"></div>
-  </div>
-  <div class="hero-editorial-content container">
-    <!-- The page label every other page component already prints. See
-         CatalogPage.astro's own note: this and /catalog were the two service
-         pages missing it. -->
+<!-- ══ DEZELFDE HERO ALS /catalog EN /lifestyle — 31 AUGUSTUS 2026 ═══════════
+     Lucas: *"Alle service pagina's zien er afschuwlijk lelijk, onoverzichtelijk
+     en inconsistent uit. Zorg dat elke pagina goed op elkaar aansluit."*
+
+     Gemeten op 1440px, en dit was de scherpste van de verschillen: deze pagina
+     droeg `.hero-editorial compact hero-bright` — een full-bleed foto over de
+     volle hoogte met de tekst eroverheen — terwijl /catalog en /lifestyle
+     `.page-hero` met twee kolommen droegen. Drie zusterpagina's, twee
+     verschillende herocomponenten. Gevolgen die je zag zonder te meten: de
+     eyebrow begon op 83px tegen 163 en 216, de feitenrij liep hier over de
+     volle 1400px en daar over 764, en de kop was 455 breed tegen 667.
+
+     `.page-hero` is bovendien niet "de vorm van die twee" maar de vorm van de
+     hele site: /pricing, /compare, /models, /custom-models, /start, /ai-act en
+     /plans dragen hem ook. Deze pagina was de uitzondering, dus deze pagina
+     gaat mee — niet andersom.
+
+     DE FOTO BLIJFT, MAAR ALS FOTO. Hij stond als achtergrondlaag onder de
+     tekst met een sluier eroverheen; nu staat hij in de rechterkolom in
+     dezelfde `.photo-band tall` die /lifestyle al gebruikte. Dat is ook wat
+     het eerste ontwerpprincipe vraagt: toon het werk vóór de belofte, en een
+     foto die half onder een verloop ligt toont het werk maar half. -->
+<section class="page-hero">
+  <div class="container two-col hero-split">
+    <div class="reveal pending">
     <span class="eyebrow-page">{c.eyebrow}</span>
     <h1 class="display vid-h1" style="font-size:var(--t-page-h1);margin-top:1rem" set:html={c.h1} />
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
@@ -351,24 +370,39 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
     {/* "Allebei" gaat over catalog en lifestyle samen en niet over clips, dus
         die valt hier weg — zie andereDeuren() in src/data/orderDoors.js. */}
     <ServiceSwitch current={['video', 'complete']} lang={lang} />
-    <div class="trust-row" style="margin-top:2.2rem">
-      {c.trust.map(([strong, rest]) => (
-        <span class="trust-item"><strong>{strong}</strong> {rest}</span>
-      ))}
-      <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
-      <span class="trust-item tf-verify"><strong>{c.reviewNote}</strong></span>
-    </div>
+      <HeroFacts eigen={c.trust} lang={lang} />
     <p class="queue-note">{c.queueNote}</p>
+    </div>
+    <div class="reveal pending">
+      <div class="photo-band tall">
+        <img src="/img/banners-03.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="1200" height="896" />
+        <div class="scrim"></div>
+        <div class="caption"><p style="font-size:.9rem">{c.heroCap}</p></div>
+      </div>
+    </div>
   </div>
 </section>
 
 <section>
   <div class="container">
-    <h2 style="margin-bottom:2rem">{c.kindsH}</h2>
-    <div class="grid grid-3 reveal-group">
+    <h2 class="section-h">{c.kindsH}</h2>
+    {/* ── VIER OP EEN RIJ, EN EEN VIERKANTE BAND — 31 AUGUSTUS 2026 ─────────
+        Hier stond `grid-3` met VIER tegels: drie op rij één en één op rij twee,
+        met 926 bij 601 pixels zwart ernaast. Dat gat was op deze pagina het
+        grootste stuk niets, en het stond midden in de sectie waar je kiest.
+
+        Vier items horen in vier kolommen: de rij is vol en er valt niets meer
+        te verklaren. En de band wordt vierkant, want dat is sinds 30 augustus
+        de vorm van dezelfde keuzesectie op /lifestyle — twee zusterpagina's die
+        hetzelfde moment tekenen, hoorden niet de ene 3/4 en de andere 1/1 te
+        gebruiken. Gemeten scheelt het ook 891px op een pagina die korter moest.
+
+        Waarom niet twee bij twee: bij 688px breed wordt een vierkante tegel ook
+        688px hoog, en dan is de sectie 1400px in plaats van 400. */}
+    <div class="grid vid-kinds reveal-group">
       {kinds.map((s) => (
         <a href={lp(`/video/${s.slug}`)} class="reveal pending" style="display:block">
-          <div class="photo-band tall">
+          <div class="photo-band square">
             <img src={posters[s.slug].src} alt={c.exampleAlt(s.name)} loading="lazy" decoding="async" width={posters[s.slug].w} height={posters[s.slug].h} />
             <div class="scrim"></div>
             <div class="caption">
@@ -490,7 +524,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 
 <section>
   <div class="container" style="max-width:760px">
-    <h2 style="margin-bottom:1.8rem">{c.faqH}</h2>
+    <h2 class="section-h">{c.faqH}</h2>
     <div class="faq-stack">
       {c.faqs.map((f) => (
         <Disclose summary={f.q} tone="panel">
@@ -517,6 +551,14 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 </section>
 
 <style>
+  /* Zie de noot bij het raster: vier items, vier kolommen, geen gat. Twee op
+     een middenbreedte en één op een telefoon — dezelfde trap als `.grid-2` en
+     `.grid-3` sitebreed nemen, alleen een stap later omdat deze tegels
+     vierkant zijn en dus minder hoog worden per kolom. */
+  .vid-kinds { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 68rem) { .vid-kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 38rem) { .vid-kinds { grid-template-columns: minmax(0, 1fr); } }
+
   /* Editorial accent (task #271b, Lucas's own request) — see global.css's
      --font-editorial comment. Same emphasis-word treatment as the other
      hero H1s. */

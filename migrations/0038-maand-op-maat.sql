@@ -1,0 +1,51 @@
+-- ═════════════════════════════════════════════════════════════════════════════
+-- DE MAAND OP MAAT — 1 september 2026
+-- ═════════════════════════════════════════════════════════════════════════════
+--
+-- Lucas: *"Vierde unieke optie in abonnementskiezer maar zorg er wel voor dat
+-- als mensen custom lifestyle of iets anders customs in het abonnement willen,
+-- ze eerst contact met ons moeten opnemen. Dit is namelijk wel mogelijk maar
+-- vereist opzetting van die style of custom service, hierdoor betaal je al
+-- terwijl die style die je wil nog helemaal niet in het systeem staat."*
+--
+-- ── WAAROM ER TWEE KOLOMMEN BIJ MOETEN, EN NIET NUL ─────────────────────────
+--
+-- De drie bestaande abonnementen zijn PAKKETTEN: hun prijs staat in PLAN_AMOUNT
+-- en hun inhoud in PLAN_SLOTS, allebei in de code. Een rij in `subscriptions`
+-- draagt daarom alleen de plan-id, en alles wat daaraan hangt wordt opgezocht.
+--
+-- Een maand op maat heeft die twee niet. Zijn prijs volgt uit de ladder over ZIJN
+-- aantallen, en zijn inhoud is wat de klant heeft samengesteld. Dat kan niet in
+-- een tabel in de code staan, want het is per abonnee anders.
+--
+-- ── EN WAAROM ZE OP DE RIJ STAAN EN NIET OPNIEUW WORDEN UITGEREKEND ─────────
+--
+-- De verleiding is om alleen de aantallen op te slaan en de prijs elke maand
+-- opnieuw uit de ladder te halen. Dat is precies wat je NIET wilt: verandert de
+-- ladder, dan verandert de afschrijving van een lopend abonnement mee, zonder dat
+-- de klant iets heeft getekend. En bij Mollie staat het bedrag toch al vast —
+-- daar is de subscription aangemaakt met een bedrag, en dat is wat er wordt
+-- afgeschreven. Twee waarheden over hetzelfde bedrag is één te veel.
+--
+-- Dus: `amount_cents` is wat er is afgesproken, en `slots_json` is wat daarvoor
+-- geleverd wordt. Allebei bevroren op het moment van afsluiten.
+--
+-- NULL VOOR DE DRIE PAKKETTEN, en dat is geen ontbrekende waarde maar de
+-- betekenis zelf: een rij zonder deze twee kolommen haalt zijn prijs en zijn
+-- bundel uit de code, zoals hij dat altijd al deed. Zie bundelVoor() en
+-- subMaandCents() in src/lib/slots.js — dat is de enige plek waar dit onderscheid
+-- gemaakt wordt.
+
+-- Wat er maandelijks wordt afgeschreven, in centen, exclusief btw. Alleen gevuld
+-- voor een maand op maat; voor een pakket komt het bedrag uit monthlyCents().
+ALTER TABLE subscriptions ADD COLUMN amount_cents INTEGER;
+
+-- De bundel per maand, als JSON: {"catalog":6,"complete":3,"video-motion":2}.
+-- Dezelfde vorm die PLAN_SLOTS per pakket geeft, en dezelfde soorten — de sleutel
+-- moet in SLOT_KINDS staan, anders kan het dashboard hem niet benoemen.
+--
+-- GEEN APARTE TABEL met een rij per soort. Die bestaat al: subscription_slots
+-- houdt bij wat er per MAAND is toegekend en opgemaakt. Deze kolom zegt iets
+-- anders — wat de klant elke maand hoort te krijgen — en dat is één waarde die
+-- bij het abonnement hoort, niet een administratie.
+ALTER TABLE subscriptions ADD COLUMN slots_json TEXT;

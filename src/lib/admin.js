@@ -38,6 +38,11 @@
 // different relationships to the site, not an inconsistency.
 
 import { hashToken, mintToken, portalUrl } from './token.js';
+import {
+  HERSTEL_AANTAL, TOTP_STAP,
+  hashRecoveryCode, mintRecoveryCodes, mintTotpSecret, normaliseRecoveryCode,
+  totpUri, verifyTotp,
+} from './adminAuth.js';
 /* DELIVERY_MONTHS staat in de mail bij een nieuwe portaallink: die mail zegt hoe
    lang de klant er nog bij kan, en dat getal hoort uit dezelfde constante te
    komen als de nachtelijke opruiming en de juridische pagina's. */
@@ -48,7 +53,7 @@ import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from 
    stuk dat van een klantenlijst werk maakt, en Lucas' keuze was uitdrukkelijk
    dat een MENS daarop drukt. Vandaar dat ze hier binnenkomen en niet in cron/. */
 import { startPlanWindow, klaarOmTeStarten } from './planStart.js';
-import { kindLabel, slotsFor } from './slots.js';
+import { bundelVoor, kindLabel } from './slots.js';
 import { planState, queueTerugNaAnnulering, loadSubscription, monthKey } from './subscription.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
    verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
@@ -88,6 +93,12 @@ import { mailInvoice } from './invoiceMail.js';
    getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
    kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
 import { AMOUNT, VAT_RATE, vatPercent, ladderTotal } from '../data/pricing.js';
+import { kindImages } from '../data/pricing.js';
+import {
+  ATTENDED_IMAGES_PER_DAY, QUEUE_DAYS_MAX, WINDOW_DAYS,
+  addDays, addOpenDays, firstOfferableDay, windowFor,
+} from '../data/capacity.js';
+import { readCalendar } from './agenda.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
 // and page-level helpers, and the mail template exports overlapping names.
 import {
@@ -129,6 +140,16 @@ export async function adminGet(context) {
     return html(page({ title: 'Sign in', body: loginBody() }));
   }
 
+  /* ── DE TWEEDE STAP STAAT VÓÓR DE WACHT — migratie 0037 ────────────────────
+     currentAdmin() weigert een halve sessie met opzet, dus dit scherm moet ervoor
+     staan of het is onbereikbaar voor precies de mensen die het nodig hebben.
+     Het toont niets en verandert niets; het vraagt alleen om de code. */
+  if (path === '/admin/code') {
+    if (await currentAdmin(context)) return seeOther('/admin');
+    if (!(await pendingAdmin(context))) return seeOther('/admin/login');
+    return html(page({ title: 'Twee stappen', body: codeBody() }));
+  }
+
   const admin = await currentAdmin(context);
   if (!admin) return seeOther('/admin/login');
 
@@ -168,6 +189,12 @@ export async function adminGet(context) {
      tot 14 augustus 2026 niet was en wat dat een klant kostte. */
   if (path === '/admin/testimonials') return renderTestimonials(context);
   if (path === '/admin/funnel') return renderFunnel(context, url);
+  /* De agenda. LEESROUTE: wat er nog af moet, op volgorde van de laatste dag.
+     Zie de kop van renderAgenda() voor waarom dit één lijst is en geen twee. */
+  if (path === '/admin/agenda') return renderAgenda(context, url);
+  /* De tweede factor instellen. LEESROUTE: alles wat iets verandert zit achter de
+     POST hieronder, en die vraagt bij elke handeling een kloppende code. */
+  if (path === '/admin/security') return renderSecurity(context, admin);
 
   if (path === '/admin') {
     // ?status= narrows the order list — Lucas, August 2026: "als je op received
@@ -213,6 +240,7 @@ export async function adminPost(context) {
   if (!env?.DB) return html(page({ title: 'Admin', body: errorBody('The database is not reachable.') }), 503);
 
   if (path === '/admin/login') return handleLogin(context);
+  if (path === '/admin/code') return handleCodePost(context);
 
   // Everything past this point changes state and requires both a live session
   // AND an Origin that matches this site — see the file header.
@@ -228,6 +256,10 @@ export async function adminPost(context) {
       `Request origin did not match. Try again from the dashboard itself. ${originMismatchDetail(request)}`
     ) }), 403);
   }
+  /* De tweede factor. Elke handeling hier vraagt bovendien een KLOPPENDE CODE,
+     ook al is de beheerder al ingelogd — zie de noot in handleSecurityPost(). */
+  if (path === '/admin/security') return handleSecurityPost(context, admin);
+
 
   if (path === '/admin/logout') return handleLogout(context, admin);
 
@@ -237,6 +269,17 @@ export async function adminPost(context) {
      aanmaakt, hoort geen GET te zijn, en achter deze poort staat bovendien de
      originIsSelf()-controle die een statisch routebestand niet krijgt. */
   if (path === '/admin/diagnose/probe') return handleDiagnoseProbe(context);
+
+  /* DE AGENDA DICHTZETTEN EN WEER OPENZETTEN. Achter dezelfde poort als alles
+     hierboven. `admin` gaat mee omdat een dichtgezette dag een dag is die geen
+     enkele klant meer krijgt aangeboden, en dan hoort in het logboek te staan wie
+     hem dichtzette en waarom. */
+  if (path === '/admin/agenda/dagen') return handleBlackoutDay(context, admin);
+
+  /* HET VENSTER VAN ÉÉN BESTELLING VERZETTEN. Hoort bij de agenda en niet bij de
+     status: dit verandert WANNEER het werk moet, niet HOE VER het is. */
+  const windowMatch = path.match(/^\/admin\/orders\/(\d+)\/window$/);
+  if (windowMatch) return handleWindowMove(context, Number(windowMatch[1]), admin);
 
   const resolveMatch = path.match(/^\/admin\/revisions\/(\d+)\/resolve$/);
   if (resolveMatch) return handleRevisionResolve(context, Number(resolveMatch[1]));
@@ -376,7 +419,9 @@ async function handleLogin({ request, env }) {
   const password = String(form?.get('password') || '');
 
   const row = email
-    ? await env.DB.prepare('SELECT id, password_hash FROM admin_users WHERE email = ?1').bind(email).first()
+    ? await env.DB.prepare(
+      'SELECT id, password_hash, totp_secret, totp_confirmed_at FROM admin_users WHERE email = ?1'
+    ).bind(email).first()
     : null;
 
   // Verify against a hash even when no row matched, so the response time does
@@ -390,12 +435,301 @@ async function handleLogin({ request, env }) {
     return html(page({ title: 'Sign in', body: loginBody('Wrong email or password.') }), 401);
   }
 
+  /* ── EN DAN PAS DE TWEEDE FACTOR — migratie 0037, 1 september 2026 ────────
+   *
+   * Alleen als hij is INGESTELD ÉN BEVESTIGD. Een geheim dat wel gezet is maar
+   * nooit met een kloppende code bevestigd, telt niet: dat is iemand die halverwege
+   * het inschrijven is weggeklikt, en die moet gewoon kunnen inloggen.
+   *
+   * De halve sessie is een echte sessierij met `totp_pending = 1`. Daarmee loopt hij
+   * door dezelfde machinerie als een hele — gehasht koekje, vervaldatum, opruiming —
+   * en currentAdmin() weigert hem, dus hij opent nergens iets. */
   const { token, tokenHash } = await mintAdminSession();
+  const tweedeFactor = Boolean(row.totp_secret && row.totp_confirmed_at);
   await env.DB.prepare(
-    'INSERT INTO admin_sessions (admin_id, token_hash, expires_at) VALUES (?1, ?2, ?3)'
-  ).bind(row.id, tokenHash, adminSessionExpiry()).run();
+    'INSERT INTO admin_sessions (admin_id, token_hash, expires_at, totp_pending) VALUES (?1, ?2, ?3, ?4)'
+  ).bind(row.id, tokenHash, adminSessionExpiry(), tweedeFactor ? 1 : 0).run();
 
+  if (tweedeFactor) return seeOther('/admin/code', [setSessionCookie(token)]);
   return seeOther('/admin', [setSessionCookie(token)]);
+}
+
+/* ── DE HALVE SESSIE OPZOEKEN ───────────────────────────────────────────────
+ *
+ * Bewust een eigen functie naast currentAdmin(): die weigert een halve sessie, en
+ * dat moet zo blijven. Deze is de enige plek die er wél een mag zien, en hij geeft
+ * alleen terug wat de tweede stap nodig heeft. */
+async function pendingAdmin({ request, env }) {
+  const token = readSessionCookie(request);
+  if (!token || !env?.DB) return null;
+  const row = await env.DB.prepare(
+    `SELECT s.id AS session_id, s.expires_at, a.id AS admin_id, a.email, a.totp_secret
+       FROM admin_sessions s JOIN admin_users a ON a.id = s.admin_id
+      WHERE s.token_hash = ?1 AND s.totp_pending = 1`
+  ).bind(await hashToken(token)).first().catch(() => null);
+  if (!row) return null;
+  if (Date.parse(normalizeStamp(row.expires_at)) <= Date.now()) return null;
+  return row;
+}
+
+/** Het scherm van de tweede stap. Eén veld, en een uitweg met een herstelcode. */
+function codeBody(melding = '') {
+  return `
+<h1>Twee stappen</h1>
+<p class="lede">Je wachtwoord klopt. Vul nu de code uit je authenticator-app in \u2014 zes
+cijfers, ${TOTP_STAP} seconden geldig. Heb je je telefoon niet bij je, gebruik dan een van je
+herstelcodes; die werkt in hetzelfde veld en daarna is hij op.</p>
+${melding ? `<p class="warnline">${esc(melding)}</p>` : ''}
+<form method="post" action="/admin/code" class="loginform">
+  <label>Code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
+    autofocus required maxlength="24"></label>
+  <button class="btn btn-primary" type="submit">Verder</button>
+</form>
+<p class="meta"><a href="/admin/login">Opnieuw beginnen</a></p>`;
+}
+
+/**
+ * De tweede stap zelf.
+ *
+ * WAT HIER GEBEURT ALS DE CODE FOUT IS: de halve sessie blijft staan en het
+ * formulier komt terug. Hem weggooien bij elke misser zou betekenen dat iemand die
+ * zich vertypt opnieuw zijn wachtwoord moet intypen, en dat leert mensen alleen om
+ * hun wachtwoord vaker te typen. De snelheidsbegrenzer eronder is wat het raden
+ * onbetaalbaar maakt \u2014 op het ACCOUNT en niet alleen op het IP, om dezelfde reden
+ * als bij de inlogcode van een klant.
+ */
+async function handleCodePost(context) {
+  const { request, env } = context;
+  if (!originIsSelf(request, env)) {
+    return html(page({ title: 'Twee stappen', body: codeBody('De aanvraag kwam niet van deze site.') }), 403);
+  }
+  const half = await pendingAdmin(context);
+  if (!half) return seeOther('/admin/login');
+
+  const perIp = await checkRate(env, { ip: clientIp(request), action: 'admin-code', limit: 20 });
+  const perAccount = await checkRate(env, {
+    key: `admin-code|${half.admin_id}`, action: 'admin-code-id', limit: 10, windowSeconds: 900,
+  });
+  if (!perIp.allowed || !perAccount.allowed) {
+    return html(page({ title: 'Twee stappen', body: codeBody('Te veel pogingen. Wacht even.') }), 429);
+  }
+
+  const form = await request.formData().catch(() => null);
+  const ingevuld = String(form?.get('code') || '');
+
+  let goed = await verifyTotp(ingevuld, half.totp_secret);
+
+  /* DE HERSTELCODE. Eén keer, en het opmaken is een voorwaardelijke UPDATE en geen
+     lees-dan-schrijf: twee tabbladen met dezelfde code mogen niet allebei binnen. */
+  if (!goed && normaliseRecoveryCode(ingevuld).length >= 16) {
+    const hash = await hashRecoveryCode(ingevuld);
+    const op = await env.DB.prepare(
+      `UPDATE admin_recovery_codes SET used_at = datetime('now')
+        WHERE admin_id = ?1 AND code_hash = ?2 AND used_at IS NULL
+        RETURNING id`
+    ).bind(half.admin_id, hash).first().catch(() => null);
+    if (op) {
+      goed = true;
+      await logAdmin(env, { id: half.admin_id, email: half.email }, 'admin.recovery-used',
+        { detail: 'ingelogd met een herstelcode' }).catch(() => {});
+    }
+  }
+
+  if (!goed) {
+    return html(page({ title: 'Twee stappen', body: codeBody('Die code klopt niet.') }), 401);
+  }
+
+  await env.DB.prepare('UPDATE admin_sessions SET totp_pending = 0 WHERE id = ?1')
+    .bind(half.session_id).run();
+  return seeOther('/admin');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * /admin/security — DE TWEEDE FACTOR INSTELLEN
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Drie toestanden en verder niets: uit, halverwege, aan. Het scherm laat er
+ * precies één zien, want een pagina die alle drie tegelijk toont, laat je zoeken
+ * waar je bent.
+ *
+ * ── ER IS GEEN QR-CODE, EN DAT IS EEN KEUZE ────────────────────────────────
+ *
+ * Een QR-plaatje maken vraagt een encoder van een paar honderd regels die niemand
+ * hier ooit naleest, of een bibliotheek die van buiten komt \u2014 en de CSP van dit
+ * paneel laat geen enkel script toe, ook geen eigen. Het geheim in groepjes van
+ * vier overtypen kost tien seconden, gebeurt \u00e9\u00e9n keer, en elke authenticator-app
+ * kan het. De otpauth-regel staat eronder voor wie hem wil plakken.
+ */
+function securityBody(staat, { secret = '', melding = '', codes = null, email = '' } = {}) {
+  const groepjes = String(secret).replace(/(.{4})/g, '$1 ').trim();
+
+  if (codes) {
+    /* DE HERSTELCODES, \u00c9\u00c9N KEER. Ze staan gehasht in de database, dus dit scherm is
+       de enige plek waar ze ooit leesbaar zijn. Dat hoort er ook bij te staan. */
+    return `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Je herstelcodes</h1>
+<p class="lede">Schrijf ze over of print ze. <strong>Dit is de enige keer dat je ze ziet</strong> \u2014
+ze staan gehasht in de database, dus ook ik kan ze niet terughalen. Elke code werkt \u00e9\u00e9n keer,
+in hetzelfde veld als de code uit je app.</p>
+<div class="card"><pre class="hcodes">${codes.map((c) => esc(c)).join('\n')}</pre></div>
+<p class="meta">Kwijt? Maak op deze pagina een nieuwe set \u2014 de oude vervallen dan allemaal.</p>
+<p><a class="btn btn-primary" href="/admin/security">Klaar</a></p>`;
+  }
+
+  if (staat === 'aan') {
+    return `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Twee stappen staan aan</h1>
+<p class="lede">Bij het inloggen vraagt dit paneel na je wachtwoord om een code uit je
+authenticator-app.</p>
+${melding ? `<p class="warnline">${esc(melding)}</p>` : ''}
+<div class="card">
+  <h3>Nieuwe herstelcodes</h3>
+  <p class="meta">Er komt een nieuwe set van ${HERSTEL_AANTAL}; alles wat je nog had, vervalt.</p>
+  <form method="post" action="/admin/security">
+    <input type="hidden" name="doen" value="codes">
+    <label>Code uit je app<input type="text" name="code" inputmode="numeric" required maxlength="24"></label>
+    <button class="btn" type="submit">Nieuwe codes maken</button>
+  </form>
+</div>
+<div class="card">
+  <h3>Uitzetten</h3>
+  <p class="meta">Daarna is je wachtwoord weer het enige slot op dit paneel.</p>
+  <form method="post" action="/admin/security">
+    <input type="hidden" name="doen" value="uit">
+    <label>Code uit je app<input type="text" name="code" inputmode="numeric" required maxlength="24"></label>
+    <button class="btn btn-ghost" type="submit">Twee stappen uitzetten</button>
+  </form>
+</div>`;
+  }
+
+  if (staat === 'halverwege') {
+    return `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Nog \u00e9\u00e9n code</h1>
+<p class="lede">Voer dit geheim in je authenticator-app in en typ de code die er verschijnt.
+Pas als die klopt, gaat de tweede stap aan \u2014 zo kun je jezelf er niet mee buitensluiten.</p>
+${melding ? `<p class="warnline">${esc(melding)}</p>` : ''}
+<div class="card">
+  <h3>Het geheim</h3>
+  <pre class="hcodes">${esc(groepjes)}</pre>
+  <p class="meta">Of plak deze regel: <code>${esc(totpUri(secret, email))}</code></p>
+</div>
+<form method="post" action="/admin/security" class="loginform">
+  <input type="hidden" name="doen" value="bevestig">
+  <label>De code uit je app<input type="text" name="code" inputmode="numeric" autofocus required maxlength="8"></label>
+  <button class="btn btn-primary" type="submit">Aanzetten</button>
+</form>
+<form method="post" action="/admin/security">
+  <input type="hidden" name="doen" value="afbreken">
+  <button class="btn btn-ghost btn-sm" type="submit">Afbreken</button>
+</form>`;
+  }
+
+  return `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Twee stappen staan uit</h1>
+<p class="lede">Je wachtwoord is nu het enige slot op dit paneel, en dit paneel opent elke klant,
+elk bestand en elke betaling. Een tweede stap maakt een gelekt of geraden wachtwoord waardeloos.</p>
+${melding ? `<p class="warnline">${esc(melding)}</p>` : ''}
+<form method="post" action="/admin/security">
+  <input type="hidden" name="doen" value="start">
+  <button class="btn btn-primary" type="submit">Instellen</button>
+</form>`;
+}
+
+async function renderSecurity(context, admin, extra = {}) {
+  const { env } = context;
+  const rij = await env.DB.prepare(
+    'SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = ?1'
+  ).bind(admin.admin_id).first().catch(() => null);
+  const staat = rij?.totp_secret && rij?.totp_confirmed_at ? 'aan'
+    : rij?.totp_secret ? 'halverwege' : 'uit';
+  return html(page({
+    title: 'Twee stappen',
+    body: securityBody(staat, { secret: rij?.totp_secret || '', email: admin.email, ...extra }),
+  }));
+}
+
+async function handleSecurityPost(context, admin) {
+  const { request, env } = context;
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('doen') || '');
+  const code = String(form?.get('code') || '');
+
+  const rij = await env.DB.prepare(
+    'SELECT totp_secret, totp_confirmed_at FROM admin_users WHERE id = ?1'
+  ).bind(admin.admin_id).first().catch(() => null);
+
+  if (doen === 'start') {
+    /* Een nieuw geheim, en de oude bevestiging gaat eraf. Iemand die opnieuw
+       begint terwijl het al aanstond, zit tot hij bevestigt zonder tweede stap \u2014
+       dat is de bedoeling: hij is nu bezig met het overzetten naar een nieuwe
+       telefoon en moet niet halverwege buitengesloten raken. */
+    const secret = mintTotpSecret();
+    await env.DB.prepare(
+      'UPDATE admin_users SET totp_secret = ?2, totp_confirmed_at = NULL WHERE id = ?1'
+    ).bind(admin.admin_id, secret).run();
+    await logAdmin(env, admin, 'admin.2fa-start', { detail: 'geheim aangemaakt, nog niet bevestigd' });
+    return renderSecurity(context, admin);
+  }
+
+  if (doen === 'afbreken') {
+    await env.DB.prepare(
+      'UPDATE admin_users SET totp_secret = NULL, totp_confirmed_at = NULL WHERE id = ?1'
+    ).bind(admin.admin_id).run();
+    return renderSecurity(context, admin);
+  }
+
+  if (doen === 'bevestig') {
+    if (!rij?.totp_secret) return renderSecurity(context, admin);
+    if (!(await verifyTotp(code, rij.totp_secret))) {
+      return renderSecurity(context, admin, { melding: 'Die code klopt niet. Loopt de klok van je telefoon gelijk?' });
+    }
+    const codes = mintRecoveryCodes();
+    await env.DB.batch([
+      env.DB.prepare("UPDATE admin_users SET totp_confirmed_at = datetime('now') WHERE id = ?1").bind(admin.admin_id),
+      env.DB.prepare('DELETE FROM admin_recovery_codes WHERE admin_id = ?1').bind(admin.admin_id),
+      ...await Promise.all(codes.map(async (c) => env.DB
+        .prepare('INSERT INTO admin_recovery_codes (admin_id, code_hash) VALUES (?1, ?2)')
+        .bind(admin.admin_id, await hashRecoveryCode(c)))),
+    ]);
+    await logAdmin(env, admin, 'admin.2fa-aan', { detail: `bevestigd, ${codes.length} herstelcodes uitgegeven` });
+    return renderSecurity(context, admin, { codes });
+  }
+
+  /* De twee handelingen hieronder vragen een KLOPPENDE CODE, ook al is de
+     beheerder al ingelogd. Wie een sessie overneemt, mag de tweede stap niet
+     kunnen uitzetten of de herstelcodes kunnen vervangen \u2014 dan is de tweede stap
+     alleen een drempel voor de eigenaar. */
+  if (!rij?.totp_secret || !rij?.totp_confirmed_at) return renderSecurity(context, admin);
+  if (!(await verifyTotp(code, rij.totp_secret))) {
+    return renderSecurity(context, admin, { melding: 'Die code klopt niet.' });
+  }
+
+  if (doen === 'codes') {
+    const codes = mintRecoveryCodes();
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM admin_recovery_codes WHERE admin_id = ?1').bind(admin.admin_id),
+      ...await Promise.all(codes.map(async (c) => env.DB
+        .prepare('INSERT INTO admin_recovery_codes (admin_id, code_hash) VALUES (?1, ?2)')
+        .bind(admin.admin_id, await hashRecoveryCode(c)))),
+    ]);
+    await logAdmin(env, admin, 'admin.2fa-codes', { detail: `${codes.length} nieuwe herstelcodes` });
+    return renderSecurity(context, admin, { codes });
+  }
+
+  if (doen === 'uit') {
+    await env.DB.batch([
+      env.DB.prepare('UPDATE admin_users SET totp_secret = NULL, totp_confirmed_at = NULL WHERE id = ?1').bind(admin.admin_id),
+      env.DB.prepare('DELETE FROM admin_recovery_codes WHERE admin_id = ?1').bind(admin.admin_id),
+    ]);
+    await logAdmin(env, admin, 'admin.2fa-uit', { detail: 'tweede stap uitgezet' });
+    return renderSecurity(context, admin);
+  }
+
+  return renderSecurity(context, admin);
 }
 
 async function handleLogout({ request, env }, admin) {
@@ -1393,7 +1727,12 @@ async function loadOrderFiles(env, orderId) {
      meer in `product_count`. Zonder deze kolom zou het aantal dat de klant
      opgaf op deze pagina helemaal niet meer te zien zijn — dan was het
      rechttrekken van dat veld voor jou een verslechtering geweest. */
+  /* `tier`, `window_start` en `window_end` staan in BEIDE varianten, om dezelfde
+     reden als details_json hierboven: het zijn kolommen van de eerste migratie, dus
+     ze kunnen niet de oorzaak zijn als de brede query omvalt. Zonder hen zou het
+     blok "Wanneer" op deze pagina verdwijnen precies wanneer er iets anders mis is. */
   const wide = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
+                       tier, window_start, window_end,
                        details_json,
                        delivery_mailed_at, redelivery_mailed_at, redelivery_count,
                        customer_note, customer_note_at,
@@ -1402,6 +1741,7 @@ async function loadOrderFiles(env, orderId) {
                        icp_reported_at
                   FROM orders WHERE id = ?1`;
   const narrow = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
+                         tier, window_start, window_end,
                          details_json, delivery_mailed_at
                     FROM orders WHERE id = ?1`;
   let order = null;
@@ -1992,6 +2332,52 @@ async function renderFiles(context, orderId) {
     return stukjes.length ? ` &middot; ${stukjes.join(' &middot; ')}` : '';
   })();
 
+  /*
+   * ── WANNEER ────────────────────────────────────────────────────────────────
+   *
+   * Het venster van deze bestelling stond op het dashboard als tekst en nergens als
+   * handeling. Sinds de agenda dagen kan dichtzetten is dat een half gereedschap:
+   * je kunt zeggen dat je er niet bent, en niet wat er dan met het werk gebeurt.
+   *
+   * ÉÉN DAG AANWIJZEN, GEEN TWEE. Het paar wordt uitgerekend door handleWindowMove()
+   * tegen de agenda van dat moment — zie de kop daar. Twee velden zouden dit scherm
+   * de enige plek maken waar een venster ontstaat zonder dat de agenda meekijkt.
+   *
+   * "LOSLATEN" IS GEEN ANNULERING. Het haalt de datum eraf, en dan telt deze
+   * bestelling mee als werk zonder vastgelegde dag — precies zoals een bestelling uit
+   * de wachtrij. De agenda blijft hem tonen, met de manier 'zo snel mogelijk'. Wat
+   * annuleren is, is de status, en die staat op het dashboard.
+   */
+  const heeftVenster = Boolean(order.window_start);
+  const afgerond = ['delivered', 'cancelled'].includes(String(order.status));
+  const wanneerBlok = afgerond
+    ? `<p class="muted">Deze bestelling is ${esc(STATUS_LABEL[order.status] || order.status)}. Het venster doet niets meer.</p>`
+    : `
+  <p class="muted">${heeftVenster
+    ? `Vastgelegd op <strong>${esc(order.window_start)}</strong> of <strong>${esc(order.window_end || order.window_start)}</strong>.`
+    : 'Geen vastgelegde dagen — deze bestelling telt in de agenda mee als &ldquo;zo snel mogelijk&rdquo;.'}</p>
+  <form class="ag-dagform" method="post" action="/admin/orders/${order.id}/window">
+    <input type="hidden" name="do" value="verzet">
+    <div>
+      <label for="w-dag">Verzetten naar</label>
+      <input id="w-dag" type="date" name="dag" required>
+    </div>
+    <div>
+      <label for="w-reden">Waarom</label>
+      <input id="w-reden" type="text" name="reason" maxlength="200" placeholder="dag dichtgezet, klant gebeld">
+    </div>
+    <button class="btn btn-primary" type="submit">Venster verzetten</button>
+  </form>
+  <p class="muted">Je wijst één dag aan; de tweede dag van het paar komt uit de agenda,
+  net als bij een klant. De aanloop van twee dagen geldt ook hier.</p>
+  ${heeftVenster ? `
+  <form method="post" action="/admin/orders/${order.id}/window">
+    <input type="hidden" name="do" value="los">
+    <button class="btn" type="submit">Dagen loslaten</button>
+  </form>` : ''}
+  <p class="warnline">Verzetten stuurt geen mail. De klant ziet het op zijn tijdlijn,
+  maar hoort het pas van jou.</p>`;
+
   const body = `
   <p><a href="/admin">&larr; Dashboard</a></p>
   <h1>${esc(order.ref)}</h1>
@@ -2040,6 +2426,9 @@ async function renderFiles(context, orderId) {
     <input type="file" name="files" multiple required />
     <button type="submit">Upload</button>
   </form>
+
+  <h2 id="wanneer">Wanneer</h2>
+  ${wanneerBlok}
 
   <h2>Tell the customer</h2>
   ${announce}
@@ -2234,7 +2623,15 @@ async function serveAdminFile(context, fileId) {
   if (typeof obj.writeHttpMetadata === 'function') obj.writeHttpMetadata(headers);
   // attachment, not inline: this is a working file being collected, not
   // something to preview in a tab and then have to save again.
-  headers.set('Content-Disposition', `attachment; filename="${(row.filename || 'file').replace(/"/g, '')}"`);
+  /* CR, LF en tab eruit en niet alleen het aanhalingsteken: een nieuwe regel in
+     een kopwaarde is een tweede kop. account.js en portal.js filteren al op
+     dezelfde verzameling; dit was de enige bouwer zonder dat filter. Vandaag komt
+     `filename` uit safeName() en zit er niets kwaads in — dat is een reden om het
+     te repareren en geen reden om het te laten staan. */
+  const veiligeNaam = String(row.filename || 'file')
+    .replace(/[\\/"\r\n\t\x00-\x1f]/g, '_')
+    .slice(0, 120) || 'file';
+  headers.set('Content-Disposition', `attachment; filename="${veiligeNaam.replace(/[^\x20-\x7e]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(veiligeNaam)}`);
   headers.set('Cache-Control', 'private, no-store');
   return new Response(obj.body, { headers });
 }
@@ -2445,8 +2842,25 @@ async function handleDeliveryUpload({ request, env }, orderId) {
         body = bytes;
       }
 
+      /* ── HET TYPE UIT DE NAAM EN NIET UIT DE BROWSER — 31 augustus 2026 ───
+       *
+       * Hier stond `file.type`, en dat is de waarde die de kant van de klant
+       * meestuurt. Voor de intake geldt al het omgekeerde: uploads.js kiest het
+       * type uit de extensie en negeert wat de browser beweert, met een noot
+       * erbij waarom. Deze weg — de afgewerkte bestanden die naar de klant gaan —
+       * volgde die regel niet.
+       *
+       * WAT ERDOOR PASTE. mimeFor() in account.js en portal.js valt op het
+       * OPGESLAGEN type terug zodra hij de extensie niet kent, en die twee routes
+       * geven af met `content-disposition: inline`. Een aflevering met een
+       * onbekende extensie en `text/html` erop kwam dus als pagina in het tabblad
+       * van de klant terecht. Er is een ingelogde beheerder voor nodig en de naam
+       * is al geschoond, dus dit is geen open deur — maar het is wel dezelfde
+       * fout die aan de intakekant al was dichtgezet.
+       *
+       * Onbekende extensie wordt octet-stream, niet wat de browser zei. */
       await env.UPLOADS.put(key, body, {
-        httpMetadata: { contentType: file.type || 'application/octet-stream' },
+        httpMetadata: { contentType: leveringMime(clean) },
       });
 
       await env.DB.prepare(
@@ -4570,7 +4984,9 @@ async function renderCustomer(context, customerId) {
      * maand nog niets is toegekend — en dat is juist het geval waarin je hier
      * komt, want een mislukte incasso laat precies zo'n leegte achter. */
     const soorten = [...new Set([
-      ...Object.keys(slotsFor(abo.plan)),
+      /* bundelVoor() en niet slotsFor(): sinds migratie 0038 kan een abonnement een
+         maand op maat zijn en draagt hij zijn soorten op de rij. */
+      ...Object.keys(bundelVoor(abo.sub)),
       ...(abo.slots || []).map((b) => b.kind),
     ])];
     const slotCorrectie = !soorten.length ? '' : `
@@ -4949,10 +5365,37 @@ async function handleAddCustomModelForCustomer({ request, env }, customerId) {
   if (file && typeof file === 'object' && file.size && env.UPLOADS) {
     const row = nieuw;
     if (row?.id) {
-      const clean = String(file.name || 'preview').split(/[\\/]/).pop().slice(0, 100) || 'preview';
+      /* ── DEZELFDE POORT ALS handleModelPreview() — 31 augustus 2026 ───────
+       *
+       * Hier stond `contentType: file.type || 'application/octet-stream'`: het
+       * type dat de BROWSER meestuurt, zonder lijst en zonder plafond — terwijl
+       * twee functies verderop precies dat wél doet, met PREVIEW_TYPES en
+       * PREVIEW_MAX_BYTES, en er in zijn eigen noot bij zegt waarom.
+       *
+       * WAT ER DOOR HET GAT PASTE. Een `image/svg+xml` of `text/html` opgeslagen
+       * langs deze weg, wordt door /account/models/<id>/preview met datzelfde type
+       * teruggegeven en in het tabblad uitgevoerd — op het account-origin van de
+       * klant, en zonder de CSP van de dashboardpagina, want die zit op de
+       * paginarespons en niet op deze. Er is een ingelogde beheerder voor nodig,
+       * dus dit is geen inbraak van buitenaf; het is de soort fout die je pas ziet
+       * als iemand die er al is er misbruik van maakt. De reparatie stond er al,
+       * één functie verderop.
+       *
+       * De naam wordt hier ook echt geschoond in plaats van alleen op schuine
+       * strepen gesplitst: dezelfde tekens die dispositionFilename() weghaalt. */
+      const clean = String(file.name || 'preview')
+        .replace(/[\\/"\r\n\t\x00-\x1f]/g, '_')
+        .split('/').pop()
+        .slice(0, 100) || 'preview';
+      if (!PREVIEW_TYPES.includes(String(file.type || '').toLowerCase())) {
+        return html(page({ title: 'Admin', body: errorBody('Preview must be a jpeg, png, webp or avif.') }), 415);
+      }
+      if (file.size > PREVIEW_MAX_BYTES) {
+        return html(page({ title: 'Admin', body: errorBody('Preview is too large.') }), 413);
+      }
       const key = `models/${customerId}/${row.id}-${clean}`;
       await env.UPLOADS.put(key, file.stream(), {
-        httpMetadata: { contentType: file.type || 'application/octet-stream' },
+        httpMetadata: { contentType: String(file.type).toLowerCase() },
       });
       await env.DB.prepare('UPDATE custom_models SET preview_key = ?1 WHERE id = ?2')
         .bind(key, row.id).run();
@@ -4991,6 +5434,21 @@ async function handleModelStatus({ request, env }, modelId) {
   await env.DB.prepare('UPDATE custom_models SET status = ?1 WHERE id = ?2')
     .bind(status, modelId).run();
   return seeOther(`/admin/customers/${model.customer_id}`);
+}
+
+/* Het type van een afgeleverd bestand, uit de extensie. Dezelfde gedachte als
+   uploads.js aan de intakekant: de naam is van ons (safeName() heeft hem al
+   geschoond), het type dat de browser meestuurt is dat niet. Wat er niet in staat
+   wordt octet-stream — dan biedt de browser hem aan om op te slaan in plaats van
+   hem te tonen, en dat is bij een onbekend bestand het juiste. */
+const LEVERING_MIME = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+  avif: 'image/avif', gif: 'image/gif', mp4: 'video/mp4', mov: 'video/quicktime',
+  webm: 'video/webm', pdf: 'application/pdf', zip: 'application/zip',
+};
+function leveringMime(naam) {
+  const ext = String(naam || '').toLowerCase().split('.').pop();
+  return LEVERING_MIME[ext] || 'application/octet-stream';
 }
 
 /** Images only, and a ceiling. See handleModelPreview() for why both. */
@@ -5195,9 +5653,12 @@ async function currentAdmin(context) {
   if (!token) return null;
   const hash = await hashToken(token);
   const row = await env.DB.prepare(
+    /* `totp_pending` erbij sinds migratie 0037: een sessie tussen wachtwoord en
+       code in mag nergens iets openen. De voorwaarde staat in de WHERE en niet in
+       een `if` erna, zodat een halve sessie hier niet eens als sessie terugkomt. */
     `SELECT s.id AS session_id, s.expires_at, a.id AS admin_id, a.email
        FROM admin_sessions s JOIN admin_users a ON a.id = s.admin_id
-      WHERE s.token_hash = ?1`
+      WHERE s.token_hash = ?1 AND s.totp_pending = 0`
   ).bind(hash).first();
   if (!row) return null;
   if (Date.parse(normalizeStamp(row.expires_at)) <= Date.now()) return null;
@@ -6006,6 +6467,536 @@ ${missing
  * verbergen: een percentage van een verkeerde noemer is een conclusie waar je een
  * advertentiebudget op zet.
  */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE AGENDA — WAT MOET ER NU AF
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 31 augustus 2026: *"Ik wil dat ik in mijn admin panel kan zien welke
+ * order de eerstvolgende is op datum of zo snel mogelijk, zodat ik precies weet
+ * wat ik af moet krijgen."*
+ *
+ * DIT SCHERM BESTOND NIET, EN DAT WAS EEN GAT. Het dashboard toont bestellingen
+ * op status en op zoekterm, en `window_start` stond er alleen als tekst bij —
+ * nergens werd er op gesorteerd. Een bestelling met een vastgelegd venster en een
+ * bestelling uit de wachtrij stonden dus door elkaar zonder dat iets zei welke
+ * eerder klaar moest zijn.
+ *
+ * ── ÉÉN SORTEERSLEUTEL VOOR ALLEBEI ────────────────────────────────────────
+ *
+ * De verleiding is twee lijstjes: eerst de vastgelegde vensters, dan de wachtrij.
+ * Dat is precies wat je niet wilt, want dan moet jij ze in je hoofd samenvoegen —
+ * en ze vechten om dezelfde dag. Alles krijgt daarom dezelfde vraag: WAT IS DE
+ * LAATSTE DAG WAAROP DIT AF MOET ZIJN.
+ *
+ *   · een vastgelegde order  → de tweede dag van het paar (`window_end`)
+ *   · een wachtrij-order     → de dag van binnenkomst plus QUEUE_DAYS_MAX
+ *
+ * Dat tweede getal is dezelfde vier die de site aan de klant belooft, uit
+ * capacity.js en niet hier overgeschreven. Verandert de belofte, dan verschuift
+ * deze lijst mee.
+ *
+ * ── WAT HIER NIET STAAT, EN WAAROM ─────────────────────────────────────────
+ *
+ * Geen datum bij een wachtrij-order. De uiterste dag hieronder is JOUW werkgrens
+ * en gaat de klant niet aan; capacity.js zegt daar in de kop van queueSpan() het
+ * scherpste over: zodra dat getal naar buiten gaat, is het een belofte geworden.
+ * Dit scherm zit achter een wachtwoord en is de enige plek waar het mag staan.
+ *
+ * En geen gewicht bij een clip. Video heeft nog geen gewicht in de agenda (zie
+ * KIND_IMAGES in pricing.js), en dat wordt hier zichtbaar getoond als "nog te
+ * wegen" in plaats van als nul. Een gat dat je ziet is beter dan een nul die
+ * meetelt.
+ */
+
+/** De statussen waarin een bestelling nog werk is. Zelfde verzameling als loadTodayCounts(). */
+const AGENDA_OPEN = ['received', 'in_production', 'human_check'];
+
+/**
+ * Hoe ver vooruit een dag dichtgezet mag worden.
+ *
+ * Niet omdat een vakantie over twee jaar ondenkbaar is, maar omdat een typefout in
+ * het jaartal ('2036-07-14') anders stil een rij achterlaat die niemand ooit nog
+ * tegenkomt — hij staat buiten elke lijst en buiten elke horizon, en op een dag
+ * loopt iemand er tegenaan zonder te weten waar hij vandaan komt.
+ */
+const BLACKOUT_MAX_DAYS = 730;
+
+/**
+ * ── EEN DAG DICHTZETTEN, EN WAAROM DAAR EEN BEVESTIGING TUSSEN ZIT ──────────
+ *
+ * Dichtzetten is niet symmetrisch met openzetten. Openzetten geeft ruimte terug en
+ * kan niets breken. Dichtzetten kan een dag afnemen waarop AL iets aan een klant
+ * beloofd is — en het gemene is dat er dan niets kapotgaat wat je ziet: de
+ * bestelling houdt haar window_start en window_end, de klant heeft haar mail nog,
+ * en alleen de agenda vindt de dag voortaan gesloten. Een stille tegenspraak
+ * tussen wat er is toegezegd en wat het systeem gelooft.
+ *
+ * Daarom staat er een tussenstap in, en niet als waarschuwing achteraf: wie een
+ * bezette dag dichtzet, krijgt eerst te zien WELKE bestellingen erop staan, met
+ * hun referentie en hun merk, en moet dan pas een tweede keer klikken. Dat is
+ * dezelfde vorm die dit huis elders aanhoudt voor onomkeerbaar werk — eerst laten
+ * lezen wat het zou doen, dan pas doen.
+ *
+ * DE DAG ZELF WORDT NIET VERZET. Dit scherm doet één ding: het zegt dat jij er
+ * niet bent. Wat er met die bestellingen moet gebeuren, is een gesprek met de klant
+ * ("de klant wordt wel altijd gecontacteerd wanneer een order niet op tijd geleverd
+ * kan worden") en geen automatische verschuiving die de klant nooit heeft gezien.
+ * De bevestiging noemt dat met zoveel woorden, zodat de knop niet suggereert dat
+ * het geregeld is.
+ */
+async function handleBlackoutDay(context, admin) {
+  const { request, env } = context;
+  const terug = '/admin/agenda#dagen';
+
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('do') || '').trim();
+  const dag = String(form?.get('dag') || '').trim();
+  const reden = String(form?.get('reason') || '').trim().slice(0, 120);
+  const bevestigd = String(form?.get('confirm') || '') === 'ja';
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dag) || Number.isNaN(Date.parse(`${dag}T00:00:00Z`))) {
+    return html(page({ title: 'Admin', body: errorBody('That is not a date. Pick a day with the date field.') }), 400);
+  }
+
+  if (doen === 'open') {
+    await env.DB.prepare('DELETE FROM blackout_days WHERE day = ?1').bind(dag).run();
+    await logAdmin(env, admin, 'agenda-dag-open', { detail: `${dag} staat weer open` }).catch(() => {});
+    return seeOther(terug);
+  }
+
+  if (doen !== 'dicht') return seeOther(terug);
+
+  const vandaag = new Date().toISOString().slice(0, 10);
+  /* Een dag in het verleden dichtzetten verandert niets aan wat er al gepland is en
+     zet alleen een rij in de weg die voor altijd bovenaan de lijst blijft staan. */
+  if (dag < vandaag) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'That day has already passed. Closing it changes nothing that is still schedulable.'
+    ) }), 400);
+  }
+  if (dag > addDays(vandaag, BLACKOUT_MAX_DAYS)) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `That is more than ${BLACKOUT_MAX_DAYS} days out. Check the year — a typo there leaves a closed day nobody ever finds again.`
+    ) }), 400);
+  }
+  if (!reden) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'A closed day needs a reason. In three months "why was 12 December closed" is the first question, and the answer should not live in your head.'
+    ) }), 400);
+  }
+
+  /* Wat staat er al op die dag? Zowel losse bestellingen als vastgezette
+     wachtrij-items, want allebei zijn ze aan iemand beloofd — dezelfde twee bronnen
+     die agenda.js optelt, hier per stuk in plaats van als gewicht, omdat Lucas moet
+     zien WIE het is en niet hoeveel beelden het zijn. */
+  const bezet = await env.DB.prepare(
+    `SELECT o.id AS id, o.ref AS ref, COALESCE(o.brand, o.name, '—') AS wie, o.window_start, o.window_end
+       FROM orders o
+      WHERE o.tier = 'attended'
+        AND o.status <> 'cancelled'
+        AND o.window_start IS NOT NULL
+        AND o.window_start <= ?1
+        AND COALESCE(o.window_end, o.window_start) >= ?1
+      ORDER BY o.id
+      LIMIT 50`
+  ).bind(dag).all().catch(() => ({ results: [] }));
+  const rijen = bezet.results || [];
+
+  if (rijen.length && !bevestigd) {
+    const lijst = rijen.map((r) => `
+  <tr>
+    <td><a href="/admin/orders/${encodeURIComponent(String(r.id))}/files#wanneer"><span class="ref">${esc(r.ref)}</span></a></td>
+    <td class="muted">${esc(r.wie)}</td>
+    <td class="muted">${esc(r.window_start)} – ${esc(r.window_end || r.window_start)}</td>
+  </tr>`).join('');
+    return html(page({ title: 'Agenda', body: `
+<p><a href="/admin/agenda#dagen">&larr; Agenda</a></p>
+<h1>Er staat al werk op ${esc(dag)}</h1>
+<p class="lede">Deze ${rijen.length === 1 ? 'bestelling heeft' : `${rijen.length} bestellingen hebben`}
+een venster dat over ${esc(dag)} heen loopt. Die vensters blijven staan — dichtzetten
+verschuift ze niet en waarschuwt niemand. Het zegt alleen dat jij die dag geen nieuw
+werk aangeboden wilt krijgen.</p>
+<table class="ag-tabel">
+  <thead><tr><th>Bestelling</th><th>Klant</th><th>Venster</th></tr></thead>
+  <tbody>${lijst}</tbody>
+</table>
+<p class="warnline">Wat hiermee niet geregeld is: deze klanten hebben nog niets
+gehoord. Lukt het niet op tijd, dan hoort dat van jou te komen en niet van een
+lege map. Klik op een referentie om haar venster te verzetten.</p>
+<form method="post" action="/admin/agenda/dagen">
+  <input type="hidden" name="do" value="dicht">
+  <input type="hidden" name="dag" value="${esc(dag)}">
+  <input type="hidden" name="reason" value="${esc(reden)}">
+  <input type="hidden" name="confirm" value="ja">
+  <button class="btn btn-primary" type="submit">Toch dichtzetten</button>
+  <a class="btn" href="/admin/agenda#dagen">Laat maar</a>
+</form>` }), 409);
+  }
+
+  await env.DB.prepare(
+    'INSERT INTO blackout_days (day, reason) VALUES (?1, ?2) ON CONFLICT(day) DO UPDATE SET reason = ?2'
+  ).bind(dag, reden).run();
+  await logAdmin(env, admin, 'agenda-dag-dicht', {
+    detail: `${dag} dicht — ${reden}${rijen.length ? ` (${rijen.length} bestelling(en) hadden hier al een venster)` : ''}`,
+  }).catch(() => {});
+  return seeOther(terug);
+}
+
+/**
+ * ── EEN VASTGELEGD VENSTER VERZETTEN OF LOSLATEN ────────────────────────────
+ *
+ * Tot nu toe was een venster onherroepelijk: de bestelstroom zette window_start en
+ * window_end, en daarna kwam er geen enkele hand meer aan. Dat gaat goed tot de dag
+ * waarop het niet goed gaat — een dag die dichtgaat, een klant die belt, een
+ * bestelling die alsnog groter blijkt. Het antwoord was tot nu toe "een UPDATE in
+ * D1", en dat is precies de handeling die niemand vastlegt.
+ *
+ * ── HET NIEUWE PAAR WORDT UITGEREKEND EN NIET INGETYPT ──────────────────────
+ *
+ * Lucas wijst één dag aan; welke tweede dag daarbij hoort, bepaalt windowFor()
+ * tegen de agenda van dit moment. Zou hij beide dagen intypen, dan is dit scherm
+ * de enige plek in het systeem waar een venster ontstaat zonder dat de agenda
+ * ernaar heeft gekeken — en dan is een dubbele boeking een typefout.
+ *
+ * ── EN DE BESTELLING TELT NIET TEGEN ZICHZELF ───────────────────────────────
+ *
+ * `exceptId` haalt deze bestelling uit de bezetting voordat er gerekend wordt. Zonder
+ * dat zou een grote order die één dag opschuift tegen haar eigen gewicht aanlopen en
+ * "vol" te horen krijgen op een agenda die na de verhuizing juist leeg is.
+ *
+ * ── DE AANLOOP GELDT HIER OOK, EN DAT IS EEN KEUZE ──────────────────────────
+ *
+ * Ook Lucas kan het venster niet binnen de twee aanloopdagen zetten. Niet omdat het
+ * systeem hem niet mag vertrouwen, maar omdat de aanloop de reden IS dat de belofte
+ * te halen is; een venster dat morgen begint, is een belofte die het systeem al weet
+ * niet te kunnen waarmaken. Wil hij het toch, dan is dat een gesprek met de klant en
+ * geen datum in een veld.
+ *
+ * ── ER GAAT GEEN MAIL UIT, EN DAT IS GEEN OMISSIE ───────────────────────────
+ *
+ * /studio en /portal beloven allebei met zoveel woorden dat een statuswissel GEEN
+ * bericht naar de klant stuurt — zie de kop van notify.js. Een automatische mail
+ * hier zou die belofte breken op het moment dat hij het meest telt. Wat er wel
+ * gebeurt: de wijziging komt op de tijdlijn die de klant in zijn eigen dashboard
+ * ziet, en dit scherm zegt met zoveel woorden dat het bellen aan Lucas is. Zijn
+ * eigen regel: *"de klant wordt wel altijd gecontacteerd wanneer een order niet op
+ * tijd geleverd kan worden."* Door hem, niet door een sjabloon.
+ */
+async function handleWindowMove(context, orderId, admin) {
+  const { request, env } = context;
+  const terug = `/admin/orders/${orderId}/files`;
+  if (!Number.isInteger(orderId)) return seeOther('/admin');
+
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('do') || '').trim();
+  const reden = String(form?.get('reason') || '').trim().slice(0, 200);
+
+  const order = await env.DB.prepare(
+    `SELECT id, ref, service, tier, status, product_count, window_start, window_end
+       FROM orders WHERE id = ?1`
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('No such order.') }), 404);
+
+  /* Een bestelling die al geleverd of geannuleerd is, heeft geen venster meer dat
+     iets betekent. Verzetten zou een datum in de agenda zetten voor werk dat niet
+     meer gaat gebeuren. */
+  if (['delivered', 'cancelled'].includes(String(order.status))) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This order is already finished or cancelled. Moving its window would put a day in the calendar for work that is not going to happen.'
+    ) }), 400);
+  }
+
+  if (doen === 'los') {
+    await env.DB.batch([
+      env.DB.prepare('UPDATE orders SET window_start = NULL, window_end = NULL WHERE id = ?1').bind(orderId),
+      env.DB.prepare(
+        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
+      ).bind(orderId, String(order.status), `Venster losgelaten${reden ? ` — ${reden}` : ''}`),
+    ]);
+    await logAdmin(env, admin, 'agenda-venster-los', {
+      orderId, detail: `${order.ref}: ${order.window_start || '—'} – ${order.window_end || '—'} losgelaten${reden ? ` (${reden})` : ''}`,
+    }).catch(() => {});
+    return seeOther(terug);
+  }
+
+  if (doen !== 'verzet') return seeOther(terug);
+
+  const dag = String(form?.get('dag') || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dag)) {
+    return html(page({ title: 'Admin', body: errorBody('That is not a date. Pick a day with the date field.') }), 400);
+  }
+
+  /* Een soort zonder gewicht houdt geen dagen bezet — zie KIND_IMAGES in pricing.js.
+     Dan valt er ook geen venster voor te berekenen, en dat hoort te worden gezegd in
+     plaats van stil te mislukken. */
+  const beelden = kindImages(order.service, Number(order.product_count) || 0);
+  if (!beelden) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This service has no weight in the calendar yet, so it cannot hold a pair of days. See KIND_IMAGES in pricing.js.'
+    ) }), 400);
+  }
+
+  const vandaag = new Date().toISOString().slice(0, 10);
+  let paar = [];
+  let eerste = '';
+  try {
+    const { blackouts, booked } = await readCalendar(env, vandaag, { exceptId: orderId });
+    eerste = firstOfferableDay(vandaag, blackouts);
+    if (dag >= eerste) paar = windowFor(dag, beelden, booked, blackouts);
+  } catch (e) {
+    /* De agenda is niet te lezen. Dan wordt er geen dag vastgelegd — dezelfde
+       weigering die account.js aanhoudt, en om dezelfde reden: een venster dat is
+       gekozen terwijl de bezetting onbekend was, is de dubbele boeking zelf. */
+    return html(page({ title: 'Admin', body: errorBody(
+      `The calendar could not be read (${esc(String(e?.message || e))}), so no window was written.`
+    ) }), 503);
+  }
+
+  if (dag < eerste) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `The first day that can be promised is ${eerste}. The two lead days are why the window holds; a window that starts sooner is a promise the system already knows it cannot keep.`
+    ) }), 400);
+  }
+  if (paar.length !== WINDOW_DAYS) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `There is no room for ${beelden} images starting ${dag}. Close a day or pick another start — the calendar was read with this order taken out of it, so this is genuinely full.`
+    ) }), 409);
+  }
+
+  const start = paar[0];
+  const eind = paar[paar.length - 1];
+  await env.DB.batch([
+    env.DB.prepare('UPDATE orders SET window_start = ?2, window_end = ?3 WHERE id = ?1')
+      .bind(orderId, start, eind),
+    env.DB.prepare(
+      "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
+    ).bind(orderId, String(order.status), `Venster verzet naar ${start} of ${eind}${reden ? ` — ${reden}` : ''}`),
+  ]);
+  await logAdmin(env, admin, 'agenda-venster-verzet', {
+    orderId,
+    detail: `${order.ref}: ${order.window_start || '—'} – ${order.window_end || '—'} → ${start} – ${eind}${reden ? ` (${reden})` : ''}`,
+  }).catch(() => {});
+  return seeOther(terug);
+}
+
+/**
+ * De laatste dag waarop deze bestelling af moet zijn.
+ *
+ * Eén functie voor allebei de soorten, zodat er geen tweede regel kan ontstaan die
+ * er stilletjes van afwijkt. Geeft ook terug WAAROM die dag het is, want een lijst
+ * die alleen datums toont, laat je raden waar ze vandaan komen.
+ */
+function agendaUiterlijk(o, blackouts) {
+  if (o.tier === 'attended' && o.window_start && o.window_end) {
+    return { dag: o.window_end, manier: 'datum' };
+  }
+  const binnen = normalizeStamp(o.created_at || '').slice(0, 10);
+  const vanaf = /^\d{4}-\d{2}-\d{2}$/.test(binnen) ? binnen : new Date().toISOString().slice(0, 10);
+  return { dag: addOpenDays(vanaf, QUEUE_DAYS_MAX, blackouts), manier: 'asap' };
+}
+
+async function renderAgenda({ env }, url) {
+  const vandaag = new Date().toISOString().slice(0, 10);
+  const morgen = addOpenDays(vandaag, 1);
+  const soort = ['datum', 'asap'].includes(url?.searchParams?.get('soort') || '')
+    ? url.searchParams.get('soort')
+    : 'alles';
+
+  let rijen = [];
+  let blackouts = new Set();
+  let belasting = {};
+  let dichteDagen = [];
+  let stuk = false;
+  try {
+    /*
+     * ── DIT SCHERM LAS EEN DERDE AGENDA, EN DAT IS DE FOUT DIE agenda.js MOEST
+     *    VOORKOMEN ────────────────────────────────────────────────────────────
+     *
+     * Hier stonden twee eigen query's: één voor de vensters en één voor de
+     * dichtgezette dagen. Ze leken op readCalendar() maar waren het niet, en op
+     * twee punten telde dit scherm anders dan de poort die de klant tegenkomt:
+     *
+     *   · een VASTGEZET wachtrij-item (plan_queue) telde hier niet mee, dus een
+     *     dag die voor een abonnee al gereserveerd was, zag er hier leeg uit;
+     *   · een onbetaald venster waarvan de betaaltermijn verlopen is, telde hier
+     *     nog wel mee, dus een dag die de poort allang weer vrijgaf, zag er hier
+     *     vol uit.
+     *
+     * Twee kanten op fout, in het ene scherm dat Lucas gebruikt om te beslissen
+     * of hij er nog iets bij kan hebben. readCalendar() is sinds 31 augustus de
+     * enige lezing; dit scherm hoort daar geen uitzondering op te zijn.
+     */
+    const [open, kalender, lijst] = await Promise.all([
+      env.DB.prepare(
+        `SELECT id, ref, brand, name, service, status, tier, lang,
+                product_count, window_start, window_end, created_at, payment_status
+           FROM orders
+          WHERE status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')})
+            AND hidden_at IS NULL
+          ORDER BY id ASC
+          LIMIT 200`
+      ).bind(...AGENDA_OPEN).all(),
+      readCalendar(env, vandaag),
+      /* De REDACTIELIJST van dichtgezette dagen, en met opzet een eigen query.
+         readCalendar() kijkt tot de boekingshorizon (HORIZON_DAYS + 14) omdat verder
+         weg niets te boeken valt; deze lijst moet juist ook een vakantie in maart
+         tonen, want anders staat er een dag dicht die Lucas nergens meer kan
+         openzetten. Twee vragen, twee query's — het is niet dezelfde lezing van de
+         agenda die agenda.js bewaakt, het is de inhoud van één tabel. */
+      env.DB.prepare('SELECT day, reason FROM blackout_days WHERE day >= ?1 ORDER BY day LIMIT 200')
+        .bind(vandaag).all(),
+    ]);
+    rijen = open.results || [];
+    blackouts = kalender.blackouts;
+    belasting = kalender.booked;
+    dichteDagen = lijst.results || [];
+  } catch (err) {
+    stuk = String(err?.message || '');
+  }
+
+  const werk = rijen
+    .map((o) => {
+      const u = agendaUiterlijk(o, blackouts);
+      return {
+        ...o,
+        uiterlijk: u.dag,
+        manier: u.manier,
+        beelden: kindImages(o.service, o.product_count || 0),
+      };
+    })
+    .sort((a, b) => (a.uiterlijk < b.uiterlijk ? -1 : a.uiterlijk > b.uiterlijk ? 1 : a.id - b.id));
+
+  const zichtbaar = soort === 'alles' ? werk : werk.filter((w) => w.manier === soort);
+  const nu = zichtbaar[0] || null;
+  const vandaagAf = werk.filter((w) => w.uiterlijk <= vandaag);
+  const nietBegonnen = vandaagAf.filter((w) => w.status === 'received').length;
+
+  const dagLabel = (iso) => (iso === vandaag ? 'vandaag' : iso === morgen ? 'morgen' : iso);
+  const gewicht = (w) => (w.beelden === null ? 'nog te wegen' : `${w.beelden} beelden`);
+  const wat = (w) => `${w.product_count || 0} × ${esc(serviceLabel(w.service, 'nl') || w.service || '—')}`;
+  const dagen = (w) => (w.manier === 'datum'
+    ? `${esc(w.window_start)} – ${esc(w.window_end)}`
+    : `binnen sinds ${esc(normalizeStamp(w.created_at || '').slice(0, 10) || '—')}`);
+
+  const chip = (waarde, label, n) => `<a class="fl-chip${soort === waarde ? ' is-active' : ''}"${soort === waarde ? ' aria-current="true"' : ''} href="/admin/agenda${waarde === 'alles' ? '' : `?soort=${waarde}`}">${label} <span class="fl-n">${n}</span></a>`;
+
+  const rij = (w) => `
+<tr${w.uiterlijk <= vandaag ? ' class="is-laat"' : ''}>
+  <td class="ag-dag">${esc(dagLabel(w.uiterlijk))}</td>
+  <td><a href="/admin/orders/${encodeURIComponent(String(w.id))}/files"><span class="ref">${esc(w.ref)}</span></a><br><span class="muted">${esc(w.brand || w.name || '—')} · ${wat(w)}</span></td>
+  <td class="ag-gewicht">${esc(gewicht(w))}</td>
+  <td><span class="pill${w.manier === 'asap' ? ' is-asap' : ''}">${w.manier === 'datum' ? 'vastgelegd' : 'zo snel mogelijk'}</span></td>
+  <td class="muted">${dagen(w)}</td>
+  <td class="muted">${esc(STATUS_LABEL[w.status] || w.status)}</td>
+</tr>`;
+
+  /*
+   * ── DE DAGEN DIE DICHT ZIJN ────────────────────────────────────────────────
+   *
+   * blackout_days werd sinds migratie 0001 alleen GELEZEN. De poort hield er keurig
+   * rekening mee, capacity.js sloeg zo'n dag netjes over, en er was geen enkel scherm
+   * om er een rij in te zetten. "Het weekend is open tenzij jij hem dichtzet" was
+   * daarmee een belofte die Lucas niet kón nakomen: openzetten kon, dichtzetten niet.
+   *
+   * GEEN DATUMKIEZER MET JAVASCRIPT, want dit paneel draait er geen (CSP is
+   * `default-src 'none'`). <input type="date"> is de browser zelf; hij levert
+   * 'YYYY-MM-DD' aan en heeft geen script nodig. `min` houdt de kiezer bij vandaag —
+   * een dag in het verleden dichtzetten verandert niets meer.
+   *
+   * DE REDEN IS VERPLICHT, om dezelfde reden als bij een slotcorrectie: over drie
+   * maanden is "waarom stond 12 december dicht" de eerste vraag, en het antwoord
+   * hoort niet in iemands hoofd te zitten.
+   */
+  const dagRij = (d) => `
+<tr>
+  <td class="ag-dag">${esc(d.day)}${d.day === vandaag ? ' <span class="muted">(vandaag)</span>' : ''}</td>
+  <td class="muted">${esc(d.reason || '—')}</td>
+  <td>${belasting[d.day] ? `<span class="pill is-asap">${belasting[d.day]} beelden staan hier nog</span>` : ''}</td>
+  <td>
+    <form method="post" action="/admin/agenda/dagen">
+      <input type="hidden" name="do" value="open">
+      <input type="hidden" name="dag" value="${esc(d.day)}">
+      <button class="btn" type="submit">Weer openzetten</button>
+    </form>
+  </td>
+</tr>`;
+
+  const dagenBlok = `
+<div class="card">
+  <form method="post" action="/admin/agenda/dagen" class="ag-dagform">
+    <input type="hidden" name="do" value="dicht">
+    <label for="bo-dag">Dag</label>
+    <input id="bo-dag" type="date" name="dag" min="${esc(vandaag)}" required>
+    <label for="bo-reden">Waarom</label>
+    <input id="bo-reden" type="text" name="reason" maxlength="120" required
+           placeholder="vakantie, shoot in Antwerpen, feestdag">
+    <button class="btn btn-primary" type="submit">Dag dichtzetten</button>
+  </form>
+</div>
+
+${dichteDagen.length ? `
+<table class="ag-tabel ag-dagen">
+  <thead><tr><th>Dag</th><th>Reden</th><th>Bezet</th><th></th></tr></thead>
+  <tbody>${dichteDagen.map(dagRij).join('')}</tbody>
+</table>` : '<p class="empty">Er staat geen enkele dag dicht. Alles vanaf vandaag is inplanbaar, het weekend erbij.</p>'}`;
+
+  const body = `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Agenda</h1>
+<p class="lede">Alles wat nog werk is, op één hoop en op volgorde van de laatste dag
+waarop het af moet zijn. Een vastgelegde bestelling telt vanaf de tweede dag van
+haar paar, een bestelling uit de wachtrij vanaf de dag van binnenkomst plus
+${QUEUE_DAYS_MAX}. Twee lijstjes zou betekenen dat jij ze in je hoofd moet
+samenvoegen, en ze vechten om dezelfde dag.</p>
+
+${stuk ? `<p class="warnline">De agenda is niet te lezen (${esc(stuk)}).</p>` : `
+<div class="stats">
+  <div class="stat"><span class="stat-n">${belasting[vandaag] || 0} / ${ATTENDED_IMAGES_PER_DAY}</span><span class="stat-l">vandaag vastgelegd, in beelden</span></div>
+  <div class="stat"><span class="stat-n">${belasting[morgen] || 0} / ${ATTENDED_IMAGES_PER_DAY}</span><span class="stat-l">morgen vastgelegd</span></div>
+  <div class="stat"><span class="stat-n">${werk.length}</span><span class="stat-l">open bestellingen</span></div>
+  <div class="stat${vandaagAf.length ? ' is-warn' : ''}"><span class="stat-n">${vandaagAf.length}</span><span class="stat-l">moet vandaag af${nietBegonnen ? `, waarvan ${nietBegonnen} niet begonnen` : ''}</span></div>
+</div>
+
+${nu ? `
+<div class="card is-attention ag-nu">
+  <p class="eyebrow">Hier begin je</p>
+  <div class="row-head">
+    <span class="ref">${esc(nu.ref)}</span>
+    <span class="muted">${esc(nu.brand || nu.name || '—')} · ${wat(nu)}</span>
+  </div>
+  <p class="meta">Uiterlijk <strong>${esc(dagLabel(nu.uiterlijk))}</strong> &middot;
+    ${nu.manier === 'datum' ? `vastgelegd op ${dagen(nu)}` : dagen(nu)} &middot;
+    ${esc(gewicht(nu))} &middot; ${esc(STATUS_LABEL[nu.status] || nu.status)}</p>
+  ${nu.uiterlijk <= vandaag
+    ? `<p class="warnline">Dit is de laatste dag. Lukt het niet, dan hoort ${esc(nu.brand || nu.name || 'de klant')} dat vandaag — niet morgen.</p>`
+    : ''}
+  <p><a class="btn btn-primary" href="/admin/orders/${encodeURIComponent(String(nu.id))}/files">Naar deze bestelling</a></p>
+</div>` : '<p class="empty">Niets open. De agenda is leeg.</p>'}
+
+<div class="fl">
+  ${chip('alles', 'Alles', werk.length)}
+  ${chip('datum', 'Vastgelegd', werk.filter((w) => w.manier === 'datum').length)}
+  ${chip('asap', 'Zo snel mogelijk', werk.filter((w) => w.manier === 'asap').length)}
+</div>
+
+${zichtbaar.length ? `
+<table class="ag-tabel">
+  <thead><tr><th>Uiterlijk</th><th>Bestelling</th><th>Weegt</th><th>Manier</th><th>Dagen</th><th>Status</th></tr></thead>
+  <tbody>${zichtbaar.map(rij).join('')}</tbody>
+</table>` : '<p class="empty">Niets in deze filter.</p>'}
+
+<h2 id="dagen">Dagen dichtzetten</h2>
+<p class="lede">Het weekend staat open, want je bent in het weekend gewoon in te
+plannen. Een dag waarop je er niet bent — vakantie, een shoot elders, een
+feestdag — zet je hier dicht. De klant krijgt hem dan niet meer aangeboden, de
+aanloop telt eroverheen in plaats van erdoorheen, en een paar dat op deze dag zou
+vallen schuift naar de eerstvolgende dag die wel open is.</p>
+${dagenBlok}
+`}`;
+
+  return html(page({ title: 'Agenda', body }));
+}
+
 const FUNNEL_DAYS = 30;
 
 /* `url` komt er los bij en zit niet in `context`: adminGet() bouwt hem zelf uit
@@ -6634,6 +7625,8 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
     : ''}${watch ? watchChip(WATCH.cron, watch.cron) : ''}${watch
     ? watchChip(WATCH.backup, watch.backup)
     : ''}
+  <a class="fl-chip" href="/admin/agenda">Agenda &rarr;</a>
+  <a class="fl-chip" href="/admin/security">Twee stappen &rarr;</a>
   <a class="fl-chip" href="/admin/funnel">Trechter &rarr;</a>
 </div>`;
 

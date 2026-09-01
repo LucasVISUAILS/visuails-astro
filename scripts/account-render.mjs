@@ -168,8 +168,17 @@ const FEEDBACK = [];
  * vergelijkt met de HUIDIGE maand, en een vastgezette '2026-08' zou deze
  * schermafdruk in september stilletjes op "nog niet betaald" laten vallen. */
 const NU = new Date().toISOString().slice(0, 7);
+/* VISUAILS_ABO=maat rendert een MAAND OP MAAT in plaats van Studio. Dat scherm is
+   sinds 1 september 2026 mogelijk en was tot dan toe alleen in de code te zien:
+   het bedrag en de bundel komen van de rij en niet uit PLAN_AMOUNT/PLAN_SLOTS, en
+   subscriptionShape() heeft er een eigen tak voor. Een scherm dat je pas na een
+   deploy kunt beoordelen, beoordeel je niet — precies waar dit script over gaat. */
+const MAAT = process.env.VISUAILS_ABO === 'maat';
 const SUBSCRIPTION = {
-  id: 4, ref: 'SUB-4K2P-9XT', customer_id: 7, plan: 'studio', term: 'yearly',
+  id: 4, ref: 'SUB-4K2P-9XT', customer_id: 7,
+  plan: MAAT ? 'maat' : 'studio', term: MAAT ? 'monthly' : 'yearly',
+  amount_cents: MAAT ? 85500 : null,
+  slots_json: MAAT ? '{"catalog":6,"complete":3,"video-motion":2}' : null,
   status: 'active', window_day: 8,
   mollie_customer_id: 'cst_voorbeeld', mollie_mandate_id: 'mdt_voorbeeld', mollie_subscription_id: 'sub_voorbeeld',
   started_at: '2026-05-08', cancelled_at: null, cancel_reason: null,
@@ -187,7 +196,10 @@ const LOCKS = [
   { style: 'catalog', custom_model_id: 31, roster_model: null, background_hex: '#F7F5F1', ratio: 'portrait45', channels: 'own,bol' },
   { style: 'lifestyle', custom_model_id: 31, roster_model: null, background_hex: null, ratio: 'portrait45', channels: null },
 ];
-const SUB_MONTHS = [
+const SUB_MONTHS = MAAT ? [
+  { month: VORIGE, granted: 9, used: 7, clips_granted: 2, clips_used: 2 },
+  { month: NU, granted: 9, used: 4, clips_granted: 2, clips_used: 0 },
+] : [
   { month: VORIGE, granted: 12, used: 9, clips_granted: 2, clips_used: 2 },
   { month: NU, granted: 12, used: 7, clips_granted: 2, clips_used: 1 },
 ];
@@ -196,10 +208,14 @@ const SUB_MONTHS = [
    precies één van de vier standen die deze lijst kan hebben: het merkje kent
    twee waarden, de vastzetknop drie (aan, uit, losmaken). Wat je niet rendert,
    beoordeel je niet — dezelfde reden waarom dit script überhaupt bestaat. */
+/* De drie standen die het inplanscherm kent, in één lijst: een vastgezet item met
+   twee aangewezen dagen, een concept dat zo snel mogelijk loopt, en een soort die
+   nog geen gewicht in de agenda heeft (video) en dus geen dag kan krijgen. */
+const _dag = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const QUEUE = [
-  { id: 21, position: 0, name: 'Winterjas, zwart', note: 'graag op straat, niet in de studio', upload_batch: 'b-21', kind: 'complete', locked_at: '2026-08-14 09:12', created_at: '2026-08-14' },
-  { id: 22, position: 1, name: 'Wollen sjaal — drie kleuren', note: null, upload_batch: 'b-22', kind: 'complete', locked_at: null, created_at: '2026-08-14' },
-  { id: 23, position: 2, name: 'Handschoenen', note: 'detailopname van de naad', upload_batch: null, kind: 'video-motion', locked_at: null, created_at: '2026-08-15' },
+  { id: 21, position: 0, name: 'Winterjas, zwart', note: 'graag op straat, niet in de studio', upload_batch: 'b-21', kind: 'complete', locked_at: '2026-08-14 09:12', created_at: '2026-08-14', window_start: _dag(4), window_end: _dag(5), asap: 0 },
+  { id: 22, position: 1, name: 'Wollen sjaal — drie kleuren', note: null, upload_batch: 'b-22', kind: 'complete', locked_at: null, created_at: '2026-08-14', window_start: null, window_end: null, asap: 1 },
+  { id: 23, position: 2, name: 'Handschoenen', note: 'detailopname van de naad', upload_batch: null, kind: 'video-motion', locked_at: null, created_at: '2026-08-15', window_start: null, window_end: null, asap: 1 },
 ];
 
 /* Vorige maand en deze maand, uitgerekend en niet vastgezet — anders valt dit
@@ -207,7 +223,15 @@ const QUEUE = [
 const _nu = new Date();
 const _dezeMaand = _nu.toISOString().slice(0, 7);
 const _vorige = new Date(Date.UTC(_nu.getUTCFullYear(), _nu.getUTCMonth() - 1, 1)).toISOString().slice(0, 7);
-const SUB_SLOTS = [
+/* Bij een maand op maat drie soorten in plaats van één: dat is precies de vorm
+   die met de vaste pakketten niet kan bestaan, en dus de vorm die je hier wilt
+   zien — een kale catalogset naast een complete bundel naast een clip. */
+const SUB_SLOTS = MAAT ? [
+  { month: _vorige,    kind: 'catalog',      granted: 6,  used: 4 },
+  { month: _dezeMaand, kind: 'catalog',      granted: 6,  used: 2 },
+  { month: _dezeMaand, kind: 'complete',     granted: 3,  used: 1 },
+  { month: _dezeMaand, kind: 'video-motion', granted: 2,  used: 0 },
+] : [
   { month: _vorige,    kind: 'complete',     granted: 12, used: 9 },
   { month: _dezeMaand, kind: 'complete',     granted: 12, used: 2 },
   { month: _dezeMaand, kind: 'video-motion', granted: 2,  used: 1 },
@@ -231,6 +255,10 @@ function makeDb() {
        deel doorgeschoven uit vorige maand: dat is de stand waar de opmaak het
        moeilijkst van wordt en dus de stand die je wilt zien. */
     if (s.includes('FROM subscription_slots')) return SUB_SLOTS;
+    /* De agenda leest plan_queue óók, maar dan alleen de vastgezette items met
+       dagen — zie src/lib/agenda.js. Dezelfde lijst volstaat: bookedFromRows()
+       slaat een rij zonder window_start vanzelf over. */
+    if (s.includes('FROM blackout_days')) return [];
     if (s.includes('FROM plan_queue q')) return TAKEN;
     if (s.includes('FROM plan_queue')) return QUEUE;
     if (s.includes('FROM account_sessions')) return { ...CUSTOMER, expires_at: '2099-01-01' };

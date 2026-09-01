@@ -439,8 +439,14 @@ input, textarea, button, select {
   appearance: none;
 }
 
+/* input[type="date"] STOND HIER NIET, en dat was geen gemis zolang er geen
+   datumveld bestond. Sinds de agenda dagen kan dichtzetten wel: een <input> die
+   niet in deze lijst staat, krijgt de vulling van de BROWSER, en dat is precies
+   het witte vlak in een donker paneel waar de noot bij `.slotfix select` over
+   gaat. De kalenderknop zelf komt van color-scheme: dark bovenaan dit bestand. */
 input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
-input[type="search"], input[type="number"], input[type="password"], textarea, select {
+input[type="search"], input[type="number"], input[type="password"],
+input[type="date"], textarea, select {
   font-size: .92rem;
   color: var(--ink);
   background: var(--surface);
@@ -448,7 +454,8 @@ input[type="search"], input[type="number"], input[type="password"], textarea, se
   border-radius: var(--r-md);
 }
 input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
-input[type="search"], input[type="number"], input[type="password"] {
+input[type="search"], input[type="number"], input[type="password"],
+input[type="date"] {
   min-height: 38px;
   padding: 0 .7rem;
 }
@@ -867,3 +874,77 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   .slotfix form > * { flex: 1 1 100%; }
   .slotfix input[type="number"] { width: 100%; }
 }
+
+/* ── DE AGENDA ─────────────────────────────────────────────────────────────
+   Wat er nu af moet, op één hoop en op volgorde. Zie de kop van renderAgenda()
+   in src/lib/admin.js voor waarom dit één lijst is en geen twee.
+
+   GEEN KLEUR BEHALVE VOOR HET ENE DING DAT GELEZEN MOET WORDEN — de dag die
+   vandaag afloopt. De rest is grijswaarden, want een scherm waarop alles
+   opvalt, wijst je nergens heen. Dezelfde regel als DESIGN.md voor de site. */
+.ag-nu { margin: 1rem 0 1.4rem; }
+.ag-nu .eyebrow {
+  margin: 0 0 .4rem; font-size: .7rem; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--warn-ink);
+}
+.ag-nu .meta { margin: .6rem 0 0; }
+.ag-nu .btn { margin-top: .9rem; }
+
+.ag-tabel { width: 100%; border-collapse: collapse; margin: .8rem 0 1.4rem; font-size: .86rem; }
+.ag-tabel th, .ag-tabel td {
+  text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.ag-tabel th {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-3); font-weight: 700;
+}
+.ag-tabel tr:last-child td { border-bottom: 0; }
+.ag-tabel a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+.ag-dag { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 600; }
+.ag-gewicht { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+/* De enige kleur in de tabel: een rij die vandaag of eerder af moet. */
+.ag-tabel tr.is-laat .ag-dag { color: var(--warn-ink); }
+/* Een wachtrij-order heeft geen vastgelegde dagen; de stippellijn zegt dat
+   zonder een tweede kleur nodig te hebben. */
+.pill.is-asap { border-style: dashed; color: var(--ink-3); }
+/* ── DAGEN DICHTZETTEN ─────────────────────────────────────────────────────
+   Eén regel op een breed scherm, gestapeld op een smal. Dezelfde vorm als
+   `.slotfix`, want het is hetzelfde soort formulier: een handeling die Lucas een
+   paar keer per jaar doet en waarvan de velden dus moeten uitleggen wat ze zijn. */
+.ag-dagform { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem .8rem; }
+.ag-dagform label {
+  display: block; font-size: .74rem; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: .25rem;
+}
+.ag-dagform input[type="text"] { flex: 1 1 18rem; min-width: 0; }
+.ag-dagen td form { display: inline; }
+@media (max-width: 620px) {
+  .ag-dagform > * { flex: 1 1 100%; }
+}
+
+@media (max-width: 720px) {
+  .ag-tabel, .ag-tabel tbody, .ag-tabel tr, .ag-tabel td { display: block; width: 100%; }
+  .ag-tabel thead { display: none; }
+  .ag-tabel tr { border-bottom: 1px solid var(--line); padding: .5rem 0; }
+  .ag-tabel td { border-bottom: 0; padding: .15rem .1rem; }
+  /* ALLEEN in de werklijst is de eerste kolom een UITERSTE dag. In de lijst met
+     dichtgezette dagen is diezelfde `.ag-dag` gewoon de dag zelf, en daar zou
+     "uiterlijk 12-12" een datum beloven die er niet staat. */
+  .ag-tabel:not(.ag-dagen) .ag-dag::before { content: "uiterlijk "; color: var(--ink-3); font-weight: 400; }
+  .ag-dagen .ag-dag::before { content: "dag "; color: var(--ink-3); font-weight: 400; }
+}
+
+/* ── TWEE STAPPEN ──────────────────────────────────────────────────────────
+   Het geheim en de herstelcodes worden overgetypt van scherm naar telefoon of
+   naar papier. Vast lettertype dus, ruim uit elkaar, en te selecteren. */
+.hcodes {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 1rem; letter-spacing: .08em; line-height: 1.9;
+  margin: .6rem 0 0; padding: .8rem 1rem; white-space: pre-wrap; word-break: break-all;
+  background: var(--paper-2); border: 1px solid var(--line); color: var(--ink-900);
+  user-select: all;
+}
+.loginform { display: grid; gap: .8rem; max-width: 22rem; margin-top: 1rem; }
+.loginform label { display: grid; gap: .3rem; font-size: .82rem; color: var(--ink-3); }
+.loginform input { font-size: 1.05rem; letter-spacing: .12em; }

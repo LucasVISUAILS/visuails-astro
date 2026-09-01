@@ -31,7 +31,11 @@
    waarmee de bank de incasso afgeeft) en de PROEFVISUAL (een product). Ze
    kostten allebei €1 en werden allebei als "€1" ingetypt, dus ze waren niet uit
    elkaar te houden — en dan verandert er bij een prijswijziging één te veel. */
-import { plans, euro, vatLabel, AMOUNT, MANDATE_AMOUNT } from '../../data/pricing.js';
+import {
+  plans, euro, vatLabel, AMOUNT, MANDATE_AMOUNT,
+  CUSTOM_MONTH_ID, CUSTOM_MONTH_MIN_PRODUCTS, CUSTOM_MONTH_MAX_PRODUCTS,
+  customMonthTotal, ladderRate, addOnRate,
+} from '../../data/pricing.js';
 import { TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel } from '../../data/plans.js';
 import { planName } from '../../data/planNames.js';
 import { localizedPath } from '../../i18n/ui.js';
@@ -54,12 +58,14 @@ const FOUTEN: Record<string, string> = nl ? {
   plan: 'Kies eerst een abonnement.',
   termijn: 'Kies eerst een termijn.',
   vol: 'Er is deze maand geen plek meer voor dit abonnement. Mail hello@visuails.com — dan zetten we je op de lijst voor de eerstvolgende plek.',
+  maat: `Kies bij een maand op maat minstens ${CUSTOM_MONTH_MIN_PRODUCTS} en hoogstens ${CUSTOM_MONTH_MAX_PRODUCTS} producten, en niet meer carrousels dan producten.`,
   opslaan: 'We konden je aanvraag niet vastleggen. Probeer het opnieuw, of mail hello@visuails.com.',
   mollie: 'Het betaalscherm ging niet open. Er is niets afgeschreven. Probeer het opnieuw, of mail hello@visuails.com.',
 } : {
   plan: 'Choose a plan first.',
   termijn: 'Choose a term first.',
   vol: 'There is no room for this plan this month. Email hello@visuails.com and we will put you on the list for the next opening.',
+  maat: `A custom month needs at least ${CUSTOM_MONTH_MIN_PRODUCTS} and at most ${CUSTOM_MONTH_MAX_PRODUCTS} products, and no more carousels than products.`,
   opslaan: 'We could not record your request. Try again, or email hello@visuails.com.',
   mollie: 'The payment screen did not open. Nothing has been charged. Try again, or email hello@visuails.com.',
 };
@@ -133,6 +139,17 @@ const c = nl ? {
   signedOut: `Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, begin dan met een proefvisual van ${euro(AMOUNT.testSample, "nl")} — dan weet je wat je koopt.`,
   signIn: 'Inloggen',
   sample: 'Eerst een proefvisual',
+  maatNaam: 'Maand op maat',
+  maatLine: `Stel zelf samen, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten per maand.`,
+  maatUitleg: `Je betaalt het gewone laddertarief over jouw aantal — dezelfde prijs per product als bij een losse bestelling van die omvang, en een carrousel kost er ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'nl')} tot ${euro(addOnRate(20), 'nl')} bovenop, afhankelijk van hoeveel producten je doet. Geen apart kortingspercentage: de korting zit al in de trede.`,
+  maatProducten: 'Producten per maand',
+  maatCarrousels: 'Daarvan met lifestyle-carrousel',
+  maatClips: 'Motion-clips per maand',
+  maatCarrouselsHint: 'Een carrousel hoort bij een product dat je toch al laat fotograferen, dus nooit meer dan het aantal producten.',
+  maatTermijn: 'Een maand op maat loopt altijd maandelijks. De jaartermijn geeft korting die uit de vaste abonnementsprijzen komt, en die heeft deze vorm niet — een verbintenis zonder korting verkopen we niet.',
+  maatCustomH: 'Wil je een eigen look erin?',
+  maatCustomBody: 'Een custom lifestyle, je eigen merkmodel of een stijl die wij nog niet voor je hebben opgezet, kan wél in een abonnement — maar niet via dit formulier. Zo\u2019n stijl moet eerst worden opgezet, en anders betaal je vanaf de eerste maand voor iets dat nog niet bestaat. Neem contact op, dan zetten we hem eerst op en daarna staat hij in je maand.',
+  maatCustomCta: 'Neem contact op',
 } : {
   h: 'Start a plan',
   lede: 'A fixed number of finished products every month, in a week reserved for you. Cancel any month.',
@@ -155,6 +172,17 @@ const c = nl ? {
   signedOut: `You need to be signed in to start a plan. Never ordered from us? Start with a ${euro(AMOUNT.testSample, "en")} sample so you know what you are buying.`,
   signIn: 'Sign in',
   sample: 'Try a sample first',
+  maatNaam: 'Custom month',
+  maatLine: `Compose it yourself, from ${CUSTOM_MONTH_MIN_PRODUCTS} products a month.`,
+  maatUitleg: `You pay the ordinary ladder rate for your volume — the same per-product price a one-off order of that size costs — and a carousel adds ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'en')} to ${euro(addOnRate(20), 'en')} on top, depending on how many products you do. No separate discount percentage: the discount is already in the step.`,
+  maatProducten: 'Products a month',
+  maatCarrousels: 'Of those, with a lifestyle carousel',
+  maatClips: 'Motion clips a month',
+  maatCarrouselsHint: 'A carousel belongs to a product you are having photographed anyway, so never more than the number of products.',
+  maatTermijn: 'A custom month always runs monthly. The 12-month term discounts the fixed plan prices, and this shape does not have one — a commitment with nothing in return is not something we sell.',
+  maatCustomH: 'Want your own look in it?',
+  maatCustomBody: 'A custom lifestyle, your own Brand Model, or a style we have not set up for you yet can go into a plan — but not through this form. That style has to be set up first, otherwise you are paying from month one for something that does not exist yet. Get in touch: we set it up, and then it is in your month.',
+  maatCustomCta: 'Get in touch',
 };
 
 // De twee termijnen, met wat ze kosten voor het GEKOZEN plan. Omdat er geen
@@ -220,7 +248,77 @@ const termijnen = TERM_IDS.map((id) => ({
             </span>
           </label>
         ))}
+
+        {/* ── DE VIERDE OPTIE — 1 september 2026 ──────────────────────────────
+            Lucas: *"Vierde unieke optie in abonnementskiezer."*
+
+            EEN RADIO ZOALS DE ANDERE DRIE, en de aantallen eronder in dezelfde
+            <label>. Geen apart scherm en geen tweede stap: wie hierheen komt,
+            vergelijkt vier vormen met elkaar, en een vierde die je eerst moet
+            aanklikken om te zien wat hij kost, vergelijkt niet mee.
+
+            DE PRIJS STAAT ER NIET ALS BEDRAG, en dat is geen omissie. Deze pagina
+            wordt één keer gebouwd (output: 'static') en heeft geen script dat
+            rekent; een bedrag dat pas na het insturen klopt, is erger dan geen
+            bedrag. Wat er wél staat is de REGEL, en die is kort genoeg om te
+            lezen: het gewone laddertarief over jouw aantal. De server rekent het
+            uit en het staat op het scherm ná de machtiging.
+
+            EN DE DRIE VELDEN ZIJN GEEN VALIDATIE. `min`, `max` en `required`
+            houden een vergissing tegen; de echte controle staat in
+            handleSubscribeStart() en die is de enige die telt — zie de kop daar. */}
+        <label class="plan-opt plan-maat">
+          <input type="radio" name="plan" value={CUSTOM_MONTH_ID} />
+          <span class="plan-opt-body">
+            <strong>{c.maatNaam}</strong>
+            <span class="plan-opt-line">{c.maatLine}</span>
+            <span class="plan-opt-facts">{c.maatUitleg}</span>
+
+            <span class="maat-velden">
+              <span class="maat-veld">
+                <label for="maat-producten">{c.maatProducten}</label>
+                <input id="maat-producten" type="number" name="producten" inputmode="numeric"
+                       min={CUSTOM_MONTH_MIN_PRODUCTS} max={CUSTOM_MONTH_MAX_PRODUCTS}
+                       step="1" placeholder={String(CUSTOM_MONTH_MIN_PRODUCTS)} />
+              </span>
+              <span class="maat-veld">
+                <label for="maat-carrousels">{c.maatCarrousels}</label>
+                <input id="maat-carrousels" type="number" name="carrousels" inputmode="numeric"
+                       min="0" max={CUSTOM_MONTH_MAX_PRODUCTS} step="1" placeholder="0" />
+              </span>
+              <span class="maat-veld">
+                <label for="maat-clips">{c.maatClips}</label>
+                <input id="maat-clips" type="number" name="clips" inputmode="numeric"
+                       min="0" max={CUSTOM_MONTH_MAX_PRODUCTS} step="1" placeholder="0" />
+              </span>
+            </span>
+            <span class="plan-opt-line">{c.maatCarrouselsHint}</span>
+            <span class="plan-opt-line">{c.maatTermijn}</span>
+          </span>
+        </label>
       </fieldset>
+
+      {/* ── DE POORT VOOR ALLES WAT EERST OPGEZET MOET WORDEN ────────────────
+          Lucas, 1 september 2026: *"als mensen custom lifestyle of iets anders
+          customs in het abonnement willen, moeten ze eerst contact met ons
+          opnemen. Dit is namelijk wel mogelijk maar vereist opzetting van die
+          style of custom service, hierdoor betaal je al terwijl die style die je
+          wil nog helemaal niet in het systeem staat."*
+
+          Dat is geen beperking van het formulier maar een eerlijkheid ervan. De
+          drie soorten hierboven — catalogset, lifestyle-carrousel in je vaste
+          look, motion-clip — bestaan zodra het abonnement loopt. Een eigen look
+          bestaat pas nadat hij is opgezet, en een incasso die daarvoor al loopt,
+          int geld voor iets dat er niet is.
+
+          GEEN VELD DAT HET AANBIEDT EN DAARNA WEIGERT. Er staat geen vinkje
+          "custom lifestyle" dat na het insturen een foutmelding geeft: wie dat
+          wil, hoort hier te lezen dat het KAN en langs welke weg. */}
+      <div class="plan-set maat-custom">
+        <h2>{c.maatCustomH}</h2>
+        <p>{c.maatCustomBody}</p>
+        <p><a class="btn btn-ghost" href={lp('/contact')}>{c.maatCustomCta}</a></p>
+      </div>
 
       {/* ── WAAROM DE JAARVORM MAAR ÉÉN PLAN GOEDKOPER MAAKT ─────────────────
           18 augustus 2026. De kaarten hierboven zetten er zes bedragen uit, en
@@ -425,6 +523,47 @@ const termijnen = TERM_IDS.map((id) => ({
   .plan-opt-line { color: var(--ink-2); }
   .plan-opt-facts { font-size: .88rem; color: var(--ink-3); }
   .plan-opt-prices { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; margin-top: .3rem; font-size: .9rem; }
+
+  /* ── DE MAAND OP MAAT ──────────────────────────────────────────────────────
+     Drie getallen naast elkaar op een breed scherm, onder elkaar op een smal.
+     Ze staan BINNEN de <label> van de radio, zodat de hele kaart hetzelfde
+     aanklikgebied houdt als de drie erboven — maar een klik in een invoerveld
+     mag niet doorslaan naar de radio, en dat doet hij ook niet: een <input>
+     binnen een label vangt zijn eigen klik.
+
+     `pointer-events` is hier dus niet nodig, en dat is nagegaan en niet
+     aangenomen: het label activeert zijn eerste besturingselement alleen als de
+     klik niet op een ander besturingselement viel. */
+  .maat-velden { display: flex; flex-wrap: wrap; gap: .6rem 1rem; margin-top: .5rem; }
+  .maat-veld { display: grid; gap: .25rem; }
+  .maat-veld label {
+    font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+  }
+  /* ── EEN <input type="number"> KRIJGT ZIJN LOOK NIET GRATIS ────────────────
+     global.css zet `appearance: none` op dit type maar geeft hem geen achtergrond
+     en geen rand — die staan op de klasse `.input`, en die hoort bij een
+     `.field`-formulier. Zonder deze regel tekent de browser drie lichte vakjes in
+     een donker paneel. Gevonden op de schermafdruk, precies zoals de noot bij
+     `.plan-day select` hieronder beschrijft; dat is dezelfde fout in dezelfde
+     vorm en daarom staat deze regel er in dezelfde stijl naast. */
+  .maat-veld input[type="number"] {
+    width: 7.5rem; padding: .55rem .9rem;
+    border-radius: var(--r-md); border: 1px solid var(--line);
+    background: var(--paper-2); color: inherit; font: inherit;
+  }
+  .maat-veld input[type="number"]::placeholder { color: var(--ink-3); }
+  .maat-veld input[type="number"]:focus-visible { border-color: var(--accent); }
+  /* Een keuze die niet aanstaat, hoeft zijn velden niet op te dringen: ze staan
+     er wel (een formulier zonder script kan ze niet wegnemen) maar gedempt, zodat
+     de kaart pas "aan" leest zodra de radio het is. */
+  .plan-maat:not(:has(input:checked)) .maat-velden { opacity: .55; }
+  .maat-custom { margin-top: .4rem; }
+  .maat-custom h2 { font-size: 1.05rem; margin: 0 0 .3rem; }
+  .maat-custom p { color: var(--ink-2); margin: 0 0 .6rem; }
+  @media (max-width: 520px) {
+    .maat-veld { flex: 1 1 100%; }
+    .maat-veld input[type="number"] { width: 100%; }
+  }
   .plan-hint { color: var(--ink-3); font-size: .9rem; margin: 0 0 .4rem; }
   .plan-day { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
   /* EXPLICIETE BREEDTE EN RADIUS. De sitebrede regel geeft elke <select> de

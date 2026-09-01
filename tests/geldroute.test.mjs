@@ -496,18 +496,29 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
     const reeks = db.prepare('SELECT COUNT(*) AS n FROM invoices').get();
     ok('en er is dus ook geen nummer verbruikt', reeks.n, 0);
 
-    /* De tweede helft: het moet wél ergens staan. Een console.error leest niemand
-       terug; de tijdlijn van de bestelling wel, want die staat in het adminportaal. */
+    /* ── DE WEIGERING IS EEN STAP NAAR VOREN GESCHOVEN — 31 augustus 2026 ──
+       Hier werd gezocht naar de regel van issueInvoice() ("de factuur wacht nog").
+       Die wordt niet meer bereikt, en dat is beter: sinds Lucas koos om een
+       betaling die het totaal niet dekt de bestelling niet op betaald te laten
+       zetten, komt het nooit meer tot een factuurpoging. De weigering staat nu in
+       de webhook zelf, één stap eerder.
+
+       De AFSPRAAK is niet veranderd en dat is wat deze regel bewaakt: de klant
+       moet in zijn eigen tijdlijn kunnen lezen dat er iets wordt nagekeken, in
+       gewone taal en zonder bedragen. */
     const gebeurtenissen = db.prepare(
-      "SELECT * FROM order_events WHERE order_id = ? AND note LIKE '%wacht nog%'"
+      "SELECT * FROM order_events WHERE order_id = ? AND note LIKE '%nagekeken%'"
     ).all(order.id);
-    ok('de klant leest in zijn tijdlijn dat de factuur wacht', gebeurtenissen.length, 1);
+    ok('de klant leest in zijn tijdlijn dat er iets wordt nagekeken', gebeurtenissen.length, 1);
     /* Zonder bedragen: order_events is óók de klantentijdlijn (portal.js en
        account.js lezen dezelfde tabel, zonder filter op actor). De getallen staan
        in admin_log, waar alleen Lucas kijkt. */
     ok('en zonder bedragen erin', /\d{3,}/.test(gebeurtenissen[0].note), false);
+    /* En de bedragen staan in admin_log, onder de handeling die er nu bij hoort:
+       'payment.short' in plaats van 'invoice.blocked', want er is geen factuur
+       tegengehouden — er is een betaling niet geaccepteerd. */
     const logregel = db.prepare(
-      "SELECT * FROM admin_log WHERE order_id = ? AND action = 'invoice.blocked'"
+      "SELECT * FROM admin_log WHERE order_id = ? AND action = 'payment.short'"
     ).get(order.id);
     ok('en jij leest de twee bedragen in het adminlog',
        /binnengekomen 100 cent op een bestelling van 123420 cent/.test(logregel?.detail || ''), true);

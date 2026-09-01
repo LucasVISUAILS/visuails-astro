@@ -57,10 +57,15 @@ import {
   setMollieIds, activateSubscription,
 } from './subscription.js';
 import {
-  PLAN_IDS, TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor, planProductBudget, fitsBudget,
+  PLAN_IDS, SUB_PLAN_IDS, TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor,
+  planProductBudget, fitsBudget, fitsProducts,
 } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
-import { MANDATE_AMOUNT } from '../data/pricing.js';
+import {
+  MANDATE_AMOUNT, CUSTOM_MONTH_ID, CUSTOM_MONTH_MIN_PRODUCTS, CUSTOM_MONTH_MAX_PRODUCTS,
+  customMonthSlots, customMonthTotal,
+} from '../data/pricing.js';
+import { subMaandCents, subProducten } from './slots.js';
 import {
   createMollieCustomer, createFirstPayment, firstPaymentMandate, createMollieSubscription,
   cancelMollieSubscription, mollieKeyProblems,
@@ -121,14 +126,56 @@ export async function handleSubscribeStart(context, customer, offsite) {
   const form = await request.formData().catch(() => null);
 
   const planId = String(form?.get('plan') || '');
-  const termId = String(form?.get('term') || 'monthly');
+  let termId = String(form?.get('term') || 'monthly');
   const windowDay = Number.parseInt(String(form?.get('window_day') || ''), 10);
   /* Bovenaan en niet halverwege: terug() heeft hem nodig en die wordt hieronder
      vijf keer aangeroepen, waarvan drie keer vóór de plek waar deze regel
      stond. Zie de noot bij terug(). */
   const lang = String(form?.get('lang') || 'nl') === 'en' ? 'en' : 'nl';
 
-  if (!PLAN_IDS.includes(planId)) return seeOtherLocal(terug('plan', lang));
+  if (!SUB_PLAN_IDS.includes(planId)) return seeOtherLocal(terug('plan', lang));
+
+  /*
+   * ── DE MAAND OP MAAT WORDT HIER OPNIEUW UITGEREKEND, EN DAT IS HET PUNT ────
+   *
+   * Het formulier stuurt drie aantallen en verder niets. Geen bedrag, geen
+   * bundel, geen prijs uit de browser — die zou de klant kunnen verzinnen, en dit
+   * is het formulier waar een machtiging uit volgt. Wat er wordt afgeschreven,
+   * komt uit customMonthTotal() over de aantallen die de server heeft goedgekeurd.
+   *
+   * DRIE GRENZEN, EN ALLE DRIE OM EEN ANDERE REDEN:
+   *   · minstens CUSTOM_MONTH_MIN_PRODUCTS — Lucas' ondergrens (31 aug 2026);
+   *     onder dat aantal is een losse bestelling eerlijker dan een abonnement.
+   *   · hoogstens CUSTOM_MONTH_MAX_PRODUCTS — boven dat aantal is het een gesprek,
+   *     want dan gaat het over een groot deel van een maand studio.
+   *   · carrousels <= producten — een carrousel hoort bij een product dat er is.
+   *     customMonthTotal() gooit hierop; die worp hoort niet bij een bezoeker
+   *     terecht te komen als een 500, dus staat de toets hier ervoor.
+   *
+   * EN ALTIJD MAANDELIJKS. De jaartermijn geeft korting die uit PLAN_AMOUNT komt
+   * (zie discountMonths in plans.js) en een maand op maat heeft dat bedrag niet.
+   * Een jaartermijn zonder korting zou een verbintenis zijn waar niets tegenover
+   * staat; die verkopen we niet.
+   */
+  let maatSlots = null;
+  let maatCents = null;
+  let maatProducten = 0;
+  if (planId === CUSTOM_MONTH_ID) {
+    termId = 'monthly';
+    const n = Number.parseInt(String(form?.get('producten') || ''), 10);
+    const m = Number.parseInt(String(form?.get('carrousels') || '0'), 10) || 0;
+    const k = Number.parseInt(String(form?.get('clips') || '0'), 10) || 0;
+    if (!Number.isInteger(n) || n < CUSTOM_MONTH_MIN_PRODUCTS || n > CUSTOM_MONTH_MAX_PRODUCTS) {
+      return seeOtherLocal(terug('maat', lang));
+    }
+    if (!Number.isInteger(m) || m < 0 || m > n) return seeOtherLocal(terug('maat', lang));
+    if (!Number.isInteger(k) || k < 0 || k > CUSTOM_MONTH_MAX_PRODUCTS) return seeOtherLocal(terug('maat', lang));
+    maatSlots = customMonthSlots({ products: n, carousels: m, clips: k });
+    maatCents = Math.round(customMonthTotal({ products: n, carousels: m, clips: k }).total * 100);
+    maatProducten = n;
+    if (!(maatCents > 0)) return seeOtherLocal(terug('maat', lang));
+  }
+
   if (!TERM_IDS.includes(termId)) return seeOtherLocal(terug('termijn', lang));
 
   /* AL EEN ABONNEMENT? Dan niet nog een. De partiële UNIQUE index vangt dit ook,
@@ -148,10 +195,15 @@ export async function handleSubscribeStart(context, customer, offsite) {
    * afgeeft en niet erna.
    */
   const bezet = await env.DB.prepare(
-    `SELECT plan FROM subscriptions WHERE status IN ('active', 'pending', 'paused')`
+    /* slots_json erbij sinds migratie 0038: bij een maand op maat zegt de plan-id
+       niets over hoeveel agenda er vastligt. Zie subProducten() in slots.js. */
+    `SELECT plan, slots_json FROM subscriptions WHERE status IN ('active', 'pending', 'paused')`
   ).all().catch(() => ({ results: [] }));
-  const vastgelegd = (bezet?.results || []).reduce((n, r) => n + productsFor(r.plan), 0);
-  if (!fitsBudget(planId, vastgelegd)) {
+  const vastgelegd = (bezet?.results || []).reduce((n, r) => n + subProducten(r), 0);
+  const past = planId === CUSTOM_MONTH_ID
+    ? fitsProducts(maatProducten, vastgelegd)
+    : fitsBudget(planId, vastgelegd);
+  if (!past) {
     console.error('[abonnement] plek geweigerd —', planId, 'bij', vastgelegd, 'van', planProductBudget());
     return seeOtherLocal(terug('vol', lang));
   }
@@ -160,6 +212,7 @@ export async function handleSubscribeStart(context, customer, offsite) {
   try {
     const gemaakt = await createSubscriptionRow(env, {
       customerId: customer.customer_id, planId, termId, windowDay,
+      slots: maatSlots, amountCents: maatCents,
     });
     if (gemaakt.bestaat) return seeOtherLocal('/account/plan');
     rij = gemaakt.row;
@@ -252,7 +305,10 @@ export async function handleSubscribeReturn(context, customer) {
 
   await setMollieIds(env, vol.id, { mandateId: mandaat.id });
 
-  const maandBedrag = monthlyCents(vol.plan, vol.term) / 100;
+  /* subMaandCents() en niet monthlyCents(): bij een maand op maat staat het bedrag
+     op de rij, bevroren op het moment van afsluiten. Zie migratie 0038 voor
+     waarom het daar staat en niet elke maand opnieuw uit de ladder komt. */
+  const maandBedrag = subMaandCents(vol) / 100;
   const origin = new URL(request.url).origin;
 
   try {

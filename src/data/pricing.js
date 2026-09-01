@@ -309,6 +309,123 @@ export const SLOT_KINDS = {
   'video-lifestyle': { en: 'Lifestyle clip', nl: 'Lifestyle-clip',     per: { en: 'a clip in a styled scene',                          nl: 'een clip in een gestileerde scène' } },
   hooks:           { en: 'Hook',             nl: 'Hook',               per: { en: 'a short vertical clip, 6 to 8 seconds',             nl: 'een korte verticale clip, 6 tot 8 seconden' } },
 };
+
+/* ── WAT EEN SOORT WEEGT IN DE AGENDA — 31 augustus 2026 ───────────────────
+ *
+ * Lucas: *"alle services moeten passen in de capaciteit niet alleen
+ * productfoto's. Dit is een gedeelde agenda voor me."*
+ *
+ * De agenda telde tot vandaag producten, en met "product" bedoelde capacity.js
+ * een COMPLEET product. Dat gaf twee fouten tegelijk: een maand van dertig
+ * catalogsets werd geteld alsof het dertig complete producten waren (210 beelden
+ * waar er 120 nodig zijn), en video werd helemaal niet geteld omdat alleen een
+ * dienst die op de ladder staat een venster kan krijgen.
+ *
+ * DE EENHEID IS HET BEELD, EN DIE STOND AL IN HET ANDERE BESTAND. De noot boven
+ * PRODUCTS_PER_DAY in capacity.js rekent zelf voor dat achttien producten per dag
+ * "126 finished, human-checked images in a day" zijn. Zeven beelden per compleet
+ * product, en dat zijn precies de vier plus de drie die SLOT_KINDS hierboven
+ * beschrijft. De getallen hieronder zijn dus niet gekozen maar overgeschreven uit
+ * de regel ernaast, en assertKindImages() bewaakt dat ze niet uit elkaar lopen.
+ *
+ * ── DE DRIE NULLEN ZIJN GEEN VERGETEN REGELS ───────────────────────────────
+ *
+ * Een clip heeft geen beelden, dus er valt niets af te leiden. Dit is exact
+ * hetzelfde soort getal als PRODUCTS_PER_DAY, waar capacity.js zelf over zegt:
+ * "it is the one number in this file I cannot set for you." Het antwoord komt uit
+ * dezelfde vraag die de achttien opleverde: HOEVEEL MOTION-CLIPS MAAK JE OP EEN
+ * DAG AF ALS JE DIE DAG NIETS ANDERS DOET? Het gewicht is dan 126 gedeeld door
+ * dat aantal, en dezelfde vraag geldt apart voor een lifestyle-clip en een hook.
+ *
+ * WAAROM null EN NIET EEN VOORLOPIG GETAL. Een verzonnen gewicht verandert wat de
+ * poort weigert, en dat is een belofte aan een klant. `null` betekent hier precies
+ * wat het zegt: deze soort is nog niet gewogen, kan daarom geen venster krijgen
+ * (wat vandaag ook al zo is) en wordt apart getoond als "nog te wegen" in plaats
+ * van stilletjes als nul. Zodra het getal er is, is dit één regel en verder niets.
+ */
+export const KIND_IMAGES = {
+  complete: 7,            // 4 catalogbeelden + een carrousel van 3
+  catalog: 4,
+  lifestyle: 3,
+  /* ── EN DE MOTION-CLIP IS GEWOGEN — 31 augustus 2026 ─────────────────────
+   *
+   * Lucas, op de vraag hoeveel clips hij op een dag afmaakt als hij die dag niets
+   * anders doet: *"Als het gaat om predefined clips, en niks anders heb die dag en
+   * het geen custom clips zijn, dan rond de 20 - 30 clips."*
+   *
+   * Vijfentwintig is het midden van die spanne, en 126 gedeeld door 25 is 5,04 —
+   * afgerond vijf. Dat komt neer op iets meer dan vijfentwintig clips op een dag,
+   * dus binnen wat hij zei en aan de voorzichtige kant van het midden. Eén clip
+   * weegt daarmee minder dan een catalogset en er passen er tweeënveertig in een
+   * venster van twee dagen.
+   *
+   * DE VOORWAARDE UIT ZIJN ANTWOORD STAAT HIER OOK IN. Dit getal geldt voor een
+   * VOORAF BEPAALDE clip. Een custom clip is iets anders, en dat is geen probleem
+   * voor deze tabel: 'custom' staat niet op de ladder, krijgt daarom nooit een
+   * gereserveerd venster (tierFor()), en wordt met de hand ingepland. De dag dat er
+   * wél een custom-slot in een abonnement komt, hoort die zijn eigen regel te
+   * krijgen — en niet deze.
+   *
+   * DE ANDERE TWEE BLIJVEN NUL, en dat is met opzet. De vraag ging over
+   * motion-clips; een lifestyle-clip heeft een gestileerde scène eromheen en een
+   * hook is een ander formaat. Ze overnemen omdat ze toevallig ook video heten,
+   * zou precies het verzinnen zijn dat de noot hierboven verbiedt. */
+  'video-motion': 5,      // ~25 vooraf bepaalde clips op een dag
+  'video-lifestyle': null,
+  hooks: null,
+};
+
+/** De soorten die nog geen gewicht hebben, en dus geen venster kunnen krijgen. */
+export const UNWEIGHED_KINDS = Object.keys(KIND_IMAGES).filter((k) => KIND_IMAGES[k] === null);
+
+/**
+ * Wat `count` stuks van een soort in de agenda wegen, in beelden.
+ *
+ * Geeft `null` terug voor een soort die nog niet gewogen is — bewust geen 0,
+ * want 0 is een getal en null is een gat, en de poort moet dat verschil zien.
+ * Neemt de wire-waarde ('drop') net zo goed als de laddernaam ('complete'),
+ * dezelfde vertaling die isLadderService() hieronder al doet.
+ */
+export function kindImages(kind, count = 1) {
+  const naam = String(kind || '').trim();
+  const key = naam === 'drop' ? 'complete' : naam;
+  if (!Object.prototype.hasOwnProperty.call(KIND_IMAGES, key)) return null;
+  const per = KIND_IMAGES[key];
+  if (per === null) return null;
+  const n = Math.max(0, Math.floor(Number(count) || 0));
+  return n * per;
+}
+
+function assertKindImages() {
+  for (const kind of Object.keys(SLOT_KINDS)) {
+    if (!Object.prototype.hasOwnProperty.call(KIND_IMAGES, kind)) {
+      throw new Error(
+        `pricing.js: de soort "${kind}" staat in SLOT_KINDS maar heeft geen regel in KIND_IMAGES. `
+        + `Een soort zonder gewicht kan niet in de agenda, en stilzwijgend nul is precies de fout `
+        + `die dit bestand moet voorkomen — zet er een getal neer, of uitdrukkelijk null.`
+      );
+    }
+  }
+  for (const kind of Object.keys(KIND_IMAGES)) {
+    if (!Object.prototype.hasOwnProperty.call(SLOT_KINDS, kind)) {
+      throw new Error(`pricing.js: KIND_IMAGES kent "${kind}" en SLOT_KINDS niet — één van de twee is achtergebleven.`);
+    }
+    const v = KIND_IMAGES[kind];
+    if (v !== null && (!Number.isInteger(v) || v < 1)) {
+      throw new Error(`pricing.js: het gewicht van "${kind}" is ${v}; dat moet een heel getal boven nul zijn, of null.`);
+    }
+  }
+  // DE BUNDEL IS DE SOM VAN ZIJN DELEN. Zodra iemand SLOT_KINDS.complete anders
+  // beschrijft dan "een catalogset plus een carrousel", moet dit meebewegen of omvallen.
+  if (KIND_IMAGES.complete !== KIND_IMAGES.catalog + KIND_IMAGES.lifestyle) {
+    throw new Error(
+      `pricing.js: een compleet product weegt ${KIND_IMAGES.complete} beelden, maar een catalogset `
+      + `(${KIND_IMAGES.catalog}) plus een carrousel (${KIND_IMAGES.lifestyle}) is `
+      + `${KIND_IMAGES.catalog + KIND_IMAGES.lifestyle}. SLOT_KINDS zegt dat compleet precies die twee is.`
+    );
+  }
+}
+assertKindImages();
 /* ── GEEN MINIMALE LOOPTIJD MEER — 18 augustus 2026 ────────────────────────
    PLAN_MIN_MONTHS stond hier op 3 en zes plekken in de copy zeiden "minimaal
    3 maanden". DE CODE HEEFT DAT NOOIT AFGEDWONGEN: handlePlanCancel() zegt
@@ -417,7 +534,7 @@ export const STOCK_ON_BRAND = 20;
 // ladder the service level FOLLOWS the size instead of being a second choice —
 // from this many products up, the order is put in the capacity calendar and
 // gets the reserved 48-hour window; below it, it runs in the standard queue at
-// 2–4 working days. Ten because that is where the ladder's third rung starts,
+// 2–4 days. Ten because that is where the ladder's third rung starts,
 // so the buyer crosses one line, not two.
 export const WINDOW_THRESHOLD = 10;
 /* ── DE ALIAS IS WEG, EN DE REDEN ERVOOR KLOPTE NIET — 23 augustus 2026 ─────
@@ -1250,16 +1367,23 @@ export const TIERS = {
     label: { en: `Under ${WINDOW_THRESHOLD} products`, nl: `Onder ${WINDOW_THRESHOLD} producten` },
     // The ONLY sanctioned timing language for this tier. No date, no "24
     // hours", no "next day" — section 13 supplies this exact substitute.
+    //
+    // "WORKING DAYS" WERD "DAYS" OP 31 AUGUSTUS 2026. Zolang de studio het
+    // weekend oversloeg, was "werkdag" het eerlijke woord en "dag" een belofte
+    // die over een zaterdag heen niet waar te maken was. Sinds isOpenDay() in
+    // capacity.js alleen nog naar dichtgezette dagen kijkt, is het omgekeerd:
+    // "werkdag" zou nu langer klinken dan het is. Dezelfde twee tot vier dagen,
+    // alleen niet meer met een weekend erin verstopt.
     turnaround: {
-      en: 'Estimated delivery: 2–4 working days',
-      nl: 'Meestal 2–4 werkdagen',
+      en: 'Estimated delivery: 2–4 days',
+      nl: 'Meestal 2–4 dagen',
     },
     // Al kort genoeg; de korte vorm staat er toch, zodat elke aanroeper van
     // turnaroundShort() een antwoord krijgt en niet per niveau hoeft te weten
     // of er een kortere bestaat. Zie de noot bij REVIEW_CLAIM_SHORT.
     turnaroundShort: {
-      en: '2–4 working days',
-      nl: '2–4 werkdagen',
+      en: '2–4 days',
+      nl: '2–4 dagen',
     },
     // Stated openly, not buried. Section 13: "The difference must be VISIBLE,
     // not hidden [...] it is also what makes the low price honest rather than
@@ -1434,7 +1558,7 @@ export function turnaround(tierId, lang = 'en') {
  * ── WAAROM DIT KON GEBEUREN ─────────────────────────────────────────────────
  *
  * Deze strings waren FRAGMENTEN toen de aanroepplekken werden geschreven
- * ("2–4 working days", "1 revision round included per order"). Een tekstronde
+ * ("2–4 days", "1 revision round included per order"). Een tekstronde
  * heeft er zinnen van gemaakt, mét een label ervoor en een punt erachter, en de
  * aanroepplekken zijn niet meegegaan. Dat is geen slordigheid van één van beide
  * kanten: het is wat er gebeurt als een string twee vormen moet dienen.
@@ -2062,3 +2186,293 @@ export const SHOOT_DAY = {
 // getPricing() and `export default getPricing` were here. getPricing() existed
 // to bundle PACKAGES and PER_PRODUCT for a caller that never arrived; with
 // PACKAGES gone it bundled one thing, and nothing imported either.
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE MAAND OP MAAT — 31 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ik wil dat klanten zelf kunnen beslissen hoe ze hun maand ingevuld
+ * willen hebben. Wanneer een klant 5 nieuwe producten per week binnenkrijgt, moet
+ * hij 20 catalogproducten per maand hebben. Stel hij wil voor 5 van die 20
+ * lifestylefoto's, dan kan hij 5 lifestylecarrousels toevoegen."*
+ *
+ * Drie plannen met een vaste inhoud konden dat niet uitdrukken, en een vierde
+ * vaste vorm erbij lost het niet op — de volgende klant wil weer iets anders.
+ * Hieronder staat daarom geen nieuw pakket maar een REGEL:
+ *
+ *     N x catalogtarief(N)  +  M x opslag(N)  +  K x videotarief
+ *
+ * met N producten, M daarvan met een carrousel (dus M <= N), en K losse clips.
+ *
+ * ── DE OPSLAG IS AFGELEID EN NIET VERZONNEN ────────────────────────────────
+ *
+ * Wat een carrousel kost bovenop een catalogset stond al in de ladder: het is het
+ * verschil tussen `complete` en `catalog` op dezelfde trede. Op de eerste trede
+ * EUR 60, op de laatste EUR 26. Dat is de bundelkorting die de ladder al bevat,
+ * alleen nu per stuk in plaats van per pakket — en daarom kan een maand op maat
+ * geen tweede kortingspercentage krijgen zonder dat er twee waarheden ontstaan.
+ *
+ * De controle is direct: N producten die ALLEMAAL een carrousel krijgen, kost
+ * exact hetzelfde als N complete producten. assertCustomMonth() rekent dat na op
+ * elke trede, zodat de regel niet stilletjes van de ladder af kan drijven.
+ *
+ * ── EN DE KLANT MAG NOOIT TE VEEL BETALEN ──────────────────────────────────
+ *
+ * Lucas: *"de klant krijgt gewoon de optie om Starter te kopen wanneer hij precies
+ * de hoeveelheid heeft als andere abonnementen"*, en: *"klant kan gewoon losse
+ * services bijkopen voor de normale prijs."*
+ *
+ * Samen maakt dat drie manieren om aan dezelfde maand te komen, en welke de
+ * goedkoopste is hangt van de vorm af. `cheapestRoute()` hieronder rekent ze
+ * alledrie uit en geeft de winnaar terug. Dat is bewust EEN functie en geen
+ * tabel met grenzen: de grenzen zijn grillig (bij negen producten slaat Studio om
+ * bij vijf carrousels, bij tien pas bij negen, omdat de ladder op tien een trede
+ * zakt) en een tabel daarvan zou met de hand onderhouden moeten worden.
+ */
+
+/** Het minimum aantal producten voor een maand op maat. Lucas, 31 augustus 2026. */
+export const CUSTOM_MONTH_MIN_PRODUCTS = 5;
+
+/**
+ * De id waaronder een maand op maat in de database staat.
+ *
+ * NIET IN PLAN_IDS, en dat is geen slordigheid. PLAN_IDS is de lijst met
+ * PAKKETTEN: drie vaste vormen met een vaste prijs, die op de prijspagina naast
+ * elkaar staan en in de algemene voorwaarden bij naam worden genoemd. Een maand
+ * op maat heeft geen vaste prijs en geen vaste inhoud — hij heeft een REGEL. Zou
+ * hij in PLAN_IDS staan, dan zou elke lus die "de plannen" doorloopt (de
+ * vergelijkingstabel, de van-prijs op de homepage, de bandbreedte in de
+ * voorwaarden) hem meenemen en om een bedrag vragen dat niet bestaat.
+ *
+ * SUB_PLAN_IDS in plans.js is de lijst die een abonnementsRIJ mag dragen, en
+ * daar staat hij wel in. Dat verschil — wat je kunt kopen tegenover wat er in de
+ * database mag staan — is precies wat hier uit elkaar wordt gehouden.
+ */
+export const CUSTOM_MONTH_ID = 'maat';
+
+/**
+ * De bovengrens van de zelfbouwer.
+ *
+ * Niet omdat vijftig producten per maand ondenkbaar is, maar omdat een formulier
+ * zonder plafond een klant laat afrekenen op een aantal dat niemand heeft gezien.
+ * Boven dit getal is het een gesprek, en dat is ook waar de pagina naartoe stuurt.
+ * Ruim boven het grootste plan, zodat het plafond nooit de reden is dat iemand
+ * zijn eigen maand niet kan samenstellen.
+ */
+export const CUSTOM_MONTH_MAX_PRODUCTS = 40;
+
+/**
+ * Wat een lifestylecarrousel kost bovenop de catalogset van hetzelfde product,
+ * op de trede die bij `products` hoort.
+ *
+ * AFGELEID UIT DE LADDER EN NERGENS APART OPGESCHREVEN, om dezelfde reden als de
+ * bundelkorting hierboven: een tweede tabel met opslagen zou op een dag iets
+ * anders zeggen dan de ladder, en dan is er geen manier meer om te zien welke van
+ * de twee de prijs is.
+ */
+export function addOnRate(products = 1) {
+  return ladderRate('complete', products) - ladderRate('catalog', products);
+}
+
+/**
+ * Wat een zelf samengestelde maand kost, exclusief btw.
+ *
+ * @param {{products:number, carousels?:number, clips?:number}} maand
+ * @returns {{total:number, catalog:number, addOn:number, video:number, images:number}}
+ */
+export function customMonthTotal({ products, carousels = 0, clips = 0 }) {
+  const n = Math.floor(Number(products) || 0);
+  const m = Math.floor(Number(carousels) || 0);
+  const k = Math.floor(Number(clips) || 0);
+  if (n < 1) throw new Error('pricing.js: een maand op maat heeft minstens één product.');
+  /* M <= N IS GEEN VALIDATIE MAAR DE VORM ZELF. Een carrousel hangt aan een
+     product dat toch al gefotografeerd wordt; meer carrousels dan producten is een
+     andere dienst (lifestyle los, met zijn eigen ladder) en geen randgeval. */
+  if (m > n) throw new Error(`pricing.js: ${m} carrousels op ${n} producten — een carrousel hoort bij een product dat er is.`);
+  if (k < 0) throw new Error('pricing.js: een negatief aantal clips bestaat niet.');
+
+  const catalog = n * ladderRate('catalog', n);
+  const addOn = m * addOnRate(n);
+  const video = k * AMOUNT.video;
+  return {
+    total: catalog + addOn + video,
+    catalog,
+    addOn,
+    video,
+    images: n * KIND_IMAGES.catalog + m * KIND_IMAGES.lifestyle,
+  };
+}
+
+/**
+ * Waaruit een maand op maat bestaat, in SLOTS.
+ *
+ * Dit is de vertaling tussen de PRIJSREGEL hierboven en de administratie in
+ * src/lib/slots.js. `customMonthTotal()` rekent met N catalogsets plus M
+ * opslagen; een klant gebruikt N − M catalogslots en M completeslots, want een
+ * complete slot IS een catalogset met de carrousel erbij (zie SLOT_KINDS).
+ *
+ * Soorten met nul komen er niet in. Een rij met granted = 0 zou in het dashboard
+ * verschijnen als een soort die je hebt en niet kunt gebruiken.
+ */
+export function customMonthSlots({ products, carousels = 0, clips = 0 }) {
+  const n = Math.floor(Number(products) || 0);
+  const m = Math.floor(Number(carousels) || 0);
+  const k = Math.floor(Number(clips) || 0);
+  if (m > n) throw new Error(`pricing.js: ${m} carrousels op ${n} producten — een carrousel hoort bij een product dat er is.`);
+  const uit = {};
+  if (n - m > 0) uit.catalog = n - m;
+  if (m > 0) uit.complete = m;
+  if (k > 0) uit['video-motion'] = k;
+  return uit;
+}
+
+/**
+ * Hoeveel PRODUCTEN een bundel slots vasthoudt.
+ *
+ * De capaciteitspoort van de abonnementen rekent in producten (zie
+ * planProductBudget() in plans.js), en een maand op maat heeft dat getal niet als
+ * constante — hij heeft zijn eigen bundel. Video telt niet mee: een clip is geen
+ * product, en de agenda weegt hem apart via KIND_IMAGES.
+ */
+export function slotProducts(slots = {}) {
+  return PRODUCT_SLOT_KINDS.reduce(
+    (n, kind) => n + Math.max(0, Math.floor(Number(slots[kind]) || 0)), 0
+  );
+}
+
+/**
+ * De soorten die een PRODUCT zijn, tegenover de soorten die dat niet zijn.
+ *
+ * Een clip is geen product: hij kost geen slot uit hetzelfde budget, hij weegt
+ * anders in de agenda, en een zin over "elk product" gaat niet over hem. Dat
+ * onderscheid stond twee keer als een rijtje sleutels in de code en hoort één
+ * plek te hebben — anders is er een dag waarop de ene lijst een soort kent die
+ * de andere niet kent, en dan telt hetzelfde abonnement op twee schermen anders.
+ *
+ * AFGELEID UIT SLOT_KINDS EN NIET INGETYPT: video zit erin herkenbaar aan het
+ * voorvoegsel, en hooks staan er los bij. Zo levert een nieuwe soort in
+ * SLOT_KINDS meteen het goede antwoord op zonder dat deze lijst moet worden
+ * bijgewerkt.
+ */
+export const PRODUCT_SLOT_KINDS = Object.keys(SLOT_KINDS)
+  .filter((k) => !k.startsWith('video-') && k !== 'hooks');
+
+/**
+ * De goedkoopste manier om aan deze maand te komen, van de drie die er zijn.
+ *
+ * `kind` is 'custom', 'plan' of 'plan+extra'. Bij de laatste twee staat er welk
+ * plan het is en wat er los bij komt, zodat het scherm het kan uitschrijven in
+ * plaats van alleen een bedrag te tonen.
+ *
+ * EEN PLAN TELT ALLEEN MEE ALS HET MINSTENS EVENVEEL GEEFT. Een plan dat te klein
+ * is, wordt aangevuld met een losse bestelling tegen het gewone laddertarief over
+ * wát er bijkomt — dat is wat "de normale prijs" betekent: bijkopen is een gewone
+ * bestelling en kost wat een gewone bestelling kost.
+ */
+export function cheapestRoute({ products, carousels = 0, clips = 0 }) {
+  const eigen = customMonthTotal({ products, carousels, clips });
+  const n = Math.floor(Number(products) || 0);
+  const m = Math.floor(Number(carousels) || 0);
+  const k = Math.floor(Number(clips) || 0);
+
+  const opties = [{ kind: 'custom', total: eigen.total, plan: null, extra: null }];
+
+  for (const id of Object.keys(PLAN_AMOUNT)) {
+    const planN = PLAN_SLOTS[id].complete || 0;
+    const planK = PLAN_SLOTS[id]['video-motion'] || 0;
+
+    // Het plan vult eerst de producten MET carrousel, want daar is het plan het
+    // sterkst: een complete slot die als catalogset wordt gebruikt, laat de
+    // carrousel die erin zit ongebruikt.
+    const extraComplete = Math.max(0, Math.min(n, m) - planN);
+    const extraCatalog = Math.max(0, n - Math.max(m, planN));
+    const extraClips = Math.max(0, k - planK);
+    const extra = ladderTotal('complete', extraComplete)
+      + ladderTotal('catalog', extraCatalog)
+      + extraClips * AMOUNT.video;
+
+    opties.push({
+      kind: extra > 0 ? 'plan+extra' : 'plan',
+      total: PLAN_AMOUNT[id] + extra,
+      plan: id,
+      extra: extra > 0
+        ? { complete: extraComplete, catalog: extraCatalog, clips: extraClips, amount: extra }
+        : null,
+    });
+  }
+
+  /* Bij een gelijke stand wint het plan van de maand op maat: dezelfde prijs met
+     een vaste vorm is voor Lucas beter in te plannen, en voor de klant simpeler.
+     De volgorde hieronder maakt dat expliciet in plaats van het aan de
+     stabiliteit van sort() over te laten. */
+  const rang = { plan: 0, 'plan+extra': 1, custom: 2 };
+  opties.sort((a, b) => a.total - b.total || rang[a.kind] - rang[b.kind]);
+  return { winner: opties[0], custom: eigen, options: opties };
+}
+
+function assertCustomMonth() {
+  /* DE SLOTS EN DE PRIJS MOETEN OVER DEZELFDE MAAND GAAN. customMonthSlots() is
+     een tweede lezing van dezelfde invoer, en twee lezingen is precies waar dit
+     bestand elders tegen waarschuwt. De band tussen de twee: het aantal producten
+     dat de slots vasthouden, is het aantal waarvoor is gerekend. */
+  for (const [n, m] of [[5, 0], [5, 5], [9, 3], [20, 20], [37, 12]]) {
+    const slots = customMonthSlots({ products: n, carousels: m, clips: 4 });
+    if (slotProducts(slots) !== n) {
+      throw new Error(`pricing.js: ${n} producten met ${m} carrousels levert ${slotProducts(slots)} productslots op.`);
+    }
+    if ((slots['video-motion'] || 0) !== 4) {
+      throw new Error('pricing.js: de clips uit een maand op maat komen niet in de bundel terecht.');
+    }
+    /* En de beelden die de agenda gaat wegen, horen dezelfde maand te beschrijven
+       als het bedrag. Zou dit uiteenlopen, dan verkoopt de site een maand die niet
+       in de agenda past of andersom. */
+    const viaSlots = Object.entries(slots)
+      .filter(([kind]) => kind !== 'video-motion')
+      .reduce((tot, [kind, aantal]) => tot + kindImages(kind, aantal), 0);
+    if (viaSlots !== customMonthTotal({ products: n, carousels: m }).images) {
+      throw new Error(`pricing.js: ${n}/${m} weegt ${viaSlots} beelden via de slots en ${customMonthTotal({ products: n, carousels: m }).images} via de prijsregel.`);
+    }
+  }
+  if (CUSTOM_MONTH_MAX_PRODUCTS <= CUSTOM_MONTH_MIN_PRODUCTS) {
+    throw new Error('pricing.js: het plafond van de maand op maat ligt op of onder de bodem.');
+  }
+
+  /* DE OPSLAG MOET DE LADDER REPRODUCEREN. N producten met allemaal een carrousel
+     is per definitie N complete producten; komt daar een ander bedrag uit, dan is
+     de opslag geen afgeleide meer maar een tweede prijs. */
+  for (const [lo] of LADDER.complete) {
+    const eigen = customMonthTotal({ products: lo, carousels: lo }).total;
+    const langs = ladderTotal('complete', lo);
+    if (eigen !== langs) {
+      throw new Error(
+        `pricing.js: ${lo} producten met evenveel carrousels kost EUR ${eigen} via de opslag `
+        + `en EUR ${langs} via de ladder. De opslag hoort het verschil tussen complete en `
+        + `catalog te zijn en niets anders.`
+      );
+    }
+  }
+  // Een carrousel erbij mag nooit goedkoper zijn dan geen carrousel.
+  for (const [lo] of LADDER.catalog) {
+    if (addOnRate(lo) <= 0) {
+      throw new Error(`pricing.js: de opslag op trede ${lo} is ${addOnRate(lo)} — een carrousel erbij zou gratis of negatief zijn.`);
+    }
+  }
+  /* ELK BESTAAND PLAN MOET ZIJN EIGEN VORM WINNEN. Zou een klant die precies
+     Starter bestelt goedkoper uit zijn met de maand op maat, dan is het plan een
+     val en niet een aanbieding. Dit is dezelfde belofte als assertPlans() maakt
+     tegenover de ladder, nu tegenover de nieuwe vorm. */
+  for (const id of Object.keys(PLAN_AMOUNT)) {
+    const n = PLAN_SLOTS[id].complete || 0;
+    const k = PLAN_SLOTS[id]['video-motion'] || 0;
+    if (!n) continue;
+    const route = cheapestRoute({ products: n, carousels: n, clips: k });
+    if (route.winner.plan !== id) {
+      throw new Error(
+        `pricing.js: wie precies ${planName(id, 'nl')} bestelt, is goedkoper uit via `
+        + `"${route.winner.kind}" (EUR ${route.winner.total}) dan via het plan zelf `
+        + `(EUR ${PLAN_AMOUNT[id]}). Een plan dat zijn eigen vorm verliest, hoort niet te bestaan.`
+      );
+    }
+  }
+}
+assertCustomMonth();

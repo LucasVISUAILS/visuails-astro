@@ -70,13 +70,23 @@ export const PORTAL_WINDOW_SECONDS = 60;
  * @param {string} opts.action  namespace, so a GET flood cannot lock out POSTs
  * @param {string} opts.nowIso  the clock, injected so tests can freeze it
  */
-export async function checkRate(env, { ip, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString() } = {}) {
+/* ── `key` NAAST `ip` — 31 augustus 2026 ────────────────────────────────────
+ *
+ * De emmer werd altijd op het IP gehasht, en dat is voor een publieke stroom het
+ * juiste. Voor het RADEN VAN EEN CODE is het de verkeerde as: de aanvaller kiest
+ * zijn IP en het slachtoffer niet, dus een teller per IP telt de verkeerde kant.
+ * Een tweede emmer op de klant zelf sluit dat gat zonder de eerste te vervangen —
+ * de twee tellen langs elkaar en de strengste wint.
+ *
+ * Geen nieuwe functie en geen tweede tabel: `key` is precies wat er gehasht wordt,
+ * en `ip` blijft de naam voor het gewone geval. */
+export async function checkRate(env, { ip, key: sleutel, action = 'portal', limit = PORTAL_LIMIT, windowSeconds = PORTAL_WINDOW_SECONDS, nowIso = new Date().toISOString() } = {}) {
   const open = { allowed: true, hits: 0, limit, retryAfter: 0 };
   if (!env?.DB) return open;
 
   try {
     const salt = await getSalt(env);
-    const key = `${action}:${await digest(`${salt}|${ip || 'unknown'}`)}:${windowStamp(nowIso, windowSeconds)}`;
+    const key = `${action}:${await digest(`${salt}|${sleutel || ip || 'unknown'}`)}:${windowStamp(nowIso, windowSeconds)}`;
     const expiresAt = new Date(Date.parse(nowIso) + windowSeconds * 2000).toISOString();
 
     // One statement, one round trip, atomic. RETURNING hands back the value the

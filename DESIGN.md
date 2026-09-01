@@ -607,7 +607,8 @@ zero additional bytes.
 ```css
 --font-display: "Archivo Variable", "Archivo", system-ui, sans-serif;
 --font-body:    "Archivo Variable", "Archivo", system-ui, sans-serif;
---font-data:    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+--font-editorial: "Anybody", "Archivo", system-ui, sans-serif;
+--font-heading:  var(--font-display);
 
 h1, h2, .display { font-variation-settings: "wdth" 112; font-weight: 800; }
 ```
@@ -639,9 +640,15 @@ If a mono string in a build is not a number or an identifier, it is wrong.
 --t-h2:   clamp(2.1rem, 4.0vw, 3.3rem);
 --t-h3:   clamp(1.2rem, 1.7vw, 1.45rem);
 --t-body: 1.0625rem;
---t-sm:   0.9375rem;
---t-data: 0.875rem;                       /* mono runs one step down — it sets wide */
+--t-lg:   clamp(1.1rem, 1.4vw, 1.25rem);
 ```
+
+> **Bijgewerkt 31 augustus 2026.** Hier stonden `--t-sm`, `--t-data` en een
+> `--font-data` met IBM Plex Mono erin. Alle drie bestaan niet en hebben nooit
+> bestaan; er staat geen letter mono op deze site. De schaal die er wél is, loopt
+> `--t-hero`, `--t-h1`, `--t-h2`, `--t-h3`, `--t-lg`, `--t-body`, met daarnaast
+> `--t-page-h1`, `--t-page-h1-sm`, `--t-page-h2` en `--t-statement` voor de koppen
+> die per pagina afwijken.
 
 - Display letter-spacing floor: `-0.035em`. Never tighter than `-0.04em`.
 - `text-wrap: balance` on h1–h3; `text-wrap: pretty` on prose.
@@ -871,17 +878,62 @@ overshoot is playfulness, and this brand's argument is control.
 ## Layout & spacing
 
 ```css
---container: 1240px;
---gutter: clamp(1.25rem, 4vw, 2.5rem);
-
---s-1: 0.25rem;  --s-2: 0.5rem;   --s-3: 0.75rem;  --s-4: 1rem;
---s-5: 1.5rem;   --s-6: 2rem;     --s-7: 3rem;     --s-8: 4.5rem;
---s-9: 7rem;     --s-10: 10rem;
+--container-cap:    1560px;
+--container:       min(var(--container-cap), 100%);
+--container-narrow: 760px;
+--container-wide:  min(1760px, 100%);
+--pad-x:           clamp(20px, 3.5vw, 64px);
+--rand-x:          calc(max(0px, (100% - var(--container-cap)) / 2) + var(--pad-x));
 ```
 
-The scale is deliberately non-uniform at the top so section rhythm varies. Sections do not
-all get `--s-8`; a dense spec section sits tighter than a photograph, and the difference is
-the rhythm.
+> **Bijgewerkt 1 september 2026 — een maatje smaller, en één ladder.**
+> Lucas: *"Ik wil de breedte van de website toch 1 maatje smaller maken omdat het
+> nu wel erg breed is."* Er stond `min(1720px, 100%)` met
+> `clamp(1.2rem, 4vw, 5.5rem)`, en dat was niet wat de bezoeker zag:
+> `body.huid-kantig` — de huid die op elke pagina op twee na staat — zette er
+> `--container: 100%` en `--pad-x: 20px` overheen. De inhoud liep dus op élk
+> scherm tot twintig pixels van de rand, en de ladder in dit document gold voor
+> `/proef`.
+>
+> Twee ladders waarvan er één stil wint is geen ladder. De huid overschrijft de
+> maten niet meer; wat hierboven staat zijn de maten van de site. Opgemeten op
+> `/pricing`, inhoudsbreedte van een gewone `.container`:
+>
+> | scherm | was | wordt |
+> |---:|---:|---:|
+> | 390 | 350 | 350 |
+> | 768 | 728 | 714 |
+> | 1024 | 984 | 952 |
+> | 1280 | 1240 | 1190 |
+> | 1440 | 1400 | 1339 |
+> | 1920 | 1880 | 1432 |
+> | 2560 | 2520 | 1432 |
+>
+> De telefoon verandert niet — daar was nooit iets mis en elke pixel telt er.
+>
+> `--rand-x` is nieuw en hoort bij de bovengrens: zolang de inhoud schermvullend
+> was, lijnde alles wat zich op de tekst richtte uit met `--pad-x`. Met een cap
+> zijn dat twee verschillende afstanden, en de annotatielaag van de huid (de
+> maatverdeling op een hoofdnaad, het zoekerkader op de hero) leest daarom dit
+> token. `100%` en niet `100vw`, want `100vw` telt de scrollbalk mee.
+
+> **Bijgewerkt 31 augustus 2026 — dit blok beschreef een systeem dat niet bestaat.**
+> Er stond `--container: 1240px` met een `--gutter` en een schaal `--s-1` tot en met
+> `--s-10`. Geen van die zestien tokens is ooit in `src/styles/global.css` gezet. De
+> container is inmiddels `min(1720px, 100%)` (zie de lange noot in global.css over
+> waarom hij van 1240 af moest), de marge heet `--pad-x`, en ruimte wordt met
+> `clamp()` per plek gezet in plaats van uit een genummerde schaal gehaald.
+>
+> Dat laatste is een echte keuze en geen slordigheid: een schaal van tien stappen
+> nodigt uit tot `--s-7` waar `--s-6` bedoeld was, en het verschil is dan niet meer
+> te beredeneren. De twee afstanden die wél een naam verdienen — de ruimte onder een
+> kop — hebben er een: `--gap-head-block` en `--gap-head-lede`, met de meting die ze
+> heeft opgeleverd erbij in global.css.
+>
+> `tests/ontwerpdoc.test.mjs` houdt dit blok voortaan tegen de code aan.
+
+Ritme wordt per sectie gezet en niet uit een schaal getrokken. Een dichte specsectie
+zit strakker dan een fotoblok, en dat verschil is het ritme.
 
 - Flexbox for one dimension, Grid for two. Do not reach for Grid where `flex-wrap` is the
   simpler answer.
@@ -895,16 +947,20 @@ the rhythm.
 ### z-index — semantic scale
 
 ```css
---z-base:           1;
---z-dropdown:     150;
 --z-sticky:       200;
 --z-bar:          250;
 --z-grain:        300;   /* above the sticky bar, below any modal — deliberate */
---z-modal-back:   390;
 --z-modal:        400;
 --z-toast:        500;
---z-tooltip:      600;
 ```
+
+> **Bijgewerkt 31 augustus 2026.** Hier stonden er negen. De andere vier —
+> `--z-base` (1), `--z-dropdown` (150), `--z-modal-back` (390) en `--z-tooltip`
+> (600) — zijn uit global.css gehaald omdat ze wel gezet waren en nergens
+> gebruikt; de noot in dat bestand zegt het met zoveel woorden. De GATEN in de
+> schaal blijven met opzet: vijftig tussen elke laag, zodat er iets tussen past
+> zonder dat alles opschuift, en zodat de vier verdwenen waarden er zo weer in
+> kunnen als er ooit een dropdown of een tooltip komt.
 
 Never an arbitrary `999` / `9999`. Absolutely-positioned dropdowns inside
 `overflow: hidden` / `auto` containers get clipped — use `position: fixed`, the popover

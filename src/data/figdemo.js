@@ -21,9 +21,10 @@
 //
 //   · PRODUCTS_PER_DAY = 18 — de doorvoer van één studiodag.
 //   · QUEUE_FLOOR_PER_DAY = 3 — daarvan gereserveerd voor kleine bestellingen,
-//     zodat "2 tot 4 werkdagen" waar blijft terwijl de agenda volloopt.
+//     zodat "2 tot 4 dagen" waar blijft terwijl de agenda volloopt.
 //   · ATTENDED_PER_DAY = 15 — wat er als vastgelegd venster verkocht mag worden.
-//   · WINDOW_DAYS = 2 — een venster is twee opeenvolgende werkdagen.
+//   · WINDOW_DAYS = 2 — een venster is twee open dagen, die niet naast elkaar
+//     hoeven te liggen: volle en dichtgezette dagen worden overgeslagen.
 //
 // Weken van honderd bestaan dus nergens in de code. Dat is geen detail: /studio
 // is de pagina die belooft dat de datum een mechanisme heeft, en dan is een
@@ -42,11 +43,12 @@
 
 import {
   ATTENDED_PER_DAY,
-  LEAD_DAYS,
-  addWorkingDays,
-  isWorkingDay,
+  ATTENDED_IMAGES_PER_DAY,
+  IMAGES_PER_PRODUCT,
+  firstOfferableDay,
+  isOpenDay,
   offerableWindows,
-  windowDays,
+  windowFor,
 } from './capacity.js';
 
 /**
@@ -58,7 +60,7 @@ import {
  * bezoeker het ziet. Augustus 2026 omdat de andere mock-ups daar al in staan.
  *
  * 3 augustus 2026 is een maandag, zodat het beeld op een maandag begint. Dat is
- * geen opmaak: de lead-tijd van twee werkdagen is alleen te zien als de week
+ * geen opmaak: de aanloop van twee volle dagen is alleen te zien als de week
  * vooraan begint.
  */
 export const DEMO_TODAY = '2026-08-03';
@@ -77,12 +79,21 @@ export const DEMO_ORDER = { ref: 'VIS-2608-4471', brand: 'VOLT', products: 30 };
 export const DEMO_SMALL_PRODUCTS = 12;
 
 /**
- * Wat er in de verzonnen agenda al staat: bezette producten per dag.
+ * Wat er in de verzonnen agenda al staat: bezette BEELDEN per dag.
+ *
+ * De eenheid is het beeld sinds de agenda gedeeld is — zie de noot bij
+ * IMAGES_PER_DAY in capacity.js. De getallen staan hier als "producten maal
+ * IMAGES_PER_PRODUCT" en niet uitgerekend, zodat de bedoeling leesbaar blijft:
+ * elf complete producten op maandag, en niet zevenenzeventig losse beelden.
  *
  * Deze cijfers zijn met opzet zo gekozen dat de poort er iets INTERESSANTS mee
  * doet, en niet zo dat alles kan:
  *
- *   · woensdag 5 augustus staat op 15 van 15 — vol, en wordt als vol aangeboden.
+ *   · woensdag 12 augustus staat op 15 van 15 producten — vol, en wordt als vol
+ *     getoond. Dat was 5 augustus, maar sinds de aanloop drie dagen beslaat in
+ *     plaats van twee (zie LEAD_DAYS) valt de 5e binnen de brieftijd, en dan
+ *     toont de figuur "te vroeg" en niet "vol". Een figuur die zijn eigen
+ *     interessantste toestand kwijtraakt, laat dat niet zien — de test wel.
  *   · donderdag 6 en vrijdag 7 hebben ruimte, maar niet genoeg voor dertig:
  *     die vraagt vijftien op ELKE dag van het venster, dus twee dagen die
  *     helemaal vrij zijn. Dat is de pessimistische lezing die windowFits()
@@ -93,19 +104,33 @@ export const DEMO_SMALL_PRODUCTS = 12;
  * hebben wel werk — een agenda waarin vandaag leeg is, is geen agenda.
  */
 export const DEMO_BOOKED = {
-  '2026-08-03': 11,
-  '2026-08-04': 14,
-  '2026-08-05': 15,
-  '2026-08-06': 8,
-  '2026-08-07': 2,
+  '2026-08-03': 11 * IMAGES_PER_PRODUCT,
+  '2026-08-04': 14 * IMAGES_PER_PRODUCT,
+  '2026-08-05': 15 * IMAGES_PER_PRODUCT,
+  '2026-08-06': 8 * IMAGES_PER_PRODUCT,
+  '2026-08-07': 2 * IMAGES_PER_PRODUCT,
+  '2026-08-08': 0,
+  '2026-08-09': 0,
   '2026-08-10': 0,
   '2026-08-11': 0,
-  '2026-08-12': 6,
+  '2026-08-12': 15 * IMAGES_PER_PRODUCT,
   '2026-08-13': 0,
   '2026-08-14': 0,
 };
 
-/** De tien werkdagen die de figuur toont: maandag 3 t/m vrijdag 14 augustus. */
+/* ── HET WEEKEND IS EEN KEUZE GEWORDEN — 31 augustus 2026 ───────────────────
+ *
+ * Zaterdag 8 en zondag 9 augustus stonden hier niet in: de figuur toonde tien
+ * WERKdagen en capacity.js sloeg het weekend zelf over. Sinds isOpenDay() alleen
+ * nog naar dichtgezette dagen kijkt, is dat geen regel meer maar een besluit, en
+ * een figuur die het besluit verzwijgt laat de bezoeker een regel zien die niet
+ * bestaat. De twee dagen staan er nu in, dichtgezet, en de poort krijgt diezelfde
+ * verzameling mee — anders biedt de poort een dag aan die de tabel als gesloten
+ * tekent, en dat is precies het soort verschil waar deze figuur tegen bedoeld is.
+ */
+export const DEMO_BLACKOUTS = new Set(['2026-08-08', '2026-08-09']);
+
+/** De twaalf dagen die de figuur toont: maandag 3 t/m vrijdag 14 augustus. */
 export const DEMO_DAYS = Object.keys(DEMO_BOOKED);
 
 /**
@@ -138,12 +163,16 @@ export const DEMO_OTHERS = [
 /** Het venster van zo’n bestelling, als label. Leeg venster → '—'. */
 export function otherWindow(order, lang = 'en') {
   if (!order.start) return '—';
-  const days = windowDays(order.start);
+  // Het venster van een bestaande bestelling, met de agenda erbij: sinds een paar
+  // over volle dagen heen springt, kan de tweede dag niet meer uit de kalender
+  // alleen worden afgeleid.
+  const days = windowFor(order.start, order.products * IMAGES_PER_PRODUCT, {}, DEMO_BLACKOUTS);
+  if (!days.length) return '—';
   return windowLabel({ start: days[0], end: days[days.length - 1] }, lang);
 }
 
 /** De eerste dag waarop een venster überhaupt mag beginnen. */
-export const DEMO_FIRST_OFFERABLE = addWorkingDays(DEMO_TODAY, LEAD_DAYS);
+export const DEMO_FIRST_OFFERABLE = firstOfferableDay(DEMO_TODAY, DEMO_BLACKOUTS);
 
 /**
  * Het eerste venster dat de poort vrijgeeft voor dit aantal producten.
@@ -156,7 +185,9 @@ export function demoWindow(products) {
   const [first] = offerableWindows({
     today: DEMO_TODAY,
     products,
+    service: 'complete',
     booked: DEMO_BOOKED,
+    blackouts: DEMO_BLACKOUTS,
     limit: 1,
   });
   return first || null;
@@ -212,18 +243,25 @@ export function demoRows(products = DEMO_ORDER.products, lang = 'en') {
   const win = demoWindow(products);
   const inWindow = new Set(win ? win.days : []);
   return DEMO_DAYS.map((iso) => {
-    const used = DEMO_BOOKED[iso] || 0;
+    // De figuur praat in producten omdat de bestelling erboven in producten staat,
+    // en in deze demo is alles compleet — dus de deling gaat op. De poort rekent
+    // in beelden; dat verschil hoort in de gegevens te zitten en niet in de opmaak.
+    const usedImages = DEMO_BOOKED[iso] || 0;
+    const used = usedImages / IMAGES_PER_PRODUCT;
+    const closed = !isOpenDay(iso, DEMO_BLACKOUTS);
     const early = iso < DEMO_FIRST_OFFERABLE;
-    const full = used >= ATTENDED_PER_DAY;
+    const full = usedImages >= ATTENDED_IMAGES_PER_DAY;
     return {
       iso,
       day: weekdayLabel(iso, lang),
       label: dayLabel(iso, lang),
       used,
+      usedImages,
       cap: ATTENDED_PER_DAY,
+      capImages: ATTENDED_IMAGES_PER_DAY,
       offered: inWindow.has(iso),
-      state: early ? 'early' : full ? 'full' : 'open',
-      closed: !isWorkingDay(iso),
+      state: closed ? 'closed' : early ? 'early' : full ? 'full' : 'open',
+      closed,
     };
   });
 }

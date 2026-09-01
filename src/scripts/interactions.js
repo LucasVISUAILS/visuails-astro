@@ -183,9 +183,26 @@ function initSplitLines() {
   heads.forEach((h) => {
     h.dataset.splitBound = '1';
     const lines = h.innerHTML.split(/<br\s*\/?>/i);
+    /* ── DE VERTRAGING GAAT ER NA HET INVOEGEN OP, EN NIET IN DE MARKUP ───────
+     *
+     * Hier stond `style="transition-delay:${i * 90}ms"` in de string. Dat werkte
+     * jarenlang en viel om op het moment dat de publieke site `style-src 'self'`
+     * kreeg: een style-ATTRIBUUT dat door de parser gaat, is voor de browser een
+     * inline stijl, ook als een script hem schrijft. Gevonden door de CSP-proef
+     * (kladblok/csp-proef.mjs) op /about en /how-it-works — de twee pagina's met
+     * een gesplitste kop — en niet door een toets, want er ging niets stuk
+     * behalve dat de regels allemaal tegelijk verschenen.
+     *
+     * `style.setProperty()` is CSSOM en geen attribuut, en die wordt NIET
+     * geblokkeerd: dezelfde proef laat de `--stagger-i` en `--cb-h` die dit
+     * bestand elders zet, ongemoeid. Dus: eerst de spans, dan de vertraging.
+     */
     h.innerHTML = lines
-      .map((line, i) => `<span class="split-line"><span class="split-word" style="transition-delay:${i * 90}ms">${line}</span></span>`)
+      .map((line) => `<span class="split-line"><span class="split-word">${line}</span></span>`)
       .join('');
+    h.querySelectorAll('.split-word').forEach((w, i) => {
+      w.style.setProperty('transition-delay', `${i * 90}ms`);
+    });
     if (reduce) { h.querySelectorAll('.split-line').forEach((l) => l.classList.add('in')); return; }
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {

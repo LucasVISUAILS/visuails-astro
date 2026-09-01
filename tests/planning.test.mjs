@@ -36,7 +36,7 @@
 import { readFileSync } from 'node:fs';
 import { buildStaat } from './lib/build.mjs';
 import { tierFor, isLadderService, LADDER, WINDOW_THRESHOLD, TIERS, EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT } from '../src/data/pricing.js';
-import { ATTENDED_PER_WINDOW } from '../src/data/capacity.js';
+import { ATTENDED_PER_WINDOW, MAX_PRODUCTS_ANY_SERVICE } from '../src/data/capacity.js';
 import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT } from '../src/data/shots.js';
 import { MAX_BATCH_FILES } from '../src/lib/uploads.js';
 import { PAYABLE_SERVICES, ladderKey } from '../src/lib/quote.js';
@@ -196,7 +196,11 @@ console.log('\nelk vakje dat het formulier tekent, kan ook geüpload worden');
      referentiefoto's (materiaal erbij, zonder extra beeld). Alle drie tekenen ze een
      upload-vakje, dus alle drie tellen ze mee in het plafond -- gratis voor de klant
      is niet gratis voor de opslag. */
-  const vakjes = ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT + MAX_REF_PER_PRODUCT);
+  /* HET GROOTSTE AANTAL PRODUCTEN OVER ALLE DIENSTEN, EN NIET DERTIG. Sinds het
+     formulier per dienst telt (een catalogset weegt vier beelden, een carrousel
+     drie), kan een bestelling zeventig producten groot zijn. Het bestandsplafond
+     moet de bestelling dekken die het formulier maximaal kan TEKENEN. */
+  const vakjes = MAX_PRODUCTS_ANY_SERVICE * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT + MAX_REF_PER_PRODUCT);
   ok(`het formulier kan ${vakjes} vakjes tekenen`, vakjes > 0, true, String(vakjes));
   ok('en het batchplafond dekt ze allemaal', MAX_BATCH_FILES >= vakjes, true,
     `plafond ${MAX_BATCH_FILES} tegen ${vakjes} vakjes`);
@@ -217,7 +221,13 @@ console.log('\nelk vakje dat het formulier tekent, kan ook geüpload worden');
   /* De config moet dat getal ook echt meesturen, anders valt maxCards() stil terug
      op de 30 uit zijn eigen terugval en is de koppeling schijn. */
   const of = read('src/components/order/OrderFlow.astro');
-  ok('en OrderFlow stuurt maxProducts mee', /maxProducts: ATTENDED_PER_WINDOW,/.test(of), true);
+  /* Sinds 31 augustus 2026 is dat getal per dienst — een catalogset weegt vier
+     beelden en een compleet product zeven, dus in hetzelfde venster passen 52
+     catalogsets tegen 30 complete. De config draagt dus `maxProducts` in de
+     verkorte vorm, en de afleiding staat er één blok boven. */
+  ok('en OrderFlow stuurt maxProducts mee', /\n  maxProducts,\n/.test(of), true);
+  ok('  en leidt dat af uit het gewicht van de dienst',
+    /const maxProducts = perProduct\s*\n?\s*\? Math\.floor\(ATTENDED_IMAGES_PER_WINDOW \/ perProduct\)/.test(of), true);
 }
 
 console.log('\nen er staat geen prijs meer op de site die niemand kan bestellen');

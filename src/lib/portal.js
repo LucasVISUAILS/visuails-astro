@@ -61,7 +61,9 @@ import {
 } from '../data/pricing.js';
 import { waHref } from '../data/whatsapp.js';
 import { serviceLabel } from '../data/services.js';
-import { PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken } from './token.js';
+import {
+  PORTAL_MAX_LIFE_DAYS, PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken, pastMaxLife,
+} from './token.js';
 import { notifyRevision } from './notify.js';
 import { clearUploadRetention } from './retention.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
@@ -373,7 +375,7 @@ export async function portalGet(context) {
   // expiry page — the link failing is no reason to switch language on them.
   const lang = order.lang === 'nl' ? 'nl' : 'en';
   if (order.revoked_at) return plainPage(env, request, 'replaced', 410, lang);
-  if (isExpired(order.expires_at, order.closed_at)) return plainPage(env, request, 'expired', 410, lang);
+  if (tokenVerlopen(order)) return plainPage(env, request, 'expired', 410, lang);
 
   if (isFile) return serveFile(context, order, route);
   if (route.kind === 'zip') return serveOrderFolder(context, order, lang);
@@ -411,7 +413,7 @@ export async function portalPost(context) {
 
   const lang = order.lang === 'nl' ? 'nl' : 'en';
   if (order.revoked_at) return plainPage(env, request, 'replaced', 410, lang);
-  if (isExpired(order.expires_at, order.closed_at)) return plainPage(env, request, 'expired', 410, lang);
+  if (tokenVerlopen(order)) return plainPage(env, request, 'expired', 410, lang);
 
   const home = `/o/${route.token}`;
 
@@ -793,6 +795,21 @@ function parseRoute(url) {
  */
 const RONDE_KOLOMMEN = 'o.revision_round_at, o.revision_round_note, o.revision_round_count,';
 
+/**
+ * Twee einddatums, een antwoord.
+ *
+ * isExpired() kijkt naar het venster dat aan de BESTELLING hangt (negentig dagen
+ * na afsluiten, en zolang er niet is afgesloten: geen einde). pastMaxLife() kijkt
+ * naar de leeftijd van het TOKEN zelf. Ze staan hier samen in een functie omdat
+ * portalGet() en portalPost() allebei dezelfde deur bewaken en twee kopieen van
+ * deze regel de klassieke manier zijn waarop er later een van de twee wordt
+ * bijgewerkt.
+ */
+function tokenVerlopen(order) {
+  return isExpired(order.expires_at, order.closed_at)
+    || pastMaxLife(order.issued_at, PORTAL_MAX_LIFE_DAYS);
+}
+
 async function loadOrder(env, token) {
   const hash = await hashToken(token);
   const bouw = (metRonde) => ORDER_SQL.replace(RONDE_KOLOMMEN, metRonde ? RONDE_KOLOMMEN : '');
@@ -814,6 +831,12 @@ const ORDER_SQL =
     `SELECT t.id           AS token_id,
             t.expires_at   AS expires_at,
             t.revoked_at   AS revoked_at,
+            -- issued_at wordt gelezen door tokenVerlopen(): de absolute bovengrens
+            -- telt hiervandaan en van nergens anders. Haal deze kolom niet weg --
+            -- tests/vervaldatum.test.mjs bewaakt dat hij hier staat, omdat zonder
+            -- hem pastMaxLife() stil false teruggeeft en de bovengrens verdwijnt
+            -- zonder dat er iets kapotgaat.
+            t.issued_at    AS issued_at,
             o.id           AS order_id,
             o.ref, o.service, o.status, o.tier, o.lang,
             o.product_count, o.window_start, o.window_end, o.closed_at,

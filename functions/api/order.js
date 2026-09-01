@@ -52,6 +52,7 @@
 //     order to protect a calendar would be the wrong thing to protect.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { readCalendar } from '../../src/lib/agenda.js';
 import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor } from '../../src/data/pricing.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
@@ -68,9 +69,6 @@ import { styles as STYLES } from '../../src/data/styles.js';
 const RATIO_IDS = new Set(LIFESTYLE_RATIOS.map((r) => r.id));
 import {
   ATTENDED_PER_WINDOW,
-  HORIZON_DAYS,
-  addDays,
-  bookedFromRows,
   clearedWindows,
 } from '../../src/data/capacity.js';
 import {
@@ -689,7 +687,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   // THE GATE, AGAIN, AGAINST LIVE ROWS. See note 1 at the top of this file.
   const asked = { start: get('window_start'), end: get('window_end') };
-  const gate = await clearRequestedWindow(env, { tier, products, asked });
+  const gate = await clearRequestedWindow(env, { tier, products, service: svc, asked });
 
   // The window the client chose filled while they were filling in the form. In
   // the pipeline this is recoverable and worth recovering: their answers are
@@ -1176,7 +1174,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // fact rather than a guess. See loseRaceIfOversold for why the lower id wins.
   let raced = false;
   if (gate.window && orderId) {
-    raced = await loseRaceIfOversold(env, { orderId, products, window: gate.window });
+    raced = await loseRaceIfOversold(env, { orderId, products, service: svc, window: gate.window });
   }
   const finalWindow = raced ? null : gate.window;
 
@@ -1587,7 +1585,7 @@ export function onRequestGet() {
  * calendar is unreadable is exactly the promise the gate exists to prevent. The
  * order itself is unaffected — see note 3 at the top.
  */
-async function clearRequestedWindow(env, { tier, products, asked }) {
+async function clearRequestedWindow(env, { tier, products, service = 'complete', asked }) {
   const empty = { window: null, windows: [], listReason: null };
   if (tier !== 'attended') return { ...empty, reason: 'queue' };
   if (!asked?.start) return { ...empty, reason: 'none' };
@@ -1603,7 +1601,7 @@ async function clearRequestedWindow(env, { tier, products, asked }) {
   // than one window and a count that is not a number are different facts and
   // /start has a different panel for each. Only the "is this worth the I/O"
   // decision is local; if the classification ever moves, this follows it.
-  const early = clearedWindows({ today: todayUTC(), products, limit: 0 }).reason;
+  const early = clearedWindows({ today: todayUTC(), products, service, limit: 0 }).reason;
   if (early === 'invalid' || early === 'too-large') {
     return { ...empty, reason: 'gone', listReason: early };
   }
@@ -1617,7 +1615,7 @@ async function clearRequestedWindow(env, { tier, products, asked }) {
     // offered — time does not run backwards — so six would in fact be enough.
     // Twelve costs one more loop iteration and removes that argument from the
     // list of things this correctness depends on.
-    const { windows, reason } = clearedWindows({ today, products, booked, blackouts, limit: 12 });
+    const { windows, reason } = clearedWindows({ today, products, service, booked, blackouts, limit: 12 });
 
     const match = windows.find(
       (w) => w.start === asked.start && (!asked.end || w.end === asked.end)
@@ -1631,69 +1629,7 @@ async function clearRequestedWindow(env, { tier, products, asked }) {
   }
 }
 
-/**
- * The calendar the gate reads. Mirrors readCalendar in functions/api/capacity.js
- * deliberately and exactly — same filters, same horizon — because a booking that
- * measured capacity differently from the page that offered it would clear
- * windows the page had already sold.
- *
- * `beforeId`, when set, counts only orders written before this one. That is the
- * race resolution and nothing else; see loseRaceIfOversold.
- *
- * ── DE VIERDE CLAUSULE ONTBRAK HIER — 14 AUGUSTUS 2026 ──────────────────────
- *
- * De regel hierboven zei "deliberately and exactly", en dat was drie van de vier
- * filters lang waar. capacity.js sluit een VERLOPEN ONBETAALDE reservering uit;
- * deze query telde hem door. De pagina die vensters aanbiedt liet zo'n dag dus
- * los zodra de betaaltermijn van zeven dagen afliep, en het endpoint dat hem
- * boekt hield hem bezet tot de nachtelijke opruiming om 03:10 UTC de kolommen
- * leegmaakte — en permanent als die cron niet draait, want dat is een apart
- * wrangler-project.
- *
- * WAT DAT KOSTTE. Order A, twintig producten, nooit betaald, venster verlopen.
- * Klant B laadt /start, krijgt 1 september aangeboden omdat /api/capacity A
- * negeert, vult vijf stappen in, verstuurt — en krijgt hier 409 window-gone,
- * omdat A hier nog meetelt. De banner zegt *"dat venster ging weg terwijl je dit
- * invulde"*, wat niet waar is, en de vervangende lijst komt uit dezelfde
- * verouderde telling, dus daar ontbreken de dagen van A ook. De order wordt op
- * dat pad NIET weggeschreven: de 409 valt vóór upsertCustomer en de INSERT.
- *
- * DE RICHTING WAS GELUKKIG EENZIJDIG. Deze query zag een SUPERSET van wat de
- * pagina zag, dus hij kon alleen ten onrechte weigeren — nooit dubbelboeken.
- * Dat is de goede kant om fout te staan, en het is de reden dat dit maanden
- * onopgemerkt kon blijven: een geweigerde bestelling klaagt niet.
- *
- * De twee queries staan nog steeds op twee plekken, want ze zitten in twee
- * Functions zonder gedeelde module. tests/promises.test.mjs bewaakt daarom
- * sinds vandaag dat ze woordelijk hetzelfde filter dragen.
- */
-async function readCalendar(env, today, beforeId = null) {
-  const horizonEnd = addDays(today, HORIZON_DAYS + 14);
-  const orderSql =
-    `SELECT window_start, window_end, product_count
-       FROM orders
-      WHERE tier = 'attended'
-        AND window_start IS NOT NULL
-        AND status <> 'cancelled'
-        AND COALESCE(window_end, window_start) >= ?1
-        AND NOT (
-              COALESCE(payment_status, 'unpaid') = 'unpaid'
-          AND window_expires_at IS NOT NULL
-          AND window_expires_at <= datetime('now')
-        )` + (beforeId ? ' AND id < ?2' : '');
 
-  const orderStmt = beforeId
-    ? env.DB.prepare(orderSql).bind(today, beforeId)
-    : env.DB.prepare(orderSql).bind(today);
-
-  const [blackoutRows, orderRows] = await Promise.all([
-    env.DB.prepare('SELECT day FROM blackout_days WHERE day >= ?1 AND day <= ?2').bind(today, horizonEnd).all(),
-    orderStmt.all(),
-  ]);
-
-  const blackouts = new Set((blackoutRows.results || []).map((r) => r.day));
-  return { blackouts, booked: bookedFromRows(orderRows.results || [], blackouts) };
-}
 
 /**
  * Did this order lose a race for the window it just wrote? If so, give it back.
@@ -1721,12 +1657,12 @@ async function readCalendar(env, today, beforeId = null) {
  *
  * Returns true if the window was surrendered.
  */
-async function loseRaceIfOversold(env, { orderId, products, window }) {
+async function loseRaceIfOversold(env, { orderId, products, service = 'complete', window }) {
   if (!env?.DB || !orderId || !window?.start) return false;
   try {
     const today = todayUTC();
-    const { blackouts, booked } = await readCalendar(env, today, orderId);
-    const { windows } = clearedWindows({ today, products, booked, blackouts, limit: 12 });
+    const { blackouts, booked } = await readCalendar(env, today, { beforeId: orderId });
+    const { windows } = clearedWindows({ today, products, service, booked, blackouts, limit: 12 });
     if (windows.some((w) => w.start === window.start && w.end === window.end)) return false;
 
     await env.DB.prepare('UPDATE orders SET window_start = NULL, window_end = NULL WHERE id = ?1')
@@ -2430,7 +2366,18 @@ export function safeRedirect(raw, lang) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
+/* Ook de aanhalingstekens, sinds 31 augustus 2026. Deze escaper dekte alleen
+   `< > &`, en vandaag komt hij nergens in een attribuut terecht — hij vult
+   tekstknopen in de bevestigingsmail. Maar hij is de enige van de vijf kopieën in
+   dit project die afwijkt (admin.js, account.js, portal.js, mailTemplate.js en
+   feedback.js doen alle vijf tekens), en de dag dat iemand hem in een `alt=` of
+   een `href=` zet, breekt hij zonder dat er iets zichtbaar misgaat. Afwijken zonder
+   reden is hier de fout, niet het ontbrekende teken. */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({
+    '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
 
 // PALETTE, HAND-CARRIED. Every hex in the mail HTML below is a literal on
 // purpose: a mail client cannot resolve a custom property, and half of them

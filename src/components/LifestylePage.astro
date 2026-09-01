@@ -50,6 +50,7 @@ import { styles as stylesEn } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
 
 import ServiceSwitch from './ServiceSwitch.astro';
+import HeroFacts from './HeroFacts.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -322,13 +323,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
         </a>
       </div>
       <ServiceSwitch current="lifestyle" lang={lang} />
-      <div class="trust-row" style="margin-top:2.4rem">
-        {c.trust.map(([strong, rest]) => (
-          <span class="trust-item"><strong>{strong}</strong> {rest}</span>
-        ))}
-        <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
-        <span class="trust-item tf-verify"><strong>{c.reviewNote}</strong></span>
-      </div>
+      <HeroFacts eigen={c.trust} lang={lang} />
       <p class="queue-note">{c.queueNote}</p>
     </div>
     <div class="reveal pending">
@@ -387,7 +382,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
 
 <section>
   <div class="container">
-    <h2 style="margin-bottom:2rem" set:html={c.moodsH} />
+    <h2 class="section-h" set:html={c.moodsH} />
   {/* ── DRIE KOLOMMEN EN EEN VIERKANTE BAND — 30 AUGUSTUS 2026 ─────────────
       Lucas, over /lifestyle: *"raster naar drie kolommen, banden lager."* De
       lengte van deze pagina zat in beeld en niet in tekst — 12.878px met 1250
@@ -547,7 +542,11 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
 
 <section class="section-tight">
   <div class="container">
-    <div class="section-head" style="margin-bottom:1.8rem">
+    {/* `.section-h` erbij: de <p> hieronder is een linkregel en geen lede, dus
+        de ruime maat van `.section-head` is te veel. Dat stond hier als
+        `style="margin-bottom:1.8rem"` — de laatste van de twaalf inline
+        kopmarges. Zie de noot bij `.section-h` in global.css. */}
+    <div class="section-head section-h">
       <h2>{c.rangeH}</h2>
       <p><a href={lp('/gallery')} class="link-arrow" style="font-size:1rem">{c.rangeCta} <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
     </div>
@@ -577,7 +576,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
 
 <section>
   <div class="container" style="max-width:760px">
-    <h2 style="margin-bottom:1.8rem">{c.faqH}</h2>
+    <h2 class="section-h">{c.faqH}</h2>
     <div class="faq-stack">
       {c.faqs.map((f) => (
         <Disclose summary={f.q} tone="panel">

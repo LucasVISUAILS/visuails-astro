@@ -560,7 +560,51 @@
      werd de site op 768 en 1024 zeven pixels smaller dan hij was, en een
      reparatie voor brede schermen die laptops iets kost, is geen reparatie.
      Zo is elke breedte gelijk of ruimer dan voorheen, nooit smaller. */
-  --pad-x: clamp(1.2rem, 4vw, 5.5rem);
+  /* ── EEN MAATJE SMALLER, EN ÉÉN LADDER — 1 september 2026 ─────────────────
+   *
+   * Lucas: *"Ik wil de breedte van de website toch 1 maatje smaller maken omdat
+   * het nu wel erg breed is, pas dit overal correct en consistent toe."*
+   *
+   * ── EERST WAT ER AAN DE HAND WAS, WANT DAT WAS NIET DE LADDER HIERBOVEN ──
+   *
+   * De maten hieronder golden voor twee pagina's. `body.huid-kantig` — de huid
+   * die op ELKE andere pagina staat — zette er `--container: 100%` en
+   * `--pad-x: 20px` overheen, dus liep de inhoud op elk scherm tot twintig pixels
+   * van de rand. De hele redenering hierboven over 1240 → 1720 ging over een
+   * getal dat de bezoeker nooit heeft gezien.
+   *
+   * Twee ladders waarvan er één stil wint, is geen ladder. De huid overschrijft
+   * ze sinds vandaag niet meer; deze regels zijn de maten van de site.
+   *
+   * ── EN DAN DE STAP ZELF, OPGEMETEN OP /pricing ───────────────────────────
+   *
+   *   scherm    was      wordt
+   *    390      350      350     ← de telefoon verandert niet, en dat is de eis
+   *    768      728      714
+   *   1024      984      952
+   *   1280     1240     1190
+   *   1440     1400     1339
+   *   1920     1880     1432
+   *   2560     2520     1432
+   *
+   * Op een laptop is het een nette stap. Op een monitor is het het verschil
+   * tussen een prijstabel van 1880 breed — met de drie kolommen zo ver uit elkaar
+   * dat je ze niet meer in één blik vergelijkt — en een van 1432.
+   *
+   * ── DE INZET GROEIT MEE, EN DE TELEFOON BLIJFT WAAR HIJ WAS ──────────────
+   *
+   * `--pad-x` was in de huid een vast getal. Vast betekent dat de marge op een
+   * telefoon en op een monitor even dik is, en dan is 20px op de een royaal en op
+   * de ander een streepje. De clamp houdt de bodem op precies diezelfde 20px —
+   * daar was nooit iets mis en elke pixel telt er — en laat hem daarboven
+   * meelopen tot 64.
+   *
+   * DE HELLING IS 3.5vw EN NIET 4vw. Met 4vw zou de marge op 1920 al 77px zijn
+   * terwijl de container daar toch al klemt; dan betaal je op een laptop voor een
+   * probleem dat alleen op een monitor bestond. Dezelfde afweging als in augustus,
+   * de andere kant op.
+   */
+  --pad-x: clamp(20px, 3.5vw, 64px);
   /* De leesbare regellengte voor kleine noten. Zie MAX-WIDTH OP PROZA verderop
      voor waarom dit 68ch is en .section-head 62ch. */
   --measure-note: 68ch;
@@ -568,12 +612,34 @@
      verderop voor de meting die deze getallen heeft opgeleverd. */
   --gap-head-block: clamp(1.4rem, 2.4vw, 2rem);
   --gap-head-lede:  clamp(1.1rem, 1.8vw, 1.6rem);
-  --container: min(1720px, 100%);
+  /* De bovengrens als eigen token, want twee dingen moeten hem kennen: de
+     container zelf, en --rand-x hieronder. Hem twee keer intypen is hem één keer
+     vergeten bij te werken. */
+  --container-cap: 1560px;
+  --container: min(var(--container-cap), 100%);
   --container-narrow: 760px;
-  /* Mee omhoog, anders is `wide` smaller dan de standaard geworden en betekent
+  /* Eén trede breder dan de standaard en niet meer schermvullend, anders betekent
      de klasse het tegenovergestelde van zijn naam. De galerij is de enige
-     gebruiker; die wil elke pixel. */
-  --container-wide: min(1920px, 100%);
+     gebruiker; die wil elke pixel die er verantwoord is. */
+  --container-wide: min(1760px, 100%);
+
+  /* ── DE AFSTAND VAN DE RAND TOT DE TEKST ───────────────────────────────────
+   *
+   * Zolang de inhoud schermvullend was, waren dit hetzelfde getal en kon elke
+   * versiering `--pad-x` gebruiken om met de tekst uit te lijnen. Met een
+   * bovengrens lopen ze uiteen: op 1920px begint de tekst op 244px van de rand en
+   * zou een streepje op `--pad-x` op 64px staan — een liniaal die niet bij de
+   * tekst hoort die hij opmeet.
+   *
+   * WAAROM `100%` EN NIET `100vw`. `100vw` telt de scrollbalk mee en de layout
+   * niet, dus op een pagina die scrolt zou dit er zo'n zeven pixels naast zitten —
+   * precies het soort verschil dat je op een schermafdruk niet ziet en op een
+   * scherm wel. `100%` wordt per gebruik opgelost tegen het blok waarin het staat,
+   * en dat is de layoutbreedte. Alles wat zich op de INHOUD uitlijnt leest dit;
+   * wat zich op de SCHERMRAND uitlijnt (een haarlijn over de volle breedte) leest
+   * niets en blijft op 0.
+   */
+  --rand-x: calc(max(0px, (100% - var(--container-cap)) / 2) + var(--pad-x));
   /* ---- radius ----
      The scale lives at the top of this block (--r-lg / --r-md / --r-sm) and
      --radius aliases --r-md for the components that still read the old name.
@@ -2330,7 +2396,22 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   .tile.r-2 { grid-row: span 1; }
 }
 @media (max-width: 620px) {
-  .tile { grid-column: span 12 !important; }
+  /* ── ZONDER !important, 31 augustus 2026 ────────────────────────────────
+     Hier stond `.tile { grid-column: span 12 !important; }`. Dat was de enige
+     `!important` in dit bestand die geen bewegingsvoorkeur uitschakelde, en hij
+     stond er om één reden: `.tile` alleen is (0,1,0) en verliest van de
+     `.tile.s-6` hierboven, die (0,2,0) is.
+
+     Het antwoord daarop is dezelfde klasse er nog eens bij zetten — dan is deze
+     regel ook (0,2,0) en wint hij op volgorde, want hij staat later. Precies de
+     truc die de noot bij .huid-kantig verderop al beschrijft, en die het bestand
+     op regel 1961 zelf aanraadt boven `!important`.
+
+     WAAROM DAT BETER IS DAN EEN GELIJKWAARDIGE OPLOSSING: een `!important` in een
+     mediaquery is niet met een gewone regel te overschrijven, ook niet door een
+     pagina die één tegel bewust breder wil op de telefoon. Dat is een deur die
+     dichtzit voor iedereen omdat één regel te zwak was. */
+  .tile.tile { grid-column: span 12; }
 }
 
 /* The hairline-divided sheet is NOT deleted — it is the right device for a
@@ -2642,6 +2723,20 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 @media (max-width: 700px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } .photo-grid .wide { grid-column: span 2; } }
 
 .section-head { max-width: 62ch; margin-bottom: clamp(2rem, 4vw, 3.4rem); }
+
+/* ── EEN KALE SECTIEKOP — 31 AUGUSTUS 2026 ─────────────────────────────────
+   `.section-head` hoort bij een kop MET een lede eronder: die twee vormen samen
+   een blok, en daar hoort ruimer wit onder dan onder een kop alleen.
+
+   Voor een kop ZONDER lede was er niets, en dus stond de maat twaalf keer als
+   inline stijl in de markup: negen keer `margin-bottom:2rem` en drie keer
+   `1.8rem`. Gemeten gaf dat 32px boven een keuzeraster en 28,8px boven een
+   FAQ-accordeon — twee waarden voor precies dezelfde stap, en geen van beide te
+   vinden als je zoekt waar hij vandaan komt.
+
+   Eén klasse, één waarde, en 2rem omdat dat er negen van de twaalf waren: de
+   drie FAQ-koppen schuiven 3,2px, de rest staat waar hij stond. */
+.section-h { margin-bottom: 2rem; }
 .section-head p { margin-top: 1rem; color: var(--ink-2); font-size: var(--t-lg); }
 
 /* ── DEZELFDE BEHANDELING ALS DE HOOFDSTUKKOP — 19 augustus 2026 ────────────

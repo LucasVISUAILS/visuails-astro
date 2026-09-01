@@ -91,7 +91,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge]) {
+    for (const task of [releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -1286,6 +1286,118 @@ async function sendReport(env, report, problems) {
 }
 
 /* Voor de tests: de taken los aanroepbaar, zonder de scheduled-handler. */
-export const tasks = { releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE ACHTERGELATEN UPLOADS — 31 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Gevonden bij de beveiligingsronde die Lucas vroeg. /api/upload is met opzet
+ * ONBEVESTIGD: iemand die een bestelling invult heeft nog geen account, dus er is
+ * niets om hem aan te herkennen. De rem is een snelheidsbegrenzer — veertig
+ * bestanden per minuut per IP, elk tot 25 MB.
+ *
+ * WAT ER MISTE. Een batch die nooit aan een bestelling wordt gekoppeld, blijft
+ * voor altijd in R2 staan. purgeExpiredFiles() hierboven ruimt alleen `files`-rijen
+ * op die hun bewaartermijn voorbij zijn, en een verlaten batch heeft nooit een rij
+ * gekregen. Dat is dus een rekening die een vreemde kan laten oplopen en die
+ * niemand ziet groeien — geen inbraak, wel de enige plek waar iemand van buiten
+ * onbeperkt iets kan achterlaten.
+ *
+ * En het gebeurt ook zonder kwade wil: elke bezoeker die foto's kiest en het
+ * formulier daarna wegklikt, laat een batch achter.
+ *
+ * ── DE VOORWAARDE IS "NERGENS GENOEMD", NIET "OUD" ─────────────────────────
+ *
+ * Alleen op leeftijd afgaan zou een batch weggooien waarvan de bestelling nog in
+ * behandeling is. Een batch mag pas weg als hij in GEEN van de twee plekken
+ * voorkomt die ernaar kunnen wijzen — `orders.details_json` en
+ * `plan_queue.upload_batch` — én hij ouder is dan INTAKE_TTL_DAYS.
+ *
+ * De zoektocht in details_json is een LIKE op het kenmerk zelf. Dat mag hier grof:
+ * een batchkenmerk is drieënveertig willekeurige tekens, dus een toevallige
+ * treffer bestaat niet, en een LIKE die te veel vindt laat een bestand STAAN —
+ * de veilige kant.
+ *
+ * ── EN DEZELFDE REM ALS BIJ purgeExpiredFiles ──────────────────────────────
+ *
+ * Dit is de tweede taak die iets onherroepelijks doet, dus hij staat achter
+ * dezelfde vlag en meldt standaard alleen wat hij zou doen. Zie de lange noot bij
+ * PURGE_ENABLED hierboven; de argumenten zijn woord voor woord dezelfde.
+ */
+
+/** Hoe lang een niet-gekoppelde batch mag blijven staan. Ruim voorbij elke bestelstroom. */
+const INTAKE_TTL_DAYS = 7;
+/** Hoeveel objecten er per nacht bekeken worden. Begrenst de snelheid, niet de juistheid. */
+const INTAKE_SCAN_LIMIT = 1000;
+
+async function sweepAbandonedIntake(env) {
+  if (!env?.UPLOADS || !env?.DB) return null;
+
+  const grens = Date.now() - INTAKE_TTL_DAYS * 86400000;
+
+  /* Alles onder intake/ in één lijst, gegroepeerd per batch. De sleutel is
+     `intake/<batch>/<bestand>`, dus het tweede deel is het kenmerk. `uploaded`
+     komt van R2 zelf; de jóngste upload in een batch bepaalt de leeftijd, want
+     zolang er nog iets bij komt is de bezoeker nog bezig. */
+  let listed;
+  try {
+    listed = await env.UPLOADS.list({ prefix: 'intake/', limit: INTAKE_SCAN_LIMIT });
+  } catch (err) {
+    throw new Error(`de wachtruimte is niet te lezen: ${err?.message || err}`);
+  }
+  const objects = listed?.objects || [];
+  if (!objects.length) return null;
+
+  const batches = new Map();
+  for (const o of objects) {
+    const deel = String(o.key || '').split('/');
+    if (deel.length < 3 || deel[0] !== 'intake' || !deel[1]) continue;
+    const bestaand = batches.get(deel[1]) || { keys: [], bytes: 0, jongste: 0 };
+    bestaand.keys.push(o.key);
+    bestaand.bytes += Number(o.size) || 0;
+    const op = o.uploaded ? new Date(o.uploaded).getTime() : 0;
+    if (op > bestaand.jongste) bestaand.jongste = op;
+    batches.set(deel[1], bestaand);
+  }
+
+  const oud = [...batches.entries()].filter(([, b]) => b.jongste && b.jongste < grens);
+  if (!oud.length) return null;
+
+  /* Wie er nog naar wijst. Twee query's per batch en niet één grote IN-lijst:
+     het aantal oude batches is klein, en een LIKE per stuk is leesbaarder dan een
+     samengestelde zoekopdracht die niemand meer naleest. */
+  const verlaten = [];
+  for (const [batch, b] of oud) {
+    const [inOrder, inWachtrij] = await Promise.all([
+      env.DB.prepare("SELECT 1 FROM orders WHERE details_json LIKE '%' || ?1 || '%' LIMIT 1").bind(batch).first(),
+      env.DB.prepare('SELECT 1 FROM plan_queue WHERE upload_batch = ?1 LIMIT 1').bind(batch).first(),
+    ]);
+    if (!inOrder && !inWachtrij) verlaten.push([batch, b]);
+  }
+  if (!verlaten.length) return null;
+
+  const bestanden = verlaten.reduce((n, [, b]) => n + b.keys.length, 0);
+  const mb = Math.round(verlaten.reduce((n, [, b]) => n + b.bytes, 0) / 1048576);
+
+  if (String(env.PURGE_ENABLED || '') !== 'true') {
+    console.log('[cron] wachtruimte: rem staat UIT —', verlaten.length, 'verlaten batches');
+    return `VERSLAGMODUS: ${verlaten.length} verlaten upload${verlaten.length === 1 ? '' : 's'} in de wachtruimte`
+      + ` (${bestanden} bestand${bestanden === 1 ? '' : 'en'}, ongeveer ${mb} MB), ouder dan ${INTAKE_TTL_DAYS} dagen en aan geen enkele bestelling gekoppeld.`
+      + ' Er is NIETS weggegooid — dezelfde rem als bij het opruimen van bestanden, zie PURGE_ENABLED.';
+  }
+
+  let weg = 0;
+  for (const [, b] of verlaten) {
+    for (const key of b.keys) {
+      try { await env.UPLOADS.delete(key); weg += 1; } catch (err) {
+        console.error('[cron] wachtruimte: kon', key, 'niet weggooien —', err?.message || err);
+      }
+    }
+  }
+  return `${weg} achtergelaten bestand${weg === 1 ? '' : 'en'} uit de wachtruimte opgeruimd`
+    + ` (${verlaten.length} batch${verlaten.length === 1 ? '' : 'es'}, ongeveer ${mb} MB).`;
+}
+
+export const tasks = { releaseExpiredWindows, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge };
 export const QUEUE_WATCH = { QUEUE_WARN_DAYS, weekBeginntOver };
 export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };

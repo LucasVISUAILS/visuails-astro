@@ -100,18 +100,28 @@ const AANWIJZER = [
 </div></div>
 
 <style is:global>
-  /* ══ DE MAAT VAN DE PAGINA ═════════════════════════════════════════════════
-     Rand tot rand met een vaste inzet, zoals de referentie: geen max-width en
-     geen gecentreerde kolom.
+  /* ══ WAT DEZE HUID WEL EN NIET ZET ═════════════════════════════════════════
 
      GEEN STERRETJESRESET voor de hoeken. DESIGN.md waarschuwt daar met zoveel
      woorden voor ("how a radius ends up on a table cell and a horizontal
      rule"), en het zou de pillen platslaan die juist het punt zijn. De site
-     past hoeken al via deze drie tokens toe. --r-pill blijft ongemoeid. */
+     past hoeken al via deze drie tokens toe. --r-pill blijft ongemoeid.
+
+     EN GEEN EIGEN PAGINABREEDTE MEER — zie de noot in de regel hieronder. */
   body.huid-kantig {
-    --container: 100%;
-    --container-wide: 100%;
-    --pad-x: 20px;
+    /* ── DE MATEN STAAN NIET MEER HIER ──────────────────────────────────────
+     *
+     * Hier stond `--container: 100%`, `--container-wide: 100%` en
+     * `--pad-x: 20px`, en dat waren de maten die de site werkelijk gebruikte —
+     * want deze huid staat op ELKE pagina op twee na. De ladder in global.css
+     * (1720 / 1600 / 760, met een lange noot erboven over waarom hij zo is
+     * geworden) stond er dus voor niets: `100%` zette hem buiten spel.
+     *
+     * Twee ladders waarvan er één stil wint, is geen ladder. De maten staan nu
+     * één keer in global.css en deze huid overschrijft ze niet meer. Wat hier
+     * overblijft is wat de huid ECHT eigen is: geen hoeken, en zijn eigen
+     * annotatielaag.
+     */
     --r-lg: 0px;
     --r-md: 0px;
     --r-sm: 0px;
@@ -600,13 +610,16 @@ const AANWIJZER = [
      dus ook informatie: waar hij staat begint een nieuw deel, waar hij ontbreekt
      loopt het deel door. Vier van de twaalf in plaats van twaalf van de twaalf. */
   body.huid-kantig .sch-naad.hoofd::before {
-    content: ""; position: absolute; left: var(--pad-x); top: -3px;
+    /* --rand-x en niet --pad-x: de maatverdeling hoort te beginnen waar de TEKST
+       begint. Zie de noot bij dat token — sinds de container een bovengrens heeft
+       zijn dat twee verschillende afstanden. */
+    content: ""; position: absolute; left: var(--rand-x); top: -3px;
     width: 96px; height: 7px;
     background: repeating-linear-gradient(to right, var(--sch-lijn) 0 1px, transparent 1px 8px);
   }
   /* het langere streepje halverwege, zoals op een liniaal */
   body.huid-kantig .sch-naad.hoofd::after {
-    content: ""; position: absolute; left: calc(var(--pad-x) + 48px); top: -5px;
+    content: ""; position: absolute; left: calc(var(--rand-x) + 48px); top: -5px;
     width: 1px; height: 11px; background: var(--sch-lijn);
   }
 
@@ -653,7 +666,14 @@ const AANWIJZER = [
   /* De bovenkant vrij van de kop. Op inset:20px rondom vielen de twee bovenste
      haken achter de balk, en een zoekerkader waarvan je de helft niet ziet is
      geen kader. 92px is de balk (76) plus dezelfde marge als aan de zijkanten. */
-  body.huid-kantig .sel-laag.hero { inset: 92px var(--pad-x) var(--pad-x); z-index: 1; }
+  /* Het zoekerkader ligt over de hero-FOTO, en die vult het scherm. Toch --rand-x
+     en niet --pad-x: het kader zegt "dit is de uitsnede" van wat eronder staat, en
+     dat is de kolom met de kop erin. Op de zijkant van het scherm zou het een
+     kader om het behang zijn. De onderkant houdt dezelfde afstand als de zijkant,
+     zodat het een vierkant kader blijft en geen liggend rechthoekje. */
+  body.huid-kantig .sel-laag.hero {
+    inset: 92px var(--rand-x) var(--pad-x) var(--rand-x); z-index: 1;
+  }
   /* Op de hero staan de haken over een foto en niet over een paneel, dus daar
      mogen ze een slag steviger — anders verdwijnen ze in elke lichte plek van
      het beeld. Lucas: *"de zoekerhoeken op de homepage licht wat meer

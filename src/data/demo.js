@@ -40,7 +40,7 @@ import { WINDOW_THRESHOLD, turnaround } from './pricing.js';
 
 // DE GETALLEN KOMEN UIT pricing.js EN NERGENS ANDERS. De drempel en de twee
 // doorlooptijden staan in vier zinnen hieronder, in twee talen — acht plekken
-// waar iemand "10" of "2–4 werkdagen" met de hand had kunnen typen. pricing.js
+// waar iemand "10" of "2–4 dagen" met de hand had kunnen typen. pricing.js
 // noemt turnaround() de enige toegestane bron voor die strings; dit bestand
 // houdt zich daaraan door ze op te halen in plaats van over te schrijven.
 const WINDOW_THRESHOLD_ = WINDOW_THRESHOLD;

@@ -44,7 +44,7 @@
 // EN ÉÉN DING KLOPTE NIET, wat pas opviel toen de figuur uit de echte cijfers
 // getekend werd. Deze pagina zei "a week has room for a number of products",
 // terwijl src/data/capacity.js per DAG telt: 18 producten per studiodag, 3 daarvan
-// vrij voor kleine bestellingen, en een venster van twee werkdagen. Weken bestaan
+// vrij voor kleine bestellingen, en een venster van twee open dagen. Weken bestaan
 // nergens in dat bestand. De regel is daarom aangepast naar de eenheid die de
 // poort werkelijk gebruikt — anders zou de figuur ernaast de tekst tegenspreken,
 // en dan is een mock-up erger dan een grijs vlak.
@@ -72,7 +72,7 @@ const COPY = {
       // Zie de noot bovenaan dit bestand: dit zei "a week has room", en de poort
       // telt per dag. De cijfers komen nu uit capacity.js, dus de tekst kan niet
       // meer los gaan staan van het mechanisme dat hij beschrijft.
-      ['Counted in products, not orders', `A studio day holds ${PRODUCTS_PER_DAY} products, and a reserved window is ${WINDOW_DAYS} working days. One order of thirty products asks for fifteen on each of those two days \u2014 not "thirty somewhere in there".`],
+      ['Counted in products, not orders', `A studio day holds ${PRODUCTS_PER_DAY} products, and a reserved window is ${WINDOW_DAYS} days. One order of thirty products asks for fifteen on each of those two days \u2014 not "thirty somewhere in there".`],
       ['One ceiling, one place', `The limit is a single configurable number, and ${QUEUE_FLOOR_PER_DAY} of every ${PRODUCTS_PER_DAY} stay off it so a small order still runs in a normal turnaround. There is no second rule anywhere that can quietly disagree.`],
       // Size, not product type. See the header note: this used to say "drops
       // outrank loose products", which named two things a buyer picked between.
@@ -133,7 +133,7 @@ const COPY = {
     gateH: 'We kijken eerst in de agenda, en pas daarna noemen we een datum.',
     gateLede: 'De datumkiezer in het bestelformulier toont geen lijstje datums. Hij vraagt de planning waar de studio zich op die dagen werkelijk aan verbonden heeft, haalt elk venster weg dat de studio niet kan vasthouden, en biedt het eerstvolgende venster aan dat wél vrij te houden is.',
     gate: [
-      ['Werkdruk, geen beschikbaarheid', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten, en een vastgelegd venster is ${WINDOW_DAYS} werkdagen. Een bestelling van dertig vraagt vijftien op elk van die twee dagen — niet "dertig ergens daarin".`],
+      ['Werkdruk, geen beschikbaarheid', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten, en een vastgelegd venster is ${WINDOW_DAYS} dagen. Een bestelling van dertig vraagt vijftien op elk van die twee dagen — niet "dertig ergens daarin".`],
       ['Eén plafond, één plek', `De limiet is één instelbaar getal, en ${QUEUE_FLOOR_PER_DAY} van elke ${PRODUCTS_PER_DAY} blijven eraf zodat een kleine bestelling nog steeds in een normale doorlooptijd draait. Er is nergens een tweede regel die er stilletjes van kan afwijken.`],
       // Zie de EN-tak: omvang beslist, niet het soort bestelling.
       [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling de agenda in en houdt hij een vastgelegde datum. Kleinere bestellingen draaien in een normale doorlooptijd en wijken ervoor — precies dat maakt de vastgelegde datum vastgelegd.`],

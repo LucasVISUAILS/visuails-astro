@@ -38,9 +38,9 @@
  */
 
 import {
-  PLAN_IDS, TERM_IDS, PLAN_SERVICE,
-  productsFor, clipsFor, monthlyCents, available, rolloverMonths, rolloverDetail,
-  addMonths, planShape,
+  PLAN_IDS, SUB_PLAN_IDS, TERM_IDS, PLAN_SERVICE,
+  productsFor, clipsFor, monthlyCents, available, availableFrom, rolloverMonths, rolloverDetail,
+  addMonths, planShape, term,
 } from '../data/plans.js';
 /* DE CONSTANTE EN NOOIT DE LETTERLIJKE TEKST. `VAT_TREATMENT.standard` is
    'nl_standard' en niet 'standard' — zie de noot bij dezelfde reparatie in
@@ -49,7 +49,11 @@ import {
    constante, die vergelijking werd false, en elke abonnementsfactuur van een
    Nederlandse klant ging de deur uit met 0% btw. */
 import { VAT_TREATMENT } from '../data/vat.js';
-import { verbruikSlot, geefSlotTerug, slotBalans, vensterVoor } from './slots.js';
+import { CUSTOM_MONTH_ID } from '../data/pricing.js';
+import {
+  verbruikSlot, geefSlotTerug, slotBalans, vensterVoor,
+  bundelVoor, subMaandCents, subProducten,
+} from './slots.js';
 // vat.js draagt de BEHANDELINGEN (standaard, verlegd, buiten bereik), quote.js
 // geeft het TARIEF door uit pricing.js. Het getal staat hier met opzet niet: een
 // noot die het tarief herhaalt, is de vierde plek waar het kan verouderen.
@@ -107,6 +111,12 @@ async function stil(fn, leeg = null) {
 export async function loadSubscription(env, customerId) {
   return stil(() => env.DB.prepare(
     `SELECT id, ref, customer_id, plan, term, status, window_day,
+            /* Sinds migratie 0038. Leeg bij een pakket, gevuld bij een maand op
+               maat — en dat verschil wordt nergens anders gelezen dan in
+               bundelVoor()/subMaandCents(). Haal ze hier niet weg: zonder deze
+               twee kolommen valt een maand op maat stil terug op een leeg plan,
+               en dan staat er een dashboard zonder slots en een bedrag van nul. */
+            amount_cents, slots_json,
             mollie_customer_id, mollie_mandate_id, mollie_subscription_id,
             started_at, cancelled_at, cancel_reason, paused_at, pause_reason,
             created_at
@@ -146,7 +156,9 @@ export async function loadSubscription(env, customerId) {
 export async function subscriptionByRef(env, ref) {
   if (!ref) return null;
   return stil(() => env.DB.prepare(
-    'SELECT id, ref, customer_id, plan, term, status, mollie_customer_id FROM subscriptions WHERE ref = ?1'
+    `SELECT id, ref, customer_id, plan, term, status, amount_cents, slots_json,
+            mollie_customer_id
+       FROM subscriptions WHERE ref = ?1`
   ).bind(String(ref)).first());
 }
 
@@ -165,12 +177,57 @@ export async function loadMonths(env, subId, termId) {
 /** De open wachtrij van een klant, op volgorde. Wat al opgehaald is (taken_at) hoort er niet meer bij. */
 export async function loadQueue(env, customerId) {
   const rows = await stil(() => env.DB.prepare(
-    `SELECT id, position, name, note, upload_batch, kind, locked_at, created_at
+    /* window_start/window_end/asap staan er sinds migratie 0036 bij: een
+       wachtrij-item draagt zijn eigen twee dagen, of zegt uitdrukkelijk dat het
+       geen datum wil. Zie de kop van die migratie voor waarom dat op het item zit
+       en niet in een aparte planningstabel. */
+    `SELECT id, position, name, note, upload_batch, kind, locked_at, created_at,
+            window_start, window_end, asap
        FROM plan_queue
       WHERE customer_id = ?1 AND taken_at IS NULL
       ORDER BY position ASC, id ASC`
   ).bind(customerId).all(), { results: [] });
   return rows?.results || [];
+}
+
+/* ── WANNEER EEN WACHTRIJ-ITEM AAN DE BEURT IS — 31 augustus 2026 ───────────
+ *
+ * Twee schrijfacties en verder niets. Het UITREKENEN van welk paar dagen bij een
+ * aangewezen dag hoort, gebeurt niet hier maar in de aanroeper, met windowFor()
+ * uit capacity.js en de echte agenda erbij. Dat is met opzet: zou dit bestand
+ * zelf een paar samenstellen, dan is er een tweede plek die bepaalt wat een
+ * venster is, en die kan afwijken van de poort die de bestelstroom gebruikt.
+ *
+ * Hier staat alleen wat er in de rij komt te staan, en de voorwaarde eromheen:
+ * een item dat al opgehaald is, verandert niet meer van dag. */
+
+/** Twee aangewezen dagen op een wachtrij-item zetten. `start` en `end` zijn ISO-dagen. */
+export async function queueWindow(env, customerId, id, start, end) {
+  const gezet = await stil(() => env.DB.prepare(
+    `UPDATE plan_queue
+        SET window_start = ?3, window_end = ?4, asap = 0
+      WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL
+      RETURNING id`
+  ).bind(Number(id) || 0, customerId, start, end).first());
+  return Boolean(gezet);
+}
+
+/**
+ * Terug naar "zo snel mogelijk": de dagen worden losgelaten.
+ *
+ * DE DAGEN WORDEN ECHT LEEGGEMAAKT EN NIET ALLEEN GENEGEERD. Bleef het paar
+ * staan met `asap = 1` ernaast, dan houdt src/lib/agenda.js die dagen bezet voor
+ * iemand die er geen aanspraak meer op maakt — en dan is de agenda voller dan de
+ * studio is.
+ */
+export async function queueAsap(env, customerId, id) {
+  const gezet = await stil(() => env.DB.prepare(
+    `UPDATE plan_queue
+        SET window_start = NULL, window_end = NULL, asap = 1
+      WHERE id = ?1 AND customer_id = ?2 AND taken_at IS NULL
+      RETURNING id`
+  ).bind(Number(id) || 0, customerId).first());
+  return Boolean(gezet);
 }
 
 /** Wat er dit jaar uit de wachtrij is gehaald — "wat je hebt opgebouwd", nieuwste eerst. */
@@ -235,7 +292,9 @@ export async function planSaldo(env, customerId) {
    * maand zit al in het plan zelf. Zie de noot bij available(). */
   const eerder = maanden.filter((m) => m.month !== maand);
 
-  const bruto = available(sub.plan, sub.term, eerder);
+  /* availableFrom() met het aantal van DIT abonnement: bij een maand op maat staat
+     dat op de rij en niet in PLAN_PRODUCTS. Zie subProducten() in slots.js. */
+  const bruto = availableFrom(subProducten(sub), sub.term, eerder);
   const verbruikt = Math.max(0, Math.floor(Number(deze?.used) || 0));
 
   /* WELK DEEL VAN HET SALDO DOORGESCHOVEN IS, EN TOT WANNEER. Lucas koos voor
@@ -249,7 +308,7 @@ export async function planSaldo(env, customerId) {
    * dezelfde maand en dezelfde betaling — maar ze zijn niet in producten om te
    * rekenen, dus is het een eigen saldo. Zie de noot bij clips_granted in
    * migratie 0030. */
-  const clipsBruto = clipsFor(sub.plan) + eerder
+  const clipsBruto = Number(bundelVoor(sub)['video-motion'] || 0) + eerder
     .slice(-rolloverMonths(sub.term))
     .reduce((n, m) => n + Math.max(0,
       (Math.floor(Number(m?.clips_granted) || 0)) - (Math.floor(Number(m?.clips_used) || 0))), 0);
@@ -803,19 +862,33 @@ export async function vatVoorAbonnement(env, customerId) {
   };
 }
 
-export async function createSubscriptionRow(env, { customerId, planId, termId, windowDay = null }) {
-  if (!PLAN_IDS.includes(planId)) throw new Error(`abonnement: onbekend plan ${planId}`);
+export async function createSubscriptionRow(env, {
+  customerId, planId, termId, windowDay = null, slots = null, amountCents = null,
+}) {
+  /* SUB_PLAN_IDS en niet PLAN_IDS: de maand op maat mag hier wel in de kolom en
+     staat niet in de lijst met pakketten. Zie de noot bij die twee in plans.js. */
+  if (!SUB_PLAN_IDS.includes(planId)) throw new Error(`abonnement: onbekend plan ${planId}`);
   if (!TERM_IDS.includes(termId)) throw new Error(`abonnement: onbekende termijn ${termId}`);
+  /* EEN MAAND OP MAAT ZONDER BUNDEL OF ZONDER BEDRAG BESTAAT NIET, en dat wordt
+     hier tegengehouden en niet bij de eerste afschrijving. Een rij die 'maat' zegt
+     en verder niets, geeft de klant nul slots en Mollie een bedrag van nul. */
+  if (planId === CUSTOM_MONTH_ID) {
+    if (!slots || !Object.keys(slots).length) throw new Error('abonnement: een maand op maat zonder bundel');
+    if (!(Number(amountCents) > 0)) throw new Error('abonnement: een maand op maat zonder bedrag');
+  }
   const ref = makeSubRef();
   const dag = Number.isFinite(Number(windowDay)) ? Math.min(28, Math.max(1, Math.floor(Number(windowDay)))) : null;
   try {
     const btw = await vatVoorAbonnement(env, customerId);
     const row = await env.DB.prepare(
       `INSERT INTO subscriptions (customer_id, ref, plan, term, status, window_day,
+                                  amount_cents, slots_json,
                                   vat_treatment, vat_rate, vat_country, vat_number)
-       VALUES (?1, ?2, ?3, ?4, 'pending', ?5, ?6, ?7, ?8, ?9)
-       RETURNING id, ref, plan, term, status, window_day`
+       VALUES (?1, ?2, ?3, ?4, 'pending', ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+       RETURNING id, ref, plan, term, status, window_day, amount_cents, slots_json`
     ).bind(customerId, ref, planId, termId, dag,
+           planId === CUSTOM_MONTH_ID ? Math.round(Number(amountCents)) : null,
+           slots && Object.keys(slots).length ? JSON.stringify(slots) : null,
            btw.treatment, btw.rate, btw.country, btw.number).first();
     return { row, bestaat: false };
   } catch (e) {
@@ -929,16 +1002,22 @@ export async function cancelSubscription(env, subId, reason = 'customer') {
  */
 export async function bezetting(env) {
   const rows = await stil(() => env.DB.prepare(
-    `SELECT plan, COUNT(*) AS n
+    /* Per RIJ en niet per plan, sinds migratie 0038: twee maanden op maat zijn
+       niet even groot, dus een GROUP BY plan met een vermenigvuldiging zou het
+       aantal van de eerste op allebei plakken. */
+    `SELECT plan, slots_json, 1 AS n
        FROM subscriptions
-      WHERE status IN ('active', 'pending', 'paused')
-      GROUP BY plan`
+      WHERE status IN ('active', 'pending', 'paused')`
   ).all(), { results: [] });
   const per = {};
   let producten = 0;
   for (const r of rows?.results || []) {
     per[r.plan] = Number(r.n) || 0;
-    producten += (Number(r.n) || 0) * productsFor(r.plan);
+    /* subProducten() en niet productsFor(): een maand op maat heeft geen vast
+       aantal en draagt zijn bundel op de rij. Vandaar ook dat de query hierboven
+       slots_json meeneemt en niet alleen op plan groepeert — voor 'maat' zegt de
+       plan-id niets over hoeveel agenda er wordt vastgelegd. */
+    producten += subProducten(r);
   }
   return { per, producten };
 }
@@ -1037,15 +1116,53 @@ export async function queueTerugNaAnnulering(env, orderId) {
  */
 export function subscriptionShape(sub) {
   if (!sub) return null;
-  const vorm = planShape(sub.plan, sub.term);
+  /*
+   * ── EEN MAAND OP MAAT HEEFT GEEN planShape() ──────────────────────────────
+   *
+   * planShape() slaat elk veld op in PLAN_PRODUCTS, PLAN_CLIPS en PLAN_AMOUNT, en
+   * die drie kennen 'maat' niet: productsFor() gooit erop. Dat was geen theorie —
+   * zonder deze tak geeft het dashboard van een abonnee met een maand op maat een
+   * 500 op de eerste regel.
+   *
+   * Wat hier gebeurt is dus geen tweede vorm maar dezelfde vorm uit een andere
+   * bron: de rij in plaats van de tabel. De velden die alleen bij een pakket
+   * horen — de merkmodel-opzet, de vergelijking met de ladder — staan op nul, en
+   * ladderCents is met opzet gelijk aan het maandbedrag: de prijs van een maand op
+   * maat IS het laddertarief, dus "dit zou los X kosten" is hier geen besparing
+   * maar hetzelfde getal. Een verzonnen besparing tonen zou een verkooppraatje
+   * zijn over een som die niet bestaat.
+   */
+  const vorm = String(sub.plan) === CUSTOM_MONTH_ID
+    ? (() => {
+      const t = term(sub.term);
+      const cents = subMaandCents(sub);
+      return {
+        id: sub.plan,
+        term: t.id,
+        products: subProducten(sub),
+        clips: Number(bundelVoor(sub)['video-motion'] || 0),
+        monthlyCents: cents,
+        totalCents: cents * t.months,
+        months: t.months,
+        fixed: t.fixed,
+        rollover: t.rollover,
+        brandModel: false,
+        perks: t.perks,
+        ladderCents: cents,
+        brandModelSetupCents: 0,
+      };
+    })()
+    : planShape(sub.plan, sub.term);
   return {
     ...vorm,
     ref: sub.ref,
     status: sub.status,
     windowDay: sub.window_day,
     service: PLAN_SERVICE,
-    monthlyCents: monthlyCents(sub.plan, sub.term),
-    products: productsFor(sub.plan),
-    clips: clipsFor(sub.plan),
+    /* Het bedrag en de vorm komen van de RIJ als die ze draagt. Zie
+       subMaandCents()/bundelVoor() in slots.js voor waarom dat één plek is. */
+    monthlyCents: subMaandCents(sub),
+    products: subProducten(sub),
+    clips: Number(bundelVoor(sub)['video-motion'] || 0),
   };
 }

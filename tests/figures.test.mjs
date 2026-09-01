@@ -30,17 +30,20 @@
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import {
+  ATTENDED_IMAGES_PER_DAY,
   ATTENDED_PER_DAY,
   ATTENDED_PER_WINDOW,
+  IMAGES_PER_PRODUCT,
   LEAD_DAYS,
   PRODUCTS_PER_DAY,
   QUEUE_FLOOR_PER_DAY,
   WINDOW_DAYS,
   offerableWindows,
-  windowDays,
   windowFits,
+  windowFor,
 } from '../src/data/capacity.js';
 import {
+  DEMO_BLACKOUTS,
   DEMO_BOOKED,
   DEMO_DAYS,
   DEMO_FIRST_OFFERABLE,
@@ -86,7 +89,9 @@ console.log('\nde poort en de tekening geven hetzelfde antwoord');
   const gate = offerableWindows({
     today: DEMO_TODAY,
     products: DEMO_ORDER.products,
+    service: 'complete',
     booked: DEMO_BOOKED,
+    blackouts: DEMO_BLACKOUTS,
     limit: 1,
   })[0];
 
@@ -116,8 +121,9 @@ console.log('\nwat geweigerd wordt, wordt echt geweigerd');
   const full = rows.filter((r) => r.state === 'full');
   check('er staat minstens één volle dag in beeld', full.length >= 1, true);
   for (const r of full) {
-    check(`${r.iso} zit werkelijk aan het plafond`, r.used >= ATTENDED_PER_DAY, true);
-    check(`en er past geen venster dat daar begint`, windowFits(r.iso, DEMO_ORDER.products, DEMO_BOOKED), false);
+    check(`${r.iso} zit werkelijk aan het plafond`, r.usedImages >= ATTENDED_IMAGES_PER_DAY, true);
+    check(`en er past geen venster dat daar begint`,
+      windowFits(r.iso, DEMO_ORDER.products * IMAGES_PER_PRODUCT, DEMO_BOOKED, DEMO_BLACKOUTS), false);
   }
 
   // De dagen met "ruimte" die tóch niet worden aangeboden — donderdag en vrijdag.
@@ -127,16 +133,23 @@ console.log('\nwat geweigerd wordt, wordt echt geweigerd');
   const roomButNotOffered = rows.filter((r) => r.state === 'open' && !r.offered && r.used > 0);
   check('er staan dagen met ruimte die niet worden aangeboden', roomButNotOffered.length >= 1, true);
   for (const r of roomButNotOffered) {
-    check(`${r.iso} heeft ruimte`, r.used < ATTENDED_PER_DAY, true);
-    check(`en past tóch niet`, windowFits(r.iso, DEMO_ORDER.products, DEMO_BOOKED), false);
+    check(`${r.iso} heeft ruimte`, r.usedImages < ATTENDED_IMAGES_PER_DAY, true);
+    check(`en past tóch niet`,
+      windowFits(r.iso, DEMO_ORDER.products * IMAGES_PER_PRODUCT, DEMO_BOOKED, DEMO_BLACKOUTS), false);
   }
 
   // De lead-tijd. De rijen die "te vroeg" heten, mogen niet aanbiedbaar zijn.
   for (const r of rows.filter((r) => r.state === 'early')) {
     check(`${r.iso} valt binnen de lead-tijd`, r.iso < DEMO_FIRST_OFFERABLE, true);
   }
-  check(`de eerste aanbiedbare dag ligt ${LEAD_DAYS} werkdagen verder`,
-    DEMO_FIRST_OFFERABLE, '2026-08-05');
+  /* LEAD_DAYS zijn VOLLE dagen tussen vandaag en de eerste aanwijsbare dag, en
+     dat is er één meer dan de oude regel `addWorkingDays(today, LEAD_DAYS)` gaf —
+     zie de noot bij LEAD_DAYS in capacity.js. Maandag 3 augustus plus twee hele
+     dagen is donderdag 6 augustus. Dit getal stond hier met de hand ingetypt en
+     dat is met opzet: het is de enige plek waar de aanloop niet uit dezelfde
+     som komt die hem produceert. */
+  check(`de eerste aanwijsbare dag ligt ${LEAD_DAYS} volle dagen verder`,
+    DEMO_FIRST_OFFERABLE, '2026-08-06');
 }
 
 /* ══ 3 · TWEE UITKOMSTEN UIT DEZELFDE AGENDA ═════════════════════════════════
@@ -157,21 +170,28 @@ console.log('\nkleiner is eerder, en dat is geen toeval');
   // dag, zelfde boeking, alleen een ander aantal producten.
   check('zelfde agenda, alleen een ander aantal',
     JSON.stringify(small),
-    JSON.stringify(offerableWindows({ today: DEMO_TODAY, products: DEMO_SMALL_PRODUCTS, booked: DEMO_BOOKED, limit: 1 })[0]));
+    JSON.stringify(offerableWindows({ today: DEMO_TODAY, products: DEMO_SMALL_PRODUCTS, service: 'complete', booked: DEMO_BOOKED, blackouts: DEMO_BLACKOUTS, limit: 1 })[0]));
 }
 
 /* ══ 4 · DE FIXTURE ZELF IS GELDIG ══════════════════════════════════════════ */
 console.log('\nde verzonnen agenda kan bestaan');
 {
   check('geen dag boven het dagplafond',
-    DEMO_DAYS.filter((d) => (DEMO_BOOKED[d] || 0) > ATTENDED_PER_DAY), []);
+    DEMO_DAYS.filter((d) => (DEMO_BOOKED[d] || 0) > ATTENDED_IMAGES_PER_DAY), []);
   check('de demobestelling past binnen één venster',
     DEMO_ORDER.products <= ATTENDED_PER_WINDOW, true);
   check('en de kleine ook', DEMO_SMALL_PRODUCTS <= ATTENDED_PER_WINDOW, true);
-  // Alleen werkdagen in beeld: een agenda met een zaterdag erin die "ruimte"
-  // heeft, verkoopt een dag waarop niemand werkt.
-  check('alleen werkdagen', demoRows().filter((r) => r.closed), []);
-  check('tien werkdagen in beeld', DEMO_DAYS.length, 10);
+  /* HET WEEKEND IS EEN BESLUIT GEWORDEN, GEEN REGEL. Hier stond "alleen
+     werkdagen" met een lege verwachting, omdat capacity.js zaterdag en zondag zelf
+     oversloeg. Sinds isOpenDay() alleen nog naar dichtgezette dagen kijkt, moet de
+     figuur die twee dagen tonen én als gesloten tekenen — anders laat hij een
+     regel zien die niet meer bestaat. De assertie is daarom omgedraaid: precies de
+     dagen die de studio heeft dichtgezet, staan als gesloten in beeld. */
+  check('de gesloten dagen in beeld zijn precies de dichtgezette dagen',
+    demoRows().filter((r) => r.closed).map((r) => r.iso), [...DEMO_BLACKOUTS]);
+  check('geen enkele gesloten dag wordt aangeboden',
+    demoRows(DEMO_ORDER.products).filter((r) => r.closed && r.offered), []);
+  check('twaalf dagen in beeld', DEMO_DAYS.length, 12);
   // Boven het vensterplafond geeft de poort niets terug, en de figuur mag daar
   // dus ook geen datum van maken.
   check('boven het plafond is er geen venster', demoWindow(ATTENDED_PER_WINDOW + 1), null);
@@ -191,14 +211,14 @@ console.log('\nde verzonnen agenda kan bestaan');
  */
 console.log('\nde tabel en de agenda gaan over dezelfde bezetting');
 {
-  const perDayOf = (n) => Math.ceil(n / WINDOW_DAYS);
+  const perDayOf = (n) => Math.ceil((n * IMAGES_PER_PRODUCT) / WINDOW_DAYS);
   const load = {};
   for (const o of DEMO_OTHERS) {
     if (!o.start) {
       check(`${o.brand} heeft geen venster en dus geen datum`, otherWindow(o, 'nl'), '—');
       continue;
     }
-    const days = windowDays(o.start);
+    const days = windowFor(o.start, o.products * IMAGES_PER_PRODUCT, {}, DEMO_BLACKOUTS);
     check(`${o.brand} heeft een venster van ${WINDOW_DAYS} dagen`, days.length, WINDOW_DAYS);
     for (const d of days) {
       check(`${o.brand}: ${d} heeft haar aandeel geboekt`,

@@ -195,13 +195,47 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
       'item(s) vielen tussen lezen en oppakken af; de bestelling draagt er', mee.length);
   }
 
-  const details = { bron: 'abonnement', abonnement: state.sub.ref, maand: monthKey() };
-  mee.forEach((q, i) => {
-    details[`product_p${i + 1}`] = String(q.name || '').slice(0, 120);
-    const note = String(q.note || '').trim();
-    if (note) details[`note_p${i + 1}`] = note.slice(0, 500);
-    const batch = String(q.upload_batch || '').trim();
-    if (batch) details[`batch_p${i + 1}`] = batch;
+  /* ── ÉÉN BESTELLING PER GEKOZEN DAGENPAAR — 31 augustus 2026 ─────────────
+   *
+   * Hier werd van alles wat vastgezet stond ÉÉN bestelling gemaakt, zonder
+   * `window_start` en `window_end`, met `tier = 'attended'`. Dat was juist zolang
+   * een abonnement één week per maand had. Sinds een klant per product twee dagen
+   * kan aanwijzen, klopte het op drie manieren niet meer:
+   *
+   *   · de gekozen dagen gingen verloren — de bestelling droeg ze niet;
+   *   · de capaciteit kwam vrij op het moment dat het werk begon, want
+   *     src/lib/agenda.js telt een wachtrij-item alleen mee zolang `taken_at`
+   *     leeg is, en de bestelling die ervoor in de plaats kwam hield niets bezet;
+   *   · en in het agendascherm stond het werk als "zo snel mogelijk" met een
+   *     uiterste dag die uit de binnenkomst was afgeleid in plaats van uit de
+   *     afspraak.
+   *
+   * Lucas' keuze, gevraagd en gekregen: *"Elk paar zijn eigen bestelling."* Een
+   * week levert dus soms twee of drie bestellingen op, en elke bestelling draagt
+   * de dagen die de klant koos. Wat geen dagen koos, gaat samen in één bestelling
+   * zonder venster — dat is precies wat "zo snel mogelijk" betekent, en `tier`
+   * hoort daar dan ook 'unattended' te zijn en niet 'attended-zonder-datum'.
+   *
+   * ── DE VOLGORDE BLIJFT: EERST OPPAKKEN, DAN BOUWEN ────────────────────────
+   *
+   * De items zijn hierboven al opgepakt, en dat verandert niet. Wat wel verandert
+   * is dat er nu meerdere INSERTs kunnen mislukken. Mislukt er één, dan worden
+   * ALLEEN de items van die groep teruggezet — de groepen die het wel haalden
+   * hebben een bestelling en horen te blijven staan. Alles terugdraaien zou werk
+   * weggooien dat al bestaat. */
+  const groepen = new Map();
+  for (const q of mee) {
+    const sleutel = q.window_start && q.window_end ? `${q.window_start}|${q.window_end}` : 'asap';
+    if (!groepen.has(sleutel)) groepen.set(sleutel, []);
+    groepen.get(sleutel).push(q);
+  }
+
+  /* De vroegste eerst, en "zo snel mogelijk" achteraan. Dat is de volgorde waarin
+     jij ze in je agendascherm terugziet, en de volgorde waarin ze af moeten. */
+  const gesorteerd = [...groepen.entries()].sort(([a], [b]) => {
+    if (a === 'asap') return 1;
+    if (b === 'asap') return -1;
+    return a < b ? -1 : a > b ? 1 : 0;
   });
 
   /* DE TAAL KOMT VAN DE VORIGE BESTELLING EN NIET VAN `customers` — die tabel
@@ -214,40 +248,66 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
   ).bind(customerId).first().catch(() => null);
   const taal = vorige?.lang === 'en' ? 'en' : 'nl';
 
-  const ref = maakRef();
-  const rij = await env.DB.prepare(
-    `INSERT INTO orders (ref, customer_id, service, name, brand, email, details_json,
-                         total_cents, lang, tier, product_count, payment_status)
-     VALUES (?1, ?2, 'drop', ?3, ?4, ?5, ?6, 0, ?7, 'attended', ?8, 'plan')
-     RETURNING id`
-  ).bind(
-    ref, customerId, klant.name || null, klant.brand || null, klant.email,
-    JSON.stringify(details), taal, mee.length,
-  ).first().catch((e) => { console.error('[abonnement] bestelling maken mislukt:', e?.message || e); return null; });
-  if (!rij?.id) {
-    /* TERUGDRAAIEN, want de items staan nu op opgepakt en er is niets om ze aan
-       te hangen. Zonder dit is de klant zijn slot kwijt, is zijn item van zijn
-       lijst verdwenen, en is er geen bestelling — de enige uitkomst die erger is
-       dan het werk te veel maken. */
-    const terug = await queueUntakeIds(env, gepakteIds);
-    console.error('[abonnement] bestelling mislukt voor klant', customerId, '—',
-      terug, 'van', gepakteIds.length, 'item(s) teruggezet op de lijst');
-    return { ok: false, reden: 'bestelling-mislukt' };
+  const bestellingen = [];
+  const mislukt = [];
+  for (const [sleutel, rijen] of gesorteerd) {
+    const [vensterStart, vensterEind] = sleutel === 'asap' ? [null, null] : sleutel.split('|');
+    const details = { bron: 'abonnement', abonnement: state.sub.ref, maand: monthKey() };
+    if (vensterStart) { details.venster_start = vensterStart; details.venster_eind = vensterEind; }
+    rijen.forEach((q, i) => {
+      details[`product_p${i + 1}`] = String(q.name || '').slice(0, 120);
+      const note = String(q.note || '').trim();
+      if (note) details[`note_p${i + 1}`] = note.slice(0, 500);
+      const batch = String(q.upload_batch || '').trim();
+      if (batch) details[`batch_p${i + 1}`] = batch;
+    });
+
+    const ref = maakRef();
+    const rij = await env.DB.prepare(
+      `INSERT INTO orders (ref, customer_id, service, name, brand, email, details_json,
+                           total_cents, lang, tier, product_count, payment_status,
+                           window_start, window_end)
+       VALUES (?1, ?2, 'drop', ?3, ?4, ?5, ?6, 0, ?7, ?8, ?9, 'plan', ?10, ?11)
+       RETURNING id`
+    ).bind(
+      ref, customerId, klant.name || null, klant.brand || null, klant.email,
+      JSON.stringify(details), taal,
+      vensterStart ? 'attended' : 'unattended',
+      rijen.length, vensterStart, vensterEind,
+    ).first().catch((e) => { console.error('[abonnement] bestelling maken mislukt:', e?.message || e); return null; });
+
+    if (!rij?.id) {
+      mislukt.push(...rijen.map((q) => q.id));
+      continue;
+    }
+    await queueLinkOrder(env, rijen.map((q) => q.id), rij.id);
+    bestellingen.push({ orderId: rij.id, ref, aantal: rijen.length, start: vensterStart, eind: vensterEind });
   }
 
-  /* ── HIER WORDT NIETS MEER AFGESCHREVEN — migratie 0035, 29 augustus 2026 ────
-   *
-   * Op deze plek stond verbruikBoeken(). Dat was juist zolang het slot pas
-   * afging als er werk van gemaakt werd. In Lucas' slotmodel gebeurt dat al bij
-   * het VASTZETTEN door de klant, in queueLock(), en dat is precies waarom deze
-   * regels weg moesten: hij zou hier een tweede keer betalen voor hetzelfde
-   * product.
-   *
-   * De volgorde in de kop hierboven klopt daarmee nog steeds, alleen zit stap 2
-   * — het saldo toetsen en boeken — nu bij de klant en niet bij ons. Wat hier
-   * overblijft is wat er altijd al hoorde te gebeuren: de items uit de rij halen
-   * en aan de bestelling hangen. */
-  await queueLinkOrder(env, gepakteIds, rij.id);
+  if (mislukt.length) {
+    /* TERUGZETTEN, want deze items staan op opgepakt en er is niets om ze aan te
+       hangen. Zonder dit is de klant zijn slot kwijt, is zijn item van zijn lijst
+       verdwenen, en is er geen bestelling — de enige uitkomst die erger is dan het
+       werk te veel maken. */
+    const terug = await queueUntakeIds(env, mislukt);
+    console.error('[abonnement] klant', customerId, '—', terug, 'van', mislukt.length,
+      'item(s) teruggezet op de lijst na een mislukte bestelling');
+  }
+  if (!bestellingen.length) return { ok: false, reden: 'bestelling-mislukt' };
 
-  return { ok: true, orderId: rij.id, ref, aantal: mee.length, gepakt: gepakteIds.length, geboekt: 0, wachtend: 0 };
+  /* De eerste bestelling staat los in de uitkomst omdat de aanroepers hem zo
+     lezen — het beheerscherm logt `orderId` en `ref`. `bestellingen` staat ernaast
+     voor wie het hele beeld wil, en `aantal` telt alles bij elkaar zodat de regel
+     in het logboek blijft kloppen. */
+  const eerste = bestellingen[0];
+  return {
+    ok: true,
+    orderId: eerste.orderId,
+    ref: eerste.ref,
+    aantal: bestellingen.reduce((n, b) => n + b.aantal, 0),
+    bestellingen,
+    gepakt: gepakteIds.length,
+    geboekt: 0,
+    wachtend: 0,
+  };
 }

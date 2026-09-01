@@ -322,8 +322,29 @@ CREATE TABLE IF NOT EXISTS admin_users (
   -- PBKDF2-SHA256 via WebCrypto (Workers has no bcrypt), stored as
   -- "iterations:saltHex:hashHex". See src/lib/adminAuth.js.
   password_hash TEXT NOT NULL,
+  -- ── 0037 · DE TWEEDE FACTOR ───────────────────────────────────────────────
+  -- Leeg tot iemand zich op /admin/security inschrijft, en `totp_confirmed_at`
+  -- blijft leeg tot hij één keer een kloppende code heeft ingetypt. Pas dán
+  -- vraagt het inloggen erom — een tweede factor die door een migratie aan gaat,
+  -- sluit de enige beheerder buiten. De nooduitgang staat in de migratie zelf.
+  totp_secret       TEXT,
+  totp_confirmed_at TEXT,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- De herstelcodes bij die tweede factor. Gehasht met hashToken() en niet met
+-- PBKDF2: dit zijn geen gekozen wachtwoorden maar honderd bits uit de generator.
+-- `used_at` in plaats van verwijderen, zodat een gebruikte code zichtbaar blijft.
+CREATE TABLE IF NOT EXISTS admin_recovery_codes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id   INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  code_hash  TEXT NOT NULL UNIQUE,
+  used_at    TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_recovery_open
+  ON admin_recovery_codes(admin_id) WHERE used_at IS NULL;
 
 -- The admin session cookie. Same shape and the same reasoning as order_tokens
 -- below: a hash is stored, never the token, and the raw value lives only in
@@ -335,7 +356,13 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
   issued_at    TEXT NOT NULL DEFAULT (datetime('now')),
   expires_at   TEXT NOT NULL,
   last_used_at TEXT
-);
+,
+  -- ── 0037 · DE HALVE SESSIE ────────────────────────────────────────────────
+  -- Tussen wachtwoord en code in. Eén kolom in plaats van een tweede tabel, zodat
+  -- de halve sessie door dezelfde machinerie loopt als de hele: hetzelfde gehashte
+  -- koekje, dezelfde vervaldatum, dezelfde opruiming. currentAdmin() eist
+  -- `totp_pending = 0`, dus een halve sessie opent nergens iets.
+  totp_pending INTEGER NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_admin ON admin_sessions(admin_id);
 
 -- Customer account login: magic link by email, chosen over a password so
@@ -991,14 +1018,34 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   -- daarna worden op mollie_subscription_id gevonden.
   ref               TEXT NOT NULL,
 
-  -- 'starter' | 'studio' | 'brand' — de id's uit PLAN_IDS in src/data/plans.js.
-  -- Geen CHECK, om dezelfde reden als bij customer_style_locks.ratio: welke
-  -- plannen bestaan is een verkoopbesluit dat meebeweegt, en een CHECK zou bij
-  -- elk nieuw plan een migratie vragen.
+  -- 'starter' | 'studio' | 'brand' | 'maat' — de id's uit SUB_PLAN_IDS in
+  -- src/data/plans.js. Geen CHECK, om dezelfde reden als bij
+  -- customer_style_locks.ratio: welke plannen bestaan is een verkoopbesluit dat
+  -- meebeweegt, en een CHECK zou bij elk nieuw plan een migratie vragen.
   plan              TEXT NOT NULL,
   -- 'monthly' | 'yearly'. Bepaalt de prijs, het doorschuiven en de extra's —
   -- allemaal via term() in plans.js en niet via een kolom hier.
   term              TEXT NOT NULL DEFAULT 'monthly',
+
+  -- ── 0038 · DE MAAND OP MAAT ────────────────────────────────────────────────
+  -- Twee kolommen die alleen gevuld zijn bij plan = 'maat'. Een pakket haalt zijn
+  -- prijs uit PLAN_AMOUNT en zijn bundel uit PLAN_SLOTS; een maand op maat heeft
+  -- die twee niet, want zijn vorm is per abonnee anders.
+  --
+  -- BEVROREN OP HET MOMENT VAN AFSLUITEN, en dat is de hele reden dat ze hier
+  -- staan in plaats van elke maand opnieuw uit de ladder te worden gehaald:
+  -- verandert de ladder, dan mag de afschrijving van een lopend abonnement niet
+  -- meebewegen. Bij Mollie staat het bedrag toch al vast; twee waarheden over
+  -- hetzelfde bedrag is één te veel.
+  --
+  -- amount_cents  wat er maandelijks wordt afgeschreven, excl. btw
+  -- slots_json    de bundel per maand: {"catalog":6,"complete":3,"video-motion":2}
+  --               — dezelfde vorm en dezelfde soorten als PLAN_SLOTS.
+  --
+  -- NULL is hier geen ontbrekende waarde maar de betekenis zelf: haal het uit de
+  -- code. Zie bundelVoor() en subMaandCents() in src/lib/slots.js.
+  amount_cents      INTEGER,
+  slots_json        TEXT,
 
   -- 'pending'  aangevraagd, nog niet actief (mandaat ontbreekt of wacht op jou)
   -- 'active'   loopt, wordt afgeschreven
@@ -1205,6 +1252,18 @@ CREATE TABLE IF NOT EXISTS plan_queue (
   -- ingediend, niet op tijd beoordeeld.
   kind             TEXT,
   locked_at        TEXT,
+  -- ── 0036 · WANNEER HET AAN DE BEURT IS ────────────────────────────────────
+  -- Twee aangewezen dagen, of uitdrukkelijk geen dag. `asap` staat standaard op
+  -- 1: wie niets kiest, kiest zo snel mogelijk — voor de meeste maanden het
+  -- snelste antwoord, want de wachtrij levert 2 tot 4 dagen en mag dus lánden op
+  -- een dag die niemand kan reserveren.
+  --
+  -- ALLEEN EEN VASTGEZET ITEM MET DAGEN HOUDT DIE DAGEN BEZET; zie
+  -- src/lib/agenda.js. Een concept telt niet mee, anders kan één klant de agenda
+  -- dichtzetten met plannen die hij nooit uitvoert.
+  window_start     TEXT,
+  window_end       TEXT,
+  asap             INTEGER NOT NULL DEFAULT 1,
   -- Zodra hij is opgepakt: naar welke bestelling. Niet verwijderen maar
   -- markeren, want een klant hoort te kunnen zien wat er met zijn item gebeurd
   -- is, en een verdwenen rij is niet te onderscheiden van een rij die er nooit
@@ -1225,6 +1284,11 @@ CREATE INDEX IF NOT EXISTS idx_queue_open
 CREATE INDEX IF NOT EXISTS idx_planqueue_soort
   ON plan_queue(customer_id, kind)
   WHERE order_id IS NULL;
+
+-- Wie er op een dag staat. Dezelfde bereikvraag als idx_orders_window, en om
+-- dezelfde reden: de poort vraagt per dag wat er al vastligt.
+CREATE INDEX IF NOT EXISTS idx_plan_queue_window
+  ON plan_queue(window_start) WHERE window_start IS NOT NULL;
 
 -- ── migratie 0031: het e-mailadres wijzigen ─────────────────────────────────
 

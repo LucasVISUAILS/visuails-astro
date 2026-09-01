@@ -984,6 +984,76 @@ section('§5 · "mail ons en we sturen een nieuwe link" — 23 augustus 2026');
   check('  and no mail goes out', sentMail.length === 0, `${sentMail.length} mails`);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+section('§17 · de agenda — wat moet er nu af');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Lucas, 31 augustus 2026: "ik wil in mijn admin panel zien welke order de
+// eerstvolgende is op datum of zo snel mogelijk". Dit scherm bestond niet, en het
+// dashboard sorteerde nergens op datum — window_start stond er alleen als tekst.
+//
+// De controles hieronder zitten op de SQL en op de gerenderde HTML, want de twee
+// fouten die dit scherm kan maken zijn allebei onzichtbaar: een query die de
+// soort niet meeleest (dan weegt alles als compleet), en een lijst die stiekem
+// twee lijstjes is.
+
+{
+  const env = makeEnv();
+  const res = await adminReq('GET', '/admin/agenda', { env });
+  check('de agenda is een gewone leesroute', res.status === 200, res.status);
+
+  const open = env.DB.prepared.find((sql) => /FROM orders/.test(sql) && /status IN \(/.test(sql));
+  check('hij vraagt om het openstaande werk', Boolean(open), 'query met status IN (...)');
+  check('  en laat verborgen bestellingen buiten', /hidden_at IS NULL/.test(open || ''));
+  check('  en leest de soort mee, anders weegt alles als compleet',
+    /\bservice\b/.test(open || ''));
+  check('  en het aantal, want daar hangt het gewicht aan',
+    /product_count/.test(open || ''));
+
+  /* DE BEZETTING KOMT UIT DEZELFDE RIJEN ALS DE POORT. Zou dit scherm zijn eigen
+     som maken, dan beschrijft het een andere agenda dan /api/capacity aan een
+     klant laat zien — en dan is een van de twee een leugen. */
+  const vensters = env.DB.prepared.find((sql) => /tier = 'attended'/.test(sql) && /window_start IS NOT NULL/.test(sql));
+  check('de belasting komt uit de vensterquery die de poort ook gebruikt', Boolean(vensters), 'attended + window_start');
+  check('  inclusief de soort', /service/.test(vensters || ''));
+
+  const html = await res.text();
+  check('er staat één tabel en geen twee lijstjes',
+    (html.match(/<table class="ag-tabel"/g) || []).length === 1,
+    (html.match(/<table class="ag-tabel"/g) || []).length);
+  check('met de uiterste dag als eerste kolom', /<th>Uiterlijk<\/th>/.test(html));
+  check('en met de drie filters erbij',
+    /href="\/admin\/agenda"/.test(html)
+    && /href="\/admin\/agenda\?soort=datum"/.test(html)
+    && /href="\/admin\/agenda\?soort=asap"/.test(html));
+  check('een ongewogen dienst zegt dat, in plaats van nul te tellen',
+    !/>0 beelden</.test(html) || /nog te wegen/.test(html), 'geen stille nul');
+}
+
+{
+  // Een filter is een filter en geen tweede scherm: dezelfde route, dezelfde
+  // tabel, alleen minder rijen.
+  const env = makeEnv();
+  const res = await adminReq('GET', '/admin/agenda?soort=datum', { env });
+  const html = await res.text();
+  check('het datumfilter markeert zichzelf', /aria-current="true"[^>]*href="\/admin\/agenda\?soort=datum"|href="\/admin\/agenda\?soort=datum"[^>]*aria-current="true"/.test(html)
+    || /fl-chip is-active[^>]*soort=datum/.test(html), true);
+
+  const env2 = makeEnv();
+  const res2 = await adminReq('GET', '/admin/agenda?soort=verzonnen', { env: env2 });
+  check('een verzonnen filter valt terug op alles in plaats van op niets', res2.status === 200, res2.status);
+}
+
+{
+  // De chip in de balk. Een scherm dat niemand kan bereiken is hetzelfde
+  // probleem als geen scherm — precies wat er met /admin/vat en de aanbevelingen
+  // aan de hand was.
+  const env = makeEnv();
+  const res = await adminReq('GET', '/admin', { env });
+  const html = await res.text();
+  check('het dashboard wijst naar de agenda', /href="\/admin\/agenda"/.test(html));
+}
+
 globalThis.fetch = realFetch;
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);
 process.exit(fails ? 1 : 0);

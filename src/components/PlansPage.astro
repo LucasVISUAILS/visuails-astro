@@ -237,6 +237,17 @@ const c = COPY[nl ? 'nl' : 'en'];
               </li>
             ))}
           </ul>
+          {/* ── DE ZIJDEUR STOND OP EEN EIGEN RASTERRIJ — 31 AUGUSTUS 2026 ──
+              Hij hing als DERDE kind in een raster van twee kolommen, dus hij
+              viel naar rij 2 — en rij 1 is zo hoog als de limoenplaat ernaast.
+              Gemeten gaf dat 110px leegte tussen de drie vinkjes en deze regel,
+              midden in het paneel dat de propositie draagt.
+
+              Hij hoort ook inhoudelijk hier: het is de laatste regel van de
+              linkerkolom, niet een derde blok. Buiten de limoen plaat blijft
+              hij, want daarbinnen zou een rij grijze links de plaat rommelig
+              maken — dat deel van de oude noot klopt nog. */}
+          <ServiceSwitch current={['plan', 'complete']} lang={lang} class="pl-svcsw" />
         </div>
 
         <div class="lime-plate plaat-vol">
@@ -256,11 +267,6 @@ const c = COPY[nl ? 'nl' : 'en'];
             <a class="btn btn-ghost" href={lp('/pricing')}>{c.cta2}</a>
           </div>
         </div>
-        {/* Ook hier de zijdeur naar de andere diensten: een abonnement is één van
-            de zes manieren om te bestellen, en deze pagina was de enige
-            dienstpagina zonder die rij. Buiten de limoen plaat, want daarbinnen
-            zou een rij grijze links de plaat rommelig maken. */}
-        <ServiceSwitch current={['plan', 'complete']} lang={lang} class="pl-svcsw" />
       </div>
 
       {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
@@ -407,7 +413,27 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-top { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.6rem, 3.2vw, 3rem); align-items: start; }
   @media (max-width: 60rem) { .pl-top { grid-template-columns: 1fr; } }
 
-  .pl-h { margin: 0; font-size: var(--t-page-h2); }
+  /* ── DRIE KOPMATEN WERDEN ÉÉN — 31 AUGUSTUS 2026 ─────────────────────────
+     Lucas: *"Ook is de abonnement pagina wat onoverzichtelijk."* Gemeten op
+     1440px stonden er vijf verschillende kopmaten op deze pagina:
+
+       64,0px  <h1>                          de paginakop
+       57,6px  .pl-h  "What a plan actually is."
+       52,8px  <h2>   "The three plans" / "And two things…"
+       23,2px  .pl-stock-h  "And a month that is already filled."
+       23,2px  .pl-out-h    "Not every month, then."
+       57,6px  .cta-band h2
+
+     Die 23,2px is `--t-h3` — kleiner dan een tussenkop en maar vier pixels
+     boven de lede eronder. Twee sectiekoppen die niet als sectiekop lezen, en
+     dan wéét je niet meer waar een sectie begint. Dat is precies wat
+     "onoverzichtelijk" is.
+
+     De dienstpagina's houden één regel aan, gemeten op /catalog: elke
+     sectiekop is `--t-h2` (52,8px) en alleen de afsluitende band is
+     `--t-page-h2` (57,6px). /plans volgt die regel nu ook — inclusief `.pl-h`,
+     dat op 57,6px stond terwijl het een sectiekop is en geen afsluiter. */
+  .pl-h { margin: 0; font-size: var(--t-h2); }
   .pl-em { font-style: normal; color: var(--accent-word); }
   .pl-lede { margin: .7rem 0 0; font-size: 1.02rem; line-height: 1.6; color: var(--ink-2); max-width: 56ch; }
   .pl-facts { list-style: none; margin: clamp(1.1rem, 2.2vw, 1.6rem) 0 0; padding: 0; display: grid; gap: .6rem; }
@@ -419,10 +445,22 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-bedrag { --bedrag-maat: clamp(2.6rem, 6vw, 3.8rem); }
   .pl-cta { margin-top: clamp(1.4rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .7rem; }
 
+  /* ── DE ZIJSTREEP IS EEN BOVENLIJN GEWORDEN — 31 AUGUSTUS 2026 ───────────
+     Hier stond `border-left: 2px solid var(--accent)`: een limoenkleurige
+     streep langs de linkerkant van dit blok, in een paneel dat zelf al een
+     limoenkleurige plaat en een limoenkleurige lichtveeg draagt. Drie keer
+     dezelfde kleur in één paneel, waarvan één als versiering langs een rand —
+     en dan markeert de kleur niets meer, wat precies is wat DESIGN.md ervan
+     zegt.
+
+     Wat dit blok IS, is een correctie op het getal erboven. De site heeft daar
+     al een vorm voor: een haarlijn erboven en wat lucht, zoals `.bmcost-seq`
+     op /custom-models en `.rungs-note` op /catalog. Dezelfde vorm dus, en de
+     kleur blijft waar hij hoort — op de plaat met het bedrag. */
   .pl-credit {
-    margin-top: clamp(1.3rem, 2.4vw, 1.9rem);
-    padding-left: clamp(1rem, 2vw, 1.4rem);
-    border-left: 2px solid var(--accent);
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    padding-top: clamp(1rem, 2vw, 1.4rem);
+    border-top: 1px solid var(--line);
     max-width: 80ch;
   }
   .pl-credit-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
@@ -513,7 +551,7 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-stock { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.6rem, 3.5vw, 3rem); align-items: center; }
   @media (max-width: 60rem) { .pl-stock { grid-template-columns: 1fr; } }
   .pl-stock-shot { width: min(100%, 26rem); }
-  .pl-stock-h { margin: 0 0 clamp(.9rem, 1.8vw, 1.3rem); font-size: var(--t-h3); font-weight: 700; }
+  .pl-stock-h { margin: 0 0 clamp(1.4rem, 2.6vw, 2rem); font-size: var(--t-h2); }
   .pl-stock-item + .pl-stock-item { margin-top: clamp(.9rem, 1.8vw, 1.3rem); padding-top: clamp(.9rem, 1.8vw, 1.3rem); box-shadow: inset 0 1px 0 var(--line); }
   .pl-stock-n { margin: 0; font-size: 1.02rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
   .pl-stock-b { margin: .4rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
@@ -536,6 +574,6 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-soon-foot { margin: clamp(1.4rem, 3vw, 2rem) 0 0; font-size: .85rem; color: var(--ink-3); max-width: 62ch; }
 
   .pl-out { padding: clamp(1.3rem, 2.4vw, 1.9rem); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 34px -26px rgb(0 0 0 / 0.5); }
-  .pl-out-h { margin: 0; font-size: var(--t-h3); }
+  .pl-out-h { margin: 0 0 clamp(1rem, 2vw, 1.4rem); font-size: var(--t-h2); }
   .pl-out-b { margin: .5rem 0 1rem; font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: 60ch; }
 </style>

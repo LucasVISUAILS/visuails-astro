@@ -45,7 +45,8 @@ import {
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
   AMOUNT, clause,
 } from '../../data/pricing.js';
-import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
+import { ATTENDED_IMAGES_PER_WINDOW, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
+import { kindImages } from '../../data/pricing.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
 /* De beeldkeuring reist NIET mee in cfg. pipeline.js importeert keurBeeld()
    rechtstreeks uit shots.js en leest de drempels daar; ze hier ook nog eens
@@ -121,6 +122,27 @@ interface Props {
   hero?: boolean;
 }
 const { lang, service, mode = 'order', hero = true } = Astro.props;
+
+/* ── HET PLAFOND HANGT AF VAN DE DIENST — 31 augustus 2026 ──────────────────
+ *
+ * Hier stond ATTENDED_PER_WINDOW, en dat getal is 30: het aantal COMPLETE
+ * producten dat in één venster past. Sinds de agenda in beelden rekent, is dat
+ * niet meer het plafond van elke dienst. Een catalogset weegt vier beelden en een
+ * compleet product zeven, dus in dezelfde 210 beelden passen 52 catalogsets waar
+ * er 30 complete in gaan.
+ *
+ * De poort wist dat al — clearedWindows() geeft `max` per dienst terug — maar dit
+ * formulier bood er nooit meer dan dertig aan. Dat is geen leugen (te weinig
+ * aanbieden kan de studio altijd waarmaken), maar het is wel de klant die zijn
+ * maand niet in één bestelling kwijt kan terwijl er ruimte is.
+ *
+ * Terugval op ATTENDED_PER_WINDOW als de dienst geen gewicht heeft: dan is dit
+ * geen ladderdienst en komt hij nooit bij de poort — zie tierFor() in pricing.js. */
+const perProduct = kindImages(service, 1);
+const maxProducts = perProduct
+  ? Math.floor(ATTENDED_IMAGES_PER_WINDOW / perProduct)
+  : ATTENDED_PER_WINDOW;
+
 const isSample = mode === 'sample';
 const lp = (p: string) => localizedPath(lang, p);
 
@@ -731,7 +753,7 @@ const FORM = {
       h: 'How many, and what for?',
       countLabel: 'How many products?',
       countPick: 'Choose a number',
-      countHint: `Above ${ATTENDED_PER_WINDOW} we plan it with you — take the last option.`,
+      countHint: `Above ${maxProducts} we plan it with you — take the last option.`,
       /* ── De soortkeuze op de proefvisual, 11 augustus 2026 ─────────────────
          Wat je krijgt staat naast de naam en niet eronder in een hint: het is
          het verschil waarop je kiest, en dat hoort niet in kleine letters. De
@@ -745,7 +767,7 @@ const FORM = {
       sampleKindErr: 'Pick one of the two.',
       sampleFlatNote: 'for one product, one per business. Everything else on this page is the same work a paid order gets.',
       countErr: 'Choose how many products before you continue.',
-      more: `More than ${ATTENDED_PER_WINDOW} products`,
+      more: `More than ${maxProducts} products`,
       totalLabel: 'Running total',
       netLabel: `Order value (${vatLabel('excl', 'en')})`,
       vatLead: vatLead('en'),
@@ -898,7 +920,7 @@ const FORM = {
       : `JavaScript is off, so this page shows all ${n} steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for the material by email, confirm a delivery date in writing, and invoice the per-product rate for the count you pick.`,
     sharedH: 'What is identical at every count',
     shared: [
-      ['The production', `The same production run at one product and at ${ATTENDED_PER_WINDOW}.`],
+      ['The production', `The same production run at one product and at ${maxProducts}.`],
       ['The review', `${clause(reviewClaim('unattended', 'en'))}. At every count.`],
       ['The files', 'High-resolution and e-commerce-ready, with no per-use licence.'],
     ],
@@ -938,7 +960,7 @@ const FORM = {
       h: 'Hoeveel, en waarvoor?',
       countLabel: 'Hoeveel producten?',
       countPick: 'Kies een aantal',
-      countHint: `Boven ${ATTENDED_PER_WINDOW} plannen we het samen — kies de laatste optie.`,
+      countHint: `Boven ${maxProducts} plannen we het samen — kies de laatste optie.`,
       /* Zie de noot bij de Engelse tegenhanger. */
       sampleKindLabel: 'Wat maken we voor je?',
       sampleKindCatalog: 'Catalogset',
@@ -948,7 +970,7 @@ const FORM = {
       sampleKindErr: 'Kies er één van de twee.',
       sampleFlatNote: 'voor één product, één per bedrijf. Al het andere op deze pagina is hetzelfde werk als bij een betaalde bestelling.',
       countErr: 'Kies eerst hoeveel producten.',
-      more: `Meer dan ${ATTENDED_PER_WINDOW} producten`,
+      more: `Meer dan ${maxProducts} producten`,
       totalLabel: 'Totaal tot nu toe',
       netLabel: `Orderbedrag (${vatLabel('excl', 'nl')})`,
       vatLead: vatLead('nl'),
@@ -1087,7 +1109,7 @@ const FORM = {
       : `JavaScript staat uit, dus deze pagina toont alle ${n} stappen tegelijk. Drie dingen werken dan niet: je bestanden versturen, de agenda checken en het totaal meerekenen. Verstuur het formulier, dan vragen we het materiaal per e-mail op, bevestigen we een leverdatum op schrift en factureren we het tarief per product bij het aantal dat je kiest.`,
     sharedH: 'Wat bij elk aantal hetzelfde is',
     shared: [
-      ['De productie', `Dezelfde productie bij één product en bij ${ATTENDED_PER_WINDOW}.`],
+      ['De productie', `Dezelfde productie bij één product en bij ${maxProducts}.`],
       ['De controle', `${clause(reviewClaim('unattended', 'nl'))}. Bij elk aantal.`],
       ['De bestanden', 'Hoge resolutie en klaar voor je webshop, zonder licentie per gebruik.'],
     ],
@@ -1196,7 +1218,7 @@ const config = {
   samplePrice: isSample ? AMOUNT.testSample : null,
   ladder: LADDER,
   windowThreshold: WINDOW_THRESHOLD,
-  maxProducts: ATTENDED_PER_WINDOW,
+  maxProducts,
   maxFileBytes: MAX_FILE_BYTES,
   maxBatchFiles: MAX_BATCH_FILES,
   uploadExt: Object.keys(UPLOAD_TYPES),
@@ -1246,7 +1268,7 @@ const config = {
 // safe to write with set:html.
 const configJson = JSON.stringify(config).replace(/</g, '\\u003c');
 
-const counts = Array.from({ length: ATTENDED_PER_WINDOW }, (_, i) => i + 1);
+const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
 const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i);
 ---
 
@@ -1982,7 +2004,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <h3 class="pl-gate-h">{f.s4.okH}</h3>
           <p class="pl-gate-body">{f.s4.okBody}</p>
           <div class="pl-windows" data-pl-windows></div>
-          <p class="pl-gate-foot">{f.s4.okMax} <span data-max>{ATTENDED_PER_WINDOW}</span> {f.s4.okMaxTail}</p>
+          <p class="pl-gate-foot">{f.s4.okMax} <span data-max>{maxProducts}</span> {f.s4.okMaxTail}</p>
         </div>
 
         <div class="pl-gate-panel" data-pl-gate="full" hidden>
@@ -1992,7 +2014,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
         <div class="pl-gate-panel" data-pl-gate="too-large" hidden>
           <h3 class="pl-gate-h">{f.s4.tooLargeH}</h3>
-          <p class="pl-gate-body">{f.s4.tooLargeBody} <span data-max>{ATTENDED_PER_WINDOW}</span> {f.s4.tooLargeTail}</p>
+          <p class="pl-gate-body">{f.s4.tooLargeBody} <span data-max>{maxProducts}</span> {f.s4.tooLargeTail}</p>
         </div>
 
         <div class="pl-gate-panel" data-pl-gate="invalid" hidden>

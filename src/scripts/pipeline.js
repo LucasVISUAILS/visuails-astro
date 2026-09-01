@@ -52,7 +52,7 @@
 // The alternative — an I18N object in the script, the way interactions.js does
 // it — has been quietly wrong for a while: it splits the Dutch copy for one
 // page across two files, and one of them is not where a translator looks. It
-// also puts strings like "typically 2–4 working days" one careless edit away
+// also puts strings like "typically 2–4 days" one careless edit away
 // from contradicting pricing.js. Here the page owns the words, both languages
 // sit next to each other in one COPY table, and this file owns only behaviour.
 //
@@ -4594,7 +4594,17 @@ function runGate() {
   const gen = ++gateReq;
   gateShow('checking');
 
-  fetch(`/api/capacity?products=${encodeURIComponent(products)}&tier=attended`, {
+  /* DE SOORT MOET MEE, WANT HET PLAFOND HANGT ERVAN AF — 31 augustus 2026.
+     De poort rekent in beelden: dertig catalogsets zijn er 120 en dertig complete
+     producten 210. Zonder deze parameter antwoordt het endpoint met 'complete',
+     het zwaarste gewicht, en krijgt een catalogbestelling minder dagen aangeboden
+     dan er werkelijk vrij zijn. Uit het formulier en niet uit het configblok, om
+     dezelfde reden als bij het verzenden: dit is de waarde die straks in
+     orders.service staat. */
+  const dienst = (q('input[name="service"]') || {}).value || '';
+  const svcDeel = dienst ? `&service=${encodeURIComponent(dienst)}` : '';
+
+  fetch(`/api/capacity?products=${encodeURIComponent(products)}&tier=attended${svcDeel}`, {
     headers: { accept: 'application/json' },
   })
     .then((r) => r.json().then((b) => ({ status: r.status, body: b })))

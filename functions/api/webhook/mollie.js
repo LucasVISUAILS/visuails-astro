@@ -56,6 +56,7 @@
 // status change of the same payment (a refund, a chargeback) — so this is a
 // normal path, not an edge case.
 
+import { betalingGedekt } from '../../../src/lib/invoice.js';
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents, refundMolliePayment } from '../../../src/lib/mollie.js';
 import { paymentMismatch } from '../../../src/data/vat.js';
 /* Hoeveel producten een plan per maand toekent. Uit plans.js en niet uit een
@@ -322,7 +323,8 @@ async function recordSubscriptionPaid(env, payment, mode) {
   let sub;
   try {
     sub = await env.DB.prepare(
-      'SELECT id, customer_id, plan, term, status FROM subscriptions WHERE mollie_subscription_id = ?1'
+      `SELECT id, customer_id, plan, term, status, amount_cents, slots_json
+         FROM subscriptions WHERE mollie_subscription_id = ?1`
     ).bind(subId).first();
   } catch (err) {
     // Zonder migratie 0030 bestaat de tabel niet. Dat is geen reden om Mollie een
@@ -424,7 +426,9 @@ async function recordSubscriptionPaid(env, payment, mode) {
    * MISLUKT HET ALSNOG, dan logt het luid en gaat de rest door. Sinds 30 augustus
    * is het ook met de hand recht te zetten: /admin/customers/<id> heeft onder het
    * abonnementspaneel een knop om slots bij te stellen, met reden en logregel. */
-  const slots = await grantSlots(env, sub.id, month, sub.plan, payment.id);
+  /* De RIJ en niet sub.plan, sinds migratie 0038: een maand op maat draagt zijn
+     bundel zelf en zou via de plan-id nul slots krijgen. */
+  const slots = await grantSlots(env, sub.id, month, sub, payment.id);
 
   /* ── DRIE UITKOMSTEN, EN MAAR ÉÉN ERVAN IS EEN FOUT ────────────────────────
    *
@@ -683,7 +687,7 @@ async function recordPaid(env, payment, mode) {
      orderGrossCents(). Migratie 0015 bracht de kolom; draait die niet, dan geeft
      D1 hier "no such column" en valt de query terug op de oude set. */
   const order = await env.DB.prepare(
-    'SELECT id, service, status, payment_status, total_cents, vat_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1'
+    'SELECT id, customer_id, service, status, payment_status, total_cents, vat_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1'
   ).bind(ref).first().catch(async (err) => {
     if (!/no such column/i.test(String(err?.message || err))) throw err;
     return env.DB.prepare(
@@ -705,6 +709,8 @@ async function recordPaid(env, payment, mode) {
   if (cents === null) {
     console.warn('[mollie-webhook] unreadable amount on', payment.id, '—', JSON.stringify(payment.amount));
   }
+
+
 
 /**
  * Het brutobedrag van een bestelling: wat er is afgeschreven en dus wat er terug
@@ -961,6 +967,78 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   }
 
   if (order.payment_status === 'paid') return; // belt and braces alongside the INSERT guard
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   * DEKT WAT ER BINNEN IS DE BESTELLING? — 31 augustus 2026
+   * ═══════════════════════════════════════════════════════════════════════
+   *
+   * Gevonden bij de beveiligingsronde: er werd nergens vergeleken wat er betaald
+   * was met wat de bestelling kost. Een betaling van één euro die aan een
+   * bestelling van elfhonderd hangt, zette haar op volledig betaald. Van buitenaf
+   * niet te forceren — elke betaallink maakt de server zelf met het juiste bedrag —
+   * maar de kop van deze functie noemt zelf de weg waarlangs het wél kan: een
+   * betaling met de hand in het Mollie-dashboard, met een `order_ref` erin.
+   *
+   * Lucas' keuze, gevraagd en gekregen: *"Niet op betaald zetten, wel melden."*
+   *
+   * ── EN DE SOM GAAT OVER DE BESTELLING, NIET OVER DEZE BETALING ───────────
+   *
+   * Dat is het verschil tussen een controle die klopt en een die in de weg zit.
+   * Een controle per betaling zou de bijbetaling breken die hierboven expliciet
+   * wordt ondersteund: één euro, later gevolgd door de rest. Per betaling
+   * bekeken dekt geen van beide het totaal en blijft de bestelling voor altijd
+   * hangen; opgeteld dekken ze het wel, en de eerstvolgende melding zet haar
+   * alsnog op betaald zonder dat iemand iets hoeft te herstellen.
+   *
+   * betalingGedekt() in src/lib/invoice.js doet precies die som al, met een marge
+   * van twee cent voor afronding, en issueInvoice() gebruikt hem om te beslissen
+   * of er een factuur uit mag. Dezelfde vraag, dus dezelfde functie — een eigen
+   * kopie hier zou een tweede waarheid zijn die er op een dag van afwijkt.
+   *
+   * De betaling zelf is hierboven al vastgelegd: het geld is binnen en dat hoort
+   * in de boeken, ook als de bestelling blijft wachten. */
+  const dekking = await betalingGedekt(env, order).catch((e) => {
+    console.warn('[mollie-webhook] dekking niet te bepalen —', e?.message || e);
+    return null;
+  });
+  if (dekking && !dekking.gedekt) {
+    const bruto = dekking.bruto;
+    const cents = dekking.binnen;
+    console.error('[mollie-webhook] betaling', payment.id, 'dekt de bestelling niet —',
+      `${cents} van ${bruto} cent op ${ref}. De bestelling blijft onbetaald.`);
+    /* ── TWEE REGELS OP TWEE PLEKKEN, EN GEEN BEDRAGEN IN DE TIJDLIJN ──────
+     *
+     * `order_events` is ÓÓK de klantentijdlijn: portal.js en account.js lezen
+     * dezelfde tabel zonder filter op actor. issueInvoice() maakt dat onderscheid
+     * al bij precies dit geval, met de reden erbij — "voor Lucas is dat de goede
+     * regel; voor de klant is het een alarm in vaktaal over zijn eigen betaling,
+     * en het eerste wat hij doet is bellen." Deze weigering hoort dezelfde vorm te
+     * hebben, want het is dezelfde gebeurtenis één stap eerder.
+     *
+     * De klant leest dus dat er iets wordt nagekeken. De twee bedragen gaan naar
+     * admin_log, waar alleen jij kijkt. */
+    const zichtbaar = 'De betaling voor deze bestelling wordt nagekeken: het betaalde bedrag komt niet overeen met het bedrag van de bestelling. We zoeken het uit en nemen contact op als dat nodig is.';
+    const al = await env.DB.prepare(
+      'SELECT id FROM order_events WHERE order_id = ?1 AND note = ?2 LIMIT 1'
+    ).bind(order.id, zichtbaar).first().catch(() => null);
+    if (!al) {
+      await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+        .bind(order.id, order.status || 'received', zichtbaar, 'system')
+        .run()
+        .catch((e) => console.error('[mollie-webhook] kon de weigering niet op de tijdlijn zetten —', e?.message || e));
+      await env.DB.prepare(
+        `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+         VALUES (NULL, NULL, 'payment.short', ?1, ?2, ?3)`
+      ).bind(order.id, order.customer_id || null,
+        `betaling ${payment.id}: binnengekomen ${cents} cent op een bestelling van ${bruto} cent`)
+        .run().catch(() => {});
+    }
+    return;
+  }
+  if (!dekking) {
+    console.warn('[mollie-webhook] betaling', payment.id, 'is niet tegen een totaal te leggen —',
+      'de bestelling gaat door op betaald, zoals voorheen.');
+  }
 
   // window_expires_at goes to NULL here: the countdown exists only to release a
   // reservation nobody paid for, and this order has now been paid for. Clearing

@@ -1,0 +1,94 @@
+---
+/*
+ * VISUAILS — de feitenrij onder een dienstenhero.
+ *
+ * ── WAAROM DIT EEN COMPONENT IS EN GEEN DRIE KOPIEËN ────────────────────────
+ *
+ * Lucas, 31 augustus 2026, met vier schermafdrukken erbij: *"Alle service
+ * pagina's zien er afschuwlijk lelijk, onoverzichtelijk en inconsistent uit.
+ * Zorg dat elke pagina goed op elkaar aansluit, dit vroeg ik de vorige keer ook
+ * al."* Hij heeft gelijk dat hij het al eens vroeg: op 30 augustus is de
+ * SECTIEVOLGORDE gelijkgetrokken en zijn er gedeelde componenten gemaakt, maar
+ * deze rij bleef drie keer met de hand opgeschreven staan. Wat dat opleverde,
+ * gemeten op 1440px:
+ *
+ *   · /catalog   prijs, formaat, levering, controle   — rij 147px hoog
+ *   · /lifestyle prijs, formaat, levering, controle   — rij 147px hoog
+ *   · /video     FORMAAT, PRIJS, levering, controle   — rij  96px hoog
+ *
+ * Drie zusterpagina's, twee volgordes, twee hoogtes. Precies het soort verschil
+ * dat je niet kunt benoemen maar wel ziet.
+ *
+ * ── DE TWEE GEDEELDE FEITEN STAAN HIER, NIET IN DE PAGINA ───────────────────
+ *
+ * De levertijd en de controlebelofte zijn op alle drie dezelfde belofte uit
+ * dezelfde bron (pricing.js). Ze stonden desondanks per pagina overgeschreven.
+ * Nu staan ze één keer, hier, en kan een pagina ze niet meer anders formuleren
+ * dan haar zusters.
+ *
+ * ── EN DE KORTE VORM, NIET DE ZIN ───────────────────────────────────────────
+ *
+ * Hier stond `turnaround()` en `reviewClaim()`: "Estimated delivery: 2–4 working
+ * days" en "Human-checked quality on every single visual." Twee hele zinnen in
+ * een rij die verder uit korte feiten bestaat, allebei volledig in de <strong>
+ * gezet, allebei zonder label erachter. Dát maakte de rij rafelig, en het was
+ * de reden dat hij op twee pagina's naar 147px doorbrak.
+ *
+ * `turnaroundShort()` en `reviewClaimShort()` bestaan al in pricing.js en geven
+ * "2–4 days" en "Human-checked". Daarmee heeft elk van de vier feiten
+ * dezelfde vorm: een getal of een woord in de <strong>, en het label erachter.
+ *
+ * ── GEEN TWEE KLEUREN MEER ──────────────────────────────────────────────────
+ *
+ * `.tf-flag` (klei-oranje) en `.tf-verify` (limegroen) gaven twee van de vier
+ * feiten een onderstreping van 3px in twee verschillende kleuren. Die twee
+ * klassen bestonden nergens anders op de site: een eigen kleurentaal voor één
+ * rij. DESIGN.md zegt "kleur markeert het ENE ding in een sectie dat gelezen
+ * moet worden" — twee markeringen in vier items is geen markering meer, en in
+ * deze hero is het gemarkeerde ding het accentwoord in de <h1>, dat er al staat.
+ */
+import { turnaroundShort, reviewClaimShort } from '../data/pricing.js';
+
+interface Props {
+  /** De twee feiten die per dienst verschillen: [wat dik staat, het label]. */
+  eigen: [string, string][];
+  lang?: string;
+}
+const { eigen, lang = 'en' } = Astro.props;
+const nl = lang === 'nl';
+
+/* De twee die op elke dienstpagina hetzelfde zijn, uit één bron. */
+const gedeeld: [string, string][] = [
+  [turnaroundShort('unattended', lang), nl ? 'geschatte levering' : 'estimated delivery'],
+  [reviewClaimShort('unattended', lang), nl ? 'elke visual' : 'every visual'],
+];
+const feiten = [...eigen, ...gedeeld];
+---
+
+<div class="trust-row hero-facts">
+  {feiten.map(([sterk, rest]) => (
+    <span class="trust-item"><strong>{sterk}</strong> {rest}</span>
+  ))}
+</div>
+
+<style>
+  /* De marge stond als inline stijl op drie plekken en was er twee keer 2,4rem
+     en één keer 2,2rem. Hij hoort bij de rij en niet bij de pagina. */
+  .hero-facts { margin-top: clamp(1.8rem, 3vw, 2.4rem); }
+
+  /* ── TWEE BIJ TWEE, EN NIET WAT DE REGEL TOEVALLIG DOET ───────────────────
+     `.trust-row` is een `flex-wrap`, dus waar de rij brak hing af van hoe lang
+     de woorden waren: /catalog brak 2+2, /video 3+1. Vier feiten, drie
+     pagina's, twee verschillende vormen — dezelfde soort rafeligheid als de
+     twee volgordes die deze component net heeft opgeheven, alleen subtieler.
+
+     Een vast raster van twee bij twee zet ook de labels onder elkaar in plaats
+     van ze te laten zweven waar het woord ervoor eindigt, en dat is wat dit
+     merk van een cijferblok vraagt: het moet als een instrument lezen en niet
+     als een zin die is opgebroken.
+
+     Onder 34rem is er geen ruimte voor twee kolommen naast elkaar zonder dat
+     een bedrag afbreekt; daar wordt het één kolom. */
+  .hero-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 2.2rem; align-items: baseline; }
+  @media (max-width: 34rem) { .hero-facts { grid-template-columns: minmax(0, 1fr); gap: .75rem; } }
+</style>

@@ -217,10 +217,29 @@ console.log('\nhet aantal clips heeft zijn eigen veld');
 
   /* Waar Lucas het aantal moet kunnen lezen zonder de mail erbij te zoeken. */
   const admin = read('src/lib/admin.js');
-  ok('de adminpagina van een bestelling leest details_json',
-    /SELECT id, ref, service, status, brand, name, email, lang, product_count,\s*\n\s*details_json/.test(admin), true);
-  ok('  ook in de smalle variant (die kolom bestaat sinds migratie 1)',
-    /details_json, delivery_mailed_at/.test(admin), true);
+  /* ── DEZE TWEE REGELS PINDEN DE SPELLING EN NIET DE EIGENSCHAP ────────────
+     Ze eisten dat `details_json` op de regel ONDER `product_count` stond. Toen
+     die query er op 1 september 2026 drie kolommen bij kreeg (tier, window_start,
+     window_end, voor het verzetten van een venster), viel deze toets om terwijl er
+     niets kapot was: details_json werd nog steeds gelezen, alleen niet meer op de
+     tweede regel. Dat is de fout die dit huis twee keer eerder heeft gemaakt —
+     toets de EIGENSCHAP, niet de opmaak. Wat hier moet gelden is: allebei de
+     varianten van de query halen de kolom op, ook de smalle, want juist die draait
+     als de brede omvalt. */
+  const queryVan = (naam) => {
+    const i = admin.indexOf(`const ${naam} = \`SELECT`);
+    return i < 0 ? '' : admin.slice(i, admin.indexOf('`;', i));
+  };
+  ok('de brede adminquery leest details_json', /details_json/.test(queryVan('wide')), true);
+  ok('  en de smalle ook (die kolom bestaat sinds migratie 1)',
+    /details_json/.test(queryVan('narrow')), true);
+  /* En de kolommen waar het venster op deze pagina van leeft, om dezelfde reden in
+     allebei: ze zijn van migratie 1, dus ze kunnen niet de oorzaak zijn als de
+     brede query omvalt — en dan hoort het blok "Wanneer" er nog te staan. */
+  for (const kolom of ['tier', 'window_start', 'window_end']) {
+    ok(`  ${kolom} staat in allebei de varianten`,
+      new RegExp(kolom).test(queryVan('wide')) && new RegExp(kolom).test(queryVan('narrow')), true);
+  }
   ok('  en zet het aantal clips op de regel bij de dienst', /\$\{esc\(String\(d\.clips\)\)\} clips/.test(admin), true);
 }
 

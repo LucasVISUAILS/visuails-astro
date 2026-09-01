@@ -24,7 +24,7 @@
  *   1 · DE ECHTE EENHEID. Producten per dag, geen weken. De poort in capacity.js
  *       telt 18 producten per studiodag, houdt er 3 vrij voor kleine bestellingen,
  *       en verkoopt de overige 15 per dag als vastgelegd venster van twee
- *       werkdagen. Die 3 staan in beeld als een apart stuk van de balk, want het
+ *       dagen. Die 3 staan in beeld als een apart stuk van de balk, want het
  *       is het enige deel van dit mechanisme dat de bezoeker beschermt die géén
  *       grote bestelling plaatst.
  *
@@ -102,7 +102,7 @@ const C = nl
       side: 'Studiokant',
       badge: 'Voorbeeld met verzonnen gegevens',
       h: 'Wat de datumkiezer vraagt',
-      sub: `${PRODUCTS_PER_DAY} producten per studiodag, waarvan ${QUEUE_FLOOR_PER_DAY} vrij blijven voor kleine bestellingen. Een venster is ${WINDOW_DAYS} werkdagen.`,
+      sub: `${PRODUCTS_PER_DAY} producten per studiodag, waarvan ${QUEUE_FLOOR_PER_DAY} vrij blijven voor kleine bestellingen. Een venster is ${WINDOW_DAYS} open dagen.`,
       askL: 'De aanvraag',
       askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} producten`,
       unit: (u, c) => `${u} / ${c}`,
@@ -111,7 +111,7 @@ const C = nl
       sOpen: 'Ruimte',
       sWin: 'Venster',
       floorNote: `De laatste ${QUEUE_FLOOR_PER_DAY} van elke dag zijn niet te boeken als venster. Die blijven voor bestellingen die in de normale doorlooptijd draaien.`,
-      leadNote: `De eerste ${LEAD_DAYS} werkdagen zijn geen productietijd: de producten moeten aankomen en bekeken worden voordat een datum iets betekent.`,
+      leadNote: `De eerste ${LEAD_DAYS} dagen zijn geen productietijd: de producten moeten aankomen en bekeken worden voordat een datum iets betekent.`,
       verdictL: 'Aangeboden',
       verdictWhy: `${DEMO_ORDER.products} producten vragen ${perDay} op elke dag van het venster, dus twee dagen die helemaal vrij zijn. Donderdag en vrijdag hebben ruimte, maar niet genoeg — en dan wordt dat venster niet aangeboden.`,
       cmpL: 'Zelfde agenda, kleinere bestelling',
@@ -123,7 +123,7 @@ const C = nl
       side: 'Studio side',
       badge: 'Example with made-up data',
       h: 'What the date picker asks',
-      sub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of which stay free for small orders. A window is ${WINDOW_DAYS} working days.`,
+      sub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of which stay free for small orders. A window is ${WINDOW_DAYS} open days.`,
       askL: 'The request',
       askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} products`,
       unit: (u, c) => `${u} / ${c}`,
@@ -132,7 +132,7 @@ const C = nl
       sOpen: 'Room',
       sWin: 'Window',
       floorNote: `The last ${QUEUE_FLOOR_PER_DAY} of every day cannot be booked as a window. They stay for orders running in the normal turnaround.`,
-      leadNote: `The first ${LEAD_DAYS} working days are not production time: the products have to arrive and be looked at before a date means anything.`,
+      leadNote: `The first ${LEAD_DAYS} days are not production time: the products have to arrive and be looked at before a date means anything.`,
       verdictL: 'Offered',
       verdictWhy: `${DEMO_ORDER.products} products ask for ${perDay} on each day of the window, so it needs two days that are completely free. Thursday and Friday have room, but not enough — so that window is not offered.`,
       cmpL: 'Same calendar, smaller order',
@@ -273,7 +273,7 @@ const floorAt = pct(ATTENDED_PER_DAY);
   .fgt-ask-v { font-size: .7rem; color: var(--ink); font-variant-numeric: tabular-nums; }
 
   /* ── DE DAGEN ─────────────────────────────────────────────────────────────
-     Tien rijen, één per werkdag. Rijen en geen kolommen: in een halve kolom is
+     Twaalf rijen, één per dag in beeld. Rijen en geen kolommen: in een halve kolom is
      een staafdiagram van tien staven twintig pixels per dag, en dan is het label
      eronder niet te lezen. Een rij heeft altijd ruimte voor zijn eigen naam.
 

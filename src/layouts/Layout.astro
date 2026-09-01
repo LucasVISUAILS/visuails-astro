@@ -2673,11 +2673,26 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   }
 
 
-  /* WhatsApp launcher — a square block pinned to the left rail, so it never
-     collides with the centred .convbar. 48px hit area at minimum; the label
-     expands on pointer devices and stays available to screen readers on
-     touch, where only the mark shows. */
-  .wa-launcher { position: fixed; left: 20px; --wa-bottom: 20px; bottom: var(--wa-bottom); z-index: var(--z-bar);
+  /* WhatsApp launcher — een vierkant blok in de RECHTERrail, zodat het nooit
+     botst met de gecentreerde .convbar. 48px raakvlak minimaal; het label
+     klapt open op aanwijsapparaten en blijft voor schermlezers bestaan op
+     aanraakschermen, waar alleen het merkje staat.
+
+     ── LINKS WERD RECHTS — 31 AUGUSTUS 2026 ────────────────────────────────
+     Lucas stuurde schermafdrukken van /lifestyle en /video waarop deze knop
+     dwars over de tekst stond: op /lifestyle precies over "Human-checked
+     quality on every single visual." en op /video over de kop "Ways to add
+     motion." Dat is geen toeval en het gaat ook niet over met scrollen — hij
+     stond vast op `left: 20px`, en de LINKERkolom is op elke pagina van deze
+     site de tekstkolom. Een knop die vastzit boven een tekstkolom staat altijd
+     ergens over een zin.
+
+     Rechts is op de dienstpagina's sinds vandaag de FOTOkolom, en een merkje
+     van 48px op een foto neemt niets weg wat gelezen moet worden. Het is ook
+     de plek waar deze knop op smalle schermen al stond (zie de regel op 600px
+     hieronder, die nu alleen de maten nog aanpast): het verschil tussen
+     desktop en telefoon is daarmee ook weg. */
+  .wa-launcher { position: fixed; right: 20px; --wa-bottom: 20px; bottom: var(--wa-bottom); z-index: var(--z-bar);
     display: inline-flex; align-items: center; justify-content: center;
     width: 48px; height: 48px; padding: 0;
     background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
@@ -2693,10 +2708,14 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      mark out from under the pointer as the label arrived. The label is now a
      pill abutting the square's right edge, wiped open from the left. It stays in
      the accessibility tree on touch, where it is the control's only name. */
-  .wa-launcher-label { position: absolute; left: calc(100% - 1px); top: -1px; bottom: -1px;
+  /* Het label klapt naar LINKS open, want de knop zit sinds vandaag rechts:
+     naar rechts zou het van het scherm af lopen. Vandaar `right: calc(100% -
+     1px)` in plaats van `left`, de rand aan de andere kant weg, en een
+     clip-path die van rechts naar links wist. */
+  .wa-launcher-label { position: absolute; right: calc(100% - 1px); top: -1px; bottom: -1px;
     display: flex; align-items: center; padding: 0 14px;
-    background: var(--surface); border: 1px solid var(--line-strong); border-left: 0;
-    clip-path: inset(0 100% 0 0); opacity: 0;
+    background: var(--surface); border: 1px solid var(--line-strong); border-right: 0;
+    clip-path: inset(0 0 0 100%); opacity: 0;
     transition: clip-path var(--dur-2) var(--ease), opacity var(--dur-1) var(--ease); }
   @media (hover: hover) and (pointer: fine) {
     .wa-launcher:hover .wa-launcher-label,
@@ -2717,7 +2736,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      by a pixel — the convbar is centred and grows toward both edges as the
      viewport shrinks, so "beside" is only true down to about 380px. Stacking
      is true at every width. */
-  @media (max-width: 600px) { .wa-launcher { left: auto; right: 12px; --wa-bottom: 12px; } }
+  @media (max-width: 600px) { .wa-launcher { right: 12px; --wa-bottom: 12px; } }
   /* ── DE WHATSAPP-KNOP MOET BOVEN DE CONVBAR UIT — MAAR ALLEEN ALS DIE ER IS ──
      Dit stond op 96px, gemeten toen de convbar op een telefoon één rij was: 58px
      hoog plus 20px van de onderkant, dus 96 was ruim.

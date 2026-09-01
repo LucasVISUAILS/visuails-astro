@@ -40,7 +40,7 @@
 
 import { isWellFormedToken, mintToken } from './token.js';
 import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT, isShotId } from '../data/shots.js';
-import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
+import { MAX_PRODUCTS_ANY_SERVICE } from '../data/capacity.js';
 /* De extra foto’s hebben sinds 8 augustus 2026 een eigen upload-vakje, dus tellen
    ze mee in het plafond hieronder. Uit pricing.js en niet overgetypt: dat is ook
    wat de teller in het formulier begrenst en wat er geprijsd wordt. pricing.js
@@ -115,8 +115,16 @@ export const MAX_FILE_BYTES = 25 * 1024 * 1024;
  * TEKENEN, want elk vakje dat een klant kan openen en vullen, moet ook aankomen —
  * dat was de fout die vanmorgen op 140 tegen 240 stond.
  */
+/* ── EN HET IS NIET MEER DERTIG — 31 augustus 2026 ─────────────────────────
+ *
+ * Hier stond ATTENDED_PER_WINDOW, en dat was juist zolang elke bestelling in
+ * COMPLETE producten geteld werd. Sinds de agenda in beelden rekent, hangt het
+ * plafond van een venster af van de dienst: dertig complete producten, of
+ * zeventig lifestylecarrousels. Het formulier biedt die zeventig ook echt aan, en
+ * elk vakje dat een klant kan openen moet aankomen — precies de fout die op 140
+ * tegen 240 stond, nu op 360 tegen 840. */
 export const MAX_BATCH_FILES =
-  ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT + MAX_REF_PER_PRODUCT);
+  MAX_PRODUCTS_ANY_SERVICE * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT + MAX_REF_PER_PRODUCT);
 
 /**
  * Extension → the content type we store.

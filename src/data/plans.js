@@ -30,12 +30,30 @@
  */
 import {
   PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, PLAN_COMPARE_MONTHS, PLAN_ROLLOVER_MONTHS,
-  AMOUNT, ladderRate, LADDER,
+  AMOUNT, ladderRate, LADDER, CUSTOM_MONTH_ID,
 } from './pricing.js';
 import { ATTENDED_PER_DAY } from './capacity.js';
 
 /** De id's van de plannen, in de volgorde waarin ze op de pagina staan. */
 export const PLAN_IDS = ['starter', 'studio', 'brand'];
+
+/**
+ * Wat een abonnementsRIJ mag dragen — de drie pakketten plus de maand op maat.
+ *
+ * ── WAAROM DIT EEN TWEEDE LIJST IS EN GEEN VIERDE ELEMENT IN PLAN_IDS ───────
+ *
+ * PLAN_IDS is "de plannen": drie vaste vormen met een vaste prijs, die naast
+ * elkaar op de prijspagina staan, in de vergelijkingstabel voorkomen en in de
+ * algemene voorwaarden bij naam en bedrag worden genoemd. Elke lus over die
+ * lijst vraagt om `PLAN_AMOUNT[id]` en `PLAN_PRODUCTS[id]`, en een maand op maat
+ * heeft die twee niet — hij draagt zijn eigen bedrag en zijn eigen bundel op de
+ * rij. Zou hij in PLAN_IDS staan, dan zou de bandbreedte in de voorwaarden
+ * ("van € 390 tot € 1690") stilletjes NaN worden.
+ *
+ * Deze lijst is dus geen synoniem maar een andere vraag: niet "wat kun je kopen"
+ * maar "wat mag er in de kolom `subscriptions.plan` staan".
+ */
+export const SUB_PLAN_IDS = [...PLAN_IDS, CUSTOM_MONTH_ID];
 
 /**
  * Welke dienst een abonnement levert.
@@ -184,7 +202,7 @@ export function hasBrandModel(planId, termId) {
 /* ── DE PLEKKEN ─────────────────────────────────────────────────────────────
  *
  * HET GETAL DAT HET HELE ONTWERP BEPAALT. Uit capacity.js: 15 producten per dag
- * met een gereserveerd venster. Over 21 werkdagen is dat 315 producten per maand.
+ * met een gereserveerd venster. Over 21 dagen is dat 315 producten per maand.
  * Wat één abonnee daarvan vastlegt:
  *
  *   Starter  5 producten   1,6 %
@@ -228,9 +246,21 @@ export function planProductBudget() {
  * abonnementen — die som staat in de database en wordt hier niet geschat.
  */
 export function fitsBudget(planId, committedProducts) {
-  const want = productsFor(planId);
+  return fitsProducts(productsFor(planId), committedProducts);
+}
+
+/**
+ * Dezelfde poort, maar met een AANTAL in plaats van een plan-id.
+ *
+ * Een maand op maat heeft geen productsFor(): hoeveel hij vasthoudt, staat op de
+ * rij en niet in een tabel. De poort blijft dezelfde som — hij hoort niet twee
+ * keer te bestaan met twee kansen om uit elkaar te lopen — dus rekent
+ * fitsBudget() hierboven er sinds vandaag doorheen.
+ */
+export function fitsProducts(want, committedProducts) {
+  const wil = Math.max(0, Math.floor(Number(want) || 0));
   const used = Math.max(0, Math.floor(Number(committedProducts) || 0));
-  return used + want <= planProductBudget();
+  return used + wil <= planProductBudget();
 }
 
 /**
@@ -279,7 +309,18 @@ export function rolloverMonths(termId) {
  * aftrekken zou hem twee keer laten betalen.
  */
 export function available(planId, termId, history = []) {
-  const grant = productsFor(planId);
+  return availableFrom(productsFor(planId), termId, history);
+}
+
+/**
+ * Dezelfde som, maar met een AANTAL in plaats van een plan-id.
+ *
+ * Een maand op maat heeft geen productsFor() — hoeveel hij per maand geeft, staat
+ * op de rij. Het doorschuiven verandert daar niet door, dus de rekenregel hoort
+ * één keer te bestaan en niet twee keer met twee kansen om uit elkaar te lopen.
+ * available() hierboven is sinds vandaag een aanroep hiervan.
+ */
+export function availableFrom(grant, termId, history = []) {
   const window = rolloverMonths(termId);
   /* `history` zijn de VOORBIJE maanden — deze maand zit al in `grant`. Bij een
      venster van nul telt er niets door; `slice(-0)` geeft de hele lijst, dus dat

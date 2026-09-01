@@ -68,14 +68,15 @@
 // TWO TOKEN TABLES, ON PURPOSE
 // account_tokens is the emailed link: minutes-scale TTL, single-use, dead the
 // moment it is clicked. account_sessions is the resulting logged-in cookie:
-// weeks-scale TTL, refreshed on every authenticated request. Collapsing them
+// weeks-scale TTL, refreshed on every authenticated request up to a hard ceiling
+// of ACCOUNT_SESSION_MAX_DAYS after issue — see the note at that constant. Collapsing them
 // into one table would mean either the emailed link stays valid for weeks
 // (a link sitting in an inbox becomes a standing credential) or the login
 // cookie expires in minutes (logged out mid-session for no reason the
 // customer can see). schema.sql's header for this section makes the same
 // point; this file is where it turns into code.
 
-import { hashToken, isWellFormedToken, mintToken, isExpired } from './token.js';
+import { hashToken, isWellFormedToken, mintToken, isExpired, pastMaxLife } from './token.js';
 import { notifyRevisionRound } from './notify.js';
 import { clearUploadRetention } from './retention.js';
 /* De uploadgrenzen uit dezelfde module die /api/upload gebruikt. Zie de kop bij
@@ -123,7 +124,7 @@ import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT, REVIEW } from '../data/vat.js';
 import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '../data/address.js';
 import { createOrderMolliePayment } from './mollie.js';
-import { kindLabel, kindPer, slotBalans, slotsFor } from './slots.js';
+import { bundelVoor, kindLabel, kindPer, slotBalans } from './slots.js';
 /*
  * HET ABONNEMENT. src/data/plans.js is het contract (wat een plan kost en geeft),
  * src/lib/subscription.js zijn de rijen (wie er een heeft en wat er nog van over
@@ -133,10 +134,17 @@ import { kindLabel, kindPer, slotBalans, slotsFor } from './slots.js';
 import { handleSubscribeStart, handleSubscribeReturn, stopIncasso, hervatIncasso } from './subscribe.js';
 import {
   planState, loadQueue, queueAdd, queueRemove, queueReorder, queueMax,
-  queueLock, queueUnlock,
+  queueLock, queueUnlock, queueWindow, queueAsap,
   pauseSubscription, activateSubscription, cancelSubscription, subscriptionShape,
   clearMollieSubscriptionId,
 } from './subscription.js';
+import {
+  ATTENDED_IMAGES_PER_DAY, WINDOW_DAYS, LEAD_DAYS,
+  addDays, firstOfferableDay, isOpenDay, windowFor,
+} from '../data/capacity.js';
+import { kindImages, PRODUCT_SLOT_KINDS } from '../data/pricing.js';
+import { PLAN_SERVICE } from '../data/plans.js';
+import { readCalendar } from './agenda.js';
 import { planName } from '../data/planNames.js';
 import { STOCK_ON_BRAND, STOCK_OFF_BRAND } from '../data/pricing.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
@@ -226,10 +234,58 @@ const LOGIN_CODE_MAX_ATTEMPTS = 5;
 /** Losser dan LOGIN_LIMIT: een verkeerd overgetypte code is normaal, een mail versturen niet. */
 const CODE_LIMIT = 30;
 
+/* ── EN EEN TWEEDE TELLER, OP HET ACCOUNT — 31 augustus 2026 ────────────────
+ *
+ * CODE_LIMIT en LOGIN_LIMIT hierboven tellen allebei per IP, en dat is voor een
+ * publieke stroom de goede as. Voor het RADEN van een zescijferige code is het de
+ * verkeerde: de aanvaller kiest zijn IP en het slachtoffer niet.
+ *
+ * WAT ER MOGELIJK WAS. Vijf pogingen per code, maar een nieuwe aanvraag zet een
+ * nieuwe rij neer met `code_attempts` op nul — dus het budget was met tien
+ * aanvragen per minuut per IP eindeloos bij te vullen. Nergens werd geteld hoeveel
+ * er in totaal op één account misging. Met een handvol IP's is een miljoen
+ * mogelijkheden dan een kwestie van uren, en het enige alarm is de inbox van het
+ * slachtoffer.
+ *
+ * Twee emmers naast elkaar, en de strengste wint. Vijftien misgokken per kwartier
+ * op één account is ruim voor iemand die zich vertypt (de code zelf staat maar vijf
+ * pogingen toe) en te weinig om te zoeken. Aanvragen wordt apart geteld, want een
+ * nieuwe code vragen is de manier waarop het budget werd bijgevuld.
+ *
+ * DE TELLER ZIT OP HET E-MAILADRES EN NIET OP HET KLANT-ID, omdat hij moet werken
+ * vóórdat er een klant gevonden is — anders vertelt een onbekend adres door zijn
+ * andere gedrag dat het onbekend is. */
+const CODE_ACCOUNT_LIMIT = 15;
+const CODE_ACCOUNT_WINDOW = 900;
+const LOGIN_ACCOUNT_LIMIT = 5;
+const LOGIN_ACCOUNT_WINDOW = 900;
+
 /** account_sessions.expires_at — refreshed on every authenticated request; see the header.
  *  De waarde staat in src/data/cookies.js, want het cookiebeleid noemt hem met
  *  zoveel woorden en die twee mogen niet uit elkaar lopen. */
 const ACCOUNT_SESSION_TTL_DAYS = SESSION_COOKIE_DAYS;
+
+/**
+ * De bovengrens die NIET meeschuift — een half jaar na inloggen, punt.
+ *
+ * ACCOUNT_SESSION_TTL_DAYS schuift bij elk verzoek mee, en dat is met opzet:
+ * niemand hoort uitgelogd te worden terwijl hij het dashboard elke week gebruikt.
+ * Maar een termijn die bij gebruik opschuift, kent geen einde. Een cookie dat van
+ * een laptop is geplukt is een cookie dat zichzelf verlengt zolang de dief hem
+ * gebruikt — het slachtoffer merkt er niets van, want zijn eigen sessie loopt
+ * gewoon door, en er is geen dag waarop de gestolen sessie vanzelf ophoudt.
+ *
+ * Het beheerderspaneel had dit al: admin_sessions krijgt bij gebruik alleen een
+ * nieuwe last_used_at, nooit een nieuwe expires_at, dus daar staat de veertien
+ * dagen vast vanaf het inloggen. Deze regel geeft de klantsessie hetzelfde plafond,
+ * met een ruimer getal omdat de klant zeldzamer inlogt en zijn inloglink per mail
+ * moet aanvragen.
+ *
+ * WAT DE KLANT ERVAN MERKT: een keer per half jaar opnieuw een inloglink. Wat het
+ * cookiebeleid belooft verandert niet — daar staat hoe lang het COOKIE leeft, en
+ * dat blijft SESSION_COOKIE_DAYS. Dit is de levensduur van de sessie erachter.
+ */
+const ACCOUNT_SESSION_MAX_DAYS = 180;
 
 const SESSION_COOKIE = 'vis_account';
 
@@ -404,7 +460,7 @@ const COPY = {
     // Voor een bestelling onder de drempel: geen datum, want die bestaat niet
     // voor deze trede. Dezelfde belofte als TIERS.unattended.turnaround in
     // pricing.js, in één regel op de kaart.
-    fQueue: 'Standard turnaround — usually 2–4 working days.',
+    fQueue: 'Standard turnaround — usually 2–4 days.',
     fProducts: 'Products',
     windowPending: 'Being scheduled',
 
@@ -807,6 +863,23 @@ const COPY = {
     planSlotExpiryOne: 'from last month — confirm before',
     planQConcept: 'Draft',
     planQLocked: 'Locked',
+    planWhenH: 'When do you want them?',
+    planWhenAsap: 'As soon as possible',
+    planWhenAsapSub: 'Usually 2 to 4 days. Often sooner than the earliest day you can point at yourself \u2014 but without a fixed day.',
+    planWhenLead: 'The first days are not pickable: your products have to arrive and be looked at before a day means anything.',
+    planWhenFirst: 'Earliest you can point at:',
+    planWhenBefore: 'Need it in by a particular day? Point at the day before \u2014 then your day is the second of the two.',
+    planWhenOnlyLocked: 'These two days are held for you once you lock the product. A draft holds nothing.',
+    planWhenNone: 'No pair of open days left in this month. Try as soon as possible, or a later month.',
+    planWhenNoWeight: 'This kind cannot be planned on a day yet \u2014 it has no weight in the calendar. It runs as soon as possible.',
+    planWhenBack: 'Back to the list',
+    planWhenToday: 'today',
+    planWhenEarly: 'too soon',
+    planWhenFull: 'full',
+    planWhenClosed: 'closed',
+    planWhenSet: 'Held for you:',
+    planWhenDay1: 'day 1',
+    planWhenDay2: 'day 2',
     planQLock: 'Confirm',
     planQUnlock: 'Unlock',
     planQLockHint: 'Confirming uses one slot. You can undo it until your week starts.',
@@ -910,7 +983,7 @@ const COPY = {
     fService: 'Dienst',
     fPlaced: 'Geplaatst',
     fWindow: 'Levering',
-    fQueue: 'Normale doorlooptijd — meestal 2–4 werkdagen.',
+    fQueue: 'Normale doorlooptijd — meestal 2–4 dagen.',
     fProducts: 'Producten',
     windowPending: 'Wordt ingepland',
 
@@ -1195,6 +1268,23 @@ const COPY = {
     planSlotExpiryOne: 'van vorige maand — vastzetten vóór',
     planQConcept: 'Concept',
     planQLocked: 'Vastgezet',
+    planWhenH: 'Wanneer wil je ze hebben?',
+    planWhenAsap: 'Zo snel mogelijk',
+    planWhenAsapSub: 'Meestal 2 tot 4 dagen. Vaak eerder dan de vroegste dag die je zelf kunt aanwijzen \u2014 maar zonder vaste dag.',
+    planWhenLead: 'De eerste dagen zijn niet aan te wijzen: je producten moeten binnenkomen en bekeken worden voordat een dag iets betekent.',
+    planWhenFirst: 'Vroegst aan te wijzen:',
+    planWhenBefore: 'Moet het uiterlijk op een bepaalde dag binnen zijn? Wijs dan de dag ervóór aan \u2014 dan is jouw dag de tweede van de twee.',
+    planWhenOnlyLocked: 'Deze twee dagen worden voor je vrijgehouden zodra je het product vastzet. Een concept houdt niets vast.',
+    planWhenNone: 'Er is in deze maand geen paar open dagen meer. Kies zo snel mogelijk, of een latere maand.',
+    planWhenNoWeight: 'Deze soort is nog niet op een dag in te plannen \u2014 hij heeft nog geen gewicht in de agenda. Hij loopt zo snel mogelijk.',
+    planWhenBack: 'Terug naar de lijst',
+    planWhenToday: 'vandaag',
+    planWhenEarly: 'te vroeg',
+    planWhenFull: 'vol',
+    planWhenClosed: 'gesloten',
+    planWhenSet: 'Vrijgehouden:',
+    planWhenDay1: 'dag 1',
+    planWhenDay2: 'dag 2',
     planQLock: 'Vastzetten',
     planQUnlock: 'Losmaken',
     planQLockHint: 'Vastzetten kost één slot. Je kunt het terugdraaien tot je week begint.',
@@ -1573,7 +1663,31 @@ async function handleLoginPost({ request, env }) {
   // header on account enumeration. A Resend failure is swallowed for the same
   // reason: nothing about the reply may differ based on what happened server-side.
   if (isEmail(email)) {
-    await sendLoginLink(env, request, email, lang).catch(() => {});
+    /* ── EN EEN EMMER OP HET ADRES ZELF — 31 augustus 2026 ──────────────────
+     *
+     * LOGIN_LIMIT hierboven telt per IP. Twee dingen lekten daar doorheen: een
+     * aanvaller kon het codebudget van een slachtoffer eindeloos bijvullen door
+     * steeds een nieuwe code aan te vragen (zie CODE_ACCOUNT_LIMIT), en hij kon
+     * een willekeurige derde onbeperkt inlogmail sturen zolang hij van IP wisselde.
+     *
+     * DE STILTE IS HIER HET ANTWOORD EN GEEN 429. Dit formulier geeft met opzet
+     * altijd dezelfde pagina terug, of het adres nu bestaat of niet — zie de kop
+     * van dit bestand over accountopsomming. Een 429 die alleen bij een bestaand
+     * adres verschijnt, zou precies dat weggeven. Er gaat dus geen mail meer uit
+     * en de bezoeker ziet hetzelfde scherm als altijd. Wie zich echt vergist,
+     * heeft binnen het kwartier al vijf mails gehad en kan de link daaruit
+     * gebruiken; de code in diezelfde mails werkt ook nog. */
+    const perAccount = await checkRate(env, {
+      key: `account-login|${email}`,
+      action: 'account-login-id',
+      limit: LOGIN_ACCOUNT_LIMIT,
+      windowSeconds: LOGIN_ACCOUNT_WINDOW,
+    });
+    if (perAccount.allowed) {
+      await sendLoginLink(env, request, email, lang).catch(() => {});
+    } else {
+      console.warn('[account] inlogmail onderdrukt — te veel aanvragen voor dit adres binnen het venster');
+    }
   }
 
   return html(page({ thema: themaCookie(request), lang, title: t.checkTitle, body: checkEmailBody(t, lang, isEmail(email) ? email : '') }));
@@ -1854,6 +1968,17 @@ async function handleCodePost({ request, env }) {
   if (!isEmail(email)) return again(t.codeWrong);
   if (!code) return again(t.codeShape);
 
+  /* DE TWEEDE EMMER: op het account en niet op het IP. Zie CODE_ACCOUNT_LIMIT.
+     Pas hier, nadat de vorm van het adres is goedgekeurd, zodat rommel de emmer
+     van een echt adres niet kan vullen. */
+  const perAccount = await checkRate(env, {
+    key: `account-code|${email}`,
+    action: 'account-code-id',
+    limit: CODE_ACCOUNT_LIMIT,
+    windowSeconds: CODE_ACCOUNT_WINDOW,
+  });
+  if (!perAccount.allowed) return again(t.codeTooMany, 429);
+
   let row;
   try {
     // De nieuwste levende code van deze klant. ORDER BY id DESC omdat een
@@ -2006,8 +2131,26 @@ function withinGrace(usedAt, now = Date.now()) {
   return now - then <= LOGIN_TOKEN_GRACE_MINUTES * 60000;
 }
 
-function accountSessionExpiry(fromDate = new Date()) {
-  return new Date(fromDate.getTime() + ACCOUNT_SESSION_TTL_DAYS * 86400000).toISOString();
+/**
+ * De nieuwe expires_at, nooit voorbij het plafond.
+ *
+ * De klem staat HIER en niet alleen in currentCustomer(), zodat expires_at in de
+ * database de waarheid vertelt in plaats van alleen de leescontrole. Dat scheelt
+ * twee dingen: een opruimquery die op expires_at filtert ruimt deze rijen echt op,
+ * en wie de tabel bekijkt ziet wanneer een sessie afloopt zonder issued_at erbij
+ * te moeten optellen. issuedAt ontbreekt bij een VERSE sessie -- die is per
+ * definitie nul dagen oud -- en dan is er niets te klemmen.
+ */
+function accountSessionExpiry(fromDate = new Date(), issuedAt = null) {
+  const glijdend = fromDate.getTime() + ACCOUNT_SESSION_TTL_DAYS * 86400000;
+  const start = Date.parse(
+    /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(String(issuedAt || ''))
+      ? `${String(issuedAt).replace(' ', 'T')}Z`
+      : String(issuedAt || '')
+  );
+  if (Number.isNaN(start)) return new Date(glijdend).toISOString();
+  const plafond = start + ACCOUNT_SESSION_MAX_DAYS * 86400000;
+  return new Date(Math.min(glijdend, plafond)).toISOString();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2298,7 +2441,16 @@ async function sectionGet(context, customer, section) {
        de eerste tab in plaats van een leeg scherm te tonen. */
     let tab = 'maand';
     try { tab = new URL(request.url).searchParams.get('tab') || 'maand'; } catch { /* geen geldige URL */ }
-    inner = planBody(t, lang, customer, state, models, lockByStyle, orders, files, fout, tab);
+    /* ?kies=<id> — het inplanscherm voor één wachtrij-item. Alleen laden als
+       ernaar gevraagd wordt: de agenda kost drie query's, en de meeste bezoeken
+       aan deze pagina gaan over iets anders. Een onbekend of ongeldig id levert
+       null en dan staat gewoon de lijst er weer, in plaats van een leeg scherm. */
+    let kal = null;
+    try {
+      const kies = Number.parseInt(new URL(request.url).searchParams.get('kies') || '', 10);
+      if (Number.isInteger(kies) && tab === 'bestellen') kal = await planKalender(env, state, kies);
+    } catch { /* geen geldige URL of geen agenda — de lijst doet het zonder */ }
+    inner = planBody(t, lang, customer, state, models, lockByStyle, orders, files, fout, tab, kal);
     title = t.planHeading;
   } else {
     inner = overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder);
@@ -2321,7 +2473,8 @@ async function currentCustomer(env, request) {
   let row;
   try {
     row = await env.DB.prepare(
-      `SELECT s.id AS session_id, s.expires_at, c.id AS customer_id, c.email, c.name, c.brand,
+      `SELECT s.id AS session_id, s.expires_at, s.issued_at,
+              c.id AS customer_id, c.email, c.name, c.brand,
               c.deactivated_at
          FROM account_sessions s JOIN customers c ON c.id = s.customer_id
         WHERE s.token_hash = ?1`
@@ -2331,6 +2484,16 @@ async function currentCustomer(env, request) {
   }
   if (!row) return null;
   if (isExpired(row.expires_at, null)) return null;
+  /*
+   * Het plafond, los van de meeschuivende expires_at hierboven. Zie de noot bij
+   * ACCOUNT_SESSION_MAX_DAYS. Dit staat ernaast en niet in plaats van: de eerste
+   * regel sluit een sessie af die niet meer gebruikt wordt, deze sluit een sessie
+   * af die juist wel gebruikt blijft worden. accountSessionExpiry() klemt de
+   * verlenging al, dus in de praktijk vangt de regel hierboven het meestal op --
+   * deze regel is wat er gebeurt als die schrijfactie ooit is mislukt, en die
+   * schrijfactie is met opzet best-effort.
+   */
+  if (pastMaxLife(row.issued_at, ACCOUNT_SESSION_MAX_DAYS)) return null;
   /*
    * ── GEDEACTIVEERD IS GEDEACTIVEERD, OOK MIDDEN IN EEN SESSIE — 12 AUG 2026 ──
    *
@@ -2347,12 +2510,14 @@ async function currentCustomer(env, request) {
 
   // Refreshed on use — see the file header on why account_sessions is a
   // separate, sliding-expiry table from the single-use account_tokens. A
-  // customer who opens the dashboard every week never gets signed out; one
-  // who does not is signed out ACCOUNT_SESSION_TTL_DAYS after their last visit,
-  // not after their first. Best-effort: a failed write here must not cost the
+  // customer who opens the dashboard every week is not signed out for using the
+  // site; one who does not is signed out ACCOUNT_SESSION_TTL_DAYS after their last
+  // visit, not after their first. "Never" is no longer the word for the first half
+  // of that sentence: accountSessionExpiry() klemt de verlenging op
+  // ACCOUNT_SESSION_MAX_DAYS na uitgifte. Best-effort: a failed write here must not cost the
   // request a 500, same reasoning as admin.js's touch of admin_sessions.
   env.DB.prepare('UPDATE account_sessions SET last_used_at = datetime(\'now\'), expires_at = ?2 WHERE id = ?1')
-    .bind(row.session_id, accountSessionExpiry()).run().catch(() => {});
+    .bind(row.session_id, accountSessionExpiry(new Date(), row.issued_at)).run().catch(() => {});
 
   return row;
 }
@@ -2580,8 +2745,24 @@ async function handleModelPreviewImage({ request, env }, modelId) {
   const obj = await env.UPLOADS.get(row.preview_key);
   if (!obj) return new Response('Not found', { status: 404 });
 
+  /* ── HET TYPE WORDT HIER GEZET EN NIET OVERGENOMEN — 31 augustus 2026 ─────
+   *
+   * Hier stond alleen writeHttpMetadata(): het type dat in R2 staat, ging
+   * ongezien de respons in. Dat was de tweede helft van een gat waarvan de eerste
+   * helft in admin.js zat (zie de noot bij de previewupload): een opgeslagen
+   * `text/html` of `image/svg+xml` werd hier dus met dát type teruggegeven en in
+   * het tabblad uitgevoerd, op het origin van de klant, zonder de CSP van de
+   * dashboardpagina — die zit op de paginarespons, niet op deze.
+   *
+   * Beide helften zijn nu dicht. De poort staat bij het opslaan, en hier staat
+   * wat serveAccountFile() en de portal al deden: één type uit een gesloten lijst,
+   * nosniff erbij zodat de browser niet alsnog gaat raden, en het is nooit iets
+   * anders dan een afbeelding. */
+  const bewaard = String(obj.httpMetadata?.contentType || '').toLowerCase();
+  const PREVIEW_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
   const headers = new Headers();
-  if (typeof obj.writeHttpMetadata === 'function') obj.writeHttpMetadata(headers);
+  headers.set('Content-Type', PREVIEW_MIME.includes(bewaard) ? bewaard : 'application/octet-stream');
+  headers.set('X-Content-Type-Options', 'nosniff');
   // private: this is one brand's face and must never sit in a shared cache.
   headers.set('Cache-Control', 'private, max-age=300');
   return new Response(obj.body, { headers });
@@ -6285,7 +6466,177 @@ function datumKort(iso, lang) {
     { day: 'numeric', month: 'long', timeZone: 'UTC' });
 }
 
-function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = [], fout = '', tab = 'maand') {
+/* ══════════════════════════════════════════════════════════════════════════════
+ * TWEE DAGEN AANWIJZEN, OF ZO SNEL MOGELIJK
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 31 augustus 2026: *"Een klant kan wanneer hij een slot gebruikt niet de
+ * komende 2 dagen kiezen. Alleen na die 2 dagen kan hij een venster inplannen. De
+ * klant kan ook kiezen voor 'Zo snel mogelijk'."* En: *"er moeten altijd 2 dagen
+ * achter elkaar gekozen worden"* — achter elkaar in de agenda, niet in de
+ * kalender: is 5 en 6 september vol, dan wordt het 4 en 7.
+ *
+ * ── WAAROM DIT SCHERM GEEN ENKELE REGEL JAVASCRIPT HEEFT ───────────────────
+ *
+ * Omdat het dat niet mág. De CSP van dit dashboard is `default-src 'none'` zonder
+ * `script-src`: er draait hier niets, en dat is een keuze die dit hele bestand
+ * draagt. Een kalender is dan geen widget maar een formulier — elke aanwijsbare
+ * dag is een `<button name="dag" value="…">`, en de keuze is een POST. Dat kost
+ * één paginalading per klik en levert iets op wat het niet kan verliezen: hij
+ * werkt zonder JavaScript, hij is te bedienen met een toetsenbord zonder dat
+ * iemand daar iets voor hoeft te schrijven, en de agenda die je ziet is de agenda
+ * op het moment van laden en niet een kopie in een browser van gisteren.
+ *
+ * ── EN WAAROM DE POORT HIER DEZELFDE IS ALS BIJ EEN LOSSE BESTELLING ───────
+ *
+ * `windowFor()` uit capacity.js, met de agenda uit src/lib/agenda.js. Niet een
+ * nagemaakte versie: een abonnee en een losse klant vechten om dezelfde dagen, en
+ * twee poorten die "vol" verschillend uitrekenen, verkopen die dag twee keer.
+ */
+
+/** Hoeveel weken de kalender toont. Vijf rijen dekt de horizon die er praktisch toe doet. */
+const KAL_WEKEN = 5;
+
+/**
+ * De maandag op of vóór `iso`. De kalender begint op een maandag omdat de aanloop
+ * van twee dagen alleen te zien is als de week vooraan begint.
+ */
+function maandagVoor(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  const dow = d.getUTCDay();
+  return addDays(iso, -((dow + 6) % 7));
+}
+
+/**
+ * De dagen die het inplanscherm toont, met hun toestand al uitgerekend.
+ *
+ * De toestand hoort hier en niet in de opmaak, om dezelfde reden als in
+ * src/data/figdemo.js: de test kan dan dezelfde uitspraken nalezen die de klant
+ * ziet, zonder door HTML te hoeven zoeken.
+ */
+function planKalenderDagen({ vandaag, eerste, beelden, booked, blackouts }) {
+  const start = maandagVoor(vandaag);
+  const dagen = [];
+  for (let i = 0; i < KAL_WEKEN * 7; i += 1) {
+    const iso = addDays(start, i);
+    let staat;
+    if (!isOpenDay(iso, blackouts)) staat = 'dicht';
+    else if (iso < eerste) staat = 'vroeg';
+    else if (windowFor(iso, beelden, booked, blackouts).length !== WINDOW_DAYS) staat = 'vol';
+    else staat = 'vrij';
+    dagen.push({
+      iso,
+      staat,
+      vandaag: iso === vandaag,
+      vul: Math.min(1, (booked[iso] || 0) / ATTENDED_IMAGES_PER_DAY),
+    });
+  }
+  return dagen;
+}
+
+/**
+ * Alles wat het inplanscherm van de agenda moet weten, in één aanroep.
+ *
+ * Geeft `null` terug als er niets in te plannen valt: geen item, een item dat al
+ * opgehaald is, of een soort die nog geen gewicht in de agenda heeft (video — zie
+ * KIND_IMAGES in pricing.js). Dat laatste is een gat en geen nul, en het scherm
+ * hoort dat te zeggen in plaats van een kalender te tonen waarop niets kan.
+ */
+async function planKalender(env, state, kiesId) {
+  const item = state.wachtrij.find((q) => q.id === kiesId);
+  if (!item) return null;
+  const beelden = kindImages(item.kind, 1);
+  const vandaag = new Date().toISOString().slice(0, 10);
+  if (beelden === null) return { item, beelden: null, vandaag, eerste: null, dagen: [] };
+
+  const { blackouts, booked } = await readCalendar(env, vandaag);
+  const eerste = firstOfferableDay(vandaag, blackouts);
+  return {
+    item,
+    beelden,
+    vandaag,
+    eerste,
+    dagen: planKalenderDagen({ vandaag, eerste, beelden, booked, blackouts }),
+  };
+}
+
+/** Wat er achter een wachtrij-regel staat over wanneer het aan de beurt is. */
+function planWanneer(q, t, lang) {
+  if (q.window_start && q.window_end) {
+    return `${shortDate(q.window_start, lang)} ${lang === 'nl' ? 'of' : 'or'} ${shortDate(q.window_end, lang)}`;
+  }
+  return t.planWhenAsap;
+}
+
+/** Het inplanscherm zelf. */
+function kalenderKaart(t, lang, kal) {
+  const terug = `/account/plan?tab=bestellen`;
+  if (kal.beelden === null) {
+    return `
+<div class="card">
+  <h3>${esc(t.planWhenH)}</h3>
+  <p class="lede">${esc(t.planWhenNoWeight)}</p>
+  <p><a class="btn btn-ghost btn-sm" href="${terug}">${esc(t.planWhenBack)}</a></p>
+</div>`;
+  }
+
+  const kopjes = (lang === 'nl'
+    ? ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo']
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+    .map((d) => `<div class="kal-kop">${esc(d)}</div>`).join('');
+
+  const etiket = { dicht: t.planWhenClosed, vroeg: t.planWhenEarly, vol: t.planWhenFull };
+  /* DE DAGEN DIE DIT ITEM AL VASTHOUDT. Zonder deze markering staat de klant voor
+     een kalender waarop niets te zien is van de keuze die hij al gemaakt heeft —
+     en dan is "wijzigen" niet te onderscheiden van "voor het eerst kiezen". */
+  const eigen = [kal.item.window_start, kal.item.window_end].filter(Boolean);
+  const cel = (d) => {
+    const nr = Number(d.iso.slice(8, 10));
+    const mijn = eigen.indexOf(d.iso);
+    const label = mijn === 0 ? t.planWhenDay1
+      : mijn === 1 ? t.planWhenDay2
+      : d.vandaag ? t.planWhenToday : (etiket[d.staat] || '');
+    const balk = `<span class="kal-vul"><i class="kal-vul-${Math.round(d.vul * 10)}"></i></span>`;
+    if (d.staat !== 'vrij') {
+      return `<div class="kal-dag is-${d.staat}${d.vandaag ? ' is-nu' : ''}${mijn >= 0 ? ' is-mijn' : ''}">
+        <span class="kal-n">${nr}</span><span class="kal-l">${esc(label)}</span>${balk}</div>`;
+    }
+    return `<button class="kal-dag is-vrij${d.vandaag ? ' is-nu' : ''}${mijn >= 0 ? ' is-mijn' : ''}" type="submit" name="dag" value="${esc(d.iso)}"
+      aria-label="${esc(datumKort(d.iso, lang))}">
+      <span class="kal-n">${nr}</span><span class="kal-l">${esc(label)}</span>${balk}</button>`;
+  };
+
+  const kanNiets = kal.dagen.every((d) => d.staat !== 'vrij');
+
+  return `
+<div class="card">
+  <p><a class="kal-terug" href="${terug}">&larr; ${esc(t.planWhenBack)}</a></p>
+  <h3>${esc(t.planWhenH)}</h3>
+  <p class="lede">${esc(kal.item.name)}${kal.item.note ? ` — ${esc(kal.item.note)}` : ''}</p>
+
+  <form method="post" action="/account/plan/queue" class="kal-asap">
+    <input type="hidden" name="do" value="asap"><input type="hidden" name="id" value="${kal.item.id}">
+    <button class="btn ${kal.item.window_start ? 'btn-ghost' : 'btn-primary'} btn-sm" type="submit">${esc(t.planWhenAsap)}</button>
+    <span class="meta">${esc(t.planWhenAsapSub)}</span>
+  </form>
+
+  ${kal.item.window_start
+    ? `<p class="kal-nu-paar">${esc(t.planWhenSet)} <strong>${esc(datumKort(kal.item.window_start, lang))}</strong> ${esc(lang === 'nl' ? 'of' : 'or')} <strong>${esc(datumKort(kal.item.window_end, lang))}</strong></p>`
+    : ''}
+  <p class="meta kal-lead">${esc(t.planWhenLead)} ${esc(t.planWhenFirst)} <strong>${esc(datumKort(kal.eerste, lang))}</strong>.</p>
+
+  <form method="post" action="/account/plan/queue">
+    <input type="hidden" name="do" value="plan"><input type="hidden" name="id" value="${kal.item.id}">
+    <div class="kal">${kopjes}${kal.dagen.map(cel).join('')}</div>
+  </form>
+
+  <p class="meta">${esc(t.planWhenBefore)}</p>
+  <p class="meta">${esc(t.planWhenOnlyLocked)}</p>
+  ${kanNiets ? `<p class="warnline">${esc(t.planWhenNone)}</p>` : ''}
+</div>`;
+}
+
+function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = [], fout = '', tab = 'maand', kal = null) {
   /* DE BOVENBALK. Zonder abonnement staat er geen chip en geen actie — er is
      niets te melden en de enige stap staat verderop in een kaart die het
      uitlegt. Mét abonnement is de chip de STATUS (loopt, wacht op je eerste
@@ -6431,6 +6782,16 @@ ${account}`;
    * niet meer als getal in de code: een plan geeft COMPLETE producten, dus er
    * komt geen aparte catalog- en lifestyle-balk bij tenzij een plan die soorten
    * ook echt los toekent.) */
+  /* Alleen een bundel die uitsluitend uit complete slots bestaat, mag beloven dat
+     elk product een carrousel krijgt. Zie de noot bij de regel zelf. */
+  /* GEEN ENKELE SOORT BIJ NAAM IN DIT BESTAND, en dat is een regel die
+     tests/subscription.test.mjs bewaakt sinds migratie 0035: een scherm dat
+     soorten kent, tekent het volgende plan half. PRODUCT_SLOT_KINDS zegt welke
+     soorten een product zijn (een clip is dat niet) en PLAN_SERVICE zegt wat een
+     pakket levert — allebei uit pricing.js, allebei al bestaand. */
+  const productSoorten = Object.keys(bundelVoor(state.sub)).filter((k) => PRODUCT_SLOT_KINDS.includes(k));
+  const elkProduct = productSoorten.length > 0 && productSoorten.every((k) => k === PLAN_SERVICE);
+
   const saldo = `
 <div class="card plan-saldo">
   <div class="dash-top">
@@ -6477,7 +6838,18 @@ ${account}`;
       </span>
     </div>
     ${slotRegels(t, lang, state)}
-    <p class="meta">${esc(t.planEachProduct)} &middot; ${esc(t.planExtraNote)}</p>
+    ${/* ── DEZE ZIN GELDT NIET VOOR ELKE BUNDEL — 1 september 2026 ────────────
+          "Elk product is een catalogset én een lifestyle-carrousel" is waar voor
+          de drie pakketten: die geven alleen `complete` slots. Sinds de maand op
+          maat kan een abonnement ook kale catalogslots hebben, en dan belooft
+          deze regel een carrousel bij producten die er geen krijgen — op het
+          scherm waar de klant kijkt wat hij deze maand tegoed heeft.
+
+          De regel eronder blijft wel staan: bijbestellen kan altijd, en juist bij
+          een zelf samengestelde maand is dat het antwoord op "ik wil er deze maand
+          eentje meer". Wat elk slot precies inhoudt, staat al per soort in de
+          regels hierboven (kindPer), dus er valt niets weg. */''}
+    <p class="meta">${elkProduct ? `${esc(t.planEachProduct)} &middot; ` : ''}${esc(t.planExtraNote)}</p>
   </div>
   ${state.betaald ? '' : `<p class="note">${esc(t.planUnpaid)}</p>`}
 </div>`;
@@ -6496,7 +6868,9 @@ ${account}`;
    * Bij één soort staat er geen keuze maar een verborgen veld. Een keuzelijst
    * met één optie is geen keuze — het is een handeling erbij die altijd
    * hetzelfde antwoord geeft. */
-  const soorten = Object.keys(slotsFor(state.plan));
+  /* bundelVoor() en niet slotsFor(): een maand op maat draagt zijn soorten op de
+     rij. Met slotsFor() zou dit dashboard voor die klanten leeg zijn. */
+  const soorten = Object.keys(bundelVoor(state.sub));
   const soortKeuze = soorten.length > 1
     ? `<label for="q-soort">${esc(t.planQueueKind)}</label>
     <select id="q-soort" name="kind">${soorten.map((k) => {
@@ -6542,6 +6916,10 @@ ${account}`;
         soorten.length > 1 ? ` · ${esc(kindLabel(q.kind, lang))}` : ''}</span>
     </div>
     <span class="q-merk${q.locked_at ? ' is-vast' : ''}">${esc(q.locked_at ? t.planQLocked : t.planQConcept)}</span>
+    ${/* WANNEER. Staat er bij elke regel, ook als het "zo snel mogelijk" is —
+          een lege plek zou lezen als "nog niet ingevuld", terwijl dat juist de
+          standaard en meestal het snelste antwoord is. */''}
+    <a class="q-wanneer${q.window_start ? ' is-vast' : ''}" href="/account/plan?tab=bestellen&amp;kies=${q.id}">${esc(planWanneer(q, t, lang))}</a>
     <div class="q-knoppen">
       ${/* VASTZETTEN OF LOSMAKEN — één knop, want het is één schakelaar met twee
             standen. Twee knoppen naast elkaar waarvan er altijd één zinloos is,
@@ -6804,7 +7182,11 @@ ${account}`;
   const panelen = {
     maand: `${saldo}
 ${week}`,
-    bestellen: lijst,
+    /* HET INPLANSCHERM VERVANGT DE LIJST EN STAAT ER NIET NAAST. Twee kalenders
+       onder elkaar zou kunnen — één per item — en dat is precies de pagina waarop
+       niemand meer ziet welke van de twee hij aan het invullen is. Eén item
+       tegelijk, met een weg terug bovenaan. */
+    bestellen: kal ? kalenderKaart(t, lang, kal) : lijst,
     edities: edities,
     look: vastgelegd,
     facturering: `${opgebouwd}
@@ -6989,7 +7371,7 @@ async function handlePlanQueue({ request, env }, customer) {
        Kent het plan de soort niet, dan valt hij terug op de eerste die het plan
        wél heeft. */
     const abo = await planState(env, customer.customer_id).catch(() => null);
-    const kanKiezen = Object.keys(slotsFor(abo?.plan));
+    const kanKiezen = Object.keys(bundelVoor(abo?.sub));
     const gevraagd = String(form?.get('kind') || '');
     const soort = kanKiezen.includes(gevraagd) ? gevraagd : (kanKiezen[0] || 'complete');
     const rij = await queueAdd(env, customer.customer_id, {
@@ -7007,6 +7389,58 @@ async function handlePlanQueue({ request, env }, customer) {
 
   if (doen === 'remove') {
     await queueRemove(env, customer.customer_id, id);
+    return seeOther(lijst);
+  }
+
+  /* ── WANNEER HET AAN DE BEURT IS — 31 augustus 2026 ────────────────────────
+   *
+   * Twee acties, en ze zijn elkaars tegendeel: 'asap' laat de dagen los, 'plan'
+   * legt er twee vast. Geen derde actie om ze te wissen — dat is 'asap', en een
+   * eigen knop ernaast zou de klant laten kiezen tussen twee manieren om
+   * hetzelfde te zeggen.
+   *
+   * HET PAAR WORDT HIER UITGEREKEND EN NIET AANGENOMEN. De klant post één dag;
+   * welke tweede dag daarbij hoort, bepaalt windowFor() tegen de agenda van dit
+   * moment. Zou de browser het paar meesturen, dan is het een waarde die de klant
+   * kan verzinnen — en de agenda is precies de plek waar dat niet mag. */
+  if (doen === 'asap') {
+    await queueAsap(env, customer.customer_id, id);
+    return seeOther(lijst);
+  }
+
+  if (doen === 'plan') {
+    const dag = String(form?.get('dag') || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dag)) return seeOther(`${lijst}&kies=${id}&fout=dag`);
+
+    const state = await planState(env, customer.customer_id).catch(() => null);
+    const item = (state?.wachtrij || []).find((q) => q.id === id);
+    if (!item) return seeOther(lijst);
+
+    const beelden = kindImages(item.kind, 1);
+    /* Een soort zonder gewicht kan geen dagen bezet houden — zie KIND_IMAGES in
+       pricing.js. Zwijgend terug naar de lijst zou lijken op een knop die niets
+       doet; dit stuurt terug naar het scherm dat het uitlegt. */
+    if (beelden === null) return seeOther(`${lijst}&kies=${id}&fout=weegt`);
+
+    const vandaag = new Date().toISOString().slice(0, 10);
+    let paar = [];
+    try {
+      const { blackouts, booked } = await readCalendar(env, vandaag);
+      /* DE AANLOOP WORDT HIER OPNIEUW GETOETST. Het scherm toonde die dagen al als
+         "te vroeg", maar een POST komt niet altijd van dat scherm — en een dag die
+         binnen de aanloop valt, is geen dag die de studio kan waarmaken. */
+      if (dag >= firstOfferableDay(vandaag, blackouts)) {
+        paar = windowFor(dag, beelden, booked, blackouts);
+      }
+    } catch {
+      /* De agenda is niet te lezen. Dan wordt er geen dag vastgelegd: een paar dat
+         gekozen is terwijl de bezetting onbekend was, is precies de dubbele boeking
+         waar src/lib/agenda.js tegen bestaat. */
+      return seeOther(`${lijst}&kies=${id}&fout=agenda`);
+    }
+    if (paar.length !== WINDOW_DAYS) return seeOther(`${lijst}&kies=${id}&fout=vol`);
+
+    await queueWindow(env, customer.customer_id, id, paar[0], paar[paar.length - 1]);
     return seeOther(lijst);
   }
 
@@ -8759,6 +9193,23 @@ async function handleEmailConfirm(context, token) {
       /* DE OPENSTAANDE INLOGLINKS VERVALLEN. Ze zijn aan de klant gehangen en niet
          aan het adres, dus ze zouden blijven werken — en een link die naar het oude
          postvak is gestuurd, hoort na een adreswijziging niets meer te openen. */
+      /* ── EN DE SESSIES BLIJVEN HIER STAAN, NA HET OVERWOGEN TE HEBBEN ────
+       *
+       * 31 augustus 2026: bij een beveiligingsronde stond dit als gat genoteerd —
+       * "een e-mailwissel hoort elke sessie te doden" is de gewone regel, en
+       * handleEmailUndo() hieronder doet het ook. Ik heb het ingebouwd en weer
+       * teruggehaald, want het sluit niets.
+       *
+       * DE AANVAL DIE HET ZOU MOETEN STOPPEN. Iemand met een gestolen koekje zet
+       * het adres op zijn eigen postvak en bevestigt daaruit. Zou hier elke sessie
+       * sneuvelen, dan valt ook hij eruit — en logt hij een seconde later weer in
+       * op het adres dat nu van hem is. De maatregel kost de eerlijke klant een
+       * uitlogbeurt midden in zijn eigen handeling en kost de aanvaller niets.
+       *
+       * WAT HET WÉL TEGENHOUDT staat één functie verderop en is er al: de
+       * terugzetlink ligt in het OUDE postvak, dat de aanvaller niet kan legen, en
+       * die link zet het adres terug én gooit iedereen eruit. Dat is het slot, en
+       * dit was een tweede grendel op een deur die er niet is. */
       env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(row.customer_id),
     ]);
   } catch (err) {

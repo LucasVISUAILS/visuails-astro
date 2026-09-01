@@ -3456,3 +3456,85 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line);
 }
 .q-merk.is-vast { color: var(--accent-2); box-shadow: inset 0 0 0 1px var(--accent-rand); }
+
+/* ── HET INPLANSCHERM ──────────────────────────────────────────────────────
+   Twee dagen aanwijzen, of zo snel mogelijk. Zie de kop van kalenderKaart() in
+   src/lib/account.js voor waarom dit een formulier is en geen widget: dit
+   dashboard draait geen JavaScript, dus elke aanwijsbare dag is een submit-knop.
+
+   GEEN INLINE STIJL, OOK NIET VOOR DE VULBALK. style-src is 'self', dus een
+   style="width:64%" wordt stil weggegooid. De bezetting komt daarom in elf
+   stappen als klasse binnen — grof genoeg om te lezen, fijn genoeg om te zien
+   of een dag bijna vol is. */
+.q-wanneer {
+  align-self: center; white-space: nowrap; font-size: .78rem;
+  color: var(--ink-3); text-decoration: underline; text-underline-offset: 2px;
+}
+.q-wanneer.is-vast { color: var(--ink-2); }
+
+.kal-terug { font-size: .82rem; }
+.kal-asap { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; margin: .8rem 0 0; }
+.kal-asap .meta { margin: 0; flex: 1 1 18rem; }
+.kal-lead { margin: 1rem 0 .5rem; }
+
+.kal {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px; background: var(--line); border: 1px solid var(--line); margin: .2rem 0 1rem;
+}
+.kal-kop {
+  background: var(--paper-lift); padding: .4rem .3rem; text-align: center;
+  font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.kal-dag {
+  background: var(--paper-2); border: 0; margin: 0; font: inherit; color: inherit;
+  text-align: left; padding: .45rem .5rem; min-height: 4rem;
+  display: flex; flex-direction: column; gap: .15rem; width: 100%;
+}
+.kal-n { font-size: .95rem; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; line-height: 1; }
+.kal-l { font-size: .62rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); line-height: 1.2; }
+
+.kal-dag.is-vrij { cursor: pointer; }
+.kal-dag.is-vrij:hover { background: var(--paper-lift); }
+.kal-dag.is-vrij:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: -2px; }
+/* Een dag die niet kan, is stiller — en zegt in het etiket waarom. */
+.kal-dag.is-vroeg, .kal-dag.is-vol, .kal-dag.is-dicht { background: var(--paper); }
+.kal-dag.is-vroeg .kal-n, .kal-dag.is-vol .kal-n, .kal-dag.is-dicht .kal-n { color: var(--ink-3); }
+.kal-dag.is-nu { box-shadow: inset 2px 0 0 var(--ink-3); }
+
+.kal-vul { margin-top: auto; display: block; height: 3px; background: var(--line); }
+.kal-vul i { display: block; height: 100%; background: var(--line-strong); }
+.kal-vul-0  { width: 0; }
+.kal-vul-1  { width: 10%; }
+.kal-vul-2  { width: 20%; }
+.kal-vul-3  { width: 30%; }
+.kal-vul-4  { width: 40%; }
+.kal-vul-5  { width: 50%; }
+.kal-vul-6  { width: 60%; }
+.kal-vul-7  { width: 70%; }
+.kal-vul-8  { width: 80%; }
+.kal-vul-9  { width: 90%; }
+.kal-vul-10 { width: 100%; }
+
+/* Een melding die om aandacht vraagt zonder een fout te zijn. Dezelfde kleur en
+   dezelfde rol als .warnline in admin.css. */
+.warnline {
+  border: 1px solid var(--warn-ink); color: var(--warn-ink);
+  padding: .6rem .8rem; margin: .8rem 0 0; font-size: .88rem;
+}
+
+@media (max-width: 560px) {
+  .kal-dag { min-height: 3.4rem; padding: .35rem .3rem; }
+  .kal-n { font-size: .85rem; }
+  .kal-l { font-size: .55rem; }
+  .q-wanneer { align-self: flex-start; }
+}
+/* De twee dagen die dit item nu vasthoudt. Dit is het ENE ding op dit scherm dat
+   kleur verdient: alles eromheen is een keuze die je kunt maken, dit is de keuze
+   die er al ligt. */
+.kal-dag.is-mijn { background: var(--accent-bright); }
+.kal-dag.is-mijn .kal-n, .kal-dag.is-mijn .kal-l { color: var(--paper); }
+.kal-dag.is-mijn .kal-l { font-weight: 700; }
+.kal-dag.is-mijn .kal-vul { background: rgb(0 0 0 / 0.20); }
+.kal-dag.is-mijn .kal-vul i { background: rgb(0 0 0 / 0.45); }
+.kal-nu-paar { margin: .9rem 0 0; font-size: .92rem; }

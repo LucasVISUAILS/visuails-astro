@@ -155,6 +155,10 @@ function json(body, status = 200, headers = {}) {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
+      /* nosniff: dit is JSON en mag door geen enkele browser voor iets anders
+         worden aangezien. api/upload.js en api/order.js zetten hem al; deze twee
+         waren de uitzondering. */
+      'x-content-type-options': 'nosniff',
       // Zie het blok over de cache bovenaan: dit eindpunt bestaat om binnen zes
       // seconden van antwoord te kunnen veranderen.
       'cache-control': 'no-store',

@@ -36,13 +36,13 @@
 // since two people can be looking at the same last window at the same instant.
 // Nothing here is a reservation. The reservation is orders.window_start.
 
+import { readCalendar } from '../../src/lib/agenda.js';
+import { kindImages } from '../../src/data/pricing.js';
 import {
+  MAX_PRODUCTS_ANY_SERVICE,
   ATTENDED_PER_WINDOW,
-  HORIZON_DAYS,
   QUEUE_DAYS_MAX,
   QUEUE_DAYS_MIN,
-  addDays,
-  bookedFromRows,
   clearedWindows,
 } from '../../src/data/capacity.js';
 
@@ -51,8 +51,36 @@ const QUEUE = { minDays: QUEUE_DAYS_MIN, maxDays: QUEUE_DAYS_MAX, committed: fal
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
-  const products = Number.parseInt(url.searchParams.get('products') ?? '', 10);
+  /* ── DE CACHESLEUTEL MOET BEGRENSD ZIJN — 31 augustus 2026 ────────────────
+   *
+   * De noot bovenaan zegt dat er geen snelheidsbegrenzer nodig is omdat een
+   * cache van zestig seconden de belasting wegneemt. Dat klopt alleen als het
+   * AANTAL VERSCHILLENDE ANTWOORDEN begrensd is, en dat was het niet: de
+   * cachesleutel is de hele URL, en `products` was elk geheel getal en `service`
+   * elke tekenreeks. Een lus met een oplopende `products` mist de rand-cache dus
+   * elke keer en komt met drie query's zonder LIMIT bij D1 uit — dezelfde D1
+   * waar de studio op draait, en het bezwijken ervan is een 503 op precies het
+   * endpoint dat leverdata maakt.
+   *
+   * Nu wordt allebei genormaliseerd vóórdat er iets mee gebeurt. Een aantal
+   * buiten bereik wordt geknipt en een onbekende dienst valt terug op 'complete',
+   * dus er zijn nog hooguit een paar honderd verschillende antwoorden en de cache
+   * doet wat de noot belooft. Knippen en niet weigeren: het antwoord op een te
+   * groot aantal is 'too-large' met een uitleg, en dat is een echt antwoord dat
+   * /start toont — een 400 zou daar een lege pagina van maken. */
+  const gevraagd = Number.parseInt(url.searchParams.get('products') ?? '', 10);
+  const products = Number.isInteger(gevraagd)
+    ? Math.min(Math.max(gevraagd, 1), MAX_PRODUCTS_ANY_SERVICE + 1)
+    : gevraagd;
   const tier = url.searchParams.get('tier') === 'attended' ? 'attended' : 'unattended';
+  /* WELKE DIENST, WANT HET PLAFOND HANGT ERVAN AF — 31 augustus 2026.
+     De agenda rekent in beelden, dus dertig catalogsets (120) passen in een
+     venster waar dertig complete producten (210) precies in gaan en eenendertig
+     niet meer. Ontbreekt de parameter, dan is het antwoord 'complete': het
+     zwaarste gewicht, en precies wat deze poort vóór vandaag voor elke order
+     aannam. Een oude aanroeper krijgt daarmee exact het antwoord van gisteren. */
+  const gevraagdeDienst = url.searchParams.get('service') || 'complete';
+  const service = kindImages(gevraagdeDienst, 1) === null ? 'complete' : gevraagdeDienst;
   const today = todayUTC();
 
   // Tier 0 does not use the gate at all. It is not "cleared for nothing" and it
@@ -65,6 +93,7 @@ export async function onRequestGet({ request, env }) {
       tier,
       products: Number.isInteger(products) ? products : null,
       reason: 'queue',
+      service,
       max: ATTENDED_PER_WINDOW,
       windows: [],
       queue: QUEUE,
@@ -85,6 +114,7 @@ export async function onRequestGet({ request, env }) {
         tier,
         products: Number.isInteger(products) ? products : null,
         reason: 'unavailable',
+        service,
         max: ATTENDED_PER_WINDOW,
         windows: [],
         queue: QUEUE,
@@ -94,86 +124,26 @@ export async function onRequestGet({ request, env }) {
     );
   }
 
-  const gate = clearedWindows({ today, products, booked, blackouts });
+  const gate = clearedWindows({ today, products, service, booked, blackouts });
 
   return json({
     ok: true,
     today,
     tier,
     products: Number.isInteger(products) ? products : null,
-    // 'ok' | 'full' | 'too-large' | 'invalid' — three of these are empty results
-    // that mean different things, and /start must not flatten them into one
-    // apology. See clearedWindows() in src/data/capacity.js.
+    service,
+    // 'ok' | 'full' | 'too-large' | 'invalid' | 'unweighed' — four of these are
+    // empty results that mean different things, and /start must not flatten them
+    // into one apology. See clearedWindows() in src/data/capacity.js.
     reason: gate.reason,
     max: gate.max,
+    maxImages: gate.maxImages,
     windows: gate.windows.map((w) => ({ start: w.start, end: w.end })),
     queue: QUEUE,
   });
 }
 
-/**
- * The two facts the gate needs, and nothing else.
- *
- * Throws on any D1 problem — including a missing binding — because the caller
- * must be able to tell "the calendar is empty" from "I could not see the
- * calendar". Returning {} for both would make those identical.
- */
-async function readCalendar(env, today) {
-  if (!env || !env.DB) throw new Error('capacity: no DB binding');
 
-  // A window that starts just inside the horizon still runs past it, and a
-  // blackout on its second day matters, so the blackout read runs long.
-  const horizonEnd = addDays(today, HORIZON_DAYS + 14);
-
-  const [blackoutRows, orderRows] = await Promise.all([
-    env.DB.prepare('SELECT day FROM blackout_days WHERE day >= ?1 AND day <= ?2')
-      .bind(today, horizonEnd)
-      .all(),
-    /*
-     * Live attended reservations only. COALESCE covers rows written before
-     * window_end existed; cancelled orders release their days immediately.
-     *
-     * ── EN EEN VERLOPEN ONBETAALDE RESERVERING TELT NIET MEER MEE ────────────
-     * 9 augustus 2026.
-     *
-     * functions/api/order.js:761 zet bij een gereserveerde bestelling een
-     * `window_expires_at` op zeven dagen — de tijd die de klant krijgt om te
-     * betalen. Deze query las die kolom niet. Wie een week reserveerde en nooit
-     * betaalde, blokkeerde die week dus VOOR ALTIJD voor iedereen daarna: jij zag
-     * in het adminportaal een onbetaalde bestelling staan, de volgende klant zag
-     * "vol" voor een week die leeg was, en herstellen kon alleen met SQL met de
-     * hand.
-     *
-     * De nachtelijke taak (cron/index.js) geeft zulke reserveringen vrij door de
-     * kolommen leeg te maken, maar die draait één keer per etmaal. Deze twee
-     * regels sluiten dat gat: zodra de zeven dagen om zijn, is de week hier al
-     * open, ook als de taak vannacht niet gelopen heeft. De taak ruimt op, deze
-     * query beslist — dat is de goede kant om dit dubbel te doen.
-     *
-     * ALLEEN ALS ER NIET BETAALD IS. Een betaalde bestelling houdt haar week,
-     * ook als `window_expires_at` in het verleden ligt: die datum is een
-     * betaaltermijn en geen einddatum van de reservering.
-     */
-    env.DB.prepare(
-      `SELECT window_start, window_end, product_count
-         FROM orders
-        WHERE tier = 'attended'
-          AND window_start IS NOT NULL
-          AND status <> 'cancelled'
-          AND COALESCE(window_end, window_start) >= ?1
-          AND NOT (
-                COALESCE(payment_status, 'unpaid') = 'unpaid'
-            AND window_expires_at IS NOT NULL
-            AND window_expires_at <= datetime('now')
-          )`
-    )
-      .bind(today)
-      .all(),
-  ]);
-
-  const blackouts = new Set((blackoutRows.results || []).map((r) => r.day));
-  return { blackouts, booked: bookedFromRows(orderRows.results || [], blackouts) };
-}
 
 /**
  * Today, as the studio's calendar sees it.
@@ -196,6 +166,10 @@ function json(body, status = 200, headers = {}) {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
+      /* nosniff: dit is JSON en mag door geen enkele browser voor iets anders
+         worden aangezien. api/upload.js en api/order.js zetten hem al; deze twee
+         waren de uitzondering. */
+      'x-content-type-options': 'nosniff',
       // See the caching note at the top of this file — this is the rate limiter.
       'cache-control': 'public, max-age=60',
       ...headers,
