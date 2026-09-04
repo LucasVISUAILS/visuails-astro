@@ -23,9 +23,18 @@
 > door `tests/nav.test.mjs` vastgezet — inclusief de eis dat het woord "stock"
 > alleen ontkend mag vallen en nooit in de naam, de omschrijving of de knop.
 >
-> **Wat nog open staat, staat hieronder in §5** en is niet aangekondigd: de
-> licentie na opzegging, wat er met de gezichten gebeurt, de herkomstmarkering
-> en bij welk plan het hoort.
+> > ⚠ **GEZICHTEN ZIJN ER OP 20 AUGUSTUS 2026 UITGEHAALD.** De regel hierboven
+> > zegt "op jouw kleurenschema, ondergrond en gezichten", en die derde klopt
+> > niet meer. Lucas: het kiezen van modellen per set maakt het controlewerk zo
+> > groot dat de prijs fors omhoog zou moeten, en juist die prijs wil hij laag
+> > houden. De belofte staat sindsdien in `src/data/pricing.js` zonder gezichten
+> > — zie de noot bij `STOCK_ON_BRAND` — en op de site is het nooit anders
+> > gezegd. Dit statusblok liep dertien dagen achter; rechtgezet op 2 september
+> > 2026, tegelijk met de bouw van /editions.
+>
+> **Wat nog open stond, staat hieronder in §5.** Drie van de vier zijn op
+> 2 september 2026 beslist en die staan doorgestreept; wat er nog ligt is het
+> capaciteitsgetal voor een on-brand set.
 
 Lucas, 17 augustus 2026: *"exclusive subscription stock fotos die elke maand
 toegevoegd worden, het zijn off-brand fotos die klanten zelf kunnen kiezen om te
@@ -118,6 +127,39 @@ meer wat ik moet posten"* — dan welke prijsprikkel dan ook. Een klant zonder
 nieuwe collectie heeft dan nog steeds een reden dat het abonnement er is.
 
 ## 5 · Wat er beslist moet zijn vóór de eerste drop
+
+> **DRIE VAN DE VIER ZIJN BESLIST — 2 september 2026.** Ze staan hieronder
+> onveranderd, want de afweging is nog steeds waarom het besluit is wat het is.
+> Wat er per punt uit gekomen is:
+>
+> · **De licentie.** Beslist zoals hieronder voorgesteld: wat je tijdens je
+>   abonnement hebt gedownload, blijft van jou. Er is nu een TWEEDE
+>   licentietekst voor gedeeld beeld (`gedeeldeLicentie()` in
+>   `src/lib/scaffold.js`) en een eigen alinea in voorwaarden §8. Dat was geen
+>   luxe: de bestaande tekst gaf op élke levering een EXCLUSIEVE licentie, en
+>   §8 verbood met zoveel woorden dat wij geleverd beeld aan iemand anders
+>   licentiëren. Twintig abonnees met een exclusieve licentie op dezelfde twintig
+>   beelden is een tegenstrijdigheid waar elk van de twintig ons op kon
+>   aanspreken.
+>
+> · **De gezichten.** Vervallen op 20 augustus — er komen er geen in. Zie het
+>   statusblok bovenaan.
+>
+> · **De herkomstmarkering.** Beslist: merkneutraal beeld zonder product draagt
+>   `trainedAlgorithmicMedia` ("door een model gemaakt") en niet de
+>   `compositeWithTrainedAlgorithmicMedia` die een gewone levering draagt. Dat
+>   verschil staat nu ook op /ai-act §6, die tot vandaag de zwakkere waarde voor
+>   ÉLK bestand beloofde.
+>
+> · **Bij welk plan het hoort.** Beslist: off-brand bij alle drie, on-brand als
+>   betaalde add-on bovenop elk plan — € 149 per maand na een eenmalige opzet
+>   van € 295 (`AMOUNT.editions`). `ADVISORY` bestaat niet meer.
+>
+> **Wat er nog ligt:** het capaciteitsgetal. `KIND_IMAGES` heeft geen regel voor
+> een on-brand set, en zonder gewicht kan de agenda er niet mee rekenen. Dat is
+> te meten en niet te verzinnen, en het is de reden dat /editions vandaag geen
+> bestelknop heeft.
+
 
 **De licentie, en dan met name na opzegging.** Death to Stock eist dat je stopt met
 gebruiken, met één uitzondering: wat al op social staat mag blijven staan mét

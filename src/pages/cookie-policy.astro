@@ -28,6 +28,9 @@ import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, cookieDuur } from '../data
 // niet meer mee, met dezelfde reden en een grendel erbij zodat er niet stilletjes
 // een tweede admincookie bij kan komen.
 import Layout from '../layouts/Layout.astro';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../data/juridischeDatums.js';
 ---
 
 <Layout
@@ -36,37 +39,56 @@ import Layout from '../layouts/Layout.astro';
 >
   <section class="page-hero"><div class="container narrow">
     <span class="eyebrow-page">Legal</span>
-    <h1 class="display" style="font-size:var(--t-page-h1)">Cookie Policy</h1>
-    <p style="margin-top:.8rem;color:var(--ink-3)">Last updated: August 2026</p>
+    <h1 class="display">Cookie Policy</h1>
+    {/* ── DE LEAD ONTBRAK — 3 september 2026 ────────────────────────────────
+        De vier andere juridische documenten (/terms, /privacy, /ai-act en de
+        verwerkersovereenkomst) hebben alle vier dezelfde kop: rubriek, titel, één
+        zin die zegt waar het document over gaat, dan de datum. Deze pagina sprong
+        van de titel naar de datum. Dat is niet alleen een gat in het ritme — het
+        is de enige regel waaraan je ziet of je op de goede pagina bent beland. */}
+    <p class="lead" style="margin-top:1.2rem">Which cookies this site sets, what each one does, and how to change your answer. There are five in total, and every one of them is named below.</p>
+    <p class="legal-meta">{bijgewerktOp('cookie-policy', 'en')}</p>
   </div></section>
 
-  <section class="section-tight"><div class="container narrow legal stack-lg">
-    <div><h2>What cookies are</h2><p style="margin-top:.6rem">Cookies are small text files a website can store on your device. They’re commonly used to make sites work, remember preferences, and measure how a site is used.</p></div>
-    <div><h2>How we use them</h2><p style="margin-top:.6rem">The VISUAILS website is largely static. By default we only use <strong>essential</strong> cookies needed for the site to function and to remember your privacy choices. We do not load advertising or tracking cookies without your consent.</p>
-    <ul class="checklist" style="margin-top:1rem">
+  <section class="section-tight">  {/* ── DEZE PAGINA WAS ANDERS GEBOUWD DAN DE ANDERE VIER — 3 sept 2026 ──────
+      Hier stond elke paragraaf in een eigen <div>, met `stack-lg` op de wikkel en
+      acht losse `style="margin-top:…"`-attributen erin. Dat gaf een ritme dat op
+      geen van de andere juridische pagina's voorkomt: koppen kwamen dichter op hun
+      tekst te staan (9,6px waar de rest 14,4px heeft) en de afstand tussen de
+      onderdelen kwam uit een tweede systeem.
+
+      Nu plat, net als /terms, /privacy en de verwerkersovereenkomst: kop, tekst,
+      lijst, kop. Het ritme komt uit `.legal` in global.css en uit niets anders.
+      Elke `margin-top` die hier met de hand stond, is er een die op de dag dat
+      `.legal` verandert niet meeverandert. */}
+  <div class="container narrow legal">
+    <h2>What cookies are</h2><p>Cookies are small text files a website can store on your device. They’re commonly used to make sites work, remember preferences, and measure how a site is used.</p>
+    <h2>How we use them</h2><p>The VISUAILS website is largely static. By default we only use <strong>essential</strong> cookies needed for the site to function and to remember your privacy choices. We do not load advertising or tracking cookies without your consent.</p>
+    <ul class="checklist">
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Essential</strong> — basic functionality and security. Always on.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Analytics</strong> — anonymous usage measurement. Only with your consent.</span></li>
-    </ul></div>
-    <div><h2>What we actually set today</h2><p style="margin-top:.6rem">Naming them is more useful than describing categories, so here they are in full. This is the complete list.</p>
-    <ul class="checklist" style="margin-top:1rem">
+    </ul>
+    <h2>What we actually set today</h2><p>Naming them is more useful than describing categories, so here they are in full. This is the complete list.</p>
+    <ul class="checklist">
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_account</code></strong> — keeps you signed in to VISUAILS Studio after you click the sign-in link in your email. Essential. Expires after {cookieDuur(SESSION_COOKIE_DAYS)}, or when you sign out.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — remembers the choice you made in the cookie banner, so we stop asking. Essential, and the reason a refusal sticks. Expires after {cookieDuur(PREFERENCE_COOKIE_DAYS)}, when we ask again.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_lang</code></strong> — remembers whether you read VISUAILS Studio in Dutch or English, set only when you use the language switch there. Essential. Expires after {cookieDuur(PREFERENCE_COOKIE_DAYS)}.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_nav</code></strong> — remembers whether you collapsed the menu in VISUAILS Studio, set only when you click that button. Essential. Expires after {cookieDuur(PREFERENCE_COOKIE_DAYS)}.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_thema</code></strong> — remembers whether you chose the light or the dark screen in VISUAILS Studio, set only when you use that switch. Essential. Expires after {cookieDuur(PREFERENCE_COOKIE_DAYS)}.</span></li>
     </ul>
-    <p style="margin-top:1rem">That is all five. No advertising cookies, no tracking pixels, no third-party embeds, and no analytics unless you switch it on — at which point it is Cloudflare Web Analytics, which is itself cookieless and sets nothing on your device. We share nothing with anyone.</p></div>
-    <div><h2>Managing cookies</h2><p style="margin-top:.6rem">Use the <button type="button" class="legal-cc" data-cc-reopen>cookie preferences</button> link — it is in the footer of every page — to change your answer at any time, including withdrawing a yes. Refusing is exactly as easy as accepting and costs you nothing: the site works identically either way. You can also clear or block cookies in your browser settings, though blocking the essential ones will stop the client portal remembering you.</p></div>
-    <div><h2>Contact</h2><p style="margin-top:.6rem">Questions about this policy? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a>. See also our <a href="/privacy/">Privacy Policy</a>.</p></div>
+    <p>That is all five. No advertising cookies, no tracking pixels, no third-party embeds, and no analytics unless you switch it on — at which point it is Cloudflare Web Analytics, which is itself cookieless and sets nothing on your device. We share nothing with anyone.</p>
+    <h2>Managing cookies</h2><p>Use the <button type="button" class="legal-cc" data-cc-reopen>cookie preferences</button> link — it is in the footer of every page — to change your answer at any time, including withdrawing a yes. Refusing is exactly as easy as accepting and costs you nothing: the site works identically either way. You can also clear or block cookies in your browser settings, though blocking the essential ones will stop the client portal remembering you.</p>
+    <h2>Contact</h2><p>Questions about this policy? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a>. See also our <a href="/privacy/">Privacy Policy</a>.</p>
   </div></section>
 </Layout>
 
 <style>
-  /* `.legal` en `.stack-lg` staan sinds 24 augustus 2026 één keer in
-     src/styles/global.css. Deze pagina had bovendien een eigen kopmaat (1,3rem
-     tegen 1,5rem elders) en een eigen kolombreedte; allebei weg, want dit is
-     dezelfde soort pagina als /terms en /privacy en hoort er ook zo uit te zien.
-     Wat hier blijft staan is het enige wat écht alleen hier bestaat. */
+  /* `.legal` staat sinds 3 september 2026 één keer in src/styles/global.css — zie
+     de noot daar; op 24 augustus is dat wel opgeschreven maar niet gedaan. Deze
+     pagina had bovendien een eigen kopmaat (1,3rem tegen 1,5rem elders), een eigen
+     kolombreedte en een `stack-lg`-wikkel met acht losse marges; allemaal weg, want
+     dit is dezelfde soort pagina als /terms en /privacy en hoort er ook zo uit te
+     zien. Wat hier blijft staan is het enige wat écht alleen hier bestaat. */
   /* The withdrawal control inside body copy. It is a <button> because it opens
      a panel, and it is styled as the link beside it because a button that
      looks like a button in the middle of a sentence reads as an advert. */

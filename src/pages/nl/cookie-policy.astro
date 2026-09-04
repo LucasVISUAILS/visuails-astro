@@ -9,6 +9,9 @@ import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, cookieDuur } from '../../d
 // terechtkomt, en die regel zei zelf al dat dat hier nooit gebeurt. Het enige wat
 // hij de bezoeker vertelde, is dat er een adminkant is en hoe het cookie heet.
 import Layout from '../../layouts/Layout.astro';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../../data/juridischeDatums.js';
 ---
 
 <Layout
@@ -17,8 +20,15 @@ import Layout from '../../layouts/Layout.astro';
 >
   <section class="page-hero"><div class="container narrow">
     <span class="eyebrow-page">Juridisch</span>
-    <h1 class="display" style="font-size:var(--t-page-h1)">Cookiebeleid</h1>
-    <p style="margin-top:.8rem;color:var(--ink-3)">Laatst bijgewerkt: augustus 2026</p>
+    <h1 class="display">Cookiebeleid</h1>
+    {/* ── DE LEAD ONTBRAK — 3 september 2026 ────────────────────────────────
+        De vier andere juridische documenten (/terms, /privacy, /ai-act en de
+        verwerkersovereenkomst) hebben alle vier dezelfde kop: rubriek, titel, één
+        zin die zegt waar het document over gaat, dan de datum. Deze pagina sprong
+        van de titel naar de datum. Dat is niet alleen een gat in het ritme — het
+        is de enige regel waaraan je ziet of je op de goede pagina bent beland. */}
+    <p class="lead" style="margin-top:1.2rem">Welke cookies deze site plaatst, wat elk ervan doet, en hoe je je antwoord verandert. Het zijn er vijf, en ze staan hieronder allemaal bij naam.</p>
+    <p class="legal-meta">{bijgewerktOp('cookie-policy', 'nl')}</p>
     {/* ── DE SJABLOONNOOT IS HIER OOK WEG — 24 augustus 2026 ────────────────
 
         Hier stond: "Dit is een algemeen sjabloon — laat het beoordelen door een
@@ -39,33 +49,45 @@ import Layout from '../../layouts/Layout.astro';
         is daar geen bescheidenheid maar een bekentenis. */}
   </div></section>
 
-  <section class="section-tight"><div class="container narrow legal stack-lg">
-    <div><h2>Wat cookies zijn</h2><p style="margin-top:.6rem">Cookies zijn kleine tekstbestanden die een website op je apparaat kan opslaan. Ze worden vaak gebruikt om sites te laten werken, voorkeuren te onthouden en te meten hoe een site wordt gebruikt.</p></div>
-    <div><h2>Hoe we ze gebruiken</h2><p style="margin-top:.6rem">De VISUAILS-website is grotendeels statisch. Standaard gebruiken we alleen <strong>essentiële</strong> cookies die nodig zijn om de site te laten functioneren en om je privacykeuzes te onthouden. We laden geen advertentie- of trackingcookies zonder je toestemming.</p>
-    <ul class="checklist" style="margin-top:1rem">
+  <section class="section-tight">  {/* ── DEZE PAGINA WAS ANDERS GEBOUWD DAN DE ANDERE VIER — 3 sept 2026 ──────
+      Hier stond elke paragraaf in een eigen <div>, met `stack-lg` op de wikkel en
+      acht losse `style="margin-top:…"`-attributen erin. Dat gaf een ritme dat op
+      geen van de andere juridische pagina's voorkomt: koppen kwamen dichter op hun
+      tekst te staan (9,6px waar de rest 14,4px heeft) en de afstand tussen de
+      onderdelen kwam uit een tweede systeem.
+
+      Nu plat, net als /terms, /privacy en de verwerkersovereenkomst: kop, tekst,
+      lijst, kop. Het ritme komt uit `.legal` in global.css en uit niets anders.
+      Elke `margin-top` die hier met de hand stond, is er een die op de dag dat
+      `.legal` verandert niet meeverandert. */}
+  <div class="container narrow legal">
+    <h2>Wat cookies zijn</h2><p>Cookies zijn kleine tekstbestanden die een website op je apparaat kan opslaan. Ze worden vaak gebruikt om sites te laten werken, voorkeuren te onthouden en te meten hoe een site wordt gebruikt.</p>
+    <h2>Hoe we ze gebruiken</h2><p>De VISUAILS-website is grotendeels statisch. Standaard gebruiken we alleen <strong>essentiële</strong> cookies die nodig zijn om de site te laten functioneren en om je privacykeuzes te onthouden. We laden geen advertentie- of trackingcookies zonder je toestemming.</p>
+    <ul class="checklist">
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Essentieel</strong> — basisfunctionaliteit en beveiliging. Altijd aan.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Analytics</strong> — anonieme gebruiksmeting. Alleen met jouw toestemming.</span></li>
-    </ul></div>
-    <div><h2>Wat we vandaag daadwerkelijk plaatsen</h2><p style="margin-top:.6rem">Ze bij naam noemen zegt meer dan categorieën beschrijven, dus hier staan ze voluit. Dit is de volledige lijst.</p>
-    <ul class="checklist" style="margin-top:1rem">
+    </ul>
+    <h2>Wat we vandaag daadwerkelijk plaatsen</h2><p>Ze bij naam noemen zegt meer dan categorieën beschrijven, dus hier staan ze voluit. Dit is de volledige lijst.</p>
+    <ul class="checklist">
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_account</code></strong> — houdt je ingelogd in VISUAILS Studio nadat je op de inloglink in je mail hebt geklikt. Noodzakelijk. Verloopt na {cookieDuur(SESSION_COOKIE_DAYS, 'nl')}, of wanneer je uitlogt.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — onthoudt je keuze uit de cookiebanner, zodat we ophouden met vragen. Noodzakelijk, en de reden dat een weigering blijft staan. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}, waarna we het opnieuw vragen.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_lang</code></strong> — onthoudt of je VISUAILS Studio in het Nederlands of het Engels leest, en wordt alleen gezet als je daar de taalschakelaar gebruikt. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_nav</code></strong> — onthoudt of je het menu in VISUAILS Studio hebt ingeklapt, en wordt alleen gezet als je op die knop klikt. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_thema</code></strong> — onthoudt of je in VISUAILS Studio het lichte of het donkere scherm hebt gekozen, en wordt alleen gezet als je die schakelaar gebruikt. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
     </ul>
-    <p style="margin-top:1rem">Dat zijn ze alle vijf. Geen advertentiecookies, geen trackingpixels, geen embeds van derden, en geen analytics tenzij jij die aanzet — en dan is het Cloudflare Web Analytics, dat zelf cookieloos is en niets op je apparaat plaatst. We delen met niemand iets.</p></div>
-    <div><h2>Cookies beheren</h2><p style="margin-top:.6rem">Gebruik de link <button type="button" class="legal-cc" data-cc-reopen>cookievoorkeuren</button> — die staat in de voettekst van elke pagina — om je antwoord op elk moment te wijzigen, inclusief het intrekken van een ja. Weigeren is precies zo makkelijk als accepteren en kost je niets: de site werkt in beide gevallen identiek. Je kunt cookies ook wissen of blokkeren in je browserinstellingen, al zorgt het blokkeren van de noodzakelijke ervoor dat het klantenportaal je niet meer onthoudt.</p></div>
-    <div><h2>Contact</h2><p style="margin-top:.6rem">Vragen over dit beleid? Mail <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Zie ook ons <a href="/nl/privacy/">Privacybeleid</a>.</p></div>
+    <p>Dat zijn ze alle vijf. Geen advertentiecookies, geen trackingpixels, geen embeds van derden, en geen analytics tenzij jij die aanzet — en dan is het Cloudflare Web Analytics, dat zelf cookieloos is en niets op je apparaat plaatst. We delen met niemand iets.</p>
+    <h2>Cookies beheren</h2><p>Gebruik de link <button type="button" class="legal-cc" data-cc-reopen>cookievoorkeuren</button> — die staat in de voettekst van elke pagina — om je antwoord op elk moment te wijzigen, inclusief het intrekken van een ja. Weigeren is precies zo makkelijk als accepteren en kost je niets: de site werkt in beide gevallen identiek. Je kunt cookies ook wissen of blokkeren in je browserinstellingen, al zorgt het blokkeren van de noodzakelijke ervoor dat het klantenportaal je niet meer onthoudt.</p>
+    <h2>Contact</h2><p>Vragen over dit beleid? Mail <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Zie ook ons <a href="/nl/privacy/">Privacybeleid</a>.</p>
   </div></section>
 </Layout>
 
 <style>
-  /* `.legal` en `.stack-lg` staan sinds 24 augustus 2026 één keer in
-     src/styles/global.css. Deze pagina had bovendien een eigen kopmaat (1,3rem
-     tegen 1,5rem elders) en een eigen kolombreedte; allebei weg, want dit is
-     dezelfde soort pagina als /terms en /privacy en hoort er ook zo uit te zien.
-     Wat hier blijft staan is het enige wat écht alleen hier bestaat. */
+  /* `.legal` staat sinds 3 september 2026 één keer in src/styles/global.css — zie
+     de noot daar; op 24 augustus is dat wel opgeschreven maar niet gedaan. Deze
+     pagina had bovendien een eigen kopmaat (1,3rem tegen 1,5rem elders), een eigen
+     kolombreedte en een `stack-lg`-wikkel met acht losse marges; allemaal weg, want
+     dit is dezelfde soort pagina als /terms en /privacy en hoort er ook zo uit te
+     zien. Wat hier blijft staan is het enige wat écht alleen hier bestaat. */
   /* The withdrawal control inside body copy. It is a <button> because it opens
      a panel, and it is styled as the link beside it because a button that
      looks like a button in the middle of a sentence reads as an advert. */

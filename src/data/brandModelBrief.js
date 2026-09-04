@@ -192,7 +192,7 @@ export const COPY = {
     summaryEmpty: 'Not filled in',
     afterH: 'What happens after you pay',
     after: [
-      'Within two days you get directions — not one face, a few, so you have something to react to.',
+      'As soon as they are ready you get directions — not one face, a few, so you have something to react to.',
       'You say what is close and what is wrong. That round is the point of doing it this way; a face nobody argued about is a face nobody chose.',
       'Then we build it, put it through the uniqueness check, and lock it to your brand. It stays yours, and it gets kept current as your line changes.',
     ],
@@ -258,7 +258,7 @@ export const COPY = {
     summaryEmpty: 'Niet ingevuld',
     afterH: 'Wat er na het betalen gebeurt',
     after: [
-      'Binnen twee dagen krijg je richtingen — niet één gezicht maar een paar, zodat je iets hebt om op te reageren.',
+      'Zodra ze klaar zijn krijg je richtingen — niet één gezicht maar een paar, zodat je iets hebt om op te reageren.',
       'Jij zegt wat in de buurt komt en wat niet klopt. Die ronde is precies waarom we het zo doen; een gezicht waar niemand over gediscussieerd heeft, is een gezicht dat niemand gekozen heeft.',
       'Daarna bouwen we het, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Het blijft van jou, en het gaat mee als je collectie verandert.',
     ],

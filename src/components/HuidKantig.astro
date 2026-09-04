@@ -1097,16 +1097,16 @@ const AANWIJZER = [
       st.setAttribute('aria-hidden', 'true');   // de tablijst zegt het al hardop
       const twee = (n) => String(n).padStart(2, '0');
       const teken = () => {
-        let i = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+        let i = tabs.findIndex((t) => t.getAttribute('aria-current') === 'true');
         if (i < 0) i = 0;
         st.innerHTML = '<b>' + twee(i + 1) + '</b> / ' + twee(tabs.length);
       };
       teken();
       laag.appendChild(st);
-      // De carrousel zet aria-selected; daar hangen we op, zodat de stand klopt
+      // De carrousel zet aria-current; daar hangen we op, zodat de stand klopt
       // of hij nu vanzelf doordraait of door een klik verspringt.
       const kijker = new MutationObserver(teken);
-      tabs.forEach((t) => kijker.observe(t, { attributes: true, attributeFilter: ['aria-selected'] }));
+      tabs.forEach((t) => kijker.observe(t, { attributes: true, attributeFilter: ['aria-current'] }));
       document.addEventListener('astro:before-swap', () => kijker.disconnect(), { once: true });
     })();
 

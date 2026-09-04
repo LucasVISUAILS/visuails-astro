@@ -558,6 +558,11 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   margin: .6rem 0 0; padding: .5rem .7rem; font-size: .82rem;
   border: 1px solid var(--warn, #b8860b); color: var(--warn-ink, #e0a92b);
 }
+/* Mail die niet aankwam (bounce of spamklacht) — rood en niet amber, want elke
+   volgende mail naar dat adres verdwijnt op dezelfde manier. Het is de enige
+   rode regel in dit dashboard; dat is met opzet. */
+.warnline.is-rood { border-color: #E5484D; color: #FF8A8E; }
+.or-let.is-rood { color: #FF8A8E; border-color: #E5484D; }
 
 /* A brand model on the customer page: the photograph beside its controls.
    Before August 2026 this card showed a filename's worth of nothing — the
@@ -948,3 +953,233 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .loginform { display: grid; gap: .8rem; max-width: 22rem; margin-top: 1rem; }
 .loginform label { display: grid; gap: .3rem; font-size: .82rem; color: var(--ink-3); }
 .loginform input { font-size: 1.05rem; letter-spacing: .12em; }
+
+/* ── ZICHTBAAR VOOR EEN SCHERMLEZER, NIET VOOR HET OOG — 2 september 2026 ────
+   Twee tabellen op dit scherm hadden een LEGE <th> boven de kolom met de
+   miniatuur en boven de kolom met de knop. axe-core: "Table header text should
+   not be empty" — een schermlezer noemt bij elke cel de naam van zijn kolom, en
+   die was er niet, dus stond je in een naamloze kolom.
+
+   Boven een miniatuur of een knop hóórt geen woord te staan; het gaat om de
+   naam, niet om de tekst. Deze klasse haalt hem uit beeld en laat hem in de
+   toegankelijkheidsboom staan. Zelfde regel, zelfde reden, als de `.sr-only` in
+   public/portal.css en public/account.css. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  border: 0; overflow: hidden; white-space: nowrap; clip-path: inset(50%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BREED — 3 september 2026
+   Lucas: "je ziet zelf hoe onoverzichtelijk en druk het is". Het paneel stond
+   op 1080px met alles open. Nu: de balk bovenaan draagt de weg naar elk scherm,
+   het dashboard en de planning gebruiken de breedte van het scherm (tot 1720px)
+   in twee vlakken, en een bestelling is één regel met de handelingen erachter.
+   Alles hieronder is aanvulling; de oude regels blijven voor de andere schermen.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.wrap { max-width: 1720px; padding: 0 clamp(1rem, 3vw, 2.5rem); }
+.wrap > .card, .wrap > form.login, .wrap > .loginform { max-width: 1080px; }
+
+/* De balk */
+.bar { align-items: center; }
+.bar-nav { display: flex; flex-wrap: wrap; gap: .15rem .2rem; flex: 1 1 auto; }
+.bar-link {
+  display: inline-flex; align-items: center; min-height: 34px; padding: 0 .7rem;
+  font-size: .86rem; font-weight: 500; color: var(--ink-2); text-decoration: none;
+  border-radius: var(--r-pill); border: 1px solid transparent;
+}
+.bar-link:hover, .bar-link:focus-visible { color: var(--ink); background: var(--ghost); }
+.bar-link.is-active { color: var(--teal-text); border-color: var(--teal); font-weight: 700; }
+
+/* Twee vlakken: hoofd + zij */
+.db-vlakken, .pl-vlakken {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  gap: 2rem clamp(1.5rem, 3vw, 3rem); align-items: start;
+}
+.db-zij, .pl-zij { position: sticky; top: 1rem; }
+.db-zij h2, .pl-zij h2 { margin-top: 1.2rem; }
+.db-zij h2:first-child, .pl-zij h2:first-child { margin-top: .4rem; }
+/* 1280 en niet 1100 (4 september 2026): Lucas zag op een laptop de zijkolom
+   over de bestellijst heen vallen. De zeven kolommen van een regel zijn samen
+   ruim 1000px breed; smaller dan 1280 past dat niet naast een zijkolom van
+   280px. Dan staat de zijkolom eronder — en de lijst scrolt in zijn eigen
+   vak zijwaarts in plaats van onder iets anders door te lopen. */
+@media (max-width: 1280px) {
+  .db-vlakken, .pl-vlakken { grid-template-columns: 1fr; }
+  .db-zij, .pl-zij { position: static; }
+}
+.db-hoofd, .pl-links { min-width: 0; }
+.or-lijst { overflow-x: auto; }
+.or-kop, .or-rij { min-width: 62rem; }
+
+/* Eerst af (dashboard, rechts) */
+.db-aflopend { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+.db-aflopend li {
+  display: grid; grid-template-columns: 5.2rem 1fr; grid-template-rows: auto auto; column-gap: .6rem;
+  padding: .5rem 0; border-bottom: 1px solid var(--line);
+}
+.db-aflopend li .db-af-dag { grid-row: 1 / 3; align-self: start; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); padding-top: .15rem; font-variant-numeric: tabular-nums; }
+.db-aflopend li.is-vandaag .db-af-dag { color: var(--teal-text); }
+.db-aflopend li.is-laat .db-af-dag { color: var(--warn-ink); }
+.db-revs { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.db-revs li { display: flex; gap: .6rem; align-items: center; }
+.db-revs img { width: 40px; height: 40px; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line); display: block; }
+
+/* Eén regel per bestelling */
+.or-lijst { border-top: 1px solid var(--line); }
+.or-kop, .or-rij {
+  display: grid; align-items: center; gap: .8rem;
+  grid-template-columns: 9.5rem minmax(9rem, 1.2fr) minmax(7rem, 1fr) minmax(11.5rem, 1fr) 8.5rem 6rem 7.5rem;
+}
+.or-kop { padding: .5rem 0 .4rem; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+.or { border-bottom: 1px solid var(--line); }
+.or-rij { padding: .7rem 0; cursor: pointer; list-style: none; min-height: 48px; font-size: .9rem; color: var(--ink); }
+.or-rij::-webkit-details-marker { display: none; }
+.or-rij:hover { background: var(--ghost); }
+.or[open] > .or-rij { background: var(--ghost); }
+.or-rij .meta { display: block; font-size: .76rem; }
+.or-ref { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.or-let { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--warn-ink); border: 1px solid var(--warn-ink); border-radius: var(--r-pill); padding: .05rem .4rem; }
+.or-let.is-stil { color: var(--ink-3); border-color: var(--line-strong); }
+.or-merk strong { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.or-merk .meta { overflow-wrap: anywhere; }
+.or-betaal { font-size: .82rem; color: var(--ink-3); }
+.or-betaal.is-open { color: var(--warn-ink); font-weight: 700; }
+.or-body { padding: .6rem 0 1.2rem 1rem; border-left: 1px solid var(--line); margin: 0 0 .8rem .3rem; }
+.or-body .controls { margin-top: .4rem; }
+@media (max-width: 900px) {
+  .or-kop { display: none; }
+  .or-rij { grid-template-columns: 1fr 1fr; min-width: 0; }
+}
+
+/* De planning */
+.pl-stats { margin-top: .6rem; }
+.pl-nav { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .4rem 0 .9rem; }
+.pl-legenda { display: inline-flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: center; margin-left: auto; }
+.pl-lg { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line-strong); vertical-align: -1px; }
+.pl-lg.is-werk { background: var(--ink-300); }
+.pl-lg.is-af { background: var(--teal); border-color: var(--teal); }
+.pl-lg.is-asap { border-style: dashed; }
+.pl-lg.is-laat { background: var(--warn-ink); border-color: var(--warn-ink); }
+.pl-raster {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px;
+  background: var(--line); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+}
+.pl-dag { background: var(--paper); min-height: 150px; padding: .55rem .6rem .7rem; display: flex; flex-direction: column; gap: .4rem; }
+.pl-dag.is-voorbij { opacity: .5; }
+.pl-dag.is-vandaag { background: var(--mist-stone, var(--paper-lift)); box-shadow: inset 0 3px 0 var(--teal); }
+.pl-dag.is-dicht { background: repeating-linear-gradient(135deg, transparent 0 8px, rgb(255 255 255 / .03) 8px 16px); }
+.pl-dag.is-vol .pl-last span { background: var(--warn-ink); }
+.pl-dag-kop { display: flex; align-items: baseline; gap: .3rem; }
+.pl-dag-wd { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.pl-dag-nr { font-size: 1.1rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pl-dag-mnd { font-size: .72rem; color: var(--ink-3); }
+.pl-dag-nu { margin-left: auto; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--teal-text); }
+.pl-last { height: 4px; background: var(--ink-200); border-radius: 2px; overflow: hidden; }
+.pl-last span { display: block; height: 100%; background: var(--teal); }
+.pl-last-n, .pl-dag-dicht { margin: 0; font-size: .7rem; color: var(--ink-3); }
+.pl-dag-dicht { color: var(--warn-ink); font-weight: 700; }
+.pl-chips { display: grid; gap: .3rem; margin-top: .2rem; }
+.pl-chip {
+  display: block; text-decoration: none; padding: .3rem .45rem; border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong); background: var(--paper-lift); font-size: .74rem; line-height: 1.3; color: var(--ink-2);
+  min-height: 24px;
+}
+.pl-chip:hover, .pl-chip:focus-visible { border-color: var(--ink-500); color: var(--ink); }
+.pl-chip.is-af { border-color: var(--teal); box-shadow: inset 3px 0 0 var(--teal); }
+.pl-chip.is-asap { border-style: dashed; }
+.pl-chip.is-laat { border-color: var(--warn-ink); box-shadow: inset 3px 0 0 var(--warn-ink); }
+.pl-chip.is-delivered, .pl-chip.is-cancelled { opacity: .6; }
+.pl-chip-ref { display: block; font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: var(--ink); }
+.pl-chip-wat { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) {
+  .pl-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pl-dag { min-height: 0; }
+}
+
+/* De aflopende lijst */
+.pl-lijst { list-style: none; margin: 0; padding: 0; counter-reset: af; }
+.pl-item {
+  display: grid; grid-template-columns: 6.4rem 1fr; gap: .2rem .7rem;
+  padding: .7rem 0; border-bottom: 1px solid var(--line);
+}
+.pl-item-dag { display: grid; gap: .1rem; align-content: start; }
+.pl-item-rel { font-size: .8rem; font-weight: 700; color: var(--ink); }
+.pl-item-abs { font-size: .74rem; color: var(--ink-3); }
+.pl-item.is-vandaag .pl-item-rel { color: var(--teal-text); }
+.pl-item.is-laat .pl-item-rel { color: var(--warn-ink); }
+.pl-item.is-laat { background: linear-gradient(90deg, var(--mist-clay), transparent 60%); }
+.pl-item-wat { display: grid; gap: .15rem; min-width: 0; }
+.pl-item-wat .meta { overflow-wrap: anywhere; }
+.pl-item-wat .pill { justify-self: start; margin-top: .15rem; }
+.pl-onbetaald { color: var(--warn-ink); }
+.pl-verleng { grid-column: 1 / -1; }
+.pl-verleng > summary { cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--ink-2); padding: .3rem 0; min-height: 28px; display: flex; align-items: center; }
+.pl-verleng[open] > summary { color: var(--ink); }
+.pl-verleng-form { display: grid; gap: .6rem; margin: .4rem 0; }
+.pl-verleng-form label { display: grid; gap: .25rem; font-size: .78rem; color: var(--ink-3); }
+.pl-verleng-form input { width: 100%; }
+.pl-contact { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .5rem 0 .2rem; }
+.pl-verzet { margin-bottom: 1.2rem; }
+.pl-verzet .pl-contact { margin-top: .6rem; }
+.pl-verleng > summary::before { content: '+'; display: inline-block; width: 1.1rem; font-weight: 700; color: var(--teal-text); }
+.pl-verleng[open] > summary::before { content: '−'; }
+.or-wanneer { white-space: nowrap; }
+
+/* ── MEER LUCHT, ook hier — 4 september 2026 ─────────────────────────────────
+   Gemeten met kladblok/witruimte.mjs: knoppen op 8px van de rand van hun vak,
+   formulieren op 10–11px van het volgende blok, koppen op 5px van hun alinea. */
+h1 { margin-bottom: .6rem; }
+.lede { margin-bottom: 1.6rem; }
+.controls { gap: .8rem; margin-top: 1rem; }
+.controls + .controls, .controls + details, .controls + p, .controls + .warnline { margin-top: 1.1rem; }
+.searchrow { margin: 1.2rem 0 .9rem; }
+.fl-row { gap: .5rem; margin-bottom: 1.3rem; }
+.slot { gap: .55rem; padding: .8rem; }
+.danger { margin-top: 1.1rem; }
+.danger-block { padding-bottom: .6rem; }
+.danger-block .btn { margin-top: .5rem; }
+.danger-money { margin-top: .6rem; display: block; }
+.or-body h3, .or-body h4, .card h3 { margin-bottom: .8rem; }
+.pl-verleng-form { gap: .8rem; margin: .7rem 0; }
+.pl-item-wat .pill { margin: .35rem 0 .3rem; }
+.pl-last-n { margin-bottom: .4rem; }
+.ag-dagform { gap: .8rem; }
+h1 { margin-bottom: .9rem; }
+.danger-block { padding-bottom: .9rem; }
+.pl-item-wat .pill { margin-bottom: .6rem; }
+.note-box h3, .notes h3, .card h3, section h3 { margin-bottom: .8rem; }
+.notepanel h3 { margin-bottom: .8rem; }
+
+/* ══ EIGEN LOOKS — 4 september 2026 ═══════════════════════════════════════
+   De lookkaart op de klantpagina en de intake van een aanvraag op de
+   bestelpagina. Het beeld is liggend (4:3) en niet staand zoals een portret:
+   een look is een scène. Het bewerkformulier is een raster van labels met het
+   veld eronder, twee naast elkaar waar dat past. */
+.stylecard-img, .stylecard-img.is-blank { width: 180px; aspect-ratio: 4 / 3; }
+.stylecard-edit { justify-items: stretch; gap: .8rem; margin-top: 1rem; }
+.stylecard-edit.card { margin-top: 1rem; }
+.stylecard-edit label { display: grid; gap: .3rem; font-size: .82rem; color: var(--ink-2); min-width: 0; }
+.stylecard-edit input:not([type="file"]), .stylecard-edit select, .stylecard-edit textarea { width: 100%; }
+.stylecard-edit textarea { min-height: 5.5rem; resize: vertical; }
+.stylecard-edit .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.stylecard-edit button { justify-self: start; }
+@media (max-width: 720px) { .stylecard-edit .row-2 { grid-template-columns: 1fr; } }
+
+.aanvraag-intake { margin: .8rem 0 1.2rem; max-width: 70ch; border-top: 1px solid var(--line); }
+.aanvraag-intake .hold-fact { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+.aanvraag-intake dt { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding-top: .15rem; }
+.aanvraag-intake dd { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+@media (max-width: 560px) { .aanvraag-intake .hold-fact { grid-template-columns: 1fr; gap: .25rem; } }
+.controls > label:not(.sr-only):not(.checkline) { display: grid; gap: .3rem; font-size: .82rem; color: var(--ink-2); }
+
+/* ══ DE MAANDSET — 4 september 2026 ═══════════════════════════════════════
+   Een strook vierkante beelden per maand, met een klein kruisje per beeld.
+   Twintig naast elkaar past niet; acht per rij op een breed scherm, en dan
+   verder omlaag. Concept is gedempt, gepubliceerd niet. */
+.maandset.is-concept { opacity: .92; }
+.maandset-strook { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .5rem; margin: .8rem 0 .4rem; }
+.maandset-beeld { position: relative; margin: 0; aspect-ratio: 1; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--paper-2); }
+.maandset-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.maandset-beeld form { position: absolute; top: .3rem; right: .3rem; margin: 0; }
+.maandset-beeld .btn { padding: 0 .5rem; min-height: 1.6rem; line-height: 1.6rem; background: rgb(0 0 0 / .55); }

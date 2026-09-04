@@ -57,9 +57,12 @@ if (!moodSize) throw new Error(`lifestyle/[slug]: no intrinsic size on record fo
 // copy. They come from pricing.js so a capacity change cannot leave a
 // promise stranded on a detail page — which is exactly what "~24h delivery"
 // and "Produced in about 24 hours" were doing here.
-const TIMING = turnaround('unattended', 'en');
+/* Een look OP AANVRAAG (priceTrust, dus custom) heeft eerst een ontwerp; de
+   doorlooptijd van een gewone bestelling geldt daar pas ná. "Vaak binnen een
+   dag" op die pagina was een belofte over het verkeerde ding — 4 sept 2026. */
+const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
 const REVIEW = reviewClaim('unattended', 'en');
-const QUEUE = TIERS.unattended.queue.en;
+const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue.en;
 
 // Four of the five lifestyle styles carry no priceTrust of their own, so the
 // fallback below is what actually renders on most of these pages — it used to
@@ -119,7 +122,7 @@ const zusters = styles
         <span class="trust-item"><strong>{TIMING}</strong></span>
         <span class="trust-item"><strong>{REVIEW}</strong></span>
       </div>
-      <p class="queue-note">{QUEUE}</p>
+      {QUEUE && <p class="queue-note">{QUEUE}</p>}
     </div>
   </section>
 

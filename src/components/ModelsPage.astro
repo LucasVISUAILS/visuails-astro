@@ -37,6 +37,9 @@ import { waHref } from '../data/whatsapp.js';
 // /lifestyle or /video, and this is not one of those four.
 import { localizedPath } from '../i18n/ui.js';
 import { ROSTER, TRAITS, modelId } from '../data/models.js';
+// Het aantal in de lopende tekst komt uit de roster hierboven en wordt niet
+// ingetypt — zie de noot bij ROSTER_COUNT in src/data/models.js.
+import { rosterWoord } from '../data/models.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -45,7 +48,7 @@ const lp = (p: string) => localizedPath(lang, p);
 const COPY = {
   en: {
     eyebrow: 'The standard library',
-    h1a: 'Ten faces.',
+    h1a: `${rosterWoord('en', true)} faces.`,
     h1b: 'Already included.',
     lead: 'Shared across every brand we work with, and included in every order at no extra cost. Pick one yourself, or tell us the product and the customer and we match one for you.',
     ctaPrimary: 'Start an order',
@@ -54,14 +57,14 @@ const COPY = {
     heroAlt: 'A VISUAILS standard model',
     trust: [
       ['No fee', 'per model, ever'],
-      ['Ten faces', 'shared across brands'],
+      [`${rosterWoord('en', true)} faces`, 'shared across brands'],
       // Was 'drop to drop'. See PricingPage.astro's header: a drop is a
       // collection going live, which is the CLIENT's word for their own
       // launch, not the name of anything we sell.
       ['Swap freely', 'order to order'],
     ],
 
-    rosterMeta: '( All ten )',
+    rosterMeta: `( All ${rosterWoord('en')} )`,
     rosterH: 'The full roster',
     rosterSub: 'At a size you can actually judge a face at — square plates, not sixty-pixel thumbnails.',
     modelAlt: 'a VISUAILS standard model',
@@ -79,7 +82,7 @@ const COPY = {
     incCta: 'See all prices by quantity',
 
     doorH: 'Want a face that’s only yours?',
-    doorBody: 'A Brand Model is designed once, exclusively for your brand, and never appears anywhere else — the ten above are shared; that one would not be.',
+    doorBody: `A Brand Model is designed once, exclusively for your brand, and never appears anywhere else — the ${rosterWoord('en')} above are shared; that one would not be.`,
     doorCta: 'Explore Your Brand Model',
 
     ctaH1: 'Pick a face,',
@@ -90,20 +93,20 @@ const COPY = {
   },
   nl: {
     eyebrow: 'De standaardbibliotheek',
-    h1a: 'Tien gezichten.',
+    h1a: `${rosterWoord('nl', true)} gezichten.`,
     h1b: 'Al inbegrepen.',
-    lead: 'Deze tien gebruiken we voor elk merk waarmee we werken, en ze zitten in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons wat je verkoopt en wie je klant is, dan kiezen wij er een dat past.',
+    lead: `Deze ${rosterWoord('nl')} gebruiken we voor elk merk waarmee we werken, en ze zitten in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons wat je verkoopt en wie je klant is, dan kiezen wij er een dat past.`,
     ctaPrimary: 'Start een bestelling',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi VISUAILS, ik wil graag iets vragen over de standaardmodellen.',
     heroAlt: 'Een VISUAILS-standaardmodel',
     trust: [
       ['Geen kosten', 'per model, nooit'],
-      ['Tien gezichten', 'die we voor alle merken gebruiken'],
+      [`${rosterWoord('nl', true)} gezichten`, 'die we voor alle merken gebruiken'],
       ['Vrij wisselen', 'van bestelling tot bestelling'],
     ],
 
-    rosterMeta: '( Alle tien )',
+    rosterMeta: `( Alle ${rosterWoord('nl')} )`,
     rosterH: 'De volledige bibliotheek',
     rosterSub: 'Op een formaat waarop je een gezicht echt kunt beoordelen — grote vierkante foto’s, geen miniatuurtjes van zestig pixels.',
     modelAlt: 'een VISUAILS-standaardmodel',
@@ -116,7 +119,7 @@ const COPY = {
     incCta: 'Bekijk alle prijzen per aantal',
 
     doorH: 'Wil je een gezicht dat alleen van jou is?',
-    doorBody: 'Een merkmodel wordt één keer ontworpen, exclusief voor jouw merk, en verschijnt nergens anders — de tien hierboven zijn gedeeld; dat model zou dat niet zijn.',
+    doorBody: `Een merkmodel wordt één keer ontworpen, exclusief voor jouw merk, en verschijnt nergens anders — de ${rosterWoord('nl')} hierboven zijn gedeeld; dat model zou dat niet zijn.`,
     doorCta: 'Ontdek jouw merkmodel',
 
     ctaH1: 'Kies een gezicht,',

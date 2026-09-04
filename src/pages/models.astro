@@ -12,14 +12,18 @@
 // pages other than /pricing, /catalog, /lifestyle and /video.
 import Layout from '../layouts/Layout.astro';
 import ModelsPage from '../components/ModelsPage.astro';
+// Het telwoord in de titel en de omschrijving komt uit de roster — zie de noot
+// bij ROSTER_COUNT in src/data/models.js. Beide zijn zoekresultaat-tekst: een
+// aantal dat niet meer klopt is daar een onjuiste bewering, geen opmaakfoutje.
+import { rosterWoord } from '../data/models.js';
 
 const description =
-  'Ten standard models, shared across every brand and included in every order ' +
+  `${rosterWoord('en', true)} standard models, shared across every brand and included in every order ` +
   'at no extra cost. Pick one, or let us match one to your product.';
 ---
 
 <Layout
-  title="Ten standard models, in every order | VISUAILS"
+  title={`${rosterWoord('en', true)} standard models, in every order | VISUAILS`}
   description={description}
   ogImage="/img/model-01.webp"
 >

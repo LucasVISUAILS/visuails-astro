@@ -74,7 +74,10 @@ const zonderUitleg = (src) => src
 console.log('de data: welke verhouding hoort bij welke dienst');
 {
   ok('catalog heeft er drie', CATALOG_RATIOS.length, 3);
-  ok('lifestyle heeft die drie plus de brede', LIFESTYLE_RATIOS.length, 4);
+  /* Vijf sinds 4 september 2026: 16:9 voor banners én 9:16 voor Reels/Stories. */
+  ok('lifestyle heeft die drie plus de brede en de story', LIFESTYLE_RATIOS.length, 5);
+  ok('  en 9:16 hoort niet bij catalog', !!ratioById('story', 'catalog'), false);
+  ok('  maar wel bij lifestyle', !!ratioById('story', 'lifestyle'), true);
   /* DE BREDE IS HET VERSCHIL, en het is geen smaakverschil: een catalogset gaat
      in een grid, en één breed beeld ertussen is precies het scheve grid waar een
      merk mee bij ons komt. Zie de kop van src/data/ratios.js. */
@@ -109,7 +112,7 @@ console.log('\nper beeld of per bestelling — en `drop` telt mee');
   ok("en 'drop' is complete op de draad", ratiosPerImage('drop'), true);
   ok('video kent de vraag niet per beeld', ratiosPerImage('video'), false);
   ok('ratiosFor(catalog) is de korte lijst', ratiosFor('catalog').length, 3);
-  ok('ratiosFor(drop) is de lange', ratiosFor('drop').length, 4);
+  ok('ratiosFor(drop) is de lange', ratiosFor('drop').length, 5);
 }
 
 console.log('\nwat wint: de keuze bij het beeld, dan de bestelling, dan de standaard');
@@ -164,7 +167,10 @@ console.log('\nhet bestelformulier stelt de vraag');
   const picker = read('src/components/order/RatioPicker.astro');
   ok('de kiezer post name="ratio"', /name="ratio"/.test(picker), true);
   ok('en de waarden zijn de ids uit ratios.js', /value=\{r\.id\}/.test(picker), true);
-  ok('met de vorm als viewBox', /viewBox=\{r\.viewBox\}/.test(picker), true);
+  /* Sinds 3 september 2026 is de vorm geen leeg <svg> meer maar een kader met
+     het catalogusbeeld erin, uitgesneden op de verhouding: `aspect-ratio` uit
+     r.css. Dezelfde bron, een andere tekening. */
+  ok('met de vorm als kader', /aspect-ratio: \$\{r\.css\}/.test(picker), true);
   ok('en de gebruiksregel eronder', /\{r\.use\}/.test(picker), true);
   /* Geen handgetypte lijst. Een verhouding die aan ratios.js wordt toegevoegd,
      hoort op het formulier te verschijnen zonder dat iemand hier iets doet. */

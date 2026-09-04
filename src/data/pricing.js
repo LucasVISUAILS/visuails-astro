@@ -125,6 +125,21 @@ export const LADDER = {
   lifestyle: [[1, 4, 109], [5, 9, 82], [10, 19, 64], [20, null, 49]],
 };
 
+/*
+ * ── HET FORMULIER STOPT BIJ TWINTIG — 3 september 2026 ──────────────────────
+ *
+ * Lucas: boven de twintig producten moet een klant eerst persoonlijk contact
+ * opnemen (mail of WhatsApp), en niet het formulier doorlopen. Tot 3 september
+ * bood de keuzelijst tot 52 aan (de weekcapaciteit in catalogsets) en liep de
+ * optie "Meer dan 52" gewoon door naar stap 2 zonder één knop naar hem toe.
+ *
+ * Dit getal is het PLAFOND VAN HET FORMULIER, niet van de studio: de agenda
+ * rekent nog steeds in beelden per venster (capacity.js). Het valt samen met de
+ * bovenste trede van elke ladder (20+), zodat elk tarief dat de site noemt ook
+ * in het formulier te kiezen is — dat was de fout van augustus met "vanaf 35".
+ */
+export const FORM_MAX_PRODUCTS = 20;
+
 /** The per-product rate for a kind at a given product count. */
 
 import { planName } from './planNames.js';
@@ -466,6 +481,11 @@ assertKindImages();
  * stilzwijgend ook de machtiging verandert — en de machtiging is bewust het
  * kleinst mogelijke bedrag, want hij wordt niet verrekend maar is puur de prikkel
  * die de bank nodig heeft.
+ *
+ * SINDS 4 SEPTEMBER 2026 IS DIT ALLEEN NOG DE ONDERGRENS. De eerste betaling van
+ * een abonnement is de eerste MAAND (subMaandCents in slots.js) en geeft het
+ * mandaat uit dezelfde transactie af — Lucas: meteen incasseren, meteen plannen.
+ * createFirstPayment() in mollie.js weigert nog steeds alles onder dit bedrag.
  */
 export const MANDATE_AMOUNT = 1;
 
@@ -888,9 +908,9 @@ export const AMOUNT = {
   // the count rises (LADDER above). Pages that can show the whole ladder should
   // — ladderRate() / ladderTotal() / ladderFloor() are for exactly that — and
   // any page still printing a single figure should say "from".
-  catalog: LADDER.catalog[0][2],       // €89 at 1–4 products, €33 at 35+
-  lifestyle: LADDER.lifestyle[0][2],   // €109 at 1–4 products, €41 at 35+
-  complete: LADDER.complete[0][2],     // €149 at 1–4 products, €55 at 35+
+  catalog: LADDER.catalog[0][2],       // entry rung; the floor is LADDER.catalog's last row
+  lifestyle: LADDER.lifestyle[0][2],   // entry rung; the floor is LADDER.lifestyle's last row
+  complete: LADDER.complete[0][2],     // entry rung; the floor is LADDER.complete's last row
   // RAISED, TASK #271f, 2026-07-30. Was €49, "left alone" by the comment
   // above — that held until Lucas asked for the opposite: video must rise
   // above €49 regardless of the Single Product/Full outfit feature this task
@@ -907,6 +927,79 @@ export const AMOUNT = {
   // CATALOG_AT_WRITING / LIFESTYLE_AT_WRITING already get in that checker —
   // updated alongside this change.
   video: 69,
+
+  /* ── HOOKS — VANAF € 119 PER PRODUCT, 2 SEPTEMBER 2026 ─────────────────────
+   *
+   * Lucas heeft dit bedrag gekozen uit HOOKS-COPY-CONCEPT.md, waar het als
+   * voorstel stond met de aantekening dat het nog niet vaststond. Het staat nu
+   * vast, en daarom staat het hier: `AMOUNT.hooks` was `null`, en een pagina die
+   * een prijs noemt terwijl deze tabel `null` zegt, is precies het soort tweede
+   * lijst waar dit bestand tegen bestaat.
+   *
+   * ── WAAROM "VANAF" EN NIET GEWOON € 119 ─────────────────────────────────
+   *
+   * Een hook is geen vast pakket zoals een catalogset dat is. Wat de prijs
+   * beweegt is het aantal producten in één video en of er losse varianten bij
+   * komen — dus is € 119 de ONDERGRENS en geen tarief, en elke pagina die het
+   * noemt zegt "vanaf". `hooksVariant` is de tweede en laatste knop: een extra
+   * snit van dezelfde montage, waarvoor het bouwwerk al staat.
+   *
+   * ── EN HIJ ZIT NIET OP DE LADDER ────────────────────────────────────────
+   *
+   * De prijs per product daalt bij catalog, lifestyle en complete omdat een
+   * grotere bestelling dezelfde opzet over meer producten uitsmeert. Bij een
+   * hook is de opzet het werk zelf en er is geen tweede product om hem over uit
+   * te smeren, dus geen ladder — net als video. Zie de filterregel bij
+   * PRODUCT_SLOT_KINDS.
+   *
+   * ── WAT ER NOG NIET IS ──────────────────────────────────────────────────
+   *
+   * `KIND_IMAGES.hooks` blijft `null`: hoeveel een hook in de agenda weegt, is
+   * niet gemeten en dus niet te verzinnen. Zolang dat zo is kan een hook geen
+   * gereserveerd venster krijgen, en dat is precies waarom /hooks vandaag geen
+   * bestelknop heeft maar een gesprek. Een prijs kennen en een doorlooptijd
+   * kunnen beloven zijn twee verschillende dingen. */
+  hooks: 119,
+  hooksVariant: 49,
+
+  /* ── EDITIONS — € 149 PER MAAND NA EEN OPZET VAN € 295, 2 SEPTEMBER 2026 ───
+   *
+   * Het on-brand pakket had tot vandaag GEEN bedrag. Niet hier, niet als `null`,
+   * en ook niet in STOCK-IDEE.md — dat document beschrijft het idee volledig en
+   * noemt nergens een prijs. Het dashboard zei daarom in zoveel woorden: *"Not
+   * settled yet, and we would rather not put up a figure we have to revise."*
+   * Lucas heeft die twee bedragen op 2 september gekozen.
+   *
+   * ── WAAROM TWEE BEDRAGEN EN NIET ÉÉN ─────────────────────────────────────
+   *
+   * Omdat er twee verschillende dingen gebeuren, en ze een verschillende vorm
+   * hebben. De OPZET is één keer werk per merk: de stijl, de locaties en het
+   * kleurenpalet worden vastgezet zodat de maandelijkse set er twaalf maanden
+   * later nog steeds als hetzelfde merk uitziet. De MAAND is de set zelf.
+   *
+   * Eén bedrag zou het opzetwerk over de maanden uitsmeren, en dat is precies
+   * de fout die het merkmodel op 23 augustus is uitgegaan: een opzet die je pas
+   * terugverdient als de klant lang genoeg blijft, is een prijs die verandert
+   * naarmate iemand eerder opzegt. Twee bedragen zeggen wat er gebeurt.
+   *
+   * ── WAT DIT NIET IS: EEN BEELDBANK ───────────────────────────────────────
+   *
+   * Death to Stock is $20 per maand voor ruim 15.000 gedeelde beelden (gemeten
+   * 17 augustus 2026, zie STOCK-IDEE.md §2). Dat lijkt een vergelijking en is er
+   * geen: die 15.000 gaan naar iedereen, en deze twintig gaan alleen naar dit
+   * merk. Wie op prijs per beeld vergelijkt, vergelijkt gedeeld met exclusief.
+   * De GEDEELDE set van dit huis is de vergelijkbare helft, en die zit bij elk
+   * abonnement in — zie STOCK_OFF_BRAND.
+   *
+   * ── EN DE GEDEELDE SET HEEFT GEEN BEDRAG, MET OPZET ──────────────────────
+   *
+   * Off-brand is één keer gemaakt en onbeperkt te leveren: de dertigste abonnee
+   * kost er niets extra aan. Daarom hoort hij bij het abonnement en niet bij een
+   * prijskaartje. On-brand doet dat NIET — die wordt per merk opgezet en
+   * verbruikt capaciteit — en dat verschil is de hele reden dat er hier één
+   * bedrag staat en niet twee. Zie STOCK-IDEE.md §1. */
+  editions: 149,
+  editionsSetup: 295,
 
   // The three package amounts that used to sit here — dropPilot, fullDrop and
   // retainer — are gone. They were kept as ladder-derived values through the
@@ -1374,16 +1467,24 @@ export const TIERS = {
     // capacity.js alleen nog naar dichtgezette dagen kijkt, is het omgekeerd:
     // "werkdag" zou nu langer klinken dan het is. Dezelfde twee tot vier dagen,
     // alleen niet meer met een weekend erin verstopt.
+    /* ── GEEN MARGE MEER, 3 SEPTEMBER 2026 ────────────────────────────────
+       Lucas: "onder 10 producten is gewoon zo snel mogelijk leveren, dus dat
+       kan een uur, 2 dagen of een week zijn, nooit beloofd; het streven is
+       altijd binnen 24 uur." De oude regel ("meestal 2–4 dagen") las als een
+       marge die we moesten halen — en was tegelijk trager dan hij meestal is.
+       "Vaak binnen een dag" zegt wat er gebeurt zonder het toe te zeggen;
+       "soms een paar dagen" houdt de andere kant open. Geen getal, geen datum.
+       tests/promises.test.mjs bewaakt dat dit nooit scherper wordt. */
     turnaround: {
-      en: 'Estimated delivery: 2–4 days',
-      nl: 'Meestal 2–4 dagen',
+      en: 'As soon as it is ready (often within a day, sometimes a few days)',
+      nl: 'Zo snel mogelijk (vaak binnen een dag, soms een paar dagen)',
     },
     // Al kort genoeg; de korte vorm staat er toch, zodat elke aanroeper van
     // turnaroundShort() een antwoord krijgt en niet per niveau hoeft te weten
     // of er een kortere bestaat. Zie de noot bij REVIEW_CLAIM_SHORT.
     turnaroundShort: {
-      en: '2–4 days',
-      nl: '2–4 dagen',
+      en: 'As soon as it is ready',
+      nl: 'Zo snel mogelijk',
     },
     // Stated openly, not buried. Section 13: "The difference must be VISIBLE,
     // not hidden [...] it is also what makes the low price honest rather than
@@ -1798,7 +1899,16 @@ export function planFor(productsPerMonth) {
 }
 
 /** The plans, as copy. Same shape as PACKAGES so a page can swap one for the other. */
-export function plans(lang = 'en') {
+/**
+ * De drie abonnementskaarten.
+ *
+ * `jaarRollover` en `jaarPrijzen` komen van BUITEN omdat ze in plans.js staan en
+ * dit bestand plans.js niet mag importeren — plans.js importeert al uit pricing.js
+ * en een kringetje zou beide stukmaken. Dezelfde reden dat planNames.js een eigen
+ * bestandje is. De terugval is de constante die hier wél staat, zodat een
+ * aanroeper die ze vergeet een kloppende maandzin krijgt in plaats van undefined.
+ */
+export function plans(lang = 'en', { jaarRollover = 3, jaarPrijzen = null } = {}) {
   const l = lang === 'nl' ? 'nl' : 'en';
   const nlx = l === 'nl';
   const meta = {
@@ -1825,6 +1935,14 @@ export function plans(lang = 'en') {
       line: meta[id].line,
       price: euro(PLAN_AMOUNT[id], l),
       unit: nlx ? 'per maand' : 'per month',
+      /* De prijs op de jaartermijn, ALLEEN als hij afwijkt. Bij Studio en Merk is
+         hij gelijk (zie discountMonths in plans.js: alleen Starter krijgt korting,
+         want bij de andere twee zakt elke korting onder de ladderbodem), en twee
+         keer hetzelfde bedrag naast elkaar laat de jaartermijn zinloos lijken
+         terwijl hij dat niet is. Dezelfde afweging als op /start/plan. */
+      jaarPrijs: jaarPrijzen && jaarPrijzen[id] && jaarPrijzen[id] !== PLAN_AMOUNT[id]
+        ? euro(jaarPrijzen[id], l)
+        : null,
       products,
       includes: [
         nlx ? `${products} producten per maand` : `${products} products a month`,
@@ -1832,9 +1950,25 @@ export function plans(lang = 'en') {
         ...(clips ? [nlx ? `${clips} videoclips per maand` : `${clips} video clips a month`] : []),
         ...(id === 'brand' ? [nlx ? 'Inclusief jouw eigen dedicated Merkmodel — volledig afgestemd op jouw merkesthetiek.' : 'Includes a dedicated Brand Model tailored to your brand — no separate casting or usage fees.'] : []),
         turnaround('attended', l),
+        /* ── DEZE REGEL GOLD VOOR ÉÉN VAN DE TWEE TERMIJNEN — 1 september 2026 ──
+         *
+         * Er stond onvoorwaardelijk "Maandelijks opzegbaar, ongebruikte producten
+         * schuiven 1 maand door". Dat is de MAANDtermijn. De jaartermijn bestaat
+         * ook, is vanaf deze kaart te kiezen (de knop gaat naar /start/plan?plan=…
+         * waar je hem aanvinkt), en heeft de twee eigenschappen die deze zin
+         * ontkent: hij ligt twaalf termijnen vast en schuift drie maanden door.
+         * Zie TERMS in plans.js — `fixed: true`, `rollover: 3`.
+         *
+         * Een kaart die "cancel any month" belooft aan iemand die een jaar tekent,
+         * is de ene fout die je op een prijspagina niet wilt maken. De zin noemt nu
+         * allebei de termijnen. De getallen komen uit plans.js en staan hier niet
+         * overgeschreven: pricing.js kan plans.js niet importeren (dat zou een
+         * kringetje maken — zie de kop van planNames.js), dus ze komen als
+         * argument binnen, met dezelfde constante als terugval.
+         */
         nlx
-          ? `Maandelijks opzegbaar, ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door`
-          : `Cancel any month, unused products roll over ${PLAN_ROLLOVER_MONTHS} month`,
+          ? `Maandelijks opzegbaar; ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door — op de jaartermijn ${jaarRollover} maanden, en die ligt twaalf maanden vast`
+          : `Cancel any month; unused products roll over ${PLAN_ROLLOVER_MONTHS} month — on the 12-month term ${jaarRollover} months, and that term is fixed`,
       ],
       saving: saving
         ? (nlx
@@ -2098,6 +2232,11 @@ export const TEST_SAMPLE = {
        OrderFlow.astro hem in `mode="sample"`. */
     h: 'Test VISUAILS with 1 product',
     price: euro(AMOUNT.testSample, 'en'),
+    /* De knoptekst, één keer. Lucas, 3 september 2026: "proefvisual" klopt niet
+       meer — de klant krijgt een SET (4 catalog of 3 lifestyle), geen visual —
+       en "Probeer VISUAILS · €1" maakt nieuwsgierig naar wat je voor €1 krijgt.
+       Elke knop die naar /test-sample leidt leest dit veld. */
+    cta: `Try VISUAILS · ${euro(AMOUNT.testSample, 'en')}`,
     unit: 'one per business',
     feeNote: `${euro(AMOUNT.testSample, 'en')} fee to prevent abuse`,
     /*
@@ -2137,9 +2276,13 @@ export const TEST_SAMPLE = {
     lifestyleLine: `${LIFESTYLE_IMAGES} images in one styled look — a scene, one on a model, and a detail close-up.`,
   },
   nl: {
-    name: 'Proefvisual',
+    /* 'Probeer VISUAILS' en niet meer 'Proefvisual' (3 september 2026): de klant
+       krijgt een set, geen visual. Zie de noot bij de Engelse `cta`. */
+    name: 'Probeer VISUAILS',
     h: 'Test VISUAILS met 1 product',
     price: euro(AMOUNT.testSample, 'nl'),
+    /* Zie de Engelse `cta`. */
+    cta: `Probeer VISUAILS · ${euro(AMOUNT.testSample, 'nl')}`,
     unit: 'één per bedrijf',
     // Geen "vergoeding" of "bijdrage" — dat zijn de woorden waarmee je een bedrag
     // mooier maakt dan het is, en dan ben je terug bij het probleem met

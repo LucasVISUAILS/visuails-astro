@@ -57,7 +57,7 @@ const c = nl ? {
   nowH: 'Wat er nu gebeurt',
   payQ: 'Staat er een betaallink in je bevestigingsmail?',
   payA: 'Rond die betaling af — je bestelling staat genoteerd, maar de productie start pas als de betaling binnen is.',
-  flow: 'Daarna lezen we wat je hebt gestuurd, maken we je visuals, en kijkt een mens elk resultaat na voordat het bij jou komt.',
+  flow: 'Daarna lezen we wat je hebt gestuurd, maken we je visuals, en kijkt een specialist elk resultaat na voordat het bij jou komt.',
   cta: 'Bekijk je bestelling',
   signin: 'Log in met het e-mailadres van deze bestelling — we sturen je een link, er is geen wachtwoord.',
   sumH: 'Samenvatting',
@@ -73,7 +73,7 @@ const c = nl ? {
   extraB: 'Hoe meer foto’s we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Een detailopname, de stof en een gedragen foto — gratis toe te voegen.',
   extraCta: 'Extra foto’s sturen',
   sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
-  cancelP1: `Uit onze administratie blijkt dat er al een proefvisual naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en de ${euro(AMOUNT.testSample, "nl")} is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
+  cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en de ${euro(AMOUNT.testSample, "nl")} is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
   cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
   cancelP3: 'Klaar voor het echte werk? De diensten beginnen bij de prijs per product, zonder minimum.',
   cancelCta: 'Bekijk de diensten',
@@ -140,10 +140,13 @@ const bronnen = nl
           betaallink. Geen zijstreep meer: een gekleurde rand van 3px links is
           precies het soort accent dat deze codebase elders verbiedt. Een eigen
           vlak zegt hetzelfde zonder de streep. */}
-      <p class="ty-pay"><strong>{c.payQ}</strong> {c.payA}</p>
+      {/* Sinds 3 september alleen als er een betaallink IS: initThankYou()
+          zet hem aan bij ?pay=. Zonder link (contactformulier, checklist,
+          terugkeer van Mollie) stond hier een vraag zonder antwoord. */}
+      <p class="ty-pay" data-ty-payq hidden><strong>{c.payQ}</strong> {c.payA}</p>
       <p>{c.flow}</p>
       <p class="ty-act"><a href={`/account?lang=${lang}`} class="btn btn-primary btn-lg">{c.cta}</a></p>
-      <p class="meta">{c.signin}</p>
+      <p class="meta" data-ty-signin>{c.signin}</p>
     </div>
   </div>
 
@@ -152,12 +155,27 @@ const bronnen = nl
     {/* Gevuld door initThankYou() met het kenmerk uit ?ref. Blijft leeg en
         onzichtbaar als er geen geldig kenmerk is — wie hier op een andere manier
         belandt, krijgt gewoon geen kenmerkregel. */}
+    {/* ── EEN ECHTE <dl> OM DE RIJEN ───────────────────────────────────────
+        axe-core, 2 september 2026: "<dt> and <dd> elements must be contained by
+        a <dl>". De rijen waren <div class="ty-row"> met een <dt> en een <dd>
+        erin, en zonder <dl> eromheen is dat geen definitielijst maar twee
+        elementen die toevallig zo heten — een schermlezer koppelt de term dan
+        niet aan de omschrijving.
+
+        De <div class="ty-row"> BLIJFT staan, want een <dl> mag een <div> om elk
+        dt/dd-paar hebben en de hele opmaak hangt aan die klasse (.ty-row is de
+        grid, de padding en de scheidingslijn). Wat erbij komt is alleen de
+        buitenste <dl>, met margin 0 zodat er geen millimeter verschuift. */}
+    <dl class="ty-rows">
     <div class="ty-row" id="ty-summary" hidden>
       <dt>{c.sumRef}</dt><dd data-ty-ref></dd>
     </div>
     <div class="ty-row">
       <dt>{c.sumMail}</dt>
-      <dd>{mailNote(lang)}</dd>
+      {/* Het adres komt uit sessionStorage (pipeline.js zet het vlak voor de
+          doorstuur); de spamnotitie stond hier ALLEEN, onder een kopje dat een
+          adres beloofde. 3 september 2026. */}
+      <dd><strong data-ty-mail></strong><span class="ty-mailnote">{mailNote(lang)}</span></dd>
     </div>
     <div class="ty-row">
       <dt>{c.sumTiming}</dt>
@@ -171,6 +189,7 @@ const bronnen = nl
         <a href={lp('/upload-guidelines')}>{c.guide}</a>
       </dd>
     </div>
+    </dl>
   </aside>
 
 </div></section>
@@ -228,11 +247,14 @@ const bronnen = nl
   .ty-now h2, .ty-extra h2 { font-size: 1.15rem; margin: 0 0 .7rem; }
   .ty-now p { margin: 0 0 .8rem; color: var(--ink-2); }
   .ty-now .meta { margin-top: .9rem; }
+  .ty-mailnote { display: block; font-size: .86rem; color: var(--ink-3); }
+  [data-ty-mail]:not(:empty) { display: block; margin-bottom: .25rem; color: var(--ink-1); }
   .ty-pay { padding: .85rem 1rem; background: var(--surface-2); border-radius: var(--r-md); }
   .ty-pay strong { color: var(--ink-1); }
   .ty-act { margin: 1.2rem 0 0; }
 
   .ty-side-h { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 .3rem; }
+  .ty-rows { margin: 0; }
   .ty-row { padding: .9rem 0; border-bottom: 1px solid var(--line); display: grid; gap: .2rem; }
   .ty-row:last-child { border-bottom: 0; }
   .ty-row dt { font-size: .82rem; color: var(--ink-3); margin: 0; }

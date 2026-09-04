@@ -12,17 +12,20 @@
 // buiten pagina’s anders dan /pricing, /catalog, /lifestyle en /video.
 import Layout from '../../layouts/Layout.astro';
 import ModelsPage from '../../components/ModelsPage.astro';
+// Zie de Engelse tegenhanger: het telwoord komt uit de roster. "Tien" is even
+// lang als het woord dat hier stond, dus de meting hieronder blijft kloppen.
+import { rosterWoord } from '../../data/models.js';
 
 // 152 tekens is de grens (META_LIMIT). "Bestelling" is vijf tekens langer dan
 // "drop", waardoor deze er met 154 net overheen ging; de laatste zin geeft
 // daarom een woord op, in plaats van dat het woord wordt teruggedraaid.
 const description =
-  'Tien standaardmodellen, gedeeld over elk merk en inbegrepen in elke bestelling ' +
+  `${rosterWoord('nl', true)} standaardmodellen, gedeeld over elk merk en inbegrepen in elke bestelling ` +
   'zonder extra kosten. Kies er een, of laat ons er een kiezen.';
 ---
 
 <Layout
-  title="Tien standaardmodellen, in elke bestelling | VISUAILS"
+  title={`${rosterWoord('nl', true)} standaardmodellen, in elke bestelling | VISUAILS`}
   description={description}
   ogImage="/img/model-01.webp"
 >

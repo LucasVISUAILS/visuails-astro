@@ -1,0 +1,39 @@
+---
+// VISUAILS — de modelkeuze op het LIFESTYLE-formulier, 4 september 2026.
+//
+// Elke carousel bevat één foto op een model (LifestylePage: "één foto op een
+// model in elke carousel") en /lifestyle zegt "hetzelfde gezicht, door je hele
+// collectie — of laat ons er een uitkiezen". De FAQ zei bovendien "kies een
+// gezicht uit de standaardbibliotheek" — maar het formulier vroeg er niet naar:
+// alleen catalog (Step1Options) had de ModelPicker. Een klant met een merkmodel
+// kon het bij lifestyle dus niet aanwijzen, en zijn vaste look (die wél een
+// gezicht kent, zie customer_style_locks) had niets om op aan te grijpen.
+//
+// Dezelfde ModelPicker, in dezelfde vouw, met "wij kiezen er een" als
+// standaard — de keuze dwingt niet, net als bij catalog.
+import Disclose from '../Disclose.astro';
+import ModelPicker from './ModelPicker.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const s = {
+  en: { model: 'we choose one', modelLabel: 'The on-model shot in the carousel' },
+  nl: { model: 'wij kiezen er een', modelLabel: 'De foto op een model in de carousel' },
+}[lang];
+---
+
+<div class="ls-folds">
+  <Disclose
+    summary={s.modelLabel}
+    name="s1"
+    liveAttr="data-pl-sum-model"
+    liveText={s.model}
+  >
+    <ModelPicker lang={lang} />
+  </Disclose>
+</div>
+
+<style>
+  .ls-folds { margin-top: clamp(1.4rem, 3vw, 2rem); max-width: var(--pl-measure); }
+  .ls-folds :global(.pl-model) { margin-top: 0; }
+</style>

@@ -266,6 +266,7 @@ async function ronde(db, velden) {
 const stand = (db, id = 91) => db.prepare('SELECT revision_round_at, revision_round_note, revision_round_count FROM orders WHERE id = ?').get(id);
 const staten = (db) => db.prepare("SELECT id, review_state FROM files WHERE order_id IN (91,92) ORDER BY id").all().map((r) => `${r.id}:${r.review_state}`);
 const verzoeken = (db) => db.prepare('SELECT file_id, note FROM revision_requests ORDER BY file_id').all();
+const db91 = (db) => db.prepare('SELECT closed_at FROM orders WHERE id = 91').get();
 
 /* ══ 2 · DE RONDE WORDT INGEDIEND, ÉÉN KEER ═════════════════════════════════ */
 console.log('\néén ronde wordt aangenomen en vastgelegd');
@@ -309,17 +310,15 @@ console.log('\néén ronde wordt aangenomen en vastgelegd');
 
   const s = stand(db);
   check('de ronde is gestempeld', Boolean(s.revision_round_at), true);
-  /* ── HET DASHBOARD VULT DE TWEE SAMENVATTINGSKOLOMMEN NIET ────────────────
-     `revision_round_note` en `revision_round_count` worden door het GEMAILDE
-     portaal geschreven (portal.js, de UPDATE bij `revision_round_note = ?2`) en
-     door het dashboard niet — dat zet alleen de stempel. De inhoud gaat niet
-     verloren: elk aangevinkt beeld krijgt zijn eigen regel in
-     `revision_requests`, en dat is waar de admin-inbox op telt.
-     Gevolg dat wél zichtbaar is: een ronde die via het dashboard binnenkomt,
-     toont in het beheerscherm "Geen toelichting achtergelaten" (admin.js:6643),
-     terwijl dezelfde ronde uit het portaal de notitie laat zien. */
-  check('het dashboard laat de samenvatting leeg', s.revision_round_count, null);
-  check('de notitie ook — die staat per beeld in revision_requests', s.revision_round_note, null);
+  /* ── HET DASHBOARD VULT DE TWEE SAMENVATTINGSKOLOMMEN — sinds 4 september 2026
+     Tot dan schreef alleen het GEMAILDE portaal `revision_round_note` en
+     `revision_round_count`; het dashboard zette alleen de stempel, en /admin
+     toonde bij een ronde uit Studio "Geen toelichting achtergelaten" terwijl de
+     klant per beeld wél iets had opgeschreven. Nu staan beide gevuld: de telling
+     en de (ontdubbelde) notities. Per beeld blijft alles in revision_requests. */
+  check('het dashboard telt de beelden van de ronde', s.revision_round_count, 2);
+  check('en zet de notitie op de bestelling (één keer, want twee keer dezelfde)',
+    s.revision_round_note, 'De kleur van het jasje klopt op geen van deze.');
 
   /* ── EN DE TWEEDE RONDE WORDT GEWEIGERD ──────────────────────────────────
      Dit is de hele reden dat dit bestand bestaat. Niets mag er nog veranderen:
@@ -481,6 +480,44 @@ console.log('\nhet scherm wisselt van formulier naar WhatsApp');
   /* De tabel noemt ze allebei, ook al staat er één open. Dat is wat de tabel
      komt doen: zonder hem zou een klant met twee leveringen er één kwijt zijn. */
   check('de tabel noemt beide bestellingen', /VIS-2026-0091/.test(na) && /VIS-2026-0092/.test(na), true);
+
+  /* ══ 4b · "ALLES GOED" PER PRODUCT — 4 september 2026 (doorlichting §3.6) ═══
+   *
+   * Vier keer op Goedkeuren drukken voor een product dat gewoon klopt, was de
+   * zwaarte van de beoordeling. Eén knop onder de tegels keurt alle openstaande
+   * beelden van dat product goed. Hij staat er alleen als er meer dan één te
+   * keuren is, en hij raakt niets anders: geen goedgekeurd beeld, geen vervangen
+   * beeld, geen beeld van een andere bestelling, en niets op een gesloten
+   * bestelling. Aanmerken blijft per beeld, dus het rondeformulier blijft staan. */
+  const knop = (html) => (html.match(/value="approve-product"/g) || []).length;
+  check('de knop "alles goed" staat bij het product met drie open beelden', knop(voor), 1);
+  check('en noemt hoeveel het er zijn', /Alle 3 zijn goed/.test(voor), true);
+  /* Bestelling 91 staat óók op deze pagina (hij vraagt iets van de klant), dus
+     de knop wordt binnen de KAART van 92 geteld en niet over de hele pagina. */
+  const een = await toon(bouwDb(), 92);
+  const kaart92 = (een.split('id="order-92"')[1] || '').split('id="order-')[0];
+  check('bij één open beeld staat hij er niet — daar is Goedkeuren genoeg', knop(kaart92), 0);
+  check('(de kaart van 92 is wel gevonden)', kaart92.length > 0, true);
+
+  const dbAlles = bouwDb();
+  const rAlles = await ronde(dbAlles, [['action', 'approve-product'], ['order', '91'], ['product', 'p1']]);
+  check('de POST keert terug naar de bestelling', rAlles.location, '/account/orders#order-91');
+  check('de drie open beelden van p1 zijn goedgekeurd, de rest niet geraakt', staten(dbAlles),
+    ['1:approved', '2:approved', '3:approved', '4:approved', '5:pending', '6:pending']);
+  check('en de bestelling is daarmee afgerond', Boolean(db91(dbAlles).closed_at), true);
+  check('de ronde is niet verbruikt — aanmerken kon nog steeds', stand(dbAlles).revision_round_at, null);
+
+  const dbDicht = bouwDb({ closed: '2026-08-20' });
+  await ronde(dbDicht, [['action', 'approve-product'], ['order', '91'], ['product', 'p1']]);
+  check('op een gesloten bestelling gebeurt er niets', staten(dbDicht).filter((x) => x.endsWith(':approved')).length, 1);
+
+  const dbAnder = bouwDb({ ownerId: 8 });
+  await ronde(dbAnder, [['action', 'approve-product'], ['order', '91'], ['product', 'p1']]);
+  check('en op de bestelling van een ander ook niet', staten(dbAnder).filter((x) => x.endsWith(':approved')).length, 1);
+
+  const dbVreemd = bouwDb();
+  await ronde(dbVreemd, [['action', 'approve-product'], ['order', '91'], ['product', "p1' OR 1=1 --"]]);
+  check('een productsleutel die geen sleutel is, wordt geweigerd', staten(dbVreemd).filter((x) => x.endsWith(':approved')).length, 1);
 }
 
 /* ══ 5 · DE TWEE SCHERMEN KUNNEN NIET UIT ELKAAR LOPEN ══════════════════════

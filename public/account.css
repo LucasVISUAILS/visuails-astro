@@ -626,7 +626,12 @@ a { color: inherit; }
   box-shadow: inset 0 -1px 0 var(--line);
 }
 .mark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
-.ref { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+/* `.ref` zit sinds 2 september op een <h2> in de <summary> van een
+   bestelling — zie de noot bij .h-sub. De drie h2-regels die een kop in een
+   samenvattingsrij zouden opblazen (marge, streep, 1,15rem) staan daarom hier
+   uit; de rest is ongewijzigd. */
+.ref { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+       margin: 0; padding-bottom: 0; box-shadow: none; font-weight: inherit; display: inline; }
 .bar-right { display: flex; align-items: center; gap: 1rem; font-size: .92rem; color: var(--ink-3); }
 /* Product-name suffix beside the wordmark — "VISUAILS · Studio Dashboard",
    the same shape as any tool naming itself next to its parent brand. Only on
@@ -649,6 +654,27 @@ h2 {
   padding-bottom: .7rem; box-shadow: inset 0 -1px 0 var(--line);
 }
 h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--ink); }
+
+/* ── EEN KOP DIE ALS h2 TELT EN ALS h3 OOGT — 2 september 2026 ─────────────
+   axe-core over het dashboard (kladblok/axe-dashboard.mjs, met de nepdata uit
+   scripts/account-render.mjs): "Heading levels should only increase by one", op
+   twaalf plekken. /account/details en /account/plan sprongen van h1 naar h3,
+   /account/orders zelfs van h1 naar h4.
+
+   Een schermlezer leest de koppenlijst als de inhoudsopgave van de pagina. Een
+   overgeslagen niveau zegt daarin dat er een tussenlaag is die je gemist hebt,
+   en die is er niet.
+
+   Wat er NIET is gebeurd: die koppen groter maken. Ze zijn h2 geworden en dragen
+   deze klasse, die precies de regel hierboven herhaalt plus de drie dingen
+   terugdraait die h2 er hier bovenop legt (de grote bovenmarge, de streep
+   eronder, en 1,15rem). Gemeten met scripts/account-render.mjs: de
+   schermafdrukken vóór en na zijn identiek. Semantiek gerepareerd, geen pixel
+   verschoven. */
+.h-sub {
+  margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--ink);
+  padding-bottom: 0; box-shadow: none; letter-spacing: normal;
+}
 .lede { margin: 0; max-width: 62ch; font-size: 1.1rem; color: var(--ink-2); text-wrap: pretty; }
 /* Record count beside a section heading — "Orders (4)" — not an eyebrow (it
    sits inline after the heading text, at heading baseline, not above it) and
@@ -723,6 +749,92 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 /* De scheiding tussen twee kaarten, en alleen tússen: geen lijn boven de eerste
    en geen onder de laatste, want dat zou het kader zijn dat net weg is. */
 .card + .card { box-shadow: inset 0 1px 0 var(--line); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   EN ÉÉN KADER KOMT TERUG — 3 SEPTEMBER 2026
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Lucas: *"in visuails studio wil ik dat voor bestellingen wel duidelijk van
+   elkaar te scheiden is, nu zie je geen kader en loopt alles in 1x door dus weet
+   je niet echt wanneer dat blok ophoudt en je bij een nieuwe order bent."*
+
+   Dat lijkt het tegendeel van de ingreep hierboven, en dat is het niet. Waar de
+   klacht van 27 augustus over ging, staat er letterlijk: VIER randen diep, "een
+   kaart om een bestelling, een doos om de betaalstatus, een doos om de
+   voortgang, een doos om elk product". Het bezwaar was de STAPELING, niet dat
+   een kader bestaat.
+
+   ── WAT ER MIS IS, PRECIES ─────────────────────────────────────────────────
+
+   Niet "er is geen kader" maar: de scheiding TUSSEN twee bestellingen is exact
+   dezelfde haarlijn als de scheiding BINNEN één bestelling. De betaalstrook, de
+   voortgangsbalk, de studionotitie en elk product beginnen met
+   `box-shadow: inset 0 1px 0 var(--line)`, en de volgende bestelling begint met
+   diezelfde lijn. Er is geen enkel verschil in gewicht tussen "hier begint een
+   nieuwe sectie" en "hier begint een nieuwe bestelling", en een open bestelling
+   is duizend pixels hoog. Dus lees je door de grens heen.
+
+   ── WAAROM EEN KADER EN NIET MEER RUIMTE ───────────────────────────────────
+
+   Meer witruimte was de eerste gedachte en die is verworpen om iets wat al op
+   het scherm staat: HET BEHEERSCHERM DOET HET AL MET EEN KADER. public/admin.css heeft
+   `.card` nooit uitgekleed — border, --paper-lift en --r-lg staan er nog, en op
+   de afdruk van het beheerscherm is een bestelling onmiskenbaar één blok. De
+   twee schermen liepen uit elkaar, niet omdat iemand dat besloot maar omdat de
+   opruiming van augustus één van de twee bestanden raakte.
+
+   En het tweede bewijs staat op dit scherm zelf: het revisiepaneel in een
+   geleverde bestelling heeft wél een kader, en niemand heeft daar ooit over
+   geklaagd dat het druk is.
+
+   ── DE REGEL DIE HIERUIT VOLGT, EN DIE HIER GELDT ──────────────────────────
+
+   **Een kader staat om een RECORD, nooit om een sectie daarbinnen.** Eén laag,
+   op het buitenste niveau, en alles erbinnen blijft cel-en-haarlijn zoals de
+   noot hierboven voorschrijft. Vier kaders op dit scherm in plaats van 220.
+
+   En het geldt alleen waar je je in een record kunt VERLIEZEN. Een factuurregel
+   is één regel hoog en een activiteitenrij twee: daar kun je niet verdwalen, en
+   die houden hun haarlijn. Gemeten op de afdrukken van 3 september is dat het
+   verschil tussen de twee lijsten die het wél nodig hebben — bestellingen en de
+   diensten onder "Standaard per dienst" — en alle andere die het niet nodig
+   hebben.
+
+   `--paper-lift` staat erbij en doet op het donkere scherm bijna niets (1,06:1,
+   zie de meting hierboven). Op het LICHTE scherm is het #FFFFFF op #FAFAF7 en
+   daar draagt het wel: dan is het kader een rand om een echt vlak.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* ── --line-strong EN NIET --line, EN DAT IS GEMETEN ───────────────────────
+   De eerste versie hiervan gebruikte `--line`, de haarlijn. Op de afdruk was het
+   kader nauwelijks te zien, en de reden staat in de kleurentrap bovenaan dit
+   bestand: `--line` is 12% wit, en op #030406 komt dat samengesteld uit op
+   ongeveer #212224 — een contrast van **1,28:1**. Dat is een lijn die je vindt
+   als je hem zoekt, en dit kader moet er zijn zonder dat je zoekt.
+
+   `--line-strong` is 22% en komt uit op ~1,83:1. Dat lijkt weinig en het is de
+   maat die op dit scherm al werkt: de statuspillen ernaast (IN PRODUCTIE,
+   GELEVERD) gebruiken exact deze rand, en die leest niemand als vaag. De trap
+   zegt over deze waarde "rules, never text", en een kader om een record is
+   precies een rule.
+
+   Meer dan dat mag niet: een lichtere rand dan de pil ernaast zou het kader
+   harder laten spreken dan de status erin, en dan is de doos terug die op
+   27 augustus wegging. */
+.card.ord {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--paper-lift);
+  padding: 0 clamp(.9rem, 2vw, 1.3rem) clamp(.9rem, 2vw, 1.2rem);
+  margin: 0 0 1rem;
+}
+/* Dicht heeft geen onderrand nodig: dan is de balk het hele blok. */
+.card.ord:not([open]) { padding-bottom: 0; }
+/* De haarlijn tussen twee kaarten is nu het kader zelf. Hem laten staan zou de
+   lijn zijn die de bovenrand van de volgende kaart al trekt, twee pixels hoger. */
+.card.ord + .card.ord { box-shadow: none; }
+/* De balk draagt nu zijn eigen verticale ruimte, want de kaart heeft er geen meer
+   aan de bovenkant. */
+.card.ord > summary.ord-sum { padding-block: clamp(.9rem, 2vw, 1.1rem); }
 .row-head {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: .8rem; flex-wrap: wrap; margin-bottom: .6rem;
@@ -787,6 +899,16 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
    bestaan en geen opsomming die je afwerkt. */
 .ed-lijst { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .9rem; }
 .ed-lijst li { padding-top: .9rem; box-shadow: inset 0 1px 0 var(--line); }
+/* De regel die zegt wat er NIET bij Editions hoort. Afgestreept van de lijst
+   erboven en niet ingekaderd: het is een noot bij die lijst, en een tweede
+   kader in dezelfde kaart leest als een tweede onderwerp. Zie de noot bij
+   edWhat in src/lib/account.js voor waarom deze regel er staat. */
+.ed-inbegrepen {
+  margin-top: 1.1rem;
+  padding-top: .9rem;
+  border-top: 1px solid var(--line);
+  line-height: 1.55;
+}
 .ed-lijst li:first-child { padding-top: 0; box-shadow: none; }
 .ed-lijst strong { display: block; color: var(--ink); }
 .ed-lijst span { display: block; margin-top: .2rem; color: var(--ink-2); }
@@ -912,11 +1034,19 @@ details.ask .btn { margin-top: .6rem; }
 .ask-tick input { width: 1rem; height: 1rem; accent-color: var(--accent, #C6F100); cursor: pointer; }
 .ask-tick:hover { color: var(--ink); }
 .ask-mark textarea { display: block; width: 100%; max-width: 32rem; margin-top: .4rem; }
-/* Een aangevinkt beeld krijgt zijn notitieveld nadrukkelijker, zodat je in één
-   blik ziet waar je nog iets moet schrijven. `:has()` en geen script — dit
-   dashboard draait onder `default-src 'none'`. */
+/* Het notitieveld verschijnt pas na het vinkje (doorlichting §3.6, 4 september
+   2026): vier lege tekstvakken onder vier goede foto's maakten de beoordeling
+   zwaarder dan hij is. `:has()` en geen script — dit dashboard draait onder
+   `default-src 'none'`. Browsers zonder `:has()` tonen het veld gewoon altijd. */
+@supports selector(:has(input)) {
+  .ask-mark:not(:has(input:checked)) textarea { display: none; }
+}
 .ask-mark:has(input:checked) textarea { border-color: var(--accent, #C6F100); }
 .ask-mark:has(input:checked) .ask-tick { color: var(--ink); }
+
+/* "Alles goed" per product: één knop onder de tegels, los van het rondeformulier. */
+.review-all { margin-top: .8rem; }
+.review-all .btn { width: auto; }
 
 /* ── HET FORMULIER DAT DE HELE RONDE VERSTUURT ──────────────────────────────
    Staat onder de productkaarten, buiten elke kaart, want het gaat over de
@@ -1123,10 +1253,20 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-cards { display: grid; gap: .8rem; }
 /* De drie uitklappers van de vaste look zijn een lijst — zelfde vorm als
    `.prod`, zelfde reden. */
+/* Zie de noot bij `.card.ord` hierboven: dit is de tweede lijst op dit dashboard
+   waar een record hoog genoeg is om in te verdwalen. Een open dienst draagt vier
+   gelabelde blokken (WIE HET DRAAGT, WAAR HET OP STAAT, BEELDVERHOUDING, WAAR JE
+   HET VERKOOPT) en een OPSLAAN-knop, en de dienst eronder begon met exact
+   dezelfde haarlijn als die vier. Op de afdruk van 3 september is niet te zien
+   dat die knop bij Catalog hoort en Lifestyle iets nieuws is.
+
+   `overflow: hidden` stond hier al en doet nu ook echt iets: hij snijdt de balk
+   op de radius af. */
 .bk-card {
-  border: 0; border-radius: 0; background: none; overflow: hidden;
+  border: 1px solid var(--line-strong); border-radius: var(--r-lg);
+  background: var(--paper-lift); overflow: hidden;
 }
-.bk-card + .bk-card { box-shadow: inset 0 1px 0 var(--line); }
+.bk-card + .bk-card { box-shadow: none; }
 .bk-card[open] { background: rgb(255 255 255 / .022); }
 
 .bk-sum {
@@ -1164,6 +1304,11 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-sum-h { font-size: 1rem; font-weight: 700; color: var(--ink); }
 .bk-sum-now { font-size: .82rem; color: var(--ink-3); overflow-wrap: anywhere; }
 .bk-sum-dot { color: var(--ink-300); }
+/* Na opslaan (3 sep 2026): de rij blijft dicht en zegt in één regel dat het
+   is opgeslagen. Kleur = signaal, geen extra kader — de samenvatting erboven
+   laat de nieuwe keuze al zien. */
+.bk-sum-ok { font-size: .82rem; color: var(--signal-ink); font-weight: 500; }
+.bk-card.is-saved { border-color: var(--signal); }
 .bk-sum-cta {
   flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35rem;
   font-size: .78rem; letter-spacing: .05em; text-transform: uppercase;
@@ -1663,7 +1808,10 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   background: var(--surface-2); border-left: 3px solid var(--accent);
   border-radius: 0 var(--r-sm, 6px) var(--r-sm, 6px) 0;
 }
-.wa-nudge h3 { margin: 0; font-size: .92rem; font-weight: 700; color: var(--ink); }
+/* `:is(h2, h3)` sinds 2 september: deze kop is een h2 geworden zodat de
+   koppenvolgorde klopt (zie .h-sub), en zonder deze regel erbij kreeg hij de
+   marges van een gewone h2 — gemeten 0px → 19,2px, en de kaart werd hoger. */
+.wa-nudge :is(h2, h3) { margin: 0; font-size: .92rem; font-weight: 700; color: var(--ink); }
 .wa-nudge p { margin: .35rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-3); }
 
 
@@ -1946,7 +2094,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
      naar zijn eigen foto om te vergelijken. */
   .prod-inner { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); }
 }
-.prod-inner h4 {
+.prod-inner h3 {
   margin: 0 0 .5rem; font-size: .72rem; letter-spacing: .09em; text-transform: uppercase;
   color: var(--ink-3); font-weight: 700;
 }
@@ -2076,6 +2224,8 @@ details.ask { margin-top: 0; }
    standen, en de donkere olijf zou daar juist verdwijnen. Zie de regel erboven
    voor die achtergrond. */
 .shot-badge.is-approved { color: var(--accent); }
+.shot-badge.is-new { color: var(--accent-ink); background: var(--accent); box-shadow: none; }
+.ronde.is-ready { border-top: 2px solid var(--accent); }
 /* En om precies dezelfde reden --warn en niet --warn-ink: dit badge ligt op
    hetzelfde donkere vlak boven de foto. De donkere kleivariant die op een lichte
    grond leesbaar is, is dat hier juist niet. */
@@ -3097,7 +3247,8 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 
 /* Plan links, volgende afschrijving rechts. */
 .dash-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
-.dash-top h3 { margin: .3rem 0 0; }
+/* Zie de noot bij .wa-nudge: de plannaam is een h2 geworden. */
+.dash-top :is(h2, h3) { margin: .3rem 0 0; }
 .dash-right { text-align: right; flex-shrink: 0; }
 .dash-right strong { display: block; margin-top: .3rem; white-space: nowrap; }
 
@@ -3538,3 +3689,103 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .kal-dag.is-mijn .kal-vul { background: rgb(0 0 0 / 0.20); }
 .kal-dag.is-mijn .kal-vul i { background: rgb(0 0 0 / 0.45); }
 .kal-nu-paar { margin: .9rem 0 0; font-size: .92rem; }
+
+/* ── De vaste stijl bij lifestyle — 3 september 2026 ──────────────────────────
+   Dezelfde tegel als de verhouding, maar met een foto: een stijl is een beeld,
+   geen woord. Zie lockSection() in account.js en migratie 0039. */
+.bk-looks { display: flex; flex-wrap: wrap; gap: .6rem; }
+.bk-look {
+  position: relative; display: grid; gap: .28rem; justify-items: center; align-content: start;
+  width: 150px; max-width: 100%;
+  cursor: pointer; padding: .55rem .6rem .6rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--paper-2); text-align: center;
+  transition: border-color .12s ease;
+}
+.bk-look:hover { border-color: var(--line-strong); }
+.bk-look:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
+.bk-look:has(input:focus-visible) { outline: 2px solid var(--teal); outline-offset: 2px; }
+.bk-look > input { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.bk-look-img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line-strong); }
+.bk-look-img.is-blank {
+  background: repeating-linear-gradient(45deg, var(--paper-2) 0 5px, var(--paper-lift) 5px 10px);
+  border-style: dashed;
+}
+.bk-look-name { font-size: .82rem; font-weight: 700; color: var(--ink); }
+.bk-look-what { font-size: .72rem; line-height: 1.35; color: var(--ink-3); }
+.bk-sum-look { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line-strong); }
+.bk-sum-look.is-blank { display: inline-block; background: var(--paper-2); border: 1px dashed var(--line-strong); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEER LUCHT — 4 september 2026
+   Lucas: "de knop Pay now staat letterlijk onderaan het orderblok op de rand;
+   er mag wel wat meer whitespace gebruikt worden over het algemeen."
+   Gemeten met kladblok/witruimte.mjs over alle Studio-schermen: knoppen op 0px
+   van de rand van hun blok (paybox, revisieronde), koppen op 5–8px van hun
+   alinea, het spoor op 11px van de tijdlijn, de statuspil op 3px van "Nu:".
+   Alles hieronder is aanvulling op de regels erboven; de maat is 1rem waar
+   het .6 was en 1.6 waar het 1.2 was — één stap ruimer, niet een ander
+   systeem. */
+.paybox { padding: 1.6rem 0 1.6rem; gap: .9rem; margin-top: 1.6rem; }
+.paybox.is-unpaid, .paybox.is-refunded { padding-left: 1.1rem; }
+.pay-form { margin-top: .4rem; }
+.flowbox { margin-top: 1.6rem; padding-top: 1.6rem; }
+.ovorder .flowbox { margin-top: 1rem; padding-top: 1.2rem; }
+.ovorder { padding-top: 1.6rem; margin-top: 1.2rem; }
+.ovorder-head { margin-bottom: .2rem; }
+.flow { margin: 1.2rem 0 .4rem; }
+.tl { margin-top: 1.2rem; }
+.ronde { margin-top: 1.6rem; padding: 1.6rem 0 1.6rem; }
+.ronde h3 { margin-bottom: .9rem; }
+.ronde p { margin-bottom: .9rem; }
+.ronde-after { margin-bottom: 1.2rem; }
+.ronde .btn { margin-top: .2rem; }
+.prod-inner h3 { margin-bottom: .9rem; }
+.prod-inner { gap: 1.6rem; padding: .6rem .8rem 1.4rem; }
+.folder { margin-top: 2rem; padding: 1.6rem 1.5rem; }
+.folder h3 { margin-bottom: .7rem; }
+.bk-cards { gap: 1rem; margin-top: 1.4rem; }
+.bk-own-empty h2, .own-empty h2 { margin-bottom: .7rem; }
+.det-field .det-check { margin-top: .5rem; }
+.leegabo h2 { margin-bottom: .9rem; }
+.login h1, .signin h1 { margin-bottom: .9rem; }
+main .lede, .main .lede { margin-bottom: 1.4rem; }
+.stats { gap: 1rem; }
+.stat { padding: 1.3rem 1.4rem; }
+.bk-empty h2 { margin-bottom: .8rem; }
+.authcard h1 { margin-bottom: 1rem; }
+.leegabo .leegabo-eyebrow { margin-bottom: 1.2rem; }
+.folder-body h3 { margin-bottom: .8rem; }
+
+/* ── JE EIGEN LOOKS — 4 september 2026 ──────────────────────────────────────
+   Eén kaart per eigen stijl: voorbeeld links, naam, dienst en toeslag, en de
+   knop die het bestelformulier opent met die stijl al aangevinkt. Een
+   voorgestelde stijl (offerte open) krijgt een gestippelde rand en geen knop. */
+.os-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); margin-top: 1.4rem; }
+.os-card { display: grid; grid-template-columns: 132px 1fr; gap: 1.1rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-lift); }
+.os-card.is-proposed { border-style: dashed; }
+.os-fig { aspect-ratio: 4 / 3; border-radius: var(--r-md); overflow: hidden; background: var(--paper-2); }
+.os-fig img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.os-fig-empty { display: block; width: 100%; height: 100%; background: repeating-linear-gradient(135deg, transparent 0 8px, rgb(255 255 255 / .04) 8px 16px); }
+.os-body { display: grid; gap: .5rem; align-content: start; min-width: 0; }
+.os-body h3 { margin: 0; font-size: 1.05rem; color: var(--ink); }
+.os-line { margin: 0; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+.os-state { margin: 0; font-size: .86rem; color: var(--ink-3); }
+.os-body .btn { justify-self: start; margin-top: .4rem; }
+@media (max-width: 520px) { .os-card { grid-template-columns: 1fr; } }
+
+/* ══ DE GEDEELDE MAANDSET — 4 september 2026 ══════════════════════════════
+   Eén kaart op de maand-tab van /account/plan. De set van nu groot (een
+   raster van vierkanten), eerdere maanden als smalle strook met een kleinere
+   knop. Zelfde beeldbehandeling als de Editions-strook. */
+.ms-card .lede { max-width: 62ch; }
+.ms-set { margin-top: 1.2rem; padding-top: 1.2rem; box-shadow: inset 0 1px 0 var(--line); }
+.ms-set.is-nu { margin-top: 1rem; padding-top: 0; box-shadow: none; }
+.ms-kop { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; flex-wrap: wrap; margin-bottom: .7rem; }
+.ms-maand { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--ink); }
+.ms-n { font-size: .82rem; color: var(--ink-3); }
+.ms-strook { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .5rem; margin-bottom: 1rem; }
+.ms-strook.is-klein { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: .35rem; }
+.ms-strook img { width: 100%; aspect-ratio: 1; height: auto; object-fit: cover; border-radius: var(--r-md); background: var(--surface-2); display: block; }
+.ms-eerder-h { margin: 1.6rem 0 0; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.ms-leeg { margin-top: .8rem; }

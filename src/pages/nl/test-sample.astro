@@ -36,13 +36,13 @@ const TIMING = turnaround('unattended', 'nl');
 ---
 
 <Layout
-  title="Test VISUAILS met 1 product — proefvisual"
-  description="Stuur de foto’s van een gewone bestelling en krijg vier catalogfoto’s of een lifestyle-carousel van drie terug. Eén proef per bedrijf, door een mens nagekeken."
+  title="Test VISUAILS met 1 product — Probeer VISUAILS · €1"
+  description="Stuur de foto’s van een gewone bestelling en krijg vier catalogfoto’s of een lifestyle-carousel van drie terug. Eén per bedrijf, nagekeken door een specialist."
 >
   <!-- HERO -->
   <section class="page-hero"><div class="container">
-    <span class="eyebrow-page">Proefvisual</span>
-    <h1 class="display" style="font-size:var(--t-page-h1)">Test VISUAILS met <span class="accent-word">1 product</span></h1>
+    <span class="eyebrow-page">Probeer VISUAILS</span>
+    <h1 class="display">Test VISUAILS met <span class="accent-word">1 product</span></h1>
     <p class="lead" style="margin-top:1.2rem">Je levert aan zoals bij een gewone bestelling — voorkant en achterkant in elk geval, plus een detail- of draagfoto als je die hebt — en je krijgt {SAMPLE.deliverable} terug. Precies wat je bij een betaalde bestelling per product krijgt. Hoe meer je meestuurt, hoe beter we het kunnen maken.</p>
     <div class="chip-row" style="margin-top:1.8rem">
       <span class="chip"><span class="dot"></span>{CATALOG_IMAGES} foto’s, of {LIFESTYLE_IMAGES}</span>
@@ -60,7 +60,7 @@ const TIMING = turnaround('unattended', 'nl');
         <ul class="checklist" style="margin-top:1.4rem">
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Kies je catalog: {CATALOG_IMAGES} foto’s — voorkant, achterkant, een stof- of logodetail, en één op een model.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Kies je lifestyle: {LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>In hoge resolutie, als downloadlink per e-mail.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>In hoge resolutie, in VISUAILS Studio — met de rechtstreekse link in je mail.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Een echte blik op onze belichting, kadrering en afwerking.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Door een persoon gecontroleerd voordat het je bereikt.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Eenmalig {SAMPLE.feeNote}, één proef per bedrijf.</span></li>
@@ -87,7 +87,7 @@ const TIMING = turnaround('unattended', 'nl');
         <div class="step reveal pending"><div class="step-n">01</div><h3>Upload je productfoto’s</h3><p>Voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt.</p></div>
         <div class="step reveal pending"><div class="step-n">02</div><h3>Kies een stijl</h3><p>Kies de look en, als je wilt, een model — of laat ons kiezen.</p></div>
         <div class="step reveal pending"><div class="step-n">03</div><h3>Wij maken het</h3><p>Geproduceerd in onze studio, daarna met de hand gecontroleerd.</p></div>
-        <div class="step reveal pending"><div class="step-n">04</div><h3>Ontvang per e-mail</h3><p>Je afgewerkte foto’s komen binnen als downloadlink — {TIMING.toLowerCase()}.</p></div>
+        <div class="step reveal pending"><div class="step-n">04</div><h3>Keur goed en download</h3><p>Je afgewerkte foto’s staan in VISUAILS Studio, met de link in je mail — {TIMING.toLowerCase()}.</p></div>
       </div>
     </div>
   </section>
@@ -148,7 +148,7 @@ const TIMING = turnaround('unattended', 'nl');
   <section>
     <div class="container narrow">
       <div class="section-head">
-        <h2>Vraag je proefvisual aan</h2>
+        <h2>Probeer VISUAILS met één product</h2>
         <p>Hetzelfde formulier als bij een betaalde bestelling, met het aantal vast op één product.</p>
       </div>
 
@@ -162,7 +162,7 @@ const TIMING = turnaround('unattended', 'nl');
            dus dit is de toestand van de pagina waar hij aankomt — niet iets dat
            hem onderbrak. -->
       <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
-        <strong>Je hebt je proefvisual al gehad.</strong>
+        <strong>Je hebt VISUAILS al geprobeerd.</strong>
         Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven —
         je hebt hier niet voor betaald.
         Klaar voor het echte werk? De <a href="/nl/start/">volledige diensten</a> beginnen bij
@@ -199,7 +199,7 @@ const TIMING = turnaround('unattended', 'nl');
         <p class="lead" style="margin:1.2rem auto 0;text-align:center">Stuur ons je product op WhatsApp en we helpen je een stijl kiezen.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <a href="/nl/start/" class="btn btn-ghost btn-lg">Plaats een volledige bestelling</a>
-          <a href={waHref("Hoi VISUAILS, ik wil graag een proefvisual proberen.")} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
+          <a href={waHref("Hoi VISUAILS, ik wil VISUAILS graag eerst proberen.")} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>

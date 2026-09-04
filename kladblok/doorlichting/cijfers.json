@@ -1,0 +1,741 @@
+{
+  "/nl/catalog/ @1440": {
+    "hoogte": 10811,
+    "overloopX": false,
+    "woorden": 1256,
+    "h1": 1,
+    "h2": [
+      "Eén product. Vier foto’s of meer. Het tarief daalt naarmate ",
+      "Kies je Catalog-stijl.",
+      "Catalogfotografie: zo duidelijk dat er niets te vragen overb",
+      "Drie stappen naar een strakke catalogus.",
+      "Alles wat een listing nodig heeft.",
+      "Dit is een telefoonfoto. Dit is wat eruit kwam.",
+      "Wat er verandert bij 10 producten",
+      "Catalog-vragen, beantwoord",
+      "Bouw een catalogus dieeruitziet als één merk.",
+      "Wat we maken",
+      "Bedrijf",
+      "Contact"
+    ],
+    "h3": 11,
+    "secties": [
+      {
+        "kop": "Strakke, consistente catalogfoto’s — ook bij dertig producten.",
+        "top": 76,
+        "h": 846,
+        "id": "page-hero"
+      },
+      {
+        "kop": "Eén product. Vier foto’s of meer. Het tarief daalt naarmate het aantal",
+        "top": 922,
+        "h": 1405,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Kies je Catalog-stijl.",
+        "top": 2327,
+        "h": 1512,
+        "id": "sr"
+      },
+      {
+        "kop": "Catalogfotografie: zo duidelijk dat er niets te vragen overblijft.",
+        "top": 3839,
+        "h": 1472,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Drie stappen naar een strakke catalogus.",
+        "top": 5311,
+        "h": 371,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Alles wat een listing nodig heeft.",
+        "top": 5681,
+        "h": 677,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Dit is een telefoonfoto. Dit is wat eruit kwam.",
+        "top": 6358,
+        "h": 920,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Wat er verandert bij 10 producten",
+        "top": 7278,
+        "h": 834,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Catalog-vragen, beantwoord",
+        "top": 8112,
+        "h": 1091,
+        "id": ""
+      },
+      {
+        "kop": "Bouw een catalogus dieeruitziet als één merk.",
+        "top": 9202,
+        "h": 588,
+        "id": "section-tight"
+      }
+    ],
+    "knoppen": 25,
+    "knopTeksten": [
+      "Wat we maken",
+      "Hoe het werkt",
+      "Bestellen",
+      "×",
+      "Chat via WhatsApp",
+      "Bestel catalogfoto’s",
+      "Bekijk de prijs per product",
+      "WhatsApp",
+      "Vraag een eigen catalogus-look aan",
+      "Ontdek Eigen merk",
+      "Bestel Classic",
+      "Ontdek Classic",
+      "? Uitleg: serviceniveau",
+      "Bekijk het tarief vanaf 10 producten",
+      "Start een bestelling",
+      "Cookievoorkeuren",
+      "? Uitleg: de proef",
+      "Probeer VISUAILS · €1 Probeer VISUAILS ·"
+    ],
+    "links": 93,
+    "kleineTikdoelen": 25,
+    "kleineTekst": 44,
+    "imgs": 6,
+    "imgsLazy": 5,
+    "imgsZonderAlt": 0,
+    "details": 10,
+    "plaatshouders": 6,
+    "dom": 764,
+    "video": 0,
+    "bytes": {
+      "js": 60350,
+      "css": 172549,
+      "img": 270852,
+      "font": 109588,
+      "n": 25
+    },
+    "tegels": 9
+  },
+  "/nl/lifestyle/ @1440": {
+    "hoogte": 12028,
+    "overloopX": false,
+    "woorden": 1264,
+    "h1": 1,
+    "h2": [
+      "Eén product. Drie foto’s. Een carousel.",
+      "Vier sferen — of je eigen.",
+      "Lifestylefotografie: je product gedragen, in een echte omgev",
+      "Drie stappen naar een carousel.",
+      "Alles wat een feedpost nodig heeft.",
+      "Het assortiment, in beweging",
+      "Wat er verandert bij 10 producten",
+      "Lifestyle-vragen, beantwoord",
+      "Zet je productin een scène die verkoopt.",
+      "Wat we maken",
+      "Bedrijf",
+      "Contact"
+    ],
+    "h3": 16,
+    "secties": [
+      {
+        "kop": "Jouw product, in scènes die verkopen.",
+        "top": 76,
+        "h": 846,
+        "id": "page-hero"
+      },
+      {
+        "kop": "Eén product. Drie foto’s. Een carousel.",
+        "top": 922,
+        "h": 1101,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Vier sferen — of je eigen.",
+        "top": 2023,
+        "h": 3295,
+        "id": "sr"
+      },
+      {
+        "kop": "Lifestylefotografie: je product gedragen, in een echte omgeving.",
+        "top": 5318,
+        "h": 700,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Drie stappen naar een carousel.",
+        "top": 6018,
+        "h": 371,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Alles wat een feedpost nodig heeft.",
+        "top": 6389,
+        "h": 936,
+        "id": "section-tight"
+      },
+      {
+        "kop": "",
+        "top": 7325,
+        "h": 250,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Het assortiment, in beweging",
+        "top": 7575,
+        "h": 844,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Wat er verandert bij 10 producten",
+        "top": 8419,
+        "h": 834,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Lifestyle-vragen, beantwoord",
+        "top": 9253,
+        "h": 1167,
+        "id": ""
+      },
+      {
+        "kop": "Zet je productin een scène die verkoopt.",
+        "top": 10420,
+        "h": 588,
+        "id": "section-tight"
+      }
+    ],
+    "knoppen": 31,
+    "knopTeksten": [
+      "Wat we maken",
+      "Hoe het werkt",
+      "Bestellen",
+      "×",
+      "Chat via WhatsApp",
+      "Bestel lifestylefoto’s",
+      "Bekijk de prijs per product",
+      "WhatsApp",
+      "Vraag een look op maat aan",
+      "Ontdek Custom",
+      "Bestel Dunes",
+      "Ontdek Dunes",
+      "Bestel Flash",
+      "Ontdek Flash",
+      "Bestel Glow",
+      "Ontdek Glow",
+      "Bestel Phone-made",
+      "Ontdek Phone-made",
+      "? Uitleg: serviceniveau",
+      "Bekijk het tarief vanaf 10 producten",
+      "Ontdek modellen",
+      "Start een bestelling",
+      "Cookievoorkeuren",
+      "? Uitleg: de proef",
+      "Probeer VISUAILS · €1 Probeer VISUAILS ·"
+    ],
+    "links": 103,
+    "kleineTikdoelen": 26,
+    "kleineTekst": 34,
+    "imgs": 31,
+    "imgsLazy": 30,
+    "imgsZonderAlt": 0,
+    "details": 11,
+    "plaatshouders": 0,
+    "dom": 863,
+    "video": 0,
+    "bytes": {
+      "js": 60350,
+      "css": 170745,
+      "img": 2454036,
+      "font": 109588,
+      "n": 45
+    },
+    "tegels": 10
+  },
+  "/nl/video/ @1440": {
+    "hoogte": 8628,
+    "overloopX": false,
+    "woorden": 1157,
+    "h1": 1,
+    "h2": [
+      "Manieren om beweging toe te voegen.",
+      "Productvideo: beweging waar een foto niet verder komt.",
+      "Drie stappen naar een bewegend product.",
+      "Strakke beweging, klaar om te publiceren.",
+      "Wat er verandert bij 10 producten",
+      "Video-vragen, beantwoord",
+      "Geef je producteen beetje beweging.",
+      "Wat we maken",
+      "Bedrijf",
+      "Contact"
+    ],
+    "h3": 13,
+    "secties": [
+      {
+        "kop": "Korte productvideo’sdie bewegen.",
+        "top": 76,
+        "h": 846,
+        "id": "page-hero"
+      },
+      {
+        "kop": "Manieren om beweging toe te voegen.",
+        "top": 922,
+        "h": 2647,
+        "id": "sr"
+      },
+      {
+        "kop": "Productvideo: beweging waar een foto niet verder komt.",
+        "top": 3569,
+        "h": 772,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Drie stappen naar een bewegend product.",
+        "top": 4341,
+        "h": 372,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Strakke beweging, klaar om te publiceren.",
+        "top": 4713,
+        "h": 529,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Wat er verandert bij 10 producten",
+        "top": 5242,
+        "h": 962,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Video-vragen, beantwoord",
+        "top": 6204,
+        "h": 785,
+        "id": ""
+      },
+      {
+        "kop": "Geef je producteen beetje beweging.",
+        "top": 6989,
+        "h": 618,
+        "id": "section-tight"
+      }
+    ],
+    "knoppen": 30,
+    "knopTeksten": [
+      "Wat we maken",
+      "Hoe het werkt",
+      "Bestellen",
+      "×",
+      "Chat via WhatsApp",
+      "Vraag een videoclip aan",
+      "Bekijk de prijzen",
+      "WhatsApp",
+      "Bespreek een video op maat",
+      "Ontdek Custom",
+      "Vraag Motion aan",
+      "Ontdek Motion",
+      "Vraag Lifestyle Video aan",
+      "Ontdek Lifestyle Video",
+      "Vraag een campagne-offerte aan",
+      "Ontdek Campaign",
+      "Offerte voor een campagne",
+      "? Uitleg: serviceniveau",
+      "Bekijk het tarief vanaf 10 producten",
+      "Neem contact op",
+      "Start een bestelling",
+      "Cookievoorkeuren",
+      "? Uitleg: de proef",
+      "Probeer VISUAILS · €1 Probeer VISUAILS ·"
+    ],
+    "links": 99,
+    "kleineTikdoelen": 25,
+    "kleineTekst": 23,
+    "imgs": 14,
+    "imgsLazy": 13,
+    "imgsZonderAlt": 0,
+    "details": 6,
+    "plaatshouders": 0,
+    "dom": 688,
+    "video": 0,
+    "bytes": {
+      "js": 60350,
+      "css": 168068,
+      "img": 900394,
+      "font": 109588,
+      "n": 35
+    },
+    "tegels": 7
+  },
+  "/nl/catalog/ @390": {
+    "hoogte": 13521,
+    "overloopX": false,
+    "woorden": 1236,
+    "h1": 1,
+    "h2": [
+      "Eén product. Vier foto’s of meer. Het tarief daalt naarmate ",
+      "Kies je Catalog-stijl.",
+      "Catalogfotografie: zo duidelijk dat er niets te vragen overb",
+      "Drie stappen naar een strakke catalogus.",
+      "Alles wat een listing nodig heeft.",
+      "Dit is een telefoonfoto. Dit is wat eruit kwam.",
+      "Wat er verandert bij 10 producten",
+      "Catalog-vragen, beantwoord",
+      "Bouw een catalogus dieeruitziet als één merk.",
+      "Wat we maken",
+      "Bedrijf",
+      "Contact"
+    ],
+    "h3": 11,
+    "secties": [
+      {
+        "kop": "Strakke, consistente catalogfoto’s — ook bij dertig producten.",
+        "top": 76,
+        "h": 1514,
+        "id": "page-hero"
+      },
+      {
+        "kop": "Eén product. Vier foto’s of meer. Het tarief daalt naarmate het aantal",
+        "top": 1590,
+        "h": 1454,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Kies je Catalog-stijl.",
+        "top": 3044,
+        "h": 1779,
+        "id": "sr"
+      },
+      {
+        "kop": "Catalogfotografie: zo duidelijk dat er niets te vragen overblijft.",
+        "top": 4823,
+        "h": 1488,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Drie stappen naar een strakke catalogus.",
+        "top": 6311,
+        "h": 605,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Alles wat een listing nodig heeft.",
+        "top": 6916,
+        "h": 818,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Dit is een telefoonfoto. Dit is wat eruit kwam.",
+        "top": 7734,
+        "h": 939,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Wat er verandert bij 10 producten",
+        "top": 8672,
+        "h": 1449,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Catalog-vragen, beantwoord",
+        "top": 10121,
+        "h": 996,
+        "id": ""
+      },
+      {
+        "kop": "Bouw een catalogus dieeruitziet als één merk.",
+        "top": 11117,
+        "h": 614,
+        "id": "section-tight"
+      }
+    ],
+    "knoppen": 23,
+    "knopTeksten": [
+      "",
+      "×",
+      "Bestellen",
+      "Chat via WhatsApp",
+      "Bestel catalogfoto’s",
+      "Bekijk de prijs per product",
+      "WhatsApp",
+      "Vraag een eigen catalogus-look aan",
+      "Ontdek Eigen merk",
+      "Bestel Classic",
+      "Ontdek Classic",
+      "? Uitleg: serviceniveau",
+      "Bekijk het tarief vanaf 10 producten",
+      "Start een bestelling",
+      "Cookievoorkeuren",
+      "? Uitleg: de proef",
+      "Probeer VISUAILS · €1 Probeer VISUAILS ·"
+    ],
+    "links": 74,
+    "kleineTikdoelen": 7,
+    "kleineTekst": 31,
+    "imgs": 6,
+    "imgsLazy": 5,
+    "imgsZonderAlt": 0,
+    "details": 10,
+    "plaatshouders": 6,
+    "dom": 764,
+    "video": 0,
+    "bytes": {
+      "js": 60350,
+      "css": 172549,
+      "img": 270852,
+      "font": 109588,
+      "n": 25
+    },
+    "tegels": 11
+  },
+  "/nl/lifestyle/ @390": {
+    "hoogte": 15272,
+    "overloopX": false,
+    "woorden": 1244,
+    "h1": 1,
+    "h2": [
+      "Eén product. Drie foto’s. Een carousel.",
+      "Vier sferen — of je eigen.",
+      "Lifestylefotografie: je product gedragen, in een echte omgev",
+      "Drie stappen naar een carousel.",
+      "Alles wat een feedpost nodig heeft.",
+      "Het assortiment, in beweging",
+      "Wat er verandert bij 10 producten",
+      "Lifestyle-vragen, beantwoord",
+      "Zet je productin een scène die verkoopt.",
+      "Wat we maken",
+      "Bedrijf",
+      "Contact"
+    ],
+    "h3": 16,
+    "secties": [
+      {
+        "kop": "Jouw product, in scènes die verkopen.",
+        "top": 76,
+        "h": 1396,
+        "id": "page-hero"
+      },
+      {
+        "kop": "Eén product. Drie foto’s. Een carousel.",
+        "top": 1472,
+        "h": 1557,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Vier sferen — of je eigen.",
+        "top": 3029,
+        "h": 3814,
+        "id": "sr"
+      },
+      {
+        "kop": "Lifestylefotografie: je product gedragen, in een echte omgeving.",
+        "top": 6843,
+        "h": 1103,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Drie stappen naar een carousel.",
+        "top": 7946,
+        "h": 629,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Alles wat een feedpost nodig heeft.",
+        "top": 8576,
+        "h": 888,
+        "id": "section-tight"
+      },
+      {
+        "kop": "",
+        "top": 9464,
+        "h": 298,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Het assortiment, in beweging",
+        "top": 9762,
+        "h": 579,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Wat er verandert bij 10 producten",
+        "top": 10341,
+        "h": 1449,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Lifestyle-vragen, beantwoord",
+        "top": 11789,
+        "h": 1112,
+        "id": ""
+      },
+      {
+        "kop": "Zet je productin een scène die verkoopt.",
+        "top": 12902,
+        "h": 580,
+        "id": "section-tight"
+      }
+    ],
+    "knoppen": 29,
+    "knopTeksten": [
+      "",
+      "×",
+      "Bestellen",
+      "Chat via WhatsApp",
+      "Bestel lifestylefoto’s",
+      "Bekijk de prijs per product",
+      "WhatsApp",
+      "Vraag een look op maat aan",
+      "Ontdek Custom",
+      "Bestel Dunes",
+      "Ontdek Dunes",
+      "Bestel Flash",
+      "Ontdek Flash",
+      "Bestel Glow",
+      "Ontdek Glow",
+      "Bestel Phone-made",
+      "Ontdek Phone-made",
+      "? Uitleg: serviceniveau",
+      "Bekijk het tarief vanaf 10 producten",
+      "Ontdek modellen",
+      "Start een bestelling",
+      "Cookievoorkeuren",
+      "? Uitleg: de proef",
+      "Probeer VISUAILS · €1 Probeer VISUAILS ·"
+    ],
+    "links": 84,
+    "kleineTikdoelen": 8,
+    "kleineTekst": 21,
+    "imgs": 31,
+    "imgsLazy": 30,
+    "imgsZonderAlt": 0,
+    "details": 11,
+    "plaatshouders": 0,
+    "dom": 863,
+    "video": 0,
+    "bytes": {
+      "js": 60350,
+      "css": 170745,
+      "img": 2401385,
+      "font": 109588,
+      "n": 44
+    },
+    "tegels": 12
+  },
+  "/nl/video/ @390": {
+    "hoogte": 12195,
+    "overloopX": false,
+    "woorden": 1137,
+    "h1": 1,
+    "h2": [
+      "Manieren om beweging toe te voegen.",
+      "Productvideo: beweging waar een foto niet verder komt.",
+      "Drie stappen naar een bewegend product.",
+      "Strakke beweging, klaar om te publiceren.",
+      "Wat er verandert bij 10 producten",
+      "Video-vragen, beantwoord",
+      "Geef je producteen beetje beweging.",
+      "Wat we maken",
+      "Bedrijf",
+      "Contact"
+    ],
+    "h3": 13,
+    "secties": [
+      {
+        "kop": "Korte productvideo’sdie bewegen.",
+        "top": 76,
+        "h": 1442,
+        "id": "page-hero"
+      },
+      {
+        "kop": "Manieren om beweging toe te voegen.",
+        "top": 1518,
+        "h": 3147,
+        "id": "sr"
+      },
+      {
+        "kop": "Productvideo: beweging waar een foto niet verder komt.",
+        "top": 4665,
+        "h": 1131,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Drie stappen naar een bewegend product.",
+        "top": 5796,
+        "h": 629,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Strakke beweging, klaar om te publiceren.",
+        "top": 6425,
+        "h": 1052,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Wat er verandert bij 10 producten",
+        "top": 7478,
+        "h": 1622,
+        "id": "section-tight"
+      },
+      {
+        "kop": "Video-vragen, beantwoord",
+        "top": 9100,
+        "h": 671,
+        "id": ""
+      },
+      {
+        "kop": "Geef je producteen beetje beweging.",
+        "top": 9771,
+        "h": 634,
+        "id": "section-tight"
+      }
+    ],
+    "knoppen": 28,
+    "knopTeksten": [
+      "",
+      "×",
+      "Bestellen",
+      "Chat via WhatsApp",
+      "Vraag een videoclip aan",
+      "Bekijk de prijzen",
+      "WhatsApp",
+      "Bespreek een video op maat",
+      "Ontdek Custom",
+      "Vraag Motion aan",
+      "Ontdek Motion",
+      "Vraag Lifestyle Video aan",
+      "Ontdek Lifestyle Video",
+      "Vraag een campagne-offerte aan",
+      "Ontdek Campaign",
+      "Offerte voor een campagne",
+      "? Uitleg: serviceniveau",
+      "Bekijk het tarief vanaf 10 producten",
+      "Neem contact op",
+      "Start een bestelling",
+      "Cookievoorkeuren",
+      "? Uitleg: de proef",
+      "Probeer VISUAILS · €1 Probeer VISUAILS ·"
+    ],
+    "links": 80,
+    "kleineTikdoelen": 7,
+    "kleineTekst": 10,
+    "imgs": 14,
+    "imgsLazy": 13,
+    "imgsZonderAlt": 0,
+    "details": 6,
+    "plaatshouders": 0,
+    "dom": 688,
+    "video": 0,
+    "bytes": {
+      "js": 60350,
+      "css": 168068,
+      "img": 900394,
+      "font": 109588,
+      "n": 35
+    },
+    "tegels": 10
+  }
+}

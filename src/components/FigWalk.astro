@@ -21,9 +21,11 @@
 //   2 · VAN LINKS NAAR RECHTS. Elke stap komt van links binnengeschoven, staat
 //       stil terwijl je hem leest, en schuift naar rechts weg. Dat is geen
 //       animatie met een eigen tijdlijn: de verschuiving hangt aan de
-//       scrollpositie, dus hij beweegt precies zo snel als jij scrolt en erft
-//       de vloeiendheid van Lenis (src/scripts/smooth-scroll.js), die de scroll
-//       van deze site al lerpt. Vandaar "net als lenis".
+//       scrollpositie, dus hij beweegt precies zo snel als jij scrolt. "Net als
+//       lenis" sloeg op de bibliotheek die de scroll van deze site lerpte; die
+//       is er sinds 1 september 2026 uit (zie de noot in Layout.astro). De
+//       verschuiving volgt nog steeds de scroll, alleen levert de browser die nu
+//       zelf.
 //
 //       Er is bewust GEEN horizontale baan gekozen die de scroll overneemt.
 //       Dat is de vorm van veel awardsites en het is ook de vorm waar
@@ -214,7 +216,7 @@ const START = SERVICES[0].id;
               {svc.shots.map((shot, i) => (
                 <li>
                   {i === 0
-                    ? <img src={svc.source.src} alt="" width="600" height="750" loading="lazy" decoding="async" />
+                    ? <img src={svc.source.src} alt={lang === 'nl' ? 'De ingestuurde telefoonfoto' : 'The submitted phone photo'} width="600" height="750" loading="lazy" decoding="async" />
                     : <span class="wk-src-drawn" aria-hidden="true"></span>}
                   <span class="wk-src-t">{shot.name}</span>
                 </li>
@@ -312,12 +314,12 @@ const START = SERVICES[0].id;
                 <div class="wk-models">
                   <ul class="wk-roster">
                     <li class="wk-face is-on">
-                      <img src={DEMO_MODEL.photo} alt="" width="200" height="250" loading="lazy" decoding="async" />
+                      <img src={DEMO_MODEL.photo} alt={`Model ${DEMO_MODEL.name}`} width="200" height="250" loading="lazy" decoding="async" />
                       <span>{DEMO_MODEL.name}</span>
                     </li>
                     {DEMO_LOCKED_MODELS.map((m) => (
                       <li class="wk-face">
-                        <img src={m.photo} alt="" width="200" height="250" loading="lazy" decoding="async" />
+                        <img src={m.photo} alt={`Model ${m.name}`} width="200" height="250" loading="lazy" decoding="async" />
                         <span>{m.name}</span>
                       </li>
                     ))}
@@ -371,8 +373,11 @@ const START = SERVICES[0].id;
   .wk { margin: 0; }
 
   /* ── the picker ───────────────────────────────────────────────────────── */
-  .wk-pick { max-width: 34rem; margin: 0 auto clamp(3rem, 7vw, 5rem); text-align: center; }
-  .wk-pick-h { font-size: .74rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-4); margin: 0 0 1.1rem; font-weight: 500; }
+  .wk-pick { max-width: 34rem; margin: 0 auto clamp(2rem, 4vw, 3rem); text-align: center; }
+  /* Een <h2> erft de koppenletter (Big Shoulders, smal) en op .74rem werd dat
+     een streepje van zeven pixels hoog — op de schermafdruk van 4 september
+     2026 niet te lezen. De broodletter, iets groter, en het label leest weer. */
+  .wk-pick-h { font-family: var(--font-body); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 1.1rem; font-weight: 700; }
   .wk-pick-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
   .wk-pick-hint { margin: 1.2rem auto 0; max-width: 46ch; font-size: .82rem; color: var(--ink-4); line-height: 1.6; }
 
@@ -573,7 +578,10 @@ const START = SERVICES[0].id;
      als tempo. De band leest sinds vandaag de échte staphoogte in plaats van
      een vast deel van het venster, dus de twee kunnen niet meer uit de pas
      lopen — zie de noot bij `band` in src/scripts/walk.js. */
-  :global(.js) .wk-step { min-height: 48svh; display: flex; flex-direction: column; justify-content: center; }
+  /* 48 → 42svh, doorlichting 4 september 2026: op een scherm van 900 px was
+     dat 432 px per stap met ~350 px lucht tussen de keuze en de eerste beelden.
+     walk.js leest de echte staphoogte, dus het tempo blijft kloppen. */
+  :global(.js) .wk-step { min-height: 42svh; display: flex; flex-direction: column; justify-content: center; }
 
   /* THE LEFT-TO-RIGHT SLIDE. `--wk-t` and `--wk-o` are written by walk.js from
      the scroll position, once per frame, on the inner element only — never on

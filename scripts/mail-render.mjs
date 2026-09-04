@@ -24,6 +24,7 @@ import { customerEmail, subscriberEmail } from '../functions/api/order.js';
 import { magicLinkEmail } from '../src/lib/account.js';
 import { deliveryEmail, redeliveryEmail } from '../src/lib/admin.js';
 import { invoiceEmail } from '../src/lib/invoiceMail.js';
+import { cancelEmail, creditNoteEmail } from '../src/lib/cancelMail.js';
 import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -85,6 +86,29 @@ const MAILS = [
       order: { ref: 'VIS-2608-4471' },
       invoice: { number: 'VIS-2026-0031' },
       snap: { date: '2026-08-09', netCents: 102000, vatCents: 21420, treatment: 'nl_standard' },
+      attached: true,
+    }).html,
+  },
+  {
+    // 4 september 2026. De twee mails rond een annulering (doorlichting §3.2):
+    // eerst het besluit, dan — zodra Mollie de terugbetaling bevestigt — de
+    // creditnota. Ze staan hier naast de factuurmail omdat de nota daar het
+    // spiegelbeeld van is en dat ook zo moet lezen.
+    label: 'Bestelling geannuleerd',
+    html: cancelEmail({
+      order: { ref: 'VIS-2608-4471', name: 'Sanne', lang: 'nl' },
+      reason: 'De lijn is uit de collectie gehaald voordat we konden starten.',
+      money: 'refund',
+      grossCents: 123420,
+    }).html,
+  },
+  {
+    label: 'Creditnota',
+    html: creditNoteEmail({
+      lang: 'nl',
+      order: { ref: 'VIS-2608-4471' },
+      note: { number: 'VIS-2026-0032' },
+      snap: { date: '2026-08-11', grossCents: 123420, creditsNumber: 'VIS-2026-0031' },
       attached: true,
     }).html,
   },

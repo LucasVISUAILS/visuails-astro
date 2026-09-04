@@ -92,12 +92,26 @@ export async function buildSitemap(distDir) {
   const files = await walk(distDir);
   const pages = [];
 
+  const gewijzigd = new Map();
   for (const file of files) {
     const html = await readFile(join(distDir, file), 'utf8');
     const robots = (html.match(/<meta\s+name="robots"\s+content="([^"]*)"/i) || [])[1] || '';
     // De pagina beslist zelf. Geen uitzonderingenlijst in dit script.
     if (/noindex/i.test(robots)) continue;
-    pages.push(routeOf(file));
+    const route = routeOf(file);
+    pages.push(route);
+    /* ── <lastmod>, UIT DE PAGINA EN NIET UIT EEN VARIABELE — 3 sept 2026 ────
+     *
+     * scripts/gewijzigd-op.mjs heeft vlak hiervoor de `dateModified` in de
+     * WebPage-knoop van deze HTML gezet. Die wordt hier terug UITGELEZEN in
+     * plaats van doorgegeven, en dat is met opzet: een waarde die van hand tot
+     * hand gaat, kan onderweg iets anders worden dan wat er op de pagina staat,
+     * en dan zeggen de sitemap en de pagina twee dingen over dezelfde dag.
+     * Wat er niet in de HTML staat, komt hier ook niet in de sitemap — geen
+     * terugval op de bouwdatum, om precies de reden die in de kop van dat
+     * bestand staat. */
+    const d = (html.match(/"dateModified":"([^"]+)"/) || [])[1];
+    if (d) gewijzigd.set(route, d);
   }
 
   /*
@@ -123,7 +137,9 @@ export async function buildSitemap(distDir) {
       alt.push(`<xhtml:link rel="alternate" hreflang="nl" href="${urlOf(nl)}"/>`);
       alt.push(`<xhtml:link rel="alternate" hreflang="x-default" href="${urlOf(en)}"/>`);
     }
+    const mod = gewijzigd.get(route);
     rows.push(`  <url><loc>${urlOf(route)}</loc>${alt.join('')}`
+      + (mod ? `<lastmod>${mod}</lastmod>` : '')
       + `<changefreq>${rule.changefreq}</changefreq><priority>${rule.priority}</priority></url>`);
   }
 
@@ -144,7 +160,7 @@ ${rows.join('\n')}
 </urlset>
 `;
   await writeFile(join(distDir, 'sitemap.xml'), xml, 'utf8');
-  return { count: rows.length, routes: pages };
+  return { count: rows.length, routes: pages, lastmod: gewijzigd.size };
 }
 
 /** dist/nl/404/index.html → dist/nl/404.html, zodat Pages hem vindt. */
@@ -185,9 +201,10 @@ export default function sitemapAnd404() {
          * precies de reden dat die stap in dezelfde build wél doorliep.
          */
         const distDir = fileURLToPath(dir);
-        const { count } = await buildSitemap(distDir);
+        const { count, lastmod } = await buildSitemap(distDir);
         const flat = await flattenDutch404(distDir);
-        logger.info(`sitemap: ${count} pagina's${flat ? ', Nederlandse 404 platgezet' : ', GEEN Nederlandse 404 gevonden'}`);
+        logger.info(`sitemap: ${count} pagina's, ${lastmod} met <lastmod>`
+          + `${flat ? ', Nederlandse 404 platgezet' : ', GEEN Nederlandse 404 gevonden'}`);
       },
     },
   };

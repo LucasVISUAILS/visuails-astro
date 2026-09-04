@@ -48,6 +48,7 @@ const I18N = {
     tyPayNote: 'This order is not paid yet. Production starts once the payment comes through.',
     tyPayCta: 'Complete the payment',
     tyPaidNote: 'The payment came through. You will get a confirmation and the invoice by email.',
+    tySignedIn: 'You are signed in — the order is already in VISUAILS Studio.',
     tsSending: 'Uploading…',
     tsDone: 'Uploaded',
     tsRemove: 'Remove',
@@ -84,6 +85,7 @@ const I18N = {
     tyPayNote: 'Deze bestelling is nog niet betaald. Zodra de betaling binnen is, gaan we aan de slag.',
     tyPayCta: 'Rond de betaling af',
     tyPaidNote: 'De betaling is binnengekomen. Je krijgt de bevestiging en de factuur per mail.',
+    tySignedIn: 'Je bent ingelogd — de bestelling staat al in VISUAILS Studio.',
     tsSending: 'Uploaden…',
     tsDone: 'Geüpload',
     tsRemove: 'Verwijderen',
@@ -1076,6 +1078,13 @@ function molliePayUrl(raw) {
 function initThankYou() {
   const box = document.querySelector('#ty-summary');
   if (!box) return;
+  /* ── ÉÉN KEER — 3 september 2026 ─────────────────────────────────────────
+     init() draait bij het laden én bij astro:page-load, en die tweede vuurt
+     ook op de eerste pagina. Alles hieronder is `append`, dus de betaalknop
+     stond twee keer onder elkaar op de live bedankpagina. Zelfde slot als
+     initVeldmeldingen() gebruikt. */
+  if (box.dataset.tyDone) return;
+  box.dataset.tyDone = '1';
   const params = new URLSearchParams(location.search);
   /* ── OOK `?paid=`, EN NIET ALLEEN `?ref=` — 23 augustus 2026 ───────────────
    *
@@ -1109,6 +1118,25 @@ function initThankYou() {
   const refCel = box.querySelector('[data-ty-ref]');
   if (refCel) refCel.textContent = ref.toUpperCase();
   box.hidden = false;
+
+  /* Het adres waar de bevestiging heen ging, als pipeline.js het achterliet. */
+  try {
+    const mail = sessionStorage.getItem('vis-ty-mail') || '';
+    const cel = document.querySelector('[data-ty-mail]');
+    if (cel && mail) cel.textContent = mail;
+  } catch { /* geen opslag */ }
+
+  /* De betaalvraag in de kaart hoort alleen bij een bestelling MET link. */
+  const vraag = document.querySelector('[data-ty-payq]');
+  if (vraag) vraag.hidden = !pay;
+
+  /* Wie al is ingelogd, hoeft geen inloglink: dan zegt de regel dat. */
+  const signin = document.querySelector('[data-ty-signin]');
+  if (signin && typeof fetch === 'function') {
+    fetch('/account/me', { credentials: 'same-origin', headers: { accept: 'application/json' } })
+      .then((r) => { if (r.ok) signin.textContent = d.tySignedIn; })
+      .catch(() => {});
+  }
 
   /* De betaalknop hoort bij het nummer waar hij bij hoort, dus hij komt in
      dezelfde rij te staan — maar als een echt element en niet als string-html. */

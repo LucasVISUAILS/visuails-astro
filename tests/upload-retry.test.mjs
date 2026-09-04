@@ -262,6 +262,16 @@ console.log('\neen weigering die nooit verandert, wordt niet herhaald');
 }
 
 await browser.close();
+
+/* Windows: process.exit() vlak na browser.close() struikelt in libuv
+
+   ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), src\\win\\async.c")
+
+   omdat de pipes van Chromium nog aan het sluiten zijn. Eén tik wachten
+
+   laat ze dichtgaan; de uitslag verandert er niet door — 4 sept 2026. */
+
+await new Promise((r) => setTimeout(r, 300));
 srv.close();
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

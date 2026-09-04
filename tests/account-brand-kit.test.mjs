@@ -385,7 +385,12 @@ check('"no preference" is a real option', faces.includes('') && grounds.includes
   let dropped = [];
   for (const style of ['catalog', 'lifestyle', 'video']) {
     for (const face of faces) {
-      const r = await post('/account/lock', { style, face, background_hex: '#FFFFFF' });
+      /* Sinds 3 september 2026 bestaat de achtergrond alleen bij catalog; bij
+         lifestyle en video is de VERHOUDING het tweede antwoord dat een rij
+         rechtvaardigt (video kent geen verhouding — daar draagt de lege face
+         terecht geen rij, dus die combinatie slaan we over). */
+      if (style === 'video' && !face) continue;
+      const r = await post('/account/lock', { style, face, background_hex: '#FFFFFF', ratio: 'square' });
       // A face of '' with a background still stores a row (the background is
       // the answer); what must never happen is no write at all.
       if (LOCK_INSERT.test(writeTo(r.writes, LOCK_INSERT).sql)) stored++;
@@ -438,17 +443,22 @@ section('§3 · a saved lock comes back selected, and reads back in the summary'
   const saved = await get('/account/brand-kit', {
     locks: [
       { style: 'catalog', custom_model_id: 31, roster_model: null, background_hex: '#FFFFFF' },
-      { style: 'lifestyle', custom_model_id: null, roster_model: 'ava', background_hex: '#F7F5F1' },
+      /* Lifestyle draagt sinds 3 september 2026 een STIJL (look) en geen
+         achtergrond meer — zie migratie 0039 en lockSection(). */
+      { style: 'lifestyle', custom_model_id: null, roster_model: 'ava', background_hex: null, look: 'glow' },
     ],
   });
   check('the brand\'s own face is the checked one', saved.html.includes('value="c31" checked'));
   check('a roster face is the checked one for the other service', saved.html.includes('value="rava" checked'));
-  check('both grounds come back checked',
-    saved.html.includes('value="#FFFFFF" checked') && saved.html.includes('value="#F7F5F1" checked'));
+  check('the catalog ground comes back checked, and the lifestyle look',
+    saved.html.includes('value="#FFFFFF" checked') && saved.html.includes('name="look" value="glow" checked'));
+  check('and lifestyle offers no ground at all',
+    !/name="style" value="lifestyle">[\s\S]*?name="background_hex"[\s\S]*?<\/form>/.test(
+      saved.html.slice(saved.html.indexOf('value="lifestyle"'), saved.html.indexOf('value="video"'))));
   // The folded card has to say what it holds, or the accordion has hidden the
   // only thing the page is for.
   check('the folded summary names the chosen face', /bk-sum-now">Nadia/.test(saved.html));
-  check('and the chosen ground, by name', /bk-sum-now">Ava <span class="bk-sum-dot">·<\/span> Off-white/.test(saved.html));
+  check('and the chosen look, by name', /bk-sum-now">Ava <span class="bk-sum-dot">·<\/span> Glow/.test(saved.html));
   check('an unset service says so once, not twice',
     (saved.html.match(/Asked per order <span class="bk-sum-dot">/g) || []).length === 0);
   check('and says it as a whole answer', /bk-sum-now">Asked per order</.test(saved.html));
@@ -817,6 +827,19 @@ console.log('\nde vorm van elke sectie');
    *   · en de knop is een mailto en geen formulier — er komt geen tabel bij voor
    *     iets zonder prijs en zonder leverdatum.
    *
+   * ── HET TWEEDE PUNT IS OP 2 SEPTEMBER 2026 OMGEDRAAID ─────────────────────
+   *
+   * "Er staat geen bedrag" was waar zolang er geen bedrag WAS. Lucas heeft op
+   * 2 september € 149 per maand en € 295 opzet gekozen, en die twee staan
+   * sindsdien in AMOUNT. Een dashboard dat dan nog "prijs volgt" zegt, is niet
+   * voorzichtig maar achterhaald.
+   *
+   * De ZORG achter de oude regel blijft en wordt hieronder scherper bewaakt.
+   * Die zorg was niet "geen getal" maar "geen getal dat later een verhoging
+   * blijkt". Dus: het bedrag moet uit AMOUNT komen en niet ingetypt zijn (dan
+   * kan het scherm niet afwijken van de bron), en het mag geen VANAF-prijs zijn
+   * — precies het woord waar de oude noot voor waarschuwde.
+   *
    * De beelden worden op hun KLEINE versie getoetst. De strook is vier kolommen
    * breed op een dashboard; brand-stair.webp is 1872 px en 148 kB, en dat is
    * dezelfde fout die de galerij in augustus 3,12 MB kostte. */
@@ -824,7 +847,15 @@ console.log('\nde vorm van elke sectie');
     const { html } = await get('/account/plan?tab=edities');
     check('de Editions-tab staat in de navigatie', /href="\/account\/plan\?tab=edities"/.test(html));
     check('en draagt het label dat hij nog niet leverbaar is', /is-wacht/.test(html));
-    check('er staat geen euroteken en geen bedrag op', /€|EUR\b/.test(html) === false);
+    /* Het bedrag staat er, en het is HET bedrag uit AMOUNT — geen tweede
+       getal dat los van de bron kan gaan lopen. */
+    const { AMOUNT: BEDRAG, euro: euroBedrag } = await import('../src/data/pricing.js');
+    check('het maandbedrag staat erop en komt uit AMOUNT', html.includes(euroBedrag(BEDRAG.editions, 'en')));
+    check('en de eenmalige opzet ook', html.includes(euroBedrag(BEDRAG.editionsSetup, 'en')));
+    /* En het is geen vanaf-prijs. Dat was de eigenlijke zorg: een ondergrens op
+       het scherm van iemand die al betaalt, leest bij de eerste factuur als een
+       verhoging. Twee vaste bedragen doen dat niet. */
+    check('en het is geen vanaf-prijs', /(from|vanaf)\s*€/i.test(html) === false);
     /* Op het PANEEL en niet op de pagina: de bovenbalk en het uitlogblok dragen
        hun eigen formulieren, en die horen er te zijn. Een controle op de hele
        pagina zou daarop afgaan en niets zeggen over deze tab. */

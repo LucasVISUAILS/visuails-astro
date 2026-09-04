@@ -39,11 +39,20 @@ import Placeholder from './Placeholder.astro';
 import {
   euro, vatLabel, plans, turnaround, AMOUNT,
   PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_ROLLOVER_MONTHS,
-  STOCK_OFF_BRAND, STOCK_ON_BRAND,
+  STOCK_OFF_BRAND, STOCK_ON_BRAND, TEST_SAMPLE, WINDOW_THRESHOLD,
 } from '../data/pricing.js';
 // Het juiste woord per soort beeld — zie de kop van lexicon.js.
 import { noun } from '../data/lexicon.js';
 import { localizedPath } from '../i18n/ui.js';
+/* ── DE JAARTERMIJN STOND HIER NIET, EN DE VOORWAARDEN BELOOFDEN VAN WEL ─────
+ * `terms.astro` zegt met zoveel woorden: *"…set out in full on our plans page.
+ * The yearly term is priced there too."* Gecontroleerd in de gebouwde pagina: er
+ * stond geen "12 maanden", geen tweede bedrag, geen termijn. Het enige plek waar
+ * de jaarprijs bestond was /start/plan — achter de knop, dus pas nadat je hebt
+ * gekozen. Een verwijzing in een bindend document naar een prijs die er niet
+ * staat, is een van de twee die je echt niet wilt hebben (de andere is een prijs
+ * die er wél staat en niet klopt). */
+import { TERMS, monthlyCents } from '../data/plans.js';
 import { waHref } from '../data/whatsapp.js';
 
 import ServiceSwitch from './ServiceSwitch.astro';
@@ -60,7 +69,10 @@ const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLA
 const FROM_AMOUNT = PLAN_AMOUNT[CHEAPEST];
 const FROM_PRODUCTS = PLAN_PRODUCTS[CHEAPEST];
 
-const planList = plans(lang);
+const JAAR_PRIJZEN = Object.fromEntries(
+  Object.keys(PLAN_AMOUNT).map((id) => [id, monthlyCents(id, 'yearly') / 100])
+);
+const planList = plans(lang, { jaarRollover: TERMS.yearly.rollover, jaarPrijzen: JAAR_PRIJZEN });
 
 /* De twee concepten die nog niet te bestellen zijn. Verhuisd van de homepage op
    30 augustus 2026 — zie de kop van src/data/binnenkort.js voor waarom ze hier
@@ -100,6 +112,11 @@ const COPY = {
     creditBody: `A credit is a place in the month, not a demand that you have something new. What you do not use rolls over ${PLAN_ROLLOVER_MONTHS === 1 ? 'a' : PLAN_ROLLOVER_MONTHS} month${PLAN_ROLLOVER_MONTHS === 1 ? '' : 's'}.`,
     creditNoteTerm: 'a credit',
     creditNote: 'You decide each month what goes in it: a new item, an item you already sell in a different look for a campaign, or a set made for your socials.',
+    /* ── HOE DE MAAND LOOPT — 4 september 2026 ──────────────────────────────
+       Drie zinnen die elke reviewer miste: dat een abonnement een vaste week
+       heeft ook onder tien producten (de uitzondering op "zo snel mogelijk"),
+       dat de eerste maand meteen wordt afgeschreven, en waar je opzegt. */
+    cycleBody: `Every plan — Starter too — has a fixed week in the month that is held for you; that is the difference with a one-off order under ${WINDOW_THRESHOLD} products, which runs as soon as possible. Your first month is charged when you set the plan up and the week is planned straight away. You cancel in your account, effective at the end of the running term; whatever is made stays yours.`,
     creditAsk: 'Not sure what to spend the rest on?',
     creditAskCta: 'Ask us and we will go through it with you',
     creditWa: 'Hi! I have a plan and I would like to think through what to spend this month’s credits on.',
@@ -127,7 +144,7 @@ const COPY = {
     ctaH: 'Start with one product',
     ctaEm: `for ${euro(AMOUNT.testSample, "en")}.`,
     ctaBody: 'Send the photos you already have and see what comes back before any plan starts.',
-    ctaSample: 'Request a test sample',
+    ctaSample: TEST_SAMPLE.en.cta,
     ctaPlan: 'Start a plan',
   },
   nl: {
@@ -155,6 +172,8 @@ const COPY = {
 
     creditH: `${FROM_PRODUCTS} plekken, geen ${FROM_PRODUCTS} nieuwe producten.`,
     creditBody: `Een credit is een plek in de maand, niet de eis dat je iets nieuws hebt. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
+    /* Zie de noot bij de Engelse cycleBody. */
+    cycleBody: `Elk abonnement — ook Starter — heeft een vaste week in de maand die voor jou wordt vrijgehouden; dat is het verschil met een losse bestelling onder ${WINDOW_THRESHOLD} producten, die zo snel mogelijk loopt. Je eerste maand wordt afgeschreven bij het afsluiten en de week staat meteen gepland. Opzeggen doe je in je account, per einde van de lopende termijn; wat al gemaakt is, blijft van jou.`,
     creditNoteTerm: 'een credit',
     creditNote: 'Jij bepaalt elke maand wat erin gaat: een nieuw item, een item dat je al verkoopt in een andere look voor een campagne, of een set die je voor je socials maakt.',
     creditAsk: 'Weet je niet waar je de rest aan besteedt?',
@@ -181,7 +200,7 @@ const COPY = {
     ctaH: 'Begin met één product',
     ctaEm: `voor ${euro(AMOUNT.testSample, "nl")}.`,
     ctaBody: 'Stuur de foto’s die je al hebt en zie wat eruit komt voordat er een abonnement begint.',
-    ctaSample: 'Vraag een proefvisual aan',
+    ctaSample: TEST_SAMPLE.nl.cta,
     ctaPlan: 'Sluit een abonnement af',
   },
 };
@@ -273,6 +292,7 @@ const c = COPY[nl ? 'nl' : 'en'];
       <div class="pl-credit">
         <p class="pl-credit-h">{c.creditH}</p>
         <p class="pl-credit-b">{c.creditBody} <Note lang={lang} term={c.creditNoteTerm}>{c.creditNote}</Note></p>
+        <p class="pl-credit-b">{c.cycleBody}</p>
         <p class="pl-credit-ask">
           <span>{c.creditAsk}</span>
           <a class="pl-credit-a" href={waHref(c.creditWa)} target="_blank" rel="noopener">{c.creditAskCta}<span class="pl-nb">&#160;<svg viewBox="0 0 24 24" class="i" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
@@ -299,6 +319,14 @@ const c = COPY[nl ? 'nl' : 'en'];
         <div class="pack-price">
           <span class="pp-amount">{p.price}</span>
           <span class="pp-unit">{p.unit}</span>
+          {/* Alleen als hij AFWIJKT, en dat is bij precies één plan zo. Bij Studio
+              en Merk geeft de jaartermijn geen korting — zie discountMonths in
+              plans.js — en twee keer hetzelfde bedrag naast elkaar laat de
+              jaartermijn zinloos lijken terwijl hij dat niet is. Wat hij daar wél
+              geeft, staat in de regel onderaan de kaart. */}
+          {p.jaarPrijs && (
+            <span class="pp-jaar">{nl ? `of ${p.jaarPrijs} op de jaartermijn` : `or ${p.jaarPrijs} on the 12-month term`}</span>
+          )}
           <span class="pp-vat">{vatLabel('excl', lang)}</span>
         </div>
 
@@ -510,6 +538,8 @@ const c = COPY[nl ? 'nl' : 'en'];
   }
 
   .pack-price { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  /* Op zijn eigen regel: naast het maandbedrag zou het als één prijs lezen. */
+  .pp-jaar { flex: 1 0 100%; font-size: .82rem; color: var(--ink-3); }
   .pp-amount {
     font-family: var(--font-display);
     font-weight: 800;

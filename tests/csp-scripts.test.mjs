@@ -79,7 +79,11 @@ if (!vers) {
   /* En de andere kant op: een hash in de header die nergens meer voorkomt, is
      een script dat is weggehaald. Geen beveiligingsprobleem, wel het begin van
      een lijst die niemand meer durft op te ruimen. */
-  const inHeader = (regel.match(/'sha256-[^']+'/g) || []);
+  /* Alleen de hashes UIT script-src, want de header draagt er sinds 1 september
+     ook één voor een <style> — zie §1b. Zonder deze afbakening zou een geldige
+     stijlhash hier als "verouderd script" worden aangemerkt. */
+  const scriptDeel = (/script-src[^;]*/.exec(regel) || [''])[0];
+  const inHeader = (scriptDeel.match(/'sha256-[^']+'/g) || []);
   const verouderd = inHeader.filter((h) => !nodig.has(h));
   check('en er staat geen hash in die nergens meer bij hoort', verouderd, []);
 
@@ -93,13 +97,26 @@ if (!vers) {
      en dit is wat dat merkt. */
   let attrs = 0;
   let stijlEls = 0;
+  let stijlBuitenNoscript = 0;
   for (const p of paginas) {
     const h = readFileSync(p, 'utf8');
     attrs += (h.match(/\sstyle="/g) || []).length;
     stijlEls += (h.match(/<style[^>]*>/g) || []).length;
+    stijlBuitenNoscript += (h.replace(/<noscript>[\s\S]*?<\/noscript>/g, '').match(/<style[^>]*>/g) || []).length;
   }
   check('geen enkel style-attribuut in de build', attrs, 0);
-  check('en geen enkel <style>-element', stijlEls, 0);
+  /* ── ÉÉN UITZONDERING, EN DIE IS VERDIEND ────────────────────────────────
+     Een <style> binnen <noscript> kan niet naar een gedeelde stylesheet: daar IS
+     de plek de voorwaarde. Hem toch verhuizen heeft één keer de before/after-
+     slider gesloopt — zie de kop van scripts/stijl-uit-de-pagina.mjs en
+     tests/vergelijker.test.mjs. Wat hier geldt is dus niet "geen enkel <style>"
+     maar "geen enkel <style> dat altijd geldt". */
+  check('er staat wel een <style> in de build', stijlEls > 0, true);
+  check('maar geen enkele buiten een <noscript>', stijlBuitenNoscript, 0);
+  /* En dan heeft die ene een hash nodig, anders blokkeert style-src hem juist
+     voor de bezoeker voor wie hij bedoeld is. */
+  const stijlHashes = ((/style-src[^;]*/.exec(regel) || [''])[0].match(/'sha256-[^']+'/g) || []);
+  check('en hij staat als hash in style-src', stijlHashes.length, 1);
   check('style-src staat in de header', /style-src 'self'/.test(regel), true);
   check("en zonder 'unsafe-inline'", /style-src[^;]*'unsafe-inline'/.test(regel), false);
 

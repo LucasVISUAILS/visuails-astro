@@ -41,6 +41,9 @@
 // because most customers do not need it to choose, and the ones who do need it
 // need it in full rather than compressed to a clause.
 import { ROSTER, TRAITS, modelId, MODEL_ANY } from '../../data/models.js';
+// "de tien gezichten" in de tekst hieronder telt de roster en typt hem niet
+// over — zie de noot bij ROSTER_COUNT in src/data/models.js.
+import { rosterWoord } from '../../data/models.js';
 import { localizedPath } from '../../i18n/ui.js';
 
 import Disclose from '../Disclose.astro';
@@ -77,10 +80,10 @@ const COPY = {
        Het Nederlands had het altijd al goed: "Wij kiezen er een die bij je merk
        past". Nu zeggen beide talen hetzelfde. */
     any: 'We choose one that fits your brand',
-    anyNote: 'We read the products and what you told us, and pick from the ten faces. This is the default, and it is a real answer — not a blank we will chase you about.',
+    anyNote: `We read the products and what you told us, and pick from the ${rosterWoord('en')} faces. This is the default, and it is a real answer — not a blank we will chase you about.`,
     why: 'About these faces',
     whyP: [
-      'These ten are our standard roster and it is shared. A face you pick here can appear on another brand next month, in the same way a stock model can. For most catalogues that is fine — a shopper is judging the garment.',
+      `These ${rosterWoord('en')} are our standard roster and it is shared. A face you pick here can appear on another brand next month, in the same way a stock model can. For most catalogues that is fine — a shopper is judging the garment.`,
       'If you would rather the face were yours alone, a Brand Model is designed once, for you, and is used nowhere else. That is a separate product with its own price, and you do not have to decide it now: a standard face today does not stop you moving to your own later.',
     ],
     brandCta: 'What a Brand Model is',
@@ -97,10 +100,10 @@ const COPY = {
     labelNote: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij zit zonder meerprijs in elke catalogset, en hij is de reden dat die set uit vier foto\u2019s bestaat en niet uit drie.',
     lead: 'Bij elke catalogset zit één foto op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     any: 'Wij kiezen er een die bij je merk past',
-    anyNote: 'Wij kijken naar de producten en naar wat je ons vertelde, en kiezen uit de tien gezichten. Dit is de standaard, en het is een echt antwoord — geen leeg veld waar we je achteraf over lastigvallen.',
+    anyNote: `Wij kijken naar de producten en naar wat je ons vertelde, en kiezen uit de ${rosterWoord('nl')} gezichten. Dit is de standaard, en het is een echt antwoord — geen leeg veld waar we je achteraf over lastigvallen.`,
     why: 'Over deze gezichten',
     whyP: [
-      'Deze tien modellen gebruiken we voor al onze klanten. Een gezicht dat je hier kiest, kan volgende maand bij een ander merk staan, net zoals bij een stockmodel. Voor de meeste catalogi is dat prima — een koper beoordeelt het kledingstuk.',
+      `Deze ${rosterWoord('nl')} modellen gebruiken we voor al onze klanten. Een gezicht dat je hier kiest, kan volgende maand bij een ander merk staan, net zoals bij een stockmodel. Voor de meeste catalogi is dat prima — een koper beoordeelt het kledingstuk.`,
       'Wil je het gezicht liever exclusief, dan wordt een merkmodel één keer ontworpen, voor jou, en nergens anders gebruikt. Dat is een apart product met een eigen prijs, en je hoeft dat nu niet te beslissen: een standaardgezicht vandaag houdt je niet tegen om later naar een eigen model te gaan.',
     ],
     brandCta: 'Wat een merkmodel is',

@@ -14,6 +14,9 @@
 // The €1 test-sample figure is read from the price ladder, never typed here.
 // src/data/pricing.js is the single source of truth for every euro on the site.
 import { TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
+// En om dezelfde reden komt het aantal modellen in de menu-omschrijving uit
+// de roster: zie de noot bij ROSTER_COUNT in src/data/models.js.
+import { rosterWoord } from '../data/models.js';
 
 export const languages = { en: 'English', nl: 'Nederlands' };
 export const localeNames = { en: 'EN', nl: 'NL' };
@@ -124,7 +127,16 @@ export const ui = {
           daar niet door: er is nu iets te lézen, er is nog niets te bestellen.
           Layout.astro hangt het label sindsdien aan `soon` en niet meer aan het
           ontbreken van een href — zie de noot daar. */
-      { href: '/plans#binnenkort', title: 'Hooks', desc: 'Not ready yet — a short video on a proven format, soon', soon: true },
+      /* HOOKS WIJST SINDS 2 SEPTEMBER 2026 NAAR ZIJN EIGEN PAGINA.
+         Hij wees naar /plans#binnenkort omdat er geen pagina wás — die is op
+         18 augustus verwijderd toen de tekst de toonregels brak. Nu er weer
+         een /hooks is, wijst het menu daarheen; het merkje blijft, want
+         bestellen kan er nog steeds niet. Editions heeft nog geen eigen
+         pagina en blijft dus wel op het ankerblok staan. */
+      /* `soon` als tekst: het label in het menu. Hooks is sinds 4 september 2026
+         "op aanvraag" — geen bestelknop, wél te laten maken — en "Binnenkort"
+         zei iets anders dan de pagina. Layout.astro toont een string letterlijk. */
+      { href: '/hooks', title: 'Hooks', desc: 'On request — a short video on a proven format', soon: 'On request' },
       /* EDITIONS — aangekondigd op 18 augustus 2026, zelfde behandeling als
          Hooks: in het menu waar de diensten staan, zonder href, en Layout.astro
          tekent hem daarom als uitgeschakeld menu-item.
@@ -135,7 +147,10 @@ export const ui = {
          document laat zien dat "stock" de vergelijking opzoekt die je verliest
          terwijl een editie precies zegt wat het is — een oplage, gedateerd en
          voor deze maand gemaakt. */
-      { href: '/plans#binnenkort', title: 'Editions', desc: 'Not ready yet — a set of visuals made for your brand, every month', soon: true },
+      /* Editions wijst sinds 2 september 2026 naar zijn eigen pagina, om
+         dezelfde reden als Hooks: daar staat de uitleg, en het ankerblok op
+         /plans is de samenvatting. Het merkje blijft — bestellen kan nog niet. */
+      { href: '/editions', title: 'Editions', desc: 'Not ready to order — monthly brand imagery with no product in it', soon: true },
     ],
     /*
      * ── DE TWEEDE LAAG, 18 AUGUSTUS 2026 ──────────────────────────────────
@@ -169,7 +184,7 @@ export const ui = {
       { title: 'See an order run', desc: 'Walk through one, screen by screen' },
       { href: '/studio', title: 'How an order is run', desc: 'The studio day, the calendar, the capacity' },
       { href: '/portal', title: 'VISUAILS Studio', desc: 'Where your work lands, and how you approve it' },
-      { href: '/models', title: 'The models', desc: 'The ten faces included in every order' },
+      { href: '/models', title: 'The models', desc: `The ${rosterWoord('en')} faces included in every order` },
       { href: '/upload-guidelines', title: 'Sending your photos', desc: 'What we need, and what a phone can do' },
       /* ── TWEE ERAF, EN ALLEBEI NAAR EEN BETERE PLEK — 21 augustus 2026 ────
        *
@@ -191,7 +206,7 @@ export const ui = {
     nav_soon: 'Soon',
     mob_chat: 'Chat on WhatsApp',
     mob_notsure: 'Not sure yet?',
-    mob_try: `Try a test sample · ${TEST_SAMPLE.en.price}`,
+    mob_try: TEST_SAMPLE.en.cta,
     foot_tagline: 'The visual studio for clothing brands and modern e-commerce — for founders who would rather grow than book another shoot.',
     // De knop in de merkkolom van de voettekst. Kort, want hij staat naast drie
     // kolommen links en moet als handeling lezen en niet als vierde lijst.
@@ -313,7 +328,7 @@ export const ui = {
        schermlezer nog steeds de lange vorm horen, en `display: none` op de
        verkeerde helft haalt hem uit de toegankelijkheidsboom. Zo hoort iedereen
        op elke breedte precies één naam. */
-    cb_cta: `Request a test sample · ${TEST_SAMPLE.en.price}`,
+    cb_cta: TEST_SAMPLE.en.cta,
     cb_cta_kort: `Test sample · ${TEST_SAMPLE.en.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Message VISUAILS on WhatsApp — opens in a new tab',
@@ -336,8 +351,10 @@ export const ui = {
          in het menu waar staat wat we maken. */
       { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt' },
       { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, onder het tarief per product' },
-      { href: '/plans#binnenkort', title: 'Hooks', desc: 'Nog niet klaar — een korte video op een bewezen format, binnenkort', soon: true },
-      { href: '/plans#binnenkort', title: 'Editions', desc: 'Nog niet klaar — elke maand een set beelden op jouw merk, binnenkort', soon: true },
+      /* Zie de noot bij de Engelse tegenhanger. */
+      { href: '/hooks', title: 'Hooks', desc: 'Op aanvraag — een korte video op een bewezen format', soon: 'Op aanvraag' },
+      /* Zie de noot bij de Engelse tegenhanger. */
+      { href: '/editions', title: 'Editions', desc: 'Nog niet te bestellen — elke maand merkbeeld zonder product erin', soon: true },
     ],
     nav_how: 'Hoe het werkt',
     how: [
@@ -346,7 +363,7 @@ export const ui = {
       { title: 'Zie een bestelling draaien', desc: 'Loop er \u00e9\u00e9n door, scherm voor scherm' },
       { href: '/studio', title: 'Hoe een bestelling draait', desc: 'De studiodag, de kalender, de capaciteit' },
       { href: '/portal', title: 'VISUAILS Studio', desc: 'Waar je werk landt, en hoe je het goedkeurt' },
-      { href: '/models', title: 'De modellen', desc: 'De tien gezichten die bij elke bestelling horen' },
+      { href: '/models', title: 'De modellen', desc: `De ${rosterWoord('nl')} gezichten die bij elke bestelling horen` },
       { href: '/upload-guidelines', title: 'Je foto\u2019s aanleveren', desc: 'Wat we nodig hebben, en wat een telefoon kan' },
       /* /compare staat nu op de prijzenpagina en /ai-act in de juridische regel
          onderaan — zie de noot bij de Engelse lijst. */
@@ -354,7 +371,7 @@ export const ui = {
     nav_soon: 'Binnenkort',
     mob_chat: 'Chat via WhatsApp',
     mob_notsure: 'Nog niet zeker?',
-    mob_try: `Probeer een proefvisual · ${TEST_SAMPLE.nl.price}`,
+    mob_try: TEST_SAMPLE.nl.cta,
     foot_tagline: 'De studio voor productvisuals voor kledingmerken en moderne e-commerce — voor ondernemers die liever groeien dan nóg een fotoshoot boeken.',
     foot_cta: 'Start een bestelling',
     foot_drops: 'Wat we maken',
@@ -365,7 +382,7 @@ export const ui = {
     foot_studio: 'Hoe een bestelling draait',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
-    foot_sample: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
+    foot_sample: TEST_SAMPLE.nl.cta,
     foot_gallery: 'Galerij',
     foot_pricing: 'Prijzen',
     foot_faq: 'FAQ',
@@ -401,15 +418,15 @@ export const ui = {
     foot_location: 'Enschede, Nederland',
     // Zie de noot bij de Engelse cb_note.
     cb_note: `Jouw product — ${TEST_SAMPLE.nl.deliverableShort}.`,
-    cb_why: 'Wat een proefvisual is',
+    cb_why: 'Wat je voor €1 krijgt',
     /* Zie de noot bij de Engelse cb_why_term. */
-    cb_why_term: 'de proefvisual',
+    cb_why_term: 'de proef',
     /* Zie de noot bij de Engelse cb_note_kort. */
     cb_note_kort: 'Zie eerst het werk.',
     cb_detail: `${TEST_SAMPLE.nl.line} ${TEST_SAMPLE.nl.unit.charAt(0).toUpperCase()}${TEST_SAMPLE.nl.unit.slice(1)}.`,
     // Zie de noot bij de Engelse cb_cta_kort.
-    cb_cta: `Vraag een proefvisual aan · ${TEST_SAMPLE.nl.price}`,
-    cb_cta_kort: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
+    cb_cta: TEST_SAMPLE.nl.cta,
+    cb_cta_kort: TEST_SAMPLE.nl.cta,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Stuur VISUAILS een bericht via WhatsApp — opent in een nieuw tabblad',
     lang_label: 'Taal',

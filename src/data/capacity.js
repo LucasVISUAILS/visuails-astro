@@ -102,6 +102,19 @@ export const HORIZON_DAYS = 60;
 export const QUEUE_DAYS_MIN = 2;
 export const QUEUE_DAYS_MAX = 4;
 
+/**
+ * DE STREEFDAG VAN DE WACHTRIJ — 3 september 2026.
+ *
+ * Lucas: "onder de 10 producten is gewoon zo snel mogelijk leveren, dus dat kan
+ * een uur, 2 dagen of een week zijn, nooit beloofd; het streven is altijd binnen
+ * 24 uur." De site belooft dus niets meer (pricing.js: "zo snel mogelijk"), en
+ * QUEUE_DAYS_MIN/MAX hierboven zijn alleen nog de VORM van de wachtrij voor de
+ * poort. Wat de eigen agenda toont als "moet af", is deze dag: binnenkomst plus
+ * één open dag. Dat is een lat voor de studio zelf en geen toezegging aan de
+ * klant — daarom staat hij hier apart en niet in de klanttekst.
+ */
+export const QUEUE_AIM_DAYS = 1;
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * DE AGENDA REKENT IN BEELDEN, EN HET WEEKEND TELT MEE — 31 augustus 2026
  * ═══════════════════════════════════════════════════════════════════════════

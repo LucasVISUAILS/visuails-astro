@@ -71,6 +71,7 @@ import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
 
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
+import StyleRows from './StyleRows.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -232,7 +233,7 @@ const COPY = {
     // expensive for arriving with a collection. Photos are priced per product
     // on a falling ladder; a clip is priced per clip and stays put, which is
     // the difference this block now has to state out loud rather than imply.
-    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}, on its own or added to any order.`,
+    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we confirm what and when in writing before anything runs.`,
     buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
     buyFlat: `Catalog and lifestyle images are priced per product and the rate falls as the count rises. A clip does not work that way: it is one rate, whatever else is in the order. ${studioPlan ? `${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
     /* Deze knop wijst naar /start/video en heette "Start an order". Dat is
@@ -308,7 +309,7 @@ const COPY = {
       reviewClaim('unattended', 'nl'),
     ],
     buyH: 'Twee manieren om video te kopen',
-    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}, los te bestellen of mee in een bestelling.`,
+    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}. Video heeft nog geen afrekenstap: je vraagt het aan via het formulier, los of bovenop een bestelling, en we bevestigen op schrift wat en wanneer voordat er iets draait.`,
     buyQuote: '<strong>Campaign</strong> — groter, meerdere scènes, offerte per project.',
     buyFlat: `Catalog- en lifestylefoto’s hebben een tarief per product, en dat daalt naarmate het aantal stijgt. Bij een clip werkt dat niet zo: het tarief blijft hetzelfde, wat er verder ook in de bestelling zit. ${studioPlan ? `${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
     buyCta: 'Vraag een videoclip aan',
@@ -328,6 +329,37 @@ const COPY = {
 
 const c = COPY[lang];
 const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
+const nl = lang === 'nl';
+
+/* ── ELKE VIDEOSOORT ZIJN EIGEN REGEL, DE EIGEN LOOK BOVENAAN — 4 september 2026 ──
+   Zie de kop van StyleRows.astro. Custom gaat naar WhatsApp (ctaExternal) en
+   niet naar een formulier; dat blijft zo. */
+/* De waaier per soort: de poster plus stills uit dezelfde reeks. Tot de
+   video-stills er zijn, zijn dit de banners die de pagina al gebruikt. */
+const WAAIER: Record<string, string[]> = {
+  motion: ['/img/banners-04.webp', '/img/banners-03.webp', '/img/banners-06.webp'],
+  lifestyle: ['/img/lifestyle-glow-03.webp', '/img/lifestyle-flash-05.webp', '/img/lifestyle-phone-made-06.webp', '/img/lifestyle-dunes-02.webp'],
+  campaign: ['/img/banners-08.webp', '/img/banners-01.webp', '/img/banners-02.webp', '/img/banners-07.webp'],
+  custom: ['/img/banners-13.webp', '/img/banners-14.webp'],
+};
+const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#C6F100' };
+const naarRij = (s: (typeof kinds)[number]) => ({
+  slug: s.slug,
+  name: s.name,
+  tagline: s.tagline,
+  desc: s.cardDesc,
+  price: kindPrice(s.slug),
+  bestFor: s.bestFor || [],
+  media: { src: posters[s.slug].src, w: posters[s.slug].w, h: posters[s.slug].h, alt: c.exampleAlt(s.name) },
+  photos: (WAAIER[s.slug] || [posters[s.slug].src]).map((src, i) => ({ src, alt: i === 0 ? c.exampleAlt(s.name) : '' })),
+  tint: TINT[s.slug],
+  detailHref: lp(`/video/${s.slug}`),
+  detailLabel: nl ? `Ontdek ${s.name}` : `Explore ${s.name}`,
+  orderHref: s.ctaHref,
+  orderLabel: s.ctaLabel,
+});
+const eigenLook = naarRij(kinds.find((s) => s.slug === 'custom')!);
+const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
 ---
 
 {/* `hero-bright` — deze foto is de lichtste van de site (wit overhemd tegen
@@ -359,7 +391,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   <div class="container two-col hero-split">
     <div class="reveal pending">
     <span class="eyebrow-page">{c.eyebrow}</span>
-    <h1 class="display vid-h1" style="font-size:var(--t-page-h1);margin-top:1rem" set:html={c.h1} />
+    <h1 class="display vid-h1" style="margin-top:1rem" set:html={c.h1} />
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
     <div class="flex" style="margin-top:1.8rem">
       <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/video')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -383,38 +415,9 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   </div>
 </section>
 
-<section>
-  <div class="container">
-    <h2 class="section-h">{c.kindsH}</h2>
-    {/* ── VIER OP EEN RIJ, EN EEN VIERKANTE BAND — 31 AUGUSTUS 2026 ─────────
-        Hier stond `grid-3` met VIER tegels: drie op rij één en één op rij twee,
-        met 926 bij 601 pixels zwart ernaast. Dat gat was op deze pagina het
-        grootste stuk niets, en het stond midden in de sectie waar je kiest.
-
-        Vier items horen in vier kolommen: de rij is vol en er valt niets meer
-        te verklaren. En de band wordt vierkant, want dat is sinds 30 augustus
-        de vorm van dezelfde keuzesectie op /lifestyle — twee zusterpagina's die
-        hetzelfde moment tekenen, hoorden niet de ene 3/4 en de andere 1/1 te
-        gebruiken. Gemeten scheelt het ook 891px op een pagina die korter moest.
-
-        Waarom niet twee bij twee: bij 688px breed wordt een vierkante tegel ook
-        688px hoog, en dan is de sectie 1400px in plaats van 400. */}
-    <div class="grid vid-kinds reveal-group">
-      {kinds.map((s) => (
-        <a href={lp(`/video/${s.slug}`)} class="reveal pending" style="display:block">
-          <div class="photo-band square">
-            <img src={posters[s.slug].src} alt={c.exampleAlt(s.name)} loading="lazy" decoding="async" width={posters[s.slug].w} height={posters[s.slug].h} />
-            <div class="scrim"></div>
-            <div class="caption">
-              <h3>{s.name} &rarr;</h3>
-              <p style="font-size:.9rem;margin-top:.35rem">{kindPrice(s.slug)}</p>
-            </div>
-          </div>
-        </a>
-      ))}
-    </div>
-  </div>
-</section>
+{/* Eén regel per soort, de eigen look bovenaan — 4 september 2026. Hier stond
+    een raster van vier posters. Zie StyleRows.astro. */}
+<StyleRows lang={lang} h={c.kindsH} lead={eigenLook} items={vasteLooks} />
 
 <section class="section-tight">
   <div class="container">
@@ -449,18 +452,16 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
      block, the tier line, the questions. -->
 <section class="section-tight">
   <div class="container">
-    <div class="photo-split reveal pending">
-      <div class="photo-split-media">
-        <img src="/img/banners-04.webp" alt={c.stepsAlt} loading="lazy" decoding="async" width="928" height="1152" />
-      </div>
-      <div>
-        <h2>{c.stepsH}</h2>
-        <div class="steps steps-stacked" style="margin-top:1.6rem">
-          {c.steps.map(([h, p], i) => (
-            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
-          ))}
-        </div>
-      </div>
+    {/* ── DRIE STAPPEN OP ÉÉN RIJ — doorlichting 4 september 2026 ──────────
+        Hier stond een fotosplit van ~1.000 px: een foto links, de drie stappen
+        gestapeld rechts. De foto staat sinds de waaiers al hoger op de pagina;
+        wat overblijft zijn drie korte stappen, en die passen naast elkaar.
+        Zelfde `.steps`-raster als de homepage. */}
+    <h2 class="section-h">{c.stepsH}</h2>
+    <div class="steps reveal-group">
+      {c.steps.map(([h, p], i) => (
+        <div class="step reveal pending"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+      ))}
     </div>
   </div>
 </section>
@@ -496,16 +497,9 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   </div>
 </section>
 
-<section class="section-tight">
-  <div class="container">
-    <div class="photo-grid reveal pending">
-      {strip.map((s) => (
-        <img src={s.src} alt={c.stripAlt[s.key]} loading="lazy" decoding="async" width={s.w} height={s.h}
-             class={s.wide ? 'wide' : undefined} style={s.pos ? `object-position:${s.pos}` : undefined} />
-      ))}
-    </div>
-  </div>
-</section>
+{/* ── DE FOTOSTROOK IS WEG — doorlichting 4 september 2026 ─────────────────
+    Vijf banners in een raster, ~800 px, direct onder de waaiers die dezelfde
+    banners al per soort laten zien. Eén keer is genoeg. */}
 
 <!-- WHAT CHANGES AT WINDOW_THRESHOLD PRODUCTS. This block used to be section
      13's two doors — "order individual products" against "run a whole drop" —
@@ -551,6 +545,12 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 </section>
 
 <style>
+  /* De prijsregel onder de naam van een stijl. Stond als style-attribuut op de
+     <p> met `margin-top: .35rem`; dezelfde relatie staat op de homepage twee keer
+     met .4 en .45rem. Alle drie lezen ze nu --gap-label-note — zie de noot bij dat
+     token in global.css voor de meting. */
+  .vid-kaartprijs { font-size: .9rem; margin-top: var(--gap-label-note); }
+
   /* Zie de noot bij het raster: vier items, vier kolommen, geen gat. Twee op
      een middenbreedte en één op een telefoon — dezelfde trap als `.grid-2` en
      `.grid-3` sitebreed nemen, alleen een stap later omdat deze tegels
@@ -579,7 +579,8 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
      framed it. Full border, no nesting, no accent tint. */
   .buy-note { border: 1px solid var(--line-strong); padding: clamp(1.4rem, 3vw, 2rem); }
   .buy-note h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
-  .buy-note p { margin-top: .8rem; color: var(--ink-2); }
+  /* Zelfde relatie als elders: een kopje met de regel die hem uitlegt. */
+  .buy-note p { margin-top: var(--gap-label-note); color: var(--ink-2); }
   .buy-note p strong { color: var(--ink); font-weight: 600; }
   /* Ruled off rather than boxed: it is a note ON the two lines above it, not a
      third way to buy, and a second frame inside .buy-note would read as one. */

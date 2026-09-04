@@ -1,0 +1,144 @@
+---
+/*
+ * VISUAILS — DE ABONNEMENTSBAND — 3 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ook hebben we af en toe van dit soort Subscription secties die heel
+ * klein worden geplaatst tussen secties. Dit slaat nergens op want het
+ * abonnementsmodel is misschien wel het handigste wat een klant kan kopen ivm
+ * continu content om te plaatsen en de klant kan het zelf inrichten via de
+ * custom subscription optie (…). Dit moet veel mooier gemaakt worden dan dit
+ * en wellicht een sfeerbeeld toevoegen als achtergrond."*
+ *
+ * Op /pricing stond het abonnement als één kaartje van drie regels
+ * (`.to-plans`), op de homepage als één zin onder de prijsladder. Dit is
+ * dezelfde band op beide plekken: schermbreed, één merkfoto als grond (dezelfde
+ * drie lagen als de afsluitband op de homepage — foto, sluier, inhoud), één
+ * kop, drie feiten en twee knoppen. De feiten komen uit pricing.js en niet uit
+ * deze tekst: het laagste maandbedrag, het minimum van een maand op maat en de
+ * week in de agenda.
+ *
+ * Wat het NIET is: een prijsblok. De drie plannen staan op /plans met de uitleg
+ * die ze nodig hebben; deze band zegt dat het bestaat, waarom het handig is en
+ * dat je het zelf kunt inrichten — en stuurt door.
+ */
+import { localizedPath } from '../i18n/ui.js';
+import { euro, PLAN_AMOUNT, CUSTOM_MONTH_MIN_PRODUCTS } from '../data/pricing.js';
+import { planName } from '../data/planNames.js';
+
+interface Props { lang: 'en' | 'nl'; id?: string }
+const { lang, id } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+const nl = lang === 'nl';
+const laagste = Math.min(...Object.values(PLAN_AMOUNT));
+
+const c = nl ? {
+  h: 'Elke maand nieuwe beelden. Zonder elke maand te bestellen.',
+  lede: 'Een abonnement is de rustigste manier om te blijven posten: een vast aantal producten per maand, een lager tarief dan per bestelling, en een week in onze agenda die van jou is. En je richt de maand zelf in — precies wat je nodig hebt, niet meer.',
+  facts: [
+    [`Vanaf ${euro(laagste, 'nl')} per maand`, `${planName('starter', 'nl')}, ${planName('studio', 'nl')} of ${planName('brand', 'nl')} — een vast aantal producten, elke maand.`],
+    [`Of jouw ${planName('maat', 'nl').toLowerCase()}`, `Vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten: jij kiest per maand exact hoeveel catalogsets, carrousels en clips.`],
+    ['Een week die van jou is', 'Je leverweek staat elke maand vast in onze agenda. Geen wachtrij, geen agendacheck.'],
+  ],
+  cta: 'Bekijk de abonnementen',
+  cta2: 'Stel je maand zelf samen',
+  vat: 'Alle bedragen excl. btw.',
+} : {
+  h: 'New images every month. Without ordering every month.',
+  lede: 'A plan is the calmest way to keep posting: a fixed number of products a month, a lower rate than order by order, and a week in our calendar that is yours. And you shape the month yourself — exactly what you need, nothing more.',
+  facts: [
+    [`From ${euro(laagste, 'en')} a month`, `${planName('starter', 'en')}, ${planName('studio', 'en')} or ${planName('brand', 'en')} — a fixed number of products, every month.`],
+    [`Or your ${planName('maat', 'en').toLowerCase()}`, `From ${CUSTOM_MONTH_MIN_PRODUCTS} products: you decide each month exactly how many catalog sets, carousels and clips.`],
+    ['A week that is yours', 'Your delivery week is held in our calendar every month. No queue, no calendar check.'],
+  ],
+  cta: 'See the plans',
+  cta2: 'Build your own month',
+  vat: 'All amounts excl. VAT.',
+};
+---
+
+<section class="band plan-band" id={id} aria-labelledby="plan-band-h">
+  <img
+    class="plan-band-bg"
+    src="/img/brand-stair-w1560.webp"
+    alt=""
+    width="1560"
+    height="1040"
+    loading="lazy"
+    decoding="async"
+  />
+  <div class="plan-band-scrim" aria-hidden="true"></div>
+  <div class="container plan-band-in">
+    <h2 class="plan-band-h" id="plan-band-h">{c.h}</h2>
+    <p class="plan-band-lede">{c.lede}</p>
+    <dl class="plan-band-facts">
+      {c.facts.map(([k, v]) => (
+        <div class="plan-band-fact">
+          <dt>{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
+    <p class="plan-band-actions">
+      <a class="btn btn-primary btn-lg" href={lp('/plans')}>{c.cta}</a>
+      <a class="btn btn-ghost btn-lg" href={`${lp('/start/plan')}?plan=maat`}>{c.cta2}</a>
+    </p>
+    <p class="plan-band-vat">{c.vat}</p>
+  </div>
+</section>
+
+<style>
+  /* Drie lagen, dezelfde als .hv-close-lit op de homepage: foto op -2, sluier
+     op -1, inhoud erboven. De randen van de sluier lopen naar transparant zodat
+     de band uit de paginagrond komt in plaats van erop te beginnen. */
+  .plan-band { position: relative; isolation: isolate; overflow: clip; }
+  .plan-band-bg {
+    position: absolute; inset: 0; z-index: -2;
+    width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%;
+    opacity: .62;
+    pointer-events: none;
+  }
+  .plan-band-scrim {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgb(8 9 11 / 0.92) 0%, rgb(8 9 11 / 0.55) 22%, rgb(8 9 11 / 0.55) 78%, rgb(8 9 11 / 0.92) 100%),
+      linear-gradient(to right, rgb(8 9 11 / 0.78) 0%, rgb(8 9 11 / 0.42) 55%, rgb(8 9 11 / 0.15) 100%);
+  }
+  .plan-band-in { position: relative; z-index: 1; max-width: 68rem; }
+  .plan-band-h {
+    margin: 0;
+    max-width: 16ch;
+    font-size: clamp(2.4rem, 5.6vw, 4.6rem);
+    line-height: .96;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .plan-band-lede {
+    margin: clamp(1rem, 2vw, 1.5rem) 0 0;
+    max-width: 58ch;
+    font-size: clamp(1rem, 1.3vw, 1.15rem);
+    line-height: 1.6;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .plan-band-facts {
+    margin: clamp(1.8rem, 3.6vw, 2.8rem) 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    gap: clamp(1rem, 2.4vw, 2rem);
+    max-width: 62rem;
+  }
+  /* Geen kaarten: een lichtlijn bovenlangs en tekst eronder, zoals de feitenrij
+     onder de homepagehero. */
+  .plan-band-fact { padding-top: .9rem; border-top: 1px solid var(--line-strong); }
+  .plan-band-fact dt { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+  .plan-band-fact dd { margin: .35rem 0 0; font-size: .92rem; line-height: 1.55; color: var(--ink-2); max-width: 34ch; }
+  .plan-band-actions { margin: clamp(1.6rem, 3vw, 2.4rem) 0 0; display: flex; flex-wrap: wrap; gap: .7rem; }
+  .plan-band-vat { margin: .8rem 0 0; font-size: .8rem; color: var(--ink-3); }
+
+  @media (max-width: 640px) {
+    .plan-band-bg { object-position: 70% 30%; opacity: .5; }
+    .plan-band-h { font-size: clamp(2rem, 9vw, 2.6rem); }
+  }
+</style>

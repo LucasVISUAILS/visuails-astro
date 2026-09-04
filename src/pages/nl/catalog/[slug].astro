@@ -21,9 +21,12 @@ const { style } = Astro.props;
 // copy. They come from pricing.js so a capacity change cannot leave a
 // promise stranded on a detail page — which is exactly what "~24h delivery"
 // and "Produced in about 24 hours" were doing here.
-const TIMING = turnaround('unattended', 'nl');
+/* Een look OP AANVRAAG (priceTrust, dus custom) heeft eerst een ontwerp; de
+   doorlooptijd van een gewone bestelling geldt daar pas ná. "Vaak binnen een
+   dag" op die pagina was een belofte over het verkeerde ding — 4 sept 2026. */
+const TIMING = style.priceTrust ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : turnaround('unattended', 'nl');
 const REVIEW = reviewClaim('unattended', 'nl');
-const QUEUE = TIERS.unattended.queue.nl;
+const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue.nl;
 
 // De description was één template literal, dus de lengte was wat de data er
 // toevallig van maakte. metaDescription laat de tier-clausules vallen in
@@ -69,7 +72,7 @@ const zusters = catalogStyles
           <span class="trust-item"><strong>{TIMING}</strong></span>
           <span class="trust-item"><strong>{REVIEW}</strong></span>
         </div>
-        <p class="queue-note">{QUEUE}</p>
+        {QUEUE && <p class="queue-note">{QUEUE}</p>}
       </div>
       <div class="reveal pending">
         <ProductScene icon={style.heroIcon} width={style.heroWidth} badge={`Catalog · ${style.name}`} wide />
@@ -179,10 +182,10 @@ const zusters = catalogStyles
     <div class="container">
       <div class="cta-band reveal pending">
         <h2 class="display" style="font-size:var(--t-page-h1-sm)">Maak {style.name} <em>van jou.</em></h2>
-        <p class="lead" style="margin:1rem auto 0;text-align:center">Vraag een proefvisual aan, of plaats vandaag je bestelling.</p>
+        <p class="lead" style="margin:1rem auto 0;text-align:center">Probeer VISUAILS eerst, of plaats vandaag je bestelling.</p>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
           <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">{style.orderLabel ?? `Bestel ${style.name}`}</a></span></span>
-          <a href="/nl/test-sample/" class="btn btn-ghost btn-lg">Proefvisual</a>
+          <a href="/nl/test-sample/" class="btn btn-ghost btn-lg">Probeer VISUAILS</a>
         </div>
       </div>
     </div>

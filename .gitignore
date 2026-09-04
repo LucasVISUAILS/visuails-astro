@@ -25,3 +25,4 @@ visual/beelden/
 # Uitvoer van `npm run tekstronde` — werkbestanden voor de tekstronde,
 # geen bron. De wijzigingen die eruit komen landen in src/.
 tekstronde/
+kladblok/doorlichting/*.png

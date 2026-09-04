@@ -78,7 +78,12 @@ import {
   plans, PLAN_AMOUNT,
   euro,
 } from './pricing.js';
-import { pricingFaqs, faqPageItems, serviceFaqs } from './faq.js';
+import { pricingFaqs, faqPageItems, serviceFaqs, homeObjectionFaqs } from './faq.js';
+/* De gidsen en de doorloopstappen, allebei uit de lijst die de PAGINA ook rendert.
+   Zie de kop van guides.js en de ItemList/HowTo hieronder: een knoop mag alleen
+   zeggen wat er te lezen valt, dus staat er geen tweede lijst in dit bestand. */
+import { guides, GUIDES_HUB } from './guides.js';
+import { WALK_STEPS, WALK_COPY } from './demo.js';
 import { WHATSAPP_NUMBER, waHref } from './whatsapp.js';
 
 export const SITE = 'https://visuails.com';
@@ -150,6 +155,79 @@ function htmlToText(html) {
 const ORG_DESCRIPTION =
   'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals built from a single product photo — a whole collection in one order, or one product at a time.';
 
+/*
+ * ── DE WEBSITE ZELF, ALS KNOOP — 2 september 2026 ──────────────────────────
+ *
+ * De graph had een Organization en per pagina een Service of een FAQPage, maar
+ * niets dat de SITE als ding beschreef. Dat is het knooppunt waar de rest aan
+ * hangt: het zegt dat deze twee taalversies één publicatie van één uitgever
+ * zijn, en het is waar een `SearchAction` aan zou hangen als de site ooit een
+ * zoekfunctie krijgt.
+ *
+ * GEEN SearchAction VANDAAG. Die belooft een zoekpagina op een vast adres, en
+ * die is er niet. Een sitelinks-zoekvak aanvragen dat op een 404 uitkomt, is
+ * erger dan er geen hebben.
+ */
+function websiteNode(lang) {
+  return {
+    '@type': 'WebSite',
+    '@id': `${SITE}/#website`,
+    name: 'VISUAILS',
+    url: SITE,
+    description: ORG_DESCRIPTION,
+    inLanguage: norm(lang),
+    publisher: { '@id': ORG_ID },
+  };
+}
+
+/*
+ * ── DE PAGINA ZELF, ALS KNOOP — 3 september 2026 ───────────────────────────
+ *
+ * De graph beschreef de uitgever (Organization), de publicatie (WebSite) en wat er
+ * te koop is (Service, Product), maar niets beschreef HET DING WAAR JE OP STAAT. Dat
+ * is de knoop waar `dateModified` aan hangt, en die datum was de grootste ontbrekende
+ * post uit de GEO-doorlichting: een model dat tussen twee bronnen kiest, neemt de
+ * bron die zegt wanneer hij voor het laatst klopte.
+ *
+ * DE DATUM STAAT HIER NIET IN, EN DAT IS DE HELE TRUC. Dit bestand draait tijdens het
+ * renderen en heeft geen toegang tot de geschiedenis; de enige datum die het zou
+ * kunnen noemen is "nu", en dat is precies de leugen die we niet vertellen (zie de
+ * kop van scripts/gewijzigd-op.mjs). Die bouwstap vult `dateModified` na de build in,
+ * uit git, per pagina. Deze functie levert de vorm, die stap levert het feit.
+ *
+ * GEEN KNOOP OP EEN noindex-PAGINA. Een WebPage-knoop op een 404 of een bedankpagina
+ * beschrijft iets wat niet in een index hoort te staan, en de bouwstap zou er dan een
+ * datum op zetten die niemand ooit leest.
+ */
+/*
+ * Een preciezer type voor de paginaknoop, waar dat een echt feit is en geen etiket.
+ * CollectionPage betekent "deze pagina is een verzameling verwijzingen" en ImageGallery
+ * betekent "deze pagina is beeld"; allebei kloppen, allebei zeggen iets wat WebPage
+ * niet zegt. De rest blijft WebPage — een type opplakken omdat het specifieker klinkt,
+ * is precies de verzonnen precisie waar de kop van dit bestand tegen waarschuwt.
+ */
+const PAGINA_TYPE = {
+  '/guides': 'CollectionPage',
+  '/gallery': 'ImageGallery',
+  '/models': 'CollectionPage',
+};
+
+function webPageNode({ url, lang, title, description, kruimels, type = 'WebPage' }) {
+  return {
+    '@type': type,
+    '@id': `${url}#webpage`,
+    url,
+    ...(title ? { name: title } : {}),
+    ...(description ? { description } : {}),
+    isPartOf: { '@id': `${SITE}/#website` },
+    about: { '@id': ORG_ID },
+    inLanguage: norm(lang),
+    // Alleen verwijzen naar een kruimelpad dat er ook echt is. Een @id dat nergens
+    // heen wijst is erger dan geen verwijzing.
+    ...(kruimels ? { breadcrumb: { '@id': `${url}#breadcrumb` } } : {}),
+  };
+}
+
 function organizationNode() {
   return {
     '@type': 'Organization',
@@ -173,11 +251,41 @@ function organizationNode() {
       addressCountry: 'NL',
     },
     areaServed: 'Worldwide',
-    // Every profile the studio actually controls. sameAs is how a search
-    // engine knows these accounts and this domain are one publisher rather
-    // than three unrelated things with the same name — it is the entity-
-    // resolution field, not a link list, so an account that is not ours does
-    // not belong here even if we post to it.
+    /* ── DE VELDEN DIE EEN ENTITEIT AANWIJSBAAR MAKEN — 2 september 2026 ────
+     *
+     * Toegevoegd na de GEO-doorlichting (kladblok/geo-audit.mjs). Een
+     * zoekmachine rangschikt pagina's; een taalmodel dat een ANTWOORD citeert
+     * moet eerst weten wíé het citeert, en dat is wat deze velden doen. Ze
+     * staan er alle vier op bewijs:
+     *
+     *   · `legalName`, `vatID` en `taxID` staan al zichtbaar in de voettekst
+     *     van elke pagina (Layout.astro) — een machineleesbare kopie van iets
+     *     wat een mens er al kan lezen, en geen nieuwe claim.
+     *   · `knowsAbout` komt uit PILLARS en is niet ingetypt: een dienst erbij
+     *     levert hier vanzelf een term op, en er kan niets in staan wat we niet
+     *     doen.
+     *   · `contactPoint` herhaalt het adres en het nummer die hierboven al
+     *     staan, maar dan als aanspreekpunt — het veld waar een model naar
+     *     kijkt bij "hoe bereik ik ze".
+     *
+     * WAT ER MET OPZET NIET IN ZIT: `foundingDate`, `numberOfEmployees` en
+     * `aggregateRating`. Van de eerste twee weet dit bestand het antwoord niet,
+     * en een schema-veld is geen plek om te schatten. Een `aggregateRating`
+     * zonder echte reviews is bovendien precies waar Google handmatige
+     * maatregelen voor uitdeelt — zie testimonials.js, dat om dezelfde reden
+     * leeg is en de site dat gewoon laat zeggen. */
+    legalName: 'VISUAILS',
+    vatID: 'NL005407575B96',
+    taxID: '99742993',
+    knowsAbout: Object.values(PILLARS).map((e) => e.serviceType.en),
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'sales',
+      email: 'hello@visuails.com',
+      telephone: `+${WHATSAPP_NUMBER}`,
+      areaServed: 'Worldwide',
+      availableLanguage: ['en', 'nl'],
+    },
     sameAs: [
       waHref(),
       'https://www.instagram.com/visuails_com/',
@@ -220,6 +328,18 @@ const VIDEO_LINE = {
   en: 'One short clip. The same rate on its own or added to any order.',
   nl: 'Eén korte clip. De prijs is hetzelfde, los of toegevoegd aan een bestelling.',
 };
+
+const HOOKS_LINE = {
+  en: 'A short vertical video that carries on into the image below it in the feed.',
+  nl: 'Een korte verticale video die doorloopt in het beeld eronder in de feed.',
+};
+const HOOKS_UNIT = { en: 'per product, from', nl: 'per product, vanaf' };
+
+const EDITIONS_LINE = {
+  en: 'A monthly set of brand imagery with no product in it, made for one brand.',
+  nl: 'Elke maand een set merkbeeld zonder product erin, gemaakt voor één merk.',
+};
+const EDITIONS_UNIT = { en: 'per month, plus a one-time setup', nl: 'per maand, plus een eenmalige opzet' };
 
 const BRAND_MODEL_NAME = { en: 'Your Brand Model', nl: 'Jouw merkmodel' };
 const BRAND_MODEL_LINE = {
@@ -264,6 +384,36 @@ const PILLARS = {
     name: { en: 'Product video clips', nl: 'Productvideoclips' },
     serviceType: { en: 'Product video production', nl: 'Productvideoproductie' },
   },
+  /* ── HOOKS — 2 SEPTEMBER 2026 ─────────────────────────────────────────
+   * Een vaste ONDERGRENS en geen ladder: `AMOUNT.hooks` is een vanaf-prijs, en
+   * `unit` zegt dat er ook bij ("per product, vanaf"), want een Offer met een
+   * kaal bedrag zegt tegen een machine dat het DE prijs is.
+   *
+   * `availability` is hier PreOrder en niet InStock. Dat is geen detail: het
+   * schema is het machineleesbare deel van dezelfde belofte die de pagina in
+   * woorden doet, en die pagina zegt met zoveel woorden dat je dit vandaag niet
+   * kunt bestellen. Twee antwoorden op één vraag is precies wat dit bestand
+   * moet voorkomen. */
+  '/hooks': {
+    amount: 'hooks',
+    description: HOOKS_LINE,
+    unit: HOOKS_UNIT,
+    availability: 'https://schema.org/PreOrder',
+    name: { en: 'Hook videos', nl: 'Hookvideo’s' },
+    serviceType: { en: 'Short-form product video production', nl: 'Productie van korte productvideo’s' },
+  },
+  /* Editions — 2 september 2026. Een maandbedrag, dus `unitText` zegt "per
+   * maand" én dat er een opzet bij hoort; een Offer met een kaal bedrag zou
+   * tegen een machine zeggen dat dat de hele prijs is. PreOrder om dezelfde
+   * reden als bij /hooks: de pagina zegt in woorden dat het nog niet loopt. */
+  '/editions': {
+    amount: 'editions',
+    description: EDITIONS_LINE,
+    unit: EDITIONS_UNIT,
+    availability: 'https://schema.org/PreOrder',
+    name: { en: 'Editions — monthly brand imagery', nl: 'Editions — maandelijks merkbeeld' },
+    serviceType: { en: 'Brand imagery subscription', nl: 'Abonnement op merkbeeld' },
+  },
   '/custom-models': {
     amount: 'brandModel',
     description: BRAND_MODEL_LINE,
@@ -300,7 +450,7 @@ function serviceNode(path, lang, url) {
       price: priceValue(amount),
       priceCurrency: 'EUR',
       url,
-      availability: 'https://schema.org/InStock',
+      availability: entry.availability || 'https://schema.org/InStock',
       seller: { '@id': ORG_ID },
       priceSpecification: {
         '@type': 'UnitPriceSpecification',
@@ -557,6 +707,92 @@ function faqNode(items, lang, url) {
 // `item`-url. Dat is wat de schema.org-documentatie voorschrijft en het is ook
 // logisch: een link naar de pagina waar je al bent, is geen navigatie.
 
+/*
+ * ── /guides ALS ItemList — 3 september 2026 ────────────────────────────────
+ *
+ * De gidsenhub is vijf kaarten die elk naar één pagina wijzen. Voor een lezer is dat
+ * een keuzemenu; voor een model dat "waar leg ik uit hoe je met een telefoon
+ * fotografeert" moet beantwoorden, was het tot vandaag vijf koppen zonder verband.
+ * Een ItemList zegt: dit is een verzameling, dit zijn de leden, en dit is de volgorde.
+ *
+ * DE LIJST KOMT UIT src/data/guides.js, hetzelfde bestand dat de pagina rendert. Dat
+ * is niet netheid maar de regel uit de kop van dit bestand, toegepast op tekst in
+ * plaats van op geld: er staat hier niets wat de zichtbare pagina niet ook toont. Een
+ * uitgetypte kopie zou machineleesbaar zijn en dus onzichtbaar als hij afwijkt.
+ */
+function guidesItemList(lang, url) {
+  const l = norm(lang);
+  const lijst = guides(l);
+  const hub = GUIDES_HUB[l] || GUIDES_HUB.en;
+  // Het voorvoegsel van deze pagina, op dezelfde manier afgeleid als in
+  // breadcrumbNode(): uit de canonieke url, zodat /nl vanzelf klopt.
+  const eind = String(url).lastIndexOf('/guides');
+  const prefix = eind > 0 ? String(url).slice(0, eind) : SITE;
+  return {
+    '@type': 'ItemList',
+    '@id': `${url}#itemlist`,
+    name: hub.naam,
+    description: hub.lede,
+    itemListOrder: 'https://schema.org/ItemListOrderAscending',
+    numberOfItems: lijst.length,
+    itemListElement: lijst.map((g, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: g.title,
+      description: g.desc,
+      url: `${prefix}${g.pad}/`,
+    })),
+  };
+}
+
+/*
+ * ── /how-it-works ALS HowTo — 3 september 2026 ─────────────────────────────
+ *
+ * Deze pagina beschrijft één bestelling van formulier tot download, in zes stappen die
+ * op de pagina zelf staan (FigWalk). Dat is letterlijk wat een HowTo is, en het is het
+ * soort knoop waar een model een stappenlijst uit overneemt in plaats van hem uit
+ * lopende tekst te moeten raden.
+ *
+ * DRIE DINGEN DIE HIER MET OPZET NIET IN STAAN:
+ *
+ *   · GEEN `totalTime`, `estimatedCost`, `supply` of `tool`. De eerste is de regel uit
+ *     de kop van dit bestand — niets hier noemt een doorlooptijd, want de agenda is de
+ *     enige die een dag mag noemen. De andere drie zouden verzonnen zijn.
+ *   · GEEN `image` per stap. De beelden in die figuur zijn met zoveel woorden
+ *     plaatsvervangers ("a drawing, not a screenshot"), en een HowToStep met een
+ *     illustratie erin zegt: zo ziet het eruit. Dat zou het niet.
+ *   · GEEN eigen tekst. Naam en tekst van elke stap komen uit WALK_COPY in
+ *     src/data/demo.js — dezelfde bron als FigWalk rendert, op deze pagina én op
+ *     /demo. Twee beschrijvingen van één proces is hoe /start en /how-it-works ooit
+ *     uit elkaar zijn gelopen; zie de kop van HowItWorksPage.astro.
+ *
+ * En de eerlijkheid erbij: Google toont sinds 2023 geen HowTo-resultaat meer in de
+ * gewone zoekresultaten. Deze knoop staat er dus niet voor een plaatje in Google maar
+ * voor de lezer die géén zoekmachine is — en die is voor deze site de reden dat er
+ * ook een /llms.txt ligt.
+ */
+function howToNode(lang, url) {
+  const l = norm(lang);
+  const t = WALK_COPY[l] || WALK_COPY.en;
+  const stappen = WALK_STEPS
+    .map((id) => t.steps[id])
+    .filter(Boolean);
+  if (!stappen.length) return null;
+  return {
+    '@type': 'HowTo',
+    '@id': `${url}#howto`,
+    name: t.title,
+    description: t.lede,
+    inLanguage: l,
+    step: stappen.map((st, i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: st.h,
+      text: htmlToText(st.b),
+    })),
+  };
+}
+
 const CRUMB_ROOT = { en: 'Home', nl: 'Home' };
 
 const CRUMBS = {
@@ -570,9 +806,11 @@ const CRUMBS = {
   '/cookie-policy': { en: 'Cookie policy', nl: 'Cookiebeleid' },
   '/custom-models': { en: 'Brand Model', nl: 'Merkmodel' },
   '/data-processing-agreement': { en: 'Data processing agreement', nl: 'Verwerkersovereenkomst' },
+  '/editions': { en: 'Editions', nl: 'Editions' },
   '/faq': { en: 'FAQ', nl: 'Veelgestelde vragen' },
   '/gallery': { en: 'Gallery', nl: 'Galerij' },
   '/guides': { en: 'Guides', nl: 'Gidsen' },
+  '/hooks': { en: 'Hooks', nl: 'Hooks' },
   '/how-it-works': { en: 'How it works', nl: 'Hoe het werkt' },
   '/lifestyle': { en: 'Lifestyle', nl: 'Lifestyle' },
   '/lifestyle/custom': { en: 'Custom', nl: 'Custom' },
@@ -591,7 +829,19 @@ const CRUMBS = {
   '/start/plan': { en: 'Plan', nl: 'Plan' },
   '/start/video': { en: 'Video', nl: 'Video' },
   '/terms': { en: 'Terms', nl: 'Voorwaarden' },
-  '/test-sample': { en: 'Test sample', nl: 'Proefvisual' },
+  /* ── VIER PAGINA'S DIE GEEN KRUIMELPAD HADDEN — 2 september 2026 ─────────
+   * Gevonden met kladblok/seo-audit.mjs: zeventien gebouwde pagina's misten een
+   * BreadcrumbList. Dertien daarvan horen dat te missen — de twee homepages
+   * (een kruimelpad naar jezelf zegt niets) en elf 404- en bedankpagina's die
+   * op noindex staan. Deze vier niet: het zijn gewone, indexeerbare pagina's
+   * die alleen nooit in deze tabel zijn gezet. Een kruimelpad is wat een
+   * zoekresultaat "visuails.com › Abonnementen" laat tonen in plaats van een
+   * kale URL, en dat is precies het regeltje waarop geklikt wordt. */
+  '/plans': { en: 'Plans', nl: 'Abonnementen' },
+  '/portal': { en: 'Your portal', nl: 'Jouw portaal' },
+  '/start/custom-look': { en: 'Custom look', nl: 'Eigen look' },
+  '/studio': { en: 'VISUAILS Studio', nl: 'VISUAILS Studio' },
+  '/test-sample': { en: 'Try VISUAILS', nl: 'Probeer VISUAILS' },
   '/upload-guidelines': { en: 'Upload guidelines', nl: 'Uploadrichtlijnen' },
   '/video': { en: 'Video', nl: 'Video' },
   '/video/campaign': { en: 'Campaign', nl: 'Campaign' },
@@ -672,23 +922,45 @@ function breadcrumbNode(p, lang, url) {
  *              here so that every @id in the graph is byte-identical to the
  *              <link rel="canonical"> in the same <head>. Two URLs for one page
  *              is how a search engine ends up with two pages.
+ * @param title / description  de <title> en <meta description> van deze pagina, voor
+ *              de WebPage-knoop. Doorgegeven en niet hier opgebouwd, om dezelfde
+ *              reden als `url`: er is één tekst en die staat in de pagina.
+ * @param noindex  staat de pagina op noindex, dan komt er geen WebPage-knoop.
  */
-export function buildGraph({ path = '/', lang = 'en', url = SITE } = {}) {
+export function buildGraph({
+  path = '/', lang = 'en', url = SITE, title, description, noindex = false,
+} = {}) {
   const p = normalizePath(path);
   const l = norm(lang);
-  const nodes = [organizationNode()];
+  const nodes = [organizationNode(), websiteNode(l)];
 
   /* Het kruimelpad, waar we het pad bij naam kennen. Vóór de dienstknoop, want
      dit gaat over WAAR de pagina hangt en de rest over wat erop staat — en een
      graph leest prettiger van plaats naar inhoud. Zie de kop hierboven voor
      waarom een onbekend pad hier niets oplevert in plaats van een gok. */
   const crumbs = breadcrumbNode(p, l, url);
+  /* De paginaknoop vóór het kruimelpad, en met een verwijzing ernaar. Zie
+     webPageNode() hierboven voor waarom er geen datum in staat en waarom een
+     noindex-pagina er geen krijgt. */
+  if (!noindex) {
+    nodes.push(webPageNode({
+      url, lang: l, title, description, kruimels: Boolean(crumbs), type: PAGINA_TYPE[p] || 'WebPage',
+    }));
+  }
   if (crumbs) nodes.push(crumbs);
 
   if (PILLARS[p]) nodes.push(serviceNode(p, l, url));
   if (p === '/pricing') nodes.push(...pricingProductNodes(l, url));
   if (p === '/test-sample') nodes.push(testSampleNode(l, url));
   if (p === '/faq') nodes.push(faqNode(faqPageItems(l), l, url));
+  /* ── DE HOMEPAGE HAD DRIE VRAGEN EN GEEN KNOOP — 2 september 2026 ─────────
+   * De bezwaardenrij toont vier vragen met hun antwoord uitgeklapt, en de
+   * graph zweeg erover. Dat is dezelfde mechanische reden als bij de
+   * dienstpagina's hierboven: dit bestand leest het pad en niet de props. Nu de
+   * drie beantwoorde vragen in faq.js staan (HOME_OBJECTION_QUESTIONS), is het
+   * één regel. De vierde blijft erbuiten: zijn antwoord woont in HomeV2 zelf en
+   * een knoop mag alleen zeggen wat hier te lezen valt. */
+  if (p === '/') nodes.push(faqNode(homeObjectionFaqs(l), l, url));
   if (p === '/pricing') nodes.push(faqNode(pricingFaqs(l), l, url));
 
   /* ── DE DIENSTPAGINA'S HADDEN HUN VRAGEN NIET IN DE GRAPH — 23 AUG 2026 ────
@@ -705,6 +977,15 @@ export function buildGraph({ path = '/', lang = 'en', url = SITE } = {}) {
    * padvergelijking. */
   const dienstVragen = serviceFaqs(p.replace(/^\//, ''), l);
   if (dienstVragen.length) nodes.push(faqNode(dienstVragen, l, url));
+
+  /* De twee pagina's die een eigen vorm hebben in plaats van een dienst of een prijs.
+     Zie guidesItemList() en howToNode() hierboven — allebei gebouwd uit de lijst die
+     de pagina zelf ook rendert. */
+  if (p === '/guides') nodes.push(guidesItemList(l, url));
+  if (p === '/how-it-works') {
+    const howto = howToNode(l, url);
+    if (howto) nodes.push(howto);
+  }
 
   return { '@context': 'https://schema.org', '@graph': nodes };
 }

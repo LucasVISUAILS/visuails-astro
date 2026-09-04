@@ -9,7 +9,8 @@
  *
  *   · bronmateriaal (kind='upload') wordt 90 dagen na het afsluiten van de
  *     bestelling verwijderd;
- *   · geleverde visuals (kind='delivery') bewaren we 12 maanden na levering.
+ *   · geleverde visuals (kind='delivery') bewaren we DELIVERY_DAYS (90 dagen,
+ *     was 12 maanden tot 4 september 2026) na levering.
  *
  * `files.expires_at` bestaat sinds migratie 0001 en heeft in schema.sql zelfs de
  * opmerking "closed_at + 90 days, set when the order closes" staan. Die kolom werd
@@ -48,7 +49,7 @@
  * staat, is het materiaal in gebruik.
  *
  * Geleverde beelden: bij de LEVERING, niet bij het afsluiten. De belofte zegt
- * "12 maanden na levering", en tussen leveren en afsluiten kan een maand
+ * "90 dagen na levering", en tussen leveren en afsluiten kan een maand
  * goedkeuringswerk zitten. Het afsluitmoment nemen zou de klant meer geven dan
  * belooft is — dat is geen probleem voor de klant, maar het maakt de tekst onwaar
  * en dan weet niemand meer welke van de twee de regel is.
@@ -64,8 +65,18 @@
 /** Bronmateriaal: dagen na het afsluiten van de bestelling. /privacy §6, /terms §7. */
 export const UPLOAD_DAYS = 90;
 
-/** Geleverde beelden: maanden na levering. /privacy §6, /terms §7. */
-export const DELIVERY_MONTHS = 12;
+/** Geleverde beelden: dagen na levering. /privacy §6, /terms §7.
+ *
+ * ── 12 MAANDEN → 90 DAGEN, 4 september 2026 ──────────────────────────────
+ * Lucas: *"90 dagen zijn de bestanden downloadbaar in VISUAILS Studio, daarna
+ * worden ze daar verwijderd; wij kunnen de resultaten lokaal nog bewaren maar
+ * dat is geen garantie — de klant moet er zelf voor zorgen dat hij ze goed
+ * lokaal opslaat. Na 90 dagen kan hij contact opnemen, dan kijken wij of ze
+ * nog bij ons staan."* Dezelfde termijn als de privélink (PORTAL_TTL_DAYS) en
+ * als het bronmateriaal, dus er is nog maar één getal om te onthouden. De
+ * naam is mee veranderd (was DELIVERY_MONTHS): een constante die "maanden"
+ * heet en dagen bevat, is de fout die je pas in een mail ziet. */
+export const DELIVERY_DAYS = 90;
 
 /**
  * Stempel de bewaartermijn op het bronmateriaal van een afgeronde bestelling.
@@ -118,7 +129,7 @@ export function clearUploadRetention(env, orderId) {
 export function stampDeliveryRetention(env, orderId) {
   return env.DB.prepare(
     `UPDATE files
-        SET expires_at = datetime(COALESCE(announced_at, created_at), '+${DELIVERY_MONTHS} months')
+        SET expires_at = datetime(COALESCE(announced_at, created_at), '+${DELIVERY_DAYS} days')
       WHERE order_id = ?1
         AND kind = 'delivery'
         AND superseded_at IS NULL
@@ -153,7 +164,7 @@ export const EXPIRED_FILES_SQL = `
         OR (f.kind = 'upload'   AND o.closed_at IS NOT NULL
               AND datetime(o.closed_at, '+${UPLOAD_DAYS} days') <= datetime('now'))
         OR (f.kind = 'delivery' AND f.announced_at IS NOT NULL
-              AND datetime(f.announced_at, '+${DELIVERY_MONTHS} months') <= datetime('now'))
+              AND datetime(f.announced_at, '+${DELIVERY_DAYS} days') <= datetime('now'))
          )
    ORDER BY f.id
    LIMIT ?1`;

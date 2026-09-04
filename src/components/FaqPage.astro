@@ -86,7 +86,7 @@ const COPY = {
     ctaEm: 'question',
     ctaH2: '?',
     ctaBody: 'Message us on WhatsApp — usually a reply within an hour on weekdays.',
-    ctaSample: `Request a test sample · ${TEST_SAMPLE.en.price}`,
+    ctaSample: TEST_SAMPLE.en.cta,
     ctaContact: 'Get in touch',
     wa: waHref("Hi VISUAILS, I have a question about your service."),
   },
@@ -104,7 +104,7 @@ const COPY = {
     ctaEm: 'vraag',
     ctaH2: '?',
     ctaBody: 'Stuur ons een bericht op WhatsApp — meestal binnen een uur antwoord op werkdagen.',
-    ctaSample: `Vraag een proefvisual aan · ${TEST_SAMPLE.nl.price}`,
+    ctaSample: TEST_SAMPLE.nl.cta,
     ctaContact: 'Neem contact op',
     wa: waHref("Hoi VISUAILS, ik heb een vraag over jullie dienst."),
   },
@@ -142,7 +142,7 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
         <img src="/img/lifestyle-flash-05.webp" alt={c.heroAlt} loading="lazy" decoding="async" width="2400" height="1792" />
       </div>
       <div>
-        <h1 class="display" style="font-size:var(--t-page-h1)">{c.h1a}<em>{c.h1em}</em>{c.h1b}</h1>
+        <h1 class="display">{c.h1a}<em>{c.h1em}</em>{c.h1b}</h1>
         <p class="lead" style="margin-top:1rem">{c.lead}</p>
       </div>
     </div>

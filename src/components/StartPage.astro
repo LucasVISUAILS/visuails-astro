@@ -137,7 +137,7 @@ const COPY = {
         name: 'A custom look',
         status: 'Priced per request',
         price: 'No standard rate',
-        line: 'A world designed around your product rather than picked from the four. What it costs follows from what you want built.',
+        line: 'A world designed around your product rather than picked from the four. What it costs follows from what you want built; once designed, it sits as a tile in your account and in the order form.',
       },
     ],
     /* ── HET ABONNEMENT STAAT NIET MEER ONDER "OP AANVRAAG" ─────────────────
@@ -183,7 +183,7 @@ const COPY = {
     planCta2: 'Compare the plans',
     footH: 'Not ready to order?',
     footBody: `One product, ${sample.price}, ${sample.unit}. It runs through the same production as a paid order, so what you see is what you would get.`,
-    footCta: `Try a test sample · ${sample.price}`,
+    footCta: sample.cta,
     footWa: 'Ask on WhatsApp',
     // Zie de noot bij OrderFlow.astro's footWaText: deze knop opende WhatsApp
     // met een leeg bericht. Hier staat de bezoeker nog vóór het formulier, dus
@@ -244,7 +244,7 @@ const COPY = {
         name: 'Een look op maat',
         status: 'Prijs op aanvraag',
         price: 'Geen standaardtarief',
-        line: 'Een wereld die om jouw product heen ontworpen wordt in plaats van gekozen uit de vier. Wat het kost, volgt uit wat je gebouwd wilt hebben.',
+        line: 'Een wereld die om jouw product heen ontworpen wordt in plaats van gekozen uit de vier. Wat het kost, volgt uit wat je gebouwd wilt hebben; eenmaal ontworpen staat hij als tegel in je account en in het bestelformulier.',
       },
     ],
     /* Zie de noot bij de Engelse tegenhanger. */
@@ -259,7 +259,7 @@ const COPY = {
     planCta2: 'Vergelijk de abonnementen',
     footH: 'Nog niet klaar om te bestellen?',
     footBody: `Eén product, ${sample.price}, ${sample.unit}. Het loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen.`,
-    footCta: `Probeer een proefvisual · ${sample.price}`,
+    footCta: sample.cta,
     footWa: 'Vraag het via WhatsApp',
     footWaText: 'Hoi VISUAILS, ik weet niet zeker welke dienst bij mijn producten past.',
     ladder: 'Alle prijzen per aantal, en wat je er bij elk aantal voor krijgt',
@@ -292,7 +292,7 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
         <img
           class="pick-shot"
           src={SHOT[s.id].src}
-          alt=""
+          alt={`${s.name} — ${lang === 'nl' ? 'voorbeeld' : 'example'}`}
           width={SHOT[s.id].w}
           height={SHOT[s.id].h}
           loading="lazy"
@@ -457,15 +457,21 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
   }
   .pick-from,
   .pick-per { font-size: .76rem; color: var(--ink-3); font-weight: 400; }
+  /* Een knop en geen onderstreepte regel — 4 september 2026. Dit is de eerste
+     stap van de bestelling, en de enige aanwijzing was een link van 13px in de
+     hoek van de kaart. De hele kaart is al klikbaar; de knop zegt alleen
+     duidelijker dat dat zo is. Dezelfde vorm als .btn.btn-primary, zonder de
+     klasse, want een <span> in een <a> mag geen tweede link worden. */
   .pick-cta {
     margin-top: auto;
-    padding-top: .8rem;
-    font-size: .84rem;
-    font-weight: 600;
-    color: var(--accent-bright);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    align-self: flex-start;
+    margin-top: 1rem;
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 1.3rem;
+    border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+    font-family: var(--font-heading); font-weight: 800; font-size: .95rem; letter-spacing: .02em; text-transform: uppercase;
+    transition: background-color .15s ease;
   }
+  .pick:hover .pick-cta { background: var(--accent-dim); }
 
   .pick-vat { margin-top: 1rem; font-size: .78rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
   .pick-more { margin-top: .6rem; font-size: .9rem; }

@@ -337,7 +337,8 @@ export function briefingText({ order, product }) {
  * ontvanger van dit bestand naar kijkt, en art. 2 lid 3 Auteurswet leest een
  * licentie beperkt: wat er niet staat, is niet gegeven.
  */
-export function licenceText({ order, lang }) {
+export function licenceText({ order, lang, gedeeld = false }) {
+  if (gedeeld) return gedeeldeLicentie({ order, lang });
   const nl = lang !== 'en';
   const merk = order.brand || order.name || (nl ? 'de klant' : 'the client');
   return nl ? CRLF([
@@ -409,6 +410,128 @@ export function licenceText({ order, lang }) {
     '',
     'Full terms, including what applies if you need the rights transferred',
     'rather than licensed: visuails.com/terms (section 8)',
+    '',
+  ]);
+}
+
+/*
+ * ── DE TWEEDE LICENTIE: GEDEELD BEELD — 2 SEPTEMBER 2026 ────────────────────
+ *
+ * De tekst hierboven is EXCLUSIEF, en dat woord doet daar al het werk:
+ * voorwaarden §8 zegt met zoveel woorden dat exclusief ook betekent dat WIJ het
+ * beeld aan niemand anders licentiëren. Dat klopt voor een bestelling, want die
+ * gaat over het product van één merk.
+ *
+ * Het klopt NIET voor de maandelijkse merkneutrale set. Die gaat naar elke
+ * abonnee; dezelfde twintig beelden bij twintig merken. Onder de tekst hierboven
+ * zou elk van die twintig een exclusieve licentie op dezelfde beelden krijgen —
+ * twintig beloftes die elkaar uitsluiten, en elk van de twintig zou ons erop
+ * kunnen aanspreken. Dat is geen slordigheid in de copy maar een tegenstrijdig-
+ * heid in de levering zelf, en hij zat er tot vandaag in.
+ *
+ * ── WAT ER WEL EN NIET VERANDERT ───────────────────────────────────────────
+ *
+ * Weg gaat één woord: exclusief. Alles wat de klant er zélf mee mag, blijft
+ * staan — verveelvoudigen, bewerken, commercieel gebruiken, sublicentiëren aan
+ * wie voor hem werkt, meenemen bij verkoop van het merk. Er komt één zin bij die
+ * zegt wat gedeeld betekent, in dezelfde bewoording als de gedeelde modellen op
+ * /custom-models al gebruiken: hetzelfde beeld kan bij een ander merk opduiken.
+ *
+ * En één zin over opzeggen, want dat is de vraag die bij een maandelijkse set
+ * onvermijdelijk komt. Het antwoord is hetzelfde als in voorwaarden §13: wat je
+ * tijdens je abonnement gedownload hebt, blijft van jou. Zonder die zin zou een
+ * klant redelijkerwijs kunnen denken dat een gedeelde licentie ophoudt als de
+ * termijn ophoudt — en dan gaat hij beelden offline halen die hij mocht houden.
+ *
+ * ── ER IS GEEN BESTELNUMMER ────────────────────────────────────────────────
+ *
+ * Een maandelijkse set hoort bij een abonnement en niet bij een bestelling, dus
+ * staat er de MAAND waar bij een bestelling het kenmerk staat. `order.ref` mag
+ * daarvoor gebruikt worden zolang er nog geen eigen levering bestaat; zodra die
+ * er is, hoort hier `${jaar}-${maand}` te staan en niets anders.
+ */
+function gedeeldeLicentie({ order, lang }) {
+  const nl = lang !== 'en';
+  const merk = order.brand || order.name || (nl ? 'de klant' : 'the client');
+  const periode = order.ref || (nl ? 'deze maand' : 'this month');
+  return nl ? CRLF([
+    'VISUAILS - gebruiksrechten, gedeelde set',
+    '='.repeat(60),
+    '',
+    `Set         ${periode}`,
+    `Voor        ${merk}`,
+    '',
+    'DIT IS DE GEDEELDE MAANDSET. Hij is merkneutraal: er staat geen',
+    'product van jou in, en dezelfde beelden gaan naar andere merken die',
+    'ook een abonnement hebben. Precies zoals bij de gedeelde modellen',
+    'kan een beeld dat jij vandaag plaatst, morgen bij een ander merk',
+    'staan. Wil je beeld dat alleen van jou is, dan is dat Editions of',
+    'een gewone bestelling - zie visuails.com/nl/editions.',
+    '',
+    `${merk} heeft op deze beelden een niet-exclusieve, eeuwigdurende,`,
+    'wereldwijde en royaltyvrije licentie. Dat betekent concreet dat je',
+    'ze mag:',
+    '',
+    '  - verveelvoudigen en openbaar maken, in elk medium en elk formaat',
+    '  - bewerken en aanpassen (uitsnijden, retoucheren, tekst erover)',
+    '  - commercieel gebruiken: webshop, marktplaatsen, advertenties,',
+    '    social media, print, verpakking, beurs, etalage',
+    '  - sublicentieren aan wie voor je werkt: je bureau, je marktplaats,',
+    '    een wederverkoper die jouw product verkoopt',
+    '  - meenemen naar een koper als je merk of bedrijf wordt verkocht',
+    '',
+    'Er zit geen limiet op aantallen, geen beperking naar gebied en geen',
+    'looptijd op. Je hoeft VISUAILS niet te vermelden.',
+    '',
+    'ZEG JE HET ABONNEMENT OP, DAN BLIJFT DEZE LICENTIE STAAN op alles',
+    'wat je tot dat moment hebt opgehaald. Wat je hebt, hou je - je hoeft',
+    'niets offline te halen. Nieuwe sets komen er dan geen meer.',
+    '',
+    'DE BEELDEN ZIJN MET AI GEMAAKT.',
+    'Wie ze publiceert, hoort dat erbij te zeggen (EU AI Act, art. 50).',
+    'Die plicht ligt bij de publiceerder - in de praktijk bij jou. Op',
+    'visuails.com/nl/ai-act staat de zin die je kunt gebruiken.',
+    '',
+    'De volledige voorwaarden: visuails.com/nl/terms (paragraaf 8)',
+    '',
+  ]) : CRLF([
+    'VISUAILS - usage rights, shared set',
+    '='.repeat(60),
+    '',
+    `Set         ${periode}`,
+    `For         ${merk}`,
+    '',
+    'THIS IS THE SHARED MONTHLY SET. It is brand-neutral: none of your',
+    'products are in it, and the same images go to other brands on a',
+    'plan. Exactly as with the shared model roster, an image you post',
+    'today can appear on another brand tomorrow. If you want imagery',
+    'that is yours alone, that is Editions or a regular order - see',
+    'visuails.com/editions.',
+    '',
+    `${merk} holds a non-exclusive, perpetual, worldwide and royalty-free`,
+    'licence to these images. Concretely, you may:',
+    '',
+    '  - reproduce and publish them, in any medium and any format',
+    '  - edit and adapt them (crop, retouch, add text)',
+    '  - use them commercially: shop, marketplaces, ads, social, print,',
+    '    packaging, trade fairs, a shop window',
+    '  - sublicense them to whoever works for you: your agency, your',
+    '    marketplace, a reseller who sells your product',
+    '  - take them with you if your brand or business is sold',
+    '',
+    'There is no volume limit, no territory limit and no term. You do not',
+    'have to credit VISUAILS.',
+    '',
+    'IF YOU CANCEL, THIS LICENCE STAYS on everything you downloaded up to',
+    'that point. What you have, you keep - nothing has to come down. You',
+    'simply stop receiving new sets.',
+    '',
+    'THESE IMAGES WERE MADE WITH AI.',
+    'Whoever publishes them should say so (EU AI Act, art. 50). That duty',
+    'sits on the publisher - in practice, on you. visuails.com/ai-act has',
+    'the sentence you can use.',
+    '',
+    'Full terms: visuails.com/terms (section 8)',
     '',
   ]);
 }

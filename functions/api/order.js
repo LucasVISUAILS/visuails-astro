@@ -704,6 +704,21 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   let customerId = null;
   await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, ...addressParts }); });
+  /* HET KVK-NUMMER OP DE KLANT — 4 september 2026 (migratie 0043). Een losse
+     UPDATE en geen zestiende kolom in upsertWide(): die valt bij een ontbrekende
+     kolom al terug op een smallere query, en een derde variant zou het gat
+     alleen groter maken. Alleen invullen als de klant iets opgaf en er nog niets
+     staat, of als hij zijn gegevens niet zelf beheert (dezelfde regel als de
+     andere velden: wat de klant op Je gegevens zette, wint). */
+  {
+    const regNr = get('reg_number').trim().slice(0, 40);
+    if (regNr && customerId) {
+      await safe(() => env.DB.prepare(
+        `UPDATE customers SET reg_number = ?1
+          WHERE id = ?2 AND (reg_number IS NULL OR reg_number = '' OR details_saved_at IS NULL)`
+      ).bind(regNr, customerId).run());
+    }
+  }
 
   // `lang` is stored, not just used. This request is the last moment the client's
   // language is known for free — every later message (the portal, the delivery
@@ -931,6 +946,25 @@ export async function onRequestPost({ request, env, waitUntil }) {
      dit pad "maak geen betaling aan". Zie FIXED_PRICE_SERVICES in
      src/lib/quote.js voor waarom het daar een eigen functie is en niet een
      zesde naam in PAYABLE_SERVICES. */
+  /* ── DE EIGEN STIJL VAN DE KLANT — 4 september 2026 ─────────────────────
+     `cs-<id>` uit het formulier is pas een keuze als de stijl van DEZE klant is
+     (op e-mailadres), actief is, en bij deze dienst hoort. Anders wordt hij
+     stil leeggemaakt, met een regel in het logboek — een stijl van een ander
+     merk mag nooit in een bestelling belanden door een aangepast formulier.
+     Wat er wél staat, gaat als naam mee in details_json (de studio-mail en
+     /admin lezen dat), en de toeslag per product gaat de offerte in. */
+  let ownStyle = null;
+  if (/^cs-\d{1,9}$/.test(String(details.style || ''))) {
+    ownStyle = await ownStyleFor(env, email, Number(details.style.slice(3)), svc).catch(() => null);
+    if (!ownStyle) {
+      console.warn(`[order] eigen stijl ${details.style} hoort niet bij ${email} of is niet actief — genegeerd`);
+      delete details.style;
+    } else {
+      details.style_name = ownStyle.name;
+      details.own_style_id = ownStyle.id;
+    }
+  }
+
   const quote = svc === 'test-sample'
     ? quoteTestSample({ vatRate: vatCall.rate })
     : svc === 'brand-model'
@@ -938,6 +972,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
       : quoteOrder({
         service: svc, products, outfits: outfitCount, extras: extraCount,
         vatRate: vatCall.rate,
+        styleSurchargeCents: ownStyle ? Number(ownStyle.surcharge_cents) || 0 : 0,
       });
 
   // ── THE WITHDRAWAL WAIVER, RECORDED ────────────────────────────────────────
@@ -1936,6 +1971,11 @@ function vetAnswer(key, value) {
    */
   if (key === 'style') {
     const v = String(value).trim();
+    /* Een EIGEN STIJL van de klant (customer_styles, 4 september 2026) post als
+       `cs-<id>`. De vorm wordt hier bewaakt; of hij van déze klant is en actief,
+       weet deze functie niet — dat controleert ownStyleFor() verderop, en tot
+       die tijd blijft de waarde staan. */
+    if (/^cs-\d{1,9}$/.test(v)) return v;
     const s = STYLES.find((x) => x.slug === v);
     if (!s) return '';
     if (s.priceTrust) {
@@ -1951,7 +1991,11 @@ function vetAnswer(key, value) {
   }
 
   const m = PRODUCT_ANSWER_KEY.exec(key);
-  if (!m || !isProductQuestionId(m[1])) return value;
+  /* Onbekende velden landden ongeknipt in details_json (4 september 2026):
+     een gesleuteld formulier kon er een megabyte in zetten. Tweeduizend tekens
+     is ruim voor elk vrij veld dat de site kent (de intake voor een eigen look
+     is het langste, en die past er drie keer in). */
+  if (!m || !isProductQuestionId(m[1])) return capAnswer(value, 2000);
 
   const q = productQuestion(m[1]);
   const v = String(value).trim();
@@ -2284,6 +2328,27 @@ async function upsertWide(env, c) {
 // for why. Imported above, alongside token.js/uploads.js.
 
 async function safe(fn) { try { return await fn(); } catch (e) { console.error('[order]', e && e.message ? e.message : e); } }
+
+/**
+ * De eigen stijl van een klant, als hij bestaat en van hem is.
+ *
+ * Op e-mailadres, omdat het bestelformulier geen sessie meestuurt: de klant is
+ * ingelogd in Studio (daar komt de tegel vandaan) maar /api/order kent alleen
+ * het formulier. `both` past bij catalog én lifestyle; 'drop' (het complete
+ * pakket) telt als allebei. Alleen 'active' — een voorgestelde stijl waar de
+ * offerte nog van openstaat is nog geen keuze.
+ */
+async function ownStyleFor(env, email, styleId, service) {
+  if (!env?.DB || !Number.isInteger(styleId) || !isEmail(String(email || ''))) return null;
+  const row = await env.DB.prepare(
+    `SELECT s.id, s.name, s.service, s.surcharge_cents
+       FROM customer_styles s JOIN customers c ON c.id = s.customer_id
+      WHERE s.id = ?1 AND lower(c.email) = ?2 AND s.status = 'active'`
+  ).bind(styleId, String(email).toLowerCase()).first().catch(() => null);
+  if (!row) return null;
+  const past = row.service === 'both' || service === 'drop' || row.service === service;
+  return past ? row : null;
+}
 
 function makeRef() {
   const t = Date.now().toString(36).toUpperCase().slice(-4);

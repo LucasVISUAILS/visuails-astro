@@ -179,11 +179,42 @@ const KIND = {
         ['Price', 'On request. There is no per-product rate for this until we know what the scene is — the house styles are the ones that have one. Once the look is designed, every product after it runs at the normal rate for its count.'],
         ['What you get', 'A setting, styling and light that only your brand would use, designed once with you and then held to on every order after it.'],
         ['How it starts', 'Send references and describe the world. We come back with a design direction and a price, in writing, before you commit to anything.'],
+        ['Two ways in', 'Tell us what you have in mind — then we have something to hold on to and can say straight away whether it can be made — or let us think up the whole concept. The second is extra design work and counts in the price.'],
+        ['Feasibility first', 'Before you pay anything, we say whether your idea can be made with AI and our tools. If that turns out not to be the case along the way, your deposit comes back.'],
+        ['Deposit and revisions', 'If it can be made, you pay a deposit and we design the look with you, with a fitting number of revision rounds — that differs per project, and it ends when the concept is right. Mistakes you point out we always fix at no cost.'],
+        ['Yours', 'The look is yours: we do not use it for another brand. A face is a separate thing — a Brand Model combines with any look.'],
       ],
       askLabel: null,
       askHint: null,
       more: '/lifestyle/custom',
       moreLabel: 'See what a look of your own is',
+      /* ── DE KORTE INTAKE — 4 september 2026 ──────────────────────────────
+         Lucas: "op aanvraag, korte intake voor belangrijke informatie waarna
+         ik kijk wat de klant precies wilt, of het mogelijk is wat de klant
+         wilt en offerte maak." Zes vragen, en niet meer: waar de look voor
+         is, de wereld in woorden, referenties, wat er niet in mag, hoeveel
+         producten er ongeveer doorheen gaan en wanneer. Elk veld landt in
+         details_json en staat daarmee vanzelf in de studiomail. */
+      intake: {
+        h: 'About the look',
+        lead: 'Five minutes. The more precise you are here, the fewer questions we have to ask before we can quote.',
+        conceptLabel: 'Who comes up with the concept?',
+        conceptOptions: [['own', 'I have the concept — you work it out'], ['us', 'Think it up for us (extra design work, counts in the price)']],
+        forLabel: 'Where should the look be usable?',
+        forOptions: [['lifestyle', 'Lifestyle scenes'], ['catalog', 'Catalog sets'], ['both', 'Both']],
+        worldLabel: 'Describe the world',
+        worldHint: 'Setting, light, mood, colour, time of day. Write it as you would brief a photographer — "a hot concrete rooftop at noon, hard shadows, one product per frame". Letting us think it up? Then describe your brand, your customer and where the images will go.',
+        worldErr: 'Describe the world you have in mind — that is what the quote is based on.',
+        refsLabel: 'Two to five references',
+        refsHint: 'Links to images, campaigns or accounts that have the feeling you want. One per line.',
+        avoidLabel: 'What should it never look like?',
+        avoidHint: 'Competitors, clichés, colours or props you do not want. Optional, but this saves a round.',
+        countLabel: 'Roughly how many products will use it?',
+        countOptions: [['1-4', '1 to 4'], ['5-9', '5 to 9'], ['10-19', '10 to 19'], ['20+', '20 or more'], ['unsure', 'Not sure yet']],
+        whenLabel: 'When do you need the first set?',
+        whenOptions: [['asap', 'As soon as it is ready'], ['month', 'Within a month'], ['quarter', 'This quarter'], ['open', 'No date yet']],
+        after: 'Once the look is designed and approved, it appears in your VISUAILS Studio as a tile of its own. From then on you order with it through the ordinary order form, at the ordinary rate for the count.',
+      },
     },
   },
   nl: {
@@ -212,11 +243,36 @@ const KIND = {
         ['Prijs', 'Op aanvraag. Er is geen tarief per product zolang we de scène niet kennen — de huisstijlen zijn de enige die er wél een hebben. Zodra de look ontworpen is, loopt elk product daarna tegen het gewone tarief voor dat aantal.'],
         ['Wat je krijgt', 'Een setting, styling en licht die alleen jouw merk zou gebruiken, één keer met je ontworpen en daarna vastgehouden in elke bestelling erna.'],
         ['Hoe het begint', 'Stuur referenties en beschrijf de wereld. Wij komen terug met een richting en een prijs, op schrift, voordat je je ergens aan vastlegt.'],
+        ['Twee ingangen', 'Geef zelf aan wat je in gedachten hebt — dan hebben wij houvast en zeggen we meteen of het kan — of laat ons het hele concept bedenken. Dat tweede is extra denkwerk en telt mee in de prijs.'],
+        ['Haalbaarheid eerst', 'Voordat je iets betaalt, zeggen we of je idee met AI en onze tools te maken is. Blijkt dat onderweg toch niet zo, dan krijg je je aanbetaling terug.'],
+        ['Aanbetaling en revisies', 'Kan het, dan betaal je een aanbetaling en ontwerpen we de look samen met jou, met een passend aantal revisierondes — dat verschilt per project en stopt als het concept klopt. Fouten die je aanwijst lossen we altijd kosteloos op.'],
+        ['Van jou', 'De look is van jou: we gebruiken hem niet voor een ander merk. Een gezicht is iets aparts — een merkmodel combineert met elke look.'],
       ],
       askLabel: null,
       askHint: null,
       more: '/lifestyle/custom',
       moreLabel: 'Bekijk wat een eigen look is',
+      /* Zie de noot bij de Engelse tegenhanger. */
+      intake: {
+        h: 'Over de look',
+        lead: 'Vijf minuten. Hoe preciezer je hier bent, hoe minder we hoeven te vragen voordat we een offerte kunnen maken.',
+        conceptLabel: 'Wie bedenkt het concept?',
+        conceptOptions: [['own', 'Ik heb het concept — jullie werken het uit'], ['us', 'Bedenk het voor ons (extra ontwerpwerk, telt mee in de prijs)']],
+        forLabel: 'Waar moet de look te gebruiken zijn?',
+        forOptions: [['lifestyle', 'Lifestylescènes'], ['catalog', 'Catalogsets'], ['both', 'Allebei']],
+        worldLabel: 'Beschrijf de wereld',
+        worldHint: 'Setting, licht, sfeer, kleur, tijd van de dag. Schrijf het zoals je een fotograaf zou briefen — "een heet betonnen dak om twaalf uur, harde schaduwen, één product per beeld". Laat je ons het bedenken? Beschrijf dan je merk, je klant en waar de beelden komen te staan.',
+        worldErr: 'Beschrijf de wereld die je in gedachten hebt — daar is de offerte op gebaseerd.',
+        refsLabel: 'Twee tot vijf referenties',
+        refsHint: 'Links naar beelden, campagnes of accounts die het gevoel hebben dat je zoekt. Eén per regel.',
+        avoidLabel: 'Hoe mag het er nooit uitzien?',
+        avoidHint: 'Concurrenten, clichés, kleuren of props die je niet wilt. Optioneel, maar dit scheelt een ronde.',
+        countLabel: 'Ongeveer hoeveel producten gaan erdoorheen?',
+        countOptions: [['1-4', '1 tot 4'], ['5-9', '5 tot 9'], ['10-19', '10 tot 19'], ['20+', '20 of meer'], ['unsure', 'Weet ik nog niet']],
+        whenLabel: 'Wanneer heb je de eerste set nodig?',
+        whenOptions: [['asap', 'Zo snel als hij klaar is'], ['month', 'Binnen een maand'], ['quarter', 'Dit kwartaal'], ['open', 'Nog geen datum']],
+        after: 'Zodra de look ontworpen en goedgekeurd is, staat hij als eigen tegel in je VISUAILS Studio. Vanaf dan bestel je ermee via het gewone bestelformulier, tegen het gewone tarief voor dat aantal.',
+      },
     },
   },
 };
@@ -350,6 +406,62 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
           </div>
         )}
 
+        {k.intake && (
+          <fieldset class="hold-intake">
+            <legend class="hold-intake-h">{k.intake.h}</legend>
+            <p class="hold-intake-lead">{k.intake.lead}</p>
+
+            <div class="field">
+              <label for="h-concept">{k.intake.conceptLabel}</label>
+              <select class="select" id="h-concept" name="look_concept">
+                {k.intake.conceptOptions.map(([v, l]) => <option value={v}>{l}</option>)}
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="h-for">{k.intake.forLabel}</label>
+              <select class="select" id="h-for" name="look_service">
+                {k.intake.forOptions.map(([v, l]) => <option value={v}>{l}</option>)}
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="h-world">{k.intake.worldLabel} <span class="req">*</span></label>
+              <textarea class="textarea" id="h-world" name="look_world" rows="5" required maxlength="2000" data-melding={k.intake.worldErr}></textarea>
+              <span class="hint">{k.intake.worldHint}</span>
+            </div>
+
+            <div class="field">
+              <label for="h-refs">{k.intake.refsLabel} <span class="hold-opt">{ui.optional}</span></label>
+              <textarea class="textarea" id="h-refs" name="look_references" rows="4" maxlength="2000" placeholder="https://"></textarea>
+              <span class="hint">{k.intake.refsHint}</span>
+            </div>
+
+            <div class="field">
+              <label for="h-avoid">{k.intake.avoidLabel} <span class="hold-opt">{ui.optional}</span></label>
+              <input class="input" type="text" id="h-avoid" name="look_avoid" maxlength="500" />
+              <span class="hint">{k.intake.avoidHint}</span>
+            </div>
+
+            <div class="row-2">
+              <div class="field">
+                <label for="h-count">{k.intake.countLabel}</label>
+                <select class="select" id="h-count" name="look_products">
+                  {k.intake.countOptions.map(([v, l]) => <option value={v} selected={v === 'unsure'}>{l}</option>)}
+                </select>
+              </div>
+              <div class="field">
+                <label for="h-when">{k.intake.whenLabel}</label>
+                <select class="select" id="h-when" name="look_when">
+                  {k.intake.whenOptions.map(([v, l]) => <option value={v} selected={v === 'open'}>{l}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <p class="hold-intake-after">{k.intake.after}</p>
+          </fieldset>
+        )}
+
         <div class="field">
           <label for="h-msg">{ui.message} <span class="hold-opt">{ui.optional}</span></label>
           <textarea class="textarea" id="h-msg" name="message"></textarea>
@@ -436,6 +548,20 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
   .hold-fields { margin-top: 1.4rem; }
   .hold-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
   .hold-submit { margin-top: .6rem; }
+
+  /* De intake: een eigen blok binnen het formulier, met een lijn erboven zodat
+     het leest als "en nu over de look zelf" na de contactgegevens. Geen kader in
+     een kader — het formulier heeft er al een. */
+  .hold-intake { margin: 1.6rem 0 1.2rem; padding: 0; border: 0; min-width: 0; }
+  /* Een <legend> zit standaard IN de rand van zijn fieldset; als blokkop (met
+     de lijn erboven, niet erdoorheen) moet hij eruit: float + volle breedte is
+     de enige manier die overal werkt. De lead erna zet de float weer stil. */
+  .hold-intake-h { float: left; width: 100%; padding: 1.4rem 0 0; margin: 0; border-top: 1px solid var(--line-strong); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); }
+  .hold-intake-lead { clear: both; margin: .5rem 0 1.1rem; color: var(--ink-3); font-size: .92rem; line-height: 1.55; max-width: 62ch; }
+  .hold-intake .row-2 { align-items: end; }
+  .hold-intake .field + .field, .hold-intake .row-2 + .field, .hold-intake .field + .row-2 { margin-top: 1rem; }
+  .hold-intake .hint { display: block; margin-top: .35rem; font-size: .8rem; color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
+  .hold-intake-after { margin: 1.2rem 0 0; padding: .9rem 1rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); color: var(--ink-2); font-size: .9rem; line-height: 1.6; max-width: 66ch; }
 
   .hold-next-list { list-style: none; margin: 1.1rem 0 0; padding: 0; border-top: 1px solid var(--line); }
   .hold-next-list li {

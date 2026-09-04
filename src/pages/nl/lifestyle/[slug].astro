@@ -50,9 +50,12 @@ if (!moodSize) throw new Error(`lifestyle/[slug]: no intrinsic size on record fo
 // copy. They come from pricing.js so a capacity change cannot leave a
 // promise stranded on a detail page — which is exactly what "~24h delivery"
 // and "Produced in about 24 hours" were doing here.
-const TIMING = turnaround('unattended', 'nl');
+/* Een look OP AANVRAAG (priceTrust, dus custom) heeft eerst een ontwerp; de
+   doorlooptijd van een gewone bestelling geldt daar pas ná. "Vaak binnen een
+   dag" op die pagina was een belofte over het verkeerde ding — 4 sept 2026. */
+const TIMING = style.priceTrust ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : turnaround('unattended', 'nl');
 const REVIEW = reviewClaim('unattended', 'nl');
-const QUEUE = TIERS.unattended.queue.nl;
+const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue.nl;
 
 // Vier van de vijf lifestyle-stijlen hebben zelf geen priceTrust, dus de
 // fallback hieronder is wat op de meeste pagina’s daadwerkelijk rendert — dat
@@ -111,7 +114,7 @@ const zusters = styles
         <span class="trust-item"><strong>{TIMING}</strong></span>
         <span class="trust-item"><strong>{REVIEW}</strong></span>
       </div>
-      <p class="queue-note">{QUEUE}</p>
+      {QUEUE && <p class="queue-note">{QUEUE}</p>}
     </div>
   </section>
 
@@ -226,7 +229,7 @@ const zusters = styles
         <h2 class="display" style="font-size:var(--t-page-h1-sm)">Maak {style.name} <em>van jou.</em></h2>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
           <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/nl/start/'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Bestel ${style.name}`}</a></span></span>
-          <a href="/nl/test-sample/" class="btn btn-ghost btn-lg">Proefvisual</a>
+          <a href="/nl/test-sample/" class="btn btn-ghost btn-lg">Probeer VISUAILS</a>
         </div>
       </div>
     </div>

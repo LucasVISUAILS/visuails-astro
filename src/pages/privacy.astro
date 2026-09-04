@@ -10,7 +10,7 @@ import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
 // betekenen iets anders: UPLOAD_DAYS is hoe lang het bronmateriaal blijft staan
 // en PORTAL_TTL_DAYS is hoe lang de privélink werkt. Wie ze door elkaar haalt,
 // schrijft de ene termijn op de plek van de andere zodra er één verschuift.
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
 import { PORTAL_TTL_DAYS } from '../lib/token.js';
 
 // VISUAILS — Privacy Policy. Ported from the SvelteKit privacy page (itself
@@ -66,6 +66,9 @@ import { PORTAL_TTL_DAYS } from '../lib/token.js';
 // is what makes the replacement safe when it is run. So the copy says "tell us"
 // rather than describing self-service, which is what we actually do today.
 import Layout from '../layouts/Layout.astro';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../data/juridischeDatums.js';
 ---
 
 <Layout
@@ -75,9 +78,9 @@ import Layout from '../layouts/Layout.astro';
   <section class="page-hero">
     <div class="container narrow">
       <span class="eyebrow-page">Legal</span>
-      <h1 class="display" style="font-size:var(--t-page-h1)">Privacy Policy</h1>
+      <h1 class="display">Privacy Policy</h1>
       <p class="lead" style="margin-top:1.2rem">How we handle your personal data at VISUAILS — in plain English, aligned with the EU General Data Protection Regulation (GDPR).</p>
-      <p class="legal-meta">Last updated: August 2026</p>
+      <p class="legal-meta">{bijgewerktOp('privacy', 'en')}</p>
     </div>
   </section>
 
@@ -150,8 +153,8 @@ import Layout from '../layouts/Layout.astro';
       <p>We keep your data only as long as it is needed. Three of those periods are fixed, because they are the three that affect you directly:</p>
       <ul>
         <li><strong>Source material</strong> — the product photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask us in writing before then and we will agree it with you.</li>
-        <li><strong>Delivered visuals</strong> — we keep your finished visuals for {DELIVERY_MONTHS} months from delivery, so a delivery outlives the material it was made from. Keep your own copy: after {DELIVERY_MONTHS} months we cannot guarantee a re-download.</li>
-        <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. That is shorter than the {DELIVERY_MONTHS} months on purpose: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
+        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We may keep a copy in our own archive, but that is not a guarantee, so keep your own copy. Still need older images, get in touch and we check whether they are still with us.</li>
+        <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. The same {DELIVERY_DAYS} days as the visuals themselves: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
       </ul>
       <p>Correspondence about an order is kept for as long as it is useful for that order and any follow-up. Invoicing and tax records are kept for as long as Dutch and EU law requires. When data is no longer needed, we delete or anonymise it.</p>
 

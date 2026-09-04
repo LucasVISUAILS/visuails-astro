@@ -225,7 +225,7 @@ const COPY = {
     h1c: ' out.',
     lead: `You send a folder of product photos and a short note. We give the order a delivery date the calendar can actually hold, produce it, check it by hand, and hand it back image by image.`,
     ctaStart: 'Start an order',
-    ctaSample: 'Try a test sample',
+    ctaSample: TEST_SAMPLE.en.cta,
 
     // ── FIGWALK ──────────────────────────────────────────────────────────
     // Two keys, where FigFlow needed eighteen. Everything the walkthrough says
@@ -297,7 +297,7 @@ const COPY = {
       ['Product page grid', 'Front, back and a fabric detail'],
       ['On-model shot', 'In every catalog set'],
       ['Instagram carousel', 'Three styled frames per product'],
-      ['Reels and TikTok', 'Vertical clips, added to any order'],
+      ['Reels and TikTok', 'Vertical clips, added per clip to any order'],
       ['Paid social', 'The same look in ad crops'],
       ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
       ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
@@ -305,7 +305,7 @@ const COPY = {
     /* Zie de noot bij dashPortalN in HomeV2.astro: er wordt niets per kanaal
        gesneden. Je kiest de verhouding bij het bestellen — deze lijst met
        kanalen is precies waar die keuze over gaat — en krijgt alle formaten. */
-    landNote: 'You pick the aspect ratio for these when you order, and every image arrives in all three formats.',
+    landNote: 'You pick the aspect ratio for these when you order, and every image arrives as jpg, png and webp.',
 
     faqH: 'Still have a question?',
     // The second inbound link to /guides (brief §1 — it had none in any page
@@ -316,7 +316,7 @@ const COPY = {
 
     ctaH: 'One of your own products, as a catalog set or a carousel.',
     ctaBody: `One test sample per business — ${sample}, no commitment. It runs through the same production as a paid order.`,
-    ctaSampleBtn: `Request a test sample · ${TEST_SAMPLE.en.price}`,
+    ctaSampleBtn: TEST_SAMPLE.en.cta,
     ctaStartBtn: 'Start an order',
     wa: waHref("Hi VISUAILS, I have a question about how an order works."),
   },
@@ -328,7 +328,7 @@ const COPY = {
     h1c: ' eruit.',
     lead: 'Jij stuurt een map met productfoto’s en een korte notitie. Wij geven de bestelling een leverdatum die de agenda ook echt kan vasthouden, produceren hem, controleren met de hand, en geven hem beeld voor beeld terug.',
     ctaStart: 'Start een bestelling',
-    ctaSample: 'Probeer een proefvisual',
+    ctaSample: TEST_SAMPLE.nl.cta,
 
     flowH: 'Je bestelling, van begin tot eind.',
     flowLede: 'Eén dienst tegelijk, van de telefoonfoto die je stuurt tot de bestanden die terugkomen. Kies er één en scroll — het beeld bovenaan verandert mee met de stap waar je bent.',
@@ -371,21 +371,21 @@ const COPY = {
       ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail'],
       ['Beeld op een model', 'In elke catalogset'],
       ['Instagram-carousel', 'Drie gestylede beelden per product'],
-      ['Reels en TikTok', 'Verticale clips, bij elke bestelling'],
+      ['Reels en TikTok', 'Verticale clips, per clip bij elke bestelling te voegen'],
       ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes'],
       ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
       ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
     ],
     // Zie de noot bij de Engelse landNote.
-    landNote: 'De beeldverhouding hiervoor kies je bij het bestellen, en elk beeld komt in alle drie de formaten.',
+    landNote: 'De beeldverhouding hiervoor kies je bij het bestellen, en elk beeld komt als jpg, png en webp.',
 
     faqH: 'Nog een vraag?',
     faqGuides: `De FAQ beantwoordt de praktische vragen; de langere stukken — hoe je de foto maakt die je ons stuurt, wat een shootdag echt kost — staan bij de <a href="${lp('/guides')}">gidsen</a>.`,
     faqCta: 'Lees de FAQ',
 
     ctaH: 'Eén product van jezelf, als catalogset of carousel.',
-    ctaBody: `Eén proefvisual per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde productie als een betaalde bestelling.`,
-    ctaSampleBtn: `Vraag een proefvisual aan · ${TEST_SAMPLE.nl.price}`,
+    ctaBody: `Eén proef per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde productie als een betaalde bestelling.`,
+    ctaSampleBtn: TEST_SAMPLE.nl.cta,
     ctaStartBtn: 'Start een bestelling',
     wa: waHref("Hoi VISUAILS, ik heb een vraag over hoe een bestelling werkt."),
   },

@@ -3,7 +3,7 @@ import { WHATSAPP_DISPLAY, waHref } from '../../data/whatsapp.js';
 // De bewaartermijnen komen uit de constanten en worden hier niet meer getypt —
 // zie de noot in src/pages/privacy.astro. Drie constanten en niet één: UPLOAD_DAYS
 // en PORTAL_TTL_DAYS zijn allebei toevallig 90 en betekenen iets anders.
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../../lib/retention.js';
 import { PORTAL_TTL_DAYS } from '../../lib/token.js';
 
 // VISUAILS — Privacybeleid (Nederlands). Vertaling van src/pages/privacy.astro.
@@ -12,6 +12,9 @@ import { PORTAL_TTL_DAYS } from '../../lib/token.js';
 // bestand — inclusief waarom de oude zin over "de link waarmee je ze downloadt
 // ... 12 maanden" onjuist was en hoe de twee klokken nu apart staan.
 import Layout from '../../layouts/Layout.astro';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../../data/juridischeDatums.js';
 ---
 
 <Layout
@@ -21,9 +24,9 @@ import Layout from '../../layouts/Layout.astro';
   <section class="page-hero">
     <div class="container narrow">
       <span class="eyebrow-page">Juridisch</span>
-      <h1 class="display" style="font-size:var(--t-page-h1)">Privacybeleid</h1>
+      <h1 class="display">Privacybeleid</h1>
       <p class="lead" style="margin-top:1.2rem">Hoe wij bij VISUAILS met je persoonsgegevens omgaan — in gewone taal, in lijn met de Algemene Verordening Gegevensbescherming (AVG/GDPR) van de EU.</p>
-      <p class="legal-meta">Laatst bijgewerkt: augustus 2026</p>
+      <p class="legal-meta">{bijgewerktOp('privacy', 'nl')}</p>
       {/* De sjabloonnoot is hier weg op 11 augustus 2026, tegelijk met die op
           /nl/terms en /nl/cookie-policy. De volledige uitleg staat in
           src/pages/nl/terms.astro; kort: de Engelse versies waren die zin op
@@ -103,8 +106,8 @@ import Layout from '../../layouts/Layout.astro';
       <p>We bewaren je gegevens alleen zolang dat nodig is. Drie van die termijnen liggen vast, omdat die je direct raken:</p>
       <ul>
         <li><strong>Bronmateriaal</strong> — de productfoto’s en bestanden die je uploadt worden {UPLOAD_DAYS} dagen na het afsluiten van je bestelling verwijderd. Wil je dat we ze langer bewaren, vraag dat dan schriftelijk vóór die tijd, dan spreken we het met je af.</li>
-        <li><strong>Geleverde visuals</strong> — je afgeronde visuals bewaren we {DELIVERY_MONTHS} maanden na levering, zodat een levering langer meegaat dan het materiaal waaruit die is gemaakt. Bewaar zelf een kopie: na {DELIVERY_MONTHS} maanden kunnen we een nieuwe download niet garanderen.</li>
-        <li><strong>Je bestellink</strong> — de privélink waarmee je downloadt werkt tot {PORTAL_TTL_DAYS} dagen nadat je bestelling is afgesloten, daarna stopt hij. Dat is bewust korter dan die {DELIVERY_MONTHS} maanden: een link die je bestanden opent, hoort niet eindeloos actief in een mailbox te blijven staan. Heb je de bestanden daarna nog nodig, mail ons dan — we sturen je een nieuwe link.</li>
+        <li><strong>Geleverde visuals</strong> — je afgeronde visuals staan {DELIVERY_DAYS} dagen na levering in VISUAILS Studio om te downloaden; daarna worden ze daar verwijderd. Wij kunnen een kopie in ons eigen archief bewaren, maar dat is geen garantie — bewaar dus zelf een kopie. Heb je oudere beelden toch nog nodig, neem contact op; dan kijken we of ze nog bij ons staan.</li>
+        <li><strong>Je bestellink</strong> — de privélink waarmee je downloadt werkt tot {PORTAL_TTL_DAYS} dagen nadat je bestelling is afgesloten, daarna stopt hij. Dezelfde {DELIVERY_DAYS} dagen als de beelden zelf: een link die je bestanden opent, hoort niet eindeloos actief in een mailbox te blijven staan. Heb je de bestanden daarna nog nodig, mail ons dan — we sturen je een nieuwe link.</li>
       </ul>
       <p>Correspondentie over een bestelling bewaren we zolang die nuttig is voor die bestelling en de opvolging daarvan. Facturatie- en belastinggegevens bewaren we zolang de Nederlandse en EU-wetgeving dat vereist. Wanneer gegevens niet langer nodig zijn, verwijderen of anonimiseren we ze.</p>
 

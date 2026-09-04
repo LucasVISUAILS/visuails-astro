@@ -1,0 +1,646 @@
+---
+import { waHref } from '../data/whatsapp.js';
+/*
+ * VISUAILS — /hooks en /nl/hooks delen dit lichaam.
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * DEZE PAGINA HEEFT AL EEN KEER BESTAAN, EN IS TOEN VERWIJDERD
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Er stond een `HooksPage.astro` op de schijf. Die is op 18 augustus 2026
+ * weggegaan omdat de tekst de toonregels op acht punten overtrad — hij beloofde
+ * bereik, hij noemde een doorlooptijd als getal, en hij verkocht iets wat nog
+ * niet te bestellen was alsof het dat wel was. De gecorrigeerde tekst is toen
+ * naar `src/data/binnenkort.js` gegaan en wordt sindsdien op /plans#binnenkort
+ * getoond. Zie HOOKS-COPY-CONCEPT.md voor de volledige lijst.
+ *
+ * Lucas, 2 september 2026: *"Ik wil dat je de hooks pagina gaat maken, uiterlijk
+ * consistent met de andere services en plaats bij elke foto op de pagina een
+ * placeholder voor nu."*
+ *
+ * Wat daarmee terugkomt is de PAGINA, niet de oude tekst. Elke regel hieronder
+ * is opnieuw geschreven tegen dezelfde drie regels die de vorige versie brak:
+ *
+ *   1 · GEEN DOORLOOPTIJD ALS GETAL. Het concept schreef "24 tot 48 uur" — vier
+ *       keer. Dat is een belofte die het systeem niet kan waarmaken en die
+ *       tests/promises.test.mjs sitebreed verbiedt. Wat er staat komt uit
+ *       `turnaround('unattended')`, net als op elke andere dienstpagina.
+ *   2 · GEEN BEREIK BELOVEN. Waar een woord als "volgers" of "betrokkenheid"
+ *       valt, staat er een woord als "kans" naast — en de pagina zegt zelf,
+ *       tweemaal, dat het format en de uitvoering zijn wat we verkopen.
+ *   3 · GEEN BESTELKNOP. Hooks is nog niet bestelbaar en dat blijft zo tot
+ *       `KIND_IMAGES.hooks` een gewicht heeft; zonder gewicht kan de agenda
+ *       geen venster geven. Zie de noot daar. De knoppen gaan dus naar een
+ *       gesprek, en het label zegt dat ook.
+ *
+ * ── EN DE PRIJS STAAT ER WÉL ──────────────────────────────────────────────
+ *
+ * Lucas heeft op 2 september het bedrag uit het concept bevestigd: vanaf € 119
+ * per product, en vanaf € 49 voor een extra variant. Die twee staan sindsdien
+ * in `AMOUNT.hooks` en `AMOUNT.hooksVariant` — niet in deze pagina, want een
+ * bedrag dat in copy staat verandert op één plek en blijft op vier andere.
+ *
+ * ÉÉN CLAIM UIT HET CONCEPT IS NIET OVERGENOMEN. Daar stond: *"Meerdere
+ * producten in één keer brengt het tarief per product omlaag, op dezelfde schaal
+ * als de rest van de prijslijst."* Dat is niet waar: `isLadderService()` laat
+ * hooks er niet in, precies zoals bij video, en er is geen ladder om op te
+ * zakken. De pagina zegt nu wat er wél gebeurt — wat het bedrag beweegt is het
+ * werk, niet het aantal.
+ *
+ * ── ELKE FOTO IS EEN PLACEHOLDER ──────────────────────────────────────────
+ *
+ * Er bestaat nog geen enkele hookvideo, dus er is niets te tonen. Een bestaande
+ * productfoto lenen zou hier het ergst mogelijke zijn: dit is de pagina die
+ * moet laten zien wat een format DOET, en een stilstaand beeld dat als voorbeeld
+ * gepresenteerd wordt, bewijst het tegenovergestelde. Elke beeldplek is dus een
+ * <Placeholder> met de opdracht erbij — `npm run placeholders` telt ze.
+ *
+ * ── DE VOLGORDE VAN DE BANDEN IS NIET VRIJ ────────────────────────────────
+ *
+ * Lucas, 31 augustus 2026: *"Zorg dat elke pagina goed op elkaar aansluit."*
+ * /catalog, /lifestyle en /video vertellen het verhaal in dezelfde volgorde, en
+ * deze pagina volgt hem regel voor regel: hero → wat je krijgt → wat het is en
+ * waar het staat → de stappen → checklist met het prijsblok ernaast → een band
+ * met het format → de tierregel → de vragen → de slotband. Dezelfde gedeelde
+ * componenten ook: ServiceSwitch, HeroFacts, TierCompare, Disclose.
+ */
+import {
+  AMOUNT, euro, vatLabel, reviewClaim, turnaround, clause,
+} from '../data/pricing.js';
+/* De vragen staan in faq.js en niet hier — schema.js bouwt zijn FAQPage-knoop
+   uit het pad en kan de frontmatter van een component niet lezen. Zie de kop
+   boven serviceFaqs(). */
+import { serviceFaqs } from '../data/faq.js';
+import { doorCta, doorHref } from '../data/orderDoors.js';
+import { localizedPath } from '../i18n/ui.js';
+import Disclose from './Disclose.astro';
+import TierCompare from './TierCompare.astro';
+import ServiceSwitch from './ServiceSwitch.astro';
+import HeroFacts from './HeroFacts.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+/* Eén keer geformatteerd, zodat het bedrag en zijn btw-label niet door een
+   bewerking van elkaar gescheiden kunnen raken. */
+const vanaf = euro(AMOUNT.hooks, lang);
+const variant = euro(AMOUNT.hooksVariant, lang);
+
+/* ── DE KNOP ONDER DE TIERBAND WIJST NAAR CATALOG EN NIET NAAR /start ──────
+ *
+ * TierCompare valt zonder `href0` terug op de keuzepagina met het generieke
+ * label "Start an order". Op elke andere dienstpagina geeft de pagina daar zijn
+ * EIGEN bestelroute mee, precies zodat die knop zegt wat erachter gebeurt —
+ * tests/nav.test.mjs bewaakt dat sitebreed.
+ *
+ * Hooks heeft geen eigen bestelroute, en de verleiding is dan om de standaard te
+ * laten staan. Dat zou hier de ergste variant zijn: een grote primaire knop op
+ * een pagina die twee alinea's hoger zegt dat je dit nog niet kunt bestellen.
+ *
+ * De twee kolommen gaan over catalog en lifestyle — dat staat in c.tierNote — dus
+ * wijst de knop daarheen, met het label dat catalog zelf ook draagt. Uit
+ * orderDoors.js en niet ingetypt, zodat er geen tweede formulering ontstaat. */
+const catalogHref = doorHref('catalog');
+const catalogCta = doorCta('catalog', lang);
+
+/* ── DE BEELDPLEKKEN, MET HUN OPDRACHT ────────────────────────────────────
+ *
+ * Ze staan hier bij elkaar en niet verspreid door de markup, om dezelfde reden
+ * als elke andere lijst in dit project: `npm run placeholders` leest de
+ * attributen uit de gebouwde html, maar een MENS die wil weten wat er nog
+ * geschoten moet worden, leest de bron. Eén blok is dan een lijstje; tien
+ * plekken door de pagina heen is zoeken.
+ *
+ * `ratio` is de verhouding die het echte bestand krijgt, en die is per plek
+ * anders: de hero staat in een `.photo-band tall` (4/5), de formatvoorbeelden
+ * zijn verticale video (9/16), en de brede band tussen de tekstkolommen is
+ * 21/9 — dezelfde maat als de band op /catalog.
+ */
+const PLEKKEN = {
+  hero: {
+    ratio: '4 / 5',
+    subject: {
+      nl: 'Eén hookvideo, stilgezet op het frame waar de naad zit: bovenin het einde van de video, eronder het beeld uit de feed dat er precies op aansluit',
+      en: 'One hook video, frozen on the frame where the join sits: the end of the video above, and below it the feed image that lines up with it exactly',
+    },
+    message: {
+      nl: 'Moet in één blik het hele idee overbrengen: twee beelden die je los verwacht en die als één beeld lezen. Als een bezoeker na dit beeld nog moet lezen wat een hook is, doet het beeld zijn werk niet.',
+      en: 'Must carry the whole idea at a glance: two images you expect to be separate, reading as one. If a visitor still has to read what a hook is after seeing this, the image is not doing its job.',
+    },
+  },
+  video: {
+    ratio: '9 / 16',
+    subject: {
+      nl: 'De verticale video zelf, op zijn volle hoogte, zoals hij in een feed staat',
+      en: 'The vertical video itself, at full height, as it sits in a feed',
+    },
+    message: {
+      nl: 'Moet laten zien dat dit een VIDEO is en geen foto in een telefoonlijstje: beweging, een productvorm die kantelt, en genoeg leesbaarheid zonder geluid.',
+      en: 'Must show that this is a VIDEO and not a photo in a phone frame: movement, a product form turning, and enough legibility without sound.',
+    },
+  },
+  stills: {
+    ratio: '9 / 16',
+    subject: {
+      nl: 'De losse beelden uit dezelfde montage — de frames waar de naad zit, naast elkaar',
+      en: 'The separate stills from the same edit — the frames where the join happens, side by side',
+    },
+    message: {
+      nl: 'Moet duidelijk maken dat je er meer aan overhoudt dan één bestand: dit zijn bruikbare beelden op zichzelf, in dezelfde mappen als elke andere bestelling.',
+      en: 'Must make clear that you keep more than one file: these are usable images in their own right, in the same folders as any other order.',
+    },
+  },
+  snit: {
+    ratio: '9 / 16',
+    subject: {
+      nl: 'Dezelfde montage in drie uitsneden naast elkaar: verticaal, 4:5 en 1:1',
+      en: 'The same edit in three crops side by side: vertical, 4:5 and 1:1',
+    },
+    message: {
+      nl: 'Moet laten zien dat het product in elke uitsnede heel blijft — het is één montage en geen drie keer bijsnijden waarbij er telkens iets afvalt.',
+      en: 'Must show the product stays whole in every crop — it is one edit, not three trims that each lose something.',
+    },
+  },
+  naad: {
+    ratio: '21 / 9',
+    subject: {
+      nl: 'Een feed van bovenaf gezien, waarin één post uit twee delen bestaat die op elkaar aansluiten, met de naad zichtbaar aangewezen',
+      en: 'A feed seen from above, in which one post is two parts that meet, with the join pointed out',
+    },
+    message: {
+      nl: 'Moet de werking van het format uitleggen zonder tekst: waar de video ophoudt en het beeld eronder begint, en waarom je dat als kijker niet meteen ziet.',
+      en: 'Must explain how the format works without words: where the video ends and the image below begins, and why a viewer does not notice the moment it happens.',
+    },
+  },
+  stappen: {
+    ratio: '4 / 5',
+    subject: {
+      nl: 'De vier telefoonfoto’s die een klant instuurt, naast het scherm waarop de montage gebouwd wordt',
+      en: 'The four phone photos a client sends, beside the screen where the edit is being built',
+    },
+    message: {
+      nl: 'Moet bewijzen dat het werk aan onze kant zit en niet aan die van de klant: links iets wat iedereen kan maken, rechts iets wat niemand er zelf van bouwt.',
+      en: 'Must prove the work sits on our side and not the client’s: on the left something anyone can make, on the right something nobody builds from it themselves.',
+    },
+  },
+};
+/* `p(plek, veld)` — de tekst in de goede taal, zonder overal een ternary. */
+const p = (sleutel: string, veld: 'subject' | 'message') => PLEKKEN[sleutel][veld][lang];
+const r = (sleutel: string) => PLEKKEN[sleutel].ratio;
+
+const COPY = {
+  en: {
+    eyebrow: '( Hooks )',
+    /* Het accentwoord is "one" en niet "video": wat deze dienst verkoopt is de
+       naad — twee beelden die als één lezen — en dat is het woord dat de kop
+       moet dragen. Zie de noot bij .hk-h1 em onderaan. */
+    h1: 'Two frames that read<br />as <em>one</em>.',
+    lead: `A short vertical video of your product, built on a format we have used before. From ${vanaf} per product, ${vatLabel('excl', 'en')}.`,
+    /* GEEN BESTELKNOP. Zie punt 3 in de kop van dit bestand. Het label zegt wat
+       er achter de knop gebeurt: een gesprek, geen bestelling. */
+    ctaPrimary: 'Talk to us about Hooks',
+    ctaPrices: 'See pricing',
+    ctaSecondary: 'Contact us',
+    wa: waHref("Hi VISUAILS, I'd like to talk about Hooks."),
+    waLabel: 'WhatsApp',
+    /* Twee feiten, prijs eerst — dezelfde volgorde als /catalog, /lifestyle en
+       /video sinds HeroFacts.astro er is. */
+    trust: [
+      [`From ${vanaf}`, `per product · ${vatLabel('excl', 'en')}`],
+      ['Vertical', 'plus a 4:5 and a 1:1 cut'],
+    ],
+    /* De eerlijke stand van zaken, zichtbaar en niet in een voetnoot: je kunt
+       dit vandaag niet zelf bestellen. Dat is geen ongemak om weg te schrijven
+       maar het eerste wat een bezoeker moet weten. */
+    soonTag: 'On request',
+    queueNote: `Hooks are made by hand and planned by hand, so there is no order button yet — you tell us what you have and we say what is possible, in writing, before anything runs. The work itself runs at the standard turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, and no date is named before the calendar clears it.`,
+    krijgH: 'What lands in your folder.',
+    krijg: [
+      ['The video', 'Vertical, and readable without sound.', 'video'],
+      ['Three cuts', 'Vertical, 4:5 and 1:1, all from the same edit.', 'snit'],
+      ['The stills', 'The frames where the join happens, as separate images.', 'stills'],
+    ],
+    krijgFoot: 'One revision round on the video, in VISUAILS Studio — the same way you review any other order.',
+    edMeta: '( How the format works )',
+    edH: 'A hook is a video that does not end where the video ends.',
+    edSub: 'It carries on into the image below it, and the two read as one picture.',
+    whatH: 'What it is',
+    whatP: [
+      'The format works on a join between two things a viewer expects to be separate. The video runs to the bottom edge of its frame and the image underneath picks it up — same line, same light, same product — so a scroll that was about to move on stops for a beat to work out what it is looking at.',
+      'You send photos and we build it. You film nothing and you design nothing. Which format fits depends on the product: what it is, how it is shaped, and which part of it is worth showing twice.',
+    ],
+    /* Brief §1: elke dienstpagina wijst naar /custom-models. Hier past hij in de
+       alinea over wat er in beeld komt, want dat is de vraag die een video met
+       een persoon erin oproept. */
+    modelNote: `Where a person appears, that person can be <a href="${lp('/custom-models')}">a Brand Model made only for you</a> — the same face your catalog and lifestyle sets already run on.`,
+    whereH: 'Where it lives',
+    where: [
+      ['Reels, TikTok & Shorts', 'the feeds the format was built for.'],
+      ['Paid social', 'the first two seconds are the whole job.'],
+      ['A product page', 'the vertical cut beside the stills.'],
+      ['Your own grid', 'the stills carry the post when the video is done.'],
+    ],
+    stepsH: 'Four steps, and you film none of them.',
+    steps: [
+      ['You send photos', 'The same set as a catalog order: front and back at a minimum, plus a detail and a worn shot if you have them. One photo is not enough — the format moves around the product, so it has to be seen from more than one side.'],
+      ['We choose the format', 'From formats we have built before. Which one fits depends on the product, not on what is trending this week.'],
+      ['A specialist checks it', 'Every video is looked at by a specialist before it goes out: the product has to stay recognisable, the join has to line up, and the result has to be something you would put your own name under.'],
+      ['It arrives in VISUAILS Studio', 'You approve it there, or say in your own words what is wrong — the same way you would with any other order.'],
+    ],
+    cleanH: 'What you can count on.',
+    clean: [
+      'A format that has been built before, not an experiment on your product',
+      'Vertical, 4:5 and 1:1 from one edit — the product whole in all three',
+      'The stills delivered as images, in the same folders as any other order',
+      reviewClaim('unattended', 'en'),
+    ],
+    prijsH: 'What it costs',
+    prijsVanaf: `<strong>From ${vanaf} per product</strong>, ${vatLabel('excl', 'en')}. What moves it up is how many angles the format needs and how much of the product has to be rebuilt for it.`,
+    prijsVariant: `<strong>From ${variant} for an extra variant</strong> on the same product: the same format, a different execution.`,
+    prijsNietH: 'Why there is no volume rate',
+    prijsNiet: 'Catalog and lifestyle images are priced per product and that rate falls as the count rises, because one setup is spread across more products. A hook is the setup — there is nothing to spread it over — so the figure is a floor and not a rate, and what moves it is the work rather than the count.',
+    prijsCta: 'Talk to us about Hooks',
+    formatH: 'What a hook looks like.',
+    formatSub: 'Nothing here is a mock-up of someone else’s work. These are the places our own first hooks will go.',
+    /* Dezelfde functie als c.tierNote op /video: TierCompare toont de twee
+       serviceniveaus van de prijs per aantal, en geen van beide is met hooks te
+       bereiken. Weglaten zou informatie weghalen die een klant die óók foto's
+       bestelt wel degelijk wil. */
+    tierNote: `The two columns below describe the price per quantity for catalog and lifestyle products. A hook is not on that ladder and does not count towards it, so ordering hooks does not reach either column — they are here because most brands who ask about a hook are ordering photos as well.`,
+    faqH: 'Hook questions, answered',
+    faqs: serviceFaqs('hooks', 'en'),
+    ctaH: 'Send the photos<br>you already have.',
+    ctaP: `From ${vanaf} per product, ${vatLabel('excl', 'en')}. Tell us what you sell and we will say which format fits it.`,
+    /* De regel onderaan, letterlijk de belofte die de vorige versie van deze
+       pagina brak. Hij staat er als laatste zin op de pagina en niet in een
+       voetnoot: het is de enige claim die we over bereik doen, en die is dat we
+       er geen doen. */
+    beloofte: 'We do not promise views, likes or followers. We promise the format, the execution and the check by a specialist. Whether a post travels depends on the platform and on timing, and neither of those is ours to promise.',
+  },
+  nl: {
+    eyebrow: '( Hooks )',
+    h1: 'Twee beelden die als<br /><em>één</em> lezen.',
+    lead: `Een korte verticale video van je product, gebouwd op een format dat we eerder gebruikt hebben. Vanaf ${vanaf} per product, ${vatLabel('excl', 'nl')}.`,
+    ctaPrimary: 'Praat met ons over Hooks',
+    ctaPrices: 'Bekijk de tarieven',
+    ctaSecondary: 'Neem contact op',
+    wa: waHref('Hoi VISUAILS, ik wil het graag over Hooks hebben.'),
+    waLabel: 'WhatsApp',
+    trust: [
+      [`Vanaf ${vanaf}`, `per product · ${vatLabel('excl', 'nl')}`],
+      ['Verticaal', 'plus een 4:5 en een 1:1'],
+    ],
+    soonTag: 'Op aanvraag',
+    queueNote: `Hooks maken we met de hand en plannen we met de hand in, dus er is nog geen bestelknop — jij zegt wat je hebt, wij zetten op schrift wat er kan voordat we beginnen. Het werk zelf loopt mee in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, en we noemen geen datum voordat we in de agenda hebben gekeken.`,
+    krijgH: 'Wat er in je map komt te staan.',
+    krijg: [
+      ['De video', 'Verticaal, en leesbaar zonder geluid.', 'video'],
+      ['Drie uitsneden', 'Verticaal, 4:5 en 1:1, allemaal uit dezelfde montage.', 'snit'],
+      ['De losse beelden', 'De frames waar de naad zit, als aparte beelden.', 'stills'],
+    ],
+    krijgFoot: 'Eén revisieronde op de video, in VISUAILS Studio — net zoals je elke andere bestelling nakijkt.',
+    edMeta: '( Hoe het format werkt )',
+    edH: 'Een hook is een video die niet ophoudt waar de video ophoudt.',
+    edSub: 'Hij loopt door in het beeld eronder, en samen lezen die twee als één beeld.',
+    whatH: 'Wat het is',
+    whatP: [
+      'Het format werkt op de naad tussen twee dingen die een kijker los van elkaar verwacht. De video loopt tot de onderrand van zijn kader en het beeld eronder pakt hem op — zelfde lijn, zelfde licht, zelfde product — waardoor een duim die al aan het doorscrollen was even stilstaat om uit te zoeken waar hij naar kijkt.',
+      'Jij stuurt foto’s en wij bouwen hem. Je filmt niets en je ontwerpt niets. Welk format past, hangt van het product af: wat het is, welke vorm het heeft, en welk deel het waard is om twee keer te laten zien.',
+    ],
+    modelNote: `Waar een persoon in beeld komt, kan dat <a href="${lp('/custom-models')}">een merkmodel zijn dat alleen voor jou gemaakt is</a> — hetzelfde gezicht waar je catalog- en lifestylesets al op draaien.`,
+    whereH: 'Waar het staat',
+    where: [
+      ['Reels, TikTok & Shorts', 'de feeds waar het format voor gebouwd is.'],
+      ['Paid social', 'de eerste twee seconden zijn het hele werk.'],
+      ['Een productpagina', 'de verticale snit naast de stills.'],
+      ['Je eigen grid', 'de losse beelden dragen de post als de video uit is.'],
+    ],
+    stepsH: 'Vier stappen, en je filmt er geen één.',
+    steps: [
+      ['Je stuurt foto’s', 'Dezelfde set als bij een catalogbestelling: minimaal voorkant en achterkant, plus een detail- en een draagfoto als je die hebt. Eén foto is niet genoeg — het format beweegt om het product heen, dus moet het van meer dan één kant te zien zijn.'],
+      ['Wij kiezen het format', 'Uit formats die we eerder gebouwd hebben. Welk format past, hangt van het product af en niet van wat er deze week toevallig rondgaat.'],
+      ['Een specialist kijkt hem na', 'Elke video wordt door een specialist bekeken voordat hij weggaat: het product moet herkenbaar blijven, de naad moet kloppen, en het resultaat moet iets zijn waar je je eigen naam onder zet.'],
+      ['Hij komt in VISUAILS Studio', 'Daar keur je hem goed, of je zegt in je eigen woorden wat er niet klopt — net als bij elke andere bestelling.'],
+    ],
+    cleanH: 'Waar je op kunt rekenen.',
+    clean: [
+      'Een format dat eerder gebouwd is, en geen experiment op jouw product',
+      'Verticaal, 4:5 en 1:1 uit één montage — het product heel in alle drie',
+      'De losse beelden als bestand, in dezelfde mappen als elke andere bestelling',
+      reviewClaim('unattended', 'nl'),
+    ],
+    prijsH: 'Wat het kost',
+    prijsVanaf: `<strong>Vanaf ${vanaf} per product</strong>, ${vatLabel('excl', 'nl')}. Wat het hoger maakt: hoeveel kanten het format nodig heeft en hoeveel er van het product opnieuw gebouwd moet worden.`,
+    prijsVariant: `<strong>Vanaf ${variant} voor een extra variant</strong> op hetzelfde product: hetzelfde format, een andere invulling.`,
+    prijsNietH: 'Waarom er geen staffel op zit',
+    prijsNiet: 'Catalog- en lifestylebeelden hebben een prijs per product, en die zakt naarmate het aantal stijgt — één opzet wordt dan over meer producten uitgesmeerd. Bij een hook ís de opzet het werk, en er is niets om hem over uit te smeren. Het bedrag is daarom een ondergrens en geen tarief, en wat het beweegt is het werk en niet het aantal.',
+    prijsCta: 'Praat met ons over Hooks',
+    formatH: 'Hoe een hook eruitziet.',
+    formatSub: 'Hier staat niets nagemaakt van andermans werk. Dit zijn de plekken waar onze eigen eerste hooks komen te staan.',
+    tierNote: `De twee kolommen hieronder beschrijven de prijs per aantal voor catalog- en lifestyleproducten. Een hook staat niet op die ladder en telt er niet in mee, dus met hooks bereik je geen van beide kolommen — ze staan hier omdat de meeste merken die naar een hook vragen ook foto’s bestellen.`,
+    faqH: 'Vragen over Hooks, beantwoord',
+    faqs: serviceFaqs('hooks', 'nl'),
+    ctaH: 'Stuur de foto’s<br>die je al hebt.',
+    ctaP: `Vanaf ${vanaf} per product, ${vatLabel('excl', 'nl')}. Vertel wat je verkoopt, dan zeggen wij welk format erbij past.`,
+    beloofte: 'Wij beloven geen views, likes of volgers. Wij beloven het format, de uitvoering en de controle door een specialist. Of een post ergens terechtkomt, hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven.',
+  },
+};
+const c = COPY[lang];
+---
+
+<!-- ── 1 · DE HERO ─────────────────────────────────────────────────────────
+     Dezelfde vorm als /catalog, /lifestyle en /video: linkerkolom met eyebrow,
+     kop, lead, drie knoppen, de dienstenregel, de feitenrij en de wachtrijnoot;
+     rechterkolom het werk. Dat laatste is hier een Placeholder in dezelfde
+     verhouding als de `.photo-band tall` die de zusterpagina's gebruiken, zodat
+     de kolom precies zo hoog is als hij straks met beeld wordt. -->
+<section class="page-hero">
+  <div class="container two-col hero-split">
+    <div class="reveal pending">
+      <span class="eyebrow-page">{c.eyebrow}</span>
+      <h1 class="display hk-h1" style="margin-top:1rem" set:html={c.h1} />
+      <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+      <div class="flex" style="margin-top:1.8rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPrices}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+      </div>
+      {/* `current={['complete']}` — "Allebei" gaat over catalog en lifestyle
+          samen en niet over video, dus die valt weg; Hooks staat zelf niet in
+          DOORS en hoeft er dus niet uit gefilterd te worden. Zie
+          andereDeuren() in src/data/orderDoors.js. */}
+      <ServiceSwitch current={['complete']} lang={lang} />
+      <HeroFacts eigen={c.trust} lang={lang} />
+      <p class="queue-note"><em class="hk-soon">{c.soonTag}</em> {c.queueNote}</p>
+    </div>
+    <div class="reveal pending">
+      {/* ── GEEN BIJSCHRIFT IN DE HERO ──────────────────────────────────
+          Op elke andere plek op deze pagina staat de opdracht onder het vlak,
+          want daar is het een lijstje voor wie de beelden gaat maken. Hier
+          niet: dit is het eerste wat een bezoeker ziet, en "Moet in één blik
+          het hele idee overbrengen" is intern werkoverleg. Zelfde besluit als
+          Lucas nam bij het portret op /studio — *"Boodschap is duidelijk zonder
+          alle extra tekst."*
+
+          De opdracht VERDWIJNT NIET: `data-subject` en `data-message` blijven
+          op de figure staan, dus `npm run placeholders` noemt deze plek met
+          opdracht en al. Zie de noot onderaan Placeholder.astro. */}
+      <Placeholder lang={lang} ratio={r('hero')} caption={false} kind="video" subject={p('hero', 'subject')} message={p('hero', 'message')} />
+    </div>
+  </div>
+</section>
+
+<!-- ── 2 · WAT ER GELEVERD WORDT ───────────────────────────────────────────
+     De plek waar /video zijn vier soorten toont en /lifestyle zijn moods: het
+     eerste blok onder de hero waarin je ziet waar het over gaat. Hooks heeft
+     geen soorten om uit te kiezen, dus staat hier wat je krijgt — drie
+     verticale vlakken naast elkaar, in de verhouding van het bestand zelf. -->
+<section>
+  <div class="container">
+    <h2 class="section-h">{c.krijgH}</h2>
+    <div class="grid hk-krijg reveal-group">
+      {c.krijg.map(([titel, regel, plek]) => (
+        <div class="reveal pending">
+          <Placeholder lang={lang} ratio={r(plek)} caption={false} kind="video" subject={p(plek, 'subject')} message={p(plek, 'message')} />
+          <h3 class="hk-krijg-h">{titel}</h3>
+          <p class="hk-krijg-p">{regel}</p>
+        </div>
+      ))}
+    </div>
+    <p class="hk-krijg-foot">{c.krijgFoot}</p>
+  </div>
+</section>
+
+<!-- ── 3 · WAT HET IS EN WAAR HET STAAT ────────────────────────────────────
+     Dezelfde `ed-head` + `svc-explain` als de drie zusterpagina's, met de brede
+     band ertussen zoals /catalog die heeft. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="ed-head">
+      <span class="ed-meta">{c.edMeta}</span>
+      <div>
+        <h2>{c.edH}</h2>
+        <p class="ed-sub">{c.edSub}</p>
+      </div>
+    </div>
+    <Placeholder lang={lang} space ratio={r('naad')} subject={p('naad', 'subject')} message={p('naad', 'message')} />
+    <div class="svc-explain">
+      <div class="svc-explain-main">
+        <h3>{c.whatH}</h3>
+        {c.whatP.map((alinea) => <p>{alinea}</p>)}
+        <p class="model-note" set:html={c.modelNote} />
+      </div>
+      <aside class="svc-explain-side">
+        <h3>{c.whereH}</h3>
+        <ul class="svc-where-list">
+          {c.where.map(([sterk, rest]) => (
+            <li><strong>{sterk}</strong> — {rest}</li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4 · DE STAPPEN ──────────────────────────────────────────────────────
+     `photo-split` met het beeld links en de stappen rechts, precies zoals op
+     /video en /catalog. Vier stappen in plaats van drie, want dat is wat er
+     gebeurt — een stap verzwijgen om de vorm te laten kloppen zou de controle
+     door een specialist zijn, en dat is juist de stap die het verschil maakt. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="photo-split reveal pending">
+      <div class="photo-split-media">
+        <Placeholder lang={lang} ratio={r('stappen')} caption={false} subject={p('stappen', 'subject')} message={p('stappen', 'message')} />
+      </div>
+      <div>
+        <h2>{c.stepsH}</h2>
+        <div class="steps steps-stacked" style="margin-top:1.6rem">
+          {c.steps.map(([kop, tekst], i) => (
+            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{kop}</h3><p>{tekst}</p></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5 · DE CHECKLIST EN HET PRIJSBLOK ───────────────────────────────────
+     Zelfde tweekolomsband als /video's checklist + `.buy-note`. De knop in het
+     rechterblok gaat naar het gesprek en niet naar een bestelling — zie punt 3
+     in de kop van dit bestand. -->
+<section class="section-tight">
+  <div class="container two-col">
+    <div class="reveal pending">
+      <h2>{c.cleanH}</h2>
+      <ul class="checklist" style="margin-top:1.4rem">
+        {c.clean.map((li) => (
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
+        ))}
+      </ul>
+    </div>
+    <div class="reveal pending hk-prijs">
+      <h3>{c.prijsH}</h3>
+      <p set:html={c.prijsVanaf} />
+      <p set:html={c.prijsVariant} />
+      {/* Dezelfde functie als `.buy-flat` op /video: een lezer die van /pricing
+          komt heeft net een dalend tarief gezien en neemt anders aan dat dit er
+          ook een is. Afgestreept en niet omkaderd — het is een noot OP de twee
+          regels erboven en geen derde manier om te kopen. */}
+      <p class="hk-prijs-vlak"><strong>{c.prijsNietH}</strong> {c.prijsNiet}</p>
+      <div class="flex" style="margin-top:1.4rem">
+        <a href={lp('/contact')} class="btn btn-primary">{c.prijsCta}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6 · DE TIERBAND ─────────────────────────────────────────────────────
+     Met dezelfde kwalificerende regel erboven als /video: TierCompare toont de
+     twee serviceniveaus van de prijs per aantal, en geen van beide is met hooks
+     te bereiken. `href0`/`label0` wijzen naar catalog en niet naar de
+     keuzepagina — zie de noot bij catalogHref hierboven. -->
+<section class="section-tight">
+  <div class="container">
+    <p class="queue-note" style="margin-bottom:1.4rem">{c.tierNote}</p>
+    <TierCompare lang={lang} href0={catalogHref} label0={catalogCta} />
+  </div>
+</section>
+
+<section>
+  <div class="container" style="max-width:760px">
+    <h2 class="section-h">{c.faqH}</h2>
+    <div class="faq-stack">
+      {c.faqs.map((f) => (
+        <Disclose summary={f.q} tone="panel">
+          <p>{f.a}</p>
+        </Disclose>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:var(--t-page-h2)" set:html={c.ctaH} />
+      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPrices}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+      </div>
+      {/* De laatste zin van de pagina, en met opzet de laatste: het is de enige
+          claim die we over bereik doen, en die is dat we er geen doen. */}
+      <p class="hk-belofte">{c.beloofte}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Het accentwoord in de kop, zelfde behandeling als op elke andere
+     dienstpagina — zie de noot bij --font-editorial in global.css. */
+  .hk-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+
+  /* De wachtrijnoot. Zichtbaar en op leesbare grootte, niet als grijze
+     voetnoot: dat "je kunt dit nog niet bestellen" is het eerste wat een
+     bezoeker moet weten en niet het laatste. */
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  /* ── HET "BINNENKORT"-MERKJE ─────────────────────────────────────────────
+     Dezelfde vorm als `.mi-soon` in de navigatie, want het zegt hetzelfde
+     ding op een tweede plek en twee vormen voor één betekenis is er één te
+     veel. Niet cursief zoals een <em> standaard is: dit is een etiket en geen
+     nadruk, en de betekenis zit in het kader eromheen. */
+  .hk-soon {
+    display: inline-block;
+    margin-right: .45rem;
+    padding: .12rem .45rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    font-style: normal;
+    font-size: .72rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    vertical-align: .08em;
+  }
+
+  /* ── DRIE VERTICALE VLAKKEN ──────────────────────────────────────────────
+     Drie items, drie kolommen. Eén stap eerder terug naar één kolom dan
+     `.vid-kinds` doet, omdat deze vlakken 9/16 zijn: op 38rem zou een derde
+     kolom 180px breed en 320px hoog worden, en dan staat er een strook in
+     plaats van een video. */
+  .hk-krijg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 56rem) { .hk-krijg { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ── EN HET VLAK IS SMALLER DAN ZIJN KOLOM ───────────────────────────────
+     Gemeten op 1440px: drie kolommen over de volle containerbreedte maken elk
+     vlak 430 bij 765 pixels, en drie van die vlakken naast elkaar zijn 765px
+     hoog aan bijna niets. Verticaal is de goede VORM — dat is wat het bestand
+     wordt — maar niet op die schaal.
+
+     DE EERSTE POGING ZETTE DE GRENS OP DE RIJ (`max-width` plus `margin-inline:
+     auto`), en die was fout op een manier die je pas op de schermafdruk ziet: de
+     rij kwam los te staan van de kop erboven en de voetregel eronder, die
+     allebei aan de linkerrand van de container beginnen. Een gecentreerde rij
+     tussen twee links uitgelijnde blokken leest als een fout, ook als de maten
+     kloppen.
+
+     De grens hoort dus op het VLAK. De kolommen houden het ritme van de
+     container — kop, rij en voetregel delen één linkerrand — en het beeld wordt
+     300 bij 533: onmiskenbaar verticaal, en geen muur. `:global()` omdat de
+     doos in Placeholder.astro staat en het scope-attribuut van deze pagina daar
+     niet komt; zie de noot bij de `space`-prop in dat bestand. */
+  .hk-krijg :global(.ph-box) { max-width: 300px; }
+
+  /* Kop en regel onder een vlak: dezelfde afstand als elk ander label-met-regel
+     op de site, uit --gap-label-note. */
+  .hk-krijg-h { margin-top: 1rem; font-size: 1rem; font-weight: 700; color: var(--ink); }
+  .hk-krijg-p { margin-top: var(--gap-label-note); font-size: .92rem; color: var(--ink-2); }
+  .hk-krijg-foot { margin-top: clamp(1.6rem, 3vw, 2.2rem); font-size: .9rem; color: var(--ink-3); max-width: var(--measure-note, 68ch); }
+
+  /* De link naar het merkmodel komt via set:html binnen en draagt dus geen
+     scope-attribuut; :global() op de afstammeling is wat hem bereikt. Zelfde
+     behandeling als elke andere link in lopende tekst. */
+  .model-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Het prijsblok. Zelfde vorm als `.buy-note` op /video: volle rand, geen
+     nesting, geen accenttint — een kader binnen een kolom die al kadert, leest
+     als twee kaders. */
+  .hk-prijs { border: 1px solid var(--line-strong); padding: clamp(1.4rem, 3vw, 2rem); }
+  .hk-prijs h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
+  .hk-prijs p { margin-top: var(--gap-label-note); color: var(--ink-2); }
+  .hk-prijs p :global(strong) { color: var(--ink); font-weight: 600; }
+  .hk-prijs .hk-prijs-vlak {
+    margin-top: 1.1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--ink-3);
+  }
+  .hk-prijs .hk-prijs-vlak strong { color: var(--ink); font-weight: 700; }
+
+  /* De vragenlijst. `Disclose` doet de panelen; dit zet alleen de tussenruimte,
+     precies zoals op /catalog, /lifestyle en /video. */
+  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
+
+  /* De slotregel in de cta-band. Gecentreerd zoals alles in die band, een stap
+     zwakker dan de lead erboven, en met een lijn erboven die hem scheidt van de
+     knoppen zonder er een tweede blok van te maken. */
+  .hk-belofte {
+    max-width: 68ch;
+    margin: clamp(2rem, 4vw, 2.8rem) auto 0;
+    padding-top: clamp(1.2rem, 2.4vw, 1.6rem);
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-size: .88rem;
+    line-height: 1.6;
+    color: var(--ink-3);
+  }
+</style>

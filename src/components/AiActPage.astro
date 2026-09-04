@@ -126,6 +126,9 @@ import Disclose from './Disclose.astro';
  * een onware belofte over tien.
  */
 import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd, oudsteControle } from '../data/modelChecks.js';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../data/juridischeDatums.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -138,7 +141,7 @@ const COPY = {
     eyebrow: 'Transparency',
     h1: 'AI Act & transparency',
     lead: 'We make your images with AI. We say so on the file.',
-    updated: 'Last updated: August 2026',
+    updated: bijgewerktOp('ai-act', 'en'),
     note: 'This page describes our own practice and the rules as we read them. It is not legal advice. For your own situation — certainly if you sell outside the EU — ask a qualified adviser.',
 
     introP: 'Since 2 August 2026 the EU asks whoever publishes an AI-generated image of a real product to say that it is one. We have not treated that as a burden but as part of the delivery. You get your images, plus the line of text to place them with. Beyond that you do not have to think about it.',
@@ -199,7 +202,7 @@ const COPY = {
       ['We are not lawyers.', 'This page is information, not legal advice.'],
       ['Our human check does not exempt your images from the disclosure duty.', 'That exemption in the law is for text on matters of public interest, not for images. Anyone claiming otherwise has not read it.'],
       ['Using the EU icon does not make you compliant.', 'It is an aid, not a certification. We supply it because it is recognisable, not because it covers anything.'],
-      ['Every file we deliver carries a machine-readable provenance tag, and one line of it is ours.', 'We write an IPTC DigitalSourceType tag into every delivered file — the value that means “partly made by a model” — including the WebP, where the conversion discarded whatever the model provider had put there. What the provider marked itself we leave alone; we remove nothing. It is not a guarantee: any program that re-saves an image can strip the tag, and providers of systems already on the market have until 2 December 2026 to mark at all. So do not rely on a file to identify itself. The disclosure that counts is the visible one, the one you place.'],
+      ['Every file we deliver carries a machine-readable provenance tag, and one line of it is ours.', 'We write an IPTC DigitalSourceType tag into every delivered file, including the WebP, where the conversion discarded whatever the model provider had put there. The value says whether a real photograph went into it: your product photo did, so a delivered visual is marked “partly made by a model”. Brand-neutral imagery with no product in it does not, and is marked “made by a model” — the stronger of the two. We pick the value that is true of the file rather than one value for everything. What the provider marked itself we leave alone; we remove nothing. It is not a guarantee: any program that re-saves an image can strip the tag, and providers of systems already on the market have until 2 December 2026 to mark at all. So do not rely on a file to identify itself. The disclosure that counts is the visible one, the one you place.'],
       ['Marketplaces have their own image rules.', 'Zalando, Amazon, bol and About You sometimes set stricter requirements than the law does, particularly for the main image. You check those for your own channels — and we are glad to help you work it out.'],
     ],
 
@@ -233,7 +236,7 @@ const COPY = {
     eyebrow: 'Transparantie',
     h1: 'AI Act & transparantie',
     lead: 'Wij maken je beeld met AI. Dat zetten we er ook bij.',
-    updated: 'Laatst bijgewerkt: augustus 2026',
+    updated: bijgewerktOp('ai-act', 'nl'),
     note: 'Deze pagina beschrijft onze eigen werkwijze en de regels zoals wij ze lezen. Het is geen juridisch advies. Raadpleeg voor je eigen situatie — zeker bij verkoop buiten de EU — een adviseur.',
 
     introP: 'Sinds 2 augustus 2026 vraagt de EU aan wie een AI-beeld van een echt product publiceert om erbij te zetten dat het er een is. Wij hebben dat niet als last behandeld maar als onderdeel van de levering. Je krijgt je beelden, plus de tekst om ze te plaatsen. Verder hoef je er niet over na te denken.',
@@ -294,7 +297,7 @@ const COPY = {
       ['Wij zijn geen juristen.', 'Deze pagina is informatie, geen juridisch advies.'],
       ['Onze menselijke controle stelt je beelden niet vrij van de vermeldingsplicht.', 'Die uitzondering in de wet geldt voor tekst over zaken van algemeen belang, niet voor beeld. Wie anders beweert, heeft de tekst niet gelezen.'],
       ['Het EU-icoon gebruiken maakt je niet automatisch compliant.', 'Het is een hulpmiddel, geen keurmerk. Wij leveren het omdat het herkenbaar is, niet omdat het iets afdekt.'],
-      ['Elk bestand dat wij leveren draagt een machineleesbare herkomsttag, en één regel daarvan is van ons.', 'Wij schrijven in elk geleverd bestand een IPTC DigitalSourceType-tag — de waarde die "deels door een model gemaakt" betekent — ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Wat de aanbieder zelf markeerde laten we staan; wij halen niets weg. Het is geen garantie: elk programma dat een beeld opnieuw opslaat kan de tag verwijderen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare, die jij plaatst.'],
+      ['Elk bestand dat wij leveren draagt een machineleesbare herkomsttag, en één regel daarvan is van ons.', 'Wij schrijven in elk geleverd bestand een IPTC DigitalSourceType-tag, ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. De waarde zegt of er een echte foto in zit: jouw productfoto zit erin, dus een geleverd beeld draagt "deels door een model gemaakt". Merkneutraal beeld zonder product erin heeft die niet, en draagt "door een model gemaakt" — de sterkste van de twee. Wij kiezen de waarde die van dát bestand waar is en niet één waarde voor alles. Wat de aanbieder zelf markeerde laten we staan; wij halen niets weg. Het is geen garantie: elk programma dat een beeld opnieuw opslaat kan de tag verwijderen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare, die jij plaatst.'],
       ['Marktplaatsen hebben eigen beeldregels.', 'Zalando, Amazon, bol en About You stellen soms strengere eisen dan de wet, met name aan de hoofdafbeelding. Die controleer je zelf voor je eigen kanalen — we denken graag mee.'],
     ],
 
@@ -489,28 +492,21 @@ const waLink = waHref(c.waText);
 </section>
 
 <style>
-  /* Legal-text typography, matching /privacy, /terms and /cookie-policy so the
-     page reads as one of that set. Astro scopes these selectors to this
-     component, so they have to be restated here rather than inherited. */
-  .legal h2 { margin-top: 2.6rem; font-size: 1.5rem; }
-  .legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
-  .legal p { margin-top: 0.9rem; }
-  .legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
-  .legal ul li { list-style: disc; }
+  /* De gedeelde opmaak van een juridische pagina staat sinds 3 september 2026 in
+     src/styles/global.css bij `.legal` — zie de noot daar, en de meting die erbij
+     hoort. De regels stonden hier woordelijk herhaald, met als reden "Astro
+     scopeert deze selectors aan dit component, dus ze moeten hier opnieuw". Dat
+     klopt voor een <style> in dit bestand en het is precies waarom herhalen hier
+     de verkeerde oplossing was: drie van de zes pagina's raakten hun blok kwijt en
+     niemand zag het, omdat elke pagina zijn eigen kopie had om op terug te vallen.
+     Wat hieronder blijft staan is wat ALLEEN deze pagina heeft. */
   .legal strong { color: var(--ink); }
-  .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
-  .legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
 
   /* §5 is the one list on the page that is a sequence of actions rather than a
      set of statements, so it is the one list that is numbered. Same rhythm as
      the bulleted lists otherwise. */
   .legal-ol { margin-top: 0.9rem; padding-left: 1.3rem; display: flex; flex-direction: column; gap: 0.5rem; }
   .legal-ol li { list-style: decimal; }
-
-  /* Full hairline border, not a left stripe. A >1px coloured side border is an
-     absolute ban in the design system; /privacy, /terms and /cookie-policy
-     carried one on this same class and were corrected in the same pass. */
-  .legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
 
   /* Placement only, for the §4 figure. The wrapper exists because Astro scopes
      these selectors to this component and a component tag is not an element it

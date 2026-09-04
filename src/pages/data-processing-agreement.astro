@@ -1,6 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../data/juridischeDatums.js';
 // VISUAILS — Data Processing Agreement (Art. 28 GDPR). New on 12 August 2026.
 //
 // The full reasoning is in src/pages/nl/verwerkersovereenkomst.astro, in Dutch,
@@ -52,9 +55,9 @@ const SUBS = [
   <section class="page-hero">
     <div class="container narrow">
       <span class="eyebrow-page">Legal</span>
-      <h1 class="display" style="font-size:var(--t-page-h1)">Data Processing Agreement</h1>
+      <h1 class="display">Data Processing Agreement</h1>
       <p class="lead" style="margin-top:1.2rem">If there is a person in the material you send us, we are processing personal data that is <em>yours</em> — and the GDPR then requires us to have an agreement about it. This is that agreement.</p>
-      <p class="legal-meta">Last updated: August 2026 &middot; Article 28 GDPR</p>
+      <p class="legal-meta">{bijgewerktOp('data-processing-agreement', 'en', 'Article 28 GDPR')}</p>
     </div>
   </section>
 
@@ -108,7 +111,9 @@ const SUBS = [
       <h2>8. Sub-processors</h2>
       <p>We use other parties. You hereby give us a <strong>general written authorisation</strong> for that, within the meaning of Art. 28(2) GDPR, on three conditions: this list is current, we announce an addition or replacement <strong>at least 30 days in advance</strong> by email, and you may object during that period. If you do, we find an alternative or you may end the engagement free of charge for the part not yet performed.</p>
       <p>With each party below we have a processor agreement that passes on the same obligations we owe you (Art. 28(4)). We remain liable to you for what they do.</p>
-      <div class="table-scroll">
+      {/* tabindex + role: zie de noot bij .fb-tblwrap in FigBoard.astro.
+          Deze tabel schuift horizontaal en was zonder muis niet te lezen. */}
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Sub-processors">
       <table class="files">
         <thead><tr><th>Who</th><th>Where</th><th>For what</th><th>Transfer basis</th></tr></thead>
         <tbody>
@@ -143,7 +148,7 @@ const SUBS = [
       <p>The periods below are the same ones as in §7 of the <a href="/terms/">Terms</a> and §6 of the <a href="/privacy/">Privacy Policy</a>. They are executed by a nightly task, not by hand.</p>
       <ul>
         <li><strong>The material you supply:</strong> {UPLOAD_DAYS} days after the order, then deleted.</li>
-        <li><strong>The visuals we deliver:</strong> {DELIVERY_MONTHS} months, so you can fetch them again within a year.</li>
+        <li><strong>The visuals we deliver:</strong> {DELIVERY_DAYS} days in VISUAILS Studio, so you can fetch them again in that time; a copy may remain in our own archive without guarantee.</li>
       </ul>
       <p>Want it gone sooner? Email us and we delete it — unless a statutory retention duty stands in the way, and then we say which one. At the end of this agreement we delete everything it covers, copies included, or return it to you if you prefer. Anything that has to stay for that reason stays only for that reason and is not used again.</p>
       <p>The data we hold as controller — your invoice, your company details — is not covered here. Those carry the seven-year Dutch tax retention duty, and that is set out in the Privacy Policy.</p>
@@ -156,7 +161,14 @@ const SUBS = [
       <h2>14. Questions</h2>
       <p>About this agreement, about a data subject request, or to get a signed copy: <a href="mailto:hello@visuails.com">hello@visuails.com</a>. One person reads that inbox, and it is the same person who carries out the processing.</p>
 
-      <p class="legal-meta" style="margin-top:2.4rem">This page was drafted against the text of Article 28 GDPR and covers points (a) to (h) of paragraph 3. It has not yet been reviewed by a lawyer. For your own situation — certainly if you sit in a chain with more than one controller — have your own adviser check it.</p>
+      {/* ── DEZELFDE SOORT NOOT ALS OP /ai-act, DUS DEZELFDE VORM — 3 sept 2026 ──
+          Dit stond hier als `.legal-meta` met een handgezette marge van 2,4rem: de
+          datumklasse, gebruikt voor een voorbehoud. /ai-act draagt precies dit soort
+          zin al als `.legal-note` — een omkaderd blok met een eigen marge — en twee
+          vormen voor één soort mededeling is hoe een lezer moet raden wat het
+          gewicht ervan is. En de marge komt nu uit de klasse in plaats van uit dit
+          bestand. */}
+      <p class="legal-note">This page was drafted against the text of Article 28 GDPR and covers points (a) to (h) of paragraph 3. It has not yet been reviewed by a lawyer. For your own situation — certainly if you sit in a chain with more than one controller — have your own adviser check it.</p>
 
     </div>
   </section>

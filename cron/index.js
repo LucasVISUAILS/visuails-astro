@@ -49,9 +49,15 @@
  * pdf maken en wegzetten), want daarvoor is er wel een toestand: status 'pending'.
  */
 
-import { EXPIRED_FILES_SQL, UPLOAD_DAYS, DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { EXPIRED_FILES_SQL, UPLOAD_DAYS, DELIVERY_DAYS } from '../src/lib/retention.js';
 import { planState } from '../src/lib/subscription.js';
 import { klaarOmTeStarten } from '../src/lib/planStart.js';
+/* De betaallinkmail (4 september 2026): dezelfde als na een btw-goedkeuring en
+   een offerte, hier als herinnering. En de mailschil voor het vervalbericht van
+   een venster. */
+import { stuurBetaallink } from '../src/lib/betaallink.js';
+import { sendMail } from '../src/lib/mail.js';
+import { shell as mailShell, h1 as mailH1, p as mailP, spamNote as mailSpamNote } from '../src/lib/mailTemplate.js';
 
 /**
  * Hoeveel bestanden per nacht maximaal.
@@ -91,7 +97,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge]) {
+    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -183,7 +189,7 @@ async function releaseExpiredWindows(env) {
 
 /* De query apart, zodat de foutafhandeling hierboven leesbaar blijft. */
 const FIND_EXPIRED_WINDOWS = (
-    `SELECT id, ref, window_start, window_end
+    `SELECT id, ref, window_start, window_end, email, lang
        FROM orders
       WHERE tier = 'attended'
         AND window_start IS NOT NULL
@@ -213,7 +219,99 @@ async function releaseAll(env, rows) {
     ]);
   }
 
-  return `${rows.length} vervallen reservering${rows.length === 1 ? '' : 'en'} vrijgegeven: ${rows.map((o) => o.ref).join(', ')}.`;
+  /* ── EN DE KLANT HOORT HET — 4 september 2026 ────────────────────────────
+     Tot vandaag stond het alleen op de tijdlijn: de datum was weg en niemand
+     zei het. De bestelling blijft staan en de betaallink uit de bevestiging
+     werkt nog; wat de klant kwijt is, is de gereserveerde dag. Eén mail per
+     bestelling, na de UPDATE, en een mislukte mail houdt de vrijgave niet op. */
+  let gemaild = 0;
+  for (const o of rows) {
+    if (await mailVensterVrij(env, o)) gemaild++;
+  }
+  return `${rows.length} vervallen reservering${rows.length === 1 ? '' : 'en'} vrijgegeven: ${rows.map((o) => o.ref).join(', ')}${gemaild ? ` (${gemaild} klant${gemaild === 1 ? '' : 'en'} gemaild)` : ''}.`;
+}
+
+async function mailVensterVrij(env, o) {
+  if (!env.RESEND_API_KEY || !o.email) return false;
+  const nl = o.lang !== 'en';
+  const venster = `${o.window_start}${o.window_end ? ` – ${o.window_end}` : ''}`;
+  try {
+    await sendMail(env, {
+      to: o.email,
+      subject: nl ? `Je gereserveerde leverdatum is vrijgegeven — ${o.ref}` : `Your reserved delivery date has been released — ${o.ref}`,
+      html: mailShell({
+        lang: nl ? 'nl' : 'en',
+        preheader: nl ? 'De bestelling blijft staan.' : 'The order still stands.',
+        body: [
+          mailH1(nl ? 'Leverdatum vrijgegeven' : 'Delivery date released'),
+          mailP(nl
+            ? `De dagen <strong>${venster}</strong> die voor <strong>${o.ref}</strong> waren gereserveerd, zijn weer vrijgegeven: er is binnen zeven dagen niet betaald. Er is niets in rekening gebracht en je bestelling blijft gewoon staan.`
+            : `The days <strong>${venster}</strong> reserved for <strong>${o.ref}</strong> have been released: the order was not paid within seven days. Nothing has been charged and your order still stands.`),
+          mailP(nl
+            ? 'Wil je hem nog? Betaal via de link in je bevestigingsmail; we plannen dan opnieuw en laten je weten wanneer. Wil je hem niet meer, dan hoef je niets te doen.'
+            : 'Still want it? Pay through the link in your confirmation email; we then plan it again and let you know when. If not, there is nothing you need to do.'),
+          mailSpamNote(nl ? 'nl' : 'en'),
+        ].join(''),
+      }),
+    });
+    return true;
+  } catch (err) {
+    console.error('[cron] vrijgavebericht voor', o.ref, 'niet verstuurd —', err?.message || err);
+    return false;
+  }
+}
+
+/*
+ * ── DE BETAALHERINNERING — 4 september 2026 ─────────────────────────────────
+ *
+ * Een bestelling die drie dagen onbetaald staat, krijgt één mail met een verse
+ * betaallink. Drie dagen: kort genoeg om vóór het vervallen van een gereserveerd
+ * venster (zeven dagen) te komen, lang genoeg om niet te duwen bij iemand die
+ * gisteren bestelde. Alleen bestellingen waar echt iets te betalen is en die niet
+ * op de btw-beoordeling wachten — die krijgen hun link pas na goedkeuring, en
+ * dán begint hun klok (reviewed_at). Eén keer, gestempeld in payment_reminder_at
+ * (migratie 0042).
+ */
+const REMINDER_DAYS = 3;
+
+async function remindUnpaid(env) {
+  if (!env.MOLLIE_API_KEY) return null;
+  let results;
+  try {
+    ({ results } = await env.DB.prepare(
+      `SELECT id, ref FROM orders
+        WHERE COALESCE(payment_status, 'unpaid') = 'unpaid'
+          AND COALESCE(total_cents, 0) > 0
+          AND status NOT IN ('cancelled', 'delivered')
+          AND payment_reminder_at IS NULL
+          AND (review_state IS NULL OR review_state = 'approved')
+          AND COALESCE(reviewed_at, created_at) <= datetime('now', '-${REMINDER_DAYS} days')
+          AND created_at >= datetime('now', '-30 days')
+        ORDER BY id LIMIT 50`
+    ).all());
+  } catch (err) {
+    if (/no such column/i.test(String(err?.message || ''))) {
+      throw new Error(`${err.message} — is migratie 0042 (betaalherinnering) gedraaid?`);
+    }
+    throw err;
+  }
+  const rows = results || [];
+  if (!rows.length) return null;
+  const origin = env.PUBLIC_ORIGIN || 'https://visuails.com';
+  const gedaan = [];
+  for (const o of rows) {
+    try {
+      const url = await stuurBetaallink(env, o.id, { origin, herinnering: true });
+      /* Ook zonder link stempelen: de vier stille uitgangen (al betaald, geen
+         adres, niets te betalen) veranderen morgen niet, en een taak die elke
+         nacht dezelfde rij opnieuw probeert is een logboek vol herhaling. */
+      await env.DB.prepare("UPDATE orders SET payment_reminder_at = datetime('now') WHERE id = ?1").bind(o.id).run();
+      if (url) gedaan.push(o.ref);
+    } catch (err) {
+      console.error('[cron] betaalherinnering voor', o.ref, 'niet verstuurd —', err?.message || err);
+    }
+  }
+  return gedaan.length ? `${gedaan.length} betaalherinnering${gedaan.length === 1 ? '' : 'en'} verstuurd: ${gedaan.join(', ')}.` : null;
 }
 
 /* ══ 1b · GOEDGEKEURD, NOOIT BETAALD ════════════════════════════════════════
@@ -575,7 +673,7 @@ function describe(kinds) {
     if (kind === 'upload') {
       parts.push(`Bronmateriaal verwijderd volgens de bewaartermijn van ${UPLOAD_DAYS} dagen na het afsluiten van de bestelling (${stuks}).`);
     } else if (kind === 'delivery') {
-      parts.push(`Geleverde beelden verwijderd volgens de bewaartermijn van ${DELIVERY_MONTHS} maanden na levering (${stuks}).`);
+      parts.push(`Geleverde beelden verwijderd volgens de bewaartermijn van ${DELIVERY_DAYS} dagen na levering (${stuks}).`);
     } else {
       parts.push(`${stuks} verwijderd volgens de bewaartermijn.`);
     }
@@ -885,10 +983,18 @@ async function issuePendingInvoices(env) {
   const creditsDone = [];
   if (credits.length) {
     const { renderCreditPdf } = await import('../src/lib/invoice.js');
+    const { mailCreditNote } = await import('../src/lib/cancelMail.js');
     for (const note of credits) {
       try {
-        await renderCreditPdf(env, note);
+        const klaar = await renderCreditPdf(env, note);
         creditsDone.push(note.number);
+        /* De webhook kon deze nota niet mailen — hij had toen nog geen pdf. Nu wel,
+           dus nu gaat hij alsnog de deur uit (4 september 2026). */
+        if (klaar?.status === 'issued') {
+          const wie = await env.DB.prepare('SELECT ref, email, lang FROM orders WHERE id = ?1')
+            .bind(note.order_id).first().catch(() => null);
+          if (wie) await mailCreditNote(env, { order: wie, note: klaar });
+        }
       } catch (err) {
         console.error('[cron] creditnota', note.number, 'niet uitgegeven —', err?.message || err);
       }
@@ -1398,6 +1504,6 @@ async function sweepAbandonedIntake(env) {
     + ` (${verlaten.length} batch${verlaten.length === 1 ? '' : 'es'}, ongeveer ${mb} MB).`;
 }
 
-export const tasks = { releaseExpiredWindows, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge };
+export const tasks = { remindUnpaid, releaseExpiredWindows, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge };
 export const QUEUE_WATCH = { QUEUE_WARN_DAYS, weekBeginntOver };
 export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };

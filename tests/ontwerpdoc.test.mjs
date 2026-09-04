@@ -75,7 +75,7 @@ console.log('\nde drie getallen die het document als feit opschrijft, kloppen');
   /* Niet elk getal, maar de drie die het vaakst worden nageschreven omdat ze in
      een codeblok staan en er dus uitzien als iets om over te nemen. */
   const paren = [
-    ['--container-cap', /--container-cap:\s*1560px/],
+    ['--container-cap', /--container-cap:\s*1640px/],
     ['--container', /--container:\s*min\(var\(--container-cap\), 100%\)/],
     ['--pad-x', /--pad-x:\s*clamp\(20px, 3\.5vw, 64px\)/],
     ['--t-body', /--t-body:\s*1\.0625rem/],

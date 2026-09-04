@@ -38,7 +38,7 @@
  * draaien is nadat een concurrent het heeft gelezen.
  */
 import { readFileSync } from 'node:fs';
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../src/lib/retention.js';
 /* De cookietermijnen staan sinds 23 augustus 2026 in src/data/cookies.js — één
    plek voor het getal dat de code zet én de pagina opschrijft. */
 import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS } from '../src/data/cookies.js';
@@ -126,11 +126,11 @@ console.log('\nde termijnen komen uit retention.js en staan niet ingetypt');
   for (const [lang, src] of Object.entries(DPA)) {
     ok(`${lang}: leest retention.js`, /from '\.\.?\/(\.\.\/)?lib\/retention\.js'/.test(SRC[lang]), true);
     ok(`${lang}: gebruikt UPLOAD_DAYS als variabele`, src.includes('{UPLOAD_DAYS}'), true);
-    ok(`${lang}: en DELIVERY_MONTHS`, src.includes('{DELIVERY_MONTHS}'), true);
+    ok(`${lang}: en DELIVERY_DAYS`, src.includes('{DELIVERY_DAYS}'), true);
     /* De omgekeerde check, en dit is de mutatie die het echt doet: een ingetypt getal
        naast de variabele is hoe de twee alsnog uit elkaar lopen. */
     ok(`${lang}: geen ingetypte ${UPLOAD_DAYS} dagen`, new RegExp(`${UPLOAD_DAYS} (days|dagen)`).test(src), false);
-    ok(`${lang}: geen ingetypte ${DELIVERY_MONTHS} maanden`, new RegExp(`${DELIVERY_MONTHS} (months|maanden)`).test(src), false);
+    ok(`${lang}: geen ingetypte ${DELIVERY_DAYS} dagen`, new RegExp(`${DELIVERY_DAYS} (days|dagen)`).test(src), false);
   }
 }
 
@@ -283,9 +283,9 @@ console.log('\nde licentie die de klant ons geeft staat in de voorwaarden, met z
      klant zich op de tekst mag beroepen — dus zwaarder, niet lichter. */
   for (const [lang, src] of Object.entries(TERMS)) {
     ok(`${lang}: §7 gebruikt UPLOAD_DAYS`, src.includes('{UPLOAD_DAYS}'), true);
-    ok(`${lang}: §7 gebruikt DELIVERY_MONTHS`, src.includes('{DELIVERY_MONTHS}'), true);
+    ok(`${lang}: §7 gebruikt DELIVERY_DAYS`, src.includes('{DELIVERY_DAYS}'), true);
     ok(`${lang}: geen ingetypte ${UPLOAD_DAYS} dagen meer`, new RegExp(`${UPLOAD_DAYS} (days|dagen)`).test(src), false);
-    ok(`${lang}: geen ingetypte ${DELIVERY_MONTHS} maanden meer`, new RegExp(`${DELIVERY_MONTHS} (months|maanden)`).test(src), false);
+    ok(`${lang}: geen ingetypte ${DELIVERY_DAYS} dagen meer`, new RegExp(`${DELIVERY_DAYS} (days|dagen)`).test(src), false);
   }
 }
 

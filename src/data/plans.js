@@ -30,7 +30,7 @@
  */
 import {
   PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, PLAN_COMPARE_MONTHS, PLAN_ROLLOVER_MONTHS,
-  AMOUNT, ladderRate, LADDER, CUSTOM_MONTH_ID,
+  AMOUNT, ladderRate, LADDER, CUSTOM_MONTH_ID, plans,
 } from './pricing.js';
 import { ATTENDED_PER_DAY } from './capacity.js';
 
@@ -457,6 +457,27 @@ function assertPlans() {
   // "twaalf maanden vast" niets naast "drie maanden minimum".
   if (TERMS.yearly.months <= TERMS.monthly.months) {
     throw new Error('plans.js: de jaartermijn is niet langer dan de minimumtermijn');
+  }
+
+  /* ── DE TERUGVAL IN plans() MOET DEZELFDE ZIJN — 1 september 2026 ──────────
+   *
+   * plans() in pricing.js schrijft op de kaart hoeveel maanden de jaartermijn
+   * doorschuift. Dat getal staat HIER, maar pricing.js mag plans.js niet
+   * importeren (dat is een kringetje — zie de kop van planNames.js), dus het komt
+   * als argument binnen met een terugval erin.
+   *
+   * Een terugval is precies waar drift begint: verandert `rollover` hierboven en
+   * vergeet iemand één aanroeper, dan staat er op die pagina een getal dat nergens
+   * meer op slaat, en niets valt om. Deze regel maakt daar een bouwfout van.
+   * pricing.js kan hem niet zelf zetten; plans.js kan dat wel, want die kant van
+   * de afhankelijkheid mag.
+   */
+  const kaartZonderArgument = plans('nl')[0].includes.join(' | ');
+  if (!kaartZonderArgument.includes(`jaartermijn ${TERMS.yearly.rollover} maanden`)) {
+    throw new Error(
+      `plans.js: de terugval van plans() in pricing.js noemt niet ${TERMS.yearly.rollover} maanden `
+      + 'doorschuiven op de jaartermijn. Werk de standaardwaarde van `jaarRollover` daar bij.'
+    );
   }
 
   // En er moet ruimte zijn voor ten minste één abonnee van elk plan, anders is

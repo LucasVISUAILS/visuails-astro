@@ -3,9 +3,10 @@
 // ThankYouPage.astro; alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
 import ThankYouPage from '../../components/ThankYouPage.astro';
-import { turnaround } from '../../data/pricing.js';
+import { turnaroundShort } from '../../data/pricing.js';
 
-const TIMING = turnaround('unattended', 'nl');
+/* De korte vorm (3 sep 2026): de lange paste niet meer in 160 tekens. */
+const TIMING = turnaroundShort('unattended', 'nl');
 const description =
   `Je aanvraag is binnen. We bevestigen per e-mail of WhatsApp, en je visuals ` +
   `volgen binnen de normale doorlooptijd — ${TIMING.toLowerCase()}.`;

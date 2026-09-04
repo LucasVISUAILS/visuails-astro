@@ -218,7 +218,12 @@ function safeRate(vatRate) {
  * a computed price. A null here means "do not create a payment", which is the
  * safe direction to fail in.
  */
-export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate = VAT_RATE }) {
+/* `styleSurchargeCents` — 4 september 2026. Een eigen stijl (customer_styles)
+   mag per product iets extra kosten; 0 is het gewone tarief, en dat is ook wat
+   /start/custom-look belooft ("daarna loopt elk product tegen het gewone
+   tarief"). Geklemd op 0..500 euro per product: een getal daarbuiten is een
+   typefout in /admin en geen prijs. */
+export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate = VAT_RATE, styleSurchargeCents = 0 }) {
   // Translate first, then decide. Both the payable test and the ladder lookup
   // below have to see the same name, or this is the same bug in a new place.
   const kind = LADDER_KEY[service] || service;
@@ -285,8 +290,9 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
   const rate = ladderRate(kind, n);
   const extraRate = extraPhotoRate(n);
 
+  const surcharge = clamp(styleSurchargeCents, 0, 50000);
   const net = n * rate + o * OUTFIT_SURCHARGE + x * extraRate;
-  const netCents = cents(net);
+  const netCents = cents(net) + n * surcharge;
 
   // THE RATE IS AN ARGUMENT NOW, and the caller is the only one who can know
   // it: it depends on the customer's country and on whether VIES confirmed
@@ -314,6 +320,7 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
     extras: x,
     rate,
     extraRate,
+    styleSurchargeCents: surcharge,
     netCents,
     vatCents,
     grossCents: netCents + vatCents,

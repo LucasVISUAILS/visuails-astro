@@ -153,7 +153,7 @@ const filters = [
   <section class="page-hero">
     <div class="container">
       <p class="eyebrow-page">Gallery</p>
-      <h1 class="display" style="font-size:var(--t-page-h1)">A look at the styles we produce</h1>
+      <h1 class="display">A look at the styles we produce</h1>
       <div class="flex" style="margin-top:1.8rem">
         <a href="/test-sample/" class="btn btn-primary btn-lg">Test sample</a>
         <a href="/start/" class="btn btn-ghost btn-lg">Start an order</a>
@@ -237,109 +237,14 @@ const filters = [
     </div>
   </section>
 
+  {/* De filterbalk staat in src/scripts/galerij-filter.js. Hij stond hier,
+      twee keer woord voor woord gelijk (en/nl), en begon met een import van
+      GSAP: 68 kB bibliotheek voor één crossfade, waardoor deze pagina op
+      128 kB JavaScript stond tegen 58 kB voor de rest van de site. Nu doet
+      de Web Animations API hetzelfde. De volledige uitleg, inclusief de
+      afwijking van brief §8, staat in dat bestand. */}
   <script>
-    import gsap from 'gsap';
-    // Client-side filter — the Svelte source used $state/$derived; this is
-    // the vanilla equivalent. Re-inits on astro:page-load so it survives
-    // ClientRouter view-transition navigations (see Layout.astro).
-    //
-    // The filter change is a crossfade rather than the synchronous
-    // `display: none` flip it used to be: leavers fade and settle back a
-    // fraction, the grid re-lays-out at the moment they are invisible, then the
-    // arrivals fade up. Opacity and transform only — no layout property is
-    // animated, so the whole thing composites on the GPU and never triggers a
-    // reflow mid-tween. The display swap that DOES reflow happens once, at the
-    // seam, when nothing is mid-motion.
-    //
-    // DEVIATION FROM BRIEF §8, flagged deliberately: §8 asks for a "WebGL
-    // crossfade on filter change". This is not WebGL. Doing it in WebGL means
-    // uploading up to 38 grid photos as textures and running a second GL
-    // context alongside the hero chrome shader, on the one page whose LCP is
-    // already a wall of images — against a budget of "LCP under 2.5s on mobile
-    // 4G WITH the shader running". The visible result of a texture crossfade
-    // and a composited opacity crossfade is the same 300ms dissolve. Raised
-    // with the client rather than silently substituted.
-    const FADE_OUT = 0.26;
-    const FADE_IN = 0.42;
-
-    function initGalleryFilter() {
-      const grid = document.querySelector<HTMLElement>('.photo-grid[data-filterable]');
-      const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-bar button[data-filter-key]');
-      if (!grid || !buttons.length) return;
-      // Bound per grid element, not per module: this file runs once at parse
-      // AND again on the astro:page-load that follows it, which would
-      // otherwise stack two click handlers on every pill.
-      if (grid.dataset.filterBound) return;
-      grid.dataset.filterBound = '1';
-
-      const photos = Array.from(grid.querySelectorAll<HTMLImageElement>('img'));
-      const shown = (img: HTMLImageElement) => img.style.display !== 'none';
-      const wanted = (img: HTMLImageElement, key: string) => key === 'all' || img.dataset.tag === key;
-      // The timeline in flight, if any. Impatient clicking is the normal way to
-      // use a filter bar, so an interrupted transition is a first-class case,
-      // not an edge case: killing only the tweens (gsap.killTweensOf) is NOT
-      // enough, because the display swap is a timeline CALLBACK, not a tween.
-      // It would survive the kill, fire late against a filter set that no
-      // longer applies, and hide photos the current filter wants — five fast
-      // clicks emptied the grid completely. The whole timeline is killed.
-      let flight: gsap.core.Timeline | null = null;
-
-      const apply = (key: string) => {
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (flight) { flight.kill(); flight = null; }
-        gsap.killTweensOf(photos);
-
-        const keep = photos.filter((img) => wanted(img, key));
-        const leaving = photos.filter((img) => shown(img) && !wanted(img, key));
-        const entering = keep.filter((img) => !shown(img));
-        // Already-visible keepers are force-reset rather than left alone: an
-        // interrupted fade could have parked one at opacity .3, and a photo
-        // that is staying on screen must be at full strength, always. This is
-        // the invariant that keeps a filter click from ever dimming the grid.
-        gsap.set(keep.filter(shown), { clearProps: 'opacity,transform' });
-        if (!leaving.length && !entering.length) return;
-
-        const swap = () => {
-          leaving.forEach((img) => { img.style.display = 'none'; });
-          entering.forEach((img) => { img.style.display = ''; });
-          gsap.set(leaving, { clearProps: 'opacity,transform' });
-        };
-
-        if (reduce) {
-          swap();
-          gsap.set(entering, { clearProps: 'opacity,transform' });
-          return;
-        }
-
-        const tl = gsap.timeline({ onComplete: () => { flight = null; } });
-        flight = tl;
-        if (leaving.length) {
-          tl.to(leaving, {
-            opacity: 0, scale: 0.96, duration: FADE_OUT, ease: 'power2.out',
-            stagger: { each: 0.018, from: 'start' },
-          }, 0);
-        }
-        tl.add(swap);
-        if (entering.length) {
-          tl.set(entering, { opacity: 0, scale: 0.96 })
-            .to(entering, {
-              opacity: 1, scale: 1, duration: FADE_IN, ease: 'power3.out',
-              stagger: { each: 0.022, from: 'start' },
-              clearProps: 'opacity,transform',
-            });
-        }
-      };
-
-      buttons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const key = btn.dataset.filterKey || 'all';
-          buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
-          apply(key);
-        });
-      });
-    }
-    initGalleryFilter();
-    document.addEventListener('astro:page-load', initGalleryFilter);
+    import '../scripts/galerij-filter.js';
   </script>
 </Layout>
 

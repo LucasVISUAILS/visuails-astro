@@ -16,13 +16,31 @@
 // photos are our own output.
 // `w`/`h` are the file's INTRINSIC pixel size, and they are here rather than
 // typed at each call site because they were being typed at each call site and
-// getting it wrong: /models declared 600x750 for a 1195x1600 file, the
-// homepage rail declared 800x1071 for all ten when only Rae is that size.
-// Nothing looked squashed — every one of them is object-fit: cover — but the
-// box the browser reserved before the bytes landed had the wrong aspect ratio,
-// which is layout shift on exactly the images a visitor is looking at.
-// Rae is genuinely a different size from the other nine. That is the reason
-// this cannot be one shared constant.
+// getting it wrong: /models declared 600x750 for a 1195x1600 file, and the
+// homepage rail declared 800x1071 for all ten while nine of them were
+// 1195x1600. Nothing looked squashed — every one of them is object-fit: cover
+// — but the box the browser reserved before the bytes landed had the wrong
+// aspect ratio, which is layout shift on exactly the images a visitor is
+// looking at.
+//
+// TIEN KEER 1195x1600, EN DAT WAREN ER NEGEN — 4 september 2026.
+// Hier stond: "Rae is genuinely a different size from the other nine. That is
+// the reason this cannot be one shared constant." Dat is niet meer waar, en de
+// reden waarom is het bewaren waard. Rae was niet kleiner omdat dat zo hoorde;
+// ze was kleiner omdat haar master ontbrak. De negen anderen komen van een
+// bronbestand van 1792x2400, dat van haar lag er niet — dus was 800x1071 het
+// grootste dat er van haar bestond, en daar hing de rest van dit bestand aan
+// vast. Sinds 4 september ligt haar master er wel, met dezelfde herkomst als
+// de rest, en is model-rae.webp opnieuw gemaakt op 1195x1600.
+//
+// EN TOCH BLIJVEN `w`/`h` PER REGEL STAAN. Dat is nu tien keer hetzelfde
+// getal, en de verleiding is om er één constante van te maken. Niet doen: dat
+// deze tien vandaag gelijk zijn is een eigenschap van de bestanden op schijf,
+// geen regel die iets afdwingt. De vorige versie van dit bestand ging er van
+// uit dat Rae altijd anders zou blijven; die aanname hield vijf maanden. Een
+// gedeelde constante zou de volgende afwijking niet fout laten gaan maar
+// stilletjes verkeerd tekenen — precies de layout shift die hierboven al een
+// keer is opgelost.
 //
 // `thumb`/`tw`/`th` are the SAME PHOTOGRAPH at roster-grid size, and they are
 // here for the same reason `w`/`h` are. No grid on this site draws a roster
@@ -40,10 +58,12 @@
 // `w`/`h` for both, is what stops a call site pointing at the 800px file while
 // declaring 1195x1600.
 //
-// Rae's `thumb` is her original: it is already 800x1071, exactly the target,
-// so a derivative would be a same-size re-encode. That every other portrait
-// resizes to 800x1071 too is arithmetic, not coincidence — 1195x1600 and
-// 800x1071 are the same 3:4 to within a rounding pixel.
+// Alle tien hebben nu een eigen `-w800`-derivaat. Rae had er lang geen: haar
+// `thumb` wees naar haar eigen bestand, want dat WAS al 800x1071 en een
+// derivaat zou een re-encode op dezelfde maat zijn geweest. Sinds haar master
+// er is (zie hierboven) is dat niet langer zo, en volgt ze de andere negen.
+// Dat elk portret naar precies 800x1071 zakt is rekenwerk en geen toeval:
+// 1195x1600 en 800x1071 zijn dezelfde 3:4, op een afrondingspixel na.
 export const ROSTER = [
   { name: 'Aaron',  photo: '/img/model-aaron.webp',  thumb: '/img/model-aaron-w800.webp',  traits: ['warm', 'approachable'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Ava',    photo: '/img/model-ava.webp',    thumb: '/img/model-ava-w800.webp',    traits: ['editorial', 'elegant'], w: 1195, h: 1600, tw: 800, th: 1071 },
@@ -52,10 +72,70 @@ export const ROSTER = [
   { name: 'Dana',   photo: '/img/model-dana.webp',   thumb: '/img/model-dana-w800.webp',   traits: ['confident', 'modern'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Lisa',   photo: '/img/model-lisa.webp',   thumb: '/img/model-lisa-w800.webp',   traits: ['natural', 'approachable'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Maegan', photo: '/img/model-maegan.webp', thumb: '/img/model-maegan-w800.webp', traits: ['bold', 'statement'], w: 1195, h: 1600, tw: 800, th: 1071 },
-  { name: 'Rae',    photo: '/img/model-rae.webp',    thumb: '/img/model-rae.webp',         traits: ['soft', 'understated'], w: 800, h: 1071, tw: 800, th: 1071 },
+  { name: 'Rae',    photo: '/img/model-rae.webp',    thumb: '/img/model-rae-w800.webp',    traits: ['soft', 'understated'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Fabi',   photo: '/img/model-fabi.webp',   thumb: '/img/model-fabi-w800.webp',   traits: ['clean', 'contemporary'], w: 1195, h: 1600, tw: 800, th: 1071 },
   { name: 'Seme',   photo: '/img/model-seme.webp',   thumb: '/img/model-seme-w800.webp',   traits: ['sharp', 'editorial'], w: 1195, h: 1600, tw: 800, th: 1071 },
 ];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HET AANTAL, ALS WOORD — 4 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Op vierentwintig plekken in acht bestanden stond het woord "ten" of "tien"
+   met de hand ingetypt: 'Ten faces.', '( Alle tien )', 'These ten are our
+   standard roster', de omschrijving in het menu, de <title> van /models, de
+   lege staat in de admin. Allemaal beschrijven ze de lijst hierboven, en geen
+   van alle keek ernaar.
+
+   ── WAAROM DIT NU IS GEDAAN EN NIET TOEN HET GESCHREVEN WERD ───────────────
+
+   Omdat het vandaag nog goed ging, en dat is precies het moment. De roster
+   staat sinds mei op tien namen, dus elk van die vierentwintig zinnen is waar,
+   en niemand zou het gemerkt hebben als er eentje niet meer klopte. Er is
+   deze week één model bijna uit de lijst gehaald (Rae, tot haar master
+   opdook). Was dat doorgegaan, dan stond er op vierentwintig plekken "tien"
+   boven negen gezichten — in de <title> die Google toont, in de
+   menu-omschrijving, in de tekst waarin we uitleggen dat de bibliotheek
+   gedeeld is. Dat is geen weergavefoutje maar een onjuiste bewering over wat
+   je krijgt als je bestelt.
+
+   ── DE REGEL ──────────────────────────────────────────────────────────────
+
+   Een getal dat een lijst beschrijft, wordt uit die lijst afgeleid en niet
+   ernaast getypt. Dezelfde regel als src/data/pricing.js voor euro's.
+
+   ── WAAROM EEN WOORD EN NIET EEN CIJFER ───────────────────────────────────
+
+   Omdat er "Tien gezichten." staat en niet "10 gezichten." — lopende tekst
+   schrijft kleine getallen voluit, in beide talen. Een afgeleid getal dat de
+   zin lelijker maakt dan de handgetypte versie wordt niet gebruikt, en dan is
+   er niets opgeschoten. Vandaar de tabel: hij is klein, hij is af tot twaalf,
+   en hij WEIGERT hardop zodra hij een getal krijgt dat hij niet kent. Dat is
+   met opzet. Een elfde model toevoegen hoort de bouw te breken met een
+   melding die zegt wat er moet gebeuren, niet stilletjes "elf" te missen. */
+export const ROSTER_COUNT = ROSTER.length;
+
+const TELWOORD = {
+  en: ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'],
+  nl: ['nul', 'één', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen', 'tien', 'elf', 'twaalf'],
+};
+
+/**
+ * Een getal als woord, in het Engels of het Nederlands.
+ *
+ * @param {number} n         het getal
+ * @param {'en'|'nl'} lang   de taal; alles wat geen 'nl' is telt als 'en'
+ * @param {boolean} hoofdletter  met een hoofdletter, voor het begin van een zin
+ */
+export function telwoord(n, lang = 'en', hoofdletter = false) {
+  const l = lang === 'nl' ? 'nl' : 'en';
+  const w = TELWOORD[l][n];
+  if (!w) throw new Error(`models.js: geen telwoord voor ${n} in ${l} — vul TELWOORD aan`);
+  return hoofdletter ? w[0].toUpperCase() + w.slice(1) : w;
+}
+
+/** Het aantal modellen in de roster, als woord. Dit is wat de pagina's lezen. */
+export const rosterWoord = (lang = 'en', hoofdletter = false) => telwoord(ROSTER_COUNT, lang, hoofdletter);
 
 /**
  * The value a roster entry travels as — in the order form, in details_json,

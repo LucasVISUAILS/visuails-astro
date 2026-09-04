@@ -4,6 +4,79 @@ Allow: /
 # Post-conversion pages — no SEO value, keep them out of the index.
 Disallow: /thank-you
 
+# ── DE AI-CRAWLERS, MET NAAM EN TOEN — 3 SEPTEMBER 2026 ──────────────────────
+#
+# Hieronder staat per crawler een eigen regel, en ze zeggen allemaal hetzelfde
+# als de `User-agent: *` hierboven al zei. Dat is met opzet: ze veranderen niets
+# aan wat er gebeurt, ze veranderen wie het besloten heeft.
+#
+# Tot vandaag stond hier geen enkele van deze namen. Ze vielen daardoor onder
+# de sterregel en mochten alles — wat waarschijnlijk is wat we willen, maar het
+# was een GEVOLG en geen KEUZE, en die twee zien er in een bestand precies
+# hetzelfde uit. Het verschil merk je pas als je van gedachten verandert: bij
+# een gevolg moet je eerst uitzoeken welke namen er bestaan, bij een keuze
+# verander je één woord op de regel die er al staat.
+#
+# WAAROM ZE ERIN MOGEN. Deze site verkoopt aan mensen die "hoe fotografeer ik
+# mijn product met een telefoon" intypen, en dat is steeds vaker een vraag aan
+# een taalmodel en niet aan een zoekmachine. Geciteerd worden kan alleen als je
+# gelezen mag worden; buiten de deur staan is geen bescherming maar afwezigheid.
+# Er staat op deze site ook niets dat beschermd hoeft te worden — geen
+# klantwerk, geen archief, geen betaalde artikelen. Wat er staat is precies wat
+# we willen dat iemand doorvertelt, en /llms.txt zet het zelfs klaar.
+#
+# EN WAT HET NIET IS. Toestemming om te lezen is geen toestemming om beeld te
+# hergebruiken; dat regelt het auteursrecht en niet dit bestand. En robots.txt
+# is een verzoek, geen slot: een crawler die zich er niets van aantrekt, wordt
+# hier niet tegengehouden. Wie dat wél wil, doet het bij Cloudflare (Bot
+# Management) en niet hier.
+#
+# OMDRAAIEN IS ÉÉN WOORD. `Allow: /` wordt `Disallow: /` op de regel van de bot
+# die je buiten wilt houden. Doe het per bot en niet als groep — de eerste twee
+# hieronder halen antwoorden op voor iemand die NU een vraag stelt, en de
+# laatste drie verzamelen materiaal voor een volgend model. Dat is niet
+# dezelfde afweging, ook al zijn het allebei "AI".
+
+# — Ophalen om NU een antwoord te geven, meestal met bronvermelding erbij.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# — Verzamelen voor training. Google-Extended en Applebot-Extended zijn geen
+#   crawlers maar schakelaars: ze halen niets op, ze zeggen alleen of wat
+#   Googlebot en Applebot al hebben opgehaald voor training gebruikt mag worden.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
 # NOT LISTED, DELIBERATELY:
 #
 # /order-status was here until section 10 retired it. It is now a 301 to /o
@@ -18,5 +91,22 @@ Disallow: /thank-you
 # so a portal URL leaked into a link somewhere could still be indexed as a
 # bare URL. Letting the crawler in to be told "no" is stronger than keeping it
 # out and hoping.
+#
+# En de Disallow op /thank-you hierboven staat ALLEEN onder de sterregel en
+# wordt hieronder niet herhaald. Dat is geen slordigheid: een crawler leest
+# precies één blok, namelijk dat van zijn eigen naam als die er staat. Wie
+# /thank-you ook voor deze bots wil sluiten, moet die regel dus in elk blok
+# herhalen — en dat willen we niet. Een bedankpagina hoort niet in een
+# zoekindex omdat er niets te zoeken valt; als een model hem leest en er niets
+# in vindt, is er niets misgegaan.
+
+# /llms.txt is de kaart voor iets dat deze site CITEERT in plaats van hem te
+# rangschikken: één pagina met elke prijs, elke doorlooptijd en elke pagina van
+# de site erop, gegenereerd uit dezelfde bron als de site zelf. Hij staat hier
+# als aanwijzing en niet als regel — robots.txt kent er geen richtlijn voor, en
+# een verzonnen sleutel wordt door elke parser overgeslagen. Zie
+# scripts/llms-txt.mjs voor wat erin staat en waarom.
+#
+#   https://visuails.com/llms.txt
 
 Sitemap: https://visuails.com/sitemap.xml

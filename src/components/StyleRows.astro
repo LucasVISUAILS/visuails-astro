@@ -1,0 +1,288 @@
+---
+/*
+ * VISUAILS — StyleRows: elke stijl zijn eigen sectie, de eigen look bovenaan.
+ * 4 september 2026.
+ *
+ * Lucas: *"elke style op de website verdient misschien wat meer aandacht en
+ * moet ik deze allemaal van elkaar plaatsen, een sectie per style om ze wat
+ * mooier te maken. Ook custom, als je dat slim lijkt, gelijk bovenaan te zetten
+ * in de desbetreffende categorie en dan alle predefined stylen te laten zien
+ * die de klant als alternatief kan kiezen zonder een eigen style te hoeven
+ * krijgen."*
+ *
+ * Wat er stond: een raster van gelijke tegels (drie of twee naast elkaar) met
+ * de naam, één regel en een prijs — en Custom als laatste tegel, kleiner dan de
+ * rest. Vijf dingen die even zwaar wegen, lezen als een keuzemenu; hier wordt
+ * elke look een eigen regel met een beeld, een naam, waarvoor hij is en een
+ * knop. En de eigen look staat bovenaan, als de eerste ingang en niet als het
+ * restje.
+ *
+ * ── DEZELFDE COMPONENT OP DRIE PAGINA'S ────────────────────────────────────
+ * Catalog, lifestyle en video geven hun stijlen in een eigen vorm door
+ * (catalogStyles, styles, videoStyles) — die worden op de pagina genormaliseerd
+ * naar `Item` en hier alleen nog getekend, zodat de drie hubs niet uit elkaar
+ * kunnen lopen. Lifestyle heeft foto's; catalog en video hebben nog een
+ * getekende scène of een poster — die komen morgen. */
+import ProductScene from './ProductScene.astro';
+
+export interface Media {
+  src?: string; w?: number; h?: number; alt?: string;
+  icon?: 'bottle' | 'sneaker' | 'jar' | 'bag'; width?: string; badge?: string;
+  label?: string;            // zonder src/icon: een "foto volgt"-kaart met deze naam (bijv. "Achterkant")
+}
+export interface Item {
+  slug: string;
+  name: string;
+  tagline: string;
+  desc: string;
+  price: string;
+  bestFor: string[];
+  media: Media;              // het eerste beeld (of de getekende scène)
+  photos?: Media[];          // tot vier beelden voor de waaier; ontbreekt → media
+  before?: Media;            // de telefoonfoto waar het van gemaakt is — de kleine kaart
+  tint?: string;             // de gloed achter de waaier, in de kleur van de look
+  detailHref: string;
+  detailLabel: string;
+  orderHref?: string;
+  orderLabel?: string;
+}
+interface Props {
+  lang: 'en' | 'nl';
+  h: string;                 // de sectiekop, mag <em> bevatten
+  lead: Item;                // de eigen look
+  items: Item[];             // de vaste looks, in volgorde
+  leadSteps?: string[];      // drie stappen naar een eigen look
+}
+const { lang, h, lead, items, leadSteps } = Astro.props;
+
+/* ── DE WAAIER — 4 september 2026 ──────────────────────────────────────────
+   Lucas' referentie: naast de tekst niet één beeld maar drie of vier, licht
+   gedraaid en over elkaar, "zodat je gelijk een paar beelden ziet voordat je
+   verder kijkt om een gevoel te krijgen bij wat je koopt". Vier vaste plekken
+   in een 4:3-vak; een look met minder beelden vult de plekken die er zijn, een
+   plek zonder beeld krijgt de streepjeskaart die de rest van de site voor een
+   foto-die-nog-komt gebruikt. Alle maten in procenten van het vak, zodat de
+   waaier op 390 px dezelfde is als op 1440. */
+/* Het eerste beeld op de grootste plek (2), dan links (1), rechts (3), de
+   kleine vierde. Twee of meer beelden: alleen die plekken. Eén beeld: de twee
+   plekken ernaast als "foto volgt", zodat het geen losse kaart is. */
+/* ── EN DE KLEINE KAART IS DE TELEFOONFOTO — 4 september 2026 ─────────────
+   Lucas: *"de kleine foto eronder een voor-foto van een telefoon maken om de
+   before/after gelijk te laten zien."* Is er een `before`, dan is plek 4 de
+   ingestuurde foto met het etiket INGESTUURD, en draagt het grootste beeld
+   GELEVERD — dezelfde twee woorden als de schuif op de homepage. */
+/* ── EN EEN CATALOGSET IS VIER — 4 september 2026 ─────────────────────────
+   Lucas: *"Catalog heeft een set van 4. Past dat?"* Ja: vier geleverde beelden
+   plus de telefoonfoto zijn vijf kaarten, en dan schuift de waaier naar een
+   vijfde indeling (data-n="5"): vier kaarten op een rij, de telefoonfoto
+   klein onder het midden. Een kaart zonder beeld maar mét naam ("Achterkant")
+   is een "foto volgt" met die naam erop, zodat je ziet wat de set ís. */
+const VOLGORDE = [2, 1, 3, 4];
+type Kaart = { slot: number; m: Media | null; voor?: boolean };
+const waaier = (it: Item): Kaart[] => {
+  const fotos = (it.photos && it.photos.length ? it.photos : [it.media]).slice(0, 4);
+  const uit: Kaart[] = fotos.map((m, i) => ({ slot: VOLGORDE[i], m: (m.src || m.icon || m.label) ? m : null }));
+  if (fotos.length === 1) uit.push({ slot: 1, m: null }, { slot: 3, m: null });
+  if (it.before) uit.push({ slot: fotos.length >= 4 ? 5 : 4, m: it.before, voor: true });
+  return uit;
+};
+const isLeeg = (m: Media | null) => !m || !(m.src || m.icon);
+const altVan = (naam: string, m: Media | null, i: number, voor?: boolean) =>
+  voor ? (nl ? `De ingestuurde telefoonfoto waar ${naam} van gemaakt wordt` : `The phone photo ${naam} is made from`)
+       : (m?.alt || (nl ? `${naam} — voorbeeld ${i + 1}` : `${naam} — example ${i + 1}`));
+const nl = lang === 'nl';
+const c = nl ? {
+  eyebrow: 'Op maat',
+  altH: 'Of kies een vaste look',
+  altSub: 'Direct te bestellen, zonder opzet. Elke look is een vaste set keuzes — licht, omgeving, afwerking — die bij elke bestelling hetzelfde blijft.',
+  bestFor: 'Past bij',
+  voor: 'Ingestuurd', na: 'Geleverd',
+  steps: leadSteps || ['Korte intake: wat wil je laten zien en waar', 'Wij zeggen of het met AI te maken is', 'Offerte — daarna bestel je hem als elke andere look'],
+} : {
+  eyebrow: 'Made to measure',
+  altH: 'Or pick a fixed look',
+  altSub: 'Ready to order, no set-up. Every look is a fixed set of choices — light, setting, finish — that stays the same on every order.',
+  bestFor: 'Best for',
+  voor: 'Submitted', na: 'Delivered',
+  steps: leadSteps || ['A short intake: what you want to show and where', 'We tell you whether it can be made with AI', 'A quote — then you order it like any other look'],
+};
+
+---
+
+<section class="sr">
+  <div class="container">
+    <h2 class="section-h" set:html={h} />
+
+    {/* ── DE EIGEN LOOK, BOVENAAN ────────────────────────────────────────── */}
+    <article class="sr-lead reveal pending">
+      <div class="sr-fan is-lead" data-n={waaier(lead).length} style={lead.tint ? `--sr-tint:${lead.tint}` : undefined}>
+        {waaier(lead).map(({ slot, m, voor }, i) => (
+          <div class={`sr-card sr-card-${slot}${isLeeg(m) ? ' is-leeg' : ''}${voor ? ' is-voor' : ''}`}>
+            {m?.src
+              ? <img src={m.src} alt={altVan(lead.name, m, i, voor)} loading="lazy" decoding="async" width={m.w} height={m.h} />
+              : m?.icon ? <ProductScene icon={m.icon} width={m.width || '40%'} badge={i === 0 ? m.badge : undefined} wide />
+              : <span class="sr-leeg">{m?.label || (nl ? 'Foto volgt' : 'Photo to come')}</span>}
+            {voor && <span class="sr-etiket">{c.voor}</span>}
+            {i === 0 && lead.before && <span class="sr-etiket is-na">{c.na}</span>}
+          </div>
+        ))}
+      </div>
+      <div class="sr-lead-body">
+        <p class="sr-eyebrow">{c.eyebrow}</p>
+        <h3 class="sr-lead-h">{lead.name}</h3>
+        <p class="sr-lead-tag">{lead.tagline}</p>
+        <p class="sr-desc">{lead.desc}</p>
+        <ol class="sr-steps">
+          {c.steps.map((s) => <li>{s}</li>)}
+        </ol>
+        <p class="sr-price">{lead.price}</p>
+        <div class="sr-cta">
+          <a class="btn btn-primary" href={lead.orderHref || lead.detailHref}>{lead.orderLabel || lead.detailLabel}</a>
+          {lead.orderHref && <a class="btn btn-ghost" href={lead.detailHref}>{lead.detailLabel}</a>}
+        </div>
+      </div>
+    </article>
+
+    {/* ── DE VASTE LOOKS, ELK ZIJN EIGEN REGEL ───────────────────────────── */}
+    <div class="sr-alt-head">
+      <h3 class="sr-alt-h">{c.altH}</h3>
+      <p class="sr-alt-sub">{c.altSub}</p>
+    </div>
+
+    <div class="sr-rows">
+      {items.map((s, i) => (
+        <article class={`sr-row reveal pending${i % 2 ? ' is-flip' : ''}`} id={`look-${s.slug}`}>
+          <a class="sr-media sr-fan" href={s.detailHref} aria-label={s.detailLabel} data-n={waaier(s).length} style={s.tint ? `--sr-tint:${s.tint}` : undefined}>
+            {waaier(s).map(({ slot, m, voor }, i) => (
+              <span class={`sr-card sr-card-${slot}${isLeeg(m) ? ' is-leeg' : ''}${voor ? ' is-voor' : ''}`}>
+                {m?.src
+                  ? <img src={m.src} alt={altVan(s.name, m, i, voor)} loading="lazy" decoding="async" width={m.w} height={m.h} />
+                  : m?.icon ? <ProductScene icon={m.icon} width={m.width || '40%'} badge={i === 0 ? m.badge : undefined} wide />
+                  : <span class="sr-leeg">{m?.label || (nl ? 'Foto volgt' : 'Photo to come')}</span>}
+                {voor && <span class="sr-etiket">{c.voor}</span>}
+                {i === 0 && s.before && <span class="sr-etiket is-na">{c.na}</span>}
+              </span>
+            ))}
+          </a>
+          <div class="sr-body">
+            <h3 class="sr-h"><em>{s.name}</em></h3>
+            <p class="sr-tag">{s.tagline}</p>
+            <p class="sr-desc">{s.desc}</p>
+            {s.bestFor.length > 0 && (
+              <p class="sr-best"><span class="sr-best-l">{c.bestFor}</span> {s.bestFor.slice(0, 3).join(' · ')}</p>
+            )}
+            <p class="sr-price">{s.price}</p>
+            <div class="sr-cta">
+              {s.orderHref && <a class="btn btn-primary" href={s.orderHref}>{s.orderLabel}</a>}
+              <a class={`btn ${s.orderHref ? 'btn-ghost' : 'btn-primary'}`} href={s.detailHref}>{s.detailLabel}</a>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .sr-eyebrow { margin: 0 0 .5rem; font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+
+  /* ── DE EIGEN LOOK: ÉÉN BREDE BAND ─────────────────────────────────────── */
+  .sr-lead {
+    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(1.4rem, 3vw, 3rem);
+    margin-top: clamp(1.4rem, 3vw, 2.4rem);
+    padding: clamp(1.2rem, 2.4vw, 2rem);
+    border: 1px solid var(--line-strong); border-radius: var(--r-lg);
+    background: var(--paper-2);
+  }
+    .sr-lead-body { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .sr-lead-h { margin: 0; font-size: clamp(2rem, 3.6vw, 3rem); line-height: 1; }
+  .sr-lead-tag { margin: .5rem 0 0; font-size: 1.1rem; color: var(--ink-2); }
+  .sr-steps { margin: 1.1rem 0 0; padding: 0 0 0 1.3rem; display: grid; gap: .35rem; color: var(--ink-2); font-size: .95rem; line-height: 1.5; }
+  .sr-steps li::marker { color: var(--accent); font-weight: 800; }
+
+  /* ── DE VASTE LOOKS ────────────────────────────────────────────────────── */
+  .sr-alt-head { margin-top: clamp(2.4rem, 5vw, 4rem); max-width: 62ch; }
+  .sr-alt-h { margin: 0; font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+  .sr-alt-sub { margin: .5rem 0 0; color: var(--ink-3); font-size: .95rem; line-height: 1.6; }
+  .sr-rows { margin-top: clamp(1.2rem, 2.4vw, 2rem); display: grid; }
+  .sr-row {
+    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.4rem, 3.5vw, 3.6rem); align-items: center;
+    padding: clamp(1.6rem, 3vw, 2.6rem) 0; border-top: 1px solid var(--line);
+  }
+  .sr-row.is-flip .sr-media { order: 2; }
+  /* ── DE WAAIER ─────────────────────────────────────────────────────────────
+     Vier kaarten op vaste plekken in een 4:3-vak, elk iets gedraaid, de
+     grootste vooraan en iets uit het midden. Achter de kaarten een zachte
+     gloed in de kleur van de look (`--sr-tint`), zodat de vier looks naast
+     elkaar ook zonder tekst van elkaar verschillen. Op hover komt de waaier
+     iets uit elkaar; zonder beweging (reduced-motion) staat hij stil. */
+  .sr-fan { --sr-tint: var(--accent); display: block; position: relative; aspect-ratio: 4 / 3; isolation: isolate; }
+  .sr-fan::before {
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(58% 54% at 50% 48%, color-mix(in oklab, var(--sr-tint) 30%, transparent) 0%, color-mix(in oklab, var(--sr-tint) 10%, transparent) 45%, transparent 100%);
+    filter: blur(28px);
+  }
+  .sr-card {
+    position: absolute; display: block; overflow: hidden; border-radius: 12px;
+    background: var(--paper-2); border: 1px solid rgb(255 255 255 / 0.10);
+    box-shadow: 0 22px 44px -18px rgb(0 0 0 / 0.75), 0 2px 0 rgb(255 255 255 / 0.04) inset;
+    transform: rotate(var(--r)) translate(0, 0);
+    transition: transform .7s cubic-bezier(.16,1,.3,1);
+    will-change: transform;
+  }
+  .sr-card img, .sr-card :global(.vis) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* De vier plekken: links laag, midden groot en vooraan, rechts hoog, en een
+     kleine vierde rechtsonder. Percentages van het vak, dus schaalvast. */
+  .sr-card-1 { left: 2%;  top: 12%; width: 34%; aspect-ratio: 3 / 4; --r: -7deg; z-index: 1; }
+  .sr-card-2 { left: 30%; top: 3%;  width: 40%; aspect-ratio: 3 / 4; --r: 3deg;  z-index: 3; }
+  .sr-card-3 { left: 66%; top: 14%; width: 32%; aspect-ratio: 3 / 4; --r: 8deg;  z-index: 2; }
+  .sr-card-4 { left: 56%; top: 60%; width: 24%; aspect-ratio: 4 / 5; --r: -4deg; z-index: 4; }
+  /* Vijf kaarten (een set van vier plus de telefoonfoto): vier op een rij,
+     licht waaierend, de telefoonfoto klein onder het midden. */
+  .sr-fan[data-n="5"] .sr-card { aspect-ratio: 1 / 1; }   /* een catalogset is vierkant */
+  .sr-fan[data-n="5"] .sr-card-1 { left: 0%;  top: 16%; width: 27%; --r: -8deg; z-index: 1; }
+  .sr-fan[data-n="5"] .sr-card-2 { left: 21%; top: 2%;  width: 33%; --r: -2deg; z-index: 3; }
+  .sr-fan[data-n="5"] .sr-card-3 { left: 48%; top: 8%;  width: 29%; --r: 4deg;  z-index: 2; }
+  .sr-fan[data-n="5"] .sr-card-4 { left: 73%; top: 20%; width: 26%; --r: 9deg; z-index: 1; }
+  .sr-fan[data-n="5"] .sr-card-5 { left: 40%; top: 62%; width: 21%; aspect-ratio: 3 / 4; --r: -3deg; z-index: 5; }
+  /* Twee kaarten (een look met maar twee beelden) staan anders links in een
+     leeg vak; een kwartslag naar het midden en ze staan gecentreerd. */
+  .sr-fan[data-n="2"] .sr-card { margin-left: 14%; }
+  /* De telefoonfoto: een smallere kaart met een dikkere lichte rand, zoals een
+     telefoonscherm, en het etiket in de hoek. De grote kaart krijgt GELEVERD. */
+  .sr-card.is-voor { aspect-ratio: 3 / 4; border: 2px solid rgb(255 255 255 / 0.55); border-radius: 10px; }
+  .sr-etiket {
+    position: absolute; left: .4rem; bottom: .4rem; z-index: 2;
+    padding: .2em .5em; border-radius: 999px;
+    font-family: var(--font-body); font-size: .58rem; line-height: 1.2; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    background: rgb(8 9 11 / 0.78); color: #fff; backdrop-filter: blur(4px); white-space: nowrap;
+  }
+  .sr-etiket.is-na { background: var(--accent); color: var(--accent-ink); }
+  .sr-card.is-leeg { border-style: dashed; border-color: var(--line-strong); background: var(--paper); display: grid; place-items: center; }
+  .sr-leeg { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); text-align: center; padding: .4rem; }
+  @media (hover: hover) {
+    .sr-fan:hover .sr-card-1 { transform: rotate(-9deg) translate(-3%, 2%); }
+    .sr-fan:hover .sr-card-2 { transform: rotate(1deg) translate(0, -2%); }
+    .sr-fan:hover .sr-card-3 { transform: rotate(10deg) translate(3%, 2%); }
+    .sr-fan:hover .sr-card-4 { transform: rotate(-6deg) translate(2%, 4%); }
+    .sr-fan[data-n="5"]:hover .sr-card-4 { transform: rotate(11deg) translate(3%, 2%); }
+    .sr-fan:hover .sr-card-5 { transform: rotate(-5deg) translate(0, 4%); }
+  }
+  .sr-fan.is-lead { align-self: center; }
+  .sr-body { min-width: 0; }
+  .sr-h { margin: 0; font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1; }
+  .sr-h em { font-style: italic; }
+  .sr-tag { margin: .4rem 0 0; font-size: 1.05rem; color: var(--ink-2); }
+  .sr-desc { margin: .9rem 0 0; color: var(--ink-2); font-size: .97rem; line-height: 1.6; max-width: 56ch; }
+  .sr-best { margin: .8rem 0 0; font-size: .88rem; color: var(--ink-3); line-height: 1.5; }
+  .sr-best-l { font-weight: 700; color: var(--ink-2); margin-right: .25rem; }
+  .sr-price { margin: .9rem 0 0; font-weight: 700; color: var(--accent); font-size: .95rem; }
+  .sr-cta { margin-top: 1.1rem; display: flex; flex-wrap: wrap; gap: .6rem; }
+
+  @media (max-width: 52rem) {
+    .sr-lead { grid-template-columns: 1fr; }
+    .sr-row { grid-template-columns: 1fr; gap: 1rem; }
+    .sr-row.is-flip .sr-media { order: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sr-card { transition: none; } .sr-fan:hover .sr-card { transform: rotate(var(--r)); } }
+</style>

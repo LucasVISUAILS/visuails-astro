@@ -29,7 +29,7 @@
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { tasks } from '../cron/index.js';
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../src/lib/retention.js';
 
 let pass = 0;
 let fail = 0;
@@ -171,7 +171,7 @@ console.log('de termijn zelf');
   const eGeleverd = events(db, geleverd);
   ok('en één bij de verlopen levering', eGeleverd.length, 1, eGeleverd.length);
   ok('die over levering gaat, niet over bronmateriaal', /Geleverde beelden verwijderd/.test(eGeleverd[0]?.note || ''), true, eGeleverd[0]?.note);
-  ok(`met de andere termijn (${DELIVERY_MONTHS} maanden)`, new RegExp(`${DELIVERY_MONTHS} maanden`).test(eGeleverd[0]?.note || ''), true, eGeleverd[0]?.note);
+  ok(`met de andere termijn (${DELIVERY_DAYS} dagen)`, new RegExp(`${DELIVERY_DAYS} dagen`).test(eGeleverd[0]?.note || ''), true, eGeleverd[0]?.note);
 
   ok('geen regel bij een bestelling die niets kwijtraakte', events(db, jong).length, 0);
   ok('ook niet bij de recente levering', events(db, recent).length, 0);

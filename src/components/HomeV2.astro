@@ -44,7 +44,7 @@ import { STOCK_OFF_BRAND, STOCK_ON_BRAND, PLAN_ROLLOVER_MONTHS } from '../data/p
 // Het juiste woord per dienst — zie de kop van lexicon.js.
 import { counted, countedShort, noun } from '../data/lexicon.js';
 // De drie bezwaren lezen hun antwoord hieruit — zie de noot bij OB_BRON.
-import { faqPageItems } from '../data/faq.js';
+import { faqPageItems, HOME_OBJECTION_QUESTIONS } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import { TAGLINE } from '../data/brand.js';
 import { testimonialsToShow } from '../data/testimonials.js';
@@ -69,6 +69,7 @@ import FigApproval from './FigApproval.astro';
 // sectie 12: er is geen feit mee verdwenen, alleen een tweede figuur.
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 import Note from './Note.astro';
+import PlanBand from './PlanBand.astro';
 // faqPageGroups is hier niet meer nodig: de accordeon met vijf vragen uit
 // faq.js is opgegaan in de bezwarenband (sectie 16). Die vijf antwoorden
 // stonden woord voor woord al op /faq, en daar staan ze nog.
@@ -353,7 +354,7 @@ const COPY = {
     // secundaire actie die meer ruimte inneemt dan de primaire leest als de
     // hoofdactie. Wat je krijgt staat nu in ctaSampleNote eronder, waar het
     // gelezen mag worden in plaats van gescand.
-    ctaSample: `Request a test sample · ${sample.price}`,
+    ctaSample: sample.cta,
     // Begint met het woord "Test sample", niet met "One product photo": deze
     // regel staat onder BEIDE knoppen en moet zonder twijfel bij de tweede
     // horen. Zonder dat woord lijkt het of een bestelling ook € 1 kost.
@@ -504,7 +505,7 @@ const COPY = {
          pijltje springt naar het blok verderop waar staat wat het wordt — niet
          naar een bestelpagina die niet bestaat. Een kaartje dat naar een dode
          deur wijst, is erger dan geen kaartje. */
-      { card: 'Hooks',    note: 'Your product in a short video that runs on into the post below it.', cta: 'What Hooks is',    href: '#hooks',    img: 4, soon: true },
+      { card: 'Hooks',    note: 'Your product in a short video that runs on into the post below it.', cta: 'What Hooks is',    href: '#hooks',    img: 4, soon: 'On request' },
       { card: 'Editions', note: 'A set of visuals in your brand colours every month, made for your feed.', cta: 'What Editions is', href: '#editions', img: 5, soon: true },
     ],
 
@@ -658,9 +659,9 @@ const COPY = {
     /* ── DE PRIJS IN TWEE GETALLEN ─────────────────────────────────────────
        De bovenste en de onderste trede van de bundelstaffel, gelezen uit
        LADDER. Alles ertussen staat op /pricing. */
-    priceFrom: 'From',
-    priceTo: 'down to',
-    priceUnit: `per complete product — ${PER_PRODUCT_VISUALS} finished images, a catalog set plus a lifestyle carousel. ${vatLabel('excl', 'en')}, and the rate falls with the number of products in the order.`,
+    priceFrom: 'Per product',
+    priceTo: 'And it falls as you add',
+    priceUnit: `per complete product — ${PER_PRODUCT_VISUALS} finished images, a catalog set plus a lifestyle carousel, ${vatLabel('excl', 'en')}.`,
     planLine: 'Rather have it every month? A plan holds a fixed number of products and a week on the calendar that is yours.',
     planLink: 'See the monthly plans',
     priceCta: 'Start an order',
@@ -685,7 +686,7 @@ const COPY = {
       ['Zero shortcuts for sample shoots — full studio quality every time.', 'Processed on our standard production pipeline and verified by the exact same quality control team.'],
       ['No obligation after', 'If it’s not right, that’s the end of it — no questions asked.'],
     ],
-    tsCta: 'Get your test sample',
+    tsCta: sample.cta,
     tsAlt: 'Or start an order',
 
     // The rail's two arrow labels survive its deletion: the Brand Model band
@@ -922,7 +923,7 @@ const COPY = {
      *       keuze vóór de productie valt in plaats van erna, en dat is precies
      *       waarom er niets te snijden valt.
      */
-    dashPortalN: 'One private link gives you full control: view delivery timelines, approve image by image, tick anything that is not right and send it as one revision round, and download every asset in all three formats and your selected aspect ratio.',
+    dashPortalN: 'One private link gives you full control: view delivery timelines, approve image by image, tick anything that is not right and send it as one revision round, and download every asset as jpg, png and webp in your selected aspect ratio.',
     dashPortalCta: 'See VISUAILS Studio',
     /* ── HOOKS STAAT OP DE PLANK, NIET IN DE ETALAGE — 9 augustus 2026 ────────
        Lucas: *"Verberg de pagina voor nu omdat ik alle ideeën hiervoor nog moet
@@ -971,7 +972,7 @@ const COPY = {
     dashFoot: [
       'Live status sync: changes on our end instantly update your timeline — ',
       'see how an order is run',
-      'What we record, and why, is detailed on our ',
+      '. What we record, and why, is detailed on our ',
       'AI Act page',
       '.',
     ],
@@ -1048,7 +1049,7 @@ const COPY = {
 
     closeH: 'Start with one of your own products — delivered as a catalog set or a lifestyle carousel.',
     closeLede: `${sample.deliverable} · Built from your original image · Specialist quality check · ${sample.feeNote} (${sample.unit})`,
-    closeCta: 'Get your test sample',
+    closeCta: sample.cta,
     closeAlt: 'Start an order instead',
   },
 
@@ -1056,8 +1057,8 @@ const COPY = {
     heroAlt: 'Een VISUAILS campagnebeeld — een figuur in een pufferjas op een achterbank die in de lens kijkt, zuurgroen belicht',
     h1: TAGLINE.nl.lines,
     ctaStart: 'Start een bestelling',
-    ctaSample: `Proefvisual aanvragen · ${sample.price}`,
-    ctaSampleNote: `Proefvisual: Upload je eigen product en ontvang ${sample.deliverable} terug. Maximaal: ${sample.unit}.`,
+    ctaSample: sample.cta,
+    ctaSampleNote: `Probeer VISUAILS: upload je eigen product en ontvang ${sample.deliverable} terug. Maximaal: ${sample.unit}.`,
     // Zie de EN-tabel voor waarom dit geen plint meer is, en waarom deze drie
     // sinds 20 augustus de korte vorm gebruiken.
     /* Zie de noot bij de Engelse tabel. */
@@ -1075,7 +1076,7 @@ const COPY = {
       { card: 'Videoclip',          note: 'Eén verticale clip, gesneden voor Reels en TikTok.',        cta: 'Bekijk Video',        href: '/video/',         img: 2 },
       { card: 'Je merkmodel',       note: 'Eén gezicht, alleen van jou, in elke bestelling.',          cta: 'Bekijk merkmodellen', href: '/custom-models/', img: 3 },
       // Zie de noot bij de Engelse heroSlides.
-      { card: 'Hooks',    note: 'Jouw product in een korte video die doorloopt in de post eronder.',     cta: 'Wat Hooks is',    href: '#hooks', img: 4, soon: true },
+      { card: 'Hooks',    note: 'Jouw product in een korte video die doorloopt in de post eronder.',     cta: 'Wat Hooks is',    href: '#hooks', img: 4, soon: 'Op aanvraag' },
       { card: 'Editions', note: 'Elke maand een set beelden in jouw merkkleuren, gemaakt voor je feed.', cta: 'Wat Editions is', href: '#editions', img: 5, soon: true },
     ],
 
@@ -1127,9 +1128,9 @@ const COPY = {
     creditWa: 'Hoi! Ik heb een abonnement en wil graag even doornemen waar ik de credits van deze maand aan kan besteden.',
 
     /* Zie de noot bij de Engelse tabel. */
-    priceFrom: 'Van',
-    priceTo: 'tot',
-    priceUnit: `per compleet product — ${PER_PRODUCT_VISUALS} afgewerkte foto’s, een catalogset plus een lifestyle-carousel. ${vatLabel('excl', 'nl')}, en het tarief daalt met het aantal producten in de bestelling.`,
+    priceFrom: 'Per product',
+    priceTo: 'En het daalt naarmate je meer bestelt',
+    priceUnit: `per compleet product — ${PER_PRODUCT_VISUALS} afgewerkte foto’s, een catalogset plus een lifestyle-carousel, ${vatLabel('excl', 'nl')}.`,
     planLine: 'Liever elke maand? Een abonnement legt een vast aantal producten vast, en een week op de kalender die van jou is.',
     planLink: 'Bekijk de maandplannen',
     priceCta: 'Start een bestelling',
@@ -1143,7 +1144,7 @@ const COPY = {
       ['Geen concessies bij een proefshoot — exact dezelfde kwaliteit als bij een vaste order.', 'Exact dezelfde studio - workflow en menselijke kwaliteitscheck als bij elke betaalde order.'],
       ['Daarna geen verplichting', 'Is het niet naar wens? Dan stopt het daar — zonder verdere verplichtingen.'],
     ],
-    tsCta: 'Vraag je proefvisual aan',
+    tsCta: sample.cta,
     tsAlt: 'Of start een bestelling',
 
     // Zie de EN-tabel: deze twee blijven staan voor de merkmodel-rail verderop.
@@ -1269,7 +1270,7 @@ const COPY = {
     dashFigNote: 'Een tekening van het beoordeelscherm, geen schermafdruk. Eén beeld dat teruggaat, houdt de rest niet op.',
     dashPortalK: 'VISUAILS Studio',
     // Zie de noot bij de Engelse dashPortalN.
-    dashPortalN: 'Eén privélink voor het complete overzicht: live status, beeld voor beeld goedkeuren, aanvinken wat niet klopt en dat als één revisieronde versturen, en downloaden in alle drie de formaten en de beeldverhouding die je koos.',
+    dashPortalN: 'Eén privélink voor het complete overzicht: live status, beeld voor beeld goedkeuren, aanvinken wat niet klopt en dat als één revisieronde versturen, en downloaden als jpg, png en webp in de beeldverhouding die je koos.',
     dashPortalCta: 'Bekijk VISUAILS Studio',
     svcSoonTag: 'Nog niet klaar',
     svcSoonLink: 'lees wat ze zijn',
@@ -1278,7 +1279,7 @@ const COPY = {
     dashFoot: [
       'Live status-sync: verandert er iets aan onze kant, dan beweegt jouw tijdlijn direct mee — ',
       'zie hoe een bestelling draait',
-      'Wat we opslaan en waarom, lees je op onze ',
+      '. Wat we opslaan en waarom, lees je op onze ',
       'AI Act-pagina',
       '.',
     ],
@@ -1316,7 +1317,7 @@ const COPY = {
 
     closeH: 'Begin met een van je eigen producten — geleverd als catalogset of lifestyle-carousel.',
     closeLede: `${sample.deliverable} · Gemaakt op basis van jouw eigen foto · Gecontroleerd door een specialist · ${sample.feeNote} (${sample.unit})`,
-    closeCta: 'Vraag je proefvisual aan',
+    closeCta: sample.cta,
     closeAlt: 'Of start meteen een bestelling',
   },
 };
@@ -1395,16 +1396,20 @@ const heroSlides = c.heroSlides.filter((sl) => !sl.soon);
  * `faq: null` betekent: het antwoord blijft in de copytabel hieronder staan.
  * Komt er ooit een FAQ-vraag over fotokwaliteit, dan hoort hij hier ingevuld te
  * worden en het antwoord uit de tabel te verdwijnen. */
+/* De drie vraagteksten staan sinds 2 september 2026 in faq.js — zie de noot bij
+   HOME_OBJECTION_QUESTIONS. schema.js leest ze daar ook, zodat de FAQPage-knoop
+   van de homepage precies de vragen bevat die er staan. De HREFS blijven hier:
+   waar een bezwaar naartoe wijst is opmaak van deze pagina. */
 const OB_BRON = [
-  { faq: 'What if the visuals are not right?', href: '/portal' },
-  { faq: 'Are the visuals AI-generated?', href: '/ai-act' },
+  { faq: HOME_OBJECTION_QUESTIONS[0], href: '/portal' },
+  { faq: HOME_OBJECTION_QUESTIONS[1], href: '/ai-act' },
   { faq: null, href: '/upload-guidelines' },
   /* De vierde, 30 augustus 2026, en hij hoort bij de EERSTE twee en niet bij de
      derde: er staat wél een antwoord in faq.js, dus dit is er geen dat in de
      copytabel hieronder mag blijven wonen. De link wijst naar /compare en niet
      naar /faq — daar staat het uitgeschreven met beide kanten naast elkaar, en
      dat is wat iemand die deze vraag stelt wil zien. */
-  { faq: 'Why not just do this myself with an AI tool?', href: '/compare' },
+  { faq: HOME_OBJECTION_QUESTIONS[2], href: '/compare' },
 ];
 
 const obEn = faqPageItems('en');
@@ -1582,7 +1587,7 @@ const zegt = testimonialsToShow(3);
         vier dia's erna zijn lichter en gebruiken een <h2>: er hoort één <h1>
         in een document te staan, en dat is de positionering van het merk en
         niet "Vier beelden per product". */}
-    <div class="hv-hero-copy" data-hero-panel="0" role="tabpanel" id="hv-slide-0" aria-labelledby="hv-tab-0">
+    <div class="hv-hero-copy" data-hero-panel="0" id="hv-slide-0">
       <h1 class="hv-h1">{c.h1.map((line) => (
         <span class="hv-line" set:html={line} />
       ))}</h1>
@@ -1695,7 +1700,7 @@ const zegt = testimonialsToShow(3);
       stoppen. Hij staat in de html — niet door script toegevoegd — zodat hij er
       is voordat de carrousel begint te lopen. */}
   <div class="container hv-hero-foot">
-    <div class="hv-slide-cards" data-hero-tabs role="tablist" aria-label={c.heroCarouselName}>
+    <div class="hv-slide-cards" data-hero-tabs role="group" aria-label={c.heroCarouselName}>
       {/* ── TWEE HANDELINGEN IN ÉÉN KAARTJE ────────────────────────────────
           Lucas: *"Deze knoppen zijn niet om naar de desbetreffende pagina te
           gaan, dat kan alleen met het kleine pijltje, maar als je gewoon op de
@@ -1754,7 +1759,7 @@ const zegt = testimonialsToShow(3);
               : <svg class="hv-slide-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SLIDE_ICON[i]} /></svg>}
             <span class="hv-slide-card-t">
               {sl.card}
-              {sl.soon && <em class="hv-slide-card-soon">{c.svcSoonTag}</em>}
+              {sl.soon && <em class="hv-slide-card-soon">{typeof sl.soon === 'string' ? sl.soon : c.svcSoonTag}</em>}
             </span>
           </a>
           {/* Een anker op deze pagina mag NIET door lp(): dat maakt er
@@ -2022,9 +2027,21 @@ const zegt = testimonialsToShow(3);
         `overflow-y: clip` op de rij zou de scroll ook weghalen en was fout
         geweest: dan is de scroll weg en de notitie afgeknipt. */}
     <div class="hv-svc-float">
-    <div class="hv-svc-rail" data-rail="svc" role="list">
+    {/* ── GEEN role="list"/role="listitem" MEER ────────────────────────────
+        axe-core, 2 september 2026: "ARIA role listitem is not allowed for given
+        element". Op elke `<a class="hv-svc-card">` stond role="listitem" en op
+        deze doos role="list". Een <a href> heeft de ingebouwde rol `link`, en
+        die mag je niet met listitem overschrijven; het geldige alternatief is
+        elk kaartje in een eigen <div role="listitem"> wikkelen, en dat zet een
+        extra doos tussen de flexrij en zijn kinderen — precies waar de rail
+        zijn scroll-snap en breedtes vandaan haalt.
+
+        De rol leverde ook weinig op: "lijst met 3 items" boven drie links die
+        allemaal hun eigen naam al uitspreken. Weg dus, en wat overblijft is
+        wat het is — drie links naast elkaar. */}
+    <div class="hv-svc-rail" data-rail="svc">
       {c.svc.map(([name, line, href], i) => (
-        <a class="hv-svc-card" href={lp(href)} role="listitem">
+        <a class="hv-svc-card" href={lp(href)}>
           <span class="hv-svc-card-head">
             <svg class="hv-svc-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SLIDE_ICON[i + 1]} /></svg>
             <span class="hv-svc-card-eyebrow">{c.svcEyebrow[i]}</span>
@@ -2064,14 +2081,16 @@ const zegt = testimonialsToShow(3);
         De namen komen uit binnenkortNamen() en staan hier niet getypt. Een
         tweede lijst met "Hooks, Editions" erin is precies het soort kopie dat in
         dit project al drie keer stil is uitgelopen op het origineel. */}
+    {/* De namen eerst, het etiket als pil erachter. Tot 4 september 2026 stond
+        het etiket vóór de namen zonder opmaak, en dan leest de regel als één
+        kromme zin: "Nog niet klaar Hooks & Editions — lees wat ze zijn". */}
     <p class="hv-svc-soon">
-      <span class="hv-svc-soon-tag">{c.svcSoonTag}</span>
-      {binnenkortNamen(lang).join(' & ')} — <a href={lp('/plans#binnenkort')}>{c.svcSoonLink}</a>
+      {binnenkortNamen(lang).join(' & ')} <span class="hv-svc-soon-tag">{c.svcSoonTag}</span> <a href={lp('/plans#binnenkort')}>{c.svcSoonLink}</a>
     </p>
 
-    <div class="hv-svc-foot">
-      <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
-    </div>
+    {/* De knop "Start een bestelling" die hier stond is weg (doorlichting 4
+        september 2026): hij stond al in de hero, in de prijsband en in de
+        footer, en elke kaart hierboven is zelf een link naar zijn dienst. */}
   </div>
 </section>
 
@@ -2160,20 +2179,38 @@ const zegt = testimonialsToShow(3);
     {/* `.bedrag-*` staat in global.css en niet hier — zie de noot daar. Deze
         vorm bestond op 30 augustus 2026 vier keer onder vier namen, waarvan er
         één van diezelfde ochtend was. */}
-    <p class="bedrag-reeks">
-      <span class="bedrag-label">{c.priceFrom}</span>
-      <span class="bedrag-cijfer">{euro(ladderRate('complete', 1), lang)}</span>
-      <span class="bedrag-label">{c.priceTo}</span>
-      <span class="bedrag-cijfer">{euro(ladderRate('complete', 20), lang)}</span>
-    </p>
-    <p class="bedrag-eenheid hv-price-unit">{c.priceUnit}</p>
+    {/* ── ÉÉN GETAL EN DE TRAP ERONDER — doorlichting 4 september 2026 ──────
+        "VAN €149 TOT €65": twee even grote getallen naast elkaar, en "van hoog
+        naar laag" leest als een bereik de verkeerde kant op. Nu één bedrag —
+        wat het eerste product kost — en daarnaast de vier treden als kleine
+        trap, zodat de beweging zichtbaar is in plaats van beweerd. Dezelfde
+        RUNGS als de tabel op /pricing; niets getypt. */}
+    <div class="hv-ladder">
+      <div class="bedrag hv-ladder-top">
+        <span class="bedrag-label">{c.priceFrom}</span>
+        <span class="bedrag-cijfer">{euro(ladderRate('complete', 1), lang)}</span>
+        <span class="bedrag-eenheid hv-price-unit">{c.priceUnit}</span>
+      </div>
+      <ol class="hv-rungs" aria-label={c.priceTo}>
+        <li class="hv-rungs-h">{c.priceTo}</li>
+        {RUNGS.map((r) => (
+          <li class={r.at === 1 ? 'is-top' : ''}>
+            <span class="hv-rung-n">{r.label}</span>
+            <span class="hv-rung-p">{euro(ladderRate('complete', r.at), lang)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
 
     {/* ── EN HET ABONNEMENT, IN ÉÉN REGEL — de tweede as ────────────────────
         Sectie 5b was een eigen band met een kop, een lede, drie beelden en een
         knop: 94 woorden om te zeggen dat je het ook maandelijks kunt doen. Dat
         is één feit, en één feit is een zin. /plans verkoopt het, en die pagina
         heeft sinds vandaag ook Hooks en Editions. */}
-    <p class="hv-price-plan">{c.planLine} <a href={lp('/plans')}>{c.planLink}</a></p>
+    {/* De ene regel over het abonnement is sinds 3 september 2026 een eigen
+        band direct onder deze sectie (PlanBand.astro). Lucas: het abonnement is
+        "misschien wel het handigste wat een klant kan kopen" en verdient meer
+        dan een zin tussen twee secties. */}
 
     <div class="hv-price-foot">
       <div class="hv-price-notes">
@@ -2186,6 +2223,9 @@ const zegt = testimonialsToShow(3);
     </div>
   </div>
 </section>
+
+<PlanBand lang={lang} />
+
 
 {/* ── 5b · HET ABONNEMENT — TERUG NAAR ÉÉN REGEL, 30 AUGUSTUS 2026 ──────
     Een eigen band met kop, lede, drie beelden en een knop: 94 woorden om te
@@ -2839,11 +2879,29 @@ var vOpruim = (function () {
 
   root.style.setProperty('--hv-slide-ms', DUUR + 'ms');
 
-  /* De tabs krijgen hun rol PAS HIER. In de html zijn het links, zodat ze
-     zonder script naar de dienstpagina gaan; vanaf nu zijn het tabs die een
-     dia kiezen, en dan hoort de rol daarbij te veranderen. */
+  /* ── GEEN role="tab", EN DAT IS EEN CORRECTIE ─────────────────────────────
+     Hier stond `t.setAttribute('role', 'tab')`, en de doos eromheen droeg
+     role="tablist". Gemeten met axe-core over alle 93 pagina's: één CRITICAL,
+     en de melding zei precies waar het aan lag —
+
+        "Element has children which are not allowed: a[aria-label]"
+
+     Een tablist mag alleen tabs bevatten. In elk kaartje zit een TWEEDE link,
+     het pijltje dat naar de dienstpagina gaat (zie de noot bij .hv-slide-card-go
+     hierboven: dat is met opzet zo, Lucas wilde de twee handelingen uit elkaar).
+     Die link kan er niet uit zonder de kaart uit elkaar te trekken, dus is het
+     de ROL die weg moet — niet het pijltje.
+
+     Het was bovendien maar half een tabpatroon: er is één paneel (#hv-slide-0)
+     voor vijf tabs, en `aria-labelledby` daarop wees altijd naar tab 0, ook als
+     dia 4 aan stond. Een schermlezer kreeg dus de belofte van een tabwidget en
+     daarna iets anders.
+
+     Wat het WEL is: een groep knoppen die de carrousel bedienen. Dus role=group
+     op de doos (die draagt het aria-label), aria-current op de actieve link, en
+     de pijltjesbediening en roving tabindex blijven precies zoals ze waren —
+     die horen bij geen enkele rol in het bijzonder en werkten al. */
   tabs.forEach(function (t, i) {
-    t.setAttribute('role', 'tab');
     t.addEventListener('click', function (e) {
       e.preventDefault();
       stop();
@@ -2935,7 +2993,10 @@ var vOpruim = (function () {
   function schilder(i) {
     tabs.forEach(function (t, k) {
       var aan = k === i;
-      t.setAttribute('aria-selected', aan ? 'true' : 'false');
+      /* aria-current en niet aria-selected: aria-selected hoort bij role=tab
+         en die is hier weg. Zie de noot bij tabs.forEach hierboven. */
+      if (aan) t.setAttribute('aria-current', 'true');
+      else t.removeAttribute('aria-current');
       /* Alleen de actieve tab is met tab bereikbaar; de rest met de pijltjes.
          Dat is het roving-tabindex-patroon en het scheelt vier tabstops voor
          iemand die alleen langs de hoofdknoppen wil. */
@@ -3508,7 +3569,7 @@ var vOpruim = (function () {
                 border-color var(--dur-1) var(--ease),
                 flex-grow var(--dur-3) var(--ease-out-expo);
   }
-  .hv-slide-card:has([aria-selected='true']) { flex-grow: 1.5; }
+  .hv-slide-card:has([aria-current='true']) { flex-grow: 1.5; }
   /* ── DE FOTO, EN DE SLUIER EROVER ────────────────────────────────────────
      De foto staat op een eigen laag onder de inhoud, met een verloop erover dat
      naar links donkerder wordt: daar staat de tekst. Rechts, waar alleen het
@@ -3620,14 +3681,14 @@ var vOpruim = (function () {
      Wat er nu gebeurt: de rand wordt een gedempte limoen hairline, de foto komt
      een stap naar voren, en het enige dat vol limoen is, is de balk onderin die
      de tijd wegtelt. Eén ding schreeuwt, en dat is het ding dat iets zegt. */
-  .hv-slide-card:has([aria-selected='true']) {
+  .hv-slide-card:has([aria-current='true']) {
     border-color: rgb(198 241 0 / .42);
     /* Dicht, waar de andere glas zijn. Zie de noot bij de achtergrond van
        .hv-slide-card: het onderscheid zit in het materiaal. */
     background: rgb(0 0 0 / .62);
     --sat: 1;
   }
-  .hv-slide-card:has([aria-selected='true'])::before { opacity: .34; }
+  .hv-slide-card:has([aria-current='true'])::before { opacity: .34; }
   /* Het merkteken op de eerste kaart. Zie de noot bij de markup: dit is een
      GEVULD pad in een kader van 702×813, dus geen stroke-eigenschappen en een
      eigen breedte — 702/813 is smaller dan vierkant, en op dezelfde hoogte als
@@ -3639,7 +3700,7 @@ var vOpruim = (function () {
     color: rgb(255 255 255 / .55);
     transition: color var(--dur-1) var(--ease);
   }
-  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-mrk { color: var(--accent); }
+  .hv-slide-card:has([aria-current='true']) .hv-slide-card-mrk { color: var(--accent); }
   .hv-slide-card-i {
     width: 20px; height: 20px; flex: none;
     fill: none; stroke: currentColor; stroke-width: 2.4;
@@ -3653,7 +3714,7 @@ var vOpruim = (function () {
   /* Alleen de kaart die aan de beurt is. Hover stond hier ook en is eruit —
      zie de noot bij hover hierboven: het limoen is het teken van "deze wel" en
      dat mag hover niet lenen. */
-  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-i { color: var(--accent); }
+  .hv-slide-card:has([aria-current='true']) .hv-slide-card-i { color: var(--accent); }
 
   /* Het label op de twee die nog niet klaar zijn. Zelfde woord als op de kaarten
      verderop op deze pagina (`svcSoonTag`), en met opzet gedempt: het is een
@@ -3681,7 +3742,7 @@ var vOpruim = (function () {
      waarom het miniatuur op 18% stond. */
   .hv-slide-card-t { min-width: 0; color: var(--paper-soft-on-dark);
     transition: color var(--dur-2) var(--ease); }
-  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-t { color: var(--paper-on-dark); }
+  .hv-slide-card:has([aria-current='true']) .hv-slide-card-t { color: var(--paper-on-dark); }
 
   /* De voortgangsbalk. Hij zit ONDERIN de kaart en niet eronder, zodat de rij
      zijn hoogte houdt als hij verschijnt — vandaar de extra 3px padding-bottom
@@ -3692,7 +3753,7 @@ var vOpruim = (function () {
      berekenen, en dat is zeven seconden lang layout-werk voor een streepje. */
   /* ── EN HIJ HEEFT EEN BAAN NODIG — 23 AUGUSTUS 2026 ──────────────────────
      De balk was limoen op een kaart die in actieve toestand een limoen RAND
-     krijgt (`:has([aria-selected='true'])` hierboven). Drie pixel limoen tegen
+     krijgt (`:has([aria-current='true'])` hierboven). Drie pixel limoen tegen
      een limoen rand van één pixel leest niet als voortgang maar als een iets
      dikkere onderrand — en dan zie je niet dát hij loopt, laat staan hoe ver.
 
@@ -3700,7 +3761,7 @@ var vOpruim = (function () {
      komt. De baan is dat tweede deel. Hij staat alleen op de actieve kaart,
      want op de vier andere loopt er niets en zou hij een streep zijn die niets
      betekent. */
-  .hv-slide-card:has([aria-selected='true'])::after {
+  .hv-slide-card:has([aria-current='true'])::after {
     content: '';
     position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
     background: rgb(255 255 255 / .18);
@@ -3715,12 +3776,14 @@ var vOpruim = (function () {
     background: var(--accent);
     transform: scaleX(0); transform-origin: left center;
   }
-  /* `:has()` en geen attribuut op de doos zelf: `aria-selected` staat op de
-     LINK erin (.hv-slide-card-main), niet op .hv-slide-card. De oude selector
-     `.hv-slide-card[aria-selected='true']` kon dus nooit raak zijn — dezelfde
+  /* `:has()` en geen attribuut op de doos zelf: de markering staat op de LINK
+     erin (.hv-slide-card-main), niet op .hv-slide-card. Een selector die het
+     attribuut op de doos zelf zocht, kon dus nooit raak zijn — dezelfde
      splitsing van 20 augustus die de regel hierboven in JavaScript brak. De
-     rest van dit blok gebruikt `:has()` al; deze regel was de uitzondering. */
-  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-bar.is-running {
+     rest van dit blok gebruikt `:has()` al; deze regel was de uitzondering.
+     (Het attribuut heette tot 2 september aria-selected; sinds de rol role=tab
+     weg is, is het aria-current. Zie de noot bij tabs.forEach in het script.) */
+  .hv-slide-card:has([aria-current='true']) .hv-slide-card-bar.is-running {
     animation: hv-slide-timer linear forwards;
     animation-duration: var(--hv-slide-ms, 7000ms);
   }
@@ -3787,7 +3850,9 @@ var vOpruim = (function () {
        Nu blijft het een rij: de kaarten schuiven, de pauzeknop staat ernaast op
        zijn eigen 44 bij 44. Dat is ook minder hoog, wat op een telefoon de
        plek is waar hoogte het duurst is. */
-    .hv-hero-foot { align-items: center; gap: .6rem; }
+    /* Ruimte rechts voor de zwevende WhatsApp-knop, die anders precies op de
+       pauzeknop van de carrousel ligt (doorlichting 4 september 2026). */
+    .hv-hero-foot { align-items: center; gap: .6rem; padding-right: 3.4rem; }
     /* `min-width: 0` is wat de rij LAAT schuiven. Een flex-item heeft van
        zichzelf `min-width: auto` = zo breed als zijn inhoud, en een
        scrollcontainer die nooit smaller wordt dan zijn inhoud, scrolt nooit. */
@@ -3984,8 +4049,20 @@ var vOpruim = (function () {
      de staffel ooit een cijfer langer wordt. */
   /* De vorm zelf staat in global.css onder `.bedrag-*`. Wat hier overblijft is
      wat van DEZE band is: de ruimte eromheen. */
-  .bedrag-reeks { margin: clamp(1.6rem, 3vw, 2.4rem) 0 0; }
-  .hv-price-unit { margin: clamp(.8rem, 1.6vw, 1.1rem) 0 0; }
+  .hv-ladder { margin: clamp(1.6rem, 3vw, 2.4rem) 0 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(1.4rem, 4vw, 4rem); align-items: end; }
+  .hv-ladder-top { --bedrag-maat: clamp(3rem, 7vw, 4.6rem); }
+  .hv-price-unit { margin: .6rem 0 0; }
+  /* De trap: vier treden, de bovenste gedempt (dat getal staat al groot
+     ernaast), de onderste vet — dáár wil je naartoe. Tabelcijfers zodat de
+     bedragen onder elkaar uitlijnen. */
+  .hv-rungs { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; min-width: 13rem; font-variant-numeric: tabular-nums; }
+  .hv-rungs-h { font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: .4rem; }
+  .hv-rungs li:not(.hv-rungs-h) { display: flex; justify-content: space-between; gap: 1.2rem; padding: .35rem 0; border-top: 1px solid var(--line); font-size: .95rem; color: var(--ink-2); }
+  .hv-rungs li.is-top { color: var(--ink-3); }
+  .hv-rungs li:not(.hv-rungs-h):last-child { color: var(--ink); font-weight: 700; }
+  .hv-rungs li:not(.hv-rungs-h):last-child .hv-rung-p { color: var(--accent); }
+  .hv-rung-n { min-width: 4.5ch; }
+  @media (max-width: 40rem) { .hv-ladder { grid-template-columns: 1fr; align-items: start; } .hv-rungs { min-width: 0; } }
   /* Het abonnement staat onder de prijs en niet in een eigen band. Een
      haarlijn erboven omdat het een tweede antwoord is op dezelfde vraag —
      zichtbaar apart, niet apart genoeg voor een eigen sectie. */
@@ -4060,6 +4137,29 @@ var vOpruim = (function () {
      rechterrand hingen op verschillende inspringing — de enige twee elementen
      op de hele pagina die dat deden. Onder de 40rem staan ze links en op volle
      breedte, zoals elke andere knoppenrij op deze site. */
+  /* ── DE VOET VAN HET PRIJSBLOK HAD HELEMAAL GEEN OPMAAK — 1 september 2026 ─
+     Lucas, met een schermafdruk: *"op meerdere plekken staat te weinig ruimte
+     tussen tekstblokken, soms raken ze elkaar bijna aan."* Dit was de scherpste
+     ervan. `.hv-price-foot` en `.hv-price-notes` stonden in de markup en hadden
+     geen enkele regel CSS: nul marge, nul padding, geen layout. De regel over
+     het abonnement liep dus recht in de regel over videoclips, en die weer in de
+     knoppen — drie dingen op elkaar, gemeten op nul pixels.
+
+     DE VORM STAAT AL OP DEZE PAGINA. `.hv-ob-foot` onder de vragen is precies
+     hetzelfde ding: een noot links, een knop rechts, met ruimte erboven. Dat is
+     wat "consistent tussen vergelijkbare secties" hier betekent — niet een nieuw
+     patroon bedenken maar het bestaande pakken. Geen haarlijn erbij: `.hv-price-plan`
+     hierboven draagt er al een, en twee lijnen onder elkaar is een streep te veel. */
+  .hv-price-foot {
+    margin-top: clamp(1.8rem, 3.5vw, 2.6rem);
+    display: flex;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .hv-price-notes { min-width: 0; }
+  .hv-price-notes p { margin: 0; max-width: 60ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
   .hv-price-cta { min-width: 0; display: flex; gap: .75rem; flex-wrap: wrap; justify-content: flex-end; }
   @media (max-width: 40rem) {
     .hv-price-cta { justify-content: stretch; flex-direction: column; }
@@ -4202,7 +4302,9 @@ var vOpruim = (function () {
     min-height: 3.4rem;
   }
   .hv-svc-card-i { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--accent-bright); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .hv-svc-card-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .01em; color: var(--ink-3); }
+  /* In pixels en niet in rem: de kaart schaalt zijn letter mee en de eyebrow
+     kwam op 10 px uit (doorlichting 4 september 2026). Elf is de vloer. */
+  .hv-svc-card-eyebrow { font-size: max(.78rem, 11.5px); font-weight: 700; letter-spacing: .01em; color: var(--ink-3); }
 
   /* HET BEELD. Staand, zoals bij Adobe (294×399 ≈ 3:4). Dat is de kern van de
      klacht "sommige foto’s zijn veel te groot": een 16:9-beeld over een halve
@@ -4310,6 +4412,10 @@ var vOpruim = (function () {
   }
 
   .hv-svc-foot { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  .hv-svc-soon { margin: 1.2rem 0 0; font-size: .95rem; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .6rem; }
+  .hv-svc-soon-tag { display: inline-block; padding: .12rem .55rem; border: 1px solid var(--line-strong); border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .hv-svc-soon a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .hv-svc-soon a:hover { color: var(--ink); }
   @keyframes hv-float {
     from { opacity: 0; transform: translateY(70px); }
     to   { opacity: 1; transform: none; }
@@ -4341,7 +4447,7 @@ var vOpruim = (function () {
      7.91–8.07:1 on this ground, well past the 3:1 a large glyph needs. */
   /* Eén lijnkleur voor alle vier. Zie de noot bij de markup. */
   .hv-pipe-n { font-family: var(--font-display); font-weight: 900; font-size: 2.4rem; line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--accent); display: block; }
-  .hv-pipe h3 { margin: 1rem 0 .45rem; font-size: 1.02rem; font-weight: 700; color: var(--ink); }
+  .hv-pipe h3 { margin: 1rem 0 var(--gap-label-note); font-size: 1.02rem; font-weight: 700; color: var(--ink); }
   .hv-pipe p { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
 
   /* The .hv-vs* rules went with the "What an order replaces" band — see the
@@ -4788,7 +4894,9 @@ var vOpruim = (function () {
   .hv-ba-points li { padding: clamp(1rem, 2vw, 1.4rem) 0; }
   .hv-ba-points li:first-child { padding-top: 0; }
   .hv-ba-points li + li { box-shadow: inset 0 1px 0 var(--line); }
-  .hv-ba-points h3 { margin: 0 0 .4rem; font-size: 1.02rem; font-weight: 700; color: var(--ink); }
+  /* --gap-label-note: dezelfde afstand als bij .hv-pipe hierboven en bij de
+     onderschriften op /video. Zie de noot bij dat token in global.css. */
+  .hv-ba-points h3 { margin: 0 0 var(--gap-label-note); font-size: 1.02rem; font-weight: 700; color: var(--ink); }
   .hv-ba-points p { margin: 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
   /* ── HET RASTER GROEIT MEE ─────────────────────────────────────────────
      Bij één paar staat het beeld naast de tekst, zoals het altijd deed. Vanaf
@@ -4824,8 +4932,54 @@ var vOpruim = (function () {
   /* ── planning backwards ────────────────────────────────────────────────── */
 
   /* ── the objections ────────────────────────────────────────────────────── */
-  .hv-ob { margin-top: clamp(2.4rem, 5vw, 4rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr)); gap: 1px; background: var(--line); }
-  .hv-ob-item { background: var(--surface); padding: clamp(1.4rem, 2.6vw, 2.1rem); display: flex; flex-direction: column; }
+  /* ── VIER VRAGEN DIE ELKAAR MET RUST LATEN — 1 september 2026 ──────────────
+     Lucas: *"Op dit moment klappen ALLE vier de FAQ-items open zodra je op één
+     ervan klikt."* Wat hij zag was echt, maar het waren niet vier open items —
+     het was er één, met drie lege vakken die even hoog werden.
+
+     Gemeten voor de reparatie: dicht stonden alle vier op 121px; na een klik op
+     de tweede stonden ze alle vier op 325px, waarvan drie leeg. Dat is
+     `align-items` op zijn standaard `stretch` in een grid: de rij krijgt de
+     hoogte van het hoogste vak en de rest rekt mee. Een <details> klapt vanzelf
+     alleen zichzelf open — dat deel werkte al — maar de LAYOUT deed alsof ze
+     alle vier meegingen, en dat is wat je op het scherm ziet.
+
+     `align-items: start` is de hele reparatie voor dat deel: elk vak wordt zo
+     hoog als zijn eigen inhoud.
+
+     ── EN TOEN KON DE HAARLIJNTRUC NIET MEER ────────────────────────────────
+     De scheidingslijnen kwamen uit `gap: 1px` met een lichte achtergrond onder
+     het raster. Die truc werkt alleen zolang alle vakken even hoog zijn; met
+     `align-items: start` worden het rafelige streepjes van verschillende
+     lengte. Ze zijn daarom vervangen door wat de rest van de site ook doet voor
+     een blok op de grond: een echt vlak met een rand en een hoek, zoals
+     `.hv-quotecard` hierboven en `.hv-ts-points > div` hieronder.
+
+     Dat lost meteen het tweede punt op — *"de achtergrond oogt inconsistent en
+     minder verzorgd"*. Gemeten: `--surface` is #08090B en de band eronder is
+     bijna dezelfde waarde, dus zonder rand lag er niets op de grond; er waren
+     alleen lijntjes tussen de vakken. Nu ligt er in beide toestanden hetzelfde
+     paneel, en verandert er bij openen precies één ding meer dan het antwoord:
+     de rand wordt sterker. Zelfde behandeling, andere sterkte. */
+  .hv-ob {
+    margin-top: clamp(2.4rem, 5vw, 4rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+    /* Dezelfde vorm als elke andere afstand op deze pagina: een clamp op de plek
+       zelf. Zie de noot bij Layout & spacing in DESIGN.md over waarom er geen
+       genummerde schaal is. */
+    gap: clamp(.7rem, 1.4vw, 1.1rem);
+    align-items: start;
+  }
+  .hv-ob-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: clamp(1.4rem, 2.6vw, 2.1rem);
+    display: flex; flex-direction: column;
+    transition: border-color var(--dur-1) var(--ease);
+  }
+  .hv-ob-item[open] { border-color: var(--line-strong); }
   /* De <summary> is de vraag. Het driehoekje moet op DRIE manieren weg, want de
      engines zijn het oneens — zie dezelfde drie regels bij .hv-q hierboven. */
   .hv-ob-item > summary {
@@ -4833,6 +4987,17 @@ var vOpruim = (function () {
     display: flex; align-items: start; justify-content: space-between; gap: 1rem;
     font-size: 1.08rem; font-weight: 700; color: var(--ink); line-height: 1.3;
   }
+  /* TWEE REGELS HOOG, OOK BIJ ÉÉN REGEL TEKST. Met `align-items: start` wordt elk
+     vak zo hoog als zijn eigen inhoud, en twee van de vier vragen lopen over twee
+     regels — dan staan er dicht vier kaarten in twee hoogtes naast elkaar. Deze
+     regel geeft de VRAAG de hoogte van twee regels; dicht staan de vier daarmee
+     gelijk, en bij openen groeit alleen de kaart die je aanklikte.
+     Op de <span> en niet op de <summary>: de summary is een flexrij met de plus
+     ernaast en meet 9px meer dan zijn inhoud, dus een minimum daar maakt de twee
+     hoogtes juist ongelijk. Gemeten: span 22 bij één regel, 45 bij twee.
+     In `em`, zodat het meegaat als de tekstgrootte hierboven verandert:
+     2.6 = twee keer de regelhoogte van 1.3. */
+  .hv-ob-item > summary > span:first-child { min-height: 2.6em; }
   .hv-ob-item > summary::marker { content: ''; }
   .hv-ob-item > summary::-webkit-details-marker { display: none; }
   .hv-ob-item > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; border-radius: var(--r-sm); }
@@ -4851,8 +5016,16 @@ var vOpruim = (function () {
   .hv-ob-item[open] .hv-ob-plus::before { background: var(--accent-bright); }
   @media (prefers-reduced-motion: reduce) {
     .hv-ob-plus::before, .hv-ob-plus::after { transition: none; }
+    .hv-ob-item { transition: none; }
+    .hv-ob-item[open] > p, .hv-ob-item[open] > .hv-ob-link { animation: none; }
   }
+  /* Het antwoord komt op, in plaats van te verschijnen. <details> kan zijn hoogte
+     niet animeren zonder eigenschappen die nog niet overal zijn; een korte fade
+     op de inhoud geeft dezelfde rust en valt in elke browser terug op "gewoon
+     zichtbaar". */
   .hv-ob-item p { margin: .9rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-ob-item[open] > p, .hv-ob-item[open] > .hv-ob-link { animation: obIn var(--dur-1) var(--ease) both; }
+  @keyframes obIn { from { opacity: 0; } to { opacity: 1; } }
   .hv-ob-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
   .hv-ob-foot p { margin: 0; max-width: 60ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
   .hv-ob-link { margin-top: auto; padding-top: 1.2rem; font-size: .85rem; font-weight: 700; color: var(--accent); }

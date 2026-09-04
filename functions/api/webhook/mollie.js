@@ -65,13 +65,15 @@ import { paymentMismatch } from '../../../src/data/vat.js';
 import { productsFor } from '../../../src/data/plans.js';
 import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
+import { mailCreditNote } from '../../../src/lib/cancelMail.js';
 import { notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
 import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
 import { grantSlots } from '../../../src/lib/slots.js';
-import { pauseSubscription } from '../../../src/lib/subscription.js';
+import { pauseSubscription, loadSubscription, subscriptionByRef } from '../../../src/lib/subscription.js';
+import { koppelSubscription } from '../../../src/lib/subscribe.js';
 import { payerHash } from '../../../src/lib/payer.js';
 
 /*
@@ -271,7 +273,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   try {
-    await recordPaid(env, payment, mode);
+    await recordPaid(env, payment, mode, new URL(request.url).origin);
   } catch (e) {
     // A failed write is the one thing genuinely worth a retry: the customer
     // has paid and the order does not know it.
@@ -316,16 +318,28 @@ export async function onRequestPost({ request, env }) {
  * aanbieden verandert niets aan een rij die er niet is — maar wel een foutregel
  * die de subscription-id noemt, want dat is het enige waarmee je hem terugvindt.
  */
-async function recordSubscriptionPaid(env, payment, mode) {
-  const subId = String(payment.subscriptionId);
+async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}) {
+  const subId = String(payment.subscriptionId || '');
   const cents = mollieAmountToCents(payment.amount) ?? 0;
 
   let sub;
   try {
-    sub = await env.DB.prepare(
-      `SELECT id, customer_id, plan, term, status, amount_cents, slots_json
-         FROM subscriptions WHERE mollie_subscription_id = ?1`
-    ).bind(subId).first();
+    /* ── DE EERSTE BETALING KOMT HIER OOK LANGS — 4 september 2026 ─────────
+       Zij heeft geen `subscriptionId` (dat veld krijgt Mollie pas bij de termijnen
+       uit het mandaat) maar wél `metadata.sub_ref`, en sinds vandaag is zij de
+       eerste MAAND en niet meer een euro voor de machtiging — zie de noot bij
+       createFirstPayment() in src/lib/subscribe.js. Dus wordt zij hier op het
+       kenmerk gevonden en verder precies zo behandeld als elke termijn: een rij in
+       subscription_payments, de maand toegekend, de slots gezet. */
+    sub = subRef
+      ? await env.DB.prepare(
+        `SELECT id, customer_id, plan, term, status, amount_cents, slots_json
+           FROM subscriptions WHERE ref = ?1`
+      ).bind(String(subRef)).first()
+      : await env.DB.prepare(
+        `SELECT id, customer_id, plan, term, status, amount_cents, slots_json
+           FROM subscriptions WHERE mollie_subscription_id = ?1`
+      ).bind(subId).first();
   } catch (err) {
     // Zonder migratie 0030 bestaat de tabel niet. Dat is geen reden om Mollie een
     // 500 te geven — hij zou het blijven proberen — maar het is wel een reden om
@@ -336,7 +350,7 @@ async function recordSubscriptionPaid(env, payment, mode) {
   }
 
   if (!sub) {
-    console.error('[mollie-webhook] betaling voor onbekend abonnement', subId, '—', payment.id, `(${mode})`);
+    console.error('[mollie-webhook] betaling voor onbekend abonnement', subRef || subId, '—', payment.id, `(${mode})`);
     return;
   }
 
@@ -621,7 +635,7 @@ async function betalingId(env, externalId) {
   return rij ? rij.id : null;
 }
 
-async function recordPaid(env, payment, mode) {
+async function recordPaid(env, payment, mode, origin = '') {
   // metadata comes back as whatever was sent. order.js sends an object; a
   // string is accepted too so a payment created by hand in Mollie's dashboard
   // (which is the natural way to test this) can still be tied to an order.
@@ -651,24 +665,37 @@ async function recordPaid(env, payment, mode) {
     return;
   }
 
-  /* ── DE € 1 VAN HET MANDAAT ────────────────────────────────────────────────
-     20 augustus 2026. Deze betaling heeft geen `order_ref` (createFirstPayment()
-     zet `sub_ref`) en ook geen `subscriptionId` — dat veld krijgt Mollie pas bij
-     de termijnen die uit het mandaat volgen. Ze viel dus in de tak hieronder en
-     leverde bij ELKE nieuwe abonnee een rode regel op: "paid payment carries no
-     order_ref". Een logboek dat bij normaal gedrag alarm slaat, is een logboek
-     dat niemand meer leest — precies het argument dat twintig regels hoger staat
-     voor de abonnementstak.
-
-     Wat hier NIET gebeurt en wat opzettelijk een openstaand punt is: er wordt
-     geen rij weggeschreven. Het abonnement wordt niet hier geactiveerd maar op de
-     terugkeerpagina (activeerAbonnement() in src/lib/subscribe.js haalt het
-     mandaat op), dus de keten loopt zonder deze webhook. Maar die euro ís
-     ontvangen en staat nergens — of daar een factuur bij hoort is een vraag over
-     btw en niet over code, en die hoort Lucas te beantwoorden voordat er iets
-     wordt vastgelegd wat later niet meer klopt. */
+  /* ── DE EERSTE MAAND VAN EEN ABONNEMENT ─────────────────────────────────
+     Deze betaling heeft geen `order_ref` (createFirstPayment() zet `sub_ref`) en
+     ook geen `subscriptionId` — dat veld krijgt Mollie pas bij de termijnen die
+     uit het mandaat volgen. Tot 20 augustus 2026 leverde zij daardoor bij elke
+     nieuwe abonnee een rode regel op; tot 4 september was zij een euro voor het
+     mandaat die nergens werd vastgelegd. Nu is zij de eerste maand en loopt zij
+     door dezelfde functie als elke termijn. */
   if (!ref && meta && meta.sub_ref) {
-    console.log('[mollie-webhook] mandaatbetaling voor abonnement', String(meta.sub_ref), '—', payment.id, `(${mode})`);
+    /* Sinds 4 september 2026 is dit de eerste maand en niet meer de euro van het
+       mandaat: hij wordt vastgelegd en toegekend als elke andere termijn. Het
+       openstaande punt hierboven ("die euro staat nergens") is daarmee ook weg —
+       er is een rij in subscription_payments en issuePendingInvoices() maakt er
+       de factuur van. */
+    console.log('[mollie-webhook] eerste maand voor abonnement', String(meta.sub_ref), '—', payment.id, `(${mode})`);
+    await recordSubscriptionPaid(env, payment, mode, { subRef: String(meta.sub_ref) });
+    /* En de Mollie-subscription erbij als die er nog niet is — normaal doet de
+       terugkeerpagina dat, maar een klant die zijn tabblad sluit komt daar nooit.
+       Zie koppelSubscription() in src/lib/subscribe.js. Zonder origin (in een
+       toets) wordt dit overgeslagen; de terugkeerpagina vangt het dan op. */
+    if (origin) {
+      try {
+        const rij = await subscriptionByRef(env, String(meta.sub_ref));
+        const vol = rij ? await loadSubscription(env, rij.customer_id) : null;
+        if (vol && !vol.mollie_subscription_id) {
+          const uit = await koppelSubscription(env, vol, origin);
+          console.log('[mollie-webhook] subscription gekoppeld vanuit de webhook:', uit.staat, '—', String(meta.sub_ref));
+        }
+      } catch (err) {
+        console.error('[mollie-webhook] subscription koppelen vanuit de webhook mislukt —', err?.message || err);
+      }
+    }
     return;
   }
 
@@ -912,6 +939,17 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
         reason: order.cancel_reason || null,
       });
       if (note) console.log(`[mollie-webhook] creditnota ${note.number} voor ${ref} (${note.status})`);
+      /* ── EN DE NOTA GAAT NAAR DE KLANT — 4 september 2026 ──────────────────
+         De factuur werd gemaild (mailInvoice hieronder), de creditnota niet: die
+         stond alleen in Studio. mailCreditNote() stuurt alleen een nota met
+         status 'issued' — bleef hij op 'pending' omdat de pdf niet lukte, dan
+         mailt de nachtelijke taak hem zodra die hem alsnog uitgeeft. Best effort,
+         binnen dezelfde try: de boeking hierboven is al gedaan. */
+      if (note && note.status === 'issued') {
+        const wie = await env.DB.prepare('SELECT ref, email, lang FROM orders WHERE id = ?1')
+          .bind(order.id).first().catch(() => null);
+        if (wie) await mailCreditNote(env, { order: wie, note });
+      }
     } catch (err) {
       console.error('[mollie-webhook] creditnota niet uitgegeven voor', ref, '—', err?.message || err);
     }

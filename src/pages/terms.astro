@@ -118,7 +118,7 @@ import {
 // 12 and on four other pages as well; a typed number in a CONTRACT is the most
 // expensive version of that drift, because the client may rely on the text while
 // the nightly task obeys the constant. tests/legal.test.mjs holds this.
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
 
 /* ── §4 TYPT GEEN PRIJZEN MEER DIE WEL BESTAAN — 23 AUGUSTUS 2026 ───────────
  *
@@ -136,6 +136,9 @@ import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
 import { AMOUNT, clause } from '../data/pricing.js';
 import { PLAN_IDS, monthlyCents } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../data/juridischeDatums.js';
 
 /* Van–tot over de drie plannen, op de maandtermijn: dat is het bedrag dat op
    /plans het grootst wordt afgedrukt. De jaartermijn is goedkoper en zou hier
@@ -164,9 +167,9 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
   <section class="page-hero">
     <div class="container narrow">
       <span class="eyebrow-page">Legal</span>
-      <h1 class="display" style="font-size:var(--t-page-h1)">Terms of Service</h1>
+      <h1 class="display">Terms of Service</h1>
       <p class="lead" style="margin-top:1.2rem">The terms that apply when you order product visuals from VISUAILS. Please read them before placing an order.</p>
-      <p class="legal-meta">Last updated: August 2026</p>
+      <p class="legal-meta">{bijgewerktOp('terms', 'en')}</p>
     </div>
   </section>
 
@@ -232,10 +235,10 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>Three periods are fixed, and they are deliberately different lengths:</p>
       <ul>
         <li><strong>Source material</strong> — the photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask in writing before then and we will agree it with you.</li>
-        <li><strong>Delivered visuals</strong> — we keep your finished visuals for {DELIVERY_MONTHS} months from delivery. A delivery outlives the material it was made from.</li>
+        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We may keep a copy in our own archive, but that is not a guarantee.</li>
         <li><strong>Your order link</strong> — the private link you download from works for {UPLOAD_DAYS} days after your order closes, then it stops. If you need the files after that, email us and we will send a new link.</li>
       </ul>
-      <p>Keep your own copy of anything you rely on: after {DELIVERY_MONTHS} months we cannot guarantee a re-download. How we handle your personal data more generally, including how that private link is protected, is set out in our <a href="/privacy/">Privacy Policy</a>.</p>
+      <p>Keep your own copy of anything you rely on: after {DELIVERY_DAYS} days we cannot guarantee a re-download. Still need older images, get in touch — we check whether they are still with us. How we handle your personal data more generally, including how that private link is protected, is set out in our <a href="/privacy/">Privacy Policy</a>.</p>
 
       <h2>8. Intellectual property &amp; usage rights</h2>
       <p>You retain all rights to your own product and brand assets — the source material you provide. Nothing here touches those.</p>
@@ -260,6 +263,17 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p><strong>The licence you give us, and where it stops.</strong> Making the visuals means copying your photo, cropping it, editing it and sending it to the parties named in our <a href="/data-processing-agreement/">Data Processing Agreement</a>. Every one of those steps needs your permission, because the copyright in that photo is yours and not ours. So you grant VISUAILS a licence to store, copy, crop, edit and adapt the source material you supply, and to submit it to those parties, <strong>for the single purpose of producing and delivering your order</strong>. That licence is non-exclusive, royalty-free, worldwide in reach only because the infrastructure is, and it lasts no longer than we hold the material under §7. It transfers no ownership. We do not use your material for another client, we do not use it to build a model or a dataset of our own, and we do not use it for a purpose you have not asked for. You may withdraw the licence in writing at any time; we then stop work and delete, and what has already been delivered stays yours to use under this section.</p>
       <p><strong>Our portfolio — the one thing we keep back, and why it has to be written down.</strong> The licence above is exclusive, and exclusive means exclusive: without this paragraph we would be infringing your rights by showing our own work. So we reserve one narrow right for ourselves, and it is the only carve-out in this section. We may show <em>delivered visuals</em> — never your source material — in our portfolio, in a case study and on our own channels, unless you tell us in writing not to. We may not sell them, licence them to anyone else, or use them to advertise a different product.</p>
       <p>Two limits, and the first is the one that matters commercially. <strong>If the product in the image is not yet publicly available, we publish nothing</strong> until you have launched it or have said yes in writing, whichever comes first — a visual of an unreleased product is your commercial secret before it is our showpiece. And you can withdraw this at any time, in one line by email, also years later and also for work already on our site; we take it down. We are asking rather than assuming, and a supplier who needs a clause to keep showing work a client has asked him to remove has a bigger problem than a portfolio.</p>
+
+      <!-- ── DE GEDEELDE MAANDSET — 2 september 2026 ────────────────────────
+           Alles hierboven in §8 gaat over EEN BESTELLING, en daar is de licentie
+           exclusief. Voor de merkneutrale maandset die bij een abonnement hoort
+           kan dat niet: dezelfde beelden gaan naar elke abonnee, en twintig
+           exclusieve licenties op hetzelfde beeld sluiten elkaar uit. Tot vandaag
+           stond die uitzondering nergens, terwijl de set al op /plans beloofd
+           werd — de tegenstrijdigheid zat dus in de voorwaarden zelf en niet in
+           de copy. Zie de noot bij gedeeldeLicentie() in src/lib/scaffold.js;
+           die twee teksten horen hetzelfde te zeggen. -->
+      <p><strong>One exception, and it is the shared monthly set.</strong> Everything above describes an <em>order</em>, where the licence is exclusive. The brand-neutral set that comes with a plan works differently, because the same images go to every brand on a plan: there your licence is <strong>non-exclusive</strong>. Every power in the list above still applies — reproduce, adapt, use commercially, sublicense, transfer with the business, no volume or territory limit, no term — and so does the AI disclosure. What does not apply is exclusivity: an image you post can appear on another brand, the same way a face from our shared model roster can. We say which set you are getting in the licence file that ships with it, and we do not describe a shared image as exclusive anywhere. Imagery made for your brand alone is a regular order or <a href="/editions/">Editions</a>, and that is exclusive under the paragraphs above. <strong>If you cancel, the non-exclusive licence stays</strong> on everything you downloaded up to that point — nothing has to come down; you simply stop receiving new sets.</p>
 
       <h2>9. Payment &amp; VAT</h2>
       <p>Payment is handled through our payment provider. Invoices are issued for your records. For EU business customers with a valid VAT number, the reverse-charge mechanism may apply where the conditions are met; otherwise Dutch VAT rules apply. You are responsible for providing accurate billing and VAT details.</p>
@@ -341,15 +355,11 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 </Layout>
 
 <style>
-  /* Legal-text typography — page-scoped, plain and scannable by design. */
-  .narrow { max-width: 820px; }
-  .legal h2 { margin-top: 2.6rem; font-size: 1.5rem; }
-  .legal h3 { margin-top: 1.6rem; font-size: 1.1rem; color: var(--ink); }
-  .legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
-  .legal p { margin-top: 0.9rem; }
-  .legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
-  .legal ul li { list-style: disc; }
-  .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
-  .legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
-  .legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
+  /* De opmaak van een juridische pagina staat sinds 3 september 2026 één keer in
+     src/styles/global.css, bij `.legal` — zie de noot daar. Hij stond hier, en in
+     vijf andere bestanden, met exact dezelfde regels; en de drie pagina's waar hij
+     op 24 augustus wél uit werd gehaald, kregen daardoor koppen van 52,8px waar
+     deze er 24 had. Nu één bron, en alle zes gelijk. `.narrow { 820px }` is niet
+     meegegaan: 760px (--container-narrow) is de maat die de ladder bij --container
+     aan juist deze pagina's geeft. */
 </style>

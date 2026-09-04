@@ -122,6 +122,30 @@ Nothing else needs setting here. `functions/` at the repo root is picked up
 automatically — you do not configure it, and it does not go in the output
 directory.
 
+### Eén omgevingsvariabele die er wél toe doet: `GIT_DEPTH`
+
+**Zet `GIT_DEPTH` op `0`** (Settings → Environment variables, voor Production én
+Preview). `0` betekent "geen limiet": de volledige geschiedenis.
+
+Waarom: sinds 3 september 2026 haalt `scripts/gewijzigd-op.mjs` de `dateModified` van
+elke pagina uit de git-geschiedenis, en die zet ook de `<lastmod>` in de sitemap en de
+datum achter elke regel in `/llms.txt`. Een bouwomgeving die het project ondiep kloont
+(`git clone --depth 1`) heeft die geschiedenis niet: dan geeft git aan élk bestand de
+datum van de laatste commit, en zou de hele site beweren dat hij vandaag is veranderd —
+elke deploy opnieuw.
+
+Dat gebeurt niet, want het script controleert het en **laat de datums dan helemaal
+weg**. Maar dan staan ze er in productie dus niet, terwijl ze op je eigen machine wél
+verschijnen, en dat is een verschil dat je pas ziet als je ernaar zoekt. Herken het aan
+deze regel in het bouwlogboek:
+
+```
+[visuails:gewijzigd-op] gewijzigd-op: kloon blijft ondiep — GEEN datums.
+```
+
+Staat die er, dan is `GIT_DEPTH` niet gezet (of niet doorgekomen). Staat er in plaats
+daarvan `dateModified op 90 pagina's over N verschillende dagen`, dan is het goed.
+
 `wrangler.toml` already carries `pages_build_output_dir = "dist"`,
 `compatibility_date = "2026-07-01"` and `compatibility_flags =
 ["nodejs_compat"]`. Leave the binding blocks in it commented out; they are

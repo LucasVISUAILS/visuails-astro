@@ -57,6 +57,7 @@ import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
 import TierCompare from './TierCompare.astro';
 import Placeholder from './Placeholder.astro';
+import StyleRows from './StyleRows.astro';
 import { catalogStyles as catalogStylesEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
 
@@ -329,6 +330,35 @@ const COPY = {
 const c = COPY[lang];
 const shots = SHOTS[lang];
 const nl = lang === 'nl';
+
+/* ── ELKE STIJL ZIJN EIGEN REGEL, DE EIGEN LOOK BOVENAAN — 4 september 2026 ──
+   Zie de kop van StyleRows.astro. De foto's voor Classic komen morgen; tot
+   dan de getekende scène. */
+const naarRij = (s: (typeof styles)[number]) => ({
+  slug: s.slug,
+  name: s.name,
+  tagline: s.tagline,
+  desc: s.cardDesc,
+  price: s.cardPrice,
+  bestFor: s.bestFor || [],
+  media: { icon: s.cardIcon, width: s.cardWidth, badge: `Catalog · ${s.name}` },
+  /* Tot de foto's er zijn (morgen): Classic het ene geleverde beeld, de rest
+     als "foto volgt"-kaart; Eigen merk de getekende scène. */
+  /* Classic is een set van vier: de voorkant staat er; achterkant, detail en
+     op-model komen als foto en staan tot dan met hun naam als "foto volgt". */
+  photos: s.slug === 'classic'
+    ? [{ src: '/img/catalog-after.webp', w: 1800, h: 1800, alt: c.exploreLabel(s.name) },
+       { label: nl ? 'Achterkant' : 'Back' }, { label: 'Detail' }, { label: nl ? 'Op een model' : 'On a model' }]
+    : [{ icon: s.cardIcon, width: s.cardWidth, badge: `Catalog · ${s.name}` }],
+  before: s.slug === 'classic' ? { src: '/img/catalog-before-1x1.webp', alt: '' } : undefined,
+  tint: s.slug === 'classic' ? '#d9d9d2' : '#C6F100',
+  detailHref: lp(`/catalog/${s.slug}`),
+  detailLabel: c.exploreLabel(s.name),
+  orderHref: s.orderHref,
+  orderLabel: s.orderLabel || (nl ? `Bestel ${s.name}` : `Order ${s.name}`),
+});
+const eigenLook = naarRij(styles.find((s) => s.slug === 'custom')!);
+const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
 ---
 
 <section class="page-hero">
@@ -447,30 +477,9 @@ const nl = lang === 'nl';
 
     Het is ook de volgorde die het meest visueel is: je ziet eerst waaruit je
     kiest en leest daarna waarom. */}
-<section>
-  <div class="container">
-    <h2 class="section-h">{c.stylesH}</h2>
-    <div class="grid grid-2">
-      {styles.map((s) => (
-        <div class="card card-hover reveal pending">
-          {/* Een lagere band is hier geprobeerd en weer teruggedraaid; de reden
-              staat bij `.vis.band` in global.css. */}
-          <div class="svc-media">
-            <ProductScene icon={s.cardIcon} width={s.cardWidth} badge={`Catalog · ${s.name}`} wide />
-          </div>
-          <div class="svc-body">
-            <h3>{s.name}</h3>
-            <span class="svc-price">{s.cardPrice}</span>
-            <p>{s.cardDesc}</p>
-            <div class="flex" style="margin-top:1.2rem">
-              <a href={lp(`/catalog/${s.slug}`)} class="btn btn-primary">{c.exploreLabel(s.name)}</a>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
+{/* Eén regel per stijl, de eigen look bovenaan — 4 september 2026. Hier stond
+    een raster van twee kaarten. Zie StyleRows.astro. */}
+<StyleRows lang={lang} h={c.stylesH} lead={eigenLook} items={vasteLooks} />
 
 <section class="section-tight">
   <div class="container">
@@ -519,36 +528,16 @@ const nl = lang === 'nl';
 
 <section class="section-tight">
   <div class="container">
-    <div class="photo-split reveal pending">
-      {/* ── EEN ECHTE FOTO, EN WEL DE INVOER — 31 AUGUSTUS 2026 ────────────
-          Hier stond een getekend potje op een grijs verloop, terwijl /lifestyle
-          en /video op precies dezelfde plek in precies dezelfde `.photo-split`
-          een echte foto dragen. Drie zusterpagina's, dezelfde sectie, twee
-          behandelingen — en de tekening stond op de pagina die fotografie
-          verkoopt.
-
-          WELKE FOTO DAN. Er staan twee echte catalogbeelden op schijf: het
-          geleverde beeld en de telefoonfoto waaruit het is gemaakt. Het
-          geleverde beeld draagt sinds vandaag de hero. Wat hier hoort is dus
-          de andere, en dat is ook inhoudelijk de juiste: stap één van deze
-          drie is "stuur ons een foto", en dit ÍS die foto — een gewassen shirt
-          plat op een kantoortafel, met de bureaustoelen in beeld.
-
-          Het bijschrift zegt wat je ziet. Zonder dat leest een telefoonfoto op
-          een verkooppagina als slecht werk in plaats van als het beginpunt. */}
-      <div class="photo-band tall">
-        <img src="/img/catalog-before-1x1.webp" alt={c.stepsAlt} loading="lazy" decoding="async" width="1350" height="1350" />
-        <div class="scrim"></div>
-        <div class="caption"><p style="font-size:.9rem">{c.stepsCap}</p></div>
-      </div>
-      <div>
-        <h2>{c.stepsH}</h2>
-        <div class="steps steps-stacked" style="margin-top:1.6rem">
-          {c.steps.map(([h, p], i) => (
-            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
-          ))}
-        </div>
-      </div>
+    {/* ── DRIE STAPPEN OP ÉÉN RIJ — doorlichting 4 september 2026 ──────────
+        Hier stond een fotosplit van ~1.000 px: een foto links, de drie stappen
+        gestapeld rechts. De foto staat sinds de waaiers al hoger op de pagina;
+        wat overblijft zijn drie korte stappen, en die passen naast elkaar.
+        Zelfde `.steps`-raster als de homepage. */}
+    <h2 class="section-h">{c.stepsH}</h2>
+    <div class="steps reveal-group">
+      {c.steps.map(([h, p], i) => (
+        <div class="step reveal pending"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+      ))}
     </div>
   </div>
 </section>

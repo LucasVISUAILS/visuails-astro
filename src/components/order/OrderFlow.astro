@@ -1,5 +1,7 @@
 ---
-import { waHref } from '../../data/whatsapp.js';
+import { waHref, WHATSAPP_DISPLAY } from '../../data/whatsapp.js';
+/* Het adres staat als tekst in schema.js en de voettekst; hier één constante. */
+const CONTACT_EMAIL = 'hello@visuails.com';
 // VISUAILS — the order pipeline, shared by every service that has a real flow.
 //
 // WHY THIS IS A COMPONENT AND NOT A PAGE
@@ -40,7 +42,7 @@ import {
   TIERS, reviewClaim, euro, TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES,
   TIER_ROWS, tierRow, tierRowLabels, turnaround,
   ladderRate, ladderFloor, LADDER, vatLabel, vatLead, vatDetail,
-  WINDOW_THRESHOLD,
+  WINDOW_THRESHOLD, FORM_MAX_PRODUCTS,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
   AMOUNT, clause,
@@ -139,9 +141,16 @@ const { lang, service, mode = 'order', hero = true } = Astro.props;
  * Terugval op ATTENDED_PER_WINDOW als de dienst geen gewicht heeft: dan is dit
  * geen ladderdienst en komt hij nooit bij de poort — zie tierFor() in pricing.js. */
 const perProduct = kindImages(service, 1);
-const maxProducts = perProduct
+const capacityMax = perProduct
   ? Math.floor(ATTENDED_IMAGES_PER_WINDOW / perProduct)
   : ATTENDED_PER_WINDOW;
+/* ── EN HET FORMULIER STOPT BIJ TWINTIG — 3 september 2026 ──────────────────
+ * Zie FORM_MAX_PRODUCTS in pricing.js. Boven dat aantal biedt stap 1 geen
+ * keuzelijst meer aan maar twee knoppen (WhatsApp, mail); wat de studio in een
+ * week kwijt kan blijft de zaak van de agenda. De laagste van de twee, zodat een
+ * dienst met een kleinere weekcapaciteit dan twintig nooit meer aanbiedt dan de
+ * poort kan waarmaken. */
+const maxProducts = Math.min(FORM_MAX_PRODUCTS, capacityMax);
 
 const isSample = mode === 'sample';
 const lp = (p: string) => localizedPath(lang, p);
@@ -532,9 +541,16 @@ for (const l of ['en', 'nl'] as const) {
     extraNoteErr: s.extraNoteErr,
     extraShotHint: s.extraShotHint,
     ownModel: s.ownModel,
+    ownLook: s.ownLook,
+    ownLookH: s.ownLookH,
+    ownLookHint: s.ownLookHint,
+    ownLookNone: s.ownLookNone,
     trayAssign: s.trayAssign,
     progress: s.progress,
     progressOne: s.progressOne,
+    missingH: s.missingH,
+    missingHOne: s.missingHOne,
+    missingMore: s.missingMore,
     allDoneOne: s.allDoneOne,
     progressExtra: s.progressExtra,
     progressExtraOne: s.progressExtraOne,
@@ -547,6 +563,9 @@ for (const l of ['en', 'nl'] as const) {
     toggle: l === 'nl' ? 'Toon de foto’s en de vraag' : 'Show the photos and the question',
     placeIn: l === 'nl' ? 'Plaats bij' : 'Place in',
     shot: Object.fromEntries(SHOTS.map((x) => [x.id, x.name[l]])),
+    /* Eén regel per vakje, uit shots.js `how` — de uitleg staat sinds 3 september
+       onder de kaarten ingeklapt, dus het vakje moet zelf zeggen wat erin hoort. */
+    how: Object.fromEntries(SHOTS.map((x) => [x.id, x.how[l]])),
 
     /* ── DE AFWIJKING PER BEELD, ALLEEN BIJ LIFESTYLE ──────────────────────
      * Lucas: *"Bij lifestyle moeten deze wel per foto ingesteld kunnen worden
@@ -572,9 +591,12 @@ for (const l of ['en', 'nl'] as const) {
      * verwachting die je niet wilt wekken op het scherm waar iemand betaalt.
      * Het aantal komt uit CATALOG_IMAGES en wordt niet overgetypt. */
     refAdd: l === 'nl' ? 'Nog een foto' : 'Another photo',
+    /* Per DIENST, 3 september 2026: een lifestyle-carousel levert er drie, en
+       deze regel zei op elke bestelpagina "4 beelden". Zelfde fout als
+       shots.js §back.buys beschrijft; nu uit kindImages(). */
     refHint: l === 'nl'
-      ? `Gratis. Meer foto’s van hetzelfde product helpen ons — je krijgt nog steeds ${CATALOG_IMAGES} beelden.`
-      : `Free. More photos of the same product help us — you still receive ${CATALOG_IMAGES} images.`,
+      ? `Gratis. Meer foto’s van hetzelfde product helpen ons — je krijgt nog steeds ${kindImages(service, 1) || CATALOG_IMAGES} beelden.`
+      : `Free. More photos of the same product help us — you still receive ${kindImages(service, 1) || CATALOG_IMAGES} images.`,
     refSlot: l === 'nl' ? 'Referentie {n}' : 'Reference {n}',
     refFull: l === 'nl'
       ? 'Dat zijn er {max} — genoeg om je product goed te zien.'
@@ -662,11 +684,14 @@ const REQUIRED_COPY = [
   'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
   'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.listAnd', 'pu.trayAssign',
   'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate', 'pu.ownModel',
+  'pu.ownLook', 'pu.ownLookH', 'pu.ownLookHint', 'pu.ownLookNone',
   'pu.extraSlot', 'pu.extraNoteLabel', 'pu.extraNoteErr', 'pu.extraShotHint',
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
+  'pu.missingH', 'pu.missingHOne', 'pu.missingMore',
   'pu.allDone', 'pu.allDoneOne',
   'pu.product', 'pu.add', 'pu.toggle', 'pu.placeIn',
   ...SHOT_IDS.map((id) => `pu.shot.${id}`),
+  ...SHOT_IDS.map((id) => `pu.how.${id}`),
   // Ook als deze stroom geen afwijking per beeld heeft. De sleutels staan altijd
   // in de blob, want een dienst die hem morgen wél krijgt, hoort geen kaart met
   // een leeg label te tekenen — dat is precies wat deze lijst voorkomt.
@@ -753,7 +778,19 @@ const FORM = {
       h: 'How many, and what for?',
       countLabel: 'How many products?',
       countPick: 'Choose a number',
-      countHint: `Above ${maxProducts} we plan it with you — take the last option.`,
+      countHint: `Up to ${maxProducts} products in one order. The rate per product drops at 5, 10 and ${maxProducts}.`,
+      qtyDec: 'One fewer',
+      qtyInc: 'One more',
+      qtyQuick: 'Quick pick',
+      moreBtn: `More than ${maxProducts} products?`,
+      moreH: `More than ${maxProducts} products — we plan that with you`,
+      moreBody: `That is more than one order holds, so we split it over delivery dates together and you get one quote. Send us the number and a link to your shop; we usually answer the same day.`,
+      moreWa: 'Send a WhatsApp',
+      moreWaText: `Hi VISUAILS, I want more than ${maxProducts} products photographed. `,
+      moreMail: 'Send an email',
+      moreMailSubject: `More than ${maxProducts} products`,
+      moreMailBody: `Hi VISUAILS,\n\nI want more than ${maxProducts} products photographed.\nRoughly how many: \nMy shop: \nWhen it should be live: \n`,
+      moreBack: `Fewer than ${maxProducts}? Choose a number instead`,
       /* ── De soortkeuze op de proefvisual, 11 augustus 2026 ─────────────────
          Wat je krijgt staat naast de naam en niet eronder in een hint: het is
          het verschil waarop je kiest, en dat hoort niet in kleine letters. De
@@ -774,6 +811,8 @@ const FORM = {
       vatDetail: vatDetail('en'),
       displayNote: 'A preview, worked out in your browser. The invoice is calculated again on our side, from the same price per product.',
       outfitLabel: 'Any complete outfits in here? (trousers, top and shoes together)',
+      outfitCatalogShort: 'One product per catalog set.',
+      outfitCatalogTerm: 'complete looks',
       outfitCatalogNote: 'A catalog set is priced and shot per product, so complete looks are not part of this order. Need one because it matters to the brand? Ask us and we will look at it with you.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS}.`,
       outfitWhy: 'Why a complete look costs more',
@@ -857,7 +896,7 @@ const FORM = {
       lead: 'Checked against the real calendar rather than promised.',
       checking: 'Checking the calendar…',
       queueH: 'This order does not need a reserved delivery date',
-      queueBody: 'Orders under the threshold are produced in the order they arrive.',
+      queueBody: `Orders of up to ${WINDOW_THRESHOLD - 1} products are produced in the order they arrive — usually ${turnaround('unattended', 'en')}.`,
       okH: 'These delivery dates can be held for you',
       okBody: 'Pick one. Nothing is reserved by looking at it — the delivery date is held when this order arrives, and confirmed before anything is invoiced.',
       okMax: 'Per date we hold room for up to',
@@ -882,10 +921,10 @@ const FORM = {
       afterH: 'What happens after you press send',
       after: [
         'You get a confirmation with a reference, immediately.',
-        'An order with a reserved delivery date is invoiced once that delivery date is confirmed and before production starts. A standard order is invoiced on delivery.',
-        'An order with a reserved delivery date lands in a portal you approve image by image. A standard order arrives as a download link.',
+        'You pay straight away or through the link in your confirmation email; production starts once the payment is in. A reserved delivery date is held for seven days while you pay.',
+        'Every order lands in VISUAILS Studio, where you approve and download image by image — a standard order too. The direct link is in your email as well.',
       ],
-      payNote: 'There is no card form here on purpose. You are confirming an order — the payment link arrives by email the moment it is in, and your reserved delivery date is held for seven days while you pay.',
+      payNote: 'No card details here. You are confirming an order — right after sending you can pay straight away, or later through the link in your confirmation email. Production starts once the payment is in, and a reserved delivery date is held for seven days while you pay.',
       submit: 'Send this order',
       legal: ['By sending this order you agree to our ', ' and ', '.'],
       legalTerms: 'terms',
@@ -926,7 +965,7 @@ const FORM = {
     ],
     footH: 'Not ready to order?',
     footBody: `${sample.deliverable}, made from one of your own products — for ${sample.price}, ${sample.unit}. Made the same way as a paid order.`,
-    footCta: `Try a test sample · ${sample.price}`,
+    footCta: sample.cta,
     footWa: 'Ask on WhatsApp',
     // De knop stond op een kale wa.me-link: WhatsApp opende met een leeg
     // invoerveld, zodat wie hier klikt zelf moet bedenken wat hij schrijft —
@@ -960,7 +999,19 @@ const FORM = {
       h: 'Hoeveel, en waarvoor?',
       countLabel: 'Hoeveel producten?',
       countPick: 'Kies een aantal',
-      countHint: `Boven ${maxProducts} plannen we het samen — kies de laatste optie.`,
+      countHint: `Tot ${maxProducts} producten in één bestelling. Het tarief per product zakt bij 5, 10 en ${maxProducts}.`,
+      qtyDec: 'Eén minder',
+      qtyInc: 'Eén meer',
+      qtyQuick: 'Snel kiezen',
+      moreBtn: `Meer dan ${maxProducts} producten?`,
+      moreH: `Meer dan ${maxProducts} producten — dat plannen we samen`,
+      moreBody: `Dat is meer dan er in één bestelling past, dus we verdelen het samen over leverdata en je krijgt één offerte. Stuur ons het aantal en een link naar je shop; we antwoorden meestal dezelfde dag.`,
+      moreWa: 'Stuur een WhatsApp',
+      moreWaText: `Hoi VISUAILS, ik wil meer dan ${maxProducts} producten laten fotograferen. `,
+      moreMail: 'Stuur een mail',
+      moreMailSubject: `Meer dan ${maxProducts} producten`,
+      moreMailBody: `Hoi VISUAILS,\n\nIk wil meer dan ${maxProducts} producten laten fotograferen.\nOngeveer hoeveel: \nMijn shop: \nWanneer het live moet: \n`,
+      moreBack: `Toch ${maxProducts} of minder? Kies dan een aantal`,
       /* Zie de noot bij de Engelse tegenhanger. */
       sampleKindLabel: 'Wat maken we voor je?',
       sampleKindCatalog: 'Catalogset',
@@ -977,6 +1028,8 @@ const FORM = {
       vatDetail: vatDetail('nl'),
       displayNote: 'Dit rekent je browser uit. Op de factuur rekenen wij het opnieuw uit, met dezelfde prijs per product.',
       outfitLabel: 'Zitten er complete setjes bij? (broek, top en schoenen samen)',
+      outfitCatalogShort: 'Eén product per catalogset.',
+      outfitCatalogTerm: 'complete setjes',
       outfitCatalogNote: 'Bij een catalogset betaal je per product, dus een compleet setje — broek, top en schoenen samen — kan in deze bestelling niet. Toch nodig voor je merk? Vraag het ons, dan kijken we er samen naar.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}.`,
       outfitWhy: 'Waarom een compleet setje meer kost',
@@ -1063,7 +1116,8 @@ const FORM = {
       lead: 'We kijken in de echte agenda. Wat je hier ziet, houden we ook vrij.',
       checking: 'Agenda checken…',
       queueH: 'Deze bestelling heeft geen vastgezette leverdatum nodig',
-      queueBody: 'Bestellingen onder dat aantal maken we in de volgorde waarin ze binnenkomen.',
+      /* 'onder dat aantal' verwees naar niets op dit scherm — 3 sep 2026. */
+      queueBody: `Bestellingen tot en met ${WINDOW_THRESHOLD - 1} producten maken we in de volgorde waarin ze binnenkomen — meestal ${turnaround('unattended', 'nl')}.`,
       okH: 'Deze leverdata kunnen voor je worden vastgehouden',
       okBody: 'Kies er één. Door te kijken reserveer je niets — we houden de leverdatum vast zodra je bestelling binnenkomt, en bevestigen hem voordat we iets factureren.',
       okMax: 'Per leverdatum houden we ruimte voor maximaal',
@@ -1088,10 +1142,10 @@ const FORM = {
       afterH: 'Wat er gebeurt nadat je op versturen drukt',
       after: [
         'Je krijgt direct een bevestiging met een referentie.',
-        'Heeft je bestelling een vastgezette leverdatum, dan factureren we zodra die datum bevestigd is en voordat we beginnen. Een standaardbestelling factureren we bij levering.',
-        'Een bestelling met een vastgezette leverdatum komt in VISUAILS Studio, waar je beeld voor beeld goedkeurt. Een standaardbestelling komt als downloadlink.',
+        'Je betaalt meteen of via de link in je bevestigingsmail; we beginnen zodra de betaling binnen is. Een vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
+        'Elke bestelling komt in VISUAILS Studio, waar je beeld voor beeld goedkeurt en downloadt — ook een standaardbestelling. De rechtstreekse link staat ook in je mail.',
       ],
-      payNote: 'Hier staat met opzet geen betaalformulier. Je bevestigt een bestelling — de betaallink komt per mail zodra hij binnen is, en je vastgezette leverdatum blijft zeven dagen staan terwijl je betaalt.',
+      payNote: 'Hier vul je geen kaartgegevens in. Je bevestigt een bestelling — direct na het versturen kun je meteen betalen, of later via de link in je bevestigingsmail. We beginnen zodra de betaling binnen is, en een vastgezette leverdatum blijft zeven dagen staan terwijl je betaalt.',
       submit: 'Verstuur deze bestelling',
       legal: ['Door deze bestelling te versturen ga je akkoord met onze ', ' en ', '.'],
       legalTerms: 'algemene voorwaarden',
@@ -1115,7 +1169,7 @@ const FORM = {
     ],
     footH: 'Nog niet klaar om te bestellen?',
     footBody: `${sample.deliverable}, gemaakt van je eigen product — voor ${sample.price}, ${sample.unit}. Dezelfde productie als een betaalde bestelling.`,
-    footCta: `Probeer een proefvisual · ${sample.price}`,
+    footCta: sample.cta,
     footWa: 'Vraag het via WhatsApp',
     footWaText: 'Hoi VISUAILS, ik ben een bestelling aan het invullen en kom er niet uit.',
     signInH: 'Al eerder bij ons besteld?',
@@ -1444,15 +1498,66 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           the line that says "choose how many and the total appears here" was
           never on screen, and an inattentive visitor could order one product by
           not answering. */}
+      {/* ── HET AANTAL: EEN GETAL, GEEN LIJST VAN 53 — 3 september 2026 ────
+          De keuzelijst met één optie per aantal was op een telefoon een wiel.
+          Wat de klant nu ziet: een getalveld met − en +, vier snelknoppen, en
+          een knop "Meer dan 20?" die het contactpaneel opent. De <select> blijft
+          bestaan en blijft de BRON: pipeline.js leest hem nog steeds
+          (productCount(), syncOrder()) en /api/order krijgt hem gepost. Hij is
+          alleen verborgen; bindQty() in pipeline.js houdt getal en lijst gelijk.
+          Het getalveld draagt daarom de eis (data-pl-req) en geen naam. */}
       {!isSample && (
-      <div class="field">
-        <label for="pl-products">{f.s1.countLabel} <span class="req">*</span></label>
-        <select id="pl-products" class="select" name="products" required data-pl-req="1" data-pl-err-msg={f.s1.countErr}>
+      <div class="field pl-qty" data-pl-qty>
+        <label for="pl-qty-n">{f.s1.countLabel} <span class="req">*</span></label>
+        <div class="pl-qty-row">
+          <button type="button" class="pl-qty-btn" data-pl-qty-dec aria-label={f.s1.qtyDec}>−</button>
+          <input
+            id="pl-qty-n"
+            class="input pl-qty-n"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max={maxProducts}
+            step="1"
+                        autocomplete="off"
+            data-pl-qty-input
+            data-pl-req="1"
+            data-pl-err-msg={f.s1.countErr}
+            required
+          />
+          <button type="button" class="pl-qty-btn" data-pl-qty-inc aria-label={f.s1.qtyInc}>+</button>
+          <span class="pl-qty-chips" role="group" aria-label={f.s1.qtyQuick}>
+            {[1, 5, 10, maxProducts].filter((n, i, a) => n <= maxProducts && a.indexOf(n) === i).map((n) => (
+              <button type="button" class="pl-qty-chip" data-pl-qty-set={String(n)}>{n}</button>
+            ))}
+          </span>
+        </div>
+        <select id="pl-products" class="select" name="products" hidden tabindex="-1" aria-hidden="true" data-pl-err-msg={f.s1.countErr}>
           <option value="" disabled selected>{f.s1.countPick}</option>
           {counts.map((n) => <option value={String(n)}>{countLabel(n)}</option>)}
           <option value={f.s1.more}>{f.s1.more}</option>
         </select>
         <span class="hint">{f.s1.countHint}</span>
+        <button type="button" class="pl-qty-more" data-pl-qty-more aria-expanded="false" aria-controls="pl-more">{f.s1.moreBtn}</button>
+      </div>
+      )}
+
+      {/* HET CONTACTPANEEL. Verschijnt zodra de keuze "meer dan" is; pipeline.js
+          verbergt dan de rest van deze stap én de knop Verder, want een
+          formulier dat niet voor dit aantal gebouwd is, moet niet doen alsof.
+          Twee knoppen, allebei met voorgevulde tekst, zodat de vraag mét aantal
+          binnenkomt. Lucas: "dan moeten ze eerst persoonlijk contact opnemen via
+          mail of whatsapp (sneller)". */}
+      {!isSample && (
+      <div class="pl-more" id="pl-more" data-pl-more-panel hidden>
+        <h3 class="pl-sub-h">{f.s1.moreH}</h3>
+        <p>{f.s1.moreBody}</p>
+        <p class="pl-more-btns">
+          <a href={waHref(f.s1.moreWaText)} target="_blank" rel="noopener" class="btn btn-primary">{f.s1.moreWa}</a>
+          <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(f.s1.moreMailSubject)}&body=${encodeURIComponent(f.s1.moreMailBody)}`} class="btn btn-ghost">{f.s1.moreMail}</a>
+        </p>
+        <p class="pl-more-alt">{WHATSAPP_DISPLAY} · {CONTACT_EMAIL}</p>
+        <button type="button" class="pl-qty-back" data-pl-qty-back>{f.s1.moreBack}</button>
       </div>
       )}
 
@@ -1493,8 +1598,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </div>
       )}
 
+      {/* De setjes-waarschuwing als notitie achter een vraagteken en niet als
+          alinea vóór iemand erom vroeg — 3 september 2026. */}
       {isCatalog && (
-        <p class="hint pl-outfit-note">{f.s1.outfitCatalogNote}</p>
+        <p class="hint pl-outfit-note">{f.s1.outfitCatalogShort} <Note lang={lang} term={f.s1.outfitCatalogTerm}>{f.s1.outfitCatalogNote}</Note></p>
       )}
 
       {/* THE RUNNING TOTAL.
@@ -2046,6 +2153,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     <section class="pl-step" data-pl-step={isSample ? '4' : '5'}>
       <h2 class="pl-h" data-pl-head>{f.s5.h}</h2>
       <p class="pl-lead">{f.s5.lead}</p>
+
+      {/* ── WAT JE BESTELT, IN BEELD — 3 september 2026 ────────────────────
+          Boven de tabel: de voorkanten die de klant zelf uploadde, het gekozen
+          gezicht, de achtergrond en een kader in de gekozen verhouding. Gevuld
+          door renderSummary() in pipeline.js; leeg en verborgen zonder JS. Een
+          klant controleert een beeld sneller dan twaalf regels tekst, en een
+          verkeerd model valt hier op in plaats van na levering. */}
+      <div class="pl-sum-strip" data-pl-sum-strip hidden></div>
 
       <dl class="pl-summary" data-pl-summary></dl>
 
@@ -2954,6 +3069,95 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+
+  /* ── Het aantal — 3 september 2026 ───────────────────────────────────────
+     Een getalveld met − en +, vier snelknoppen en de knop naar het
+     contactpaneel. De verborgen <select> eronder is de bron; zie de noot bij
+     de markup. */
+  .pl-qty-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+  .pl-qty-n {
+    width: 5.2rem;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+  }
+  .pl-qty-n::-webkit-outer-spin-button, .pl-qty-n::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .pl-qty-btn, .pl-qty-chip {
+    min-width: 2.6rem;
+    height: 2.6rem;
+    padding: 0 .7rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .pl-qty-btn { font-size: 1.25rem; line-height: 1; }
+  .pl-qty-btn:hover, .pl-qty-chip:hover { border-color: var(--accent-line); }
+  .pl-qty-btn:focus-visible, .pl-qty-chip:focus-visible, .pl-qty-more:focus-visible, .pl-qty-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pl-qty-btn:disabled { opacity: .45; cursor: default; }
+  .pl-qty-chips { display: inline-flex; gap: .35rem; margin-left: .35rem; }
+  .pl-qty-chip { font-size: .86rem; font-variant-numeric: tabular-nums; }
+  .pl-qty-chip.is-on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .pl-qty-more, .pl-qty-back {
+    display: block;
+    width: max-content;
+    text-align: left;
+    margin-top: .35rem;
+    /* Minstens 24px hoog: een tekstknop van 22px is een raakvlak dat de
+       keuring terecht afkeurt. */
+    padding: .3rem 0;
+    min-height: 28px;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: .84rem;
+    color: var(--accent-bright);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .pl-qty-more[aria-expanded='true'] { display: none; }
+  .pl-more {
+    margin-top: 1.1rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    max-width: var(--pl-measure);
+  }
+  .pl-more > p { margin-top: .5rem; font-size: .92rem; line-height: 1.6; color: var(--ink-2); max-width: 62ch; }
+  .pl-more-btns { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .pl-more-alt { font-size: .82rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  /* ── De beeldstrook op de bevestiging ─────────────────────────────────── */
+  .pl-sum-strip {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: .7rem;
+    margin: .9rem 0 1.1rem;
+    padding: .9rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+  .pl-sum-strip :global(.pl-sum-item) { display: flex; flex-direction: column; align-items: center; gap: .3rem; width: 84px; }
+  .pl-sum-strip :global(.pl-sum-thumb) {
+    width: 84px; height: 84px; border-radius: var(--r-sm); overflow: hidden;
+    background: #fff; box-shadow: inset 0 0 0 1px var(--line-strong);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pl-sum-strip :global(.pl-sum-thumb img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pl-sum-strip :global(.pl-sum-thumb.is-ratio) { width: auto; max-width: 84px; background: var(--surface-2); }
+  .pl-sum-strip :global(.pl-sum-thumb.is-bg img) { mix-blend-mode: multiply; }
+  .pl-sum-strip :global(.pl-sum-cap) {
+    font-size: .68rem; line-height: 1.25; color: var(--ink-3); text-align: center;
+    max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pl-sum-strip :global(.pl-sum-more) { font-size: .78rem; color: var(--ink-3); align-self: center; }
 
   /* ── The error state ──────────────────────────────────────────────────────
      There was none. Pressing Continue with nothing chosen left the step

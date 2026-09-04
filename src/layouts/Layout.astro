@@ -236,7 +236,12 @@ const switchLangs = ['en', 'nl'];
 //
 // It takes the canonical URL rather than rebuilding one, so every @id in the
 // graph matches the <link rel="canonical"> below it exactly.
-const jsonLd = graphJson({ path: base, lang, url: canonical });
+// En de titel, de omschrijving en de noindex-vlag gaan mee sinds 3 september 2026:
+// de graph draagt nu een WebPage-knoop, die de pagina bij naam noemt en waar de
+// bouwstap scripts/gewijzigd-op.mjs de `dateModified` in schrijft. Doorgegeven en
+// niet daar opgebouwd, om dezelfde reden als de url: er is één titel per pagina en
+// die staat hier, twee regels boven de <title> die hem ook gebruikt.
+const jsonLd = graphJson({ path: base, lang, url: canonical, title, description, noindex });
 ---
 
 <!DOCTYPE html>
@@ -639,7 +644,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
                   toetsenbordronde: er is niets te activeren. */}
               {drops.map((s) => (s.href
                 ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
-                    <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
+                    <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                   </a>
                 : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
                     <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
@@ -672,7 +677,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
                   PLAN-DEMO-SPEL.md), dan is het één `href` terugzetten. */}
               {how.map((s) => (s.href
                 ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
-                    <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
+                    <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                   </a>
                 : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
                     <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
@@ -785,7 +790,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
     </a>
     {drops.map((s) => (s.href
-      ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</a>
+      ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</a>
       : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
     ))}
     {/* Merkmodel en Abonnement stonden hier ook los; ze zitten nu in `drops`
@@ -797,7 +802,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
     <p class="mobile-group">{t('nav_how')}</p>
     {how.map((s) => (s.href
-      ? <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</a>
+      ? <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</a>
       : <span class="mobile-sub mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
     ))}
     <div class="mobile-cta">
@@ -1031,7 +1036,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <h2 class="footer-h">{t('foot_drops')}</h2>
           <ul>
             {drops.map((s) => <li>{s.href
-              ? <a href={lp(s.href)}>{s.title}{s.soon && <em class="mi-soon">{t('nav_soon')}</em>}</a>
+              ? <a href={lp(s.href)}>{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</a>
               : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>}</li>)}
             {/* Jouw merkmodel staat sinds 21 augustus in `drops` hierboven en
                 stond hier dus twee keer in dezelfde kolom. */}
@@ -1231,7 +1236,30 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   {/* Our own WhatsApp launcher — a square block, not a third-party circular
       bubble widget. No external script, no round corners, no brand-green
       circle we don’t control, and the deep link carries a prefilled opener so
-      the conversation starts with context. */}
+      the conversation starts with context.
+
+      ── DE DOOS EROMHEEN IS EEN LANDMARK, EN GEEN OPMAAK ───────────────────
+      axe-core, 2 september 2026, op alle 91 pagina's × 2 breedtes: "Some page
+      content is not contained by landmarks", en het aangewezen element was
+      steeds .wa-launcher. Dat klopte: de link staat buiten <header>, <main> en
+      <footer>, dus wie met een schermlezer van landmark naar landmark springt,
+      kwam hem nooit tegen. De balk ernaast (.convbar) had zijn
+      role="complementary" al — deze was de enige die het miste.
+
+      Een landmarkrol kan NIET op de link zelf: een <a href> is een link, en
+      `complementary` erop zetten haalt de link weg uit de boom. Dus een doos
+      eromheen, en die draagt de rol.
+
+      DIE DOOS BREEKT ÉÉN SELECTOR, EN DIE IS MEE VERHUISD. `.convbar.show ~
+      .wa-launcher` tilt de knop op als de balk verschijnt; met een doos ertussen
+      is de knop geen broer meer van de balk maar een kind van de doos. De regel
+      staat nu als `.convbar.show ~ .wa-dock .wa-launcher`. Gemeten na de
+      verbouwing, niet aangenomen.
+
+      De doos zelf krijgt GEEN positionering: .wa-launcher is `position: fixed`
+      en blijft dat, want een gewone <div> maakt geen bevattend blok voor een
+      vast geplaatst kind (dat doet alleen transform / filter / contain). */}
+  <div class="wa-dock" role="complementary" aria-label={t('wa_launcher_label')}>
   <a
     class="wa-launcher"
     href={waHref(wa.chat)}
@@ -1252,6 +1280,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     </svg>
     <span class="wa-launcher-label">{t('wa_launcher_label')}</span>
   </a>
+  </div>
 
   <script>
     // Importing runs init() once immediately and registers the
@@ -1277,12 +1306,34 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      * 84 pagina's opgehaald en uitgevoerd om dat vast te stellen. Zelfde
      * redenering als bij de choreografie hierboven: geen haak meer, dus geen
      * import. Komt het canvas ooit terug, dan komt deze regel ermee terug. */
-    // Inertial scrolling. ~3 kB, off entirely under prefers-reduced-motion and
-    // on touch; it drives the document's real scrollTop, so the sticky header
-    // above and the view()-timeline reveals in global.css are unaffected. The
-    // long argument for why a library and not `scroll-behavior: smooth` is at
-    // the top of the module.
-    import '../scripts/smooth-scroll.js';
+    /* ── LENIS IS ERUIT — 1 september 2026 ─────────────────────────────────
+     *
+     * Lucas: *"Verwijder lenis als dat mogelijk is. Dit maakt de website af en
+     * toe wat sloom."*
+     *
+     * Hier stond `import '../scripts/smooth-scroll.js'`, die Lenis opzette: de
+     * wielinvoer werd onderschept en de scrollpositie werd per frame naar zijn
+     * doel gelerpt. Het argument ervoor staat nog in dat bestand en klopte op
+     * zichzelf — `scroll-behavior: smooth` doet alleen iets bij programmatische
+     * sprongen en niets aan het wiel.
+     *
+     * WAT ER NIET IN DAT ARGUMENT STOND is wat het kost. Lenis roept
+     * preventDefault aan op elke wielgebeurtenis en zet de scrollpositie
+     * vervolgens zelf, in JavaScript, op de hoofdthread. Zolang die thread vrij
+     * is voelt dat vloeiend; zodra er iets anders gebeurt — een ScrollTrigger
+     * die herberekent, een foto die binnenkomt, de GSAP-pin op #develop — loopt
+     * de scroll achter op de vinger. Native scrollen kan dat niet overkomen,
+     * want dat gebeurt op de compositor-thread en niet in onze code. Precies het
+     * "af en toe sloom" dat hij beschrijft: niet altijd, alleen als het druk is.
+     *
+     * En de reveals merken er niets van. Die draaien op `animation-timeline:
+     * view()` en op ScrollTrigger, en allebei lezen de ECHTE scrollpositie —
+     * dezelfde die Lenis aanstuurde. Wat wegvalt is de easing ertussen, niet de
+     * beweging zelf. De lade op mobiel had `data-lenis-prevent` nodig omdat
+     * Lenis de wielgebeurtenis afving; native heeft daar `overscroll-behavior:
+     * contain` voor, en dat stond er al.
+     *
+     * src/scripts/smooth-scroll.js kan weg — zie de lijst die ik Lucas gaf. */
   </script>
   {/* THE BEACON IS NOT RENDERED HERE ANY MORE, and that is the whole point of
       the consent banner. A <script> in the HTML fires before any script can
@@ -2253,6 +2304,14 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .footer-col ul.foot-social, .footer-act ul.foot-social { flex-direction: row; gap: .5rem; list-style: none; margin: 0; padding: 0; display: flex; }
   .footer-col a,
   .footer-col .mi-off { color: var(--ink-2); font-size: .92rem; }
+  /* Op een aanraakscherm zijn zestien links van 16px hoog onder elkaar een
+     loterij (doorlichting 4 september 2026: elke footerlink 16px, tikdoel
+     ver onder de 44px). Wat lucht om elke regel, alleen waar een vinger het
+     doet — op een desktop blijft de lijst even compact. */
+  @media (pointer: coarse) {
+    .footer-col li > a, .footer-col li > .mi-off { display: inline-block; padding-block: .45rem; }
+    .footer-col ul { gap: .1rem; }
+  }
 
   /* ── DE TINT KOMT ALS LAATSTE, EN DAT IS GEEN DETAIL ───────────────────────
      Deze regel stond eerst hoger in het bestand dan de maatregels hierboven. Bij
@@ -2753,9 +2812,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      10 augustus 2026: de 142px stond hier los van of de balk er ook echt was —
      puur op viewportbreedte. Vóór de scroll-drempel (640px) en na het sluiten via
      .cb-close (initConvbar in interactions.js zet dan .show weg) bleef de knop
-     dus op die hoogte hangen, zwevend boven niets. `.convbar.show ~ .wa-launcher`
-     bindt de 142px aan de balk zelf: de knop en de balk staan als broers in de
-     DOM en de balk staat er eerst, dus de sibling-selector werkt zonder JS. Zodra
+     dus op die hoogte hangen, zwevend boven niets. De sibling-selector bindt de
+     142px aan de balk zelf: de balk en de doos om de knop staan als broers in de
+     DOM en de balk staat er eerst, dus dat werkt zonder JS. (Sinds 2 september
+     staat de knop in een <div class="wa-dock"> die de landmarkrol draagt, dus de
+     selector loopt via die doos — zie de noot bij .wa-dock in de markup.) Zodra
      .show weggaat — dichtklikken, wegscrollen boven de drempel, of een pagina
      waar de balk onderdrukt is — zakt de knop terug naar de hoek, en de
      bottom-transitie hierboven maakt daar een beweging van in plaats van een
@@ -2771,6 +2832,6 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      32px eronder is lucht plus de eigen inzet van de knop. Zonder script blijft
      de terugval 0px staan en gedraagt de knop zich als voorheen — er is dan ook
      geen balk om overheen te vallen. */
-  @media (max-width: 700px) { .convbar.show ~ .wa-launcher { --wa-bottom: calc(var(--cb-h, 0px) + 32px); } }
+  @media (max-width: 700px) { .convbar.show ~ .wa-dock .wa-launcher { --wa-bottom: calc(var(--cb-h, 0px) + 32px); } }
   @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

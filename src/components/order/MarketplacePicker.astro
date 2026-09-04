@@ -41,6 +41,12 @@ import {
 } from '../../data/channels.js';
 
 import Disclose from '../Disclose.astro';
+import Note from '../Note.astro';
+/* 3 september 2026: de kaart draagt één regel (`short`); de volledige eis van
+   het platform — pixels, RGB-waarden, IPTC — staat achter het vraagteken.
+   Lucas: klanten moeten zien wat ze kiezen, niet de specificatie lezen die wij
+   al kennen. De drie blokken eronder (vastgezet op wit, twee keer bestellen,
+   welk beeld vooraan) zijn om dezelfde reden één regel met een notitie. */
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -63,9 +69,13 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
   <h3 class="pl-sub-h" id="pl-ch-h">{c.label}</h3>
   <p class="pl-ch-lead">{c.lead}</p>
 
+  {/* De notitieknop staat NAAST het label en niet erin: een knop binnen een
+      label is genest interactief, en dat keurt axe af. De kaart als geheel
+      blijft klikbaar via het label; het vraagteken is een eigen doel. */}
   <div class="ch-grid" role="group" aria-labelledby="pl-ch-h">
     {CHANNELS.map((ch) => (
-      <label class="ch-opt">
+      <div class="ch-opt">
+      <label class="ch-lab">
         <span class="ch-row">
           <input
             type="checkbox"
@@ -79,8 +89,10 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
           <span class="ch-name">{channelName(ch, lang)}</span>
         </span>
         {ch.requiresWhite && <span class="ch-flag">#FFFFFF</span>}
-        <span class="ch-note">{ch.note[lang]}</span>
+        <span class="ch-note">{ch.short[lang]}</span>
       </label>
+      <span class="ch-more"><Note lang={lang} term={c.detailTerm} wide>{ch.note[lang]}</Note></span>
+      </div>
     ))}
   </div>
 
@@ -90,9 +102,8 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
       rather than absent so the copy is in the page for a screen reader that
       reaches it after the change, and so there is one element to toggle rather
       than a string to build. */}
-  <div class="ch-lock" data-pl-ch-lock hidden>
-    <p class="ch-lock-h">{c.whiteWarnH}</p>
-    <p>{c.whiteWarn}</p>
+  <div class="ch-lock ch-line" data-pl-ch-lock hidden>
+    <p><strong class="ch-lock-h">{c.whiteWarnH}.</strong> {c.whiteWarnShort} <Note lang={lang} term={c.detailTerm} wide>{c.whiteWarn}</Note></p>
   </div>
 
   {/* The two-order answer, shown alongside the lock. This is the commercially
@@ -101,9 +112,8 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
       "Charged at the rate your total lands on" is not a discount claim — the
       ladder in pricing.js is per product, so a second version genuinely is just
       another product on it. */}
-  <div class="ch-split" data-pl-ch-split hidden>
-    <p class="ch-split-h">{c.splitH}</p>
-    <p>{c.split}</p>
+  <div class="ch-split ch-line" data-pl-ch-split hidden>
+    <p><strong class="ch-split-h">{c.splitH}</strong> {c.splitShort} <Note lang={lang} term={c.detailTerm} wide>{c.split}</Note></p>
   </div>
 
   {/* Shown for a channel that restricts who may appear on the MAIN image.
@@ -111,9 +121,8 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
       leads, they do not forbid the on-model frame from the listing, so dropping
       it would take away a photograph the customer paid for and solve nothing.
       A placement instruction is the whole fix. */}
-  <div class="ch-order" data-pl-ch-order hidden>
-    <p class="ch-order-h">{c.orderH}</p>
-    <p>{c.order}</p>
+  <div class="ch-order ch-line" data-pl-ch-order hidden>
+    <p><strong class="ch-order-h">{c.orderH}.</strong> {c.orderShort} <Note lang={lang} term={c.detailTerm} wide>{c.order}</Note></p>
   </div>
 
   {/* Zalando only. A warning and never a block — see channels.js. */}
@@ -149,10 +158,9 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
      sentence of platform rules, and four of those side by side is a wall. */
   .ch-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; margin-top: .8rem; }
   .ch-opt {
-    display: flex;
-    flex-direction: column;
-    gap: .35rem;
-    padding: .75rem .85rem;
+    position: relative;
+    display: block;
+    padding: 0;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-md);
     background: var(--surface);
@@ -160,8 +168,11 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .ch-opt:hover { border-color: var(--accent-line); }
+  .ch-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .ch-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   .ch-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .ch-lab { display: flex; flex-direction: column; gap: .35rem; padding: .75rem 2.4rem .75rem .85rem; cursor: pointer; }
+  .ch-more { position: absolute; top: .6rem; right: .6rem; }
   .ch-row { display: flex; align-items: center; gap: .5rem; }
   .ch-row input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
   .ch-name { font-size: .92rem; font-weight: 600; color: var(--ink); line-height: 1.25; }

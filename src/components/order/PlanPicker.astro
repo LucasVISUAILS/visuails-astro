@@ -26,17 +26,15 @@
 // door te bestellen. De handler zit dus in account.js, achter de sessiecontrole:
 // wie niet is ingelogd, komt op de inlogpagina en niet op een betaalscherm. Zie
 // de kop van src/lib/subscribe.js voor waarom dat de goede kant op is.
-/* MANDATE_AMOUNT en AMOUNT staan erbij omdat de teksten hieronder twee
-   verschillende bedragen van één euro noemen: de MACHTIGING (de transactie
-   waarmee de bank de incasso afgeeft) en de PROEFVISUAL (een product). Ze
-   kostten allebei €1 en werden allebei als "€1" ingetypt, dus ze waren niet uit
-   elkaar te houden — en dan verandert er bij een prijswijziging één te veel. */
+/* MANDATE_AMOUNT stond hier tot 4 september 2026: de machtiging kostte een euro
+   en de tekst noemde hem. Sinds de eerste betaling de eerste maand is, noemt de
+   tekst geen bedrag meer voor de machtiging; AMOUNT blijft voor de proefvisual. */
 import {
-  plans, euro, vatLabel, AMOUNT, MANDATE_AMOUNT,
+  plans, euro, vatLabel, AMOUNT, planSaving,
   CUSTOM_MONTH_ID, CUSTOM_MONTH_MIN_PRODUCTS, CUSTOM_MONTH_MAX_PRODUCTS,
-  customMonthTotal, ladderRate, addOnRate,
+  customMonthTotal, addOnRate, CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
 } from '../../data/pricing.js';
-import { TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel } from '../../data/plans.js';
+import { TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel, term as termOf } from '../../data/plans.js';
 import { planName } from '../../data/planNames.js';
 import { localizedPath } from '../../i18n/ui.js';
 
@@ -112,94 +110,218 @@ const foutTekst = FOUTEN[fout] || '';
  */
 const FOUT_IDS = Object.keys(FOUTEN);
 
+/* ── HERONTWERP, 4 SEPTEMBER 2026 ────────────────────────────────────────────
+ *
+ * Lucas: *"het abonnement ziet er op het moment super saai en niet waardevol
+ * uit, dit mag je volledig aanpassen."*
+ *
+ * Wat er stond: vier grijze vakken onder elkaar met een radio, drie regels
+ * uitleg per vak en zes bedragen; daaronder nog drie vakken en een alinea over
+ * de machtiging. Alles even zwaar, niets dat zei wat je KRIJGT. Het duurste
+ * formulier van de site zag eruit als een enquête.
+ *
+ * Wat er nu staat: links de drie keuzes als korte stappen (welk plan, welke
+ * termijn, welke week), rechts één plaat in de accentkleur — dezelfde plaat als
+ * op /plans en de homepage — die per keuze laat zien wat de maand oplevert:
+ * hoeveel beelden, wat het los zou kosten, wat er nu gebeurt, en de knop.
+ *
+ * ── NOG STEEDS ZONDER SCRIPT ───────────────────────────────────────────────
+ *
+ * De plaat wisselt mee met de radio's via `:has()` in CSS: alle zeven varianten
+ * (drie plannen × twee termijnen, plus de maand op maat) staan in de HTML en er
+ * is er precies één zichtbaar. Geen rekenwerk in de browser — de bedragen
+ * komen uit plans.js en pricing.js bij het bouwen, zoals hiervoor. Een browser
+ * zonder `:has()` (2022 en ouder) ziet alle varianten onder elkaar; dat is
+ * lelijker, niet fout. */
+const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>';
+
+type Regel = { t: string; sub?: string };
+type Variant = {
+  plan: string; term: string; naam: string; kop: string;
+  bedrag: string; eenheid: string; per?: string;
+  regels: Regel[]; los?: string; bespaar?: string;
+};
+
+const kopVan = (id: string) => ({
+  starter: nl ? 'Elke maand iets nieuws.' : 'Something new every month.',
+  studio: nl ? 'Elke week iets te posten.' : 'Something to post every week.',
+  brand: nl ? 'Je hele collectie, met je eigen gezicht.' : 'Your whole collection, with your own face.',
+}[id] || '');
+
+const varianten: Variant[] = [];
+for (const p of planList) {
+  for (const t of TERM_IDS) {
+    const n = productsFor(p.id);
+    const k = clipsFor(p.id);
+    const cents = monthlyCents(p.id, t);
+    const tt = termOf(t);
+    const besp = planSaving(p.id);
+    const beelden = n * COMPLETE_IMAGES;
+    const regels: Regel[] = [
+      { t: nl ? `${n} producten` : `${n} products`,
+        sub: nl
+          ? `elk een catalogset van ${CATALOG_IMAGES} en een lifestyle-carrousel van ${LIFESTYLE_IMAGES} — ${beelden} afgemaakte beelden`
+          : `each a ${CATALOG_IMAGES}-image catalog set and a ${LIFESTYLE_IMAGES}-image lifestyle carousel — ${beelden} finished images` },
+      ...(k ? [{ t: nl ? `${k} motion-clips` : `${k} motion clips`, sub: nl ? 'het product in beweging, 8 seconden' : 'the product in motion, 8 seconds' }] : []),
+      ...(hasBrandModel(p.id, t) ? [{ t: nl ? 'Je eigen merkmodel' : 'Your own brand model', sub: nl ? 'één gezicht, alleen voor jouw merk' : 'one face, for your brand only' }] : []),
+      { t: nl ? 'Een vaste week' : 'A fixed week',
+        sub: nl
+          ? (tt.perks.includes('standingWindow') ? 'dezelfde dagen, elke maand, vóór iedereen vrijgehouden' : 'elke maand voor jou gereserveerd vóór andere bestellingen')
+          : (tt.perks.includes('standingWindow') ? 'the same days every month, held before anyone else' : 'reserved for you every month before other orders') },
+      { t: nl ? `Ongebruikt schuift ${tt.rollover} ${tt.rollover === 1 ? 'maand' : 'maanden'} door` : `Unused rolls over ${tt.rollover} month${tt.rollover === 1 ? '' : 's'}` },
+      ...(tt.perks.includes('priceLock') ? [{ t: nl ? 'Prijsslot' : 'Price lock', sub: nl ? 'gaat het tarief omhoog, dan blijft het jouwe staan' : 'if the rate goes up, yours stays' }] : []),
+      { t: tt.fixed
+          ? (nl ? `Looptijd ${tt.months} maanden` : `${tt.months}-month term`)
+          : (nl ? 'Maandelijks opzegbaar' : 'Cancel any month'),
+        sub: tt.fixed ? undefined : (nl ? 'zelf, in je dashboard' : 'yourself, in your dashboard') },
+    ];
+    varianten.push({
+      plan: p.id, term: t, naam: planName(p.id, lang), kop: kopVan(p.id),
+      bedrag: euro(cents / 100, lang),
+      eenheid: nl ? 'per maand' : 'per month',
+      per: tt.fixed && cents !== monthlyCents(p.id, 'monthly')
+        ? (nl ? `op de jaartermijn — ${euro(monthlyCents(p.id, 'monthly') / 100, lang)} maandelijks` : `on the 12-month term — ${euro(monthlyCents(p.id, 'monthly') / 100, lang)} monthly`)
+        : undefined,
+      regels,
+      los: besp ? (nl ? `Los besteld: ${euro(besp.onLadder, lang)} per maand.` : `Ordered one-off: ${euro(besp.onLadder, lang)} a month.`) : undefined,
+      bespaar: besp ? (nl ? `Je bespaart ${euro(besp.saving, lang)}` : `You save ${euro(besp.saving, lang)}`) : undefined,
+    });
+  }
+}
+
+/* De maand op maat heeft geen vast bedrag; hij volgt het laddertarief over jouw
+   aantal. Drie voorbeelden zeggen meer dan de regel: wat vijf, tien en twintig
+   producten mét carrousel kosten, uitgerekend met dezelfde functie als de
+   server gebruikt. */
+const maatVanaf = euro(customMonthTotal({ products: CUSTOM_MONTH_MIN_PRODUCTS }).total, lang);
+const maatVoorbeelden = [CUSTOM_MONTH_MIN_PRODUCTS, 10, 20].map((n) => {
+  const r = customMonthTotal({ products: n, carousels: n });
+  return { n, bedrag: euro(r.total, lang), beelden: r.images };
+});
+
 const c = nl ? {
-  h: 'Een abonnement afsluiten',
-  lede: 'Elke maand een vast aantal afgemaakte producten, in een week die voor jou gereserveerd is. Maandelijks opzegbaar.',
-  planH: 'Welk abonnement',
-  termH: 'Welke termijn',
-  weekH: 'Je vaste week',
-  weekHint: 'De dag van de maand waarop wij aan jouw producten beginnen. Elke maand dezelfde. Weet je het nog niet, laat hem dan staan — je kunt hem later wijzigen.',
-  /* ── DRIE BEGRIPPEN DIE NERGENS UITGELEGD STONDEN — 21 augustus 2026 ──
-     "Machtiging", "vaste week" en "prijsslot" stonden alle drie als bekend
-     verondersteld op het duurste formulier van de site — een doorlopende
-     incasso. Ze staan nu in een zwevende notitie: de pagina wordt er niet langer
-     van, en wie het woord niet kent, hoeft er niet meer omheen te lezen. */
-  weekNote: 'Wij reserveren die week in de planning voor jou, elke maand opnieuw, vóórdat er andere bestellingen in mogen. Heb je die maand niets klaarstaan, dan vervalt de week niet: je producten schuiven door. Je kunt de dag altijd wijzigen in je dashboard.',
-  mandateNote: `Een machtiging is de toestemming die je bank nodig heeft om ons maandelijks te laten incasseren — een SEPA-incasso, dezelfde vorm als bij een energieleverancier. Je geeft hem één keer af en je kunt hem altijd intrekken. De ${euro(MANDATE_AMOUNT, "nl")} is de transactie waarmee je bank hem uitgeeft.`,
-  weekLabel: 'Dag van de maand',
-  perMonth: 'per maand',
-  products: 'producten per maand',
-  clips: 'clips per maand',
-  brandModel: 'Inclusief jouw eigen dedicated Merkmodel — volledig afgestemd op jouw merkesthetiek.',
-  termNote: 'De jaartermijn is op Starter goedkoper per maand. Op Studio en Merk is hij dat niet, en dat is met opzet: die twee zitten met hun maandbedrag al op of onder de laagste prijs per product, en daar gaat niets meer af. Wat de jaartermijn daar geeft, staat hieronder.',
-  submit: 'Doorgaan naar de machtiging',
-  mandateH: 'Wat er nu gebeurt',
-  mandateBody: `Je betaalt zo eenmalig ${euro(MANDATE_AMOUNT, "nl")}. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later.`,
-  cancelNote: 'Opzeggen kan zelf, in je eigen dashboard. Wat je hebt laten maken, blijft van jou.',
-  signedOut: `Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, begin dan met een proefvisual van ${euro(AMOUNT.testSample, "nl")} — dan weet je wat je koopt.`,
-  signIn: 'Inloggen',
-  sample: 'Eerst een proefvisual',
+  h: 'Je abonnement',
+  lede: 'Kies hoeveel je elke maand wilt laten maken. Rechts zie je meteen wat die maand oplevert.',
+  stap1: 'Welk abonnement',
+  stap2: 'Welke termijn',
+  stap3: 'Je vaste week',
+  perMaand: '/ mnd',
+  producten: 'producten',
+  clips: 'clips',
+  merkmodel: 'merkmodel',
   maatNaam: 'Maand op maat',
-  maatLine: `Stel zelf samen, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten per maand.`,
-  maatUitleg: `Je betaalt het gewone laddertarief over jouw aantal — dezelfde prijs per product als bij een losse bestelling van die omvang, en een carrousel kost er ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'nl')} tot ${euro(addOnRate(20), 'nl')} bovenop, afhankelijk van hoeveel producten je doet. Geen apart kortingspercentage: de korting zit al in de trede.`,
+  maatLine: `Stel zelf samen, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten.`,
+  maatFacts: 'laddertarief over jouw aantal',
   maatProducten: 'Producten per maand',
   maatCarrousels: 'Daarvan met lifestyle-carrousel',
   maatClips: 'Motion-clips per maand',
-  maatCarrouselsHint: 'Een carrousel hoort bij een product dat je toch al laat fotograferen, dus nooit meer dan het aantal producten.',
-  maatTermijn: 'Een maand op maat loopt altijd maandelijks. De jaartermijn geeft korting die uit de vaste abonnementsprijzen komt, en die heeft deze vorm niet — een verbintenis zonder korting verkopen we niet.',
+  maatHint: `Je betaalt het gewone laddertarief over jouw aantal — dezelfde prijs per product als bij een losse bestelling van die omvang; een carrousel kost er ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'nl')} tot ${euro(addOnRate(20), 'nl')} bovenop. Nooit meer carrousels dan producten. Een maand op maat loopt altijd maandelijks.`,
   maatCustomH: 'Wil je een eigen look erin?',
-  maatCustomBody: 'Een custom lifestyle, je eigen merkmodel of een stijl die wij nog niet voor je hebben opgezet, kan wél in een abonnement — maar niet via dit formulier. Zo\u2019n stijl moet eerst worden opgezet, en anders betaal je vanaf de eerste maand voor iets dat nog niet bestaat. Neem contact op, dan zetten we hem eerst op en daarna staat hij in je maand.',
+  maatCustomBody: 'Een eigen look of je eigen merkmodel kan wél in een abonnement — maar niet via dit formulier. Zo’n look moet eerst worden opgezet, anders betaal je vanaf de eerste maand voor iets dat nog niet bestaat. Vraag hem aan via /start/custom-look; zodra hij klaar is, staat hij als tegel in je account en in het bestelformulier, ook binnen je maand.',
   maatCustomCta: 'Neem contact op',
+  termMaand: 'Maandelijks',
+  termMaandSub: 'Elke maand opzegbaar, in je dashboard.',
+  termJaar: '12 maanden',
+  termJaarSub: 'Vaste looptijd. Daarvoor terug: een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio. Op Starter bovendien goedkoper per maand.',
+  termMaat: 'Een maand op maat loopt altijd maandelijks.',
+  weekHint: 'De dag van de maand waarop wij aan jouw producten beginnen. Elke maand dezelfde; je kunt hem later wijzigen.',
+  weekNote: 'Wij reserveren die week in de planning voor jou, elke maand opnieuw, vóórdat er andere bestellingen in mogen. Heb je die maand niets klaarstaan, dan vervalt de week niet: je producten schuiven door. Je kunt de dag altijd wijzigen in je dashboard.',
+  weekLabel: 'Dag van de maand',
+  sumLabel: 'Jouw maand',
+  sumElke: 'Elke maand',
+  sumMaatH: 'Wat een maand op maat kost',
+  sumMaatSub: `Het bedrag volgt jouw aantal en staat op het scherm na de machtiging. Drie voorbeelden, elk product met carrousel:`,
+  sumMaatBeelden: 'beelden',
+  nuH: 'Wat er nu gebeurt',
+  nu: [
+    'Je betaalt je eerste maand via Mollie. Met die betaling geeft je bank ook de machtiging af voor de maanden erna.',
+    'Je vaste week staat meteen gepland en je saldo staat klaar.',
+    'Je uploadt je producten in VISUAILS Studio; wij maken ze in jouw week.',
+  ],
+  mandateNote: 'Een machtiging is de toestemming die je bank nodig heeft om ons maandelijks te laten incasseren — een SEPA-incasso, dezelfde vorm als bij een energieleverancier. Je geeft hem één keer af en je kunt hem altijd intrekken. De betaling van je eerste maand is de transactie waarmee je bank hem uitgeeft.',
+  submit: 'Doorgaan naar de machtiging',
+  cancelNote: 'Opzeggen kan zelf, in je dashboard. Wat je hebt laten maken, blijft van jou.',
+  signedOut: `Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, probeer VISUAILS dan eerst voor ${euro(AMOUNT.testSample, 'nl')} — dan weet je wat je koopt.`,
+  signIn: 'Inloggen',
+  sample: `Eerst proberen · ${euro(AMOUNT.testSample, 'nl')}`,
 } : {
-  h: 'Start a plan',
-  lede: 'A fixed number of finished products every month, in a week reserved for you. Cancel any month.',
-  planH: 'Which plan',
-  termH: 'Which term',
-  weekH: 'Your fixed week',
-  weekHint: 'The day of the month we start on your products. The same every month. Not sure yet? Leave it — you can change it later.',
-  weekNote: 'We reserve that week in the calendar for you, every month, before any other order can take it. If you have nothing ready that month the week is not lost: your products roll over. You can change the day at any time in your dashboard.',
-  mandateNote: `A mandate is the permission your bank needs to let us collect monthly — a SEPA direct debit, the same shape as an energy supplier uses. You give it once and you can withdraw it at any time. The ${euro(MANDATE_AMOUNT, "en")} is the transaction that makes your bank issue it.`,
-  weekLabel: 'Day of the month',
-  perMonth: 'per month',
-  products: 'products a month',
-  clips: 'clips a month',
-  brandModel: 'Includes a dedicated Brand Model tailored to your brand — no separate casting or usage fees.',
-  termNote: 'The 12-month term is cheaper per month on Starter. On Studio and Brand it is not, and that is deliberate: their monthly price already sits at or below the lowest per-product rate, and there is nothing left to take off. What the 12-month term gives you there is listed below.',
-  submit: 'Continue to the mandate',
-  mandateH: 'What happens next',
-  mandateBody: `You pay ${euro(MANDATE_AMOUNT, "en")} once. That is not a first month but the transaction your bank needs to issue the mandate — without it nothing can be charged. Your first monthly term falls a month later.`,
-  cancelNote: 'You can cancel yourself, in your own dashboard. Whatever you had made stays yours.',
-  signedOut: `You need to be signed in to start a plan. Never ordered from us? Start with a ${euro(AMOUNT.testSample, "en")} sample so you know what you are buying.`,
-  signIn: 'Sign in',
-  sample: 'Try a sample first',
+  h: 'Your plan',
+  lede: 'Choose how much you want made every month. On the right you see straight away what that month delivers.',
+  stap1: 'Which plan',
+  stap2: 'Which term',
+  stap3: 'Your fixed week',
+  perMaand: '/ mo',
+  producten: 'products',
+  clips: 'clips',
+  merkmodel: 'brand model',
   maatNaam: 'Custom month',
-  maatLine: `Compose it yourself, from ${CUSTOM_MONTH_MIN_PRODUCTS} products a month.`,
-  maatUitleg: `You pay the ordinary ladder rate for your volume — the same per-product price a one-off order of that size costs — and a carousel adds ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'en')} to ${euro(addOnRate(20), 'en')} on top, depending on how many products you do. No separate discount percentage: the discount is already in the step.`,
+  maatLine: `Compose it yourself, from ${CUSTOM_MONTH_MIN_PRODUCTS} products.`,
+  maatFacts: 'ladder rate for your volume',
   maatProducten: 'Products a month',
   maatCarrousels: 'Of those, with a lifestyle carousel',
   maatClips: 'Motion clips a month',
-  maatCarrouselsHint: 'A carousel belongs to a product you are having photographed anyway, so never more than the number of products.',
-  maatTermijn: 'A custom month always runs monthly. The 12-month term discounts the fixed plan prices, and this shape does not have one — a commitment with nothing in return is not something we sell.',
+  maatHint: `You pay the ordinary ladder rate for your volume — the same per-product price a one-off order of that size costs; a carousel adds ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'en')} to ${euro(addOnRate(20), 'en')} on top. Never more carousels than products. A custom month always runs monthly.`,
   maatCustomH: 'Want your own look in it?',
-  maatCustomBody: 'A custom lifestyle, your own Brand Model, or a style we have not set up for you yet can go into a plan — but not through this form. That style has to be set up first, otherwise you are paying from month one for something that does not exist yet. Get in touch: we set it up, and then it is in your month.',
+  maatCustomBody: 'A look of your own, or your own brand model, can go into a plan — but not through this form. That look has to be set up first, otherwise you are paying from month one for something that does not exist yet. Request it via /start/custom-look; once it is ready, it appears as a tile in your account and in the order form, also within your month.',
   maatCustomCta: 'Get in touch',
+  termMaand: 'Monthly',
+  termMaandSub: 'Cancel any month, in your dashboard.',
+  termJaar: '12 months',
+  termJaarSub: 'A fixed term. In return: a standing week, three months of rollover, a price lock, and the brand model on Studio too. On Starter also cheaper per month.',
+  termMaat: 'A custom month always runs monthly.',
+  weekHint: 'The day of the month we start on your products. The same every month; you can change it later.',
+  weekNote: 'We reserve that week in the calendar for you, every month, before any other order can take it. If you have nothing ready that month the week is not lost: your products roll over. You can change the day at any time in your dashboard.',
+  weekLabel: 'Day of the month',
+  sumLabel: 'Your month',
+  sumElke: 'Every month',
+  sumMaatH: 'What a custom month costs',
+  sumMaatSub: 'The amount follows your numbers and is shown after the mandate. Three examples, every product with a carousel:',
+  sumMaatBeelden: 'images',
+  nuH: 'What happens next',
+  nu: [
+    'You pay your first month through Mollie. That same payment makes your bank issue the mandate for the months after it.',
+    'Your fixed week is planned straight away and your credits are ready.',
+    'You upload your products in VISUAILS Studio; we make them in your week.',
+  ],
+  mandateNote: 'A mandate is the permission your bank needs to let us collect monthly — a SEPA direct debit, the same shape as an energy supplier uses. You give it once and you can withdraw it at any time. Paying your first month is the transaction that makes your bank issue it.',
+  submit: 'Continue to the mandate',
+  cancelNote: 'You can cancel yourself, in your dashboard. Whatever you had made stays yours.',
+  signedOut: `You need to be signed in to start a plan. Never ordered from us? Start with a ${euro(AMOUNT.testSample, 'en')} sample so you know what you are buying.`,
+  signIn: 'Sign in',
+  sample: 'Try a sample first',
 };
 
-// De twee termijnen, met wat ze kosten voor het GEKOZEN plan. Omdat er geen
-// script is, staat het bedrag per plan per termijn er gewoon uit — drie plannen
-// maal twee termijnen is zes bedragen, en dat is minder verwarrend dan een
-// prijs die pas verschijnt als je iets aanklikt.
-const termijnen = TERM_IDS.map((id) => ({
-  id,
-  naam: TERMS[id].name[nl ? 'nl' : 'en'],
-  maanden: TERMS[id].months,
-}));
+const termijnen = TERM_IDS.map((id) => ({ id, naam: TERMS[id].name[nl ? 'nl' : 'en'], maanden: TERMS[id].months }));
+
+/* Wat op de kaart staat: naam, maandbedrag en één regel feiten. De jaarprijs
+   staat er alleen als hij afwijkt — bij precies één plan (zie discountMonths in
+   plans.js); twee keer hetzelfde bedrag laat de jaartermijn zinloos lijken. */
+const kaarten = planList.map((p) => {
+  const n = productsFor(p.id);
+  const k = clipsFor(p.id);
+  const maand = monthlyCents(p.id, 'monthly');
+  const jaar = monthlyCents(p.id, 'yearly');
+  return {
+    id: p.id,
+    naam: planName(p.id, lang),
+    line: p.line,
+    bedrag: euro(maand / 100, lang),
+    jaar: jaar !== maand ? (nl ? `${euro(jaar / 100, lang)} op de jaartermijn` : `${euro(jaar / 100, lang)} on the 12-month term`) : null,
+    facts: [
+      `${n} ${c.producten}`,
+      ...(k ? [`${k} ${c.clips}`] : []),
+      ...(hasBrandModel(p.id, 'monthly') ? [c.merkmodel] : []),
+    ].join(' · '),
+  };
+});
 ---
 
 <section class="wrap plan-start">
-  <div class="container container-narrow">
-    <h1>{c.h}</h1>
-    <p class="lede">{c.lede}</p>
+  <div class="container">
+    <header class="ps-head">
+      <h1>{c.h}</h1>
+      <p class="lede">{c.lede}</p>
+    </header>
 
     {/* foutTekst blijft staan voor het geval deze pagina ooit wél per verzoek
         gerenderd wordt; dan wint de server en heeft het script niets te doen.
@@ -215,66 +337,45 @@ const termijnen = TERM_IDS.map((id) => ({
     <form method="post" action="/account/plan/start" class="plan-form">
       <input type="hidden" name="lang" value={lang} />
 
-      <fieldset class="plan-set">
-        <legend>{c.planH}</legend>
-        {planList.map((p, i) => (
-          <label class="plan-opt">
-            <input type="radio" name="plan" value={p.id} required checked={i === 1} />
-            <span class="plan-opt-body">
-              <strong>{planName(p.id, lang)}</strong>
-              <span class="plan-opt-line">{p.line}</span>
-              <span class="plan-opt-facts">
-                {productsFor(p.id)} {c.products}
-                {clipsFor(p.id) ? ` · ${clipsFor(p.id)} ${c.clips}` : ''}
-                {hasBrandModel(p.id, 'monthly') ? ` · ${c.brandModel}` : ''}
-              </span>
-              {/* TWEE BEDRAGEN ALLEEN ALS ZE VERSCHILLEN, en dat is bij precies
-                  één plan zo. Alleen Starter krijgt jaarkorting; bij Studio en
-                  Merk zit de waarde van de jaartermijn in de vier extra's en niet
-                  in de prijs — zie de rekensom bij TERMS in plans.js. Twee keer
-                  hetzelfde bedrag naast elkaar laat de jaartermijn zinloos lijken
-                  terwijl hij dat niet is, en dat is erger dan één bedrag. */}
-              <span class="plan-opt-prices">
-                {monthlyCents(p.id, 'monthly') === monthlyCents(p.id, 'yearly') ? (
-                  <span class="plan-opt-price">
-                    <strong>{euro(monthlyCents(p.id, 'monthly') / 100, lang)}</strong> {c.perMonth}
+      <div class="ps-grid">
+        <div class="ps-keuzes">
+
+          {/* ── 1 · HET PLAN ─────────────────────────────────────────────── */}
+          <fieldset class="ps-set">
+            <legend><span class="ps-n">1</span>{c.stap1}</legend>
+            <div class="ps-plans">
+              {kaarten.map((k, i) => (
+                <label class="ps-plan">
+                  <input type="radio" name="plan" value={k.id} required checked={i === 1} />
+                  <span class="ps-plan-top">
+                    <strong class="ps-plan-naam">{k.naam}</strong>
+                    <span class="ps-plan-prijs"><b>{k.bedrag}</b><small>{c.perMaand}</small></span>
                   </span>
-                ) : termijnen.map((t) => (
-                  <span class="plan-opt-price">
-                    {t.naam}: <strong>{euro(monthlyCents(p.id, t.id) / 100, lang)}</strong> {c.perMonth}
-                  </span>
-                ))}
-              </span>
-            </span>
-          </label>
-        ))}
+                  <span class="ps-plan-line">{k.line}</span>
+                  <span class="ps-plan-facts">{k.facts}</span>
+                  {k.jaar && <span class="ps-plan-jaar">{k.jaar}</span>}
+                </label>
+              ))}
 
-        {/* ── DE VIERDE OPTIE — 1 september 2026 ──────────────────────────────
-            Lucas: *"Vierde unieke optie in abonnementskiezer."*
+              {/* ── DE VIERDE OPTIE — 1 september 2026 ──────────────────────
+                  Een radio zoals de andere drie; de drie velden staan eronder en
+                  verschijnen zodra hij aanstaat. De prijs staat er niet als
+                  bedrag — de server rekent hem uit en hij staat op het scherm
+                  ná de machtiging; de plaat rechts geeft drie voorbeelden.
+                  `min`, `max` en `required` zijn geen validatie: die staat in
+                  handleSubscribeStart() en is de enige die telt. */}
+              <label class="ps-plan ps-maat">
+                <input type="radio" name="plan" value={CUSTOM_MONTH_ID} />
+                <span class="ps-plan-top">
+                  <strong class="ps-plan-naam">{c.maatNaam}</strong>
+                  <span class="ps-plan-prijs"><small>{nl ? 'vanaf' : 'from'}</small> <b>{maatVanaf}</b><small>{c.perMaand}</small></span>
+                </span>
+                <span class="ps-plan-line">{c.maatLine}</span>
+                <span class="ps-plan-facts">{c.maatFacts}</span>
+              </label>
+            </div>
 
-            EEN RADIO ZOALS DE ANDERE DRIE, en de aantallen eronder in dezelfde
-            <label>. Geen apart scherm en geen tweede stap: wie hierheen komt,
-            vergelijkt vier vormen met elkaar, en een vierde die je eerst moet
-            aanklikken om te zien wat hij kost, vergelijkt niet mee.
-
-            DE PRIJS STAAT ER NIET ALS BEDRAG, en dat is geen omissie. Deze pagina
-            wordt één keer gebouwd (output: 'static') en heeft geen script dat
-            rekent; een bedrag dat pas na het insturen klopt, is erger dan geen
-            bedrag. Wat er wél staat is de REGEL, en die is kort genoeg om te
-            lezen: het gewone laddertarief over jouw aantal. De server rekent het
-            uit en het staat op het scherm ná de machtiging.
-
-            EN DE DRIE VELDEN ZIJN GEEN VALIDATIE. `min`, `max` en `required`
-            houden een vergissing tegen; de echte controle staat in
-            handleSubscribeStart() en die is de enige die telt — zie de kop daar. */}
-        <label class="plan-opt plan-maat">
-          <input type="radio" name="plan" value={CUSTOM_MONTH_ID} />
-          <span class="plan-opt-body">
-            <strong>{c.maatNaam}</strong>
-            <span class="plan-opt-line">{c.maatLine}</span>
-            <span class="plan-opt-facts">{c.maatUitleg}</span>
-
-            <span class="maat-velden">
+            <div class="maat-velden">
               <span class="maat-veld">
                 <label for="maat-producten">{c.maatProducten}</label>
                 <input id="maat-producten" type="number" name="producten" inputmode="numeric"
@@ -291,133 +392,116 @@ const termijnen = TERM_IDS.map((id) => ({
                 <input id="maat-clips" type="number" name="clips" inputmode="numeric"
                        min="0" max={CUSTOM_MONTH_MAX_PRODUCTS} step="1" placeholder="0" />
               </span>
-            </span>
-            <span class="plan-opt-line">{c.maatCarrouselsHint}</span>
-            <span class="plan-opt-line">{c.maatTermijn}</span>
-          </span>
-        </label>
-      </fieldset>
+              <p class="maat-hint">{c.maatHint}</p>
+            </div>
 
-      {/* ── DE POORT VOOR ALLES WAT EERST OPGEZET MOET WORDEN ────────────────
-          Lucas, 1 september 2026: *"als mensen custom lifestyle of iets anders
-          customs in het abonnement willen, moeten ze eerst contact met ons
-          opnemen. Dit is namelijk wel mogelijk maar vereist opzetting van die
-          style of custom service, hierdoor betaal je al terwijl die style die je
-          wil nog helemaal niet in het systeem staat."*
+            {/* ── DE POORT VOOR ALLES WAT EERST OPGEZET MOET WORDEN ──────────
+                Lucas, 1 september 2026: een eigen look in het abonnement kan,
+                maar vereist opzetting — anders betaal je al terwijl die stijl
+                nog niet bestaat. Geen veld dat het aanbiedt en daarna weigert;
+                één uitklapregel die zegt dat het KAN en langs welke weg. */}
+            <details class="ps-look">
+              <summary>{c.maatCustomH}</summary>
+              <p>{c.maatCustomBody}</p>
+              <p><a class="btn btn-ghost btn-sm" href={lp('/contact')}>{c.maatCustomCta}</a></p>
+            </details>
+          </fieldset>
 
-          Dat is geen beperking van het formulier maar een eerlijkheid ervan. De
-          drie soorten hierboven — catalogset, lifestyle-carrousel in je vaste
-          look, motion-clip — bestaan zodra het abonnement loopt. Een eigen look
-          bestaat pas nadat hij is opgezet, en een incasso die daarvoor al loopt,
-          int geld voor iets dat er niet is.
+          {/* ── 2 · DE TERMIJN ─────────────────────────────────────────────
+              De jaarvorm maakt maar één plan goedkoper (discountMonths in
+              plans.js); wat hij bij de andere twee geeft, staat in de regel
+              onder de keuze en op de plaat rechts. */}
+          <fieldset class="ps-set">
+            <legend><span class="ps-n">2</span>{c.stap2}</legend>
+            <div class="ps-terms">
+              {termijnen.map((t, i) => (
+                <label class="ps-term">
+                  <input type="radio" name="term" value={t.id} required checked={i === 0} />
+                  <span class="ps-term-naam">{t.id === 'yearly' ? c.termJaar : c.termMaand}</span>
+                  <span class="ps-term-sub">{t.id === 'yearly' ? c.termJaarSub : c.termMaandSub}</span>
+                </label>
+              ))}
+            </div>
+            <p class="ps-term-maat">{c.termMaat}</p>
+          </fieldset>
 
-          GEEN VELD DAT HET AANBIEDT EN DAARNA WEIGERT. Er staat geen vinkje
-          "custom lifestyle" dat na het insturen een foutmelding geeft: wie dat
-          wil, hoort hier te lezen dat het KAN en langs welke weg. */}
-      <div class="plan-set maat-custom">
-        <h2>{c.maatCustomH}</h2>
-        <p>{c.maatCustomBody}</p>
-        <p><a class="btn btn-ghost" href={lp('/contact')}>{c.maatCustomCta}</a></p>
+          {/* ── 3 · DE WEEK ────────────────────────────────────────────────── */}
+          <fieldset class="ps-set">
+            <legend><span class="ps-n">3</span>{c.stap3} <Note lang={lang} term={nl ? 'je vaste week' : 'your fixed week'}>{c.weekNote}</Note></legend>
+            <p class="ps-hint">{c.weekHint}</p>
+            <label class="plan-day">
+              <span>{c.weekLabel}</span>
+              {/* 1 tot 28 en niet 1 tot 31, om dezelfde reden als window_day in
+                  migratie 0030: februari mag geen uitzondering worden. */}
+              <select name="window_day">
+                {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                  <option value={d} selected={d === 8}>{d}</option>
+                ))}
+              </select>
+            </label>
+          </fieldset>
+        </div>
+
+        {/* ── DE PLAAT: WAT DEZE MAAND OPLEVERT ───────────────────────────────
+            Dezelfde `.lime-plate.plaat-vol` als op /plans en de homepage. Eén
+            variant per plan-en-termijn; CSS onderaan zet er één aan. */}
+        <aside class="ps-sum lime-plate plaat-vol">
+          <p class="ps-sum-label">{c.sumLabel}</p>
+
+          {varianten.map((v) => (
+            <div class="ps-sumv" data-plan={v.plan} data-term={v.term}>
+              <h2 class="ps-sum-naam">{v.naam}</h2>
+              <p class="ps-sum-kop">{v.kop}</p>
+              <div class="bedrag ps-bedrag">
+                <span class="bedrag-cijfer">{v.bedrag}</span>
+                <span class="bedrag-eenheid">{v.eenheid}{v.per ? ` — ${v.per}` : ''} · {vatLabel('excl', lang)}</span>
+              </div>
+              <p class="ps-sum-h">{c.sumElke}</p>
+              <ul class="ps-sum-list">
+                {v.regels.map((r) => (
+                  <li><span class="ps-sum-i" set:html={CHECK} /><span><b>{r.t}</b>{r.sub ? <span class="ps-sum-sub"> — {r.sub}</span> : null}</span></li>
+                ))}
+              </ul>
+              {v.los && (
+                <p class="ps-sum-los"><span>{v.los}</span> <b>{v.bespaar}</b></p>
+              )}
+            </div>
+          ))}
+
+          <div class="ps-sumv" data-plan={CUSTOM_MONTH_ID} data-term="monthly">
+            <h2 class="ps-sum-naam">{c.maatNaam}</h2>
+            <p class="ps-sum-kop">{c.maatLine}</p>
+            <p class="ps-sum-h">{c.sumMaatH}</p>
+            <p class="ps-sum-maatsub">{c.sumMaatSub}</p>
+            <ul class="ps-sum-vb">
+              {maatVoorbeelden.map((m) => (
+                <li>
+                  <span class="ps-vb-n">{m.n} {c.producten}</span>
+                  <span class="ps-vb-b">{m.bedrag}<small> {c.perMaand}</small></span>
+                  <span class="ps-vb-i">{m.beelden} {c.sumMaatBeelden}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="ps-sum-sub">{c.termMaat}</p>
+          </div>
+
+          <div class="ps-nu">
+            <p class="ps-sum-h">{c.nuH} <Note lang={lang} term={nl ? 'machtiging' : 'mandate'}>{c.mandateNote}</Note></p>
+            <ol class="ps-nu-list">
+              {c.nu.map((z) => <li>{z}</li>)}
+            </ol>
+          </div>
+
+          <button class="btn btn-primary btn-lg btn-block" type="submit">{c.submit}</button>
+          <p class="ps-sum-meta">{c.cancelNote}</p>
+        </aside>
       </div>
-
-      {/* ── WAAROM DE JAARVORM MAAR ÉÉN PLAN GOEDKOPER MAAKT ─────────────────
-          18 augustus 2026. De kaarten hierboven zetten er zes bedragen uit, en
-          bij Studio en Merk staat er twee keer hetzelfde getal. Dat is juist —
-          discountMonths in plans.js geeft alleen Starter korting, en de reden
-          daarvoor staat daar uitgerekend: twee maanden korting duwt Studio en
-          Merk ónder de bodem van de ladder, en dan verkoop je dertig producten
-          per maand goedkoper aan de klant die de meeste capaciteit opeet.
-
-          Maar op deze pagina stond dat nergens. Wie op Studio klikt en dan op
-          "12 maanden", ziet hetzelfde bedrag staan en heeft twee gedachten die
-          allebei slecht zijn: óf de pagina rekent niet goed, óf ik zit twaalf
-          maanden vast voor niets. Het antwoord is beter dan allebei en het is
-          één zin — en het is dezelfde zin die de jaarvorm verkoopt, want wat
-          hij wél geeft staat er direct achter. */}
-      <fieldset class="plan-set">
-        <legend>{c.termH}</legend>
-        <p class="plan-hint">{c.termNote}</p>
-        {termijnen.map((t, i) => (
-          <label class="plan-opt plan-opt-row">
-            <input type="radio" name="term" value={t.id} required checked={i === 0} />
-            <span class="plan-opt-body">
-              <strong>{t.naam}</strong>
-              {/* DE REGEL BEGINT NIET MET HET LABEL. Er stond hier
-                  "Maandelijks, en elke maand opzegbaar" ónder een vetgedrukt
-                  "Maandelijks", en bij de jaarvorm "12 maanden vast" onder
-                  "12 maanden". In de bron valt dat niet op, want label en regel
-                  staan tien tekens uit elkaar; op het scherm staan ze recht
-                  boven elkaar en lees je het woord twee keer achter elkaar.
-                  Het getal komt nog steeds uit TERMS.months — alleen niet meer
-                  als eerste woord van de zin. */}
-              <span class="plan-opt-line">
-                {nl
-                  ? (t.id === 'yearly'
-                    ? `Een vaste looptijd van ${t.maanden} maanden. Daarvoor terug: een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio.`
-                    : 'Elke maand opzegbaar. Je zegt op in je eigen dashboard.')
-                  : (t.id === 'yearly'
-                    ? `A fixed term of ${t.maanden} months. In return: a standing week, three months of rollover, a price lock, and the Brand Model on Studio too.`
-                    : 'Cancellable any month. You cancel it yourself in your dashboard.')}
-              </span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
-      <fieldset class="plan-set">
-        <legend>{c.weekH} <Note lang={lang} term={nl ? 'je vaste week' : 'your fixed week'}>{c.weekNote}</Note></legend>
-        <p class="plan-hint">{c.weekHint}</p>
-        <label class="plan-day">
-          <span>{c.weekLabel}</span>
-          {/* 1 tot 28 en niet 1 tot 31, om dezelfde reden als window_day in
-              migratie 0030: februari mag geen uitzondering worden. */}
-          <select name="window_day">
-            {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-              <option value={d} selected={d === 8}>{d}</option>
-            ))}
-          </select>
-        </label>
-      </fieldset>
-
-      <div class="plan-mandate">
-        <h2>{c.mandateH} <Note lang={lang} term={nl ? 'machtiging' : 'mandate'}>{c.mandateNote}</Note></h2>
-        <p>{c.mandateBody}</p>
-        {/* Twee losse feiten, dus twee regels. Aan elkaar geplakt leest het als
-            "blijft van jou excl. btw", en dat is een zin die niets betekent. */}
-        <p class="meta">{c.cancelNote}</p>
-        <p class="meta">{nl ? 'Alle bedragen' : 'All amounts'} {vatLabel('excl', lang)}.</p>
-      </div>
-
-      <button class="btn btn-primary btn-lg" type="submit">{c.submit}</button>
     </form>
 
-    {/* De uitleg voor wie nog geen account heeft. Geen foutmelding en geen
-        blokkade: de POST stuurt hem vanzelf naar de inlogpagina, en dit is de
-        zin die uitlegt waarom dat gebeurt vóórdat het gebeurt.
-
-        ── EN ALLEEN VOOR WIE UITGELOGD IS ────────────────────────────────────
-        18 augustus 2026. Dit blok stond er voor iedereen. Deze pagina is
-        statisch, dus bij het bouwen is er geen sessie en kan Astro het niet
-        weten — maar de site heeft daar al een mechanisme voor, en drie andere
-        formulieren gebruiken het. Layout.astro doet één gememoïseerde
-        /account/me per paginalading en zet elk [data-acct]-blok in één keer
-        aan of uit; zie ModelPicker.astro en .pl-signin in OrderFlow.astro.
-
-        Zonder dat las een klant die net had ingelogd, direct ónder de knop
-        "Doorgaan naar de machtiging", de zin "Je moet ingelogd zijn om een
-        abonnement af te sluiten". Op precies het duurste knopje van de site
-        is dat geen ruis maar twijfel: het leest als een waarschuwing dat de
-        klik niet gaat werken, en de klant die dan tóch klikt is de klant die
-        we net hebben laten aarzelen.
-
-        GEEN `hidden` IN DE MARKUP, en dat is de asymmetrie met
-        [data-acct="in"] in Layout.astro, die hem wél draagt. Zonder
-        JavaScript draait paint() nooit, en dan blijft staan wat er staat.
-        Voor "in" is dat goed (een naam tonen die je niet kunt controleren is
-        erger dan geen naam) en hier is het omgekeerde goed: de fout die we
-        niet willen is een uitgelogde bezoeker die de uitleg mist en op een
-        knop drukt die hem naar een inlogscherm gooit zonder dat hem verteld
-        is waarom. */}
+    {/* Alleen voor wie uitgelogd is — Layout.astro zet [data-acct]-blokken aan of
+        uit na één /account/me. Geen `hidden` in de markup: zonder script blijft
+        de uitleg staan, en dat is hier de goede kant — zie de noot van 18
+        augustus 2026 in de geschiedenis van dit bestand. */}
     <div class="plan-signedout" data-acct="out">
       <p>{c.signedOut}</p>
       <p>
@@ -493,98 +577,168 @@ const termijnen = TERM_IDS.map((id) => ({
 
 <style>
   .plan-fouten:empty { display: none; }
-  /* De <h1> viel terug op de standaard h1-maat (67px) terwijl elke andere
-     bestelpagina — /start/catalog, /start/lifestyle, /start/custom-look — op de
-     paginatitelmaat van 64 staat. Zie de noot bij --t-page-h1 in global.css. */
   .plan-start h1 { font-size: var(--t-page-h1); }
-  /* Gelijk aan `.section-tight` (72/72 op 1440) en niet aan een eigen clamp.
-     Gemeten op 19 augustus 2026: deze pagina stond op 64/64 terwijl
-     /start/catalog, /start/lifestyle en /start/complete allemaal op 72/72
-     stonden — vier stappen van dezelfde flow met drie keer dezelfde en één
-     keer een andere maat. Zie de noot bij --section-tight in global.css. */
   .plan-start { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
-  .plan-form { margin-top: 2rem; display: grid; gap: 2rem; }
-  .plan-set { border: 0; padding: 0; margin: 0; display: grid; gap: .7rem; }
-  .plan-set legend {
-    padding: 0; margin-bottom: .3rem;
-    font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  .ps-head .lede { max-width: 58ch; }
+
+  /* ── HET RASTER: KEUZES LINKS, DE PLAAT RECHTS ─────────────────────────────
+     De plaat plakt mee bij het scrollen zodat de keuze en het gevolg naast
+     elkaar blijven staan. Onder 60rem één kolom, de plaat onder de keuzes en
+     niet plakkend: op een telefoon zou een plakkende plaat het halve scherm
+     opeten. */
+  .plan-form { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  .ps-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(20rem, 5fr); gap: clamp(1.6rem, 3.5vw, 3.4rem); align-items: start; }
+  .ps-keuzes { display: grid; gap: clamp(1.8rem, 3.2vw, 2.6rem); min-width: 0; }
+  .ps-sum { position: sticky; top: 5.5rem; }
+  @media (max-width: 60rem) {
+    .ps-grid { grid-template-columns: 1fr; }
+    .ps-sum { position: static; }
   }
-  .plan-opt {
-    display: flex; gap: .8rem; align-items: flex-start;
-    padding: 1rem 1.1rem;
+
+  .ps-set { border: 0; padding: 0; margin: 0; display: grid; gap: .8rem; min-width: 0; }
+  .ps-set legend {
+    padding: 0; margin-bottom: .4rem;
+    display: flex; align-items: center; gap: .6rem;
+    font-family: var(--font-heading); font-weight: 800; font-size: 1.35rem; letter-spacing: -0.01em; color: var(--ink);
+  }
+  .ps-n {
+    display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem;
+    border-radius: 50%; border: 1px solid var(--line-strong);
+    font-family: var(--font-body, inherit); font-size: .8rem; font-weight: 700; color: var(--ink-3);
+  }
+  .ps-hint { color: var(--ink-3); font-size: .9rem; margin: 0; max-width: 60ch; }
+
+  /* ── DE PLANKAARTEN: TWEE NAAST ELKAAR ─────────────────────────────────────
+     De radio is er nog (toetsenbord, formulier) maar tekent niet mee; de kaart
+     zelf licht op. `:has()` en geen span-truc — dezelfde aanpak als de
+     stijlkiezer. */
+  .ps-plans { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  @media (max-width: 34rem) { .ps-plans { grid-template-columns: 1fr; } }
+  .ps-plan {
+    position: relative; display: grid; gap: .35rem; align-content: start;
+    padding: 1.1rem 1.2rem 1.15rem;
     border: 1px solid var(--line); border-radius: var(--r-lg);
-    cursor: pointer;
+    background: var(--paper-2); cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
   }
-  /* :has() en niet een :checked + span-truc: de hele kaart moet oplichten, niet
-     alleen het label ernaast. Dezelfde aanpak als bij de stijlkiezer. */
-  .plan-opt:has(input:checked) { border-color: var(--signal-ink, var(--ink-1)); }
-  .plan-opt:has(input:focus-visible) { outline: 2px solid var(--signal-ink, var(--ink-1)); outline-offset: 2px; }
-  .plan-opt-body { display: grid; gap: .3rem; }
-  .plan-opt-line { color: var(--ink-2); }
-  .plan-opt-facts { font-size: .88rem; color: var(--ink-3); }
-  .plan-opt-prices { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; margin-top: .3rem; font-size: .9rem; }
-
-  /* ── DE MAAND OP MAAT ──────────────────────────────────────────────────────
-     Drie getallen naast elkaar op een breed scherm, onder elkaar op een smal.
-     Ze staan BINNEN de <label> van de radio, zodat de hele kaart hetzelfde
-     aanklikgebied houdt als de drie erboven — maar een klik in een invoerveld
-     mag niet doorslaan naar de radio, en dat doet hij ook niet: een <input>
-     binnen een label vangt zijn eigen klik.
-
-     `pointer-events` is hier dus niet nodig, en dat is nagegaan en niet
-     aangenomen: het label activeert zijn eerste besturingselement alleen als de
-     klik niet op een ander besturingselement viel. */
-  .maat-velden { display: flex; flex-wrap: wrap; gap: .6rem 1rem; margin-top: .5rem; }
-  .maat-veld { display: grid; gap: .25rem; }
-  .maat-veld label {
-    font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+  .ps-plan input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .ps-plan:hover { border-color: var(--line-strong); }
+  .ps-plan:has(input:checked) { border-color: var(--accent); background: rgb(198 241 0 / 0.06); }
+  .ps-plan:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ps-plan-top { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+  .ps-plan-naam { font-family: var(--font-heading); font-weight: 800; font-size: 1.35rem; letter-spacing: -0.01em; color: var(--ink); }
+  .ps-plan-prijs { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ps-plan-prijs b { font-weight: 800; font-size: 1.1rem; color: var(--ink); }
+  .ps-plan-prijs small { margin-left: .2rem; font-size: .8rem; color: var(--ink-3); }
+  .ps-plan-line { color: var(--ink-2); font-size: .93rem; line-height: 1.5; }
+  .ps-plan-facts { font-size: .82rem; color: var(--ink-3); }
+  .ps-plan-jaar { font-size: .78rem; color: var(--accent-bright, var(--accent)); }
+  /* Het vinkje van de gekozen kaart: een stip in de accentkleur, rechtsboven. */
+  .ps-plan::after {
+    content: ''; position: absolute; top: .9rem; right: .95rem; width: .55rem; height: .55rem;
+    border-radius: 50%; background: var(--accent); opacity: 0; transition: opacity .15s ease;
   }
-  /* ── EEN <input type="number"> KRIJGT ZIJN LOOK NIET GRATIS ────────────────
-     global.css zet `appearance: none` op dit type maar geeft hem geen achtergrond
-     en geen rand — die staan op de klasse `.input`, en die hoort bij een
-     `.field`-formulier. Zonder deze regel tekent de browser drie lichte vakjes in
-     een donker paneel. Gevonden op de schermafdruk, precies zoals de noot bij
-     `.plan-day select` hieronder beschrijft; dat is dezelfde fout in dezelfde
-     vorm en daarom staat deze regel er in dezelfde stijl naast. */
+  .ps-plan:has(input:checked)::after { opacity: 1; }
+  .ps-plan:has(input:checked) .ps-plan-top { padding-right: 1rem; }
+
+  /* ── DE MAAND OP MAAT: DE VELDEN PAS ALS HIJ AANSTAAT ──────────────────────
+     Ze staan in de HTML (een formulier zonder script kan ze niet wegnemen) en
+     worden getoond zodra de vierde radio aan is. Zonder `:has()` staan ze er
+     gewoon altijd. */
+  .maat-velden {
+    flex-wrap: wrap; gap: .8rem 1rem;
+    padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2);
+  }
+  @supports selector(:has(input)) {
+    .maat-velden { display: none; }
+  }
+  @supports not selector(:has(input)) {
+    .maat-velden { display: flex; }
+  }
+  .plan-form:has(input[name="plan"][value="maat"]:checked) .maat-velden { display: flex; }
+  .maat-veld { display: grid; gap: .3rem; flex: 1 1 10rem; }
+  .maat-veld label { font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
   .maat-veld input[type="number"] {
-    width: 7.5rem; padding: .55rem .9rem;
-    border-radius: var(--r-md); border: 1px solid var(--line);
-    background: var(--paper-2); color: inherit; font: inherit;
+    width: 100%; padding: .6rem .9rem;
+    border-radius: var(--r-md); border: 1px solid var(--line-strong);
+    background: var(--paper); color: inherit; font: inherit;
   }
-  .maat-veld input[type="number"]::placeholder { color: var(--ink-3); }
-  .maat-veld input[type="number"]:focus-visible { border-color: var(--accent); }
-  /* Een keuze die niet aanstaat, hoeft zijn velden niet op te dringen: ze staan
-     er wel (een formulier zonder script kan ze niet wegnemen) maar gedempt, zodat
-     de kaart pas "aan" leest zodra de radio het is. */
-  .plan-maat:not(:has(input:checked)) .maat-velden { opacity: .55; }
-  .maat-custom { margin-top: .4rem; }
-  .maat-custom h2 { font-size: 1.05rem; margin: 0 0 .3rem; }
-  .maat-custom p { color: var(--ink-2); margin: 0 0 .6rem; }
-  @media (max-width: 520px) {
-    .maat-veld { flex: 1 1 100%; }
-    .maat-veld input[type="number"] { width: 100%; }
+  .maat-veld input[type="number"]::placeholder { color: var(--ink-4); }
+  .maat-veld input[type="number"]:focus-visible { border-color: var(--accent); outline: none; }
+  .maat-hint { flex: 1 1 100%; margin: .2rem 0 0; font-size: .84rem; line-height: 1.55; color: var(--ink-3); }
+
+  .ps-look { margin-top: .2rem; }
+  .ps-look > summary { cursor: pointer; font-size: .9rem; color: var(--ink-3); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
+  .ps-look > summary::-webkit-details-marker { display: none; }
+  .ps-look > summary:hover { color: var(--ink); }
+  .ps-look p { margin: .7rem 0 0; font-size: .92rem; line-height: 1.6; color: var(--ink-2); max-width: 64ch; }
+
+  /* ── DE TERMIJN: TWEE KEUZES NAAST ELKAAR ─────────────────────────────── */
+  .ps-terms { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  @media (max-width: 34rem) { .ps-terms { grid-template-columns: 1fr; } }
+  .ps-term {
+    position: relative; display: grid; gap: .3rem; align-content: start;
+    padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2); cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
   }
-  .plan-hint { color: var(--ink-3); font-size: .9rem; margin: 0 0 .4rem; }
+  .ps-term input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .ps-term:hover { border-color: var(--line-strong); }
+  .ps-term:has(input:checked) { border-color: var(--accent); background: rgb(198 241 0 / 0.06); }
+  .ps-term:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ps-term-naam { font-weight: 800; color: var(--ink); }
+  .ps-term-sub { font-size: .86rem; line-height: 1.5; color: var(--ink-3); }
+  .ps-term-maat { display: none; margin: 0; font-size: .86rem; color: var(--ink-3); }
+  .plan-form:has(input[name="plan"][value="maat"]:checked) .ps-terms { opacity: .45; }
+  .plan-form:has(input[name="plan"][value="maat"]:checked) .ps-term-maat { display: block; }
+
   .plan-day { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
-  /* EXPLICIETE BREEDTE EN RADIUS. De sitebrede regel geeft elke <select> de
-     pilvorm van een knop, en met 28 korte opties knijpt dat hem samen tot een
-     rondje waar "8" net in past. Gevonden op de schermafdruk; een <select> die
-     eruitziet als een badge, klikt niemand aan. */
   .plan-day select {
-    min-width: 7rem; padding: .55rem .9rem;
-    border-radius: var(--r-md); border: 1px solid var(--line);
+    min-width: 7rem; padding: .6rem .9rem;
+    border-radius: var(--r-md); border: 1px solid var(--line-strong);
     background: var(--paper-2); color: inherit; font: inherit;
   }
-  .plan-mandate {
-    padding: 1.2rem 1.3rem;
-    border: 1px solid var(--line); border-radius: var(--r-lg);
-    background: var(--paper-2);
+
+  /* ── DE PLAAT ──────────────────────────────────────────────────────────────
+     Kleur en inkt komen van `.plaat-vol.lime-plate` in global.css; hier alleen
+     de indeling. Eén variant zichtbaar, gekozen door de radio's. */
+  .ps-sum { padding: clamp(1.4rem, 2.6vw, 2rem); border-radius: var(--r-lg); display: grid; gap: 1.1rem; }
+  .ps-sum-label { margin: 0; font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .ps-sumv { display: grid; gap: .9rem; }
+  @supports selector(:has(input)) {
+    .ps-sumv { display: none; }
+    .plan-form:has([name="plan"][value="starter"]:checked):has([name="term"][value="monthly"]:checked) .ps-sumv[data-plan="starter"][data-term="monthly"],
+    .plan-form:has([name="plan"][value="starter"]:checked):has([name="term"][value="yearly"]:checked)  .ps-sumv[data-plan="starter"][data-term="yearly"],
+    .plan-form:has([name="plan"][value="studio"]:checked):has([name="term"][value="monthly"]:checked)  .ps-sumv[data-plan="studio"][data-term="monthly"],
+    .plan-form:has([name="plan"][value="studio"]:checked):has([name="term"][value="yearly"]:checked)   .ps-sumv[data-plan="studio"][data-term="yearly"],
+    .plan-form:has([name="plan"][value="brand"]:checked):has([name="term"][value="monthly"]:checked)   .ps-sumv[data-plan="brand"][data-term="monthly"],
+    .plan-form:has([name="plan"][value="brand"]:checked):has([name="term"][value="yearly"]:checked)    .ps-sumv[data-plan="brand"][data-term="yearly"],
+    .plan-form:has([name="plan"][value="maat"]:checked) .ps-sumv[data-plan="maat"] { display: grid; }
   }
-  .plan-mandate h2 { font-size: 1rem; margin: 0 0 .5rem; }
-  .plan-mandate p { margin: 0 0 .5rem; }
-  .plan-signedout { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--ink-3); }
+  .ps-sum-naam { margin: 0; font-size: clamp(1.9rem, 3vw, 2.4rem); line-height: 1; }
+  .ps-sum-kop { margin: -.4rem 0 0; font-size: 1rem; color: var(--ink-2); }
+  .ps-bedrag { --bedrag-maat: clamp(2.4rem, 4.5vw, 3.2rem); gap: .2rem; }
+  .ps-bedrag .bedrag-eenheid { font-size: .88rem; }
+  .ps-sum-h { margin: .2rem 0 0; font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: .4rem; }
+  .ps-sum-list { list-style: none; margin: -.3rem 0 0; padding: 0; display: grid; gap: .5rem; }
+  .ps-sum-list li { display: grid; grid-template-columns: 18px 1fr; gap: .6rem; font-size: .93rem; line-height: 1.5; color: var(--ink-2); }
+  .ps-sum-list b { color: var(--ink); font-weight: 700; }
+  .ps-sum-sub { color: var(--ink-3); }
+  .ps-sum-i svg { width: 16px; height: 16px; margin-top: .25rem; fill: none; stroke: var(--ink); stroke-width: 2.4; }
+  .ps-sum-los { margin: 0; padding-top: .9rem; border-top: 1px solid var(--line); font-size: .92rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+  .ps-sum-los b { color: var(--ink); font-size: 1rem; }
+  .ps-sum-maatsub { margin: -.4rem 0 0; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+  .ps-sum-vb { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+  .ps-sum-vb li { display: grid; grid-template-columns: 1fr auto; gap: .1rem .8rem; padding: .55rem 0; border-top: 1px solid var(--line); font-size: .92rem; }
+  .ps-vb-n { color: var(--ink); font-weight: 700; }
+  .ps-vb-b { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ps-vb-b small { font-weight: 400; color: var(--ink-3); }
+  .ps-vb-i { grid-column: 1 / -1; font-size: .82rem; color: var(--ink-3); }
+  .ps-nu { padding-top: 1rem; border-top: 1px solid var(--line); display: grid; gap: .6rem; }
+  .ps-nu-list { margin: 0; padding: 0 0 0 1.2rem; display: grid; gap: .4rem; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+  .ps-nu-list li::marker { font-weight: 800; color: var(--ink); }
+  .ps-sum .btn-block { width: 100%; margin-top: .2rem; }
+  .ps-sum-meta { margin: 0; font-size: .82rem; color: var(--ink-3); }
+
+  .plan-signedout { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--ink-3); max-width: 70ch; }
   .plan-signedout .btn { margin-right: .5rem; }
-  @media (max-width: 560px) {
-    .plan-opt-prices { flex-direction: column; gap: .15rem; }
-  }
 </style>

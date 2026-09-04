@@ -257,9 +257,12 @@ CREATE TABLE IF NOT EXISTS blackout_days (
 -- The brief says the token is "single-use on issue". Read as burn-on-first-view
 -- that would make the portal unusable — a client returns over days to approve
 -- images one at a time, and the second visit would 404. The reading implemented
--- here is single-ISSUE: exactly one live token per order, minted once, and
--- re-issuing revokes the previous row. The partial unique index below makes that
--- a database constraint rather than a convention. FLAGGED FOR LUCAS.
+-- here WAS single-ISSUE: exactly one live token per order, enforced by a partial
+-- unique index. Since 4 September 2026 (migration 0044) an order may carry several
+-- live tokens: every announcement mail mints its own link and the earlier ones
+-- keep working, so a customer opening an older mail is not told "this link has
+-- been replaced". Revocation is now only for an explicitly requested new link;
+-- expiry is derived from orders.closed_at + 90 days (token.js isExpired).
 CREATE TABLE IF NOT EXISTS order_tokens (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id     INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -271,9 +274,8 @@ CREATE TABLE IF NOT EXISTS order_tokens (
   uses         INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_order_tokens_order ON order_tokens(order_id);
--- One live token per order, enforced by the database.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_order_tokens_live
-  ON order_tokens(order_id) WHERE revoked_at IS NULL;
+-- idx_order_tokens_live (one live token per order) was dropped in migration 0044 —
+-- see the note above the table.
 
 -- Fixed-window rate limiting, for the portal lookups the brief asks us to limit.
 -- There is no KV binding on this project, so the counter lives in D1.
@@ -431,6 +433,9 @@ ALTER TABLE orders ADD COLUMN paid_at TEXT;
 -- the webhook on payment. NULL means nothing is counting down, which is correct
 -- for every unattended order and every settled one.
 ALTER TABLE orders ADD COLUMN window_expires_at TEXT;
+-- payment_reminder_at: wanneer de ene betaalherinnering is verstuurd (migratie
+-- 0042, cron remindUnpaid). NULL = nog niet.
+ALTER TABLE orders ADD COLUMN payment_reminder_at TEXT;
 -- refunded_cents: how much came back. On the ORDER, not as a second payments
 -- row, so UNIQUE(provider, external_id) keeps doing its job — that constraint
 -- is what made refunds vanish silently before this existed.
@@ -628,11 +633,14 @@ CREATE INDEX IF NOT EXISTS idx_orders_vat_treatment ON orders (vat_treatment);
 ALTER TABLE customers ADD COLUMN first_name    TEXT;
 ALTER TABLE customers ADD COLUMN last_name     TEXT;
 ALTER TABLE customers ADD COLUMN no_vat_number INTEGER NOT NULL DEFAULT 0;
+-- reg_number: het KVK-nummer (of buitenlands registratienummer) van een klant
+-- zonder btw-nummer — migratie 0043. Vroeger alleen in details_json per bestelling.
 ALTER TABLE customers ADD COLUMN address_line1 TEXT;
 ALTER TABLE customers ADD COLUMN address_line2 TEXT;
 ALTER TABLE customers ADD COLUMN postal_code   TEXT;
 ALTER TABLE customers ADD COLUMN city          TEXT;
 ALTER TABLE customers ADD COLUMN region        TEXT;
+ALTER TABLE customers ADD COLUMN reg_number    TEXT;
 
 ALTER TABLE orders ADD COLUMN first_name    TEXT;
 ALTER TABLE orders ADD COLUMN last_name     TEXT;
@@ -747,6 +755,12 @@ ALTER TABLE customer_style_locks ADD COLUMN channels TEXT;
 -- welke verhoudingen mogen, verschilt per dienst en beweegt mee met wat we
 -- verkopen. Zie migrations/0028-vaste-verhouding.sql.
 ALTER TABLE customer_style_locks ADD COLUMN ratio TEXT;
+
+-- ── De vaste stijl bij lifestyle (migratie 0039, 3 september 2026) ─────────
+-- Wat de achtergrond voor catalog is, is de stijl (Glow, Dunes, Flash,
+-- Phone-made) voor lifestyle. Waardes zijn de slugs uit src/data/styles.js;
+-- gecontroleerd daar, niet met een CHECK. Zie migrations/0039-vaste-look.sql.
+ALTER TABLE customer_style_locks ADD COLUMN look TEXT;
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- 0020 · DE REVIEWVRAAG NA EEN AFGERONDE BESTELLING
@@ -1466,3 +1480,61 @@ ALTER TABLE orders ADD COLUMN revision_round_count INTEGER;
 
 CREATE INDEX IF NOT EXISTS idx_orders_revision_round
   ON orders (revision_round_at) WHERE revision_round_at IS NOT NULL;
+
+-- ── 0040 · eigen stijlen per klant (4 september 2026) ─────────────────────
+CREATE TABLE IF NOT EXISTS customer_styles (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id     INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  name            TEXT NOT NULL,
+  description     TEXT,
+  service         TEXT NOT NULL DEFAULT 'lifestyle' CHECK (service IN ('catalog', 'lifestyle', 'both')),
+  status          TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('proposed', 'active', 'archived')),
+  surcharge_cents INTEGER NOT NULL DEFAULT 0,
+  preview_key     TEXT,
+  prompt_note     TEXT,
+  request_order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  design_order_id  INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_customer_styles_customer ON customer_styles(customer_id, status);
+
+-- De gedeelde maandset bij het abonnement — migratie 0041, 4 september 2026.
+-- Eén set per maand, van niemand; wie hem ziet bepaalt het abonnement. Zie de
+-- kop van migrations/0041-maandset.sql en STOCK-IDEE.md §6.
+CREATE TABLE IF NOT EXISTS shared_sets (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  month         TEXT NOT NULL UNIQUE,
+  title         TEXT,
+  note          TEXT,
+  published_at  TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS shared_files (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  set_id        INTEGER NOT NULL REFERENCES shared_sets(id) ON DELETE CASCADE,
+  r2_key        TEXT NOT NULL,
+  filename      TEXT NOT NULL,
+  bytes         INTEGER NOT NULL DEFAULT 0,
+  content_type  TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_shared_files_set ON shared_files(set_id);
+
+-- Mail die niet aankwam — migratie 0045, 4 september 2026 (doorlichting §3.7).
+-- Gevuld door /api/webhook/resend (bounces en spamklachten), gelezen door /admin.
+-- Zie de kop van migrations/0045-mail-bounces.sql.
+CREATE TABLE IF NOT EXISTS mail_bounces (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id     TEXT NOT NULL UNIQUE,
+  email        TEXT NOT NULL,
+  kind         TEXT NOT NULL,
+  email_id     TEXT,
+  subject      TEXT,
+  bounce_type  TEXT,
+  message      TEXT,
+  occurred_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  resolved_at  TEXT,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_mail_bounces_email ON mail_bounces(email, resolved_at);

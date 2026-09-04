@@ -34,6 +34,7 @@
 import { customerEmail } from '../functions/api/order.js';
 import { deliveryEmail, freshLinkEmail, redeliveryEmail } from '../src/lib/admin.js';
 import { greeting } from '../src/lib/mailTemplate.js';
+import { cancelEmail } from '../src/lib/cancelMail.js';
 
 const R = [];
 const ok = (naam, gekregen, verwacht = true) => R.push({
@@ -71,6 +72,12 @@ const MAILS = [
     naam: 'nieuwe portaallink (freshLinkEmail)',
     render: (lang) => freshLinkEmail({ order: order(lang), link: 'https://visuails.com/o/abc' }),
     nlWoord: /link|bestelling/i,
+  },
+  {
+    // 4 september 2026: de annuleringsmail (doorlichting §3.2).
+    naam: 'annulering (cancelEmail)',
+    render: (lang) => cancelEmail({ order: order(lang), reason: 'Merk stopt met de lijn.', money: 'refund', grossCents: 121000 }).html,
+    nlWoord: /geannuleerd|terug/i,
   },
 ];
 

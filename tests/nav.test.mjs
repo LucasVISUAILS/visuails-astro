@@ -87,13 +87,30 @@ for (const lang of LANGS) {
    * WAT DEZE REGEL NU BEWAAKT is het paar dat nog wél moet kloppen: een
    * `soon`-item mag alleen naar een pagina wijzen die het ook echt uitlegt.
    * Wijst er ooit een naar /start of naar een bestelformulier, dan belooft het
-   * menu een bestelling die er niet is — en dan valt dit om. */
-  const UITLEGPAD = /^\/plans(#|$)/;
-  check(`${lang}: een dienst met "binnenkort" wijst naar een uitlegpagina`,
-    drops.every((d) => !d.soon || !d.href || UITLEGPAD.test(d.href)), true);
-  check(`${lang}: en Hooks en Editions wijzen naar het ankerblok`,
-    drops.filter((d) => d.soon).map((d) => d.href),
-    drops.filter((d) => d.soon).map(() => '/plans#binnenkort'));
+   * menu een bestelling die er niet is — en dan valt dit om.
+   *
+   * ── EN "UITLEGPAGINA" IS SINDS 2 SEPTEMBER NIET MEER ALLEEN /plans ───────
+   *
+   * Hier stond `/^\/plans(#|$)/` en een tweede regel die eiste dat ALLE
+   * soon-items exact naar `/plans#binnenkort` wezen. Dat klopte zolang er geen
+   * eigen pagina's waren. Hooks heeft er sinds 2 september wel een, en die legt
+   * hem uitgebreider uit dan het ankerblok ooit deed — hem terugwijzen naar een
+   * korter stuk tekst zou de bezoeker slechter bedienen om een toets groen te
+   * houden.
+   *
+   * Wat de regel bewaakt is niet HET PAD maar de belofte: een soon-item wijst
+   * naar iets om te LEZEN en nooit naar iets om te BESTELLEN. Daarom staat er
+   * nu een verbod in plaats van een toestemming — geen /start en geen
+   * /start/… — en dat verbod dekt ook elk pad dat er in de toekomst bij komt. */
+  const BESTELPAD = /^\/start(\/|#|$)/;
+  check(`${lang}: geen enkel "binnenkort" wijst naar een bestelformulier`,
+    drops.every((d) => !d.soon || !d.href || !BESTELPAD.test(d.href)), true);
+  /* En het pad moet wel ergens heen gaan waar het wordt uitgelegd: het
+     ankerblok op /plans, of een eigen pagina met dezelfde naam als het item. */
+  const legtUit = (d) => /^\/plans(#|$)/.test(d.href)
+    || d.href === `/${d.title.toLowerCase()}`;
+  check(`${lang}: elk "binnenkort" wijst naar zijn eigen uitleg`,
+    drops.filter((d) => d.soon && d.href).every(legtUit), true);
   const linked = drops.filter((d) => d.href);
   check(`${lang}: elke href begint met een schuine streep`, linked.every((d) => d.href.startsWith('/')), true);
   // Geen taal in de href: localizedPath() zet /nl/ ervoor. Stond er ooit /nl/ in,
@@ -393,8 +410,21 @@ console.log('\nde balk onderaan houdt zijn uitleg');
      de WhatsApp-knop omhoog en komt hij er niet achter te zitten. Dat is nu de
      eis — een regel die `.wa-launcher` verhoogt zodra `.convbar.show` er is,
      hoe die verhoging ook is opgeschreven. Een vast getal mag nog steeds; alleen
-     is het niet langer verplicht. */
-  const wijkt = /\.convbar\.show\s*~\s*\.wa-launcher[^{}]*\{[^}]*--wa-bottom:\s*[^;]+/.test(css);
+     is het niet langer verplicht.
+
+     ── EN DEZELFDE LES NOG EEN KEER — 2 september 2026 ──────────────────────
+     De regel hierboven eiste `~ .wa-launcher` DIRECT achter de tilde, en dus
+     ging hij opnieuw rood op een verbetering: de knop staat nu in een
+     <div class="wa-dock"> die role="complementary" draagt, omdat axe-core hem
+     op alle 91 pagina's aanwees als inhoud buiten elk landmark. De selector
+     werd `.convbar.show ~ .wa-dock .wa-launcher` — dezelfde belofte, één doos
+     verderop.
+
+     Wat de tilde bewaakt is dat de verhoging AAN DE BALK HANGT en niet los aan
+     de viewportbreedte; dat de knop een broer of een kleinkind van die broer is,
+     is opmaak. `[^{}]*` tussen de tilde en de knop laat dat vrij en houdt de
+     eis overeind: geen `{` en geen `}` ertussen, dus het blijft één selector. */
+  const wijkt = /\.convbar\.show\s*~\s*[^{}]*\.wa-launcher[^{}]*\{[^}]*--wa-bottom:\s*[^;]+/.test(css);
   check('de whatsapp-knop wijkt voor de balk', wijkt, true);
   /* En de controle op de controle: zonder die regel hoort hij rood te gaan. */
   check('en die eis vindt een echte fout', /\.convbar\.show\s*~\s*\.wa-launcher[^{}]*\{[^}]*--wa-bottom:\s*[^;]+/.test('.wa-launcher { bottom: 20px; }'), false);
@@ -425,20 +455,38 @@ console.log('\nde prijsvorm');
   check('geen handgeschreven bereik met twee eurotekens', handwritten, []);
 }
 
-/* ══ 8 · HOOKS IS VERBORGEN, MAAR NIET ONZICHTBAAR ══════════════════════════
+/* ══ 8 · HOOKS IS ER WÉL, EN JE KUNT HEM NOG NIET BESTELLEN ═════════════════
  *
- * Lucas: *"Verberg de pagina voor nu (…) maar post hem voor nu wel alvast tussen de
- * services als knop die niet werkt met een label erbij dat deze nog niet klaar is."*
+ * ── WAT HIER STOND, EN WAAROM HET IS OMGEDRAAID ────────────────────────────
  *
- * Twee dingen die tegen elkaar in kunnen gaan zodra iemand er één van aanraakt: de
- * pagina mag niet bestaan, en het item moet blijven staan. Zonder deze test is de
- * meest waarschijnlijke fout dat iemand het item weghaalt "omdat de pagina er niet
- * is", of de pagina terugzet zonder de tekst die er nog niet is.
+ * Deze sectie eiste tot 2 september 2026 het TEGENOVERGESTELDE: `src/pages/
+ * hooks.astro` mocht niet bestaan, `hooks` mocht niet in de sitemap staan, en
+ * het menu-item moest naar /plans#binnenkort wijzen. Dat kwam uit Lucas'
+ * instructie van 9 augustus: *"Verberg de pagina voor nu (…) maar post hem voor
+ * nu wel alvast tussen de services als knop die niet werkt met een label erbij
+ * dat deze nog niet klaar is."*
+ *
+ * Op 2 september vroeg hij het omgekeerde: *"Ik wil dat je de hooks pagina gaat
+ * maken."* Daarmee vervalt de eis dat de pagina er niet mag zijn — maar niet de
+ * eis eronder, en dat onderscheid is het hele punt van deze sectie. Wat Lucas
+ * in augustus beschermde was niet de afwezigheid van een pagina; het was dat
+ * niemand iets kan bestellen wat nog niet gemaakt kan worden. Die eis staat
+ * hieronder onveranderd, en geldt nu ook voor de pagina zelf.
+ *
+ * ── WAAROM DE OUDE EIS NIET GEWOON IS WEGGEHAALD ───────────────────────────
+ *
+ * Omdat een verwijderde wacht geen spoor achterlaat. Over een maand is de
+ * vraag "mocht /hooks er niet zijn, of is dat ooit veranderd?" — en het
+ * antwoord hoort in het bestand te staan waar de vraag opkomt, niet in een
+ * commitbericht dat niemand opzoekt. Vandaar deze noot en niet een schone lei.
  */
-console.log('\nverborgen, maar niet onzichtbaar');
+console.log('\nde hookspagina bestaat, en verkoopt niets');
 {
-  check('er is geen /hooks-pagina', existsSync(new URL('../src/pages/hooks.astro', import.meta.url)), false);
-  check('en geen Nederlandse',      existsSync(new URL('../src/pages/nl/hooks.astro', import.meta.url)), false);
+  /* De pagina staat als map en niet als `hooks.astro` — zelfde vorm als
+     /catalog, /lifestyle en /video, die alle drie ooit sub-pagina's kregen. */
+  check('er is een /hooks-pagina',  existsSync(new URL('../src/pages/hooks/index.astro', import.meta.url)), true);
+  check('en een Nederlandse',       existsSync(new URL('../src/pages/nl/hooks/index.astro', import.meta.url)), true);
+  check('en geen tweede op het oude pad', existsSync(new URL('../src/pages/hooks.astro', import.meta.url)), false);
 
   /*
    * De sitemap staat sinds 9 augustus 2026 in dist/ en niet meer in public/: hij wordt
@@ -464,21 +512,36 @@ console.log('\nverborgen, maar niet onzichtbaar');
   const staat = buildStaat(sitemapPad);
   if (staat.er && !staat.oud) {
     const sitemap = read('dist/sitemap.xml').replace(/<!--[\s\S]*?-->/g, '');
-    check('en hij staat niet in de sitemap', /hooks/.test(sitemap), false);
+    /* Omgedraaid met de rest van deze sectie: hij MOET er nu in staan, in
+       allebei de talen. Een dienstpagina die niet in de sitemap staat, bestaat
+       voor een zoekmachine niet — en dat was precies de bedoeling toen hij
+       verborgen was, en precies niet de bedoeling nu. */
+    check('en hij staat in de sitemap',            /<loc>[^<]*\/hooks\/<\/loc>/.test(sitemap), true);
+    check('en de Nederlandse ook',                 /<loc>[^<]*\/nl\/hooks\/<\/loc>/.test(sitemap), true);
   } else {
     console.log(` --   sitemap niet gecontroleerd: ${staat.uitleg}`);
   }
 
-  /* Het item staat er nog, in beide talen — en sinds 30 augustus 2026 wijst het
-     naar de plek waar hij wordt uitgelegd. Zie de noot bij de vormregels
-     bovenaan: "binnenkort" ging over de PAGINA en gaat sindsdien over de
-     BESTELLING. */
+  /* Het item staat er nog, in beide talen, en wijst sinds 2 september naar zijn
+     eigen pagina. Het MERKJE blijft: "binnenkort" ging tot 30 augustus over de
+     pagina en gaat sindsdien over de BESTELLING — en bestellen kan nog steeds
+     niet. Editions heeft geen eigen pagina en blijft dus op het ankerblok. */
   for (const lang of LANGS) {
     const hooks = ui[lang].drops.find((d) => d.title === 'Hooks');
     check(`${lang}: het item staat in het menu`, Boolean(hooks), true);
-    check(`${lang}: en wijst naar de uitleg op /plans`, hooks?.href, '/plans#binnenkort');
-    check(`${lang}: en draagt nog steeds het label`, hooks?.soon, true);
-    check(`${lang}: en is als binnenkort gemarkeerd`, hooks?.soon, true);
+    check(`${lang}: en wijst naar de eigen pagina`, hooks?.href, '/hooks');
+    /* Sinds 4 september 2026 is het label een tekst ("Op aanvraag") en geen
+       "Binnenkort" meer — Hooks is te laten maken, alleen niet te bestellen. */
+    check(`${lang}: en draagt nog steeds het label`, typeof hooks?.soon === 'string' && hooks.soon.length > 0, true);
+
+    /* Editions heeft sinds 2 september 2026 óók een eigen pagina. Deze regel
+       eiste tot dan `/plans#binnenkort`, precies zoals de Hooks-regel erboven
+       tot 2 september deed — en om dezelfde reden is hij nu een verbod in
+       plaats van een adres: waar het item heen wijst mag veranderen, wat er
+       achter mag staan niet. Zie de noot bij BESTELPAD in §1. */
+    const edities = ui[lang].drops.find((d) => d.title === 'Editions');
+    check(`${lang}: Editions wijst naar de eigen pagina`, edities?.href, '/editions');
+    check(`${lang}: en draagt het label`, edities?.soon, true);
   }
 
   // Layout tekent een item zonder href als iets anders dan een link.
@@ -495,6 +558,48 @@ console.log('\nverborgen, maar niet onzichtbaar');
     check(`${pagina}: geen bestelknop bij de aangekondigde diensten`,
       /id="binnenkort"[\s\S]{0,4000}?href="[^"]*\/start/.test(h), false);
     void blok;
+  }
+
+  /* ── EN DE PAGINA ZELF VERKOOPT NIETS ────────────────────────────────────
+   *
+   * Dit is de eis die overblijft van de oude sectie, en hij is de enige die er
+   * ooit toe deed: een dienst die de agenda niet kan inplannen, mag geen knop
+   * hebben die doet alsof dat wel kan. `KIND_IMAGES.hooks` is null, dus
+   * tierFor() kan er geen venster voor geven; een /start-link zou een
+   * bestelstroom openen die halverwege vastloopt.
+   *
+   * Er wordt op de GEBOUWDE pagina gezocht en niet in de bron: het gaat om wat
+   * een bezoeker kan aanklikken, en een link kan uit een component of uit een
+   * gedeelde data-lijst komen. De navigatie en de voettekst staan ook op deze
+   * pagina en wijzen wél naar /start — vandaar dat alleen het <main> wordt
+   * gelezen, dat is de pagina zelf. */
+  for (const pagina of ['dist/hooks/index.html', 'dist/nl/hooks/index.html',
+                        'dist/editions/index.html', 'dist/nl/editions/index.html']) {
+    const h = read(pagina);
+    const i = h.indexOf('<main');
+    const j = h.indexOf('</main>');
+    check(`${pagina}: heeft een <main>`, i >= 0 && j > i, true);
+    const romp = i >= 0 && j > i ? h.slice(i, j) : '';
+    /* ── WAT ER WÉL EN NIET MAG STAAN ──────────────────────────────────
+       Deze regel was eerst "geen enkele /start-link in de romp", en dat viel
+       meteen om — terecht. Er staan er twee, en allebei horen ze er:
+       ServiceSwitch noemt de diensten die je wél kunt bestellen, en de
+       tierband wijst naar catalog omdat die twee kolommen over catalog en
+       lifestyle gaan.
+
+       De eis is dus preciezer: geen bestelroute voor HOOKS zelf, en geen
+       generieke keuzepagina — dat laatste is de knop die niet zegt wat er
+       achter hem gebeurt, en die deze site op elke dienstpagina verbiedt. */
+    const bestel = [...romp.matchAll(/href="([^"]*\/start[^"]*)"/g)].map((m) => m[1]);
+    check(`${pagina}: geen bestelroute voor hooks`,
+      bestel.filter((h) => /\/start\/hooks/.test(h)), []);
+    check(`${pagina}: en geen knop naar de kale keuzepagina`,
+      [...new Set(bestel.filter((h) => /\/start\/?$/.test(h)))], []);
+    /* En het merkje staat er, zodat het niet alleen in het menu wordt gezegd. */
+    /* Sinds 4 september 2026 zegt /hooks "Op aanvraag": wel te laten maken, geen
+       bestelknop — Lucas' keuze. /editions blijft "nog niet actief". */
+    check(`${pagina}: zegt zelf dat het niet zomaar te bestellen is`,
+      /(Not orderable yet|Nog niet te bestellen|Not running yet|Nog niet actief|On request|Op aanvraag)/.test(romp), true);
   }
 }
 
@@ -970,10 +1075,25 @@ console.log('\n══ het kruimelpad wijst naar echte pagina\'s met echte namen'
     }
   }
 
-  // De pagina's die er met opzet géén hebben. (/demo stond hier tot 24 augustus
-  // 2026 bij; die route bestaat niet meer, en een uitzondering toetsen op een
-  // pagina die niet gebouwd wordt, bewijst niets meer.)
-  for (const pad of ['/thank-you', '/portal', '/studio']) {
+  /* ── DE PAGINA'S DIE ER MET OPZET GÉÉN HEBBEN ────────────────────────────
+   *
+   * (/demo stond hier tot 24 augustus 2026 bij; die route bestaat niet meer, en
+   * een uitzondering toetsen op een pagina die niet gebouwd wordt, bewijst
+   * niets meer.)
+   *
+   * ── EN /portal EN /studio STAAN ER SINDS 2 SEPTEMBER NIET MEER BIJ ────────
+   *
+   * Die twee stonden hier zonder reden erbij, en bij het nalopen bleek er ook
+   * geen te zijn: allebei dragen ze `index, follow` en allebei zijn het gewone
+   * pagina's van twee niveaus diep. Precies waar een kruimelpad voor is — zonder
+   * hem toont Google het kale pad onder de titel, met hem de namen die wij
+   * geven. Gevonden met kladblok/seo-audit.mjs, dat zeventien pagina's zonder
+   * BreadcrumbList aanwees.
+   *
+   * Wat er OVERBLIJFT in deze lijst is /thank-you, en dat is de enige die er
+   * hoort: hij staat op noindex. Een kruimelpad bouwen voor een pagina die niet
+   * in een zoekresultaat mag verschijnen, is werk dat niemand ziet. */
+  for (const pad of ['/thank-you']) {
     const node = buildGraph({ path: pad, lang: 'en', url: `https://visuails.com${pad}` })['@graph']
       .find((n) => n['@type'] === 'BreadcrumbList');
     check(`${pad} krijgt er bewust geen`, Boolean(node), false);

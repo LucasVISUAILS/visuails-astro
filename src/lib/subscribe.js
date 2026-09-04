@@ -78,17 +78,20 @@ import {
  *
  *   · Mollie geeft alleen een mandaat af uit een ECHTE transactie. Nul euro kan
  *     niet — createFirstPayment() weigert dat expliciet.
- *   · De eerste maand hoort via de subscription te lopen en niet hier. Anders
- *     bestaat de eerste termijn buiten `subscription_payments` om, en dan mist de
- *     maandboekhouding precies één maand — de eerste, die de klant zich het beste
- *     herinnert.
+ *   · (Tot 4 september 2026 stond hier: de eerste maand hoort via de subscription
+ *     te lopen, anders mist de maandboekhouding een maand. Dat is opgelost aan de
+ *     andere kant: de webhook schrijft de eerste betaling — herkenbaar aan
+ *     `sub_ref` — óók in subscription_payments en kent de maand toe. Zie
+ *     recordSubscriptionPaid() in functions/api/webhook/mollie.js.)
  *
- * De € 1 wordt verrekend doordat de subscription pas de maand daarna begint; zie
- * `startDate` hieronder. Wat de klant betaalt is dus één euro nu en zijn
- * maandbedrag vanaf de eerstvolgende termijn.
+ * De eerste betaling is dus de eerste MAAND, en de subscription begint bij
+ * eersteTermijn(): dezelfde dag, volgende maand. Zo betaalt de klant één keer per
+ * maand, vanaf de dag dat hij ja zegt, en heeft hij meteen saldo.
  */
 /* Uit src/data/pricing.js: elk bedrag op de site komt daarvandaan, en de copy op
    /plans en in PlanPicker leest hem inmiddels ook. */
+/* MANDATE_AMOUNT blijft de ondergrens die createFirstPayment() eist; het bedrag
+   zelf is sinds 4 september 2026 de eerste maand — zie de noot bij de aanroep. */
 const MANDATE_EUROS = MANDATE_AMOUNT;
 
 /**
@@ -242,10 +245,21 @@ export async function handleSubscribeStart(context, customer, offsite) {
 
   let checkout;
   try {
+    /* ── DE EERSTE BETALING IS DE EERSTE MAAND — 4 september 2026 ──────────
+       Tot vandaag was dit MANDATE_EUROS (€ 1): alleen de machtiging, en de eerste
+       échte termijn viel een maand later. Gevolg: een abonnee had een lopend
+       abonnement zonder saldo tot de eerste afschrijving — een maand wachten op
+       iets waar hij net ja op had gezegd. Lucas: de eerste maand meteen
+       incasseren, en de eerste week meteen plannen.
+
+       Dezelfde betaling geeft nog steeds het mandaat af (sequenceType 'first');
+       de webhook kent de maand toe op `sub_ref` (zie mollie.js in functions/api/
+       webhook) en de Mollie-subscription begint bij eersteTermijn(), dus er wordt
+       niet twee keer in dezelfde maand afgeschreven. */
     const betaling = await createFirstPayment(env, {
       subscriptionRef: rij.ref,
       mollieCustomerId,
-      valueEuros: MANDATE_EUROS,
+      valueEuros: subMaandCents(rij) / 100,
       description: `VISUAILS ${planName(planId, lang)} — ${rij.ref}`,
       lang,
       /* De klant komt terug op /account/plan/return, waar het mandaat wordt
@@ -293,6 +307,26 @@ export async function handleSubscribeReturn(context, customer) {
   if (vol?.mollie_subscription_id) return { staat: 'actief', sub: vol };
   if (!vol?.mollie_customer_id) return { staat: 'wacht', sub: vol || sub };
 
+  return koppelSubscription(env, vol, new URL(request.url).origin);
+}
+
+/**
+ * Het mandaat ophalen en de Mollie-subscription aanmaken — de stap die van een
+ * betaalde eerste maand een lopend abonnement maakt.
+ *
+ * ── TWEE AANROEPERS SINDS 4 SEPTEMBER 2026 ──────────────────────────────────
+ * De terugkeerpagina (hierboven) én de webhook van de eerste betaling. Die tweede
+ * bestaat omdat de eerste maand nu meteen wordt geïncasseerd en toegekend: een
+ * klant die na het betalen zijn tabblad sluit en nooit op /account/plan/return
+ * landt, zou anders een actief abonnement met saldo hebben — en geen Mollie-
+ * subscription die volgende maand afschrijft. De webhook dicht dat gat; komt de
+ * klant daarna alsnog terug, dan ziet die pagina `mollie_subscription_id` staan en
+ * zegt gewoon dat het loopt.
+ */
+export async function koppelSubscription(env, vol, origin) {
+  if (vol?.mollie_subscription_id) return { staat: 'actief', sub: vol };
+  if (!vol?.mollie_customer_id) return { staat: 'wacht', sub: vol };
+
   let mandaat;
   try {
     mandaat = await firstPaymentMandate(env, vol.mollie_customer_id);
@@ -309,7 +343,6 @@ export async function handleSubscribeReturn(context, customer) {
      op de rij, bevroren op het moment van afsluiten. Zie migratie 0038 voor
      waarom het daar staat en niet elke maand opnieuw uit de ladder komt. */
   const maandBedrag = subMaandCents(vol) / 100;
-  const origin = new URL(request.url).origin;
 
   try {
     const sc = await createMollieSubscription(env, {
@@ -318,14 +351,16 @@ export async function handleSubscribeReturn(context, customer) {
       valueEuros: maandBedrag,
       description: `VISUAILS ${vol.plan} — ${vol.ref}`,
       webhookUrl: `${origin}/api/webhook/mollie`,
-      /* VANAF DE VOLGENDE MAAND. De klant heeft zojuist € 1 betaald voor het
-         mandaat; de eerste echte termijn hoort een maand later te vallen, anders
-         betaalt hij twee keer in dezelfde week. */
+      /* VANAF DE VOLGENDE MAAND. De klant heeft zojuist zijn eerste maand betaald
+         (dezelfde betaling die het mandaat afgeeft); de tweede termijn hoort een
+         maand later te vallen, anders betaalt hij twee keer in dezelfde week. */
       startDate: eersteTermijn(),
       /* Een jaarverbintenis stopt zichzelf na twaalf termijnen. Netter dan
          onthouden dat er iets opgezegd moet worden — zie de noot bij `times` in
          mollie.js. */
-      times: vol.term === 'yearly' ? 12 : undefined,
+      /* Elf en niet twaalf sinds de eerste betaling de eerste maand IS: één
+         betaald bij het afsluiten, elf via de subscription = twaalf termijnen. */
+      times: vol.term === 'yearly' ? 11 : undefined,
     });
     if (!sc?.id) throw new Error('Mollie gaf geen abonnements-id terug');
     await setMollieIds(env, vol.id, { subscriptionId: sc.id });
@@ -335,7 +370,7 @@ export async function handleSubscribeReturn(context, customer) {
     return { staat: 'wacht', sub: vol };
   }
 
-  return { staat: 'gelukt', sub: await loadSubscription(env, customer.customer_id) };
+  return { staat: 'gelukt', sub: await loadSubscription(env, vol.customer_id) };
 }
 
 /**

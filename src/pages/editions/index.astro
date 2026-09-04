@@ -1,0 +1,33 @@
+---
+/*
+ * VISUAILS — /editions (Engels). Het lichaam staat in EditionsPage.astro.
+ *
+ * ── WAAROM DE PAGINA NIET /stock HEET ─────────────────────────────────────
+ *
+ * Omdat je die vergelijking verliest. Death to Stock is $20 per maand voor ruim
+ * 15.000 beelden en positioneert zich letterlijk als *"made by real creators,
+ * not AI"*. Jezelf stock noemen betekent op hun terrein spelen, en daar wint
+ * niemand op prijs per beeld. Zie STOCK-IDEE.md §2 en de wacht in
+ * tests/nav.test.mjs die het woord in de NAAM, de omschrijving en de knop
+ * verbiedt — ontkend gebruiken mag wel, en dat doet deze pagina ook.
+ *
+ * De description hieronder noemt het woord daarom precies één keer, en in de
+ * vorm waarin het klopt: dit is geen beeldbank.
+ */
+import Layout from '../../layouts/Layout.astro';
+import EditionsPage from '../../components/EditionsPage.astro';
+import { euro, AMOUNT, STOCK_OFF_BRAND, STOCK_ON_BRAND } from '../../data/pricing.js';
+
+/* Onder de 160 tekens — tests/nav.test.mjs meet elke pagina. */
+const description =
+  `${STOCK_OFF_BRAND} brand-neutral visuals with every plan, ${STOCK_ON_BRAND} on your brand alone ` +
+  `for ${euro(AMOUNT.editions, 'en')} a month. No product in them, and no stock library.`;
+---
+
+<Layout
+  title="Editions — monthly brand imagery | VISUAILS"
+  description={description}
+  ogImage="/img/brand-stair.webp"
+>
+  <EditionsPage lang="en" />
+</Layout>

@@ -55,7 +55,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import {
-  TEST_SAMPLE, TIERS, aftercare, turnaround,
+  TEST_SAMPLE, TIERS, aftercare, turnaround, clause,
   canReviewOrder, canSeeReviewHistory, SAMPLE_SERVICE,
   revisionRoundState, canRequestRevisionRound,
 } from '../data/pricing.js';
@@ -221,7 +221,7 @@ const COPY = {
     orderLede: 'Alles wat we tot nu toe af hebben. Keur goed wat klopt, en markeer wat niet klopt.',
     filesTitle: 'Je bestanden',
     filesLede: 'Alles uit deze bestelling. Download wat je nodig hebt, keur goed wat klopt, en markeer wat niet klopt.',
-    sampleLede: 'Je proefvisual. Download hem, en laat weten wat je ervan vindt — we reageren op elke reactie.',
+    sampleLede: 'Je proef. Download de beelden, en laat weten wat je ervan vindt — we reageren op elke reactie.',
 
     fRef: 'Referentie',
     fOrder: 'Bestelling',
@@ -1259,7 +1259,7 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
   <p class="lede">${esc(t.orderLede)}</p>
 </div>
 ${factList(facts)}
-<p class="note">${esc(readOnly ? t.closed : t.howAttended(aftercare('attended', lang)))}</p>
+<p class="note">${esc(readOnly ? t.closed : t.howAttended(clause(aftercare('attended', lang))))}</p>
 <section class="work">
   <h2>${esc(t.workTitle)}${tally}</h2>
   ${work}
@@ -1331,7 +1331,7 @@ function unattendedBody(t, lang, order, token, files, folder = '') {
   <p class="lede">${esc(order.service === SAMPLE_SERVICE ? t.sampleLede : t.filesLede)}</p>
 </div>
 ${factList(facts)}
-<p class="note">${esc(t.howUnattended(aftercare('unattended', lang)))}</p>
+<p class="note">${esc(t.howUnattended(clause(aftercare('unattended', lang))))}</p>
 <section class="work">
   <h2>${esc(t.filesHeading)}</h2>
   ${work}

@@ -43,6 +43,7 @@
 
 import { readFileSync } from 'node:fs';
 import { SHOTS, REQUIRED_SHOT_IDS } from '../src/data/shots.js';
+import { UPLOAD_TYPES, uploadFormats, uploadFormatsSentence } from '../src/lib/uploads.js';
 
 let goed = 0, totaal = 0;
 const ok = (naam, werkelijk, verwacht) => {
@@ -110,6 +111,51 @@ const ENKELVOUD = /\b(a|an|one|een|één)\s+(?:[\w-]+[\s’']+){0,3}?(?:phone ph
 for (const regel of REGELS) {
   const kort = regel.trim().replace(/^\s*\w+:\s*/, '').slice(0, 50);
   ok(`geen enkelvoud — ${kort}…`, ENKELVOUD.test(regel), false);
+}
+
+
+/*
+ * ── DEEL TWEE: DE FORMATENBELOFTE ──────────────────────────────────────────
+ *
+ * Dezelfde fout, één veld verderop. De hint onder het uploadveld op de plan-
+ * lijst zei "jpg, png of webp"; UPLOAD_TYPES in uploads.js nam er acht aan,
+ * heic incluis — en heic is precies wat een iPhone maakt. De klant met een
+ * iPhone las dus dat zijn foto niet mocht, terwijl de poort hem zou hebben
+ * aangenomen. Weer twee lijsten, en weer stond de onjuiste in beeld.
+ *
+ * De zin wordt nu afgeleid (uploadFormatsSentence). Deze toets bewaakt twee
+ * dingen: dat élk contenttype uit UPLOAD_TYPES in de zin voorkomt, en dat er
+ * in de schermteksten geen tweede, met de hand geschreven lijst terugsluipt.
+ *
+ * uploads.js zelf wordt NIET gescand: de uitleg daar noemt de oude zin
+ * woordelijk, en dit project heeft die val vaak genoeg gezet.
+ */
+console.log('\nde formatenbelofte');
+
+const zin = { en: uploadFormatsSentence('en'), nl: uploadFormatsSentence('nl') };
+const families = uploadFormats();
+
+ok('elk contenttype uit UPLOAD_TYPES heeft een familie',
+  families.length, new Set(Object.values(UPLOAD_TYPES)).size);
+for (const f of families) {
+  ok(`de zin noemt ${f}`, zin.en.includes(f) && zin.nl.includes(f), true);
+}
+ok('de zin is Engels waar hij Engels hoort', / or /.test(zin.en) && !/ of /.test(zin.en), true);
+ok('en Nederlands waar hij Nederlands hoort', / of /.test(zin.nl), true);
+
+/* Geen tweede lijst met de hand. Alleen de schermteksten, zonder commentaar. */
+const schermen = ['../src/lib/account.js', '../src/lib/portal.js']
+  .map((f) => zonderUitleg(readFileSync(new URL(f, import.meta.url), 'utf8')));
+/* De vorm van een handgeschreven formatenlijst: twee of meer extensies met
+   komma's, afgesloten met "of"/"or". Verzonnen wordt er niets — het patroon
+   komt van de zin die er stond. */
+const HANDLIJST = /\b(?:jpe?g|png|webp|avif|heic|gif|tiff?)\b\s*,\s*(?:[a-z]{3,4}\s*,\s*)*[a-z]{3,4}\s+(?:of|or)\s+\b(?:jpe?g|png|webp|avif|heic|gif|tiff?)\b/i;
+for (const [i, tekst] of schermen.entries()) {
+  const naam = ['account.js', 'portal.js'][i];
+  const treffers = tekst.split('\n')
+    .filter((r) => HANDLIJST.test(r))
+    .filter((r) => !/uploadFormatsSentence/.test(r));
+  ok(`${naam} schrijft geen eigen formatenlijst`, treffers, []);
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

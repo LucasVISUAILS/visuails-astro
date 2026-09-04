@@ -6,9 +6,10 @@
 // aanhangt is `ref`, en interactions.js leest die client-side.
 import Layout from '../layouts/Layout.astro';
 import ThankYouPage from '../components/ThankYouPage.astro';
-import { turnaround } from '../data/pricing.js';
+import { turnaroundShort } from '../data/pricing.js';
 
-const TIMING = turnaround('unattended', 'en');
+/* De korte vorm (3 sep 2026): de lange paste niet meer in 160 tekens. */
+const TIMING = turnaroundShort('unattended', 'en');
 const description =
   `Your request has been received. We confirm by email or WhatsApp, and your ` +
   `visuals follow from the normal turnaround — ${TIMING.toLowerCase()}.`;

@@ -22,7 +22,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from '../src/lib/zip.js';
-import { DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { DELIVERY_DAYS } from '../src/lib/retention.js';
 import { readmeText as studioReadme } from '../src/lib/scaffold.js';
 import {
   loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles,
@@ -492,7 +492,7 @@ console.log('\nde leesmij van de klant');
 
   /* De bewaartermijn komt uit retention.js en staat hier niet los ingetypt: dat is
      dezelfde afspraak die de opruimtaak aanhoudt. */
-  check('de bewaartermijn komt uit retention.js', mij.includes(`${DELIVERY_MONTHS} maanden`), true);
+  check('de bewaartermijn komt uit retention.js', mij.includes(`${DELIVERY_DAYS} dagen`), true);
 
   check('het zegt hoe je alle jpg\'s pakt', /\*\.jpg/.test(mij), true);
   check('en verwijst naar de licentie ernaast', mij.includes('LICENTIE.txt'), true);

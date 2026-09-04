@@ -79,7 +79,7 @@ import {
   AMOUNT, euro, vatLabel,
   WINDOW_THRESHOLD,
 } from '../data/pricing.js';
-import { ROSTER } from '../data/models.js';
+import { ROSTER, rosterWoord, telwoord } from '../data/models.js';
 import { localizedPath } from '../i18n/ui.js';
 import Placeholder from './Placeholder.astro';
 
@@ -109,16 +109,16 @@ const brandModel = {
   unit: lang === 'nl' ? 'per merk' : 'per brand',
   includes: lang === 'nl'
     ? [
-        'Eén of meer modellen gebouwd voor jouw merk, door niemand anders gebruikt',
+        'Eén gezicht per ontwerp, gebouwd voor jouw merk en door niemand anders gebruikt — wil je er meer, dan is elk gezicht een eigen ontwerp tegen hetzelfde bedrag',
         'Hetzelfde gezicht door een hele bestelling heen — en jij kiest per bestelling welk gezicht erop staat',
-        'De uniekheidscontrole voordat je het gezicht ooit ziet, en de garantie erachter',
-        'Blijft meegaan als je collectie verandert',
+        'De uniekheidscontrole vóór levering: het gezicht gaat door gezichtszoekmachines en dat wordt op je bestelling vastgelegd. Blijkt het ooit toch op een bestaande persoon te lijken, dan ontwerpen we het opnieuw en maken we de bestelde beelden ermee over',
+        'Blijft meegaan als je collectie verandert, en blijft aan jouw merk gekoppeld — ook als je een tijd niet bestelt',
       ]
     : [
-        'One or more models built for your brand, used by no one else',
+        'One face per design, built for your brand and used by no one else — want more, then each face is its own design at the same amount',
         'The same face across a whole order — and you pick per order which face runs',
-        'The uniqueness check before you ever see the face, and the guarantee behind it',
-        'Kept current as your line changes',
+        'The uniqueness check before delivery: the face goes through face search engines and that is recorded on your order. Should it ever turn out to resemble a real person, we redesign it and remake the ordered images with it',
+        'Kept current as your line changes, and tied to your brand — even if you do not order for a while',
       ],
 };
 
@@ -156,12 +156,18 @@ const EXAMPLES = [
 //
 // No `as const`: COPY[lang] on a union of two readonly object literals gives
 // readonly tuple unions, and .map() on those is a TS error. See StartPage.
+/* Hoeveel roostergezichten deze pagina als voorproefje toont. Als getal, want de
+   bibliotheeknoot eronder noemt het én de slice verderop gebruikt het — en die twee
+   liepen tot 3 september 2026 los van elkaar: de noot zei "Drie van de tien" en de
+   slice had kunnen veranderen zonder dat de zin meebewoog. */
+const TOONBAAR = 3;
+
 const COPY = {
   en: {
     eyebrow: 'Your Brand Model',
     h1a: 'Faces of your own.',
     h1b: 'Only yours.',
-    lead: 'A model designed once for your brand and booked by nobody else, ever. Have one, or build a small cast — and choose per order which of them runs, yours or one of the ten standard faces. What stays constant is that a face carries a whole order, so your range reads as one line instead of a folder of separate shoots.',
+    lead: `A model designed once for your brand and booked by nobody else, ever. Have one, or build a small cast — and choose per order which of them runs, yours or one of the ${rosterWoord('en')} standard faces. What stays constant is that a face carries a whole order, so your range reads as one line instead of a folder of separate shoots.`,
     ctaPrimary: 'Start your Brand Model',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hi VISUAILS, I\'d like to discuss a brand model.',
@@ -220,17 +226,16 @@ const COPY = {
     fitH: 'One look, across everything you sell.',
     fitSub: 'The thread that makes a range look like a brand.',
     fitWhatH: 'What it is',
+    /* Eén alinea, doorlichting 4 september 2026: wat een merkmodel ís staat al
+       in de vier feiten bovenaan; hier alleen nog wat het dóét. */
     fitWhat: [
-      'A Brand Model is a signature designed once, exclusively for you — a face, a bearing, a way of standing that no other brand shares. Once it is locked, every visual in every order is made with it, so your catalog and your feed hang together instead of looking assembled from separate sessions.',
-      // Was three sentences. The image above now shows what they explained.
-      'As above: the same face on your shop, your ads and your socials. Shoppers start recognising your images before they read your name.',
+      'Once it is locked, every visual in every order is made with the same face, so your catalog and your feed hang together instead of looking assembled from separate sessions — and shoppers start recognising your images before they read your name.',
     ],
     fitWhereH: 'Where it lives',
     fitWhere: [
       ['Every channel', 'shop, feed, ads and email, in one look.'],
       ['Campaigns', 'seasonal stories with a face people already know.'],
       ['Whole collections', `${WINDOW_THRESHOLD} products or two hundred, in one order that has to read as one line.`],
-      ['Your identity', 'the visual signature people remember you by.'],
     ],
 
     // DIRECTIONS
@@ -255,7 +260,7 @@ const COPY = {
     getH: 'What you get back',
     get: [
       ['locked', 'A <strong>locked model</strong>, exclusive to you, reused at no extra cost.'],
-      ['every', 'The same face across <strong>a whole order</strong> &mdash; and you choose per order which face runs, one of yours or one of the ten.'],
+      ['every', `The same face across <strong>a whole order</strong> &mdash; and you choose per order which face runs, one of yours or one of the ${rosterWoord('en')}.`],
       ['current', '<strong>Kept current</strong> as your line and your styling change.'],
       ['credit', `<strong>${euro(AMOUNT.brandModel, 'en')} once</strong> ${vatLabel('excl', 'en')}, and nothing after that.`],
     ],
@@ -267,9 +272,9 @@ const COPY = {
     /* Drie regels waar er vijf stonden. "Laat ons matchen" was een eigen tegel
        met een eigen kop; het is nu de tweede helft van deze zin, want het is een
        tweede antwoord op dezelfde vraag. */
-    libLead: 'Ten models, shared across brands, included in every order at no extra cost. Pick one yourself, or tell us the product and the customer when you order and we match one — then keep using it.',
-    libNote: 'Three of the ten are shown here. They cost nothing extra, and moving to a Brand Model later does not mean redoing anything.',
-    libAllCta: 'See all ten',
+    libLead: `${rosterWoord('en', true)} models, shared across brands, included in every order at no extra cost. Pick one yourself, or tell us the product and the customer when you order and we match one — then keep using it.`,
+    libNote: `${telwoord(TOONBAAR, 'en', true)} of the ${rosterWoord('en')} are shown here. They cost nothing extra, and moving to a Brand Model later does not mean redoing anything.`,
+    libAllCta: `See all ${rosterWoord('en')}`,
     libOwnCta: 'Or have one made for you',
     traits: {
       warm: 'Warm', approachable: 'Approachable', editorial: 'Editorial', elegant: 'Elegant',
@@ -302,7 +307,7 @@ const COPY = {
     eyebrow: 'Jouw merkmodel',
     h1a: 'Eigen gezichten.',
     h1b: 'Alleen van jou.',
-    lead: 'Een model dat we één keer voor jouw merk ontwerpen, en dat geen ander merk kan boeken. Neem er één, of laat een klein groepje maken. Per bestelling kies je wie erop staat: je eigen gezicht, of een van de tien standaardmodellen. Eén gezicht draagt de hele bestelling, dus je collectie ziet eruit als één geheel in plaats van als een map met losse fotoshoots.',
+    lead: `Een model dat we één keer voor jouw merk ontwerpen, en dat geen ander merk kan boeken. Neem er één, of laat een klein groepje maken. Per bestelling kies je wie erop staat: je eigen gezicht, of een van de ${rosterWoord('nl')} standaardmodellen. Eén gezicht draagt de hele bestelling, dus je collectie ziet eruit als één geheel in plaats van als een map met losse fotoshoots.`,
     ctaPrimary: 'Start je merkmodel',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi VISUAILS, ik wil graag een merkmodel bespreken.',
@@ -344,17 +349,15 @@ const COPY = {
     fitH: 'Eén look, door alles wat je verkoopt.',
     fitSub: 'Hetzelfde gezicht op elk product dat je verkoopt.',
     fitWhatH: 'Wat het is',
+    // Eén alinea, doorlichting 4 september 2026: wat het ís staat al bovenaan.
     fitWhat: [
-      'Een merkmodel is één gezicht dat we één keer voor jou ontwerpen — met een eigen houding en een eigen manier van staan, die geen ander merk deelt. Zodra het vastligt, maken we elke visual in elke bestelling met dat gezicht. Zo horen je catalogus en je feed bij elkaar in plaats van dat het losse shoots blijven.',
-      // Was drie zinnen. Het beeld erboven laat nu zien wat ze uitlegden.
-      'Zoals hierboven: hetzelfde gezicht op je shop, in je advertenties en op je socials. Mensen herkennen je beelden dan nog voordat ze je naam lezen.',
+      'Zodra het vastligt, maken we elke visual in elke bestelling met dat gezicht. Zo horen je catalogus en je feed bij elkaar in plaats van dat het losse shoots blijven — en mensen herkennen je beelden nog voordat ze je naam lezen.',
     ],
     fitWhereH: 'Waar je het gebruikt',
     fitWhere: [
       ['Elk kanaal', 'shop, feed, ads en e-mail, in één look.'],
       ['Campagnes', 'seizoenscampagnes met een gezicht dat je klanten al kennen.'],
       ['Hele collecties', `${WINDOW_THRESHOLD} producten of tweehonderd, in één bestelling die als één geheel moet overkomen.`],
-      ['Herkenbaarheid', 'mensen zien aan het gezicht dat het jouw merk is, voordat ze je naam lezen.'],
     ],
 
     dirH: 'Negen richtingen om op te reageren.',
@@ -375,7 +378,7 @@ const COPY = {
     getH: 'Wat je terugkrijgt',
     get: [
       ['locked', 'Een <strong>vastgezet model</strong>, exclusief van jou, hergebruikt zonder extra kosten.'],
-      ['every', 'Hetzelfde gezicht door een hele bestelling heen &mdash; en <strong>jij kiest per bestelling</strong> welk gezicht erop staat, dat van jou of een van de tien.'],
+      ['every', `Hetzelfde gezicht door een hele bestelling heen &mdash; en <strong>jij kiest per bestelling</strong> welk gezicht erop staat, dat van jou of een van de ${rosterWoord('nl')}.`],
       ['current', '<strong>Blijft meegaan</strong> als je collectie en je styling veranderen.'],
       ['credit', `<strong>${euro(AMOUNT.brandModel, 'nl')} eenmalig</strong> ${vatLabel('excl', 'nl')}, en daarna niets meer.`],
     ],
@@ -384,9 +387,9 @@ const COPY = {
     libH: 'De standaardbibliotheek',
     libAlt: 'een VISUAILS-standaardmodel',
     /* Zie de noot bij de Engelse tabel. */
-    libLead: 'Tien modellen die we voor alle merken gebruiken, inbegrepen in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons bij het bestellen wat je verkoopt en wie je klant is — dan kiezen wij er een dat past en blijven we dat gebruiken.',
-    libNote: 'Drie van de tien staan hier. Ze kosten niets extra, en later overstappen op een eigen merkmodel betekent niet dat je iets over moet doen.',
-    libAllCta: 'Bekijk alle tien',
+    libLead: `${rosterWoord('nl', true)} modellen die we voor alle merken gebruiken, inbegrepen in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons bij het bestellen wat je verkoopt en wie je klant is — dan kiezen wij er een dat past en blijven we dat gebruiken.`,
+    libNote: `${telwoord(TOONBAAR, 'nl', true)} van de ${rosterWoord('nl')} staan hier. Ze kosten niets extra, en later overstappen op een eigen merkmodel betekent niet dat je iets over moet doen.`,
+    libAllCta: `Bekijk alle ${rosterWoord('nl')}`,
     libOwnCta: 'Of laat er een voor je maken',
     traits: {
       warm: 'Warm', approachable: 'Toegankelijk', editorial: 'Editorial', elegant: 'Elegant',
@@ -680,7 +683,7 @@ const wa = waHref(c.waText);
      file header for why). It sits below the Brand Model argument rather than
      above it because this page's job is the exclusive face; the library is
      the alternative you already have, and saying so plainly is what makes
-     the Brand Model an honest upsell rather than a gate. Three of the ten,
+     the Brand Model an honest upsell rather than a gate. TOONBAAR van de roster,
      not all ten: the full roster now has its own page at /models, and
      showing all ten here again would put the same ten portraits on two
      pages for search engines to index as duplicate content. -->
@@ -735,7 +738,7 @@ const wa = waHref(c.waText);
       stapelt het en krijgt de noot zijn scheidingslijn terug. */}
   <div class="bm-lib-split">
     <div class="bm-roster bm-roster-kort reveal-group">
-      {ROSTER.slice(0, 3).map((m) => (
+      {ROSTER.slice(0, TOONBAAR).map((m) => (
         <figure class="bm-model reveal pending">
           <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
           <figcaption>

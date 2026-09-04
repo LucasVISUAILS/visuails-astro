@@ -316,6 +316,48 @@ console.log('\nde nachtelijke taak raapt een vastgelopen nota op');
   ok('en nu wel een pdf', typeof na.pdf_key, 'string');
 }
 
+console.log('\nde nota wordt gemaild, met de pdf uit R2');
+{
+  const { creditNoteEmail, mailCreditNote } = await import('../src/lib/cancelMail.js');
+  const { db, env, UPLOADS } = fresh();
+  const a = await paidOrderWithInvoice(env, db);
+  const nota = await issueCreditNote(env, a.orderId, { refundedGrossCents: a.gross, reason: 'Merk stopt met de lijn.' });
+  ok('de nota is uitgegeven', nota.status, 'issued');
+
+  const gestuurd = [];
+  const echteFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    if (String(url).includes('resend.com')) { gestuurd.push(JSON.parse(init.body)); return new Response('{"id":"m"}', { status: 200 }); }
+    return echteFetch(url, init);
+  };
+  try {
+    /* De emmer van deze toets onthoudt alleen puts; voor de bijlage moet hij ook
+       teruggeven wat erin zit. */
+    const emmer = { ...UPLOADS, async get(key) { return UPLOADS.puts.some((x) => x.key === key) ? { arrayBuffer: async () => new Uint8Array([37, 80, 68, 70]).buffer } : null; } };
+    const ok1 = await mailCreditNote({ ...env, UPLOADS: emmer, RESEND_API_KEY: 'k', INVOICE_BCC: 'boek@voorbeeld.nl' },
+      { order: { ref: 'VIS-2026-0001', email: 'klant@voorbeeld.nl', lang: 'nl' }, note: nota });
+    ok('de mail gaat weg', ok1, true);
+    ok('naar de klant', gestuurd[0]?.to, 'klant@voorbeeld.nl');
+    ok('met een kopie voor de administratie', [].concat(gestuurd[0]?.bcc || [])[0], 'boek@voorbeeld.nl');
+    ok('met de pdf als bijlage', gestuurd[0]?.attachments?.[0]?.filename, `${nota.number}.pdf`);
+    ok('en het nummer in het onderwerp of de kop', (gestuurd[0]?.html || '').includes(nota.number), true);
+
+    const pending = await mailCreditNote({ ...env, RESEND_API_KEY: 'k' },
+      { order: { ref: 'x', email: 'klant@voorbeeld.nl' }, note: { ...nota, status: 'pending' } });
+    ok('een nota zonder pdf (pending) gaat niet weg', pending, false);
+  } finally { globalThis.fetch = echteFetch; }
+
+  /* De renderfunctie los, in beide talen, zoals bij de factuurmail. */
+  const snap = JSON.parse(nota.snapshot_json);
+  const nl = creditNoteEmail({ lang: 'nl', order: { ref: 'VIS-2026-0001' }, note: nota, snap, attached: true });
+  const en = creditNoteEmail({ lang: 'en', order: { ref: 'VIS-2026-0001' }, note: nota, snap, attached: false });
+  ok('nl: onderwerp noemt de creditnota', /creditnota/i.test(nl.subject), true);
+  ok('nl: verwijst naar de factuur waar hij bij hoort', nl.html.includes(snap.creditsNumber), true);
+  ok('en: subject names the credit note', /credit note/i.test(en.subject), true);
+  ok('en: zonder bijlage zegt hij dat hij in Studio staat', /waiting in VISUAILS Studio/.test(en.html), true);
+  ok('geen van beide heeft een lege rij', /<td[^>]*><\/td>/.test(nl.html + en.html), false);
+}
+
 console.log('\nen de afspraken tussen bestanden');
 {
   const src = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
@@ -349,6 +391,14 @@ console.log('\nen de afspraken tussen bestanden');
 
   ok('de nachtelijke taak raapt vastgelopen nota\'s op', cron.includes('renderCreditPdf'));
   ok('en leest daarvoor credit_notes', cron.includes('FROM credit_notes'));
+
+  /* ── EN DE NOTA GAAT NAAR DE KLANT — 4 september 2026 (doorlichting §3.2) ──
+     De factuur werd gemaild, de creditnota niet. Beide paden die een nota op
+     'issued' zetten — de webhook direct, de nachtelijke taak na een mislukte
+     pdf — sturen hem nu ook. */
+  ok('de webhook mailt de uitgegeven nota', /mailCreditNote\(env, \{ order: wie, note \}\)/.test(webhook), true);
+  ok('  en alleen een nota met status issued', /note && note\.status === 'issued'/.test(webhook), true);
+  ok('de nachtelijke taak mailt wat hij alsnog uitgeeft', /mailCreditNote\(env, \{ order: wie, note: klaar \}\)/.test(cron), true);
 
   ok('credit_notes staat in schema.sql', src('../schema.sql').includes('credit_notes'));
   ok('en in migrations/0026-credit-notes.sql', src('../migrations/0026-credit-notes.sql').includes('credit_notes'));

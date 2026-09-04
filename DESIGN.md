@@ -862,23 +862,30 @@ overshoot is playfulness, and this brand's argument is control.
 - Stagger within a single list is legitimate. One identical entrance applied uniformly to
   every section is the tell, and the current site has it — it goes.
 - Do not animate layout properties. `transform`, `opacity`, `filter`, `clip-path`, `mask`.
-- GSAP + ScrollTrigger stay in `src/scripts/interactions.js`, inside a `gsap.context()` reverted
-  on `astro:before-swap` — `<ClientRouter />` makes page-local scripts unreliable, so all
+- Beweging draait op CSS en op de Web Animations API. Er zit geen
+  animatiebibliotheek meer in de site. `<ClientRouter />` maakt pagina-eigen
+  scripts onbetrouwbaar, dus JS staat in gedeelde modules die op
+  `astro:page-load` opnieuw starten en hun eigen opruimwerk doen.
 
-  > *Bestandsnaam bijgewerkt, 30 augustus 2026.* Hier stond `src/scripts/motion.js`.
-  > Dat bestand bestaat niet meer: de bewegingscode is opgegaan in
-  > `src/scripts/interactions.js`, waar GSAP en ScrollTrigger vandaag ook echt
-  > staan. De regel eromheen — één `gsap.context()`, en alles teruggedraaid bij
-  > een zachte navigatie — is ongewijzigd.
-
-  JS lives in shared modules re-inited on `astro:page-load`.
+  > *Bijgewerkt, 2 september 2026.* Hier stond dat GSAP en ScrollTrigger in
+  > `src/scripts/interactions.js` wonen, binnen een `gsap.context()` die bij een
+  > zachte navigatie wordt teruggedraaid. Dat klopte niet meer: GSAP was uit
+  > interactions.js verdwenen en stond alleen nog in de filterbalk van de
+  > galerij. Gemeten aan de build was dat 68 kB bibliotheek voor één crossfade,
+  > op de twee pagina's die daardoor op 128 kB JavaScript stonden tegen 58 kB
+  > voor de rest van de site. Die crossfade doet nu `element.animate()` —
+  > dezelfde bewegingen, dezelfde tijden, en de curves staan met hun GSAP-naam
+  > erbij in `src/scripts/galerij-filter.js`. Na de omzetting: 60 kB.
+  >
+  > In dezelfde week ging Lenis eruit, om dezelfde reden. Wat overblijft is de
+  > browser.
 
 ---
 
 ## Layout & spacing
 
 ```css
---container-cap:    1560px;
+--container-cap:    1640px;
 --container:       min(var(--container-cap), 100%);
 --container-narrow: 760px;
 --container-wide:  min(1760px, 100%);
@@ -906,10 +913,14 @@ overshoot is playfulness, and this brand's argument is control.
 > | 1024 | 984 | 952 |
 > | 1280 | 1240 | 1190 |
 > | 1440 | 1400 | 1339 |
-> | 1920 | 1880 | 1432 |
-> | 2560 | 2520 | 1432 |
+> | 1920 | 1880 | 1512 |
+> | 2560 | 2520 | 1512 |
 >
 > De telefoon verandert niet — daar was nooit iets mis en elke pixel telt er.
+>
+> *Bijgesteld dezelfde dag:* de eerste stap zette de cap op 1560 en Lucas vroeg om
+> *"een tikje ruimer"*. 1640 is die tik: tachtig pixels erbij waar hij klemt, en
+> niets veranderd op alles daaronder.
 >
 > `--rand-x` is nieuw en hoort bij de bovengrens: zolang de inhoud schermvullend
 > was, lijnde alles wat zich op de tekst richtte uit met `--pad-x`. Met een cap

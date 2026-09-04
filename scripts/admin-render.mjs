@@ -157,6 +157,16 @@ const request = new Request(`https://visuails.com${SECTION}`, { headers: { cooki
 const res = await adminGet({ request, env: makeEnv(), waitUntil() {} });
 const body = await res.text();
 
+/* Met VISUAILS_DUMP_HTML=<map> wordt de html óók weggeschreven — dezelfde
+   schakelaar als in account-render.mjs, en om dezelfde reden: een schermafdruk
+   laat zien DAT er iets mis is, de html laat een browser vertellen wat. Zo kan
+   kladblok/axe-dashboard.mjs ook over het adminscherm heen. */
+if (process.env.VISUAILS_DUMP_HTML) {
+  fs.mkdirSync(process.env.VISUAILS_DUMP_HTML, { recursive: true });
+  fs.writeFileSync(path.join(process.env.VISUAILS_DUMP_HTML,
+    `${SECTION.replace(/\//g, '_') || 'root'}.html`), body);
+}
+
 /* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────
    Hier stond een hard pad naar /opt/pw-browsers. Dat is de map van de
    Linux-container waarin dit project ook wordt gebouwd, en op Lucas' machine

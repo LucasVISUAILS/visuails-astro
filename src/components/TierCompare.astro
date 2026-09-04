@@ -195,7 +195,10 @@ const columns = (['unattended', 'attended'] as const).map((id) => ({
 <style>
   .tierc-head { max-width: 68ch; }
   .tierc-head h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
-  .tierc-head p { margin-top: .7rem; color: var(--ink-2); }
+  /* Een kop met zijn lede eronder — dat is de relatie waar --gap-head-lede voor
+     is, en die stond hier op .7rem (11px) terwijl elke andere kop op deze site
+     17 tot 26 aanhoudt. Zie de noot bij dat token in global.css. */
+  .tierc-head p { margin-top: var(--gap-head-lede); color: var(--ink-2); }
 
   /* TWO CARDS, NOT ONE BOX WITH A LINE DOWN IT — August 2026. Lucas: *"bij
      sommige elementen zit een soort grijze rand eromheen, maak dit mooier."*

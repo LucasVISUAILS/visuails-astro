@@ -243,8 +243,12 @@ console.log('\nde site zegt "dagen" waar de agenda dagen bedoelt');
       /werkdag/.test(TIERS.unattended.turnaround.nl), false);
     check('en niet in het Engels',
       /working day/.test(TIERS.unattended.turnaround.en), false);
-    check('maar wel nog steeds de spanne uit capacity.js',
-      TIERS.unattended.turnaround.nl.includes(`${QUEUE_DAYS_MIN}–${QUEUE_DAYS_MAX}`), true);
+    /* SINDS 3 SEPTEMBER 2026 NOEMT DE TEKST GEEN SPANNE MEER. Lucas: onder de
+       tien producten is het "zo snel mogelijk, nooit beloofd". QUEUE_DAYS_MIN/MAX
+       zijn alleen nog de vorm van de wachtrij voor de poort; de klanttekst mag
+       ze niet meer herhalen. tests/promises.test.mjs bewaakt de rest. */
+    check('en noemt de spanne uit capacity.js niet meer als belofte',
+      TIERS.unattended.turnaround.nl.includes(`${QUEUE_DAYS_MIN}–${QUEUE_DAYS_MAX}`), false);
 
     /* DE UITZONDERINGEN ZIJN BENOEMD EN NIET VERGETEN. Op deze plekken betekent
        "werkdag" iets anders dan een studiodag: een wettelijke termijn, de

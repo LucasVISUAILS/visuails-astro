@@ -43,7 +43,6 @@ import {
    een component niet lezen — zie de kop boven serviceFaqs(). */
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
-import Compare from './Compare.astro';
 import Disclose from './Disclose.astro';
 import TierCompare from './TierCompare.astro';
 import { styles as stylesEn } from '../data/styles.js';
@@ -51,9 +50,11 @@ import { styles as stylesNl } from '../data/styles.nl.js';
 
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
+import StyleRows from './StyleRows.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
+const nl = lang === 'nl';
 
 const moods = lang === 'nl' ? stylesNl : stylesEn;
 
@@ -73,16 +74,7 @@ const rungRows = rungs.map(([lo, hi, rate]) => ({
 const t0 = TIERS.unattended;
 
 
-// The before/after row. Photo paths only — the labels come out of `moods` so
-// a renamed style can never drift between the grid and the comparison row.
-const GRADES = [
-  { slug: 'dunes', photo: '/img/lifestyle-dunes-01.webp' },
-  { slug: 'flash', photo: '/img/lifestyle-flash-01.webp' },
-  { slug: 'glow', photo: '/img/lifestyle-glow-01.webp' },
-  { slug: 'phone-made', photo: '/img/lifestyle-phone-made-01.webp' },
-];
-const moodBySlug = Object.fromEntries(moods.map((s) => [s.slug, s]));
-const grades = GRADES.map((g) => ({ ...g, name: moodBySlug[g.slug].name }));
+// GRADES (de vier schuifvergelijkingen) stond hier tot 4 september 2026; het blok is weg, zie de noot bij de sectie.
 
 // w/h are the intrinsic pixel size of each file in public/img. .marquee-item
 // is a fixed 4/5 box and the image covers it, so these change nothing you can
@@ -299,6 +291,37 @@ const c = COPY[lang];
 // item at the per-product price. Keeping this rule here rather than in
 // styles.js means no euro figure ever enters the style data.
 const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLabel);
+
+/* ── ELKE SFEER ZIJN EIGEN REGEL, DE EIGEN LOOK BOVENAAN — 4 september 2026 ──
+   Zie de kop van StyleRows.astro. De data blijft styles.js; hier wordt hij
+   alleen in de vorm gezet die die component tekent. */
+/* De gloed achter elke waaier, in de kleur van de look zelf: zand, koud
+   flitslicht, het paars van Glow, het blauw van een telefoonhemel. */
+const TINT: Record<string, string> = { dunes: '#c9a06a', flash: '#9fb3c8', glow: '#a86bd6', 'phone-made': '#5f7fa8', custom: '#C6F100' };
+const naarRij = (s: (typeof moods)[number]) => ({
+  slug: s.slug,
+  name: s.name,
+  tagline: s.tagline,
+  desc: s.cardDesc,
+  price: moodPrice(s.slug),
+  bestFor: s.bestFor || [],
+  media: { src: s.cardPhoto, w: cardSize(s.cardPhoto)[0], h: cardSize(s.cardPhoto)[1], alt: c.exampleAlt(s.name) },
+  /* De waaier: tot vier beelden van deze look, uit wat de stijl al meebrengt
+     (kaart, hero, before/after, het raster), ontdubbeld. Geen maten — de
+     kaarten hebben een vast kader en het beeld vult het. */
+  photos: [...new Set([s.cardPhoto, s.heroPhoto, s.beforeAfter?.before, s.beforeAfter?.after, ...(s.grid || []).map((g: any) => g.photo),
+      /* De eigen look heeft geen eigen reeks — dat is het punt. Twee campagnebeelden erbij, zodat de waaier laat zien hoe verschillend het kan. */
+      ...(s.slug === 'custom' ? ['/img/banners-09.webp', '/img/banners-10.webp'] : [])].filter(Boolean))]
+    .slice(0, 4).map((src, i) => ({ src, alt: i === 0 ? c.exampleAlt(s.name) : '' })),
+  before: { src: '/img/catalog-before-1x1.webp', alt: '' },
+  tint: TINT[s.slug] || undefined,
+  detailHref: lp(`/lifestyle/${s.slug}`),
+  detailLabel: nl ? `Ontdek ${s.name}` : `Explore ${s.name}`,
+  orderHref: s.orderHref,
+  orderLabel: s.orderLabel || (nl ? `Bestel ${s.name}` : `Order ${s.name}`),
+});
+const eigenLook = naarRij(moods.find((s) => s.slug === 'custom')!);
+const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
 ---
 
 <!-- THE HERO, in /catalog's shape. This page opened on a full-width column of
@@ -314,7 +337,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   <div class="container two-col hero-split">
     <div class="reveal pending">
       <span class="eyebrow-page">{c.eyebrow}</span>
-      <h1 class="display ls-h1" style="font-size:var(--t-page-h1);margin-top:1rem" set:html={c.h1} />
+      <h1 class="display ls-h1" style="margin-top:1rem" set:html={c.h1} />
       <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
       <div class="flex" style="margin-top:1.8rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/lifestyle')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -380,40 +403,11 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   </div>
 </section>
 
-<section>
-  <div class="container">
-    <h2 class="section-h" set:html={c.moodsH} />
-  {/* ── DRIE KOLOMMEN EN EEN VIERKANTE BAND — 30 AUGUSTUS 2026 ─────────────
-      Lucas, over /lifestyle: *"raster naar drie kolommen, banden lager."* De
-      lengte van deze pagina zat in beeld en niet in tekst — 12.878px met 1250
-      woorden — en dit blok was er in zijn eentje 2794px van.
-
-      Het waren VIJF tegels in twee kolommen, dus drie rijen, elk 3/4 hoog. In
-      drie kolommen zijn het twee rijen, en met een vierkante band is elke rij
-      een derde lager. Vijf in drie kolommen laat één plek op de tweede rij
-      open, en dat is hier juist goed: de vijfde is Custom, en die staat dan
-      apart in plaats van als vierde-uit-vier.
-
-      DE KOP GAAT MEE OMLAAG. 1,6rem was gekozen voor een tegel van 580px
-      breed; op 380px liep die naam over twee regels heen. Hij staat nu in een
-      eigen klasse in plaats van in een style-attribuut, want een maat die van
-      de tegelbreedte afhangt is geen losse uitzondering maar een regel. */}
-    <div class="grid grid-3 reveal-group mood-raster">
-      {moods.map((s) => (
-        <a href={lp(`/lifestyle/${s.slug}`)} class="reveal pending" style="display:block">
-          <div class="photo-band square">
-            <img src={s.cardPhoto} alt={c.exampleAlt(s.name)} loading="lazy" decoding="async" width={cardSize(s.cardPhoto)[0]} height={cardSize(s.cardPhoto)[1]} />
-            <div class="scrim"></div>
-            <div class="caption">
-              <h3 class="mood-naam"><em>{s.name}</em> &rarr;</h3>
-              <p class="mood-regel">{s.tagline} &middot; {moodPrice(s.slug)}</p>
-            </div>
-          </div>
-        </a>
-      ))}
-    </div>
-  </div>
-</section>
+{/* ── VIER SFEREN, ELK EEN EIGEN REGEL — 4 september 2026 ─────────────────
+    Hier stond een raster van vijf tegels met Custom als kleinste, laatste.
+    Lucas: elke stijl zijn eigen sectie, en de eigen look bovenaan als eerste
+    ingang, met de vaste sferen als alternatief eronder. Zie StyleRows.astro. */}
+<StyleRows lang={lang} h={c.moodsH} lead={eigenLook} items={vasteLooks} />
 
 <section class="section-tight">
   <div class="container">
@@ -447,18 +441,16 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
      steps, the checklist, the proof, the tier line, the questions. -->
 <section class="section-tight">
   <div class="container">
-    <div class="photo-split reveal pending">
-      <div class="photo-split-media">
-        <img src="/img/lifestyle-glow-01.webp" alt={c.stepsAlt} loading="lazy" decoding="async" width="1340" height="2400" />
-      </div>
-      <div>
-        <h2>{c.stepsH}</h2>
-        <div class="steps steps-stacked" style="margin-top:1.6rem">
-          {c.steps.map(([h, p], i) => (
-            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
-          ))}
-        </div>
-      </div>
+    {/* ── DRIE STAPPEN OP ÉÉN RIJ — doorlichting 4 september 2026 ──────────
+        Hier stond een fotosplit van ~1.000 px: een foto links, de drie stappen
+        gestapeld rechts. De foto staat sinds de waaiers al hoger op de pagina;
+        wat overblijft zijn drie korte stappen, en die passen naast elkaar.
+        Zelfde `.steps`-raster als de homepage. */}
+    <h2 class="section-h">{c.stepsH}</h2>
+    <div class="steps reveal-group">
+      {c.steps.map(([h, p], i) => (
+        <div class="step reveal pending"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+      ))}
     </div>
   </div>
 </section>
@@ -481,64 +473,28 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   </div>
 </section>
 
+{/* ── HET MODEL IN ÉÉN REGEL — doorlichting 4 september 2026 ────────────
+    Hier stond een fotosplit van 984 px: een portret en drie zinnen om te
+    zeggen dat je een vast gezicht kunt kiezen. Dat feit is één regel met een
+    link; /custom-models vertelt de rest. */}
 <section class="section-tight">
   <div class="container">
-    <div class="photo-split reveal pending">
-      <div class="photo-split-media">
-        <img src="/img/model-02.webp" alt={c.modelAlt} loading="lazy" decoding="async" width="800" height="1071" />
-      </div>
-      <div>
-        <h2 set:html={c.modelH} />
-        <p class="lead" style="margin-top:1rem">{c.modelP}</p>
-        <!-- /models merged into /custom-models (AUDIT-TASK-0.md §H·8). The
-             roster kept its #standard anchor precisely so links written for
-             "browse the faces" still land on the faces and not on the Brand
-             Model pitch above them. -->
-        <div class="flex" style="margin-top:1.4rem"><a href={`${lp('/custom-models')}#standard`} class="btn btn-primary">{c.modelCta}</a></div>
-      </div>
-    </div>
+    <a class="model-regel reveal pending" href={`${lp('/custom-models')}#standard`}>
+      <img src="/img/model-02.webp" alt={c.modelAlt} loading="lazy" decoding="async" width="800" height="1071" />
+      <span class="model-regel-t">
+        <strong set:html={c.modelH} />
+        <span>{c.modelP}</span>
+      </span>
+      <span class="model-regel-go">{c.modelCta} <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
   </div>
 </section>
 
-<section class="section-tight">
-  <div class="container">
-    <div class="section-head" style="text-align:center;margin-inline:auto">
-      <h2>{c.gradeH}</h2>
-      <p style="margin-inline:auto">{c.gradeP}</p>
-    </div>
-    {/* ── VIER OP EEN RIJ IN PLAATS VAN TWEE BIJ TWEE — 30 AUGUSTUS 2026 ────
-        Dit blok was 1614px: vier schuifvergelijkingen van 604 bij 755 in twee
-        kolommen, dus twee rijen die je moest scrollen om alle vier te zien.
-
-        En dat scrollen was niet alleen lang, het was ook de claim ondermijnen.
-        De kop zegt "vier moods, vier transformaties" — dat is een uitspraak
-        over VERSCHIL, en verschil zie je door dingen naast elkaar te zetten.
-        Twee per keer laat je twee grades vergelijken en de andere twee uit je
-        hoofd erbij halen. Vier naast elkaar is één blik.
-
-        Ze worden er wel kleiner van: 294px in plaats van 604. Voor een
-        kleurverschil is dat ruim genoeg — een grade zie je niet aan detail maar
-        aan de hele toon — en de schuifknop blijft met zijn 40px bedienbaar.
-        Onder 75rem worden het er weer twee, onder 700px één; dat laatste is
-        hetzelfde breekpunt als `.compare-grid` sitebreed gebruikt. */}
-    <div class="compare-grid compare-grade reveal-group" style="margin-top:2.2rem">
-      {grades.map((g) => (
-        <div class="reveal pending">
-          <Compare
-            grade
-            before={g.photo}
-            after={g.photo}
-            beforeAlt={c.gradeBeforeAlt(g.name)}
-            afterAlt={c.gradeAfterAlt(g.name)}
-            beforeLabel={c.gradeFlat}
-            afterLabel={g.name}
-          />
-          <p class="cc-label"><strong>{g.name}</strong> &middot; {c.unitLabel}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
+{/* ── DE VIER SCHUIFVERGELIJKINGEN ZIJN WEG — doorlichting 4 september 2026 ──
+    "Vier sferen. Dezelfde foto, vier keer anders afgewerkt" (824 px) zei sinds
+    de stijlregels hierboven hetzelfde nog een keer: elke look draagt daar al
+    zijn eigen INGESTUURD/GELEVERD-paar. De Compare-component blijft op
+    /how-it-works en de stijlpagina's. */}
 
 <section class="section-tight">
   <div class="container">
@@ -668,6 +624,20 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   @media (max-width: 75rem) { .compare-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 43.75rem) { .compare-grade { grid-template-columns: minmax(0, 1fr); } }
 
+  .model-regel {
+    display: grid; grid-template-columns: 4.5rem 1fr auto; gap: 1.2rem; align-items: center;
+    padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2);
+    color: inherit; text-decoration: none; transition: border-color .15s ease;
+  }
+  .model-regel:hover { border-color: var(--line-strong); }
+  .model-regel img { width: 4.5rem; height: 4.5rem; border-radius: 50%; object-fit: cover; object-position: center top; }
+  .model-regel-t { display: grid; gap: .2rem; min-width: 0; }
+  .model-regel-t strong { font-size: 1.15rem; color: var(--ink); }
+  .model-regel-t strong :global(em) { font-style: normal; color: var(--accent-word); }
+  .model-regel-t span { font-size: .93rem; line-height: 1.5; color: var(--ink-3); }
+  .model-regel-go { white-space: nowrap; font-weight: 700; color: var(--accent-bright); display: inline-flex; align-items: center; gap: .3rem; }
+  .model-regel-go .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+  @media (max-width: 40rem) { .model-regel { grid-template-columns: 3.5rem 1fr; } .model-regel-go { grid-column: 2; } }
   .mood-naam { font-size: clamp(1.15rem, 2.2vw, 1.5rem); }
   .mood-regel { font-size: .88rem; }
 

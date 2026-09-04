@@ -1,0 +1,11 @@
+-- VISUAILS — een nieuwe mail maakt de vorige portaallink niet meer dood, 4 september 2026.
+--
+-- Doorlichting §3.4: bij elke aankondiging (levering, herlevering) werd een
+-- nieuwe portaallink uitgegeven en de vorige ingetrokken. De klant die de eerste
+-- mail twee dagen later opende, zag "deze link is vervangen, kijk in de nieuwste
+-- mail". De partiële unieke index maakte "één levend token per bestelling" tot
+-- een databaseregel; die regel gaat eruit. Wat blijft: intrekken bij een
+-- uitdrukkelijk gevraagde NIEUWE link (/admin, "Mail ons en we sturen een
+-- nieuwe"), en alle links van een bestelling verlopen 90 dagen na afronding —
+-- dat leidt token.js al af uit orders.closed_at en niet uit deze tabel.
+DROP INDEX IF EXISTS idx_order_tokens_live;

@@ -584,8 +584,12 @@
    *   1024      984      952
    *   1280     1240     1190
    *   1440     1400     1339
-   *   1920     1880     1432
-   *   2560     2520     1432
+   *   1920     1880     1512
+   *   2560     2520     1512
+   *
+   * BIJGESTELD OP 1 SEPTEMBER: eerst stond de bovengrens op 1560 en vroeg Lucas
+   * om *"een tikje ruimer"*. 1640, dus tachtig pixels erbij op de schermen waar
+   * hij klemt en geen enkele verandering daaronder — een tik en geen stap terug.
    *
    * Op een laptop is het een nette stap. Op een monitor is het het verschil
    * tussen een prijstabel van 1880 breed — met de drie kolommen zo ver uit elkaar
@@ -612,10 +616,36 @@
      verderop voor de meting die deze getallen heeft opgeleverd. */
   --gap-head-block: clamp(1.4rem, 2.4vw, 2rem);
   --gap-head-lede:  clamp(1.1rem, 1.8vw, 1.6rem);
+  /* ── EN DE DERDE, 1 september 2026 ────────────────────────────────────────
+   *
+   * Lucas: *"Op meerdere plekken staat te weinig ruimte tussen tekstblokken,
+   * soms raken ze elkaar bijna aan (…) maak de spacing consistent tussen
+   * vergelijkbare secties."*
+   *
+   * Dit is de kleinste van de drie: de ruimte tussen een KOPJE en de ene regel
+   * die hem uitlegt. Hij kwam op drie plekken voor met drie verschillende
+   * waarden, en dat is precies het soort verschil dat je niet ziet maar wel
+   * voelt:
+   *
+   *     .hv-ba-points h3   margin-bottom .4rem    →  6,4px
+   *     .hv-pipe h3        margin-bottom .45rem   →  7,2px
+   *     /video .caption p  margin-top .35rem      →  5,6px   (in een attribuut)
+   *
+   * Drie keer dezelfde relatie, drie keer een ander getal, en alle drie aan de
+   * krappe kant: op tekst van 17px met regelhoogte 1,6 staat een kopje van zes
+   * pixels boven zijn uitleg zo goed als tegen die regel aan.
+   *
+   * Eén token, en de reden dat het een token is en geen clamp per plek: deze
+   * afstand IS een relatie tussen twee dingen en niet de ruimte in een sectie.
+   * Waar dat geldt, hoort hij overal hetzelfde te zijn — net als de twee
+   * hierboven. DESIGN.md noemt dat expliciet als de grens tussen "een naam
+   * verdienen" en "per plek zetten".
+   */
+  --gap-label-note: clamp(.5rem, .9vw, .7rem);
   /* De bovengrens als eigen token, want twee dingen moeten hem kennen: de
      container zelf, en --rand-x hieronder. Hem twee keer intypen is hem één keer
      vergeten bij te werken. */
-  --container-cap: 1560px;
+  --container-cap: 1640px;
   --container: min(var(--container-cap), 100%);
   --container-narrow: 760px;
   /* Eén trede breder dan de standaard en niet meer schermvullend, anders betekent
@@ -1410,6 +1440,59 @@ p { text-wrap: pretty; margin: 0; }
 .container.wide { max-width: var(--container-wide); }
 .container.bleed { max-width: none; padding-inline: clamp(.8rem, 2vw, 1.6rem); }
 section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DE JURIDISCHE PAGINA'S — 3 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   Zes documenten in twee talen delen één opmaak: voorwaarden, privacy,
+   cookiebeleid, verwerkersovereenkomst, AI-verordening en de uploadrichtlijnen.
+   Lopende tekst in één kolom, koppen die de tekst geleden en niet overstemmen.
+
+   ── WAAROM DIT HIER NU PAS STAAT ──────────────────────────────────────────
+
+   Het stond in de pagina's zelf, zes keer dezelfde regels. Op 24 augustus 2026
+   is het uit drie van die zes gehaald, met de noot "staat sinds vandaag één keer
+   in src/styles/global.css, bij `.legal`" — en die noot was niet waar. Er is
+   nooit iets in dit bestand aangekomen. Astro scopeert een <style> in een
+   paginabestand aan díé pagina, dus de drie die hun blok hielden bleven goed en
+   de drie die het kwijtraakten hadden vanaf dat moment geen opmaak meer.
+
+   Gemeten in de browser op 3 september 2026, op de gebouwde site:
+
+     /terms, /ai-act (en hun NL-versies)   h2 24px    · marge 41,6px · meta 13,6px
+     /privacy, /cookie-policy, /dpa        h2 52,8px  · marge 0px    · meta 17px
+
+   52,8px is de standaard h2 van de site — een sectiekop op een marketingpagina.
+   Op een paragraafkop in een privacyverklaring is dat vier keer te luid, en het
+   was drie pagina's lang de werkelijkheid.
+
+   Dat is precies de fout die die opruiming wilde WEGHALEN: de noot van 24
+   augustus schreef zelf op dat de verwerkersovereenkomst het blok miste "waardoor
+   die pagina koppen van 52,8px kreeg". De opruiming heeft dat probleem niet
+   opgelost maar omgedraaid — van één pagina zonder naar drie.
+
+   ── EN DE BREEDTE ─────────────────────────────────────────────────────────
+
+   `.narrow { max-width: 820px }` stond óók in die paginablokken en is hier NIET
+   overgenomen. Dat was een overschrijving van --container-narrow (760px), en 760
+   is de maat die de ladder bij --container hierboven met opzet aan juist deze
+   pagina's toekent: "lopende tekst. Voorwaarden, privacy, één kolom proza." Twee
+   van de zes pagina's die stilletjes 60px breder waren, is geen keuze geweest.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.legal h2 { margin-top: 2.6rem; font-size: 1.5rem; }
+.legal h3 { margin-top: 1.6rem; font-size: 1.1rem; color: var(--ink); }
+.legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
+.legal p { margin-top: 0.9rem; }
+.legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.legal ul li { list-style: disc; }
+.legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+/* Een hele haarlijn rondom, geen streep aan één kant. Een gekleurde zijrand van meer
+   dan 1px is een absoluut verbod in het ontwerpsysteem; /privacy, /terms en
+   /cookie-policy droegen er ooit een op deze klasse en zijn in één ronde
+   rechtgezet. Die reden stond in AiActPage.astro en is met de regel meeverhuisd —
+   een uitleg die achterblijft bij code die weg is, wijst nergens meer naar. */
+.legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
+.legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    GROUND SCOPES — section 18
@@ -2718,8 +2801,45 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    voor een vierde en blijven het er drie — zelfde raster als altijd. */
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.6rem, 1.4vw, 1rem); }
 @media (min-width: 1200px) { .photo-grid { grid-template-columns: repeat(4, 1fr); } }
-.photo-grid img { width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 4/5; }
-.photo-grid .wide { grid-column: span 2; aspect-ratio: unset; }
+.photo-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* `:not(.wide)` EN NIET `aspect-ratio: unset` OP .wide — zie de noot daar. */
+.photo-grid img:not(.wide) { aspect-ratio: 4/5; }
+/* ── DE BREDE TEGELS RESERVEERDEN GEEN RUIMTE — 2 SEPTEMBER 2026 ───────────
+   Gemeten op /gallery, 390px, met CPU-rem en 1,6 Mbit: CLS 0,113 — de slechtste
+   van de site, en ruim boven de 0,1 die nog "goed" heet. De bron was elke keer
+   `div.photo-grid > picture > img`, en de tijdlijn liet zien wat er gebeurde:
+   het raster groeide van 4717 naar 5412 px terwijl de foto's binnenkwamen. De
+   brede tegels stonden op `height: 0px` tot hun beeld er was, en sprongen dan in
+   één keer naar 434.
+
+   ── WAAROM `aspect-ratio: unset` HET NIET DEED, EN DIT WEL ─────────────────
+
+   Hier stond `.photo-grid .wide { aspect-ratio: unset; }`, en dat leek precies
+   goed: geen 4/5 opleggen aan een tegel die zijn eigen verhouding heeft. Maar
+   `unset` op een niet-geërfde eigenschap is `initial`, en dat is `auto` — en
+   `auto` betekent voor een <img> "gebruik de NATUURLIJKE verhouding". Die kent
+   de browser pas als het beeld binnen is.
+
+   De verhouding stond er intussen wel degelijk op: elke <img> draagt width en
+   height (928×1152, 2400×1792, 1872×1248 — ze verschillen, dus één vaste
+   aspect-ratio zou hier fout zijn). De browser gebruikt die via een UA-regel,
+   `img[width][height] { aspect-ratio: attr(width) / attr(height) }`. En precies
+   die regel werd overschreven: een declaratie van de AUTEUR wint van de UA, ook
+   als die declaratie `auto` is. `unset` gooide dus weg wat het probeerde te
+   behouden.
+
+   Gemeten bevestigd: `getComputedStyle(img).aspectRatio` gaf 'auto', width
+   350px, height 0px, naturalWidth 0.
+
+   De oplossing is er NIET over heen schrijven maar er niet aan komen: de 4/5
+   staat nu op `img:not(.wide)`, zodat op een brede tegel geen enkele
+   auteursregel voor aspect-ratio geldt en de UA-regel gewoon zijn werk doet.
+   `height: auto` erbij, want de `height: 100%` van de regel hierboven zou de
+   gereserveerde hoogte weer platslaan.
+
+   Wat je ziet verandert niet: een brede tegel werd al op zijn eigen verhouding
+   getekend (350×434 gemeten). Alleen gebeurt dat nu vóór het laden. */
+.photo-grid .wide { grid-column: span 2; height: auto; }
 @media (max-width: 700px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } .photo-grid .wide { grid-column: span 2; } }
 
 .section-head { max-width: 62ch; margin-bottom: clamp(2rem, 4vw, 3.4rem); }
@@ -2897,8 +3017,11 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
 .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.3rem; }
 .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1.1rem; color: var(--accent-bright); }
-.step h3 { font-size: 1.2rem; margin: .6rem 0 .45rem; }
-.step p { font-size: .95rem; color: var(--ink-3); }
+.step h3 { font-size: 1.2rem; margin: .6rem 0 var(--gap-label-note); }
+/* Geen eigen margin-top: de afstand tot het kopje staat op de h3 hierboven, in
+   --gap-label-note. Twee marges die om dezelfde ruimte vechten, is precies hoe
+   dezelfde relatie op vier plekken vier waarden kreeg. */
+.step p { margin-top: 0; font-size: .95rem; color: var(--ink-3); }
 
 /* STACKED STEPS — the one-column variant the service pages use inside a
    .photo-split, where the row sits beside an image instead of spanning the
@@ -2914,7 +3037,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .steps-stacked { grid-template-columns: 1fr; gap: 1.1rem; }
 .steps-stacked .step { padding-top: 1.1rem; }
 .steps-stacked .step .step-n { font-size: 1rem; color: var(--ink-3); }
-.steps-stacked .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
+.steps-stacked .step h3 { font-size: 1.05rem; margin: .5rem 0 var(--gap-label-note); }
 .steps-stacked .step p { font-size: .9rem; }
 
 .arrow-rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem, 3vw, 3rem); }
@@ -3443,7 +3566,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 rgb(var(--scrim) / 0.35); cursor: ew-resize; touch-action: none; }
 .cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; }
 .cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgb(var(--scrim) / 0.86); color: var(--ink); pointer-events: none; }
+.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .72rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgb(var(--scrim) / 0.86); color: var(--ink); pointer-events: none; }
 /* Each label fades out as its own side shrinks — i.e. as the divider (driven
    by --cmp-pos, from both the auto-animation and manual drag) sweeps toward it.
    opacity accepts a percentage; calc(...*6) means fully opaque until ~value
@@ -3582,7 +3705,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    a "where it lives" channel list on the right. Shared by every service hub. */
 .svc-explain { display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(1.6rem, 4vw, 3.5rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); align-items: start; }
 @media (max-width: 820px) { .svc-explain { grid-template-columns: 1fr; } }
-.svc-explain-main h3, .svc-explain-side h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); margin: 0 0 .7rem; letter-spacing: -0.01em; }
+.svc-explain-main h3, .svc-explain-side h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); margin: 0 0 var(--gap-label-note); letter-spacing: -0.01em; }
 .svc-explain-main p { color: var(--ink-2); line-height: 1.65; max-width: 64ch; margin: 0 0 1rem; }
 .svc-explain-main p:last-child { margin-bottom: 0; }
 .svc-explain-side { padding: clamp(1.2rem, 2.4vw, 1.6rem); border: 1px solid var(--line); background: var(--surface); }
@@ -4127,6 +4250,10 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .lift,
 .tile,
 .tierc-col,
+/* De twee kolommen van de vergelijking op /editions dragen dezelfde
+   verhoging als de tierband, en om dezelfde reden: het zijn twee objecten
+   boven een donkere ondergrond en geen doos met een streep erdoor. */
+.ed-vgl-col,
 .guide-card {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.055),
@@ -4337,10 +4464,48 @@ body::before {
   background:
     /* 1 · material — ground only, never over an image */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") 0 0 / 170px repeat,
-    /* 2 · the lamp — accent-tinted, top left, very wide, very weak */
-    radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%),
-    /* 3 · the falloff — the far corners sit back */
+    /* 2 · the falloff — the far corners sit back */
     radial-gradient(150% 110% at 50% 50%, transparent 38%, rgb(0 0 0 / 0.45) 100%);
+}
+
+/* ── DE LAMP HOORT BIJ DE PAGINA EN NIET BIJ HET VENSTER ────────────────────
+ *
+ * Lucas, 1 september 2026: *"Er is een groene gloed linksboven in het scherm te
+ * zien dat blijkbaar op meer pagina's/secties verschijnt dan de bedoeling is."*
+ *
+ * De lamp stond in de laag hierboven, en die staat op `position: fixed`. Voor de
+ * KORREL en het VIGNET is dat juist: dat zijn eigenschappen van het scherm — een
+ * korrel die meescrollt is geen materiaal maar behang, en een vignet hoort bij de
+ * randen van het beeld.
+ *
+ * Voor de lamp is het fout, en precies op de manier die hij beschrijft. Een lamp
+ * die aan het venster hangt, schijnt niet één keer op de pagina maar opnieuw op
+ * elk stuk pagina dat je in beeld scrollt. Je scrollt naar de prijstabel: gloed
+ * linksboven. Naar de FAQ: gloed linksboven. Het effect dat als "één val licht
+ * over de pagina" was bedoeld, werd zo een vlek die met je meereist — en op elke
+ * pagina van de site, want body::before staat overal.
+ *
+ * DE LAMP HANGT NU AAN DE BOVENKANT VAN DE PAGINA. Eén schermhoogte, absoluut
+ * geplaatst, en daarna is hij weg. Wat je bij het openen van een pagina ziet is
+ * tot op de pixel hetzelfde als voorheen; wat er verandert is dat hij blijft
+ * liggen waar hij lag toen je verder scrollde.
+ *
+ * De gerichte lichtbundel die er WEL overal mag zijn, is `.beam` — maar die
+ * wordt per sectie gezet en is dus een keuze. Zie het blok daarover hieronder.
+ *
+ * `body { position: relative }` hoort bij deze regel: zonder die ene declaratie
+ * valt een absoluut geplaatst pseudo-element terug op het initiële blok en staat
+ * hij weer aan het venster vast — dan is er niets veranderd behalve de uitleg.
+ */
+body { position: relative; }
+body::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%);
 }
 
 /* ══ .beam — DE LICHTBUNDEL, ALS MERKTAAL ══════════════════════════════════
@@ -4448,6 +4613,60 @@ body::before {
 .pl-ctx-seen { font-size: .8rem; font-weight: 400; color: var(--ink-3); }
 .pl-ctx .hint { margin: 0; }
 .pl-ctx-row[hidden] { display: none; }
+
+/* ══ JE EIGEN LOOK IN HET BESTELFORMULIER ═════════════════════════════════
+   Lucas, 4 september 2026: *"De custom stylen worden dan in het account van
+   de klant geplaatst waarna hij deze kan gaan gebruiken via hetzelfde
+   bestelformulier met de custom style ertussen."*
+
+   pipeline.js (addOwnStyles) zet die stijlen pas neer NA /account/me, dus de
+   markup bestaat niet op bouwtijd en de scoped CSS van StylePicker en
+   BackgroundPicker reikt er niet bij. Daarom staan deze regels hier.
+   · lifestyle: een gekloonde .look-tegel, vooraan in het rooster, met een
+     klein "Jouw look"-merkje naast de naam — dezelfde tegel als de vier
+     standaardlooks, want het IS dezelfde keuze, alleen van de klant zelf.
+   · catalog: er is geen lookkiezer, dus een blok van onszelf na de achter-
+     grond, met "Standaardlook" als eerste en aangevinkte optie zodat het
+     nooit dwingt. */
+.look.is-own { border-color: var(--accent-line); }
+.look-own-badge {
+  display: inline-block;
+  margin-left: .45rem;
+  padding: .1rem .45rem;
+  vertical-align: middle;
+  font-family: var(--font-body);
+  font-size: .66rem; font-weight: 700; letter-spacing: .02em;
+  color: var(--accent-bright);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-sm, 4px);
+  white-space: nowrap;
+}
+.pl-own-look { border: 0; padding: 0; margin: 0; min-width: 0; }
+.dc-body > .pl-own-look { padding: .2rem 0 .6rem; }
+.pl-own-look > legend {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.pl-own-look > .hint { margin: 0; max-width: 62ch; }
+.own-look-list { display: grid; gap: .6rem; margin-top: .9rem; }
+.own-look-opt {
+  display: flex; align-items: center; gap: .8rem;
+  padding: .7rem .85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.own-look-opt:hover { border-color: var(--accent-line); }
+.own-look-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.own-look-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.own-look-opt input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; margin: 0; }
+.own-look-img { width: 64px; height: 48px; object-fit: cover; border-radius: var(--r-md); background: var(--surface-2); flex: none; }
+.own-look-text { display: grid; gap: .15rem; min-width: 0; }
+.own-look-name { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
+.own-look-line { font-size: .82rem; color: var(--ink-3); line-height: 1.45; }
+@media (prefers-reduced-motion: reduce) { .own-look-opt { transition: none; } }
 
 /* ══ HET MERK GAAT OPEN OP HOVER ═══════════════════════════════════════════
    Lucas, 20 augustus 2026: *"Ik wil op de bij elk logo op de website eerst de

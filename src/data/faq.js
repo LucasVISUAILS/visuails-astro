@@ -71,7 +71,18 @@ import {
   LADDER, ladderRate, ladderFloor, ladderTotal,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
   PLAN_ROLLOVER_MONTHS,
-  WINDOW_THRESHOLD, vatLabel, vatNote, clause,} from './pricing.js';
+  WINDOW_THRESHOLD, vatLabel, vatNote, clause,
+  /* De twee aantallen voor Editions — zie de noot bij EDITIONS_FAQ. */
+  STOCK_OFF_BRAND, STOCK_ON_BRAND,
+  /* De toeslag voor een compleet setje en de extra hoek — zie de nieuwe vragen
+     bij catalog en lifestyle, 4 september 2026. */
+  OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, extraPhotoRate,
+} from './pricing.js';
+/* De doorschuiftermijnen staan in plans.js; hier alleen gelezen, niet overgetypt. */
+import { TERMS } from './plans.js';
+/* De bewaartermijnen komen uit retention.js — dezelfde getallen als /privacy §6,
+   /terms §7 en de nachtelijke opruimtaak. Hier niet overgetypt. */
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
 import { localizedPath } from '../i18n/ui.js';
 
 const norm = (lang) => (lang === 'nl' ? 'nl' : 'en');
@@ -124,11 +135,11 @@ export function pricingFaqs(lang = 'en') {
     return [
       {
         q: 'Wanneer betaal ik?',
-        a: `Vanaf ${WINDOW_THRESHOLD} producten betaal je zodra we je leverdatum hebben bevestigd, en voordat we beginnen. Je legt die datum daarmee vast, en dat is waar je voor betaalt. Kleinere bestellingen worden bij levering gefactureerd. De proefvisual is het enige dat vooraf betaald wordt, en dat is er één per bedrijf.`,
+        a: `Na het versturen van je bestelling: je kunt meteen betalen, of later via de link in je bevestigingsmail. We beginnen zodra de betaling binnen is. Vanaf ${WINDOW_THRESHOLD} producten betaal je daarmee ook je leverdatum vast: die blijft zeven dagen voor je staan terwijl je betaalt. Probeer VISUAILS · €1 is één per bedrijf en wordt ook vooraf betaald.`,
       },
       {
         q: 'Is mijn eerste bestelling goedkoper?',
-        a: `Nee, en dat is met opzet. Er was een kennismakingskorting van 20% en die is eraf gehaald: een tarief noemen en er dan een vijfde vanaf halen zegt dat het tarief nooit de prijs was. De prijs per product ís de korting — het tarief per product daalt naarmate je er meer bestelt, en het geldt voor elk product in de bestelling. ${FIRST_EG_PRODUCTS} complete producten is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'nl')}, voor iedereen, altijd. Wil je het werk eerst zien, dan is daar de proefvisual voor.`,
+        a: `Nee, en dat is met opzet. Er was een kennismakingskorting van 20% en die is eraf gehaald: een tarief noemen en er dan een vijfde vanaf halen zegt dat het tarief nooit de prijs was. De prijs per product ís de korting — het tarief per product daalt naarmate je er meer bestelt, en het geldt voor elk product in de bestelling. ${FIRST_EG_PRODUCTS} complete producten is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'nl')}, voor iedereen, altijd. Wil je het werk eerst zien, probeer VISUAILS dan eerst voor ${TEST_SAMPLE.nl.price}.`,
       },
       {
         q: 'Hoe daalt het tarief?',
@@ -140,7 +151,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Wat gebeurt er met planproducten die ik niet gebruik?',
-        a: `Die schuiven ${PLAN_ROLLOVER_MONTHS} maand door: wat je deze maand niet besteld hebt, kun je volgende maand alsnog bestellen. Verder stapelen ze niet op, want een plan is gereserveerde capaciteit in de agenda en niet-opgevraagde capaciteit is een maand die al voorbij is. Een maandabonnement kun je elke maand opzeggen; de jaartermijn ligt twaalf maanden vast.`,
+        a: `Die schuiven ${PLAN_ROLLOVER_MONTHS} maand door op de maandtermijn en ${TERMS.yearly.rollover} maanden op de jaartermijn: wat je deze maand niet besteld hebt, kun je daarna alsnog bestellen. Verder stapelen ze niet op, want een plan is gereserveerde capaciteit in de agenda en niet-opgevraagde capaciteit is een maand die al voorbij is. Een maandabonnement kun je elke maand opzeggen; de jaartermijn ligt twaalf maanden vast.`,
       },
       {
         q: 'Waarom staat er geen leverdatum bij een kleine bestelling?',
@@ -160,7 +171,7 @@ export function pricingFaqs(lang = 'en') {
   return [
     {
       q: 'When do I pay?',
-      a: `From ${WINDOW_THRESHOLD} products, after the capacity check has confirmed your delivery date and before production starts — the delivery date is what you are reserving, so it is what you are paying for. Smaller orders are invoiced on delivery. The test sample is the one thing charged upfront, and it is one per business.`,
+      a: `After you send your order: you can pay straight away, or later through the link in your confirmation email. Production starts once the payment is in. From ${WINDOW_THRESHOLD} products that payment also locks your delivery date, which is held for seven days while you pay. Try VISUAILS · €1 is one per business and is paid upfront as well.`,
     },
     {
       q: 'Is my first order cheaper?',
@@ -176,7 +187,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'What happens to plan products I do not use?',
-      a: `They roll over ${PLAN_ROLLOVER_MONTHS} month — what you did not order this month can be ordered next month. They do not stack up beyond that, because a plan is capacity reserved in the calendar and capacity nobody claimed is a month that has already gone by. A monthly plan can be cancelled any month; the 12-month term is fixed.`,
+      a: `They roll over ${PLAN_ROLLOVER_MONTHS} month on the monthly term and ${TERMS.yearly.rollover} months on the 12-month term — what you did not order this month can be ordered later. They do not stack up beyond that, because a plan is capacity reserved in the calendar and capacity nobody claimed is a month that has already gone by. A monthly plan can be cancelled any month; the 12-month term is fixed.`,
     },
     {
       q: 'Why is there no delivery date on a small order?',
@@ -233,7 +244,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
-            a: `Op twee manieren. Een proefvisual van ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit}: je krijgt ${sample.deliverable} terug. Die loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn.`,
+            a: `Op twee manieren. Probeer VISUAILS voor ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit}: je krijgt ${sample.deliverable} terug. Die loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn.`,
           },
           {
             /* ── HET MEEST GESTELDE BEZWAAR, EN HET STOND NERGENS — 30 AUGUSTUS 2026
@@ -342,7 +353,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Is er een abonnement?',
-            a: `Alleen als dezelfde output elke maand terugkomt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan diezelfde output op de prijs per product, is maandelijks opzegbaar, en ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door. Bestel je zonder plan, dan loopt er niets door.`,
+            a: `Alleen als dezelfde output elke maand terugkomt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan diezelfde output op de prijs per product. Op de maandtermijn is hij maandelijks opzegbaar en schuiven ongebruikte producten ${PLAN_ROLLOVER_MONTHS} maand door; de jaartermijn ligt twaalf maanden vast en schuift ${TERMS.yearly.rollover} maanden door. Bestel je zonder plan, dan loopt er niets door.`,
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
@@ -366,6 +377,10 @@ export function faqPageGroups(lang = 'en') {
           {
             q: 'Gebruiken jullie mijn productfoto’s voor iets anders?',
             a: 'Nee. De foto’s die je stuurt worden alleen gebruikt om jouw bestelling te produceren, en verder niets.',
+          },
+          {
+            q: 'Hoe lang bewaren jullie mijn foto’s?',
+            a: `De foto’s die je aanlevert blijven ${UPLOAD_DAYS} dagen na het afronden van je bestelling staan en worden dan verwijderd; de geleverde beelden staan ${DELIVERY_DAYS} dagen in VISUAILS Studio om te downloaden en worden daarna daar verwijderd. Bewaar dus zelf een kopie: wij kunnen er een in ons archief hebben, maar dat is geen garantie — heb je oudere beelden toch nodig, neem contact op en we kijken of ze er nog staan. Wil je je aangeleverde foto’s eerder weg, mail ons en het gebeurt. Dezelfde termijnen staan in ons privacybeleid.`,
           },
           {
             q: 'Moet ik alle geleverde beelden gebruiken?',
@@ -567,7 +582,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Is there a subscription?',
-          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Every plan costs less than the same output on the price per product, can be cancelled any month, and rolls an unused product over ${PLAN_ROLLOVER_MONTHS} month. Order without one and nothing recurs.`,
+          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Every plan costs less than the same output on the price per product. On the monthly term it can be cancelled any month and unused products roll over ${PLAN_ROLLOVER_MONTHS} month; the 12-month term is fixed for twelve months and rolls over ${TERMS.yearly.rollover} months. Order without one and nothing recurs.`,
         },
         {
           q: 'Can I add my VAT number?',
@@ -593,6 +608,10 @@ export function faqPageGroups(lang = 'en') {
           a: 'No. The photos you send are used to produce your order and nothing else.',
         },
         {
+          q: 'How long do you keep my photos?',
+          a: `The photos you send stay for ${UPLOAD_DAYS} days after your order closes and are then deleted; the delivered images stay in VISUAILS Studio for ${DELIVERY_DAYS} days to download and are then removed there. So keep your own copy: we may have one in our archive, but that is not a guarantee — still need older images, get in touch and we check whether they are still there. Want your source photos gone sooner, email us and it is done. The same terms are in our privacy policy.`,
+        },
+        {
           q: 'Do I have to use every image you deliver?',
           a: 'No. You get the complete set per product, and what you publish from it is your call. If today you only use the front and the on-model shot, the rest simply stay there for when you need them — a seasonal campaign, a new marketplace, a different banner size. There is no time limit on using them and nothing extra to pay for putting one to work later.',
         },
@@ -610,6 +629,44 @@ export function faqPageGroups(lang = 'en') {
 /** Every /faq question, flattened out of its groups — what the schema needs. */
 export function faqPageItems(lang = 'en') {
   return faqPageGroups(lang).flatMap((g) => g.items);
+}
+
+/*
+ * ── DE DRIE BEZWAREN OP DE HOMEPAGE — 2 september 2026 ─────────────────────
+ *
+ * De bezwaardenrij op de homepage toont vier vragen, waarvan er DRIE hun
+ * antwoord uit dit bestand halen (de vierde, over foto's van lage kwaliteit,
+ * heeft zijn antwoord in HomeV2 zelf staan omdat het nergens anders voorkomt).
+ * Die drie stonden in HomeV2.astro als `OB_BRON` — een lijstje vraagteksten dat
+ * per stuk in faqPageItems() wordt opgezocht.
+ *
+ * Waarom die lijst hierheen verhuist: de GEO-doorlichting van 2 september wees
+ * uit dat de homepage drie echte vragen-met-antwoord toont zonder FAQPage-knoop
+ * in de graph. schema.js kan die knoop wel bouwen — het leest alleen het PAD en
+ * niet de props van een component, en het had dus geen manier om te weten wélke
+ * drie vragen daar staan. Nu heeft het die: één lijst, twee lezers.
+ *
+ * De HREFS blijven in HomeV2 staan. Waar een bezwaar naartoe linkt is opmaak
+ * van die pagina en geen eigenschap van de vraag.
+ */
+export const HOME_OBJECTION_QUESTIONS = [
+  'What if the visuals are not right?',
+  'Are the visuals AI-generated?',
+  'Why not just do this myself with an AI tool?',
+];
+
+/** Die drie vragen mét hun antwoord, in de gevraagde taal. */
+export function homeObjectionFaqs(lang = 'en') {
+  const l = norm(lang);
+  const en = faqPageItems('en');
+  const hier = faqPageItems(l);
+  return HOME_OBJECTION_QUESTIONS.map((q) => {
+    const i = en.findIndex((it) => it.q === q);
+    /* Niet gooien maar overslaan: dit draait in de bouw van ELKE pagina, en
+       een graph zonder één vraag is beter dan een site die niet bouwt. HomeV2
+       gooit er wél op — daar is het een zichtbaar gat in de pagina. */
+    return i < 0 ? null : hier[i];
+  }).filter(Boolean);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -656,6 +713,25 @@ export function serviceFaqs(service, lang = 'en') {
     return l === 'nl' ? VIDEO_FAQ.nl({ clip, studioPlan, t0 }) : VIDEO_FAQ.en({ clip, studioPlan, t0 });
   }
 
+  /* Hooks, sinds 2 september 2026. Er is geen ladder en geen bestelstroom, dus
+     geen `entry`/`floor` en geen venster — wat er wél is, is een ondergrens en
+     een variantprijs. Zie de kop van HooksPage.astro voor waarom die twee de
+     enige getallen op die pagina zijn. */
+  if (service === 'hooks') {
+    const vanaf = euro(AMOUNT.hooks, l);
+    const variant = euro(AMOUNT.hooksVariant, l);
+    return l === 'nl' ? HOOKS_FAQ.nl({ vanaf, variant, t0 }) : HOOKS_FAQ.en({ vanaf, variant, t0 });
+  }
+
+  /* Editions, sinds 2 september 2026. Twee bedragen en twee sets, en de vragen
+     gaan bijna allemaal over het verschil tussen die twee — dat is waar een
+     bezoeker op deze pagina echt mee zit. Zie de kop van EditionsPage.astro. */
+  if (service === 'editions') {
+    const maand = euro(AMOUNT.editions, l);
+    const opzet = euro(AMOUNT.editionsSetup, l);
+    return l === 'nl' ? EDITIONS_FAQ.nl({ maand, opzet, t0 }) : EDITIONS_FAQ.en({ maand, opzet, t0 });
+  }
+
   /* Een onbekende dienst geeft een lege lijst en geen fout. buildGraph() roept
      dit aan voor elk pad dat het herkent; een lege lijst betekent daar "geen
      FAQPage-knoop", en dat is precies het juiste antwoord voor een pagina zonder
@@ -695,12 +771,26 @@ const CATALOG_LIFESTYLE_FAQ = {
         a: 'You tell us where the product will be sold as part of the order, and we deliver to that spec. All three require a pure white main image, so picking one locks the background to #FFFFFF and the set comes as jpg rather than webp. Two rules stay theirs and are worth knowing: bol allows no model on the main image, and Zalando asks for model views photographed with a real person — so use our on-model shot there as an additional image. We match the specifications; the platform still decides on the listing.',
       },
       {
+        q: 'Can I get more than four photos of a product?',
+        a: `Yes. In the order form you add extra angles per product — a side, the inside, a second detail — at the extra-photo rate for your count (${euro(extraPhotoRate(1), 'en')} at one product, falling with the ladder). Write down which angle you want; it comes in the same set.`,
+      },
+      {
+        q: 'Is this AI, and do I have to say so?',
+        a: 'Yes, and we say so plainly: every image is generated from photographs of your real product and finished by hand. The AI provenance sits inside the file, so the disclosure is already there. What a marketplace or a social platform asks of you on top of that — an AI toggle on a post, a label on an ad — is theirs to set, and we list it on our AI Act page.',
+        linkText: 'Read our AI Act page',
+        linkHref: '/ai-act',
+      },
+      {
+        q: 'Which files do I get?',
+        a: 'Every image as jpg, png and webp, in the aspect ratio you chose when ordering (1:1, 4:5 or 3:4 for a catalog set). A marketplace order comes as jpg, because that is what Amazon, bol and Zalando take. You download per image or the whole approved set as a zip, from your account.',
+      },
+      {
         q: 'What if I need changes?',
         // This answer used to read "Three revision rounds are included."
         // That was a package's guarantee and not this one — and there is no
         // count on either tier now. What we would agree instead is in
         // /terms §10 and stays there; see src/data/pricing.js for why.
-        a: `${clause(t0.aftercare.en)}. Tell us what is wrong and we go through it with you.`,
+        a: `${clause(t0.aftercare.en)}. Anything that does not match your own photos — colour, print, fit — is what that round is for. A different background or look is a new order.`,
       },
     ],
     nl:
@@ -730,8 +820,22 @@ const CATALOG_LIFESTYLE_FAQ = {
         a: 'Je geeft bij je bestelling aan waar het product verkocht wordt, en we leveren op die specificatie. Alle drie eisen ze een zuiver witte hoofdafbeelding, dus die keuze zet de achtergrond vast op #FFFFFF en je krijgt de set als jpg in plaats van webp. Twee regels blijven van het platform zelf, en die zijn goed om te weten: bol staat geen model op de hoofdafbeelding toe, en Zalando vraagt modelbeelden die met een echte persoon zijn gefotografeerd — gebruik onze on-model shot daar dus als extra afbeelding. Wij matchen de specificaties; het platform beslist over de listing.',
       },
       {
+        q: 'Kan ik meer dan vier foto’s van een product krijgen?',
+        a: `Ja. In het bestelformulier zet je per product extra hoeken erbij — een zijkant, de binnenkant, een tweede detail — tegen het extra-fototarief voor jouw aantal (${euro(extraPhotoRate(1), 'nl')} bij één product, dalend met de trap). Schrijf erbij welke hoek je wilt; hij komt in dezelfde set.`,
+      },
+      {
+        q: 'Is dit AI, en moet ik dat vermelden?',
+        a: 'Ja, en dat zeggen we gewoon: elk beeld wordt gegenereerd uit foto’s van je echte product en met de hand afgewerkt. De AI-herkomst zit in het bestand, dus de vermelding is er al. Wat een marktplaats of socialplatform daarbovenop van jou vraagt — een AI-schakelaar op een post, een label op een advertentie — is aan hen, en staat op onze AI Act-pagina.',
+        linkText: 'Lees onze AI Act-pagina',
+        linkHref: '/ai-act',
+      },
+      {
+        q: 'Welke bestanden krijg ik?',
+        a: 'Elk beeld als jpg, png en webp, in de beeldverhouding die je bij het bestellen koos (1:1, 4:5 of 3:4 voor een catalogset). Een marktplaatsbestelling komt als jpg, want dat nemen Amazon, bol en Zalando aan. Je downloadt per beeld of de hele goedgekeurde set als zip, vanuit je account.',
+      },
+      {
         q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${clause(t0.aftercare.nl)}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+        a: `${clause(t0.aftercare.nl)}. Alles wat niet overeenkomt met je eigen foto’s — kleur, print, pasvorm — is waar die ronde voor is. Een andere achtergrond of look is een nieuwe bestelling.`,
       },
     ],
   },
@@ -763,8 +867,26 @@ const CATALOG_LIFESTYLE_FAQ = {
         a: `Under ${WINDOW_THRESHOLD} products: ${clause(turnaround('unattended', 'en')).toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${clause(turnaround('attended', 'en')).toLowerCase()}.`,
       },
       {
+        q: 'Can several products go into one shot?',
+        a: `Yes — a complete outfit. Trousers, top and shoes styled together on one model counts as one product plus a flat ${euro(OUTFIT_SURCHARGE, 'en')} for that product, for up to ${MAX_OUTFIT_PRODUCTS} products styled that way per order. Send the front and back of every piece, and tick it in the order form.`,
+      },
+      {
+        q: 'Can I steer within a look?',
+        a: 'A look is locked on its light and grade — that is what makes ten orders look like one brand. Setting, props and season you put in the note with your order, and we take them along as far as they fit the look. Anything beyond that is a look of your own.',
+      },
+      {
+        q: 'Is this AI, and do I have to say so?',
+        a: 'Yes, and we say so plainly: every image is generated from photographs of your real product and finished by hand. The AI provenance sits inside the file, so the disclosure is already there. What a marketplace or a social platform asks of you on top of that — an AI toggle on a post, a label on an ad — is theirs to set, and we list it on our AI Act page.',
+        linkText: 'Read our AI Act page',
+        linkHref: '/ai-act',
+      },
+      {
+        q: 'Which files do I get?',
+        a: 'Every image as jpg, png and webp, in the aspect ratio you chose when ordering (1:1, 4:5, 3:4, 16:9 for banners or 9:16 for Reels and Stories). A marketplace order comes as jpg, because that is what Amazon, bol and Zalando take. You download per image or the whole approved set as a zip, from your account.',
+      },
+      {
         q: 'What if I need changes?',
-        a: `${clause(t0.aftercare.en)}. Tell us what is wrong and we go through it with you.`,
+        a: `${clause(t0.aftercare.en)}. Anything that does not match your own photos — colour, print, fit — is what that round is for. A different look is a new order.`,
       },
     ],
     nl:
@@ -794,11 +916,195 @@ const CATALOG_LIFESTYLE_FAQ = {
         a: `Onder ${WINDOW_THRESHOLD} producten: ${clause(turnaround('unattended', 'nl')).toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${clause(turnaround('attended', 'nl')).toLowerCase()}.`,
       },
       {
+        q: 'Kunnen meerdere producten in één shot?',
+        a: `Ja — een compleet setje. Broek, top en schoenen samen gestyled op één model telt als één product plus een vaste ${euro(OUTFIT_SURCHARGE, 'nl')} voor dat product, voor maximaal ${MAX_OUTFIT_PRODUCTS} zo gestylede producten per bestelling. Stuur van elk stuk voor- en achterkant, en vink het aan in het bestelformulier.`,
+      },
+      {
+        q: 'Kan ik sturen binnen een look?',
+        a: 'Een look ligt vast op licht en grade — dat is wat tien bestellingen op één merk laat lijken. Setting, props en seizoen geef je mee in de notitie bij je bestelling, en die nemen we mee zover het binnen de look past. Alles daarbuiten is een eigen look.',
+      },
+      {
+        q: 'Is dit AI, en moet ik dat vermelden?',
+        a: 'Ja, en dat zeggen we gewoon: elk beeld wordt gegenereerd uit foto’s van je echte product en met de hand afgewerkt. De AI-herkomst zit in het bestand, dus de vermelding is er al. Wat een marktplaats of socialplatform daarbovenop van jou vraagt — een AI-schakelaar op een post, een label op een advertentie — is aan hen, en staat op onze AI Act-pagina.',
+        linkText: 'Lees onze AI Act-pagina',
+        linkHref: '/ai-act',
+      },
+      {
+        q: 'Welke bestanden krijg ik?',
+        a: 'Elk beeld als jpg, png en webp, in de beeldverhouding die je bij het bestellen koos (1:1, 4:5, 3:4, 16:9 voor banners of 9:16 voor Reels en Stories). Een marktplaatsbestelling komt als jpg, want dat nemen Amazon, bol en Zalando aan. Je downloadt per beeld of de hele goedgekeurde set als zip, vanuit je account.',
+      },
+      {
         q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${clause(t0.aftercare.nl)}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+        a: `${clause(t0.aftercare.nl)}. Alles wat niet overeenkomt met je eigen foto’s — kleur, print, pasvorm — is waar die ronde voor is. Een andere look is een nieuwe bestelling.`,
       },
     ],
   },
+};
+
+/* ── DE VRAGEN BIJ /hooks — 2 SEPTEMBER 2026 ────────────────────────────────
+ *
+ * Vijf vragen, en drie ervan bestaan omdat ze op deze pagina onvermijdelijk
+ * gesteld worden en het antwoord ongemakkelijk is: je kunt het nog niet
+ * bestellen, we beloven geen bereik, en er zit geen staffel op. Een dienst-FAQ
+ * die alleen de makkelijke vragen beantwoordt, is een verkooptekst met een
+ * vraagteken erachter.
+ *
+ * GEEN ENKEL GETAL VOOR DE DOORLOOPTIJD. `turnaround('unattended')` schrijft
+ * hem, net als op elke andere dienstpagina — het concept in
+ * HOOKS-COPY-CONCEPT.md zei vier keer "24 tot 48 uur" en dat is precies de
+ * belofte die tests/promises.test.mjs sitebreed tegenhoudt.
+ */
+const HOOKS_FAQ = {
+  en:
+  ({ vanaf, variant, t0 }) => [
+      {
+        q: 'What is a hook, exactly?',
+        a: 'A short vertical video of your product, built on a format we have used before. The format works on a join: the video runs to the bottom edge of its frame and the image below it in the feed picks it up, so the two read as one picture rather than two posts.',
+      },
+      {
+        q: 'What does it cost?',
+        a: `From ${vanaf} ${vatLabel('excl', 'en')} per product. What moves it up is how many angles the format needs and how much of the product has to be rebuilt for it. An extra variant on the same product — same format, different execution — starts at ${variant}.`,
+      },
+      {
+        q: 'Why does the rate not fall when I order more?',
+        a: 'Catalog and lifestyle images are priced per product and that rate falls as the count rises, because one setup gets spread across more products. A hook is the setup, and there is nothing to spread it over. So the figure is a floor rather than a rate: what moves it is the work in front of it, not the number of products behind it.',
+      },
+      {
+        q: 'Can I order one today?',
+        a: `Not through the site, no. Hooks are planned by hand, so it starts with a conversation: you tell us what you sell and what photos you have, and we say in writing which format fits and what it would cost before anything runs. The work itself runs at the standard turnaround — ${clause(turnaround('unattended', 'en')).toLowerCase()} — and no delivery date is named before the calendar clears it.`,
+      },
+      {
+        q: 'Do you guarantee it will perform?',
+        a: 'No, and nobody honestly can. We guarantee the format, the execution and the check by a specialist before it goes out. Whether a post reaches anyone depends on the platform and on timing, and neither of those is ours to promise — a format can give a post a better chance, it cannot give it an audience.',
+      },
+      {
+        q: 'What do I have to send?',
+        a: 'The same set as a catalog order: front and back at a minimum, plus a detail shot and a worn shot if you have them. One photo is not enough, because the format moves around the product and so has to see it from more than one side. Phone photos are fine.',
+      },
+      {
+        q: 'What if I need changes?',
+        a: `${clause(t0.aftercare.en)}. One revision round on the video is included, in VISUAILS Studio, the same way you review any other order.`,
+      },
+  ],
+  nl:
+  ({ vanaf, variant, t0 }) => [
+      {
+        q: 'Wat is een hook precies?',
+        a: 'Een korte verticale video van je product, gebouwd op een format dat we eerder gebruikt hebben. Het format werkt op een naad: de video loopt tot de onderrand van zijn kader en het beeld dat er in de feed onder staat pakt hem op, zodat die twee als één beeld lezen in plaats van als twee posts.',
+      },
+      {
+        q: 'Wat kost het?',
+        a: `Vanaf ${vanaf} ${vatLabel('excl', 'nl')} per product. Wat het hoger maakt: hoeveel kanten het format nodig heeft en hoeveel er van het product opnieuw gebouwd moet worden. Een extra variant op hetzelfde product — hetzelfde format, een andere invulling — begint bij ${variant}.`,
+      },
+      {
+        q: 'Waarom daalt het tarief niet als ik er meer bestel?',
+        a: 'Catalog- en lifestylebeelden hebben een prijs per product, en die zakt naarmate het aantal stijgt, omdat één opzet dan over meer producten wordt uitgesmeerd. Bij een hook ís de opzet het werk, en er is niets om hem over uit te smeren. Het bedrag is daarom een ondergrens en geen tarief: wat het beweegt is het werk ervoor, niet het aantal erachter.',
+      },
+      {
+        q: 'Kan ik er vandaag een bestellen?',
+        a: `Via de site niet. Hooks plannen we met de hand in, dus het begint met een gesprek: jij vertelt wat je verkoopt en welke foto’s je hebt, wij zetten op schrift welk format erbij past en wat het zou kosten voordat we beginnen. Het werk zelf loopt mee in de normale doorlooptijd — ${clause(turnaround('unattended', 'nl')).toLowerCase()} — en we noemen geen leverdatum voordat we in de agenda hebben gekeken.`,
+      },
+      {
+        q: 'Garanderen jullie dat hij het goed doet?',
+        a: 'Nee, en dat kan eerlijk gezegd niemand. Wij garanderen het format, de uitvoering en de controle door een specialist voordat hij weggaat. Of een post iemand bereikt, hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven — een format kan een post een betere kans geven, geen publiek.',
+      },
+      {
+        q: 'Wat moet ik aanleveren?',
+        a: 'Dezelfde set als bij een catalogbestelling: minimaal voorkant en achterkant, plus een detailfoto en een draagfoto als je die hebt. Eén foto is niet genoeg, omdat het format om het product heen beweegt en het dus van meer dan één kant moet zien. Telefoonfoto’s zijn prima.',
+      },
+      {
+        q: 'Wat als ik wijzigingen nodig heb?',
+        a: `${clause(t0.aftercare.nl)}. Eén revisieronde op de video zit erbij, in VISUAILS Studio, net zoals je elke andere bestelling nakijkt.`,
+      },
+  ],
+};
+
+/* ── DE VRAGEN BIJ /editions — 2 SEPTEMBER 2026 ─────────────────────────────
+ *
+ * De eerste vraag is niet "wat is het" maar "waar betaal ik voor", en dat is
+ * geen toeval: dit is het enige product op de site waarvan de helft gratis bij
+ * iets anders zit. Elke vraag hieronder bestaat omdat iemand hem stelt vlak
+ * voordat hij een factuur krijgt — en dan is het te laat om hem te beantwoorden.
+ */
+const EDITIONS_FAQ = {
+  en:
+  ({ maand, opzet, t0 }) => [
+      {
+        q: 'What is the difference between the two sets?',
+        a: `Who else gets them. The shared set of ${STOCK_OFF_BRAND} visuals a month is brand-neutral and goes to every brand on a plan — the same images, to all of them. Editions is ${STOCK_ON_BRAND} visuals a month built on your style, your locations and your colour palette, and that set goes to you and nobody else. Neither has a product in it.`,
+      },
+      {
+        q: 'Do I have to pay for the shared set?',
+        a: 'No. It comes with every plan at no extra cost, from the smallest one up, and appears each month under "This month" in your plan in VISUAILS Studio — every image, and the whole set as a zip. Only Editions is paid for.',
+      },
+      {
+        q: 'What does Editions cost?',
+        a: `${maand} a month ${vatLabel('excl', 'en')} on top of your plan, after a one-time setup of ${opzet}. The setup is the work done once per brand: the style, the locations and the colour palette every month after it runs on. It is two figures because it is two different things — folding the setup into the monthly price would spread it over months you have not committed to yet.`,
+      },
+      {
+        q: 'Is my product in these images?',
+        a: 'No, and that is the point of the category. These are mood, texture and light — the fabric close up, a wall in late light, a hand. A shopper is not judging a product in them; they are deciding whether they recognise the brand. Images with your product in them are a regular order.',
+      },
+      {
+        q: 'Can another brand post the same image as me?',
+        a: 'On the shared set, yes — that is what shared means, and we would rather say it here than in the small print. Our clients are clothing brands and therefore each other’s competitors, so it matters. On Editions, no: that set is made for one brand and delivered to one brand.',
+      },
+      {
+        q: 'What happens to the images if I cancel?',
+        a: 'You keep everything you downloaded, under the same licence you had. Nothing has to come down. You simply stop receiving new sets.',
+      },
+      {
+        q: 'Will it be the same picture twelve times?',
+        a: 'No — that is what the setup is for. It fixes the style, the locations and the palette so the sets stay recognisably one brand, and every month runs that setup again from different angles. A set that looked identical every month would fail its own job, which is to fill a calendar.',
+      },
+      {
+        q: 'Are there models in them?',
+        a: 'No faces in either set. Choosing models per set would turn a monthly run into a review round each time, and that is what would make it expensive. If that changes we will say so here first. Faces belong to your orders, where you pick from the shared roster or use a Brand Model.',
+      },
+      {
+        q: 'Can I order it today?',
+        a: `Editions, not yet — nothing is charged for it. The shared set needs no order: it comes with your plan. Editions starts with a conversation: you tell us about your brand, we say what the setup would look like, and nothing runs before that is agreed in writing. ${clause(t0.aftercare.en)}.`,
+      },
+  ],
+  nl:
+  ({ maand, opzet, t0 }) => [
+      {
+        q: 'Wat is het verschil tussen de twee sets?',
+        a: `Wie ze verder krijgt. De gedeelde set van ${STOCK_OFF_BRAND} beelden per maand is merkneutraal en gaat naar elk merk met een abonnement — dezelfde beelden, naar allemaal. Editions is ${STOCK_ON_BRAND} beelden per maand die op jouw stijl, jouw locaties en jouw kleurenpalet gebouwd zijn, en die set gaat naar jou en naar niemand anders. In geen van beide zit een product.`,
+      },
+      {
+        q: 'Moet ik voor de gedeelde set betalen?',
+        a: 'Nee. Die komt zonder meerprijs met elk abonnement mee, vanaf het kleinste, en staat elke maand onder "Deze maand" bij je abonnement in VISUAILS Studio — elk beeld los, en de hele set als zip. Alleen Editions kost geld.',
+      },
+      {
+        q: 'Wat kost Editions?',
+        a: `${maand} per maand ${vatLabel('excl', 'nl')} bovenop je abonnement, na een eenmalige opzet van ${opzet}. Die opzet is het werk dat één keer per merk gedaan wordt: de stijl, de locaties en het kleurenpalet waar elke maand daarna op draait. Het zijn twee bedragen omdat het twee verschillende dingen zijn — de opzet in het maandbedrag vouwen zou hem uitsmeren over maanden waar je nog niet aan vastzit.`,
+      },
+      {
+        q: 'Zit mijn product in deze beelden?',
+        a: 'Nee, en dat is juist waar deze categorie over gaat. Dit is sfeer, textuur en licht — de stof van dichtbij, een muur in laat licht, een hand. Een koper beoordeelt er geen product op; hij beslist of hij het merk herkent. Beelden mét je product erin zijn een gewone bestelling.',
+      },
+      {
+        q: 'Kan een ander merk hetzelfde beeld plaatsen als ik?',
+        a: 'Bij de gedeelde set wel — dat is wat gedeeld betekent, en we zeggen het liever hier dan in de kleine lettertjes. Onze klanten zijn kledingmerken en dus elkaars concurrenten, dus het doet ertoe. Bij Editions niet: die set wordt voor één merk gemaakt en aan één merk geleverd.',
+      },
+      {
+        q: 'Wat gebeurt er met de beelden als ik opzeg?',
+        a: 'Je houdt alles wat je hebt opgehaald, onder dezelfde licentie die je had. Er hoeft niets offline. Je krijgt alleen geen nieuwe sets meer.',
+      },
+      {
+        q: 'Wordt het niet twaalf keer hetzelfde beeld?',
+        a: 'Nee — daar is de opzet voor. Die legt de stijl, de locaties en het palet vast zodat de sets herkenbaar één merk blijven, en elke maand draait diezelfde opzet opnieuw vanuit andere invalshoeken. Een set die er elke maand hetzelfde uitziet, faalt in zijn eigen opdracht: een kalender vullen.',
+      },
+      {
+        q: 'Staan er modellen in?',
+        a: 'Geen gezichten, in geen van beide sets. Modellen per set kiezen maakt van een maandelijkse ronde elke keer een controleronde, en dát is wat het duur zou maken. Verandert dat, dan staat het hier als eerste. Gezichten horen bij je bestellingen, waar je kiest uit de gedeelde bibliotheek of een merkmodel gebruikt.',
+      },
+      {
+        q: 'Kan ik het vandaag bestellen?',
+        a: `Editions nog niet — daar wordt ook nog niets voor afgeschreven. De gedeelde set hoef je niet te bestellen: die komt met je abonnement mee. Editions begint met een gesprek: jij vertelt over je merk, wij zeggen hoe de opzet eruit zou zien, en er gebeurt niets voordat dat op schrift staat. ${clause(t0.aftercare.nl)}.`,
+      },
+  ],
 };
 
 const VIDEO_FAQ = {

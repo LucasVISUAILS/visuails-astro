@@ -125,7 +125,7 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
     successUrl,
     webhookUrl,
     valueEuros: AMOUNT.testSample.toFixed(2),
-    description: lang === 'nl' ? 'VISUAILS proefvisual' : 'VISUAILS test sample',
+    description: lang === 'nl' ? 'VISUAILS proef' : 'VISUAILS test sample',
   });
 }
 
@@ -317,8 +317,8 @@ export async function firstPaymentMandate(env, mollieCustomerId) {
  * ── `startDate` IS HOE EEN GRATIS PERIODE WERKT ────────────────────────────
  *
  * Nagekeken in de Create-subscription-documentatie: `startDate` (YYYY-MM-DD)
- * stelt de eerste afschrijving uit. Twee maanden gratis is dus: een eerste
- * betaling van € 1 voor het mandaat, en deze subscription met `startDate` op
+ * stelt de eerste afschrijving uit. Twee maanden gratis zou dus zijn: een eerste
+ * betaling voor het mandaat, en deze subscription met `startDate` op
  * vandaag plus twee maanden. De klant betaalt twee maanden niets en daarna elke
  * maand het volle bedrag, automatisch.
  *

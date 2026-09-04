@@ -7,8 +7,8 @@
 // loudly. That is the pattern worth testing for.
 //
 // §1 — SETTING AN ORDER TO DELIVERED NEVER EMAILED ANYONE. sendDeliveryMail()
-// minted a second portal token, schema.sql:275 allows exactly one live token per
-// order, and handleStatusUpdate calls the mail inside .catch(console.error) so
+// minted a second portal token, schema.sql (until migration 0044) allowed exactly
+// one live token per order, and handleStatusUpdate calls the mail inside .catch(console.error) so
 // that a Resend outage cannot turn a successful status change into an error
 // page. The constraint violation went into that catch. delivered_at was written,
 // the dashboard said delivered, and the customer was never told their images
@@ -31,7 +31,7 @@ import { adminGet, adminPost, guessProductShot } from '../src/lib/admin.js';
 import { mintToken } from '../src/lib/token.js';
 /* De bewaartermijn wordt geïmporteerd en niet ingetypt: een toets die 12
    intypt, bewijst dat 12 nog steeds 12 is. */
-import { DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { DELIVERY_DAYS } from '../src/lib/retention.js';
 
 const ORDERS = [
   { id: 91, customer_id: 7, ref: 'VIS-8K2-QQ1', service: 'catalog', status: 'received', tier: 'attended', brand: 'VOLT', email: 'studio@voltbrand.nl', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', payment_status: 'paid', total_cents: 102000, vat_cents: 21420, paid_at: '2026-08-01', created_at: '2026-08-01', delivered_at: null, delivery_mailed_at: null, file_count: 0, lang: 'nl', name: 'Mara' },
@@ -195,18 +195,18 @@ section('§1 · setting an order to delivered actually emails the customer');
   const body = new URLSearchParams({ status: 'delivered', note: '' });
   const res = await adminReq('POST', '/admin/orders/90/status', { env, body });
 
-  const revokeAt = indexOfWrite(env.DB.writes, /UPDATE order_tokens SET revoked_at/);
   const insertAt = indexOfWrite(env.DB.writes, /INSERT INTO order_tokens/);
 
   check('the status change redirects, not errors', res.status === 303, res.status);
   check('delivered_at is stamped', has(env.DB.writes, /UPDATE orders SET delivered_at/));
-  check('the live token is revoked first', revokeAt >= 0 && insertAt >= 0 && revokeAt < insertAt,
-    `revoke@${revokeAt} insert@${insertAt}`);
+  /* Sinds 4 september 2026 (migratie 0044, doorlichting §3.4) blijft de link uit
+     de bevestigingsmail gewoon werken: een aankondiging trekt niets meer in. Tot
+     dan stond hier "the live token is revoked first". */
+  check('a new token is minted', insertAt >= 0, `insert@${insertAt}`);
+  check('and the earlier link is NOT revoked — the confirmation mail keeps working',
+    !has(env.DB.writes, /UPDATE order_tokens SET revoked_at/));
   check('only ONE new token is minted',
     env.DB.writes.filter((w) => /INSERT INTO order_tokens/.test(w.sql)).length === 1);
-  check('the revoke is scoped to live tokens on this order',
-    /WHERE order_id = \?1 AND revoked_at IS NULL/.test(
-      env.DB.writes.find((w) => /UPDATE order_tokens SET revoked_at/.test(w.sql)).sql));
   check('the customer is emailed', sentMail.length === 1, `${sentMail.length} mail(s)`);
   check('at their own address', sentMail[0]?.to === 'hi@kade.nl', sentMail[0]?.to);
   check('with a portal link in it', /\/p\/|portal/.test(sentMail[0]?.html || ''), 'link present');
@@ -421,8 +421,10 @@ section('§4 · de herlevering — "je revisie staat klaar", los van de eerste m
   // DE KERN VAN LUCAS' EIS. De eerste aankondiging houdt zijn eigen bewaker.
   check('delivery_mailed_at is NOT touched',
     !has(env.DB.writes, /UPDATE orders SET delivery_mailed_at/));
-  check('the customer gets a working link (old token revoked, new one minted)',
-    has(env.DB.writes, /UPDATE order_tokens SET revoked_at/) && has(env.DB.writes, /INSERT INTO order_tokens/));
+  check('the customer gets a working link (new token minted, earlier ones left alive)',
+    !has(env.DB.writes, /UPDATE order_tokens SET revoked_at/) && has(env.DB.writes, /INSERT INTO order_tokens/));
+  check('and the mail no longer claims to replace the previous link',
+    !/vervangt de vorige|replaces the previous/i.test(sentMail[0]?.html || ''));
   check('and it lands on their timeline too',
     has(env.DB.writes, /INSERT INTO order_events/));
 
@@ -740,6 +742,7 @@ section('§8 · annuleren, verbergen, verwijderen — drie dingen, geen knop');
 }
 
 {
+  sentMail = [];
   const env = makeEnv();
   await adminReq('POST', '/admin/orders/90/cancel', {
     env, body: new URLSearchParams({ reason: 'Merk stopt met de lijn.', payment: 'refund' }),
@@ -749,9 +752,18 @@ section('§8 · annuleren, verbergen, verwijderen — drie dingen, geen knop');
   check('the customer sees the reason and what happens with the money',
     /Merk stopt/.test(ev?.binds?.[1] || '') && /Refund/.test(ev?.binds?.[1] || ''), ev?.binds?.[1]);
   check('and it lands in the admin log', has(env.DB.writes, /INSERT INTO admin_log/));
+  /* 4 september 2026 (doorlichting §3.2): de klant hoort het ook per mail, met
+     de reden in jouw woorden en wat er met zijn geld gebeurt. Vóór vandaag stond
+     dit alleen op de tijdlijn in Studio. */
+  const afzegging = sentMail.find((m) => /geannuleerd|cancelled/i.test(m.subject || ''));
+  check('the customer is emailed about the cancellation', Boolean(afzegging), `${sentMail.length} mail(s)`);
+  check('at their own address', afzegging?.to === 'hi@kade.nl', afzegging?.to);
+  check('with the reason in it', /Merk stopt met de lijn/.test(afzegging?.html || ''));
+  check('and what happens with the money', /terug|refund/i.test(afzegging?.html || ''));
 }
 
 {
+  sentMail = [];
   const env = makeEnv();
   await adminReq('POST', '/admin/orders/90/hide', { env, body: new URLSearchParams({ action: 'hide' }) });
   check('hiding stamps hidden_at', has(env.DB.writes, /SET hidden_at = datetime/));
@@ -940,6 +952,8 @@ section('§5 · "mail ons en we sturen een nieuwe link" — 23 augustus 2026');
   const insertAt = indexOfWrite(env.DB.writes, /INSERT INTO order_tokens/);
 
   check('a fresh link works when there is nothing to announce', res.status === 303, res.status);
+  /* HIER WÉL intrekken: de klant vroeg uitdrukkelijk om een nieuwe link, dus de
+     oude is kwijt of doorgestuurd. De enige aanroeper die dat nog doet. */
   check('the old token is revoked first', revokeAt >= 0 && insertAt >= 0 && revokeAt < insertAt,
     `revoke@${revokeAt} insert@${insertAt}`);
   check('exactly one new token is minted',
@@ -957,7 +971,7 @@ section('§5 · "mail ons en we sturen een nieuwe link" — 23 augustus 2026');
   check('it says the previous link is dead',
     /replaces the previous one/i.test(m.html || ''));
   check('and it names the retention period from the constant',
-    new RegExp(`${DELIVERY_MONTHS} months`).test(m.html || ''));
+    new RegExp(`${DELIVERY_DAYS} days`).test(m.html || ''));
 
   /* NIETS AANGEKONDIGD. redelivery_count omhoog zetten of announced_at stempelen
      zou de volgende echte herlevering laten denken dat die beelden al gemeld

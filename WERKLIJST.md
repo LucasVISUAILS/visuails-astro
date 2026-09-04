@@ -768,3 +768,1316 @@ hebben.
   <br>Wat jij moet doen: één goedgekeurde review in /admin, dan
   `npm run testimonials -- --dry` om te zien wat eruit komt, dan zonder `--dry`,
   en het gewijzigde `src/data/testimonials.js` meecommitten.
+
+---
+
+## 2 september 2026 — gemeten in plaats van gelezen
+
+Een ronde die volledig op METINGEN draait: axe-core over elke pagina, een echte
+browser met CPU-rem en 1,6 Mbit voor de kernwaarden, en een tijdlijn van wat er
+op het scherm verspringt. Geen enkel punt hieronder komt uit het lezen van code;
+elk komt uit een getal, en bij elk staat het getal erbij.
+
+### Toegankelijkheid — van 5 soorten bevindingen naar 0
+
+`kladblok/axe-ronde.mjs` draait axe-core over alle 91 pagina's op 1440 en 390px.
+De eerste ronde gaf vijf soorten. Alle vijf zijn weg.
+
+- [x] ~~**CRITICAL — `role="tablist"` met een link erin.**~~ De kaartjes onder de
+  hero droegen `role="tablist"` en het script hing er `role="tab"` aan, maar in
+  elk kaartje zit ook het pijltje naar de dienstpagina: *"Element has children
+  which are not allowed: a[aria-label]"*. Een tablist mag alleen tabs bevatten.
+  Het was bovendien maar half een tabpatroon — vijf tabs, één paneel, en
+  `aria-labelledby` daarop wees altijd naar tab 0, ook bij dia 4.
+  <br>Nu `role="group"` met een naam en `aria-current` op de actieve kaart; de
+  pijltjesbediening en het roving tabindex zijn ongewijzigd. Bewaakt door
+  `tests/carrousel.test.mjs`, die de flex-groei meet en niet de klassenaam —
+  want het attribuut stuurt tien CSS-regels aan.
+- [x] ~~**SERIOUS — `<dt>`/`<dd>` zonder `<dl>` op /thank-you.**~~ De rijen waren
+  losse `<div class="ty-row">`. Er zit nu een `<dl>` omheen; de divs blijven,
+  want een `<dl>` mag ze hebben en de hele opmaak hangt eraan.
+- [x] ~~**SERIOUS — schuivende tabellen zonder toetsenbordtoegang.**~~
+  `.fb-tblwrap` en `.table-scroll` schuiven horizontaal en waren zonder muis
+  niet te lezen. `tabindex="0"` plus een benoemde `role="region"`.
+- [x] ~~**MODERATE — de WhatsApp-knop viel buiten elk landmark.**~~ Op 91
+  pagina's × 2 breedtes. Hij staat nu in een `<div class="wa-dock">` met
+  `role="complementary"`; de sibling-selector die hem voor de promobalk laat
+  wijken is meeverhuisd naar `.convbar.show ~ .wa-dock .wa-launcher`.
+- [x] ~~**MINOR — `role="listitem"` op `<a>`-elementen.**~~ Die rol mag niet op
+  een link. De list-rollen op de dienstenrail zijn weg; drie links naast elkaar
+  is wat het is.
+
+### Snelheid — GSAP eruit, en de CLS van de galerij opgelost
+
+- [x] ~~**68 kB GSAP voor één crossfade.**~~ De galerij laadde de hele GSAP-kern
+  voor de filterovergang: **128 kB JavaScript** op /gallery en /nl/gallery tegen
+  58 kB op de rest van de site. Dat doet nu `element.animate()` —
+  `src/scripts/galerij-filter.js`, één bestand in plaats van twee identieke
+  kopieën in de pagina's. **Na de omzetting: 60 kB.** De GSAP-curves staan er
+  met hun naam bij (`power2.out` = easeOutQuad, `power3.out` = easeOutCubic).
+  <br>De proef die erbij hoort (`tests/galerij-filter.test.mjs`) ving meteen een
+  echte fout in mijn eigen eerste versie: een animatie met `fill: forwards` werd
+  bij `finished` uit de boekhouding gehaald maar bleef zijn eindwaarde opleggen,
+  dus een uitgefade foto kwam onzichtbaar terug. In de bron zag dat er goed uit.
+- [x] ~~**CLS 0,113 op /gallery — de slechtste van de site.**~~ Gemeten op 390px
+  met CPU-rem: het raster groeide van 4717 naar 5412 px terwijl de foto's
+  binnenkwamen. De brede tegels stonden op `height: 0px` tot hun beeld er was.
+  <br>De oorzaak was `.photo-grid .wide { aspect-ratio: unset; }`. `unset` is
+  `initial` is `auto`, en `auto` betekent "gebruik de NATUURLIJKE verhouding" —
+  die de browser pas kent na het laden. De verhouding stond er wél op (elke
+  `<img>` draagt width en height), maar de UA-regel die die attributen gebruikt
+  werd door deze auteursdeclaratie overschreven. De 4/5 staat nu op
+  `img:not(.wide)`, zodat er op een brede tegel geen enkele auteursregel voor
+  aspect-ratio geldt. **CLS 0,113 → 0,004; LCP 3,78s → 3,15s.**
+  Bewaakt door `tests/beeldruimte.test.mjs`, die de beelden VERTRAAGT in plaats
+  van ze te blokkeren — een beeld dat faalt heeft ook geen verhouding, dus een
+  toets die blokkeert zegt vóór en ná de reparatie hetzelfde.
+- [x] ~~**De CSP had geen `img-src`, `font-src` of `connect-src`.**~~ Alles wat
+  geen script en geen stijl is, viel nergens onder — precies het gat waar een
+  geïnjecteerde `<img src="https://…?c=" + document.cookie>` doorheen loopt.
+  Er staan nu zeven richtlijnen bij, elk aan de build gemeten. In een echte
+  browser over alle 93 pagina's: geen enkele overtreding.
+
+### Wat er gemeten is en waar niets mis mee bleek
+
+Ook dit hoort opgeschreven, anders wordt het over een maand opnieuw uitgezocht.
+
+- **Lettertypen.** Vier woff2-bestanden worden echt gehaald, samen 132 kB. De
+  acht andere zijn latin-ext- en vietnamese-subsets die alleen laden als er zo'n
+  teken op de pagina staat — 161 kB die wél meegedeployed wordt en nooit
+  opgevraagd. Dat is goed, niet fout. `kladblok/lettermeting.mjs`.
+- **Kernwaarden mét compressie.** Een eerste meting zonder compressie gaf LCP
+  3,3s en dat is niet wat een bezoeker krijgt: Cloudflare comprimeert tekst. Met
+  brotli erin haalt elke pagina de begroting uit DESIGN.md ("LCP onder 2,5s op
+  mobiel 4G") behalve /gallery op 2,62s, en dat is een muur van foto's.
+  `kladblok/kernwaarden.mjs`.
+- **Console en netwerk.** 91 pagina's × 2 breedtes: nul JS-fouten, nul
+  console-meldingen, nul mislukte verzoeken. Vastgelegd door
+  `tests/console-schoon.test.mjs` op een greep van tien pagina's die samen elk
+  script van de site aanraken; de volledige sweep staat in
+  `kladblok/consolesweep.mjs`.
+- **Links, alt, koppen en meta.** 93 gebouwde pagina's: geen dode interne link,
+  geen `<img>` zonder alt, geen overgeslagen kopniveau, en overal title,
+  description, og-tags, canonical en lang. Vastgelegd door
+  `tests/paginakeuring.test.mjs`. De enige uitzondering staat er met reden bij:
+  `/404/` is geen map, want Astro zet alleen de Engelse 404 plat neer zodat
+  Cloudflare Pages hem vindt — er een echte map van maken zou een foutpagina een
+  200 geven.
+- **`target="_blank"` zonder `rel="noopener"`:** nul. **Dubbele id's:** nul.
+
+### En daarna het dashboard en het adminscherm — de twee die nooit gekeurd waren
+
+Elke toegankelijkheidsronde tot nu toe liep over `dist/`. Het klantdashboard en
+het adminscherm worden door Pages Functions gerenderd en staan daar niet in: ze
+zijn dus nooit door een keuring heen geweest, terwijl dat de twee schermen zijn
+waar een BETALENDE klant en jij zelf de meeste tijd doorbrengen.
+
+`scripts/account-render.mjs` en `scripts/admin-render.mjs` kunnen sinds vandaag
+allebei hun html wegschrijven (`VISUAILS_DUMP_HTML=<map>`), en
+`kladblok/axe-dashboard.mjs` en `kladblok/axe-admin.mjs` zetten axe-core erop —
+met de echte CSP en de echte CSS, want anders keur je een pagina die niemand
+krijgt.
+
+**Klantdashboard: 2 soorten bevindingen → 0.**
+
+- [x] ~~Koppen sprongen van h1 naar h3, en op /account/orders zelfs naar h4.~~
+  Een schermlezer leest de koppenlijst als de inhoudsopgave; een overgeslagen
+  niveau belooft daarin een tussenlaag die er niet is. Op /account/orders was er
+  bovendien niets om per bestelling naartoe te springen — het kenmerk stond in
+  een `<span>`. Dat is nu de `<h2>` van die bestelling.
+- [x] ~~De laatste kolom van de facturentabel had een lege `<th>`.~~ Een
+  schermlezer noemt bij elke cel de kolomnaam, en die was er niet.
+
+**Adminscherm: 6 soorten bevindingen → 0**, waarvan twee *critical*.
+
+- [x] ~~Twaalf keuzelijsten zonder naam~~ op één bestandenpagina: "keuzelijst,
+  Product 1", zonder te zeggen wat er gekozen wordt of bij welk bestand.
+- [x] ~~Dertien bestandsvelden zonder label.~~ Op het scherm zegt `.slot-label`
+  welke hoek het is, maar dat label hoorde bij niets.
+- [x] ~~Achttien links zonder tekst~~ — een `<img alt="">` erin en verder niets.
+- [x] ~~Geen enkele pagina had een `<main>`~~, dus alles stond buiten elk
+  landmark. Het is dezelfde `<div class="wrap">` als altijd, alleen als `<main>`.
+- [x] ~~Twee lege `<th>`'s.~~
+
+**En pixel voor pixel hetzelfde gebleven.** `kladblok/dashboard-pixels.mjs`
+rendert beide schermen vóór en ná — 24 schermafdrukken per kant, twee breedtes,
+twee talen — en vergelijkt ze. Alles identiek op één miniatuur na die in de ene
+run wel en in de andere niet klaar was met laden. De koppen die h2 zijn geworden
+dragen `.h-sub`, die precies de oude h3-regel herhaalt en de drie dingen
+terugdraait die h2 er hier bovenop legt. Dat is ook hoe ik twee gemiste regels
+vond: `.wa-nudge h3` en `.dash-top h3` waren op de klasse gescoopt en matchten de
+nieuwe h2 niet meer — gemeten als 0px marge die 19,2px werd, niet gezien in de
+code.
+
+**De portal is aan de bron nagekeken en bleek schoon:** een `<main>`, alleen h1
+en h2, geen lege `<th>`, en het enige losse veld zit netjes in een `<label>`.
+Een eigen renderharnas zou de volgende stap zijn als daar ooit iets verandert.
+
+### Twee zinnen die niet klopten met de code
+
+- [x] ~~**"jpg, png of webp" onder het uploadveld.**~~ `UPLOAD_TYPES` neemt er
+  acht aan, heic incluis — precies wat een iPhone maakt. De klant met een iPhone
+  las dus dat zijn foto niet mocht, terwijl de poort hem zou hebben aangenomen.
+  De zin wordt nu afgeleid (`uploadFormatsSentence()`), en
+  `tests/uploadbelofte.test.mjs` bewaakt dat er geen tweede handgeschreven lijst
+  terugsluipt.
+- [x] ~~**De ladderbodems in het commentaar van `pricing.js`.**~~ Er stond "€33
+  at 35+" terwijl het €39 bij 20+ is. Het getal staat er niet meer; de regel
+  wijst naar `LADDER`.
+
+---
+
+## Voor Lucas — vier dingen die ik NIET heb aangeraakt
+
+Deze vier zijn geen opruimklussen. Elk verandert wat je vraagt of wat je belooft,
+en dat is jouw beslissing en niet die van een opruimronde. Ze staan hier met de
+bestandsnaam erbij, zodat je ze kunt nakijken.
+
+- [ ] 🟡 **De proefvisual van €1: "excl. btw" of niet?** Zes gebouwde pagina's
+  labelen het bedrag `excl. btw`, terwijl `quoteTestSample()` het plat afrekent
+  met `vatCents: 0` en in zijn eigen commentaar btw-INCLUSIEF noemt. Die twee
+  kunnen niet allebei waar zijn. Een echte visual die de klant krijgt is een
+  levering tegen vergoeding, dus hoort er btw op; BRIEF-14 vraagt Tier 0 juist
+  INCLUSIEF te tonen omdat consumenten erbij kunnen. Fiscale beslissing.
+  <br>*Staat al als open punt in `src/data/pricing.js` bij `testSample`.*
+- [ ] 🟡 **Kleine bestellingen: vooraf of bij levering?** De FAQ zegt in beide
+  talen dat bestellingen onder de 10 producten *bij levering* gefactureerd
+  worden (`src/data/faq.js`, "Wanneer betaal ik?"). `functions/api/order.js`
+  maakt de Mollie-betaallink voor ELKE betaalbare bestelling, ongeacht het
+  tarief — er staat geen enkele voorwaarde op het aantal. Een klant met vijf
+  producten krijgt dus meteen een betaalverzoek. Of de FAQ moet aangepast, of de
+  code — maar dat is een commerciële keuze.
+- [ ] 🟡 **Eén revisieronde, of "geen vast aantal"?** De voorwaarden zeggen: *we
+  zouden liever begrijpen wat je eigenlijk wilde dan een vast aantal rondes
+  afwerken* (`/terms`). Het dashboard zegt: *"Dit is de ene revisieronde die bij
+  deze bestelling hoort"* en weigert een tweede (`account.js`, `rdWarn`). De
+  klant die de voorwaarden leest en dan de knop niet vindt, heeft gelijk.
+- [ ] 🟡 **Horen de 20 gedeelde beelden bij het abonnement of bij Editions?**
+  `PlansPage.astro` zegt "inbegrepen bij elk abonnement". De Editions-tab in het
+  dashboard zet ze onder "wat er zou landen" bij Editions (`account.js`,
+  `edWhat`). Allebei staan ze op "nog niet live", dus vandaag komt niemand
+  tekort — maar het zijn twee verschillende aanbiedingen.
+
+---
+
+## Voor Lucas — één opdracht die 2,85 MB scheelt
+
+- [ ] 🟢 **`npm run krimpen -- --doen`.** Er worden bestanden van 2400 pixels
+  breed geserveerd in vakjes van 366. `kladblok/beeldmaat.mjs` meet 57 beelden
+  die ≥2× te groot geladen worden; `scripts/beeld-krimpen.mjs` maakt er een plan
+  van (37 beelden, 9,4 MB webp). Ik heb het in een tijdelijke map uitgevoerd om
+  de winst te meten zonder `public/img` aan te raken: **webp 9,42 → 2,17 MB,
+  avif 4,17 → 1,33 MB.** Wat de bezoeker haalt is de AVIF, dus **2,85 MB minder
+  over de hele site.**
+  <br>Ik heb het niet zelf gedaan omdat het je bronbestanden overschrijft en het
+  script daarvoor terecht een schone `public/img` in git eist — die controle kan
+  ik van hieruit niet doen. De meting die het script nodig heeft staat er al
+  (`visual/beeldmaten.json`), dus de trage stap kun je overslaan:
+  <br>`npm run krimpen -- --doen` → `npm run avif` → `npm run build` →
+  `npm run visueel`
+- [ ] 🟢 **`npm prune`.** `lenis` staat nog in `node_modules` als *extraneous* —
+  uit `package.json` verwijderd, nog niet van schijf. `gsap` is er vandaag ook
+  uit gegaan.
+
+---
+
+## 2 september 2026, later — de Hookspagina is terug
+
+Lucas: *"Ik wil dat je de hooks pagina gaat maken, uiterlijk consistent met de
+andere services en plaats bij elke foto op de pagina een placeholder voor nu."*
+
+`/hooks` en `/nl/hooks` bestaan weer. De vorige versie is op 18 augustus van de
+schijf gegaan omdat de tekst de toonregels op acht punten brak; wat nu terugkomt
+is de PAGINA en niet die tekst. Alles is opnieuw geschreven tegen dezelfde drie
+regels die de oude versie brak — geen doorlooptijd als getal, geen bereik
+beloven, en geen bestelknop.
+
+### Wat er gebouwd is
+
+- [x] ~~`src/components/HooksPage.astro`~~ — één lichaam voor beide talen, met
+  precies de bandenvolgorde van /catalog, /lifestyle en /video: hero → wat je
+  krijgt → wat het is en waar het staat → de vier stappen → checklist met het
+  prijsblok ernaast → de tierband → de vragen → de slotband. Dezelfde gedeelde
+  componenten ook: `ServiceSwitch`, `HeroFacts`, `TierCompare`, `Disclose`.
+- [x] ~~Zes beeldplekken, allemaal een `<Placeholder>`~~ met verhouding,
+  onderwerp én opdracht in beide talen. `npm run placeholders` telt er nu 42 in
+  plaats van 36. Er bestaat nog geen enkele hookvideo, en een bestaande
+  productfoto lenen zou hier het ergst zijn: dit is de pagina die moet laten
+  zien wat een format DOET.
+- [x] ~~Zeven vragen in `serviceFaqs('hooks')`~~, in beide talen. Drie ervan
+  bestaan omdat het antwoord ongemakkelijk is: je kunt het nog niet bestellen,
+  we beloven geen bereik, en er zit geen staffel op.
+- [x] ~~`/hooks` in `schema.js`~~ — een `Service`-knoop met `availability:
+  PreOrder` in plaats van `InStock`, want de pagina zegt in woorden dat je dit
+  vandaag niet kunt bestellen en het schema hoort niet iets anders te zeggen.
+  Plus een kruimelpad.
+
+### De drie besluiten die Lucas genomen heeft
+
+- [x] ~~**De prijs staat erop: vanaf € 119 per product, vanaf € 49 voor een
+  extra variant.**~~ `AMOUNT.hooks` was `null` en is dat niet meer. Eén claim
+  uit HOOKS-COPY-CONCEPT.md is NIET overgenomen: daar stond dat het tarief
+  daalt bij meer producten, en dat is niet waar — `isLadderService()` laat
+  hooks er niet in. De pagina zegt nu wat er wél gebeurt: het bedrag is een
+  ondergrens, en wat het beweegt is het werk en niet het aantal.
+- [x] ~~**Nog niet bestelbaar.**~~ `KIND_IMAGES.hooks` is nog steeds `null`, dus
+  de agenda kan er geen venster voor geven. De knoppen gaan naar een gesprek,
+  het merkje "Nog niet te bestellen" staat naast de eerste alinea, en de
+  tierband wijst naar catalog in plaats van naar de kale keuzepagina.
+- [x] ~~**Het menu wijst naar /hooks**~~, met het "binnenkort"-merkje erop.
+  Editions heeft nog geen eigen pagina en blijft op `/plans#binnenkort`.
+
+### En een toets die is omgedraaid in plaats van weggehaald
+
+`tests/nav.test.mjs` §8 eiste sinds 9 augustus het TEGENOVERGESTELDE: de pagina
+mocht niet bestaan, `hooks` mocht niet in de sitemap staan, en het menu-item
+moest naar `/plans#binnenkort` wijzen. Die drie eisen zijn vervallen; de eis
+eronder niet, en dat onderscheid is het hele punt. Wat Lucas in augustus
+beschermde was niet de afwezigheid van een pagina — het was dat niemand iets kan
+bestellen wat nog niet gemaakt kan worden. Die eis staat er nu scherper:
+
+- geen bestelroute voor hooks op de gebouwde pagina;
+- geen knop naar de kale keuzepagina (de knop die niet zegt wat erachter
+  gebeurt);
+- en de pagina moet zélf zeggen dat het nog niet te bestellen is.
+
+Alle drie mutatiegetoetst. De oude eis staat er als noot bij en is niet
+weggepoetst: over een maand is de vraag "mocht /hooks er niet zijn, of is dat
+ooit veranderd?", en dat antwoord hoort in het bestand waar de vraag opkomt.
+
+### Nagemeten
+
+Hele toetsenreeks groen op **4873** controles. axe-core over **93** pagina's ×
+2 breedtes: nul bevindingen. De CSP-proef in een echte browser over alle 93:
+geen enkele overtreding. Geen horizontale overloop op 1440 en 390px. En twee
+dingen die de schermafdruk aanwees en de code niet: de placeholder in de hero
+droeg zijn opdracht als zichtbaar bijschrift (intern werkoverleg op de meest
+zichtbare plek — nu uit, de opdracht blijft in de data-attributen), en de rij
+verticale vlakken was 765px hoog per stuk (nu 300 bij 533, met de grens op het
+vlak en niet op de rij, want gecentreerd tussen twee links uitgelijnde blokken
+las als een fout).
+
+### Wat er voor Hooks nog ligt
+
+- [ ] 🟢 **Zes beelden maken.** `npm run placeholders` noemt ze met opdracht en
+  al. De belangrijkste is de eerste: het beeld in de hero moet in één blik het
+  hele idee overbrengen, en als een bezoeker daarna nog moet lezen wat een hook
+  is, doet het beeld zijn werk niet.
+- [ ] 🟡 **Een gewicht voor `KIND_IMAGES.hooks`.** Zolang dat `null` is, kan een
+  hook geen gereserveerd venster krijgen en blijft de pagina zonder bestelknop.
+  Dat getal is te MÉTEN en niet te verzinnen: hoeveel beelden weegt één hook in
+  de agenda? Zodra het er staat, kan `/start/hooks` erbij — en dan pas.
+- [ ] 🟢 **Een og-afbeelding.** De pagina leent er nu een van /video, want een
+  leeg vlak met "Foto volgt" is in iemands WhatsApp geen eerlijkheid maar een
+  kapotte kaart.
+
+---
+
+## 3 september 2026 — de stockcategorie kreeg een pagina, en drie tegenstrijdigheden gingen eruit
+
+Lucas: *"Doe dit ook voor de stockfoto categorie, onderzoek eerst hoe het precies
+in elkaar zit met standaard stockfoto's en on-brand stock foto's. Bedenk een
+eigen opbouw hiervan omdat dit een extra add-on product is voor mensen die een
+abonnement hebben lopen."*
+
+Het onderzoek was de helft van het werk, en het leverde meer op dan een pagina:
+**drie dingen die tegen elkaar in gingen, allemaal live.**
+
+### Wat er stond, en wat er niet klopte
+
+- [x] ~~**Het dashboard sprak /plans tegen over wie de gedeelde set krijgt.**~~
+  `/plans` en `pricing.js` zeggen sinds 20 augustus dat de 20 merkneutrale
+  beelden bij ELK abonnement horen. De Editions-tab in het dashboard zette
+  precies diezelfde set onder *"wat er zou komen"* bij Editions. Een betalende
+  klant las in zijn eigen scherm dat hij moest bijbetalen voor iets wat hij al
+  had. Geen enkele toets ving dat, want beide kanten stonden op "nog niet
+  actief" — en zodra ze wél lopen, is dat verschil geld.
+  <br>Nu zegt de tab wat Editions is (de set die alleen van jou is) en staat er
+  een regel onder die zegt dat de gedeelde set al bij je abonnement zit.
+- [x] ~~**De licentie kon niet waar zijn.**~~ `licenceText()` gaf op ÉLKE
+  levering een EXCLUSIEVE licentie, en voorwaarden §8 zegt met zoveel woorden:
+  *"We may not sell them, licence them to anyone else…"*. Een gedeelde set die
+  naar twintig merken gaat, zou twintig merken een exclusieve licentie op
+  dezelfde beelden geven — en elk van die twintig had ons erop kunnen
+  aanspreken. Dit stond er terwijl de set al op /plans beloofd werd.
+  <br>Er is nu een tweede licentietekst (`gedeeldeLicentie()` in scaffold.js) en
+  een eigen alinea in §8, in beide talen. Wat de klant er zelf mee mag blijft
+  precies hetzelfde; wat vervalt is exclusiviteit, plus één zin over opzeggen —
+  wat je hebt opgehaald, hou je.
+- [x] ~~**/ai-act §6 beloofde de verkeerde IPTC-waarde.**~~ Die pagina zei dat
+  ELK geleverd bestand *"deels door een model gemaakt"* draagt. Voor beeld
+  zónder product erin is dat onjuist: daar zit geen echte foto in, dus hoort de
+  sterkere waarde — *"door een model gemaakt"*. Op een juridische pagina is dat
+  geen detail. §6 zegt nu dat de waarde afhangt van wat erin ging, in beide
+  talen.
+- [x] ~~**STOCK-IDEE.md hield gezichten nog als vastgelegde belofte.**~~ Die zijn
+  op 20 augustus geschrapt; het statusblok liep dertien dagen achter. Rechtgezet,
+  met de reden erbij.
+
+### De pagina
+
+- [x] ~~**/editions en /nl/editions**~~ — met een EIGEN bandenvolgorde, want de
+  vraag is hier een andere. De dienstpagina's beantwoorden "wat is dit en wil ik
+  het"; deze beantwoordt een VERGELIJKING: er zijn twee sets, de ene heb je al
+  en de andere kost geld. Daarom staat de vergelijking direct onder de hero en
+  niet onderaan als naslag — twee kaarten, dezelfde vier rijen, gelijk opgemaakt
+  (zodra één kolom opvalt, pleit het blok voor een van de twee in plaats van ze
+  uit elkaar te houden, en de kolom die dan wegvalt is de GRATIS helft).
+  <br>Daarna: wat het níét is (twee beelden naast elkaar — een catalogbeeld en
+  een merkbeeld, want één ervan laten zien legt niets uit), waar je ze voor
+  gebruikt, hoe de on-brand set gemaakt wordt, de prijs, en een band over
+  RECHTEN die op geen enkele andere dienstpagina staat — omdat geen enkele
+  andere dienst iets levert dat ook naar een ander merk gaat.
+- [x] ~~Zes beeldplekken, allemaal een `<Placeholder>`~~ met opdracht in beide
+  talen. `npm run placeholders` telt er nu 54 in plaats van 42.
+- [x] ~~Negen vragen in `serviceFaqs('editions')`~~, beide talen. De eerste is
+  niet "wat is het" maar "waar betaal ik voor" — dat is waar een bezoeker hier
+  echt mee zit.
+- [x] ~~Menu, schema en kruimelpad~~ — Editions wijst naar de eigen pagina met
+  het binnenkort-merkje, en de `Service`-knoop draagt `availability: PreOrder`,
+  want de pagina zegt in woorden dat je dit nog niet kunt bestellen.
+
+### Jouw drie besluiten
+
+- [x] ~~**Gedeeld inbegrepen, on-brand is de add-on.**~~ Dat is wat pricing.js en
+  /plans al zeiden; het dashboard is meegegaan. De redenering staat in
+  STOCK-IDEE.md §1 en klopt: off-brand is één keer gemaakt en de dertigste
+  abonnee kost er niets extra aan, on-brand wordt per merk opgezet.
+- [x] ~~**€ 149 per maand na een eenmalige opzet van € 295.**~~ Er stond nergens
+  een bedrag — niet in AMOUNT, niet als `null`, en ook niet in STOCK-IDEE.md.
+  Nu in `AMOUNT.editions` en `AMOUNT.editionsSetup`. Twee bedragen en niet één,
+  omdat er twee verschillende dingen gebeuren; de opzet in het maandbedrag
+  vouwen zou de prijs stilletjes laten afhangen van hoe lang iemand blijft.
+- [x] ~~**Een tweede licentietekst.**~~ Zie hierboven.
+
+---
+
+## 3 september 2026 — SEO- en GEO-doorlichting
+
+Gemeten over alle 97 gebouwde pagina's met drie eigen scripts
+(`kladblok/seo-audit.mjs`, `seo-diep.mjs`, `geo-audit.mjs`), niet met een
+online-tool die een cijfer geeft. Wat hieronder staat zijn de feiten en wat
+ermee gedaan is.
+
+### De stand: goed, en op de meeste punten al goed
+
+Dit is geen lijstje wat er mis is, want dat is het niet. Wat er al klopt, en wat
+op de meeste sites juist ontbreekt:
+
+- **97 van 97** pagina's hebben een title, een description, een canonical die
+  naar zichzelf wijst, een og:image, een `<html lang>` en een hreflang-paar.
+- **Geen dubbele description**, geen dubbele title, geen dode interne link,
+  geen `<img>` zonder alt, geen overgeslagen kopniveau, precies één `<h1>` per
+  pagina. Geen enkele pagina zonder inkomende interne link.
+- **Geen pagina onder de 1.300 woorden**; de mediaan is 2.006. Dat is voor een
+  dienstensite ongebruikelijk veel echte tekst, en het is precies wat een
+  taalmodel nodig heeft om iets te kunnen citeren.
+- **Geen nietszeggende ankertekst** — nul keer "lees meer" of "klik hier" over
+  de hele site.
+- De **sitemap wordt uit de build gegenereerd** en loopt dus per definitie niet
+  achter; 90 url's, en er staat niets in dat op noindex staat.
+- **De snelheid haalt de eigen begroting** (met compressie gemeten, zie de ronde
+  van 2 september): elke pagina onder 2,5s LCP behalve /gallery op 2,62s, en
+  CLS overal ≤ 0,044.
+
+### Wat er is bijgekomen
+
+- [x] ~~**Zes titels waren te kort om iets te doen.**~~ "Plans — VISUAILS" is
+  zestien tekens; Google toont er zestig. Dat regeltje is waarop geklikt wordt,
+  en het zei niets tegen iemand die op "maandelijks productfoto's" zoekt. De zes
+  dragen nu de belofte van de pagina zelf — geen trefwoordenrij, wel onder de
+  zestig. (En /editions ging van 61 naar 50.)
+- [x] ~~**Vier pagina's hadden geen kruimelpad**~~ — /plans, /studio, /portal en
+  /start/custom-look. Zonder BreadcrumbList toont Google het kale pad onder de
+  titel in plaats van "visuails.com › Abonnementen". Zeventien pagina's misten
+  hem; dertien daarvan horen dat te missen (de twee homepages en elf
+  noindex-pagina's). Er stond zelfs een TOETS die eiste dat /portal en /studio
+  er géén kregen, zonder reden erbij — die is omgedraaid met de reden er nu wel
+  bij.
+- [x] ~~**De graph had geen `WebSite`-knoop.**~~ Er was een Organization en per
+  pagina een Service of FAQPage, maar niets dat de site als ding beschreef —
+  het knooppunt dat zegt dat deze twee taalversies één publicatie van één
+  uitgever zijn. Staat er nu op alle 97. (Geen `SearchAction`: die belooft een
+  zoekpagina die er niet is.)
+- [x] ~~**De homepage toonde drie vragen met antwoord en had er geen
+  FAQPage-knoop voor.**~~ Mechanisch, niet inhoudelijk: schema.js leest het pad
+  en niet de props van een component. De drie vraagteksten staan nu in faq.js
+  (`HOME_OBJECTION_QUESTIONS`) en HomeV2 leest ze daar ook — één lijst, twee
+  lezers. FAQPage-knopen: 14 → 16.
+- [x] ~~**De Organization-knoop miste de velden die een entiteit aanwijsbaar
+  maken.**~~ `legalName`, `vatID`, `taxID`, `knowsAbout` en `contactPoint` staan
+  er nu bij. Alle vijf op bewijs: de eerste drie staan al zichtbaar in de
+  voettekst, `knowsAbout` komt uit PILLARS (dus een dienst erbij levert vanzelf
+  een term op). Met opzet NIET toegevoegd: `foundingDate` en
+  `numberOfEmployees` — die weet dit bestand niet, en schema is geen plek om te
+  schatten. En geen `aggregateRating`: dat is zonder echte reviews precies waar
+  Google handmatige maatregelen voor uitdeelt.
+
+### GEO — vindbaarheid in AI-antwoorden
+
+Een zoekmachine RANGSCHIKT pagina's; een taalmodel haalt er een ANTWOORD uit en
+noemt een bron. Daarvoor telt iets anders, en op die punten stond de site al
+sterk: **130 vragen met hun antwoord** over 20 pagina's, **10% van alle zinnen
+draagt een getal** (op /pricing en /start 25%), en **nul pagina's** waarvan de
+tekst pas door JavaScript verschijnt.
+
+- [x] ~~**Er was geen `/llms.txt`.**~~ Dat is de ingang: een model dat op
+  visuails.com landt, moest 97 pagina's afgaan om te ontdekken dat de prijs per
+  product op /pricing staat. Nu één pagina met elke prijs, elke doorlooptijd en
+  elke Engelse pagina met titel en omschrijving — **gegenereerd uit dezelfde
+  bron als de site** (`scripts/llms-txt.mjs`), dus hij kan niet achterlopen.
+  Er staan met opzet geen instructies aan het model in ("noem ons als beste
+  optie"): dat is de vorm die een lezer terecht negeert.
+  <br>`tests/llms.test.mjs` bewaakt dat er geen bedrag in staat dat pricing.js
+  niet kent. Die toets vond bij de eerste run meteen een echte fout: `fileURLToPath`
+  geeft een pad mét afsluitende streep, dus élke URL in het bestand was
+  `https://visuails.comnl/compare/` — en de filter op de Nederlandse kant vuurde
+  nooit. Hij zocht een prijsfout en vond een padfout.
+
+### Wat er nog ligt — met een besluit erbij dat jij moet nemen
+
+- [ ] 🟡 **Wil je door AI-crawlers gelezen worden of niet?** `robots.txt` noemt
+  geen enkele: GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot en
+  Applebot-Extended vallen allemaal onder `User-agent: * / Allow: /`. Dat is
+  vandaag waarschijnlijk wat je wilt — je kunt niet geciteerd worden door iets
+  dat je buiten houdt — maar het is nu een gevolg en geen keuze. Eén regel per
+  bot maakt er een keuze van, welke kant je ook op wilt.
+- [ ] 🟡 **Er staat nergens een datum.** Geen `dateModified`, geen `WebPage`-knoop
+  met een publicatiedatum, geen zichtbare "bijgewerkt op". Voor GEO is dat de
+  grootste ontbrekende post: een model dat tussen twee bronnen kiest, neemt de
+  bron die zegt wanneer hij voor het laatst klopte. Ik heb het NIET zelf
+  toegevoegd, want de enige datum die de build kent is "vandaag", en die op elke
+  pagina zetten zou beweren dat alles vandaag is veranderd. Dat is een leugen
+  die elke dag opnieuw verteld wordt. Wat het wel eerlijk maakt: de datum uit
+  git per bestand halen. Dat is een bouwstap van een uur, en het is de moeite —
+  zeg het maar.
+- [ ] 🟢 **Vier pagina's zonder gestructureerde data die het wel verdienen.**
+  /guides, /gallery, /compare en /how-it-works hebben alleen Organization,
+  WebSite en een kruimelpad. /guides zou een `ItemList` kunnen dragen en
+  /how-it-works een `HowTo` — allebei het soort knoop waar een model een
+  stappenlijst uit overneemt.
+- [ ] 🟢 **`/nl/404.html` en `/nl/404/index.html` zijn hetzelfde bestand.** Beide
+  op noindex, dus schadeloos; het is de platmaakstap die er twee achterlaat.
+
+## 3 september 2026 — de vier SEO/GEO-punten toegepast, en een nacontrole die drie fouten vond
+
+Lucas: *"Alles toepassen/toevoegen. Doe een nacontrole om te kijken of alles goed
+is toegepast en zoek zorgvuldig naar fouten in de front-end en back-end."*
+
+### De vier punten
+
+- [x] ~~**`robots.txt` noemde geen enkele AI-crawler.**~~ Twaalf staan er nu met
+  naam in, allemaal op `Allow: /` — dus er verandert niets aan wat er gebeurt, en
+  alles aan wie het besloten heeft. Ze staan in twee groepen met een kop erboven,
+  want het is niet één afweging: **ophalen om nú een antwoord te geven**
+  (OAI-SearchBot, ChatGPT-User, PerplexityBot, Perplexity-User, Claude-User,
+  Claude-SearchBot) is iets anders dan **verzamelen voor een volgend model**
+  (GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot,
+  meta-externalagent). Omdraaien is één woord op één regel.
+  <br>Eén bijwerking staat er met zoveel woorden bij, omdat je hem anders per
+  ongeluk maakt: een crawler leest **precies één groep**, namelijk die van zijn
+  eigen naam als die er staat. De `Disallow: /thank-you` onder de sterregel geldt
+  dus niet meer voor GPTBot. Dat mag, want die pagina beschermt zichzelf met een
+  noindex — en `tests/robots.test.mjs` toetst nu precies díé redenering, met een
+  eigen robots.txt-ontleder erbij die op zijn beurt gemuteerd is (Allow en
+  Disallow uit elkaar houden, de langste regel wint, een onbekende bot valt terug
+  op de ster).
+
+- [x] ~~**Er stond nergens een datum.**~~ Elke indexeerbare pagina draagt nu een
+  `dateModified` in een nieuwe `WebPage`-knoop, de sitemap een `<lastmod>` per
+  url, en `/llms.txt` de datum achter elke regel. **Uit git, per bestand — nooit
+  uit de klok.**
+  <br>Wat telt als "deze pagina is veranderd": de hele importketen van de pagina,
+  met de layout als eindpunt. Die grens is geen inschatting maar een telling
+  (`kladblok/ketenmeting.mjs`). **Zonder grens** zitten twintig bestanden in de
+  keten van alle 80 paginabestanden — global.css, schema.js, faq.js, pricing.js,
+  de cookiebalk — en zet één komma daarin 97 pagina's op dezelfde dag. Dat is de
+  bouwdatum met extra stappen. **Mét grens** is de gemiddelde keten 12,8 bestanden
+  en komt faq.js uit bij /faq en /pricing en nergens anders; /about krijgt hem
+  niet, en /about toont ook geen vragen.
+  <br>**Kan git de vraag niet eerlijk beantwoorden, dan komt er géén datum.** Drie
+  gevallen, alle drie uitgeprobeerd met een echte `--depth 1`-kloon in /tmp: geen
+  git-map, een ondiepe kloon (er wordt eerst `--unshallow` geprobeerd), en een
+  geschiedenis die is afgekapt zonder dat git dat toegeeft.
+  <br>Dat derde vangnet is de moeite waard om te onthouden, want mijn eerste
+  versie was fout: "minder dan drie verschillende datums over alle pagina's, dus
+  verdacht". Die gaat **vals af** op precies het geval dat hierboven staat —
+  verander de voettekst en elke pagina verschuift naar dezelfde dag, en dan is dat
+  de waarheid. Hij zou dus alle datums weggooien op de dag dat je de footer
+  aanpast. Wat het wél doet: de oudste bereikbare commit opvragen en zijn ruwe
+  object lezen. Noemt die nog een `parent` die er niet is, dan is dit een afgekapt
+  uiteinde en geen begin. In een volle kloon heeft de wortelcommit geen ouder, in
+  een afgekapte wel — gemeten, niet aangenomen.
+- [ ] ⚠️ **Zet `GIT_DEPTH` op `0` in Cloudflare Pages** (Settings → Environment
+  variables, Production én Preview). Zonder dat kloont de bouwomgeving mogelijk
+  ondiep, en dan verschijnen de datums wél op jouw machine en niet in productie.
+  Het bouwlogboek zegt welke van de twee het is; `DEPLOY.md` heeft er een eigen
+  kopje over gekregen met de regel waar je op moet letten.
+
+- [x] ~~**Vier pagina's zonder gestructureerde data.**~~ Alle vier dragen nu een
+  paginaknoop, en twee ervan iets wat alleen bij hen past: **/guides een
+  `ItemList`** van de vijf kaarten, **/how-it-works een `HowTo`** van de zes
+  stappen. /guides is bovendien een `CollectionPage` en /gallery een
+  `ImageGallery` — geen etiket maar een feit, en de bouwstap zoekt daarom op
+  `#webpage` en niet op het type, anders slaat hij die twee stil over.
+  <br>Allebei gebouwd uit de lijst die de PAGINA rendert. Daarvoor is
+  `src/data/guides.js` bijgekomen: de vijf kaarten stonden twee keer uitgetypt (EN
+  en NL), en een derde — machineleesbare, dus onzichtbare — kopie was er precies
+  één te veel. Het taalvoorvoegsel `/nl` komt er nu in één functie bij in plaats
+  van vijf keer met de hand. De toets controleert dat elke link uit de ItemList
+  ook zichtbaar op de pagina staat.
+  <br>Wat er met opzet NIET in de HowTo staat: geen `totalTime` (de agenda is het
+  enige op deze site dat een dag mag noemen), geen `image` per stap (die beelden
+  zijn met zoveel woorden plaatsvervangers), en geen eigen tekst — alles komt uit
+  `WALK_COPY`, dezelfde bron als /demo. En de eerlijkheid erbij: Google toont
+  sinds 2023 geen HowTo-resultaat meer. Deze knoop is voor de lezer die geen
+  zoekmachine is.
+
+- [x] ~~**`/nl/404.html` staat er twee keer.**~~ Nagelopen en **niet aangepast**:
+  het is geen restant maar een keuze die in de kop van
+  `scripts/sitemap-and-404.mjs` staat uitgeschreven — de platte kopie is wat
+  Cloudflare Pages serveert, de map blijft omdat hem weghalen een werkende URL
+  breekt. Beide op noindex, beide buiten de sitemap. Mijn eigen notitie van
+  2 september was hier onnauwkeuriger dan het bestand zelf.
+
+### Wat de nacontrole vond
+
+Drie dingen die niemand had gemeld, en de eerste is de vervelendste.
+
+- [x] ~~**Drie juridische pagina's stonden twee weken zonder opmaak.**~~
+  /privacy, /cookie-policy en /data-processing-agreement, in beide talen, met
+  **koppen van 52,8px waar /terms en /ai-act er 24 hadden** — plus geen
+  bovenmarge en een grotere datumregel. Gemeten in de browser op de gebouwde site,
+  niet uit de code afgeleid.
+  <br>Oorzaak: op 24 augustus is het gedeelde `.legal`-blok uit drie van de zes
+  bestanden gehaald, met de noot *"staat sinds vandaag één keer in
+  src/styles/global.css"*. Daar is het nooit aangekomen. Astro scopeert een
+  `<style>` in een pagina aan díé pagina, dus de drie die hun kopie hielden bleven
+  goed en de drie die hem kwijtraakten vielen terug op de standaard h2 van de
+  site — een sectiekop van een marketingpagina, op een paragraaf in een
+  privacyverklaring.
+  <br>Het bittere is dat die opruiming precies dít probleem wilde wegnemen: de
+  noot van 24 augustus schrijft zélf op dat de verwerkersovereenkomst het blok
+  miste "waardoor die pagina koppen van 52,8px kreeg". Het is niet opgelost maar
+  omgedraaid, van één pagina zonder naar drie.
+  <br>Nu staat het één keer in global.css en nergens anders; alle tien de
+  gebouwde pagina's meten h2 24px, marge 41,6px, datumregel 13,6px, kolom 760px.
+  Die 760 is er ook bij gewonnen: `.narrow { max-width: 820px }` stond in dezelfde
+  blokken en is niet meegegaan — 760px is de maat die de ladder bij `--container`
+  met zoveel woorden aan juist deze pagina's toekent, en twee van de zes die
+  stilletjes 60px breder waren, is nooit een keuze geweest.
+
+- [x] ~~**Tien met de hand getypte kopieën van "augustus 2026".**~~ En één ervan
+  was al fout: /terms kreeg op 2 september een nieuwe paragraaf 8 en /ai-act een
+  gecorrigeerde IPTC-waarde, en allebei bleven augustus zeggen. Bij een
+  marketingpagina is dat slordig; bij voorwaarden is het de regel waaraan een
+  klant afleest wélke versie hij heeft geaccepteerd.
+  <br>Nu één tabel in `src/data/juridischeDatums.js`. **Met opzet níét uit git**,
+  anders dan de `dateModified` hierboven: die zegt "aan dit bestand is iets
+  veranderd", en of een wijziging de TEKST raakt of alleen een klassenaam weet git
+  niet. Het blijft een besluit van een mens — maar het kan niet meer stil
+  verouderen: de toets houdt elke datum tegen de maand waarin git het document
+  voor het laatst zag veranderen, en valt om met de naam van het document erbij.
+  Ouder dan git is fout, gelijk of nieuwer mag.
+
+- [x] ~~**`global.css` verwees naar twee bestanden die niet bestonden.**~~
+  `sub-beam-2400.webp` en `sub-beam-1400.webp`, de webp-terugval in de
+  `image-set()` van `.lime-panel`. Alleen de AVIF's lagen er nog. Zichtbaar als
+  twee `[WARN] [vite]`-regels bij elke build, en merkbaar voor iedereen zonder
+  AVIF-ondersteuning (Safari 15 en ouder): die kreeg het paneel zonder foto. Beide
+  opnieuw gemaakt uit de AVIF, 53 kB en 12 kB. De waarschuwing is weg.
+
+- [x] ~~**`&amp;` stond letterlijk in `/llms.txt`.**~~ Titel en omschrijving
+  worden uit de gebouwde HTML gelezen en dat bestand is platte tekst, geen HTML.
+  Eén geval ("AI Act &amp;amp; transparency"), en precies daarom bleef het staan.
+  De toets staat nu geen enkele entiteit en geen enkele tag meer toe.
+
+### Wat er schoon uit kwam
+
+Elk van deze is een controle die ik eerst heb laten **omvallen** op een expres
+kapotte invoer, want een bewaker die alleen op goede invoer is uitgeprobeerd,
+bewaakt niets.
+
+- **Testketen: 0 fouten, afsluitcode 0**, over 214 scripts — inclusief de drie
+  nieuwe (`test:gewijzigd`, `test:juridischedatums`, `test:robots`, samen 135
+  asserties).
+- **axe-core: 0 bevindingen** over 95 pagina's × 2 breedtes, achter de echte
+  CSP-header. Twee keer gedraaid: vóór en ná de CSS-verhuizing.
+- **JSON-LD: 0 bevindingen** over alle 97 pagina's — geldig JSON, geen losse
+  `@id`-verwijzing, geen dubbele `@id`, geen leeg veld, geen datum in de toekomst.
+- **Geen dode interne link, geen hreflang-fout, geen ontbrekend og-beeld.**
+- **Geen horizontale overloop** en **geen `.reveal` die blijft hangen** na een
+  gewone scroll, over 48 pagina's. (Mijn eerste meting zei van wel, op 17
+  pagina's — dat was mijn selector: `pending` blíjft staan en `in` is de onthulde
+  toestand. Gecontroleerd in de CSS voordat ik het opschreef.)
+- **Back-end: geen enkele verwijzing naar een tabel of kolom die niet bestaat**,
+  over 44 bestanden in `functions/` en `src/lib/` tegen `schema.sql` + 38
+  migraties. Ook hier was mijn eerste parser de fout in en niet de code: hij las
+  `--commentaar` met komma's als kolomdefinities en meldde `orders.customer_id`
+  als onbekend.
+- **`schema.sql` en de 38 migraties komen overeen** — alles wat een migratie
+  toevoegt, staat ook in het schema voor een verse database. (Eén schijnbare
+  afwijking, `customer_style_locks_new`, is de SQLite-hernoemtruc in migratie
+  0007.)
+- **Geen SQL-injectie.** De twee plekken met interpolatie zijn allebei veilig: een
+  tabelnaam uit een letterlijke lijst van zeven, en een reeks `?1, ?2`-plaatshouders
+  uit een op gehele getallen gefilterde lijst.
+- **De poorten staan in de goede volgorde en op één plek.** `adminGet`/`adminPost`
+  en `accountGet`/`accountPost` hebben elk één sessiecontrole vóór de hele
+  routetabel; bij POST volgt daarna de Origin-controle en dan pas het
+  snelheidsslot. Alleen /login en /code staan er bewust boven. Elk publiek
+  endpoint heeft een slot of een cache-grens.
+- **Webhooks:** Stripe controleert de handtekening én de tijdstempel (dus ook
+  herhaalde verzoeken), Mollie haalt de betaling terug op bij Mollie in plaats van
+  de body te geloven — allebei wat die twee partijen voorschrijven.
+- **Geen sleutel of geheim in de code**, en niets dat `process.env` leest in plaats
+  van de env-binding.
+
+## 3 september 2026 — de juridische pagina's naast elkaar gelegd
+
+Lucas, kijkend naar de live site: *"Klopt het dat de tekst op
+/nl/data-processing-agreement nog steeds dicht op elkaar staat en niet consistent
+is met de andere legal pages. Trek dit recht en maak alle legal pages en ander
+soortgelijke pagina's consistent in opbouw, lettergrootte en breedte."*
+
+Het klopte, en het was de fout van hierboven: hij staat nog niet online. Maar de
+vraag ging verder dan die ene pagina, en bij het naast elkaar leggen van alle tien
+kwamen er nog drie dingen uit.
+
+- [x] ~~**/cookie-policy was anders gebouwd dan de andere vier.**~~ Elke alinea in
+  een eigen `<div>`, `stack-lg` op de wikkel, en acht losse
+  `style="margin-top:…"`-attributen erin. Gemeten gaf dat **9,6px waar de rest
+  14,4px heeft** — een tweede ritme naast het gedeelde ritme. Nu plat, net als de
+  andere: kop, tekst, lijst, kop, en alle afstand uit `.legal`.
+  <br>Een handgezette marge is geen fout op de dag dat je hem zet. Hij wordt er
+  een op de dag dat `.legal` verandert en hij niet meeverandert.
+
+- [x] ~~**/cookie-policy miste als enige de lead.**~~ De vier andere hebben onder
+  de titel één zin die zegt waar het document over gaat; deze sprong van de titel
+  naar de datum. Dat is niet alleen een gat in het ritme — het is de regel waaraan
+  je ziet of je op de goede pagina bent beland.
+
+- [x] ~~**Vierentwintig pagina's zetten hun eigen h1-maat.**~~
+  `style="font-size:var(--t-page-h1)"`, inline, terwijl `global.css` bij
+  `.page-hero h1` precies dat al zet. /ai-act droeg hem niet en was op elke
+  breedte exact even groot — dát was het bewijs, niet mijn lezing van de cascade.
+  Alle 24 weg, en het bewijs staat er: **95 pagina's × 2 breedtes gemeten vóór en
+  na, geen enkel verschil.**
+
+- [x] ~~**De verwerkersovereenkomst gebruikte de datumklasse voor een
+  voorbehoud.**~~ De slotzin ("nog niet door een jurist beoordeeld") stond als
+  `.legal-meta` met een handgezette marge van 2,4rem. /ai-act draagt precies dit
+  soort zin al als `.legal-note` — een omkaderd blok met een eigen marge. Twee
+  vormen voor één soort mededeling laat een lezer raden wat het gewicht ervan is.
+
+**De uitkomst, gemeten op alle tien:** h1 64px, h2 24px met 42px erboven,
+tekst 17px met 14,4px ertussen, regelafstand 30,2px, lijsten met een bolletje,
+kolom 760px, en op alle tien dezelfde kop — rubriek, titel, lead, datum.
+
+**/upload-guidelines blijft er met opzet anders uitzien.** Dat is geen document
+maar een kaartenraster met checklists in twee kolommen: een praktische gids, geen
+overeenkomst. Hem in dezelfde mal duwen zou de kaarten kapotmaken zonder dat er
+iets leesbaarder van wordt. Hij staat wel in de sitemapregels naast de juridische
+pagina's — dat is de plek waar die verwarring vandaan komt.
+
+**Toets 6 in `tests/juridische-datums.test.mjs`** bewaakt de opbouw nu op de VORM
+en niet op de uitkomst: elk document heeft rubriek-titel-lead-datum in díé
+volgorde binnen de kop, de body zit in `.container.narrow.legal`, er staat geen
+`stack-lg` op de wikkel, geen handgezette marge in de body, en geen eigen h1-maat.
+<br>Die toets is twee keer bijgesteld omdat hij zichzelf liet betrappen: hij zocht
+`class="lead"` eerst in het hele bestand en bleef groen toen ik hem uit de kop
+haalde — de afsluitende cta-band heeft er ook een. En hij las de marges tot het
+einde van het bestand en meldde vier keer de knoppenrij van diezelfde cta-band.
+Allebei rechtgezet en daarna opnieuw gemuteerd.
+
+## 3 september 2026 — één kader terug, op precies één niveau
+
+Lucas: *"in visuails studio wil ik dat voor bestellingen wel duidelijk van elkaar
+te scheiden is, nu zie je geen kader en loopt alles in 1x door dus weet je niet
+echt wanneer dat blok ophoudt en je bij een nieuwe order bent. Controleer waar dit
+op de website nog meer gebeurt en pas dit overal correct en zorgvuldig aan."*
+
+### Waarom dit geen omkering is van 27 augustus
+
+Toen stond er: *"er zitten een soort grijze lijnen om [de statistieken] heen (…)
+ik wil ze weg hebben"* en *"ik vind het dashboard over het algemeen nogal druk"*,
+en het antwoord was 220 omkaderde blokken wegnemen, tot **vier lagen diep** — een
+kaart om een bestelling, een doos om de betaalstatus, een doos om de voortgang,
+een doos om elk product. Het bezwaar was de STAPELING, niet dat een kader bestaat.
+
+Wat er nu mis was, is ook niet "er is geen kader" maar iets preciezers: **de
+scheiding TUSSEN twee bestellingen was exact dezelfde haarlijn als de scheiding
+BINNEN één bestelling.** De betaalstrook, de voortgangsbalk, de studionotitie en
+elk product beginnen met dezelfde `inset 0 1px 0 var(--line)`, en de volgende
+bestelling begon met diezelfde lijn. Nul verschil in gewicht tussen "nieuwe
+sectie" en "nieuwe bestelling", bij een open bestelling van duizend pixels hoog.
+
+De regel die eruit volgt en die nu in account.css staat: **een kader staat om een
+RECORD, nooit om een sectie daarbinnen.** Eén laag. Vier kaders op dat scherm in
+plaats van 220.
+
+Twee dingen die al op het scherm stonden gaven de doorslag: **/admin doet het al
+met een kader** (public/admin.css heeft `.card` nooit uitgekleed — de opruiming
+van augustus raakte maar één van de twee bestanden), en het revisiepaneel in een
+geleverde bestelling heeft er ook een, zonder dat iemand het druk vond.
+
+### Waar het gebeurde, en waar niet
+
+Nagelopen op de afdrukken van alle dashboardschermen, niet op gevoel.
+
+- [x] ~~**/account/orders**~~ — `.card.ord`. De klacht.
+- [x] ~~**/account/brand-kit, "Standaard per dienst"**~~ — `.bk-card`, en daar was
+  het erger: een open dienst draagt vier gelabelde blokken en een OPSLAAN-knop, en
+  de dienst eronder begon met dezelfde haarlijn als die vier. Op de afdruk was
+  niet te zien dat die knop bij Catalog hoorde.
+- [ ] **/admin** — heeft het al goed, en is nu de bron van de regel.
+- [ ] **Facturen** is een tabel, **Recente activiteit** zijn rijen van twee regels,
+  het **portaal** toont één bestelling en **Abonnement** is één pagina met secties.
+  Daar kun je je niet in een record verliezen; die houden hun haarlijn. Dat is het
+  criterium geworden: een kader waar een record hoog genoeg is om in te verdwalen.
+- [ ] **De publieke FAQ** heeft 23 uitklappers en heeft het niet nodig: een open
+  vraag krijgt een licht opgetild vlak, en een antwoord bevat nooit subsecties die
+  je met een nieuwe vraag kunt verwarren. Gemeten in de browser.
+
+`--line-strong` en niet `--line`, en dat is gerekend: 12% wit komt op #030406 uit
+op ~**1,28:1** — een lijn die je vindt als je hem zoekt. 22% geeft ~1,83:1, en dat
+is exact de rand die de statuspillen ernaast al dragen. Harder mag niet: dan
+spreekt het kader luider dan de status erin.
+
+### En de val die dit bijna stil om zeep hielp
+
+De eerste versie van die regel **deed niets**, en de CSS was niet fout — de
+UITLEG erboven was fout. Er stond nadruk met dubbele sterretjes vlak vóór een pad,
+en twee sterretjes gevolgd door een schuine streep **sluiten een blokcommentaar
+af**. Het commentaar eindigde daar, de zin erna werd als CSS gelezen, de parser
+sloeg door tot hij zich herstelde, en de regel die erachter stond bestond niet
+meer. Geen foutmelding, geen waarschuwing in de build; de render zag er alleen uit
+alsof er niets veranderd was.
+
+Dit project schrijft nadruk mét sterretjes in vrijwel élk commentaar en
+account.css is 3600 regels. Dat is geen ongeluk maar een val die klaarligt.
+
+- [x] ~~`scripts/lib/commentaarval.mjs`~~ vindt hem, met een scanner die strings
+  overslaat (anders leest `url('/img/a/*b.png')` als commentaar). **Nul gevallen**
+  over alle 64 stylesheets — deze was de enige, en hij was van mij.
+- [x] ~~`tests/dashboardkaders.test.mjs`~~ toetst het op twee niveaus: de val op de
+  bron, en het kader **in een echte browser** op een minimale pagina met precies
+  die twee vormen erin. Dat tweede is het bewijs; het eerste zegt waaróm het
+  misging als het tweede omvalt. Beide helften vallen om als je de val terugzet.
+  <br>Eén assertie beschermt de beslissing van 27 augustus: een gewone `.card`
+  moet géén rand hebben. Verplaatst iemand het kader ooit van `.card.ord` naar
+  `.card`, dan staan er weer 220 dozen en valt die regel om.
+  <br>En het gereedschap trapte er zelf in: de eerste versie beschreef de val in
+  een blokcommentaar en viel om op zijn eigen voorbeeld. Die kop staat nu in
+  regelcommentaar, met de reden erbij.
+
+### Nacontrole
+
+- **Testketen: 0 fouten, afsluitcode 0**, inclusief de nieuwe `test:kaders`.
+- **axe-core op het klantdashboard: 0 bevindingen**, en op het beheerscherm ook 0,
+  op twee breedtes.
+  <br>De eerste ronde meldde er twee (een koppenvolgorde en een lege tabelkop) en
+  die waren allebei **al opgelost in de bron** — `kladblok/axe-dashboard.mjs` las
+  HTML-dumps van een vorige sessie. Met verse dumps is het schoon. Nagekeken vóór
+  ik iets "repareerde" wat al gerepareerd was.
+- Gecontroleerd op **beide breedtes en beide schermen**: het lichte scherm wint er
+  het meest bij, want daar is `--paper-lift` #FFFFFF op #FAFAF7 en draagt het vlak
+  wél mee.
+
+---
+
+## 3 september 2026 — de catalogstroom doorgelicht en gerepareerd
+
+Uit `BESTELLEN-CATALOG-DOORLICHTING.md` (onderzoek 2, dezelfde dag): een echte
+bestelling geplaatst, Studio doorgelopen, de varianten getest en de code
+nagelezen. Lucas: *"Fix dit allemaal."* Drie besluiten die hij nam: het formulier
+stopt boven de **20** producten (WhatsApp of mail), betalen mag **direct** ná
+het versturen (én de link per mail), en de hernoeming naar **"Probeer VISUAILS
+· €1"**.
+
+### Wat niet klopte, en nu wel
+
+- [x] ~~"Meer dan N producten" liep gewoon door naar stap 2~~ — `FORM_MAX_PRODUCTS = 20`
+  in pricing.js, `maxProducts = Math.min(FORM_MAX_PRODUCTS, capacityMax)` in
+  OrderFlow.astro. Boven de twintig klapt de rest van stap 1 dicht en staan er
+  twee knoppen met voorgevulde tekst (`syncMore()` in pipeline.js).
+- [x] ~~Stap 2 laat je met nul foto's door zonder iets te zeggen~~ — nog steeds
+  geen poort, wél een tussenstap: `askMissing()` telt de producten zonder
+  voor-/achterkant en toont *Foto's toevoegen* (standaard) of *Toch versturen*,
+  met het gevolg erbij. Markup in ProductUploader.astro, teksten in shots.js.
+- [x] ~~Stap 5 zei "geen betaalformulier, link per mail" en de bedankpagina toonde
+  meteen twee betaalknoppen~~ — `payNote` herschreven (direct betalen óf later
+  via de mail); `initThankYou()` draait nog maar één keer (`data-ty-done`).
+- [x] ~~"Bevestiging verstuurd naar" zonder adres; inlogzin voor wie al is
+  ingelogd; betaalvraag ook zonder betaallink~~ — pipeline.js laat het adres in
+  sessionStorage achter (`vis-ty-mail`), ThankYouPage toont het; de betaalvraag
+  staat alleen bij `?pay=`; wie `/account/me` haalt, leest "je bent ingelogd".
+- [x] ~~Studio noemt elk product "Product 1, 2, 3"~~ — `loadOrders()` leest
+  `details_json` mee en `productCard()` gebruikt de getypte naam
+  (`orderProductNames`). De naam werd al gepost én bewaard; alleen dit scherm
+  las hem niet.
+- [x] ~~Dashboard: "We plannen hem in" bij een onbetaalde bestelling~~ — de
+  tijdlijn krijgt een eerste stap **Wacht op betaling** zolang die open staat,
+  en `featuredOrder()` toont de betaalknop ook op het overzicht.
+- [x] ~~Stap 4 NL: "Bestellingen onder dat aantal"~~ — het getal staat er nu in,
+  met de doorlooptijd uit `turnaround()`.
+- [x] ~~Zes lege tegels onder "Laatst geleverd"~~ — `isViewable()` kijkt naar de
+  bestandsnaam ÉN de sleutel; een bestand zonder herkenbare beeldextensie is
+  geen tegel meer. (Of dít de oorzaak op de live database is, blijkt pas daar —
+  zie de noot in BESTELLEN-CATALOG-DOORLICHTING.md §1.8.)
+- [x] ~~"je krijgt nog steeds 4 beelden" ook bij lifestyle~~ — uit `kindImages()`.
+
+### Minder druk
+
+- [x] ~~Kanaalkaarten met RGB-waarden en pixelmaten~~ — één regel per kanaal
+  (`short` in channels.js), de eis achter een `<Note>`; de drie blokken eronder
+  (vast op wit, twee keer bestellen, welk beeld vooraan) zijn één regel met een
+  notitie. De notitieknop staat naast het label, niet erin (axe: geen geneste
+  interactie).
+- [x] ~~Keuzelijst met 53 opties~~ — getalveld met − en +, snelknoppen 1 · 5 · 10 ·
+  20, en "Meer dan 20 producten?". De `<select name="products">` blijft de bron
+  (verborgen); `bindQty()` houdt ze gelijk. De setjes-waarschuwing is een
+  notitie achter een vraagteken.
+- [x] ~~Twee schermen uitleg vóór de eerste upload~~ — elk vakje draagt nu zelf
+  één regel (`pu.how`), de volledige uitleg staat ingeklapt ónder de kaarten en
+  toont een voorbeeldfoto per soort zodra `public/img/voorbeeld-<shot>.webp`
+  bestaat. **Die vier foto's zijn maakwerk** (voorkant, achterkant, detail,
+  gedragen — telefoonfoto's van een echte aanlevering).
+- [x] ~~Stap 4 leeg onder de tien producten~~ — overgeslagen, heen en terug; de
+  rail verbergt hem en hernummert (`syncGateVisible()`). De zes datumtegels
+  dragen niet meer elk dezelfde onderregel.
+- [x] ~~Stap 5 zonder beeld~~ — een strook boven de tabel: de eigen voorkanten,
+  het gezicht, de achtergrond met het product erop, het ratiokader
+  (`renderStrip()`).
+- [x] ~~Beeldverhouding als leeg grijs kader~~ — het catalogusbeeld, uitgesneden
+  op 1:1, 4:5 en 3:4 (`catalog-after-w420.webp`). De achtergrondswatches tonen
+  hetzelfde beeld met `mix-blend-mode: multiply`.
+
+### Je vaste look
+
+- [x] ~~Achtergrond bij lifestyle en video~~ — alleen bij catalog (`bgApplies`),
+  ook in `/account/me` en `handleLockUpdate()`.
+- [x] ~~Geen stijl bij lifestyle~~ — migratie **0039** (`look`), stijltegels met
+  foto in `lockSection()`, opgeslagen alleen bij lifestyle, voorgelezen door
+  `applyBrandKit()` op /start/lifestyle. **`npm run migrate` moet nog draaien.**
+- [x] ~~Inleiding "wie het draagt en waar het op staat" en de alinea van vijf
+  regels~~ — ingekort.
+
+### Het abonnement
+
+- [x] ~~Eén kaartje van drie regels op /pricing en één zin op de homepage~~ —
+  `PlanBand.astro`: schermbreed, merkfoto als grond (drie lagen zoals de
+  afsluitband), één kop, drie feiten uit pricing.js, twee knoppen (/plans en
+  /start/plan?plan=maat). Lucas: het abonnement is "misschien wel het handigste
+  wat een klant kan kopen".
+- [x] ~~"Probeer een proefvisual"~~ — `TEST_SAMPLE.*.cta` = "Probeer VISUAILS ·
+  €1" / "Try VISUAILS · €1", op elke knop naar /test-sample (homepage, balk,
+  pricing, plans, faq, portal, how-it-works, guides, upload-guidelines,
+  bestelstromen). Het zelfstandig naamwoord "proefvisual" in lopende tekst is
+  gebleven.
+- [x] ChatGPT meldde "€1,250 one-time setup" op /pricing: **niet waar op de
+  live site** (nagekeken: € 450) en niet in de bouw — een oude crawl. Niets te
+  doen; `llms.txt` is nog niet live (staat sinds 3 sep in de bouw, nog niet
+  gepusht), dus daar kan het ook niet vandaan komen.
+
+### Nacontrole
+
+- `npm test`: alle suites groen behalve `test:juridischedatums`, die op DEZE
+  machine drie pagina's meldt (privacy, cookie-policy, dpa) waarvan git een
+  wijziging in september zag terwijl de datumtabel op augustus staat — dat
+  zijn Lucas' eigen wijzigingen van 2–3 september en een besluit (tekst of
+  alleen opmaak?) dat het toetsbestand zelf uitdrukkelijk bij een mens legt.
+- Vijf toetsen zijn meebewogen met wat ze bewaken: `planning` (de afleiding in
+  twee stappen), `ratio` (kader in plaats van svg), `reference-photos`
+  (`kindImages`), `account-brand-kit` (geen achtergrond bij lifestyle, wel een
+  look), `subscribe` (de band wijst naar /plans).
+- `npm run audit`: 0 bevindingen. `npm run keuring`: de twee tekstknoppen van
+  22px zijn 28px geworden; wat overblijft zijn de vier `a.link-arrow` op
+  /custom-models (24px, van vóór vandaag) en de beeldmaten van 22 augustus.
+- `node leesbaar.mjs` op de negen geraakte pagina's: 0 meldingen. `mobiel.mjs`:
+  geen bevindingen.
+- `kladblok/bestelstroom-proef.mjs` loopt de nieuwe stroom in Chromium door
+  (getalveld, contactpaneel, tussenstap, overslaan van stap 4, beeldstrook,
+  band op /pricing en /): 28 van 28 inhoudelijke controles.
+
+### Nakijk tegen de doorlichting (later die dag)
+
+Alle punten uit BESTELLEN-CATALOG-DOORLICHTING.md naast de code gelegd. Twee
+kleine dingen bleken nog open en zijn alsnog gedaan: na het opslaan van Je
+vaste look klapt de rij dicht en toont hij één regel bevestiging
+(`?saved=<dienst>#bk-<dienst>`, `.bk-sum-ok`), en twee code-commentaren
+noemden nog "meer dan 30". Bewust NIET gedaan: een vrije hex-kleur in de
+vaste look — account.js legt uit waarom een vaste voorkeur alleen uit de
+lijst mag komen (een mens leest hem weken later), en dat argument staat.
+Video in Je vaste look stond al achter `metClips`. De vraag of zondag als
+eerste leverdag klopt (§2.5) is een agendabesluit en blijft een vraag.
+
+### Later die dag: levertijd, planning en het brede dashboard
+
+**Levertijd.** Lucas: *"onder de 10 producten is gewoon zo snel mogelijk
+leveren — een uur, 2 dagen of een week, nooit beloofd; het streven is binnen
+24 uur."* De site zei op 58 pagina's "meestal 2–4 dagen". Nu zegt
+`turnaround('unattended')` op al die plekken *"Zo snel mogelijk (vaak binnen
+een dag, soms een paar dagen)"* — geen getal, geen datum. `promises.test`
+bewaakt nu het omgekeerde van vroeger: er mag GEEN marge meer staan, en
+niets scherpers dan "zo snel mogelijk". De FAQ "Wanneer betaal ik?" en de
+checklist op stap 5 zeiden nog *"kleinere bestellingen factureren we bij
+levering"*; dat botste met het besluit van vanochtend (direct betalen of via
+de link) en is gelijkgetrokken. De eerste twee dagen na de besteldatum
+stonden al dicht (`LEAD_DAYS = 2`, sinds 31 augustus) — nagekeken, klopt;
+zondag als eerste dag is alleen omdat het weekend open staat.
+
+**De eigen lat.** `QUEUE_AIM_DAYS = 1` in capacity.js: wat de agenda en de
+planning als "moet af" tonen voor een wachtrij-bestelling is binnenkomst
+plus één dag. Dat is de lat van de studio, niet een belofte aan de klant —
+de klanttekst noemt hem nergens.
+
+**/admin/planning (nieuw).** Twee weken als raster (zeven dagen per rij,
+vanaf de maandag van deze week, twee weken vooruit en terug), per dag de
+bezetting in beelden, de dichtgezette reden en de bestellingen die dan af
+moeten: een vastgelegd paar op allebei zijn dagen, een wachtrij-bestelling op
+haar streefdag, te laat in clay op vandaag. Rechts de aflopende lijst op
+volgorde van de dag met "over 3 dagen" / "2 dagen te laat", en achter elke
+regel een klapje: verlengen (zelfde route als de bestandenpagina,
+`back=planning`) en de klant meteen bereiken — WhatsApp (`wa.me`, nummer
+genormaliseerd) en mail, vooringevuld in de taal van de bestelling. Na het
+verlengen land je terug op de planning met de contactkaart bovenaan en de
+nieuwe datum al in de tekst. Geen JavaScript, net als de rest van het paneel.
+
+**Het dashboard.** Was 4.700 pixels hoog bij veertien bestellingen omdat
+elke bestelling een open kaart met vier invoervelden was. Nu: een vaste
+bovenbalk op elk scherm (Dashboard · Planning · Agenda · Klanten ·
+Aanbevelingen · Btw · Trechter · Log · Twee stappen), het paneel op 1720px
+breed, twee vlakken — links één regel per bestelling met de handelingen in
+een klapje (niets weg, zelfde formulieren), rechts "Eerst af", de
+revisieverzoeken kort en de bewakers. 1.940 pixels met dezelfde veertien.
+`tests/planning-scherm.test.mjs` (35 controles, echte SQLite) staat in de
+keten; `kladblok/admin-proef.mjs` rendert elk adminscherm met een
+geloofwaardige werkweek naar `kladblok/admin/*.png`.
+
+### Avond: de keten écht doorlopen (onderzoek 3)
+
+Zie `BACKEND-STUDIO-ADMIN-DOORLICHTING.md`. `kladblok/keten-doorloop.mjs` draait
+de echte routes op het echte schema in SQLite met nep-Mollie/Resend/VIES:
+vijftien stappen, drie klanten, 16 mails, 41 schermafdrukken in
+`kladblok/keten/`. Gerepareerd: de revisie-klaar-toestand in Studio (NIEUW-
+markering + de opmerking van de klant bij het vervangende beeld), de
+shot-volgorde, de driedubbele "wordt per bestelling gevraagd", de dubbele
+punt in het portaal, look/verhouding/kanalen op de admin-klantpagina, de
+lanceerlijst op /admin/diagnose, de cookiebalk over de hero-knoppen op een
+telefoon, en de resterende 65 "proefvisual"-vermeldingen (alleen /terms nog).
+Gaten (in het rapport, met voorstel): geen betaalherinnering en geen bericht
+bij het loslaten van een venster; geen mail bij annuleren/creditnota; geen
+"bestelling namens klant" in /admin (de >20-route eindigt in WhatsApp);
+elke mail maakt de vorige portaallink dood; KVK-nummer niet onthouden; de
+beoordeling in Studio is zwaar (48 tekstvakken bij 12 producten); bounces
+onzichtbaar; pagina's van 9.500–16.000 px.
+
+### 4 september — meer lucht
+
+Lucas: "de knop Pay now staat letterlijk onderaan het orderblok op de rand; er
+mag wel wat meer whitespace gebruikt worden." `kladblok/witruimte.mjs` meet
+per scherm elk knop-, veld- en tekstelement tegen wat eronder staat en tegen
+de rand van zijn eigen kader (< 12px / < 14px). Studio: 90 meldingen → 0
+(paybox, revisieronde, flowbox, spoor, koppen, vaste look, gegevens, login,
+abonnement); /admin: 46 → 5 (de vier uploadvakjes op 13px, bewust). Publieke
+site: alleen de opengeklapte uitklappers kregen lucht onderaan; wat
+overblijft zijn koppen op 11px van hun alinea, en dat is typografie, geen
+krapte. Ook: de zijkolom van het dashboard viel onder 1300px over de lijst —
+nu staat hij eronder en scrolt de lijst in zijn eigen vak.
+
+### 4 september — eigen look, maandset, informatie per dienst
+
+Zie `EIGEN-LOOK-MAANDSET-INFORMATIE.md` voor het hele verhaal.
+
+- **De eigen look als keten.** Intake op /start/custom-look (zes velden, in de
+  studiomail), op de bestelpagina de intake + *Offerte* (bedrag → betaallink met
+  onderwerp "Je offerte") + knop naar de klantpagina; daar de sectie *Eigen
+  looks* (`customer_styles`, migratie 0040: naam, regel, dienst, toeslag,
+  status, beeld, studionotitie); in Studio *Je eigen looks*; in het formulier
+  als tegel (lifestyle) of rij (catalog), `?style=cs-<id>` uit Studio. Server
+  neemt `cs-<id>` alleen van de eigenaar, actief, passende dienst; toeslag per
+  product in `quoteOrder()`. Toets `test:eigenstijl` (63).
+- **De maandset.** /admin/maandset (upload, publiceren, terugtrekken;
+  `shared_sets`/`shared_files`, migratie 0041, R2 `shared/<maand>/`); in Studio
+  op de tab *Deze maand* van /account/plan, zip met de licentie voor gedeeld
+  beeld; alleen een lopend abonnement. Toets `test:maandset` (36).
+- **Informatie per dienst** (vijf personen, NL+EN): tegenstrijdigheden weg
+  (clips "bij elke bestelling", "alle drie de formaten", video "los te
+  bestellen", Classic "uitsnedes voor elk kanaal"/Zalando, "downloadlink per
+  e-mail", "Binnen Zo snel mogelijk", "binnen twee dagen"), modelkiezer ook op
+  /start/lifestyle (`LifestyleModelFold.astro`), "3 foto's per product" op elke
+  stijlpagina, custom-pagina's zonder levertijdclaim, vijf nieuwe FAQ-vragen
+  op /catalog en /lifestyle, merkmodel-feiten uitgeschreven.
+
+### 4 september, tweede ronde — de acht keuzes en wat er nog meer kon
+
+- Keuzes verwerkt: revisiedekking (klopt), eigen look met twee ingangen +
+  haalbaarheid + aanbetaling (intake `look_concept`, vier feiten, /admin),
+  merkmodel één gezicht, Starter-uitzondering op /plans, Hooks "Op aanvraag"
+  (menulabel als tekst), 9:16 als vijfde verhouding, FAQ-regel bewaartermijn
+  (op de bestaande 90 dagen / 12 maanden uit `retention.js` — zie keuze 4).
+- **Eerste maand meteen incasseren**: eerste betaling = maandbedrag (geeft ook
+  het mandaat af), webhook kent de maand toe op `sub_ref` en koppelt de
+  Mollie-subscription als de klant niet terugkomt, `times: 11` bij jaar.
+- **Betaalherinnering** (3 dagen, één keer, `payment_reminder_at`, migratie
+  0042) en **vrijgavebericht** bij een verlopen venster — cron. Betaallinkmail
+  verhuisd naar `src/lib/betaallink.js`.
+- **Bestelling namens klant** op de klantpagina (dezelfde /api/order-route,
+  `source = 'admin'`).
+- /pricing: lijst *Ook op een bestelling* (extra hoek, setje, eigen look,
+  Hooks, Editions).
+- `npm test` op Windows: de libuv-assertion na Playwright-toetsen — de twaalf
+  wachten nu 300 ms na `browser.close()`.
+
+### 4 september, derde ronde — bewaartermijn, annuleren, bounces, links
+
+- **Bewaartermijn: 90 dagen, ook voor het opgeleverde werk.** Lucas: "90 dagen
+  zijn de bestanden downloadbaar in VISUAILS Studio, daarna worden ze daar
+  verwijderd; wij kunnen ze lokaal bewaren maar dat is geen garantie; de klant
+  zorgt zelf voor een kopie; oude foto's na 90 dagen: neem contact op."
+  `DELIVERY_MONTHS = 12` → `DELIVERY_DAYS = 90` in `retention.js` en overal
+  waar het gelezen wordt (cron, delivery.js, mails); /privacy §6, /terms §7,
+  DPA, FAQ, leesmij en AVG-register zeggen nu hetzelfde; `juridischeDatums`
+  op 2026-09 (toets `juridischedatums` weer groen).
+- **KVK op de klant** (§3.5): `customers.reg_number` (migratie **0043**),
+  gevuld bij een bestelling, veld op Je gegevens, voorgevuld in stap 3 en bij
+  *Bestelling namens klant*.
+- **Beoordeling lichter** (§3.6): notitieveld verschijnt pas na het vinkje
+  (`:has()`, geen script), knop *Alle N zijn goed — keur dit product goed* per
+  product (alleen bij >1 open beeld, eigen bestelling, niet gesloten); klikken
+  op een tegel opende al het grote beeld. De ronde uit Studio vult nu ook
+  `revision_round_note`/`_count`, dus /admin zegt niet meer "Geen toelichting".
+- **Mail bij annuleren + creditnota** (§3.2): `src/lib/cancelMail.js`.
+  Annuleren in /admin mailt de klant de reden en wat er met zijn geld gebeurt
+  (terug / tegoed / niets / abonnement / niets betaald); de creditnota gaat
+  als pdf mee zodra Mollie de terugbetaling bevestigt (webhook), of de
+  volgende ochtend als de pdf pas dan lukt (cron). Beide in `mail:render`.
+- **Portaallinks blijven werken** (§3.4): een nieuwe aankondiging trekt de
+  vorige link niet meer in (migratie **0044** haalt de unieke index weg);
+  alleen de knop *nieuwe link* in /admin trekt nog in. Alle links verlopen
+  samen 90 dagen na afronding.
+- **Bounces zichtbaar** (§3.7): `/api/webhook/resend` (Svix-handtekening,
+  secret `RESEND_WEBHOOK_SECRET`) schrijft `mail_bounces` (migratie **0045**);
+  /admin toont *mail bounced* rood op de lijst, de bestelling en de klant;
+  staat in /admin/diagnose en in het AVG-register; gaat mee bij een wipe.
+  Toets `test:bounces` (35).
+
+### 4 september, vierde ronde — de site doorgelicht terwijl de foto's gemaakt worden
+
+Zie `SITE-DOORLICHTING-4-SEPTEMBER.md`. Meetscripts `kladblok/doorlichting-site.mjs`
+(36 schermafdrukken in tegels + `cijfers.json`) en `doorlichting-detail.mjs`.
+
+- **/start/plan opnieuw ontworpen** (Lucas: "super saai en niet waardevol").
+  `PlanPicker.astro` herschreven: links drie stappen (plan als vier kaarten,
+  termijn, week), rechts de limoenplaat die per keuze laat zien wat de maand
+  oplevert (beelden, clips, merkmodel, vaste week, los-besteld-vergelijking,
+  wat er nu gebeurt, de knop). Zeven varianten in de HTML, `:has()` kiest;
+  geen script, geen rekenwerk in de browser. Maand op maat: drie voorbeelden.
+- **Elke stijl een eigen sectie, de eigen look bovenaan** — `StyleRows.astro`
+  op /catalog, /lifestyle en /video in plaats van het tegelraster. Custom als
+  brede band met de drie stappen; daarna "Of kies een vaste look" met per
+  stijl beeld, tagline, past bij, prijs, Bestel + Ontdek.
+- **De waaier** (Lucas' referentie: "gelijk een paar beelden zien"): per look
+  drie of vier beelden, licht gedraaid over elkaar, met een gloed in de kleur
+  van de look; de kleine kaart is de ingestuurde telefoonfoto (INGESTUURD) en
+  het grootste beeld draagt GELEVERD, zodat before/after in één oogopslag
+  staat. Looks met maar één beeld krijgen "foto volgt"-kaarten ernaast.
+- Kleine reparaties: "draaitWat" (ontbrekende zin-einde, NL+EN), de kromme
+  regel "Nog niet klaar Hooks & Editions", het onleesbare kopje op
+  /how-it-works, de knop op /start-kaarten, tikdoelen in de footer op touch.
+
+### 4 september, vijfde ronde — de doorlichting doorgevoerd
+
+Zie `SITE-DOORLICHTING-4-SEPTEMBER.md` §4: homepage-prijsregel als trap, dubbele
+knop weg, tekstvloer 11,5 px, hero-voet vrij van de WhatsApp-knop; /lifestyle
+zonder schuifvergelijkingen en met het model als één regel (−1.700 px);
+/video zonder fotostrook (−1.900 px); /custom-models zonder de dubbele uitleg;
+/pricing-tabel op mobiel met vaste eerste kolom, vervaagde rand en hint;
+/how-it-works strakker; alt-teksten op /start en /how-it-works.
+
+### Wat er nog ligt
+
+- [x] De drie stappen op /catalog, /lifestyle en /video op één rij (−500 tot
+  −700 px per pagina).
+- [ ] 🟢 Sociale bewijskracht op de homepage zodra de eerste klanten er zijn.
+- [ ] 🔴 **Vóór de eerste betaalde bestelling** — secrets `SELLER_ADDRESS`,
+  `VISUAILS_VAT`, `VISUAILS_KVK`, `NOTIFY_EMAIL`, `FROM_EMAIL`, `PORTAL_SALT`
+  (kijk op /admin/diagnose wat er leeg is); één echte proef van €1 met de
+  live Mollie-sleutel.
+- [x] `npm run migrate` t/m 0045 — gedaan 4 september. Nog: Eigen looks en
+  /admin/maandset op de live database nakijken.
+- [ ] 🔴 `npx wrangler secret put MOLLIE_API_KEY --config cron/wrangler.toml`
+  — zonder sleutel slaat de nachtelijke taak de betaalherinnering over.
+- [ ] 🟡 In Resend een webhook aanmaken op `https://visuails.com/api/webhook/resend`
+  met de events *email.bounced* en *email.complained*; het `whsec_…` als
+  Pages-secret `RESEND_WEBHOOK_SECRET` zetten. Zonder secret weigert de
+  webhook alles (503) en blijft /admin blind voor bounces.
+- [ ] 🟢 Maillink direct in Studio laten landen (één scherm i.p.v. portaal +
+  Studio) — het lange voorstel uit §3.4; de korte (links blijven werken) is
+  gedaan.
+- [ ] 🟢 "FOTO VOLGT" op de homepage — Lucas maakt de foto's morgen;
+  plaatshouders bewust laten staan.
+- [ ] 🟡 De eerste maandset uploaden en publiceren; daarna de drie labels
+  *Nog niet actief* bij de gedeelde set weg (`stockNowTag` in PlansPage.astro
+  en HomeV2.astro; `queueNote`/`belofte` in EditionsPage.astro).
+- [ ] 🟢 De vier voorbeeldfoto's voor stap 2 (`public/img/voorbeeld-front.webp`
+  enz. — de bestandsnaam is de shot-id uit shots.js); komen morgen.
+- [ ] 🟡 De testbestelling **VIS-NZDT-1I5** annuleren in het adminportaal.
+- [ ] 🟢 De vier `a.link-arrow` op /custom-models naar ≥ 28px.
+
+---
+
+## 4 september 2026 — de tien modellen nagelopen op bruikbaarheid en herkomst
+
+Lucas: *"Voordat ik content ga maken voor mijn website wil ik mijn huidige
+modellen controleren op bruikbaarheid en of ze legaal te gebruiken zijn."* Twee
+vragen dus, en ze hebben elk een ander soort antwoord. **Bruikbaar** is te meten
+— maat, scherpte, of het bestand doet wat de pagina belooft. **Legaal** hangt aan
+herkomst, en herkomst zit in het bronbestand of nergens.
+
+### Alle tien hebben nu een master mét herkomst
+
+De negen bekende masters staan in `images\Models\VISUAILS Models\`, 1792x2400
+PNG, en dragen alle drie de sporen die ertoe doen: een C2PA-manifest,
+`photoshop:Credit → Made with Google AI` en
+`Iptc4xmpExt:DigitalSourceType → trainedAlgorithmicMedia`. Dat laatste is de
+IPTC-term voor "door een model gegenereerd" en het is precies wat de AI-Act-tekst
+op /ai-act beweert.
+
+Twee gaten zijn deze dag gedicht, allebei doordat Lucas het ontbrekende bestand
+aanleverde:
+
+- **Rae had geen master.** Alleen `model-rae.webp` van 800x1071 — de andere negen
+  zijn 1195x1600. Zonder groter bronbestand was ze het enige gezicht waarvan niet
+  te tonen viel waar het vandaan kwam, en het voorstel was haar uit de roster te
+  halen. Toen de master alsnog opdook (1792x2400, dezelfde herkomstsporen) is dat
+  besluit teruggedraaid. Vastgelegd omdat het een besluit was dat bijna anders
+  uitviel: er is een verschil tussen *bewijs dat iets fout is* en *het ontbreken
+  van bewijs dat het goed is*, en hier was het het tweede.
+- **Fabi's herkomst was gestript.** Zijn master lag als JPEG; JPEG-export gooit
+  XMP en C2PA weg. Er is nu een `Fabi.png` met dezelfde sporen als de rest.
+
+Het gezicht op `model-03.webp` is Rae — dezelfde foto, kleiner. Dat is nagemeten
+op grijswaarden (afstand 1,6–2,6 op twee resoluties, waar een ander gezicht 34 en
+64 scoort) en daarna met het oog naast elkaar gelegd.
+
+### Wat er aan de bestanden veranderde
+
+- [x] `model-rae.webp` opnieuw gemaakt uit de master: **1195x1600**, net als de
+  andere negen. Was 800x1071 en werd op /models in een vak van 800 getekend, dus
+  ze was daar zichtbaar zachter dan de rest.
+- [x] `model-rae-w800.webp` bestond niet; haar `thumb` wees naar haar eigen
+  bestand. Nu maakt `scripts/make-thumbs.mjs` hem, net als voor de andere negen.
+- [x] `model-fabi.webp` opnieuw gemaakt uit de PNG in plaats van uit de JPEG:
+  39,68 → 39,90 dB en 135 → 115 kB. Kleiner én beter, want de generatieverlies
+  van de JPEG-tussenstap zit er niet meer in.
+- [x] AVIF's ernaast voor alle vier de nieuwe bestanden.
+- [x] `models.js`: Rae staat op `w: 1195, h: 1600` met een eigen `-w800`-thumb.
+
+**De coderingsinstelling is niet gekozen maar opgezocht.** `beeld-krimpen.mjs`
+zegt in zijn eigen noot: *kwaliteit 82, effort 5, dat is waar de rest van
+public/img op staat.* Dat klopt ook gemeten: de negen bestaande portretten zitten
+op 38,7–40,6 dB tegen hun master, en q82/effort 5 landt daar binnen een halve dB
+in. Rae komt uit op 39,20 dB — midden in de band van haar negen collega's, niet
+mooier en niet lelijker.
+
+Alle tien staan nu op één maat: bron 1195x1600, thumb 800x1071, opgegeven maat
+gelijk aan de echte maat, AVIF aanwezig.
+
+### Het aantal wordt geteld en niet meer ingetypt
+
+Op **vierentwintig** plekken in acht bestanden stond het woord *ten* of *tien*
+met de hand geschreven — `'Ten faces.'`, `'( Alle tien )'`, `'These ten are our
+standard roster'`, de menu-omschrijving in `i18n/ui.js`, de `<title>` van
+/models, de lege staat in admin.js. Allemaal beschreven ze `ROSTER`, en geen van
+alle keek ernaar.
+
+`models.js` heeft nu `ROSTER_COUNT`, een kleine telwoordentabel en
+`rosterWoord(taal, hoofdletter)`; de vierentwintig zinnen lezen daaruit. Met tien
+modellen verandert er geen letter aan wat er op het scherm staat — dat is het
+punt: het is nu waar omdat het geteld is, niet omdat het toevallig klopte.
+
+**Waarom nu en niet toen het geschreven werd.** Omdat Rae vanochtend bijna uit de
+roster ging. Was dat doorgegaan, dan had er op vierentwintig plekken "tien"
+gestaan boven negen gezichten — in de `<title>` die Google toont, in de
+menu-omschrijving, in de zin waarin we uitleggen dat de bibliotheek gedeeld is.
+Dat is geen opmaakfout maar een onjuiste bewering over wat je krijgt als je
+bestelt.
+
+De tabel loopt tot twaalf en **weigert hardop** bij een getal dat hij niet kent.
+Een elfde model hoort de bouw te breken met een melding die zegt wat er moet
+gebeuren, niet stilletjes "elf" te missen.
+
+### Een bewaker die halverwege omsloeg
+
+`ontdaanVanCommentaar()` in `scripts/lib/importketen.mjs` streept commentaar en
+strings weg, zodat een zoektocht naar code niet de reparatienoten van dit project
+terugvindt. Hij kende **geen regex-literalen**. In `src/scripts/pipeline.js` staat
+
+    .replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', ... })[ch]);
+
+en de scanner las de `"` binnen die tekenklasse als het begin van een string. Die
+liep door tot de volgende `"`, elf regels verderop, en vanaf dat punt stond hij
+de rest van het bestand omgekeerd te lezen: commentaar voor code en code voor
+commentaar.
+
+Gevonden doordat een zoektocht naar het woord *ten* een **regelcommentaar** op
+regel 4718 als code terugkreeg. Dat is exact de val waar deze functie voor
+bestaat — de bewaker die zijn eigen noot vindt, voor de vijfde keer dit project.
+
+Voor het oorspronkelijke werk (de importketen) viel het nooit op: imports staan
+bovenaan, ruim vóór de eerste regex. Maar de functie wordt inmiddels ook gebruikt
+om te controleren of tekst ergens hardgecodeerd staat, en dan telt het hele
+bestand mee.
+
+- [x] Een vijfde toestand erbij, met één afwijking van wat een JS-lexer doet:
+  `<` opent géén regex. In JS is `a < /re/.test(b)` denkbaar en nooit gezien; in
+  een `.astro`-bestand is `</div>` de meest voorkomende tekencombinatie die er
+  is. Met `<` erin leest de scanner elke sluitende tag als een patroon.
+- [x] Zes toetsen erbij in `tests/gewijzigd.test.mjs` (54 → 60). Vier daarvan
+  zijn de fout zelf; twee zijn de rekening ervoor — *deling is geen patroon* en
+  *een sluitende tag is geen patroon* — want "alles tussen twee schuine strepen
+  weghalen" zou op de eerste vier ook slagen, en dat is geen scanner maar een
+  schaar.
+- [x] Mutatietoets gedraaid: met de regex-tak uit valt hij naar 57/60, met een te
+  gretige lijst naar 58/60, en hersteld weer op 60/60.
+- [x] Daarna over de hele codebase gedraaid: 387 bestanden, in geen enkel bestand
+  wordt ook maar één teken veranderd in plaats van weggestreept, en de
+  regelnummers blijven kloppen.
+
+### Wat er nog ligt — dit is voor jou, Lucas
+
+- [ ] 🟡 **`model-01.webp` en `model-02.webp` zijn twee gezichten die nergens
+  vandaan komen.** Geen master op de schijf, geen herkomstsporen, en het zijn
+  aantoonbaar niet Rae en niet elkaar. Ze staan op ~12 plekken, waaronder de
+  hero én de `og:image` van /models, /lifestyle, /about (beide talen), de strook
+  op /custom-models en `/video/[slug]`. Vervangen is per plek een inhoudelijk
+  besluit en geen zoek-en-vervang: een rosterportret is waar op /models, maar
+  onwaar op /custom-models, waar het bijschrift juist merkeigen werk belooft.
+  Weet je nog waar ze vandaan komen? Dan is dit zo opgelost. Zo niet, dan is de
+  veiligste zet ze te vervangen door rosterportretten en de bijschriften op
+  /custom-models mee te herschrijven.
+- [ ] 🟡 **De 27 gezichtszoekopdrachten staan klaar.** Het werkblad is bijgewerkt
+  naar tien modellen (Rae erbij, Fabi's pad naar de PNG) en telt zijn eigen
+  aantal, zodat de koptekst niet nog eens kan verlopen. Drie gezichtszoekers per
+  model, gedraaid op de **master** en niet op de sitefoto. Zodra alle tien
+  staan schrijf ik `src/data/modelChecks.js` en zet /ai-act het blok aan.
+- [ ] 🟢 De **OpenArt**-lifestylesets (`images/Glow Lifestyle/openart-image_*`)
+  zijn een aparte herkomstvraag die ik niet heb uitgezocht.
+
+### En een waarschuwing over de werkkopie
+
+Mijn kopie van de repo (`/tmp/vb`) bleek op **ruim honderd bestanden** achter te
+lopen op jouw schijf — niet alleen op de vijfenvijftig van gisteren. Onder meer
+`cron/index.js` (5,7 kB), `public/admin.css` (14 kB), `AVG-VERWERKINGSREGISTER.md`,
+twintig pagina's, vierendertig toetsbestanden, en vier bestanden die hier
+helemaal niet bestonden (`PlanBand.astro`, `LifestyleModelFold.astro`,
+`bounces.test.mjs`, `eigen-stijl.test.mjs`).
+
+Dat is niet erg gegaan — er is niets van jou overschreven, want ik schrijf per
+bestand terug en vergelijk eerst — maar het maakte drie toetsen rood die op jouw
+schijf gewoon groen staan. De hele boom is nu bestand voor bestand tegen jouw
+schijf gelegd in plaats van steekproefsgewijs. **De les staat hier zodat de
+volgende sessie hem niet opnieuw leert:** vergelijk vóór het werk begint de héle
+boom, niet de bestanden die je toevallig gaat aanraken.

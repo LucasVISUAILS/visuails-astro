@@ -36,7 +36,7 @@
  * beoordeeld. Als iemand die procedure ooit "vereenvoudigt", hoort dit rood te gaan.
  */
 import { readFileSync, existsSync } from 'node:fs';
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../src/lib/retention.js';
 
 let pass = 0;
 let fail = 0;
@@ -83,7 +83,7 @@ console.log('\nde twee rollen staan erin, want daar gaat het meestal mis');
 console.log('\nde bewaartermijnen staan niet ingetypt');
 {
   ok('het register noemt UPLOAD_DAYS bij naam', /UPLOAD_DAYS/.test(REG), true);
-  ok('en DELIVERY_MONTHS', /DELIVERY_MONTHS/.test(REG), true);
+  ok('en DELIVERY_DAYS', /DELIVERY_DAYS/.test(REG), true);
   ok('en wijst naar retention.js', /src\/lib\/retention\.js/.test(REG), true);
   /*
    * DE OMGEKEERDE CHECK, en dit is degene die het werk doet. Een register dat "90
@@ -92,7 +92,7 @@ console.log('\nde bewaartermijnen staan niet ingetypt');
    * taak uitvoert.
    */
   ok(`geen ingetypte ${UPLOAD_DAYS} dagen`, new RegExp(`${UPLOAD_DAYS} dagen`).test(REG), false);
-  ok(`geen ingetypte ${DELIVERY_MONTHS} maanden`, new RegExp(`${DELIVERY_MONTHS} maanden`).test(REG), false);
+  ok(`geen ingetypte ${DELIVERY_DAYS} dagen`, new RegExp(`${DELIVERY_DAYS} dagen`).test(REG), false);
   /* De fiscale termijn mag wél ingetypt: 7 jaar staat in art. 52 lid 4 AWR en niet
      in onze code, dus daar is geen constante om naar te wijzen. */
   ok('de fiscale bewaarplicht van 7 jaar staat er wel', /7 jaar/.test(REG), true);

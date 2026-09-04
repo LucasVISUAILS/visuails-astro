@@ -132,6 +132,9 @@ const {
   .dc-sum:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: var(--r-sm); }
 
   .dc-body { margin-top: .85rem; }
+  /* Lucht onder een opengeklapt antwoord (4 september 2026): de laatste alinea
+     stond op 0–2px van de rand van het volgende paneel. */
+  .dc[open] > .dc-body { padding-bottom: .6rem; }
   /* Set on the body rather than on the component, so a caller can put anything
      inside — a list, a figure, a fieldset — without inheriting prose rules it
      did not ask for. */

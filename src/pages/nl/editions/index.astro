@@ -1,0 +1,18 @@
+---
+/* VISUAILS — /nl/editions. Zie de noot in src/pages/editions/index.astro. */
+import Layout from '../../../layouts/Layout.astro';
+import EditionsPage from '../../../components/EditionsPage.astro';
+import { euro, AMOUNT, STOCK_OFF_BRAND, STOCK_ON_BRAND } from '../../../data/pricing.js';
+
+const description =
+  `${STOCK_OFF_BRAND} merkneutrale beelden bij elk abonnement, ${STOCK_ON_BRAND} alleen op jouw merk ` +
+  `voor ${euro(AMOUNT.editions, 'nl')} per maand. Zonder product erin, en geen beeldbank.`;
+---
+
+<Layout
+  title="Editions — maandelijks merkbeeld zonder product | VISUAILS"
+  description={description}
+  ogImage="/img/brand-stair.webp"
+>
+  <EditionsPage lang="nl" />
+</Layout>

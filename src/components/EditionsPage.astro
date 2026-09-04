@@ -1,0 +1,741 @@
+---
+import { waHref } from '../data/whatsapp.js';
+/*
+ * VISUAILS — /editions en /nl/editions delen dit lichaam.
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * WAAROM DEZE PAGINA EEN ANDERE OPBOUW HEEFT DAN DE DIENSTPAGINA'S
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 2 september 2026: *"Bedenk een eigen opbouw hiervan omdat dit een extra
+ * add-on product is voor mensen die een abonnement hebben lopen. Doe dit
+ * zorgvuldig en maak het zo dat het makkelijk te begrijpen is wat wat is en
+ * waarvoor dit soort beelden bedoelt zijn."*
+ *
+ * /catalog, /lifestyle, /video en /hooks beantwoorden allemaal dezelfde vraag —
+ * "wat is dit en wil ik het" — en delen daarom één bandenvolgorde. Deze pagina
+ * beantwoordt een andere vraag, en die is een vergelijking: er zijn TWEE soorten
+ * beeld, de ene heb je al en de andere kost geld, en als een bezoeker dat
+ * verschil niet binnen tien seconden ziet, is de pagina mislukt hoe mooi hij
+ * verder ook is.
+ *
+ * Vandaar dat de vergelijking hier NIET onderaan staat waar TierCompare op de
+ * dienstpagina's staat, maar direct onder de hero. Het is de ruggengraat en niet
+ * een naslagblok. Alles daarna legt één van de twee kolommen uit.
+ *
+ * De onderdelen zijn wél dezelfde: `page-hero`, `ed-head`, `svc-explain`,
+ * `photo-split`, `checklist`, `faq-stack`, `cta-band`, en `ServiceSwitch` en
+ * `HeroFacts` in de hero. Een eigen VOLGORDE is niet hetzelfde als een eigen
+ * taal.
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * DE DRIE DINGEN DIE DEZE PAGINA MOET VOORKOMEN
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * 1 · DAT IEMAND BETAALT VOOR WAT HIJ AL HEEFT. De gedeelde set van
+ *     STOCK_OFF_BRAND beelden hoort bij ELK abonnement. Het dashboard zette hem
+ *     tot 2 september onder "wat er zou komen" bij Editions, en dat sprak /plans
+ *     tegen — een betalende klant las dus in zijn eigen scherm dat hij moest
+ *     bijbetalen voor iets wat hij al had. Rechtgezet in account.js; deze pagina
+ *     zegt het op drie plekken opnieuw, want het is de fout die geld kost.
+ *
+ * 2 · DAT IEMAND DENKT DAT HIER ZIJN PRODUCT IN ZIT. Er zit GEEN product van de
+ *     klant in deze beelden — niet in de gedeelde set en niet in de on-brand
+ *     set. Ze geven het merk een gevoel; ze verkopen geen artikel. Dat is het
+ *     verschil met alles wat er verder op deze site staat, en het is de tweede
+ *     band op de pagina omdat het de eerste verwarring is.
+ *
+ * 3 · DAT GEDEELD BEELD ALS EXCLUSIEF LEEST. Onze klanten zijn allemaal
+ *     kledingmerken en dus elkaars concurrenten: twee abonnees die hetzelfde
+ *     beeld posten, staan in dezelfde feed voor dezelfde koper. Dat mag geen
+ *     kleine lettertjes worden. De modelkiezer noemt de gedeelde bibliotheek al
+ *     met zoveel woorden gedeeld, en deze pagina doet hetzelfde — met een eigen
+ *     band over rechten, die geen enkele andere dienstpagina heeft omdat geen
+ *     enkele andere dienst iets deelt.
+ *
+ * ── DE PRIJS ──────────────────────────────────────────────────────────────
+ *
+ * € 149 per maand na een eenmalige opzet van € 295, allebei uit AMOUNT. Tot
+ * 2 september stond er NERGENS een bedrag: niet in AMOUNT, niet als `null`, en
+ * ook niet in STOCK-IDEE.md, dat het idee verder volledig beschrijft. Zie de
+ * noot bij AMOUNT.editions voor waarom het er twee zijn en niet één.
+ *
+ * ── EN JE KUNT HET NOG NIET BESTELLEN ─────────────────────────────────────
+ *
+ * Net als bij Hooks: er is een prijs, en er is nog geen gewicht in KIND_IMAGES,
+ * dus de agenda kan er niet mee rekenen. De knoppen gaan naar een gesprek.
+ *
+ * ── ELKE FOTO IS EEN PLACEHOLDER ──────────────────────────────────────────
+ *
+ * Er bestaat nog geen enkele set. Een bestaand lifestylebeeld lenen zou hier
+ * precies het tegenovergestelde bewijzen van wat de pagina beweert, want die
+ * beelden hébben een product erin.
+ */
+import {
+  AMOUNT, euro, vatLabel, STOCK_OFF_BRAND, STOCK_ON_BRAND,
+  reviewClaim, plans,
+} from '../data/pricing.js';
+/* Het woord voor deze beelden komt uit de lexicon en niet uit deze pagina:
+   "stock photos" / "stockfoto's", enkelvoud en meervoud op één plek. Zie
+   tests/woorden.test.mjs, dat de hele site op dat lijstje nakijkt. */
+import { noun } from '../data/lexicon.js';
+import { serviceFaqs } from '../data/faq.js';
+import { localizedPath } from '../i18n/ui.js';
+import Disclose from './Disclose.astro';
+import ServiceSwitch from './ServiceSwitch.astro';
+import HeroFacts from './HeroFacts.astro';
+import Placeholder from './Placeholder.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const maand = euro(AMOUNT.editions, lang);
+const opzet = euro(AMOUNT.editionsSetup, lang);
+/* Het goedkoopste abonnement, om te kunnen zeggen waar de gedeelde set al bij
+   zit. Uit plans() en niet ingetypt — zelfde reden als overal. */
+const eerstePlan = plans(lang)[0];
+
+/* ── DE BEELDPLEKKEN ──────────────────────────────────────────────────────
+ *
+ * Zes plekken, en twee ervan staan naast elkaar met opzet: op deze pagina moet
+ * je ZIEN wat het verschil is tussen een beeld met een product erin en een beeld
+ * zonder. Eén van de twee alleen laten zien legt niets uit.
+ */
+const PLEKKEN = {
+  maandgrid: {
+    ratio: '4 / 5',
+    subject: {
+      nl: `Een maandraster van ${STOCK_ON_BRAND} beelden voor één merk — steeds dezelfde kleuren en hetzelfde licht, en in geen enkel beeld een product`,
+      en: `A month grid of ${STOCK_ON_BRAND} visuals for one brand — the same colours and the same light throughout, and no product in any of them`,
+    },
+    message: {
+      nl: 'Moet als één merk lezen en niet als een verzameling. Als het overkomt als een greep uit een beeldbank, is het mislukt — de hele belofte is dat twintig losse beelden herkenbaar bij elkaar horen.',
+      en: 'Must read as one brand and not as a collection. If it comes across as a handful pulled from a library it has failed — the whole promise is that twenty separate images belong recognisably together.',
+    },
+  },
+  welProduct: {
+    ratio: '1 / 1',
+    subject: {
+      nl: 'Een gewoon catalogbeeld: één kledingstuk, scherp, op een egale achtergrond',
+      en: 'An ordinary catalog image: one garment, sharp, on a plain background',
+    },
+    message: {
+      nl: 'Dit beeld staat er om afgewezen te worden. Het moet zo herkenbaar "productfoto" zijn dat de bezoeker meteen ziet dat het beeld ernaast iets anders is.',
+      en: 'This image is here to be ruled out. It has to read as “product photo” so unmistakably that the visitor sees at once that the image beside it is something else.',
+    },
+  },
+  geenProduct: {
+    ratio: '1 / 1',
+    subject: {
+      nl: 'Een merkbeeld uit dezelfde wereld: textiel van dichtbij, een muur in namiddaglicht, een hand — en nergens een kledingstuk om te verkopen',
+      en: 'A brand image from the same world: fabric up close, a wall in late-afternoon light, a hand — and nowhere a garment to sell',
+    },
+    message: {
+      nl: 'Moet dezelfde sfeer hebben als het beeld ernaast en toch onmiskenbaar iets anders zijn. Het verschil zit niet in de kwaliteit maar in het onderwerp: dit verkoopt niets, het zegt wie je bent.',
+      en: 'Must carry the same mood as the image beside it and still be unmistakably something else. The difference is not quality but subject: this sells nothing, it says who you are.',
+    },
+  },
+  feed: {
+    ratio: '21 / 9',
+    subject: {
+      nl: 'Een maand in een feed van bovenaf: de eigen productposts afgewisseld met merkbeelden, zodat je ziet welke dagen door welke soort gevuld zijn',
+      en: 'A month of a feed seen from above: the brand’s own product posts alternating with brand imagery, so you can see which days are filled by which kind',
+    },
+    message: {
+      nl: 'Moet het probleem laten zien waar dit product voor bestaat: de gaten in de maand zonder nieuwe collectie. Twee kleuren markering is genoeg — dit is geen infographic maar een feed.',
+      en: 'Must show the problem this product exists for: the gaps in a month with no new collection. Two colours of marking is enough — this is a feed, not an infographic.',
+    },
+  },
+  opzet: {
+    ratio: '4 / 5',
+    subject: {
+      nl: 'De opzet van één merk naast elkaar: kleurstalen, twee locatiereferenties en een materiaalproef, met de aantekeningen van de klant erbij',
+      en: 'One brand’s setup laid out: colour swatches, two location references and a material sample, with the client’s notes beside them',
+    },
+    message: {
+      nl: 'Moet duidelijk maken waar de eenmalige opzet uit bestaat en waarom je die maar één keer betaalt. Het is het recept en niet het gerecht.',
+      en: 'Must make clear what the one-time setup consists of and why you pay for it once. It is the recipe, not the dish.',
+    },
+  },
+  twaalf: {
+    ratio: '16 / 9',
+    subject: {
+      nl: 'Drie maandsets van hetzelfde merk naast elkaar, met de maand erboven — herkenbaar dezelfde opzet, en toch drie keer iets anders',
+      en: 'Three monthly sets from the same brand side by side, month labelled above each — recognisably the same setup, and still three different things',
+    },
+    message: {
+      nl: 'Moet de angst wegnemen die bij een maandelijkse set hoort: dat het na drie maanden twaalf keer hetzelfde beeld is. Als je de drie maanden niet uit elkaar kunt houden, doet dit beeld het omgekeerde van wat het moet doen.',
+      en: 'Must answer the fear that comes with a monthly set: that after three months it is the same picture twelve times. If you cannot tell the three months apart, this image does the opposite of its job.',
+    },
+  },
+};
+const p = (sleutel: string, veld: 'subject' | 'message') => PLEKKEN[sleutel][veld][lang];
+const r = (sleutel: string) => PLEKKEN[sleutel].ratio;
+
+const COPY = {
+  en: {
+    eyebrow: '( Editions )',
+    h1: 'The months with<br />nothing <em>new</em> to shoot.',
+    lead: `Every month, a set of visuals with no product in them — mood, texture and light. ${STOCK_OFF_BRAND} come with every plan. ${STOCK_ON_BRAND} more, built on your brand alone, are ${maand} a month.`,
+    ctaPrimary: 'Talk to us about Editions',
+    ctaPlans: 'See the plans',
+    ctaSecondary: 'Contact us',
+    wa: waHref("Hi VISUAILS, I'd like to talk about Editions."),
+    waLabel: 'WhatsApp',
+    trust: [
+      [`${STOCK_OFF_BRAND} + ${STOCK_ON_BRAND}`, 'visuals a month'],
+      [`${maand} / mo`, `on top of your plan · ${vatLabel('excl', 'en')}`],
+    ],
+    soonTag: 'Not running yet',
+    queueNote: `Neither set is running yet, so nothing is charged for either. When they start, the shared set arrives with your plan at no extra cost and Editions is the paid half — this page is here so that difference is clear before there is a bill.`,
+
+    /* ── DE VERGELIJKING, DE RUGGENGRAAT VAN DE PAGINA ─────────────────── */
+    vglH: 'Two sets, and only one of them costs anything.',
+    vglSub: 'Both are visuals without a product in them. What separates them is who else gets them.',
+    gedeeld: {
+      naam: 'The shared set',
+      tag: 'Comes with your plan',
+      rijen: [
+        ['What it is', `${STOCK_OFF_BRAND} ${noun('stock', 'en')} a month, brand-neutral: mood, texture and light that suit any clothing brand.`],
+        ['Who else gets it', 'Every brand on a plan. The same images go out to all of them — exactly like the shared model roster, and we say so for the same reason.'],
+        ['What it costs', `Nothing extra. It is part of every plan, from ${eerstePlan ? eerstePlan.name : 'the first'} up.`],
+        ['Your licence', 'Non-exclusive, perpetual, worldwide. You may edit, publish and use them commercially, and you keep them if you cancel.'],
+      ],
+      cta: 'See the plans',
+      href: '/plans',
+    },
+    eigen: {
+      naam: 'Editions',
+      tag: 'The paid add-on',
+      rijen: [
+        ['What it is', `${STOCK_ON_BRAND} visuals a month, set up on your style, your locations and your colour palette. Still no product in them.`],
+        ['Who else gets it', 'Nobody. This set is made for one brand and goes to one brand.'],
+        ['What it costs', `${maand} a month ${vatLabel('excl', 'en')} on top of your plan, after a one-time setup of ${opzet}.`],
+        ['Your licence', 'Exclusive, perpetual, worldwide — the same licence as any order you place. Nobody else may use these images.'],
+      ],
+      cta: 'Talk to us about Editions',
+      href: '/contact',
+    },
+    vglFoot: `You do not choose between them. The shared set is there either way; Editions is what you add when brand-neutral is not enough.`,
+
+    /* ── WAT HET NIET IS ──────────────────────────────────────────────── */
+    nietH: 'There is no product in any of it.',
+    nietSub: 'That is the whole category, and it is the thing most people get wrong on first reading.',
+    nietA: ['A catalog image', 'sells the garment. It is sharp, it is on a plain ground, and a shopper is judging the product in it. That is what you order per product, and it is not this.'],
+    nietB: ['A brand image', 'sells nothing. It is the fabric close up, the wall in late light, the hand on the strap. A shopper is not judging a product — they are deciding whether this is a brand they recognise.'],
+    nietFoot: 'Both are made to the same standard and go through the same check. What differs is the job.',
+
+    /* ── WAAR JE ZE VOOR GEBRUIKT ──────────────────────────────────────── */
+    gebruikMeta: '( What they are for )',
+    gebruikH: 'The month with nothing new in it.',
+    gebruikSub: 'A plan is capacity; a feed is a calendar. They do not fill the same gaps.',
+    gebruikP: [
+      'Every clothing brand has months with no drop in them. The collection is out, the next one is not shot, and the calendar still expects something on it. That is the month a subscription starts to feel like a bill — not because the work stopped being good, but because there was nothing to send.',
+      `${STOCK_ON_BRAND + STOCK_OFF_BRAND} visuals is roughly two-thirds of a month of daily posting. The rest is your own product. That ratio is the point: a feed carried entirely by brand imagery stops selling, and a feed with nothing but packshots stops being a brand.`,
+    ],
+    gebruikH2: 'Where they go',
+    gebruik: [
+      ['The quiet days', 'between one drop and the next.'],
+      ['Stories and reels', 'that need a backdrop, not a product.'],
+      ['Your grid', 'so three packshots in a row do not sit together.'],
+      ['Email and banners', 'where the product is named in words already.'],
+    ],
+
+    /* ── HOE ON-BRAND GEMAAKT WORDT ────────────────────────────────────── */
+    hoeH: 'Set up once, then it runs every month.',
+    hoe: [
+      ['We set your brand up', 'Style, locations and colour palette are decided together and then locked. That is the one-time part, and it is what makes month eleven look like month one.'],
+      ['The same setup runs again', 'Every month, with different angles in it. Not a new idea each time — the same brand seen from somewhere else.'],
+      ['A specialist checks it', 'Before it lands: the colours have to hold, and the set has to read as one brand rather than twenty separate pictures.'],
+      ['It arrives in VISUAILS Studio', 'At the start of the month, alongside your orders. One place, one download, no second library to keep tidy.'],
+    ],
+    hoeFoot: 'No product of yours goes into it, so there is nothing to send us each month. After the setup you do nothing.',
+
+    /* ── PRIJS ─────────────────────────────────────────────────────────── */
+    prijsH: 'What Editions costs',
+    prijsMaand: `<strong>${maand} a month</strong> ${vatLabel('excl', 'en')}, on top of your plan.`,
+    prijsOpzet: `<strong>${opzet} once</strong> to set your brand up: the style, the locations and the colour palette that every month after it runs on.`,
+    prijsWaaromH: 'Why two figures and not one',
+    prijsWaarom: 'Because two different things happen. The setup is work done once per brand; the monthly run is the set itself. Folding the setup into the monthly price would spread it over months you have not committed to yet — which means the price would quietly depend on how long you stay.',
+    zekerH: 'What you can count on.',
+    zeker: [
+      `${STOCK_ON_BRAND} visuals every month, whether or not you had anything new to shoot`,
+      'Made for one brand and delivered to one brand — nobody else gets this set',
+      'In VISUAILS Studio with your orders, not in a separate library',
+      reviewClaim('unattended', 'en'),
+    ],
+    prijsCta: 'Talk to us about Editions',
+
+    /* ── RECHTEN EN VERMELDING ─────────────────────────────────────────── */
+    rechtMeta: '( Rights and disclosure )',
+    rechtH: 'Shared means shared, and we would rather say it here than in the small print.',
+    rechtP: [
+      'Our clients are clothing brands, which makes them each other’s competitors. Two brands posting the same image are in the same feed for the same buyer, so a shared set is not a detail to bury — it is the first thing you should know about the half that costs nothing.',
+      'So the two sets carry two different licences, and the file that ships with them says which one you got. The shared set is non-exclusive: yours to edit, publish and use commercially, and yours to keep if you cancel, but the same image can appear on another brand. Editions is exclusive, like any order you place — nobody else may use those images at all.',
+    ],
+    rechtLijst: [
+      ['Both are made with AI, and both say so in the file', `Every file carries a machine-readable provenance tag. Because there is no photograph of yours in these, they carry the stronger of the two values — “made by a model” rather than “partly made by a model”. The visible disclosure on your own post is still yours to place; <a href="${lp('/ai-act')}">the AI Act page</a> has the sentence.`],
+      ['No faces in either set', 'Choosing models per set would turn a monthly run into a review round each time, and that is what would make it expensive. If that changes, it will be said here first.'],
+      ['Cancel and you keep what you downloaded', 'Both licences survive the plan. Nothing has to come down; you simply stop receiving new sets.'],
+    ],
+
+    faqH: 'Editions questions, answered',
+    faqs: serviceFaqs('editions', 'en'),
+    ctaH: 'Fill the month<br>you have nothing for.',
+    ctaP: `${STOCK_OFF_BRAND} shared visuals come with every plan. ${STOCK_ON_BRAND} of your own are ${maand} a month after a ${opzet} setup.`,
+    belofte: 'Neither set is running yet, so there is nothing to buy today and nothing is charged. What this page is for is that you know which half is included and which half is not, before the first invoice rather than after it.',
+  },
+  nl: {
+    eyebrow: '( Editions )',
+    h1: 'De maanden waarin je<br /><em>niets</em> te fotograferen hebt.',
+    lead: `Elke maand een set beelden zonder product erin — sfeer, textuur en licht. ${STOCK_OFF_BRAND} zitten bij elk abonnement. ${STOCK_ON_BRAND} extra, alleen op jouw merk gebouwd, kosten ${maand} per maand.`,
+    ctaPrimary: 'Praat met ons over Editions',
+    ctaPlans: 'Bekijk de abonnementen',
+    ctaSecondary: 'Neem contact op',
+    wa: waHref('Hoi VISUAILS, ik wil het graag over Editions hebben.'),
+    waLabel: 'WhatsApp',
+    trust: [
+      [`${STOCK_OFF_BRAND} + ${STOCK_ON_BRAND}`, 'beelden per maand'],
+      [`${maand} p/m`, `bovenop je abonnement · ${vatLabel('excl', 'nl')}`],
+    ],
+    soonTag: 'Nog niet actief',
+    queueNote: `Geen van beide sets loopt al, dus er wordt voor allebei nog niets afgeschreven. Zodra ze lopen, komt de gedeelde set zonder meerprijs met je abonnement mee en is Editions de betaalde helft — deze pagina staat er zodat dat verschil duidelijk is vóór er een factuur ligt.`,
+
+    vglH: 'Twee sets, en maar één ervan kost iets.',
+    vglSub: 'Allebei zijn het beelden zonder product erin. Wat ze scheidt is wie ze verder krijgt.',
+    gedeeld: {
+      naam: 'De gedeelde set',
+      tag: 'Zit bij je abonnement',
+      rijen: [
+        ['Wat het is', `${STOCK_OFF_BRAND} ${noun('stock', 'nl')} per maand, merkneutraal: sfeer, textuur en licht die bij elk kledingmerk passen.`],
+        ['Wie hem verder krijgt', 'Elk merk met een abonnement. Dezelfde beelden gaan naar allemaal — precies zoals bij de gedeelde modellenbibliotheek, en we zeggen het er om dezelfde reden bij.'],
+        ['Wat het kost', `Niets extra. Hij hoort bij elk abonnement, vanaf ${eerstePlan ? eerstePlan.name : 'het eerste'}.`],
+        ['Je licentie', 'Niet-exclusief, eeuwigdurend, wereldwijd. Je mag ze bewerken, publiceren en commercieel gebruiken, en je houdt ze als je opzegt.'],
+      ],
+      cta: 'Bekijk de abonnementen',
+      href: '/plans',
+    },
+    eigen: {
+      naam: 'Editions',
+      tag: 'De betaalde add-on',
+      rijen: [
+        ['Wat het is', `${STOCK_ON_BRAND} beelden per maand, opgezet op jouw stijl, jouw locaties en jouw kleurenpalet. Nog steeds zonder product erin.`],
+        ['Wie hem verder krijgt', 'Niemand. Deze set wordt voor één merk gemaakt en gaat naar één merk.'],
+        ['Wat het kost', `${maand} per maand ${vatLabel('excl', 'nl')} bovenop je abonnement, na een eenmalige opzet van ${opzet}.`],
+        ['Je licentie', 'Exclusief, eeuwigdurend, wereldwijd — dezelfde licentie als bij elke bestelling die je plaatst. Niemand anders mag deze beelden gebruiken.'],
+      ],
+      cta: 'Praat met ons over Editions',
+      href: '/contact',
+    },
+    vglFoot: 'Je kiest niet tussen de twee. De gedeelde set is er sowieso; Editions is wat je erbij neemt als merkneutraal niet genoeg is.',
+
+    nietH: 'Er zit in geen van beide een product.',
+    nietSub: 'Dat is de hele categorie, en het is wat de meeste mensen bij eerste lezing verkeerd begrijpen.',
+    nietA: ['Een catalogbeeld', 'verkoopt het kledingstuk. Het is scherp, het staat op een egale ondergrond, en een koper beoordeelt het product erop. Dat is wat je per product bestelt, en dit is het niet.'],
+    nietB: ['Een merkbeeld', 'verkoopt niets. Het is de stof van dichtbij, de muur in laat licht, de hand op het bandje. Een koper beoordeelt geen product — hij beslist of dit een merk is dat hij herkent.'],
+    nietFoot: 'Allebei worden ze op dezelfde manier gemaakt en langs dezelfde controle gehaald. Wat verschilt is het werk dat ze doen.',
+
+    gebruikMeta: '( Waar ze voor zijn )',
+    gebruikH: 'De maand waarin niets nieuws zit.',
+    gebruikSub: 'Een abonnement is capaciteit; een feed is een kalender. Die twee vullen niet dezelfde gaten.',
+    gebruikP: [
+      'Elk kledingmerk heeft maanden zonder drop. De collectie staat online, de volgende is nog niet geschoten, en de kalender verwacht er nog steeds iets op. Dat is de maand waarin een abonnement als een rekening begint te voelen — niet omdat het werk minder werd, maar omdat er niets te sturen was.',
+      `${STOCK_ON_BRAND + STOCK_OFF_BRAND} beelden is grofweg tweederde van een maand dagelijks posten. De rest is je eigen product. Die verhouding is het punt: een feed die volledig op merkbeeld draait verkoopt niets meer, en een feed met alleen packshots is geen merk meer.`,
+    ],
+    gebruikH2: 'Waar ze terechtkomen',
+    gebruik: [
+      ['De stille dagen', 'tussen de ene drop en de volgende.'],
+      ['Stories en reels', 'die een achtergrond nodig hebben en geen product.'],
+      ['Je grid', 'zodat er geen drie packshots naast elkaar komen te staan.'],
+      ['Mail en banners', 'waar het product al in woorden genoemd wordt.'],
+    ],
+
+    hoeH: 'Eén keer opzetten, daarna loopt hij elke maand.',
+    hoe: [
+      ['Wij zetten je merk op', 'Stijl, locaties en kleurenpalet bepalen we samen en leggen we daarna vast. Dat is het eenmalige deel, en het is wat maand elf op maand één laat lijken.'],
+      ['Dezelfde opzet draait opnieuw', 'Elke maand, met andere invalshoeken erin. Niet elke keer een nieuw idee — hetzelfde merk, van een andere kant gezien.'],
+      ['Een specialist kijkt hem na', 'Voordat hij landt: de kleuren moeten kloppen, en de set moet als één merk lezen in plaats van als twintig losse beelden.'],
+      ['Hij komt in VISUAILS Studio', 'Aan het begin van de maand, naast je bestellingen. Eén plek, één download, geen tweede bibliotheek om bij te houden.'],
+    ],
+    hoeFoot: 'Er gaat geen product van jou in, dus je hoeft ons maandelijks niets te sturen. Na de opzet doe jij niets meer.',
+
+    prijsH: 'Wat Editions kost',
+    prijsMaand: `<strong>${maand} per maand</strong> ${vatLabel('excl', 'nl')}, bovenop je abonnement.`,
+    prijsOpzet: `<strong>${opzet} eenmalig</strong> om je merk op te zetten: de stijl, de locaties en het kleurenpalet waar elke maand daarna op draait.`,
+    prijsWaaromH: 'Waarom twee bedragen en niet één',
+    prijsWaarom: 'Omdat er twee verschillende dingen gebeuren. De opzet is werk dat één keer per merk gedaan wordt; de maand is de set zelf. De opzet in het maandbedrag vouwen zou hem uitsmeren over maanden waar je nog niet aan vastzit — en dan hangt de prijs stilletjes af van hoe lang je blijft.',
+    zekerH: 'Waar je op kunt rekenen.',
+    zeker: [
+      `${STOCK_ON_BRAND} beelden per maand, of je nu iets nieuws te fotograferen had of niet`,
+      'Voor één merk gemaakt en aan één merk geleverd — niemand anders krijgt deze set',
+      'In VISUAILS Studio bij je bestellingen, niet in een aparte bibliotheek',
+      reviewClaim('unattended', 'nl'),
+    ],
+    prijsCta: 'Praat met ons over Editions',
+
+    rechtMeta: '( Rechten en vermelding )',
+    rechtH: 'Gedeeld betekent gedeeld, en dat zeggen we liever hier dan in de kleine lettertjes.',
+    rechtP: [
+      'Onze klanten zijn kledingmerken, en dus elkaars concurrenten. Twee merken die hetzelfde beeld plaatsen staan in dezelfde feed voor dezelfde koper, dus een gedeelde set is geen detail om weg te stoppen — het is het eerste wat je moet weten over de helft die niets kost.',
+      'De twee sets dragen daarom twee verschillende licenties, en in het bestand dat meekomt staat welke van de twee je hebt. De gedeelde set is niet-exclusief: van jou om te bewerken, te publiceren en commercieel te gebruiken, en van jou om te houden als je opzegt, maar hetzelfde beeld kan bij een ander merk opduiken. Editions is exclusief, net als elke bestelling die je plaatst — niemand anders mag die beelden gebruiken.',
+    ],
+    rechtLijst: [
+      ['Allebei met AI gemaakt, en dat staat in het bestand', `Elk bestand draagt een machineleesbare herkomsttag. Omdat er geen foto van jou in zit, dragen deze de sterkste van de twee waardes — “door een model gemaakt” en niet “deels door een model gemaakt”. De zichtbare vermelding op je eigen post plaats je nog steeds zelf; op <a href="${lp('/ai-act')}">de AI-verordeningspagina</a> staat de zin.`],
+      ['Geen gezichten, in geen van beide sets', 'Modellen per set kiezen maakt van een maandelijkse ronde elke keer een controleronde, en dát is wat het duur zou maken. Verandert dat, dan staat het hier als eerste.'],
+      ['Zeg je op, dan hou je wat je hebt opgehaald', 'Allebei de licenties blijven na het abonnement staan. Er hoeft niets offline; je krijgt alleen geen nieuwe sets meer.'],
+    ],
+
+    faqH: 'Vragen over Editions, beantwoord',
+    faqs: serviceFaqs('editions', 'nl'),
+    ctaH: 'Vul de maand waar<br>je niets voor hebt.',
+    ctaP: `${STOCK_OFF_BRAND} gedeelde beelden zitten bij elk abonnement. ${STOCK_ON_BRAND} eigen beelden kosten ${maand} per maand, na een opzet van ${opzet}.`,
+    belofte: 'Geen van beide sets loopt al, dus er valt vandaag niets te kopen en er wordt niets afgeschreven. Waar deze pagina voor is: dat je weet welke helft inbegrepen is en welke niet, vóór de eerste factuur in plaats van erna.',
+  },
+};
+const c = COPY[lang];
+---
+
+<!-- ── 1 · HERO ──────────────────────────────────────────────────────────── -->
+<section class="page-hero">
+  <div class="container two-col hero-split">
+    <div class="reveal pending">
+      <span class="eyebrow-page">{c.eyebrow}</span>
+      <h1 class="display ed-h1" style="margin-top:1rem" set:html={c.h1} />
+      <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+      <div class="flex" style="margin-top:1.8rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/plans')} class="btn btn-ghost btn-lg">{c.ctaPlans}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+      </div>
+      <ServiceSwitch current={['complete']} lang={lang} />
+      <HeroFacts eigen={c.trust} lang={lang} />
+      <p class="queue-note"><em class="ed-soon">{c.soonTag}</em> {c.queueNote}</p>
+    </div>
+    <div class="reveal pending">
+      <Placeholder lang={lang} ratio={r('maandgrid')} caption={false} subject={p('maandgrid', 'subject')} message={p('maandgrid', 'message')} />
+    </div>
+  </div>
+</section>
+
+<!-- ── 2 · DE VERGELIJKING ────────────────────────────────────────────────
+     Direct onder de hero, en dat is het verschil met elke andere dienstpagina.
+     Zie de kop van dit bestand: de vraag die deze pagina beantwoordt IS een
+     vergelijking, dus staat hij vooraan en niet als naslag onderaan.
+
+     De vorm komt van TierCompare: twee kaarten met dezelfde rijen, gelijk
+     opgemaakt. Gelijk opgemaakt is hier geen esthetische keuze maar de
+     boodschap — zodra één van de twee een accentkleur of een lint krijgt,
+     pleit het blok voor een van de twee in plaats van ze uit elkaar te houden.
+     En de linker is de gratis helft, dus juist die mag niet wegvallen. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-h">{c.vglH}</h2>
+      <p class="lead">{c.vglSub}</p>
+    </div>
+    <div class="ed-vgl reveal-group">
+      {[c.gedeeld, c.eigen].map((kolom) => (
+        <div class="ed-vgl-col reveal pending">
+          <div class="ed-vgl-kop">
+            <h3>{kolom.naam}</h3>
+            <span class="ed-vgl-tag">{kolom.tag}</span>
+          </div>
+          <dl class="ed-vgl-rijen">
+            {kolom.rijen.map(([label, waarde]) => (
+              <div class="ed-vgl-rij">
+                <dt>{label}</dt>
+                <dd>{waarde}</dd>
+              </div>
+            ))}
+          </dl>
+          <a href={lp(kolom.href)} class="link-arrow ed-vgl-cta">
+            {kolom.cta}
+            <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+      ))}
+    </div>
+    <p class="ed-vgl-foot">{c.vglFoot}</p>
+  </div>
+</section>
+
+<!-- ── 3 · WAT HET NIET IS ────────────────────────────────────────────────
+     Twee beelden naast elkaar, en allebei nodig: één ervan laten zien legt
+     niets uit. Zie punt 2 in de kop van dit bestand. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-h">{c.nietH}</h2>
+      <p class="lead">{c.nietSub}</p>
+    </div>
+    <div class="ed-niet reveal-group">
+      <div class="reveal pending">
+        <Placeholder lang={lang} ratio={r('welProduct')} caption={false} subject={p('welProduct', 'subject')} message={p('welProduct', 'message')} />
+        <h3 class="ed-niet-h">{c.nietA[0]}</h3>
+        <p class="ed-niet-p">{c.nietA[1]}</p>
+      </div>
+      <div class="reveal pending">
+        <Placeholder lang={lang} ratio={r('geenProduct')} caption={false} subject={p('geenProduct', 'subject')} message={p('geenProduct', 'message')} />
+        <h3 class="ed-niet-h">{c.nietB[0]}</h3>
+        <p class="ed-niet-p">{c.nietB[1]}</p>
+      </div>
+    </div>
+    <p class="ed-vgl-foot">{c.nietFoot}</p>
+  </div>
+</section>
+
+<!-- ── 4 · WAAR ZE VOOR ZIJN ──────────────────────────────────────────── -->
+<section class="section-tight">
+  <div class="container">
+    <div class="ed-head">
+      <span class="ed-meta">{c.gebruikMeta}</span>
+      <div>
+        <h2>{c.gebruikH}</h2>
+        <p class="ed-sub">{c.gebruikSub}</p>
+      </div>
+    </div>
+    <Placeholder lang={lang} space ratio={r('feed')} subject={p('feed', 'subject')} message={p('feed', 'message')} />
+    <div class="svc-explain">
+      <div class="svc-explain-main">
+        <h3>{c.gebruikH}</h3>
+        {c.gebruikP.map((alinea) => <p>{alinea}</p>)}
+      </div>
+      <aside class="svc-explain-side">
+        <h3>{c.gebruikH2}</h3>
+        <ul class="svc-where-list">
+          {c.gebruik.map(([sterk, rest]) => (
+            <li><strong>{sterk}</strong> — {rest}</li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5 · HOE ON-BRAND GEMAAKT WORDT ────────────────────────────────────
+     Vanaf hier gaat de pagina alleen nog over de BETAALDE helft. De gedeelde
+     set heeft geen opzet, geen stappen en geen prijs — die is er gewoon. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="photo-split reveal pending">
+      <div class="photo-split-media">
+        <Placeholder lang={lang} ratio={r('opzet')} caption={false} subject={p('opzet', 'subject')} message={p('opzet', 'message')} />
+      </div>
+      <div>
+        <h2>{c.hoeH}</h2>
+        <div class="steps steps-stacked" style="margin-top:1.6rem">
+          {c.hoe.map(([kop, tekst], i) => (
+            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{kop}</h3><p>{tekst}</p></div>
+          ))}
+        </div>
+        <p class="ed-hoe-foot">{c.hoeFoot}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 6 · DRIE MAANDEN NAAST ELKAAR ──────────────────────────────────────
+     Het antwoord op de enige echte bezwaarvraag bij een maandelijkse set: is
+     het na drie maanden niet twaalf keer hetzelfde? Eén beeld, geen tekst — de
+     vraag is visueel en het antwoord dus ook. -->
+<section class="section-tight">
+  <div class="container">
+    <Placeholder lang={lang} ratio={r('twaalf')} subject={p('twaalf', 'subject')} message={p('twaalf', 'message')} />
+  </div>
+</section>
+
+<!-- ── 7 · DE PRIJS ─────────────────────────────────────────────────────── -->
+<section class="section-tight">
+  <div class="container two-col">
+    <div class="reveal pending">
+      <h2>{c.zekerH}</h2>
+      <ul class="checklist" style="margin-top:1.4rem">
+        {c.zeker.map((li) => (
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
+        ))}
+      </ul>
+    </div>
+    <div class="reveal pending ed-prijs">
+      <h3>{c.prijsH}</h3>
+      <p set:html={c.prijsMaand} />
+      <p set:html={c.prijsOpzet} />
+      <p class="ed-prijs-vlak"><strong>{c.prijsWaaromH}</strong> {c.prijsWaarom}</p>
+      <div class="flex" style="margin-top:1.4rem">
+        <a href={lp('/contact')} class="btn btn-primary">{c.prijsCta}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 8 · RECHTEN EN VERMELDING ──────────────────────────────────────────
+     Deze band staat op geen enkele andere dienstpagina, en dat is met reden:
+     geen enkele andere dienst levert iets dat ook naar een ander merk gaat.
+     Zie punt 3 in de kop van dit bestand. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="ed-head">
+      <span class="ed-meta">{c.rechtMeta}</span>
+      <div>
+        <h2>{c.rechtH}</h2>
+      </div>
+    </div>
+    <div class="svc-explain">
+      <div class="svc-explain-main">
+        {c.rechtP.map((alinea) => <p>{alinea}</p>)}
+      </div>
+      <aside class="svc-explain-side">
+        <ul class="ed-recht-lijst">
+          {c.rechtLijst.map(([kop, body]) => (
+            <li><strong>{kop}</strong><span set:html={body} /></li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container" style="max-width:760px">
+    <h2 class="section-h">{c.faqH}</h2>
+    <div class="faq-stack">
+      {c.faqs.map((f) => (
+        <Disclose summary={f.q} tone="panel">
+          <p>{f.a}</p>
+        </Disclose>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:var(--t-page-h2)" set:html={c.ctaH} />
+      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/plans')} class="btn btn-ghost btn-lg">{c.ctaPlans}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+      </div>
+      <p class="ed-belofte">{c.belofte}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ed-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  /* Zelfde merkje als in de navigatie en op /hooks: één vorm voor één
+     betekenis. Zie de noot bij .hk-soon in HooksPage.astro. */
+  .ed-soon {
+    display: inline-block; margin-right: .45rem; padding: .12rem .45rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+    font-style: normal; font-size: .72rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3); vertical-align: .08em;
+  }
+
+  /* ── DE VERGELIJKING ──────────────────────────────────────────────────
+     Twee kaarten met echte ruimte ertussen, en niet één doos met een streep
+     erdoor — zie de lange noot bij .tierc-grid in TierCompare.astro, waar
+     precies deze vorm is uitgezocht. De verhoging komt uit de `.lift`-groep
+     in global.css, waar .ed-vgl-col nu bij staat; twee kopieën van dezelfde
+     schaduw zijn twee dingen die uit elkaar kunnen lopen.
+
+     GELIJK OPGEMAAKT, EN DAT IS DE BOODSCHAP. Geen accentkleur op een van de
+     twee, geen lint, geen grotere kop. Zodra één kolom opvalt, pleit dit blok
+     voor een van de twee in plaats van ze uit elkaar te houden — en de kolom
+     die dan wegvalt is de GRATIS helft, precies degene die een klant moet
+     zien voordat hij voor de andere betaalt. */
+  .ed-vgl {
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(.9rem, 1.8vw, 1.4rem);
+  }
+  @media (max-width: 46rem) { .ed-vgl { grid-template-columns: minmax(0, 1fr); } }
+  .ed-vgl-col {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    padding: clamp(1.5rem, 2.8vw, 2.1rem);
+    display: flex;
+    flex-direction: column;
+  }
+  .ed-vgl-kop { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }
+  .ed-vgl-kop h3 { font-size: clamp(1.05rem, 1.7vw, 1.25rem); line-height: 1.25; }
+  /* Het etiket zegt WAT voor ding dit is en niet hoe goed het is, dus het is
+     een label en geen keurmerk: geen vlak, geen kleur, alleen een rand. */
+  .ed-vgl-tag {
+    flex: 0 0 auto;
+    padding: .12rem .5rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+    font-size: .7rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .ed-vgl-rijen { margin-top: var(--gap-head-block); flex: 1; }
+  .ed-vgl-rij { padding: .85rem 0; border-top: 1px solid var(--line); }
+  .ed-vgl-rij:first-child { border-top: 0; padding-top: 0; }
+  .ed-vgl-rij dt { font-size: .72rem; font-weight: 600; color: var(--ink-3); }
+  .ed-vgl-rij dd { margin: .3rem 0 0; color: var(--ink); font-size: .95rem; line-height: 1.45; }
+  .ed-vgl-cta { margin-top: clamp(1.2rem, 2.4vw, 1.7rem); }
+  /* De regel onder de twee kolommen, links uitgelijnd met de kop erboven —
+     zie de noot bij .hk-krijg in HooksPage.astro over gecentreerde rijen
+     tussen links uitgelijnde blokken. */
+  .ed-vgl-foot {
+    margin-top: clamp(1.4rem, 2.6vw, 2rem);
+    font-size: .9rem; color: var(--ink-3);
+    max-width: var(--measure-note, 68ch);
+  }
+
+  /* ── DIT WEL, DIT NIET ────────────────────────────────────────────────
+     Twee vierkanten naast elkaar. Onder de 46rem onder elkaar en niet
+     kleiner: het hele punt is dat je ze VERGELIJKT, en twee beelden van 160px
+     naast elkaar op een telefoon vergelijk je niet. */
+  .ed-niet {
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1rem, 2.4vw, 1.8rem);
+  }
+  @media (max-width: 46rem) { .ed-niet { grid-template-columns: minmax(0, 1fr); } }
+  .ed-niet-h { margin-top: 1rem; font-size: 1rem; font-weight: 700; color: var(--ink); }
+  .ed-niet-p { margin-top: var(--gap-label-note); font-size: .92rem; color: var(--ink-2); line-height: 1.55; }
+
+  .ed-hoe-foot { margin-top: clamp(1.4rem, 2.6vw, 1.9rem); font-size: .9rem; color: var(--ink-3); }
+
+  /* Het prijsblok, zelfde vorm als .buy-note op /video en .hk-prijs op
+     /hooks: volle rand, geen nesting, geen accenttint. */
+  .ed-prijs { border: 1px solid var(--line-strong); padding: clamp(1.4rem, 3vw, 2rem); }
+  .ed-prijs h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
+  .ed-prijs p { margin-top: var(--gap-label-note); color: var(--ink-2); }
+  .ed-prijs p :global(strong) { color: var(--ink); font-weight: 600; }
+  .ed-prijs .ed-prijs-vlak {
+    margin-top: 1.1rem; padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: .9rem; line-height: 1.55; color: var(--ink-3);
+  }
+  .ed-prijs .ed-prijs-vlak strong { color: var(--ink); font-weight: 700; }
+
+  /* De rechtenlijst in de zijkolom. Zelfde ritme als .svc-where-list, maar met
+     een kop per regel omdat er drie afzonderlijke afspraken in staan en geen
+     opsomming van plekken. */
+  .ed-recht-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
+  .ed-recht-lijst li { display: grid; gap: .3rem; padding-top: .9rem; border-top: 1px solid var(--line); }
+  .ed-recht-lijst li:first-child { padding-top: 0; border-top: 0; }
+  .ed-recht-lijst strong { color: var(--ink); font-size: .95rem; }
+  .ed-recht-lijst span { color: var(--ink-2); font-size: .9rem; line-height: 1.55; }
+  .ed-recht-lijst :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
+
+  .ed-belofte {
+    max-width: 68ch;
+    margin: clamp(2rem, 4vw, 2.8rem) auto 0;
+    padding-top: clamp(1.2rem, 2.4vw, 1.6rem);
+    border-top: 1px solid var(--line);
+    text-align: center; font-size: .88rem; line-height: 1.6; color: var(--ink-3);
+  }
+</style>

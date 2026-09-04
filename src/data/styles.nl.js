@@ -2,13 +2,16 @@
 // src/data/styles.js — same shape and exports, only the human-readable
 // strings are translated. Order paths are prefixed with /nl.
 
-import { reviewClaim, turnaround } from './pricing.js';
+import { reviewClaim, turnaround, LIFESTYLE_IMAGES } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
 // [slug] pages ended up quoting a turnaround the capacity gate had never
 // cleared — and how a video price that exists nowhere in pricing.js
 // survived a repricing nobody caught. Derive, never type.
+/* Wat een carousel IS, als eerste regel op elke stijlpagina — 4 september 2026.
+   Geen van de vier zei hoeveel foto's je krijgt; dat stond alleen op de hub. */
+const SET = `${LIFESTYLE_IMAGES} foto’s per product — sfeer, op een model en detail`;
 const TIMING = turnaround('unattended', 'nl');
 const REVIEW = reviewClaim('unattended', 'nl');
 
@@ -63,7 +66,7 @@ export const styles = [
       { title: 'Campagne-flexibel', body: 'Negatieve ruimte die werkt voor advertenties, banners en verpakking.' },
     ],
     bestFor: ['Premium skincare, sieraden en lederwaren', 'Merken die rust verkopen, geen ruis', 'Campagnes met een ingehouden stem', 'Producten die een galeriebehandeling verdienen'],
-    whatYouGet: ['Zonovergoten, aardse minimalistische scènes', 'Premium belichting met lange schaduwen', 'Composities met ruimte voor je boodschap', TIMING, REVIEW],
+    whatYouGet: [SET, 'Zonovergoten, aardse minimalistische scènes', 'Premium belichting met lange schaduwen', 'Composities met ruimte voor je boodschap', TIMING, REVIEW],
   },
   {
     slug: 'flash',
@@ -101,7 +104,7 @@ export const styles = [
       { title: 'Gemaakt voor een lancering', body: 'De look past bij een release, een bijbestelling of een beperkte oplage.' },
     ],
     bestFor: ['Streetwear, sneakers en accessoires', 'Lanceringen en beperkte oplages', 'Merken met een harde, herkenbare stijl', 'Social-advertenties die tussen de rest moeten opvallen'],
-    whatYouGet: ['Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Consistente modellen, vastgezet op je merk', TIMING, REVIEW],
+    whatYouGet: [SET, 'Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Consistente modellen, vastgezet op je merk', TIMING, REVIEW],
   },
   {
     slug: 'glow',
@@ -139,7 +142,7 @@ export const styles = [
       { title: 'Eén consistente gloed', body: 'Dezelfde warmte over je hele feed, launch na launch.' },
     ],
     bestFor: ['Beauty, skincare en parfum', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een feed bouwen waar mensen bij willen horen'],
-    whatYouGet: ['Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elke lifestylefoto', TIMING, REVIEW],
+    whatYouGet: [SET, 'Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elke lifestylefoto', TIMING, REVIEW],
   },
   {
     slug: 'phone-made',
@@ -177,11 +180,11 @@ export const styles = [
       { title: 'Meteen goed voor je feed', body: 'Je hoeft er niets meer uit te snijden — de verhouding klopt al zoals je hem krijgt.' },
     ],
     bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die eerst vertrouwen opbouwen en dan glans', 'Organische content die er niet als advertentie uit mag zien'],
-    whatYouGet: ['Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', TIMING, REVIEW],
+    whatYouGet: [SET, 'Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', TIMING, REVIEW],
   },
   {
     slug: 'custom',
-    name: 'Custom',
+    name: 'Eigen look',
     tagline: 'Je eigen wereld, gebouwd rond je product.',
     priceTrust: 'Op aanvraag',
     priceUnit: '',
@@ -196,7 +199,7 @@ export const styles = [
        "Op aanvraag" zegt. Nu naar de aanvraagpagina — zie
        StylePicker.astro en het 'custom-look'-blok in HoldingPage.astro. */
     orderHref: '/nl/start/custom-look/',
-    orderLabel: 'Vraag een look op maat aan',
+    orderLabel: 'Vraag een eigen look aan',
     moodParagraphs: [
       'Geen van onze vier vaste sferen — een scène ontworpen vanuit jouw referenties. De setting, de styling en het licht die alleen bij jouw merk passen.',
       'We bouwen de wereld één keer, samen met jou, en houden daarna elke toekomstige lifestylefoto daaraan trouw.',
@@ -221,6 +224,9 @@ export const styles = [
       'Scène, styling en licht afgestemd op je merk',
       'Consistent bij elke toekomstige bestelling',
       'Een heldere prijs, afgesproken voordat we beginnen',
+      'Eén ontwerpbedrag op schrift; elke carousel daarna tegen het gewone lifestyle-tarief voor dat aantal',
+      'Van jou: we gebruiken de look niet voor een ander merk',
+      'Daarna een eigen tegel in je account en in het bestelformulier',
     ],
   },
 ];

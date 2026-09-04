@@ -85,7 +85,7 @@ const browser = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath:
  * is de weg waarop het misging: terugkomen op een pagina waar het script al eens
  * gedraaid had.
  */
-console.log('\nde dienstkaartjes onder de hero blijven tabs');
+console.log('\nde dienstkaartjes onder de hero blijven bedraad');
 {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
@@ -109,25 +109,40 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
      welke van de twee het is in plaats van dat het weer acht runs kost. */
   const klikGeeftDia = async () => {
     const voor = new URL(page.url()).pathname;
-    const rolBijKlik = await page.evaluate(() => document.querySelector('[data-hero-tab="1"]')?.getAttribute('role') ?? null);
+    const rolBijKlik = await page.evaluate(() => document.querySelector('[data-hero-tab="1"]')?.getAttribute('tabindex') ?? null);
     await page.click('[data-hero-tab="1"]');
     await page.waitForTimeout(700);
     const na = new URL(page.url()).pathname;
     if (voor !== na) {
-      console.log(`      (weggenavigeerd: ${voor} -> ${na}, rol bij het klikken: ${JSON.stringify(rolBijKlik)})`);
+      console.log(`      (weggenavigeerd: ${voor} -> ${na}, tabindex bij het klikken: ${JSON.stringify(rolBijKlik)})`);
       await page.goBack();
       await page.waitForTimeout(600);
     }
     return voor === na;
   };
-  const rol = () => page.evaluate(() => {
+  /* ── WAT ER GEPEILD WORDT, EN WAAROM NIET MEER DE ROL — 2 september 2026 ──
+     Hier stond `t.getAttribute('role') === 'tab'`. Dat was de spelling en niet
+     de belofte, en op 2 september ging deze toets er rood op terwijl er niets
+     stuk was: axe-core wees role="tablist" af (een tablist mag alleen tabs
+     bevatten, en in elk kaartje zit ook het pijltje naar de dienstpagina), dus
+     is de rol weg en zet het script nu `aria-current` plus een roving tabindex.
+     Dezelfde les als bij `--wa-bottom: 142px` in nav.test.mjs, en het is het
+     geval dat SCHRIJFWIJZER.md §6 beschrijft.
+
+     Wat deze toets moet weten is één ding: HEEFT HET SCRIPT DIT KAARTJE
+     BEDRAAD na een zachte navigatie? Daar is `tabindex` het bewijs voor. In de
+     gebouwde html staat er geen tabindex op — schilder() zet hem, `0` op het
+     actieve kaartje en `-1` op de rest. Staat er dus iets, dan heeft het script
+     gedraaid; staat er niets, dan is het kaartje nog de kale link uit de html.
+     Dat blijft waar hoe de markering verder ook heet. */
+  const bedraad = () => page.evaluate(() => {
     const t = document.querySelector('[data-hero-tab="1"]');
-    return t ? t.getAttribute('role') : null;
+    return t ? t.getAttribute('tabindex') : null;
   });
 
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   await page.waitForTimeout(900);
-  ok('bij een harde laadbeurt is het kaartje een tab', await rol(), 'tab');
+  ok('bij een harde laadbeurt is het kaartje bedraad', await bedraad(), '-1');
   ok('en een klik blijft op de homepage', await klikGeeftDia(), true);
 
   // Binnenkomen op een andere pagina en dan pas naar huis.
@@ -135,7 +150,7 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
   await page.waitForTimeout(700);
   await page.click('a[href="/"]');
   await page.waitForTimeout(1100);
-  ok('ook wie via /pricing binnenkomt krijgt tabs', await rol(), 'tab');
+  ok('ook wie via /pricing binnenkomt krijgt een bedraad kaartje', await bedraad(), '-1');
   ok('en ook daar blijft een klik op de homepage', await klikGeeftDia(), true);
 
   // En de weg waarop het misging: wég van de homepage en terug.
@@ -143,7 +158,7 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
   await page.waitForTimeout(900);
   await page.click('a[href="/"]');
   await page.waitForTimeout(1100);
-  ok('en na weggaan en terugkomen nog steeds', await rol(), 'tab');
+  ok('en na weggaan en terugkomen nog steeds', await bedraad(), '-1');
   ok('dit was de melding van Lucas: klik wisselt de dia', await klikGeeftDia(), true);
 
   // De taalwissel is dezelfde route met een andere bestemming: de Nederlandse
@@ -166,12 +181,12 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
    * testmachine soms niet, en dat is precies wat een tijdslimiet als voorwaarde
    * zo slecht maakt: hij faalt op belasting en niet op gedrag. Nu wordt er
    * gewacht op de twee dingen die echt moeten kloppen — de URL is aangekomen, en
-   * het kaartje is opnieuw als tab bedraad. */
+   * het kaartje is opnieuw bedraad. */
   const naarTaal = async (taal, pad) => {
     await page.click(`a.ls[hreflang="${taal}"]`);
     await page.waitForURL((u) => new URL(u).pathname === pad, { timeout: 10000 });
     await page.waitForFunction(
-      () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('role') === 'tab',
+      () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('tabindex') !== null,
       null,
       { timeout: 10000 }
     );
@@ -179,14 +194,14 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
 
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   await page.waitForFunction(
-    () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('role') === 'tab',
+    () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('tabindex') !== null,
     null,
     { timeout: 10000 }
   );
   await naarTaal('nl', '/nl/');
   await naarTaal('en', '/');
   await naarTaal('nl', '/nl/');
-  ok('en na een taalwissel heen en weer ook', await rol(), 'tab');
+  ok('en na een taalwissel heen en weer ook', await bedraad(), '-1');
   ok('op de Nederlandse homepage wisselt de klik de dia', await klikGeeftDia(), true);
 
   await page.close();
@@ -341,6 +356,16 @@ console.log('\nde luisteraars op window en document stapelen zich niet op');
 }
 
 await browser.close();
+
+/* Windows: process.exit() vlak na browser.close() struikelt in libuv
+
+   ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), src\\win\\async.c")
+
+   omdat de pipes van Chromium nog aan het sluiten zijn. Eén tik wachten
+
+   laat ze dichtgaan; de uitslag verandert er niet door — 4 sept 2026. */
+
+await new Promise((r) => setTimeout(r, 300));
 server.close();
 
 /* ── WAT HIER NIET IN ZIT ───────────────────────────────────────────────────

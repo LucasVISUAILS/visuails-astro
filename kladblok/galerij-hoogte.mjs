@@ -1,0 +1,28 @@
+import { createServer } from 'node:http';
+import { readFile, existsSync } from 'node:fs';
+import { join, extname } from 'node:path';
+import { chromium } from 'playwright';
+const DIST='/tmp/vb/dist';
+const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.avif':'image/avif','.png':'image/png','.woff2':'font/woff2','.ico':'image/x-icon','.json':'application/json'};
+const s=createServer((q,r)=>{let p=decodeURIComponent(q.url.split('?')[0]);let f=join(DIST,p);if(!extname(f))f=join(f,'index.html');readFile(f,(e,b)=>{if(e){r.writeHead(404);return r.end('x');}r.writeHead(200,{'content-type':MIME[extname(f)]||'application/octet-stream'});r.end(b);});});
+await new Promise(r=>s.listen(8086,r));
+const EXE='/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const b=await chromium.launch(existsSync(EXE)?{executablePath:EXE}:{});
+const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2});
+const p=await ctx.newPage();
+// blokkeer de beelden zodat we de LAY-OUT ZONDER beeld zien
+await p.route('**/*.{webp,avif,png,jpg}', r=>r.abort());
+await p.goto('http://127.0.0.1:8086/gallery',{waitUntil:'domcontentloaded'});
+await p.waitForTimeout(600);
+const zonder=await p.evaluate(()=>[...document.querySelectorAll('.photo-grid img')].slice(0,8).map(i=>({cls:i.className,ar:getComputedStyle(i).aspectRatio,h:Math.round(i.getBoundingClientRect().height),w:Math.round(i.getBoundingClientRect().width)})));
+console.log('ZONDER beeld:'); console.table(zonder);
+await ctx.close();
+const ctx2=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2});
+const p2=await ctx2.newPage();
+await p2.goto('http://127.0.0.1:8086/gallery',{waitUntil:'load'});
+await p2.evaluate(()=>{document.querySelectorAll('img[loading="lazy"]').forEach(i=>i.loading='eager');});
+await p2.waitForTimeout(1500);
+const met=await p2.evaluate(()=>[...document.querySelectorAll('.photo-grid img')].slice(0,8).map(i=>({cls:i.className,ar:getComputedStyle(i).aspectRatio,h:Math.round(i.getBoundingClientRect().height),w:Math.round(i.getBoundingClientRect().width)})));
+console.log('MET beeld:'); console.table(met);
+console.log('\nverschil in hoogte:', zonder.map((z,i)=>`${z.cls||'(geen)'}: ${z.h} → ${met[i].h}`).join('\n                   '));
+await b.close(); s.close();

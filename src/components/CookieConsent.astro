@@ -223,6 +223,15 @@ const t = useTranslations(lang);
      those breakpoints. */
   :global(body:has(#cc-bar:not([hidden])) .convbar) { bottom: calc(20px + var(--cc-h, 88px)); }
   :global(body:has(#cc-bar:not([hidden])) .wa-launcher) { bottom: calc(var(--wa-bottom, 20px) + var(--cc-h, 88px)); }
+  /* ── DE BALK LAG OVER DE TWEE KNOPPEN VAN DE HERO — 3 september 2026 ──────
+     Op een telefoon is de hero 100svh hoog en staan "Start een bestelling" en
+     "Probeer VISUAILS" onderin. De balk is daar ruim 180px hoog en dekte ze
+     precies af: de eerste twee knoppen van de site waren onzichtbaar tot je de
+     cookies had beantwoord. Dezelfde regel als voor de conversiebalk hierboven:
+     zolang de balk er staat, schuift de hero-tekst er bovenuit. */
+  @media (max-width: 720px) {
+    :global(body:has(#cc-bar:not([hidden])) .hv-hero-copy) { padding-bottom: calc(5.25rem + var(--cc-h, 180px)); }
+  }
 
   @media (prefers-reduced-motion: no-preference) {
     .cc { animation: cc-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }

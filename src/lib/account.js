@@ -84,6 +84,7 @@ import { clearUploadRetention } from './retention.js';
    kunnen lopen. */
 import {
   MAX_BATCH_FILES, MAX_FILE_BYTES, batchPrefix, mintBatch, safeName, typeFor,
+  uploadFormatsSentence,
 } from './uploads.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { sendMail } from './mail.js';
@@ -106,6 +107,12 @@ import { CHANNELS, CHANNEL_IDS, channelName } from '../data/channels.js';
    bestelformulier, deze pagina en de werkmap moeten dezelfde lijst kennen, en
    welke verhoudingen mogen verschilt per dienst — zie ratiosFor(). */
 import { ratiosFor, ratiosPerImage, ratioById, ratioViewBox } from '../data/ratios.js';
+/* De vaste stijl bij lifestyle (migratie 0039). De EN-lijst draagt de slugs en
+   de kaartfoto's; de NL-lijst dezelfde slugs met Nederlandse namen. */
+import { styles as LOOKS_EN } from '../data/styles.js';
+import { styles as LOOKS_NL } from '../data/styles.nl.js';
+const LOOK_IDS = LOOKS_EN.map((x) => x.slug);
+const lookById = (slug, lang) => (lang === 'nl' ? LOOKS_NL : LOOKS_EN).find((x) => x.slug === slug) || LOOKS_EN.find((x) => x.slug === slug) || null;
 import { mailNote } from '../data/mailNote.js';
 // Afronden staat sinds 8 augustus 2026 in zijn eigen bestand omdat portal.js
 // hem óók nodig heeft — zie de kop van close.js. Hier stond dezelfde functie
@@ -147,9 +154,13 @@ import { PLAN_SERVICE } from '../data/plans.js';
 import { readCalendar } from './agenda.js';
 import { planName } from '../data/planNames.js';
 import { STOCK_ON_BRAND, STOCK_OFF_BRAND } from '../data/pricing.js';
+/* De twee bedragen van Editions. Uit pricing.js en niet ingetypt — zodra Lucas
+   ze daar bijstelt, staat hier hetzelfde. Zie de noot bij AMOUNT.editions. */
+import { AMOUNT as BEDRAG, euro as euroBedrag, vatLabel as btwLabel } from '../data/pricing.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
 import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
+import { licenceText } from './scaffold.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
 // deze twee schermen hadden elk hun eigen query over dezelfde levering en die
 // waren al uit elkaar gelopen.
@@ -460,7 +471,7 @@ const COPY = {
     // Voor een bestelling onder de drempel: geen datum, want die bestaat niet
     // voor deze trede. Dezelfde belofte als TIERS.unattended.turnaround in
     // pricing.js, in één regel op de kaart.
-    fQueue: 'Standard turnaround — usually 2–4 days.',
+    fQueue: 'Standard turnaround — as soon as it is ready, no fixed date.',
     fProducts: 'Products',
     windowPending: 'Being scheduled',
 
@@ -537,7 +548,7 @@ const COPY = {
     // navlabel) en deliberately niet het oude "Brand lock" either, for the
     // reason the note below still gives. It names what the panel does.
     lockH: 'Defaults per service',
-    lockLede: 'What each service starts with — a face and a background. These are defaults, not rules: every order still lets you change them, so you can run your own model on one order and a standard one on the next. Leave a service unset and we ask from scratch, as usual.',
+    lockLede: 'These are your defaults — every order starts here, and you can still change any of them per order.',
     // lockNoModels / lockUnset / lockFace / lockBg / lockOwn / lockRoster came
     // out with the dropdowns they labelled (August 2026). Every one of them was
     // a <select>'s own furniture — a placeholder option, two field labels, two
@@ -550,20 +561,33 @@ const COPY = {
     // The brand kit as a picture rather than as two dropdowns, August 2026.
     // Lucas: "ik wil dat de brand kit veel mooier wordt om in te stellen, dus
     // echt foto’s toevoegen bij modellen, het voelt allemaal zo zielloos nu."
-    bkLede: 'The look your orders start from — who wears your product, and what it sits on.',
+    bkLede: 'The look your orders start from — who wears your product, and the style or ground it is made in.',
     bkOwnH: 'Your own models',
     bkOwnLede: 'Faces made for your brand, and nobody else’s. Pick one below as the default for a service, or choose per order.',
     bkOwnEmptyH: 'No faces of your own yet',
     bkOwnEmptyBody: 'A brand model is one face, made for you, that comes back on every order — the same person wearing your range season after season, without a shoot. Until then the standard roster below is included in everything you order.',
     bkOwnEmptyCta: 'See what a brand model needs',
+    osH: 'Your own looks',
+    osLede: 'A world designed around your product, held to on every order. Made once, on request.',
+    osBoth: 'Catalog and lifestyle',
+    osPerProduct: 'per product',
+    osProposed: 'Proposed — we are working out the quote with you. It becomes orderable the moment it is agreed.',
+    osOrder: 'Order in this look',
+    osEmptyH: 'No look of your own yet',
+    osEmptyBody: 'The four house styles come with everything. A look of your own is a setting, styling and light only your brand would use — designed once with you, priced on request, and then here as a choice in the order form.',
+    osEmptyCta: 'Ask for a look of your own',
     bkOwnPending: 'In the making',
     bkOwnReady: 'Ready to use',
     bkOwnTag: 'Yours only',
     // On a folded service card: what this service currently starts from.
     bkAsk: 'Asked per order',
     bkChange: 'Change',
+    bkSaved: 'Saved — your next order starts from this.',
     bkFaceLede: 'Who wears it',
     bkBgLede: 'What it sits on',
+    bkLookLede: 'The look',
+    bkLookNone: 'We ask per order.',
+    bkLookHint: 'One look for every lifestyle order. Catalog images sit on a colour; lifestyle images live in a scene, so here you pick the scene.',
     bkRatioLede: 'Image shape',
     // Op de lege tegel, waar de andere vier hun `use` uit ratios.js hebben. Een
     // tegel zonder die regel zou naast vier tegels mét er half afgemaakt uitzien.
@@ -606,6 +630,8 @@ const COPY = {
     detVat: 'VAT number',
     detVatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
     detNoVat: 'I do not have a VAT number',
+    detReg: 'Company registration number',
+    detRegHint: 'For a business without a VAT number — a Dutch KVK number, for instance. Saved once, filled in on every order.',
     detMissing: 'One of the fields above is still empty. Everything except the ones marked optional has to be filled in — it all ends up on your invoice.',
     detFailed: 'We could not save that just now. Try again in a moment — nothing was changed.',
     // Zelfde woorden als op het bestelformulier (OrderFlow.astro) — twee
@@ -724,6 +750,7 @@ const COPY = {
     prodOther: 'Other images',
     prodDelivered: (n) => (n === 1 ? '1 image delivered' : `${n} images delivered`),
     prodApproved: (n) => `${n} approved`,
+    prodApproveAll: (n) => `All ${n} are good — approve this product`,
     prodNothingYet: 'Nothing delivered for this one yet.',
     prodWeMade: 'What we delivered',
     prodYouSent: 'What you sent',
@@ -733,13 +760,14 @@ const COPY = {
     // kolomwaarde: 'human_check' is een woord uit onze werkverdeling.
     flowNowLabel: 'Right now:',
     flowNow: {
+      awaiting_payment: 'Your order is in, but not paid yet. Once the payment comes through we schedule it in.',
       received: 'We have your order and your files. We are scheduling it in.',
       in_production: 'Our studio is making your images.',
       human_check: 'Someone is going through every image before it reaches you.',
       delivered: 'Your images are ready. Look them over and tell us if anything is off.',
       cancelled: 'This order was cancelled. Nothing is being made for it.',
     },
-    flowStep: { received: 'Received', in_production: 'In production', human_check: 'Checked by a person', delivered: 'Delivered' },
+    flowStep: { awaiting_payment: 'Awaiting payment', received: 'Received', in_production: 'In production', human_check: 'Checked by a person', delivered: 'Delivered' },
     flowWindow: (from, to) => (from === to ? `Planned for ${from}.` : `Planned for ${from} – ${to}.`),
     flowHistory: 'Everything that happened',
     noteFrom: 'From the studio',
@@ -763,6 +791,10 @@ const COPY = {
     stRevisionShort: 'Revision',
     // Het antwoord van de studio op een revisie, bij het beeld zelf.
     stFixed: 'Changed:',
+    stNew: 'New',
+    stReplacedFor: 'Redone after your note:',
+    rdReadyH: 'Your revision is ready',
+    rdReadyB: 'The images marked “new” replace the ones you flagged. Have a look and approve them — or let us know on WhatsApp if something is still off.',
     bCancelShort: 'Cancel',
 
     planHeading: 'Plan & billing',
@@ -775,6 +807,17 @@ const COPY = {
     planTabMaand: 'This month',
     planTabBestellen: 'Order',
     planTabEdities: 'Editions',
+    /* ── DE GEDEELDE MAANDSET — 4 september 2026 ─────────────────────────
+       De STOCK_OFF_BRAND beelden die bij elk abonnement horen. Eén kaart op
+       de maand-tab (STOCK-IDEE.md §6), de zip gaat dezelfde weg als een
+       levering, met de licentie voor gedeeld beeld erin. */
+    msH: 'The shared set for this month',
+    msLede: 'Brand-neutral visuals, no product in them, the same set for every brand on a plan — something to post on the days you have nothing new. Whatever you download while you are on a plan stays yours.',
+    msZip: 'Download the set (.zip)',
+    msCount: (n) => `${n} ${n === 1 ? 'visual' : 'visuals'}`,
+    msLicence: 'The licence for shared visuals is in the zip: non-exclusive, perpetual, worldwide.',
+    msEarlier: 'Earlier months',
+    msNone: 'This month\u2019s set is being made. It appears here the moment it is published.',
     /* ── DE EDITIONS-TAB ──────────────────────────────────────────────────────
      * Dezelfde stand als op de homepage, en die is met zorg gekozen: GEEN van
      * beide helften loopt al. Off-brand draagt daar `stockNowTag: 'Not running
@@ -788,14 +831,31 @@ const COPY = {
     edTag: 'Not running yet',
     edLede: `Editions is the set that arrives alongside your products: mood, texture and light in your style, your locations and your brand colours. For the weeks when there is nothing new to shoot and your feed still has to keep going.`,
     edWhatH: 'What would land',
+    /* ── DE GEDEELDE SET STAAT HIER NIET MEER — 2 SEPTEMBER 2026 ───────────
+     * Hij stond als tweede regel onder "wat er zou komen", en dat sprak /plans
+     * tegen: daar staat sinds 20 augustus dat de gedeelde set bij ELK abonnement
+     * hoort, en pricing.js zegt hetzelfde. Een betalende klant las in zijn eigen
+     * dashboard dus dat hij voor iets moest bijbetalen wat hij al had.
+     *
+     * Twee dingen die allebei "nog niet actief" heten, dekken die fout niet af:
+     * zodra ze wél lopen, is de ene inbegrepen en de andere niet, en dan is het
+     * verschil geld. De regel eronder zegt nu waar de gedeelde set hoort, met
+     * een link naar de pagina die de twee uit elkaar houdt. */
     edWhat: [
       [`${STOCK_ON_BRAND} visuals a month, built on your brand`, 'Ready in VISUAILS Studio at the start of the month, downloadable like any other order. No second library and no separate folders.'],
-      [`${STOCK_OFF_BRAND} shared visuals a month`, 'Brand-neutral and not exclusive: the same set also goes to other brands. We say so, exactly as we do for the shared model roster.'],
+      ['Yours alone', 'Nobody else gets this set. That is the whole difference with the shared set, which is brand-neutral and goes to every brand on a plan.'],
     ],
+    edIncluded: `The ${STOCK_OFF_BRAND} shared visuals a month are not part of this — they come with your plan already, at no extra cost, under "This month". Editions is the set that is yours alone.`,
     edHowH: 'How it gets made',
     edHow: `We set your brand up once: style, locations and colour palette are locked into a fixed setup. Every month that same setup runs again with different angles in it. That is where the work sits — a set that stays recognisably yours month after month without becoming the same picture twelve times.`,
     edPriceH: 'What it costs',
-    edPrice: `Not settled yet, and we would rather not put up a figure we have to revise. The setup is per brand and the monthly run has to stand first; a price comes once we know what it actually costs to make. You will hear it here first.`,
+    /* ── ER STAAT NU EEN BEDRAG — 2 SEPTEMBER 2026 ────────────────────────
+     * Hier stond: *"Not settled yet, and we would rather not put up a figure we
+     * have to revise."* Dat was waar tot Lucas de twee bedragen koos. Ze staan
+     * in AMOUNT en niet in deze zin, om dezelfde reden als elk ander getal op
+     * deze site: een bedrag in copy verandert op één plek en blijft op vier
+     * andere staan. */
+    edPrice: `${euroBedrag(BEDRAG.editions, 'en')} a month ${btwLabel('excl', 'en')}, on top of your plan, after a one-time setup of ${euroBedrag(BEDRAG.editionsSetup, 'en')}. The setup is the work that makes every month after it look like the same brand: your style, your locations and your colour palette, locked once. It is not running yet, so nothing is charged until it is — and you will hear it here first.`,
     edCta: 'Tell us you are interested',
     edCtaNote: 'That is not an order and costs nothing — you go on the list and we email you the moment Editions is there.',
     edMailSubject: 'Editions — keep me posted',
@@ -838,7 +898,7 @@ const COPY = {
     planQueueLede: 'Your list, your order. We work from the top down — we never decide what goes on it.',
     planQueueEmpty: 'Your list is empty. Add what you want photographed next, and it will be picked up in your week without you having to be there.',
     planQueuePhotos: 'Photos of this product',
-    planQueuePhotosHint: 'Optional now — a product without photos stays on the list and is skipped in your week until you add them. jpg, png or webp.',
+    planQueuePhotosHint: `Optional now — a product without photos stays on the list and is skipped in your week until you add them. ${uploadFormatsSentence('en')}.`,
     planQueueAdd: 'Add to the list',
     planQueueName: 'What is it',
     planQueueKind: 'Which kind of slot',
@@ -931,6 +991,11 @@ const COPY = {
     invDate: 'Date',
     invOrder: 'Order',
     invAmount: 'Amount',
+    /* De laatste kolom draagt de downloadknop en had een LEGE <th>. axe-core:
+       "Table header text should not be empty" — een schermlezer noemt bij die cel
+       de kolomnaam, en die was er niet. De naam staat er nu, alleen niet in
+       beeld (.sr-only), want boven een knop hoort geen woord. */
+    invDownloadCol: 'Invoice PDF',
     invDownload: 'Download PDF',
     invPending: 'Being prepared',
     invPendingNote: 'This invoice has its number and the document is still being made. Refresh in a minute; if it stays like this, send us a line.',
@@ -983,7 +1048,7 @@ const COPY = {
     fService: 'Dienst',
     fPlaced: 'Geplaatst',
     fWindow: 'Levering',
-    fQueue: 'Normale doorlooptijd — meestal 2–4 dagen.',
+    fQueue: 'Normale doorlooptijd — zo snel mogelijk, geen vaste datum.',
     fProducts: 'Producten',
     windowPending: 'Wordt ingepland',
 
@@ -997,7 +1062,7 @@ const COPY = {
     folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgt een drukker, een productpagina en een feed elk het bestand dat hij wil, zonder dat iemand nog iets bijschaalt.',
     folderReview: 'De foto\'s hierboven zijn beoordeelbeelden op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
     revokedNote: 'Revisieaanvragen staan op dit account uit. Stuur ons een bericht, dan lossen we het samen op.',
-    sampleNote: `Dit is de proefvisual van ${TEST_SAMPLE.nl.price}, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.`,
+    sampleNote: `Dit is de proef van ${TEST_SAMPLE.nl.price}, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.`,
     closedNote: 'Je hebt alles in deze bestelling goedgekeurd. Toch nog iets? Maak het hieronder ongedaan.',
     settledNote: 'Deze bestelling is afgerond. Alles blijft hier te downloaden — is er toch nog iets, stuur ons dan een bericht.',
 
@@ -1024,23 +1089,36 @@ const COPY = {
     bDownload: 'Downloaden',
 
     lockH: 'Standaard per dienst',
-    lockLede: 'Waar elke dienst mee begint — een gezicht en een achtergrond. Dit zijn standaardinstellingen en geen regels: bij elke bestelling kun je ze nog wijzigen, dus je kunt de ene bestelling met je eigen model draaien en de volgende met een standaardmodel. Laat een dienst leeg en we vragen het gewoon per bestelling.',
+    lockLede: 'Dit zijn je standaardkeuzes — elke bestelling begint hier, en per bestelling kun je er nog van afwijken.',
     // Zie de Engelse tak: de zes labels van de oude dropdowns zijn eruit.
     lockSave: 'Opslaan',
 
-    bkLede: 'De look waar je bestellingen mee beginnen — wie je product draagt, en waar het op staat.',
+    bkLede: 'De look waar je bestellingen mee beginnen — wie je product draagt, en de stijl of ondergrond waarin het gemaakt wordt.',
     bkOwnH: 'Je eigen modellen',
     bkOwnLede: 'Gezichten die voor jouw merk zijn gemaakt en voor niemand anders. Kies er hieronder één als standaard voor een dienst, of kies per bestelling.',
     bkOwnEmptyH: 'Nog geen eigen gezichten',
     bkOwnEmptyBody: 'Een merkmodel is één gezicht, voor jou gemaakt, dat bij elke bestelling terugkomt — dezelfde persoon in jouw collectie, seizoen na seizoen, zonder shoot. Tot die tijd zit het standaardbibliotheek hieronder bij alles wat je bestelt.',
     bkOwnEmptyCta: 'Bekijk wat een merkmodel nodig heeft',
+    osH: 'Je eigen looks',
+    osLede: 'Een wereld die om jouw product heen ontworpen is en in elke bestelling wordt vastgehouden. Eén keer gemaakt, op aanvraag.',
+    osBoth: 'Catalog en lifestyle',
+    osPerProduct: 'per product',
+    osProposed: 'Voorgesteld — we werken de offerte met je uit. Zodra die rond is, kun je ermee bestellen.',
+    osOrder: 'Bestel in deze look',
+    osEmptyH: 'Nog geen eigen look',
+    osEmptyBody: 'De vier huisstijlen zitten overal bij. Een eigen look is een setting, styling en licht die alleen jouw merk zou gebruiken — één keer met je ontworpen, prijs op aanvraag, en daarna hier als keuze in het bestelformulier.',
+    osEmptyCta: 'Vraag een eigen look aan',
     bkOwnPending: 'In de maak',
     bkOwnReady: 'Klaar voor gebruik',
     bkOwnTag: 'Alleen van jou',
     bkAsk: 'Wordt per bestelling gevraagd',
     bkChange: 'Wijzigen',
+    bkSaved: 'Opgeslagen — je volgende bestelling begint hiermee.',
     bkFaceLede: 'Wie het draagt',
     bkBgLede: 'Waar het op staat',
+    bkLookLede: 'De stijl',
+    bkLookNone: 'We vragen het per bestelling.',
+    bkLookHint: 'Eén stijl voor elke lifestylebestelling. Catalogbeelden staan op een kleur; lifestylebeelden staan in een scène, dus hier kies je de scène.',
     bkRatioLede: 'Beeldverhouding',
     bkRatioNone: 'We vragen het per bestelling.',
     bkRatioHint: 'Eén keer instellen en elke bestelling begint hier. Catalogbeelden staan naast elkaar in een grid, dus één verhouding voor je hele assortiment is wat dat grid recht houdt. Bij lifestyle is dit het startpunt — je kunt één beeld alsnog breed maken als je een banner wilt.',
@@ -1070,6 +1148,8 @@ const COPY = {
     detVat: 'Btw-nummer',
     detVatHint: 'Een bedrijf in een ander EU-land: we controleren het bij VIES, en als het klopt rekenen we geen Nederlandse btw.',
     detNoVat: 'Ik heb geen btw-nummer',
+    detReg: 'KVK-nummer',
+    detRegHint: 'Voor een bedrijf zonder btw-nummer, zoals een eenmanszaak. Eén keer bewaard, bij elke bestelling ingevuld.',
     detMissing: 'Een van de velden hierboven is nog leeg. Alles behalve de velden met "optioneel" moet ingevuld zijn — het komt allemaal op je factuur.',
     detFailed: 'Opslaan lukte even niet. Probeer het zo nog eens — er is niets gewijzigd.',
     detCountry: 'Land',
@@ -1152,6 +1232,7 @@ const COPY = {
     prodOther: 'Overige beelden',
     prodDelivered: (n) => (n === 1 ? '1 beeld geleverd' : `${n} beelden geleverd`),
     prodApproved: (n) => `${n} goedgekeurd`,
+    prodApproveAll: (n) => `Alle ${n} zijn goed — keur dit product goed`,
     prodNothingYet: 'Hier is nog niets voor geleverd.',
     prodWeMade: 'Wat wij leverden',
     prodYouSent: 'Wat jij stuurde',
@@ -1159,13 +1240,14 @@ const COPY = {
     prodClose: 'Sluiten',
     flowNowLabel: 'Nu:',
     flowNow: {
+      awaiting_payment: 'Je bestelling is binnen, maar nog niet betaald. Zodra de betaling binnen is, plannen we hem in.',
       received: 'We hebben je bestelling en je bestanden binnen. We plannen hem in.',
       in_production: 'Onze studio maakt je beelden.',
       human_check: 'Een specialist loopt elk beeld na voordat het naar je toe gaat.',
       delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
       cancelled: 'Deze bestelling is geannuleerd. Er wordt niets voor gemaakt.',
     },
-    flowStep: { received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door een specialist', delivered: 'Geleverd' },
+    flowStep: { awaiting_payment: 'Wacht op betaling', received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door een specialist', delivered: 'Geleverd' },
     flowWindow: (from, to) => (from === to ? `Ingepland op ${from}.` : `Ingepland van ${from} tot ${to}.`),
     flowHistory: 'Alles wat er gebeurd is',
     noteFrom: 'Van de studio',
@@ -1183,6 +1265,10 @@ const COPY = {
     stRevision: 'Revisie aangevraagd',
     stRevisionShort: 'Revisie',
     stFixed: 'Aangepast:',
+    stNew: 'Nieuw',
+    stReplacedFor: 'Opnieuw gemaakt na je opmerking:',
+    rdReadyH: 'Je revisie staat klaar',
+    rdReadyB: 'De beelden met “nieuw” vervangen de beelden die je aanmerkte. Bekijk ze en keur ze goed — of app ons als er nog iets niet klopt.',
     bCancelShort: 'Intrekken',
 
     planHeading: 'Abonnement & facturering',
@@ -1190,19 +1276,30 @@ const COPY = {
     planTabMaand: 'Deze maand',
     planTabBestellen: 'Bestellen',
     planTabEdities: 'Editions',
+    /* Zie de noot bij de Engelse msH. */
+    msH: 'De gedeelde set van deze maand',
+    msLede: 'Merkneutrale beelden zonder product erin, dezelfde set voor elk merk met een abonnement — iets om te posten op de dagen dat je niets nieuws hebt. Wat je tijdens je abonnement downloadt, blijft van jou.',
+    msZip: 'Download de set (.zip)',
+    msCount: (n) => `${n} ${n === 1 ? 'beeld' : 'beelden'}`,
+    msLicence: 'De licentie voor gedeeld beeld zit in de zip: niet-exclusief, eeuwigdurend, wereldwijd.',
+    msEarlier: 'Eerdere maanden',
+    msNone: 'De set van deze maand wordt gemaakt. Hij staat hier zodra hij gepubliceerd is.',
     /* Zie de noot bij de Engelse edH. */
     edH: 'Beeld voor je feed, in jouw merk',
     edTag: 'Nog niet leverbaar',
     edLede: `Editions is de set beelden die er los van je producten bijkomt: sfeer, textuur en licht in jouw stijl, jouw locaties en jouw merkkleuren. Voor de dagen waarop er niets nieuws te fotograferen valt en je feed toch door moet.`,
     edWhatH: 'Wat er zou komen',
+    /* Zie de noot bij de Engelse tegenhanger. */
     edWhat: [
       [`${STOCK_ON_BRAND} beelden per maand, op jouw merk gezet`, 'Aan het begin van de maand klaar in VISUAILS Studio, te downloaden zoals een gewone bestelling. Geen tweede bibliotheek en geen aparte mappen.'],
-      [`${STOCK_OFF_BRAND} gedeelde beelden per maand`, 'Merkneutraal en niet exclusief: dezelfde set gaat ook naar andere merken. Dat zeggen we erbij, net zoals bij de gedeelde modellen.'],
+      ['Alleen van jou', 'Niemand anders krijgt deze set. Dat is het hele verschil met de gedeelde set, die merkneutraal is en naar elk merk met een abonnement gaat.'],
     ],
+    edIncluded: `De ${STOCK_OFF_BRAND} gedeelde beelden per maand horen hier niet bij — die komen al met je abonnement mee, zonder meerprijs, onder "Deze maand". Editions is de set die alleen van jou is.`,
     edHowH: 'Hoe het gemaakt wordt',
     edHow: `Eenmalig zetten we je merk op: stijl, locaties en kleurenpalet worden vastgelegd tot een vaste opzet. Daarna draait elke maand dezelfde opzet opnieuw, met steeds andere invalshoeken erin. Dat is waar het werk zit — een set die maand na maand herkenbaar van jou blijft zonder dat het twaalf keer hetzelfde beeld wordt.`,
     edPriceH: 'Wat het kost',
-    edPrice: `Dat staat nog niet vast, en we zetten er liever geen bedrag neer dat we daarna moeten bijstellen. De opzet is per merk en de maandelijkse ronde moet eerst staan; pas als we weten wat die werkelijk kost, komt er een prijs. Je hoort het hier als eerste.`,
+    /* Zie de noot bij de Engelse tegenhanger. */
+    edPrice: `${euroBedrag(BEDRAG.editions, 'nl')} per maand ${btwLabel('excl', 'nl')}, bovenop je abonnement, na een eenmalige opzet van ${euroBedrag(BEDRAG.editionsSetup, 'nl')}. Die opzet is het werk waardoor elke maand daarna op hetzelfde merk lijkt: jouw stijl, jouw locaties en jouw kleurenpalet, één keer vastgezet. Hij loopt nog niet, dus er wordt ook nog niets afgeschreven — en je hoort het hier als eerste.`,
     edCta: 'Laat weten dat je interesse hebt',
     edCtaNote: 'Dat is geen bestelling en kost niets — je komt op de lijst en we mailen je zodra Editions er is.',
     edMailSubject: 'Editions — houd me op de hoogte',
@@ -1247,7 +1344,7 @@ const COPY = {
     planQueueLede: 'Jouw lijst, jouw volgorde. Wij werken hem van boven naar beneden af — wij bepalen nooit wat erop staat.',
     planQueueEmpty: 'Je lijst is leeg. Zet erop wat je hierna gefotografeerd wilt hebben; het wordt in jouw week opgepakt zonder dat je erbij hoeft te zijn.',
     planQueuePhotos: 'Foto\u2019s van dit product',
-    planQueuePhotosHint: 'Mag ook later \u2014 een product zonder foto\u2019s blijft op de lijst staan en wordt in je week overgeslagen tot je ze erbij doet. jpg, png of webp.',
+    planQueuePhotosHint: `Mag ook later \u2014 een product zonder foto\u2019s blijft op de lijst staan en wordt in je week overgeslagen tot je ze erbij doet. ${uploadFormatsSentence('nl')}.`,
     planQueueAdd: 'Aan de lijst toevoegen',
     planQueueName: 'Wat is het',
     planQueueKind: 'Welk soort slot',
@@ -1330,6 +1427,8 @@ const COPY = {
     invDate: 'Datum',
     invOrder: 'Bestelling',
     invAmount: 'Bedrag',
+    /* Zie de noot bij de Engelse tegenhanger. */
+    invDownloadCol: 'Factuur-pdf',
     invDownload: 'Download pdf',
     invPending: 'Wordt gemaakt',
     invPendingNote: 'Deze factuur heeft zijn nummer, het document wordt nog gemaakt. Vernieuw de pagina over een minuut; blijft het hierbij, laat het ons dan weten.',
@@ -1377,6 +1476,8 @@ export async function accountGet(context) {
   // never from the URL, which carries only a numeric id.
   const previewMatch = path.match(/^\/account\/models\/(\d+)\/preview$/);
   if (previewMatch) return handleModelPreviewImage(context, Number(previewMatch[1]));
+  const stylePreviewMatch = path.match(/^\/account\/styles\/(\d+)\/preview$/);
+  if (stylePreviewMatch) return handleModelPreviewImage(context, Number(stylePreviewMatch[1]), 'customer_styles');
 
   if (!env?.DB) {
     const lang = negotiate(request);
@@ -1392,6 +1493,25 @@ export async function accountGet(context) {
       token = verifyMatch[1];
     }
     return handleVerify(context, token);
+  }
+
+  /* DE GEDEELDE MAANDSET: één beeld, of de hele set als zip. Alleen voor een
+     lopend abonnement — zie maandsetToegang(). Dezelfde emmers als de rest. */
+  const setImgMatch = path.match(/^\/account\/set\/(\d+)\/f$/);
+  if (setImgMatch) {
+    const gate = await checkRate(env, { ip: clientIp(request), action: 'account-file', limit: FILE_LIMIT });
+    if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
+    const customer = await currentCustomer(env, request);
+    if (!customer) return new Response(null, { status: 404, headers: fileHeaders() });
+    return serveMaandsetFile(context, customer, Number(setImgMatch[1]));
+  }
+  const setZipMatch = path.match(/^\/account\/set\/(\d+)\/zip$/);
+  if (setZipMatch) {
+    const gate = await checkRate(env, { ip: clientIp(request), action: 'account-zip', limit: ZIP_LIMIT });
+    if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
+    const customer = await currentCustomer(env, request);
+    if (!customer) return seeOther('/account/login');
+    return serveMaandsetZip(context, customer, Number(setZipMatch[1]));
   }
 
   const zipMatch = path.match(/^\/account\/orders\/(\d+)\/zip$/);
@@ -2354,10 +2474,15 @@ async function sectionGet(context, customer, section) {
    * voor nul javascript.
    */
   let openOrderId = 0;
+  let savedLock = '';
   try {
     const params = new URL(request.url).searchParams;
     openOrderId = Number(params.get('order')) || 0;
     justSaved = params.get('saved') === '1';
+    /* ?saved=<dienst> zet handleLockUpdate(): de rij op de brand kit klapt dicht
+       en toont één regel bevestiging — zie lockSection(). Alleen een echte
+       dienstnaam telt. */
+    savedLock = STYLES.includes(params.get('saved')) ? params.get('saved') : '';
     payFailed = params.get('pay') === 'failed';
     payHeld = params.get('pay') === 'held';
     detailsMissing = params.get('missing') === '1' ? 'missing' : (params.get('failed') === '1' ? 'failed' : false);
@@ -2392,7 +2517,8 @@ async function sectionGet(context, customer, section) {
     inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed, feedbackByOrder, payHeld, openOrderId, rondeFlag);
     title = t.ordersHeading;
   } else if (section === 'brand') {
-    inner = brandKitBody(t, lang, models, lockByStyle);
+    const ownStyles = await loadOwnStyles(env, customer.customer_id);
+    inner = brandKitBody(t, lang, models, lockByStyle, savedLock, ownStyles);
     title = t.navBrandKit;
   } else if (section === 'details') {
     /* ?email=gevraagd of ?email=mislukt komt van handleEmailChangeRequest(). Net
@@ -2450,7 +2576,10 @@ async function sectionGet(context, customer, section) {
       const kies = Number.parseInt(new URL(request.url).searchParams.get('kies') || '', 10);
       if (Number.isInteger(kies) && tab === 'bestellen') kal = await planKalender(env, state, kies);
     } catch { /* geen geldige URL of geen agenda — de lijst doet het zonder */ }
-    inner = planBody(t, lang, customer, state, models, lockByStyle, orders, files, fout, tab, kal);
+    /* De maandset alleen laden als hij te zien is (maand-tab, lopend
+       abonnement): twee query's die de andere vier tabben niet nodig hebben. */
+    const maandsets = tab === 'maand' && maandsetToegang(state) ? await loadMaandsets(env) : [];
+    inner = planBody(t, lang, customer, state, models, lockByStyle, orders, files, fout, tab, kal, maandsets);
     title = t.planHeading;
   } else {
     inner = overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder);
@@ -2641,6 +2770,29 @@ async function handleMe({ request, env }) {
     }));
   } catch { brandModels = []; }
 
+  /* ── DE EIGEN STIJLEN — 4 september 2026 ─────────────────────────────────
+     Zelfde weg als de eigen gezichten: pipeline.js zet ze als tegel naast de
+     huisstijlen (addOwnStyles), met de dienst erbij zodat een catalogstijl niet
+     op /start/lifestyle verschijnt. Alleen 'active': een voorgestelde stijl
+     waar de offerte nog van openstaat, is nog niets om mee te bestellen. */
+  let ownStyles = [];
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT id, name, service, surcharge_cents, preview_key, description
+         FROM customer_styles
+        WHERE customer_id = ?1 AND status = 'active'
+        ORDER BY id ASC LIMIT 24`
+    ).bind(customer.customer_id).all();
+    ownStyles = (results || []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      service: r.service,
+      line: r.description || '',
+      surchargeCents: Number(r.surcharge_cents) || 0,
+      preview: r.preview_key ? `/account/styles/${r.id}/preview` : '',
+    }));
+  } catch { ownStyles = []; }
+
   let locks = {};
   try {
     // SELECT l.* in plaats van een kolomlijst: dan werkt deze query ook op een
@@ -2670,7 +2822,12 @@ async function handleMe({ request, env }) {
            worden die het formulier niet kan tonen. Zelfde regel als bij de
            kanalen hierboven. */
         ratio: ratioById(l.ratio || '', l.style) ? String(l.ratio) : '',
+        /* De vaste stijl, alleen bij lifestyle en alleen een bekende slug. */
+        look: l.style === 'lifestyle' && LOOK_IDS.includes(String(l.look || '')) ? String(l.look) : '',
       };
+      /* Een achtergrond hoort alleen bij catalog; een eerder opgeslagen kleur
+         bij lifestyle of video mag het formulier niet meer bereiken. */
+      if (l.style !== 'catalog') locks[l.style].background = '';
     }
   } catch { locks = {}; }
 
@@ -2682,6 +2839,9 @@ async function handleMe({ request, env }) {
     website: row.website || '',
     vat: row.vat_number || '',
     noVat: !!row.no_vat_number,
+    /* Het KVK-nummer (migratie 0043), zodat stap 3 het voorinvult bij een klant
+       zonder btw-nummer — die typte het tot vandaag bij elke bestelling opnieuw. */
+    regNumber: row.reg_number || '',
     country: row.country || '',
     // De losse velden, want dat zijn de velden die het bestelformulier sinds
     // 7 augustus 2026 heeft. `address` blijft als samengesteld blok voor wie
@@ -2705,6 +2865,7 @@ async function handleMe({ request, env }) {
     // before the face exists is a normal intermediate state rather than
     // something the customer should be asked to choose from.
     models: brandModels,
+    styles: ownStyles,
     saved: !!row.details_saved_at,
     label: row.brand || row.name || row.email || '',
   });
@@ -2720,7 +2881,7 @@ async function handleMe({ request, env }) {
  * makes a broken tile obvious in the studio's own testing, where a grey square
  * would look like a design decision.
  */
-async function handleModelPreviewImage({ request, env }, modelId) {
+async function handleModelPreviewImage({ request, env }, modelId, table = 'custom_models') {
   if (!env?.DB || !Number.isInteger(modelId)) return new Response('Not found', { status: 404 });
 
   // DEZELFDE METER ALS ELK ANDER BESTAND, 30 AUGUSTUS 2026. Deze route stond als
@@ -2737,8 +2898,12 @@ async function handleModelPreviewImage({ request, env }, modelId) {
   const customer = await currentCustomer(env, request);
   if (!customer) return new Response('Not found', { status: 404 });
 
-  const row = await env.DB.prepare(
-    'SELECT preview_key FROM custom_models WHERE id = ?1 AND customer_id = ?2'
+  /* `table` is een van twee vaste namen — nooit uit de URL. De eigen stijlen
+     (customer_styles, 4 september 2026) delen deze route omdat de regels
+     identiek zijn: een id, de sleutel komt van de rij, alleen de eigenaar. */
+  const row = await env.DB.prepare(table === 'customer_styles'
+    ? 'SELECT preview_key FROM customer_styles WHERE id = ?1 AND customer_id = ?2'
+    : 'SELECT preview_key FROM custom_models WHERE id = ?1 AND customer_id = ?2'
   ).bind(modelId, customer.customer_id).first();
   if (!row?.preview_key || !env.UPLOADS) return new Response('Not found', { status: 404 });
 
@@ -2816,7 +2981,7 @@ function detailsRowFull(env, customerId) {
     // vóór 0016 heeft alleen de samengestelde — zie detailsSection(), dat de
     // oude naam in het voornaamveld zet zodat er niets zoekraakt.
     `SELECT email, name, first_name, last_name, brand, phone, website,
-            vat_number, no_vat_number, country, billing_address,
+            vat_number, no_vat_number, reg_number, country, billing_address,
             address_line1, address_line2, postal_code, city, region,
             default_background, default_background_hex, details_saved_at
        FROM customers WHERE id = ?1`
@@ -2985,6 +3150,7 @@ async function handleDetails({ request, env }, customer, asJson) {
   if (form.has('phone')) add('phone', one('phone'));
   if (form.has('website')) add('website', one('website'));
   if (hasVat) { add('vat_number', vatNumber); add('no_vat_number', noVat ? 1 : 0); }
+  if (form.has('reg_number')) add('reg_number', one('reg_number').slice(0, 40) || null);
   if (hasBg) { add('default_background', background); add('default_background_hex', hex); }
   if (hasCountry) add('country', country);
 
@@ -3151,6 +3317,7 @@ async function loadOrders(env, customerId) {
       // waarde als 'beschikbaar', wat de vriendelijke kant is: op een niet
       // gemigreerde database kan de klant zijn ronde nog gewoon indienen.
       `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at,
+              details_json,
               customer_note, customer_note_at, revision_round_at,
               payment_status, payment_provider, paid_at, total_cents, currency, refunded_cents,
               window_expires_at, vat_cents, vat_rate, vat_treatment,
@@ -3178,6 +3345,7 @@ async function loadOrders(env, customerId) {
     // alles wat 0013 en 0015 toevoegen valt hier weg. paymentBlock() leest
     // vat_cents dan als undefined en rekent met het standaardtarief; zie daar.
     `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at,
+            details_json,
             payment_status, payment_provider, paid_at, total_cents, currency, refunded_cents, window_expires_at,
             (SELECT revisions_revoked_at FROM customers c WHERE c.id = ?1) AS revisions_revoked_at
        FROM orders
@@ -3263,14 +3431,32 @@ async function loadCustomerFiles(env, customerId) {
      De laatste afgehandelde regel per beeld, want een beeld kan meer dan één
      ronde hebben gezien en dan is het nieuwste antwoord het antwoord. */
   const cols = `f.id, f.order_id, f.kind, f.filename, f.bytes, f.expires_at,
+                f.r2_key, f.preview_key,
                 f.review_state, f.review_note, f.reviewed_at, f.product_key, f.shot,
                 (SELECT rr.resolution_note FROM revision_requests rr
                   WHERE rr.file_id = f.id AND rr.resolved_at IS NOT NULL
                     AND rr.resolution_note IS NOT NULL
-                  ORDER BY rr.resolved_at DESC LIMIT 1) AS fix_note`;
+                  ORDER BY rr.resolved_at DESC LIMIT 1) AS fix_note,
+                -- ── HET VERVANGENDE BEELD WEET WAAROM HET ER IS — 3 september 2026 ──
+                -- fix_note hangt aan het OUDE beeld (rr.file_id), en dat oude beeld is
+                -- superseded en dus onzichtbaar. Het nieuwe beeld op dezelfde plek
+                -- (product + shot) droeg niets: geen markering, niet de opmerking van
+                -- de klant waar het het antwoord op is. Dit is de laatste afgehandelde
+                -- aanvraag op een vervangen voorganger op precies deze plek.
+                (SELECT rr.note FROM revision_requests rr JOIN files g ON g.id = rr.file_id
+                  WHERE g.order_id = f.order_id AND g.product_key = f.product_key AND g.shot = f.shot
+                    AND g.superseded_at IS NOT NULL AND g.superseded_at <= f.created_at
+                    AND rr.resolved_at IS NOT NULL AND f.superseded_at IS NULL AND f.kind = 'delivery'
+                  ORDER BY rr.resolved_at DESC LIMIT 1) AS replaced_for`;
+  /* DE SHOTS IN DE VOLGORDE VAN HET PRODUCT — 3 september 2026. `f.shot` sorteerde
+     alfabetisch: back, detail, front, worn. De klant zag zijn achterkant eerst en
+     de voorkant als derde. Nu de volgorde van shots.js: voor, achter, detail,
+     gedragen; onbekende shots erachter. */
   const order = `ORDER BY f.order_id,
                           f.product_key IS NULL, f.product_key,
-                          f.kind DESC, f.shot IS NULL, f.shot, f.id`;
+                          f.kind DESC, f.shot IS NULL,
+                          CASE f.shot WHEN 'front' THEN 0 WHEN 'back' THEN 1 WHEN 'detail' THEN 2 WHEN 'worn' THEN 3 ELSE 9 END,
+                          f.shot, f.id`;
   try {
     const res = await env.DB.prepare(
       `SELECT ${cols}
@@ -3585,7 +3771,15 @@ async function handleLockUpdate({ request, env }, customer) {
   const ratioRaw = String(form?.get('ratio') || '').trim();
   const ratio = ratioById(ratioRaw, style) ? ratioRaw : null;
 
-  if (!customModelId && !rosterModel && !background && !channels && !ratio) {
+  /* De vaste stijl (migratie 0039): alleen bij lifestyle, alleen een slug uit
+     styles.js. Zelfde lidmaatschapstoets als de kanalen en de verhouding. */
+  const lookRaw = String(form?.get('look') || '').trim().toLowerCase();
+  const look = style === 'lifestyle' && LOOK_IDS.includes(lookRaw) ? lookRaw : null;
+  /* De achtergrond bestaat alleen bij catalog; bij een andere dienst wordt hij
+     niet meer opgeslagen — zie lockSection(). */
+  const backgroundKept = style === 'catalog' ? background : null;
+
+  if (!customModelId && !rosterModel && !backgroundKept && !channels && !ratio && !look) {
     // Everything cleared — back to "ask per order, as usual." Deleting rather
     // than storing nulls keeps "no row" as the single meaning of "no
     // preference", so nothing downstream has to test for both.
@@ -3597,16 +3791,17 @@ async function handleLockUpdate({ request, env }, customer) {
 
   try {
     await env.DB.prepare(
-      `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, channels, ratio, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'))
+      `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, channels, ratio, look, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now'))
        ON CONFLICT(customer_id, style) DO UPDATE SET
          custom_model_id = excluded.custom_model_id,
          roster_model    = excluded.roster_model,
          background_hex  = excluded.background_hex,
          channels        = excluded.channels,
          ratio           = excluded.ratio,
+         look            = excluded.look,
          updated_at      = datetime('now')`
-    ).bind(customer.customer_id, style, customModelId, rosterModel, background, channels, ratio).run();
+    ).bind(customer.customer_id, style, customModelId, rosterModel, backgroundKept, channels, ratio, look).run();
   } catch (err) {
     // Terugval voor een database waar 0019 of 0028 nog niet gedraaid heeft.
     // Zelfde patroon als de btw-INSERT in functions/api/order.js: een deploy die
@@ -3617,7 +3812,24 @@ async function handleLockUpdate({ request, env }, customer) {
     // hier een echte fout doorgooien en de hele voorkeur laten vallen — precies
     // wat deze terugval moet voorkomen. De smalle INSERT hieronder laat ze allebei
     // weg, want hij is de bodem: wat er zeker is sinds migratie 0007.
-    if (!/channels|ratio/i.test(String(err && err.message))) throw err;
+    if (!/channels|ratio|look/i.test(String(err && err.message))) throw err;
+    /* Tussenstap voor een database met 0019 en 0028 maar zonder 0039. */
+    try {
+      await env.DB.prepare(
+        `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, channels, ratio, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'))
+         ON CONFLICT(customer_id, style) DO UPDATE SET
+           custom_model_id = excluded.custom_model_id,
+           roster_model    = excluded.roster_model,
+           background_hex  = excluded.background_hex,
+           channels        = excluded.channels,
+           ratio           = excluded.ratio,
+           updated_at      = datetime('now')`
+      ).bind(customer.customer_id, style, customModelId, rosterModel, backgroundKept, channels, ratio).run();
+      return seeOther(home);
+    } catch (err2) {
+      if (!/channels|ratio/i.test(String(err2 && err2.message))) throw err2;
+    }
     await env.DB.prepare(
       `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, updated_at)
        VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))
@@ -3626,10 +3838,14 @@ async function handleLockUpdate({ request, env }, customer) {
          roster_model    = excluded.roster_model,
          background_hex  = excluded.background_hex,
          updated_at      = datetime('now')`
-    ).bind(customer.customer_id, style, customModelId, rosterModel, background).run();
+    ).bind(customer.customer_id, style, customModelId, rosterModel, backgroundKept).run();
   }
 
-  return seeOther(home);
+  /* Terug naar de dienst die net is opgeslagen, dichtgeklapt en met één regel
+     bevestiging (3 september 2026). Een formulier dat terugkeert op een scherm
+     dat er identiek uitziet, wordt twee keer ingedrukt — zelfde regel als
+     handleDetailsUpdate. */
+  return seeOther(`${home}?saved=${encodeURIComponent(style)}#bk-${encodeURIComponent(style)}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3783,11 +3999,21 @@ async function handleRevisionRound({ form, env }, customer, home) {
       ).bind(fileId, orderId, customer.customer_id, note),
     );
   }
+  /* ── DE SAMENVATTING OP DE BESTELLING — 4 september 2026 ──────────────────
+     Het gemailde portaal schreef `revision_round_note` en `revision_round_count`
+     al; het dashboard zette alleen de stempel. Gevolg: een ronde via Studio
+     toonde in /admin "Geen toelichting achtergelaten", terwijl de klant per beeld
+     wél iets had opgeschreven. De notities staan per beeld in revision_requests
+     en blijven daar; hier komt alleen de samenvatting: één notitie als ze alle
+     gelijk zijn, anders de verschillende onder elkaar. */
+  const uniekeNotities = [...new Set(items.map((i) => i.note))];
   acties.push(
     env.DB.prepare(
-      `UPDATE orders SET revision_round_at = datetime('now')
+      `UPDATE orders SET revision_round_at = datetime('now'),
+              revision_round_note = ?2,
+              revision_round_count = ?3
         WHERE id = ?1 AND revision_round_at IS NULL`
-    ).bind(orderId),
+    ).bind(orderId, uniekeNotities.join('\n').slice(0, NOTE_MAX * 4), items.length),
   );
   /* De gebeurtenis op de tijdlijn van de bestelling, zodat de klant later
      terugvindt wanneer hij dit deed en met hoeveel beelden. 'system' als actor,
@@ -3874,6 +4100,26 @@ async function handleFileReview({ request, env }, customer) {
      en het is een POST die iemand met de hand kan sturen. Langs die weg werd de
      ronde niet afgeschreven, dus hij was zo vaak te herhalen als je wilde.
      Aanmerken loopt sinds vandaag ALLEEN nog via handleRevisionRound(). */
+  /* "Alles goed" per product (4 september 2026): alle beelden van één product die
+     nog op 'pending' staan in één keer goedkeuren. Dezelfde eigenaarscontrole
+     als hieronder, alleen op de bestelling in plaats van op het bestand; een
+     gesloten bestelling of een verlopen beeld wordt met rust gelaten. */
+  if (action === 'approve-product') {
+    const orderId = Number.parseInt(String(form?.get('order') || ''), 10);
+    const product = String(form?.get('product') || '').trim();
+    if (!Number.isInteger(orderId) || !/^p\d{1,3}$/.test(product)) return seeOther(home);
+    const eigen = await env.DB.prepare(
+      `SELECT id, closed_at FROM orders WHERE id = ?1 AND customer_id = ?2 AND service <> ?3`
+    ).bind(orderId, customer.customer_id, SAMPLE_SERVICE).first().catch(() => null);
+    if (!eigen || eigen.closed_at) return seeOther(home);
+    await env.DB.prepare(
+      `UPDATE files SET review_state = 'approved', review_note = NULL, reviewed_at = datetime('now')
+        WHERE order_id = ?1 AND product_key = ?2 AND kind = 'delivery' AND review_state = 'pending'
+          AND superseded_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))`
+    ).bind(orderId, product).run().catch(() => {});
+    await maybeCloseOrder(env, orderId);
+    return seeOther(`${home}#order-${orderId}`);
+  }
   if (!Number.isInteger(fileId) || !['approve', 'undo'].includes(action)) return seeOther(home);
 
   // Het bestand moet horen bij een bestelling van DEZE klant, en die bestelling
@@ -5297,6 +5543,12 @@ function featuredOrder(t, lang, o, events) {
     <span class="meta">${esc(serviceLabel(o.service, lang) || o.service)}${o.product_count ? ` · ${esc(String(o.product_count))} ${esc(t.fProducts.toLowerCase())}` : ''}</span>
     <a class="viewall" href="/account/orders?order=${o.id}#order-${o.id}">${esc(t.ovOpenOrder)}</a>
   </div>
+  ${
+    /* De betaalknop ook hier, zolang er niet betaald is — anders stond de
+       waarheid één klik verder op Bestellingen en zei het overzicht "we
+       plannen hem in". 3 september 2026. */
+    String(o.payment_status || 'unpaid') !== 'paid' && o.status === 'received' ? paymentBlock(t, lang, o) : ''
+  }
   ${progressBlock(t, lang, o, events)}
   ${studioNote(t, o)}
 </div>`;
@@ -5442,13 +5694,14 @@ ${shown.length ? shown.map((o, i) => orderCard(t, lang, o, filesByOrder.get(o.id
  * page — see the copy note on detH. A phone number and a VAT line under a
  * gallery of faces were two settings screens sharing one heading.
  */
-function brandKitBody(t, lang, models, lockByStyle) {
+function brandKitBody(t, lang, models, lockByStyle, savedLock = '', ownStyles = []) {
   return `
 ${topBar(t.navBrandKit, { lede: t.bkLede })}
 ${ownModelsSection(t, lang, models)}
+${ownStylesSection(t, lang, ownStyles)}
 <h2 class="bk-h2">${esc(t.lockH)}</h2>
 <p class="lede">${esc(t.lockLede)}</p>
-${lockSection(t, lang, models, lockByStyle)}`;
+${lockSection(t, lang, models, lockByStyle, savedLock)}`;
 }
 
 /**
@@ -5472,6 +5725,63 @@ ${lockSection(t, lang, models, lockByStyle)}`;
  * paragraph says what a brand model IS rather than what it costs. The price
  * question belongs on the page the link goes to, where the answer is complete.
  */
+/**
+ * De eigen stijlen van dit merk — 4 september 2026.
+ *
+ * Lucas: een custom stijl gaat op aanvraag (intake → hij kijkt wat kan → offerte)
+ * en wordt daarna "in het account van de klant geplaatst waarna hij deze kan
+ * gaan gebruiken via hetzelfde bestelformulier". Dit is de plek waar de klant
+ * ziet wat er van hem is: naam, voorbeeld, voor welke dienst, en of hij al te
+ * gebruiken is. Een voorgestelde stijl (offerte open) staat er wél, met die
+ * status — anders vraagt de klant zich af of zijn aanvraag is aangekomen.
+ */
+async function loadOwnStyles(env, customerId) {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT id, name, description, service, status, surcharge_cents, preview_key, created_at
+         FROM customer_styles WHERE customer_id = ?1 AND status <> 'archived' ORDER BY id ASC`
+    ).bind(customerId).all();
+    return results || [];
+  } catch { return []; }
+}
+
+function ownStylesSection(t, lang, styles) {
+  const pad = (p) => `/${lang === 'nl' ? 'nl' : ''}${p}`.replace('//', '/');
+  const tegel = (s) => {
+    const dienst = s.service === 'both' ? t.osBoth : s.service === 'catalog' ? 'Catalog' : 'Lifestyle';
+    const extra = Number(s.surcharge_cents) > 0 ? ` · +${euroBedrag(Number(s.surcharge_cents) / 100, lang)} ${t.osPerProduct}` : '';
+    const start = s.service === 'catalog' ? '/start/catalog' : '/start/lifestyle';
+    return `
+<article class="os-card${s.status === 'proposed' ? ' is-proposed' : ''}">
+  <div class="os-fig">${s.preview_key
+    ? `<img src="/account/styles/${s.id}/preview" alt="" loading="lazy" decoding="async" width="320" height="240">`
+    : `<span class="os-fig-empty" aria-hidden="true"></span>`}</div>
+  <div class="os-body">
+    <h3>${esc(s.name)}</h3>
+    <p class="meta">${esc(dienst)}${esc(extra)}</p>
+    ${s.description ? `<p class="os-line">${esc(s.description)}</p>` : ''}
+    ${s.status === 'proposed'
+      ? `<p class="os-state">${esc(t.osProposed)}</p>`
+      : `<a class="btn btn-primary btn-sm" href="${pad(start)}?style=cs-${s.id}">${esc(t.osOrder)}</a>`}
+  </div>
+</article>`;
+  };
+  return `
+<section class="bk-own os-own">
+  <h2 class="bk-h2">${esc(t.osH)}</h2>
+  <p class="lede">${esc(t.osLede)}</p>
+  ${styles.length
+    ? `<div class="os-grid">${styles.map(tegel).join('')}</div>`
+    : `<div class="bk-empty">
+         <div class="bk-empty-text">
+           <h2>${esc(t.osEmptyH)}</h2>
+           <p>${esc(t.osEmptyBody)}</p>
+           <a class="btn btn-2nd" href="${pad('/start/custom-look')}">${esc(t.osEmptyCta)}</a>
+         </div>
+       </div>`}
+</section>`;
+}
+
 function ownModelsSection(t, lang, models) {
   if (!models.length) {
     return `
@@ -5544,7 +5854,7 @@ function emailChangeSection(t, details, status = '') {
       : '';
   return `
 <div class="card">
-  <h3>${esc(t.detEmailChange)}</h3>
+  <h2 class="h-sub">${esc(t.detEmailChange)}</h2>
   ${melding}
   <form method="post" action="/account/email" class="q-toevoegen">
     <label for="new-email">${esc(t.detEmailNew)}</label>
@@ -5619,7 +5929,7 @@ function detailsSection(t, lang, details, justSaved, missing = false) {
      niemand nakomt.
   */ ''}
   ${d.phone ? '' : `<div class="wa-nudge">
-    <h3>${esc(t.waNudgeTitle)}</h3>
+    <h2 class="h-sub">${esc(t.waNudgeTitle)}</h2>
     <p>${esc(t.waNudgeBody)}</p>
     <p><a class="btn btn-quiet btn-sm" href="#det-phone">${esc(t.waNudgeCta)}</a></p>
   </div>`}
@@ -5762,6 +6072,11 @@ function detailsSection(t, lang, details, justSaved, missing = false) {
           <span>${esc(t.detNoVat)}</span>
         </label>
         <span class="det-hint">${esc(t.detVatHint)}</span>
+      </div>
+      <div class="det-field">
+        <label for="det-reg">${esc(t.detReg)} <span class="det-opt">${esc(t.detOptional)}</span></label>
+        <input id="det-reg" name="reg_number" type="text" value="${esc(d.reg_number || '')}" maxlength="40" autocomplete="off">
+        <span class="det-hint">${esc(t.detRegHint)}</span>
       </div>
     </div>
     <button class="btn btn-primary" type="submit">${esc(t.detSave)}</button>
@@ -6172,7 +6487,7 @@ ${topBar(t.invHeading, { lede: t.invLede })}
   <table class="invtable">
     <thead><tr>
       <th>${esc(t.invNumber)}</th><th>${esc(t.invDate)}</th><th>${esc(t.invOrder)}</th>
-      <th class="invamount">${esc(t.invAmount)}</th><th></th>
+      <th class="invamount">${esc(t.invAmount)}</th><th><span class="sr-only">${esc(t.invDownloadCol)}</span></th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
@@ -6574,7 +6889,7 @@ function kalenderKaart(t, lang, kal) {
   if (kal.beelden === null) {
     return `
 <div class="card">
-  <h3>${esc(t.planWhenH)}</h3>
+  <h2 class="h-sub">${esc(t.planWhenH)}</h2>
   <p class="lede">${esc(t.planWhenNoWeight)}</p>
   <p><a class="btn btn-ghost btn-sm" href="${terug}">${esc(t.planWhenBack)}</a></p>
 </div>`;
@@ -6611,7 +6926,7 @@ function kalenderKaart(t, lang, kal) {
   return `
 <div class="card">
   <p><a class="kal-terug" href="${terug}">&larr; ${esc(t.planWhenBack)}</a></p>
-  <h3>${esc(t.planWhenH)}</h3>
+  <h2 class="h-sub">${esc(t.planWhenH)}</h2>
   <p class="lede">${esc(kal.item.name)}${kal.item.note ? ` — ${esc(kal.item.note)}` : ''}</p>
 
   <form method="post" action="/account/plan/queue" class="kal-asap">
@@ -6636,7 +6951,107 @@ function kalenderKaart(t, lang, kal) {
 </div>`;
 }
 
-function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = [], fout = '', tab = 'maand', kal = null) {
+/* ── DE GEDEELDE MAANDSET — 4 september 2026 ─────────────────────────────────
+ *
+ * Wie hem ziet: een abonnement dat loopt, of dat opgezegd is maar de betaalde
+ * maand nog uitzit (dezelfde twee als bij het saldo). 'pending' — wacht op de
+ * eerste incasso — nog niet: de set is onderdeel van wat je betaalt.
+ *
+ * De set is van niemand (geen customer_id), dus de eigendomsvraag die elke
+ * andere bestandsroute stelt, is hier "heb je een lopend abonnement". De
+ * sleutel komt van de rij; de URL draagt alleen een getal. */
+function maandsetToegang(state) {
+  return !!(state?.sub && ['active', 'cancelled'].includes(String(state.sub.status)));
+}
+
+async function loadMaandsets(env, limiet = 4) {
+  try {
+    const { results: sets } = await env.DB.prepare(
+      `SELECT id, month, title, published_at FROM shared_sets WHERE published_at IS NOT NULL ORDER BY month DESC LIMIT ?1`
+    ).bind(limiet).all();
+    if (!sets?.length) return [];
+    const { results: files } = await env.DB.prepare(
+      `SELECT id, set_id, filename, bytes FROM shared_files WHERE set_id IN (${sets.map((x) => x.id).join(',')}) ORDER BY id ASC`
+    ).all();
+    return sets.map((st) => ({ ...st, files: (files || []).filter((f) => f.set_id === st.id) }));
+  } catch { return []; }
+}
+
+function maandsetLabel(month, lang) {
+  const [y, m] = String(month || '').split('-').map(Number);
+  if (!y || !m) return String(month || '');
+  const NL = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+  const EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${(lang === 'nl' ? NL : EN)[m - 1]} ${y}`;
+}
+
+function maandsetSection(t, lang, sets) {
+  const [nu, ...eerder] = sets;
+  const kaart = (st, groot) => `
+<div class="ms-set${groot ? ' is-nu' : ''}" id="set-${st.id}">
+  <div class="ms-kop">
+    <span class="ms-maand">${esc(maandsetLabel(st.month, lang))}${st.title ? ` · ${esc(st.title)}` : ''}</span>
+    <span class="ms-n">${esc(t.msCount(st.files.length))}</span>
+  </div>
+  ${st.files.length ? `<div class="ms-strook${groot ? '' : ' is-klein'}">${st.files.slice(0, groot ? 40 : 8).map((f) =>
+    `<img src="/account/set/${f.id}/f" alt="" loading="lazy" decoding="async" width="240" height="240">`).join('')}</div>` : ''}
+  <a class="btn ${groot ? 'btn-primary' : 'btn-2nd'} btn-sm" href="/account/set/${st.id}/zip">${esc(t.msZip)}</a>
+</div>`;
+  return `
+<div class="card ms-card">
+  <h2 class="h-sub">${esc(t.msH)}</h2>
+  <p class="lede">${esc(t.msLede)}</p>
+  ${nu ? kaart(nu, true) : `<p class="meta ms-leeg">${esc(t.msNone)}</p>`}
+  ${nu ? `<p class="meta">${esc(t.msLicence)}</p>` : ''}
+  ${eerder.length ? `<h3 class="ms-eerder-h">${esc(t.msEarlier)}</h3>${eerder.map((st) => kaart(st, false)).join('')}` : ''}
+</div>`;
+}
+
+async function serveMaandsetFile({ env }, customer, fileId) {
+  if (!env?.DB || !env.UPLOADS || !Number.isInteger(fileId)) return new Response(null, { status: 404, headers: fileHeaders() });
+  const state = await planState(env, customer.customer_id).catch(() => null);
+  if (!maandsetToegang(state)) return new Response(null, { status: 404, headers: fileHeaders() });
+  const row = await env.DB.prepare(
+    `SELECT f.r2_key, f.content_type FROM shared_files f JOIN shared_sets s ON s.id = f.set_id
+      WHERE f.id = ?1 AND s.published_at IS NOT NULL`
+  ).bind(fileId).first().catch(() => null);
+  if (!row?.r2_key) return new Response(null, { status: 404, headers: fileHeaders() });
+  const obj = await env.UPLOADS.get(row.r2_key);
+  if (!obj) return new Response(null, { status: 404, headers: fileHeaders() });
+  const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+  return new Response(obj.body, { status: 200, headers: { ...fileHeaders(), 'content-type': TYPES.includes(String(row.content_type)) ? row.content_type : 'application/octet-stream' } });
+}
+
+async function serveMaandsetZip({ env, request }, customer, setId) {
+  if (!env?.DB || !env.UPLOADS || !Number.isInteger(setId)) return new Response(null, { status: 404, headers: fileHeaders() });
+  const state = await planState(env, customer.customer_id).catch(() => null);
+  if (!maandsetToegang(state)) return new Response(null, { status: 404, headers: fileHeaders() });
+  const set = await env.DB.prepare('SELECT id, month, title FROM shared_sets WHERE id = ?1 AND published_at IS NOT NULL').bind(setId).first().catch(() => null);
+  if (!set) return new Response(null, { status: 404, headers: fileHeaders() });
+  const { results: files } = await env.DB.prepare('SELECT id, r2_key, filename, bytes FROM shared_files WHERE set_id = ?1 ORDER BY id ASC').bind(setId).all();
+  if (!files?.length) return new Response(null, { status: 404, headers: fileHeaders() });
+  const total = files.reduce((n, f) => n + (Number(f.bytes) || 0), 0);
+  if (files.length > ZIP_MAX_FILES || total > ZIP_MAX_BYTES) return new Response(null, { status: 413, headers: fileHeaders() });
+
+  const lang = langCookie(request) || negotiate(request);
+  const nl = lang !== 'en';
+  const merk = customer.brand || customer.name || customer.email;
+  /* De licentie voor GEDEELD beeld en niet de exclusieve van een levering —
+     zie gedeeldeLicentie() in scaffold.js en STOCK-IDEE.md §5. */
+  const licentie = licenceText({ order: { brand: merk, ref: maandsetLabel(set.month, nl ? 'nl' : 'en') }, lang: nl ? 'nl' : 'en', gedeeld: true });
+  const entries = files.map((f, i) => ({ name: `VISUAILS-set-${set.month}-${String(i + 1).padStart(2, '0')}-${String(f.filename).replace(/^\d+-/, '')}`, key: f.r2_key }));
+  const docs = [{ name: nl ? 'GEBRUIKSRECHTEN.txt' : 'LICENCE.txt', text: licentie }];
+  const stream = zipStream(deliveryZipFiles(entries, docs, async (key) => {
+    const obj = await env.UPLOADS.get(key);
+    return obj ? obj.arrayBuffer() : null;
+  }));
+  const headers = new Headers(fileHeaders());
+  headers.set('content-type', 'application/zip');
+  headers.set('content-disposition', zipDisposition(`VISUAILS-set-${set.month}.zip`));
+  return new Response(stream, { status: 200, headers });
+}
+
+function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = [], fout = '', tab = 'maand', kal = null, maandsets = []) {
   /* DE BOVENBALK. Zonder abonnement staat er geen chip en geen actie — er is
      niets te melden en de enige stap staat verderop in een kaart die het
      uitlegt. Mét abonnement is de chip de STATUS (loopt, wacht op je eerste
@@ -6681,7 +7096,7 @@ function planBody(t, lang, customer, state, models = [], lockByStyle = {}, order
 
   const account = `
 <div class="card">
-  <h3>${esc(t.planAccountLabel)}</h3>
+  <h2 class="h-sub">${esc(t.planAccountLabel)}</h2>
   <dl class="facts">
     <div class="fact"><dt>${esc(t.planEmailLabel)}</dt><dd>${esc(customer.email)}</dd></div>
     ${customer.brand ? `<div class="fact"><dt>${esc(t.planBrandLabel)}</dt><dd>${esc(customer.brand)}</dd></div>` : ''}
@@ -6751,7 +7166,7 @@ ${account}`;
    * Hij verdwijnt zodra het af is. Een nudge die blijft staan, is een banner. */
   const nudge = !bkOnaf.length ? '' : `
 <div class="card nudge">
-  <h3>${esc(t.planBkNudgeH)}</h3>
+  <h2 class="h-sub">${esc(t.planBkNudgeH)}</h2>
   <p>${esc(t.planBkNudgeBody)}</p>
   <p class="meta">${esc(t.planBkNudgeWhich)} ${bkOnaf.map((r) => esc(r.label)).join(', ')}</p>
   <p><a class="btn" href="/account/brand-kit">${esc(t.planBkNudgeCta)}</a></p>
@@ -6802,7 +7217,7 @@ ${account}`;
              geeft er geen enkele. Wat een plan per maand geeft, staat hieronder
              per soort — precies één keer, en compleet. Hier hoort dus wat het
              plan IS: zijn naam en zijn termijn. */''}
-      <h3>${esc(planName(state.plan, lang))} · ${esc(state.sub.term === 'yearly' ? t.planTermYearly : t.planTermMonthly)}</h3>
+      <h2 class="h-sub">${esc(planName(state.plan, lang))} · ${esc(state.sub.term === 'yearly' ? t.planTermYearly : t.planTermMonthly)}</h2>
     </div>
     ${state.volgendeAfschrijving ? `<div class="dash-right">
       <span class="eyebrow">${esc(t.planNextCharge)}</span>
@@ -6951,7 +7366,7 @@ ${account}`;
 
   const lijst = `
 <div class="card">
-  <h3>${esc(t.planQueueH)}</h3>
+  <h2 class="h-sub">${esc(t.planQueueH)}</h2>
   <p class="lede">${esc(t.planQueueLede)}</p>
   <p class="meta">${esc(t.planQLockHint)}</p>
   ${state.wachtrij.length
@@ -7010,7 +7425,7 @@ ${account}`;
    * plek waar niemand hem bijhoudt. */
   const week = `
 <div class="card">
-  <h3>${esc(t.planWindowH)}</h3>
+  <h2 class="h-sub">${esc(t.planWindowH)}</h2>
   ${state.sub.window_day
     ? `<p class="plan-getal"><strong>${dagVanDeMaand(state.sub.window_day, lang)}</strong></p>`
     : `<p>${esc(t.planWindowNone)}</p>`}
@@ -7074,7 +7489,7 @@ ${account}`;
     <span class="eyebrow">Editions</span>
     <span class="pill is-wacht">${esc(t.edTag)}</span>
   </div>
-  <h3>${esc(t.edH)}</h3>
+  <h2 class="h-sub">${esc(t.edH)}</h2>
   <p class="lede">${esc(t.edLede)}</p>
   <div class="ed-strook">${EDITIE_BEELDEN.map(([naam, alt]) =>
     `<img src="/img/${naam}-w380.webp" alt="${esc(alt)}" width="380" height="380" loading="lazy" decoding="async">`).join('')}</div>
@@ -7084,6 +7499,10 @@ ${account}`;
   <span class="eyebrow">${esc(t.edWhatH)}</span>
   <ul class="ed-lijst">${t.edWhat.map(([kop, body]) =>
     `<li><strong>${esc(kop)}</strong><span>${esc(body)}</span></li>`).join('')}</ul>
+  ${/* De grens tussen wat je al hebt en waar dit over gaat. Zie de noot bij
+       edWhat: dit paneel zette de gedeelde set tot vandaag onder "wat er zou
+       komen", en dat sprak /plans tegen. */ ''}
+  <p class="meta ed-inbegrepen">${esc(t.edIncluded)}</p>
 </div>
 
 <div class="card">
@@ -7100,7 +7519,7 @@ ${account}`;
 
   const vastgelegd = `
 <div class="card">
-  <h3>${esc(t.planLookH)}</h3>
+  <h2 class="h-sub">${esc(t.planLookH)}</h2>
   <p>${esc(t.planLookNote)}</p>
   <dl class="facts facts-kv">
     ${bk.map((r) => `<div class="fact"><dt>${esc(r.label)}</dt><dd${r.waarde ? '' : ' class="leeg"'}>${esc(r.waarde || t.planLookUnset)}</dd></div>`).join('')}
@@ -7118,7 +7537,7 @@ ${account}`;
   const beelden = files.length;
   const opgebouwd = `
 <div class="card">
-  <h3>${esc(t.planBuiltH)}</h3>
+  <h2 class="h-sub">${esc(t.planBuiltH)}</h2>
   <dl class="facts">
     <div class="fact"><dt>${esc(t.planBuiltDelivered)}</dt><dd>${geleverd}</dd></div>
     <div class="fact"><dt>${esc(t.planBuiltImages)}</dt><dd>${beelden}</dd></div>
@@ -7137,7 +7556,7 @@ ${account}`;
    * tegen het besluit. */
   const beheer = `
 <div class="card">
-  <h3>${esc(t.planBillingH)}</h3>
+  <h2 class="h-sub">${esc(t.planBillingH)}</h2>
   <dl class="facts">
     <div class="fact"><dt>${esc(t.planBillingTerm)}</dt><dd>${esc(state.sub.term === 'yearly' ? t.planBillingYearly : t.planBillingMonthly)}</dd></div>
     <div class="fact"><dt>${esc(t.planBillingAmount)}</dt><dd>${money(vorm.monthlyCents, lang)}</dd></div>
@@ -7181,7 +7600,8 @@ ${account}`;
      hoort te wachten tot iemand er toevallig komt. */
   const panelen = {
     maand: `${saldo}
-${week}`,
+${week}
+${maandsetToegang(state) ? maandsetSection(t, lang, maandsets) : ''}`,
     /* HET INPLANSCHERM VERVANGT DE LIJST EN STAAT ER NIET NAAST. Twee kalenders
        onder elkaar zou kunnen — één per item — en dat is precies de pagina waarop
        niemand meer ziet welke van de twee hij aan het invullen is. Eén item
@@ -7218,8 +7638,8 @@ function subscribeReturnBody(t, lang, uitkomst) {
   const nl = lang === 'nl';
   const M = {
     gelukt: nl
-      ? ['Je abonnement loopt', 'Het mandaat is afgegeven en de eerste termijn wordt volgende maand afgeschreven. De euro van zojuist was voor het mandaat.']
-      : ['Your plan is running', 'The mandate is in place and the first term is charged next month. The euro just now was for the mandate.'],
+      ? ['Je abonnement loopt', 'Je eerste maand is betaald en het mandaat is afgegeven. Je saldo staat klaar op de tab Deze maand; de volgende termijn valt precies een maand later.']
+      : ['Your plan is running', 'Your first month is paid and the mandate is in place. Your credits are ready under This month; the next term falls exactly a month later.'],
     wacht: nl
       ? ['Je betaling wordt verwerkt', 'Je bank heeft het nog niet bevestigd. Dat duurt bij iDEAL soms een paar minuten en er is niets misgegaan — zodra het binnen is, staat je abonnement hier en krijg je bericht.']
       : ['Your payment is being processed', 'Your bank has not confirmed it yet. With iDEAL that can take a few minutes and nothing has gone wrong — as soon as it arrives your plan appears here and you get an email.'],
@@ -7594,7 +8014,7 @@ async function handlePlanCancel({ request, env }, customer) {
  * gone — a brand with no custom models still has a roster and a background to
  * set, which is the whole point.
  */
-function lockSection(t, lang, models, lockByStyle) {
+function lockSection(t, lang, models, lockByStyle, savedLock = '') {
   // Only faces a customer can actually see. See ownModelsSection's header: a
   // model still in the making is shown up there and withheld from here.
   const pickable = models.filter((m) => m.has_preview && m.status !== 'in_design');
@@ -7603,7 +8023,40 @@ function lockSection(t, lang, models, lockByStyle) {
     const lock = lockByStyle[style] || {};
     const face = lock.custom_model_id ? `c${lock.custom_model_id}`
       : lock.roster_model ? `r${lock.roster_model}` : FACE_NONE;
-    const bg = (lock.background_hex || '').toUpperCase();
+    /* ── DE ACHTERGROND ALLEEN BIJ CATALOG — 3 september 2026 ──────────────
+       Lucas: "lifestyle hoort geen achtergrondkleur te krijgen omdat dit echt
+       puur voor catalog foto's is." De bestelstroom deed dat al goed
+       (bgApplies in OrderFlow.astro); deze pagina tekende hem bij alle drie.
+       Een eerder opgeslagen kleur bij lifestyle of video wordt hier genegeerd. */
+    const bgApplies = style === 'catalog';
+    const bg = bgApplies ? (lock.background_hex || '').toUpperCase() : '';
+    /* En de STIJL bij lifestyle — wat de achtergrond voor catalog is. */
+    const lookApplies = style === 'lifestyle';
+    const lookNow = lookApplies && LOOK_IDS.includes(String(lock.look || '')) ? String(lock.look) : '';
+    const lookGroup = !lookApplies ? '' : `
+    <fieldset class="bk-group">
+      <legend>${esc(t.bkLookLede)}</legend>
+      <div class="bk-looks">
+        <label class="bk-look is-none">
+          <input type="radio" name="look" value=""${lookNow ? '' : ' checked'}>
+          <span class="bk-look-img is-blank" aria-hidden="true"></span>
+          <span class="bk-look-name">${esc(t.bkNoPref)}</span>
+          <span class="bk-look-what">${esc(t.bkLookNone)}</span>
+        </label>${LOOKS_EN.map((lk) => {
+          const loc = lookById(lk.slug, lang) || lk;
+          return `
+        <label class="bk-look">
+          <input type="radio" name="look" value="${esc(lk.slug)}"${lookNow === lk.slug ? ' checked' : ''}>
+          <img class="bk-look-img" src="${esc(lk.cardPhoto || lk.heroPhoto || '')}" alt="" loading="lazy" decoding="async" width="240" height="300">
+          <span class="bk-look-name">${esc(loc.name || lk.name)}</span>
+          <span class="bk-look-what">${esc(loc.tagline || lk.tagline || '')}</span>
+        </label>`;
+        }).join('')}
+      </div>
+      <p class="bk-hint">${esc(t.bkLookHint)}</p>
+    </fieldset>`;
+    const lookLabel = lookNow ? ((lookById(lookNow, lang) || {}).name || lookNow) : '';
+    const lookThumb = lookNow ? ((LOOKS_EN.find((x) => x.slug === lookNow) || {}).cardPhoto || '') : '';
 
     // ── DE KANALEN, ALLEEN BIJ CATALOG ─────────────────────────────────────────
     //
@@ -7717,8 +8170,13 @@ function lockSection(t, lang, models, lockByStyle) {
        ziet met "gezicht · achtergrond" erop denkt dat alles vastligt terwijl
        juist het duurste veld nog open staat. */
     const chSamen = chNames || (chApplies ? t.bkChNone : '');
-    const summaryNow = (!face && !bg && !chSamen && !ratioLabel) ? esc(t.bkAsk)
-      : [esc(faceName), esc(bgName)]
+    /* `chNames` en niet `chSamen`: die laatste is bij catalog nooit leeg (hij
+       draagt de "geen marktplaats"-zin), dus de kaart zei bij een schone klant
+       drie keer "wordt per bestelling gevraagd" achter elkaar. 3 september 2026. */
+    const summaryNow = (!face && !bg && !chNames && !ratioLabel && !lookLabel) ? esc(t.bkAsk)
+      : [esc(faceName)]
+          .concat(bgApplies ? [esc(bgName)] : [])
+          .concat(lookApplies ? [esc(lookLabel || t.bkAsk)] : [])
           .concat(ratioLabel ? [esc(ratioLabel)] : [])
           .concat(chSamen ? [esc(chSamen)] : [])
           .join(' <span class="bk-sum-dot">·</span> ');
@@ -7786,15 +8244,17 @@ function lockSection(t, lang, models, lockByStyle) {
     // rows — DESIGN.md's disclosure rule allows folding what only some readers
     // ask for, and it also says a page must not fold the thing it is for.
     return `
-<details class="bk-card" name="bk"${i === 0 ? ' open' : ''}>
+<details class="bk-card${savedLock === style ? ' is-saved' : ''}" name="bk" id="bk-${esc(style)}"${!savedLock && i === 0 ? ' open' : ''}>
   <summary class="bk-sum">
     <span class="bk-sum-figs">
       ${faceThumb || `<span class="bk-sum-face is-blank" aria-hidden="true">${ICON_FACE}</span>`}
-      ${bgChip || `<span class="bk-sum-bg is-blank" aria-hidden="true"></span>`}
+      ${bgApplies ? (bgChip || `<span class="bk-sum-bg is-blank" aria-hidden="true"></span>`) : ''}
+      ${lookApplies ? (lookThumb ? `<img class="bk-sum-look" src="${esc(lookThumb)}" alt="" loading="lazy" decoding="async" width="96" height="96">` : `<span class="bk-sum-look is-blank" aria-hidden="true"></span>`) : ''}
     </span>
     <span class="bk-sum-text">
       <span class="bk-sum-h">${esc(styleLabel(style))}</span>
       <span class="bk-sum-now">${summaryNow}</span>
+      ${savedLock === style ? `<span class="bk-sum-ok" role="status">${esc(t.bkSaved)}</span>` : ''}
     </span>
     <span class="bk-sum-cta">${esc(t.bkChange)}</span>
   </summary>
@@ -7804,10 +8264,10 @@ function lockSection(t, lang, models, lockByStyle) {
       <legend>${esc(t.bkFaceLede)}</legend>
       <div class="bk-tiles">${noFaceTile}${ownTiles}${rosterTiles}</div>
     </fieldset>
-    <fieldset class="bk-group">
+    ${bgApplies ? `<fieldset class="bk-group">
       <legend>${esc(t.bkBgLede)}</legend>
       <div class="bk-sws">${bgTiles}</div>
-    </fieldset>${ratioGroup}${chGroup}
+    </fieldset>` : ''}${lookGroup}${ratioGroup}${chGroup}
     <div class="bk-actions">
       <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
     </div>
@@ -8002,10 +8462,19 @@ function revisionRound(t, o, delivered) {
   const stand = revisionRoundState(o);
 
   if (stand === 'gebruikt') {
+    /* ── KLAAR IS IETS ANDERS DAN ONDERWEG — 3 september 2026 ─────────────
+       Dit blok zei "we zijn ermee bezig", ook nadat de studio de beelden had
+       vervangen en aangekondigd. De klant kreeg de mail "je revisie staat klaar",
+       opende Studio en las dat we er nog mee bezig waren. Klaar = geen enkel
+       levend beeld staat nog op revision_requested én er is een vervangend
+       beeld dat wacht op zijn oordeel. */
+    const openNog = delivered.some((f) => !f.superseded_at && f.review_state === 'revision_requested');
+    const nieuw = delivered.some((f) => !f.superseded_at && f.replaced_for && f.review_state === 'pending');
+    const klaar = !openNog && nieuw;
     return `
-  <section class="ronde is-done">
-    <h3>${esc(t.rdUsedH)}</h3>
-    <p>${esc(t.rdUsedB)}</p>
+  <section class="ronde ${klaar ? 'is-ready' : 'is-done'}">
+    <h3>${esc(klaar ? t.rdReadyH : t.rdUsedH)}</h3>
+    <p>${esc(klaar ? t.rdReadyB : t.rdUsedB)}</p>
   </section>`;
   }
 
@@ -8244,7 +8713,23 @@ function orderCard(t, lang, o, files, events = [], fb = null, index = 0, openOrd
   return `
 <details class="card ord" id="order-${o.id}"${openNow ? ' open' : ''}>
   <summary class="row-head ord-sum">
-    <span class="ref">${esc(o.ref)}</span>
+    ${/* ── HET KENMERK IS DE KOP VAN DEZE BESTELLING — 2 september 2026 ──────
+         Hier stond een <span>. Daardoor sprong /account/orders van de <h1> van
+         de pagina rechtstreeks naar de <h4>'s in een productpaneel, en dat is
+         wat axe-core aanwees: "Heading levels should only increase by one".
+
+         Een schermlezer leest de koppenlijst als de inhoudsopgave. Zonder kop
+         per bestelling staat er onder "Bestellingen (4)" niets waar je naartoe
+         kunt springen — je moet je door elke kaart heen lezen om bij de
+         volgende te komen. Het kenmerk IS de naam van deze bestelling, dus is
+         het de kop; een tweede, verborgen kop erbij zou hetzelfde tweemaal
+         zeggen.
+
+         Een <h2> in een <summary> is geldige HTML. Wat het NIET mag doen is de
+         rij opblazen: de drie h2-regels die dat zouden doen staan uit in
+         public/account.css bij `.ref`. Gemeten met scripts/account-render.mjs:
+         de schermafdrukken vóór en na zijn identiek. */ ''}
+    <h2 class="ref">${esc(o.ref)}</h2>
     <span class="ord-sum-meta">${summaryBits}</span>
     ${miniFlow}
     <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
@@ -8382,19 +8867,29 @@ function shortDate(value, lang) {
 function progressBlock(t, lang, o, events = []) {
   const status = o.status || 'received';
   const cancelled = status === 'cancelled';
+  /* ── WACHT OP BETALING IS EEN STAP — 3 september 2026 ────────────────────
+     Een ontvangen maar onbetaalde bestelling zei "we plannen hem in", met een
+     groen bolletje op Ontvangen. Niets loopt tot er betaald is, en dat hoort
+     de tijdlijn te zeggen: een extra eerste stap, alleen zichtbaar zolang hij
+     open staat, en de zin ernaast zegt wat de klant kan doen. Alleen bij een
+     bestelling met een bedrag (orderMoney) en nog zonder betaling. */
+  const unpaid = !cancelled && status === 'received'
+    && String(o.payment_status || 'unpaid') !== 'paid' && !!orderMoney(o);
   const idx = FLOW.indexOf(status);
 
   // Wat er nu gebeurt, plus het venster als dat bekend is — een belofte met een
   // datum eraan is een ander bericht dan dezelfde belofte zonder.
-  const now = t.flowNow[status] || t.flowNow.received;
+  const now = unpaid ? t.flowNow.awaiting_payment : (t.flowNow[status] || t.flowNow.received);
   const when = !cancelled && status !== 'delivered' && o.window_start
     ? ` ${t.flowWindow(shortDate(o.window_start, lang), shortDate(o.window_end || o.window_start, lang))}`
     : '';
 
+  const flow = unpaid ? ['awaiting_payment', ...FLOW] : FLOW;
+  const nowIdx = unpaid ? 0 : idx;
   const steps = cancelled
     ? ''
-    : `<ol class="flow">${FLOW.map((key, i) => {
-        const state = i < idx ? 'is-done' : i === idx ? 'is-now' : 'is-todo';
+    : `<ol class="flow">${flow.map((key, i) => {
+        const state = i < nowIdx ? 'is-done' : i === nowIdx ? 'is-now' : 'is-todo';
         return `<li class="flow-step ${state}"><span class="flow-dot"></span><span class="flow-label">${esc(t.flowStep[key])}</span></li>`;
       }).join('')}</ol>`;
 
@@ -8475,7 +8970,13 @@ function groupByProduct(delivered, uploaded) {
  * valt het uit deze lijst — dus de rand verdwijnt doordat het werk gedaan is.
  */
 function productCard(t, lang, o, g) {
-  const label = g.key ? t.prodLabel(g.key.replace(/^p/, '')) : t.prodOther;
+  /* ── DE NAAM DIE DE KLANT ZELF TYPTE — 3 september 2026 ──────────────────
+     "Product 1, 2, 3" terwijl de klant "Grijze tee" had ingevuld. De naam
+     werd gepost én bewaard (details_json → product_p1), en de zip en de
+     studio-mail gebruikten hem al; alleen dit scherm labelde op product_key.
+     Stap 2 belooft "het komt met dezelfde naam terug", dus hier ook. */
+  const typed = g.key ? (orderProductNames(o.details_json)[g.key] || '') : '';
+  const label = typed || (g.key ? t.prodLabel(g.key.replace(/^p/, '')) : t.prodOther);
   const live = g.delivered.filter((f) => !(f.expires_at && isExpired(f.expires_at, null)));
   // Op de LEVENDE beelden, niet op alles. Een verlopen beeld met een openstaande
   // revisie zou de kaart anders amber kleuren én opengeklapt tonen, met als
@@ -8498,6 +8999,21 @@ function productCard(t, lang, o, g) {
     live.length ? t.prodDelivered(live.length) : t.prodNothingYet,
     live.length && approved ? t.prodApproved(approved) : null,
   ].filter(Boolean).join(' · ');
+
+  /* ── "ALLES GOED" PER PRODUCT — 4 september 2026 (doorlichting §3.6) ─────
+     Vier keer op Goedkeuren drukken voor één product dat gewoon klopt, is
+     precies de zwaarte die de beoordeling had. Eén knop voor alle beelden van
+     dit product die nog op 'pending' staan; hij verschijnt alleen als er meer
+     dan één te keuren is en de bestelling nog open staat. Aanmerken blijft per
+     beeld, want dáár moet de klant juist precies zijn. */
+  const teKeuren = live.filter((f) => f.review_state === 'pending' && !f.superseded_at);
+  const allesGoed = (teKeuren.length > 1 && !o.closed_at && g.key && o.service !== SAMPLE_SERVICE)
+    ? `<form class="review-form review-all" method="post" action="/account/review">
+        <input type="hidden" name="order" value="${o.id}">
+        <input type="hidden" name="product" value="${esc(g.key)}">
+        <button class="btn btn-2nd btn-sm" type="submit" name="action" value="approve-product" formnovalidate>${esc(t.prodApproveAll(teKeuren.length))}</button>
+      </form>`
+    : '';
 
   const waText = encodeURIComponent(
     lang === 'nl'
@@ -8523,14 +9039,15 @@ function productCard(t, lang, o, g) {
   <div class="prod-panel">
     <div class="prod-inner">
       <div class="prod-col">
-        <h4>${esc(t.prodWeMade)}</h4>
+        <h3>${esc(t.prodWeMade)}</h3>
         ${g.delivered.length
           ? `<ul class="shots">${g.delivered.map((f) => shotTile(t, f, o, true)).join('')}</ul>`
           : `<p class="meta">${esc(t.prodNothingYet)}</p>`}
+        ${allesGoed}
       </div>
       ${g.uploaded.length
         ? `<div class="prod-col is-ref">
-             <h4>${esc(t.prodYouSent)}</h4>
+             <h3>${esc(t.prodYouSent)}</h3>
              <ul class="shots is-ref">${g.uploaded.map((f) => shotTile(t, f, o)).join('')}</ul>
            </div>`
         : ''}
@@ -8574,7 +9091,19 @@ function productCard(t, lang, o, g) {
  * faalt is beter dan een tegel die het niet probeert.
  */
 const NOT_IMAGE = /\.(mp4|webm|mov|m4v|avi|mkv|zip|pdf|psd|ai|tiff?)$/i;
-const isViewable = (f) => !NOT_IMAGE.test(String(f?.filename || ''));
+/* Op de bestandsnaam ÉN op de sleutel — 3 september 2026. `files.filename` mag
+   NULL zijn (order.js schrijft `f.name || null`), en String(null) matcht deze
+   regex nooit: een naamloze mp4 of pdf telde dan als beeld en tekende een lege
+   tegel onder "Laatst geleverd". Zonder herkenbare extensie op geen van beide
+   is het geen tegel. */
+const IMAGE_EXT = /\.(jpe?g|png|webp|avif|gif)$/i;
+const isViewable = (f) => {
+  const name = String(f?.filename || '');
+  const key = String(f?.preview_key || f?.r2_key || '');
+  if (NOT_IMAGE.test(name) || NOT_IMAGE.test(key)) return false;
+  if (IMAGE_EXT.test(name) || IMAGE_EXT.test(key)) return true;
+  return !!name; // naam zonder extensie: proberen, zoals voorheen
+};
 
 function shotTile(t, f, o, inProduct = false) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
@@ -8619,6 +9148,14 @@ function shotTile(t, f, o, inProduct = false) {
        ronde en zou het naast een nieuwe vraag verwarren. */
     if (f.fix_note && f.review_state !== 'revision_requested') {
       said += `<p class="fixed"><b>${esc(t.stFixed)}</b> ${esc(f.fix_note)}</p>`;
+    }
+    /* Een vervangend beeld dat nog niet beoordeeld is, zegt dat het nieuw is en
+       waar het het antwoord op was — anders ziet de klant vier gelijke tegels en
+       weet hij niet welke hij moet bekijken. Goedgekeurd gaat voor: dan is het
+       antwoord al gegeven. */
+    if (f.replaced_for && f.review_state === 'pending') {
+      badge = `<span class="shot-badge is-new">${esc(t.stNew)}</span>`;
+      said += `<p class="fixed"><b>${esc(t.stReplacedFor)}</b> ${esc(f.replaced_for)}</p>`;
     }
   }
 
@@ -8760,12 +9297,14 @@ function reviewControls(t, f, o) {
    * `default-src 'none'`, dus een oplossing met JavaScript was hier sowieso
    * geen oplossing geweest.
    *
-   * ── HET NOTITIEVELD STAAT ALTIJD OPEN, EN DAT IS EEN KEUZE ──────────────
+   * ── HET NOTITIEVELD VERSCHIJNT NA HET VINKJE — 4 september 2026 ──────────
    *
-   * Het zou met CSS `:has()` in te klappen zijn tot je het vinkje zet. Niet
-   * gedaan: Lucas vroeg om een simpele flow, en een veld dat verschijnt na een
-   * klik is één beweging meer om te begrijpen. Twee regels hoog naast de foto
-   * waar het over gaat, is duidelijker dan netter.
+   * Tot vandaag stond het altijd open, met als reden "één beweging minder".
+   * Bij twaalf producten waren dat 48 tekstvakken op één scherm (doorlichting
+   * §3.6), en dat is geen simpele flow meer maar een formulier dat schreeuwt.
+   * Nu klapt het uit zodra "Deze aanmerken" is aangevinkt — puur CSS
+   * (`.ask-mark:has(input:checked) textarea` in account.css), dus nog steeds
+   * zonder script onder `default-src 'none'`.
    *
    * De naam draagt het bestandsnummer (`note-34`) zodat de server de notitie
    * bij het juiste beeld terugvindt; het vinkje heet voor alle beelden `file`,

@@ -122,8 +122,53 @@ export function haalAttributenEruit(html, gevonden = new Map()) {
   };
 }
 
-/** De <style>-blokken eruit halen, in de volgorde waarin ze stonden. */
+/**
+ * De <style>-blokken eruit halen, in de volgorde waarin ze stonden.
+ *
+ * ── BEHALVE DIE IN <noscript>, EN DAT IS GEEN DETAIL ────────────────────────
+ *
+ * Gevonden op 1 september 2026, door Lucas: de before/after-slider op de
+ * homepage bewoog zijn handvat wel maar sneed de foto niet meer af. De oorzaak
+ * stond hier. In Layout.astro zit een <noscript> met deze regel:
+ *
+ *     .cmp .cmp-after { animation: none !important; clip-path: inset(0 0 0 50%) !important; }
+ *
+ * Zonder JavaScript is de slider niet te slepen, dus wordt hij op de helft
+ * vastgezet — een knop die niet kan bewegen hoort niet de hele dag te adverteren
+ * dat hij beweegt. Precies goed, en de betekenis van die regel zit volledig in
+ * WAAR hij staat: binnen <noscript> geldt hij alleen als er geen JavaScript is.
+ *
+ * Deze stap hees hem eruit en zette hem in de gedeelde stylesheet, waar hij
+ * altijd geldt. Met twee keer !important wint hij van alles, dus stond de
+ * afsnijding voor iedereen voorgoed op 50% — het handvat bewoog, de foto niet.
+ * Er ging niets stuk waar een toets naar keek; de slider werkte gewoon niet meer.
+ *
+ * DE LES IS ALGEMENER DAN DIT GEVAL. Een <style> in <noscript> is geen
+ * stylesheet die toevallig ergens staat: de plek IS de voorwaarde. Hetzelfde
+ * geldt voor een <style media="print">. Verplaatsen betekent hier de voorwaarde
+ * weggooien, en dat is nooit een verhuizing maar altijd een gedragswijziging.
+ *
+ * Wat er met zo'n blok dan wél gebeurt: hij blijft staan en krijgt een hash in
+ * de Content-Security-Policy — zie scripts/csp-scripts.mjs. Eén hash, en de
+ * voorwaarde blijft waar hij hoort.
+ */
 export function haalStijlblokkenEruit(html, blokken = new Map()) {
+  /* De <noscript>-blokken worden eerst uit het zicht gehaald, verwerkt, en daarna
+     ongemoeid teruggezet. Een regex die "een <style> die niet in een <noscript>
+     staat" probeert te beschrijven, kan dat niet — HTML nest en regex telt niet. */
+  const bewaard = [];
+  const veilig = html.replace(/<noscript[\s\S]*?<\/noscript>/gi, (blok) => {
+    bewaard.push(blok);
+    return `\u0000noscript${bewaard.length - 1}\u0000`;
+  });
+  const uit = haalStijlblokkenUitTekst(veilig, blokken);
+  return {
+    html: uit.html.replace(/\u0000noscript(\d+)\u0000/g, (_, i) => bewaard[Number(i)]),
+    blokken: uit.blokken,
+  };
+}
+
+function haalStijlblokkenUitTekst(html, blokken) {
   return {
     html: html.replace(STYLE_EL, (heel, attrs, inhoud) => {
       /* Een <style> met een media- of type-attribuut doet iets anders dan gewoon

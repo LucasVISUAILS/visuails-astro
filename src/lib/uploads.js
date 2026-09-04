@@ -304,3 +304,38 @@ export function extensionOf(name) {
 export function typeFor(name) {
   return UPLOAD_TYPES[extensionOf(name)] || null;
 }
+
+/*
+ * ── WAT WE ACCEPTEREN, GEZEGD IN PLAATS VAN OVERGESCHREVEN ────────────────────
+ *
+ * De hint onder een uploadveld zei jarenlang "jpg, png of webp" terwijl
+ * UPLOAD_TYPES hierboven al veel meer aannam — heic er nota bene bij, en dat is
+ * precies wat er uit een iPhone komt. Een klant met een heic las dus dat zijn
+ * foto geweigerd zou worden, en liet hem weg; het formulier had hem gewoon
+ * aangenomen. Twee lijsten die uit elkaar lopen, en de onjuiste stond in beeld.
+ *
+ * Daarom wordt de zin nu uít UPLOAD_TYPES afgeleid. Eén lijst per contenttype
+ * (jpeg heeft twee extensies, tiff ook — die noemen we één keer), in de volgorde
+ * waarin ze hierboven staan. Voeg je boven een formaat toe, dan staat het hier
+ * vanzelf ook. tests/uploadformaten.test.mjs bewaakt dat.
+ */
+
+/** De extensies die we noemen: één per contenttype, in de volgorde van de tabel. */
+export function uploadFormats() {
+  const gezien = new Set();
+  const uit = [];
+  for (const [ext, type] of Object.entries(UPLOAD_TYPES)) {
+    if (gezien.has(type)) continue;
+    gezien.add(type);
+    uit.push(ext);
+  }
+  return uit;
+}
+
+/** Diezelfde lijst als zin: "jpg, png … of tif" / "… or tif". */
+export function uploadFormatsSentence(lang = 'en') {
+  const lijst = uploadFormats();
+  const laatste = lijst[lijst.length - 1];
+  const rest = lijst.slice(0, -1).join(', ');
+  return lang === 'nl' ? `${rest} of ${laatste}` : `${rest} or ${laatste}`;
+}

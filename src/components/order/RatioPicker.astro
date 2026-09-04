@@ -60,13 +60,13 @@ const COPY = {
        catalog is dit DE keuze, bij lifestyle het startpunt. syncRatio() toont er
        één. Ze staan allebei in de html zodat een bezoeker zonder JavaScript de
        algemene zin leest en niet een lege plek. */
-    hintBatch: 'One shape for the whole order. Catalog images sit next to each other in a grid, and a grid only looks right when every image is the same shape.',
+    hintBatch: 'One shape for the whole order. Images sit next to each other — in a grid or a carousel — and that only looks right when every image is the same shape.',
     hintEach: 'The shape every image starts on. On any product below you can set a single image differently — a banner among three square ones, for instance.',
     recommended: 'Recommended',
   },
   nl: {
     label: 'Beeldverhouding',
-    hintBatch: 'Eén verhouding voor de hele bestelling. Catalogbeelden staan naast elkaar in een grid, en een grid ziet er alleen goed uit als elk beeld dezelfde vorm heeft.',
+    hintBatch: 'Eén verhouding voor de hele bestelling. Beelden staan naast elkaar — in een grid of een carousel — en dat ziet er alleen goed uit als elk beeld dezelfde vorm heeft.',
     hintEach: 'De verhouding waar elk beeld op begint. Bij elk product hieronder kun je één beeld anders zetten — bijvoorbeeld één banner tussen drie vierkante.',
     recommended: 'Aanbevolen',
   },
@@ -106,7 +106,12 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
           data-pl-ratio-box={r.id}
           data-pl-ratio-label={r.label}
         />
-        <svg class="ratio-shape" viewBox={r.viewBox} preserveAspectRatio="none" focusable="false" aria-hidden="true"></svg>
+        {/* Het kader toont sinds 3 september hetzelfde catalogusbeeld, uitgesneden
+            op deze verhouding — een leeg grijs vlak zei niet wat "staand" met je
+            product doet. Zelfde bestand op alle tegels; alleen de uitsnede verschilt. */}
+        <span class="ratio-shape" style={`aspect-ratio: ${r.css}`} aria-hidden="true">
+          <img src="/img/catalog-after-w420.webp" alt="" width="420" height="420" loading="lazy" decoding="async" />
+        </span>
         <span class="ratio-label">{r.label}</span>
         <span class="ratio-name">{r.name}</span>
         <span class="ratio-use">{r.use}</span>
@@ -166,11 +171,13 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
      4:5 en 3:4 daaronder in de ruis van een paar pixels valt — bij 72 is het
      58 tegen 54. */
   .ratio-shape {
-    display: block; height: 72px; width: auto; max-width: 100%;
+    display: block; height: 96px; width: auto; max-width: 100%;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-sm);
-    background: var(--surface-2);
+    background: #fff;
+    overflow: hidden;
   }
+  .ratio-shape img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
   .ratio:has(input:checked) .ratio-shape { border-color: var(--accent); background: var(--surface); }
 
   .ratio-label { margin-top: .45rem; font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); font-variant-numeric: tabular-nums; }

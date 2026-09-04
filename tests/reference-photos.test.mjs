@@ -158,8 +158,11 @@ console.log('\nen het formulier zegt in beide talen wat het is');
   /* HET AANTAL GELEVERDE BEELDEN KOMT UIT DE BRON. "je krijgt nog steeds 4
      beelden" met een overgetypte 4 is de zin die onwaar wordt zodra CATALOG_IMAGES
      verandert — en het is precies de zin die de verwachting recht moet zetten. */
+  /* Sinds 3 september 2026 per DIENST: kindImages(service) — een lifestyle-
+     carousel levert er drie, en de regel zei op elke bestelpagina vier.
+     CATALOG_IMAGES blijft de terugval voor een dienst zonder gewicht. */
   ok('de hint rekent het aantal beelden uit pricing.js',
-    /refHint:[\s\S]{0,260}\$\{CATALOG_IMAGES\}/.test(flow), true);
+    /refHint:[\s\S]{0,420}\$\{kindImages\(service, 1\) \|\| CATALOG_IMAGES\}/.test(flow), true);
   ok('het maximum reist mee in de config', /maxRefPerProduct: MAX_REF_PER_PRODUCT/.test(flow), true);
   ok('  uit shots.js en niet uit pricing.js',
     /import \{ SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy \} from '\.\.\/\.\.\/data\/shots\.js';/.test(flow), true);

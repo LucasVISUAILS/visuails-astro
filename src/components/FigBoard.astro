@@ -183,7 +183,18 @@ const C = nl
       {/* ── 2 · DE TABEL ──────────────────────────────────────────────────── */}
       <section class="fb-card">
         <div class="fb-head"><p class="fb-h">{C.tblH}</p></div>
-        <div class="fb-tblwrap">
+{/* ── EEN SCROLLENDE TABEL MOET MET HET TOETSENBORD TE BEREIKEN ZIJN ──
+          axe-core, 2 september 2026: "Scrollable region must have keyboard
+          access". Deze doos schuift horizontaal (overflow-x: auto), en op een
+          smal scherm staat de halve tabel buiten beeld. Met een muis of een
+          vinger schuif je hem; met alleen een toetsenbord kon je er niet bij,
+          want er zat niets focusbaars in de doos zelf.
+
+          tabindex="0" maakt de doos zelf focusbaar — dan schuiven de pijltjes
+          hem, precies zoals bij een scrollend gebied hoort. role="region" met
+          een naam erbij, want een focusbare doos zonder naam is een tabstop
+          waarvan een schermlezer niets kan zeggen. */}
+        <div class="fb-tblwrap" tabindex="0" role="region" aria-label={C.tblH}>
           <table class="fb-tbl">
             <thead>
               <tr>{C.tblCols.map((col, i) => <th class={i > 1 ? 'is-num' : ''}>{col}</th>)}</tr>

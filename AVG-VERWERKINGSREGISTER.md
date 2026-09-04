@@ -124,8 +124,9 @@ uit. Dat onderscheid is de hele reden dat er een verwerkersovereenkomst is.
 |---|---|
 | **Doel** | de studio zijn eigen werk laten doen, en vastleggen wie wat wanneer heeft gewijzigd |
 | **Grondslag** | art. 6 lid 1 sub f |
-| **Gegevens** | gebruikersnaam en gehasht wachtwoord van de beheerder, sessietokens (gehasht), en een handelingenlogboek |
-| **Waar** | D1, tabellen `admin_users`, `admin_sessions`, `admin_log` |
+| **Gegevens** | gebruikersnaam en gehasht wachtwoord van de beheerder, sessietokens (gehasht), en een handelingenlogboek. Sinds 4 september 2026 ook: per e-mailadres of een mail van ons niet aankwam (bounce) of als spam is gemarkeerd, met datum, onderwerp en de reden zoals de mailprovider hem meldt — zodat de studio ziet dat een klant een bericht níét heeft gekregen |
+| **Waar** | D1, tabellen `admin_users`, `admin_sessions`, `admin_log`, `mail_bounces` (gevuld door de webhook van Resend, `/api/webhook/resend`) |
+| **Bewaartermijn** | een bounce blijft staan tot het adres is gecorrigeerd of de klantgegevens worden gewist (dan gaat hij mee, zie §5) |
 
 ### 3.8 Abonnementen, de wachtrij en het tegoed
 
@@ -140,17 +141,17 @@ uit. Dat onderscheid is de hele reden dat er een verwerkersovereenkomst is.
 | **Bewaartermijn** | `subscription_invoices` en de gegevens daarop: **7 jaar** na het boekjaar, net als een gewone factuur. De wachtrij en het tegoed: zolang de klantrelatie loopt |
 | **Doorgifte** | zie §6 |
 
-### 3.9 De vaste look en het eigen merkmodel
+### 3.9 De vaste look, het eigen merkmodel en de eigen look
 
 | Veld | Inhoud |
 |---|---|
-| **Doel** | een volgende bestelling laten beginnen waar de vorige ophield, en een merkmodel bewaren dat alleen voor deze klant wordt gebruikt |
+| **Doel** | een volgende bestelling laten beginnen waar de vorige ophield, een merkmodel bewaren dat alleen voor deze klant wordt gebruikt, en een op aanvraag ontworpen look (4 september 2026) bewaren zodat de klant er in elke bestelling mee kan werken |
 | **Grondslag** | art. 6 lid 1 sub b — het is de dienst zelf, niet een profiel: de klant stelt deze voorkeuren zelf in en ziet ze in zijn dashboard staan |
 | **Betrokkenen** | de klant |
-| **Gegevens** | per dienst het gekozen model, de achtergrondkleur, de verkoopkanalen en de beeldverhouding; per merkmodel een naam, een status en de verwijzing naar een voorbeeldbeeld in R2 |
+| **Gegevens** | per dienst het gekozen model, de achtergrondkleur, de verkoopkanalen en de beeldverhouding; per merkmodel een naam, een status en de verwijzing naar een voorbeeldbeeld in R2; per eigen look een naam, een regel, de dienst, de toeslag, een status, een studionotitie over de look (geen persoonsgegeven) en de verwijzing naar de aanvraag- en ontwerpbestelling |
 | **Let op** | een merkmodel is een **gegenereerd** gezicht en geen foto van een bestaand mens. Dat het dat niet is, wordt per model gecontroleerd en vastgelegd — zie `src/data/modelChecks.js` en de vijf `model_check_*`-kolommen op `orders`. Zou een gezicht toch op een bestaand persoon lijken, dan is dat een gegeven over díé persoon en niet over de klant, en dan geldt de procedure in AVG-DATALEKPROCEDURE.md |
-| **Waar** | D1, tabellen `customer_style_locks`, `custom_models`; het voorbeeldbeeld in R2 |
-| **Bewaartermijn** | zolang de klantrelatie loopt; de klant kan een merkmodel zelf laten verbergen en een voorkeur zelf wijzigen |
+| **Waar** | D1, tabellen `customer_style_locks`, `custom_models`, `customer_styles`; het voorbeeldbeeld in R2 (`models/`, `styles/`) |
+| **Bewaartermijn** | zolang de klantrelatie loopt; de klant kan een merkmodel zelf laten verbergen en een voorkeur zelf wijzigen; een eigen look wordt door de studio gearchiveerd of verwijderd op verzoek. De gedeelde maandset (`shared_sets`, `shared_files`) bevat geen persoonsgegevens: geen product, geen klant, geen gezicht |
 
 ---
 
@@ -166,7 +167,7 @@ compleet.
 | **Betrokkenen** | de personen die op het aangeleverde materiaal staan: doorgaans een model, een medewerker, of de klant zelf |
 | **Gegevens** | beeltenis. **Geen** bijzondere categorieën (art. 9): daar wordt niet om gevraagd, en een gezicht op een foto is geen biometrisch gegeven zolang de verwerking niet op unieke identificatie is gericht — en dat is zij niet |
 | **Waar** | Cloudflare R2 (het materiaal), D1 (`files`, `file_assets`, de verwijzingen) |
-| **Bewaartermijn** | bronmateriaal `UPLOAD_DAYS` dagen na afsluiten van de bestelling; geleverde beelden `DELIVERY_MONTHS` maanden na levering. **De getallen staan hier niet ingetypt** — ze staan in `src/lib/retention.js` en `tests/register.test.mjs` controleert dat dit document en die constante niet uit elkaar lopen |
+| **Bewaartermijn** | bronmateriaal `UPLOAD_DAYS` dagen na afsluiten van de bestelling; geleverde beelden `DELIVERY_DAYS` dagen na levering (sinds 4 september 2026 dezelfde termijn als het bronmateriaal: in Studio, daarna verwijderd; een kopie in het eigen archief van VISUAILS is mogelijk maar geen garantie). **De getallen staan hier niet ingetypt** — ze staan in `src/lib/retention.js` en `tests/register.test.mjs` controleert dat dit document en die constante niet uit elkaar lopen |
 | **Uitvoering** | een nachtelijke taak (`cron/index.js`) verwijdert wat verlopen is, uit R2 én uit D1, en schrijft op de tijdlijn van de bestelling wat er weg is |
 | **Subverwerkers** | zie §5 |
 | **Doorgifte** | zie §6 |

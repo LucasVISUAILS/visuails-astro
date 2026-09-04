@@ -43,12 +43,17 @@ import {
   hashRecoveryCode, mintRecoveryCodes, mintTotpSecret, normaliseRecoveryCode,
   totpUri, verifyTotp,
 } from './adminAuth.js';
-/* DELIVERY_MONTHS staat in de mail bij een nieuwe portaallink: die mail zegt hoe
+/* DELIVERY_DAYS staat in de mail bij een nieuwe portaallink: die mail zegt hoe
    lang de klant er nog bij kan, en dat getal hoort uit dezelfde constante te
    komen als de nachtelijke opruiming en de juridische pagina's. */
-import { stampDeliveryRetention, DELIVERY_MONTHS } from './retention.js';
+import { stampDeliveryRetention, DELIVERY_DAYS } from './retention.js';
 import { serviceLabel } from '../data/services.js';
+/* De vier huisstijlen, voor de keuzelijst bij een bestelling namens de klant.
+   Alleen wat een tarief heeft (geen priceTrust) is via het formulier te kiezen. */
+import { styles as ALLE_LOOKS } from '../data/styles.js';
+const STYLE_LOOKS = ALLE_LOOKS.filter((l) => !l.priceTrust);
 import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from '../data/modelChecks.js';
+import { rosterWoord } from '../data/models.js';
 /* DE ABONNEMENTSWEEK. Zie de kop van planStart.js: deze twee functies zijn het
    stuk dat van een klantenlijst werk maakt, en Lucas' keuze was uitdrukkelijk
    dat een MENS daarop drukt. Vandaar dat ze hier binnenkomen en niet in cron/. */
@@ -86,17 +91,20 @@ const SESSION_COOKIE = 'vis_admin';
 
 /** orders.status, in the order the studio actually moves through them. */
 import { sendMail } from './mail.js';
+import { stuurBetaallink as stuurBetaallinkMail } from './betaallink.js';
 import { createOrderMolliePayment, refundMolliePayment, mollieKey, mollieKeyProblems, describeHeaders } from './mollie.js';
 import { issueInvoice } from './invoice.js';
 import { mailInvoice } from './invoiceMail.js';
+import { mailCancellation } from './cancelMail.js';
+import { bouncesFor, bounceLine } from './bounces.js';
 /* De twee bedragen van de merkmodel-credit komen uit de prijslijst en niet uit een
    getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
    kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
-import { AMOUNT, VAT_RATE, vatPercent, ladderTotal } from '../data/pricing.js';
+import { AMOUNT, VAT_RATE, vatPercent, ladderTotal, STOCK_OFF_BRAND } from '../data/pricing.js';
 import { kindImages } from '../data/pricing.js';
 import {
-  ATTENDED_IMAGES_PER_DAY, QUEUE_DAYS_MAX, WINDOW_DAYS,
-  addDays, addOpenDays, firstOfferableDay, windowFor,
+  ATTENDED_IMAGES_PER_DAY, QUEUE_AIM_DAYS, WINDOW_DAYS,
+  addDays, addOpenDays, daysInRange, firstOfferableDay, windowFor,
 } from '../data/capacity.js';
 import { readCalendar } from './agenda.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
@@ -178,8 +186,14 @@ export async function adminGet(context) {
   const modelImgMatch = path.match(/^\/admin\/models\/(\d+)\/image$/);
   if (modelImgMatch) return serveModelPreview(context, Number(modelImgMatch[1]));
 
+  const styleImgMatch = path.match(/^\/admin\/styles\/(\d+)\/image$/);
+  if (styleImgMatch) return serveStylePreview(context, Number(styleImgMatch[1]));
+
   if (path === '/admin/log') return renderLog(context);
   if (path === '/admin/vat') return renderVatReview(context);
+  if (path === '/admin/maandset') return renderMaandset(context);
+  const sharedImgMatch = path.match(/^\/admin\/shared\/(\d+)$/);
+  if (sharedImgMatch) return serveSharedFile(context, Number(sharedImgMatch[1]));
   /* De diagnose. LEESROUTE: alleen vormen van secrets en een methodelijst — geen
      enkele bijwerking. Wat wél iets aanmaakt bij Mollie zit achter de POST
      hieronder. Zie de kop van renderDiagnose(). */
@@ -192,6 +206,9 @@ export async function adminGet(context) {
   /* De agenda. LEESROUTE: wat er nog af moet, op volgorde van de laatste dag.
      Zie de kop van renderAgenda() voor waarom dit één lijst is en geen twee. */
   if (path === '/admin/agenda') return renderAgenda(context, url);
+  /* De planning: twee weken als raster plus de aflopende lijst. LEESROUTE; het
+     verlengen gaat via POST /admin/orders/<id>/window met back=planning. */
+  if (path === '/admin/planning') return renderPlanning(context, url);
   /* De tweede factor instellen. LEESROUTE: alles wat iets verandert zit achter de
      POST hieronder, en die vraagt bij elke handeling een kloppende code. */
   if (path === '/admin/security') return renderSecurity(context, admin);
@@ -213,7 +230,7 @@ export async function adminGet(context) {
       ? wantedFilter : '';
     const hidden = url.searchParams.get('hidden') === '1';
 
-    const [revisions, orders, counts, statusCounts, vatHeld, watch, tmWaiting] = await Promise.all([
+    const [revisions, orders, counts, statusCounts, vatHeld, watch, tmWaiting, aflopend] = await Promise.all([
       loadRevisionInbox(env),
       loadOrders(env, statusFilter, { q, filter, hidden }),
       loadTodayCounts(env),
@@ -221,11 +238,16 @@ export async function adminGet(context) {
       loadVatHeld(env),
       loadWatchdogs(env),
       loadTestimonialsWaiting(env),
+      loadAflopend(env),
     ]);
     const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
+    /* Mail die niet aankwam (doorlichting §3.7, 4 september 2026): één query voor
+       alle adressen op de lijst, als merkteken op de regel — zie orderCard(). */
+    const bounces = await bouncesFor(env, orders.map((o) => o.email));
+    for (const o of orders) o.bounce = bounces.get(String(o.email || '').toLowerCase()) || null;
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
-      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld, watch, tmWaiting),
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld, watch, tmWaiting, aflopend),
     }));
   }
 
@@ -401,6 +423,35 @@ export async function adminPost(context) {
   const custModelMatch = path.match(/^\/admin\/customers\/(\d+)\/models$/);
   if (custModelMatch) return handleAddCustomModelForCustomer(context, Number(custModelMatch[1]));
 
+  /* EIGEN LOOKS — 4 september 2026. Vier routes, dezelfde vorm als de
+     merkmodellen: toevoegen vanaf de klantpagina, bewerken/verwijderen, beeld
+     erbij. Zie het blok boven readStyleForm(). */
+  const custStyleMatch = path.match(/^\/admin\/customers\/(\d+)\/styles$/);
+  if (custStyleMatch) return handleAddCustomerStyle(context, Number(custStyleMatch[1]));
+
+  const styleManageMatch = path.match(/^\/admin\/styles\/(\d+)\/manage$/);
+  if (styleManageMatch) return handleStyleManage(context, Number(styleManageMatch[1]));
+
+  const stylePreviewMatch = path.match(/^\/admin\/styles\/(\d+)\/preview$/);
+  if (stylePreviewMatch) return handleStylePreview(context, Number(stylePreviewMatch[1]));
+
+  /* DE OFFERTE op een aanvraag zonder tarief (eigen look, video). Zet het
+     bedrag op de bestelling en stuurt de betaallink — zie handleQuote(). */
+  const quoteMatch = path.match(/^\/admin\/orders\/(\d+)\/quote$/);
+  if (quoteMatch) return handleQuote(context, Number(quoteMatch[1]), admin);
+
+  /* BESTELLING NAMENS EEN KLANT — 4 september 2026. De meest gemiste handeling
+     uit de doorlichting: een klant appt "doe er nog vijf bij" en er was geen weg
+     dan hem terug naar het formulier te sturen. Zie handleOrderForCustomer(). */
+  const namensMatch = path.match(/^\/admin\/customers\/(\d+)\/order$/);
+  if (namensMatch) return handleOrderForCustomer(context, Number(namensMatch[1]), admin);
+
+  /* DE GEDEELDE MAANDSET (migratie 0041): beelden erbij, publiceren, één beeld
+     weghalen. Zie renderMaandset(). */
+  if (path === '/admin/maandset') return handleMaandsetUpload(context, admin);
+  const setMatch = path.match(/^\/admin\/maandset\/(\d+)$/);
+  if (setMatch) return handleMaandsetManage(context, Number(setMatch[1]), admin);
+
   return html(page({ title: 'Not found', body: errorBody('Not found.') }), 404);
 }
 
@@ -567,7 +618,7 @@ function securityBody(staat, { secret = '', melding = '', codes = null, email = 
     /* DE HERSTELCODES, \u00c9\u00c9N KEER. Ze staan gehasht in de database, dus dit scherm is
        de enige plek waar ze ooit leesbaar zijn. Dat hoort er ook bij te staan. */
     return `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('security')}
 <h1>Je herstelcodes</h1>
 <p class="lede">Schrijf ze over of print ze. <strong>Dit is de enige keer dat je ze ziet</strong> \u2014
 ze staan gehasht in de database, dus ook ik kan ze niet terughalen. Elke code werkt \u00e9\u00e9n keer,
@@ -579,7 +630,7 @@ in hetzelfde veld als de code uit je app.</p>
 
   if (staat === 'aan') {
     return `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('security')}
 <h1>Twee stappen staan aan</h1>
 <p class="lede">Bij het inloggen vraagt dit paneel na je wachtwoord om een code uit je
 authenticator-app.</p>
@@ -606,7 +657,7 @@ ${melding ? `<p class="warnline">${esc(melding)}</p>` : ''}
 
   if (staat === 'halverwege') {
     return `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('security')}
 <h1>Nog \u00e9\u00e9n code</h1>
 <p class="lede">Voer dit geheim in je authenticator-app in en typ de code die er verschijnt.
 Pas als die klopt, gaat de tweede stap aan \u2014 zo kun je jezelf er niet mee buitensluiten.</p>
@@ -628,7 +679,7 @@ ${melding ? `<p class="warnline">${esc(melding)}</p>` : ''}
   }
 
   return `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('security')}
 <h1>Twee stappen staan uit</h1>
 <p class="lede">Je wachtwoord is nu het enige slot op dit paneel, en dit paneel opent elke klant,
 elk bestand en elke betaling. Een tweede stap maakt een gelekt of geraden wachtwoord waardeloos.</p>
@@ -949,7 +1000,7 @@ async function handleOrderCancel(context, orderId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
   const order = await env.DB.prepare(
-    'SELECT id, ref, status, payment_status, total_cents, vat_cents, refunded_cents, payment_ref, customer_id FROM orders WHERE id = ?1'
+    'SELECT id, ref, status, payment_status, total_cents, vat_cents, refunded_cents, payment_ref, customer_id, email, name, lang FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
   if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
 
@@ -1161,6 +1212,25 @@ async function handleOrderCancel(context, orderId) {
         ).bind(orderId, 'De terugbetaling is niet gelukt en moet met de hand in Mollie gedaan worden.').run().catch(() => {});
         console.error('[admin] restitutie voor', order.ref, 'mislukt —', e && e.message ? e.message : e);
       }
+    }
+  }
+
+  /* ── EN DE KLANT HOORT HET — 4 september 2026 (doorlichting §3.2) ──────────
+     Tot vandaag stond de annulering alleen op de tijdlijn in Studio. Wie daar
+     niet toevallig keek, wist van niets — ook niet dat zijn geld onderweg was.
+     Eén mail, met de reden in jouw woorden en wat er met de betaling gebeurt.
+     De creditnota volgt apart zodra Mollie de terugbetaling bevestigt (zie
+     mailCreditNote in de webhook). Best effort, na alles hierboven: een mail die
+     niet weggaat mag een vastgelegde annulering niet ongedaan lijken te maken. */
+  {
+    const bruto = Math.max(0,
+      (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0) - Math.max(0, Number(order.refunded_cents) || 0));
+    const money = paid ? payment : (uitAbonnement ? 'plan' : 'unpaid');
+    const verstuurd = await mailCancellation(env, { order, reason, money, grossCents: bruto });
+    if (!verstuurd) {
+      await logAdmin(env, admin, 'order.cancel.mail-mislukt', {
+        orderId, detail: `${order.ref}: annuleringsmail niet verstuurd — laat het de klant zelf weten`,
+      }).catch(() => {});
     }
   }
 
@@ -1546,6 +1616,9 @@ async function handleCustomerWipe(context, customerId) {
     env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM messages WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM subscribers WHERE lower(email) = lower(?1)').bind(customer.email || ''),
+    // Mail die naar dit adres niet aankwam (mail_bounces, 4 september 2026) hangt
+    // aan het ADRES en niet aan een bestelling, dus gaat hij hier apart mee.
+    env.DB.prepare('DELETE FROM mail_bounces WHERE email = lower(?1)').bind(customer.email || ''),
 
     /*
      * ── HET ABONNEMENT, EN DE FOUT DIE HET BIJNA WERD — 17 AUGUSTUS 2026 ──────
@@ -1738,7 +1811,7 @@ async function loadOrderFiles(env, orderId) {
                        customer_note, customer_note_at,
                        country, vat_number, vat_treatment, vat_rate, vat_cents, total_cents,
                        vat_valid, vat_checked_at, vat_consultation, vat_check_name,
-                       icp_reported_at
+                       icp_reported_at, customer_id, payment_status, review_state
                   FROM orders WHERE id = ?1`;
   const narrow = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
                          tier, window_start, window_end,
@@ -1890,6 +1963,8 @@ async function renderFiles(context, orderId) {
   if (!data) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
 
   const { order, files, migrated, notes } = data;
+  const orderBounce = (await bouncesFor(env, [order.email])).get(String(order.email || '').toLowerCase()) || null;
+  const bounceBlok = orderBounce ? `<p class="warnline is-rood">${esc(bounceLine(orderBounce))}</p>` : '';
 
   /* ── DE FACTUUR, MET TWEE KNOPPEN ─────────────────────────────────────────
      Staat er geen factuur, dan staat hier ook niets: een factuur hoort bij de
@@ -2082,8 +2157,14 @@ async function renderFiles(context, orderId) {
     return [...keys].sort((a, b) => (Number(a.slice(1)) || 0) - (Number(b.slice(1)) || 0));
   })();
 
-  const select = (name, value, options, blank) =>
-    `<select name="${name}">
+  /* `aria-label` erbij — 2 september 2026. axe-core: "Select element must have
+     an accessible name", twaalf keer op één bestandenpagina. In de tabel staat
+     de kolomnaam bovenaan en dat is voor het oog genoeg, maar een schermlezer
+     leest een keuzelijst los van zijn kolom: hij zei twaalf keer "keuzelijst,
+     Product 1" zonder erbij te zeggen WAT er gekozen wordt of BIJ WELK bestand.
+     Het label noemt nu allebei, en het staat niet in beeld. */
+  const select = (name, value, options, blank, label) =>
+    `<select name="${name}"${label ? ` aria-label="${esc(label)}"` : ''}>
        <option value=""${value ? '' : ' selected'}>${blank}</option>
        ${options.map(([v, label]) =>
          `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(label)}</option>`).join('')}
@@ -2094,9 +2175,9 @@ async function renderFiles(context, orderId) {
     const dead = !!f.superseded_at;
     const cls = [revising ? 'is-revising' : '', dead ? 'is-superseded' : ''].filter(Boolean).join(' ');
     return `<tr class="${cls}">
-      <td class="thumbcell"><a href="/admin/files/${f.id}"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
-      <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— not set —')}</td>
-      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, k]), '— not set —')}</td>
+      <td class="thumbcell"><a href="/admin/files/${f.id}" aria-label="Open ${esc(f.filename || `file ${f.id}`)} full size"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
+      <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— not set —', `Product for ${f.filename || `file ${f.id}`}`)}</td>
+      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, k]), '— not set —', `Shot for ${f.filename || `file ${f.id}`}`)}</td>
       <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a>
         ${dead ? '<br><span class="muted">replaced</span>' : ''}
         ${revising ? '<br><strong>revision asked</strong>' : ''}</td>
@@ -2144,12 +2225,19 @@ async function renderFiles(context, orderId) {
   const slot = (productKey, shotKey) => {
     const f = liveByKey.get(`${productKey}|${shotKey}`);
     if (!f) {
+      /* ── DE VELDEN DRAGEN HUN EIGEN NAAM — 2 september 2026 ────────────────
+         axe-core: "Form elements must have labels", dertien keer op één
+         bestandenpagina. Op het scherm zegt `.slot-label` welke hoek dit vakje
+         is, en dat is voor het oog genoeg — maar dat label hoort bij niets, dus
+         een schermlezer leest dertien identieke "bestand kiezen"-knoppen zonder
+         te zeggen bij welk product en welke hoek. Op het scherm verandert er
+         niets; het label staat op het veld in plaats van ernaast. */
       return `<div class="slot is-empty">
         <span class="slot-label">${esc(SHOT_LABEL[shotKey] || shotKey)}</span>
         <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
           <input type="hidden" name="product" value="${esc(productKey)}">
           <input type="hidden" name="shot" value="${esc(shotKey)}">
-          <input type="file" name="files" required>
+          <input type="file" name="files" required aria-label="Upload ${esc(SHOT_LABEL[shotKey] || shotKey)} for product ${esc(productKey.slice(1))}">
           <button class="btn btn-ghost btn-sm" type="submit">Upload</button>
         </form>
       </div>`;
@@ -2158,7 +2246,11 @@ async function renderFiles(context, orderId) {
     const fresh = migrated && !f.announced_at;
     return `<div class="slot${revising ? ' is-revising' : ''}${fresh ? ' is-fresh' : ''}">
       <span class="slot-label">${esc(SHOT_LABEL[shotKey] || shotKey)}</span>
-      <a href="/admin/files/${f.id}" target="_blank" rel="noopener"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
+      ${/* De link had geen enkele tekst: een <img alt=""> erin en verder niets,
+           dus axe-core las "Links must have discernible text" — twaalf keer.
+           Het alt blijft leeg, want het beeld zelf is decoratie in deze rij; de
+           LINK krijgt de naam, want dat is wat er aangeklikt wordt. */ ''}
+      <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="Open ${esc(SHOT_LABEL[shotKey] || shotKey)} of product ${esc(productKey.slice(1))} full size"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
       <span class="slot-state">${revising ? 'revision asked' : fresh ? 'not announced' : 'announced'}</span>
       <!-- Vervangen gaat via hetzelfde vakje: een nieuw bestand op dezelfde
            product+shot maakt het vorige automatisch vervangen (resupersede),
@@ -2166,7 +2258,7 @@ async function renderFiles(context, orderId) {
       <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
         <input type="hidden" name="product" value="${esc(productKey)}">
         <input type="hidden" name="shot" value="${esc(shotKey)}">
-        <input type="file" name="files" required>
+        <input type="file" name="files" required aria-label="Replace ${esc(SHOT_LABEL[shotKey] || shotKey)} for product ${esc(productKey.slice(1))}">
         <button class="btn btn-quiet btn-sm" type="submit">Replace</button>
       </form>
     </div>`;
@@ -2205,7 +2297,7 @@ async function renderFiles(context, orderId) {
   const unmapped = delivery.filter((f) => !f.superseded_at && (!f.product_key || !f.shot)).length;
   const mapForm = delivery.length
     ? `<form method="post" action="/admin/orders/${order.id}/map">
-      <table class="files"><thead><tr><th></th><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th>${showAnnounced ? '<th>Announced</th>' : ''}</tr></thead>
+      <table class="files"><thead><tr><th><span class="sr-only">Preview</span></th><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th>${showAnnounced ? '<th>Announced</th>' : ''}</tr></thead>
       <tbody>${delivery.map(mapRow).join('')}</tbody></table>
       <div class="controls is-under">
         <button class="btn btn-primary" type="submit">Save mapping</button>
@@ -2230,6 +2322,12 @@ async function renderFiles(context, orderId) {
   const mappedFlag = (() => {
     try { return Number(new URL(request.url).searchParams.get('mapped')) || 0; } catch { return 0; }
   })();
+  const quoteFlag = (() => {
+    try { return new URL(request.url).searchParams.get('quote') || ''; } catch { return ''; }
+  })();
+  const namensFlag = (() => {
+    try { return new URL(request.url).searchParams.get('namens') === '1'; } catch { return false; }
+  })();
   const flash = flag === 'none'
     ? '<p class="muted">Nothing new to announce — every delivered file on this order has already been mailed.</p>'
     : Number(flag) > 0
@@ -2238,7 +2336,65 @@ async function renderFiles(context, orderId) {
         ? `<p class="okline">Mapping saved for ${mappedFlag} ${mappedFlag === 1 ? 'file' : 'files'}. The customer&rsquo;s dashboard now groups them per product.</p>`
         : notedFlag
           ? '<p class="okline">Note saved.</p>'
-          : '';
+          : quoteFlag === 'sent'
+            ? `<p class="okline">Offerte vastgelegd en betaallink gemaild naar ${esc(order.email || 'de klant')}.</p>`
+            : quoteFlag === 'nolink'
+              ? '<p class="warnline">Bedrag vastgelegd, maar er ging geen betaallink uit (geen Mollie-sleutel, geen e-mailadres, of al betaald). Zie het logboek.</p>'
+              : namensFlag
+                ? `<p class="okline">Bestelling namens de klant aangemaakt. ${order.review_state === 'pending' ? 'Zonder btw- of KVK-nummer staat hij eerst op de btw-lijst; na jouw akkoord gaat de betaallink.' : `De bevestiging met betaallink is naar ${esc(order.email || 'de klant')} gemaild.`}</p>`
+                : '';
+
+  /* ── DE AANVRAAG VOOR EEN EIGEN LOOK — 4 september 2026 ──────────────────
+     Lucas: "korte intake voor belangrijke informatie waarna ik kijk wat de
+     klant precies wilt, of het mogelijk is wat de klant wilt en offerte maak."
+     De intake staat hier compleet, in de volgorde van het formulier, en
+     daaronder de twee handelingen die erbij horen: de offerte (bedrag op deze
+     bestelling + betaallink) en de look klaarzetten op de klantpagina. Een
+     video-aanvraag krijgt dezelfde offerteknop; die had tot nu toe ook geen
+     weg naar een bedrag. */
+  const aanvraagBlok = (() => {
+    let d = {};
+    try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
+    const opAanvraag = order.service === 'custom' || order.service === 'video';
+    if (!opAanvraag) return '';
+    const eigenLook = d.request === 'custom-look';
+    const veld = (label, v) => (v ? `<div class="hold-fact"><dt>${esc(label)}</dt><dd>${esc(String(v)).replace(/\n/g, '<br>')}</dd></div>` : '');
+    const DIENST = { lifestyle: 'Lifestylescènes', catalog: 'Catalogsets', both: 'Allebei' };
+    const CONCEPT = { own: 'Klant heeft het concept — wij werken het uit', us: 'Wij bedenken het concept (extra ontwerpwerk)' };
+    const AANTAL = { '1-4': '1 tot 4', '5-9': '5 tot 9', '10-19': '10 tot 19', '20+': '20 of meer', unsure: 'Weet de klant nog niet' };
+    const WANNEER = { asap: 'Zo snel als hij klaar is', month: 'Binnen een maand', quarter: 'Dit kwartaal', open: 'Nog geen datum' };
+    const intake = eigenLook ? `
+    <dl class="hold-fact-list aanvraag-intake">
+      ${veld('Concept', CONCEPT[d.look_concept] || d.look_concept)}
+      ${veld('Kiesbaar bij', DIENST[d.look_service] || d.look_service)}
+      ${veld('De wereld', d.look_world)}
+      ${veld('Referenties', d.look_references)}
+      ${veld('Nooit', d.look_avoid)}
+      ${veld('Aantal producten', AANTAL[d.look_products] || d.look_products)}
+      ${veld('Wanneer', WANNEER[d.look_when] || d.look_when)}
+      ${veld('Bericht', d.message)}
+    </dl>` : (d.message ? `<p class="muted">${esc(String(d.message))}</p>` : '');
+    const betaald = String(order.payment_status || '') === 'paid';
+    const bedrag = Number(order.total_cents) > 0 ? (Number(order.total_cents) / 100).toFixed(2) : '';
+    const offerte = betaald
+      ? `<p class="okline">Betaald: &euro;${esc(bedrag)} excl. btw.</p>`
+      : `<form class="controls" method="post" action="/admin/orders/${order.id}/quote">
+      <label>Offerte, &euro; excl. btw
+        <input name="amount" type="number" min="1" max="25000" step="0.01" inputmode="decimal" required value="${esc(bedrag)}"></label>
+      <button class="btn btn-primary" type="submit">${bedrag ? 'Bedrag aanpassen en link opnieuw mailen' : 'Offerte vastleggen en betaallink mailen'}</button>
+    </form>
+    <p class="meta">Offerte of aanbetaling — zeg eerst of het idee met AI en onze tools te maken is; kan het niet, dan gaat de aanbetaling terug. Zet het bedrag op deze bestelling${Number(order.vat_rate) === 0 ? ' (0% btw, verlegd of buiten de EU)' : ` (+ ${vatPercent()} btw)`} en mailt de klant dezelfde betaallink als na een btw-controle. Pas als de klant betaald heeft, staat hij op &ldquo;betaald&rdquo; &mdash; de webhook van Mollie doet dat, niet deze knop.</p>`;
+    const klaarzetten = eigenLook && order.customer_id
+      ? `<p><a class="btn" href="/admin/customers/${order.customer_id}?look=${order.id}#nieuwe-look">De look klaarzetten in het account van ${esc(order.brand || order.name || 'de klant')}</a></p>
+      <p class="meta">Maak hem eerst aan als <em>in ontwerp</em> &mdash; de klant ziet dan in Studio dat er aan gewerkt wordt &mdash; en zet hem op <em>actief</em> zodra het ontwerp betaald en goedgekeurd is. Daarna staat hij als tegel in zijn bestelformulier.</p>`
+      : eigenLook ? '<p class="warnline">Deze aanvraag hangt aan geen klant &mdash; de look kan pas klaargezet worden als er een klantaccount is.</p>' : '';
+    return `
+  <h2>${eigenLook ? 'Aanvraag eigen look' : 'Aanvraag'}</h2>
+  ${intake}
+  <h3>Offerte</h3>
+  ${offerte}
+  ${klaarzetten}`;
+  })();
 
   const announce = !migrated
     ? ''
@@ -2379,10 +2535,12 @@ async function renderFiles(context, orderId) {
   maar hoort het pas van jou.</p>`;
 
   const body = `
-  <p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('')}
   <h1>${esc(order.ref)}</h1>
   <p class="muted">${esc(order.brand || order.name || '')} &middot; ${esc(order.service)} &middot; ${esc(order.status)}${order.product_count ? ` &middot; ${order.product_count} products` : ''}${aanvraagRegel}</p>
+  ${bounceBlok}
   ${flash}
+  ${aanvraagBlok}
 
   <h2>Client uploads (${intake.length})</h2>
   ${table(intake, 'Nothing was uploaded with this order.')}
@@ -2415,7 +2573,7 @@ async function renderFiles(context, orderId) {
          de indeling terug op de gok uit de naam. Geen script nodig, en dat is hier
          een eis: deze pagina draait onder default-src 'none'. -->
     <label>De hele map in één keer
-      <input type="file" name="files" webkitdirectory directory multiple required />
+      <input type="file" name="files" webkitdirectory directory multiple required aria-label="De hele map in één keer" />
     </label>
     <button type="submit">Map uploaden</button>
   </form>
@@ -2423,7 +2581,7 @@ async function renderFiles(context, orderId) {
   <h2>Upload the finished work</h2>
   <p class="muted">Losse bestanden, zonder mappen. Files land against this order and appear in the client&rsquo;s portal. Setting the status to <strong>delivered</strong> on the dashboard is what emails them the link &mdash; uploading alone does not.</p>
   <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
-    <input type="file" name="files" multiple required />
+    <input type="file" name="files" multiple required aria-label="Losse bestanden voor deze bestelling" />
     <button type="submit">Upload</button>
   </form>
 
@@ -3120,12 +3278,11 @@ async function sendDeliveryMail(context, orderId) {
   // refuses it) or none at all, and none means the customer's confirmation link
   // dies without a replacement being mailed.
   //
-  // WHAT THE CUSTOMER SEES. The link in their confirmation email stops working
-  // and the new one, in the mail below, takes over. That is a real cost — the
-  // confirmation mail invites them to forward it to a colleague — and it is the
-  // trade the one-live-token rule already chose. The replacement page names the
-  // situation rather than 404ing, and the delivery mail goes to the same address
-  // moments later.
+  // WHAT THE CUSTOMER SEES — since 4 September 2026 (migration 0044): the link
+  // in their confirmation email KEEPS working next to the new one below. The
+  // one-live-token rule that made the earlier link die is gone; see the note in
+  // freshPortalLink(). All links of an order expire together, 90 days after it
+  // closes.
   const link = await freshPortalLink(env, orderId, origin);
 
   const nl = order.lang === 'nl';
@@ -3155,15 +3312,26 @@ async function sendDeliveryMail(context, orderId) {
  * stilte laat verdampen) is precies het soort ding dat je bij het overtypen
  * half meeneemt.
  */
-async function freshPortalLink(env, orderId, origin) {
+async function freshPortalLink(env, orderId, origin, { revoke = false } = {}) {
   const token = mintToken();
-  await env.DB.batch([
-    env.DB.prepare(
+  /* ── DE VORIGE LINK BLIJFT LEVEN — 4 september 2026 (doorlichting §3.4) ────
+     Tot vandaag trok elke aanroep hier alle levende tokens van de bestelling in:
+     de leverings- en herleveringsmail maakten daarmee de link uit de vorige mail
+     dood, en de klant die die mail twee dagen later opende kreeg "deze link is
+     vervangen". Migratie 0044 haalt de unieke index weg die dat afdwong. Nu
+     wordt er alleen nog ingetrokken als daar uitdrukkelijk om gevraagd is
+     (`revoke: true`, de knop "nieuwe link" in /admin) — dan is de oude link
+     misschien kwijt of doorgestuurd, en dan hoort hij dood. Alle links van een
+     bestelling verlopen samen 90 dagen na afronding; zie isExpired() in token.js. */
+  const stappen = [];
+  if (revoke) {
+    stappen.push(env.DB.prepare(
       "UPDATE order_tokens SET revoked_at = datetime('now') WHERE order_id = ?1 AND revoked_at IS NULL"
-    ).bind(orderId),
-    env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
-      .bind(orderId, await hashToken(token)),
-  ]);
+    ).bind(orderId));
+  }
+  stappen.push(env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
+    .bind(orderId, await hashToken(token)));
+  await env.DB.batch(stappen);
   return portalUrl(token, origin);
 }
 
@@ -3368,7 +3536,9 @@ async function handleFreshLink(context, orderId) {
   const origin = (() => {
     try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; }
   })();
-  const link = await freshPortalLink(env, orderId, origin);
+  // Hier WÉL intrekken: de klant vroeg om een nieuwe link, dus de oude is kwijt
+  // of in verkeerde handen. De mail zegt ook dat deze de vorige vervangt.
+  const link = await freshPortalLink(env, orderId, origin, { revoke: true });
 
   const nl = order.lang === 'nl';
   try {
@@ -3439,8 +3609,8 @@ export function freshLinkEmail({ order, link }) {
       mailButton(link, nl ? 'Open je bestelling' : 'Open your order'),
       '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
       mailNote(nl
-        ? `Deze link vervangt de vorige — gebruik vanaf nu deze. Je opgeleverde beelden blijven ${DELIVERY_MONTHS} maanden bij ons staan; download ze gerust nog een keer.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
-        : `This link replaces the previous one — use this from now on. Your delivered images stay with us for ${DELIVERY_MONTHS} months; download them again whenever you like.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+        ? `Deze link vervangt de vorige — gebruik vanaf nu deze. Je opgeleverde beelden blijven ${DELIVERY_DAYS} dagen bij ons staan; download ze gerust nog een keer.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
+        : `This link replaces the previous one — use this from now on. Your delivered images stay with us for ${DELIVERY_DAYS} days; download them again whenever you like.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
       '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
       mailSpamNote(nl ? 'nl' : 'en'),
     ].join(''),
@@ -3877,14 +4047,15 @@ export function redeliveryEmail({ order, link, n, revisions = 0, note = '', prod
       note ? '<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>' : '',
       mailButton(link, nl ? 'Bekijk de nieuwe beelden' : 'See the new images'),
       '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
-      // DEZE LINK VERVANGT DE VORIGE, en dat staat er ook. Eén levend token per
-      // bestelling is de regel van het schema (zie freshPortalLink); wie de
-      // oude link nog geopend had, krijgt daar de "vervangen"-pagina. Dat
-      // stilzwijgend laten gebeuren is hoe je iemand laat denken dat er iets
-      // stuk is.
+      // Tot 4 september 2026 stond hier "deze link vervangt de vorige", en dat
+      // klopte: elke aankondiging trok de vorige link in. Sinds migratie 0044
+      // blijven eerdere links werken (doorlichting §3.4), dus de mail belooft
+      // dat niet meer — een belofte over een link die gewoon nog werkt, is
+      // precies het soort zin dat een klant laat twijfelen welke hij moet
+      // gebruiken.
       mailNote(nl
-        ? `Deze link vervangt de vorige — gebruik vanaf nu deze.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
-        : `This link replaces the previous one — use this from now on.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+        ? `Je eerdere link blijft ook werken; allebei brengen je naar dezelfde bestelling.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
+        : `Your earlier link keeps working too; both take you to the same order.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
       '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
       mailSpamNote(nl ? 'nl' : 'en'),
     ].join(''),
@@ -4141,7 +4312,7 @@ async function renderCustomers(context) {
   const { env } = context;
   const rows = await loadCustomers(env);
   const body = `
-  <p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('customers')}
   <h1>Customers</h1>
   <p class="lede">${rows.length} brand${rows.length === 1 ? '' : 's'}</p>
   ${rows.length ? `<table class="files">
@@ -4746,13 +4917,14 @@ async function renderCustomer(context, customerId) {
     `SELECT id, email, brand, name, phone, website, vat_number, created_at,
             deactivated_at, deactivated_reason, merged_into,
             revisions_revoked_at, revisions_revoked_note,
+            reg_number,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id) AS revisions_asked,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id AND rr.resolved_at IS NULL) AS revisions_open
        FROM customers WHERE id = ?1`
   ).bind(customerId).first();
   if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
 
-  const [orders, models, locks, credits] = await Promise.all([
+  const [orders, models, locks, credits, styles] = await Promise.all([
     /* `has_invoice` erbij, 12 augustus 2026: het AVG-paneel onderaan moet kunnen
        zeggen wat er WEL blijft staan, en dat hangt hieraan. Een subselect en geen
        vierde query — het is één vlag per rij en die past in de query die er al was. */
@@ -4768,7 +4940,7 @@ async function renderCustomer(context, customerId) {
          FROM custom_models WHERE customer_id = ?1 ORDER BY id DESC`
     ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
     env.DB.prepare(
-      `SELECT l.style, l.roster_model, l.background_hex, m.label AS custom_label
+      `SELECT l.style, l.roster_model, l.background_hex, l.look, l.ratio, l.channels, m.label AS custom_label
          FROM customer_style_locks l LEFT JOIN custom_models m ON m.id = l.custom_model_id
         WHERE l.customer_id = ?1`
     ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
@@ -4785,6 +4957,20 @@ async function renderCustomer(context, customerId) {
          LEFT JOIN orders o ON o.id = c.order_id
         WHERE c.customer_id = ?1 ORDER BY c.id DESC LIMIT 100`
     ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
+    /* DE EIGEN LOOKS van deze klant (customer_styles, migratie 0040). Zelfde
+       afspraak als bij het tegoed: geen tabel is geen looks, niet een kapotte
+       klantpagina. De aanvraag en de ontwerpbestelling komen als ref mee, zodat
+       de kaart kan zeggen waar de look vandaan komt zonder tweede query. */
+    env.DB.prepare(
+      `SELECT s.id, s.name, s.description, s.service, s.status, s.surcharge_cents,
+              s.preview_key, s.prompt_note, s.request_order_id, s.design_order_id,
+              s.created_at,
+              r.ref AS request_ref, d.ref AS design_ref, d.payment_status AS design_paid
+         FROM customer_styles s
+         LEFT JOIN orders r ON r.id = s.request_order_id
+         LEFT JOIN orders d ON d.id = s.design_order_id
+        WHERE s.customer_id = ?1 ORDER BY s.id DESC`
+    ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
   ]);
 
   // THE BRAND KIT, READ-ONLY AND ON PURPOSE. The customer owns these settings
@@ -4792,11 +4978,19 @@ async function renderCustomer(context, customerId) {
   // edit them behind the customer's back. A studio that can silently change a
   // brand's standing preference is a studio that will get blamed for a change
   // nobody made.
+  /* Look, verhouding en kanalen erbij — 3 september 2026. Sinds Studio bij
+     lifestyle een stijl (Glow, Dunes…) vastlegt in plaats van een achtergrond,
+     stond hier bij lifestyle alleen "—", terwijl de klant wél een keuze had
+     gemaakt. Wat de klant heeft vastgezet, moet hier compleet te lezen zijn:
+     dit is het scherm dat je opent vóór je begint te produceren. */
   const lockRows = locks.length
-    ? `<table class="files"><thead><tr><th>Service</th><th>Face</th><th>Background</th></tr></thead><tbody>
+    ? `<table class="files"><thead><tr><th>Service</th><th>Face</th><th>Background</th><th>Look</th><th>Ratio</th><th>Channels</th></tr></thead><tbody>
        ${locks.map((l) => `<tr><td>${esc(l.style)}</td>
          <td>${esc(l.custom_label || l.roster_model || '—')}</td>
-         <td>${esc(l.background_hex || '—')}</td></tr>`).join('')}</tbody></table>`
+         <td>${esc(l.style === 'catalog' ? (l.background_hex || '—') : '—')}</td>
+         <td>${esc(l.style === 'lifestyle' ? (l.look || '—') : '—')}</td>
+         <td>${esc(l.ratio || '—')}</td>
+         <td>${esc(l.channels || '—')}</td></tr>`).join('')}</tbody></table>`
     : '<p class="empty">No standing preferences set. Every order asks from scratch.</p>';
 
   // WHAT MAKES A MODEL ORDERABLE, spelled out on the card rather than left to
@@ -4898,7 +5092,90 @@ async function renderCustomer(context, customerId) {
         </details>
       </div>`;
     }).join('')
-    : '<p class="empty">No models of their own yet. Every order still includes one of the ten standard faces.</p>';
+    : `<p class="empty">No models of their own yet. Every order still includes one of the ${rosterWoord('en')} standard faces.</p>`;
+
+  /* ── DE EIGEN LOOKS — 4 september 2026 ──────────────────────────────────────
+     Lucas: "De custom stylen worden dan in het account van de klant geplaatst
+     waarna hij deze kan gaan gebruiken via hetzelfde bestelformulier met de
+     custom style ertussen."
+
+     Dit is die plaatsing. Eén kaart per look, en op de kaart staat wat de klant
+     ervan ziet (naam, regel, beeld, waar hij kiesbaar is) gescheiden van wat
+     alleen de studio ziet (de vastgelegde look: prompt, licht, grade). Dezelfde
+     twee voorwaarden als bij een merkmodel, hardop op de kaart: een look is pas
+     kiesbaar als hij 'active' is — een beeld is wenselijk maar geen eis, want
+     een look zonder voorbeeld is in het formulier nog steeds een keuze met een
+     naam. 'proposed' staat in Studio als "in ontwerp" en is niet bestelbaar. */
+  const STYLE_SERVICES = [['lifestyle', 'Lifestyle'], ['catalog', 'Catalog'], ['both', 'Allebei']];
+  const STYLE_STATUSES = [['proposed', 'In ontwerp — klant ziet hem, kan er niet mee bestellen'], ['active', 'Actief — kiesbaar in het bestelformulier'], ['archived', 'Archief — onzichtbaar voor de klant']];
+  const eurField = (cents) => (Number(cents) > 0 ? (Number(cents) / 100).toFixed(2) : '');
+  const styleRows = styles.length
+    ? styles.map((s) => {
+      const stand = s.status === 'active'
+        ? 'Kiesbaar: de klant ziet deze look als tegel in het bestelformulier.'
+        : s.status === 'proposed'
+          ? 'In ontwerp: staat in Studio als "in ontwerp", nog niet bestelbaar.'
+          : 'Archief: de klant ziet deze look nergens meer. Alles blijft bewaard.';
+      return `<div class="card modelcard stylecard${s.status === 'archived' ? ' is-superseded' : ''}" id="style-${s.id}">
+        <div class="row-head"><span class="ref">${esc(s.name)}</span><span class="pill${s.status === 'active' ? ' is-delivered' : ''}">${esc(s.status)}</span></div>
+        <div class="modelcard-body">
+          ${s.preview_key
+            ? `<img class="modelcard-img stylecard-img" src="/admin/styles/${s.id}/image" alt="${esc(s.name)}" width="400" height="300" loading="lazy" decoding="async">`
+            : '<span class="modelcard-img stylecard-img is-blank">nog geen beeld</span>'}
+          <div class="modelcard-side">
+            <p class="meta">${esc(stand)}</p>
+            <p class="meta">${esc(STYLE_SERVICES.find((x) => x[0] === s.service)?.[1] || s.service)}${Number(s.surcharge_cents) > 0 ? ` &middot; +&euro;${esc(eurField(s.surcharge_cents))} per product` : ' &middot; gewoon tarief'}${s.request_ref ? ` &middot; aanvraag <a href="/admin/orders/${s.request_order_id}/files">${esc(s.request_ref)}</a>` : ''}${s.design_ref ? ` &middot; ontwerp <a href="/admin/orders/${s.design_order_id}/files">${esc(s.design_ref)}</a> (${esc(s.design_paid || 'onbetaald')})` : ''}</p>
+            <form class="stack" method="post" action="/admin/styles/${s.id}/preview" enctype="multipart/form-data">
+              <input type="file" name="preview" accept="image/*" required />
+              <label class="checkline">
+                <input type="checkbox" name="publish" value="1"${s.status === 'active' ? ' checked disabled' : ' checked'}>
+                <span>Meteen kiesbaar maken${s.status === 'active' ? ' (is al kiesbaar)' : ''}</span>
+              </label>
+              <button class="btn btn-ghost" type="submit">${s.preview_key ? 'Beeld vervangen' : 'Beeld toevoegen'}</button>
+            </form>
+          </div>
+        </div>
+        <form class="stack stylecard-edit" method="post" action="/admin/styles/${s.id}/manage">
+          <div class="row-2">
+            <label>Naam (ziet de klant)
+              <input name="name" type="text" maxlength="60" required value="${esc(s.name || '')}"></label>
+            <label>Kiesbaar bij
+              <select name="service">${STYLE_SERVICES.map(([v, l]) => `<option value="${v}"${v === s.service ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+          </div>
+          <label>Eén regel (ziet de klant, onder de naam)
+            <input name="description" type="text" maxlength="140" value="${esc(s.description || '')}" placeholder="Heet betondak, hard middaglicht, één product per beeld"></label>
+          <div class="row-2">
+            <label>Toeslag per product, &euro; excl. btw (leeg = gewoon tarief)
+              <input name="surcharge" type="number" min="0" max="500" step="0.01" inputmode="decimal" value="${esc(eurField(s.surcharge_cents))}"></label>
+            <label>Status
+              <select name="status">${STYLE_STATUSES.map(([v, l]) => `<option value="${v}"${v === s.status ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+          </div>
+          <label>Alleen voor de studio: de vastgelegde look (prompt, licht, grade, wat vermeden wordt)
+            <textarea name="prompt_note" rows="4" maxlength="4000">${esc(s.prompt_note || '')}</textarea></label>
+          <button class="btn btn-ghost" type="submit" name="action" value="save">Opslaan</button>
+        </form>
+        <details class="danger">
+          <summary>Deze look verwijderen</summary>
+          <div class="danger-body">
+            <p class="meta">Archiveren is omkeerbaar, dit niet: de rij gaat weg en het beeld gaat uit R2. Een bestelling die er al mee is geplaatst houdt de naam in zijn dossier.</p>
+            <form method="post" action="/admin/styles/${s.id}/manage">
+              <input type="text" name="confirm" required autocomplete="off" placeholder="Typ ${esc(s.name || '')} om te bevestigen">
+              <button class="btn btn-ghost btn-sm" type="submit" name="action" value="delete">Verwijderen</button>
+            </form>
+          </div>
+        </details>
+      </div>`;
+    }).join('')
+    : '<p class="empty">Nog geen eigen looks. Deze klant bestelt met de huisstijlen.</p>';
+
+  /* `?look=<orderId>` komt van de knop op een custom-look-aanvraag: dan staat
+     de aanvraag alvast aan de nieuwe look vast, en is de naam van de aanvraag
+     het eerste dat je invult. Alleen een getal wordt overgenomen. */
+  const vanAanvraag = (() => {
+    const raw = new URL(context.request.url).searchParams.get('look') || '';
+    return /^\d{1,9}$/.test(raw) ? Number(raw) : 0;
+  })();
+  const aanvraagOrder = vanAanvraag ? orders.find((o) => o.id === vanAanvraag) : null;
 
   const orderRows = orders.length
     ? `<table class="files"><thead><tr><th>Ref</th><th>Service</th><th>Status</th><th>Payment</th><th class="num">Net</th><th>Placed</th></tr></thead><tbody>
@@ -5118,6 +5395,9 @@ async function renderCustomer(context, customerId) {
    * want "sinds wanneer is dit een klant" is de eerste vraag bij elk telefoontje.
    */
   const sinds = customer.created_at ? when(customer.created_at) : null;
+  // Mail die niet aankwam op dit adres (doorlichting §3.7) — de klantpagina is
+  // waar je het adres corrigeert, dus hier hoort de vlag als eerste.
+  const klantBounce = (await bouncesFor(env, [customer.email])).get(String(customer.email || '').toLowerCase()) || null;
 
   /*
    * GEDEACTIVEERD IS EEN TOESTAND DIE JE BOVENAAN WILT ZIEN en niet onderaan
@@ -5242,9 +5522,10 @@ async function renderCustomer(context, customerId) {
   typefout van drie nullen tegen.</p>
 </div>`;
   const body = `
-  <p><a href="/admin/customers">&larr; Customers</a></p>
+${adminNav('customers')}
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
-  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · VAT ${esc(customer.vat_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
+  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · VAT ${esc(customer.vat_number)}` : ''}${!customer.vat_number && customer.reg_number ? ` · KVK ${esc(customer.reg_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
+  ${klantBounce ? `<p class="warnline is-rood">${esc(bounceLine(klantBounce))}</p>` : ''}
 
   ${statusPanel}
 
@@ -5283,6 +5564,62 @@ async function renderCustomer(context, customerId) {
     <button class="btn btn-primary" type="submit">Add brand model</button>
   </form>
   <p class="meta">Only you see this. The moment a model has a picture it appears as a tile the customer can pick when they place an order.</p>
+
+  <h2 id="eigen-looks">Eigen looks</h2>
+  <p class="meta">Een look op maat, na intake en offerte. Wat hier op <em>actief</em> staat, ziet de klant in Studio onder &ldquo;Je eigen looks&rdquo; en als tegel in het gewone bestelformulier &mdash; bij lifestyle tussen de vier huisstijlen, bij catalog als keuze na de achtergrond.</p>
+  ${styleRows}
+  <form class="stack stylecard-edit card" method="post" action="/admin/customers/${customer.id}/styles" enctype="multipart/form-data" id="nieuwe-look">
+    <input type="hidden" name="request_order_id" value="${vanAanvraag || ''}">
+    ${aanvraagOrder ? `<p class="meta">Uit aanvraag <a href="/admin/orders/${aanvraagOrder.id}/files">${esc(aanvraagOrder.ref)}</a>.</p>` : ''}
+    <div class="row-2">
+      <label>Naam (ziet de klant)
+        <input name="name" type="text" maxlength="60" required class="in-grow" placeholder="bv. Rooftop"></label>
+      <label>Kiesbaar bij
+        <select name="service">${STYLE_SERVICES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+    </div>
+    <label>Eén regel (ziet de klant, onder de naam)
+      <input name="description" type="text" maxlength="140" placeholder="Heet betondak, hard middaglicht, één product per beeld"></label>
+    <div class="row-2">
+      <label>Toeslag per product, &euro; excl. btw (leeg = gewoon tarief)
+        <input name="surcharge" type="number" min="0" max="500" step="0.01" inputmode="decimal"></label>
+      <label>Status
+        <select name="status">${STYLE_STATUSES.map(([v, l]) => `<option value="${v}"${v === 'proposed' ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+    </div>
+    <label>Alleen voor de studio: de vastgelegde look
+      <textarea name="prompt_note" rows="3" maxlength="4000" placeholder="Prompt, licht, grade, wat vermeden wordt — komt nergens bij de klant"></textarea></label>
+    <label>Voorbeeldbeeld (optioneel, jpeg/png/webp/avif)
+      <input type="file" name="preview" accept="image/*"></label>
+    <button class="btn btn-primary" type="submit">Look toevoegen</button>
+  </form>
+  <p class="meta">Zet hem op <em>in ontwerp</em> zolang de offerte loopt: de klant ziet dan in Studio dat er aan gewerkt wordt. Op <em>actief</em> zodra het ontwerp betaald en goedgekeurd is.</p>
+
+  <h2 id="namens">Bestelling namens ${esc(customer.brand || customer.name || 'de klant')}</h2>
+  <p class="meta">Voor de klant die appt "doe er nog vijf bij". Dezelfde route als het bestelformulier: de klant krijgt de gewone bevestiging met betaallink, de bestelling staat in zijn Studio en hier op het dashboard. Foto's uploadt hij daar zelf, of je zet ze bij de bestelling. Ontbreekt een btw- of KVK-nummer, dan komt de bestelling eerst op de btw-lijst en gaat de link na jouw akkoord.</p>
+  <form class="stack stylecard-edit card" method="post" action="/admin/customers/${customer.id}/order">
+    <div class="row-2">
+      <label>Dienst
+        <select name="service">
+          <option value="catalog">Catalog</option>
+          <option value="lifestyle">Lifestyle</option>
+          <option value="drop">Compleet (catalog + lifestyle)</option>
+        </select></label>
+      <label>Aantal producten
+        <input name="products" type="number" min="1" max="20" value="1" required></label>
+    </div>
+    <div class="row-2">
+      <label>Look (alleen lifestyle/compleet)
+        <select name="style">
+          <option value="">Kiest de klant / standaard</option>
+          ${STYLE_LOOKS.map((l) => `<option value="${esc(l.slug)}">${esc(l.name)}</option>`).join('')}
+          ${styles.filter((st) => st.status === 'active' && st.service !== 'catalog').map((st) => `<option value="cs-${st.id}">${esc(st.name)} (eigen look)</option>`).join('')}
+        </select></label>
+      <label>KVK-nummer (als er geen btw-nummer is)
+        <input name="reg_number" type="text" maxlength="40" value="${esc(customer.reg_number || '')}" placeholder="alleen bij een eenmanszaak zonder btw-nummer"></label>
+    </div>
+    <label>Notitie bij de bestelling (ziet de klant in zijn dossier)
+      <input name="message" type="text" maxlength="500" placeholder="bv. 'Zoals besproken via WhatsApp: vijf hoodies, dezelfde look als VIS-…'"></label>
+    <button class="btn btn-primary" type="submit">Bestelling aanmaken en bevestiging mailen</button>
+  </form>
 
   <h2>Orders</h2>
   ${orderRows}
@@ -5561,6 +5898,345 @@ async function serveModelPreview({ env }, modelId) {
     headers: {
       'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
       // Same as every other admin file route: never cached, never indexed.
+      'cache-control': 'private, no-store',
+      'x-robots-tag': 'noindex, nofollow',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EIGEN LOOKS — customer_styles, 4 september 2026
+//
+// De tegenhanger van de merkmodellen hierboven, voor een look in plaats van een
+// gezicht. Dezelfde poorten (PREVIEW_TYPES, PREVIEW_MAX_BYTES, de sleutel van de
+// rij en nooit uit de URL) en dezelfde uitgangen. Wat de klant ervan ziet komt
+// uit account.js (/account/me → `styles`); wat het bij een bestelling kost komt
+// uit ownStyleFor() in functions/api/order.js — beide lezen alleen 'active'.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/* De velden van het formulier, één keer gelezen en één keer geschoond. De
+   toeslag komt binnen in euro's met een komma of een punt en gaat de tabel in
+   als centen; alles boven € 500 per product is een typefout en wordt 500. */
+function readStyleForm(form) {
+  const name = String(form?.get('name') || '').trim().slice(0, 60);
+  const service = String(form?.get('service') || 'lifestyle');
+  const status = String(form?.get('status') || 'proposed');
+  const description = String(form?.get('description') || '').trim().slice(0, 140);
+  const promptNote = String(form?.get('prompt_note') || '').trim().slice(0, 4000);
+  const rawSurcharge = String(form?.get('surcharge') || '').trim().replace(',', '.');
+  const eur = rawSurcharge === '' ? 0 : Number(rawSurcharge);
+  const surcharge = Number.isFinite(eur) && eur > 0 ? Math.min(Math.round(eur * 100), 50000) : 0;
+  return {
+    name,
+    service: ['catalog', 'lifestyle', 'both'].includes(service) ? service : 'lifestyle',
+    status: ['proposed', 'active', 'archived'].includes(status) ? status : 'proposed',
+    description,
+    promptNote,
+    surcharge,
+  };
+}
+
+/* Het beeld in R2, met dezelfde controle als handleModelPreview(). Geeft de
+   sleutel terug, of een Response met de reden — de aanroeper geeft die door. */
+async function putStylePreview(env, customerId, styleId, file) {
+  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('No R2 binding.') }), 503);
+  const type = String(file.type || '').toLowerCase();
+  if (!PREVIEW_TYPES.includes(type)) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `"${esc(String(file.name || 'dat bestand'))}" is ${esc(type || 'van onbekend type')}. Het voorbeeld van een look moet een JPEG, PNG, WebP of AVIF zijn — de klant ziet het als foto op een tegel.`
+    ) }), 415);
+  }
+  if (file.size > PREVIEW_MAX_BYTES) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `Dat bestand is ${(file.size / 1024 / 1024).toFixed(1)} MB. De tegel is ongeveer 400px breed; alles boven 12 MB is wachttijd voor de klant.`
+    ) }), 413);
+  }
+  const clean = String(file.name || 'preview')
+    .replace(/[\\/"\r\n\t\x00-\x1f]/g, '_')
+    .split('/').pop()
+    .slice(0, 100) || 'preview';
+  const key = `styles/${customerId}/${styleId}-${clean}`;
+  await env.UPLOADS.put(key, file.stream(), { httpMetadata: { contentType: type } });
+  return key;
+}
+
+async function handleAddCustomerStyle({ request, env }, customerId) {
+  if (!Number.isInteger(customerId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+  }
+  const exists = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(customerId).first();
+  if (!exists) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+
+  const form = await request.formData().catch(() => null);
+  const f = readStyleForm(form);
+  if (!f.name) return seeOther(`/admin/customers/${customerId}#eigen-looks`);
+
+  /* De aanvraag waar de look uit komt, alleen als die bestelling van DEZE
+     klant is. Een getal uit een verborgen veld is geen bewijs. */
+  const rawReq = String(form?.get('request_order_id') || '');
+  let requestOrderId = null;
+  if (/^\d{1,9}$/.test(rawReq)) {
+    const o = await env.DB.prepare('SELECT id FROM orders WHERE id = ?1 AND customer_id = ?2')
+      .bind(Number(rawReq), customerId).first().catch(() => null);
+    if (o) requestOrderId = o.id;
+  }
+
+  const nieuw = await env.DB.prepare(
+    `INSERT INTO customer_styles (customer_id, name, description, service, status, surcharge_cents, prompt_note, request_order_id)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) RETURNING id`
+  ).bind(customerId, f.name, f.description || null, f.service, f.status, f.surcharge, f.promptNote || null, requestOrderId).first();
+
+  const file = form && form.get('preview');
+  if (file && typeof file === 'object' && file.size && nieuw?.id) {
+    const key = await putStylePreview(env, customerId, nieuw.id, file);
+    if (key instanceof Response) return key;
+    await env.DB.prepare('UPDATE customer_styles SET preview_key = ?1 WHERE id = ?2').bind(key, nieuw.id).run();
+  }
+  return seeOther(`/admin/customers/${customerId}#style-${nieuw?.id || ''}`);
+}
+
+async function handleStyleManage({ request, env }, styleId) {
+  if (!Number.isInteger(styleId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad style id.') }), 400);
+  }
+  const style = await env.DB.prepare(
+    'SELECT id, customer_id, name, preview_key FROM customer_styles WHERE id = ?1'
+  ).bind(styleId).first();
+  if (!style) return html(page({ title: 'Admin', body: errorBody('No such style.') }), 404);
+  const back = `/admin/customers/${style.customer_id}#style-${styleId}`;
+
+  const form = await request.formData().catch(() => null);
+  const action = String(form?.get('action') || '');
+
+  if (action === 'delete') {
+    /* Dezelfde drempel als bij een merkmodel: de naam overtypen. */
+    if (String(form?.get('confirm') || '').trim() !== String(style.name || '').trim()) return seeOther(back);
+    if (style.preview_key && env.UPLOADS) await env.UPLOADS.delete(style.preview_key).catch(() => {});
+    await env.DB.prepare('DELETE FROM customer_styles WHERE id = ?1').bind(styleId).run();
+    return seeOther(`/admin/customers/${style.customer_id}#eigen-looks`);
+  }
+
+  if (action === 'save') {
+    const f = readStyleForm(form);
+    if (!f.name) return seeOther(back);
+    await env.DB.prepare(
+      `UPDATE customer_styles
+          SET name = ?1, description = ?2, service = ?3, status = ?4, surcharge_cents = ?5,
+              prompt_note = ?6, updated_at = datetime('now')
+        WHERE id = ?7`
+    ).bind(f.name, f.description || null, f.service, f.status, f.surcharge, f.promptNote || null, styleId).run();
+  }
+  return seeOther(back);
+}
+
+async function handleStylePreview({ request, env }, styleId) {
+  if (!Number.isInteger(styleId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad style id.') }), 400);
+  }
+  const style = await env.DB.prepare(
+    'SELECT id, customer_id, status FROM customer_styles WHERE id = ?1'
+  ).bind(styleId).first();
+  if (!style) return html(page({ title: 'Admin', body: errorBody('No such style.') }), 404);
+  const back = `/admin/customers/${style.customer_id}#style-${styleId}`;
+
+  const form = await request.formData().catch(() => null);
+  const file = form && form.get('preview');
+  if (!file || typeof file !== 'object' || !file.size) return seeOther(back);
+
+  const key = await putStylePreview(env, style.customer_id, styleId, file);
+  if (key instanceof Response) return key;
+
+  /* Beeld en toestemming in één schrijfbeurt, net als bij het merkmodel:
+     'proposed' → 'active' als het vinkje aanstaat. Een gearchiveerde look wordt
+     hier niet stilletjes weer actief — dat is een beslissing en geen upload. */
+  const publish = form.get('publish') === '1' && style.status === 'proposed';
+  await env.DB.prepare(
+    `UPDATE customer_styles SET preview_key = ?1, status = CASE WHEN ?3 THEN 'active' ELSE status END,
+            updated_at = datetime('now') WHERE id = ?2`
+  ).bind(key, styleId, publish ? 1 : 0).run();
+  return seeOther(back);
+}
+
+async function serveStylePreview({ env }, styleId) {
+  if (!Number.isInteger(styleId)) return new Response('Bad id', { status: 400 });
+  const row = await env.DB.prepare('SELECT preview_key FROM customer_styles WHERE id = ?1').bind(styleId).first();
+  if (!row?.preview_key) return new Response('Not found', { status: 404 });
+  if (!env.UPLOADS) return new Response('No bucket binding', { status: 503 });
+  const obj = await env.UPLOADS.get(row.preview_key);
+  if (!obj) return new Response('The object is not in the bucket', { status: 404 });
+  return new Response(obj.body, {
+    headers: {
+      'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
+      'cache-control': 'private, no-store',
+      'x-robots-tag': 'noindex, nofollow',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DE GEDEELDE MAANDSET — shared_sets / shared_files, 4 september 2026
+//
+// Lucas: "waar komen de stockafbeeldingen terecht?" Tot vandaag nergens: de
+// site beloofde STOCK_OFF_BRAND beelden per maand bij elk abonnement met het
+// label "nog niet actief", en er was geen tabel, geen R2-pad en geen scherm.
+// STOCK-IDEE.md §6 zegt wat de kleinste vorm is: één blok op /account/plan,
+// downloaden zoals een levering. Dit is de studiokant daarvan: één scherm,
+// één maand per set, beelden uploaden, publiceren als hij compleet is.
+//
+// De sleutel is shared/<maand>/<id>-<naam>; de klantkant (account.js) leest
+// hem van de rij en nooit uit de URL, net als elk ander bestand.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MAANDSET_MAX_PER_POST = 40;
+
+function maandNu() { return new Date().toISOString().slice(0, 7); }
+function maandLabel(m) {
+  const [y, mo] = String(m || '').split('-').map(Number);
+  const NAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+  return y && mo ? `${NAMEN[mo - 1]} ${y}` : String(m || '');
+}
+
+async function loadMaandsets(env) {
+  const sets = await env.DB.prepare(
+    `SELECT s.id, s.month, s.title, s.note, s.published_at, s.created_at,
+            (SELECT COUNT(*) FROM shared_files f WHERE f.set_id = s.id) AS n,
+            (SELECT COALESCE(SUM(bytes), 0) FROM shared_files f WHERE f.set_id = s.id) AS bytes
+       FROM shared_sets s ORDER BY s.month DESC LIMIT 24`
+  ).all().then((r) => r.results || []).catch(() => null);
+  if (!sets) return null;
+  const files = sets.length ? await env.DB.prepare(
+    `SELECT id, set_id, filename, bytes FROM shared_files WHERE set_id IN (${sets.map((s) => s.id).join(',')}) ORDER BY id ASC`
+  ).all().then((r) => r.results || []).catch(() => []) : [];
+  for (const s of sets) s.files = files.filter((f) => f.set_id === s.id);
+  return sets;
+}
+
+async function renderMaandset(context) {
+  const { env, request } = context;
+  const sets = await loadMaandsets(env);
+  const flag = (() => { try { return new URL(request.url).searchParams.get('m') || ''; } catch { return ''; } })();
+  const flash = flag === 'up' ? '<p class="okline">Beelden toegevoegd.</p>'
+    : flag === 'pub' ? '<p class="okline">Gepubliceerd — abonnees zien de set nu in Studio.</p>'
+      : flag === 'unpub' ? '<p class="okline">Teruggetrokken — de set is weer onzichtbaar.</p>'
+        : flag === 'type' ? '<p class="warnline">Eén of meer bestanden waren geen jpeg/png/webp/avif en zijn overgeslagen.</p>' : '';
+  const doel = STOCK_OFF_BRAND;
+  const kaart = (s) => {
+    const live = !!s.published_at;
+    const compleet = s.n >= doel;
+    return `<div class="card maandset${live ? '' : ' is-concept'}" id="set-${s.id}">
+      <div class="row-head"><span class="ref">${esc(maandLabel(s.month))}${s.title ? ` · ${esc(s.title)}` : ''}</span>
+        <span class="pill${live ? ' is-delivered' : ''}">${live ? 'gepubliceerd' : 'concept'}</span></div>
+      <p class="meta">${s.n} van ${doel} beelden${s.bytes ? ` · ${(s.bytes / 1024 / 1024).toFixed(1)} MB` : ''}${live ? ` · zichtbaar sinds ${esc(String(s.published_at).slice(0, 10))}` : compleet ? ' · compleet, nog niet gepubliceerd' : ` · nog ${doel - s.n} te gaan`}</p>
+      ${s.files.length ? `<div class="maandset-strook">${s.files.map((f) =>
+        `<figure class="maandset-beeld"><img src="/admin/shared/${f.id}" alt="${esc(f.filename)}" loading="lazy" decoding="async">
+          <form method="post" action="/admin/maandset/${s.id}"><input type="hidden" name="action" value="remove"><input type="hidden" name="file" value="${f.id}"><button class="btn btn-ghost btn-sm" type="submit" title="Dit beeld weghalen">×</button></form></figure>`).join('')}</div>` : ''}
+      <form class="controls" method="post" action="/admin/maandset" enctype="multipart/form-data">
+        <input type="hidden" name="month" value="${esc(s.month)}">
+        <input type="file" name="files" accept="image/*" multiple required aria-label="Beelden voor ${esc(maandLabel(s.month))}">
+        <button class="btn btn-ghost" type="submit">Beelden toevoegen</button>
+      </form>
+      <form class="controls" method="post" action="/admin/maandset/${s.id}">
+        <label class="sr-only" for="st-${s.id}">Titel</label>
+        <input id="st-${s.id}" name="title" type="text" maxlength="60" class="in-grow" value="${esc(s.title || '')}" placeholder="Titel (ziet de klant, optioneel — bv. 'Nazomer')">
+        <button class="btn btn-ghost" type="submit" name="action" value="save">Opslaan</button>
+        ${live
+          ? '<button class="btn btn-ghost" type="submit" name="action" value="unpublish">Terugtrekken</button>'
+          : `<button class="btn btn-primary" type="submit" name="action" value="publish"${s.n ? '' : ' disabled'}>Publiceren</button>`}
+      </form>
+    </div>`;
+  };
+  const body = `
+${adminNav('maandset')}
+  <h1>De maandset</h1>
+  <p class="lede">De ${doel} gedeelde beelden die bij elk abonnement horen. Merkneutraal, zonder product, dezelfde set voor iedereen. Gepubliceerd staat hij op de maand-tab van /account/plan bij elke abonnee; downloaden gaat als een levering, met de licentie voor gedeeld beeld erbij.</p>
+  ${flash}
+  ${sets === null ? '<p class="warnline">De tabel shared_sets ontbreekt — draai migratie 0041.</p>' : ''}
+  <h2>Nieuwe maand</h2>
+  <form class="controls" method="post" action="/admin/maandset" enctype="multipart/form-data">
+    <label>Maand <input name="month" type="month" value="${esc(maandNu())}" required></label>
+    <label>De beelden <input type="file" name="files" accept="image/*" multiple required></label>
+    <button class="btn btn-primary" type="submit">Maand aanmaken en beelden toevoegen</button>
+  </form>
+  <p class="meta">Jpeg, png, webp of avif, tot 12 MB per beeld, tot ${MAANDSET_MAX_PER_POST} per keer. Publiceer pas als de set compleet is: de klant ziet het aantal.</p>
+  <h2>Sets</h2>
+  ${sets && sets.length ? sets.map(kaart).join('') : '<p class="empty">Nog geen enkele maand. Wat je hierboven uploadt, staat hier.</p>'}`;
+  return html(page({ title: 'Maandset', body }));
+}
+
+async function handleMaandsetUpload({ request, env }, admin) {
+  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('No R2 binding.') }), 503);
+  const form = await request.formData().catch(() => null);
+  const month = String(form?.get('month') || '').trim();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return seeOther('/admin/maandset');
+  let set = await env.DB.prepare('SELECT id FROM shared_sets WHERE month = ?1').bind(month).first();
+  if (!set) {
+    set = await env.DB.prepare('INSERT INTO shared_sets (month) VALUES (?1) RETURNING id').bind(month).first();
+  }
+  const files = (form.getAll('files') || []).filter((f) => f && typeof f === 'object' && f.size).slice(0, MAANDSET_MAX_PER_POST);
+  let overgeslagen = 0;
+  for (const file of files) {
+    const type = String(file.type || '').toLowerCase();
+    if (!PREVIEW_TYPES.includes(type) || file.size > PREVIEW_MAX_BYTES) { overgeslagen++; continue; }
+    const clean = String(file.name || 'beeld').replace(/[\\/"\r\n\t\x00-\x1f]/g, '_').split('/').pop().slice(0, 100) || 'beeld';
+    const rij = await env.DB.prepare(
+      'INSERT INTO shared_files (set_id, r2_key, filename, bytes, content_type) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id'
+    ).bind(set.id, `shared/${month}/pending`, clean, file.size, type).first();
+    const key = `shared/${month}/${rij.id}-${clean}`;
+    await env.UPLOADS.put(key, file.stream(), { httpMetadata: { contentType: type } });
+    await env.DB.prepare('UPDATE shared_files SET r2_key = ?1 WHERE id = ?2').bind(key, rij.id).run();
+  }
+  await logAdmin(env, admin, 'maandset.upload', { detail: `${month}: ${files.length - overgeslagen} beeld(en) toegevoegd${overgeslagen ? `, ${overgeslagen} overgeslagen` : ''}` }).catch(() => {});
+  return seeOther(`/admin/maandset?m=${overgeslagen ? 'type' : 'up'}#set-${set.id}`);
+}
+
+async function handleMaandsetManage({ request, env }, setId, admin) {
+  if (!Number.isInteger(setId)) return seeOther('/admin/maandset');
+  const set = await env.DB.prepare('SELECT id, month, published_at FROM shared_sets WHERE id = ?1').bind(setId).first();
+  if (!set) return seeOther('/admin/maandset');
+  const form = await request.formData().catch(() => null);
+  const action = String(form?.get('action') || '');
+  const back = `/admin/maandset#set-${setId}`;
+  if (action === 'publish') {
+    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM shared_files WHERE set_id = ?1').bind(setId).first();
+    if (!n?.n) return seeOther(back);
+    await env.DB.prepare("UPDATE shared_sets SET published_at = datetime('now') WHERE id = ?1").bind(setId).run();
+    await logAdmin(env, admin, 'maandset.publish', { detail: `${set.month}: gepubliceerd (${n.n} beelden)` }).catch(() => {});
+    return seeOther(`/admin/maandset?m=pub#set-${setId}`);
+  }
+  if (action === 'unpublish') {
+    await env.DB.prepare('UPDATE shared_sets SET published_at = NULL WHERE id = ?1').bind(setId).run();
+    await logAdmin(env, admin, 'maandset.unpublish', { detail: `${set.month}: teruggetrokken` }).catch(() => {});
+    return seeOther(`/admin/maandset?m=unpub#set-${setId}`);
+  }
+  if (action === 'save') {
+    const title = String(form?.get('title') || '').trim().slice(0, 60);
+    await env.DB.prepare('UPDATE shared_sets SET title = ?1 WHERE id = ?2').bind(title || null, setId).run();
+    return seeOther(back);
+  }
+  if (action === 'remove') {
+    const fileId = Number(form?.get('file'));
+    if (!Number.isInteger(fileId)) return seeOther(back);
+    const f = await env.DB.prepare('SELECT id, r2_key FROM shared_files WHERE id = ?1 AND set_id = ?2').bind(fileId, setId).first();
+    if (!f) return seeOther(back);
+    if (env.UPLOADS) await env.UPLOADS.delete(f.r2_key).catch(() => {});
+    await env.DB.prepare('DELETE FROM shared_files WHERE id = ?1').bind(fileId).run();
+    return seeOther(back);
+  }
+  return seeOther(back);
+}
+
+async function serveSharedFile({ env }, fileId) {
+  if (!Number.isInteger(fileId)) return new Response('Bad id', { status: 400 });
+  const row = await env.DB.prepare('SELECT r2_key, content_type FROM shared_files WHERE id = ?1').bind(fileId).first().catch(() => null);
+  if (!row?.r2_key) return new Response('Not found', { status: 404 });
+  if (!env.UPLOADS) return new Response('No bucket binding', { status: 503 });
+  const obj = await env.UPLOADS.get(row.r2_key);
+  if (!obj) return new Response('The object is not in the bucket', { status: 404 });
+  return new Response(obj.body, {
+    headers: {
+      'content-type': PREVIEW_TYPES.includes(String(row.content_type || '')) ? row.content_type : 'application/octet-stream',
       'cache-control': 'private, no-store',
       'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',
@@ -6018,6 +6694,30 @@ async function renderDiagnose(context) {
   const { env } = context;
   const namen = ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
   const vormen = namen.map((naam) => [naam, secretShape(env?.[naam])]);
+  /* ── DE LANCEERLIJST — 3 september 2026 ────────────────────────────────────
+     Dit scherm toonde vijf secrets en zweeg over de rest. Bij de ketendoorloop
+     bleek dat een factuur zonder VISUAILS_VAT/VISUAILS_KVK stil met
+     plaatshoudergegevens de deur uitgaat en dat VIES zonder eigen btw-nummer
+     geen bewijsnummer oplevert. Alles wat de code uit env leest, staat nu hier
+     met de vraag "is het gezet" — de waarde zelf nooit. Wat leeg is, krijgt het
+     gevolg erbij, zodat je weet wat je mist en niet alleen dát je iets mist. */
+  const VERWACHT = [
+    ['SELLER_ADDRESS', 'zonder: de factuur draagt een voorbeeldadres'],
+    ['VISUAILS_VAT', 'zonder: geen VIES-bewijsnummer, en een plaatshouder op de factuur'],
+    ['VISUAILS_KVK', 'zonder: een plaatshouder-KVK op de factuur'],
+    ['PAYER_SALT', 'leeg mag: dan maakt de code één keer zelf een zout aan in app_settings'],
+    ['NOTIFY_EMAIL', 'zonder: de studio krijgt geen melding van nieuwe bestellingen'],
+    ['FROM_EMAIL', 'zonder: mails gaan uit met de standaardafzender'],
+    ['INVOICE_BCC', 'leeg mag: dan krijgt de studio geen kopie van elke factuur'],
+    ['RESEND_WEBHOOK_SECRET', 'zonder: /admin ziet niet welke mail niet aankwam (bounces) — zet de webhook in Resend op /api/webhook/resend'],
+    ['ALLOWED_ORIGIN_HOSTS', 'leeg mag: alleen visuails.com wordt vertrouwd'],
+    ['PURGE_ENABLED', 'leeg mag: de opruimtaak van de cron rapporteert dan alleen en verwijdert niets (bewust)'],
+  ];
+  const lanceerRij = ([naam, gevolg]) => {
+    const gezet = env?.[naam] !== undefined && env?.[naam] !== null && String(env[naam]) !== '';
+    const mag = /^leeg mag/.test(gevolg);
+    return `<tr><td><code>${esc(naam)}</code></td><td>${gezet ? '<span class="pill">gezet</span>' : `<span class="pill${mag ? '' : ' is-warn'}">niet gezet</span>`}</td><td class="meta">${gezet ? '&mdash;' : esc(gevolg)}</td></tr>`;
+  };
   const problemen = mollieKeyProblems(env);
 
   const rij = ([naam, v]) => {
@@ -6043,6 +6743,12 @@ async function renderDiagnose(context) {
       <tbody>${vormen.map(rij).join('')}</tbody>
     </table>
     ${problemen ? `<p class="meta is-warn">De Mollie-sleutel heeft een probleem vóór er iets wordt verstuurd: ${esc(problemen.join('; '))}</p>` : ''}
+    <h2>De rest van de omgeving</h2>
+    <p class="meta">Geen secrets in de strikte zin, wel alles wat de code uit de omgeving leest. Alleen gezet of niet, en wat het gevolg is als het leeg is.</p>
+    <table class="tbl">
+      <thead><tr><th>Variabele</th><th>Staat</th><th>Als hij leeg is</th></tr></thead>
+      <tbody>${VERWACHT.map(lanceerRij).join('')}</tbody>
+    </table>
     <h2>De vier probes</h2>
     <p class="meta">Vier verzoeken aan Mollie, goedkoopste eerst, elk met één variabele erin: transport met een
     bewust verkeerde sleutel, dan de echte sleutel zonder body, dan de kleinste betaling, dan precies wat
@@ -6380,7 +7086,7 @@ async function renderLog({ env }) {
   } catch { missing = true; }
 
   const body = `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('log')}
 <h1>Activity log</h1>
 <p class="lede">Every change made from this dashboard. The customer never sees this — their own timeline lives on the order.</p>
 ${missing
@@ -6489,7 +7195,7 @@ ${missing
  * LAATSTE DAG WAAROP DIT AF MOET ZIJN.
  *
  *   · een vastgelegde order  → de tweede dag van het paar (`window_end`)
- *   · een wachtrij-order     → de dag van binnenkomst plus QUEUE_DAYS_MAX
+ *   · een wachtrij-order     → de dag van binnenkomst plus QUEUE_AIM_DAYS (sinds 3 sep 2026; was QUEUE_DAYS_MAX)
  *
  * Dat tweede getal is dezelfde vier die de site aan de klant belooft, uit
  * capacity.js en niet hier overgeschreven. Verandert de belofte, dan verschuift
@@ -6684,12 +7390,18 @@ lege map. Klik op een referentie om haar venster te verzetten.</p>
  */
 async function handleWindowMove(context, orderId, admin) {
   const { request, env } = context;
-  const terug = `/admin/orders/${orderId}/files`;
   if (!Number.isInteger(orderId)) return seeOther('/admin');
 
   const form = await request.formData().catch(() => null);
   const doen = String(form?.get('do') || '').trim();
   const reden = String(form?.get('reason') || '').trim().slice(0, 200);
+  /* ── TERUG NAAR DE PLANNING — 3 september 2026 ──────────────────────────
+     Vanaf /admin/planning wil Lucas na het verlengen METEEN de klant bereiken.
+     Daar landt hij dus weer, met ?verzet=<id> zodat het scherm de contactknoppen
+     bovenaan zet met de nieuwe datum al in de tekst. Alleen de letterlijke
+     waarde 'planning' telt; alles anders gaat naar de bestandenpagina. */
+  const naarPlanning = String(form?.get('back') || '') === 'planning';
+  const terug = naarPlanning ? `/admin/planning?verzet=${orderId}` : `/admin/orders/${orderId}/files`;
 
   const order = await env.DB.prepare(
     `SELECT id, ref, service, tier, status, product_count, window_start, window_end
@@ -6792,7 +7504,294 @@ function agendaUiterlijk(o, blackouts) {
   }
   const binnen = normalizeStamp(o.created_at || '').slice(0, 10);
   const vanaf = /^\d{4}-\d{2}-\d{2}$/.test(binnen) ? binnen : new Date().toISOString().slice(0, 10);
-  return { dag: addOpenDays(vanaf, QUEUE_DAYS_MAX, blackouts), manier: 'asap' };
+  /* QUEUE_AIM_DAYS en niet meer QUEUE_DAYS_MAX (3 september 2026): de site
+     belooft geen marge meer, en de lat van de studio zelf is binnen een dag. */
+  return { dag: addOpenDays(vanaf, QUEUE_AIM_DAYS, blackouts), manier: 'asap' };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DE PLANNING — /admin/planning, 3 september 2026
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Lucas: "een werkend interactief planningsschema waar alle orders in staan
+// voor welke datum en een soort aflopende lijst rechts van het scherm met
+// tijden dat ze klaar moeten zijn en een optie om de datum te verlengen wanneer
+// het niet lukt en ik gelijk de klant contacteer."
+//
+// Twee vlakken naast elkaar, op een breed scherm:
+//
+//   LINKS  · veertien dagen als raster, zeven per rij, beginnend op de maandag
+//            van deze week. Elke dag draagt zijn bezetting (beelden tegenover
+//            wat er per dag in past), zijn dichtgezette reden, en de bestellingen
+//            die op die dag af moeten: een vastgelegd paar staat op allebei zijn
+//            dagen, een wachtrij-bestelling op haar streefdag (QUEUE_AIM_DAYS).
+//            Vooruit en terug per twee weken via ?van=.
+//   RECHTS · de aflopende lijst. Alles wat open staat, op volgorde van de dag
+//            waarop het af moet, met hoeveel dagen er nog zijn (of hoeveel het
+//            te laat is). Achter elke regel één klapje: de datum verlengen —
+//            hetzelfde formulier en dezelfde route als op de bestandenpagina,
+//            met back=planning — en de klant meteen bereiken.
+//
+// GEEN JAVASCRIPT, net als de rest van dit paneel (CSP default-src 'none').
+// "Interactief" is hier: klikbare dagen, klapjes, formulieren en links die
+// een vooringevulde WhatsApp of mail openen. Het verlengen zelf verandert de
+// agenda; het contact doet Lucas zelf, met de tekst al klaar — dat is wat hij
+// vroeg ("ik gelijk de klant contacteer"), en een mail die vanzelf uitgaat op
+// een verschoven datum is precies het soort bericht dat je zelf wilt lezen
+// voordat het weg is.
+
+const WEEKDAG = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+const MAAND = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+function maandagVan(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  const terug = (d.getUTCDay() + 6) % 7;
+  return addDays(iso, -terug);
+}
+
+function dagKop(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return { wd: WEEKDAG[d.getUTCDay()], nr: d.getUTCDate(), mnd: MAAND[d.getUTCMonth()] };
+}
+
+/** "vandaag", "morgen", "over 3 dagen", "2 dagen te laat" — vanuit vandaag gerekend. */
+function relatief(dag, vandaag) {
+  const n = Math.round((Date.parse(`${dag}T00:00:00Z`) - Date.parse(`${vandaag}T00:00:00Z`)) / 86400000);
+  if (n < -1) return `${-n} dagen te laat`;
+  if (n === -1) return 'gisteren — te laat';
+  if (n === 0) return 'vandaag';
+  if (n === 1) return 'morgen';
+  return `over ${n} dagen`;
+}
+
+/** Alleen cijfers, met landcode: wat wa.me wil. Een 06-nummer wordt 316. */
+function waNummer(phone) {
+  let d = String(phone || '').replace(/[^\d+]/g, '');
+  if (!d) return '';
+  if (d.startsWith('+')) d = d.slice(1);
+  else if (d.startsWith('00')) d = d.slice(2);
+  else if (d.startsWith('0')) d = `31${d.slice(1)}`;
+  return /^\d{8,15}$/.test(d) ? d : '';
+}
+
+/**
+ * De tekst waarmee Lucas de klant bereikt. In de taal van de bestelling, met de
+ * nieuwe datum erin als die er is. Kort, want dit is een WhatsApp-bericht dat hij
+ * nog aanpast voordat het weg is — het moet kloppen, niet compleet zijn.
+ */
+function contactTekst(o, vandaag) {
+  const naam = o.name ? String(o.name).split(' ')[0] : '';
+  const nl = (o.lang || 'nl') !== 'en';
+  const wat = `${o.product_count || 0} × ${serviceLabel(o.service, nl ? 'nl' : 'en') || o.service}`;
+  const venster = o.window_start ? `${o.window_start} – ${o.window_end || o.window_start}` : '';
+  if (nl) {
+    return `Hoi${naam ? ` ${naam}` : ''}, over ${o.ref} (${wat}): we hebben iets meer tijd nodig dan gepland. `
+      + (venster ? `De nieuwe leverdatum is ${venster}. ` : 'We verwachten het binnen een paar dagen af te hebben. ')
+      + 'Sorry voor het ongemak — je hoort van ons zodra het klaarstaat. Lucas, VISUAILS';
+  }
+  return `Hi${naam ? ` ${naam}` : ''}, about ${o.ref} (${wat}): we need a little more time than planned. `
+    + (venster ? `The new delivery date is ${venster}. ` : 'We expect to have it ready within a few days. ')
+    + 'Sorry for the inconvenience — you will hear from us the moment it is ready. Lucas, VISUAILS';
+}
+
+function contactKnoppen(o, vandaag) {
+  const tekst = contactTekst(o, vandaag);
+  const tel = waNummer(o.phone || o.c_phone);
+  const onderwerp = (o.lang || 'nl') !== 'en' ? `${o.ref} — nieuwe leverdatum` : `${o.ref} — new delivery date`;
+  return `
+<div class="pl-contact">
+  ${tel
+    ? `<a class="btn btn-primary btn-sm" href="https://wa.me/${esc(tel)}?text=${encodeURIComponent(tekst)}" target="_blank" rel="noopener">App ${esc(o.brand || o.name || 'de klant')}</a>`
+    : '<span class="meta">Geen telefoonnummer bekend, dus geen WhatsApp.</span>'}
+  <a class="btn btn-ghost btn-sm" href="mailto:${esc(o.email)}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}">Mail ${esc(o.brand || o.name || 'de klant')}</a>
+  <a class="meta" href="/admin/orders/${o.id}/files">Naar de bestelling &rarr;</a>
+</div>`;
+}
+
+async function renderPlanning({ env }, url) {
+  const vandaag = new Date().toISOString().slice(0, 10);
+  const gevraagd = String(url?.searchParams?.get('van') || '');
+  const van = /^\d{4}-\d{2}-\d{2}$/.test(gevraagd) ? maandagVan(gevraagd) : maandagVan(vandaag);
+  const DAGEN = 14;
+  const tot = addDays(van, DAGEN - 1);
+  const verzetId = Number(url?.searchParams?.get('verzet')) || 0;
+
+  let rijen = [];
+  let blackouts = new Set();
+  let belasting = {};
+  let redenen = {};
+  let stuk = false;
+  try {
+    const [open, kalender, dicht] = await Promise.all([
+      env.DB.prepare(
+        `SELECT o.id, o.ref, o.brand, o.name, o.email, o.phone, o.service, o.status, o.tier, o.lang,
+                o.product_count, o.window_start, o.window_end, o.created_at, o.payment_status,
+                c.phone AS c_phone
+           FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
+          WHERE o.status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')})
+            AND o.hidden_at IS NULL
+          ORDER BY o.id ASC
+          LIMIT 300`
+      ).bind(...AGENDA_OPEN).all(),
+      readCalendar(env, vandaag),
+      env.DB.prepare('SELECT day, reason FROM blackout_days WHERE day >= ?1 AND day <= ?2')
+        .bind(van, tot).all(),
+    ]);
+    rijen = open.results || [];
+    blackouts = kalender.blackouts;
+    belasting = kalender.booked;
+    for (const r of dicht.results || []) redenen[r.day] = r.reason || '';
+  } catch (err) {
+    stuk = String(err?.message || '');
+  }
+
+  const werk = rijen
+    .map((o) => {
+      const u = agendaUiterlijk(o, blackouts);
+      return { ...o, uiterlijk: u.dag, manier: u.manier, beelden: kindImages(o.service, o.product_count || 0) };
+    })
+    .sort((a, b) => (a.uiterlijk < b.uiterlijk ? -1 : a.uiterlijk > b.uiterlijk ? 1 : a.id - b.id));
+
+  const perDag = new Map();
+  const zet = (dag, o, rol) => {
+    if (!perDag.has(dag)) perDag.set(dag, []);
+    perDag.get(dag).push({ o, rol });
+  };
+  for (const o of werk) {
+    if (o.manier === 'datum') {
+      for (const dag of daysInRange(o.window_start, o.window_end || o.window_start)) {
+        zet(dag, o, dag === o.uiterlijk ? 'af' : 'werk');
+      }
+    } else {
+      zet(o.uiterlijk < vandaag ? vandaag : o.uiterlijk, o, o.uiterlijk < vandaag ? 'laat' : 'af');
+    }
+  }
+
+  const wat = (o) => `${o.product_count || 0} × ${esc(serviceLabel(o.service, 'nl') || o.service || '—')}`;
+  const chip = (o, rol) => `
+<a class="pl-chip is-${rol}${o.manier === 'asap' ? ' is-asap' : ''} is-${esc(o.status)}" href="/admin/orders/${o.id}/files" title="${esc(o.ref)} · ${esc(o.brand || o.name || '')} · ${esc(STATUS_LABEL[o.status] || o.status)}">
+  <span class="pl-chip-ref">${esc(o.ref.replace(/^VIS-/, ''))}</span>
+  <span class="pl-chip-wat">${esc(o.brand || o.name || '—')} · ${wat(o)}</span>
+</a>`;
+
+  const cel = (dag) => {
+    const k = dagKop(dag);
+    const bezet = belasting[dag] || 0;
+    const vol = Math.min(100, Math.round((bezet / ATTENDED_IMAGES_PER_DAY) * 100));
+    const dicht = blackouts.has(dag);
+    const lijst = (perDag.get(dag) || []).sort((a, b) => (a.rol === 'laat' ? -1 : b.rol === 'laat' ? 1 : 0));
+    const klassen = ['pl-dag'];
+    if (dag === vandaag) klassen.push('is-vandaag');
+    if (dag < vandaag) klassen.push('is-voorbij');
+    if (dicht) klassen.push('is-dicht');
+    if (vol >= 100) klassen.push('is-vol');
+    return `
+<div class="${klassen.join(' ')}">
+  <div class="pl-dag-kop">
+    <span class="pl-dag-wd">${k.wd}</span>
+    <span class="pl-dag-nr">${k.nr}</span>
+    <span class="pl-dag-mnd">${k.mnd}</span>
+    ${dag === vandaag ? '<span class="pl-dag-nu">vandaag</span>' : ''}
+  </div>
+  ${dicht
+    ? `<p class="pl-dag-dicht">dicht${redenen[dag] ? ` · ${esc(redenen[dag])}` : ''}</p>`
+    : `<div class="pl-last" title="${bezet} van ${ATTENDED_IMAGES_PER_DAY} beelden vastgelegd"><span style="width:${vol}%"></span></div>
+       <p class="pl-last-n">${bezet} / ${ATTENDED_IMAGES_PER_DAY} beelden</p>`}
+  <div class="pl-chips">${lijst.map(({ o, rol }) => chip(o, rol)).join('')}</div>
+</div>`;
+  };
+
+  const dagen = Array.from({ length: DAGEN }, (_, i) => addDays(van, i));
+  const raster = `
+<div class="pl-raster">
+  ${dagen.map(cel).join('')}
+</div>`;
+
+  const nav = `
+<div class="pl-nav">
+  <a class="fl-chip" href="/admin/planning?van=${esc(addDays(van, -DAGEN))}">&larr; twee weken terug</a>
+  ${van === maandagVan(vandaag) ? '<span class="fl-chip is-active" aria-current="true">Deze twee weken</span>' : '<a class="fl-chip" href="/admin/planning">Deze twee weken</a>'}
+  <a class="fl-chip" href="/admin/planning?van=${esc(addDays(van, DAGEN))}">twee weken vooruit &rarr;</a>
+  <span class="meta pl-legenda"><i class="pl-lg is-werk"></i> vastgelegd, in het paar <i class="pl-lg is-af"></i> moet die dag af <i class="pl-lg is-asap"></i> zo snel mogelijk, streefdag <i class="pl-lg is-laat"></i> te laat</span>
+</div>`;
+
+  /* ── DE AFLOPENDE LIJST ────────────────────────────────────────────────── */
+  const eerste = firstOfferableDay(vandaag, blackouts);
+  const item = (o) => {
+    const laat = o.uiterlijk < vandaag;
+    const nu = o.uiterlijk === vandaag;
+    const klasse = laat ? ' is-laat' : nu ? ' is-vandaag' : o.uiterlijk === addDays(vandaag, 1) ? ' is-morgen' : '';
+    const k = dagKop(o.uiterlijk);
+    return `
+<li class="pl-item${klasse}" id="order-${o.id}">
+  <div class="pl-item-dag">
+    <span class="pl-item-rel">${esc(relatief(o.uiterlijk, vandaag))}</span>
+    <span class="pl-item-abs">${k.wd} ${k.nr} ${k.mnd}</span>
+  </div>
+  <div class="pl-item-wat">
+    <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
+    <span class="meta">${esc(o.brand || o.name || '—')} · ${wat(o)}${o.beelden ? ` · ${o.beelden} beelden` : ''}</span>
+    <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `zo snel mogelijk, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
+    <span class="pill is-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
+  </div>
+  <details class="pl-verleng">
+    <summary>${o.manier === 'datum' ? 'Verlengen' : 'Datum zetten of klant informeren'}</summary>
+    <form class="pl-verleng-form" method="post" action="/admin/orders/${o.id}/window">
+      <input type="hidden" name="do" value="verzet">
+      <input type="hidden" name="back" value="planning">
+      <label>Nieuwe dag <input type="date" name="dag" min="${esc(eerste)}" required></label>
+      <label>Waarom <input type="text" name="reason" maxlength="200" placeholder="ziek, materiaal te laat binnen, dag dichtgezet"></label>
+      <button class="btn btn-primary btn-sm" type="submit">${o.manier === 'datum' ? 'Verlengen' : 'Datum vastzetten'}</button>
+    </form>
+    <p class="meta">Je wijst één dag aan; de tweede dag van het paar komt uit de agenda. Vanaf ${esc(eerste)}. Daarna staan de contactknoppen bovenaan met de nieuwe datum in de tekst.</p>
+    <p class="meta">Of laat het nu al weten, zonder datum te veranderen:</p>
+    ${contactKnoppen(o, vandaag)}
+  </details>
+</li>`;
+  };
+
+  const teLaat = werk.filter((w) => w.uiterlijk < vandaag);
+  const lijst = werk.length
+    ? `<ol class="pl-lijst">${werk.map(item).join('')}</ol>`
+    : '<p class="empty">Niets open. Alles is af.</p>';
+
+  /* ── NET VERZET: DE KLANT NU BEREIKEN ─────────────────────────────────── */
+  const verzet = verzetId ? werk.find((w) => w.id === verzetId) : null;
+  const verzetBlok = verzet ? `
+<div class="card is-attention pl-verzet" role="status">
+  <p class="eyebrow">Verzet</p>
+  <p><strong>${esc(verzet.ref)}</strong> · ${esc(verzet.brand || verzet.name || '')} staat nu op
+    <strong>${esc(verzet.window_start)} – ${esc(verzet.window_end)}</strong>. De klant weet dat nog niet — laat het nu weten, de tekst staat klaar:</p>
+  ${contactKnoppen(verzet, vandaag)}
+</div>` : '';
+
+  const body = `
+${adminNav('planning')}
+<h1>Planning</h1>
+<p class="lede">Alles wat open staat, per dag waarop het af moet. Links de twee weken, rechts dezelfde
+bestellingen op volgorde van de dag — met wat er nog rest. Loopt iets uit, dan verleng je het
+daar en bereik je de klant meteen.</p>
+${stuk ? `<p class="warnline">De planning is niet te lezen (${esc(stuk)}).</p>` : `
+${verzetBlok}
+<div class="stats pl-stats">
+  <div class="stat${teLaat.length ? ' is-warn' : ''}"><span class="stat-n">${teLaat.length}</span><span class="stat-l">te laat</span></div>
+  <div class="stat"><span class="stat-n">${werk.filter((w) => w.uiterlijk === vandaag).length}</span><span class="stat-l">moet vandaag af</span></div>
+  <div class="stat"><span class="stat-n">${belasting[vandaag] || 0} / ${ATTENDED_IMAGES_PER_DAY}</span><span class="stat-l">vandaag vastgelegd, in beelden</span></div>
+  <div class="stat"><span class="stat-n">${werk.length}</span><span class="stat-l">open bestellingen</span></div>
+</div>
+<div class="pl-vlakken">
+  <section class="pl-links" aria-label="Twee weken">
+    ${nav}
+    ${raster}
+    <p class="meta">Een dag dichtzetten of weer openen doe je in de <a href="/admin/agenda#dagen">agenda</a>.</p>
+  </section>
+  <aside class="pl-zij" aria-label="Aflopende lijst">
+    <h2>Aflopend</h2>
+    ${lijst}
+  </aside>
+</div>`}`;
+
+  return html(page({ title: 'Planning', body }));
 }
 
 async function renderAgenda({ env }, url) {
@@ -6936,17 +7935,17 @@ async function renderAgenda({ env }, url) {
 
 ${dichteDagen.length ? `
 <table class="ag-tabel ag-dagen">
-  <thead><tr><th>Dag</th><th>Reden</th><th>Bezet</th><th></th></tr></thead>
+  <thead><tr><th>Dag</th><th>Reden</th><th>Bezet</th><th><span class="sr-only">Actie</span></th></tr></thead>
   <tbody>${dichteDagen.map(dagRij).join('')}</tbody>
 </table>` : '<p class="empty">Er staat geen enkele dag dicht. Alles vanaf vandaag is inplanbaar, het weekend erbij.</p>'}`;
 
   const body = `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('agenda')}
 <h1>Agenda</h1>
 <p class="lede">Alles wat nog werk is, op één hoop en op volgorde van de laatste dag
 waarop het af moet zijn. Een vastgelegde bestelling telt vanaf de tweede dag van
 haar paar, een bestelling uit de wachtrij vanaf de dag van binnenkomst plus
-${QUEUE_DAYS_MAX}. Twee lijstjes zou betekenen dat jij ze in je hoofd moet
+${QUEUE_AIM_DAYS} — dat is je eigen lat, de klant is niets beloofd. Twee lijstjes zou betekenen dat jij ze in je hoofd moet
 samenvoegen, en ze vechten om dezelfde dag.</p>
 
 ${stuk ? `<p class="warnline">De agenda is niet te lezen (${esc(stuk)}).</p>` : `
@@ -7079,7 +8078,7 @@ async function renderFunnel({ env }, url) {
   };
 
   const body = `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('funnel')}
 <h1>Trechter</h1>
 <p class="lede">Hoe vaak elke stap van het bestelformulier bereikt is, over de laatste
 ${days} dagen. Dit zijn <strong>geen bezoekersaantallen</strong>: er wordt geen bezoeker
@@ -7202,7 +8201,7 @@ async function renderTestimonials({ env }) {
   };
 
   const body = `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('testimonials')}
 <h1>Aanbevelingen</h1>
 <p class="lede">Wat klanten over ons geschreven hebben, met het vinkje erbij dat wij het
 mogen gebruiken. Goedkeuren zet alleen dat vinkje om — <strong>er wordt niets
@@ -7289,7 +8288,7 @@ async function renderVatReview({ env }) {
   const cents = (v) => `€ ${((Number(v) || 0) / 100).toFixed(2).replace('.', ',')}`;
 
   const body = `
-<p><a href="/admin">&larr; Dashboard</a></p>
+${adminNav('vat')}
 <h1>Btw-controle</h1>
 <p class="lede">Bestellingen die op een btw-opgave wachten die wij niet kunnen nakijken.
 Voor landen buiten de EU bestaat geen register — VIES dekt alleen lidstaten — dus rust
@@ -7469,6 +8468,145 @@ async function handleVatDecision({ request, env }, orderId, admin) {
 }
 
 /*
+ * ── DE OFFERTE OP EEN AANVRAAG — 4 september 2026 ───────────────────────────
+ *
+ * Een eigen look en een videoclip hebben geen tarief; de aanvraag komt binnen
+ * met total_cents 0. Dit is de enige plek waar dat bedrag ontstaat. Het is het
+ * NETTObedrag; de btw volgt het tarief dat de bestelling al had (0% bij een
+ * verlegde of niet-EU-bestelling, anders het gewone), zodat de betaallink en
+ * de factuur hetzelfde zeggen als bij elke andere bestelling.
+ *
+ * `review_state` gaat op 'approved': de btw-controle is voor deze bestelling
+ * gedaan door dezelfde hand die het bedrag zet. Het bedrag mag later opnieuw
+ * gezet worden zolang er niet betaald is — dan gaat er ook een nieuwe link uit.
+ */
+async function handleQuote({ request, env }, orderId, admin) {
+  if (!Number.isInteger(orderId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+  }
+  const back = `/admin/orders/${orderId}/files`;
+  const order = await env.DB.prepare(
+    'SELECT id, ref, service, payment_status, vat_rate, vat_treatment FROM orders WHERE id = ?1'
+  ).bind(orderId).first();
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!['custom', 'video'].includes(String(order.service))) return seeOther(back);
+  if (String(order.payment_status || '') === 'paid') return seeOther(back);
+
+  const form = await request.formData().catch(() => null);
+  const raw = String(form?.get('amount') || '').trim().replace(',', '.');
+  const eur = Number(raw);
+  if (!Number.isFinite(eur) || eur <= 0 || eur > 25000) return seeOther(back);
+  const net = Math.round(eur * 100);
+  const rate = Number.isFinite(Number(order.vat_rate)) && order.vat_rate !== null ? Number(order.vat_rate) : VAT_RATE;
+  const vat = Math.round(net * rate);
+
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE orders SET total_cents = ?2, vat_cents = ?3, vat_rate = ?4,
+              review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?5
+        WHERE id = ?1`
+    ).bind(orderId, net, vat, rate, admin?.email || 'admin'),
+    env.DB.prepare(
+      `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'pending', ?2, 'studio')`
+    ).bind(orderId, `Offerte vastgelegd: € ${(net / 100).toFixed(2).replace('.', ',')} excl. btw.`),
+  ]);
+  await logAdmin(env, admin, 'quote', { orderId, detail: `${order.ref}: offerte ${net} cent netto, btw ${vat} cent` });
+
+  const url = await stuurBetaallink({ request, env }, orderId, { offerte: true }).catch((e) => ({ mislukt: e?.message || String(e) }));
+  if (!url || url.mislukt) {
+    await logAdmin(env, admin, 'payment-link.failed', {
+      orderId, detail: `${order.ref}: offerte gezet, geen betaallink verstuurd — ${url?.mislukt || 'geen sleutel, geen e-mailadres, of al betaald'}`,
+    }).catch(() => {});
+    return seeOther(`${back}?quote=nolink`);
+  }
+  return seeOther(`${back}?quote=sent`);
+}
+
+/*
+ * ── EEN BESTELLING NAMENS DE KLANT — 4 september 2026 ──────────────────────
+ *
+ * Geen tweede bestelroute. Dit bouwt precies het formulier dat de klant zelf zou
+ * versturen (de velden uit TOP_FIELDS in functions/api/order.js) uit wat er van
+ * hem in `customers` staat, en geeft dat aan dezelfde onRequestPost(). Alles wat
+ * daar hoort te gebeuren gebeurt dus ook hier: de prijs uit de ladder, de
+ * btw-beoordeling, het venster bij tien of meer, de bevestigingsmail met de
+ * betaallink, de studiomail, de tijdlijn. Wat er anders is staat in
+ * details_json: `source: 'admin'` en `placed_by`, zodat je later ziet dat deze
+ * niet door de klant zelf is geplaatst.
+ *
+ * De zakelijke verklaring wordt hier door de studio gedaan ('admin'): de klant
+ * heeft al eerder besteld of het is besproken. Ontbreekt een btw-nummer én een
+ * KVK-nummer, dan valt de bestelling gewoon op de btw-lijst — dat is de poort
+ * die er al is, en dan is de betaallink één klik verder.
+ */
+async function handleOrderForCustomer({ request, env, waitUntil }, customerId, admin) {
+  if (!Number.isInteger(customerId)) return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+  const c = await env.DB.prepare(
+    `SELECT id, email, brand, name, phone, website, vat_number, country, first_name, last_name,
+            address_line1, address_line2, postal_code, city, region, no_vat_number, reg_number
+       FROM customers WHERE id = ?1`
+  ).bind(customerId).first();
+  if (!c) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+
+  const form = await request.formData().catch(() => null);
+  const service = ['catalog', 'lifestyle', 'drop'].includes(String(form?.get('service'))) ? String(form.get('service')) : 'catalog';
+  const products = Math.max(1, Math.min(20, Number.parseInt(String(form?.get('products') || '1'), 10) || 1));
+  const style = String(form?.get('style') || '').trim();
+  /* Het KVK-nummer uit het formulier, anders het bewaarde (migratie 0043). */
+  const regNumber = String(form?.get('reg_number') || '').trim().slice(0, 40) || String(c.reg_number || '');
+  const message = String(form?.get('message') || '').trim().slice(0, 500);
+
+  /* De taal van de klant: die van zijn laatste bestelling, anders Nederlands. */
+  const laatste = await env.DB.prepare('SELECT lang FROM orders WHERE customer_id = ?1 ORDER BY id DESC LIMIT 1').bind(customerId).first().catch(() => null);
+  const lang = laatste?.lang === 'en' ? 'en' : 'nl';
+
+  const fd = new FormData();
+  const zet = (k, v) => { if (v !== null && v !== undefined && String(v) !== '') fd.append(k, String(v)); };
+  zet('mode', 'json');
+  zet('service', service);
+  zet('products', products);
+  zet('lang', lang);
+  zet('source', 'admin');
+  zet('placed_by', admin?.email || 'admin');
+  zet('name', c.name || [c.first_name, c.last_name].filter(Boolean).join(' ') || c.brand || c.email);
+  zet('first_name', c.first_name); zet('last_name', c.last_name);
+  zet('brand', c.brand || c.name || c.email);
+  zet('email', c.email);
+  zet('phone', c.phone); zet('website', c.website);
+  zet('country', c.country || 'NL');
+  zet('address_line1', c.address_line1); zet('address_line2', c.address_line2);
+  zet('postal_code', c.postal_code); zet('city', c.city); zet('region', c.region);
+  if (c.vat_number) zet('vat', c.vat_number);
+  else { zet('no_vat_number', '1'); zet('reg_number', regNumber); }
+  zet('business_declaration', 'yes');
+  zet('business_version', 'admin-namens-klant');
+  if (service !== 'catalog' && style) zet('style', style);
+  for (let i = 1; i <= products; i++) zet(`product_p${i}`, `Product ${i}`);
+  if (message) zet('message', message);
+
+  const { onRequestPost: plaats } = await import('../../functions/api/order.js');
+  const origin = new URL(request.url).origin;
+  const res = await plaats({
+    request: new Request(`${origin}/api/order`, { method: 'POST', body: fd, headers: { 'cf-connecting-ip': '127.0.0.1', origin } }),
+    env,
+    waitUntil: waitUntil || (() => {}),
+  });
+  let uit = null;
+  try { uit = await res.json(); } catch { uit = null; }
+  if (!uit?.ok || !uit.ref) {
+    return html(page({ title: 'Admin', body: errorBody(`De bestelling is niet aangemaakt (${res.status}${uit?.error ? `, ${esc(String(uit.error))}` : ''}).`) }), 500);
+  }
+  const rij = await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(uit.ref).first();
+  await logAdmin(env, admin, 'order.namens', { orderId: rij?.id || null, customerId, detail: `${uit.ref}: ${service} × ${products} namens ${c.email}` });
+  if (rij?.id) {
+    await env.DB.prepare(`INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'received', ?2, 'studio')`)
+      .bind(rij.id, lang === 'nl' ? 'Bestelling namens de klant geplaatst door de studio, zoals besproken.' : 'Order placed on the customer\u2019s behalf by the studio, as discussed.').run();
+    return seeOther(`/admin/orders/${rij.id}/files?namens=1`);
+  }
+  return seeOther(`/admin/customers/${customerId}`);
+}
+
+/*
  * ── DE BETAALLINK NA EEN GOEDKEURING ────────────────────────────────────────
  *
  * Dezelfde route als functions/api/order.js gebruikt bij een bestelling die
@@ -7482,89 +8620,64 @@ async function handleVatDecision({ request, env }, orderId, admin) {
  * die `payment_status` aanraakt (zie de noot daar), en een tweede plek die dat
  * doet is precies hoe een betaalde bestelling onbetaald blijft staan.
  */
-async function stuurBetaallink({ request, env }, orderId) {
-  if (!env.MOLLIE_API_KEY) {
-    console.warn('[admin] geen MOLLIE_API_KEY — geen betaallink voor bestelling', orderId);
-    return null;
-  }
-  const o = await env.DB.prepare(
-    `SELECT id, ref, email, lang, service, product_count, total_cents, vat_cents, vat_rate, payment_status
-       FROM orders WHERE id = ?1`
-  ).bind(orderId).first();
-  if (!o || !o.email) return null;
-  /* Al betaald? Dan is er niets te sturen. Kan gebeuren als iemand twee tabbladen
-     open heeft, of als de klant in de tussentijd via een eerdere link betaald heeft. */
-  if (String(o.payment_status || '') === 'paid') return null;
-
-  const bruto = (Number(o.total_cents) || 0) + (Number(o.vat_cents) || 0);
-  if (!(bruto > 0)) return null;
-
-  const lang = o.lang === 'en' ? 'en' : 'nl';
-  const origin = new URL(request.url).origin;
-  const svcNaam = serviceLabel(o.service, lang) || o.service;
-
-  const payment = await createOrderMolliePayment(env, {
-    ref: o.ref,
-    lang,
-    valueEuros: (bruto / 100).toFixed(2),
-    grossCents: bruto,
-    description: `VISUAILS ${o.ref}`,
-    /* IN DE TAAL VAN DE KLANT. Hier stond het Engelse pad vast ingebakken,
-       terwijl `lang` drie regels hoger al bepaald is: een Nederlandse klant die
-       op deze link betaalde, landde op de Engelse bedankpagina. De gewone
-       bestelroute doet het wél goed (die neemt het pad uit het formulier). */
-    successUrl: `${origin}${lang === 'nl' ? '/nl' : ''}/thank-you?paid=${encodeURIComponent(o.ref)}`,
-    webhookUrl: `${origin}/api/webhook/mollie`,
-    /* Bij 0% geen iDEAL, om dezelfde reden als bij een gewone bestelling: een
-       Nederlandse bankrekening onder een buitenlandse claim is precies wat je
-       niet achteraf wilt uitzoeken. Zie de toelichting in src/lib/mollie.js. */
-    excludeIdeal: Number(o.vat_rate) === 0,
-  });
-  const url = payment?._links?.checkout?.href || null;
-  if (!url) {
-    console.error('[admin] Mollie gaf geen betaallink voor', o.ref);
-    return null;
-  }
-
-  const bedrag = `€ ${(bruto / 100).toFixed(2).replace('.', ',')}`;
-  await sendMail(env, {
-    to: o.email,
-    subject: lang === 'nl'
-      ? `Je bestelling is nagekeken — ${o.ref}`
-      : `Your order has been checked — ${o.ref}`,
-    html: mailShell({
-      lang,
-      preheader: lang === 'nl' ? 'De betaallink staat erin.' : 'The payment link is inside.',
-      body: [
-        mailH1(lang === 'nl' ? 'Nagekeken en akkoord' : 'Checked and cleared'),
-        mailP(lang === 'nl'
-          ? `We hebben de gegevens bij <strong>${esc(o.ref)}</strong> nagekeken. Alles klopt, dus je kunt nu betalen — daarna begint de productie meteen.`
-          : `We have checked the details on <strong>${esc(o.ref)}</strong>. Everything is in order, so you can pay now — production starts straight after.`),
-        mailPayPanel({
-          label: lang === 'nl' ? 'Te betalen' : 'To pay',
-          amount: bedrag,
-          sub: `${esc(svcNaam)}${o.product_count ? ` · ${o.product_count}` : ''}`,
-          href: url,
-          cta: lang === 'nl' ? 'Betalen' : 'Pay now',
-        }),
-        mailLinkLine(url, lang === 'nl' ? 'Werkt de knop niet? Gebruik deze link:' : 'Button not working? Use this link:'),
-        mailSpamNote(lang),
-      ].join(''),
-    }),
-  });
-
-  await env.DB.prepare(
-    `INSERT INTO order_events (order_id, status, note, actor)
-     VALUES (?1, 'pending', ?2, 'studio')`
-  ).bind(orderId, lang === 'nl'
-    ? `Betaallink verstuurd naar ${o.email} voor ${bedrag}.`
-    : `Payment link sent to ${o.email} for ${bedrag}.`).run();
-
-  console.log('[admin] betaallink verstuurd voor', o.ref);
-  return url;
+async function stuurBetaallink({ request, env }, orderId, { offerte = false } = {}) {
+  /* Verhuisd naar src/lib/betaallink.js op 4 september 2026 — de nachtelijke
+     herinnering gebruikt dezelfde mail. Zie de kop van dat bestand. */
+  return stuurBetaallinkMail(env, orderId, { origin: new URL(request.url).origin, offerte });
 }
 
-function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0, watch = null, tmWaiting = 0) {
+/**
+ * Wat er als eerste af moet — de kop van de aflopende lijst, voor het dashboard.
+ *
+ * Dezelfde rekenregel als de planning en de agenda (agendaUiterlijk), zodat het
+ * dashboard nooit een andere dag noemt dan de twee schermen ernaast. Faalt de
+ * agenda, dan is dit blok leeg en zegt het dat; het dashboard zelf blijft staan.
+ */
+async function loadAflopend(env, limiet = 6) {
+  const vandaag = new Date().toISOString().slice(0, 10);
+  try {
+    const [open, kalender] = await Promise.all([
+      env.DB.prepare(
+        `SELECT id, ref, brand, name, service, status, tier, product_count, window_start, window_end, created_at, payment_status
+           FROM orders
+          WHERE status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')}) AND hidden_at IS NULL
+          ORDER BY id ASC LIMIT 300`
+      ).bind(...AGENDA_OPEN).all(),
+      readCalendar(env, vandaag),
+    ]);
+    const werk = (open.results || [])
+      .map((o) => { const u = agendaUiterlijk(o, kalender.blackouts); return { ...o, uiterlijk: u.dag, manier: u.manier }; })
+      .sort((a, b) => (a.uiterlijk < b.uiterlijk ? -1 : a.uiterlijk > b.uiterlijk ? 1 : a.id - b.id));
+    return { vandaag, open: werk.length, teLaat: werk.filter((w) => w.uiterlijk < vandaag).length, kop: werk.slice(0, limiet) };
+  } catch (err) {
+    return { vandaag, stuk: String(err?.message || err), kop: [] };
+  }
+}
+
+/*
+ * ── HET DASHBOARD, BREED — 3 september 2026 ──────────────────────────────────
+ *
+ * Lucas: "je ziet zelf hoe onoverzichtelijk en druk het is." Dat klopte, en de
+ * oorzaak was niet dat er te veel op stond maar dat alles OPEN stond: elke
+ * bestelling was een kaart met een statusformulier, een notitieveld, een
+ * klapje voor annuleren en een formulier voor een merkmodel — vier keer een
+ * invoerveld per bestelling, veertien bestellingen, 4.700 pixels hoog. Alles
+ * wat je één keer per week nodig hebt, stond even groot als wat je elke dag
+ * leest.
+ *
+ * Nu:
+ *   · één regel per bestelling (referentie, merk, wat, wanneer, status,
+ *     betaling, bestanden), en alle handelingen achter die regel in een klapje.
+ *     Niets is weg — hetzelfde formulier, dezelfde route — het staat alleen
+ *     dicht tot je erop klikt;
+ *   · twee vlakken op een breed scherm: links de lijst, rechts wat vandaag
+ *     telt — de kop van de aflopende lijst, de revisieverzoeken, en de
+ *     bewakers (cron, back-up, btw-controle, aanbevelingen) die eerst als
+ *     chips tussen de filters stonden;
+ *   · de weg naar de andere schermen zit in de balk bovenaan (adminNav) en
+ *     niet meer tussen de filterchips.
+ */
+function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0, watch = null, tmWaiting = 0, aflopend = null) {
   const { q = '', filter = '', hidden = false } = view;
 
   /* Zoeken en filteren, in één rij boven de lijst.
@@ -7588,71 +8701,84 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
   ${statusFilter ? `<input type="hidden" name="status" value="${esc(statusFilter)}">` : ''}
   ${filter ? `<input type="hidden" name="f" value="${esc(filter)}">` : ''}
   ${hidden ? '<input type="hidden" name="hidden" value="1">' : ''}
-  <input type="search" name="q" value="${esc(q)}" placeholder="Reference, brand, email or name" aria-label="Search orders">
-  <button class="btn btn-ghost btn-sm" type="submit">Search</button>
-  ${q ? `<a class="fl-chip" href="/admin">Clear</a>` : ''}
+  <input type="search" name="q" value="${esc(q)}" placeholder="Referentie, merk, e-mail of naam" aria-label="Zoek bestellingen">
+  <button class="btn btn-ghost btn-sm" type="submit">Zoek</button>
+  ${q ? `<a class="fl-chip" href="/admin">Wis</a>` : ''}
 </form>
 <div class="fl-row">
-  ${chip('revisions', 'Revisions open')}
-  ${chip('unpaid', 'Unpaid')}
-  ${chip('unannounced', 'Delivered, not announced')}
-  ${chip('paid_undelivered', 'Paid, not delivered')}
-  ${chip('delivered_unpaid', 'Delivered, not paid')}
-  <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Hiding hidden again' : 'Include hidden'}</a>
-  <a class="fl-chip" href="/admin/log">Activity log &rarr;</a>
-  ${/*
-      DE LINK NAAR DE BTW-CONTROLE, MET HET AANTAL ERIN.
-
-      Een scherm dat niemand kan bereiken is hetzelfde probleem als geen scherm — en
-      dat was precies wat er met `orders.review_state` aan de hand was: de toestand
-      bestond, er was geen weg ernaartoe. Het getal staat erbij omdat een link zonder
-      getal je niet vertelt of je erop moet klikken.
-
-      Staat er niets in behandeling, dan is de chip er ook niet. Een lege lijst is
-      geen werk en hoort niet elke dag om aandacht te vragen.
-   */''}${vatHeld > 0
-    ? `<a class="fl-chip is-warn" href="/admin/vat">Btw-controle &middot; ${vatHeld} &rarr;</a>`
-    : ''}${/*
-      DE AANBEVELINGEN, om precies dezelfde reden als de regel hierboven en met
-      precies dezelfde fout in de voorgeschiedenis: de kolom bestond, de toestand
-      bestond, en er was geen weg ernaartoe. Zie de kop van renderTestimonials().
-
-      GEEN is-warn. Een aanbeveling die nog niet nagekeken is, is geen bestelling
-      die vastzit — er wacht niemand op. Een gewone chip dus, die alleen laat zien
-      dat er iets te lezen valt.
-   */''}${tmWaiting > 0
-    ? `<a class="fl-chip" href="/admin/testimonials">Aanbevelingen &middot; ${tmWaiting} &rarr;</a>`
-    : ''}${watch ? watchChip(WATCH.cron, watch.cron) : ''}${watch
-    ? watchChip(WATCH.backup, watch.backup)
-    : ''}
-  <a class="fl-chip" href="/admin/agenda">Agenda &rarr;</a>
-  <a class="fl-chip" href="/admin/security">Twee stappen &rarr;</a>
-  <a class="fl-chip" href="/admin/funnel">Trechter &rarr;</a>
+  ${chip('revisions', 'Revisies open')}
+  ${chip('unpaid', 'Onbetaald')}
+  ${chip('unannounced', 'Geleverd, niet gemeld')}
+  ${chip('paid_undelivered', 'Betaald, niet geleverd')}
+  ${chip('delivered_unpaid', 'Geleverd, niet betaald')}
+  <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Verborgen weer weg' : 'Ook verborgen'}</a>
 </div>`;
 
+  /* ── RECHTS: WAT VANDAAG TELT ─────────────────────────────────────────── */
+  const dagKort = (iso, vandaag) => {
+    if (iso < vandaag) return 'te laat';
+    if (iso === vandaag) return 'vandaag';
+    if (iso === addDays(vandaag, 1)) return 'morgen';
+    return iso.slice(5).replace('-', '/');
+  };
+  const aflopendBlok = aflopend?.stuk
+    ? `<p class="warnline">De agenda is niet te lezen (${esc(aflopend.stuk)}).</p>`
+    : aflopend?.kop?.length
+      ? `<ol class="db-aflopend">${aflopend.kop.map((o) => `
+<li class="${o.uiterlijk < aflopend.vandaag ? 'is-laat' : o.uiterlijk === aflopend.vandaag ? 'is-vandaag' : ''}">
+  <span class="db-af-dag">${esc(dagKort(o.uiterlijk, aflopend.vandaag))}</span>
+  <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
+  <span class="meta">${esc(o.brand || o.name || '—')} · ${o.product_count || 0} × ${esc(serviceLabel(o.service, 'nl') || o.service)}${o.manier === 'asap' ? ' · zsm' : ''}</span>
+</li>`).join('')}</ol>
+        <p class="meta">${aflopend.open} open${aflopend.teLaat ? `, <strong class="pl-onbetaald">${aflopend.teLaat} te laat</strong>` : ''} · <a href="/admin/planning">Naar de planning &rarr;</a></p>`
+      : '<p class="empty">Niets open.</p>';
+
+  const bewakers = [
+    vatHeld > 0 ? `<a class="fl-chip is-warn" href="/admin/vat">Btw-controle &middot; ${vatHeld} &rarr;</a>` : '',
+    tmWaiting > 0 ? `<a class="fl-chip" href="/admin/testimonials">Aanbevelingen &middot; ${tmWaiting} &rarr;</a>` : '',
+    watch ? watchChip(WATCH.cron, watch.cron) : '',
+    watch ? watchChip(WATCH.backup, watch.backup) : '',
+  ].filter(Boolean);
+
+  const revisieKort = revisions.length
+    ? `<ul class="db-revs">${revisions.slice(0, 6).map((r) => `
+<li><a href="#rev-${r.file_id}"><img src="/admin/files/${r.file_id}" alt="" loading="lazy" decoding="async" width="40" height="40"></a>
+  <span><a class="ref" href="#rev-${r.file_id}">${esc(r.ref)}</a><br><span class="meta">${esc(r.brand || r.email)}${r.product_key ? ` · product ${esc(r.product_key.replace(/^p/, ''))}` : ''}${r.shot ? ` · ${esc(r.shot)}` : ''}</span></span></li>`).join('')}</ul>`
+    : '<p class="meta">Geen revisieverzoeken. Wat een klant in zijn portaal aanmerkt, komt hier.</p>';
+
+  const zij = `
+<aside class="db-zij" aria-label="Vandaag">
+  <h2>Eerst af</h2>
+  ${aflopendBlok}
+  <h2>Revisies${revisions.length ? ` <span class="fl-n">${revisions.length}</span>` : ''}</h2>
+  ${revisieKort}
+  ${bewakers.length ? `<h2>Bewakers</h2><div class="fl-row">${bewakers.join('')}</div>` : ''}
+</aside>`;
+
   return `
-<div class="bar">
-  <a class="mark" href="/">VISUAILS</a>
-  <div class="bar-right">
-    <span>Admin</span>
-    <form method="post" action="/admin/logout"><button class="btn btn-ghost" type="submit">Sign out</button></form>
-  </div>
-</div>
+${adminNav('dashboard')}
 <h1>Dashboard</h1>
-<p class="lede"><a href="/admin/customers">Customers &rarr;</a></p>
 ${counts ? todayStrip(counts) : ''}
+<div class="db-vlakken">
+<section class="db-hoofd">
+${revisions.length ? `
+<h2>Revisieverzoeken <span class="fl-n">${revisions.length}</span></h2>
+${revisions.map(revisionCard).join('')}` : ''}
 
-<h2>Revision requests</h2>
-${revisions.length ? revisions.map(revisionCard).join('') : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
-
-<h2>Orders${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
+<h2>Bestellingen${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
 ${searchRow}
 ${statusFilterRow(statusCounts, statusFilter)}
 ${orders.length
-  ? orders.map((o) => orderCard(o, modelsByCustomer.get(o.customer_id) || [], statusFilter)).join('')
+  ? `<div class="or-lijst">
+<div class="or-kop" aria-hidden="true"><span>Referentie</span><span>Merk</span><span>Wat</span><span>Wanneer</span><span>Status</span><span>Betaling</span><span>Bestanden</span></div>
+${orders.map((o) => orderCard(o, modelsByCustomer.get(o.customer_id) || [], statusFilter)).join('')}
+</div>`
   : statusFilter
-    ? `<p class="empty">Nothing at "${esc(STATUS_LABEL[statusFilter] || statusFilter)}" right now. <a href="/admin">All orders</a></p>`
-    : '<p class="empty">No orders yet.</p>'}`;
+    ? `<p class="empty">Niets op "${esc(STATUS_LABEL[statusFilter] || statusFilter)}" op dit moment. <a href="/admin">Alle bestellingen</a></p>`
+    : '<p class="empty">Nog geen bestellingen.</p>'}
+</section>
+${zij}
+</div>`;
 }
 
 /**
@@ -7775,7 +8901,6 @@ function orderCard(o, models, statusFilter = '') {
   const options = STATUSES.map(
     (s) => `<option value="${s}"${s === o.status ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
   ).join('');
-  const window = o.window_start ? `${esc(o.window_start)} → ${esc(o.window_end)}` : '—';
   // Task #271e: custom_models for this order’s customer, read-only, so Lucas
   // can see what a brand already has before adding another with the same
   // name by accident — see loadCustomModelsByCustomer()'s header.
@@ -7805,19 +8930,40 @@ function orderCard(o, models, statusFilter = '') {
     ? `<p class="warnline">${o.unannounced} delivered ${o.unannounced === 1 ? 'file has' : 'files have'} not been announced.
         <a href="/admin/orders/${o.id}/files">Tell the customer &rarr;</a></p>`
     : '';
+  /* EN DE DERDE STILTE — 4 september 2026 (doorlichting §3.7). Resend zei 200,
+     de klant kreeg niets: het adres bestaat niet of wij staan in zijn spam. Rood
+     en niet amber, want elke mail hierna — betaallink, inloglink, levering —
+     verdwijnt op dezelfde manier. */
+  const bounced = o.bounce
+    ? `<p class="warnline is-rood">${esc(bounceLine(o.bounce))}</p>`
+    : '';
+        /* ── ÉÉN REGEL, EN DE HANDELINGEN ERACHTER — 3 september 2026 ──────────
+     Zie de kop van dashboardBody(). De regel is de <summary>; alles wat je
+     kunt DOEN staat in het klapje eronder en is ongewijzigd: dezelfde velden,
+     dezelfde routes. De waarschuwingen (geleverd maar niet gemeld, geannuleerd)
+     staan als merkteken óp de regel, want die moet je zien zonder te klikken. */
+  const waar = o.window_start
+    ? `${esc(o.window_start)} → ${esc(o.window_end)}`
+    : '<span class="muted">zo snel mogelijk</span>';
+  const merkteken = o.bounce
+    ? `<span class="or-let is-rood" title="${esc(bounceLine(o.bounce))}">mail bounced</span>`
+    : (o.status === 'delivered' && !o.delivery_mailed_at)
+    ? '<span class="or-let" title="Geleverd, klant niet gemaild">niet gemeld</span>'
+    : (o.delivery_mailed_at && o.unannounced)
+      ? `<span class="or-let" title="${o.unannounced} nieuwe beelden niet aangekondigd">${o.unannounced} nieuw</span>`
+      : o.hidden_at ? '<span class="or-let is-stil">verborgen</span>' : '';
   return `
-<div class="card">
-  <div class="row-head">
-    <span class="ref">${esc(o.ref)}</span>
-    <span class="pill is-${esc(o.status)}">${STATUS_LABEL[o.status] || esc(o.status)}</span>
-    <!-- The way in to this order’s files, both directions. Added August 2026,
-         when the 30-product test order made it clear the notification email is
-         a heads-up and not a delivery mechanism. -->
-    <a class="files-link" href="/admin/orders/${o.id}/files">Files${o.file_count ? ` (${o.file_count})` : ''}</a>
-  </div>
-  <p class="meta">${esc(o.brand || '—')} · ${esc(o.email)} · ${esc(o.service)}/${esc(o.tier)} ·
-     ${o.product_count ? `${esc(o.product_count)} products · ` : ''}window ${window} ·
-     payment ${esc(o.payment_status)} · ${esc(when(o.created_at))}</p>
+<details class="or" id="order-${o.id}">
+  <summary class="or-rij">
+    <span class="or-ref"><span class="ref">${esc(o.ref)}</span>${merkteken}</span>
+    <span class="or-merk"><strong>${esc(o.brand || '—')}</strong><span class="meta">${esc(o.email)}</span></span>
+    <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : 'wachtrij')}</span></span>
+    <span class="or-wanneer">${waar}<span class="meta">binnen ${esc(when(o.created_at).slice(0, 10))}</span></span>
+    <span class="or-status"><span class="pill is-${esc(o.status)}">${STATUS_LABEL[o.status] || esc(o.status)}</span></span>
+    <span class="or-betaal${o.payment_status === 'paid' ? '' : ' is-open'}">${esc(o.payment_status === 'paid' ? 'betaald' : o.payment_status === 'unpaid' ? 'onbetaald' : o.payment_status)}</span>
+    <span class="or-files"><a class="files-link" href="/admin/orders/${o.id}/files">Bestanden${o.file_count ? ` (${o.file_count})` : ''}</a></span>
+  </summary>
+  <div class="or-body">
   <form class="controls" method="post" action="/admin/orders/${o.id}/status">
     <!-- Where to go back to. Without this, moving one order out of a filtered
          list drops Lucas back on the unfiltered dashboard and he has to re-pick
@@ -7825,10 +8971,11 @@ function orderCard(o, models, statusFilter = '') {
          session, not an edge case. handleStatusUpdate re-validates it against
          STATUSES rather than trusting the round trip. -->
     ${statusFilter ? `<input type="hidden" name="back" value="${esc(statusFilter)}">` : ''}
-    <select name="status">${options}</select>
+    <select name="status" aria-label="Status for ${esc(o.ref)}">${options}</select>
     <input type="text" name="note" placeholder="Note (optional, goes on the client’s timeline too)" class="in-grow">
     <button class="btn btn-primary" type="submit">Update</button>
   </form>
+  ${bounced}
   ${unannounced}
   ${pendingAnnounce}
   ${o.hidden_at ? `<p class="meta">Hidden since ${esc(when(o.hidden_at))} — it stays out of the lists and the counts.</p>` : ''}
@@ -7839,7 +8986,8 @@ function orderCard(o, models, statusFilter = '') {
     <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" class="in-grow" required>
     <button class="btn btn-ghost" type="submit">Add custom model</button>
   </form>
-</div>`;
+  </div>
+</details>`;
 }
 
 /**
@@ -7916,6 +9064,42 @@ function errorBody(message) {
   return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error is-page">${message}</p>`;
 }
 
+/**
+ * De vaste bovenbalk van het paneel — 3 september 2026.
+ *
+ * Elke pagina had een eigen kop: het dashboard een balk met "Sign out", de rest
+ * een "← Dashboard"-regel, en de weg naar de agenda, de klanten of de btw-controle
+ * zat verstopt tussen de filterchips van het dashboard. Eén balk, dezelfde op
+ * elke pagina, met de plek waar je bent aangewezen. Niets nieuws erin: het zijn
+ * de schermen die al bestonden, nu vindbaar.
+ */
+const NAV = [
+  ['dashboard', '/admin', 'Dashboard'],
+  ['planning', '/admin/planning', 'Planning'],
+  ['agenda', '/admin/agenda', 'Agenda'],
+  ['customers', '/admin/customers', 'Klanten'],
+  ['maandset', '/admin/maandset', 'Maandset'],
+  ['testimonials', '/admin/testimonials', 'Aanbevelingen'],
+  ['vat', '/admin/vat', 'Btw'],
+  ['funnel', '/admin/funnel', 'Trechter'],
+  ['log', '/admin/log', 'Log'],
+  ['security', '/admin/security', 'Twee stappen'],
+];
+function adminNav(actief = '') {
+  return `
+<div class="bar">
+  <a class="mark" href="/">VISUAILS</a>
+  <nav class="bar-nav" aria-label="Adminportaal">
+    ${NAV.map(([k, href, label]) => (k === actief
+      ? `<span class="bar-link is-active" aria-current="page">${esc(label)}</span>`
+      : `<a class="bar-link" href="${href}">${esc(label)}</a>`)).join('')}
+  </nav>
+  <div class="bar-right">
+    <form method="post" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sign out</button></form>
+  </div>
+</div>`;
+}
+
 function page({ title, body }) {
   return `<!doctype html>
 <html lang="en">
@@ -7929,9 +9113,18 @@ function page({ title, body }) {
 <link rel="stylesheet" href="/admin.css">
 </head>
 <body>
-<div class="wrap">
+${/* ── <main> EN NIET <div> — 2 september 2026 ──────────────────────────────
+     axe-core over het adminscherm (kladblok/axe-admin.mjs): "Document does not
+     have a main landmark", op elke pagina, plus "Some page content is not
+     contained by landmarks" voor alles erin. Wie met een schermlezer werkt,
+     springt van landmark naar landmark; zonder <main> is er niets om naartoe te
+     springen en moet je elke keer door de kop heen.
+
+     Het is dezelfde <div class="wrap"> als altijd — alleen het element is
+     veranderd, en `.wrap` is een klasse, dus de opmaak beweegt niet mee. */ ''}
+<main class="wrap">
 ${body}
-</div>
+</main>
 </body>
 </html>`;
 }

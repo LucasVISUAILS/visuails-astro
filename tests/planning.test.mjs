@@ -226,8 +226,14 @@ console.log('\nelk vakje dat het formulier tekent, kan ook geüpload worden');
      catalogsets tegen 30 complete. De config draagt dus `maxProducts` in de
      verkorte vorm, en de afleiding staat er één blok boven. */
   ok('en OrderFlow stuurt maxProducts mee', /\n  maxProducts,\n/.test(of), true);
+  /* Sinds 3 september 2026 in twee stappen: eerst de weekcapaciteit van de
+     dienst (capacityMax), dan het plafond van het FORMULIER erover heen —
+     FORM_MAX_PRODUCTS in pricing.js, boven de twintig gaat de klant naar
+     WhatsApp of mail. De afleiding uit het gewicht blijft de eerste stap. */
   ok('  en leidt dat af uit het gewicht van de dienst',
-    /const maxProducts = perProduct\s*\n?\s*\? Math\.floor\(ATTENDED_IMAGES_PER_WINDOW \/ perProduct\)/.test(of), true);
+    /const capacityMax = perProduct\s*\n?\s*\? Math\.floor\(ATTENDED_IMAGES_PER_WINDOW \/ perProduct\)/.test(of), true);
+  ok('  en legt daar het formulierplafond overheen',
+    /const maxProducts = Math\.min\(FORM_MAX_PRODUCTS, capacityMax\);/.test(of), true);
 }
 
 console.log('\nen er staat geen prijs meer op de site die niemand kan bestellen');

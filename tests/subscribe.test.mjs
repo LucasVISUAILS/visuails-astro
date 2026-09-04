@@ -59,10 +59,11 @@ db.exec(`
    Eén functie die op het PAD reageert, zoals mollieRequest() hem aanroept. `staat`
    stuurt per test wat er terugkomt: geen mandaat, een geldig mandaat, of een
    storing. */
-const staat = { mandaten: [], stuk: null, aanroepen: [] };
+const staat = { mandaten: [], stuk: null, aanroepen: [], bodies: [] };
 function nepFetch(url, init) {
   const pad = new URL(url).pathname;
   staat.aanroepen.push(`${init?.method || 'GET'} ${pad}`);
+  if (init?.body) { try { staat.bodies.push({ pad, body: JSON.parse(String(init.body)) }); } catch { /* geen json */ } }
   if (staat.stuk && pad.includes(staat.stuk)) {
     return Promise.resolve(new Response(JSON.stringify({ detail: 'nep-storing' }), { status: 503 }));
   }
@@ -150,6 +151,14 @@ console.log('\nde weg naar de machtiging');
   ok('eerst een klant bij Mollie', mollie[0], 'POST /v2/customers');
   ok('en dan pas de eerste betaling', mollie[1], 'POST /v2/payments');
   ok('en nog geen subscription', mollie.some((a) => a.includes('subscriptions')), false);
+
+  /* ── DE EERSTE BETALING IS DE EERSTE MAAND — 4 september 2026 ──────────
+     Geen euro voor het mandaat meer: het bedrag is het maandbedrag van het plan,
+     zodat de klant meteen saldo heeft. Het mandaat komt uit dezelfde betaling. */
+  const eerste = staat.bodies.find((b) => b.pad === '/v2/payments')?.body;
+  ok('de eerste betaling is het maandbedrag en geen euro', eerste?.amount?.value, (subMaandCents(r) / 100).toFixed(2));
+  ok('  en geeft het mandaat af', eerste?.sequenceType, 'first');
+  ok('  met het kenmerk in de metadata', eerste?.metadata?.sub_ref, r.ref);
 }
 
 console.log('\neen tweede poging levert geen tweede abonnement op');
@@ -187,6 +196,11 @@ console.log('\nmet een geldig mandaat gaat het abonnement lopen');
      nog niet geldig is. Een mandaat in 'pending' kan niet afschrijven. */
   ok('het nieuwste geldige mandaat is gekozen', r.mollie_mandate_id, 'mdt_nieuw');
   ok('en de subscription staat erbij', r.mollie_subscription_id, 'sub_nep');
+  /* Een jaartermijn: één maand al betaald bij het afsluiten, dus elf via de
+     subscription — samen twaalf. En hij begint pas volgende maand. */
+  const subBody = staat.bodies.filter((b) => /\/subscriptions$/.test(b.pad)).pop()?.body;
+  ok('de jaartermijn telt elf termijnen na de eerste', subBody?.times, 11);
+  ok('  en begint bij de eerstvolgende termijn', subBody?.startDate, eersteTermijn());
   ok('started_at is gezet', Boolean(r.started_at), true);
 }
 
@@ -295,7 +309,11 @@ console.log('\nen de weg bestaat echt — geen knop zonder draad');
      om te kopen vindbaar blijven vanaf elkaar. */
   const prijs = readFileSync(new URL('../src/components/PricingPage.astro', import.meta.url), 'utf8')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
-  ok('en de prijspagina wijst naar de abonnementen', /lp\('\/plans'\)/.test(prijs), true);
+  /* Sinds 3 september 2026 via de abonnementsband (PlanBand.astro), die zelf
+     naar /plans wijst; de prijspagina zet die band neer. */
+  const band = readFileSync(new URL('../src/components/PlanBand.astro', import.meta.url), 'utf8');
+  ok('en de prijspagina wijst naar de abonnementen',
+    /<PlanBand /.test(prijs) && /lp\('\/plans'\)/.test(band), true);
 }
 
 /* ══ OPZEGGEN EN PAUZEREN STOPPEN DE INCASSO ══════════════════════════════

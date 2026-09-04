@@ -274,6 +274,50 @@ console.log('\n9 · de klant zegt op');
   ok('vastzetten mag nog, want hij heeft ervoor betaald', (await queueLock(env, 1, q.id)).ok, true);
 }
 
+/* ── 10 · DE EERSTE MAAND — 4 september 2026 ─────────────────────────────────
+   Sinds vandaag is de eerste betaling geen euro voor het mandaat meer maar de
+   eerste maand: dezelfde webhook kent hem toe, alleen wordt het abonnement
+   gevonden op `metadata.sub_ref` en niet op `subscriptionId` (dat veld is er dan
+   nog niet). Een tweede klant, nog op 'pending', zonder Mollie-subscription. */
+console.log('\n10 · de eerste maand telt meteen');
+{
+  db.exec("INSERT INTO customers (id, email, name, brand) VALUES (2, 'joris@noord.test', 'Joris', 'NOORD')");
+  const { row: sub2 } = await createSubscriptionRow(env0(), { customerId: 2, planId: 'studio', termId: 'monthly', windowDay: 12 });
+  betaling = {
+    resource: 'payment', id: 'tr_EERSTE', mode: 'test',
+    createdAt: `${DEZE}-03T10:00:00+00:00`, paidAt: `${DEZE}-03T10:01:00+00:00`,
+    amount: { value: '790.00', currency: 'EUR' },
+    description: 'VISUAILS Studio', method: 'ideal',
+    sequenceType: 'first', status: 'paid',
+    customerId: 'cst_2', mandateId: 'mdt_2',
+    metadata: { sub_ref: sub2.ref },
+  };
+  const res = await onRequestPost({
+    request: new Request('https://visuails.com/api/webhook/mollie', {
+      method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: 'id=tr_EERSTE',
+    }),
+    env, waitUntil() {},
+  });
+  ok('de webhook geeft 200 terug', res.status, 200);
+  ok('de eerste betaling staat in subscription_payments',
+    db.prepare("SELECT COUNT(*) AS n FROM subscription_payments WHERE subscription_id = ? AND external_id = 'tr_EERSTE'").get(sub2.id).n, 1);
+  ok('  en de maand is toegekend',
+    db.prepare('SELECT month FROM subscription_months WHERE subscription_id = ?').get(sub2.id)?.month, DEZE);
+  ok('  met de slots uit het plan',
+    db.prepare('SELECT COUNT(*) AS n FROM subscription_slots WHERE subscription_id = ?').get(sub2.id).n, SOORTEN.length);
+  ok('  en het abonnement staat op actief', db.prepare('SELECT status FROM subscriptions WHERE id = ?').get(sub2.id).status, 'active');
+  ok('  het eerste abonnement is er niet door geraakt',
+    db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub.id).n,
+    db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub.id).n);
+  const nogmaals = await onRequestPost({
+    request: new Request('https://visuails.com/api/webhook/mollie', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'id=tr_EERSTE' }),
+    env, waitUntil() {},
+  });
+  ok('een tweede aflevering kent niets dubbel toe', [nogmaals.status,
+    db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub2.id).n], [200, 1]);
+}
+
 globalThis.fetch = echteFetch;
 console.log(`\n${goed}/${totaal} geslaagd`);
 process.exit(goed === totaal ? 0 : 1);

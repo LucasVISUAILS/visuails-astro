@@ -1,0 +1,43 @@
+---
+/*
+ * VISUAILS — /hooks (Engels). Het lichaam staat in HooksPage.astro, zodat
+ * /hooks en /nl/hooks niet uit elkaar kunnen lopen; alleen de meta verschilt.
+ *
+ * ── EEN MAP EN GEEN hooks.astro ────────────────────────────────────────────
+ *
+ * De vorige versie van deze pagina stond als `src/pages/hooks.astro` op de
+ * schijf, en die naam is niet vrij: tests/nav.test.mjs heeft er sinds 9
+ * augustus 2026 een wacht op staan. Die wacht is op 2 september omgekeerd (de
+ * pagina MOET er nu zijn en mag géén bestelknop dragen), maar de map is
+ * sowieso de juiste vorm — /catalog, /lifestyle en /video staan er alle drie
+ * ook zo, omdat ze ooit sub-pagina's kunnen krijgen. Hooks heeft nog geen
+ * formats om als /hooks/<slug> te tonen; zodra die er zijn, past een
+ * [slug].astro er hier naast zonder dat deze route verandert.
+ *
+ * ── DE OG-AFBEELDING IS EEN BESTAANDE FOTO EN GEEN PLACEHOLDER ─────────────
+ *
+ * Elk beeld ÓP de pagina is een placeholder, want er bestaat nog geen hook.
+ * De og-afbeelding staat niet op de pagina maar in een gedeelde link, en daar
+ * is een leeg vlak met "Foto volgt" erin geen eerlijkheid maar een kapotte
+ * kaart in iemands WhatsApp. Tot er een echte hook is, draagt deze link
+ * hetzelfde beeld als /video — de dienst waar een hook het dichtst bij staat.
+ */
+import Layout from '../../layouts/Layout.astro';
+import HooksPage from '../../components/HooksPage.astro';
+import { euro, AMOUNT, vatLabel } from '../../data/pricing.js';
+
+/* Onder de 160 tekens — tests/nav.test.mjs meet elke pagina en Google knipt
+   erboven af. Wat er dus in moet: wat het is, wat het kost, en wat jij niet
+   hoeft te doen. De uitleg over de naad staat in de <h1> en de lead. */
+const description =
+  `A short vertical video that carries on into the image below it in the feed. ` +
+  `From ${euro(AMOUNT.hooks, 'en')} per product ${vatLabel('excl', 'en')} — you film nothing.`;
+---
+
+<Layout
+  title="Hook videos — your product in a proven format | VISUAILS"
+  description={description}
+  ogImage="/img/banners-16.webp"
+>
+  <HooksPage lang="en" />
+</Layout>

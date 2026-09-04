@@ -12,11 +12,15 @@
 // de stylen van links naar rechts gaan net als lenis tijdens het scrollen."* A
 // keyframe animation has its own clock and would run at its own speed no matter
 // how fast you scrolled; this reads the scroll position and derives a position
-// from it, so the text moves exactly as fast as the reader does. The site
-// already runs Lenis (src/scripts/smooth-scroll.js), which lerps the scroll
-// itself, and everything downstream of that inherits the easing for free. That
-// is the whole of "net als lenis" — there is nothing to ease here, because the
-// thing being followed is already eased.
+// from it, so the text moves exactly as fast as the reader does.
+//
+// "NET ALS LENIS" IS INMIDDELS EEN VERWIJZING NAAR IETS DAT ER NIET MEER IS, en
+// dat verandert niets aan deze regel. Lenis lerpte de scroll zelf, en alles wat
+// die scroll volgde erfde de vloeiendheid gratis. Sinds 1 september 2026 is die
+// bibliotheek eruit — hij dreef de scrollpositie op de hoofdthread aan en dat
+// werd merkbaar zodra die thread bezet was (zie de noot in Layout.astro). Wat
+// deze code doet blijft precies hetzelfde: hij volgt de scrollpositie, en die
+// wordt nu door de browser zelf geleverd in plaats van door ons.
 //
 // IT CREATES NOTHING. Every layer, every look, every result grid is already in
 // the page. This file sets `hidden`, toggles one class, and writes two custom

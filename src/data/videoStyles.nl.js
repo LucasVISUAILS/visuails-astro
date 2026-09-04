@@ -194,11 +194,11 @@ export const videoStyles = [
   },
   {
     slug: 'custom',
-    name: 'Custom',
+    name: 'Eigen look',
     tagline: 'Een videoconcept volledig rond jouw merk gebouwd.',
     priceTrust: 'Offerte per project',
     priceUnit: '',
-    ctaLabel: 'Bespreek een video op maat',
+    ctaLabel: 'Vraag een eigen look aan',
     ctaHref: waHref("Hoi VISUAILS, ik wil graag een video op maat bespreken."),
     ctaExternal: true,
     heroIcon: 'jar',
@@ -207,7 +207,7 @@ export const videoStyles = [
     cardWidth: '46%',
     cardPrice: 'Offerte op maat',
     cardDesc: 'Je eigen concept, tempo en look — een video die helemaal is gebouwd op wat jij ons vertelt.',
-    moodTitle: 'Hoe Custom eruitziet.',
+    moodTitle: 'Hoe een eigen look eruitziet.',
     moodParagraphs: [
       'Voorbij de drie formaten — een videoconcept gebouwd op jouw verhaal, jouw tempo, jouw look.',
     ],

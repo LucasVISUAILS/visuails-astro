@@ -44,7 +44,7 @@ import { styles } from '../src/data/styles.js';
 import { WINDOW_DAYS } from '../src/data/capacity.js';
 import {
   UPLOAD_DAYS,
-  DELIVERY_MONTHS,
+  DELIVERY_DAYS,
   EXPIRED_FILES_SQL,
   stampUploadRetention,
   clearUploadRetention,
@@ -129,8 +129,8 @@ console.log('\nde bewaartermijn doet wat /privacy §6 belooft');
   check('en het leveringsbeeld blijft ongemoeid', fileById(11).expires_at, null);
 
   stampDeliveryRetention(env, 1).run();
-  check(`geleverd beeld krijgt announced_at + ${DELIVERY_MONTHS} maanden`,
-    fileById(11).expires_at, '2027-01-05 09:00:00');
+  check(`geleverd beeld krijgt announced_at + ${DELIVERY_DAYS} dagen`,
+    fileById(11).expires_at, '2026-04-05 09:00:00');
   check('een vervangen beeld krijgt geen eigen klok', fileById(13).expires_at, null);
 
   // ── DE HEROPENING. Dit is de subtielste van de vijf: een revisie zet closed_at
@@ -139,17 +139,21 @@ console.log('\nde bewaartermijn doet wat /privacy §6 belooft');
   clearUploadRetention(env, 1).run();
   check('een heropende bestelling verliest de klok op zijn bronmateriaal',
     fileById(10).expires_at, null);
-  check('maar de levering houdt de hare', fileById(11).expires_at, '2027-01-05 09:00:00');
+  check('maar de levering houdt de hare', fileById(11).expires_at, '2026-04-05 09:00:00');
 
   // ── DE OPRUIMQUERY, met een klok in de toekomst nagebootst door oude datums.
   const expired = db.prepare(EXPIRED_FILES_SQL.replace('?1', '500')).all();
   const ids = expired.map((r) => r.id).sort();
   // 10 en 12: uploads. 10 hoort erbij (afgesloten 10 jan, dus 90 dagen zijn in 2026
-  // lang om), 12 niet (nooit afgesloten). 11 en 13 zijn leveringen van januari 2026,
-  // dus 12 maanden zijn per vandaag (aug 2026) nog niet om.
+  // lang om), 12 niet (nooit afgesloten). 11 en 13 zijn leveringen van januari 2026;
+  // sinds 4 september 2026 is de termijn 90 dagen (was 12 maanden), dus die zijn
+  // per vandaag óók om — 11 hoort er nu bij. Een levering van gisteren niet.
   check('de opruimquery vindt het verlopen bronmateriaal', ids.includes(10), true);
   check('en laat een openstaande bestelling staan', ids.includes(12), false);
-  check('en een levering van vijf maanden oud blijft ook staan', ids.includes(11), false);
+  check('en een levering ouder dan de termijn gaat nu ook mee', ids.includes(11), true);
+  db.exec("INSERT INTO files (id, order_id, kind, r2_key, announced_at) VALUES (14, 1, 'delivery', 'delivery/gisteren.png', datetime('now', '-1 days'))");
+  const opnieuw = db.prepare(EXPIRED_FILES_SQL.replace('?1', '500')).all().map((r) => r.id);
+  check('  maar een levering van gisteren blijft staan', opnieuw.includes(14), false);
   db.close();
 }
 
@@ -190,9 +194,9 @@ console.log('\nde getallen op de pagina komen overeen met de code');
         new RegExp(`${UPLOAD_DAYS} ${eenheid}`).test(html), true);
     }
     for (const [pad, taal] of PAGINAS.slice(0, 2)) {
-      const eenheid = taal === 'nl' ? 'maanden' : 'months';
-      check(`${pad.replace('dist/', '')} toont ${DELIVERY_MONTHS} ${eenheid}`,
-        new RegExp(`${DELIVERY_MONTHS} ${eenheid}`).test(read(pad)), true);
+      const eenheid = taal === 'nl' ? 'dagen' : 'days';
+      check(`${pad.replace('dist/', '')} toont ${DELIVERY_DAYS} ${eenheid}`,
+        new RegExp(`${DELIVERY_DAYS} ${eenheid}`).test(read(pad)), true);
     }
     /* En de privélink is een ANDERE klok die toevallig even lang loopt. Als die
        twee ooit uit elkaar gaan, moet de pagina de goede van de twee noemen. */
@@ -233,8 +237,8 @@ console.log('\nde getallen op de pagina komen overeen met de code');
     const code = zonderCommentaar(read(p));
     check(`${p.replace('src/', '')} typt ${UPLOAD_DAYS} dagen niet meer`,
       new RegExp(`${UPLOAD_DAYS} (days|dagen)`).test(code), false);
-    check(`${p.replace('src/', '')} typt ${DELIVERY_MONTHS} maanden niet meer`,
-      new RegExp(`${DELIVERY_MONTHS} (months|maanden)`).test(code), false);
+    check(`${p.replace('src/', '')} typt ${DELIVERY_DAYS} dagen niet meer`,
+      new RegExp(`${DELIVERY_DAYS} (days|dagen)`).test(code), false);
   }
   // En de drie plekken die stempelen of opruimen lezen de module in plaats van de
   // getallen te herhalen. Dit is de regel die voorkomt dat er over een jaar 60 dagen
@@ -261,7 +265,7 @@ console.log('\nde getallen op de pagina komen overeen met de code');
   }
   for (const p of ['src/lib/portal.js', 'src/lib/account.js', 'src/lib/feedback.js', 'src/lib/delivery.js']) {
     const code = codeOnly(read(p));
-    const noemtTermijn = /\b(UPLOAD_DAYS|DELIVERY_MONTHS)\b/.test(code)
+    const noemtTermijn = /\b(UPLOAD_DAYS|DELIVERY_DAYS)\b/.test(code)
       || /\b(30|60|90|120)\s*(dagen|days)\b/i.test(code)
       || /\b(6|12|18|24)\s*(maanden|months)\b/i.test(code);
     check(`${p} noemt geen termijn buiten retention.js om`,
@@ -521,30 +525,27 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
   const en = turnaround('unattended', 'en');
   const nl = turnaround('unattended', 'nl');
 
-  /* De marge zelf. Het streepje mag een gedachtestreepje of een koppelteken zijn:
-     dat is typografie en geen belofte. */
-  const marge = /\b2\s*[–—-]\s*4\b/;
-  check('de onbegeleide termijn noemt nog een marge van 2 tot 4', marge.test(en) && marge.test(nl), true);
-  /* DE EENHEID IS "DAG" GEWORDEN EN NIET MEER "WERKDAG" — 31 augustus 2026.
-     Hier stond /working days/ en /werkdagen/. Sinds isOpenDay() in capacity.js
-     alleen nog naar dichtgezette dagen kijkt en het weekend een gewone dag is,
-     zou "werkdag" een LANGERE termijn beloven dan de poort hanteert — de site zou
-     zichzelf trager voordoen dan hij is, en bij de eerste zaterdaglevering staat er
-     iets anders op de site dan er gebeurt. De eenheid moet er nog steeds staan (een
-     kale "2–4" belooft niets), maar het oude woord mag niet terugkomen. */
-  const eenheid = /\bdays\b/i;
-  const eenheidNl = /\bdagen\b/i;
-  check('en de eenheid staat erbij, in beide talen',
-    eenheid.test(en) && eenheidNl.test(nl), true);
+  /* ── GEEN MARGE MEER — 3 SEPTEMBER 2026 ──────────────────────────────────
+     Hier stond: de tekst moet een marge van 2 tot 4 dagen noemen. Lucas: "onder
+     10 producten is gewoon zo snel mogelijk leveren — een uur, 2 dagen of een
+     week, nooit beloofd; het streven is binnen 24 uur." Een marge is dus zelf
+     een belofte geworden die er niet hoort. Wat overblijft is de bewaking van
+     hieronder: het mag niet SCHERPER worden dan "zo snel mogelijk". Een getal
+     met een eenheid erachter is nu per definitie te scherp. */
+  check('de onbegeleide termijn noemt geen marge en geen aantal dagen meer',
+    /\b\d+\s*[–—-]?\s*\d*\s*(days?|dagen|dag|hours?|uur)\b/i.test(`${en} ${nl}`), false);
+  check('en zegt in beide talen dat het zo snel mogelijk is',
+    /as soon as/i.test(en) && /zo snel mogelijk/i.test(nl), true);
   check('en het is niet de oude eenheid met een weekend erin',
     /working day|werkdag/i.test(`${en} ${nl}`), false);
 
   /* ── EN HET MAG NIET SCHERPER WORDEN ──────────────────────────────────────
-     Dit is de eigenlijke bewaking. Een enkel getal zonder marge, een uurbelofte
-     of "de volgende dag" zijn allemaal toezeggingen die de capaciteitspoort niet
-     kan waarmaken voor een bestelling zonder gereserveerde datum. */
-  const teScherp = /(within \d+ (working )?days|binnen \d+ (werk)?dagen|\b24 hours\b|\b24 uur\b|next (working )?day|volgende (werk)?dag)/i;
-  check('en belooft niets scherpers dan die marge', teScherp.test(en) || teScherp.test(nl), false);
+     Dit is de eigenlijke bewaking. Een enkel getal, een uurbelofte of "de
+     volgende dag" zijn allemaal toezeggingen die de capaciteitspoort niet kan
+     waarmaken voor een bestelling zonder gereserveerde datum. "Vaak binnen een
+     dag" mag: dat beschrijft en belooft niet. */
+  const teScherp = /(within \d+ (working )?days|binnen \d+ (werk)?dagen|\b24 hours\b|\b24 uur\b|next (working )?day|volgende (werk)?dag|guaranteed|gegarandeerd)/i;
+  check('en belooft niets scherpers dan zo snel mogelijk', teScherp.test(en) || teScherp.test(nl), false);
 
   /* De twee talen moeten dezelfde marge noemen. Toen de Nederlandse regel in
      augustus per ongeluk "levering binnen 48 uur" beloofde waar het Engels een
@@ -552,7 +553,7 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
      taal van de thuismarkt — zie de lange noot bij TIERS.attended.turnaround in
      pricing.js. Deze controle is wat dat had moeten vangen. */
   const cijfers = (t) => (t.match(/\d+/g) || []).join(',');
-  check('en beide talen noemen dezelfde getallen', cijfers(en), cijfers(nl));
+  check('en beide talen noemen dezelfde getallen (nu: geen)', cijfers(en), cijfers(nl));
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════

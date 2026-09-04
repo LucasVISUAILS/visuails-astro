@@ -119,11 +119,11 @@
  */
 
 /* De bewaartermijn en de licentietekst komen uit de bestanden die er al over gaan.
-   DELIVERY_MONTHS staat in retention.js en wordt door de opruimtaak gebruikt, dus de
+   DELIVERY_DAYS staat in retention.js en wordt door de opruimtaak gebruikt, dus de
    leesmij noemt hetzelfde getal dat de database aanhoudt in plaats van een tweede
    belofte. licenceText() stond in scaffold.js en is bilinguaal; hij verhuist niet,
    want de werkmap gebruikt hem ook. */
-import { DELIVERY_MONTHS } from './retention.js';
+import { DELIVERY_DAYS } from './retention.js';
 import { licenceText } from './scaffold.js';
 
 /** De mapnaam per formaat. Hoofdletters, zodat een map als map leest. */
@@ -569,13 +569,15 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       '',
       ...kop('4 · TOT WANNEER JE HIERBIJ KAN'),
       '',
-      `De map blijft ${DELIVERY_MONTHS} maanden te downloaden vanuit je dashboard op`,
+      `De map blijft ${DELIVERY_DAYS} dagen te downloaden vanuit je dashboard op`,
       'visuails.com. Daarna wordt hij opgeruimd — dat is een afspraak uit onze',
       'voorwaarden en geen technische grens.',
       '',
-      'Zet er dus één kopie van op je eigen schijf of in je eigen cloud. Niet',
-      'omdat wij het niet bewaren, maar omdat dit de originelen zijn en een',
-      'back-up van je eigen beeldmateriaal altijd bij jou hoort te liggen.',
+      'Zet er dus één kopie van op je eigen schijf of in je eigen cloud: dit',
+      'zijn de originelen en een back-up van je eigen beeldmateriaal hoort bij',
+      'jou te liggen. Wij kunnen een kopie in ons archief hebben, maar dat is',
+      'geen garantie. Heb je later toch iets nodig, neem contact op — dan',
+      'kijken we of het er nog staat.',
       '',
       ...kop('5 · ALS ER IETS NIET GOED IS'),
       '',
@@ -664,12 +666,14 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     ...kop('4 · HOW LONG YOU CAN COME BACK'),
     '',
     `The folder stays downloadable from your dashboard on visuails.com for`,
-    `${DELIVERY_MONTHS} months. After that it is cleaned up — that is a commitment in our`,
+    `${DELIVERY_DAYS} days. After that it is cleaned up — that is a commitment in our`,
     'terms, not a technical limit.',
     '',
-    'So put one copy on your own disk or in your own cloud. Not because we',
-    'will not keep it, but because these are the originals, and a backup of',
-    'your own image library belongs with you.',
+    'So put one copy on your own disk or in your own cloud: these are the',
+    'originals, and a backup of your own image library belongs with you. We',
+    'may keep a copy in our archive, but that is not a guarantee. Need',
+    'something later anyway, get in touch and we check whether it is still',
+    'there.',
     '',
     ...kop('5 · IF SOMETHING IS NOT RIGHT'),
     '',

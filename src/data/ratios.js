@@ -147,6 +147,24 @@ export const LIFESTYLE_RATIOS = [
       nl: 'Een banner. Een paginakop, een e-mailkop, een hero op een categoriepagina — alles wat breder moet zijn dan hoog.',
     },
   },
+  /* 9:16 — 4 september 2026. /lifestyle noemde Reels-covers en de kiezer had
+     geen staand-volledig formaat; Lucas: "ja, 9:16 toevoegen". Alleen bij
+     lifestyle, net als 16:9: een catalogbeeld in een grid heeft er niets aan. */
+  {
+    id: 'story',
+    ratio: '9x16',
+    label: '9:16',
+    css: '9 / 16',
+    name: { en: 'Story 9:16', nl: 'Story 9:16' },
+    use: {
+      en: 'Reels, Stories and TikTok.',
+      nl: 'Reels, Stories en TikTok.',
+    },
+    what: {
+      en: 'Full-screen vertical. A Reels cover, a Story, a TikTok frame — the whole phone screen, nothing cropped when it plays.',
+      nl: 'Staand over het hele scherm. Een Reels-cover, een Story, een TikTok-beeld — de hele telefoon, zonder dat er iets afvalt.',
+    },
+  },
 ];
 
 /** Waar een bestelling op staat als de klant niets kiest. Zie CATALOG_RATIOS[0]. */

@@ -1,0 +1,15 @@
+-- VISUAILS — de vaste stijl (look) hoort bij Je vaste look, alleen bij lifestyle.
+--
+-- Lucas, 3 september 2026: Je vaste look toonde bij lifestyle en video een
+-- ACHTERGROND ("Waar het op staat"), terwijl een achtergrondkleur alleen bij
+-- catalog bestaat — een lifestylebeeld is een scène, geen ondergrond. Wat bij
+-- lifestyle wél de vaste keuze is, ontbrak: de stijl (Glow, Dunes, Flash,
+-- Phone-made). Dat is voor lifestyle wat de achtergrond voor catalog is.
+--
+-- Eén kolom op dezelfde tabel, per dienst, nullable — dezelfde afspraak als
+-- `ratio` (0028): geen rij of een lege waarde is "vraag het per bestelling".
+-- De toegestane waardes zijn de slugs uit src/data/styles.js en worden daar
+-- gecontroleerd, niet met een CHECK: welke stijlen er zijn is een verkoopbesluit.
+-- Het formulier tekent dit veld alleen bij lifestyle; account.js bewaart het
+-- alleen daar.
+ALTER TABLE customer_style_locks ADD COLUMN look TEXT;

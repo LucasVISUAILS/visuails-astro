@@ -97,6 +97,12 @@ FROM_EMAIL = "VISUAILS <orders@visuails.com>"
 # Zonder die sleutel doet de taak nog steeds alles behalve mailen, en zegt hij in
 # zijn verslag dat hij niet kon mailen. Dat is met opzet: opruimen en vrijgeven zijn
 # belangrijker dan het bericht erover.
+#
+# MOLLIE_API_KEY is er sinds 4 september 2026 ook één: de betaalherinnering
+# (remindUnpaid) maakt een verse betaallink aan. Dezelfde LIVE sleutel als de site:
+#   npx wrangler secret put MOLLIE_API_KEY --config cron/wrangler.toml
+# Zonder die sleutel slaat de taak de herinnering over en doet hij de rest gewoon.
+PUBLIC_ORIGIN = "https://visuails.com"
 
 # ── OBSERVABILITY, AAN — 10 augustus 2026 ────────────────────────────────────
 #

@@ -2,6 +2,13 @@
 import { defineConfig } from 'astro/config';
 import brandLockupGuard from './scripts/brand-lockup-guard.mjs';
 import sitemapAnd404 from './scripts/sitemap-and-404.mjs';
+/* De `dateModified` per pagina, uit git. Moet VÓÓR de sitemapstap staan: die leest
+   de datum weer uit de gebouwde HTML voor zijn <lastmod>. Zie de kop van dat
+   bestand voor waarom de datum niet uit de klok komt. */
+import gewijzigdOp from './scripts/gewijzigd-op.mjs';
+/* /llms.txt — de kaart voor iets dat de site citeert. Zie de kop van dat
+   bestand; hij draait na de build om dezelfde reden als de sitemap. */
+import llmsTxt from './scripts/llms-txt.mjs';
 import avifNaastWebp from './scripts/avif-naast-webp.mjs';
 import stijlUitDePagina from './scripts/stijl-uit-de-pagina.mjs';
 import cspScripts from './scripts/csp-scripts.mjs';
@@ -76,9 +83,13 @@ export default defineConfig({
   // reden daarvoor (1663 inline style-attributen) gaat over stijl en niet over
   // scripts. Laatste in de rij omdat hij de HTML hasht die de stappen ervóór
   // eventueel nog herschrijven — zie de kop van scripts/csp-scripts.mjs.
+  // gewijzigdOp() staat als TWEEDE en niet ergens achteraan: hij schrijft de
+  // dateModified in de JSON-LD, en sitemapAnd404() leest die er meteen daarna weer
+  // uit voor de <lastmod>. Achteraan zou hij de HTML aanpassen nadat csp-scripts hem
+  // gehasht heeft — en dan klopt de hash niet meer met wat er staat.
   // En dan de twee stappen die de CSP mogelijk maken, in deze volgorde: eerst de
   // stijl uit de pagina halen (1735 attributen → 149 klassen, plus de <style>-
   // blokjes die Astro voor view-transitions maakt), dan de hashes van de scripts
   // berekenen op de HTML zoals hij er ná die verhuizing uitziet.
-  integrations: [brandLockupGuard(), sitemapAnd404(), avifNaastWebp(), stijlUitDePagina(), cspScripts()],
+  integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), avifNaastWebp(), stijlUitDePagina(), cspScripts()],
 });

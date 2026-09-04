@@ -1,6 +1,9 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../../lib/retention.js';
+// De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
+// src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
+import { bijgewerktOp } from '../../data/juridischeDatums.js';
 // VISUAILS — Verwerkersovereenkomst (art. 28 AVG). Nieuw op 12 augustus 2026.
 //
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -99,9 +102,9 @@ const SUBS = [
   <section class="page-hero">
     <div class="container narrow">
       <span class="eyebrow-page">Juridisch</span>
-      <h1 class="display" style="font-size:var(--t-page-h1)">Verwerkersovereenkomst</h1>
+      <h1 class="display">Verwerkersovereenkomst</h1>
       <p class="lead" style="margin-top:1.2rem">Staat er een persoon op het beeld dat je aanlevert, dan verwerken wij persoonsgegevens van jóu — en dan schrijft de AVG voor dat wij daar een overeenkomst over hebben. Dit is die overeenkomst.</p>
-      <p class="legal-meta">Laatst bijgewerkt: augustus 2026 &middot; artikel 28 AVG</p>
+      <p class="legal-meta">{bijgewerktOp('data-processing-agreement', 'nl', 'artikel 28 AVG')}</p>
     </div>
   </section>
 
@@ -155,7 +158,9 @@ const SUBS = [
       <h2>8. Subverwerkers</h2>
       <p>Wij schakelen andere partijen in. Je geeft ons hierbij een <strong>algemene schriftelijke toestemming</strong> daarvoor, in de zin van art. 28 lid 2 AVG, onder drie voorwaarden: deze lijst is actueel, wij melden een toevoeging of vervanging <strong>minstens 30 dagen vooraf</strong> per e-mail, en je mag er in die periode bezwaar tegen maken. Doe je dat, dan zoeken wij een alternatief of mag je de opdracht kosteloos beëindigen voor het deel dat nog niet is uitgevoerd.</p>
       <p>Met elke partij hieronder hebben wij een verwerkersovereenkomst die dezelfde verplichtingen doorlegt die wij aan jou hebben (art. 28 lid 4). Wij blijven jegens jou aansprakelijk voor wat zij doen.</p>
-      <div class="table-scroll">
+      {/* tabindex + role: zie de noot bij .fb-tblwrap in FigBoard.astro.
+          Deze tabel schuift horizontaal en was zonder muis niet te lezen. */}
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Subverwerkers">
       <table class="files">
         <thead><tr><th>Wie</th><th>Waar</th><th>Waarvoor</th><th>Grondslag doorgifte</th></tr></thead>
         <tbody>
@@ -190,7 +195,7 @@ const SUBS = [
       <p>De termijnen hieronder zijn dezelfde als in §7 van de <a href="/nl/terms/">voorwaarden</a> en §6 van het <a href="/nl/privacy/">privacybeleid</a>. Ze worden uitgevoerd door een nachtelijke taak en niet met de hand.</p>
       <ul>
         <li><strong>Het materiaal dat jij aanlevert:</strong> {UPLOAD_DAYS} dagen na de bestelling, daarna verwijderd.</li>
-        <li><strong>De beelden die wij leveren:</strong> {DELIVERY_MONTHS} maanden, zodat je ze binnen een jaar opnieuw kunt ophalen.</li>
+        <li><strong>De beelden die wij leveren:</strong> {DELIVERY_DAYS} dagen in VISUAILS Studio, zodat je ze in die tijd opnieuw kunt ophalen; een kopie kan zonder garantie in ons eigen archief blijven.</li>
       </ul>
       <p>Wil je het eerder weg, dan mail je ons en verwijderen wij het — tenzij een wettelijke bewaarplicht in de weg staat, en dan zeggen wij welke. Bij het einde van de overeenkomst verwijderen wij alles wat onder deze overeenkomst valt, inclusief kopieën, of geven wij het aan je terug als je dat liever hebt. Wat om die reden moet blijven staan, blijft alleen daarvoor staan en wordt niet meer gebruikt.</p>
       <p>De gegevens die wij als verwerkingsverantwoordelijke hebben — je factuur, je bedrijfsgegevens — vallen hier niet onder. Daarvoor geldt de fiscale bewaarplicht van zeven jaar, en dat staat in het privacybeleid.</p>
@@ -203,7 +208,14 @@ const SUBS = [
       <h2>14. Vragen</h2>
       <p>Over deze overeenkomst, over een verzoek van een betrokkene of over een ondertekend exemplaar: <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Eén persoon leest die mailbox, en dat is dezelfde persoon die de verwerking uitvoert.</p>
 
-      <p class="legal-meta" style="margin-top:2.4rem">Deze pagina is opgesteld tegen de tekst van artikel 28 AVG en dekt de onderdelen van lid 3 sub a tot en met h. Hij is nog niet door een jurist beoordeeld. Voor jouw eigen situatie — zeker als je zelf in een keten met meerdere verantwoordelijken zit — laat je dit door je eigen adviseur nakijken.</p>
+      {/* ── DEZELFDE SOORT NOOT ALS OP /ai-act, DUS DEZELFDE VORM — 3 sept 2026 ──
+          Dit stond hier als `.legal-meta` met een handgezette marge van 2,4rem: de
+          datumklasse, gebruikt voor een voorbehoud. /ai-act draagt precies dit soort
+          zin al als `.legal-note` — een omkaderd blok met een eigen marge — en twee
+          vormen voor één soort mededeling is hoe een lezer moet raden wat het
+          gewicht ervan is. En de marge komt nu uit de klasse in plaats van uit dit
+          bestand. */}
+      <p class="legal-note">Deze pagina is opgesteld tegen de tekst van artikel 28 AVG en dekt de onderdelen van lid 3 sub a tot en met h. Hij is nog niet door een jurist beoordeeld. Voor jouw eigen situatie — zeker als je zelf in een keten met meerdere verantwoordelijken zit — laat je dit door je eigen adviseur nakijken.</p>
 
     </div>
   </section>

@@ -37,6 +37,9 @@
 // hieronder alleen om er beelden bij te zoeken.
 
 import { WINDOW_THRESHOLD, turnaround } from './pricing.js';
+/* Het aantal roostergezichten wordt hier niet uitgetypt maar afgeleid — zie de
+   noot bij ROSTER_COUNT in src/data/models.js. */
+import { rosterWoord } from './models.js';
 
 // DE GETALLEN KOMEN UIT pricing.js EN NERGENS ANDERS. De drempel en de twee
 // doorlooptijden staan in vier zinnen hieronder, in twee talen — acht plekken
@@ -290,7 +293,7 @@ export const WALK_COPY = {
       window: {
         n: 'Us, before you pay',
         h: 'We check the calendar and confirm a delivery date',
-        b: `From ${WINDOW_THRESHOLD_} products the order goes into the calendar and gets ${TURN_ATT_.toLowerCase()} — in writing, and before anything is charged. If the week you need cannot be held, you are told that, with the next delivery date that can. No date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround at ${TURN_UNATT_.toLowerCase()}.`,
+        b: `From ${WINDOW_THRESHOLD_} products the order goes into the calendar and gets ${TURN_ATT_.toLowerCase()} — in writing, and before anything is charged. If the week you need cannot be held, you are told that, with the next delivery date that can. No date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround: ${TURN_UNATT_.toLowerCase()}.`,
       },
       pay: {
         n: 'You, by email',
@@ -300,7 +303,7 @@ export const WALK_COPY = {
       model: {
         n: 'Us, in production',
         h: 'A face is added, and every product runs as one batch',
-        b: 'Every order includes a model from the shared roster: no per-model fee, no upgrade to unlock one. In this walkthrough it is one face; on a real order you pick from ten, or we design one that is only yours. Then every product in the order runs through together, which is what makes the lighting, the angle and the grade match across all of them — run separately they would not. Each image is finished by hand in professional editing tools, colour-graded to your brand, and a specialist checks fit, colour against your own photo, and framing before anything leaves.',
+        b: `Every order includes a model from the shared roster: no per-model fee, no upgrade to unlock one. In this walkthrough it is one face; on a real order you pick from ${rosterWoord('en')}, or we design one that is only yours. Then every product in the order runs through together, which is what makes the lighting, the angle and the grade match across all of them — run separately they would not. Each image is finished by hand in professional editing tools, colour-graded to your brand, and a specialist checks fit, colour against your own photo, and framing before anything leaves.`,
       },
       /* ── DE DREMPEL STOND HIER NOG, EN HIJ IS ER SINDS 7 AUGUSTUS AF ────────
          Deze twee zinnen zeiden dat per beeld goedkeuren pas vanaf
@@ -321,9 +324,9 @@ export const WALK_COPY = {
       },
     },
 
-    lookCustom: 'Something else in mind? A style of your own goes in a note with your order and we look at it together.',
+    lookCustom: 'Something else in mind? A look of your own starts with a short intake at /start/custom-look; once designed, it sits as a tile of its own in this form.',
     modelLocked: 'Locked in this walkthrough',
-    modelRoster: 'See the ten models',
+    modelRoster: `See the ${rosterWoord('en')} models`,
     outCount: function outCount(n) { return n === 1 ? 'One clip, from that one photo.' : `${n} images, from that one photo.`; },
     shotNames: { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On a model' },
     backgroundNames: { white: 'White', 'off-white': 'Off-white', beige: 'Beige' },
@@ -379,7 +382,7 @@ export const WALK_COPY = {
       model: {
         n: 'Wij, in productie',
         h: 'Er komt een gezicht bij, en alles gaat als één batch door',
-        b: 'Elke bestelling bevat een model uit de gedeelde bibliotheek: geen kosten per model, geen upgrade om er een vrij te spelen. In deze doorloop is het één gezicht; bij een echte bestelling kies je uit tien, of we ontwerpen er één die alleen van jou is. Daarna gaat elk product in de bestelling samen door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar — los gedraaid lukt dat niet. Elk beeld wordt met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en een specialist controleert de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
+        b: `Elke bestelling bevat een model uit de gedeelde bibliotheek: geen kosten per model, geen upgrade om er een vrij te spelen. In deze doorloop is het één gezicht; bij een echte bestelling kies je uit ${rosterWoord('nl')}, of we ontwerpen er één die alleen van jou is. Daarna gaat elk product in de bestelling samen door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar — los gedraaid lukt dat niet. Elk beeld wordt met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en een specialist controleert de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.`,
       },
       // Zie de noot bij de Engelse result-tekst hierboven.
       result: {
@@ -389,9 +392,9 @@ export const WALK_COPY = {
       },
     },
 
-    lookCustom: 'Iets anders voor ogen? Een eigen stijl gaat in een notitie bij je bestelling, en dan kijken we er samen naar.',
+    lookCustom: 'Iets anders voor ogen? Een eigen look begint met een korte intake op /start/custom-look; eenmaal ontworpen staat hij als eigen tegel in dit formulier.',
     modelLocked: 'Vast in deze doorloop',
-    modelRoster: 'Bekijk de tien modellen',
+    modelRoster: `Bekijk de ${rosterWoord('nl')} modellen`,
     outCount: function outCount(n) { return n === 1 ? 'Eén clip, uit die ene foto.' : `${n} beelden, uit die ene foto.`; },
     shotNames: { front: 'Voorkant', back: 'Achterkant', detail: 'Detail', worn: 'Op een model' },
     backgroundNames: { white: 'Wit', 'off-white': 'Gebroken wit', beige: 'Beige' },

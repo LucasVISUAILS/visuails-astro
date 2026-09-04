@@ -257,6 +257,10 @@ let staged = []; // [{ key, name, bytes, product, shot }]
 let uploadsOff = false;
 let busy = false;
 let gateReq = 0; // request generation, so a slow answer cannot overwrite a fast one
+/* Zie askMissing(): heeft de klant "toch versturen" gekozen bij ontbrekende
+   foto's? Hier en niet bij de functie, om dezelfde reden als `reached`: boot()
+   draait vóór de rest van dit bestand is geëvalueerd. */
+let missingOk = false;
 
 // Step 2. `cards` is the product list — one per product on the order, each with
 // four slots — and `tray` is what arrived without a product we could name.
@@ -446,6 +450,8 @@ function init(el) {
   bindSubmit();
   bindPrefill();
   bindGarment();
+  bindMissing();
+  missingOk = false;
 
   syncOrder();
   show(1, { focus: false });
@@ -837,14 +843,24 @@ function bindNav() {
     b.type = 'button';
     b.addEventListener('click', () => {
       if (!validateStep(current)) return;
-      const to = current + 1;
+      /* Stap 2 is geen poort, maar wel een vraag — zie askMissing(). */
+      if (current === 2 && !askMissing()) return;
+      let to = current + 1;
+      /* De levertijd-stap bestaat alleen voor een bestelling die een leverdatum
+         krijgt. Onder de drempel is het een scherm zonder keuze, dus slaan we
+         hem over — heen én terug. 3 september 2026. */
+      if (GATE_STEP !== null && to === GATE_STEP && !needsGate()) to += 1;
       show(to);
       if (GATE_STEP !== null && to === GATE_STEP) runGate();
     });
   });
   qa('[data-pl-back]').forEach((b) => {
     b.type = 'button';
-    b.addEventListener('click', () => show(current - 1));
+    b.addEventListener('click', () => {
+      let to = current - 1;
+      if (GATE_STEP !== null && to === GATE_STEP && !needsGate()) to -= 1;
+      show(to);
+    });
   });
   // The rail goes backwards only. Jumping forward past an unfilled step would
   // let someone reach the confirm screen without a scope, and the summary would
@@ -854,6 +870,96 @@ function bindNav() {
     li.addEventListener('click', () => {
       if (Number.isInteger(n) && n < current) show(n);
     });
+  });
+}
+
+/** Krijgt deze bestelling een leverdatum? Dan is de levertijd-stap een echte stap. */
+function needsGate() {
+  return value('tier') === 'attended';
+}
+
+/**
+ * De levertijd-stap zichtbaar of niet, in de rail én als sectie. Bij een kleine
+ * bestelling verdwijnt hij uit de rail en schuift het nummer van de laatste stap
+ * op, zodat de balk 01–04 telt en niet 01, 02, 03, 05.
+ */
+function syncGateVisible(attended) {
+  if (GATE_STEP === null) return;
+  const on = !!attended;
+  const rail = q(`[data-pl-rail-item="${GATE_STEP}"]`);
+  const li = rail && rail.closest('li');
+  if (li) li.hidden = !on;
+  const node = stepNode(GATE_STEP);
+  if (node && current !== GATE_STEP) node.classList.toggle('is-skipped', !on);
+  for (let i = GATE_STEP + 1; i <= STEPS; i += 1) {
+    const item = q(`[data-pl-rail-item="${i}"] .pl-rail-n`);
+    if (item) item.textContent = String(on ? i : i - 1).padStart(2, '0');
+  }
+}
+
+/*
+ * ── DE TUSSENSTAP BIJ ONTBREKENDE FOTO'S — 3 september 2026 ─────────────────
+ *
+ * Stap 2 blijft technisch geen poort (zie ProductUploader.astro), maar wie
+ * doorklikt met producten zonder voor- en achterkant krijgt nu eerst een vraag
+ * met het gevolg erbij: de productie start pas als alles binnen is, en we nemen
+ * contact op. Twee knoppen — foto's toevoegen (standaard) of toch versturen.
+ * Lucas, 8 augustus: materiaal vooraf compleet, niet achteraf mailen. Dit is de
+ * zachtste vorm daarvan die niemand tegenhoudt.
+ */
+function askMissing() {
+  const box = q('[data-pl-missing]');
+  if (!box) return true;
+  const short = cards.filter((card) => !cardReady(card));
+  if (!short.length || missingOk) { box.hidden = true; return true; }
+  const n = short.length;
+  const h = q('[data-pl-missing-h]', box);
+  if (h) h.textContent = n === 1 ? c('pu.missingHOne') : c('pu.missingH', { n });
+  const list = q('[data-pl-missing-list]', box);
+  if (list) {
+    list.textContent = '';
+    short.slice(0, 6).forEach((card) => {
+      const li = document.createElement('li');
+      const naam = card.input && card.input.value.trim();
+      li.textContent = `${naam || c('pu.product', { n: card.n })} — ${shotListText(missingRequired(card))}`;
+      list.appendChild(li);
+    });
+    if (short.length > 6) {
+      const li = document.createElement('li');
+      li.textContent = c('pu.missingMore', { n: short.length - 6 });
+      list.appendChild(li);
+    }
+  }
+  box.hidden = false;
+  if (box.tabIndex < 0) box.tabIndex = -1;
+  try { box.focus({ preventScroll: true }); } catch { /* nice-to-have */ }
+  const top = box.getBoundingClientRect().top + window.scrollY - 96;
+  window.scrollTo({ top: Math.max(0, top), behavior: reduced() ? 'auto' : 'smooth' });
+  return false;
+}
+
+function bindMissing() {
+  const box = q('[data-pl-missing]');
+  if (!box) return;
+  const fix = q('[data-pl-missing-fix]', box);
+  const go = q('[data-pl-missing-go]', box);
+  if (fix) fix.addEventListener('click', () => {
+    box.hidden = true;
+    const first = cards.find((card) => !cardReady(card));
+    if (first && first.el) {
+      first.collapsed = false;
+      paintCard(first);
+      first.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+      if (first.input) { try { first.input.focus({ preventScroll: true }); } catch { /* ok */ } }
+    }
+  });
+  if (go) go.addEventListener('click', () => {
+    missingOk = true;
+    box.hidden = true;
+    let to = current + 1;
+    if (GATE_STEP !== null && to === GATE_STEP && !needsGate()) to += 1;
+    show(to);
+    if (GATE_STEP !== null && to === GATE_STEP) runGate();
   });
 }
 
@@ -1000,6 +1106,7 @@ function bindOrder() {
   bindRatio();
   const count = q('select[name="products"]');
   if (count) count.addEventListener('change', syncOrder);
+  bindQty();
   // Task #271f.
   const outfit = q('select[name="outfit_count"]');
   if (outfit) outfit.addEventListener('change', syncTotal);
@@ -1013,6 +1120,121 @@ function bindOrder() {
   // syncRequired() en refreshUploader() aan en die willen dat de kaarten en de
   // achtergrond al gebonden zijn.
   bindUploadMode();
+}
+
+/*
+ * ── HET AANTAL ALS GETAL, EN DE KNOP "MEER DAN 20" — 3 september 2026 ────────
+ *
+ * De <select name="products"> blijft de bron: productCount() en syncOrder()
+ * lezen hem, /api/order krijgt hem gepost, en de laatste optie is nog steeds de
+ * tekst "Meer dan N producten" die geen getal is. Wat hier bijkomt is de laag
+ * die de klant ziet — een getalveld met − en +, vier snelknoppen en een knop
+ * naar het contactpaneel — en die laag schrijft ALTIJD naar de select en
+ * dispatcht daar een `change`, zodat alles wat aan het aantal hangt (totaal,
+ * kaarten, poort) via dezelfde weg loopt als voorheen.
+ *
+ * Boven het maximum is er geen formulier meer: syncMore() verbergt de rest van
+ * stap 1 en de knop Verder, en toont de twee contactknoppen. Lucas: boven de
+ * twintig eerst persoonlijk contact, "via mail of whatsapp (sneller)".
+ */
+function bindQty() {
+  const box = q('[data-pl-qty]');
+  const select = q('select[name="products"]');
+  const input = q('[data-pl-qty-input]');
+  if (!box || !select || !input) return;
+  const max = Number.parseInt(input.max, 10) || 1;
+  const moreOpt = Array.from(select.options).find((o) => o.value && !/^\d+$/.test(o.value));
+  const moreVal = moreOpt ? moreOpt.value : '';
+  const clamp = (n) => Math.min(max, Math.max(1, n));
+  const push = (v) => {
+    select.value = v;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  const paint = () => {
+    const n = Number.parseInt(select.value, 10);
+    qa('[data-pl-qty-set]', box).forEach((b) => b.classList.toggle('is-on', Number(b.dataset.plQtySet) === n));
+    const dec = q('[data-pl-qty-dec]', box);
+    const inc = q('[data-pl-qty-inc]', box);
+    if (dec) dec.disabled = Number.isInteger(n) && n <= 1;
+    if (inc) inc.disabled = Number.isInteger(n) && n >= max;
+  };
+  const apply = (n) => {
+    const v = clamp(n);
+    input.value = String(v);
+    push(String(v));
+    paint();
+  };
+  input.addEventListener('input', () => {
+    const n = Number.parseInt(input.value, 10);
+    if (!Number.isInteger(n)) { push(''); paint(); return; }
+    if (n < 1 || n > max) { push(String(clamp(n))); paint(); return; }
+    push(String(n));
+    paint();
+  });
+  input.addEventListener('blur', () => {
+    const n = Number.parseInt(input.value, 10);
+    if (Number.isInteger(n) && (n < 1 || n > max)) apply(n);
+  });
+  const dec = q('[data-pl-qty-dec]', box);
+  const inc = q('[data-pl-qty-inc]', box);
+  if (dec) dec.addEventListener('click', () => apply((Number.parseInt(select.value, 10) || 2) - 1));
+  if (inc) inc.addEventListener('click', () => apply((Number.parseInt(select.value, 10) || 0) + 1));
+  qa('[data-pl-qty-set]', box).forEach((b) => b.addEventListener('click', () => apply(Number(b.dataset.plQtySet))));
+  const more = q('[data-pl-qty-more]');
+  if (more && moreVal) {
+    more.addEventListener('click', () => {
+      input.value = '';
+      push(moreVal);
+      paint();
+    });
+  }
+  const back = q('[data-pl-qty-back]');
+  if (back) {
+    back.addEventListener('click', () => {
+      push('');
+      paint();
+      try { input.focus(); } catch { /* geen focus is geen fout */ }
+    });
+  }
+  // Een herstelde of voorgevulde select (bfcache, terug-knop) landt ook in het veld.
+  const start = Number.parseInt(select.value, 10);
+  if (Number.isInteger(start)) input.value = String(start);
+  paint();
+}
+
+/**
+ * Het contactpaneel boven het maximum. Alles in stap 1 ná het aantal gaat dicht,
+ * behalve het paneel zelf en het foutvak; wat dichtging wordt onthouden in
+ * data-pl-more-hid zodat een element dat al `hidden` was, dat blijft.
+ */
+function syncMore(on) {
+  const step = stepNode(1);
+  const panel = q('[data-pl-more-panel]');
+  const qty = q('[data-pl-qty]');
+  if (!step || !panel || !qty) return;
+  const was = !panel.hidden;
+  panel.hidden = !on;
+  const more = q('[data-pl-qty-more]');
+  if (more) more.setAttribute('aria-expanded', on ? 'true' : 'false');
+  let after = false;
+  Array.from(step.children).forEach((ch) => {
+    if (ch === qty) { after = true; return; }
+    if (!after || ch === panel || ch.hasAttribute('data-pl-step-error')) return;
+    if (on) {
+      if (!ch.hidden) { ch.hidden = true; ch.dataset.plMoreHid = '1'; }
+    } else if (ch.dataset.plMoreHid) {
+      ch.hidden = false;
+      delete ch.dataset.plMoreHid;
+    }
+  });
+  step.classList.toggle('is-more', on);
+  if (on && !was) {
+    const h = panel.querySelector('h3');
+    if (h) {
+      if (h.tabIndex < 0) h.tabIndex = -1;
+      try { h.focus({ preventScroll: true }); } catch { /* nice-to-have */ }
+    }
+  }
 }
 
 /**
@@ -1072,6 +1294,8 @@ function syncOrder() {
     ? n >= Number(cfg.windowThreshold)
     : !!chosen; // the escape hatch: more than one window holds is more than the threshold
   setHidden('tier', attended ? 'attended' : 'unattended');
+  syncMore(!!chosen && !Number.isInteger(n));
+  syncGateVisible(attended);
 
   syncOutfit(kind);
   syncBackground(kind);
@@ -2033,7 +2257,7 @@ function bindUploads() {
   const add = q('[data-pl-add]');
   if (add) {
     add.textContent = c('pu.add');
-    // ONLY WHEN THE COUNT IS UNKNOWN. This button exists for the "More than 30"
+    // ONLY WHEN THE COUNT IS UNKNOWN. This button exists for the "More than N" (per-service ceiling)
     // option, where productCount() is NaN and the card list has no number to
     // follow. It was rendered at every count, and pressing it added a card
     // WITHOUT touching select[name="products"] — so a customer who ordered
@@ -3010,6 +3234,16 @@ function buildSlot(card, id) {
   nameEl.textContent = shotLabel(id);
 
   btn.append(dia, img, nameEl);
+
+  /* De ene regel die zegt wat erin hoort — sinds 3 september staat de uitleg
+     onder de kaarten ingeklapt, dus het vakje draagt hem zelf. */
+  const how = lookup(`pu.how.${id}`);
+  if (how) {
+    const howEl = document.createElement('span');
+    howEl.className = 'pu-slot-how';
+    howEl.textContent = how;
+    btn.appendChild(howEl);
+  }
 
   if (isRequiredShot(id)) {
     const req = document.createElement('span');
@@ -4052,10 +4286,15 @@ function applyAccount(me) {
     noVat.checked = true;
     noVat.dispatchEvent(new Event('change', { bubbles: true }));
   }
+  /* En het KVK-nummer erbij (migratie 0043): syncReg() wist het veld zodra het
+     vinkje uit staat, dus alleen invullen als het blok zichtbaar is en leeg. */
+  const reg = q('input[name="reg_number"]');
+  if (reg && me.regNumber && noVat && noVat.checked && !reg.value) reg.value = me.regNumber;
 
   applySavedBackground(me);
   // Tiles first: applyBrandKit() may want to preselect one of them.
   addBrandModels(me);
+  addOwnStyles(me);
   applyBrandKit(me);
 
   // The collapse needs the fields it hides to actually be filled. A saved
@@ -4277,6 +4516,144 @@ function addBrandModels(me) {
   syncSummaries();
 }
 
+/* ── DE EIGEN LOOKS VAN DE KLANT — 4 september 2026 ─────────────────────────
+ *
+ * Lucas: een custom stijl wordt "in het account van de klant geplaatst waarna
+ * hij deze kan gaan gebruiken via hetzelfde bestelformulier met de custom style
+ * ertussen". /account/me draagt ze (`styles`); hier komen ze in het formulier.
+ *
+ * Op /start/lifestyle bestaat de lookkiezer al (StylePicker.astro): daar wordt
+ * de eerste tegel gekloond zodat de eigen look dezelfde vorm en dezelfde
+ * scoped CSS krijgt, met een merkteken "Jouw look" erop. Op /start/catalog is
+ * er geen lookvraag — daar komt een klein blok bij ná de achtergrond, alleen
+ * als er iets te kiezen valt, met "standaardlook" als eerste antwoord zodat de
+ * vraag nooit dwingt.
+ *
+ * `?style=cs-<id>` uit Studio ("Bestel in deze look") wordt hier aangevinkt;
+ * het inline script van StylePicker kan dat niet, want deze tegels bestaan pas
+ * na /account/me. Dezelfde discipline: de waarde uit de URL gaat nergens de
+ * pagina in, hij wordt alleen vergeleken met een radio die hier zelf is gemaakt.
+ */
+function addOwnStyles(me) {
+  const styles = Array.isArray(me && me.styles) ? me.styles : [];
+  if (!styles.length) return;
+  const kind = kindOf();
+  const passend = styles.filter((st) => st && st.id && (st.service === 'both' || st.service === kind || (kind === 'complete' && st.service !== 'catalog')));
+  if (!passend.length) return;
+
+  let wanted = '';
+  try {
+    const raw = new URLSearchParams(location.search).get('style') || '';
+    if (/^cs-\d{1,9}$/.test(raw)) wanted = raw;
+  } catch { /* geen URL, geen voorkeur */ }
+
+  const grid = q('.look-grid');
+  if (grid && grid.firstElementChild) {
+    /* Elke tegel gaat VÓÓR de eerste; de lijst wordt daarom achterstevoren
+       doorlopen zodat de volgorde van Studio (oudste eerst) op het scherm
+       blijft staan. Het model is de eerste huisstijltegel, gekloond mét zijn
+       scope-attribuut, zodat de scoped CSS van StylePicker erop blijft werken. */
+    const model = grid.firstElementChild;
+    for (const st of passend.slice().reverse()) {
+      const tile = model.cloneNode(true);
+      tile.classList.add('is-own');
+      const img = tile.querySelector('.look-shot');
+      const input = tile.querySelector('input[name="style"]');
+      const name = tile.querySelector('.look-name');
+      const line = tile.querySelector('.look-line');
+      if (!input || !name) continue;
+      if (img) {
+        /* Zonder beeld GEEN gat: een tegel zonder foto naast drie met foto
+           zou een lege kolom zijn. De plaats van de foto krijgt een stille
+           kaart met de naam erop, als data-URI zodat de <img> (en dus de
+           scoped CSS met zijn 4:3) blijft staan. */
+        img.removeAttribute('srcset');
+        /* De huisstijltegel zit in een <picture> met een avif-<source>; die
+           wint van `src` en zou hier de foto van Dunes laten staan. */
+        if (img.parentElement && img.parentElement.tagName === 'PICTURE') qa('source', img.parentElement).forEach((el) => el.remove());
+        img.src = st.preview || ownLookPlaceholder(st.name);
+        img.addEventListener('error', () => { img.src = ownLookPlaceholder(st.name); }, { once: true });
+      }
+      input.value = `cs-${st.id}`;
+      input.dataset.plStyleName = st.name;
+      input.required = false;
+      delete input.dataset.plReq;
+      delete input.dataset.plErrMsg;
+      input.checked = wanted === input.value;
+      name.textContent = st.name;
+      const badge = document.createElement('span');
+      badge.className = 'look-own-badge';
+      badge.textContent = c('pu.ownLook') || 'Your look';
+      name.appendChild(badge);
+      if (line) line.textContent = st.line || '';
+      grid.insertBefore(tile, grid.firstElementChild);
+    }
+    syncSummaries();
+    return;
+  }
+
+  // Catalog: geen lookkiezer op de pagina, dus een klein blok van onszelf.
+  const bg = q('[data-pl-bg]');
+  if (!bg || q('[data-pl-own-look]')) return;
+  const box = document.createElement('fieldset');
+  box.className = 'pl-fieldset pl-own-look';
+  box.setAttribute('data-pl-own-look', '');
+  const label = c('pu.ownLookH') || 'Your own look';
+  const rows = [`<label class="own-look-opt"><input type="radio" name="style" value=""${wanted ? '' : ' checked'}><span class="own-look-text"><span class="own-look-name">${escHtml(c('pu.ownLookNone') || 'Standard look')}</span></span></label>`]
+    .concat(passend.map((st) => `<label class="own-look-opt${st.preview ? ' has-img' : ''}">
+        <input type="radio" name="style" value="cs-${st.id}" data-pl-style-name="${escHtml(st.name)}"${wanted === `cs-${st.id}` ? ' checked' : ''}>
+        ${st.preview ? `<img class="own-look-img" src="${escHtml(st.preview)}" alt="" loading="lazy" decoding="async">` : ''}
+        <span class="own-look-text"><span class="own-look-name">${escHtml(st.name)} <span class="look-own-badge">${escHtml(c('pu.ownLook') || 'Your look')}</span></span>${st.line ? `<span class="own-look-line">${escHtml(st.line)}</span>` : ''}</span>
+      </label>`));
+  box.innerHTML = `<legend class="pl-sr">${escHtml(label)}</legend>
+    <p class="hint">${escHtml(c('pu.ownLookHint') || '')}</p>
+    <div class="own-look-list" role="radiogroup">${rows.join('')}</div>`;
+  /* De achtergrond staat op deze stap in een dichtgeklapte rij (Disclose:
+     <details class="dc dc-panel">) met de keuze in de kop. Een blok dat er los
+     achteraan hangt, zou binnen die rij vallen en dus onzichtbaar zijn tot de
+     rij open is. Dus wordt de rij zelf gekloond — mét haar scope-attribuut,
+     zodat de scoped CSS van Disclose erop blijft werken — en de kop krijgt de
+     gekozen look, net zoals "Achtergrond" zijn kleur in de kop draagt. */
+  const rij = bg.closest('details.dc');
+  const kopLive = () => {
+    const gekozen = q('input[name="style"]:checked', box);
+    return (gekozen && gekozen.value ? gekozen.dataset.plStyleName : '') || c('pu.ownLookNone') || 'Standard look';
+  };
+  if (rij && rij.querySelector('.dc-sum') && rij.querySelector('.dc-body')) {
+    const eigen = rij.cloneNode(false);
+    eigen.open = false;
+    const sum = rij.querySelector('.dc-sum').cloneNode(false);
+    const lbl = rij.querySelector('.dc-label') ? rij.querySelector('.dc-label').cloneNode(false) : document.createElement('span');
+    lbl.textContent = label;
+    const live = rij.querySelector('.dc-live') ? rij.querySelector('.dc-live').cloneNode(false) : document.createElement('span');
+    for (const a of [...live.attributes]) if (a.name.startsWith('data-pl-')) live.removeAttribute(a.name);
+    live.setAttribute('data-pl-sum-own-look', '');
+    sum.append(lbl, live);
+    const body = rij.querySelector('.dc-body').cloneNode(false);
+    body.appendChild(box);
+    eigen.append(sum, body);
+    rij.insertAdjacentElement('afterend', eigen);
+    live.textContent = kopLive();
+    qa('input[name="style"]', box).forEach((r) => r.addEventListener('change', () => { live.textContent = kopLive(); }));
+  } else {
+    bg.insertAdjacentElement('afterend', box);
+  }
+  qa('input[name="style"]', box).forEach((r) => r.addEventListener('change', syncSummaries));
+  syncSummaries();
+}
+
+/* De stille kaart voor een look zonder beeld: 4:3, de grond van de tegel, de
+   naam in het accent. Alleen tekens die in een SVG-tekstknoop mogen. */
+function ownLookPlaceholder(name) {
+  const tekst = escHtml(String(name || '').slice(0, 24));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#141414"/><text x="24" y="264" font-family="Archivo, Arial, sans-serif" font-size="22" font-weight="700" fill="#C6F100">${tekst}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function escHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+}
+
 function applyBrandKit(me) {
   const locks = me && typeof me.locks === 'object' && me.locks ? me.locks : null;
   if (!locks) return;
@@ -4321,6 +4698,20 @@ function applyBrandKit(me) {
     if (!current || current.defaultChecked) {
       const target = qa('input[name="ratio"]').find((r) => r.value === wantRatio && !r.disabled);
       if (target) { target.checked = true; syncRatio(kindOf()); }
+    }
+  }
+
+  /* De vaste STIJL bij lifestyle (Je vaste look, migratie 0039) — 3 sep 2026.
+     Zelfde regel als de verhouding: alleen als de klant nog niets zelf koos
+     (of alleen de standaard nog aanstaat), en alleen een radio die op de
+     pagina bestaat. Een `?style=` in de URL is al door StylePicker verwerkt en
+     wint dus van de vaste look, want dat is een keuze van zojuist. */
+  const wantLook = String(lock.look || '');
+  if (wantLook) {
+    const current = q('input[name="style"]:checked');
+    if (!current || current.defaultChecked) {
+      const target = qa('input[name="style"]').find((r) => r.value === wantLook && !r.disabled);
+      if (target) { target.checked = true; target.dispatchEvent(new Event('change', { bubbles: true })); }
     }
   }
 
@@ -4651,12 +5042,10 @@ function renderWindows(windows) {
     label.className = 'pl-window-days';
     label.textContent = w.end && w.end !== w.start ? `${day(w.start)} – ${day(w.end)}` : day(w.start);
 
-    const sub = document.createElement('span');
-    sub.className = 'pl-window-sub';
-    sub.textContent = c('gate.windowSub');
-
+    /* Geen onderregel per tegel meer — zes keer "Data die we kunnen vrijhouden"
+       onder zes tegels zei zes keer hetzelfde. De kop van het paneel zegt het
+       één keer; de tegel draagt alleen de dagen. 3 september 2026. */
     b.appendChild(label);
-    b.appendChild(sub);
     b.setAttribute('aria-pressed', 'false');
 
     b.addEventListener('click', () => {
@@ -4845,6 +5234,8 @@ function renderSummary() {
   const email = q('input[name="email"]');
   if (email && email.value) rows.push([c('sum.email'), email.value]);
 
+  renderStrip({ bgHex, bgName: (q('input[name="background"]:checked') || {}).dataset?.plBgName || '', ratioId, mp });
+
   rows.forEach(([k, v]) => {
     if (!k || !v) return;
     const dt = document.createElement('dt');
@@ -4854,6 +5245,84 @@ function renderSummary() {
     host.appendChild(dt);
     host.appendChild(dd);
   });
+}
+
+/**
+ * De beeldstrook boven de samenvatting — 3 september 2026. Alleen wat er
+ * echt is: de voorkant-thumbnails van de kaarten (max. acht, dan "+N"), het
+ * gekozen gezicht als er een portret op de pagina staat, de achtergrond met
+ * het voorbeeldbeeld erop, en het ratiokader. Niets hiervan is een waarde die
+ * gepost wordt; het is dezelfde informatie als de tabel, in beeld.
+ */
+function renderStrip({ bgHex, bgName, ratioId, mp }) {
+  const strip = q('[data-pl-sum-strip]');
+  if (!strip) return;
+  strip.textContent = '';
+  const item = (cap, cls) => {
+    const w = document.createElement('div');
+    w.className = 'pl-sum-item';
+    const t = document.createElement('span');
+    t.className = `pl-sum-thumb${cls ? ` ${cls}` : ''}`;
+    const c2 = document.createElement('span');
+    c2.className = 'pl-sum-cap';
+    c2.textContent = cap;
+    c2.title = cap;
+    w.append(t, c2);
+    strip.appendChild(w);
+    return t;
+  };
+  const front = REQUIRED_SHOT_IDS[0];
+  const shown = cards.filter((card) => card.slots[front] && card.slots[front].url && card.slots[front].thumb);
+  shown.slice(0, 8).forEach((card) => {
+    const t = item((card.input && card.input.value.trim()) || c('pu.product', { n: card.n }));
+    const im = document.createElement('img');
+    im.alt = '';
+    im.src = card.slots[front].url;
+    t.appendChild(im);
+  });
+  if (shown.length > 8) {
+    const more = document.createElement('span');
+    more.className = 'pl-sum-more';
+    more.textContent = `+${shown.length - 8}`;
+    strip.appendChild(more);
+  }
+  if (mp && !mp.matches(':disabled') && mp.value && mp.value !== 'any') {
+    const opt = mp.closest('.mp-opt');
+    const img = opt && opt.querySelector('img');
+    const naam = opt && opt.querySelector('.mp-name');
+    if (img && (img.currentSrc || img.getAttribute('src'))) {
+      const t = item(naam ? naam.textContent.trim() : mp.value);
+      const im = document.createElement('img');
+      im.alt = '';
+      im.src = img.currentSrc || img.getAttribute('src');
+      t.appendChild(im);
+    }
+  }
+  if (bgHex) {
+    const t = item(bgName ? `${bgName} · ${bgHex}` : bgHex, 'is-bg');
+    t.style.background = bgHex;
+    const eg = q('.bg-eg');
+    if (eg) {
+      const im = document.createElement('img');
+      im.alt = '';
+      im.src = eg.getAttribute('src');
+      t.appendChild(im);
+    }
+  }
+  if (ratioId) {
+    const tile = q(`[data-pl-ratio-tile="${ratioId}"] .ratio-shape`);
+    const t = item(c(`ratio.name.${ratioId}`), 'is-ratio');
+    t.style.aspectRatio = tile && tile.style.aspectRatio ? tile.style.aspectRatio : '1 / 1';
+    t.style.height = '84px';
+    const eg = tile && tile.querySelector('img');
+    if (eg) {
+      const im = document.createElement('img');
+      im.alt = '';
+      im.src = eg.getAttribute('src');
+      t.appendChild(im);
+    }
+  }
+  strip.hidden = !strip.childElementCount;
 }
 
 function bindSubmit() {
@@ -4921,6 +5390,15 @@ function finishSubmit(status, body) {
     // see saveDetailsIfAsked(). Does nothing at all if the box was not ticked,
     // which is the state it is always in unless the visitor ticked it.
     saveDetailsIfAsked();
+
+    /* Het adres voor de bedankpagina, en niets anders — 3 september 2026. De
+       pagina is statisch en de URL draagt alleen het kenmerk; de zin
+       "Bevestiging verstuurd naar" wil het adres tonen. sessionStorage sluit
+       de deur achter zich: één tab, weg na sluiten. Best effort. */
+    try {
+      const em = (q('input[name="email"]') || {}).value || '';
+      if (em) sessionStorage.setItem('vis-ty-mail', em.trim());
+    } catch { /* geen opslag is geen fout */ }
 
     if (body.windowLost) {
       // The order exists and has no window. Saying so here is the only honest

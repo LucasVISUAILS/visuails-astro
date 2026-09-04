@@ -383,6 +383,16 @@ for (const pad of ['/pricing/', '/plans/', '/start/catalog/', '/contact/', '/nl/
 }
 
 await browser.close();
+
+/* Windows: process.exit() vlak na browser.close() struikelt in libuv
+
+   ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), src\\win\\async.c")
+
+   omdat de pipes van Chromium nog aan het sluiten zijn. Eén tik wachten
+
+   laat ze dichtgaan; de uitslag verandert er niet door — 4 sept 2026. */
+
+await new Promise((r) => setTimeout(r, 300));
 server.close();
 console.log(`\n${goed}/${totaal} geslaagd`);
 process.exit(goed === totaal ? 0 : 1);
