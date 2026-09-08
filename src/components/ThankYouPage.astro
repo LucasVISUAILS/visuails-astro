@@ -294,10 +294,13 @@ const bronnen = nl
   /* ── DE BALK ─────────────────────────────────────────────────────────────
      Geel vlak met inkt erop, in dezelfde marge en ronding als een paneel, zodat
      hij bovenaan de pagina hetzelfde ritme heeft als alles eronder. */
+  /* Zonder zijmarge en zonder ronding — 8 september 2026. Sectie 22 heeft zijn
+     kader verloren (zie de noot bij .paneel in stijl22.css) en deze balk was de
+     laatste plek waar het nog stond: een gele kaart met vier hoeken op een
+     pagina waar verder niets meer zweeft. */
   .ty-bar {
-    margin: var(--rand) var(--rand) 0;
+    margin: 0;
     padding: clamp(1.6rem, 4vw, 2.8rem) clamp(1.5rem, 5vw, 4rem);
-    border-radius: var(--ronding);
     background: var(--geel);
     color: var(--inkt);
   }

@@ -232,7 +232,35 @@
 
      De zijvulling gaat mee omlaag, anders staat de tekst straks verder van de
      rand af dan van zijn eigen kop. */
-  .s22 .paneel { position: relative; margin: var(--rand); padding: clamp(2.25rem, 5.5vw, 5rem) clamp(1.25rem, 4vw, 4rem); border-radius: var(--ronding); background: var(--vel); color: var(--inkt); }
+  /* ── GEEN KADER MEER, ALLEEN NOG BANDEN — 8 september 2026 ───────────────
+     Lucas: *"Die zwarte randen zijn er nog steeds, ik wou die alleen houden bij
+     tussen stukken en de top bar is nog steeds niet een geheel met de rest van
+     de pagina. Ook onder de voorpagina zijn er nog lelijke hoeken."*
+
+     Er stond `margin: var(--rand)` — aan alle VIER de kanten — plus een ronding
+     van 20 tot 34 pixels. Elk blok was daarmee een kaart met een zwarte lijst
+     eromheen, en een pagina van acht secties las als een stapel losse kaarten
+     op een donkere tafel. De balk bovenaan liep wél van rand tot rand, dus die
+     hoorde bij niets: hij zweefde boven een stapel.
+
+     De ondergrond blijft, maar alleen waar hij iets zégt — TUSSEN twee stukken,
+     als een horizontale band. Links en rechts is hij weg, en met de zijmarge
+     verdwijnen ook de vier hoeken: een ronding tegen de schermrand is precies
+     de "lelijke hoek" uit de opmerking hierboven. Wat je overhoudt is één vlak
+     dat de hele breedte vult, met zwarte banden als hoofdstukwissel.
+
+     De ronding blijft wél op wat ÍN een paneel staat — kaarten, posters, de
+     clipkaart. Die staan los op hun eigen vlak en horen een vorm te hebben;
+     het is het KADER om de pagina dat weg moest, niet elke ronde hoek. */
+  .s22 .paneel { position: relative; margin: var(--rand) 0; padding: clamp(2.25rem, 5.5vw, 5rem) clamp(1.25rem, 4vw, 4rem); border-radius: 0 0 var(--ronding) var(--ronding); background: var(--vel); color: var(--inkt); }
+  /* ── DE RONDING ZIT ONDERAAN, EN NERGENS ANDERS ──────────────────────────
+     Lucas, tweede ronde: *"Wat ik wel wou is de rondingen onderaan secties
+     behouden om alsnog die kaarten feeling te behouden."* Dus niet vier hoeken
+     terug — dat was het kader dat net weg is — maar twee. Een sectie ligt met
+     zijn bovenkant strak tegen wat erboven zit en rondt aan de onderkant af;
+     de zwarte band eronder valt in die twee hoeken en dat is precies waar het
+     kaartgevoel vandaan komt. */
+  .s22 .kamer { border-radius: 0 0 var(--ronding) var(--ronding); }
   .s22 .paneel + .paneel { margin-top: calc(var(--rand) * 1.6); }
 
   /* ── VOL OF INGEKADERD — 8 september 2026 ────────────────────────────────
@@ -263,17 +291,45 @@
      De ronding van de BUUR gaat mee: een paneel dat tegen een vol beeld aan
      ligt, moet aan die kant recht zijn, anders zit er een halvemaantje
      ondergrond tussen twee blokken die elkaar horen te raken. */
-  .s22 :is(.paneel, .kamer).vol {
-    margin-left: 0;
-    margin-right: 0;
-    border-radius: 0;
+  /* ── WAT `.vol` NOG DOET ─────────────────────────────────────────────────
+     Twee van de drie dingen die hier stonden — de zijmarge eraf en de ronding
+     eraf — zijn sinds vandaag de REGEL en geen uitzondering meer; zie de noot
+     bij .paneel hierboven. Wat overblijft is het derde, en dat is nog steeds
+     nodig: een blok dat op een beeld draait, hoort zijn buren te RAKEN. Een
+     zwarte band boven een schermvullende foto leest als een kader eromheen, en
+     dat is precies waar deze klasse vanaf wilde. */
+  .s22 :is(.paneel, .kamer).vol,
+  .s22 :is(.paneel, .kamer).vol + :is(.paneel, .kamer) { margin-top: 0; }
+  .s22 :is(.paneel, .kamer).vol { margin-bottom: 0; }
+
+  /* ── EN SOMMIGE SECTIES ZWEVEN ───────────────────────────────────────────
+     Lucas: *"bij sommige secties dus wel die zwarte balken aan de zijkant
+     hebben om een soort 3d effect te creëren."*
+
+     Dat effect komt van het VERSCHIL en niet van de balken zelf: staat elke
+     sectie ingekaderd, dan is er geen laag meer om boven te liggen — dat was
+     precies de stapel losse kaarten waar de vorige ronde vanaf moest. Ligt de
+     pagina vol en zweeft er hier en daar één blok bóven dat vlak, dan is er
+     ineens diepte.
+
+     Vandaar: `vol` is de regel, `zwevend` de uitzondering, en de uitzondering
+     krijgt zijn vier hoeken terug — een blok dat loskomt van de pagina heeft
+     aan alle kanten een rand, anders zweeft hij alleen aan de onderkant.
+
+     WAAR HIJ NU STAAT: op het slotpaneel van elke pagina, en op de voorpagina
+     ook op de twee kaartsecties. Een sectie verplaatsen is één klasse. */
+  .s22 :is(.paneel, .kamer):is(.zwevend, .paneel-slot) {
+    margin-left: var(--rand);
+    margin-right: var(--rand);
+    border-radius: var(--ronding);
   }
-  .s22 :is(.paneel, .kamer).vol + :is(.paneel, .kamer),
-  .s22 :is(.paneel, .kamer).vol { margin-top: 0; }
-  /* Het blok VÓÓR een vol blok verliest zijn onderste ronding, en het blok
-     erna zijn bovenste — anders raken ze elkaar met een ronde hoek. */
-  .s22 :is(.paneel, .kamer):has(+ .vol) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-  .s22 .vol + :is(.paneel, .kamer) { border-top-left-radius: 0; border-top-right-radius: 0; }
+  /* Een zwevend blok raakt zijn buren nooit: de band eromheen is het punt. */
+  .s22 :is(.paneel, .kamer):is(.zwevend, .paneel-slot),
+  .s22 :is(.paneel, .kamer):is(.zwevend, .paneel-slot) + :is(.paneel, .kamer) { margin-top: calc(var(--rand) * 1.6); }
+  /* HET SLOTPANEEL ZWEEFT ALTIJD, en dat is geen opmaakkeuze maar een
+     inhoudelijke: het is op elke pagina het blok dat om de bestelling vraagt.
+     Vandaar `.paneel-slot` in de selector hierboven en niet vijfentwintig keer
+     een klasse in de markup — één plek, en het klopt op elke pagina tegelijk. */
 
   /* ── DE BALK IS DE GROND VAN DE PAGINA — 8 september 2026 ─────────────────
      Lucas: *"Ook beweegt de top bar niet mooi mee en ziet er niet smooth uit,
@@ -315,6 +371,21 @@
     --ink-900: #FFFFFF;
     --ink-700: rgb(245 245 245 / .84);
     --ink-500: rgb(245 245 245 / .68);
+    /* ── --ink-2 EN --ink-3 STONDEN HIER NIET, EN DAT WAS DE HELE NAVIGATIE ──
+       8 september 2026, gevonden bij het omkleuren van de balk. Dit blok klapt
+       de inktschaal om voor een donkere balk, maar sloeg juist de twee waarden
+       over die `.nav-links > li > a` en `.nav-account-link` gebruiken: die
+       lezen `var(--ink-2)`, en dat bleef #454545 — de waarde van de LICHTE
+       kant. Elke hoofdmenu-link op elke pagina van sectie 22 stond daarmee op
+       2,4:1 tegen de donkergrijze balk.
+       Niet te zien op een schermafdruk zonder te meten, en keuring.mjs vindt
+       het niet: die zoekt de achtergrondKLEUR van de ouders en de balk zelf is
+       doorzichtig — dezelfde blinde vlek die vanochtend bij de tekst op de
+       hero opdook. Dit is de tweede plek waar hij toesloeg.
+       Een doorzichtigheid van #F5F5F5 en geen tweede vaste kleur: dan volgt de
+       schaal de grond, ook als die grond ooit iets anders wordt. */
+    --ink-2: rgb(245 245 245 / .8);
+    --ink-3: rgb(245 245 245 / .64);
     --brand: #F5F5F5;
     --line: rgb(245 245 245 / .16);
     --line-strong: rgb(245 245 245 / .28);
@@ -325,6 +396,73 @@
   }
   /* Het teken erft geen `fill`; die staat als attribuut. */
   body:has(.s22) .site-header :is(.brand-word, .brand-mark, .mk) { fill: #F5F5F5; }
+  /* ── OP DE VOORPAGINA MENGT DE BALK MET DE HERO — 8 september 2026 ───────
+     Lucas: *"ik wil dat op de homepagina de top bar in de achtergrond mengt en
+     dus wit word en wanneer je scrollt hij naar donker fade."*
+
+     Alleen daar, en alleen boven aan de pagina. De hero van de voorpagina is
+     het enige lichte vlak dat direct onder de balk begint; overal elders staat
+     er donkergrijze ondergrond of een donkere kamer, en een witte balk zou daar
+     weer een vreemd voorwerp zijn.
+
+     ── WAAROM DIT MAG FADEN EN DE REST NIET ────────────────────────────────
+     Elders in dit bestand staat `transition: none` op de letters van de balk,
+     met de reden: daar zit de tekst één frame op een grond die al is omgeklapt
+     en die stand BLIJFT staan. Hier vloeien de grond én de letters samen over
+     in 260 ms en komen ze allebei op een leesbare stand uit — boven 7,9:1 en
+     hoger, gescrold 10,3:1 en hoger, allebei nagemeten. Halverwege duikt het
+     kort onder de norm; dat is een overgang van een vijfde seconde en geen
+     toestand waarin iemand zit te lezen. De norm gaat over waar je op uitkomt.
+
+     `:not(.scrolled)`: interactions.js zet die klasse vanaf 20 pixels. */
+  body:has(.s22.thuis) .site-header::after,
+  body:has(.s22.thuis) .site-header,
+  body:has(.s22.thuis) .site-header :is(.nav-links > li > a, .nav-trigger, .nav-account-link, .lang-switch .ls, .brand-word, .brand-mark, .mk) {
+    /* De curve staat hier UITGESCHREVEN en niet als var(--uit). Die variabele
+       is gedefinieerd op `.s22`, en de balk is geen kind van `.s22` maar een
+       broer ervan — dus stond er `var(--uit)` zonder waarde, was de hele
+       declaratie ongeldig, en sprong de kleur in plaats van over te vloeien.
+       Gemeten frame voor frame: 0 ms wit, 103 ms al donker. */
+    transition: background-color .26s cubic-bezier(.16, 1, .3, 1),
+                color .26s cubic-bezier(.16, 1, .3, 1),
+                fill .26s cubic-bezier(.16, 1, .3, 1),
+                border-color .26s cubic-bezier(.16, 1, .3, 1);
+  }
+  /* ── EN HIJ MOET ZICHTBAAR ZIJN, WANT HIJ STAAT OP NUL ───────────────────
+     Layout.astro zet `.site-header::after { opacity: 0 }` en laat hem pas op
+     `.scrolled` naar 1 lopen: dát is de bestaande vervaging. Boven aan een
+     pagina van sectie 22 zie je daardoor niet de balk maar de BODYGROND —
+     #111111, zwarter dan de pagina zelf. Zolang de letters daar licht op
+     stonden viel het niet op; zet je ze donker, dan is de balk leeg.
+     Dus: op de voorpagina staat het glas altijd aan, en wat overvloeit is de
+     KLEUR ervan in plaats van zijn dekking. Allebei de standen zijn dekkend,
+     zodat er onderweg geen zwart doorheen komt kijken. */
+  body:has(.s22.thuis) .site-header::after { opacity: 1; }
+  body:has(.s22.thuis) .site-header:not(.scrolled)::after {
+    background: #F7F8F8;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  body:has(.s22.thuis) .site-header.scrolled::after { background: var(--s22-grond, #1B1C1E); }
+  body:has(.s22.thuis) .site-header:not(.scrolled) {
+    --ink: #111111;
+    --ink-900: #0A0A0A;
+    --ink-700: rgb(17 17 17 / .78);
+    --ink-500: rgb(17 17 17 / .62);
+    /* Zie de noot hierboven: dezelfde twee waarden, de andere kant op. */
+    --ink-2: rgb(17 17 17 / .74);
+    --ink-3: rgb(17 17 17 / .6);
+    --brand: #111111;
+    --line: rgb(17 17 17 / .14);
+    --line-strong: rgb(17 17 17 / .26);
+    --ghost: rgb(17 17 17 / .1);
+    --btn-ghost-fill: rgb(17 17 17 / .08);
+    --btn-ghost-fill-hover: rgb(17 17 17 / .14);
+    --focus-ring: #111111;
+  }
+  body:has(.s22.thuis) .site-header:not(.scrolled) :is(.brand-word, .brand-mark, .mk) { fill: #111111; }
+
+
   /* De bestelknop is de enige plek in de balk die kleur mág dragen, en op
      donkergrijs is dat het limoen zelf — 9,6:1 met zwarte letters erop, tegen
      de 1,9:1 die een doorzichtige spookknop hier haalde. */
@@ -374,10 +512,9 @@
      morgen met iets anders opent, hoort dit vanzelf te krijgen. De marge aan de
      bovenkant gaat mee weg; anders blijft er een streepje ondergrond staan waar
      de hoek net weg is, en dat is hetzelfde probleem in een dunnere vorm. */
-  .s22 > :is(.paneel, .kamer):first-child {
-    border-radius: 0 0 var(--ronding) var(--ronding);
-    margin-top: 0;
-  }
+  /* Het eerste blok raakt de balk. De ronding die hier stond is weg met alle
+     andere — zie de noot bij .paneel. */
+  .s22 > :is(.paneel, .kamer):first-child { margin-top: 0; }
 
   /* Dezelfde inperking als bij .paneel hierboven; een kamer houdt meer lucht
      omdat hij het donker moet dragen, maar 9rem was ook daar te veel. */
@@ -430,7 +567,7 @@
      verdwijnpunt. */
   .s22 .hero {
     position: relative; isolation: isolate; overflow: hidden;
-    margin: 0 var(--rand); border-radius: var(--ronding) var(--ronding) 0 0;
+    margin: 0;
     min-height: min(92svh, 940px); color: var(--inkt);
     background:
       radial-gradient(70% 50% at 50% 96%, var(--tint), transparent 70%),
@@ -538,7 +675,7 @@
 
   /* Geen tussenruimte en geen bovenhoeken: de maatlijn is de voortzetting van
      het witte vlak waar de hero in oplost. Zie de noot bij .hero. */
-  .s22 .maatlijn { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: clamp(.6rem, 2vw, 1.5rem); margin: 0 var(--rand); padding: clamp(.9rem, 2vw, 1.4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.3rem, 2.6vw, 1.9rem); border-radius: 0 0 var(--ronding) var(--ronding); background: var(--wit); color: var(--inkt); }
+  .s22 .maatlijn { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: clamp(.6rem, 2vw, 1.5rem); margin: 0; padding: clamp(.9rem, 2vw, 1.4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.3rem, 2.6vw, 1.9rem); border-radius: 0 0 var(--ronding) var(--ronding); background: var(--wit); color: var(--inkt); }
   .s22 .maatlijn li { display: grid; gap: .3rem; padding-left: 1rem; border-left: 1px solid var(--lijn); font-size: .82rem; color: var(--inkt-2); }
   .s22 .maatlijn li:first-child { border-left: 0; padding-left: 0; }
   .s22 .maatlijn .nr { color: var(--inkt-2); }
@@ -1046,7 +1183,8 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
 
    `.s22.thuis` zelf blijft bestaan — de hero van de voorpagina gebruikt hem nog
    — maar hij bepaalt niets meer aan de balk. */
-body:has(.s22.thuis) .s22 .hero { border-radius: 0 0 var(--ronding) var(--ronding); }
+/* De ronding van de hero stond hier; hij is weg met het hele kader — zie de
+   noot bij .paneel in sectie 22. */
 
 /* ═══ DE GEDEELDE COMPONENTEN BINNEN DEZE STIJL ══════════════════════════════
    /catalog, /lifestyle en /video delen vijf componenten: Compare (de schuif
