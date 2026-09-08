@@ -252,15 +252,26 @@
      De ronding blijft wél op wat ÍN een paneel staat — kaarten, posters, de
      clipkaart. Die staan los op hun eigen vlak en horen een vorm te hebben;
      het is het KADER om de pagina dat weg moest, niet elke ronde hoek. */
-  .s22 .paneel { position: relative; margin: var(--rand) 0; padding: clamp(2.25rem, 5.5vw, 5rem) clamp(1.25rem, 4vw, 4rem); border-radius: 0 0 var(--ronding) var(--ronding); background: var(--vel); color: var(--inkt); }
-  /* ── DE RONDING ZIT ONDERAAN, EN NERGENS ANDERS ──────────────────────────
-     Lucas, tweede ronde: *"Wat ik wel wou is de rondingen onderaan secties
-     behouden om alsnog die kaarten feeling te behouden."* Dus niet vier hoeken
-     terug — dat was het kader dat net weg is — maar twee. Een sectie ligt met
-     zijn bovenkant strak tegen wat erboven zit en rondt aan de onderkant af;
-     de zwarte band eronder valt in die twee hoeken en dat is precies waar het
-     kaartgevoel vandaan komt. */
-  .s22 .kamer { border-radius: 0 0 var(--ronding) var(--ronding); }
+  /* ── ÉÉN SECTIE SPREIDT, DE REST IS EEN KAART — 8 september 2026 ─────────
+     Lucas, derde en beslissende ronde: *"Bij sommige secties heb je nog steeds
+     rechte bovenkant terwijl ik deze ook een kaart feeling wil geven. Alleen de
+     eerste sectie (voorpagina) is volledig uitgespreid, de rest heeft allemaal
+     een zwarte balk ernaast tot de footer."*
+
+     Dat is de regel, en hij is korter dan de twee die eraan voorafgingen:
+
+       DE OPENING VAN DE VOORPAGINA  loopt van rand tot rand. Hij zit vast aan
+                                     de balk erboven en lost onderin op in de
+                                     maatlijn; daar hoort geen ondergrond
+                                     tussen.
+       ELKE ANDERE SECTIE            is een kaart: marge aan alle vier de
+                                     kanten, ronding aan alle vier de hoeken.
+
+     Een halve ronding — alleen onderaan — was de vorige poging, en die maakte
+     precies de rechte bovenkant waar deze opmerking over gaat: een kaart die
+     bovenaan is afgesneden leest als een kolom, niet als een kaart. */
+  .s22 :is(.paneel, .kamer) { margin: var(--rand); border-radius: var(--ronding); }
+  .s22 .paneel { position: relative; padding: clamp(2.25rem, 5.5vw, 5rem) clamp(1.25rem, 4vw, 4rem); background: var(--vel); color: var(--inkt); }
   .s22 .paneel + .paneel { margin-top: calc(var(--rand) * 1.6); }
 
   /* ── VOL OF INGEKADERD — 8 september 2026 ────────────────────────────────
@@ -318,18 +329,11 @@
 
      WAAR HIJ NU STAAT: op het slotpaneel van elke pagina, en op de voorpagina
      ook op de twee kaartsecties. Een sectie verplaatsen is één klasse. */
-  .s22 :is(.paneel, .kamer):is(.zwevend, .paneel-slot) {
-    margin-left: var(--rand);
-    margin-right: var(--rand);
-    border-radius: var(--ronding);
-  }
-  /* Een zwevend blok raakt zijn buren nooit: de band eromheen is het punt. */
-  .s22 :is(.paneel, .kamer):is(.zwevend, .paneel-slot),
-  .s22 :is(.paneel, .kamer):is(.zwevend, .paneel-slot) + :is(.paneel, .kamer) { margin-top: calc(var(--rand) * 1.6); }
-  /* HET SLOTPANEEL ZWEEFT ALTIJD, en dat is geen opmaakkeuze maar een
-     inhoudelijke: het is op elke pagina het blok dat om de bestelling vraagt.
-     Vandaar `.paneel-slot` in de selector hierboven en niet vijfentwintig keer
-     een klasse in de markup — één plek, en het klopt op elke pagina tegelijk. */
+  /* `.zwevend` stond hier één ronde lang: hij zette de zijmarge en de vier
+     hoeken terug voor een handvol secties, toen de rest juist van rand tot rand
+     liep. Sinds de regel hierboven is dat de standaard geworden en had de
+     klasse niets meer te doen — weg dus, in plaats van als lege klasse blijven
+     staan waar iemand hem over drie maanden per ongeluk weer opzet. */
 
   /* ── DE BALK IS DE GROND VAN DE PAGINA — 8 september 2026 ─────────────────
      Lucas: *"Ook beweegt de top bar niet mooi mee en ziet er niet smooth uit,
@@ -512,9 +516,15 @@
      morgen met iets anders opent, hoort dit vanzelf te krijgen. De marge aan de
      bovenkant gaat mee weg; anders blijft er een streepje ondergrond staan waar
      de hoek net weg is, en dat is hetzelfde probleem in een dunnere vorm. */
-  /* Het eerste blok raakt de balk. De ronding die hier stond is weg met alle
-     andere — zie de noot bij .paneel. */
-  .s22 > :is(.paneel, .kamer):first-child { margin-top: 0; }
+  /* Blijft gelden, óók nu elke sectie weer vier hoeken heeft: het eerste blok
+     raakt de balk en houdt daar twee RECHTE hoeken. Zijn zijmarges houdt hij
+     wel — die horen bij de regel dat alles behalve de opening van de voorpagina
+     een zwarte balk naast zich heeft. */
+  .s22 > :is(.paneel, .kamer):first-child {
+    margin-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
 
   /* Dezelfde inperking als bij .paneel hierboven; een kamer houdt meer lucht
      omdat hij het donker moet dragen, maar 9rem was ook daar te veel. */

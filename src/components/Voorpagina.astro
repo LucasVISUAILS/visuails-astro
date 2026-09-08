@@ -73,7 +73,18 @@ const FOTOS = telwoord(REQUIRED_SHOT_IDS.length, lang, true);
    rijlabels komen van één soort en gelden voor alle drie — dat klopt alleen als
    ze op dezelfde aantallen breken, en dat wordt hier nagekeken zoals /pricing
    dat doet. */
-const KINDS = ['complete', 'catalog', 'lifestyle'] as const;
+/* ── DE INSTAP STAAT VOORAAN, OOK HIER — 8 september 2026 ──────────────────
+   /pricing kreeg deze volgorde op 8 september ('catalog', 'lifestyle',
+   'complete') met de reden dat het verhaal van de site bij €89 begint en de
+   prijzenpagina met €149 opende — drie framings op één pagina, en precies de
+   verwarring waar Lucas het over had. Zie de lange noot in PricingPage.astro.
+
+   DEZE TABEL BLEEF ACHTER. De noot hierboven zegt "dezelfde drie kolommen als
+   /pricing" en dat was sinds die ingreep niet meer waar: de voorpagina zette
+   nog steeds de bundel vooraan. Wie op de voorpagina naar beneden scrolde, las
+   dus €149 als eerste tarief, klikte door naar /pricing en zag daar €89.
+   Gevonden doordat Lucas de live pagina naast de nieuwe legde. */
+const KINDS = ['catalog', 'lifestyle', 'complete'] as const;
 const KIND_PAGE: Record<string, string | null> = { complete: null, catalog: '/catalog', lifestyle: '/lifestyle' };
 const vorm = (id: string) => LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
 for (const id of KINDS) if (vorm(id) !== vorm('complete')) throw new Error(`Voorpagina: staffel "${id}" breekt op andere aantallen dan "complete".`);
@@ -147,7 +158,14 @@ const COPY = {
     ],
     priceH: 'One rate per product. It drops as the count rises.',
     priceCount: 'Products',
-    priceKinds: [`Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`, `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`],
+    /* Op ID en niet op volgorde: een lijst die met de index van KINDS moet
+       meelopen, is een lijst die bij de eerstvolgende herordening stilletjes de
+       verkeerde kop boven de verkeerde kolom zet. */
+    priceKinds: {
+      catalog: `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`,
+      lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`,
+      complete: `Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`,
+    },
     priceVat: `Per product, ${vatLabel('excl', 'en')}.`,
     priceCta: 'Start an order', priceCta2: 'Full price list',
     planH: 'Or every month.',
@@ -224,7 +242,12 @@ const COPY = {
     ],
     priceH: 'Eén tarief per product. Daalt met het aantal.',
     priceCount: 'Producten',
-    priceKinds: [`Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`, `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`],
+    /* Zie de Engelse noot. */
+    priceKinds: {
+      catalog: `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`,
+      lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`,
+      complete: `Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`,
+    },
     priceVat: `Per product, ${vatLabel('excl', 'nl')}.`,
     priceCta: 'Start een bestelling', priceCta2: 'De volledige prijslijst',
     planH: 'Of elke maand.',
@@ -373,7 +396,7 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
   {/* ── 2 · WAT WE MAKEN ─────────────────────────────────────────────────────
       De pillenrij is echt: vier radioknoppen, nul regels JavaScript. De gekozen
       dienst blijft vol, de andere drie zakken terug. */}
-  <section id="maken" class="paneel kiezer zwevend" aria-labelledby="vp-sv">
+  <section id="maken" class="paneel kiezer" aria-labelledby="vp-sv">
     <header class="paneel-kop">
       <p class="etiket">{c.secties[0]}</p>
       <h2 id="vp-sv" class="hoog hoog-2">{c.svcH}</h2>
@@ -443,7 +466,7 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
   {/* ── 4 · DE SET ───────────────────────────────────────────────────────────
       Zeven kaarten op een rij; de splitsing tussen catalog en lifestyle is een
       balk erboven in dezelfde verhouding als de beelden eronder. */}
-  <section class="paneel zwevend" aria-labelledby="vp-set">
+  <section class="paneel" aria-labelledby="vp-set">
     <header class="paneel-kop">
       <p class="etiket">{c.secties[2]}</p>
       <h2 id="vp-set" class="hoog hoog-2">{c.setH}</h2>
@@ -492,7 +515,7 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       <div class="blad">
         <div class="tabel-schuif">
         <table class="lijst">
-          <thead><tr><th scope="col" class="mono">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="mono">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+          <thead><tr><th scope="col" class="mono">{c.priceCount}</th>{KINDS.map((id) => <th scope="col" class="mono">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id])}>{c.priceKinds[id]}</a> : c.priceKinds[id]}</th>)}</tr></thead>
           <tbody>{RUNGS.map((r) => <tr><th scope="row" class="mono">{r.label}</th>{KINDS.map((id) => <td class="tarief">{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
         </table>
         </div>

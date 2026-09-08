@@ -229,6 +229,53 @@ const vink = 'M20 6L9 17l-5-5';
     </div>
   </section>
 
+  {/* ── HET FORMULIER STAAT DERDE EN NIET ZESDE — 8 september 2026 ──────────
+      Lucas: *"Het bestelformulier van test sample zou toch hoger moeten staan,
+      dat had je een tijdje terug gezegd dat dat beter was."* Klopt — en wat er
+      toen van gemaakt is, was een SPRONGKNOP onder de kop ("Naar het
+      formulier", #aanvraag). Die staat er nog en werkt, maar hij lost het
+      halve probleem op: wie hem niet ziet, scrolt nog steeds vier secties door
+      voordat er iets in te vullen valt. Gemeten op een telefoon: het eerste
+      veld lag op 4193 van 9579 pixels.
+
+      De volgorde is nu: wat het is → wat je krijgt → HET FORMULIER → hoe het
+      werkt → hoe je fotografeert → de kleine lettertjes. De twee dingen die
+      iemand nodig heeft vóór hij begint staan er dus nog steeds vóór; de rest
+      is geruststelling en die leest hij als hij hem nodig heeft.
+
+      De sprongknop blijft: hij is nu korter van weg, en op een breed scherm
+      scheelt hij nog steeds een halve pagina. */}
+  <section class="paneel ts-aanvraag" id="aanvraag">
+    <div class="paneel-kop">
+      <p class="etiket">{c.vormEtiket}</p>
+      <h2 class="hoog hoog-2">{c.vormKop}</h2>
+      <p class="lopend">{c.vormLead}</p>
+    </div>
+
+    {/* Weigeringen komen van /api/order terug als een redirect met ?error=…,
+        omdat het versturen eindigt in een echte navigatie. initFormRefusal() in
+        interactions.js haalt het `hidden` van het passende blok en zet de focus
+        erop. In de opmaak en niet vanuit JS, zodat de tekst mee vertaald wordt
+        met de rest van de pagina en in een diff te zien is.
+
+        role="status" en niet role="alert": de bezoeker is zojuist genavigeerd,
+        dus dit is de toestand van de pagina waar hij aankomt — niet iets dat hem
+        onderbrak. */}
+    <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerGebruiktKop}</strong>
+      <span>{c.weigerGebruikt[0]}<a href={lp('/start')}>{c.weigerGebruikt[1]}</a>{c.weigerGebruikt[2]}<a href={lp('/contact')}>{c.weigerGebruikt[3]}</a>{c.weigerGebruikt[4]}</span>
+    </div>
+    <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerMailKop}</strong>
+      <span>{c.weigerMail}</span>
+    </div>
+  </section>
+
+  <OrderFlow lang={lang} service="lifestyle" mode="sample" hero={false}>
+    <StylePicker lang={lang} />
+    <Step1Options lang={lang} />
+  </OrderFlow>
+
   <section class="kamer ts-stappen-kamer">
     <div class="kamer-kop">
       <p class="etiket">{c.stapEtiket}</p>
@@ -283,36 +330,7 @@ const vink = 'M20 6L9 17l-5-5';
     </div>
   </section>
 
-  <section class="paneel ts-aanvraag" id="aanvraag">
-    <div class="paneel-kop">
-      <p class="etiket">{c.vormEtiket}</p>
-      <h2 class="hoog hoog-2">{c.vormKop}</h2>
-      <p class="lopend">{c.vormLead}</p>
-    </div>
 
-    {/* Weigeringen komen van /api/order terug als een redirect met ?error=…,
-        omdat het versturen eindigt in een echte navigatie. initFormRefusal() in
-        interactions.js haalt het `hidden` van het passende blok en zet de focus
-        erop. In de opmaak en niet vanuit JS, zodat de tekst mee vertaald wordt
-        met de rest van de pagina en in een diff te zien is.
-
-        role="status" en niet role="alert": de bezoeker is zojuist genavigeerd,
-        dus dit is de toestand van de pagina waar hij aankomt — niet iets dat hem
-        onderbrak. */}
-    <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
-      <strong>{c.weigerGebruiktKop}</strong>
-      <span>{c.weigerGebruikt[0]}<a href={lp('/start')}>{c.weigerGebruikt[1]}</a>{c.weigerGebruikt[2]}<a href={lp('/contact')}>{c.weigerGebruikt[3]}</a>{c.weigerGebruikt[4]}</span>
-    </div>
-    <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
-      <strong>{c.weigerMailKop}</strong>
-      <span>{c.weigerMail}</span>
-    </div>
-  </section>
-
-  <OrderFlow lang={lang} service="lifestyle" mode="sample" hero={false}>
-    <StylePicker lang={lang} />
-    <Step1Options lang={lang} />
-  </OrderFlow>
 
   <section class="paneel ts-fijndruk">
     <p class="mono ts-fijn">{c.fijndruk}</p>

@@ -51,7 +51,11 @@ export function inhoud(lang) {
   const e = (n) => euro(n, lang);
   const FOTOS = telwoord(REQUIRED_SHOT_IDS.length, lang, true);
 
-  const KINDS = ['complete', 'catalog', 'lifestyle'];
+  /* Zelfde volgorde als /pricing en de voorpagina sinds 8 september: de instap
+     vooraan, de bundel als derde. Zie de lange noot in PricingPage.astro.
+     KINDS en priceKinds lopen hier op INDEX mee — negen conceptpagina's lezen
+     `c.priceKinds[i]` — dus deze twee horen altijd samen te verspringen. */
+  const KINDS = ['catalog', 'lifestyle', 'complete'];
   const KIND_PAGE = { complete: null, catalog: '/catalog', lifestyle: '/lifestyle' };
   const vorm = (id) => LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
   for (const id of KINDS) if (vorm(id) !== vorm('complete')) throw new Error(`conceptInhoud: staffel "${id}" breekt op andere aantallen dan "complete".`);
@@ -106,7 +110,7 @@ export function inhoud(lang) {
       ],
       priceH: 'One rate per product. It drops as the count rises.',
       priceCount: 'Products',
-      priceKinds: [`Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`, `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`],
+      priceKinds: [`Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, `Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`],
       priceVat: `Per product, ${vatLabel('excl', 'en')}.`,
       priceCta: 'Start an order', priceCta2: 'Full price list',
       planH: 'Or every month.',
@@ -180,7 +184,7 @@ export function inhoud(lang) {
       ],
       priceH: 'Eén tarief per product. Daalt met het aantal.',
       priceCount: 'Producten',
-      priceKinds: [`Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`, `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`],
+      priceKinds: [`Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, `Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`],
       priceVat: `Per product, ${vatLabel('excl', 'nl')}.`,
       priceCta: 'Start een bestelling', priceCta2: 'De volledige prijslijst',
       planH: 'Of elke maand.',
