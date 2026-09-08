@@ -469,76 +469,9 @@ function initServicesMenu() {
   });
 }
 
-let convbarDismissed = false;
-let convbarBound = false;
-function initConvbar() {
-  // The bar re-renders per page (no longer transition:persist, so its text is
-  // localized), so we query it fresh in the handler and delegate the close.
-  // Suppressed wherever the visitor is already doing the thing the bar is
-  // nagging them to do. /order was the old funnel; section 10 retired it, so
-  // the entry that matters now is /start — without it the bar floats over the
-  // pipeline's own submit button on every page past the fold, which is both
-  // an obstruction and an argument with itself. /o (the client portal) is a
-  // Pages Function, not an Astro route: this script never loads there.
-  const suppressed = () => {
-    let p = location.pathname;
-    if (p.startsWith('/nl')) p = p.slice(3) || '/';
-    return p.startsWith('/test-sample') || p.startsWith('/start') || p.startsWith('/thank-you');
-  };
-  /* ── DE HOOGTE VAN DE BALK, ALS EIGENSCHAP ────────────────────────────────
-     De WhatsApp-knop moet boven de balk uitkomen, en die afstand stond als
-     `142px` in de opmaak met een noot erbij dat de balk 110 hoog was. Gemeten op
-     25 augustus 2026: de balk was 161, dus de knop zat 19px BINNEN de balk.
-     Precies de overlap die Lucas op zijn schermafdruk zag.
-
-     Een tweede met de hand gemeten getal zou over een maand weer verlopen. Dus
-     schrijft dit de ECHTE hoogte weg als `--cb-h` en rekent de opmaak ermee.
-
-     ALLEEN SCHRIJVEN ALS HIJ VERANDERT. sync() hangt aan de scroll, dus dit
-     draait vaak; een style-schrijfactie per scrollframe dwingt de browser tot
-     werk dat nergens toe leidt. De vergelijking is één getal en kost niets.
-
-     NUL ALS HIJ NIET STAAT, zodat de knop terugvalt op zijn gewone plek zodra de
-     balk weg is — dat was ook de fout in de oude situatie: bij het wegklikken
-     bleef de knop op 142px hangen, zwevend boven niets. */
-  let laatsteHoogte = -1;
-  const meetHoogte = (bar) => {
-    const h = bar.classList.contains('show') ? Math.round(bar.getBoundingClientRect().height) : 0;
-    if (h === laatsteHoogte) return;
-    laatsteHoogte = h;
-    document.documentElement.style.setProperty('--cb-h', `${h}px`);
-  };
-
-  const sync = () => {
-    const bar = document.querySelector('.convbar');
-    if (!bar) return;
-    if (convbarDismissed || suppressed()) { bar.classList.remove('show'); meetHoogte(bar); return; }
-    bar.classList.toggle('show', window.scrollY > 640);
-    meetHoogte(bar);
-  };
-  sync();
-  if (convbarBound) return;
-  convbarBound = true;
-  window.addEventListener('scroll', sync, { passive: true });
-  /* Bij het draaien van een telefoon of het slepen van een venster wisselt de
-     balk van vorm — één rij op een telefoon, een pil op een breed scherm — en
-     dan klopt de gemeten hoogte niet meer. */
-  window.addEventListener('resize', () => { laatsteHoogte = -1; sync(); }, { passive: true });
-  document.addEventListener('astro:page-load', sync);
-  document.addEventListener('click', (e) => {
-    if (!(e.target instanceof Element)) return;
-    if (e.target.closest('.cb-close')) {
-      convbarDismissed = true;
-      const bar = document.querySelector('.convbar');
-      if (bar) bar.classList.remove('show');
-      return;
-    }
-  });
-  /* Hier stond het dichtklappen van `.cb-detail` bij het opstarten en na elke
-     zachte navigatie. Die uitklapper bestaat niet meer — het vraagteken in de
-     balk is sinds 27 augustus 2026 een <Note>, en die regelt zijn eigen staat.
-     Zie de noot bij de markup in Layout.astro. */
-}
+/* initConvbar() stond hier — de conversiebalk. Sectie 21 (5 september 2026):
+   de balk is Proefkaart.astro geworden, met zijn eigen script; niets zet nog
+   `--cb-h`. */
 
 // Multi-step form wizards — handled here via document-level delegation so
 // they work reliably after ClientRouter navigations (a page-local <script>
@@ -1156,7 +1089,10 @@ function initThankYou() {
     const note = document.createElement('span');
     note.textContent = d.tyPayNote;
     const knop = document.createElement('a');
-    knop.className = 'btn btn-primary';
+    /* `knop knop-inkt` en niet `btn btn-primary` sinds 7 september 2026: dit
+       element landt in een paneel van sectie 22 en moet er uitzien als elke
+       andere knop daar. De klassen staan in stijl22.css. */
+    knop.className = 'knop knop-inkt';
     knop.href = pay;
     knop.rel = 'noopener';
     knop.textContent = d.tyPayCta;
@@ -1615,7 +1551,6 @@ export function init() {
   initHeaderScroll();
   initMobileNav();
   initServicesMenu();
-  initConvbar();
   initTestSampleUpload();
   initFormRefusal();
   initWizards();

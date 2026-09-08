@@ -25,7 +25,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { d1, verseDb } from './lib/d1sqlite.mjs';
 import { adminGet, adminPost } from '../src/lib/admin.js';
-import { accountGet } from '../src/lib/account.js';
+import { accountGet, studioScreen } from '../src/lib/account.js';
 import { hashToken } from '../src/lib/token.js';
 import { quoteOrder, VAT_RATE } from '../src/lib/quote.js';
 
@@ -191,9 +191,12 @@ const klantId = aanvraag.customer_id;
   const me = async () => (await accountGet({ request: new Request('https://visuails.com/account/me', { headers: { cookie: `vis_account=${token}` } }), env, waitUntil() {} })).json();
   let mij = await me();
   ok('in ontwerp staat hij NIET in /account/me (niet bestelbaar)', (mij.styles || []).length, 0);
-  const studio = await (await accountGet({ request: new Request('https://visuails.com/account/brand-kit', { headers: { cookie: `vis_account=${token}` } }), env, waitUntil() {} })).text();
-  ok('  maar wel in Studio, als "in ontwerp"', /Rooftop/.test(studio) && /is-proposed/.test(studio));
-  ok('  zonder de studionotitie', !/ALLEEN STUDIO/.test(studio));
+  /* Je vaste look als staat (studioScreen, 6 september 2026): `eigenLooks` is
+     wat src/pages/account/brand-kit.astro tekent. */
+  const studio = await studioScreen({ request: new Request('https://visuails.com/account/brand-kit', { headers: { cookie: `vis_account=${token}` } }), env, waitUntil() {} }, 'brand');
+  const eigen = (studio.v?.eigenLooks || []).find((x) => x.name === 'Rooftop');
+  ok('  maar wel in Studio, als "in ontwerp"', !!eigen && eigen.proposed === true);
+  ok('  zonder de studionotitie', !/ALLEEN STUDIO/.test(JSON.stringify(studio.v || {})));
   const preview = await accountGet({ request: new Request(`https://visuails.com/account/styles/${stijl.id}/preview`, { headers: { cookie: `vis_account=${token}` } }), env, waitUntil() {} });
   ok('  en het beeld is voor de klant te zien', preview.status, 200);
 

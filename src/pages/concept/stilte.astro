@@ -1,0 +1,342 @@
+---
+/**
+ * CONCEPT A · STILTE — de voorpagina als stille ruimte. 6 september 2026.
+ *
+ * Wat het is: het beeld zweeft in wit, de tekst is één uitspraak per sectie,
+ * de navigatie zit in de vier hoeken en de rest van het scherm blijft leeg.
+ * Gemeten aan Kononenko Architectural Bureau (Awwwards SOTD, 23 aug 2026: één
+ * tekening in wit, tiny hoeknavigatie, één grote uitspraak) en de hero van
+ * Heliot Emil (mono-coördinaten op vaste rasterpunten rond het beeld). Het
+ * "alien" zit in de leegte en in de coördinaten: het scherm leest als een
+ * instrument dat één beeld opmeet.
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const { c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate, CATALOG_IMAGES, COMPLETE_IMAGES, ROSTER, modelId, SFEER } = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+
+/* De coördinaten rond het herobeeld: vier feiten die waar zijn, als meetpunten. */
+const COORD = [
+  [`${nn(CATALOG_IMAGES)}`, c.setGroups[0][0].split(' · ')[0]],
+  [`${nn(COMPLETE_IMAGES - CATALOG_IMAGES)}`, c.setGroups[1][0].split(' · ')[0]],
+  ['01', 'Revisieronde'],
+  [sample.price, 'Proef'],
+];
+---
+<ConceptLayout title="Concept A · Stilte — VISUAILS" description="Concept A voor de nieuwe voorpagina van VISUAILS: het beeld zweeft in wit, één uitspraak per sectie, de navigatie in de hoeken." lang={lang} grond="vel">
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  {/* De vier hoeken. Vast, klein, mono; het merkteken linksboven, de knop rechtsonder. */}
+  <nav class="hoeken" aria-label="Hoofdnavigatie">
+    <a class="hoek hoek-lb" href={lp('/')} aria-label="VISUAILS"><svg class="merkteken" viewBox="0 0 702 813.25" aria-hidden="true"><use href="#markglyph" /></svg></a>
+    <ul class="hoek hoek-rb mono">{c.nav.map(([t, h]) => <li><a href={h}>{t}</a></li>)}</ul>
+    <span class="hoek hoek-lo mono">{c.labels[1]} — {c.labels[2]}</span>
+    <a class="hoek hoek-ro knop knop-geel" href={lp('/test-sample')}>{sample.cta}</a>
+  </nav>
+
+  <main id="inhoud">
+    {/* ── 1 · HERO: één beeld, opgemeten ──────────────────────────────────── */}
+    <section class="hero" aria-labelledby="h1">
+      <div class="meet">
+        <figure class="hero-beeld rijst">
+          <img src={S(6).src} width={S(6).w} height={S(6).h} alt={S(6).alt} fetchpriority="high" decoding="async">
+        </figure>
+        {COORD.map(([n, t], i) => <span class={`coord coord-${i + 1} mono`} aria-hidden="true"><b>{n}</b>{t}</span>)}
+        <span class="meetlijn meetlijn-h" aria-hidden="true"></span>
+        <span class="meetlijn meetlijn-v" aria-hidden="true"></span>
+      </div>
+      <h1 id="h1" class="kop kop-smal h1">{c.h1.map((line) => <span class="regel" set:html={line} />)}</h1>
+      <p class="lede lopend">{c.lede}</p>
+      <p class="acties"><a class="knop" href={lp('/start')}>{c.ctaStart}</a><a class="pijl" href="#maken">{c.secties[0]}</a></p>
+    </section>
+
+    {/* ── 2 · WAT WE MAKEN: vier beelden, verspringend, elk met één regel ──── */}
+    <section id="maken" class="sectie" aria-labelledby="h-maken">
+      <header class="sectie-kop">
+        <h2 id="h-maken" class="kop kop-smal h2">{c.svcH}</h2>
+        <p class="lede lopend">{c.svcLede}</p>
+      </header>
+      <ul class="veld">
+        {c.svc.map(([naam, wat, prijs, href], i) => {
+          const s = S([1, 2, 3, 4][i]);
+          return (
+            <li class={`veld-item veld-item-${i + 1}`}>
+              <a href={lp(href)}>
+                <figure class="rijst"><img src={s.src} width={s.w} height={s.h} alt={s.alt} loading="lazy" decoding="async"></figure>
+                <span class="onderschrift">
+                  <span class="mono"><b>{nn(i + 1)}</b> {naam}</span>
+                  <span class="wat">{wat}</span>
+                  <span class="mono prijs">{prijs}</span>
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="mono voetnoot"><span>{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    </section>
+
+    {/* ── 3 · TELEFOONFOTO → STUDIOPRODUCTIE ─────────────────────────────── */}
+    <section class="sectie" aria-labelledby="h-vn">
+      <header class="sectie-kop">
+        <h2 id="h-vn" class="kop kop-smal h2">{c.vnH}</h2>
+        <p class="lede lopend">{c.vnLede}</p>
+      </header>
+      <div class="vannaar">
+        <figure class="vn-in rijst">
+          <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async">
+          <figcaption class="mono">{c.vnIn[0]} · {c.vnIn[1]}</figcaption>
+        </figure>
+        <span class="vn-pijl mono" aria-hidden="true">→</span>
+        <figure class="vn-uit rijst">
+          <img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async">
+          <figcaption class="mono">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
+        </figure>
+        <ol class="noten mono" aria-label={c.vnLede}>
+          {c.vnNoten.map((k, i) => <li><b>{nn(i + 1)}</b>{k}</li>)}
+        </ol>
+      </div>
+      <p class="voetnoot"><a class="pijl" href={lp('/gallery')}>{c.vnLink}</a></p>
+    </section>
+
+    {/* ── 4 · EÉN PRODUCT, ZEVEN BEELDEN: een strook op één haarlijn ─────── */}
+    <section class="sectie" aria-labelledby="h-set">
+      <header class="sectie-kop">
+        <h2 id="h-set" class="kop kop-smal h2">{c.setH}</h2>
+        <p class="lede lopend">{c.setLede}</p>
+      </header>
+      <div class="strook" role="list">
+        {c.frames.map((naam, i) => {
+          const s = S([1, 5, 4, 2, 3, 7, 6][i]);
+          return (
+            <figure class={`frame${i < CATALOG_IMAGES ? ' is-catalog' : ' is-lifestyle'}`} role="listitem">
+              {i === 0 && <a class="groep mono" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a>}
+              {i === CATALOG_IMAGES && <a class="groep mono" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a>}
+              <img src={s.klein} width="800" height="1000" alt="" decoding="async">
+              <figcaption class="mono"><b>{nn(i + 1)}</b>{naam}</figcaption>
+            </figure>
+          );
+        })}
+      </div>
+      <ul class="extras">
+        {c.extras.map(([k, v, href]) => <li><a href={lp(href)}><span class="mono">+ {k}</span><span>{v}</span></a></li>)}
+      </ul>
+    </section>
+
+    {/* ── 5 · VAN MAP TOT LANCERING: vier stappen, één lijn ──────────────── */}
+    <section class="sectie" aria-labelledby="h-st">
+      <header class="sectie-kop">
+        <h2 id="h-st" class="kop kop-smal h2">{c.stepsH}</h2>
+        <p class="lede lopend">{c.stepsLede}</p>
+      </header>
+      <ol class="stappen">
+        {c.steps.map(([k, v], i) => <li class="rijst"><span class="mono"><b>{nn(i + 1)}</b></span><h3 class="kop h3">{k}</h3><p>{v}</p></li>)}
+      </ol>
+    </section>
+
+    {/* ── 6 · TARIEVEN: haarlijnen, grote getallen ───────────────────────── */}
+    <section id="tarieven" class="sectie" aria-labelledby="h-pr">
+      <header class="sectie-kop">
+        <h2 id="h-pr" class="kop kop-smal h2">{c.priceH}</h2>
+      </header>
+      <table class="tabel">
+        <thead><tr><th scope="col" class="mono">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="mono">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+        <tbody>{RUNGS.map((r) => <tr><th scope="row" class="mono">{r.label}</th>{KINDS.map((id) => <td class="bedrag">{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+      </table>
+      <p class="mono voetnoot">{c.priceVat}</p>
+      <p class="acties"><a class="knop" href={lp('/start')}>{c.priceCta}</a><a class="pijl" href={lp('/pricing')}>{c.priceCta2}</a></p>
+
+      <header class="sectie-kop sectie-kop-sub">
+        <h3 class="kop kop-smal h2">{c.planH}</h3>
+        <p class="lede lopend">{c.planLede}</p>
+      </header>
+      <table class="tabel tabel-abo">
+        <thead><tr>{c.planCols.map((k) => <th scope="col" class="mono">{k}</th>)}</tr></thead>
+        <tbody>{PLANS.map((pl) => <tr><th scope="row"><a href={`${lp('/plans')}#${pl.id}`} class="kop h3">{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td class="bedrag">{pl.products}</td><td class="bedrag">{PLAN_CLIPS[pl.id] || '—'}</td><td class="bedrag">{pl.price}</td></tr>)}</tbody>
+      </table>
+      <p class="mono voetnoot">{c.planVat}</p>
+      <p class="acties"><a class="knop" href={lp('/start/plan')}>{c.planCta}</a><a class="pijl" href={lp('/plans')}>{c.planLink}</a></p>
+    </section>
+
+    {/* ── 7 · STUDIO ─────────────────────────────────────────────────────── */}
+    <section id="studio" class="sectie studio" aria-labelledby="h-sd">
+      <figure class="studio-beeld rijst"><img src={S(8).src} width={S(8).w} height={S(8).h} alt={S(8).alt} loading="lazy" decoding="async"></figure>
+      <div class="studio-tekst">
+        <h2 id="h-sd" class="kop kop-smal h2">{c.studioH}</h2>
+        <p class="lede lopend">{c.studioLede}</p>
+        <ul class="beloften">{c.beloften.map(([k, v]) => <li><strong class="kop h3">{k}</strong><span>{v}</span></li>)}</ul>
+        <p class="acties"><a class="pijl" href={lp('/portal')}>{c.studioLink}</a><a class="pijl" href={lp('/studio')}>{c.studioLink2}</a></p>
+      </div>
+    </section>
+
+    {/* ── 8 · GEZICHTEN ──────────────────────────────────────────────────── */}
+    <section id="gezichten" class="sectie" aria-labelledby="h-gz">
+      <header class="sectie-kop">
+        <h2 id="h-gz" class="kop kop-smal h2">{c.facesH}</h2>
+        <p class="lede lopend">{c.facesLede}</p>
+      </header>
+      <ul class="rooster">
+        {ROSTER.map((m) => <li><a href={`${lp('/models')}#${modelId(m.name)}`}><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"><span class="mono">{m.name}</span></a></li>)}
+      </ul>
+      <p class="acties"><a class="pijl" href={lp('/custom-models')}>{c.facesLink}</a><a class="pijl" href={lp('/models')}>{c.facesLink2}</a></p>
+    </section>
+
+    {/* ── 9 · DIRECT ANTWOORD ────────────────────────────────────────────── */}
+    <section class="sectie" aria-labelledby="h-q">
+      <header class="sectie-kop"><h2 id="h-q" class="kop kop-smal h2">{c.qH}</h2></header>
+      <ul class="vragen">
+        {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="pijl" href={lp(href)}>{l}</a></li>)}
+        <li><span></span><a class="pijl" href={lp('/faq')}>{c.qAll}</a></li>
+      </ul>
+    </section>
+
+    {/* ── 10 · DE PROEF: het ene gele vlak ───────────────────────────────── */}
+    <section class="slot op-geel" aria-labelledby="h-sl">
+      <h2 id="h-sl" class="kop kop-smal h1">{c.closeH}</h2>
+      <p class="lede lopend">{c.closeLede}</p>
+      <p class="acties"><a class="knop knop-inkt" href={lp('/test-sample')}>{sample.cta}</a><a class="knop" href={lp('/start')}>{c.closeAlt}</a></p>
+    </section>
+  </main>
+
+  <footer class="voet">
+    <svg class="woordmerk" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
+    <ul class="trust mono">{c.trust.map((t) => <li>{t}</li>)}</ul>
+    <span class="mono">{c.posterLine[1]}</span>
+  </footer>
+</ConceptLayout>
+
+<style>
+  /* Het raster: één zijmarge, en de ruimte tussen secties is het ontwerp. */
+  main { padding-inline: var(--x); }
+  .sectie { padding-block: clamp(6rem, 14vw, 15rem) 0; display: grid; gap: clamp(2.5rem, 5vw, 4.5rem); }
+  .sectie-kop { display: grid; gap: 1.25rem; max-width: 60rem; }
+  .sectie-kop-sub { margin-top: clamp(3rem, 7vw, 7rem); }
+  .h1 { font-size: clamp(2.6rem, 6.4vw, 6rem); }
+  .regel { display: block; }
+  .h2 { font-size: clamp(2rem, 4.2vw, 3.6rem); }
+  .h3 { font-size: 1.15rem; font-weight: 500; letter-spacing: -.01em; line-height: 1.2; }
+  .lede { font-size: clamp(1rem, 1.25vw, 1.2rem); color: var(--inkt-2); }
+  .acties { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2rem; }
+  .voetnoot { color: var(--inkt-3); }
+  .mono b { font-weight: 500; color: var(--inkt); margin-right: .6em; }
+
+  /* ── De hoeken ─────────────────────────────────────────────────────────── */
+  .hoeken { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+  .hoek { position: absolute; pointer-events: auto; margin: clamp(1rem, 2vw, 1.75rem) var(--x); }
+  .hoek-lb { top: 0; left: 0; }
+  .hoek-rb { top: 0; right: 0; display: flex; gap: 1.5rem; }
+  .hoek-rb a:hover { color: var(--inkt-3); }
+  .hoek-lo { bottom: 0; left: 0; color: var(--inkt-3); }
+  .hoek-ro { bottom: 0; right: 0; }
+  @media (max-width: 720px) { .hoek-rb, .hoek-lo { display: none; } }
+
+  /* ── De hero: het beeld in het midden, coördinaten eromheen ─────────────── */
+  .hero { min-height: 100svh; display: grid; align-content: center; justify-items: center; text-align: center; gap: 2rem; padding-block: 6rem 4rem; }
+  .hero .lede { max-width: 32em; }
+  .hero .acties { justify-content: center; }
+  .meet { position: relative; width: min(52svh, 70vw, 40rem); aspect-ratio: 1; }
+  .hero-beeld img { width: 100%; height: 100%; object-fit: cover; }
+  .coord { position: absolute; display: grid; gap: .15rem; color: var(--inkt-3); white-space: nowrap; }
+  .coord b { display: block; font-family: var(--kop); font-size: 1.5rem; font-weight: 500; letter-spacing: -.02em; color: var(--inkt); margin: 0; line-height: 1; }
+  .coord-1 { left: 0; top: 50%; transform: translate(calc(-100% - 2.5rem), -100%); text-align: right; }
+  .coord-2 { left: 0; top: 50%; transform: translate(calc(-100% - 2.5rem), 1rem); text-align: right; }
+  .coord-3 { right: 0; top: 50%; transform: translate(calc(100% + 2.5rem), -100%); text-align: left; }
+  .coord-4 { right: 0; top: 50%; transform: translate(calc(100% + 2.5rem), 1rem); text-align: left; }
+  .meetlijn { position: absolute; background: var(--lijn-sterk); }
+  .meetlijn-h { left: -14vw; right: -14vw; top: 50%; height: 1px; }
+  .meetlijn-v { top: -6vh; bottom: -6vh; left: 50%; width: 1px; }
+  .meet::before, .meet::after { content: ""; position: absolute; width: 10px; height: 10px; border: 1px solid var(--inkt); }
+  .meet::before { left: -6px; top: -6px; border-width: 1px 0 0 1px; }
+  .meet::after { right: -6px; bottom: -6px; border-width: 0 1px 1px 0; }
+  @media (max-width: 900px) {
+    .meet { width: min(60vw, 22rem); }
+    .coord { position: static; transform: none; text-align: left; }
+    .meet { margin-bottom: 1rem; }
+    .hero .coord { display: none; }
+    .meetlijn-h { left: -10vw; right: -10vw; }
+  }
+
+  /* ── Het veld: vier beelden, verspringend op twaalf kolommen ────────────── */
+  .veld { display: grid; grid-template-columns: repeat(12, 1fr); gap: clamp(3rem, 8vw, 9rem) clamp(1rem, 3vw, 3rem); }
+  .veld-item a { display: grid; gap: 1.25rem; }
+  .veld-item img { width: 100%; height: auto; }
+  .veld-item-1 { grid-column: 1 / 8; }
+  .veld-item-2 { grid-column: 9 / 13; align-self: end; }
+  .veld-item-3 { grid-column: 3 / 8; }
+  .veld-item-4 { grid-column: 8 / 12; margin-top: clamp(4rem, 10vw, 12rem); }
+  .onderschrift { display: grid; gap: .35rem; }
+  .onderschrift .wat { color: var(--inkt-2); max-width: 34em; }
+  .onderschrift .prijs { color: var(--inkt-3); }
+  .veld-item a:hover img { opacity: .92; }
+  @media (max-width: 720px) { .veld-item { grid-column: 1 / 13 !important; margin-top: 0 !important; } }
+
+  /* ── Van → naar ─────────────────────────────────────────────────────────── */
+  .vannaar { display: grid; grid-template-columns: 3fr auto 7fr; gap: clamp(1rem, 3vw, 3rem); align-items: end; }
+  .vannaar figure { display: grid; gap: .8rem; }
+  .vannaar img { width: 100%; }
+  .vannaar figcaption { color: var(--inkt-3); }
+  .vn-pijl { align-self: center; font-size: 1.5rem; color: var(--inkt-3); }
+  .noten { grid-column: 3; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--lijn-sterk); color: var(--inkt-3); }
+  @media (max-width: 720px) { .vannaar { grid-template-columns: 1fr; } .vn-pijl { transform: rotate(90deg); justify-self: center; } .noten { grid-column: 1; grid-template-columns: 1fr 1fr; } }
+
+  /* ── De strook: zeven beelden op één lijn ───────────────────────────────── */
+  .strook { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(9.5rem, 1fr); gap: clamp(.75rem, 1.5vw, 1.5rem); overflow-x: auto; padding-top: 2.5rem; scroll-snap-type: x proximity; }
+  .frame { position: relative; display: grid; gap: .7rem; scroll-snap-align: start; }
+  .frame img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .frame.is-lifestyle img { filter: none; }
+  .frame figcaption { color: var(--inkt-3); }
+  .groep { position: absolute; top: -2.2rem; left: 0; white-space: nowrap; color: var(--inkt); }
+  .groep::before { content: ""; position: absolute; left: 0; top: 1.4rem; width: 100vw; max-width: 60vw; height: 1px; background: var(--lijn-sterk); }
+  .extras { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 0 3rem; border-top: 1px solid var(--lijn-sterk); }
+  .extras a { display: grid; gap: .3rem; padding: 1.25rem 0; border-bottom: 1px solid var(--lijn); color: var(--inkt-2); }
+  .extras a:hover { color: var(--inkt); }
+
+  /* ── Stappen: vier op een rij, elk op zijn eigen lijn ───────────────────── */
+  .stappen { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 3rem clamp(1.5rem, 3vw, 3rem); }
+  .stappen li { display: grid; gap: .9rem; padding-top: 1.25rem; border-top: 1px solid var(--inkt); align-content: start; }
+  .stappen p { color: var(--inkt-2); max-width: 26em; }
+
+  /* ── Tabellen: alleen lijnen ────────────────────────────────────────────── */
+  .tabel th, .tabel td { text-align: left; padding: 1.4rem 1rem 1.4rem 0; border-bottom: 1px solid var(--lijn); vertical-align: baseline; }
+  .tabel thead th { color: var(--inkt-3); border-bottom-color: var(--inkt); padding-top: 0; }
+  .tabel tbody th { color: var(--inkt-3); font-weight: 400; width: 14%; }
+  .bedrag { font-family: var(--kop); font-size: clamp(1.4rem, 2.6vw, 2.2rem); font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .tabel-abo tbody th { color: var(--inkt); width: 34%; }
+  .abo-regel { display: block; color: var(--inkt-3); font-size: .9rem; margin-top: .25rem; }
+  @media (max-width: 600px) { .tabel th, .tabel td { padding: 1rem .5rem 1rem 0; } .bedrag { font-size: 1.25rem; } .abo-regel { display: none; } }
+  .tabel a:hover { color: var(--inkt-3); }
+
+  /* ── Studio ────────────────────────────────────────────────────────────── */
+  .studio { grid-template-columns: 7fr 5fr; align-items: end; gap: clamp(2rem, 5vw, 6rem); }
+  .studio-tekst { display: grid; gap: 1.5rem; }
+  .beloften { display: grid; gap: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--inkt); }
+  .beloften li { display: grid; gap: .25rem; color: var(--inkt-2); }
+  @media (max-width: 900px) { .studio { grid-template-columns: 1fr; } }
+
+  /* ── De roster ─────────────────────────────────────────────────────────── */
+  .rooster { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 1.5rem 1rem; }
+  .rooster a { display: grid; gap: .6rem; color: var(--inkt-3); }
+  .rooster img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: grayscale(1); transition: filter .4s var(--uit); }
+  .rooster a:hover img { filter: none; }
+
+  /* ── Vragen ────────────────────────────────────────────────────────────── */
+  .vragen { display: grid; }
+  .vragen li { display: grid; grid-template-columns: 1fr auto; gap: 1rem; padding: 1.25rem 0; border-top: 1px solid var(--lijn); }
+  .vragen li:last-child { border-bottom: 1px solid var(--lijn); }
+  @media (max-width: 600px) { .vragen li { grid-template-columns: 1fr; } }
+
+  /* ── Het slot: het gele vlak — het enige vlak van de pagina ─────────────── */
+  .slot { margin: clamp(6rem, 14vw, 15rem) calc(-1 * var(--x)) 0; padding: clamp(5rem, 12vw, 12rem) var(--x); background: var(--geel); color: var(--inkt); display: grid; gap: 2rem; }
+  .slot .lede { color: var(--inkt); }
+
+  /* ── De voet ───────────────────────────────────────────────────────────── */
+  .voet { padding: clamp(3rem, 6vw, 6rem) var(--x) clamp(4rem, 7vw, 7rem); display: grid; gap: 2.5rem; color: var(--inkt); }
+  .trust { display: flex; flex-wrap: wrap; gap: .75rem 2.5rem; color: var(--inkt-3); }
+</style>

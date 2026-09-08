@@ -56,12 +56,25 @@ export const DOORS = [
     cta: { en: 'Order lifestyle images', nl: 'Bestel lifestylefoto’s' },
     kort: { en: 'Your product in a styled scene', nl: 'Je product in een gestylede scène' },
   },
+  /* ── DE BUNDEL HEET NAAR WAT ERIN ZIT — 7 september 2026 ──────────────────
+     Hij heette "Complete" op /start en "Both together" hier. Lucas: *"ik vind
+     complete te onduidelijk"*, en over het alternatief Full Shoot: *"dat is
+     weer meer alsof je ook andere services erbij krijgt."* Allebei terecht —
+     "complete" zegt niet WAT er compleet is, "both together" zegt niet waarvan,
+     en een woord als shoot belooft de hele studio.
+
+     De naam noemt nu precies de twee dingen die je krijgt, met de namen die
+     overal elders op de site staan. Onmogelijk te lezen als iets anders.
+
+     ALLEEN DE WEERGAVENAAM. De route /start/complete, de sleutel `complete` in
+     LADDER en de waarde in ORDER_SERVICES blijven staan: daar hangen bestaande
+     bestellingen en betalingen aan. */
   {
     id: 'complete',
     lees: null,
     bestel: '/start/complete',
-    naam: { en: 'Both together', nl: 'Allebei' },
-    cta: { en: 'Order both together', nl: 'Bestel allebei' },
+    naam: { en: 'Catalog + Lifestyle', nl: 'Catalog + Lifestyle' },
+    cta: { en: 'Order catalog + lifestyle', nl: 'Bestel catalog + lifestyle' },
     kort: { en: 'A catalog set and a carousel per product', nl: 'Een catalogset en een carousel per product' },
   },
   {

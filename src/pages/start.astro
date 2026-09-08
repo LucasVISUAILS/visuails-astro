@@ -3,22 +3,25 @@
 // /start and /nl/start cannot drift apart; only the meta differs here.
 //
 // This used to be the order form itself, and the description said so: "one way
-// in, whatever the size." There are six ways in — three that check out and
-// three that do not yet — and pretending otherwise is what left video off the
-// only page whose job is to take an order. /start is the chooser now; each
-// service owns its own route under /start/.
+// in, whatever the size." It is the CHOOSER now, and each service owns its own
+// route under /start/. See the header of StartPage.astro for the 7 September
+// rebuild — what the page groups by, and why the old grouping (by whether we
+// can take payment) is what left video looking like something we do not do.
 import Layout from '../layouts/Layout.astro';
 import StartPage from '../components/StartPage.astro';
-import { WINDOW_THRESHOLD } from '../data/pricing.js';
 
 /* ONDER DE 160 TEKENS, en dat is geteld en niet geschat: tests/nav.test.mjs meet
-   elke gebouwde pagina. Google kapt daarboven af met een beletselteken, en dan is
-   het de LAATSTE zin die wegvalt — hier de zin over de gereserveerde leverdatum,
-   precies het argument dat iemand over de streep trekt. Het interpolatiegetal
-   telt mee, dus de marge is niet nul: WINDOW_THRESHOLD kan tweecijferig worden. */
+   elke gebouwde pagina.
+
+   HERSCHREVEN MET DE PAGINA MEE — 7 september 2026. Hier stond "Catalog sets,
+   lifestyle carousels, or both", en dat noemde drie van de vier deuren: precies
+   dezelfde weglating als op de pagina zelf, waar video onder een tweede kopje
+   stond en dus niet gevonden werd. De vier bestemmingen staan er nu alle vier
+   in, in de woorden van de bezoeker, en de laatste zin is de belofte die deze
+   pagina moest doen en niet deed. */
 const description =
-  `Catalog sets, lifestyle carousels, or both. The rate per product falls as the ` +
-  `count rises, and from ${WINDOW_THRESHOLD} products your delivery date is reserved.`;
+  `Images for your product page, your feed, both at once, or a clip. ` +
+  `Pick where they have to go \u2014 nothing is created or charged until you send the order.`;
 ---
 
 <Layout

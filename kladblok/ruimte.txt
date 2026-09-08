@@ -1,0 +1,51 @@
+
+16 bevindingen
+
+1440px /nl/  tekst over tekst (18px)
+    span.hv-svc-card-go "Bekijk Lifestyle-carousel→"
+    a "lees wat ze zijn"
+1440px /nl/  tekst over tekst (6px)
+    a "zie hoe een bestelling draait"
+    a "AI Act-pagina"
+1440px /nl/  tekst over tekst (14px)
+    a "zie hoe een bestelling draait"
+    button.nt-btn "? Uitleg: de tijdstempel"
+1440px /nl/  geen ruimte (0px)
+    span.hv-line "Jij uploadt."
+    span.hv-line "Wij leveren de campagne."
+1440px /nl/  geen ruimte (0px)
+    span "Nog geen muur vol reviews —"
+    em.hv-accent "dus verdienen we je vertrouwen op de eer"
+1440px /nl/how-it-works/  tekst over tekst (31px)
+    em "bestelling"
+    p.lead.vs-38b1c835 "Jij stuurt een map met productfoto’s en "
+1440px /nl/how-it-works/  tekst over tekst (54px)
+    em "bestelling"
+    a.btn.btn-ghost "Probeer VISUAILS · €1"
+1440px /nl/how-it-works/  tekst over tekst (13px)
+    a "De studiodag en de kalender"
+    a "Wie erachter zit"
+1440px /nl/how-it-works/  geen ruimte (2px)
+    span.wk-svc-name "Catalog"
+    span.wk-svc-line "Vier beelden per product"
+1440px /nl/about/  tekst over tekst (40px)
+    em "studio"
+    a.btn.btn-wa "WhatsApp"
+390px /nl/  tekst over tekst (14px)
+    a "AI Act-pagina"
+    button.nt-btn "? Uitleg: de tijdstempel"
+390px /nl/  geen ruimte (0px)
+    span.hv-line "Jij uploadt."
+    span.hv-line "Wij leveren de campagne."
+390px /nl/  geen ruimte (0px)
+    span.hv-svc-card-media.sel "Productfotografie"
+    span.hv-svc-card-body "Catalogset Strakke, consistente productf"
+390px /nl/  geen ruimte (0px)
+    span "Nog geen muur vol reviews —"
+    em.hv-accent "dus verdienen we je vertrouwen op de eer"
+390px /nl/how-it-works/  tekst over tekst (13px)
+    a "De studiodag en de kalender"
+    a "Wie erachter zit"
+390px /nl/how-it-works/  geen ruimte (2px)
+    span.wk-svc-name "Catalog"
+    span.wk-svc-line "Vier beelden per product"

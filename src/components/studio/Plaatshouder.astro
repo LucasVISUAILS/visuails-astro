@@ -1,0 +1,36 @@
+---
+/* Een plaatshouder in Studio, in dezelfde taal als de plaatshouders van de site
+   (scripts/plaatshouders.mjs): een vlak, een haarlijn, het teken op 12%, en
+   "FOTO VOLGT" in mono. Inline svg, want Studio laadt geen beelden van buiten
+   en de CSP staat geen inline style toe. `naam` is het onderschrift (wat hier
+   straks komt te staan), `ratio` de verhouding als "4/5". `donker` voor op een
+   inktvlak. `klein` laat de tekst weg — alleen het teken. */
+const { naam = '', ratio = '4/5', donker = false, klein = false, label = 'FOTO VOLGT' } = Astro.props;
+const [rw, rh] = String(ratio).split('/').map(Number);
+const w = 400, h = Math.round(400 * (rh || 5) / (rw || 4));
+const k = Math.min(w, h);
+const mw = Math.round(k * (klein ? 0.34 : 0.16)), mh = Math.round(mw * 813.25 / 702);
+const fs1 = Math.round(k * 0.07), fs2 = Math.round(k * 0.055);
+const cx = w / 2, cy = h / 2;
+const MERK_V = 'M 0 16 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119 A 201.21 201.21 0 0 0 101 15.75 L 0 16 Z';
+const MERK_VLAG = 'M 701.75 0 L 543.25 366.25 L 507.25 453.75 L 652 259.25 L 702 338.25 L 701.75 0 Z';
+const grond = donker ? '#242424' : '#EDEDED', lijn = donker ? '#3A3A3A' : '#BDBDBD', inkt = donker ? '#FFFFFF' : '#0A0A0A';
+
+/* DE LETTER IN DIT PLAATSHOUDERTJE STAAT VOLUIT, NIET ALS var(--font-mono).
+   Een SVG erft de tokens van zijn pagina wel, maar dit ding wordt ook los
+   gerenderd — in tests en in de proefpagina's — waar dat :root er niet is.
+   Sinds sectie 22 is de mono van de site Martian Mono; hier stond nog Sometype
+   Mono, dat nergens meer geladen wordt, dus viel het terug op Menlo. De 82%
+   breedte is dezelfde als .etiket in stijl22.css. */
+---
+<svg class={`st-ph${donker ? ' is-donker' : ''}`} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={naam ? `${label}: ${naam}` : label}>
+  <rect width={w} height={h} fill={grond} />
+  <rect x="0.5" y="0.5" width={w - 1} height={h - 1} fill="none" stroke={lijn} />
+  <g transform={`translate(${cx - mw / 2} ${klein ? cy - mh / 2 : cy - mh - fs1 * 1.2}) scale(${mw / 702})`} fill={inkt} opacity=".12"><path d={MERK_V} /><path d={MERK_VLAG} /></g>
+  {!klein && (
+    <g font-family="Martian Mono Variable, ui-monospace, Menlo, monospace" font-stretch="82%" text-anchor="middle" fill={inkt}>
+      <text x={cx} y={cy + fs1 * 0.6} font-size={fs1} letter-spacing={fs1 * 0.08}>{label}</text>
+      {naam && <text x={cx} y={cy + fs1 * 0.6 + fs2 * 1.9} font-size={fs2} opacity=".6">{naam}</text>}
+    </g>
+  )}
+</svg>

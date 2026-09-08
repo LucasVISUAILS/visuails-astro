@@ -1,0 +1,7 @@
+---
+/* De meter van één slotgroep: stippen tot acht, daarboven een balk. */
+const { g, alsBalk } = Astro.props;
+---
+{alsBalk
+  ? <progress class="st-slotbalk" value={g.vast} max={g.totaal}></progress>
+  : <span class="st-pips">{Array.from({ length: g.totaal }, (_, i) => <i class={i < g.vast ? 'is-vast' : ''}></i>)}</span>}

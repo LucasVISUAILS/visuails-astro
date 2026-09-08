@@ -77,6 +77,8 @@ import {
   /* De toeslag voor een compleet setje en de extra hoek — zie de nieuwe vragen
      bij catalog en lifestyle, 4 september 2026. */
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, extraPhotoRate,
+  /* Wat er na de ene revisieronde gebeurt — zie REVISIEBELEID in pricing.js. */
+  revisiebeleid,
 } from './pricing.js';
 /* De doorschuiftermijnen staan in plans.js; hier alleen gelezen, niet overgetypt. */
 import { TERMS } from './plans.js';
@@ -247,6 +249,42 @@ export function faqPageGroups(lang = 'en') {
             a: `Op twee manieren. Probeer VISUAILS voor ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit}: je krijgt ${sample.deliverable} terug. Die loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn.`,
           },
           {
+            /* ── TWEE VRAGEN DIE NERGENS STONDEN — 4 september 2026 ──────────
+             *
+             * Uit de doorloop met vier bezoekers. De eigenaar van een
+             * verlichtingszaak las "de studio voor kledingmerken", zag bij het
+             * bestellen "voorkant en achterkant verplicht" (een hanglamp heeft
+             * geen achterkant) en concludeerde dat hij hier niet hoorde — terwijl
+             * hij verder alles goed vond. De bureau-inkoper vroeg zich af of
+             * "één proef per bedrijf" over zíjn bureau ging of over zijn klant.
+             *
+             * Allebei zijn het antwoorden die Lucas al had; ze stonden alleen
+             * nergens. Zijn woorden, 4 september:
+             *
+             *   *"Op dit moment ligt de focus niet op andere sectoren dan
+             *   kleding. Wel zou een klant die een ander soort producten verkoopt
+             *   contact kunnen opnemen via mail of WhatsApp en kunnen we kijken of
+             *   we alsnog iets voor hem kunnen betekenen."*
+             *
+             *   *"Bureaus kunnen gebruik maken van onze service voor andere
+             *   klanten. Ook voor deze bureaus is 1 test sample per bedrijf gewoon
+             *   geldig (…) een bureau met dezelfde iban kan niet vaker bestellen
+             *   met die iban."*
+             *
+             * DE PROEFREGEL STAAT ER ZOALS HIJ WERKT en niet zoals hij klinkt: de
+             * controle hangt aan de betaalrekening (payerHash() in src/lib/payer.js
+             * hasht het IBAN of de kaartafdruk), niet aan het e-mailadres. Dat is
+             * ook waarom het antwoord het zo zegt — een bureau dat het met drie
+             * adressen probeert, loopt tegen zijn eigen rekening aan, en dat kan
+             * hij maar beter vooraf weten dan bij de terugbetaling. */
+            q: 'Ik verkoop geen kleding. Kan dat ook?',
+            a: 'De studio is op dit moment op kleding ingericht: de vaste stijlen, de modellen en de vier gevraagde foto\u2019s per product gaan allemaal uit van iets wat gedragen wordt. Verkoop je iets anders, stuur ons dan een bericht via WhatsApp of e-mail met een foto van je product erbij. Dan zeggen we eerlijk of we er iets voor kunnen betekenen \u2014 soms wel, soms niet, en dat weten we binnen \u00e9\u00e9n blik.',
+          },
+          {
+            q: 'Kan ik als bureau voor mijn klanten bestellen?',
+            a: `Ja. Je bestelt onder je eigen account en vult per bestelling de merknaam en de factuurgegevens van die klant in \u2014 dat hoeft dus niet elke keer hetzelfde te zijn. \u00c9\u00e9n ding werkt anders dan je misschien verwacht: de proef van ${sample.price} is er \u00e9\u00e9n per bedrijf, en die telling loopt via de rekening waarvan betaald wordt en niet via het e-mailadres. Je kunt dus \u00e9\u00e9n keer een proef doen op een testproduct, ook als bureau, en daarna niet nog een keer met dezelfde rekening.`,
+          },
+          {
             /* ── HET MEEST GESTELDE BEZWAAR, EN HET STOND NERGENS — 30 AUGUSTUS 2026
              *
              * Een buitenstaander die alleen naar de gepubliceerde pagina's keek,
@@ -332,7 +370,9 @@ export function faqPageGroups(lang = 'en') {
             q: 'Wat als de visuals niet kloppen?',
             /* Zie de noot bij de Engelse tegenhanger: dezelfde kapotte
                interpolatie en dezelfde onterechte kwalificatie. */
-            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. ${aftercare('attended', 'nl')} Je markeert het per beeld in het portaal, zodat één beeld dat terug moet de rest niet ophoudt.`,
+            /* Zie de noot bij de Engelse tegenhanger: het beleid komt uit
+               REVISIEBELEID in pricing.js en staat hier niet nog een keer. */
+            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt — je markeert het per beeld in het portaal, zodat één beeld dat terug moet de rest niet ophoudt. ${revisiebeleid('nl').map(([kop, regel]) => `${kop}: ${regel.charAt(0).toLowerCase()}${regel.slice(1)}`).join(' ')}`,
           },
           {
             q: 'Hoe krijg ik de bestanden precies?',
@@ -368,9 +408,25 @@ export function faqPageGroups(lang = 'en') {
             q: 'Mag ik de visuals commercieel gebruiken?',
             a: 'Ja. Ze zijn gemaakt voor commercieel gebruik — je shop, marktplaatsen, betaalde advertenties en socialmediafeeds. Geen licentie per gebruik en geen extra kosten om ze ergens anders in te zetten.',
           },
+          /* ── DIT ANTWOORD GAF ZIJN EIGEN VRAAG WEG — 7 september 2026 ──────
+             Er stond: "De afgewerkte visuals zijn van jou om voor je bedrijf te
+             gebruiken. Heb je een specifieke licentievraag, stel hem gerust."
+
+             Dat is een gebruiksrecht en geen eigendom, en de vraag gaat over
+             eigendom. Erger: /terms §6 heeft er wél een antwoord op, en een
+             sterk antwoord — een EXCLUSIEVE licentie, en een akte van overdracht
+             op verzoek, kosteloos, omdat overdracht onder art. 2 lid 3 Aw een
+             getekende akte nodig heeft en een clausule in algemene voorwaarden
+             niet volstaat. Die paragraaf legt ook uit dat op een AI-beeld
+             mogelijk helemaal geen auteursrecht rust en waarom de clausule
+             daarom beide kanten dekt.
+
+             Een bureau dat hierheen komt om te weten of het het beeld aan zijn
+             eigen klant mag overdragen, las het zwakste zinnetje van de site op
+             een vraag waar de sterkste alinea van de site over gaat. */
           {
             q: 'Wie is eigenaar van de resultaten?',
-            a: 'De afgewerkte visuals zijn van jou om voor je bedrijf te gebruiken. Heb je een specifieke licentievraag, stel hem gerust en we bevestigen de details voor jouw geval op schrift.',
+            a: 'De afgewerkte visuals zijn van jou, exclusief: waar er auteursrecht op rust, krijg jij de exclusieve licentie — niemand anders mag dat beeld gebruiken, wij ook niet. Heb je de rechten écht op jouw naam nodig, bijvoorbeeld voor een merkregistratie of een investeerder, dan tekenen we daar kosteloos een akte van overdracht voor. Dat moet met een akte: een overdrachtsclausule in algemene voorwaarden is naar Nederlands recht niet geldig, dus wie dat wel belooft, belooft iets wat de wet niet toestaat.',
             linkText: 'Lees de voorwaarden',
             linkHref: '/terms',
           },
@@ -420,6 +476,16 @@ export function faqPageGroups(lang = 'en') {
         {
           q: 'Can I try it before ordering a whole collection?',
           a: `Two ways. A ${sample.price} ${vatLabel('excl', 'en')} test sample on one of your own products, ${sample.unit}: you get back ${sample.deliverable}. It runs through the same production as a paid order, so what you see is what you would get. Or simply start small: the rate is per product, so a first order can be a handful of pieces.`,
+        },
+        {
+          /* Zie de Nederlandse tegenhangers voor waarom deze twee vragen er zijn
+             en waar de antwoorden vandaan komen. */
+          q: 'I do not sell clothing. Is that possible too?',
+          a: 'The studio is set up for clothing at the moment: the fixed styles, the models and the four photos we ask for per product all assume something that is worn. If you sell something else, send us a message on WhatsApp or by email with a photo of your product. We will tell you honestly whether we can do anything for it \u2014 sometimes yes, sometimes no, and we know within one look.',
+        },
+        {
+          q: 'Can I order for my clients as an agency?',
+          a: `Yes. You order under your own account and fill in the brand name and billing details of that client per order \u2014 so they do not have to be the same every time. One thing works differently than you might expect: the ${sample.price} test sample is one per business, and that count runs on the account the payment comes from, not on the email address. So you can run one sample on a test product, agency included, and not a second one from the same account.`,
         },
         {
           /* Zie de Nederlandse tegenhanger voor waarom deze vraag hier staat en
@@ -552,7 +618,13 @@ export function faqPageGroups(lang = 'en') {
              kwalificatie beloofde minder dan de studio doet.
 
              Nu staat de zin op zichzelf, zoals hij geschreven is. */
-          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you — what we agree depends on the problem. ${aftercare('attended', 'en')} You mark it per image in the portal, so one image going back does not hold up the rest.`,
+          /* ── EN WAT ER NA DIE RONDE GEBEURT, STAAT ER NU BIJ ──────────────
+             4 september 2026. Hier stond alleen "what we agree depends on the
+             problem", en dat is precies de zin waar twee van de vier bezoekers
+             in de doorloop van die dag op afhaakten. Het beleid staat sinds
+             vandaag als ladder in pricing.js (REVISIEBELEID); dit antwoord
+             leest hem uit in plaats van hem over te typen. */
+          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you, per image in the portal — one image going back does not hold up the rest. ${revisiebeleid('en').map(([kop, regel]) => `${kop}: ${regel.charAt(0).toLowerCase()}${regel.slice(1)}`).join(' ')}`,
         },
         {
           q: 'How do I actually receive the files?',
@@ -599,7 +671,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Who owns the results?',
-          a: 'The finished visuals are yours to use for your business. If you have a specific licensing question, ask and we will confirm the details for your case in writing.',
+          a: 'The finished visuals are yours, exclusively: where copyright exists in an image, you get the exclusive licence — nobody else may use it, us included. If you need the rights in your own name, for a trademark filing or an investor\u2019s IP schedule, we sign a deed of transfer for the order free of charge. It has to be a deed: under Dutch law a transfer clause in general terms is not valid, so anyone promising you a transfer by the act of ordering is promising something the law does not allow.',
           linkText: 'Read the terms',
           linkHref: '/terms',
         },

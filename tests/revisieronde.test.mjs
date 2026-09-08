@@ -44,7 +44,7 @@
 
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { accountGet, accountPost } from '../src/lib/account.js';
+import { accountPost, studioScreen } from '../src/lib/account.js';
 import { portalGet } from '../src/lib/portal.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
 import {
@@ -436,15 +436,22 @@ console.log('\nhet scherm wisselt van formulier naar WhatsApp');
    * pagina" werd waar zolang íéts het renderde, terwijl de vraag is of 91 zijn
    * eigen ronde heeft en 92 de zijne. Nu wordt dat per bestelling gevraagd, wat
    * dezelfde correctie is als de noot hieronder over `form="ronde-<id>"`. */
+  /* Sinds 6 september 2026 als STAAT en niet als HTML: studioScreen('orders')
+     is wat src/pages/account/orders.astro tekent, en `kaart(id)` is de staat
+     van één bestelkaart (orderView). De pagina zelf staat in
+     tests/studio-vorm.test.mjs. */
   const toon = async (db, orderId = 91) => {
     const token = await mintToken();
     const env = { DB: d1(db, await hashToken(token)) };
     const request = new Request(`https://visuails.com/account/orders?order=${orderId}`, {
       headers: { cookie: `vis_account=${token}`, 'accept-language': 'nl' },
     });
-    const res = await accountGet({ request, env, waitUntil() {} });
-    return await res.text();
+    const r = await studioScreen({ request, env, waitUntil() {} }, 'orders');
+    if (r instanceof Response) throw new Error(`orders gaf ${r.status}`);
+    return { v: r.v, kaart: (id) => r.v.kaarten.find((k) => k.o.id === id)?.view || null };
   };
+  /* Alle geleverde beelden van een kaart, over de producten heen. */
+  const beelden = (k) => (k.products ? k.products.flatMap((p) => p.delivered) : k.sides.delivered.shots);
 
   /* PER BESTELLING GETELD EN NIET OVER DE HELE PAGINA. Dit scherm toont álle
      bestellingen van de klant onder elkaar, en bestelling 92 heeft zijn eigen
@@ -455,18 +462,17 @@ console.log('\nhet scherm wisselt van formulier naar WhatsApp');
   /* Het formulier heet sinds de laatste ronde `ronde-<id>` en niet meer `rr<id>`.
      Zelfde bedoeling: het attribuut zegt bij WELKE bestelling een vinkje hoort,
      zodat de telling van 91 niet die van 92 meepakt. */
-  const vinkjes = (html, id) =>
-    (html.match(new RegExp(`<input type="checkbox" form="ronde-${id}"`, 'g')) || []).length;
+  const vinkjes = (k) => beelden(k).filter((sh) => sh.review.kind === 'approve' && sh.review.ask && sh.review.ask.tick).length;
 
   const voor = await toon(bouwDb());
-  check('vooraf staat het rondeformulier er', /id="ronde-91"/.test(voor), true);
-  check('met een vinkje bij elk openstaand beeld van 91', vinkjes(voor, 91), 3);
-  check('en nog geen WhatsApp-link', /wa\.me/.test(voor.split('id="rr91"')[1] || ''), false);
+  check('vooraf staat het rondeformulier er', voor.kaart(91).ronde?.kind, 'form');
+  check('en het post naar de eigen ronde-route', voor.kaart(91).ronde.action, '/account/orders/91/ronde');
+  check('met een vinkje bij elk openstaand beeld van 91', vinkjes(voor.kaart(91)), 3);
 
   const na = await toon(bouwDb({ roundAt: '2026-08-24 10:00:00' }));
-  check('daarna is het formulier weg', /id="ronde-91"/.test(na), false);
-  check('en zijn de vinkjes van 91 weg', vinkjes(na, 91), 0);
-  check('en staat er een WhatsApp-link', /wa\.me/.test(na), true);
+  check('daarna is het formulier weg', na.kaart(91).ronde?.kind, 'done');
+  check('en zijn de vinkjes van 91 weg', vinkjes(na.kaart(91)), 0);
+  check('en de weg naar een specialist staat er', na.kaart(91).products.every((p) => /wa\.me\//.test(p.waHref)), true);
   /* En de ANDERE bestelling houdt zijn eigen ronde. Eén ronde per bestelling is
      niet één ronde per klant — zie de noot in migrations/0034-revisieronde.sql
      over waarom dit op `orders` staat en niet op `customers`. */
@@ -474,12 +480,13 @@ console.log('\nhet scherm wisselt van formulier naar WhatsApp');
      een terwijl die van 91 gebruikt is. Eén ronde per bestelling is niet één
      ronde per klant. */
   const na92 = await toon(bouwDb({ roundAt: '2026-08-24 10:00:00' }), 92);
-  check('en bestelling 92 houdt zijn eigen ronde', /id="ronde-92"/.test(na92), true);
-  check('en die van 91 is daar niet te vinden', /id="ronde-91"/.test(na92), false);
+  check('en bestelling 92 houdt zijn eigen ronde', na92.kaart(92).ronde?.kind, 'form');
+  check('en die van 91 is daar gebruikt', na92.kaart(91).ronde?.kind, 'done');
+  check('?order=92 zet die kaart open', na92.kaart(92).openNow, true);
 
-  /* De tabel noemt ze allebei, ook al staat er één open. Dat is wat de tabel
+  /* De lijst noemt ze allebei, ook al staat er één open. Dat is wat de lijst
      komt doen: zonder hem zou een klant met twee leveringen er één kwijt zijn. */
-  check('de tabel noemt beide bestellingen', /VIS-2026-0091/.test(na) && /VIS-2026-0092/.test(na), true);
+  check('de lijst noemt beide bestellingen', na.v.shown.map((o) => o.ref).sort(), ['VIS-2026-0091', 'VIS-2026-0092']);
 
   /* ══ 4b · "ALLES GOED" PER PRODUCT — 4 september 2026 (doorlichting §3.6) ═══
    *
@@ -489,15 +496,14 @@ console.log('\nhet scherm wisselt van formulier naar WhatsApp');
    * keuren is, en hij raakt niets anders: geen goedgekeurd beeld, geen vervangen
    * beeld, geen beeld van een andere bestelling, en niets op een gesloten
    * bestelling. Aanmerken blijft per beeld, dus het rondeformulier blijft staan. */
-  const knop = (html) => (html.match(/value="approve-product"/g) || []).length;
-  check('de knop "alles goed" staat bij het product met drie open beelden', knop(voor), 1);
-  check('en noemt hoeveel het er zijn', /Alle 3 zijn goed/.test(voor), true);
+  const knop = (k) => (k.products || []).filter((p) => p.allesGoed).length;
+  check('de knop "alles goed" staat bij het product met drie open beelden', knop(voor.kaart(91)), 1);
+  check('en noemt hoeveel het er zijn', /^Alle 3 zijn goed/.test(voor.kaart(91).products.find((p) => p.allesGoed).allesGoed.label), true);
   /* Bestelling 91 staat óók op deze pagina (hij vraagt iets van de klant), dus
      de knop wordt binnen de KAART van 92 geteld en niet over de hele pagina. */
   const een = await toon(bouwDb(), 92);
-  const kaart92 = (een.split('id="order-92"')[1] || '').split('id="order-')[0];
-  check('bij één open beeld staat hij er niet — daar is Goedkeuren genoeg', knop(kaart92), 0);
-  check('(de kaart van 92 is wel gevonden)', kaart92.length > 0, true);
+  check('bij één open beeld staat hij er niet — daar is Goedkeuren genoeg', knop(een.kaart(92)), 0);
+  check('(de kaart van 92 is wel gevonden)', een.kaart(92) !== null, true);
 
   const dbAlles = bouwDb();
   const rAlles = await ronde(dbAlles, [['action', 'approve-product'], ['order', '91'], ['product', 'p1']]);
@@ -610,13 +616,13 @@ console.log('\nzonder migratie 0034 blijft elk scherm overeind');
 
   const env = { DB: d1(db, hash) };
 
-  const dash = await accountGet({
+  const dash = await studioScreen({
     request: new Request('https://visuails.com/account/orders', {
       headers: { cookie: `vis_account=${token}`, 'accept-language': 'nl' },
     }),
     env, waitUntil() {},
-  });
-  check('/account/orders geeft nog steeds 200', dash.status, 200);
+  }, 'orders');
+  check('/account/orders levert nog steeds zijn staat', !(dash instanceof Response) && dash.v.kaarten.length, 1);
 
   const poort = await portalGet({
     request: new Request(`https://visuails.com/o/${ptok}`, { headers: { 'accept-language': 'nl' } }),

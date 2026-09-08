@@ -1,0 +1,162 @@
+---
+/**
+ * /concept — de drie voorbeelden voor de nieuwe voorpagina, en wat eraan
+ * voorafging. 6 september 2026.
+ *
+ * Lucas: *"Ik wil echt een gehele nieuwe look niet wat er nu staat. Alles mag
+ * helemaal nieuw en bouw de voorbeelden met astro … Gebruik heel veel white
+ * space en grote afbeeldingen."* Dit is de index: drie echte pagina’s, dezelfde
+ * inhoud (src/data/conceptInhoud.js), drie totaal andere vormen. Kies er één,
+ * of wijs aan wat je uit welke wilt — dan wordt dát de voorpagina.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { MERK } from '../../data/brand.js';
+
+const CONCEPTEN = [
+  {
+    slug: 'zweef', letter: 'I', naam: 'Zweef',
+    een: 'De opening is de VEXO-hero zelf: witte balk met een tab in het midden, kop gecentreerd met één accentwoord, twee pillen, het model dat over de onderrand heen loopt, links drie gezichten met één zin, rechts een donkere clipkaart — in onze kleuren. De animatie is subtieler dan in de video: geen invallende balken en vervormende letters, maar zeven banden (het aantal beelden van één set) die met 70 ms verschil veertien pixels op hun plaats schuiven, en een kop die per regel opkomt. Binnen een seconde staat alles stil. Daaronder de maatlijn uit de Komma-pagina: haarlijn, streepje per waarde, nummer erboven. Verder van «WISE» de zwarte kamers: de kop staat er in dezelfde bijna-zwarte toon overheen, torenhoog, met een raster van haarlijnen en het beeld dat er op één dunne lichte lijn overheen hangt. Van «VEXO» het zwevende paneel: de lichte secties zijn kaarten met een flinke ronding die op de inkt liggen, met een rand inkt eromheen, en beeldkaarten met een pil eronder. De pillenrij is echt: vier keuzes, zonder één regel JavaScript.',
+    bron: 'jouw video’s «WISE» en «VEXO» (Zeyox Studio) · ovyonlabs.com/works/komma voor de maatlijn',
+    grond: 'Inkt, met lichte panelen erop',
+  },
+  {
+    slug: 'kolos', letter: 'F', naam: 'Kolos',
+    een: 'Het merk op de schaal van een gebouw: het woordmerk loopt aan beide kanten van het scherm af, en daaronder is alles klein en precies. Er zijn maar twee maten op deze pagina — kolossaal en 11px — en dat verschil ís de grootsheid. Elke sectie opent met één woord over de volle breedte.',
+    bron: 'aim.obys.agency · bennettandclive.com',
+    grond: 'Licht, met volle beeldbanden',
+  },
+  {
+    slug: 'gang', letter: 'G', naam: 'Gang',
+    een: 'De pagina loopt niet naar beneden maar opzij. Tien zalen achter elkaar, elk een heel scherm hoog, met een rail onderin die zegt waar je bent. Je scrollt zoals altijd; het script vertaalt dat naar zijwaarts. Op een telefoon wordt het weer een gewone stapel.',
+    bron: 'floema.com · siena.film',
+    grond: 'Licht, horizontaal',
+  },
+  {
+    slug: 'salon', letter: 'H', naam: 'Salon',
+    een: 'Eén doorlopende wand van beelden, van rand tot rand, zonder ruimte ertussen — de salonhang uit een negentiende-eeuws museum. De tekst hangt ertussen als vlak van dezelfde maat, in wit, inkt of geel. Groots door aantal in plaats van door leegte: je ziet in één oogopslag hoeveel er staat.',
+    bron: 'de salonhang · monolayer.dev voor de dichtheid',
+    grond: 'Inkt, met witte en gele vlakken',
+  },
+  {
+    slug: 'signaal', letter: 'E', naam: 'Signaal',
+    een: 'De stilte van een galerie op een instrument. Je ziet het raster waarop alles staat en de kleine labels hangen aan die lijnen. Elke grafiek is echte data uit pricing.js: de balken bij de diensten zijn het aantal beelden, de balken bij de tarieven zijn het tarief per trede. Eén zwarte kamer waar het licht uitgaat — de enige plek waar het geel een letter mag zijn. Verder is het geel een streep ónder een woord: een signaallijn, geen markeerstift.',
+    bron: 'monolayer.dev · igloo.inc · kriss.ai · y-vision.co.kr, op de sfeer van Gentle Monster',
+    grond: 'Koel wit, één zwarte kamer',
+  },
+  {
+    slug: 'vitrine', letter: 'D', naam: 'Vitrine',
+    een: 'De pagina als tentoonstelling. Elke foto hangt in een lege ruimte en raakt de rand niet — één keer wel, vlak voor het slot. Bijna geen letter: één zin per zaal en verder alleen kapitalen van 10px. Nadruk is geen kleur maar breedte: het accentwoord staat in de brede snit tussen smalle letters. Kleur zit in de foto’s; het geel komt één keer voluit, als wand.',
+    bron: 'gentlemonster.com · aircenter.space · ceciliebahnsen.com',
+    grond: 'Koel wit (#F3F4F6, gemeten op Gentle Monster)',
+  },
+  {
+    slug: 'stilte', letter: 'A', naam: 'Stilte',
+    een: 'Het beeld zweeft in wit. Eén uitspraak per sectie, de navigatie in de vier hoeken, coördinaten rond het herobeeld. Het gele vlak komt één keer: de proef.',
+    bron: 'Kononenko Architectural Bureau (Awwwards SOTD 23 aug 2026) · de hero van Heliot Emil',
+    grond: 'Licht',
+  },
+  {
+    slug: 'verschuiving', letter: 'B', naam: 'Verschuiving',
+    een: 'De grond verschuift terwijl je scrollt: licht, inkt, grijs, geel, inkt. Eén reusachtige uitspraak in kapitalen, een veld van losse foto’s, de tarieven op een volledig geel vlak.',
+    bron: 'landonorris.com (Awwwards Site of the Year 2025, OFF+BRAND)',
+    grond: 'Wisselend',
+  },
+  {
+    slug: 'adem', letter: 'C', naam: 'Adem',
+    een: 'Beeld, wit, beeld, wit. Elk beeld vult het scherm en blijft staan terwijl het volgende witte vel eroverheen schuift. Links een rail die meetelt: 01 / 08.',
+    bron: 'floema.com (Awwwards Site of the Month mei 2026, Bürocratik)',
+    grond: 'Donker beeld, wit ertussen',
+  },
+];
+
+const ONDERZOEK = [
+  ['«WISE», Zeyox Studio (jouw video 1)', 'digital fashion', 'De grond is bijna zwart en de kop staat er in dezelfde bijna-zwarte toon overheen, schermvullend: je leest hem pas als je hem al ziet. Een raster van haarlijnen over het zwart. Het product hangt over die letters heen en staat op één dunne lichte lijn — geen kader, geen schaduw, één streep. Filters als pillen: één zwarte actief, de rest omlijnd. Hun lime is op een haar na het onze (≈ #D9F24E tegen #D2E04A).', 'I'],
+  ['«VEXO», Zeyox Studio (jouw video 2)', 'workout wear', 'De pagina is geen vlak maar een zwevend paneel met een flinke ronding; rondom blijft een rand van de ondergrond zichtbaar. Reusachtige spookwoorden schuiven erachter langs. Beeldkaarten met een klein label linksboven en een zwevende witte pil onderin met naam, prijs en een rond pijltje. Eén donkere posterkaart precies in het midden van een licht veld.', 'I'],
+  ['aim.obys.agency', 'SOTM, Obys', 'De drie letters van het merk staan als zwarte vlakken over de hele bovenkant van het scherm, afgesneden door de rand. Daaronder één haarlijn en een rij piepkleine gegevens die over de volle breedte uit elkaar staan.', 'F'],
+  ['bennettandclive.com', 'Spatzek Studio', 'De naam vult in zijn eentje het hele scherm en wordt aan beide kanten afgesneden. Verder staat er niets. De grootste beweging die er is: geen beeld, geen kader, alleen de naam.', 'F'],
+  ['siena.film', 'SOTM, Niccolò Miranda', 'Eerst een drempel («enter»), daarna beweeg je door een ruimte in plaats van een pagina af te scrollen. De site is een plek waar je doorheen gaat.', 'G'],
+  ['monolayer.dev', 'hyper-futuristisch', 'Een zichtbaar raster van dunne verticale lijnen waar de kleine labels aan hangen in plaats van aan de tekstblokken. Grafieken die alleen uit zwarte balken van verschillende lengte bestaan: een uitlezing, geen illustratie. Koppen in kleine letter, van rand tot rand.', 'E'],
+  ['igloo.inc', 'SOTM juli 2024', 'De laadstand ís het ontwerp: één streepjesbalk in mono, midden in een vlak veld. Niets anders op het scherm.', 'E'],
+  ['kriss.ai', 'SOTM oktober 2024', 'Een reusachtige teller in de hoek van het scherm — een getal als beeld.', 'E'],
+  ['y-vision.co.kr', 'Awwwards, minimal', 'Een harde knip van zwart naar wit, zonder overgang, en een zwevende nav-capsule bovenin.', 'E'],
+  ['gentlemonster.com', 'de sfeer', 'De grond is geen zuiver wit maar rgb(243,244,246): wit met een koele slag, waardoor elke foto er warmer uitziet. Woordmerk klein en gecentreerd; verder staat er bijna geen letter op het scherm. Eén onderstreepte link per sectie, geen knoppen. De prijs onder een product is even groot als de naam — niets schreeuwt.', 'D'],
+  ['aircenter.space', 'Awwwards, minimal', 'Eén object dat zweeft in een leeg wit veld, de merkletters uit elkaar getrokken tot aan de rand van het scherm, en kleine kapitalen die middenin het niets een claim doen.', 'D'],
+  ['ceciliebahnsen.com', 'mode', 'Schermbrede foto, dan een enorme witte stilte, dan een rij beelden zonder één bijschrift. Bewijs dat je een rij foto’s niks hoeft mee te geven.', 'D'],
+  ['landonorris.com', 'Site of the Year 2025', 'Gebroken wit → donker olijf → grijs → zwart, de grond verschuift per sectie. Eén reusachtige uitspraak met één lime woord in een andere letter. Een veld van losse foto’s met kleine plaats/datum-labels, daarna foto van rand tot rand.', 'B'],
+  ['kononenkogroup.com', 'SOTD 23 aug 2026', 'Eén tekening in wit, tiny navigatie in de hoeken, één grote uitspraak per scherm, key : value-lijsten. Leegte als het materiaal.', 'A'],
+  ['floema.com', 'SOTM mei 2026', 'Stapel schermvullende foto’s met een vaste rail en teller; elk beeld draagt één boodschap en één knop.', 'C'],
+  ['heliotemil.com', 'techwear', 'Tweeluik-hero met mono-coördinaten op vaste rasterpunten (07 · 25 · 13 · 34), woordmerk gesplitst, alles klein en stil.', 'A'],
+  ['terminal-industries.com', 'SOTM sep 2025', 'Zwarte opener met lime, wit lichaam met grote gecentreerde koppen. Bewijs dat donker openen en licht doorgaan werkt.', 'B'],
+  ['ovyonlabs.com/works/komma', 'de kleuranker', '#111111 en #F5F5F5, het geel als vulling en als letter op inkt, mono-labels, haakjes om knoppen. De familie uit KLEURENSCHEMA.md staat in alle drie.', 'A B C'],
+];
+---
+<ConceptLayout title="Negen voorpagina’s — VISUAILS concepten" description="Negen voorbeelden voor de nieuwe voorpagina van VISUAILS, met dezelfde inhoud en negen keer een andere ruimte — om uit te kiezen." lang="nl" grond="vel">
+  <main class="index">
+    <header class="kop-blok">
+      <p class="mono">{MERK} · Concepten · 6 september 2026</p>
+      <h1 class="kop kop-smal h1">Negen voorpagina’s. Dezelfde inhoud, negen keer een andere ruimte.</h1>
+      <p class="lede lopend">Elk concept is een echte Astro-pagina met alle secties en getallen van de huidige voorpagina — uit pricing.js, niet getypt. De foto’s zijn de sfeerbeelden met het groene licht uit je map, als plaatshouder tot je eigen beelden er zijn. Klik door, scroll, en zeg welke — of welk stuk uit welke.</p>
+      <p class="lede lopend"><b>I · Zweef</b> is de nieuwste: de twee video’s die je stuurde, over elkaar heen gelegd — de zwarte kamers met spookletters van «WISE» en het zwevende paneel met ronde kaarten van «VEXO», in jouw eigen kleuren. <b>F, G en H</b> zijn de ronde «groots»: drie manieren om de site groot te laten voelen die onderling niets met elkaar te maken hebben — schaal (F), ruimte (G) en aantal (H). <b>E · Signaal</b> is de ronde ervoor: hyper-futuristische winnaars gekruist met de sfeer van Gentle Monster. <b>D · Vitrine</b> is de ronde ervoor, na «dit voelt zo standaard»: dezelfde sfeer, maar puur als tentoonstelling. A, B en C staan er nog bij ter vergelijking.</p>
+    </header>
+
+    <ol class="lijst">
+      {CONCEPTEN.map((k) => (
+        <li>
+          <a class="kaart" href={`/concept/${k.slug}`}>
+            <img src={`/img/concept/voorbeeld-${k.slug}.webp`} width="1440" height="900" alt={`Concept ${k.letter} · ${k.naam}, het eerste scherm`} loading="lazy" decoding="async">
+            <span class="kaart-tekst">
+              <span class="mono"><b>{k.letter}</b>{k.grond}</span>
+              <span class="kop kop-smal h2">{k.naam}</span>
+              <span class="een">{k.een}</span>
+              <span class="mono bron">Naar: {k.bron}</span>
+              <span class="pijl">Bekijk concept {k.letter}</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+
+    <section class="onderzoek">
+      <h2 class="kop kop-smal h2">Waar het vandaan komt.</h2>
+      <p class="lede lopend">Elke site is per scherm bekeken, met langere wachttijden en kleine stappen. Wat op WebGL draait (oryzo.ai, aircenter.space voorbij het eerste scherm) bevriest de opname; daarvan telt alleen wat wél te zien was.</p>
+      <ul class="bronnen">
+        {ONDERZOEK.map(([site, wat, les, in_]) => (
+          <li><span class="mono"><b>{site}</b>{wat}</span><span>{les}</span><span class="mono stil">In concept {in_}</span></li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="vast">
+      <h2 class="kop kop-smal h2">Wat in alle negen vaststaat.</h2>
+      <p class="lopend">Tien secties, dezelfde inhoud en getallen als nu. Hubot Sans voor de koppen — smal (78%) waar de pagina fluistert, breed (125%) waar hij schreeuwt (F, H, I) — en breed voor het woordmerk, Sometype Mono voor labels, Satoshi voor de lopende tekst zodra de woff2's er liggen. Het geel alleen als vulling of als letter op inkt, nooit als letter op wit. De bestaande merksymbolen, ongewijzigd, uit Layout.astro gelezen. Elke pagina getest op 1440 en 390 breed, zonder horizontale overloop, met een alternatief voor wie minder beweging wil.</p>
+    </section>
+  </main>
+
+  <footer class="voet"><span class="mono">{MERK} · Concepten · niet geïndexeerd</span></footer>
+</ConceptLayout>
+
+<style>
+  .index { padding: clamp(4rem, 8vw, 8rem) var(--x) 0; display: grid; gap: clamp(4rem, 8vw, 8rem); }
+  .kop-blok { display: grid; gap: 1.5rem; max-width: 64rem; }
+  .h1 { font-size: clamp(2.4rem, 5.6vw, 5rem); }
+  .h2 { font-size: clamp(1.8rem, 3.6vw, 3rem); }
+  .lede { font-size: clamp(1rem, 1.25vw, 1.2rem); color: var(--inkt-2); }
+  .mono b { font-weight: 500; margin-right: .6em; }
+  .stil { color: var(--inkt-3); }
+
+  .lijst { display: grid; gap: clamp(3rem, 6vw, 6rem); }
+  .kaart { display: grid; grid-template-columns: 7fr 5fr; gap: clamp(1.5rem, 4vw, 4rem); align-items: end; }
+  .kaart img { width: 100%; height: auto; outline: 1px solid var(--lijn-sterk); }
+  .kaart-tekst { display: grid; gap: .9rem; }
+  .kaart .een { color: var(--inkt-2); max-width: 34em; }
+  .kaart .bron { color: var(--inkt-3); }
+  .kaart:hover img { outline-color: var(--inkt); }
+  @media (max-width: 800px) { .kaart { grid-template-columns: 1fr; } }
+
+  .onderzoek, .vast { display: grid; gap: 2rem; }
+  .bronnen { display: grid; border-top: 1px solid var(--inkt); }
+  .bronnen li { display: grid; grid-template-columns: 16rem 1fr 8rem; gap: 2rem; padding: 1.25rem 0; border-bottom: 1px solid var(--lijn); color: var(--inkt-2); }
+  @media (max-width: 800px) { .bronnen li { grid-template-columns: 1fr; gap: .5rem; } }
+  .vast p { color: var(--inkt-2); }
+  .voet { padding: clamp(3rem, 6vw, 6rem) var(--x); color: var(--inkt-3); }
+</style>

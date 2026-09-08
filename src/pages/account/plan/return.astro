@@ -1,0 +1,32 @@
+---
+/**
+ * /account/plan/return — terug van Mollie na het afgeven van het mandaat.
+ * 6 september 2026: de laatste route van Studio die nog uit account.js kwam.
+ *
+ * Het werk (mandaat ophalen, subscription aanmaken) doet handleSubscribeReturn()
+ * in studioScreen(); hier staat alleen de uitkomst als kop en zin — gelukt,
+ * wacht, onbekend. Zie planReturnView() in src/lib/account.js.
+ */
+import StudioLayout from '../../../layouts/StudioLayout.astro';
+import { pagesContext } from '../../../lib/route.js';
+import { studioScreen } from '../../../lib/account.js';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'plan-return');
+if (s instanceof Response) return s;
+
+const { st, v } = s;
+const { t, lang, customer, thema, navDicht } = st;
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="plan" customer={customer}
+  title={t.planHeading} kop={v.kop} lede={v.tekst}
+  chip={v.staat === 'gelukt' ? { tekst: t.planStatusActive, toon: 'signal' } : v.staat === 'wacht' ? { tekst: t.planStatusPending, toon: 'warn' } : null}
+>
+  <section class="st-blok" aria-label={t.planHeading}>
+    <div class="st-kaart-vlak st-terug">
+      <a class="btn btn-primary" href={v.ctaHref}>{v.cta}</a>
+    </div>
+  </section>
+</StudioLayout>

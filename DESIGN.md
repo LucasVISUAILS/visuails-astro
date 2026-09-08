@@ -29,28 +29,40 @@
 
 ---
 
-## The shipped palette (section 18)
+## The shipped palette (section 20 — light, with Komma's yellow)
 
-Cool near-black as the base surface, white ink in four alpha steps, one light-blue
-accent that works as text *and* as a fill, and two decorative gradients that are
-allowed on panels and never under body copy.
+> **5 september 2026.** Lucas: *"Wat ik nu heb voelt ergens onprofessioneel en ik
+> zou het liever een wat serieuzere feeling willen geven"* — reference
+> ovyonlabs.com/works/komma, measured there: a white ground, neutral greys, one
+> metallic acid yellow (#DED812 / #E4DE18 on the material). The section-18 table
+> that used to sit here is deleted, per this file's own rule; its values are in
+> git history. Hanken Grotesk + Space Mono replaced Archivo + Big Shoulders +
+> Anybody in the same change.
+
+Pure white as the ground, near-black ink in four steps, one acid yellow that is a
+**fill and a material, never a letter** (yellow on white is 1.48:1), and dark
+"glass" panels for everything that must stay dark — the footer, the cta band, the
+scrims over photographs, the conversion bar — via the `.on-ink` scope.
 
 | Token | Value | Role | Measured |
 |---|---|---|---|
-| `--bg-0` | `#030406` | The page ground | — |
-| `--bg-raise` | `#060709` | Raised band, recessed panel — a no-op since §19 | — |
-| `--surface` | `#08090B` | A card off the ground | — |
-| `--surface-2` | `#0C0E11` | The step above that | — |
-| `--ink-1` | `#FFFFFF` | Headings and primary text | 16.75:1 on `--surface` |
-| `--ink-2` | white 80% | Body / secondary | 10.94:1 |
-| `--ink-3` | white 66% | Muted, captions | 7.53:1 |
-| `--ink-4` | white 52% | Faint | 4.62:1 |
-| `--line` | white 12% | Hairline | — |
-| `--line-strong` | white 22% | Rule, control border — **never text** | — |
-| `--accent` | `#C6F100` | Primary fill, links, the accent word | 15.16:1 both directions |
-| `--accent-ink` | `#08090B` | What sits ON an accent fill | white on the accent is 1.31:1 and is never correct |
-| `--accent-dim` | `#ABD200` | Hover / pressed | — |
-| `--scrim` | `8 9 11` (channels) | Every veil over a photograph | see below |
+| `--bg-0` | `#F5F5F5` | The page ground — Komma's light ground, measured 5 Sep 2026 | — |
+| `--bg-raise` | `#EDEDED` | Raised band, recessed panel | — |
+| `--surface` | `#FFFFFF` | A card off the ground — the white poster on Komma's grey | — |
+| `--surface-2` | `#EAEAEA` | The step above that | — |
+| `--ink-1` | `#0A0A0A` | Headings and primary text | 19.7:1 on `--bg-0` |
+| `--ink-2` | `#454545` | Body / secondary | 9.2:1 |
+| `--ink-3` | `#686868` | Muted, captions | 5,6:1 op wit · 4,53:1 op `#EDEDED` |
+| `--ink-4` | ink 42% | Faint — **a line value, never text** | — |
+| `--line` | `#DFDFDF` | Hairline | — |
+| `--line-strong` | `#BDBDBD` | Rule, control border — **never text** | — |
+| `--accent` | `#D2E04A` | Primary fill, the one coloured tile, the glow — Komma's yellow, measured (6 Sept 2026, see KLEURENSCHEMA.md) | 13.7:1 with ink on it |
+| `--accent-ink` | `#0A0A0A` | What sits ON an accent fill | white on the accent is 1.5:1 and is never correct |
+| `--accent-dim` | `#B8CC46` | Hover / pressed; the meter, the ring | — |
+| `--accent-text` | `var(--ink-1)` on light, `#E4F474` on glass | The accent where a rule asks for it as text: ink on white; on glass the lighter UI-lime Komma sets its mono labels in | 16.5:1 on `#111111` |
+| `--glass` | `#111111` | The dark panel — Komma's dark, measured on the page itself (`--ink-900` resolves to it) | white on it 18.9:1 |
+| `--glow` | `#9EB42F` | The glow along a glass panel's edge — Komma's glow border; light only, never text | — |
+| `--scrim` | `17 17 17` (channels) | Every veil over a photograph | see below |
 
 > **De vier grondwaarden zijn bijgewerkt, 30 augustus 2026.** Ze stonden hier één
 > stap lichter dan wat `global.css` schildert: `#08090B / #101216 / #17191E /
@@ -181,8 +193,8 @@ De namen zijn gebleven (er hangen tientallen regels aan) en de waarden niet:
 |---|---|---|
 | `--fill-blue` | `var(--accent)` | het ene vlak in een raster dat gelezen moet worden |
 | `--fill-violet` | `var(--accent-dim)` | de tweede stap, als er echt twee nodig zijn |
-| `--fill-pink` | wit 66% | een derde onderscheid, zonder tweede kleur |
-| `--fill-coral` | wit 40% | de zwakste; ook de waarschuwingsstreep in lijsten |
+| `--fill-pink` | `#E6E6E6` | een derde onderscheid, zonder tweede kleur |
+| `--fill-coral` | `#C2C2C2` | de zwakste; ook de waarschuwingsstreep in lijsten |
 
 Dat volgt het ontwerpprincipe dat PRODUCT.md sinds augustus draagt: *"Colour
 marks the point; the photograph still carries it."* Eén vlak per raster krijgt
@@ -885,14 +897,20 @@ overshoot is playfulness, and this brand's argument is control.
 ## Layout & spacing
 
 ```css
---container-cap:    1640px;
+--container-cap:    1760px;
 --container:       min(var(--container-cap), 100%);
 --container-narrow: 760px;
---container-wide:  min(1760px, 100%);
---pad-x:           clamp(20px, 3.5vw, 64px);
+--container-wide:  min(1920px, 100%);
+--pad-x:           clamp(20px, 4.5vw, 96px);
 --rand-x:          calc(max(0px, (100% - var(--container-cap)) / 2) + var(--pad-x));
 ```
 
+> **Bijgewerkt 5 september 2026 — weer een maat breder.** Lucas, bij sectie 21:
+> *"de website mag ook weer breder om meer white space te creëren."* De cap
+> gaat van 1640 naar 1760, `wide` naar 1920, en de zijmarge groeit mee naar
+> 4,5vw (max 96px) — ruimte zit dan in de marge én tussen de kolommen, zoals
+> bij Komma. De ladder smal < cap < breed blijft staan.
+>
 > **Bijgewerkt 1 september 2026 — een maatje smaller, en één ladder.**
 > Lucas: *"Ik wil de breedte van de website toch 1 maatje smaller maken omdat het
 > nu wel erg breed is."* Er stond `min(1720px, 100%)` met
@@ -1119,6 +1137,85 @@ for JavaScript.
 - **A second chrome surface.** There is one, and the logotype used to be the other.
 
 ---
+
+## Section 21 — the homepage, flat and full-bleed (5 September 2026)
+
+Lucas, after section 20: *"hoe het nu wordt voelt zo vriendelijk nog"* — the
+reference is ovyonlabs.com/works/komma and the Lue site, and the brief is
+*"visueel uitleggen wat visuails doet"*, cutting copy where it does not carry
+the core. `src/components/Voorpagina.astro` replaces HomeV2 (5,150 lines →
+~600). What "strak" means here, measured on those two sites, and revised in
+the second round the same day:
+
+- **One full-screen banner.** Photo edge to edge, `min-height: 100svh`, a
+  dark scrim, the headline bottom-left, mono labels top-left, one HUD chip
+  top-right, three facts in a glass card bottom-right. Nothing vertical, no
+  V pattern behind anything — Lucas: *"vind ik maar niks"* — only two loose
+  outline strokes of the mark on the process panel, off-centre.
+- **Panels, not sections.** Full-bleed, white (`#F5F5F5`) and Komma's dark
+  grey (`#111111`, measured from his screenshot; `#212121` was wrong), one
+  hairline between them. One shared side margin (`--vp-x`) so every heading
+  sits on one vertical line; `--vp-y` is `clamp(5rem, 11vw, 11rem)` and the
+  rest of the site takes the same section padding.
+- **The accent word is a yellow block, on cap height.** `h1 em, h2 em` draw
+  `--accent` as a one-colour gradient sized `.9em` and offset `.27em` from the
+  top of the inline box — a full background fills the whole 1.4em font box and
+  overlaps the line above at line-height 1.02. Descenders hang out of the
+  block like a marker. Never yellow letters, never italics.
+- **Hairlines instead of cards.** Tables, lists and rows draw `--line`;
+  cards keep a hairline and lose their shadow and hover lift sitewide.
+  Corner ticks (two, not four — *"vier is een fotolijst, twee is een
+  aantekening"*) on `.vp-kader-lijn`, `.cta-band` and `.photo-split-media`;
+  crop marks on the closing poster.
+- **Hard edges.** The August "lamp" layer — `.rand-los` masks, `.foto-licht`,
+  `.korrel-mee`, the `brand-beam`/`brand-glow` atmosphere images — is switched
+  off in global.css; a panel ends where it ends. /studio's hero and closer are
+  plain ink panels now, registered in the dark-ground scope.
+- **Type.** Hubot Sans Variable (headings at `font-stretch: 110%`, the
+  `VISUAILS®` mark at 125%), Satoshi for running text (self-hosted from
+  `public/fonts/satoshi/`, Hubot as fallback until the woff2 files land),
+  Sometype Mono as the second voice: labels, chips, the nav, the footer trust
+  row. Chosen from two font sheets (`kladblok/font-keuze*.html`).
+- **Pills and glass.** Buttons are pills again (`--r-pill`, 42px, 1.5rem
+  inset), as are the nav links, the language switch and the chips. Glass
+  (`.glas`, `.glas-licht`: 62% ink, 16px blur, a 1px light rim, 22px radius)
+  is a material for the hero facts, the HUD chips and the Try-card — not for
+  the header, not for buttons.
+- **The Try-card.** `Proefkaart.astro` replaces the conversion bar: a glass
+  card bottom-left, mark, one sentence from `TEST_SAMPLE`, one pill. Shows
+  after 60% of a viewport of scrolling and only once the cookie choice is
+  made; closing silences it for seven days (localStorage); not on
+  /test-sample, /start, /thank-you, /account, /o. One 480ms ease-out, fade
+  only under reduced motion.
+- **Motion.** Scroll-driven `vis-rise` (10px, opacity) on tiles, frames and
+  steps; hover scale on the service tiles and grayscale→colour on the faces.
+  The set frames animate the photo, not the frame, so a waiting frame never
+  counts as overflow of the row.
+- **Numbers only where there is a sequence.** `01–04` on the four steps and
+  on the seven frames of one set — the panel numerals are gone.
+- **Yellow once, full width: the footer.** Site-wide (global.css, "DE VOET
+  ALS GEEL VLAK"), black ink on it; the primary button inverts to black.
+- **Photos are named before they exist.** Every image is `voorpagina-*` and
+  gets a build-time placeholder in the size the page asks for until the file
+  lands in `public/img` (see `src/data/beeld.js`); `data-plaatshouder="donker"`
+  gives a dark one under a scrim.
+
+Gone with it: the hero carousel, the FAQ cards, the floating notes on the
+homepage, the yellow wash on the first screen (`body::after`), the conversion
+bar and its ~270 lines in Layout.astro, the dead `.hv-*`/`.sel-*`/`.sch-*`
+layer of HuidKantig (what remains there: square radii, the seam hairline
+between sections, the menu bridge, the WhatsApp pill and the pointer), and
+the leaf-shaped V (`logo-mark.webp`) — that mark is retired; the tile mark
+with the flag stays, recoloured to the accent on `#111111`. The accent itself
+moved once more the same evening, from Komma's measured `#DEDA14` to `#C8F206`
+— Lucas: *"een stuk meer toxic groen/gelig"* — one step short of the old lime.
+And back, on 6 September: Lucas compared the site with Komma's pages and the
+feeling did not match. Measured per pixel in Komma's own images the UI yellow
+is a soft lime (`#E4F474` as a letter on black, `#B8CC46` as a ring, `#9EB42F`
+as a glow) and the photographic yellow a metallic olive-gold (`#D4D444`);
+`#C8F206` was more saturated and greener than anything in them. The family is
+now `#D2E04A` / `#B8CC46` / `#E4F474` / `#9EB42F` — KLEURENSCHEMA.md is the
+one file that carries it.
 
 ## Build order
 

@@ -127,7 +127,7 @@ const t = useTranslations(lang);
   }
   .cc-copy { margin: 0; flex: 1 1 26rem; min-width: 0; font-size: .875rem; line-height: 1.5; color: var(--ink-2); }
   .cc-copy b { display: block; color: var(--ink); font-size: .95rem; margin-bottom: .15rem; }
-  .cc-copy a { color: var(--fill-blue); text-decoration: underline; text-underline-offset: 2px; }
+  .cc-copy a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
 
   .cc-actions { display: flex; align-items: center; gap: var(--gap-actions); flex-wrap: wrap; }
   /* ONE class for both answers. Equal prominence is not a thing to remember,
@@ -179,9 +179,10 @@ const t = useTranslations(lang);
     .cc-btn { min-width: 0; padding: 0 .7rem; }
     .cc-link { grid-column: 1 / -1; text-align: center; }
   }
-  /* Below ~380px the two labels genuinely do not fit side by side. They stack,
-     and they stack TOGETHER — same width, same order, neither promoted. */
-  @media (max-width: 380px) {
+  /* Below ~480px the two labels genuinely do not fit side by side (in mono
+     kapitalen sinds sectie 20 al niet meer op 420). They stack, and they stack
+     TOGETHER — same width, same order, neither promoted. */
+  @media (max-width: 480px) {
     .cc-actions { grid-template-columns: 1fr; }
   }
 
@@ -212,8 +213,8 @@ const t = useTranslations(lang);
   }
   .cc-prefs-actions { display: flex; gap: var(--gap-actions); justify-content: flex-end; flex-wrap: wrap; margin-top: .4rem; }
 
-  /* The conversion bar and this cannot occupy the same 20px. While the consent
-     bar is up, the conversion bar sits above it.
+  /* De conversiebalk stond hier ook (sectie 21: die is Proefkaart.astro
+     geworden en komt pas na de cookiekeuze in beeld — zie het script daar).
      The WhatsApp launcher needed the same treatment and never got it: measured
      at 360x740 its 48px square overlapped the "only what is necessary" button
      by 41x34px, and elementFromPoint at the button's right end returned the
@@ -221,7 +222,6 @@ const t = useTranslations(lang);
      reads its own resting offset from --wa-bottom (set in Layout.astro, which
      moves it per breakpoint) so this rule does not have to know about any of
      those breakpoints. */
-  :global(body:has(#cc-bar:not([hidden])) .convbar) { bottom: calc(20px + var(--cc-h, 88px)); }
   :global(body:has(#cc-bar:not([hidden])) .wa-launcher) { bottom: calc(var(--wa-bottom, 20px) + var(--cc-h, 88px)); }
   /* ── DE BALK LAG OVER DE TWEE KNOPPEN VAN DE HERO — 3 september 2026 ──────
      Op een telefoon is de hero 100svh hoog en staan "Start een bestelling" en

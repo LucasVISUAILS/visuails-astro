@@ -75,6 +75,85 @@ export function monthKey(d = new Date()) {
 }
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE LOPENDE TERMIJN — 4 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Wanneer ik het abonnement opzeg verdwijnt het abonnements-dashboard
+ * ook per direct terwijl ik de maand nog niet had afgemaakt."*
+ *
+ * Dat klopte, en de oorzaak zit dieper dan het opzeggen. Overal in dit bestand
+ * stond `monthKey()`: de KALENDERmaand. Maar een abonnement wordt afgeschreven
+ * op de dag van de eerste betaling en daarna elke maand op diezelfde dag — zie
+ * eersteTermijn() in subscribe.js. Wie op 20 augustus begint, betaalt op 20
+ * september opnieuw, en de termijn waarvoor hij betaald heeft loopt dus van de
+ * 20e tot de 19e. Niet van de 1e tot de 31e.
+ *
+ * Wat dat aanrichtte, in twee vormen van dezelfde fout:
+ *
+ *   · EEN LOPENDE ABONNEE kon tussen de 1e en zijn afschrijfdag zijn saldo niet
+ *     uitgeven. `betaald` keek of er een rij voor de kalendermaand bestond, en
+ *     die komt er pas op de 20e. Op het scherm stond het saldo, en het formulier
+ *     zei "onbetaald" — tot 27 dagen per maand, voor iedereen die niet op de 1e
+ *     is begonnen.
+ *   · EEN OPZEGGER zag zijn dashboard meteen verdwijnen. loadSubscription()
+ *     houdt een opgezegd abonnement staan zolang er voor DEZE maand betaald is
+ *     (zie de noot daar) — maar met de kalendermaand als maat was dat vanaf de
+ *     1e al niet meer waar, terwijl de betaalde termijn nog liep.
+ *
+ * Vandaar deze twee functies. Ze veranderen niets aan wat er in de database
+ * staat: een maandrij houdt de kalendermaand van de afschrijving als naam, want
+ * dat is wat de betaling zegt. Ze veranderen wélke rij "nu" is.
+ *
+ * DE DAG KOMT UIT started_at EN NIET UIT window_day. Die tweede is de
+ * leverweek die de klant koos (zie migratie 0030); de afschrijving hangt aan de
+ * dag waarop de eerste betaling binnenkwam. Twee verschillende dagen, en ze door
+ * elkaar halen zou het saldo op de verkeerde dag laten omslaan.
+ */
+export function termijnDag(sub) {
+  const bron = String(sub?.started_at || sub?.created_at || '');
+  const dag = Number(bron.slice(8, 10));
+  /* 28 als bovengrens, om dezelfde reden als bij eersteTermijn() en window_day:
+     februari mag geen uitzondering worden. Geen bruikbare datum → de 1e, en dan
+     is de termijn gelijk aan de kalendermaand — precies het oude gedrag. */
+  return Number.isInteger(dag) && dag >= 1 ? Math.min(28, dag) : 1;
+}
+
+/**
+ * De maandrij die NU de lopende termijn is. Vóór de afschrijfdag is dat de rij
+ * van de vorige kalendermaand: die betaling loopt nog.
+ */
+export function termijnMaand(sub, nu = new Date()) {
+  const d = nu instanceof Date ? nu : new Date(nu);
+  const maand = monthKey(d);
+  return d.getUTCDate() >= termijnDag(sub) ? maand : monthMinus(maand, 1);
+}
+
+/**
+ * Wanneer de termijn die op `maand` betaald is, afloopt — als YYYY-MM-DD, de dag
+ * waarop de volgende afschrijving valt. Een abonnement dat op de 20e betaald is
+ * voor augustus, loopt tot 20 september.
+ */
+export function termijnEinde(sub, maand) {
+  const m = String(maand || '');
+  if (!/^\d{4}-\d{2}$/.test(m)) return '';
+  const volgende = monthPlus(m, 1);
+  return `${volgende}-${String(termijnDag(sub)).padStart(2, '0')}`;
+}
+
+/** Eén kalendermaand terug, op de sleutel YYYY-MM. */
+function monthMinus(maand, n = 1) {
+  const [j, m] = String(maand).split('-').map(Number);
+  const d = new Date(Date.UTC(j, (m - 1) - n, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+/** En één vooruit. */
+function monthPlus(maand, n = 1) {
+  return monthMinus(maand, -n);
+}
+
+/**
  * Een kenmerk voor een nieuw abonnement, in dezelfde vorm als makeRef() in
  * functions/api/order.js maar met een eigen voorvoegsel.
  *
@@ -108,8 +187,8 @@ async function stil(fn, leeg = null) {
  * het mandaat heeft getekend maar wiens webhook nog onderweg is, mag geen
  * tweede aanvraag kunnen starten. Alleen 'cancelled' is weg.
  */
-export async function loadSubscription(env, customerId) {
-  return stil(() => env.DB.prepare(
+export async function loadSubscription(env, customerId, nu = new Date()) {
+  const rij = await stil(() => env.DB.prepare(
     `SELECT id, ref, customer_id, plan, term, status, window_day,
             /* Sinds migratie 0038. Leeg bij een pakket, gevuld bij een maand op
                maat — en dat verschil wordt nergens anders gelezen dan in
@@ -144,12 +223,39 @@ export async function loadSubscription(env, customerId) {
                 te lopen: verbruikToestaan() laat hem toe, de bovenbalk toont
                 "opgezegd", en de partiële UNIQUE index op ('active','pending')
                 blijft ongemoeid — een klant kan dus meteen een nieuw
-                abonnement afsluiten zonder op de maand te wachten. */
+                abonnement afsluiten zonder op de maand te wachten.
+
+                ── EN "DEZE MAAND" IS DE LOPENDE TERMIJN, NIET DE KALENDER ───
+                4 september 2026. Hier stond "m.month = ?2" met de
+                kalendermaand erin, en dat is de verkeerde maat: wie op de 20e
+                betaalt, heeft op de 4e van de volgende maand nog steeds een
+                lopende termijn maar geen rij voor die kalendermaand. Zijn
+                dashboard verdween dus op de 1e in plaats van op de 20e — de
+                fout die Lucas aanwees. Zie termijnMaand() bovenaan.
+
+                De SQL kijkt naar allebei de kandidaten (deze en de vorige
+                kalendermaand) omdat de dag waarop de termijn omslaat op de RIJ
+                staat die we hier ophalen; welke van de twee het is, beslist de
+                controle in JavaScript hieronder. */
              OR (status = 'cancelled' AND EXISTS (
                    SELECT 1 FROM subscription_months m
-                    WHERE m.subscription_id = subscriptions.id AND m.month = ?2)))
+                    WHERE m.subscription_id = subscriptions.id
+                      AND m.month IN (?2, ?3))))
       ORDER BY id DESC LIMIT 1`
-  ).bind(customerId, monthKey()).first());
+  ).bind(customerId, monthKey(nu), monthMinus(monthKey(nu), 1)).first());
+
+  /* Een opgezegd abonnement blijft staan zolang de betaalde termijn loopt, en
+     geen dag langer. De query hierboven is met opzet één maand te ruim; deze
+     controle maakt hem precies. Eén extra query, en alleen voor wie opgezegd
+     heeft. */
+  if (rij && String(rij.status) === 'cancelled') {
+    const maand = termijnMaand(rij, nu);
+    const heeft = await stil(() => env.DB.prepare(
+      'SELECT 1 AS er FROM subscription_months WHERE subscription_id = ?1 AND month = ?2 LIMIT 1'
+    ).bind(rij.id, maand).first());
+    if (!heeft) return null;
+  }
+  return rij;
 }
 
 /** Het abonnement achter een kenmerk — hoe de eerste betaling terugvindt waar hij hoort. */
@@ -272,21 +378,24 @@ export async function loadTaken(env, customerId, limit = 20) {
  *
  * Geeft dezelfde vorm terug als planState(), op `wachtrij` en `opgehaald` na.
  */
-export async function planSaldo(env, customerId) {
-  const sub = await loadSubscription(env, customerId);
+export async function planSaldo(env, customerId, nu = new Date()) {
+  const sub = await loadSubscription(env, customerId, nu);
   if (!sub) {
     return {
       actief: false, sub: null, plan: null, term: null,
       saldo: 0, toegekend: 0, verbruikt: 0, doorgeschoven: 0, vervalt: [],
       clips: { saldo: 0, toegekend: 0, verbruikt: 0 },
       maanden: [],
-      maand: monthKey(), betaald: false, volgendeAfschrijving: '',
+      maand: monthKey(), betaald: false, volgendeAfschrijving: '', termijnTot: '',
     };
   }
 
   const maanden = await loadMonths(env, sub.id, sub.term);
 
-  const maand = monthKey();
+  /* DE LOPENDE TERMIJN en niet de kalendermaand — zie termijnMaand() bovenaan.
+     Alles hieronder hangt hieraan: welke rij "deze maand" is, wat er als
+     doorgeschoven telt, en of `betaald` waar is. */
+  const maand = termijnMaand(sub, nu);
   const deze = maanden.find((m) => m.month === maand) || null;
   /* De geschiedenis die available() krijgt, zijn de VOORBIJE maanden — deze
    * maand zit al in het plan zelf. Zie de noot bij available(). */
@@ -337,6 +446,10 @@ export async function planSaldo(env, customerId) {
      * netwerkaanroep per dashboardbezoek zijn, en de dag ligt vast op de dag van
      * de eerste betaling. Bij een gepauzeerd abonnement is er niets te noemen. */
     volgendeAfschrijving: sub.status === 'active' ? addMonths(maand, 1) : '',
+    /* Tot wanneer er betaald is. Bij een opgezegd abonnement is dat de dag
+       waarop het dashboard verdwijnt, en die hoort op het scherm te staan in
+       plaats van dat hij iemand overvalt. */
+    termijnTot: termijnEinde(sub, maand),
     maanden,
     maand,
     /* Is er voor DEZE maand betaald? De webhook maakt de maandrij aan op het
@@ -385,7 +498,10 @@ export async function planAanvullen(env, kort) {
   const [wachtrij, opgehaald, slots] = await Promise.all([
     loadQueue(env, kort.sub.customer_id),
     loadTaken(env, kort.sub.customer_id),
-    slotBalans(env, kort.sub.id, vensterVoor(kort.sub)),
+    /* Met de maand van de LOPENDE termijn, niet die van de kalender: anders
+       leest het saldo van iemand die op de 20e betaalt tussen de 1e en de 20e
+       als nul, en bij een opgezegd abonnement (venster 0) helemaal. */
+    slotBalans(env, kort.sub.id, vensterVoor(kort.sub), new Date(), kort.maand),
   ]);
   return { ...kort, wachtrij, opgehaald, slots };
 }

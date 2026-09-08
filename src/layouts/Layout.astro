@@ -28,8 +28,46 @@ import '../styles/global.css';
 //
 // The wght axis, not the wdth build: nothing in the system varies width, and
 // the wdth file is a second axis nobody reads.
-import '@fontsource-variable/archivo/wght.css';
-import '@fontsource-variable/archivo/wght-italic.css';
+/* Sectie 20 (5 september 2026): Hanken Grotesk + Space Mono in plaats van
+   Archivo + Big Shoulders + Anybody — zie de fonttokens in global.css. */
+/* Sectie 21 (5 september 2026) was Hubot Sans + Satoshi + Sometype Mono. Satoshi
+   stond niet op npm en werd zelf gehost uit public/fonts/satoshi/, met een <link>
+   die alleen verscheen als de woff2's er lagen. Sectie 22 noemt Satoshi nergens
+   meer, dus die hele tak is op 7 september weggehaald: de glob, de voorwaardelijke
+   <link> hier, dezelfde in StudioLayout, en de Satoshi-tak in
+   scripts/fonts-voor-worker.mjs. Een schakelaar die niets meer aanzet is precies
+   het soort bedrading dat de drie werkschermen maandenlang in Arial hield. */
+/* Sectie 22: Anybody voor de koppen, Instrument Sans voor de tekst, Martian
+   Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
+   noot bij --font-heading in global.css voor waarom deze drie. */
+import '@fontsource-variable/anybody/standard.css';
+import '@fontsource-variable/instrument-sans/standard.css';
+import '@fontsource-variable/martian-mono/standard.css';
+
+/* ── SATOSHI, ALS HIJ ER LIGT — 8 september 2026 ──────────────────────────
+   Lucas wil Satoshi proberen als tekstletter. Hij staat niet op npm (Fontshare,
+   ITF Free Font License, gratis maar niet open source), dus de woff2's komen
+   met de hand in public/fonts/satoshi/ te liggen.
+
+   Liggen ze er niet, dan wordt er niets gelinkt en verandert er niets: geen
+   404, en Instrument Sans blijft de tekstletter. Wat er gebeurt als ze er WEL
+   liggen, staat in public/fonts/satoshi/satoshi.css zelf.
+
+   ── EN WAAROM DIT GEEN VITE-ZOEKOPDRACHT MEER IS ─────────────────────────
+   Hier stond, uit de vorige ronde overgenomen, een statische mapzoekopdracht
+   van Vite over public/fonts/satoshi/. Die was NOOIT AAN GEWEEST: zolang de
+   map leeg was gaf hij een leeg object en leek alles in orde. Vandaag lag er
+   voor het eerst een bestand in, en de hele site gaf 500 met "i is not
+   defined" — Vite probeert elk gevonden pad als MODULE te laden, en een woff2
+   in public/ is geen module. De schakelaar werkte dus precies zolang hij niet
+   werd omgezet.
+
+   Nu leest astro.config.mjs de map met node:fs en zet het antwoord als
+   __SATOSHI__ in de build. Dat is één waarde, vervangen tijdens het bouwen, en
+   hij kan niets laden — de fout hierboven kán niet meer terugkomen. Onder
+   `astro dev` bestaat dezelfde vervanging, dus lokaal zie je hetzelfde. */
+const SATOSHI = __SATOSHI__;
+
 // The latin roman is the only font file on the critical path — it sets the H1
 // that is the LCP element on most pages. Measured: /catalog's LCP was 2840ms
 // on the mobile profile purely waiting for it to arrive, because a woff2
@@ -37,7 +75,7 @@ import '@fontsource-variable/archivo/wght-italic.css';
 // stylesheet has been fetched and parsed. Preloading it moves the request to
 // the first byte of the document. Only this one file — preloading a font the
 // page may never use costs the same bandwidth as one it does.
-import archivoRoman from '@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2?url';
+import archivoRoman from '@fontsource-variable/instrument-sans/files/instrument-sans-latin-standard-normal.woff2?url';
 // Bodoni Moda italic (task #271b) — same self-hosting reason as Archivo
 // above: AVG/GDPR-clean, no third-party font request. Two weights only —
 // 500 for quote-weight prose, 700 for the heavier heading-emphasis word —
@@ -67,12 +105,11 @@ import archivoRoman from '@fontsource-variable/archivo/files/archivo-latin-wght-
 // No .css on the specifier: this package's exports map has only "./*" ->
 // "./*.css", so "/wght.css" resolves to "wght.css.css" and the build fails.
 // Anybody ships an extra "./*.css" entry, which is why the line below keeps it.
-import '@fontsource-variable/big-shoulders-display/wght';
-import '@fontsource-variable/anybody/wght-italic.css';
-import bigShoulders from '@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2?url';
+import bigShoulders from '@fontsource-variable/anybody/files/anybody-latin-standard-normal.woff2?url';
 import { ui, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 import { graphJson } from '../data/schema.js';
 import CookieConsent from '../components/CookieConsent.astro';
+import Proefkaart from '../components/Proefkaart.astro';
 import BrandMark from '../components/BrandMark.astro';
 import HuidKantig from '../components/HuidKantig.astro';
 
@@ -288,7 +325,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       in DESIGN.md's swap checklist for that reason and nowhere else. It was
       still the retired paper value (#F3F5F8) after section 18, which painted a
       near-white address bar above a near-black page on Android Chrome. */}
-  <meta name="theme-color" content="#08090B" />
+  <meta name="theme-color" content="#F5F5F5" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -369,6 +406,9 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
     </style>
   </noscript>
   <ClientRouter />
+  {/* Als laatste in de <head>: satoshi.css zet --font-body om, en staat
+      buiten @layer basis waar global.css in zit — zie de noot in dat bestand. */}
+  {SATOSHI && <link rel="stylesheet" href="/fonts/satoshi/satoshi.css" />}
 </head>
 <body class={[ground === "espresso" && "ground-espresso", huid === "kantig" && "huid-kantig"].filter(Boolean).join(" ") || undefined}>
 {/* THE FIRST TAB STOP. It has to be the first child of <body>, not merely
@@ -1159,6 +1199,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   </footer>
 
   <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
+  {/* De proefkaart: zie de kop van Proefkaart.astro voor wanneer hij komt. */}
+  <Proefkaart lang={lang} />
 
   {/* ÉÉN RIJ: teken, zin, knop, kruisje — 9 augustus 2026.
 
@@ -1171,67 +1213,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       gaat, dan wat je kunt doen. Een schermlezer krijgt daarmee dezelfde volgorde
       als het oog. Zie de noot bij cb_note in i18n/ui.js over waarom die zin er
       precies zo staat. */}
-  <div class="convbar" role="complementary" aria-label={t('cb_region')}>
-    <svg class="mk brand-mark cb-logo" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
-    <em class="cb-note">{t('cb_note')}</em>
-    {/* ── TWEE ZINNEN, ÉÉN OP HET SCHERM ────────────────────────────────────
-        Zelfde afspraak als bij `.cb-cta-vol` / `.cb-cta-kort` hieronder: de
-        ongebruikte helft gaat op `display: none` en dus uit de toegankelijk-
-        heidsboom, zodat een schermlezer op elke breedte precies één zin hoort.
-
-        Lucas, 27 augustus: *"Wellicht toch wel een hele korte zin die test
-        sample uitlegt."* De lange vorm noemt de aantallen en past niet naast een
-        knop op 390px; deze zegt alleen waarom je zou klikken. De aantallen staan
-        achter het vraagteken. */}
-    <em class="cb-note-kort">{t('cb_note_kort')}</em>
-    {/* ── HET VRAAGTEKEN — 23 AUGUSTUS 2026, HERZIEN 27 AUGUSTUS ────────────
-        Lucas: *"wellicht kan je een vraagteken icoon toevoegen om de klant meer
-        informatie erover te laten lezen zonder het daar allemaal neer te zetten."*
-
-        Hier stond daarvoor een eigen knop met een eigen uitklapper: `.cb-why`
-        plus een `<p class="cb-detail">` die onder de zin openklapte en de balk
-        een rij hoger maakte. Lucas, 27 augustus: *"Dat vraagteken moet geen
-        dropdown zijn maar net als de andere vraagtekens moet hij een blok
-        tonen."*
-
-        Hij heeft gelijk en het was ook de enige plek op de site waar een
-        vraagteken nog uitklapte. <Note> is precies daarvoor gemaakt — zie de kop
-        van Note.astro, met Lucas' eigen formulering erin: *"niet uitklapt maar
-        een floating note blok laat zien om ruimte op de site te besparen."* Een
-        uitklapper in een balk die onderaan het scherm vastzit is bovendien de
-        slechtste variant: hij duwt de balk omhoog over de pagina heen.
-
-        `wide`, want hier staan twee zinnen in plaats van één woord uitleg.
-
-        ALLEEN `cb_detail`, EN NIET OOK `cb_note`. Eerst stonden ze allebei in
-        de notitie, zodat de zin die op een telefoon van het scherm gaat ergens
-        zou blijven. Op de schermafdruk las dat als "…carousel van 3.4
-        catalogfoto's of een…": `cb_note` eindigt op "van 3." en `cb_detail`
-        begint met "4 catalogfoto's". Twee zinnen die hetzelfde zeggen, met een
-        getal op de naad. `cb_detail` zegt het volledig — dat is genoeg. */}
-    {/* EEN EIGEN OMHULSEL, EN DAT IS GEEN OVERBODIGE SPAN. Astro scopet elke
-        selector in het <style>-blok hieronder met een attribuut, en dat
-        attribuut komt niet op de wortel van een component die zijn stijl met
-        `is:global` schrijft — zoals <Note>. `.convbar .cb-why { order: 4 }`
-        werd dus `.cb-why[data-astro-cid-…]` en sloeg nergens op: gemeten bleef
-        `order` op 0 staan en stond het vraagteken vooraan in plaats van rechts.
-        Een span die dit bestand zelf rendert, draagt het attribuut wél. */}
-    <span class="cb-why">
-      <Note lang={lang} term={t('cb_why_term')} wide up>
-        {t('cb_detail')}
-      </Note>
-    </span>
-    {/* TWEE LABELS, ÉÉN LINK. Op een telefoon staat de balk op één rij (zie de
-        noot bij de media-query hieronder) en past de lange vorm niet. `display:
-        none` haalt de ongebruikte helft uit de toegankelijkheidsboom, dus een
-        schermlezer hoort op elke breedte precies één naam — dat zou niet zo zijn
-        met een afgeknipte string of met `visibility`. */}
-    <a class="cb-cta" href={lp('/test-sample')}>
-      <span class="cb-cta-vol">{t('cb_cta')}</span>
-      <span class="cb-cta-kort">{t('cb_cta_kort')}</span>
-    </a>
-    <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
-  </div>
+  {/* ── DE CONVERSIEBALK STOND HIER ─────────────────────────────────────────
+      Een zwevende pil onderin met "Probeer VISUAILS · €1", vanaf 640px scrollen.
+      Sectie 21 (5 september 2026): vervangen door de proefkaart (Proefkaart.astro,
+      hieronder bij de cookiebalk) — dezelfde boodschap als glazen kaart, met de
+      uitleg erin in plaats van achter een vraagteken. De stijl (.convbar) en het
+      script in interactions.js zijn null-veilig en staan er nog; die gaan weg
+      bij de opruiming van de kantige huid. */}
 
   {/* Our own WhatsApp launcher — a square block, not a third-party circular
       bubble widget. No external script, no round corners, no brand-green
@@ -1500,7 +1488,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: rgb(8 9 11 / 0.86);
+    /* Sectie 20: de grond is licht, dus de balk die na het scrollen verschijnt
+       is licht glas — de inkt eronder is de gewone inkt van de pagina. */
+    background: rgb(245 245 245 / 0.88);
     backdrop-filter: saturate(140%) blur(14px);
     box-shadow: 0 1px 0 var(--line);
     opacity: 0;
@@ -1523,7 +1513,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      white slab with paper ink on it, invisible for the whole page rather
      than for one frame. Same class of defect as section 16's, in a new
      place, caught the same way — by reading the rendered colour. */
-  :global(body.ground-espresso) .site-header::after { background: rgb(8 9 11 / 0.86); box-shadow: 0 1px 0 var(--line); }
+  :global(body.ground-espresso) .site-header::after { background: rgb(245 245 245 / 0.88); box-shadow: 0 1px 0 var(--line); }
 
   /* ---- the header over a dark hero -------------------------------------
      MEASURED BUG, not a refinement: on every page that opens with a
@@ -1575,7 +1565,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     --line-strong: rgb(255 255 255 / 0.30);
     --line-ui:     var(--paper-muted-on-dark);
     /* THE LOGOTYPE FLATTENS TO PAPER HERE TOO, and this is the one scope where
-       it does not follow the accent. :root moved --brand to #C6F100 in August
+       it does not follow the accent. :root moved --brand to #D2E04A in August
        2026 — green reads at 15.16:1 on the page ground and the mark is green
        everywhere else, including the footer and the scrolled bar.
 
@@ -1679,7 +1669,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Pill, like everything else pressable in this bar. A 14px trigger standing
      next to a fully round Start button is the specific "blokkerig" Lucas
      pointed at — the header is where the two shapes sit closest together. */
-  .nav-links > li > a, .nav-trigger { border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .8rem; font-size: .92rem; font-weight: 500; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); font-family: var(--font-body); }
+  /* Sectie 21 (5 september 2026): de navigatie in kleine mono-kapitalen, zoals
+     op Komma en Lue — de tweede stem van de site, naast de koppen in Hanken. De
+     hoeken zijn recht; de pil is met de rest van sectie 20 verdwenen. */
+  .nav-links > li > a, .nav-trigger { border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .7rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); }
   .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
   .nav-links > li > a[aria-current="page"] { color: var(--ink); }
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
@@ -1687,7 +1680,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      text link so it never competes with nav_start's button weight. Hidden at
      the mobile breakpoint alongside .btn/.lang-switch below; the drawer
      carries its own copy (.mobile-account-link). */
-  .nav-account-link { font-size: .88rem; font-weight: 500; color: var(--ink-3); padding: .55rem .4rem; transition: color var(--dur-1) var(--ease); }
+  .nav-account-link { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); padding: .55rem .4rem; transition: color var(--dur-1) var(--ease); }
   .nav-account-link:hover, .nav-account-link[aria-current="page"] { color: var(--ink); }
 
   /* ---- the signed-in chrome ------------------------------------------------
@@ -1712,7 +1705,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .nav-signout-btn {
     font: inherit; font-size: .78rem; font-weight: 500; letter-spacing: .02em;
     color: var(--ink-3); background: none; border: 0; cursor: pointer;
-    padding: .5rem .45rem; border-radius: var(--r-sm);
+    padding: .5rem .45rem; border-radius: var(--r-pill);
     text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
     transition: color var(--dur-1) var(--ease);
   }
@@ -1797,19 +1790,19 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   /* Language switcher (EN · NL · DE). Desktop version lives in .nav-actions;
      a second copy sits inside the mobile drawer (.mobile-lang). */
-  .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; border-radius: var(--r-md); }
+  .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; border-radius: var(--r-pill); }
   /* 36x27 measured on all 84 pages — under the 40px minimum in both axes, on
      a control people hit while holding a phone. The visible chip keeps its
      size; the hit area grows into the padding, which is what min-height and
      the vertical padding do here. */
-  .lang-switch .ls { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 40px; min-height: 40px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
+  .lang-switch .ls { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 40px; min-height: 40px; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .06em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .lang-switch .ls:hover { color: var(--ink); }
   /* The active chip reads --accent-soft, which is a MIST TINT on the paper
      side. Inside the dark-hero header scope --ink flips to paper-on-dark and
      the fill does not, so the selected language measured 1.06:1 — the chip
      that tells you which language you are reading was the least legible thing
      on the page. The fill is scoped with the ramp instead. */
-  .lang-switch .ls.on { color: var(--chip-ink, var(--ink)); background: var(--chip-fill, var(--accent-soft)); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  .lang-switch .ls.on { color: var(--bg-0); background: var(--ink-1); }
   .mobile-lang { align-self: center; margin-top: .5rem; }
 
   /* THE DRAWER DID NOT FIT AND DID NOT SAY SO. Its content is 967px tall; a
@@ -1992,7 +1985,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
      De waarden zijn met de hand als rgb() geschreven omdat een gradiëntstop
      geen token met losse alpha aankan. Het zijn de kanalen van --accent
-     (#C6F100). Verandert het accent, dan verandert deze regel mee — en dat is
+     (#D2E04A). Verandert het accent, dan verandert deze regel mee — en dat is
      precies wat de vorige keer NIET gebeurde: er stond nog blauw-naar-violet
      van het vorige palet in, wat de roze gloed was die op elke schermafdruk
      terugkwam. */
@@ -2016,16 +2009,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     /* De stops: fel genoeg om te zien dat er licht is, uit op 72% van de straal
        zodat het ruim onder de juridische regel ophoudt. De waarden zijn met de
        hand als rgb() geschreven omdat een gradiëntstop geen token met losse
-       alpha aankan; het zijn de kanalen van --accent (#C6F100).
+       alpha aankan; het zijn de kanalen van --accent (#D2E04A).
 
        ALS HET ACCENT VERSCHUIFT, VERSCHUIFT DEZE REGEL MEE. Dat is de vorige
        keer NIET gebeurd: hier stond nog 91 124 250 en 154 107 245 van het
        vorige palet, een blauw-naar-violette bloem onder een limoenen site. Dat
        was de roze gloed op elke schermafdruk van de onderkant van de pagina. */
     background: radial-gradient(ellipse 120% 100% at 50% 100%,
-      rgb(198 241 0 / 0.14) 0%,
-      rgb(198 241 0 / 0.055) 42%,
-      rgb(198 241 0 / 0) 72%);
+      rgb(210 224 74 / 0.14) 0%,
+      rgb(210 224 74 / 0.055) 42%,
+      rgb(210 224 74 / 0) 72%);
     pointer-events: none;
   }
   .foot-mark-w {
@@ -2256,7 +2249,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      The hairline goes with the gap. An inset rule is how a footer separates
      itself from a section that ended on its own terms; these two do not end,
      the plate runs into it. */
-  main:has(> .panel-tonal) + .site-footer { margin-top: 0; box-shadow: none; }
+  main:has(> .panel-tonal, > .vp) + .site-footer { margin-top: 0; box-shadow: none; }
   /* ── .foot-watermark EN .foot-glow ZIJN HIER WEGGEHAALD ──────────────────
      `.foot-watermark` was al dode code: het <svg> dat hem droeg is bij een
      eerdere ronde vervangen door `.foot-mark`, de opmaakregel bleef staan, en
@@ -2363,374 +2356,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      footer under the reader's thumb. Space costs nothing here; a jump does. */
   @media (max-width: 1100px) { .footer-bottom { padding-bottom: 84px; } }
 
-  /* ── DE VORM VAN DE BALK ─────────────────────────────────────────────────
-     Één rij, vier cellen: teken, zin, knop, kruisje. `align-items: center` mag
-     nu weer, want er is geen tweede regel meer om bovenaan uit te lijnen — dat
-     haalt tegelijk de drie losse margin-top-correcties weg die daarvoor nodig
-     waren.
-
-     De hoek is --r-pill en niet --r-lg. Op een balk van 58px hoog met een pil
-     erin liepen die twee rondingen langs elkaar heen: de buitenboog was vlakker
-     dan de binnenboog en dat is precies wat "niet strak" oplevert. Twee volledig
-     ronde vormen, de een in de ander, lopen per definitie evenwijdig. */
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto auto auto; align-items: center; column-gap: 14px; padding: 9px 9px 9px 18px; background: #08090B; border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-pill); }
-  .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
-
-  /* ── EEN SFEERFOTO IN DE PIL — 23 AUGUSTUS 2026 ──────────────────────────
-   *
-   * De balk was een grijze pil met een zin en een knop, en verder niets van het
-   * merk erop.
-   *
-   * EEN SFEERBEELD EN GEEN PRODUCTFOTO. De eerste versie hiervan had een
-   * lifestylebeeld — een figuur in een jas — en dat is het verkeerde soort beeld
-   * voor deze plek. Een productfoto van 60 pixels hoog toont geen product; hij
-   * toont een vlek waarvan je niet ziet wat het is. Wat op deze maat wél werkt is
-   * licht en kleur: `brand-beam` is de limoen lichtbundel op een donkere vloer, en
-   * die is op elke schaal herkenbaar als VISUAILS in plaats van als een foto van
-   * iemand.
-   *
-   * DE HELE PIL IS HET BEELD, en niet een vlekje achter een grijze vulling. Lucas,
-   * 23 augustus: *"ik wil echt dat de test sample box volledig die afbeelding
-   * wordt, en wat donkerder net als de sfeerfoto."* Dus staat de foto op volle
-   * sterkte en is de vulling eronder zwart in plaats van --surface-2 — de balk is
-   * nu even donker als het beeld zelf, en dat is waar de bundel het van moet
-   * hebben.
-   *
-   * DONKER LINKS, GLOED RECHTS, en dat is geen toeval maar de uitsnede: links
-   * staan het teken en de zin, rechts staat de knop met zijn eigen vulling. De
-   * strook is hoog uit de bundel gesneden — daar is de linkerhelft zwart en komt
-   * de bundel pas op waar de knop staat. Op de lagere uitsnede liep het licht tot
-   * onder de laatste woorden van de zin, en witte tekst op limoen is geen tekst.
-   *
-   * `overflow: hidden` op de pil zodat de foto de pilvorm aanneemt; een box-shadow
-   * wordt daar niet door geknipt, die valt buiten de border-box.
-   *
-   * ABSOLUUT GEPLAATST, EN DAT IS HIER GEEN DETAIL: .convbar is een `inline-grid`
-   * met vier `auto`-kolommen, en een pseudo-element op een grid-container wordt
-   * anders een vijfde grid-item dat de kolommen verschuift. Absoluut geplaatste
-   * kinderen vallen buiten die verdeling.
-   *
-   * 14% ONDER EEN VERLOOP DAT NAAR LINKS DONKERDER WORDT. Links staat het teken en
-   * de zin, rechts staat de knop met zijn eigen vulling — dus daar mag de foto het
-   * zwaarst zijn. npm run test:a11y meet wat er overblijft; de zin haalde 8,9:1 en
-   * houdt dat.
-   */
-  /* ── `position: relative` STOND HIER, EN ZETTE DE BALK VAST OP DE PAGINA ──
-     Rechtgezet 25 augustus 2026, gevonden bij het compacter maken.
-
-     Twee regels hierboven staat `.convbar { position: fixed; bottom: 20px; … }`.
-     Deze regel had dezelfde specificiteit en kwam later, dus WON HIJ: de
-     conversiebalk stond op `position: relative` en zweefde dus niet. Gemeten op
-     390×844 met de pagina 2600px gescrold: `getComputedStyle(.convbar).position`
-     gaf `relative` en zijn bovenkant lag op 14.461px — onderaan het document, in
-     de gewone stroom, in plaats van 20px boven de onderrand van het scherm.
-
-     ── WAAROM HIJ ER STOND, EN WAAROM DAT NIET NODIG WAS ────────────────────
-
-     De noot hierboven legt uit dat `::before` en `::after` absoluut geplaatst
-     zijn zodat ze geen vijfde en zesde grid-item worden. Dat klopt, en daarvoor
-     is een bevattend blok nodig. Alleen: `position: fixed` IS al een bevattend
-     blok voor absoluut geplaatste kinderen. `relative` voegde niets toe en nam
-     het zweven weg.
-
-     ── WAT DIT VERKLAART ────────────────────────────────────────────────────
-
-     Vrijwel alles wat er aan die balk mis leek. Hij oogde als een blok onderaan
-     de pagina in plaats van als een pil, de `translateY(120%)`-animatie van
-     `.show` deed niets zichtbaars, en `--wa-bottom` was een met de hand gemeten
-     getal dat een afstand probeerde te bewaren tot een element dat er niet lag.
-
-     `overflow: hidden` blijft: dat is wat de foto de pilvorm laat aannemen. */
-  /* ── GEEN `overflow: hidden` MEER OP DE BALK ZELF — 27 AUGUSTUS 2026 ──────
-     Hier stond `overflow: hidden`, om de twee sierlagen hieronder binnen de
-     pilvorm te houden. Dat werkte, en het knipte sinds vandaag ook de uitleg
-     weg: het vraagteken is een <Note>, en die zet zijn notitie op
-     `position: fixed`. Normaal ontsnapt dat aan elke `overflow` van een
-     voorouder — maar niet aan deze, want `.convbar` draagt een `transform` en
-     daarmee is hij zélf het bevattende blok voor alles wat `fixed` is. Gemeten:
-     de notitie stond op opacity 1, zichtbaar, met de goede tekst erin, en was
-     op de schermafdruk nergens te bekennen.
-
-     De clip verhuist naar de lagen die hem nodig hebben. `border-radius:
-     inherit` geeft ze dezelfde pilvorm als de balk, dus ze steken nergens meer
-     uit — en de balk knipt niets meer weg wat erbovenop hoort te liggen. */
-  .convbar { overflow: visible; }
-  .convbar::before,
-  .convbar::after { border-radius: inherit; }
-  .convbar::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image: url('/img/sfeer-balk-w760.webp');
-    background-size: cover; background-position: center;
-    opacity: 1;
-    pointer-events: none;
-  }
-  /* Eén dunne sluier over de linkerhelft, en verder niets. Hij is er alleen voor
-     de leesbaarheid van de zin op het moment dat de bundel op een smal scherm
-     verder naar links kruipt; rechts blijft de foto onaangeraakt. */
-  .convbar::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, rgb(0 0 0 / .55) 0%, rgb(0 0 0 / .34) 44%, rgb(0 0 0 / 0) 72%);
-    pointer-events: none;
-  }
-  /* De inhoud boven allebei de lagen. Alleen de vier echte kinderen — de twee
-     pseudo-elementen hebben hun eigen plek en mogen die houden. */
-  .convbar > * { position: relative; z-index: 1; }
-
-  /* Eén maat voor de hoogte van de rij: de knop, het kruisje en het teken leiden
-     er alle drie hun eigen maat uit af, zodat er geen los getal is dat achterblijft
-     als de knop verandert. */
-  .convbar { --cb-row: 40px; }
-
-  /* ── HET VRAAGTEKEN ─────────────────────────────────────────────────────
-     Hier stonden veertig regels: een eigen ronde knop, een eigen open/dicht-
-     staat, en een `.cb-detail` die als derde rij in de balk uitklapte. Dat is
-     allemaal weg — <Note> doet het, net als op de rest van de site. Zie de noot
-     bij de markup.
-
-     Wat er overblijft is de PLAATSING. Note komt met zijn eigen 24×24 knop en
-     zijn eigen notitie; het enige wat deze balk erover te zeggen heeft, is dat
-     hij in de rij van 40px moet passen zoals het kruisje ernaast. */
-  /* `width: 24px` en niet `auto`: <Note> is een `inline-grid` met de notitie als
-     tweede kind. Die notitie staat absoluut gepositioneerd en telt dus niet mee
-     voor de hoogte — maar wél voor de intrinsieke BREEDTE van de grid, en op
-     `nt-wide` is dat 140px. Gemeten kreeg het vraagteken daardoor 140 van de 366
-     pixels in de balk en werd de knop ernaast platgedrukt. De knop zelf is 24×24
-     (SC 2.5.8), en dat is precies wat deze cel moet zijn. */
-  .convbar .cb-why { display: inline-grid; place-items: center; width: 24px; height: var(--cb-row); }
-  /* ── BOVEN DE BALK, MET :global() EN DAAR IS EEN REDEN VOOR ──────────────
-     De notitie staat op z-index 60 (zie Note.astro) en deze balk op --z-bar
-     (250). Zonder deze regel opent de uitleg ACHTER de balk waar hij bij hoort:
-     in de meting een blok met opacity 1 dat je op de schermafdruk nergens ziet.
-
-     `:global()` en niet `.convbar .nt-pop`. Astro scopet elke selector in dit
-     blok met een eigen attribuut, dus dat zou `.convbar[data-astro-cid-…]
-     .nt-pop[data-astro-cid-…]` worden — en `.nt-pop` komt uit Note.astro en
-     draagt dat attribuut niet. De regel zou dus nergens op slaan. Eerst zo
-     geschreven, en de meting gaf gewoon weer 60 terug. */
-  .convbar :global(.nt-pop) { z-index: calc(var(--z-bar) + 1); }
-  /* ── DE NOTITIE LIJNT UIT MET DE BALK ───────────────────────────────────
-     Lucas: *"Maak alles wat consistenter en beter gecentreerd."* De notitie was
-     354px breed onder een balk van 366 en stond op zijn eigen middelpunt — dus
-     nét niet op de randen van de balk eronder, en met een andere hoekradius dan
-     alles eromheen. Twee blokken die bij elkaar horen en geen van beide lijnen
-     uit: dat leest als een fout.
-
-     Dezelfde breedte als de balk (de balk staat op `left: 12px; right: 12px`,
-     dus 100vw − 24) en dezelfde marge. Het script klemt de x-positie al op
-     precies 12px van de rand, dus met deze breedte valt hij vanzelf op de balk.
-
-     `--r-md` en niet de pilvorm: een pil om vier regels tekst leest als een bel,
-     en dat is dezelfde afweging die hier al voor de balk zelf stond. */
-  .convbar :global(.nt-pop) {
-    max-inline-size: calc(100vw - 24px);
-    border-radius: var(--r-md);
-    padding: .85rem 1rem;
-  }
-
-  /* ── DE BREEDTE VAN HET TEKEN STAAT ER EXPLICIET, EN DAT MOET ────────────
-     `.brand-mark` heeft `width: auto` en de svg leidt zijn breedte af uit de
-     viewBox. In een flexregel werkt dat; in een grid met `auto`-kolommen droeg
-     hij NUL bij aan de intrinsieke breedte — gemeten: kolom 1 werd 0px en het
-     teken verdween van de balk terwijl de hoogte gewoon 22px was.
-
-     De echte oorzaak zat een laag hoger: global.css zet
-     `img, svg, video { max-width: 100% }` als reset. Honderd procent van wát, in
-     een kolom die zichzelf op zijn inhoud maat? Dat is een kringetje, en de
-     browser knipt die knoop door op nul. Vandaar `max-width: none` plus een
-     breedte die uit de verhouding van de viewBox (702 x 813.25) volgt — als
-     deling opgeschreven, zodat een andere tekening meerekent. */
-  .convbar .cb-logo { --cb-mark-h: 22px; height: var(--cb-mark-h); width: calc(var(--cb-mark-h) * 702 / 813.25); max-width: none; }
-
-  /* ── DE ZIN ──────────────────────────────────────────────────────────────
-     Eén regel, en dat is nu een eis in plaats van een wens: hij staat naast de
-     knop. `nowrap` maakt dat hard, en de noot in i18n/ui.js houdt de zin kort
-     genoeg om die belofte te kunnen doen — dit is dezelfde `nowrap` die de balk
-     eerder bijna schermbreed maakte, maar toen stond er een zin van dertig
-     woorden in en nu een van tien.
-
-     Onder 900px valt hij weg. Twee redenen: daar zou hij de balk breder maken dan
-     het scherm, en de knop zegt met "test sample · €1" al genoeg om op te kunnen
-     klikken. */
-  .convbar .cb-note-kort { display: none; }
-  .convbar .cb-note { font-style: normal; font-size: .85rem; font-weight: 400; line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
-  /* ── DE NOTE BLIJFT STAAN, OOK OP EEN TELEFOON ─────────────────────────────
-     Hier stond `@media (max-width: 900px) { .cb-note { display: none } }`, en
-     samen met het verbergen van het teken onder de 600px was het resultaat wat
-     Lucas op zijn telefoon zag: een kale groene knop met een kruisje, en niets dat
-     zei waarom hij daar stond. *"ook mist hier tekst en logo bij de pop up."*
-
-     Dat was mijn eigen fout uit de ronde waarin de balk korter moest: ik heb hem
-     korter gemaakt door de UITLEG weg te halen, en de uitleg is het enige waardoor
-     de knop iets betekent. "Request a test sample · €1" zonder die regel is een
-     bedrag zonder aanbod.
-
-     Wat er nu gebeurt onder de 700px: de balk wordt twee regels in plaats van één.
-     Teken en tekst boven, knop eronder over de volle breedte. Dat is een paar
-     pixels hoger en het draagt zijn hele boodschap — en op een telefoon is verticale
-     ruimte precies wat je wél hebt.
-
-     `white-space: nowrap` moet er dan af, anders staat de regel op één lijn te
-     duwen tegen een breedte die er niet is. */
-  @media (max-width: 700px) {
-    .convbar .cb-note { white-space: normal; font-size: .8rem; line-height: 1.35; }
-  }
-
-  /* De knop houdt de pilvorm van elke andere knop op de site. Hij is de reden dat
-     de balk zelf ook een pil is — zie de noot bij .convbar. */
-  /* Standaard de lange vorm; de media-query onderaan draait het om. */
-  .convbar .cb-cta-kort { display: none; }
-  .convbar .cb-cta { display: inline-flex; align-items: center; min-height: var(--cb-row); padding: 0 22px; background: var(--accent); color: var(--accent-on); font-size: .88rem; font-weight: 600; letter-spacing: .01em; white-space: nowrap; border-radius: var(--r-pill); }
-
-  /* Rond en even hoog als de knop, zodat de rij één lijn heeft in plaats van drie
-     hoogtes. Iets kleiner dan de knop, want het is de secundaire handeling. */
-  .convbar .cb-close { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 1.05rem; line-height: 1; background: none; border: 0; border-radius: 50%; cursor: pointer; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
-  .convbar .cb-close:hover { color: var(--ink); background: rgb(255 255 255 / 0.06); }
-
-  /* ── OP EEN TELEFOON IS DE BALK EEN STROOK ───────────────────────────────
-     Op een breed scherm maakt de balk zich zo breed als zijn inhoud en staat hij
-     gecentreerd. Op een telefoon werkt dat niet: gemeten op 320px liep de
-     Nederlandse knop ("Vraag een proefvisual aan · €1", 237px) samen met teken,
-     tussenruimtes en kruisje op 340px uit terwijl er 296px was — en wat er dan
-     buiten valt is het KRUISJE. Een balk die je niet kunt wegklikken is erger dan
-     een balk die te breed is.
-
-     Dus daaronder: vaste marges links en rechts, de knop rekt mee tot maximaal
-     20rem (verder is het geen knop meer maar een band), en het kruisje staat
-     altijd binnen de rand. De transform verliest zijn translateX omdat de balk
-     niet meer gecentreerd hoeft te worden.
-
-     Het teken gaat weg, en dat is de enige manier waarop de knop op 320px nog
-     past. Op die maat is het ook het minst nodig: de kleur en de tekst zeggen al
-     van wie de balk is, en het kruisje moet bereikbaar blijven. */
-  /* ── TWEE RIJEN, EN HET TEKEN BLIJFT ──────────────────────────────────────
-     Drie kolommen op de bovenste rij (teken, tekst, kruisje) en de knop over de
-     volle breedte eronder. Het kruisje blijft rechtsboven, want dat is waar je hem
-     zoekt en hij mag nooit onder de knop belanden — dat was de bug van de vorige
-     ronde, waarbij het kruisje op 320px buiten de balk viel.
-
-     Geen pilvorm meer maar een gewone ronding: een pil om een blok van twee regels
-     leest als een fout, en een strook van rand tot rand met 14px ronding is wat
-     elke andere strook op een telefoon doet. */
-  /* ── OP EEN TELEFOON ÉÉN RIJ — 25 AUGUSTUS 2026 ─────────────────────────
-     Lucas: *"de test sample pop-up ziet er niet meer zo goed uit en wat groot,
-     maak deze compacter."* Gemeten op 390×844: de balk was 161px, oftewel
-     negentien procent van het scherm, permanent.
-
-     ── DRIE DINGEN WAREN STUK, EN ÉÉN VERKLAARDE DE SCHERMAFDRUK ───────────
-
-     1 · HET VRAAGTEKEN STOND NERGENS. Het merkteken, de zin, het kruisje en de
-     knop kregen hier alle vier een plek toegewezen; `.cb-why` niet. Gemeten
-     stond hij op `grid-row: auto` en viel dus door naar een DERDE rij, waar hij
-     40px plus 10px rijruimte helemaal voor zichzelf kreeg. Vijftig van de
-     honderdeenenzestig pixels, voor één rond knopje.
-
-     2 · DE WHATSAPP-KNOP REKENDE MET EEN OUDE MAAT. Zie de noot daar: `142px`
-     was gemeten toen de balk 110 hoog was. Hij zat dus 19px BINNEN de balk. Die
-     afstand wordt nu afgeleid uit de werkelijke hoogte — zie `--cb-h`.
-
-     3 · DE ZIN LIEP OVER TWEE REGELS. 35px voor tekst die voluit achter het
-     vraagteken staat én op /test-sample, waar de knop toch al heen gaat.
-
-     ── DE VORM DIE ERVOOR IN DE PLAATS KOMT ────────────────────────────────
-
-     Eén rij: merkteken, korte knop, vraagteken, kruisje. Dezelfde pilvorm als
-     op een breed scherm, dus dit is niet langer een tweede component met een
-     eigen indeling en een eigen fout — het is dezelfde balk, smaller. `.cb-note`
-     gaat van het scherm en niet uit de pagina: hij blijft in de opmaak staan
-     voor bredere schermen, en zijn inhoud staat op een telefoon achter het
-     vraagteken. Een balk die permanent onderin staat is een duwtje, geen alinea.
-
-     De uitleg mag nog steeds uitklappen; die krijgt dan een tweede rij over de
-     volle breedte, en dat is precies het moment waarop hij ruimte verdient. */
-  @media (max-width: 700px) {
-    /* ── ÉÉN RIJ, NET ALS OP EEN BREED SCHERM — 27 AUGUSTUS 2026 ────────────
-       Lucas, met een schermafdruk van zijn telefoon: *"test sample pop up ziet
-       er niet uit op telefoon, maak deze meer gelijk aan hoe hij op
-       computerscherm eruit ziet. Mag minder tekst op komen bijvoorbeeld alleen
-       knop met vraagteken voor meer info."*
-
-       Wat er stond waren twee rijen: de zin over de volle breedte, en daaronder
-       de knop met het vraagteken en het kruisje. Op zijn scherm liep de zin over
-       twee regels, werd de balk 86px hoog, en kwam de WhatsApp-knop er half
-       overheen te staan.
-
-       ── EN DIT DRAAIT EEN EERDERE BESLISSING TERUG ────────────────────────
-       Op 26 augustus stond hier het omgekeerde, met een reden die ik toen zo
-       opschreef: *"de knop zonder zin is geen duwtje maar een advertentie."* Dat
-       argument klopte, en het klopt nog steeds — alleen ging het uit van een
-       vraagteken dat de zin niet kon dragen. Dat vraagteken klapte de balk open
-       en werd daarom als noodoplossing gebruikt; nu opent het een blok dat over
-       de pagina heen ligt en waar de zin gewoon in past. `cb_note` staat er
-       voluit in, op elke breedte.
-
-       De zin is dus niet weg, hij staat een tik verderop. Dat is precies het
-       verschil dat het argument van 26 augustus toen niet kon maken.
-
-       tests/nav.test.mjs verbood `display: none` op `.cb-note` na die ronde. Die
-       toets is meegegaan met de reden erachter: hij bewaakt nu dat de tekst
-       BEREIKBAAR is, en niet meer dat hij op het scherm staat. */
-    .convbar {
-      left: 12px; right: 12px; max-width: none;
-      transform: translateY(120%);
-      /* Vijf cellen: teken, korte zin, knop, vraagteken, kruisje. De ZIN krijgt
-         de vrije ruimte en de knop precies wat hij nodig heeft — andersom duwt
-         een knop die meegroeit de zin weg, en dan staat er weer een kale knop.
-
-         HET VRAAGTEKEN STAAT RECHTS. Lucas: *"Staat het vraagteken naar links
-         terwijl ik rechts aangaf?"* Het stond links omdat het in de DOM vóór de
-         knop komt — die volgorde is er voor een schermlezer (eerst waarover het
-         gaat, dan wat je kunt doen) en hoort niet om te draaien. `order` zet hem
-         visueel rechts zonder de leesvolgorde te raken. */
-      /* FLEX EN GEEN GRID OP DEZE BREEDTE. `order` verplaatst in een grid wel de
-         auto-plaatsing, maar de kolommen uit `grid-template-columns` blijven op
-         hun oorspronkelijke plek staan — gemeten kreeg de korte zin de kolom van
-         98px die voor de knop bedoeld was, en de 1fr belandde bij het teken.
-         Vijf items op één rij waarvan er één mag groeien, is precies waar flex
-         voor is; grid is hier de verkeerde doos. */
-      display: flex; align-items: center;
-      grid-template-columns: none;
-      gap: 8px;
-      padding: 7px 7px 7px 13px; border-radius: var(--r-pill);
-    }
-    .convbar.show { transform: translateY(0); }
-    .convbar .cb-logo { --cb-mark-h: 17px; align-self: center; order: 1; flex: 0 0 auto; }
-    /* VAN HET SCHERM, NIET UIT DE PAGINA. De lange zin blijft staan voor bredere
-       schermen; hier staat de korte, en de aantallen achter het vraagteken. */
-    .convbar .cb-note { display: none; }
-    .convbar .cb-note-kort {
-      display: block; order: 2; flex: 1 1 auto; min-width: 0;
-      font-style: normal; font-size: .76rem; line-height: 1.25;
-      font-weight: 400; color: var(--ink-2);
-      align-self: center; text-wrap: balance;
-    }
-    /* Kleiner dan hij was: Lucas vroeg om *"de knop iets kleiner"*, en er moet
-       nu ook een zin naast passen. 36 in plaats van 40 hoog, en de vulling
-       eromheen mee terug — het blijft ruim boven de 24px van SC 2.5.8. */
-    .convbar .cb-cta {
-      order: 3; flex: 0 0 auto; justify-content: center;
-      min-height: 36px; padding: 0 13px; font-size: .78rem;
-    }
-    /* HET VRAAGTEKEN EN HET KRUISJE ZIJN ÉÉN PAAR. Ze staan naast elkaar, doen
-       allebei niets aan de bestelling, en hoorden dus dezelfde maat te hebben —
-       ze stonden op 24 en 30. Eén variabele voor allebei, en de tekens erin
-       optisch even groot. */
-    .convbar { --cb-icoon: 30px; }
-    .convbar .cb-why,
-    .convbar .cb-close {
-      order: 4; flex: 0 0 auto;
-      width: var(--cb-icoon); height: var(--cb-icoon);
-      display: inline-grid; place-items: center;
-    }
-    .convbar .cb-close { order: 5; }
-    /* De korte naam wint hier van de lange. */
-    .convbar .cb-cta-vol  { display: none; }
-    .convbar .cb-cta-kort { display: inline; }
-    /* Exact de breedte van de balk, niet "hooguit". Zie de noot hierboven. */
-    .convbar :global(.nt-pop) { inline-size: calc(100vw - 24px); }
-  }
-
+  /* ── DE CONVERSIEBALK STOND HIER — SECTIE 21, 5 SEPTEMBER 2026 ────────────
+     Zo'n 270 regels opmaak voor `.convbar` (de pil, de sfeerfoto erin, het
+     vraagteken met zijn <Note>, de telefoonvarianten) en de regel die de
+     WhatsApp-knop erboven tilde via `--cb-h`. De balk is vervangen door
+     Proefkaart.astro — een kaart linksonder die zijn eigen opmaak draagt — en
+     de markup ging er op 5 september al uit; interactions.js zet `--cb-h` niet
+     meer. De knop rechtsonder en de kaart linksonder raken elkaar niet. */
 
   /* WhatsApp launcher — een vierkant blok in de RECHTERrail, zodat het nooit
      botst met de gecentreerde .convbar. 48px raakvlak minimaal; het label
@@ -2796,42 +2428,5 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      viewport shrinks, so "beside" is only true down to about 380px. Stacking
      is true at every width. */
   @media (max-width: 600px) { .wa-launcher { right: 12px; --wa-bottom: 12px; } }
-  /* ── DE WHATSAPP-KNOP MOET BOVEN DE CONVBAR UIT — MAAR ALLEEN ALS DIE ER IS ──
-     Dit stond op 96px, gemeten toen de convbar op een telefoon één rij was: 58px
-     hoog plus 20px van de onderkant, dus 96 was ruim.
-
-     Sinds de balk twee rijen heeft (de uitleg is teruggekomen — zie de noot bij
-     .cb-note) is hij 110px hoog. Gemeten op 412px breed lag de WhatsApp-knop
-     daarmee bovenop de bovenste rij van de balk. 20px onderkant + 110px balk +
-     12px lucht = 142.
-
-     Het breekpunt is 700px en niet 620px, zodat het meeschuift met het punt waar de
-     balk van vorm verandert. Twee verschillende grenzen voor hetzelfde feit is hoe
-     dit de vorige keer misging.
-
-     10 augustus 2026: de 142px stond hier los van of de balk er ook echt was —
-     puur op viewportbreedte. Vóór de scroll-drempel (640px) en na het sluiten via
-     .cb-close (initConvbar in interactions.js zet dan .show weg) bleef de knop
-     dus op die hoogte hangen, zwevend boven niets. De sibling-selector bindt de
-     142px aan de balk zelf: de balk en de doos om de knop staan als broers in de
-     DOM en de balk staat er eerst, dus dat werkt zonder JS. (Sinds 2 september
-     staat de knop in een <div class="wa-dock"> die de landmarkrol draagt, dus de
-     selector loopt via die doos — zie de noot bij .wa-dock in de markup.) Zodra
-     .show weggaat — dichtklikken, wegscrollen boven de drempel, of een pagina
-     waar de balk onderdrukt is — zakt de knop terug naar de hoek, en de
-     bottom-transitie hierboven maakt daar een beweging van in plaats van een
-     sprong. */
-  /* ── AFGELEID IN PLAATS VAN GEMETEN — 25 AUGUSTUS 2026 ──────────────────
-     Hier stond `142px`, met een noot erbij dat de balk 110px hoog is. Op de dag
-     dat dit werd nagemeten was de balk 161 en zat deze knop dus 19px binnen de
-     balk. Dat is het lot van elk met de hand gemeten getal naast een element dat
-     nog verandert.
-
-     `--cb-h` wordt door initConvbar() in interactions.js gezet uit de ECHTE
-     hoogte van de balk, elke keer dat hij verschijnt of van vorm verandert. De
-     32px eronder is lucht plus de eigen inzet van de knop. Zonder script blijft
-     de terugval 0px staan en gedraagt de knop zich als voorheen — er is dan ook
-     geen balk om overheen te vallen. */
-  @media (max-width: 700px) { .convbar.show ~ .wa-dock .wa-launcher { --wa-bottom: calc(var(--cb-h, 0px) + 32px); } }
   @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

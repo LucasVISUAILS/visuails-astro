@@ -109,6 +109,37 @@ export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle', 'complete']);
  */
 export const FIXED_PRICE_SERVICES = new Set(['brand-model']);
 
+/*
+ * ── DIENSTEN MET EEN VAST TARIEF PER STUK — 7 september 2026 ────────────────
+ *
+ * Een derde vorm, naast "van de ladder" en "één vast bedrag". Een videoclip
+ * heeft wél een aantal — je bestelt er twee of tien — maar geen ladder: het
+ * tarief daalt niet als er meer bij komen, want de opzet is het werk zelf en er
+ * is geen tweede product om hem over uit te smeren. Zelfde redenering als bij
+ * hooks in pricing.js, en dezelfde reden dat video daar niet in LADDER staat.
+ *
+ * WAAROM 'video' EN NIET 'video-motion'. De draadwaarde blijft `video` — dat is
+ * wat orders.service al bewaart, wat ORDER_SERVICES accepteert en waar
+ * portal.js en account.js een etiket voor hebben. Welke SOORT clip het is, staat
+ * in `details.style`, precies zoals een look bij lifestyle. Een tweede
+ * draadwaarde invoeren zou elke bestaande videorij wezen maken, en dat voor een
+ * onderscheid dat al ergens staat.
+ *
+ * EN DAAROM BESLIST DE STIJL OVER DE PRIJS. Motion is gewogen in de agenda
+ * (KIND_PUNTEN) en heeft een vast tarief per clip, dus die valt uit te rekenen.
+ * Lifestyle, campagne en custom niet: campagne en custom staan in videoStyles.js
+ * als "Quoted per project", en een lifestyle-clip heeft een ondergrens en geen
+ * tarief. Die drie leveren null op — "maak geen betaling aan", de veilige kant —
+ * en worden in /admin met de hand geoffreerd, net als een aanvraag voor een
+ * eigen look. Zie quoteVideo() hieronder.
+ */
+export const FLAT_RATE_SERVICES = new Set(['video']);
+
+/* Welke videostijlen een uitrekenbaar tarief hebben. Eén verzameling en geen
+   `=== 'motion'` verspreid over drie bestanden: de dag dat een lifestyle-clip
+   een vast tarief krijgt, is dat één regel hier. */
+export const PRICED_VIDEO_STYLES = new Set(['motion']);
+
 /**
  * THE WIRE VALUE IS NOT THE LADDER KEY, AND THAT COST REAL MONEY.
  *
@@ -172,7 +203,15 @@ export function ladderKey(service) {
 /** Is deze dienst uit orders.service te prijzen — en dus te betalen? */
 export function isPayableService(service) {
   const kind = ladderKey(service);
-  return PAYABLE_SERVICES.has(kind) || FIXED_PRICE_SERVICES.has(kind);
+  /* FLAT_RATE_SERVICES staat er sinds 7 september bij. Let op wat dit WEL en
+     NIET zegt: het zegt dat er voor deze dienst een prijs KAN bestaan, niet dat
+     er voor deze bestelling een bedrag IS. Een campagneclip is 'video' en dus
+     payable volgens deze functie, maar quoteVideo() geeft er null voor terug en
+     dan blijft total_cents leeg — en elk pad dat daarna geld aanraakt kijkt naar
+     het bedrag en niet naar deze functie. Zie de noot bij quoteVideo(), en
+     orderMoney() in account.js, dat een bestelling zonder bedrag geen betaalknop
+     geeft en de /pay-route dat nog een keer weigert. */
+  return PAYABLE_SERVICES.has(kind) || FIXED_PRICE_SERVICES.has(kind) || FLAT_RATE_SERVICES.has(kind);
 }
 
 /** Round to whole cents the way money has to be rounded: half away from zero. */
@@ -417,6 +456,59 @@ export function quoteBrandModel({ vatRate = VAT_RATE } = {}) {
   };
 }
 
+/**
+ * Wat een videobestelling kost, netto en bruto, in centen.
+ *
+ * ── NULL IS HIER EEN ANTWOORD EN GEEN FOUT ─────────────────────────────────
+ *
+ * Geeft null terug zodra de gekozen stijl geen uitrekenbaar tarief heeft —
+ * lifestyle, campagne, custom — of zodra het aantal clips onzin is. Null
+ * betekent op dit pad "maak geen betaling aan", en dat is precies wat er moet
+ * gebeuren: die drie soorten worden per project geoffreerd, met de hand, in
+ * /admin. De bestelling wordt dan gewoon vastgelegd en de studio zet er een
+ * bedrag op — hetzelfde pad dat een aanvraag voor een eigen look al loopt.
+ *
+ * Dezelfde weigergrenzen als quoteOrder(): een aantal dat er niet is, is geen
+ * aantal van één. Zie de lange noot daar; die fout heeft echt geld gekost.
+ *
+ * ── DE OUTFITTOESLAG DOET MEE ──────────────────────────────────────────────
+ *
+ * Een clip met een volledige outfit erin kost AMOUNT.video + OUTFIT_SURCHARGE,
+ * en dat staat zo in pricing.js ("video's outfit price is AMOUNT.video +
+ * OUTFIT_SURCHARGE, following the same 'priced the same as every other style'
+ * rule"). Hij wordt hier per CLIP geteld en kan er dus nooit meer zijn dan er
+ * clips zijn, net als bij een fotobestelling.
+ *
+ * Extra beelden bestaan niet bij video: een bestelling levert één clip per
+ * product, en een tweede clip is een tweede clip.
+ */
+export function quoteVideo({ style, clips, outfits = 0, vatRate = VAT_RATE } = {}) {
+  if (!PRICED_VIDEO_STYLES.has(String(style || '').trim())) return null;
+
+  const asked = Math.floor(Number(clips));
+  if (!Number.isFinite(asked) || asked < 1 || asked > MAX_LADDER_PRODUCTS) return null;
+
+  const n = asked;
+  const o = clamp(outfits, 0, Math.min(n, MAX_OUTFIT_PRODUCTS));
+
+  const netCents = cents(n * AMOUNT.video + o * OUTFIT_SURCHARGE);
+  const effectiveRate = safeRate(vatRate);
+  const vatCents = Math.round(netCents * effectiveRate);
+
+  return {
+    service: 'video',
+    style: String(style),
+    products: n,
+    outfits: o,
+    extras: 0,
+    rate: AMOUNT.video,
+    netCents,
+    vatCents,
+    grossCents: netCents + vatCents,
+    vatRate: effectiveRate,
+  };
+}
+
 /** "12,50" — Mollie wants a decimal string with exactly two places. */
 export function centsToMollieValue(c) {
   return (Math.round(Number(c) || 0) / 100).toFixed(2);
@@ -437,6 +529,17 @@ export function paymentDescription(quote, lang = 'en') {
      undefined"*. Precies de fout die drie regels lager in vijfentwintig regels
      staat beschreven; hier voorkomen in plaats van herhaald. */
   if (quote.service === 'brand-model') return nl ? 'VISUAILS merkmodel' : 'VISUAILS Brand Model';
+  /* Video, om exact dezelfde reden als het merkmodel hierboven: `what` is op
+     LADDERNAMEN gesleuteld en video staat niet op de ladder, dus zonder deze
+     regel stond er *"VISUAILS — 5 producten, undefined"* op het bankafschrift.
+     Het telwoord is hier "clip" en niet "product": dát is wat er geleverd
+     wordt, en de omschrijving moet los van de site te lezen zijn. 7 sept 2026. */
+  if (quote.service === 'video') {
+    const k = Number(quote.products) || 1;
+    return nl
+      ? `VISUAILS — ${k} ${k === 1 ? 'videoclip' : 'videoclips'}`
+      : `VISUAILS — ${k} video ${k === 1 ? 'clip' : 'clips'}`;
+  }
   const what = nl
     ? { catalog: 'catalogsets', lifestyle: 'lifestyle-carousels', complete: 'catalog + lifestyle' }
     : { catalog: 'catalog sets', lifestyle: 'lifestyle carousels', complete: 'catalog + lifestyle' };

@@ -1,0 +1,319 @@
+---
+/*
+ * VISUAILS — de detailpagina van een lifestylestijl, gedeeld door
+ * /lifestyle/[slug] en /nl/lifestyle/[slug].
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ *
+ * Twee sjablonen van 263 en 252 regels die elkaars vertaling hoorden te zijn.
+ * Zelfde behandeling als de catalogstijlen; zie de kop van
+ * CatalogStyleDetail.astro voor de redenering.
+ *
+ * De stijlgegevens komen als prop binnen, uit styles.js of styles.nl.js. Wat
+ * hier staat is de omlijsting — de koppen die op elke lifestylepagina hetzelfde
+ * zijn, en die dus niet twee keer horen te bestaan.
+ *
+ * ── DE SFEERFOTO MAG DE HEROFOTO NIET ZIJN ───────────────────────────────
+ *
+ * Bij Flash en Glow ÍS grid[0] de hero, dus droeg dezelfde foto de herostrook
+ * en de sfeerstrook twee vouwen uit elkaar — op een pagina wiens hele opdracht
+ * is te laten zien wat één look oplevert, en dat leest als "er is maar één
+ * foto van deze stijl". De andere acht rasterbeelden zijn stijlcorrecte foto's
+ * van dezelfde look, dus de oplossing is de eerste te nemen die nog niet in
+ * beeld staat. Valt terug op grid[0] als een stijl ooit met één foto uitkomt,
+ * wat het oude gedrag was.
+ *
+ * ── DE DOORLOOPTIJD IS EEN TIER-FEIT ─────────────────────────────────────
+ *
+ * Levertijd, controleniveau en wachtrijgedrag komen uit pricing.js en niet uit
+ * de stijl — zo kan een capaciteitswijziging geen belofte laten stranden op een
+ * detailpagina. En een look OP AANVRAAG heeft eerst een ONTWERP; daar geldt de
+ * gewone doorlooptijd pas ná.
+ */
+import ProductScene from './ProductScene.astro';
+import Compare from './Compare.astro';
+import ServiceSwitch from './ServiceSwitch.astro';
+import { waHref } from '../data/whatsapp.js';
+import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; style: any; zusters: { href: string; naam: string }[]; priceLine: string; }
+const { lang, style, zusters, priceLine } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const TIMING = style.priceTrust
+  ? (nl ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : 'Design first, then the ordinary turnaround per order.')
+  : turnaround('unattended', lang);
+const REVIEW = reviewClaim('unattended', lang);
+const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue[lang];
+
+/* De intrinsieke pixelmaten van de ene foto die dit sjabloon als <img> rendert.
+   Het vak pint de verhouding en het beeld dekt hem, dus deze attributen
+   veranderen niets zichtbaars — ze laten de browser de ruimte reserveren
+   voordat het bestand er is. Een onbekend pad gooit, met opzet: dan valt de
+   maat niet stil weg maar bij de bouw op. */
+const INTRINSIC: Record<string, [number, number]> = {
+  '/img/banners-14.webp': [2400, 1792],
+  '/img/lifestyle-dunes-02.webp': [928, 1152],
+  '/img/lifestyle-flash-01.webp': [928, 1152],
+  '/img/lifestyle-glow-01.webp': [1340, 2400],
+  '/img/lifestyle-phone-made-02.webp': [2400, 1792],
+  '/img/lifestyle-flash-02.webp': [1340, 2400],
+  '/img/lifestyle-glow-02.webp': [2400, 1792],
+};
+const moodPhoto = (style.grid.find((g: any) => g.photo && g.photo !== style.heroPhoto) || style.grid[0]).photo;
+const moodSize = INTRINSIC[moodPhoto];
+if (!moodSize) throw new Error(`LifestyleStyleDetail: geen intrinsieke maat bekend voor ${moodPhoto} — zet hem in INTRINSIC.`);
+
+const c = nl ? {
+  terug: 'Lifestyle-stijlen',
+  bestel: style.orderLabel ?? `Bestel ${style.name}`,
+  wa: 'WhatsApp',
+  waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
+  andere: 'Andere looks:',
+  heroAlt: `De ${style.name}-stijl van VISUAILS`,
+  voeltH: ['Hoe ', ' voelt'],
+  sfeerAlt: `Voorbeeld in de ${style.name}-stijl`,
+  vlakH: ['Vlak vs. '],
+  vlakP: 'Wat de behandeling werkelijk verandert.',
+  vlak: 'Vlak',
+  vlakAlt: `Een vlakke, ongegradeerde ${style.name}-scène`,
+  klaarAlt: `Dezelfde scène afgewerkt in de ${style.name}-lifestylelook`,
+  stapH: ['Hoe ', ' tot stand komt.'],
+  idealH: ['Ideaal ', 'voor'],
+  krijgH: ['Wat je ', 'krijgt'],
+  modelNoot: ['Wordt een ', '-scène gedragen in plaats van geplaatst, dan kan het model uit de standaardbibliotheek komen — of ', 'een merkmodel dat alleen voor jou gemaakt is', ', zodat hetzelfde gezicht elke bestelling draagt.'],
+  slotH: ['Maak ', ' van jou.'],
+  proef: 'Probeer VISUAILS',
+} : {
+  terug: 'Lifestyle styles',
+  bestel: style.orderLabel ?? `Order ${style.name}`,
+  wa: 'WhatsApp',
+  waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
+  andere: 'Other looks:',
+  heroAlt: `The VISUAILS ${style.name} style`,
+  voeltH: ['What ', ' feels like'],
+  sfeerAlt: `${style.name}-style example`,
+  vlakH: ['Flat vs. '],
+  vlakP: 'What the treatment actually changes.',
+  vlak: 'Flat',
+  vlakAlt: `A flat, ungraded ${style.name} scene`,
+  klaarAlt: `The same scene finished in the ${style.name} lifestyle look`,
+  stapH: ['How ', ' comes together.'],
+  idealH: ['Best ', 'for'],
+  krijgH: ['What you ', 'get'],
+  modelNoot: ['When a ', ' scene is worn rather than placed, the model can come from the standard roster — or be ', 'a Brand Model made only for you', ', so the same face carries every order.'],
+  slotH: ['Make ', ' yours.'],
+  proef: 'Test sample',
+};
+
+const vink = 'M20 6L9 17l-5-5';
+---
+
+<div class="s22 ls">
+
+  <section class="paneel ls-open" aria-labelledby="ls-h1">
+    <div class="paneel-kop ls-kop">
+      <p class="etiket"><a href={lp('/lifestyle')}>{c.terug}</a></p>
+      <h1 id="ls-h1" class="hoog">{style.name}</h1>
+      <p class="lopend ls-tagline">{style.tagline}</p>
+      <div class="acties">
+        <a class="knop knop-inkt" href={style.orderHref ?? lp('/start')}>{c.bestel}</a>
+        <a class="knop knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener">{c.wa}</a>
+      </div>
+      <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
+      <ServiceSwitch current="lifestyle" lang={lang} />
+      {/* Eén bron voor het tarief op deze pagina: priceLine bevat al de eigen
+          priceTrust van de stijl of de twee uiteinden van de staffel, dus de
+          feitenrij kan geen ander bedrag noemen dan de meta. */}
+      <ul class="ls-feiten" role="list">
+        <li>{priceLine}</li>
+        <li>{TIMING}</li>
+        <li>{REVIEW}</li>
+      </ul>
+      {QUEUE && <p class="ls-queue">{QUEUE}</p>}
+    </div>
+  </section>
+
+  {/* De kenmerkende foto over de volle breedte. Eén beeld, groot — dat is wat
+      een lifestylestijl verkoopt, en het is het enige wat een raster niet kan. */}
+  <figure class="ls-band">
+    <img src={style.heroPhoto} alt={c.heroAlt} width="2400" height="1143" fetchpriority="high" decoding="async" />
+  </figure>
+
+  <section class="paneel ls-sfeer">
+    <div class="ls-twee">
+      <figure class="kaart kaart-stil ls-sfeerbeeld">
+        <img src={moodPhoto} alt={c.sfeerAlt} loading="lazy" decoding="async" width={moodSize[0]} height={moodSize[1]} />
+      </figure>
+      <div>
+        <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
+        <p class="lopend ls-sfeer-p">{style.moodParagraphs[0]}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="kamer ls-bewijs">
+    <div class="kamer-kop ls-midden">
+      <h2 class="hoog hoog-2">{c.vlakH[0]}{style.name}.</h2>
+      <p class="lopend">{c.vlakP}</p>
+    </div>
+    <div class="ls-compare">
+      <Compare
+        grade
+        before={style.heroPhoto}
+        after={style.heroPhoto}
+        beforeAlt={c.vlakAlt}
+        afterAlt={c.klaarAlt}
+        beforeLabel={c.vlak}
+        afterLabel={style.name}
+      />
+    </div>
+  </section>
+
+  <section class="paneel ls-stap">
+    <div class="paneel-kop">
+      <h2 class="hoog hoog-2">{c.stapH[0]}<em>{style.name}</em>{c.stapH[1]}</h2>
+    </div>
+    <ol class="ls-stappen" role="list">
+      {style.steps.map((s: any, i: number) => (
+        <li>
+          <span class="mono ls-nr">{String(i + 1).padStart(2, '0')}</span>
+          <b>{s.title}</b>
+          <p class="lopend">{s.body}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="paneel ls-raster">
+    <ul class="ls-negen" role="list">
+      {style.grid.map((g: any) => (
+        <li>
+          {g.photo ? (
+            <span class="kaart kaart-stil">
+              <img src={g.photo} alt={`${style.name}`} loading="lazy" decoding="async" />
+              <span class="foto-pil mono">{style.name}</span>
+            </span>
+          ) : (
+            <ProductScene icon={g.icon} width={g.width} badge={style.name} />
+          )}
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="paneel ls-lijsten">
+    <div class="ls-twee ls-twee-gelijk">
+      <div>
+        <h2 class="hoog hoog-3">{c.idealH[0]}<em>{c.idealH[1]}</em></h2>
+        <ul class="ls-vinkjes" role="list">
+          {style.bestFor.map((item: string) => (
+            <li><svg viewBox="0 0 24 24" class="ls-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
+        <ul class="ls-vinkjes" role="list">
+          {style.whatYouGet.map((item: string) => (
+            <li><svg viewBox="0 0 24 24" class="ls-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          ))}
+        </ul>
+        {/* Bodytekst en geen callout — zie dezelfde noot in
+            CatalogStyleDetail.astro. Voorwaardelijk geformuleerd ("gedragen in
+            plaats van geplaatst") omdat niet elke lifestylescène een mens in
+            beeld heeft. */}
+        <p class="ls-modelnoot">
+          {c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paneel paneel-slot ls-slot">
+    <h2 class="hoog hoog-2">{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</h2>
+    <div class="acties">
+      <a class="knop knop-inkt" href={style.orderHref ?? lp('/start')}>{c.bestel}</a>
+      <a class="knop knop-lijn" href={lp('/test-sample')}>{c.proef}</a>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  .ls-kop { margin-bottom: 0; }
+  .ls-kop .etiket a { color: inherit; }
+  .ls-kop .etiket a:hover { color: var(--inkt); }
+  .ls-tagline {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1.2rem, 2.1vw, 1.7rem); line-height: 1.2;
+    letter-spacing: -.01em; color: var(--inkt); max-width: 20em;
+  }
+  .ls-feiten { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }
+  .ls-feiten li {
+    font-family: var(--mono2); font-size: .72rem; font-stretch: 82%;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2);
+    padding: .42rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px;
+  }
+  .ls-queue { margin-top: .9rem; font-size: .88rem; line-height: 1.6; color: var(--inkt-2); }
+
+  /* Over de volle breedte, binnen de marge van de stijl — dezelfde vorm als een
+     paneel maar dan met alleen een beeld erin. */
+  .ls-band {
+    margin: var(--rand); border-radius: var(--ronding); overflow: hidden;
+    aspect-ratio: 21 / 10; background: var(--inkt);
+  }
+  .ls-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .ls-twee { display: grid; gap: clamp(1.8rem, 4.5vw, 3.5rem); align-items: center; }
+  @media (min-width: 900px) {
+    .ls-twee { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+    .ls-twee-gelijk { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  }
+  .ls-sfeerbeeld { margin: 0; aspect-ratio: 4 / 5; }
+  .ls-sfeerbeeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ls-sfeer-p { margin-top: 1.1rem; }
+
+  .ls-midden { max-width: 46rem; margin-inline: auto; text-align: center; }
+  .ls-midden .lopend { margin-inline: auto; }
+  .ls-compare { max-width: 520px; margin: 0 auto; }
+
+  .ls-stappen {
+    display: grid; gap: clamp(1.2rem, 2.5vw, 2rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    list-style: none; padding: 0; margin: 0;
+  }
+  .ls-stappen li { padding-top: 1.2rem; border-top: 1px solid var(--lijn); display: grid; gap: .35rem; align-content: start; }
+  /* Inkt en geen lime: --gloed is een accent náást leesbare tekst en meet als
+     tekstkleur 2,13:1 op vel. Zie de noot bij die token in stijl22.css. */
+  .ls-nr { color: var(--inkt-2); }
+  .ls-stappen b {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: 1.05rem; line-height: 1.2; text-transform: uppercase; letter-spacing: -.01em;
+  }
+  .ls-stappen p { font-size: .92rem; margin-top: .35rem; }
+
+  .ls-negen {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(.7rem, 1.6vw, 1.1rem); list-style: none; padding: 0; margin: 0;
+  }
+  @media (max-width: 700px) { .ls-negen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ls-negen .kaart img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .ls-vinkjes { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.4rem 0 0; }
+  .ls-vinkjes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
+  .ls-vinkjes span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
+  .ls-i {
+    width: 20px; height: 20px; margin-top: .15rem; flex: 0 0 auto;
+    fill: none; stroke: var(--gloed); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ls-modelnoot { margin-top: 1.4rem; font-size: .92rem; line-height: 1.6; color: var(--inkt-2); max-width: 44em; }
+  .ls-modelnoot a {
+    color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
+    text-decoration-color: var(--geel); text-decoration-thickness: 2px;
+  }
+  .ls-modelnoot a:hover { text-decoration-color: var(--inkt); }
+</style>

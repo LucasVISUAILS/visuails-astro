@@ -39,6 +39,8 @@ import { planName } from '../../data/planNames.js';
 import { localizedPath } from '../../i18n/ui.js';
 
 import Note from '../Note.astro';
+/* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
+import '../../styles/stijl22.css';
 interface Props {
   lang: 'en' | 'nl';
 }
@@ -316,11 +318,20 @@ const kaarten = planList.map((p) => {
 });
 ---
 
-<section class="wrap plan-start">
-  <div class="container">
+{/* ── SECTIE 22 — 7 september 2026 ─────────────────────────────────────────
+    De laatste van de drie. Het script onderaan dit bestand selecteert alleen op
+    data-plan-fout en op een radio bij naam, dus de .ps-* en .plan-* klassen
+    kunnen blijven staan zoals ze zijn — wat verandert is de schil en de vorm van
+    de knoppen. */}
+<div class="s22">
+<section class="paneel plan-start">
+  <div class="plan-binnen">
     <header class="ps-head">
-      <h1>{c.h}</h1>
-      <p class="lede">{c.lede}</p>
+      {/* Het etiket staat hier en niet in de copytabel: de twee woorden zijn de
+           naam van de pagina en niet iets wat per taal anders gezegd wordt. */}
+      <p class="etiket">{lang === 'nl' ? 'Abonnement' : 'Plan'}</p>
+      <h1 class="hoog">{c.h}</h1>
+      <p class="lopend ps-lede">{c.lede}</p>
     </header>
 
     {/* foutTekst blijft staan voor het geval deze pagina ooit wél per verzoek
@@ -403,7 +414,7 @@ const kaarten = planList.map((p) => {
             <details class="ps-look">
               <summary>{c.maatCustomH}</summary>
               <p>{c.maatCustomBody}</p>
-              <p><a class="btn btn-ghost btn-sm" href={lp('/contact')}>{c.maatCustomCta}</a></p>
+              <p><a class="knop knop-lijn" href={lp('/contact')}>{c.maatCustomCta}</a></p>
             </details>
           </fieldset>
 
@@ -492,7 +503,7 @@ const kaarten = planList.map((p) => {
             </ol>
           </div>
 
-          <button class="btn btn-primary btn-lg btn-block" type="submit">{c.submit}</button>
+          <button class="knop knop-inkt ps-verzend" type="submit">{c.submit}</button>
           <p class="ps-sum-meta">{c.cancelNote}</p>
         </aside>
       </div>
@@ -505,12 +516,13 @@ const kaarten = planList.map((p) => {
     <div class="plan-signedout" data-acct="out">
       <p>{c.signedOut}</p>
       <p>
-        <a class="btn btn-ghost" href={`/account/login?lang=${lang}`}>{c.signIn}</a>
-        <a class="btn btn-ghost" href={lp('/test-sample')}>{c.sample}</a>
+        <a class="knop knop-lijn" href={`/account/login?lang=${lang}`}>{c.signIn}</a>
+        <a class="knop knop-lijn" href={lp('/test-sample')}>{c.sample}</a>
       </p>
     </div>
   </div>
 </section>
+</div>
 
 <script is:inline data-astro-rerun>
   /* ── `data-astro-rerun`, OM DEZELFDE REDEN ALS IN HomeV2.astro ─────────────
@@ -577,8 +589,12 @@ const kaarten = planList.map((p) => {
 
 <style>
   .plan-fouten:empty { display: none; }
-  .plan-start h1 { font-size: var(--t-page-h1); }
-  .plan-start { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
+  /* Sinds sectie 22 zet .hoog de kopmaat en draagt .paneel de binnenmarge, dus
+     deze twee regels vechten er alleen nog mee. .plan-binnen vervangt
+     .container: binnen een paneel hoort de leesbreedte bij het blok. */
+  .plan-binnen { max-width: 72rem; margin-inline: auto; }
+  .ps-lede { margin-top: 1.2rem; }
+  .ps-verzend { width: 100%; justify-content: center; }
   .ps-head .lede { max-width: 58ch; }
 
   /* ── HET RASTER: KEUZES LINKS, DE PLAAT RECHTS ─────────────────────────────
@@ -623,7 +639,7 @@ const kaarten = planList.map((p) => {
   }
   .ps-plan input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .ps-plan:hover { border-color: var(--line-strong); }
-  .ps-plan:has(input:checked) { border-color: var(--accent); background: rgb(198 241 0 / 0.06); }
+  .ps-plan:has(input:checked) { border-color: var(--accent); background: rgb(210 224 74 / 0.06); }
   .ps-plan:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
   .ps-plan-top { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
   .ps-plan-naam { font-family: var(--font-heading); font-weight: 800; font-size: 1.35rem; letter-spacing: -0.01em; color: var(--ink); }
@@ -683,7 +699,7 @@ const kaarten = planList.map((p) => {
   }
   .ps-term input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .ps-term:hover { border-color: var(--line-strong); }
-  .ps-term:has(input:checked) { border-color: var(--accent); background: rgb(198 241 0 / 0.06); }
+  .ps-term:has(input:checked) { border-color: var(--accent); background: rgb(210 224 74 / 0.06); }
   .ps-term:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
   .ps-term-naam { font-weight: 800; color: var(--ink); }
   .ps-term-sub { font-size: .86rem; line-height: 1.5; color: var(--ink-3); }

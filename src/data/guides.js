@@ -4,7 +4,8 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Deze vijf kaarten stonden twee keer uitgetypt: in src/pages/guides.astro en in
- * src/pages/nl/guides.astro. Dat werkte, en het is precies de constructie die in dit
+ * src/pages/nl/guides.astro (sinds 7 september 2026 allebei één regel die
+ * src/components/GuidesPage.astro aanroept). Dat werkte, en het is precies de constructie die in dit
  * project al drie keer stil is verschoven — de drie parallelle menulijsten, de vier
  * kopieën van dezelfde leverdatum, de handgeschreven sitemap die veertien pagina's
  * achterliep. Twee lijsten die hetzelfde horen te zeggen, zeggen op een dag iets
@@ -49,6 +50,12 @@ export function guides(lang = 'en') {
      allebei, met "en lager" erachter — dus las de pagina dat lifestyle tot €33 zou
      dalen terwijl hij op €41 eindigt, en dat er nog iets onder zat. 8 augustus 2026. */
   const lifeVloer = euro(ladderFloor('lifestyle'), l);
+  /* ── "VANAF" EN NIET "EEN VASTE" — 7 september 2026 ──────────────────────
+     Hier stond "video een vaste €69 per clip". Lucas: *"die 69 euro slaat
+     nergens op per clip omdat hier ook meerdere stylen in komen."* AMOUNT.video
+     is het tarief van Motion; lifestyle- en campagnevideo rekenen anders af en
+     hooks helemaal niet. Eén bedrag "vast" noemen belooft dus een prijs die
+     drie van de vier videosoorten niet hebben. */
   const vid = euro(AMOUNT.video, l);
   const vanaf = LADDER.catalog[LADDER.catalog.length - 1][0];
 
@@ -56,13 +63,13 @@ export function guides(lang = 'en') {
     ['Zo fotografeer je je product met je telefoon', 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', '/upload-guidelines', 'Checklist'],
     ['Van foto naar publicatie — hoe het werkt', 'Wat er precies gebeurt tussen het sturen van één foto en het terugkrijgen van een afgewerkte, met de hand gecontroleerde visual.', '/how-it-works', 'Proces'],
     ['AI-tools vs een done-for-you studio', 'Wanneer een AI-tool die je zelf bedient echt genoeg is — en waar hij je stilletjes uren kost aan overdoen en kleur die niet bij je merk past.', '/compare', 'Vergelijk'],
-    ['Wat productvisuals echt kosten', `Catalog vanaf ${catInstap} per set van vier foto’s en lifestyle vanaf ${lifeInstap}, dalend tot ${catVloer} en ${lifeVloer} vanaf ${vanaf} producten; video een vaste ${vid} per clip. Alles ${vatLabel('excl', 'nl')}.`, '/pricing', 'Prijzen'],
+    ['Wat productvisuals echt kosten', `Catalog vanaf ${catInstap} per set van vier foto’s en lifestyle vanaf ${lifeInstap}, dalend tot ${catVloer} en ${lifeVloer} vanaf ${vanaf} producten; video vanaf ${vid} per clip. Alles ${vatLabel('excl', 'nl')}.`, '/pricing', 'Prijzen'],
     ['Vragen, beantwoord', 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', '/faq', 'FAQ'],
   ] : [
     ['How to photograph your product with your phone', 'The four angles, the lighting, the background — everything that turns a phone photo into a campaign-ready result. The single most useful thing to read before you order.', '/upload-guidelines', 'Checklist'],
     ['From photo to publish — how it works', 'What actually happens between sending one photo and getting a finished, human-checked visual back.', '/how-it-works', 'Process'],
     ['AI tools vs a done-for-you studio', 'When a self-serve AI tool is genuinely enough — and where it quietly costs you in redos, off-brand colour and hours.', '/compare', 'Compare'],
-    ['What product visuals actually cost', `Catalog from ${catInstap} for a four-photo set and lifestyle from ${lifeInstap}, falling to ${catVloer} and ${lifeVloer} from ${vanaf} products up; video a flat ${vid} a clip. All ${vatLabel('excl', 'en')}.`, '/pricing', 'Pricing'],
+    ['What product visuals actually cost', `Catalog from ${catInstap} for a four-photo set and lifestyle from ${lifeInstap}, falling to ${catVloer} and ${lifeVloer} from ${vanaf} products up; video from ${vid} a clip. All ${vatLabel('excl', 'en')}.`, '/pricing', 'Pricing'],
     ['Questions, answered', 'Payment, VAT, models, delivery, what if something is off — the practical things brands ask before their first order.', '/faq', 'FAQ'],
   ];
 

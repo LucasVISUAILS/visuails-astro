@@ -1,572 +1,841 @@
 ---
 import { waHref } from '../data/whatsapp.js';
-// VISUAILS — /start, the chooser.
-//
-// WHAT THIS PAGE USED TO BE
-// The whole order pipeline: 2,300 lines, five steps, and a first question that
-// asked which of three things you wanted made. That question was already
-// answered everywhere it was asked from — /catalog's own call to action says
-// "order catalog sets", and the visitor who clicked it arrived at a form that
-// made them pick again from a grid of three. It also quietly decided that
-// video, the Brand Model and the monthly plans did not exist, because they had
-// no place in a form built around one ladder. Lucas noticed the video-shaped
-// hole; the rest of this page is the same hole in three other shapes.
-//
-// So /start is a chooser now, and each service owns its own route:
-//
-//   /start/catalog      real flow      catalog sets, with the background picker
-//   /start/lifestyle    real flow      carousels, with the look picker
-//   /start/complete     real flow      both, with the background picker
-//   /start/video        placeholder    the flow is not built; register interest
-//   /start/brand-model  real flow      the brief, at a fixed one-time price
-//   /start/plan         real flow      choose, authorise by Mollie, done
-//
-// DIE LAATSTE TWEE STONDEN HIER TOT 24 AUGUSTUS 2026 ALS "placeholder", en dat
-// was op allebei achterhaald. Het abonnement is op 18 augustus rechtgezet in de
-// tekst verderop maar niet in deze lijst; het merkmodel is nooit rechtgezet.
-//
-// /start/brand-model rendert BrandModelBrief: een <form action="/api/order">
-// met service=brand-model. ORDER_SERVICES accepteert die waarde en
-// FIXED_PRICE_SERVICES in src/lib/quote.js bevat hem, dus isPayableService()
-// geeft true en er komt een betaling uit. Het is geen aanvraag maar een
-// bestelling met een vaste prijs.
-//
-// Waarom dat hier met zoveel woorden staat: deze lijst is wat een lezer als
-// eerste ziet, en op grond hiervan is het merkmodel maandenlang in de groep
-// "op aanvraag" blijven staan, met een knop "lees hoe het ervoor staat" voor
-// een formulier dat gewoon werkt.
-//
-// A link can now point at the flow it means. Nothing on this page is a form:
-// six doors, what is behind each one, and what state each one is in.
-//
-// EVERY EURO IS READ, NOT TYPED. The three rates below are the ladder's own
-// first rung per kind (ladderRate(kind, 1)) and its floor (ladderFloor(kind)),
-// so a repricing in src/data/pricing.js changes this page without anyone
-// opening it. The two placeholder amounts come from AMOUNT for the same reason.
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /start, de kiezer. HERBOUWD VANAF NUL, 7 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"de what are we making pagina moet een volledige redo worden (…) kijk
+ * wat er zou moeten komen te staan door als een klant door de website te
+ * navigeren en te kijken wat het meest logische is. Ik vind het namelijk een
+ * hele onlogische pagina."*
+ *
+ * ── WIE HIER BINNENKOMT, GETELD ────────────────────────────────────────────
+ *
+ * /start is het doel van de knop ORDER in de kop, van dezelfde knop in de
+ * voettekst, van de voorpagina, /pricing, /models, /studio, /compare,
+ * /gallery, /guides, /upload-guidelines, /test-sample, /thank-you, /portal en
+ * de 404. Zesentwintig plekken.
+ *
+ * Wie al WEET wat hij wil, komt hier niet: de dienstpagina's linken rechtstreeks
+ * naar /start/catalog, /start/lifestyle en /start/video. Iedereen die hier
+ * aankomt heeft dus op een algemene bestelknop gedrukt en heeft de keuze nog
+ * niet gemaakt. Dat is de enige bezoeker die deze pagina heeft, en de pagina
+ * moet precies één ding voor hem doen: hem naar de goede deur brengen.
+ *
+ * ── WAT ER MIS WAS, EN WAAROM HET ONLOGISCH VOELDE ─────────────────────────
+ *
+ * 1 · DE PAGINA DEELDE OP NAAR ONZE KASSA, NIET NAAR ZIJN VRAAG. Bovenaan
+ *     stond "Nu te bestellen" met drie kaarten; twee schermen lager "Op
+ *     aanvraag" met video en de look op maat. Wie video zoekt, leest de eerste
+ *     rij, ziet geen video, en concludeert dat we het niet doen. De vraag is
+ *     in beide gevallen dezelfde — wat moet er gemaakt worden — dus hoort het
+ *     antwoord in één rij te staan. Of er al een kassa achter zit, is ONS
+ *     probleem en mag op de deur staan, maar het mag de deuren niet sorteren.
+ *
+ * 2 · DE PRIJSMECHANIEK STOND VÓÓR DE KEUZE. De eerste zin ging over een
+ *     dalend tarief en over de grens van tien producten, allebei voordat je
+ *     iets gekozen had. En elke kaart droeg een BEREIK (€89–€39): twee getallen
+ *     waar je niets mee kunt tot je je aantal weet. De ladder is het werk van
+ *     /pricing. Hier hoort één getal: waar het begint.
+ *
+ * 3 · VIJF BESLISSINGEN OP DE PAGINA DIE ÉÉN BESLISSING MOET AFHANDELEN.
+ *     Welke dienst · wel of geen merkmodel · wel of geen abonnement · een van
+ *     de twee op aanvraag · of toch eerst een proef. Alleen de eerste is de
+ *     reden dat iemand op ORDER drukte.
+ *
+ * 4 · TWEE ERVAN WAREN GEEN KEUZE MAAR EEN CATEGORIEFOUT. Een merkmodel is
+ *     geen vierde dienst — het is een gezicht dat MEEGAAT in een bestelling.
+ *     Een look op maat is geen dienst maar een LOOK, die je binnen catalog of
+ *     lifestyle kiest; de pagina zei dat zelf ("eenmaal ontworpen staat hij als
+ *     tegel in het bestelformulier") en zette hem toch naast catalog en video.
+ *     Een abonnement is geen dienst maar een MANIER VAN BETALEN voor hetzelfde
+ *     werk. Ze naast de diensten zetten stelt een keuze voor die niet bestaat.
+ *
+ * 5 · DE PAGINA ZEI NERGENS WAT ER GEBEURT ALS JE DRUKT. Geen woord over hoe
+ *     lang het formulier is, dat er niets in rekening wordt gebracht voordat je
+ *     verstuurt, of dat de leverdatum vóór de betaling vaststaat. Dat is het
+ *     meest geruststellende dat een doorverwijspagina kan zeggen, en de site
+ *     zegt het overal behalve hier.
+ *
+ * ── DE OPBOUW NU: VIER GROEPEN, VIER VERSCHILLENDE VRAGEN ──────────────────
+ *
+ *   1. WAT WORDT ER GEMAAKT?      vier deuren, op bestemming gesorteerd
+ *   2. WAT GEBEURT ER DAARNA?     de vijf stappen, en wanneer je betaalt
+ *   3. WAT GAAT ER MEE?           merkmodel en eigen look — bij een bestelling
+ *   4. HOE BETAAL JE?             eenmalig, of maandelijks
+ *   ...en voor wie het nog niet weet: de proef.
+ *
+ * De deuren heten naar WAAR DE BEELDEN HEEN GAAN en niet naar hoe wij ze
+ * noemen. "Catalogsets" is ons woord; "op je productpagina" is het zijne. De
+ * dienstnaam staat er als etiket bij, want die heeft hij overal elders op de
+ * site gelezen en die moet blijven kloppen.
+ *
+ * ── WAT ONGEWIJZIGD BLIJFT ─────────────────────────────────────────────────
+ *
+ * HET WOORD "VIER HUISSTIJLEN" STAAT ER UITGESCHREVEN, EN DAT IS BEWAAKT.
+ * tests/promises.test.mjs leest dit bestand en eist dat het aantal echte
+ * huisstijlen uit styles.js hier als WOORD staat, in beide talen. Verandert het
+ * aantal, dan wordt die toets rood en zegt hij welke zin waar aangepast moet
+ * worden. Vandaar "house styles" en niet "house looks": het is het woord dat de
+ * toets kent en dat op de meeste plekken van de site staat.
+ *
+ * Elke euro komt uit src/data/pricing.js — geen enkel bedrag is hier getypt.
+ * Elk bedrag draagt zijn btw-label uit vatLabel(), en de <Note> met vatDetail()
+ * staat er één keer, bij de deuren waar de bedragen staan. De zes routes
+ * eronder zijn niet aangeraakt: dit bestand verwijst alleen.
+ * ═══════════════════════════════════════════════════════════════════════════ */
 import {
-  ladderRate, ladderFloor, euro, vatLabel, vatLead, vatDetail, AMOUNT, plans,
-  WINDOW_THRESHOLD, TEST_SAMPLE,
+  ladderRate, euro, vatLabel, vatLead, vatDetail, AMOUNT, plans,
+  WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
+  STOCK_OFF_BRAND, STOCK_ON_BRAND,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
 import Note from './Note.astro';
+import Placeholder from './Placeholder.astro';
+import '../styles/stijl22.css';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
 const sample = TEST_SAMPLE[lang];
 const planList = plans(lang);
-// The cheapest plan, named rather than described — "from <the Starter price> a
-// month" is the only figure this page needs about the plans, and it is read off
-// the list rather than typed here or in the comment above it.
 const planFrom = planList[0];
+const t0 = TIERS.unattended;
 
-// ── The photographs ────────────────────────────────────────────────────────
-// One per real service, and the smallest file in public/img that actually
-// shows the thing. They render at roughly 370 CSS px in the three-up grid, so
-// the worst oversample here is about 5× at 1× DPR and 2.5× on a retina screen.
-// The order form used to draw the same 2,400px files into 84px boxes — a 14×
-// oversample of seven photographs, on the step where nobody was looking at
-// them. That grid is gone; this one is where the pictures earn their bytes.
-const SHOT = {
+/* De foto op elke deur, met de ECHTE afmeting van het bestand op schijf — niet
+   die van het kader waarin hij belandt. Een verkeerd getypte hoogte reserveert
+   de verkeerde plek en laat de rij verspringen zodra het beeld binnenkomt.
+
+   ── WAAROM DE VIDEODEUREN EEN FOTO DRAGEN ─────────────────────────────────
+   Er staat geen enkel videostill op schijf, en een still verzinnen mag niet.
+   Wat er wel staat zijn onze eigen campagnebeelden, en dat is ook precies waar
+   een clip van gemaakt wordt: video op deze site is beeld dat gaat bewegen. De
+   deur draagt dus het soort scène, niet een frame uit een bestaande clip, en er
+   staat geen afspeelknop op — die zou beloven dat er een video achter zit.
+
+   Hooks heeft niets: /hooks draagt zelf ook alleen <Placeholder>s, want het
+   tweebeeldsformaat is nog niet geschoten. Die deur krijgt dus de plaatshouder
+   met de opdracht erin, dezelfde afspraak als overal. */
+const SHOT: Record<string, { src: string; w: number; h: number }> = {
   catalog: { src: '/img/catalog-after.webp', w: 1800, h: 1800 },
   lifestyle: { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
   complete: { src: '/img/lifestyle-glow-04.webp', w: 1200, h: 896 },
+  editions: { src: '/img/brand-stair.webp', w: 1872, h: 1248 },
+  'custom-photo': { src: '/img/banners-16.webp', w: 2400, h: 1792 },
+  'video-product': { src: '/img/banners-03.webp', w: 928, h: 1152 },
+  'video-scene': { src: '/img/banners-05.webp', w: 928, h: 1152 },
+  'video-custom': { src: '/img/banners-01.webp', w: 928, h: 1152 },
 };
+
+const vanaf = (kind: string) => euro(ladderRate(kind, 1), lang);
 
 const COPY = {
   en: {
     eyebrow: 'Start',
     h1: 'What are we making?',
-    lead: `Pick what you want made and we only ask the questions that service needs. The rate per product falls as the count rises, and from ${WINDOW_THRESHOLD} products an order gets a reserved delivery date instead of the normal turnaround.`,
-    readyH: 'Order it now',
-    laterH: 'Ask for it',
-    laterLead: 'Two services the studio does that a form cannot price on its own yet. Each has a page saying where it stands and how to get in line.',
-    from: 'from',
-    perProduct: 'a product',
-    go: 'Start this order',
-    ask: 'Read where this stands',
-    services: [
+    lead: 'Two questions, and the second one is short. Nothing is created and nothing is charged until you press send.',
+
+    /* ── DE EERSTE VRAAG ────────────────────────────────────────────────── */
+    takLabel: 'Still images or video?',
+    takken: [
+      { id: 'beeld', naam: 'Photos', kort: 'Stills for your page, your feed and your ads' },
+      { id: 'video', naam: 'Video', kort: 'Clips that move, from a product turn to a campaign' },
+    ],
+
+    /* ── DE TWEEDE VRAAG, PER TAK ───────────────────────────────────────── */
+    beeld: [
       {
         id: 'catalog',
         kind: 'catalog',
         href: '/start/catalog/',
-        name: 'Catalog sets',
-        gets: 'From 4 images per product — front, back, detail, on model',
-        line: 'The product page shots. Clean ground, consistent across a whole range.',
+        name: 'Catalog',
+        where: 'On your product page',
+        gets: `${CATALOG_IMAGES} images per product — front, back, a detail and one on model`,
+        line: 'Clean ground, same framing and light on every product, so a whole range reads as one line.',
+        unit: `a product, ${vatLabel('excl', 'en')}`,
+        cta: 'Start this order',
+        read: '/catalog',
+        readCta: 'See catalog work',
       },
       {
         id: 'lifestyle',
         kind: 'lifestyle',
         href: '/start/lifestyle/',
-        name: 'Lifestyle carousels',
-        gets: '3 images per product — one styled look',
-        line: 'The same product in a scene, in one of four house styles.',
+        name: 'Lifestyle',
+        where: 'In your feed and your ads',
+        gets: `${LIFESTYLE_IMAGES} images per product — one styled look, posted as a carousel`,
+        line: 'The same product in a scene someone wants to step into, in one of four house styles or your own.',
+        unit: `a product, ${vatLabel('excl', 'en')}`,
+        cta: 'Start this order',
+        read: '/lifestyle',
+        readCta: 'See lifestyle work',
       },
       {
         id: 'complete',
         kind: 'complete',
         href: '/start/complete/',
-        name: 'Both together',
-        gets: '7 images per product — 4 catalog, 3 lifestyle',
-        line: 'A whole range shot once: the page and the feed, in one order.',
+        /* ── DE NAAM VAN DE BUNDEL — 7 september 2026 ──────────────────────
+           Hij heette "Complete" en "Both together". Lucas: *"ik vind complete
+           te onduidelijk"*, en over het alternatief Full Shoot: *"dat is weer
+           meer alsof je ook andere services erbij krijgt."* Allebei terecht —
+           "complete" zegt niet WAT er compleet is, en een woord als shoot
+           belooft de hele studio.
+
+           De naam noemt daarom precies de twee dingen die je krijgt, met de
+           namen die de bezoeker twee deuren eerder heeft gelezen. Onmogelijk
+           te lezen als iets anders, en dat is hier het enige dat telt.
+
+           HET IS ALLEEN DE WEERGAVENAAM. De route /start/complete, de sleutel
+           `complete` in LADDER en de waarde in ORDER_SERVICES blijven staan:
+           daar hangen bestaande bestellingen en betalingen aan. */
+        name: 'Catalog + Lifestyle',
+        where: 'Your page and your feed at once',
+        gets: `${COMPLETE_IMAGES} images per product — ${CATALOG_IMAGES} catalog and ${LIFESTYLE_IMAGES} lifestyle`,
+        line: 'A whole range shot once for both. Cheaper per image than ordering the two apart.',
+        unit: `a product, ${vatLabel('excl', 'en')}`,
+        cta: 'Start this order',
+        merk: 'Most orders',
+        read: '/pricing',
+        readCta: 'What it costs per count',
+      },
+      {
+        id: 'editions',
+        href: '/start/plan',
+        name: 'Editions',
+        where: 'Brand imagery with no product in it',
+        gets: `${STOCK_OFF_BRAND} shared visuals with every plan · ${STOCK_ON_BRAND} on your brand alone`,
+        line: 'Mood, texture and light for the months you have nothing new to shoot. It comes with a monthly plan rather than with an order.',
+        fig: euro(AMOUNT.editions, 'en'),
+        unit: `a month, ${vatLabel('excl', 'en')}`,
+        merk: 'With a plan',
+        voorwaarde: true,
+        cta: 'Start a plan',
+        read: '/editions',
+        readCta: 'See what Editions is',
+      },
+      {
+        id: 'custom-photo',
+        href: '/start/custom-look',
+        name: 'Custom photos',
+        where: 'Something we do not offer yet',
+        gets: 'A look built around your product instead of picked from the house styles',
+        line: 'Have something in mind that is not on this page? It gets designed rather than chosen, so it starts with a short brief and a written answer.',
+        fig: 'On request',
+        unit: 'no standard rate',
+        later: true,
+        cta: 'Tell us what you want',
+        read: '/lifestyle',
+        readCta: 'See the house styles',
       },
     ],
-    later: [
-      {
-        id: 'video',
-        href: '/start/video/',
-        name: 'Video clips',
-        status: 'No order form yet',
-        price: `${euro(AMOUNT.video, 'en')} a clip`,
-        line: 'Clips are being made today; the order flow for them is not finished.',
-      },
-      /* ── DE LOOK OP MAAT, 18 augustus 2026 ────────────────────────────────
-         Hij stond als vijfde radio in het bestelformulier, afgerekend op de
-         lifestyle-ladder, terwijl /lifestyle/custom "Op aanvraag" zei. Lucas:
-         een stijl op maat heeft geen standaardtarief; die prijs volgt pas als
-         de klant heeft gezegd wat hij wil.
 
-         Hier hoort hij dus, en niet daar: dit is de groep voor werk dat de
-         studio doet en waar dit formulier geen prijs voor kan uitrekenen. De
-         `price`-regel is de enige van de drie zonder bedrag, en dat is het
-         eerlijke antwoord in plaats van een gat. */
+    video: [
       {
-        id: 'custom-look',
-        href: '/start/custom-look/',
-        name: 'A custom look',
-        status: 'Priced per request',
-        price: 'No standard rate',
-        line: 'A world designed around your product rather than picked from the four. What it costs follows from what you want built; once designed, it sits as a tile in your account and in the order form.',
+        id: 'video-product',
+        href: '/start/video',
+        name: 'Product video',
+        where: 'The product itself, moving',
+        gets: 'One short clip per product — eight seconds, one clean move',
+        line: 'The turn, the pour, the fabric catching light. Enough to hold the eye in a feed, never enough to distract from the product.',
+        fig: euro(AMOUNT.video, 'en'),
+        unit: `a clip, ${vatLabel('excl', 'en')}`,
+        cta: 'Ask about a clip',
+        read: '/video/motion',
+        readCta: 'See product clips',
+      },
+      {
+        id: 'video-scene',
+        href: '/start/video',
+        name: 'Lifestyle & campaign',
+        where: 'The product in a scene, in motion',
+        gets: 'A styled clip with a model and a world around it',
+        line: 'What a lifestyle image is, set moving. A campaign is the same idea at length and is quoted per project rather than per clip.',
+        fig: euro(AMOUNT.videoLifestyle, 'en'),
+        unit: `a clip, ${vatLabel('excl', 'en')}`,
+        vanaf: true,
+        cta: 'Ask about a clip',
+        read: '/video/lifestyle',
+        readCta: 'See lifestyle clips',
+      },
+      {
+        id: 'hooks',
+        href: '/contact',
+        name: 'Hooks',
+        where: 'The first two seconds of an ad',
+        gets: 'A short vertical clip built on a format that already works',
+        line: 'Two frames that read as one, cut to stop a thumb. Built on a format we have used before rather than invented per order.',
+        fig: euro(AMOUNT.hooks, 'en'),
+        unit: `a product, ${vatLabel('excl', 'en')}`,
+        vanaf: true,
+        cta: 'Talk about Hooks',
+        read: '/hooks',
+        readCta: 'See how a Hook is built',
+      },
+      {
+        id: 'video-custom',
+        href: '/start/video',
+        name: 'Custom video',
+        where: 'Something we do not offer yet',
+        gets: 'A concept built entirely around your brand',
+        line: 'Have something in mind that is not on this page? Say what you want made and the studio answers in writing, with a date and a price.',
+        fig: 'On request',
+        unit: 'quoted per project',
+        later: true,
+        cta: 'Tell us what you want',
+        read: '/video/custom',
+        readCta: 'See custom video work',
       },
     ],
-    /* ── HET ABONNEMENT STAAT NIET MEER ONDER "OP AANVRAAG" ─────────────────
-       18 augustus 2026. Het stond in de `later`-lijst met status "After a
-       conversation" en de knop "Read where it stands" — drie signalen dat je
-       het niet kunt kopen. De LINK wees al naar /start/plan, en dat is sinds
-       deze week een echte kassa: kiezen, machtigen via Mollie, klaar.
 
-       Een bezoeker leest de status en de knop, niet de href. Dit was dus een
-       werkende kassa met een bordje "gesloten" ervoor, op het duurste product
-       dat de studio verkoopt en het enige dat elke maand terugkomt.
+    from: 'from',
+    ladderLine: 'The rates above are where each one starts. On catalog, lifestyle and the two together it falls at every step up in count — every price by count, and what each one includes:',
+    ladderCta: 'See the full rate card',
 
-       EN GEEN VIERDE TEGEL BOVEN. Dat is dezelfde afweging als op de homepage:
-       een abonnement is geen vierde dienst maar een andere MANIER VAN BETALEN
-       voor wat er in de drie tegels staat. Ernaast zetten zou een keuze
-       suggereren tussen "catalog" en "abonnement", en dat is de verkeerde
-       vraag. Dus een eigen rij, direct onder de drie, met het getal en de weg
-       naar binnen. */
-    /* ── HET MERKMODEL KRIJGT EEN EIGEN RIJ — 24 augustus 2026 ─────────────
-       Het stond in `later`, tussen video en de look op maat, met status "By
-       conversation" en de knop "Read where this stands". Alle drie de signalen
-       zeiden: dit kun je nog niet kopen.
+    afterH: 'What happens after you press it',
+    afterLead: 'The five steps below are the photo order form, and you can go back through all of them. Video, Hooks and the two custom doors have no form yet: those take a short brief and the studio answers in writing, with a date and a price.',
+    steps: ['Order', 'Material', 'Your details', 'Timing', 'Confirm'],
+    facts: [
+      ['Nothing is charged in the form', 'You are confirming an order, not paying in it. No card details are asked anywhere in the five steps.'],
+      ['The delivery date is confirmed before you pay', `Never after. Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a date for the order and confirm it in writing.`],
+      ['Then you approve image by image', 'Every order lands in VISUAILS Studio, where you see each image, approve it or ask for a change, and download what is finished.'],
+    ],
 
-       Dat klopt niet. FIXED_PRICE_SERVICES in src/lib/quote.js bevat
-       'brand-model', dus het heeft een vaste prijs en isPayableService() geeft
-       true; /start/brand-model rendert een echt formulier dat naar /api/order
-       post. Dit is precies wat op 18 augustus met het abonnement gebeurde — een
-       werkende kassa met een bordje "gesloten" ervoor — nu op het duurste
-       eenmalige product dat de studio verkoopt.
+    withH: 'One thing that goes with an order',
+    withLead: 'Not a service you order instead of the doors above — it rides along with whatever you pick.',
+    withs: [
+      {
+        h: 'Your own face',
+        name: 'Brand Model',
+        body: 'One model designed for your brand and booked by nobody else, carried across every order after this one — in the photos and in the clips. Without it, every order still includes a face from the ten shared models at no extra cost.',
+        fig: euro(AMOUNT.brandModel, 'en'),
+        unit: `one-time, ${vatLabel('excl', 'en')}`,
+        cta: 'Fill in the brief',
+        cta2: 'See what a Brand Model is',
+        href: '/start/brand-model',
+        href2: '/custom-models',
+      },
+    ],
 
-       EN GEEN VIERDE TEGEL BOVEN, om dezelfde reden als het abonnement: de drie
-       tegels zijn per product geprijsd en dit is een eenmalig bedrag. Ernaast
-       zetten zou een keuze suggereren tussen "catalog" en "merkmodel", en dat is
-       de verkeerde vraag — een merkmodel komt bij het werk, niet in plaats van. */
-    bmH: 'Or give the work your own face',
-    bmLine: 'One model, built for your brand and yours alone, that carries across every campaign after this one. A fixed one-time fee, and it starts with a short brief rather than a conversation.',
-    bmCta: 'Fill in the brief',
-    bmCta2: 'See what a Brand Model is',
-    bmOnce: 'one-time',
-    planH: 'Or put it on a monthly plan',
-    planLine: 'The same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you. You arrange it yourself — no conversation needed first.',
-    planCta: 'Start a plan',
-    planCta2: 'Compare the plans',
-    footH: 'Not ready to order?',
-    footBody: `One product, ${sample.price}, ${sample.unit}. It runs through the same production as a paid order, so what you see is what you would get.`,
+    payH: 'Or pay for it monthly instead',
+    payLine: `The same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you. Every plan costs less than the same number of products ordered one by one, and ${STOCK_OFF_BRAND} Editions visuals come with it.`,
+    payCta: 'Start a plan',
+    payCta2: 'Compare the plans',
+
+    footH: 'Not sure which one yet?',
+    footBody: `Send one product and see it come back. ${sample.price}, ${sample.unit}, no commitment. It runs through the same production as a paid order, so what you see is what you would get.`,
     footCta: sample.cta,
     footWa: 'Ask on WhatsApp',
-    // Zie de noot bij OrderFlow.astro's footWaText: deze knop opende WhatsApp
-    // met een leeg bericht. Hier staat de bezoeker nog vóór het formulier, dus
-    // de zin is een vraag en geen vastgelopen bestelling.
     footWaText: "Hi VISUAILS, I'm not sure which service fits my products.",
-    ladder: 'Every price by count, and what each one includes',
   },
+
   nl: {
     eyebrow: 'Start',
     h1: 'Wat gaan we maken?',
-    lead: `Kies wat je wilt laten maken, daarna volgen de stappen. Het tarief per product daalt naarmate het aantal stijgt, en vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling een vastgezette leverdatum in plaats van de normale doorlooptijd.`,
-    readyH: 'Nu te bestellen',
-    laterH: 'Op aanvraag',
-    laterLead: 'Twee dingen die we maken en waar dit formulier nog geen prijs voor kan uitrekenen. Bij elk staat een pagina met hoe het ervoor staat en hoe je je aanmeldt.',
-    from: 'vanaf',
-    perProduct: 'per product',
-    go: 'Start deze bestelling',
-    ask: 'Lees hoe het ervoor staat',
-    services: [
+    lead: 'Twee vragen, en de tweede is kort. Er wordt niets aangemaakt en niets in rekening gebracht tot je op versturen drukt.',
+
+    takLabel: 'Foto’s of video?',
+    takken: [
+      { id: 'beeld', naam: 'Foto’s', kort: 'Stilstaand beeld voor je pagina, je feed en je advertenties' },
+      { id: 'video', naam: 'Video', kort: 'Bewegend beeld, van een productdraai tot een campagne' },
+    ],
+
+    beeld: [
       {
         id: 'catalog',
         kind: 'catalog',
         href: '/start/catalog/',
-        name: 'Catalogsets',
-        gets: 'Vanaf 4 foto’s per product — voor, achter, detail, op model',
-        line: 'De foto’s voor je productpagina. Egale ondergrond, en elk product ziet er hetzelfde uit.',
+        name: 'Catalog',
+        where: 'Op je productpagina',
+        gets: `${CATALOG_IMAGES} foto’s per product — voorkant, achterkant, een detail en één op model`,
+        line: 'Egale ondergrond, bij elk product hetzelfde kader en hetzelfde licht, zodat je hele collectie als één geheel leest.',
+        unit: `per product, ${vatLabel('excl', 'nl')}`,
+        cta: 'Start deze bestelling',
+        read: '/catalog',
+        readCta: 'Bekijk catalogwerk',
       },
       {
         id: 'lifestyle',
         kind: 'lifestyle',
         href: '/start/lifestyle/',
-        name: 'Lifestyle-carousels',
-        gets: '3 foto’s per product — één gestylede look',
-        line: 'Hetzelfde product in een scène, in een van vier huisstijlen.',
+        name: 'Lifestyle',
+        where: 'In je feed en je advertenties',
+        gets: `${LIFESTYLE_IMAGES} foto’s per product — één gestylede look, als carousel te plaatsen`,
+        line: 'Hetzelfde product in een scène waar iemand in wil stappen, in een van vier huisstijlen, of in je eigen.',
+        unit: `per product, ${vatLabel('excl', 'nl')}`,
+        cta: 'Start deze bestelling',
+        read: '/lifestyle',
+        readCta: 'Bekijk lifestylewerk',
       },
       {
         id: 'complete',
         kind: 'complete',
         href: '/start/complete/',
-        name: 'Allebei samen',
-        gets: '7 foto’s per product — 4 catalog, 3 lifestyle',
-        line: 'Een hele reeks in één keer: de pagina en de feed, in één bestelling.',
+        /* Zie de noot bij de Engelse tegenhanger. */
+        name: 'Catalog + Lifestyle',
+        where: 'Je pagina en je feed in één keer',
+        gets: `${COMPLETE_IMAGES} foto’s per product — ${CATALOG_IMAGES} catalog en ${LIFESTYLE_IMAGES} lifestyle`,
+        line: 'Een hele collectie in één keer, voor allebei. Per beeld goedkoper dan de twee los bestellen.',
+        unit: `per product, ${vatLabel('excl', 'nl')}`,
+        cta: 'Start deze bestelling',
+        merk: 'Meest besteld',
+        read: '/pricing',
+        readCta: 'Wat het per aantal kost',
+      },
+      {
+        id: 'editions',
+        href: '/start/plan',
+        name: 'Editions',
+        where: 'Merkbeeld zonder product erin',
+        gets: `${STOCK_OFF_BRAND} gedeelde beelden bij elk abonnement · ${STOCK_ON_BRAND} op jouw merk alleen`,
+        line: 'Sfeer, textuur en licht voor de maanden waarin je niets nieuws te fotograferen hebt. Het hoort bij een abonnement en niet bij een losse bestelling.',
+        fig: euro(AMOUNT.editions, 'nl'),
+        unit: `per maand, ${vatLabel('excl', 'nl')}`,
+        merk: 'Bij een abonnement',
+        voorwaarde: true,
+        cta: 'Sluit een abonnement af',
+        read: '/editions',
+        readCta: 'Bekijk wat Editions is',
+      },
+      {
+        id: 'custom-photo',
+        href: '/start/custom-look',
+        name: 'Foto’s op maat',
+        where: 'Iets wat we nog niet aanbieden',
+        gets: 'Een look die om jouw product heen gebouwd wordt in plaats van gekozen uit de huisstijlen',
+        line: 'Heb je iets in gedachten dat hier niet staat? Het wordt ontworpen en niet gekozen, dus het begint met een korte brief en een antwoord op schrift.',
+        fig: 'Op aanvraag',
+        unit: 'geen standaardtarief',
+        later: true,
+        cta: 'Zeg wat je wilt laten maken',
+        read: '/lifestyle',
+        readCta: 'Bekijk de huisstijlen',
       },
     ],
-    later: [
+
+    video: [
       {
-        id: 'video',
-        href: '/start/video/',
-        name: 'Videoclips',
-        status: 'In aanbouw',
-        price: `${euro(AMOUNT.video, 'nl')} per clip`,
-        line: 'Clips maken we al, maar je kunt ze hier nog niet zelf bestellen.',
+        id: 'video-product',
+        href: '/start/video',
+        name: 'Productvideo',
+        where: 'Het product zelf, in beweging',
+        gets: 'Eén korte clip per product — acht seconden, één schone beweging',
+        line: 'De draai, de schenkbeweging, de stof die licht vangt. Genoeg om het oog vast te houden in een feed, nooit genoeg om van het product af te leiden.',
+        fig: euro(AMOUNT.video, 'nl'),
+        unit: `per clip, ${vatLabel('excl', 'nl')}`,
+        cta: 'Vraag een clip aan',
+        read: '/video/motion',
+        readCta: 'Bekijk productclips',
       },
-      /* Zie de noot bij de Engelse tegenhanger. */
       {
-        id: 'custom-look',
-        href: '/start/custom-look/',
-        name: 'Een look op maat',
-        status: 'Prijs op aanvraag',
-        price: 'Geen standaardtarief',
-        line: 'Een wereld die om jouw product heen ontworpen wordt in plaats van gekozen uit de vier. Wat het kost, volgt uit wat je gebouwd wilt hebben; eenmaal ontworpen staat hij als tegel in je account en in het bestelformulier.',
+        id: 'video-scene',
+        href: '/start/video',
+        name: 'Lifestyle & campagne',
+        where: 'Het product in een scène, in beweging',
+        gets: 'Een gestylede clip met een model en een wereld eromheen',
+        line: 'Wat een lifestylefoto is, maar dan bewegend. Een campagne is hetzelfde idee op lengte en wordt per project geoffreerd in plaats van per clip.',
+        fig: euro(AMOUNT.videoLifestyle, 'nl'),
+        unit: `per clip, ${vatLabel('excl', 'nl')}`,
+        vanaf: true,
+        cta: 'Vraag een clip aan',
+        read: '/video/lifestyle',
+        readCta: 'Bekijk lifestyleclips',
+      },
+      {
+        id: 'hooks',
+        href: '/contact',
+        name: 'Hooks',
+        where: 'De eerste twee seconden van een advertentie',
+        gets: 'Een korte verticale clip op een format dat al werkt',
+        line: 'Twee beelden die als één lezen, gemonteerd om een duim te stoppen. Gebouwd op een format dat we eerder gebruikt hebben in plaats van per bestelling bedacht.',
+        fig: euro(AMOUNT.hooks, 'nl'),
+        unit: `per product, ${vatLabel('excl', 'nl')}`,
+        vanaf: true,
+        cta: 'Praat over Hooks',
+        read: '/hooks',
+        readCta: 'Bekijk hoe een Hook gebouwd wordt',
+      },
+      {
+        id: 'video-custom',
+        href: '/start/video',
+        name: 'Video op maat',
+        where: 'Iets wat we nog niet aanbieden',
+        gets: 'Een concept dat volledig om jouw merk heen gebouwd is',
+        line: 'Heb je iets in gedachten dat hier niet staat? Zeg wat je wilt laten maken en de studio antwoordt op schrift, met een datum en een prijs.',
+        fig: 'Op aanvraag',
+        unit: 'per project geoffreerd',
+        later: true,
+        cta: 'Zeg wat je wilt laten maken',
+        read: '/video/custom',
+        readCta: 'Bekijk video op maat',
       },
     ],
-    /* Zie de noot bij de Engelse tegenhanger. */
-    bmH: 'Of geef het werk je eigen gezicht',
-    bmLine: 'Eén model, alleen voor jouw merk gebouwd, dat meegaat in elke campagne hierna. Een vast eenmalig bedrag, en het begint met een korte brief in plaats van met een gesprek.',
-    bmCta: 'Vul de brief in',
-    bmCta2: 'Bekijk wat een merkmodel is',
-    bmOnce: 'eenmalig',
-    planH: 'Of doe het op een maandabonnement',
-    planLine: 'Hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt. Je regelt het zelf — er hoeft geen gesprek aan vooraf te gaan.',
-    planCta: 'Sluit een abonnement af',
-    planCta2: 'Vergelijk de abonnementen',
-    footH: 'Nog niet klaar om te bestellen?',
-    footBody: `Eén product, ${sample.price}, ${sample.unit}. Het loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen.`,
+
+    from: 'vanaf',
+    ladderLine: 'De tarieven hierboven zijn waar elk van de deuren begint. Bij catalog, lifestyle en de twee samen daalt het bij elke stap omhoog in aantal — alle prijzen per aantal, en wat je er bij elk aantal voor krijgt:',
+    ladderCta: 'Bekijk de volledige prijslijst',
+
+    afterH: 'Wat er gebeurt nadat je erop drukt',
+    afterLead: 'De vijf stappen hieronder zijn het bestelformulier voor foto’s, en je kunt overal in terug. Video, Hooks en de twee deuren op maat hebben nog geen formulier: die nemen een korte brief aan en de studio antwoordt op schrift, met een datum en een prijs.',
+    steps: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
+    facts: [
+      ['In het formulier wordt niets afgeschreven', 'Je bevestigt een bestelling, je betaalt er niet in. Nergens in de vijf stappen wordt om je kaartgegevens gevraagd.'],
+      ['De leverdatum staat vast vóór je betaalt', `Nooit erna. Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} houden we een datum voor je vrij en zetten we die schriftelijk vast.`],
+      ['Daarna keur je beeld voor beeld goed', 'Elke bestelling komt in VISUAILS Studio, waar je elk beeld ziet, het goedkeurt of een aanpassing vraagt, en downloadt wat af is.'],
+    ],
+
+    withH: 'Eén ding dat met een bestelling meegaat',
+    withLead: 'Geen dienst die je in plaats van de deuren hierboven bestelt — hij gaat mee met wat je ook kiest.',
+    withs: [
+      {
+        h: 'Je eigen gezicht',
+        name: 'Merkmodel',
+        body: 'Eén model dat voor jouw merk ontworpen is en dat geen ander merk kan boeken, en dat meegaat in elke bestelling hierna — in de foto’s en in de clips. Ook zonder merkmodel zit er in elke bestelling een gezicht uit de tien gedeelde modellen, zonder meerprijs.',
+        fig: euro(AMOUNT.brandModel, 'nl'),
+        unit: `eenmalig, ${vatLabel('excl', 'nl')}`,
+        cta: 'Vul de brief in',
+        cta2: 'Bekijk wat een merkmodel is',
+        href: '/start/brand-model',
+        href2: '/custom-models',
+      },
+    ],
+
+    payH: 'Of betaal er maandelijks voor',
+    payLine: `Hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt. Elk abonnement kost minder dan datzelfde aantal producten los besteld, en er zitten ${STOCK_OFF_BRAND} Editions-beelden bij.`,
+    payCta: 'Sluit een abonnement af',
+    payCta2: 'Vergelijk de abonnementen',
+
+    footH: 'Nog niet zeker welke?',
+    footBody: `Stuur één product in en zie wat er terugkomt. ${sample.price}, ${sample.unit}, zonder verplichting. Het loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen.`,
     footCta: sample.cta,
     footWa: 'Vraag het via WhatsApp',
     footWaText: 'Hoi VISUAILS, ik weet niet zeker welke dienst bij mijn producten past.',
-    ladder: 'Alle prijzen per aantal, en wat je er bij elk aantal voor krijgt',
   },
 };
 
 const c = COPY[lang];
-
-// First rung to floor, both read, neither typed — not even in this comment. One
-// figure cannot say the thing that matters about the ladder, which is that it
-// is a range you move along.
-const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro(ladderFloor(kind), lang)}`;
+const nl = lang === 'nl';
 ---
 
-{/* De lichtbundel uit de merktaal — zie .beam in global.css. Op een
-    paginakop en niet op een band met een foto: twee lichtbronnen over elkaar
-    maken het beeld troebel. */}
-<section class="page-hero beam beam-left"><div class="container">
-  <span class="eyebrow-page">{c.eyebrow}</span>
-  <h1 class="display">{c.h1}</h1>
-  <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-</div></section>
+<div class="s22">
 
-<!-- THE THREE THAT HAVE A FLOW -->
-<section class="section-tight"><div class="container">
-  <h2 class="pick-h">{c.readyH}</h2>
-  <div class="pick-grid">
-    {c.services.map((s) => (
-      <a class="pick" href={lp(s.href)}>
-        <img
-          class="pick-shot"
-          src={SHOT[s.id].src}
-          alt={`${s.name} — ${lang === 'nl' ? 'voorbeeld' : 'example'}`}
-          width={SHOT[s.id].w}
-          height={SHOT[s.id].h}
-          loading="lazy"
-          decoding="async"
-        />
-        <span class="pick-body">
-          <span class="pick-name">{s.name}</span>
-          <span class="pick-gets">{s.gets}</span>
-          <span class="pick-line">{s.line}</span>
-          {/* BRIEF-14: the label rides with the figure, the way it does on the
-              cards below. It used to sit only in the note under the grid, and
-              the note already opens with the same words — so the page said
-              "excl. VAT. All figures are excl. VAT." and neither price on the
-              card was labelled. */}
-          <span class="pick-rate">
-            <span class="pick-from">{c.from}</span>
-            {rateRange(s.kind)}
-            <span class="pick-per">{c.perProduct}, {vatLabel('excl', lang)}</span>
-          </span>
-          <span class="pick-cta">{c.go}</span>
-        </span>
-      </a>
+  {/* ── 1 · DE TRECHTER: EERST DE TAK, DAN DE CATEGORIE ─────────────────────
+
+      Lucas: *"ik wil de trechter laten beginnen bij mensen te laten kiezen
+      tussen afbeeldingen of video, en daarin dan de categorieën plaatsen (…)
+      om het rustiger te maken."*
+
+      Negen deuren tegelijk is te veel om te lezen; vijf of vier is te doen. En
+      de eerste vraag is er een die iedereen meteen kan beantwoorden — stil of
+      bewegend — terwijl "catalog of lifestyle" pas te beantwoorden is als je
+      weet wat die woorden hier betekenen.
+
+      GEEN JAVASCRIPT. Twee radioknoppen die visueel verborgen zijn, met labels
+      erop die eruitzien als knoppen; de zusterselector eronder laat de
+      bijbehorende rij zien. Dat werkt met de toetsen (pijltjes wisselen van
+      radio, zoals in elke radiogroep), het werkt zonder script, en beide rijen
+      staan in de HTML — dus een zoekmachine ziet alle negen deuren en een
+      bezoeker die de pagina zonder CSS krijgt ook.
+
+      De radio's staan vóór de fieldset omdat een zusterselector alleen vooruit
+      kijkt. Zelfde constructie als de dienstenkiezer op de voorpagina. */}
+  <section class="paneel st-kies" aria-labelledby="st-h1">
+    <header class="paneel-kop st-kop">
+      <p class="etiket">{c.eyebrow}</p>
+      <h1 id="st-h1" class="hoog">{c.h1}</h1>
+      <p class="lopend">{c.lead}</p>
+    </header>
+
+    {c.takken.map((t, i) => (
+      <input class="visueel-verborgen keuze" type="radio" name="st-tak" id={`st-tak-${i}`} checked={i === 0} />
     ))}
-  </div>
-  {/* BRIEF-14: every figure above carries its own excl.-VAT label; this is the
-      one line per page that says how VAT is actually handled. vatNote() opens
-      with "All figures are excl. VAT", so prefixing it with vatLabel() said the
-      same thing twice. */}
-  <p class="pick-vat">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
-  <p class="pick-more"><a href={lp('/pricing')}>{c.ladder}</a></p>
-</div></section>
+    <fieldset class="st-takrij">
+      <legend class="visueel-verborgen">{c.takLabel}</legend>
+      {c.takken.map((t, i) => (
+        <label class="st-tak" for={`st-tak-${i}`}>
+          <b>{t.naam}</b>
+          <span class="mono">{t.kort}</span>
+        </label>
+      ))}
+    </fieldset>
 
-<!-- HET MERKMODEL — een eenmalig bedrag, geen vierde tegel. Zie de noot bij bmH. -->
-<section class="section-tight"><div class="container">
-  <div class="startplan">
-    <div class="startplan-copy">
-      <h2>{c.bmH}</h2>
-      <p>{c.bmLine}</p>
+    {[c.beeld, c.video].map((deuren, tak) => (
+      <ul class={`st-deuren st-groep st-groep-${tak}`} role="list" data-telling={deuren.length}>
+        {deuren.map((d) => (
+          <li class={`st-deur${d.later ? ' is-later' : ''}${d.voorwaarde ? ' is-voorwaarde' : ''}`}>
+            <span class="kaart st-beeld">
+              {SHOT[d.id]
+                ? <img src={SHOT[d.id].src} alt="" width={SHOT[d.id].w} height={SHOT[d.id].h} loading="lazy" decoding="async" />
+                : <Placeholder
+                    lang={lang}
+                    ratio="4 / 3"
+                    caption={false}
+                    kind="video"
+                    subject={`${d.name} — ${d.where}`}
+                    message={nl
+                      ? 'Eén beeld dat het tweebeeldsformaat van een Hook laat zien: de eerste seconde en de tweede naast elkaar, zodat je in één blik ziet dat het één clip is en geen twee. Zolang die er niet is, staat hier wat er is — een lege plek met de opdracht erin.'
+                      : 'One frame showing a Hook’s two-shot format: the first second and the second beside each other, so you see at a glance that it is one clip and not two. Until that exists, what stands here is what there is — an empty slot with the brief in it.'}
+                  />}
+              {d.merk && <span class="mono st-merk">{d.merk}</span>}
+            </span>
+            <div class="st-tekst">
+              <p class="mono st-dienst">{d.name}</p>
+              <h2 class="st-waar">{d.where}</h2>
+              <p class="st-krijgt">{d.gets}</p>
+              <p class="lopend st-regel">{d.line}</p>
+              {/* Het bedrag draagt zijn eigen btw-label. BRIEF-14: het label
+                  reist mee met het getal en staat niet alleen in de noot
+                  eronder. Elke rij heeft dezelfde vorm — label, getal, eenheid
+                  — zodat de bedragen van een groep op één lijn staan.
+
+                  `from` staat er bij alles wat een ONDERGRENS is: de drie op de
+                  ladder, en Hooks. Bij een vaste prijs (de productclip) en bij
+                  een maandbedrag staat het er niet, want dan zou het liegen. */}
+              <p class="st-tarief">
+                {(d.kind || d.vanaf) && <span class="mono">{c.from}</span>}
+                <span class="tarief">{d.fig || vanaf(d.kind)}</span>
+                <span class="mono">{d.unit}</span>
+              </p>
+              <p class="st-wegen">
+                <a class={`knop ${d.later ? 'knop-lijn' : 'knop-inkt'}`} href={lp(d.href)}>{d.cta}</a>
+                <a class="pijl st-lees" href={lp(d.read)}>{d.readCta}</a>
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    ))}
+
+    <div class="st-onder">
+      <p class="lopend st-ladder">{c.ladderLine} <a class="st-link" href={lp('/pricing')}>{c.ladderCta}</a></p>
+      <p class="st-btw">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
     </div>
-    <div class="startplan-side">
-      <p class="startplan-fig">
-        <strong>{euro(AMOUNT.brandModel, lang)}</strong>
-        <span class="startplan-unit">{c.bmOnce}, {vatLabel('excl', lang)}</span>
-      </p>
-      <div class="startplan-cta">
-        <a class="btn btn-primary" href={lp('/start/brand-model')}>{c.bmCta}</a>
-        <a class="btn btn-ghost" href={lp('/custom-models')}>{c.bmCta2}</a>
+  </section>
+
+  {/* ── 3 · WAT ER DAARNA GEBEURT ───────────────────────────────────────────
+      De pagina die de bestelling begint, zei nergens wat drukken doet. De vijf
+      stappen komen letterlijk uit de rail van OrderFlow.astro, zodat ze niet
+      uiteen kunnen lopen met het formulier waar ze over gaan. */}
+  <section class="kamer st-kamer" aria-labelledby="st-daarna">
+    <p class="spook spook-rechts" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <h2 id="st-daarna" class="hoog hoog-2">{c.afterH}</h2>
+      <p class="lopend">{c.afterLead}</p>
+    </header>
+
+    <ol class="st-stappen">
+      {c.steps.map((s, i) => (
+        <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><span class="st-stap-naam">{s}</span></li>
+      ))}
+    </ol>
+
+    <ul class="st-feiten" role="list">
+      {c.facts.map(([h, b]) => (
+        <li><b>{h}</b><span class="lopend">{b}</span></li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 4 · WAT ER MEEGAAT ──────────────────────────────────────────────────
+      Het merkmodel en de look op maat. Allebei geen dienst maar een eigenschap
+      van een bestelling — zie punt 4 van de kop. Ze staan hier ONDER de deuren
+      en met een kop die zegt dat ze meegaan, zodat niemand ze leest als een
+      vijfde en zesde keuze. */}
+  <section class="paneel" aria-labelledby="st-mee">
+    <header class="paneel-kop">
+      <h2 id="st-mee" class="hoog hoog-2">{c.withH}</h2>
+      <p class="lopend">{c.withLead}</p>
+    </header>
+    <ul class="st-mee" role="list">
+      {c.withs.map((w) => (
+        <li>
+          <p class="mono st-mee-etiket">{w.name}</p>
+          <h3 class="hoog hoog-3">{w.h}</h3>
+          <p class="lopend">{w.body}</p>
+          <p class="st-mee-bedrag">
+            <span class="tarief">{w.fig}</span>
+            <span class="mono">{w.unit}</span>
+          </p>
+          <p class="acties">
+            <a class="knop knop-inkt" href={lp(w.href)}>{w.cta}</a>
+            <a class="pijl" href={lp(w.href2)}>{w.cta2}</a>
+          </p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 5 · HOE JE BETAALT ──────────────────────────────────────────────────
+      Eén rij en geen tegel naast de deuren: een abonnement is geen dienst maar
+      een andere manier van betalen voor precies het werk dat hierboven staat. */}
+  <section class="paneel st-abo" aria-labelledby="st-betalen">
+    <div class="st-rij">
+      <div class="st-rij-tekst">
+        <h2 id="st-betalen" class="hoog hoog-3">{c.payH}</h2>
+        <p class="lopend">{c.payLine}</p>
+      </div>
+      <div class="st-rij-zij">
+        <p class="st-mee-bedrag">
+          <span class="mono">{c.from}</span>
+          <span class="tarief st-groot">{planFrom.price}</span>
+          <span class="mono">{planFrom.unit}, {vatLabel('excl', lang)}</span>
+        </p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start/plan')}>{c.payCta}</a>
+          <a class="knop knop-lijn" href={lp('/plans')}>{c.payCta2}</a>
+        </p>
       </div>
     </div>
-  </div>
-</div></section>
+  </section>
 
-<!-- HET ABONNEMENT — een andere manier van betalen, geen vierde dienst -->
-<section class="section-tight"><div class="container">
-  <div class="startplan">
-    <div class="startplan-copy">
-      <h2>{c.planH}</h2>
-      <p>{c.planLine}</p>
-    </div>
-    <div class="startplan-side">
-      <p class="startplan-fig">
-        <span class="startplan-from">{c.from}</span>
-        <strong>{planFrom.price}</strong>
-        <span class="startplan-unit">{planFrom.unit}, {vatLabel('excl', lang)}</span>
-      </p>
-      <div class="startplan-cta">
-        <a class="btn btn-primary" href={lp('/start/plan')}>{c.planCta}</a>
-        <a class="btn btn-ghost" href={lp('/plans')}>{c.planCta2}</a>
-      </div>
-    </div>
-  </div>
-</div></section>
-
-<!-- THE THREE THAT DO NOT, AND SAY SO -->
-<section class="section-tight"><div class="container">
-  <h2 class="pick-h">{c.laterH}</h2>
-  <p class="pick-lead">{c.laterLead}</p>
-  <div class="ask-grid">
-    {c.later.map((s) => (
-      <a class="ask" href={lp(s.href)}>
-        <span class="ask-status">{s.status}</span>
-        <span class="ask-name">{s.name}</span>
-        <span class="ask-price">{s.price}, {vatLabel('excl', lang)}</span>
-        <span class="ask-line">{s.line}</span>
-        <span class="ask-cta">{c.ask}</span>
-      </a>
-    ))}
-  </div>
-</div></section>
-
-<!-- NOT SURE YET -->
-<section class="section-tight"><div class="container">
-  <div class="start-foot">
-    <div>
-      <h2>{c.footH}</h2>
-      <p class="start-foot-body">{c.footBody}</p>
-    </div>
-    <div class="start-foot-cta">
-      <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.footCta}</a>
-      <a href={waHref(c.footWaText)} target="_blank" rel="noopener" class="btn btn-ghost btn-lg">{c.footWa}</a>
-    </div>
-  </div>
-</div></section>
+  {/* ── 6 · NOG NIET ZEKER ──────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="st-slot">
+    <h2 id="st-slot" class="hoog">{c.footH}</h2>
+    <p class="lopend">{c.footBody}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.footCta}</a>
+      <a class="knop knop-lijn" href={waHref(c.footWaText)} target="_blank" rel="noopener">{c.footWa}</a>
+    </p>
+  </section>
+</div>
 
 <style>
+  .st-kop { max-width: 46rem; }
+
+  /* ── DE EERSTE VRAAG: STIL OF BEWEGEND ────────────────────────────────────
+     Twee knoppen, en met opzet groot: dit is de belangrijkste klik van de
+     pagina en niet een filter. De radio's zelf staan visueel verborgen boven de
+     fieldset; het label is de knop. Zie de noot bij de markup voor waarom hier
+     geen script bij hoort. */
+  .st-takrij { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(.6rem, 1.5vw, 1rem); border: 0; padding: 0; margin: 0 0 clamp(2rem, 4vw, 3rem); max-width: 46rem; }
+  .st-tak {
+    display: grid; gap: .3rem; cursor: pointer;
+    padding: clamp(1rem, 2.2vw, 1.4rem) clamp(1.1rem, 2.4vw, 1.6rem);
+    border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 10px);
+    transition: background .3s var(--uit), border-color .3s var(--uit), color .3s var(--uit);
+  }
+  .st-tak b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.15rem, 2.2vw, 1.6rem); text-transform: uppercase; letter-spacing: -.01em; line-height: 1; }
+  .st-tak .mono { color: var(--inkt-2); text-transform: none; letter-spacing: 0; font-size: .82rem; line-height: 1.45; }
+  .st-tak:hover { border-color: var(--inkt); }
+
+  /* De gekozen tak, en de rij die erbij hoort. Eén regel per combinatie, want
+     een zusterselector kan niet rekenen. */
+  .st-kies #st-tak-0:checked ~ .st-takrij label[for="st-tak-0"],
+  .st-kies #st-tak-1:checked ~ .st-takrij label[for="st-tak-1"] {
+    background: var(--inkt); border-color: var(--inkt); color: var(--vel);
+  }
+  .st-kies #st-tak-0:checked ~ .st-takrij label[for="st-tak-0"] .mono,
+  .st-kies #st-tak-1:checked ~ .st-takrij label[for="st-tak-1"] .mono { color: rgb(245 245 245 / .7); }
+  .st-groep { display: none; }
+  .st-kies #st-tak-0:checked ~ .st-groep-0,
+  .st-kies #st-tak-1:checked ~ .st-groep-1 { display: grid; }
+  /* De toetsenbordring hoort om de knop die je met de pijltjes verplaatst, en
+     de radio zelf is onzichtbaar. */
+  .st-kies .keuze:focus-visible ~ .st-takrij label { outline: 2px solid var(--inkt); outline-offset: 3px; }
+
   /* ═══════════════════════════════════════════════════════════════════════════
-     Two grids, and the difference between them is the point of the page.
+     DE VIER DEUREN — één rij, en dat is de hele herbouw.
 
-     The three that can be ordered carry a photograph, a rate and a call to
-     action that starts something. The three that cannot carry a status word
-     where the photograph would be, a price that is still true, and a call to
-     action that is honest about what pressing it does. They are not styled as
-     lesser — same corner radius, same border weight, same type — because they
-     are not lesser work. They are work with no checkout yet.
+     Ze zijn opzettelijk NIET gesorteerd naar of er een kassa achter zit. Video
+     draagt hetzelfde kader, dezelfde foto en dezelfde letters als de andere
+     drie; wat verschilt is dat er een statuswoord staat waar bij de andere een
+     tarief staat, en dat de knop een lijnknop is in plaats van een inktknop.
+     Dat is precies genoeg om te zeggen "hier gebeurt iets anders" en te weinig
+     om te zeggen "dit doen we niet".
      ═══════════════════════════════════════════════════════════════════════════ */
-  .pick-h { font-size: var(--t-h3); line-height: 1.2; }
-  .pick-lead { margin-top: .7rem; color: var(--ink-3); max-width: 66ch; }
+  /* Vier of vijf deuren, en het raster telt ze zelf. `data-telling` staat op de
+     <ul> zodat de fototak (vijf) en de videotak (vier) niet elk een eigen
+     klassenaam nodig hebben. */
+  .st-deuren { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.8rem, 1.8vw, 1.4rem); }
+  .st-deuren[data-telling="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  /* Flex en geen grid: de knop moet met `margin-top: auto` naar de onderrand
+     zakken zodat de vier knoppen op één lijn staan, ook als de ene regel twee
+     keer afbreekt en de andere niet. */
+  .st-deur { display: flex; flex-direction: column; gap: .9rem; }
+  .st-beeld { position: relative; aspect-ratio: 4 / 3; flex: 0 0 auto; }
+  .st-beeld img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
+  .st-beeld :global([data-placeholder]) { position: absolute; inset: 0; margin: 0; }
+  .st-beeld :global([data-placeholder] > *) { width: 100%; height: 100%; border-radius: 0; }
+  .st-deur:hover .st-beeld img { scale: 1.04; }
+  /* Het etiket op het beeld draagt twee verschillende dingen en ziet er dus
+     twee keer anders uit: geel is een AANBEVELING ("meest besteld"), wit is een
+     STAAT ("formulier nog niet af"). Allebei op de plek waar je ze leest
+     voordat je de tekst leest. */
+  .st-merk { position: absolute; z-index: 1; top: .6rem; left: .6rem; background: var(--geel); color: var(--inkt); padding: .3rem .65rem; border-radius: 999px; }
+  .st-deur.is-later .st-merk, .st-deur.is-voorwaarde .st-merk { background: var(--wit); }
+  /* De videodeur: het beeld iets teruggenomen, want er zit nog geen kassa
+     achter. Niet grijs — het werk bestaat wel. */
+  .st-deur.is-later .st-beeld img { opacity: .72; }
 
-  .pick-grid,
-  .ask-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: clamp(.9rem, 1.8vw, 1.4rem);
-    margin-top: clamp(1.4rem, 3vw, 2rem);
-  }
+  .st-tekst { display: flex; flex-direction: column; gap: .35rem; flex: 1; }
+  .st-dienst { color: var(--inkt-2); }
+  .st-waar { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.1rem, 1.8vw, 1.4rem); text-transform: uppercase; letter-spacing: -.01em; line-height: 1.05; }
+  .st-krijgt { font-size: .88rem; color: var(--inkt); }
+  /* De beschrijving slikt de speling op, en niet de knop met `margin-top:auto`.
+     Verschil: zo staan de VIER TARIEFREGELS ook op één lijn, en niet alleen de
+     vier knoppen — en dat is de regel die je vergelijkt. */
+  .st-regel { font-size: .88rem; flex: 1; }
+  /* `min-height` van twee regels, want "On request · no standard rate" past
+     niet op één en elke andere deur wel. Zonder deze regel zakte de knop van die
+     ene deur een regel lager dan de rest — en de vier knoppen op één lijn is
+     precies wat een rij deuren vergelijkbaar maakt. */
+  .st-tarief { display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: .4rem .5rem; min-height: 3.4rem; margin-top: .5rem; padding-top: .8rem; border-top: 1px solid var(--lijn); }
+  .st-tarief .mono { color: var(--inkt-2); }
+  .st-wegen { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-top: .6rem; }
+  .st-lees { color: var(--inkt-2); }
+  .st-lees:hover { color: var(--inkt); }
 
-  .pick {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-    overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
-  }
-  .pick:hover { border-color: var(--accent); background: var(--accent-soft); }
-  .pick:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
-  .pick-shot {
-    display: block;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-    background: var(--surface-2);
-  }
-  .pick-body {
-    display: flex;
-    flex-direction: column;
-    gap: .3rem;
-    padding: clamp(.9rem, 2vw, 1.2rem);
-    flex: 1;
-  }
-  .pick-name { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; line-height: 1.2; color: var(--ink); }
-  .pick-gets { font-size: .82rem; color: var(--ink-2); line-height: 1.4; }
-  .pick-line { font-size: .86rem; color: var(--ink-3); line-height: 1.55; }
-  .pick-rate {
-    margin-top: .5rem;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-    font-weight: 500;
-  }
-  .pick-from,
-  .pick-per { font-size: .76rem; color: var(--ink-3); font-weight: 400; }
-  /* Een knop en geen onderstreepte regel — 4 september 2026. Dit is de eerste
-     stap van de bestelling, en de enige aanwijzing was een link van 13px in de
-     hoek van de kaart. De hele kaart is al klikbaar; de knop zegt alleen
-     duidelijker dat dat zo is. Dezelfde vorm als .btn.btn-primary, zonder de
-     klasse, want een <span> in een <a> mag geen tweede link worden. */
-  .pick-cta {
-    margin-top: auto;
-    align-self: flex-start;
-    margin-top: 1rem;
-    display: inline-flex; align-items: center; min-height: 44px; padding: 0 1.3rem;
-    border-radius: 999px; background: var(--accent); color: var(--accent-ink);
-    font-family: var(--font-heading); font-weight: 800; font-size: .95rem; letter-spacing: .02em; text-transform: uppercase;
-    transition: background-color .15s ease;
-  }
-  .pick:hover .pick-cta { background: var(--accent-dim); }
+  .st-onder { display: grid; gap: .8rem; max-width: 62rem; margin-top: clamp(2rem, 4vw, 3rem); }
+  .st-ladder { max-width: none; font-size: .92rem; }
+  .st-link { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
+  .st-btw { font-size: .84rem; line-height: 1.6; color: var(--inkt-2); }
 
-  .pick-vat { margin-top: 1rem; font-size: .78rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
-  .pick-more { margin-top: .6rem; font-size: .9rem; }
-  .pick-more a,
-  .pick-more :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+  /* ── De vijf stappen, als een liniaal en niet als kaarten ─────────────────
+     Ze zijn genummerd omdat het écht een volgorde is: dit is de volgorde waarin
+     het formulier ze stelt. */
+  .st-stappen { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: clamp(.6rem, 2vw, 1.5rem); margin-bottom: clamp(2.5rem, 5vw, 4rem); }
+  .st-stappen li { display: grid; gap: .4rem; padding-top: .9rem; border-top: 1px solid rgb(245 245 245 / .28); }
+  .st-stappen .nr { color: rgb(245 245 245 / .5); }
+  .st-stap-naam { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(.95rem, 1.5vw, 1.25rem); text-transform: uppercase; letter-spacing: -.01em; }
 
-  /* No photograph, and that is deliberate rather than a gap: what these three
-     need said first is what state they are in, so the status word takes the
-     place the picture takes on the cards above it. The system colour is the one
-     the site already uses for statements of process. */
-  .ask {
-    display: flex;
-    flex-direction: column;
-    gap: .3rem;
-    padding: clamp(1rem, 2.2vw, 1.4rem);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-lg);
-    background: var(--paper-2);
-    text-decoration: none;
-    color: inherit;
-    transition: border-color var(--dur-1) var(--ease);
-  }
-  .ask:hover { border-color: var(--signal); }
-  .ask:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
-  .ask-status {
-    align-self: flex-start;
-    padding: .22rem .55rem;
-    border: 1px solid var(--signal);
-    border-radius: var(--r-sm);
-    font-size: .68rem; font-weight: 700; letter-spacing: .09em;
-    text-transform: uppercase; color: var(--signal-ink);
-  }
-  .ask-name { margin-top: .5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; line-height: 1.2; color: var(--ink); }
-  .ask-price { font-size: .86rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-  .ask-line { margin-top: .2rem; font-size: .86rem; color: var(--ink-3); line-height: 1.55; }
-  .ask-cta {
-    margin-top: auto;
-    padding-top: .9rem;
-    font-size: .84rem;
-    font-weight: 600;
-    color: var(--accent-bright);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
+  .st-feiten { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.4rem, 3.5vw, 3rem); }
+  .st-feiten li { display: grid; gap: .5rem; align-content: start; padding-top: 1rem; border-top: 1px solid var(--geel); }
+  .st-feiten b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.6vw, 1.3rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .st-feiten .lopend { font-size: .92rem; }
 
-  .start-foot {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: clamp(1.6rem, 4vw, 3.5rem);
-    align-items: center;
-    border-top: 1px solid var(--line-strong);
-    padding-top: clamp(2rem, 4vw, 3rem);
-  }
-  .start-foot-body { margin-top: .9rem; color: var(--ink-3); max-width: 52ch; }
-  .start-foot-cta { display: flex; flex-wrap: wrap; gap: .8rem; }
-  /* `flex: 1 0 auto` betekende: groeien mag, KRIMPEN NIET. Met `flex-wrap`
-     eronder ging elke knop die te breed werd naar een eigen regel, maar bleef
-     daar even breed — en bij 150 % tekstgrootte op een telefoon stak
-     "Probeer een proefvisual · €1" daarmee 16 px buiten het scherm. Krimpen mag
-     nu wel, en `min-width: 0` haalt de ondergrens weg die een flexitem anders
-     op zijn min-content houdt. Het label breekt dan af; dat is precies wat de
-     regel bij .btn onder 28.75em al toestaat. */
-  .start-foot-cta > .btn { flex: 1 1 auto; min-width: 0; }
+  /* ── Wat er meegaat ──────────────────────────────────────────────────────
+     Twee blokken naast elkaar, met een rand eromheen omdat het hier wél twee
+     losse dingen zijn — anders dan de vier deuren, die één rij vormen. */
+  .st-mee { display: grid; grid-template-columns: minmax(0, 46rem); gap: clamp(1rem, 2.5vw, 1.8rem); }
+  .st-mee li { display: grid; gap: .7rem; align-content: start; padding: clamp(1.4rem, 3vw, 2.2rem); border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 8px); }
+  .st-mee-etiket { color: var(--inkt-2); }
+  .st-mee li .lopend { font-size: .92rem; }
+  .st-mee-bedrag { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; margin-top: .3rem; }
+  .st-mee-bedrag .mono { color: var(--inkt-2); }
+  .st-mee .acties { margin-top: .5rem; }
 
+  /* ── Het abonnement ──────────────────────────────────────────────────────
+     Tekst links, het bedrag en de twee knoppen rechts. Eén beslissing met één
+     getal, en dat getal hoort naast de knop die erop volgt. */
+  .st-rij { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 22rem); gap: clamp(1.4rem, 4vw, 3.5rem); align-items: center; }
+  .st-rij-tekst { display: grid; gap: .7rem; }
+  .st-rij-zij { display: grid; gap: 1.2rem; justify-items: start; }
+  .st-groot { font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1; }
+
+  @media (max-width: 1400px) {
+    .st-deuren[data-telling="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 1100px) {
+    .st-deuren, .st-deuren[data-telling="5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   @media (max-width: 900px) {
-    .pick-grid, .ask-grid { grid-template-columns: 1fr 1fr; }
-    .start-foot { grid-template-columns: 1fr; }
+    .st-stappen { grid-auto-flow: row; }
+    .st-feiten, .st-mee { grid-template-columns: 1fr; }
+    .st-rij { grid-template-columns: 1fr; align-items: start; }
   }
   @media (max-width: 620px) {
-    .pick-grid, .ask-grid { grid-template-columns: 1fr; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .pick, .ask { transition: none; }
-  }
-  /* ── het abonnement op /start ─────────────────────────────────────────────
-     Tekst links, het bedrag en de twee knoppen rechts. Dezelfde tweedeling als
-     de abonnementsband op de homepage, en om dezelfde reden: het is één
-     beslissing met één getal, en dat getal hoort naast de knop te staan die
-     erop volgt in plaats van erboven in een alinea. */
-  .startplan {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: clamp(1.4rem, 4vw, 3rem);
-    align-items: center;
-    padding: clamp(1.4rem, 3vw, 2.2rem) 0;
-    box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
-  }
-  .startplan-copy h2 { font-size: var(--t-h3); }
-  .startplan-copy p { margin-top: .6rem; max-width: 64ch; font-size: .95rem; line-height: 1.6; color: var(--ink-3); }
-  .startplan-fig { margin: 0; display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
-  .startplan-from { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-  .startplan-fig strong { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.8rem, 3.4vw, 2.4rem); line-height: 1; color: var(--ink); }
-  .startplan-unit { font-size: .85rem; color: var(--ink-3); }
-  .startplan-cta { margin-top: 1rem; display: flex; gap: .7rem; flex-wrap: wrap; }
-  @media (max-width: 52rem) {
-    .startplan { grid-template-columns: 1fr; align-items: start; }
+    .st-deuren, .st-deuren[data-telling="5"] { grid-template-columns: minmax(0, 1fr); }
+    .st-takrij { grid-template-columns: minmax(0, 1fr); }
   }
 </style>

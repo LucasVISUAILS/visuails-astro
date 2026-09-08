@@ -1,0 +1,445 @@
+---
+/**
+ * CONCEPT D · VITRINE — de voorpagina als tentoonstelling. 6 september 2026.
+ *
+ * Lucas: *"ik wil het meer minimalistic en artistic hebben, dit voelt zo
+ * standaard … Ik vind de style van Gentle Monster heel mooi … alleen de sfeer
+ * die die website geeft is super mooi. Maak een Gentle Monster inspired design
+ * … Minimalistische look met een alien-achtig futuristische feeling. Veel wit
+ * ruimte en veel afbeeldingen gebruiken voor sfeer en uitleg."*
+ *
+ * WAT ER OP GENTLE MONSTER IS NAGEMETEN (6 september 2026, gentlemonster.com):
+ *   · de grond is geen zuiver wit maar rgb(243,244,246) — wit met een koele
+ *     slag, waardoor elke foto er warmer uitziet dan hij is;
+ *   · het woordmerk staat klein en gecentreerd bovenaan, en verder staat er in
+ *     het hele scherm bijna geen letter;
+ *   · secties dragen één kort kapitalenlabel links, met één onderstreepte link
+ *     eronder ("MORE"). Geen knoppen, geen pillen, geen kaders;
+ *   · de prijs onder een product staat in dezelfde maat als de productnaam:
+ *     niets schreeuwt.
+ * Aangevuld met aircenter.space (Awwwards, minimal): één object dat in een leeg
+ * wit veld zweeft, de letters van het merk uit elkaar getrokken tot aan de rand,
+ * en heel kleine kapitalen die middenin het niets een claim doen. En met
+ * ceciliebahnsen.com: schermbrede foto, dan een enorme witte stilte, dan een rij
+ * beelden zonder één bijschrift.
+ *
+ * DE DRIE REGELS VAN DEZE PAGINA:
+ *   1 · Een foto is nooit een banner. Hij hangt in een lege ruimte, raakt de
+ *       rand niet, en heeft lucht om zich heen — behalve één keer, aan het slot.
+ *   2 · Kleur zit in de foto's, niet in de pagina. Het groene licht doet al het
+ *       werk; de UI blijft inkt op koel wit. Het geel komt één keer voluit: de
+ *       laatste zaal.
+ *   3 · Nadruk is geen kleur maar BREEDTE. Het accentwoord in een kop staat in
+ *       Hubot Sans op 125% breedte tussen letters van 78% — een verschil dat je
+ *       voelt voordat je het ziet. Geen gele markering op deze pagina.
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js — precies dezelfde inhoud
+ * als de andere drie concepten en als de huidige voorpagina.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const { c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate, CATALOG_IMAGES, ROSTER, modelId, SFEER } = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+
+/* De vier werken aan de vitrinewand, elk op een andere schaal en hoogte. De
+   schaalsprong is het punt: een klein werk naast een groot werk leest als een
+   ruimte, vier even grote tegels leest als een raster. */
+const WAND = [
+  { beeld: 1, kol: '1 / 8', top: '0' },
+  { beeld: 4, kol: '8 / 13', top: '24vh' },
+  { beeld: 3, kol: '2 / 7', top: '12vh' },
+  { beeld: 2, kol: '7 / 13', top: '2vh' },
+];
+/* De zeven beelden van één set, in de volgorde van de frames. */
+const SET = [1, 5, 4, 2, 3, 7, 6];
+---
+<ConceptLayout
+  title="Concept D · Vitrine — VISUAILS"
+  description="Concept D: de voorpagina als tentoonstelling — foto’s in een lege ruimte, bijna geen letter, kleur alleen in het beeld."
+  lang={lang}
+  grond="zaal"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  {/* De chrome van Gentle Monster: woordmerk klein en gecentreerd, links de
+      zalen, rechts één onderstreepte link. Verder niets. */}
+  <header class="chroom">
+    <nav class="chroom-links" aria-label="Hoofdnavigatie">{c.nav.map(([t, h]) => <a class="lijn" href={h}>{t}</a>)}</nav>
+    <a class="chroom-merk" href={lp('/')} aria-label="VISUAILS">
+      <svg class="woordmerk" viewBox="0 0 1650 278" aria-hidden="true"><use href="#wordmark" /></svg>
+    </a>
+    <a class="lijn chroom-rechts" href={lp('/test-sample')}>{sample.cta}</a>
+  </header>
+
+  <main id="inhoud" class="vitrine">
+
+    {/* ── ZAAL 01 · DE OPENING ────────────────────────────────────────────
+        Eén staand werk midden in de ruimte, de zin eronder. Meer niet. */}
+    <section class="zaal zaal-open" aria-labelledby="h1">
+      <p class="plaat">{nn(1)} — {c.heroChip}</p>
+      <figure class="werk werk-open">
+        <img src={S(6).src} width={S(6).w} height={S(6).h} alt={S(6).alt} fetchpriority="high" decoding="async">
+      </figure>
+      <h1 id="h1" class="zin zin-groot">{c.h1.map((line) => <span class="regel" set:html={line} />)}</h1>
+      <p class="onder">{c.lede}</p>
+      <p class="acties"><a class="lijn" href={lp('/start')}>{c.ctaStart}</a><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a></p>
+      <ul class="feiten" role="list">{c.facts.map((f) => <li>{f}</li>)}</ul>
+    </section>
+
+    {/* ── ZAAL 02 · DE WAND · wat we maken ────────────────────────────────
+        Vier werken, vier schalen, vier hoogtes. Het bijschrift staat er als
+        een museumplaatje onder: nummer, naam, wat het is, wat het kost. */}
+    <section id="maken" class="zaal zaal-wand" aria-labelledby="h-maken">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(2)} — {c.secties[0]}</p>
+        <h2 id="h-maken" class="zin">{c.svcH}</h2>
+        <p class="onder">{c.svcLede}</p>
+      </header>
+      <ul class="wand" role="list">
+        {c.svc.map(([naam, wat, prijs, href], i) => {
+          const w = WAND[i]; const s = S(w.beeld);
+          return (
+            <li class="wand-werk" style={`--kol:${w.kol};--top:${w.top}`}>
+              <a href={lp(href)}>
+                <figure class="werk"><img src={s.src} width={s.w} height={s.h} alt={s.alt} loading="lazy" decoding="async"></figure>
+                <span class="plaatje">
+                  <span class="plaat">{nn(i + 1)}</span>
+                  <span class="plaatje-naam">{naam}</span>
+                  <span class="plaatje-wat">{wat}</span>
+                  <span class="plaatje-prijs">{prijs}</span>
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="voetregel"><span class="plaat">{c.svcSoon[0]}</span> <a class="lijn" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    </section>
+
+    {/* ── ZAAL 03 · HET PREPARAAT · van telefoonfoto naar studioproductie ──
+        De schaalsprong is hier het argument: het ingestuurde beeld hangt als
+        een klein preparaat naast het werk dat eruit is gemaakt. Eén haarlijn
+        loopt van het ene naar het andere, met de vier termen erop. */}
+    <section class="zaal zaal-preparaat" aria-labelledby="h-vn">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(3)} — {c.secties[1]}</p>
+        <h2 id="h-vn" class="zin">{c.vnH}</h2>
+        <p class="onder">{c.vnLede}</p>
+      </header>
+      <div class="preparaat">
+        <figure class="werk werk-klein">
+          <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async">
+          <figcaption class="plaat">{c.vnIn[0]} · {c.vnIn[1]}</figcaption>
+        </figure>
+        <div class="draad" aria-hidden="true">
+          <span class="draad-lijn"></span>
+          <ol class="draad-termen">{c.vnNoten.map((k, i) => <li><b>{nn(i + 1)}</b>{k}</li>)}</ol>
+        </div>
+        <figure class="werk werk-groot">
+          <img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async">
+          <figcaption class="plaat">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
+        </figure>
+      </div>
+      <p class="voetregel"><a class="lijn" href={lp('/gallery')}>{c.vnLink}</a></p>
+    </section>
+
+    {/* ── ZAAL 04 · DE RIJ · één product, zeven beelden ───────────────────
+        Zeven kleine werken op één lijn, gecentreerd in een leeg veld. De
+        splitsing tussen catalog en lifestyle is een haarlijn, geen kop. */}
+    <section class="zaal zaal-rij" aria-labelledby="h-set">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(4)} — {c.secties[2]}</p>
+        <h2 id="h-set" class="zin">{c.setH}</h2>
+        <p class="onder">{c.setLede}</p>
+      </header>
+      <div class="rij-blok">
+        <p class="rij-groepen">
+          <a class="lijn" href={lp(c.setGroups[0][1])} style={`--breed:${CATALOG_IMAGES}`}>{c.setGroups[0][0]}</a>
+          <a class="lijn" href={lp(c.setGroups[1][1])} style={`--breed:${SET.length - CATALOG_IMAGES}`}>{c.setGroups[1][0]}</a>
+        </p>
+        <ol class="rij">
+          {c.frames.map((naam, i) => (
+            <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
+              <img src={S(SET[i]).klein} width="800" height="1000" alt="" decoding="async">
+              <span class="plaat">{nn(i + 1)} {naam}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <ul class="extras" role="list">
+        {c.extras.map(([k, v, href]) => <li><a class="lijn" href={lp(href)}>{k}</a><span>{v}</span></li>)}
+      </ul>
+    </section>
+
+    {/* ── ZAAL 05 · DE WANDTEKST · van map tot lancering ──────────────────
+        Geen beeld. Vier regels in een lege zaal, zoals de tekst naast de deur
+        van een tentoonstelling. Dit is de adempauze van de pagina. */}
+    <section class="zaal zaal-tekst" aria-labelledby="h-st">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(5)} — {c.secties[3]}</p>
+        <h2 id="h-st" class="zin">{c.stepsH}</h2>
+        <p class="onder">{c.stepsLede}</p>
+      </header>
+      <ol class="wandtekst">
+        {c.steps.map(([k, v], i) => <li><span class="plaat">{nn(i + 1)}</span><b>{k}</b><span>{v}</span></li>)}
+      </ol>
+    </section>
+
+    {/* ── ZAAL 06 · DE CATALOGUS · tarieven ───────────────────────────────
+        De prijslijst als catalogusblad: haarlijnen, kleine kapitalen, en de
+        bedragen in de brede snit — de enige plek waar de letter opvalt. */}
+    <section id="tarieven" class="zaal zaal-catalogus" aria-labelledby="h-pr">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(6)} — {c.secties[4]}</p>
+        <h2 id="h-pr" class="zin">{c.priceH}</h2>
+      </header>
+      <div class="blad">
+        <table class="lijst">
+          <thead><tr><th scope="col" class="plaat">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="plaat">{KIND_PAGE[id] ? <a class="lijn" href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+          <tbody>{RUNGS.map((r) => <tr><th scope="row" class="plaat">{r.label}</th>{KINDS.map((id) => <td class="bedrag">{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+        </table>
+        <p class="plaat">{c.priceVat}</p>
+        <p class="acties"><a class="lijn" href={lp('/start')}>{c.priceCta}</a><a class="lijn" href={lp('/pricing')}>{c.priceCta2}</a></p>
+      </div>
+      <div class="blad blad-abo">
+        <h3 class="zin">{c.planH}</h3>
+        <p class="onder">{c.planLede}</p>
+        <table class="lijst">
+          <thead><tr>{c.planCols.map((k) => <th scope="col" class="plaat">{k}</th>)}</tr></thead>
+          <tbody>{PLANS.map((pl) => <tr><th scope="row"><a class="lijn" href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td class="bedrag">{pl.products}</td><td class="bedrag">{PLAN_CLIPS[pl.id] || '—'}</td><td class="bedrag">{pl.price}</td></tr>)}</tbody>
+        </table>
+        <p class="plaat">{c.planVat}</p>
+        <p class="acties"><a class="lijn" href={lp('/start/plan')}>{c.planCta}</a><a class="lijn" href={lp('/plans')}>{c.planLink}</a></p>
+      </div>
+    </section>
+
+    {/* ── ZAAL 07 · HET ACHTERHUIS · Studio ───────────────────────────────
+        Eén liggend werk, en ernaast de twee beloften als bijschrift. */}
+    <section id="studio" class="zaal zaal-studio" aria-labelledby="h-sd">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(7)} — {c.secties[5]}</p>
+        <h2 id="h-sd" class="zin">{c.studioH}</h2>
+        <p class="onder">{c.studioLede}</p>
+      </header>
+      <figure class="werk werk-liggend">
+        <img src={S(8).src} width={S(8).w} height={S(8).h} alt={S(8).alt} loading="lazy" decoding="async">
+      </figure>
+      <ul class="beloften" role="list">{c.beloften.map(([k, v]) => <li><b>{k}</b><span>{v}</span></li>)}</ul>
+      <p class="acties"><a class="lijn" href={lp('/portal')}>{c.studioLink}</a><a class="lijn" href={lp('/studio')}>{c.studioLink2}</a></p>
+    </section>
+
+    {/* ── ZAAL 08 · DE CAST · gezichten ───────────────────────────────────
+        Tien kleine portretten op één lijn, met de naam eronder — een rolbezetting. */}
+    <section id="gezichten" class="zaal zaal-cast" aria-labelledby="h-gz">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(8)} — {c.secties[6]}</p>
+        <h2 id="h-gz" class="zin">{c.facesH}</h2>
+        <p class="onder">{c.facesLede}</p>
+      </header>
+      <ul class="cast" role="list">
+        {ROSTER.map((m) => <li><a href={`${lp('/models')}#${modelId(m.name)}`}><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"><span class="plaat">{m.name}</span></a></li>)}
+      </ul>
+      <p class="acties"><a class="lijn" href={lp('/custom-models')}>{c.facesLink}</a><a class="lijn" href={lp('/models')}>{c.facesLink2}</a></p>
+    </section>
+
+    {/* ── ZAAL 09 · DE BALIE · direct antwoord ────────────────────────────*/}
+    <section class="zaal zaal-balie" aria-labelledby="h-q">
+      <header class="zaal-kop">
+        <p class="plaat">{nn(9)}</p>
+        <h2 id="h-q" class="zin">{c.qH}</h2>
+      </header>
+      <ul class="vragen" role="list">
+        {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="lijn" href={lp(href)}>{l}</a></li>)}
+        <li><span></span><a class="lijn" href={lp('/faq')}>{c.qAll}</a></li>
+      </ul>
+    </section>
+
+    {/* ── HET SLUITSTUK ──────────────────────────────────────────────────
+        De enige foto op deze pagina die de rand raakt. Hij staat er waar de
+        pagina van kijken naar kopen gaat: één beeld over de volle breedte,
+        zonder tekst erop behalve het plaatje in de hoek. Regel 1 van deze
+        pagina zegt dat een foto de rand niet raakt — dit is de uitzondering
+        die de regel hoorbaar maakt. */}
+    <figure class="vol">
+      <img src={S(3).src} width={S(3).w} height={S(3).h} alt={S(3).alt} loading="lazy" decoding="async">
+      <figcaption class="plaat">{c.labels[0]} · {c.heroChip} · {c.labels[2]}</figcaption>
+    </figure>
+
+    {/* ── ZAAL 10 · DE GELE ZAAL · de proef ───────────────────────────────
+        De enige zaal met kleur op de wand. Eén zin, één link. */}
+    <section class="zaal zaal-geel op-geel" aria-labelledby="h-sl">
+      <p class="plaat">{nn(10)} — {c.secties[7]}</p>
+      <h2 id="h-sl" class="zin zin-groot">{c.closeH}</h2>
+      <p class="onder">{c.closeLede}</p>
+      <p class="acties"><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a><a class="lijn" href={lp('/start')}>{c.closeAlt}</a></p>
+    </section>
+  </main>
+
+  <footer class="voet">
+    <ul class="trust" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+    <span class="plaat">{c.posterLine[0]} · {c.posterLine[1]}</span>
+  </footer>
+</ConceptLayout>
+
+<style is:global>
+  /* NADRUK IS BREEDTE, GEEN KLEUR — alleen op deze pagina.
+     ConceptLayout zet een geel blok achter <em>; hier komt het accentwoord uit
+     de kop en uit set:html, dus die regel is niet te bereiken met een gescoopte
+     selector. Dit blok zet hem om: 125% breed tussen letters van 78% smal. Geen
+     geel op deze pagina behalve de laatste zaal en het licht in de foto's. */
+  .vitrine .zin em { background: none; padding: 0; font-stretch: 125%; letter-spacing: -.01em; }
+</style>
+
+<style>
+  /* ── DE RUIMTE ────────────────────────────────────────────────────────────
+     Een zaal is minstens een scherm hoog en zet alles gecentreerd in het
+     midden. De ruimte tussen twee zalen is er niet: de leegte in de zaal zelf
+     doet dat werk, precies zoals bij Gentle Monster tussen twee campagnes. */
+  .vitrine { --lucht: clamp(4rem, 11vh, 9rem); }
+  .zaal { min-height: 100svh; padding: 12vh var(--x) 10vh; display: grid; justify-items: center; align-content: center; gap: var(--lucht); text-align: center; }
+  .zaal-kop { display: grid; justify-items: center; gap: 1.4rem; max-width: 46rem; }
+
+  /* ── DE TWEE STEMMEN, allebei stil ──────────────────────────────────────
+     Eén zin per zaal in Hubot smal, en verder uitsluitend kapitalen van 10px.
+     Er is geen derde maat: dat is wat de pagina rustig houdt. */
+  .zin { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(1.35rem, 2.5vw, 2.3rem); line-height: 1.14; letter-spacing: -.02em; max-width: 24ch; text-wrap: balance; color: var(--inkt); }
+  .zin-groot { font-size: clamp(1.9rem, 3.8vw, 3.4rem); max-width: 20ch; }
+  .regel { display: block; }
+  .onder { font-size: .95rem; line-height: 1.6; color: var(--inkt-2); max-width: 46ch; text-wrap: pretty; }
+  .plaat { font-family: var(--mono); font-size: .625rem; font-weight: 400; letter-spacing: .18em; text-transform: uppercase; line-height: 1.5; color: var(--inkt-3); }
+  .plaat b { color: var(--inkt); font-weight: 400; margin-right: .5em; }
+
+  /* De enige linkvorm: tekst met een haarlijn eronder. Geen pillen, geen
+     kaders — Gentle Monster heeft er precies één ("MORE"). */
+  .lijn { font-family: var(--mono); font-size: .625rem; letter-spacing: .18em; text-transform: uppercase; color: var(--inkt); border-bottom: 1px solid var(--inkt); padding-bottom: .28em; transition: color .3s var(--uit), border-color .3s var(--uit); }
+  .lijn:hover { color: var(--inkt-3); border-color: var(--inkt-3); }
+  .acties { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem 2.5rem; }
+  .voetregel { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 1rem; }
+
+  /* ── EEN WERK HANGT, HET VULT NIET ──────────────────────────────────────
+     Geen kader, geen schaduw, geen radius. Alleen het beeld, met lucht
+     eromheen, en een heel trage aanloop. */
+  /* Lucas, 6 september: *"de foto's wil ik groter hebben, niet in de lengte, ik
+     wil ze in 1 scherm zichtbaar hebben maar ze mogen wel het scherm vullen."*
+     Dus: elk werk wordt zo groot als het kan — tot de volle breedte van zijn
+     kolom — maar nooit hoger dan één scherm. Twee grenzen, en de kleinste wint:
+     max-width neemt de breedte, max-height (--hoog) neemt de hoogte. Een liggend
+     beeld vult daardoor de breedte, een staand of vierkant beeld vult de hoogte,
+     en je ziet altijd de hele foto zonder te scrollen. */
+  .werk { display: grid; gap: 1.1rem; justify-items: center; --hoog: 82svh; }
+  .werk img { width: auto; height: auto; max-width: 100%; max-height: var(--hoog); }
+  @media (prefers-reduced-motion: no-preference) {
+    .werk img { animation: komop 1.6s var(--uit) both; animation-timeline: view(); animation-range: entry 0% entry 42%; }
+    @keyframes komop { from { opacity: 0; transform: scale(1.015); } }
+    @supports not (animation-timeline: view()) { .werk img { animation: none; } }
+  }
+
+  /* ── ZAAL 01 ────────────────────────────────────────────────────────────*/
+  .zaal-open { padding: 11vh var(--x) 9vh; gap: clamp(1.4rem, 3vh, 2.4rem); }
+  .zaal-open .feiten { margin-top: clamp(1.5rem, 5vh, 4rem); }
+  .werk-open { width: 100%; --hoog: 74svh; }
+  .feiten { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 3rem; font-family: var(--mono); font-size: .625rem; letter-spacing: .14em; text-transform: uppercase; color: var(--inkt-3); }
+
+  /* ── ZAAL 02 · de wand ──────────────────────────────────────────────────*/
+  .zaal-wand { align-content: start; }
+  .wand { width: 100%; max-width: 92rem; display: grid; grid-template-columns: repeat(12, 1fr); column-gap: clamp(1rem, 3vw, 3rem); row-gap: clamp(6rem, 14vh, 12rem); text-align: left; }
+  .wand-werk { grid-column: var(--kol); margin-top: var(--top); }
+  .wand-werk a { display: grid; gap: 1.1rem; }
+  .plaatje { display: grid; gap: .3rem; max-width: 30ch; opacity: .55; transition: opacity .4s var(--uit); }
+  .wand-werk a:hover .plaatje { opacity: 1; }
+  .plaatje-naam { font-size: .95rem; color: var(--inkt); }
+  .plaatje-wat, .plaatje-prijs { font-size: .82rem; color: var(--inkt-2); }
+  @media (max-width: 820px) { .wand { grid-template-columns: 1fr; row-gap: 5rem; } .wand-werk { grid-column: 1; margin-top: 0; } .werk-open { --hoog: 62svh; } }
+
+  /* ── ZAAL 03 · het preparaat ────────────────────────────────────────────*/
+  .preparaat { width: 100%; display: grid; grid-template-columns: 9rem minmax(6rem, 1fr) minmax(0, 52rem); align-items: center; gap: clamp(1rem, 3vw, 3rem); }
+  .preparaat .werk-groot { --hoog: 78svh; }
+  .werk-klein figcaption, .werk-groot figcaption { justify-self: start; }
+  .draad { display: grid; gap: .9rem; justify-items: center; }
+  .draad-lijn { display: block; width: 100%; height: 1px; background: var(--lijn-sterk); }
+  .draad-termen { display: flex; justify-content: space-between; width: 100%; font-family: var(--mono); font-size: .625rem; letter-spacing: .14em; text-transform: uppercase; color: var(--inkt-3); }
+  .draad-termen b { color: var(--inkt); font-weight: 400; margin-right: .5em; }
+  @media (max-width: 820px) {
+    .preparaat { grid-template-columns: 1fr; justify-items: center; }
+    .werk-klein { width: 9rem; }
+    .draad-lijn { width: 1px; height: 4rem; justify-self: center; }
+    .draad-termen { flex-wrap: wrap; justify-content: center; gap: .5rem 1.5rem; }
+  }
+
+  /* ── ZAAL 04 · de rij ───────────────────────────────────────────────────*/
+  .rij-blok { width: 100%; display: grid; gap: 1rem; }
+  .rij-groepen { display: grid; grid-template-columns: 4fr 3fr; gap: clamp(.4rem, 1vw, 1rem); text-align: left; }
+  .rij-groepen a { justify-self: start; }
+  .rij { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(.4rem, 1vw, 1rem); border-top: 1px solid var(--lijn-sterk); padding-top: 1rem; }
+  .rij li { display: grid; gap: .6rem; text-align: left; }
+  .rij img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .extras { display: grid; gap: .5rem; justify-items: center; }
+  .extras li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: .8rem; font-size: .85rem; color: var(--inkt-2); }
+  @media (max-width: 820px) { .rij { grid-template-columns: repeat(4, 1fr); } .rij-groepen { grid-template-columns: 1fr; gap: .4rem; } }
+
+  /* ── ZAAL 05 · de wandtekst ─────────────────────────────────────────────*/
+  .wandtekst { display: grid; gap: 2.6rem; max-width: 34rem; }
+  .wandtekst li { display: grid; gap: .45rem; }
+  .wandtekst b { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: 1.25rem; letter-spacing: -.015em; }
+  .wandtekst span:last-child { font-size: .9rem; color: var(--inkt-2); line-height: 1.6; }
+
+  /* ── ZAAL 06 · de catalogus ─────────────────────────────────────────────*/
+  .zaal-catalogus { align-content: start; }
+  .blad { width: 100%; max-width: 58rem; display: grid; gap: 2.2rem; justify-items: center; }
+  .blad-abo { margin-top: clamp(5rem, 12vh, 10rem); }
+  .lijst { width: 100%; }
+  .lijst th, .lijst td { text-align: left; padding: 1.15rem .8rem 1.15rem 0; border-bottom: 1px solid var(--lijn); vertical-align: baseline; }
+  .lijst thead th { border-bottom-color: var(--inkt); padding-top: 0; }
+  .lijst tbody th { font-weight: 400; width: 22%; }
+  .bedrag { font-family: var(--kop); font-stretch: 125%; font-weight: 400; font-size: clamp(1.05rem, 1.9vw, 1.5rem); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .abo-regel { display: block; font-size: .8rem; color: var(--inkt-3); margin-top: .3rem; max-width: 24ch; }
+  @media (max-width: 620px) { .lijst th, .lijst td { padding: .8rem .4rem .8rem 0; } .abo-regel { display: none; } }
+
+  /* ── ZAAL 07 · Studio ───────────────────────────────────────────────────*/
+  .werk-liggend { width: 100%; --hoog: 80svh; }
+  .beloften { display: grid; gap: 1.4rem; max-width: 40rem; }
+  .beloften b { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: 1.05rem; display: block; margin-bottom: .3rem; }
+  .beloften span { font-size: .88rem; color: var(--inkt-2); }
+
+  /* ── ZAAL 08 · de cast ──────────────────────────────────────────────────*/
+  .cast { width: 100%; max-width: 82rem; display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(.4rem, 1vw, 1rem); }
+  .cast a { display: grid; gap: .7rem; }
+  .cast img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: grayscale(1) contrast(1.05); transition: filter .5s var(--uit); }
+  .cast a:hover img { filter: none; }
+  @media (max-width: 820px) { .cast { grid-template-columns: repeat(5, 1fr); } }
+
+  /* ── ZAAL 09 · de balie ─────────────────────────────────────────────────*/
+  .vragen { width: 100%; max-width: 52rem; display: grid; text-align: left; }
+  .vragen li { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 1.5rem; padding: 1.3rem 0; border-top: 1px solid var(--lijn); font-size: .95rem; }
+  .vragen li:last-child { border-bottom: 1px solid var(--lijn); }
+  @media (max-width: 620px) { .vragen li { grid-template-columns: 1fr; gap: .7rem; } }
+
+  /* ── ZAAL 10 · de gele zaal ─────────────────────────────────────────────*/
+  .zaal-geel { background: var(--geel); color: var(--inkt); }
+  .zaal-geel .onder, .zaal-geel .plaat { color: var(--inkt); }
+
+  /* ── HET SLUITSTUK ──────────────────────────────────────────────────────*/
+  .vol { position: relative; width: 100%; height: min(88svh, 52rem); }
+  .vol img { width: 100%; height: 100%; object-fit: cover; }
+  /* Het plaatje staat op de foto, dus het krijgt zijn eigen grond mee: een
+     smalle veeg onderin. Zonder die veeg valt lichtgrijs op een lichte plek in
+     het beeld weg — en dat gebeurt hier, want de trui is fel. */
+  .vol::after { content: ""; position: absolute; inset: auto 0 0; height: 6rem; background: linear-gradient(rgb(17 17 17 / 0), rgb(17 17 17 / .55)); pointer-events: none; }
+  .vol figcaption { position: absolute; left: var(--x); bottom: 1.6rem; color: var(--vel); z-index: 1; }
+
+  /* ── DE CHROME ──────────────────────────────────────────────────────────*/
+  .chroom { position: fixed; inset: 0 0 auto; z-index: 10; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem; padding: 1.5rem var(--x); background: linear-gradient(#F3F4F6 55%, rgb(243 244 246 / 0)); }
+  .chroom-links { display: flex; gap: 1.75rem; }
+  .chroom-merk { width: 7.5rem; justify-self: center; border: 0; }
+  .chroom-merk .woordmerk { fill: var(--inkt); }
+  .chroom-rechts { justify-self: end; }
+  @media (max-width: 820px) { .chroom-links, .chroom-rechts { display: none; } .chroom { justify-items: center; grid-template-columns: 1fr; } }
+
+  .voet { display: grid; justify-items: center; gap: 1.2rem; padding: 0 var(--x) clamp(3rem, 7vh, 6rem); text-align: center; }
+  .trust { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 2.5rem; font-family: var(--mono); font-size: .625rem; letter-spacing: .14em; text-transform: uppercase; color: var(--inkt-3); }
+</style>

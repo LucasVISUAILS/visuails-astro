@@ -190,7 +190,7 @@
 // own COPY table is never read from here, and importing it would put half the
 // Dutch for one step in a file no translator opens.
 import {
-  SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromPath, extraShotId,
+  SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productStem, productKeyFromPath, extraShotId,
   /* De GRATIS referentievakken. Lucas, 13 augustus 2026: *"Ook wil ik dat het
      mogelijk word voor een bezoeker om meer foto’s toe te voegen van zijn product
      kosteloos door op een plusje naast de 4 aanbevolen foto’s te klikken. Dit zorgt
@@ -265,6 +265,16 @@ let missingOk = false;
 // Step 2. `cards` is the product list — one per product on the order, each with
 // four slots — and `tray` is what arrived without a product we could name.
 let cards = [];
+/* Het aantal producten dat de KLANT koos, en dus de bodem waar de knop
+   "Weghalen" niet onder mag komen — zie minCards(). Hij staat hier tussen de
+   andere moduletoestand en niet bij minCards() zelf: boot() draait voordat het
+   midden van dit bestand is uitgevoerd, en een `let` die dan nog niet aan de
+   beurt is geweest, gooit bij aanraking een ReferenceError die de hele
+   bind-ronde afbreekt. Precies dat gebeurde bij de eerste versie hiervan. */
+let bodemProducten = 0;
+/* Staat aan terwijl "nog een product"/"weghalen" zelf het aantal bijwerkt, zodat
+   die wijziging niet als keuze van de klant wordt geteld. */
+let telViaKnop = false;
 let tray = [];
 let trayN = 0;
 let traySig = ''; // what the tray last rendered, so it is not rebuilt per file
@@ -2172,8 +2182,55 @@ function shotListText(ids) {
  * geen ander aanbod opleveren dan een aanwezige.
  */
 function maxCards() {
+  /* Het proefbeeld is er één per bedrijf, één keer. Dan is één kaart ook het
+     maximum — Lucas, 4 september: *"Bij test sample kan klant een tweede
+     product kiezen terwijl je voor 1 product per bedrijf kan bestellen nooit
+     meer."* Zonder deze regel viel /test-sample in de "aantal onbekend"-tak
+     (er staat geen keuzelijst voor het aantal op die pagina) en kreeg hij dus
+     de knop "Nog een product toevoegen". */
+  if (cfg && cfg.sample) return 1;
   const cap = Math.floor(Number(cfg && cfg.maxProducts));
   return cap > 0 ? cap : 30;
+}
+
+/**
+ * Hoeveel kaarten er MINSTENS staan: het aantal dat de klant ZELF op stap 1
+ * koos, en niet het aantal van dit moment.
+ *
+ * Lucas: *"Wanneer de klant vanaf het begin 5 producten heeft gekozen kan hij
+ * niet kiezen om eentje te verwijderen, hij kan alleen extra producten die hij
+ * op dat scherm heeft toegevoegd verwijderen en niet lager gaan dan 5."*
+ *
+ * Dat "vanaf het begin" is de hele moeilijkheid. De knop "nog een product"
+ * verhoogt sinds vandaag óók het aantal op stap 1 (anders lopen de foto's en de
+ * rekening uiteen — zie de noot bij de knop), dus het live aantal is altijd
+ * gelijk aan het aantal kaarten en kan de bodem niet zijn. De bodem is het
+ * laatste aantal dat de KLANT heeft gekozen: `bodemProducten`, dat alleen
+ * bijwerkt bij een wijziging die niet van deze twee knoppen komt.
+ */
+function onteltBodem() {
+  if (telViaKnop) return;
+  const n = productCount();
+  bodemProducten = Number.isInteger(n) && n > 0 ? n : 0;
+}
+function minCards() {
+  const bodem = bodemProducten > 0 ? bodemProducten : 1;
+  return Math.max(1, Math.min(bodem, maxCards()));
+}
+
+/** Kan er nog een product bij? Zie de noot bij de knop in bindUploader(). */
+function kanErbij() {
+  if (cards.length >= maxCards()) return false;
+  const n = productCount();
+  if (!Number.isInteger(n)) return true;
+  const sel = q('select[name="products"]');
+  return !!(sel && [...sel.options].some((o) => Number(o.value) === n + 1));
+}
+
+/** De knop staat er alleen als hij iets kan. Eén regel, twee aanroepers. */
+function syncAddKnop() {
+  const add = q('[data-pl-add]');
+  if (add) add.hidden = !kanErbij();
 }
 
 function cardLabel(card) {
@@ -2265,15 +2322,48 @@ function bindUploads() {
     // quoted for three, with the two screens contradicting each other and
     // neither flagging it. A card list that can disagree with the price is
     // worse than a card list that cannot grow.
-    const syncAdd = () => { add.hidden = !Number.isNaN(productCount()); };
-    syncAdd();
+    /* ── DE KNOP TELT NU MEE — 4 september 2026 ──────────────────────────────
+       Hij stond alleen bij een ONBEKEND aantal ("meer dan N"), met een goede
+       reden: hij voegde een kaart toe zonder select[name="products"] aan te
+       raken, en dan uploadde je foto's voor vijf producten terwijl je er drie
+       betaalde. Twee schermen die elkaar tegenspraken.
+
+       De oplossing is niet de knop weghalen maar hem het AANTAL laten
+       bijwerken: één product erbij is één kaart erbij én één product erbij op
+       de rekening. Daarmee kan de knop overal staan, en dat is wat een klant
+       met één product extra verwacht. Kan het aantal niet mee (de lijst kent
+       die waarde niet, of we zitten aan het plafond), dan doet de knop niets en
+       staat hij er ook niet. */
+    onteltBodem();
+    syncAddKnop();
     document.addEventListener('change', (e) => {
-      if (e.target && e.target.name === 'products') syncAdd();
+      if (!e.target || e.target.name !== 'products') return;
+      onteltBodem();
+      syncAddKnop();
+      /* En opnieuw schilderen: syncOrder() heeft de kaarten al bijgewerkt vóór
+         deze regel (beide hangen aan hetzelfde change-event), dus zonder dit
+         staat de weghaalknop nog op de bodem van dáárvoor. */
+      cards.forEach(paintCard);
     });
     add.addEventListener('click', () => {
-      if (cards.length >= maxCards()) return;
-      addCard();
-      refreshUploader();
+      if (!kanErbij()) return;
+      const n = productCount();
+      const sel = q('select[name="products"]');
+      if (Number.isInteger(n) && sel) {
+        /* Het aantal ophogen en de rest laten volgen: `change` roept syncOrder
+           aan, die het tarief, de stap en syncCards() bijwerkt — daar wordt de
+           kaart gemaakt. Zo is er één plek die weet hoeveel kaarten er horen.
+           `telViaKnop` zegt tegen onteltBodem() dat deze wijziging van de knop
+           komt en dus niet de bodem is. */
+        telViaKnop = true;
+        sel.value = String(n + 1);
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        telViaKnop = false;
+      } else {
+        addCard();
+        refreshUploader();
+      }
+      syncAddKnop();
       const last = cards[cards.length - 1];
       if (last && last.input) last.input.focus();
     });
@@ -2382,18 +2472,18 @@ function walkEntry(entry, prefix, out, depth) {
 /**
  * What is left of a filename once the word naming the angle is taken out.
  *
- * TSHIRT-01-front.jpg → TSHIRT-01, and so does TSHIRT-01-back.jpg, which is how
- * two loose files with no folder between them end up on the same card. A token
- * is dropped when guessShot() recognises it ON ITS OWN, so the test here and
- * the test that picks the slot are the same test — one table, in shots.js.
+ * DEZE FUNCTIE STOND HIER, EN DAT WAS DE FOUT — 7 september 2026. Hij splitste
+ * de naam zelf en riep guessShot() aan op elk LOS token. Een aanwijzing van twee
+ * woorden ("on model", "close-up") kon zo nooit als geheel herkend worden: het
+ * shot werd goed geraden op het losse woord en de andere helft bleef aan de
+ * productnaam plakken. `hoodie-on-model.jpg` maakte een product "hoodie-on" dat
+ * om zijn eigen voor- en achterkant vroeg, en daar liep de klant vast.
+ *
+ * Twee lezingen van dezelfde tabel is één te veel. productStem() staat nu in
+ * shots.js, naast guessShot(), en gebruikt dezelfde lijst met dezelfde
+ * langste-eerst-volgorde. Zie de noot daar.
  */
-function stemOf(name) {
-  const base = String(name || '').replace(/\.[A-Za-z0-9]+$/, '');
-  return base
-    .split(/[^A-Za-z0-9]+/)
-    .filter((part) => part && !guessShot(part))
-    .join('-');
-}
+const stemOf = (name) => productStem(name);
 
 /**
  * A drop, distributed. Folders first, then loose files that name their angle,
@@ -2551,7 +2641,38 @@ function buildCard(card) {
   const state = document.createElement('span');
   state.className = 'pu-state';
 
-  head.append(num, input, toggle, state);
+  /* ── EN WEER WEG — 4 september 2026 ──────────────────────────────────────
+     Een product dat je per ongeluk toevoegde, moet je kunnen terugnemen. Alleen
+     de LAATSTE kaart draagt de knop, en alleen boven het bestelde aantal (zie
+     minCards). Alleen de laatste, omdat de kaarten `p1`, `p2`, `p3` heten en
+     die sleutel bij elke geüploade foto in R2 staat: een kaart uit het midden
+     weghalen zou de rest moeten hernummeren, en dan hoort de foto van product 3
+     ineens bij product 2. Wat er wél gebeurt met foto's op een kaart die weggaat:
+     ze vallen in de bak onderaan (`trayAdd` in dropCard), niet in de prullenbak. */
+  const weg = document.createElement('button');
+  weg.type = 'button';
+  weg.className = 'pu-weg';
+  weg.hidden = true;
+  weg.textContent = c('pu.dropCard');
+  weg.addEventListener('click', () => {
+    if (cards.length <= minCards() || cards[cards.length - 1] !== card) return;
+    const n = productCount();
+    const sel = q('select[name="products"]');
+    if (Number.isInteger(n) && sel && [...sel.options].some((o) => Number(o.value) === n - 1)) {
+      /* Net als bij toevoegen: het AANTAL is de waarheid en syncCards() volgt. */
+      telViaKnop = true;
+      sel.value = String(n - 1);
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      telViaKnop = false;
+    } else {
+      dropCard(card);
+      refreshUploader();
+    }
+    syncAddKnop();
+  });
+  card.wegEl = weg;
+
+  head.append(num, input, toggle, state, weg);
 
   const slots = document.createElement('div');
   slots.className = 'pu-slots';
@@ -2698,7 +2819,8 @@ function buildAbout(card) {
     card.answers[qn.id] = ctrl;
   });
 
-  wrap.appendChild(buildExtras(card));
+  const extras = buildExtras(card);
+  if (extras) wrap.appendChild(extras);
 
   // THE FIRST CARD CARRIES THE COPY-DOWN, and only the first. A button on
   // every card is 25 buttons doing 25 slightly different things; one, at the
@@ -2988,14 +3110,42 @@ function buildRefs(card, slots) {
 }
 
 function buildExtras(card) {
+  /* ── NIET BIJ DE PROEF — 4 september 2026 ─────────────────────────────────
+     Dezelfde fout als de knop "nog een product", en gevonden door ernaar te
+     zoeken toen Lucas die aanwees: /test-sample bood vier bijbestelde foto's
+     van € 35 aan op een proef die € 1 kost en één product groot is. De toeslag
+     voor een compleet setje was hier al om precies dezelfde reden weggehaald
+     (zie de noot bij `outfit_count` in OrderFlow.astro): een proef is één vast
+     bedrag, dus mag er geen enkele vraag in staan die daar geld bij optelt. */
+  if (cfg && cfg.sample) return null;
+
   const wrap = document.createElement('div');
   wrap.className = 'pu-extra';
 
   const max = Math.max(0, Math.floor(Number(cfg.maxExtraPerProduct) || 0));
 
+  /* ── EEN BLOK MET EEN PRIJSKAARTJE, GEEN VOETNOOT — 4 september 2026 ───────
+     Lucas: *"Ook extra foto's beter in het bestelproces per product verwerken.
+     Dit kost de klant extra geld dus dit moet wat serieuzer dan een klein
+     blokje onderin."*
+
+     Wat er stond: een kopje van 0,74rem, een keuzelijst, en het tarief eronder
+     in 0,7rem grijs. Alles klopte en niets woog. Een keuze die geld kost, hoort
+     te lezen als een keuze die geld kost — dus: een eigen omkaderd blok, een
+     kop op leesformaat met het tarief ernaast, één zin die zegt wát je koopt,
+     en zodra er één gekozen is een regel die het BEDRAG noemt (niet het tarief,
+     het bedrag) plus een accentrand om het blok. */
   const head = document.createElement('span');
   head.className = 'pu-extra-h';
   head.textContent = c('pu.extraH');
+
+  const wat = document.createElement('p');
+  wat.className = 'pu-extra-wat';
+  wat.textContent = c('pu.extraWhat');
+
+  const som = document.createElement('p');
+  som.className = 'pu-extra-som';
+  som.hidden = true;
 
   const countField = document.createElement('div');
   countField.className = 'pu-q pu-extra-count';
@@ -3062,10 +3212,12 @@ function buildExtras(card) {
     if (ph) note.placeholder = ph;
     note.dataset.plReq = '1';
     note.dataset.plErrMsg = c('pu.extraNoteErr', { n: i });
-    const hint = document.createElement('span');
-    hint.className = 'pu-q-hint';
-    hint.textContent = c('pu.extraShotHint');
-    noteField.append(noteLabel, note, hint);
+    /* De regel "een voorbeeldfoto mag, hoeft niet" stond hier per rij, en met
+       vier extra foto's stond hij dus vier keer op één kaart. Sinds het blok
+       zelf één zin heeft die zegt wat een extra foto is (`extraWhat`, boven de
+       teller), is dit dezelfde uitleg nog een keer — precies de vermenigvuldiging
+       waar de kop van ProductUploader.astro tegen waarschuwt. */
+    noteField.append(noteLabel, note);
     row.appendChild(noteField);
 
     rows.appendChild(row);
@@ -3092,6 +3244,14 @@ function buildExtras(card) {
       if (card.slots[r.id] && (card.slots[r.id].file || card.slots[r.id].key)) clearSlot(card, r.id);
     });
     rate.textContent = c('pu.extraRate', { rate: euro(extraRateNow()), max });
+    /* Het bedrag, en pas als er iets gekozen is. Nul extra foto's kosten niets
+       en verdienen dus ook geen regel die over geld gaat. */
+    const bedrag = n * extraRateNow();
+    som.hidden = n < 1;
+    som.textContent = n === 1
+      ? c('pu.extraSumOne', { sum: euro(bedrag) })
+      : c('pu.extraSum', { n, rate: euro(extraRateNow()), sum: euro(bedrag) });
+    wrap.classList.toggle('is-aan', n > 0);
     // De verplichting van de notities hangt aan zichtbaarheid, dus na elke
     // wijziging opnieuw laten bepalen.
     syncRequired();
@@ -3102,7 +3262,11 @@ function buildExtras(card) {
   card.paintExtra = paint;
   paint();
 
-  wrap.append(head, countField, rows, rate);
+  /* De volgorde is het argument: wat het is, wat het kost, wat je krijgt,
+     hoeveel je er wilt, wat dat bij elkaar is, en dan pas de invulvelden. Het
+     tarief stond onderaan, ná de velden — de prijs las je dus pas nadat je had
+     gekozen. */
+  wrap.append(head, rate, wat, countField, som, rows);
   return wrap;
 }
 
@@ -3229,11 +3393,26 @@ function buildSlot(card, id) {
   img.addEventListener('load', () => { card.slots[id].thumb = true; paintSlot(card, id); });
   img.addEventListener('error', () => { card.slots[id].thumb = false; paintSlot(card, id); });
 
+  /* ── HET VINKJE, VOOR EEN VAKJE ZONDER VOORBEELD — 4 september 2026 ────────
+     Lucas: *"Wanneer productfoto's zijn toegevoegd [graag] per tegel wel
+     tonen."* Dat gebeurt ook — zodra de browser het bestand kan tekenen, vult
+     de foto het vakje (zie `.is-thumb`). Alleen kán de browser dat niet altijd:
+     een HEIC rechtstreeks van een iPhone is op een desktop niet te decoderen,
+     en dan bleef het vakje er precies zo uitzien als een LEEG vakje — dezelfde
+     tekening, dezelfde uitleg. Alleen de regel eronder verschilde.
+
+     Dit is het verschil dat er dan wel is: een vinkje over de tekening, zodat
+     "deze is binnen" van een halve meter af te zien is. */
+  const vink = document.createElement('span');
+  vink.className = 'pu-slot-vink';
+  vink.setAttribute('aria-hidden', 'true');
+  vink.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
+
   const nameEl = document.createElement('span');
   nameEl.className = 'pu-slot-name';
   nameEl.textContent = shotLabel(id);
 
-  btn.append(dia, img, nameEl);
+  btn.append(dia, img, vink, nameEl);
 
   /* De ene regel die zegt wat erin hoort — sinds 3 september staat de uitleg
      onder de kaarten ingeklapt, dus het vakje draagt hem zelf. */
@@ -3451,6 +3630,10 @@ function paintCard(card) {
 
   card.el.classList.toggle('is-ready', ready);
   card.el.classList.toggle('is-collapsed', card.collapsed);
+  /* De verwijderknop hoort bij de laatste kaart, en alleen boven het bestelde
+     aantal. Hij wordt hier geschilderd en niet bij het bouwen, want beide
+     voorwaarden veranderen terwijl de kaart al bestaat. */
+  if (card.wegEl) card.wegEl.hidden = !(cards[cards.length - 1] === card && cards.length > minCards());
   if (card.toggleEl) card.toggleEl.setAttribute('aria-expanded', card.collapsed ? 'false' : 'true');
   if (card.stateEl) card.stateEl.textContent = ready ? c('pu.ready') : c('pu.needsShots', { list: shotListText(missingRequired(card)) });
   SHOT_IDS.forEach((id) => paintSlot(card, id));
@@ -3493,8 +3676,7 @@ function refreshUploader() {
   syncCopyDown(cards[0]);
   const out = q('[data-pl-progress]');
   if (out) out.textContent = progressText();
-  const add = q('[data-pl-add]');
-  if (add) add.hidden = cards.length >= maxCards();
+  syncAddKnop();
   renderTray();
 }
 
@@ -4589,6 +4771,12 @@ function addOwnStyles(me) {
       grid.insertBefore(tile, grid.firstElementChild);
     }
     syncSummaries();
+    /* En als er nu een look aangevinkt staat — de eigen stijl uit de URL, of de
+       huisstijl die het script van StylePicker al had aangevinkt — dan vouwt het
+       raster op tot één regel. Die functie hoort bij StylePicker (daar staat de
+       markup) en wordt hier alleen aangeroepen, want dit is het moment waarop
+       de laatste tegel bestaat. */
+    if (typeof window.__visLookVast === 'function') window.__visLookVast();
     return;
   }
 
@@ -4646,7 +4834,7 @@ function addOwnStyles(me) {
    naam in het accent. Alleen tekens die in een SVG-tekstknoop mogen. */
 function ownLookPlaceholder(name) {
   const tekst = escHtml(String(name || '').slice(0, 24));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#141414"/><text x="24" y="264" font-family="Archivo, Arial, sans-serif" font-size="22" font-weight="700" fill="#C6F100">${tekst}</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1C1D18"/><text x="24" y="264" font-family="Hanken Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="#D2E04A">${tekst}</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
@@ -4986,7 +5174,7 @@ function runGate() {
   gateShow('checking');
 
   /* DE SOORT MOET MEE, WANT HET PLAFOND HANGT ERVAN AF — 31 augustus 2026.
-     De poort rekent in beelden: dertig catalogsets zijn er 120 en dertig complete
+     De poort rekent in punten: dertig catalogsets zijn er 120 en dertig complete
      producten 210. Zonder deze parameter antwoordt het endpoint met 'complete',
      het zwaarste gewicht, en krijgt een catalogbestelling minder dagen aangeboden
      dan er werkelijk vrij zijn. Uit het formulier en niet uit het configblok, om

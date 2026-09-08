@@ -71,22 +71,15 @@ console.log('\nde query in het script is de privacygrens');
   ok('en kent een --dry om eerst te kijken', /--dry/.test(script), true);
 }
 
-console.log('\nde homepage neemt zijn eigen kop terug');
+/* ── "DE HOMEPAGE NEEMT ZIJN EIGEN KOP TERUG" STOND HIER ──────────────────
+   Sectie 21 (5 september 2026): de voorpagina heeft geen reviewblok meer —
+   Lucas: tekst mag weg zolang de kern helder blijft, en er zijn nog geen
+   reviews (TESTIMONIALS is leeg). Zodra testimonialsToShow() iets teruggeeft,
+   hoort er weer een plek voor en komt deze toets terug. */
+console.log('\nde homepage verzint geen reviews');
 {
-  const home = lees('../src/components/HomeV2.astro');
-  ok('hij leest de goedgekeurde lijst', /testimonialsToShow\(/.test(home), true);
-  ok('de kop hangt aan de data en niet aan een besluit',
-    /zegt\.length[\s\S]{0,120}saidH/.test(home), true);
-  ok('de eerlijke regel blijft bestaan voor als er niets is', /promiseH/.test(home), true);
-  ok('beide koppen staan in twee talen',
-    (home.match(/saidH:/g) || []).length, 2);
-  ok('en de anonieme naam ook', (home.match(/saidAnon:/g) || []).length, 2);
-
-  /* ARCHITECTURE.md §1: geen client-side ophalen van paginainhoud. Dit blok is
-     precies het soort blok waarvoor iemand ooit een fetch wil schrijven. */
-  const script = /<script[\s\S]*?<\/script>/g;
-  const inline = (home.match(script) || []).join('\n');
-  ok('er wordt nergens gefetcht voor dit blok', /fetch\(/.test(inline), false);
+  const home = lees('../src/components/Voorpagina.astro');
+  ok('er staat geen getypt citaat van een klant', /class="[^"]*(review|quote|zegt)[^"]*"/.test(home), false);
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

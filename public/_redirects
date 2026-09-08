@@ -78,7 +78,7 @@
 # it: the link in the confirmation email carries the token, and /o without a
 # token renders the "you need the link from your email" page rather than a
 # 404 — which is exactly what someone arriving on an old bookmark needs to
-# read. functions/o/index.js exists for this redirect.
+# read. src/pages/o/[...token].js serves /o without a token as well as with one.
 #
 # Both languages land on /o. There is no /nl/o: the portal is one Function
 # that reads the order's own `lang` column, so it answers in the language the

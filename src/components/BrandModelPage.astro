@@ -84,6 +84,7 @@ import { localizedPath } from '../i18n/ui.js';
 import Placeholder from './Placeholder.astro';
 
 import ServiceSwitch from './ServiceSwitch.astro';
+import '../styles/stijl22.css';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -137,17 +138,25 @@ const brandModel = {
 // Intrinsic sizes, per photo, because these four are NOT all the same shape:
 // 01 and 02 are 800x1071, 04 and 05 are 1200x1200. One shared width/height on
 // the <img> reserved a square box for two portraits, which is layout shift.
+/* De zes gedeelde gezichten achter het merkmodel in de hero. Kleine derivaten
+   (380px, zie scripts/make-thumbs.mjs): ze worden getekend in vakjes van
+   ongeveer 150 px en de hero is het eerste wat binnenkomt. */
+const WALL = ['aaron', 'ava', 'elias', 'ryan', 'dana', 'rae']
+  .map((n) => ({ src: `/img/model-${n}-w380.webp`, w: 380, h: 509 }));
+
 const EXAMPLES = [
   { src: '/img/custom-models-01.webp', w: 800, h: 1071 },
-  { src: '/img/custom-models-02.webp', w: 800, h: 1071 },
+  /* -02 staat sinds 4 september in de hero (zie de noot daar) en -03 is Rae uit
+     de standaardbibliotheek — een gedeeld gezicht hoort niet in een raster dat
+     "echt geleverd werk" heet op de pagina over exclusieve gezichten. */
   { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
   { src: '/img/custom-models-05.webp', w: 1200, h: 1200 },
-  // These two were bare strings in a list of {src,w,h} objects, so the markup's
-  // `photo.src` read undefined and both shipped as <img> with no src, no width
-  // and no height — a third of the evidence grid blank, on the one page whose
-  // whole argument is finished work.
-  { src: '/img/model-raw-01.webp', w: 1344, h: 1800 },
-  { src: '/img/model-raw-02.webp', w: 1344, h: 1800 },
+  /* ── EN HIER STONDEN DEZELFDE TWEE MENSEN NOG EEN KEER — 4 september 2026 ──
+     model-raw-01 en model-raw-02 zijn andere BESTANDEN dan custom-models-04 en
+     -05, maar het zijn dezelfde twee gezichten in een andere uitsnede. In een
+     raster van zes stonden dus vier mensen, waarvan twee dubbel — op de sectie
+     die "echt geleverd werk" heet. Vier verschillende gezichten zeggen wat zes
+     met twee dubbelgangers niet zeggen. */
 ];
 
 // ── Copy ───────────────────────────────────────────────────────────────────
@@ -171,7 +180,17 @@ const COPY = {
     ctaPrimary: 'Start your Brand Model',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hi VISUAILS, I\'d like to discuss a brand model.',
-    heroAlt: 'A VISUAILS brand model portrait',
+    heroAlt: 'One brand model portrait, in front of six faces from the shared library',
+    /* ── DE MUUR IN DE HERO — 4 september 2026 ────────────────────────────────
+       Lucas: *"Op dit moment wordt een standaard inbegrepen modelfoto gebruikt
+       in de header en 2x achter elkaar, wat ik er echt totaal niet mooi uit vind
+       zien."* Klopte: /img/custom-models-03.webp en /img/model-03.webp zijn
+       byte voor byte hetzelfde bestand, en ze stonden onder elkaar op één
+       scherm. Wat er nu staat, is geen tweede portret maar het VERSCHIL dat deze
+       pagina verkoopt: zes gedeelde gezichten achter één dat van jou alleen is. */
+    castShared: 'Shared library',
+    castYours: 'Your brand model',
+    castNote: 'An example. Yours is a face that is not in this picture — that is the point.',
     trust: [
       ['One-time', 'setup, then it is yours'],
       ['Exclusive', 'to your brand, permanently'],
@@ -311,7 +330,11 @@ const COPY = {
     ctaPrimary: 'Start je merkmodel',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi VISUAILS, ik wil graag een merkmodel bespreken.',
-    heroAlt: 'Een portret van een VISUAILS merkmodel',
+    heroAlt: 'Eén merkmodel-portret, vóór zes gezichten uit de vaste reeks',
+    /* Zie de Engelse tegenhanger. */
+    castShared: 'Vaste reeks',
+    castYours: 'Jouw merkmodel',
+    castNote: 'Een voorbeeld. Dat van jou staat niet op deze foto — dat is precies het punt.',
     trust: [
       ['Eén keer betalen', 'daarna is het gezicht van jou'],
       ['Exclusief', 'voor jouw merk, permanent'],
@@ -469,477 +492,381 @@ const steps = STEPS[lang];
 const wa = waHref(c.waText);
 ---
 
-<!-- HERO -->
-<section class="page-hero"><div class="container two-col bm-hero">
-  <div>
-    <p class="eyebrow-page">{c.eyebrow}</p>
-    <h1 class="display bm-h1">{c.h1a}<br /><em>{c.h1b}</em></h1>
-    <p class="lead bm-lead">{c.lead}</p>
-    <div class="flex bm-actions">
-      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/brand-model')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWa}
-      </a>
-    </div>
-    <ServiceSwitch current={['brand-model', 'complete']} lang={lang} />
-    <div class="trust-row bm-trust">
-      {c.trust.map((t) => (
-        <span class="trust-item"><strong>{t[0]}</strong> {t[1]}</span>
-      ))}
-    </div>
-  </div>
-  <div class="photo-split-media"><img src="/img/custom-models-03.webp" alt={c.heroAlt} decoding="sync" width="800" height="1071" fetchpriority="high" /></div>
-</div></section>
+{/* ═══ /custom-models IN DE STIJL VAN SECTIE 22 — 7 september 2026 ══════════
+    Negende pagina in de stijl. Alles boven deze regel is onaangeraakt: dezelfde
+    COPY in beide talen, dezelfde ROSTER uit models.js, hetzelfde bedrag uit
+    pricing.js met zijn btw-label, dezelfde WALL en EXAMPLES, dezelfde
+    <Placeholder>s met hun opdracht erin. Alleen de opmaak verandert.
 
-<!-- YOUR MODEL, NOT A MODEL -->
-<section class="section-tight"><div class="container">
-  <div class="photo-split reverse reveal pending">
-    <div class="photo-split-media"><img src="/img/model-03.webp" alt={c.notAAlt} loading="lazy" decoding="async" width="800" height="1071" /></div>
-    <div>
-      <h2 set:html={c.notAH} />
-      <p class="lead bm-lead">{c.notALead}</p>
-    </div>
-  </div>
+    ELF SECTIES ZIJN ER TIEN GEWORDEN, en dat is de enige inhoudelijke ingreep:
+    "de richtingen" en "echt geleverd werk" stonden als twee losse secties onder
+    elkaar terwijl ze dezelfde vraag beantwoorden — hoe ziet zo'n gezicht eruit.
+    Ze delen nu één paneel, met elk hun eigen kop. Niets is geschrapt.
 
-  <div class="arrow-rows reveal-group bm-props">
-    {c.props.map((p) => (
-      <div class="arow reveal pending"><h3>{p[0]}</h3><p>{p[1]}</p></div>
-    ))}
-  </div>
-</div></section>
+    TWEE DONKERE KAMERS: waar het past, en waarom geen generator. Dat zijn de
+    twee plekken waar de pagina van tonen naar betogen gaat, en een
+    hoofdstukwissel is precies wat daar hoort. */}
+<div class="s22">
 
-<!-- WHAT IT COSTS.
-     The number is stated before the argument for it, not after. A brand about
-     to spend four figures on exclusivity finds the price eventually; making
-     them hunt for it is the only thing that turns it into a shock. -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.costH}</h2></div>
-
-  <div class="bmcost reveal pending">
-    <div class="bmcost-figures">
-      {/* Op de gedeelde `.bedrag`-vorm sinds 30 augustus 2026. Zie de kop van
-          dat blok in global.css: label, cijfer, eenheid, btw — vier onderdelen
-          die op vier pagina's met vier verschillende klassenamen bestonden en
-          daardoor uit elkaar liepen. Wat hier eigen blijft is de MAAT en de
-          padding, en die staan als variabele op `.bmcost-fig`. */}
-      <div class="bmcost-fig bedrag">
-        <span class="bedrag-label">{c.costSetupLabel}</span>
-        <span class="bedrag-cijfer">{brandModel.price}</span>
-        <span class="bedrag-eenheid">{brandModel.unit}</span>
-        <span class="bedrag-btw bmcost-vat">{c.costSetupVat}</span>
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="bm-h1">
+    <div class="bm-open">
+      <div class="paneel-kop">
+        <p class="etiket">{c.eyebrow}</p>
+        <h1 id="bm-h1" class="hoog">{c.h1a}<br /><em>{c.h1b}</em></h1>
+        <p class="lopend">{c.lead}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start/brand-model')}>{c.ctaPrimary}</a>
+          <a class="knop knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWa}</a>
+        </p>
+        <ServiceSwitch current={['brand-model', 'complete']} lang={lang} />
+        <div class="trust-row bm-trust">
+          {c.trust.map((t) => (
+            <span class="trust-item"><strong>{t[0]}</strong> <span class="trust-label">{t[1]}</span></span>
+          ))}
+        </div>
       </div>
+
+      {/* ── ZES GEDEELDE GEZICHTEN, ÉÉN VAN JOU ────────────────────────────
+          De muur is `aria-hidden`: hij zegt niets wat de tekst niet zegt, en
+          zes lege alt-teksten zijn zes keer niets voor wie voorleest. Het
+          portret ernaast draagt de alt-tekst en het onderschrift, en dat
+          onderschrift zegt er meteen bij dat het een voorbeeld is — geen echt
+          merkmodel van een echte klant. */}
+      <figure class="bm-cast">
+        <div class="bm-muur" aria-hidden="true">
+          {WALL.map((m) => (
+            <span class="kaart kaart-stil bm-muur-vak">
+              <img src={m.src} alt="" width={m.w} height={m.h} loading="lazy" decoding="async" />
+            </span>
+          ))}
+          <span class="mono bm-muur-etiket">{c.castShared}</span>
+        </div>
+        <div class="bm-een">
+          <span class="kaart kaart-stil">
+            <img src="/img/custom-models-02.webp" alt={c.heroAlt} decoding="sync" width="800" height="1071" fetchpriority="high" />
+          </span>
+          <span class="mono bm-een-etiket">{c.castYours}</span>
+        </div>
+        <figcaption class="mono bm-cast-onder">{c.castNote}</figcaption>
+      </figure>
     </div>
+  </section>
 
-    <div class="bmcost-body">
-      <span class="bmcost-inc-h">{c.costIncludes}</span>
-      <ul class="checklist bmcost-inc">
-        {brandModel.includes.map((f) => (
-          <li><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
-        ))}
-      </ul>
-      <p class="bmcost-seq">{c.costSequence}</p>
-    </div>
-  </div>
-
-  <div class="bmcost-notes reveal-group">
-    <div class="bmcost-note reveal pending">
-      <h3>{c.costMathH}</h3>
-      <p>{c.costMath}</p>
-    </div>
-    <div class="bmcost-note reveal pending">
-      <p class="bmcost-free">{c.costFree}</p>
-      <a href={lp('/pricing')} class="link-arrow">{c.costCta}
-        <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
-    </div>
-  </div>
-</div></section>
-
-<!-- WHERE IT FITS -->
-<section class="section-tight"><div class="container">
-  <div class="ed-head">
-    <span class="ed-meta">{c.fitMeta}</span>
-    <div>
-      <h2>{c.fitH}</h2>
-      <p class="ed-sub">{c.fitSub}</p>
-    </div>
-  </div>
-  <!-- Deze pagina verkoopt één ding: hetzelfde gezicht, overal. Dat is een
-       claim die je in twee alinea's kunt uitleggen of in één beeld kunt
-       bewijzen — en de tweede alinea van `fitWhat` deed het eerste. Die is
-       ingekort tot één regel; dit vlak doet nu het bewijs. -->
-  {/* ── DE VERHOUDING VOLGT DE OPDRACHT, 30 AUGUSTUS 2026 ──────────────────
-      Stond op 21/9 en dat is 2,33:1. De opdracht eronder vraagt om ZES kaders
-      naast elkaar, en zes portretkaders van 3:4 naast elkaar zijn samen 4,5:1.
-      Op 21/9 was de gereserveerde plek dus bijna twee keer zo hoog als het
-      beeld dat erin komt — en dat is precies wat een placeholder niet mag doen,
-      want zijn hele reden van bestaan is dat de pagina niet verspringt zodra de
-      foto er is. Dat het ook 267px scheelt op een pagina die ingekort moest
-      worden, is meegenomen en niet de reden. */}
-  <Placeholder
-    lang={lang}
-    space
-    ratio="9 / 2"
-    subject={nl ? 'Zes beelden naast elkaar met hetzelfde merkmodel: twee producten uit de webshop, een advertentie, een e-mailheader, een socialpost en een campagnebeeld'
-                : 'Six frames side by side with the same brand model: two webshop products, an ad, an email header, a social post and a campaign image'}
-    message={nl
-      ? 'Moet bewijzen dat het om één persoon gaat en niet om zes modellen die op elkaar lijken — hetzelfde gezicht moet zó herkenbaar zijn dat je het al ziet voordat je de kaders los bekijkt. Product, kader en kleur mogen per beeld verschillen; alleen het gezicht ligt vast. Dat verschil is de hele boodschap: het merk komt van het gezicht, niet van de set.'
-      : 'Must prove this is one person and not six lookalikes — the same face has to be recognisable before you even look at the frames separately. Product, framing and colour may differ per frame; only the face is fixed. That contrast is the whole message: the brand comes from the face, not from the set.'}
-  />
-
-  <div class="svc-explain">
-    <div class="svc-explain-main">
-      <h3>{c.fitWhatH}</h3>
-      {c.fitWhat.map((p) => <p>{p}</p>)}
-    </div>
-    <aside class="svc-explain-side">
-      <h3>{c.fitWhereH}</h3>
-      <ul class="svc-where-list">
-        {c.fitWhere.map((w) => (
-          <li><strong>{w[0]}</strong> — {w[1]}</li>
-        ))}
-      </ul>
-    </aside>
-  </div>
-</div></section>
-
-<!-- DIRECTIONS -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.dirH}</h2><p>{c.dirLead}</p></div>
-  <div class="grid bm-dirs reveal-group">
-    {directions.map((d) => (
-      <div class="card bm-dir reveal pending">
-        <div class="monogram" aria-hidden="true">{d[0]}</div>
-        <h3>{d[1]}</h3>
-        <p>{d[2]}</p>
-      </div>
-    ))}
-  </div>
-</div></section>
-
-<!-- REAL OUTPUT -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.outH}</h2></div>
-  <div class="grid grid-3 reveal-group">
-    {EXAMPLES.map((photo, i) => (
-      <div class="reveal pending">
-        <div class="photo-band square"><img src={photo.src} alt={`${c.outAlt} ${i + 1}`} loading="lazy" decoding="async" width={photo.w} height={photo.h} /></div>
-      </div>
-    ))}
-  </div>
-</div></section>
-
-<!-- HOW IT COMES TOGETHER -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.procH}</h2></div>
-  <!-- Vijf stappen als tekst vertellen WAT er gebeurt; dit vlak laat zien hoe
-       het eruitziet terwijl het gebeurt. Het staat vóór de stappen en niet
-       erna: wie het proces al herkent hoeft de vijf regels niet meer te
-       lezen. -->
-  {/* 16/9 was 1,78:1, en dat gaf de grootste lege doos van de site: 698px.
-      Drie portretten naast elkaar plus een kolom aantekeningen is vier kolommen
-      van 3:4, oftewel 3:1. Zelfde redenering als bij het vlak hierboven. */}
-  <Placeholder
-    lang={lang}
-    space
-    ratio="3 / 1"
-    subject={nl ? 'Een richtingenblad: drie voorgestelde gezichten naast elkaar, met aantekeningen van de klant erbij en één ervan aangekruist'
-                : 'A directions sheet: three proposed faces side by side, the client’s notes beside them and one of them ticked'}
-    message={nl
-      ? 'Moet laten zien dat dit een gesprek is en geen bestelknop — er wordt iets voorgelegd, er wordt op gereageerd, er wordt gekozen. De drie gezichten moeten duidelijk verschillen (leeftijd, houding, styling), anders lijkt het een keuze zonder keuze. De aantekeningen mogen onleesbaar zijn; dat er óp het werk geschreven is, is het punt.'
-      : 'Must show this is a conversation, not a buy button — something is proposed, responded to, chosen. The three faces have to differ clearly (age, posture, styling), or it reads as a choice without a choice. The notes may be illegible; that someone wrote on the work is the point.'}
-  />
-  <div class="steps reveal-group">
-    {steps.map((s, i) => (
-      <div class="step reveal pending">
-        <span class="step-n">{String(i + 1).padStart(2, '0')}</span>
-        <h3>{s[0]}</h3>
-        <p>{s[1]}</p>
-      </div>
-    ))}
-  </div>
-</div></section>
-
-<!-- WHAT YOU SEND / WHAT YOU GET -->
-<section class="section-tight"><div class="container two-col bm-exchange">
-  <div class="card reveal pending">
-    <h3>{c.giveH}</h3>
-    <ul class="checklist bm-exchange-list">
-      {c.give.map((g) => (
-        <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
+  {/* ── 2 · JOUW MODEL, GEEN MODEL ───────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="bm-nota">
+    <header class="paneel-kop">
+      <h2 id="bm-nota" class="hoog hoog-2" set:html={c.notAH} />
+      <p class="lopend">{c.notALead}</p>
+    </header>
+    <ul class="bm-props" role="list">
+      {c.props.map((p) => (
+        <li><b>{p[0]}</b><span class="lopend">{p[1]}</span></li>
       ))}
     </ul>
-  </div>
-  <div class="card bm-get reveal pending">
-    <h3>{c.getH}</h3>
-    <ul class="checklist bm-exchange-list">
-      {c.get.map((g) => (
-        <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
+  </section>
+
+  {/* ── 3 · WAT HET KOST ─────────────────────────────────────────────────────
+      Het getal staat vóór het argument ervoor en niet erna. Een merk dat op het
+      punt staat vier cijfers aan exclusiviteit uit te geven vindt de prijs
+      uiteindelijk toch; ze laten zoeken is het enige dat er een schrik van
+      maakt. */}
+  <section class="paneel" aria-labelledby="bm-kost">
+    <header class="paneel-kop">
+      <h2 id="bm-kost" class="hoog hoog-2">{c.costH}</h2>
+    </header>
+    <div class="bm-kost">
+      <p class="bm-bedrag">
+        <span class="etiket">{c.costSetupLabel}</span>
+        <span class="tarief bm-cijfer">{brandModel.price}</span>
+        <span class="mono">{brandModel.unit} · {c.costSetupVat}</span>
+      </p>
+      <div class="bm-inbegrepen">
+        <p class="etiket">{c.costIncludes}</p>
+        <ul class="bm-vink" role="list">
+          {brandModel.includes.map((f) => <li>{f}</li>)}
+        </ul>
+        <p class="lopend bm-volgorde">{c.costSequence}</p>
+      </div>
+    </div>
+    <div class="bm-kost-noten">
+      <div>
+        <h3 class="hoog hoog-3">{c.costMathH}</h3>
+        <p class="lopend">{c.costMath}</p>
+      </div>
+      <div>
+        <p class="lopend">{c.costFree}</p>
+        <p class="acties"><a class="pijl" href={lp('/pricing')}>{c.costCta}</a></p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 4 · WAAR HET PAST ────────────────────────────────────────────────── */}
+  <section class="kamer bm-kamer" aria-labelledby="bm-past">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <p class="etiket">{c.fitMeta}</p>
+      <h2 id="bm-past" class="hoog hoog-2">{c.fitH}</h2>
+      <p class="lopend">{c.fitSub}</p>
+    </header>
+
+    <Placeholder
+      lang={lang}
+      space
+      ratio="9 / 2"
+      subject={nl ? 'Zes beelden naast elkaar met hetzelfde merkmodel: twee producten uit de webshop, een advertentie, een e-mailheader, een socialpost en een campagnebeeld'
+                  : 'Six frames side by side with the same brand model: two webshop products, an ad, an email header, a social post and a campaign image'}
+      message={nl
+        ? 'Moet bewijzen dat het om één persoon gaat en niet om zes modellen die op elkaar lijken — hetzelfde gezicht moet zó herkenbaar zijn dat je het al ziet voordat je de kaders los bekijkt. Product, kader en kleur mogen per beeld verschillen; alleen het gezicht ligt vast. Dat verschil is de hele boodschap: het merk komt van het gezicht, niet van de set.'
+        : 'Must prove this is one person and not six lookalikes — the same face has to be recognisable before you even look at the frames separately. Product, framing and colour may differ per frame; only the face is fixed. That contrast is the whole message: the brand comes from the face, not from the set.'}
+    />
+
+    <div class="bm-twee">
+      <div class="bm-uitleg">
+        <h3 class="hoog hoog-3">{c.fitWhatH}</h3>
+        {c.fitWhat.map((p) => <p class="lopend">{p}</p>)}
+      </div>
+      <aside class="bm-waar">
+        <h3 class="hoog hoog-3">{c.fitWhereH}</h3>
+        <ul class="bm-waar-lijst" role="list">
+          {c.fitWhere.map((w) => <li><b>{w[0]}</b><span class="lopend">{w[1]}</span></li>)}
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  {/* ── 5 · DE RICHTINGEN, EN WAT ERUIT KOMT ────────────────────────────────
+      Dit waren twee secties onder elkaar. Ze beantwoorden dezelfde vraag — hoe
+      ziet zo'n gezicht eruit — dus delen ze één paneel: eerst waaruit je kunt
+      kiezen, dan wat er in het echt uit kwam. */}
+  <section class="paneel" aria-labelledby="bm-richting">
+    <header class="paneel-kop">
+      <h2 id="bm-richting" class="hoog hoog-2">{c.dirH}</h2>
+      <p class="lopend">{c.dirLead}</p>
+    </header>
+    <ul class="bm-richtingen" role="list">
+      {directions.map((d) => (
+        <li>
+          <span class="bm-letter" aria-hidden="true">{d[0]}</span>
+          <b>{d[1]}</b>
+          <span class="lopend">{d[2]}</span>
+        </li>
       ))}
     </ul>
-  </div>
-</div></section>
 
-<!-- THE STANDARD LIBRARY — a taste, not the full roster (task #268; see the
-     file header for why). It sits below the Brand Model argument rather than
-     above it because this page's job is the exclusive face; the library is
-     the alternative you already have, and saying so plainly is what makes
-     the Brand Model an honest upsell rather than a gate. TOONBAAR van de roster,
-     not all ten: the full roster now has its own page at /models, and
-     showing all ten here again would put the same ten portraits on two
-     pages for search engines to index as duplicate content. -->
-<section class="section-tight" id="standard"><div class="container">
-  <div class="ed-head">
-    <span class="ed-meta">{c.libMeta}</span>
-    <div>
-      <h2>{c.libH}</h2>
-      <p class="ed-sub">{c.libLead}</p>
-    </div>
-  </div>
-
-  {/* ── DRIE GEZICHTEN, EN TWEE WEGEN ERVANDAAN — 30 AUGUSTUS 2026 ─────────
-      Lucas: *"modellen sectie ook visueel inkorten door 3 model fotos te laten
-      zien, klanten kunnen er dan meer over lezen en op die pagina alle 10 de
-      inclusieve modellen bekijken of voor een custom tailored model gaan."*
-
-      Wat hier stond: vier portretten plus een vijfde tegel "laat ons matchen"
-      met een eigen kop, een eigen alinea en een eigen link. Vijf cellen, 114
-      woorden, 817 pixels — op een pagina die met elf secties en 11.194 pixels
-      tot de drukste van de site hoorde.
-
-      DRIE EN NIET VIER, en dat is niet alleen "één minder". Drie portretten in
-      dit raster vullen op elke breedte precies één rij; vier klapten op een
-      middenbreedte naar 2×2 en dan stond er een halve rij wit onder een sectie
-      die alleen maar een voorproefje is.
-
-      MINDER TEGELS IS NIET VANZELF MINDER HOOGTE, en dat is de val waar dit
-      bijna in liep. Drie portretten over de volle schil zijn breder dan vijf,
-      en met `aspect-ratio: 4/5` dus ook hóger: de eerste versie van deze cel
-      werd 1038px waar er 817px stond. De maat op de rij en de noot ernaast
-      staan in global.css uitgelegd; het resultaat is 690px op 1280 en 1087px
-      op 390 — waar dat laatste 2071px was toen ze op smal onder elkaar
-      stonden.
-
-      DE VIJFDE TEGEL IS EEN REGEL GEWORDEN. "Laat ons er een kiezen" is een
-      tweede antwoord op dezelfde vraag — welk gezicht — en dat hoort geen eigen
-      tegel te zijn met een eigen kop. Zelfde regel als op de homepage bij het
-      abonnement onder de prijs. Het aanbod is niet weg: het staat nu in de
-      lead, waar het bij de andere twee keuzes staat.
-
-      EN TWEE WEGEN ERVANDAAN, allebei zichtbaar: alle tien op /models, of een
-      gezicht dat alleen van jou is. Dat tweede is de pagina waar de bezoeker al
-      staat, dus wijst die link naar de bestelstap en niet naar de pagina zelf. */}
-  {/* DE NOOT STAAT ERNAAST EN NIET ERONDER.
-      Drie portretten vullen de schil niet meer — ze zijn met opzet zo breed
-      als de vier van gisteren, anders wordt een voorproefje van drie hóger
-      dan de vier die het vervangt. Daardoor bleef rechts een halve kolom wit
-      staan, en een noot van dertig woorden past daar precies in. Dat is
-      dezelfde regel als op de ingekorte homepage bij het voor/na-paar: bewijs
-      links, wat je erover moet weten ernaast, niet eronder. Onder 62rem
-      stapelt het en krijgt de noot zijn scheidingslijn terug. */}
-  <div class="bm-lib-split">
-    <div class="bm-roster bm-roster-kort reveal-group">
-      {ROSTER.slice(0, TOONBAAR).map((m) => (
-        <figure class="bm-model reveal pending">
-          <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
-          <figcaption>
-            <span class="bm-model-name">{m.name}</span>
-            <span class="bm-model-traits">{m.traits.map((t) => c.traits[t]).join(' · ')}</span>
-          </figcaption>
-        </figure>
+    <h3 class="hoog hoog-3 bm-uit-kop">{c.outH}</h3>
+    <ul class="bm-uit" role="list">
+      {EXAMPLES.map((photo, i) => (
+        <li>
+          <span class="kaart kaart-stil">
+            <img src={photo.src} alt={`${c.outAlt} ${i + 1}`} loading="lazy" decoding="async" width={photo.w} height={photo.h} />
+          </span>
+        </li>
       ))}
-    </div>
+    </ul>
+  </section>
 
-    <p class="bm-lib-note">
-      {c.libNote}
-      <span class="bm-lib-wegen">
-        <a class="link-arrow" href={lp('/models')}>{c.libAllCta}
-          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <a class="link-arrow" href={lp('/start/brand-model')}>{c.libOwnCta}
-          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-      </span>
+  {/* ── 6 · HOE HET TOT STAND KOMT ───────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="bm-proces">
+    <header class="paneel-kop">
+      <h2 id="bm-proces" class="hoog hoog-2">{c.procH}</h2>
+    </header>
+    {/* Vijf stappen als tekst vertellen WAT er gebeurt; dit vlak laat zien hoe
+        het eruitziet terwijl het gebeurt. Het staat vóór de stappen: wie het
+        proces al herkent hoeft de vijf regels niet meer te lezen. */}
+    <Placeholder
+      lang={lang}
+      ratio="3 / 1"
+      subject={nl ? 'Een richtingenblad: drie voorgestelde gezichten naast elkaar, met aantekeningen van de klant erbij en één ervan aangekruist'
+                  : 'A directions sheet: three proposed faces side by side, the client’s notes beside them and one of them ticked'}
+      message={nl
+        ? 'Moet laten zien dat dit een gesprek is en geen bestelknop — er wordt iets voorgelegd, er wordt op gereageerd, er wordt gekozen. De drie gezichten moeten duidelijk verschillen (leeftijd, houding, styling), anders lijkt het een keuze zonder keuze. De aantekeningen mogen onleesbaar zijn; dat er óp het werk geschreven is, is het punt.'
+        : 'Must show this is a conversation, not a buy button — something is proposed, responded to, chosen. The three faces have to differ clearly (age, posture, styling), or it reads as a choice without a choice. The notes may be illegible; that someone wrote on the work is the point.'}
+    />
+    <ol class="bm-stappen">
+      {steps.map((s, i) => (
+        <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{s[0]}</b><span class="lopend">{s[1]}</span></li>
+      ))}
+    </ol>
+  </section>
+
+  {/* ── 7 · WAT JE STUURT, WAT JE KRIJGT ─────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="bm-ruil">
+    <div class="bm-ruil">
+      <div>
+        <h2 id="bm-ruil" class="hoog hoog-3">{c.giveH}</h2>
+        <ul class="bm-vink" role="list">
+          {c.give.map((g) => <li set:html={g[1]} />)}
+        </ul>
+      </div>
+      <div class="bm-krijgt">
+        <h2 class="hoog hoog-3">{c.getH}</h2>
+        <ul class="bm-vink" role="list">
+          {c.get.map((g) => <li set:html={g[1]} />)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 8 · DE STANDAARDBIBLIOTHEEK ──────────────────────────────────────────
+      Een voorproefje van de tien en niet de tien: de volledige lijst staat op
+      /models, en ze hier nog een keer zetten geeft twee pagina's met dezelfde
+      tien portretten. Deze sectie staat ONDER het betoog over het eigen gezicht
+      en niet erboven: de bibliotheek is het alternatief dat je al hebt, en dat
+      hardop zeggen is wat het merkmodel een eerlijke upsell maakt.
+
+      Het aanbod "laat ons er een kiezen" is geen eigen tegel maar een regel in
+      de noot ernaast — het is een tweede antwoord op dezelfde vraag. */}
+  <section class="paneel" id="standard" aria-labelledby="bm-bieb">
+    <header class="paneel-kop">
+      <p class="etiket">{c.libMeta}</p>
+      <h2 id="bm-bieb" class="hoog hoog-2">{c.libH}</h2>
+      <p class="lopend">{c.libLead}</p>
+    </header>
+    <div class="bm-bieb">
+      <ul class="bm-rooster" role="list">
+        {ROSTER.slice(0, TOONBAAR).map((m) => (
+          <li>
+            <span class="kaart kaart-stil">
+              <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
+            </span>
+            <b>{m.name}</b>
+            <span class="mono">{m.traits.map((t) => c.traits[t]).join(' · ')}</span>
+          </li>
+        ))}
+      </ul>
+      <div class="bm-bieb-noot">
+        <p class="lopend">{c.libNote}</p>
+        <p class="bm-wegen">
+          <a class="pijl" href={lp('/models')}>{c.libAllCta}</a>
+          <a class="pijl" href={lp('/start/brand-model')}>{c.libOwnCta}</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 9 · WAAROM GEEN GENERATOR ───────────────────────────────────────────
+      Hier stond een vergelijking van twee panelen — "Generieke AI-tool" tegen
+      VISUAILS — met een van onze eigen renders onder het label van een
+      concurrent en drie tekortkomingen eraan gehangen die niemand gemeten had.
+      Dat is een verzonnen resultaat onder de eigen regel van de brief, en
+      overbodig: het argument is sterker zonder stropop. /compare draagt de
+      toolvergelijking. */}
+  <section class="kamer bm-kamer-gen" aria-labelledby="bm-gen">
+    <p class="spook spook-rechts" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <h2 id="bm-gen" class="hoog hoog-2">{c.genH}</h2>
+    </header>
+    <div class="bm-gen">
+      {c.genBody.map((p) => <p class="lopend">{p}</p>)}
+      <p class="acties"><a class="pijl bm-gen-link" href={lp('/compare#ai-tools')}>{c.genCta}</a></p>
+    </div>
+  </section>
+
+  {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="bm-slot">
+    <h2 id="bm-slot" class="hoog">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/start/brand-model')}>{c.ctaStart}</a>
+      <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPricing}</a>
+      <a class="knop knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWaShort}</a>
     </p>
-  </div>
-</div></section>
-
-<!-- WHY NOT A GENERATOR.
-     This replaces the two-panel "Generic AI tool vs VISUAILS" comparison. That
-     block put one of our own renders under a competitor's label and attached
-     three failings to it that no one measured — an invented result under the
-     brief's own rule, and unnecessary: the argument is stronger without a
-     strawman to knock over. /compare carries the tool comparison (§H·5). -->
-<section class="section-tight"><div class="container narrow">
-  <div class="section-head"><h2>{c.genH}</h2></div>
-  <div class="bm-gen reveal pending">
-    {c.genBody.map((p) => <p>{p}</p>)}
-    <a href={lp('/compare#ai-tools')} class="link-arrow">{c.genCta}
-      <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </a>
-  </div>
-</div></section>
-
-<!-- CLOSING -->
-<section class="section-tight"><div class="container">
-  <div class="cta-band reveal pending">
-    <h2 class="display bm-cta-h">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
-    <div class="flex bm-cta-actions">
-      <a href={lp('/start/brand-model')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
-      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPricing}</a>
-      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWaShort}
-      </a>
-    </div>
-  </div>
-</div></section>
+  </section>
+</div>
 
 <style>
-  /* Hard edges, hairlines, two ramps. No radius anywhere on this page — the
-     roster is the one place a radius would have crept back in, because round
-     avatars are the web's default for faces. Squares read as plates in a
-     lookbook, which is what they are. */
-  .container.narrow { max-width: 760px; }
+  .bm-open { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .92fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .bm-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
 
-  .bm-hero { align-items: center; }
-  /* Was een met de hand ingetypte clamp, teken voor teken gelijk aan het
-     token. Zie de noot bij --t-page-h1 in global.css: "paginatitel" had geen
-     token en werd daarom 53 keer opnieuw ingetypt, met acht verschillende
-     maten als resultaat. */
-  .bm-h1 { font-size: var(--t-page-h1); max-width: 16ch; }
-  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
-     --font-editorial comment. Scoped to this page's own h1 em, same reasoning
-     as HomePage.astro's equivalent override. */
-  .bm-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
-  .bm-lead { margin-top: 1.2rem; }
-  .bm-actions { margin-top: 1.8rem; }
-  .bm-trust { margin-top: 2.4rem; }
-  .bm-props { grid-template-columns: repeat(2, 1fr); margin-top: clamp(2.5rem, 5vw, 4rem); }
+  /* Zes gedeelde gezichten in een raster van drie bij twee, en ernaast het ene
+     dat van jou is — groter, en met het gele etiket. Het verschil in MAAT is
+     het argument; de kleur bevestigt het alleen. */
+  .bm-cast { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: clamp(.7rem, 2vw, 1.2rem); align-items: end; }
+  .bm-muur { display: grid; grid-template-columns: repeat(2, 1fr); gap: .4rem; align-content: end; }
+  .bm-muur-vak { border-radius: calc(var(--ronding) - 16px); }
+  .bm-muur-vak img { width: 100%; height: 100%; object-fit: cover; opacity: .55; filter: grayscale(1); }
+  .bm-muur-etiket, .bm-een-etiket { grid-column: 1 / -1; color: var(--inkt-2); }
+  .bm-een { display: grid; gap: .5rem; }
+  .bm-een .kaart { aspect-ratio: 3 / 4; }
+  .bm-een img { width: 100%; height: 100%; object-fit: cover; }
+  .bm-een-etiket { color: var(--inkt); }
+  .bm-een-etiket::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--geel); margin-right: .5em; translate: 0 -.15em; }
+  .bm-cast-onder { grid-column: 1 / -1; margin-top: .4rem; color: var(--inkt-2); text-transform: none; letter-spacing: 0; font-size: .78rem; }
 
-  @media (max-width: 720px) { .bm-props { grid-template-columns: 1fr; } }
+  /* De vier beloften onder elkaar, elk op een eigen regel met een lijn ertussen
+     — geen kaartjes. Zie de noot bij `.paneel` in stijl22.css: rand, vulling en
+     ronding zeggen "los ding", en dit zijn vier zinnen over één ding. */
+  .bm-props { display: grid; }
+  .bm-props li { display: grid; grid-template-columns: minmax(0, 20rem) minmax(0, 34rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
+  .bm-props li:last-child { border-bottom: 1px solid var(--lijn); }
+  .bm-props b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; }
 
-  /* COST — the figures band. Two numbers, a hairline between them, then the
-     inclusions. The credit is shown as a negative so the pair reads as one
-     sum rather than as two unrelated prices. */
-  .bmcost { display: grid; grid-template-columns: minmax(280px, 26rem) 1fr; border: 1px solid var(--line-strong); }
-  .bmcost-figures { display: grid; grid-template-rows: 1fr auto 1fr; border-right: 1px solid var(--line-strong); }
-  /* `.bmcost-key`, `-amount` en `-unit` stonden hier en zijn `.bedrag-label`,
-     `.bedrag-cijfer` en `.bedrag-eenheid` geworden. Wat overblijft is wat aan
-     DEZE plek hoort: de padding van de cel, en een eigen cijfermaat — 3rem in
-     plaats van de 3,6rem die de vorm standaard geeft, want dit bedrag staat in
-     een kolom van 26rem en niet over de volle breedte. */
-  .bmcost-fig { padding: clamp(1.4rem, 3vw, 2.2rem); --bedrag-maat: clamp(2rem, 4.4vw, 3rem); }
-  .bmcost-rule { height: 1px; background: var(--line-strong); }
-  /* Under the figure, not beside it: at this type size a trailing "excl. VAT"
-     either shrinks the price or wraps, and an unreadable VAT label is the same
-     failure as no VAT label. Same call /pricing's .anchor-vat makes. Alleen de
-     marge is nog eigen; de rest komt van `.bedrag-btw`. */
-  .bmcost-vat { display: block; margin-top: .45rem; }
-  .bmcost-body { padding: clamp(1.4rem, 3vw, 2.2rem); display: flex; flex-direction: column; gap: 1rem; }
-  .bmcost-inc-h { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-  .bmcost-inc { margin: 0; }
-  .bmcost-seq { font-size: .9rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; margin: auto 0 0; }
-  @media (max-width: 860px) {
-    .bmcost { grid-template-columns: 1fr; }
-    .bmcost-figures { grid-template-rows: none; border-right: 0; border-bottom: 1px solid var(--line-strong); }
+  .bm-kost { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .bm-bedrag { display: grid; gap: .4rem; justify-items: start; }
+  .bm-bedrag .mono { color: var(--inkt-2); }
+  .bm-cijfer { font-size: clamp(2.4rem, 6vw, 4rem); line-height: .95; }
+  .bm-inbegrepen { display: grid; gap: .9rem; }
+  .bm-vink { display: grid; gap: .7rem; }
+  .bm-vink li { position: relative; padding-left: 1.5rem; color: var(--inkt-2); }
+  .bm-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .bm-vink :global(a) { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
+  .bm-volgorde { font-size: .92rem; }
+  .bm-kost-noten { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .bm-kost-noten h3 { margin-bottom: .6rem; }
+
+  .bm-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; margin-top: clamp(2.5rem, 5vw, 4rem); }
+  .bm-uitleg { display: grid; gap: .9rem; }
+  .bm-waar { padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); display: grid; gap: .9rem; }
+  .bm-waar-lijst { display: grid; gap: .7rem; }
+  .bm-waar-lijst li { display: grid; gap: .2rem; }
+  .bm-waar-lijst b { font-weight: 500; }
+
+  /* Negen richtingen in drie kolommen. De letter is een monogram en geen
+     nummer: het is geen volgorde maar een lijst waar je uit kiest. */
+  .bm-richtingen { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1rem, 2.5vw, 2rem) clamp(1.5rem, 3vw, 3rem); }
+  .bm-richtingen li { display: grid; gap: .35rem; align-content: start; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .bm-letter { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.6rem; line-height: 1; color: var(--inkt-2); }
+  .bm-richtingen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em; }
+  .bm-richtingen .lopend { font-size: .92rem; }
+
+  .bm-uit-kop { margin-top: clamp(2.5rem, 5vw, 4rem); }
+  .bm-uit { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); margin-top: 1.4rem; }
+  .bm-uit .kaart { aspect-ratio: 3 / 4; }
+  .bm-uit img { width: 100%; height: 100%; object-fit: cover; }
+
+  .bm-stappen { display: grid; margin-top: clamp(2rem, 4vw, 3rem); }
+  .bm-stappen li { display: grid; grid-template-columns: auto minmax(0, 20rem) minmax(0, 32rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
+  .bm-stappen li:last-child { border-bottom: 1px solid var(--lijn); }
+  .bm-stappen .nr { color: var(--inkt-2); }
+  .bm-stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; }
+
+  .bm-ruil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .bm-ruil h2 { margin-bottom: 1.2rem; }
+  .bm-krijgt { padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
+
+  .bm-bieb { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .bm-rooster { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); }
+  .bm-rooster li { display: grid; gap: .5rem; }
+  .bm-rooster .kaart { aspect-ratio: 4 / 5; }
+  .bm-rooster img { width: 100%; height: 100%; object-fit: cover; }
+  .bm-rooster b { font-weight: 500; }
+  .bm-rooster .mono { font-size: .72rem; color: var(--inkt-2); }
+  .bm-bieb-noot { display: grid; gap: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .bm-wegen { display: grid; gap: .8rem; justify-items: start; }
+
+  .bm-gen { display: grid; gap: .9rem; max-width: 46rem; }
+  .bm-gen-link { color: var(--geel-letter); }
+
+  @media (max-width: 900px) {
+    .bm-open, .bm-kost, .bm-twee, .bm-ruil, .bm-bieb, .bm-kost-noten { grid-template-columns: 1fr; }
+    .bm-cast { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); }
+    .bm-props li { grid-template-columns: 1fr; gap: .4rem; }
+    .bm-richtingen { grid-template-columns: repeat(2, 1fr); }
+    .bm-stappen li { grid-template-columns: auto 1fr; }
+    .bm-stappen li .lopend { grid-column: 2; }
+    .bm-uit, .bm-rooster { grid-template-columns: repeat(2, 1fr); }
   }
-
-  .bmcost-notes { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(1.2rem, 3vw, 2.4rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
-  .bmcost-note h3 { font-size: 1.05rem; margin: 0 0 .5rem; }
-  .bmcost-note p { color: var(--ink-2); font-size: .96rem; line-height: 1.65; margin: 0; }
-  .bmcost-free { color: var(--ink-3); }
-  .bmcost-note .link-arrow { margin-top: .9rem; }
-  @media (max-width: 860px) { .bmcost-notes { grid-template-columns: 1fr; } }
-
-  /* DIRECTIONS */
-  .bm-dirs { grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); }
-  .bm-dir { display: flex; flex-direction: column; gap: .9rem; }
-  .bm-dir h3 { font-size: 1.05rem; margin: 0; }
-  .bm-dir p { font-size: .9rem; color: var(--ink-3); margin: 0; }
-  .monogram { width: 56px; height: 56px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 1.3rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line-strong); }
-
-  /* EXCHANGE */
-  .bm-exchange { align-items: start; }
-  .bm-exchange-list { margin-top: var(--gap-head-block); }
-  .bm-get { border-color: var(--line-strong); }
-
-  /* THE ROSTER — .bm-roster/.bm-model/etc. moved to global.css (task #268):
-     /models now renders the same roster grid, so the rules live where both
-     pages can reach them instead of only here. */
-
-  /* THE GENERATOR ANSWER — prose, deliberately. The block it replaced was two
-     image panels; the whole point of removing it was that the argument does
-     not need a picture of a strawman. */
-  .bm-gen p { color: var(--ink-2); font-size: 1.02rem; line-height: 1.7; margin: 0 0 1rem; }
-  .bm-gen p:last-of-type { margin-bottom: 1.2rem; }
-
-  .bm-cta-h { font-size: var(--t-page-h2); }
-  .bm-cta-actions { justify-content: center; margin-top: 2rem; }
-
-  /* ═══════════════════════════════════════════════════════════════════════════
-     DE GLOED OM DE FOTO — 27 AUGUSTUS 2026
-     ═══════════════════════════════════════════════════════════════════════════
-
-     Lucas: *"Ik zou bij custom models wel een soort gloed willen hebben op de
-     buitenlijnen waar de foto in zit, kleur kan wit of toxic groen zijn maar
-     kijk even wat mooi is en er exclusief en leuk uitziet."*
-
-     ── LIME EN NIET WIT, EN DAT IS EEN MEETBARE KEUZE ─────────────────────────
-
-     Wit lag voor de hand en is hier de zwakste van de twee. De heldere portretten
-     op deze pagina staan op een lichtgrijze studio-achtergrond (#EDEDEE aan de
-     randen gemeten). Een witte gloed komt dus uit een rand die zelf al bijna wit
-     is: op de bovenrand is het verschil tussen gloed en foto 1,1:1 en zie je
-     niets, en op de onderrand — waar donker haar tegen de rand staat — zie je hem
-     wel. Eén gloed die per rand een andere sterkte lijkt te hebben, leest als een
-     fout in de foto en niet als een keuze.
-
-     Lime komt uit geen van beide en heeft overal hetzelfde verschil: 8,1:1 tegen
-     de paginagrond, 3,4:1 tegen de lichte fotorand. En het is de enige kleur die
-     op deze site betekenis draagt, dus zegt hij ook iets — dit is van jou.
-
-     ── DRIE LAGEN, EN WAAROM HET ER GEEN ÉÉN IS ───────────────────────────────
-
-     Eén grote zachte schaduw in lime is precies de gloed die goedkoop oogt: een
-     wolk zonder rand, die de vorm van de foto niet volgt. Wat het duur maakt is
-     dat er een SCHERPE lijn onder zit waar de zachte gloed uit lijkt te komen:
-
-       1 · de haarlijn zelf, 1px op 26% — dit is letterlijk de "buitenlijn waar
-           de foto in zit" die Lucas noemde, en hij is scherp;
-       2 · de bloei: 54px onscherp met −18px spreiding, zodat hij de vorm STRAK
-           volgt in plaats van als een halo rond de bounding box te hangen.
-           Zonder die negatieve spreiding hangt er een rechthoekige waas om een
-           afgeronde hoek — het detail waar de meeste gloeden op stuklopen;
-       3 · de bestaande zwarte slagschaduw blijft, want gewicht en gloed zijn
-           twee verschillende dingen en de foto moet nog steeds van de pagina
-           afkomen.
-
-     ── HET ROOSTER GLOEIT PAS ALS JE ERBIJ KOMT ───────────────────────────────
-
-     Tien kaartjes die alle tien permanent gloeien is een kerstboom. Daar staat de
-     gloed daarom op hover en op toetsenbordfocus: hij beloont het aanwijzen, en
-     dat is precies de handeling die de pagina van je vraagt — kies een gezicht.
-     `:focus-within` erbij, want anders bestaat het effect niet voor wie tabt. */
-  .bm-hero .photo-split-media {
-    box-shadow:
-      0 0 0 1px rgb(198 241 0 / .26),
-      0 0 54px -18px rgb(198 241 0 / .55),
-      0 30px 70px -40px rgb(0 0 0 / .85);
-  }
-
-  .bm-model {
-    transition: box-shadow var(--dur-2, .28s) var(--ease, ease), border-color var(--dur-2, .28s) var(--ease, ease);
-  }
-  .bm-model:hover,
-  .bm-model:focus-within {
-    border-color: rgb(198 241 0 / .40);
-    box-shadow:
-      0 0 0 1px rgb(198 241 0 / .26),
-      0 0 40px -14px rgb(198 241 0 / .50);
-  }
-
-  /* Een gloed die aan- en uitspringt is geen gloed maar een knippering. Wie
-     beweging heeft uitgezet krijgt hem daarom meteen en niet geleidelijk — het
-     effect blijft, alleen de overgang gaat eraf. */
-  @media (prefers-reduced-motion: reduce) {
-    .bm-model { transition: none; }
+  @media (max-width: 560px) {
+    .bm-richtingen { grid-template-columns: 1fr; }
   }
 </style>

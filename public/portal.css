@@ -56,7 +56,7 @@
      terugkwam in een render. Op een telefoon leidde Chrome het donker af uit iets
      anders en viel het niet op — precies het soort verschil dat pas opvalt op de
      browser van een klant. */
-  color-scheme: dark;
+  color-scheme: light;
 
   /* ---- palette ----------------------------------------------------------
      Hand-copied from src/styles/global.css's :root. This is a duplicate and
@@ -64,10 +64,11 @@
      the same names global.css uses, so a value that drifts is visible as a
      value, not as a renamed concept.
 
-     The scheme is cool near-black with one light-blue accent and two panel
-     gradients. It replaced a warm paper-and-harbor-teal scheme, and the port
-     is not a find-and-replace: three of the names below changed ROLE, not just
-     value, and each is called out where it sits.
+     SECTIE 21, 5 september 2026: de waarden zijn die van de site — Komma's
+     lichte grond #F5F5F5, inkt #0A0A0A, het geel #D2E04A als VLAK met zwarte
+     letters erop, en als letter de inkt (geel op wit is 1,5:1). De noten
+     eronder beschrijven de vorige, donkere stand en zijn geschiedenis; de
+     NAMEN zijn ongewijzigd, zodat elke regel in dit bestand blijft kloppen.
 
      Ramps, with their measured worst case on the darkest ground they land on
      (--surface, #17191E):
@@ -93,25 +94,31 @@
      Die twee wensen samen betekenen dat een blok niet meer als DOOS mag lezen
      maar als CEL: gescheiden door een haarlijn, niet omsloten door een kader.
      Zie .statrow verderop, waar dat als eerste is uitgevoerd. */
-  --paper:      #030406;               /* body ground                       */
-  --paper-2:    #060709;               /* recessed / banded                 */
-  --paper-lift: #08090B;               /* raised — a card off the ground    */
+  --paper:      #F5F5F5;               /* body ground                       */
+  --paper-2:    #EDEDED;               /* recessed / banded                 */
+  --paper-lift: #FFFFFF;               /* raised — a card off the ground    */
 
   /* Espresso's two names, kept as aliases so .btn-dark and the raised panels
      keep resolving. There is no espresso any more; these are the two surface
      steps above the ground. */
-  --ink-850:  #08090B;
-  --ink-800:  #0C0E11;
+  --ink-850:  #1A1A1A;
+  --ink-800:  #242424;
 
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
      same way on every one of the three surfaces above. */
-  --ink-900:  #FFFFFF;
-  --ink-700:  rgb(255 255 255 / 0.80);
-  --ink-500:  rgb(255 255 255 / 0.66);
-  --ink-300:  rgb(255 255 255 / 0.22);  /* rules, never text */
-  --ink-200:  rgb(255 255 255 / 0.12);  /* hairlines */
-  --ink-100:  #FFFFFF;
+  --ink-900:  #0A0A0A;
+  --ink-700:  #454545;
+  /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
+     met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
+     blijven staan op de oudere, lichtere waarde. Op wit haalde die het nog
+     (5,1:1), op de tweede grond #EDEDED niet: 4,36:1, en daar staat de meta-regel
+     van elke aandachtkaart in. Precies de afdrijving waar de kop van dit blok
+     voor waarschuwt, gevonden door te meten. */
+  --ink-500:  #686868;
+  --ink-300:  rgb(10 10 10 / 0.26);  /* rules, never text */
+  --ink-200:  #DFDFDF;  /* hairlines */
+  --ink-100:  #0A0A0A;
 
   /* The three "on dark" names are now the same values as the ink ramp, because
      every ground is dark. They stay as separate names rather than being
@@ -126,10 +133,10 @@
      ground a tint is a lighter surface, and four of them would be four
      surfaces nobody can tell apart, so all four resolve to the one raised
      step. Kept as four names because the markup reads them by meaning. */
-  --mist-teal:  #101216;
-  --mist-clay:  #101216;
-  --mist-slate: #101216;
-  --mist-stone: #101216;
+  --mist-teal:  #EDEDED;
+  --mist-clay:  #EDEDED;
+  --mist-slate: #EDEDED;
+  --mist-stone: #EDEDED;
 
   /* ---- accent ----
      #C6F100 since August 2026, moved with the site — see the accent note in
@@ -143,11 +150,11 @@
      hue. --teal-grad and --teal-hover are the one step DOWN a hover may take;
      on a dark ground the text-safe cut is the accent itself, which is why
      they are not five darkening steps the way they were on paper. */
-  --teal:       #C6F100;
-  --teal-grad:  #ABD200;
-  --teal-hover: #ABD200;
-  --teal-text:  #C6F100;
-  --teal-deep:  #C6F100;
+  --teal:       #D2E04A;
+  --teal-grad:  #B8CC46;
+  --teal-hover: #B8CC46;
+  --teal-text:  #0A0A0A;
+  --teal-deep:  #0A0A0A;
 
   /* THE ATTENTION COLOUR. Was a pink left over from the decorative palette;
      #E9963B since August 2026 — see the --clay note in src/styles/global.css
@@ -156,29 +163,29 @@
      --flag below both read it, which is what makes "pay attention" one colour
      on this site instead of three. */
   --clay:       #E9963B;
-  --clay-text:  #E9963B;
+  --clay-text:  #8A4F06;
 
   /* Ghost fill for secondary and small buttons — a paper alpha now, not an
      ink alpha. An ink alpha on a near-black ground is invisible. */
-  --ghost:      rgb(255 255 255 / 0.08);
+  --ghost:      rgb(10 10 10 / 0.06);
 
   /* Button surfaces as TOKENS, not as descendant rules — see global.css. */
   --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(255 255 255 / 0.16);
+  --btn-ghost-fill-hover:  rgb(10 10 10 / 0.12);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(255 255 255 / 0.08);
-  --btn-2nd-ink:           #FFFFFF;
-  --btn-2nd-border:        rgb(255 255 255 / 0.28);
-  --btn-2nd-border-hover:  rgb(255 255 255 / 0.55);
+  --btn-2nd-fill-hover:    rgb(10 10 10 / 0.06);
+  --btn-2nd-ink:           #0A0A0A;
+  --btn-2nd-border:        rgb(10 10 10 / 0.24);
+  --btn-2nd-border-hover:  rgb(10 10 10 / 0.60);
 
   /* ---- system colour ----
      Still two hues, still never the sole carrier of state — every status
      carries a word. The -ink variants are the ones allowed to set body text,
      and on this ground both cuts clear 4.5:1, so they equal their fills. */
   --signal:      var(--teal);
-  --signal-ink:  var(--teal);
+  --signal-ink:  var(--teal-text);
   --warn:        var(--clay);
-  --warn-ink:    var(--clay);
+  --warn-ink:    var(--clay-text);
   --verify:      var(--signal);
   --verify-ink:  var(--signal-ink);
   --flag:        var(--warn);
@@ -190,7 +197,7 @@
      darkest ink and, by coincidence of value, the dark ground — and every
      rule that used it as a ground went white the moment the ramp flipped.
      The deep ground is stated as a ground. */
-  --bg-deep:    #000000;
+  --bg-deep:    #111111;
   --bg-raise:   var(--paper-2);
   --surface:    var(--paper-lift);
   --surface-2:  var(--paper-2);
@@ -208,30 +215,30 @@
   --line-strong: var(--ink-300);
   /* The border a focused field takes: strong enough to read as "this one",
      which on a dark ground means brighter, not darker. */
-  --line-ui:     rgb(255 255 255 / 0.55);
+  --line-ui:     rgb(10 10 10 / 0.45);
 
   --brand:         var(--ink-900);
   --accent:        var(--teal);
   /* The label ON the accent. It was paper-on-dark, because the accent was a
      dark teal; the accent is a light blue now, so the label is the ground.
      10.43:1. */
-  --accent-on:     #08090B;
-  --accent-ink:    #08090B;
+  --accent-on:     #0A0A0A;
+  --accent-ink:    #0A0A0A;
   --accent-2:      var(--teal-text);
   --accent-word:   var(--teal-text);
-  --accent-bright: var(--teal-hover);
-  --accent-soft:   rgb(198 241 0 / 0.14);
+  --accent-bright: var(--teal-text);
+  --accent-soft:   rgb(210 224 74 / 0.22);
   --accent-line:   var(--ink-300);
 
-  --focus-ring:    var(--teal);
+  --focus-ring:    #0A0A0A;
 
   /* The <select> caret, as a data URL rather than a token the SVG can read —
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
      ramp's top step; when that moves, this moves with it or the caret stops
      matching. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230A0A0A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-  --font: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
 
   /* ---- radius ----
      There IS a scale now, and there is exactly one place it is written. The
@@ -244,9 +251,9 @@
      and the three values have to move in step with it: this stylesheet is
      served to a page that links back into the same site, and a dashboard with
      tighter corners than the page it came from reads as a different product. */
-  --r-lg: 24px;   /* cards, panels, tiles */
-  --r-md: 14px;   /* buttons, fields, pills */
-  --r-sm: 8px;    /* the small stuff inside them */
+  --r-lg: 4px;   /* cards, panels, tiles */
+  --r-md: 4px;   /* buttons, fields, pills */
+  --r-sm: 2px;    /* the small stuff inside them */
   --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
 
@@ -264,6 +271,35 @@
 
 /* box-sizing only. The radius half of this reset is gone — see the radius
    note in :root. */
+/* ══ SECTIE 22 — DE LETTER VAN DE SITE — 7 september 2026 ═══════════════════
+   GETELD, NIET GEGOKT. Hier stond Hubot Sans voor de koppen, Satoshi voor de
+   lopende tekst en Sometype Mono voor nummers. /fonts/gedeeld.css levert er
+   geen van drieën: het schrijft Anybody, Instrument Sans en Martian Mono, en
+   Satoshi alleen als de twee woff2's in public/fonts/satoshi/ staan — daar
+   ligt nu alleen een LEES-MIJ. Alle drie de werkschermen stonden dus in
+   Arial te renderen terwijl de site in Instrument Sans staat.
+
+   De namen hieronder zijn nu de snitten die de build ECHT kopieert; zie
+   scripts/fonts-voor-worker.mjs, dat de enige waarheid is over wat er staat.
+
+   DE TWEE BREEDTES. Anybody en Martian Mono hebben allebei een breedte-as, en
+   die staat standaard op 100% — dat is niet de stand van de site. --stretch-kop
+   is 125% en --stretch-mono 82%, dezelfde twee getallen als .hoog en .etiket in
+   src/styles/stijl22.css. Een mono op 100% is zó breed dat een ordernummer over
+   de rand van zijn cel loopt; dat is geen smaak maar een layoutfout.
+
+   WAT HIER MET OPZET NIET GEBEURT. De site zet .hoog ook in kapitalen. Dat is
+   een editorial gebaar; dit zijn werkschermen. Dezelfde letter, rustiger
+   ingezet — zie de REGISTER-noot in de kop van dit bestand. */
+:root {
+  --font-kop: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-kop);
+  --font-mono: "Martian Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --stretch-kop: 125%;
+  --stretch-mono: 82%;
+}
+h1, h2, h3 { font-family: var(--font-kop); font-stretch: var(--stretch-kop); letter-spacing: -.02em; }
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -709,3 +745,91 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   line-height: 1.55;
   color: var(--ink-2);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTIE 22 · HET PANEELRITME — 7 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Dit is het laatste wat een klant van een bestelling ziet: de map met zijn
+   beelden. Van de drie door de Worker gerenderde schermen is dit het scherm dat
+   het meest op de site hoort te lijken, want het is de site — alleen achter een
+   sleutel.
+
+   HET RITME. Op visuails.com ligt de pagina op INKT en staat de inhoud in een
+   licht paneel met ronde hoeken en een marge eromheen (.paneel in
+   src/styles/stijl22.css). Dat is precies wat hier gebeurt: body wordt de inkt,
+   .wrap wordt het paneel. Alles BINNEN het paneel blijft ongewijzigd — het staat
+   nog steeds op --paper (#F5F5F5), dus elke regel hierboven blijft kloppen en
+   elke gemeten verhouding blijft dezelfde.
+
+   DE MAAT IS KLEINER DAN OP DE SITE. --ronding is daar clamp(20px,2.4vw,34px).
+   Een paneel met een raster van twaalf productbeelden erin wil geen 34px; dit
+   staat op clamp(16px,1.8vw,22px), dezelfde stand als /admin.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --rand: clamp(.75rem, 2vw, 1.5rem);
+  --ronding: clamp(16px, 1.8vw, 22px);
+  /* 4 / 4 / 2 was de stand van vóór sectie 22 en klopte niet meer met de familie
+     van de site. Zelfde schaal als public/admin.css. */
+  --r-lg: 12px;
+  --r-md: 8px;
+  --r-sm: 5px;
+}
+
+body {
+  padding: 0;
+  background: var(--ink-900);
+}
+.wrap {
+  max-width: 980px;
+  margin: var(--rand) auto;
+  padding: 0 clamp(1.2rem, 3vw, 2.4rem) clamp(2rem, 4vw, 3rem);
+  background: var(--paper);
+  border-radius: var(--ronding);
+}
+
+/* ── DRIE STREPEN AAN ÉÉN KANT ──────────────────────────────────────────────
+   .said, .mailnote en (op de site) het inlogbalkje droegen alle drie een streep
+   van 2 of 3px links. De noot bij .note hierboven heeft dat argument al één keer
+   gewogen en verworpen; deze drie waren blijven staan omdat de streep daar als
+   box-shadow inset geschreven staat en dus niet opvalt bij een zoektocht naar
+   border-left.
+
+   Een citaat van een klant is inhoud van een andere soort dan de tekst eromheen.
+   Een cel zegt dat aan vier kanten; een streep zegt het aan één. */
+.said {
+  padding: .55rem .85rem;
+  box-shadow: none;
+  border-radius: var(--r-md);
+  background: var(--paper-2);
+  font-style: normal;
+}
+.mailnote {
+  padding: .7rem .9rem;
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+
+/* De beelden krijgen de ronding van hun kaart mee. Een scherpe hoek in een
+   afgerond paneel is het enige wat dan nog uit de toon valt. */
+.shot img { border-radius: var(--r-md); }
+
+/* ── DRIE DINGEN DIE OP DE AFDRUK OPVIELEN ──────────────────────────────────
+
+   EEN. De revisiesectie plakte tegen de laatste rij GOEDKEUREN-knoppen. Het
+   rooster erboven heeft geen ondermarge en <section class="rr"> heeft geen
+   enkele regel in dit bestand; hij leunde dus volledig op de marge van zijn
+   eigen h2, en die valt weg tegen de knoppen. */
+.rr, .folder { margin-top: clamp(2rem, 4vw, 3rem); }
+
+/* TWEE. De map-sectie was een doos in een doos: een grijs vlak MET een rand,
+   en daarin nog een omkaderd blokje. Drie kaders om één mededeling. De vulling
+   doet het werk; de rand kan weg, en het blokje erin gaat een tint lichter in
+   plaats van omlijnd. */
+.folder { border: 0; border-radius: var(--r-lg); background: var(--paper-2); }
+.folder .note { border: 0; background: var(--paper-lift); }
+
+/* DRIE. .note stond op --paper-2, dezelfde tint als de map eromheen, dus binnen
+   die sectie was hij onzichtbaar. Buiten die sectie blijft hij zoals hij was. */
+.note { border-radius: var(--r-md); }

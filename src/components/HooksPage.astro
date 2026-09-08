@@ -29,7 +29,7 @@ import { waHref } from '../data/whatsapp.js';
  *       valt, staat er een woord als "kans" naast — en de pagina zegt zelf,
  *       tweemaal, dat het format en de uitvoering zijn wat we verkopen.
  *   3 · GEEN BESTELKNOP. Hooks is nog niet bestelbaar en dat blijft zo tot
- *       `KIND_IMAGES.hooks` een gewicht heeft; zonder gewicht kan de agenda
+ *       `KIND_PUNTEN.hooks` een gewicht heeft; zonder gewicht kan de agenda
  *       geen venster geven. Zie de noot daar. De knoppen gaan dus naar een
  *       gesprek, en het label zegt dat ook.
  *
@@ -78,6 +78,7 @@ import TierCompare from './TierCompare.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
 import Placeholder from './Placeholder.astro';
+import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -351,296 +352,212 @@ const COPY = {
 const c = COPY[lang];
 ---
 
-<!-- ── 1 · DE HERO ─────────────────────────────────────────────────────────
-     Dezelfde vorm als /catalog, /lifestyle en /video: linkerkolom met eyebrow,
-     kop, lead, drie knoppen, de dienstenregel, de feitenrij en de wachtrijnoot;
-     rechterkolom het werk. Dat laatste is hier een Placeholder in dezelfde
-     verhouding als de `.photo-band tall` die de zusterpagina's gebruiken, zodat
-     de kolom precies zo hoog is als hij straks met beeld wordt. -->
-<section class="page-hero">
-  <div class="container two-col hero-split">
-    <div class="reveal pending">
-      <span class="eyebrow-page">{c.eyebrow}</span>
-      <h1 class="display hk-h1" style="margin-top:1rem" set:html={c.h1} />
-      <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-      <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPrices}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
-      </div>
-      {/* `current={['complete']}` — "Allebei" gaat over catalog en lifestyle
-          samen en niet over video, dus die valt weg; Hooks staat zelf niet in
-          DOORS en hoeft er dus niet uit gefilterd te worden. Zie
-          andereDeuren() in src/data/orderDoors.js. */}
-      <ServiceSwitch current={['complete']} lang={lang} />
-      <HeroFacts eigen={c.trust} lang={lang} />
-      <p class="queue-note"><em class="hk-soon">{c.soonTag}</em> {c.queueNote}</p>
-    </div>
-    <div class="reveal pending">
-      {/* ── GEEN BIJSCHRIFT IN DE HERO ──────────────────────────────────
-          Op elke andere plek op deze pagina staat de opdracht onder het vlak,
-          want daar is het een lijstje voor wie de beelden gaat maken. Hier
-          niet: dit is het eerste wat een bezoeker ziet, en "Moet in één blik
-          het hele idee overbrengen" is intern werkoverleg. Zelfde besluit als
-          Lucas nam bij het portret op /studio — *"Boodschap is duidelijk zonder
-          alle extra tekst."*
+{/* ═══ /hooks IN DE STIJL VAN SECTIE 22 — 7 september 2026 ══════════════════
+    Vijftiende pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in
+    beide talen, dezelfde zes <Placeholder>s met hun opdracht erin (deze pagina
+    heeft geen enkele foto en dat is eerlijk — het tweebeeldsformaat is nog niet
+    geschoten), dezelfde bedragen uit pricing.js, dezelfde <TierCompare> met de
+    kwalificerende regel erboven.
 
-          De opdracht VERDWIJNT NIET: `data-subject` en `data-message` blijven
-          op de figure staan, dus `npm run placeholders` noemt deze plek met
-          opdracht en al. Zie de noot onderaan Placeholder.astro. */}
+    DE KNOP GAAT NAAR HET GESPREK EN NIET NAAR EEN BESTELLING, overal op deze
+    pagina. Een hook heeft een prijs en geen doorlooptijd — `KIND_PUNTEN.hooks`
+    staat op null, dus hij kan geen gereserveerd venster krijgen — en dat is
+    precies waarom er geen bestelknop staat maar een gesprek.
+
+    WAT HET IS EN WAAR HET STAAT is de donkere kamer: dat is de plek waar de
+    pagina van tonen naar uitleggen gaat. */}
+<div class="s22">
+
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="hk-h1">
+    <div class="hk-open">
+      <div class="paneel-kop">
+        <p class="etiket">{c.eyebrow}</p>
+        <h1 id="hk-h1" class="hoog" set:html={c.h1} />
+        <p class="lopend">{c.lead}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
+          <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
+          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+        </p>
+        <ServiceSwitch current={['complete']} lang={lang} />
+        <HeroFacts eigen={c.trust} lang={lang} />
+        <p class="hk-wacht"><span class="mono hk-tag">{c.soonTag}</span> {c.queueNote}</p>
+      </div>
       <Placeholder lang={lang} ratio={r('hero')} caption={false} kind="video" subject={p('hero', 'subject')} message={p('hero', 'message')} />
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── 2 · WAT ER GELEVERD WORDT ───────────────────────────────────────────
-     De plek waar /video zijn vier soorten toont en /lifestyle zijn moods: het
-     eerste blok onder de hero waarin je ziet waar het over gaat. Hooks heeft
-     geen soorten om uit te kiezen, dus staat hier wat je krijgt — drie
-     verticale vlakken naast elkaar, in de verhouding van het bestand zelf. -->
-<section>
-  <div class="container">
-    <h2 class="section-h">{c.krijgH}</h2>
-    <div class="grid hk-krijg reveal-group">
+  {/* ── 2 · WAT JE KRIJGT ───────────────────────────────────────────────────
+      Hooks heeft geen soorten om uit te kiezen, dus staat hier wat je krijgt:
+      drie verticale vlakken naast elkaar, in de verhouding van het bestand
+      zelf. */}
+  <section class="paneel" aria-labelledby="hk-krijg">
+    <header class="paneel-kop">
+      <h2 id="hk-krijg" class="hoog hoog-2">{c.krijgH}</h2>
+    </header>
+    <ul class="hk-krijg" role="list">
       {c.krijg.map(([titel, regel, plek]) => (
-        <div class="reveal pending">
+        <li>
           <Placeholder lang={lang} ratio={r(plek)} caption={false} kind="video" subject={p(plek, 'subject')} message={p(plek, 'message')} />
-          <h3 class="hk-krijg-h">{titel}</h3>
-          <p class="hk-krijg-p">{regel}</p>
-        </div>
+          <b>{titel}</b>
+          <span class="lopend">{regel}</span>
+        </li>
       ))}
-    </div>
-    <p class="hk-krijg-foot">{c.krijgFoot}</p>
-  </div>
-</section>
+    </ul>
+    <p class="lopend hk-voet">{c.krijgFoot}</p>
+  </section>
 
-<!-- ── 3 · WAT HET IS EN WAAR HET STAAT ────────────────────────────────────
-     Dezelfde `ed-head` + `svc-explain` als de drie zusterpagina's, met de brede
-     band ertussen zoals /catalog die heeft. -->
-<section class="section-tight">
-  <div class="container">
-    <div class="ed-head">
-      <span class="ed-meta">{c.edMeta}</span>
-      <div>
-        <h2>{c.edH}</h2>
-        <p class="ed-sub">{c.edSub}</p>
+  {/* ── 3 · WAT HET IS EN WAAR HET STAAT ─────────────────────────────────── */}
+  <section class="kamer hk-kamer" aria-labelledby="hk-wat">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <p class="etiket">{c.edMeta}</p>
+      <h2 id="hk-wat" class="hoog hoog-2">{c.edH}</h2>
+      <p class="lopend">{c.edSub}</p>
+    </header>
+    <Placeholder lang={lang} ratio={r('naad')} caption={false} subject={p('naad', 'subject')} message={p('naad', 'message')} />
+    <div class="hk-twee">
+      <div class="hk-uitleg">
+        <h3 class="hoog hoog-3">{c.whatH}</h3>
+        {c.whatP.map((alinea) => <p class="lopend">{alinea}</p>)}
+        <p class="lopend hk-noot" set:html={c.modelNote} />
       </div>
-    </div>
-    <Placeholder lang={lang} space ratio={r('naad')} subject={p('naad', 'subject')} message={p('naad', 'message')} />
-    <div class="svc-explain">
-      <div class="svc-explain-main">
-        <h3>{c.whatH}</h3>
-        {c.whatP.map((alinea) => <p>{alinea}</p>)}
-        <p class="model-note" set:html={c.modelNote} />
-      </div>
-      <aside class="svc-explain-side">
-        <h3>{c.whereH}</h3>
-        <ul class="svc-where-list">
-          {c.where.map(([sterk, rest]) => (
-            <li><strong>{sterk}</strong> — {rest}</li>
-          ))}
+      <aside class="hk-waar">
+        <h3 class="hoog hoog-3">{c.whereH}</h3>
+        <ul class="hk-waar-lijst" role="list">
+          {c.where.map(([sterk, rest]) => <li><b>{sterk}</b><span class="lopend">{rest}</span></li>)}
         </ul>
       </aside>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── 4 · DE STAPPEN ──────────────────────────────────────────────────────
-     `photo-split` met het beeld links en de stappen rechts, precies zoals op
-     /video en /catalog. Vier stappen in plaats van drie, want dat is wat er
-     gebeurt — een stap verzwijgen om de vorm te laten kloppen zou de controle
-     door een specialist zijn, en dat is juist de stap die het verschil maakt. -->
-<section class="section-tight">
-  <div class="container">
-    <div class="photo-split reveal pending">
-      <div class="photo-split-media">
-        <Placeholder lang={lang} ratio={r('stappen')} caption={false} subject={p('stappen', 'subject')} message={p('stappen', 'message')} />
-      </div>
+  {/* ── 4 · DE STAPPEN ──────────────────────────────────────────────────────
+      Vier stappen in plaats van drie, want dat is wat er gebeurt — een stap
+      verzwijgen om de vorm te laten kloppen zou de controle door een
+      specialist zijn, en dat is juist de stap die het verschil maakt. */}
+  <section class="paneel" aria-labelledby="hk-stappen">
+    <div class="hk-twee-licht">
+      <Placeholder lang={lang} ratio={r('stappen')} caption={false} subject={p('stappen', 'subject')} message={p('stappen', 'message')} />
       <div>
-        <h2>{c.stepsH}</h2>
-        <div class="steps steps-stacked" style="margin-top:1.6rem">
+        <h2 id="hk-stappen" class="hoog hoog-2">{c.stepsH}</h2>
+        <ol class="hk-stappen">
           {c.steps.map(([kop, tekst], i) => (
-            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{kop}</h3><p>{tekst}</p></div>
+            <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{kop}</b><span class="lopend">{tekst}</span></li>
           ))}
-        </div>
+        </ol>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── 5 · DE CHECKLIST EN HET PRIJSBLOK ───────────────────────────────────
-     Zelfde tweekolomsband als /video's checklist + `.buy-note`. De knop in het
-     rechterblok gaat naar het gesprek en niet naar een bestelling — zie punt 3
-     in de kop van dit bestand. -->
-<section class="section-tight">
-  <div class="container two-col">
-    <div class="reveal pending">
-      <h2>{c.cleanH}</h2>
-      <ul class="checklist" style="margin-top:1.4rem">
-        {c.clean.map((li) => (
-          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
-        ))}
-      </ul>
-    </div>
-    <div class="reveal pending hk-prijs">
-      <h3>{c.prijsH}</h3>
-      <p set:html={c.prijsVanaf} />
-      <p set:html={c.prijsVariant} />
-      {/* Dezelfde functie als `.buy-flat` op /video: een lezer die van /pricing
-          komt heeft net een dalend tarief gezien en neemt anders aan dat dit er
-          ook een is. Afgestreept en niet omkaderd — het is een noot OP de twee
-          regels erboven en geen derde manier om te kopen. */}
-      <p class="hk-prijs-vlak"><strong>{c.prijsNietH}</strong> {c.prijsNiet}</p>
-      <div class="flex" style="margin-top:1.4rem">
-        <a href={lp('/contact')} class="btn btn-primary">{c.prijsCta}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+  {/* ── 5 · DE CHECKLIST EN DE PRIJS ────────────────────────────────────────
+      De knop in het rechterblok gaat naar het gesprek en niet naar een
+      bestelling. */}
+  <section class="paneel" aria-labelledby="hk-schoon">
+    <div class="hk-twee-licht">
+      <div>
+        <h2 id="hk-schoon" class="hoog hoog-2">{c.cleanH}</h2>
+        <ul class="hk-vink" role="list">
+          {c.clean.map((li) => <li>{li}</li>)}
+        </ul>
+      </div>
+      <div class="hk-prijs">
+        <h3 class="hoog hoog-3">{c.prijsH}</h3>
+        <p class="lopend" set:html={c.prijsVanaf} />
+        <p class="lopend" set:html={c.prijsVariant} />
+        {/* Een lezer die van /pricing komt heeft net een dalend tarief gezien
+            en neemt anders aan dat dit er ook een is. Afgestreept en niet
+            omkaderd — het is een noot OP de twee regels erboven en geen derde
+            manier om te kopen. */}
+        <p class="lopend hk-prijs-niet"><b>{c.prijsNietH}</b> {c.prijsNiet}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/contact')}>{c.prijsCta}</a>
+          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+        </p>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── 6 · DE TIERBAND ─────────────────────────────────────────────────────
-     Met dezelfde kwalificerende regel erboven als /video: TierCompare toont de
-     twee serviceniveaus van de prijs per aantal, en geen van beide is met hooks
-     te bereiken. `href0`/`label0` wijzen naar catalog en niet naar de
-     keuzepagina — zie de noot bij catalogHref hierboven. -->
-<section class="section-tight">
-  <div class="container">
-    <p class="queue-note" style="margin-bottom:1.4rem">{c.tierNote}</p>
+  {/* ── 6 · DE TIERBAND ─────────────────────────────────────────────────────
+      Met dezelfde kwalificerende regel erboven als /video: TierCompare toont de
+      twee serviceniveaus van de prijs per aantal, en geen van beide is met
+      hooks te bereiken. `href0`/`label0` wijzen naar catalog en niet naar de
+      keuzepagina. */}
+  <section class="paneel">
+    <p class="mono hk-tiernoot">{c.tierNote}</p>
     <TierCompare lang={lang} href0={catalogHref} label0={catalogCta} />
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="container" style="max-width:760px">
-    <h2 class="section-h">{c.faqH}</h2>
-    <div class="faq-stack">
-      {c.faqs.map((f) => (
-        <Disclose summary={f.q} tone="panel">
-          <p>{f.a}</p>
-        </Disclose>
-      ))}
+  {/* ── 7 · VRAGEN ───────────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="hk-faq">
+    <header class="paneel-kop">
+      <h2 id="hk-faq" class="hoog hoog-2">{c.faqH}</h2>
+    </header>
+    <div class="hk-vragen">
+      {c.faqs.map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section-tight">
-  <div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:var(--t-page-h2)" set:html={c.ctaH} />
-      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPrices}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
-      </div>
-      {/* De laatste zin van de pagina, en met opzet de laatste: het is de enige
-          claim die we over bereik doen, en die is dat we er geen doen. */}
-      <p class="hk-belofte">{c.beloofte}</p>
-    </div>
-  </div>
-</section>
+  {/* ── 8 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="hk-slot">
+    <h2 id="hk-slot" class="hoog" set:html={c.ctaH} />
+    <p class="lopend">{c.ctaP}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
+      <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
+      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+    </p>
+    <p class="mono hk-belofte">{c.beloofte}</p>
+  </section>
+</div>
 
 <style>
-  /* Het accentwoord in de kop, zelfde behandeling als op elke andere
-     dienstpagina — zie de noot bij --font-editorial in global.css. */
-  .hk-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+  .hk-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .hk-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
+  .hk-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 42em; }
+  .hk-tag { color: var(--inkt); border: 1px solid var(--lijn-sterk); border-radius: 999px; padding: .22rem .55rem; }
 
-  /* De wachtrijnoot. Zichtbaar en op leesbare grootte, niet als grijze
-     voetnoot: dat "je kunt dit nog niet bestellen" is het eerste wat een
-     bezoeker moet weten en niet het laatste. */
-  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+  .hk-krijg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2rem); }
+  .hk-krijg li { display: grid; gap: .5rem; align-content: start; }
+  .hk-krijg b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.3rem); text-transform: uppercase; letter-spacing: -.01em; margin-top: .6rem; }
+  .hk-krijg .lopend { font-size: .92rem; }
+  .hk-voet { margin-top: clamp(1.6rem, 3vw, 2.4rem); font-size: .92rem; }
 
-  /* ── HET "BINNENKORT"-MERKJE ─────────────────────────────────────────────
-     Dezelfde vorm als `.mi-soon` in de navigatie, want het zegt hetzelfde
-     ding op een tweede plek en twee vormen voor één betekenis is er één te
-     veel. Niet cursief zoals een <em> standaard is: dit is een etiket en geen
-     nadruk, en de betekenis zit in het kader eromheen. */
-  .hk-soon {
-    display: inline-block;
-    margin-right: .45rem;
-    padding: .12rem .45rem;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-sm);
-    font-style: normal;
-    font-size: .72rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    vertical-align: .08em;
-  }
+  .hk-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; margin-top: clamp(2.5rem, 5vw, 4rem); }
+  .hk-uitleg { display: grid; gap: .9rem; }
+  .hk-waar { padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); display: grid; gap: .9rem; }
+  .hk-waar-lijst { display: grid; gap: .7rem; }
+  .hk-waar-lijst li { display: grid; gap: .2rem; }
+  .hk-waar-lijst b { font-weight: 500; }
+  .hk-waar-lijst .lopend { font-size: .92rem; }
+  .hk-noot :global(a) { color: var(--geel-letter); text-decoration: underline; text-underline-offset: 3px; }
 
-  /* ── DRIE VERTICALE VLAKKEN ──────────────────────────────────────────────
-     Drie items, drie kolommen. Eén stap eerder terug naar één kolom dan
-     `.vid-kinds` doet, omdat deze vlakken 9/16 zijn: op 38rem zou een derde
-     kolom 180px breed en 320px hoog worden, en dan staat er een strook in
-     plaats van een video. */
-  .hk-krijg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  @media (max-width: 56rem) { .hk-krijg { grid-template-columns: minmax(0, 1fr); } }
+  .hk-twee-licht { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .hk-stappen { display: grid; margin-top: 1.4rem; }
+  .hk-stappen li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: .4rem 1.2rem; padding: clamp(.9rem, 2vw, 1.3rem) 0; border-top: 1px solid var(--lijn); }
+  .hk-stappen li:last-child { border-bottom: 1px solid var(--lijn); }
+  .hk-stappen .nr { color: var(--inkt-2); grid-row: span 2; }
+  .hk-stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.3rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .hk-stappen .lopend { font-size: .92rem; }
 
-  /* ── EN HET VLAK IS SMALLER DAN ZIJN KOLOM ───────────────────────────────
-     Gemeten op 1440px: drie kolommen over de volle containerbreedte maken elk
-     vlak 430 bij 765 pixels, en drie van die vlakken naast elkaar zijn 765px
-     hoog aan bijna niets. Verticaal is de goede VORM — dat is wat het bestand
-     wordt — maar niet op die schaal.
+  .hk-vink { display: grid; gap: .7rem; margin-top: 1.4rem; }
+  .hk-vink li { position: relative; padding-left: 1.5rem; color: var(--inkt-2); }
+  .hk-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .hk-prijs { display: grid; gap: .8rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
+  .hk-prijs :global(strong) { font-weight: 500; color: var(--inkt); }
+  .hk-prijs-niet { padding-top: .8rem; border-top: 1px solid var(--lijn); font-size: .92rem; }
+  .hk-prijs-niet b { font-weight: 500; }
 
-     DE EERSTE POGING ZETTE DE GRENS OP DE RIJ (`max-width` plus `margin-inline:
-     auto`), en die was fout op een manier die je pas op de schermafdruk ziet: de
-     rij kwam los te staan van de kop erboven en de voetregel eronder, die
-     allebei aan de linkerrand van de container beginnen. Een gecentreerde rij
-     tussen twee links uitgelijnde blokken leest als een fout, ook als de maten
-     kloppen.
+  .hk-tiernoot { color: var(--inkt-2); margin-bottom: 1.6rem; }
+  .hk-vragen { display: grid; gap: .7rem; }
+  /* ── ERFT NU VAN HET DONKERE SLOT — 7 september 2026 ─────────────────────
+     Deze regel stond op var(--inkt) omdat het slotpaneel geel was. Sinds het
+     donker is, was dat inkt op #1A1A1A: 1,08:1, en dat is precies het soort
+     restant dat een klassenaam die "geel" heette had moeten voorkomen. De
+     etiket-tint van .paneel-slot zegt hetzelfde en is 8:1. */
+  .hk-belofte { color: rgb(245 245 245 / .72); margin-top: .6rem; }
 
-     De grens hoort dus op het VLAK. De kolommen houden het ritme van de
-     container — kop, rij en voetregel delen één linkerrand — en het beeld wordt
-     300 bij 533: onmiskenbaar verticaal, en geen muur. `:global()` omdat de
-     doos in Placeholder.astro staat en het scope-attribuut van deze pagina daar
-     niet komt; zie de noot bij de `space`-prop in dat bestand. */
-  .hk-krijg :global(.ph-box) { max-width: 300px; }
-
-  /* Kop en regel onder een vlak: dezelfde afstand als elk ander label-met-regel
-     op de site, uit --gap-label-note. */
-  .hk-krijg-h { margin-top: 1rem; font-size: 1rem; font-weight: 700; color: var(--ink); }
-  .hk-krijg-p { margin-top: var(--gap-label-note); font-size: .92rem; color: var(--ink-2); }
-  .hk-krijg-foot { margin-top: clamp(1.6rem, 3vw, 2.2rem); font-size: .9rem; color: var(--ink-3); max-width: var(--measure-note, 68ch); }
-
-  /* De link naar het merkmodel komt via set:html binnen en draagt dus geen
-     scope-attribuut; :global() op de afstammeling is wat hem bereikt. Zelfde
-     behandeling als elke andere link in lopende tekst. */
-  .model-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
-
-  /* Het prijsblok. Zelfde vorm als `.buy-note` op /video: volle rand, geen
-     nesting, geen accenttint — een kader binnen een kolom die al kadert, leest
-     als twee kaders. */
-  .hk-prijs { border: 1px solid var(--line-strong); padding: clamp(1.4rem, 3vw, 2rem); }
-  .hk-prijs h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
-  .hk-prijs p { margin-top: var(--gap-label-note); color: var(--ink-2); }
-  .hk-prijs p :global(strong) { color: var(--ink); font-weight: 600; }
-  .hk-prijs .hk-prijs-vlak {
-    margin-top: 1.1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-    font-size: .9rem;
-    line-height: 1.55;
-    color: var(--ink-3);
-  }
-  .hk-prijs .hk-prijs-vlak strong { color: var(--ink); font-weight: 700; }
-
-  /* De vragenlijst. `Disclose` doet de panelen; dit zet alleen de tussenruimte,
-     precies zoals op /catalog, /lifestyle en /video. */
-  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
-
-  /* De slotregel in de cta-band. Gecentreerd zoals alles in die band, een stap
-     zwakker dan de lead erboven, en met een lijn erboven die hem scheidt van de
-     knoppen zonder er een tweede blok van te maken. */
-  .hk-belofte {
-    max-width: 68ch;
-    margin: clamp(2rem, 4vw, 2.8rem) auto 0;
-    padding-top: clamp(1.2rem, 2.4vw, 1.6rem);
-    border-top: 1px solid var(--line);
-    text-align: center;
-    font-size: .88rem;
-    line-height: 1.6;
-    color: var(--ink-3);
+  @media (max-width: 900px) {
+    .hk-open, .hk-krijg, .hk-twee, .hk-twee-licht { grid-template-columns: 1fr; }
   }
 </style>

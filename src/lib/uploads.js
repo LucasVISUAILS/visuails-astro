@@ -118,7 +118,7 @@ export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 /* ── EN HET IS NIET MEER DERTIG — 31 augustus 2026 ─────────────────────────
  *
  * Hier stond ATTENDED_PER_WINDOW, en dat was juist zolang elke bestelling in
- * COMPLETE producten geteld werd. Sinds de agenda in beelden rekent, hangt het
+ * COMPLETE producten geteld werd. Sinds de agenda in punten rekent, hangt het
  * plafond van een venster af van de dienst: dertig complete producten, of
  * zeventig lifestylecarrousels. Het formulier biedt die zeventig ook echt aan, en
  * elk vakje dat een klant kan openen moet aankomen — precies de fout die op 140

@@ -48,12 +48,13 @@
 // nergens in dat bestand. De regel is daarom aangepast naar de eenheid die de
 // poort werkelijk gebruikt — anders zou de figuur ernaast de tekst tegenspreken,
 // en dan is een mock-up erger dan een grijs vlak.
-import { WINDOW_THRESHOLD } from '../data/pricing.js';
+import { WINDOW_THRESHOLD, aim48 } from '../data/pricing.js';
 import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capacity.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigGate from './FigGate.astro';
 import FigBoard from './FigBoard.astro';
 import Placeholder from './Placeholder.astro';
+import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -62,7 +63,7 @@ const lp = (p: string) => localizedPath(lang, p);
 const COPY = {
   en: {
     h1: ['How we arrive at a delivery date.', 'This is the calendar we work in.'],
-    lede: 'Anyone can put "48 hours" on a website. The question is what happens in the week it is not true. Here is the part of the studio that answers that, and the reason a date is never offered before it has been checked.',
+    lede: 'Anyone can put "48 hours" on a website. The question is what happens in the week it is not true. Here is the part of the studio that answers that, and the reason a date is never offered before it has been checked — and never as a promise we have not reserved the day for.',
     ctaStart: 'Start an order',
     ctaPortal: 'See a delivered order',
 
@@ -104,7 +105,7 @@ const COPY = {
     plLede: `From ${WINDOW_THRESHOLD} products we take that week out of the calendar for your order. That is why we can put the date in writing, and why a week that is full is offered as full.`,
     pl: [
       ['Your launch date', 'The day the collection has to be live. Everything else is counted backwards from here.'],
-      ['48 hours from your date', `The reserved delivery date, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it; below that count an order runs in the normal turnaround.`],
+      ['Your reserved date', `The delivery date we hold, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it. ${aim48('en')} That part is what we work towards, not what we promise. Below that count an order runs in the normal turnaround.`],
       ['Minus one folder', 'The day you send the photos. That is your part finished, and the date is already locked.'],
     ],
     plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait.',
@@ -126,7 +127,7 @@ const COPY = {
 
   nl: {
     h1: ['Zo komen we aan een leverdatum.', 'Dit is de agenda waar wij in werken.'],
-    lede: 'Iedereen kan "48 uur" op een website zetten. De vraag is wat er gebeurt in de week dat het niet waar is. Dit is het deel van de studio dat die vraag beantwoordt, en de reden dat een datum nooit wordt aangeboden voordat hij gecontroleerd is.',
+    lede: 'Iedereen kan "48 uur" op een website zetten. De vraag is wat er gebeurt in de week dat het niet waar is. Dit is het deel van de studio dat die vraag beantwoordt, en de reden dat een datum nooit wordt aangeboden voordat hij gecontroleerd is — en nooit als belofte waar we de dag niet voor hebben vrijgehouden.',
     ctaStart: 'Start een bestelling',
     ctaPortal: 'Bekijk een geleverde bestelling',
 
@@ -157,7 +158,7 @@ const COPY = {
     plLede: 'Bij een vastgezette leverdatum houden we die dagen in de studio voor je vrij. Daarom kunnen we die datum op papier zetten — en daarom kan een week ook vol zitten.',
     pl: [
       ['De dag dat je live gaat', 'De dag waarop de collectie online moet staan. Vanaf daar rekenen we terug.'],
-      ['48 uur vanaf je leverdatum', `De vastgezette leverdatum, vanaf ${WINDOW_THRESHOLD} producten. Zodra die datum vaststaat, gaat geen ander werk in de studio er nog voor. Bestel je minder producten, dan geldt de normale doorlooptijd.`],
+      ['Je vastgezette datum', `De leverdatum die we vrijhouden, vanaf ${WINDOW_THRESHOLD} producten. Zodra die datum vaststaat, gaat geen ander werk in de studio er nog voor. ${aim48('nl')} Dat is waar we naartoe werken, niet wat we beloven. Bestel je minder producten, dan geldt de normale doorlooptijd.`],
       ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar, en de datum staat al vast.'],
     ],
     plNote: 'We boeken de weken één voor één vol. Zit een week vol, dan zeggen we dat gewoon, in plaats van je een langere wachttijd te geven.',
@@ -184,50 +185,36 @@ const c = COPY[lang];
 const nl = lang === 'nl';
 ---
 
-{/* ── DEZE PAGINA HAD 1197 WOORDEN EN GEEN ENKEL BEELD — 19 augustus 2026 ────
-    Gemeten over zeventien pagina's: dit was de tekstrijkste pagina van de site
-    zonder één foto of schermafdruk. De twee SVG-figuren (FigGate, FigBoard)
-    tekenen een agenda en een tabel — schema's, geen product. En de pagina gaat
-    over VISUAILS Studio, dus over een scherm dat je kunt laten zien.
+{/* ═══ /studio IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═════════════════
+    Dertiende pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in
+    beide talen, dezelfde <FigGate> en <FigBoard>, dezelfde twee <Placeholder>s
+    met hun opdracht erin, dezelfde getallen uit capacity.js.
 
-    Lucas: *"check waar tekst minder kan worden en er visuele uitleg in de plaats
-    kan komen."* Hier is het antwoord letterlijk: laat het scherm zien.
+    DE POORT EN DE HANDCONTROLE ZIJN DE TWEE DONKERE KAMERS. Dat zijn ook de
+    twee plekken waar de pagina van "hier is een scherm" naar "en dit is waarom
+    het klopt" gaat, en een hoofdstukwissel is precies wat daar hoort.
 
-    De placeholders dragen een `message` — wat het beeld moet OVERBRENGEN, niet
-    alleen wat erop staat. Zie de noot bij die prop in Placeholder.astro. */}
-{/* ── SFEER OP DEZE PAGINA — 22 augustus 2026 ─────────────────────────────
-    Lucas: *"Ook graag wat van die simpele alleen groen zonder model foto's
-    gebruiken om de VISUAILS studio pagina wat meer gevoel en sfeer te geven."*
+    DE HERO DOET NIET MEE AAN DE INKOMEFFECTEN, en dat blijft zo: wat boven de
+    vouw staat hoort er meteen te staan; een titel die eerst moet inkomen is een
+    titel die je even niet kunt lezen. In deze stijl is dat geen keuze meer maar
+    het gedrag van `.paneel` — er zit geen reveal op. */}
+<div class="s22">
 
-    Twee lichtstudies uit dezelfde reeks als de merkbeelden op de homepage: een
-    lichtkegel op een vloer hier, en een strakke uitsnede van een lichtplas op
-    de slotband. Ze staan er als GROND en niet als inhoud — er valt niets op te
-    zien behalve licht, en dat is precies waarom ze hier passen. De plekken waar
-    deze pagina nog een echte foto MIST (iemand die zit te controleren, een
-    schermafdruk van Studio) houden hun plaatshouder: een lichtkegel bewijst
-    niet dat er met de hand gekeken wordt.
-
-    De behandeling is dezelfde als op de homepage — zie .foto-licht en
-    scripts/beeld-inbedden.mjs — zodat de twee pagina's van dezelfde lamp
-    lijken te komen. */}
-<section class="band-tall sp-hero foto-licht" style="--fl-o: .85; --fl-x: 50%; --fl-y: 80%;">
-  <div class="foto-licht-laag" aria-hidden="true"></div>
-  <img class="sp-sfeer rand-los" src="/img/brand-beam.webp" alt="" aria-hidden="true" width="1600" height="900" fetchpriority="low" decoding="async" />
-  <div class="sp-sfeer-scrim rand-los" aria-hidden="true"></div>
-  <div class="korrel-mee rand-los" aria-hidden="true"></div>
-  <div class="container">
-    <div class="sp-hero-split">
-      <div class="statement statement-left">
-        <h1>{c.h1[0]} <em class="sp-accent">{c.h1[1]}</em></h1>
-        <p class="lede">{c.lede}</p>
-        <div class="actions">
-          <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
-          <a href={lp('/portal')} class="btn btn-ghost btn-lg">{c.ctaPortal}</a>
-        </div>
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="sp-h1">
+    <div class="sp-open">
+      <div class="paneel-kop">
+        <h1 id="sp-h1" class="hoog">{c.h1[0]} <em>{c.h1[1]}</em></h1>
+        <p class="lopend">{c.lede}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
+          <a class="knop knop-lijn" href={lp('/portal')}>{c.ctaPortal}</a>
+        </p>
       </div>
       <Placeholder
         lang={lang}
         ratio="4 / 3"
+        caption={false}
         subject={nl ? 'Schermafdruk van VISUAILS Studio — het overzicht met één lopende bestelling'
                     : 'Screenshot of VISUAILS Studio — the overview with one live order'}
         message={nl
@@ -235,270 +222,164 @@ const nl = lang === 'nl';
           : 'Must show at a glance that this is a real workspace and not an email with a download link: status row, delivery date, and images waiting for approval. A half-full order beats an empty one — an empty screen proves nothing.'}
       />
     </div>
-  </div>
-</section>
+  </section>
 
-{/* ── DE EFFECTEN OP DEZE PAGINA — 19 augustus 2026 ───────────────────────
-    Deze pagina had er geen enkele, terwijl /catalog, /pricing, /compare en
-    /video hun blokken allemaal laten inkomen. Dat was geen keuze maar een
-    gat: /studio is in de nieuwere band/statement-taal geschreven en die
-    kwam zonder de `.reveal`-haken mee.
-
-    Het is bewust dezelfde `.reveal pending` + `.reveal-group` als op de
-    andere pagina's en geen eigen variant: één mechanisme betekent één
-    veiligheidsnet (interactions.js zet alles alsnog zichtbaar als het script
-    niet aankomt) en één gedrag onder prefers-reduced-motion.
-
-    De hero doet NIET mee. Wat boven de vouw staat hoort er meteen te staan;
-    een titel die eerst moet inkomen is een titel die je even niet kunt lezen. */}
-
-{/* ── the capacity gate ──────────────────────────────────────────────────── */}
-<section class="band well-deep">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.gateH}</h2>
-      <p class="lede">{c.gateLede}</p>
-    </div>
-    <div class="sp-split reveal-group">
-      <div class="sp-rules">
+  {/* ── 2 · DE CAPACITEITSPOORT ─────────────────────────────────────────────
+      De agenda zelf, met de dag erin die geweigerd wordt. Het venster dat hij
+      "aangeboden" noemt komt uit offerableWindows() — zie FigGate.astro. */}
+  <section class="kamer sp-kamer" aria-labelledby="sp-poort">
+    <p class="spook spook-links" aria-hidden="true"><span>Studio</span><span>Studio</span></p>
+    <header class="kamer-kop">
+      <h2 id="sp-poort" class="hoog hoog-2">{c.gateH}</h2>
+      <p class="lopend">{c.gateLede}</p>
+    </header>
+    <div class="sp-twee">
+      <ul class="sp-regels" role="list">
         {c.gate.map(([k, v]) => (
-          <div class="tile reveal pending"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
+          <li><span class="mono">{k}</span><b>{v}</b></li>
         ))}
-      </div>
-      {/* De agenda zelf, met de dag erin die geweigerd wordt. Het venster dat hij
-          "aangeboden" noemt, komt uit offerableWindows() — zie FigGate.astro. */}
-      <div class="reveal pending"><FigGate lang={lang} /></div>
+      </ul>
+      <FigGate lang={lang} />
     </div>
-  </div>
-</section>
+  </section>
 
-{/* ── the order board ────────────────────────────────────────────────────── */}
-<section class="band">
-  <div class="container">
-    <div class="sp-split is-flip reveal-group">
-      <div class="reveal pending">
-        <h2 class="sp-h2">{c.boardH}</h2>
-        <p class="sp-lede">{c.boardLede}</p>
-        <dl class="sp-defs">
-          {c.board.map(([k, v]) => (<div><dt>{k}</dt><dd>{v}</dd></div>))}
+  {/* ── 3 · HET BESTELBORD ──────────────────────────────────────────────────
+      De tabel, met het revisieverzoek open. */}
+  <section class="paneel" aria-labelledby="sp-bord">
+    <div class="sp-twee-licht">
+      <div class="sp-bord-t">
+        <h2 id="sp-bord" class="hoog hoog-2">{c.boardH}</h2>
+        <p class="lopend">{c.boardLede}</p>
+        <dl class="sp-def">
+          {c.board.map(([k, v]) => (<Fragment><dt>{k}</dt><dd class="lopend">{v}</dd></Fragment>))}
         </dl>
       </div>
-      {/* De tabel, met het revisieverzoek open dat de noot hier eerder alleen
-          beschreef. */}
-      <div class="reveal pending"><FigBoard lang={lang} /></div>
+      <FigBoard lang={lang} />
     </div>
-  </div>
-</section>
+  </section>
 
-{/* ── the human step ────────────────────────────────────────────────────── */}
-<section class="band-tight well-deep">
-  <div class="container">
-    <div class="statement statement-left sp-head">
-      <h2>{c.humanH}</h2>
-      <p class="lede">{c.humanLede}</p>
-      <p class="sp-note">{c.humanNote}</p>
-      <div class="actions">
-        <a href={lp('/ai-act')} class="btn btn-ghost">{c.humanCta}</a>
-      </div>
-    </div>
-    {/* "De laatste stap is een specialist" is de belangrijkste belofte op deze
-        pagina en stond er als drie alinea's tekst. Een foto van iemand die
-        daadwerkelijk zit te kijken, doet dat werk in een halve seconde. */}
+  {/* ── 4 · DE STAP MET DE HAND ─────────────────────────────────────────────
+      "De laatste stap is een specialist" is de belangrijkste belofte op deze
+      pagina en stond er ooit als drie alinea's tekst. Een foto van iemand die
+      daadwerkelijk zit te kijken doet dat werk in een halve seconde — vandaar
+      de plaatshouder met de opdracht erin, en niet een lichtstudie: een
+      lichtkegel bewijst niet dat er met de hand gekeken wordt. */}
+  <section class="kamer sp-kamer-hand" aria-labelledby="sp-hand">
+    <p class="spook spook-rechts" aria-hidden="true"><span>Studio</span><span>Studio</span></p>
+    <header class="kamer-kop">
+      <h2 id="sp-hand" class="hoog hoog-2">{c.humanH}</h2>
+      <p class="lopend">{c.humanLede}</p>
+      <p class="lopend sp-noot">{c.humanNote}</p>
+      <p class="acties"><a class="knop sp-knop-lijn" href={lp('/ai-act')}>{c.humanCta}</a></p>
+    </header>
     <Placeholder
       lang={lang}
-      space
       ratio="16 / 9"
+      caption={false}
       subject={nl ? 'Iemand aan het werk: een beeld op het scherm, ernaast de originele telefoonfoto van de klant'
                   : 'Someone at work: a finished visual on screen, the client’s original phone photo beside it'}
       message={nl
         ? 'Moet bewijzen dat "met de hand gecontroleerd" een handeling is en geen zinnetje. Het vergelijken moet te zien zijn — twee beelden naast elkaar, een blik erop. Geen poserend portret en geen stockfoto van een kantoor.'
         : 'Must prove that "checked by hand" is an action, not a phrase. The comparing has to be visible — two images side by side, a person looking at them. Not a posed portrait, not a stock office shot.'}
     />
-  </div>
-</section>
+  </section>
 
-{/* ── terugrekenen vanaf de lanceerdatum ──────────────────────────────────
-    Verhuisd van de homepage, augustus 2026. Deze pagina legt uit hoe een
-    bestelling door de studio loopt; de kalender is daar de laatste stap van,
-    en de homepage was de verkeerde plek om hem uit te leggen (HERONTWERP.md
-    §3.3). Het leest als een dienst aan de lezer en niet als druk: een
-    lanceerdatum is de ene datum die hij al in zijn hoofd heeft, en deze band
-    doet de aftrekking voor hem. */}
-<section class="band-tight">
-  <div class="container">
-    <div class="statement statement-left sp-head">
-      <h2>{c.plH}</h2>
-      <p class="lede">{c.plLede}</p>
-    </div>
-    <ol class="sp-pl reveal-group">
+  {/* ── 5 · TERUGREKENEN VANAF DE LANCEERDATUM ──────────────────────────────
+      Het leest als een dienst aan de lezer en niet als druk: een lanceerdatum
+      is de ene datum die hij al in zijn hoofd heeft, en deze rij doet de
+      aftrekking voor hem. Geen kleurladder over de drie stappen — zie de noot
+      daarover in de voorpagina: drie stappen die van accent naar 40% wit liepen
+      terwijl de derde de leverdatum is. */}
+  <section class="paneel" aria-labelledby="sp-plan">
+    <header class="paneel-kop">
+      <h2 id="sp-plan" class="hoog hoog-2">{c.plH}</h2>
+      <p class="lopend">{c.plLede}</p>
+    </header>
+    <ol class="sp-plan">
       {c.pl.map(([t, b], i) => (
-        <li class="reveal pending">
-          <span class="sp-pl-dot" aria-hidden="true"></span>
-          {/* Geen kleurladder — zie de noot bij .hv-pipe-n in HomeV2.astro,
-              20 augustus 2026. Drie stappen die van accent naar 40% wit liepen,
-              terwijl de derde de leverdatum is. */}
-          <h3 class="sp-pl-h">{t}</h3>
-          <p>{b}</p>
+        <li>
+          <span class="mono nr">{String(i + 1).padStart(2, '0')}</span>
+          <b>{t}</b>
+          <span class="lopend">{b}</span>
         </li>
       ))}
     </ol>
-    <div class="sp-pl-foot">
-      <p>{c.plNote}</p>
-      <a class="btn btn-ghost" href={lp('/start')}>{c.plCta}</a>
+    <div class="sp-plan-voet">
+      <p class="lopend">{c.plNote}</p>
+      <p class="acties"><a class="knop knop-lijn" href={lp('/start')}>{c.plCta}</a></p>
     </div>
-  </div>
-</section>
+  </section>
 
-{/* ── what it does not do, on paper: the part that has to be read ────────── */}
-<section class="band on-paper">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.honestH}</h2>
-      <p class="lede">{c.honestLede}</p>
-    </div>
-    <div class="tiles sp-honest-tiles reveal-group">
+  {/* ── 6 · WAT HET NIET DOET ────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="sp-eerlijk">
+    <header class="paneel-kop">
+      <h2 id="sp-eerlijk" class="hoog hoog-2">{c.honestH}</h2>
+      <p class="lopend">{c.honestLede}</p>
+    </header>
+    <ul class="sp-eerlijk" role="list">
       {c.honest.map(([k, v]) => (
-        <div class="tile s-4 reveal pending"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
+        <li><b>{k}</b><span class="lopend">{v}</span></li>
       ))}
-    </div>
-  </div>
-</section>
+    </ul>
+  </section>
 
-<section class="band-tall sp-close foto-licht" style="--fl-o: .7; --fl-x: 45%; --fl-y: 70%;">
-  <div class="foto-licht-laag" aria-hidden="true"></div>
-  <img class="sp-sfeer sp-sfeer-slot rand-los" src="/img/brand-glow.webp" alt="" aria-hidden="true" width="1400" height="788" loading="lazy" decoding="async" />
-  <div class="sp-sfeer-scrim rand-los" aria-hidden="true"></div>
-  <div class="korrel-mee rand-los" aria-hidden="true"></div>
-  <div class="container closing">
-    <div>
-      <h2>{c.closeH}</h2>
-      <p class="lede">{c.closeLede}</p>
-      <div class="statement actions">
-        <a href={lp('/start')} class="btn btn-primary btn-lg">{c.closeCta}</a>
-        <a href={lp('/test-sample')} class="btn btn-ghost btn-lg">{c.closeAlt}</a>
-      </div>
-    </div>
-  </div>
-</section>
+  {/* ── 7 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="sp-slot">
+    <h2 id="sp-slot" class="hoog">{c.closeH}</h2>
+    <p class="lopend">{c.closeLede}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/start')}>{c.closeCta}</a>
+      <a class="knop knop-lijn" href={lp('/test-sample')}>{c.closeAlt}</a>
+    </p>
+  </section>
+</div>
 
 <style>
-  /* ── HERO MET BEELD ERNAAST ────────────────────────────────────────────────
-     Tekst links, het scherm rechts. Onder de 62rem valt het onder elkaar, met
-     het beeld ERONDER en niet erboven: de kop moet als eerste gelezen worden,
-     ook op een telefoon. */
-  .sp-hero-split { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: center; }
-  @media (min-width: 62rem) {
-    .sp-hero-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .sp-open { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .sp-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
+
+  .sp-twee { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  /* De drie regels van de poort: het etiket klein, de uitleg als lopende tekst.
+     Geen tegels met een rand eromheen — het zijn drie feiten over één ding.
+
+     EN DE UITLEG IS GEEN GETAL. Hij stond hier eerst in de kopletter op
+     clamp(1.3rem, 2.6vw, 2rem), want "etiket klein, cijfer groot" is de vorm
+     die deze stijl elders gebruikt. Maar `c.gate` draagt hier geen cijfers: de
+     waarde is een hele alinea ("A studio day holds 18 products, and a reserved
+     window is 2 days…"). Drie alinea's op 32px in de kopletter is geen nadruk
+     maar schreeuwen, en het duwt de tekening ernaast uit beeld. */
+  .sp-regels { display: grid; gap: 1.4rem; }
+  .sp-regels li { display: grid; gap: .4rem; padding-top: 1rem; border-top: 1px solid rgb(245 245 245 / .22); }
+  .sp-regels .mono { color: rgb(245 245 245 / .66); }
+  .sp-regels b { font-weight: 400; font-size: .95rem; line-height: 1.55; color: rgb(245 245 245 / .78); }
+
+  .sp-twee-licht { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .sp-bord-t { display: grid; gap: 1rem; }
+  .sp-def { display: grid; gap: .8rem; margin-top: .4rem; }
+  .sp-def dt { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1rem, 1.6vw, 1.2rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .sp-def dd { margin: 0 0 .6rem; font-size: .92rem; }
+
+  .sp-noot { font-size: .92rem; }
+  /* Een lijnknop op inkt: `.knop-lijn` is voor de lichte panelen gemaakt. */
+  .sp-knop-lijn { color: var(--vel); }
+  .sp-knop-lijn:hover { background: var(--vel); color: var(--inkt); }
+
+  .sp-plan { display: grid; }
+  .sp-plan li { display: grid; grid-template-columns: auto minmax(0, 20rem) minmax(0, 32rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
+  .sp-plan li:last-child { border-bottom: 1px solid var(--lijn); }
+  .sp-plan .nr { color: var(--inkt-2); }
+  .sp-plan b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .sp-plan-voet { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  .sp-plan-voet .lopend { font-size: .92rem; }
+
+  .sp-eerlijk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.2rem, 3vw, 2.5rem); }
+  .sp-eerlijk li { display: grid; gap: .5rem; align-content: start; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .sp-eerlijk b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.3rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .sp-eerlijk .lopend { font-size: .92rem; }
+
+  @media (max-width: 900px) {
+    .sp-open, .sp-twee, .sp-twee-licht, .sp-eerlijk { grid-template-columns: 1fr; }
+    .sp-plan li { grid-template-columns: auto 1fr; }
+    .sp-plan li .lopend { grid-column: 2; }
   }
-
-  /* ── GEEN EIGEN GROND — 23 augustus 2026 ──────────────────────────────────
-     `background: var(--ink-900)` stond hier en is weg, samen met
-     `.ground-blend` in de markup. Zie de noot bij .pp-hero in PortalPage.astro
-     en bij `.rand-los` in global.css: een dekkende --bg-0 op een sectie is een
-     deksel over de verlichting van body::before, en de naadvervaging die dat
-     moest verbergen was zelf de lichte lijn op Lucas' schermafdruk.
-
-     Wat deze sectie WEL heeft is een sfeerbeeld, en dat is een echte eigen
-     grond. Die dooft nu aan zijn eigen boven- en onderrand uit (`.rand-los` op
-     de foto én op de sluier, met hetzelfde masker zodat hun verhouding gelijk
-     blijft). Daaronder loopt de paginagrond gewoon door — er is dus geen kleur
-     meer die kan afwijken, want er wordt geen kleur meer geschilderd. */
-  /* ── DE LICHTSTUDIE ALS GROND ──────────────────────────────────────────────
-     z-index -2 voor de foto en -1 voor de sluier.
-
-     `object-position` mikt het heldere deel van de kegel naar rechtsonder, weg
-     van de kop en de knoppen die linksboven staan. De sluier eroverheen is een
-     strijklicht van links, precies zoals bij de hero op de homepage: donker
-     waar de tekst staat, weg waar de foto mag spreken. Gemeten met
-     leesbaar.mjs, niet geschat. */
-  .sp-sfeer {
-    position: absolute; inset: 0; z-index: -2;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    /* De kegel LAAG in het kader, en niet rechts. Rechts staat de plaatshouder
-       voor de schermafdruk en die is ondoorzichtig: daar was van het licht
-       niets te zien behalve een harde rand langs de doos. Onderaan ligt het
-       licht op de vloer van de band, onder de kop en onder de knoppen door, en
-       loopt het via .foto-licht door in de sectie eronder. */
-    object-position: 50% 92%;
-    opacity: .62;
-    pointer-events: none;
-  }
-  /* Hier stond `transform: scale(1.28)`, om de rand van de lichtplas BUITEN het
-     kader te duwen — die rand liep anders als een kaarsrechte streep over 1440
-     pixels en las als een sectiegrens.
-
-     23 augustus 2026 weggehaald, en dat is geen verlies maar een opruiming: de
-     laag draagt nu `.rand-los`, dus hij dooft aan zijn eigen randen uit en die
-     streep kan niet meer bestaan. Twee middelen voor één probleem is één te
-     veel — en erger, ze werkten tegen elkaar: een masker hangt aan de lokale
-     assen van een element, dus met een schaal van 1,28 eromheen viel de
-     uitdoving 28 procent buiten de sectie en raakte ze de rand niet meer. */
-  .sp-sfeer-slot { object-position: 50% 62%; opacity: .4; }
-  .sp-sfeer-scrim {
-    position: absolute; inset: 0; z-index: -1;
-    pointer-events: none;
-    /* Van boven zwaar naar onder open: de kop en de inleiding staan bovenin en
-       hebben een rustige grond nodig, het licht hoort onderin. */
-    background:
-      /* Onder de rechterkolom staat de plaatshouder met zijn briefing in
-         --ink-4, het lichtste grijs dat de site heeft. Op een vlakke grond
-         haalde dat 4,5 : 1; met het licht eronder zakte het naar 3,85 — gemeten
-         met leesbaar.mjs. Daar hoort dus geen licht: die kolom is een panelen-
-         doos en geen foto. Het licht blijft waar het iets doet, linksonder. */
-      radial-gradient(58% 54% at 78% 80%, rgb(var(--scrim) / 0.66) 0%, rgb(var(--scrim) / 0.32) 48%, transparent 78%),
-      linear-gradient(180deg, rgb(var(--scrim) / 0.90) 0%, rgb(var(--scrim) / 0.74) 28%, rgb(var(--scrim) / 0.34) 56%, rgb(var(--scrim) / 0.10) 78%, transparent 100%),
-      linear-gradient(96deg, rgb(var(--scrim) / 0.52) 0%, rgb(var(--scrim) / 0.22) 34%, transparent 62%);
-  }
-  .sp-close { position: relative; overflow: clip; }
-  .sp-close > .container { position: relative; z-index: 1; }
-  .sp-hero > .container { position: relative; z-index: 1; }
-  /* Op een smal scherm staat de kop over de volle breedte en is er geen
-     rechterhelft meer om de foto aan over te laten. De sluier wordt dan een
-     verticale in plaats van een strijklicht. */
-  @media (max-width: 62rem) {
-    .sp-sfeer { opacity: .44; }
-    .sp-sfeer-scrim { background:
-      linear-gradient(180deg, rgb(var(--scrim) / 0.92) 0%, rgb(var(--scrim) / 0.80) 34%, rgb(var(--scrim) / 0.46) 64%, rgb(var(--scrim) / 0.16) 86%, transparent 100%); }
-  }
-  .sp-hero .statement-left { max-width: 46rem; }
-  /* --t-page-h1 en niet --t-h1: dit is een paginatitel en die staat op elke
-     andere dienstpagina op 64px. Zie de noot bij --t-page-h1. */
-  .sp-hero h1 { font-size: var(--t-page-h1); line-height: 1.02; letter-spacing: -0.038em; max-width: 20ch; }
-  .sp-accent { font-style: normal; color: var(--ink-3); }
-  .on-paper .sp-accent { color: var(--teal-text); }
-
-  .sp-head { max-width: 46rem; }
-  .sp-h2 { font-size: var(--t-h2); line-height: 1.05; letter-spacing: -0.035em; margin: 0 0 1rem; max-width: 16ch; }
-  .sp-lede { margin: 0 0 1.6rem; font-size: var(--t-lg); line-height: 1.55; color: var(--ink-2); max-width: 52ch; }
-  .sp-note { margin: 1.2rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }
-
-  .sp-split { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: clamp(1.8rem, 4vw, 3.5rem); align-items: center; margin-top: clamp(2.4rem, 5vw, 3.5rem); }
-  .sp-split.is-flip > *:first-child { order: 2; }
-  @media (max-width: 860px) {
-    .sp-split { grid-template-columns: 1fr; }
-    .sp-split.is-flip > *:first-child { order: 0; }
-  }
-
-  .sp-rules { display: grid; gap: clamp(1rem, 1.7vw, 1.5rem); }
-
-  .sp-defs { margin: 0; display: grid; gap: 1.1rem; }
-  .sp-defs dt { font-weight: 700; font-size: .95rem; color: var(--ink); }
-  .sp-defs dd { margin: .25rem 0 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
-
-  .sp-honest-tiles { margin-top: clamp(2.4rem, 5vw, 3.5rem); }
-
-  /* Geen eigen grond — zie de noot bij .sp-hero hierboven. */
-  /* ── terugrekenen vanaf de lanceerdatum (verhuisd van de homepage) ──────
-     Een <ol>, want dit is wél een volgorde: de drie data staan in de tijd
-     achter elkaar. De stip zit op de bovenlijn en niet ervoor, zodat de rij
-     ook klopt als een cel door de auto-fit op een tweede regel valt. */
-  .sp-pl { list-style: none; margin: clamp(2.2rem, 4.5vw, 3.2rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); gap: clamp(1.4rem, 3vw, 2.6rem); }
-  .sp-pl > li { position: relative; padding-top: 1.6rem; box-shadow: inset 0 1px 0 var(--line); }
-  .sp-pl-dot { position: absolute; top: -4px; left: 0; width: 9px; height: 9px; background: var(--ink-1); }
-  .sp-pl h3 { margin: 0 0 .45rem; font-size: 1.02rem; font-weight: 700; }
-  .sp-pl p { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--ink-3); }
-  .sp-pl li h3.sp-pl-h { color: var(--accent-bright); }
-  .sp-pl-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
-  .sp-pl-foot p { margin: 0; max-width: 66ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
 </style>

@@ -112,6 +112,7 @@ import { waHref } from '../data/whatsapp.js';
 // use, and naming an instrument a reader cannot act on is noise on a trust page.
 import { localizedPath } from '../i18n/ui.js';
 import FigAnatomy from './FigAnatomy.astro';
+import '../styles/stijl22.css';
 import Disclose from './Disclose.astro';
 /*
  * De modellencontrole komt uit data en niet uit deze tekst — 19 augustus 2026.
@@ -371,158 +372,164 @@ const f = FIG[lang];
 const waLink = waHref(c.waText);
 ---
 
-<section class="page-hero">
-  <div class="container narrow">
-    <span class="eyebrow-page">{c.eyebrow}</span>
-    <h1 class="display">{c.h1}</h1>
-    <p class="lead" style="margin-top:1.2rem"><strong>{c.lead}</strong></p>
-    <p class="lead" style="margin-top:1rem">{c.introP}</p>
-    <p class="legal-meta">{c.updated}</p>
-    <p class="legal-note">{c.note}</p>
-  </div>
-</section>
+{/* ═══ /ai-act IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═════════════════
+    Zestiende pagina in de stijl, en de eerste van de zes juridische pagina's.
+    De inhoud is woord voor woord onaangeraakt: dezelfde COPY in beide talen,
+    dezelfde <FigAnatomy>, dezelfde vier <Disclose>-vouwen, dezelfde
+    modellencontrole die alleen verschijnt als élk model door alle
+    gezichtszoekers is gegaan.
 
-{/* The legal pages carry no reveal animation and this one matches them. A
-    trust document that fades in on scroll is performing. */}
-<section class="section-tight">
-  <div class="container narrow legal">
+    ── WAT ER NIET GEBEURT, EN WAAROM DAT DE HELE INGREEP IS ─────────────────
 
-    <h2>{c.s1H}</h2>
-    {c.s1P.map((p) => (<p>{p}</p>))}
+    De markup van het `.legal`-blok is niet herschreven. Die staat sinds
+    3 september in global.css, is per pagina nagemeten (de marge tussen een kop
+    en de alinea eronder, de streep onder een definitierij, de inspringing van
+    een lijst) en heeft niets met de stijl te maken. Wat verandert zijn de
+    LETTERS, en die zet stijl22.css er in één blok op — voor alle zes de
+    juridische pagina's tegelijk. Zie `.s22.s22 .legal` daar.
 
-    <h2>{c.s2H}</h2>
-    {c.s2P.map((p) => (<p>{p}</p>))}
+    Deze pagina draagt daarom precies twee wijzigingen: een `.s22` eromheen en
+    één `.paneel` in plaats van drie losse secties.
 
-    <h2>{c.s3H}</h2>
-    <p>{c.s3P}</p>
-    <dl class="legal-dl">
-      {c.s3Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
-    </dl>
+    GEEN INKOMEFFECTEN, en dat blijft zo. Een vertrouwensdocument dat op scroll
+    komt invaden is aan het optreden. In deze stijl is dat geen keuze meer maar
+    het gedrag van `.paneel` — daar zit geen reveal op.
 
-    {/* DE MODELLENCONTROLE — 19 augustus 2026.
-        Staat hier, direct na "wat je van ons krijgt", omdat het daar een van is:
-        een controle die gedraaid is en waarvan je het logboek kunt opvragen.
+    EN GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; deze
+    niet. Het accent is er om een keuze aan te wijzen, en aan het eind van een
+    juridische pagina valt niets te kiezen — er staat een adres waar je terecht
+    kunt. Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
+<div class="s22">
+  <section class="paneel" aria-labelledby="ai-h1">
+    <header class="paneel-kop jur-kop">
+      <p class="etiket">{c.eyebrow}</p>
+      <h1 id="ai-h1" class="hoog">{c.h1}</h1>
+      <p class="lopend jur-lead">{c.lead}</p>
+      <p class="lopend">{c.introP}</p>
+      <p class="legal-meta">{c.updated}</p>
+      <p class="legal-note">{c.note}</p>
+    </header>
 
-        Alles of niets. `modellenGecontroleerd` is pas waar als élk model in de
-        roster door alle gezichtszoekers is gegaan zonder treffer — zie de noot bij
-        de import. Is dat niet zo, dan staat hier niets: liever geen claim dan een
-        claim die op negen van de tien slaat. */}
-    {modellenGecontroleerd && (
-      <>
-        <h2>{c.mdlH}</h2>
-        <p>{c.mdlP(controleDatum, zoekers)}</p>
-        <ul>
-          {c.mdlItems.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
-        </ul>
-      </>
-    )}
+    <div class="legal jur-tekst">
+      <h2>{c.s1H}</h2>
+      {c.s1P.map((p) => (<p>{p}</p>))}
 
-    <h2>{c.s4H}</h2>
-    <p>{c.s4P[0]}</p>
-    <div class="legal-fig">
-      <FigAnatomy
-        realLabel={f.real}
-        builtLabel={f.built}
-        keys={f.keys}
-        note={f.note}
-      />
-    </div>
-    <p>{c.s4P[1]}</p>
-    <ul>
-      {c.s4Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
-    </ul>
+      <h2>{c.s2H}</h2>
+      {c.s2P.map((p) => (<p>{p}</p>))}
 
-    {/* FROM HERE DOWN THE PAGE FOLDS. §1–§4 are the message — what the rules
-        are aimed at, what you get, and why the image has to match the product —
-        and every reader needs those to decide anything. §5–§8 are looked up
-        rather than read: what to do at publication, what we refuse to claim,
-        who carries what, and where we sit. DESIGN.md's disclosure rule is
-        exactly this split, and the page went from 1,567 words in one column to
-        four lines plus the argument.
+      <h2>{c.s3H}</h2>
+      <p>{c.s3P}</p>
+      <dl class="legal-dl">
+        {c.s3Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
+      </dl>
 
-        Not one shared `name`: these four are reference, and somebody checking
-        their responsibilities against what we do not claim wants both open at
-        once. The exclusive accordion is for step 1, where the whole point is
-        one control at a time. */}
-    <div class="legal-folds">
-      <Disclose summary={c.s5H} tone="plain">
-        <ol class="legal-ol">
-          {c.s5Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
-        </ol>
-        <p>{c.s5Tail}</p>
-      </Disclose>
+      {/* DE MODELLENCONTROLE. Staat hier, direct na "wat je van ons krijgt",
+          omdat het daar een van is: een controle die gedraaid is en waarvan je
+          het logboek kunt opvragen.
 
-      <Disclose summary={c.s6H} tone="plain">
-        <p>{c.s6P}</p>
-        <dl class="legal-dl">
-          {c.s6Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
-        </dl>
-      </Disclose>
+          Alles of niets. `modellenGecontroleerd` is pas waar als élk model in
+          de roster door alle gezichtszoekers is gegaan zonder treffer — zie de
+          noot bij de import. Is dat niet zo, dan staat hier niets: liever geen
+          claim dan een claim die op negen van de tien slaat. */}
+      {modellenGecontroleerd && (
+        <>
+          <h2>{c.mdlH}</h2>
+          <p>{c.mdlP(controleDatum, zoekers)}</p>
+          <ul>
+            {c.mdlItems.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+          </ul>
+        </>
+      )}
 
-      <Disclose summary={c.s7H} tone="plain">
-        <p>{c.s7P}</p>
-        <p>{c.s7Lead}</p>
-        <ul>
-          {c.s7Items.map((i) => (<li>{i}</li>))}
-        </ul>
-        {c.s7Tail.map((p) => (<p>{p}</p>))}
-      </Disclose>
+      <h2>{c.s4H}</h2>
+      <p>{c.s4P[0]}</p>
+      <div class="legal-fig">
+        <FigAnatomy
+          realLabel={f.real}
+          builtLabel={f.built}
+          keys={f.keys}
+          note={f.note}
+        />
+      </div>
+      <p>{c.s4P[1]}</p>
+      <ul>
+        {c.s4Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+      </ul>
 
-      <Disclose summary={c.s8H} tone="plain">
-        <p>{c.s8P}</p>
-      </Disclose>
-    </div>
+      {/* VANAF HIER VOUWT DE PAGINA. §1–§4 zijn de boodschap — waar de regels
+          op gericht zijn, wat je krijgt, en waarom het beeld bij het product
+          moet kloppen — en die heeft elke lezer nodig om iets te beslissen.
+          §5–§8 worden opgezocht in plaats van gelezen: wat te doen bij
+          publicatie, wat we weigeren te claimen, wie wat draagt, en waar we
+          zitten. De vouwregel van DESIGN.md is precies die tweedeling, en de
+          pagina ging van 1.567 woorden in één kolom naar vier regels plus het
+          betoog.
 
-  </div>
-</section>
+          Geen gedeelde `name`: deze vier zijn naslag, en wie zijn
+          verantwoordelijkheden naast wat wij níet claimen legt, wil ze allebei
+          open hebben. De uitsluitende harmonica is voor stap 1, waar het hele
+          punt één bediening tegelijk is. */}
+      <div class="legal-folds">
+        <Disclose summary={c.s5H} tone="plain">
+          <ol class="legal-ol">
+            {c.s5Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+          </ol>
+          <p>{c.s5Tail}</p>
+        </Disclose>
 
-<section>
-  <div class="container">
-    <div class="cta-band">
-      <h2 class="display" style="font-size:var(--t-page-h2)">{c.ctaH}</h2>
-      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaBtn}</a>
-        <a href={waLink} class="btn btn-wa" target="_blank" rel="noopener">
-          {c.wa}
-        </a>
+        <Disclose summary={c.s6H} tone="plain">
+          <p>{c.s6P}</p>
+          <dl class="legal-dl">
+            {c.s6Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
+          </dl>
+        </Disclose>
+
+        <Disclose summary={c.s7H} tone="plain">
+          <p>{c.s7P}</p>
+          <p>{c.s7Lead}</p>
+          <ul>
+            {c.s7Items.map((i) => (<li>{i}</li>))}
+          </ul>
+          {c.s7Tail.map((p) => (<p>{p}</p>))}
+        </Disclose>
+
+        <Disclose summary={c.s8H} tone="plain">
+          <p>{c.s8P}</p>
+        </Disclose>
+      </div>
+
+      {/* Het slot van een juridische pagina is een adres en geen aanbieding.
+          Zie de noot bovenaan. */}
+      <div class="jur-uit">
+        <h2>{c.ctaH}</h2>
+        <p>{c.ctaP}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaBtn}</a>
+          <a class="knop knop-lijn" href={waLink} target="_blank" rel="noopener">{c.wa}</a>
+        </p>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+</div>
 
 <style>
-  /* De gedeelde opmaak van een juridische pagina staat sinds 3 september 2026 in
-     src/styles/global.css bij `.legal` — zie de noot daar, en de meting die erbij
-     hoort. De regels stonden hier woordelijk herhaald, met als reden "Astro
-     scopeert deze selectors aan dit component, dus ze moeten hier opnieuw". Dat
-     klopt voor een <style> in dit bestand en het is precies waarom herhalen hier
-     de verkeerde oplossing was: drie van de zes pagina's raakten hun blok kwijt en
-     niemand zag het, omdat elke pagina zijn eigen kopie had om op terug te vallen.
-     Wat hieronder blijft staan is wat ALLEEN deze pagina heeft. */
-  .legal strong { color: var(--ink); }
+  /* Een juridische pagina leest in één kolom. 46rem is ongeveer 75 tekens in
+     deze letter — de bovengrens die de leesbaarheidsregel van DESIGN.md
+     aanhoudt, en ruimer dan de 34em van `.lopend` omdat dit een document is en
+     geen verkooptekst. */
+  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
+  .jur-lead { font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
+  .jur-tekst { max-width: 46rem; }
+  .jur-tekst :global(.lopend) { max-width: none; }
 
-  /* §5 is the one list on the page that is a sequence of actions rather than a
-     set of statements, so it is the one list that is numbered. Same rhythm as
-     the bulleted lists otherwise. */
-  .legal-ol { margin-top: 0.9rem; padding-left: 1.3rem; display: flex; flex-direction: column; gap: 0.5rem; }
-  .legal-ol li { list-style: decimal; }
-
-  /* Placement only, for the §4 figure. The wrapper exists because Astro scopes
-     these selectors to this component and a component tag is not an element it
-     can reach — FigAnatomy's own `.an` is out of range from here, and writing a
-     rule for it would be a dead selector by every static check in the suite.
-     Deliberately not `reveal pending`: this page carries no reveal animation. */
-  .legal-fig { margin: 2.2rem 0 0.6rem; }
-
-  /* Term/definition rows for §3 and §6. A <dl> rather than a two-column grid:
-     at these text lengths a grid puts one word beside six lines. */
-  .legal-dl { margin-top: 1.4rem; border-top: 1px solid var(--line); }
-  .legal-dl dt { padding-top: 1rem; font-weight: 700; color: var(--ink); font-size: 0.95rem; }
-  .legal-dl dd { margin: 0.4rem 0 0; padding-bottom: 1rem; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.7; }
-
-  /* The folded half. Its own top margin so the four rules do not run straight
-     on from §4's bullet list — the fold has to read as a change of register,
-     from the argument to the reference. */
+  /* De vouwen krijgen lucht boven zich, zodat de vier regels niet rechtstreeks
+     doorlopen op de opsomming van §4 — de vouw moet lezen als een wissel van
+     toon, van het betoog naar de naslag. */
   .legal-folds { margin-top: 2.6rem; }
+  .legal-ol { margin-top: .9rem; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .5rem; }
+  .legal-ol li { list-style: decimal; }
+  .legal-fig { margin: 2.2rem 0 .6rem; }
+
+  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .jur-uit .acties { margin-top: 1.4rem; }
 </style>

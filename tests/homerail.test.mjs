@@ -140,7 +140,13 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
     await page.waitForTimeout(500);
     const meting = await page.evaluate(() => {
       const uit = {};
-      for (const sel of ['.hv-svc-rail', '.hv-faces']) {
+      /* ── DE NAMEN ZIJN MEEGEGAAN MET DE NIEUWE VOORPAGINA — 7 sept 2026 ────
+         De rijen heetten `.vp-strook` (de diensten) en `.vp-rooster`. In de
+         nieuwe stijl zijn dat `.kaarten` (de vier diensten), `.rij` (de zeven
+         beelden van één set) en `.cast` (de gezichten): dezelfde constructie,
+         dezelfde eis. Wat hier getoetst wordt is niet veranderd — een rij mag
+         nooit verticaal scrollen en geen kaart mag onbereikbaar zijn. */
+      for (const sel of ['.s22 .kaarten', '.s22 .rij', '.s22 .cast']) {
         const el = document.querySelector(sel);
         if (!el) continue;
         uit[sel] = { v: el.scrollHeight - el.clientHeight, h: el.scrollWidth - el.clientWidth };
@@ -166,7 +172,7 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
        enige verboden derde is dat hij is afgeknipt. Dat wordt hieronder
        gemeten aan de kaarten zelf en niet meer aan de scrollbalk. */
     const kaarten = await page.evaluate(() => {
-      const rail = document.querySelector('.hv-svc-rail');
+      const rail = document.querySelector('.s22 .kaarten');
       if (!rail) return null;
       const r = rail.getBoundingClientRect();
       const items = [...rail.children].map((el) => el.getBoundingClientRect());
@@ -212,7 +218,7 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
  * op de homepage langs. Dat is strenger dan wat er stond: elke notitie die er
  * ooit bijkomt, in welke container dan ook, wordt vanaf nu meegemeten zonder
  * dat iemand deze toets hoeft aan te passen. */
-console.log('\nelke zwevende notitie op de homepage valt binnen het venster');
+console.log('\nelke zwevende notitie op /pricing valt binnen het venster');
 {
   for (const [naam, opties] of [
     ['telefoon 390', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }],
@@ -220,9 +226,11 @@ console.log('\nelke zwevende notitie op de homepage valt binnen het venster');
   ]) {
     const ctx = await browser.newContext(opties);
     /* De cookiebanner ligt over de pagina heen en onderschept elke klik. */
-    await ctx.addCookies([{ name: 'vis_consent', value: 'necessary', domain: '127.0.0.1', path: '/' }]);
+    await ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-09-05T00:00:00.000Z' })), domain: '127.0.0.1', path: '/' }]);
     const page = await ctx.newPage();
-    await page.goto(`${BASE}/`, { waitUntil: 'load' });
+    /* Sectie 21: de homepage heeft geen notities meer; /pricing wel, en die
+       staan daar in gewone stroom — precies de plek waar een <Note> nog leeft. */
+    await page.goto(`${BASE}/pricing/`, { waitUntil: 'load' });
     await page.waitForTimeout(400);
 
     const knoppen = page.locator('.nt-btn');
@@ -287,7 +295,7 @@ console.log('\nelke zwevende notitie op de homepage valt binnen het venster');
 console.log('\nook een notitie buiten de homepage staat op zijn eigen vraagteken');
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await ctx.addCookies([{ name: 'vis_consent', value: 'necessary', domain: '127.0.0.1', path: '/' }]);
+  await ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-09-05T00:00:00.000Z' })), domain: '127.0.0.1', path: '/' }]);
   const page = await ctx.newPage();
   await page.goto(`${BASE}/pricing/`, { waitUntil: 'load' });
   await page.waitForTimeout(400);

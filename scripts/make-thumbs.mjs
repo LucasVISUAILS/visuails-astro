@@ -66,23 +66,23 @@ const JOBS = [
   { file: 'lifestyle-phone-made-11', width: 960 },
   { file: 'banners-13', width: 960 },
 
-  /* De /models-roster. TIEN NAMEN, EN DAT WAREN ER NEGEN — 4 september 2026.
-   *
-   * Hier stond: "Rae is absent for the same reason as dunes: her original is
-   * 800x1071, which is the target size exactly." Dat klopte, en het klopt niet
-   * meer. Haar bronbestand op schijf WAS 800x1071, want er was geen groter —
-   * de andere negen komen van een master van 1792x2400, die van haar ontbrak.
-   * Ze was dus niet overgeslagen omdat 800 groot genoeg was, maar omdat 800
-   * alles was wat er lag. Dat is een ander soort afwezigheid dan die van dunes,
-   * en het onderscheid is het opschrijven waard: dunes hoeft hier nooit bij,
-   * Rae hoorde er altijd al bij.
-   *
-   * Sinds 4 september ligt haar master er wel, met dezelfde herkomst als de
-   * andere negen (C2PA, trainedAlgorithmicMedia). model-rae.webp is opnieuw
-   * gemaakt op 1195x1600, net als de rest, dus is 800 nu weer wat het voor
-   * iedereen is: de helft. */
-  ...['aaron', 'ava', 'elias', 'ryan', 'dana', 'lisa', 'maegan', 'fabi', 'seme', 'rae']
+  // The /models roster. Rae is absent for the same reason as dunes: her
+  // original is 800x1071, which is the target size exactly.
+  ...['aaron', 'ava', 'elias', 'ryan', 'dana', 'lisa', 'maegan', 'fabi', 'seme']
     .map((n) => ({ file: `model-${n}`, width: 800 })),
+
+  /* ── DE MUUR IN DE HERO VAN /custom-models — 4 september 2026 ─────────────
+   *
+   * Zes roosterportretten achter het ene merkmodel, elk in een vakje van
+   * ongeveer 150 CSS px op een desktop en 110 op een telefoon. Maal twee is 300,
+   * dus 380 — dezelfde trede als de kleinste galerijmaat.
+   *
+   * Waarom niet de bestaande -w800: zes keer 800px in een vakje van 150 is de
+   * hero van deze pagina een halve megabyte laten wegen om er 90% van weg te
+   * gooien, en dit is nu net het beeld dat als eerste in beeld komt. Rae zit er
+   * niet bij; haar origineel is 800px en heeft geen w800, maar wel deze maat. */
+  ...['aaron', 'ava', 'elias', 'ryan', 'dana', 'rae']
+    .map((n) => ({ file: `model-${n}`, width: 380 })),
 
   /* ── DE GALERIJ — 14 AUGUSTUS 2026 ────────────────────────────────────────
    *

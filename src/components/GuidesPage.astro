@@ -1,0 +1,121 @@
+---
+/*
+ * VISUAILS — de gidsen-hub, gedeeld door /guides en /nl/guides.
+ *
+ * De informatieve laag die de site miste: hij geeft zoekintentie één stap
+ * eerder dan de commerciële pagina's een plek om te landen, en verzamelt de
+ * stukken die echt iets uitleggen achter één deur. Elke kaart wijst naar de
+ * beste bestaande pagina; de hub zelf is het zoekoppervlak.
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ *
+ * Het waren twee bestanden met dezelfde opbouw in twee talen, tot op de
+ * stylesheet na identiek. Zelfde reden als bij /gallery, /thank-you en
+ * /upload-guidelines: twee bestanden die identiek moeten blijven, blijven dat
+ * niet. De kaarten zelf staan al sinds langer in src/data/guides.js, want daar
+ * kwam een derde lezer bij — de ItemList in de JSON-LD (src/data/schema.js).
+ */
+import { TEST_SAMPLE } from '../data/pricing.js';
+import { guides as gidsen } from '../data/guides.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
+const guides = gidsen(lang);
+
+const c = nl ? {
+  etiket: 'Gidsen',
+  h1: ['Alles wat de moeite waard is ', 'vóór je shoot'],
+  lead: 'Korte, praktische stukken voor ondernemers die hun productbeelden goed willen hebben — of je nu bij ons bestelt of niet.',
+  lees: 'Lees',
+  slotEtiket: 'Wanneer je zover bent',
+  slotH: 'Klaar wanneer jij dat bent.',
+  slotP: 'Begin met één product, of zet meteen een hele set in de rij. Er is geen minimum.',
+  ctaStart: 'Start een bestelling',
+} : {
+  etiket: 'Guides',
+  h1: ['Everything worth knowing ', 'before you shoot'],
+  lead: 'Short, practical reads for founders getting their product visuals right — whether you order from us or not.',
+  lees: 'Read',
+  slotEtiket: 'Whenever you are ready',
+  slotH: 'Ready when you are.',
+  slotP: 'Start with a single product, or put a whole set in the queue. There is no minimum.',
+  ctaStart: 'Start an order',
+};
+---
+
+<div class="s22 gd">
+
+  <section class="paneel gd-open">
+    <div class="paneel-kop">
+      <p class="etiket">{c.etiket}</p>
+      <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
+      <p class="lopend">{c.lead}</p>
+    </div>
+
+    <ul class="gd-raster" role="list">
+      {guides.map((g) => (
+        <li>
+          <a class="gd-kaart" href={g.href}>
+            <span class="mono gd-merk">{g.tag}</span>
+            <h2 class="hoog hoog-3 gd-titel">{g.title}</h2>
+            <p class="lopend gd-tekst">{g.desc}</p>
+            <span class="pijl gd-meer">{c.lees}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="paneel paneel-slot gd-slot">
+    <p class="etiket">{c.slotEtiket}</p>
+    <h2 class="hoog hoog-2">{c.slotH}</h2>
+    <p class="lopend">{c.slotP}</p>
+    <div class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{SAMPLE.cta}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  .gd-raster {
+    display: grid; gap: clamp(1rem, 2.2vw, 1.6rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    list-style: none; padding: 0; margin: 0;
+  }
+  /* De hele kaart is de link — er staat maar één bestemming in, dus een aparte
+     knop eronder zou een tweede doel suggereren dat er niet is. */
+  .gd-kaart {
+    display: flex; flex-direction: column; height: 100%;
+    padding: clamp(1.5rem, 2.8vw, 2.1rem);
+    border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 12px);
+    background: var(--wit); color: var(--inkt);
+    transition: background-color .25s var(--uit), border-color .25s var(--uit);
+  }
+  .gd-kaart:hover { background: var(--vel); border-color: var(--inkt); }
+
+  /* ── HET LABEL IS 12px EN NIET 10,9px — 7 september 2026 ──────────────────
+     Het stond op .68rem, en dat is 10,88px: onder de ondergrens van 11,5px die
+     de leesbaarheidskeuring hanteert. Het is het enige woord dat zegt WAAR de
+     gids over gaat, dus juist niet de plek om onder die grens te duiken. */
+  .gd-merk {
+    align-self: flex-start; margin-bottom: 1.1rem;
+    padding: .35rem .8rem; border-radius: 999px;
+    border: 1px solid var(--lijn-sterk); color: var(--inkt-2);
+  }
+  /* Kleiner dan .hoog-3 zelf: in een kolom van 300px brak "PRODUCTVISUALS" op
+     2,2rem middenin het woord af. De kop mag hier de kaart niet uit. */
+  .gd-titel { margin: 0; font-size: clamp(1.15rem, 1.9vw, 1.5rem); text-wrap: balance; }
+  .gd-tekst { margin: .8rem 0 0; font-size: .95rem; }
+  /* auto-marge boven de pijl: de kaarten zijn even hoog en de pijl staat bij
+     alle vier op dezelfde regel, hoe lang de omschrijving ook is. */
+  .gd-meer { margin-top: auto; padding-top: 1.4rem; color: var(--inkt); }
+
+  .gd-slot .lopend { max-width: 40em; }
+</style>

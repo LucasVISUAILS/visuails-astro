@@ -20,6 +20,14 @@
  * bestaat. Verder de dingen die de klant zijn beloofd: dat het scherm ZEGT dat
  * er geen abonnement loopt, en dat er twee wegen naast elkaar staan — naar de
  * abonnementen en naar los bestellen — allebei naar een pagina die er is.
+ *
+ * ── 6 SEPTEMBER 2026 ──────────────────────────────────────────────────────
+ * Het scherm is een Astro-pagina (src/pages/account/plan.astro, staat uit
+ * planView() in account.js) en sinds sectie 21 een inktvlak zonder foto: de
+ * foto's komen pas als Lucas ze schiet, en tot die tijd tekenen drie
+ * uitlegblokken eronder wat een abonnement is (slots, week, look). De
+ * beloften blijven: het scherm zegt dat er niets loopt, twee knoppen naar twee
+ * bestaande pagina's, en de kop leesbaar op het vlak.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -33,11 +41,13 @@ function ok(naam, kreeg, verwacht = true) {
 }
 const pad = (p) => fileURLToPath(new URL(p, import.meta.url));
 const bron = readFileSync(pad('../src/lib/account.js'), 'utf8');
-const css = readFileSync(pad('../public/account.css'), 'utf8');
+const pagina = readFileSync(pad('../src/pages/account/plan.astro'), 'utf8');
+const css = readFileSync(pad('../src/styles/studio.css'), 'utf8');
 
 console.log('\nhet scherm staat er, en het zegt waar het over gaat');
-ok('planBody rendert een .leegabo-sectie', /<section class="leegabo">/.test(bron));
-ok('met een aanhef die zegt dat er niets loopt', /class="leegabo-eyebrow">\$\{esc\(t\.planNoneEyebrow\)\}/.test(bron));
+ok('plan.astro tekent het lege scherm als .st-geenabo', /class="st-kaart-vlak st-geenabo"/.test(pagina));
+ok('met een aanhef die zegt dat er niets loopt', /class="st-eyebrow">\{v\.leeg\.eyebrow\}/.test(pagina));
+ok('en planView levert die aanhef uit de COPY', /leeg: \{ eyebrow: t\.planNoneEyebrow, h: t\.planNoneH, p: t\.planNoneBody/.test(bron));
 for (const sleutel of ['planNoneEyebrow', 'planNoneH', 'planNoneBody', 'planNoneCta', 'planNoneAlt']) {
   ok(`${sleutel} staat er in twee talen`,
     (bron.match(new RegExp(`^ {4}${sleutel}:`, 'gm')) || []).length, 2);
@@ -47,28 +57,21 @@ ok('de Nederlandse aanhef zegt het met zoveel woorden',
 
 console.log('\ntwee knoppen, twee bestaande pagina’s');
 ok('de eerste gaat naar de abonnementen',
-  /class="btn btn-primary" href="\$\{lang === 'nl' \? '\/nl\/plans' : '\/plans'\}"/.test(bron));
+  /ctaHref: lang === 'nl' \? '\/nl\/plans' : '\/plans'/.test(bron) && /class="btn btn-primary" href=\{v\.leeg\.ctaHref\}/.test(pagina));
 ok('de tweede gaat naar los bestellen',
-  /class="btn btn-tweede" href="\$\{lang === 'nl' \? '\/nl\/start' : '\/start'\}"/.test(bron));
+  /altHref: lang === 'nl' \? '\/nl\/start' : '\/start'/.test(bron) && /class="btn btn-2nd" href=\{v\.leeg\.altHref\}/.test(pagina));
 for (const p of ['src/pages/plans.astro', 'src/pages/start.astro', 'src/pages/nl/plans.astro', 'src/pages/nl/start.astro']) {
   ok(`${p} bestaat`, existsSync(pad('../' + p)));
 }
 
-console.log('\nde achtergrond wijst naar een bestand dat er is');
-const blok = css.slice(css.indexOf('.leegabo {'));
-const urls = [...blok.matchAll(/url\('([^']+)'\)/g)].map((m) => m[1]);
-ok('er staat minstens één achtergrondbeeld in', urls.length > 0);
-for (const u of urls) {
-  ok(`public${u} ligt er`, existsSync(pad('../public' + u)));
+console.log('\nhet vlak is leesbaar, en er staat uitleg onder');
+ok('het vlak is inkt', /\.st-geenabo \{[^}]*background: var\(--ink-900\)/.test(css));
+ok('en de kop erop is wit', /\.st-geenabo h2 \{[^}]*color: #FFFFFF/.test(css));
+ok('de drie uitlegblokken staan onder het vlak', (pagina.match(/class="st-kaart-vlak st-vlak st-uitleg-blok"/g) || []).length, 3);
+for (const sleutel of ['planVisSlotsH', 'planVisWeekH', 'planVisLookH']) {
+  ok(`${sleutel} staat er in twee talen`, (bron.match(new RegExp(`^ {4}${sleutel}:`, 'gm')) || []).length, 2);
 }
-
-console.log('\nde tekst staat niet op de foto zonder iets eronder');
-ok('er ligt een verloop over het beeld', /\.leegabo::before/.test(css));
-ok('en een eigen verloop voor smalle schermen',
-  /@media \(max-width: 700px\) \{[\s\S]{0,400}?\.leegabo::before/.test(css));
-/* De globale h2 draagt een onderlijn; op een foto is dat een streep door het
-   beeld. Die reset is onderdeel van het ontwerp en niet van de smaak. */
-ok('de kop draagt de blokonderlijn niet mee', /\.leegabo h2 \{[\s\S]*?box-shadow: none;/.test(css));
+ok('en de voorbeeldweek komt uit planView, ook zonder abonnement', /weekstrip: Array\.from\(\{ length: 28 \}/.test(bron));
 
 console.log(`\n${goed}/${totaal} geslaagd`);
 process.exit(goed === totaal ? 0 : 1);

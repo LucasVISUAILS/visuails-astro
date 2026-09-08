@@ -1,0 +1,182 @@
+<title>Lettertypes voor VISUAILS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600&family=Geist:wght@300;400;500&family=Fragment+Mono&family=Syncopate:wght@400;700&family=Manrope:wght@300;400;500;600&family=DM+Mono:wght@300;400&family=Archivo:wdth,wght@62..125,300..700&family=Courier+Prime:wght@400;700&family=Hanken+Grotesk:wght@300;400;500&family=Space+Mono&family=Martian+Mono:wdth,wght@75..112.5,300..500&display=swap">
+<style>
+  :root{--bg:#FFFFFF;--raise:#F0F0F0;--ink:#0A0A0A;--ink2:#454545;--ink3:#7A7A7A;--line:#E6E6E6;--line2:#C2C2C2;--accent:#DEDA14;--dark:#212121}
+  body{background:var(--bg);color:var(--ink);font:15px/1.5 "Hanken Grotesk",system-ui,sans-serif;margin:0}
+  .wrap{max-width:1480px;margin:0 auto;padding:clamp(1.2rem,4vw,4rem)}
+  .mono{font-family:"Space Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--ink);margin-bottom:3rem;flex-wrap:wrap}
+  header h1{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:500;letter-spacing:-.03em;margin:0;line-height:1.05}
+  header p{margin:.6rem 0 0;max-width:60ch;color:var(--ink2)}
+  .ref{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:4rem}
+  .ref div{background:#fff;padding:1.2rem}
+  .ref b{display:block;font-weight:500;margin-bottom:.3rem}
+  .ref p{margin:0;color:var(--ink2);font-size:.92rem}
+  .combo{border-top:1px solid var(--ink);padding:2.4rem 0 4rem;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:clamp(1.5rem,4vw,5rem)}
+  .combo aside h2{font-size:1.15rem;font-weight:500;margin:0 0 .3rem;letter-spacing:-.01em}
+  .combo aside .mono{display:block;margin-bottom:1.2rem}
+  .combo aside p{color:var(--ink2);margin:0 0 1rem;font-size:.95rem;max-width:38ch}
+  .combo aside dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.35rem 1rem;font-size:.85rem;border-top:1px solid var(--line);padding-top:1rem}
+  .combo aside dt{color:var(--ink3)} .combo aside dd{margin:0}
+  .proef{display:grid;gap:2rem}
+  .hero{background:var(--dark);color:#fff;padding:clamp(1.6rem,4vw,3rem);min-height:22rem;display:flex;flex-direction:column;justify-content:space-between;gap:2rem;position:relative}
+  .hero .labels{display:flex;gap:.8em;color:rgb(255 255 255/.7)}
+  .hero .labels span:first-child{color:#fff}
+  .hero .labels span+span::before{content:"/";margin-right:.8em;color:rgb(255 255 255/.35)}
+  .hero h3{margin:0;font-weight:500;line-height:1;letter-spacing:-.03em;font-size:clamp(2.2rem,4.6vw,4.2rem);max-width:14ch}
+  .hero h3 em{font-style:normal;background:var(--accent);color:var(--ink);padding:0 .1em}
+  .hero .hud{position:absolute;right:1.2rem;bottom:1.2rem;border:1px solid rgb(255 255 255/.3);padding:.4rem .7rem;background:rgb(0 0 0/.35)}
+  .wm{font-size:clamp(2rem,5vw,3.6rem);letter-spacing:-.02em;line-height:1;text-transform:uppercase;font-weight:600}
+  .rij{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2rem;align-items:start}
+  .rij p{margin:0;color:var(--ink2);max-width:46ch}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{text-align:left;padding:.55rem 0;border-bottom:1px solid var(--line)}
+  thead th{font-weight:400;color:var(--ink3);border-bottom-color:var(--ink)}
+  td{font-size:1.25rem;font-weight:500}
+  .spec{display:grid;grid-template-columns:auto 1fr auto;gap:.5rem 1.5rem;border-top:1px solid var(--line);padding-top:.8rem;align-items:baseline}
+  .spec .n{font-size:clamp(3rem,7vw,6rem);line-height:.9;font-weight:300;color:var(--line2);letter-spacing:-.04em}
+  .knop{display:inline-block;background:var(--accent);color:var(--ink);padding:.7rem 1.2rem;text-transform:uppercase;letter-spacing:.06em;font-size:.78rem;margin-top:1rem}
+  @media(max-width:860px){.combo{grid-template-columns:1fr}.rij{grid-template-columns:1fr}}
+  /* ── A ── */
+  .a .wm,.a .hero h3{font-family:"Unbounded",sans-serif;font-weight:500}
+  .a .hero h3{letter-spacing:-.02em;font-size:clamp(1.8rem,3.8vw,3.4rem)}
+  .a .wm{font-weight:600;letter-spacing:-.01em}
+  .a .rij p,.a td{font-family:"Geist",sans-serif}
+  .a .mono,.a .hero .labels,.a .hero .hud,.a thead th,.a .spec,.a .knop{font-family:"Fragment Mono",monospace}
+  .a .spec .n{font-family:"Geist",sans-serif}
+  /* ── B ── */
+  .b .wm{font-family:"Syncopate",sans-serif;font-weight:700;letter-spacing:-.02em;font-size:clamp(1.6rem,4vw,3rem)}
+  .b .hero h3,.b .rij p,.b td,.b .spec .n{font-family:"Manrope",sans-serif}
+  .b .hero h3{font-weight:500;letter-spacing:-.035em}
+  .b .mono,.b .hero .labels,.b .hero .hud,.b thead th,.b .spec,.b .knop{font-family:"DM Mono",monospace}
+  /* ── C ── */
+  .c .wm{font-family:"Archivo",sans-serif;font-stretch:125%;font-weight:600;letter-spacing:0}
+  .c .hero h3,.c .rij p,.c td,.c .spec .n{font-family:"Archivo",sans-serif;font-stretch:100%}
+  .c .hero h3{font-weight:500;letter-spacing:-.03em}
+  .c .mono,.c .hero .labels,.c .hero .hud,.c thead th,.c .spec,.c .knop{font-family:"Courier Prime",monospace;letter-spacing:.04em}
+  /* ── D (nu) ── */
+  .d .wm,.d .hero h3,.d .rij p,.d td,.d .spec .n{font-family:"Hanken Grotesk",sans-serif}
+  .d .wm{font-weight:500;letter-spacing:-.03em}
+  .d .mono,.d .hero .labels,.d .hero .hud,.d thead th,.d .spec,.d .knop{font-family:"Space Mono",monospace}
+  /* ── E ── */
+  .e .wm{font-family:"Martian Mono",monospace;font-stretch:112.5%;font-weight:500;letter-spacing:-.02em;font-size:clamp(1.8rem,4.2vw,3.2rem)}
+  .e .hero h3,.e .rij p,.e td,.e .spec .n{font-family:"Geist",sans-serif}
+  .e .hero h3{font-weight:500;letter-spacing:-.035em}
+  .e .mono,.e .hero .labels,.e .hero .hud,.e thead th,.e .spec,.e .knop{font-family:"Martian Mono",monospace;font-stretch:100%;font-weight:400}
+</style>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="mono">VISUAILS® · lettertypes · 5 september 2026</p>
+      <h1>Vijf combinaties, allemaal vrij te gebruiken.</h1>
+      <p>Wat ik in je voorbeelden zie: een <b>breed, geometrisch woordmerk</b> (Komma), een <b>zachte grotesk</b> voor de tekst (ecwora), een <b>neutrale Helvetica-achtige</b> voor lange stukken en cijfers (het schetsblad), en een <b>typemachine-mono</b> voor labels en de copyrightregel (Lue). Elke combinatie hieronder vult die vier rollen in. Alles staat op Google Fonts onder de SIL Open Font License — geen licentiekosten, ook niet commercieel.</p>
+    </div>
+    <p class="mono">wordmark · kop · tekst · labels</p>
+  </header>
+
+  <div class="ref">
+    <div><b>Komma</b><p>Woordmerk in een extended geometrische sans. Op de site zelf: PP Neue Montreal + Fragment Mono. Fragment Mono is vrij; Neue Montreal niet.</p></div>
+    <div><b>ecwora</b><p>Rond, zacht, geometrisch — een grotesk met open vormen, dicht bij Manrope of Sora.</p></div>
+    <div><b>Schetsblad</b><p>Helvetica/Arial-achtig voor lopende tekst, en grote, lichte cijfers in grijs (20 / 26) als beeldelement.</p></div>
+    <div><b>Lue</b><p>Alles in één mono met typemachinekarakter — labels, lopende tekst in kapitalen, de copyrightregel.</p></div>
+  </div>
+
+  <!-- A -->
+  <section class="combo a">
+    <aside>
+      <span class="mono">A · aanbevolen</span>
+      <h2>Unbounded + Geist + Fragment Mono</h2>
+      <p>Het dichtst bij Komma: Unbounded is breed en geometrisch en werkt als woordmerk en als kop; Geist is de rustige Helvetica-opvolger voor tekst en cijfers; Fragment Mono is letterlijk de mono die Ovyon voor Komma gebruikt.</p>
+      <dl><dt>Wordmark / kop</dt><dd>Unbounded 500–600</dd><dt>Tekst, cijfers</dt><dd>Geist 300–500</dd><dt>Labels, knoppen</dt><dd>Fragment Mono</dd><dt>Licentie</dt><dd>OFL, alle drie</dd></dl>
+    </aside>
+    <div class="proef">
+      <div class="hero"><div class="labels mono"><span>VISUAILS®</span><span>Studio</span><span>Enschede, NL</span></div><h3>Jij uploadt. Wij leveren de <em>campagne</em>.</h3><span class="hud mono">Catalog · 01/04</span></div>
+      <div class="wm">Visuails®</div>
+      <div class="rij">
+        <p>Catalog, lifestyle en video van de productfoto’s die je al hebt. Het kledingstuk blijft zoals het is; licht, achtergrond, model en uitsnede bouwen wij eromheen. Elk beeld gecheckt door een specialist.<br><span class="knop">Start een bestelling</span></p>
+        <div><table><thead><tr><th class="mono">Producten</th><th class="mono">Compleet · 7 foto’s</th><th class="mono">Catalog · 4</th></tr></thead><tbody><tr><td>1–4</td><td>€149</td><td>€89</td></tr><tr><td>5–9</td><td>€109</td><td>€65</td></tr><tr><td>20+</td><td>€65</td><td>€39</td></tr></tbody></table>
+        <div class="spec mono" style="margin-top:1rem"><span class="n">04</span><span>Een specialist kijkt<br>elk beeld, voordat het bij je staat.</span><span>2026</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="combo b">
+    <aside>
+      <span class="mono">B · het zachtst</span>
+      <h2>Syncopate + Manrope + DM Mono</h2>
+      <p>Syncopate is extreem breed en alleen in kapitalen — puur een woordmerk-letter, zoals Komma’s. Manrope is de ecwora-toon: rond en vriendelijk maar strak gezet. DM Mono is fijner en lichter dan Space Mono.</p>
+      <dl><dt>Wordmark</dt><dd>Syncopate 700</dd><dt>Kop, tekst</dt><dd>Manrope 300–600</dd><dt>Labels</dt><dd>DM Mono 300–400</dd><dt>Let op</dt><dd>Syncopate alleen als merk, nooit als kop</dd></dl>
+    </aside>
+    <div class="proef">
+      <div class="hero"><div class="labels mono"><span>VISUAILS®</span><span>Studio</span><span>Enschede, NL</span></div><h3>Jij uploadt. Wij leveren de <em>campagne</em>.</h3><span class="hud mono">Catalog · 01/04</span></div>
+      <div class="wm">Visuails®</div>
+      <div class="rij">
+        <p>Catalog, lifestyle en video van de productfoto’s die je al hebt. Het kledingstuk blijft zoals het is; licht, achtergrond, model en uitsnede bouwen wij eromheen. Elk beeld gecheckt door een specialist.<br><span class="knop">Start een bestelling</span></p>
+        <div><table><thead><tr><th class="mono">Producten</th><th class="mono">Compleet · 7 foto’s</th><th class="mono">Catalog · 4</th></tr></thead><tbody><tr><td>1–4</td><td>€149</td><td>€89</td></tr><tr><td>5–9</td><td>€109</td><td>€65</td></tr><tr><td>20+</td><td>€65</td><td>€39</td></tr></tbody></table>
+        <div class="spec mono" style="margin-top:1rem"><span class="n">04</span><span>Een specialist kijkt<br>elk beeld, voordat het bij je staat.</span><span>2026</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="combo c">
+    <aside>
+      <span class="mono">C · één familie + typemachine</span>
+      <h2>Archivo (breed → normaal) + Courier Prime</h2>
+      <p>Archivo heeft een breedte-as: het woordmerk op 125% (extended, Komma), de koppen en de tekst op 100% — één familie, dus alles rijmt vanzelf. Courier Prime is de Lue-toon: een echte typemachine-mono voor labels en de © regel.</p>
+      <dl><dt>Wordmark</dt><dd>Archivo 600, breedte 125%</dd><dt>Kop, tekst, cijfers</dt><dd>Archivo 300–500, breedte 100%</dd><dt>Labels</dt><dd>Courier Prime</dd><dt>Sterk in</dt><dd>het schetsblad-gevoel: neutraal, technisch</dd></dl>
+    </aside>
+    <div class="proef">
+      <div class="hero"><div class="labels mono"><span>VISUAILS®</span><span>Studio</span><span>Enschede, NL</span></div><h3>Jij uploadt. Wij leveren de <em>campagne</em>.</h3><span class="hud mono">Catalog · 01/04</span></div>
+      <div class="wm">Visuails®</div>
+      <div class="rij">
+        <p>Catalog, lifestyle en video van de productfoto’s die je al hebt. Het kledingstuk blijft zoals het is; licht, achtergrond, model en uitsnede bouwen wij eromheen. Elk beeld gecheckt door een specialist.<br><span class="knop">Start een bestelling</span></p>
+        <div><table><thead><tr><th class="mono">Producten</th><th class="mono">Compleet · 7 foto’s</th><th class="mono">Catalog · 4</th></tr></thead><tbody><tr><td>1–4</td><td>€149</td><td>€89</td></tr><tr><td>5–9</td><td>€109</td><td>€65</td></tr><tr><td>20+</td><td>€65</td><td>€39</td></tr></tbody></table>
+        <div class="spec mono" style="margin-top:1rem"><span class="n">04</span><span>Een specialist kijkt<br>elk beeld, voordat het bij je staat.</span><span>2026</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- E -->
+  <section class="combo e">
+    <aside>
+      <span class="mono">D · mono als merk</span>
+      <h2>Martian Mono (breed) + Geist</h2>
+      <p>De gok: het woordmerk en alle labels in één brede mono, en alleen de koppen en tekst in Geist. Dat is het meest “infographic” van de vijf — alles wat klein is leest als een datablad — en het is het minst gezien.</p>
+      <dl><dt>Wordmark, labels</dt><dd>Martian Mono, breedte 112% / 100%</dd><dt>Kop, tekst, cijfers</dt><dd>Geist 300–500</dd><dt>Risico</dt><dd>koud als de foto’s het niet opwarmen</dd></dl>
+    </aside>
+    <div class="proef">
+      <div class="hero"><div class="labels mono"><span>VISUAILS®</span><span>Studio</span><span>Enschede, NL</span></div><h3>Jij uploadt. Wij leveren de <em>campagne</em>.</h3><span class="hud mono">Catalog · 01/04</span></div>
+      <div class="wm">Visuails®</div>
+      <div class="rij">
+        <p>Catalog, lifestyle en video van de productfoto’s die je al hebt. Het kledingstuk blijft zoals het is; licht, achtergrond, model en uitsnede bouwen wij eromheen. Elk beeld gecheckt door een specialist.<br><span class="knop">Start een bestelling</span></p>
+        <div><table><thead><tr><th class="mono">Producten</th><th class="mono">Compleet · 7 foto’s</th><th class="mono">Catalog · 4</th></tr></thead><tbody><tr><td>1–4</td><td>€149</td><td>€89</td></tr><tr><td>5–9</td><td>€109</td><td>€65</td></tr><tr><td>20+</td><td>€65</td><td>€39</td></tr></tbody></table>
+        <div class="spec mono" style="margin-top:1rem"><span class="n">04</span><span>Een specialist kijkt<br>elk beeld, voordat het bij je staat.</span><span>2026</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D nu -->
+  <section class="combo d">
+    <aside>
+      <span class="mono">E · wat er nu staat</span>
+      <h2>Hanken Grotesk + Space Mono</h2>
+      <p>Ter vergelijking: de keuze van vanochtend. Hanken is een nette humanistische grotesk, Space Mono heeft een uitgesproken, wat retro karakter. Het gemis ten opzichte van de voorbeelden: geen brede letter voor het merk, en de mono trekt aandacht waar hij stil hoort te zijn.</p>
+      <dl><dt>Kop, tekst</dt><dd>Hanken Grotesk 300–500</dd><dt>Labels</dt><dd>Space Mono</dd></dl>
+    </aside>
+    <div class="proef">
+      <div class="hero"><div class="labels mono"><span>VISUAILS®</span><span>Studio</span><span>Enschede, NL</span></div><h3>Jij uploadt. Wij leveren de <em>campagne</em>.</h3><span class="hud mono">Catalog · 01/04</span></div>
+      <div class="wm">Visuails®</div>
+      <div class="rij">
+        <p>Catalog, lifestyle en video van de productfoto’s die je al hebt. Het kledingstuk blijft zoals het is; licht, achtergrond, model en uitsnede bouwen wij eromheen. Elk beeld gecheckt door een specialist.<br><span class="knop">Start een bestelling</span></p>
+        <div><table><thead><tr><th class="mono">Producten</th><th class="mono">Compleet · 7 foto’s</th><th class="mono">Catalog · 4</th></tr></thead><tbody><tr><td>1–4</td><td>€149</td><td>€89</td></tr><tr><td>5–9</td><td>€109</td><td>€65</td></tr><tr><td>20+</td><td>€65</td><td>€39</td></tr></tbody></table>
+        <div class="spec mono" style="margin-top:1rem"><span class="n">04</span><span>Een specialist kijkt<br>elk beeld, voordat het bij je staat.</span><span>2026</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="mono" style="border-top:1px solid var(--ink);padding-top:1rem">Het woordmerk zelf (logo-wordmark.webp) blijft het bestand dat het is; “Visuails®” hierboven laat alleen zien hoe het lettertype naast dat merk zou staan. Zeg A, B, C, D of E — of mix: bijvoorbeeld A met de mono van C.</p>
+</div>

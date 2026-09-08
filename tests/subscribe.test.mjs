@@ -28,7 +28,7 @@
  * `_links.checkout.href`, `_embedded.mandates` — zodat een wijziging daar hier
  * omvalt in plaats van in productie.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { d1, verseDb, telling } from './lib/d1sqlite.mjs';
 import { hashToken } from '../src/lib/token.js';
 import { handleSubscribeStart, handleSubscribeReturn, eersteTermijn } from '../src/lib/subscribe.js';
@@ -291,7 +291,9 @@ console.log('\nen de weg bestaat echt — geen knop zonder draad');
   ok('account.js roept het starten aan', /handleSubscribeStart\(context, customer/.test(src), true);
   ok('en de terugkomst', /handleSubscribeReturn\(context, customer\)/.test(src), true);
   ok('er is een route om te starten', /'\/account\/plan\/start'/.test(src), true);
-  ok('en een om terug te komen', /'\/account\/plan\/return'/.test(src), true);
+  /* Sinds 6 september 2026 is de terugkomst een Astro-pagina
+     (src/pages/account/plan/return.astro) op studioScreen(…, 'plan-return'). */
+  ok('en een om terug te komen', existsSync(new URL('../src/pages/account/plan/return.astro', import.meta.url)) && /'plan-return'/.test(src), true);
 
   const pagina = readFileSync(new URL('../src/components/order/PlanPicker.astro', import.meta.url), 'utf8');
   ok('de keuzepagina post naar die route', /action="\/account\/plan\/start"/.test(pagina), true);
@@ -664,8 +666,11 @@ console.log('\nde contactpoort voor alles wat eerst opgezet moet worden');
    * Wat elk slot wél inhoudt, staat er per soort al bij (kindPer), dus er valt
    * niets weg als de zin wegblijft. */
   const acc = readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8');
+  /* Sinds 6 september 2026 tekent src/pages/account/plan.astro de zin, uit
+     `elkProduct` dat planView() in account.js uitrekent. */
+  const plan = readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8');
   ok('de zin over elk product staat achter een voorwaarde',
-    /\$\{elkProduct \? `\$\{esc\(t\.planEachProduct\)\}/.test(acc), true);
+    /\{v\.saldo\.elkProduct && <Fragment>\{t\.planEachProduct\}/.test(plan), true);
   ok('en die voorwaarde leest de bundel van dit abonnement',
     /const productSoorten = Object\.keys\(bundelVoor\(state\.sub\)\)/.test(acc), true);
   /* ── EN ZONDER ÉÉN SOORT BIJ NAAM ────────────────────────────────────────
@@ -682,7 +687,7 @@ console.log('\nde contactpoort voor alles wat eerst opgezet moet worden');
   /* De regel over bijbestellen blijft juist wél staan: bij een zelf samengestelde
      maand is dat het antwoord op "ik wil er deze maand eentje meer". */
   ok('de regel over bijbestellen blijft onvoorwaardelijk',
-    /\$\{esc\(t\.planExtraNote\)\}<\/p>/.test(acc), true);
+    /<\/Fragment>\}\{t\.planExtraNote\}<\/p>/.test(plan), true);
 }
 
 globalThis.fetch = echteFetch;

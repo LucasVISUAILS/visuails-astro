@@ -252,7 +252,11 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
   const mislukt = [];
   for (const [sleutel, rijen] of gesorteerd) {
     const [vensterStart, vensterEind] = sleutel === 'asap' ? [null, null] : sleutel.split('|');
-    const details = { bron: 'abonnement', abonnement: state.sub.ref, maand: monthKey() };
+    /* De maand van de LOPENDE TERMIJN — `state.maand`, die planSaldo() al heeft
+       uitgerekend. De kalendermaand stond hier, en die zette op de 4e van de
+       maand een verkeerd etiket op een bestelling die uit de termijn van de 20e
+       betaald werd. Zie termijnMaand() in subscription.js. */
+    const details = { bron: 'abonnement', abonnement: state.sub.ref, maand: state.maand || monthKey() };
     if (vensterStart) { details.venster_start = vensterStart; details.venster_eind = vensterEind; }
     rijen.forEach((q, i) => {
       details[`product_p${i + 1}`] = String(q.name || '').slice(0, 120);

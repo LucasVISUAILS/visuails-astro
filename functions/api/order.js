@@ -53,7 +53,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { readCalendar } from '../../src/lib/agenda.js';
-import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor } from '../../src/data/pricing.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
    browser. `background` heet hier backgroundById, want `background` is in dit
@@ -88,7 +88,7 @@ import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../s
    noot bij die aanroep over waarom het de wire-waarde moet zijn en niet de
    laddernaam. */
 import {
-  quoteOrder, quoteTestSample, quoteBrandModel, centsToMollieValue, paymentDescription,
+  quoteOrder, quoteTestSample, quoteBrandModel, quoteVideo, centsToMollieValue, paymentDescription,
   isPayableService,
 } from '../../src/lib/quote.js';
 import { businessCheck } from '../../src/data/business.js';
@@ -965,15 +965,40 @@ export async function onRequestPost({ request, env, waitUntil }) {
     }
   }
 
+  /* ── EN EEN VIERDE TAK: VIDEO — 7 september 2026 ──────────────────────────
+     Een videobestelling heeft wél een aantal maar geen ladder, dus geen van de
+     drie takken hierboven past erop. quoteVideo() beslist op de gekozen STIJL:
+     Motion heeft een vast tarief per clip en is uit te rekenen; lifestyle,
+     campagne en custom leveren null op en worden met de hand geoffreerd in
+     /admin — hetzelfde pad dat een aanvraag voor een eigen look al loopt.
+
+     `details.style` en niet een aparte draadwaarde: welke soort clip het is,
+     staat waar een look bij lifestyle ook staat. Zie de kop van quoteVideo(). */
   const quote = svc === 'test-sample'
     ? quoteTestSample({ vatRate: vatCall.rate })
     : svc === 'brand-model'
       ? quoteBrandModel({ vatRate: vatCall.rate })
-      : quoteOrder({
-        service: svc, products, outfits: outfitCount, extras: extraCount,
-        vatRate: vatCall.rate,
-        styleSurchargeCents: ownStyle ? Number(ownStyle.surcharge_cents) || 0 : 0,
-      });
+      : svc === 'video'
+        ? quoteVideo({
+          /* `clips` EN NIET `products`, en dat is geen detail. Zie de lange noot
+             bij dat veld in HoldingPage.astro: `orders.product_count` betekent
+             overal in dit systeem het aantal PRODUCTEN dat door de fotopijplijn
+             gaat, en er een aantal clips in schrijven liet tierFor() een venster
+             beloven, de opwaardeermail een verkeerd getal noemen en het portaal
+             "12 producten" zetten bij een aanvraag zonder één product erin.
+             Dat is één keer gerepareerd door het veld te hernoemen; die
+             reparatie hier ongedaan maken door alsnog `products` te lezen, zou
+             alle drie terugbrengen op het pad waar het geld loopt.
+             `notSure` ("Weet ik nog niet") blijft staan zoals de klant hem koos
+             en countOf() maakt er null van — dus geen prijs, en dat klopt. */
+          style: details.style, clips: countOf(get('clips')), outfits: outfitCount,
+          vatRate: vatCall.rate,
+        })
+        : quoteOrder({
+          service: svc, products, outfits: outfitCount, extras: extraCount,
+          vatRate: vatCall.rate,
+          styleSurchargeCents: ownStyle ? Number(ownStyle.surcharge_cents) || 0 : 0,
+        });
 
   // ── THE WITHDRAWAL WAIVER, RECORDED ────────────────────────────────────────
   // A customer with no VAT number is a consumer, and a consumer buying at a
@@ -2697,9 +2722,12 @@ export function customerEmail(lang, ref, service, name,
       ? `Je leverdatum staat gereserveerd: ${esc(from)} tot en met ${esc(to)}.`
       : `Your delivery date is reserved: ${esc(from)} to ${esc(to)}.`;
   } else if (attended) {
+    /* clause(), niet de kale functie — zie tests/leestekens.test.mjs. `turnaround()`
+       en `tierRow()` geven afgeronde zinnen terug, en een punt erachter maakt er
+       `betaalt.. We komen` van. Dat stond hier tot 7 september in beide talen. */
     timing = nl
-      ? `${turnaround('attended', 'nl')}. We komen bij je terug met de exacte data — zolang die niet bevestigd zijn, noemen we er geen.`
-      : `${turnaround('attended', 'en')}. We'll come back with the exact dates — until they're confirmed, we won't name one.`;
+      ? `${clause(turnaround('attended', 'nl'))}. We komen bij je terug met de exacte data — zolang die niet bevestigd zijn, noemen we er geen.`
+      : `${clause(turnaround('attended', 'en'))}. We'll come back with the exact dates — until they're confirmed, we won't name one.`;
   } else {
     // THIS WAS TWO STRING LITERALS, and the docstring above already claimed it
     // was not. They happened to match TIERS.unattended byte-for-byte — verified
@@ -2709,12 +2737,29 @@ export function customerEmail(lang, ref, service, name,
     // only sanctioned timing language existed in two places, and the second one
     // was inside an email, which is precisely the surface the docstring above
     // names as "the one surface nobody greps".
-    timing = `${tierRow('unattended', 'queue', lang)}. ${turnaround('unattended', lang)}.`;
+    timing = `${clause(tierRow('unattended', 'queue', lang))}. ${clause(turnaround('unattended', lang))}.`;
   }
 
+  /* ── "EEN SPECIALIST", NOOIT "EEN MENS" — 7 september 2026 ─────────────────
+   *
+   * Lucas' eigen regel, en de bevestigingsmail was de enige plek waar hij
+   * gebroken werd. Elke andere plek zegt het goed: "Reviewed by a specialist
+   * before it reaches you" (test-sample), "A specialist checks · Every image,
+   * before it reaches you" (voorpagina), "een specialist controleert elke visual
+   * voordat die bij jou aankomt" (faq). Alleen hier stond "Een mens" / "A
+   * person" — in de mail die iederéén krijgt die betaalt.
+   *
+   * Het verschil is niet cosmetisch. "Een mens" zegt dat er iemand naar gekeken
+   * heeft; "een specialist" zegt dat het iemand was die het kan beoordelen. Dat
+   * tweede is wat de klant koopt, en het is ook wat er gebeurt.
+   *
+   * EN DE PUNT STOND ER TWEE KEER. AFTERCARE eindigt zelf al op een punt
+   * ("...om aanpassingen door te voeren."), en hier werd er nog een `.` achter
+   * geplakt. In beide talen, sinds de regel bestaat: "door te voeren.." en
+   * "any details..". Eén punt is genoeg. */
   const care = nl
-    ? `Een mens controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}.`
-    : `A person checks every visual before it reaches you. ${aftercare(tier, 'en')}.`;
+    ? `Een specialist controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}`
+    : `A specialist checks every visual before it reaches you. ${aftercare(tier, 'en')}`;
 
   // SECTION 13 · "Factual, no pressure, once per quarter maximum." The styling
   // IS the "no pressure" half, and it is the half a copy review cannot enforce:
@@ -2905,6 +2950,18 @@ export function subscriberEmail(lang) {
         ? 'Hier staat het in vier punten — de hoeken, het licht en de achtergrond die van een telefoonfoto een campagnebeeld maken.'
         : "Here it is in four points — the angles, lighting and background that turn a phone photo into a campaign image."),
       linkLine(url, nl ? 'Bekijk de checklist' : 'Read the checklist'),
+      /* ── EN DE PDF ERONDER — 7 september 2026 ─────────────────────────────
+         Deze mail IS de checklist waarvoor iemand zich heeft ingeschreven, en
+         hij landt bij iemand die zo gaat staan fotograferen. Een link naar een
+         pagina vraagt hem om die pagina op te zoeken op het moment dat hij zijn
+         handen vol heeft; het bestand kan hij nu meenemen.
+
+         Als bijlage kan niet: deze mail gaat naar een inschrijving en niet naar
+         een klant, en een pdf van 170 kB bij een eerste contact is precies wat
+         een spamfilter opmerkt. Een link naar het bestand doet hetzelfde en
+         weegt niets. */
+      linkLine(`https://visuails.com/downloads/visuails-fotogids-${nl ? 'nl' : 'en'}.pdf`,
+        nl ? 'Of neem hem mee als pdf' : 'Or take it with you as a pdf'),
       spamNote(lang),
     ].join(''),
   });

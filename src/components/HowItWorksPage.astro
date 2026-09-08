@@ -193,6 +193,7 @@ import {
 import { localizedPath } from '../i18n/ui.js';
 
 import Note from './Note.astro';
+import '../styles/stijl22.css';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -395,233 +396,204 @@ const c = COPY[lang];
 
 ---
 
-<!-- HERO -->
-<section class="hero-editorial compact">
-  {/* De foto en de sluier zitten in een STILLE vloer. Het masker dat de
-      onderrand laat oplossen hangt daaraan en niet aan .bg zelf: die laag
-      schuift met de parallax, en een masker schuift met zijn element mee —
-      dan valt de uitdoving naast de rand die ze moet oplossen. */}
-  <div class="hero-vloer rand-los-voet" aria-hidden="true">
-    <div class="bg" style="background-image:url('/img/banners-04.webp')"></div>
-    <div class="fade"></div>
-  <div class="korrel-mee" aria-hidden="true"></div>
-  </div>
-  <div class="hero-editorial-content container">
-    <h1 class="display" data-split-lines>{c.h1a}<br />{c.h1b}<em>{c.h1em}</em>{c.h1c}</h1>
-    <p class="lead" style="margin-top:1.2rem;max-width:60ch">{c.lead}</p>
-    <div class="flex" style="margin-top:1.8rem">
-      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg" data-track="hiw-start">{c.ctaStart}</a></span></span>
-      <a href={lp('/test-sample')} class="btn btn-ghost btn-lg">{c.ctaSample}</a>
-    </div>
-  </div>
-</section>
+{/* ═══ /how-it-works IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══════════
+    Tiende pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in
+    beide talen, dezelfde <FigWalk>, <Compare grade> en <FigApproval>, dezelfde
+    <Note> over de btw. Alleen de opmaak verandert.
 
-<!-- ONE ORDER, FOLLOWED FROM END TO END. This section is what six were: the
-     five figures the page carried, and then FigFlow, which replaced them for a
-     day. What changed between FigFlow and this is not the drawing but the
-     question it answers. FigFlow put all three services on screen as switches
-     you could combine — a calculator, good for finding a price and useless for
-     understanding a process, because there is no order and no story in it.
-     This follows ONE service, and while you are in it the other two are not on
-     the page. Lucas: "Ieder apart van elkaar."
+    DE HERO WAS EEN FULL-BLEED FOTO MET TEKST EROVERHEEN. Die vorm — een beeld
+    onder een sluier met een kop erop — is precies wat deze stijl niet doet: het
+    beeld staat ernaast en niet eronder, zodat het beeld beeld blijft. De foto
+    (banners-04) staat er dus nog, in een kaart naast de kop.
 
-     The gate promise stays in prose above it, where it has always been. It is
-     the one claim on this page we would rather lose an order over than break,
-     and it belongs in a sentence a reader cannot skim past rather than in a
-     node on a diagram they might. -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.flowH}</h2></div>
-  <p class="flow-lede reveal pending">{c.flowLede}</p>
-  <div class="gate reveal pending">
-    <p class="editorial-statement">{c.gateLead}</p>
-    <p class="gate-body">{c.gateBody}</p>
-  </div>
-  <div class="reveal pending">
-    <FigWalk lang={lang} />
-  </div>
-</div></section>
+    DE BELOFTE OVER DE POORT BLIJFT PROZA. Het is de ene bewering op deze pagina
+    waarvoor we liever een bestelling verliezen dan hem breken, en die hoort in
+    een zin te staan waar een lezer niet langs kan scrollen — niet in een knoop
+    van een tekening die hij misschien overslaat. */}
+<div class="s22">
 
-<!-- FINISHED BY HAND -->
-<section class="section-tight"><div class="container two-col">
-  <div class="reveal pending">
-    <Compare
-      grade
-      before="/img/lifestyle-glow-06.webp"
-      after="/img/lifestyle-glow-06.webp"
-      beforeAlt={c.beforeAlt}
-      afterAlt={c.afterAlt}
-    />
-  </div>
-  <div class="reveal pending">
-    <h2>{c.craftH}</h2>
-    <p class="lead" style="margin-top:1.1rem">{c.craftBody}</p>
-    <div class="chip-row" style="margin-top:1.4rem">
-      {c.chips.map((chip) => (
-        <span class="chip"><span class="dot"></span>{chip}</span>
-      ))}
-    </div>
-  </div>
-</div></section>
-
-<!-- THE PORTAL, MET DE TEKENING ERBIJ — 30 AUGUSTUS 2026.
-     Hier stond: "de tekening ervan staat nu in de doorloop hierboven, dus wat
-     hier overblijft is de claim zelf." Dat klopte tot vandaag. De portaalstap
-     is samengevoegd met de downloadstap om die doorloop in te korten, en toen
-     was deze sectie de enige plek op de pagina die over goedkeuren gaat én de
-     enige sectie zonder één beeld.
-     Twee kolommen dus, en niet meer één: er is nu wél iets voor de rechterhelft
-     — precies de reden die hier stond om het níet te doen. -->
-<section class="section-tight"><div class="container two-col hiw-portal">
-  <div class="reveal pending">
-    <h2>{c.portalH}</h2>
-    <p class="lead" style="margin-top:1.1rem">{c.portalBody}</p>
-    <p class="portal-note">{c.portalNote}</p>
-    {/* ── DRIE PAGINA'S DIE NERGENS VANDAAN BEREIKBAAR WAREN — 21 aug 2026 ──
-        Gemeten op de gebouwde site: /demo had NUL inkomende links vanuit welke
-        paginatekst dan ook — je hele doorloop van een bestelling, alleen te
-        vinden door een uitklapmenu te openen. /about idem. /studio had er één.
-        Alle drie horen bij deze pagina: dit is waar iemand is die wil weten hoe
-        het werkt, en dit zijn de drie plekken waar dat verder wordt uitgelegd. */}
-    <p class="hiw-verder">
-      {c.verderH}{' '}
-      {/* DE /demo-LINK STOND HIER EN /demo BESTAAT NIET — 26 augustus 2026.
-          Gevonden door audit-links.mjs, samen met de 90 in het menu. `verderDemo`
-          blijft als tekst bestaan zodat de regel terug kan zodra de pagina er is;
-          zie PLAN-DEMO-SPEL.md en de noot bij how.map in Layout.astro. */}
-      <a href={lp('/studio')}>{c.verderStudio}</a>{' · '}
-      <a href={lp('/about')}>{c.verderAbout}</a>
-    </p>
-  </div>
-  <div class="reveal pending">
-    <FigApproval
-      head={c.portalFigH}
-      okLabel={c.portalFigOk}
-      revLabel={c.portalFigRev}
-      waitLabel={c.portalFigWait}
-      note={c.portalFigNote}
-    />
-  </div>
-</div></section>
-
-<!-- THE DETAILS. FigFormats and its heading used to open this section; the five
-     channel crops are the fan-out at the foot of the rail now, and the
-     high-resolution claim that was once a sixth card travelled with them into
-     the rail's caption. What is left is the card grid it always ended with. -->
-<section><div class="container">
-  <div class="section-head"><h2>{c.detailsH}</h2></div>
-  <div class="grid grid-auto reveal-group">
-    {c.details.map((d) => (
-      <div class="card reveal pending">
-        <h3 style="font-size:1.05rem">{d.t}</h3>
-        <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{d.b}{d.linkText ? <> <a href={lp(d.linkHref)}>{d.linkText}</a>.</> : null}</p>
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="hiw-h1">
+    <div class="hiw-open">
+      <div class="paneel-kop">
+        <h1 id="hiw-h1" class="hoog">{c.h1a}<br />{c.h1b}<em>{c.h1em}</em>{c.h1c}</h1>
+        <p class="lopend">{c.lead}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start')} data-track="hiw-start">{c.ctaStart}</a>
+          <a class="knop knop-lijn" href={lp('/test-sample')}>{c.ctaSample}</a>
+        </p>
       </div>
-    ))}
-  </div>
-</div></section>
-
-<!-- WAAR DE BEELDEN LANDEN -->
-{/* Verhuisd van de homepage (sectie 10), augustus 2026. Het staat hier omdat
-    het de enige band was die antwoord gaf op wat je met de beelden DOET — de
-    vraag waar deze pagina over gaat en waar de homepage één stap voor stopte.
-
-    Het rekent de prijs om naar stukskosten zonder korting te geven: een
-    seizoenstotaal is geen bedrag meer maar een bedrag gedeeld door ruwweg
-    tweehonderd plaatsingen. Er staat met opzet geen enkel eurobedrag in — dat
-    is het werk van de prijspagina, en deze band moet niet de zoveelste plek
-    worden waar iets geprijsd wordt. */}
-<section class="section-tight"><div class="container">
-  <div class="section-head">
-    <h2>{c.landH}</h2>
-    <p class="lead" style="margin-top:.8rem">{c.landLede}</p>
-  </div>
-  <ul class="land-grid">
-    {c.land.map(([t, b]) => (
-      <li>
-        <span class="land-t">{t}</span>
-        <span class="land-n">{b}</span>
-      </li>
-    ))}
-  </ul>
-  <p class="land-note">{c.landNote}</p>
-</div></section>
-
-<!-- FAQ -->
-<section class="section-tight"><div class="container">
-  <div style="text-align:center;max-width:60ch;margin:0 auto 1.4rem">
-    <h2>{c.faqH}</h2>
-    <p class="faq-guides" set:html={c.faqGuides} />
-  </div>
-  <div class="flex" style="justify-content:center"><a href={lp('/faq')} class="btn btn-ghost btn-lg">{c.faqCta}</a></div>
-</div></section>
-
-<!-- CTA -->
-<section class="section-tight"><div class="container">
-  <div class="cta-band reveal pending">
-    <h2 class="display" style="font-size:var(--t-page-h1-sm)">{c.ctaH}</h2>
-    <p class="lead" style="margin:1rem auto 0;text-align:center">{c.ctaBody}</p>
-    <div class="flex" style="justify-content:center;margin-top:1.8rem">
-      <a href={lp('/test-sample')} class="btn btn-primary btn-lg" data-track="hiw-sample">{c.ctaSampleBtn}</a>
-      <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.ctaStartBtn}</a>
-      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
+      <span class="kaart kaart-stil hiw-beeld">
+        <img src="/img/banners-04.webp" alt="" width="928" height="1152" loading="eager" fetchpriority="high" decoding="async" />
+      </span>
     </div>
-    {/* vatNote() ONCE PER PAGE, which this page had never said. Every figure it
-        prints carries `excl. VAT` — BRIEF-14's per-number half — but the other
-        half is one line saying how VAT is actually handled, the way HomeV2 and
-        StartPage do. It sits here rather than under the walkthrough because
-        this is where the page's one price is; a VAT line under a figure that
-        quotes nothing is a footnote to nothing. */}
-    <p class="cta-vat">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
-  </div>
-</div></section>
+  </section>
+
+  {/* ── 2 · ÉÉN BESTELLING, VAN BEGIN TOT EIND ──────────────────────────────
+      Deze sectie is wat er zes waren. <FigWalk> volgt ÉÉN dienst, en zolang je
+      daarin zit staan de andere twee niet op de pagina. Lucas: *"Ieder apart
+      van elkaar."* */}
+  <section class="paneel" aria-labelledby="hiw-flow">
+    <header class="paneel-kop">
+      <h2 id="hiw-flow" class="hoog hoog-2">{c.flowH}</h2>
+      <p class="lopend">{c.flowLede}</p>
+    </header>
+    <div class="hiw-poort">
+      <p class="hoog hoog-3 hiw-poort-kop">{c.gateLead}</p>
+      <p class="lopend">{c.gateBody}</p>
+    </div>
+    <FigWalk lang={lang} />
+  </section>
+
+  {/* ── 3 · MET DE HAND AFGEMAAKT ────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="hiw-hand">
+    <div class="hiw-twee">
+      <Compare
+        grade
+        before="/img/lifestyle-glow-06.webp"
+        after="/img/lifestyle-glow-06.webp"
+        beforeAlt={c.beforeAlt}
+        afterAlt={c.afterAlt}
+      />
+      <div class="hiw-hand">
+        <h2 id="hiw-hand" class="hoog hoog-2">{c.craftH}</h2>
+        <p class="lopend">{c.craftBody}</p>
+        <ul class="hiw-chips" role="list">
+          {c.chips.map((chip) => <li>{chip}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 4 · HET PORTAAL ────────────────────────────────────────────────────
+      De enige plek op de pagina die over goedkeuren gaat. De drie pagina's
+      onderaan waren nergens vandaan bereikbaar (gemeten op de gebouwde site,
+      21 aug 2026); dit is waar iemand staat die wil weten hoe het werkt, dus
+      hier horen ze. */}
+  <section class="paneel" aria-labelledby="hiw-portaal">
+    <div class="hiw-twee">
+      <div class="hiw-portaal">
+        <h2 id="hiw-portaal" class="hoog hoog-2">{c.portalH}</h2>
+        <p class="lopend">{c.portalBody}</p>
+        <p class="lopend hiw-portaal-noot">{c.portalNote}</p>
+        <p class="mono hiw-verder">
+          {c.verderH}{' '}
+          {/* De /demo-link stond hier en /demo bestaat niet — 26 augustus 2026,
+              gevonden door audit-links.mjs. `verderDemo` blijft als tekst
+              bestaan zodat de regel terug kan zodra de pagina er is. */}
+          <a href={lp('/studio')}>{c.verderStudio}</a>{' · '}
+          <a href={lp('/about')}>{c.verderAbout}</a>
+        </p>
+      </div>
+      <FigApproval
+        head={c.portalFigH}
+        okLabel={c.portalFigOk}
+        revLabel={c.portalFigRev}
+        waitLabel={c.portalFigWait}
+        note={c.portalFigNote}
+      />
+    </div>
+  </section>
+
+  {/* ── 5 · DE DETAILS ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="hiw-details">
+    <header class="paneel-kop">
+      <h2 id="hiw-details" class="hoog hoog-2">{c.detailsH}</h2>
+    </header>
+    <ul class="hiw-details" role="list">
+      {c.details.map((d) => (
+        <li>
+          <b>{d.t}</b>
+          <span class="lopend">{d.b}{d.linkText ? <> <a href={lp(d.linkHref)}>{d.linkText}</a>.</> : null}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 6 · WAAR DE BEELDEN LANDEN ──────────────────────────────────────────
+      Verhuisd van de homepage. Het rekent de prijs om naar stukskosten zonder
+      korting te geven: een seizoenstotaal is geen bedrag meer maar een bedrag
+      gedeeld door ruwweg tweehonderd plaatsingen. Er staat met opzet geen enkel
+      eurobedrag in — dat is het werk van de prijspagina. */}
+  <section class="kamer hiw-kamer" aria-labelledby="hiw-land">
+    <p class="spook spook-rechts" aria-hidden="true"><span>VISUAILS</span><span>VISUAILS</span></p>
+    <header class="kamer-kop">
+      <h2 id="hiw-land" class="hoog hoog-2">{c.landH}</h2>
+      <p class="lopend">{c.landLede}</p>
+    </header>
+    <ul class="hiw-land" role="list">
+      {c.land.map(([t, b]) => (
+        <li><span class="hiw-land-t">{t}</span><span class="mono">{b}</span></li>
+      ))}
+    </ul>
+    <p class="lopend hiw-land-noot">{c.landNote}</p>
+  </section>
+
+  {/* ── 7 · DE VRAGEN STAAN ERGENS ANDERS ────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="hiw-faq">
+    <header class="paneel-kop">
+      <h2 id="hiw-faq" class="hoog hoog-2">{c.faqH}</h2>
+      <p class="lopend hiw-gidsen" set:html={c.faqGuides} />
+    </header>
+    <p class="acties"><a class="knop knop-lijn" href={lp('/faq')}>{c.faqCta}</a></p>
+  </section>
+
+  {/* ── 8 · HET SLOT ────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="hiw-slot">
+    <h2 id="hiw-slot" class="hoog">{c.ctaH}</h2>
+    <p class="lopend">{c.ctaBody}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')} data-track="hiw-sample">{c.ctaSampleBtn}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStartBtn}</a>
+      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">WhatsApp</a>
+    </p>
+    {/* vatNote() één keer per pagina. Elk bedrag hier draagt zijn eigen
+        excl.-btw-label; dit is de ene regel die zegt hoe de btw echt werkt. Hij
+        staat hier en niet onder de doorloop, want hier staat de enige prijs van
+        de pagina — een btw-regel onder een figuur zonder bedrag is een voetnoot
+        bij niets. */}
+    <p class="hiw-btw">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
+  </section>
+</div>
 
 <style>
-  /* The `.steps.four` override and `.step p a` that used to live here are gone
-     with the markup they styled — FigPipeline replaced the four step cards, so
-     the rules had nothing left to select. Deleting them is not tidying: an
-     emitted-nowhere CSS rule is exactly what verify3 [5] reports as dead, and
-     leaving it would have cost a real finding to make room for a false one.
-     Global .steps / .step / .step-n stay put — six other pages use them. */
+  .hiw-open { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .hiw-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
+  .hiw-beeld { aspect-ratio: 4 / 5; }
+  .hiw-beeld img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* The capacity gate. A single heavy rule above it and nothing else — the
-     sentence is the design. */
-  .gate { border-top: 2px solid var(--ink); padding-top: clamp(1.4rem, 3vw, 2.2rem); }
-  .gate-body { margin-top: 1.1rem; color: var(--ink-2); max-width: 66ch; }
-  /* `.gate-fig` used to be here and is gone with FigCapacity — see the note at
-     the top of this block about not leaving a rule that selects nothing.
-     The gate block now introduces the rail rather than a figure of its own, so
-     what it needs is room underneath it, not around a drawing. */
-  .gate { margin-bottom: clamp(2.4rem, 5vw, 3.6rem); }
+  /* De belofte over de poort. Een blok met een gele lijn ernaast en niet een
+     kaart: het is een uitspraak in de lopende tekst en geen los ding. */
+  .hiw-poort { display: grid; gap: .8rem; max-width: 44rem; margin-bottom: clamp(2.5rem, 5vw, 4rem); padding-left: clamp(1rem, 2.5vw, 1.8rem); border-left: 2px solid var(--geel); }
+  .hiw-poort-kop { max-width: 24em; }
 
-  /* The lede above the gate promise. Wider than the prose max, because it is
-     describing a thing the reader can see the whole of. */
-  .flow-lede { max-width: 68ch; margin: 0 0 clamp(1.8rem, 4vw, 2.8rem); color: var(--ink-2); font-size: 1.02rem; line-height: 1.65; }
+  .hiw-twee { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .hiw-hand, .hiw-portaal { display: grid; gap: 1rem; align-content: center; }
+  .hiw-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
+  .hiw-chips li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); border: 1px solid var(--lijn); border-radius: 999px; padding: .4rem .85rem; }
+  .hiw-portaal-noot { font-size: .92rem; }
+  .hiw-verder { color: var(--inkt-2); }
+  .hiw-verder a { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
 
-  .cta-vat { margin: 1.6rem auto 0; max-width: 62ch; text-align: center; font-size: .76rem; color: var(--ink-4); line-height: 1.6; }
+  /* De details als regels en niet als kaartjes: het zijn korte antwoorden op
+     losse vragen, en twaalf kaders zetten twaalf keer een rand om één zin. */
+  .hiw-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); }
+  .hiw-details li { display: grid; gap: .4rem; align-content: start; padding: clamp(1rem, 2.2vw, 1.5rem) 0; border-top: 1px solid var(--lijn); }
+  .hiw-details b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em; }
+  .hiw-details .lopend { font-size: .92rem; }
+  .hiw-details a { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
 
-  .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
-  .chip .dot { width: 5px; height: 5px; background: var(--accent); }
+  .hiw-land { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2rem); }
+  .hiw-land li { display: grid; gap: .4rem; align-content: start; padding-top: 1rem; border-top: 1px solid rgb(245 245 245 / .18); }
+  .hiw-land-t { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .hiw-land li .mono { color: rgb(245 245 245 / .66); text-transform: none; letter-spacing: 0; font-size: .88rem; line-height: 1.5; }
+  .hiw-land-noot { margin-top: clamp(1.6rem, 3vw, 2.4rem); font-size: .92rem; }
 
-  .portal-note { margin-top: 1.1rem; font-size: .9rem; color: var(--ink-3); max-width: 60ch; }
-  .hiw-verder { margin-top: 1.6rem; font-size: .9rem; color: var(--ink-4); max-width: 60ch; line-height: 1.9; }
-  .hiw-verder a { color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; padding-block: .3rem; }
-  .hiw-verder a:hover, .hiw-verder a:focus-visible { color: var(--accent-bright); text-decoration-color: currentColor; }
+  .hiw-gidsen :global(a) { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
+  .hiw-btw { margin-top: 1.6rem; font-size: .84rem; line-height: 1.6; max-width: 70ch; }
 
-  .grid-auto { grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); }
-  .card p a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
-
-  /* The line to the guides hub under the FAQ heading. Its anchor arrives
-     through set:html and carries no scope attribute, so :global() is what
-     reaches it. */
-  .faq-guides { margin-top: .9rem; font-size: .92rem; color: var(--ink-3); line-height: 1.6; }
-  .faq-guides :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
-  /* ── waar de beelden landen (verhuisd van de homepage) ─────────────────
-     Eén pixel raster in --line met cellen in --bg erop: dat tekent acht
-     scheidingslijnen zonder acht randen, en het blijft kloppen als een cel
-     door de auto-fit op een andere rij belandt. */
-  .land-grid { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); gap: 1px; background: var(--line); }
-  .land-grid > li { background: var(--bg); padding: clamp(1.1rem, 2vw, 1.5rem); display: grid; gap: .35rem; align-content: start; }
-  .land-t { font-size: .95rem; font-weight: 700; color: var(--ink); }
-  .land-n { font-size: .84rem; line-height: 1.5; color: var(--ink-3); }
-  .land-note { margin: 1.4rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
+  @media (max-width: 900px) {
+    .hiw-open, .hiw-twee, .hiw-details { grid-template-columns: 1fr; }
+    .hiw-land { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
 </style>

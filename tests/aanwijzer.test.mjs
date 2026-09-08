@@ -31,6 +31,7 @@
  *   · en de bron draagt de tekstkleurcontrole niet meer, zodat een herstel van
  *     die ene regel niet stilletjes terug kan sluipen.
  */
+import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
 import { stat, readFile } from 'node:fs/promises';
@@ -92,8 +93,12 @@ await page.waitForFunction(() => document.documentElement.classList.contains('aw
 /* De pagina zoeken naar wat er echt op staat, en niet naar een klasse die ik
    verzin: het eerste element met limetekst op een donkere grond, en het eerste
    dat zelf een dekkend limevlak IS. */
-const doelen = await page.evaluate(() => {
-  const acc = [198, 241, 0];
+/* Het accent uit global.css, en geen vast getal: op 6 september 2026 stond
+   hier nog het oude lime (198 241 0) terwijl --accent al #D2E04A was, en de
+   toets vond dan geen enkel limevlak. */
+const ACCENT = (readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8').match(/--accent:\s*#([0-9A-Fa-f]{6})/) || [])[1] || 'D2E04A';
+const ACC_RGB = [0, 2, 4].map((i) => parseInt(ACCENT.slice(i, i + 2), 16));
+const doelen = await page.evaluate((acc) => {
   const dicht = (v, marge = 44) => {
     const m = String(v).match(/[\d.]+/g);
     if (!m) return false;
@@ -123,7 +128,7 @@ const doelen = await page.evaluate(() => {
   }
   const merk = (el, naam) => { if (el) el.setAttribute('data-aw-doel', naam); return Boolean(el); };
   return { tekst: merk(tekst, 'tekst'), vlak: merk(vlak, 'vlak') };
-});
+}, ACC_RGB);
 
 console.log('\nde pagina draagt allebei de gevallen');
 ok('er staat limetekst op een donkere grond', doelen.tekst);
@@ -285,7 +290,11 @@ if (doelen.vlak) {
   ok('de omgekeerde laag blijft liggen', /\bvast\b/.test(k.om), false);
   ok('en hij draagt de limevulling', /oplime/.test(k.om));
   ok(`de menging is difference (${k.omMenging})`, k.omMenging, 'difference');
-  ok(`en de vulling is het accent (${k.omVulling})`, /198.*241.*\b0\b/.test(k.omVulling));
+  /* Het accent uit global.css, niet overgetypt: sectie 20 zette hem van #C6F100
+     op #D2E04A en deze regel liep toen rood op een pijl die gewoon klopte. */
+  const accentHex = (readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8').match(/--accent:\s*(#[0-9A-Fa-f]{6})/) || [])[1] || '#D2E04A';
+  const accentRgb = [1, 3, 5].map((i) => parseInt(accentHex.slice(i, i + 2), 16));
+  ok(`en de vulling is het accent (${k.omVulling})`, new RegExp(`${accentRgb[0]}.*${accentRgb[1]}.*\\b${accentRgb[2]}\\b`).test(k.omVulling));
   /* En daarmee is de zichtbare kleur per pixel het tegendeel van de grond —
      nooit onzichtbaar, op geen van beide ondergronden. */
   ok('de pijl heeft dus geen vaste kleur meer', k.kleur, 'omgekeerd');
@@ -371,15 +380,38 @@ for (const pad of ['/pricing/', '/plans/', '/start/catalog/', '/contact/', '/nl/
   await page.mouse.move(700, 400);
   await page.waitForFunction(() => document.getElementById('aw2')?.classList.contains('wakker'), null, { timeout: 3000 })
     .catch(() => {});
-  const heeft = await page.evaluate(() => {
-    const el = [...document.querySelectorAll('.btn-primary')].find((e) => e.getBoundingClientRect().width > 8);
+  /* ── DE KNOP IS NIET ALTIJD LIME — 7 september 2026 ───────────────────────
+     Twee dingen zijn veranderd sinds deze lus geschreven werd. De voorpagina
+     staat in de nieuwe stijl en heeft geen `.btn-primary` meer maar een inkten
+     pil (`.knop-inkt`), en de eerste `.btn-primary` in de DOM is nu de knop in
+     de mobiele lade — die op een breed scherm niet te zien is en dus niets
+     bewijst. `offsetParent` sluit die uit.
+
+     Belangrijker: de eis was "donker op de knop", en dat gold zolang elke
+     primaire knop lime was. Wat er werkelijk moet gelden is dat de aanwijzer
+     het TEGENOVERGESTELDE is van het vlak waar hij op ligt — donker op een
+     lichte knop, licht op een donkere. Dat wordt hieronder uit de knop zelf
+     afgeleid in plaats van aangenomen. */
+  const knopGrond = await page.evaluate(() => {
+    /* De knop in de mobiele lade staat er ook op een breed scherm, maar de lade
+       is dan `inert` en `aria-hidden`: niet te zien en niet te klikken. Alleen
+       een knop die de bezoeker echt voor zich heeft telt hier mee. */
+    const zichtbaar = (e) => e.offsetParent !== null && e.getBoundingClientRect().width > 8
+      && !e.closest('[inert]') && !e.closest('[aria-hidden="true"]')
+      && (!e.checkVisibility || e.checkVisibility({ visibilityProperty: true, opacityProperty: true }));
+    const el = [...document.querySelectorAll('.btn-primary, .s22 .knop-inkt')].find(zichtbaar);
     if (el) el.setAttribute('data-aw-doel', 'knop');
-    return Boolean(el);
+    return el ? getComputedStyle(el).backgroundColor : null;
   });
-  if (!heeft) { console.log(`  --   ${pad} heeft geen .btn-primary`); continue; }
+  if (!knopGrond) { console.log(`  --   ${pad} heeft geen zichtbare primaire knop`); continue; }
+  const [kr, kg, kb] = (knopGrond.match(/[\d.]+/g) || [255, 255, 255]).map(Number);
+  const donkereKnop = (0.299 * kr + 0.587 * kg + 0.114 * kb) < 90;
   const k = await klassen('[data-aw-doel="knop"]');
-  ok(`${pad} — donker op de knop (${zichtbaar(k, k.grond)})`, bijnaZwart(zichtbaar(k, k.grond)));
-  ok(`${pad} — en licht op de pagina ernaast`, bijnaZwart(zichtbaar(k, PAGINA)), false);
+  ok(`${pad} — ${donkereKnop ? 'licht' : 'donker'} op de knop (${zichtbaar(k, k.grond)})`,
+    bijnaZwart(zichtbaar(k, k.grond)), !donkereKnop);
+  /* De tweede regel meet de aanwijzer zelf tegen de donkere grond van de site
+     (PAGINA) en blijft dus onveranderd: daar is hij altijd licht. */
+  ok(`${pad} — en licht op de donkere grond ernaast`, bijnaZwart(zichtbaar(k, PAGINA)), false);
 }
 
 await browser.close();

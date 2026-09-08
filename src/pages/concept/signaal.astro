@@ -1,0 +1,475 @@
+---
+/**
+ * CONCEPT E · SIGNAAL — het instrument, in de stilte van een galerie.
+ * 6 september 2026.
+ *
+ * Lucas: *"zoek hyper futuristische winnende website designs en haal daar
+ * inspiratie vandaan gecombineerd met Gentle Monster inspired vibe."*
+ *
+ * DE TWEE HELFTEN, EN WAT ER VAN ELK KOMT:
+ *
+ * Gentle Monster (de sfeer, uit concept D): de koele witte grond
+ * rgb(243,244,246), het kleine gecentreerde woordmerk, geen knoppen maar
+ * onderstreepte regels, en foto's die lucht om zich heen krijgen.
+ *
+ * Hyper-futuristisch (nagemeten, 6 september 2026):
+ *   · monolayer.dev — een zichtbaar raster van dunne verticale lijnen waar de
+ *     kleine labels aan hangen in plaats van aan de tekstblokken, en een
+ *     grafiek die alleen uit zwarte balken van verschillende lengte bestaat:
+ *     een uitlezing, geen illustratie. Koppen in kleine letter, van rand tot
+ *     rand;
+ *   · igloo.inc (SOTM juli 2024) — de laadstand ís het ontwerp: één streepjes-
+ *     balk in mono, midden in een vlak veld;
+ *   · kriss.ai (SOTM oktober 2024) — een reusachtige teller in de hoek;
+ *   · y-vision.co.kr — een harde knip van zwart naar wit, zonder overgang;
+ *   · heliotemil.com — coördinaten op vaste rasterpunten rond het beeld.
+ *
+ * WAT DAT HIER WORDT: de pagina is de uitlezing van het apparaat. Je ziet het
+ * raster waarop alles staat, de labels hangen aan die lijnen, en elke grafiek
+ * op deze pagina is ECHTE DATA uit pricing.js — de balken bij de diensten zijn
+ * het aantal beelden, de balken bij de tarieven zijn het tarief per trede. Er
+ * staat geen enkele versierde meter op deze pagina.
+ *
+ * En dan de zwarte kamer: één sectie waar het licht uitgaat, met de lime
+ * letters die Komma op zwart zet. Dat is de enige plek waar het geel een letter
+ * mag zijn (op wit is het 1,5:1 en dus nooit). Verder is het geel een streep
+ * onder een woord — een signaallijn, geen markeerstift.
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const {
+  c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES, ROSTER, modelId, SFEER, AMOUNT,
+} = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+
+/* DE BALKEN BIJ DE DIENSTEN ZIJN HET AANTAL BEELDEN. Vier catalogfoto's, drie
+   lifestyle, één clip, één gezicht — genormaliseerd op de langste. Wie het
+   aantal in pricing.js verandert, verandert de grafiek mee. */
+const LEVERING = [CATALOG_IMAGES, LIFESTYLE_IMAGES, 1, 1];
+const LEVERING_MAX = Math.max(...LEVERING);
+
+/* DE BALKEN BIJ DE TARIEVEN ZIJN HET TARIEF. Het complete tarief per trede,
+   genormaliseerd op de eerste trede: de daling is de grafiek. */
+const TREDEN = RUNGS.map((r) => ({ ...r, prijs: ladderRate('complete', r.at) }));
+const TREDE_MAX = TREDEN[0].prijs;
+
+/* De uitlezing links in de opening: vier regels die alle vier waar zijn. */
+const UITLEZING = [
+  ['BRON', c.vnIn[1]],
+  ['UIT', `${COMPLETE_IMAGES} × ${'2000 × 2500'}`],
+  ['RONDE', '01'],
+  ['PROEF', sample.price],
+];
+---
+<ConceptLayout
+  title="Concept E · Signaal — VISUAILS"
+  description="Concept E: het instrument in de stilte van een galerie — zichtbaar raster, echte data als grafiek, één zwarte kamer."
+  lang={lang}
+  grond="zaal"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  {/* HET RASTER WAAR ALLES AAN HANGT. Twaalf lijnen, bijna onzichtbaar, over de
+      hele hoogte van het venster. Alles op deze pagina staat erop, en de kleine
+      labels hangen eraan in plaats van aan hun eigen blok. */}
+  <div class="raster" aria-hidden="true"></div>
+
+  <header class="balk">
+    <p class="uit">{c.labels[0]}</p>
+    <a class="merk" href={lp('/')} aria-label="VISUAILS">
+      <svg class="woordmerk" viewBox="0 0 1650 278" aria-hidden="true"><use href="#wordmark" /></svg>
+    </a>
+    <nav class="balk-nav uit" aria-label="Hoofdnavigatie">{c.nav.map(([t, h]) => <a class="streep" href={h}>{t}</a>)}</nav>
+  </header>
+
+  <main id="inhoud" class="signaal">
+
+    {/* ── 01 · DE OPENING ─────────────────────────────────────────────────
+        Links de uitlezing, rechts het beeld met zijn coördinaten, daaronder
+        de zin van rand tot rand. */}
+    <section class="blok blok-open" aria-labelledby="h1">
+      <div class="open-rij">
+        <dl class="uitlezing uit">
+          {UITLEZING.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+        </dl>
+        <figure class="scan">
+          <img src={S(6).src} width={S(6).w} height={S(6).h} alt={S(6).alt} fetchpriority="high" decoding="async">
+          <span class="scan-lijn" aria-hidden="true"></span>
+          <span class="hoek hoek-lt" aria-hidden="true"></span><span class="hoek hoek-rt" aria-hidden="true"></span>
+          <span class="hoek hoek-lb" aria-hidden="true"></span><span class="hoek hoek-rb" aria-hidden="true"></span>
+          <figcaption class="uit">{S(6).w} × {S(6).h}</figcaption>
+        </figure>
+      </div>
+      <h1 id="h1" class="groot">{c.h1.map((line) => <span class="regel" set:html={line} />)}</h1>
+      <div class="open-voet">
+        <p class="lede">{c.lede}</p>
+        <p class="acties"><a class="streep" href={lp('/start')}>{c.ctaStart}</a><a class="streep" href={lp('/test-sample')}>{sample.cta}</a></p>
+      </div>
+    </section>
+
+    {/* ── 02 · DE UITLEZING · wat we maken ────────────────────────────────
+        Vier regels van rand tot rand. Per regel: index, naam, wat het is, de
+        balk met het aantal beelden, de prijs, en het beeld. */}
+    <section id="maken" class="blok" aria-labelledby="h-maken">
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(2)} / {c.secties[0]}</p>
+        <h2 id="h-maken" class="mid">{c.svcH}</h2>
+        <p class="lede">{c.svcLede}</p>
+      </header>
+      <ul class="regels" role="list">
+        {c.svc.map(([naam, wat, prijs, href], i) => (
+          <li>
+            <a href={lp(href)}>
+              <span class="uit r-nr">{nn(i + 1)}</span>
+              <span class="r-naam">{naam}</span>
+              <span class="r-wat">{wat}</span>
+              <span class="r-balk" aria-hidden="true"><i style={`--v:${(LEVERING[i] / LEVERING_MAX) * 100}%`}></i></span>
+              <span class="uit r-prijs">{prijs}</span>
+              <span class="r-beeld"><img src={S([1, 2, 4, 3][i]).klein} width="800" height="1000" alt="" loading="lazy" decoding="async"></span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="voetregel uit"><span>{c.svcSoon[0]}</span> <a class="streep" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    </section>
+
+    {/* ── 03 · DE METING · telefoonfoto → studioproductie ─────────────────*/}
+    <section class="blok" aria-labelledby="h-vn">
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(3)} / {c.secties[1]}</p>
+        <h2 id="h-vn" class="mid">{c.vnH}</h2>
+        <p class="lede">{c.vnLede}</p>
+      </header>
+      <div class="meting">
+        <figure class="meting-in">
+          <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async">
+          <figcaption class="uit">{c.vnIn[0]}</figcaption>
+        </figure>
+        <ol class="termen uit">{c.vnNoten.map((k, i) => <li><b>{nn(i + 1)}</b>{k}</li>)}</ol>
+        <figure class="meting-uit scan">
+          <img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async">
+          <span class="hoek hoek-lt" aria-hidden="true"></span><span class="hoek hoek-rb" aria-hidden="true"></span>
+          <figcaption class="uit">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
+        </figure>
+      </div>
+      <p class="voetregel"><a class="streep" href={lp('/gallery')}>{c.vnLink}</a></p>
+    </section>
+
+    {/* ── 04 · DE STROOK · één product, zeven beelden ─────────────────────
+        Zeven beelden op één liniaal: tikken erboven, nummers eronder. */}
+    <section class="blok" aria-labelledby="h-set">
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(4)} / {c.secties[2]}</p>
+        <h2 id="h-set" class="mid">{c.setH}</h2>
+        <p class="lede">{c.setLede}</p>
+      </header>
+      <div class="liniaal">
+        <p class="liniaal-kop uit">
+          <a class="streep" href={lp(c.setGroups[0][1])} style={`--breed:${CATALOG_IMAGES}`}>{c.setGroups[0][0]}</a>
+          <a class="streep" href={lp(c.setGroups[1][1])} style={`--breed:${COMPLETE_IMAGES - CATALOG_IMAGES}`}>{c.setGroups[1][0]}</a>
+        </p>
+        <ol class="strook">
+          {c.frames.map((naam, i) => (
+            <li>
+              <img src={S([1, 5, 4, 2, 3, 7, 6][i]).klein} width="800" height="1000" alt="" decoding="async">
+              <span class="uit">{nn(i + 1)} {naam}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <ul class="extras uit" role="list">
+        {c.extras.map(([k, v, href]) => <li><a class="streep" href={lp(href)}>{k}</a><span>{v}</span></li>)}
+      </ul>
+    </section>
+
+    {/* ── 05 · DE TIJDLIJN · van map tot lancering ────────────────────────*/}
+    <section class="blok" aria-labelledby="h-st">
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(5)} / {c.secties[3]}</p>
+        <h2 id="h-st" class="mid">{c.stepsH}</h2>
+        <p class="lede">{c.stepsLede}</p>
+      </header>
+      <ol class="tijdlijn">
+        {c.steps.map(([k, v], i) => <li><span class="uit">{nn(i + 1)}</span><b>{k}</b><span class="t-wat">{v}</span></li>)}
+      </ol>
+    </section>
+
+    {/* ── 06 · DE ZWARTE KAMER · Studio ───────────────────────────────────
+        Het licht gaat uit. Harde knip, geen overgang (y-vision). Dit is de
+        enige plek waar het geel een letter is: op inkt haalt #E4F474 16,5:1. */}
+    <section id="studio" class="blok kamer op-inkt" aria-labelledby="h-sd">
+      <div class="kamer-raster" aria-hidden="true"></div>
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(6)} / {c.secties[5]}</p>
+        <h2 id="h-sd" class="mid">{c.studioH}</h2>
+        <p class="lede">{c.studioLede}</p>
+      </header>
+      <div class="kamer-rij">
+        <figure class="kamer-beeld">
+          <img src={S(8).src} width={S(8).w} height={S(8).h} alt={S(8).alt} loading="lazy" decoding="async">
+        </figure>
+        <ul class="beloften" role="list">
+          {c.beloften.map(([k, v]) => <li><b>{k}</b><span>{v}</span></li>)}
+        </ul>
+      </div>
+      <p class="acties"><a class="streep" href={lp('/portal')}>{c.studioLink}</a><a class="streep" href={lp('/studio')}>{c.studioLink2}</a></p>
+    </section>
+
+    {/* ── 07 · DE STAFFEL ALS GRAFIEK · tarieven ──────────────────────────
+        Elke balk is het complete tarief op die trede, gedeeld door het tarief
+        op de eerste trede. De daling die je ziet is de daling die je betaalt. */}
+    <section id="tarieven" class="blok" aria-labelledby="h-pr">
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(7)} / {c.secties[4]}</p>
+        <h2 id="h-pr" class="mid">{c.priceH}</h2>
+      </header>
+      <ol class="grafiek">
+        {TREDEN.map((t) => (
+          <li>
+            <span class="uit g-trede">{t.label} {c.priceCount.toLowerCase()}</span>
+            <span class="g-balk" aria-hidden="true"><i style={`--v:${(t.prijs / TREDE_MAX) * 100}%`}></i></span>
+            <span class="g-prijs">{e(t.prijs)}</span>
+          </li>
+        ))}
+      </ol>
+      <table class="tabel">
+        <thead><tr><th scope="col" class="uit">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="uit">{KIND_PAGE[id] ? <a class="streep" href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+        <tbody>{RUNGS.map((r) => <tr><th scope="row" class="uit">{r.label}</th>{KINDS.map((id) => <td>{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+      </table>
+      <p class="uit">{c.priceVat}</p>
+      <p class="acties"><a class="streep" href={lp('/start')}>{c.priceCta}</a><a class="streep" href={lp('/pricing')}>{c.priceCta2}</a></p>
+
+      <header class="blok-kop blok-kop-sub">
+        <h3 class="mid">{c.planH}</h3>
+        <p class="lede">{c.planLede}</p>
+      </header>
+      <table class="tabel">
+        <thead><tr>{c.planCols.map((k) => <th scope="col" class="uit">{k}</th>)}</tr></thead>
+        <tbody>{PLANS.map((pl) => <tr><th scope="row"><a class="streep" href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td>{pl.products}</td><td>{PLAN_CLIPS[pl.id] || '—'}</td><td>{pl.price}</td></tr>)}</tbody>
+      </table>
+      <p class="uit">{c.planVat}</p>
+      <p class="acties"><a class="streep" href={lp('/start/plan')}>{c.planCta}</a><a class="streep" href={lp('/plans')}>{c.planLink}</a></p>
+    </section>
+
+    {/* ── 08 · DE BEZETTING · gezichten ───────────────────────────────────*/}
+    <section id="gezichten" class="blok" aria-labelledby="h-gz">
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(8)} / {c.secties[6]}</p>
+        <h2 id="h-gz" class="mid">{c.facesH}</h2>
+        <p class="lede">{c.facesLede}</p>
+      </header>
+      <ul class="bezetting" role="list">
+        {ROSTER.map((m, i) => <li><a href={`${lp('/models')}#${modelId(m.name)}`}><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"><span class="uit">M-{nn(i + 1)} {m.name}</span></a></li>)}
+      </ul>
+      <p class="acties"><a class="streep" href={lp('/custom-models')}>{c.facesLink}</a><a class="streep" href={lp('/models')}>{c.facesLink2}</a></p>
+    </section>
+
+    {/* ── 09 · DE VRAGEN ──────────────────────────────────────────────────*/}
+    <section class="blok" aria-labelledby="h-q">
+      <header class="blok-kop">
+        <p class="uit merkregel">{nn(9)}</p>
+        <h2 id="h-q" class="mid">{c.qH}</h2>
+      </header>
+      <ul class="vragen" role="list">
+        {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="streep" href={lp(href)}>{l}</a></li>)}
+        <li><span></span><a class="streep" href={lp('/faq')}>{c.qAll}</a></li>
+      </ul>
+    </section>
+
+    {/* ── 10 · DE PROEF · het gele vlak, met de teller ────────────────────
+        De teller uit kriss.ai, maar met een getal dat iets betekent: wat één
+        product kost om te proberen. */}
+    <section class="blok proef op-geel" aria-labelledby="h-sl">
+      <p class="uit merkregel">{nn(10)} / {c.secties[7]}</p>
+      <p class="teller" aria-hidden="true">{sample.price}</p>
+      <h2 id="h-sl" class="mid">{c.closeH}</h2>
+      <p class="lede">{c.closeLede}</p>
+      <p class="acties"><a class="streep" href={lp('/test-sample')}>{sample.cta}</a><a class="streep" href={lp('/start')}>{c.closeAlt}</a></p>
+    </section>
+  </main>
+
+  <footer class="voet uit">
+    <ul class="trust" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+    <span>{c.posterLine[0]} · {c.posterLine[1]}</span>
+  </footer>
+</ConceptLayout>
+
+<style is:global>
+  /* HET ACCENTWOORD IS EEN SIGNAALLIJN, GEEN MARKEERSTIFT. Een balk van .1em
+     op de basislijn in plaats van een vlak achter het woord: de kop blijft
+     inkt op wit, en het geel doet wat het op een instrument doet — het wijst
+     iets aan. In de zwarte kamer is het accentwoord wél een letter, in het
+     lime dat Komma op zwart zet. */
+  .signaal .groot em, .signaal .mid em { background: none; text-decoration: underline; text-decoration-color: var(--geel); text-decoration-thickness: .085em; text-underline-offset: .12em; text-decoration-skip-ink: none; padding: 0; }
+  .signaal .kamer em { background: none; text-decoration: none; color: var(--geel-letter); padding: 0; }
+</style>
+
+<style>
+  /* ── HET RASTER ─────────────────────────────────────────────────────────
+     Twaalf lijnen over het venster, één keer getekend en verder overal
+     zichtbaar. De labels in de pagina hangen aan dezelfde kolommen. */
+  .raster { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(to right, rgb(17 17 17 / .055) 0 1px, transparent 1px calc(100% / 12)); }
+  .signaal, .balk, .voet { position: relative; z-index: 1; }
+
+  /* ── DE MAAT ────────────────────────────────────────────────────────────*/
+  .blok { padding: clamp(7rem, 16vh, 13rem) var(--x); display: grid; gap: clamp(2.5rem, 6vh, 5rem); }
+  .blok-kop { display: grid; gap: 1.1rem; max-width: 52rem; }
+  .blok-kop-sub { margin-top: clamp(4rem, 9vh, 8rem); }
+  .merkregel { color: var(--inkt-3); }
+  .uit { font-family: var(--mono); font-size: .64rem; font-weight: 400; letter-spacing: .16em; text-transform: uppercase; line-height: 1.5; }
+  .uit b { font-weight: 400; margin-right: .55em; }
+  .groot { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(2.4rem, 7.6vw, 8rem); line-height: .96; letter-spacing: -.035em; text-transform: lowercase; }
+  .regel { display: block; }
+  .mid { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(1.6rem, 3.4vw, 3rem); line-height: 1.06; letter-spacing: -.025em; text-wrap: balance; }
+  .lede { font-size: .95rem; line-height: 1.6; color: var(--inkt-2); max-width: 48ch; text-wrap: pretty; }
+  .streep { font-family: var(--mono); font-size: .64rem; letter-spacing: .16em; text-transform: uppercase; border-bottom: 1px solid currentColor; padding-bottom: .3em; transition: opacity .3s var(--uit); }
+  .streep:hover { opacity: .55; }
+  .acties { display: flex; flex-wrap: wrap; gap: 1.2rem 2.5rem; }
+  .voetregel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem; color: var(--inkt-3); }
+
+  /* ── DE BALK BOVENIN ────────────────────────────────────────────────────*/
+  .balk { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem; padding: 1.4rem var(--x); background: linear-gradient(#F3F4F6 60%, rgb(243 244 246 / 0)); color: var(--inkt-3); }
+  .merk { width: 6.5rem; justify-self: center; }
+  .merk .woordmerk { fill: var(--inkt); }
+  .balk-nav { display: flex; gap: 1.6rem; justify-self: end; color: var(--inkt); }
+  @media (max-width: 860px) { .balk { grid-template-columns: 1fr; justify-items: center; } .balk > p, .balk-nav { display: none; } }
+
+  /* ── 01 · DE OPENING ────────────────────────────────────────────────────*/
+  .blok-open { min-height: 100svh; align-content: center; padding-top: 6vh; }
+  .open-rij { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: clamp(1.5rem, 4vw, 4rem); }
+  .uitlezing { display: grid; gap: .9rem; align-self: end; color: var(--inkt-3); }
+  .uitlezing div { display: grid; grid-template-columns: 4.5rem 1fr; gap: .6rem; border-top: 1px solid var(--lijn); padding-top: .5rem; }
+  .uitlezing dd { margin: 0; color: var(--inkt); }
+  .open-rij .scan { width: min(42vw, 32rem); justify-self: center; --hoog: 62svh; }
+  .open-voet { display: grid; gap: 1.6rem; justify-items: start; }
+  @media (max-width: 860px) {
+    .open-rij { grid-template-columns: 1fr; justify-items: start; }
+    .open-rij .scan { width: 100%; justify-self: start; --hoog: 54svh; }
+    .uitlezing { width: 100%; }
+  }
+
+  /* Het beeld als opname: hoekmarkeringen, een maat eronder, en één lijn die
+     er heel traag overheen loopt. Zonder beweging staat de lijn stil. */
+  /* Lucas, 6 september: de foto's mogen het scherm vullen, maar moeten in één
+     scherm te zien zijn. Dus een tweede grens naast de breedte: --hoog. De
+     kleinste van de twee wint, dus een liggend beeld vult de breedte en een
+     staand beeld de hoogte — en je ziet de hele foto zonder te scrollen. */
+  .scan { position: relative; display: grid; gap: .7rem; --hoog: 78svh; }
+  .scan img { width: 100%; height: auto; max-height: var(--hoog); object-fit: contain; }
+  .scan figcaption { color: var(--inkt-3); }
+  .hoek { position: absolute; width: 9px; height: 9px; border: 1px solid var(--inkt); }
+  .hoek-lt { top: -5px; left: -5px; border-width: 1px 0 0 1px; }
+  .hoek-rt { top: -5px; right: -5px; border-width: 1px 1px 0 0; }
+  .hoek-lb { bottom: 1.9rem; left: -5px; border-width: 0 0 1px 1px; }
+  .hoek-rb { bottom: 1.9rem; right: -5px; border-width: 0 1px 1px 0; }
+  .scan-lijn { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--geel); opacity: .9; }
+  @media (prefers-reduced-motion: no-preference) {
+    .scan-lijn { animation: scannen 7s cubic-bezier(.65,0,.35,1) infinite; }
+    @keyframes scannen { 0%, 12% { top: 0; opacity: 0; } 18% { opacity: .9; } 82% { opacity: .9; } 88%, 100% { top: calc(100% - 2.6rem); opacity: 0; } }
+  }
+
+  /* ── 02 · DE REGELS ─────────────────────────────────────────────────────*/
+  .regels { border-top: 1px solid var(--inkt); }
+  .regels li { border-bottom: 1px solid var(--lijn); }
+  .regels a { display: grid; grid-template-columns: 3rem 12rem 1fr 8rem 9rem 13rem; align-items: center; gap: 1.5rem; padding: 1.1rem 0; }
+  .r-naam { font-family: var(--kop); font-stretch: 78%; font-size: 1.15rem; }
+  .r-wat { font-size: .88rem; color: var(--inkt-2); }
+  .r-nr, .r-prijs { color: var(--inkt-3); }
+  .r-balk { display: block; height: 6px; background: var(--lijn); }
+  .r-balk i { display: block; height: 100%; width: var(--v); background: var(--inkt); }
+  .r-beeld img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; transition: transform .6s var(--uit); }
+  .regels a:hover .r-beeld img { transform: scale(1.03); }
+  @media (max-width: 980px) {
+    .regels a { grid-template-columns: 2.5rem 1fr 7rem; grid-template-areas: "nr naam beeld" "nr wat beeld" "nr balk beeld" "nr prijs beeld"; gap: .4rem 1rem; align-items: start; }
+    .r-nr { grid-area: nr; } .r-naam { grid-area: naam; } .r-wat { grid-area: wat; }
+    .r-balk { grid-area: balk; margin: .5rem 0; } .r-prijs { grid-area: prijs; }
+    .r-beeld { grid-area: beeld; }
+  }
+
+  /* ── 03 · DE METING ─────────────────────────────────────────────────────*/
+  .meting { display: grid; grid-template-columns: 9rem minmax(6rem, 1fr) minmax(0, 54rem); align-items: center; gap: clamp(1rem, 3vw, 3rem); }
+  .meting-uit { --hoog: 76svh; }
+  .meting-in img { width: 100%; height: auto; }
+  .meting-in figcaption { color: var(--inkt-3); margin-top: .6rem; }
+  .termen { display: grid; gap: .55rem; color: var(--inkt-3); border-top: 1px solid var(--lijn-sterk); padding-top: .8rem; align-self: center; }
+  .termen b { color: var(--inkt); }
+  @media (max-width: 860px) { .meting { grid-template-columns: 1fr; } .meting-in { width: 9rem; } }
+
+  /* ── 04 · DE LINIAAL ────────────────────────────────────────────────────*/
+  .liniaal { display: grid; gap: .9rem; }
+  .liniaal-kop { display: grid; grid-template-columns: 4fr 3fr; gap: clamp(.4rem, 1vw, 1rem); }
+  .liniaal-kop a { justify-self: start; }
+  .strook { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(.4rem, 1vw, 1rem); border-top: 1px solid var(--inkt); padding-top: .9rem; }
+  .strook li { display: grid; gap: .6rem; position: relative; }
+  .strook li::before { content: ""; position: absolute; top: -.9rem; left: 0; width: 1px; height: .45rem; background: var(--inkt); }
+  .strook img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .strook span { color: var(--inkt-3); }
+  .extras { display: grid; gap: .7rem; color: var(--inkt-2); }
+  .extras li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem; }
+  @media (max-width: 860px) { .strook { grid-template-columns: repeat(4, 1fr); } .liniaal-kop { grid-template-columns: 1fr; gap: .4rem; } }
+
+  /* ── 05 · DE TIJDLIJN ───────────────────────────────────────────────────*/
+  .tijdlijn { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1.5rem, 3vw, 3rem); border-top: 1px solid var(--inkt); }
+  .tijdlijn li { display: grid; gap: .7rem; padding-top: 1.2rem; position: relative; align-content: start; }
+  .tijdlijn li::before { content: ""; position: absolute; top: 0; left: 0; width: 1px; height: .5rem; background: var(--inkt); }
+  .tijdlijn b { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: 1.15rem; }
+  .t-wat { font-size: .88rem; color: var(--inkt-2); }
+  @media (max-width: 860px) { .tijdlijn { grid-template-columns: 1fr 1fr; } }
+
+  /* ── 06 · DE ZWARTE KAMER ───────────────────────────────────────────────*/
+  .kamer { position: relative; background: var(--inkt); color: var(--vel); }
+  .kamer-raster { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(to right, rgb(245 245 245 / .08) 0 1px, transparent 1px calc(100% / 12)); }
+  .kamer > * { position: relative; }
+  .kamer .lede, .kamer .merkregel { color: rgb(245 245 245 / .72); }
+  .kamer-rij { display: grid; grid-template-columns: 1.7fr 1fr; gap: clamp(2rem, 5vw, 5rem); align-items: end; }
+  .kamer-beeld img { width: 100%; height: auto; max-height: 74svh; object-fit: contain; }
+  .beloften { display: grid; gap: 1.3rem; border-top: 1px solid rgb(245 245 245 / .3); padding-top: 1.3rem; }
+  .beloften b { display: block; font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: 1.05rem; margin-bottom: .3rem; color: var(--geel-letter); }
+  .beloften span { font-size: .88rem; color: rgb(245 245 245 / .8); }
+  @media (max-width: 860px) { .kamer-rij { grid-template-columns: 1fr; } }
+
+  /* ── 07 · DE GRAFIEK EN DE TABEL ────────────────────────────────────────*/
+  .grafiek { display: grid; gap: .8rem; }
+  .grafiek li { display: grid; grid-template-columns: 11rem 1fr 5rem; align-items: center; gap: 1.5rem; }
+  .g-trede { color: var(--inkt-3); }
+  .g-balk { display: block; height: 10px; background: var(--lijn); }
+  .g-balk i { display: block; height: 100%; width: var(--v); background: var(--inkt); }
+  .g-prijs { font-family: var(--kop); font-stretch: 125%; font-size: 1.1rem; font-variant-numeric: tabular-nums; text-align: right; }
+  .tabel { width: 100%; }
+  .tabel th, .tabel td { text-align: left; padding: 1.1rem .8rem 1.1rem 0; border-bottom: 1px solid var(--lijn); vertical-align: baseline; }
+  .tabel thead th { color: var(--inkt-3); border-bottom-color: var(--inkt); padding-top: 0; }
+  .tabel tbody th { color: var(--inkt-3); font-weight: 400; width: 20%; }
+  .tabel td { font-family: var(--kop); font-stretch: 125%; font-size: clamp(1rem, 1.8vw, 1.4rem); font-variant-numeric: tabular-nums; }
+  .abo-regel { display: block; font-size: .8rem; color: var(--inkt-3); margin-top: .3rem; }
+  @media (max-width: 620px) { .grafiek li { grid-template-columns: 6.5rem 1fr 4rem; gap: .8rem; } .tabel th, .tabel td { padding: .8rem .4rem .8rem 0; } .abo-regel { display: none; } }
+
+  /* ── 08 · DE BEZETTING ──────────────────────────────────────────────────*/
+  .bezetting { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(.4rem, 1vw, 1rem); }
+  .bezetting a { display: grid; gap: .6rem; color: var(--inkt-3); }
+  .bezetting img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: grayscale(1); transition: filter .5s var(--uit); }
+  .bezetting a:hover img { filter: none; }
+  @media (max-width: 860px) { .bezetting { grid-template-columns: repeat(5, 1fr); } }
+
+  /* ── 09 · DE VRAGEN ─────────────────────────────────────────────────────*/
+  .vragen { display: grid; max-width: 62rem; }
+  .vragen li { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 1.5rem; padding: 1.25rem 0; border-top: 1px solid var(--lijn); font-size: .95rem; }
+  .vragen li:last-child { border-bottom: 1px solid var(--lijn); }
+  @media (max-width: 620px) { .vragen li { grid-template-columns: 1fr; gap: .7rem; } }
+
+  /* ── 10 · DE PROEF ──────────────────────────────────────────────────────*/
+  .proef { background: var(--geel); color: var(--inkt); justify-items: start; gap: 1.6rem; }
+  .proef .lede, .proef .merkregel { color: var(--inkt); }
+  .teller { font-family: var(--kop); font-stretch: 125%; font-weight: 400; font-size: clamp(5rem, 20vw, 17rem); line-height: .8; letter-spacing: -.05em; margin: 0; }
+
+  .voet { display: grid; gap: 1rem; padding: 0 var(--x) clamp(3rem, 7vh, 6rem); color: var(--inkt-3); }
+  .trust { display: flex; flex-wrap: wrap; gap: .5rem 2.5rem; }
+</style>

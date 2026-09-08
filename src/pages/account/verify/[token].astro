@@ -1,0 +1,12 @@
+---
+/* /account/verify/<token> — de link uit de mail. Bij een geldige link zet
+   studioAuth() de sessiecookie en stuurt door naar /account; anders staat hier
+   de dode-linkkaart met het formulier voor een nieuwe. */
+import { pagesContext } from '../../../lib/route.js';
+import { studioAuth } from '../../../lib/account.js';
+import Inlogkaart from '../../../components/studio/Inlogkaart.astro';
+export const prerender = false;
+const uit = await studioAuth(pagesContext(Astro));
+if (uit instanceof Response) return uit;
+---
+<Inlogkaart view={uit} />

@@ -1,0 +1,353 @@
+---
+/**
+ * CONCEPT F · KOLOS — het merk op de schaal van een gebouw. 6 september 2026.
+ *
+ * Lucas: *"maak meerdere verschillende soorten homepages die flink van elkaar
+ * verschillen … Ik wil de website groots laten voelen."*
+ *
+ * WAAR DE GROOTSHEID VANDAAN KOMT, nagemeten op 6 september 2026:
+ *   · aim.obys.agency (Awwwards SOTM) — de drie letters van het merk staan als
+ *     zwarte vlakken over de hele bovenkant van het scherm, afgesneden door de
+ *     rand. Daaronder één haarlijn en een rij piepkleine gegevens die over de
+ *     volle breedte uit elkaar staan. Daaronder loopt de tekst op 48px van rand
+ *     tot rand, met één verticale lijn als scheiding;
+ *   · bennettandclive.com — de naam vult in zijn eentje het hele scherm en
+ *     wordt aan beide kanten afgesneden. Er staat verder niets. Dat is de
+ *     grootste beweging die er is: geen beeld, geen kader, alleen de naam.
+ *
+ * DE REGEL VAN DEZE PAGINA: er is één maat voor het merk (kolossaal, afgesneden
+ * door de rand) en één maat voor al het andere (klein en precies). Daartussen
+ * zit niets. Dat verschil ís het gebouw — een zuil is groot omdat er een mens
+ * naast staat.
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const {
+  c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate,
+  CATALOG_IMAGES, COMPLETE_IMAGES, ROSTER, modelId, SFEER,
+} = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+---
+<ConceptLayout
+  title="Concept F · Kolos — VISUAILS"
+  description="Concept F voor de nieuwe voorpagina van VISUAILS: het merk op de schaal van een gebouw, alles eronder klein en precies."
+  lang={lang}
+  grond="vel"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  <main id="inhoud" class="kolos">
+
+    {/* ── DE GEVEL ────────────────────────────────────────────────────────
+        Het woordmerk op 158% van de schermbreedte, dus afgesneden aan beide
+        kanten. Het is geen logo meer maar een muur. Daaronder de haarlijn en
+        de rij gegevens die AIM ook heeft: links de plaats, midden de zalen,
+        rechts het jaar. */}
+    <header class="gevel">
+      <a class="gevel-merk" href={lp('/')} aria-label="VISUAILS">
+        <svg class="woordmerk" viewBox="0 0 1650 278" aria-hidden="true"><use href="#wordmark" /></svg>
+      </a>
+      <div class="lat">
+        <span class="klein">{c.labels[1]} — {c.labels[2]}</span>
+        <nav class="lat-nav klein" aria-label="Hoofdnavigatie">{c.nav.map(([t, h], i) => <><a href={h}>{t}</a>{i < c.nav.length - 1 && <span aria-hidden="true">/</span>}</>)}</nav>
+        <span class="klein">[{sample.price}]</span>
+        <span class="klein">{c.posterLine[1]}</span>
+      </div>
+    </header>
+
+    {/* ── DE UITSPRAAK ────────────────────────────────────────────────────*/}
+    <section class="zin-blok" aria-labelledby="h1">
+      <p class="klein zin-label">{nn(1)} — {c.heroChip}</p>
+      <h1 id="h1" class="zin">{c.h1.map((line) => <span class="regel" set:html={line} />)}</h1>
+      <div class="zin-voet">
+        <p class="lede">{c.lede}</p>
+        <ul class="feiten klein" role="list">{c.facts.map((f, i) => <li><b>{nn(i + 1)}</b>{f}</li>)}</ul>
+        <p class="acties"><a class="lijn" href={lp('/start')}>{c.ctaStart}</a><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a></p>
+      </div>
+    </section>
+
+    {/* ── HET EERSTE BEELD, van rand tot rand ─────────────────────────────*/}
+    <figure class="band">
+      <img src={S(1).src} width={S(1).w} height={S(1).h} alt={S(1).alt} fetchpriority="high" decoding="async">
+    </figure>
+
+    {/* ── WAT WE MAKEN ────────────────────────────────────────────────────
+        De sectienaam is zelf een kolos: één woord over de volle breedte,
+        afgesneden door de rand. Daaronder vier kolommen met kolomlijnen. */}
+    <section id="maken" class="sectie" aria-labelledby="h-maken">
+      <p class="kolos-woord" aria-hidden="true">Diensten</p>
+      <header class="sectie-kop">
+        <p class="klein">{nn(2)} — {c.secties[0]}</p>
+        <h2 id="h-maken" class="mid">{c.svcH}</h2>
+        <p class="lede">{c.svcLede}</p>
+      </header>
+      <ul class="kolommen" role="list">
+        {c.svc.map(([naam, wat, prijs, href], i) => (
+          <li>
+            <a href={lp(href)}>
+              <span class="klein">{nn(i + 1)}</span>
+              <img src={S([1, 2, 4, 3][i]).src} width={S([1, 2, 4, 3][i]).w} height={S([1, 2, 4, 3][i]).h} alt={S([1, 2, 4, 3][i]).alt} loading="lazy" decoding="async">
+              <b>{naam}</b>
+              <span class="wat">{wat}</span>
+              <span class="klein">{prijs}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="voetregel klein"><span>{c.svcSoon[0]}</span> <a class="lijn" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    </section>
+
+    {/* ── TELEFOONFOTO → STUDIOPRODUCTIE ──────────────────────────────────*/}
+    <section class="sectie" aria-labelledby="h-vn">
+      <header class="sectie-kop">
+        <p class="klein">{nn(3)} — {c.secties[1]}</p>
+        <h2 id="h-vn" class="mid">{c.vnH}</h2>
+        <p class="lede">{c.vnLede}</p>
+      </header>
+      <div class="tweeluik">
+        <figure class="klein-beeld">
+          <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async">
+          <figcaption class="klein">{c.vnIn[0]} · {c.vnIn[1]}</figcaption>
+        </figure>
+        <figure class="groot-beeld">
+          <img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async">
+          <figcaption class="klein">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
+        </figure>
+      </div>
+      <ol class="termen klein">{c.vnNoten.map((k, i) => <li><b>{nn(i + 1)}</b>{k}</li>)}</ol>
+      <p class="voetregel"><a class="lijn" href={lp('/gallery')}>{c.vnLink}</a></p>
+    </section>
+
+    {/* ── DE SET ──────────────────────────────────────────────────────────*/}
+    <section class="sectie" aria-labelledby="h-set">
+      <p class="kolos-woord" aria-hidden="true">{COMPLETE_IMAGES} beelden</p>
+      <header class="sectie-kop">
+        <p class="klein">{nn(4)} — {c.secties[2]}</p>
+        <h2 id="h-set" class="mid">{c.setH}</h2>
+        <p class="lede">{c.setLede}</p>
+      </header>
+      <p class="groepen klein"><a class="lijn" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a><a class="lijn" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a></p>
+      <ol class="rij">
+        {c.frames.map((naam, i) => (
+          <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
+            <img src={S([1, 5, 4, 2, 3, 7, 6][i]).klein} width="800" height="1000" alt="" decoding="async">
+            <span class="klein">{nn(i + 1)} {naam}</span>
+          </li>
+        ))}
+      </ol>
+      <ul class="extras klein" role="list">{c.extras.map(([k, v, href]) => <li><a class="lijn" href={lp(href)}>{k}</a><span>{v}</span></li>)}</ul>
+    </section>
+
+    {/* ── HET PROCES ──────────────────────────────────────────────────────*/}
+    <section class="sectie" aria-labelledby="h-st">
+      <header class="sectie-kop">
+        <p class="klein">{nn(5)} — {c.secties[3]}</p>
+        <h2 id="h-st" class="mid">{c.stepsH}</h2>
+        <p class="lede">{c.stepsLede}</p>
+      </header>
+      <ol class="kolommen kolommen-tekst">
+        {c.steps.map(([k, v], i) => <li><span class="klein">{nn(i + 1)}</span><b>{k}</b><span class="wat">{v}</span></li>)}
+      </ol>
+    </section>
+
+    <figure class="band">
+      <img src={S(5).src} width={S(5).w} height={S(5).h} alt={S(5).alt} loading="lazy" decoding="async">
+    </figure>
+
+    {/* ── TARIEVEN ────────────────────────────────────────────────────────*/}
+    <section id="tarieven" class="sectie" aria-labelledby="h-pr">
+      <p class="kolos-woord" aria-hidden="true">Tarief</p>
+      <header class="sectie-kop">
+        <p class="klein">{nn(6)} — {c.secties[4]}</p>
+        <h2 id="h-pr" class="mid">{c.priceH}</h2>
+      </header>
+      <table class="tabel">
+        <thead><tr><th scope="col" class="klein">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="klein">{KIND_PAGE[id] ? <a class="lijn" href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+        <tbody>{RUNGS.map((r) => <tr><th scope="row" class="klein">{r.label}</th>{KINDS.map((id) => <td>{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+      </table>
+      <p class="klein">{c.priceVat}</p>
+      <p class="acties"><a class="lijn" href={lp('/start')}>{c.priceCta}</a><a class="lijn" href={lp('/pricing')}>{c.priceCta2}</a></p>
+
+      <header class="sectie-kop sectie-kop-sub">
+        <h3 class="mid">{c.planH}</h3>
+        <p class="lede">{c.planLede}</p>
+      </header>
+      <table class="tabel">
+        <thead><tr>{c.planCols.map((k) => <th scope="col" class="klein">{k}</th>)}</tr></thead>
+        <tbody>{PLANS.map((pl) => <tr><th scope="row"><a class="lijn" href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td>{pl.products}</td><td>{PLAN_CLIPS[pl.id] || '—'}</td><td>{pl.price}</td></tr>)}</tbody>
+      </table>
+      <p class="klein">{c.planVat}</p>
+      <p class="acties"><a class="lijn" href={lp('/start/plan')}>{c.planCta}</a><a class="lijn" href={lp('/plans')}>{c.planLink}</a></p>
+    </section>
+
+    {/* ── STUDIO ──────────────────────────────────────────────────────────*/}
+    <section id="studio" class="sectie" aria-labelledby="h-sd">
+      <header class="sectie-kop">
+        <p class="klein">{nn(7)} — {c.secties[5]}</p>
+        <h2 id="h-sd" class="mid">{c.studioH}</h2>
+        <p class="lede">{c.studioLede}</p>
+      </header>
+      <figure class="groot-beeld breed">
+        <img src={S(8).src} width={S(8).w} height={S(8).h} alt={S(8).alt} loading="lazy" decoding="async">
+      </figure>
+      <ul class="kolommen kolommen-tekst" role="list">
+        {c.beloften.map(([k, v], i) => <li><span class="klein">{nn(i + 1)}</span><b>{k}</b><span class="wat">{v}</span></li>)}
+      </ul>
+      <p class="acties"><a class="lijn" href={lp('/portal')}>{c.studioLink}</a><a class="lijn" href={lp('/studio')}>{c.studioLink2}</a></p>
+    </section>
+
+    {/* ── GEZICHTEN ───────────────────────────────────────────────────────*/}
+    <section id="gezichten" class="sectie" aria-labelledby="h-gz">
+      <p class="kolos-woord" aria-hidden="true">Gezichten</p>
+      <header class="sectie-kop">
+        <p class="klein">{nn(8)} — {c.secties[6]}</p>
+        <h2 id="h-gz" class="mid">{c.facesH}</h2>
+        <p class="lede">{c.facesLede}</p>
+      </header>
+      <ul class="rooster" role="list">
+        {ROSTER.map((m) => <li><a href={`${lp('/models')}#${modelId(m.name)}`}><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"><span class="klein">{m.name}</span></a></li>)}
+      </ul>
+      <p class="acties"><a class="lijn" href={lp('/custom-models')}>{c.facesLink}</a><a class="lijn" href={lp('/models')}>{c.facesLink2}</a></p>
+    </section>
+
+    {/* ── VRAGEN ──────────────────────────────────────────────────────────*/}
+    <section class="sectie" aria-labelledby="h-q">
+      <header class="sectie-kop">
+        <p class="klein">{nn(9)}</p>
+        <h2 id="h-q" class="mid">{c.qH}</h2>
+      </header>
+      <ul class="vragen" role="list">
+        {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="lijn" href={lp(href)}>{l}</a></li>)}
+        <li><span></span><a class="lijn" href={lp('/faq')}>{c.qAll}</a></li>
+      </ul>
+    </section>
+
+    {/* ── DE PROEF: de tweede kolos, op geel ──────────────────────────────*/}
+    <section class="slot op-geel" aria-labelledby="h-sl">
+      <p class="klein">{nn(10)} — {c.secties[7]}</p>
+      <h2 id="h-sl" class="zin">{c.closeH}</h2>
+      <p class="lede">{c.closeLede}</p>
+      <p class="acties"><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a><a class="lijn" href={lp('/start')}>{c.closeAlt}</a></p>
+    </section>
+  </main>
+
+  <footer class="voet">
+    <ul class="trust klein" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+    <span class="klein">{c.posterLine[0]} · {c.posterLine[1]}</span>
+  </footer>
+</ConceptLayout>
+
+<style is:global>
+  /* Nadruk: het accentwoord staat in de brede snit met een gele streep eronder.
+     Op deze pagina is alles al groot, dus de nadruk moet fijn zijn. */
+  .kolos .zin em, .kolos .mid em { background: none; font-stretch: 125%; text-decoration: underline; text-decoration-color: var(--geel); text-decoration-thickness: .07em; text-underline-offset: .1em; text-decoration-skip-ink: none; }
+</style>
+
+<style>
+  /* ── TWEE MATEN, EN NIETS ERTUSSEN ──────────────────────────────────────
+     Alles op deze pagina is óf kolossaal (het merk, de sectiewoorden, de
+     uitspraak) óf 11px mono. Het gat tussen die twee is wat het groot maakt. */
+  .klein { font-family: var(--mono); font-size: .68rem; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; line-height: 1.5; color: var(--inkt-3); }
+  .klein b { color: var(--inkt); font-weight: 400; margin-right: .5em; }
+  .lijn { font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--inkt); border-bottom: 1px solid currentColor; padding-bottom: .25em; }
+  .lijn:hover { color: var(--inkt-3); }
+  .zin { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(2.6rem, 8.4vw, 9rem); line-height: .94; letter-spacing: -.04em; }
+  .regel { display: block; }
+  .mid { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(1.5rem, 3vw, 2.6rem); line-height: 1.08; letter-spacing: -.025em; text-wrap: balance; }
+  .lede { font-size: 1rem; line-height: 1.6; color: var(--inkt-2); max-width: 46ch; text-wrap: pretty; }
+  .acties { display: flex; flex-wrap: wrap; gap: 1.2rem 2.5rem; }
+  .voetregel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem; }
+
+  /* ── DE GEVEL ───────────────────────────────────────────────────────────*/
+  .gevel { padding-top: clamp(1rem, 2vw, 2rem); overflow: hidden; }
+  /* Het merk bloedt aan beide kanten net van het scherm af: groot genoeg om
+     een muur te zijn, niet zo ver afgesneden dat de naam onleesbaar wordt. */
+  .gevel-merk { display: block; width: 118vw; margin-left: -9vw; }
+  .gevel-merk .woordmerk { fill: var(--inkt); }
+  .lat { display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: baseline; gap: 2rem; padding: .9rem var(--x); border-top: 1px solid var(--inkt); }
+  .lat-nav { display: flex; gap: .6rem; color: var(--inkt); }
+  .lat-nav a:hover { color: var(--inkt-3); }
+  @media (max-width: 860px) { .lat { grid-template-columns: 1fr; gap: .4rem; } .lat-nav { flex-wrap: wrap; } }
+
+  /* ── DE UITSPRAAK ───────────────────────────────────────────────────────*/
+  .zin-blok { padding: clamp(4rem, 10vh, 9rem) var(--x) clamp(3rem, 7vh, 6rem); display: grid; gap: clamp(1.5rem, 4vh, 3rem); }
+  .zin-voet { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem clamp(2rem, 5vw, 5rem); align-items: start; border-top: 1px solid var(--lijn-sterk); padding-top: 1.5rem; }
+  .zin-voet .acties { grid-column: 1 / -1; }
+  .feiten { display: grid; gap: .4rem; }
+  @media (max-width: 860px) { .zin-voet { grid-template-columns: 1fr; } }
+
+  /* ── DE BANDEN: een beeld van rand tot rand, nooit hoger dan een scherm ──*/
+  .band { width: 100%; }
+  .band img { width: 100%; height: auto; max-height: 84svh; object-fit: cover; display: block; }
+
+  /* ── EEN SECTIE ─────────────────────────────────────────────────────────*/
+  .sectie { padding: clamp(5rem, 12vh, 11rem) var(--x); display: grid; gap: clamp(2rem, 5vh, 4rem); }
+  .sectie-kop { display: grid; gap: 1rem; max-width: 54rem; }
+  .sectie-kop-sub { margin-top: clamp(3rem, 7vh, 6rem); }
+
+  /* Het sectiewoord als tweede kolos: over de volle breedte, afgesneden. */
+  .kolos-woord { font-family: var(--kop); font-stretch: 125%; font-weight: 400; font-size: 15.5vw; line-height: .78; letter-spacing: -.05em; text-transform: uppercase; margin: 0 calc(-1 * var(--x)) clamp(1rem, 3vh, 2.5rem); padding-inline: var(--x); white-space: nowrap; overflow: hidden; color: var(--inkt); }
+
+  /* ── KOLOMMEN, met echte kolomlijnen ────────────────────────────────────*/
+  .kolommen { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1rem, 2.5vw, 2.5rem); }
+  .kolommen > li { border-left: 1px solid var(--lijn-sterk); padding-left: clamp(.8rem, 1.5vw, 1.4rem); }
+  .kolommen a, .kolommen li { display: grid; gap: .7rem; align-content: start; }
+  .kolommen img { width: 100%; height: auto; max-height: 62svh; object-fit: cover; aspect-ratio: 4 / 5; margin-block: .3rem; }
+  .kolommen b { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: 1.2rem; }
+  .kolommen .wat { font-size: .9rem; color: var(--inkt-2); }
+  .kolommen-tekst > li { padding-top: 1.1rem; border-top: 1px solid var(--inkt); border-left: 0; padding-left: 0; }
+  @media (max-width: 860px) { .kolommen { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .kolommen { grid-template-columns: 1fr; } }
+
+  /* ── HET TWEELUIK ───────────────────────────────────────────────────────*/
+  .tweeluik { display: grid; grid-template-columns: 10rem 1fr; gap: clamp(1rem, 3vw, 3rem); align-items: end; }
+  .tweeluik figure { display: grid; gap: .7rem; }
+  .tweeluik img { width: 100%; height: auto; }
+  .groot-beeld img { max-height: 80svh; object-fit: contain; }
+  .groot-beeld.breed img { width: 100%; object-fit: cover; max-height: 78svh; }
+  .termen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; border-top: 1px solid var(--lijn-sterk); padding-top: .9rem; }
+  @media (max-width: 860px) { .tweeluik { grid-template-columns: 1fr; } .tweeluik .klein-beeld { width: 10rem; } .termen { grid-template-columns: 1fr 1fr; } }
+
+  /* ── DE RIJ VAN ZEVEN ───────────────────────────────────────────────────*/
+  .groepen { display: grid; grid-template-columns: 4fr 3fr; gap: 1rem; }
+  .groepen a { justify-self: start; }
+  .rij { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(.4rem, 1vw, 1rem); border-top: 1px solid var(--inkt); padding-top: 1rem; }
+  .rij li { display: grid; gap: .6rem; }
+  .rij img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .extras { display: grid; gap: .6rem; }
+  .extras li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem; color: var(--inkt-2); }
+  @media (max-width: 860px) { .rij { grid-template-columns: repeat(4, 1fr); } .groepen { grid-template-columns: 1fr; } }
+
+  /* ── TABELLEN ───────────────────────────────────────────────────────────*/
+  .tabel { width: 100%; }
+  .tabel th, .tabel td { text-align: left; padding: 1.2rem .8rem 1.2rem 0; border-bottom: 1px solid var(--lijn); vertical-align: baseline; }
+  .tabel thead th { border-bottom-color: var(--inkt); padding-top: 0; }
+  .tabel tbody th { font-weight: 400; width: 20%; }
+  .tabel td { font-family: var(--kop); font-stretch: 125%; font-size: clamp(1.1rem, 2.2vw, 1.8rem); font-variant-numeric: tabular-nums; }
+  .abo-regel { display: block; font-size: .82rem; color: var(--inkt-3); margin-top: .3rem; text-transform: none; letter-spacing: 0; font-family: var(--tekst); }
+  @media (max-width: 620px) { .tabel th, .tabel td { padding: .8rem .4rem .8rem 0; } .abo-regel { display: none; } }
+
+  /* ── ROOSTER EN VRAGEN ──────────────────────────────────────────────────*/
+  .rooster { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(.4rem, 1vw, 1rem); }
+  .rooster a { display: grid; gap: .6rem; }
+  .rooster img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: grayscale(1); transition: filter .5s var(--uit); }
+  .rooster a:hover img { filter: none; }
+  @media (max-width: 860px) { .rooster { grid-template-columns: repeat(5, 1fr); } }
+  .vragen { display: grid; }
+  .vragen li { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 1.5rem; padding: 1.3rem 0; border-top: 1px solid var(--lijn); font-size: 1rem; }
+  .vragen li:last-child { border-bottom: 1px solid var(--lijn); }
+  @media (max-width: 620px) { .vragen li { grid-template-columns: 1fr; gap: .7rem; } }
+
+  /* ── HET SLOT ───────────────────────────────────────────────────────────*/
+  .slot { background: var(--geel); color: var(--inkt); padding: clamp(5rem, 14vh, 12rem) var(--x); display: grid; gap: clamp(1.5rem, 4vh, 3rem); }
+  .slot .lede, .slot .klein { color: var(--inkt); }
+  .voet { display: grid; gap: 1rem; padding: clamp(2.5rem, 6vh, 5rem) var(--x); }
+  .trust { display: flex; flex-wrap: wrap; gap: .5rem 2.5rem; }
+</style>

@@ -1,0 +1,64 @@
+---
+/* De drie inlogschermen — formulier, "kijk in je mail", dode link — plus de
+   503, uit één beschrijving (zie authPage/studioAuth in account.js). Dezelfde
+   velden, namen en acties als de oude loginBody/checkEmailBody/badLinkBody,
+   want de handlers lezen ze zo. */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import { COPY, themaCookie, LOGIN_CODE_TTL_MINUTES } from '../../lib/account.js';
+import { mailNote } from '../../data/mailNote.js';
+const { view } = Astro.props;
+const lang = view.lang === 'nl' ? 'nl' : 'en';
+const t = COPY[lang];
+const thema = themaCookie(Astro.request);
+if (view.status) Astro.response.status = view.status;
+/* De verplichte velden dragen hun eigen melding (huisregel, tests/verplichte-
+   velden.test.mjs). Studio laadt geen script, dus de browser toont zijn eigen
+   melding; het attribuut zegt wél waarom het veld er staat. */
+const meldEmail = lang === 'nl' ? 'Vul het e-mailadres in waarmee je besteld hebt — daar sturen we de code heen.' : 'Enter the email address you ordered with — that is where the code goes.';
+const meldCode = lang === 'nl' ? 'Vul de code van zes cijfers uit de mail in.' : 'Enter the six-digit code from the email.';
+const titel = view.view === 'check' ? t.checkTitle : view.view === 'badlink' ? t.badLinkTitle : view.view === 'error' ? 'VISUAILS' : t.loginTitle;
+---
+<StudioLayout lang={lang} t={t} thema={thema} vorm="kaart" title={titel}>
+  {view.view === 'error' ? (
+    <p class="st-fout" role="alert">{t.dbDown}</p>
+  ) : view.view === 'check' ? (
+    <Fragment>
+      <h1>{t.checkTitle}</h1>
+      <p class="st-lede">{t.checkBody}</p>
+      {view.message && <p class="st-fout" role="alert">{view.message}</p>}
+      <form class="st-form" method="post" action="/account/code">
+        <input type="hidden" name="lang" value={lang}>
+        <input type="hidden" name="email" value={view.email || ''}>
+        <label for="login-code">{t.codeLabel}</label>
+        <input class="st-veld is-code" id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+               pattern="[0-9 ]{6,9}" maxlength="9" required autofocus placeholder="000000" aria-describedby="login-code-hint" data-melding={meldCode}>
+        <button class="btn btn-primary" type="submit">{t.codeSubmit}</button>
+      </form>
+      <p class="st-hint" id="login-code-hint">{t.codeHint(LOGIN_CODE_TTL_MINUTES)}</p>
+      <p class="st-hint">{mailNote(lang)}</p>
+      <details class="st-details" open={!!view.message}>
+        <summary>{t.codeAgain}</summary>
+        <form class="st-form" method="post" action="/account/login">
+          <input type="hidden" name="lang" value={lang}>
+          <label class="sr-only" for="again-email">{t.loginEmailLabel}</label>
+          <input class="st-veld" id="again-email" name="email" type="email" autocomplete="email" required value={view.email || ''} placeholder={t.loginEmailLabel} data-melding={meldEmail}>
+          <button class="btn btn-ghost" type="submit">{t.codeAgainCta}</button>
+        </form>
+      </details>
+      <p class="st-wie-tekst">{t.loginWho}</p>
+    </Fragment>
+  ) : (
+    <Fragment>
+      <h1>{view.view === 'badlink' ? t.badLinkTitle : t.loginTitle}</h1>
+      <p class="st-lede">{view.view === 'badlink' ? t.badLinkBody : t.loginLede}</p>
+      {view.error && <p class="st-fout" role="alert">{view.error}</p>}
+      <form class="st-form" method="post" action="/account/login">
+        <input type="hidden" name="lang" value={lang}>
+        <label class="sr-only" for="login-email">{t.loginEmailLabel}</label>
+        <input class="st-veld" id="login-email" name="email" type="email" placeholder={t.loginEmailLabel} autocomplete="email" required data-melding={meldEmail}>
+        <button class="btn btn-primary" type="submit">{t.loginSubmit}</button>
+      </form>
+      {view.view !== 'badlink' && <p class="st-wie-tekst">{t.loginWho}</p>}
+    </Fragment>
+  )}
+</StudioLayout>

@@ -241,6 +241,16 @@ const C = nl
 </figure>
 
 <style>
+  /* ── ELKE MAAT ONDER 11,5px IS OMHOOG — 7 september 2026 ───────────────────
+     Deze tekening bootst een scherm na, en kleine letters horen bij die
+     illusie — dat was de redenering. De keuring is het daar niet mee eens en
+     heeft gelijk: wat een bezoeker geacht wordt te LEZEN, moet leesbaar zijn,
+     ook als het een nagebootst scherm is. Gemeten op /studio in de stijl van
+     sectie 22: acht labels tussen 9,3 en 11,2px, waaronder de statusregel van
+     de voorbeeldbestelling en de dagtelling van de agenda.
+     Alles onder .72rem (11,5px, de ondergrens die kladblok/keuring.mjs
+     aanhoudt) staat nu op .72rem. Lucas: *"Wel even altijd goed controleren op
+     leesbaarheid."* */
   /* Container query en geen media query: deze figuur staat in een halve kolom.
      Zelfde reden als in FigDash — zie de noot daar. */
   .fb { container-type: inline-size; margin: 0; }
@@ -263,11 +273,11 @@ const C = nl
   }
   .fb-mark { font-size: .72rem; font-weight: 700; letter-spacing: .2em; color: var(--ink); }
   .fb-side {
-    font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
     padding: .18rem .5rem; border-radius: var(--r-pill);
     background: var(--accent); color: var(--accent-on);
   }
-  .fb-badge { margin-left: auto; font-size: .62rem; color: var(--ink-3); }
+  .fb-badge { margin-left: auto; font-size: .72rem; color: var(--ink-3); }
 
   .fb-body { padding: 1rem; display: grid; gap: .8rem; }
 
@@ -286,34 +296,35 @@ const C = nl
   .fb-h { margin: 0; font-size: .8rem; font-weight: 600; color: var(--ink); }
   .fb-count {
     margin: 0 0 0 auto;
-    font-size: .58rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--warn-ink, #C9A227);
+    font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    /* Klei-als-tekst en niet klei — zie de noot bij `.fb-pill.is-rev`. */
+    color: var(--flag-ink, #8A4F06);
   }
   .fb-cap {
-    margin: 0; font-size: .58rem; font-weight: 600; letter-spacing: .08em;
+    margin: 0; font-size: .72rem; font-weight: 600; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
   }
-  .fb-fine { margin: 0; font-size: .64rem; line-height: 1.55; color: var(--ink-3); }
+  .fb-fine { margin: 0; font-size: .72rem; line-height: 1.55; color: var(--ink-3); }
 
   /* ── DE REVISIE ───────────────────────────────────────────────────────────*/
   .fb-rev { display: grid; gap: .35rem; }
   .fb-rev-top {
     margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .55rem;
-    font-size: .68rem; color: var(--ink-3);
+    font-size: .72rem; color: var(--ink-3);
   }
   .fb-rev-top b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
   .fb-rev-what { color: var(--ink-2); }
-  .fb-rev-when { margin-left: auto; font-size: .62rem; font-variant-numeric: tabular-nums; }
+  .fb-rev-when { margin-left: auto; font-size: .72rem; font-variant-numeric: tabular-nums; }
   .fb-said {
     margin: 0; padding: .1rem 0 .1rem .55rem;
     box-shadow: inset 2px 0 0 var(--warn-ink, #C9A227);
-    font-size: .7rem; line-height: 1.5; font-style: italic; color: var(--ink-2);
+    font-size: .72rem; line-height: 1.5; font-style: italic; color: var(--ink-2);
   }
   .fb-acts { display: flex; flex-wrap: wrap; gap: .3rem; }
   /* Geen echte knoppen — zie de kop. */
   .fb-btn {
     display: inline-block;
-    font-size: .6rem; font-weight: 600;
+    font-size: .72rem; font-weight: 600;
     padding: .26rem .55rem;
     border: 1px solid var(--line-strong); border-radius: var(--r-pill);
     color: var(--ink-2); white-space: nowrap;
@@ -322,10 +333,10 @@ const C = nl
 
   /* ── DE TABEL ─────────────────────────────────────────────────────────────*/
   .fb-tblwrap { overflow-x: auto; }
-  .fb-tbl { width: 100%; border-collapse: collapse; font-size: .7rem; }
+  .fb-tbl { width: 100%; border-collapse: collapse; font-size: .72rem; }
   .fb-tbl th {
     text-align: left; padding: 0 .7rem .45rem 0;
-    font-size: .58rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
     color: var(--ink-3); white-space: nowrap;
     box-shadow: inset 0 -1px 0 var(--line);
   }
@@ -346,14 +357,24 @@ const C = nl
 
   .fb-pill {
     display: inline-block;
-    font-size: .58rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
     padding: .18rem .5rem; border-radius: var(--r-pill);
     border: 1px solid var(--line-strong); color: var(--ink-3);
     white-space: nowrap;
   }
-  .fb-pill.is-run { border-color: var(--accent); color: var(--accent); }
+  .fb-pill.is-run { border-color: var(--accent); color: var(--accent-text); }
   .fb-pill.is-check { border-color: var(--line-strong); color: var(--ink-2); }
-  .fb-pill.is-rev { border-color: var(--warn-ink, #C9A227); color: var(--warn-ink, #C9A227); }
+  /* ── DE RAND IS KLEI, DE LETTER IS KLEI-ALS-TEKST — 7 september 2026 ───────
+     `--warn-ink` is #E9963B, en de noot bij dat token in global.css zegt er
+     zelf bij dat het 8,43:1 haalt OP DE PAGINAGROND — en die grond is
+     bijna-zwart. Op het vel van sectie 22 (#F5F5F5) haalt dezelfde kleur
+     2,17:1, gemeten op /studio. Een oranje dat als rand is gekozen, is daarmee
+     als LETTER op licht onbruikbaar.
+
+     `--clay-text` bestaat precies hiervoor: dezelfde kleur, donker genoeg om
+     tekst te zijn (5,7:1 op licht, zegt diezelfde noot). De rand houdt de
+     heldere versie, want een rand hoeft geen 4,5 te halen. */
+  .fb-pill.is-rev { border-color: var(--warn-ink, #C9A227); color: var(--flag-ink, #8A4F06); }
   .fb-pill.is-wait { border-color: var(--line); color: var(--ink-3); }
   .fb-pill.is-was { border-color: var(--line); color: var(--ink-3); text-decoration: line-through; }
 
@@ -369,9 +390,9 @@ const C = nl
   }
   .fb-swap { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
   .fb-arrow { color: var(--ink-3); font-size: .78rem; }
-  .fb-yours { margin: 0; font-size: .68rem; line-height: 1.45; color: var(--ink-2); }
+  .fb-yours { margin: 0; font-size: .72rem; line-height: 1.45; color: var(--ink-2); }
   /* De twee tijdstempels dragen dezelfde kleur, en dat is de bewijsvoering: het
      oog ziet dat het één gebeurtenis is voordat de zin eronder het uitlegt.
      Dezelfde keuze, met dezelfde reden, als in FigGate. */
-  .fb-stamp { margin: 0; font-size: .66rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .fb-stamp { margin: 0; font-size: .72rem; color: var(--accent-text); font-variant-numeric: tabular-nums; }
 </style>

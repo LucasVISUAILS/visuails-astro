@@ -43,8 +43,8 @@
 
 import {
   ATTENDED_PER_DAY,
-  ATTENDED_IMAGES_PER_DAY,
-  IMAGES_PER_PRODUCT,
+  ATTENDED_PUNTEN_PER_DAG,
+  PUNTEN_PER_PRODUCT,
   firstOfferableDay,
   isOpenDay,
   offerableWindows,
@@ -66,7 +66,7 @@ import {
 export const DEMO_TODAY = '2026-08-03';
 
 /** De bestelling die in alle vijf de figuren dezelfde is. */
-export const DEMO_ORDER = { ref: 'VIS-2608-4471', brand: 'VOLT', products: 30 };
+export const DEMO_ORDER = { ref: 'VIS-2608-4471', brand: 'VOLT', products: 20 };
 
 /**
  * Een tweede, kleinere bestelling — alleen als vergelijking in FigGate.
@@ -76,44 +76,63 @@ export const DEMO_ORDER = { ref: 'VIS-2608-4471', brand: 'VOLT', products: 30 };
  * agenda op dezelfde dag: 30 producten krijgt 10 – 11 augustus, 12 producten
  * krijgt 6 – 7 augustus. Zelfde poort, zelfde moment, andere uitkomst.
  */
-export const DEMO_SMALL_PRODUCTS = 12;
+export const DEMO_SMALL_PRODUCTS = 8;
 
 /**
  * Wat er in de verzonnen agenda al staat: bezette BEELDEN per dag.
  *
  * De eenheid is het beeld sinds de agenda gedeeld is — zie de noot bij
- * IMAGES_PER_DAY in capacity.js. De getallen staan hier als "producten maal
- * IMAGES_PER_PRODUCT" en niet uitgerekend, zodat de bedoeling leesbaar blijft:
- * elf complete producten op maandag, en niet zevenenzeventig losse beelden.
+ * PUNTEN_PER_DAG in capacity.js. De getallen staan hier als "producten maal
+ * PUNTEN_PER_PRODUCT" en niet uitgerekend, zodat de bedoeling leesbaar blijft:
+ * acht complete producten op maandag, en niet zesenvijftig losse punten.
  *
  * Deze cijfers zijn met opzet zo gekozen dat de poort er iets INTERESSANTS mee
  * doet, en niet zo dat alles kan:
  *
- *   · woensdag 12 augustus staat op 15 van 15 producten — vol, en wordt als vol
- *     getoond. Dat was 5 augustus, maar sinds de aanloop drie dagen beslaat in
- *     plaats van twee (zie LEAD_DAYS) valt de 5e binnen de brieftijd, en dan
- *     toont de figuur "te vroeg" en niet "vol". Een figuur die zijn eigen
- *     interessantste toestand kwijtraakt, laat dat niet zien — de test wel.
- *   · donderdag 6 en vrijdag 7 hebben ruimte, maar niet genoeg voor dertig:
- *     die vraagt vijftien op ELKE dag van het venster, dus twee dagen die
- *     helemaal vrij zijn. Dat is de pessimistische lezing die windowFits()
- *     aanhoudt, en het is de reden dat een grote bestelling verder vooruit valt
- *     dan een kleine terwijl de agenda "toch ruimte heeft".
+ *   · woensdag 12 augustus staat vol, en wordt als vol getoond. Dat was 5
+ *     augustus, maar sinds de aanloop drie dagen beslaat in plaats van twee
+ *     (zie LEAD_DAYS) valt de 5e binnen de brieftijd, en dan toont de figuur
+ *     "te vroeg" en niet "vol". Een figuur die zijn eigen interessantste
+ *     toestand kwijtraakt, laat dat niet zien — de test wel.
+ *   · donderdag 6 en vrijdag 7 hebben ruimte, maar niet genoeg voor de grote
+ *     bestelling: die vraagt de helft van haar punten op ELKE dag van het
+ *     venster, dus twee dagen die vrij genoeg zijn. Dat is de pessimistische
+ *     lezing die windowFits() aanhoudt, en het is de reden dat een grote
+ *     bestelling verder vooruit valt dan een kleine terwijl de agenda "toch
+ *     ruimte heeft".
+ *
+ * ── HERIJKT OP HET PUNTENPLAFOND — 7 september 2026 ────────────────────────
+ *
+ * Deze cijfers stonden op een plafond van 126 punten per dag; sinds Lucas het op
+ * 100 zette, past er minder op een dag en paste de demobestelling van dertig
+ * producten (210 punten) niet eens meer in één venster. De figuur tekende toen
+ * geen venster meer, en tests/figures.test.mjs zei dat meteen — precies waarvoor
+ * die test bestaat. De bestelling is nu twintig producten en de kleine acht, en
+ * het verhaal is woord voor woord hetzelfde: de grote krijgt 10 – 11 augustus,
+ * de kleine 6 – 7.
  *
  * De dagen binnen de lead-tijd staan er ook in. Ze zijn niet aanbiedbaar, maar ze
  * hebben wel werk — een agenda waarin vandaag leeg is, is geen agenda.
  */
 export const DEMO_BOOKED = {
-  '2026-08-03': 11 * IMAGES_PER_PRODUCT,
-  '2026-08-04': 14 * IMAGES_PER_PRODUCT,
-  '2026-08-05': 15 * IMAGES_PER_PRODUCT,
-  '2026-08-06': 8 * IMAGES_PER_PRODUCT,
-  '2026-08-07': 2 * IMAGES_PER_PRODUCT,
+  '2026-08-03': 8 * PUNTEN_PER_PRODUCT,
+  '2026-08-04': 11 * PUNTEN_PER_PRODUCT,
+  /* Precies het plafond, en niet "twaalf producten". Sinds het plafond een rond
+     getal in punten is (100, waarvan 79 te reserveren), gaat het niet meer op in
+     hele producten — elf is 77 en twaalf is 84, dus "vol" is met producten niet
+     te schrijven zonder eroverheen te gaan. De dag die vol hoort te zijn, zegt
+     dat nu met de constante zelf. */
+  '2026-08-05': ATTENDED_PUNTEN_PER_DAG,
+  '2026-08-06': 6 * PUNTEN_PER_PRODUCT,
+  '2026-08-07': 2 * PUNTEN_PER_PRODUCT,
+  /* Zaterdag en zondag staan in DEMO_BLACKOUTS: de demo laat een studio zien
+     die het weekend dichtzet. Bezetting erop zou suggereren dat er gewerkt wordt
+     op een dag die de figuur als gesloten tekent. */
   '2026-08-08': 0,
   '2026-08-09': 0,
   '2026-08-10': 0,
   '2026-08-11': 0,
-  '2026-08-12': 15 * IMAGES_PER_PRODUCT,
+  '2026-08-12': ATTENDED_PUNTEN_PER_DAG,
   '2026-08-13': 0,
   '2026-08-14': 0,
 };
@@ -166,7 +185,7 @@ export function otherWindow(order, lang = 'en') {
   // Het venster van een bestaande bestelling, met de agenda erbij: sinds een paar
   // over volle dagen heen springt, kan de tweede dag niet meer uit de kalender
   // alleen worden afgeleid.
-  const days = windowFor(order.start, order.products * IMAGES_PER_PRODUCT, {}, DEMO_BLACKOUTS);
+  const days = windowFor(order.start, order.products * PUNTEN_PER_PRODUCT, {}, DEMO_BLACKOUTS);
   if (!days.length) return '—';
   return windowLabel({ start: days[0], end: days[days.length - 1] }, lang);
 }
@@ -243,22 +262,39 @@ export function demoRows(products = DEMO_ORDER.products, lang = 'en') {
   const win = demoWindow(products);
   const inWindow = new Set(win ? win.days : []);
   return DEMO_DAYS.map((iso) => {
-    // De figuur praat in producten omdat de bestelling erboven in producten staat,
-    // en in deze demo is alles compleet — dus de deling gaat op. De poort rekent
-    // in beelden; dat verschil hoort in de gegevens te zitten en niet in de opmaak.
-    const usedImages = DEMO_BOOKED[iso] || 0;
-    const used = usedImages / IMAGES_PER_PRODUCT;
+    /* De figuur praat in producten omdat de bestelling erboven in producten staat.
+       De poort rekent in punten; dat verschil hoort in de gegevens te zitten en
+       niet in de opmaak.
+
+       ── EN DE DELING GAAT NIET OP — 7 september 2026 ───────────────────────
+       Hier stond "in deze demo is alles compleet, dus de deling gaat op". Dat
+       was waar tot het dagplafond een rond getal in PUNTEN werd: de twee dagen
+       die op ATTENDED_PUNTEN_PER_DAG staan zijn 79 / 7 = 11,285714285714286 —
+       en dat getal stond, voluit, op /studio en /nl/studio te lezen:
+
+         wo 5 aug   11.285714285714286 / 11   Te vroeg
+
+       De noot bij DEMO_BOOKED wist dit al ("elf is 77 en twaalf is 84, dus vol
+       is met producten niet te schrijven") en zette de dag dáárom in punten. Wat
+       ontbrak was de andere kant: als de bron in punten mag staan, moet de
+       omrekening naar producten een heel product opleveren.
+
+       Afronden en niet naar beneden: 79 punten IS de volle dag, en `full` staat
+       twee regels lager op precies diezelfde vergelijking. "11 / 11 · Vol" is
+       wat er staat te gebeuren; "11 / 11" is dus ook wat er hoort te staan. */
+    const gebruiktePunten = DEMO_BOOKED[iso] || 0;
+    const used = Math.round(gebruiktePunten / PUNTEN_PER_PRODUCT);
     const closed = !isOpenDay(iso, DEMO_BLACKOUTS);
     const early = iso < DEMO_FIRST_OFFERABLE;
-    const full = usedImages >= ATTENDED_IMAGES_PER_DAY;
+    const full = gebruiktePunten >= ATTENDED_PUNTEN_PER_DAG;
     return {
       iso,
       day: weekdayLabel(iso, lang),
       label: dayLabel(iso, lang),
       used,
-      usedImages,
+      gebruiktePunten,
       cap: ATTENDED_PER_DAY,
-      capImages: ATTENDED_IMAGES_PER_DAY,
+      capPunten: ATTENDED_PUNTEN_PER_DAG,
       offered: inWindow.has(iso),
       state: closed ? 'closed' : early ? 'early' : full ? 'full' : 'open',
       closed,

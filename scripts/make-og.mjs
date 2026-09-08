@@ -32,8 +32,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'public/img');
 
 const W = 1200, H = 630;
-const GREEN = '#C6F100';
-const INK = '#08090B';
+const GREEN = '#D2E04A';
+const INK = '#111111';
 
 /** Een bestand als data-URL — Chromium mag geen file:// laden bij setContent. */
 const dataUrl = (abs, mime) =>

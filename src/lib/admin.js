@@ -51,6 +51,22 @@ import { serviceLabel } from '../data/services.js';
 /* De vier huisstijlen, voor de keuzelijst bij een bestelling namens de klant.
    Alleen wat een tarief heeft (geen priceTrust) is via het formulier te kiezen. */
 import { styles as ALLE_LOOKS } from '../data/styles.js';
+/* ── DE KEUZES VAN DE KLANT, MET HUN ECHTE NAAM ─────────────────────────────
+   7 september 2026. Lucas: *"zorg er trouwens wel voor dat als iemand een order
+   op een specifieke style invoert dat ik dan kan zien welke style het is."*
+
+   Dat kon niet. StylePicker post `style` als SLUG en die belandt in
+   details_json — daar staat hij, en de studiomail drukt hem ook af omdat
+   detailRows() alles afdrukt wat er staat. Maar het scherm waar je een
+   bestelling opent, deze pagina, noemde hem nergens. Dus: mail bewaard = je
+   weet het, mail weg = alleen nog met SQL te vinden. Precies de situatie die
+   `aanvraagRegel` hieronder al voor `clips` en `plan` oploste.
+
+   Deze drie lijsten zijn dezelfde die de formulieren tekenen, dus een stijl die
+   daar hernoemd wordt, heet hier meteen ook zo. */
+import { catalogStyles as ALLE_CATALOG_LOOKS } from '../data/catalogStyles.js';
+import { videoStyles as ALLE_VIDEO_LOOKS } from '../data/videoStyles.js';
+import { background as achtergrondVan } from '../data/backgrounds.js';
 const STYLE_LOOKS = ALLE_LOOKS.filter((l) => !l.priceTrust);
 import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from '../data/modelChecks.js';
 import { rosterWoord } from '../data/models.js';
@@ -59,7 +75,7 @@ import { rosterWoord } from '../data/models.js';
    dat een MENS daarop drukt. Vandaar dat ze hier binnenkomen en niet in cron/. */
 import { startPlanWindow, klaarOmTeStarten } from './planStart.js';
 import { bundelVoor, kindLabel } from './slots.js';
-import { planState, queueTerugNaAnnulering, loadSubscription, monthKey } from './subscription.js';
+import { planState, queueTerugNaAnnulering, loadSubscription, termijnMaand } from './subscription.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
    verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
    zodat de sleutel hier niet wordt overgetypt. Zie src/data/ratios.js. */
@@ -101,12 +117,20 @@ import { bouncesFor, bounceLine } from './bounces.js';
    getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
    kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
 import { AMOUNT, VAT_RATE, vatPercent, ladderTotal, STOCK_OFF_BRAND } from '../data/pricing.js';
-import { kindImages } from '../data/pricing.js';
+import { puntenVoor } from '../data/pricing.js';
+/* rowPunten() weegt een opgeslagen rij, video inbegrepen; videoVelden() haalt de
+   stijl en het aantal clips uit details_json. Zie de noten daar — het beheerscherm
+   moet dezelfde vertaling gebruiken als de poort, anders zegt de planning iets
+   anders dan de agenda. */
+import { rowPunten } from '../data/capacity.js';
 import {
-  ATTENDED_IMAGES_PER_DAY, QUEUE_AIM_DAYS, WINDOW_DAYS,
+  ATTENDED_PUNTEN_PER_DAG, QUEUE_AIM_DAYS, WINDOW_DAYS,
   addDays, addOpenDays, daysInRange, firstOfferableDay, windowFor,
 } from '../data/capacity.js';
-import { readCalendar } from './agenda.js';
+import { readCalendar, videoVelden } from './agenda.js';
+/* Zodat het annuleerregeltje kan zeggen of de klant de bestanden nog heeft. Eén
+   waarheid over die vraag; zie de kop van delivery.js. */
+import { leveringIngetrokken } from './delivery.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
 // and page-level helpers, and the mail template exports overlapping names.
 import {
@@ -123,12 +147,23 @@ import {
 } from './mailTemplate.js';
 
 const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'cancelled'];
+/* De vijf statussen zoals ze op dit scherm staan. Nederlands sinds 7 september
+   2026, om dezelfde reden als de cijferrij bij todayStrip(): dit is één scherm
+   voor één gebruiker en dat hoort in één taal te staan.
+
+   DE SLEUTELS BLIJVEN ENGELS. Dat zijn de waarden in orders.status, ze staan in
+   de database, in migraties, in queries en in de tijdlijn van elke bestaande
+   bestelling. Alleen wat je LEEST verandert; wat er staat niet.
+
+   De klantkant heeft zijn eigen vertaling — statusLabel() in account.js, per
+   taal — en die is hier niet bruikbaar: daar heet human_check "Wordt nagekeken
+   door een specialist", wat de klant geruststelt en jou een woord te veel is. */
 const STATUS_LABEL = {
-  received: 'Received',
-  in_production: 'In production',
-  human_check: 'Being checked',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
+  received: 'Binnen',
+  in_production: 'In productie',
+  human_check: 'Nagekeken',
+  delivered: 'Geleverd',
+  cancelled: 'Geannuleerd',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2478,6 +2513,100 @@ async function renderFiles(context, orderId) {
    * tekst zijn — de keuzelijst heeft "Weet ik nog niet" als laatste optie, en dat
    * is een antwoord dat je wil zien staan in plaats van een leeg vakje.
    */
+  /* ── WAT DE KLANT KOOS ─────────────────────────────────────────────────────
+   *
+   * 7 september 2026, op verzoek van Lucas. Elke bestelling draagt keuzes die de
+   * studio nodig heeft vóór er iets draait — de look bij lifestyle, de
+   * achtergrond bij catalog, de soort clip bij video, de verhouding, het
+   * gezicht — en ze stonden alle vijf alleen in details_json en in de
+   * studiomail. Dit blok haalt ze naar voren, met de naam die de klant zag en
+   * de slug erachter, want die slug is ook de mapnaam en de URL.
+   *
+   * ── WAAROM DE SLUG ERBIJ STAAT EN NIET ALLEEN DE NAAM ───────────────────
+   * "Glow" is wat de klant koos; `glow` is waar het promptbestand staat en waar
+   * /lifestyle/glow over gaat. Wie dit scherm opent om werk te MAKEN heeft die
+   * tweede nodig, en wie het opent om een klant te bellen de eerste.
+   *
+   * ── EN EEN ONBEKENDE SLUG WORDT GETOOND, NIET VERZWEGEN ─────────────────
+   * Staat er iets in details_json dat in geen enkele lijst voorkomt — een
+   * hernoemde stijl, een handgemaakte POST — dan komt de ruwe waarde er te
+   * staan met "onbekend" erbij. Stil weglaten zou betekenen dat het scherm
+   * liegt over wat er besteld is, en dat is erger dan een lelijke regel.
+   *
+   * Een eigen stijl van de klant (cs-<id>) heeft geen slug in een lijst maar
+   * wél een naam: order.js zet die als `style_name` in details_json zodra hij
+   * gecontroleerd is. Zie de noot bij ownStyleFor().
+   */
+  const keuzeBlok = (() => {
+    let d = {};
+    try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
+
+    const LIJST = {
+      lifestyle: ALLE_LOOKS,
+      catalog: ALLE_CATALOG_LOOKS,
+      video: ALLE_VIDEO_LOOKS,
+      /* Een bestelling voor allebei kiest een LIFESTYLE-look: de catalogkant
+         heeft een achtergrond en geen wereld. Zie StylePicker.astro. */
+      complete: ALLE_LOOKS,
+      drop: ALLE_LOOKS,
+    };
+
+    const stijlRegel = () => {
+      const ruw = String(d.style || '').trim();
+      if (!ruw) return '';
+      if (d.style_name) {
+        /* Een eigen stijl van deze klant. `own_style_id` staat ernaast zodat je
+           hem in het klantscherm terugvindt. */
+        return `${esc(String(d.style_name))} <span class="meta">— eigen stijl van deze klant${d.own_style_id ? ` (#${esc(String(d.own_style_id))})` : ''}</span>`;
+      }
+      const lijst = LIJST[String(order.service)] || [];
+      const hit = lijst.find((x) => x.slug === ruw);
+      return hit
+        ? `${esc(hit.name)} <span class="meta">— ${esc(ruw)}</span>`
+        : `${esc(ruw)} <span class="meta">— onbekende stijl, staat in geen enkele lijst</span>`;
+    };
+
+    const achtergrondRegel = () => {
+      const hex = String(d.background_hex || '').trim();
+      const id = String(d.background || '').trim();
+      if (!hex && !id) return '';
+      /* `background().name` is een paar {en, nl} en geen tekst — het adminscherm
+         is Nederlands, dus .nl, met de Engelse als terugval. Dit stond hier
+         eerst als `bg.name` en zette dan "[object Object]" op het scherm. */
+      const bg = id ? achtergrondVan(id) : null;
+      const naam = bg ? (bg.name?.nl || bg.name?.en || id) : (id || '');
+      const staal = /^#[0-9a-fA-F]{6}$/.test(hex)
+        ? `<span class="kleurstaal" style="background:${esc(hex)}"></span>`
+        : '';
+      return `${staal}${esc(naam || hex)}${naam && hex ? ` <span class="meta">— ${esc(hex)}</span>` : ''}`;
+    };
+
+    const verhoudingRegel = () => {
+      const r = ratioById(String(d.ratio || '').trim(), order.service);
+      if (!r) return d.ratio ? esc(String(d.ratio)) : '';
+      /* `name` is een paar {en, nl}, net als bij een achtergrond. */
+      return `${esc(r.name?.nl || r.name?.en || r.label)} <span class="meta">— ${esc(r.label)}</span>`;
+    };
+
+    const rij = (label, waarde) => (waarde
+      ? `<div class="hold-fact"><dt>${esc(label)}</dt><dd>${waarde}</dd></div>`
+      : '');
+
+    const rijen = [
+      rij('Stijl', stijlRegel()),
+      rij('Achtergrond', achtergrondRegel()),
+      rij('Verhouding', verhoudingRegel()),
+      rij('Gezicht', d.model ? esc(String(d.model)) : ''),
+      rij('Kanalen', d.channels ? esc(String(d.channels)) : ''),
+      rij('Kledingsoort', d.garment ? esc(String(d.garment)) : ''),
+    ].filter(Boolean);
+
+    if (!rijen.length) return '';
+    return `
+  <h2>Wat de klant koos</h2>
+  <dl class="hold-fact-list keuze-intake">${rijen.join('')}</dl>`;
+  })();
+
   const aanvraagRegel = (() => {
     let d = {};
     try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
@@ -2541,6 +2670,7 @@ ${adminNav('')}
   ${bounceBlok}
   ${flash}
   ${aanvraagBlok}
+  ${keuzeBlok}
 
   <h2>Client uploads (${intake.length})</h2>
   ${table(intake, 'Nothing was uploaded with this order.')}
@@ -4272,18 +4402,33 @@ async function loadTodayCounts(env) {
   return { newToday, inProduction, checking, undelivered, unpaid, revisions, owed, toAnnounce };
 }
 
+/* ── NEDERLANDS, ZOALS DE REST VAN DIT SCHERM — 7 september 2026 ────────────
+ *
+ * Hier stond "in today · in production · in review · open · unpaid · revisions
+ * · to announce · delivered, not paid", pal boven "Revisieverzoeken",
+ * "Bestellingen" en "Eerst af". Acht Engelse etiketten in een verder Nederlands
+ * scherm dat Lucas op zichzelf gebruikt.
+ *
+ * Dat is geen smaakkwestie. Een cijferrij lees je met een halve blik, en twee
+ * talen naast elkaar dwingen je elke keer even te schakelen — precies wat een
+ * scherm dat "logisch en rustig" moet aanvoelen niet hoort te doen.
+ *
+ * DIT SCHERM HEEFT GEEN TAALKEUZE, en dat blijft zo. /admin is één gebruiker,
+ * en een taalschakelaar bouwen voor een publiek van één is werk dat niemand
+ * terugverdient. De klantkant heeft er wél een; die staat in COPY in account.js
+ * en portal.js en is niet aangeraakt. */
 function todayStrip(c) {
   const cell = (n, label, warn) =>
     `<div class="stat${warn && n ? ' is-warn' : ''}"><span class="stat-n">${n}</span><span class="stat-l">${esc(label)}</span></div>`;
   return `<div class="stats">
-    ${cell(c.newToday, 'in today')}
-    ${cell(c.inProduction, 'in production')}
-    ${cell(c.checking, 'in review')}
+    ${cell(c.newToday, 'vandaag binnen')}
+    ${cell(c.inProduction, 'in productie')}
+    ${cell(c.checking, 'wordt nagekeken')}
     ${cell(c.undelivered, 'open')}
-    ${cell(c.unpaid, 'unpaid', true)}
-    ${cell(c.revisions, 'revisions', true)}
-    ${cell(c.toAnnounce, 'to announce', true)}
-    ${cell(c.owed, 'delivered, not paid', true)}
+    ${cell(c.unpaid, 'onbetaald', true)}
+    ${cell(c.revisions, 'revisies', true)}
+    ${cell(c.toAnnounce, 'nog te melden', true)}
+    ${cell(c.owed, 'geleverd, niet betaald', true)}
   </div>`;
 }
 
@@ -4811,7 +4956,11 @@ async function handleSlotCorrectie(context, customerId, admin) {
   const sub = await loadSubscription(env, customerId);
   if (!sub) return html(page({ title: 'Admin', body: errorBody('This customer has no subscription to adjust.') }), 400);
 
-  const maand = monthKey();
+  /* De maand van de LOPENDE TERMIJN en niet de kalendermaand — zie
+     termijnMaand() in subscription.js. Anders schrijft een handmatige correctie
+     op een maand die het dashboard van de klant nog niet telt, en zie je op twee
+     schermen twee verschillende saldi. */
+  const maand = termijnMaand(sub);
   /* De rij van DEZE maand, en aanmaken als hij er nog niet is. Dat laatste is
      geen zeldzaam geval maar juist het gewone: een klant wiens incasso mislukte
      heeft geen rij voor deze maand, en dat is precies wanneer je hem met de hand
@@ -7209,7 +7358,7 @@ ${missing
  * Dit scherm zit achter een wachtwoord en is de enige plek waar het mag staan.
  *
  * En geen gewicht bij een clip. Video heeft nog geen gewicht in de agenda (zie
- * KIND_IMAGES in pricing.js), en dat wordt hier zichtbaar getoond als "nog te
+ * KIND_PUNTEN in pricing.js), en dat wordt hier zichtbaar getoond als "nog te
  * wegen" in plaats van als nul. Een gat dat je ziet is beter dan een nul die
  * meetelt.
  */
@@ -7404,7 +7553,7 @@ async function handleWindowMove(context, orderId, admin) {
   const terug = naarPlanning ? `/admin/planning?verzet=${orderId}` : `/admin/orders/${orderId}/files`;
 
   const order = await env.DB.prepare(
-    `SELECT id, ref, service, tier, status, product_count, window_start, window_end
+    `SELECT id, ref, service, tier, status, product_count, window_start, window_end, details_json
        FROM orders WHERE id = ?1`
   ).bind(orderId).first().catch(() => null);
   if (!order) return html(page({ title: 'Admin', body: errorBody('No such order.') }), 404);
@@ -7438,13 +7587,13 @@ async function handleWindowMove(context, orderId, admin) {
     return html(page({ title: 'Admin', body: errorBody('That is not a date. Pick a day with the date field.') }), 400);
   }
 
-  /* Een soort zonder gewicht houdt geen dagen bezet — zie KIND_IMAGES in pricing.js.
+  /* Een soort zonder gewicht houdt geen dagen bezet — zie KIND_PUNTEN in pricing.js.
      Dan valt er ook geen venster voor te berekenen, en dat hoort te worden gezegd in
      plaats van stil te mislukken. */
-  const beelden = kindImages(order.service, Number(order.product_count) || 0);
-  if (!beelden) {
+  const punten = rowPunten(videoVelden(order));
+  if (!punten) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This service has no weight in the calendar yet, so it cannot hold a pair of days. See KIND_IMAGES in pricing.js.'
+      'This service has no weight in the calendar yet, so it cannot hold a pair of days. See KIND_PUNTEN and STYLE_PUNTEN in pricing.js.'
     ) }), 400);
   }
 
@@ -7454,7 +7603,7 @@ async function handleWindowMove(context, orderId, admin) {
   try {
     const { blackouts, booked } = await readCalendar(env, vandaag, { exceptId: orderId });
     eerste = firstOfferableDay(vandaag, blackouts);
-    if (dag >= eerste) paar = windowFor(dag, beelden, booked, blackouts);
+    if (dag >= eerste) paar = windowFor(dag, punten, booked, blackouts);
   } catch (e) {
     /* De agenda is niet te lezen. Dan wordt er geen dag vastgelegd — dezelfde
        weigering die account.js aanhoudt, en om dezelfde reden: een venster dat is
@@ -7575,6 +7724,27 @@ function waNummer(phone) {
 }
 
 /**
+ * "12 × Catalog", of "6 clips × Video".
+ *
+ * ── EEN VIDEOBESTELLING HEEFT GEEN PRODUCTEN — 7 september 2026 ────────────
+ *
+ * Op vier plekken in dit scherm stond `${o.product_count} × <dienst>`, en voor
+ * een videobestelling is `product_count` nul: er ging "0 × Video" naar de
+ * planning, naar de dagkaart, naar het dashboard én naar het WhatsApp-bericht
+ * dat Lucas naar de klant stuurt. Het aantal staat bij video in `details.clips`,
+ * en dat is met opzet een ander veld — zie de noot bij rowPunten() in
+ * capacity.js. Eén functie, zodat de vijfde plek die dit nodig heeft hem vindt.
+ */
+export function aantalLabel(o = {}, lang = 'nl') {
+  const dienst = serviceLabel(o.service, lang) || o.service || '—';
+  if (String(o.service || '') === 'video') {
+    const k = Number(o.clip_count ?? o.clips) || 0;
+    return `${k} ${k === 1 ? 'clip' : 'clips'} × ${dienst}`;
+  }
+  return `${o.product_count || 0} × ${dienst}`;
+}
+
+/**
  * De tekst waarmee Lucas de klant bereikt. In de taal van de bestelling, met de
  * nieuwe datum erin als die er is. Kort, want dit is een WhatsApp-bericht dat hij
  * nog aanpast voordat het weg is — het moet kloppen, niet compleet zijn.
@@ -7582,7 +7752,7 @@ function waNummer(phone) {
 function contactTekst(o, vandaag) {
   const naam = o.name ? String(o.name).split(' ')[0] : '';
   const nl = (o.lang || 'nl') !== 'en';
-  const wat = `${o.product_count || 0} × ${serviceLabel(o.service, nl ? 'nl' : 'en') || o.service}`;
+  const wat = aantalLabel(videoVelden(o), nl ? 'nl' : 'en');
   const venster = o.window_start ? `${o.window_start} – ${o.window_end || o.window_start}` : '';
   if (nl) {
     return `Hoi${naam ? ` ${naam}` : ''}, over ${o.ref} (${wat}): we hebben iets meer tijd nodig dan gepland. `
@@ -7626,6 +7796,7 @@ async function renderPlanning({ env }, url) {
       env.DB.prepare(
         `SELECT o.id, o.ref, o.brand, o.name, o.email, o.phone, o.service, o.status, o.tier, o.lang,
                 o.product_count, o.window_start, o.window_end, o.created_at, o.payment_status,
+                o.details_json,
                 c.phone AS c_phone
            FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')})
@@ -7648,7 +7819,7 @@ async function renderPlanning({ env }, url) {
   const werk = rijen
     .map((o) => {
       const u = agendaUiterlijk(o, blackouts);
-      return { ...o, uiterlijk: u.dag, manier: u.manier, beelden: kindImages(o.service, o.product_count || 0) };
+      return { ...videoVelden(o), uiterlijk: u.dag, manier: u.manier, punten: rowPunten(videoVelden(o)) };
     })
     .sort((a, b) => (a.uiterlijk < b.uiterlijk ? -1 : a.uiterlijk > b.uiterlijk ? 1 : a.id - b.id));
 
@@ -7667,7 +7838,7 @@ async function renderPlanning({ env }, url) {
     }
   }
 
-  const wat = (o) => `${o.product_count || 0} × ${esc(serviceLabel(o.service, 'nl') || o.service || '—')}`;
+  const wat = (o) => esc(aantalLabel(o, 'nl'));
   const chip = (o, rol) => `
 <a class="pl-chip is-${rol}${o.manier === 'asap' ? ' is-asap' : ''} is-${esc(o.status)}" href="/admin/orders/${o.id}/files" title="${esc(o.ref)} · ${esc(o.brand || o.name || '')} · ${esc(STATUS_LABEL[o.status] || o.status)}">
   <span class="pl-chip-ref">${esc(o.ref.replace(/^VIS-/, ''))}</span>
@@ -7677,7 +7848,7 @@ async function renderPlanning({ env }, url) {
   const cel = (dag) => {
     const k = dagKop(dag);
     const bezet = belasting[dag] || 0;
-    const vol = Math.min(100, Math.round((bezet / ATTENDED_IMAGES_PER_DAY) * 100));
+    const vol = Math.min(100, Math.round((bezet / ATTENDED_PUNTEN_PER_DAG) * 100));
     const dicht = blackouts.has(dag);
     const lijst = (perDag.get(dag) || []).sort((a, b) => (a.rol === 'laat' ? -1 : b.rol === 'laat' ? 1 : 0));
     const klassen = ['pl-dag'];
@@ -7695,8 +7866,8 @@ async function renderPlanning({ env }, url) {
   </div>
   ${dicht
     ? `<p class="pl-dag-dicht">dicht${redenen[dag] ? ` · ${esc(redenen[dag])}` : ''}</p>`
-    : `<div class="pl-last" title="${bezet} van ${ATTENDED_IMAGES_PER_DAY} beelden vastgelegd"><span style="width:${vol}%"></span></div>
-       <p class="pl-last-n">${bezet} / ${ATTENDED_IMAGES_PER_DAY} beelden</p>`}
+    : `<div class="pl-last" title="${bezet} van ${ATTENDED_PUNTEN_PER_DAG} punten vastgelegd"><span style="width:${vol}%"></span></div>
+       <p class="pl-last-n">${bezet} / ${ATTENDED_PUNTEN_PER_DAG} punten</p>`}
   <div class="pl-chips">${lijst.map(({ o, rol }) => chip(o, rol)).join('')}</div>
 </div>`;
   };
@@ -7730,7 +7901,7 @@ async function renderPlanning({ env }, url) {
   </div>
   <div class="pl-item-wat">
     <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
-    <span class="meta">${esc(o.brand || o.name || '—')} · ${wat(o)}${o.beelden ? ` · ${o.beelden} beelden` : ''}</span>
+    <span class="meta">${esc(o.brand || o.name || '—')} · ${wat(o)}${o.punten ? ` · ${o.punten} ${o.punten === 1 ? 'punt' : 'punten'}` : ''}</span>
     <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `zo snel mogelijk, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
     <span class="pill is-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
   </div>
@@ -7776,7 +7947,7 @@ ${verzetBlok}
 <div class="stats pl-stats">
   <div class="stat${teLaat.length ? ' is-warn' : ''}"><span class="stat-n">${teLaat.length}</span><span class="stat-l">te laat</span></div>
   <div class="stat"><span class="stat-n">${werk.filter((w) => w.uiterlijk === vandaag).length}</span><span class="stat-l">moet vandaag af</span></div>
-  <div class="stat"><span class="stat-n">${belasting[vandaag] || 0} / ${ATTENDED_IMAGES_PER_DAY}</span><span class="stat-l">vandaag vastgelegd, in beelden</span></div>
+  <div class="stat"><span class="stat-n">${belasting[vandaag] || 0} / ${ATTENDED_PUNTEN_PER_DAG}</span><span class="stat-l">vandaag vastgelegd, in punten</span></div>
   <div class="stat"><span class="stat-n">${werk.length}</span><span class="stat-l">open bestellingen</span></div>
 </div>
 <div class="pl-vlakken">
@@ -7828,7 +7999,7 @@ async function renderAgenda({ env }, url) {
     const [open, kalender, lijst] = await Promise.all([
       env.DB.prepare(
         `SELECT id, ref, brand, name, service, status, tier, lang,
-                product_count, window_start, window_end, created_at, payment_status
+                product_count, window_start, window_end, created_at, payment_status, details_json
            FROM orders
           WHERE status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')})
             AND hidden_at IS NULL
@@ -7857,10 +8028,10 @@ async function renderAgenda({ env }, url) {
     .map((o) => {
       const u = agendaUiterlijk(o, blackouts);
       return {
-        ...o,
+        ...videoVelden(o),
         uiterlijk: u.dag,
         manier: u.manier,
-        beelden: kindImages(o.service, o.product_count || 0),
+        punten: rowPunten(videoVelden(o)),
       };
     })
     .sort((a, b) => (a.uiterlijk < b.uiterlijk ? -1 : a.uiterlijk > b.uiterlijk ? 1 : a.id - b.id));
@@ -7871,8 +8042,16 @@ async function renderAgenda({ env }, url) {
   const nietBegonnen = vandaagAf.filter((w) => w.status === 'received').length;
 
   const dagLabel = (iso) => (iso === vandaag ? 'vandaag' : iso === morgen ? 'morgen' : iso);
-  const gewicht = (w) => (w.beelden === null ? 'nog te wegen' : `${w.beelden} beelden`);
-  const wat = (w) => `${w.product_count || 0} × ${esc(serviceLabel(w.service, 'nl') || w.service || '—')}`;
+  /* ── PUNTEN, EN NIET "BEELDEN" — 7 september 2026 ──────────────────────────
+     Dit veld draagt rowPunten(), dus punten. Voor fotowerk is dat toevallig
+     hetzelfde getal (één punt is één afgewerkte foto), en dáárom viel het niet
+     op. Voor video loopt het uiteen: tien lifestyle-clips wegen honderd punten
+     en dat stond er als "100 beelden" — tien clips, geen honderd beelden.
+
+     Bovendien stond op hetzelfde scherm de dagteller al in punten ("54 / 79
+     punten"). Twee woorden voor één getal, naast elkaar. */
+  const gewicht = (w) => (w.punten === null ? 'nog te wegen' : `${w.punten} ${w.punten === 1 ? 'punt' : 'punten'}`);
+  const wat = (w) => esc(aantalLabel(w, 'nl'));
   const dagen = (w) => (w.manier === 'datum'
     ? `${esc(w.window_start)} – ${esc(w.window_end)}`
     : `binnen sinds ${esc(normalizeStamp(w.created_at || '').slice(0, 10) || '—')}`);
@@ -7950,8 +8129,8 @@ samenvoegen, en ze vechten om dezelfde dag.</p>
 
 ${stuk ? `<p class="warnline">De agenda is niet te lezen (${esc(stuk)}).</p>` : `
 <div class="stats">
-  <div class="stat"><span class="stat-n">${belasting[vandaag] || 0} / ${ATTENDED_IMAGES_PER_DAY}</span><span class="stat-l">vandaag vastgelegd, in beelden</span></div>
-  <div class="stat"><span class="stat-n">${belasting[morgen] || 0} / ${ATTENDED_IMAGES_PER_DAY}</span><span class="stat-l">morgen vastgelegd</span></div>
+  <div class="stat"><span class="stat-n">${belasting[vandaag] || 0} / ${ATTENDED_PUNTEN_PER_DAG}</span><span class="stat-l">vandaag vastgelegd, in punten</span></div>
+  <div class="stat"><span class="stat-n">${belasting[morgen] || 0} / ${ATTENDED_PUNTEN_PER_DAG}</span><span class="stat-l">morgen vastgelegd</span></div>
   <div class="stat"><span class="stat-n">${werk.length}</span><span class="stat-l">open bestellingen</span></div>
   <div class="stat${vandaagAf.length ? ' is-warn' : ''}"><span class="stat-n">${vandaagAf.length}</span><span class="stat-l">moet vandaag af${nietBegonnen ? `, waarvan ${nietBegonnen} niet begonnen` : ''}</span></div>
 </div>
@@ -8728,7 +8907,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
 <li class="${o.uiterlijk < aflopend.vandaag ? 'is-laat' : o.uiterlijk === aflopend.vandaag ? 'is-vandaag' : ''}">
   <span class="db-af-dag">${esc(dagKort(o.uiterlijk, aflopend.vandaag))}</span>
   <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
-  <span class="meta">${esc(o.brand || o.name || '—')} · ${o.product_count || 0} × ${esc(serviceLabel(o.service, 'nl') || o.service)}${o.manier === 'asap' ? ' · zsm' : ''}</span>
+  <span class="meta">${esc(o.brand || o.name || '—')} · ${esc(aantalLabel(o, 'nl'))}${o.manier === 'asap' ? ' · zsm' : ''}</span>
 </li>`).join('')}</ol>
         <p class="meta">${aflopend.open} open${aflopend.teLaat ? `, <strong class="pl-onbetaald">${aflopend.teLaat} te laat</strong>` : ''} · <a href="/admin/planning">Naar de planning &rarr;</a></p>`
       : '<p class="empty">Niets open.</p>';
@@ -8801,7 +8980,7 @@ function statusFilterRow(statusCounts, statusFilter) {
     : `<a class="fl-chip" href="${esc(href)}">${esc(label)} <span class="fl-n">${n}</span></a>`;
 
   return `<nav class="fl" aria-label="Filter orders by status">
-    ${chip('/admin', 'All', total, !statusFilter)}
+    ${chip('/admin', 'Alles', total, !statusFilter)}
     ${STATUSES.map((s) => chip(
       `/admin?status=${encodeURIComponent(s)}`,
       STATUS_LABEL[s] || s,
@@ -8917,7 +9096,7 @@ function orderCard(o, models, statusFilter = '') {
   // sendDeliveryMail is guarded on delivery_mailed_at, which is exactly the
   // column that is still empty here, so a retry is safe and cannot double-send.
   const unannounced = o.status === 'delivered' && !o.delivery_mailed_at
-    ? '<p class="warnline">Delivered, but the customer has not been emailed. Set the status to <strong>delivered</strong> again to retry the mail.</p>'
+    ? '<p class="warnline">Geleverd, maar de klant heeft geen mail gehad. Zet de status opnieuw op <strong>geleverd</strong> om de mail nog een keer te proberen.</p>'
     : '';
 
   // EN DE TWEEDE STILTE, sinds augustus 2026. Bovenstaande regel vangt de
@@ -8979,7 +9158,7 @@ function orderCard(o, models, statusFilter = '') {
   ${unannounced}
   ${pendingAnnounce}
   ${o.hidden_at ? `<p class="meta">Hidden since ${esc(when(o.hidden_at))} — it stays out of the lists and the counts.</p>` : ''}
-  ${o.cancel_reason ? `<p class="warnline">Cancelled: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc({ refund: 'refunded', credit: 'credit given', none: 'no refund' }[o.cancel_payment] || o.cancel_payment)}` : ''}</p>` : ''}
+  ${o.cancel_reason ? `<p class="warnline">Geannuleerd: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc({ refund: 'geld terug', credit: 'tegoed gegeven', none: 'geen restitutie' }[o.cancel_payment] || o.cancel_payment)}` : ''}${leveringIngetrokken(o) ? ' · de bestanden zijn niet meer voor de klant zichtbaar' : ''}</p>` : ''}
   ${modelList}
   ${orderDanger(o)}
   <form class="controls" method="post" action="/admin/orders/${o.id}/models">
@@ -9095,7 +9274,7 @@ function adminNav(actief = '') {
       : `<a class="bar-link" href="${href}">${esc(label)}</a>`)).join('')}
   </nav>
   <div class="bar-right">
-    <form method="post" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Sign out</button></form>
+    <form method="post" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Uitloggen</button></form>
   </div>
 </div>`;
 }
@@ -9110,6 +9289,7 @@ function page({ title, body }) {
 <meta name="color-scheme" content="light">
 <title>${esc(title)} — VISUAILS admin</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="/fonts/gedeeld.css">
 <link rel="stylesheet" href="/admin.css">
 </head>
 <body>

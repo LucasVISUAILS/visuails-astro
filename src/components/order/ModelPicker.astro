@@ -49,8 +49,18 @@ import { localizedPath } from '../../i18n/ui.js';
 import Disclose from '../Disclose.astro';
 
 import Note from '../Note.astro';
-interface Props { lang: 'en' | 'nl'; }
-const { lang } = Astro.props;
+/* ── DE AANHEF HANGT AF VAN WAT JE BESTELT — 4 september 2026 ────────────────
+   `lead` zei "Bij elke catalogset zit één foto op een model" — ook op
+   /start/lifestyle, waar geen catalogset besteld wordt maar een carousel. Een
+   persona-doorloop pikte hem er meteen uit: "in dit lifestyle-formulier staat
+   dat bij elke catalogset één modelfoto zit." Eén zin die over de verkeerde
+   dienst gaat, zaait twijfel over de rest van het formulier.
+
+   Vandaar `soort`: dezelfde kiezer, dezelfde tegels, één regel die zegt waar de
+   modelfoto in JOUW bestelling zit. LifestyleModelFold geeft 'lifestyle' mee;
+   Step1Options (catalog) laat hem weg en houdt de bestaande tekst. */
+interface Props { lang: 'en' | 'nl'; soort?: 'catalog' | 'lifestyle'; }
+const { lang, soort = 'catalog' } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 const t = TRAITS[lang];
 
@@ -73,6 +83,7 @@ const COPY = {
     label: 'The on-model shot',
     labelNote: 'One photo of the product being worn, so a shopper can see the fit and the drape instead of guessing at them. It is part of every catalog set at no extra cost, and it is the reason the set is four photos and not three.',
     lead: 'Every catalog set includes one on-model photo at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
+    leadLifestyle: 'Every carousel includes one photo of the product being worn, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
     /* "Choose one that fits OUR brand" stond hier, en dat wisselt halverwege het
        blok van spreker: de regel erboven zegt "Pick the face that fits YOUR
        brand, or leave the choice to us" — VISUAILS aan het woord — en de noot
@@ -99,6 +110,7 @@ const COPY = {
     label: 'De foto op een model',
     labelNote: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij zit zonder meerprijs in elke catalogset, en hij is de reden dat die set uit vier foto\u2019s bestaat en niet uit drie.',
     lead: 'Bij elke catalogset zit één foto op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
+    leadLifestyle: 'In elke carousel zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     any: 'Wij kiezen er een die bij je merk past',
     anyNote: `Wij kijken naar de producten en naar wat je ons vertelde, en kiezen uit de ${rosterWoord('nl')} gezichten. Dit is de standaard, en het is een echt antwoord — geen leeg veld waar we je achteraf over lastigvallen.`,
     why: 'Over deze gezichten',
@@ -122,7 +134,7 @@ const nl = lang === 'nl';
       uitgelegd, en dan nog binnen een dichtgeklapte vraag. Hier staat het als
       kop boven een keuze die de klant moet maken. */}
   <h3 class="pl-sub-h" id="pl-model-h">{c.label} <Note lang={lang} term={nl ? 'de foto op een model' : 'the on-model shot'}>{c.labelNote}</Note></h3>
-  <p class="pl-model-lead">{c.lead}</p>
+  <p class="pl-model-lead">{soort === 'lifestyle' ? c.leadLifestyle : c.lead}</p>
 
   <div class="mp-grid" role="radiogroup" aria-labelledby="pl-model-h">
     {/* "Let us choose" comes FIRST and is checked. It is the honest default —
@@ -304,7 +316,8 @@ const nl = lang === 'nl';
   .mp-row { display: flex; align-items: center; gap: .4rem; }
   .mp-row input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
   .mp-name { font-size: .8rem; color: var(--ink); line-height: 1.25; }
-  .mp-traits { font-size: .68rem; color: var(--ink-3); line-height: 1.3; }
+  /* 11,7px in plaats van 10,9 — de ondergrens van de keuring is 11,5px. */
+  .mp-traits { font-size: .73rem; color: var(--ink-3); line-height: 1.35; }
 
   /* A brand's OWN face, injected by pipeline.js from /account/me — these tiles
      do not exist in this component's markup and cannot, because the roster is
@@ -333,7 +346,7 @@ const nl = lang === 'nl';
      `fill: currentColor` zodat de kleur uit één plek komt. */
   .mp-thumb-any .mp-mark {
     width: 34%; height: 34%; display: block;
-    fill: var(--accent); color: var(--accent);
+    fill: var(--accent); color: var(--accent-text);
   }
   .mp-thumb-any { display: grid; place-items: center; }
 
@@ -362,9 +375,9 @@ const nl = lang === 'nl';
     left: .3rem;
     padding: .12rem .38rem;
     border-radius: var(--r-sm);
-    background: rgb(8 9 11 / .78);
+    background: rgb(28 29 24 / .78);
     color: var(--accent-bright);
-    font-size: .62rem;
+    font-size: .73rem;
     font-weight: 700;
     letter-spacing: .06em;
     text-transform: uppercase;

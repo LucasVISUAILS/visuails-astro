@@ -1,0 +1,28 @@
+---
+/* Eén bestelling op het overzicht: kop, betaalblok (zolang er niet betaald is),
+   tijdlijn, en de mededeling van de studio. Bewust niet de hele orderkaart met
+   productkaarten en goedkeurknoppen — die hoort op Bestellingen; hier staat wat
+   je wilt weten zonder te klikken, plus één link naar waar je iets kunt dóén. */
+import { serviceLabel } from '../../data/services.js';
+import Pil from './Pil.astro';
+import Voortgang from './Voortgang.astro';
+import Betaling from './Betaling.astro';
+const { t, lang, order: o, events = [] } = Astro.props;
+const onbetaald = String(o.payment_status || 'unpaid') !== 'paid' && o.status === 'received';
+---
+<article class="st-kaart-vlak st-order">
+  <div class="st-order-kop">
+    <span class="st-ref">{o.ref}</span>
+    <Pil status={o.status} lang={lang} />
+    <span class="st-meta">{serviceLabel(o.service, lang) || o.service}{o.product_count ? ` · ${o.product_count} ${t.fProducts.toLowerCase()}` : ''}</span>
+    <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
+  </div>
+  {onbetaald && <Betaling t={t} lang={lang} order={o} />}
+  <Voortgang t={t} lang={lang} order={o} events={events} />
+  {o.customer_note && (
+    <div class="st-nota">
+      <span class="st-nota-wie">{t.noteFrom}</span>
+      <p>{o.customer_note}</p>
+    </div>
+  )}
+</article>

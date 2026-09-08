@@ -1,0 +1,129 @@
+---
+/*
+ * VISUAILS — de 404, gedeeld door /404 en /nl/404.
+ *
+ * ── WAAROM DEZE PAGINA BESTAAT ────────────────────────────────────────────
+ *
+ * Toegevoegd 28 juli 2026 (audit taak #263, bevinding 7 — de ernstigste van de
+ * lijst). Cloudflare Pages serveert voor een statische build ZONDER eigen
+ * 404.html de homepage voor elk pad dat nergens op matcht: status 200, met de
+ * inhoud van de voorpagina. Bevestigd live op visuails.com na de verhuizing van
+ * Wix — een verzonnen pad kwam terug als de homepage, titel en al, zonder het
+ * woord "404" ergens in het antwoord.
+ *
+ * Dat is op drie concrete manieren erger dan een gewone 404:
+ *   • SEO — elke dode link en verlopen URL die zoekmachines nog hebben, leest
+ *     als een 200-duplicaat van de homepage. Precies de vorm van "soft 404"
+ *     die Google in zijn eigen richtlijnen aanwijst als rankingprobleem.
+ *   • Bewaking — een kapotte link ZIET er nooit kapot uit. Niets, geen
+ *     statuscode en geen zichtbare tekst, vertelt iemand dat de URL fout was.
+ *   • De navigatiefout die dezelfde audit in Layout.astro repareerde: /nl/account
+ *     gaf voor elke Nederlandse bezoeker een 404 — behalve dat het geen 404 gaf
+ *     maar stilletjes de homepage.
+ *
+ * Astro behandelt een bestand dat exact 404.astro heet apart: het bouwt altijd
+ * naar /404.html, ongeacht trailingSlash en build.format, precies omdat statische
+ * hosts naar die bestandsnaam zoeken. Cloudflare Pages serveert per map de
+ * dichtstbijzijnde — dit bestand voor alles buiten /nl, en src/pages/nl/404.astro
+ * voor alles eronder.
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ *
+ * De twee pagina's waren woord voor woord elkaars vertaling, en waren dat al
+ * niet helemaal meer: de Engelse droeg een volledige toelichting, de Nederlandse
+ * een samenvatting ervan. Zelfde behandeling als /gallery, /thank-you, /guides
+ * en /upload-guidelines.
+ */
+import { waHref } from '../data/whatsapp.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const c = nl ? {
+  h1: ['Deze pagina ', 'bestaat niet'],
+  lead: 'De link is misschien verouderd, of het adres is verkeerd getypt. Hier kun je verder.',
+  home: 'Terug naar home',
+  start: 'Start een aanvraag',
+  wa: 'Meld wat er stuk is',
+  waTekst: 'Hoi VISUAILS, ik volgde een link die niet werkte.',
+  verderH: 'Waar de meeste mensen heen gaan',
+  verder: [
+    ['/catalog', 'Catalog', 'Vier foto’s per product op een schone achtergrond.'],
+    ['/lifestyle', 'Lifestyle', 'Drie foto’s in één gestylede look.'],
+    ['/video', 'Video', 'Korte clips van hetzelfde product.'],
+    ['/pricing', 'Prijzen', 'Wat een set kost, en waar de staffel zakt.'],
+    ['/gallery', 'Galerij', 'Werk dat we eerder hebben gemaakt.'],
+    ['/contact', 'Contact', 'Een vraag die hier niet beantwoord wordt.'],
+  ],
+} : {
+  h1: ['This page ', 'doesn’t exist'],
+  lead: 'The link may be old, or the address was mistyped. Here’s where to go instead.',
+  home: 'Back to home',
+  start: 'Start a request',
+  wa: 'Tell us what’s broken',
+  waTekst: 'Hi VISUAILS, I followed a link that didn’t work.',
+  verderH: 'Where most people are heading',
+  verder: [
+    ['/catalog', 'Catalog', 'Four photos per product on a clean background.'],
+    ['/lifestyle', 'Lifestyle', 'Three photos in one styled look.'],
+    ['/video', 'Video', 'Short clips of the same product.'],
+    ['/pricing', 'Pricing', 'What a set costs, and where the ladder drops.'],
+    ['/gallery', 'Gallery', 'Work we have made before.'],
+    ['/contact', 'Contact', 'A question this page does not answer.'],
+  ],
+};
+---
+
+<div class="s22 nf">
+  <section class="paneel nf-paneel">
+    <div class="paneel-kop">
+      <p class="etiket">404</p>
+      <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
+      <p class="lopend">{c.lead}</p>
+    </div>
+
+    <div class="acties">
+      <a class="knop knop-inkt" href={lp('/')}>{c.home}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.start}</a>
+      <a class="knop knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener">{c.wa}</a>
+    </div>
+
+    {/* Een 404 die alleen zegt dat er niets is, laat de bezoeker met dezelfde
+        vraag achter waarmee hij kwam. Deze zes zijn waar bijna elke aanvraag
+        vandaan komt, dus staan ze eronder in plaats van in een menu dat hij dan
+        zelf moet openzoeken. */}
+    <h2 class="etiket nf-verder-h">{c.verderH}</h2>
+    <ul class="nf-verder" role="list">
+      {c.verder.map(([pad, naam, uitleg]) => (
+        <li>
+          <a href={lp(pad)}>
+            <b>{naam}</b>
+            <span>{uitleg}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</div>
+
+<style>
+  .nf-paneel { padding-block: clamp(3rem, 7vw, 6rem); }
+  .nf-verder-h { margin: clamp(2.5rem, 6vw, 4rem) 0 1rem; padding-top: clamp(1.8rem, 4vw, 2.6rem); border-top: 1px solid var(--lijn); }
+  .nf-verder { display: grid; gap: .4rem 1.6rem; list-style: none; padding: 0; margin: 0; }
+  @media (min-width: 700px) { .nf-verder { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1100px) { .nf-verder { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .nf-verder a {
+    display: grid; gap: .2rem; padding: .9rem 0;
+    border-bottom: 1px solid var(--lijn); color: var(--inkt);
+  }
+  .nf-verder a:hover b { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
+  .nf-verder b {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em;
+  }
+  .nf-verder span { font-size: .9rem; line-height: 1.55; color: var(--inkt-2); }
+</style>

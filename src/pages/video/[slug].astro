@@ -1,19 +1,13 @@
 ---
-import { waHref } from '../../data/whatsapp.js';
-// VISUAILS — shared template for the video style detail pages (Motion /
-// Lifestyle Video / Campaign). Ported from the SvelteKit rebuild's
-// VideoStylePage.svelte, driven by `style` entries from
-// src/data/videoStyles.js (shared with the /video hub, written
-// separately). Real photography leads every section per IMAGES.md
-// (banners/lifestyle stills stand in for video thumbnails/posters) — the
-// per-style hero/strip media map is ported verbatim from the original.
+// VISUAILS — /video/[slug] (English). De inhoud staat in VideoStyleDetail.astro
+// zodat deze route en /nl/video/[slug] niet uit elkaar kunnen lopen; zie de kop
+// daar, ook voor waarom de beeldkaart bij het sjabloon hoort en niet bij de taal.
 import Layout from '../../layouts/Layout.astro';
+import VideoStyleDetail from '../../components/VideoStyleDetail.astro';
 import { videoStyles } from '../../data/videoStyles.js';
-import { reviewClaim, turnaround, TIERS } from '../../data/pricing.js';
+import { reviewClaim, turnaround } from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
-import VideoExamples from '../../components/VideoExamples.astro';
 
-import ServiceSwitch from '../../components/ServiceSwitch.astro';
 export function getStaticPaths() {
   return videoStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
@@ -21,75 +15,16 @@ export function getStaticPaths() {
 const { style } = Astro.props;
 const metaPrice = `${style.priceTrust}${style.priceUnit}`;
 
-// Timing, review level and queue behaviour are tier facts, not per-style
-// copy. They come from pricing.js so a capacity change cannot leave a
-// promise stranded on a detail page — which is exactly what "~24h delivery"
-// and "Produced in about 24 hours" were doing here.
-const TIMING = turnaround('unattended', 'en');
-const REVIEW = reviewClaim('unattended', 'en');
-const QUEUE = TIERS.unattended.queue.en;
-
-// Poster / strip photography per style — real stills standing in for video
-// thumbnails, ported verbatim from VideoStylePage.svelte's `media` map.
-// `strip` entries carry their intrinsic pixel size alongside the path — the
-// real size of the file in public/img, not the size .photo-grid renders it at
-// (it pins its own aspect-ratio). They are what lets the browser reserve the
-// box before the bytes land (§12), and they are per-file because the library
-// was produced in batches at different sizes.
-const media: Record<string, { hero: string; strip: Array<{ src: string; w: number; h: number }> }> = {
-  motion: {
-    hero: '/img/banners-04.webp',
-    strip: [
-      { src: '/img/banners-02.webp', w: 928, h: 1152 },
-      { src: '/img/banners-05.webp', w: 928, h: 1152 },
-      { src: '/img/banners-01.webp', w: 928, h: 1152 },
-      { src: '/img/banners-06.webp', w: 928, h: 1152 },
-    ],
-  },
-  lifestyle: {
-    hero: '/img/lifestyle-glow-03.webp',
-    strip: [
-      { src: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400 },
-      { src: '/img/lifestyle-glow-05.webp', w: 2400, h: 1792 },
-      { src: '/img/lifestyle-flash-06.webp', w: 2400, h: 1792 },
-      { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
-    ],
-  },
-  campaign: {
-    hero: '/img/banners-08.webp',
-    strip: [
-      { src: '/img/banners-03.webp', w: 928, h: 1152 },
-      { src: '/img/custom-models-01.webp', w: 800, h: 1071 },
-      { src: '/img/banners-07.webp', w: 928, h: 1152 },
-      { src: '/img/model-02.webp', w: 800, h: 1071 },
-    ],
-  },
-  custom: {
-    hero: '/img/banners-13.webp',
-    strip: [
-      { src: '/img/banners-14.webp', w: 2400, h: 1792 },
-      { src: '/img/lifestyle-glow-06.webp', w: 2400, h: 1792 },
-      { src: '/img/banners-16.webp', w: 2400, h: 1792 },
-      { src: '/img/lifestyle-flash-03.webp', w: 1340, h: 2400 },
-    ],
-  },
-};
-const m = media[style.slug] ?? media.motion;
-
-// The description used to be one template literal, so its length was whatever
-// the data happened to make it. metaDescription drops the trailing tier
-// clauses instead of running past 160 — see src/data/meta.js.
-
 /* ── DE ZUSTERLOOKS VAN DEZE PAGINA ────────────────────────────────────────
    Elke stijlpagina had precies één inkomende link — van de eigen hub — en
-   verwees naar geen enkele andere look. Wie op Dunes belandde en wilde weten
-   hoe Flash eruitziet, moest terug naar boven en opnieuw beginnen. Deze rij
-   is dezelfde regel-vorm als de dienstenrij eronder, met de looks erin die
-   deze pagina niet is. Ongelokaliseerde paden: ServiceSwitch doet lp() zelf. */
+   verwees naar geen enkele andere look. Ongelokaliseerde paden: ServiceSwitch
+   doet lp() zelf. */
 const zusters = videoStyles
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/video/${s.slug}`, naam: s.name }));
 
+const TIMING = turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
 ---
 
 <Layout
@@ -101,155 +36,5 @@ const zusters = videoStyles
     REVIEW,
   ])}
 >
-  <section class="page-hero">
-    <div class="container two-col" style="align-items:center">
-      <div class="reveal pending">
-        <span class="eyebrow-page"><a href="/video/" style="color:inherit">Video styles</a></span>
-        <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
-        <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
-        <div class="flex" style="margin-top:1.8rem">
-          <span class="magnet-wrap">
-            <span class="magnet-inner">
-              {style.ctaExternal ? (
-                <a href={style.ctaHref} class="btn btn-primary btn-lg" target="_blank" rel="noopener">{style.ctaLabel}</a>
-              ) : (
-                <a href={style.ctaHref} class="btn btn-primary btn-lg">{style.ctaLabel}</a>
-              )}
-            </span>
-          </span>
-          <a href={waHref(`Hi VISUAILS, I'd like to talk about the ${style.name} style.`)} class="btn btn-wa" target="_blank" rel="noopener">
-            WhatsApp
-          </a>
-        </div>
-        <ServiceSwitch lang="en" label={'Other looks:'} items={zusters} />
-        <ServiceSwitch current={['video', 'complete']} lang="en" />
-        <div class="trust-row" style="margin-top:2rem">
-          <span class="trust-item"><strong>{style.priceTrust}</strong>{style.priceUnit}</span>
-          <span class="trust-item"><strong>{TIMING}</strong></span>
-          <span class="trust-item"><strong>{REVIEW}</strong></span>
-        </div>
-        <p class="queue-note">{QUEUE}</p>
-      </div>
-      <div class="reveal-mask photo-moment-frame" style="aspect-ratio:4/5">
-        <div class="rm-inner" style={`background-image:url('${m.hero}')`}></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Mood + how it’s made -->
-  <section class="section-tight">
-    <div class="container two-col" style="align-items:start">
-      <div class="reveal pending">
-        <h2>What {style.name} <em>feels</em> like.</h2>
-        {style.moodParagraphs.map((p) => (
-          <p class="lead" style="margin-top:1rem">{p}</p>
-        ))}
-      </div>
-      <div class="steps" style="grid-template-columns:1fr;gap:1.1rem">
-        {style.steps.map((s, i) => (
-          <div class="reveal pending step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{s.title}</h3><p>{s.body}</p></div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Real photography strip — the style, in one glance -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-grid reveal pending">
-        {m.strip.map((s, i) => (
-          <img src={s.src} alt={`${style.name} example still`} loading="lazy" decoding="async" width={s.w} height={s.h} class={i === 0 || i === m.strip.length - 1 ? 'wide' : ''} />
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ── DE VOORBEELDEN, EN DE LEVERLIJST — 13 augustus 2026 ─────────────────
-       Blok 7. Staat NA de fotostrip en VOOR "wat er in elke frame gaat": de
-       bezoeker heeft dan gezien wat de stijl is en wil weten hoe het beweegt,
-       en pas daarna hoe het gemaakt wordt. Alles eraan -- de twee voorbeelden,
-       de lege staat zolang het materiaal er niet is, en de bestandsnamen die
-       geleverd worden -- zit in het component, zodat de vier stijlen en de twee
-       talen niet uit elkaar kunnen lopen. -->
-  <VideoExamples lang="en" slug={style.slug} name={style.name} />
-
-  <!-- Craft + why choose it, condensed into one section -->
-  <section>
-    <div class="container">
-      <h2 class="section-h">What goes into every frame.</h2>
-      <div class="arrow-rows arrow-rows-2">
-        {style.craft.map((c) => (
-          <div class="reveal pending"><h3>{c.title}</h3><p>{c.body}</p></div>
-        ))}
-      </div>
-      <div class="grid grid-3" style="margin-top:clamp(2.5rem,5vw,4rem)">
-        {style.why.map((w) => (
-          <div class="card reveal pending"><h3 style="font-size:1.1rem">{w.title}</h3><p style="margin-top:.6rem;font-size:.92rem;color:var(--ink-3)">{w.body}</p></div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Best for / what you get -->
-  <section class="section-tight">
-    <div class="container two-col" style="align-items:start">
-      <div class="reveal pending">
-        <h2 style="font-size:1.7rem">Best <em>for</em></h2>
-        <ul class="checklist" style="margin-top:1.2rem">
-          {style.bestFor.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
-      <div class="reveal pending">
-        <h2 style="font-size:1.7rem">What you <em>get</em></h2>
-        <ul class="checklist" style="margin-top:1.2rem">
-          {style.whatYouGet.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
-          ))}
-        </ul>
-        {/* Brief §1 — every drop-content page links to /custom-models. One
-            line in the template reaches all four video styles. */}
-        <p class="model-note">If a {style.name} clip has someone in it, it can be the same face as your photos — <a href="/custom-models/">a Brand Model</a> is built once and used across stills and video alike.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Closing CTA -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:var(--t-page-h1-sm)">Make {style.name} <em>yours.</em></h2>
-        <p class="lead" style="margin:1rem auto 0;text-align:center">Test sample, or place your order today.</p>
-        <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap">
-            <span class="magnet-inner">
-              {style.ctaExternal ? (
-                <a href={style.ctaHref} class="btn btn-primary btn-lg" target="_blank" rel="noopener">{style.ctaLabel}</a>
-              ) : (
-                <a href={style.ctaHref} class="btn btn-primary btn-lg">{style.ctaLabel}</a>
-              )}
-            </span>
-          </span>
-          <a href="/test-sample/" class="btn btn-ghost btn-lg">Test sample</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <VideoStyleDetail lang="en" style={style} zusters={zusters} />
 </Layout>
-
-<style>
-  .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
-  .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
-  .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
-  .step p { font-size: .9rem; color: var(--ink-3); }
-  /* Mirrors .queue-note on the hub components. Astro scopes <style> to a
-     component's own template, so a shared visual pattern has to be repeated
-     per file; consolidating these into global.css is logged as a follow-up. */
-  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
-
-  /* The Brand Model line under "What you get" — body copy, not a callout.
-     A box or a tint here would turn one honest sentence into an ad slot. */
-  .model-note { margin-top: 1.2rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
-  .model-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
-</style>

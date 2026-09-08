@@ -23,6 +23,8 @@ import { WHATSAPP_DISPLAY, waHref } from '../../data/whatsapp.js';
 import Layout from '../../layouts/Layout.astro';
 import {
   euro, turnaround, ladderRate, ladderFloor, LADDER, WINDOW_THRESHOLD,
+  /* §10 leest het revisiebeleid uit; zie de noot daar. */
+  revisiebeleid,
 } from '../../data/pricing.js';
 // §7 leest de bewaartermijnen uit retention.js in plaats van ze in te typen. Zie de
 // noot in de Engelse pagina: een ingetypt getal in een contract is de duurste
@@ -48,6 +50,7 @@ import { planName } from '../../data/planNames.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../../data/juridischeDatums.js';
+import '../../styles/stijl22.css';
 
 /* Van–tot over de drie plannen, op de maandtermijn: dat is het bedrag dat op
    /plans het grootst wordt afgedrukt. De jaartermijn is goedkoper en zou hier
@@ -70,39 +73,34 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
   title="Algemene voorwaarden — VISUAILS"
   description="De voorwaarden voor VISUAILS — AI-ondersteunde, door mensen gecontroleerde productvisuals. Bestellingen, prijzen, betaling en Nederlands recht."
 >
-  <section class="page-hero">
-    <div class="container narrow">
-      <span class="eyebrow-page">Juridisch</span>
-      <h1 class="display">Algemene voorwaarden</h1>
-      <p class="lead" style="margin-top:1.2rem">De voorwaarden die van toepassing zijn wanneer je productvisuals bestelt bij VISUAILS. Lees ze voordat je een bestelling plaatst.</p>
+{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
+    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
+    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
+    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
+    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
+    letters voor alle zes juridische pagina's tegelijk.
+
+    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
+    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
+    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
+    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
+    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
+    daarop is niet de toets versoepelen maar de andere vier meenemen.
+
+    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
+    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
+    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
+    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
+<div class="s22">
+  <section class="paneel">
+    <header class="paneel-kop jur-kop">
+      <p class="etiket">Juridisch</p>
+      <h1 class="hoog">Algemene voorwaarden</h1>
+      <p class="lopend jur-lead">De voorwaarden die van toepassing zijn wanneer je productvisuals bestelt bij VISUAILS. Lees ze voordat je een bestelling plaatst.</p>
       <p class="legal-meta">{bijgewerktOp('terms', 'nl')}</p>
-      {/* ── DE SJABLOONNOOT IS WEG — 11 AUGUSTUS 2026 ─────────────────────────
+    </header>
 
-          Hier stond: "Dit is een algemeen sjabloon — laat het beoordelen door een
-          gekwalificeerde juridische professional voordat je erop vertrouwt."
-
-          Op 8 augustus is diezelfde zin van de Engelse pagina's gehaald, met de
-          juiste reden: hij stond op de pagina die de klant moet aanvaarden, en
-          vertelde dus iedere klant dat het contract dat hij aanging niet was
-          nagekeken. Dat is een gratis argument tegen de rechtsgeldigheid van elk
-          beding erin, aangereikt door de partij die zich erop wil beroepen.
-
-          Alleen: hij is toen uit de Engelse bestanden gehaald en uit de
-          Nederlandse niet. /nl/terms, /nl/privacy en /nl/cookie-policy droegen hem
-          alle drie nog — in de taal van vrijwel elke klant. De zin stond dus
-          precies daar niet meer waar bijna niemand hem las, en bleef staan waar
-          iedereen hem las.
-
-          WAT HIER NIET MEE IS OPGELOST, en dat hoort erbij: de teksten zijn nog
-          steeds niet door een jurist gezien. Die noot hoorde alleen niet op de
-          klantpagina thuis — hij hoort op de werklijst, en daar staat hij. Het
-          weghalen verandert niets aan wat er nagekeken moet worden; het haalt
-          alleen weg dat de klant het als eerste te horen krijgt. */}
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container narrow legal">
+    <div class="legal jur-tekst">
 
       <h2>1. Inleiding &amp; aanvaarding</h2>
       <p>Deze algemene voorwaarden zijn van toepassing op je gebruik van VISUAILS en op elke bestelling die je bij ons plaatst. VISUAILS wordt geëxploiteerd vanuit Enschede, Nederland (KVK 99742993, btw NL005407575B96). Door een bestelling te plaatsen, een proefvisual aan te vragen of anderszins onze dienst te gebruiken, ga je akkoord met deze voorwaarden. Als je niet akkoord gaat, gebruik de dienst dan niet.</p>
@@ -232,7 +230,14 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>10. Annuleringen, terugbetalingen en herstel</h2>
       <p>Omdat visuals worden gemaakt volgens je specifieke briefing, kan werk dat al is gestart of geleverd doorgaans niet worden geannuleerd voor een terugbetaling.</p>
-      <p>Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door. Wat we vervolgens afspreken hangt af van het probleem, en kan een revisie zijn, een terugbetaling, of tegoed op je volgende bestelling. We begrijpen liever wat je echt voor ogen had dan dat we een vast aantal rondes afwerken.</p>
+      <p>Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — per beeld, in VISUAILS Studio. Wat er daarna gebeurt, hangt af van welk van deze vier het is:</p>
+      {/* Zie de noot bij §10 in de Engelse voorwaarden: het beleid staat als
+          REVISIEBELEID in pricing.js en wordt hier alleen uitgelezen. */}
+      <ul>
+        {revisiebeleid('nl').map(([kop, regel]) => (
+          <li><strong>{kop}.</strong> {regel}</li>
+        ))}
+      </ul>
       <p>Wat we afspreken heeft betrekking op de briefing waarmee we hebben gewerkt; een substantieel nieuwe richting is een nieuwe bestelling en geen correctie. Terugbetalingen zijn naar onze redelijke beoordeling en worden per geval beoordeeld.</p>
 
 
@@ -260,25 +265,33 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <h2>13. Contact</h2>
       <p>Vragen over deze voorwaarden? Mail <a href="mailto:hello@visuails.com">hello@visuails.com</a> of stuur ons een bericht op WhatsApp via <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>.</p>
 
+    <div class="jur-uit">
+      <h2>Klaar wanneer jij dat bent.</h2>
+      <p>Begin met een proefvisual of plaats je eerste bestelling. We bevestigen wat je krijgt en wat het kost voordat er werk begint.</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href="/nl/test-sample/">Proefvisual</a>
+        <a class="knop knop-lijn" href="/nl/start/">Start een bestelling</a>
+        <a class="knop knop-lijn" href={waHref("Hoi VISUAILS, ik heb een vraag over jullie voorwaarden.")} target="_blank" rel="noopener">WhatsApp</a>
+      </p>
+    </div>
     </div>
   </section>
-
-  <section>
-    <div class="container">
-      <div class="cta-band">
-        <h2 class="display" style="font-size:var(--t-page-h2)">Klaar wanneer jij dat bent.</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">Begin met een proefvisual of plaats je eerste bestelling. We bevestigen wat je krijgt en wat het kost voordat er werk begint.</p>
-        <div class="flex" style="justify-content:center;margin-top:2rem">
-          <a href="/nl/test-sample/" class="btn btn-primary btn-lg">Proefvisual</a>
-          <a href="/nl/start/" class="btn btn-ghost btn-lg">Start een bestelling</a>
-          <a href={waHref("Hoi VISUAILS, ik heb een vraag over jullie voorwaarden.")} class="btn btn-wa" target="_blank" rel="noopener">
-            WhatsApp
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
+</div>
 </Layout>
+
+<style>
+  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
+     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
+     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
+     verkooptekst. */
+  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
+  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
+  .jur-tekst { max-width: 46rem; }
+
+  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
+  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .jur-uit .acties { margin-top: 1.4rem; }
+</style>
 
 <style>
   /* De opmaak van een juridische pagina staat sinds 3 september 2026 één keer in

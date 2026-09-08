@@ -55,7 +55,7 @@ import { HORIZON_DAYS, addDays, bookedFromRows } from '../data/capacity.js';
  * betekenissen betekent dat de aanroepende regel de enige uitleg is.
  */
 function orderSql(beforeId, exceptId) {
-  return `SELECT window_start, window_end, product_count, service
+  return `SELECT window_start, window_end, product_count, service, details_json
             FROM orders
            WHERE tier = 'attended'
              AND window_start IS NOT NULL
@@ -98,6 +98,35 @@ export async function readCalendar(env, today, { beforeId = null, exceptId = nul
   ]);
 
   const blackouts = new Set((blackoutRows.results || []).map((r) => r.day));
-  const rijen = [...(orderRows.results || []), ...(queueRows.results || [])];
+  const rijen = [...(orderRows.results || []).map(videoVelden), ...(queueRows.results || [])];
   return { blackouts, booked: bookedFromRows(rijen, blackouts) };
+}
+
+/**
+ * De twee velden die een videorij nodig heeft om gewogen te kunnen worden.
+ *
+ * Geëxporteerd omdat het beheerscherm dezelfde rijen leest en dezelfde vertaling
+ * nodig heeft; twee kopieën hiervan zouden precies het soort verschil worden dat
+ * je pas merkt als de planning en de poort iets anders zeggen.
+ *
+ * ── WAAROM DIT IN JAVASCRIPT GEBEURT EN NIET IN DE QUERY — 7 sep 2026 ──────
+ *
+ * De stijl en het aantal clips staan in `details_json`, en SQLite kan die er met
+ * json_extract() zo uit halen. Dat is hier bewust niet gedaan. Deze query is de
+ * enige lezer van de agenda, en als hij gooit, weigert de hele keten een venster
+ * te schrijven — /api/capacity geeft 503, het bestel-endpoint legt niets vast.
+ * json_extract() op een rij met kapotte JSON is een fout van de hele query, niet
+ * van die ene rij, en dan valt de poort om voor elke klant vanwege één rommelige
+ * bestelling uit het verleden. Hier valt alleen die ene rij weg, en die verschijnt
+ * dan als een gat in het beheerscherm — precies wat bookedFromRows() met een
+ * onweegbare rij hoort te doen.
+ *
+ * De rijenset is klein: alleen bestellingen met een venster binnen de horizon,
+ * in de praktijk tientallen. `details_json` meelezen kost daar niets.
+ */
+export function videoVelden(r) {
+  if (String(r.service || '') !== 'video') return r;
+  let d = null;
+  try { d = JSON.parse(r.details_json || '{}'); } catch { d = null; }
+  return { ...r, style: d?.style, clip_count: d?.clips };
 }

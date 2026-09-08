@@ -97,7 +97,7 @@ console.log('\nslepen met de muis snijdt de foto af');
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/how-it-works/`, { waitUntil: 'networkidle' });
   const cmp = page.locator('.cmp').first();
   await cmp.scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
@@ -154,8 +154,13 @@ console.log('\nslepen met de muis snijdt de foto af');
 console.log('\nslepen met een vinger doet hetzelfde');
 {
   const ctx = await browser.newContext({ ...devices['iPhone 13'], isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+  /* De cookiebanner ligt onderin over de pagina en vangt anders de vinger; de
+     proefkaart (Proefkaart.astro) komt na de cookiekeuze op dezelfde plek en
+     wordt hier vooraf als gesloten gemarkeerd. */
+  await ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-09-05T00:00:00.000Z' })), domain: '127.0.0.1', path: '/' }]);
+  await ctx.addInitScript(() => { try { localStorage.setItem('vis_proef_dicht', String(Date.now() + 86400000)); } catch {} });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/how-it-works/`, { waitUntil: 'networkidle' });
   const cmp = page.locator('.cmp').first();
   await cmp.scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
@@ -198,7 +203,7 @@ console.log('\nde knop is met de pijltjes te bedienen');
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/how-it-works/`, { waitUntil: 'networkidle' });
   await page.locator('.cmp').first().scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
   const knop = page.locator('.cmp .cmp-knob').first();

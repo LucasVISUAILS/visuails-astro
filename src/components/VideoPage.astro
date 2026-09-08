@@ -65,6 +65,7 @@ import {
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
+import '../styles/stijl22.css';
 import TierCompare from './TierCompare.astro';
 import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
@@ -190,6 +191,8 @@ const COPY = {
     reviewNote: reviewClaim('unattended', 'en'),
     heroAlt: 'A still from a short VISUAILS product clip',
     heroCap: 'Video · a frame from an 8-second clip',
+    kiesCta: 'Pick your clip',
+    levert: 'one clip of eight seconds.',
     kindsH: 'Ways to add motion.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
     quoted: 'Quoted per project',
@@ -273,6 +276,8 @@ const COPY = {
     reviewNote: reviewClaim('unattended', 'nl'),
     heroAlt: 'Een stilstaand beeld uit een korte productclip van VISUAILS',
     heroCap: 'Video · een beeld uit een clip van 8 seconden',
+    kiesCta: 'Kies je clip',
+    levert: 'één clip van acht seconden.',
     kindsH: 'Manieren om beweging toe te voegen.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
     quoted: 'Offerte per project',
@@ -336,13 +341,23 @@ const nl = lang === 'nl';
    niet naar een formulier; dat blijft zo. */
 /* De waaier per soort: de poster plus stills uit dezelfde reeks. Tot de
    video-stills er zijn, zijn dit de banners die de pagina al gebruikt. */
+/* ── ÉÉN KAART, WANT JE KRIJGT ÉÉN CLIP — 4 september 2026 ─────────────────
+   Hier stonden drie tot vier beelden per soort, en dat was een verkeerde
+   belofte: een videobestelling levert ÉÉN clip. Catalog toont er vier omdat een
+   catalogset er vier heeft, lifestyle drie om dezelfde reden — dan hoort video
+   er één te tonen. Naast die ene staat de ingestuurde telefoonfoto, zodat je in
+   één oogopslag ziet wat erin gaat en wat eruit komt.
+
+   Campaign is de uitzondering en dat staat in de dienst zelf: dat is een film
+   MET meerdere shots, dus drie kaarten zijn daar geen overdrijving maar de
+   beschrijving. */
 const WAAIER: Record<string, string[]> = {
-  motion: ['/img/banners-04.webp', '/img/banners-03.webp', '/img/banners-06.webp'],
-  lifestyle: ['/img/lifestyle-glow-03.webp', '/img/lifestyle-flash-05.webp', '/img/lifestyle-phone-made-06.webp', '/img/lifestyle-dunes-02.webp'],
-  campaign: ['/img/banners-08.webp', '/img/banners-01.webp', '/img/banners-02.webp', '/img/banners-07.webp'],
-  custom: ['/img/banners-13.webp', '/img/banners-14.webp'],
+  motion: ['/img/banners-04.webp'],
+  lifestyle: ['/img/lifestyle-glow-03.webp'],
+  campaign: ['/img/banners-08.webp', '/img/banners-01.webp'],
+  custom: ['/img/banners-13.webp'],
 };
-const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#C6F100' };
+const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#D2E04A' };
 const naarRij = (s: (typeof kinds)[number]) => ({
   slug: s.slug,
   name: s.name,
@@ -352,6 +367,12 @@ const naarRij = (s: (typeof kinds)[number]) => ({
   bestFor: s.bestFor || [],
   media: { src: posters[s.slug].src, w: posters[s.slug].w, h: posters[s.slug].h, alt: c.exampleAlt(s.name) },
   photos: (WAAIER[s.slug] || [posters[s.slug].src]).map((src, i) => ({ src, alt: i === 0 ? c.exampleAlt(s.name) : '' })),
+  /* Dezelfde telefoonfoto als op /catalog en /lifestyle: het ingestuurde beeld
+     hoort bij elke dienst hetzelfde te zijn, want het IS bij elke dienst
+     hetzelfde — één foto van je product. */
+  before: { src: '/img/catalog-before-1x1.webp', alt: '' },
+  /* En het geleverde beeld zegt hier wat het is: geen foto maar een clip. */
+  naLabel: nl ? 'Clip · 8 sec' : 'Clip · 8 sec',
   tint: TINT[s.slug],
   detailHref: lp(`/video/${s.slug}`),
   detailLabel: nl ? `Ontdek ${s.name}` : `Explore ${s.name}`,
@@ -387,218 +408,167 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
      dezelfde `.photo-band tall` die /lifestyle al gebruikte. Dat is ook wat
      het eerste ontwerpprincipe vraagt: toon het werk vóór de belofte, en een
      foto die half onder een verloop ligt toont het werk maar half. -->
-<section class="page-hero">
-  <div class="container two-col hero-split">
-    <div class="reveal pending">
-    <span class="eyebrow-page">{c.eyebrow}</span>
-    <h1 class="display vid-h1" style="margin-top:1rem" set:html={c.h1} />
-    <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-    <div class="flex" style="margin-top:1.8rem">
-      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/video')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPrices}</a>
-      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
-      </a>
-    </div>
-    {/* "Allebei" gaat over catalog en lifestyle samen en niet over clips, dus
-        die valt hier weg — zie andereDeuren() in src/data/orderDoors.js. */}
-    <ServiceSwitch current={['video', 'complete']} lang={lang} />
-      <HeroFacts eigen={c.trust} lang={lang} />
-    <p class="queue-note">{c.queueNote}</p>
-    </div>
-    <div class="reveal pending">
-      <div class="photo-band tall">
+{/* ═══ /video IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══════════════════
+    Zesde pagina in de stijl, en de eerste van de drie dienstpagina's. De vijf
+    gedeelde componenten — ServiceSwitch, HeroFacts, StyleRows, TierCompare en
+    Disclose — staan er nog precies zoals ze waren: hun opmaak, hun
+    toetsenbordgedrag en hun aria zijn niet aangeraakt. Alleen hun uiterlijk
+    volgt nu de stijl, via het blok onderaan src/styles/stijl22.css. Dat scheelt
+    drie keer hetzelfde werk op /catalog en /lifestyle, en het houdt het gedrag
+    waarvan de toetsen al bewijzen dat het klopt.
+
+    De inhoud is niet aangeraakt: dezelfde COPY in beide talen, dezelfde looks
+    uit videoStyles.js, dezelfde getallen uit pricing.js. */}
+<div class="s22">
+
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="vid-h1">
+    <div class="vid-open">
+      <div class="paneel-kop">
+        <p class="etiket">{c.eyebrow}</p>
+        <h1 id="vid-h1" class="hoog" set:html={c.h1} />
+        <p class="lopend">{c.lead}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href="#looks">{c.kiesCta}</a>
+          <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
+          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+        </p>
+        <ServiceSwitch current={['video', 'complete']} lang={lang} />
+        <HeroFacts eigen={c.trust} lang={lang} />
+        <p class="vid-wacht">{c.queueNote}</p>
+      </div>
+      <figure class="kaart kaart-stil vid-beeld">
         <img src="/img/banners-03.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="1200" height="896" />
-        <div class="scrim"></div>
-        <div class="caption"><p style="font-size:.9rem">{c.heroCap}</p></div>
-      </div>
+        <figcaption class="mono foto-pil">{c.heroCap}</figcaption>
+      </figure>
     </div>
-  </div>
-</section>
+  </section>
 
-{/* Eén regel per soort, de eigen look bovenaan — 4 september 2026. Hier stond
-    een raster van vier posters. Zie StyleRows.astro. */}
-<StyleRows lang={lang} h={c.kindsH} lead={eigenLook} items={vasteLooks} />
+  {/* ── 2 · DE LOOKS ─────────────────────────────────────────────────────── */}
+  <section class="paneel" id="looks">
+    <StyleRows lang={lang} dienst="video" h={c.kindsH} lead={eigenLook} items={vasteLooks} levert={c.levert} />
+  </section>
 
-<section class="section-tight">
-  <div class="container">
-    <div class="ed-head">
-      <span class="ed-meta">{c.edMeta}</span>
-      <div>
-        <h2>{c.edH}</h2>
-        <p class="ed-sub">{c.edSub}</p>
+  {/* ── 3 · WAT HET IS, EN WAAR HET STAAT ────────────────────────────────────
+      De donkere kamer van deze pagina. */}
+  <section class="kamer vid-kamer" aria-labelledby="vid-wat">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <p class="etiket">{c.edMeta}</p>
+      <h2 id="vid-wat" class="hoog hoog-2">{c.edH}</h2>
+      <p class="lopend">{c.edSub}</p>
+    </header>
+    <div class="vid-twee">
+      <div class="vid-uitleg">
+        <h3 class="hoog hoog-3">{c.whatH}</h3>
+        {c.whatP.map((p) => <p class="lopend">{p}</p>)}
+        <p class="lopend vid-noot" set:html={c.modelNote} />
       </div>
-    </div>
-    <div class="svc-explain">
-      <div class="svc-explain-main">
-        <h3>{c.whatH}</h3>
-        {c.whatP.map((p) => <p>{p}</p>)}
-        <p class="model-note" set:html={c.modelNote} />
-      </div>
-      <aside class="svc-explain-side">
-        <h3>{c.whereH}</h3>
-        <ul class="svc-where-list">
-          {c.where.map(([strong, rest]) => (
-            <li><strong>{strong}</strong> — {rest}</li>
-          ))}
+      <aside class="vid-waar">
+        <h3 class="hoog hoog-3">{c.whereH}</h3>
+        <ul class="vid-waar-lijst" role="list">
+          {c.where.map(([strong, rest]) => <li><b>{strong}</b><span class="lopend">{rest}</span></li>)}
         </ul>
       </aside>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- HOW IT WORKS, in the same place and the same shape as /catalog's. The
-     three service pages tell the story in the same order now: what it is,
-     where it lives, the kinds, the three steps, the checklist, the price
-     block, the tier line, the questions. -->
-<section class="section-tight">
-  <div class="container">
-    {/* ── DRIE STAPPEN OP ÉÉN RIJ — doorlichting 4 september 2026 ──────────
-        Hier stond een fotosplit van ~1.000 px: een foto links, de drie stappen
-        gestapeld rechts. De foto staat sinds de waaiers al hoger op de pagina;
-        wat overblijft zijn drie korte stappen, en die passen naast elkaar.
-        Zelfde `.steps`-raster als de homepage. */}
-    <h2 class="section-h">{c.stepsH}</h2>
-    <div class="steps reveal-group">
+  {/* ── 4 · DE DRIE STAPPEN ──────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="vid-stappen">
+    <header class="paneel-kop">
+      <h2 id="vid-stappen" class="hoog hoog-2">{c.stepsH}</h2>
+    </header>
+    <ol class="vid-stappen">
       {c.steps.map(([h, p], i) => (
-        <div class="step reveal pending"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+        <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{h}</b><span class="lopend">{p}</span></li>
       ))}
-    </div>
-  </div>
-</section>
+    </ol>
+  </section>
 
-<section class="section-tight">
-  <div class="container two-col">
-    <div class="reveal pending">
-      <h2>{c.cleanH}</h2>
-      <ul class="checklist" style="margin-top:1.4rem">
-        {c.clean.map((li) => (
-          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
-        ))}
-      </ul>
-    </div>
-    <div class="reveal pending buy-note">
-      <h3>{c.buyH}</h3>
-      <p set:html={c.buyFixed} />
-      <p set:html={c.buyQuote} />
-      {/* The flatness, stated rather than implied. A reader arriving from
-          /pricing has just read a rate that falls with volume; without this
-          they will assume the clip rate falls too and find out at checkout
-          that it does not. */}
-      <p class="buy-flat"><strong>{c.buyFlatH}</strong> {c.buyFlat}</p>
-      <div class="flex" style="margin-top:1.4rem">
-        {/* The button used to print the tier label — "Order individual
-            products" — which was a door the buyer picked between. Size picks
-            the service level now, so the button is a verb. */}
-        <a href={lp('/start/video')} class="btn btn-primary">{c.buyCta}</a>
-        <a href={c.waQuote} class="btn btn-wa" target="_blank" rel="noopener">{c.waQuoteLabel}
-        </a>
+  {/* ── 5 · WAT ER SCHOON MOET, EN WAT HET KOST ──────────────────────────── */}
+  <section class="paneel">
+    <div class="vid-twee-licht">
+      <div>
+        <h2 class="hoog hoog-2">{c.cleanH}</h2>
+        <ul class="vid-check" role="list">
+          {c.clean.map((li) => <li>{li}</li>)}
+        </ul>
+      </div>
+      <div class="vid-koop">
+        <h3 class="hoog hoog-3">{c.buyH}</h3>
+        <p class="lopend" set:html={c.buyFixed} />
+        <p class="lopend" set:html={c.buyQuote} />
+        <p class="lopend vid-vast"><b>{c.buyFlatH}</b> {c.buyFlat}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start/video')}>{c.buyCta}</a>
+          <a class="knop knop-lijn" href={c.waQuote} target="_blank" rel="noopener">{c.waQuoteLabel}</a>
+        </p>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-{/* ── DE FOTOSTROOK IS WEG — doorlichting 4 september 2026 ─────────────────
-    Vijf banners in een raster, ~800 px, direct onder de waaiers die dezelfde
-    banners al per soort laten zien. Eén keer is genoeg. */}
-
-<!-- WHAT CHANGES AT WINDOW_THRESHOLD PRODUCTS. This block used to be section
-     13's two doors — "order individual products" against "run a whole drop" —
-     a choice the buyer made. Size makes it now, so the component states a line
-     rather than offering a fork; see TierCompare.astro's own header.
-     One shared component, not a paragraph pasted into each service page: the
-     tier facts it prints all come from pricing.js accessors, so /catalog,
-     /lifestyle, /video and /pricing cannot drift apart in either language.
-     See TierCompare.astro for why both columns are styled identically. -->
-<section class="section-tight">
-  <div class="container">
-    <p class="queue-note" style="margin-bottom:1.4rem">{c.tierNote}</p>
+  {/* ── 6 · WAT ER VERANDERT BIJ EEN GROTERE BESTELLING ──────────────────── */}
+  <section class="paneel">
+    <p class="mono vid-tiernoot">{c.tierNote}</p>
     <TierCompare lang={lang} href0="/start/video/" label0={c.ctaPrimary} />
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="container" style="max-width:760px">
-    <h2 class="section-h">{c.faqH}</h2>
-    <div class="faq-stack">
-      {c.faqs.map((f) => (
-        <Disclose summary={f.q} tone="panel">
-          <p>{f.a}</p>
-        </Disclose>
-      ))}
+  {/* ── 7 · VRAGEN ───────────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="vid-faq">
+    <header class="paneel-kop">
+      <h2 id="vid-faq" class="hoog hoog-2">{c.faqH}</h2>
+    </header>
+    <div class="vid-vragen">
+      {c.faqs.map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section-tight">
-  <div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:var(--t-page-h2)" set:html={c.ctaH} />
-      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/video')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-        <a href={lp('/contact')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
+  {/* ── 8 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="vid-slot">
+    <h2 id="vid-slot" class="hoog" set:html={c.ctaH} />
+    <p class="lopend">{c.ctaP}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/start/video')}>{c.ctaPrimary}</a>
+      <a class="knop knop-lijn" href={lp('/contact')}>{c.ctaSecondary}</a>
+      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+    </p>
+  </section>
+</div>
 
 <style>
-  /* De prijsregel onder de naam van een stijl. Stond als style-attribuut op de
-     <p> met `margin-top: .35rem`; dezelfde relatie staat op de homepage twee keer
-     met .4 en .45rem. Alle drie lezen ze nu --gap-label-note — zie de noot bij dat
-     token in global.css voor de meting. */
-  .vid-kaartprijs { font-size: .9rem; margin-top: var(--gap-label-note); }
+  .vid-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .vid-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
+  .vid-beeld { aspect-ratio: 4 / 3; position: relative; }
+  .vid-wacht { font-size: .92rem; color: var(--inkt-2); }
 
-  /* Zie de noot bij het raster: vier items, vier kolommen, geen gat. Twee op
-     een middenbreedte en één op een telefoon — dezelfde trap als `.grid-2` en
-     `.grid-3` sitebreed nemen, alleen een stap later omdat deze tegels
-     vierkant zijn en dus minder hoog worden per kolom. */
-  .vid-kinds { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  @media (max-width: 68rem) { .vid-kinds { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 38rem) { .vid-kinds { grid-template-columns: minmax(0, 1fr); } }
+  .vid-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .vid-uitleg { display: grid; gap: .9rem; }
+  .vid-waar { padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); display: grid; gap: .9rem; }
+  .vid-waar-lijst { display: grid; gap: .7rem; }
+  .vid-waar-lijst li { display: grid; gap: .2rem; }
+  .vid-waar-lijst b { font-weight: 500; }
+  .vid-noot :global(a) { color: var(--geel-letter); text-decoration: underline; text-underline-offset: 3px; }
 
-  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
-     --font-editorial comment. Same emphasis-word treatment as the other
-     hero H1s. */
-  .vid-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+  .vid-stappen { display: grid; }
+  .vid-stappen li { display: grid; grid-template-columns: auto minmax(0, 22rem) minmax(0, 30rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
+  .vid-stappen li:last-child { border-bottom: 1px solid var(--lijn); }
+  .vid-stappen .nr { color: var(--inkt-2); }
+  .vid-stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; }
 
-  /* The queue disclosure. Section 13 requires the "no fixed delivery date"
-     half of the promise to be visible, not hidden — so it is set at body
-     weight directly under the trust row rather than as footnote-sized grey. */
-  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+  .vid-twee-licht { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .vid-check { display: grid; gap: .6rem; margin-top: 1.4rem; }
+  .vid-check li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); }
+  .vid-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .vid-koop { display: grid; gap: .8rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
+  .vid-vast { padding-top: 1rem; border-top: 1px solid var(--lijn); font-size: .92rem; }
+  .vid-vast b { font-weight: 500; }
 
-  /* The Brand Model link in the "What it is" column. It arrives through
-     set:html and so carries no scope attribute — :global() on the descendant
-     is what reaches it. Same treatment as every other inline prose link. */
-  .model-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+  .vid-tiernoot { color: var(--inkt-2); margin-bottom: 1.6rem; }
+  .vid-vragen { display: grid; gap: .7rem; }
 
-  /* This block used to be a `.card` with an overridden border colour sitting
-     inside a two-column grid, i.e. a card nested in a layout that already
-     framed it. Full border, no nesting, no accent tint. */
-  .buy-note { border: 1px solid var(--line-strong); padding: clamp(1.4rem, 3vw, 2rem); }
-  .buy-note h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
-  /* Zelfde relatie als elders: een kopje met de regel die hem uitlegt. */
-  .buy-note p { margin-top: var(--gap-label-note); color: var(--ink-2); }
-  .buy-note p strong { color: var(--ink); font-weight: 600; }
-  /* Ruled off rather than boxed: it is a note ON the two lines above it, not a
-     third way to buy, and a second frame inside .buy-note would read as one. */
-  .buy-note .buy-flat {
-    margin-top: 1.1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-    font-size: .9rem;
-    line-height: 1.55;
-    color: var(--ink-3);
+  @media (max-width: 900px) {
+    .vid-open, .vid-twee, .vid-twee-licht { grid-template-columns: 1fr; }
+    .vid-stappen li { grid-template-columns: auto 1fr; }
+    .vid-stappen li .lopend { grid-column: 2; }
   }
-  .buy-note .buy-flat strong { color: var(--ink); font-weight: 700; }
-
-  /* The question list. `Disclose` styles the panels; this only sets the gap
-     between them, exactly as on /catalog and /lifestyle. */
-  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
-
-  /* `.drop-note` lived here, and identically in CatalogPage.astro and
-     LifestylePage.astro. Three copies of one block is what TierCompare.astro
-     replaced; its styles are scoped to that component now. */
 </style>

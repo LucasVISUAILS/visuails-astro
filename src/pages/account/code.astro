@@ -1,0 +1,10 @@
+---
+/* /account/code — zie studioAuth() in src/lib/account.js en Inlogkaart.astro. */
+import { pagesContext } from '../../lib/route.js';
+import { studioAuth } from '../../lib/account.js';
+import Inlogkaart from '../../components/studio/Inlogkaart.astro';
+export const prerender = false;
+const uit = await studioAuth(pagesContext(Astro));
+if (uit instanceof Response) return uit;
+---
+<Inlogkaart view={uit} />

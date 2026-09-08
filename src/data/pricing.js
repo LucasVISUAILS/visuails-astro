@@ -134,7 +134,7 @@ export const LADDER = {
  * optie "Meer dan 52" gewoon door naar stap 2 zonder één knop naar hem toe.
  *
  * Dit getal is het PLAFOND VAN HET FORMULIER, niet van de studio: de agenda
- * rekent nog steeds in beelden per venster (capacity.js). Het valt samen met de
+ * rekent nog steeds in punten per venster (capacity.js). Het valt samen met de
  * bovenste trede van elke ladder (20+), zodat elk tarief dat de site noemt ook
  * in het formulier te kiezen is — dat was de fout van augustus met "vanaf 35".
  */
@@ -325,122 +325,248 @@ export const SLOT_KINDS = {
   hooks:           { en: 'Hook',             nl: 'Hook',               per: { en: 'a short vertical clip, 6 to 8 seconds',             nl: 'een korte verticale clip, 6 tot 8 seconden' } },
 };
 
-/* ── WAT EEN SOORT WEEGT IN DE AGENDA — 31 augustus 2026 ───────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+ * DE PUNTEN — wat een bestelling van een studiodag opeet
+ * ══════════════════════════════════════════════════════════════════════════
  *
- * Lucas: *"alle services moeten passen in de capaciteit niet alleen
- * productfoto's. Dit is een gedeelde agenda voor me."*
+ * Lucas, 7 september 2026: *"Maak voor het systeem zelf een soort punten
+ * systeem waar foto's bijvoorbeeld 1 punt is en video 2 punten is en als er
+ * zoveel punten ingepland staan staat die datum vol en kan die niet meer
+ * geboekt worden. Die punten kunnen dan per categorie en style verschillen
+ * omdat deze soms verschillend zijn in hoeveel tijd ze kosten om te maken en te
+ * leveren. Per style dus een bepaalde hoeveelheid punten."*
  *
- * De agenda telde tot vandaag producten, en met "product" bedoelde capacity.js
- * een COMPLEET product. Dat gaf twee fouten tegelijk: een maand van dertig
- * catalogsets werd geteld alsof het dertig complete producten waren (210 beelden
- * waar er 120 nodig zijn), en video werd helemaal niet geteld omdat alleen een
- * dienst die op de ladder staat een venster kan krijgen.
+ * ── ÉÉN PUNT IS ÉÉN AFGEWERKTE FOTO ───────────────────────────────────────
  *
- * DE EENHEID IS HET BEELD, EN DIE STOND AL IN HET ANDERE BESTAND. De noot boven
- * PRODUCTS_PER_DAY in capacity.js rekent zelf voor dat achttien producten per dag
- * "126 finished, human-checked images in a day" zijn. Zeven beelden per compleet
- * product, en dat zijn precies de vier plus de drie die SLOT_KINDS hierboven
- * beschrijft. De getallen hieronder zijn dus niet gekozen maar overgeschreven uit
- * de regel ernaast, en assertKindImages() bewaakt dat ze niet uit elkaar lopen.
+ * Dat is de hele schaal, en hij is met opzet zo saai. Een catalogset is vier
+ * foto's en dus vier punten; een lifestylecarrousel is er drie. Een compleet
+ * product is die twee bij elkaar: zeven. Wie het getal ziet, weet meteen waar
+ * het vandaan komt, en dat is precies wat een puntentabel moet doen — een
+ * schaal die je moet opzoeken, wordt een schaal die niemand controleert.
  *
- * ── DE DRIE NULLEN ZIJN GEEN VERGETEN REGELS ───────────────────────────────
+ * DE PUNTEN ZIJN GEEN BEELDTELLING, ook al beginnen ze daar. Voor video valt
+ * het uit elkaar: een Motion-clip is één bestand en kost vier punten, een
+ * lifestyle-clip is óók één bestand en kost er tien. Een punt meet TIJD, en
+ * voor foto's is het aantal foto's daar toevallig een goede maat voor. Waar de
+ * klant het echte aantal beelden hoort te lezen, staat dat in SLOT_KINDS
+ * hierboven en niet in deze tabel; dat zijn twee verschillende vragen die tot
+ * 7 september 2026 hetzelfde getal deelden.
  *
- * Een clip heeft geen beelden, dus er valt niets af te leiden. Dit is exact
- * hetzelfde soort getal als PRODUCTS_PER_DAY, waar capacity.js zelf over zegt:
- * "it is the one number in this file I cannot set for you." Het antwoord komt uit
- * dezelfde vraag die de achttien opleverde: HOEVEEL MOTION-CLIPS MAAK JE OP EEN
- * DAG AF ALS JE DIE DAG NIETS ANDERS DOET? Het gewicht is dan 126 gedeeld door
- * dat aantal, en dezelfde vraag geldt apart voor een lifestyle-clip en een hook.
+ * ── WAAR DE GETALLEN VANDAAN KOMEN ────────────────────────────────────────
  *
- * WAAROM null EN NIET EEN VOORLOPIG GETAL. Een verzonnen gewicht verandert wat de
- * poort weigert, en dat is een belofte aan een klant. `null` betekent hier precies
- * wat het zegt: deze soort is nog niet gewogen, kan daarom geen venster krijgen
- * (wat vandaag ook al zo is) en wordt apart getoond als "nog te wegen" in plaats
- * van stilletjes als nul. Zodra het getal er is, is dit één regel en verder niets.
+ * Uit één vraag, elke keer dezelfde: HOEVEEL MAAK JE ER OP EEN DAG AF ALS JE
+ * DIE DAG NIETS ANDERS DOET? Het antwoord gedeeld op PUNTEN_PER_DAG (100, zie
+ * capacity.js) is het gewicht.
+ *
+ *   · Motion-clip — Lucas: *"rond de 20 - 30 clips"* → 25 → 100/25 = 4
+ *   · lifestyle-clip — Lucas: *"ongeveer 8 tot 12 per dag"* → 10 → 100/10 = 10
+ *
+ * Allebei herijkt op 7 september toen het dagplafond van 126 naar 100 ging;
+ * de vraag en het antwoord van Lucas zijn niet veranderd, alleen de deling.
+ *
+ * ── DE NUL IS GEEN VERGETEN REGEL ─────────────────────────────────────────
+ *
+ * `hooks: null` betekent: deze soort is nog niet gewogen, kan daarom geen
+ * venster krijgen, en wordt apart getoond als "nog te wegen" in plaats van
+ * stilletjes als nul. Een verzonnen gewicht verandert wat de poort weigert, en
+ * dat is een belofte aan een klant. Zodra het getal er is, is dit één regel.
  */
-export const KIND_IMAGES = {
-  complete: 7,            // 4 catalogbeelden + een carrousel van 3
+export const KIND_PUNTEN = {
+  complete: 7,            // een catalogset (4) plus een carrousel (3)
   catalog: 4,
   lifestyle: 3,
-  /* ── EN DE MOTION-CLIP IS GEWOGEN — 31 augustus 2026 ─────────────────────
-   *
-   * Lucas, op de vraag hoeveel clips hij op een dag afmaakt als hij die dag niets
-   * anders doet: *"Als het gaat om predefined clips, en niks anders heb die dag en
-   * het geen custom clips zijn, dan rond de 20 - 30 clips."*
-   *
-   * Vijfentwintig is het midden van die spanne, en 126 gedeeld door 25 is 5,04 —
-   * afgerond vijf. Dat komt neer op iets meer dan vijfentwintig clips op een dag,
-   * dus binnen wat hij zei en aan de voorzichtige kant van het midden. Eén clip
-   * weegt daarmee minder dan een catalogset en er passen er tweeënveertig in een
-   * venster van twee dagen.
-   *
-   * DE VOORWAARDE UIT ZIJN ANTWOORD STAAT HIER OOK IN. Dit getal geldt voor een
-   * VOORAF BEPAALDE clip. Een custom clip is iets anders, en dat is geen probleem
-   * voor deze tabel: 'custom' staat niet op de ladder, krijgt daarom nooit een
-   * gereserveerd venster (tierFor()), en wordt met de hand ingepland. De dag dat er
-   * wél een custom-slot in een abonnement komt, hoort die zijn eigen regel te
-   * krijgen — en niet deze.
-   *
-   * DE ANDERE TWEE BLIJVEN NUL, en dat is met opzet. De vraag ging over
-   * motion-clips; een lifestyle-clip heeft een gestileerde scène eromheen en een
-   * hook is een ander formaat. Ze overnemen omdat ze toevallig ook video heten,
-   * zou precies het verzinnen zijn dat de noot hierboven verbiedt. */
-  'video-motion': 5,      // ~25 vooraf bepaalde clips op een dag
-  'video-lifestyle': null,
+  'video-motion': 4,      // ~25 vooraf bepaalde clips op een dag
+  'video-lifestyle': 10,  // ~10 gestileerde clips op een dag
   hooks: null,
 };
 
+/* ══════════════════════════════════════════════════════════════════════════
+ * DE PUNTEN PER STIJL
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Die punten kunnen dan per categorie en style verschillen omdat deze
+ * soms verschillend zijn in hoeveel tijd ze kosten om te maken en te leveren."*
+ *
+ * De soort hierboven is de basis; deze tabel is de uitzondering. Een sleutel is
+ * `<soort>:<stijl-slug>` — de slug zoals hij in styles.js, catalogStyles.js of
+ * videoStyles.js staat, want dat is de waarde die ook in de bestelling terecht
+ * komt en die het beheerscherm toont. Eén vocabulaire, geen vertaallaag.
+ *
+ * ── HIJ IS NU LEEG, EN DAT IS EEN ANTWOORD EN GEEN GAT ────────────────────
+ *
+ * Gevraagd of Dunes, Flash, Glow en Phone-made in tijd verschillen, zei Lucas:
+ * alle lifestyle-looks even zwaar. Dus staat er niets in, en valt elke stijl
+ * terug op zijn soort. Dat is precies wat je wil van een uitzonderingstabel:
+ * leeg zolang er geen uitzondering is.
+ *
+ * WAAROM HIJ TOCH BESTAAT. De vraag "kost Flash meer tijd dan Glow" is er een
+ * die pas te beantwoorden valt als er honderd van allebei gemaakt zijn, en het
+ * antwoord hoort dan één regel te kosten en niet een verbouwing. De weg ernaar
+ * toe — de stijl uit de bestelling halen, hem tot bij de weging brengen, hem in
+ * het beheerscherm laten zien — is het werk, en dat ligt nu klaar.
+ *
+ * VOORBEELD, als Phone-made ooit lichter blijkt:
+ *     'lifestyle:phone-made': 2,
+ *
+ * `null` mag hier ook, en betekent hetzelfde als in KIND_PUNTEN: deze stijl is
+ * niet gewogen, krijgt geen venster en wordt met de hand ingepland. Dat is de
+ * regel die 'video:campaign' en elke custom stijl al zonder eigen regel volgen
+ * — zie agendaKind() hieronder.
+ */
+export const STYLE_PUNTEN = {
+};
+
 /** De soorten die nog geen gewicht hebben, en dus geen venster kunnen krijgen. */
-export const UNWEIGHED_KINDS = Object.keys(KIND_IMAGES).filter((k) => KIND_IMAGES[k] === null);
+export const UNWEIGHED_KINDS = Object.keys(KIND_PUNTEN).filter((k) => KIND_PUNTEN[k] === null);
 
 /**
- * Wat `count` stuks van een soort in de agenda wegen, in beelden.
+ * ── VIDEO IS ÉÉN DIENST EN DRIE GEWICHTEN — 7 september 2026 ────────────────
+ *
+ * `orders.service` is voor elke videobestelling het woord 'video'. Dat woord
+ * staat niet in KIND_PUNTEN en kan er ook niet in: een Motion-clip kost vier
+ * punten en een lifestyle-clip tien, en welke van de twee het is, staat in de
+ * gekozen STIJL (`details.style`) en niet in de dienst.
+ *
+ * WAT DIT REPAREERT. bookedFromRows() woog op `orders.service`, vond voor 'video'
+ * geen gewicht en sloeg de rij over. Datzelfde deed het beheerscherm: een
+ * videobestelling een venster geven gaf "This service has no weight in the
+ * calendar yet". Videowerk bestond dus niet in de agenda — niet als bezetting,
+ * en niet als iets dat je met de hand kón inplannen. Onschadelijk zolang er geen
+ * video liep; zodra de eerste Motion-bestelling binnenkomt, verkoopt de poort
+ * dagen waarop de studio al video staat te maken.
+ *
+ * CAMPAGNE EN CUSTOM KRIJGEN HIER MET OPZET GEEN REGEL. Lucas heeft de vraag
+ * "hoeveel maak je er op een dag af" beantwoord voor Motion (20-30) en voor de
+ * lifestyle-clip (8-12), en voor die twee alleen. Een campagnevideo is per
+ * project geoffreerd en een custom video is per definitie niet één maat — ze
+ * moeten eerst BEDACHT worden, en dat is met de hand. Ze een gewicht geven omdat
+ * ze toevallig ook video heten, is precies het verzinnen dat de noot boven
+ * KIND_PUNTEN verbiedt: ze blijven ongewogen, krijgen dus geen venster, en
+ * worden met de hand ingepland — wat vandaag ook al zo is.
+ */
+export const VIDEO_STYLE_KINDS = {
+  motion: 'video-motion',
+  lifestyle: 'video-lifestyle',
+};
+
+/**
+ * De soort waarop de agenda deze bestelling weegt.
+ *
+ * @param {string} service  `orders.service` — 'catalog', 'drop', 'video', …
+ * @param {string} [style]  de gekozen stijl, alleen van belang bij video
+ * @returns {string|null}   een sleutel uit KIND_PUNTEN, of null als deze
+ *                          bestelling geen gewogen soort heeft
+ *
+ * Geeft null en niet een terugval voor een videobestelling zonder herkenbare
+ * stijl. Terugvallen op de lichtste soort zou de agenda laten denken dat er
+ * ruimte is; terugvallen op de zwaarste zou dagen dichtzetten voor werk waarvan
+ * niemand weet hoe groot het is. Null is het gat dat je in het beheerscherm
+ * ziet, en dat is de enige eerlijke van de drie.
+ */
+export function agendaKind(service, style) {
+  const dienst = String(service || '').trim();
+  if (dienst === 'video') {
+    const s = String(style || '').trim();
+    return Object.prototype.hasOwnProperty.call(VIDEO_STYLE_KINDS, s) ? VIDEO_STYLE_KINDS[s] : null;
+  }
+  const key = dienst === 'drop' ? 'complete' : dienst;
+  return Object.prototype.hasOwnProperty.call(KIND_PUNTEN, key) ? key : null;
+}
+
+/**
+ * Wat één stuk van deze soort in deze stijl kost, in punten.
+ *
+ * De stijl mag ontbreken en doet er meestal niet toe: STYLE_PUNTEN is een
+ * uitzonderingstabel en is vandaag leeg, dus valt alles terug op de soort. Staat
+ * er wél een regel, dan wint die — óók als hij `null` is, want "deze stijl is
+ * nog niet gewogen" is een geldig antwoord en geen ontbrekende waarde.
+ *
+ * @returns {number|null} punten per stuk, of null als deze combinatie niet
+ *                        gewogen is.
+ */
+export function puntenPerStuk(kind, style) {
+  const naam = String(kind || '').trim();
+  const key = naam === 'drop' ? 'complete' : naam;
+  if (!Object.prototype.hasOwnProperty.call(KIND_PUNTEN, key)) return null;
+  const slug = String(style || '').trim();
+  const eigen = slug ? `${key}:${slug}` : '';
+  if (eigen && Object.prototype.hasOwnProperty.call(STYLE_PUNTEN, eigen)) return STYLE_PUNTEN[eigen];
+  return KIND_PUNTEN[key];
+}
+
+/**
+ * Wat `count` stuks van een soort in de agenda kosten, in punten.
  *
  * Geeft `null` terug voor een soort die nog niet gewogen is — bewust geen 0,
  * want 0 is een getal en null is een gat, en de poort moet dat verschil zien.
  * Neemt de wire-waarde ('drop') net zo goed als de laddernaam ('complete'),
  * dezelfde vertaling die isLadderService() hieronder al doet.
+ *
+ * HEETTE kindImages() TOT 7 SEPTEMBER 2026, en die naam is meeverhuisd met de
+ * eenheid. Zolang alles een foto was, viel "beelden" samen met "hoeveel werk";
+ * bij video niet meer — een lifestyle-clip is één bestand en tien punten. Een
+ * functie die punten teruggeeft en `images` heet, is een functie waarvan de
+ * volgende lezer het verkeerde getal op een klantscherm zet.
  */
-export function kindImages(kind, count = 1) {
-  const naam = String(kind || '').trim();
-  const key = naam === 'drop' ? 'complete' : naam;
-  if (!Object.prototype.hasOwnProperty.call(KIND_IMAGES, key)) return null;
-  const per = KIND_IMAGES[key];
+export function puntenVoor(kind, count = 1, style = '') {
+  const per = puntenPerStuk(kind, style);
   if (per === null) return null;
   const n = Math.max(0, Math.floor(Number(count) || 0));
   return n * per;
 }
 
-function assertKindImages() {
+function assertPunten() {
   for (const kind of Object.keys(SLOT_KINDS)) {
-    if (!Object.prototype.hasOwnProperty.call(KIND_IMAGES, kind)) {
+    if (!Object.prototype.hasOwnProperty.call(KIND_PUNTEN, kind)) {
       throw new Error(
-        `pricing.js: de soort "${kind}" staat in SLOT_KINDS maar heeft geen regel in KIND_IMAGES. `
+        `pricing.js: de soort "${kind}" staat in SLOT_KINDS maar heeft geen regel in KIND_PUNTEN. `
         + `Een soort zonder gewicht kan niet in de agenda, en stilzwijgend nul is precies de fout `
         + `die dit bestand moet voorkomen — zet er een getal neer, of uitdrukkelijk null.`
       );
     }
   }
-  for (const kind of Object.keys(KIND_IMAGES)) {
+  for (const kind of Object.keys(KIND_PUNTEN)) {
     if (!Object.prototype.hasOwnProperty.call(SLOT_KINDS, kind)) {
-      throw new Error(`pricing.js: KIND_IMAGES kent "${kind}" en SLOT_KINDS niet — één van de twee is achtergebleven.`);
+      throw new Error(`pricing.js: KIND_PUNTEN kent "${kind}" en SLOT_KINDS niet — één van de twee is achtergebleven.`);
     }
-    const v = KIND_IMAGES[kind];
+    const v = KIND_PUNTEN[kind];
     if (v !== null && (!Number.isInteger(v) || v < 1)) {
       throw new Error(`pricing.js: het gewicht van "${kind}" is ${v}; dat moet een heel getal boven nul zijn, of null.`);
     }
   }
+  /* Elke sleutel in STYLE_PUNTEN moet `<soort>:<stijl>` zijn met een soort die
+     bestaat. Een typefout in de soort ("lifestlye:glow") zou anders stil nooit
+     matchen en de uitzondering onzichtbaar laten vervallen — dan denkt iedereen
+     dat een stijl zwaarder weegt terwijl de agenda de basiswaarde blijft
+     gebruiken. Dat is exact het soort stille afwijking waar dit bestand vol
+     asserties voor staat. */
+  for (const sleutel of Object.keys(STYLE_PUNTEN)) {
+    const [kind, ...rest] = sleutel.split(':');
+    if (!rest.length || !rest.join(':')) {
+      throw new Error(`pricing.js: "${sleutel}" in STYLE_PUNTEN mist de stijl na de dubbele punt.`);
+    }
+    if (!Object.prototype.hasOwnProperty.call(KIND_PUNTEN, kind)) {
+      throw new Error(
+        `pricing.js: "${sleutel}" in STYLE_PUNTEN begint met de soort "${kind}", en die staat niet in `
+        + `KIND_PUNTEN. Een sleutel die nergens op slaat, valt stil terug op de basiswaarde.`
+      );
+    }
+    const v = STYLE_PUNTEN[sleutel];
+    if (v !== null && (!Number.isInteger(v) || v < 1)) {
+      throw new Error(`pricing.js: de punten van "${sleutel}" zijn ${v}; dat moet een heel getal boven nul zijn, of null.`);
+    }
+  }
   // DE BUNDEL IS DE SOM VAN ZIJN DELEN. Zodra iemand SLOT_KINDS.complete anders
   // beschrijft dan "een catalogset plus een carrousel", moet dit meebewegen of omvallen.
-  if (KIND_IMAGES.complete !== KIND_IMAGES.catalog + KIND_IMAGES.lifestyle) {
+  if (KIND_PUNTEN.complete !== KIND_PUNTEN.catalog + KIND_PUNTEN.lifestyle) {
     throw new Error(
-      `pricing.js: een compleet product weegt ${KIND_IMAGES.complete} beelden, maar een catalogset `
-      + `(${KIND_IMAGES.catalog}) plus een carrousel (${KIND_IMAGES.lifestyle}) is `
-      + `${KIND_IMAGES.catalog + KIND_IMAGES.lifestyle}. SLOT_KINDS zegt dat compleet precies die twee is.`
+      `pricing.js: een compleet product kost ${KIND_PUNTEN.complete} punten, maar een catalogset `
+      + `(${KIND_PUNTEN.catalog}) plus een carrousel (${KIND_PUNTEN.lifestyle}) is `
+      + `${KIND_PUNTEN.catalog + KIND_PUNTEN.lifestyle}. SLOT_KINDS zegt dat compleet precies die twee is.`
     );
   }
 }
-assertKindImages();
+assertPunten();
 /* ── GEEN MINIMALE LOOPTIJD MEER — 18 augustus 2026 ────────────────────────
    PLAN_MIN_MONTHS stond hier op 3 en zes plekken in de copy zeiden "minimaal
    3 maanden". DE CODE HEEFT DAT NOOIT AFGEDWONGEN: handlePlanCancel() zegt
@@ -553,7 +679,7 @@ export const STOCK_ON_BRAND = 20;
 // order, and do you want a committed date. Two axes, one price list. Under the
 // ladder the service level FOLLOWS the size instead of being a second choice —
 // from this many products up, the order is put in the capacity calendar and
-// gets the reserved 48-hour window; below it, it runs in the standard queue at
+// gets the reserved delivery date; below it, it runs in the standard queue at
 // 2–4 days. Ten because that is where the ladder's third rung starts,
 // so the buyer crosses one line, not two.
 export const WINDOW_THRESHOLD = 10;
@@ -928,6 +1054,30 @@ export const AMOUNT = {
   // updated alongside this change.
   video: 69,
 
+  /* ── LIFESTYLE- EN CAMPAGNEVIDEO — VOORLOPIG BEDRAG, 7 september 2026 ──────
+   *
+   * Lucas: *"die 69 euro slaat nergens op per clip omdat hier ook meerdere
+   * stylen in komen."* Dat klopte: `AMOUNT.video` is de prijs van MOTION — één
+   * product, acht seconden, één schone beweging — en die stond op /start als
+   * "de" videoprijs, terwijl er onder video ook een gestylede scène en een
+   * campagne hangen die een veelvoud aan werk zijn.
+   *
+   * Dit bedrag is de ondergrens van die tweede groep. HET IS EEN VOORLOPIG
+   * GETAL: Lucas heeft gevraagd om "denkbeeldige maar wel realistische prijzen
+   * die ik altijd nog kan aanpassen". Het staat hier en niet in een pagina,
+   * juist omdat het gaat veranderen — dan verandert het op één plek en niet op
+   * de vier plekken waar het anders overgetypt zou zijn.
+   *
+   * Waarom ruim het dubbele van Motion: een lifestyle-clip vraagt een scène,
+   * een model en een kleurbewerking die met de foto's moet kloppen. Waarom een
+   * ONDERGRENS en geen tarief: een campagne is per project geoffreerd (zie
+   * `priceTrust: 'Quoted per project'` in videoStyles.js), dus de deur die
+   * lifestyle en campagne samen draagt kan alleen zeggen waar het begint.
+   *
+   * Zoals hooks zit ook dit niet op de ladder: de opzet ís het werk, en er is
+   * geen tweede product om hem over uit te smeren. Zie de noot bij hooks. */
+  videoLifestyle: 149,
+
   /* ── HOOKS — VANAF € 119 PER PRODUCT, 2 SEPTEMBER 2026 ─────────────────────
    *
    * Lucas heeft dit bedrag gekozen uit HOOKS-COPY-CONCEPT.md, waar het als
@@ -954,7 +1104,7 @@ export const AMOUNT = {
    *
    * ── WAT ER NOG NIET IS ──────────────────────────────────────────────────
    *
-   * `KIND_IMAGES.hooks` blijft `null`: hoeveel een hook in de agenda weegt, is
+   * `KIND_PUNTEN.hooks` blijft `null`: hoeveel een hook in de agenda weegt, is
    * niet gemeten en dus niet te verzinnen. Zolang dat zo is kan een hook geen
    * gereserveerd venster krijgen, en dat is precies waarom /hooks vandaag geen
    * bestelknop heeft maar een gesprek. Een prijs kennen en een doorlooptijd
@@ -1313,7 +1463,7 @@ export function euroRange(low, high, lang = 'en') {
 //       than made silently: it removes a (never-priced) revenue line.
 //
 // The tiers still differ, and now they differ on something real: attended gets
-// a committed 48-hour window and priority in the queue, unattended gets the
+// a committed delivery date and priority in the queue, unattended gets the
 // standard queue. Section 13 frames the split as "order individual products"
 // against "run a whole drop" — revisions were never the actual difference, they
 // were just the difference that was easiest to put a number on.
@@ -1406,6 +1556,75 @@ export const AFTERCARE = {
   en: 'Satisfaction check: 1 revision round included per order to adjust any details.',
   nl: 'Tevredenheidscheck: 1 revisieronde per bestelling om aanpassingen door te voeren.',
 };
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * WAT ER NA DIE ENE RONDE GEBEURT — 4 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * AFTERCARE hierboven zegt hoeveel rondes erbij zitten: één. De vraag die
+ * daarna komt — "en als het dan nog niet goed is?" — had tot vandaag één
+ * antwoord op de hele site: *"wat we afspreken hangt af van het probleem."*
+ *
+ * Vier bezoekers liepen deze zomer de site door en twee van hen haakten op
+ * precies die zin af. De sceptische lezer noemde hem letterlijk: *"dat is geen
+ * afspraak."* Hij heeft gelijk — het is een uitnodiging tot een gesprek op het
+ * moment dat iemand zekerheid zoekt, en het staat op de plek waar een merk
+ * beslist of het vier cijfers aan je uitgeeft.
+ *
+ * Lucas, 4 september 2026, in zijn eigen woorden:
+ *
+ *   *"Na de ene revisieronde kan er niet nog een keer een revisieronde gepland
+ *   worden behalve wanneer er echt duidelijk fouten zijn gemaakt door ons. Dan
+ *   lossen wij dat altijd kosteloos op wanneer het aan onze kant ligt. Kleine
+ *   aanpassingen of revisies kunnen extra kosten met zich in rekening brengen.
+ *   Wanneer we erachter komen dat het product niet na te maken is met ai en
+ *   meerdere andere tools zoals Photoshop en andere in house software dan zullen
+ *   we pas een volledige/passende terugbetaling overwegen."*
+ *
+ * ── WAAROM DIT EEN LADDER IS EN GEEN ALINEA ────────────────────────────────
+ *
+ * Het zijn vier gevallen met vier verschillende uitkomsten, en de klant wil
+ * weten in welk geval híj zit. Als lijst kan hij dat aflezen; als alinea moet
+ * hij het eruit halen, en dan onthoudt hij de helft. De volgorde is die van de
+ * werkelijkheid: eerst wat erbij zit, dan onze fout, dan zijn wens, en pas als
+ * laatste het geld terug.
+ *
+ * ── ÉÉN BRON, DRIE PLEKKEN ─────────────────────────────────────────────────
+ *
+ * Deze tekst staat op /faq, in de voorwaarden (§10) en in VISUAILS Studio bij
+ * het aanvragen van een revisieronde. Dat zijn de drie momenten waarop de vraag
+ * gesteld wordt: bij het oriënteren, bij het tekenen, en op het moment zelf.
+ * Drie kopieën zouden binnen een maand uit elkaar lopen — en dit is een
+ * toezegging over geld, dus de goedkoopste plek om dat te voorkomen is hier.
+ *
+ * ── WAT ER MET OPZET NIET STAAT ────────────────────────────────────────────
+ *
+ * Geen bedrag bij "kan extra kosten". Wat een tweede ronde kost, hangt af van
+ * wat er gevraagd wordt, en een tarief noemen dat daarna toch een offerte blijkt
+ * te zijn, is slechter dan geen tarief noemen. En geen belofte dat er ALTIJD
+ * terugbetaald wordt: "overwegen" is Lucas' woord en het blijft staan, want een
+ * garantie die je niet kunt waarmaken is precies wat deze lijst moet vervangen.
+ */
+export const REVISIEBELEID = {
+  nl: [
+    ['Eén ronde zit erbij', 'Bij elke bestelling hoort één revisieronde. Daarin verwerken we je aanpassingen, per beeld, in VISUAILS Studio.'],
+    ['Is het onze fout, dan lossen we het op', 'Verkeerd product, verkeerde kleur, iets mis in de afwerking — als het aan onze kant ligt, maken we het kosteloos goed. Ook na die ene ronde.'],
+    ['Wil je daarna iets anders, dan kan dat', 'Aanpassingen die geen fout van ons zijn, doen we ook na de eerste ronde nog. Daar kunnen kosten aan verbonden zijn, en die spreken we vooraf af.'],
+    ['Kan het niet, dan krijg je je geld terug', 'Blijkt bij het maken dat jouw product met AI en onze eigen gereedschappen niet goed na te maken is, dan kijken we naar een passende of volledige terugbetaling.'],
+  ],
+  en: [
+    ['One round is included', 'Every order comes with one revision round. That is where your adjustments go, image by image, in VISUAILS Studio.'],
+    ['If it is our mistake, we fix it', 'Wrong product, wrong colour, something off in the finishing — if it is on our side we put it right at no cost. Also after that one round.'],
+    ['Want something else after that? Possible', 'Changes that are not a mistake of ours can still be made after the first round. There may be a cost, and we agree it beforehand.'],
+    ['If it cannot be made, you get your money back', 'If it turns out your product cannot be reproduced properly with AI and our own tools, we look at a full or appropriate refund.'],
+  ],
+};
+
+/** Het revisiebeleid in één taal. Pagina's lezen dit, nooit een eigen kopie. */
+export function revisiebeleid(lang = 'nl') {
+  return REVISIEBELEID[lang === 'nl' ? 'nl' : 'en'];
+}
 
 /* ── "HANDMATIG" → "ZORGVULDIG" — 25 augustus 2026, besluit van Lucas ───────
  *
@@ -1534,43 +1753,46 @@ export const TIERS = {
     label: { en: `From ${WINDOW_THRESHOLD} products`, nl: `Vanaf ${WINDOW_THRESHOLD} producten` },
     // A committed window, cleared by the capacity gate before it is offered.
     // The site must never print a date the gate has not cleared.
+    /* ── "48 UUR" IS EEN STREVEN EN GEEN BELOFTE — 7 september 2026 ──────────
+     *
+     * Lucas: *"levering binnen 48 uur nooit beloven, wij streven levering binnen
+     * 48 uur en meestal lukt dat ook."*
+     *
+     * Hier stond "A reserved 48-hour window — fully confirmed before you pay",
+     * en dat is twee dingen tegelijk: een GERESERVEERDE DAG (waar) en een
+     * TIJDSDUUR van 48 uur (die als toezegging leest). De eerste kan de studio
+     * waarmaken — de agenda geeft die dag pas vrij als hij past, en niets in de
+     * studio mag hem daarna nog verzetten. De tweede is een verwachting, en die
+     * hoort te staan als verwachting.
+     *
+     * De twee zinnen zijn daarom gesplitst: eerst wat vastligt, dan waar we naar
+     * streven. In die volgorde, want de vastgelegde dag is wat de klant koopt.
+     *
+     * DE VOORGESCHIEDENIS STAAT HIER OMDAT DEZE REGEL AL TWEE KEER IETS ANDERS
+     * ZEI DAN HIJ BEDOELDE. Op 8 augustus stond er in het Nederlands "een
+     * leverdatum met 48 uur werk erin" — dat gaat over hoeveel uur wíj eraan
+     * werken en zegt niets over snelheid, terwijl de Engelse regel over levering
+     * ging. De reparatie daarvan schoot door naar "levering binnen 48 uur vanaf
+     * je leverdatum", een zwaardere toezegging dan de Engelse ooit deed, op
+     * veertien pagina's in de taal van de thuismarkt. En capacity.js is er
+     * expliciet over: een venster is twee open dagen, en de klant hoort de
+     * kalenderdata te lezen en nooit "48 uur" als aftelklok. Een streven mag dat
+     * getal wel noemen, want een streven is geen klok. */
+    /* ÉÉN ZIN, want clause() maakt hier een bijzin van en zeventien FAQ-antwoorden
+       plakken die middenin een andere zin. Het streven staat daarom apart in
+       AIM_48 hieronder, en komt alleen op de plekken waar een tweede zin past. */
     turnaround: {
-      en: 'A reserved 48-hour window — fully confirmed before you pay.',
-      // 8 augustus 2026 — DIT ZEI IETS ANDERS DAN DE ENGELSE REGEL, op zo’n
-      // vijftien plekken. Er stond "een leverdatum met 48 uur werk erin": dat
-      // gaat over hoeveel uur wij eraan werken en zegt niets over snelheid,
-      // terwijl de Engelse regel een levering binnen 48 uur belooft. capacity.js
-      // is expliciet dat 48 uur twee werkdagen betekent, en HomeV2 zei elders al
-      // "48 uur vanaf je leverdatum" — de Nederlandse tekst was dus ook met
-      // zichzelf in tegenspraak. Vermoedelijk bijschade van het opruimen van het
-      // woord "venster".
-      //
-      // ── EN OP 18 AUGUSTUS 2026 BLEEK HIJ NOG STEEDS IETS ANDERS TE ZEGGEN ──
-      //
-      // De reparatie hierboven bracht de Nederlandse regel dichter bij de
-      // Engelse en schoot er overheen. Er stond: "Levering binnen 48 uur vanaf
-      // je leverdatum". De Engelse regel belooft een GERESERVEERD BLOK van 48
-      // uur; de Nederlandse beloofde LEVERING BINNEN 48 uur ná een datum. Dat
-      // is een andere toezegging, en een zwaardere, op veertien pagina's in de
-      // taal van zijn thuismarkt.
-      //
-      // En hij botst met capacity.js, die er expliciet over is: een venster is
-      // twee WERKdagen, een venster dat vrijdag opengaat loopt vrijdag en
-      // maandag, en — letterlijk — *"the client is told the calendar dates,
-      // never the phrase '48 hours' as a countdown"*. Precies een aftelling is
-      // wat "binnen 48 uur vanaf je leverdatum" leest, en in dat vrijdaggeval
-      // is de eigen normale gang van zaken al 72 uur wandklok.
-      //
-      // Nu zegt hij wat de Engelse regel zegt: een blok dat we vrijhouden. Het
-      // aanbod verandert niet; de belofte die er per ongeluk bij stond, gaat weg.
-      nl: 'Een gereserveerd tijdvak van 48 uur, bevestigd voordat je betaalt.',
+      en: 'A delivery date we reserve and confirm before you pay.',
+      nl: 'Een leverdatum die we vastleggen en bevestigen voordat je betaalt.',
     },
-    // De korte vorm laat "dat we voor je vrijhouden" weg en houdt het blok en
-    // het moment: dat zijn de twee dingen die de belofte dragen. Zie de noot bij
-    // REVIEW_CLAIM_SHORT voor waarom hij hier staat en niet elders.
+    /* De korte vorm houdt de vastgelegde datum en laat het streven weg. Dat is
+       met opzet: in twee regels is er geen ruimte voor een nuance, en dan hoort
+       het deel dat waar te maken is te blijven staan — niet het deel dat een
+       verwachting is. Zie de noot bij REVIEW_CLAIM_SHORT voor waarom de korte
+       vorm hier staat en niet elders. */
     turnaroundShort: {
-      en: '48-hour window, fixed before you pay',
-      nl: '48-uursblok, vast voor je betaalt',
+      en: 'A delivery date, fixed before you pay',
+      nl: 'Een leverdatum, vast voor je betaalt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
@@ -1677,6 +1899,38 @@ export function turnaround(tierId, lang = 'en') {
  * de noot bij "How do I actually receive the files?" in faq.js waarschuwt daar
  * al voor: er staat "WhatsApp" in een van deze strings.
  */
+/**
+ * WAT WE NASTREVEN, EN DAT IS IETS ANDERS DAN WAT WE BELOVEN.
+ *
+ * Lucas, 7 september 2026: *"levering binnen 48 uur nooit beloven, wij streven
+ * levering binnen 48 uur en meestal lukt dat ook."*
+ *
+ * Deze zin staat APART van TIERS.attended.turnaround en niet erin, om een reden
+ * die niets met de betekenis te maken heeft: clause() maakt van die string een
+ * bijzin en zeventien FAQ-antwoorden plakken hem middenin een andere zin. Een
+ * turnaround van twee zinnen zou daar een volzin in het midden van een zin
+ * opleveren — precies de fout die op 25 augustus 2026 op zeventien plekken
+ * gerepareerd is. Dus: de toezegging in `turnaround` (kort, inbedbaar), het
+ * streven hier (een hele zin, alleen waar er ruimte voor is).
+ *
+ * DE TWEEDE HELFT VAN LUCAS' REGEL STAAT IN HET GEBRUIK EN NIET IN DE TEKST.
+ * Hij geldt voor wat vooraf bedacht is: catalog, lifestyle en Motion. Een
+ * campagnevideo of iets op maat moet eerst ONTWORPEN worden, met de hand, en
+ * dat is geen doorlooptijd maar een gesprek. Die diensten staan niet op de
+ * ladder, krijgen dus geen venster (tierFor()), zijn niet gewogen in
+ * KIND_PUNTEN, en horen deze zin daarom nergens te zien. Zet hem alleen op een
+ * pagina die over een vooraf bepaalde stijl gaat.
+ */
+export const AIM_48 = {
+  en: 'We aim to deliver inside 48 hours of that date, and usually do.',
+  nl: 'We streven ernaar binnen 48 uur na die datum te leveren, en meestal lukt dat.',
+};
+
+/** Het streven in de taal van de pagina. */
+export function aim48(lang = 'en') {
+  return AIM_48[lang] || AIM_48.en;
+}
+
 export function clause(sentence) {
   return String(sentence == null ? '' : sentence).trim().replace(/[.\u3002]+$/, '');
 }
@@ -2174,6 +2428,38 @@ export const LIFESTYLE_IMAGES = 3;
 /** Een compleet product is beide samen. */
 export const COMPLETE_IMAGES = CATALOG_IMAGES + LIFESTYLE_IMAGES;
 
+/**
+ * Hoeveel BEELDEN een dienst per product oplevert. Niet te verwarren met
+ * KIND_PUNTEN, dat zegt hoeveel WERK hij kost.
+ *
+ * ── WAAROM DIT SINDS 7 SEPTEMBER 2026 EEN EIGEN TABEL IS ──────────────────
+ *
+ * Tot vandaag deelden die twee vragen één getal, en dat kon: een catalogset is
+ * vier foto's en kost vier punten. Het formulier vroeg dan ook gewoon aan de
+ * agenda hoeveel beelden je krijgt (`kindImages(service, 1)` in OrderFlow), en
+ * dat klopte per ongeluk.
+ *
+ * Zodra de punten per STIJL mogen afwijken, klopt het niet meer: een look die
+ * meer tijd kost, krijgt meer punten en levert nog steeds evenveel foto's. Wie
+ * dan de punten op het scherm zet, belooft de klant beelden die hij niet krijgt.
+ * Vandaar twee tabellen, met in allebei een noot die naar de andere wijst.
+ *
+ * Video staat er niet in en dat is met opzet: een clip is één bestand en "hoeveel
+ * beelden" is geen vraag die erover gaat. Wie hem toch stelt, krijgt null.
+ */
+export const KIND_BEELDEN = {
+  complete: COMPLETE_IMAGES,
+  catalog: CATALOG_IMAGES,
+  lifestyle: LIFESTYLE_IMAGES,
+};
+
+/** Beelden per product voor deze dienst, of null als beelden er niet over gaan. */
+export function beeldenVoor(service) {
+  const naam = String(service || '').trim();
+  const key = naam === 'drop' ? 'complete' : naam;
+  return Object.prototype.hasOwnProperty.call(KIND_BEELDEN, key) ? KIND_BEELDEN[key] : null;
+}
+
 /*
  * De catalogset levert net zoveel beelden als de klant er uploadt — vier — maar
  * dat is geen wet, het is vandaag zo. SHOTS in shots.js gaat over wat er IN
@@ -2442,7 +2728,10 @@ export function customMonthTotal({ products, carousels = 0, clips = 0 }) {
     catalog,
     addOn,
     video,
-    images: n * KIND_IMAGES.catalog + m * KIND_IMAGES.lifestyle,
+    /* Wat deze maand de agenda kost, in punten. Heette `images` tot 7 september
+       2026 — zie de noot bij puntenVoor(): zolang alles een foto was, viel die
+       naam samen met de eenheid, en bij video niet meer. */
+    punten: n * KIND_PUNTEN.catalog + m * KIND_PUNTEN.lifestyle,
   };
 }
 
@@ -2475,7 +2764,7 @@ export function customMonthSlots({ products, carousels = 0, clips = 0 }) {
  * De capaciteitspoort van de abonnementen rekent in producten (zie
  * planProductBudget() in plans.js), en een maand op maat heeft dat getal niet als
  * constante — hij heeft zijn eigen bundel. Video telt niet mee: een clip is geen
- * product, en de agenda weegt hem apart via KIND_IMAGES.
+ * product, en de agenda weegt hem apart via KIND_PUNTEN.
  */
 export function slotProducts(slots = {}) {
   return PRODUCT_SLOT_KINDS.reduce(
@@ -2566,14 +2855,14 @@ function assertCustomMonth() {
     if ((slots['video-motion'] || 0) !== 4) {
       throw new Error('pricing.js: de clips uit een maand op maat komen niet in de bundel terecht.');
     }
-    /* En de beelden die de agenda gaat wegen, horen dezelfde maand te beschrijven
+    /* En de punten die de agenda gaat wegen, horen dezelfde maand te beschrijven
        als het bedrag. Zou dit uiteenlopen, dan verkoopt de site een maand die niet
        in de agenda past of andersom. */
     const viaSlots = Object.entries(slots)
       .filter(([kind]) => kind !== 'video-motion')
-      .reduce((tot, [kind, aantal]) => tot + kindImages(kind, aantal), 0);
-    if (viaSlots !== customMonthTotal({ products: n, carousels: m }).images) {
-      throw new Error(`pricing.js: ${n}/${m} weegt ${viaSlots} beelden via de slots en ${customMonthTotal({ products: n, carousels: m }).images} via de prijsregel.`);
+      .reduce((tot, [kind, aantal]) => tot + puntenVoor(kind, aantal), 0);
+    if (viaSlots !== customMonthTotal({ products: n, carousels: m }).punten) {
+      throw new Error(`pricing.js: ${n}/${m} kost ${viaSlots} punten via de slots en ${customMonthTotal({ products: n, carousels: m }).punten} via de prijsregel.`);
     }
   }
   if (CUSTOM_MONTH_MAX_PRODUCTS <= CUSTOM_MONTH_MIN_PRODUCTS) {

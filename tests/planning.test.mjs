@@ -231,7 +231,7 @@ console.log('\nelk vakje dat het formulier tekent, kan ook geüpload worden');
      FORM_MAX_PRODUCTS in pricing.js, boven de twintig gaat de klant naar
      WhatsApp of mail. De afleiding uit het gewicht blijft de eerste stap. */
   ok('  en leidt dat af uit het gewicht van de dienst',
-    /const capacityMax = perProduct\s*\n?\s*\? Math\.floor\(ATTENDED_IMAGES_PER_WINDOW \/ perProduct\)/.test(of), true);
+    /const capacityMax = perProduct\s*\n?\s*\? Math\.floor\(ATTENDED_PUNTEN_PER_VENSTER \/ perProduct\)/.test(of), true);
   ok('  en legt daar het formulierplafond overheen',
     /const maxProducts = Math\.min\(FORM_MAX_PRODUCTS, capacityMax\);/.test(of), true);
 }

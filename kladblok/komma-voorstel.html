@@ -1,0 +1,238 @@
+<title>Komma-palet voor VISUAILS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Archivo:wght@400;500;600;700&family=Unbounded:wght@500;600;700&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --grond: #FAFAF8; --vlak: #FFFFFF; --vlak-2: #F0F0EC; --lijn: #E4E4DF; --lijn-sterk: #C4C4BC;
+    --inkt: #111210; --inkt-2: #454540; --inkt-3: #6B6B64;
+    --glas: #1C1D18; --glas-inkt: #FFFFFF; --glas-inkt-2: rgb(255 255 255 / .66);
+    --zuur: #DEDA14; --zuur-dim: #C9C50E; --zuur-tekst: #6B6900; --gloed: #AEBA60;
+    --f-display: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --f-body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --f-mono: "Space Mono", ui-monospace, Menlo, monospace;
+    --r: 14px; --r-sm: 8px;
+  }
+  body:has(#optB:checked) { --f-display: "Geist", "Helvetica Neue", Arial, sans-serif; --f-body: "Geist", "Helvetica Neue", Arial, sans-serif; --f-mono: "Geist Mono", ui-monospace, Menlo, monospace; }
+  body:has(#optC:checked) { --f-display: "Unbounded", "Archivo", Arial, sans-serif; --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif; --f-mono: "DM Mono", ui-monospace, Menlo, monospace; }
+  body:has(#optD:checked) { --f-display: "Instrument Sans", "Helvetica Neue", Arial, sans-serif; --f-body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif; --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  body:has(#optC:checked) .kop-groot, body:has(#optC:checked) .hero h1 { font-weight: 600; letter-spacing: -.02em; font-size: clamp(2rem, 4.4vw, 3.4rem); }
+  body:has(#optC:checked) .cijfer { font-family: var(--f-body); font-weight: 600; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--grond); color: var(--inkt-2); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+  main { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; display: flex; flex-direction: column; gap: 56px; }
+  h1, h2, h3 { color: var(--inkt); margin: 0; font-family: var(--f-display); text-wrap: balance; }
+  h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.02; letter-spacing: -.025em; font-weight: 600; }
+  h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -.01em; }
+  h3 { font-size: 1rem; font-weight: 600; }
+  p { margin: 0; max-width: 64ch; }
+  .lede { font-size: 1.1rem; color: var(--inkt-2); }
+  .mono { font-family: var(--f-mono); font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); }
+  .mono b { color: var(--inkt); font-weight: 500; }
+  section { display: flex; flex-direction: column; gap: 18px; }
+  .kopregel { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--lijn); padding-bottom: 10px; }
+
+  /* ── de gemeten kleuren ── */
+  .chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .chip { border: 1px solid var(--lijn); border-radius: var(--r-sm); overflow: hidden; background: var(--vlak); }
+  .chip .kleur { height: 64px; }
+  .chip .naam { padding: 8px 10px 9px; display: flex; flex-direction: column; gap: 2px; }
+  .chip .naam span { font-family: var(--f-mono); font-size: .72rem; color: var(--inkt); }
+  .chip .naam small { color: var(--inkt-3); font-size: .74rem; }
+  .chip.is-nieuw { outline: 2px solid var(--zuur); outline-offset: -2px; }
+
+  /* ── de vergelijking van het groen ── */
+  .groen { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .groen > div { border-radius: var(--r); padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .groen .naam { font-weight: 600; color: var(--inkt); }
+  .groen small { color: var(--inkt-2); }
+
+  /* ── de lettertypes ── */
+  .keuze { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .keuze label { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid var(--lijn); border-radius: var(--r); background: var(--vlak); cursor: pointer; }
+  .keuze label:has(input:checked) { border-color: var(--inkt); box-shadow: inset 0 0 0 1px var(--inkt); }
+  .keuze input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .keuze .titel { font-weight: 600; color: var(--inkt); }
+  .keuze .uitleg { font-size: .88rem; color: var(--inkt-3); }
+  .keuze .lic { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; color: var(--zuur-tekst); }
+  #optA + .titel { font-family: "Hanken Grotesk", sans-serif; }
+  #optB + .titel { font-family: "Geist", sans-serif; }
+  #optC + .titel { font-family: "Unbounded", sans-serif; font-weight: 600; font-size: .95rem; }
+  #optD + .titel { font-family: "Instrument Sans", sans-serif; }
+
+  /* ── de proef: hero ── */
+  .hero { background: var(--vlak); border: 1px solid var(--lijn); border-radius: var(--r); padding: clamp(24px, 4vw, 48px); display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+  .hero h1 { font-size: clamp(2.4rem, 5.4vw, 4rem); }
+  .hero h1 em { font-style: normal; color: var(--zuur-tekst); }
+  .hero .links { display: flex; flex-direction: column; gap: 20px; }
+  .knoppen { display: flex; gap: 10px; flex-wrap: wrap; }
+  .knop { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 0 20px; border-radius: 999px; font-family: var(--f-mono); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; text-decoration: none; border: 1px solid transparent; }
+  .knop.primair { background: var(--zuur); color: var(--inkt); }
+  .knop.tweede { background: transparent; color: var(--inkt); border-color: var(--lijn-sterk); }
+  .knop.donker { background: var(--glas); color: var(--glas-inkt); }
+  .glas { background: rgb(28 29 24 / .94); color: var(--glas-inkt); border-radius: 22px; padding: 22px 24px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 0 0 1px rgb(255 255 255 / .06) inset, 0 30px 60px -30px rgb(28 29 24 / .5); }
+  .glas::before { content: ""; position: absolute; inset: auto -40% -60% -40%; height: 70%; background: radial-gradient(ellipse at center, rgb(222 218 20 / .55), transparent 60%); filter: blur(24px); pointer-events: none; }
+  .glas > * { position: relative; }
+  .glas .rij { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .glas .mono { color: var(--glas-inkt-2); }
+  .glas .mono b { color: var(--glas-inkt); }
+  .glas .cijfer { font-family: var(--f-display); font-weight: 400; font-size: 3.2rem; line-height: 1; letter-spacing: -.03em; color: var(--glas-inkt); font-variant-numeric: tabular-nums; }
+  .glas .cijfer small { font-size: 1.1rem; color: var(--zuur); margin-left: 4px; }
+  .balk { height: 6px; border-radius: 999px; background: rgb(255 255 255 / .12); overflow: hidden; }
+  .balk i { display: block; height: 100%; width: 68%; background: var(--zuur); border-radius: 999px; }
+
+  /* ── de proef: studio ── */
+  .studio { background: var(--vlak); border: 1px solid var(--lijn); border-radius: var(--r); overflow: hidden; display: grid; grid-template-columns: 220px 1fr; }
+  .studio aside { background: var(--vlak-2); border-right: 1px solid var(--lijn); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .studio aside .merk { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--inkt-3); padding: 4px 10px 14px; }
+  .studio aside a { display: block; padding: 9px 10px; border-radius: var(--r-sm); color: var(--inkt-2); text-decoration: none; font-size: .95rem; }
+  .studio aside a.actief { background: var(--vlak); color: var(--inkt); font-weight: 600; box-shadow: inset 0 0 0 1px var(--lijn); }
+  .studio .inhoud { padding: 22px 24px; display: flex; flex-direction: column; gap: 18px; }
+  .studio .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .studio .top h2 { font-size: 1.6rem; letter-spacing: -.02em; }
+  .pil { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--lijn-sterk); font-family: var(--f-mono); font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; color: var(--inkt-2); }
+  .pil::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--zuur-dim); }
+  .tellers { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--lijn); border-radius: var(--r-sm); overflow: hidden; }
+  .tellers div { padding: 14px 16px; border-right: 1px solid var(--lijn); display: flex; flex-direction: column; gap: 6px; }
+  .tellers div:last-child { border-right: 0; }
+  .tellers .cijfer { font-family: var(--f-display); font-weight: 500; font-size: 2.2rem; line-height: 1; letter-spacing: -.03em; color: var(--inkt); font-variant-numeric: tabular-nums; }
+  .stappen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .stap { display: flex; flex-direction: column; gap: 8px; font-size: .8rem; color: var(--inkt-3); }
+  .stap i { display: block; height: 3px; border-radius: 999px; background: var(--lijn); }
+  .stap.klaar i { background: var(--inkt-3); } .stap.nu i { background: var(--zuur); } .stap.nu { color: var(--inkt); font-weight: 600; }
+
+  .toepassen { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .toepassen div { border: 1px solid var(--lijn); border-radius: var(--r); padding: 18px; background: var(--vlak); display: flex; flex-direction: column; gap: 8px; }
+  .toepassen div p { font-size: .92rem; }
+  .noot { font-size: .88rem; color: var(--inkt-3); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--lijn); vertical-align: top; }
+  th { font-weight: 600; color: var(--inkt); font-size: .82rem; }
+  td.m { font-family: var(--f-mono); font-size: .78rem; white-space: nowrap; }
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; border: 1px solid rgb(0 0 0 / .08); }
+  @media (max-width: 760px) { .hero, .studio, .groen { grid-template-columns: 1fr; } .studio aside { border-right: 0; border-bottom: 1px solid var(--lijn); } .tellers { grid-template-columns: 1fr 1fr; } .tellers div:nth-child(2) { border-right: 0; } .tellers div:nth-child(-n+2) { border-bottom: 1px solid var(--lijn); } }
+</style>
+
+<main>
+  <section>
+    <p class="mono"><b>Onderzoek</b> · ovyonlabs.com/works/komma · gemeten 5 sep 2026</p>
+    <h1>Een lichter, serieuzer VISUAILS, met het zuurgeel van Komma.</h1>
+    <p class="lede">Hieronder wat er op die pagina echt staat (gemeten, geen gok), het palet dat ik daaruit voorstel, vier lettertypes die vrij te gebruiken zijn, en twee proeven — de homepage-hero en Studio — die je met de knoppen van lettertype wisselt. Kies, en dan zet ik het op alle 96 pagina's én het dashboard.</p>
+  </section>
+
+  <section>
+    <div class="kopregel"><h2>Wat Komma is, gemeten</h2><span class="mono">framer · pp neue montreal · fragment mono</span></div>
+    <p>De pagina van Ovyon zelf is wit met neutrale grijzen en één elektrisch blauw (#0004FF) voor knoppen — dat blauw is van Ovyon, niet van Komma. Het merk Komma zit in de beelden: zwart-witfotografie, één metallic zuurgeel materiaal, en donkere "glas"-panelen met een lichtgevende rand en monospace datalabels. Het groen is warmer en geler dan het lime dat VISUAILS nu draagt.</p>
+    <div class="chips">
+      <div class="chip"><div class="kleur" style="background:#FFFFFF"></div><div class="naam"><span>#FFFFFF</span><small>grond van de pagina</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#F0F0F0"></div><div class="naam"><span>#F0F0F0</span><small>vlak, Ovyon-token</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#E6E6E6"></div><div class="naam"><span>#E6E6E6</span><small>lijn, Ovyon-token</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#7A7A7A"></div><div class="naam"><span>#7A7A7A</span><small>gedempte tekst</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#212121"></div><div class="naam"><span>#212121</span><small>donker paneel</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#000000"></div><div class="naam"><span>#000000</span><small>tekst</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#DED812"></div><div class="naam"><span>#DED812</span><small>Komma-geel, hooglicht jas</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#E4DE18"></div><div class="naam"><span>#E4DE18</span><small>Komma-geel, tweede meting</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#AEBA60"></div><div class="naam"><span>#AEBA60</span><small>de gloed om de panelen</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#606010"></div><div class="naam"><span>#606010</span><small>schaduw in het materiaal</small></div></div>
+      <div class="chip"><div class="kleur" style="background:#0004FF"></div><div class="naam"><span>#0004FF</span><small>Ovyon-blauw — niet overnemen</small></div></div>
+    </div>
+    <div class="groen">
+      <div style="background:#C6F100;color:#08090B"><span class="naam">Nu: #C6F100</span><small>Het lime van de site sinds augustus. Tint 72° — koeler, groener, "screen"-achtig.</small></div>
+      <div style="background:#DEDA14;color:#111210"><span class="naam">Voorstel: #DEDA14</span><small>Het Komma-geel, afgerond uit de twee metingen. Tint 58° — warmer, meer materiaal dan scherm. Dit is de kleur die zij gebruiken.</small></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kopregel"><h2>Het voorgestelde palet</h2><span class="mono">licht · één accent · glas voor het donkere</span></div>
+    <p>Wit met een zweem warmte als grond (het lichte inlogscherm dat je goed vond, iets neutraler), bijna-zwart als inkt, en het Komma-geel als enige kleur. Donkere vlakken blijven bestaan — de hero, het abonnementspaneel, de kaarten in Studio — maar als glaspaneel op de lichte grond, zoals bij Komma, niet als grond van de hele site.</p>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Token</th><th>Waarde</th><th>Rol</th><th>Gemeten</th></tr>
+      <tr><td class="m"><span class="swatch" style="background:#FAFAF8"></span>--bg-0</td><td class="m">#FAFAF8</td><td>de grond</td><td>—</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#FFFFFF"></span>--surface</td><td class="m">#FFFFFF</td><td>een kaart op de grond</td><td>—</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#F0F0EC"></span>--surface-2</td><td class="m">#F0F0EC</td><td>een vak in een kaart, de zijbalk</td><td>—</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#E4E4DF"></span>--line</td><td class="m">#E4E4DF</td><td>haarlijn</td><td>—</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#C4C4BC"></span>--line-strong</td><td class="m">#C4C4BC</td><td>rand van een knop of veld — nooit tekst</td><td>—</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#111210"></span>--ink-1</td><td class="m">#111210</td><td>koppen, primaire tekst</td><td>17,98:1</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#454540"></span>--ink-2</td><td class="m">#454540</td><td>lopende tekst</td><td>9,22:1</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#6B6B64"></span>--ink-3</td><td class="m">#6B6B64</td><td>gedempt, bijschriften</td><td>5,14:1</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#DEDA14"></span>--accent</td><td class="m">#DEDA14</td><td>de vulling: primaire knop, het lopende punt</td><td>12,65:1 met inkt erop</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#C9C50E"></span>--accent-dim</td><td class="m">#C9C50E</td><td>hover, ingedrukt</td><td>10,27:1</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#6B6900"></span>--accent-text</td><td class="m">#6B6900</td><td>het accent als LETTER of lijn op de lichte grond (geel op wit is 1,48:1)</td><td>5,76:1</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#1C1D18"></span>--glass</td><td class="m">#1C1D18 · 94%</td><td>het donkere paneel, met blur en een gele gloed langs de rand</td><td>16,96:1 met wit erop</td></tr>
+      <tr><td class="m"><span class="swatch" style="background:#AEBA60"></span>--glow</td><td class="m">#AEBA60</td><td>de gloed, alleen als licht — nooit als tekst</td><td>—</td></tr>
+    </table>
+    </div>
+    <p class="noot">Waarschuwingskleur blijft klei (#8A4F06 op licht), nooit rood. Hoeken blijven 24 / 14 / 8 en de pil voor knoppen — Komma's UI is ook rond.</p>
+  </section>
+
+  <section>
+    <div class="kopregel"><h2>Vier lettertypes — kies er één</h2><span class="mono">allemaal SIL Open Font License · gratis, ook commercieel</span></div>
+    <p>Komma zet PP Neue Montreal (kop en tekst), Fragment Mono (datalabels) en Inter. De eerste twee kosten een licentie. Dit zijn de vrije families die dat gevoel het dichtst benaderen; klik en de twee proeven hieronder wisselen mee.</p>
+    <div class="keuze">
+      <label><input type="radio" name="font" id="optA" checked><span class="titel">A · Hanken Grotesk + Space Mono</span><span class="uitleg">Het dichtst bij Neue Montreal: een rustige grotesk met net wat karakter in de a en de g. Space Mono heeft dezelfde eigenzinnigheid als Fragment Mono. Mijn eerste keus.</span><span class="lic">ofl · google fonts</span></label>
+      <label><input type="radio" name="font" id="optB"><span class="titel">B · Geist + Geist Mono</span><span class="uitleg">Strakker, "product"-achtiger, gemaakt voor interfaces. Het meest neutraal van de vier; de mono is heel leesbaar in kleine datalabels.</span><span class="lic">ofl · google fonts</span></label>
+      <label><input type="radio" name="font" id="optC"><span class="titel">C · Unbounded + Archivo + DM Mono</span><span class="uitleg">De kleinste stap: Archivo blijft (staat al op de site), alleen de koppen worden breed en technisch als het KOMMA-woordmerk. Het meest "merk", het minst rustig.</span><span class="lic">ofl · google fonts</span></label>
+      <label><input type="radio" name="font" id="optD"><span class="titel">D · Instrument Sans + IBM Plex Mono</span><span class="uitleg">Tussen A en B in: iets warmer dan Geist, iets strakker dan Hanken. Plex Mono is de meest "serieuze" mono, boekhoudkundig bijna.</span><span class="lic">ofl · google fonts</span></label>
+    </div>
+  </section>
+
+  <section>
+    <div class="kopregel"><h2>Proef 1 · de hero van de homepage</h2><span class="mono">tekst zoals hij nu op de site staat</span></div>
+    <div class="hero">
+      <div class="links">
+        <p class="mono"><b>VISUAILS</b> · catalog · lifestyle · video</p>
+        <h1>Jij uploadt. Wij leveren de <em>campagne</em>.</h1>
+        <p>Beelden en video's gemaakt op basis van de foto's die je al hebt — zodat jij je kunt richten op wat echt telt.</p>
+        <div class="knoppen"><a class="knop primair" href="#">Start een bestelling</a><a class="knop tweede" href="#">Probeer VISUAILS · €1</a></div>
+      </div>
+      <div class="glas">
+        <div class="rij"><span class="mono"><b>Levering</b> · venster</span><span class="mono">VIS-2609-4471</span></div>
+        <div class="cijfer">48<small>uur</small></div>
+        <div class="balk"><i></i></div>
+        <div class="rij"><span class="mono">30 producten · catalog</span><span class="mono"><b>8 – 10 sep</b></span></div>
+        <div class="knoppen"><a class="knop donker" href="#" style="background:rgb(255 255 255 / .1)">Bekijk de planning</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kopregel"><h2>Proef 2 · Studio, het overzicht</h2><span class="mono">zelfde opbouw als de Astro-versie van vandaag</span></div>
+    <div class="studio">
+      <aside>
+        <div class="merk">VISUAILS Studio</div>
+        <a class="actief" href="#">Overzicht</a><a href="#">Bestellingen</a><a href="#">Je vaste look</a><a href="#">Je gegevens</a><a href="#">Facturen</a><a href="#">Abonnement</a>
+      </aside>
+      <div class="inhoud">
+        <div class="top"><h2>Welkom terug, VOLT</h2><span class="pil">3 bestellingen lopen</span></div>
+        <div class="tellers">
+          <div><span class="mono">In productie</span><span class="cijfer">1</span></div>
+          <div><span class="mono">Wordt nagekeken</span><span class="cijfer">1</span></div>
+          <div><span class="mono">Geleverd</span><span class="cijfer">2</span></div>
+          <div><span class="mono">Totaal</span><span class="cijfer">5</span></div>
+        </div>
+        <div class="stappen">
+          <div class="stap klaar"><i></i>Ontvangen</div>
+          <div class="stap nu"><i></i>In productie</div>
+          <div class="stap"><i></i>Nagekeken door een specialist</div>
+          <div class="stap"><i></i>Geleverd</div>
+        </div>
+        <div class="knoppen"><a class="knop primair" href="#">Nieuwe aanvraag</a><a class="knop tweede" href="#">Open deze bestelling</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kopregel"><h2>Wat ik van Komma's branding wél en niet zou overnemen</h2></div>
+    <div class="toepassen">
+      <div><h3>Wél: glaspanelen</h3><p>Donkere, licht doorschijnende panelen met een zachte gele gloed langs één rand, voor alles wat nu een donker vlak is: de hero-plaat, het abonnementspaneel, de "Nu"-kaart in Studio.</p></div>
+      <div><h3>Wél: datalabels in mono</h3><p>Referenties, datums, aantallen en statuspillen in het monospace-lettertype, klein en in kapitalen. Koppen en lopende tekst niet — dat blijft de grotesk.</p></div>
+      <div><h3>Wél: haakjes op knoppen</h3><p>Komma zet [ ABOUT ] en [ EXPLORE MORE ]. Werkt goed met een mono-label en maakt de knoppen herkenbaar zonder een tweede kleur. Alleen op knoppen, nergens anders.</p></div>
+      <div><h3>Wél: één materiaal in kleur</h3><p>Zwart-witfoto's met één geel voorwerp. Dat is een fotografische keuze die je zelf maakt bij het shooten en genereren van de sitebeelden; de site kan er alvast op gebouwd worden (de gele tegel in een raster, de gloed).</p></div>
+      <div><h3>Wél: de posteropbouw</h3><p>Uit de merkbeelden die je stuurde: één groot beeld, daaronder het woordmerk links en twee regels kleine mono-tekst rechts, en helemaal onderaan een regel "VISUAILS™ · alle rechten voorbehouden". Die opbouw wordt de vorm van de dienstpagina's en van de galerij — VISUAILS-inhoud in die ordening, geen kopie.</p></div>
+      <div><h3>Wél: een lijnpatroon uit het eigen teken</h3><p>Komma herhaalt zijn schuine M als dunne omtreklijn op donker. VISUAILS heeft de V met de losse vlag; die herhaald als omtrek wordt het patroon voor de hero-plaat, de mailkop en de voet — van ons, in dezelfde taal.</p></div>
+      <div><h3>Wél: het blauw wordt geel</h3><p>Waar Ovyon een blauwe knop zet, staat bij ons de gele: primaire knop, actieve tab, het lopende punt. Eén accent, zoals nu.</p></div>
+      <div><h3>Niet: hun woordmerk zelf</h3><p>Het brede KOMMA-logo en de M-golf zijn van hen. Het VISUAILS-teken en -woordmerk blijven; alleen de kleur en het patroon eromheen veranderen.</p></div>
+    </div>
+    <p class="noot">Wat het aan werk is: de tokens in global.css (één blok) plus alles wat aan het donker vastzit — scrims over foto's, de chrome-hero, `.on-bright`, de vier gekleurde tegels, de cookiebalk — en daarna alle 96 pagina's nakijken op contrast en op beelden die op wit anders vallen. Studio volgt vanzelf via dezelfde tokens. Reken op een aantal ronden; ik lever per ronde schermafdrukken.</p>
+  </section>
+</main>

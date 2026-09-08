@@ -23,26 +23,59 @@
 // dates it cannot keep. The unit is a product-day.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// FLAGGED FOR LUCAS — PRODUCTS_PER_DAY IS AN OPERATIONAL CLAIM, NOT A DESIGN
-// DECISION, AND IT IS THE ONE NUMBER IN THIS FILE I CANNOT SET FOR YOU.
+// VOOR LUCAS — PUNTEN_PER_DAG IS EEN UITSPRAAK OVER DE STUDIO EN GEEN
+// ONTWERPBESLUIT. HET IS HET ENE GETAL IN DIT BESTAND DAT IK NIET VOOR JE KAN
+// ZETTEN.
 //
-// Everything below is derived from it, and it is what the site is bound to the
-// moment /start offers a window. At drop scope one product is a catalog set
-// (4 images) plus a lifestyle carousel (3), so 18 products/day is 126 finished,
-// human-checked images in a day. If that is wrong, it is wrong in one place:
-// change PRODUCTS_PER_DAY and the whole calendar moves with it. The assertions
-// at the bottom will tell you immediately if a new value stops the Full Drop
-// fitting inside the window it is sold with.
+// Alles hieronder is eruit afgeleid, en het is waar de site aan vastzit zodra
+// /start een dag aanbiedt. Klopt het niet, dan klopt het op één plek niet:
+// verander PUNTEN_PER_DAG en de hele agenda schuift mee. De asserties onderaan
+// zeggen meteen of een nieuwe waarde de grootste bestelling niet meer in het
+// venster laat passen waarmee hij verkocht wordt.
+//
+// ── 100 EN NIET MEER 126 — 7 september 2026 ──────────────────────────────────
+//
+// Hier stond PRODUCTS_PER_DAY = 18, en de punten werden daaruit afgeleid: 18 × 7
+// = 126. Lucas draaide dat om en zette het plafond zelf op 100 punten, met de
+// waarschuwing erbij gelezen dat dat ongeveer een vijfde minder capaciteit is.
+// Het is nu dus andersom: het PUNTENPLAFOND is het getal dat hij zet, en het
+// aantal producten volgt eruit — veertien complete producten op een dag in
+// plaats van achttien.
+//
+// Waarom dat de goede kant op is: een punt is geen product. Een dag waarop hij
+// alleen lifestyle-clips maakt, gaat op tien clips dicht en niet op veertien
+// producten, en dat kon "producten per dag" nooit uitdrukken. Het plafond hoort
+// dus in de eenheid te staan waarin ALLE diensten meetellen, en het aantal
+// producten is daar een gevolg van.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { WINDOW_THRESHOLD, KIND_IMAGES, kindImages } from './pricing.js';
+import { WINDOW_THRESHOLD, KIND_PUNTEN, puntenVoor, agendaKind } from './pricing.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1 · THE CEILING
+// 1 · HET PLAFOND
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Total product throughput one studio day can hold. See the flag above. */
-export const PRODUCTS_PER_DAY = 18;
+/**
+ * Wat één studiodag aankan, in punten. Zie de vlag hierboven — dit is het getal
+ * dat Lucas zet, en het enige in dit bestand dat niet afgeleid is.
+ *
+ * Eén punt is één afgewerkte foto (KIND_PUNTEN in pricing.js): een catalogset is
+ * vier punten, een carrousel drie, een compleet product zeven. Voor video meet
+ * een punt tijd en geen bestanden — een lifestyle-clip is één bestand en tien
+ * punten. Zie de noot boven KIND_PUNTEN.
+ */
+export const PUNTEN_PER_DAG = 100;
+
+/** Punten in één compleet product — vier catalog plus een carrousel van drie. */
+export const PUNTEN_PER_PRODUCT = KIND_PUNTEN.complete;
+
+/**
+ * Complete producten die op een dag passen. AFGELEID, niet gezet: het plafond
+ * staat in punten en dit is wat daar aan complete producten in gaat. Naar
+ * beneden afgerond, want een half product bestaat niet en naar boven afronden
+ * zou een dag verkopen die niet af komt.
+ */
+export const PRODUCTS_PER_DAY = Math.floor(PUNTEN_PER_DAG / PUNTEN_PER_PRODUCT);
 
 /**
  * Capacity an attended window may never take.
@@ -63,7 +96,7 @@ export const ATTENDED_PER_DAY = PRODUCTS_PER_DAY - QUEUE_FLOOR_PER_DAY;
  * A reserved window is two open days — consecutive in the diary, not necessarily
  * in the calendar. See windowFor(): a day that is full or closed is stepped over.
  *
- * The site sells "a reserved 48-hour window" (TIERS.attended.turnaround), and
+ * De site verkoopt "een leverdatum die we vastleggen" (TIERS.attended.turnaround), en
  * sinds 31 augustus 2026 klopt die zin beter dan hij deed. Zolang het weekend
  * werd overgeslagen, betekende "twee werkdagen" op een vrijdag vier kalenderdagen
  * en was 48 uur de vriendelijke lezing. Nu is het weekend een gewone dag, dus een
@@ -123,23 +156,26 @@ export const QUEUE_AIM_DAYS = 1;
  * productfoto's. Dit is een gedeelde agenda voor me."* En: *"ik ben namelijk ook
  * in het weekend gewoon in te plannen."*
  *
- * ── WAAROM BEELDEN EN NIET PRODUCTEN ───────────────────────────────────────
+ * ── WAAROM PUNTEN EN NIET PRODUCTEN ────────────────────────────────────────
  *
- * De noot boven PRODUCTS_PER_DAY rekende het zelf al voor: achttien producten
- * per dag is "126 finished, human-checked images in a day". Zolang elk product
- * een compleet product was, viel die telling samen met de werkelijkheid. Zodra
- * een klant zijn maand zelf mag vullen, niet meer:
+ * De agenda telde producten, en met "product" bedoelde dit bestand een COMPLEET
+ * product. Zolang elke bestelling dat was, viel de telling samen met de
+ * werkelijkheid. Zodra een klant zijn maand zelf mag vullen, niet meer:
  *
- *   · dertig catalogsets zijn dertig producten voor de poort, maar 120 beelden
+ *   · dertig catalogsets zijn dertig producten voor de poort, maar 120 punten
  *     en geen 210 — de poort weigerde vensters waar het werk in past;
  *   · een clip is geen product en woog dus nul, terwijl hij een dag wel degelijk
  *     vol maakt.
  *
- * Het plafond hieronder is exact hetzelfde plafond, alleen in de eenheid die
- * alles kan dragen. PRODUCTS_PER_DAY blijft het getal dat de site laat zien en
- * dat Lucas zet; de poort rekent er intern in beelden mee. KIND_IMAGES in
- * pricing.js zegt wat een soort weegt, en die tabel is de enige plek waar dat
- * staat.
+ * Het plafond staat daarom in de eenheid die ALLES kan dragen. KIND_PUNTEN en
+ * STYLE_PUNTEN in pricing.js zeggen wat een soort en een stijl kosten, en die
+ * twee tabellen zijn de enige plek waar dat staat.
+ *
+ * DE EENHEID HEETTE "BEELDEN" TOT 7 SEPTEMBER 2026, en dat was raak zolang alles
+ * een foto was: een punt is één afgewerkte foto en dat is het nog steeds voor de
+ * fotokant. Bij video valt het uit elkaar — een lifestyle-clip is één bestand en
+ * tien punten — en een eenheid die "beelden" heet terwijl hij tijd meet, is een
+ * getal dat vroeg of laat als aantal foto's op een klantscherm belandt.
  *
  * ── WAAROM HET WEEKEND EEN GEWONE DAG IS ───────────────────────────────────
  *
@@ -159,26 +195,27 @@ export const QUEUE_AIM_DAYS = 1;
  * vager maar korter, want een venster hoeft niet meer over een weekend heen.
  */
 
-/** Beelden in één compleet product — vier catalog plus een carrousel van drie. */
-export const IMAGES_PER_PRODUCT = KIND_IMAGES.complete;
+/** Wat er per dag vrij blijft voor de wachtrij, in punten. */
+export const QUEUE_FLOOR_PUNTEN = QUEUE_FLOOR_PER_DAY * PUNTEN_PER_PRODUCT;
 
-/** Het plafond van een studiodag, in beelden. Hetzelfde plafond, andere eenheid. */
-export const IMAGES_PER_DAY = PRODUCTS_PER_DAY * IMAGES_PER_PRODUCT;
+/**
+ * Wat er per dag te reserveren is, in punten.
+ *
+ * Uit het PLAFOND en niet uit ATTENDED_PER_DAY × 7. Dat tweede rondde twee keer
+ * af — eerst bij PRODUCTS_PER_DAY en dan nog eens hier — en gooide zo punten weg
+ * die er wel degelijk zijn. Het plafond min de wachtrijbodem is precies wat er
+ * overblijft.
+ */
+export const ATTENDED_PUNTEN_PER_DAG = PUNTEN_PER_DAG - QUEUE_FLOOR_PUNTEN;
 
-/** Wat er per dag vrij blijft voor de wachtrij, in beelden. */
-export const QUEUE_FLOOR_IMAGES = QUEUE_FLOOR_PER_DAY * IMAGES_PER_PRODUCT;
-
-/** Wat er per dag te reserveren is, in beelden. */
-export const ATTENDED_IMAGES_PER_DAY = ATTENDED_PER_DAY * IMAGES_PER_PRODUCT;
-
-/** Wat één venster van twee open dagen kan houden, in beelden. */
-export const ATTENDED_IMAGES_PER_WINDOW = ATTENDED_IMAGES_PER_DAY * WINDOW_DAYS;
+/** Wat één venster van twee open dagen kan houden, in punten. */
+export const ATTENDED_PUNTEN_PER_VENSTER = ATTENDED_PUNTEN_PER_DAG * WINDOW_DAYS;
 
 /**
  * Het grootste aantal producten dat één venster kan houden, over alle diensten heen.
  *
- * De lichtste gewogen soort bepaalt dit: een lifestylecarrousel is drie beelden, dus
- * er passen er zeventig in de 210 van een venster, waar er dertig complete in gaan.
+ * De lichtste gewogen soort bepaalt dit: een lifestylecarrousel kost drie punten, dus
+ * er passen er meer in een venster dan complete producten, die er zeven kosten.
  * ATTENDED_PER_WINDOW blijft het getal voor complete producten — dat is wat de site
  * bedoelt als er "producten" staat zonder dienst erbij.
  *
@@ -188,9 +225,9 @@ export const ATTENDED_IMAGES_PER_WINDOW = ATTENDED_IMAGES_PER_DAY * WINDOW_DAYS;
  * telt. Een plafond dat los gekozen is, loopt bij de volgende wijziging weer achter.
  */
 export const MAX_PRODUCTS_ANY_SERVICE = Math.max(
-  ...Object.values(KIND_IMAGES)
+  ...Object.values(KIND_PUNTEN)
     .filter((per) => per !== null)
-    .map((per) => Math.floor(ATTENDED_IMAGES_PER_WINDOW / per))
+    .map((per) => Math.floor(ATTENDED_PUNTEN_PER_VENSTER / per))
 );
 
 /* ── HOE VER EEN VENSTER MAG UITREKKEN ──────────────────────────────────────
@@ -272,20 +309,19 @@ export function firstOfferableDay(today, blackouts = new Set()) {
  * en wordt overgeslagen; het venster rekt daarvoor op tot hooguit
  * WINDOW_MAX_SPAN_DAYS kalenderdagen en geeft daarna op.
  *
- * `images` is de last van de order in beelden, en die wordt gelijk over de dagen
- * van het venster verdeeld — de pessimistische lezing die dit bestand al hanteert:
- * een order van 210 beelden vraagt 105 op elk van twee dagen, niet "210 ergens
- * daarin". Een venster dat werk tussen dagen laat schuiven, is een venster dat
+ * `punten` is de last van de order, en die wordt gelijk over de dagen van het
+ * venster verdeeld — de pessimistische lezing die dit bestand al hanteert: een
+ * order van 158 punten vraagt 79 op elk van twee dagen, niet "158 ergens daarin". Een venster dat werk tussen dagen laat schuiven, is een venster dat
  * een datum vrijgeeft die het later moet verzetten.
  *
- * Roep dit nooit aan met een soort die nog geen gewicht heeft; kindImages() geeft
+ * Roep dit nooit aan met een soort die nog geen gewicht heeft; puntenVoor() geeft
  * daar null en de aanroeper hoort dat af te vangen voordat hij hier komt.
  */
-export function windowFor(iso, images, booked = {}, blackouts = new Set()) {
+export function windowFor(iso, punten, booked = {}, blackouts = new Set()) {
   if (!isOpenDay(iso, blackouts)) return [];
   const last = addDays(iso, WINDOW_MAX_SPAN_DAYS);
-  const perDay = Math.ceil(Math.max(0, Number(images) || 0) / WINDOW_DAYS);
-  const past = (d) => isOpenDay(d, blackouts) && (booked[d] || 0) + perDay <= ATTENDED_IMAGES_PER_DAY;
+  const perDay = Math.ceil(Math.max(0, Number(punten) || 0) / WINDOW_DAYS);
+  const past = (d) => isOpenDay(d, blackouts) && (booked[d] || 0) + perDay <= ATTENDED_PUNTEN_PER_DAG;
 
   if (!past(iso)) return [];
   const days = [iso];
@@ -324,16 +360,16 @@ function naiveWindow(iso, blackouts = new Set()) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Past er een venster dat op `startIso` begint, voor een order van `images`?
+ * Past er een venster dat op `startIso` begint, voor een order van `punten`?
  *
- * `booked` gaat van 'YYYY-MM-DD' naar het aantal beelden dat op die dag al is
+ * `booked` gaat van 'YYYY-MM-DD' naar het aantal punten dat op die dag al is
  * vastgelegd. Een dag die de poort nooit gezien heeft is leeg; een dag in
  * `blackouts` is dicht en wordt overgeslagen in plaats van dat hij het hele
  * venster onmogelijk maakt — dat laatste was de oude regel, en die kon niet
  * blijven staan naast een paar dat over volle dagen heen springt.
  */
-export function windowFits(startIso, images, booked = {}, blackouts = new Set()) {
-  return windowFor(startIso, images, booked, blackouts).length === WINDOW_DAYS;
+export function windowFits(startIso, punten, booked = {}, blackouts = new Set()) {
+  return windowFor(startIso, punten, booked, blackouts).length === WINDOW_DAYS;
 }
 
 /**
@@ -345,7 +381,7 @@ export function windowFits(startIso, images, booked = {}, blackouts = new Set())
  * er per ongeluk een gok in schrijft.
  *
  * `service` en `products` gaan er samen in en worden hier één getal: het gewicht
- * in beelden. Een dienst die nog geen gewicht heeft (video) levert null op en
+ * in punten. Een dienst die nog geen gewicht heeft (video) levert null op en
  * krijgt dus geen venster — precies wat er vandaag ook gebeurt, maar nu omdat de
  * agenda hem niet kan wegen en niet omdat hij toevallig niet op de prijsladder
  * staat.
@@ -359,9 +395,9 @@ export function offerableWindows({
   limit = 6,
 }) {
   if (!Number.isInteger(products) || products < 1) return [];
-  const images = kindImages(service, products);
-  if (images === null) return [];
-  if (images > ATTENDED_IMAGES_PER_WINDOW) return [];
+  const punten = puntenVoor(service, products);
+  if (punten === null) return [];
+  if (punten > ATTENDED_PUNTEN_PER_VENSTER) return [];
 
   const first = firstOfferableDay(today, blackouts);
   const last = addDays(today, HORIZON_DAYS);
@@ -369,7 +405,7 @@ export function offerableWindows({
 
   let cur = first;
   while (cur <= last && out.length < limit) {
-    const days = windowFor(cur, images, booked, blackouts);
+    const days = windowFor(cur, punten, booked, blackouts);
     if (days.length === WINDOW_DAYS) {
       out.push({ start: days[0], end: days[days.length - 1], days });
     }
@@ -387,25 +423,29 @@ export function offerableWindows({
  * horizon, een aantal dat geen getal is, en een dienst die nog niet gewogen is.
  * Elk krijgt zijn eigen reden zodat de pagina het ware ding kan zeggen.
  *
- * `max` is er in twee eenheden. Producten omdat de site daarin praat, beelden
+ * `max` is er in twee eenheden. Producten omdat de site daarin praat, punten
  * omdat de poort daarin rekent — en dat verschil is echt: dertig catalogsets
  * passen wél in een venster en dertig complete producten niet.
+ *
+ * `maxPunten` heette `maxImages` tot 7 september 2026. Zelfde reden als overal:
+ * het getal meet werk en geen bestanden, en een naam die het tweede belooft komt
+ * ooit als aantal foto's op een scherm terecht.
  */
 export function clearedWindows({ today, products, service = 'complete', booked = {}, blackouts = new Set(), limit = 6 }) {
-  const perProduct = kindImages(service, 1);
-  const maxProducts = perProduct === null ? 0 : Math.floor(ATTENDED_IMAGES_PER_WINDOW / perProduct);
-  const leeg = (reason) => ({ windows: [], reason, max: maxProducts, maxImages: ATTENDED_IMAGES_PER_WINDOW, service });
+  const perProduct = puntenVoor(service, 1);
+  const maxProducts = perProduct === null ? 0 : Math.floor(ATTENDED_PUNTEN_PER_VENSTER / perProduct);
+  const leeg = (reason) => ({ windows: [], reason, max: maxProducts, maxPunten: ATTENDED_PUNTEN_PER_VENSTER, service });
 
   if (perProduct === null) return leeg('unweighed');
   if (!Number.isInteger(products) || products < 1) return leeg('invalid');
-  if (kindImages(service, products) > ATTENDED_IMAGES_PER_WINDOW) return leeg('too-large');
+  if (puntenVoor(service, products) > ATTENDED_PUNTEN_PER_VENSTER) return leeg('too-large');
 
   const windows = offerableWindows({ today, products, service, booked, blackouts, limit });
   return {
     windows,
     reason: windows.length ? 'ok' : 'full',
     max: maxProducts,
-    maxImages: ATTENDED_IMAGES_PER_WINDOW,
+    maxPunten: ATTENDED_PUNTEN_PER_VENSTER,
     service,
   };
 }
@@ -459,7 +499,9 @@ export function daysInRange(startIso, endIso) {
  * Elke rij is { window_start, window_end, product_count, service } van een levende
  * order met een gereserveerd venster.
  *
- * DE LAST IS IN BEELDEN EN NIET IN PRODUCTEN. Een rij zonder `service` telt als
+ * DE LAST IS IN BEELDEN EN NIET IN PRODUCTEN, en sinds 7 september 2026 doet
+ * rowPunten() hieronder de vertaling van rij naar gewicht — inclusief video, dat
+ * clips telt in plaats van producten. Een rij zonder `service` telt als
  * `complete` — het zwaarste gewicht, en precies wat de poort vóór 31 augustus 2026
  * voor elke order aannam. Oude rijen worden daarmee gelezen zoals ze bedoeld waren
  * en niemand krijgt met terugwerkende kracht meer ruimte dan hij had. Een rij met
@@ -483,17 +525,55 @@ export function daysInRange(startIso, endIso) {
  * plaats van te verdwijnen — een reservering die de poort niet ziet is precies de
  * ene fout waarvoor dit hele bestand bestaat.
  */
+/**
+ * Wat één opgeslagen rij in de agenda kost, in punten.
+ *
+ * ── WAAROM DIT EEN EIGEN FUNCTIE IS — 7 september 2026 ─────────────────────
+ *
+ * Hier stond `kindImages(r.service || 'complete', r.product_count)`, één regel,
+ * en die regel klopte zolang elke bestelling producten telde. Video telt clips
+ * en heet in `orders.service` gewoon 'video' — één woord voor drie soorten met
+ * drie verschillende gewichten. Beide aannames braken tegelijk, en het gevolg
+ * was dat een videobestelling stilletjes werd overgeslagen: geen bezetting, en
+ * in het beheerscherm ook geen venster dat je met de hand kon zetten.
+ *
+ * De soort komt uit agendaKind() (zie pricing.js) en de teller uit het veld dat
+ * bij die soort hoort. `clip_count` en NIET `product_count` voor video, en dat
+ * is geen smaak: `orders.product_count` betekent overal in dit systeem het
+ * aantal producten dat door de fotopijplijn gaat, en er clips in schrijven heeft
+ * eerder tierFor() een venster laten beloven, de opwaardeermail een verkeerd
+ * getal laten noemen en het portaal "12 producten" laten zetten bij een aanvraag
+ * zonder één product erin. Zie de noot bij het clips-veld in functions/api/order.js.
+ *
+ * Geeft null terug voor een rij die niet te wegen is — een ongewogen soort, een
+ * videostijl zonder gewicht, of een teller van nul. bookedFromRows() slaat zo'n
+ * rij over, en dat blijft precies wat het was: een gat dat je in het
+ * beheerscherm ziet, en niet een nul die stilletjes meetelt.
+ */
+export function rowPunten(r = {}) {
+  const dienst = String(r.service || 'complete').trim();
+  const kind = agendaKind(dienst, r.style);
+  if (!kind) return null;
+  const aantal = dienst === 'video'
+    ? Number(r.clip_count) || 0
+    : Number(r.product_count) || 0;
+  /* De stijl gaat mee zodat STYLE_PUNTEN kan afwijken van de soort. Bij video is
+     de stijl al in agendaKind() verwerkt (die kiest de soort ermee); bij foto's
+     staat hij hier voor het geval een look ooit zwaarder blijkt te wegen. */
+  return puntenVoor(kind, aantal, dienst === 'video' ? '' : r.style);
+}
+
 export function bookedFromRows(rows = [], blackouts = new Set()) {
   const booked = {};
   for (const r of rows) {
     const start = r.window_start;
-    const images = kindImages(r.service || 'complete', Number(r.product_count) || 0);
-    if (!start || !images) continue;
+    const punten = rowPunten(r);
+    if (!start || !punten) continue;
 
     let days = r.window_end ? daysInRange(start, r.window_end) : naiveWindow(start, blackouts);
     if (!days.length) days = [start];
 
-    const perDay = Math.ceil(images / days.length);
+    const perDay = Math.ceil(punten / days.length);
     for (const d of days) booked[d] = (booked[d] || 0) + perDay;
   }
   return booked;
@@ -523,7 +603,7 @@ function assertCapacity() {
     throw new Error(
       `capacity.js: the site promises a reserved window from ${WINDOW_THRESHOLD} products ` +
       `(WINDOW_THRESHOLD in pricing.js), but one window only holds ${ATTENDED_PER_WINDOW}. ` +
-      `Either raise PRODUCTS_PER_DAY, lower QUEUE_FLOOR_PER_DAY, or raise WINDOW_THRESHOLD — ` +
+      `Either raise PUNTEN_PER_DAG, lower QUEUE_FLOOR_PER_DAY, or raise WINDOW_THRESHOLD — ` +
       `the site must not promise a window the gate can never clear.`
     );
   }
@@ -539,23 +619,36 @@ function assertCapacity() {
       + `(${WINDOW_DAYS}) — dan kan er nooit een venster gevormd worden, ook niet op een lege agenda.`
     );
   }
-  // HETZELFDE PLAFOND IN TWEE EENHEDEN MOET HETZELFDE ZEGGEN. De poort rekent in
-  // beelden en de site praat in producten; lopen die uiteen, dan belooft de ene
-  // helft iets wat de andere weigert.
-  if (ATTENDED_IMAGES_PER_WINDOW !== ATTENDED_PER_WINDOW * IMAGES_PER_PRODUCT) {
-    throw new Error('capacity.js: het plafond in beelden en het plafond in producten lopen uiteen.');
+  /* HET PLAFOND IN PRODUCTEN MAG NOOIT MEER ZIJN DAN HET PLAFOND IN PUNTEN.
+   *
+   * Dit was tot 7 september 2026 een gelijkheid, en dat kon toen: het plafond
+   * stond in producten en de punten waren daar een veelvoud van, dus ze vielen
+   * exact samen. Nu is het plafond een rond getal in punten (100) en volgt het
+   * aantal producten daaruit met een afronding naar beneden — elf complete
+   * producten is 77 punten van de 79 die er te reserveren zijn, en die twee
+   * punten die overblijven zijn geen fout maar de rest van de deling.
+   *
+   * Wat wél een fout zou zijn, is de andere kant op: een productplafond dat méér
+   * punten opeet dan er zijn. Dan verkoopt de site een venster dat de poort
+   * daarna weigert. Vandaar `>` en niet `!==`. */
+  if (ATTENDED_PER_WINDOW * PUNTEN_PER_PRODUCT > ATTENDED_PUNTEN_PER_VENSTER) {
+    throw new Error(
+      `capacity.js: ${ATTENDED_PER_WINDOW} complete producten kosten `
+      + `${ATTENDED_PER_WINDOW * PUNTEN_PER_PRODUCT} punten, en een venster houdt er `
+      + `${ATTENDED_PUNTEN_PER_VENSTER}. Het plafond in producten belooft meer dan het plafond in punten geeft.`
+    );
   }
   // DE BELOFTE VAN EEN VENSTER MOET VOOR ELKE DIENST WAAR ZIJN. Vanaf
   // WINDOW_THRESHOLD producten zegt de site dat een order een gereserveerd venster
   // krijgt. Dat geldt nu voor drie soorten met drie gewichten, en de zwaarste
   // bepaalt of de zin waar is.
-  for (const [kind, per] of Object.entries(KIND_IMAGES)) {
+  for (const [kind, per] of Object.entries(KIND_PUNTEN)) {
     if (per === null) continue;
-    if (WINDOW_THRESHOLD * per > ATTENDED_IMAGES_PER_WINDOW) {
+    if (WINDOW_THRESHOLD * per > ATTENDED_PUNTEN_PER_VENSTER) {
       throw new Error(
         `capacity.js: de site belooft een gereserveerd venster vanaf ${WINDOW_THRESHOLD} producten, `
-        + `maar ${WINDOW_THRESHOLD} keer "${kind}" is ${WINDOW_THRESHOLD * per} beelden en een venster `
-        + `houdt er ${ATTENDED_IMAGES_PER_WINDOW}. Verhoog PRODUCTS_PER_DAY, verlaag QUEUE_FLOOR_PER_DAY, `
+        + `maar ${WINDOW_THRESHOLD} keer "${kind}" is ${WINDOW_THRESHOLD * per} punten en een venster `
+        + `houdt er ${ATTENDED_PUNTEN_PER_VENSTER}. Verhoog PUNTEN_PER_DAG, verlaag QUEUE_FLOOR_PER_DAY, `
         + `of verhoog WINDOW_THRESHOLD — de site mag geen venster beloven dat de poort nooit vrijgeeft.`
       );
     }

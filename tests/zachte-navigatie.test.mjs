@@ -79,141 +79,12 @@ const BASE = `http://127.0.0.1:${server.address().port}`;
 const EXECUTABLE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
 
-/* ══ 1 · DE DIENSTKAARTJES BLIJVEN TABS ═════════════════════════════════════
- *
- * Drie wegen naar de homepage, en alle drie moeten hetzelfde opleveren. De derde
- * is de weg waarop het misging: terugkomen op een pagina waar het script al eens
- * gedraaid had.
- */
-console.log('\nde dienstkaartjes onder de hero blijven bedraad');
-{
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+/* ── DE DIENSTKAARTJES ONDER DE HERO STONDEN HIER ──────────────────────────
+   Sectie 21 (5 september 2026): de hero-carrousel met kaartjes is van de
+   homepage af (Voorpagina.astro heeft een gesplitste hero zonder script). De
+   controle op het herbedraden na een zachte navigatie leeft door in §3 (de
+   zwevende notitie) en §4 (de luisteraars), die hetzelfde mechanisme raken. */
 
-  /* Klikt hij een dia aan, of navigeert hij weg? Dat laatste is de fout, en het
-     is meteen de scherpste meting die er is: het pad in de adresbalk. */
-  /* ── EN ALS HIJ WÉL WEGNAVIGEERT, VERTEL DAN WAAROM — 30 AUGUSTUS 2026 ───
-     Deze regel viel één keer om in een volle `npm test` en daarna niet meer in
-     acht losse runs. "verwacht true kreeg false" is dan alles wat je hebt, en
-     dat is te weinig om te weten wélke van de twee mogelijke oorzaken het was:
-
-       1 · het script had de rol nog niet gezet — dan is het een echte fout, en
-           die zou de regel ervóór (`rol()`) ook moeten zien;
-       2 · de DOM werd tussen het opzoeken en het klikken vervangen door een
-           zachte navigatie die nog liep. Dan klikte Playwright een verse <a>
-           waaraan het script nog niet toe was, en dat is een race in DEZE toets
-           en niet op de site — een bezoeker die dat treft komt gewoon op de
-           dienstpagina uit, precies zoals het zonder script hoort te werken.
-
-     Het verschil zit in de rol op het moment van klikken en in waar hij belandt.
-     Die twee staan er nu bij, zodat de eerstvolgende keer meteen duidelijk is
-     welke van de twee het is in plaats van dat het weer acht runs kost. */
-  const klikGeeftDia = async () => {
-    const voor = new URL(page.url()).pathname;
-    const rolBijKlik = await page.evaluate(() => document.querySelector('[data-hero-tab="1"]')?.getAttribute('tabindex') ?? null);
-    await page.click('[data-hero-tab="1"]');
-    await page.waitForTimeout(700);
-    const na = new URL(page.url()).pathname;
-    if (voor !== na) {
-      console.log(`      (weggenavigeerd: ${voor} -> ${na}, tabindex bij het klikken: ${JSON.stringify(rolBijKlik)})`);
-      await page.goBack();
-      await page.waitForTimeout(600);
-    }
-    return voor === na;
-  };
-  /* ── WAT ER GEPEILD WORDT, EN WAAROM NIET MEER DE ROL — 2 september 2026 ──
-     Hier stond `t.getAttribute('role') === 'tab'`. Dat was de spelling en niet
-     de belofte, en op 2 september ging deze toets er rood op terwijl er niets
-     stuk was: axe-core wees role="tablist" af (een tablist mag alleen tabs
-     bevatten, en in elk kaartje zit ook het pijltje naar de dienstpagina), dus
-     is de rol weg en zet het script nu `aria-current` plus een roving tabindex.
-     Dezelfde les als bij `--wa-bottom: 142px` in nav.test.mjs, en het is het
-     geval dat SCHRIJFWIJZER.md §6 beschrijft.
-
-     Wat deze toets moet weten is één ding: HEEFT HET SCRIPT DIT KAARTJE
-     BEDRAAD na een zachte navigatie? Daar is `tabindex` het bewijs voor. In de
-     gebouwde html staat er geen tabindex op — schilder() zet hem, `0` op het
-     actieve kaartje en `-1` op de rest. Staat er dus iets, dan heeft het script
-     gedraaid; staat er niets, dan is het kaartje nog de kale link uit de html.
-     Dat blijft waar hoe de markering verder ook heet. */
-  const bedraad = () => page.evaluate(() => {
-    const t = document.querySelector('[data-hero-tab="1"]');
-    return t ? t.getAttribute('tabindex') : null;
-  });
-
-  await page.goto(`${BASE}/`, { waitUntil: 'load' });
-  await page.waitForTimeout(900);
-  ok('bij een harde laadbeurt is het kaartje bedraad', await bedraad(), '-1');
-  ok('en een klik blijft op de homepage', await klikGeeftDia(), true);
-
-  // Binnenkomen op een andere pagina en dan pas naar huis.
-  await page.goto(`${BASE}/pricing`, { waitUntil: 'load' });
-  await page.waitForTimeout(700);
-  await page.click('a[href="/"]');
-  await page.waitForTimeout(1100);
-  ok('ook wie via /pricing binnenkomt krijgt een bedraad kaartje', await bedraad(), '-1');
-  ok('en ook daar blijft een klik op de homepage', await klikGeeftDia(), true);
-
-  // En de weg waarop het misging: wég van de homepage en terug.
-  await page.click('a[href="/pricing/"]');
-  await page.waitForTimeout(900);
-  await page.click('a[href="/"]');
-  await page.waitForTimeout(1100);
-  ok('en na weggaan en terugkomen nog steeds', await bedraad(), '-1');
-  ok('dit was de melding van Lucas: klik wisselt de dia', await klikGeeftDia(), true);
-
-  // De taalwissel is dezelfde route met een andere bestemming: de Nederlandse
-  // homepage draagt exact dezelfde scripttekst, dus die gold als "al gedraaid".
-  /* De taalknop draagt `hreflang`, en dat is meteen de stevigste greep: de href
-     zelf is /nl zonder slash en dat soort details verschuift nog wel eens. */
-  /* ── WACHTEN OP DE UITKOMST EN NIET OP DE KLOK — 31 augustus 2026 ────────
-   *
-   * Hier stonden drie taalwissels met elk `waitForTimeout(1100)` erachter, en dat
-   * maakte deze toets flakerig: ongeveer één op de drie volledige runs viel de
-   * regel eronder om, terwijl hij los altijd groen was.
-   *
-   * DE OORZAAK STOND IN ZIJN EIGEN DIAGNOSTIEK. De melding was
-   * "weggenavigeerd: / -> /nl/, rol bij het klikken: tab" — de rol klopte dus, en
-   * de klik werd wel degelijk afgevangen. Wat er misging is dat de TAALWISSEL nog
-   * onderweg was: `voor` werd afgelezen op `/` en `na` een tel later op `/nl/`.
-   * De toets mat de staart van de vorige navigatie en niet zijn eigen klik.
-   *
-   * Elfhonderd milliseconden is op mijn machine genoeg en op een volle
-   * testmachine soms niet, en dat is precies wat een tijdslimiet als voorwaarde
-   * zo slecht maakt: hij faalt op belasting en niet op gedrag. Nu wordt er
-   * gewacht op de twee dingen die echt moeten kloppen — de URL is aangekomen, en
-   * het kaartje is opnieuw bedraad. */
-  const naarTaal = async (taal, pad) => {
-    await page.click(`a.ls[hreflang="${taal}"]`);
-    await page.waitForURL((u) => new URL(u).pathname === pad, { timeout: 10000 });
-    await page.waitForFunction(
-      () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('tabindex') !== null,
-      null,
-      { timeout: 10000 }
-    );
-  };
-
-  await page.goto(`${BASE}/`, { waitUntil: 'load' });
-  await page.waitForFunction(
-    () => document.querySelector('[data-hero-tab="1"]')?.getAttribute('tabindex') !== null,
-    null,
-    { timeout: 10000 }
-  );
-  await naarTaal('nl', '/nl/');
-  await naarTaal('en', '/');
-  await naarTaal('nl', '/nl/');
-  ok('en na een taalwissel heen en weer ook', await bedraad(), '-1');
-  ok('op de Nederlandse homepage wisselt de klik de dia', await klikGeeftDia(), true);
-
-  await page.close();
-}
-
-/* ══ 2 · HET GEKOZEN PLAN OVERLEEFT DE SPRONG VANAF /plans ══════════════════
- *
- * Dezelfde regel, met een prijskaartje eraan. De drie kaarten op /plans wijzen
- * naar /start/plan?plan=…, en het aanvinken gebeurt in een inline script. Draait
- * dat niet, dan staat Studio aangevinkt terwijl de bezoeker Merk koos — op een
- * formulier dat eindigt in een doorlopende machtiging.
- */
 console.log('\nhet plan uit de URL wordt aangevinkt, ook na een sprong');
 {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -336,6 +207,15 @@ console.log('\nde luisteraars op window en document stapelen zich niet op');
 
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   await page.waitForTimeout(1100);
+  /* Eén opwarmronde vóór de meting. Een module die de voorpagina niet laadt
+     (Note.astro staat op /pricing en sinds sectie 21 niet meer op /) draait
+     bij de eerste zachte navigatie één keer en bindt dan zijn luisteraars —
+     dat is geen stapeling maar een late start. Wat de meting hieronder moet
+     vangen is wat er bij ELKE ronde bijkomt. */
+  await page.click('a[href="/pricing/"]');
+  await page.waitForTimeout(800);
+  await page.click('a[href="/"]');
+  await page.waitForTimeout(1000);
   const eerste = await tel();
 
   for (let i = 0; i < 3; i++) {

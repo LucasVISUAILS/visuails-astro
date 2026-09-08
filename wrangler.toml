@@ -1,44 +1,57 @@
-# VISUAILS — Cloudflare Pages configuration.
-# The site stays fully static (Astro `output: 'static'` -> dist/). The
-# serverless bits live in /functions.
+# VISUAILS — Cloudflare Worker configuration.
 #
-# NOTE: this Pages project runs in "config file" mode. Because this
-# wrangler.toml exists, Cloudflare reads the bindings from HERE, not from the
-# dashboard (the dashboard Bindings UI is disabled and points back to this
-# file). So the D1 + R2 bindings and the non-secret vars live below.
+# ── ÉÉN WORKER — 5 SEPTEMBER 2026 ────────────────────────────────────────────
 #
-# The RESEND_API_KEY is a SECRET and is deliberately NOT stored here (it would
-# leak into git). Set it separately with either:
-#   npx wrangler pages secret put RESEND_API_KEY --project-name visuails-astro
-# or in the dashboard: your Pages project -> Settings -> Variables and Secrets
-# -> add RESEND_API_KEY as an encrypted Secret.
+# Tot deze datum was dit een Pages-project (`pages_build_output_dir = "dist"`):
+# Astro bouwde de statische site en de serverkant stond ernaast in /functions,
+# als Pages Functions. Sinds vandaag bouwt Astro via @astrojs/cloudflare ALLES in
+# één keer: de statische pagina's als assets in dist/, en de server-routes
+# (bestelling, betaling, dashboard, beheer, portaal) als één Worker in
+# dist/server/entry.mjs. De handlers in /functions zijn niet veranderd; zie
+# src/pages/api/, /account, /admin en /o voor de dunne endpoints die ze aanroepen.
 #
-# ── DE PROJECTNAAM STOND HIER FOUT — 10 AUGUSTUS 2026 ────────────────────────
+# Wat dat verandert aan de commando's — `wrangler pages …` bestaat voor dit
+# project niet meer:
 #
-# Hier stond `name = "visuails"`. Het Pages-project heet "visuails-astro", en dat
-# verschil bleef achttien dagen onopgemerkt om één reden: de site wordt gebouwd via
-# de GitHub-koppeling, en dan kiest Cloudflare het project niet op basis van dit
-# veld. Elke deploy ging dus goed.
+#   deploy        npm run build && npx wrangler deploy
+#   secret        npx wrangler secret put RESEND_API_KEY      (idem MOLLIE_API_KEY,
+#                 STRIPE_*, ADMIN_*, SELLER_* — elke secret die de Pages-kant had)
+#   logs          npx wrangler tail
+#   lokaal        npm run build && npx wrangler dev            (lokale D1 + R2 in
+#                 .wrangler/state; `npm run dev` kan het ook, via platformProxy)
 #
-# Waar het wél op stukloopt is elk `wrangler pages`-commando, want dát leest de naam
-# hier. `npx wrangler pages secret put SELLER_ADDRESS` antwoordde met
-# `Project "visuails" does not exist` — een melding die klinkt als "je project is
-# weg" terwijl het project er prima staat, alleen onder een andere naam. Vandaar dat
-# de regel hierboven de naam nu ook expliciet noemt: het antwoord hoort in het
-# bestand te staan en niet in het geheugen van degene die het een keer heeft
-# uitgezocht.
+# Assets gaan vóór de Worker: bestaat een bestand in dist/, dan komt het daar
+# vandaan (met public/_headers en public/_redirects erbij) en draait de Worker
+# niet. Alleen wat er niet ligt — /api/*, /account, /admin, /o — bereikt de code.
 #
-# `visuails` is wél de naam van de D1-database (zie database_name onderaan). Die
-# twee namen naast elkaar zijn precies waardoor dit kon ontstaan.
+# ── DE NAAM ──────────────────────────────────────────────────────────────────
+#
+# Het Pages-project heette "visuails-astro" en de D1-database heet "visuails";
+# die twee naast elkaar hebben op 10 augustus 2026 achttien dagen verwarring
+# gekost (`Project "visuails" does not exist`). De Worker krijgt daarom een
+# derde naam die op geen van beide lijkt. Hij verschijnt als
+# visuails-site.<account>.workers.dev tot het domein is overgezet.
+#
+# De secrets (RESEND_API_KEY, MOLLIE_API_KEY, …) staan NIET in dit bestand:
+# `npx wrangler secret put <NAAM>`, of in het dashboard onder Workers ->
+# visuails-site -> Settings -> Variables and Secrets. Ze moeten na de eerste
+# deploy opnieuw gezet worden; een Worker deelt geen secrets met een Pages-project.
 
-name = "visuails-astro"
-pages_build_output_dir = "dist"
+name = "visuails-site"
 compatibility_date = "2026-07-01"
 # Confirmed required: removing this broke the build with
 # "No such module 'node:stream'" — something in a dependency imports it
 # transitively, even though nothing in functions/ or src/ does directly.
 # Ruled out as the cause of the empty Stripe 400s; do not remove again.
 compatibility_flags = ["nodejs_compat"]
+
+# --- Geen `main`, geen [assets] ---------------------------------------------
+# Die twee vult Astro's Cloudflare-adapter zelf in. Bij `npm run build` schrijft
+# hij dist/server/wrangler.json (dit bestand plus main en de assets-map) en zet
+# in .wrangler/deploy/config.json dat wrangler dáár moet kijken. `npx wrangler
+# deploy` en `npx wrangler dev` vanuit de wortel volgen die verwijzing vanzelf.
+# Zelf `main` zetten breekt de build: de adapter wil dat bestand vóór de build
+# al zien liggen.
 
 # --- Bindings ------------------------------------------------------------------
 [[d1_databases]]

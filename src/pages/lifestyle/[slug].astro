@@ -1,95 +1,44 @@
 ---
-import { waHref } from '../../data/whatsapp.js';
-// VISUAILS — shared template for the lifestyle style detail pages
-// (Dunes / Flash / Glow / Phone-made). Ported from the SvelteKit rebuild's
-// StylePage.svelte, driven by `style` entries from src/data/styles.js
-// (shared with the /lifestyle hub, written separately). `style.heroPhoto` /
-// `style.grid[0].photo` / `style.grid[].photo` already point at real,
-// style-correct photos per IMAGES.md — used directly; the ProductScene SVG
-// placeholder is only the fallback for grid slots with no matching photo
-// (same behavior as the original ProductScene.svelte's `photo` escape
-// hatch, replicated here with a plain `.vis` div since ProductScene.astro
-// only supports the icon-driven placeholder).
+// VISUAILS — /lifestyle/[slug] (English). De inhoud staat in
+// LifestyleStyleDetail.astro zodat deze route en /nl/lifestyle/[slug] niet uit
+// elkaar kunnen lopen; zie de kop daar.
 import Layout from '../../layouts/Layout.astro';
-import ProductScene from '../../components/ProductScene.astro';
-import Compare from '../../components/Compare.astro';
+import LifestyleStyleDetail from '../../components/LifestyleStyleDetail.astro';
 import { styles } from '../../data/styles.js';
 import {
   euro, ladderRate, ladderFloor, LADDER, vatLabel,
-  reviewClaim, turnaround, TIERS,
+  reviewClaim, turnaround,
 } from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
 
-import ServiceSwitch from '../../components/ServiceSwitch.astro';
 export function getStaticPaths() {
   return styles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
 
 const { style } = Astro.props;
 
-// Intrinsic pixel size of the one photo this template renders as an <img>
-// (style.grid[0].photo). The .photo-split-media box pins aspect-ratio 4/5 and
-// the image covers it, so these attributes change nothing visually — they let
-// the browser reserve the box before the file lands (§12). Unlisted throws.
-const INTRINSIC: Record<string, [number, number]> = {
-  '/img/banners-14.webp': [2400, 1792],
-  '/img/lifestyle-dunes-02.webp': [928, 1152],
-  '/img/lifestyle-flash-01.webp': [928, 1152],
-  '/img/lifestyle-glow-01.webp': [1340, 2400],
-  '/img/lifestyle-phone-made-02.webp': [2400, 1792],
-  // Added when the mood photo stopped being allowed to repeat the hero:
-  // Flash and Glow now take grid[1] instead of grid[0].
-  '/img/lifestyle-flash-02.webp': [1340, 2400],
-  '/img/lifestyle-glow-02.webp': [2400, 1792],
-};
-// THE MOOD PHOTO MUST NOT BE THE HERO PHOTO. On Flash and Glow, grid[0] IS the
-// hero, so the same photograph carried the hero band and the mood band two
-// folds apart, and on a page whose whole job is to show what one look actually
-// produces that reads as "there is only one picture of this". The other eight
-// grid entries are style-correct photographs of the same look, so the fix is to
-// take the first one that is not already on screen. Falls back to grid[0] if a
-// style ever ships with a single photo, which is the old behaviour.
-const moodPhoto = (style.grid.find((g) => g.photo && g.photo !== style.heroPhoto) || style.grid[0]).photo;
-const moodSize = INTRINSIC[moodPhoto];
-if (!moodSize) throw new Error(`lifestyle/[slug]: no intrinsic size on record for ${moodPhoto} — add it to INTRINSIC.`);
-
-// Timing, review level and queue behaviour are tier facts, not per-style
-// copy. They come from pricing.js so a capacity change cannot leave a
-// promise stranded on a detail page — which is exactly what "~24h delivery"
-// and "Produced in about 24 hours" were doing here.
-/* Een look OP AANVRAAG (priceTrust, dus custom) heeft eerst een ontwerp; de
-   doorlooptijd van een gewone bestelling geldt daar pas ná. "Vaak binnen een
-   dag" op die pagina was een belofte over het verkeerde ding — 4 sept 2026. */
-const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
-const REVIEW = reviewClaim('unattended', 'en');
-const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue.en;
-
-// Four of the five lifestyle styles carry no priceTrust of their own, so the
-// fallback below is what actually renders on most of these pages — it used to
-// be the string '€59.99', typed twice, and then one flat rate off PER_PRODUCT.
-// It is two figures now: a lifestyle carousel is priced on a ladder that falls
-// with the count (section 0 of src/data/pricing.js), so a single rate here
-// would be quoting the price of ONE product on a page a brand reaches while
-// choosing a look for a whole range. Custom is quoted, so it keeps its own.
+/* Vier van de vijf lifestylestijlen dragen geen eigen priceTrust, dus de
+   terugval hieronder is wat er op de meeste van deze pagina's staat. Hij was
+   ooit de string '€59.99', twee keer getypt, en daarna één vast tarief. Nu zijn
+   het TWEE bedragen: een lifestylecarrousel loopt op een staffel die met het
+   aantal daalt, dus één tarief zou hier de prijs van ÉÉN product noemen op een
+   pagina die een merk bereikt terwijl het een look kiest voor een hele
+   collectie. Custom wordt geoffreerd en houdt zijn eigen regel. */
 const LIFE_FLOOR_FROM = LADDER.lifestyle[LADDER.lifestyle.length - 1][0];
 const priceLine = style.priceTrust
   ? `${style.priceTrust}${style.priceUnit ?? ''}`
   : `${euro(ladderRate('lifestyle', 1), 'en')} / product, ${euro(ladderFloor('lifestyle'), 'en')} from ${LIFE_FLOOR_FROM} up (${vatLabel('excl', 'en')})`;
 
-// The description used to be one template literal, so its length was whatever
-// the data happened to make it. metaDescription drops the trailing tier
-// clauses instead of running past 160 — see src/data/meta.js.
-
 /* ── DE ZUSTERLOOKS VAN DEZE PAGINA ────────────────────────────────────────
    Elke stijlpagina had precies één inkomende link — van de eigen hub — en
-   verwees naar geen enkele andere look. Wie op Dunes belandde en wilde weten
-   hoe Flash eruitziet, moest terug naar boven en opnieuw beginnen. Deze rij
-   is dezelfde regel-vorm als de dienstenrij eronder, met de looks erin die
-   deze pagina niet is. Ongelokaliseerde paden: ServiceSwitch doet lp() zelf. */
+   verwees naar geen enkele andere look. Ongelokaliseerde paden: ServiceSwitch
+   doet lp() zelf. */
 const zusters = styles
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/lifestyle/${s.slug}`, naam: s.name }));
 
+const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
 ---
 
 <Layout
@@ -101,163 +50,5 @@ const zusters = styles
     REVIEW,
   ])}
 >
-  <section class="page-hero">
-    <div class="container">
-      <p class="eyebrow-page"><a href="/lifestyle/" style="color:inherit">&larr; Lifestyle styles</a></p>
-      <h1 class="display">{style.name}.</h1>
-      <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
-      <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start/'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
-        <a href={waHref(`Hi VISUAILS, I'd like to talk about the ${style.name} style.`)} class="btn btn-wa" target="_blank" rel="noopener">
-          WhatsApp
-        </a>
-      </div>
-      <ServiceSwitch lang="en" label={'Other looks:'} items={zusters} />
-      <ServiceSwitch current="lifestyle" lang="en" />
-      <div class="trust-row" style="margin-top:2rem">
-        {/* One source for the rate on this page: priceLine already resolves
-            the style's own priceTrust or the two ends of the ladder, so the
-            trust row cannot quote a different figure from the meta. */}
-        <span class="trust-item"><strong>{priceLine}</strong></span>
-        <span class="trust-item"><strong>{TIMING}</strong></span>
-        <span class="trust-item"><strong>{REVIEW}</strong></span>
-      </div>
-      {QUEUE && <p class="queue-note">{QUEUE}</p>}
-    </div>
-  </section>
-
-  <!-- Media band — mask reveal on the signature photo -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="reveal-mask" style="aspect-ratio:21/10;overflow:hidden">
-        <div class="rm-inner" style={`background-image:url('${style.heroPhoto}')`}></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Mood — photo + one line, not a wall of text -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-split reveal pending">
-        <div class="photo-split-media">
-          <img src={moodPhoto} alt={`${style.name}-style example`} loading="lazy" decoding="async" width={moodSize[0]} height={moodSize[1]} />
-        </div>
-        <div>
-          <h2>What {style.name} <em>feels</em> like.</h2>
-          <p class="lead" style="margin-top:1rem">{style.moodParagraphs[0]}</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Before/after — real proof for this specific style. -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>Flat vs. {style.name}.</h2>
-        <p style="margin-inline:auto">What the treatment actually changes.</p>
-      </div>
-      <div style="max-width:520px;margin:2rem auto 0">
-        <Compare
-          grade
-          before={style.heroPhoto}
-          after={style.heroPhoto}
-          beforeAlt={`A flat, ungraded ${style.name} scene`}
-          afterAlt={`The same scene finished in the ${style.name} lifestyle look`}
-          beforeLabel="Flat"
-          afterLabel={style.name}
-        />
-      </div>
-    </div>
-  </section>
-
-  <!-- Steps -->
-  <section class="section-tight">
-    <div class="container">
-      <h2 class="section-h">How {style.name} comes together.</h2>
-      <div class="steps">
-        {style.steps.map((s, i) => (
-          <div class="reveal pending">
-            <span class="step-n">No. {i + 1}</span><h3>{s.title}</h3><p>{s.body}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Photo grid — the range, in frames -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="grid grid-3">
-        {style.grid.map((g) => (
-          <div class="reveal pending">
-            {g.photo ? (
-              <div class="vis" style={`background-image:url('${g.photo}')`}>
-                <div class="vis-floor"></div>
-                <span class="vis-badge">{style.name}</span>
-              </div>
-            ) : (
-              <ProductScene icon={g.icon} width={g.width} badge={style.name} />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Best for / what you get -->
-  <section>
-    <div class="container two-col" style="align-items:start">
-      <div class="reveal pending">
-        <h2 style="font-size:1.7rem">Best <em>for</em></h2>
-        <ul class="checklist" style="margin-top:1.2rem">
-          {style.bestFor.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
-      <div class="reveal pending">
-        <h2 style="font-size:1.7rem">What you <em>get</em></h2>
-        <ul class="checklist" style="margin-top:1.2rem">
-          {style.whatYouGet.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
-          ))}
-        </ul>
-        {/* Brief §1 — every drop-content page links to /custom-models. One
-            line in the template reaches all five lifestyle styles. Written as
-            a conditional ("worn rather than placed") because not every
-            lifestyle scene has a person in it. */}
-        <p class="model-note">When a {style.name} scene is worn rather than placed, the model can come from the standard roster — or be <a href="/custom-models/">a Brand Model made only for you</a>, so the same face carries every order.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Closing CTA -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:var(--t-page-h1-sm)">Make {style.name} <em>yours.</em></h2>
-        <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start/'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
-          <a href="/test-sample/" class="btn btn-ghost btn-lg">Test sample</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <LifestyleStyleDetail lang="en" style={style} zusters={zusters} priceLine={priceLine} />
 </Layout>
-
-<style>
-  /* app.css's shared .step-n carries an italic mark from the v1 serif system
-     — v2 has no italics anywhere, so it’s overridden locally rather than
-     touched globally. */
-  .step-n { font-style: normal; }
-  /* Mirrors .queue-note on the hub components. Astro scopes <style> to a
-     component's own template, so a shared visual pattern has to be repeated
-     per file; consolidating these into global.css is logged as a follow-up. */
-  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
-
-  /* The Brand Model line under "What you get" — body copy, not a callout.
-     A box or a tint here would turn one honest sentence into an ad slot. */
-  .model-note { margin-top: 1.2rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
-  .model-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
-</style>

@@ -13,7 +13,7 @@
  * ────────────────────────────────────────────────────────────────────────────
  * SIX COLOURWAYS, ONE OF THEM LIVE. August 2026.
  *
- * The palette moved to the green (--accent #C6F100) and the mark had to follow.
+ * The palette moved to the green (--accent #D2E04A) and the mark had to follow.
  * Rather than settling that in a conversation and baking the winner in, all six
  * candidates are cut every run: the live one into public/, the rest into
  * brand/logo/<id>/, which is NOT inside public/ and therefore never deployed —
@@ -69,14 +69,15 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
 import { readGlyph, opticalOffset, BLEND } from './lib/glyph.mjs';
+import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
 const DRAWER = path.join(ROOT, 'brand', 'logo');
 
-const GREEN = '#C6F100';   // --accent
-const GREEN_DIM = '#ABD200';   // --accent-dim
-const DARK = '#08090B';   // --bg-0
+const GREEN = '#D2E04A';   // --accent (sectie 20: het Komma-geel)
+const GREEN_DIM = '#B8CC46';   // --accent-dim
+const DARK = '#111111';   // --glass (sectie 20: de grond is wit, het tegeltje blijft donker)
 const WHITE = '#FFFFFF';   // --ink-1
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
@@ -159,12 +160,19 @@ function icoFromPngs(files) {
   return Buffer.concat([header, ...bufs]);
 }
 
-/* CHROMIUM_PATH is an escape hatch for environments where Playwright's own
- * download is absent but a Chromium binary exists — a CI image, or the cloud
- * container this project is also built in, which ships /opt/pw-browsers/chromium
- * and no headless shell. Unset on a normal machine, where Playwright finds its
- * own browser and this resolves to undefined (which launch() ignores). */
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+/* WELKE CHROME. 7 september 2026: hier stond `process.env.CHROMIUM_PATH ||
+ * undefined`, een omweg die je zelf moest zetten. Zonder die variabele zoekt
+ * Playwright naar de bouwnummer-map die bij ZIJN versie hoort, en die verandert
+ * bij elke `npm install` die playwright een minor omhoog tikt:
+ *
+ *     browserType.launch: Executable doesn't exist at
+ *     /opt/pw-browsers/chromium_headless_shell-1234/...
+ *
+ * Precies waarvoor scripts/lib/browserpad.mjs bestaat, en wat elf andere
+ * scripts in deze map al gebruiken. CHROMIUM_PATH blijft vóór staan zodat een
+ * omgeving die hem zet niets merkt; browserPad() geeft undefined terug op een
+ * gewone laptop, en dan zoekt Playwright zelf — wat daar juist goed is. */
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || browserPad() });
 const nudge = await opticalOffset(browser, glyph);
 
 async function shoot(v, out, file, size, radius, inset) {

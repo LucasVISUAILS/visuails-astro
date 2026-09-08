@@ -1,0 +1,187 @@
+---
+/**
+ * VISUAILS Studio — de schil van het klantdashboard, als Astro-layout.
+ * 5 september 2026, fase 2 van "dashboard en /admin in Astro".
+ *
+ * WAT DIT VERVANGT. shellBody() en page() in src/lib/account.js: een handgeschreven
+ * <html> met een handgekopieerde tokenset (public/account.css, 3.800 regels) die
+ * naast de site stond in plaats van erin. Dit bestand laadt DEZELFDE global.css
+ * en dezelfde fonts als src/layouts/Layout.astro, dus een token dat op de site
+ * verandert, verandert hier mee. Wat Studio erbovenop nodig heeft — de zijbalk,
+ * de bovenbalk, de lichte stand — staat in src/styles/studio.css.
+ *
+ * TWEE STANDEN. `schil` (standaard) is het dashboard mét zijbalk, voor een
+ * ingelogde klant. `kaart` is één gecentreerde kaart zonder zijbalk: het
+ * inlogscherm, "kijk in je mail", de dode link. Zelfde head, zelfde koppen,
+ * andere romp.
+ *
+ * GEEN JAVASCRIPT, EN DAT IS EEN EIS. De CSP van dit dashboard (studioHeaders in
+ * account.js) is default-src 'none' met alleen img/style/font 'self'. Er staat
+ * hier dus geen <script>, geen ClientRouter, geen inline stijl. Het thema, de
+ * taal en de inklapstand zijn cookies, gezet via een GET met ?thema=, ?lang= en
+ * ?nav= — zie sectionState() in account.js voor de omleiding.
+ *
+ * DE KOPPEN. Astro laat een pagina zijn eigen antwoordkoppen zetten via
+ * Astro.response.headers; dat gebeurt hier in de layout, zodat elke Studio-pagina
+ * ze krijgt zonder er zelf aan te denken. no-store, noindex, en de CSP.
+ */
+import '../styles/global.css';
+import '../styles/studio.css';
+/* Sectie 22: Anybody voor de koppen, Instrument Sans voor de tekst, Martian
+   Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
+   noot bij --font-heading in global.css voor waarom deze drie. */
+import '@fontsource-variable/anybody/standard.css';
+import '@fontsource-variable/instrument-sans/standard.css';
+import '@fontsource-variable/martian-mono/standard.css';
+
+/* ── SATOSHI, ALS HIJ ER LIGT — 8 september 2026 ──────────────────────────
+   Lucas wil Satoshi proberen als tekstletter. Hij staat niet op npm (Fontshare,
+   ITF Free Font License, gratis maar niet open source), dus de woff2's komen
+   met de hand in public/fonts/satoshi/ te liggen.
+
+   Liggen ze er niet, dan wordt er niets gelinkt en verandert er niets: geen
+   404, en Instrument Sans blijft de tekstletter. Wat er gebeurt als ze er WEL
+   liggen, staat in public/fonts/satoshi/satoshi.css zelf.
+
+   ── EN WAAROM DIT GEEN VITE-ZOEKOPDRACHT MEER IS ─────────────────────────
+   Hier stond, uit de vorige ronde overgenomen, een statische mapzoekopdracht
+   van Vite over public/fonts/satoshi/. Die was NOOIT AAN GEWEEST: zolang de
+   map leeg was gaf hij een leeg object en leek alles in orde. Vandaag lag er
+   voor het eerst een bestand in, en de hele site gaf 500 met "i is not
+   defined" — Vite probeert elk gevonden pad als MODULE te laden, en een woff2
+   in public/ is geen module. De schakelaar werkte dus precies zolang hij niet
+   werd omgezet.
+
+   Nu leest astro.config.mjs de map met node:fs en zet het antwoord als
+   __SATOSHI__ in de build. Dat is één waarde, vervangen tijdens het bouwen, en
+   hij kan niets laden — de fout hierboven kán niet meer terugkomen. Onder
+   `astro dev` bestaat dezelfde vervanging, dus lokaal zie je hetzelfde. */
+const SATOSHI = __SATOSHI__;
+
+import { studioHeaders, studioNav, STUDIO_ICONS } from '../lib/account.js';
+
+interface Props {
+  lang: 'nl' | 'en';
+  title: string;
+  t: Record<string, any>;
+  thema?: 'licht' | 'donker';
+  /** 'schil' = zijbalk + bovenbalk (ingelogd); 'kaart' = één kaart in het midden (inloggen). */
+  vorm?: 'schil' | 'kaart';
+  navDicht?: boolean;
+  actief?: string;
+  customer?: { brand?: string | null; name?: string | null; email: string } | null;
+  /** De bovenbalk van de schil. */
+  kop?: string;
+  lede?: string;
+  chip?: { tekst: string; toon?: string } | null;
+  actie?: { href: string; label: string } | null;
+}
+
+const {
+  lang, title, t, thema = 'licht', vorm = 'schil', navDicht = false, actief = '',
+  customer = null, kop = '', lede = '', chip = null, actie = null,
+} = Astro.props;
+
+for (const [k, v] of Object.entries(studioHeaders())) Astro.response.headers.set(k, v);
+
+const licht = thema === 'licht';
+const items = studioNav(t);
+const naam = customer ? (customer.brand || customer.name || customer.email) : '';
+const andereTaal = lang === 'nl' ? 'en' : 'nl';
+const andereTaalLabel = lang === 'nl' ? 'English' : 'Nederlands';
+const themaLabel = licht ? t.themaNaarDonker : t.themaNaarLicht;
+const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
+
+/* De twee paden van het merk — dezelfde als de <symbol id="markglyph"> in
+   Layout.astro. Inline, want een <use href="#markglyph"> zou het symbool hier
+   niet vinden en een <img> valt onder img-src, wat kan, maar dan kleurt het
+   teken niet mee met het thema. */
+const MERK_V = 'M 0 16 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119 A 201.21 201.21 0 0 0 101 15.75 L 0 16 Z';
+const MERK_VLAG = 'M 701.75 0 L 543.25 366.25 L 507.25 453.75 L 652 259.25 L 702 338.25 L 701.75 0 Z';
+---
+<!doctype html>
+<html lang={lang} data-thema={licht ? 'licht' : 'donker'}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="color-scheme" content={licht ? 'light' : 'dark'}>
+  <title>{title} — VISUAILS</title>
+  {/* De tevredenheidsvraag op Bestellingen komt uit feedback.js met zijn eigen
+      stylesheet (public/feedback.css, gedeeld met het klantportaal). Op tokens,
+      dus hij kleurt mee met licht en donker. */}
+  <link rel="stylesheet" href="/feedback.css">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  {/* Als laatste in de <head>: satoshi.css zet --font-body om, en staat
+      buiten @layer basis waar global.css in zit — zie de noot in dat bestand. */}
+  {SATOSHI && <link rel="stylesheet" href="/fonts/satoshi/satoshi.css" />}
+</head>
+<body class={`studio ${vorm === 'kaart' ? 'st-kaartvorm' : 'st-schilvorm'}${licht ? '' : ' on-ink'}`}>
+  {vorm === 'kaart' ? (
+    <div class="st-kaartveld">
+      <a class="st-merk st-merk-los" href="/" aria-label="VISUAILS">
+        <svg class="st-glyph" viewBox="0 0 702 813.25" aria-hidden="true" focusable="false"><path d={MERK_V}/><path d={MERK_VLAG}/></svg>
+      </a>
+      <main class="st-kaart" id="inhoud">
+        <slot />
+      </main>
+    </div>
+  ) : (
+    <div class={`st-shell${navDicht ? ' is-dicht' : ''}`}>
+      <div class="st-kolom">
+      <aside class="st-side">
+        <div class="st-side-kop">
+          <a class="st-merk" href="/" aria-label="VISUAILS">
+            <svg class="st-glyph" viewBox="0 0 702 813.25" aria-hidden="true" focusable="false"><path d={MERK_V}/><path d={MERK_VLAG}/></svg>
+          </a>
+          <span class="st-sub">{t.dashSub}</span>
+          <a class="st-klap" href={`?nav=${navDicht ? 'open' : 'dicht'}`} title={navDicht ? t.navExpand : t.navCollapse}>
+            <Fragment set:html={navDicht ? STUDIO_ICONS.expand : STUDIO_ICONS.collapse} /><span>{t.navCollapse}</span>
+          </a>
+        </div>
+        <nav class="st-nav" aria-label="Studio">
+          {items.map((n) => (
+            <a class={`st-navlink${n.key === actief ? ' is-actief' : ''}`} href={n.href} aria-current={n.key === actief ? 'page' : undefined}>
+              <Fragment set:html={n.icon} /><span>{n.label}</span>
+            </a>
+          ))}
+        </nav>
+        <div class="st-side-voet">
+          {customer && (
+            <div class="st-wie">
+              <span class="st-wie-naam">{naam}</span>
+              <span class="st-wie-mail">{customer.email}</span>
+            </div>
+          )}
+          <a class="st-stand" href={`?lang=${andereTaal}`}>{andereTaalLabel}</a>
+          <a class="st-stand" href={`?thema=${licht ? 'donker' : 'licht'}`} title={themaLabel}>
+            <Fragment set:html={themaIcon} /><span>{themaLabel}</span>
+          </a>
+          <form method="post" action="/account/logout"><button class="btn btn-ghost btn-block" type="submit">{t.signOut}</button></form>
+        </div>
+      </aside>
+      </div>
+
+      <div class="st-romp">
+        <header class="st-top">
+          <div class="st-top-tekst">
+            <h1 class="st-h1">{kop}</h1>
+            {lede && <p class="st-lede">{lede}</p>}
+          </div>
+          {chip && chip.tekst && <span class={`st-chip${chip.toon ? ` is-${chip.toon}` : ''}`}>{chip.tekst}</span>}
+          {actie && <a class="btn btn-primary st-top-actie" href={actie.href}>{actie.label}</a>}
+        </header>
+        <main class="st-main" id="inhoud">
+          <slot />
+        </main>
+        <footer class="st-voet">
+          <a class="st-stand" href={`?lang=${andereTaal}`}>{andereTaalLabel}</a>
+          <a class="st-stand" href={`?thema=${licht ? 'donker' : 'licht'}`}><Fragment set:html={themaIcon} /><span>{themaLabel}</span></a>
+          <form method="post" action="/account/logout"><button class="btn btn-ghost btn-sm" type="submit">{t.signOut}</button></form>
+        </footer>
+      </div>
+    </div>
+  )}
+</body>
+</html>

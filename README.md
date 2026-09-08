@@ -76,7 +76,14 @@ opgepakt en hoort niet in de build-output.
 
 Bindings komen uit `wrangler.toml` (dit project draait in config-file mode, de
 Bindings-UI in het dashboard is uitgeschakeld). Secrets staan daar bewust níét in
-en gaan via `npx wrangler pages secret put …`.
+en gaan via `npx wrangler secret put …`.
+
+**Sinds 5 september 2026 is de site één Cloudflare Worker** in plaats van een
+Pages-project met losse Functions: dezelfde build levert de statische pagina's
+én de server-routes. Hoe dat zit, hoe je hem uitrolt en welke secrets opnieuw
+gezet moeten worden staat in `WORKER.md`. De twee alinea's hierboven over
+`*.pages.dev` beschrijven de oude situatie, die blijft staan tot het domein
+overgaat.
 
 De Worker in `cron/` is een **apart** Cloudflare-project (`visuails-cron`) en gaat
 niet mee met een push. Verander je `cron/index.js`, dan blijft de oude versie

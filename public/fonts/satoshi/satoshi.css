@@ -1,0 +1,51 @@
+/* Satoshi — Indian Type Foundry via fontshare.com, ITF Free Font License.
+   Zie LEES-MIJ.txt in deze map.
+
+   ── DIT BESTAND IS DE SCHAKELAAR — 8 september 2026 ────────────────────────
+   Layout.astro en StudioLayout.astro linken het alleen als er woff2's in deze
+   map liggen. Liggen ze er niet, dan gebeurt er niets en blijft Instrument
+   Sans de tekstletter — geen 404, geen halve toestand.
+
+   De omschakeling zelf staat hieronder, in :root, en niet in global.css. Twee
+   redenen. Ten eerste hoort de schakelaar bij de bestanden: wie de map
+   leeghaalt, zet daarmee ook de regel uit. Ten tweede staat global.css bij de
+   build in `@layer basis` (zie scripts/stijl-uit-de-pagina.mjs) en dit bestand
+   niet — een regel zonder laag wint altijd van een regel in een laag, hoe de
+   volgorde in de <head> ook uitvalt. Dat is hier precies wat je wilt en het is
+   geen toeval: het is de reden dat dit bestand in public/ staat en niet in
+   src/styles/.
+
+   ALLEEN DE LOPENDE TEKST. Anybody blijft de kop en Martian Mono blijft het
+   label. Satoshi heeft geen breedte-as, en het hele typografische systeem van
+   sectie 22 draait op "nadruk is breedte" — de koppen staan op 118%, het
+   woordmerk op 125%. Zet je Satoshi op de koppen, dan valt die regel om en
+   verdwijnt de meest herkenbare zet van de site. --font-body staat toch al op
+   100% breedte (zie de noot bij --font-merk in global.css: "twee breedtes in
+   één alinea leest als twee lettertypes"), dus daar kost het niets. */
+@font-face {
+  font-family: "Satoshi";
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url("/fonts/satoshi/Satoshi-Variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Satoshi";
+  font-style: italic;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url("/fonts/satoshi/Satoshi-VariableItalic.woff2") format("woff2");
+}
+
+/* De omschakeling. Instrument Sans blijft in de terugvalrij staan: laadt
+   Satoshi niet, dan leest de pagina in de letter die hij anders ook had.
+
+   `:root:root` en niet `:root` — nagemeten, want de eerste versie deed niets.
+   Bij het BOUWEN belandt global.css in `@layer basis` en wint een regel zonder
+   laag altijd, ongeacht volgorde. Onder `astro dev` draait die stap niet, staat
+   global.css óók zonder laag, en beslist dus de volgorde in de <head> — en daar
+   won global.css. Twee keer dezelfde selector maakt de specificiteit hoger dan
+   die van global.css, en dan klopt het in allebei de gevallen. */
+:root:root {
+  --font-body: "Satoshi", "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
+}

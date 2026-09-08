@@ -113,6 +113,8 @@ import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
 import Layout from '../layouts/Layout.astro';
 import {
   euro, turnaround, ladderRate, ladderFloor, LADDER, WINDOW_THRESHOLD,
+  /* §10 leest het revisiebeleid uit; zie de noot daar. */
+  revisiebeleid,
 } from '../data/pricing.js';
 // §7 READS THE RETENTION PERIODS, it no longer types them. They sat here as 90 and
 // 12 and on four other pages as well; a typed number in a CONTRACT is the most
@@ -139,6 +141,7 @@ import { planName } from '../data/planNames.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../data/juridischeDatums.js';
+import '../styles/stijl22.css';
 
 /* Van–tot over de drie plannen, op de maandtermijn: dat is het bedrag dat op
    /plans het grootst wordt afgedrukt. De jaartermijn is goedkoper en zou hier
@@ -164,17 +167,34 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
   title="Terms of Service — VISUAILS"
   description="The terms governing your use of VISUAILS — AI-assisted, human-reviewed product visuals. Orders, pricing, usage rights, payment, VAT and Dutch law."
 >
-  <section class="page-hero">
-    <div class="container narrow">
-      <span class="eyebrow-page">Legal</span>
-      <h1 class="display">Terms of Service</h1>
-      <p class="lead" style="margin-top:1.2rem">The terms that apply when you order product visuals from VISUAILS. Please read them before placing an order.</p>
-      <p class="legal-meta">{bijgewerktOp('terms', 'en')}</p>
-    </div>
-  </section>
+{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
+    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
+    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
+    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
+    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
+    letters voor alle zes juridische pagina's tegelijk.
 
-  <section class="section-tight">
-    <div class="container narrow legal">
+    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
+    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
+    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
+    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
+    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
+    daarop is niet de toets versoepelen maar de andere vier meenemen.
+
+    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
+    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
+    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
+    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
+<div class="s22">
+  <section class="paneel">
+    <header class="paneel-kop jur-kop">
+      <p class="etiket">Legal</p>
+      <h1 class="hoog">Terms of Service</h1>
+      <p class="lopend jur-lead">The terms that apply when you order product visuals from VISUAILS. Please read them before placing an order.</p>
+      <p class="legal-meta">{bijgewerktOp('terms', 'en')}</p>
+    </header>
+
+    <div class="legal jur-tekst">
 
       <h2>1. Introduction &amp; acceptance</h2>
       <p>These Terms of Service govern your use of VISUAILS and any order you place with us. VISUAILS is operated from Enschede, the Netherlands (KVK 99742993, VAT NL005407575B96). By placing an order, requesting a test sample or otherwise using our service, you agree to these terms. If you do not agree, please do not use the service.</p>
@@ -306,7 +326,20 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>10. Cancellations, refunds and putting it right</h2>
       <p>Because visuals are produced to your specific brief, work that has already started or been delivered generally cannot be cancelled for a refund.</p>
-      <p>We ask on every order whether you are happy with what you received. If you are not, tell us what is wrong and we will go through it with you. What we agree from there depends on the problem, and can be a revision, a refund, or credit against your next order. We would rather understand what you actually wanted than work through a fixed number of rounds.</p>
+      <p>We ask on every order whether you are happy with what you received. If you are not, tell us what is wrong and we will go through it with you, image by image in VISUAILS Studio. What happens next depends on which of these four you are in:</p>
+      {/* ── DE LADDER STAAT IN pricing.js EN NIET HIER — 4 september 2026 ──────
+          Dit was één alinea die eindigde op "what we agree from there depends on
+          the problem". Twee van de vier bezoekers in de doorloop van die dag
+          noemden precies die zin als de reden om niet te bestellen. Lucas heeft
+          het beleid daarna uitgeschreven; het staat als REVISIEBELEID in
+          pricing.js en wordt op drie plekken uitgelezen — hier, op /faq en in
+          VISUAILS Studio bij het aanvragen van een ronde. Eén bron, want dit is
+          een toezegging over geld. */}
+      <ul>
+        {revisiebeleid('en').map(([kop, regel]) => (
+          <li><strong>{kop}.</strong> {regel}</li>
+        ))}
+      </ul>
       <p>What we agree relates to the brief we worked from; a substantially new direction is a new order rather than a correction. Refunds are at our reasonable discretion and assessed case by case.</p>
 
 
@@ -334,25 +367,33 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <h2>13. Contact</h2>
       <p>Questions about these terms? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a> or message us on WhatsApp at <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>.</p>
 
+    <div class="jur-uit">
+      <h2>Ready when you are.</h2>
+      <p>Start with a test sample, or place your first order. We’ll confirm what you get and what it costs before any work begins.</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href="/test-sample/">Test sample</a>
+        <a class="knop knop-lijn" href="/start/">Start an order</a>
+        <a class="knop knop-lijn" href={waHref("Hi VISUAILS, I have a question about your terms.")} target="_blank" rel="noopener">WhatsApp</a>
+      </p>
+    </div>
     </div>
   </section>
-
-  <section>
-    <div class="container">
-      <div class="cta-band">
-        <h2 class="display" style="font-size:var(--t-page-h2)">Ready when you are.</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">Start with a test sample, or place your first order. We’ll confirm what you get and what it costs before any work begins.</p>
-        <div class="flex" style="justify-content:center;margin-top:2rem">
-          <a href="/test-sample/" class="btn btn-primary btn-lg">Test sample</a>
-          <a href="/start/" class="btn btn-ghost btn-lg">Start an order</a>
-          <a href={waHref("Hi VISUAILS, I have a question about your terms.")} class="btn btn-wa" target="_blank" rel="noopener">
-            WhatsApp
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
+</div>
 </Layout>
+
+<style>
+  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
+     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
+     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
+     verkooptekst. */
+  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
+  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
+  .jur-tekst { max-width: 46rem; }
+
+  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
+  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .jur-uit .acties { margin-top: 1.4rem; }
+</style>
 
 <style>
   /* De opmaak van een juridische pagina staat sinds 3 september 2026 één keer in

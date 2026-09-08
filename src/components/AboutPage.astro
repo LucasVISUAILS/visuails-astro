@@ -1,0 +1,234 @@
+---
+/*
+ * VISUAILS — de overpagina, gedeeld door /about en /nl/about.
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026, EN DEZE KEER MET BEWIJS ─────────
+ *
+ * Dit paar was al uit elkaar gelopen, en zichtbaar: /about stond in de stijl
+ * van sectie 22 en /nl/about nog in de oude — een donkere hero met parallax,
+ * een fotoraster met een andere naam, en drie kaarten waar de Engelse pagina
+ * drie genummerde regels heeft. Twee bestanden die hetzelfde horen te zeggen,
+ * zeiden het al niet meer in dezelfde vorm.
+ *
+ * Dat is precies het patroon dat /gallery, /thank-you, /guides,
+ * /upload-guidelines, /404, /contact en /test-sample allemaal al hebben
+ * afgelegd. Hier is de Engelse vorm de basis, want die was al om.
+ *
+ * ── DE HARDE LEVERBELOFTE IS HIER WEGGEHAALD — 9 augustus 2026 ────────────
+ *
+ * De Nederlandse pagina beloofde op twee plekken "twee werkdagen"; de Engelse
+ * op geen van beide. De gevoeligste claim van de site was dus niet gelijk in
+ * twee talen, en hij stond in de taal die het grootste deel van het publiek
+ * leest. Erger dan de scheefheid was dat hij in strijd was met het mechanisme:
+ * pricing.js geeft een bestelling onder tien producten uitdrukkelijk GEEN
+ * vastgelegde datum, en /studio bestaat als hele pagina om uit te leggen dat er
+ * geen datum wordt genoemd voordat de agenda hem heeft vrijgegeven.
+ *
+ * Wat er nu staat noemt geen termijn zelf: TIMING en REVIEW komen uit
+ * pricing.js, per taal, en kunnen daarmee niet los gaan staan.
+ */
+import { waHref } from '../data/whatsapp.js';
+import { MERK } from '../data/brand.js';
+import WhoItIsFor from './WhoItIsFor.astro';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel, reviewClaim, turnaround } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+/* Deze pagina droeg ooit vier losse leverbeloftes — de meta, de hero-lead, de
+   body-lead en een pil — allemaal "in ongeveer een dag" of "~24u", en geen
+   enkele daarvan is ooit door de capaciteitspoort gekomen. Het zijn tier-feiten,
+   dus ze komen uit pricing.js.
+
+   De ene prijs was een vast tarief per product. Dat is nu de eerste trede van
+   een staffel, en de regel eronder heet "Toegankelijk voor iedereen" — precies
+   de claim die het instaptarief alléén zou ondergraven, want het punt van een
+   dalend tarief is dat een grotere collectie minder per product kost. Dus staan
+   beide uiteinden er. */
+const CAT_ENTRY = euro(ladderRate('catalog', 1), lang);
+const CAT_FLOOR = euro(ladderFloor('catalog'), lang);
+const CAT_FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
+const TIMING = turnaround('unattended', lang);
+const REVIEW = reviewClaim('unattended', lang);
+
+/* w/h zijn de INTRINSIEKE pixelmaten van de bestanden in public/img, niet de
+   weergavegrootte — die bepaalt het raster zelf met aspect-ratio. Ze staan hier
+   zodat de browser de ruimte kan reserveren voordat de bytes er zijn. */
+const strip = [
+  { src: '/img/lifestyle-glow-05.webp', w: 2400, h: 1792, alt: { en: 'Lifestyle photo in the Glow style', nl: 'Lifestylefoto in de Glow-stijl' } },
+  { src: '/img/lifestyle-flash-06.webp', w: 2400, h: 1792, alt: { en: 'Lifestyle photo in the Flash style', nl: 'Lifestylefoto in de Flash-stijl' } },
+  { src: '/img/lifestyle-dunes-02.webp', w: 928, h: 1152, alt: { en: 'Lifestyle photo in the Dunes style', nl: 'Lifestylefoto in de Dunes-stijl' } },
+  { src: '/img/lifestyle-phone-made-09.webp', w: 2400, h: 1792, alt: { en: 'Lifestyle photo in the Phone-made style', nl: 'Lifestylefoto in de Phone-made-stijl' } },
+  { src: '/img/banners-08.webp', w: 928, h: 1152, alt: { en: 'Campaign photography', nl: 'Campagnefotografie' } },
+];
+
+const c = nl ? {
+  etiket: `${MERK} · Enschede, NL`,
+  h1: ['Studiobeelden, zonder ', 'studio'],
+  lead: 'Productvisuals uit je eigen foto’s, door een specialist nagekeken voordat ze naar je toe gaan.',
+  ctaProef: 'Probeer VISUAILS',
+  ctaWa: 'WhatsApp',
+  heroWa: 'Hoi VISUAILS, ik wil graag meer over jullie weten.',
+  heroAlt: 'Een campagnebeeld van VISUAILS',
+
+  samenH: ['Snelheid en oordeel, ', 'samen'],
+  samenP: 'Een klein team in Enschede, Nederland. Eén foto wordt een volledige set — en een specialist beoordeelt elk beeld voordat het bij jou aankomt.',
+  samenAlt: 'Een VISUAILS-campagnescène, gestyled en geschoten voor een klantmerk',
+  plaats: 'Enschede, NL',
+
+  drieEtiket: 'Waar we ons aan houden',
+  drieH: 'Drie dingen waar we aan vasthouden.',
+  drie: [
+    ['Snel, zonder sluiproute', 'Een doorlooptijd die we halen in plaats van een die mooi staat, en nog steeds beelden die je zonder aarzelen publiceert.'],
+    ['Consistent, ook bij dertig producten', 'Dezelfde kleurzetting en dezelfde kadrering over je hele assortiment, niet per beeld opnieuw bedacht.'],
+    ['Eén product of een hele collectie', `Catalog ${CAT_ENTRY} per product, ${CAT_FLOOR} vanaf ${CAT_FLOOR_FROM} (${vatLabel('excl', 'nl')}). Bestel er één, of een hele collectie.`],
+  ],
+
+  slotH: ['Laten we ', 'samen', ' groeien.'],
+  slotP: 'Probeer VISUAILS eerst, of stuur ons een bericht op WhatsApp.',
+  slotWa: 'Hoi VISUAILS, ik wil graag praten over visuals voor mijn merk.',
+} : {
+  etiket: `${MERK} · Enschede, NL`,
+  h1: ['Great visuals, without the ', 'studio'],
+  lead: 'Studio-quality product visuals — modern speed, checked by real people.',
+  ctaProef: 'Test sample',
+  ctaWa: 'WhatsApp',
+  heroWa: 'Hi VISUAILS, I’d like to learn more about you.',
+  heroAlt: 'A VISUAILS campaign visual',
+
+  samenH: ['Speed and judgement, ', 'together'],
+  samenP: 'A small team in Enschede, Netherlands. One photo becomes a full set — and a specialist reviews every image before it reaches you.',
+  samenAlt: 'A VISUAILS campaign scene, styled and shot for a client brand',
+  plaats: 'Enschede, NL',
+
+  drieEtiket: 'What we hold to',
+  drieH: 'Three things we hold to.',
+  drie: [
+    ['Speed, without the shortcut', 'A turnaround we make rather than one that looks good, and still images you publish without hesitating.'],
+    ['Consistent, at thirty products too', 'The same colour and the same framing across your whole range, not re-invented per image.'],
+    ['One product or a whole collection', `Catalog at ${CAT_ENTRY} per product, ${CAT_FLOOR} from ${CAT_FLOOR_FROM} up (${vatLabel('excl', 'en')}). Order one, or a whole collection.`],
+  ],
+
+  slotH: ['Let’s grow ', 'together', '.'],
+  slotP: 'Test sample, or message us on WhatsApp.',
+  slotWa: 'Hi VISUAILS, I’d like to talk about visuals for my brand.',
+};
+---
+
+<div class="s22 ab">
+
+  <section class="paneel" aria-labelledby="ab-h1">
+    <div class="ab-open">
+      <div class="paneel-kop">
+        <p class="etiket">{c.etiket}</p>
+        <h1 id="ab-h1" class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
+        <p class="lopend">{c.lead}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaProef}</a>
+          <a class="knop knop-lijn" href={waHref(c.heroWa)} target="_blank" rel="noopener">{c.ctaWa}</a>
+        </p>
+      </div>
+      <figure class="kaart kaart-stil ab-beeld">
+        <img src="/img/banners-13.webp" alt={c.heroAlt} width="2400" height="1350" fetchpriority="high" decoding="async" />
+      </figure>
+    </div>
+  </section>
+
+  <section class="paneel" aria-labelledby="ab-samen">
+    <div class="ab-twee">
+      <figure class="kaart kaart-stil ab-portret">
+        <img src="/img/custom-models-01.webp" alt={c.samenAlt} loading="lazy" decoding="async" width="800" height="1071" />
+      </figure>
+      <div class="paneel-kop ab-zin">
+        <h2 id="ab-samen" class="hoog hoog-2">{c.samenH[0]}<em>{c.samenH[1]}</em>.</h2>
+        <p class="lopend">{c.samenP}</p>
+        {/* De drie pillen komen uit pricing.js en niet uit deze lijst — zie de
+            noot bovenaan: het zijn tier-feiten, en een pagina die er zijn eigen
+            versie van bijhoudt, belooft op een dag iets anders. */}
+        <ul class="ab-pillen" role="list">
+          <li>{c.plaats}</li>
+          <li>{REVIEW}</li>
+          <li>{TIMING}</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {/* De donkere kamer: drie regels waar we ons aan houden. */}
+  <section class="kamer ab-kamer" aria-labelledby="ab-drie">
+    <span class="spook spook-links" aria-hidden="true">STUDIO</span>
+    <header class="kamer-kop">
+      <p class="etiket">{c.drieEtiket}</p>
+      <h2 id="ab-drie" class="hoog hoog-2">{c.drieH}</h2>
+    </header>
+    <ol class="ab-drie" role="list">
+      {c.drie.map(([kop, tekst], i) => (
+        <li>
+          <span class="stap-nr" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <b>{kop}</b>
+          <span class="lopend">{tekst}</span>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="paneel">
+    <ul class="ab-strook" role="list">
+      {strip.map((f, i) => (
+        <li class={i === 0 || i === strip.length - 1 ? 'breed' : undefined}>
+          <span class="kaart kaart-stil">
+            <img src={f.src} alt={f.alt[lang]} loading="lazy" decoding="async" width={f.w} height={f.h} />
+          </span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* "Voor wie is dit" stond tot augustus 2026 als sectie 4 op de homepage. Het
+      staat hier omdat een bezoeker die vraag pas stelt als hij weet wie er
+      achter staat. Er is niets ingekort bij de verhuizing; de component draagt
+      de copy woord voor woord mee, en tekent hem sinds 7 september als kamer. */}
+  <WhoItIsFor lang={lang} />
+
+  <section class="paneel paneel-slot" aria-labelledby="ab-slot">
+    <h2 id="ab-slot" class="hoog">{c.slotH[0]}<em>{c.slotH[1]}</em>{c.slotH[2]}</h2>
+    <p class="lopend">{c.slotP}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaProef}</a>
+      <a class="knop knop-lijn" href={waHref(c.slotWa)} target="_blank" rel="noopener">{c.ctaWa}</a>
+    </p>
+  </section>
+
+</div>
+
+<style>
+  .ab-open, .ab-twee { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .ab-open .paneel-kop, .ab-zin { margin-bottom: 0; }
+  .ab-beeld { aspect-ratio: 4 / 3; }
+  .ab-portret { aspect-ratio: 3 / 4; }
+  .ab-beeld img, .ab-portret img, .ab-strook img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ab-pillen { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
+  .ab-pillen li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; padding: .42rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px; }
+
+  .ab-drie { list-style: none; padding: 0; margin: 0; }
+  .ab-drie li { display: grid; grid-template-columns: auto minmax(0, 19rem) minmax(0, 34rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid rgb(245 245 245 / .14); }
+  .ab-drie li:last-child { border-bottom: 1px solid rgb(245 245 245 / .14); }
+  .ab-drie b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; text-wrap: balance; }
+
+  .ab-strook { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.7rem, 1.6vw, 1.1rem); list-style: none; padding: 0; margin: 0; }
+  .ab-strook .kaart { aspect-ratio: 3 / 4; }
+  .ab-strook .breed { grid-column: span 3; }
+  .ab-strook .breed .kaart { aspect-ratio: 21 / 9; }
+
+  @media (max-width: 900px) {
+    .ab-open, .ab-twee { grid-template-columns: 1fr; }
+    .ab-drie li { grid-template-columns: auto 1fr; }
+    .ab-drie li .lopend { grid-column: 2; }
+    .ab-strook { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ab-strook .breed { grid-column: span 2; }
+  }
+</style>

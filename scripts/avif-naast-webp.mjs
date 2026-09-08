@@ -232,7 +232,13 @@ export default function avifNaastWebp() {
 
            Vandaar deze regel. Wel beelden op de pagina's, geen enkele AVIF op
            schijf: dat is geen keuze, dat is een vergeten stap. */
-        if (!omgezet && overgeslagen) {
+        /* Zolang elke foto een plaatshouder is (src/data/beeld.js) staat er
+           geen enkele webp meer in de HTML, en dan is "geen AVIF" geen
+           vergeten stap maar de bedoeling. */
+        const { PLAATSHOUDERS } = await import(new URL('../src/data/beeld.js', import.meta.url).href);
+        if (!omgezet && overgeslagen && PLAATSHOUDERS) {
+          logger.info(`avif: plaatshouders staan aan, ${overgeslagen} beeld(en) zonder <picture> — verwacht`);
+        } else if (!omgezet && overgeslagen) {
           logger.warn(
             `avif: GEEN ENKELE AVIF gevonden naast ${overgeslagen} beeld(en). ` +
             'De site wordt nu met alleen webp gebouwd — ruwweg twee keer zo zwaar. ' +

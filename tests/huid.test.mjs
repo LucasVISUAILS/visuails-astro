@@ -127,45 +127,25 @@ console.log('\nde hoeken gaan op nul, behalve de pillen');
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   3 · DE AANWIJZER FAALT NAAR EEN GEWONE MUISPIJL
-   ───────────────────────────────────────────────────────────────────────────── */
-console.log('\nde aanwijzer degradeert veilig');
+   3 · DE EIGEN MUISAANWIJZER IS ERUIT — 7 september 2026
+   ─────────────────────────────────────────────────────────────────────────────
+   Hier stond de langste sectie van dit bestand: elf toetsen die bewaakten dat
+   `cursor: none` alleen aan een door het script gezette klasse hing, dat een
+   tekstveld zijn eigen cursor hield, dat hij op een aanraakscherm verdween en
+   dat de luisteraars werden opgeruimd bij een zachte navigatie.
+
+   Ze zijn weg omdat de aanwijzer zelf weg is. Lucas: *"Ik wil de muis hover
+   animatie weg en subtieler hebben dan wat hij nu is. Ook de kleur vind ik niet
+   mooi."* Zie de noot bovenin HuidKantig.astro voor waarom er geen zachtere
+   versie voor in de plaats kwam — de kleur was geen smaakkeuze maar een gevolg
+   van mix-blend-mode difference, en met de kleur eruit valt de techniek weg.
+
+   Wat die toetsen bewaakten kan niet meer stukgaan: er staat geen enkele
+   `cursor: none` meer in het stijlblad. Deze toets bewaakt precies dat. */
+console.log('\nde bezoeker houdt zijn eigen muisaanwijzer');
 {
-  /* Dit is de belangrijkste regel van het hele bestand. `cursor: none` in
-     statische CSS betekent: gaat het script stuk of staat JavaScript uit, dan
-     heeft de bezoeker géén muisaanwijzer meer. Niet lelijk — onbedienbaar.
-     Daarom zet het script de klasse, en hangt elke `cursor: none` eraan. */
-  const cursorRegels = [...huid.matchAll(/([^{}]*)\{[^{}]*cursor:\s*none[^{}]*\}/g)].map((m) => m[1].trim());
-  check('er is minstens één cursor:none-regel', cursorRegels.length > 0, true);
-  check('elke cursor:none hangt aan html.aw-aan',
-    cursorRegels.filter((s) => !s.includes('html.aw-aan')), []);
-  check('de klasse wordt door het script gezet',
-    /classList\.add\('aw-aan'\)/.test(huid), true);
-  check('en alleen bij een fijne aanwijzer',
-    /\(hover:\s*hover\)\s*and\s*\(pointer:\s*fine\)/.test(huid), true);
-
-  /* Een tekstveld houdt zijn eigen cursor: die vertelt wáár je kunt typen, en
-     dat is informatie die een pijl niet kan overbrengen. */
-  check('formuliervelden houden cursor:auto',
-    /input, textarea, select[^}]*cursor:\s*auto/.test(huid.replace(/\s+/g, ' ')), true);
-
-  check('er is een reduced-motion-tak', /prefers-reduced-motion:\s*reduce/.test(huid), true);
-  check('en het script leest diezelfde voorkeur',
-    /matchMedia\('\(prefers-reduced-motion: reduce\)'\)/.test(huid), true);
-  check('op een aanraakscherm verdwijnt hij', /\(pointer:\s*coarse\)[^}]*display:\s*none/.test(huid.replace(/\s+/g, ' ')), true);
-
-  /* ClientRouter maakt van elke navigatie een zachte navigatie. Zonder opruimen
-     stapelen de luisteraars zich op bij elke pagina die iemand aandoet. */
-  check('luisteraars worden opgeruimd bij een zachte navigatie',
-    /astro:before-swap/.test(huid) && /removeEventListener\('mousemove'/.test(huid), true);
-  check('en opnieuw gestart na een zachte navigatie',
-    /astro:page-load/.test(huid), true);
-
-  /* TWEE LAGEN sinds 27 augustus 2026 — de omgekeerde en de vlakke — en ze
-     moeten allebei voor een schermlezer onzichtbaar zijn. Deze toets ging af
-     toen de klasse van `aw` naar `aw aw-om` ging: precies waar hij voor is. */
-  check('beide aanwijzerlagen zijn aria-hidden',
-    (huid.match(/class="aw [a-z-]+" id="aw2?" aria-hidden="true"/g) || []).length, 2);
+  check('geen enkele cursor:none in de huid', /cursor:\s*none/.test(huid), false);
+  check('en geen eigen aanwijzer in de opmaak', /id="aw2?"/.test(huid), false);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -230,7 +210,11 @@ console.log('\nde huid staat op elke gebouwde pagina, op twee na');
 
        Hier normaliseren en niet verderop bij de vergelijking, want dan geldt het
        voor alles wat er nog met deze lijst gebeurt. */
-    const gebouwd = globSync('dist/**/index.html').map((f) => f.replace(/\\/g, '/'));
+    /* /concept/* staat er buiten: dat zijn de voorbeelden voor de nieuwe
+       voorpagina (6 september 2026), op ConceptLayout zonder Layout.astro en
+       zonder global.css — de huid bestaat daar niet. Ze zijn noindex en gaan
+       weg zodra er gekozen is; deze regel gaat dan mee. */
+    const gebouwd = globSync('dist/**/index.html').map((f) => f.replace(/\\/g, '/')).filter((f) => !f.includes('/concept/'));
     check('er is een gebouwde site om te controleren', gebouwd.length > 50, true);
 
     const zonder = gebouwd
@@ -264,16 +248,17 @@ console.log('\nde huid staat op elke gebouwde pagina, op twee na');
 console.log('\n/proef rendert dezelfde component als /');
 {
   for (const [naam, bron, taal] of [['en', proefEN, 'en'], ['nl', proefNL, 'nl']]) {
-    check(`/proef (${naam}) importeert HomeV2`, /import HomeV2 from '\.\.?\/[^']*components\/HomeV2\.astro'/.test(bron), true);
-    check(`/proef (${naam}) rendert HomeV2 lang="${taal}"`, bron.includes(`<HomeV2 lang="${taal}" />`), true);
+    check(`/proef (${naam}) importeert Voorpagina`, /import Voorpagina from '\.\.?\/[^']*components\/Voorpagina\.astro'/.test(bron), true);
+    check(`/proef (${naam}) rendert Voorpagina lang="${taal}"`, bron.includes(`<Voorpagina lang="${taal}" />`), true);
     /* noindex, want een pagina die de site half toont hoort niet in een
        zoekresultaat. scripts/sitemap-and-404.mjs leest de robots-tag en laat
        hem daardoor vanzelf weg. */
     check(`/proef (${naam}) staat op noindex`, /\bnoindex\b/.test(bron), true);
   }
-  /* Dezelfde grond als de homepage, anders vergelijk je twee dingen tegelijk. */
+  /* Dezelfde grond als de homepage, anders vergelijk je twee dingen tegelijk.
+     Sectie 21: de grond is de standaard (licht), dus geen van beide noemt hem. */
   check('/proef staat op dezelfde grond als /',
-    /ground="espresso"/.test(proefEN) && /ground="espresso"/.test(indexEN), true);
+    /ground=/.test(proefEN) === /ground=/.test(indexEN), true);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -304,11 +289,13 @@ if (!distStaat.er || distStaat.oud) {
   check('dist/proef bestaat', proef !== null, true);
   if (proef) {
     check('/proef draagt de klasse NIET', /<body[^>]*huid-kantig/.test(proef), false);
-    check('/proef draagt de aanwijzer NIET', /id="aw"/.test(proef), false);
+    check('/proef draagt geen eigen aanwijzer', /id="aw"/.test(proef), false);
     check('/proef staat op noindex', /name="robots"[^>]*noindex/.test(proef), true);
   }
   check('/ draagt de klasse', /<body[^>]*huid-kantig/.test(home), true);
-  check('/ draagt de aanwijzer', /id="aw"/.test(home), true);
+  /* Omgedraaid op 7 september 2026: de eigen aanwijzer is eruit, dus ook de
+     homepage hoort er geen te dragen. Zie sectie 3 hierboven. */
+  check('/ draagt ook geen eigen aanwijzer', /id="aw"/.test(home), false);
   /* Het merk met zijn hover-animatie staat er nog — de reden dat dit een huid
      werd en geen verbouwing. */
   check('/ heeft het merk met zijn twee lagen nog', /mk-line/.test(home) && /mk-fill/.test(home), true);

@@ -29,9 +29,31 @@
 // conversations. A card form here would be the studio pretending a decision has
 // been made that has not.
 import { AMOUNT, euro, vatLabel, vatLead, vatDetail, turnaround } from '../../data/pricing.js';
+/* ── DE VIDEOSTIJLEN, VOOR DE VRAAG WELKE SOORT CLIP — 7 september 2026 ──────
+   Lucas: *"ook een soort keuze scherm welke style de klant wilt of custom"*, en
+   *"zorg er wel voor dat als iemand een order op een specifieke style invoert
+   dat ik dan kan zien welke style het is."*
+
+   Het aanvraagformulier vroeg wél HOEVEEL clips en niet WELKE SOORT, terwijl
+   die keuze het meeste bepaalt van wat het wordt en wat het kost — een Motion
+   is een vast tarief per clip, een campagne is een offerte. Zonder die vraag
+   stond in /admin alleen een aantal, en moest de soort per mail alsnog worden
+   uitgevraagd.
+
+   De lijst komt uit videoStyles.js en wordt niet hier overgetypt, dus een soort
+   die daar hernoemd of toegevoegd wordt, staat hier meteen ook. Het veld heet
+   `style`, precies zoals bij lifestyle, zodat /admin er dezelfde regel voor
+   tekent (zie het blok "Wat de klant koos" in admin.js) en quoteVideo() hem op
+   dezelfde plek vindt. */
+import { videoStyles as videoStylesEn } from '../../data/videoStyles.js';
+import { videoStyles as videoStylesNl } from '../../data/videoStyles.nl.js';
 import { localizedPath } from '../../i18n/ui.js';
 
 import Note from '../Note.astro';
+/* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen en staat de pagina
+   in ink-op-ink. Dat is precies wat er op /thank-you gebeurde toen die als eerste
+   werd omgezet; het is één regel en hij wordt één keer vergeten. */
+import '../../styles/stijl22.css';
 interface Props {
   lang: 'en' | 'nl';
   /* 'brand-model' STOND HIER, EN IS WEG — 23 augustus 2026.
@@ -284,16 +306,34 @@ const k = KIND[lang][kind];
 const wire = kind === 'video' ? 'video' : 'custom';
 
 const clipCounts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const videoSoorten = nl ? videoStylesNl : videoStylesEn;
+const soortLabel = nl ? 'Welke soort clip?' : 'Which kind of clip?';
+const soortHint = nl
+  ? 'Nog niet zeker? Kies wat er het dichtst bij komt — je zit nergens aan vast.'
+  : 'Not sure? Pick the closest one — nothing here is binding.';
+const soortOnbekend = nl ? 'Weet ik nog niet' : 'Not sure yet';
 const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
 ---
 
-<section class="page-hero"><div class="container">
-  <span class="eyebrow-page">{ui.eyebrow}</span>
-  <h1 class="display">{k.h1}</h1>
-  <p class="lead" style="margin-top:1.2rem">{k.lead}</p>
-</div></section>
+{/* ── SECTIE 22 — 7 september 2026 ─────────────────────────────────────────
+    Deze pagina en BrandModelBrief waren de laatste twee buiten het systeem, en
+    dat was te zien: /start/catalog stond in het paneelritme en /start/video
+    ernaast in de oude stijl, terwijl het dezelfde stap in dezelfde bestelling
+    is.
 
-<section class="section-tight"><div class="container">
+    ALLEEN DE OMLIJSTING. De .hold-* klassen hieronder blijven woord voor woord
+    staan, en het <style>-blok onderaan ook. Wat er verandert is de schil: een
+    .s22-omhulsel, twee panelen in plaats van twee losse secties, en de knop als
+    pil. Er zit geen JavaScript op deze pagina, dus er is ook niets dat op een
+    klassenaam selecteert — dit is de veiligste van de acht die nog overwaren. */}
+<div class="s22">
+<section class="paneel hold-kop">
+  <p class="etiket">{ui.eyebrow}</p>
+  <h1 class="hoog">{k.h1}</h1>
+  <p class="lopend hold-lede">{k.lead}</p>
+</section>
+
+<section class="paneel">
   <div class="hold">
     <!-- THE STATUS. The same object on all three pages, so a visitor who has
          seen one of them knows what kind of page this is on sight. -->
@@ -360,6 +400,17 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
           <label for="h-web">{ui.website} <span class="hold-opt">{ui.optional}</span></label>
           <input class="input" type="url" id="h-web" name="website" placeholder="https://" autocomplete="url" />
         </div>
+
+        {kind === 'video' && (
+          <div class="field">
+            <label for="h-style">{soortLabel}</label>
+            <select class="select" id="h-style" name="style">
+              <option value="" selected>{soortOnbekend}</option>
+              {videoSoorten.map((v) => <option value={v.slug}>{v.name} &middot; {v.tagline}</option>)}
+            </select>
+            <span class="hint">{soortHint}</span>
+          </div>
+        )}
 
         {kind === 'video' && (
           <div class="field">
@@ -467,7 +518,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
           <textarea class="textarea" id="h-msg" name="message"></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg hold-submit">{ui.submit}</button>
+        <button type="submit" class="knop knop-inkt hold-submit">{ui.submit}</button>
       </form>
     </div>
 
@@ -476,10 +527,11 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
       <ul class="hold-next-list">
         {ui.next.map((t) => <li>{t}</li>)}
       </ul>
-      <p class="hold-more"><a href={lp('/start')}>{ui.back}</a></p>
+      <p class="hold-more"><a class="pijl" href={lp('/start')}>{ui.back}</a></p>
     </div>
   </div>
-</div></section>
+</section>
+</div>
 
 <style>
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -489,6 +541,10 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
      uses the system colour the rest of the site uses for statements of process,
      the same one /start's capacity note carries.
      ═══════════════════════════════════════════════════════════════════════════ */
+  /* De kop staat sinds sectie 22 in een eigen paneel; .hoog en .etiket doen het
+     letterwerk, dus hier alleen de ruimte eronder en de leesbreedte. */
+  .hold-kop { padding-bottom: clamp(2rem, 4vw, 3rem); }
+  .hold-lede { margin-top: 1.2rem; }
   .hold { display: grid; gap: clamp(2rem, 4vw, 3rem); max-width: 880px; }
 
   .hold-status {

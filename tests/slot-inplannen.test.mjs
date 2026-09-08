@@ -24,10 +24,10 @@ import { mintToken, hashToken } from '../src/lib/token.js';
 import { readCalendar } from '../src/lib/agenda.js';
 import { startPlanWindow } from '../src/lib/planStart.js';
 import {
-  ATTENDED_IMAGES_PER_DAY, WINDOW_DAYS,
+  ATTENDED_PUNTEN_PER_DAG, WINDOW_DAYS,
   addDays, firstOfferableDay, windowFor,
 } from '../src/data/capacity.js';
-import { KIND_IMAGES } from '../src/data/pricing.js';
+import { KIND_PUNTEN } from '../src/data/pricing.js';
 
 let goed = 0;
 let totaal = 0;
@@ -100,7 +100,7 @@ console.log('\nde server bepaalt zelf welke tweede dag erbij hoort');
   ok('de post gaat terug naar de lijst', res.headers.get('location'), '/account/plan?tab=bestellen');
 
   const q = await rij();
-  const verwacht = windowFor(EERSTE, KIND_IMAGES.complete, {}, new Set());
+  const verwacht = windowFor(EERSTE, KIND_PUNTEN.complete, {}, new Set());
   ok('de eerste dag is de aangewezen dag', q.window_start, EERSTE);
   ok('en de tweede komt uit windowFor()', q.window_end, verwacht[verwacht.length - 1]);
   ok('het zijn er WINDOW_DAYS', verwacht.length, WINDOW_DAYS);
@@ -118,9 +118,9 @@ console.log('\nalleen een vastgezet item houdt zijn dagen');
   db.prepare("UPDATE plan_queue SET locked_at = datetime('now') WHERE id = 7").run();
   const na = await readCalendar(env, VANDAAG);
   ok('en zodra het vastgezet is, wel',
-    na.booked[q.window_start], Math.ceil(KIND_IMAGES.complete / WINDOW_DAYS));
+    na.booked[q.window_start], Math.ceil(KIND_PUNTEN.complete / WINDOW_DAYS));
   ok('  op allebei de dagen',
-    na.booked[q.window_end], Math.ceil(KIND_IMAGES.complete / WINDOW_DAYS));
+    na.booked[q.window_end], Math.ceil(KIND_PUNTEN.complete / WINDOW_DAYS));
 }
 
 /* ══ 5 · TERUG NAAR ZO SNEL MOGELIJK LAAT DE DAGEN ECHT LOS ══════════════ */
@@ -146,7 +146,7 @@ console.log('\neen dag die vol zit, wordt niet aangeboden en niet aangenomen');
     .run(EERSTE, addDays(EERSTE, 1));
 
   const { booked } = await readCalendar(env, VANDAAG);
-  ok('de dag zit aan het plafond', booked[EERSTE] >= ATTENDED_IMAGES_PER_DAY, true);
+  ok('de dag zit aan het plafond', booked[EERSTE] >= ATTENDED_PUNTEN_PER_DAG, true);
 
   const res = await post({ do: 'plan', id: 7, dag: EERSTE });
   ok('en de poort weigert hem als begindag',
@@ -158,20 +158,22 @@ console.log('\neen dag die vol zit, wordt niet aangeboden en niet aangenomen');
 console.log('\nhet inplanscherm is een formulier en geen widget');
 {
   const bron = (await import('node:fs')).readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8');
+  const pagina = (await import('node:fs')).readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8');
   /* Dit dashboard draait geen JavaScript — de CSP heeft geen script-src. Een
      kalender die op een klik reageert, moet dus een submit-knop zijn. Deze regel
      is wat voorkomt dat iemand er ooit een handler in schrijft die stil niets doet. */
   ok('elke aanwijsbare dag is een submit-knop',
-    /class="kal-dag is-vrij[^"]*" type="submit" name="dag"/.test(bron), true);
+    /class=\{`st-kal-dag is-vrij[^`]*`\} type="submit" name="dag"/.test(pagina), true);
   ok('en er staat geen enkele klikafhandeling in dit bestand',
-    /addEventListener|onclick=/.test(bron), false);
+    /addEventListener|onclick=/.test(bron) || /addEventListener|onclick=|<script/.test(pagina), false);
   /* De inline stijl. Op de rest van dit bestand zoeken helpt niet: er staan twee
      lange noten in die `style="width:58%"` letterlijk citeren, juist omdat het
      daar een keer misging. De vraag geldt dus het inplanscherm zelf, en niet het
      bestand eromheen. */
-  const kaart = bron.slice(bron.indexOf('function kalenderKaart'), bron.indexOf('function planBody'));
-  ok('de bezetting komt als klasse binnen',  /kal-vul-\$\{/.test(kaart), true);
-  ok('en er staat geen inline stijl in het scherm', /style="/.test(kaart), false);
+  /* Sinds 6 september 2026 tekent src/pages/account/plan.astro het scherm; de
+     staat (`vul` als getal 0–10) komt uit planView() in account.js. */
+  ok('de bezetting komt als klasse binnen', /st-kal-vul"><i class=\{`is-\$\{d\.vul\}`\}/.test(pagina), true);
+  ok('en er staat geen inline stijl in het scherm', /style="/.test(pagina), false);
 }
 
 /* ══ 8 · ELK GEKOZEN PAAR WORDT ZIJN EIGEN BESTELLING ════════════════════
@@ -192,9 +194,9 @@ console.log('\nhet inplanscherm is een formulier en geen widget');
 console.log('\nelk gekozen dagenpaar wordt zijn eigen bestelling, met de dagen erop');
 {
   const eersteDag = EERSTE;
-  const paarA = windowFor(eersteDag, KIND_IMAGES.complete, {}, new Set());
+  const paarA = windowFor(eersteDag, KIND_PUNTEN.complete, {}, new Set());
   const laterDag = addDays(eersteDag, 10);
-  const paarB = windowFor(laterDag, KIND_IMAGES.complete, {}, new Set());
+  const paarB = windowFor(laterDag, KIND_PUNTEN.complete, {}, new Set());
 
   db.exec('DELETE FROM orders');
   db.exec('DELETE FROM plan_queue');
@@ -227,10 +229,10 @@ console.log('\nelk gekozen dagenpaar wordt zijn eigen bestelling, met de dagen e
 
   /* ── EN DE DAGEN BLIJVEN BEZET OVER DE OVERGANG HEEN ────────────────────── */
   const na = await readCalendar(env, VANDAAG);
-  const perDag = Math.ceil((2 * KIND_IMAGES.complete) / WINDOW_DAYS);
+  const perDag = Math.ceil((2 * KIND_PUNTEN.complete) / WINDOW_DAYS);
   ok('de agenda ziet de dagen nog steeds bezet', na.booked[paarA[0]], perDag);
   ok('  op allebei de dagen van het paar', na.booked[paarA[1]], perDag);
-  ok('en het latere paar ook', na.booked[paarB[0]], Math.ceil(KIND_IMAGES.complete / WINDOW_DAYS));
+  ok('en het latere paar ook', na.booked[paarB[0]], Math.ceil(KIND_PUNTEN.complete / WINDOW_DAYS));
 
   /* De wachtrij is leeg: alles is opgepakt en aan een bestelling gehangen. Zou er
      iets zijn blijven staan, dan telde het dubbel — één keer als wachtrij-item en

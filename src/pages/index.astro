@@ -1,5 +1,5 @@
 ---
-// VISUAILS — / (English). The page body lives in HomeV2.astro so that / and
+// VISUAILS — / (English). The page body lives in Voorpagina.astro so that / and
 // /nl cannot drift apart; only the meta differs here. (It said HomePage.astro
 // until that file was deleted — it had been dead since the section-17 rebuild
 // and nothing imported it, but 1,347 lines of stale prices read as live to
@@ -18,7 +18,7 @@
 // either number alone is a different page's price. The band is gone with the
 // package, because every count has a price now.
 import Layout from '../layouts/Layout.astro';
-import HomeV2 from '../components/HomeV2.astro';
+import Voorpagina from '../components/Voorpagina.astro';
 import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
 
 // `complete` is the scope the homepage sells — a catalog set and a lifestyle
@@ -40,7 +40,6 @@ const description =
   title="Product visuals for clothing brands, no shoot | VISUAILS"
   description={description}
   ogImage="/img/og-en.png"
-  ground="espresso"
 >
-  <HomeV2 lang="en" />
+  <Voorpagina lang="en" />
 </Layout>

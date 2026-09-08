@@ -1,50 +1,37 @@
 ---
-import { waHref } from '../../data/whatsapp.js';
-// VISUAILS — shared template for the catalog style detail pages
-// (Classic / Custom Brand). Ported from the SvelteKit rebuild's
-// CatalogStylePage.svelte, driven by `style` entries from
-// src/data/catalogStyles.js (shared with catalog/index.astro). No real
-// "clean product on white" photography exists (see IMAGES.md), so this
-// stays ProductScene-led throughout, same as the original.
+// VISUAILS — /catalog/[slug] (English). De inhoud staat in
+// CatalogStyleDetail.astro zodat deze route en /nl/catalog/[slug] niet uit
+// elkaar kunnen lopen; zie de kop daar.
+//
+// De stijlgegevens zelf komen uit catalogStyles.js — dat is de tekst die PER
+// STIJL verschilt en die per taal een eigen bestand verdient. Wat de component
+// draagt is de omlijsting: de koppen die op elke stijlpagina hetzelfde zijn.
 import Layout from '../../layouts/Layout.astro';
-import ProductScene from '../../components/ProductScene.astro';
-import Compare from '../../components/Compare.astro';
+import CatalogStyleDetail from '../../components/CatalogStyleDetail.astro';
 import { catalogStyles } from '../../data/catalogStyles.js';
-import { reviewClaim, turnaround, TIERS } from '../../data/pricing.js';
+import { reviewClaim, turnaround } from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
 
-import ServiceSwitch from '../../components/ServiceSwitch.astro';
 export function getStaticPaths() {
   return catalogStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
 
 const { style } = Astro.props;
 
-// Timing, review level and queue behaviour are tier facts, not per-style
-// copy. They come from pricing.js so a capacity change cannot leave a
-// promise stranded on a detail page — which is exactly what "~24h delivery"
-// and "Produced in about 24 hours" were doing here.
-/* Een look OP AANVRAAG (priceTrust, dus custom) heeft eerst een ontwerp; de
-   doorlooptijd van een gewone bestelling geldt daar pas ná. "Vaak binnen een
-   dag" op die pagina was een belofte over het verkeerde ding — 4 sept 2026. */
-const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
-const REVIEW = reviewClaim('unattended', 'en');
-const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue.en;
-
-// The description used to be one template literal, so its length was whatever
-// the data happened to make it. metaDescription drops the trailing tier
-// clauses instead of running past 160 — see src/data/meta.js.
-
 /* ── DE ZUSTERLOOKS VAN DEZE PAGINA ────────────────────────────────────────
    Elke stijlpagina had precies één inkomende link — van de eigen hub — en
-   verwees naar geen enkele andere look. Wie op Dunes belandde en wilde weten
-   hoe Flash eruitziet, moest terug naar boven en opnieuw beginnen. Deze rij
-   is dezelfde regel-vorm als de dienstenrij eronder, met de looks erin die
-   deze pagina niet is. Ongelokaliseerde paden: ServiceSwitch doet lp() zelf. */
+   verwees naar geen enkele andere look. Wie op Classic belandde en wilde weten
+   hoe Custom eruitziet, moest terug naar boven en opnieuw beginnen.
+   Ongelokaliseerde paden: ServiceSwitch doet lp() zelf. */
 const zusters = catalogStyles
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/catalog/${s.slug}`, naam: s.name }));
 
+/* De beschrijving was één template literal, dus zijn lengte was wat de data er
+   toevallig van maakte. metaDescription laat de tier-clausules achterwege in
+   plaats van over de 160 te lopen — zie src/data/meta.js. */
+const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
 ---
 
 <Layout
@@ -56,159 +43,5 @@ const zusters = catalogStyles
     REVIEW,
   ])}
 >
-  <section class="page-hero">
-    <div class="container two-col" style="align-items:center">
-      <div class="reveal pending">
-        <span class="eyebrow-page"><a href="/catalog/" style="color:inherit">Catalog styles</a></span>
-        <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
-        <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
-        <div class="flex" style="margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
-          <a href={waHref(`Hi VISUAILS, I'd like to talk about the ${style.name} style.`)} class="btn btn-wa" target="_blank" rel="noopener">
-            WhatsApp
-          </a>
-        </div>
-        <ServiceSwitch lang="en" label={'Other looks:'} items={zusters} />
-        <ServiceSwitch current="catalog" lang="en" />
-        <div class="trust-row" style="margin-top:2rem">
-          <span class="trust-item"><strong>{style.priceTrust}</strong>{style.priceUnit ?? ' / visual'}</span>
-          <span class="trust-item"><strong>{TIMING}</strong></span>
-          <span class="trust-item"><strong>{REVIEW}</strong></span>
-        </div>
-        {QUEUE && <p class="queue-note">{QUEUE}</p>}
-      </div>
-      <div class="reveal pending">
-        <ProductScene icon={style.heroIcon} width={style.heroWidth} badge={`Catalog · ${style.name}`} wide />
-      </div>
-    </div>
-  </section>
-
-  <!-- Mood + how it’s made, one photo-split section -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-split reveal pending">
-        <div class="photo-split-media"><ProductScene icon={style.cardIcon} width={style.cardWidth} badge={`Catalog · ${style.name}`} /></div>
-        <div>
-          <h2>What {style.name} <em>feels</em> like.</h2>
-          {style.moodParagraphs.map((p) => (
-            <p class="lead" style="margin-top:1rem">{p}</p>
-          ))}
-          <div class="steps" style="grid-template-columns:1fr;margin-top:1.8rem;gap:1.1rem">
-            {style.steps.map((s, i) => (
-              <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{s.title}</h3><p>{s.body}</p></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3x3 product-scene grid — the look, in one glance -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="grid grid-3">
-        {style.grid.map((g) => (
-          <div class="reveal pending">
-            <ProductScene icon={g.icon} width={g.width} badge={`Catalog · ${style.name}`} />
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Real proof, not just illustration — the one genuine raw-to-catalog
-       pair in the asset library, framed for this style's own funnel step. -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>What {style.name} does to a real photo.</h2>
-        <p style="margin-inline:auto">One of your own product photos, treated exactly like this.</p>
-      </div>
-      <div style="max-width:520px;margin:2rem auto 0">
-        <Compare
-          before="/img/catalog-before-1x1.webp"
-          after="/img/catalog-after.webp"
-          ratio="1/1"
-          beforeLabel="Your photo"
-          afterLabel="VISUAILS"
-          beforeAlt="A raw phone photo of a t-shirt on a table before VISUAILS"
-          afterAlt={`The same t-shirt as a clean ${style.name} catalog visual after VISUAILS`}
-        />
-      </div>
-    </div>
-  </section>
-
-  <!-- Craft + why choose it, condensed into one section -->
-  <section>
-    <div class="container">
-      <h2 class="section-h">What goes into every frame.</h2>
-      <div class="arrow-rows arrow-rows-2">
-        {style.craft.map((c) => (
-          <div class="reveal pending"><h3>{c.title}</h3><p>{c.body}</p></div>
-        ))}
-      </div>
-      <div class="grid grid-3" style="margin-top:clamp(2.5rem,5vw,4rem)">
-        {style.why.map((w) => (
-          <div class="card reveal pending"><h3 style="font-size:1.1rem">{w.title}</h3><p style="margin-top:.6rem;font-size:.92rem;color:var(--ink-3)">{w.body}</p></div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Best for / what you get -->
-  <section class="section-tight">
-    <div class="container two-col" style="align-items:start">
-      <div class="reveal pending">
-        <h2 style="font-size:1.7rem">Best <em>for</em></h2>
-        <ul class="checklist" style="margin-top:1.2rem">
-          {style.bestFor.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
-      <div class="reveal pending">
-        <h2 style="font-size:1.7rem">What you <em>get</em></h2>
-        <ul class="checklist" style="margin-top:1.2rem">
-          {style.whatYouGet.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
-          ))}
-        </ul>
-        {/* Brief §1 — every drop-content page links to /custom-models. One
-            line in the template reaches both catalog styles, and it sits
-            under "What you get" because the model is part of what you get:
-            every catalog set includes an on-model shot. */}
-        <p class="model-note">The on-model shot in every {style.name} set can use a face from the standard roster — or <a href="/custom-models/">a Brand Model made only for you</a>, so the same person carries your whole range.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Closing CTA -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:var(--t-page-h1-sm)">Make {style.name} <em>yours.</em></h2>
-        <p class="lead" style="margin:1rem auto 0;text-align:center">Test sample, or place your order today.</p>
-        <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
-          <a href="/test-sample/" class="btn btn-ghost btn-lg">Test sample</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <CatalogStyleDetail lang="en" style={style} zusters={zusters} />
 </Layout>
-
-<style>
-  .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
-  .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
-  .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
-  .step p { font-size: .9rem; color: var(--ink-3); }
-  /* Mirrors .queue-note on the hub components. Astro scopes <style> to a
-     component's own template, so a shared visual pattern has to be repeated
-     per file; consolidating these into global.css is logged as a follow-up. */
-  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
-
-  /* The Brand Model line under "What you get" — body copy, not a callout.
-     A box or a tint here would turn one honest sentence into an ad slot. */
-  .model-note { margin-top: 1.2rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
-  .model-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
-</style>

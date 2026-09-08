@@ -25,12 +25,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { readGlyph, opticalOffset } from './lib/glyph.mjs';
+import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'brand', 'visuails-logo');
 
-const GREEN = '#C6F100';
-const DARK = '#08090B';
+const GREEN = '#D2E04A';
+const DARK = '#111111';
 const WHITE = '#FFFFFF';
 
 /* Shared with make-favicons.mjs, so the pack and the tab icon cannot disagree
@@ -59,7 +60,19 @@ function tileSvg(ink, ground, size, radius, inset) {
 </svg>`;
 }
 
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+/* WELKE CHROME. 7 september 2026: hier stond `process.env.CHROMIUM_PATH ||
+ * undefined`, een omweg die je zelf moest zetten. Zonder die variabele zoekt
+ * Playwright naar de bouwnummer-map die bij ZIJN versie hoort, en die verandert
+ * bij elke `npm install` die playwright een minor omhoog tikt:
+ *
+ *     browserType.launch: Executable doesn't exist at
+ *     /opt/pw-browsers/chromium_headless_shell-1234/...
+ *
+ * Precies waarvoor scripts/lib/browserpad.mjs bestaat, en wat elf andere
+ * scripts in deze map al gebruiken. CHROMIUM_PATH blijft vóór staan zodat een
+ * omgeving die hem zet niets merkt; browserPad() geeft undefined terug op een
+ * gewone laptop, en dan zoekt Playwright zelf — wat daar juist goed is. */
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || browserPad() });
 const nudge = await opticalOffset(browser, glyph);
 
 async function png(svg, w, h, file, transparent) {
@@ -165,6 +178,45 @@ WELK BESTAND WANNEER
                       achtergrond die in de naam staat. Zet een JPG dus nooit
                       op een andere kleur dan die van zichzelf — dan zie je het
                       vierkant.
+
+DE CONTOURVARIANT (visuails-*-contour-*)
+  Toegevoegd 19 augustus 2026. Dezelfde V, maar met een zwarte lijn die het merk
+  op een afstandje volgt. Aangeleverd als afbeelding en hier alleen opgeschoond:
+  de kleuren zijn vastgeklikt op het merkgroen en het bijna-zwart hierboven, en
+  de witte achtergrond is eruit gehaald.
+
+  VIER ONDERGRONDEN, EN ZE ZIJN NIET UITWISSELBAAR. Dit merk heeft twee kleuren
+  in zich, en een ondergrond kan er altijd één van opslokken:
+
+    op-wit    beide kleuren staan er. Dit is de variant zoals bedoeld, en de
+              enige die je moet pakken als je er niet over na wilt denken.
+    op-grijs  hetzelfde beeld, iets rustiger. #D8D8D8 — LET OP: dat is geen
+              merkkleur, hij staat nergens in global.css. Wil je een andere
+              grijstint, dan is dat één regel in scripts/gronden.py.
+    op-zwart  de zwarte contour valt weg tegen de grond en wat overblijft is het
+              gewone groene merk. Bruikbaar, maar dan heb je feitelijk
+              png-transparant/visuails-mark-groen te pakken — met een extra stap.
+    op-groen  nu valt het gróén weg en blijft alleen de zwarte lijn staan: de V
+              als losse contour. Een heel ander beeld, en met opzet bewaard.
+
+  De transparante versie in png-transparant/ hoort dus op iets lichts. Zet je
+  hem op donker, gebruik dan visuails-mark-groen of -wit.
+
+  GEEN SVG EN GEEN 2048, en dat is met opzet. De aangeleverde afbeelding bevat
+  740 x 834 pixels inkt. 512 is daarmee een verkleining en dus scherp; 1024 is
+  een lichte oprekking die op een scherm niet opvalt. 2048 staat hierboven
+  beschreven als het formaat voor drukwerk en spandoeken, en dat kan deze bron
+  niet waarmaken — een zachte opschaling onder die naam wegzetten is de belofte
+  breken. Komt er ooit een vectorversie van deze variant, dan kan het hele
+  pakket alsnog compleet.
+
+  NIET GEGENEREERD DOOR "npm run logo:pack". Dat script rendert uit het merk in
+  Layout.astro en kleurt het in zijn geheel één kleur — zo ontstaan groen, wit
+  en zwart. Een merk met twee kleuren erin past niet in die vorm. Deze bestanden
+  overleven dus een herbouw van het pakket, maar veranderen ook niet mee als het
+  merk zelf ooit verandert. Dan moeten ze opnieuw worden aangeleverd.
+  Op 5 september 2026 zijn ze per pixel herkleurd van het oude gifgroen en
+  bijna-zwart naar de kleuren hierboven (sectie 20); de vorm is niet aangeraakt.
 
 FORMATEN
   512   ruim genoeg voor elk sociaal profiel en elke website

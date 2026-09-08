@@ -1,5 +1,5 @@
 ---
-// VISUAILS — /nl (Nederlands). De pagina-inhoud staat in HomeV2.astro,
+// VISUAILS — /nl (Nederlands). De pagina-inhoud staat in Voorpagina.astro,
 // zodat / en /nl niet uit elkaar kunnen lopen; alleen de meta verschilt hier.
 //
 // De description komt uit pricing.js en wordt niet ingetypt: een prijs of een
@@ -12,7 +12,7 @@
 // bedragen voor terug, en dat moeten er twee zijn: het instaptarief is wat
 // één product kost en de bodem is wat een hele collectie per product kost.
 import Layout from '../../layouts/Layout.astro';
-import HomeV2 from '../../components/HomeV2.astro';
+import Voorpagina from '../../components/Voorpagina.astro';
 import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
 // `complete` is de scope die de homepage verkoopt — per product een catalogset
@@ -32,7 +32,6 @@ const description =
   title="Productbeelden zonder fotoshoot | VISUAILS"
   description={description}
   ogImage="/img/og-nl.png"
-  ground="espresso"
 >
-  <HomeV2 lang="nl" />
+  <Voorpagina lang="nl" />
 </Layout>

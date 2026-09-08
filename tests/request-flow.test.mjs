@@ -331,10 +331,20 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
     /twee kolommen hieronder/.test(vid) && /catalog- en lifestyleproducten/.test(vid), true);
 
   /* De knoppen. Drie stuks, en ze gingen alle drie naar de keuzepagina waar de
-     bezoeker net vandaan kwam. */
+     bezoeker net vandaan kwam.
+
+     ── EN SINDS 4 SEPTEMBER 2026 GAAT DE EERSTE NAAR DE SOORTEN ─────────────
+     De hero-knop wijst nu naar #looks op deze pagina zelf. Reden: het kiezen
+     van een soort is stap 1 van het bestellen geworden (zie StyleRows.astro),
+     en een aanvraagformulier openen vóór je weet wélke clip je wilt, is dezelfde
+     vraag in de verkeerde volgorde. De twee andere knoppen — de tredevergelijking
+     en de slotband — blijven rechtstreeks naar /start/video gaan, voor wie het
+     al weet. Wat de toets bewaakt blijft hetzelfde: geen enkele knop mag naar
+     /start zelf. */
   ok('geen enkele knop gaat nog naar /start zelf', /lp\('\/start'\)/.test(vid), false);
   const naarVideo = (vid.match(/lp\('\/start\/video'\)/g) || []).length;
-  ok('alle drie gaan naar /start/video', naarVideo, 3);
+  ok('twee knoppen gaan rechtstreeks naar /start/video', naarVideo, 2);
+  ok('en de hero wijst naar de soorten op deze pagina', /href="#looks"/.test(vid), true);
 
   /* En die pagina moet dan ook bestaan, in beide talen. */
   ok('/start/video bestaat', read('src/pages/start/video.astro').includes('HoldingPage'), true);
@@ -417,14 +427,19 @@ console.log('\nde proefvisual: catalog krijgt de achtergrond, lifestyle de look'
    * niet meer bij hoeft, is dat het zonder script moet — de proef draait nu op
    * dezelfde stroom als elke andere bestelling, met dezelfde <noscript>-belofte.
    */
-  for (const [pad, taal] of [['src/pages/test-sample.astro', 'en'], ['src/pages/nl/test-sample.astro', 'nl']]) {
+  /* ── ÉÉN COMPONENT VOOR BEIDE TALEN — 7 september 2026 ──────────────────
+     De twee pagina's zijn één regel geworden die TestSamplePage.astro
+     aanroept; de aanroep van de stroom staat daar. `lang={lang}` in plaats van
+     een letterlijke taal is precies de winst: de twee talen KUNNEN niet meer
+     uit elkaar lopen, want er is er nog maar één. */
+  for (const [pad, taal] of [['src/components/TestSamplePage.astro', 'de component']]) {
     const src = read(pad);
-    ok(`${taal}: de pagina gebruikt de gedeelde stroom in proefstand`,
-      /<OrderFlow lang="(en|nl)" service="lifestyle" mode="sample" hero=\{false\}>/.test(src), true);
+    ok(`${taal}: gebruikt de gedeelde stroom in proefstand`,
+      /<OrderFlow lang=\{lang\} service="lifestyle" mode="sample" hero=\{false\}>/.test(src), true);
     /* BEIDE KIEZERS IN DE SLOT, want de soort wordt hier in het formulier
        gekozen. Eén ervan weglaten is de helft van de klacht terugzetten. */
-    ok(`${taal}: met de lookkiezer erin`, /<StylePicker lang="(en|nl)" \/>/.test(src), true);
-    ok(`${taal}: en de achtergrondkiezer erin`, /<Step1Options lang="(en|nl)" \/>/.test(src), true);
+    ok(`${taal}: met de lookkiezer erin`, /<StylePicker lang=\{lang\} \/>/.test(src), true);
+    ok(`${taal}: en de achtergrondkiezer erin`, /<Step1Options lang=\{lang\} \/>/.test(src), true);
     /* En geen eigen formulier meer ernaast. Twee bestelformulieren op één site is
        hoe de proef de vorige keer achterbleef bij wat /start al kon. */
     ok(`${taal}: geen eigen bestelformulier meer`, /<form[^>]*action="\/api\/order"/.test(src), false);

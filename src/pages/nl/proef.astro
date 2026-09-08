@@ -7,7 +7,7 @@
 // staan toe te passen aan de echte homepage."*
 //
 // Hij blijft bestaan omdat het vergelijken zonder hem alleen nog kan door een
-// bestand weg te halen. Dezelfde HomeV2.astro, dezelfde teksten, dezelfde
+// bestand weg te halen. Dezelfde Voorpagina.astro, dezelfde teksten, dezelfde
 // prijzen — het enige verschil met de homepage is dat `huid` hier ontbreekt.
 // Zo zie je op je eigen site precies wat de laag doet, en niets anders.
 //
@@ -16,16 +16,15 @@
 // Diezelfde regel hier herhalen zou precies die tweede plek maken. Deze pagina
 // staat op noindex, dus deze tekst komt nooit in een zoekresultaat.
 import Layout from '../../layouts/Layout.astro';
-import HomeV2 from '../../components/HomeV2.astro';
+import Voorpagina from '../../components/Voorpagina.astro';
 ---
 
 <Layout
   title="Zonder de stijllaag | VISUAILS"
   description="De VISUAILS-homepage zonder de stijllaag, om te vergelijken. Niet om te indexeren."
   ogImage="/img/og-nl.png"
-  ground="espresso"
   huid="geen"
   noindex
 >
-  <HomeV2 lang="nl" />
+  <Voorpagina lang="nl" />
 </Layout>

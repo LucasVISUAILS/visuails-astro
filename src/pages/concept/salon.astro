@@ -1,0 +1,313 @@
+---
+/**
+ * CONCEPT H · SALON — de wand. 6 september 2026.
+ *
+ * Lucas: *"maak meerdere verschillende soorten homepages die flink van elkaar
+ * verschillen … Ik wil de website groots laten voelen."*
+ *
+ * WAAR DE GROOTSHEID VANDAAN KOMT: niet uit leegte (dat is concept D) en niet
+ * uit schaal van letters (dat is F), maar uit AANTAL. De hele pagina is één
+ * doorlopende wand van beelden, van rand tot rand, zonder tussenruimte — de
+ * salonhang uit een negentiende-eeuws museum: alles hangt tegen elkaar aan,
+ * groot naast klein, en de tekst hangt ertussen als een vlak van dezelfde maat.
+ * Je ziet in één oogopslag hoeveel er staat, en dát is de belofte van VISUAILS:
+ * niet één mooi beeld, maar een hele collectie in één keer.
+ *
+ * DE MAAT: één raster van twaalf kolommen en rijen van gelijke hoogte over de
+ * hele pagina. Elk vlak — foto of tekst — pakt een aantal kolommen en rijen uit
+ * datzelfde raster. Er is geen kader, geen schaduw, geen ruimte tussen: de
+ * wand is één ding.
+ *
+ * De kleur komt uit de foto's; de tekstvlakken zijn wit, inkt of geel, en dat
+ * zijn precies de drie gronden uit KLEURENSCHEMA.md.
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const {
+  c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate,
+  CATALOG_IMAGES, ROSTER, modelId, SFEER,
+} = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+/* Een vlak op de wand: hoeveel kolommen breed en hoeveel rijen hoog. */
+const v = (k: number, r: number) => `--k:${k};--r:${r}`;
+---
+<ConceptLayout
+  title="Concept H · Salon — VISUAILS"
+  description="Concept H voor de nieuwe voorpagina van VISUAILS: één doorlopende wand van beelden van rand tot rand, met de tekst ertussen."
+  lang={lang}
+  grond="inkt"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  <header class="chroom">
+    <a class="chroom-merk" href={lp('/')} aria-label="VISUAILS">
+      <svg class="woordmerk" viewBox="0 0 1650 278" aria-hidden="true"><use href="#wordmark" /></svg>
+    </a>
+    <nav class="chroom-nav klein" aria-label="Hoofdnavigatie">{c.nav.map(([t, h]) => <a href={h}>{t}</a>)}</nav>
+    <a class="knopje" href={lp('/test-sample')}>{sample.cta}</a>
+  </header>
+
+  <main id="inhoud" class="salon">
+
+    {/* ── DE WAND, DEEL 1 · de opening ────────────────────────────────────*/}
+    <section class="wand" aria-labelledby="h1">
+      <div class="vlak vlak-beeld" style={v(7, 4)}><img src={S(1).src} width={S(1).w} height={S(1).h} alt={S(1).alt} fetchpriority="high" decoding="async"></div>
+      <div class="vlak vlak-tekst vlak-groot" style={v(5, 4)}>
+        <p class="klein">{nn(1)} — {c.heroChip}</p>
+        <h1 id="h1" class="zin">{c.h1.map((line) => <span class="regel" set:html={line} />)}</h1>
+        <p class="lede">{c.lede}</p>
+        <p class="acties"><a class="lijn" href={lp('/start')}>{c.ctaStart}</a><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a></p>
+      </div>
+      <div class="vlak vlak-beeld" style={v(3, 3)}><img src={S(2).src} width={S(2).w} height={S(2).h} alt={S(2).alt} loading="lazy" decoding="async"></div>
+      <div class="vlak vlak-geel" style={v(3, 3)}>
+        <ul class="feiten klein" role="list">{c.facts.map((f, i) => <li><b>{nn(i + 1)}</b>{f}</li>)}</ul>
+      </div>
+      <div class="vlak vlak-beeld" style={v(6, 3)}><img src={S(5).src} width={S(5).w} height={S(5).h} alt={S(5).alt} loading="lazy" decoding="async"></div>
+    </section>
+
+    {/* ── DEEL 2 · wat we maken ───────────────────────────────────────────*/}
+    <section id="maken" class="wand" aria-labelledby="h-maken">
+      <div class="vlak vlak-tekst" style={v(4, 2)}>
+        <p class="klein">{nn(2)} — {c.secties[0]}</p>
+        <h2 id="h-maken" class="mid">{c.svcH}</h2>
+        <p class="lede">{c.svcLede}</p>
+      </div>
+      <div class="vlak vlak-beeld" style={v(8, 2)}><img src={S(5).src} width={S(5).w} height={S(5).h} alt={S(5).alt} loading="lazy" decoding="async"></div>
+      {c.svc.map(([naam, wat, prijs, href], i) => (
+        <>
+          <a class="vlak vlak-beeld vlak-link" style={v(3, 3)} href={lp(href)}>
+            <img src={S([1, 2, 4, 3][i]).src} width={S([1, 2, 4, 3][i]).w} height={S([1, 2, 4, 3][i]).h} alt={S([1, 2, 4, 3][i]).alt} loading="lazy" decoding="async">
+            <span class="op-beeld klein"><b>{nn(i + 1)}</b>{naam}</span>
+          </a>
+          <div class={`vlak ${i % 2 === 0 ? 'vlak-tekst' : 'vlak-inkt'}`} style={v(3, 3)}>
+            <p class="klein"><b>{nn(i + 1)}</b>{naam}</p>
+            <p class="wat">{wat}</p>
+            <p class="klein">{prijs}</p>
+            <p><a class="lijn" href={lp(href)}>{c.svcMore} {naam}</a></p>
+          </div>
+        </>
+      ))}
+      <div class="vlak vlak-tekst" style={v(12, 1)}>
+        <p class="klein"><span>{c.svcSoon[0]}</span> <a class="lijn" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+      </div>
+    </section>
+
+    {/* ── DEEL 3 · van telefoonfoto naar studioproductie ──────────────────*/}
+    <section class="wand" aria-labelledby="h-vn">
+      <div class="vlak vlak-tekst vlak-groot" style={v(5, 3)}>
+        <p class="klein">{nn(3)} — {c.secties[1]}</p>
+        <h2 id="h-vn" class="mid">{c.vnH}</h2>
+        <p class="lede">{c.vnLede}</p>
+        <p><a class="lijn" href={lp('/gallery')}>{c.vnLink}</a></p>
+      </div>
+      <div class="vlak vlak-beeld" style={v(2, 3)}>
+        <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async">
+        <span class="op-beeld klein">{c.vnIn[0]}</span>
+      </div>
+      <div class="vlak vlak-beeld" style={v(5, 3)}>
+        <img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async">
+        <span class="op-beeld klein">{c.vnOut[0]} · {c.vnOut[1]}</span>
+      </div>
+      <div class="vlak vlak-inkt" style={v(12, 1)}>
+        <ol class="termen klein">{c.vnNoten.map((k, i) => <li><b>{nn(i + 1)}</b>{k}</li>)}</ol>
+      </div>
+    </section>
+
+    {/* ── DEEL 4 · de set: zeven beelden als één band ─────────────────────*/}
+    <section class="wand" aria-labelledby="h-set">
+      <div class="vlak vlak-tekst" style={v(5, 2)}>
+        <p class="klein">{nn(4)} — {c.secties[2]}</p>
+        <h2 id="h-set" class="mid">{c.setH}</h2>
+        <p class="lede">{c.setLede}</p>
+      </div>
+      <div class="vlak vlak-geel" style={v(7, 2)}>
+        <p class="klein"><a class="lijn" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a> <a class="lijn" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a></p>
+        <ul class="extras klein" role="list">{c.extras.map(([k, w2, href]) => <li><a class="lijn" href={lp(href)}>{k}</a> <span>{w2}</span></li>)}</ul>
+      </div>
+      <div class="groep groep-zeven">
+        {c.frames.map((naam, i) => (
+          <div class={`vlak vlak-beeld ${i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}`}>
+            <img src={S([1, 5, 4, 2, 3, 7, 6][i]).src} width={S([1, 5, 4, 2, 3, 7, 6][i]).w} height={S([1, 5, 4, 2, 3, 7, 6][i]).h} alt="" loading="lazy" decoding="async">
+            <span class="op-beeld klein">{nn(i + 1)} {naam}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    {/* ── DEEL 5 · het proces, als vier vlakken ───────────────────────────*/}
+    <section class="wand" aria-labelledby="h-st">
+      <div class="vlak vlak-tekst" style={v(4, 2)}>
+        <p class="klein">{nn(5)} — {c.secties[3]}</p>
+        <h2 id="h-st" class="mid">{c.stepsH}</h2>
+        <p class="lede">{c.stepsLede}</p>
+      </div>
+      <div class="vlak vlak-beeld" style={v(8, 2)}><img src={S(9).src} width={S(9).w} height={S(9).h} alt={S(9).alt} loading="lazy" decoding="async"></div>
+      {c.steps.map(([k, w2], i) => (
+        <div class={`vlak ${i % 2 === 0 ? 'vlak-tekst' : 'vlak-inkt'}`} style={v(3, 2)}>
+          <p class="klein"><b>{nn(i + 1)}</b></p>
+          <p class="stap-kop">{k}</p>
+          <p class="wat">{w2}</p>
+        </div>
+      ))}
+    </section>
+
+    {/* ── DEEL 6 · tarieven ───────────────────────────────────────────────*/}
+    <section id="tarieven" class="wand" aria-labelledby="h-pr">
+      <div class="vlak vlak-tekst" style={v(4, 4)}>
+        <p class="klein">{nn(6)} — {c.secties[4]}</p>
+        <h2 id="h-pr" class="mid">{c.priceH}</h2>
+        <p class="klein">{c.priceVat}</p>
+        <p class="acties"><a class="lijn" href={lp('/start')}>{c.priceCta}</a><a class="lijn" href={lp('/pricing')}>{c.priceCta2}</a></p>
+      </div>
+      <div class="vlak vlak-tekst vlak-tabel" style={v(8, 4)}>
+        <table class="tabel">
+          <thead><tr><th scope="col" class="klein">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="klein">{KIND_PAGE[id] ? <a class="lijn" href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+          <tbody>{RUNGS.map((r) => <tr><th scope="row" class="klein">{r.label}</th>{KINDS.map((id) => <td>{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      <div class="vlak vlak-beeld" style={v(4, 3)}><img src={S(4).src} width={S(4).w} height={S(4).h} alt={S(4).alt} loading="lazy" decoding="async"></div>
+      <div class="vlak vlak-tekst vlak-tabel" style={v(8, 3)}>
+        <p class="klein">{c.planH}</p>
+        <table class="tabel">
+          <thead><tr>{c.planCols.map((k) => <th scope="col" class="klein">{k}</th>)}</tr></thead>
+          <tbody>{PLANS.map((pl) => <tr><th scope="row"><a class="lijn" href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a></th><td>{pl.products}</td><td>{PLAN_CLIPS[pl.id] || '—'}</td><td>{pl.price}</td></tr>)}</tbody>
+        </table>
+        <p class="klein">{c.planVat} <a class="lijn" href={lp('/start/plan')}>{c.planCta}</a> <a class="lijn" href={lp('/plans')}>{c.planLink}</a></p>
+      </div>
+    </section>
+
+    {/* ── DEEL 7 · Studio en de gezichten ─────────────────────────────────*/}
+    <section id="studio" class="wand" aria-labelledby="h-sd">
+      <div class="vlak vlak-beeld" style={v(7, 3)}><img src={S(8).src} width={S(8).w} height={S(8).h} alt={S(8).alt} loading="lazy" decoding="async"></div>
+      <div class="vlak vlak-inkt vlak-groot" style={v(5, 3)}>
+        <p class="klein">{nn(7)} — {c.secties[5]}</p>
+        <h2 id="h-sd" class="mid">{c.studioH}</h2>
+        <p class="lede">{c.studioLede}</p>
+        <ul class="beloften" role="list">{c.beloften.map(([k, w2]) => <li><b>{k}</b><span class="wat">{w2}</span></li>)}</ul>
+        <p class="acties"><a class="lijn" href={lp('/portal')}>{c.studioLink}</a><a class="lijn" href={lp('/studio')}>{c.studioLink2}</a></p>
+      </div>
+      <div class="vlak vlak-tekst" style={v(4, 2)} id="gezichten">
+        <p class="klein">{nn(8)} — {c.secties[6]}</p>
+        <h2 class="mid">{c.facesH}</h2>
+        <p class="acties"><a class="lijn" href={lp('/custom-models')}>{c.facesLink}</a><a class="lijn" href={lp('/models')}>{c.facesLink2}</a></p>
+      </div>
+      <div class="vlak vlak-geel" style={v(8, 2)}><p class="lede">{c.facesLede}</p></div>
+      <div class="groep groep-cast">
+        {ROSTER.map((m) => (
+          <a class="vlak vlak-beeld vlak-link" href={`${lp('/models')}#${modelId(m.name)}`}>
+            <img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async">
+            <span class="op-beeld klein">{m.name}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    {/* ── DEEL 8 · de vragen en de proef ──────────────────────────────────*/}
+    <section class="wand" aria-labelledby="h-q">
+      <div class="vlak vlak-tekst" style={v(7, 3)}>
+        <p class="klein">{nn(9)}</p>
+        <h2 id="h-q" class="mid">{c.qH}</h2>
+        <ul class="vragen" role="list">
+          {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="lijn" href={lp(href)}>{l}</a></li>)}
+          <li><span></span><a class="lijn" href={lp('/faq')}>{c.qAll}</a></li>
+        </ul>
+      </div>
+      <div class="vlak vlak-beeld" style={v(5, 3)}><img src={S(6).src} width={S(6).w} height={S(6).h} alt={S(6).alt} loading="lazy" decoding="async"></div>
+      <div class="vlak vlak-geel vlak-groot" style={v(12, 3)} aria-labelledby="h-sl">
+        <p class="klein">{nn(10)} — {c.secties[7]}</p>
+        <h2 id="h-sl" class="zin">{c.closeH}</h2>
+        <p class="lede">{c.closeLede}</p>
+        <p class="acties"><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a><a class="lijn" href={lp('/start')}>{c.closeAlt}</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="voet">
+    <ul class="trust klein" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+    <span class="klein">{c.posterLine[0]} · {c.posterLine[1]}</span>
+  </footer>
+</ConceptLayout>
+
+<style>
+  /* ── DE WAND ────────────────────────────────────────────────────────────
+     Twaalf kolommen, rijen van gelijke hoogte, geen ruimte ertussen. Elk vlak
+     zegt zelf hoeveel kolommen (--k) en rijen (--r) het pakt. `dense` vult de
+     gaten die daardoor ontstaan, zodat de wand echt dicht is. */
+  .salon { background: var(--inkt); }
+  .wand { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: clamp(5.5rem, 8.2vw, 10rem); grid-auto-flow: row dense; }
+  .vlak { grid-column: span var(--k, 3); grid-row: span var(--r, 2); position: relative; overflow: hidden; min-width: 0; }
+  .vlak-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .vlak-link:hover img { transform: scale(1.02); }
+  .vlak-beeld img { transition: transform .8s var(--uit); }
+  .op-beeld { position: absolute; left: .8rem; bottom: .7rem; color: var(--vel); text-shadow: 0 1px 10px rgb(17 17 17 / .8); }
+
+  /* Twee rijen hebben een eigen aantal vakken: de zeven beelden van één set en
+     de tien gezichten. Ze pakken de volle breedte van de wand en houden dezelfde
+     rijhoogte, zodat de wand één ding blijft. */
+  .groep { grid-column: 1 / -1; display: grid; }
+  .groep-zeven { grid-template-columns: repeat(7, 1fr); height: calc(3 * clamp(5.5rem, 8.2vw, 10rem)); }
+  .groep-cast { grid-template-columns: repeat(10, 1fr); height: calc(2 * clamp(5.5rem, 8.2vw, 10rem)); }
+  .groep .vlak { grid-column: auto; grid-row: auto; }
+
+  .vlak-tekst { background: var(--vel); color: var(--inkt); }
+  .vlak-inkt { background: var(--inkt); color: var(--vel); box-shadow: inset 0 0 0 1px rgb(245 245 245 / .12); }
+  .vlak-geel { background: var(--geel); color: var(--inkt); }
+  .vlak-tekst, .vlak-inkt, .vlak-geel { display: grid; align-content: center; gap: .7rem; padding: clamp(1rem, 2vw, 2rem); }
+  .vlak-groot { gap: 1rem; }
+  .vlak-tabel { align-content: start; }
+
+  /* ── DE TWEE MATEN ──────────────────────────────────────────────────────*/
+  .klein { font-family: var(--mono); font-size: .64rem; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; line-height: 1.5; opacity: .78; }
+  .klein b { opacity: 1; font-weight: 400; margin-right: .5em; }
+  .lijn { font-family: var(--mono); font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; border-bottom: 1px solid currentColor; padding-bottom: .2em; white-space: nowrap; }
+  .zin { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(1.8rem, 3.6vw, 3.6rem); line-height: 1; letter-spacing: -.03em; }
+  .regel { display: block; }
+  .mid { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(1.15rem, 1.9vw, 1.9rem); line-height: 1.08; letter-spacing: -.02em; text-wrap: balance; }
+  .lede { font-size: .88rem; line-height: 1.55; opacity: .85; }
+  .wat { font-size: .85rem; opacity: .85; }
+  .stap-kop { font-family: var(--kop); font-stretch: 78%; font-size: 1.05rem; }
+  .acties { display: flex; flex-wrap: wrap; gap: .7rem 1.5rem; }
+  .feiten, .extras, .termen { display: grid; gap: .4rem; }
+  .termen { grid-auto-flow: column; justify-content: start; gap: 2.5rem; }
+  .beloften { display: grid; gap: .7rem; }
+  .beloften b { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: 1rem; display: block; }
+  .vragen { display: grid; }
+  .vragen li { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: baseline; padding: .6rem 0; border-top: 1px solid var(--lijn); font-size: .9rem; }
+  .tabel { width: 100%; }
+  .tabel th, .tabel td { text-align: left; padding: .5rem .5rem .5rem 0; border-bottom: 1px solid var(--lijn); vertical-align: baseline; }
+  .tabel thead th { border-bottom-color: var(--inkt); padding-top: 0; }
+  .tabel tbody th { font-weight: 400; }
+  .tabel td { font-family: var(--kop); font-stretch: 125%; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+  /* ── DE CHROME ──────────────────────────────────────────────────────────*/
+  .chroom { position: fixed; inset: 0 0 auto; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: 1.1rem var(--x); background: linear-gradient(var(--inkt) 55%, rgb(17 17 17 / 0)); color: var(--vel); }
+  .chroom-merk { width: 6.5rem; }
+  .chroom-merk .woordmerk { fill: var(--vel); }
+  .chroom-nav { display: flex; gap: 1.4rem; }
+  .knopje { font-family: var(--mono); font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; background: var(--geel); color: var(--inkt); padding: .5rem .9rem; }
+  @media (max-width: 860px) { .chroom-nav { display: none; } }
+
+  .voet { background: var(--inkt); color: var(--vel); display: grid; gap: .8rem; padding: clamp(2rem, 5vh, 4rem) var(--x); }
+  .trust { display: flex; flex-wrap: wrap; gap: .4rem 2rem; }
+
+  /* ── OP EEN KLEIN SCHERM WORDT DE WAND SMALLER, NIET LOSSER ─────────────*/
+  @media (max-width: 980px) {
+    .wand { grid-template-columns: repeat(6, 1fr); grid-auto-rows: clamp(5rem, 13vw, 8rem); }
+    .vlak { grid-column: span min(6, var(--k, 3)); }
+    .termen { grid-auto-flow: row; gap: .4rem; }
+    .groep-zeven { grid-template-columns: repeat(4, 1fr); height: auto; grid-auto-rows: clamp(5rem, 13vw, 8rem); }
+    .groep-cast { grid-template-columns: repeat(5, 1fr); height: auto; grid-auto-rows: clamp(5rem, 13vw, 8rem); }
+  }
+  @media (max-width: 560px) {
+    .wand { grid-template-columns: repeat(4, 1fr); }
+    .vlak { grid-column: span min(4, var(--k, 3)); }
+    .vragen li { grid-template-columns: 1fr; gap: .4rem; }
+  }
+</style>

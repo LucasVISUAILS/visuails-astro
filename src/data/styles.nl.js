@@ -115,7 +115,14 @@ export const styles = [
     cardPhoto: '/img/lifestyle-glow-01.webp',
     beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
     cardIcon: 'jar',
-    cardDesc: 'Gedurfde lifestylefoto’s geïnspireerd op fashion-editorial — directe on-camera flits, scherp contrast, sterke schaduwen, moderne campagne-esthetiek.',
+    /* ── DEZE REGEL BESCHREEF FLASH — 4 september 2026 ──────────────────────
+       Hier stond "directe on-camera flits, scherp contrast, sterke schaduwen":
+       de beschrijving van Flash, onder de naam Glow en onder de tagline "Golden
+       hour, op afroep". Op de vernieuwde /lifestyle staan de looks onder elkaar
+       met hun beschrijving eronder, en dan lezen twee looks als dezelfde look —
+       waarop je er geen van beide durft te kiezen. Wat er nu staat is wat
+       moodParagraphs hieronder al zei, in één regel. */
+    cardDesc: 'Zacht, laagstaand zonlicht over de hele set — warm, editorial en flatterend, zonder dat het naar een filter ruikt.',
     moodTitle: 'Hoe Glow eruitziet.',
     moodParagraphs: [
       'Laagstaande zon, zachte gloed, huid en product gehuld in hetzelfde amberkleurige licht. De look van een avond die goed verliep.',

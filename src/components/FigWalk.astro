@@ -360,6 +360,14 @@ const START = SERVICES[0].id;
 </script>
 
 <style>
+  /* ── LEESBAARHEID, 7 SEPTEMBER 2026 ────────────────────────────────────────
+     Elke `--ink-4` in dit bestand is `--ink-3` geworden, en vier maten onder
+     11,5px zijn omhoog. Reden: --ink-4 IS de lijnkleur (.42 alpha) en haalt als
+     tekst 2,8:1 — zie KLEURENSCHEMA.md, waar staat dat tekst op --ink-3 of
+     donkerder hoort. Op de oude, iets warmere paginagrond viel het niet op; op
+     het vel van sectie 22 (#F5F5F5) meet de keuring het en gaat het mis op
+     dertien plekken in deze ene tekening, inclusief de vier labels van de
+     catalogset. Lucas: *"Wel even altijd goed controleren op leesbaarheid."* */
   /* ═══════════════════════════════════════════════════════════════════════
      FigWalk
 
@@ -379,7 +387,7 @@ const START = SERVICES[0].id;
      2026 niet te lezen. De broodletter, iets groter, en het label leest weer. */
   .wk-pick-h { font-family: var(--font-body); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 1.1rem; font-weight: 700; }
   .wk-pick-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
-  .wk-pick-hint { margin: 1.2rem auto 0; max-width: 46ch; font-size: .82rem; color: var(--ink-4); line-height: 1.6; }
+  .wk-pick-hint { margin: 1.2rem auto 0; max-width: 46ch; font-size: .82rem; color: var(--ink-3); line-height: 1.6; }
 
   /* Clipped, not display:none — that would take the radio out of the tab order
      and out of the accessibility tree, which is the usual way a "custom radio
@@ -393,17 +401,25 @@ const START = SERVICES[0].id;
     pointer-events: none;
   }
   .wk-svc { display: block; cursor: pointer; }
+  /* De drie vakjes zijn even hoog en de tweede regel krijgt lucht — 4 september
+     2026, uit de ruimtemeting. Lifestyle's regel loopt over twee regels en de
+     andere twee niet, dus stonden er drie vakjes van drie verschillende hoogtes
+     naast elkaar; en .15rem tussen de naam en de regel eronder was zo krap dat
+     de twee als één blok lazen. */
+  .wk-svc { height: 100%; }
   .wk-svc-box {
     display: flex;
     flex-direction: column;
-    gap: .15rem;
+    justify-content: center;
+    height: 100%;
+    gap: .3rem;
     padding: .85rem 1rem;
     border: 1px solid var(--line);
     border-radius: var(--r-md);
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .wk-svc-name { font-size: .98rem; }
-  .wk-svc-line { font-size: .76rem; color: var(--ink-4); }
+  .wk-svc-line { font-size: .76rem; color: var(--ink-3); }
   .wk-svc input:checked + .wk-svc-box { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
   .wk-svc input:focus-visible + .wk-svc-box { outline: 2px solid var(--accent); outline-offset: 3px; }
 
@@ -474,7 +490,7 @@ const START = SERVICES[0].id;
     border-radius: var(--r-md);
   }
 
-  .wk-cap { margin-top: .8rem; font-size: .78rem; color: var(--ink-4); text-align: center; }
+  .wk-cap { margin-top: .8rem; font-size: .78rem; color: var(--ink-3); text-align: center; }
 
   /* Panels — the steps with nothing to photograph. Deliberately quiet: a border
      and text, no invented screenshot. */
@@ -501,7 +517,7 @@ const START = SERVICES[0].id;
   .wk-refuse { display: flex; align-items: flex-start; gap: .65rem; margin: 0; font-size: .9rem; line-height: 1.5; }
   .wk-pass span,
   .wk-refuse span { margin-top: .3rem; }
-  .wk-refuse { color: var(--ink-4); }
+  .wk-refuse { color: var(--ink-3); }
   .wk-pay { margin: 0; text-align: center; font-size: .95rem; color: var(--ink-2); }
 
   /* the model pair */
@@ -520,7 +536,7 @@ const START = SERVICES[0].id;
     border: 1px solid var(--line);
     background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px);
   }
-  .wk-src-t { font-size: .7rem; color: var(--ink-4); }
+  .wk-src-t { font-size: .75rem; color: var(--ink-3); }
 
   /* De tegels van het portaal stonden hier. Die tekening staat sinds 30
      augustus 2026 als FigApproval op /how-it-works zelf; zie de noot bij de
@@ -548,11 +564,11 @@ const START = SERVICES[0].id;
     bottom: .35rem;
     padding: .12rem .4rem;
     border-radius: 4px;
-    background: color-mix(in srgb, #08090B 74%, transparent);
-    font-size: .64rem;
+    background: color-mix(in srgb, #1C1D18 74%, transparent);
+    font-size: .72rem;
     color: var(--ink-2);
   }
-  .wk-noclip { margin: .65rem 0 0; font-size: .74rem; color: var(--ink-4); text-align: center; }
+  .wk-noclip { margin: .65rem 0 0; font-size: .74rem; color: var(--ink-3); text-align: center; }
 
   /* ── the steps ────────────────────────────────────────────────────────── */
   /* Centred, and wider than the frame it sits under. The first pass left the
@@ -607,11 +623,11 @@ const START = SERVICES[0].id;
     }
   }
 
-  .wk-step-n { margin: 0 0 .5rem; font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  .wk-step-n { margin: 0 0 .5rem; font-size: .75rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-text); }
   .wk-step-h { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -.01em; }
   .wk-step-b { margin: 1rem 0 0; color: var(--ink-3); font-size: 1rem; line-height: 1.75; }
-  .wk-note { margin: 1rem 0 0; font-size: .82rem; color: var(--ink-4); line-height: 1.6; }
-  .wk-note a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .wk-note { margin: 1rem 0 0; font-size: .82rem; color: var(--ink-3); line-height: 1.6; }
+  .wk-note a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
 
   .wk-looks { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.4rem; }
   .wk-look { cursor: pointer; }
@@ -632,14 +648,14 @@ const START = SERVICES[0].id;
 
   .wk-models { margin-top: 1.4rem; }
   .wk-roster { list-style: none; margin: 0; padding: 0; display: flex; gap: .45rem; }
-  .wk-face { display: flex; flex-direction: column; align-items: center; gap: .3rem; font-size: .68rem; color: var(--ink-4); }
+  .wk-face { display: flex; flex-direction: column; align-items: center; gap: .3rem; font-size: .75rem; color: var(--ink-3); }
   .wk-face img { width: clamp(2.4rem, 6vw, 3rem); aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-sm); filter: grayscale(1); opacity: .4; }
   .wk-face.is-on { color: var(--ink-2); }
   .wk-face.is-on img { filter: none; opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .wk-cta { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.8rem; }
 
-  .wk-honest { margin: clamp(3rem, 6vw, 4.5rem) auto 0; max-width: 34rem; font-size: .76rem; color: var(--ink-4); line-height: 1.65; }
+  .wk-honest { margin: clamp(3rem, 6vw, 4.5rem) auto 0; max-width: 34rem; font-size: .76rem; color: var(--ink-3); line-height: 1.65; }
 
   /* ── narrow ───────────────────────────────────────────────────────────── */
   @media (max-width: 720px) {

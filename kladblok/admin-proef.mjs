@@ -15,6 +15,7 @@ import { d1, verseDb } from '../tests/lib/d1sqlite.mjs';
 import { adminGet } from '../src/lib/admin.js';
 import { hashToken } from '../src/lib/token.js';
 import { addDays } from '../src/data/capacity.js';
+import { keur } from './werkscherm-keuring.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const OUT = path.join(ROOT, 'kladblok', 'admin');
@@ -106,8 +107,12 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME || '/
 const ctx = await browser.newContext({ viewport: { width: Number(process.env.W) || 1600, height: 1000 } });
 await ctx.route('**/*', async (route) => {
   const u = new URL(route.request().url());
-  const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
-  if (/\.(css|woff2?|ico|svg|png|webp)$/.test(u.pathname) && fs.existsSync(file)) {
+  /* public/ eerst, dist/ als terugval. /fonts/gedeeld.css en de woff2's eronder
+     bestaan alleen NA een build — scripts/fonts-voor-worker.mjs schrijft ze in
+     dist/. Zonder deze terugval rendert de proef in Arial en zie je dus precies
+     niet wat je wilt zien. Geen dist? Dan geen letters, en dat zegt het log. */
+  const file = ['public', 'dist'].map((m) => path.join(ROOT, m, u.pathname.replace(/^\//, ''))).find(fs.existsSync);
+  if (file && /\.(css|woff2?|ico|svg|png|webp)$/.test(u.pathname)) {
     const type = u.pathname.endsWith('.css') ? 'text/css' : u.pathname.endsWith('.woff2') ? 'font/woff2' : 'application/octet-stream';
     return route.fulfill({ contentType: type, body: fs.readFileSync(file) });
   }
@@ -115,9 +120,13 @@ await ctx.route('**/*', async (route) => {
   return route.fulfill({ status: 204, body: '' });
 });
 
+let fouten = 0;
 for (const r of ROUTES) {
   const res = await adminGet({ request: new Request(`https://visuails.com${r}`, { headers: { cookie: `vis_admin=${token}` } }), env, waitUntil() {} });
   const body = await res.text();
+  /* KEUR=1: geen plaatje maar de leesbaarheidsmeting op drie breedtes. Dezelfde
+     meetlat als kladblok/keuring.mjs op de site — zie werkscherm-keuring.mjs. */
+  if (process.env.KEUR) { fouten += await keur(ctx, r, body); continue; }
   const page = await ctx.newPage();
   await page.route('**/__page*', (route) => route.fulfill({ contentType: 'text/html', body }));
   await page.goto('https://visuails.com/__page', { waitUntil: 'networkidle' });

@@ -1,5 +1,11 @@
 # Deploying visuails-astro to GitHub + Cloudflare Pages
 
+> **5 september 2026 — dit document beschrijft de Pages-opzet.** De site is
+> sinds vandaag één Worker; `WORKER.md` is de actuele handleiding voor
+> uitrollen en secrets. Wat hieronder staat over D1, R2, `GIT_DEPTH` (§3), de
+> back-up (§7) en de cron-worker (§8) geldt nog steeds; §2 (het Pages-project)
+> niet meer.
+
 <!-- namen-bijgewerkt -->
 > **Namen bijgewerkt, 30 augustus 2026.** Dit document noemt een bestand dat inmiddels anders heet of niet meer bestaat. De tekst eronder is niet herschreven — een deel van die namen staat in geciteerde foutmeldingen en bouwuitvoer, en die aanpassen zou het bewijs vervalsen in plaats van bijwerken. Wat ze vandaag zijn:
 >

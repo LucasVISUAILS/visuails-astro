@@ -1,0 +1,356 @@
+---
+/**
+ * CONCEPT G · GANG — de voorpagina als één lange hal. 6 september 2026.
+ *
+ * Lucas: *"maak meerdere verschillende soorten homepages die flink van elkaar
+ * verschillen … Ik wil de website groots laten voelen."*
+ *
+ * WAAR DE GROOTSHEID VANDAAN KOMT: niet uit schaal maar uit RUIMTE. De pagina
+ * loopt niet naar beneden maar naar opzij. Je scrollt zoals altijd, maar je
+ * beweegt zijwaarts door tien zalen die elk een heel scherm hoog zijn — je
+ * loopt een hal door in plaats van een pagina af. Onderin loopt een rail mee
+ * die zegt waar je bent.
+ *
+ * Nagemeten (6 september 2026): floema.com stapelt schermvullende foto's met
+ * een vaste rail en een teller; siena.film (Awwwards SOTM, Niccolò Miranda) zet
+ * er eerst een drempel voor ("ENTER") en laat je daarna door een ruimte slepen
+ * in plaats van scrollen. Van de eerste komt de rail, van de tweede het idee
+ * dat de site een plek is waar je doorheen gaat.
+ *
+ * WAT ER GEBEURT ALS JAVASCRIPT UITSTAAT: de hal is een gewone horizontale
+ * scrollbalk — je kunt hem met de pijltjes, met shift+scroll en op een
+ * touchpad gewoon vegen. Het script vertaalt alleen verticaal scrollen naar
+ * zijwaarts, zodat een muis met één wiel ook werkt. Op een telefoon valt alles
+ * terug op een gewone verticale stapel: een hal van 100vw breed heeft daar
+ * geen zin.
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const {
+  c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate,
+  CATALOG_IMAGES, ROSTER, modelId, SFEER,
+} = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+
+/* De tien zalen, in volgorde, voor de rail onderin. */
+const ZALEN = [c.heroChip, c.secties[0], c.secties[1], c.secties[2], c.secties[3], c.secties[4], c.secties[5], c.secties[6], 'Vragen', c.secties[7]];
+---
+<ConceptLayout
+  title="Concept G · Gang — VISUAILS"
+  description="Concept G voor de nieuwe voorpagina van VISUAILS: de pagina loopt niet naar beneden maar opzij — tien zalen achter elkaar."
+  lang={lang}
+  grond="vel"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  <header class="top">
+    <a class="top-merk" href={lp('/')} aria-label="VISUAILS">
+      <svg class="woordmerk" viewBox="0 0 1650 278" aria-hidden="true"><use href="#wordmark" /></svg>
+    </a>
+    <p class="klein top-hint">{c.labels[1]} — {c.labels[2]}</p>
+    <a class="lijn top-knop" href={lp('/test-sample')}>{sample.cta}</a>
+  </header>
+
+  <main id="inhoud" class="hal" data-hal tabindex="0" aria-label="De hal — beweeg zijwaarts">
+
+    {/* ZAAL 01 · de opening: één beeld over de volle hoogte, de zin ernaast */}
+    <section class="zaal zaal-open" aria-labelledby="h1">
+      <figure class="vol"><img src={S(1).src} width={S(1).w} height={S(1).h} alt={S(1).alt} fetchpriority="high" decoding="async"></figure>
+      <div class="woord">
+        <p class="klein">{nn(1)} — {c.heroChip}</p>
+        <h1 id="h1" class="zin">{c.h1.map((line) => <span class="regel" set:html={line} />)}</h1>
+        <p class="lede">{c.lede}</p>
+        <ul class="feiten klein" role="list">{c.facts.map((f, i) => <li><b>{nn(i + 1)}</b>{f}</li>)}</ul>
+        <p class="acties"><a class="lijn" href={lp('/start')}>{c.ctaStart}</a><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a></p>
+      </div>
+    </section>
+
+    {/* ZAAL 02 · wat we maken: vier beelden naast elkaar, over de volle hoogte */}
+    <section id="maken" class="zaal zaal-breed" aria-labelledby="h-maken">
+      <header class="zaal-kop">
+        <p class="klein">{nn(2)} — {c.secties[0]}</p>
+        <h2 id="h-maken" class="mid">{c.svcH}</h2>
+        <p class="lede">{c.svcLede}</p>
+      </header>
+      <ul class="vier" role="list">
+        {c.svc.map(([naam, wat, prijs, href], i) => (
+          <li>
+            <a href={lp(href)}>
+              <img src={S([1, 2, 4, 3][i]).src} width={S([1, 2, 4, 3][i]).w} height={S([1, 2, 4, 3][i]).h} alt={S([1, 2, 4, 3][i]).alt} loading="lazy" decoding="async">
+              <span class="klein"><b>{nn(i + 1)}</b>{naam}</span>
+              <span class="wat">{wat}</span>
+              <span class="klein">{prijs}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="klein voetregel"><span>{c.svcSoon[0]}</span> <a class="lijn" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    </section>
+
+    {/* ZAAL 03 · van telefoonfoto naar studioproductie */}
+    <section class="zaal zaal-breed" aria-labelledby="h-vn">
+      <header class="zaal-kop">
+        <p class="klein">{nn(3)} — {c.secties[1]}</p>
+        <h2 id="h-vn" class="mid">{c.vnH}</h2>
+        <p class="lede">{c.vnLede}</p>
+      </header>
+      <div class="paar">
+        <figure class="klein-beeld">
+          <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async">
+          <figcaption class="klein">{c.vnIn[0]}</figcaption>
+        </figure>
+        <figure class="hoog-beeld">
+          <img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async">
+          <figcaption class="klein">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
+        </figure>
+        <ol class="termen klein">{c.vnNoten.map((k, i) => <li><b>{nn(i + 1)}</b>{k}</li>)}</ol>
+      </div>
+      <p class="voetregel"><a class="lijn" href={lp('/gallery')}>{c.vnLink}</a></p>
+    </section>
+
+    {/* ZAAL 04 · de set: zeven beelden op ware hoogte naast elkaar */}
+    <section class="zaal zaal-breed" aria-labelledby="h-set">
+      <header class="zaal-kop">
+        <p class="klein">{nn(4)} — {c.secties[2]}</p>
+        <h2 id="h-set" class="mid">{c.setH}</h2>
+        <p class="lede">{c.setLede}</p>
+      </header>
+      <ol class="zeven">
+        {c.frames.map((naam, i) => (
+          <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
+            <img src={S([1, 5, 4, 2, 3, 7, 6][i]).src} width={S([1, 5, 4, 2, 3, 7, 6][i]).w} height={S([1, 5, 4, 2, 3, 7, 6][i]).h} alt="" loading="lazy" decoding="async">
+            <span class="klein">{nn(i + 1)} {naam}</span>
+          </li>
+        ))}
+      </ol>
+      <p class="klein voetregel">
+        <a class="lijn" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a>
+        <a class="lijn" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a>
+        {c.extras.map(([k, v, href]) => <a class="lijn" href={lp(href)}>{k} · {v.split(' · ').pop()}</a>)}
+      </p>
+    </section>
+
+    {/* ZAAL 05 · het proces */}
+    <section class="zaal" aria-labelledby="h-st">
+      <div class="woord">
+        <p class="klein">{nn(5)} — {c.secties[3]}</p>
+        <h2 id="h-st" class="mid">{c.stepsH}</h2>
+        <p class="lede">{c.stepsLede}</p>
+        <ol class="stappen">
+          {c.steps.map(([k, v], i) => <li><span class="klein">{nn(i + 1)}</span><b>{k}</b><span class="wat">{v}</span></li>)}
+        </ol>
+      </div>
+      <figure class="vol"><img src={S(5).src} width={S(5).w} height={S(5).h} alt={S(5).alt} loading="lazy" decoding="async"></figure>
+    </section>
+
+    {/* ZAAL 06 · tarieven */}
+    <section id="tarieven" class="zaal zaal-breed" aria-labelledby="h-pr">
+      <header class="zaal-kop">
+        <p class="klein">{nn(6)} — {c.secties[4]}</p>
+        <h2 id="h-pr" class="mid">{c.priceH}</h2>
+      </header>
+      <div class="twee-tabellen">
+        <div>
+          <table class="tabel">
+            <thead><tr><th scope="col" class="klein">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="klein">{KIND_PAGE[id] ? <a class="lijn" href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+            <tbody>{RUNGS.map((r) => <tr><th scope="row" class="klein">{r.label}</th>{KINDS.map((id) => <td>{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+          </table>
+          <p class="klein">{c.priceVat}</p>
+          <p class="acties"><a class="lijn" href={lp('/start')}>{c.priceCta}</a><a class="lijn" href={lp('/pricing')}>{c.priceCta2}</a></p>
+        </div>
+        <div>
+          <h3 class="mid mid-klein">{c.planH}</h3>
+          <p class="lede">{c.planLede}</p>
+          <table class="tabel">
+            <thead><tr>{c.planCols.map((k) => <th scope="col" class="klein">{k}</th>)}</tr></thead>
+            <tbody>{PLANS.map((pl) => <tr><th scope="row"><a class="lijn" href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a></th><td>{pl.products}</td><td>{PLAN_CLIPS[pl.id] || '—'}</td><td>{pl.price}</td></tr>)}</tbody>
+          </table>
+          <p class="klein">{c.planVat}</p>
+          <p class="acties"><a class="lijn" href={lp('/start/plan')}>{c.planCta}</a><a class="lijn" href={lp('/plans')}>{c.planLink}</a></p>
+        </div>
+      </div>
+    </section>
+
+    {/* ZAAL 07 · Studio */}
+    <section id="studio" class="zaal" aria-labelledby="h-sd">
+      <figure class="vol"><img src={S(8).src} width={S(8).w} height={S(8).h} alt={S(8).alt} loading="lazy" decoding="async"></figure>
+      <div class="woord">
+        <p class="klein">{nn(7)} — {c.secties[5]}</p>
+        <h2 id="h-sd" class="mid">{c.studioH}</h2>
+        <p class="lede">{c.studioLede}</p>
+        <ul class="beloften" role="list">{c.beloften.map(([k, v]) => <li><b>{k}</b><span class="wat">{v}</span></li>)}</ul>
+        <p class="acties"><a class="lijn" href={lp('/portal')}>{c.studioLink}</a><a class="lijn" href={lp('/studio')}>{c.studioLink2}</a></p>
+      </div>
+    </section>
+
+    {/* ZAAL 08 · gezichten */}
+    <section id="gezichten" class="zaal zaal-breed" aria-labelledby="h-gz">
+      <header class="zaal-kop">
+        <p class="klein">{nn(8)} — {c.secties[6]}</p>
+        <h2 id="h-gz" class="mid">{c.facesH}</h2>
+        <p class="lede">{c.facesLede}</p>
+      </header>
+      <ul class="cast" role="list">
+        {ROSTER.map((m) => <li><a href={`${lp('/models')}#${modelId(m.name)}`}><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"><span class="klein">{m.name}</span></a></li>)}
+      </ul>
+      <p class="acties"><a class="lijn" href={lp('/custom-models')}>{c.facesLink}</a><a class="lijn" href={lp('/models')}>{c.facesLink2}</a></p>
+    </section>
+
+    {/* ZAAL 09 · vragen */}
+    <section class="zaal" aria-labelledby="h-q">
+      <div class="woord">
+        <p class="klein">{nn(9)}</p>
+        <h2 id="h-q" class="mid">{c.qH}</h2>
+        <ul class="vragen" role="list">
+          {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="lijn" href={lp(href)}>{l}</a></li>)}
+          <li><span></span><a class="lijn" href={lp('/faq')}>{c.qAll}</a></li>
+        </ul>
+      </div>
+      <figure class="vol"><img src={S(3).src} width={S(3).w} height={S(3).h} alt={S(3).alt} loading="lazy" decoding="async"></figure>
+    </section>
+
+    {/* ZAAL 10 · de proef, geel, het eind van de hal */}
+    <section class="zaal zaal-geel op-geel" aria-labelledby="h-sl">
+      <div class="woord">
+        <p class="klein">{nn(10)} — {c.secties[7]}</p>
+        <h2 id="h-sl" class="zin">{c.closeH}</h2>
+        <p class="lede">{c.closeLede}</p>
+        <p class="acties"><a class="lijn" href={lp('/test-sample')}>{sample.cta}</a><a class="lijn" href={lp('/start')}>{c.closeAlt}</a></p>
+        <ul class="trust klein" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+        <p class="klein">{c.posterLine[0]} · {c.posterLine[1]}</p>
+      </div>
+    </section>
+  </main>
+
+  {/* De rail: waar je bent in de hal. */}
+  <nav class="rail klein" aria-label="Zalen">
+    <ol>{ZALEN.map((z, i) => <li><b>{nn(i + 1)}</b>{z}</li>)}</ol>
+    <span class="rail-balk" aria-hidden="true"><i data-rail-balk></i></span>
+  </nav>
+
+  <script>
+    /* Verticaal scrollen wordt zijwaarts bewegen. Zonder dit script blijft de
+       hal gewoon een horizontale scrollbalk (pijltjes, shift+scroll, vegen). */
+    const hal = document.querySelector<HTMLElement>('[data-hal]');
+    const balk = document.querySelector<HTMLElement>('[data-rail-balk]');
+    if (hal) {
+      const breed = () => window.matchMedia('(min-width: 861px)').matches;
+      hal.addEventListener('wheel', (e) => {
+        if (!breed()) return;
+        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+        hal.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }, { passive: false });
+      const meet = () => {
+        if (!balk) return;
+        const t = hal.scrollWidth - hal.clientWidth;
+        balk.style.setProperty('--v', `${t > 0 ? (hal.scrollLeft / t) * 100 : 0}%`);
+      };
+      hal.addEventListener('scroll', meet, { passive: true });
+      meet();
+    }
+  </script>
+</ConceptLayout>
+
+<style>
+  /* ── DE HAL ─────────────────────────────────────────────────────────────*/
+  .hal { display: flex; height: 100svh; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .hal::-webkit-scrollbar { display: none; }
+  .zaal { flex: 0 0 auto; width: 100vw; height: 100svh; scroll-snap-align: start; display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: clamp(1.5rem, 4vw, 4rem); padding: 7rem var(--x) 5.5rem; }
+  .zaal-breed { width: max-content; max-width: none; grid-template-columns: none; grid-auto-flow: row; align-content: center; justify-items: start; }
+  .zaal-kop { display: grid; gap: .9rem; max-width: 46rem; }
+  .woord { display: grid; gap: clamp(.9rem, 2vh, 1.6rem); max-width: 40rem; align-self: center; align-content: center; }
+
+  /* ── DE TWEE MATEN ──────────────────────────────────────────────────────*/
+  .klein { font-family: var(--mono); font-size: .66rem; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; line-height: 1.5; color: var(--inkt-3); }
+  .klein b { color: var(--inkt); font-weight: 400; margin-right: .5em; }
+  .lijn { font-family: var(--mono); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--inkt); border-bottom: 1px solid currentColor; padding-bottom: .25em; white-space: nowrap; }
+  .lijn:hover { color: var(--inkt-3); }
+  .zin { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(2rem, 4.4vw, 4.4rem); line-height: .98; letter-spacing: -.035em; }
+  .regel { display: block; }
+  .mid { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: clamp(1.5rem, 2.8vw, 2.6rem); line-height: 1.06; letter-spacing: -.025em; text-wrap: balance; }
+  .mid-klein { font-size: clamp(1.2rem, 2vw, 1.7rem); margin-bottom: .6rem; }
+  .lede { font-size: .95rem; line-height: 1.6; color: var(--inkt-2); max-width: 44ch; }
+  .wat { font-size: .88rem; color: var(--inkt-2); }
+  .acties { display: flex; flex-wrap: wrap; gap: 1rem 2rem; }
+  .voetregel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem 2rem; }
+  .feiten { display: grid; gap: .35rem; }
+
+  /* ── BEELDEN: over de volle hoogte van de zaal ──────────────────────────*/
+  /* Een beeld in een zaal vult de hele hoogte van die zaal: de rij rekt uit
+     (align-items: stretch), dus height:100% is hier de hele hal min de chrome. */
+  .vol { height: 100%; }
+  .vol img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ── DE BREDE ZALEN ─────────────────────────────────────────────────────*/
+  .vier, .zeven, .cast { display: flex; gap: clamp(.6rem, 1.2vw, 1.2rem); align-items: end; }
+  .vier li, .zeven li { display: grid; gap: .5rem; }
+  .vier img, .zeven img { height: min(52svh, 34rem); width: auto; object-fit: cover; }
+  .vier li { max-width: 22rem; }
+  .cast li a { display: grid; gap: .5rem; }
+  .cast img { height: min(26svh, 15rem); width: auto; object-fit: cover; filter: grayscale(1); transition: filter .5s var(--uit); }
+  .cast a:hover img { filter: none; }
+  .paar { display: flex; gap: clamp(1rem, 3vw, 3rem); align-items: end; }
+  .paar figure { display: grid; gap: .6rem; }
+  .klein-beeld img { height: 16svh; width: auto; }
+  .hoog-beeld img { height: min(56svh, 36rem); width: auto; object-fit: cover; }
+  .termen { display: grid; gap: .4rem; align-self: end; padding-bottom: .3rem; }
+  .stappen { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem 2rem; }
+  .stappen li { display: grid; gap: .35rem; border-top: 1px solid var(--inkt); padding-top: .7rem; }
+  .stappen b, .beloften b { font-family: var(--kop); font-stretch: 78%; font-weight: 400; font-size: 1.05rem; }
+  .beloften { display: grid; gap: 1rem; border-top: 1px solid var(--inkt); padding-top: 1rem; }
+  .beloften li { display: grid; gap: .25rem; }
+
+  /* ── TABELLEN ───────────────────────────────────────────────────────────*/
+  .twee-tabellen { display: flex; gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+  .twee-tabellen > div { display: grid; gap: 1rem; min-width: 30rem; }
+  .tabel { width: 100%; }
+  .tabel th, .tabel td { text-align: left; padding: .8rem .8rem .8rem 0; border-bottom: 1px solid var(--lijn); vertical-align: baseline; }
+  .tabel thead th { border-bottom-color: var(--inkt); padding-top: 0; }
+  .tabel tbody th { font-weight: 400; }
+  .tabel td { font-family: var(--kop); font-stretch: 125%; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+
+  .vragen { display: grid; }
+  .vragen li { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: baseline; padding: .9rem 0; border-top: 1px solid var(--lijn); font-size: .95rem; }
+  .vragen li:last-child { border-bottom: 1px solid var(--lijn); }
+  .zaal-geel { background: var(--geel); color: var(--inkt); grid-template-columns: 1fr; justify-items: start; }
+  .zaal-geel .lede, .zaal-geel .klein { color: var(--inkt); }
+  .trust { display: grid; gap: .3rem; }
+
+  /* ── DE CHROME EN DE RAIL ───────────────────────────────────────────────*/
+  .top { position: fixed; inset: 0 0 auto; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: 1.5rem var(--x); }
+  .top-merk { width: 7rem; }
+  .top-merk .woordmerk { fill: var(--inkt); }
+  .rail { position: fixed; inset: auto 0 0; z-index: 5; padding: 0 var(--x) 1.2rem; display: grid; gap: .6rem; }
+  .rail ol { display: flex; gap: clamp(.8rem, 2.2vw, 2.2rem); overflow: hidden; }
+  .rail li { white-space: nowrap; }
+  .rail-balk { display: block; height: 2px; background: var(--lijn-sterk); position: relative; }
+  .rail-balk i { position: absolute; inset: 0 auto 0 0; width: 12%; background: var(--inkt); transform: translateX(calc(var(--v, 0%) * 7.33)); transition: transform .2s linear; }
+
+  /* ── OP EEN TELEFOON IS ER GEEN HAL ─────────────────────────────────────*/
+  @media (max-width: 860px) {
+    .hal { display: block; height: auto; overflow: visible; }
+    .zaal { width: auto; height: auto; min-height: 100svh; grid-template-columns: 1fr; align-content: center; padding: 7rem var(--x) 6rem; gap: 2rem; }
+    .zaal-breed { width: auto; }
+    .vier, .zeven, .cast, .paar, .twee-tabellen { flex-wrap: wrap; }
+    .vier img, .zeven img, .hoog-beeld img { height: auto; width: 100%; max-height: 52svh; }
+    .vier li, .zeven li { flex: 1 1 8rem; }
+    .cast img { height: auto; width: 100%; }
+    .cast li { flex: 1 1 4.5rem; }
+    .twee-tabellen { display: grid; gap: 2.5rem; }
+    .twee-tabellen > div { min-width: 0; width: 100%; }
+    .tabel { table-layout: fixed; }
+    .tabel th, .tabel td { padding: .7rem .3rem .7rem 0; word-break: break-word; }
+    .lijn { white-space: normal; }
+    .stappen { grid-template-columns: 1fr; }
+    .zaal .vol { height: auto; max-height: 46svh; }
+    .rail ol { display: none; }
+  }
+</style>

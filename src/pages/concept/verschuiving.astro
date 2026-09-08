@@ -1,0 +1,342 @@
+---
+/**
+ * CONCEPT B · VERSCHUIVING — de grond verschuift onder de pagina. 6 september 2026.
+ *
+ * Wat het is: de pagina heeft geen vaste kleur. Elk paneel vraagt zijn eigen
+ * grond — licht, inkt, grijs, geel, inkt, licht — en het lichaam van de pagina
+ * kleurt mee terwijl je scrollt, zodat de overgang nooit een harde rand is maar
+ * een verschuiving. Gemeten aan landonorris.com (Awwwards Site of the Year 2025,
+ * OFF+BRAND): gebroken wit → donker olijf → grijs → zwart, één reusachtige
+ * uitspraak met één lime woord, een veld van losse foto’s met kleine
+ * plaats/datum-labels, en foto’s van rand tot rand. Hier zijn de twee stemmen in
+ * de kop niet serif en grotesk maar smal en breed — dezelfde Hubot Sans op 78%
+ * en 125% — en het gele vlak is de prijstabel: het ene paneel dat helemaal geel
+ * is (Komma's geel als vulling, inkt erop).
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const { c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate, CATALOG_IMAGES, LIFESTYLE_IMAGES, ROSTER, modelId, SFEER } = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+
+/* De uitspraak op inkt: de lede en de drie feiten, als één blok kapitalen. Het
+   laatste woord van elke regel is breed en lime — de tweede stem. */
+const UITSPRAAK = [
+  ['Catalog, lifestyle en video van de foto’s die je', 'al hebt.'],
+  [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle`, 'per product.'],
+  ['Jouw eigen week', 'op de kalender.'],
+  ['Elk beeld gecheckt door', 'een specialist.'],
+];
+/* Het fotoveld: vier diensten, elk op een eigen plek in twaalf kolommen. */
+const VELD = [
+  { col: '1 / 6', row: 1, beeld: 1, top: '0' },
+  { col: '8 / 13', row: 1, beeld: 2, top: '18vw' },
+  { col: '3 / 7', row: 2, beeld: 4, top: '6vw' },
+  { col: '8 / 12', row: 2, beeld: 3, top: '22vw' },
+];
+---
+<ConceptLayout title="Concept B · Verschuiving — VISUAILS" description="Concept B voor de nieuwe voorpagina van VISUAILS: de grond verschuift mee per paneel, één uitspraak in kapitalen, de tarieven op geel." lang={lang} grond="vel">
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  <header class="top">
+    <a class="top-merk" href={lp('/')} aria-label="VISUAILS"><svg class="merkteken" viewBox="0 0 702 813.25" aria-hidden="true"><use href="#markglyph" /></svg></a>
+    <nav class="top-nav mono" aria-label="Hoofdnavigatie">{c.nav.map(([t, h]) => <a href={h}>{t}</a>)}</nav>
+    <a class="knop knop-geel top-knop" href={lp('/start')}>{c.ctaStart}</a>
+  </header>
+
+  <main id="inhoud">
+    {/* ── 1 · HERO op licht: het beeld loopt links uit het scherm ────────── */}
+    <section class="paneel hero" data-grond="vel" aria-labelledby="h1">
+      <figure class="hero-beeld"><img src={S(5).src} width={S(5).w} height={S(5).h} alt={S(5).alt} fetchpriority="high" decoding="async"></figure>
+      <div class="hero-tekst">
+        <p class="mono hero-label">{c.labels[0]} · {c.heroChip} · {c.labels[2]}</p>
+        <h1 id="h1" class="kop kop-smal h1">{c.h1.map((line) => <span class="regel" set:html={line} />)}</h1>
+        <p class="lede lopend">{c.lede}</p>
+        <p class="acties"><a class="knop" href={lp('/test-sample')}>{sample.cta}</a><a class="pijl" href="#maken">{c.secties[0]}</a></p>
+      </div>
+    </section>
+
+    {/* ── 2 · DE UITSPRAAK op inkt ───────────────────────────────────────── */}
+    <section class="paneel op-inkt uitspraak" data-grond="inkt" aria-label={c.lede}>
+      <p class="kop kop-smal uit">
+        {UITSPRAAK.map(([a, b]) => <span class="uit-regel">{a} <b class="kop-breed">{b}</b></span>)}
+      </p>
+    </section>
+
+    {/* ── 3 · WAT WE MAKEN: het fotoveld, op inkt ────────────────────────── */}
+    <section id="maken" class="paneel op-inkt veld-paneel" data-grond="inkt" aria-labelledby="h-maken">
+      <header class="paneel-kop">
+        <h2 id="h-maken" class="kop kop-smal h2">{c.svcH}</h2>
+        <p class="lede lopend">{c.svcLede}</p>
+      </header>
+      <ul class="veld">
+        {c.svc.map(([naam, wat, prijs, href], i) => {
+          const v = VELD[i]; const s = S(v.beeld);
+          return (
+            <li class="veld-item" style={`--col:${v.col};--top:${v.top}`}>
+              <a href={lp(href)}>
+                <span class="mono label"><b>{nn(i + 1)}</b>{naam}</span>
+                <img src={s.src} width={s.w} height={s.h} alt={s.alt} loading="lazy" decoding="async">
+                <span class="onder"><span>{wat}</span><span class="mono">{prijs}</span></span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="mono voetnoot"><span>{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    </section>
+
+    {/* ── 4 · GRIJS: telefoonfoto → studioproductie, en de vier stappen ──── */}
+    <section class="paneel proces" data-grond="grijs" aria-labelledby="h-vn">
+      <header class="paneel-kop">
+        <h2 id="h-vn" class="kop kop-smal h2">{c.vnH}</h2>
+        <p class="lede lopend">{c.vnLede}</p>
+      </header>
+      <div class="vannaar">
+        <figure><img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async"><figcaption class="mono">{c.vnIn[0]} · {c.vnIn[1]}</figcaption></figure>
+        <figure><img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async"><figcaption class="mono">{c.vnOut[0]} · {c.vnOut[1]}</figcaption></figure>
+        <ol class="noten mono">{c.vnNoten.map((k, i) => <li><b>{nn(i + 1)}</b>{k}</li>)}</ol>
+      </div>
+      <p><a class="pijl" href={lp('/gallery')}>{c.vnLink}</a></p>
+
+      <header class="paneel-kop paneel-kop-sub">
+        <h2 class="kop kop-smal h2">{c.stepsH}</h2>
+        <p class="lede lopend">{c.stepsLede}</p>
+      </header>
+      <ol class="stappen">
+        {c.steps.map(([k, v], i) => <li><span class="kop kop-breed stap-n">{nn(i + 1)}</span><h3 class="kop h3">{k}</h3><p>{v}</p></li>)}
+      </ol>
+    </section>
+
+    {/* ── 5 · DE SET, op licht ───────────────────────────────────────────── */}
+    <section class="paneel set" data-grond="vel" aria-labelledby="h-set">
+      <header class="paneel-kop">
+        <h2 id="h-set" class="kop kop-smal h2">{c.setH}</h2>
+        <p class="lede lopend">{c.setLede}</p>
+      </header>
+      <div class="strook" role="list">
+        {c.frames.map((naam, i) => {
+          const s = S([1, 5, 4, 2, 3, 7, 6][i]);
+          return (
+            <figure class="frame" role="listitem">
+              {i === 0 && <a class="groep mono" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a>}
+              {i === CATALOG_IMAGES && <a class="groep mono" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a>}
+              <img src={s.klein} width="800" height="1000" alt="" decoding="async">
+              <figcaption class="mono"><b>{nn(i + 1)}</b>{naam}</figcaption>
+            </figure>
+          );
+        })}
+      </div>
+      <ul class="extras">{c.extras.map(([k, v, href]) => <li><a href={lp(href)}><span class="mono">+ {k}</span><span>{v}</span></a></li>)}</ul>
+    </section>
+
+    {/* ── 6 · GEEL: de tarieven, het ene volle vlak ──────────────────────── */}
+    <section id="tarieven" class="paneel op-geel prijs" data-grond="geel" aria-labelledby="h-pr">
+      <header class="paneel-kop">
+        <h2 id="h-pr" class="kop kop-smal h2">{c.priceH}</h2>
+      </header>
+      <table class="tabel">
+        <thead><tr><th scope="col" class="mono">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="mono">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+        <tbody>{RUNGS.map((r) => <tr><th scope="row" class="mono">{r.label}</th>{KINDS.map((id) => <td class="bedrag kop kop-breed">{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+      </table>
+      <p class="mono">{c.priceVat}</p>
+      <p class="acties"><a class="knop knop-inkt" href={lp('/start')}>{c.priceCta}</a><a class="pijl" href={lp('/pricing')}>{c.priceCta2}</a></p>
+
+      <div class="abo">
+        <header class="paneel-kop">
+          <h3 class="kop kop-smal h2">{c.planH}</h3>
+          <p class="lede lopend">{c.planLede}</p>
+        </header>
+        <table class="tabel tabel-abo">
+          <thead><tr>{c.planCols.map((k) => <th scope="col" class="mono">{k}</th>)}</tr></thead>
+          <tbody>{PLANS.map((pl) => <tr><th scope="row"><a href={`${lp('/plans')}#${pl.id}`} class="kop h3">{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td class="bedrag kop kop-breed">{pl.products}</td><td class="bedrag kop kop-breed">{PLAN_CLIPS[pl.id] || '—'}</td><td class="bedrag kop kop-breed">{pl.price}</td></tr>)}</tbody>
+        </table>
+        <p class="mono">{c.planVat}</p>
+        <p class="acties"><a class="knop knop-inkt" href={lp('/start/plan')}>{c.planCta}</a><a class="pijl" href={lp('/plans')}>{c.planLink}</a></p>
+      </div>
+    </section>
+
+    {/* ── 7 · INKT: Studio, met het lichtspoor van rand tot rand ────────── */}
+    <section id="studio" class="paneel op-inkt studio" data-grond="inkt" aria-labelledby="h-sd">
+      <figure class="studio-beeld"><img src={S(9).src} width={S(9).w} height={S(9).h} alt={S(9).alt} loading="lazy" decoding="async"></figure>
+      <div class="studio-tekst">
+        <h2 id="h-sd" class="kop kop-smal h2">{c.studioH}</h2>
+        <p class="lede lopend">{c.studioLede}</p>
+        <ul class="beloften">{c.beloften.map(([k, v]) => <li><strong class="kop h3">{k}</strong><span>{v}</span></li>)}</ul>
+        <p class="acties"><a class="pijl" href={lp('/portal')}>{c.studioLink}</a><a class="pijl" href={lp('/studio')}>{c.studioLink2}</a></p>
+      </div>
+    </section>
+
+    {/* ── 8 · LICHT: gezichten en vragen ─────────────────────────────────── */}
+    <section id="gezichten" class="paneel gezichten" data-grond="vel" aria-labelledby="h-gz">
+      <header class="paneel-kop">
+        <h2 id="h-gz" class="kop kop-smal h2">{c.facesH}</h2>
+        <p class="lede lopend">{c.facesLede}</p>
+      </header>
+      <ul class="rooster">{ROSTER.map((m) => <li><a href={`${lp('/models')}#${modelId(m.name)}`}><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"><span class="mono">{m.name}</span></a></li>)}</ul>
+      <p class="acties"><a class="pijl" href={lp('/custom-models')}>{c.facesLink}</a><a class="pijl" href={lp('/models')}>{c.facesLink2}</a></p>
+      <div class="vragen-blok">
+        <h2 class="kop kop-smal h2">{c.qH}</h2>
+        <ul class="vragen">
+          {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="pijl" href={lp(href)}>{l}</a></li>)}
+          <li><span></span><a class="pijl" href={lp('/faq')}>{c.qAll}</a></li>
+        </ul>
+      </div>
+    </section>
+
+    {/* ── 9 · HET SLOT: één beeld van rand tot rand, de proef erop ───────── */}
+    <section class="paneel op-inkt slot" data-grond="inkt" aria-labelledby="h-sl">
+      <img class="slot-beeld" src={S(3).src} width={S(3).w} height={S(3).h} alt={S(3).alt} loading="lazy" decoding="async">
+      <div class="slot-tekst">
+        <h2 id="h-sl" class="kop kop-smal h1">{c.closeH}</h2>
+        <p class="lede lopend">{c.closeLede}</p>
+        <p class="acties"><a class="knop knop-geel" href={lp('/test-sample')}>{sample.cta}</a><a class="knop" href={lp('/start')}>{c.closeAlt}</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="voet op-inkt" data-grond="inkt">
+    <svg class="woordmerk" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
+    <ul class="trust mono">{c.trust.map((t) => <li>{t}</li>)}</ul>
+    <span class="mono">{c.posterLine[1]}</span>
+  </footer>
+
+  <script>
+    /* De grond verschuift mee. Elk paneel zegt welke grond het wil; zodra een
+       paneel het midden van het scherm kruist krijgt <html> die grond en kleurt
+       de pagina in .7s. Zonder JavaScript staat elk paneel gewoon op zijn eigen
+       kleur (zie de CSS): de verschuiving is een verrijking, geen voorwaarde. */
+    const panelen = document.querySelectorAll<HTMLElement>('[data-grond]');
+    const root = document.documentElement;
+    /* ?stil: elk paneel houdt zijn eigen kleur (voor schermafbeeldingen over de hele hoogte). */
+    if (location.search.includes('stil')) { /* niets */ } else {
+    root.classList.add('verschuift');
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) if (en.isIntersecting) root.dataset.grond = en.target.dataset.grond;
+    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+    panelen.forEach((p) => io.observe(p));
+    }
+  </script>
+</ConceptLayout>
+
+<style is:global>
+  /* De gronden. Zonder JS draagt elk paneel zijn kleur zelf; met JS laat het
+     paneel los en kleurt de pagina. */
+  html[data-grond="grijs"] body { background: #E6E6E6; }
+  html[data-grond="geel"] body { background: var(--geel); }
+  @media (prefers-reduced-motion: no-preference) { html.verschuift body { transition: background-color .7s var(--uit); } }
+  html:not(.verschuift) [data-grond="inkt"] { background: var(--inkt); }
+  html:not(.verschuift) [data-grond="grijs"] { background: #E6E6E6; }
+  html:not(.verschuift) [data-grond="geel"] { background: var(--geel); }
+  html:not(.verschuift) [data-grond="vel"] { background: var(--vel); }
+</style>
+
+<style>
+  .paneel { padding: clamp(6rem, 12vw, 13rem) var(--x); display: grid; gap: clamp(2.5rem, 5vw, 4.5rem); transition: color .7s var(--uit); }
+  .op-inkt { color: var(--vel); }
+  .op-geel { color: var(--inkt); }
+  .paneel-kop { display: grid; gap: 1.25rem; max-width: 60rem; }
+  .paneel-kop-sub { margin-top: clamp(4rem, 8vw, 8rem); }
+  .h1 { font-size: clamp(2.8rem, 7vw, 6rem); }
+  .h2 { font-size: clamp(2rem, 4.4vw, 3.8rem); }
+  .h3 { font-size: 1.15rem; letter-spacing: -.01em; line-height: 1.2; }
+  .regel { display: block; }
+  .lede { font-size: clamp(1rem, 1.25vw, 1.2rem); opacity: .82; }
+  .acties { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2rem; }
+  .voetnoot { opacity: .7; }
+  .mono b { font-weight: 500; margin-right: .6em; }
+
+  /* ── De top: vast, dun, de knop geel ─────────────────────────────────────── */
+  .top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: 1rem var(--x); color: var(--inkt); transition: color .7s var(--uit); }
+  :global(html[data-grond="inkt"]) .top { color: var(--vel); }
+  .top-nav { display: flex; gap: 1.75rem; }
+  .top-nav a:hover { opacity: .6; }
+  @media (max-width: 720px) { .top-nav { display: none; } }
+
+  /* ── De hero ───────────────────────────────────────────────────────────── */
+  .hero { grid-template-columns: 7fr 5fr; align-items: end; gap: clamp(2rem, 5vw, 6rem); padding-top: clamp(4rem, 8vw, 8rem); min-height: 100svh; margin-top: -4.5rem; }
+  .hero-beeld { margin-left: calc(-1 * var(--x)); }
+  .hero-beeld img { width: 100%; height: auto; }
+  .hero-tekst { display: grid; gap: 1.75rem; padding-bottom: 2vw; }
+  .hero-label { opacity: .7; }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; margin-top: 0; padding-top: 1rem; } .hero-beeld { margin-right: calc(-1 * var(--x)); } }
+
+  /* ── De uitspraak ──────────────────────────────────────────────────────── */
+  .uitspraak { min-height: 90svh; align-content: center; }
+  .uit { font-size: clamp(2.2rem, 6.2vw, 6rem); text-transform: uppercase; letter-spacing: -.02em; line-height: 1.02; display: grid; gap: .1em; }
+  .uit-regel { display: block; }
+  .uit b { font-weight: 600; color: var(--geel-letter); letter-spacing: -.01em; }
+
+  /* ── Het veld ──────────────────────────────────────────────────────────── */
+  .veld { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: clamp(1rem, 3vw, 3rem); row-gap: clamp(4rem, 10vw, 12rem); }
+  .veld-item { grid-column: var(--col); margin-top: var(--top); }
+  .veld-item a { display: grid; gap: 1rem; }
+  .veld-item img { width: 100%; height: auto; transition: transform .8s var(--uit); }
+  .veld-item a:hover img { transform: scale(1.02); }
+  .veld-item .label { opacity: .7; }
+  .onder { display: grid; gap: .3rem; opacity: .85; max-width: 32em; }
+  @media (max-width: 720px) { .veld-item { grid-column: 1 / 13; margin-top: 0; } }
+
+  /* ── Grijs: van→naar en stappen ────────────────────────────────────────── */
+  .vannaar { display: grid; grid-template-columns: 4fr 8fr; gap: clamp(1rem, 3vw, 3rem); align-items: end; }
+  .vannaar figure { display: grid; gap: .8rem; }
+  .vannaar img { width: 100%; }
+  .vannaar figcaption { opacity: .7; }
+  .noten { grid-column: 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--inkt); opacity: .8; }
+  .stappen { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 3rem clamp(1.5rem, 3vw, 3rem); }
+  .stappen li { display: grid; gap: .9rem; align-content: start; }
+  .stap-n { font-size: clamp(3rem, 6vw, 5.5rem); font-weight: 600; line-height: 1; }
+  .stappen p { opacity: .8; max-width: 26em; }
+  @media (max-width: 720px) { .vannaar { grid-template-columns: 1fr; } .noten { grid-column: 1; grid-template-columns: 1fr 1fr; } }
+
+  /* ── De strook ─────────────────────────────────────────────────────────── */
+  .strook { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(9.5rem, 1fr); gap: clamp(.75rem, 1.5vw, 1.5rem); overflow-x: auto; padding-top: 2.5rem; scroll-snap-type: x proximity; }
+  .frame { position: relative; display: grid; gap: .7rem; scroll-snap-align: start; }
+  .frame img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .frame figcaption { opacity: .7; }
+  .groep { position: absolute; top: -2.2rem; left: 0; white-space: nowrap; }
+  .groep::before { content: ""; position: absolute; left: 0; top: 1.4rem; width: 60vw; height: 1px; background: var(--lijn-sterk); }
+  .extras { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 0 3rem; border-top: 1px solid var(--inkt); }
+  .extras a { display: grid; gap: .3rem; padding: 1.25rem 0; border-bottom: 1px solid var(--lijn-sterk); }
+
+  /* ── Geel: de tabellen ─────────────────────────────────────────────────── */
+  .tabel th, .tabel td { text-align: left; padding: 1.4rem 1rem 1.4rem 0; border-bottom: 1px solid rgb(17 17 17 / .28); vertical-align: baseline; }
+  .tabel thead th { border-bottom-color: var(--inkt); padding-top: 0; }
+  .tabel tbody th { font-weight: 400; width: 14%; }
+  .bedrag { font-size: clamp(1.6rem, 3.2vw, 3rem); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tabel-abo tbody th { width: 34%; }
+  .abo-regel { display: block; font-size: .9rem; margin-top: .25rem; opacity: .8; }
+  @media (max-width: 600px) { .tabel th, .tabel td { padding: 1rem .5rem 1rem 0; } .bedrag { font-size: 1.25rem; } .abo-regel { display: none; } }
+  .abo { display: grid; gap: clamp(2.5rem, 5vw, 4.5rem); margin-top: clamp(4rem, 8vw, 8rem); }
+
+  /* ── Inkt: Studio ──────────────────────────────────────────────────────── */
+  .studio { padding-inline: 0; }
+  .studio-beeld img { width: 100%; height: auto; }
+  .studio-tekst { display: grid; gap: 1.5rem; padding-inline: var(--x); max-width: 60rem; }
+  .beloften { display: grid; gap: 1rem; padding-top: 1.25rem; border-top: 1px solid rgb(245 245 245 / .35); }
+  .beloften li { display: grid; gap: .25rem; opacity: .9; }
+
+  /* ── Licht: de roster en de vragen ─────────────────────────────────────── */
+  .rooster { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 1.5rem 1rem; }
+  .rooster a { display: grid; gap: .6rem; opacity: .85; }
+  .rooster img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: grayscale(1); transition: filter .4s var(--uit); }
+  .rooster a:hover img { filter: none; }
+  .vragen-blok { display: grid; gap: 2.5rem; margin-top: clamp(4rem, 8vw, 8rem); }
+  .vragen li { display: grid; grid-template-columns: 1fr auto; gap: 1rem; padding: 1.25rem 0; border-top: 1px solid var(--lijn-sterk); }
+  .vragen li:last-child { border-bottom: 1px solid var(--lijn-sterk); }
+  @media (max-width: 600px) { .vragen li { grid-template-columns: 1fr; } }
+
+  /* ── Het slot: beeld van rand tot rand, tekst eronder ──────────────────── */
+  .slot { padding: 0 0 clamp(5rem, 10vw, 10rem); gap: clamp(3rem, 6vw, 6rem); }
+  .slot-beeld { width: 100%; height: auto; }
+  .slot-tekst { display: grid; gap: 1.75rem; padding-inline: var(--x); }
+
+  .voet { padding: 0 var(--x) clamp(3rem, 6vw, 6rem); display: grid; gap: 2.5rem; color: var(--vel); }
+  .trust { display: flex; flex-wrap: wrap; gap: .75rem 2.5rem; opacity: .7; }
+</style>

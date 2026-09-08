@@ -4,6 +4,7 @@ import { UPLOAD_DAYS, DELIVERY_DAYS } from '../../lib/retention.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../../data/juridischeDatums.js';
+import '../../styles/stijl22.css';
 // VISUAILS — Verwerkersovereenkomst (art. 28 AVG). Nieuw op 12 augustus 2026.
 //
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -99,17 +100,34 @@ const SUBS = [
   title="Verwerkersovereenkomst — VISUAILS"
   description="De verwerkersovereenkomst van VISUAILS volgens artikel 28 AVG: wat wij met jouw beeldmateriaal doen, wie het ontvangt en hoe lang wij het bewaren."
 >
-  <section class="page-hero">
-    <div class="container narrow">
-      <span class="eyebrow-page">Juridisch</span>
-      <h1 class="display">Verwerkersovereenkomst</h1>
-      <p class="lead" style="margin-top:1.2rem">Staat er een persoon op het beeld dat je aanlevert, dan verwerken wij persoonsgegevens van jóu — en dan schrijft de AVG voor dat wij daar een overeenkomst over hebben. Dit is die overeenkomst.</p>
-      <p class="legal-meta">{bijgewerktOp('data-processing-agreement', 'nl', 'artikel 28 AVG')}</p>
-    </div>
-  </section>
+{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
+    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
+    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
+    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
+    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
+    letters voor alle zes juridische pagina's tegelijk.
 
-  <section class="section-tight">
-    <div class="container narrow legal">
+    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
+    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
+    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
+    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
+    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
+    daarop is niet de toets versoepelen maar de andere vier meenemen.
+
+    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
+    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
+    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
+    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
+<div class="s22">
+  <section class="paneel">
+    <header class="paneel-kop jur-kop">
+      <p class="etiket">Juridisch</p>
+      <h1 class="hoog">Verwerkersovereenkomst</h1>
+      <p class="lopend jur-lead">Staat er een persoon op het beeld dat je aanlevert, dan verwerken wij persoonsgegevens van jóu — en dan schrijft de AVG voor dat wij daar een overeenkomst over hebben. Dit is die overeenkomst.</p>
+      <p class="legal-meta">{bijgewerktOp('data-processing-agreement', 'nl', 'artikel 28 AVG')}</p>
+    </header>
+
+    <div class="legal jur-tekst">
 
       <h2>1. Twee rollen, en het verschil doet ertoe</h2>
       <p>Bij één bestelling verwerken wij twee soorten gegevens, en de AVG geeft ons daarbij twee verschillende rollen. Dat klinkt als een formaliteit en is het niet: het bepaalt wie beslist, wie een datalek aan de toezichthouder meldt, en bij wie een betrokkene terechtkan.</p>
@@ -216,7 +234,21 @@ const SUBS = [
           gewicht ervan is. En de marge komt nu uit de klasse in plaats van uit dit
           bestand. */}
       <p class="legal-note">Deze pagina is opgesteld tegen de tekst van artikel 28 AVG en dekt de onderdelen van lid 3 sub a tot en met h. Hij is nog niet door een jurist beoordeeld. Voor jouw eigen situatie — zeker als je zelf in een keten met meerdere verantwoordelijken zit — laat je dit door je eigen adviseur nakijken.</p>
-
     </div>
   </section>
+</div>
 </Layout>
+
+<style>
+  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
+     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
+     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
+     verkooptekst. */
+  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
+  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
+  .jur-tekst { max-width: 46rem; }
+
+  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
+  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .jur-uit .acties { margin-top: 1.4rem; }
+</style>

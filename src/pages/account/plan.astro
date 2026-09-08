@@ -1,0 +1,401 @@
+---
+/**
+ * /account/plan — Abonnement & facturering, als Astro-pagina. Studio fase 2,
+ * 5 september 2026. Alles komt uit planView() in account.js: de status, de
+ * meldingen, de vijf tabben (links, geen script), en per tab de blokken die
+ * planBody() ook tekende — het saldo met slotmeters, je week, de maandset; de
+ * lijst en de agenda; de edities; je look; wat je hebt opgebouwd en het beheer.
+ * De formulieren posten naar dezelfde routes als voorheen (accountPost).
+ *
+ * /account/plan/return blijft in accountGet(): dat is de terugkeer van de
+ * betaalpagina, geen scherm van deze pagina.
+ */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import Slotmeter from '../../components/studio/Slotmeter.astro';
+import Plaatshouder from '../../components/studio/Plaatshouder.astro';
+import VasteLookRij from '../../components/studio/VasteLookRij.astro';
+import { pagesContext } from '../../lib/route.js';
+import { studioScreen, STUDIO_ICONS } from '../../lib/account.js';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'plan');
+if (s instanceof Response) return s;
+
+const { st, v, bk } = s;
+const { t, lang, customer, thema, navDicht } = st;
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="plan" customer={customer}
+  title={t.planHeading} kop={t.planHeading} chip={v.chip} actie={v.actie}
+>
+  {v.melding && <p class="st-melding is-warn" role="alert">{v.melding}</p>}
+
+  {v.geen && (
+    <Fragment>
+      <section class="st-blok" aria-label={v.leeg.h}>
+        <div class="st-kaart-vlak st-geenabo">
+          <span class="st-eyebrow">{v.leeg.eyebrow}</span>
+          <h2>{v.leeg.h}</h2>
+          <p>{v.leeg.p}</p>
+          <div class="st-knoppen">
+            <a class="btn btn-primary" href={v.leeg.ctaHref}>{v.leeg.cta}</a>
+            <a class="btn btn-2nd" href={v.leeg.altHref}>{v.leeg.alt}</a>
+          </div>
+        </div>
+      </section>
+      {/* Drie dingen die een abonnement is, als beeld: de slots, de week, de look. */}
+      <section class="st-blok" aria-label={t.planVisSlotsH}>
+        <div class="st-uitleg">
+          <div class="st-kaart-vlak st-vlak st-uitleg-blok">
+            <div class="st-frames is-uitleg">
+              {Array.from({ length: 12 }, (_, i) => <span class={`st-frame${i < 4 ? ' is-gemaakt' : i < 7 ? ' is-vast' : ' is-vrij'}`}>{i < 4 ? <Plaatshouder klein ratio="4/5" /> : i < 7 ? <Plaatshouder klein donker ratio="4/5" /> : <span class="st-frame-leeg"></span>}</span>)}
+            </div>
+            <h2>{t.planVisSlotsH}</h2>
+            <p>{t.planVisSlotsP}</p>
+          </div>
+          <div class="st-kaart-vlak st-vlak st-uitleg-blok">
+            <div class="st-weekstrip" aria-hidden="true">
+              {v.weekstrip.map((d) => <span class={`st-dag${d.week ? ' is-week' : ''}${d.start ? ' is-start' : ''}`}>{d.n}</span>)}
+            </div>
+            <h2>{t.planVisWeekH}</h2>
+            <p>{t.planVisWeekP}</p>
+          </div>
+          <div class="st-kaart-vlak st-vlak st-uitleg-blok">
+            {bk && <VasteLookRij t={t} k={bk.kaarten[0]} voorbeeld />}
+            <h2>{t.planVisLookH}</h2>
+            <p>{t.planVisLookP}</p>
+          </div>
+        </div>
+      </section>
+    </Fragment>
+  )}
+
+  {!v.geen && (
+    <Fragment>
+      {v.nudge && (
+        <aside class="st-kaart-vlak st-nudge">
+          <div><h2>{v.nudge.h}</h2><p>{v.nudge.p}</p><p class="st-meta">{v.nudge.which}</p></div>
+          <a class="btn btn-2nd btn-sm" href="/account/brand-kit">{v.nudge.cta}</a>
+        </aside>
+      )}
+      <nav class="st-tabs" aria-label={t.planTabsLabel}>
+        {v.tabs.map((tb) => <a class={`st-tab${tb.nu ? ' is-nu' : ''}`} href={tb.href} aria-current={tb.nu ? 'page' : undefined}>{tb.label}</a>)}
+      </nav>
+
+      {v.nu === 'maand' && (
+        <Fragment>
+          <section class="st-blok" aria-label={t.planBalanceH}>
+            <div class="st-kaart-vlak st-saldo">
+              <div class="st-saldo-kop">
+                <div><span class="st-eyebrow">{t.planBalanceH}</span><h2>{v.saldo.naam}</h2></div>
+                {v.saldo.volgende && <div class="st-saldo-volgende"><span class="st-eyebrow">{t.planNextCharge}</span><strong>{v.saldo.volgende}</strong></div>}
+              </div>
+              <div class="st-saldo-rij">
+                <div class="st-saldo-uitleg">
+                  <span class="st-eyebrow">{t.planSlotsH}</span>
+                  <p class="st-meta">{t.planSlotsLede}</p>
+                </div>
+                <div class="st-knoppen">
+                  <a class="btn btn-primary btn-sm" href="/account/plan?tab=bestellen">{t.planSlotFill}</a>
+                  <a class="btn btn-ghost btn-sm" href={v.saldo.startComplete}>{t.planRequest}</a>
+                </div>
+              </div>
+              {v.saldo.slots.length > 0 && (
+                <div class="st-slots">
+                  {v.saldo.slots.map((s) => (
+                    <div class={`st-slot${s.vol ? ' is-vol' : ''}`}>
+                      <div class="st-slot-kop">
+                        <span class="st-slot-naam"><span class="n">{s.naam}</span><span class="u">{s.per}</span>{s.verval && <span class="st-slot-verval">{s.verval}</span>}</span>
+                        <span class="st-slot-tel"><b>{s.tel}</b> {s.telLabel}</span>
+                      </div>
+                      {/* Elk slot een frame: gemaakt (met het beeld), vastgezet, vrij. */}
+                      <div class="st-frames">
+                        {s.frames.slice(0, 24).map((fr) => fr.kind === 'vrij'
+                          ? <a class="st-frame is-vrij" href="/account/plan?tab=bestellen" aria-label={fr.label}><span class="st-frame-leeg">+</span></a>
+                          : <span class={`st-frame is-${fr.kind}`} aria-label={fr.label}>{fr.img ? <img src={fr.img} alt="" loading="lazy" decoding="async" /> : <Plaatshouder klein donker={fr.kind === 'vast'} ratio="4/5" />}</span>)}
+                        {s.frames.length > 24 && <span class="st-frame is-meer">+{s.frames.length - 24}</span>}
+                      </div>
+                      <div class="st-frame-legenda">
+                        <span><i class="is-gemaakt"></i>{t.planVisFrameMade}</span>
+                        <span><i class="is-vast"></i>{t.planVisFrameLocked}</span>
+                        <span><i class="is-vrij"></i>{t.planVisFrameFree}</span>
+                        {s.oud && <span class="st-slot-oud"><Slotmeter g={s.oud} alsBalk={s.alsBalk} /> {s.oud.label}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p class="st-meta">{v.saldo.elkProduct && <Fragment>{t.planEachProduct} · </Fragment>}{t.planExtraNote}</p>
+              {!v.saldo.betaald && <p class="st-melding is-warn">{t.planUnpaid}</p>}
+            </div>
+          </section>
+          <section class="st-blok" aria-label={t.planWindowH}>
+            <div class="st-kaart-vlak st-vlak">
+              <h2>{t.planWindowH}</h2>
+              {v.week ? <p class="st-groot">{v.week}</p> : <p>{t.planWindowNone}</p>}
+              {v.venster > 0 && (
+                <div class="st-weekstrip" role="img" aria-label={`${t.planVisWeekStart} ${v.week}`}>
+                  {v.weekstrip.map((d) => <span class={`st-dag${d.week ? ' is-week' : ''}${d.start ? ' is-start' : ''}${d.vandaag ? ' is-vandaag' : ''}`}>{d.n}</span>)}
+                </div>
+              )}
+              <p class="st-meta">{t.planWindowNote}</p>
+            </div>
+          </section>
+          {v.maandset && (
+            <section class="st-blok" aria-label={t.msH}>
+              <div class="st-kaart-vlak st-vlak">
+                <h2>{t.msH}</h2>
+                <p class="st-meta">{t.msLede}</p>
+                {v.maandset.nu
+                  ? (
+                    <Fragment>
+                      <div class="st-set is-nu" id={`set-${v.maandset.nu.id}`}>
+                        <div class="st-set-kop"><span class="st-set-maand">{v.maandset.nu.label}</span><span class="st-meta">{v.maandset.nu.n}</span></div>
+                        {v.maandset.nu.beelden.length > 0 && <div class="st-strook">{v.maandset.nu.beelden.map((b) => <span><img src={b} alt="" loading="lazy" decoding="async" width="240" height="240" /></span>)}</div>}
+                        <a class="btn btn-primary btn-sm" href={v.maandset.nu.zip}>{t.msZip}</a>
+                      </div>
+                      <p class="st-meta">{t.msLicence}</p>
+                    </Fragment>
+                  )
+                  : <p class="st-meta">{t.msNone}</p>}
+                {v.maandset.eerder.length > 0 && (
+                  <Fragment>
+                    <h3 class="st-h3">{t.msEarlier}</h3>
+                    {v.maandset.eerder.map((ms) => (
+                      <div class="st-set" id={`set-${ms.id}`}>
+                        <div class="st-set-kop"><span class="st-set-maand">{ms.label}</span><span class="st-meta">{ms.n}</span></div>
+                        {ms.beelden.length > 0 && <div class="st-strook is-klein">{ms.beelden.map((b) => <span><img src={b} alt="" loading="lazy" decoding="async" width="240" height="240" /></span>)}</div>}
+                        <a class="btn btn-2nd btn-sm" href={ms.zip}>{t.msZip}</a>
+                      </div>
+                    ))}
+                  </Fragment>
+                )}
+              </div>
+            </section>
+          )}
+        </Fragment>
+      )}
+
+      {v.nu === 'bestellen' && !v.kalender && (
+        <section class="st-blok" aria-label={t.planQueueH}>
+          <div class="st-kaart-vlak st-vlak">
+            <h2>{t.planQueueH}</h2>
+            <p class="st-meta">{t.planQueueLede}</p>
+            <p class="st-meta">{t.planQLockHint}</p>
+            {v.wachtrij.length
+              ? (
+                <Fragment>
+                  <ol class="st-lijst">
+                    {v.wachtrij.map((q) => (
+                      <li class={`st-q${q.vast ? ' is-vast' : ''}`}>
+                        <span class={`st-q-frame${q.fotos ? ' is-fotos' : ''}`} aria-hidden="true">{q.fotos ? <Plaatshouder klein donker={q.vast} ratio="4/5" /> : <span class="st-frame-leeg"></span>}</span>
+                        <div class="st-q-tekst">
+                          <strong>{q.name}</strong>
+                          {q.note && <span class="st-meta">{q.note}</span>}
+                          <span class={`st-q-staat${q.fotos ? ' is-ok' : ''}`}>{q.fotosLabel}{q.soort && ` · ${q.soort}`}</span>
+                        </div>
+                        <span class={`st-q-merk${q.vast ? ' is-vast' : ''}`}>{q.merk}</span>
+                        <a class={`st-q-wanneer${q.wanneerVast ? ' is-vast' : ''}`} href={q.kiesHref}>{q.wanneer}</a>
+                        <div class="st-q-knoppen">
+                          <form method="post" action="/account/plan/queue">
+                            <input type="hidden" name="do" value={q.lockDo} /><input type="hidden" name="id" value={q.id} />
+                            <button class={`btn ${q.vast ? 'btn-ghost' : 'btn-primary'} btn-sm`} type="submit" disabled={q.lockUit}>{q.lockLabel}</button>
+                          </form>
+                          <form method="post" action="/account/plan/queue">
+                            <input type="hidden" name="do" value="up" /><input type="hidden" name="id" value={q.id} />
+                            <button class="btn btn-ghost btn-sm" type="submit" disabled={q.eerste} aria-label={`${t.planQueueUp}: ${q.name}`}>↑</button>
+                          </form>
+                          <form method="post" action="/account/plan/queue">
+                            <input type="hidden" name="do" value="down" /><input type="hidden" name="id" value={q.id} />
+                            <button class="btn btn-ghost btn-sm" type="submit" disabled={q.laatste} aria-label={`${t.planQueueDown}: ${q.name}`}>↓</button>
+                          </form>
+                          <form method="post" action="/account/plan/queue">
+                            <input type="hidden" name="do" value="remove" /><input type="hidden" name="id" value={q.id} />
+                            <button class="btn btn-ghost btn-sm" type="submit">{t.planQueueRemove}</button>
+                          </form>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  <p class="st-meta">{v.wachtrijNoot}</p>
+                </Fragment>
+              )
+              : <p>{t.planQueueEmpty}</p>}
+            {/* enctype, en dat is het hele punt: zonder multipart komen de bytes
+                niet mee. Geen required op het fotoveld — een product zonder foto's
+                mag op de lijst; de lijst zegt zelf dat we hem overslaan. */}
+            <form method="post" action="/account/plan/queue" class="st-formulier is-in-vlak" enctype="multipart/form-data">
+              <input type="hidden" name="do" value="add" />
+              <div class="st-rij">
+                <div class="st-veldgroep">
+                  <label for="q-name">{t.planQueueName}</label>
+                  <input id="q-name" class="st-veld" name="name" type="text" maxlength="120" required data-melding={t.planQueueNameMissing} placeholder={t.planQueueNamePh} />
+                </div>
+                {v.soortKeuze
+                  ? (
+                    <div class="st-veldgroep">
+                      <label for="q-soort">{t.planQueueKind}</label>
+                      <select id="q-soort" class="st-veld" name="kind">{v.soortKeuze.map((o) => <option value={o.value}>{o.label}</option>)}</select>
+                    </div>
+                  )
+                  : <input type="hidden" name="kind" value={v.soortEnkel} />}
+              </div>
+              <div class="st-rij">
+                <div class="st-veldgroep is-breed">
+                  <label for="q-note">{t.planQueueNote}</label>
+                  <input id="q-note" class="st-veld" name="note" type="text" maxlength="500" />
+                </div>
+              </div>
+              <div class="st-rij">
+                <div class="st-veldgroep is-breed">
+                  <label for="q-fotos">{t.planQueuePhotos}</label>
+                  <input id="q-fotos" class="st-veld st-veld-bestand" name="fotos" type="file" accept="image/*" multiple />
+                  <span class="st-hint">{t.planQueuePhotosHint}</span>
+                </div>
+              </div>
+              <div class="st-rij is-acties"><button class="btn btn-2nd" type="submit">{t.planQueueAdd}</button></div>
+            </form>
+          </div>
+        </section>
+      )}
+
+      {v.nu === 'bestellen' && v.kalender && (
+        <section class="st-blok" aria-label={t.planWhenH}>
+          <div class="st-kaart-vlak st-vlak">
+            <p><a class="st-link" href="/account/plan?tab=bestellen">← {t.planWhenBack}</a></p>
+            <h2>{t.planWhenH}</h2>
+            {v.kalender.geenGewicht
+              ? <p class="st-meta">{t.planWhenNoWeight}</p>
+              : (
+                <Fragment>
+                  <p class="st-meta">{v.kalender.item.name}{v.kalender.item.note && ` — ${v.kalender.item.note}`}</p>
+                  <form method="post" action="/account/plan/queue" class="st-kal-asap">
+                    <input type="hidden" name="do" value="asap" /><input type="hidden" name="id" value={v.kalender.item.id} />
+                    <button class={`btn ${v.kalender.item.vast ? 'btn-ghost' : 'btn-primary'} btn-sm`} type="submit">{t.planWhenAsap}</button>
+                    <span class="st-meta">{t.planWhenAsapSub}</span>
+                  </form>
+                  {v.kalender.item.vast && <p>{t.planWhenSet} <strong>{v.kalender.item.start}</strong> {v.kalender.of} <strong>{v.kalender.item.end}</strong></p>}
+                  <p class="st-meta">{t.planWhenLead} {t.planWhenFirst} <strong>{v.kalender.eerste}</strong>.</p>
+                  <form method="post" action="/account/plan/queue">
+                    <input type="hidden" name="do" value="plan" /><input type="hidden" name="id" value={v.kalender.item.id} />
+                    <div class="st-kal">
+                      {v.kalender.kopjes.map((k) => <div class="st-kal-kop">{k}</div>)}
+                      {v.kalender.dagen.map((d) => d.staat === 'vrij'
+                        ? <button class={`st-kal-dag is-vrij${d.vandaag ? ' is-nu' : ''}${d.mijn ? ' is-mijn' : ''}`} type="submit" name="dag" value={d.iso} aria-label={d.aria}><span class="st-kal-n">{d.nr}</span><span class="st-kal-l">{d.label}</span><span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span></button>
+                        : <div class={`st-kal-dag is-${d.staat}${d.vandaag ? ' is-nu' : ''}${d.mijn ? ' is-mijn' : ''}`}><span class="st-kal-n">{d.nr}</span><span class="st-kal-l">{d.label}</span><span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span></div>)}
+                    </div>
+                  </form>
+                  <p class="st-meta">{t.planWhenBefore}</p>
+                  <p class="st-meta">{t.planWhenOnlyLocked}</p>
+                  {v.kalender.kanNiets && <p class="st-melding is-warn">{t.planWhenNone}</p>}
+                </Fragment>
+              )}
+          </div>
+        </section>
+      )}
+
+      {v.nu === 'edities' && (
+        <Fragment>
+          <section class="st-blok" aria-label={t.edH}>
+            <div class="st-kaart-vlak st-vlak">
+              <div class="st-ed-kop"><span class="st-eyebrow">Editions</span><span class="st-pil is-wacht">{t.edTag}</span></div>
+              <h2>{t.edH}</h2>
+              <p class="st-meta">{t.edLede}</p>
+              <div class="st-strook is-vier">{v.edities.beelden.map((b) => <span><img src={b.src} alt={b.alt} width="380" height="380" loading="lazy" decoding="async" /></span>)}</div>
+            </div>
+          </section>
+          <section class="st-blok">
+            <div class="st-kaart-vlak st-vlak">
+              <span class="st-eyebrow">{t.edWhatH}</span>
+              <ul class="st-ed-lijst">{t.edWhat.map(([kop, body]) => <li><strong>{kop}</strong><span>{body}</span></li>)}</ul>
+              <p class="st-meta">{t.edIncluded}</p>
+            </div>
+          </section>
+          <section class="st-blok">
+            <div class="st-kaart-vlak st-vlak"><span class="st-eyebrow">{t.edHowH}</span><p>{t.edHow}</p></div>
+          </section>
+          <section class="st-blok">
+            <div class="st-kaart-vlak st-vlak">
+              <span class="st-eyebrow">{t.edPriceH}</span>
+              <p>{t.edPrice}</p>
+              <p><a class="btn btn-primary" href={v.edities.mailto}>{t.edCta}</a></p>
+              <p class="st-meta">{t.edCtaNote}</p>
+            </div>
+          </section>
+        </Fragment>
+      )}
+
+      {v.nu === 'look' && (
+        <section class="st-blok" aria-label={t.planLookH}>
+          <div class="st-kaart-vlak st-vlak">
+            <h2>{t.planLookH}</h2>
+            <p>{t.planLookNote}</p>
+            {bk && <div class="st-lookrijen">{bk.kaarten.map((k) => <VasteLookRij t={t} k={k} />)}</div>}
+            <p><a class="btn btn-ghost" href="/account/brand-kit">{t.planLookCta}</a></p>
+          </div>
+        </section>
+      )}
+
+      {v.nu === 'facturering' && (
+        <Fragment>
+          <section class="st-blok" aria-label={t.planBuiltH}>
+            <div class="st-kaart-vlak st-vlak">
+              <h2>{t.planBuiltH}</h2>
+              <dl class="st-feiten">
+                <div class="st-feit"><dt>{t.planBuiltDelivered}</dt><dd>{v.opgebouwd.geleverd}</dd></div>
+                <div class="st-feit"><dt>{t.planBuiltImages}</dt><dd>{v.opgebouwd.beelden}</dd></div>
+                {v.opgebouwd.sinds && <div class="st-feit"><dt>{t.planBuiltSince}</dt><dd>{v.opgebouwd.sinds}</dd></div>}
+              </dl>
+              {v.opgebouwd.opgehaald.length
+                ? <ul class="st-gedaan">{v.opgebouwd.opgehaald.map((o) => <li><strong>{o.name}</strong>{o.ref && <span class="st-meta"> {o.ref}</span>}</li>)}</ul>
+                : <p class="st-meta">{t.planBuiltEmpty}</p>}
+            </div>
+          </section>
+          <section class="st-blok" aria-label={t.planBillingH}>
+            <div class="st-kaart-vlak st-vlak">
+              <h2>{t.planBillingH}</h2>
+              <dl class="st-feiten">
+                <div class="st-feit"><dt>{t.planBillingTerm}</dt><dd>{v.beheer.term}</dd></div>
+                <div class="st-feit"><dt>{t.planBillingAmount}</dt><dd>{v.beheer.bedrag}</dd></div>
+                <div class="st-feit"><dt>{t.planStatusLabel}</dt><dd>{v.beheer.status}</dd></div>
+              </dl>
+              {v.beheer.beeindigd
+                ? <Fragment><p class="st-melding">{v.beheer.beeindigd}</p><p class="st-meta"><a class="st-link" href={v.beheer.plansHref}>{t.planNoneCta}</a></p></Fragment>
+                : (
+                  <Fragment>
+                    <form method="post" action="/account/plan/pause">
+                      <input type="hidden" name="do" value={v.beheer.gepauzeerd ? 'resume' : 'pause'} />
+                      <button class="btn btn-ghost" type="submit">{v.beheer.gepauzeerd ? t.planResume : t.planPause}</button>
+                    </form>
+                    <p class="st-meta">{t.planPauseNote}</p>
+                    <form method="post" action="/account/plan/cancel" class="st-rij is-mail">
+                      <div class="st-veldgroep">
+                        <label for="opz">{t.planCancelConfirm}</label>
+                        <input id="opz" class="st-veld" name="confirm" type="text" autocomplete="off" required data-melding={t.planCancelConfirm} />
+                      </div>
+                      <div class="st-veldgroep is-knop"><button class="btn btn-ghost" type="submit">{t.planCancel}</button></div>
+                    </form>
+                    <p class="st-meta">{t.planCancelNote}</p>
+                  </Fragment>
+                )}
+            </div>
+          </section>
+        </Fragment>
+      )}
+    </Fragment>
+  )}
+
+  {(v.geen || v.nu === 'facturering') && (
+    <section class="st-blok" aria-label={v.account.h}>
+      <div class="st-kaart-vlak st-vlak">
+        <h2>{v.account.h}</h2>
+        <dl class="st-feiten">
+          <div class="st-feit"><dt>{v.account.emailLabel}</dt><dd>{v.account.email}</dd></div>
+          {v.account.brand && <div class="st-feit"><dt>{v.account.brandLabel}</dt><dd>{v.account.brand}</dd></div>}
+        </dl>
+        <p class="st-meta">{v.account.note}</p>
+      </div>
+    </section>
+  )}
+</StudioLayout>

@@ -23,7 +23,15 @@
 // (see its header). The stub answers by matching SQL text, records every write,
 // and is deliberately dumb: a test that reimplements SQLite proves nothing about
 // the statements this code sends.
-import { accountGet, accountPost } from '../src/lib/account.js';
+//
+// ── 6 SEPTEMBER 2026: DE STAAT, NIET DE HTML ────────────────────────────────
+// Tot vandaag las dit bestand de HTML van accountGet(). Die HTML tekent niemand
+// meer — Studio is een stel Astro-pagina's op studioScreen() — en de bouwers
+// zijn weg. `get()` geeft nu wat de pagina krijgt: de gedeelde staat (`st`) en
+// de staat van de sectie (`view`), uit precies dezelfde functie als de pagina.
+// Wat een klant ZIET (één h1, geen inline style, de kaders, de chips) staat in
+// tests/studio-vorm.test.mjs, door de echte Worker.
+import { studioScreen, accountPost, progressView } from '../src/lib/account.js';
 import { mintToken } from '../src/lib/token.js';
 
 const CUSTOMER = { customer_id: 7, email: 'studio@voltbrand.nl', brand: 'VOLT', name: 'Mara' };
@@ -135,14 +143,17 @@ function makeDb({ locks = [], models = MODELS, files = [], events = [], finish =
   return db;
 }
 
+/* Welke sectie bij welk pad hoort — dezelfde koppeling als src/pages/account/. */
+const SECTIE = { '/account': 'overview', '/account/orders': 'orders', '/account/brand-kit': 'brand', '/account/details': 'details', '/account/invoices': 'invoices', '/account/plan': 'plan' };
 async function get(path, opts = {}) {
   const token = await mintToken();
   const db = makeDb(opts);
   const request = new Request(`https://visuails.com${path}`, {
     headers: { cookie: `vis_account=${token}`, 'accept-language': 'en-GB,en;q=0.9' },
   });
-  const res = await accountGet({ request, env: { DB: db }, waitUntil() {} });
-  return { status: res.status, html: await res.text(), db };
+  const r = await studioScreen({ request, env: { DB: db }, waitUntil() {} }, SECTIE[path.split('?')[0]]);
+  if (r instanceof Response) return { status: r.status, res: r, db };
+  return { status: 200, st: r.st, view: r.v, db };
 }
 
 async function post(path, fields, opts = {}) {
@@ -363,17 +374,17 @@ section('§2 · the brand kit renders only values the lock handler accepts');
 const kit = await get('/account/brand-kit');
 check('the brand kit renders', kit.status === 200, kit.status);
 
-// Pull the picker apart the way a browser would: every radio value, per group.
-const values = (name) => [...kit.html.matchAll(new RegExp(`name="${name}" value="([^"]*)"`, 'g'))].map((m) => m[1]);
-const faces = [...new Set(values('face'))];
-const grounds = [...new Set(values('background_hex'))];
+// Pull the picker apart the way the page does: every radio value, per group.
+const catalogKaart = kit.view.kaarten.find((k) => k.style === 'catalog');
+const faces = [...new Set(catalogKaart.tegels.map((tg) => tg.value))];
+const grounds = [...new Set(catalogKaart.achtergronden.map((b) => b.hex))];
 
 check('it offers faces at all', faces.length > 5, `${faces.length} distinct`);
 check('it offers grounds at all', grounds.length > 1, `${grounds.length} distinct`);
 check('the brand\'s two usable faces are offered', faces.includes('c31') && faces.includes('c32'));
 // The one still being made: shown as a card, never as a choice.
 check('a model still in the making is NOT offered', !faces.includes('c33'));
-check('but it IS on the page', kit.html.includes('Autumn face'));
+check('but it IS on the page', kit.view.eigenModellen.some((m) => m.label === 'Autumn face' && !m.ready));
 check('the standard roster is offered', faces.includes('rava') && faces.includes('rseme'));
 check('"no preference" is a real option', faces.includes('') && grounds.includes(''));
 
@@ -448,20 +459,19 @@ section('§3 · a saved lock comes back selected, and reads back in the summary'
       { style: 'lifestyle', custom_model_id: null, roster_model: 'ava', background_hex: null, look: 'glow' },
     ],
   });
-  check('the brand\'s own face is the checked one', saved.html.includes('value="c31" checked'));
-  check('a roster face is the checked one for the other service', saved.html.includes('value="rava" checked'));
+  const kaart = (style) => saved.view.kaarten.find((k) => k.style === style);
+  const gekozen = (lijst, key) => (lijst || []).find((x) => x.checked)?.[key];
+  check('the brand\'s own face is the checked one', gekozen(kaart('catalog').tegels, 'value') === 'c31');
+  check('a roster face is the checked one for the other service', gekozen(kaart('lifestyle').tegels, 'value') === 'rava');
   check('the catalog ground comes back checked, and the lifestyle look',
-    saved.html.includes('value="#FFFFFF" checked') && saved.html.includes('name="look" value="glow" checked'));
-  check('and lifestyle offers no ground at all',
-    !/name="style" value="lifestyle">[\s\S]*?name="background_hex"[\s\S]*?<\/form>/.test(
-      saved.html.slice(saved.html.indexOf('value="lifestyle"'), saved.html.indexOf('value="video"'))));
+    gekozen(kaart('catalog').achtergronden, 'hex') === '#FFFFFF' && gekozen(kaart('lifestyle').looks, 'slug') === 'glow');
+  check('and lifestyle offers no ground at all', kaart('lifestyle').achtergronden === null && kaart('lifestyle').bgApplies === false);
   // The folded card has to say what it holds, or the accordion has hidden the
   // only thing the page is for.
-  check('the folded summary names the chosen face', /bk-sum-now">Nadia/.test(saved.html));
-  check('and the chosen look, by name', /bk-sum-now">Ava <span class="bk-sum-dot">·<\/span> Glow/.test(saved.html));
-  check('an unset service says so once, not twice',
-    (saved.html.match(/Asked per order <span class="bk-sum-dot">/g) || []).length === 0);
-  check('and says it as a whole answer', /bk-sum-now">Asked per order</.test(saved.html));
+  check('the folded summary names the chosen face', kaart('catalog').samenvatting[0] === 'Nadia');
+  check('and the chosen look, by name', kaart('lifestyle').samenvatting.slice(0, 2).join(' · ') === 'Ava · Glow');
+  check('an unset service says so once, not twice', kaart('video').samenvatting.length === 1);
+  check('and says it as a whole answer', kaart('video').samenvatting[0] === 'Asked per order');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -483,32 +493,33 @@ section('§4 · the status filter on the order list');
    * second place that can mention the same thing, a test has to say WHICH place
    * it means. Here that is the middle column — <main class="main">, which
    * shellBody() draws around whatever the section rendered. */
-  const lijst = (html) => (html.split('<main class="main">')[1] || html).split('</main>')[0];
+  const refs = (r) => r.view.shown.map((o) => o.ref);
+  const chips = (r) => r.view.filters.map((f) => f.key);
 
   const all = await get('/account/orders');
   check('unfiltered, every order is listed',
-    ['VIS-8K2-QQ1', 'VIS-7F4-M3A', 'VIS-5D1-XX8'].every((r) => lijst(all.html).includes(r)));
+    ['VIS-8K2-QQ1', 'VIS-7F4-M3A', 'VIS-5D1-XX8'].every((r) => refs(all).includes(r)));
   check('a chip is offered per status this customer actually has',
-    all.html.includes('status=in_production') && all.html.includes('status=delivered'));
+    chips(all).includes('in_production') && chips(all).includes('delivered'));
   // No chip for a status with no orders — a filter that resolves to nothing
   // looks like a feature and is a dead end.
-  check('no chip for a status this customer has never had', !all.html.includes('status=cancelled'));
-  check('"all" is the active chip', /fl-chip is-active" aria-current="true">All/.test(all.html));
+  check('no chip for a status this customer has never had', !chips(all).includes('cancelled'));
+  check('"all" is the active chip', all.view.filters.find((f) => f.active)?.label === 'All');
 
   const one = await get('/account/orders?status=delivered');
   check('filtered, the two delivered orders are listed',
-    lijst(one.html).includes('VIS-7F4-M3A') && lijst(one.html).includes('VIS-5D1-XX8'));
-  check('and the in-production one is not', !lijst(one.html).includes('VIS-8K2-QQ1'));
-  check('the heading counts the filtered set', /Orders <span class="h2-count">\(2\)/.test(one.html));
-  check('the active chip is the one asked for', /fl-chip is-active" aria-current="true">Delivered/.test(one.html));
+    refs(one).includes('VIS-7F4-M3A') && refs(one).includes('VIS-5D1-XX8'));
+  check('and the in-production one is not', !refs(one).includes('VIS-8K2-QQ1'));
+  check('the heading counts the filtered set', one.view.shown.length === 2 && one.view.kaarten.length === 2);
+  check('the active chip is the one asked for', one.view.filters.find((f) => f.active)?.label === 'Delivered');
 
   // A status nobody can see the name of must not look like an empty account.
   const bogus = await get('/account/orders?status=not_a_status');
-  check('an unknown status falls back to no filter', lijst(bogus.html).includes('VIS-8K2-QQ1'));
+  check('an unknown status falls back to no filter', refs(bogus).includes('VIS-8K2-QQ1') && bogus.st.statusFilter === '');
 
   const empty = await get('/account/orders?status=cancelled');
   check('a real but empty status explains itself and offers a way back',
-    empty.html.includes('No orders with this status.') && empty.html.includes('Show all orders'));
+    empty.view.shown.length === 0 && empty.view.empty.text === 'No orders with this status.' && empty.view.empty.clear === 'Show all orders');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -516,22 +527,14 @@ section('§5 · the page keeps its promises about itself');
 // ─────────────────────────────────────────────────────────────────────────────
 
 {
-  const kit2 = await get('/account/brand-kit');
-  // The CSP in html() says default-src 'none' and style-src 'self'. Both are
-  // facts only while this page ships no <script> and no inline <style> — the
-  // nonce that used to admit one is gone (its rules moved to account.css).
-  check('no script anywhere on the dashboard', !/<script/i.test(kit2.html));
-  check('no inline <style> either', !/<style/i.test(kit2.html));
-  check('and no leftover nonce attribute', !/nonce=/i.test(kit2.html));
-  // The details form left this page. Its nav item is what replaced it.
-  check('the brand kit no longer carries the details form', !kit2.html.includes('action="/account/details"'));
-  check('and the sidebar has a way to reach it', kit2.html.includes('href="/account/details"'));
-
+  /* Geen script, geen inline style, één h1: dat toetst tests/studio-vorm.test.mjs
+     op de echte pagina's. Hier alleen wat de STAAT belooft. */
   const det = await get('/account/details');
-  check('the details page renders the form', det.html.includes('action="/account/details"'), det.status);
-  check('with no background control on it',
-    !det.html.includes('name="background"') && !det.html.includes('name="background_custom"'));
-  check('the email is text, not an editable field', det.html.includes('det-fixed') && !det.html.includes('name="email"'));
+  check('the details page renders the form', det.status === 200 && det.view.rijen.length === 2 && det.view.adres.length === 2, det.status);
+  const velden = [...det.view.rijen.flat(), ...det.view.adres.flat(), det.view.phone, det.view.region].map((v) => v.name);
+  check('with no background control on it', !velden.includes('background') && !velden.includes('background_custom'));
+  check('the email is text, not an editable field', det.view.email.value === CUSTOMER.email && !velden.includes('email'));
+  check('and the saved details come back in the fields', velden.includes('brand') && det.view.rijen[1][0].value === 'VOLT' && det.view.vat.value === 'NL001234567B01');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -560,17 +563,18 @@ const FILE = (id, kind, product, shot, extra = {}) => ({
       FILE(5, 'delivery', 'p2', 'front', { review_state: 'revision_requested', review_note: 'Achtergrond trekt naar grijs.' }),
     ],
   });
-  const cards = (r.html.match(/class="prod[ "]/g) || []).length;
+  const kaart = r.view.kaarten.find((k) => k.o.id === 91).view;
+  const cards = (kaart.products || []).length;
   check('one card per product, not one pile per direction', cards === 2, `${cards} card(s)`);
-  check('the product with an open revision is marked', r.html.includes('prod is-revising'));
-  check('and it is open, because that is what they came back for',
-    /<details class="prod is-revising" open>/.test(r.html));
-  check('both directions live inside the card', r.html.includes('What we delivered') && r.html.includes('What you sent'));
-  check('the note the customer left is shown back to them', r.html.includes('Achtergrond trekt naar grijs.'));
-  check('and there is a way to reach a human about it', r.html.includes('wa.me/31625436130'));
+  const revising = (kaart.products || []).find((p) => p.revising);
+  check('the product with an open revision is marked', !!revising && revising.key === 'p2');
+  check('and its order is open, because that is what they came back for', kaart.openNow === true);
+  check('both directions live inside the card', revising.delivered.length === 1 && revising.uploaded.length === 1);
+  check('the note the customer left is shown back to them', revising.delivered[0].said.some((z) => z.text === 'Achtergrond trekt naar grijs.'));
+  check('and there is a way to reach a human about it', /wa\.me\/31625436130/.test(revising.waHref));
   // Het productnummer staat in de kop; het per foto herhalen maakt vier
   // bijschriften die alleen achteraan verschillen.
-  check('the tile captions do not repeat the product number', !r.html.includes('#1 · Front'));
+  check('the tile captions do not repeat the product number', kaart.products[0].delivered.every((sh) => !sh.caption.startsWith('#1')));
 }
 
 // Niets ingedeeld: dan is groeperen een kaart met "overige" eromheen, en doet
@@ -579,8 +583,9 @@ const FILE = (id, kind, product, shot, extra = {}) => ({
   const r = await get('/account/orders', {
     files: [FILE(6, 'upload', null, null), FILE(7, 'delivery', null, null)],
   });
+  const kaart = r.view.kaarten.find((k) => k.o.id === 91).view;
   check('with nothing mapped it falls back to the two columns',
-    !r.html.includes('class="prods"') && r.html.includes('class="sides"'));
+    kaart.products === null && !!kaart.sides && kaart.sides.delivered.shots.length === 1 && kaart.sides.uploaded.shots.length === 1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -602,16 +607,16 @@ const EVENTS = [
 
 {
   const r = await get('/account', { events: EVENTS });
-  check('the overview leads with one order and its timeline', r.html.includes('class="ovorder"') && r.html.includes('flowbox'));
+  const p = progressView(r.st.t, r.st.lang, r.view.featured, r.st.eventsByOrder.get(r.view.featured.id) || []);
+  check('the overview leads with one order and its timeline', r.view.featured?.id === 91 && p.steps.length === 4);
   check('with a sentence about what happens now, not a column value',
-    r.html.includes('Our studio is making your images') && !r.html.includes('>in_production<'));
+    p.now.startsWith('Our studio is making your images') && !/in_production/.test(p.now));
   check('and the four steps, with the current one marked',
-    r.html.includes('flow-step is-now') && r.html.includes('flow-step is-todo'));
-  check('the history is there but folded away', r.html.includes('class="tl"') && r.html.includes('Everything that happened'));
+    p.steps.some((s) => s.state === 'is-now') && p.steps.some((s) => s.state === 'is-todo'));
+  check('the history is there', p.history.length === 1 && p.history[0].what !== 'received');
   // Met één lopende bestelling hoort er geen klapje te staan: een knop die
   // "nog 0 bestellingen" opent is erger dan geen knop.
-  check('with only one order in progress there is nothing to unfold',
-    !r.html.includes('class="more-orders"'));
+  check('with only one order in progress there is nothing to unfold', r.view.rest.length === 0);
 }
 
 {
@@ -623,7 +628,7 @@ const EVENTS = [
   delivered.status = 'in_production';
   const r = await get('/account', { events: EVENTS });
   check('two in progress: one control, counting only those',
-    r.html.includes('class="more-orders"') && r.html.includes('1 more order in progress'));
+    r.view.rest.length === 1 && r.view.rest[0].id === 90 && r.view.active.length === 2);
   delivered.status = prev;
 }
 
@@ -639,19 +644,20 @@ const EVENTS = [
    * proving that three of something exist somewhere. Order 88 is the unattended
    * one in this fixture; the portal would show it no timeline at all, and the
    * dashboard must not care about the tier. */
+  const kaartVan = (r, id) => r.view.kaarten.find((k) => k.o.id === id).view;
   for (const o of ORDERS) {
     const r = await get(`/account/orders?order=${o.id}`, { events: EVENTS });
-    check(`order ${o.id} carries a timeline`, /class="flowbox/.test(r.html));
+    check(`order ${o.id} carries a timeline`, kaartVan(r, o.id).progress.steps.length === 4 && kaartVan(r, o.id).openNow === true);
   }
   const delivered = await get('/account/orders?order=90', { events: EVENTS });
   check('the delivered one says the images are ready',
-    delivered.html.includes('Your images are ready'));
+    kaartVan(delivered, 90).progress.now.startsWith('Your images are ready'));
   /* The hand-typed note lives on order 88's timeline, not 90's — so ask for 88.
      Reading it off whichever card happened to render was the same page-wide
      shortcut this block just stopped taking. */
   const unattended = await get('/account/orders?order=88', { events: EVENTS });
   check('and a note typed by hand travels to the customer',
-    unattended.html.includes('Alles in één keer geleverd.'));
+    kaartVan(unattended, 88).progress.history.some((e) => e.note === 'Alles in één keer geleverd.'));
 }
 
 // De mededeling die admin schrijft, aan de kant waar hij gelezen wordt.
@@ -659,13 +665,14 @@ const EVENTS = [
   const o = ORDERS.find((x) => x.id === 91);
   o.customer_note = 'De stof op product 4 kwam donkerder uit dan op je foto, dus we hebben de belichting opgetrokken.';
   const r = await get('/account/orders', { events: EVENTS });
-  check('the studio note reaches the customer', r.html.includes('belichting opgetrokken'));
-  check('with a sender above it, not as system text', r.html.includes('studionote-who'));
+  const kaart = r.view.kaarten.find((k) => k.o.id === 91).view;
+  check('the studio note reaches the customer', /belichting opgetrokken/.test(kaart.note));
+  check('as its own field, not as system text', typeof kaart.note === 'string' && !/customer_note/.test(JSON.stringify(kaart.progress)));
   // De garantie uit migratie 0013: interne aantekeningen staan in een tabel die
   // deze kant niet kent. Een dashboard dat order_notes zou lezen, zou hier te
   // vinden zijn.
   check('and nothing on this page reads the internal log',
-    !r.html.includes('order_notes'));
+    !JSON.stringify(kaart).includes('order_notes'));
   delete o.customer_note;
 }
 
@@ -730,8 +737,8 @@ section('§9 · het dashboard is tweetalig, en de klant mag kiezen');
   const req = new Request('https://visuails.com/account?lang=nl', {
     headers: { cookie: `vis_account=${token}`, 'accept-language': 'en-GB,en;q=0.9' },
   });
-  const res = await accountGet({ request: req, env: { DB: db }, waitUntil() {} });
-  check('choosing a language redirects and remembers it', res.status === 303, res.status);
+  const res = await studioScreen({ request: req, env: { DB: db }, waitUntil() {} }, 'overview');
+  check('choosing a language redirects and remembers it', res instanceof Response && res.status === 303, res.status);
   check('the parameter is dropped so a shared link cannot force it',
     res.headers.get('location') === '/account', res.headers.get('location'));
   check('and the cookie is scoped to the dashboard, not the whole site',
@@ -745,129 +752,36 @@ section('§9 · het dashboard is tweetalig, en de klant mag kiezen');
   const req = new Request('https://visuails.com/account', {
     headers: { cookie: `vis_account=${token}; vis_lang=nl`, 'accept-language': 'en-GB,en;q=0.9' },
   });
-  const html = await (await accountGet({ request: req, env: { DB: db }, waitUntil() {} })).text();
-  check('the choice beats the language of the last order', html.includes('Welkom terug'));
-  check('and the toggle then offers the way back', /href="\?lang=en"/.test(html));
+  const { st } = await studioScreen({ request: req, env: { DB: db }, waitUntil() {} }, 'overview');
+  check('the choice beats the language of the last order', st.lang === 'nl' && st.t.ovWelcome === 'Welkom terug');
+  /* En de schakelaar biedt de weg terug: StudioLayout tekent `?lang=<andere>`
+     uit dezelfde `lang` — zie tests/studio-vorm.test.mjs voor de pagina zelf. */
 }
 
 /* ══ DE VORM VAN ELKE SECTIE ═══════════════════════════════════════════════
  *
- * De portal kreeg in augustus 2026 één bovenbalk per sectie: paginanaam links,
- * één statuschip, één primaire actie rechts (topBar() in src/lib/account.js).
- * Deze sectie houdt de vier eigenschappen vast die daarbij horen en die alle
- * vier stil kunnen breken.
- *
- * 1. ÉÉN <h1> PER PAGINA. De balk is opmaak, geen koppenboom. Twee <h1>'s is
- *    precies wat er op /thank-you stond en waarom die pagina in dezelfde week
- *    opnieuw is gebouwd; het is geen theoretische fout.
- *
- * 2. ÉÉN BOVENBALK. Nul betekent dat een sectie hem bij een herbouw is
- *    kwijtgeraakt en er weer een kale kop staat; twee betekent dat iemand hem
- *    binnen de inhoud nog eens heeft aangeroepen.
- *
- * 3. GEEN INLINE style-ATTRIBUUT. Dit is de belangrijkste van de vier. De
- *    portal draait onder `style-src 'self'`, en style-src-attr valt in CSP3
- *    terug op style-src — een `style=""` wordt dus GEBLOKKEERD. Dat heeft in
- *    2026 twee keer een leeg vak opgeleverd, en beide keren was het pas op de
- *    live site te zien. Elke dynamische waarde hoort een SVG-attribuut of een
- *    vaste klasse te zijn, zoals swatch(), ratioShape() en slotRegels() doen.
- *
- * 4. GEEN <script>. Er staat geen `script-src` in de CSP van dit dashboard;
- *    de header is `default-src 'none'`. Eén scripttag betekent niet "een klein
- *    beetje JavaScript" maar "een blok in de console en een dode knop".
- *
- * Alle zes secties, want een regel die op één sectie wordt getoetst is een
- * regel die op de andere vijf niet geldt.
+ * Hier stond een blok dat de zes secties als HTML las: één <h1>, één bovenbalk,
+ * geen inline style, geen <script>, de slotbalk als <progress>, de edities uit
+ * AMOUNT. Dat staat sinds 6 september 2026 in tests/studio-vorm.test.mjs, op
+ * de echte pagina's uit de gebouwde Worker — wat een klant ziet, en niet een
+ * bouwer die niemand meer aanroept. Wat hier blijft is dat elke sectie zijn
+ * staat oplevert, en dat de abonnementstaat zijn slots per soort telt.
  */
-console.log('\nde vorm van elke sectie');
+console.log('\nde staat van elke sectie');
 {
-  const secties = [
-    '/account', '/account/orders', '/account/brand-kit',
-    '/account/details', '/account/invoices', '/account/plan',
-  ];
-  for (const pad of secties) {
-    const { status, html } = await get(pad);
-    check(`${pad} geeft 200`, status === 200);
-    const tel = (re) => (html.match(re) || []).length;
-    check(`${pad} heeft precies één <h1>`, tel(/<h1[\s>]/g) === 1);
-    check(`${pad} heeft precies één bovenbalk`, tel(/<header class="topbar"/g) === 1);
-    /* Op het style-ATTRIBUUT en niet op het woord "style": account.css wordt
-       met een <link> geladen en die mag blijven. */
-    check(`${pad} heeft geen inline style-attribuut`, tel(/\sstyle="/g) === 0);
-    check(`${pad} heeft geen script`, tel(/<script/g) === 0);
+  for (const pad of Object.keys(SECTIE)) {
+    const r = await get(pad);
+    check(`${pad} levert zijn staat`, r.status === 200 && r.view && typeof r.view === 'object', r.status);
   }
-  /* ── EN /account/plan MOET ZIJN SLOTS ECHT GETEKEND HEBBEN ─────────────────
-     Zonder deze twee regels bewijzen de controles hierboven alleen dat er niets
-     verkeerds STAAT — niet dat de code die het fout kon doen ook gelopen heeft.
-     Dat onderscheid is precies waar de inline style doorheen glipte. */
-  {
-    const { html } = await get('/account/plan');
-    check('/account/plan tekent zijn slots per soort', /class="slotrij/.test(html));
-    check('en de balk is een <progress> met attributen', /<progress class="slotbalk" value="\d+" max="\d+"/.test(html));
-  }
-  {
-    /* De lijst staat op de besteltab en niet op de maandtab — zie planTabs().
-       Een controle op /account/plan zonder tab zou hier altijd falen om de
-       verkeerde reden. */
-    const { html } = await get('/account/plan?tab=bestellen');
-    check('de besteltab draagt een vastzetknop', /name="do" value="lock"/.test(html));
-    check('en een merkje concept of vastgezet', /class="q-merk/.test(html));
-    check('en ook daar geen inline style', (html.match(/\sstyle="/g) || []).length === 0);
-  }
-  /* ── DE EDITIONS-TAB — 30 augustus 2026 ────────────────────────────────────
-   *
-   * Deze tab staat in het dashboard van een BETALENDE klant en beschrijft iets
-   * dat nog niet geleverd wordt. Dat is precies de plek waar een belofte kan
-   * ontstaan die niemand bedoeld heeft, dus staan er drie dingen vast:
-   *
-   *   · het label "nog niet leverbaar" STAAT er — dezelfde stand die de
-   *     homepage sinds 23 augustus draagt met `stockNowTag`;
-   *   · er staat GEEN bedrag. Lucas weet de prijs nog niet, en een "vanaf"-getal
-   *     op het scherm van iemand die al betaalt, leest later als een verhoging;
-   *   · en de knop is een mailto en geen formulier — er komt geen tabel bij voor
-   *     iets zonder prijs en zonder leverdatum.
-   *
-   * ── HET TWEEDE PUNT IS OP 2 SEPTEMBER 2026 OMGEDRAAID ─────────────────────
-   *
-   * "Er staat geen bedrag" was waar zolang er geen bedrag WAS. Lucas heeft op
-   * 2 september € 149 per maand en € 295 opzet gekozen, en die twee staan
-   * sindsdien in AMOUNT. Een dashboard dat dan nog "prijs volgt" zegt, is niet
-   * voorzichtig maar achterhaald.
-   *
-   * De ZORG achter de oude regel blijft en wordt hieronder scherper bewaakt.
-   * Die zorg was niet "geen getal" maar "geen getal dat later een verhoging
-   * blijkt". Dus: het bedrag moet uit AMOUNT komen en niet ingetypt zijn (dan
-   * kan het scherm niet afwijken van de bron), en het mag geen VANAF-prijs zijn
-   * — precies het woord waar de oude noot voor waarschuwde.
-   *
-   * De beelden worden op hun KLEINE versie getoetst. De strook is vier kolommen
-   * breed op een dashboard; brand-stair.webp is 1872 px en 148 kB, en dat is
-   * dezelfde fout die de galerij in augustus 3,12 MB kostte. */
-  {
-    const { html } = await get('/account/plan?tab=edities');
-    check('de Editions-tab staat in de navigatie', /href="\/account\/plan\?tab=edities"/.test(html));
-    check('en draagt het label dat hij nog niet leverbaar is', /is-wacht/.test(html));
-    /* Het bedrag staat er, en het is HET bedrag uit AMOUNT — geen tweede
-       getal dat los van de bron kan gaan lopen. */
-    const { AMOUNT: BEDRAG, euro: euroBedrag } = await import('../src/data/pricing.js');
-    check('het maandbedrag staat erop en komt uit AMOUNT', html.includes(euroBedrag(BEDRAG.editions, 'en')));
-    check('en de eenmalige opzet ook', html.includes(euroBedrag(BEDRAG.editionsSetup, 'en')));
-    /* En het is geen vanaf-prijs. Dat was de eigenlijke zorg: een ondergrens op
-       het scherm van iemand die al betaalt, leest bij de eerste factuur als een
-       verhoging. Twee vaste bedragen doen dat niet. */
-    check('en het is geen vanaf-prijs', /(from|vanaf)\s*€/i.test(html) === false);
-    /* Op het PANEEL en niet op de pagina: de bovenbalk en het uitlogblok dragen
-       hun eigen formulieren, en die horen er te zijn. Een controle op de hele
-       pagina zou daarop afgaan en niets zeggen over deze tab. */
-    const paneel = (html.split('<div class="planpaneel">')[1] || '').split('</div>').slice(0, -1).join('</div>');
-    check('de interesseknop is een mailto', /href="mailto:hello@visuails\.com\?subject=/.test(paneel));
-    check('en er komt geen formulier bij kijken', /<form/.test(paneel) === false);
-    check('de sfeerbeelden staan er in hun kleine versie',
-      (html.match(/\/img\/brand-[a-z-]+-w380\.webp/g) || []).length === 4);
-    check('elk beeld draagt een eigen alt', (html.match(/<img[^>]+alt="[^"]+"/g) || []).length === 4);
-    check('en ook deze tab heeft geen inline style', (html.match(/\sstyle="/g) || []).length === 0);
-    check('en geen script', (html.match(/<script/g) || []).length === 0);
-  }
+  const plan = await get('/account/plan');
+  check('/account/plan telt zijn slots per soort', plan.view.geen === false && plan.view.saldo.slots.length === 2);
+  check('en tekent twaalf kaders voor deze maand', plan.view.saldo.slots[0].frames.length === 12);
+  const lijst = await get('/account/plan?tab=bestellen');
+  check('de besteltab draagt de lijst met een vastzetknop per item', lijst.view.nu === 'bestellen' && lijst.view.wachtrij.length === 2 && lijst.view.wachtrij.every((q) => ['lock', 'unlock'].includes(q.lockDo)));
+  const { AMOUNT: BEDRAG, euro: euroBedrag } = await import('../src/data/pricing.js');
+  const ed = await get('/account/plan?tab=edities');
+  check('de editions-tab is een tab met vier kleine beelden en een mailto', ed.view.nu === 'edities' && ed.view.edities.beelden.length === 4 && ed.view.edities.beelden.every((b) => /-w380\.webp$/.test(b.src) && b.alt) && /^mailto:hello@visuails\.com\?subject=/.test(ed.view.edities.mailto));
+  check('en het bedrag komt uit AMOUNT, geen vanaf-prijs', typeof BEDRAG.editions === 'number' && euroBedrag(BEDRAG.editions, 'en').startsWith('€') && !/\bfrom €|vanaf €/i.test(ed.st.t.edPrice));
 }
 
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);

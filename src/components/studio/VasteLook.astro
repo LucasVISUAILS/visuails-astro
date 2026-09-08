@@ -1,0 +1,116 @@
+---
+/* Eén stijl op Je vaste look: de kaart klapt in tot een samenvatting (gezicht ·
+   achtergrond · look · verhouding · kanalen) en klapt uit tot het formulier
+   met de keuzes. `name="bk"` op de <details>: open je de ene, dan sluit de
+   andere — zonder script. Gegevens en regels: brandKitView() in account.js;
+   opslaan blijft accountPost() → /account/lock.
+
+   Kleuren als <svg><rect fill>: inline `style` mag niet van de CSP van Studio,
+   en een achtergrondkleur is precies wat hier getoond moet worden. */
+import { STUDIO_ICONS } from '../../lib/account.js';
+const { t, k } = Astro.props;
+---
+<details class={`st-kaart-vlak st-vl${k.saved ? ' is-opgeslagen' : ''}`} name="bk" id={`bk-${k.style}`} open={k.open}>
+  <summary class="st-vl-kop">
+    <span class="st-vl-figs">
+      {k.faceThumb ? <img class="st-vl-gezicht" src={k.faceThumb} alt="" loading="lazy" decoding="async" width="96" height="128" /> : <span class="st-vl-gezicht is-leeg" aria-hidden="true"><Fragment set:html={STUDIO_ICONS.face} /></span>}
+      {k.bgApplies && (k.bg
+        ? <svg class="st-vl-kleur" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"><rect width="1" height="1" fill={k.bg} /></svg>
+        : <span class="st-vl-kleur is-leeg" aria-hidden="true"></span>)}
+      {k.lookApplies && (k.lookThumb
+        ? <img class="st-vl-look" src={k.lookThumb} alt="" loading="lazy" decoding="async" width="96" height="96" />
+        : <span class="st-vl-look is-leeg" aria-hidden="true"></span>)}
+    </span>
+    <span class="st-vl-tekst">
+      <span class="st-vl-h">{k.label}</span>
+      <span class="st-vl-nu">{k.samenvatting.map((s, i) => <Fragment>{i > 0 && <span class="st-vl-punt">·</span>}{s}</Fragment>)}</span>
+      {k.saved && <span class="st-vl-ok" role="status">{t.bkSaved}</span>}
+    </span>
+    <span class="st-vl-cta">{t.bkChange}</span>
+  </summary>
+  <form class="st-vl-form" method="post" action="/account/lock">
+    <input type="hidden" name="style" value={k.style} />
+
+    <fieldset class="st-groep">
+      <legend>{t.bkFaceLede}</legend>
+      <div class="st-tegels">
+        {k.tegels.map((tg) => (
+          <label class={`st-tegel is-${tg.kind}`}>
+            <input type="radio" name="face" value={tg.value} checked={tg.checked} />
+            {tg.img ? <img class="st-tegel-img" src={tg.img} alt="" loading="lazy" decoding="async" /> : <span class="st-tegel-img is-leeg" aria-hidden="true"><Fragment set:html={STUDIO_ICONS.face} /></span>}
+            <span class="st-tegel-meta"><span class="st-tegel-naam">{tg.name}</span>{tg.sub && <span class="st-tegel-sub">{tg.sub}</span>}</span>
+            <span class="st-tegel-vink" aria-hidden="true"><Fragment set:html={STUDIO_ICONS.tick} /></span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    {k.achtergronden && (
+      <fieldset class="st-groep">
+        <legend>{t.bkBgLede}</legend>
+        <div class="st-stalen">
+          {k.achtergronden.map((b) => (
+            <label class={`st-staal${b.hex ? '' : ' is-none'}`}>
+              <input type="radio" name="background_hex" value={b.hex} checked={b.checked} />
+              {b.hex ? <svg class="st-staal-chip" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"><rect width="1" height="1" fill={b.hex} /></svg> : <span class="st-staal-chip is-leeg" aria-hidden="true"></span>}
+              <span class="st-staal-naam">{b.name}</span>
+              {b.hex && <span class="st-staal-hex">{b.hex}</span>}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    )}
+
+    {k.looks && (
+      <fieldset class="st-groep">
+        <legend>{t.bkLookLede}</legend>
+        <div class="st-looks">
+          {k.looks.map((lk) => (
+            <label class={`st-look${lk.slug ? '' : ' is-none'}`}>
+              <input type="radio" name="look" value={lk.slug} checked={lk.checked} />
+              {lk.img ? <img class="st-look-img" src={lk.img} alt="" loading="lazy" decoding="async" width="240" height="300" /> : <span class="st-look-img is-leeg" aria-hidden="true"></span>}
+              <span class="st-look-naam">{lk.name}</span>
+              <span class="st-look-wat">{lk.what}</span>
+            </label>
+          ))}
+        </div>
+        <p class="st-hint">{t.bkLookHint}</p>
+      </fieldset>
+    )}
+
+    {k.ratios && (
+      <fieldset class="st-groep">
+        <legend>{t.bkRatioLede}</legend>
+        <div class="st-ratios">
+          {k.ratios.map((r) => (
+            <label class={`st-ratio${r.none ? ' is-none' : ''}`}>
+              <input type="radio" name="ratio" value={r.id} checked={r.checked} />
+              <svg class={`st-ratio-vorm${r.none ? ' is-none' : ''}`} viewBox={r.viewBox} preserveAspectRatio="none" focusable="false" aria-hidden="true"></svg>
+              <span class="st-ratio-naam">{r.name}</span>
+              <span class="st-ratio-wat">{r.what}</span>
+            </label>
+          ))}
+        </div>
+        <p class="st-hint">{t.bkRatioHint}</p>
+      </fieldset>
+    )}
+
+    {k.kanalen && (
+      <fieldset class="st-groep">
+        <legend>{t.bkChLede}</legend>
+        <div class="st-kanalen">
+          {k.kanalen.map((ch) => (
+            <label class="st-kanaal">
+              <input type="checkbox" name="channels" value={ch.id} checked={ch.checked} />
+              <span class="st-kanaal-naam">{ch.name}</span>
+              {ch.white && <span class="st-kanaal-vlag">#FFFFFF</span>}
+            </label>
+          ))}
+        </div>
+        <p class="st-hint">{t.bkChHint}</p>
+      </fieldset>
+    )}
+
+    <div class="st-rij is-acties"><button class="btn btn-primary" type="submit">{t.lockSave}</button></div>
+  </form>
+</details>

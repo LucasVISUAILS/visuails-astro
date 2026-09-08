@@ -119,7 +119,8 @@ export const styles = [
     cardPhoto: '/img/lifestyle-glow-01.webp',
     beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
     cardIcon: 'jar',
-    cardDesc: 'Bold lifestyle images inspired by fashion editorial — direct on-camera flash, sharp contrast, strong shadows, modern campaign aesthetic.',
+    /* This line described Flash — see the note in styles.nl.js. */
+    cardDesc: 'Soft, low-angle sunlight across the whole set — warm, editorial and flattering, without looking filtered.',
     moodTitle: 'What Glow feels like.',
     moodParagraphs: [
       'Low sun, soft bloom, skin and product wrapped in the same amber light. The look of an evening that went well.',

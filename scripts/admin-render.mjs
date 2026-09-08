@@ -178,8 +178,14 @@ const context = await browser.newContext();
 await context.route('**/*', async (route) => {
   const u = new URL(route.request().url());
   if (u.pathname.endsWith('.css')) {
-    const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
-    if (fs.existsSync(file)) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(file) });
+    /* Eerst public/, dan dist/: /fonts/gedeeld.css schrijft de build (zie
+       scripts/fonts-voor-worker.mjs) en staat niet in public/. */
+    const file = ['public', 'dist'].map((d) => path.join(ROOT, d, u.pathname.replace(/^\//, ''))).find((p) => fs.existsSync(p));
+    if (file) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(file) });
+  }
+  if (u.pathname.endsWith('.woff2')) {
+    const file = path.join(ROOT, 'dist', u.pathname.replace(/^\//, ''));
+    if (fs.existsSync(file)) return route.fulfill({ contentType: 'font/woff2', body: fs.readFileSync(file) });
   }
   const m = /^\/admin\/files\/(\d+)$/.exec(u.pathname);
   if (m) return route.fulfill({ contentType: 'image/webp', body: fs.readFileSync(PHOTOS[Number(m[1]) % PHOTOS.length]) });

@@ -37,7 +37,7 @@
 // Nothing here is a reservation. The reservation is orders.window_start.
 
 import { readCalendar } from '../../src/lib/agenda.js';
-import { kindImages } from '../../src/data/pricing.js';
+import { puntenVoor } from '../../src/data/pricing.js';
 import {
   MAX_PRODUCTS_ANY_SERVICE,
   ATTENDED_PER_WINDOW,
@@ -74,13 +74,13 @@ export async function onRequestGet({ request, env }) {
     : gevraagd;
   const tier = url.searchParams.get('tier') === 'attended' ? 'attended' : 'unattended';
   /* WELKE DIENST, WANT HET PLAFOND HANGT ERVAN AF — 31 augustus 2026.
-     De agenda rekent in beelden, dus dertig catalogsets (120) passen in een
+     De agenda rekent in punten, dus dertig catalogsets (120) passen in een
      venster waar dertig complete producten (210) precies in gaan en eenendertig
      niet meer. Ontbreekt de parameter, dan is het antwoord 'complete': het
      zwaarste gewicht, en precies wat deze poort vóór vandaag voor elke order
      aannam. Een oude aanroeper krijgt daarmee exact het antwoord van gisteren. */
   const gevraagdeDienst = url.searchParams.get('service') || 'complete';
-  const service = kindImages(gevraagdeDienst, 1) === null ? 'complete' : gevraagdeDienst;
+  const service = puntenVoor(gevraagdeDienst, 1) === null ? 'complete' : gevraagdeDienst;
   const today = todayUTC();
 
   // Tier 0 does not use the gate at all. It is not "cleared for nothing" and it
@@ -137,7 +137,7 @@ export async function onRequestGet({ request, env }) {
     // into one apology. See clearedWindows() in src/data/capacity.js.
     reason: gate.reason,
     max: gate.max,
-    maxImages: gate.maxImages,
+    maxPunten: gate.maxPunten,
     windows: gate.windows.map((w) => ({ start: w.start, end: w.end })),
     queue: QUEUE,
   });

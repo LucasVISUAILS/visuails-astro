@@ -209,7 +209,12 @@ const fl = FIELD[lang];
   .bg-row { display: flex; align-items: center; gap: .45rem; }
   .bg-row input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
   .bg-name { font-size: .82rem; color: var(--ink); line-height: 1.2; }
-  .bg-hex { font-size: .7rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  /* ── 12px EN NIET 10,6 — 7 september 2026 ────────────────────────────────
+     De leesbaarheidskeuring hanteert een ondergrens van 11,5px, en dit label
+     zat eronder. Het is precies het soort tekst waar dat het meest telt: een
+     hexwaarde is een reeks tekens zonder woordbeeld, dus je kunt hem niet
+     half lezen en de rest raden. */
+  .bg-hex { font-size: .75rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
   .bg-hex:empty { display: none; }
 
   /* One note at a time, for whichever swatch is selected. Four of them side by

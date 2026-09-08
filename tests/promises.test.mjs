@@ -38,7 +38,7 @@
 
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, turnaround, turnaroundShort, reviewClaimShort } from '../src/data/pricing.js';
+import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, turnaround, turnaroundShort, reviewClaimShort, aim48 } from '../src/data/pricing.js';
 import { ROSTER } from '../src/data/models.js';
 import { styles } from '../src/data/styles.js';
 import { WINDOW_DAYS } from '../src/data/capacity.js';
@@ -497,7 +497,7 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
   const pages = [
     'src/pages/about.astro', 'src/pages/nl/about.astro',
     'src/pages/contact.astro', 'src/pages/nl/contact.astro',
-    'src/components/HomeV2.astro', 'src/components/StudioPage.astro',
+    'src/components/Voorpagina.astro', 'src/components/StudioPage.astro',
   ];
   for (const p of pages) {
     const body = codeOnly(read(p));
@@ -653,21 +653,45 @@ console.log('\nde levertijdbelofte is in beide talen dezelfde belofte');
   const en = TIERS.attended.turnaround.en;
   const nl = TIERS.attended.turnaround.nl;
 
-  /* Geen van beide mag LEVERING BINNEN een termijn beloven. Het aanbod is een
-     blok dat wordt vrijgehouden; wanneer het geleverd wordt, staat als datum in
-     de bevestiging en niet als aftelling in een tariefkaart. */
+  /* Geen van beide mag LEVERING BINNEN een termijn beloven. Wat er verkocht
+     wordt is een DATUM die wordt vrijgehouden; wanneer er precies geleverd wordt,
+     is een streven en geen aftelling in een tariefkaart. */
   check('en belooft geen levering binnen een termijn', /deliver\w* (with)?in \d/i.test(en), false);
   check('nl belooft geen levering binnen een termijn', /levering binnen \d|geleverd binnen \d/i.test(nl), false);
 
-  /* Beide noemen wél het getal en beide zeggen dat het vooraf vaststaat — dat
-     is de belofte die er wel is. */
-  check('en noemt de 48 uur', /48/.test(en), true);
-  check('nl noemt de 48 uur', /48/.test(nl), true);
+  /* ── EN SINDS 7 SEPTEMBER 2026 STAAT ER GEEN GETAL MEER IN ────────────────
+   *
+   * Lucas: *"levering binnen 48 uur nooit beloven, wij streven levering binnen
+   * 48 uur en meestal lukt dat ook."* De 48 stond in deze regel als kenmerk van
+   * het aanbod ("een gereserveerd tijdvak van 48 uur"), en een getal in een
+   * tariefkaart leest als toezegging hoe je hem ook inkleedt. Het getal is
+   * verhuisd naar AIM_48, waar het als streven staat.
+   *
+   * Wat hier blijft is de toezegging die de studio wél kan waarmaken: een datum
+   * die vóór de betaling vastligt en die de poort heeft goedgekeurd. */
+  check('en noemt geen uurgetal meer', /\d+\s*(hour|hr)/i.test(en), false);
+  check('nl noemt geen uurgetal meer', /\d+\s*uur/i.test(nl), false);
   check('en zegt dat het vooraf vaststaat', /before you pay/i.test(en), true);
   check('nl zegt dat het vooraf vaststaat', /voordat je betaalt/i.test(nl), true);
 
-  /* En capacity.js blijft de bron van wat 48 uur betekent. Verandert WINDOW_DAYS,
-     dan klopt de zin niet meer en hoort iemand hier langs te komen. */
+  /* ── HET STREVEN IS EEN STREVEN, IN BEIDE TALEN ───────────────────────────
+   *
+   * AIM_48 mag het getal wél noemen, want een streven is geen klok. Wat hij
+   * NIET mag, is stilletjes weer een belofte worden — en dat is precies wat er
+   * op 8 en 18 augustus twee keer gebeurde met de regel hierboven. Dus: elke
+   * taal moet een streefwoord dragen, en geen van beide een garantiewoord. */
+  for (const [taal, streef, verboden] of [
+    ['en', /\baim\b|\btarget\b/i, /\bguarantee|\bpromise|\balways\b/i],
+    ['nl', /streven|streeft/i, /garanti|belov|beloof|altijd/i],
+  ]) {
+    const zin = aim48(taal);
+    check(`${taal}: het streven noemt de 48 uur`, /48/.test(zin), true);
+    check(`${taal}: en zegt dat het een streven is`, streef.test(zin), true);
+    check(`${taal}: en belooft niets`, verboden.test(zin), false);
+  }
+
+  /* En capacity.js blijft de bron van wat een venster is. Verandert WINDOW_DAYS,
+     dan klopt het streven van 48 uur niet meer en hoort iemand hier langs te komen. */
   check('een venster is twee werkdagen', WINDOW_DAYS, 2);
 }
 
@@ -706,9 +730,12 @@ console.log('\nde korte belofte zegt hetzelfde als de lange, met minder woorden'
         REVIEW_CLAIM_SHORT[niveau][taal].length <= REVIEW_CLAIM[niveau][taal].length, true);
     }
   }
-  /* De twee woorden die de belofte dragen, blijven staan. */
-  check('kort en noemt de 48 uur', /48/.test(turnaroundShort('attended', 'en')), true);
-  check('kort nl noemt de 48 uur', /48/.test(turnaroundShort('attended', 'nl')), true);
+  /* Het woord dat de belofte draagt, blijft staan — en het getal blijft weg.
+     De korte vorm heeft geen ruimte voor de nuance van een streven, en dan hoort
+     het deel dat waar te maken is te blijven en niet het deel dat een
+     verwachting is. */
+  check('kort en noemt geen uurgetal', /\d+\s*(hour|hr)/i.test(turnaroundShort('attended', 'en')), false);
+  check('kort nl noemt geen uurgetal', /\d+\s*uur/i.test(turnaroundShort('attended', 'nl')), false);
   check('kort en zegt dat het vooraf vaststaat', /before you pay/i.test(turnaroundShort('attended', 'en')), true);
   check('kort nl zegt dat het vooraf vaststaat', /voor je betaalt/i.test(turnaroundShort('attended', 'nl')), true);
   /* En de korte controlebelofte blijft over MENSEN gaan. */
@@ -843,41 +870,17 @@ console.log('\nDESIGN.md noemt geen kleuren die de site niet heeft');
  * verschillend. De Engelse kaarten hadden op twee van de vier een baat, de
  * Nederlandse op nul. Eén tekst in twee talen, niet twee teksten.
  */
-console.log('\nde dienstkaarten op de homepage beloven niets buiten de studio');
+console.log('\nde homepage belooft niets buiten de studio');
 {
-  const home = read('src/components/HomeV2.astro');
-
-  /* Alleen de svc-tabellen, en zonder commentaar: de noot erboven CITEERT de
-     verwijderde zin, en een toets die zijn eigen toelichting leest, faalt op de
-     reparatie in plaats van op de fout. Dit is in deze repository al vier keer
-     misgegaan. */
-  const tabellen = [...home.matchAll(/svc: \[([\s\S]*?)\n    \],/g)].map((m) => m[1]);
-  check('er staan twee svc-tabellen (en, nl)', tabellen.length, 2);
-
-  const kaarten = tabellen.map((t) =>
-    [...t.matchAll(/\[\s*\n\s*'([^']+)',\s*\n\s*'([^']+)',/g)].map((m) => ({ naam: m[1], baat: m[2] })));
-  check('en elk vier kaarten', kaarten.map((k) => k.length), [4, 4]);
-
-  /* Wat een baat NIET mag noemen: iets waar het platform over gaat. Geen van
-     deze woorden is op zichzelf verboden op de site — ze mogen alleen niet in
-     de zin staan waarin de studio zegt wat je eraan hebt. */
+  /* Sectie 21 (5 september 2026): de dienstkaarten met een baat per kaart zijn
+     van de homepage af. Wat blijft is de regel erachter — de homepage zegt
+     nergens iets over wat een platform ermee doet — en die geldt nu voor de
+     hele copytabel van Voorpagina.astro, zonder commentaar. Strenger dan de
+     vier kaarten, en zonder een structuur te pinnen die weer kan verhuizen. */
+  const home = codeOnly(read('src/components/Voorpagina.astro'));
   const BUITEN = /click-?through|doorklik|bereik\b|reach\b|impressie|engagement|volgers|followers|conversie|conversion|meer verkopen|sell more|viral/i;
-  for (const set of kaarten) {
-    for (const k of set) {
-      check(`"${k.naam}" belooft niets van het platform`, BUITEN.test(k.baat), false);
-    }
-  }
-
-  /* En de talen blijven aan elkaar gekoppeld: even veel kaarten, in dezelfde
-     volgorde van diensten. De TEKST mag verschillen — het zijn twee talen — maar
-     een kaart die in één taal een baat heeft en in de andere niet, is de drift
-     die deze sectie heeft gevonden. Een baat herken je hier aan wat hij NIET is:
-     een opsomming van wat er geleverd wordt. */
-  const FEITELIJK = /^\d|beelden per product|images per product|Eén korte|One short|Eén keer opgezet|Set up once/;
-  for (const [i, set] of kaarten.entries()) {
-    const zonder = set.filter((k) => FEITELIJK.test(k.baat)).map((k) => k.naam);
-    check(`tabel ${i + 1}: geen kaart begint met het feit in plaats van de baat`, zonder, []);
-  }
+  const treffers = [...home.matchAll(new RegExp(BUITEN.source, 'gi'))].map((m) => m[0]);
+  check('de homepage belooft niets van het platform', treffers, []);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

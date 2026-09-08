@@ -357,41 +357,29 @@ console.log('\nde privacyverklaring dekt het');
  * Deze test is daarom een verbod en geen bevestiging: nergens mag een media query
  * die twee elementen nog verbergen.
  */
-console.log('\nde balk onderaan houdt zijn uitleg');
+console.log('\nde proefkaart onderin draagt tekst en merk');
 {
+  /* ── DE BALK IS EEN KAART GEWORDEN — SECTIE 21, 5 SEPTEMBER 2026 ──────────
+     Hier stond de conversiebalk (.convbar) met een <Note> achter een vraagteken.
+     Lucas' oorspronkelijke bezwaar — *"ook mist hier tekst en logo bij de pop
+     up"* — geldt onverkort voor de opvolger, Proefkaart.astro: de kaart zegt
+     wat je krijgt en voor hoeveel (uit TEST_SAMPLE, niet getypt), draagt het
+     merk, en is te sluiten. Layout.astro rendert hem op elke pagina. */
+  const kaart = read('src/components/Proefkaart.astro');
   const bron = read('src/layouts/Layout.astro');
-  const css = codeOnly(bron);
-  /* ── DE BELOFTE IS VERHUISD, NIET VERVALLEN — 27 AUGUSTUS 2026 ────────────
-     Deze toets verbood `display: none` op `.cb-note`. Dat was de goede toets bij
-     de vorm van toen: de zin stond op het scherm of nergens.
-
-     Lucas, met een schermafdruk van zijn telefoon: *"test sample pop up ziet er
-     niet uit op telefoon [...] Mag minder tekst op komen bijvoorbeeld alleen
-     knop met vraagteken voor meer info."* De balk is nu één rij op een telefoon
-     en de zin staat achter het vraagteken.
-
-     Wat Lucas' oorspronkelijke bezwaar was — *"ook mist hier tekst en logo bij
-     de pop up"* — ging niet over wáár de tekst staat maar over of hij er is. Dus
-     bewaakt deze toets dat nu: er moet een <Note> in de balk staan, hij moet
-     `cb_detail` dragen, en het merkteken mag nog steeds nergens verdwijnen. Een
-     verbod op `display: none` bij `.cb-note` zou vandaag de reparatie tegen-
-     houden in plaats van een fout. */
-  const hidesLogo = /\.cb-logo[^{}]*\{[^}]*display:\s*none/.test(css);
-  check('het teken wordt nergens verborgen', hidesLogo, false);
-  /* Op de SPAN en niet op <Note> zelf: de klasse zit sinds 27 augustus op een
-     omhulsel dat Layout.astro rendert, omdat een component met `is:global`-stijl
-     het scope-attribuut van zijn ouder niet draagt en de order-regels dan nergens
-     op sloegen. Zie de noot bij de markup. */
-  check('de uitleg zit in een Note in de balk',
-    /<span class="cb-why">\s*<Note/.test(bron), true);
-  check('en die Note draagt cb_detail',
-    /<span class="cb-why">\s*<Note[^>]*>\s*\{t\('cb_detail'\)\}/.test(bron), true);
-  /* De korte zin die Lucas terugvroeg: hij moet ergens vandaan komen. */
-  check('de korte zin staat in de balk', /class="cb-note-kort">\{t\('cb_note_kort'\)\}/.test(bron), true);
-  /* Op `codeOnly()` en niet op de ruwe bron: de noot bij de markup NOEMT de oude
-     `<p class="cb-detail">` om uit te leggen wat er verdween, en een toets die
-     over zijn eigen documentatie struikelt is een toets die je uitzet. */
-  check('het vraagteken klapt niets meer uit', /class="cb-detail"/.test(css), false);
+  check('Layout rendert de proefkaart', /<Proefkaart lang=\{lang\} \/>/.test(bron), true);
+  check('de kaart leest de proef uit TEST_SAMPLE', /TEST_SAMPLE\[lang\]/.test(kaart), true);
+  check('en noemt prijs en inhoud', /s\.price/.test(kaart) && /s\.deliverableShort/.test(kaart), true);
+  /* ── DE BEDOELING EN NIET DE SPELLING — 8 september 2026 ────────────────
+     Hier stond /VISUAILS®/, en dat werd rood toen het merkteken op 8 september
+     naar één constante ging (MERK in src/data/brand.js, ™ in plaats van ® —
+     zie de noot daar). De kaart was niet stuk; de test spelde de uitvoering na
+     in plaats van de belofte. Wat hier telt is dat het merk op de kaart staat
+     en dat het uit die ene bron komt. */
+  check('het merk staat erop', /\{MERK\}/.test(kaart), true);
+  check('en het komt uit brand.js', /import \{ MERK \} from '\.\.\/data\/brand\.js'/.test(kaart), true);
+  check('en hij is te sluiten', /data-pk-sluit/.test(kaart), true);
+  check('de oude balk staat niet meer in de markup', /class="convbar"/.test(bron), false);
   /* ── DE KNOP MOET WIJKEN, NIET OP 142px STAAN — 26 augustus 2026 ─────────
      Hier stond `/--wa-bottom: 142px/`, en dat is een SPELLING en geen belofte.
      Het getal was met de hand gemeten tegen een balk die door de
@@ -424,10 +412,9 @@ console.log('\nde balk onderaan houdt zijn uitleg');
      de viewportbreedte; dat de knop een broer of een kleinkind van die broer is,
      is opmaak. `[^{}]*` tussen de tilde en de knop laat dat vrij en houdt de
      eis overeind: geen `{` en geen `}` ertussen, dus het blijft één selector. */
-  const wijkt = /\.convbar\.show\s*~\s*[^{}]*\.wa-launcher[^{}]*\{[^}]*--wa-bottom:\s*[^;]+/.test(css);
-  check('de whatsapp-knop wijkt voor de balk', wijkt, true);
-  /* En de controle op de controle: zonder die regel hoort hij rood te gaan. */
-  check('en die eis vindt een echte fout', /\.convbar\.show\s*~\s*\.wa-launcher[^{}]*\{[^}]*--wa-bottom:\s*[^;]+/.test('.wa-launcher { bottom: 20px; }'), false);
+  /* De WhatsApp-knop hoefde voor de balk te wijken; de kaart staat linksonder
+     en de knop rechtsonder, dus die twee raken elkaar niet meer. De
+     `.convbar.show ~`-regel mag weg zodra de huid wordt opgeruimd. */
 }
 
 console.log('\nde prijsvorm');
@@ -450,7 +437,7 @@ console.log('\nde prijsvorm');
    * meeleest, straft het opschrijven van de regel.
    */
   const stripped = (f) => codeOnly(read(f));
-  const files = ['src/data/pricing.js', 'src/components/PricingPage.astro', 'src/components/HomeV2.astro'];
+  const files = ['src/data/pricing.js', 'src/components/PricingPage.astro', 'src/components/Voorpagina.astro'];
   const handwritten = files.filter((f) => /€\s?\d[\d.,]*\s*[–—-]\s*€/.test(stripped(f)));
   check('geen handgeschreven bereik met twee eurotekens', handwritten, []);
 }
@@ -564,7 +551,7 @@ console.log('\nde hookspagina bestaat, en verkoopt niets');
    *
    * Dit is de eis die overblijft van de oude sectie, en hij is de enige die er
    * ooit toe deed: een dienst die de agenda niet kan inplannen, mag geen knop
-   * hebben die doet alsof dat wel kan. `KIND_IMAGES.hooks` is null, dus
+   * hebben die doet alsof dat wel kan. `KIND_PUNTEN.hooks` is null, dus
    * tierFor() kan er geen venster voor geven; een /start-link zou een
    * bestelstroom openen die halverwege vastloopt.
    *
@@ -629,7 +616,7 @@ console.log('\nde hookspagina bestaat, en verkoopt niets');
  */
 console.log('\nhet vraagteken naast hooks');
 {
-  const home = read('src/components/HomeV2.astro');
+  const home = read('src/components/Voorpagina.astro');
 
   /* ── DE CONSTRUCTIE IS OP 21 AUGUSTUS 2026 VERVANGEN ────────────────────
      Hier stond een <details> met het driehoekje op drie manieren verborgen, en
@@ -658,7 +645,10 @@ console.log('\nhet vraagteken naast hooks');
      De INHOUDELIJKE eisen — één foto is niet genoeg, geen prijs, geen belofte
      over bereik — staan hieronder en zijn ongewijzigd; die lezen alleen een
      ander bestand. */
-  check('de homepage noemt de twee nog wel', /binnenkortNamen\(lang\)/.test(home), true);
+  /* Sectie 21 (5 september 2026): de homepage noemt Hooks en Editions helemaal
+     niet meer — Lucas: tekst mag weg zolang de kern helder blijft. Het menu
+     doet dat werk (NAV_SOON in src/i18n/ui.js), en /plans draagt de uitleg. */
+  check('de homepage noemt de twee nog wel', /binnenkortNamen\(/.test(home), true);
   check('en wijst naar de plek waar ze staan', /plans#binnenkort/.test(home), true);
   check('en draagt de uitleg zelf niet meer', /svcSoonList/.test(home), false);
   /* ── EN DEZE ZES LEZEN dist/, DUS MET DE LEEFTIJDSCONTROLE ERVOOR ───────
@@ -705,7 +695,8 @@ console.log('\nhet vraagteken naast hooks');
      platte html stond alles op de goede plek; pas een parser laat zien dat het
      <p> de omhullende span had gesloten. Een regexp zou hier dus altijd groen
      zijn geweest. */
-  const gebouwd = read('dist/index.html');
+  /* Sectie 21: de homepage heeft geen zwevende notities meer; /pricing wel. */
+  const gebouwd = read('dist/pricing/index.html');
   const doc = parse(gebouwd);
   const loop = (n, f) => { f(n); for (const c of n.childNodes || []) loop(c, f); };
   const woordenIn = (n) => n.nodeName === '#text'
@@ -716,7 +707,7 @@ console.log('\nhet vraagteken naast hooks');
     const cl = (n.attrs || []).find((a) => a.name === 'class');
     if (cl && /\bnt-pop\b/.test(cl.value)) popjes.push(n);
   });
-  check('er staan minstens twee zwevende notities op de homepage', popjes.length >= 2, true);
+  check('er staat minstens één zwevende notitie op /pricing', popjes.length >= 1, true);
   check('en geen enkele is leeg', popjes.filter((n) => woordenIn(n) === 0).length, 0);
   /* "De Hooks-notitie draagt haar hele paneel" stond hier: de zwaarste notitie
      op de homepage moest meer dan 150 woorden hebben. Dat was Hooks, en die

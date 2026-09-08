@@ -181,8 +181,11 @@ if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FF
      three take the colour choice away. */
   .ch-flag {
     align-self: flex-start;
-    font-size: .66rem; font-weight: 700; letter-spacing: .06em;
-    padding: .12rem .4rem;
+    /* 12px in plaats van 10,6 — de ondergrens van de keuring is 11,5px, en dit
+       vaantje draagt een hexwaarde: een reeks tekens zonder woordbeeld, die je
+       niet half kunt lezen en verder raden. */
+    font-size: .75rem; font-weight: 700; letter-spacing: .06em;
+    padding: .16rem .45rem;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-sm);
     color: var(--ink-3);

@@ -1,0 +1,96 @@
+---
+/**
+ * /account/details — Je gegevens, als Astro-pagina. Studio fase 2, 5 september 2026.
+ * Gegevens en volgorde: detailsView() in account.js (dezelfde velden, dezelfde
+ * autocomplete-namen en dezelfde landenlijst als detailsSection()); het opslaan
+ * blijft accountPost() → handleDetails(), het e-mailadres → /account/email.
+ *
+ * GEEN `required` OP HET BTW-VELD, met opzet: deze pagina heeft geen script,
+ * dus het vinkje "ik heb er geen" kan het attribuut niet weghalen. De eis staat
+ * op de server, waar hij het vinkje kan meewegen.
+ */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import Veld from '../../components/studio/Veld.astro';
+import { pagesContext } from '../../lib/route.js';
+import { studioScreen } from '../../lib/account.js';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'details');
+if (s instanceof Response) return s;
+
+const { st, v } = s;
+const { t, lang, customer, thema, navDicht } = st;
+const opt = t.detOptional;
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="details" customer={customer}
+  title={t.detH} kop={t.detH} lede={t.detLede}
+>
+  {v.saved && <p class="st-melding" role="status">{v.saved}</p>}
+  {v.warn && <p class="st-melding is-warn" role="alert">{v.warn}</p>}
+  {v.nudge && (
+    <aside class="st-kaart-vlak st-nudge">
+      <div><h2>{v.nudge.h}</h2><p>{v.nudge.p}</p></div>
+      <a class="btn btn-2nd btn-sm" href="#det-phone">{v.nudge.cta}</a>
+    </aside>
+  )}
+
+  <section class="st-blok" id="details" aria-label={t.detH}>
+    <form class="st-kaart-vlak st-formulier" method="post" action="/account/details">
+      {v.rijen.map((rij) => <div class="st-rij">{rij.map((f) => <Veld v={f} optioneel={opt} melding={v.warn || t.detMissing} />)}</div>)}
+      <div class="st-rij">
+        <div class="st-veldgroep is-breed">
+          <span class="st-label">{v.email.label}</span>
+          <p class="st-vast">{v.email.value}</p>
+          <span class="st-hint">{v.email.note}</span>
+        </div>
+      </div>
+      <div class="st-rij"><Veld v={v.phone} optioneel={opt} /></div>
+      {v.adres.map((rij) => <div class="st-rij">{rij.map((f) => <Veld v={f} optioneel={opt} melding={t.detMissing} />)}</div>)}
+      <div class="st-rij">
+        <div class="st-veldgroep">
+          <label for="det-country">{v.land.label}</label>
+          <select id="det-country" class="st-veld" name="country" autocomplete="country">
+            <option value="">{v.land.pick}</option>
+            {v.land.lijst.home.map((c) => <option value={c.id} selected={v.land.value === c.id}>{c.name}</option>)}
+            <optgroup label={v.land.eu}>{v.land.lijst.eu.map((c) => <option value={c.id} selected={v.land.value === c.id}>{c.name}</option>)}</optgroup>
+            <optgroup label={v.land.other}>{v.land.lijst.other.map((c) => <option value={c.id} selected={v.land.value === c.id}>{c.name}</option>)}</optgroup>
+          </select>
+          <span class="st-hint">{v.land.hint}</span>
+        </div>
+        <Veld v={v.region} optioneel={opt} />
+      </div>
+      <div class="st-rij st-btw">
+        <div class="st-veldgroep">
+          <label for="det-vat">{v.vat.label}{v.vat.none && <span class="st-optioneel"> · {v.vat.optional}</span>}</label>
+          <input id="det-vat" class="st-veld" name="vat" type="text" value={v.vat.value} maxlength={v.max} placeholder="NL000000000B00" autocomplete="off" />
+          <label class="st-vink"><input type="checkbox" name="no_vat" value="1" checked={v.vat.none} /><span>{v.vat.noneLabel}</span></label>
+          <span class="st-hint">{v.vat.hint}</span>
+        </div>
+        <div class="st-veldgroep">
+          <label for="det-reg">{v.reg.label}<span class="st-optioneel"> · {v.reg.optional}</span></label>
+          <input id="det-reg" class="st-veld" name="reg_number" type="text" value={v.reg.value} maxlength="40" autocomplete="off" />
+          <span class="st-hint">{v.reg.hint}</span>
+        </div>
+      </div>
+      <div class="st-rij is-acties"><button class="btn btn-primary" type="submit">{v.save}</button></div>
+    </form>
+  </section>
+
+  <section class="st-blok" aria-label={v.mail.h}>
+    <div class="st-blok-kop"><h2>{v.mail.h}</h2></div>
+    <div class="st-kaart-vlak st-formulier">
+      {v.mail.sent && <p class="st-melding" role="status">{v.mail.sent}</p>}
+      {v.mail.failed && <p class="st-melding is-warn" role="alert">{v.mail.failed}</p>}
+      <form method="post" action="/account/email" class="st-rij is-mail">
+        <div class="st-veldgroep">
+          <label for="new-email">{v.mail.label}</label>
+          <input id="new-email" class="st-veld" name="new_email" type="email" autocomplete="email" maxlength="254" required data-melding={v.mail.label} placeholder={v.mail.placeholder} />
+        </div>
+        <div class="st-veldgroep is-knop"><button class="btn btn-2nd" type="submit">{v.mail.submit}</button></div>
+      </form>
+      <p class="st-meta">{v.mail.safety}</p>
+    </div>
+  </section>
+</StudioLayout>

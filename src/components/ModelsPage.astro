@@ -35,6 +35,7 @@ import { waHref } from '../data/whatsapp.js';
 // separate fee rather than stating a number — Section 13 of the brief keeps
 // per-product tier pricing off pages that are not /pricing, /catalog,
 // /lifestyle or /video, and this is not one of those four.
+import '../styles/stijl22.css';
 import { localizedPath } from '../i18n/ui.js';
 import { ROSTER, TRAITS, modelId } from '../data/models.js';
 // Het aantal in de lopende tekst komt uit de roster hierboven en wordt niet
@@ -133,124 +134,131 @@ const COPY = {
 const c = COPY[lang];
 const traits = TRAITS[lang];
 const wa = waHref(c.waText);
+const nn = (i: number) => String(i).padStart(2, '0');
 ---
 
-<!-- HERO -->
-<section class="page-hero"><div class="container two-col mp-hero">
-  <div>
-    <p class="eyebrow-page">{c.eyebrow}</p>
-    <h1 class="display mp-h1">{c.h1a}<br /><em>{c.h1b}</em></h1>
-    <p class="lead mp-lead">{c.lead}</p>
-    <div class="flex mp-actions">
-      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWa}
-      </a>
-    </div>
-    <div class="trust-row mp-trust">
-      {c.trust.map((t) => (
-        <span class="trust-item"><strong>{t[0]}</strong> {t[1]}</span>
-      ))}
-    </div>
-  </div>
-  <div class="photo-split-media"><img src="/img/model-01.webp" alt={c.heroAlt} decoding="sync" width="800" height="1071" fetchpriority="high" /></div>
-</div></section>
+{/* ═══ /models IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══════════════════
+    Lucas: *"Ik wil dat je deze website gaat bouwen met deze style."* De
+    voorpagina ging eerst; dit is de tweede pagina, en de eerste die de stijl
+    uit src/styles/stijl22.css leest in plaats van hem over te typen. De inhoud
+    is niet aangeraakt: dezelfde COPY, dezelfde roster uit models.js, dezelfde
+    links. Alleen de vorm is nieuw — panelen op inkt, één donkere kamer met een
+    spookwoord, en het gele paneel als slot. */}
+<div class="s22">
 
-<!-- THE FULL ROSTER -->
-<section class="section-tight"><div class="container">
-  <div class="ed-head">
-    <span class="ed-meta">{c.rosterMeta}</span>
-    <div>
-      <h2>{c.rosterH}</h2>
-      <p class="ed-sub">{c.rosterSub}</p>
-    </div>
-  </div>
-
-  <div class="bm-roster reveal-group">
-    {ROSTER.map((m) => (
-      <figure class="bm-model reveal pending">
-        {/* thumb/tw/th, not photo/w/h: this grid draws a portrait at 211 CSS
-            px on a desktop and 350 on a phone, and the 1195px original was ten
-            files of pixels the browser downloaded to discard. The pair travels
-            together from src/data/models.js so the declared size can never
-            describe the other file. */}
-        <img src={m.thumb} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.tw} height={m.th} transition:name={`face-${modelId(m.name)}`} />
-        <figcaption>
-          <span class="bm-model-name">{m.name}</span>
-          <span class="bm-model-traits">{m.traits.map((t) => traits[t]).join(' · ')}</span>
-        </figcaption>
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────────
+      Geen tweede VEXO-hero: dat blijft van de voorpagina. Hier één licht
+      paneel, tekst links, één portret rechts als kaart. */}
+  <section class="paneel mp-open" aria-labelledby="mp-h1">
+    <div class="mp-open-in">
+      <div class="paneel-kop">
+        <p class="etiket">{c.eyebrow}</p>
+        <h1 id="mp-h1" class="hoog">{c.h1a} <em>{c.h1b}</em></h1>
+        <p class="lopend">{c.lead}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start')}>{c.ctaPrimary}</a>
+          <a class="knop knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWa}</a>
+        </p>
+      </div>
+      <figure class="kaart kaart-stil mp-portret">
+        <img src="/img/model-01.webp" alt={c.heroAlt} width="800" height="1071" decoding="sync" fetchpriority="high" />
       </figure>
-    ))}
-    <div class="bm-model bm-model-choose reveal pending">
-      <div class="bm-choose-inner">
-        <h3>{c.chooseH}</h3>
-        <p>{c.chooseBody}</p>
-        <a href={lp('/start')} class="link-arrow">{c.ctaPrimary}
-          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
+    </div>
+    <ul class="maatlijn mp-maatlijn" role="list">
+      {c.trust.map((t) => <li><span><b>{t[0]}</b> — {t[1]}</span></li>)}
+    </ul>
+  </section>
+
+  {/* ── 2 · DE VOLLEDIGE BIBLIOTHEEK ─────────────────────────────────────────
+      Tien portretten op ware grootte — de belofte van de kop hierboven is dat
+      je een gezicht kunt beoordelen, dus geen miniaturen. De elfde tegel is
+      geen gezicht maar het aanbod om er een te kiezen. */}
+  <section class="paneel" aria-labelledby="mp-roster">
+    <header class="paneel-kop">
+      <p class="etiket">{c.rosterMeta}</p>
+      <h2 id="mp-roster" class="hoog hoog-2">{c.rosterH}</h2>
+      <p class="lopend">{c.rosterSub}</p>
+    </header>
+    <ul class="rooster" role="list">
+      {ROSTER.map((m, i) => (
+        <li>
+          <a class="kaart kaart-stil" href={`${lp('/models')}#${modelId(m.name)}`} id={modelId(m.name)}>
+            <img src={m.thumb} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.tw} height={m.th} transition:name={`face-${modelId(m.name)}`} />
+            <span class="kaart-merk mono">{nn(i + 1)}</span>
+          </a>
+          <p class="mp-naam"><b>{m.name}</b><span class="mono">{m.traits.map((t) => traits[t]).join(' · ')}</span></p>
+        </li>
+      ))}
+      <li class="mp-kies">
+        <div class="mp-kies-in">
+          <h3 class="hoog hoog-3">{c.chooseH}</h3>
+          <p class="lopend">{c.chooseBody}</p>
+          <a class="pijl" href={lp('/start')}>{c.ctaPrimary}</a>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  {/* ── 3 · WAT HET KOST ─────────────────────────────────────────────────────
+      De donkere kamer van deze pagina. Links de zin die het argument draagt,
+      rechts de deur naar het merkmodel — twee blokken, geen derde raster. */}
+  <section class="kamer mp-kamer" aria-labelledby="mp-inc">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <p class="etiket">{c.incMeta}</p>
+      <h2 id="mp-inc" class="hoog hoog-2">{c.incH}</h2>
+    </header>
+    <div class="mp-twee">
+      <div class="mp-inc">
+        <p class="lopend">{c.incBody}</p>
+        <p class="acties"><a class="pijl" href={lp('/pricing')}>{c.incCta}</a></p>
+      </div>
+      <div class="mp-deur">
+        <h3 class="hoog hoog-3">{c.doorH}</h3>
+        <p class="lopend">{c.doorBody}</p>
+        <p class="acties"><a class="pijl" href={lp('/custom-models')}>{c.doorCta}</a></p>
       </div>
     </div>
-  </div>
-</div></section>
+  </section>
 
-<!-- INCLUDED, NOT UPSOLD — and the door back to the exclusive story. Two
-     blocks, not one, so the section's shape differs from the roster grid
-     above: prose left, a single card right, rather than another repeat. -->
-<section class="section-tight"><div class="container">
-  <div class="ed-head">
-    <span class="ed-meta">{c.incMeta}</span>
-    <div>
-      <h2>{c.incH}</h2>
-    </div>
-  </div>
-  <div class="mp-split">
-    <div class="mp-inc reveal pending">
-      <p>{c.incBody}</p>
-      <a href={lp('/pricing')} class="link-arrow">{c.incCta}
-        <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
-    </div>
-    <div class="card mp-door reveal pending">
-      <h3>{c.doorH}</h3>
-      <p>{c.doorBody}</p>
-      <a href={lp('/custom-models')} class="link-arrow">{c.doorCta}
-        <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
-    </div>
-  </div>
-</div></section>
-
-<!-- CLOSING -->
-<section class="section-tight"><div class="container">
-  <div class="cta-band reveal pending">
-    <h2 class="display mp-cta-h">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
-    <div class="flex mp-cta-actions">
-      <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
-      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPricing}</a>
-      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWaShort}
-      </a>
-    </div>
-  </div>
-</div></section>
+  {/* ── 4 · HET SLOT ─────────────────────────────────────────────────────────*/}
+  <section class="paneel paneel-slot" aria-labelledby="mp-slot">
+    <h2 id="mp-slot" class="hoog">{c.ctaH1} <em>{c.ctaEm}</em></h2>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
+      <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPricing}</a>
+      <a class="knop knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWaShort}</a>
+    </p>
+  </section>
+</div>
 
 <style>
-  /* Hard edges, hairlines — same discipline as BrandModelPage. No radius. */
-  .mp-hero { align-items: center; }
-  .mp-h1 { font-size: var(--t-page-h1); max-width: 16ch; }
-  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
-     --font-editorial comment. Same scoped treatment as the h1 em word on
-     /custom-models and the homepage. */
-  .mp-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
-  .mp-lead { margin-top: 1.2rem; }
-  .mp-actions { margin-top: 1.8rem; }
-  .mp-trust { margin-top: 2.4rem; }
+  /* Alleen wat deze pagina eigen is; de rest komt uit stijl22.css. */
+  .mp-open-in { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(1.5rem, 5vw, 4.5rem); align-items: center; }
+  .mp-open .paneel-kop { margin-bottom: 0; }
+  .mp-portret { aspect-ratio: 3 / 4; }
+  .mp-maatlijn { margin: clamp(2.5rem, 5vw, 4rem) 0 0; padding-inline: 0; background: none; }
+  .mp-maatlijn b { font-weight: 500; }
 
-  .mp-split { display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(1.4rem, 3vw, 2.4rem); align-items: start; margin-top: clamp(1.6rem, 3vw, 2.4rem); }
-  .mp-inc p { color: var(--ink-2); font-size: 1.02rem; line-height: 1.7; margin: 0 0 1rem; }
-  .mp-door { border-color: var(--line-strong); }
-  .mp-door h3 { font-size: 1.05rem; margin: 0 0 .5rem; }
-  .mp-door p { color: var(--ink-3); font-size: .92rem; margin: 0 0 1rem; }
-  @media (max-width: 720px) { .mp-split { grid-template-columns: 1fr; } }
+  /* Vier portretten op een rij, groot genoeg om een gezicht te beoordelen. */
+  .rooster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.7rem, 1.6vw, 1.2rem); }
+  .rooster li { display: grid; gap: .7rem; align-content: start; }
+  .mp-naam { display: grid; gap: .15rem; }
+  .mp-naam b { font-weight: 500; font-size: .95rem; }
+  .mp-naam .mono { color: var(--inkt-2); }
+  .mp-kies { grid-column: span 2; }
+  .mp-kies-in { display: grid; gap: .8rem; justify-items: start; height: 100%; align-content: center; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
 
-  .mp-cta-h { font-size: var(--t-page-h2); }
-  .mp-cta-actions { justify-content: center; margin-top: 2rem; }
+  .mp-twee { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .mp-deur { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid rgb(245 245 245 / .22); border-radius: calc(var(--ronding) - 8px); display: grid; gap: .8rem; }
+
+  @media (max-width: 900px) {
+    .mp-open-in, .mp-twee { grid-template-columns: 1fr; }
+    .rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mp-kies { grid-column: span 2; }
+  }
+  @media (max-width: 560px) {
+    .rooster { grid-template-columns: 1fr; }
+    .mp-kies { grid-column: auto; }
+  }
 </style>

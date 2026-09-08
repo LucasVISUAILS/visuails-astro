@@ -204,6 +204,18 @@ const C = nl
 </figure>
 
 <style>
+  /* ── DE MAATVOERING IS OMHOOG — 7 september 2026 ─────────────────────────
+   *
+   * Deze tekening stond vol labels tussen 9,6 en 10,6px, onder de ondergrens
+   * van 11,5px die de leesbaarheidskeuring hanteert. Dat is precies de val van
+   * een figuur: hij is een TEKENING, dus je kijkt naar de vorm en leest de
+   * bijschriften niet — en dan valt niemand op dat ze te klein zijn om te
+   * lezen. Ze staan er alleen wél om gelezen te worden; het is de tekst die
+   * uitlegt wat je ziet.
+   *
+   * Dezelfde ronde die FigGate, FigBoard en FigConverge al hebben gehad. De
+   * ondergrens hier is .72rem (11,52px), en waar het label een reeks tekens is
+   * zonder woordbeeld (een hexwaarde, een bestandsnaam) .75rem. */
   /* De maat wordt met een container query gemeten en niet met het venster: deze
      figuur staat in een halve kolom, dus wat hij moet weten is hoe breed die kolom
      is. Zelfde reden als in FigDash — zie de langere noot daar. */
@@ -223,12 +235,12 @@ const C = nl
     box-shadow: inset 0 -1px 0 var(--line);
   }
   .fg-mark { font-family: var(--font-display); font-weight: 900; font-size: .78rem; letter-spacing: .16em; color: var(--ink); }
-  .fg-ref { font-size: .7rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .fg-ref { font-size: .75rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
   /* Het woord "voorbeeld" hoort in beeld te staan en niet alleen in de tekst
      ernaast: een schermafdruk wordt gedeeld zonder zijn pagina. */
   .fg-badge {
     margin-left: auto;
-    font-size: .62rem; letter-spacing: .04em;
+    font-size: .72rem; letter-spacing: .04em;
     color: var(--ink-3);
     padding: .18rem .5rem;
     border: 1px solid var(--line); border-radius: var(--r-pill);
@@ -237,7 +249,7 @@ const C = nl
   .fg-body { padding: .9rem; display: grid; gap: .8rem; }
   .fg-head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
   .fg-h { margin: 0; font-size: .9rem; font-weight: 700; color: var(--ink); }
-  .fg-tally { margin: 0; font-size: .7rem; color: var(--ink-3); }
+  .fg-tally { margin: 0; font-size: .74rem; color: var(--ink-3); }
 
   /* Vier tegels op één rij zodra het past, en anders twee. Onder de 22rem één,
      want een foto van tachtig pixels breed bewijst niets. */
@@ -259,14 +271,19 @@ const C = nl
   .fg-tile.is-rev img { box-shadow: inset 0 0 0 2px var(--warn-ink, #C9A227); }
   .fg-tile.is-open img { box-shadow: inset 0 0 0 1px var(--line-strong); }
   .fg-tile-body { display: grid; gap: .18rem; }
-  .fg-cap { font-size: .66rem; color: var(--ink-2); }
-  .fg-state { font-size: .6rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-  .fg-state.is-ok { color: var(--accent); }
-  .fg-state.is-rev { color: var(--warn-ink, #C9A227); }
+  .fg-cap { font-size: .74rem; color: var(--ink-2); }
+  .fg-state { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .fg-state.is-ok { color: var(--accent-text); }
+  /* ── DE LETTER IS DONKER, DE RAND BLIJFT HELDER — 7 september 2026 ──────
+     `--warn-ink` is de klei-kleur en meet als TEKST op wit 2,36:1. De noot bij
+     dezelfde reparatie in FigBoard zegt het al: `--clay-text` bestaat precies
+     hiervoor — dezelfde kleur, donker genoeg om te lezen (5,7:1). De rand om de
+     tegel hoeft niet leesbaar te zijn en houdt dus de heldere waarde. */
+  .fg-state.is-rev { color: var(--flag-ink, #8A4F06); }
   .fg-said {
     margin: .15rem 0 0; padding-left: .45rem;
     box-shadow: inset 2px 0 0 var(--line-strong);
-    font-size: .62rem; line-height: 1.45; font-style: italic; color: var(--ink-3);
+    font-size: .74rem; line-height: 1.5; font-style: italic; color: var(--ink-3);
   }
 
   .fg-acts { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .15rem; }
@@ -274,7 +291,7 @@ const C = nl
      het eerlijke element: er is niets om aan te klikken. */
   .fg-btn {
     display: inline-block;
-    font-size: .6rem; font-weight: 600; letter-spacing: .02em;
+    font-size: .72rem; font-weight: 600; letter-spacing: .02em;
     padding: .26rem .5rem;
     border: 1px solid var(--line-strong); border-radius: var(--r-pill);
     color: var(--ink-2); white-space: nowrap;
@@ -288,16 +305,16 @@ const C = nl
     border: 1px solid var(--line);
     border-radius: var(--r-md);
   }
-  .fg-ask-l { margin: 0; font-size: .64rem; color: var(--ink-3); }
+  .fg-ask-l { margin: 0; font-size: .74rem; color: var(--ink-3); }
   .fg-ask-field {
     margin: 0; width: 100%;
     padding: .45rem .55rem;
-    font-size: .66rem; line-height: 1.5; color: var(--ink-2);
+    font-size: .74rem; line-height: 1.55; color: var(--ink-2);
     background: var(--surface);
     border: 1px solid var(--line-strong); border-radius: var(--r-sm, 6px);
   }
 
-  .fg-fine { margin: 0; font-size: .62rem; line-height: 1.5; color: var(--ink-3); }
+  .fg-fine { margin: 0; font-size: .74rem; line-height: 1.55; color: var(--ink-3); }
 
   /* ── DE MAP ──────────────────────────────────────────────────────────────
      Drie kolommen: waarom, wat erin zit, en de knop. Onder de 30rem worden het er
@@ -316,15 +333,15 @@ const C = nl
     .fg-folder-btn { text-align: center; }
   }
   .fg-folder-h { margin: 0 0 .15rem; font-size: .78rem; font-weight: 700; color: var(--ink); }
-  .fg-folder-n { margin: 0; font-size: .66rem; line-height: 1.5; color: var(--ink-2); }
-  .fg-folder-m { margin: .25rem 0 0; font-size: .62rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .fg-folder-n { margin: 0; font-size: .75rem; line-height: 1.55; color: var(--ink-2); }
+  .fg-folder-m { margin: .25rem 0 0; font-size: .74rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   /* Monospace, want dit zijn paden en geen woorden — dan is uitlijning informatie
      en niet toeval. */
   .fg-tree {
     list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: .6rem; line-height: 1.4; color: var(--ink-3);
+    font-size: .72rem; line-height: 1.45; color: var(--ink-3);
     white-space: nowrap;
   }
   .fg-tree-dir { color: var(--ink-2); font-weight: 600; }

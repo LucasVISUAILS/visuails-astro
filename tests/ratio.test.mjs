@@ -150,7 +150,12 @@ console.log('\nde vorm komt uit een viewBox en niet uit een style-attribuut');
   ok('en niets ook', ratioViewBox(null), '0 0 1 1');
 
   const account = read('src/lib/account.js');
-  ok('de brand kit tekent de vorm met een viewBox', /viewBox="\$\{safe\}"/.test(account), true);
+  /* Sinds 6 september 2026 tekent src/components/studio/VasteLook.astro de
+     vorm, uit `viewBox: ratioViewBox(r)` dat brandKitView() meegeeft. */
+  const vasteLook = read('src/components/studio/VasteLook.astro');
+  ok('de brand kit tekent de vorm met een viewBox',
+    /viewBox: ratioViewBox\(r\)/.test(account) && /viewBox=\{r\.viewBox\}/.test(vasteLook), true);
+  ok('en ook daar niet met een style-attribuut', /style=/.test(vasteLook), false);
   ok('en nergens meer met aspect-ratio in een style-attribuut',
     /style="aspect-ratio/.test(zonderUitleg(account)), false);
   const css = zonderUitleg(read('public/account.css'));

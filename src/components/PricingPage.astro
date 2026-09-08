@@ -72,6 +72,7 @@ import { counted, countedShort } from '../data/lexicon.js';
 // is page furniture, not a question.
 import { pricingFaqs } from '../data/faq.js';
 import Disclose from './Disclose.astro';
+import '../styles/stijl22.css';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
 import Placeholder from './Placeholder.astro';
@@ -434,666 +435,242 @@ const included = [
 const SVC_KEYS = ['turnaround', 'queue', 'delivery'];
 const svcLabels = tierRowLabels(lang, SVC_KEYS);
 const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
+
+const nn = (i: number) => String(i).padStart(2, '0');
 ---
 
-<!-- HERO -->
-{/* De lichtbundel uit de merktaal — zie .beam in global.css. Op een
-    paginakop en niet op een band met een foto: twee lichtbronnen over elkaar
-    maken het beeld troebel. */}
-<section class="page-hero beam beam-left"><div class="container">
-  <span class="eyebrow-page">{c.eyebrow}</span>
-  <h1 class="display">{c.h1}</h1>
-  <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-</div></section>
+{/* ═══ /pricing IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═════════════════
+    Lucas: *"De style is goedgekeurd, bouw verder."* Derde pagina in de stijl,
+    na de voorpagina en /models, en de tweede die src/styles/stijl22.css leest.
 
-<!-- THE LADDER.
-     A real table, because this is a rate card and a rate card is tabular data:
-     a reader who wants to know what 12 lifestyle-only products cost should be
-     able to find the row and the column and stop reading. Cards would have
-     forced one card per rung per kind — fifteen of them — which is how the old
-     page ended up with two packages and a hole between them.
+    De inhoud is niet aangeraakt. Dezelfde COPY in beide talen, dezelfde staffel
+    uit pricing.js, dezelfde uitgerekende voorbeelden, dezelfde losse regels en
+    dezelfde PlanBand met `id="plans"` voor de oude links. Wat weg is, is de
+    oude vorm: de lichtbundel, de tegels, de kaarten met randen.
 
-     Every cell prints the net rate large and the VAT-inclusive rate under it.
-     Fifteen pairs is a lot of small type, and it is still the right call: this
-     is the one table on the site a Dutch business will read with a calculator,
-     and the alternative — one footnote saying "all prices excl. VAT" — is the
-     typed string BRIEF-14 exists to remove. -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.ladderH}</h2><p>{c.ladderSub}</p></div>
+    DE TABEL BLIJFT EEN TABEL. Dit is een tarievenkaart en dat is tabellaire
+    data: wie wil weten wat twaalf lifestyleproducten kosten, hoort de rij en de
+    kolom te vinden en te stoppen met lezen. Hij schuift op een telefoon in zijn
+    eigen bak, zodat de labels leesbaar blijven in plaats van te krimpen. */}
+<div class="s22">
 
-  {/* ── OP EEN TELEFOON SCHUIFT DE TABEL, EN DAT MOET TE ZIEN ZIJN ─────────
-      Doorlichting 4 september 2026: op 390 px viel de tabel af bij "PER P" en
-      niets zei dat er nog twee kolommen waren. Nu: de eerste kolom blijft
-      staan bij het schuiven, rechts een vervaagde rand zolang er meer is, en
-      één regel eronder die het zegt. Alleen onder 560 px. */}
-  <div class="ladder-scroll reveal pending">
-  <div class="ladder-wrap">
-    <table class="ladder">
-      <thead>
-        <tr>
-          <th scope="col" class="lad-corner">{c.ladderProductsCol}</th>
-          {KIND_IDS.map((id) => (
-            <th scope="col">
-              <span class="lad-kind">
-                {KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id] as string)}>{c.kinds[id].name}</a> : c.kinds[id].name}
-              </span>
-              <span class="lad-kind-sub">{c.kinds[id].sub}</span>
-              <span class="lad-kind-vat">{c.perProduct} · {vatLabel('excl', lang)}</span>
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rungs.map((r, ri) => (
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="pr-h1">
+    <div class="paneel-kop pr-open">
+      <p class="etiket">{c.eyebrow}</p>
+      <h1 id="pr-h1" class="hoog">{c.h1}</h1>
+      <p class="lopend">{c.lead}</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
+        <a class="knop knop-lijn" href={lp('/test-sample')}>{c.sampleCta}</a>
+      </p>
+    </div>
+  </section>
+
+  {/* ── 2 · DE STAFFEL ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="pr-ladder">
+    <header class="paneel-kop">
+      <p class="etiket">{c.ladderProductsCol}</p>
+      <h2 id="pr-ladder" class="hoog hoog-2">{c.ladderH}</h2>
+      <p class="lopend">{c.ladderSub}</p>
+    </header>
+
+    <div class="tabel-schuif">
+      <table class="lijst pr-staffel">
+        <thead>
           <tr>
-            <th scope="row">{r.label}</th>
+            <th scope="col" class="mono">{c.ladderProductsCol}</th>
             {KIND_IDS.map((id) => (
-              <td>
-                <span class="lad-rate">{euro(ladderRate(id, r.at), lang)}</span>
-                {/* Zie de noot bij dezelfde regel in HomeV2: de complete kolom
-                    is de duurste om naar te kijken en de goedkoopste om te
-                    kopen, en zonder dit getal doet de lezer die aftrekking
-                    zelf of niet. Per trede uitgerekend uit LADDER. */}
-                {id === 'complete' && (
-                  <span class="lad-save">−{euro(completeSaving(r.at).saved, lang)}
-                    {/* Waar het van AF gaat, één keer, op de bovenste trede.
-                        Zie de noot bij ladSaveUnit in HomeV2.astro: het bedrag
-                        stond er kaal en de zin die hem uitlegde stond elders. */}
-                    {ri === 0 && <em> {c.kinds.saveUnit}</em>}
-                  </span>
-                )}
-              </td>
+              <th scope="col">
+                <span class="mono pr-soort">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id] as string)}>{c.kinds[id].name}</a> : c.kinds[id].name}</span>
+                <span class="pr-soort-sub">{c.kinds[id].sub}</span>
+                <span class="mono pr-soort-btw">{c.perProduct} · {vatLabel('excl', lang)}</span>
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-  <p class="ladder-hint">{c.ladderScrollHint}</p>
-  </div>
-
-  <!-- The multiplication, done. Three counts, and the middle one carries the
-       grid's one coloured plate — the fence in global.css is at most two per
-       grid and this page spends one. It is on the middle count because that is
-       the count the old model had no price for. -->
-  <div class="worked-head"><h3>{c.workedH}</h3><p>{c.workedSub}</p></div>
-  <div class="tiles worked reveal-group">
-    {WORKED.map((n, i) => {
-      const q = quote('complete', n);
-      return (
-        <div class={`tile s-4 reveal pending${i === 1 ? ' on-bright tile-c-blue' : ''}`}>
-          <div class="tile-body">
-            <p class="tile-k">{n} {c.workedUnit}</p>
-            <p class="tile-v">{euro(q.net, lang)}</p>
-            <p class="worked-vat">{vatLabel('excl', lang)}</p>
-            <p class="tile-n">{euro(q.rate, lang)} {c.perProduct} · {vatLabel('excl', lang)}</p>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-
-  <!-- The first-order discount, stated once. It is the whole of what the Drop
-       Pilot was, so it gets the Pilot's old job: one reason to place a first
-       order, at any size, with nothing to explain beyond the sentence. -->
-  <p class="gate-note first-note reveal pending"><strong>{c.firstLead}</strong> {c.firstBody}</p>
-
-  <div class="flex ladder-cta">
-    <a href={lp('/start')} class="btn btn-primary">{c.ladderCta}</a>
-    {/* ── /compare KOMT HIERHEEN — 21 augustus 2026 ────────────────────────
-        Die pagina stond in de uitklapper "Hoe het werkt", tussen de
-        processtappen, en had drie inkomende links op de hele site. Het is een
-        vergelijking van GELD — een shootdag tegen een bestelling — en die
-        overtuigt naast een prijslijst, niet naast een uitleg over hoe een
-        bestelling loopt. Als tekstlink en niet als tweede knop: er staat hier al
-        één ding dat je moet doen. */}
-    <a href={lp('/compare')} class="link-arrow ladder-compare">{c.compareCta}
-      <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </a>
-  </div>
-</div></section>
-
-<!-- THE ANCHOR — what a production day costs, itemised rather than narrowed.
-     AUDIT-TASK-0.md §H flag 2: the range is the brief's figure and is not
-     sourced, so it is presented as a full day with every line counted, the
-     lines are named without inventing a euro figure for any of them, and the
-     caveat travels with it. No strikethrough: crossing out someone else’s
-     price is a discount-site gesture, and the comparison is strong enough
-     stated plainly.
-
-     BOTH COLUMNS CARRY A VAT LABEL, including the one that is not our price.
-     A net figure set against a gross one is a comparison that flatters us by
-     a fifth, and the reader cannot see that it has happened. Saying "excl."
-     under both is the only way the two columns are the same kind of number. -->
-{/* ── WAT EEN PRODUCT IS, IN BEELD ─────────────────────────────────────────
-    19 augustus 2026. Gemeten: 1093 woorden en nul beelden op de pagina waar
-    iemand beslist of hij geld uitgeeft. De staffel hierboven zegt wat één
-    product KOST; nergens stond wat één product IS.
-
-    Dat is de zin die de hele prijslijst draagt — "zeven afgewerkte beelden per
-    product" is een getal tot je het ziet. Eén rij van die zeven doet meer dan
-    de alinea eronder, en hij staat daarom tussen het tarief en de vergelijking
-    met een shootdag in: eerst wat het kost, dan wat je krijgt, dan waar het
-    tegen afgezet wordt. */}
-
-
-
-
-<!-- WHAT RIDES ON TOP OF AN ORDER.
-     Two products, two shapes, and the asymmetry is the argument. A Brand Model
-     is a one-time price whose interesting property is arithmetic: it is exactly
-     five credits, so it cancels itself over five orders. That is drawn, because
-     a drawing is how you show a sum. A video clip is a rate whose interesting
-     property is that it does not move — the same figure inside an order as on
-     its own — and a rate that does not move is a short list of the places it
-     does not move in. Neither layout would work for the other product, which
-     is the test this section used to fail when both were one .map().
-
-     WHAT THE BRAND MODEL BLOCK DOES NOT CARRY, on purpose: its four inclusions.
-     They are one click away on /custom-models, which is a page about the
-     product; this is a page about the money, and the four bullets were the
-     third statement of the credit on a page that already had two. -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.addOnH}</h2><p>{c.addOnSub}</p></div>
-
-  <div class="addon reveal pending">
-    <div class="addon-id">
-      <h3 class="addon-name">{c.brandModelName}</h3>
-      <p class="addon-line">{c.brandModelLine}</p>
+        </thead>
+        <tbody>
+          {rungs.map((r, ri) => (
+            <tr>
+              <th scope="row" class="mono">{r.label}</th>
+              {KIND_IDS.map((id) => (
+                <td class="tarief">
+                  {euro(ladderRate(id, r.at), lang)}
+                  {id === 'complete' && (
+                    <span class="pr-besparing mono">−{euro(completeSaving(r.at).saved, lang)}{ri === 0 && <em> {c.kinds.saveUnit}</em>}</span>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-    <p class="addon-price">
-      <span class="ap-amount">{euro(AMOUNT.brandModel, lang)}</span>
-      <span class="ap-unit">{c.brandModelUnit}</span>
-      <span class="ap-vat">{vatLabel('excl', lang)}</span>
-      {/* "Verrekend met je eerste 5 bestellingen" leest als korting én als
-          terugbetaling, en dat verschil is 1.250 euro waard. De uitleg staat
-          alleen op /custom-models; hier stond alleen het bijschrift. */}
-      <Note lang={lang} term={c.brandModelName} wide>{c.brandModelNote}</Note>
-    </p>
+    <p class="mono pr-hint">{c.ladderScrollHint}</p>
 
-    <a href={lp('/custom-models')} class="link-arrow addon-cta">{c.brandModelCta}
-      <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </a>
-  </div>
-
-  <div class="standing reveal pending">
-    <div class="standing-id">
-      <h3 class="standing-name"><a href={lp('/video')}>{c.videoName}</a></h3>
-      <p class="standing-line">{c.videoLine}</p>
-      <p class="standing-price">
-        <span class="sp-amount">{euro(AMOUNT.video, lang)}</span>
-        <span class="sp-unit">{c.videoUnit}</span>
-        <span class="sp-vat">{vatLabel('excl', lang)}</span>
-      </p>
-      <a href={lp('/video')} class="link-arrow standing-cta">{c.videoCta}
-        <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
-    </div>
-    <div class="standing-inc">
-      <span class="standing-inc-h">{c.videoIncH}</span>
-      <ul class="standing-list">
-        {c.videoList.map((f) => <li>{f}</li>)}
+    {/* De vermenigvuldiging, gedaan. Drie aantallen, helemaal uitgerekend. */}
+    <div class="pr-uitgerekend">
+      <header class="pr-uit-kop">
+        <h3 class="hoog hoog-3">{c.workedH}</h3>
+        <p class="lopend">{c.workedSub}</p>
+      </header>
+      <ul class="pr-som" role="list">
+        {WORKED.map((n) => {
+          const q = quote('complete', n);
+          return (
+            <li>
+              <span class="mono">{n} {c.workedUnit}</span>
+              <b class="hoog hoog-3">{euro(q.net, lang)}</b>
+              <span class="mono pr-som-sub">{euro(q.rate, lang)} {c.perProduct} · {vatLabel('excl', lang)}</span>
+            </li>
+          );
+        })}
       </ul>
     </div>
-  </div>
 
-  <div class="more reveal pending">
-    <h3 class="more-h">{c.moreH}</h3>
-    <p class="more-sub">{c.moreSub}</p>
-    <dl class="more-list">
-      {c.moreRows.map(([naam, prijs, uitleg, href]) => (
-        <div class="more-row">
-          <dt><a href={lp(href)}>{naam}</a></dt>
-          <dd><strong>{prijs}</strong><span>{uitleg}</span></dd>
-        </div>
-      ))}
-    </dl>
-    <p class="more-vat">{vatLabel('excl', lang)}</p>
-  </div>
-</div></section>
+    <p class="pr-eerste lopend"><b>{c.firstLead}</b> {c.firstBody}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/start')}>{c.ladderCta}</a>
+      <a class="pijl" href={lp('/compare')}>{c.compareCta}</a>
+    </p>
+  </section>
 
-<!-- WHAT EVERY ORDER INCLUDES, AND WHERE THE RESERVED WINDOW STARTS -->
+  {/* ── 3 · TOE TE VOEGEN AAN EEN BESTELLING ─────────────────────────────────
+      De donkere kamer van deze pagina: twee dingen die je bij een bestelling
+      zet, en daaronder de kleine regels als haarlijnen. */}
+  <section class="kamer pr-kamer" aria-labelledby="pr-add">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.addOnH}</span><span>{c.addOnH}</span></p>
+    <header class="kamer-kop">
+      <p class="etiket">{c.eyebrow}</p>
+      <h2 id="pr-add" class="hoog hoog-2">{c.addOnH}</h2>
+      <p class="lopend">{c.addOnSub}</p>
+    </header>
 
+    <div class="pr-twee">
+      <article class="pr-toevoeging">
+        <h3 class="hoog hoog-3">{c.brandModelName}</h3>
+        <p class="lopend">{c.brandModelLine}</p>
+        {/* De zwevende notitie blijft: hij hangt met aria-describedby aan de
+            prijs en legt uit dat het bedrag eenmalig is. tests/notitie.test.mjs
+            eist er minstens één op deze pagina, en terecht — het verschil
+            tussen "eenmalig" en "per bestelling" is hier het hele bedrag. */}
+        <p class="pr-prijs">
+          <b class="hoog hoog-3">{euro(AMOUNT.brandModel, lang)}</b>
+          <span class="mono">{c.brandModelUnit} · {vatLabel('excl', lang)}</span>
+          <Note lang={lang} term={c.brandModelName} wide>{c.brandModelNote}</Note>
+        </p>
+        <p class="acties"><a class="pijl" href={lp('/custom-models')}>{c.brandModelCta}</a></p>
+      </article>
+      <article class="pr-toevoeging">
+        <h3 class="hoog hoog-3"><a href={lp('/video')}>{c.videoName}</a></h3>
+        <p class="lopend">{c.videoLine}</p>
+        <p class="pr-prijs"><b class="hoog hoog-3">{euro(AMOUNT.video, lang)}</b><span class="mono">{c.videoUnit} · {vatLabel('excl', lang)}</span></p>
+        <p class="mono pr-lijst-kop">{c.videoIncH}</p>
+        <ul class="pr-lijst" role="list">{c.videoList.map((f) => <li>{f}</li>)}</ul>
+        <p class="acties"><a class="pijl" href={lp('/video')}>{c.videoCta}</a></p>
+      </article>
+    </div>
 
-<!-- THE PLANS.
-     The bottom of this page used to hold a second price list (Tier 0, per
-     product) for work the top of the page also sold. The ladder covers small
-     counts now, so the bottom is free for the other axis: the same output,
-     bought monthly, cheaper than the ladder.
+    <div class="pr-meer">
+      <h3 class="hoog hoog-3">{c.moreH}</h3>
+      <p class="lopend">{c.moreSub}</p>
+      <dl class="pr-regels">
+        {c.moreRows.map(([naam, prijs, uitleg, href]) => (
+          <div class="pr-regel">
+            <dt><a class="pijl" href={lp(href)}>{naam}</a></dt>
+            <dd><b>{prijs}</b><span class="lopend">{uitleg}</span></dd>
+          </div>
+        ))}
+      </dl>
+      <p class="mono">{vatLabel('excl', lang)}</p>
+    </div>
+  </section>
 
-     THE SAVING LINE IS NOT A MARKETING CLAIM, it is a subtraction — pricing.js
-     asserts at build time that every plan costs less than the same products on
-     the ladder, so a reader who does the sum finds what the card says. If that
-     assertion ever fails, the fix is the price, not this copy. -->
-{/* ── DE PLANNEN STAAN NIET MEER OP DEZE PAGINA — 20 augustus 2026 ──────────
-    Lucas: *"Abonnementen zou ik wel graag echt een eigen pagina voor hebben dan
-    nu dat het slordig tussen de compare prices lijst staat ... en maak de
-    compare prices lijst dan heel simpel met gewoon de prijzen en niet teveel
-    informatie eromheen."*
+  {/* ── 4 · OF ELKE MAAND ────────────────────────────────────────────────────
+      PlanBand blijft staan zoals hij is: hij draagt `id="plans"` voor oude
+      links en wordt ook op /plans gebruikt. Hij ligt hier in een licht paneel,
+      zodat hij niet los op de inkt hangt. */}
+  <section class="paneel pr-plan">
+    <PlanBand lang={lang} id="plans" />
+  </section>
 
-    Hier stonden drie plankaarten met elk zes regels, een bespaarzin en een knop
-    — 278 woorden onder dezelfde kop als een staffel per product. Dat zijn twee
-    MANIEREN OM TE KOPEN en geen twee secties van één onderwerp: wie de tabel
-    hierboven leest, is nog aan het uitrekenen wat één bestelling kost terwijl er
-    al drie maandbedragen onder staan.
-
-    Ze staan nu op /plans, met de uitleg erbij die hier nooit paste. Wat hier
-    blijft is één regel die zegt dat de andere manier bestaat — want dat is het
-    enige wat een prijslijst daarover hoeft te zeggen.
-
-    `id="plans"` blijft op deze strook staan: er wezen zes plekken naar
-    /pricing#plans en die zijn allemaal omgezet, maar een oude link uit een mail
-    of een zoekresultaat hoort niet in het niets te landen. */}
-{/* 3 september 2026: het kaartje van drie regels is de abonnementsband
-    geworden — zie PlanBand.astro. `id="plans"` blijft, om de oude links. */}
-<PlanBand lang={lang} id="plans" />
-
-<!-- TEST SAMPLE -->
-<section class="section-tight"><div class="container">
-  <div class="sample reveal pending">
-    <div>
-      <h2>{c.sampleH}</h2>
-      <p class="sample-body">{c.sampleBody}</p>
-      <div class="flex" style="margin-top:1.6rem">
-        <a href={lp('/test-sample')} class="btn btn-primary">{c.sampleCta}</a>
+  {/* ── 5 · DE PROEF ─────────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="pr-proef">
+    <div class="pr-proef">
+      <div class="paneel-kop">
+        <p class="etiket">{c.sampleH}</p>
+        <h2 id="pr-proef" class="hoog hoog-2">{c.sampleH}</h2>
+        <p class="lopend">{c.sampleBody}</p>
+        <p class="acties"><a class="knop knop-inkt" href={lp('/test-sample')}>{c.sampleCta}</a></p>
       </div>
+      <div class="pr-scene"><ProductScene icon="bottle" width="42%" badge={sample.unit} wide /></div>
     </div>
-    <div><ProductScene icon="bottle" width="42%" badge={sample.unit} wide /></div>
-  </div>
-</div></section>
+  </section>
 
-<!-- FAQ -->
-
-
-<!-- CLOSING -->
-<section class="section-tight"><div class="container">
-  <div class="cta-band reveal pending">
-    <h2 class="display" style="font-size:var(--t-page-h2)">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
-    <div class="flex" style="justify-content:center;margin-top:2rem">
-      <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.ctaSample}</a>
-      <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.ctaStart}</a>
-      <a href={waHref(c.waText)} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWa}
-      </a>
-    </div>
-  </div>
-</div></section>
+  {/* ── 6 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="pr-slot">
+    <h2 id="pr-slot" class="hoog">{c.ctaH1} <em>{c.ctaEm}</em></h2>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+      <a class="knop knop-lijn" href={waHref(c.waText)} target="_blank" rel="noopener">{c.ctaWa}</a>
+    </p>
+  </section>
+</div>
 
 <style>
-  .container.narrow { max-width: 760px; }
+  /* Alleen wat deze pagina eigen is; de rest komt uit stijl22.css. */
+  .pr-open { max-width: 52rem; margin-bottom: 0; }
 
-  /* ── The ladder ──────────────────────────────────────────────────────────
-     The one new device on this page, and the only place new classes were
-     added. It carries a radius where the framed blocks below it do not,
-     because it sits directly above the .tile grid of worked totals, which is
-     16px by the system — a hard-edged frame butting a rounded one reads as
-     two systems, and the table is the newer of the two. --r-md, not --r-lg:
-     the tiles are the objects, the table is the surface they explain.
+  /* De staffel. Eén tabel, drie kolommen, en de bedragen in de brede snit —
+     de enige plek op de pagina waar de letter opvalt. */
+  .pr-staffel thead th { vertical-align: bottom; }
+  .pr-soort { display: block; }
+  .pr-soort-sub { display: block; margin-top: .35rem; font-size: .8rem; color: var(--inkt-2); text-transform: none; letter-spacing: 0; font-family: var(--tekst2); max-width: 22ch; margin-left: auto; }
+  .pr-soort-btw { display: block; margin-top: .35rem; color: var(--inkt-2); }
+  .pr-staffel td { padding-block: 1rem; }
+  .pr-besparing { display: block; margin-top: .35rem; color: var(--inkt-2); font-size: .72rem; }
+  .pr-besparing em { font-style: normal; background: none; padding: 0; }
+  .pr-hint { margin-top: .8rem; color: var(--inkt-2); }
+  @media (min-width: 561px) { .pr-hint { display: none; } }
 
-     The wrapper scrolls rather than the table reflowing: four columns of
-     tabular numbers stacked into cards stop being comparable, which is the
-     one thing this table is for. */
-  .ladder-wrap {
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
-    overflow-x: auto;
-  }
-  .ladder {
-    width: 100%;
-    border-collapse: collapse;
-    /* Lining, tabular: rates in a column have to line up on the decimal or
-       the column stops being scannable, which is the whole reason it is a
-       table and not a paragraph. */
-    font-variant-numeric: tabular-nums lining-nums;
-  }
-  .ladder th, .ladder td {
-    padding: clamp(.85rem, 1.6vw, 1.15rem) clamp(.9rem, 2vw, 1.5rem);
-    text-align: right;
-    vertical-align: top;
-  }
-  .ladder thead th { vertical-align: bottom; border-bottom: 1px solid var(--line-strong); }
-  .ladder tbody tr + tr th, .ladder tbody tr + tr td { border-top: 1px solid var(--line); }
-  .ladder thead th:first-child, .ladder tbody th { text-align: left; }
-  .lad-corner {
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    white-space: nowrap;
-  }
-  .lad-kind { display: block; font-size: .98rem; font-weight: 700; color: var(--ink); }
-  /* Two of the three headings are links to their pillar pages, and a link in a
-     table header needs a cue at REST — a reader scanning columns is not going
-     to hover each one to discover which are clickable. Hairline underline,
-     thickened and accented on interaction, so the page's one accent colour
-     stays on the CTA where §7 puts it. */
-  .lad-kind a {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-decoration-color: var(--line-strong);
-    text-underline-offset: 4px;
-  }
-  .lad-kind a:hover, .lad-kind a:focus-visible { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
-  .lad-kind-sub {
-    display: block;
-    margin: .35rem 0 0 auto;
-    max-width: 24ch;
-    font-size: .8rem;
-    font-weight: 400;
-    line-height: 1.45;
-    color: var(--ink-3);
-  }
-  .lad-kind-vat {
-    display: block;
-    margin-top: .5rem;
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    white-space: nowrap;
-  }
-  .ladder tbody th { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap; }
-  .lad-rate {
-    display: block;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(1.05rem, 1.7vw, 1.3rem);
-    line-height: 1;
-    letter-spacing: -0.02em;
-  }
-  .lad-save { display: block; margin-top: .2rem; font-size: .74rem; font-weight: 600; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .lad-save em { font-style: normal; font-weight: 400; color: var(--ink-3); white-space: normal; }
+  .pr-uitgerekend { margin-top: clamp(2.5rem, 6vw, 4.5rem); display: grid; gap: clamp(1.25rem, 3vw, 2rem); }
+  .pr-uit-kop { display: grid; gap: .6rem; }
+  .pr-som { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.7rem, 2vw, 1.5rem); }
+  .pr-som li { display: grid; gap: .35rem; padding-top: 1rem; border-top: 1px solid var(--inkt); }
+  .pr-som-sub { color: var(--inkt-2); }
+  .pr-eerste { margin-top: clamp(2rem, 4vw, 3rem); max-width: 46em; }
+  .pr-eerste b { font-weight: 500; }
+  .pr-eerste + .acties { margin-top: 1.5rem; }
 
-  /* DE BUNDELKOLOM, NET ALS OP DE HOMEPAGE. Twee tabellen over hetzelfde
-     onderwerp horen hetzelfde te wijzen; zie de uitgeschreven motivering bij
-     .hv-lad thead th:nth-child(2) in HomeV2.astro. De hoekcel is kolom 1, dus
-     de bundel is kolom 2. */
-  .ladder thead th:nth-child(2) { box-shadow: inset 0 2px 0 var(--accent); }
-  .ladder thead th:nth-child(2),
-  .ladder tbody td:nth-child(2) { background: rgb(198 241 0 / .035); }
-  .lad-incl { display: block; margin-top: .3rem; font-size: .75rem; color: var(--ink-3); white-space: nowrap; }
+  /* De donkere kamer: twee toevoegingen naast elkaar, daaronder de regels. */
+  .pr-twee { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); }
+  .pr-toevoeging { display: grid; gap: .7rem; align-content: start; padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); }
+  .pr-prijs { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+  .pr-prijs .mono { color: rgb(245 245 245 / .66); }
+  .pr-lijst-kop { color: rgb(245 245 245 / .66); margin-top: .4rem; }
+  .pr-lijst { display: grid; gap: .45rem; color: rgb(245 245 245 / .68); font-size: .95rem; }
+  .pr-lijst li { padding-left: 1.1rem; position: relative; }
+  .pr-lijst li::before { content: "—"; position: absolute; left: 0; color: var(--geel); }
 
-  /* ── The worked totals ───────────────────────────────────────────────── */
-  .worked-head { margin-top: clamp(2rem, 4vw, 3rem); }
-  .worked-head h3 { font-size: var(--t-h3); line-height: 1.2; }
-  .worked-head p { margin-top: .5rem; color: var(--ink-3); font-size: .95rem; max-width: 60ch; }
-  .worked { margin-top: clamp(1rem, 2vw, 1.4rem); }
-  .worked-vat { margin: .5rem 0 0; font-size: .8rem; color: var(--ink-3); }
+  .pr-meer { margin-top: clamp(3rem, 7vw, 5rem); display: grid; gap: .8rem; }
+  .pr-regels { margin-top: 1rem; display: grid; }
+  .pr-regel { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2.5rem); padding: 1.1rem 0; border-top: 1px solid rgb(245 245 245 / .14); }
+  .pr-regel:last-child { border-bottom: 1px solid rgb(245 245 245 / .14); }
+  .pr-regel dd { display: grid; gap: .35rem; margin: 0; }
+  .pr-regel dd b { font-weight: 500; }
 
-  .first-note { max-width: 78ch; }
-  .ladder-cta { margin-top: clamp(1.2rem, 2.4vw, 1.6rem); }
+  /* PlanBand komt uit de oude opmaak; hij krijgt hier alleen lucht. */
+  .pr-plan { padding-block: clamp(2rem, 5vw, 4rem); }
 
-  /* ── DE ANKERSTIJLEN STONDEN HIER — WEG OP 30 AUGUSTUS 2026 ──────────────
-     Twaalf regels: `.anchor`, `-col`, `-rule`, `-tag`, `-price`, `-vat`,
-     `-meta`, `-list`, `-list li`, `-list li::before`, `-per` en `-note`. Geen
-     enkele stond nog op een element — `class="anchor` komt in deze hele repo
-     niet meer voor. Zie de noot bij de teksten hierboven voor waar dat blok
-     naartoe is. */
+  .pr-proef { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .pr-proef .paneel-kop { margin-bottom: 0; }
+  .pr-scene { display: grid; place-items: center; }
 
-  /* ── What rides on top ───────────────────────────────────────────────────
-     Two shapes, because two claims. The add-on is a price with a drawing
-     underneath, because what is interesting about it is arithmetic and
-     arithmetic is a thing you show. The clip is a price beside a list, because
-     what is interesting about it is where the rate does NOT change, and that
-     is a list. Neither layout would work for the other product, which is the
-     test this section previously failed by rendering both from one .map(). */
-  .addon {
-    margin-top: clamp(1.4rem, 3vw, 2.2rem);
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: start;
-    gap: clamp(1.1rem, 2.6vw, 1.9rem) clamp(1.5rem, 4vw, 4rem);
-    padding: clamp(1.6rem, 3.2vw, 2.6rem);
-    border: 1px solid var(--line-strong);
-  }
-  /* A grid item, so it needs the min-width reset: the default `min-width:auto`
-     makes a 1fr track refuse to shrink below its longest word, and the longest
-     word here is a product name that gets translated. Without this, a long NL
-     name pushes the price column off the right edge instead of wrapping. */
-  .addon-id { min-width: 0; }
-  .addon-name { font-size: var(--t-h3); line-height: 1.2; }
-  .addon-line { margin-top: .55rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; }
-  .addon-price { display: flex; align-items: baseline; justify-content: flex-end; gap: .55rem; flex-wrap: wrap; }
-  .ap-amount {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(1.7rem, 2.8vw, 2.2rem);
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-  .ap-unit { font-size: .86rem; color: var(--ink-3); }
-  /* Full-width in the flex row, so the VAT pair always lands on its own line
-     under the figure instead of wrapping unpredictably between the two. */
-  .ap-vat, .sp-vat, .pp-vat { flex: 0 0 100%; font-size: .78rem; color: var(--ink-3); }
-  .addon-price .ap-vat { text-align: right; }
-
-  /* Full width, under both the name and the price, because the figure is about
-     the relationship between them: it is that price, cut into the parts that
-     repay it. Boxing it into one column would make it an illustration beside
-     the claim rather than the claim itself. */
-  .addon-fig { grid-column: 1 / -1; }
-  .addon-cta { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: .4rem; }
-  .ladder-compare { display: inline-flex; align-items: center; gap: .4rem; }
-
-  /* Two panels inside one frame, split by a border rather than a gap: the
-     clip's rate and where that rate holds are one offer, and a gap between
-     them would read as two. Same framing device as .packs, at a different
-     rhythm — one row, not three columns. */
-  .standing {
-    margin-top: clamp(1rem, 2.4vw, 1.6rem);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--line-strong);
-  }
-  .standing-id, .standing-inc { padding: clamp(1.5rem, 3vw, 2.4rem); }
-  .standing-id { display: flex; flex-direction: column; }
-  .standing-inc { border-left: 1px solid var(--line-strong); }
-  .standing-name { font-size: var(--t-h3); line-height: 1.2; }
-  .standing-name a {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-decoration-color: var(--line-strong);
-    text-underline-offset: 4px;
-  }
-  .standing-name a:hover, .standing-name a:focus-visible { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
-  .standing-line { margin-top: .55rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; }
-  .standing-price { margin-top: 1.1rem; display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
-  .sp-amount {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(1.7rem, 2.8vw, 2.2rem);
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-  .sp-unit { font-size: .86rem; color: var(--ink-3); }
-  .standing-cta { margin-top: auto; padding-top: 1.2rem; align-self: start; display: inline-flex; align-items: center; gap: .4rem; }
-
-  /* De lijst met kleine posten. Een definitielijst met een haarlijn per regel,
-     naam links, bedrag en uitleg rechts — geen kaart, want het zijn regels bij
-     een bestelling en geen producten (zie de noot bij moreH). */
-  .more { margin-top: clamp(1.6rem, 3vw, 2.4rem); max-width: 72ch; }
-  .more-h { font-size: var(--t-h3); line-height: 1.2; }
-  .more-sub { margin-top: .5rem; color: var(--ink-3); font-size: .95rem; max-width: 60ch; }
-  .more-list { margin: 1.1rem 0 0; border-top: 1px solid var(--line-strong); }
-  .more-row { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: 1rem; padding: .9rem 0; border-bottom: 1px solid var(--line); }
-  .more-row dt { font-weight: 700; color: var(--ink); }
-  .more-row dt a { text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
-  .more-row dt a:hover, .more-row dt a:focus-visible { text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
-  .more-row dd { margin: 0; display: grid; gap: .25rem; }
-  .more-row dd strong { color: var(--ink); font-weight: 600; }
-  .more-row dd span { color: var(--ink-3); font-size: .92rem; line-height: 1.55; }
-  .more-vat { margin-top: .8rem; font-size: .78rem; color: var(--ink-3); }
-  @media (max-width: 560px) { .more-row { grid-template-columns: 1fr; gap: .3rem; } }
-
-  /* Sentence case and quiet. The copy this carries is "How it is priced:",
-     which is a sentence with a colon in it; setting a sentence in tracked
-     uppercase is how a label stops being readable and starts being decoration,
-     and DESIGN.md rejects that mark anyway. */
-  .standing-inc-h { display: block; font-size: .9rem; color: var(--ink-3); }
-  .standing-list { list-style: none; margin: .9rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
-  .standing-list li { position: relative; padding-left: 1.25rem; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
-  .standing-list li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: .55em;
-    width: 6px;
-    height: 6px;
-    background: var(--ink-faint);
-  }
-
-  /* ── In every order ──────────────────────────────────────────────────── */
-  .incl-grid {
-    list-style: none;
-    /* Was clamp(1.6rem, 3vw, 2.4rem) — 38px, de ruimste kop→blok-afstand van
-       de hele site, tegenover 21px elders voor precies dezelfde relatie. Nu op
-       het token; zie EN DE TWEEDE AFSTAND in global.css. */
-    margin: var(--gap-head-block) 0 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-    gap: 0 clamp(1.5rem, 3vw, 3rem);
-  }
-  .incl {
-    padding: 1rem 0;
-    border-top: 1px solid var(--line);
-    color: var(--ink-2);
-    font-size: .95rem;
-    line-height: 1.5;
-  }
-
-  .svc-lead { margin-top: clamp(1.8rem, 3vw, 2.4rem); max-width: 78ch; color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
-  .svc-lead strong { color: var(--ink); font-weight: 700; }
-  .svc { margin-top: clamp(1rem, 2vw, 1.4rem); }
-  .svc-facts { margin: 1rem 0 0; }
-  .svc-row { padding: .8rem 0; border-top: 1px solid var(--line); }
-  .svc-row dt {
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .svc-row dd { margin: .3rem 0 0; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
-
-  .gate-note {
-    margin-top: clamp(1.8rem, 3vw, 2.4rem);
-    padding: 1.05rem 1.25rem;
-    /* Neutral here, unlike the same note on /start. The system palette
-       (--signal) is scoped to /start, the client portal and system surfaces —
-       /pricing is a marketing surface, so the note earns its emphasis from the
-       rule and the bold lead rather than from hue. It would also fail contrast
-       against ink on this dark ground. */
-    border: 1px solid var(--line-strong);
-    font-size: .95rem;
-    line-height: 1.55;
-    max-width: 78ch;
-    color: var(--ink-2);
-  }
-  .gate-note strong { color: var(--ink); font-weight: 700; }
-
-  /* ── DE VERWIJZING NAAR /plans ────────────────────────────────────────────
-     Wat er van de plankaarten over is: één blok met een kop, een zin en een
-     knop. Zelfde vorm als de andere blokken die op deze site "op de pagina
-     liggen" — lichtlijn bovenlangs, zachte val eronder. De kaart-CSS is
-     meeverhuisd naar PlansPage.astro. */
-  .to-plans {
-    padding: clamp(1.4rem, 2.6vw, 2rem);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 34px -26px rgb(0 0 0 / 0.5);
-  }
-  .to-plans-h { margin: 0; font-size: var(--t-h3); }
-  .to-plans-b { margin: .5rem 0 1.2rem; font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: 62ch; }
-
-  /* ── Test sample ─────────────────────────────────────────────────────── */
-  .sample {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(1.6rem, 4vw, 3.5rem);
-    align-items: center;
-    border: 1px solid var(--line-strong);
-    padding: clamp(1.6rem, 3vw, 2.6rem);
-  }
-  .sample-body { margin-top: .9rem; color: var(--ink-3); max-width: 46ch; line-height: 1.65; }
-
-  /* ── FAQ ─────────────────────────────────────────────────────────────────
-     .acc-item carries only a bottom rule, so without a rule here the first
-     question has no line above it and the list reads as unclosed at the top. */
-  .acc { border-top: 1px solid var(--line); margin-top: clamp(1rem, 2vw, 1.6rem); }
-  .acc-item { box-shadow: inset 0 -1px 0 var(--line); }
-  .acc-q {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.35rem 0;
-    text-align: left;
-    font-family: var(--font-body);
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--ink);
-    cursor: pointer;
-    list-style: none;
-  }
-  .acc-q::-webkit-details-marker { display: none; }
-  .acc-q::marker { content: ''; }
-  .acc-icon {
-    flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
-    border: 1px solid var(--line-strong);
-    /* Without this the glyph inherits .acc-q's var(--ink) and the plus reads
-       full-black here while the identical accordion on /faq draws it muted.
-       Same component, same page system — it must not differ by page. */
-    color: var(--ink-3);
-    display: grid;
-    place-items: center;
-    transition: transform var(--dur-2) var(--ease), background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
-  }
-  .acc-item[open] .acc-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
-  .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }
-
-  /* ── Responsive ──────────────────────────────────────────────────────── */
-  @media (max-width: 1040px) {
-    /* Three plan columns give up first — before the two-column blocks below,
-       because they run out of room first. */
-    .plans-3 { grid-template-columns: 1fr; }
-    .plans-3 .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
-    .plans-3 .pack-line { min-height: 0; }
-  }
   @media (max-width: 900px) {
-    .packs { grid-template-columns: 1fr; }
-    .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
-    .pack-line { min-height: 0; }
-    .addon { grid-template-columns: 1fr; }
-    /* Stacked, the price is no longer opposite anything, so right-aligning it
-       would leave it floating against an edge with nothing across from it. */
-    .addon-price { justify-content: flex-start; }
-    .addon-price .ap-vat { text-align: left; }
-    .standing { grid-template-columns: 1fr; }
-    .standing-inc { border-left: 0; border-top: 1px solid var(--line-strong); }
-    .sample { grid-template-columns: 1fr; }
+    .pr-som { grid-template-columns: 1fr; }
+    .pr-twee, .pr-proef { grid-template-columns: 1fr; }
+    .pr-regel { grid-template-columns: 1fr; gap: .5rem; }
+    .pr-soort-sub { display: none; }
   }
-  @media (max-width: 560px) {
-    .pack-top { flex-direction: column; align-items: flex-start; gap: .6rem; }
-    /* The table keeps its shape and scrolls sideways instead of reflowing —
-       see .ladder-wrap. What gives way is the column descriptions, which are
-       explanation rather than data, and the padding. */
-    .ladder th, .ladder td { padding: .75rem .8rem; }
-    .lad-kind-sub { display: none; }
-    .ladder-scroll { position: relative; }
-    .ladder-scroll::after {
-      content: ''; position: absolute; top: 0; right: 0; bottom: 2.2rem; width: 3.5rem; pointer-events: none;
-      border-radius: 0 var(--r-md) var(--r-md) 0;
-      background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--bg-0) 92%, transparent));
-    }
-    .ladder thead th:first-child, .ladder tbody th { position: sticky; left: 0; z-index: 1; background: var(--bg-0); }
-    .ladder-scroll .ladder-hint { display: block; }
-  }
-  .ladder-hint { display: none; margin: .6rem 0 0; font-size: .82rem; color: var(--ink-3); }
 </style>

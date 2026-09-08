@@ -1,0 +1,124 @@
+---
+/**
+ * /account — het overzicht van Studio, als Astro-pagina. 5 september 2026.
+ *
+ * De eerste sectie die uit src/lib/account.js verhuist. De gegevens komen nog
+ * steeds daarvandaan: studioSection() doet de paginalimiet, de sessie, de
+ * cookie-omleidingen en de zes queries; overviewView() bepaalt wat er op het
+ * overzicht staat (tellers, uitgelichte bestelling, strook, activiteit). Hier
+ * staat alleen de vorm — in de schil van de site, zie StudioLayout.astro.
+ *
+ * Vier blokken, in deze volgorde en met deze reden:
+ *   1 · de vier tellers — elk een link naar dezelfde statusfilter op Bestellingen;
+ *   2 · de nieuwste LOPENDE bestelling met haar tijdlijn, en de andere lopende
+ *       eronder als compacte rij (was een <details>-klapje);
+ *   3 · de laatst geleverde beelden — kijken, niet downloaden: downloaden hoort
+ *       bij de bestelling, waar de context staat;
+ *   4 · de vijf recentste bestellingen.
+ */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import Bestelkaart from '../../components/studio/Bestelkaart.astro';
+import Pil from '../../components/studio/Pil.astro';
+import { pagesContext } from '../../lib/route.js';
+import { studioScreen, progressView, STUDIO_ICONS } from '../../lib/account.js';
+import { serviceLabel } from '../../data/services.js';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'overview');
+if (s instanceof Response) return s;
+
+const { st, v } = s;
+const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht } = st;
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="overview" customer={customer}
+  title={t.navOverview}
+  kop={`${t.ovWelcome}, ${v.name}`} lede={t.ovLede} chip={v.chip}
+  actie={{ href: '/start/', label: t.ovNewCta }}
+>
+  <section class="st-blok" aria-label={t.navOverview}>
+    <div class="st-kaart-vlak st-cijfers">
+      {v.stats.map(([icon, label, n, status]) => {
+        const href = n ? `/account/orders${status ? `?status=${encodeURIComponent(status)}` : ''}` : '';
+        const inner = (
+          <Fragment>
+            <Fragment set:html={icon} />
+            <span class="st-cijfer-label">{label}</span>
+            <span class={`st-cijfer-n${n ? '' : ' is-nul'}`}>{n}</span>
+          </Fragment>
+        );
+        return href ? <a class="st-cijfer" href={href}>{inner}</a> : <div class="st-cijfer">{inner}</div>;
+      })}
+    </div>
+  </section>
+
+  {v.featured && (
+    <section class="st-blok">
+      <div class="st-blok-kop"><h2>{t.ovNowTitle}</h2></div>
+      <Bestelkaart t={t} lang={lang} order={v.featured} events={eventsByOrder.get(v.featured.id) || []} />
+      {v.rest.length > 0 && (
+        <div class="st-kaart-vlak">
+          <ul class="st-lopend" aria-label={t.ovOthers(v.rest.length)}>
+            {v.rest.slice(0, 6).map((o) => {
+              const p = progressView(t, lang, o, eventsByOrder.get(o.id) || []);
+              return (
+                <li>
+                  <span class="st-ref">{o.ref}</span>
+                  <Pil status={o.status} lang={lang} />
+                  <span class="st-meta">{serviceLabel(o.service, lang) || o.service} · {p.now}{p.when}</span>
+                  <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
+                </li>
+              );
+            })}
+          </ul>
+          {v.rest.length > 6 && <p class="st-meta st-meer"><a class="st-link" href="/account/orders">{t.ovViewAll}</a></p>}
+        </div>
+      )}
+    </section>
+  )}
+
+  <section class="st-blok">
+    <div class="st-blok-kop">
+      <h2>{t.ovLatest}</h2>
+      {orders.length > 0 && <a class="st-link" href="/account/orders">{t.ovViewAll}</a>}
+    </div>
+    {v.latest.length > 0 ? (
+      <ul class="st-strook">
+        {v.latest.map(({ f, o }) => (
+          <li>
+            <a href={`/account/orders?order=${o.id}#order-${o.id}`} title={o.ref}>
+              <img src={`/account/files/${f.id}/f`} alt={o.ref} loading="lazy" decoding="async">
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="st-leeg">{t.ovLatestEmpty}</p>
+    )}
+  </section>
+
+  <section class="st-blok">
+    <div class="st-blok-kop">
+      <h2>{t.ovRecent}</h2>
+      {orders.length > 0 && <a class="st-link" href="/account/orders">{t.ovViewAll}</a>}
+    </div>
+    {v.recent.length > 0 ? (
+      <div class="st-kaart-vlak">
+        <ul class="st-activiteit">
+          {v.recent.map((o) => (
+            <li>
+              <a href={`/account/orders?order=${o.id}#order-${o.id}`}>
+                <span class="st-ref">{o.ref}</span>
+                <span class="st-meta">{serviceLabel(o.service, lang) || o.service}{o.created_at ? ` · ${String(o.created_at).slice(0, 10)}` : ''}</span>
+              </a>
+              <Pil status={o.status} lang={lang} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : (
+      <p class="st-leeg">{t.emptyOrders}</p>
+    )}
+  </section>
+</StudioLayout>

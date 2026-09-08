@@ -1896,10 +1896,485 @@ zonder schuifvergelijkingen en met het model als één regel (−1.700 px);
 /pricing-tabel op mobiel met vaste eerste kolom, vervaagde rand en hint;
 /how-it-works strakker; alt-teksten op /start en /how-it-works.
 
+## 5 september 2026 — één Worker, Studio in Astro, en de site opnieuw in Komma's taal
+
+### Fase 1 — de site en de serverkant in één Cloudflare Worker (`9071cb0`)
+
+`@astrojs/cloudflare`, `output: 'static'` met de API-routes als Astro-endpoints
+in `src/pages/{api,account,admin,o}/`; de oude `functions/*` blijven staan tot
+de domeinwissel. Door Lucas zelf gedeployed op de workers.dev-URL; inloggen,
+/admin en een proefbestelling werkten daar. `DEPLOY.md` en `WORKER.md`
+beschrijven de rest (secrets, webhooks, de domeinwissel als laatste stap).
+
+### Studio in Astro, stap 1 (`b6f8aa4`)
+
+`StudioLayout.astro` (schil: zijbalk, bovenbalk, thema, taal, inklappen — alles
+cookies, geen JavaScript), het inloggen (`Inlogkaart.astro`) en het overzicht
+(`src/pages/account/index.astro` met `Bestelkaart`, `Voortgang`, `Betaling`,
+`Pil`). De rest van Studio (bestellingen, beoordelen, vaste look, facturen,
+brand kit) draait nog op `src/lib/account.js` — dat is fase 2. Daarna /admin.
+
+### Sectie 20 en 21 — licht, strak, Komma's geel (`96b5b51` → `121c2b8`)
+
+Lucas: het donkere schema voelde onprofessioneel; referentie ovyonlabs.com/
+works/komma (het geel behouden, gemeten ≈ #DEDA14; later op zijn verzoek een
+stuk giftiger: #C8F206), Lue (gesplitst, mono, haarlijnen),
+ecwora (schetsblad). Eerst het palet en Hanken + Space Mono (sectie 20), dan
+"strak" (sectie 21, twee rondes op één dag):
+
+- **De voorpagina** is `Voorpagina.astro` (HomeV2, 5.150 regels, weg): één
+  banner over het hele scherm, dan panelen — wat we maken (vier diensten met
+  prijs), van→naar met aantekeningen op het beeld, de set van zeven, vier
+  stappen op inkt, de staffel in een kader met pastekens, de abonnementen als
+  tabel, de twee beloften, de gezichten, de poster met snijtekens. Kopregels
+  `VISUAILS® · <sectie>` met het motief (drie omtrekken van het teken) in
+  plaats van paneelnummers.
+- **Kleuren gemeten van zijn schermafdruk**: #F5F5F5 grond, #111111 donker
+  (#212121 was fout), #DEDA14 accent — op 5 september 's avonds naar #C8F206,
+  "een stuk meer toxic groen/gelig"; site weer breder (1760, `--pad-x` tot
+  96px) voor lucht. Het accentwoord is een geel VLAK op kaphoogte achter zwarte
+  letters — nooit gele of cursieve letters.
+- **Letters** (twee keuzerondes, `kladblok/font-keuze*.html`): Hubot Sans
+  (koppen 110% breed, merk 125%), Satoshi (lopende tekst, zelf gehost — Lucas
+  plaatst de woff2's), Sometype Mono (labels). Studio, portaal en /admin krijgen
+  ze via `scripts/fonts-voor-worker.mjs` (→ `/fonts/gedeeld.css`).
+- **Knoppen weer pil**, glas (`.glas`) als materiaal voor de bannerfeiten, de
+  HUD-chips en de **proefkaart** (`Proefkaart.astro`, vervangt de conversiebalk:
+  na 60% scrollen, na de cookiekeuze, zeven dagen stil na sluiten).
+- **Harde randen**: de lamp-laag van augustus (maskers, `.foto-licht`, korrel,
+  vignet, sfeerbeelden brand-beam/brand-glow) staat uit of is weg; /studio is
+  een inktvlak. Hoektekens (twee, geen vier) om slotvlakken en foto's.
+- **Het logo**: het V-teken met het losse blad is definitief weg (favicons,
+  markglyph, `logo-mark.*`, `mark-contour-lime.png`); het vierkante teken met
+  de vlag blijft. Het logopakket in `images/Logo/visuails-logo` is per pixel
+  herkleurd (#C6F100 → #DEDA14, #08090B → #111111), geen nieuwe logo's — met
+  het geel op #C8F206 moet dat pakket nog één keer mee.
+- **Alle foto's zijn plaatshouders** (`src/data/beeld.js`,
+  `scripts/plaatshouders.mjs`, ook voor beelden die nog niet bestaan; `donker`
+  variant onder een sluier) tot Lucas de nieuwe foto's maakt — de kleuren van
+  de oude klopten niet meer.
+- **Studio (/account, oud en nieuw), portaal (/o), /admin en de mails** in
+  hetzelfde palet: licht als beginstand, donker (#111111) als keuze in Studio;
+  `mailTemplate.js` en het mailteken in het geel; `account.css`/`portal.css`/
+  `admin.css` op de site-tokens, Hubot Sans voor de koppen.
+- **Opgeruimd**: HuidKantig van 1026 naar 611 regels (alleen rechte hoeken,
+  naad-haarlijn, menubrug, WhatsApp-pil, aanwijzer), de conversiebalk uit
+  Layout/interactions/CookieConsent, `shader-hero.js`, `carrousel.test.mjs`,
+  HomeV2. Tests aangepast (vergelijker, paginalicht, homerail, nav, zachte
+  navigatie, huid, promises, woorden, testimonials, uploadbelofte, ontwerpdoc);
+  DESIGN.md sectie 21 herschreven.
+
+### Studio fase 2, eerste helft (avond)
+
+Bestellingen, Facturen en Je gegevens zijn Astro-pagina's op `StudioLayout`
+(`src/pages/account/{orders,invoices,details}.astro`, componenten
+`Bestelling`, `Product`, `Beeld`, `Veld` in `src/components/studio/`). Zelfde
+afspraak als het overzicht: `account.js` levert de staat (`ordersView`,
+`orderView`, `productView`, `shotView`, `invoicesView`, `detailsView`), de
+pagina alleen de vorm; goedkeuren, aanmerken, de revisieronde, betalen en
+opslaan posten naar dezelfde routes als voorheen (`accountPost`). De
+tevredenheidsvraag en het revisiebeleid komen als HTML mee (feedback.js).
+Schermafdrukken: `kladblok/studio-proef.mjs` (nu ook bestellingen, facturen,
+gegevens; licht is de beginstand, donker de cookie).
+
+### Studio fase 2, tweede helft (later die avond)
+
+Je vaste look (`brand-kit.astro` + `VasteLook.astro`, staat uit
+`brandKitView`) en Abonnement & facturering (`plan.astro` + `Slotmeter.astro`,
+staat uit `planView`: de vijf tabben, slotmeters, je week, de maandset, de
+lijst met vastzetten/verplaatsen/verwijderen, de agenda per item, edities, je
+look, opgebouwd, beheer met pauzeren en opzeggen). Daarmee staat heel Studio
+op `StudioLayout`; `account.js` rendert alleen nog de routes zonder scherm
+(bestanden, zip, pdf, e-mailbevestiging, /account/plan/return) en de
+POST-handlers. Kleuren als `<svg><rect fill>` — inline `style` mag niet van de
+CSP. Rae's roostertegel gaf een 404 (`model-rae-w800` bestaat niet): thumb wijst
+nu naar haar eigen 800×1071. `studio-proef.mjs` zet nu ook een abonnement met
+twee lijstitems neer en fotografeert drie tabben.
+
+### Studio visueler — het abonnement (6 september)
+
+Lucas: "bij abonnementen is alles tekst en zwaar om doorheen te lezen". Het
+abonnement laat nu zien in plaats van vertellen. De slots zijn een rij van
+twaalf kaders (`.st-frames`): gemaakt = de echte thumbnail van de laatst
+geleverde beelden, vastgezet = het kader met een slotje, vrij = een open kader
+met plus; legenda eronder. Onder "Jouw week" een strook van vier weken
+(`.st-weekstrip`): de vensterdag geel, vandaag omlijnd. De look-tab is per
+dienst een beeldregel (`VasteLookRij.astro`: gezicht · ondergrond · look ·
+formaat als vier vlakjes met mono-label), geen opsomming meer. Elk item op de
+lijst krijgt een kader (`.st-q-frame`). Zonder abonnement: drie uitlegblokken
+(slots, week, look) met dezelfde beeldtaal als voorbeeld, in plaats van alleen
+de tekst. Alle plaatshouders zijn inline svg (`Plaatshouder.astro`, zelfde taal
+als `scripts/plaatshouders.mjs`: vlak, haarlijn, het teken op 12%, "FOTO
+VOLGT"), want de CSP staat geen inline style toe en er komen straks echte foto's
+op die plek. `planView()` levert daarvoor `frames` per slot, `weekstrip` en
+`venster`; nieuwe COPY-sleutels `planVis*` in beide talen. `studio-proef.mjs`
+zet er een tweede klant zonder abonnement bij (NOORD, Engels) en schiet
+`abonnement-look` en `abonnement-leeg`.
+
+### `account.js` opgeschoond, en Studio getoetst zoals de klant het ziet (6 september)
+
+De HTML-bouwers zijn weg: `sectionGet`, `overviewBody` t/m `planBody`,
+`orderCard`, `lockSection`, `shellBody`, `topBar`, `slotRegels`,
+`kalenderKaart`, `swatch`, `ratioShape`, `productCard`, `shotTile`,
+`progressBlock` en wat er alleen voor bestond — 2.700 regels, van 11.000 naar
+8.250. `/account/plan/return` was de laatste route die nog uit account.js
+kwam; dat is nu `src/pages/account/plan/return.astro` (`planReturnView`).
+Wat er nog HTML tekent in account.js is wat geen scherm op de schil is: de
+inlog/code/dode-link-pagina's (`authPage`), de e-mailbevestiging, de
+nakijkstap van de revisieronde en de foutpagina's.
+
+**`studioScreen(context, sectie)`** is de ene functie die de pagina én de test
+aanroepen: de gedeelde laadstap, de `*View()` van de sectie, de extra's van die
+ene pagina (feedback per bestelling, de look-staat op de abonnementstab). De
+zes pagina's zijn erop gezet, en de zeven tests die de oude HTML lazen
+(account-brand-kit, account-invoices, revisieronde, eigen-stijl, maandset,
+plan-leeg, slot-inplannen, subscription, email-change) toetsen nu de staat die
+de pagina krijgt — niet een bouwer die niemand meer serveerde.
+
+**Nieuw: `tests/studio-vorm.test.mjs`** (132 controles, ~5 s, in `npm test`
+achter `test:account`). De gebouwde Worker draait IN HET TESTPROCES op een
+verse, gevulde D1 en R2 — `tests/lib/studio-worker.mjs`, via de JS-API van
+wrangler (`getPlatformProxy` om te vullen, `unstable_startWorker` om te
+draaien; let op: de Worker legt zijn staat onder `<map>/v3`). Geen
+`spawn('npx')`, dus ook op Windows. Elke pagina wordt opgehaald met de
+sessiecookie en nagekeken zoals een browser hem ziet: één h1, geen inline
+style, geen script, de CSP-koppen, de bestellingen op hun kaart, de chips, de
+slots als kaders, de weekstrook, de look als beeldregel, de edities uit
+AMOUNT, de lege stand voor NOORD, de deuren (?lang=, ?nav=, ?thema=, zonder
+sessie, 404, /plan/return). De nepdata staat in `tests/lib/studio-seed.mjs`
+en is dezelfde als die van `kladblok/studio-proef.mjs` (`npm run
+account:render`), die nu ook op die opstelling draait; `scripts/account-render.mjs`
+is weg.
+
+**`scripts/dash-leesbaar.mjs`** meet weer — op de echte Worker, met de echte
+CSP — en vond meteen twee dingen die op de afdrukken niet opvielen: (1) tekst
+op `--ink-4` (42% inkt, 2,8:1) in dagnummers, stappen, mono-labels, "Concept",
+hexwaarden → allemaal naar `--ink-3` (5,3:1), dagnummers op de grijze grond
+naar `--ink-2`; (2) op het donkere scherm was elke knop-als-link geel op geel
+(1,2:1): `body.studio a { color: inherit }` won van `.btn-primary` →
+`a:not(.btn)`. Beide thema's zijn nu schoon. Eén keer zag de veeg een losse
+500 op een beeld onder /account/plan die daarna in drie herhalingen niet
+terugkwam — een opstartkriebel van workerd, geen fout in de pagina; de veeg
+noemt nu de URL als het nog eens gebeurt.
+
+### Drie voorpagina's om uit te kiezen — /concept (6 september, tweede ronde)
+
+De eerste ronde (vijf richtingen op een ontwerpcanvas, `kladblok/concepten/`)
+was niet mooi genoeg: *"Ik wil echt een gehele nieuwe look niet wat er nu
+staat."* Dus nu drie **echte Astro-pagina's**, elk met alle tien secties en
+elk getal uit pricing.js, en niets van Layout.astro of global.css erin:
+
+- `/concept/` — de index met de drie, de zes bronnen en wat vaststaat;
+- `/concept/stilte` (A) — het beeld zweeft in wit, hoeknavigatie, coördinaten
+  rond het herobeeld, het geel één keer als vlak (Kononenko, Heliot Emil);
+- `/concept/verschuiving` (B) — de grond verschuift mee per paneel (licht →
+  inkt → grijs → geel → inkt), één uitspraak in kapitalen, een fotoveld, de
+  tarieven op een geel vlak (landonorris.com, Site of the Year 2025);
+- `/concept/adem` (C) — beeld, wit, beeld, wit: schermvullende foto's als
+  gordijn met een rail die meetelt (floema.com, Site of the Month mei 2026);
+- `/concept/vitrine` (D) — de pagina als tentoonstelling, naar de sfeer van
+  Gentle Monster (zie hieronder);
+- `/concept/signaal` (E) — diezelfde sfeer op een instrument: zichtbaar raster,
+  echte data als grafiek, één zwarte kamer (zie hieronder).
+
+Hoe het in elkaar zit: `src/layouts/ConceptLayout.astro` (fonts, de twee
+merksymbolen bij de build uit Layout.astro gelezen — niet overgetypt — en de
+kleurfamilie uit KLEURENSCHEMA.md), `src/data/conceptInhoud.js` (de tekst van
+Voorpagina.astro, één keer, voor alle drie), de negen sfeerbeelden met het
+groene licht uit `images/Website Banners - Unspecified` als
+`public/img/concept/sfeer-01..09.webp` (plaatshouders tot je eigen beelden er
+zijn). `noindex`, dus buiten de sitemap en llms.txt. Schermafbeeldingen:
+`node kladblok/concept-schermen.mjs` (bij een draaiende `astro dev --port
+4331`), in `kladblok/concepten/schermen/`.
+
+#### D · Vitrine — de tweede ronde, dezelfde dag
+
+Lucas over A, B en C: *"ik wil het meer minimalistic en artistic hebben, dit
+voelt zo standaard … Ik vind de style van Gentle Monster heel mooi … Maak een
+Gentle Monster inspired design … Veel wit ruimte en veel afbeeldingen gebruiken
+voor sfeer en uitleg."* Dus `/concept/vitrine`: de pagina als tentoonstelling,
+tien zalen. Wat er is nagemeten en overgenomen:
+
+- **gentlemonster.com** — de grond is rgb(243,244,246), wit met een koele slag
+  (staat als `grond="zaal"` in ConceptLayout); woordmerk klein en gecentreerd;
+  één onderstreepte link per sectie in plaats van knoppen; de prijs even groot
+  als de productnaam.
+- **aircenter.space** — één object dat zweeft in een leeg wit veld, kleine
+  kapitalen die middenin het niets een claim doen.
+- **ceciliebahnsen.com** — schermbrede foto, enorme witte stilte, dan een rij
+  beelden zonder één bijschrift.
+
+De drie regels van die pagina: een foto raakt de rand niet (één keer wel, het
+sluitstuk vlak voor de gele zaal); kleur zit in de foto's en niet in de UI (het
+groene licht doet het werk, het geel komt één keer voluit als wand); en **nadruk
+is breedte, geen kleur** — het accentwoord staat in Hubot Sans op 125% tussen
+letters van 78%, dus op deze pagina géén gele markering achter een woord.
+
+#### E · Signaal — hyper-futuristisch × Gentle Monster
+
+Lucas daarna: *"zoek hyper futuristische winnende website designs en haal daar
+inspiratie vandaan gecombineerd met Gentle Monster inspired vibe."* Nagemeten:
+**monolayer.dev** (een zichtbaar raster van verticale haarlijnen waar de labels
+aan hangen; grafieken van niets dan zwarte balken; koppen in kleine letter van
+rand tot rand), **igloo.inc** (de laadstand ís het ontwerp), **kriss.ai** (een
+reusachtige teller in de hoek) en **y-vision.co.kr** (een harde knip van zwart
+naar wit). Daar bovenop de grond, het kleine woordmerk en de onderstreepte
+regels van Gentle Monster.
+
+Twee regels die deze pagina eerlijk houden:
+
+1. **Elke grafiek is echte data uit pricing.js.** De balken bij de diensten zijn
+   het aantal beelden (4 / 3 / 1 / 1), de balken bij de tarieven zijn het
+   complete tarief per trede gedeeld door de eerste trede. Er staat geen enkele
+   versierde meter op de pagina; verandert een getal in pricing.js, dan
+   verandert de grafiek mee.
+2. **Het geel is een signaallijn, geen markeerstift.** Onder het accentwoord in
+   plaats van erachter. Alleen in de zwarte kamer is het geel een letter — daar
+   haalt `#E4F474` 16,5:1, op wit zou het 1,5:1 zijn.
+
+#### F, G en H — de ronde «groots»
+
+Lucas: *"maak meerdere verschillende soorten homepages die flink van elkaar
+verschillen door meerdere niche winning website designs op te zoeken … Ik wil de
+website groots laten voelen."* Drie manieren om groot te voelen die onderling
+niets met elkaar te maken hebben:
+
+- **F · Kolos** (`/concept/kolos`) — grootsheid uit **schaal**. Het woordmerk
+  loopt aan beide kanten van het scherm af; daaronder is alles 11px mono. Er
+  zitten maar twee maten op de pagina en dat gat ís het gebouw. Elke sectie
+  opent met één woord over de volle breedte. Naar aim.obys.agency (letters als
+  vlakken over de hele bovenkant, één haarlijn, piepkleine gegevens ernaast) en
+  bennettandclive.com (de naam vult het scherm, afgesneden, verder niets).
+- **G · Gang** (`/concept/gang`) — grootsheid uit **ruimte**. De pagina loopt
+  opzij: tien zalen achter elkaar, elk een heel scherm hoog, met een rail
+  onderin. Verticaal scrollen wordt zijwaarts bewegen; zonder JavaScript blijft
+  het een gewone horizontale scrollbalk en op een telefoon een verticale
+  stapel. Naar floema.com (rail + teller) en siena.film (de site als plek).
+- **H · Salon** (`/concept/salon`) — grootsheid uit **aantal**. Eén doorlopende
+  wand van beelden van rand tot rand zonder ruimte ertussen, met de tekst
+  ertussen als vlak van dezelfde maat (wit, inkt of geel — de drie gronden uit
+  KLEURENSCHEMA.md). De salonhang uit een negentiende-eeuws museum: je ziet in
+  één oogopslag hoeveel er staat, en dat is precies de belofte.
+
+#### I · Zweef — de ronde uit je twee video's
+
+Lucas, ná het besluit hieronder: *"Zou je toch nog een website design kunnen
+creëren met mijn bestaande kleurenschema met de 2 videos als inspiratie."* Twee
+schermopnames, allebei van Zeyox Studio, en elkaars tegenpool:
+
+- **«WISE»** (digital fashion) — bijna zwarte grond met de kop er in dezelfde
+  bijna-zwarte toon schermvullend overheen, een raster van haarlijnen, het
+  product dat over die letters heen hangt op één dunne lichte lijn, en filters
+  als pillen. Hun lime is op een haar na de onze: gemeten ≈ #D9F24E tegen ons
+  #D2E04A. Daarom past dit concept in de familie zonder één nieuwe kleur.
+- **«VEXO»** (workout wear) — de pagina als zwevend paneel met een flinke
+  ronding en een rand ondergrond eromheen, reusachtige spookwoorden die
+  erachter langs schuiven, beeldkaarten met een pil onderin (naam, prijs, rond
+  pijltje) en één donkere posterkaart midden in een licht veld.
+
+**De opening is de VEXO-hero zelf.** Lucas, terwijl dit gebouwd werd: *"Deze
+graag gebruiken als homepage begin sectie. Ik wil een beetje dezelfde animatie
+die ze ook gebruiken maar dan wellicht iets subtieler … Gebruik veel white space
+en vul de beelden goed. Ook graag wat infographics opmaak zoals de komma pagina
+van ovyon labs subtiel toepassen."* De opbouw is één op één overgenomen — witte
+balk met een tab in het midden, kop gecentreerd met één accentwoord, twee
+pillen, het model dat over de onderrand heen loopt, links drie gezichten met één
+zin, rechts een donkere clipkaart — maar in onze kleuren. De animatie is
+teruggebracht: in de video vallen de balken van het beeld los in en vervormt de
+kop daarna letter voor letter; hier schuiven zeven banden (het aantal beelden
+van één set) met 70 ms verschil veertien pixels op hun plaats en komt de kop per
+regel op. Binnen één seconde staat alles stil, en bij `prefers-reduced-motion`
+staat het meteen goed. De Komma-opmaak zit in de maatlijn onder de hero: een
+haarlijn, een streepje per waarde, het nummer erboven.
+
+**`/concept/zweef`** legt de rest over elkaar: het document zelf is inkt (WISE) en de
+lichte panelen zweven erop (VEXO), om en om, met in elk donker deel een
+spookwoord. Geen nieuwe kleur — #111111, #F5F5F5, #D2E04A voor de ronde
+pijltjes en de laatste zaal, #E4F474 als letter en alleen op inkt. De pillenrij
+bij «wat we maken» is echt: vier radioknoppen, nul regels JavaScript.
+
+- [ ] 🟡 **Kies**: houden we de huidige voorpagina, of wordt dit hem — of stukken
+  eruit (de zwarte kamers met spookletters, de zwevende panelen, de kaarten met
+  de pil)?
+
+#### De voorpagina staat in de nieuwe stijl — 7 september 2026
+
+Lucas: *"Ik wil dat je deze website gaat bouwen met deze style, begin met de
+homepagina."* `src/components/Voorpagina.astro` is omgebouwd: het document is
+inkt, de lichte secties liggen erop als panelen met een ronding, en elke
+overgang licht → donker is een hoofdstukwissel met een spookwoord. De inhoud is
+níet veranderd — dezelfde tien secties, dezelfde COPY, alle getallen nog steeds
+uit pricing.js.
+
+- De opening is de VEXO-hero met jouw eigen foto, vrijstaand gemaakt, en de
+  animatie van zeven banden.
+- De letters zijn nieuw: Anybody (koppen), Instrument Sans (tekst), Martian Mono
+  (labels) — zie de noot bovenin het bestand. Ze worden alléén op de voorpagina
+  geladen.
+- De beelden in de andere secties zijn voorlopig de sfeerbeelden met het groene
+  licht; de echte `voorpagina-*` foto's kunnen er zo overheen.
+- `tests/homerail.test.mjs` wijst nu naar `.kaarten`, `.rij` en `.cast` in
+  plaats van `.vp-strook` en `.vp-rooster`. Zelfde eis, nieuwe namen.
+
+**De letters staan nu sitebreed** (7 september). De tokens in global.css wijzen
+naar de drie nieuwe families, dus elke pagina — ook /studio — spreekt dezelfde
+taal: Anybody voor de koppen (`--stretch-kop` van 110% naar 118%), Instrument
+Sans voor de tekst, Martian Mono voor de labels op 82% breedte. Hubot Sans en
+Sometype Mono zijn eruit, ook uit `scripts/fonts-voor-worker.mjs`, en de twee
+preloads wijzen naar de nieuwe bestanden.
+
+- [ ] 🟢 **Satoshi is niet meer nodig.** `--font-body` wijst nu naar Instrument
+  Sans. De @font-face en de glob op `public/fonts/satoshi/` staan er nog en doen
+  niets zolang die bestanden er niet liggen; ze mogen weg zodra je zeker weet
+  dat je Satoshi niet meer wilt.
+- [x] ~~🟡 Op `/plans` was de kop van het limepaneel niet te lezen.~~
+  *(gerepareerd 7 september, nadat Lucas de schermafdruk stuurde: het paneel
+  staat nu in de `.on-ink`-lijst in global.css, dus `--ink` lost op naar de
+  lichte kant van de ladder. Het accentwoord is daar een letter en geen blok.
+  Zie de noot bij `.lime-panel-in`.)*
+- [ ] 🟡 **De site-header en -voet zijn nog de oude.** De balk met de menu's
+  staat op alle ~40 pagina's; de witte balk met de tab uit de video vervangt hem
+  pas als jij dat zegt.
+**De stijl staat nu in één bestand** (7 september): `src/styles/stijl22.css`.
+Hij zat in het `<style>`-blok van Voorpagina.astro; nu importeert een pagina hem
+en zet de inhoud in een `<div class="s22">`. Elke regel heeft `.s22` voor zich —
+dat is geen opsmuk maar noodzaak: global.css zet kleuren op h1, h2, a en td, en
+één klasse ervoor tilt de nieuwe stijl daaroverheen zonder `!important`.
+
+**`/models` is de tweede pagina in de stijl** en de eerste die het gedeelde
+bestand leest. Inhoud onaangeraakt: dezelfde COPY, dezelfde roster uit
+models.js, dezelfde links. Twee regels in stijl22.css zorgen dat een pagina die
+er helemaal in staat geen strook oude grond meer laat zien tussen het laatste
+paneel en de voettekst.
+
+**`/pricing` is de derde pagina in de stijl** (7 september). Dezelfde COPY,
+dezelfde staffel uit pricing.js, dezelfde uitgerekende voorbeelden, dezelfde
+losse regels, dezelfde PlanBand met `id="plans"` en dezelfde zwevende notitie
+bij het merkmodel. De tabel blijft een tabel en schuift op een telefoon in zijn
+eigen bak.
+
+Drie leesbaarheidsreparaties die de hele site raken, alle drie gemeten en niet
+gezien:
+
+- **Het gele blok achter een accentwoord zat op de maten van Hubot Sans**
+  (`0 .27em / 100% .9em`). Met Anybody erin zakte het onder de letters — op
+  `/plans` stond "for €1." met de bovenkant van de letters ernaast in inkt op
+  inkt. Anybody op 100px gemeten: lettervak 104, basislijn op 80, kaphoogte 68.
+  Het blok staat nu op `0 .05em / 100% .87em` en dekt de hele letter.
+- **`--ink-3` van `#6E6E6E` naar `#686868`.** Op wit haalde hij 5,3:1, maar op
+  `#EDEDED` — waar de kleine bijschriften staan — 4,36:1, nét onder de eis.
+- **De plaatshouderteksten** stonden in `--ink-4`, de lijnkleur (2,8:1). Dat is
+  nu `--ink-3`; `--ink-4` is voor lijnen, niet voor letters.
+
+**Het raster is veel zachter** (7 september). Lucas: *"Ik wil die infographics
+grid effecten veel minder en heel subtiel."* Het stond op .045 alpha met vakken
+van 70–120px — dat leest als ruitjespapier. Nu .018 met vakken van 130–200px, en
+het masker laat hem pas op 22% van de kamer beginnen en op 78% weer los. De
+spookletter ging van .055 naar .04. Zelfde waarden op de conceptpagina.
+
+**`/faq` is de vierde pagina in de stijl.** Dezelfde COPY, dezelfde groepen uit
+faq.js, dezelfde `<Disclose>` met zijn toetsenbord- en schermlezergedrag,
+dezelfde ankers.
+
+**De balk op de voorpagina is de tab uit de video** (7 september). Lucas:
+*"Pas de homepage aan naar wat hier staat maar gebruik geen tekst logo maar het
+V logo in bestanden en behoud de glitch hover animatie die er nu op staat."* De
+header van Layout.astro houdt precies dezelfde drie kinderen — merk, menu's,
+acties — en wisselt alleen van plek: menu's links, acties rechts, en het merk
+absoluut in het midden in een tab die onder de balk uit hangt, met holle
+schouders. Het is dus nog steeds `<BrandMark>` met zijn glitch bij hover, en elk
+menu blijft werken. Alleen op de voorpagina (`body:has(.s22.thuis)`) en alleen
+vanaf 761px; op een telefoon blijft de balk zoals hij is.
+
+De tab eronder is er weer af — Lucas: *"Dat stuk onder het logo dat uitsteekt
+van de topbar mag gewoon weg. Overbodig."* Het merk staat nu gewoon gecentreerd
+in de balk.
+
+Drie dingen die daarbij zichtbaar werden en meteen gerepareerd zijn: de balk was
+op de nieuwe voorpagina doorzichtig en dus donker op donker (nu wit), de
+sprong-naar-de-inhoud stak 6px lime boven de balk uit zodra die een marge kreeg,
+en **de glitch op het V-teken had de verkeerde kleur**. Lucas vroeg daarnaar:
+`--mk-line-ink` stond op `--accent` zolang de balk niet meegescrold is en op wit
+daarna — allebei goed op een donkere hero, allebei fout op een witte balk (1,5:1
+en 1,0:1). Op de voorpagina is dat nu `--glow` (#9EB42F, 3,0:1), het groen dat
+KLEURENSCHEMA.md juist voor deze rol aanwijst. Alle andere animaties op de site
+zijn nagelopen: ze halen hun kleur uit tokens en lopen dus vanzelf mee.
+
+**`/about` is de vijfde pagina in de stijl** (7 september). Dezelfde zinnen,
+dezelfde getallen uit pricing.js, dezelfde fotostrook en dezelfde `<WhoItIsFor>`
+met zijn eigen copy. De drie regels waar we ons aan houden staan nu in de
+donkere kamer.
+
+**De eigen muisaanwijzer is eruit** (7 september). Lucas: *"Ik wil de muis hover
+animatie weg en subtieler hebben dan wat hij nu is. Ook de kleur vind ik niet
+mooi."* Er stonden twee pijlen op elkaar — één met `mix-blend-mode: difference`
+die de grond omkeerde, één vlakke in het accent die eroverheen kwam bij hover,
+plus een groei van anderhalf keer. Er komt geen zachtere versie voor in de
+plaats, en dat is een technische reden en geen luiheid: difference toont
+|grond − vulling|, dus om zowel op de bijna zwarte pagina licht te zijn als op
+een limeknop donker, moet de vulling ongeveer lime *zijn* — elke andere waarde
+geeft op de knop blauwviolet (gemeten: wit geeft rgb(45,31,181)). Met de kleur
+eruit valt de techniek weg. De bezoeker houdt nu de muisaanwijzer van zijn
+besturingssysteem; de knoppen doen hun hover zelf al.
+
+`tests/aanwijzer.test.mjs` is verwijderd en sectie 3 van `tests/huid.test.mjs`
+bewaakt nu het omgekeerde: er staat geen enkele `cursor: none` meer in het
+stijlblad. De rest van de huid — korrel, haarlijnen, naden, hoeken — is
+ongemoeid.
+
+**`/video` is de zesde pagina in de stijl**, en de eerste van de drie
+dienstpagina's. De vijf gedeelde componenten zijn niet herbouwd: ServiceSwitch,
+HeroFacts, StyleRows, TierCompare en Disclose houden hun opmaak, hun
+toetsenbordgedrag en hun aria, en volgen alleen in uiterlijk via een blok
+onderaan `stijl22.css`. Dat scheelt straks twee keer hetzelfde werk op /catalog
+en /lifestyle.
+
+- [ ] 🟢 **Nog te doen in de stijl:** /catalog en /lifestyle (die gebruiken nu
+  dezelfde componenten, dus dat is vooral opmaak), daarna /start (het
+  bestelformulier — eigen ronde, daar zit gedrag in), /custom-models,
+  /how-it-works, /contact, /gallery, /compare en de juridische pagina's.
+  /catalog, /lifestyle en /video delen vijf componenten: `Compare`,
+  `TierCompare`, `StyleRows`, `ServiceSwitch` en `HeroFacts`. Die één keer
+  omzetten opent alle drie de pagina's tegelijk; ze los per pagina doen betekent
+  drie keer hetzelfde werk. Daarna /start (het bestelformulier — die verdient
+  een eigen ronde, want daar zit gedrag in), /custom-models en /how-it-works.
+
+#### Gesloten — 6 september 2026
+
+Lucas na acht concepten: *"ik vind het toch niks en denk dat ik voor de huidige
+look ga, wel wil ik dit kleurenschema gebruiken."* Op de vraag wát er dan aan de
+kleuren moest veranderen: **"Alles klopt al."** De `#D2E04A`-familie uit
+KLEURENSCHEMA.md draait al sitebreed sinds f5f9108 — er verandert dus niets aan
+de live site. De conceptpagina's blijven staan ("laten staan"): ze staan op
+`noindex`, buiten de sitemap en buiten llms.txt, en kosten verder niets.
+
+- [x] ~~🟡 **Kies**: A t/m H~~ *(gevallen 6 september: de huidige voorpagina
+  blijft; de kleuren waren al goed)*
+- [ ] 🟢 Ooit, als je ze niet meer wilt bewaren: `src/pages/concept/`,
+  `src/layouts/ConceptLayout.astro`, `public/img/concept/` en de regel in
+  `tests/huid.test.mjs` weg; `conceptInhoud.js` gaat dan onder Voorpagina.astro
+  hangen. Geen haast — niets ervan raakt de publieke site.
+
 ### Wat er nog ligt
 
-- [x] De drie stappen op /catalog, /lifestyle en /video op één rij (−500 tot
-  −700 px per pagina).
+- [ ] 🟢 **Fase 3: /admin** naar Astro op dezelfde tokens (`admin.js`, 9.100
+  regels; `public/admin.css` staat al in de huisstijl).
+- [ ] 🔴 **Domeinwissel visuails.com → Worker** pas na fase 2/3: webhooks
+  (Mollie, Stripe, Resend) omzetten, resterende secrets op de Worker
+  (Stripe, SELLER_ADDRESS, VISUAILS_VAT/IBAN, RESEND_WEBHOOK_SECRET).
+- [ ] 🟢 `npm install` na het binnenhalen (Hubot Sans, Sometype Mono via npm;
+  Hanken, Space Mono, Manrope, DM Mono, Syncopate zijn weg).
+- [ ] 🟢 Satoshi: `Satoshi-Variable.woff2` en `Satoshi-VariableItalic.woff2` in
+  `public/fonts/satoshi/` (zie LEES-MIJ.txt daar).
+- [ ] 🟢 Op schijf wissen (staan niet meer in de repo): `functions/api/debug-
+  egress-ip.js`, `src/components/HomeV2.astro`, `tests/carrousel.test.mjs`,
+  `src/scripts/shader-hero.js`, `public/img/logo-mark.webp`, `logo-mark.avif`,
+  `mark-contour-lime.png`, `brand-beam.webp/.avif`, `brand-glow.webp/.avif`,
+  `scripts/account-render.mjs`.
+- [ ] 🟢 **De foto's**: `voorpagina-hero`, `-dienst-01..04`, `-ingestuurd`,
+  `-geleverd`, `-set-01..07`, `-poster` (maten in `src/data/beeld.js`); daarna
+  de aantekeningen op het van→naar-beeld nakijken (`.vp-noten` in
+  Voorpagina.astro, posities in procenten).
 - [ ] 🟢 Sociale bewijskracht op de homepage zodra de eerste klanten er zijn.
 - [ ] 🔴 **Vóór de eerste betaalde bestelling** — secrets `SELLER_ADDRESS`,
   `VISUAILS_VAT`, `VISUAILS_KVK`, `NOTIFY_EMAIL`, `FROM_EMAIL`, `PORTAL_SALT`
@@ -1911,173 +2386,15 @@ zonder schuifvergelijkingen en met het model als één regel (−1.700 px);
   — zonder sleutel slaat de nachtelijke taak de betaalherinnering over.
 - [ ] 🟡 In Resend een webhook aanmaken op `https://visuails.com/api/webhook/resend`
   met de events *email.bounced* en *email.complained*; het `whsec_…` als
-  Pages-secret `RESEND_WEBHOOK_SECRET` zetten. Zonder secret weigert de
-  webhook alles (503) en blijft /admin blind voor bounces.
+  secret `RESEND_WEBHOOK_SECRET` zetten. Zonder secret weigert de webhook
+  alles (503) en blijft /admin blind voor bounces.
 - [ ] 🟢 Maillink direct in Studio laten landen (één scherm i.p.v. portaal +
   Studio) — het lange voorstel uit §3.4; de korte (links blijven werken) is
   gedaan.
-- [ ] 🟢 "FOTO VOLGT" op de homepage — Lucas maakt de foto's morgen;
-  plaatshouders bewust laten staan.
 - [ ] 🟡 De eerste maandset uploaden en publiceren; daarna de drie labels
-  *Nog niet actief* bij de gedeelde set weg (`stockNowTag` in PlansPage.astro
-  en HomeV2.astro; `queueNote`/`belofte` in EditionsPage.astro).
+  *Nog niet actief* bij de gedeelde set weg (`stockNowTag` in PlansPage.astro;
+  `queueNote`/`belofte` in EditionsPage.astro).
 - [ ] 🟢 De vier voorbeeldfoto's voor stap 2 (`public/img/voorbeeld-front.webp`
-  enz. — de bestandsnaam is de shot-id uit shots.js); komen morgen.
+  enz. — de bestandsnaam is de shot-id uit shots.js).
 - [ ] 🟡 De testbestelling **VIS-NZDT-1I5** annuleren in het adminportaal.
 - [ ] 🟢 De vier `a.link-arrow` op /custom-models naar ≥ 28px.
-
----
-
-## 4 september 2026 — de tien modellen nagelopen op bruikbaarheid en herkomst
-
-Lucas: *"Voordat ik content ga maken voor mijn website wil ik mijn huidige
-modellen controleren op bruikbaarheid en of ze legaal te gebruiken zijn."* Twee
-vragen dus, en ze hebben elk een ander soort antwoord. **Bruikbaar** is te meten
-— maat, scherpte, of het bestand doet wat de pagina belooft. **Legaal** hangt aan
-herkomst, en herkomst zit in het bronbestand of nergens.
-
-### Alle tien hebben nu een master mét herkomst
-
-De negen bekende masters staan in `images\Models\VISUAILS Models\`, 1792x2400
-PNG, en dragen alle drie de sporen die ertoe doen: een C2PA-manifest,
-`photoshop:Credit → Made with Google AI` en
-`Iptc4xmpExt:DigitalSourceType → trainedAlgorithmicMedia`. Dat laatste is de
-IPTC-term voor "door een model gegenereerd" en het is precies wat de AI-Act-tekst
-op /ai-act beweert.
-
-Twee gaten zijn deze dag gedicht, allebei doordat Lucas het ontbrekende bestand
-aanleverde:
-
-- **Rae had geen master.** Alleen `model-rae.webp` van 800x1071 — de andere negen
-  zijn 1195x1600. Zonder groter bronbestand was ze het enige gezicht waarvan niet
-  te tonen viel waar het vandaan kwam, en het voorstel was haar uit de roster te
-  halen. Toen de master alsnog opdook (1792x2400, dezelfde herkomstsporen) is dat
-  besluit teruggedraaid. Vastgelegd omdat het een besluit was dat bijna anders
-  uitviel: er is een verschil tussen *bewijs dat iets fout is* en *het ontbreken
-  van bewijs dat het goed is*, en hier was het het tweede.
-- **Fabi's herkomst was gestript.** Zijn master lag als JPEG; JPEG-export gooit
-  XMP en C2PA weg. Er is nu een `Fabi.png` met dezelfde sporen als de rest.
-
-Het gezicht op `model-03.webp` is Rae — dezelfde foto, kleiner. Dat is nagemeten
-op grijswaarden (afstand 1,6–2,6 op twee resoluties, waar een ander gezicht 34 en
-64 scoort) en daarna met het oog naast elkaar gelegd.
-
-### Wat er aan de bestanden veranderde
-
-- [x] `model-rae.webp` opnieuw gemaakt uit de master: **1195x1600**, net als de
-  andere negen. Was 800x1071 en werd op /models in een vak van 800 getekend, dus
-  ze was daar zichtbaar zachter dan de rest.
-- [x] `model-rae-w800.webp` bestond niet; haar `thumb` wees naar haar eigen
-  bestand. Nu maakt `scripts/make-thumbs.mjs` hem, net als voor de andere negen.
-- [x] `model-fabi.webp` opnieuw gemaakt uit de PNG in plaats van uit de JPEG:
-  39,68 → 39,90 dB en 135 → 115 kB. Kleiner én beter, want de generatieverlies
-  van de JPEG-tussenstap zit er niet meer in.
-- [x] AVIF's ernaast voor alle vier de nieuwe bestanden.
-- [x] `models.js`: Rae staat op `w: 1195, h: 1600` met een eigen `-w800`-thumb.
-
-**De coderingsinstelling is niet gekozen maar opgezocht.** `beeld-krimpen.mjs`
-zegt in zijn eigen noot: *kwaliteit 82, effort 5, dat is waar de rest van
-public/img op staat.* Dat klopt ook gemeten: de negen bestaande portretten zitten
-op 38,7–40,6 dB tegen hun master, en q82/effort 5 landt daar binnen een halve dB
-in. Rae komt uit op 39,20 dB — midden in de band van haar negen collega's, niet
-mooier en niet lelijker.
-
-Alle tien staan nu op één maat: bron 1195x1600, thumb 800x1071, opgegeven maat
-gelijk aan de echte maat, AVIF aanwezig.
-
-### Het aantal wordt geteld en niet meer ingetypt
-
-Op **vierentwintig** plekken in acht bestanden stond het woord *ten* of *tien*
-met de hand geschreven — `'Ten faces.'`, `'( Alle tien )'`, `'These ten are our
-standard roster'`, de menu-omschrijving in `i18n/ui.js`, de `<title>` van
-/models, de lege staat in admin.js. Allemaal beschreven ze `ROSTER`, en geen van
-alle keek ernaar.
-
-`models.js` heeft nu `ROSTER_COUNT`, een kleine telwoordentabel en
-`rosterWoord(taal, hoofdletter)`; de vierentwintig zinnen lezen daaruit. Met tien
-modellen verandert er geen letter aan wat er op het scherm staat — dat is het
-punt: het is nu waar omdat het geteld is, niet omdat het toevallig klopte.
-
-**Waarom nu en niet toen het geschreven werd.** Omdat Rae vanochtend bijna uit de
-roster ging. Was dat doorgegaan, dan had er op vierentwintig plekken "tien"
-gestaan boven negen gezichten — in de `<title>` die Google toont, in de
-menu-omschrijving, in de zin waarin we uitleggen dat de bibliotheek gedeeld is.
-Dat is geen opmaakfout maar een onjuiste bewering over wat je krijgt als je
-bestelt.
-
-De tabel loopt tot twaalf en **weigert hardop** bij een getal dat hij niet kent.
-Een elfde model hoort de bouw te breken met een melding die zegt wat er moet
-gebeuren, niet stilletjes "elf" te missen.
-
-### Een bewaker die halverwege omsloeg
-
-`ontdaanVanCommentaar()` in `scripts/lib/importketen.mjs` streept commentaar en
-strings weg, zodat een zoektocht naar code niet de reparatienoten van dit project
-terugvindt. Hij kende **geen regex-literalen**. In `src/scripts/pipeline.js` staat
-
-    .replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', ... })[ch]);
-
-en de scanner las de `"` binnen die tekenklasse als het begin van een string. Die
-liep door tot de volgende `"`, elf regels verderop, en vanaf dat punt stond hij
-de rest van het bestand omgekeerd te lezen: commentaar voor code en code voor
-commentaar.
-
-Gevonden doordat een zoektocht naar het woord *ten* een **regelcommentaar** op
-regel 4718 als code terugkreeg. Dat is exact de val waar deze functie voor
-bestaat — de bewaker die zijn eigen noot vindt, voor de vijfde keer dit project.
-
-Voor het oorspronkelijke werk (de importketen) viel het nooit op: imports staan
-bovenaan, ruim vóór de eerste regex. Maar de functie wordt inmiddels ook gebruikt
-om te controleren of tekst ergens hardgecodeerd staat, en dan telt het hele
-bestand mee.
-
-- [x] Een vijfde toestand erbij, met één afwijking van wat een JS-lexer doet:
-  `<` opent géén regex. In JS is `a < /re/.test(b)` denkbaar en nooit gezien; in
-  een `.astro`-bestand is `</div>` de meest voorkomende tekencombinatie die er
-  is. Met `<` erin leest de scanner elke sluitende tag als een patroon.
-- [x] Zes toetsen erbij in `tests/gewijzigd.test.mjs` (54 → 60). Vier daarvan
-  zijn de fout zelf; twee zijn de rekening ervoor — *deling is geen patroon* en
-  *een sluitende tag is geen patroon* — want "alles tussen twee schuine strepen
-  weghalen" zou op de eerste vier ook slagen, en dat is geen scanner maar een
-  schaar.
-- [x] Mutatietoets gedraaid: met de regex-tak uit valt hij naar 57/60, met een te
-  gretige lijst naar 58/60, en hersteld weer op 60/60.
-- [x] Daarna over de hele codebase gedraaid: 387 bestanden, in geen enkel bestand
-  wordt ook maar één teken veranderd in plaats van weggestreept, en de
-  regelnummers blijven kloppen.
-
-### Wat er nog ligt — dit is voor jou, Lucas
-
-- [ ] 🟡 **`model-01.webp` en `model-02.webp` zijn twee gezichten die nergens
-  vandaan komen.** Geen master op de schijf, geen herkomstsporen, en het zijn
-  aantoonbaar niet Rae en niet elkaar. Ze staan op ~12 plekken, waaronder de
-  hero én de `og:image` van /models, /lifestyle, /about (beide talen), de strook
-  op /custom-models en `/video/[slug]`. Vervangen is per plek een inhoudelijk
-  besluit en geen zoek-en-vervang: een rosterportret is waar op /models, maar
-  onwaar op /custom-models, waar het bijschrift juist merkeigen werk belooft.
-  Weet je nog waar ze vandaan komen? Dan is dit zo opgelost. Zo niet, dan is de
-  veiligste zet ze te vervangen door rosterportretten en de bijschriften op
-  /custom-models mee te herschrijven.
-- [ ] 🟡 **De 27 gezichtszoekopdrachten staan klaar.** Het werkblad is bijgewerkt
-  naar tien modellen (Rae erbij, Fabi's pad naar de PNG) en telt zijn eigen
-  aantal, zodat de koptekst niet nog eens kan verlopen. Drie gezichtszoekers per
-  model, gedraaid op de **master** en niet op de sitefoto. Zodra alle tien
-  staan schrijf ik `src/data/modelChecks.js` en zet /ai-act het blok aan.
-- [ ] 🟢 De **OpenArt**-lifestylesets (`images/Glow Lifestyle/openart-image_*`)
-  zijn een aparte herkomstvraag die ik niet heb uitgezocht.
-
-### En een waarschuwing over de werkkopie
-
-Mijn kopie van de repo (`/tmp/vb`) bleek op **ruim honderd bestanden** achter te
-lopen op jouw schijf — niet alleen op de vijfenvijftig van gisteren. Onder meer
-`cron/index.js` (5,7 kB), `public/admin.css` (14 kB), `AVG-VERWERKINGSREGISTER.md`,
-twintig pagina's, vierendertig toetsbestanden, en vier bestanden die hier
-helemaal niet bestonden (`PlanBand.astro`, `LifestyleModelFold.astro`,
-`bounces.test.mjs`, `eigen-stijl.test.mjs`).
-
-Dat is niet erg gegaan — er is niets van jou overschreven, want ik schrijf per
-bestand terug en vergelijk eerst — maar het maakte drie toetsen rood die op jouw
-schijf gewoon groen staan. De hele boom is nu bestand voor bestand tegen jouw
-schijf gelegd in plaats van steekproefsgewijs. **De les staat hier zodat de
-volgende sessie hem niet opnieuw leert:** vergelijk vóór het werk begint de héle
-boom, niet de bestanden die je toevallig gaat aanraken.

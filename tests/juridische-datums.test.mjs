@@ -31,7 +31,7 @@
  * klassenaam wijzigt, verandert de tekst niet, en de datum hoort dan te blijven staan.
  * Alleen "ouder dan git" is fout.
  */
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync, globSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { join, resolve, relative, sep } from 'node:path';
@@ -194,9 +194,45 @@ if (existsSync(join(DIST, 'index.html'))) {
   /* En in de BUILD staat hij precies één keer. Een broncontrole alleen zou een
      tweede kopie missen die via een ander bestand binnenkomt. */
   const cssDir = join(DIST, '_astro');
+  /* ── HET PATROON MOET DE HELE SELECTOR ZIEN — 7 september 2026 ────────────
+     Hier stond `/\.legal h2\s*\{/`, en dat vindt óók de staart van
+     `.s22.s22 .legal h2{`. Sinds de zes juridische pagina's in de stijl van
+     sectie 22 staan, zet stijl22.css daar de LETTERS op — een skin, geen tweede
+     kopie van het blok — en de toets meldde die bundel als derde vindplaats.
+
+     Wat deze bewaker moet vinden is een KALE `.legal h2`-regel: dat is de
+     opmaak van global.css, en die hoort maar op één plek te staan. In
+     geminificeerde CSS staat daar `}` of `,` voor, of hij begint de bundel.
+     Een selector met iets ervóór is per definitie een andere regel. */
+  const kaal = /(^|[};,])\.legal h2\s*\{/;
   const treffers = readdirSync(cssDir).filter((f) => f.endsWith('.css'))
-    .filter((f) => /\.legal h2\s*\{/.test(readFileSync(join(cssDir, f), 'utf8')));
-  ok('en in de gebouwde CSS precies één keer', treffers.length, 1);
+    .filter((f) => kaal.test(readFileSync(join(cssDir, f), 'utf8')));
+  /* ── DE NAAM VAN DE BUNDEL IS GEEN INVARIANT — 7 september 2026 ───────────
+     Hier stond `naam === 'Layout' || naam === 'StudioLayout'`, en dat brak toen
+     stijl22.css door drie componenten méér geïmporteerd werd: Vite maakte er een
+     gedeelde brok van en hing global.css daar aan. De regel stond nog steeds
+     precies één keer per laag — alleen heette de brok nu `stijl22`.
+
+     Dat is de test die zijn eigen implementatie natekende in plaats van zijn
+     bedoeling. Die bedoeling staat in de noot hierboven: geen PAGINA mag hem
+     nog een keer meebrengen. Astro noemt de eigen brok van een pagina naar die
+     pagina (AboutPage, FaqPage, …), dus dat is ook precies wat hier te toetsen
+     valt — hoe Vite zijn gedeelde brokken noemt, mag hij zelf weten. */
+  /* .replace(/\\+/g, '/') meteen na de glob, zoals tests/paths.test.mjs eist:
+     op Windows geeft globSync backslashes terug en dan klopt elke .split('/')
+     eronder niet meer. */
+  const paginaNamen = new Set(
+    globSync('src/{pages,components}/**/*.astro').map((p) => p.replace(/\\/g, '/'))
+      .map((p) => p.split('/').pop().replace(/\.astro$/, ''))
+  );
+  const uitPagina = treffers.map((f) => f.replace(/\..*$/, '')).filter((n) => paginaNamen.has(n));
+  ok('en in de gebouwde CSS niet in de eigen brok van een pagina', uitPagina, [],
+    uitPagina.length ? `komt uit: ${uitPagina.join(', ')}` : `brokken: ${treffers.join(', ')}`);
+  /* En elke brok draagt hem één keer, niet twee. Dat is de andere helft van
+     "één bron": de vorige regel houdt een pagina tegen, deze een dubbele regel
+     binnen dezelfde brok. */
+  const dubbel = treffers.filter((f2) => (readFileSync(join(cssDir, f2), 'utf8').match(new RegExp(kaal.source, 'g')) || []).length > 1);
+  ok('en binnen een brok precies één keer', dubbel, [], dubbel.length ? `dubbel in: ${dubbel.join(', ')}` : '');
   /* De vijf documenten die de klasse dragen, dragen hem alle vijf — in beide
      talen. Zonder deze regel zou een pagina de opmaak kunnen verliezen door de
      KLASSE te verliezen in plaats van de CSS, en dat ziet er in de bron net zo
@@ -249,16 +285,53 @@ for (const [doc, bestanden] of Object.entries(DOCUMENTEN)) {
        bewaker die het goede woord op de verkeerde plek accepteert, bewaakt de
        plek niet. Dus: binnen `.page-hero`, en op VOLGORDE — rubriek, titel, de
        ene zin die zegt waar het document over gaat, en dan de datum. */
-    const heroStart = bron.indexOf('class="page-hero"');
-    const hero = heroStart === -1 ? '' : bron.slice(heroStart, bron.indexOf('</section>', heroStart));
-    const posities = ['eyebrow-page', 'h1 class="display"', 'class="lead"', 'class="legal-meta"']
-      .map((deel) => [deel, hero.indexOf(deel)]);
+    /* ── DE VORM IS DIE VAN SECTIE 22 GEWORDEN — 7 september 2026 ─────────
+       Deze toets zocht `.page-hero`, `h1 class="display"` en
+       `.container.narrow.legal`: de vorm van de oude opmaak. Alle vijf de
+       documenten staan sinds vandaag in één `.paneel` met een `.paneel-kop`
+       erboven en het `.legal`-blok eronder.
+
+       WAT DE TOETS BEWAAKT VERANDERT NIET, en dat is het punt. Hij eist nog
+       steeds dat de kop dezelfde vier onderdelen draagt — rubriek, titel, de
+       ene zin die zegt waar het document over gaat, en de datum — en in die
+       volgorde, binnen de KOP en niet ergens anders op de pagina. Dat de
+       klassenamen mee veranderd zijn, maakt hem niet zwakker: `eyebrow-page`
+       en `lead` staan er nog steeds bij, náást de nieuwe, precies zodat deze
+       bewaker één ding blijft toetsen in plaats van twee vormen te moeten
+       kennen.
+
+       Toen /ai-act als eerste overging viel deze regel om met de naam van dat
+       bestand erin. Het antwoord daarop was niet de toets versoepelen maar de
+       andere vier meenemen — zie de noot bovenaan elk van die bestanden. */
+    const heroStart = bron.indexOf('class="paneel-kop');
+    const hero = heroStart === -1 ? '' : bron.slice(heroStart, bron.indexOf('</header>', heroStart));
+    /* Op patroon en niet op een letterlijke tekenreeks: de klassen staan naast
+       elkaar in het attribuut ("lopend lead jur-lead"), en `indexOf('class="lead')`
+       vond dat niet — een bewaker die het goede element mist omdat er een tweede
+       klasse voor staat, bewaakt niets. */
+    const posities = [
+      /* `.etiket` en niet `.eyebrow-page`. Die tweede klasse stond er even bij,
+         alleen om deze toets te laten vinden wat hij zocht — en zij brengt haar
+         eigen `::before` met "VISUAILS®" mee, dat daardoor boven elke juridische
+         kop verscheen. Een bewaker die de pagina VORMT in plaats van hem te
+         controleren, is de verkeerde kant op. */
+      ['rubriek', /class="[^"]*\betiket\b/],
+      /* `<h1 ... class="hoog">`: /ai-act draagt er een `id` op omdat zijn sectie
+         een aria-labelledby heeft. Het patroon laat daarom attributen tussen de
+         tag en de klasse toe — wat getoetst wordt is dat er een h1 in de kop
+         staat en dat die de kopletter van deze stijl draagt. */
+      ['titel', /<h1[^>]*class="[^"]*\bhoog\b/],
+      ['lead', /class="[^"]*\bjur-lead\b/],
+      ['datum', /class="legal-meta"/],
+    ].map(([naam, re2]) => [naam, hero.search(re2)]);
     ok(`${rel} · kop draagt rubriek, titel, lead, datum`,
       posities.filter(([, i]) => i === -1).map(([d]) => d), []);
     ok(`${rel} · en in die volgorde`,
       posities.every(([, i], n) => n === 0 || i > posities[n - 1][1]), true);
-    ok(`${rel} · body in .container.narrow.legal`,
-      heeft(/class="container narrow legal"/), true);
+    /* Het document zelf blijft één `.legal`-blok, want dáár hangt de opmaak
+       aan die alle vijf de pagina's delen. */
+    ok(`${rel} · body in één .legal-blok`,
+      heeft(/class="legal jur-tekst"/), true);
     /* Geen tweede ritme naast `.legal`: geen `stack-lg` op de wikkel, en geen
        handgezette marge op iets in de body. De lead in de HERO mag er één hebben —
        die staat op alle vijf identiek en hoort bij de kop, niet bij het document. */
@@ -267,7 +340,7 @@ for (const [doc, bestanden] of Object.entries(DOCUMENTEN)) {
        regel las tot het einde van het bestand en meldde vier keer de knoppenrij van
        de afsluitende cta-band — die staat buiten het document en heeft met het
        leesritme niets te maken. Een bewaker die ruis geeft, wordt weggeklikt. */
-    const vanaf = bron.indexOf('container narrow legal');
+    const vanaf = bron.search(/class="legal jur-tekst"/);
     const tot = bron.indexOf('</section>', vanaf);
     const naBody = bron.slice(vanaf, tot === -1 ? undefined : tot);
     const handmarges = [...naBody.matchAll(/style="[^"]*margin-top[^"]*"/g)].map((m) => m[0]);

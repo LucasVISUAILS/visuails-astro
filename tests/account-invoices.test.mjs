@@ -22,7 +22,7 @@
  */
 
 import { DatabaseSync } from 'node:sqlite';
-import { accountGet, catchupOrder, issuedRefs } from '../src/lib/account.js';
+import { accountGet, studioScreen, catchupOrder, issuedRefs } from '../src/lib/account.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
 
 let fails = 0;
@@ -59,7 +59,7 @@ const INVOICE = {
 };
 
 /**
- * Een D1 die genoeg antwoordt om sectionGet() te laten renderen.
+ * Een D1 die genoeg antwoordt om studioScreen() zijn staat te laten maken.
  *
  * ── DE FACTUURQUERIES GAAN NAAR EEN ECHTE SQLITE ────────────────────────────
  *
@@ -179,7 +179,7 @@ function makeBucket({ present = true } = {}) {
  * bestellingen heeft dus geen taal en valt terug op Accept-Language — dus een
  * test die de lege staat in het Nederlands verwacht en géén taal meestuurt,
  * krijgt Engels terug en faalt om een reden die niets met facturen te maken
- * heeft. Zie de noot over die volgorde in sectionGet().
+ * heeft. Zie de noot over die volgorde in sectionState().
  */
 const get = (path, { db, bucket = makeBucket(), cookie = `vis_account=${token}`, accept = 'nl' } = {}) =>
   accountGet({
@@ -188,6 +188,24 @@ const get = (path, { db, bucket = makeBucket(), cookie = `vis_account=${token}`,
     }),
     env: { DB: db, UPLOADS: bucket },
   });
+
+/* ── DE PAGINA ALS STAAT — 6 september 2026 ─────────────────────────────────
+   /account/invoices is een Astro-pagina op studioScreen(); de HTML-bouwer is
+   weg. `pagina()` geeft wat die pagina krijgt: `v.rows` (nummer, vlaggen,
+   bedrag, link, stand), `v.anyPending`, `v.emptyText`, plus `st.t` en `st.lang`.
+   Wat de klant ZIET toetst tests/studio-vorm.test.mjs door de echte Worker.
+   De pdf-routes staan nog in accountGet() en gaan hieronder via get(). */
+async function pagina({ db, bucket = makeBucket(), cookie = `vis_account=${token}`, accept = 'nl' } = {}) {
+  const r = await studioScreen({
+    request: new Request('https://visuails.com/account/invoices', {
+      headers: { ...(cookie ? { cookie } : {}), ...(accept ? { 'accept-language': accept } : {}) },
+    }),
+    env: { DB: db, UPLOADS: bucket },
+    waitUntil() {},
+  }, 'invoices');
+  if (r instanceof Response) return { status: r.status, res: r };
+  return { status: 200, v: r.v, st: r.st, rows: r.v.rows, rij: (n) => r.v.rows.find((x) => x.number === n) };
+}
 
 console.log('\nVISUAILS Studio — Facturen\n');
 /* ── DE VOLGORDE WAARIN DE INHAALSLAG NUMMERS UITDEELT ─────────────────────
@@ -284,38 +302,37 @@ console.log('\nde volgorde van de inhaalslag');
 
 /* ── de pagina ───────────────────────────────────────────────────────────── */
 {
-  const res = await get('/account/invoices', { db: makeDb() });
-  const body = await res.text();
-  check('de pagina rendert', res.status === 200, res.status);
-  check('het factuurnummer staat erop', body.includes('VIS-2026-0007'));
-  check('het brutobedrag staat erop, niet het netto', body.includes('430,76') && !body.includes('356,00'));
-  check('de bestelling staat erbij', body.includes('VIS-2608-4471'));
-  check('er is een downloadlink', body.includes('/account/invoices/3/pdf'));
-  check('Facturen staat in de zijbalk', body.includes('href="/account/invoices"'));
-  check('en is de actieve sectie', /href="\/account\/invoices"[^>]*aria-current="page"/.test(body) || /aria-current="page"[^>]*href="\/account\/invoices"/.test(body));
-  check('de bewaartermijn wordt uitgelegd', body.includes('zeven jaar'));
-  check('geen "wordt gemaakt" bij een afgeronde factuur', !body.includes('Wordt gemaakt'));
+  const p = await pagina({ db: makeDb() });
+  check('de pagina rendert', p.status === 200, p.status);
+  const rij = p.rij('VIS-2026-0007');
+  check('het factuurnummer staat erop', !!rij);
+  check('het brutobedrag staat erop, niet het netto', rij.amount.includes('430,76') && !rij.amount.includes('356,00'), rij.amount);
+  check('de bestelling staat erbij', rij.ref === 'VIS-2608-4471');
+  check('er is een downloadlink', rij.href === '/account/invoices/3/pdf');
+  check('de bewaartermijn wordt uitgelegd', /zeven jaar/.test(p.st.t.invKeepNote));
+  check('geen "wordt gemaakt" bij een afgeronde factuur', rij.state === '' && p.v.anyPending === false);
 }
 
 /* ── de lege staat zegt twee verschillende dingen ─────────────────────────── */
 {
-  const none = await (await get('/account/invoices', { db: makeDb({ invoices: [], orders: [] }) })).text();
-  check('zonder bestellingen: "zodra een bestelling betaald is"', none.includes('Zodra een bestelling betaald is'));
+  const none = await pagina({ db: makeDb({ invoices: [], orders: [] }) });
+  check('zonder bestellingen: "zodra een bestelling betaald is"', none.rows.length === 0 && none.v.emptyText.includes('Zodra een bestelling betaald is'));
 
   // Wél betaald en tóch geen factuur: dan is de inhaalslag net gelopen en heeft
   // hij niets opgeleverd. De klant verwacht iets, dus de tekst is een andere.
-  const waiting = await (await get('/account/invoices', { db: makeDb({ invoices: [] }) })).text();
-  check('mét een betaalde bestelling: "krijgt er een zodra"', waiting.includes('zodra de betaling binnen is'));
+  const waiting = await pagina({ db: makeDb({ invoices: [] }) });
+  check('mét een betaalde bestelling: "krijgt er een zodra"', waiting.rows.length === 0 && waiting.v.emptyText.includes('zodra de betaling binnen is'));
 }
 
 /* ── pending: nummer wel, document nog niet ───────────────────────────────── */
 {
   const pending = { ...INVOICE, status: 'pending', pdf_key: null, pdf_bytes: null, issued_at: null };
-  const body = await (await get('/account/invoices', { db: makeDb({ invoices: [pending] }) })).text();
-  check('het nummer staat er wel', body.includes('VIS-2026-0007'));
-  check('maar er is GEEN downloadlink', !body.includes('/account/invoices/3/pdf'));
-  check('het zegt dat hij gemaakt wordt', body.includes('Wordt gemaakt'));
-  check('met uitleg wat de klant kan doen', body.includes('Vernieuw de pagina'));
+  const p = await pagina({ db: makeDb({ invoices: [pending] }) });
+  const rij = p.rij('VIS-2026-0007');
+  check('het nummer staat er wel', !!rij);
+  check('maar er is GEEN downloadlink', rij.href === '');
+  check('het zegt dat hij gemaakt wordt', rij.state === 'Wordt gemaakt');
+  check('met uitleg wat de klant kan doen', p.v.anyPending === true && /Vernieuw de pagina/.test(p.st.t.invPendingNote));
 
   const res = await get('/account/invoices/3/pdf', { db: makeDb({ invoices: [pending] }) });
   check('de route geeft 404 en niet 500', res.status === 404, res.status);
@@ -332,9 +349,9 @@ console.log('\nde volgorde van de inhaalslag');
   const voided = { ...INVOICE, status: 'void' };
   const res = await get('/account/invoices/3/pdf', { db: makeDb({ invoices: [voided] }) });
   check('een ingetrokken factuur is niet te downloaden', res.status === 404, res.status);
-  const body = await (await get('/account/invoices', { db: makeDb({ invoices: [voided] }) })).text();
-  check('en staat in de lijst als ingetrokken', body.includes('Ingetrokken'));
-  check('zonder downloadlink', !body.includes('/account/invoices/3/pdf'));
+  const p = await pagina({ db: makeDb({ invoices: [voided] }) });
+  check('en staat in de lijst als ingetrokken', p.rij('VIS-2026-0007')?.state === 'Ingetrokken');
+  check('zonder downloadlink', p.rij('VIS-2026-0007')?.href === '');
 }
 
 /* ── de download ─────────────────────────────────────────────────────────── */
@@ -364,7 +381,7 @@ console.log('\nde volgorde van de inhaalslag');
   check('zonder sessie: naar het inloggen', anon.status === 303, anon.status);
   check('en dus geen pdf in het antwoord', (anon.headers.get('content-type') || '') !== 'application/pdf');
 
-  const anonPage = await get('/account/invoices', { db: makeDb(), cookie: '' });
+  const anonPage = await pagina({ db: makeDb(), cookie: '' });
   check('de pagina zelf is ook dicht', anonPage.status === 303, anonPage.status);
 }
 
@@ -391,31 +408,30 @@ console.log('\nde volgorde van de inhaalslag');
     }
     return st;
   };
-  const res = await get('/account/invoices', { db: broken });
-  const body = await res.text();
-  check('zonder de tabel nog steeds 200', res.status === 200, res.status);
-  check('en de lege staat in plaats van een foutpagina', body.includes('Facturen') && !body.includes('We kunnen je account nu niet bereiken'));
+  const p = await pagina({ db: broken });
+  check('zonder de tabel nog steeds 200', p.status === 200, p.status);
+  check('en de lege staat in plaats van een foutpagina', p.rows.length === 0 && typeof p.v.emptyText === 'string' && p.v.emptyText.length > 0);
 }
 
 /* ── de btw-vlag ─────────────────────────────────────────────────────────── */
 {
   const reverse = { ...INVOICE, snapshot_json: JSON.stringify({ ...SNAP, treatment: 'eu_reverse_charge', vatCents: 0, grossCents: 35600 }) };
-  const body = await (await get('/account/invoices', { db: makeDb({ invoices: [reverse] }) })).text();
-  check('verlegging staat bij het nummer', body.includes('Btw verlegd'));
-  check('en het bedrag is dan zonder btw', body.includes('356,00'));
+  const rv = (await pagina({ db: makeDb({ invoices: [reverse] }) })).rij('VIS-2026-0007');
+  check('verlegging staat bij het nummer', rv.flags.includes('Btw verlegd'));
+  check('en het bedrag is dan zonder btw', rv.amount.includes('356,00'), rv.amount);
 
   const outside = { ...INVOICE, snapshot_json: JSON.stringify({ ...SNAP, treatment: 'outside_scope', vatCents: 0 }) };
-  check('buiten de EU krijgt zijn eigen regel', (await (await get('/account/invoices', { db: makeDb({ invoices: [outside] }) })).text()).includes('Buiten de Europese btw'));
+  check('buiten de EU krijgt zijn eigen regel', (await pagina({ db: makeDb({ invoices: [outside] }) })).rij('VIS-2026-0007').flags.includes('Buiten de Europese btw'));
 
-  const plain = await (await get('/account/invoices', { db: makeDb() })).text();
-  check('een gewone nl-factuur krijgt geen vlag', !plain.includes('Btw verlegd') && !plain.includes('Buiten de Europese btw'));
+  const plain = (await pagina({ db: makeDb() })).rij('VIS-2026-0007');
+  check('een gewone nl-factuur krijgt geen vlag', plain.flags.length === 0);
 }
 
 /* ── Engels ──────────────────────────────────────────────────────────────── */
 {
-  const body = await (await get('/account/invoices', { db: makeDb({ orders: [{ ...ORDER, lang: 'en' }] }) })).text();
-  check('een Engelse klant krijgt Invoices', body.includes('>Invoices<') || body.includes('Invoices</'), '');
-  check('en geen Nederlandse kop', !body.includes('>Facturen<'));
+  const p = await pagina({ db: makeDb({ orders: [{ ...ORDER, lang: 'en' }] }) });
+  check('een Engelse klant krijgt Invoices', p.st.lang === 'en' && p.st.t.invHeading === 'Invoices', p.st.t.invHeading);
+  check('en geen Nederlandse kop', p.st.t.invHeading !== 'Facturen');
 }
 
 /* ══ DE CREDITNOTA IN HET OVERZICHT VAN DE KLANT — 12 augustus 2026 ═════════
@@ -448,29 +464,28 @@ const CREDIT = {
 };
 
 {
-  const res = await get('/account/invoices', { db: makeDb({ credits: [CREDIT] }) });
-  const body = await res.text();
-  check('de creditnota staat in het overzicht', body.includes('VIS-2026-0008'), '');
-  check('en is gemerkt als creditnota', body.includes('Creditnota'), '');
+  const p = await pagina({ db: makeDb({ credits: [CREDIT] }) });
+  const nota = p.rij('VIS-2026-0008');
+  check('de creditnota staat in het overzicht', !!nota, '');
+  check('en is gemerkt als creditnota', !!nota && nota.flags.includes('Creditnota'), '');
   /* Het PAD is het punt: /account/credit-notes/5/pdf en niet /account/invoices/5/pdf.
      Factuur 3 en nota 5 bestaan naast elkaar, en id 5 zou in de factuurtabel niets zijn —
      of, erger, ooit iets van een andere klant. */
-  check('met de knop naar het creditnotapad', body.includes('/account/credit-notes/5/pdf'), '');
-  check('en niet naar het factuurpad', !body.includes('/account/invoices/5/pdf'));
+  check('met de knop naar het creditnotapad', nota?.href === '/account/credit-notes/5/pdf', nota?.href);
+  check('en niet naar het factuurpad', !p.rows.some((r) => r.href === '/account/invoices/5/pdf'));
   /* De factuur die hij intrekt staat er nog gewoon: een creditnota vervángt geen factuur. */
-  check('de factuur staat er nog', body.includes('VIS-2026-0007'), '');
+  check('de factuur staat er nog', !!p.rij('VIS-2026-0007'), '');
 }
 {
   /* De taal van dit dashboard komt uit de LAATSTE BESTELLING en niet uit de nota of uit
      Accept-Language — zie de noot bij get() hierboven. Een Engelse creditnota bij een
      Nederlandse bestelling levert dus een Nederlands overzicht op, en dat is goed: de
      klant leest één taal, niet één per document. */
-  const en = await get('/account/invoices', {
+  const en = await pagina({
     db: makeDb({ orders: [{ ...ORDER, lang: 'en' }], credits: [CREDIT] }),
     accept: 'en',
   });
-  const body = await en.text();
-  check('en in het Engels heet het Credit note', body.includes('Credit note'), '');
+  check('en in het Engels heet het Credit note', en.rij('VIS-2026-0008')?.flags.includes('Credit note'), '');
 }
 {
   const res = await get('/account/credit-notes/5/pdf', { db: makeDb({ credits: [CREDIT] }) });
@@ -499,21 +514,19 @@ const CREDIT = {
   });
   check('een nota zonder pdf: 404 en geen 500', pending.status === 404, pending.status);
 
-  const lijst = await get('/account/invoices', {
+  const lijst = await pagina({
     db: makeDb({ credits: [{ ...CREDIT, status: 'pending', pdf_key: null }] }),
   });
-  const body = await lijst.text();
-  check('en dan staat er geen downloadknop', !body.includes('/account/credit-notes/5/pdf'));
+  check('en dan staat er geen downloadknop', !lijst.rows.some((r) => r.href === '/account/credit-notes/5/pdf'));
 }
 {
   /* Migratie 0026 nog niet gedraaid terwijl 0021 dat wel is. Dan zijn er geen nota's, en
      dat mag het overzicht niet slopen — dezelfde afspraak als bij een ontbrekende
      invoices-tabel, maar zonder de waarschuwing in de log, want dit is een normale
      tussentoestand en geen storing. */
-  const res = await get('/account/invoices', { db: makeDb({ noCreditTable: true }) });
-  check('zonder credit_notes-tabel rendert het overzicht gewoon', res.status === 200, res.status);
-  const body = await res.text();
-  check('en de facturen staan er nog', body.includes('VIS-2026-0007'), '');
+  const p = await pagina({ db: makeDb({ noCreditTable: true }) });
+  check('zonder credit_notes-tabel rendert het overzicht gewoon', p.status === 200, p.status);
+  check('en de facturen staan er nog', !!p.rij('VIS-2026-0007'), '');
 }
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n');

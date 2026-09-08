@@ -1,0 +1,13 @@
+Satoshi — zelf gehost (sectie 21, 5 september 2026)
+
+Download op https://www.fontshare.com/fonts/satoshi (knop "Download family"),
+pak uit, en kopieer uit Satoshi_Complete/Fonts/WEB/fonts/ deze twee bestanden
+hierheen:
+
+  Satoshi-Variable.woff2
+  Satoshi-VariableItalic.woff2
+
+Meer is niet nodig: de @font-face in src/styles/global.css leest alleen deze
+twee. Licentie: ITF Free Font License — vrij te gebruiken en zelf te hosten,
+niet aanpassen of doorverkopen. Zolang de bestanden ontbreken valt de tekst
+terug op Hubot Sans.

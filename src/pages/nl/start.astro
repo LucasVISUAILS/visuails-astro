@@ -3,18 +3,19 @@
 // StartPage.astro, zodat /start en /nl/start niet uit elkaar kunnen lopen.
 //
 // Dit wás het bestelformulier zelf, en de description zei dat ook: één ingang.
-// Er zijn zes ingangen — drie waar je direct kunt bestellen en drie nog niet —
-// en doen alsof dat niet zo is, is precies waarom video ontbrak op de enige
-// pagina die bestellingen aanneemt. /start is nu de keuze; elke dienst heeft
-// een eigen route onder /start/.
+// /start is nu de KEUZE; elke dienst heeft een eigen route onder /start/. Zie
+// de kop van StartPage.astro voor de herbouw van 7 september — waarop de pagina
+// groepeert, en waarom de oude groepering (naar of er al een kassa achter zit)
+// video liet lijken op iets wat we niet doen.
 import Layout from '../../layouts/Layout.astro';
 import StartPage from '../../components/StartPage.astro';
-import { WINDOW_THRESHOLD } from '../../data/pricing.js';
 
-/* Onder de 160 tekens — zie de noot in src/pages/start.astro. */
+/* Onder de 160 tekens — zie de noot in src/pages/start.astro, en daar staat ook
+   waarom deze regel op 7 september is herschreven: hij noemde drie van de vier
+   deuren. */
 const description =
-  `Catalogsets, lifestyle-carousels of allebei. Het tarief per product daalt als ` +
-  `het aantal stijgt, en vanaf ${WINDOW_THRESHOLD} producten ligt je leverdatum vast.`;
+  `Beelden voor je productpagina, je feed, allebei tegelijk, of een clip. ` +
+  `Kies waar ze heen moeten \u2014 in het formulier wordt nog niets afgeschreven.`;
 ---
 
 <Layout

@@ -41,6 +41,11 @@ const COPY = {
     askH: 'Something else entirely?',
     askBody: 'A world built around your product is designed rather than picked, so it has no per-product rate until we know what it is. It is a request, and it gets a written price before anything runs.',
     askCta: 'Ask for a custom look',
+    /* De regel die in de plaats komt van het raster zodra de bezoeker de look
+       al op /lifestyle gekozen heeft. */
+    vastL: 'Your look',
+    vastWijzig: 'Change',
+    vastHint: 'Picked on the lifestyle page. Changing it here is one click.',
   },
   nl: {
     label: 'Welke look?',
@@ -51,6 +56,10 @@ const COPY = {
     askH: 'Iets heel anders voor ogen?',
     askBody: 'Een wereld die om jouw product heen gebouwd wordt, ontwerpen we in plaats van dat je hem kiest — en dus heeft hij geen tarief per product zolang we niet weten wat het is. Het is een aanvraag, en je krijgt er een prijs op schrift voor voordat er iets draait.',
     askCta: 'Vraag een look op maat aan',
+    /* Zie de Engelse tegenhanger. */
+    vastL: 'Jouw look',
+    vastWijzig: 'Wijzig',
+    vastHint: 'Gekozen op de lifestyle-pagina. Hier veranderen kan met één klik.',
   },
 };
 const c = COPY[lang];
@@ -141,7 +150,27 @@ const looks = ORDERABLE.map((s) => {
   <h3 class="pl-sub-h" id="pl-look-h">{c.label}</h3>
   <p class="hint pl-look-hint">{c.hint}</p>
 
-  <div class="look-grid" role="radiogroup" aria-labelledby="pl-look-h">
+  {/* ── DE LOOK IS AL GEKOZEN ──────────────────────────────────────────────
+      Sinds 4 september kiest de bezoeker zijn look op /lifestyle en komt hij
+      hier binnen met ?style=<slug>. Hetzelfde raster nóg een keer tonen is dan
+      dezelfde vraag voor de tweede keer stellen — en een tweede vraag over iets
+      wat al beantwoord is, leest als "was mijn antwoord niet goed?".
+
+      Dus: het raster blijft in de pagina staan (zonder JS is het de enige
+      manier om te kiezen, en het is de weg terug voor wie zich bedenkt), maar
+      zodra er een look gekozen ís, schuift deze regel ervoor. Eén klik op
+      "Wijzig" en het raster staat er weer. */}
+  <div class="look-vast" data-look-vast hidden>
+    <img class="look-vast-shot" alt="" data-look-vast-shot width="160" height="120" decoding="async" />
+    <span class="look-vast-t">
+      <span class="look-vast-l">{c.vastL}</span>
+      <strong class="look-vast-naam" data-look-vast-naam></strong>
+      <span class="look-vast-hint">{c.vastHint}</span>
+    </span>
+    <button type="button" class="look-vast-btn" data-look-wijzig>{c.vastWijzig}</button>
+  </div>
+
+  <div class="look-grid" role="radiogroup" aria-labelledby="pl-look-h" data-look-grid>
     {looks.map((s, i) => (
       <label class="look">
         <img
@@ -218,6 +247,59 @@ const looks = ORDERABLE.map((s) => {
        pipeline.js: de samenvatting op de laatste stap leest de gekozen look, en
        een vinkje dat met de hand gezet is, meldt zichzelf niet. */
     radio.dispatchEvent(new Event('change', { bubbles: true }));
+    if (window.__visLookVast) window.__visLookVast();
+  })();
+
+  /* ── HET RASTER OPVOUWEN TOT ÉÉN REGEL ────────────────────────────────────
+   *
+   * Aangeroepen door het blokje hierboven (de look uit de URL) én door
+   * pipeline.js zodra het de eigen stijlen van een ingelogde klant heeft
+   * ingevoegd en er een heeft aangevinkt (addOwnStyles). Vandaar op `window`:
+   * de twee weten niet van elkaar en hoeven dat ook niet.
+   *
+   * WAT HET NIET DOET: de radio's weghalen. Ze staan er nog, alleen buiten
+   * beeld — een aangevinkte radio in een verborgen blok post gewoon zijn waarde,
+   * en "Wijzig" hoeft daardoor niets terug te bouwen. */
+  (function () {
+    var vak = document.querySelector('[data-look-vast]');
+    var raster = document.querySelector('[data-look-grid]');
+    if (!vak || !raster) return;
+    var naamEl = vak.querySelector('[data-look-vast-naam]');
+    var shot = vak.querySelector('[data-look-vast-shot]');
+    var hint = document.querySelector('.pl-look-hint');
+    var ask = document.querySelector('.look-ask');
+
+    function toon(open) {
+      raster.hidden = !open;
+      vak.hidden = open;
+      if (hint) hint.hidden = !open;
+      if (ask) ask.hidden = !open;
+    }
+
+    window.__visLookVast = function () {
+      var aan = document.querySelector('input[name="style"]:checked');
+      if (!aan) return;
+      var tegel = aan.closest('.look');
+      if (naamEl) naamEl.textContent = aan.getAttribute('data-pl-style-name') || '';
+      var beeld = tegel && tegel.querySelector('img');
+      if (shot) {
+        if (beeld && beeld.currentSrc) { shot.src = beeld.currentSrc; shot.hidden = false; }
+        else if (beeld && beeld.getAttribute('src')) { shot.src = beeld.getAttribute('src'); shot.hidden = false; }
+        else { shot.hidden = true; }
+      }
+      toon(false);
+    };
+
+    var knop = vak.querySelector('[data-look-wijzig]');
+    if (knop) knop.addEventListener('click', function () {
+      toon(true);
+      var aan = document.querySelector('input[name="style"]:checked');
+      if (aan) aan.focus();
+    });
+
+    /* En meteen één keer, want het blokje hierboven (de look uit de URL) draait
+       vóór dit blok en kon toen nog niets aanroepen. */
+    window.__visLookVast();
   })();
 </script>
 
@@ -301,6 +383,35 @@ const looks = ORDERABLE.map((s) => {
      not carry it. */
   .look:has([aria-invalid='true']) { border-color: var(--warn); }
 
+  /* ── DE GEKOZEN LOOK ALS ÉÉN REGEL ─────────────────────────────────────── */
+  .look-vast {
+    display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+    gap: .9rem; align-items: center;
+    margin-top: .9rem; padding: .7rem .8rem;
+    border: 1px solid var(--accent); border-radius: var(--r-lg);
+    background: var(--accent-soft);
+  }
+  .look-vast-shot { width: 4.5rem; height: 3.4rem; object-fit: cover; border-radius: var(--r-sm); display: block; background: var(--surface-2); }
+  .look-vast-t { display: grid; gap: .1rem; min-width: 0; }
+  /* 11,7px in plaats van 10,9 — de ondergrens van de keuring is 11,5px. */
+  .look-vast-l { font-size: .73rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .look-vast-naam { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); }
+  .look-vast-hint { font-size: .78rem; color: var(--ink-3); line-height: 1.4; }
+  .look-vast-btn {
+    font: inherit; font-size: .86rem; font-weight: 700;
+    padding: .45rem .8rem; border-radius: 999px;
+    border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .look-vast-btn:hover { border-color: var(--accent); }
+  .look-vast-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
   @media (max-width: 640px) { .look-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 30rem) {
+    .look-vast { grid-template-columns: 3.4rem minmax(0, 1fr); }
+    .look-vast-shot { width: 3.4rem; height: 2.6rem; }
+    .look-vast-btn { grid-column: 2; justify-self: start; }
+  }
   @media (prefers-reduced-motion: reduce) { .look { transition: none; } }
 </style>

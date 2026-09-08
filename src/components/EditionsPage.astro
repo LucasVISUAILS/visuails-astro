@@ -62,7 +62,7 @@ import { waHref } from '../data/whatsapp.js';
  *
  * ── EN JE KUNT HET NOG NIET BESTELLEN ─────────────────────────────────────
  *
- * Net als bij Hooks: er is een prijs, en er is nog geen gewicht in KIND_IMAGES,
+ * Net als bij Hooks: er is een prijs, en er is nog geen gewicht in KIND_PUNTEN,
  * dus de agenda kan er niet mee rekenen. De knoppen gaan naar een gesprek.
  *
  * ── ELKE FOTO IS EEN PLACEHOLDER ──────────────────────────────────────────
@@ -85,6 +85,7 @@ import Disclose from './Disclose.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
 import Placeholder from './Placeholder.astro';
+import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -397,345 +398,265 @@ const COPY = {
 const c = COPY[lang];
 ---
 
-<!-- ── 1 · HERO ──────────────────────────────────────────────────────────── -->
-<section class="page-hero">
-  <div class="container two-col hero-split">
-    <div class="reveal pending">
-      <span class="eyebrow-page">{c.eyebrow}</span>
-      <h1 class="display ed-h1" style="margin-top:1rem" set:html={c.h1} />
-      <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-      <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-        <a href={lp('/plans')} class="btn btn-ghost btn-lg">{c.ctaPlans}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
+{/* ═══ /editions IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══════════════
+    Veertiende pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in
+    beide talen, dezelfde zes <Placeholder>s met hun opdracht erin (deze pagina
+    heeft er meer dan alle andere, en dat is eerlijk — er is nog geen Editions
+    geleverd om te tonen), dezelfde getallen uit pricing.js, dezelfde <Disclose>
+    voor de vragen.
+
+    DE TWEE KOLOMMEN BLIJVEN NAAST ELKAAR STAAN. Zie de noot die hier stond: is
+    er maar één te zien, dan pleit het blok voor een van de twee in plaats van
+    ze uit elkaar te houden — en de linker is de GRATIS helft, dus juist die mag
+    niet wegvallen.
+
+    WAT HET NIET IS, IS DE DONKERE KAMER. Dat is de sectie waar de pagina het
+    misverstand wegneemt (beeld mét product tegenover beeld zónder), en dat is
+    precies de plek waar een hoofdstukwissel hoort. */}
+<div class="s22">
+
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="ed-h1">
+    <div class="ed-open">
+      <div class="paneel-kop">
+        <p class="etiket">{c.eyebrow}</p>
+        <h1 id="ed-h1" class="hoog" set:html={c.h1} />
+        <p class="lopend">{c.lead}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
+          <a class="knop knop-lijn" href={lp('/plans')}>{c.ctaPlans}</a>
+          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+        </p>
+        <ServiceSwitch current={['complete']} lang={lang} />
+        <HeroFacts eigen={c.trust} lang={lang} />
+        <p class="ed-wacht"><span class="mono ed-tag">{c.soonTag}</span> {c.queueNote}</p>
       </div>
-      <ServiceSwitch current={['complete']} lang={lang} />
-      <HeroFacts eigen={c.trust} lang={lang} />
-      <p class="queue-note"><em class="ed-soon">{c.soonTag}</em> {c.queueNote}</p>
-    </div>
-    <div class="reveal pending">
       <Placeholder lang={lang} ratio={r('maandgrid')} caption={false} subject={p('maandgrid', 'subject')} message={p('maandgrid', 'message')} />
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── 2 · DE VERGELIJKING ────────────────────────────────────────────────
-     Direct onder de hero, en dat is het verschil met elke andere dienstpagina.
-     Zie de kop van dit bestand: de vraag die deze pagina beantwoordt IS een
-     vergelijking, dus staat hij vooraan en niet als naslag onderaan.
-
-     De vorm komt van TierCompare: twee kaarten met dezelfde rijen, gelijk
-     opgemaakt. Gelijk opgemaakt is hier geen esthetische keuze maar de
-     boodschap — zodra één van de twee een accentkleur of een lint krijgt,
-     pleit het blok voor een van de twee in plaats van ze uit elkaar te houden.
-     En de linker is de gratis helft, dus juist die mag niet wegvallen. -->
-<section class="section-tight">
-  <div class="container">
-    <div class="section-head">
-      <h2 class="section-h">{c.vglH}</h2>
-      <p class="lead">{c.vglSub}</p>
-    </div>
-    <div class="ed-vgl reveal-group">
+  {/* ── 2 · DE GEDEELDE SET EN DE EIGEN SET ───────────────────────────────── */}
+  <section class="paneel" aria-labelledby="ed-vgl">
+    <header class="paneel-kop">
+      <h2 id="ed-vgl" class="hoog hoog-2">{c.vglH}</h2>
+      <p class="lopend">{c.vglSub}</p>
+    </header>
+    <ul class="ed-vgl" role="list">
       {[c.gedeeld, c.eigen].map((kolom) => (
-        <div class="ed-vgl-col reveal pending">
-          <div class="ed-vgl-kop">
-            <h3>{kolom.naam}</h3>
-            <span class="ed-vgl-tag">{kolom.tag}</span>
-          </div>
+        <li>
+          <p class="ed-vgl-kop">
+            <b>{kolom.naam}</b>
+            <span class="mono ed-tag">{kolom.tag}</span>
+          </p>
           <dl class="ed-vgl-rijen">
             {kolom.rijen.map(([label, waarde]) => (
-              <div class="ed-vgl-rij">
-                <dt>{label}</dt>
-                <dd>{waarde}</dd>
-              </div>
+              <Fragment><dt class="mono">{label}</dt><dd class="lopend">{waarde}</dd></Fragment>
             ))}
           </dl>
-          <a href={lp(kolom.href)} class="link-arrow ed-vgl-cta">
-            {kolom.cta}
-            <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-        </div>
+          <p class="ed-vgl-cta"><a class="pijl" href={lp(kolom.href)}>{kolom.cta}</a></p>
+        </li>
       ))}
-    </div>
-    <p class="ed-vgl-foot">{c.vglFoot}</p>
-  </div>
-</section>
+    </ul>
+    <p class="lopend ed-voet">{c.vglFoot}</p>
+  </section>
 
-<!-- ── 3 · WAT HET NIET IS ────────────────────────────────────────────────
-     Twee beelden naast elkaar, en allebei nodig: één ervan laten zien legt
-     niets uit. Zie punt 2 in de kop van dit bestand. -->
-<section class="section-tight">
-  <div class="container">
-    <div class="section-head">
-      <h2 class="section-h">{c.nietH}</h2>
-      <p class="lead">{c.nietSub}</p>
-    </div>
-    <div class="ed-niet reveal-group">
-      <div class="reveal pending">
+  {/* ── 3 · WAT HET NIET IS ─────────────────────────────────────────────────
+      Twee beelden naast elkaar, en allebei nodig: één ervan laten zien legt
+      niets uit. */}
+  <section class="kamer ed-kamer" aria-labelledby="ed-niet">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <h2 id="ed-niet" class="hoog hoog-2">{c.nietH}</h2>
+      <p class="lopend">{c.nietSub}</p>
+    </header>
+    <ul class="ed-niet" role="list">
+      <li>
         <Placeholder lang={lang} ratio={r('welProduct')} caption={false} subject={p('welProduct', 'subject')} message={p('welProduct', 'message')} />
-        <h3 class="ed-niet-h">{c.nietA[0]}</h3>
-        <p class="ed-niet-p">{c.nietA[1]}</p>
-      </div>
-      <div class="reveal pending">
+        <b>{c.nietA[0]}</b>
+        <span class="lopend">{c.nietA[1]}</span>
+      </li>
+      <li>
         <Placeholder lang={lang} ratio={r('geenProduct')} caption={false} subject={p('geenProduct', 'subject')} message={p('geenProduct', 'message')} />
-        <h3 class="ed-niet-h">{c.nietB[0]}</h3>
-        <p class="ed-niet-p">{c.nietB[1]}</p>
-      </div>
-    </div>
-    <p class="ed-vgl-foot">{c.nietFoot}</p>
-  </div>
-</section>
+        <b>{c.nietB[0]}</b>
+        <span class="lopend">{c.nietB[1]}</span>
+      </li>
+    </ul>
+    <p class="lopend ed-voet">{c.nietFoot}</p>
+  </section>
 
-<!-- ── 4 · WAAR ZE VOOR ZIJN ──────────────────────────────────────────── -->
-<section class="section-tight">
-  <div class="container">
-    <div class="ed-head">
-      <span class="ed-meta">{c.gebruikMeta}</span>
-      <div>
-        <h2>{c.gebruikH}</h2>
-        <p class="ed-sub">{c.gebruikSub}</p>
+  {/* ── 4 · WAAR ZE VOOR ZIJN ────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="ed-waarvoor">
+    <header class="paneel-kop">
+      <p class="etiket">{c.gebruikMeta}</p>
+      <h2 id="ed-waarvoor" class="hoog hoog-2">{c.gebruikH}</h2>
+      <p class="lopend">{c.gebruikSub}</p>
+    </header>
+    <Placeholder lang={lang} ratio={r('feed')} caption={false} subject={p('feed', 'subject')} message={p('feed', 'message')} />
+    <div class="ed-twee">
+      <div class="ed-uitleg">
+        {c.gebruikP.map((alinea) => <p class="lopend">{alinea}</p>)}
       </div>
-    </div>
-    <Placeholder lang={lang} space ratio={r('feed')} subject={p('feed', 'subject')} message={p('feed', 'message')} />
-    <div class="svc-explain">
-      <div class="svc-explain-main">
-        <h3>{c.gebruikH}</h3>
-        {c.gebruikP.map((alinea) => <p>{alinea}</p>)}
-      </div>
-      <aside class="svc-explain-side">
-        <h3>{c.gebruikH2}</h3>
-        <ul class="svc-where-list">
-          {c.gebruik.map(([sterk, rest]) => (
-            <li><strong>{sterk}</strong> — {rest}</li>
-          ))}
+      <aside class="ed-waar">
+        <h3 class="hoog hoog-3">{c.gebruikH2}</h3>
+        <ul class="ed-waar-lijst" role="list">
+          {c.gebruik.map(([sterk, rest]) => <li><b>{sterk}</b><span class="lopend">{rest}</span></li>)}
         </ul>
       </aside>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── 5 · HOE ON-BRAND GEMAAKT WORDT ────────────────────────────────────
-     Vanaf hier gaat de pagina alleen nog over de BETAALDE helft. De gedeelde
-     set heeft geen opzet, geen stappen en geen prijs — die is er gewoon. -->
-<section class="section-tight">
-  <div class="container">
-    <div class="photo-split reveal pending">
-      <div class="photo-split-media">
-        <Placeholder lang={lang} ratio={r('opzet')} caption={false} subject={p('opzet', 'subject')} message={p('opzet', 'message')} />
-      </div>
+  {/* ── 5 · HOE ON-BRAND GEMAAKT WORDT ──────────────────────────────────────
+      Vanaf hier gaat de pagina alleen nog over de BETAALDE helft. De gedeelde
+      set heeft geen opzet, geen stappen en geen prijs — die is er gewoon. */}
+  <section class="paneel" aria-labelledby="ed-hoe">
+    <div class="ed-twee-licht">
+      <Placeholder lang={lang} ratio={r('opzet')} caption={false} subject={p('opzet', 'subject')} message={p('opzet', 'message')} />
       <div>
-        <h2>{c.hoeH}</h2>
-        <div class="steps steps-stacked" style="margin-top:1.6rem">
+        <h2 id="ed-hoe" class="hoog hoog-2">{c.hoeH}</h2>
+        <ol class="ed-stappen">
           {c.hoe.map(([kop, tekst], i) => (
-            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{kop}</h3><p>{tekst}</p></div>
+            <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{kop}</b><span class="lopend">{tekst}</span></li>
           ))}
-        </div>
-        <p class="ed-hoe-foot">{c.hoeFoot}</p>
+        </ol>
+        <p class="lopend ed-voet">{c.hoeFoot}</p>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ── 6 · DRIE MAANDEN NAAST ELKAAR ──────────────────────────────────────
-     Het antwoord op de enige echte bezwaarvraag bij een maandelijkse set: is
-     het na drie maanden niet twaalf keer hetzelfde? Eén beeld, geen tekst — de
-     vraag is visueel en het antwoord dus ook. -->
-<section class="section-tight">
-  <div class="container">
+  {/* ── 6 · DRIE MAANDEN NAAST ELKAAR ───────────────────────────────────────
+      Het antwoord op de enige echte bezwaarvraag bij een maandelijkse set: is
+      het na drie maanden niet twaalf keer hetzelfde? Eén beeld, geen tekst —
+      de vraag is visueel en het antwoord dus ook. */}
+  <section class="paneel ed-twaalf">
     <Placeholder lang={lang} ratio={r('twaalf')} subject={p('twaalf', 'subject')} message={p('twaalf', 'message')} />
-  </div>
-</section>
+  </section>
 
-<!-- ── 7 · DE PRIJS ─────────────────────────────────────────────────────── -->
-<section class="section-tight">
-  <div class="container two-col">
-    <div class="reveal pending">
-      <h2>{c.zekerH}</h2>
-      <ul class="checklist" style="margin-top:1.4rem">
-        {c.zeker.map((li) => (
-          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
-        ))}
-      </ul>
-    </div>
-    <div class="reveal pending ed-prijs">
-      <h3>{c.prijsH}</h3>
-      <p set:html={c.prijsMaand} />
-      <p set:html={c.prijsOpzet} />
-      <p class="ed-prijs-vlak"><strong>{c.prijsWaaromH}</strong> {c.prijsWaarom}</p>
-      <div class="flex" style="margin-top:1.4rem">
-        <a href={lp('/contact')} class="btn btn-primary">{c.prijsCta}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── 8 · RECHTEN EN VERMELDING ──────────────────────────────────────────
-     Deze band staat op geen enkele andere dienstpagina, en dat is met reden:
-     geen enkele andere dienst levert iets dat ook naar een ander merk gaat.
-     Zie punt 3 in de kop van dit bestand. -->
-<section class="section-tight">
-  <div class="container">
-    <div class="ed-head">
-      <span class="ed-meta">{c.rechtMeta}</span>
+  {/* ── 7 · DE PRIJS ────────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="ed-zeker">
+    <div class="ed-twee-licht">
       <div>
-        <h2>{c.rechtH}</h2>
+        <h2 id="ed-zeker" class="hoog hoog-2">{c.zekerH}</h2>
+        <ul class="ed-vink" role="list">
+          {c.zeker.map((li) => <li>{li}</li>)}
+        </ul>
+      </div>
+      <div class="ed-prijs">
+        <h3 class="hoog hoog-3">{c.prijsH}</h3>
+        <p class="lopend" set:html={c.prijsMaand} />
+        <p class="lopend" set:html={c.prijsOpzet} />
+        <p class="lopend ed-prijs-waarom"><b>{c.prijsWaaromH}</b> {c.prijsWaarom}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/contact')}>{c.prijsCta}</a>
+          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+        </p>
       </div>
     </div>
-    <div class="svc-explain">
-      <div class="svc-explain-main">
-        {c.rechtP.map((alinea) => <p>{alinea}</p>)}
+  </section>
+
+  {/* ── 8 · RECHTEN EN VERMELDING ───────────────────────────────────────────
+      Deze sectie staat op geen enkele andere dienstpagina, en dat is met reden:
+      geen enkele andere dienst levert iets dat ook naar een ánder merk gaat. */}
+  <section class="paneel" aria-labelledby="ed-recht">
+    <header class="paneel-kop">
+      <p class="etiket">{c.rechtMeta}</p>
+      <h2 id="ed-recht" class="hoog hoog-2">{c.rechtH}</h2>
+    </header>
+    <div class="ed-twee">
+      <div class="ed-uitleg">
+        {c.rechtP.map((alinea) => <p class="lopend">{alinea}</p>)}
       </div>
-      <aside class="svc-explain-side">
-        <ul class="ed-recht-lijst">
-          {c.rechtLijst.map(([kop, body]) => (
-            <li><strong>{kop}</strong><span set:html={body} /></li>
-          ))}
+      <aside class="ed-waar">
+        <ul class="ed-waar-lijst" role="list">
+          {c.rechtLijst.map(([kop, body]) => <li><b>{kop}</b><span class="lopend" set:html={body} /></li>)}
         </ul>
       </aside>
     </div>
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="container" style="max-width:760px">
-    <h2 class="section-h">{c.faqH}</h2>
-    <div class="faq-stack">
-      {c.faqs.map((f) => (
-        <Disclose summary={f.q} tone="panel">
-          <p>{f.a}</p>
-        </Disclose>
-      ))}
+  {/* ── 9 · VRAGEN ───────────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="ed-faq">
+    <header class="paneel-kop">
+      <h2 id="ed-faq" class="hoog hoog-2">{c.faqH}</h2>
+    </header>
+    <div class="ed-vragen">
+      {c.faqs.map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section-tight">
-  <div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:var(--t-page-h2)" set:html={c.ctaH} />
-      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-        <a href={lp('/plans')} class="btn btn-ghost btn-lg">{c.ctaPlans}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}</a>
-      </div>
-      <p class="ed-belofte">{c.belofte}</p>
-    </div>
-  </div>
-</section>
+  {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="ed-slot">
+    <h2 id="ed-slot" class="hoog" set:html={c.ctaH} />
+    <p class="lopend">{c.ctaP}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
+      <a class="knop knop-lijn" href={lp('/plans')}>{c.ctaPlans}</a>
+      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+    </p>
+    <p class="mono ed-belofte">{c.belofte}</p>
+  </section>
+</div>
 
 <style>
-  .ed-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
-  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+  .ed-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .ed-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
+  .ed-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 42em; }
 
-  /* Zelfde merkje als in de navigatie en op /hooks: één vorm voor één
-     betekenis. Zie de noot bij .hk-soon in HooksPage.astro. */
-  .ed-soon {
-    display: inline-block; margin-right: .45rem; padding: .12rem .45rem;
-    border: 1px solid var(--line-strong); border-radius: var(--r-sm);
-    font-style: normal; font-size: .72rem; letter-spacing: .08em;
-    text-transform: uppercase; color: var(--ink-3); vertical-align: .08em;
-  }
+  /* Hetzelfde merkje als in de navigatie en op /hooks: één vorm voor één
+     betekenis — dit is er nog niet. */
+  .ed-tag { color: var(--inkt); border: 1px solid var(--lijn-sterk); border-radius: 999px; padding: .22rem .55rem; }
 
-  /* ── DE VERGELIJKING ──────────────────────────────────────────────────
-     Twee kaarten met echte ruimte ertussen, en niet één doos met een streep
-     erdoor — zie de lange noot bij .tierc-grid in TierCompare.astro, waar
-     precies deze vorm is uitgezocht. De verhoging komt uit de `.lift`-groep
-     in global.css, waar .ed-vgl-col nu bij staat; twee kopieën van dezelfde
-     schaduw zijn twee dingen die uit elkaar kunnen lopen.
+  /* De twee sets naast elkaar. Een lijn erboven en geen kader eromheen: het
+     zijn twee helften van één aanbod en geen twee producten. */
+  .ed-vgl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); }
+  .ed-vgl li { display: flex; flex-direction: column; gap: .9rem; padding-top: 1.2rem; border-top: 2px solid var(--inkt); }
+  .ed-vgl-kop { display: flex; flex-wrap: wrap; align-items: baseline; gap: .7rem; }
+  .ed-vgl-kop b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.15rem, 2.2vw, 1.6rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .ed-vgl-rijen { display: grid; gap: .2rem; }
+  .ed-vgl-rijen dt { color: var(--inkt-2); margin-top: .7rem; }
+  .ed-vgl-rijen dd { margin: 0; font-size: .92rem; }
+  .ed-vgl-cta { margin-top: auto; padding-top: 1rem; }
+  .ed-voet { margin-top: clamp(1.6rem, 3vw, 2.4rem); font-size: .92rem; }
 
-     GELIJK OPGEMAAKT, EN DAT IS DE BOODSCHAP. Geen accentkleur op een van de
-     twee, geen lint, geen grotere kop. Zodra één kolom opvalt, pleit dit blok
-     voor een van de twee in plaats van ze uit elkaar te houden — en de kolom
-     die dan wegvalt is de GRATIS helft, precies degene die een klant moet
-     zien voordat hij voor de andere betaalt. */
-  .ed-vgl {
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(.9rem, 1.8vw, 1.4rem);
-  }
-  @media (max-width: 46rem) { .ed-vgl { grid-template-columns: minmax(0, 1fr); } }
-  .ed-vgl-col {
-    background: var(--surface);
-    border-radius: var(--r-lg);
-    padding: clamp(1.5rem, 2.8vw, 2.1rem);
-    display: flex;
-    flex-direction: column;
-  }
-  .ed-vgl-kop { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }
-  .ed-vgl-kop h3 { font-size: clamp(1.05rem, 1.7vw, 1.25rem); line-height: 1.25; }
-  /* Het etiket zegt WAT voor ding dit is en niet hoe goed het is, dus het is
-     een label en geen keurmerk: geen vlak, geen kleur, alleen een rand. */
-  .ed-vgl-tag {
-    flex: 0 0 auto;
-    padding: .12rem .5rem;
-    border: 1px solid var(--line-strong); border-radius: var(--r-sm);
-    font-size: .7rem; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .ed-vgl-rijen { margin-top: var(--gap-head-block); flex: 1; }
-  .ed-vgl-rij { padding: .85rem 0; border-top: 1px solid var(--line); }
-  .ed-vgl-rij:first-child { border-top: 0; padding-top: 0; }
-  .ed-vgl-rij dt { font-size: .72rem; font-weight: 600; color: var(--ink-3); }
-  .ed-vgl-rij dd { margin: .3rem 0 0; color: var(--ink); font-size: .95rem; line-height: 1.45; }
-  .ed-vgl-cta { margin-top: clamp(1.2rem, 2.4vw, 1.7rem); }
-  /* De regel onder de twee kolommen, links uitgelijnd met de kop erboven —
-     zie de noot bij .hk-krijg in HooksPage.astro over gecentreerde rijen
-     tussen links uitgelijnde blokken. */
-  .ed-vgl-foot {
-    margin-top: clamp(1.4rem, 2.6vw, 2rem);
-    font-size: .9rem; color: var(--ink-3);
-    max-width: var(--measure-note, 68ch);
-  }
+  .ed-niet { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); }
+  .ed-niet li { display: grid; gap: .6rem; align-content: start; }
+  .ed-niet b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; margin-top: .6rem; }
 
-  /* ── DIT WEL, DIT NIET ────────────────────────────────────────────────
-     Twee vierkanten naast elkaar. Onder de 46rem onder elkaar en niet
-     kleiner: het hele punt is dat je ze VERGELIJKT, en twee beelden van 160px
-     naast elkaar op een telefoon vergelijk je niet. */
-  .ed-niet {
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(1rem, 2.4vw, 1.8rem);
-  }
-  @media (max-width: 46rem) { .ed-niet { grid-template-columns: minmax(0, 1fr); } }
-  .ed-niet-h { margin-top: 1rem; font-size: 1rem; font-weight: 700; color: var(--ink); }
-  .ed-niet-p { margin-top: var(--gap-label-note); font-size: .92rem; color: var(--ink-2); line-height: 1.55; }
+  .ed-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; margin-top: clamp(2.5rem, 5vw, 4rem); }
+  .ed-uitleg { display: grid; gap: .9rem; }
+  .ed-waar { padding-top: 1.2rem; border-top: 1px solid var(--lijn); display: grid; gap: .9rem; }
+  .kamer .ed-waar { border-top-color: rgb(245 245 245 / .22); }
+  .ed-waar-lijst { display: grid; gap: .7rem; }
+  .ed-waar-lijst li { display: grid; gap: .2rem; }
+  .ed-waar-lijst b { font-weight: 500; }
+  .ed-waar-lijst .lopend { font-size: .92rem; }
 
-  .ed-hoe-foot { margin-top: clamp(1.4rem, 2.6vw, 1.9rem); font-size: .9rem; color: var(--ink-3); }
+  .ed-twee-licht { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .ed-stappen { display: grid; margin-top: 1.4rem; }
+  .ed-stappen li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: .4rem 1.2rem; padding: clamp(.9rem, 2vw, 1.3rem) 0; border-top: 1px solid var(--lijn); }
+  .ed-stappen li:last-child { border-bottom: 1px solid var(--lijn); }
+  .ed-stappen .nr { color: var(--inkt-2); grid-row: span 2; }
+  .ed-stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.3rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .ed-stappen .lopend { font-size: .92rem; }
 
-  /* Het prijsblok, zelfde vorm als .buy-note op /video en .hk-prijs op
-     /hooks: volle rand, geen nesting, geen accenttint. */
-  .ed-prijs { border: 1px solid var(--line-strong); padding: clamp(1.4rem, 3vw, 2rem); }
-  .ed-prijs h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
-  .ed-prijs p { margin-top: var(--gap-label-note); color: var(--ink-2); }
-  .ed-prijs p :global(strong) { color: var(--ink); font-weight: 600; }
-  .ed-prijs .ed-prijs-vlak {
-    margin-top: 1.1rem; padding-top: 1rem;
-    border-top: 1px solid var(--line);
-    font-size: .9rem; line-height: 1.55; color: var(--ink-3);
-  }
-  .ed-prijs .ed-prijs-vlak strong { color: var(--ink); font-weight: 700; }
+  .ed-twaalf { display: grid; }
 
-  /* De rechtenlijst in de zijkolom. Zelfde ritme als .svc-where-list, maar met
-     een kop per regel omdat er drie afzonderlijke afspraken in staan en geen
-     opsomming van plekken. */
-  .ed-recht-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
-  .ed-recht-lijst li { display: grid; gap: .3rem; padding-top: .9rem; border-top: 1px solid var(--line); }
-  .ed-recht-lijst li:first-child { padding-top: 0; border-top: 0; }
-  .ed-recht-lijst strong { color: var(--ink); font-size: .95rem; }
-  .ed-recht-lijst span { color: var(--ink-2); font-size: .9rem; line-height: 1.55; }
-  .ed-recht-lijst :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+  .ed-vink { display: grid; gap: .7rem; margin-top: 1.4rem; }
+  .ed-vink li { position: relative; padding-left: 1.5rem; color: var(--inkt-2); }
+  .ed-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .ed-prijs { display: grid; gap: .8rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
+  .ed-prijs :global(strong) { font-weight: 500; color: var(--inkt); }
+  .ed-prijs-waarom { padding-top: .8rem; border-top: 1px solid var(--lijn); font-size: .92rem; }
+  .ed-prijs-waarom b { font-weight: 500; }
 
-  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
+  .ed-vragen { display: grid; gap: .7rem; }
+  /* ── ERFT NU VAN HET DONKERE SLOT — 7 september 2026 ─────────────────────
+     Deze regel stond op var(--inkt) omdat het slotpaneel geel was. Sinds het
+     donker is, was dat inkt op #1A1A1A: 1,08:1, en dat is precies het soort
+     restant dat een klassenaam die "geel" heette had moeten voorkomen. De
+     etiket-tint van .paneel-slot zegt hetzelfde en is 8:1. */
+  .ed-belofte { color: rgb(245 245 245 / .72); margin-top: .6rem; }
 
-  .ed-belofte {
-    max-width: 68ch;
-    margin: clamp(2rem, 4vw, 2.8rem) auto 0;
-    padding-top: clamp(1.2rem, 2.4vw, 1.6rem);
-    border-top: 1px solid var(--line);
-    text-align: center; font-size: .88rem; line-height: 1.6; color: var(--ink-3);
+  @media (max-width: 900px) {
+    .ed-open, .ed-vgl, .ed-niet, .ed-twee, .ed-twee-licht { grid-template-columns: 1fr; }
   }
 </style>

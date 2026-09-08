@@ -1,0 +1,56 @@
+---
+/* Eén beeld in een bestelling: de tegel, het bijschrift, de beoordeelknoppen
+   en wat erover gezegd is. De toestand komt uit shotView() in account.js —
+   dezelfde beslissingen als het oude shotTile()/reviewControls(), dus het
+   scherm biedt nooit iets aan wat /account/review weigert.
+
+   De formulieren posten naar dezelfde routes als voorheen (accountPost). Het
+   aanvinkvak en de notitie voor de revisieronde dragen `form="ronde-<id>"` en
+   horen bij het formulier onderaan de bestelling (Bestelling.astro). */
+const { v, orderId } = Astro.props;
+---
+<li class="st-beeld" id={`f${v.id}`}>
+  {v.gone
+    ? <div class="st-beeld-media is-weg"><span>{v.expiredText}</span></div>
+    : <a class={`st-beeld-media${v.viewable ? '' : ' is-bestand'}`} href={v.href} target="_blank" rel="noopener">
+        {v.viewable
+          ? <img src={v.href} alt={v.caption} loading="lazy" decoding="async" />
+          : <span class="st-beeld-ext">{v.ext}</span>}
+        {v.badge && <span class={`st-badge is-${v.badge.kind}`}>{v.badge.text}</span>}
+      </a>}
+  <div class="st-beeld-body">
+    <span class="st-beeld-cap">{v.caption}</span>
+    {v.review.kind === 'sample' && <p class="st-meta st-beeld-noot">{v.review.text}</p>}
+    {v.review.kind === 'settled' && <p class="st-meta st-beeld-noot">{v.review.text}</p>}
+    {v.review.kind === 'undo' && (
+      <form class="st-keur" method="post" action="/account/review">
+        <input type="hidden" name="file" value={v.id} />
+        <button class="btn btn-2nd btn-sm" type="submit" name="action" value="undo">{v.review.label}</button>
+      </form>
+    )}
+    {v.review.kind === 'approve' && (
+      <Fragment>
+        <form class="st-keur" method="post" action="/account/review">
+          <input type="hidden" name="file" value={v.id} />
+          <button class="btn btn-primary btn-sm" type="submit" name="action" value="approve" formnovalidate>{v.review.label}</button>
+        </form>
+        {v.review.ask && v.review.ask.revoked && <p class="st-meta st-beeld-noot">{v.review.ask.revoked}</p>}
+        {v.review.ask && !v.review.ask.revoked && (
+          <div class="st-aanmerk">
+            <label class="st-vink">
+              <input type="checkbox" form={`ronde-${orderId}`} name="file" value={v.id} />
+              <span>{v.review.ask.tick}</span>
+            </label>
+            <label class="sr-only" for={`n${v.id}`}>{v.review.ask.note}</label>
+            <textarea id={`n${v.id}`} class="st-veld st-veld-klein" form={`ronde-${orderId}`} name={`note-${v.id}`} rows="2" maxlength={v.review.ask.max} placeholder={v.review.ask.hint}></textarea>
+          </div>
+        )}
+      </Fragment>
+    )}
+    {v.said.map((s) => (
+      s.kind === 'said'
+        ? <p class="st-gezegd">{s.text}</p>
+        : <p class="st-gezegd is-antwoord"><b>{s.label}</b> {s.text}</p>
+    ))}
+  </div>
+</li>

@@ -52,7 +52,7 @@
      terugkwam in een render. Op een telefoon leidde Chrome het donker af uit iets
      anders en viel het niet op — precies het soort verschil dat pas opvalt op de
      browser van een klant. */
-  color-scheme: dark;
+  color-scheme: light;
 
   /* ---- palette ----------------------------------------------------------
      Hand-copied from src/styles/global.css's :root. This is a duplicate and
@@ -60,10 +60,11 @@
      the same names global.css uses, so a value that drifts is visible as a
      value, not as a renamed concept.
 
-     The scheme is cool near-black with one light-blue accent and two panel
-     gradients. It replaced a warm paper-and-harbor-teal scheme, and the port
-     is not a find-and-replace: three of the names below changed ROLE, not just
-     value, and each is called out where it sits.
+     SECTIE 21, 5 september 2026: de waarden zijn die van de site — Komma's
+     lichte grond #F5F5F5, inkt #0A0A0A, het geel #D2E04A als VLAK met zwarte
+     letters erop, en als letter de inkt (geel op wit is 1,5:1). De noten
+     eronder beschrijven de vorige, donkere stand en zijn geschiedenis; de
+     NAMEN zijn ongewijzigd, zodat elke regel in dit bestand blijft kloppen.
 
      Ramps, with their measured worst case on the darkest ground they land on
      (--surface, #17191E):
@@ -89,25 +90,31 @@
      Die twee wensen samen betekenen dat een blok niet meer als DOOS mag lezen
      maar als CEL: gescheiden door een haarlijn, niet omsloten door een kader.
      Zie .statrow verderop, waar dat als eerste is uitgevoerd. */
-  --paper:      #030406;               /* body ground                       */
-  --paper-2:    #060709;               /* recessed / banded                 */
-  --paper-lift: #08090B;               /* raised — a card off the ground    */
+  --paper:      #F5F5F5;               /* body ground                       */
+  --paper-2:    #EDEDED;               /* recessed / banded                 */
+  --paper-lift: #FFFFFF;               /* raised — a card off the ground    */
 
   /* Espresso's two names, kept as aliases so .btn-dark and the raised panels
      keep resolving. There is no espresso any more; these are the two surface
      steps above the ground. */
-  --ink-850:  #08090B;
-  --ink-800:  #0C0E11;
+  --ink-850:  #1A1A1A;
+  --ink-800:  #242424;
 
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
      same way on every one of the three surfaces above. */
-  --ink-900:  #FFFFFF;
-  --ink-700:  rgb(255 255 255 / 0.80);
-  --ink-500:  rgb(255 255 255 / 0.66);
-  --ink-300:  rgb(255 255 255 / 0.22);  /* rules, never text */
-  --ink-200:  rgb(255 255 255 / 0.12);  /* hairlines */
-  --ink-100:  #FFFFFF;
+  --ink-900:  #0A0A0A;
+  --ink-700:  #454545;
+  /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
+     met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
+     blijven staan op de oudere, lichtere waarde. Op wit haalde die het nog
+     (5,1:1), op de tweede grond #EDEDED niet: 4,36:1, en daar staat de meta-regel
+     van elke aandachtkaart in. Precies de afdrijving waar de kop van dit blok
+     voor waarschuwt, gevonden door te meten. */
+  --ink-500:  #686868;
+  --ink-300:  rgb(10 10 10 / 0.26);  /* rules, never text */
+  --ink-200:  #DFDFDF;  /* hairlines */
+  --ink-100:  #0A0A0A;
 
   /* The three "on dark" names are now the same values as the ink ramp, because
      every ground is dark. They stay as separate names rather than being
@@ -122,10 +129,10 @@
      ground a tint is a lighter surface, and four of them would be four
      surfaces nobody can tell apart, so all four resolve to the one raised
      step. Kept as four names because the markup reads them by meaning. */
-  --mist-teal:  #101216;
-  --mist-clay:  #101216;
-  --mist-slate: #101216;
-  --mist-stone: #101216;
+  --mist-teal:  #EDEDED;
+  --mist-clay:  #EDEDED;
+  --mist-slate: #EDEDED;
+  --mist-stone: #EDEDED;
 
   /* ---- accent ----
      #C6F100 since August 2026, moved with the site — see the accent note in
@@ -139,11 +146,11 @@
      hue. --teal-grad and --teal-hover are the one step DOWN a hover may take;
      on a dark ground the text-safe cut is the accent itself, which is why
      they are not five darkening steps the way they were on paper. */
-  --teal:       #C6F100;
-  --teal-grad:  #ABD200;
-  --teal-hover: #ABD200;
-  --teal-text:  #C6F100;
-  --teal-deep:  #C6F100;
+  --teal:       #D2E04A;
+  --teal-grad:  #B8CC46;
+  --teal-hover: #B8CC46;
+  --teal-text:  #0A0A0A;
+  --teal-deep:  #0A0A0A;
 
   /* THE ATTENTION COLOUR. Was a pink left over from the decorative palette;
      #E9963B since August 2026 — see the --clay note in src/styles/global.css
@@ -152,29 +159,29 @@
      --flag below both read it, which is what makes "pay attention" one colour
      on this site instead of three. */
   --clay:       #E9963B;
-  --clay-text:  #E9963B;
+  --clay-text:  #8A4F06;
 
   /* Ghost fill for secondary and small buttons — a paper alpha now, not an
      ink alpha. An ink alpha on a near-black ground is invisible. */
-  --ghost:      rgb(255 255 255 / 0.08);
+  --ghost:      rgb(10 10 10 / 0.06);
 
   /* Button surfaces as TOKENS, not as descendant rules — see global.css. */
   --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(255 255 255 / 0.16);
+  --btn-ghost-fill-hover:  rgb(10 10 10 / 0.12);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(255 255 255 / 0.08);
-  --btn-2nd-ink:           #FFFFFF;
-  --btn-2nd-border:        rgb(255 255 255 / 0.28);
-  --btn-2nd-border-hover:  rgb(255 255 255 / 0.55);
+  --btn-2nd-fill-hover:    rgb(10 10 10 / 0.06);
+  --btn-2nd-ink:           #0A0A0A;
+  --btn-2nd-border:        rgb(10 10 10 / 0.24);
+  --btn-2nd-border-hover:  rgb(10 10 10 / 0.60);
 
   /* ---- system colour ----
      Still two hues, still never the sole carrier of state — every status
      carries a word. The -ink variants are the ones allowed to set body text,
      and on this ground both cuts clear 4.5:1, so they equal their fills. */
   --signal:      var(--teal);
-  --signal-ink:  var(--teal);
+  --signal-ink:  var(--teal-text);
   --warn:        var(--clay);
-  --warn-ink:    var(--clay);
+  --warn-ink:    var(--clay-text);
   --verify:      var(--signal);
   --verify-ink:  var(--signal-ink);
   --flag:        var(--warn);
@@ -186,7 +193,7 @@
      darkest ink and, by coincidence of value, the dark ground — and every
      rule that used it as a ground went white the moment the ramp flipped.
      The deep ground is stated as a ground. */
-  --bg-deep:    #000000;
+  --bg-deep:    #111111;
   --bg-raise:   var(--paper-2);
   --surface:    var(--paper-lift);
   --surface-2:  var(--paper-2);
@@ -204,30 +211,30 @@
   --line-strong: var(--ink-300);
   /* The border a focused field takes: strong enough to read as "this one",
      which on a dark ground means brighter, not darker. */
-  --line-ui:     rgb(255 255 255 / 0.55);
+  --line-ui:     rgb(10 10 10 / 0.45);
 
   --brand:         var(--ink-900);
   --accent:        var(--teal);
   /* The label ON the accent. It was paper-on-dark, because the accent was a
      dark teal; the accent is a light blue now, so the label is the ground.
      10.43:1. */
-  --accent-on:     #08090B;
-  --accent-ink:    #08090B;
+  --accent-on:     #0A0A0A;
+  --accent-ink:    #0A0A0A;
   --accent-2:      var(--teal-text);
   --accent-word:   var(--teal-text);
-  --accent-bright: var(--teal-hover);
-  --accent-soft:   rgb(198 241 0 / 0.14);
+  --accent-bright: var(--teal-text);
+  --accent-soft:   rgb(210 224 74 / 0.22);
   --accent-line:   var(--ink-300);
 
-  --focus-ring:    var(--teal);
+  --focus-ring:    #0A0A0A;
 
   /* The <select> caret, as a data URL rather than a token the SVG can read —
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
      ramp's top step; when that moves, this moves with it or the caret stops
      matching. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230A0A0A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-  --font: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
 
   /* ---- radius ----
      There IS a scale now, and there is exactly one place it is written. The
@@ -240,9 +247,9 @@
      and the three values have to move in step with it: this stylesheet is
      served to a page that links back into the same site, and a dashboard with
      tighter corners than the page it came from reads as a different product. */
-  --r-lg: 24px;   /* cards, panels, tiles */
-  --r-md: 14px;   /* buttons, fields, pills */
-  --r-sm: 8px;    /* the small stuff inside them */
+  --r-lg: 4px;   /* cards, panels, tiles */
+  --r-md: 4px;   /* buttons, fields, pills */
+  --r-sm: 2px;    /* the small stuff inside them */
   --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
 
@@ -260,6 +267,35 @@
 
 /* box-sizing only. The radius half of this reset is gone — see the radius
    note in :root. */
+/* ══ SECTIE 22 — DE LETTER VAN DE SITE — 7 september 2026 ═══════════════════
+   GETELD, NIET GEGOKT. Hier stond Hubot Sans voor de koppen, Satoshi voor de
+   lopende tekst en Sometype Mono voor nummers. /fonts/gedeeld.css levert er
+   geen van drieën: het schrijft Anybody, Instrument Sans en Martian Mono, en
+   Satoshi alleen als de twee woff2's in public/fonts/satoshi/ staan — daar
+   ligt nu alleen een LEES-MIJ. Alle drie de werkschermen stonden dus in
+   Arial te renderen terwijl de site in Instrument Sans staat.
+
+   De namen hieronder zijn nu de snitten die de build ECHT kopieert; zie
+   scripts/fonts-voor-worker.mjs, dat de enige waarheid is over wat er staat.
+
+   DE TWEE BREEDTES. Anybody en Martian Mono hebben allebei een breedte-as, en
+   die staat standaard op 100% — dat is niet de stand van de site. --stretch-kop
+   is 125% en --stretch-mono 82%, dezelfde twee getallen als .hoog en .etiket in
+   src/styles/stijl22.css. Een mono op 100% is zó breed dat een ordernummer over
+   de rand van zijn cel loopt; dat is geen smaak maar een layoutfout.
+
+   WAT HIER MET OPZET NIET GEBEURT. De site zet .hoog ook in kapitalen. Dat is
+   een editorial gebaar; dit zijn werkschermen. Dezelfde letter, rustiger
+   ingezet — zie de REGISTER-noot in de kop van dit bestand. */
+:root {
+  --font-kop: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-kop);
+  --font-mono: "Martian Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --stretch-kop: 125%;
+  --stretch-mono: 82%;
+}
+h1, h2, h3 { font-family: var(--font-kop); font-stretch: var(--stretch-kop); letter-spacing: -.02em; }
+
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 
@@ -310,7 +346,7 @@ h2 { margin: 2.4rem 0 .8rem; font-size: 1.1rem; font-weight: 700; color: var(--i
   display: flex; align-items: baseline; justify-content: space-between;
   gap: .8rem; flex-wrap: wrap; margin-bottom: .5rem;
 }
-.ref { font-family: ui-monospace, Menlo, monospace; font-size: .86rem; font-weight: 700; color: var(--ink); }
+.ref { font-family: var(--font-mono); font-stretch: var(--stretch-mono); font-size: .86rem; font-weight: 700; color: var(--ink); }
 .meta { font-size: .82rem; color: var(--ink-3); }
 .pill {
   display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
@@ -942,9 +978,13 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 
 /* ── TWEE STAPPEN ──────────────────────────────────────────────────────────
    Het geheim en de herstelcodes worden overgetypt van scherm naar telefoon of
-   naar papier. Vast lettertype dus, ruim uit elkaar, en te selecteren. */
+   naar papier. Vast lettertype dus, ruim uit elkaar, en te selecteren.
+
+   DE ENIGE MONO OP VOLLE BREEDTE. Overal elders staat --stretch-mono (82%),
+   omdat een smalle mono in een cel past. Hier is overtypen het hele doel, dus
+   wint de leesbaarheid van het teken het van de breedte van het blok. */
 .hcodes {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 1rem; letter-spacing: .08em; line-height: 1.9;
   margin: .6rem 0 0; padding: .8rem 1rem; white-space: pre-wrap; word-break: break-all;
   background: var(--paper-2); border: 1px solid var(--line); color: var(--ink-900);
@@ -1090,7 +1130,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .pl-chip.is-asap { border-style: dashed; }
 .pl-chip.is-laat { border-color: var(--warn-ink); box-shadow: inset 3px 0 0 var(--warn-ink); }
 .pl-chip.is-delivered, .pl-chip.is-cancelled { opacity: .6; }
-.pl-chip-ref { display: block; font-family: ui-monospace, Menlo, monospace; font-weight: 700; color: var(--ink); }
+.pl-chip-ref { display: block; font-family: var(--font-mono); font-stretch: var(--stretch-mono); font-weight: 700; color: var(--ink); }
 .pl-chip-wat { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) {
   .pl-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1166,11 +1206,19 @@ h1 { margin-bottom: .9rem; }
 .stylecard-edit button { justify-self: start; }
 @media (max-width: 720px) { .stylecard-edit .row-2 { grid-template-columns: 1fr; } }
 
-.aanvraag-intake { margin: .8rem 0 1.2rem; max-width: 70ch; border-top: 1px solid var(--line); }
-.aanvraag-intake .hold-fact { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
-.aanvraag-intake dt { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding-top: .15rem; }
-.aanvraag-intake dd { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
-@media (max-width: 560px) { .aanvraag-intake .hold-fact { grid-template-columns: 1fr; gap: .25rem; } }
+/* `.keuze-intake` staat overal naast `.aanvraag-intake` en niet als kopie
+   eronder: het is dezelfde feitenlijst, alleen met de KEUZES van een gewone
+   bestelling erin in plaats van de intake van een aanvraag. Twee klassen op één
+   set regels betekent dat een aanpassing er maar één keer hoeft. 7 sept 2026. */
+.aanvraag-intake, .keuze-intake { margin: .8rem 0 1.2rem; max-width: 70ch; border-top: 1px solid var(--line); }
+.aanvraag-intake .hold-fact, .keuze-intake .hold-fact { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+.aanvraag-intake dt, .keuze-intake dt { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding-top: .15rem; }
+.aanvraag-intake dd, .keuze-intake dd { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+.keuze-intake .meta { color: var(--ink-3); font-size: .82rem; }
+/* Het kleurvierkantje voor de achtergrond van een catalogbestelling. Een rand
+   eromheen, anders is wit op wit geen vierkantje maar niets. */
+.kleurstaal { display: inline-block; width: .9em; height: .9em; margin-right: .45em; vertical-align: -.1em; border: 1px solid var(--line-strong, #BDBDBD); border-radius: 3px; }
+@media (max-width: 560px) { .aanvraag-intake .hold-fact, .keuze-intake .hold-fact { grid-template-columns: 1fr; gap: .25rem; } }
 .controls > label:not(.sr-only):not(.checkline) { display: grid; gap: .3rem; font-size: .82rem; color: var(--ink-2); }
 
 /* ══ DE MAANDSET — 4 september 2026 ═══════════════════════════════════════
@@ -1183,3 +1231,253 @@ h1 { margin-bottom: .9rem; }
 .maandset-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .maandset-beeld form { position: absolute; top: .3rem; right: .3rem; margin: 0; }
 .maandset-beeld .btn { padding: 0 .5rem; min-height: 1.6rem; line-height: 1.6rem; background: rgb(0 0 0 / .55); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTIE 22 · HET PANEELRITME — 7 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Lucas: "/admin hoeft niet super editorial maar moet voornamelijk logisch zijn
+   en fijn zijn om meer te werken. Moet logisch en rustig aanvoelen."
+
+   WAT HIER MIS WAS, GETELD. Dit scherm tekende ALLES als doos: acht cijfervakjes
+   met een rand, elk blok met een rand, elke filterknop met een rand, elke status
+   met een rand. Een rand zegt "dit is een apart ding". Als alles apart is, is
+   niets belangrijk — en dat is precies het drukke gevoel waar hij het over had.
+
+   HET RITME VAN DE SITE, IN ÉÉN ZIN. De pagina staat op de grijze grond met een
+   marge eromheen (--rand), en het werkvlak is ÉÉN wit paneel met ronde hoeken —
+   net als .paneel in src/styles/stijl22.css. Binnen dat paneel is een blok geen
+   doos maar een CEL: een grijze vulling of een haarlijn, geen kader.
+
+   DIT STAAT MET OPZET ONDERAAN. Het is één blok dat je in zijn geheel kunt
+   weghalen om terug te zijn waar we waren; niets erboven is aangeraakt. De prijs
+   is dat het op specificiteit moet winnen van wat erboven staat, en dat lukt
+   hier met dezelfde selectors — laatste wint bij gelijke specificiteit.
+
+   WAT HIER NIET GEBEURT. Geen kapitalen op de koppen, geen editorial maten, geen
+   beweging. Zie de REGISTER-noot bovenin: dit is gereedschap. De elf-stapstekst-
+   schaal blijft staan zoals hij is.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Dezelfde twee namen als stijl22.css, en met opzet KLEINER: --ronding op de
+     site is clamp(20px,2.4vw,34px), en 34px om een tabel met zeven kolommen is
+     speels in plaats van rustig. Een paneel dat je de hele dag openhebt mag
+     zachte hoeken hebben, geen ronde. */
+  --rand: clamp(.75rem, 2vw, 1.5rem);
+  --ronding: clamp(16px, 1.8vw, 22px);
+
+  /* De radiusschaal stond op 4 / 4 / 2 terwijl de noot erboven 24 / 14 / 8
+     beweerde — precies de afdrijving waar diezelfde noot voor waarschuwt. Nu
+     staat er wat er is, en het is de familie van de site: een knop is een pil,
+     de rest is zacht. */
+  --r-lg: 12px;
+  --r-md: 8px;
+  --r-sm: 5px;
+}
+
+/* ── DE GROND EN HET PANEEL ─────────────────────────────────────────────────
+   body draagt de marge, .wrap is het paneel. De balk bovenin hoort erbij: hij
+   is de weg naar elk scherm en dus onderdeel van het werkvlak, niet iets wat
+   erboven zweeft. */
+body { padding: var(--rand) var(--rand) calc(var(--rand) * 3); }
+.wrap {
+  background: var(--paper-lift);
+  border-radius: var(--ronding);
+  padding: 0 clamp(1.1rem, 2.4vw, 2.2rem) clamp(1.6rem, 3vw, 2.6rem);
+}
+
+/* ── EEN BLOK IS EEN CEL, GEEN DOOS ─────────────────────────────────────────
+   Op een wit paneel is een witte kaart met een rand twee keer niets: de vulling
+   zegt niets en de rand doet al het werk. Omgekeerd dus — de vulling doet het
+   werk, de rand verdwijnt. */
+.card {
+  border: 0;
+  background: var(--paper);
+  border-radius: var(--r-lg);
+  padding: 1.1rem 1.2rem;
+  margin-bottom: .8rem;
+}
+/* De aandachtkaart houdt wél een rand: dit is de enige plek waar een blok om
+   een handeling vraagt, en dan mag het zich aftekenen. */
+.card.is-attention { border: 1px solid var(--warn-ink); background: var(--mist-clay); }
+
+/* ── DE CIJFERRIJ ───────────────────────────────────────────────────────────
+   Acht vakjes met acht randen worden één rij cellen, gescheiden door één
+   haarlijn. Het getal blijft het getal; alleen de dozen zijn weg. */
+.stats {
+  gap: 0;
+  background: var(--paper);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  padding: .15rem;
+}
+.stat {
+  border: 0;
+  background: var(--paper-lift);
+  border-radius: calc(var(--r-lg) - 3px);
+  margin: .15rem;
+  padding: .85rem 1rem;
+}
+/* Een cijfer dat aandacht vraagt kreeg een gekleurde RAND. Op een cel zonder
+   randen bestaat die niet meer, dus draagt het label de kleur — dat is ook waar
+   je leest wat er aan de hand is. */
+.stat.is-warn { border: 0; }
+.stat.is-warn .stat-l { color: var(--warn-ink); font-weight: 700; }
+.stat-l { font-size: .72rem; }
+
+/* ── FILTERS EN STATUSSEN ZIJN PILLEN ───────────────────────────────────────
+   Zelfde vorm als .knop en .filterpil op de site. Een rechthoek met een rand
+   leest als een veld waar je in kunt typen; een pil leest als iets wat je
+   aanklikt of iets wat een toestand aangeeft. */
+.fl-chip, .pill, .or-let, .board-count { border-radius: var(--r-pill); }
+.pill, .or-let, .board-count {
+  font-family: var(--font-mono);
+  font-stretch: var(--stretch-mono);
+  letter-spacing: .02em;
+}
+
+/* ── DE KOLOMKOPPEN IN DE MONO-STEM ─────────────────────────────────────────
+   Een kolomkop is een etiket bij data, geen kop. Martian Mono op 82%, dezelfde
+   stand als .etiket in stijl22.css. De maten blijven staan; alleen de stem
+   verandert, zodat je in één oogopslag ziet wat label is en wat inhoud. */
+.or-kop,
+.slot-label,
+.aanvraag-intake dt, .keuze-intake dt {
+  font-family: var(--font-mono);
+  font-stretch: var(--stretch-mono);
+  letter-spacing: .04em;
+}
+
+/* ── VELDEN ─────────────────────────────────────────────────────────────────
+   background-color en niet background: de <select> draagt --select-caret als
+   background-image, en `background` wist die. Dat staat twee keer in global.css
+   als valstrik beschreven en is hier al één keer ingelopen. */
+input, textarea, select { background-color: var(--paper-lift); }
+.card input, .card textarea, .card select { background-color: var(--paper-lift); }
+
+/* ── EEN CITAAT IS EEN CEL, GEEN STREEP ─────────────────────────────────────
+   .note en .tm-text droegen allebei een streep van 2px links: het klassieke
+   accentrandje. Twee bezwaren, en het tweede is het echte.
+
+   EEN: met --r-lg op 12px tekent de browser die 2px mee langs de bocht, en dan
+   staat er letterlijk een haakje "(" voor de zin. Dat is hoe ik het zag.
+
+   TWEE: een streep aan één kant zegt niets. Wat hier staat is een KLANT die iets
+   zegt — een revisieverzoek, een tevredenheidsantwoord — en dat is inhoud van
+   een andere soort dan de velden eromheen. Een cel met een eigen vulling zegt
+   dat wel, en zegt het aan alle vier de kanten tegelijk. */
+.note, .tm-text {
+  border-left: 0;
+  border-radius: var(--r-md);
+  padding: .55rem .85rem;
+  background: var(--paper);
+}
+/* Binnen de aandachtkaart is de grond al grijs, dus daar zou de cel verdwijnen;
+   die krijgt wit terug. Zelfde regel, andere grond. */
+.card.is-attention .note { background: var(--paper-lift); }
+
+/* De aandachtkaart stopte op 1080px, tussen een cijferrij en een tabel die
+   allebei de volle breedte gebruiken. Dat leest als een blok dat niet af is.
+   Hij is geen lopende tekst maar een aanwijzing — "hier begin je" — dus hij
+   mag de breedte van het paneel hebben; de zin erin houdt zijn eigen maat. */
+.wrap > .card.is-attention { max-width: none; }
+.card.is-attention .note { max-width: 78ch; }
+
+/* ── DE GEMETEN LEESBAARHEID — 7 september 2026 ─────────────────────────────
+   KEUR=1 node kladblok/admin-proef.mjs meet elk tekstelement tegen de grond die
+   er echt onder ligt, op 1440 / 768 / 390. Dit zijn de uitslagen, niet mijn
+   indruk. Elke regel hieronder heeft een gemeten getal ernaast.
+
+   EEN SIGNAALKLEUR IS GEEN LETTERKLEUR. Dat is dezelfde fout als --gloed op de
+   site: een kleur die als VLAK werkt, wordt niet vanzelf een kleur waarin je
+   kunt schrijven. Het amber (--warn, #E9963B) haalt 2,36:1 als letter op wit;
+   het is bedoeld als rand en vulling. --warn-ink (#8A4F06) is de letterkant van
+   datzelfde amber en haalt 6,56:1. */
+.fl-chip.is-warn { color: var(--warn-ink); border-color: var(--warn-ink); }
+
+/* HET ROOD STOND OP DE VERKEERDE GROND. #FF8A8E is een rood voor een DONKERE
+   pagina — het komt uit de tijd dat dit dashboard donker was. Op wit haalt het
+   2,2:1. #B02A28 is dezelfde signaalkleur voor een lichte grond: 6,55:1 op wit
+   en 6,00:1 op #F5F5F5. Het blijft de enige rode regel in dit dashboard. */
+.warnline.is-rood { border-color: #B02A28; color: #B02A28; }
+.or-let.is-rood { color: #B02A28; border-color: #B02A28; }
+.danger-block.is-worst h4 { color: #B02A28; }
+
+/* ONDER DE ONDERGRENS. 11,5px is de vloer op de hele site; .68rem is 10,88px.
+   Twee etiketten stonden eronder: het merkje bij een bestelling ("NIET GEMELD")
+   en het opschrift boven een plek in de opleverset ("FRONT", "BACK"). Ze gaan
+   naar .72rem — de eerstvolgende stap op de elf-stapsschaal, dus geen nieuwe
+   maat, en 11,52px, dus net erboven. */
+.or-let { font-size: .72rem; }
+.slot-label { font-size: .72rem; }
+
+/* Nog drie onder de vloer, uit dezelfde meting. .7rem is 11,2px en .66rem is
+   10,56px; allebei gaan ze naar .72rem (11,52px), de stap die de schaal al
+   heeft. Het gaat om: het opschrift boven de aandachtkaart ("HIER BEGIN JE"),
+   de dagteller in de planning ("54 / 79 punten") en het merkje "VANDAAG" — juist
+   de drie labels waar je op een planningsscherm het vaakst naar kijkt. */
+.pl-dag-nu, .pl-last-n, .pl-dag-dicht, .or-kop { font-size: .72rem; }
+.ag-nu .eyebrow { font-size: .72rem; }
+
+/* ── EEN DICHTE DAG HAD GEEN EIGEN GROND ────────────────────────────────────
+   .pl-dag.is-dicht zette alleen een streepjespatroon en géén background-color,
+   dus wat je zag was de RASTERLIJN eronder: #DFDFDF. Daar haalt --ink-3 4,18:1,
+   en dat is precies waar "wo 16 sep · dicht · shoot in Antwerpen" staat.
+
+   Twee dingen dus. De dag krijgt een eigen grond onder de streepjes — en de
+   streepjes worden zichtbaar donker in plaats van 3% wit, want op een lichte
+   pagina deed dat patroon helemaal niets. En de kop van die dag gaat een stap
+   donkerder, want een dichte dag is de enige cel met een afwijkende grond. */
+.pl-dag.is-dicht {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 7px, rgb(10 10 10 / .05) 7px 14px)
+    var(--paper-2);
+}
+.pl-dag.is-dicht .pl-dag-wd, .pl-dag.is-dicht .pl-dag-mnd { color: var(--ink-2); }
+
+/* ── EEN TABEL DUWDE DE PAGINA OPZIJ OP EEN TELEFOON ────────────────────────
+   Op 390px liep /admin/customers uit tot 460px, /admin/customers/1 tot 524px en
+   /admin/maandset tot 469px: een tabel met vijf of zes kolommen past daar niet,
+   dus rekte hij de HELE pagina op en scrolde alles zijwaarts mee — ook de
+   koppen en de knoppen die wél pasten.
+
+   De bestellijst deed dit al goed: .or-lijst scrolt in zijn eigen vak. De
+   veertien <table>'s in dit bestand hadden dat vak niet, en er een <div> omheen
+   zetten betekent veertien plekken in src/lib/admin.js aanpassen. Dit doet
+   hetzelfde met één regel: onder 720px is de tabel zelf het scrollvak.
+
+   display:block is hier geen truc maar de prijs: de kolommen krimpen dan niet
+   meer naar de smalste kant, ze houden hun eigen breedte en je schuift. Dat is
+   op een telefoon ook wat je wilt — een kolom van 30px is geen kolom. Boven
+   720px verandert er niets. */
+@media (max-width: 720px) {
+  table.files, table.tbl, table.ag-tabel {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}
+/* Een e-mailadres van veertig tekens is de andere helft van hetzelfde probleem:
+   die brak nergens af en zette dus de minimumbreedte van zijn kolom. */
+table.files td, table.tbl td, table.ag-tabel td { overflow-wrap: anywhere; }
+
+/* ── TWEE DINGEN DIE ZICHZELF BREDER MAKEN DAN HUN VAK ──────────────────────
+   Wat er overbleef na de tabellen, op 390px gemeten:
+
+   EEN SELECT IS ZO BREED ALS ZIJN LANGSTE OPTIE. In het stijlformulier op
+   /admin/customers/1 staat een keuzelijst waarvan één regel 476px meet, en die
+   maat duwt de kolom, de rij en daarmee de pagina op. `1fr` in een grid heeft
+   een minimum van min-content, dus de kolom gaf niet mee. min-width:0 zegt dat
+   hij dat wél mag; max-width:100% zegt hetzelfde tegen het veld zelf.
+
+   EEN KNOP MET WHITE-SPACE:NOWRAP KAN NIET AFBREKEN. Op /admin/maandset staat
+   er een van 439px. Boven 720px is nowrap juist goed — een knop hoort niet in
+   twee stukken te breken midden in een rij. Op een telefoon is de rij één kolom
+   breed en is afbreken het enige alternatief voor de pagina opzij duwen. */
+.row-2, .stack, .controls { min-width: 0; }
+.row-2 > *, .stack > * { min-width: 0; }
+input, select, textarea { max-width: 100%; }
+@media (max-width: 720px) {
+  .btn { white-space: normal; max-width: 100%; height: auto; padding-block: .5rem; }
+}

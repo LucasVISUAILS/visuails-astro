@@ -1,0 +1,13 @@
+---
+/* Eén invoerveld van Je gegevens: label, invoer, hint. `v` uit detailsView(). */
+const { v, optioneel = 'optioneel', melding = '' } = Astro.props;
+/* `data-melding` is wat interactions.js op de site gebruikt voor de eigen
+   foutmelding; Studio heeft geen script, dus hier doet hij niets — maar de tekst
+   staat er wél, zodat tests/verplichte-velden.test.mjs en een latere
+   scriptlaag dezelfde zin vinden: waarom het veld er staat. */
+---
+<div class="st-veldgroep">
+  <label for={`det-${v.name}`}>{v.label}{v.optional && <span class="st-optioneel"> · {optioneel}</span>}</label>
+  <input id={`det-${v.name}`} class="st-veld" name={v.name} type={v.type} value={v.value} maxlength={v.max} placeholder={v.placeholder || undefined} autocomplete={v.auto} required={!v.optional} data-melding={v.optional ? undefined : (melding || v.hint || v.label)} />
+  {v.hint && <span class="st-hint">{v.hint}</span>}
+</div>

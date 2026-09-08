@@ -1,0 +1,43 @@
+---
+/* Eén product in een bestelling: wat de klant stuurde en wat wij leverden bij
+   elkaar, ingeklapt tot een kop met omslagbeeld, naam en feiten. Uitklappen
+   laat de losse beelden zien en pas dáár staan de beoordeelknoppen — een
+   revisie vraag je op een foto, niet op een stapel. Gegevens: productView(). */
+import Beeld from './Beeld.astro';
+const { t, v, orderId } = Astro.props;
+---
+<details class={`st-product${v.revising ? ' is-revisie' : ''}`} open={v.revising}>
+  <summary class="st-product-kop">
+    <span class="st-product-cover">{v.coverHref && <img src={v.coverHref} alt="" loading="lazy" decoding="async" />}</span>
+    <span class="st-product-tekst">
+      <span class="st-product-naam">{v.label}</span>
+      <span class="st-product-feiten">{v.facts}</span>
+      {v.revising && <span class="st-product-vlag">{t.stRevision}</span>}
+    </span>
+    <span class="st-product-cta"><span class="bij-dicht">{t.prodOpen}</span><span class="bij-open">{t.prodClose}</span></span>
+  </summary>
+  <div class="st-product-paneel">
+    <div class="st-product-kolommen">
+      <div class="st-product-kolom">
+        <h3>{t.prodWeMade}</h3>
+        {v.delivered.length
+          ? <ul class="st-beelden">{v.delivered.map((b) => <Beeld v={b} orderId={orderId} />)}</ul>
+          : <p class="st-meta">{t.prodNothingYet}</p>}
+        {v.allesGoed && (
+          <form class="st-keur st-keur-alles" method="post" action="/account/review">
+            <input type="hidden" name="order" value={orderId} />
+            <input type="hidden" name="product" value={v.allesGoed.product} />
+            <button class="btn btn-2nd btn-sm" type="submit" name="action" value="approve-product" formnovalidate>{v.allesGoed.label}</button>
+          </form>
+        )}
+      </div>
+      {v.uploaded.length > 0 && (
+        <div class="st-product-kolom is-ref">
+          <h3>{t.prodYouSent}</h3>
+          <ul class="st-beelden is-ref">{v.uploaded.map((b) => <Beeld v={b} orderId={orderId} />)}</ul>
+        </div>
+      )}
+    </div>
+    <p class="st-product-hulp">{t.prodHelp} <a class="st-link" href={v.waHref} target="_blank" rel="noopener">{t.prodHelpCta}</a></p>
+  </div>
+</details>

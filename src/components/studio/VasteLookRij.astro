@@ -1,0 +1,46 @@
+---
+/* Eén dienst uit Je vaste look als beeldregel: het gezicht, de ondergrond, de
+   look, het formaat — elk als klein vlak met een mono-label eronder, en de naam
+   van de keuze. Voor de look-tab van het abonnement en de uitleg bij de lege
+   stand (`voorbeeld`: dan staat er geen "wordt per bestelling gevraagd" maar
+   een neutraal voorbeeld). Gegevens: een kaart uit brandKitView(). */
+import { STUDIO_ICONS } from '../../lib/account.js';
+const { t, k, voorbeeld = false } = Astro.props;
+const gekozen = (lijst) => (lijst || []).find((x) => x.checked && (x.value ?? x.hex ?? x.slug ?? x.id) !== '') || null;
+const ratio = k.ratios ? gekozen(k.ratios) : null;
+const look = k.looks ? gekozen(k.looks) : null;
+const gezichtNaam = (k.tegels.find((tg) => tg.checked) || {}).name || t.bkAsk;
+const grondNaam = k.achtergronden ? ((k.achtergronden.find((b) => b.checked) || {}).name || t.bkAsk) : '';
+const leeg = voorbeeld ? '' : t.bkAsk;
+---
+<div class="st-lookrij">
+  <span class="st-lookrij-naam">{k.label}</span>
+  <div class="st-lookrij-vakken">
+    <span class="st-lookvak">
+      {k.faceThumb ? <img src={k.faceThumb} alt="" loading="lazy" decoding="async" /> : <span class="st-lookvak-leeg"><Fragment set:html={STUDIO_ICONS.face} /></span>}
+      <span class="st-lookvak-l">{t.planVisFace}</span>
+      <span class="st-lookvak-w">{voorbeeld ? '—' : gezichtNaam}</span>
+    </span>
+    {k.bgApplies && (
+      <span class="st-lookvak">
+        {k.bg ? <svg viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"><rect width="1" height="1" fill={k.bg} /></svg> : <span class="st-lookvak-leeg is-arcering"></span>}
+        <span class="st-lookvak-l">{t.planVisGround}</span>
+        <span class="st-lookvak-w">{voorbeeld ? '#FFFFFF' : grondNaam}</span>
+      </span>
+    )}
+    {k.lookApplies && (
+      <span class="st-lookvak">
+        {k.lookThumb ? <img src={k.lookThumb} alt="" loading="lazy" decoding="async" /> : <span class="st-lookvak-leeg is-arcering"></span>}
+        <span class="st-lookvak-l">{t.planVisLook}</span>
+        <span class="st-lookvak-w">{look ? look.name : leeg}</span>
+      </span>
+    )}
+    {k.ratios && (
+      <span class="st-lookvak">
+        <span class="st-lookvak-vorm"><svg class={`st-ratio-vorm${ratio ? '' : ' is-none'}`} viewBox={ratio ? ratio.viewBox : '0 0 4 5'} preserveAspectRatio="none" aria-hidden="true"></svg></span>
+        <span class="st-lookvak-l">{t.planVisRatio}</span>
+        <span class="st-lookvak-w">{ratio ? ratio.name : (voorbeeld ? '4:5' : leeg)}</span>
+      </span>
+    )}
+  </div>
+</div>

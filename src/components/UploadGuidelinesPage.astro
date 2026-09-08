@@ -1,0 +1,317 @@
+---
+/*
+ * VISUAILS — de uploadrichtlijnen, gedeeld door /upload-guidelines en
+ * /nl/upload-guidelines.
+ *
+ * ── WAAROM DIT NU ÉÉN COMPONENT IS — 7 september 2026 ─────────────────────
+ *
+ * Het waren twee losse pagina's met dezelfde opbouw in twee talen: 155 regels
+ * Engels en 144 regels Nederlands. Precies de constructie die op /gallery al
+ * stilletjes uit elkaar liep, en die op /thank-you om dezelfde reden is
+ * opgeheven. Twee bestanden die identiek moeten blijven, blijven dat niet.
+ *
+ * Allebei importeerden ze ProductScene zonder het te gebruiken — een restant
+ * van de twee tekeningen die op 20 augustus door echte foto's zijn vervangen.
+ * Die import is hier niet meegekomen.
+ *
+ * ── DE OMZETTING NAAR SECTIE 22 ───────────────────────────────────────────
+ *
+ * De indeling is dezelfde gebleven, want die klopte: eerst wat je wél en niet
+ * moet doen, dan twee kaders die het verschil LATEN ZIEN, dan de set die we
+ * aanraden. Alleen de aanbevolen set is nu een donkere kamer — vier genummerde
+ * opnamen is precies waar `.stappen` voor gemaakt is, en het geeft de pagina
+ * halverwege een adempauze.
+ */
+import { TEST_SAMPLE } from '../data/pricing.js';
+/* ── DE ONDERGRENS KOMT UIT DE CODE DIE HEM AFDWINGT — 23 augustus 2026 ──
+ *
+ * Hier stond ooit "stuur de hoogste resolutie die je hebt" en verder niets over
+ * formaat. Het bestelformulier WEIGERT een foto onder een ondergrens (zie
+ * keurBeeld() in src/data/shots.js), en een weigering die nergens is
+ * aangekondigd, is een weigering die iemand op stap 2 tegenkomt zonder te weten
+ * wat hij dan moet.
+ *
+ * Uit de constante en niet ingetypt, om dezelfde reden als de bewaartermijnen in
+ * terms.astro: dit is een getal dat de code afdwingt, en een pagina die er zijn
+ * eigen versie van bijhoudt, belooft op een dag iets anders dan er gebeurt. */
+import { MIN_LANGE_ZIJDE } from '../data/shots.js';
+import Placeholder from './Placeholder.astro';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
+
+const c = nl ? {
+  etiket: 'De beste resultaten halen',
+  h1: ['Zo maak je de foto die wij ', 'nodig hebben'],
+  lead: 'Je hebt geen studio nodig. Een scherpe foto en een paar dingen waar je even op let, dat is het.',
+  hub: ['Van alles in de ', 'gidsen', ' is dit het stuk om te lezen vóór je bestelt — elke stap daarna werkt beter als de foto die erin gaat klopt.'],
+  ctaProef: SAMPLE.cta,
+  ctaStart: 'Start een bestelling',
+  pdf: 'Download de fotogids (pdf)',
+
+  welH: 'Wel doen',
+  wel: [
+    'Houd het scherp en duidelijk — in focus, geen bewegingsonscherpte.',
+    'Gebruik een neutrale, rustige achtergrond.',
+    'Belicht het goed en gelijkmatig — daglicht werkt uitstekend.',
+    'Toon het volledige product, plus een paar close-ups van belangrijke details.',
+    `Stuur de hoogste resolutie die je hebt — minstens ${MIN_LANGE_ZIJDE} pixels op de lange zijde, en dat haalt elke telefoon van de afgelopen tien jaar. Daaronder wordt de upload meteen geweigerd met de reden erbij, zodat je het weet terwijl je er nog achter zit en niet pas een dag later.`,
+  ],
+  nietH: 'Vermijden',
+  niet: [
+    'Wazige, donkere of slecht belichte foto’s.',
+    'Drukke of afleidende achtergronden.',
+    'Zware filters of sterke kleurzweem.',
+    'Kleine schermafbeeldingen met lage resolutie.',
+    'Een deel van het product buiten beeld snijden.',
+  ],
+
+  slechtBij: 'Zo niet',
+  goedBij: 'Zo wel',
+  slechtOnderwerp: 'Hetzelfde product slecht gefotografeerd: een telefoonfoto in een schemerige kamer, op een rommelig oppervlak, net niet scherp',
+  slechtOpdracht: 'Moet eruitzien als een foto die iemand ons echt zou sturen — geen karikatuur. Weinig licht, vlak, een drukke achtergrond, en net zo onscherp dat de rand van het product niet klopt. Hetzelfde product en dezelfde hoek als in het kader ernaast; alleen de omstandigheden verschillen.',
+  goedOnderwerp: 'Hetzelfde product goed gefotografeerd: daglicht van een raam, een egaal oppervlak, scherp tot aan de rand',
+  goedOpdracht: 'Moet haalbaar zijn met een telefoon en zonder spullen — dat is de hele belofte van deze pagina. Daglicht, een egale muur of tafel, het product vult het kader, scherp. Niets gestyled en niets nabewerkt; ziet het eruit als studiowerk, dan concludeert de lezer dat hij het zelf niet kan.',
+
+  setEtiket: 'De aanbevolen set',
+  setH: ['De set die we aanraden — ', 'en waarom'],
+  setLead: 'We hebben je product bijna nooit in handen, dus hoe meer hoeken je stuurt, hoe nauwkeuriger we het kunnen nabouwen. Dat is het verschil tussen je product nábouwen en het benaderen.',
+  set: [
+    ['Voor- en achterkant', 'Het hele product van beide kanten, zodat er niets aan de vorm wordt gegokt.'],
+    ['Een detail-close-up', 'Logo’s, stiksels, prints, hardware — de dingen die exact moeten blijven.'],
+    ['De stof', 'Een close-up van het materiaal zodat textuur, weefselstructuur en glans natuurgetrouw overkomen.'],
+    ['Iemand die het aanheeft', 'Iemand die het daadwerkelijk draagt, zodat we de pasvorm en val uit de praktijk kunnen reproduceren.'],
+  ],
+  setNoot: ['De eerste is verplicht. De rest is aanbevolen.', ' Voorkant en achterkant krijg je allebei terug als geleverd beeld, dus vragen we ze allebei in plaats van de kant te verzinnen die we niet zien. De close-up en de draagfoto zijn optioneel — elk maakt één ding nauwkeuriger, en heeft een product geen logo of fournituren om op in te zoomen, dan wordt de close-up die je terugkrijgt een stoffoto.'],
+
+  slotEtiket: 'Klaar om te sturen',
+  slotH: 'Foto klaar? Stuur hem in.',
+  slotP: `Probeer VISUAILS eerst met één product — je betaalt ${SAMPLE.feeNote}.`,
+  slotCta: 'Probeer VISUAILS',
+} : {
+  etiket: 'Getting the best results',
+  h1: ['How to photograph your product so we can ', 'match it exactly'],
+  lead: 'You don’t need a studio — just a clear photo and a few simple habits.',
+  hub: ['Of everything in the ', 'guides', ', this is the one to read before you order — every step after it works better when the photo going in is right.'],
+  ctaProef: SAMPLE.cta,
+  ctaStart: 'Start an order',
+  pdf: 'Download the photo guide (pdf)',
+
+  welH: 'Do',
+  wel: [
+    'Keep it clear and sharp — in focus, no motion blur.',
+    'Use a neutral, uncluttered background.',
+    'Light it well and evenly — daylight works great.',
+    'Show the full product, plus a few close-ups of key details.',
+    `Send the highest resolution you have — at least ${MIN_LANGE_ZIJDE} pixels on the long side, which any phone from the last decade clears. Below that the upload is refused on the spot and says so, so you find out while you are still at your desk rather than a day later.`,
+  ],
+  nietH: 'Avoid',
+  niet: [
+    'Blurry, dark or low-light shots.',
+    'Busy or distracting backgrounds.',
+    'Heavy filters or strong colour casts.',
+    'Tiny, low-res screenshots.',
+    'Cropping part of the product out of frame.',
+  ],
+
+  slechtBij: 'Not this',
+  goedBij: 'This',
+  slechtOnderwerp: 'The same product shot badly: a phone photo in a dim room, on a cluttered surface, slightly out of focus',
+  slechtOpdracht: 'Must look like a photo someone would actually send us — not a caricature. Dim, flat, a busy background, and just soft enough that the edge of the product is not crisp. Same product and same angle as the frame beside it; only the conditions differ.',
+  goedOnderwerp: 'The same product shot well: daylight from a window, a plain surface, sharp from edge to edge',
+  goedOpdracht: 'Must be reachable with a phone and no equipment — that is the whole promise of this page. Daylight, a plain wall or table, product filling the frame, in focus. Nothing styled, nothing retouched; if it looks like studio work the reader concludes they cannot do it.',
+
+  setEtiket: 'The recommended set',
+  setH: ['The set we recommend — ', 'and why'],
+  setLead: 'We almost never hold your product in our hands, so the more angles you send, the more exactly we can rebuild it. That is what makes the difference between matching your product and approximating it.',
+  set: [
+    ['Front and back', 'The whole product from both sides, so nothing about its shape is guessed.'],
+    ['A detail close-up', 'Logos, stitching, prints, hardware — the things that have to stay exact.'],
+    ['The fabric', 'A close shot of the material so texture, weave and sheen read true.'],
+    ['Worn for fit', 'Someone actually wearing it, so we can reproduce the real-world fit and drape.'],
+  ],
+  setNoot: ['The first one is required. The rest are recommended.', ' Front and back both come back to you as delivered images, so we ask for both rather than invent the side we cannot see. The close-up and the worn shot are optional — each one makes a specific thing more accurate, and if a product has no logo or hardware to close in on, the close-up you get back is a fabric shot instead.'],
+
+  slotEtiket: 'Ready to send',
+  slotH: 'Got a photo ready? Let’s see it transformed.',
+  slotP: `Start with one test sample — just a ${SAMPLE.feeNote}.`,
+  slotCta: 'Test sample',
+};
+import '../styles/stijl22.css';
+---
+
+<div class="s22 ug">
+
+  <section class="paneel ug-open">
+    <div class="paneel-kop">
+      <p class="etiket">{c.etiket}</p>
+      <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
+      <p class="lopend">{c.lead}</p>
+      {/* /guides kreeg nergens in de body van de site een inkomende link, en dit
+          is de pagina waar de hub als eerste naar wijst. De link staat in de
+          inleiding en niet in een blok "gerelateerd": wie een gids leest, is
+          precies degene die de rest ervan wil. */}
+      <p class="lopend ug-hub">{c.hub[0]}<a href={lp('/guides')}>{c.hub[1]}</a>{c.hub[2]}</p>
+    </div>
+    <div class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaProef}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+      {/* Dezelfde gids als PDF. Hij bestaat omdat hij MEEGAAT met een bericht —
+          zie de kop van scripts/handleiding.mjs — maar wie hem hier leest, wil
+          hem soms ook gewoon bewaren. `download` en niet alleen een link: dan
+          landt hij in de downloadmap in plaats van in een nieuw tabblad.
+          Het bestand is voor beide talen hetzelfde pad-patroon; de inhoud volgt
+          de taal van deze pagina. */}
+      <a class="knop knop-lijn" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.pdf}</a>
+    </div>
+  </section>
+
+  <section class="paneel ug-regels">
+    <div class="ug-twee">
+      <div class="ug-vak">
+        <h2 class="hoog hoog-3">{c.welH}</h2>
+        <ul class="ug-lijst" role="list">
+          {c.wel.map((r) => (
+            <li>
+              <svg viewBox="0 0 24 24" class="ug-i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/* ── GEEN ROOD OP DE "VERMIJDEN"-KAART ─────────────────────────────────
+          Hier stond ooit een eigen oklch(0.78 0.15 25) op de kop en elk icoon.
+          Drie dingen waren er tegelijk mis mee: de kleur viel 0,096 buiten sRGB
+          dus wat er verscheen was nooit wat er stond, hij haalde met 2,02:1 op
+          papier de WCAG-drempel voor een kop niet, en hij was de enige verzadigde
+          kleur op een marketingpagina. Deze kaart zegt "minder" nu door de
+          ondergrond te laten zakken; het kruisje tegenover het vinkje draagt de
+          betekenis, en dat deed het altijd al. */}
+      <div class="ug-vak ug-vak-uit">
+        <h2 class="hoog hoog-3">{c.nietH}</h2>
+        <ul class="ug-lijst" role="list">
+          {c.niet.map((r) => (
+            <li>
+              <svg viewBox="0 0 24 24" class="ug-i ug-i-uit" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    {/* ── TWEE ECHTE FOTO'S, GEEN TEKENING — 20 augustus 2026 ───────────────
+        Hier stonden twee `<ProductScene>`-illustraties: dezelfde getekende fles,
+        één met het label "niet ideaal" en één met "goed". Dat is een tekening die
+        beweert iets over fotografie te laten zien, en dat kan een tekening niet.
+        Deze pagina is de enige op de site die de bezoeker vraagt zélf een foto te
+        maken; hij moet het verschil kunnen ZIEN, niet lezen dat er verschil is.
+
+        Placeholders in plaats van niets, zodat `npm run placeholders` deze twee
+        blijft tellen tot ze er zijn — zie de noot in Placeholder.astro. De
+        opdracht staat erin: het moet hetzelfde product zijn in allebei de
+        kaders, want anders vergelijk je twee producten in plaats van twee foto's.
+
+        HET FILTER OP HET ZWAKKE KADER IS WEG. `.not-ideal` stond op
+        `saturate(.4) brightness(.92)`, en dat klopte zolang er een TEKENING in
+        stond. Een echte foto van een slechte inzending mag je niet nabewerken —
+        dan zegt het beeld niet meer "zo ziet een slechte foto eruit" maar "wij
+        hebben deze foto slechter gemaakt". */}
+    <div class="ug-twee ug-kaders">
+      <figure class="ug-kader">
+        <figcaption class="etiket ug-bij ug-bij-uit">{c.slechtBij}</figcaption>
+        <Placeholder lang={lang} ratio="4 / 3" subject={c.slechtOnderwerp} message={c.slechtOpdracht} />
+      </figure>
+      <figure class="ug-kader">
+        <figcaption class="etiket ug-bij">{c.goedBij}</figcaption>
+        <Placeholder lang={lang} ratio="4 / 3" subject={c.goedOnderwerp} message={c.goedOpdracht} />
+      </figure>
+    </div>
+  </section>
+
+  <section class="kamer ug-set">
+    <span class="spook spook-rechts" aria-hidden="true">{nl ? 'HOEKEN' : 'ANGLES'}</span>
+    <div class="kamer-kop">
+      <p class="etiket">{c.setEtiket}</p>
+      <h2 class="hoog hoog-2">{c.setH[0]}<em>{c.setH[1]}</em></h2>
+      <p class="lopend">{c.setLead}</p>
+    </div>
+    <ol class="stappen ug-stappen" role="list">
+      {c.set.map(([kop, tekst], i) => (
+        <li>
+          <span class="stap-nr" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <b>{kop}</b>
+          <p class="lopend">{tekst}</p>
+        </li>
+      ))}
+    </ol>
+    <p class="lopend ug-noot"><strong>{c.setNoot[0]}</strong>{c.setNoot[1]}</p>
+  </section>
+
+  <section class="paneel paneel-slot ug-slot">
+    <p class="etiket">{c.slotEtiket}</p>
+    <h2 class="hoog hoog-2">{c.slotH}</h2>
+    <p class="lopend">{c.slotP}</p>
+    <div class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.slotCta}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  /* De regel terug naar de gidsen-hub: bodytekst onder de inleiding, geen badge. */
+  .ug-hub { font-size: .95rem; }
+  .ug-hub a {
+    color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
+    text-decoration-color: var(--geel); text-decoration-thickness: 2px;
+  }
+  .ug-hub a:hover { text-decoration-color: var(--inkt); }
+
+  .ug-twee { display: grid; gap: clamp(1.2rem, 3vw, 2.2rem); }
+  @media (min-width: 820px) { .ug-twee { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .ug-vak {
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+    border: 1px solid var(--lijn);
+    border-radius: calc(var(--ronding) - 12px);
+    background: var(--wit);
+  }
+  /* "Minder" is een lagere ondergrond, geen andere kleur. */
+  .ug-vak-uit { background: transparent; }
+  .ug-vak h2 { margin: 0 0 1.2rem; }
+
+  .ug-lijst { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 0; }
+  .ug-lijst li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
+  .ug-lijst span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
+  .ug-i {
+    width: 20px; height: 20px; margin-top: .15rem; flex: 0 0 auto;
+    fill: none; stroke: var(--gloed); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+  }
+  /* Het kruisje in inkt en niet in rood — zie de noot bij de kaart hierboven. */
+  .ug-i-uit { stroke: var(--inkt-2); }
+
+  /* ── HET BIJSCHRIFT STAAT BOVEN HET KADER, NIET EROVERHEEN ──────────────
+     Eerst was dit een `.foto-pil` linksonder in het kader. Dat werkt op een
+     foto die het hele vlak vult; hier zit er onder het beeld nog de opdracht van
+     de plaatshouder, en dan ligt de pil op de tekst. Een bijschrift erboven zegt
+     hetzelfde en kan nooit ergens overheen vallen. */
+  .ug-kaders { margin-top: clamp(1.8rem, 4vw, 3rem); }
+  .ug-kader { display: grid; gap: .7rem; margin: 0; }
+  .ug-bij { color: var(--inkt); }
+  .ug-bij::before { content: "\2713\00a0\00a0"; color: var(--gloed); }
+  .ug-bij-uit { color: var(--inkt-2); }
+  .ug-bij-uit::before { content: "\2715\00a0\00a0"; color: var(--inkt-2); }
+
+  /* ── DE AANBEVOLEN SET, IN DE DONKERE KAMER ───────────────────────────── */
+  .ug-stappen { list-style: none; padding: 0; margin: 0; counter-reset: none; }
+  .ug-noot { margin-top: clamp(1.6rem, 3vw, 2.4rem); max-width: 46em; }
+  .ug-noot strong { color: var(--vel); font-weight: 600; }
+
+  .ug-slot .lopend { max-width: 40em; }
+</style>

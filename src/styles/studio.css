@@ -1,0 +1,856 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   VISUAILS Studio — het klantdashboard, bovenop global.css. 5 september 2026.
+
+   WAT HIER STAAT EN WAT NIET. Geen enkel token: die komen uit global.css, dezelfde
+   als de site (grond, inkt, lijnen, accent, hoeken, fonts, duur en easing). Dit
+   bestand doet drie dingen: de lichte stand (een tweede waarde voor die tokens),
+   de schil (zijbalk, bovenbalk, tabrij op de telefoon) en de bouwstenen van de
+   secties (cijferrij, bestelkaart, tijdlijn, betaalblok, strook, activiteit,
+   inlogkaart). Alles met een st-voorvoegsel, zodat het naast de honderden
+   klassen van global.css kan bestaan zonder ze te raken.
+
+   REGISTER. Dit is een werkscherm, geen merkpagina: Instrument Sans in de
+   bediening, Anybody alleen voor de paginatitel, de vier grote cijfers en de
+   knoppen (die zijn al zo in global.css). Geel op precies drie plekken: de primaire
+   knop, het actieve menu-item en het lopende punt in de tijdlijn. De rest
+   onderscheidt zich met wittinten en lijnen — zie PRODUCT.md, "Colour marks
+   the point".
+
+   GEEN JAVASCRIPT. Inklappen, taal en thema zijn cookies; open/dicht is
+   <details>. Elke toestand hier is een klasse die de server zet.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── LICHT EN DONKER — herzien 5 september 2026 (sectie 21) ────────────────
+   Lucas, 30 augustus 2026: "Ik wil een wit en donker scherm optie voor het
+   dashboard." Toen was de site donker en stond hier een lichte tweede waarde
+   voor elk token. Sinds sectie 20/21 is het omgekeerd: global.css IS licht
+   (#F5F5F5, Komma's grond), dus de lichte stand hoeft niets meer te
+   overschrijven — hij is de site. De donkere stand is de .on-ink-scope van
+   global.css (#111111, dezelfde die de donkere panelen op de voorpagina
+   dragen), gezet als klasse op <body> door StudioLayout. Zo blijven de twee
+   standen de twee gronden van de site en niet een derde en vierde palet.
+
+   HET ACCENT IS EEN VLAK, GEEN LETTER. Geel op wit is 1,5:1; op de lichte
+   grond dragen --st-accent-tekst en --st-accent-lijn dus de inkt, en het geel
+   blijft voor de knop, het actieve menu-item en de stip in de tijdlijn. Op de
+   donkere grond is geel als letter 11,4:1 en mag hij wél. */
+:root {
+  --st-accent-tekst: var(--ink-1);
+  --st-accent-lijn: var(--ink-1);
+  --st-accent-tint: rgb(210 224 74 / 0.22);
+  --st-clay-tekst: var(--clay-text);
+  --st-side-w: 264px;
+  --st-side-dicht: 76px;
+  --st-pad: clamp(1.1rem, 2.6vw, 2.4rem);
+}
+body.studio.on-ink {
+  --bg-0: var(--bg);
+  --st-accent-tekst: var(--accent-text);   /* de lichte UI-lime (#E4F474) als letter op inkt */
+  --st-accent-lijn: var(--accent);
+  --st-accent-tint: rgb(210 224 74 / 0.12);
+  --st-clay-tekst: var(--clay);
+}
+
+/* ── DE GROND ─────────────────────────────────────────────────────────────── */
+body.studio { background: var(--bg-0); color: var(--ink-2); min-height: 100vh; }
+/* `a` erft de tekstkleur — behalve als knop: `.btn-primary` zet zijn eigen
+   letter (--accent-ink) en `body.studio a` won daar op specificiteit van, dus
+   was elke knop-als-link op het donkere scherm geel op geel (1,2:1, gemeten
+   door scripts/dash-leesbaar.mjs op 6 september 2026). */
+body.studio a:not(.btn) { color: inherit; }
+.studio .st-link { color: var(--st-accent-tekst); text-decoration: underline; text-underline-offset: .18em; text-decoration-color: color-mix(in srgb, var(--st-accent-tekst) 45%, transparent); }
+.studio .st-link:hover { text-decoration-color: currentColor; }
+.studio .st-meta { color: var(--ink-3); font-size: .9rem; }
+.studio .btn-sm { min-height: 36px; padding-inline: 1.05rem; font-size: .9rem; }
+.studio .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ── DE SCHIL ─────────────────────────────────────────────────────────────── */
+.st-shell { display: grid; grid-template-columns: var(--st-side-w) minmax(0, 1fr); min-height: 100vh; }
+.st-shell.is-dicht { grid-template-columns: var(--st-side-dicht) minmax(0, 1fr); }
+
+/* De kolom draagt de grond en de lijn en loopt zo lang als de pagina; de
+   zijbalk zelf kleeft aan de bovenkant en is nooit hoger dan het venster. */
+.st-kolom { background: var(--surface); border-right: 1px solid var(--line); min-width: 0; }
+.st-side {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 1.4rem;
+  padding: 1.25rem 1rem;
+}
+.st-side-kop { display: flex; flex-direction: column; gap: .5rem; padding-inline: .5rem; }
+.st-merk { display: inline-flex; width: 34px; height: 40px; color: var(--ink-1); }
+.st-glyph { width: 100%; height: 100%; fill: currentColor; }
+.st-sub { font-size: .8rem; color: var(--ink-3); letter-spacing: .02em; }
+.st-klap {
+  margin-top: .4rem; display: inline-flex; align-items: center; gap: .55rem;
+  font-size: .82rem; color: var(--ink-3); min-height: 32px;
+}
+.st-klap:hover { color: var(--ink-1); }
+
+.st-nav { display: flex; flex-direction: column; gap: .15rem; }
+.st-navlink {
+  display: flex; align-items: center; gap: .75rem;
+  min-height: 42px; padding: 0 .75rem; border-radius: var(--r-sm);
+  font-size: .95rem; font-weight: 500; color: var(--ink-2);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.st-navlink .i { width: 18px; height: 18px; stroke-width: 1.7; color: var(--ink-3); }
+.st-navlink:hover { background: var(--ghost); color: var(--ink-1); }
+.st-navlink.is-actief { background: var(--st-accent-tint); color: var(--ink-1); font-weight: 600; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-accent-lijn) 40%, transparent); }
+.st-navlink.is-actief .i { color: var(--st-accent-tekst); }
+
+.st-side-voet { margin-top: auto; display: flex; flex-direction: column; gap: .5rem; padding-inline: .5rem; }
+.st-wie { display: flex; flex-direction: column; gap: .1rem; padding-bottom: .6rem; margin-bottom: .2rem; border-bottom: 1px solid var(--line); min-width: 0; }
+.st-wie-naam { font-weight: 600; color: var(--ink-1); font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-wie-mail { font-size: .8rem; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-stand { display: inline-flex; align-items: center; gap: .5rem; font-size: .85rem; color: var(--ink-3); min-height: 30px; }
+.st-stand svg { width: 16px; height: 16px; }
+.st-stand:hover { color: var(--ink-1); }
+.st-side-voet form { margin-top: .5rem; }
+
+/* Ingeklapt: alleen het teken en de iconen. Het label van elk item blijft in
+   de DOM (schermlezers, tooltip) maar neemt geen ruimte. */
+.is-dicht .st-side { padding-inline: .6rem; }
+.is-dicht .st-side-kop { align-items: center; padding-inline: 0; }
+.is-dicht .st-sub, .is-dicht .st-klap span, .is-dicht .st-navlink span,
+.is-dicht .st-wie, .is-dicht .st-stand span, .is-dicht .st-side-voet form { display: none; }
+.is-dicht .st-navlink { justify-content: center; padding: 0; }
+.is-dicht .st-side-voet { align-items: center; padding-inline: 0; }
+.is-dicht .st-stand:first-of-type { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+
+/* ── DE ROMP EN DE BOVENBALK ──────────────────────────────────────────────── */
+.st-romp { display: flex; flex-direction: column; min-width: 0; }
+.st-top {
+  display: flex; align-items: flex-start; gap: 1rem 1.25rem; flex-wrap: wrap;
+  padding: calc(var(--st-pad) + .4rem) var(--st-pad) 1.3rem;
+  border-bottom: 1px solid var(--line);
+}
+.st-top-tekst { flex: 1 1 18rem; min-width: 0; }
+.st-h1 {
+  font-family: var(--font-heading); font-weight: 800; font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+  line-height: 1; letter-spacing: -.01em; color: var(--ink-1); margin: 0; text-wrap: balance;
+}
+.st-lede { margin: .5rem 0 0; color: var(--ink-3); font-size: .95rem; max-width: 60ch; }
+.st-chip {
+  align-self: center; display: inline-flex; align-items: center; gap: .5rem;
+  padding: .3rem .8rem; border-radius: var(--r-pill); font-size: .78rem; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); border: 1px solid var(--line-strong);
+}
+.st-chip.is-signal { color: var(--st-accent-tekst); border-color: color-mix(in srgb, var(--st-accent-lijn) 55%, transparent); }
+.st-chip.is-signal::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--st-accent-lijn); }
+.st-top-actie { align-self: center; }
+
+.st-main { padding: var(--st-pad); display: flex; flex-direction: column; gap: clamp(1.6rem, 3vw, 2.4rem); max-width: 1180px; width: 100%; }
+.st-voet { display: none; }
+
+/* ── DE BOUWSTENEN ───────────────────────────────────────────────────────── */
+/* global.css geeft elke <section> de verticale ruimte van een merkpagina
+   (4,5–9rem). Dit is een werkscherm; de ruimte tussen blokken is de gap van
+   .st-main en niets anders. */
+.studio section { padding: 0; margin: 0; }
+.st-blok { display: flex; flex-direction: column; gap: .8rem; min-width: 0; }
+.st-blok-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.st-blok-kop h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-spacing: 0; line-height: 1.3; color: var(--ink-1); margin: 0; }
+.st-blok-kop .st-tel { color: var(--ink-3); font-weight: 500; margin-left: .35rem; }
+.st-leeg { margin: 0; padding: 1.2rem 1.25rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); color: var(--ink-3); font-size: .95rem; }
+
+.st-kaart-vlak { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
+
+/* De cijferrij: één vlak, vier vakken, lijnen ertussen. */
+.st-cijfers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.st-cijfer {
+  display: flex; flex-direction: column; gap: .4rem; padding: 1.15rem 1.25rem 1.05rem;
+  border-right: 1px solid var(--line); min-width: 0;
+  transition: background var(--dur-1) var(--ease);
+}
+.st-cijfer:last-child { border-right: 0; }
+a.st-cijfer:hover { background: var(--ghost); }
+.st-cijfer .i { width: 18px; height: 18px; color: var(--ink-3); }
+.st-cijfer-label { font-size: .8rem; color: var(--ink-3); line-height: 1.25; }
+.st-cijfer-n { font-family: var(--font-heading); font-weight: 800; font-size: 2.4rem; line-height: 1; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-cijfer-n.is-nul { color: var(--ink-3); }
+
+/* De statuspil. Het woord draagt de status; de kleur onderstreept alleen. */
+.st-pil {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .18rem .65rem;
+  border-radius: var(--r-pill); border: 1px solid var(--line-strong);
+  font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
+}
+.st-pil::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .7; }
+.st-pil.is-in_production { color: var(--st-accent-tekst); border-color: color-mix(in srgb, var(--st-accent-lijn) 55%, transparent); }
+.st-pil.is-human_check { color: var(--st-clay-tekst); border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
+.st-pil.is-delivered { color: var(--ink-1); border-color: var(--line-strong); }
+.st-pil.is-delivered::before { background: var(--st-accent-lijn); opacity: 1; }
+.st-pil.is-cancelled { color: var(--ink-3); }
+
+/* De bestelkaart op het overzicht. */
+.st-order { padding: 1.2rem 1.35rem 1.3rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-order-kop { display: flex; align-items: center; gap: .6rem .85rem; flex-wrap: wrap; }
+.st-ref { font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; letter-spacing: .01em; white-space: nowrap; }
+.st-order-kop .st-meta { flex: 1 1 auto; }
+.st-order-kop .st-link { font-size: .9rem; }
+.st-lopend .st-link { white-space: nowrap; }
+
+/* De tijdlijn: de zin, de vier (of vijf) stappen, de geschiedenis. */
+.st-flow { display: flex; flex-direction: column; gap: .9rem; }
+.st-flow-nu { margin: 0; color: var(--ink-2); }
+.st-flow-nu strong { color: var(--ink-1); font-weight: 600; }
+.st-stappen { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0; position: relative; }
+.st-stap { position: relative; display: flex; flex-direction: column; gap: .5rem; padding-top: .1rem; min-width: 0; }
+.st-stap::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--line); }
+.st-stap.is-done::before { background: var(--ink-3); }
+.st-stap.is-now::before { background: linear-gradient(90deg, var(--ink-3) 0 50%, var(--line) 50% 100%); }
+.st-stap:first-child::before { left: 7px; }
+.st-stap:last-child::before { right: auto; width: 50%; }
+.st-stap:first-child:last-child::before { display: none; }
+.st-stip { position: relative; z-index: 1; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line-strong); box-sizing: border-box; }
+.st-stap.is-done .st-stip { background: var(--ink-3); border-color: var(--ink-3); }
+.st-stap.is-now .st-stip { background: var(--st-accent-lijn); border-color: var(--st-accent-lijn); box-shadow: 0 0 0 4px var(--st-accent-tint); }
+.st-stap-label { font-size: .8rem; color: var(--ink-3); line-height: 1.25; padding-right: .5rem; }
+.st-stap.is-done .st-stap-label { color: var(--ink-3); }
+.st-stap.is-now .st-stap-label { color: var(--ink-1); font-weight: 600; }
+.st-flow.is-cancelled .st-flow-nu { color: var(--ink-3); }
+
+.st-details > summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: .45rem; font-size: .88rem; color: var(--ink-3); min-height: 32px; }
+.st-details > summary::-webkit-details-marker { display: none; }
+.st-details > summary::before { content: ""; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform var(--dur-1) var(--ease); margin-right: .1rem; }
+.st-details[open] > summary::before { transform: rotate(45deg); }
+.st-details > summary:hover { color: var(--ink-1); }
+.st-historie { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.st-historie li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.st-historie .st-wanneer { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.st-historie .st-wat { color: var(--ink-2); }
+.st-historie .st-notitie { display: block; color: var(--ink-3); margin-top: .15rem; }
+
+/* De notitie van de studio. */
+.st-nota { border-left: 0; padding: .9rem 1rem; border-radius: var(--r-sm); background: var(--surface-2); display: flex; flex-direction: column; gap: .2rem; }
+.st-nota-wie { font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+.st-nota p { margin: 0; color: var(--ink-1); }
+
+/* Het betaalblok. */
+.st-betaal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .6rem 1.5rem; align-items: center; padding: .95rem 1.1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); }
+.st-betaal.is-unpaid { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
+.st-betaal-rijen { margin: 0; display: flex; flex-wrap: wrap; gap: .25rem 1.4rem; grid-column: 1; }
+.st-betaal-rij { display: flex; gap: .5rem; font-size: .9rem; }
+.st-betaal-rij dt { color: var(--ink-3); }
+.st-betaal-rij dd { margin: 0; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-betaal-rij:last-child dd { font-weight: 700; }
+.st-betaal-staat { margin: 0; font-size: .9rem; color: var(--ink-2); grid-column: 1; }
+.st-betaal.is-unpaid .st-betaal-staat { color: var(--st-clay-tekst); }
+.st-betaal form { grid-column: 2; grid-row: 1 / span 2; }
+
+/* De andere lopende bestellingen, compact. */
+.st-lopend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.st-lopend li { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: .85rem; padding: .8rem 1.35rem; border-top: 1px solid var(--line); }
+.st-lopend .st-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* De strook laatst geleverde beelden. */
+.st-strook { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: .6rem; }
+.st-strook a { display: block; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease); }
+.st-strook a:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.st-strook img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* De recente activiteit. */
+.st-activiteit { list-style: none; margin: 0; padding: 0; }
+.st-activiteit li { display: flex; align-items: center; gap: 1rem; padding: .85rem 1.35rem; border-top: 1px solid var(--line); }
+.st-activiteit li:first-child { border-top: 0; }
+.st-activiteit a { display: flex; flex-direction: column; gap: .1rem; flex: 1 1 auto; min-width: 0; border-radius: var(--r-sm); }
+.st-activiteit a:hover .st-ref { color: var(--st-accent-tekst); }
+
+/* ── BESTELLINGEN — Studio fase 2, 5 september 2026 ─────────────────────────
+   De volledige bestelkaart (Bestelling.astro), het product (Product.astro) en
+   het beeld (Beeld.astro). Dezelfde taal als het overzicht: één vlak met een
+   haarlijn, cellen gescheiden door lijnen, geel alleen op de hoofdknop en de
+   ene stip die "nu" zegt. */
+.st-melding { margin: 0; padding: .8rem 1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); font-size: .95rem; }
+.st-melding.is-warn { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); color: var(--st-clay-tekst); }
+
+.st-filters { display: flex; flex-wrap: wrap; gap: .4rem; }
+.st-filter {
+  display: inline-flex; align-items: center; gap: .4rem; min-height: 34px; padding: 0 .85rem;
+  border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .85rem; color: var(--ink-2);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
+.st-filter.is-actief { background: var(--ink-1); border-color: var(--ink-1); color: var(--surface); font-weight: 600; }
+.st-filter-n { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; opacity: .75; }
+
+.st-bestellingen { display: flex; flex-direction: column; gap: 1rem; }
+.st-bestelling { padding: 0; }
+.st-bestelling-kop {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: .6rem .9rem; flex-wrap: wrap;
+  padding: 1rem 1.35rem; min-height: 60px;
+}
+.st-bestelling-kop::-webkit-details-marker { display: none; }
+.st-bestelling-kop .st-ref { font-family: var(--font-body); font-size: 1rem; margin: 0; line-height: 1.3; letter-spacing: .01em; }
+.st-bestelling-meta { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: .1rem .4rem; font-size: .9rem; color: var(--ink-3); min-width: 0; }
+.st-bit + .st-bit::before { content: "·"; margin-right: .4rem; color: var(--ink-4); }
+.st-bit-money { color: var(--st-clay-tekst); font-weight: 600; font-variant-numeric: tabular-nums; }
+.st-mini { display: inline-flex; gap: 4px; align-items: center; }
+.st-mini-stip { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.st-mini-stip.is-done { background: var(--ink-3); }
+.st-mini-stip.is-now { background: var(--st-accent-lijn); box-shadow: 0 0 0 3px var(--st-accent-tint); }
+.st-chevron { width: 8px; height: 8px; border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3); transform: rotate(45deg); margin: 0 .3rem 0 .2rem; transition: transform var(--dur-1) var(--ease); }
+.st-bestelling[open] .st-chevron { transform: rotate(-135deg); margin-top: .3rem; }
+.st-bestelling-kop:hover { background: var(--ghost); }
+.st-bestelling[open] .st-bestelling-kop { border-bottom: 1px solid var(--line); }
+.st-bestelling-body { padding: 1.1rem 1.35rem 1.35rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-gesloten { padding-top: .2rem; }
+
+/* De producten: elk een klapper met omslag, naam, feiten. */
+.st-producten { display: flex; flex-direction: column; gap: .6rem; }
+.st-product { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.st-product.is-revisie { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
+.st-product-kop { list-style: none; cursor: pointer; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: .9rem; padding: .7rem .9rem; }
+.st-product-kop::-webkit-details-marker { display: none; }
+.st-product-kop:hover { background: var(--ghost); }
+.st-product-cover { width: 56px; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
+.st-product-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.st-product-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.st-product-naam { font-weight: 600; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-product-feiten { font-size: .85rem; color: var(--ink-3); }
+.st-product-vlag { font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--st-clay-tekst); }
+.st-product-cta { font-size: .85rem; color: var(--ink-3); white-space: nowrap; }
+.st-product-cta .bij-open, .st-product[open] .st-product-cta .bij-dicht { display: none; }
+.st-product[open] .st-product-cta .bij-open { display: inline; }
+.st-product-paneel { border-top: 1px solid var(--line); padding: 1rem .9rem 1.1rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-product-kolommen { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.4rem; }
+.st-product-kolom h3, .st-kant h3, .st-map h3, .st-ronde h3 { font-family: var(--font-body); font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 .7rem; }
+.st-product-kolom.is-ref { border-left: 1px solid var(--line); padding-left: 1.4rem; }
+.st-product-hulp { margin: 0; font-size: .88rem; color: var(--ink-3); }
+
+/* De beelden: een raster van tegels, elk met bijschrift en knoppen eronder. */
+.st-beelden { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .9rem; }
+.st-beelden.is-ref { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.st-beeld { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.st-beeld-media { position: relative; display: block; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
+.st-beeld-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.st-beeld-media.is-bestand, .st-beeld-media.is-weg { display: grid; place-items: center; color: var(--ink-3); font-size: .8rem; }
+.st-beeld-ext { font-family: var(--font-mono); font-stretch: 82%; font-size: .8rem; letter-spacing: .06em; }
+.st-badge { position: absolute; left: 6px; bottom: 6px; padding: .18rem .5rem; border-radius: var(--r-pill); font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: rgb(17 17 17 / .78); color: #FFFFFF; }
+.st-badge.is-approved { background: var(--accent); color: var(--accent-ink); }
+.st-badge.is-revision { background: var(--clay); color: #111111; }
+.st-beeld-body { display: flex; flex-direction: column; gap: .45rem; }
+.st-beeld-cap { font-size: .82rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-beeld-noot { font-size: .8rem; }
+.st-keur { margin: 0; }
+.st-keur-alles { margin-top: .9rem; }
+.st-aanmerk { display: flex; flex-direction: column; gap: .4rem; }
+.st-vink { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--ink-2); cursor: pointer; }
+.st-vink input { width: 16px; height: 16px; margin: 0; accent-color: var(--ink-1); }
+.st-veld-klein { min-height: 0; padding: .5rem .7rem; font-size: .85rem; line-height: 1.4; resize: vertical; }
+.st-gezegd { margin: 0; font-size: .82rem; line-height: 1.45; color: var(--ink-2); padding: .5rem .7rem; border-radius: var(--r-sm); background: var(--surface-2); }
+.st-gezegd.is-antwoord b { color: var(--ink-1); font-weight: 600; }
+
+/* Zonder producten (oudere bestellingen): de twee kanten naast elkaar. */
+.st-kanten { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.4rem; }
+.st-kant:last-child { border-left: 1px solid var(--line); padding-left: 1.4rem; }
+
+/* De map: het archief dat de klant meeneemt. */
+.st-map { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.1rem; border: 1px solid var(--line-strong); border-radius: var(--r-md); }
+.st-map-tekst { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.st-map-tekst h3 { margin: 0; }
+.st-map-tekst p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+
+/* De revisieronde: klaar, gebruikt, of het formulier. */
+.st-ronde { display: flex; flex-direction: column; gap: .5rem; padding: 1rem 1.1rem; border-radius: var(--r-md); border: 1px solid var(--line); }
+.st-ronde p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+.st-ronde.is-ready { border-color: var(--st-accent-lijn); }
+.st-ronde.is-form .btn { align-self: flex-start; margin-top: .3rem; }
+.st-ronde-waarschuwing { color: var(--ink-1) !important; font-weight: 500; }
+.st-beleid details { margin-top: .4rem; }
+.st-beleid summary { cursor: pointer; font-size: .85rem; color: var(--ink-3); }
+.st-beleid ul { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .85rem; color: var(--ink-2); display: flex; flex-direction: column; gap: .3rem; }
+
+@media (max-width: 56.25em) {
+  .st-bestelling-kop, .st-bestelling-body { padding-inline: 1rem; }
+  .st-product-kolommen, .st-kanten { grid-template-columns: 1fr; }
+  .st-product-kolom.is-ref, .st-kant:last-child { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 1rem; }
+  .st-beelden { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .st-beelden.is-ref { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ── FACTUREN EN JE GEGEVENS — Studio fase 2 ────────────────────────────────── */
+.st-tabelvlak { padding: .2rem 1.35rem 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
+.st-tabel { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.st-tabel th { text-align: left; font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); padding: .9rem 0 .6rem; border-bottom: 1px solid var(--line); }
+.st-tabel td { padding: .8rem .8rem .8rem 0; border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); }
+.st-tabel td b { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-tabel .is-bedrag { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-1); }
+.st-tabel .is-actie { text-align: right; padding-right: 0; white-space: nowrap; }
+.st-vlag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); vertical-align: middle; }
+.st-tabel-noot { margin: 0; font-size: .85rem; }
+
+.st-nudge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.35rem; }
+.st-nudge h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin: 0 0 .2rem; color: var(--ink-1); }
+.st-nudge p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+
+.st-formulier { padding: 1.35rem; display: flex; flex-direction: column; gap: 1.1rem; }
+.st-rij { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.4rem; }
+.st-rij.is-acties { grid-template-columns: 1fr; justify-items: start; padding-top: .3rem; }
+.st-rij.is-mail { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.st-veldgroep { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.st-veldgroep.is-breed { grid-column: 1 / -1; }
+.st-veldgroep label, .st-label { font-size: .85rem; font-weight: 600; color: var(--ink-2); }
+.st-optioneel { font-weight: 400; color: var(--ink-3); }
+.st-vast { margin: 0; min-height: 46px; display: flex; align-items: center; padding: 0 .95rem; border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink-1); }
+select.st-veld { appearance: none; -webkit-appearance: none; background-image: var(--select-caret); background-repeat: no-repeat; background-position: right .9rem center; padding-right: 2.4rem; }
+.st-btw:has(input[name="no_vat"]:checked) #det-vat { opacity: .45; }
+.st-veldgroep .st-vink { margin-top: .1rem; }
+
+@media (max-width: 56.25em) {
+  .st-rij, .st-rij.is-mail { grid-template-columns: 1fr; }
+  .st-tabelvlak { padding-inline: 1rem; }
+  .st-tabel thead { display: none; }
+  .st-tabel tr { display: grid; grid-template-columns: 1fr auto; gap: .15rem .8rem; padding: .8rem 0; border-bottom: 1px solid var(--line); }
+  .st-tabel td { border: 0; padding: 0; }
+  .st-tabel td[data-label]::before { content: attr(data-label) " "; color: var(--ink-3); font-size: .8rem; }
+  .st-tabel td:first-child { grid-column: 1 / -1; }
+  .st-tabel .is-actie { grid-column: 1 / -1; text-align: left; padding-top: .4rem; }
+}
+
+/* ── JE VASTE LOOK — Studio fase 2 ──────────────────────────────────────────── */
+.st-blok-lede { margin: -.3rem 0 .2rem; max-width: 62ch; }
+.st-leegvlak { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding: 1.35rem; }
+.st-leegvlak > div { flex: 1 1 18rem; }
+.st-leegvlak h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin: 0 0 .25rem; color: var(--ink-1); }
+.st-leegvlak p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+.st-leegvlak-fig { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); color: var(--ink-3); }
+.st-leegvlak-fig .i, .st-model-img.is-leeg .i, .st-tegel-img.is-leeg .i, .st-vl-gezicht.is-leeg .i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+.st-modellen { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .9rem; }
+.st-model { margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+.st-model-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); }
+.st-model-img.is-leeg { display: grid; place-items: center; color: var(--ink-4); }
+.st-model figcaption { display: flex; flex-direction: column; gap: .1rem; }
+.st-model-naam { font-weight: 600; color: var(--ink-1); font-size: .92rem; }
+.st-model-staat { font-size: .8rem; color: var(--ink-3); }
+.st-model.is-klaar .st-model-staat { color: var(--st-accent-tekst); }
+
+.st-eigenlooks { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; }
+.st-eigenlook { display: grid; grid-template-columns: 120px minmax(0, 1fr); overflow: hidden; }
+.st-eigenlook-fig { background: var(--surface-2); min-height: 100%; }
+.st-eigenlook-fig img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.st-eigenlook-body { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; }
+.st-eigenlook-body h3 { margin: 0; font-family: var(--font-body); font-size: 1rem; font-weight: 600; color: var(--ink-1); }
+.st-eigenlook-body .st-meta { margin: 0; font-size: .85rem; }
+.st-eigenlook-lijn { margin: 0; font-size: .9rem; color: var(--ink-2); }
+.st-eigenlook.is-voorstel { border-style: dashed; }
+
+.st-vls { display: flex; flex-direction: column; gap: .8rem; }
+.st-vl { padding: 0; }
+.st-vl-kop { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: .9rem 1.2rem; }
+.st-vl-kop::-webkit-details-marker { display: none; }
+.st-vl-kop:hover { background: var(--ghost); }
+.st-vl[open] .st-vl-kop { border-bottom: 1px solid var(--line); }
+.st-vl-figs { display: flex; align-items: center; gap: .4rem; }
+.st-vl-gezicht { width: 42px; height: 56px; border-radius: var(--r-sm); object-fit: cover; border: 1px solid var(--line); background: var(--surface-2); }
+.st-vl-gezicht.is-leeg { display: grid; place-items: center; color: var(--ink-4); }
+.st-vl-kleur, .st-vl-look { width: 42px; height: 42px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); object-fit: cover; display: block; }
+.st-vl-kleur.is-leeg, .st-vl-look.is-leeg { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
+.st-vl-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.st-vl-h { font-weight: 700; color: var(--ink-1); }
+.st-vl-nu { font-size: .9rem; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-vl-punt { margin: 0 .4rem; color: var(--ink-4); }
+.st-vl-ok { font-size: .8rem; color: var(--st-accent-tekst); font-weight: 600; }
+.st-vl.is-opgeslagen { border-color: var(--st-accent-lijn); }
+.st-vl-cta { font-size: .85rem; color: var(--ink-3); white-space: nowrap; }
+.st-vl-form { padding: 1.2rem; display: flex; flex-direction: column; gap: 1.4rem; }
+
+.st-groep { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: .7rem; }
+.st-groep legend { padding: 0; margin-bottom: .7rem; font-size: .85rem; font-weight: 600; color: var(--ink-2); }
+.st-groep .st-hint { margin: 0; }
+
+/* Keuzetegels: het vinkje zit op de invoer, de rand toont het. */
+.st-tegels { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .7rem; }
+.st-tegel { position: relative; display: flex; flex-direction: column; gap: .4rem; padding: .45rem; border-radius: var(--r-md); border: 1px solid var(--line); cursor: pointer; background: var(--surface); }
+.st-tegel input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.st-tegel:hover { border-color: var(--line-strong); }
+.st-tegel:has(input:checked) { border-color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
+.st-tegel:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.st-tegel-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2); }
+.st-tegel-img.is-leeg { display: grid; place-items: center; color: var(--ink-4); }
+.st-tegel-meta { display: flex; flex-direction: column; gap: .05rem; padding: 0 .2rem .2rem; }
+.st-tegel-naam { font-size: .88rem; font-weight: 600; color: var(--ink-1); }
+.st-tegel-sub { font-size: .76rem; color: var(--ink-3); }
+.st-tegel-vink { position: absolute; top: .7rem; right: .7rem; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: none; place-items: center; }
+.st-tegel-vink .i { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.st-tegel:has(input:checked) .st-tegel-vink { display: grid; }
+.st-tegel.is-own .st-tegel-sub { color: var(--st-accent-tekst); }
+
+.st-stalen { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .6rem; }
+.st-staal { position: relative; display: flex; align-items: center; gap: .6rem; padding: .5rem .65rem; border-radius: var(--r-md); border: 1px solid var(--line); cursor: pointer; }
+.st-staal input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.st-staal:has(input:checked) { border-color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
+.st-staal:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.st-staal-chip { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-strong); flex: none; display: block; }
+.st-staal-chip.is-leeg { background: repeating-linear-gradient(-45deg, transparent 0 4px, var(--line) 4px 5px); }
+.st-staal-naam { font-size: .85rem; font-weight: 600; color: var(--ink-1); }
+.st-staal-hex { font-family: var(--font-mono); font-stretch: 82%; font-size: .7rem; color: var(--ink-3); margin-left: auto; }
+
+.st-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .7rem; }
+.st-look { position: relative; display: flex; flex-direction: column; gap: .3rem; padding: .45rem; border-radius: var(--r-md); border: 1px solid var(--line); cursor: pointer; }
+.st-look input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.st-look:has(input:checked) { border-color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
+.st-look:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.st-look-img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2); }
+.st-look-img.is-leeg { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
+.st-look-naam { font-size: .88rem; font-weight: 600; color: var(--ink-1); padding: 0 .2rem; }
+.st-look-wat { font-size: .76rem; color: var(--ink-3); padding: 0 .2rem .2rem; }
+
+.st-ratios { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .7rem; }
+.st-ratio { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; padding: .7rem; border-radius: var(--r-md); border: 1px solid var(--line); cursor: pointer; }
+.st-ratio input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.st-ratio:has(input:checked) { border-color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
+.st-ratio:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.st-ratio-vorm { height: 44px; width: auto; max-width: 100%; border: 1.5px solid var(--ink-2); border-radius: 2px; background: var(--surface-2); display: block; }
+.st-ratio-vorm.is-none { border-style: dashed; border-color: var(--line-strong); background: none; }
+.st-ratio-naam { font-size: .88rem; font-weight: 600; color: var(--ink-1); }
+.st-ratio-wat { font-size: .76rem; color: var(--ink-3); }
+
+.st-kanalen { display: flex; flex-wrap: wrap; gap: .5rem; }
+.st-kanaal { display: inline-flex; align-items: center; gap: .5rem; min-height: 36px; padding: 0 .85rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: .85rem; color: var(--ink-2); cursor: pointer; }
+.st-kanaal input { width: 15px; height: 15px; margin: 0; accent-color: var(--ink-1); }
+.st-kanaal:has(input:checked) { border-color: var(--ink-1); color: var(--ink-1); }
+.st-kanaal-vlag { font-family: var(--font-mono); font-stretch: 82%; font-size: .68rem; color: var(--ink-3); }
+
+@media (max-width: 56.25em) {
+  .st-vl-kop { grid-template-columns: auto minmax(0, 1fr); padding-inline: 1rem; }
+  .st-vl-cta { display: none; }
+  .st-vl-nu { white-space: normal; }
+  .st-vl-form { padding: 1rem; }
+  .st-tegels, .st-looks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .st-eigenlook { grid-template-columns: 96px minmax(0, 1fr); }
+}
+
+/* ── ABONNEMENT & FACTURERING — Studio fase 2 ──────────────────────────────── */
+.st-eyebrow { display: block; font-family: var(--font-mono); font-stretch: 82%; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.st-vlak { padding: 1.35rem; display: flex; flex-direction: column; gap: .8rem; }
+.st-vlak h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin: 0; color: var(--ink-1); }
+.st-vlak > p { margin: 0; color: var(--ink-2); }
+.st-h3 { font-family: var(--font-body); font-size: .85rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: .6rem 0 0; }
+.st-groot { font-family: var(--font-heading); font-weight: 700; font-size: 2rem; line-height: 1.1; letter-spacing: -.01em; color: var(--ink-1); }
+.st-knoppen { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.st-geenabo { padding: clamp(1.5rem, 4vw, 2.6rem); display: flex; flex-direction: column; gap: .6rem; align-items: flex-start; background: var(--ink-900); color: var(--paper-soft-on-dark); border: 0; }
+.st-geenabo .st-eyebrow { color: var(--accent); }
+.st-geenabo h2 { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.05; letter-spacing: -.01em; color: #FFFFFF; margin: 0; max-width: 24ch; }
+.st-geenabo p { margin: 0; max-width: 56ch; }
+.st-geenabo .st-knoppen { margin-top: .6rem; }
+.st-geenabo .btn-2nd { color: #FFFFFF; border-color: rgb(255 255 255 / .42); }
+
+.st-tabs { display: flex; gap: .2rem; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.st-tabs::-webkit-scrollbar { display: none; }
+.st-tab { flex: 0 0 auto; min-height: 42px; display: inline-flex; align-items: center; padding: 0 .9rem; margin-bottom: -1px; border-bottom: 2px solid transparent; font-size: .92rem; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+.st-tab:hover { color: var(--ink-1); }
+.st-tab.is-nu { color: var(--ink-1); font-weight: 600; border-bottom-color: var(--st-accent-lijn); }
+
+.st-saldo { padding: 1.35rem; display: flex; flex-direction: column; gap: 1rem; }
+.st-saldo-kop { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
+.st-saldo-kop h2 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; letter-spacing: -.01em; margin: .2rem 0 0; color: var(--ink-1); }
+.st-saldo-volgende { display: flex; flex-direction: column; gap: .2rem; text-align: right; }
+.st-saldo-volgende strong { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-saldo-rij { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; padding-top: 1rem; border-top: 1px solid var(--line); }
+.st-saldo-uitleg { display: flex; flex-direction: column; gap: .2rem; max-width: 52ch; }
+.st-saldo-uitleg p { margin: 0; }
+.st-saldo > .st-meta { margin: 0; }
+.st-slots { display: flex; flex-direction: column; }
+.st-slot { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) auto; gap: .5rem 1.2rem; align-items: center; padding: .85rem 0; border-top: 1px solid var(--line); }
+.st-slot-naam { display: flex; flex-direction: column; gap: .1rem; }
+.st-slot-naam .n { font-weight: 600; color: var(--ink-1); }
+.st-slot-naam .u, .st-slot-verval { font-size: .8rem; color: var(--ink-3); }
+.st-slot-groepen { display: flex; gap: 1.2rem; flex-wrap: wrap; }
+.st-slot-groep { display: flex; flex-direction: column; gap: .3rem; }
+.st-slot-groep .lab { font-size: .74rem; color: var(--ink-3); }
+.st-pips { display: inline-flex; gap: 4px; }
+.st-pips i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--surface); }
+.st-pips i.is-vast { background: var(--st-accent-lijn); border-color: var(--st-accent-lijn); }
+.st-slotbalk { width: 140px; height: 8px; appearance: none; border: 0; border-radius: var(--r-pill); overflow: hidden; background: var(--surface-2); }
+.st-slotbalk::-webkit-progress-bar { background: var(--surface-2); }
+.st-slotbalk::-webkit-progress-value { background: var(--st-accent-lijn); }
+.st-slotbalk::-moz-progress-bar { background: var(--st-accent-lijn); }
+.st-slot-tel { font-size: .85rem; color: var(--ink-3); white-space: nowrap; }
+.st-slot-tel b { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-slot.is-vol .st-slot-tel { color: var(--st-clay-tekst); }
+
+.st-set { display: flex; flex-direction: column; gap: .7rem; align-items: flex-start; padding: 1rem; border: 1px solid var(--line); border-radius: var(--r-md); }
+.st-set.is-nu { border-color: var(--line-strong); }
+.st-set-kop { display: flex; justify-content: space-between; gap: 1rem; width: 100%; }
+.st-set-maand { font-weight: 600; color: var(--ink-1); }
+.st-strook.is-klein { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+.st-strook.is-vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.st-strook span { display: block; aspect-ratio: 1; overflow: hidden; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); }
+.st-strook span img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.st-strook.is-vier span { aspect-ratio: 1; }
+
+.st-lijst { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.st-q { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: .5rem 1rem; align-items: center; padding: .85rem 0; border-top: 1px solid var(--line); }
+.st-q:first-child { border-top: 0; }
+.st-q-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.st-q-tekst strong { color: var(--ink-1); }
+.st-q-staat { font-size: .8rem; color: var(--st-clay-tekst); }
+.st-q-staat.is-ok { color: var(--ink-3); }
+.st-q-merk { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); padding: .2rem .6rem; border-radius: var(--r-pill); border: 1px solid var(--line); }
+.st-q-merk.is-vast { color: var(--ink-1); border-color: var(--ink-1); }
+.st-q-wanneer { font-size: .85rem; color: var(--ink-3); text-decoration: underline; text-underline-offset: .18em; white-space: nowrap; }
+.st-q-wanneer.is-vast { color: var(--ink-1); }
+.st-q-knoppen { display: flex; gap: .35rem; flex-wrap: wrap; }
+.st-q-knoppen form { margin: 0; }
+.st-formulier.is-in-vlak { padding: 1rem 0 0; border-top: 1px solid var(--line); border-radius: 0; background: none; border-inline: 0; border-bottom: 0; }
+.st-veld-bestand { padding-block: .6rem; min-height: 0; }
+
+.st-kal-asap { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.st-kal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.st-kal-kop { font-family: var(--font-mono); font-stretch: 82%; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: .3rem .4rem; }
+.st-kal-dag { position: relative; display: flex; flex-direction: column; gap: .15rem; min-height: 64px; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); font: inherit; color: var(--ink-2); text-align: left; }
+button.st-kal-dag { cursor: pointer; }
+button.st-kal-dag:hover { border-color: var(--ink-1); }
+.st-kal-dag.is-dicht, .st-kal-dag.is-vroeg, .st-kal-dag.is-vol { color: var(--ink-3); background: var(--surface-2); }
+.st-kal-dag.is-nu { box-shadow: inset 0 0 0 1px var(--ink-1); }
+.st-kal-dag.is-mijn { border-color: var(--st-accent-lijn); background: var(--st-accent-tint); color: var(--ink-1); }
+.st-kal-n { font-weight: 600; font-variant-numeric: tabular-nums; }
+.st-kal-l { font-size: .68rem; line-height: 1.2; }
+.st-kal-vul { position: absolute; left: .5rem; right: .5rem; bottom: .4rem; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.st-kal-vul i { display: block; height: 100%; background: var(--ink-3); }
+.st-kal-vul i.is-0 { width: 0; } .st-kal-vul i.is-1 { width: 10%; } .st-kal-vul i.is-2 { width: 20%; } .st-kal-vul i.is-3 { width: 30%; } .st-kal-vul i.is-4 { width: 40%; } .st-kal-vul i.is-5 { width: 50%; } .st-kal-vul i.is-6 { width: 60%; } .st-kal-vul i.is-7 { width: 70%; } .st-kal-vul i.is-8 { width: 80%; } .st-kal-vul i.is-9 { width: 90%; } .st-kal-vul i.is-10 { width: 100%; }
+
+.st-ed-kop { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.st-pil.is-wacht { color: var(--ink-3); }
+.st-ed-lijst { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.st-ed-lijst li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1rem; padding: .7rem 0; border-top: 1px solid var(--line); font-size: .92rem; color: var(--ink-2); }
+.st-ed-lijst li:first-child { border-top: 0; }
+.st-ed-lijst strong { color: var(--ink-1); font-weight: 600; }
+
+.st-feiten { margin: 0; display: flex; flex-direction: column; }
+.st-feit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; padding: .6rem 0; border-top: 1px solid var(--line); font-size: .92rem; }
+.st-feit:first-child { border-top: 0; }
+.st-feit dt { color: var(--ink-3); }
+.st-feit dd { margin: 0; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-feit dd.is-leeg { color: var(--ink-3); }
+.st-gedaan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; font-size: .92rem; }
+.st-gedaan strong { color: var(--ink-1); font-weight: 600; }
+
+@media (max-width: 56.25em) {
+  .st-slot { grid-template-columns: 1fr; gap: .5rem; }
+  .st-q { grid-template-columns: 1fr; }
+  .st-strook.is-vier { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .st-kal-dag { min-height: 54px; padding: .35rem .4rem; }
+  .st-kal-l { display: none; }
+  .st-ed-lijst li, .st-feit { grid-template-columns: 1fr; gap: .15rem; }
+}
+
+/* ── DE VISUELE LAAG VAN HET ABONNEMENT — 5 september 2026 ──────────────────
+   Frames voor de slots, een strook van 28 dagen voor de week, beeldregels voor
+   de look, en de plaatshouder (Plaatshouder.astro) in de taal van de site. */
+.st-ph { display: block; width: 100%; height: 100%; }
+
+.st-slot { grid-template-columns: 1fr; gap: .7rem; }
+.st-slot-kop { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+.st-frames { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: .45rem; }
+.st-frames.is-uitleg { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-bottom: .4rem; }
+.st-frame { display: block; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); position: relative; }
+.st-frame img, .st-frame .st-ph { display: block; width: 100%; height: 100%; object-fit: cover; }
+.st-frame.is-vast { border-color: var(--ink-1); }
+.st-frame.is-vrij { background: none; border-style: dashed; border-color: var(--line-strong); color: var(--ink-4); }
+a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
+.st-frame.is-meer { display: grid; place-items: center; border-style: dashed; background: none; font-family: var(--font-mono); font-stretch: 82%; font-size: .8rem; color: var(--ink-3); }
+.st-frame-leeg { display: grid; place-items: center; width: 100%; height: 100%; font-size: 1.2rem; font-weight: 300; }
+.st-frame-legenda { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); align-items: center; }
+.st-frame-legenda span { display: inline-flex; align-items: center; gap: .4rem; }
+.st-frame-legenda i { width: 10px; height: 12px; border-radius: 2px; border: 1px solid var(--line-strong); background: var(--surface-2); }
+.st-frame-legenda i.is-vast { border-color: var(--ink-1); background: var(--ink-1); }
+.st-frame-legenda i.is-vrij { background: none; border-style: dashed; }
+.st-slot-oud { margin-left: auto; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: .8rem; }
+
+.st-weekstrip { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; max-width: 34rem; }
+.st-dag { display: grid; place-items: center; aspect-ratio: 1; border-radius: 3px; font-family: var(--font-mono); font-stretch: 82%; font-size: .62rem; color: var(--ink-2); background: var(--surface-2); }
+.st-dag.is-week { background: rgb(210 224 74 / .38); color: var(--ink-1); }
+.st-dag.is-start { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.st-dag.is-vandaag { box-shadow: inset 0 0 0 1.5px var(--ink-1); color: var(--ink-1); }
+
+.st-uitleg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
+.st-uitleg-blok { gap: .6rem; }
+.st-uitleg-blok .st-weekstrip { max-width: none; margin-bottom: .4rem; }
+.st-uitleg-blok .st-lookrij { margin-bottom: .4rem; }
+.st-uitleg-blok p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+
+.st-lookrijen { display: flex; flex-direction: column; }
+.st-lookrij { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 1rem; align-items: center; padding: .9rem 0; border-top: 1px solid var(--line); }
+.st-lookrij:first-child { border-top: 0; padding-top: 0; }
+.st-uitleg-blok .st-lookrij { grid-template-columns: 1fr; border-top: 0; padding: 0; }
+.st-uitleg-blok .st-lookrij-naam { display: none; }
+.st-lookrij-naam { font-weight: 700; color: var(--ink-1); }
+.st-lookrij-vakken { display: flex; gap: .9rem; flex-wrap: wrap; }
+.st-lookvak { display: flex; flex-direction: column; gap: .2rem; width: 68px; }
+.st-lookvak img, .st-lookvak svg, .st-lookvak-leeg, .st-lookvak-vorm { display: block; width: 68px; height: 68px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); object-fit: cover; }
+.st-lookvak-leeg { display: grid; place-items: center; color: var(--ink-4); }
+.st-lookvak-leeg .i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.st-lookvak-leeg.is-arcering { background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px); }
+.st-lookvak-vorm { display: grid; place-items: center; padding: 12px; box-sizing: border-box; }
+.st-lookvak-vorm .st-ratio-vorm { height: 100%; width: auto; max-width: 100%; }
+.st-lookvak-l { font-family: var(--font-mono); font-stretch: 82%; font-size: .6rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-top: .2rem; }
+.st-lookvak-w { font-size: .78rem; color: var(--ink-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.st-q { grid-template-columns: auto minmax(0, 1fr) auto auto auto; }
+.st-q-frame { display: block; width: 44px; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; border: 1px dashed var(--line-strong); }
+.st-q-frame.is-fotos { border-style: solid; border-color: var(--line); }
+.st-q-frame .st-ph { width: 100%; height: 100%; }
+
+@media (max-width: 56.25em) {
+  .st-uitleg { grid-template-columns: 1fr; }
+  .st-frames.is-uitleg { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .st-weekstrip { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .st-lookrij { grid-template-columns: 1fr; gap: .5rem; }
+  .st-q { grid-template-columns: auto minmax(0, 1fr); }
+  .st-q > .st-q-merk, .st-q > .st-q-wanneer, .st-q > .st-q-knoppen { grid-column: 2; }
+}
+
+/* ── HET INLOGSCHERM: ÉÉN KAART IN HET MIDDEN ────────────────────────────── */
+.st-kaartveld { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; padding: clamp(1.2rem, 4vw, 3rem) 1rem; }
+.st-merk-los { width: 40px; height: 46px; }
+.st-kaart { width: min(100%, 440px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(1.5rem, 4vw, 2.4rem); display: flex; flex-direction: column; gap: 1.1rem; }
+.st-kaart h1 { font-family: var(--font-heading); font-weight: 800; font-size: 2.2rem; line-height: 1; letter-spacing: -.01em; color: var(--ink-1); margin: 0; }
+.st-kaart .st-lede { margin: 0; font-size: 1rem; color: var(--ink-2); }
+.st-fout { margin: 0; padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); color: var(--st-clay-tekst); font-size: .92rem; }
+.st-form { display: flex; flex-direction: column; gap: .7rem; }
+.st-form label { font-size: .85rem; font-weight: 600; color: var(--ink-2); }
+.st-veld {
+  width: 100%; box-sizing: border-box; min-height: 46px; padding: 0 .95rem;
+  font: inherit; font-size: 1rem; color: var(--ink-1); background: var(--bg-0);
+  border: 1px solid var(--line-ui); border-radius: var(--r-sm);
+  transition: border-color var(--dur-1) var(--ease);
+}
+.st-veld::placeholder { color: var(--ink-3); }
+.st-veld:hover { border-color: var(--ink-3); }
+.st-veld:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-color: var(--ink-3); }
+.st-veld.is-code { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 700; letter-spacing: .18em; text-align: center; min-height: 58px; }
+.st-hint { margin: 0; font-size: .85rem; color: var(--ink-3); }
+.st-kaart .st-details { border-top: 1px solid var(--line); padding-top: .6rem; }
+.st-kaart .st-details .st-form { margin-top: .6rem; }
+.st-wie-tekst { margin: 0; font-size: .85rem; color: var(--ink-3); }
+
+/* ── DE TELEFOON: KOP, TABRIJ, VOET ──────────────────────────────────────── */
+@media (max-width: 56.25em) {
+  .st-shell, .st-shell.is-dicht { display: block; }
+  .st-kolom { border-right: 0; border-bottom: 1px solid var(--line); }
+  .st-side {
+    position: static; height: auto; overflow: visible;
+    display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "merk sub uit" "nav nav nav";
+    align-items: center; gap: .6rem .9rem;
+    padding: .7rem .9rem 0;
+  }
+  .st-side-kop { display: contents; }
+  .st-merk { grid-area: merk; }
+  .st-sub { grid-area: sub; }
+  .st-nav { grid-area: nav; }
+  .st-side-voet form { grid-area: uit; }
+  .st-merk { width: 26px; height: 30px; }
+  .st-sub { font-size: .85rem; color: var(--ink-2); font-weight: 600; }
+  .st-klap { display: none; }
+  .st-side-voet { display: contents; }
+  .st-wie, .st-side-voet .st-stand { display: none; }
+  .st-side-voet form { margin: 0; }
+  .st-side-voet .btn { min-height: 34px; padding-inline: .9rem; font-size: .85rem; }
+  .st-nav {
+    flex-direction: row; gap: .1rem; overflow-x: auto; scrollbar-width: none;
+    margin-inline: -.9rem; padding-inline: .6rem; -webkit-overflow-scrolling: touch;
+  }
+  .st-nav::-webkit-scrollbar { display: none; }
+  .st-navlink {
+    flex: 0 0 auto; min-height: 44px; padding: 0 .7rem; border-radius: 0; gap: .5rem;
+    border-bottom: 2px solid transparent; font-size: .9rem; box-shadow: none !important; background: none !important;
+  }
+  .st-navlink.is-actief { border-bottom-color: var(--st-accent-lijn); }
+  .st-navlink .i { width: 16px; height: 16px; }
+  .st-top { padding: 1.3rem 1rem 1rem; }
+  .st-top-actie { width: 100%; }
+  .st-main { padding: 1rem; gap: 1.6rem; }
+  .st-voet { display: flex; align-items: center; gap: 1.2rem; padding: 1rem 1rem 1.6rem; border-top: 1px solid var(--line); margin-top: auto; }
+  .st-voet form { margin-left: auto; }
+  .st-cijfers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .st-cijfer:nth-child(2) { border-right: 0; }
+  .st-cijfer:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
+  .st-stappen { grid-auto-flow: row; grid-auto-columns: auto; gap: .55rem; }
+  .st-stap { flex-direction: row; align-items: center; gap: .7rem; padding: 0; }
+  .st-stap::before { display: none; }
+  .st-order, .st-lopend li, .st-activiteit li { padding-inline: 1rem; }
+  .st-lopend li { grid-template-columns: auto auto; }
+  .st-lopend li .st-meta { grid-column: 1 / -1; white-space: normal; }
+  .st-betaal { grid-template-columns: 1fr; }
+  .st-betaal form { grid-column: 1; grid-row: auto; }
+  .st-strook { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 26em) {
+  .st-cijfer-n { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-strook a:hover { transform: none; }
+}
+.st-meer { margin: 0; padding: .7rem 1.35rem; border-top: 1px solid var(--line); }
+
+/* ── LETTERS NOOIT OP --ink-4 — 6 september 2026 ─────────────────────────
+   scripts/dash-leesbaar.mjs mat op de echte Worker: --ink-4 (42% inkt) is
+   2,8:1 op de grond, en dat is een lijn, geen letter. Elke tekst die erop
+   stond — dagnummers, stappen, mono-labels, "Concept", hexwaarden — staat nu
+   op --ink-3 (5,3:1); --ink-4 blijft voor iconen, puntjes en gestippelde
+   randen. In global.css staat dezelfde regel bij de trap zelf. */
+
+/* ── Terug van Mollie (/account/plan/return) ─────────────────────────────── */
+.st-terug { padding: 1.4rem; display: flex; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SECTIE 22 · HET PANEELRITME — 7 september 2026
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Dit bestand stond al goed: het leest de tokens van global.css, de streep-links
+   is er al uit (.st-nota), en de twee standen zijn de twee gronden van de site.
+   Wat er nog niet in zat is het RITME van sectie 22 — de hoek en de laag.
+
+   DE HOEK. --r-lg / --r-md / --r-sm in global.css staan op 4 / 4 / 2, en die
+   waarden dragen ook de honderden klassen van vóór sectie 22; daar kan ik niet
+   aankomen zonder de hele site te verzetten. De site zelf tekent zijn panelen
+   dus niet met --r-lg maar met --ronding, clamp(20px,2.4vw,34px) in
+   src/styles/stijl22.css. Studio krijgt hier zijn eigen twee stappen, afgeleid
+   van die maat en één slag kleiner: een dashboard met 34px hoeken leest speels,
+   en dit is een scherm waar iemand werkt.
+
+   DE LAAG. Wat op de afdruk het meest opviel: een bestelkaart met een rand, en
+   daarin een betaalblok met een rand, en daarin productregels met een rand, en
+   daaronder een map met een rand. Vier kaders om één bestelling. De buitenste
+   rand blijft — Lucas vroeg er zelf om: "voor bestellingen wil ik wel duidelijk
+   van elkaar te scheiden". Maar wat BINNEN dat kader ligt hoort geen tweede
+   kader te zijn: daar doet de vulling het werk, en een rand blijft alleen over
+   waar hij een TOESTAND aanwijst — onbetaald, revisie gevraagd, ronde klaar.
+   Dat is dezelfde regel als in public/admin.css: een cel, geen doos.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --st-ronding: clamp(14px, 1.6vw, 20px);   /* het paneel zelf */
+  --st-ronding-in: 10px;                    /* wat erin ligt   */
+}
+
+.st-kaart-vlak { border-radius: var(--st-ronding); }
+.st-kaart { border-radius: var(--st-ronding); }
+.st-leeg { border-radius: var(--st-ronding-in); }
+
+/* ── BINNEN HET PANEEL: VULLING IN PLAATS VAN RAND ────────────────────────── */
+.st-betaal, .st-product, .st-map, .st-ronde, .st-melding {
+  border: 1px solid transparent;
+  border-radius: var(--st-ronding-in);
+  background: var(--surface-2);
+}
+/* De rand komt terug waar hij iets ZEGT. Dit zijn de vier toestanden die een
+   klant moet zien zonder te lezen; ze stonden er al, ze zijn nu het enige wat
+   nog een rand draagt binnen een kaart. */
+.st-betaal.is-unpaid { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
+.st-product.is-revisie { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
+.st-ronde.is-ready { border-color: var(--st-accent-lijn); }
+
+/* Een productregel die openklapt, klapt open BINNEN zijn eigen vulling; de
+   scheidingslijn tussen kop en paneel blijft, want die scheidt twee dingen in
+   plaats van er een doos omheen te zetten. */
+.st-product-paneel { border-top-color: var(--line); }
+
+/* De omslagjes en tegels krijgen de binnenhoek mee. Een scherpe hoek in een
+   afgeronde cel is het enige wat dan nog uit de toon valt. */
+.st-product-cover, .st-beeld-media, .st-strook a, .st-model-img, .st-vl-gezicht,
+.st-vast, .st-nota, .st-gezegd { border-radius: var(--st-ronding-in); }

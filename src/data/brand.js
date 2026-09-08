@@ -43,3 +43,49 @@ export const TAGLINE = {
 export function tagline(lang) {
   return TAGLINE[lang] || TAGLINE.en;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HET MERKTEKEN — 8 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Lucas: *"Ook ® overal verwijderen omdat je dit volgens mij niet zomaar mag
+   gebruiken. Als dat wel kan, houden."*
+
+   WAT DE BRONNEN ZEGGEN, EN DAT ZIJN ER TWEE DIE HET NIET EENS ZIJN.
+
+   BOIP — het Benelux-merkenbureau zelf — schrijft: "Er is echter geen wet die
+   verbiedt dat niet-geregistreerde merken ook het ®teken gebruiken." Naar de
+   letter van het merkenrecht mag het in de Benelux dus.
+
+   Maar het merkenrecht is niet de enige wet die erover gaat. Een ® bij een
+   naam die niet is ingeschreven is een mededeling over je eigen positie die
+   niet klopt, en dat valt onder misleidende handelspraktijken (art. 6:193c BW,
+   uit de Europese richtlijn). Specialisten schrijven het scherper op dan BOIP:
+   "Zonder deze formele registratie is gebruik van het ®-symbool misleidend en
+   mogelijk strafbaar."
+
+   WAAROM HET DAN TOCH WEGGAAT. Niet omdat het zeker verboden is — dat is het
+   in de Benelux blijkbaar niet. Maar omdat de afweging scheef staat: het ®
+   levert niets op (het staat in een labelregel, als typografisch detail) en
+   het kost in het slechtste geval een klacht over misleiding, van een
+   concurrent of van iemand die het merk wél heeft. Bovendien is de VS
+   strenger — daar is onterecht ®-gebruik "false marking" — en de site verkoopt
+   in het Engels.
+
+   ™ MAG WÉL, ALTIJD. Dat teken zegt "wij voeren dit als merk", en daar hoort
+   geen inschrijving bij. Het houdt het detail dat het label mooi maakte, en
+   het beweert niets wat niet waar is.
+
+   ÉÉN CONSTANTE EN GEEN ZEVEN. Het teken stond letterlijk overgetypt op zeven
+   plekken in vijf bestanden. Dat is precies de vorm waarin dit soort dingen
+   half blijft staan bij de volgende ronde. Schrijft Lucas VISUAILS ooit in bij
+   BOIP of EUIPO, dan is dit één regel — en dan klopt hij ook meteen overal.
+
+   DE CSS HEEFT ZIJN EIGEN KOPIE, EN DIE IS VASTGEZET. `.eyebrow-page::before`
+   kan geen JavaScript lezen, dus daar staat `--merkteken` in :root. Dat is een
+   tweede waarheid, en die wordt door tests/merkteken.test.mjs aan deze
+   vastgeknoopt: lopen ze uit elkaar, dan wordt er iets rood. */
+export const MERKTEKEN = '™';
+
+/** De merknaam met zijn teken: "VISUAILS™". Gebruik dit, niet de losse letters. */
+export const MERK = `VISUAILS${MERKTEKEN}`;

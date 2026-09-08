@@ -162,18 +162,20 @@ console.log('\nde rechte apostrof staat nergens in de tabel');
 
 console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
 {
-  const home = codeOnly(lees('src/components/HomeV2.astro'));
+  /* Sectie 21: Voorpagina.astro in plaats van HomeV2; de tabel daar leest de
+     korte vorm voor alle drie de kolommen. */
+  const home = codeOnly(lees('src/components/Voorpagina.astro'));
   const prijs = codeOnly(lees('src/components/PricingPage.astro'));
 
-  check('HomeV2 leest counted()', /counted\('complete',/.test(home), true);
-  check('en niet meer "beelden" in ladKinds', /ladKinds:[\s\S]{0,400}beelden/.test(home), false);
+  check('Voorpagina leest counted()/countedShort()', /counted(?:Short)?\('complete',/.test(home), true);
+  check('en nergens "beelden" naast een getypt aantal', /priceKinds:[\s\S]{0,400}\d beelden/.test(home), false);
   check('PricingPage leest counted()', /counted\('complete',/.test(prijs), true);
 
   /* De kolomkoppen NOEMEN de categorie ("Catalog set", "Catalogset"), dus daar
      hoort de korte vorm. Stond hier counted(), dan las de kop "Catalog set —
      4 catalog images". Zie de noot bij SHORTER in lexicon.js. */
-  check('HomeV2 gebruikt de korte vorm onder de kop',
-    (home.match(/countedShort\('(catalog|lifestyle)'/g) || []).length, 4);
+  check('Voorpagina gebruikt de korte vorm onder de kop (diensten, set én tabel, twee talen)',
+    (home.match(/countedShort\('(catalog|lifestyle)'/g) || []).length, 12);
   check('PricingPage ook',
     (prijs.match(/countedShort\('(catalog|lifestyle)'/g) || []).length, 4);
   check('en nergens meer de lange vorm onder een kop',
@@ -200,12 +202,12 @@ console.log('\nde voorraadregels zeggen stockfoto’s en niet visuals');
      pagina's, precies de kwaal waar deze lijst voor is.
 
      Vandaar deze controle: hij bewaakt de plek waar ik zelf overheen keek. */
-  const home = codeOnly(lees('src/components/HomeV2.astro'));
+  /* Sectie 21: de voorraadregels staan niet meer op de homepage; alleen /plans. */
   const plan = codeOnly(lees('src/components/PlansPage.astro'));
 
   const stockRegels = (t, welk) => (t.match(new RegExp(`STOCK_${welk}_BRAND\\}[^\`]*\``, 'g')) || []);
 
-  for (const [naam, tekst] of [['HomeV2', home], ['PlansPage', plan]]) {
+  for (const [naam, tekst] of [['PlansPage', plan]]) {
     const gedeeld = stockRegels(tekst, 'OFF');
     const opMerk = stockRegels(tekst, 'ON');
     check(`${naam}: twee gedeelde en twee on-brand regels`, [gedeeld.length, opMerk.length], [2, 2]);

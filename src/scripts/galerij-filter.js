@@ -72,8 +72,18 @@ const UIT = 'cubic-bezier(.25,.46,.45,.94)';   // easeOutQuad  = GSAP power2.out
 const IN = 'cubic-bezier(.215,.61,.355,1)';    // easeOutCubic = GSAP power3.out
 
 export function initGalerijFilter() {
-  const grid = document.querySelector('.photo-grid[data-filterable]');
-  const knoppen = document.querySelectorAll('.filter-bar button[data-filter-key]');
+  /* ── GEZOCHT OP DE DATA-ATTRIBUTEN EN NIET OP DE KLASSENAAM ────────────────
+     7 september 2026, bij het overzetten van de galerij naar de stijl van sectie
+     22. Hier stond `.photo-grid[data-filterable]` en `.filter-bar button[…]`,
+     dus dit script hing aan twee klassenamen uit de oude opmaak — hernoem de
+     opmaak en de filterbalk doet niets meer, zonder één foutmelding.
+
+     `data-filterable` en `data-filter-key` zijn wat deze twee dingen ECHT
+     identificeert: ze staan er precies om door dit script gevonden te worden,
+     en een klassenaam staat er om iets te kleuren. Dat is ook waarom er geen
+     nieuwe klassenaam voor in de plaats komt. */
+  const grid = document.querySelector('[data-filterable]');
+  const knoppen = document.querySelectorAll('button[data-filter-key]');
   if (!grid || !knoppen.length) return;
   /* Per grid-element gebonden en niet per module: dit bestand draait één keer
      bij het inlezen ÉN nog een keer op de astro:page-load die erop volgt, wat

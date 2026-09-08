@@ -151,8 +151,9 @@ console.log('\neen volle lijst wordt geweigerd, en er gaat niets naar R2');
 console.log('\nde twee meldingen staan er ook echt, in beide talen');
 {
   const bron = readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8');
-  ok('fout=vol toont planQueueFull', /fout === 'vol' \? t\.planQueueFull/.test(bron), true);
-  ok('fout=naam toont planQueueNameMissing', /fout === 'naam'\s*\? t\.planQueueNameMissing/.test(bron), true);
+  /* Sinds 6 september 2026 kiest planView() de melding uit één tabel op ?fout=. */
+  ok('fout=vol toont planQueueFull', /vol: t\.planQueueFull/.test(bron) && /\}\[fout\] \|\| ''/.test(bron), true);
+  ok('fout=naam toont planQueueNameMissing', /naam: t\.planQueueNameMissing/.test(bron), true);
   ok('planQueueFull staat er in twee talen',
     (bron.match(/^ {4}planQueueFull:/gm) || []).length, 2);
   ok('planQueueNameMissing staat er in twee talen',
@@ -161,11 +162,12 @@ console.log('\nde twee meldingen staan er ook echt, in beide talen');
 
 console.log('\nhet formulier draagt de enctype die de bytes meestuurt');
 {
-  const bron = readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8');
+  /* Het formulier staat sinds 6 september 2026 in src/pages/account/plan.astro. */
+  const bron = readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8');
   ok('enctype staat op het toevoegformulier',
-    /action="\/account\/plan\/queue" class="q-toevoegen" enctype="multipart\/form-data"/.test(bron), true);
+    /action="\/account\/plan\/queue" class="st-formulier is-in-vlak" enctype="multipart\/form-data"/.test(bron), true);
   ok('en het bestandsveld heet fotos',
-    /<input id="q-fotos" name="fotos" type="file"/.test(bron), true);
+    /<input id="q-fotos"[^>]* name="fotos" type="file"/.test(bron), true);
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

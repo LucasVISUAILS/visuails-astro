@@ -51,7 +51,16 @@ export function readGlyph() {
   if (!m) throw new Error('glyph.mjs: no <symbol id="markglyph"> in Layout.astro');
   const viewBox = m[1];
   const [, , VW, VH] = viewBox.split(/\s+/).map(Number);
-  return { viewBox, inner: m[2].trim(), VW, VH };
+  /* Het symbool in Layout.astro draagt sinds augustus een {/* … *\/}-commentaar
+     en twee attributen (pathLength, vector-effect) die alleen voor de lijnstand
+     van BrandMark bestaan. Geen van drie hoort in een los SVG-bestand: het
+     commentaar maakte de favicons leeg (x="NaN") en de attributen doen niets
+     bij een gevuld vlak. Alleen de paden gaan door. */
+  const inner = m[2]
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\s+(pathLength|vector-effect)="[^"]*"/g, '')
+    .trim();
+  return { viewBox, inner, VW, VH };
 }
 
 /**

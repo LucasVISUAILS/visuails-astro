@@ -1,0 +1,698 @@
+---
+/**
+ * CONCEPT I · ZWEEF — de voorpagina als zwevend paneel op inkt. 6 september 2026.
+ *
+ * Lucas stuurde twee schermopnames (Zeyox Studio) en vroeg: *"Zou je toch nog
+ * een website design kunnen creëren met mijn bestaande kleurenschema met de 2
+ * videos als inspiratie."* Ze zijn elkaars tegenpool, en deze pagina neemt van
+ * allebei precies één ding.
+ *
+ * VIDEO 1 — «WISE», digital fashion house. Wat er te halen viel:
+ *   · de grond is bijna zwart en de kop staat er in dezelfde bijna-zwarte
+ *     toon overheen, torenhoog: je leest hem pas als je hem al ziet. Dat is
+ *     hier de spookletter — nergens tekst die je moet lezen, altijd tekst die
+ *     de ruimte vult;
+ *   · een raster van haarlijnen over het zwart, nauwelijks zichtbaar;
+ *   · het product hangt over die letters heen en staat op één dunne lichte
+ *     lijn — een plank. Geen kader, geen schaduw, één streep;
+ *   · de filterrij als pillen: één zwarte pil actief, de rest omlijnd;
+ *   · het accent is een limoengeel dat op een haar na het onze is (gemeten
+ *     ≈ #D9F24E tegen ons #D2E04A) — daarom gaat dit concept over in onze
+ *     familie zonder één kleur te verzinnen.
+ *
+ * VIDEO 2 — «VEXO», workout wear. Wat er te halen viel:
+ *   · de pagina is geen vlak maar een zwevend paneel met een flinke ronding;
+ *     rondom blijft een rand van de ondergrond zichtbaar. Daardoor voelt het
+ *     scherm als een kaart die je op tafel legt;
+ *   · reusachtige spookwoorden schuiven achter dat paneel langs;
+ *   · beeldkaarten met een sterke ronding, een klein label linksboven en een
+ *     zwevende witte pil onderin met naam, prijs en een rond pijltje;
+ *   · één donkere «poster»-kaart die precies in het midden van een licht veld
+ *     hangt, met de spookwoorden erachter langs.
+ *
+ * DE OPENING (7 september toegevoegd). Lucas: *"Deze graag gebruiken als
+ * homepage begin sectie. Ik wil een beetje dezelfde animatie die ze ook
+ * gebruiken maar dan wellicht iets subtieler … Gebruik veel white space en vul
+ * de beelden goed. Ook graag wat infographics opmaak zoals de komma pagina van
+ * ovyon labs subtiel toepassen."* De hero is daarom één op één de opbouw van
+ * VEXO — witte balk met een tab in het midden, kop gecentreerd met één woord in
+ * een andere snit, twee pillen, het model vrijstaand, links gezichten met een
+ * zin, rechts een donkere kaart — maar in onze kleuren. De animatie daar laat
+ * het beeld in losse balken invallen en vervormt daarna de kop letter voor
+ * letter; hier schuiven zeven banden (het aantal beelden van één set) met 70 ms
+ * verschil over veertien pixels op hun plaats en komt de kop per regel op.
+ * Binnen een seconde staat alles stil. De Komma-opmaak zit in de maatlijn
+ * onderaan de hero: een haarlijn, een streepje per waarde, het nummer erboven —
+ * en het model staat erop.
+ *
+ * DE KRUISING. Video 1 is hard en zwart, video 2 is zacht en licht. Deze
+ * pagina zet ze om beurten in: het document zelf is inkt (video 1) en de
+ * lichte panelen zweven erop (video 2), met steeds een rand inkt eromheen. Elke
+ * overgang van licht naar donker is een hoofdstukwissel, en in het donker
+ * staat altijd een spookwoord.
+ *
+ * DE KLEUR. Niets nieuws: #111111 en #F5F5F5 als gronden, #D2E04A voor de
+ * ronde pijltjes en de laatste zaal, #E4F474 als letter — en dat laatste
+ * alléén op inkt (op wit haalt het 1,5:1, op inkt 16,5:1; DESIGN.md §21).
+ *
+ * DE FOTO'S. Lucas: *"ik wil ze in 1 scherm zichtbaar hebben maar ze mogen wel
+ * het scherm vullen."* Elk vrijstaand beeld is daarom begrensd op de hoogte
+ * (--hoog) en niet op de breedte; kaarten hebben een vaste verhouding.
+ *
+ * Alle tekst en getallen: src/data/conceptInhoud.js — exact dezelfde inhoud als
+ * de andere acht concepten en als de huidige voorpagina.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const { c, sample, e, KINDS, KIND_PAGE, RUNGS, PLANS, PLAN_CLIPS, ladderRate, CATALOG_IMAGES, ROSTER, modelId, SFEER } = inhoud(lang);
+const nn = (i: number) => String(i).padStart(2, '0');
+const S = (n: number) => SFEER[n - 1];
+
+/* De zeven beelden van één set, in de volgorde van de frames. */
+const SET = [1, 5, 4, 2, 3, 7, 6];
+/* Welk sfeerbeeld bij welke dienst hoort. */
+const DIENST_BEELD = [1, 2, 9, 6];
+---
+<ConceptLayout
+  title="Concept I · Zweef — VISUAILS"
+  description="Concept I: lichte panelen die op inkt zweven, spookletters achter het beeld en ronde kaarten met een pil eronder."
+  lang={lang}
+  grond="inkt"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  {/* De balk uit de video: wit, met een tab in het midden die naar beneden
+      hangt en waar het woordmerk in zit. Links de secties, rechts de proef. */}
+  <header class="balk">
+    <nav class="balk-nav balk-links" aria-label="Hoofdnavigatie">{c.nav.slice(0, 2).map(([t, h]) => <a href={h}>{t}</a>)}</nav>
+    <a class="balk-tab" href={lp('/')} aria-label="VISUAILS">
+      <svg class="woordmerk" viewBox="0 0 1650 278" aria-hidden="true"><use href="#wordmark" /></svg>
+    </a>
+    <nav class="balk-nav balk-rechts" aria-label="Meer">{c.nav.slice(2).map(([t, h]) => <a href={h}>{t}</a>)}<a class="knop balk-cta" href={lp('/start')}>{c.ctaStart}</a></nav>
+  </header>
+
+  <main id="inhoud" class="zweef">
+
+    {/* ── 01 · DE OPENING ─────────────────────────────────────────────────
+        De hero uit video 2, in onze eigen kleuren. Wat er is overgenomen:
+        een lichte hemel die naar wit zakt, de kop gecentreerd met één woord in
+        een andere snit, twee pillen eronder, het model vrijstaand en over de
+        onderrand heen, links een klein blok met gezichten en een zin, rechts
+        een donkere kaart met een pijl.
+
+        DE ANIMATIE, subtieler dan in de video. Daar valt het beeld binnen als
+        losse horizontale balken die uit elkaar staan en dichtklappen, en
+        vervolgens vervormt de kop letter voor letter. Hier: zeven banden —
+        precies het aantal beelden van één set — die met 70 ms verschil op hun
+        plaats schuiven over 14 pixels, en een kop die per regel van onderen
+        opkomt. Eén beweging, geen vervorming, alles klaar binnen een seconde.
+        Bij prefers-reduced-motion staat alles meteen goed. */}
+    <section class="hero" aria-labelledby="h1">
+      <div class="stralen" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+      <div class="hero-kop">
+        <p class="etiket">{c.labels[0]} · {c.labels[2]}</p>
+        <h1 id="h1" class="hoog hero-h1">
+          {c.h1.map((line, i) => <span class="kop-regel" style={`--i:${i}`}><span set:html={line} /></span>)}
+        </h1>
+        <p class="acties hero-acties"><a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a><a class="knop knop-wit" href={lp('/test-sample')}>{sample.cta}</a></p>
+      </div>
+
+      {/* Het beeld komt binnen in zeven banden — het aantal beelden van één set.
+          De foto is vrijstaand gemaakt: de studiowand en de olijfgroene
+          slagschaduw zijn eruit gehaald, zodat de grond van de pagina er
+          doorheen valt en er geen rand van een foto te zien is. */}
+      <div class="strook" role="img" aria-label="Model in een zwarte hoodie met veterkraag, van onderaf gefotografeerd" style="--src:url(/img/voorpagina/hero-model.webp)">
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => <span style={`--i:${i}`}></span>)}
+      </div>
+
+      <div class="hero-links">
+        <ul class="koppen" role="list">
+          {ROSTER.slice(0, 3).map((m) => <li><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></li>)}
+        </ul>
+        <p class="lopend hero-zin">{c.lede}</p>
+      </div>
+
+      <a class="hero-clip" href={lp('/video')}>
+        <img src={S(9).klein} width="1000" height="563" alt={S(9).alt} loading="lazy" decoding="async">
+        <span class="rond" aria-hidden="true">▶</span>
+        <span class="mono">{c.extras[0][0]}</span>
+      </a>
+
+    </section>
+
+    {/* De maatlijn: de Komma-manier om een feit te tonen — een haarlijn, een
+        streepje per waarde, het nummer erboven. Een eigen dunne strook onder de
+        hero, zodat het model gewoon over de onderrand heen kan lopen. */}
+    <ul class="maatlijn" role="list">
+      {c.facts.map((f) => <li><span>{f}</span></li>)}
+      <li><span>{c.trust[0]}</span></li>
+    </ul>
+
+    {/* ── 02 · WAT WE MAKEN ───────────────────────────────────────────────
+        Het lichte paneel begint hier. De pillenrij van video 1 is echt: vier
+        radioknoppen zonder JavaScript. De gekozen dienst licht op, de andere
+        drie zakken terug — kijken is kiezen. */}
+    <section id="maken" class="paneel kiezer" aria-labelledby="h-maken">
+      <header class="paneel-kop">
+        <p class="etiket">{c.secties[0]}</p>
+        <h2 id="h-maken" class="hoog hoog-2">{c.svcH}</h2>
+        <p class="lopend">{c.svcLede}</p>
+      </header>
+      {c.svc.map(([naam], i) => (
+        <input class="visueel-verborgen keuze" type="radio" name="dienst" id={`dienst-${i}`} checked={i === 0} />
+      ))}
+      <fieldset class="chips">
+        <legend class="visueel-verborgen">Kies een dienst</legend>
+        {c.svc.map(([naam], i) => <label class="chip" for={`dienst-${i}`}>{naam}</label>)}
+      </fieldset>
+      <ul class="kaarten" role="list">
+        {c.svc.map(([naam, wat, prijs, href], i) => {
+          const s = S(DIENST_BEELD[i]);
+          return (
+            <li>
+              <a class="kaart" href={lp(href)}>
+                <img src={s.klein} width="1000" height="1250" alt={s.alt} loading="lazy" decoding="async">
+                <span class="kaart-merk mono">{nn(i + 1)}</span>
+                <span class="kaart-pil">
+                  <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
+                  <span class="rond" aria-hidden="true">→</span>
+                </span>
+              </a>
+              <p class="kaart-wat">{wat}</p>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="voetregel"><span class="mono">{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    </section>
+
+    {/* ── 03 · STUDIOPRODUCTIE ────────────────────────────────────────────
+        Terug het donker in. Links wat erin gaat, rechts wat eruit komt, en
+        ertussen één gele draad met de vier termen erop. */}
+    <section class="kamer kamer-draad" aria-labelledby="h-vn">
+      <p class="spook spook-links" aria-hidden="true"><span>STUDIO</span><span>STUDIO</span></p>
+      <header class="kamer-kop op-inkt">
+        <p class="etiket">{c.secties[1]}</p>
+        <h2 id="h-vn" class="hoog hoog-2">{c.vnH}</h2>
+        <p class="lopend">{c.vnLede}</p>
+      </header>
+      <div class="draad-blok">
+        <figure class="werk werk-in">
+          <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnIn[1]} loading="lazy" decoding="async">
+          <figcaption class="etiket">{c.vnIn[0]} · {c.vnIn[1]}</figcaption>
+        </figure>
+        <ol class="draad" aria-label="Wat wij eromheen bouwen">
+          {c.vnNoten.map((k, i) => <li><b class="mono">{nn(i + 1)}</b>{k}</li>)}
+        </ol>
+        <figure class="werk werk-uit">
+          <img src={S(7).src} width={S(7).w} height={S(7).h} alt={S(7).alt} loading="lazy" decoding="async">
+          <figcaption class="etiket">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
+        </figure>
+      </div>
+      <p class="voetregel"><a class="pijl" href={lp('/gallery')}>{c.vnLink}</a></p>
+    </section>
+
+    {/* ── 04 · DE SET ─────────────────────────────────────────────────────
+        Zeven kaarten op een rij, met de splitsing tussen catalog en lifestyle
+        als een balk erboven in plaats van als kop. */}
+    <section class="paneel" aria-labelledby="h-set">
+      <header class="paneel-kop">
+        <p class="etiket">{c.secties[2]}</p>
+        <h2 id="h-set" class="hoog hoog-2">{c.setH}</h2>
+        <p class="lopend">{c.setLede}</p>
+      </header>
+      <p class="groepen" style={`--a:${CATALOG_IMAGES}fr;--b:${SET.length - CATALOG_IMAGES}fr`}>
+        <a class="groep" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a>
+        <a class="groep" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a>
+      </p>
+      <ol class="rij">
+        {c.frames.map((naam, i) => (
+          <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
+            <span class="kaart kaart-stil">
+              <img src={S(SET[i]).klein} width="800" height="1000" alt="" loading="lazy" decoding="async">
+              <span class="kaart-merk mono">{nn(i + 1)}</span>
+            </span>
+            <span class="mono">{naam}</span>
+          </li>
+        ))}
+      </ol>
+      <ul class="extras" role="list">
+        {c.extras.map(([k, v, href]) => <li><a class="pijl" href={lp(href)}>{k}</a><span>{v}</span></li>)}
+      </ul>
+    </section>
+
+    {/* ── 05 · HET PROCES ─────────────────────────────────────────────────
+        Vier regels in het donker, elk met een reusachtig nummer dat half in de
+        spookletter valt. Geen beeld: dit is de adempauze. */}
+    <section class="kamer kamer-stappen" aria-labelledby="h-st">
+      <p class="spook spook-rechts" aria-hidden="true"><span>PROCES</span><span>PROCES</span></p>
+      <header class="kamer-kop op-inkt">
+        <p class="etiket">{c.secties[3]}</p>
+        <h2 id="h-st" class="hoog hoog-2">{c.stepsH}</h2>
+        <p class="lopend">{c.stepsLede}</p>
+      </header>
+      <ol class="stappen">
+        {c.steps.map(([k, v], i) => (
+          <li>
+            <span class="stap-nr" aria-hidden="true">{nn(i + 1)}</span>
+            <b>{k}</b>
+            <span class="lopend">{v}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    {/* ── 06 · TARIEVEN ───────────────────────────────────────────────────*/}
+    <section id="tarieven" class="paneel" aria-labelledby="h-pr">
+      <header class="paneel-kop">
+        <p class="etiket">{c.secties[4]}</p>
+        <h2 id="h-pr" class="hoog hoog-2">{c.priceH}</h2>
+      </header>
+      <div class="tabellen">
+        <div class="blad">
+          <div class="tabel-schuif">
+          <table class="lijst">
+            <thead><tr><th scope="col" class="mono">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="mono">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+            <tbody>{RUNGS.map((r) => <tr><th scope="row" class="mono">{r.label}</th>{KINDS.map((id) => <td class="bedrag">{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+          </table>
+          </div>
+          <p class="mono">{c.priceVat}</p>
+          <p class="acties"><a class="knop knop-geel" href={lp('/start')}>{c.priceCta}</a><a class="knop" href={lp('/pricing')}>{c.priceCta2}</a></p>
+        </div>
+        <div class="blad">
+          <h3 class="hoog hoog-3">{c.planH}</h3>
+          <p class="lopend">{c.planLede}</p>
+          <div class="tabel-schuif">
+          <table class="lijst">
+            <thead><tr>{c.planCols.map((k) => <th scope="col" class="mono">{k}</th>)}</tr></thead>
+            <tbody>{PLANS.map((pl) => <tr><th scope="row"><a href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td class="bedrag">{pl.products}</td><td class="bedrag">{PLAN_CLIPS[pl.id] || '—'}</td><td class="bedrag">{pl.price}</td></tr>)}</tbody>
+          </table>
+          </div>
+          <p class="mono">{c.planVat}</p>
+          <p class="acties"><a class="knop" href={lp('/start/plan')}>{c.planCta}</a><a class="pijl" href={lp('/plans')}>{c.planLink}</a></p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── 07 · STUDIO ─────────────────────────────────────────────────────
+        Het posterbeeld uit video 2: één donkere kaart, precies in het midden,
+        met de spookwoorden erachter langs. De twee beloften staan eronder. */}
+    <section id="studio" class="kamer kamer-poster" aria-labelledby="h-sd">
+      <p class="spook spook-midden" aria-hidden="true"><span>{c.secties[5]}</span><span>{c.secties[5]}</span></p>
+      <article class="poster">
+        <img src={S(5).src} width={S(5).w} height={S(5).h} alt={S(5).alt} loading="lazy" decoding="async">
+        <div class="poster-tekst op-inkt">
+          <p class="etiket">{c.secties[5]}</p>
+          <h2 id="h-sd" class="hoog hoog-3">{c.studioH}</h2>
+          <p class="lopend">{c.studioLede}</p>
+        </div>
+      </article>
+      <ul class="beloften" role="list">{c.beloften.map(([k, v]) => <li><b>{k}</b><span class="lopend">{v}</span></li>)}</ul>
+      <p class="acties"><a class="knop" href={lp('/portal')}>{c.studioLink}</a><a class="pijl" href={lp('/studio')}>{c.studioLink2}</a></p>
+    </section>
+
+    {/* ── 08 · GEZICHTEN ──────────────────────────────────────────────────*/}
+    <section id="gezichten" class="paneel" aria-labelledby="h-gz">
+      <header class="paneel-kop">
+        <p class="etiket">{c.secties[6]}</p>
+        <h2 id="h-gz" class="hoog hoog-2">{c.facesH}</h2>
+        <p class="lopend">{c.facesLede}</p>
+      </header>
+      <ul class="cast" role="list">
+        {ROSTER.map((m) => (
+          <li>
+            <a href={`${lp('/models')}#${modelId(m.name)}`}>
+              <span class="kaart kaart-stil"><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></span>
+              <span class="mono">{m.name}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="acties"><a class="knop" href={lp('/custom-models')}>{c.facesLink}</a><a class="pijl" href={lp('/models')}>{c.facesLink2}</a></p>
+    </section>
+
+    {/* ── 09 · DIRECT ANTWOORD ────────────────────────────────────────────*/}
+    <section class="paneel paneel-vragen" aria-labelledby="h-q">
+      <header class="paneel-kop">
+        <h2 id="h-q" class="hoog hoog-2">{c.qH}</h2>
+      </header>
+      <ul class="vragen" role="list">
+        {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="pijl" href={lp(href)}>{l}</a></li>)}
+        <li><span></span><a class="pijl" href={lp('/faq')}>{c.qAll}</a></li>
+      </ul>
+    </section>
+
+    {/* ── 10 · DE PROEF ───────────────────────────────────────────────────
+        Het gele paneel. Eén keer kleur over de volle breedte, en dan is het uit. */}
+    <section class="paneel paneel-geel op-geel" aria-labelledby="h-sl">
+      <p class="etiket">{c.secties[7]}</p>
+      <h2 id="h-sl" class="hoog">{c.closeH}</h2>
+      <p class="lopend">{c.closeLede}</p>
+      <p class="acties"><a class="knop knop-inkt" href={lp('/test-sample')}>{sample.cta}</a><a class="knop" href={lp('/start')}>{c.closeAlt}</a></p>
+    </section>
+  </main>
+
+  <footer class="voet">
+    <svg class="woordmerk voet-merk" viewBox="0 0 1650 278" aria-hidden="true"><use href="#wordmark" /></svg>
+    <ul class="trust" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+    <span class="mono">{c.posterLine[0]} · {c.posterLine[1]}</span>
+  </footer>
+</ConceptLayout>
+
+<style is:global>
+  /* Het accentwoord in de koppen komt uit set:html en is niet met een gescoopte
+     selector te bereiken. Op de lichte panelen blijft het het gele blok uit
+     ConceptLayout; in het donker wordt het de lichte letter #E4F474. */
+  .zweef .kamer .hoog em, .zweef .poster .hoog em { background: none; color: var(--geel-letter); padding: 0; }
+
+  /* De marge rondom de zwevende panelen geldt ook voor de balk erboven, dus
+     staat hij op :root en niet op <main>. */
+  :root { --rand: clamp(.75rem, 2vw, 1.5rem); --ronding: clamp(20px, 2.4vw, 34px); }
+</style>
+
+<style>
+  /* ── DE ZWEVENDE BALK ─────────────────────────────────────────────────────
+     Uit video 2: een witte balk met een tab in het midden die eronder uit
+     hangt, met het woordmerk erin. */
+  .balk {
+    position: sticky; top: 0; z-index: 20;
+    display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+    height: 54px; margin: var(--rand) var(--rand) 0; padding: 0 clamp(1rem, 3vw, 2.25rem);
+    background: var(--wit); color: var(--inkt);
+    border-radius: var(--ronding) var(--ronding) 0 0;
+  }
+  .balk-tab {
+    position: absolute; left: 50%; top: 0; translate: -50% 0;
+    display: grid; place-items: center; width: clamp(150px, 17vw, 210px); height: 74px;
+    padding: 0 clamp(1rem, 2.5vw, 2rem) 1rem; background: var(--wit);
+    border-radius: 0 0 calc(var(--ronding) * .7) calc(var(--ronding) * .7);
+  }
+  .balk-tab .woordmerk { width: 100%; }
+  .balk-nav { display: flex; align-items: center; gap: clamp(.8rem, 2vw, 1.6rem); font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
+  .balk-rechts { justify-content: flex-end; }
+  .balk-nav a:hover { color: var(--gloed); }
+  .balk-cta { min-height: 34px; padding: 0 1rem; font-size: .72rem; }
+  @media (max-width: 760px) {
+    .balk { grid-template-columns: 1fr auto; height: 48px; }
+    .balk-links { display: none; }
+    .balk-tab { position: static; translate: none; justify-self: start; width: 118px; height: auto; padding: 0; background: none; }
+    .balk-rechts a:not(.balk-cta) { display: none; }
+  }
+
+  /* ── HET RITME ────────────────────────────────────────────────────────────
+     Het document is inkt. De lichte panelen zweven erop met een rand inkt
+     eromheen; de donkere kamers lopen van rand tot rand. */
+  .zweef { --hoog: 62svh; }
+  .paneel { padding-inline: clamp(1.5rem, 5vw, 5rem); }
+
+  .paneel {
+    position: relative; z-index: 1;
+    margin: var(--rand); padding: clamp(3rem, 8vw, 7.5rem) clamp(1.25rem, 5vw, 5rem);
+    border-radius: var(--ronding); background: var(--vel); color: var(--inkt);
+  }
+  .paneel + .paneel { margin-top: calc(var(--rand) * 1.6); }
+  .paneel-kop { display: grid; gap: .9rem; max-width: 46rem; margin-bottom: clamp(2.5rem, 6vw, 4.5rem); }
+
+  .kamer { position: relative; padding: clamp(4rem, 11vw, 9rem) var(--x); overflow: clip; }
+  /* Het raster uit video 1: bijna niet te zien, maar het maakt het zwart een ruimte. */
+  .kamer::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      repeating-linear-gradient(to right, rgb(245 245 245 / .018) 0 1px, transparent 1px clamp(130px, 11vw, 200px)),
+      repeating-linear-gradient(to bottom, rgb(245 245 245 / .018) 0 1px, transparent 1px clamp(130px, 11vw, 200px));
+    mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  }
+  /* Alles in een kamer ligt bóven het raster — behalve de spookletter, die
+     absoluut staat. (:not is nodig: een gescoopte kindselector wint het anders
+     van .spook zelf en zet hem terug in de stroom.) */
+  .kamer > *:not(.spook) { position: relative; }
+  .kamer-kop { display: grid; gap: .9rem; max-width: 46rem; margin-bottom: clamp(2.5rem, 6vw, 4.5rem); }
+
+  /* ── DE SPOOKLETTER ───────────────────────────────────────────────────────
+     Zwart op zwart, torenhoog, en hij schuift. Twee kopieën achter elkaar zodat
+     de lus naadloos is. Staat stil bij prefers-reduced-motion. */
+  .spook {
+    position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%;
+    display: flex; gap: .35em; width: max-content;
+    font-family: var(--kop); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(6rem, 21vw, 22rem); line-height: .8; letter-spacing: -.03em;
+    text-transform: uppercase; color: rgb(245 245 245 / .04);
+    pointer-events: none; user-select: none;
+  }
+  .spook span { display: block; }
+  .spook-links { top: 22%; }
+  .spook-rechts { top: 62%; }
+  .spook-midden { top: 50%; font-size: clamp(4rem, 13vw, 13rem); }
+  @media (prefers-reduced-motion: no-preference) {
+    .spook { animation: schuif 46s linear infinite; }
+    .spook-rechts { animation-direction: reverse; }
+    @keyframes schuif { to { transform: translateX(calc(-50% - .175em)); } }
+  }
+
+  /* ── LETTERS ──────────────────────────────────────────────────────────────
+     Twee stemmen: de hoge (Hubot, breed, kapitaal) en het etiket (mono). */
+  .hoog {
+    font-family: var(--kop); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1.9rem, 6.4vw, 6rem); line-height: .94; letter-spacing: -.03em;
+    text-transform: uppercase; text-wrap: balance;
+  }
+  .hoog-2 { font-size: clamp(1.5rem, 4.2vw, 3.6rem); }
+  .hoog-3 { font-size: clamp(1.3rem, 2.8vw, 2.3rem); }
+  .regel { display: block; }
+  .etiket { font-family: var(--mono); font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-3); }
+  .kamer .etiket, .poster .etiket { color: rgb(245 245 245 / .5); }
+  .lopend { color: var(--inkt-2); }
+  .kamer .lopend { color: rgb(245 245 245 / .68); }
+
+  /* ── DE HERO ──────────────────────────────────────────────────────────────
+     Een lichte hemel die naar wit zakt, met een heel zachte gloed van het
+     accent laag achter het model — dat is wat in de video de blauwe lucht doet,
+     hier in onze eigen kleur en op .14 alpha (--tint uit ConceptLayout). */
+  .hero {
+    position: relative; isolation: isolate; overflow: hidden;
+    margin: 0 var(--rand) var(--rand); border-radius: 0 0 var(--ronding) var(--ronding);
+    min-height: min(96svh, 980px); color: var(--inkt);
+    background:
+      radial-gradient(70% 50% at 50% 96%, var(--tint), transparent 70%),
+      linear-gradient(180deg, #E9EDEE 0%, #F7F8F8 48%, var(--wit) 100%);
+    display: grid; grid-template-rows: auto 1fr; justify-items: center;
+    padding: clamp(2rem, 5vw, 3.5rem) clamp(1.25rem, 5vw, 4rem) 0;
+  }
+  .hero-kop { display: grid; justify-items: center; gap: clamp(1rem, 2.5vw, 1.6rem); text-align: center; z-index: 2; max-width: min(100%, 62rem); }
+  .hero-h1 { font-size: clamp(1.8rem, 4.6vw, 3.9rem); }
+  /* De binnenste span is een blok, óók zonder beweging: als hij inline blijft,
+     is zijn rechthoek de regelbox en die overlapt bij een regelafstand onder de
+     1 — precies wat tests/a11y.test.mjs "tekst over tekst" noemt. */
+  .kop-regel { display: block; overflow: hidden; padding-bottom: .06em; }
+  .kop-regel > * { display: block; }
+  .hero-acties { justify-content: center; }
+  .knop-inkt { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
+  .knop-inkt:hover { background: transparent; color: var(--inkt); border-color: var(--inkt); }
+  .knop-wit { background: var(--wit); border-color: var(--wit); }
+
+  /* De lichtstralen achter het model: vier haarlijnen vanuit één punt. */
+  .stralen { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .stralen span { position: absolute; top: 26%; left: 50%; width: 1px; height: 68%; transform-origin: top center; background: linear-gradient(rgb(17 17 17 / .13), transparent); }
+  .stralen span:nth-child(1) { rotate: -27deg; }
+  .stralen span:nth-child(2) { rotate: -13deg; }
+  .stralen span:nth-child(3) { rotate: 13deg; }
+  .stralen span:nth-child(4) { rotate: 27deg; }
+
+  /* HET BEELD IN ZEVEN BANDEN. Eén achtergrondbeeld, zeven keer uitgesneden
+     met clip-path; elke band schuift apart op zijn plaats. Zeven is het aantal
+     beelden van één complete set — niet zomaar een getal. */
+  /* Het model loopt, net als in de video, over de onderrand van het scherm
+     heen: de hero snijdt hem af. */
+  .strook { position: absolute; z-index: 1; left: 50%; translate: -50% 0; bottom: 0; width: min(42%, 500px); height: min(56%, 560px); }
+  /* De halve pixel overlap houdt de naden onzichtbaar zodra de banden staan. */
+  .strook span { position: absolute; inset: 0; background: var(--src) center bottom / contain no-repeat; clip-path: inset(calc(var(--i) * 100% / 7 - .5px) 0 calc((6 - var(--i)) * 100% / 7 - .5px) 0); }
+
+  .hero-links { position: absolute; z-index: 2; left: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem); width: min(32%, 250px); display: grid; gap: .9rem; }
+  .koppen { display: flex; }
+  .koppen li + li { margin-left: -12px; }
+  .koppen img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid var(--wit); }
+  .hero-zin { font-size: .84rem; }
+
+  .hero-clip { position: absolute; z-index: 2; right: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem); width: min(32%, 260px); aspect-ratio: 16 / 10; border-radius: calc(var(--ronding) - 12px); overflow: hidden; background: var(--inkt); display: grid; place-items: center; }
+  .hero-clip img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .62; }
+  .hero-clip .rond { position: relative; width: 40px; height: 40px; font-size: .7rem; }
+  .hero-clip .mono { position: absolute; left: .7rem; bottom: .6rem; font-size: .72rem; color: var(--vel); }
+
+  /* DE MAATLIJN — de Komma-manier van een feit tonen: een haarlijn, een
+     streepje per waarde, het nummer erboven. Het model staat erop. */
+  .maatlijn { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: clamp(.6rem, 2vw, 1.5rem); margin: calc(var(--rand) * .7) var(--rand) 0; padding: clamp(.9rem, 2vw, 1.4rem) clamp(1.25rem, 5vw, 4rem); border-radius: var(--ronding); background: var(--wit); color: var(--inkt); }
+  .maatlijn li { display: grid; gap: .25rem; padding-left: .7rem; border-left: 1px solid var(--lijn); font-size: .72rem; color: var(--inkt-2); }
+  .maatlijn li:first-child { border-left: 0; padding-left: 0; }
+  .maatlijn .nr { color: var(--inkt-3); }
+
+  /* DE BEWEGING. In de video klappen de banden dicht en vervormt de kop letter
+     voor letter; hier schuift elke band 14 pixels op zijn plaats met 70 ms
+     verschil en komt de kop per regel op. Alles staat binnen een seconde stil. */
+  @media (prefers-reduced-motion: no-preference) {
+    .strook span { animation: band .9s var(--uit) both; animation-delay: calc(var(--i) * 70ms); }
+    @keyframes band { from { opacity: 0; transform: translateY(14px); } }
+    .kop-regel > * { animation: opkomen 1s var(--uit) both; animation-delay: calc(var(--i) * .09s + .1s); }
+    @keyframes opkomen { from { transform: translateY(110%); } }
+    .stralen span { animation: streep 1.6s var(--uit) both .35s; }
+    @keyframes streep { from { opacity: 0; scale: 1 .15; } }
+    .hero-kop .etiket, .hero-acties, .hero-links, .hero-clip, .maatlijn { animation: zacht .9s var(--uit) both .5s; }
+    @keyframes zacht { from { opacity: 0; transform: translateY(10px); } }
+  }
+
+  .acties { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.2rem; }
+  .werk { display: grid; justify-items: center; }
+  .werk img { width: auto; height: auto; max-width: 100%; max-height: var(--hoog); }
+
+  /* ── DE PILLENRIJ EN DE KAARTEN ───────────────────────────────────────────*/
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; border: 0; padding: 0; margin: 0 0 clamp(1.75rem, 4vw, 2.75rem); }
+  .chip {
+    font-family: var(--mono); font-size: .75rem; letter-spacing: .06em; text-transform: uppercase;
+    padding: .6rem 1.15rem; border: 1px solid var(--lijn-sterk); border-radius: 999px; cursor: pointer;
+    transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit);
+  }
+  .chip:hover { border-color: var(--inkt); }
+  .kaarten { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); }
+  .kaarten li { display: grid; gap: .8rem; }
+  .kaart { position: relative; display: block; border-radius: calc(var(--ronding) - 8px); overflow: hidden; background: var(--inkt); aspect-ratio: 4 / 5; }
+  .kaart img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
+  .kaart:hover img { scale: 1.04; }
+  .kaart::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(17 17 17 / .55), transparent 42%); }
+  .kaart-merk { position: absolute; top: .6rem; left: .6rem; z-index: 1; background: var(--wit); color: var(--inkt); padding: .3rem .6rem; border-radius: 999px; }
+  .kaart-pil {
+    position: absolute; z-index: 1; inset-inline: .6rem; bottom: .6rem;
+    display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+    background: var(--wit); color: var(--inkt); border-radius: 999px; padding: .45rem .45rem .45rem 1rem;
+  }
+  .kaart-tekst { display: grid; min-width: 0; }
+  .kaart-tekst b { font-weight: 500; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kaart-tekst .mono { font-size: .72rem; color: var(--inkt-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rond { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: var(--geel); color: var(--inkt); display: grid; place-items: center; font-size: .9rem; transition: transform .3s var(--uit); }
+  .kaart:hover .rond { transform: translateX(3px); }
+  .kaart-wat { font-size: .92rem; color: var(--inkt-2); }
+
+  /* De keuze. Vier radioknoppen zonder script: de gekozen pil wordt zwart, de
+     gekozen kaart blijft vol, de rest zakt terug. */
+  .kiezer .kaarten .kaart { opacity: .42; transition: opacity .35s var(--uit); }
+  #dienst-0:checked ~ .chips label[for="dienst-0"],
+  #dienst-1:checked ~ .chips label[for="dienst-1"],
+  #dienst-2:checked ~ .chips label[for="dienst-2"],
+  #dienst-3:checked ~ .chips label[for="dienst-3"] { background: var(--inkt); color: var(--vel); border-color: var(--inkt); }
+  #dienst-0:checked ~ .kaarten li:nth-child(1) .kaart,
+  #dienst-1:checked ~ .kaarten li:nth-child(2) .kaart,
+  #dienst-2:checked ~ .kaarten li:nth-child(3) .kaart,
+  #dienst-3:checked ~ .kaarten li:nth-child(4) .kaart { opacity: 1; }
+  .keuze:focus-visible ~ .chips label { outline: 2px solid var(--inkt); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .kiezer .kaarten .kaart { opacity: 1; } }
+
+  .voetregel { margin-top: clamp(1.5rem, 3vw, 2.25rem); display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+
+  /* ── DE DRAAD ─────────────────────────────────────────────────────────────*/
+  .draad-blok { display: grid; grid-template-columns: minmax(0, .62fr) auto minmax(0, 1fr); align-items: center; gap: clamp(1.25rem, 4vw, 3.5rem); }
+  .werk-in img, .werk-uit img { max-height: var(--hoog); border-radius: calc(var(--ronding) - 10px); }
+  .werk figcaption { margin-top: .8rem; }
+  .draad { display: grid; gap: .9rem; padding-inline: clamp(.5rem, 2vw, 1.5rem); border-left: 1px solid var(--geel); }
+  .draad li { display: flex; align-items: baseline; gap: .6rem; font-family: var(--mono); font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .draad b { color: var(--geel-letter); }
+
+  /* ── DE STAPPEN ───────────────────────────────────────────────────────────*/
+  .stappen { display: grid; }
+  .stappen li { display: grid; grid-template-columns: auto minmax(0, 19rem) minmax(0, 34rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid rgb(245 245 245 / .14); }
+  .stappen li:last-child { border-bottom: 1px solid rgb(245 245 245 / .14); }
+  .stap-nr { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: clamp(2rem, 5vw, 4.2rem); line-height: .8; color: rgb(245 245 245 / .22); }
+  .stappen b { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; text-wrap: balance; }
+
+  /* ── DE SET ───────────────────────────────────────────────────────────────*/
+  /* De balk erboven staat in dezelfde verhouding als de beelden eronder:
+     vier catalog naast drie lifestyle, rechtstreeks uit pricing.js. */
+  .groepen { display: grid; grid-template-columns: var(--a) var(--b); gap: clamp(.5rem, 1.2vw, .9rem); margin-bottom: .7rem; }
+  .groep { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; padding-bottom: .55rem; border-bottom: 1px solid var(--inkt); }
+  .rij { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(.5rem, 1.2vw, .9rem); }
+  .rij li { display: grid; gap: .55rem; }
+  .rij .mono { font-size: .72rem; color: var(--inkt-3); }
+  .kaart-stil { aspect-ratio: 4 / 5; }
+  .kaart-stil::after { display: none; }
+  .extras { display: grid; gap: .7rem; margin-top: clamp(2rem, 4vw, 3rem); }
+  .extras li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.2rem; padding-top: .8rem; border-top: 1px solid var(--lijn); }
+  .extras span { font-size: .92rem; color: var(--inkt-2); }
+
+  /* ── TARIEVEN ─────────────────────────────────────────────────────────────*/
+  .tabellen { display: grid; gap: clamp(2.5rem, 6vw, 4.5rem); }
+  /* Een prijstabel maakt de pagina nooit breder dan het scherm: hij schuift in
+     zijn eigen bak, zodat de labels leesbaar blijven in plaats van te krimpen. */
+  .tabel-schuif { overflow-x: auto; }
+  .blad { display: grid; gap: 1rem; }
+  .lijst th, .lijst td { padding: .8rem .6rem; border-bottom: 1px solid var(--lijn); text-align: right; vertical-align: baseline; }
+  .lijst th:first-child, .lijst thead th:first-child { text-align: left; }
+  .lijst thead th { color: var(--inkt-3); font-weight: 400; }
+  .lijst tbody th { font-weight: 400; }
+  .lijst tbody th a { text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--lijn-sterk); }
+  .bedrag { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: clamp(.95rem, 1.5vw, 1.15rem); font-variant-numeric: tabular-nums; }
+  .abo-regel { display: block; font-size: .78rem; color: var(--inkt-3); }
+
+  /* ── DE POSTER ────────────────────────────────────────────────────────────
+     Video 2: één donkere kaart midden in het veld, de spookwoorden erachter. */
+  .kamer-poster { display: grid; justify-items: center; gap: clamp(2rem, 5vw, 3.5rem); }
+  .poster { position: relative; width: min(100%, 30rem); border-radius: var(--ronding); overflow: hidden; background: var(--inkt); aspect-ratio: 3 / 4; box-shadow: 0 40px 90px rgb(0 0 0 / .5); }
+  .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .poster-tekst { position: absolute; inset: auto 0 0; display: grid; gap: .7rem; padding: clamp(1.25rem, 3vw, 2rem); background: linear-gradient(to top, rgb(17 17 17 / .92), rgb(17 17 17 / .55) 60%, transparent); }
+  .beloften { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 2.5rem); max-width: 52rem; }
+  .beloften li { display: grid; gap: .5rem; padding-top: 1rem; border-top: 1px solid rgb(245 245 245 / .2); }
+  .beloften b { font-weight: 500; }
+
+  /* ── DE CAST ──────────────────────────────────────────────────────────────*/
+  .cast { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(.4rem, 1vw, .8rem); }
+  .cast a { display: grid; gap: .5rem; }
+  .cast .mono { font-size: .72rem; color: var(--inkt-3); }
+
+  /* ── DE VRAGEN ────────────────────────────────────────────────────────────*/
+  .vragen li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .6rem 1.5rem; padding: clamp(.9rem, 2vw, 1.35rem) 0; border-top: 1px solid var(--lijn); }
+  .vragen li span:first-child { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 2vw, 1.5rem); text-transform: uppercase; letter-spacing: -.01em; }
+
+  /* ── HET GELE PANEEL ──────────────────────────────────────────────────────*/
+  .paneel-geel { background: var(--geel); display: grid; gap: 1.1rem; justify-items: start; }
+  .paneel-geel .etiket, .paneel-geel .lopend { color: var(--inkt); }
+
+  /* ── DE VOET ──────────────────────────────────────────────────────────────*/
+  .voet { display: grid; gap: clamp(1.5rem, 4vw, 2.5rem); padding: clamp(3rem, 8vw, 6rem) var(--x) clamp(2rem, 4vw, 3rem); }
+  .voet-merk { width: 100%; opacity: .16; }
+  .trust { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .trust li { font-family: var(--mono); font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; color: rgb(245 245 245 / .6); padding: .4rem .85rem; border: 1px solid rgb(245 245 245 / .18); border-radius: 999px; }
+  .voet .mono { color: rgb(245 245 245 / .45); }
+
+  /* ── SMALLE SCHERMEN ──────────────────────────────────────────────────────
+     Alles wat op een rij staat wordt een raster van twee; de zeven frames en de
+     tien portretten worden een strook die je opzij duwt. */
+  @media (max-width: 900px) {
+    .zweef { --hoog: 54svh; }
+    /* De hero wordt een stapel: kop, beeld, de twee blokken, de maatlijn. */
+    .hero { min-height: auto; grid-template-rows: none; gap: 1.75rem; padding-bottom: 0; justify-items: stretch; }
+    .hero-kop { justify-self: center; }
+    .strook, .hero-links, .hero-clip { position: relative; inset: auto; translate: none; width: 100%; }
+    .strook { height: auto; aspect-ratio: 3 / 4; }
+    .hero-clip { aspect-ratio: 16 / 9; }
+    .maatlijn { grid-auto-flow: row; gap: .9rem; }
+    .maatlijn li { border-left: 0; padding-left: 0; }
+    .stralen { display: none; }
+    .kaarten { grid-template-columns: repeat(2, 1fr); }
+    .draad-blok { grid-template-columns: 1fr; justify-items: start; }
+    .draad { border-left: 0; border-top: 1px solid var(--geel); padding: 1rem 0 0; grid-auto-flow: column; grid-auto-columns: max-content; gap: 1.2rem; overflow-x: auto; width: 100%; }
+    .stappen li { grid-template-columns: auto 1fr; }
+    .stappen li .lopend { grid-column: 2; }
+    .beloften { grid-template-columns: 1fr; }
+    .rij, .cast { display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: .6rem; }
+    .rij li, .cast li { flex: 0 0 42%; scroll-snap-align: start; }
+    .cast li { flex-basis: 30%; }
+    .lijst th, .lijst td { padding: .6rem .35rem; font-size: .88rem; }
+    .abo-regel { display: none; }
+  }
+  @media (max-width: 560px) {
+    .kaarten { grid-template-columns: 1fr; }
+    .rij li { flex-basis: 62%; }
+    .cast li { flex-basis: 44%; }
+  }
+</style>

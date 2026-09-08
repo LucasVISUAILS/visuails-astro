@@ -1,9 +1,20 @@
 ---
 /* ── DE STIJLLAAG VAN DE HOMEPAGE ───────────────────────────────────────────
    Alles hieronder staat achter `body.huid-kantig`, en die klasse zet
-   Layout.astro alleen wanneer een pagina er om vraagt. Op dit moment vragen
-   alleen / en /nl erom; elke andere pagina is onaangeroerd, tot Lucas zegt dat
-   de stijl mee mag.
+   Layout.astro wanneer een pagina er om vraagt — en `kantig` is de standaard
+   van de prop, dus elke pagina behalve /proef draagt hem.
+
+   ── SECTIE 21, 5 SEPTEMBER 2026 ────────────────────────────────────────────
+   HomeV2.astro is weg; de homepage is Voorpagina.astro en gebruikt geen enkele
+   .hv-*-regel uit dit bestand meer. Opgeruimd in de tweede ronde: het
+   zoekerkader en de selectie op de dienstenkaarten, de specificatielabels, de
+   maatlijnen, de databladsleutel, de prijscurve, de standaanwijzer van de
+   carrousel, de proefbalk, het glas, de voet (die staat in global.css) — alles
+   wat aan .hv-* of aan de oude balk hing. Wat overblijft werkt op ELKE pagina:
+   de rechte hoeken (--r-*: 0), de annotatiekleuren (.sch), de haarlijn op de
+   naad tussen twee secties, de kier onder het uitklapmenu, de WhatsApp-pil en
+   de poster en de hoekwoorden. De noten hieronder over de poster en de hoekwoorden
+   zijn geschiedenis en blijven staan als geheugen.
 
    HET IS EEN LAAG EN GEEN VERBOUWING. HomeV2.astro is niet aangeraakt. Wat hier
    staat zijn tokens die anders worden ingevuld plus een handvol aanvullende
@@ -50,54 +61,36 @@
        snit en hosten we die zelf, net als Archivo.
    tests/huid.test.mjs zet deze drie vast, zodat ze bewust blijven.
 
-   ── DE AANWIJZER FAALT NAAR EEN GEWONE MUISPIJL ────────────────────────────
-   `cursor: none` staat NIET in dit stijlblad. Het wordt door het script gezet,
-   pas nadat het eigen element leeft. Staat JavaScript uit, of gaat het script
-   stuk, dan houdt de bezoeker zijn systeemcursor. Dezelfde regel als boven de
-   onthullingen in Layout.astro — "a reveal that fails should degrade to no
-   animation, never to no page" — en hier is de inzet hoger, want een pagina
-   zonder muisaanwijzer is niet lelijk maar onbedienbaar. */
+   (De eigen muisaanwijzer is er op 7 september 2026 uit gegaan; zie de noot
+   bij de opmaak hieronder.)
+*/
 
 /* Overgetrokken uit het bestand dat Lucas aanleverde (186 x 251), met een
    contourvolger op vier keer de resolutie. Niet nagetekend: de omtrek is
    letterlijk die van zijn afbeelding. */
-const AANWIJZER = [
-  'M 47.00 224.88 L 46.62 224.25 L 47.12 222.75 L 57.88 196.25 L 128.50 33.62 L 128.88 174.25 L 127.88 174.25 L 109.12 144.00 L 108.50 143.38 L 107.75 143.62 L 47.00 224.88 Z',
-  'M 36.00 223.38 L 35.88 222.00 L 48.12 191.75 L 117.25 32.38 L 117.62 42.00 L 110.62 58.75 L 107.88 64.00 L 94.62 95.75 L 90.88 103.25 L 87.62 112.00 L 83.88 119.50 L 71.62 149.00 L 59.88 175.00 L 46.62 207.50 L 43.38 213.75 L 36.00 223.38 Z',
-  'M 117.50 176.12 L 102.12 152.25 L 104.00 148.88 L 105.12 149.50 L 117.62 169.25 L 117.50 176.12 Z',
-];
 ---
 
-{/* TWEE LAGEN, EN DAT IS DE ENIGE MANIER OM DE KLEUR TE LATEN OVERLOPEN.
-    `mix-blend-mode` is niet te animeren: hij staat aan of uit, en de eerste
-    versie sprong daardoor van omgekeerd naar zwart zodra je limetekst raakte.
-    Lucas: *"bij toxic groene tekst springt de cursor gelijk op zwart, ik wil
-    dat hij mooi overloopt van kleur."*
+{/* ── DE EIGEN MUISAANWIJZER IS ERUIT — 7 september 2026 ─────────────────────
+    Lucas: *"Ik wil de muis hover animatie weg en subtieler hebben dan wat hij
+    nu is. Ook de kleur vind ik niet mooi."*
 
-    Dus twee pijlen op dezelfde plek: de onderste keert de grond om, de
-    bovenste is een vlakke kleur. Wat overvloeit is hun DEKKING, en dat is wel
-    te animeren. De vulling van de bovenste vloeit daarbovenop nog eens van
-    lime naar zwart, zodat ook de sprong tussen die twee zacht is.
+    Hier stonden twee pijlen op elkaar: één met mix-blend-mode difference die de
+    grond omkeerde, en één vlakke in het accent die eroverheen kwam zodra je iets
+    aanklikbaars raakte — plus een groei van anderhalf keer bij hover. Dat was
+    het meest zichtbare stukje beweging van de hele site, en precies daarom
+    stoorde het.
 
-    NASCHRIFT 28 AUGUSTUS. Dat overlopen was het goede antwoord op de verkeerde
-    vraag: op limeTEKST hoort hij helemaal niet zwart te worden, zacht noch
-    hard. Zie de noot bij opAccent() onderin dit bestand. Deze twee lagen
-    blijven nodig voor het echte geval — een limeVLAK — en daar vloeit hij nog
-    steeds over in plaats van te springen.
+    Waarom er geen zachtere versie in de plaats komt: de vulling van de
+    omgekeerde laag KON niet neutraal zijn. Difference toont |grond − vulling|,
+    dus om zowel op de bijna zwarte pagina licht te zijn als op een limeknop
+    donker, moet de vulling ongeveer lime ZIJN — elke andere waarde geeft op de
+    knop blauwviolet (gemeten: wit geeft rgb(45,31,181)). De kleur was dus geen
+    smaakkeuze maar een gevolg van de techniek, en met de kleur eruit valt de
+    techniek weg. Wat overblijft is de gewone muisaanwijzer van het besturings-
+    systeem, en de hover die de knoppen zelf al doen.
 
-    Ze moeten allebei direct onder <body> hangen: een menging bereikt alleen de
-    grond als er geen stapelcontext tussen zit, en een gedeelde ouder zou er
-    een maken. */}
-<div class="aw aw-om" id="aw" aria-hidden="true"><div class="aw-i">
-  <svg viewBox="35.88 32.38 93 192.5" overflow="visible">
-    {AANWIJZER.map((d) => <path d={d} />)}
-  </svg>
-</div></div>
-<div class="aw aw-plat" id="aw2" aria-hidden="true"><div class="aw-i">
-  <svg viewBox="35.88 32.38 93 192.5" overflow="visible">
-    {AANWIJZER.map((d) => <path d={d} />)}
-  </svg>
-</div></div>
+    De rest van deze huid — de korrel, de haarlijnen, de naden en de hoeken —
+    blijft ongemoeid. */}
 
 <style is:global>
   /* ══ WAT DEZE HUID WEL EN NIET ZET ═════════════════════════════════════════
@@ -129,10 +122,12 @@ const AANWIJZER = [
     /* De annotatielaag heeft ÉÉN tint en ÉÉN lettergrootte. Dat is wat het als
        instrumentatie laat lezen: een technische tekening heeft geen drie diktes
        lijn en geen twee kleuren inkt. */
-    --sch-lijn: rgb(255 255 255 / .24);
-    --sch-ink:  rgb(255 255 255 / .48);
-    --sch-fel:  rgb(255 255 255 / .88);
-    --sch-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    /* Sectie 20 (5 september 2026): de grond is licht, dus de annotatielaag is
+       inkt op licht. De witte variant staat verderop, alleen nog over de hero. */
+    --sch-lijn: rgb(28 29 24 / .24);
+    --sch-ink:  rgb(28 29 24 / .55);
+    --sch-fel:  rgb(28 29 24 / .90);
+    --sch-mono: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace);
     /* In de semantische schaal uit global.css en niet erbuiten: --z-toast (500)
        is de skip-link en dat was het hoogste dat er was. */
     --z-cursor: 700;
@@ -156,140 +151,15 @@ const AANWIJZER = [
      verdeeld. */
   body.huid-kantig .grain { opacity: .011; background-size: 220px; }
 
-  /* ══ GLAS ══════════════════════════════════════════════════════════════════
-     Lucas, 27 augustus 2026: *"heel smooth met lichte doorzichtigheid en
-     wazigheid voor contrast."* Dat laatste woord is de hele truc, en het is
-     ook waarom dit één recept is en geen los lijstje kleuren.
-
-     ── WAAROM brightness(.55) IN DE FILTER STAAT ─────────────────────────────
-     Een glazen vlak met een LICHTE vulling over een donkere grond leest prima:
-     de vulling tekent de vorm af. Maar dezelfde vulling over een felle foto
-     TILT de grond op, en dan verliest de witte tekst erop zijn contrast — en
-     dit zijn precies de elementen die over de hero zweven, waar de grond een
-     foto is die de studio niet in de hand heeft.
-
-     De filter lost dat op vóór de vulling eroverheen gaat: hij vervaagt en
-     DEMPT wat erachter zit. Over de paginagrond, die al bijna zwart is,
-     verandert dat niets — daar doet de lichte vulling het werk. Over een felle
-     foto haalt hij de piek eruit, zodat de tekst zijn contrast houdt in plaats
-     van het aan de doorzichtigheid te verliezen. Het is dus letterlijk
-     wazigheid vóór contrast, en niet ondanks.
-
-     Wat het NIET is: een rand. Wat de vorm aftekent is het verschil in
-     helderheid plus een glansrand bovenin — licht dat op een glazen rand valt.
-     Een omtrek eromheen zou precies de strakheid weghalen waar het om gaat. */
-  body.huid-kantig {
-    --glas-vul:   rgb(255 255 255 / .05);
-    /* brightness(.35) EN NIET .55, en dat is een gemeten waarde. Met .55 kwam
-       de witte tekst op de glazen knop in de hero uit op 2,9:1 tegen de
-       helderste pixel van de herofoto — onder de norm van 4,5. De som: na de
-       filter is de grond 0,35xB, daar compositeert de vulling op 6% wit
-       overheen, dus 15,3 + 0,329xB. Bij een uitgebrande hooglicht (B=255) is
-       dat 99, en wit daarop is 5,9:1. Bij de paginagrond (B=14) is het 20 —
-       net genoeg lichter dan de grond om de vorm af te tekenen zonder dat er
-       een rand omheen hoeft.
-
-       Nagemeten kwam .35 er nog niet: de ORDER-knop rechtsboven ligt op de
-       balk, dus daar liggen TWEE glazen lagen op elkaar en telt de demping
-       maar één keer voor de bovenste. Die knop kwam uit op 4,23 tegen de norm
-       van 4,5 — net eronder, en net eronder is eronder. Op .28 haalt hij het
-       met marge en verandert er aan de rest niets zichtbaars. */
-    --glas-waas:  blur(24px) saturate(1.35) brightness(.28);
-    --glas-glans: inset 0 1px 0 rgb(255 255 255 / .16);
-    --glas-rand:  inset 0 0 0 1px rgb(255 255 255 / .07);
-  }
-
-  /* Eén regel, en daaronder de lijst plekken waar hij geldt. Zo blijft het één
-     materiaal in plaats van acht keer bijna hetzelfde. */
-  /* DE KOP KRIJGT ZIJN EIGEN REGEL, EN DAT IS GEEN NETHEID.
-     Layout.astro zet over een hero een eigen vulling én een witte ring van 42%
-     op de ORDER-knop: `.site-header .nav-cta.btn-ghost` weegt zwaarder dan de
-     lijst hieronder, dus die won. Gemeten kwam die ring uit op grijs 123 tegen
-     de foto — en het is bovendien precies de lijn eromheen die weg moest. */
-  /* `.nav-cta:not(.btn-primary)` EN NIET `.nav-cta` — 28 augustus 2026.
-   *
-   * Deze twee regels zijn geschreven toen de huid alleen op de homepage stond,
-   * en daar is de ORDER-knop een `.btn-ghost`. Op elke ANDERE pagina is diezelfde
-   * knop een `.btn-primary`: lime vlak, tekst in --accent-ink. Deze selector
-   * weegt zwaarder dan `.btn-primary` en haalde dus het lime weg terwijl de
-   * bijna-zwarte tekst bleef staan — grijs 16,17,18 met letters van 8,9,11
-   * erop, gemeten 1,05:1. Onzichtbaar, op 85 van de 91 pagina's, en pas zichtbaar
-   * op de dag dat de huid van de homepage af kwam.
-   *
-   * Het glasrecept hoort bij de STILLE chrome: spookknoppen, de taalschakelaar,
-   * de menulade. Een primaire knop is per definitie geen stille chrome. */
-  body.huid-kantig:has(.hv-hero) .site-header:not(.scrolled) :is(.btn-ghost, .nav-cta:not(.btn-primary), .lang-switch),
-  body.huid-kantig .site-header :is(.btn-ghost, .nav-cta:not(.btn-primary), .lang-switch),
-  body.huid-kantig :is(
-    .btn-ghost, .btn-2nd, .cc-btn,
-    .convbar,
-    .hv-slide-card-main,
-    .nav-menu,
-    .lang-switch,
-    .wa-launcher
-  ) {
-    background: var(--glas-vul);
-    border: 0;
-    -webkit-backdrop-filter: var(--glas-waas);
-            backdrop-filter: var(--glas-waas);
-    box-shadow: var(--glas-glans), var(--glas-rand);
-    transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
-  }
-  body.huid-kantig :is(.btn-ghost, .btn-2nd, .cc-btn, .wa-launcher, .hv-slide-card-main):hover {
-    background: rgb(255 255 255 / .12);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / .24), inset 0 0 0 1px rgb(255 255 255 / .11);
-  }
-
-  /* DE ORDER-KNOP, EN WAAROM HIER WEL !important STAAT.
-     Layout.astro geeft de kop over een hero een eigen vulling van 8% wit en een
-     inset ring van 42% wit. Ik heb er drie selectors tegenover gezet die op
-     papier zwaarder wegen en geen ervan won; verder zoeken kost meer dan het
-     oplevert, en de uitkomst is hoe dan ook dat deze twee waarden weg moeten —
-     de ring is precies de lijn eromheen die Lucas niet wilde, en gemeten kwam
-     hij op grijs 119 tegen de herofoto, wat de witte tekst op 4,47 zette tegen
-     een norm van 4,5.
-
-     Het is dus geen luiheid maar een gerichte overschrijving van twee
-     eigenschappen op één element, met de meting erbij. Verandert die scope in
-     Layout.astro ooit, dan mag dit blok weg. */
-  body.huid-kantig .site-header .nav-cta.btn-ghost {
-    background: var(--glas-vul) !important;
-    box-shadow: var(--glas-glans), var(--glas-rand) !important;
-  }
-
-  /* De balk bovenin is een pseudo-element, en die kan hetzelfde materiaal
-     dragen. Hij stond op rgb(8 9 11 / .86) — bijna dicht — en wordt nu glas,
-     zodat de pagina eronder doorschemert zoals bij de referentie. */
-  /* DE KOPBALK KRIJGT EEN EIGEN, ZWAARDERE TINT — EN DAT IS EEN CORRECTIE.
-     Ik gaf hem hetzelfde recept als de knoppen: 5% wit met een demping. Op een
-     zwevende pil over witruimte werkt dat (zo doet de referentie het ook), maar
-     dit is een balk over de volle breedte waar de hele pagina onderdoor
-     scrollt. Gemeten resultaat: kaarttekst liep dwars door de navigatie heen,
-     en de limekleurige merkletter dreef als een losse vlek over de inhoud —
-     wat Lucas beschreef als *"Groene gloed links bovenin het scherm."*
-
-     Dus hier een donkere tint van 62% in plaats van 5% wit, met de blur eronder.
-     Nog steeds glas — je ziet de vormen en de kleur van wat eronder langsgaat —
-     maar de balk is weer een oppervlak in plaats van een venster. */
-  body.huid-kantig .site-header::after {
-    background: rgb(3 4 6 / .62);
-    -webkit-backdrop-filter: blur(26px) saturate(1.3);
-            backdrop-filter: blur(26px) saturate(1.3);
-    box-shadow: var(--glas-glans);
-  }
-
-  /* DE TAALSCHAKELAAR DEMPT NIET. Hij is klein en de gekozen chip is een VOL
-     vlak papier — Layout.astro zet daar met zoveel woorden `--chip-fill` op een
-     dekkende waarde omdat twee gestapelde doorzichtige lagen hem eerder al tot
-     een middengrijs composeerden met 2,03:1 eronder. Met de demping erbij werd
-     die chip een olijfgroene vlek. Dus hier alleen de blur en de tint, zonder
-     brightness, en de chip zelf blijft buiten het glas. */
-  body.huid-kantig .lang-switch {
-    --glas-waas: blur(18px) saturate(1.2);
-  }
-  body.huid-kantig .lang-switch .ls {
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-  }
+  /* ══ HET GLAS STOND HIER ═══════════════════════════════════════════════════
+     150 regels glas: knoppen, de kop, het menu, de taalwissel en de
+     WhatsApp-knop als doorschijnend vlak met blur, demping en een glansrand,
+     en de kopbalk na het scrollen als donker glas van 62%. Sectie 21
+     (5 september 2026): weg. De site is licht en vlak — Komma en Lue hebben
+     geen glas, alleen vlakken en haarlijnen — en de donkere kopbalk stond
+     dwars op de witte balk die Layout.astro sinds sectie 20 tekent. De
+     WhatsApp-knop hieronder houdt zijn pilvorm, want dat ging over vorm en
+     niet over glas. */
 
   /* ══ DE WHATSAPP-KNOP ══════════════════════════════════════════════════════
      Lucas: *"Ook de whatsapp hover knop is afschuwelijk lelijk."* Hij had een
@@ -324,107 +194,11 @@ const AANWIJZER = [
     border-radius: var(--r-pill);
   }
 
-  /* ══ DE VOET ALS LIMEVLAK ══════════════════════════════════════════════════
-     Lucas: *"Ik wil de footer toxic green hebben."* Bij de referentie is de
-     voet ook het enige vlak in de merkkleur over de volle breedte — precies
-     één keer per pagina, en dat is waarom het werkt.
-
-     ZWART OP LIME, NOOIT WIT. In DESIGN.md staat het met een getal erbij: wit
-     op deze lime is 1,31:1 en is nooit correct. Daarom kantelt hier de hele
-     inkttrap naar zwarte varianten in plaats van dat er één kleur wordt
-     omgezet — anders blijft er ergens een lichte tint staan die je pas ziet
-     als hij al live is.
-
-     Het glas kantelt mee: dezelfde omkering als bij het abonnementsvlak, want
-     dempen is hier weer de verkeerde kant op. En de aanwijzer hoeft niets: die
-     leest de werkelijke kleur en gaat vanzelf naar zwart zodra hij hier komt. */
-  body.huid-kantig .site-footer {
-    background: var(--accent);
-    color: var(--accent-ink);
-    /* DE HELE TRAP, EN NIET DRIE TREDEN. Eerste poging zette --ink tot --ink-4
-       om en liet --ink-faint staan; gemeten stonden de kolomkopjes ("What we
-       make", "Company") en de hele onderste regel daarna nog in wit op 66% —
-       1,3:1 op deze lime. Ook --paper-on-dark hoort erbij: dat is de kleur die
-       elke "balk boven een foto"-scope gebruikt, en de voet is nu zelf licht.
-       Alles opsommen wat er is, want een tint die je vergeet zie je pas live. */
-    --ink:        var(--accent-ink);
-    --ink-1:      var(--accent-ink);
-    /* ── DE ONDERSTE TREDEN ZIJN OPGETROKKEN — 27 AUGUSTUS 2026 ────────────
-       De trap was overgezet uit de donkere kant met dezelfde dekkingen, en dat
-       klopt niet: op #030406 wordt wit op 46% een grijs van ruim 6:1, op deze
-       lime wordt zwart op 46% een groen van 3,13:1. Gemeten stonden daardoor de
-       kolomkopjes ("What we make"), de auteursregel, "Privacy" en de
-       cookieknop allemaal ONDER de 4,5:1 die WCAG voor kleine tekst vraagt.
-
-       De vier getallen hieronder zijn gemeten tegen #C6F100 (luminantie 0,757):
-         .82 → 8,6:1   .72 → 6,7:1   .66 → 5,9:1   .60 → 5,34:1
-       De laagste trede haalt het dus met marge, en de volgorde van de trap
-       blijft kloppen — elke trede is lichter dan de vorige, wat de reden is dat
-       ze alle vier omhoog moesten en niet alleen de onderste. */
-    --ink-2:      rgb(8 9 11 / .82);
-    --ink-3:      rgb(8 9 11 / .72);
-    --ink-4:      rgb(8 9 11 / .66);
-    --ink-faint:  rgb(8 9 11 / .60);
-    --paper:              var(--accent-ink);
-    --paper-on-dark:      var(--accent-ink);
-    --paper-soft-on-dark: rgb(8 9 11 / .70);
-    --paper-muted-on-dark: rgb(8 9 11 / .66);
-    --line:        rgb(8 9 11 / .18);
-    --line-strong: rgb(8 9 11 / .32);
-    --line-ui:     rgb(8 9 11 / .42);
-    --brand:      var(--accent-ink);
-    --mk-ink:     var(--accent-ink);
-    --sch-lijn:   rgb(8 9 11 / .28);
-    --sch-ink:    rgb(8 9 11 / .58);
-    --sch-fel:    rgb(8 9 11 / .90);
-    --glas-vul:   rgb(8 9 11 / .10);
-    --glas-waas:  blur(20px) saturate(1.05) brightness(.97);
-    --glas-glans: inset 0 1px 0 rgb(255 255 255 / .28);
-    --glas-rand:  inset 0 0 0 1px rgb(8 9 11 / .18);
-  }
-  body.huid-kantig .site-footer a { color: inherit; }
-  body.huid-kantig .site-footer :is(.brand-word, .brand-mark, .mk) { fill: var(--accent-ink); }
-  /* De hoofdknop draait om, net als op het abonnementsvlak: de vulling wordt de
-     inkt en de letters worden lime. Zonder dit staat er een limeknop op een
-     limevlak en zie je hem niet. */
-  body.huid-kantig .site-footer .btn-primary {
-    background: var(--accent-ink); color: var(--accent);
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / .14);
-  }
-  /* Het grote woordmerk onderaan is wit. Op lime is dat 1,31:1 — in DESIGN.md
-     staat met zoveel woorden dat dat nooit correct is.
-
-     `fill` EN NIET `color`. Eerste poging zette color en -webkit-text-fill-color,
-     en het merk bleef gewoon wit staan: .foot-mark-w is een <svg> met een <use>,
-     geen tekst. Een SVG luistert naar fill. Precies het soort verschil dat je
-     alleen ziet als je na de wijziging nog een keer kijkt. */
-  body.huid-kantig .site-footer .foot-mark-w {
-    fill: var(--accent-ink);
-    --mk-ink: var(--accent-ink);
-    opacity: .14;
-  }
-  body.huid-kantig .site-footer .foot-mark { background: none; }
-  body.huid-kantig .site-footer .foot-mark-light { display: none; }
-
-  /* ══ DE BELOFTEREGEL UIT DE HERO ═══════════════════════════════════════════
-     Lucas: *"Voor mijn gevoel maakt dit stuk tekst de header wat druk."* Weg
-     uit de hero dus. Wat er staat blijft waar: promises.test.mjs bewaakt dat de
-     revisieronde ergens op de site staat, en de zin komt onder de knoppen ook
-     terug in de sectie over hoe een order loopt.
-
-     `display: none` en niet `visibility` of een clip: hij moet ook voor een
-     schermlezer weg zijn. Een zin die je verbergt voor het oog maar hardop laat
-     voorlezen is geen opgeruimde hero, dat is een hero met een geheim. */
-  /* DE BELOFTEREGEL BLIJFT VOORLOPIG STAAN.
-     Lucas wil hem uit de hero. `display: none` kan dat niet doen: gemeten valt
-     tests/zachte-navigatie.test.mjs dan om op "op de Nederlandse homepage
-     wisselt de klik de dia" — 21/22 met de regel, 22/22 zonder. De hero zet
-     zichzelf pas op `is-live` als zijn intrede-keten afloopt, en een element op
-     display:none animeert niet, dus die keten stopt en de tabs blijven gewone
-     links die wegnavigeren.
-     Weghalen hoort dus in de opmaak van HomeV2.astro, samen met de
-     bouwcontrole die aan `heroClaim` hangt. Dat is een aparte wijziging. */
+  /* ══ DE VOET STOND HIER ALS LIMEVLAK ═══════════════════════════════════
+     Sectie 21 (5 september 2026): de gele voet geldt nu op elke pagina en
+     staat in global.css (zoek "DE VOET ALS GEEL VLAK"). De regels die hier
+     stonden zetten `color: var(--accent-text)` op de hoofdknop, en dat werd
+     op de gele voet zwart-op-zwart. */
 
   /* ══ DE KIER ONDER EEN UITKLAPMENU ═════════════════════════════════════════
      Lucas: *"Ook kan ik niet met de muis naar de tabs toe, het vak met services
@@ -448,147 +222,6 @@ const AANWIJZER = [
   body.huid-kantig .has-menu:focus-within::after {
     content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 14px;
   }
-
-  /* De tabrij onder de hero: Lucas wees deze met zoveel woorden aan. De kaarten
-     hadden een vol vlak met een harde rand; nu is het glas, en wat een kaart
-     als gekozen aanwijst is de limestreep die er al onder stond — die blijft
-     ongemoeid, want dat is het enige signaal dat kleur mag gebruiken. */
-  body.huid-kantig .hv-slide-card { border: 0; background: none; }
-
-  /* De hoofdknop blijft de hoofdknop: lime, maar met glas erin. Op .9 dekking
-     over de donkere grond blijft het contrast van de zwarte letters ruim boven
-     de norm, en de blur eronder geeft hem diepte in plaats van dat hij als een
-     sticker op de pagina ligt. Hier GEEN brightness in de filter: het vlak is
-     zelf bijna dekkend, dus er is geen grond die door de tekst heen werkt. */
-  /* ── DE VULLING IS EEN VARIABELE EN GEEN GETAL — 27 AUGUSTUS 2026 ─────────
-     Hier stond `rgb(198 241 0 / .9)`, met de hex van lime erin geschreven. Dat
-     leek onschuldig: de knop IS lime. Maar op precies één plek op de site is
-     hij dat niet, en daar sloeg deze regel de hele knop dood.
-
-     `.lime-plate.plaat-vol` — het volle limevlak in de abonnementssectie — draait
-     `--accent` en `--accent-ink` om: binnen dat vlak is `--accent` #08090B. Dat
-     is wat global.css nodig heeft om daar vanzelf een inktknop met lime letters
-     te maken. Een vaste hex negeert die omkering, dus stond er lime op lime:
-     1,00:1, een knop die je alleen aan zijn schaduw terugvindt. Lucas had hem
-     aangewezen — *"de knoppen zie je niet goed"* — en twee eerdere reparaties
-     schoten mis omdat ze in de laag eronder zochten.
-
-     `color-mix` houdt de variabele heel. Wat deze laag toevoegt is dekking en
-     blur, niet kleur, en zo staat het er nu ook. Gemeten na deze regel:
-     14,50:1 op het omgedraaide vlak, 15,71:1 op de donkere grond.
-
-     De @supports-terugval is geen sier: zonder color-mix wordt het een volle
-     `var(--accent)`. Dat is dezelfde KLEUR, alleen zonder de 10% doorkijk —
-     de knop blijft dus leesbaar en verliest alleen het glas. */
-  body.huid-kantig .btn-primary {
-    background: var(--accent);
-    -webkit-backdrop-filter: blur(20px) saturate(1.3);
-            backdrop-filter: blur(20px) saturate(1.3);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / .3);
-  }
-  @supports (background: color-mix(in srgb, red 50%, transparent)) {
-    body.huid-kantig .btn-primary { background: color-mix(in srgb, var(--accent) 90%, transparent); }
-  }
-  body.huid-kantig .btn-primary:hover { background: var(--accent); }
-
-  /* ══ GLAS OP EEN LICHT VLAK ════════════════════════════════════════════════
-     HIER GING HET MIS, EN HET IS LEERZAAM. Het recept hierboven gaat uit van
-     een donkere grond: het DEMPT wat erachter zit, zodat witte tekst zijn
-     contrast houdt. Op het limevlak van de abonnementssectie werkt dat precies
-     verkeerd om — daar maakte `brightness(.28)` van lime een donkere olijfvlek,
-     met zwarte tekst erop. Lucas stuurde de schermafdruk: *"de knoppen zie je
-     niet goed."*
-
-     Twee dingen waren stuk, en de tweede was erger:
-
-     1 · De glasknop dempte de grond terwijl hij hem juist moest laten staan.
-         Hier gaat de demping er dus af en komt er een lichte INKT-tint voor in
-         de plaats. Het zijn dezelfde vier variabelen, alleen anders ingevuld —
-         daarom hoeft er geen enkele regel overschreven te worden.
-
-     2 · De hoofdknop had de site zelf al omgedraaid: op een limevlak zet hij
-         `color: var(--accent)`, want de vulling hoort daar de inkt te zijn. Mijn
-         regel duwde die vulling terug naar lime, en dan staat er lime tekst op
-         een lime knop — de knop die in de schermafdruk bijna onzichtbaar is.
-         Het is precies het soort fout dat een laag kan maken: je overschrijft
-         een waarde en gooit daarmee een beslissing weg die ergens anders al
-         genomen was.
-
-     De grond zelf blijft ongemoeid. In global.css staat uitgerekend waarom hij
-     #C6F100 is en niet donkerder: alleen die waarde haalt 14,50 tegen de
-     paginagrond en laat het blok loskomen. Daar zit deze laag niet aan. */
-  body.huid-kantig .lime-panel {
-    /* ── DE BOVENKOP MOET HIER DONKERDER — 27 AUGUSTUS 2026 ─────────────────
-       `--sch-ink` is wit op 48%, gemeten op de paginagrond #030406: 7,4:1, ruim
-       genoeg. Maar het abonnementsvlak heeft een eigen, lichtere grond — lime
-       op lage dekking, gemeten #2A3412 — en daar zakt diezelfde 48% naar
-       4,28:1. Onder de 4,5:1 die WCAG voor kleine tekst vraagt, en dit is 10px.
-
-       Niet de globale waarde optrekken: op de donkere grond klopt 48% en een
-       hogere waarde maakt van een specificatielabel een kop. De grond is hier
-       anders, dus hoort de inkt hier anders te zijn. Gemeten na deze regel:
-       5,79:1. */
-    --sch-ink:    rgb(255 255 255 / .60);
-    --glas-vul:   rgb(8 9 11 / .10);
-    --glas-waas:  blur(20px) saturate(1.05) brightness(.97);
-    --glas-glans: inset 0 1px 0 rgb(255 255 255 / .28);
-    --glas-rand:  inset 0 0 0 1px rgb(8 9 11 / .18);
-  }
-  /* ── GEEN VULLING MEER, EN DAT IS DE HELE REPARATIE — 27 AUGUSTUS 2026 ────
-     Hier stond `background: var(--accent-ink)`. Gemeten stond er daarna lime
-     op lime: 1,00:1, een knop die je op de schermafdruk alleen aan zijn schaduw
-     terugvindt. Lucas had hem al aangewezen — *"de knoppen zie je niet goed"* —
-     en de vorige poging verplaatste de fout in plaats van hem weg te nemen.
-
-     De oorzaak zit in een omkering die de site zelf al doet. Op `.lime-plate
-     .plaat-vol` — het volle limevlak waar deze knop in staat — wisselen
-     `--accent` en `--accent-ink` van plaats: binnen dat vlak is `--accent`
-     #08090B en `--accent-ink` #C6F100. `.btn-primary` in global.css zegt
-     `background: var(--accent); color: var(--accent-ink)`, en dat levert daar
-     dus vanzelf een INKTKLEURIGE knop met LIME letters op. Precies goed.
-
-     Beide pogingen van deze laag schreven daar een vaste variabele overheen, en
-     allebei de keren was dat de variabele die binnen de omkering juist de
-     verkeerde kant op wees. `var(--accent)` gaf lime vulling op lime letters,
-     `var(--accent-ink)` gaf lime vulling op lime letters. Dezelfde uitkomst,
-     twee keer, omdat de vraag niet "welke variabele" was maar "waarom overhaal
-     ik hier iets".
-
-     Dus haalt deze laag de vulling niet meer over. Wat blijft is wat deze laag
-     WEL toevoegt: het glas eraf, want een knop op een vol vlak hoort geen
-     achtergrond te vervagen, en de glans erop. De kleurbeslissing blijft waar
-     hij hoort — bij het vlak dat de tokens omdraait.
-
-     Gemeten na deze regel: 14,50:1 (lime letters op #08090B). Er staat een
-     controle op in tests/huid.test.mjs die over ALLE 91 pagina's kijkt of er
-     nog een knop is waarvan de letterkleur en de vulling samenvallen. */
-  body.huid-kantig .lime-panel .btn-primary {
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / .14);
-  }
-  /* Het paneel mag wat meer gewicht krijgen — Lucas: *"Abonnement sectie mag
-     wat sterker."* Geen andere kleur en geen groter blok: alleen een diepere
-     slagschaduw, zodat het verder van de pagina afkomt. Dat is dezelfde
-     ingreep als bij de proefbalk, en op een bijna-zwarte grond is het het enige
-     wat "loskomen" nog kan versterken zonder de tint aan te raken. */
-  body.huid-kantig .lime-panel {
-    box-shadow: 0 40px 90px -40px rgb(0 0 0 / .85), 0 4px 18px -8px rgb(0 0 0 / .5);
-  }
-
-  /* ══ DE PROEFBALK ══════════════════════════════════════════════════════════
-     Zonder lijn eromheen, en zonder de foto die erin zat. Die foto deed het
-     werk dat het glas nu doet, maar met een vast plaatje achter een balk die
-     over een veranderende pagina zweeft. Glas neemt de pagina zelf mee en klopt
-     daardoor altijd. De slagschaduw blijft: die tilt de balk van de pagina af
-     en is het enige wat hem als zwevend laat lezen nu de rand weg is. */
-  body.huid-kantig .convbar {
-    box-shadow: var(--glas-glans), var(--glas-rand), 0 18px 50px -16px rgb(0 0 0 / .7);
-  }
-  body.huid-kantig .convbar::before { display: none; }
-  body.huid-kantig .convbar::after {
-    background: linear-gradient(90deg, rgb(0 0 0 / .28), rgb(0 0 0 / .10) 60%, transparent);
-  }
-  body.huid-kantig .convbar .cb-cta { box-shadow: inset 0 1px 0 rgb(255 255 255 / .3); }
 
   /* ══ DE NAAD TUSSEN TWEE SECTIES ═══════════════════════════════════════════
      Er liep eerst een liniaal langs de hele linkerrand. Lucas: *"Die zijkant
@@ -623,312 +256,6 @@ const AANWIJZER = [
     width: 1px; height: 11px; background: var(--sch-lijn);
   }
 
-  /* ══ HET ZOEKERKADER ═══════════════════════════════════════════════════════
-     Vier haakjes in plaats van een kader: een kader sluit iets op, vier hoeken
-     zeggen "dit is de uitsnede". Op de hero staat het om het beeld zelf, op de
-     dienstenkaarten om elke foto.
-
-     BINNEN DE RAND EN NIET EROMHEEN. .hv-svc-card-media staat op
-     overflow:hidden — het moet wel, want het beeld staat op scale(1.04) binnen
-     een 3:4-kader — dus wat buiten valt wordt weggeknipt. Eerste poging zette
-     ze op inset:-6px en dan zie je er geen één.
-
-     De schaduw is er omdat een haarlijn over een foto loopt: op een lichte plek
-     in het beeld verdwijnt wit, en dan staat er een halve haak. */
-  body.huid-kantig .sel { position: relative; }
-  body.huid-kantig .sel-laag {
-    position: absolute; inset: 9px; pointer-events: none; z-index: 3;
-    filter: drop-shadow(0 0 1px rgb(0 0 0 / .6));
-  }
-  body.huid-kantig .sel-hoek {
-    position: absolute; inset: 0; --l: var(--sch-lijn);
-    transition: opacity var(--dur-1) var(--ease);
-    background:
-      linear-gradient(var(--l), var(--l)) 0 0 / 14px 1px no-repeat,
-      linear-gradient(var(--l), var(--l)) 0 0 / 1px 14px no-repeat,
-      linear-gradient(var(--l), var(--l)) 100% 0 / 14px 1px no-repeat,
-      linear-gradient(var(--l), var(--l)) 100% 0 / 1px 14px no-repeat,
-      linear-gradient(var(--l), var(--l)) 0 100% / 14px 1px no-repeat,
-      linear-gradient(var(--l), var(--l)) 0 100% / 1px 14px no-repeat,
-      linear-gradient(var(--l), var(--l)) 100% 100% / 14px 1px no-repeat,
-      linear-gradient(var(--l), var(--l)) 100% 100% / 1px 14px no-repeat;
-  }
-  /* De hero krijgt hetzelfde kader, maar ruimer ingezet — het beeld loopt daar
-     tot de rand van het venster, dus de haken staan op de paginamarge en niet
-     op de beeldrand. Geen selectie hier: de hero is geen voorwerp dat je
-     aanwijst, hij is de achtergrond. */
-  /* NIET position:relative HIER. .hv-hero-bg staat al op `absolute` en spant
-     daarmee het hele herovlak op; hem op `relative` zetten haalt hem uit die
-     opspanning en dan valt de foto weg — de hele hero werd zwart. Gemeten:
-     zonder deze regel toont de hero het beeld, met deze regel niet. Een
-     absoluut geplaatst element is al een houder voor absolute kinderen, dus
-     het zoekerkader hieronder heeft er niets voor nodig. */
-  /* De bovenkant vrij van de kop. Op inset:20px rondom vielen de twee bovenste
-     haken achter de balk, en een zoekerkader waarvan je de helft niet ziet is
-     geen kader. 92px is de balk (76) plus dezelfde marge als aan de zijkanten. */
-  /* Het zoekerkader ligt over de hero-FOTO, en die vult het scherm. Toch --rand-x
-     en niet --pad-x: het kader zegt "dit is de uitsnede" van wat eronder staat, en
-     dat is de kolom met de kop erin. Op de zijkant van het scherm zou het een
-     kader om het behang zijn. De onderkant houdt dezelfde afstand als de zijkant,
-     zodat het een vierkant kader blijft en geen liggend rechthoekje. */
-  body.huid-kantig .sel-laag.hero {
-    inset: 92px var(--rand-x) var(--pad-x) var(--rand-x); z-index: 1;
-  }
-  /* Op de hero staan de haken over een foto en niet over een paneel, dus daar
-     mogen ze een slag steviger — anders verdwijnen ze in elke lichte plek van
-     het beeld. Lucas: *"de zoekerhoeken op de homepage licht wat meer
-     zichtbaar of groter maar wel subtiel blijven."* De armen zijn overal van
-     9 naar 14px gegaan; hier komt alleen de lijnsterkte erbij. */
-  body.huid-kantig .sel-laag.hero .sel-hoek { --l: rgb(255 255 255 / .42); }
-  @media (max-width: 700px) { body.huid-kantig .sel-laag.hero { display: none; } }
-
-  /* ══ DE SELECTIE ═══════════════════════════════════════════════════════════
-     Zodra de muis een kaartbeeld raakt wordt het zoekerkader een selectie: een
-     kader met acht grepen, de naam van de laag, en een aanhaallijn naar wat de
-     set bevat — precies de opbouw van "CARBON CASE" op de poster. */
-  body.huid-kantig .sel-kader {
-    position: absolute; inset: 0; border: 1px solid var(--sch-fel); opacity: 0;
-    transition: opacity var(--dur-1) var(--ease);
-  }
-  body.huid-kantig .sel-greep {
-    position: absolute; width: 5px; height: 5px; background: #fff;
-    box-shadow: 0 0 0 1px rgb(8 9 11 / .55); opacity: 0;
-    transition: opacity var(--dur-1) var(--ease);
-  }
-  body.huid-kantig .sel-greep.a { left: -3px; top: -3px; }
-  body.huid-kantig .sel-greep.b { left: calc(50% - 2.5px); top: -3px; }
-  body.huid-kantig .sel-greep.c { right: -3px; top: -3px; }
-  body.huid-kantig .sel-greep.d { right: -3px; top: calc(50% - 2.5px); }
-  body.huid-kantig .sel-greep.e { right: -3px; bottom: -3px; }
-  body.huid-kantig .sel-greep.f { left: calc(50% - 2.5px); bottom: -3px; }
-  body.huid-kantig .sel-greep.g { left: -3px; bottom: -3px; }
-  body.huid-kantig .sel-greep.h { left: -3px; top: calc(50% - 2.5px); }
-
-  /* LIME EN NIET WIT. Eerste versie zette deze twee labels in wit op 88%, en op
-     een lichte productfoto verdwenen ze allebei — precies op de kaarten waar de
-     selectie het meest te vertellen heeft. Een vol vlak in de accentkleur leest
-     op elke grond, en het is meteen het ene accentmoment per selectie. Zwarte
-     letters, want wit op deze lime is 1,31:1.
-
-     BINNEN HET KADER EN NIET EROP: hij stond op top:-17px en werd door de
-     overflow:hidden van de mediahouder half afgesneden — je las "PRODUCT
-     PHOTOGRAPH". Binnen de linkerbovenhoek is bovendien waar een
-     ontwerpprogramma hem zet als er boven geen ruimte is. */
-  body.huid-kantig .sel-naam {
-    position: absolute; left: 1px; top: 1px; padding: 2px 5px;
-    background: var(--accent); color: var(--accent-ink); opacity: 0;
-    white-space: nowrap; transition: opacity var(--dur-1) var(--ease);
-  }
-  body.huid-kantig .sel-haal {
-    position: absolute; left: 0; top: 44%; display: flex; align-items: center;
-    opacity: 0; transition: opacity var(--dur-1) var(--ease);
-  }
-  body.huid-kantig .sel-haal i {
-    width: 4px; height: 4px; background: var(--accent); border-radius: 50%;
-    flex: none; margin-right: -1px;
-  }
-  body.huid-kantig .sel-haal s {
-    width: 22px; height: 1px; background: var(--accent); text-decoration: none; flex: none;
-  }
-  body.huid-kantig .sel-haal em {
-    font-style: normal; margin-left: 6px; padding: 2px 5px; white-space: nowrap;
-    background: var(--accent); color: var(--accent-ink);
-  }
-
-  body.huid-kantig .sel:hover .sel-hoek { opacity: 0; }
-  body.huid-kantig .sel:hover :is(.sel-kader, .sel-greep, .sel-naam, .sel-haal) { opacity: 1; }
-  @media (hover: none), (pointer: coarse) {
-    body.huid-kantig .sel-laag { display: none; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    body.huid-kantig :is(.sel-hoek, .sel-kader, .sel-greep, .sel-naam, .sel-haal) { transition: none; }
-  }
-
-  /* ══ DE SPECIFICATIELABELS ═════════════════════════════════════════════════
-     De bovenkopjes die er al staan worden specificaties. De haken staan in
-     `content` en niet in de opmaak, zodat er geen nieuwe tekst bijkomt die
-     vertaald en gekeurd zou moeten worden. `"[ " / ""` zet de toegankelijke
-     naam op leeg — een schermlezer leest het label en niet de haak. Kan een
-     browser die syntaxis nog niet, dan leest hij de haak voor: hinderlijk, niet
-     kapot, en de reden dat de haken nooit betekenis dragen.
-
-     De spatiëring is .02em en niet de .14em die ik eerst aannam. Nagemeten bij
-     de referentie: 0,22px op 11px. Juist die strakheid laat het als een
-     specificatie lezen in plaats van als een modieuze bovenkop. */
-  body.huid-kantig :is(.hv-kicker, .hv-svc-card-eyebrow, .hv-sub-eyebrow) {
-    font-family: var(--sch-mono); font-size: 10px; font-weight: 400;
-    letter-spacing: .02em; text-transform: uppercase;
-    color: var(--sch-ink); line-height: 1.3;
-  }
-  body.huid-kantig :is(.hv-kicker, .hv-svc-card-eyebrow, .hv-sub-eyebrow)::before { content: "[ " / ""; }
-  body.huid-kantig :is(.hv-kicker, .hv-svc-card-eyebrow, .hv-sub-eyebrow)::after  { content: " ]" / ""; }
-
-  /* ══ DE MAATLIJN ═══════════════════════════════════════════════════════════
-     De streep met een tik aan elk uiteinde die een afstand aangeeft — hier wat
-     een set BEVAT, want dat is de maat die de klant koopt. */
-  body.huid-kantig .sch-maatlijn { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-  body.huid-kantig .sch-maatlijn::before,
-  body.huid-kantig .sch-maatlijn::after {
-    content: ""; width: 1px; height: 7px; background: var(--sch-lijn); flex: none;
-  }
-  body.huid-kantig .sch-maatlijn s { flex: 1; height: 1px; background: var(--sch-lijn); text-decoration: none; }
-  body.huid-kantig .sch-maatlijn em { font-style: normal; flex: none; padding: 0 2px; }
-
-  /* ══ DE DATABLADSLEUTEL ════════════════════════════════════════════════════
-     Naam links, haarlijn tot de rand. Je oog volgt de lijn in plaats van te
-     moeten gokken welke regel bij welke naam hoort. */
-  body.huid-kantig .sch-sleutel { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-  body.huid-kantig .sch-sleutel s { flex: 1; height: 1px; background: var(--sch-lijn); text-decoration: none; }
-
-  /* ══ DE AANWIJZER ══════════════════════════════════════════════════════════
-     mix-blend-mode: difference. Wit dat met difference over de pagina ligt is
-     precies "keer de grond om": over zwart wordt hij wit, over wit zwart, over
-     een foto volgt hij elke pixel.
-
-     IK HAD DIT EERST ANDERS OPGELOST EN DAT WAS FOUT. Ik rekende uit dat
-     difference van lime met wit blauwviolet geeft en besloot daarom de omkering
-     te BENOEMEN per sectie in plaats van te berekenen. Verkeerde conclusie uit
-     een juiste som: een lijst kleuren klopt alleen op de plekken die je van
-     tevoren kent, en het effect is juist dat hij zich overal vanzelf omkeert.
-
-     TWEE LAGEN, WANT EEN MENGING IS NIET TE ANIMEREN. Zie de noot bij de
-     opmaak hierboven: de omgekeerde laag en de vlakke laag liggen op elkaar en
-     wisselen met hun dekking, zodat de overgang vloeit in plaats van springt.
-
-     `isolation: isolate` mag hier nergens boven staan, anders mengt de
-     omgekeerde laag alleen binnen dat blokje en zie je niets. */
-  body.huid-kantig .aw {
-    position: fixed; top: 0; left: 0;
-    /* Iets groter dan de 11,6 x 24 van de eerste versie: op een drukke foto
-       was hij soms lastig te vinden. Twintig procent erbij is genoeg om hem te
-       zien staan zonder dat hij een muisaanwijzer-met-hoofdletters wordt. */
-    width: 14px; height: 29px;
-    z-index: var(--z-cursor, 700); pointer-events: none; opacity: 0;
-    will-change: transform;
-  }
-  body.huid-kantig .aw.wakker { opacity: 1; }
-  /* De onderste laag keert de grond om; de bovenste ligt eroverheen zodra er
-     een vaste kleur nodig is. Allebei met dezelfde overgangstijd, zodat het
-     één beweging is en geen twee. */
-  body.huid-kantig .aw-om { mix-blend-mode: difference; }
-  body.huid-kantig .aw-om svg { fill: #fff; transition: fill .2s var(--ease); }
-  /* ── OP LIME KRIJGT DE OMGEKEERDE LAAG EEN LIME VULLING — 30 augustus 2026 ──
-   *
-   * Lucas: *"de muis is bij groene onderdelen gelijk zwart waardoor hij lastig
-   * zichtbaar is. Ik wil dat hij overloopt van kleur, dus dat het gedeelte dat
-   * nog op de donkere achtergrond is een lichte kleur heeft."*
-   *
-   * Dat kan geen VLAKKE kleur, en dat is de kern. De pijl ligt op de rand van een
-   * knop op twee ondergronden tegelijk: de punt op lime, de staart op de donkere
-   * pagina. Welke ene kleur je ook kiest, één helft valt weg. De haarlijn van
-   * eergisteren maakte dat draaglijk en loste het niet op.
-   *
-   * `difference` lost het wél op, en per pixel: de laag toont |grond − vulling|,
-   * dus hij rekent voor elke pixel apart uit wat het tegendeel van zijn eigen
-   * ondergrond is. Met LIME als vulling komt daar precies uit wat Lucas vraagt:
-   *
-   *   op de pagina (#030406)  →  |3−198|, |4−241|, |6−0|   ≈ lime, goed te zien
-   *   op een limeknop         →  |198−198|, |241−241|, 0   =  zwart, goed te zien
-   *   op de rand              →  het omslagpunt ligt exáct waar de knop ophoudt
-   *
-   * En het is geen extra kleur in de huisstijl: allebei de uitkomsten zijn de
-   * twee kleuren die dit merk al draagt.
-   *
-   * WAAROM DE VLAKKE LAAG HIERVOOR NIET MEER AANGAAT: zie de noot bij `vast` in
-   * het script. Hij blijft bestaan voor een aanklikbaar vlak dat NIET lime is —
-   * daar ligt de pijl wel op één ondergrond en is één kleur het goede antwoord. */
-  body.huid-kantig .aw-om.oplime svg { fill: var(--accent); }
-  body.huid-kantig .aw-plat { opacity: 0; }
-  body.huid-kantig .aw-plat svg {
-    fill: var(--accent);
-    transition: fill .2s var(--ease);
-  }
-  body.huid-kantig .aw-plat.wakker { opacity: 0; }
-  /* `vast` = er moet een vaste kleur komen. De omgekeerde laag zakt weg, de
-     vlakke komt op. .22s is dezelfde tijd als de schaal, zodat groeien en
-     verkleuren samenvallen. */
-  body.huid-kantig .aw.wakker.vast { opacity: 0; }
-  body.huid-kantig .aw-plat.wakker.vast { opacity: 1; }
-  body.huid-kantig .aw { transition: opacity .2s var(--ease); }
-  /* Op een limevlak wordt de vlakke laag zwart in plaats van lime. Dit is het
-     enige verschil tussen "boven iets aanklikbaars" en "op het accent zelf". */
-  body.huid-kantig .aw-plat.oplime svg { fill: var(--accent-ink); }
-
-  /* ══ DE RAND VAN DE KNOP ═══════════════════════════════════════════════════
-     Eén vlakke kleur klopt alleen als de pijl HELEMAAL op één ondergrond ligt,
-     en dat is precies wat er op een knoprand niet gebeurt. De punt zit dan op de
-     lime en de staart hangt op de donkere pagina — en welke van de twee kleuren
-     je ook kiest, één helft van de pijl valt weg. Op Lucas' uitsnede is dat goed
-     te zien: de punt in de knop, de staart eronder in het zwart.
-
-     Vandaar een haarlijn in de tegenkleur, ONDER de vulling geschilderd
-     (`paint-order: stroke`), zodat de vorm zelf niet dikker wordt maar wel
-     overal een randje meedraagt. Dat is dezelfde oplossing als de witte pijl met
-     zwarte omlijning die Windows en macOS al veertig jaar gebruiken, en om
-     precies dezelfde reden: een aanwijzer weet niet waar hij landt.
-
-     12 in kadereenheden. Het kader is 93 breed en wordt op 14px getekend, dus
-     dat is ruwweg 1,8px lijn, ofwel 0,9px zichtbaar aan weerszijden van de
-     vulling. Genoeg om te zien, te weinig om de pijl bot te maken. */
-  body.huid-kantig .aw-plat svg path {
-    stroke: var(--accent-ink);
-    stroke-width: 12;
-    paint-order: stroke;
-    stroke-linejoin: round;
-  }
-  body.huid-kantig .aw-plat.oplime svg path { stroke: var(--accent); }
-
-  /* De punt van het pad ligt op deze breuk van het kader — daar wordt hij
-     naartoe geschoven en daar staat de oorsprong van de schaal, zodat hij bij
-     het groeien blijft aanwijzen in plaats van weg te wandelen. */
-  body.huid-kantig .aw-i {
-    width: 100%; height: 100%; translate: -99.4% -.6%; transform-origin: 99.4% .6%;
-    transition: scale .22s var(--ease);
-  }
-  body.huid-kantig .aw-i svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  body.huid-kantig .aw.raakt .aw-i { scale: 1.5; }
-
-  /* Het script zet deze klasse, nooit dit stijlblad — zie de kop van dit
-     bestand. Alleen op een echte muis. */
-  html.aw-aan body.huid-kantig,
-  html.aw-aan body.huid-kantig :is(a, button, summary, label, [role="button"]) { cursor: none; }
-  /* Formuliervelden houden hun eigen aanwijzer: een tekstcursor vertelt waar je
-     kunt typen, en dat is informatie die deze pijl niet kan vervangen. */
-  html.aw-aan body.huid-kantig :is(input, textarea, select, [contenteditable]) { cursor: auto; }
-
-  @media (hover: none), (pointer: coarse) { body.huid-kantig .aw { display: none; } }
-  @media (prefers-reduced-motion: reduce) {
-    body.huid-kantig :is(.aw, .aw-i, .aw-plat svg) { transition: none; }
-    body.huid-kantig .aw.raakt .aw-i { scale: 1; }
-  }
-
-  /* ══ DE PRIJSCURVE ═════════════════════════════════════════════════════════
-     De staffel IS een dalende curve, en die alleen als tabel tonen laat dat
-     niet zien. Deze grafiek wordt uit diezelfde tabel gelezen — vier tarieven,
-     vier treden — dus hij kan niet afwijken van wat eronder staat en niet
-     verouderen. Geen assen, geen raster: alleen de lijn, de vier meetpunten en
-     de twee uiterste waarden. */
-  body.huid-kantig .sch-curve {
-    display: flex; align-items: flex-end; gap: 10px; margin-top: 14px;
-  }
-  body.huid-kantig .sch-curve svg { display: block; overflow: visible; }
-  body.huid-kantig .sch-curve .lijn { fill: none; stroke: var(--sch-lijn); stroke-width: 1; }
-  body.huid-kantig .sch-curve .punt { fill: var(--sch-ink); }
-  body.huid-kantig .sch-curve .punt.laatste { fill: var(--accent); }
-  body.huid-kantig .sch-curve em { font-style: normal; padding-bottom: 1px; }
-
-  /* ══ DE STANDAANWIJZER VAN DE CARROUSEL ════════════════════════════════════
-     Welke van de vijf je ziet, als meterstand. Dit is de ENE plek op de pagina
-     waar doorlopend nummeren mag: DESIGN.md verbiedt 01/02/03 tenzij de
-     volgorde iets betekent, en hier betekent hij precies iets — het is de
-     positie in een rij die de bezoeker zelf verschuift. */
-  body.huid-kantig .sch-stand {
-    position: absolute; right: 0; bottom: 0; z-index: 2; pointer-events: none;
-    font-variant-numeric: tabular-nums;
-  }
-  body.huid-kantig .sch-stand b { font-weight: 400; color: var(--sch-fel); }
-  @media (max-width: 700px) { body.huid-kantig .sch-stand { display: none; } }
-
 </style>
 
 <script>
@@ -937,57 +264,6 @@ const AANWIJZER = [
   // script overleeft een zachte navigatie niet.
   const start = () => {
     if (!document.body || !document.body.classList.contains('huid-kantig')) return;
-
-    // ── de maat per dienst, uit de prijstabel ────────────────────────────────
-    // Niets wordt getypt. De tabel weet dat een catalogset vier beelden is en
-    // lifestyle er drie; die koppeling wordt hier gelegd, niet verzonnen.
-    const maten = {};
-    document.querySelectorAll('.hv-lad thead th').forEach((th) => {
-      const k = th.querySelector('.hv-lad-kind');
-      const s = th.querySelector('.hv-lad-sub');
-      if (!k || !s) return;
-      const naam = k.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
-      const maat = s.textContent.split('·')[0].trim();
-      if (naam && maat) maten[naam] = maat;
-    });
-    const maatVoor = (titel) => {
-      const t = titel.toLowerCase();
-      for (const k in maten) {
-        if (t.startsWith(k) || k.startsWith(t) || t.startsWith(k.split(' ')[0])) return maten[k];
-      }
-      return '';
-    };
-
-    const grepen = () =>
-      ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => '<i class="sel-greep ' + k + '"></i>').join('');
-
-    // ── het zoekerkader om de hero ───────────────────────────────────────────
-    const heroBg = document.querySelector('.hv-hero-bg');
-    if (heroBg && !heroBg.querySelector('.sel-laag')) {
-      const l = document.createElement('div');
-      l.className = 'sel-laag hero';
-      l.setAttribute('aria-hidden', 'true');
-      l.innerHTML = '<i class="sel-hoek"></i>';
-      heroBg.appendChild(l);
-    }
-
-    // ── het selectiekader op de dienstenkaarten ──────────────────────────────
-    document.querySelectorAll('.hv-svc-card-media').forEach((h) => {
-      if (h.querySelector('.sel-laag')) return;
-      h.classList.add('sel');
-      const kaart = h.closest('.hv-svc-card');
-      const eb = kaart && kaart.querySelector('.hv-svc-card-eyebrow');
-      const ti = kaart && kaart.querySelector('.hv-svc-card-t');
-      const naam = eb ? eb.textContent.replace(/\s+/g, ' ').trim() : '';
-      const maat = ti ? maatVoor(ti.textContent.replace(/\s+/g, ' ').trim()) : '';
-      const l = document.createElement('div');
-      l.className = 'sel-laag';
-      l.setAttribute('aria-hidden', 'true');
-      l.innerHTML = '<i class="sel-hoek"></i><i class="sel-kader"></i>' + grepen()
-        + (naam ? '<i class="sch sel-naam">' + naam + '</i>' : '')
-        + (maat ? '<span class="sch sel-haal"><i></i><s></s><em>' + maat + '</em></span>' : '');
-      h.appendChild(l);
-    });
 
     // ── de naad tussen twee secties ──────────────────────────────────────────
     document.querySelectorAll('section + section').forEach((sec) => {
@@ -1000,304 +276,6 @@ const AANWIJZER = [
       sec.appendChild(n);
     });
 
-    // ── de maatlijnen onder de prijskoppen ───────────────────────────────────
-    document.querySelectorAll('.hv-lad thead th').forEach((th) => {
-      const sub = th.querySelector('.hv-lad-sub');
-      if (!sub || th.querySelector('.sch-maatlijn')) return;
-      const deel = sub.textContent.split('·');
-      const maat = deel[0].trim();
-      const rest = deel.slice(1).join('·').trim();
-      if (!maat) return;
-      // De maatlijn NEEMT het aantal over in plaats van het ernaast te herhalen;
-      // wat overblijft is de eenheid, en die hoort daar ook.
-      sub.textContent = rest;
-      if (!rest) sub.style.display = 'none';
-      const d = document.createElement('div');
-      d.className = 'sch sch-maatlijn';
-      d.setAttribute('aria-hidden', 'true');
-      d.innerHTML = '<s></s><em>' + maat + '</em><s></s>';
-      th.appendChild(d);
-    });
-
-    // ── de databladsleutels ──────────────────────────────────────────────────
-    document.querySelectorAll('.hv-q-k').forEach((k) => {
-      if (k.querySelector('s')) return;
-      k.classList.add('sch', 'sch-sleutel');
-      k.appendChild(document.createElement('s'));
-    });
-
-    // ── de prijscurve, getekend uit de tabel eronder ─────────────────────────
-    // De staffel IS een dalende curve, en die alleen als kolom getallen tonen
-    // laat dat niet zien. Vier tarieven, vier treden, uit dezelfde cellen die
-    // eronder staan — dus hij kan er niet van afwijken en niet verouderen.
-    (() => {
-      const tab = document.querySelector('.hv-lad');
-      if (!tab || document.querySelector('.sch-curve')) return;
-      const rijen = [...tab.querySelectorAll('tbody tr')];
-      const getal = (tekst) => {
-        // Nederlands schrijft € 1.250 en € 132,30 waar Engels € 1,250 en
-        // € 132.30 schrijft. Allebei terugrekenen naar hetzelfde getal, anders
-        // klopt de curve in één van de twee talen niet.
-        const m = String(tekst).match(/€\s?[\d.,]+/);
-        if (!m) return null;
-        let n = m[0].replace(/[€\s]/g, '');
-        n = n.includes(',') ? n.replace(/\./g, '').replace(',', '.') : n.replace(/,/g, '');
-        const v = Number(n);
-        return Number.isFinite(v) ? v : null;
-      };
-      const punten = rijen.map((r) => {
-        const cel = r.querySelector('td');
-        return cel ? getal(cel.textContent) : null;
-      }).filter((v) => v !== null);
-      if (punten.length < 3) return;
-
-      const B = 168, H = 34;
-      const max = Math.max(...punten), min = Math.min(...punten);
-      const bereik = max - min || 1;
-      const xy = punten.map((v, i) => [
-        (i / (punten.length - 1)) * B,
-        H - ((v - min) / bereik) * H,
-      ]);
-      const lijn = xy.map(([a, b]) => a.toFixed(1) + ',' + b.toFixed(1)).join(' ');
-      const stippen = xy.map(([a, b], i) =>
-        '<circle class="punt' + (i === xy.length - 1 ? ' laatste' : '') + '" cx="' + a.toFixed(1)
-        + '" cy="' + b.toFixed(1) + '" r="2"/>').join('');
-
-      const eersteCel = rijen[0] && rijen[0].querySelector('td');
-      const laatsteCel = rijen[rijen.length - 1] && rijen[rijen.length - 1].querySelector('td');
-      const bedrag = (cel) => {
-        const m = cel && cel.textContent.match(/€\s?[\d.,]+/);
-        return m ? m[0].trim() : '';
-      };
-
-      const d = document.createElement('div');
-      d.className = 'sch sch-curve';
-      d.setAttribute('aria-hidden', 'true');   // de tabel is de leesbare bron
-      d.innerHTML = '<em>' + bedrag(eersteCel) + '</em>'
-        + '<svg width="' + B + '" height="' + H + '" viewBox="-3 -3 ' + (B + 6) + ' ' + (H + 6) + '">'
-        + '<polyline class="lijn" points="' + lijn + '"/>' + stippen + '</svg>'
-        + '<em>' + bedrag(laatsteCel) + '</em>';
-      const wrap = tab.closest('.hv-lad-wrap') || tab.parentElement;
-      wrap.insertAdjacentElement('afterend', d);
-    })();
-
-    // ── de standaanwijzer van de carrousel ───────────────────────────────────
-    // Welke van de vijf je ziet, als meterstand. Dit is de ENE plek waar
-    // doorlopend nummeren mag: DESIGN.md verbiedt 01/02/03 tenzij de volgorde
-    // iets betekent, en hier is het de positie in een rij die de bezoeker zelf
-    // verschuift — dus hij betekent precies iets, en hij verandert mee.
-    (() => {
-      const tabs = [...document.querySelectorAll('[data-hero-tab]')];
-      const hero = document.querySelector('.hv-hero');
-      if (!tabs.length || !hero || hero.querySelector('.sch-stand')) return;
-      const laag = hero.querySelector('.sel-laag.hero');
-      if (!laag) return;
-      const st = document.createElement('div');
-      st.className = 'sch sch-stand';
-      st.setAttribute('aria-hidden', 'true');   // de tablijst zegt het al hardop
-      const twee = (n) => String(n).padStart(2, '0');
-      const teken = () => {
-        let i = tabs.findIndex((t) => t.getAttribute('aria-current') === 'true');
-        if (i < 0) i = 0;
-        st.innerHTML = '<b>' + twee(i + 1) + '</b> / ' + twee(tabs.length);
-      };
-      teken();
-      laag.appendChild(st);
-      // De carrousel zet aria-current; daar hangen we op, zodat de stand klopt
-      // of hij nu vanzelf doordraait of door een klik verspringt.
-      const kijker = new MutationObserver(teken);
-      tabs.forEach((t) => kijker.observe(t, { attributes: true, attributeFilter: ['aria-current'] }));
-      document.addEventListener('astro:before-swap', () => kijker.disconnect(), { once: true });
-    })();
-
-    // ── de aanwijzer ─────────────────────────────────────────────────────────
-    const c = document.getElementById('aw');
-    const c2 = document.getElementById('aw2');
-    if (!c || !c2) return;
-    if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    document.documentElement.classList.add('aw-aan');
-    const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // WELKE PLEKKEN EEN VASTE KLEUR KRIJGEN — GELEZEN, NIET OPGESOMD.
-    // Eerste poging was een lijst klassen, en die miste meteen het
-    // belangrijkste geval: het accentwoord in de hero is een kale <em> zonder
-    // klasse. Een opsomming vangt alleen de gevallen die je van tevoren kent.
-    const acc = (() => {
-      const d = document.createElement('span');
-      d.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-      document.body.appendChild(d);
-      const v = getComputedStyle(d).color;
-      d.remove();
-      const m = String(v).match(/[\d.]+/g);
-      /* Deze ene mag nog wél een regex zijn: `color` van een span die de token
-         draagt komt er als rgb() uit. Wijkt dat ooit af, dan is [198,241,0] de
-         terugval en dat IS de merkkleur — zie --accent in global.css. */
-      return m && +m[0] > 1 ? m.slice(0, 3).map(Number) : [198, 241, 0];
-    })();
-    /* ── DE KLEUR DOOR EEN CANVAS EN NIET DOOR EEN REGEX — 28 augustus 2026 ────
-     *
-     * Hier stond een regex over de berekende kleur: pak de eerste drie getallen
-     * en vergelijk ze met 198, 241, 0. Dat werkte zolang de browser
-     * `rgb(198, 241, 0)` teruggaf, en het brak stil op de dag dat ik
-     * .btn-primary op `color-mix(in srgb, var(--accent) 90%, transparent)` zette
-     * om die knop op Safari zichtbaar te krijgen. Chrome berekent dat namelijk
-     * niet naar rgb() maar naar `color(srgb 0.776471 0.945098 0 / 0.9)` — en dan
-     * leest dezelfde regex 0.78 waar hij 198 verwacht, en is een limeknop
-     * ineens geen limeknop meer. Gevolg: de aanwijzer bleef lime op een lime
-     * knop. Lucas: *"Groene muis kleur op groene knoppen is ook niet zo handig."*
-     *
-     * Een tweede tak voor color(srgb …) erbij schrijven lost precies dit ene
-     * geval op en wacht op het volgende — oklch(), lab(), color-mix in een
-     * andere ruimte. De browser kan het zelf: één pixel tekenen en teruglezen
-     * geeft ALTIJD 0-255 sRGB, welke schrijfwijze er ook in ging.
-     *
-     * `globalCompositeOperation = 'copy'` want anders mengt een half-doorzichtige
-     * vulling met wat er al stond en klopt de alpha niet meer. En een geheugen
-     * erbij: dit wordt tot dertien keer per muisbeweging aangeroepen, terwijl een
-     * pagina maar een handvol verschillende kleuren heeft.
-     */
-    const doek = document.createElement('canvas');
-    doek.width = 1; doek.height = 1;
-    const pen = doek.getContext('2d', { willReadFrequently: true });
-    const onthouden = new Map();
-    const naarRgb = (v) => {
-      const t = String(v);
-      if (onthouden.has(t)) return onthouden.get(t);
-      let uit = null;
-      try {
-        /* Een ongeldige waarde laat fillStyle ONGEWIJZIGD staan. Zonder deze
-           twee regels zou 'bananen' dus de vorige kleur opleveren in plaats van
-           niets. Nu is de vorige kleur doorzichtig zwart en valt hij af op alpha. */
-        pen.fillStyle = 'rgba(0,0,0,0)';
-        pen.fillStyle = t;
-        pen.globalCompositeOperation = 'copy';
-        pen.fillRect(0, 0, 1, 1);
-        const d = pen.getImageData(0, 0, 1, 1).data;
-        uit = [d[0], d[1], d[2], d[3] / 255];
-      } catch { uit = null; }
-      onthouden.set(t, uit);
-      return uit;
-    };
-    const bijna = (v) => {
-      const c = naarRgb(v);
-      if (!c || c[3] < 0.5) return false;
-      return Math.abs(c[0] - acc[0]) < 44 && Math.abs(c[1] - acc[1]) < 44 && Math.abs(c[2] - acc[2]) < 44;
-    };
-    // TOT DE EERSTE ECHTE GROND, EN NIET VIER VOOROUDERS VER. Op het limevlak
-    // van de voet zat de lime meer dan vier niveaus boven de tekst waar de muis
-    // stond, dus de omkering sloeg niet aan en de pijl bleef in de omgekeerde
-    // stand — die op lime blauwviolet is. Nu klimt hij tot hij een vlak vindt
-    // dat werkelijk een kleur heeft; alles daarboven doet er niet meer toe,
-    // want dat is precies wat de bezoeker ook niet ziet.
-    /* DE GROND BESLIST, NIET DE LETTER — 28 augustus 2026.
-     *
-     * Hier stond als eerste regel `if (bijna(getComputedStyle(t).color)) return true;`
-     * en dat was de fout. Lucas: *"Wanneer je groene tekst aanraakt of in de
-     * buurt komt wordt de gehele muis gelijk donker waardoor hij moeilijk te
-     * zien is. Bij witte tekst loopt hij gewoon mooi over."*
-     *
-     * Precies wat er gebeurde. `oplime` schildert de vlakke pijl in
-     * --accent-ink, bijna zwart. Dat is de goede kleur op een limeVLAK: zwart
-     * op lime lees je. Het is de slechtste kleur op limeTEKST, want daar is de
-     * grond gewoon de donkere pagina — en dan is de pijl zwart op zwart.
-     *
-     * En "in de buurt" is geen gevoel maar de rechthoek: een woord staat in een
-     * link of een kop die breder is dan de letters, dus zodra je die doos
-     * binnenkomt sloeg de omkering al aan, ruim voordat je een letter raakte.
-     *
-     * De pijl is 14 bij 29 pixels en een letterstreek is er twee breed. Wat
-     * eronder ligt is dus vrijwel altijd de grond en vrijwel nooit de letter.
-     * Daarom kijkt deze functie alleen nog naar het eerste DEKKENDE vlak. Boven
-     * limetekst blijft de omgekeerde laag liggen — die is op de donkere pagina
-     * wit, en loopt over de letters heen precies zoals hij dat over witte tekst
-     * doet. Dat is het gedrag dat Lucas goed noemde.
-     */
-    const opAccent = (t) => {
-      for (let i = 0, el = t; el && i < 12; el = el.parentElement, i += 1) {
-        const bg = getComputedStyle(el).backgroundColor;
-        /* Ook deze dekkingsvraag door naarRgb(), en om dezelfde reden als
-           hierboven: op `color(srgb … / 0.9)` gaf de oude regex het goede
-           antwoord per ongeluk — het vierde getal stond toevallig op de plek waar
-           hij de alpha zocht. Per ongeluk goed is de vervelendste soort goed. */
-        const c = naarRgb(bg);
-        if (c && c[3] > 0.5) return bijna(bg);   // de eerste dekkende laag IS de grond
-      }
-      return false;
-    };
-
-    let x = 0, y = 0, cx = 0, cy = 0, eerst = true, draait = false;
-    const lus = () => {
-      // 0,62 EN NIET 0,26. Met 0,26 haalde hij na vier beelden pas 70% van de
-      // afstand, en dat voel je als slepen: Lucas *"Er zit ook een bepaalde lag
-      // op de cursor movement."* Bij 0,62 zit hij na drie beelden op 95% — nog
-      // net zacht genoeg om niet te stotteren, en niet meer als vertraging te
-      // voelen. translate3d in plaats van translate zet hem op een eigen laag,
-      // zodat het verplaatsen geen herteken van de pagina kost.
-      const f = rustig ? 1 : 0.62;
-      cx += (x - cx) * f;
-      cy += (y - cy) * f;
-      const t = 'translate3d(' + cx + 'px,' + cy + 'px,0)';
-      c.style.transform = t;
-      c2.style.transform = t;
-      if (draait) requestAnimationFrame(lus);
-    };
-    const beweeg = (e) => {
-      x = e.clientX; y = e.clientY;
-      if (eerst) {
-        cx = x; cy = y; eerst = false; draait = true;
-        c.classList.add('wakker'); c2.classList.add('wakker');
-        lus();
-      }
-    };
-    const overheen = (e) => {
-      const t = e.target;
-      if (!(t instanceof Element)) return;
-      // Volgorde telt: accent wint van aanklikbaar, want een limeknop is allebei
-      // en daar moet hij zwart zijn en niet lime-op-lime.
-      const lime = opAccent(t);
-      const raakt = !!t.closest('a, button, summary, label, [role="button"], .btn, .sel');
-      /* ── OP LIME BLIJFT DE OMGEKEERDE LAAG LIGGEN — 30 augustus 2026 ────────
-       *
-       * Hier stond `vast = lime || raakt`: op een limevlak zakte de omgekeerde
-       * laag weg en kwam de vlakke op, zwart. Dat is leesbaar zolang de héle
-       * pijl op de knop ligt, en precies dat is op een knoprand niet zo — de
-       * staart hangt op de donkere pagina en werd daar onzichtbaar.
-       *
-       * Een vlakke kleur kan die twee niet allebei bedienen. De omgekeerde laag
-       * wel, want die rekent per pixel. Op lime krijgt hij daarom een lime
-       * vulling (zie het stijlblad) en blijft hij liggen: `vast` gaat nu alleen
-       * nog aan voor iets aanklikbaars dat NIET lime is.
-       *
-       * `oplime` verhuist mee naar de omgekeerde laag, want die draagt sinds
-       * vandaag de kleurkeuze. De vlakke houdt hem ook — hij is daar onschadelijk
-       * zolang die laag onzichtbaar is, en hij houdt de twee lagen gelijk voor
-       * wie ernaar kijkt in de inspector. */
-      [c, c2].forEach((el) => {
-        el.classList.toggle('vast', raakt && !lime);
-        el.classList.toggle('raakt', raakt);
-        el.classList.toggle('oplime', lime);
-      });
-    };
-    const weg = () => { c.classList.remove('wakker'); c2.classList.remove('wakker'); };
-    const terug = () => { c.classList.add('wakker'); c2.classList.add('wakker'); };
-
-    addEventListener('mousemove', beweeg, { passive: true });
-    document.addEventListener('mouseover', overheen, { passive: true });
-    document.addEventListener('mouseleave', weg);
-    document.addEventListener('mouseenter', terug);
-
-    // Opruimen vóór een zachte navigatie, anders stapelen de luisteraars zich op
-    // bij elke pagina die de bezoeker aandoet — en blijft de lus draaien.
-    const stop = () => {
-      draait = false;
-      removeEventListener('mousemove', beweeg);
-      document.removeEventListener('mouseover', overheen);
-      document.removeEventListener('mouseleave', weg);
-      document.removeEventListener('mouseenter', terug);
-      document.documentElement.classList.remove('aw-aan');
-      document.removeEventListener('astro:before-swap', stop);
-    };
-    document.addEventListener('astro:before-swap', stop);
   };
 
   start();

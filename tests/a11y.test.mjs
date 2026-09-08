@@ -34,13 +34,15 @@
  * Zonder een meting waren beide reparaties "gedaan" geweest.
  */
 
-import { existsSync, createReadStream } from 'node:fs';
+import { existsSync, createReadStream, readdirSync, readFileSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { join, extname } from 'node:path';
+import { join, join as pathJoin, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { buildStaat } from './lib/build.mjs';
+/* De projectmap, voor de twee bronbestandstoetsen onderaan sectie 3. */
+const WORTEL = pathJoin(dirname(fileURLToPath(import.meta.url)), '..');
 
 let pass = 0, fail = 0;
 const check = (name, actual, expected) => {
@@ -326,18 +328,37 @@ console.log('\ngeen pagina slaat een kopniveau over');
   }
   check('geen sprong op 17 pagina\'s', skips, []);
 
-  // En de maat is niet veranderd. Gemeten vóór de tagwijziging: 17px, gewicht 700,
-  // regelhoogte 27,54px, marge 22,608px. Wijkt dit af, dan is de reparatie een
-  // ontwerpwijziging geworden en dat was hij niet.
-  await page.goto(`${BASE}/compare/`, { waitUntil: 'load' });
-  const card = await page.evaluate(() => {
-    const el = document.querySelector('.card .as-card-h');
-    if (!el) return null;
-    const c = getComputedStyle(el);
-    return { tag: el.tagName, size: c.fontSize, weight: c.fontWeight, lh: c.lineHeight, margin: c.margin };
-  });
-  check('de kaartkop ziet er hetzelfde uit als vóór de wijziging',
-    card, { tag: 'H3', size: '17px', weight: '700', lh: '27.54px', margin: '22.608px 0px' });
+  /* ── DE VASTGEZETTE KAARTKOP IS EEN LEVENDE GARANTIE GEWORDEN ─────────────
+   *
+   * Hier stond een meting op `.card .as-card-h` op /compare: 17px, gewicht 700,
+   * regelhoogte 27,54px, marge 22,608px. Die maten stonden vast om één reden —
+   * een koptag was gerepareerd (h4 → h3, tegen de sprong die hierboven getoetst
+   * wordt) en dat mocht geen ONTWERPwijziging worden.
+   *
+   * Die markup bestaat niet meer: bij het overzetten van /compare naar de stijl
+   * van sectie 22 zijn die kaarten een rij met een eigen kop geworden, en de
+   * klasse staat sindsdien in nul .astro-bestanden. De toets viel om met
+   * `got null`, en dat is precies wat hij hoort te doen.
+   *
+   * Wat ervoor in de plaats komt is niet niets. De maten pinnen had zin zolang
+   * de klasse bestond; nu hij weg is, is de garantie die nog WEL iets waard is
+   * dat hij niet terugkomt — niet in de opmaak en niet als dode regel in het
+   * stylesheet. Een kop die alleen door een klasse een kop lijkt, is precies
+   * wat de oorspronkelijke reparatie afschafte. */
+  const bestanden = [];
+  const loop = (map) => {
+    for (const e of readdirSync(map, { withFileTypes: true })) {
+      const vol = pathJoin(map, e.name);
+      if (e.isDirectory()) loop(vol);
+      else if (/\.astro$/.test(e.name)) bestanden.push(vol);
+    }
+  };
+  loop(pathJoin(WORTEL, 'src'));
+  const nogSteeds = bestanden.filter((f) => /as-card-h/.test(readFileSync(f, 'utf8')));
+  check('geen enkele component draagt nog .as-card-h', nogSteeds.map((f) => f.replace(`${WORTEL}/`, '')), []);
+  const css = readFileSync(pathJoin(WORTEL, 'src', 'styles', 'global.css'), 'utf8');
+  check('en het stylesheet draagt er geen dode regel meer voor',
+    /^\.as-card-h\s*\{/m.test(css), false);
   await page.close();
 }
 
@@ -479,8 +500,25 @@ console.log('\ngeen tekst ligt over andere tekst heen');
          wordt de <strong> zelf gemeten. */
       const draagtTekst = (el) => el.textContent.trim().length > 8
         && ![...el.children].some((k) => k.textContent.trim().length > 8);
+      /* ── WAT IN EEN DICHTE VOUW STAAT, TELT NIET MEE — 7 september 2026 ────
+         Deze toets meet rechthoeken, en een <details> die DICHT staat geeft in
+         Chromium nog steeds een rechthoek terug voor zijn inhoud. Die inhoud is
+         voor een bezoeker onzichtbaar en ligt dus per definitie "over" wat er
+         onder de vouw staat — vier dichte vouwen op /ai-act leverden zo
+         eenenveertig botsingen op die geen van alle op het scherm te zien zijn.
+         Gemeten: de <details> is 60px hoog en zijn `.dc-body` 277px.
+
+         Dit was er altijd al; het viel niet op omdat deze toets alleen binnen
+         `.page-hero` keek en de vouwen daarbuiten stonden. Sinds /ai-act in de
+         stijl van sectie 22 één paneel is, valt de zoekopdracht terug op
+         `main section` en kijkt hij naar de hele pagina — meer dekking, en
+         daarmee ook dit gat.
+
+         `closest()` en geen eigen boomwandeling: een element in een dichte vouw
+         is precies "een element met een gesloten <details> boven zich". */
+      const inDichteVouw = (el) => Boolean(el.closest('details:not([open])'));
       const els = [...hero.querySelectorAll('h1, h2, p, span, strong, li, dt, dd')]
-        .filter(draagtTekst)
+        .filter((el) => draagtTekst(el) && !inDichteVouw(el))
         .map((el) => ({ r: el.getBoundingClientRect(), t: el.textContent.trim().slice(0, 30) }))
         .filter((x) => x.r.width > 0 && x.r.height > 0);
       const uit = [];

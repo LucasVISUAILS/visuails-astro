@@ -250,10 +250,21 @@ console.log('\nen het formulier van de proefvisual vraagt het ook — dat deed h
    * gedeelde stroom AANROEPT. Zonder die regel zou een pagina die de verklaring
    * opnieuw overtypt deze toets alsnog halen.
    */
+  /* ── DE BRON IS DE COMPONENT — 7 september 2026 ──────────────────────────
+     De twee pagina's waren 270 en 265 regels die elkaars vertaling hoorden te
+     zijn; sinds vandaag zijn het allebei één regel die TestSamplePage.astro
+     aanroept. De bewering over de gedeelde stroom moet dus daar gedaan worden.
+     Wat de pagina's zelf nog wordt gevraagd, staat hieronder: dat ze die
+     component gebruiken — anders verhuist de aanroep ongemerkt en zegt deze
+     toets niets meer. */
+  const TS_COMPONENT = read('src/components/TestSamplePage.astro');
   const TS = {
-    en: { src: read('src/pages/test-sample.astro'), dist: new URL('../dist/test-sample/index.html', import.meta.url) },
-    nl: { src: read('src/pages/nl/test-sample.astro'), dist: new URL('../dist/nl/test-sample/index.html', import.meta.url) },
+    en: { src: TS_COMPONENT, dist: new URL('../dist/test-sample/index.html', import.meta.url) },
+    nl: { src: TS_COMPONENT, dist: new URL('../dist/nl/test-sample/index.html', import.meta.url) },
   };
+  for (const p of ['src/pages/test-sample.astro', 'src/pages/nl/test-sample.astro']) {
+    ok(`${p} gebruikt die component`, /<TestSamplePage\b/.test(read(p)), true);
+  }
   for (const [lang, { src, dist: distPad }] of Object.entries(TS)) {
     /* DE STROOM EN NIET EEN EIGEN FORMULIER. `mode="sample"` is wat het aantal op
        één zet en de levertijdstap weglaat; zonder die stand is dit de gewone

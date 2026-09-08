@@ -1,0 +1,8 @@
+# VISUAILS — wat er NIET als bestand de deur uit gaat, ook al staat het in dist/.
+#
+# Astro zet de Worker in dist/server/ (astro.config.mjs, build.server) en de
+# statische site eromheen in dist/ zelf. Cloudflare uploadt heel dist/ als assets,
+# behalve wat hier staat: zonder deze regel zou de servercode — met daarin elke
+# SQL-query en elke controle — op https://visuails.com/server/entry.mjs te lezen
+# zijn. De adapter voegt bij de build zelf wrangler.json en .dev.vars toe.
+server/

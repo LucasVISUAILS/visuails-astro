@@ -83,12 +83,14 @@ const COPY = {
     folderHint: 'One folder per product. We read the folder name as the product.',
     off: 'Files cannot be taken at the moment. Carry on — we will ask for them by email, and nothing about your order depends on this step.',
     guideH: 'What we ask for, and what each one is for',
+    pdf: 'Take the photo guide with you (pdf)',
   },
   nl: {
     folder: 'Of kies een map',
     folderHint: 'Eén map per product. We lezen de mapnaam als het product.',
     off: 'Je kunt op dit moment geen bestanden versturen. Ga gerust verder — we vragen ze per e-mail op, en je bestelling hangt niet van deze stap af.',
     guideH: 'Wat we vragen, en waar elke foto voor is',
+    pdf: 'Neem de fotogids mee (pdf)',
   },
 };
 const t = COPY[lang];
@@ -250,6 +252,19 @@ const hint = lang === 'nl'
       ))}
     </ul>
     <p class="pu-quality">{k.quality}</p>
+    {/* ── DE GIDS OM MEE TE NEMEN — 7 september 2026 ────────────────────────
+        Dit is de enige stap waar iemand ontdekt dat de foto's die hij heeft
+        niet zijn wat we vragen — en het volgende dat hij doet, is opstaan om
+        ze te maken. Dan staat deze pagina niet meer op zijn scherm.
+
+        Daarom hier de pdf en niet nog een link naar /upload-guidelines: die
+        lees je, deze neem je mee. `download` zorgt dat hij in de downloadmap
+        landt in plaats van in een tabblad dat hij kwijtraakt. Zelfde bestand
+        als op /upload-guidelines en /test-sample; scripts/handleiding.mjs
+        maakt hem. */}
+    <p class="acties pu-gids">
+      <a class="pijl" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{t.pdf}</a>
+    </p>
   </section>
 
   {/* ── THE SECOND HALF OF THE GUIDE, ALSO ONCE ─────────────────────────────
@@ -410,6 +425,7 @@ const hint = lang === 'nl'
   .pu-tag.is-req { border-color: var(--signal); color: var(--signal-ink); background: var(--paper-2); }
 
   .pu-quality { margin-top: 1.1rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+  .pu-gids { margin-top: 1rem; }
 
   /* ── The second guide: what the product is made of ────────────────────────
      Only shown on the live form. See the note in the markup: without JS there
@@ -674,6 +690,13 @@ const hint = lang === 'nl'
     grid-column: 1 / -1;
     font-size: .74rem; color: var(--ink-3); line-height: 1.4;
   }
+  /* Even hoog, allemaal. De vier vakjes hebben teksten van verschillende lengte
+     en dus vier verschillende hoogtes — waardoor "Sla deze over" eronder op vier
+     hoogtes stond en de rij er rommelig uitzag. Het vakje rekt nu mee met de
+     hoogste van de rij. */
+  .pu-cards :global(.pu-slot) { display: flex; flex-direction: column; }
+  .pu-cards :global(.pu-slot > .pu-slot-btn) { flex: 1 1 auto; }
+
   .pu-cards :global(.pu-slot-btn) {
     position: relative;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -729,7 +752,38 @@ const hint = lang === 'nl'
     background: var(--surface);
     color: var(--ink);
   }
+  /* ── DE WEGHAALKNOP OP DE LAATSTE KAART ─────────────────────────────────── */
+  .pu-cards :global(.pu-weg) {
+    grid-column: 2 / -1; justify-self: start;
+    margin-top: .1rem;
+    font: inherit; font-size: .78rem; font-weight: 600;
+    padding: .25rem .1rem;
+    border: 0; background: none; color: var(--ink-3);
+    text-decoration: underline; text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .pu-cards :global(.pu-weg:hover) { color: var(--warn-ink, var(--ink)); }
+  .pu-cards :global(.pu-weg:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-sm); }
+
   .pu-cards :global(.pu-slot.is-thumb .pu-slot-req) { display: none; }
+
+  /* GEVULD, MAAR ZONDER VOORBEELD. De tekening blijft (er is niets anders te
+     tonen) maar zakt weg, de uitleg verdwijnt — die is gevolgd — en er komt een
+     vinkje overheen. Zonder dit verschil ziet een vakje met een HEIC erin er
+     hetzelfde uit als een vakje waar nog niets in zit. */
+  .pu-cards :global(.pu-slot-vink) {
+    position: absolute; inset: 0; display: none; place-items: center;
+    background: color-mix(in oklab, var(--accent) 12%, transparent);
+  }
+  .pu-cards :global(.pu-slot-vink svg) {
+    width: 26px; height: 26px; fill: none; stroke: var(--accent); stroke-width: 2.5;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .pu-cards :global(.pu-slot[data-state="filled"]:not(.is-thumb) .pu-slot-vink) { display: grid; }
+  .pu-cards :global(.pu-slot[data-state="filled"]:not(.is-thumb) .pu-slot-dia) { opacity: .28; }
+  .pu-cards :global(.pu-slot[data-state="filled"]:not(.is-thumb) .pu-slot-how) { display: none; }
+  .pu-cards :global(.pu-slot[data-state="filled"]:not(.is-thumb) .pu-slot-btn) { border-color: var(--accent-line); }
+  .pu-cards :global(.pu-slot[data-state="filled"]:not(.is-thumb) .pu-slot-name) { position: relative; z-index: 1; }
   /* Offscreen rather than display:none: one per slot, and a hidden input is
      what the slot button, the Replace action and the tray's menu all end up
      clicking. */
@@ -840,19 +894,45 @@ const hint = lang === 'nl'
      can have while still being visible on every product, which is what asking
      per product requires. Built by pipeline.js, so every selector here is
      :global(); the wrapper is the one element this sheet can reach directly. */
+  /* ── EEN BLOK MET EEN PRIJSKAARTJE — 4 september 2026 ─────────────────────
+     Zie de noot bij buildExtras() in pipeline.js. Wat hier veranderde: een
+     eigen omkaderd vlak in plaats van een streep, een kop op leesformaat, het
+     tarief op leesformaat direct onder de kop, en een accentrand zodra er
+     daadwerkelijk iets bijbesteld is. */
   .pu-cards :global(.pu-extra) {
+    /* Over de VOLLE breedte van de kaart, niet als derde kolom naast de twee
+       vragen: het is geen extra vraagje maar een bijbestelling, en in een kolom
+       van 190px kreeg elke beschrijvingsregel zes regels. */
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr);
-    gap: .3rem .7rem;
+    gap: .35rem .7rem;
     align-items: start;
-    margin-top: .85rem;
-    padding-top: .8rem;
-    border-top: 1px solid var(--line);
+    margin-top: 1rem;
+    padding: .85rem .9rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
+  .pu-cards :global(.pu-extra.is-aan) { border-color: var(--accent-line); background: var(--accent-soft); }
   .pu-cards :global(.pu-extra-h) {
     grid-column: 1 / -1;
-    font-size: .74rem; font-weight: 700; line-height: 1.3;
+    font-family: var(--font-display); font-weight: 800;
+    font-size: .95rem; line-height: 1.25;
     color: var(--ink);
+  }
+  /* Wat je koopt, in gewone leesmaat. Dit stond in .68rem grijs onder de velden. */
+  .pu-cards :global(.pu-extra-wat) {
+    grid-column: 1 / -1; margin: .1rem 0 .35rem;
+    font-size: .8rem; line-height: 1.5; color: var(--ink-3); max-width: 62ch;
+  }
+  /* Het bedrag, niet het tarief. Verschijnt pas als er iets gekozen is. */
+  .pu-cards :global(.pu-extra-som) {
+    grid-column: 1 / -1; margin: .1rem 0 0;
+    font-size: .88rem; font-weight: 700; line-height: 1.45;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums lining-nums;
   }
   .pu-cards :global(.pu-extra-count) { grid-column: 1; }
 
@@ -889,8 +969,9 @@ const hint = lang === 'nl'
      per-control caption is 25 repetitions of the same line at reading weight. */
   .pu-cards :global(.pu-extra-rate) {
     grid-column: 1 / -1;
-    font-size: .7rem; line-height: 1.45;
-    color: var(--ink-3);
+    font-size: .82rem; line-height: 1.45;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums lining-nums;
   }
   /* pipeline.js hides the description with el.hidden, and the UA rule for
      [hidden] loses to .pu-q's display:flex. Same guard the form's own sheet

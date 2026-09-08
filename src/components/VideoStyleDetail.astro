@@ -1,0 +1,327 @@
+---
+/*
+ * VISUAILS — de detailpagina van een videostijl, gedeeld door /video/[slug] en
+ * /nl/video/[slug].
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ *
+ * Twee sjablonen van 255 en 250 regels die elkaars vertaling hoorden te zijn.
+ * Derde en laatste van de drie stijlsjablonen; zie de kop van
+ * CatalogStyleDetail.astro voor de redenering.
+ *
+ * ── DE BEELDKAART STAAT HIER EN NIET IN DE PAGINA ────────────────────────
+ *
+ * `media` koppelt een stijl aan echte stills die voor videothumbnails
+ * doorgaan, met per bestand de INTRINSIEKE pixelmaat erbij — de werkelijke
+ * grootte in public/img, niet de maat waarop het raster hem toont. Ze staan er
+ * zodat de browser de ruimte kan reserveren voordat de bytes er zijn, en ze
+ * zijn per bestand omdat de bibliotheek in batches van verschillende maten is
+ * gemaakt. De kaart hoort bij het SJABLOON en niet bij de taal: dezelfde stijl
+ * toont in beide talen dezelfde beelden, en twee kopieën zouden precies daar
+ * uit elkaar lopen.
+ */
+import ServiceSwitch from './ServiceSwitch.astro';
+import VideoExamples from './VideoExamples.astro';
+import { waHref } from '../data/whatsapp.js';
+import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; style: any; zusters: { href: string; naam: string }[]; }
+const { lang, style, zusters } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const TIMING = turnaround('unattended', lang);
+const REVIEW = reviewClaim('unattended', lang);
+const QUEUE = TIERS.unattended.queue[lang];
+
+const media: Record<string, { hero: string; strip: Array<{ src: string; w: number; h: number }> }> = {
+  motion: {
+    hero: '/img/banners-04.webp',
+    strip: [
+      { src: '/img/banners-02.webp', w: 928, h: 1152 },
+      { src: '/img/banners-05.webp', w: 928, h: 1152 },
+      { src: '/img/banners-01.webp', w: 928, h: 1152 },
+      { src: '/img/banners-06.webp', w: 928, h: 1152 },
+    ],
+  },
+  lifestyle: {
+    hero: '/img/lifestyle-glow-03.webp',
+    strip: [
+      { src: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400 },
+      { src: '/img/lifestyle-glow-05.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-flash-06.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
+    ],
+  },
+  campaign: {
+    hero: '/img/banners-08.webp',
+    strip: [
+      { src: '/img/banners-03.webp', w: 928, h: 1152 },
+      { src: '/img/custom-models-01.webp', w: 800, h: 1071 },
+      { src: '/img/banners-07.webp', w: 928, h: 1152 },
+      { src: '/img/model-02.webp', w: 800, h: 1071 },
+    ],
+  },
+  custom: {
+    hero: '/img/banners-13.webp',
+    strip: [
+      { src: '/img/banners-14.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-glow-06.webp', w: 2400, h: 1792 },
+      { src: '/img/banners-16.webp', w: 2400, h: 1792 },
+      { src: '/img/lifestyle-flash-03.webp', w: 1340, h: 2400 },
+    ],
+  },
+};
+const m = media[style.slug] ?? media.motion;
+
+const c = nl ? {
+  terug: 'Video-stijlen',
+  wa: 'WhatsApp',
+  waTekst: `Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`,
+  andere: 'Andere looks:',
+  heroAlt: `De ${style.name}-videostijl van VISUAILS`,
+  voeltH: ['Hoe ', ' voelt'],
+  stillAlt: `Voorbeeldstill uit ${style.name}`,
+  kaderH: 'Wat er in elk kader gaat.',
+  idealH: ['Ideaal ', 'voor'],
+  krijgH: ['Wat je ', 'krijgt'],
+  modelNoot: ['Zit er iemand in een ', '-clip, dan kan dat hetzelfde gezicht zijn als op je foto’s — ', 'een merkmodel', ' wordt één keer gemaakt en gaat mee door stills én video.'],
+  slotH: ['Maak ', ' van jou.'],
+  slotP: 'Probeer VISUAILS eerst, of plaats vandaag je bestelling.',
+  proef: 'Probeer VISUAILS',
+} : {
+  terug: 'Video styles',
+  wa: 'WhatsApp',
+  waTekst: `Hi VISUAILS, I’d like to talk about the ${style.name} style.`,
+  andere: 'Other looks:',
+  heroAlt: `The VISUAILS ${style.name} video style`,
+  voeltH: ['What ', ' feels like'],
+  stillAlt: `${style.name} example still`,
+  kaderH: 'What goes into every frame.',
+  idealH: ['Best ', 'for'],
+  krijgH: ['What you ', 'get'],
+  modelNoot: ['If a ', ' clip has someone in it, it can be the same face as your photos — ', 'a Brand Model', ' is built once and used across stills and video alike.'],
+  slotH: ['Make ', ' yours.'],
+  slotP: 'Test sample, or place your order today.',
+  proef: 'Test sample',
+};
+
+const vink = 'M20 6L9 17l-5-5';
+---
+
+<div class="s22 vs">
+
+  <section class="paneel vs-open" aria-labelledby="vs-h1">
+    <div class="vs-open-grid">
+      <div class="paneel-kop vs-kop">
+        <p class="etiket"><a href={lp('/video')}>{c.terug}</a></p>
+        <h1 id="vs-h1" class="hoog">{style.name}</h1>
+        <p class="lopend vs-tagline">{style.tagline}</p>
+        <div class="acties">
+          {style.ctaExternal ? (
+            <a class="knop knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}</a>
+          ) : (
+            <a class="knop knop-inkt" href={style.ctaHref}>{style.ctaLabel}</a>
+          )}
+          <a class="knop knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener">{c.wa}</a>
+        </div>
+        <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
+        <ServiceSwitch current={['video', 'complete']} lang={lang} />
+        <ul class="vs-feiten" role="list">
+          <li>{style.priceTrust}{style.priceUnit}</li>
+          <li>{TIMING}</li>
+          <li>{REVIEW}</li>
+        </ul>
+        <p class="vs-queue">{QUEUE}</p>
+      </div>
+      <figure class="kaart kaart-stil vs-beeld">
+        <img src={m.hero} alt={c.heroAlt} width="928" height="1160" fetchpriority="high" decoding="async" />
+      </figure>
+    </div>
+  </section>
+
+  <section class="paneel vs-sfeer">
+    <div class="paneel-kop">
+      <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
+      {style.moodParagraphs.map((p: string) => <p class="lopend vs-sfeer-p">{p}</p>)}
+    </div>
+    <ol class="vs-stappen" role="list">
+      {style.steps.map((s: any, i: number) => (
+        <li>
+          <span class="mono vs-nr">{String(i + 1).padStart(2, '0')}</span>
+          <b>{s.title}</b>
+          <p class="lopend">{s.body}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="paneel vs-strook">
+    <ul class="vs-stills" role="list">
+      {m.strip.map((s, i) => (
+        <li class={i === 0 || i === m.strip.length - 1 ? 'breed' : undefined}>
+          <span class="kaart kaart-stil">
+            <img src={s.src} alt={c.stillAlt} loading="lazy" decoding="async" width={s.w} height={s.h} />
+          </span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── DE VOORBEELDEN, EN DE LEVERLIJST — 13 augustus 2026 ──────────────────
+      Staat NA de fotostrip en VOOR "wat er in elk kader gaat": de bezoeker
+      heeft dan gezien wat de stijl ís en wil weten hoe het beweegt, en pas
+      daarna hoe het gemaakt wordt. Alles eraan — de twee voorbeelden, de lege
+      staat zolang het materiaal er niet is, en de bestandsnamen die geleverd
+      worden — zit in het component, zodat de vier stijlen en de twee talen niet
+      uit elkaar kunnen lopen. */}
+  <div class="paneel vs-vb">
+    <VideoExamples lang={lang} slug={style.slug} name={style.name} />
+  </div>
+
+  <section class="paneel vs-vak">
+    <div class="paneel-kop">
+      <h2 class="hoog hoog-2">{c.kaderH}</h2>
+    </div>
+    <ul class="vs-vakwerk" role="list">
+      {style.craft.map((k: any) => (
+        <li><b>{k.title}</b><p class="lopend">{k.body}</p></li>
+      ))}
+    </ul>
+    <ul class="vs-waarom" role="list">
+      {style.why.map((w: any) => (
+        <li><b>{w.title}</b><p class="lopend">{w.body}</p></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="paneel vs-lijsten">
+    <div class="vs-twee">
+      <div>
+        <h2 class="hoog hoog-3">{c.idealH[0]}<em>{c.idealH[1]}</em></h2>
+        <ul class="vs-vinkjes" role="list">
+          {style.bestFor.map((item: string) => (
+            <li><svg viewBox="0 0 24 24" class="vs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
+        <ul class="vs-vinkjes" role="list">
+          {style.whatYouGet.map((item: string) => (
+            <li><svg viewBox="0 0 24 24" class="vs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          ))}
+        </ul>
+        {/* Bodytekst en geen callout — zie dezelfde noot in de twee andere
+            stijlsjablonen. */}
+        <p class="vs-modelnoot">
+          {c.modelNoot[0]}{style.name}{c.modelNoot[1]}<a href={lp('/custom-models')}>{c.modelNoot[2]}</a>{c.modelNoot[3]}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paneel paneel-slot vs-slot">
+    <h2 class="hoog hoog-2">{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</h2>
+    <p class="lopend">{c.slotP}</p>
+    <div class="acties">
+      {style.ctaExternal ? (
+        <a class="knop knop-inkt" href={style.ctaHref} target="_blank" rel="noopener">{style.ctaLabel}</a>
+      ) : (
+        <a class="knop knop-inkt" href={style.ctaHref}>{style.ctaLabel}</a>
+      )}
+      <a class="knop knop-lijn" href={lp('/test-sample')}>{c.proef}</a>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  .vs-open-grid, .vs-twee { display: grid; gap: clamp(1.8rem, 4.5vw, 3.5rem); align-items: center; }
+  @media (min-width: 900px) {
+    .vs-open-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); }
+    .vs-twee { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  }
+  .vs-kop { margin-bottom: 0; }
+  .vs-kop .etiket a { color: inherit; }
+  .vs-kop .etiket a:hover { color: var(--inkt); }
+  .vs-tagline {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1.2rem, 2.1vw, 1.7rem); line-height: 1.2;
+    letter-spacing: -.01em; color: var(--inkt); max-width: 20em;
+  }
+  .vs-beeld { margin: 0; aspect-ratio: 4 / 5; }
+  .vs-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .vs-feiten { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }
+  .vs-feiten li {
+    font-family: var(--mono2); font-size: .72rem; font-stretch: 82%;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2);
+    padding: .42rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px;
+  }
+  .vs-queue { margin-top: .9rem; font-size: .88rem; line-height: 1.6; color: var(--inkt-2); }
+
+  .vs-sfeer-p { margin-top: 1.1rem; }
+  .vs-stappen {
+    display: grid; gap: clamp(1.2rem, 2.5vw, 2rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    list-style: none; padding: 0; margin: 0;
+  }
+  .vs-stappen li { padding-top: 1.2rem; border-top: 1px solid var(--lijn); display: grid; gap: .35rem; align-content: start; }
+  /* Inkt en geen lime: --gloed is een accent náást leesbare tekst en meet als
+     tekstkleur 2,13:1 op vel. Zie de noot bij die token in stijl22.css. */
+  .vs-nr { color: var(--inkt-2); }
+  .vs-stappen b, .vs-vakwerk b, .vs-waarom b {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: 1.05rem; line-height: 1.2; text-transform: uppercase; letter-spacing: -.01em;
+  }
+  .vs-stappen p, .vs-vakwerk p, .vs-waarom p { font-size: .92rem; margin-top: .35rem; }
+
+  .vs-stills {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(.7rem, 1.6vw, 1.1rem); list-style: none; padding: 0; margin: 0;
+  }
+  @media (min-width: 900px) { .vs-stills { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .vs-stills .kaart { aspect-ratio: 4 / 5; }
+  .vs-stills img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .vs-vakwerk, .vs-waarom {
+    display: grid; gap: clamp(1.4rem, 3vw, 2.4rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    list-style: none; padding: 0; margin: 0;
+  }
+  .vs-vakwerk li { padding-top: 1.2rem; border-top: 1px solid var(--lijn); }
+  .vs-waarom { margin-top: clamp(2.5rem, 5vw, 4rem); }
+  .vs-waarom li {
+    padding: clamp(1.2rem, 2.5vw, 1.7rem);
+    border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 12px);
+    background: var(--wit);
+  }
+
+  .vs-vinkjes { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.4rem 0 0; }
+  .vs-vinkjes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
+  .vs-vinkjes span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
+  .vs-i {
+    width: 20px; height: 20px; margin-top: .15rem; flex: 0 0 auto;
+    fill: none; stroke: var(--gloed); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .vs-modelnoot { margin-top: 1.4rem; font-size: .92rem; line-height: 1.6; color: var(--inkt-2); max-width: 44em; }
+  .vs-modelnoot a {
+    color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
+    text-decoration-color: var(--geel); text-decoration-thickness: 2px;
+  }
+  .vs-modelnoot a:hover { text-decoration-color: var(--inkt); }
+
+  /* ── HET VOORBEELDENBLOK IN EEN PANEEL ───────────────────────────────────
+     VideoExamples.astro is nog niet omgezet en leest de rollen van global.css,
+     en die wijzen naar de LICHTE kant. Tussen twee panelen viel hij op de
+     inktgrond van sectie 22 en stond de tekst in bijna-zwart op bijna-zwart:
+     1,05:1. Een paneel eromheen geeft hem de grond waar zijn kleuren voor
+     gemaakt zijn, en dat is de eerlijke tussenstap tot het component zelf om
+     is — beter dan een handvol overschrijvingen die daarna weer weg moeten. */
+  .vs-vb { padding-block: 0; }
+
+  .vs-slot .lopend { max-width: 44em; }
+</style>

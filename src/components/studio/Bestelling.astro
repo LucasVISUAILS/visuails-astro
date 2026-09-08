@@ -1,0 +1,80 @@
+---
+/* De volledige bestelkaart op Bestellingen. Klapt in (native <details>, geen
+   script): de kop draagt kenmerk, dienst · aantal · datum · openstaand bedrag,
+   de vier stappen als stippen en de statuspil. Open staat wat aandacht vraagt
+   — de nieuwste, een onbetaalde, een met een revisie, een gesloten zonder
+   tevredenheidsvraag — en de bestelling waar de link naar wijst. Gegevens en
+   beslissingen: orderView() in account.js.
+
+   Twee blokken komen als HTML binnen: de tevredenheidsvraag (feedback.js, met
+   public/feedback.css) en het revisiebeleid (een lijst uit revisiebeleid()). */
+import Pil from './Pil.astro';
+import Voortgang from './Voortgang.astro';
+import Betaling from './Betaling.astro';
+import Product from './Product.astro';
+import Beeld from './Beeld.astro';
+const { t, lang, v, order, events = [] } = Astro.props;
+---
+<details class="st-kaart-vlak st-bestelling" id={`order-${v.id}`} open={v.openNow}>
+  <summary class="st-bestelling-kop">
+    <h2 class="st-ref">{v.ref}</h2>
+    <span class="st-bestelling-meta">{v.bits.map(([k, val]) => <span class={`st-bit st-bit-${k}`}>{val}</span>)}</span>
+    {v.mini.length > 0 && (
+      <span class="st-mini" role="img" aria-label={v.statusLabel}>{v.mini.map((s) => <i class={`st-mini-stip is-${s}`}></i>)}</span>
+    )}
+    <Pil status={v.status} lang={lang} />
+    <span class="st-chevron" aria-hidden="true"></span>
+  </summary>
+  <div class="st-bestelling-body">
+    <p class="st-meta">{v.windowLine}</p>
+    <Betaling t={t} lang={lang} order={order} />
+    <Voortgang t={t} lang={lang} order={order} events={events} />
+    {v.note && (
+      <div class="st-nota"><span class="st-nota-wie">{t.noteFrom}</span><p>{v.note}</p></div>
+    )}
+    {v.closedNote && <p class="st-meta st-gesloten">{v.closedNote}</p>}
+    {v.feedbackHtml && <div class="st-tevreden" set:html={v.feedbackHtml} />}
+
+    {v.products && (
+      <div class="st-producten">{v.products.map((p) => <Product t={t} v={p} orderId={v.id} />)}</div>
+    )}
+    {v.sides && (
+      <Fragment>
+        {v.folder && (
+          <section class="st-map">
+            <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p><p class="st-meta">{v.folder.note}</p></div>
+            <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>
+          </section>
+        )}
+        <div class="st-kanten">
+          {[v.sides.delivered, v.sides.uploaded].map((k) => (
+            <section class="st-kant">
+              <h3>{k.h}</h3>
+              {k.shots.length ? <ul class="st-beelden">{k.shots.map((b) => <Beeld v={b} orderId={v.id} />)}</ul> : <p class="st-meta">{k.empty}</p>}
+            </section>
+          ))}
+        </div>
+      </Fragment>
+    )}
+
+    {v.ronde && v.ronde.kind !== 'form' && (
+      <section class={`st-ronde is-${v.ronde.kind}`}><h3>{v.ronde.h}</h3><p>{v.ronde.p}</p></section>
+    )}
+    {v.ronde && v.ronde.kind === 'form' && (
+      <form class="st-ronde is-form" id={`ronde-${v.id}`} method="post" action={v.ronde.action}>
+        <h3>{v.ronde.h}</h3>
+        <p class="st-ronde-waarschuwing">{v.ronde.warn}</p>
+        <p class="st-meta">{v.ronde.after}</p>
+        <button class="btn btn-primary" type="submit">{v.ronde.send}</button>
+        <div class="st-beleid" set:html={v.ronde.beleidHtml} />
+      </form>
+    )}
+
+    {v.products && v.folder && (
+      <section class="st-map">
+        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p><p class="st-meta">{v.folder.note}</p></div>
+        <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>
+      </section>
+    )}
+  </div>
+</details>

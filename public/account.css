@@ -84,10 +84,12 @@
      the same names global.css uses, so a value that drifts is visible as a
      value, not as a renamed concept.
 
-     The scheme is cool near-black with one light-blue accent and two panel
-     gradients. It replaced a warm paper-and-harbor-teal scheme, and the port
-     is not a find-and-replace: three of the names below changed ROLE, not just
-     value, and each is called out where it sits.
+     SECTIE 21, 5 september 2026: dit basisblok is de DONKERE stand, nu in
+     Komma's donkergrijs (#111111) met het geel #D2E04A — dezelfde als de
+     donkere panelen van de site. De lichte stand (verderop, :root[data-thema=
+     "licht"]) is sinds sectie 21 de beginstand en draagt het palet van de
+     site. De noten eronder beschrijven de vorige waarden en zijn geschiedenis;
+     de NAMEN zijn ongewijzigd, zodat elke regel in dit bestand blijft kloppen.
 
      Ramps, with their measured worst case on the darkest ground they land on
      (--surface, #17191E):
@@ -113,15 +115,15 @@
      Die twee wensen samen betekenen dat een blok niet meer als DOOS mag lezen
      maar als CEL: gescheiden door een haarlijn, niet omsloten door een kader.
      Zie .statrow verderop, waar dat als eerste is uitgevoerd. */
-  --paper:      #030406;               /* body ground                       */
-  --paper-2:    #060709;               /* recessed / banded                 */
-  --paper-lift: #08090B;               /* raised — a card off the ground    */
+  --paper:      #111111;               /* body ground                       */
+  --paper-2:    #161616;               /* recessed / banded                 */
+  --paper-lift: #1A1A1A;               /* raised — a card off the ground    */
 
   /* Espresso's two names, kept as aliases so .btn-dark and the raised panels
      keep resolving. There is no espresso any more; these are the two surface
      steps above the ground. */
-  --ink-850:  #08090B;
-  --ink-800:  #0C0E11;
+  --ink-850:  #1A1A1A;
+  --ink-800:  #242424;
 
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
@@ -146,10 +148,10 @@
      ground a tint is a lighter surface, and four of them would be four
      surfaces nobody can tell apart, so all four resolve to the one raised
      step. Kept as four names because the markup reads them by meaning. */
-  --mist-teal:  #101216;
-  --mist-clay:  #101216;
-  --mist-slate: #101216;
-  --mist-stone: #101216;
+  --mist-teal:  #1F1F1F;
+  --mist-clay:  #1F1F1F;
+  --mist-slate: #1F1F1F;
+  --mist-stone: #1F1F1F;
 
   /* ---- accent ----
      #C6F100 since August 2026, moved with the site — see the accent note in
@@ -163,11 +165,11 @@
      hue. --teal-grad and --teal-hover are the one step DOWN a hover may take;
      on a dark ground the text-safe cut is the accent itself, which is why
      they are not five darkening steps the way they were on paper. */
-  --teal:       #C6F100;
-  --teal-grad:  #ABD200;
-  --teal-hover: #ABD200;
-  --teal-text:  #C6F100;
-  --teal-deep:  #C6F100;
+  --teal:       #D2E04A;
+  --teal-grad:  #B8CC46;
+  --teal-hover: #B8CC46;
+  --teal-text:  #E4F474;   /* letter op inkt: de lichte UI-lime van Komma */
+  --teal-deep:  #D2E04A;
 
   /* THE ATTENTION COLOUR. Was a pink left over from the decorative palette;
      #E9963B since August 2026 — see the --clay note in src/styles/global.css
@@ -235,8 +237,8 @@
   /* The label ON the accent. It was paper-on-dark, because the accent was a
      dark teal; the accent is a light blue now, so the label is the ground.
      10.43:1. */
-  --accent-on:     #08090B;
-  --accent-ink:    #08090B;
+  --accent-on:     #0A0A0A;
+  --accent-ink:    #0A0A0A;
   --accent-2:      var(--teal-text);
   --accent-word:   var(--teal-text);
   --accent-bright: var(--teal-hover);
@@ -248,13 +250,13 @@
      te zijn als in global.css, anders is drift niet te zien als een waarde maar als een
      ontbrekend concept. */
   --accent-dim:    var(--teal-hover);
-  --accent-soft:   rgb(198 241 0 / 0.14);
+  --accent-soft:   rgb(210 224 74 / 0.14);
   /* ── HET ACCENT ALS LIJN OF TINT, EN NIET ALS VLAK — 30 augustus 2026 ─────
      Op een donkere grond is een lime haarlijn op 45% prima te zien. Op een
      lichte grond verdwijnt hij. Deze twee namen dragen dat verschil, zodat de
      regels eronder in beide standen kloppen zonder ze te verdubbelen. */
-  --accent-rand:   rgb(198 241 0 / 0.45);
-  --accent-vlak:   rgb(198 241 0 / 0.55);
+  --accent-rand:   rgb(210 224 74 / 0.45);
+  --accent-vlak:   rgb(210 224 74 / 0.55);
   /* ── HET ACCENT ALS GEGEVEN ───────────────────────────────────────────────
      Een gevulde balk of een vakje is geen letter en geen knop: het draagt een
      GETAL. WCAG 1.4.11 vraagt daar 3:1 tegen wat ernaast ligt, en dat is precies
@@ -272,7 +274,7 @@
      matching. */
   --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-  --font: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
 
   /* ---- radius ----
      There IS a scale now, and there is exactly one place it is written. The
@@ -285,9 +287,9 @@
      and the three values have to move in step with it: this stylesheet is
      served to a page that links back into the same site, and a dashboard with
      tighter corners than the page it came from reads as a different product. */
-  --r-lg: 24px;   /* cards, panels, tiles */
-  --r-md: 14px;   /* buttons, fields, pills */
-  --r-sm: 8px;    /* the small stuff inside them */
+  --r-lg: 4px;   /* cards, panels, tiles */
+  --r-md: 4px;   /* buttons, fields, pills */
+  --r-sm: 2px;    /* the small stuff inside them */
   --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
 
@@ -334,76 +336,82 @@
      · Het lege abonnementsscherm. Dat is witte tekst op een FOTO en niet op de
        pagina — daar verandert de grond niet mee.
 
-   ── DE GRONDEN ZIJN NIET ZUIVER WIT ─────────────────────────────────────────
+   ── DE GRONDEN — herzien in sectie 21 (5 september 2026) ────────────────────
 
-   #FAFAF7 en niet #FFFFFF, met een zweem naar het accent toe. Zuiver wit onder
-   een lime accent leest koud en klinisch, en een kaart die eruit moet springen
-   heeft dan geen lichtere trede meer om naartoe te gaan. Nu is de grond
-   gebroken wit en de KAART wit — dezelfde ordening als in het donker, waar de
-   grond #030406 is en de kaart #08090B.
+   #F5F5F5 en niet #FFFFFF: Komma's gemeten lichte grond, dezelfde als op de
+   site. De KAART is wit — dezelfde ordening als in het donker, waar de grond
+   #111111 is en de kaart #1A1A1A. Het accent is hier een VLAK (geel, zwarte
+   letters) en nooit een letter: geel op wit is 1,5:1, dus overal waar het
+   accent tekst was staat nu de inkt. Dit is sinds sectie 21 de BEGINSTAND.
    ══════════════════════════════════════════════════════════════════════════ */
 :root[data-thema="licht"] {
-  --paper:      #FAFAF7;               /* body ground                       */
-  --paper-2:    #F1F1EC;               /* recessed / banded                 */
+  --paper:      #F5F5F5;               /* body ground                       */
+  --paper-2:    #EDEDED;               /* recessed / banded                 */
   --paper-lift: #FFFFFF;               /* raised — a card off the ground    */
 
   /* De inktladder keert om: bijna-zwart met een zweem olijf, zodat hij bij het
      accent hoort en niet als een tweede, koudere kleur leest. De verhoudingen
      zijn dezelfde rollen als in het donker — 18,1:1 / 9,3:1 / 5,2:1 voor tekst,
      en de onderste twee zijn lijnen en nooit letters. */
-  --ink-900:  #101208;
-  --ink-700:  rgb(16 18 8 / 0.78);
-  --ink-500:  rgb(16 18 8 / 0.62);
-  --ink-300:  rgb(16 18 8 / 0.26);      /* rules, never text */
-  --ink-200:  rgb(16 18 8 / 0.14);      /* hairlines */
-  --ink-100:  #101208;
+  --ink-900:  #0A0A0A;
+  --ink-700:  #454545;
+  /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
+     met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
+     blijven staan op de oudere, lichtere waarde. Op wit haalde die het nog
+     (5,1:1), op de tweede grond #EDEDED niet: 4,36:1, en daar staat de meta-regel
+     van elke aandachtkaart in. Precies de afdrijving waar de kop van dit blok
+     voor waarschuwt, gevonden door te meten. */
+  --ink-500:  #686868;
+  --ink-300:  rgb(10 10 10 / 0.26);      /* rules, never text */
+  --ink-200:  #DFDFDF;      /* hairlines */
+  --ink-100:  #0A0A0A;
 
   /* De vier mistkleuren zijn in het donker één lichtere trede; hier zijn ze één
      donkerdere. Vier namen, één waarde, om dezelfde reden als hierboven. */
-  --mist-teal:  #EDEDE6;
-  --mist-clay:  #EDEDE6;
-  --mist-slate: #EDEDE6;
-  --mist-stone: #EDEDE6;
+  --mist-teal:  #EDEDED;
+  --mist-clay:  #EDEDED;
+  --mist-slate: #EDEDED;
+  --mist-stone: #EDEDED;
 
   /* Lime als TEKST kan hier niet: 1,26:1 op de grond. Dit is dezelfde kleur,
      donkerder gestookt tot hij leesbaar is — 6,6:1 op de grond en 6,9:1 op een
      kaart. Hij draagt --teal-text, --accent-2, --accent-word en --signal-ink,
      want dat zijn precies de plekken waar het accent een letter is.
      --teal zelf blijft ongewijzigd: dat is de VULLING. */
-  --teal-text:  #4F6100;
-  --teal-deep:  #4F6100;
-  --teal-grad:  #ABD200;
-  --teal-hover: #B4DC00;
+  --teal-text:  #0A0A0A;
+  --teal-deep:  #0A0A0A;
+  --teal-grad:  #B8CC46;
+  --teal-hover: #B8CC46;
 
   /* Klei, om dezelfde reden: #E9963B is 2,26:1 op de grond en dus geen tekst. */
   --clay-text:  #8A4F06;
 
   /* De vullingen waren paper-alfa's omdat een inkt-alfa op bijna zwart
      onzichtbaar is. Op een lichte grond geldt het omgekeerde, dus keren ze om. */
-  --ghost:      rgb(16 18 8 / 0.06);
+  --ghost:      rgb(10 10 10 / 0.06);
   --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(16 18 8 / 0.12);
+  --btn-ghost-fill-hover:  rgb(10 10 10 / 0.12);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(16 18 8 / 0.06);
-  --btn-2nd-ink:           #101208;
-  --btn-2nd-border:        rgb(16 18 8 / 0.24);
-  --btn-2nd-border-hover:  rgb(16 18 8 / 0.50);
+  --btn-2nd-fill-hover:    rgb(10 10 10 / 0.06);
+  --btn-2nd-ink:           #0A0A0A;
+  --btn-2nd-border:        rgb(10 10 10 / 0.24);
+  --btn-2nd-border-hover:  rgb(10 10 10 / 0.60);
 
   /* De lijn om een bedienbaar element. In het donker een felle witte alfa; hier
      de donkere tegenhanger, zodat een invoerveld nog steeds een rand heeft. */
-  --line-ui:    rgb(16 18 8 / 0.45);
+  --line-ui:    rgb(10 10 10 / 0.45);
 
   /* De focusring moet op de grond te zien zijn en lime is dat hier niet. */
-  --focus-ring: #4F6100;
+  --focus-ring: #0A0A0A;
 
   /* Het pijltje in een <select> is een tekening in de kleur van de tekst. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23101208' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230A0A0A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   /* Lime op wit is 1,26:1, dus ook als lijn en tint gaat het accent hier
      dieper. Zelfde alfa's, andere kleur. */
-  --accent-rand:   rgb(79 97 0 / 0.55);
-  --accent-vlak:   rgb(79 97 0 / 0.62);
-  --accent-data:   #4F6100;
+  --accent-rand:   #BDBDBD;
+  --accent-vlak:   rgb(210 224 74 / 0.55);
+  --accent-data:   #0A0A0A;
 
   /* ── DE SYSTEEMKLEUREN ALS LETTER ─────────────────────────────────────────
      De -ink-varianten zijn volgens hun eigen noot hierboven "de enige die
@@ -418,17 +426,48 @@
   --warn-ink:    var(--clay-text);
   --verify-ink:  var(--teal-text);
   --flag-ink:    var(--clay-text);
+  /* Geel als letter is 1,5:1 op deze grond; als "fel" accent geldt hier de tekstvariant. */
+  --accent-bright: var(--teal-text);
 }
 
 /* De drie plekken die een PAPIER-alfa schrijven in plaats van een token. Ze
    staan hier en niet hierboven omdat het geen kleuren zijn maar tinten óp een
    grond: in het donker een vleugje wit, in het licht een vleugje inkt. */
 :root[data-thema="licht"] .bk-card[open],
-:root[data-thema="licht"] .prod[open] { background: rgb(16 18 8 / .028); }
+:root[data-thema="licht"] .prod[open] { background: rgb(10 10 10 / .028); }
 
 
 /* box-sizing only. The radius half of this reset is gone — see the radius
    note in :root. */
+/* ══ SECTIE 22 — DE LETTER VAN DE SITE — 7 september 2026 ═══════════════════
+   GETELD, NIET GEGOKT. Hier stond Hubot Sans voor de koppen, Satoshi voor de
+   lopende tekst en Sometype Mono voor nummers. /fonts/gedeeld.css levert er
+   geen van drieën: het schrijft Anybody, Instrument Sans en Martian Mono, en
+   Satoshi alleen als de twee woff2's in public/fonts/satoshi/ staan — daar
+   ligt nu alleen een LEES-MIJ. Alle drie de werkschermen stonden dus in
+   Arial te renderen terwijl de site in Instrument Sans staat.
+
+   De namen hieronder zijn nu de snitten die de build ECHT kopieert; zie
+   scripts/fonts-voor-worker.mjs, dat de enige waarheid is over wat er staat.
+
+   DE TWEE BREEDTES. Anybody en Martian Mono hebben allebei een breedte-as, en
+   die staat standaard op 100% — dat is niet de stand van de site. --stretch-kop
+   is 125% en --stretch-mono 82%, dezelfde twee getallen als .hoog en .etiket in
+   src/styles/stijl22.css. Een mono op 100% is zó breed dat een ordernummer over
+   de rand van zijn cel loopt; dat is geen smaak maar een layoutfout.
+
+   WAT HIER MET OPZET NIET GEBEURT. De site zet .hoog ook in kapitalen. Dat is
+   een editorial gebaar; dit zijn werkschermen. Dezelfde letter, rustiger
+   ingezet — zie de REGISTER-noot in de kop van dit bestand. */
+:root {
+  --font-kop: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-kop);
+  --font-mono: "Martian Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --stretch-kop: 125%;
+  --stretch-mono: 82%;
+}
+h1, h2, h3 { font-family: var(--font-kop); font-stretch: var(--stretch-kop); letter-spacing: -.02em; }
+
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 
@@ -1031,7 +1070,7 @@ details.ask .btn { margin-top: .6rem; }
 
 .ask-mark { width: 100%; margin-top: .45rem; }
 .ask-tick { display: inline-flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; color: var(--ink-3); cursor: pointer; }
-.ask-tick input { width: 1rem; height: 1rem; accent-color: var(--accent, #C6F100); cursor: pointer; }
+.ask-tick input { width: 1rem; height: 1rem; accent-color: var(--accent, #D2E04A); cursor: pointer; }
 .ask-tick:hover { color: var(--ink); }
 .ask-mark textarea { display: block; width: 100%; max-width: 32rem; margin-top: .4rem; }
 /* Het notitieveld verschijnt pas na het vinkje (doorlichting §3.6, 4 september
@@ -1041,7 +1080,7 @@ details.ask .btn { margin-top: .6rem; }
 @supports selector(:has(input)) {
   .ask-mark:not(:has(input:checked)) textarea { display: none; }
 }
-.ask-mark:has(input:checked) textarea { border-color: var(--accent, #C6F100); }
+.ask-mark:has(input:checked) textarea { border-color: var(--accent, #D2E04A); }
 .ask-mark:has(input:checked) .ask-tick { color: var(--ink); }
 
 /* "Alles goed" per product: één knop onder de tegels, los van het rondeformulier. */
@@ -1061,6 +1100,24 @@ details.ask .btn { margin-top: .6rem; }
 .ronde-warn { color: var(--ink-2, #444); border-left: 3px solid #E5B45C; padding-left: .75rem; }
 /* Afgerond: de haarlijn wordt groen in plaats van dat er een groene doos komt. */
 .ronde.is-done { box-shadow: inset 0 1px 0 rgb(143 209 79 / .5); }
+
+/* ── WAT ER NA DEZE RONDE GEBEURT — 4 september 2026 ───────────────────────
+   Vier regels beleid (REVISIEBELEID in pricing.js), dichtgeklapt onder de
+   verzendknop. Dicht, omdat wie hier staat aan het AANMERKEN is: vier alinea's
+   tussen zijn vinkjes en de knop duwen die knop van het scherm. Open zodra de
+   vraag opkomt, en dan in dezelfde rustige maat als de rest van dit blok. */
+.ronde-beleid { margin-top: 1rem; }
+.ronde-beleid > summary {
+  cursor: pointer; font-size: .84rem; font-weight: 700; color: var(--ink-2);
+  padding: .35rem 0; list-style: none; display: inline-flex; align-items: center; gap: .4rem;
+}
+.ronde-beleid > summary::-webkit-details-marker { display: none; }
+.ronde-beleid > summary::before { content: '+'; font-weight: 400; color: var(--ink-3); }
+.ronde-beleid[open] > summary::before { content: '–'; }
+.ronde-beleid > summary:focus-visible { outline: 2px solid var(--focus, #8FD14F); outline-offset: 2px; }
+.ronde-beleid ul { margin: .5rem 0 0; padding-left: 1.1rem; display: grid; gap: .5rem; }
+.ronde-beleid li { font-size: .84rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
+.ronde-beleid li strong { color: var(--ink-2); }
 
 /* ── DE NAKIJKSTAP ─────────────────────────────────────────────────────────
    POST /account/orders/<id>/ronde. Hij staat in de `.authcard` en niet in de
@@ -1965,9 +2022,11 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   display: block; font-size: .7rem; font-weight: 700;
   letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
 }
-/* Hier stond var(--font-display), en dat token wordt in dit blad nergens gezet:
-   de regel viel stil terug op het geerfde lettertype. Nu staat er wat er echt
-   gebeurt — deze pagina's laden geen webfont, met opzet. */
+/* Hier stond var(--font-display) toen dat token nergens gezet werd, dus viel de
+   regel stil terug op het geerfde lettertype; er kwam --font voor in de plaats.
+   Sinds sectie 22 bestaat --font-display wél (het is --font-kop, Anybody), maar
+   deze regel houdt --font: een getal in een statblok hoort bij de lopende tekst
+   eronder en niet bij de koppen. Het is nu een keuze in plaats van een gebrek. */
 .stat-n { display: block; margin-top: .25rem; font-family: var(--font); font-weight: 800;
   font-size: 1.9rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (hover: hover) {
@@ -2223,7 +2282,7 @@ details.ask { margin-top: 0; }
    `rgb(8 9 11 / .78)` óver een foto — de grond eronder is dus donker in beide
    standen, en de donkere olijf zou daar juist verdwijnen. Zie de regel erboven
    voor die achtergrond. */
-.shot-badge.is-approved { color: var(--accent); }
+.shot-badge.is-approved { color: var(--accent-2); }
 .shot-badge.is-new { color: var(--accent-ink); background: var(--accent); box-shadow: none; }
 .ronde.is-ready { border-top: 2px solid var(--accent); }
 /* En om precies dezelfde reden --warn en niet --warn-ink: dit badge ligt op
@@ -3488,9 +3547,10 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   inline-size: fit-content;
   margin: 0 0 .6rem;
   padding-bottom: 0; box-shadow: none;
-  /* var(--font) en niet var(--font-display): dit blad laadt geen enkele webfont,
-     zie de .btn-notitie verderop. Een koplettertype noemen dat er niet is,
-     levert Impact op en geen Big Shoulders. */
+  /* var(--font) en niet var(--font-display). De reden was ooit dat dit blad geen
+     webfont laadde; dat klopt sinds sectie 22 niet meer, /fonts/gedeeld.css
+     levert Anybody. De uitkomst blijft dezelfde: dit is een titel op een foto in
+     een leeg abonnement, en die hoort bij de tekst eronder, niet bij de koppen. */
   font-family: var(--font);
   font-size: clamp(1.7rem, 4.2vw, 2.6rem); line-height: 1.04;
   color: #FFFFFF; text-wrap: balance;
@@ -3782,7 +3842,7 @@ main .lede, .main .lede { margin-bottom: 1.4rem; }
 .ms-set { margin-top: 1.2rem; padding-top: 1.2rem; box-shadow: inset 0 1px 0 var(--line); }
 .ms-set.is-nu { margin-top: 1rem; padding-top: 0; box-shadow: none; }
 .ms-kop { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; flex-wrap: wrap; margin-bottom: .7rem; }
-.ms-maand { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--ink); }
+.ms-maand { font-family: var(--font-display); font-stretch: var(--stretch-kop); font-weight: 800; font-size: 1.05rem; color: var(--ink); }
 .ms-n { font-size: .82rem; color: var(--ink-3); }
 .ms-strook { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .5rem; margin-bottom: 1rem; }
 .ms-strook.is-klein { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: .35rem; }

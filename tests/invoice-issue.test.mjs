@@ -222,12 +222,21 @@ console.log('\néén bestelling, één factuur');
   const inv = await issueInvoice(e, id);
   ok('status wordt issued', inv.status === 'issued', 'issued', inv.status);
   ok('nummer is het eerste van 2026', inv.number === 'VIS-2026-0001', 'VIS-2026-0001', inv.number);
-  ok('jaar komt uit de betaaldatum', inv.year === 2026, 2026, inv.year);
+  /* ── DE DATUM IS DE DAG VAN UITGIFTE — 4 september 2026 ────────────────────
+     Deze twee regels toetsten dat de factuurdatum de BETAALdatum was. Dat is
+     veranderd, en waarom staat in issueInvoice(): het nummer loopt op met het
+     uitgeven, dus als de datum met het betalen meeloopt, staan nummer en datum
+     in een andere volgorde zodra een factuur later wordt aangemaakt dan de
+     betaling. Lucas zag dat in zijn eigen overzicht. De betaaldatum staat nog
+     steeds op de factuur, als `paidAt` en als "Betaald op …". */
+  const vandaag = new Date().toISOString().slice(0, 10);
+  ok('jaar komt uit de factuurdatum', inv.year === Number(vandaag.slice(0, 4)), Number(vandaag.slice(0, 4)), inv.year);
   ok('pdf ligt in R2', b.objects.has('invoices/2026/VIS-2026-0001.pdf'), true, b.objects.has('invoices/2026/VIS-2026-0001.pdf'));
   ok('pdf is een echte pdf', String(b.objects.get(inv.pdf_key).body.subarray(0, 5)) === '%PDF-', '%PDF-', String(b.objects.get(inv.pdf_key).body.subarray(0, 5)));
   ok('pdf_bytes klopt met wat er ligt', inv.pdf_bytes === b.objects.get(inv.pdf_key).body.length, inv.pdf_bytes, b.objects.get(inv.pdf_key).body.length);
   ok('content-type is application/pdf', b.objects.get(inv.pdf_key).opts.httpMetadata.contentType === 'application/pdf', 'application/pdf', b.objects.get(inv.pdf_key).opts.httpMetadata.contentType);
-  ok('factuurdatum is de betaaldatum', JSON.parse(inv.snapshot_json).date === '2026-08-09', '2026-08-09', JSON.parse(inv.snapshot_json).date);
+  ok('factuurdatum is de dag van uitgifte', JSON.parse(inv.snapshot_json).date === vandaag, vandaag, JSON.parse(inv.snapshot_json).date);
+  ok('en de betaaldatum staat er los op', JSON.parse(inv.snapshot_json).paidAt === '2026-08-09', '2026-08-09', JSON.parse(inv.snapshot_json).paidAt);
   ok('issued_at is gezet', !!inv.issued_at, true, !!inv.issued_at);
 }
 
@@ -267,10 +276,14 @@ console.log('\nde reeks');
 console.log('\nper jaar opnieuw');
 {
   const db = fresh(); const e = env(db);
+  /* De datum wordt hier meegegeven en niet uit paid_at gehaald: sinds de
+     factuurdatum de dag van UITGIFTE is, is dat de enige manier om in een toets
+     een jaargrens over te steken. Wat getoetst wordt is onveranderd — de reeks
+     begint per jaar opnieuw en houdt per jaar een eigen teller. */
   const a = addOrder(db, { ref: 'VIS-2026-X', paid_at: '2026-12-31 23:50:00' });
   const c = addOrder(db, { ref: 'VIS-2027-X', paid_at: '2027-01-01 00:10:00' });
-  ok('laatste van 2026', (await issueInvoice(e, a)).number === 'VIS-2026-0001', 'VIS-2026-0001', (await issueInvoice(e, a)).number);
-  ok('eerste van 2027 begint weer bij 1', (await issueInvoice(e, c)).number === 'VIS-2027-0001', 'VIS-2027-0001', (await issueInvoice(e, c)).number);
+  ok('laatste van 2026', (await issueInvoice(e, a, { today: '2026-12-31' })).number === 'VIS-2026-0001', 'VIS-2026-0001', (await issueInvoice(e, a, { today: '2026-12-31' })).number);
+  ok('eerste van 2027 begint weer bij 1', (await issueInvoice(e, c, { today: '2027-01-01' })).number === 'VIS-2027-0001', 'VIS-2027-0001', (await issueInvoice(e, c, { today: '2027-01-01' })).number);
   ok('twee tellers', db.prepare('SELECT COUNT(*) c FROM invoice_series').get().c === 2, 2, db.prepare('SELECT COUNT(*) c FROM invoice_series').get().c);
 }
 

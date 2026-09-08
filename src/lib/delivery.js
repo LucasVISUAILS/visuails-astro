@@ -163,6 +163,75 @@ const SHOT_NAME = {
  * (account.js deed het al zo): een database waar migratie 0012 niet op gedraaid
  * is, hoort een archief te geven met te veel beelden erin — niet een 500.
  */
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * MAG DEZE BESTELLING NOG BEKEKEN EN GEDOWNLOAD WORDEN?
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * GEMETEN OP 7 SEPTEMBER 2026, en dat is de enige reden dat dit bestaat. Een
+ * bestelling geannuleerd, volledig terugbetaald via Mollie, creditnota verstuurd
+ * — en daarna:
+ *
+ *     portaal ná annulering + restitutie → 200 (de gemailde link werkt nog)
+ *     zip    ná annulering + restitutie → 200 application/zip
+ *     beeld bekijken ná annulering      → 200
+ *
+ * De studio betaalde €323 terug en de klant hield twaalf afgewerkte beelden.
+ * Annuleren zette `status = 'cancelled'` en startte de restitutie; het trok de
+ * portaalsleutel niet in en liet de bestanden staan. En geen van de drie deuren
+ * — portalGet(), serveAccountFile(), de twee zip-routes — keek naar de status.
+ *
+ * ── DE REGEL, IN ÉÉN ZIN ────────────────────────────────────────────────────
+ *
+ * Een geannuleerde bestelling verliest haar bestanden, TENZIJ de studio het geld
+ * heeft gehouden.
+ *
+ * Dat is één zin en hij dekt alle vijf de uitkomsten die handleOrderCancel()
+ * kent, zonder dat er ergens een tweede lijstje bijkomt:
+ *
+ *   refund   geld terug        → weg. Hij heeft niets betaald.
+ *   credit   tegoed i.p.v. geld → weg. Hetzelfde, met een ander etiket: het
+ *                                tegoed staat als rij in customer_credits en is
+ *                                straks een korting op iets nieuws.
+ *   none     geen restitutie   → BLIJFT. Hij heeft betaald en krijgt niets
+ *                                terug; dan houdt hij wat er ligt. Dat is ook de
+ *                                enige uitkomst waarbij "geannuleerd" betekent
+ *                                "we stoppen ermee", niet "het is ongedaan".
+ *   (leeg)   nooit betaald     → weg. Er is niets voor betaald.
+ *   plan     uit een abonnement → weg. De slots gaan terug naar zijn abonnement
+ *                                (queueTerugNaAnnulering), dus hij kan hetzelfde
+ *                                werk opnieuw inplannen; het twee keer houden
+ *                                zou het dubbel opleveren.
+ *
+ * ── WAAROM HIER, EN NIET DRIE KEER ─────────────────────────────────────────
+ *
+ * Precies de reden die boven aan dit bestand staat. Het portaal en Studio
+ * tekenden dezelfde levering met twee eigen query's, en die waren al uit elkaar
+ * gelopen op `superseded_at`. Een toegangsregel op drie plekken schrijven is
+ * dezelfde fout met een grotere prijs: dan lekt er niet een verouderd beeld maar
+ * de hele map, en pas als iemand het toevallig meet.
+ *
+ * ── EN DE SLEUTEL WORDT NIET INGETROKKEN ───────────────────────────────────
+ *
+ * Verleidelijk, en verkeerd. Een ingetrokken sleutel geeft een dode link, en de
+ * klant die erop klikt weet niet of hij verlopen is, of verkeerd gekopieerd, of
+ * dat er iets stuk is. De link blijft dus werken en de pagina zégt het: deze
+ * bestelling is geannuleerd en het geld is terug. Dat is één zin die de vraag
+ * beantwoordt in plaats van hem op te roepen.
+ */
+
+/**
+ * @param {{status?: string, cancel_payment?: string|null}} order  een rij uit `orders`
+ * @returns {boolean} true als de klant de beelden en de map NIET meer mag hebben
+ */
+export function leveringIngetrokken(order) {
+  if (String(order?.status || '') !== 'cancelled') return false;
+  return String(order?.cancel_payment || '') !== 'none';
+}
+
+/** De twee kolommen die leveringIngetrokken() nodig heeft, voor in een SELECT. */
+export const TOEGANG_KOLOMMEN = 'status, cancel_payment';
+
 export async function loadDeliveryFiles(env, orderId) {
   const withSuperseded = `
     SELECT f.id, f.r2_key, f.preview_key, f.filename, f.bytes, f.expires_at,

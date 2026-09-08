@@ -340,8 +340,8 @@ section('§3 · the status filter on the dashboard');
   check('unfiltered, both orders are listed', html.includes('VIS-8K2-QQ1') && html.includes('VIS-7F4-M3A'));
   check('every status gets a chip, zeros included', ['received', 'in_production', 'human_check', 'delivered', 'cancelled']
     .every((s) => html.includes(`/admin?status=${s}`)));
-  check('"all" is active', /fl-chip is-active" aria-current="true">All/.test(html));
-  check('a delivered order that was never emailed says so', html.includes('has not been emailed'));
+  check('"alles" is active', /fl-chip is-active" aria-current="true">Alles/.test(html));
+  check('a delivered order that was never emailed says so', html.includes('geen mail gehad'));
 }
 
 {
@@ -356,7 +356,10 @@ section('§3 · the status filter on the dashboard');
   const listQuery = env.DB.prepared.find((q) => /FROM orders WHERE status = \?1/.test(q) && /LIMIT 200/.test(q));
   check('the filter is applied in the query that carries the LIMIT',
     !!listQuery, listQuery ? 'WHERE ... LIMIT 200' : 'NOT FOUND');
-  check('the active chip is the one asked for', /fl-chip is-active" aria-current="true">Received/.test(html));
+  /* "Binnen" en niet "Received" sinds 7 september 2026: /admin staat in het
+     Nederlands, zie STATUS_LABEL in admin.js. De SLEUTEL blijft `received` —
+     dat is de waarde in de database, en de regel eronder bewaakt dat. */
+  check('the active chip is the one asked for', /fl-chip is-active" aria-current="true">Binnen/.test(html));
   check('the status form carries the filter back', /name="back" value="received"/.test(html));
 }
 

@@ -320,6 +320,12 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
   const acc = zonderUitleg(readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8'));
+  /* Sinds 6 september 2026 tekent src/pages/account/plan.astro het scherm (met
+     Slotmeter.astro voor de vakjes en de balk) uit de staat van planView() in
+     account.js; de HTML-bouwer in account.js is weg. De vorm-controles hieronder
+     lezen dus de pagina, de staat-controles account.js. */
+  const pagina = zonderUitleg(readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8'));
+  const meter = zonderUitleg(readFileSync(new URL('../src/components/studio/Slotmeter.astro', import.meta.url), 'utf8'));
 
   /* Lucas, 17 augustus: "Ik wil niet dat VISUAILS zegt wat er aan de beurt is."
      De lijst is van de klant; een kop die anders klinkt, is een belofte die het
@@ -332,7 +338,7 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      staat er een lege doos waar het saldo hoort. Twee keer eerder dit jaar
      dezelfde val (swatch, de beeldverhoudingen). */
   ok('de meter zet geen breedte in een style-attribuut',
-    /style="width/.test(acc), false);
+    /style="width/.test(acc) || /style=/.test(meter) || /style=/.test(pagina), false);
   /* De meter is een rij vakjes naar het voorbeeld van de mockup: vijf lege
      vakjes zijn vijf dingen die je nog kunt laten maken, waar een balk op 58%
      een getal is waar niemand iets mee doet.
@@ -341,17 +347,17 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      slotRegels(): dezelfde vakjes, maar één rij per SOORT in plaats van één rij
      voor het hele abonnement, en met de doorgeschoven slots als een eigen groep
      ernaast in plaats van als een derde soort vakje in dezelfde rij. */
-  ok('en tekent vakjes', /class="pips"/.test(acc), true);
+  ok('en tekent vakjes', /class="st-pips"/.test(meter), true);
   /* DOORGESCHOVEN STAAT APART EN DAT IS HET HELE PUNT. Doorschuiven mét een
      zichtbare afloopmaand was de keuze van 17 augustus; staat het door de rest
      heen, dan is het verschil tussen "van deze maand" en "vervalt volgende
      maand" onzichtbaar. Vandaar een eigen groepje met een eigen label. */
   ok('en zet wat doorgeschoven is in een eigen groep',
-    /slot-groep oud/.test(acc) && /planSlotCarried/.test(acc), true);
+    /class="st-slot-oud"><Slotmeter g=\{s\.oud\}/.test(pagina) && /planSlotCarried/.test(acc), true);
   /* En met de maand waarin het vervalt erbij — een maand en geen afteller op de
      dag, want een afteller maakt de laatste dag de drukste. */
   ok('en noemt de maand waarin het vervalt',
-    /slot-verval/.test(acc) && /planSlotExpiryOne/.test(acc), true);
+    /st-slot-verval/.test(pagina) && /planSlotExpiryOne/.test(acc), true);
   /* Boven een bovengrens is tellen niet meer wat iemand doet: Brand kan met
      doorschuiven op 120 producten komen, en 120 vakjes zijn een muur. */
   ok('en valt boven een bovengrens terug op getallen', /PIP_MAX/.test(acc), true);
@@ -359,28 +365,28 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
   /* De drie knoppen per regel zijn drie losse formulieren. In één formulier zou
      één submit alle drie de bedoelingen tegelijk versturen. */
   ok('elke lijstknop heeft zijn eigen formulier',
-    (acc.match(/action="\/account\/plan\/queue"/g) || []).length >= 4, true);
+    (pagina.match(/action="\/account\/plan\/queue"/g) || []).length >= 4, true);
 
   /* Opzeggen moet kunnen. Wie er niet uit kan, stapt naar zijn bank, en dan is
      het een stornering in plaats van een beëindiging. */
-  ok('opzeggen staat op de pagina', /action="\/account\/plan\/cancel"/.test(acc), true);
+  ok('opzeggen staat op de pagina', /action="\/account\/plan\/cancel"/.test(pagina), true);
   ok('en accepteert het woord in beide talen',
     /'CANCEL' && \w+ !== 'OPZEGGEN'/.test(acc), true);
 
-  const css = zonderUitleg(readFileSync(new URL('../public/account.css', import.meta.url), 'utf8'));
+  const css = zonderUitleg(readFileSync(new URL('../src/styles/studio.css', import.meta.url), 'utf8'));
   ok('de css kent de vakjes, de balk en het onderscheid met doorgeschoven',
-    /\.slot-groep \.pips i \{/.test(css) && /\.slotbalk \{/.test(css)
-    && /\.slot-groep\.oud \.pips i \{/.test(css), true);
+    /\.st-pips i \{/.test(css) && /\.st-slotbalk \{/.test(css)
+    && /\.st-slot-oud/.test(css), true);
   /* DE BALK IS EEN <progress> EN GEEN DIV. Zelfde CSP-val als hierboven, en op
      29 augustus 2026 voor de derde keer dit jaar ingelopen: `style="width:17%"`
      werd geweigerd en de balk stond vol. value en max zijn attributen, dus
      gegevens, en die weigert het beleid niet. */
   ok('en de balk draagt zijn stand in attributen',
-    /<progress class="slotbalk" value="\$\{vast\}" max="\$\{totaal\}"/.test(acc), true);
+    /<progress class="st-slotbalk" value=\{g\.vast\} max=\{g\.totaal\}>/.test(meter), true);
 
   /* DE BESTELKNOP NAAST HET GETAL. Uit de mockup: het getal roept een vraag op en
      het antwoord hoort op dezelfde kaart. */
-  ok('het saldo heeft een bestelknop naast zich', /saldo-kop/.test(acc) && /saldo-kop/.test(css), true);
+  ok('het saldo heeft een bestelknop naast zich', /st-saldo-kop/.test(pagina) && /\.st-saldo-kop/.test(css), true);
   /* ── GEEN SOORT MEER BIJ NAAM IN DE OPMAAK — migratie 0035 ─────────────────
      Hier stond `ok('de clips hebben hun eigen meter', /planClipsH/)`: een vaste
      tweede meter naast die voor de producten. Dat klopte zolang er precies twee
@@ -391,8 +397,10 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      bij naam kent en er één regel per soort uit de balans tekent. Zou er ooit
      weer een soort hardgecodeerd worden, dan tekent dit scherm het volgende plan
      half — de soorten die het toevallig kent wel, de rest niet. */
+  /* Sinds 6 september 2026: planView() levert `slots` per soort uit de balans
+     (state.slots), en plan.astro tekent er één regel per stuk. */
   ok('het scherm tekent een regel per soort uit de balans',
-    /slotRegels\(t, lang, state\)/.test(acc) && /balans\.map/.test(acc), true);
+    /const slots = \(state\.slots \|\| \[\]\)\.map/.test(acc) && /v\.saldo\.slots\.map/.test(readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8')), true);
   ok('en noemt geen enkele soort bij naam in de opmaak',
     /planClipsH|'video-motion'|"video-motion"/.test(acc), false);
   /* En de soort van een nieuw item komt uit het PLAN en niet uit het formulier:

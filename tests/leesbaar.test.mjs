@@ -165,6 +165,16 @@ const METEN = () => {
     while (n && n !== document.documentElement) {
       const bg = nr(getComputedStyle(n).backgroundColor);
       if (bg) { const a = bg.length > 3 ? bg[3] : 1; if (a > 0) { stapel.push(bg); if (a >= 0.999) break; } }
+      /* De kop boven een hero heeft geen eigen vulling maar een ::before met een
+         scrim-verloop (Layout.astro), 66% donker aan de bovenrand waar de knoppen
+         staan. Sinds de grond licht is (sectie 20) ziet deze loop anders wit
+         onder een witte knop, terwijl er in werkelijkheid een donkere foto met
+         scrim onder ligt. De bovenste stop, als laag. */
+      if (n.classList.contains('site-header') && !n.classList.contains('scrolled')
+          && /gradient/.test(getComputedStyle(n, '::before').backgroundImage)) {
+        const kan = getComputedStyle(document.documentElement).getPropertyValue('--scrim').trim().split(/\s+/).map(Number);
+        if (kan.length === 3 && kan.every((v) => !Number.isNaN(v))) stapel.push([...kan, 0.66]);
+      }
       n = n.parentElement;
     }
     let uit = (nr(getComputedStyle(document.documentElement).backgroundColor) || [255, 255, 255]).slice(0, 3);

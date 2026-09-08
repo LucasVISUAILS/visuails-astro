@@ -1,0 +1,18 @@
+---
+/* Het betaalblok van een bestelling. paymentView() in account.js bepaalt de
+   regels, de zin en of er een knop is; hier staat alleen de vorm. */
+import { paymentView } from '../../lib/account.js';
+const { t, lang, order } = Astro.props;
+const v = paymentView(t, lang, order);
+---
+{v && (
+  <div class={`st-betaal ${v.cls}`}>
+    <dl class="st-betaal-rijen">
+      {v.rows.map(([k, val]) => <div class="st-betaal-rij"><dt>{k}</dt><dd>{val}</dd></div>)}
+    </dl>
+    <p class="st-betaal-staat">{v.line}</p>
+    {v.payHref && (
+      <form method="post" action={v.payHref}><button class="btn btn-primary btn-sm" type="submit">{t.payNow}</button></form>
+    )}
+  </div>
+)}

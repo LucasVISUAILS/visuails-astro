@@ -31,37 +31,41 @@ import Layout from '../layouts/Layout.astro';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../data/juridischeDatums.js';
+import '../styles/stijl22.css';
 ---
 
 <Layout
   title="Cookie Policy — VISUAILS"
   description="How VISUAILS uses cookies: essential cookies by default, analytics only with your consent."
 >
-  <section class="page-hero"><div class="container narrow">
-    <span class="eyebrow-page">Legal</span>
-    <h1 class="display">Cookie Policy</h1>
-    {/* ── DE LEAD ONTBRAK — 3 september 2026 ────────────────────────────────
-        De vier andere juridische documenten (/terms, /privacy, /ai-act en de
-        verwerkersovereenkomst) hebben alle vier dezelfde kop: rubriek, titel, één
-        zin die zegt waar het document over gaat, dan de datum. Deze pagina sprong
-        van de titel naar de datum. Dat is niet alleen een gat in het ritme — het
-        is de enige regel waaraan je ziet of je op de goede pagina bent beland. */}
-    <p class="lead" style="margin-top:1.2rem">Which cookies this site sets, what each one does, and how to change your answer. There are five in total, and every one of them is named below.</p>
-    <p class="legal-meta">{bijgewerktOp('cookie-policy', 'en')}</p>
-  </div></section>
+{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
+    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
+    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
+    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
+    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
+    letters voor alle zes juridische pagina's tegelijk.
 
-  <section class="section-tight">  {/* ── DEZE PAGINA WAS ANDERS GEBOUWD DAN DE ANDERE VIER — 3 sept 2026 ──────
-      Hier stond elke paragraaf in een eigen <div>, met `stack-lg` op de wikkel en
-      acht losse `style="margin-top:…"`-attributen erin. Dat gaf een ritme dat op
-      geen van de andere juridische pagina's voorkomt: koppen kwamen dichter op hun
-      tekst te staan (9,6px waar de rest 14,4px heeft) en de afstand tussen de
-      onderdelen kwam uit een tweede systeem.
+    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
+    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
+    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
+    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
+    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
+    daarop is niet de toets versoepelen maar de andere vier meenemen.
 
-      Nu plat, net als /terms, /privacy en de verwerkersovereenkomst: kop, tekst,
-      lijst, kop. Het ritme komt uit `.legal` in global.css en uit niets anders.
-      Elke `margin-top` die hier met de hand stond, is er een die op de dag dat
-      `.legal` verandert niet meeverandert. */}
-  <div class="container narrow legal">
+    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
+    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
+    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
+    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
+<div class="s22">
+  <section class="paneel">
+    <header class="paneel-kop jur-kop">
+      <p class="etiket">Legal</p>
+      <h1 class="hoog">Cookie Policy</h1>
+      <p class="lopend jur-lead">Which cookies this site sets, what each one does, and how to change your answer. There are five in total, and every one of them is named below.</p>
+      <p class="legal-meta">{bijgewerktOp('cookie-policy', 'en')}</p>
+    </header>
+
+    <div class="legal jur-tekst">
     <h2>What cookies are</h2><p>Cookies are small text files a website can store on your device. They’re commonly used to make sites work, remember preferences, and measure how a site is used.</p>
     <h2>How we use them</h2><p>The VISUAILS website is largely static. By default we only use <strong>essential</strong> cookies needed for the site to function and to remember your privacy choices. We do not load advertising or tracking cookies without your consent.</p>
     <ul class="checklist">
@@ -79,8 +83,24 @@ import { bijgewerktOp } from '../data/juridischeDatums.js';
     <p>That is all five. No advertising cookies, no tracking pixels, no third-party embeds, and no analytics unless you switch it on — at which point it is Cloudflare Web Analytics, which is itself cookieless and sets nothing on your device. We share nothing with anyone.</p>
     <h2>Managing cookies</h2><p>Use the <button type="button" class="legal-cc" data-cc-reopen>cookie preferences</button> link — it is in the footer of every page — to change your answer at any time, including withdrawing a yes. Refusing is exactly as easy as accepting and costs you nothing: the site works identically either way. You can also clear or block cookies in your browser settings, though blocking the essential ones will stop the client portal remembering you.</p>
     <h2>Contact</h2><p>Questions about this policy? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a>. See also our <a href="/privacy/">Privacy Policy</a>.</p>
-  </div></section>
+    </div>
+  </section>
+</div>
 </Layout>
+
+<style>
+  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
+     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
+     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
+     verkooptekst. */
+  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
+  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
+  .jur-tekst { max-width: 46rem; }
+
+  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
+  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .jur-uit .acties { margin-top: 1.4rem; }
+</style>
 
 <style>
   /* `.legal` staat sinds 3 september 2026 één keer in src/styles/global.css — zie
@@ -92,5 +112,5 @@ import { bijgewerktOp } from '../data/juridischeDatums.js';
   /* The withdrawal control inside body copy. It is a <button> because it opens
      a panel, and it is styled as the link beside it because a button that
      looks like a button in the middle of a sentence reads as an advert. */
-  .legal-cc { background: none; border: 0; padding: 0; font: inherit; color: var(--fill-blue); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .legal-cc { background: none; border: 0; padding: 0; font: inherit; color: var(--accent-text); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 </style>

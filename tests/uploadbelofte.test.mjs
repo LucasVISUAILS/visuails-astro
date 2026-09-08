@@ -61,7 +61,7 @@ const zonderUitleg = (t) => t
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-const home = zonderUitleg(readFileSync(new URL('../src/components/HomeV2.astro', import.meta.url), 'utf8'));
+const home = zonderUitleg(readFileSync(new URL('../src/components/Voorpagina.astro', import.meta.url), 'utf8'));
 
 const nodig = REQUIRED_SHOT_IDS.length;
 
@@ -85,12 +85,13 @@ ok('en het zijn er twee: voorkant en achterkant',
  * sturen, en alleen die.
  */
 const BELOFTE = /(all (?:you|we) need|genoeg om te beginnen|enough to start|are all)/i;
-const REGELS = home.split('\n')
+const REGELS = home.replace(/\$\{FOTOS\}/g, nodig === 2 ? 'Two' : String(nodig)).split('\n')
   .filter((r) => /phone photos?|smartphone photos?|telefoonfoto/i.test(r))
   .filter((r) => BELOFTE.test(r));
 
 console.log('\nelke zin die zegt hoeveel foto’s je moet sturen');
-ok('er zijn er zes gevonden — drie plekken, twee talen', REGELS.length, 6);
+/* Sectie 21: de voorpagina zegt het één keer, in de stappen — twee talen. */
+ok('er zijn er twee gevonden — één plek, twee talen', REGELS.length, 2);
 
 const TELWOORD = {
   one: 1, a: 1, an: 1, een: 1, één: 1,

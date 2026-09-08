@@ -215,8 +215,13 @@ export function vensterVoor(sub) {
  * `venster` komt uit de termijn. Alles ouder dan `maand - venster` is vervallen
  * en wordt niet gelezen — niet omdat het weg is, maar omdat het niet meer telt.
  */
-export async function loadSlots(env, subId, venster, nu = new Date()) {
-  const maand = monthKey(nu);
+export async function loadSlots(env, subId, venster, nu = new Date(), tot = '') {
+  /* `tot` is de maand van de LOPENDE TERMIJN — zie termijnMaand() in
+     subscription.js. Zonder die parameter is het de kalendermaand, en dan valt
+     de toekenning van iemand die op de 20e betaalt tussen de 1e en de 20e
+     buiten het venster: zijn saldo leest als nul terwijl hij betaald heeft.
+     Leeg gelaten (elke andere aanroeper) blijft het gedrag zoals het was. */
+  const maand = /^\d{4}-\d{2}$/.test(String(tot)) ? String(tot) : monthKey(nu);
   const vanaf = monthMinus(maand, Math.max(0, Number(venster) || 0));
   const rijen = await stil(() => env.DB.prepare(
     `SELECT month, kind, granted, used FROM subscription_slots
@@ -333,6 +338,7 @@ export async function geefSlotTerug(env, subId, venster, kind, aantal = 1, nu = 
 }
 
 /** Het saldo per soort, in één aanroep. */
-export async function slotBalans(env, subId, venster, nu = new Date()) {
-  return balansUit(await loadSlots(env, subId, venster, nu), monthKey(nu));
+export async function slotBalans(env, subId, venster, nu = new Date(), tot = '') {
+  const maand = /^\d{4}-\d{2}$/.test(String(tot)) ? String(tot) : monthKey(nu);
+  return balansUit(await loadSlots(env, subId, venster, nu, maand), maand);
 }

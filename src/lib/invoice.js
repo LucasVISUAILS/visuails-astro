@@ -411,8 +411,39 @@ export async function issueInvoice(env, orderId, { today } = {}) {
     return null;
   }
 
-  const date = String(today || order.paid_at || '').slice(0, 10) || null;
-  if (!date) throw new Error('invoice: geen datum voor bestelling ' + orderId);
+  /* ── DE FACTUURDATUM IS DE DAG VAN UITGIFTE — 4 september 2026 ─────────────
+   *
+   * Hier stond `today || order.paid_at`, dus de BETAALDATUM van de bestelling.
+   * Lucas zag waar dat op uitkomt: in zijn overzicht stond VIS-2026-0006 op
+   * 4 september boven VIS-2026-0007 en -0008 op 13 augustus. Het nummer loopt
+   * op met het moment van UITGEVEN (nextNumber telt bij het aanmaken op), de
+   * datum liep mee met het moment van BETALEN, en die twee zijn niet hetzelfde
+   * zodra een factuur later wordt aangemaakt dan de betaling — een webhook die
+   * hapert, of de vangnetaanroep vanaf /account/invoices die een oudere
+   * bestelling pas vandaag van een factuur voorziet. Een nummerreeks die niet
+   * met de data meeloopt, is precies wat een boekhouding niet mag hebben.
+   *
+   * De betaaldatum verdwijnt niet: `paidAt` staat als eigen veld in de snapshot
+   * en de pdf drukt hem af als "Betaald op …" (zie invoicePdf.js). Er is dus
+   * niets minder te zien; de twee data staan alleen niet langer in één kolom
+   * met twee betekenissen.
+   *
+   * `today` blijft voorgaan omdat de toetsen ermee rekenen — en omdat de studio
+   * daarmee een factuur op de juiste dag kan uitgeven als er ooit met de hand
+   * iets rechtgezet moet worden. */
+  /* De betaaldatum is niet langer de factuurdatum, maar hij blijft wél de
+     voorwaarde: een bestelling die niet betaald is, krijgt geen factuur en dus
+     ook geen nummer uit de reeks. Dat stond tot vandaag impliciet in de
+     dataregel hierboven ("geen betaaldatum, geen datum, dus een fout"); nu het
+     nummer niet meer van paid_at afhangt, moet die eis er expliciet staan of
+     hij verdwijnt stilletjes. Vóór nextNumber(), zodat een geweigerde factuur
+     geen gat in de reeks achterlaat.
+
+     Met een MEEGEGEVEN datum kan het nog steeds: dat is de inhaalslag vanuit
+     Studio, waar de studio een factuur met de hand op de juiste dag zet. Die
+     uitweg bestond al en blijft. */
+  if (!today && !order.paid_at) throw new Error('invoice: geen datum voor bestelling ' + orderId);
+  const date = String(today || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
   const year = Number(date.slice(0, 4));
 
   // Bestaat er al een nummer maar geen pdf, dan gebruiken we DAT nummer opnieuw.

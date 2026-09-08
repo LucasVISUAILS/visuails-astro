@@ -1,0 +1,127 @@
+---
+/**
+ * De proefkaart — "Probeer VISUAILS · €1" als glazen kaart. Sectie 21, 5 september 2026.
+ *
+ * Lucas: *"vergeet niet de Try VISUAILS pop up toe te voegen inclusief satisfying
+ * subtiele … animations."* Het voorbeeld was Komma's zwevende kaart: donker glas,
+ * ronde hoeken, het merk linksboven, een korte zin, twee pillen.
+ *
+ * WANNEER HIJ KOMT. Niet meteen: pas als de bezoeker de hero voorbij is (60% van
+ * het venster gescrold) én de cookiekeuze gemaakt is — twee zwevende dingen
+ * tegelijk onderin is te veel. Niet op de pagina's waar hij zichzelf in de weg
+ * zou staan (/test-sample, /start, /account, /thank-you, /o). Wie hem sluit,
+ * ziet hem zeven dagen niet (localStorage; geen cookie, dus niets voor het
+ * cookiebeleid). Escape sluit ook.
+ *
+ * DE BEWEGING. Eén keer omhoog schuiven en opkomen, 480ms, uitlopend. Onder
+ * prefers-reduced-motion alleen opkomen. Geen bibliotheek: één transition.
+ *
+ * WAT ERIN STAAT komt uit TEST_SAMPLE — de prijs, wat je krijgt, één per
+ * bedrijf — dus de kaart kan niet iets anders beloven dan /test-sample.
+ *
+ * CSP: het script hieronder wordt door Astro als los bestand gebundeld, dus
+ * `script-src 'self'` dekt hem; er staat geen inline handler in de markup.
+ */
+import { TEST_SAMPLE } from '../data/pricing.js';
+import { MERK } from '../data/brand.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl' }
+const { lang } = Astro.props;
+const s = TEST_SAMPLE[lang];
+const nl = lang === 'nl';
+const href = localizedPath(lang, '/test-sample');
+const c = nl
+  ? { kop: 'Eerst zien?', zin: `Eén product voor ${s.price}: ${s.deliverableShort}, gemaakt van jouw eigen foto.`, chip: s.unit, sluit: 'Sluiten', naam: 'Proef VISUAILS' }
+  : { kop: 'See it first?', zin: `One product for ${s.price}: ${s.deliverableShort}, made from your own photo.`, chip: s.unit, sluit: 'Close', naam: 'Try VISUAILS' };
+---
+<aside class="proefkaart glas" id="proefkaart" hidden aria-label={c.naam} data-proefkaart>
+  <div class="pk-kop">
+    <span class="pk-merk">{MERK}</span>
+    <button type="button" class="btn btn-ghost btn-sm pk-sluit" data-pk-sluit>{c.sluit}</button>
+  </div>
+  <p class="pk-tekst"><strong>{c.kop}</strong> {c.zin}</p>
+  <div class="pk-voet">
+    <span class="pk-chip">{c.chip}</span>
+    <a class="btn btn-primary" href={href}>{s.cta}</a>
+  </div>
+</aside>
+
+<style>
+  .proefkaart {
+    position: fixed; left: clamp(1rem, 2.4vw, 2rem); bottom: clamp(1rem, 2.4vw, 2rem); z-index: var(--z-bar);
+    width: min(24rem, calc(100vw - 2rem));
+    padding: 1.1rem 1.2rem 1.2rem;
+    border-radius: 22px;
+    display: grid; gap: .9rem;
+    opacity: 0; transform: translateY(14px);
+    transition: opacity 480ms cubic-bezier(.22, 1, .36, 1), transform 480ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .proefkaart.is-open { opacity: 1; transform: none; }
+  .proefkaart[hidden] { display: none; }
+  .pk-kop { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .pk-merk { font-family: var(--font-merk); font-stretch: var(--stretch-merk); font-weight: 700; font-size: .7rem; letter-spacing: .08em; color: #FFFFFF; }
+  .pk-sluit { min-height: 32px; padding: 0 .9rem; font-size: .68rem; }
+  .pk-tekst { margin: 0; font-size: .95rem; line-height: 1.5; color: rgb(255 255 255 / .86); }
+  .pk-tekst strong { color: #FFFFFF; font-weight: 500; }
+  .pk-voet { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; }
+  .pk-chip { font-family: var(--font-mono); font-stretch: 82%; font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; color: rgb(255 255 255 / .7); padding: .45rem .8rem; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .18); }
+  @media (max-width: 560px) {
+    .proefkaart { left: .75rem; right: .75rem; bottom: .75rem; width: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .proefkaart { transform: none; transition: opacity 200ms linear; }
+  }
+</style>
+
+<script>
+  /* De kaart: één keer per bezoek, na de hero, na de cookiekeuze, niet op de
+     pagina's die hem in de weg zitten, en zeven dagen stil na een sluiting. */
+  const SLEUTEL = 'vis_proef_dicht';
+  const DAGEN = 7;
+  /* Eén scroll-luisteraar tegelijk. `start` draait bij elke zachte navigatie
+     opnieuw (de kaart wordt per pagina opnieuw gerenderd), en zonder dit
+     stapelde er per navigatie een luisteraar bij — gemeten door
+     tests/zachte-navigatie.test.mjs. De keydown hangt aan document en wordt
+     één keer gebonden; hij kijkt via `huidig` naar de kaart van dit moment. */
+  let kijkHuidig = null;
+  let huidig = null;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && huidig) huidig(); });
+  const start = () => {
+    huidig = null;
+    if (kijkHuidig) { window.removeEventListener('scroll', kijkHuidig); kijkHuidig = null; }
+    const el = document.querySelector('[data-proefkaart]');
+    if (!el) return;
+    const pad = location.pathname;
+    if (/^\/(nl\/)?(test-sample|start|thank-you)(\/|$)|^\/(account|admin|o)(\/|$)/.test(pad)) return;
+    try {
+      const tot = Number(localStorage.getItem(SLEUTEL) || 0);
+      if (tot > Date.now()) return;
+    } catch { /* geen opslag: dan gewoon tonen */ }
+    let open = false;
+    const toon = () => {
+      if (open) return;
+      if (!/(^|; )vis_consent=/.test(document.cookie)) return; /* eerst de cookiekeuze */
+      open = true;
+      el.hidden = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-open')));
+    };
+    const sluit = () => {
+      el.classList.remove('is-open');
+      const weg = () => { el.hidden = true; };
+      el.addEventListener('transitionend', weg, { once: true });
+      setTimeout(weg, 600);
+      try { localStorage.setItem(SLEUTEL, String(Date.now() + DAGEN * 86400000)); } catch { /* niets */ }
+      window.removeEventListener('scroll', kijk);
+      if (kijkHuidig === kijk) kijkHuidig = null;
+    };
+    const kijk = () => { if (window.scrollY > window.innerHeight * 0.6) toon(); };
+    kijkHuidig = kijk;
+    window.addEventListener('scroll', kijk, { passive: true });
+    kijk();
+    el.querySelector('[data-pk-sluit]')?.addEventListener('click', sluit);
+    huidig = () => { if (open) sluit(); };
+  };
+  start();
+  document.addEventListener('astro:page-load', start);
+</script>

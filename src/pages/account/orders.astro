@@ -1,0 +1,55 @@
+---
+/**
+ * /account/orders — Bestellingen, als Astro-pagina. Studio fase 2, 5 september 2026.
+ *
+ * De tweede sectie die uit src/lib/account.js verhuist, met dezelfde afspraak
+ * als het overzicht: de gegevens en de beslissingen komen daarvandaan
+ * (studioScreen(): ordersView(), orderView()), hier staat alleen de vorm.
+ * De formulieren op de kaarten — goedkeuren, aanmerken, de revisieronde, de
+ * tevredenheidsvraag, betalen — posten naar dezelfde routes als voorheen;
+ * accountPost() kent geen verschil.
+ *
+ * Wat er staat, van boven naar beneden: de filterrij op status (alleen als er
+ * meer dan één status is), de meldingen (?pay=, ?ronde=), en per bestelling een
+ * kaart die inklapt. Open staat wat aandacht vraagt; zie orderView().
+ */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import Bestelling from '../../components/studio/Bestelling.astro';
+import { pagesContext } from '../../lib/route.js';
+import { studioScreen } from '../../lib/account.js';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'orders');
+if (s instanceof Response) return s;
+
+const { st, v } = s;
+const { t, lang, customer, thema, navDicht, statusFilter, payFailed, payHeld, rondeFlag } = st;
+const { kaarten, rondeTekst } = v;
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="orders" customer={customer}
+  title={t.ordersHeading}
+  kop={t.ordersHeading} lede={t.ordersLede}
+  chip={statusFilter && v.shown.length ? { tekst: t.flActive, toon: 'signal' } : null}
+  actie={{ href: '/start/', label: t.ovNewCta }}
+>
+  {payFailed && <p class="st-melding is-warn" role="status">{t.payFailed}</p>}
+  {rondeTekst && <p class={`st-melding${rondeFlag === 'verstuurd' ? '' : ' is-warn'}`} role="status">{rondeTekst}</p>}
+  {payHeld && <p class="st-melding is-warn" role="status">{t.payHeld}</p>}
+
+  {v.filters.length > 0 && (
+    <nav class="st-filters" aria-label={t.ordersHeading}>
+      {v.filters.map((f) => f.active
+        ? <span class="st-filter is-actief" aria-current="true">{f.label} <span class="st-filter-n">{f.n}</span></span>
+        : <a class="st-filter" href={f.href}>{f.label} <span class="st-filter-n">{f.n}</span></a>)}
+    </nav>
+  )}
+
+  <section class="st-blok" aria-label={t.ordersHeading}>
+    <div class="st-blok-kop"><h2>{t.ordersHeading}{v.shown.length ? <span class="st-tel">({v.shown.length})</span> : null}</h2></div>
+    {kaarten.length
+      ? <div class="st-bestellingen">{kaarten.map((k) => <Bestelling t={t} lang={lang} v={k.view} order={k.o} events={k.events} />)}</div>
+      : <p class="st-leeg">{v.empty.text} {v.empty.clear && <a class="st-link" href="/account/orders">{v.empty.clear}</a>}</p>}
+  </section>
+</StudioLayout>

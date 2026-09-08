@@ -1,3 +1,14 @@
+/* ── OP DE DATA-ATTRIBUTEN EN NIET OP DE KLASSENAAM — 7 september 2026 ───────
+ * Deze toets zocht op `.photo-grid` en `.filter-bar`, twee klassenamen uit de
+ * oude opmaak. Bij het overzetten van de galerij naar de stijl van sectie 22
+ * heten die anders, en de toets viel om met "er zijn filterpillen: false" —
+ * precies zoals bedoeld, want hij bewaakt dat de filterbalk WERKT.
+ *
+ * Hij zoekt nu op dezelfde selectors als het script zelf: `[data-filterable]`
+ * en `[data-filter-key]`. Dat is ook wat deze twee dingen echt identificeert;
+ * een klassenaam staat er om iets te kleuren. Zie de noot in
+ * src/scripts/galerij-filter.js.
+ */
 /*
  * ═══════════════════════════════════════════════════════════════════════════════
  * DE FILTERBALK VAN DE GALERIJ  ·  npm run test:galerijfilter
@@ -57,7 +68,7 @@ const ok=(n,w,v)=>{totaal++;const g=JSON.stringify(w)===JSON.stringify(v);if(g)g
    en 22ms stagger duurt de laatste infade tot ~1,2s; een vaste 900ms meet dan
    het midden van de beweging en niet de uitkomst. */
 const stil = (p) => p.evaluate(() => {
-  const imgs=[...document.querySelectorAll('.photo-grid[data-filterable] img')];
+  const imgs=[...document.querySelectorAll('[data-filterable] img')];
   return imgs.every(i => i.getAnimations().every(a => a.playState !== 'running'));
 });
 /* TWEE KEER STIL, MET EEN GAT ERTUSSEN — en dat gat is geen slordigheid.
@@ -78,7 +89,7 @@ const rust = async (p) => {
 };
 
 const staat = (p) => p.evaluate(() => {
-  const imgs=[...document.querySelectorAll('.photo-grid[data-filterable] img')];
+  const imgs=[...document.querySelectorAll('[data-filterable] img')];
   const zicht=imgs.filter(i=>i.style.display!=='none');
   return {
     totaal: imgs.length,
@@ -86,7 +97,7 @@ const staat = (p) => p.evaluate(() => {
     tags: [...new Set(zicht.map(i=>i.dataset.tag))].sort(),
     /* de invariant: geen enkele zichtbare foto mag half doorzichtig blijven staan */
     doorzichtig: zicht.filter(i=>Number(getComputedStyle(i).opacity) < 0.99).length,
-    ingedrukt: [...document.querySelectorAll('.filter-bar button[data-filter-key]')].filter(k=>k.getAttribute('aria-pressed')==='true').map(k=>k.dataset.filterKey),
+    ingedrukt: [...document.querySelectorAll('button[data-filter-key]')].filter(k=>k.getAttribute('aria-pressed')==='true').map(k=>k.dataset.filterKey),
   };
 });
 
@@ -99,12 +110,12 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
 
   let st = await staat(p);
   ok('alle foto’s staan bij het openen', st.zichtbaar, st.totaal);
-  const sleutels = await p.evaluate(()=>[...document.querySelectorAll('.filter-bar button[data-filter-key]')].map(k=>k.dataset.filterKey));
+  const sleutels = await p.evaluate(()=>[...document.querySelectorAll('button[data-filter-key]')].map(k=>k.dataset.filterKey));
   ok('er zijn filterpillen', sleutels.length > 1, true);
 
   /* Elke pil apart, en na elke klik moet er precies één soort overblijven. */
   for (const k of sleutels.filter(k=>k!=='all')) {
-    await p.click(`.filter-bar button[data-filter-key="${k}"]`);
+    await p.click(`button[data-filter-key="${k}"]`);
     await rust(p);
     st = await staat(p);
     ok(`"${k}" laat alleen ${k} staan`, st.tags, [k]);
@@ -113,7 +124,7 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
     ok(`"${k}" toont er minstens één`, st.zichtbaar > 0, true);
   }
 
-  await p.click('.filter-bar button[data-filter-key="all"]');
+  await p.click('button[data-filter-key="all"]');
   await rust(p);
   st = await staat(p);
   ok('"all" brengt ze allemaal terug', st.zichtbaar, st.totaal);
@@ -121,7 +132,7 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
 
   /* DE FOUT DIE GSAP'S killTweensOf NIET DEKTE: vijf snelle klikken. */
   for (const k of [...sleutels, ...sleutels].slice(0, 6)) {
-    await p.click(`.filter-bar button[data-filter-key="${k}"]`);
+    await p.click(`button[data-filter-key="${k}"]`);
     await p.waitForTimeout(40);
   }
   const laatste = [...sleutels, ...sleutels].slice(0, 6).pop();

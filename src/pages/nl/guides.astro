@@ -1,65 +1,13 @@
 ---
-// VISUAILS — Gidsen-hub (Nederlands). Vertaling van src/pages/guides.astro.
+// VISUAILS — /nl/guides. Zie de Engelse variant en de kop van GuidesPage.astro;
+// alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
-import { TEST_SAMPLE } from '../../data/pricing.js';
-// Zie de Engelse pagina en de kop van src/data/guides.js: één lijst, drie lezers. Het
-// taalvoorvoegsel /nl komt daar in één functie erbij, en niet vijf keer met de hand.
-import { guides as gidsen } from '../../data/guides.js';
-
-const SAMPLE = TEST_SAMPLE.nl;
-const guides = gidsen('nl');
+import GuidesPage from '../../components/GuidesPage.astro';
 ---
 
 <Layout
   title="Gidsen — productfotografie voor kledingmerken | VISUAILS"
   description="Praktische gidsen voor kleding- en e-commercemerken: fotograferen met een telefoon, AI-visuals tegenover een shoot, en wat productvisuals kosten."
 >
-  <section class="page-hero"><div class="container">
-    <p class="eyebrow-page">Gidsen</p>
-    <h1 class="display">Alles wat de moeite waard is <em>vóór je shoot.</em></h1>
-    <p class="lead" style="margin-top:1.2rem;max-width:60ch">Korte, praktische stukken voor ondernemers die hun productbeelden goed willen hebben — of je nu bij ons bestelt of niet.</p>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div class="guide-grid reveal-group">
-      {guides.map((g) => (
-        <a class="guide-card reveal pending" href={g.href}>
-          <span class="guide-tag">{g.tag}</span>
-          <h2 class="guide-title">{g.title}</h2>
-          <p class="guide-desc">{g.desc}</p>
-          <span class="guide-more">Lees <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </a>
-      ))}
-    </div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:var(--t-page-h2)">Klaar wanneer jij dat bent.</h2>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <a href="/nl/test-sample/" class="btn btn-primary btn-lg">{SAMPLE.cta}</a>
-        <a href="/nl/start/" class="btn btn-ghost btn-lg">Start een bestelling</a>
-      </div>
-    </div>
-  </div></section>
+  <GuidesPage lang="nl" />
 </Layout>
-
-<style>
-  .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 1.2rem; }
-    /* A card, so it takes the card treatment: the site radius and .lift from
-     global.css (a lit top edge, a contact shadow, a 1.2% rise on hover)
-     instead of a 1px grey rectangle. The local transition is gone with it —
-     .lift declares its own, and two rules animating `transform` from two
-     places is how a hover ends up with two different durations. */
-.guide-card { display: flex; flex-direction: column; padding: clamp(1.5rem, 2.8vw, 2.1rem); border: 0; border-radius: var(--r-lg); background: var(--surface); }
-    /* Only the ground changes here. The rise and the shadow come from .lift in
-     global.css; repeating translateY locally would win on specificity and
-     silently drop the 1.2% scale that makes the two consistent. */
-  .guide-card:hover { background: var(--surface-2); }
-  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--accent-line); margin-bottom: 1rem; }
-  .guide-title { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.12; color: var(--ink); letter-spacing: -0.02em; }
-  .guide-desc { margin-top: .7rem; font-size: .95rem; color: var(--ink-3); line-height: 1.55; }
-  .guide-more { margin-top: 1.4rem; display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; font-weight: 600; color: var(--ink); }
-  .guide-more .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
-  .guide-card:hover .guide-more { color: var(--accent-bright); }
-</style>

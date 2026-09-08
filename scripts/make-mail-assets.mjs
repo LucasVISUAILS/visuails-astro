@@ -41,7 +41,7 @@ const OUT = path.join(ROOT, 'public/img/mail');
 const H = 96;
 
 const COLOURS = {
-  groen: '#C6F100',   // on the dark header band
+  groen: '#D2E04A',   // on the dark header band — Komma's geel sinds sectie 20
   wit: '#FFFFFF',     // spare, for a light-on-dark variant of any future template
 };
 

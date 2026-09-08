@@ -26,7 +26,7 @@
 import {
   AMOUNT,
   CUSTOM_MONTH_MIN_PRODUCTS,
-  KIND_IMAGES,
+  KIND_PUNTEN,
   LADDER,
   PLAN_AMOUNT,
   PLAN_SLOTS,
@@ -78,11 +78,14 @@ console.log('\nde doorgerekende maanden kloppen nog');
     [{ products: 30, carousels: 8, clips: 4 }, 1654, 144],
     [{ products: 30, carousels: 30 }, 1950, 210],
   ];
-  for (const [maand, bedrag, beelden] of maanden) {
+  for (const [maand, bedrag, punten] of maanden) {
     const uit = customMonthTotal(maand);
     const naam = `${maand.products}·${maand.carousels || 0}·${maand.clips || 0}`;
     check(`${naam} kost € ${bedrag}`, uit.total, bedrag);
-    check(`${naam} levert ${beelden} beelden`, uit.images, beelden);
+    /* `punten` en niet `images` sinds 7 september 2026: het getal meet werk en
+       geen bestanden. De WAARDEN in deze tabel veranderen niet — voor de
+       fotokant is één punt nog steeds één foto. */
+    check(`${naam} kost ${punten} punten`, uit.punten, punten);
   }
 
   /* Lucas' eigen voorbeeld, en waar de besparing vandaan komt: dezelfde inhoud in
@@ -160,11 +163,11 @@ console.log('\nhet formulier wijst nooit naar de duurste route');
 /* ══ 5 · WAT DE MAAND IN DE AGENDA WEEGT ═════════════════════════════════ */
 console.log('\nde maand weegt in dezelfde eenheid als de agenda');
 {
-  check('een catalogproduct weegt vier beelden',
-    customMonthTotal({ products: 1 }).images, KIND_IMAGES.catalog);
-  check('en met carrousel zeven', customMonthTotal({ products: 1, carousels: 1 }).images, KIND_IMAGES.complete);
-  check('twintig met vijf carrousels weegt 95 beelden',
-    customMonthTotal({ products: 20, carousels: 5 }).images, 20 * KIND_IMAGES.catalog + 5 * KIND_IMAGES.lifestyle);
+  check('een catalogproduct kost vier punten',
+    customMonthTotal({ products: 1 }).punten, KIND_PUNTEN.catalog);
+  check('en met carrousel zeven', customMonthTotal({ products: 1, carousels: 1 }).punten, KIND_PUNTEN.complete);
+  check('twintig met vijf carrousels kost 95 punten',
+    customMonthTotal({ products: 20, carousels: 5 }).punten, 20 * KIND_PUNTEN.catalog + 5 * KIND_PUNTEN.lifestyle);
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

@@ -1,5 +1,7 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import fs from 'node:fs';
+import { defineConfig, sessionDrivers } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 import brandLockupGuard from './scripts/brand-lockup-guard.mjs';
 import sitemapAnd404 from './scripts/sitemap-and-404.mjs';
 /* De `dateModified` per pagina, uit git. Moet VÓÓR de sitemapstap staan: die leest
@@ -12,6 +14,9 @@ import llmsTxt from './scripts/llms-txt.mjs';
 import avifNaastWebp from './scripts/avif-naast-webp.mjs';
 import stijlUitDePagina from './scripts/stijl-uit-de-pagina.mjs';
 import cspScripts from './scripts/csp-scripts.mjs';
+import plaatshouders from './scripts/plaatshouders.mjs';
+// De woff2's voor Studio, portaal en /admin — die laden de sitebundel niet.
+import fontsVoorWorker from './scripts/fonts-voor-worker.mjs';
 
 // VISUAILS — Astro v2 rebuild. Fully static output (Cloudflare Pages serves
 // the build/ output directly, same deploy shape as the previous SvelteKit
@@ -19,8 +24,65 @@ import cspScripts from './scripts/csp-scripts.mjs';
 // niet door astro:assets: het staat als vooraf geschaalde .webp in public/img en
 // krijgt bij de build een AVIF-bron ernaast — zie IMAGES.md voor waarom, en de
 // drie integraties onderaan voor wat er wél in de build gebeurt.
+/* ── LIGT SATOSHI ER? — 8 september 2026 ──────────────────────────────────
+   Eén keer per build gemeten, hier, met gewone fs. Layout.astro en
+   StudioLayout.astro lezen het als __SATOSHI__ en linken op grond daarvan
+   public/fonts/satoshi/satoshi.css — zie de noot in dat bestand voor wat er
+   dan omgaat, en de noot in Layout.astro voor wat hier eerst stond en waarom
+   dat de site sloopte zodra de schakelaar voor het eerst aan ging.
+
+   Waarom niet gewoon altijd linken: dan vraagt de browser een woff2 op die er
+   niet is, en dat is een 404 in de console — waar tests/consoleschoon.test.mjs
+   op let, en terecht.
+
+   Alleen het romeinse bestand telt. Ligt de cursieve er niet naast, dan valt
+   die ene stijl terug op Instrument Sans; dat is een detail, geen halve site. */
+const SATOSHI = fs.existsSync(new URL('./public/fonts/satoshi/Satoshi-Variable.woff2', import.meta.url));
+
 export default defineConfig({
   site: 'https://visuails.com',
+  /* ── ÉÉN WORKER — 5 SEPTEMBER 2026 ─────────────────────────────────────────
+   *
+   * Tot hier was dit een Pages-project: Astro bouwde de statische site, en de
+   * serverkant (bestelling, betaling, dashboard, beheer) stond los ernaast in
+   * /functions, buiten Astro om. Dat is waarom het dashboard er anders uitzag dan
+   * de site: het deelde er geen Layout, geen fonts, geen tokens mee.
+   *
+   * Nu is het één Worker. Dezelfde build levert de statische pagina's (als assets)
+   * én de server-routes (dist/server/entry.mjs). De site zelf blijft volledig
+   * statisch — `output: 'static'` — en alleen de bestanden in src/pages die
+   * `export const prerender = false` zeggen, draaien op de server. Zie
+   * src/pages/api/, /account, /admin en /o: dunne endpoints die de bestaande
+   * handlers in /functions aanroepen. De handlers zelf zijn niet veranderd.
+   */
+  adapter: cloudflare({
+    /* Onder `astro dev` draaien de server-routes in workerd met de bindings uit
+       wrangler.toml en een lokale D1/R2 in .wrangler/state/v3 — dezelfde staat
+       als `wrangler dev` gebruikt, dus `npm run migrate -- --local` hoeft maar
+       één keer. Dat is de standaard van de adapter; er staat hier bewust niets
+       over. */
+    /* Beeld gaat niet door astro:assets (zie IMAGES.md); geen beeldservice in de
+       Worker dan ook. */
+    imageService: 'passthrough',
+    /* De statische pagina's bouwen onder Node, zoals altijd. De adapter wil ze
+       standaard in workerd bouwen, en daar kan /gallery de map public/img niet
+       lezen en struikelen de /start-pagina's over een URL zonder host. De Worker
+       zelf draait natuurlijk wél in workerd; dit gaat alleen over de build. */
+    prerenderEnvironment: 'node',
+  }),
+  /* Geen Astro-sessies. Het dashboard, het beheer en het portaal hebben hun
+     eigen sessies (cookies plus tabellen in D1, zie src/lib/account.js en
+     admin.js). Zonder deze regel zet de adapter er een KV-namespace "SESSION"
+     bij die bij elke deploy aangemaakt wordt en nooit gebruikt. */
+  session: { driver: sessionDrivers.null() },
+  /* Astro's eigen Origin-controle op formulier-POSTs staat UIT, en dat is geen
+     versoepeling: elke handler doet die controle al zelf (originIsSelf in
+     account.js, de Origin-vergelijking in admin.js en portal.js), precies zoals
+     onder Pages. Astro's versie zou wél iets breken: Mollie's webhook post
+     application/x-www-form-urlencoded zonder Origin-header, en die zou dan
+     zonder een regel code van ons een 403 krijgen — en de betaling blijft dan
+     stil op "open" staan. */
+  security: { checkOrigin: false },
   output: 'static',
   trailingSlash: 'ignore',
   // Bilingual: English at the root (/), Dutch at /nl.
@@ -34,6 +96,14 @@ export default defineConfig({
   },
   build: {
     format: 'directory',
+    /* Met een adapter zet Astro de statische bestanden standaard in dist/client
+       en de Worker in dist/server. Hier blijft de statische site in de wortel van
+       dist/ staan, precies waar hij altijd stond: elke test in tests/ en elk
+       script dat de gebouwde HTML leest, kijkt in dist/index.html. De Worker
+       staat ernaast in dist/server/ en wordt door public/.assetsignore buiten de
+       assets gehouden. */
+    client: './',
+    server: './server/',
     /* ── GEEN ENKELE STIJL IN DE PAGINA — 1 SEPTEMBER 2026 ────────────────────
      *
      * Astro zet een kleine componentstylesheet standaard als <style> IN de pagina.
@@ -91,5 +161,12 @@ export default defineConfig({
   // stijl uit de pagina halen (1735 attributen → 149 klassen, plus de <style>-
   // blokjes die Astro voor view-transitions maakt), dan de hashes van de scripts
   // berekenen op de HTML zoals hij er ná die verhuizing uitziet.
-  integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), avifNaastWebp(), stijlUitDePagina(), cspScripts()],
+  // plaatshouders() staat VÓÓR avifNaastWebp(): hij maakt van de oude foto's een
+  // .svg, en de avif-stap laat alles wat geen .webp is met rust. Zie
+  // src/data/beeld.js voor de knop en de lijst.
+  integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), stijlUitDePagina(), cspScripts()],
+  /* __SATOSHI__ wordt tijdens het bouwen vervangen door true of false — zie de
+     noot bij de constante bovenaan dit bestand. Vervanging en geen import, zodat
+     er in de Worker niets te lezen valt en er niets kan mislukken. */
+  vite: { define: { __SATOSHI__: JSON.stringify(SATOSHI) } },
 });

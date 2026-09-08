@@ -4,7 +4,7 @@
 // Harbor-styleguide bijgewerkt naar het huidige toxic-green schema. Een
 // styleguide die met de hand wordt bijgewerkt, is een styleguide die één
 // paletwijziging achterloopt — en dit palet is in een paar maanden twee keer
-// verschoven (harbor-teal → #86C232 → #C6F100). Dit leest de tokens uit
+// verschoven (harbor-teal → #86C232 → #D2E04A). Dit leest de tokens uit
 // global.css op het moment dat het draait, dus hij kan niet verouderen zonder
 // dat de site zelf ook verandert.
 //

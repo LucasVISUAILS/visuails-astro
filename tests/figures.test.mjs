@@ -30,10 +30,10 @@
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import {
-  ATTENDED_IMAGES_PER_DAY,
+  ATTENDED_PUNTEN_PER_DAG,
   ATTENDED_PER_DAY,
   ATTENDED_PER_WINDOW,
-  IMAGES_PER_PRODUCT,
+  PUNTEN_PER_PRODUCT,
   LEAD_DAYS,
   PRODUCTS_PER_DAY,
   QUEUE_FLOOR_PER_DAY,
@@ -121,21 +121,38 @@ console.log('\nwat geweigerd wordt, wordt echt geweigerd');
   const full = rows.filter((r) => r.state === 'full');
   check('er staat minstens één volle dag in beeld', full.length >= 1, true);
   for (const r of full) {
-    check(`${r.iso} zit werkelijk aan het plafond`, r.usedImages >= ATTENDED_IMAGES_PER_DAY, true);
+    check(`${r.iso} zit werkelijk aan het plafond`, r.gebruiktePunten >= ATTENDED_PUNTEN_PER_DAG, true);
     check(`en er past geen venster dat daar begint`,
-      windowFits(r.iso, DEMO_ORDER.products * IMAGES_PER_PRODUCT, DEMO_BOOKED, DEMO_BLACKOUTS), false);
+      windowFits(r.iso, DEMO_ORDER.products * PUNTEN_PER_PRODUCT, DEMO_BOOKED, DEMO_BLACKOUTS), false);
   }
 
   // De dagen met "ruimte" die tóch niet worden aangeboden — donderdag en vrijdag.
   // Dit is het subtielste deel van de figuur en dus het makkelijkste om per
   // ongeluk te laten liegen: de tekst zegt dat dertig producten twee HELEMAAL
   // vrije dagen vragen, en dat moet de poort ook echt zo zien.
+  /* ── EN HET GETAL DAT ERBIJ STAAT IS EEN HEEL PRODUCT — 7 september 2026 ──
+     Op /studio en /nl/studio stond te lezen:
+
+       wo 5 aug   11.285714285714286 / 11   Te vroeg
+
+     De bron is punten (79 op de volle dag), de figuur praat in producten, en
+     79 / 7 gaat niet op. Alle andere dagen deelden wél op, dus de fout stond
+     precies op de twee dagen die de figuur het hardst moet maken: de volle.
+
+     Dit bewaakt de omrekening en niet de afronding: verandert PUNTEN_PER_PRODUCT
+     of het dagplafond, dan is dit het regeltje dat rood wordt in plaats van een
+     bezoeker die zestien decimalen leest. */
+  for (const r of rows) {
+    check(`${r.iso} toont een heel product`, Number.isInteger(r.used), true);
+    check(`${r.iso} blijft binnen het plafond`, r.used <= r.cap, true);
+  }
+
   const roomButNotOffered = rows.filter((r) => r.state === 'open' && !r.offered && r.used > 0);
   check('er staan dagen met ruimte die niet worden aangeboden', roomButNotOffered.length >= 1, true);
   for (const r of roomButNotOffered) {
-    check(`${r.iso} heeft ruimte`, r.usedImages < ATTENDED_IMAGES_PER_DAY, true);
+    check(`${r.iso} heeft ruimte`, r.gebruiktePunten < ATTENDED_PUNTEN_PER_DAG, true);
     check(`en past tóch niet`,
-      windowFits(r.iso, DEMO_ORDER.products * IMAGES_PER_PRODUCT, DEMO_BOOKED, DEMO_BLACKOUTS), false);
+      windowFits(r.iso, DEMO_ORDER.products * PUNTEN_PER_PRODUCT, DEMO_BOOKED, DEMO_BLACKOUTS), false);
   }
 
   // De lead-tijd. De rijen die "te vroeg" heten, mogen niet aanbiedbaar zijn.
@@ -177,7 +194,7 @@ console.log('\nkleiner is eerder, en dat is geen toeval');
 console.log('\nde verzonnen agenda kan bestaan');
 {
   check('geen dag boven het dagplafond',
-    DEMO_DAYS.filter((d) => (DEMO_BOOKED[d] || 0) > ATTENDED_IMAGES_PER_DAY), []);
+    DEMO_DAYS.filter((d) => (DEMO_BOOKED[d] || 0) > ATTENDED_PUNTEN_PER_DAG), []);
   check('de demobestelling past binnen één venster',
     DEMO_ORDER.products <= ATTENDED_PER_WINDOW, true);
   check('en de kleine ook', DEMO_SMALL_PRODUCTS <= ATTENDED_PER_WINDOW, true);
@@ -211,14 +228,14 @@ console.log('\nde verzonnen agenda kan bestaan');
  */
 console.log('\nde tabel en de agenda gaan over dezelfde bezetting');
 {
-  const perDayOf = (n) => Math.ceil((n * IMAGES_PER_PRODUCT) / WINDOW_DAYS);
+  const perDayOf = (n) => Math.ceil((n * PUNTEN_PER_PRODUCT) / WINDOW_DAYS);
   const load = {};
   for (const o of DEMO_OTHERS) {
     if (!o.start) {
       check(`${o.brand} heeft geen venster en dus geen datum`, otherWindow(o, 'nl'), '—');
       continue;
     }
-    const days = windowFor(o.start, o.products * IMAGES_PER_PRODUCT, {}, DEMO_BLACKOUTS);
+    const days = windowFor(o.start, o.products * PUNTEN_PER_PRODUCT, {}, DEMO_BLACKOUTS);
     check(`${o.brand} heeft een venster van ${WINDOW_DAYS} dagen`, days.length, WINDOW_DAYS);
     for (const d of days) {
       check(`${o.brand}: ${d} heeft haar aandeel geboekt`,

@@ -275,20 +275,99 @@ export function shot(id) {
 const HINTS = {
   front: ['front', 'voor', 'voorkant', 'f'],
   back: ['back', 'achter', 'achterkant', 'rug', 'b'],
-  detail: ['detail', 'close', 'closeup', 'close-up', 'macro', 'label', 'stof', 'fabric', 'd'],
-  worn: ['worn', 'gedragen', 'model', 'onmodel', 'on-model', 'fit', 'pasvorm', 'w'],
+  detail: ['detail', 'close up', 'close-up', 'closeup', 'close', 'macro', 'label', 'stof', 'fabric', 'd'],
+  worn: ['worn', 'on model', 'on-model', 'op model', 'op-model', 'onmodel', 'gedragen', 'model', 'fit', 'pasvorm', 'w'],
 };
 
+/* ── EEN AANWIJZING VAN TWEE WOORDEN — 7 september 2026 ────────────────────────
+ *
+ * GEVONDEN DOOR HET FORMULIER TE GEBRUIKEN, niet door het te lezen. Vier foto's
+ * geüpload met de namen uit de handleiding, en er verscheen een tweede product
+ * dat "hoodie-op" heette en om een voor- en achterkant vroeg. Nagerekend:
+ *
+ *   hoodie-op-model.webp  → shot worn ✓   product "hoodie-op"   ✗
+ *   hoodie-on-model.jpg   → shot worn ✓   product "hoodie-on"   ✗
+ *   hoodie-close-up.jpg   → shot detail ✓ product "hoodie-up"   ✗
+ *
+ * De oorzaak stond in de tabel hierboven: 'close-up' en 'on-model' stonden er
+ * al in, maar guessShot splitste de naam op elk niet-letterteken en vergeleek
+ * dan LOSSE tokens. Een aanwijzing met een streepje erin kon dus nooit matchen —
+ * die twee regels waren dood. Het shot werd goed geraden op het losse woord
+ * ("model", "close"), en dan bleef de andere helft ("op", "on", "up") aan de
+ * productnaam plakken.
+ *
+ * Het gevolg is niet cosmetisch. Elk fantoomproduct vraagt om zijn eigen
+ * verplichte voor- en achterkant, dus de klant komt stap 2 niet uit — met
+ * bestandsnamen die de handleiding zelf aanleert ("close-up", "draagfoto",
+ * "on model" is de gangbare term in e-commerce).
+ *
+ * WAT ER NU GEBEURT. De naam wordt één genormaliseerde tekenreeks met spaties,
+ * en een aanwijzing matcht als hij daar als HELE woordenreeks in staat —
+ * langste eerst, zodat "close up" wint van "close". Dezelfde functie levert ook
+ * de productnaam, zodat de twee niet meer los van elkaar kunnen antwoorden.
+ */
+
+/** De bestandsnaam als woordenreeks: kleine letters, zonder extensie, één spatie tussen de woorden. */
+function woorden(filename) {
+  return String(filename || '')
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/, '')
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .join(' ');
+}
+
+/* Alle aanwijzingen, langste eerst. Zo wint 'close up' van 'close' en
+   'on model' van 'model' — anders zou de kortste eerst toeslaan en bleef de
+   rest van de zinsnede in de productnaam achter. */
+const HINT_LIJST = Object.entries(HINTS)
+  .flatMap(([id, lijst]) => lijst.map((h) => ({ id, woorden: h.replace(/-/g, ' ') })))
+  .sort((a, b) => b.woorden.length - a.woorden.length);
+
+/** Staat `naald` als hele woordenreeks in `hooiberg`? */
+function bevatReeks(hooiberg, naald) {
+  return new RegExp(`(^| )${naald.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}( |$)`).test(hooiberg);
+}
+
 export function guessShot(filename) {
-  const base = String(filename || '').toLowerCase().replace(/\.[a-z0-9]+$/, '');
-  // Word-ish boundaries only: a token has to sit between separators, or be the
-  // whole name. Without this, "brochure" matches 'b' → back, and "storefront"
-  // matches 'front' for a photo of a shop.
-  const tokens = base.split(/[^a-z]+/).filter(Boolean);
-  for (const [id, hints] of Object.entries(HINTS)) {
-    if (tokens.some((t) => hints.includes(t))) return id;
-  }
+  const w = woorden(filename);
+  if (!w) return null;
+  for (const h of HINT_LIJST) if (bevatReeks(w, h.woorden)) return h.id;
   return null;
+}
+
+/**
+ * Wat er van een bestandsnaam overblijft als de aanwijzing eruit is: de
+ * productnaam. `TSHIRT-01-front.jpg` en `TSHIRT-01-back.jpg` geven allebei
+ * `TSHIRT-01`, en zo belanden twee losse bestanden zonder map op dezelfde kaart.
+ *
+ * STAAT HIER EN NIET IN pipeline.js, waar hij vandaan komt. Daar was het een
+ * eigen splitsing die per token guessShot() aanriep, en precies die tweede
+ * lezing van dezelfde tabel is waar het misging. Eén functie, één antwoord.
+ */
+export function productStem(filename) {
+  const ruw = String(filename || '').replace(/\.[A-Za-z0-9]+$/, '');
+  const delen = ruw.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  const klein = delen.map((d) => d.toLowerCase());
+  const houden = delen.map(() => true);
+  /* Langste eerst, zodat 'close up' twee delen wegneemt voordat 'close' er één
+     zou pakken. Elke aanwijzing wordt hooguit één keer weggehaald: een product
+     dat écht "model" heet houdt zijn naam zodra de aanwijzing al gevonden is. */
+  let gevonden = false;
+  for (const h of HINT_LIJST) {
+    if (gevonden) break;
+    const stukken = h.woorden.split(' ');
+    for (let i = 0; i + stukken.length <= klein.length; i++) {
+      if (!houden[i]) continue;
+      let past = true;
+      for (let j = 0; j < stukken.length; j++) if (klein[i + j] !== stukken[j] || !houden[i + j]) { past = false; break; }
+      if (!past) continue;
+      for (let j = 0; j < stukken.length; j++) houden[i + j] = false;
+      gevonden = true;
+      break;
+    }
+  }
+  return delen.filter((_, i) => houden[i]).join('-');
 }
 
 /**
@@ -366,6 +445,14 @@ export const COPY = {
     extraNoteErr: 'Describe what Extra {n} should be before you continue.',
     extraShotHint: 'A reference is optional — describe it and we will make it.',
     extraRate: '{rate} each at this order size, up to {max} per product.',
+    /* ── DE REGEL DIE HET BEDRAG NOEMT — 4 september 2026 ────────────────────
+       Lucas: *"Extra foto's (…) kost de klant extra geld dus dit moet wat
+       serieuzer dan een klein blokje onderin."* Het tarief stond er al, maar
+       niet wat het BIJ ELKAAR wordt — en dat is het getal waar iemand ja of nee
+       op zegt. Deze regel verschijnt pas zodra er één gekozen is. */
+    extraSum: '{n} extra × {rate} = {sum} on top, for this product',
+    extraSumOne: 'One extra photo: {sum} on top, for this product',
+    extraWhat: 'A photo you describe yourself — an angle, a crop or a detail that is not in the standard set. We make it; a reference photo is welcome but not needed.',
     ownModel: 'Yours only',
     ownLook: 'Your look',
     ownLookH: 'Your own look',
@@ -426,6 +513,10 @@ export const COPY = {
     extraNoteErr: 'Beschrijf wat Extra {n} moet worden voordat je verdergaat.',
     extraShotHint: 'Een voorbeeldfoto mag, hoeft niet — beschrijf het en wij maken het.',
     extraRate: '{rate} per stuk bij deze bestelgrootte, tot {max} per product.',
+    /* Zie de Engelse tegenhanger. */
+    extraSum: '{n} extra × {rate} = {sum} erbij, voor dit product',
+    extraSumOne: 'Eén extra foto: {sum} erbij, voor dit product',
+    extraWhat: 'Een foto die je zelf omschrijft — een hoek, een uitsnede of een detail dat niet in de vaste set zit. Wij maken hem; een voorbeeldfoto mag, maar hoeft niet.',
     ownModel: 'Alleen van jou',
     ownLook: 'Jouw look',
     ownLookH: 'Je eigen look',

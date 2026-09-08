@@ -76,10 +76,14 @@ console.log('\nhet raden van een inlogcode wordt op het account geteld en niet a
      formulier een accountopsommer geworden. De 429 die er wél in zit, hoort bij de
      bestaande teller per IP en die staat vóór het adres bekend is. */
   const naEmmer = blok.slice(blok.indexOf('const perAccount'));
+  /* Sinds 5 september 2026 rendert de handler niet zelf meer maar beschrijft hij
+     het scherm (authPage(context, { view: 'check', … })), zodat de Astro-pagina
+     van Studio dezelfde logica kan gebruiken. De eigenschap is dezelfde: één
+     antwoord na de emmer, en dat is het "kijk in je mail"-scherm. */
   ok('een geblokkeerde aanvraag krijgt geen eigen antwoord',
-    /\breturn\b/.test(naEmmer.slice(0, naEmmer.lastIndexOf('return html'))), false);
+    /\breturn\b/.test(naEmmer.slice(0, naEmmer.lastIndexOf('return authPage'))), false);
   ok('en de pagina is dezelfde als altijd',
-    /return html\(page\([\s\S]{0,160}checkEmailBody/.test(blok), true);
+    /return authPage\(context, \{ view: 'check'/.test(naEmmer), true);
 
   // De begrenzer kan op een eigen sleutel tellen en niet alleen op een IP.
   const { db, mislukt } = verseDb(new URL('../schema.sql', import.meta.url));
@@ -151,7 +155,7 @@ console.log('\nhet publieke capaciteits-endpoint kan niet om zijn eigen cache he
   ok('het aantal wordt geknipt op een bovengrens',
     /Math\.min\(Math\.max\(gevraagd, 1\), MAX_PRODUCTS_ANY_SERVICE \+ 1\)/.test(cap), true);
   ok('een onbekende dienst valt terug op complete',
-    /kindImages\(gevraagdeDienst, 1\) === null \? 'complete'/.test(cap), true);
+    /puntenVoor\(gevraagdeDienst, 1\) === null \? 'complete'/.test(cap), true);
   ok('en het antwoord blijft cachebaar', /'cache-control': 'public, max-age=60'/.test(cap), true);
   ok('met nosniff erbij', /'x-content-type-options': 'nosniff'/.test(cap), true);
   ok('ook op /api/order-status',

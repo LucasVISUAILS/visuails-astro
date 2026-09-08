@@ -45,7 +45,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
   WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
-  clause,
+  clause, FORM_MAX_PRODUCTS,
 } from '../data/pricing.js';
 /* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
    schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
@@ -53,7 +53,6 @@ import {
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
-import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
 import TierCompare from './TierCompare.astro';
 import Placeholder from './Placeholder.astro';
@@ -62,6 +61,7 @@ import { catalogStyles as catalogStylesEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
 
 import ServiceSwitch from './ServiceSwitch.astro';
+import '../styles/stijl22.css';
 import HeroFacts from './HeroFacts.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -177,11 +177,13 @@ const COPY = {
     // — so this line names the count as well as the promise. A visitor should
     // not be able to leave this page believing a date was promised.
     queueNote: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
+    kiesCta: 'Pick your look',
+    levert: 'four photos per product.',
     packH: 'One product. Four images, or more. The rate falls as the count rises.',
     ladderH: 'What a catalog set costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
-    ladderNote: `The rate applies to every product in the order, not only the ones above that count — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them.`,
+    ladderNote: `The rate applies to every product in the order, not only the ones above that count — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them. More than ${FORM_MAX_PRODUCTS} at once is fine too: we split those over delivery dates, at the same rate per product.`,
     // The on-model shot is the one line on this page where the Brand Model is
     // the obvious next question, so the upsell is woven into the sentence that
     // already raises it rather than parked in a block of its own. §1 of the
@@ -266,11 +268,13 @@ const COPY = {
       ['Vanaf 4 foto’s', 'per product'],
     ],
     queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
+    kiesCta: 'Kies je look',
+    levert: 'vier foto’s per product.',
     packH: 'Eén product. Vier foto’s of meer. Het tarief daalt naarmate het aantal stijgt.',
     ladderH: 'Wat een catalogset kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
-    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
+    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Meer dan ${FORM_MAX_PRODUCTS} in één keer kan ook: die verdelen we over leverdata, tegen hetzelfde tarief per product.`,
     packOpen: 'Eén geleverd beeld, drie die nog geschoten worden. De set bestaat; de foto\u2019s ervan staan er nog niet allemaal, en we laten dat liever zien dan dat we de gaten met iets anders vullen.',
     packP: `Elk product komt terug als een complete set — met een echte foto op een model, niet alleen het product plat op een ondergrond. Op die foto staat een gezicht uit de standaardbibliotheek, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
     packCta: 'Bestel catalogfoto’s',
@@ -351,153 +355,134 @@ const naarRij = (s: (typeof styles)[number]) => ({
        { label: nl ? 'Achterkant' : 'Back' }, { label: 'Detail' }, { label: nl ? 'Op een model' : 'On a model' }]
     : [{ icon: s.cardIcon, width: s.cardWidth, badge: `Catalog · ${s.name}` }],
   before: s.slug === 'classic' ? { src: '/img/catalog-before-1x1.webp', alt: '' } : undefined,
-  tint: s.slug === 'classic' ? '#d9d9d2' : '#C6F100',
+  tint: s.slug === 'classic' ? '#d9d9d2' : '#D2E04A',
   detailHref: lp(`/catalog/${s.slug}`),
   detailLabel: c.exploreLabel(s.name),
   orderHref: s.orderHref,
-  orderLabel: s.orderLabel || (nl ? `Bestel ${s.name}` : `Order ${s.name}`),
+  /* Zie LifestylePage: een vaste look heet "Kies deze look", want de knop is de
+     keuze. Alleen de look op maat houdt zijn eigen tekst. */
+  orderLabel: s.orderLabel || undefined,
 });
 const eigenLook = naarRij(styles.find((s) => s.slug === 'custom')!);
 const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
 ---
 
-<section class="page-hero">
-  <div class="container two-col hero-split">
-    <div class="reveal pending">
-      <!-- `.eyebrow-page` is the site's standing convention — /pricing,
-           /compare, /models, /custom-models, /start, /ai-act and /lifestyle all
-           open with it. This page and /video were the two that did not, so a
-           visitor moving between the three service pages lost the label exactly
-           where the pages are meant to feel like siblings. The ProductScene
-           badge beside it names the IMAGE; this names the page. -->
-      <span class="eyebrow-page">{c.eyebrow}</span>
-      <h1 class="display cat-h1" set:html={c.h1} />
-      <p class="lead" style="margin-top:1.2rem" set:html={c.lead} />
-      <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/catalog')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
-        </a>
+{/* ═══ /catalog IN DE STIJL VAN SECTIE 22 — 7 september 2026 ════════════════
+    Zevende pagina in de stijl, en de tweede van de drie dienstpagina's. Alles
+    wat hierboven staat is onaangeraakt: dezelfde COPY in beide talen, dezelfde
+    ladder uit pricing.js, dezelfde SHOTS met hun drie <Placeholder>s, dezelfde
+    looks uit catalogStyles.js. Wat verandert is uitsluitend de opmaak.
+
+    De gedeelde componenten — ServiceSwitch, HeroFacts, StyleRows, Compare,
+    TierCompare, Disclose en Placeholder — staan er ongewijzigd in. Hun
+    uiterlijk volgt de stijl via het `.s22.s22`-blok onderaan stijl22.css, dus
+    hun toetsenbordgedrag en hun aria blijven wat de toetsen al bewijzen.
+
+    DE PRIJSLADDER BLIJFT EEN TABEL. Vijf rijen, twee kolommen, met de
+    btw-vermelding als kolomkop — precies zoals hij stond. Hij staat nu in een
+    `.tabel-schuif` zodat hij op een telefoon schuift in plaats van de pagina
+    breder te maken; dat was op /pricing dezelfde ingreep. */}
+<div class="s22">
+
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="cat-h1">
+    <div class="cat-open">
+      <div class="paneel-kop">
+        <p class="etiket">{c.eyebrow}</p>
+        <h1 id="cat-h1" class="hoog" set:html={c.h1} />
+        <p class="lopend" set:html={c.lead} />
+        <p class="acties">
+          <a class="knop knop-inkt" href="#looks">{c.kiesCta}</a>
+          <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaSecondary}</a>
+          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+        </p>
+        <ServiceSwitch current="catalog" lang={lang} />
+        <HeroFacts eigen={c.trust} lang={lang} />
+        <p class="cat-wacht">{c.queueNote}</p>
       </div>
-      <ServiceSwitch current="catalog" lang={lang} />
-      <HeroFacts eigen={c.trust} lang={lang} />
-      <p class="queue-note">{c.queueNote}</p>
-    </div>
-    {/* ── EEN FOTO EN GEEN TEKENING — 31 AUGUSTUS 2026 ───────────────────
-        Hier stond een <ProductScene>: een getekend flesje op een grijs
-        studioverloop, 423px hoog. /lifestyle en /video dragen op deze plek een
-        `.photo-band tall` van 753px met een echte foto, dus deze hero was de
-        enige van de drie die zijn eigen product niet liet zien — op de pagina
-        die productfotografie verkoopt.
-
-        `catalog-after.webp` is echt geleverd werk: het shirt uit het voor/na-
-        paar verderop op deze pagina. Het is de eerlijkste foto die er voor deze
-        dienst op schijf staat, en tot de drie ontbrekende shots geschoten zijn
-        is het ook de enige. Zie de kop bij SHOTS.
-
-        Het is een vierkant beeld in een band van 3/4, dus `object-fit: cover`
-        snijdt boven en onder wat weg; het shirt staat gecentreerd, dus dat kan.
-        Zodra er een staand catalogbeeld is, hoort dat hier. */}
-    <div class="reveal pending">
-      <div class="photo-band tall">
+      {/* Dezelfde foto als voorheen: `catalog-after.webp`, het shirt uit het
+          voor/na-paar verderop. Zie de noot bij SHOTS — het is het enige echt
+          geleverde catalogbeeld dat er is, en dus ook het enige dat hier hoort. */}
+      <figure class="kaart kaart-stil cat-beeld">
         <img src="/img/catalog-after.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="1800" height="1800" />
-        <div class="scrim"></div>
-        <div class="caption"><p style="font-size:.9rem">{c.heroCap}</p></div>
-      </div>
+        <figcaption class="mono foto-pil">{c.heroCap}</figcaption>
+      </figure>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- One product = a full 4-photo set. Spelled out so the price and the
-     included on-model shot are never a surprise. The per-photo maths that
-     used to sit here ("about €10 a photo") is gone: it invited a comparison
-     with stock rates the rest of the site is deliberately not competing on. -->
-<section class="section-tight">
-  <div class="container">
-    <div class="section-head" style="text-align:center;margin-inline:auto">
-      <h2>{c.packH}</h2>
-      <p class="pack-p" style="margin-inline:auto" set:html={c.packP} />
-    </div>
-    {/* Zie de kop bij SHOTS: één plek draagt een foto, de andere drie een
-        <Placeholder> met de opdracht erbij. `bijschrift={false}` omdat het
-        nummer en de naam al op de badge staan; de opdracht zelf is voor Lucas
-        en staat in de bron, niet op het scherm. */}
-    <div class="pack-row reveal-group" style="margin-top:2rem">
+  {/* ── 2 · DE LOOKS ─────────────────────────────────────────────────────── */}
+  <section class="paneel" id="looks">
+    <StyleRows
+      lang={lang}
+      dienst="catalog"
+      h={c.stylesH}
+      lead={eigenLook}
+      items={vasteLooks}
+      levert={c.levert}
+      bestelBasis={lp('/start/catalog/')}
+    />
+  </section>
+
+  {/* ── 3 · DE SET, EN WAT HIJ KOST ──────────────────────────────────────────
+      Eén product, vier beelden, en de hele ladder eronder. De vier plekken
+      staan er nog precies zo: één foto en drie <Placeholder>s met de opdracht
+      in de bron. Zie de kop bij SHOTS voor waarom dat zo blijft. */}
+  <section class="paneel" aria-labelledby="cat-set">
+    <header class="paneel-kop">
+      <h2 id="cat-set" class="hoog hoog-2">{c.packH}</h2>
+      <p class="lopend cat-pack-p" set:html={c.packP} />
+    </header>
+
+    <ul class="cat-shots" role="list">
       {shots.map((s) => (
-        <div class="pack-card reveal pending">
-          <div class="photo-band">
+        <li>
+          <div class="kaart kaart-stil cat-shot">
             {s.img
               ? <img src={s.img} alt={s.alt} loading="lazy" decoding="async" width={s.w} height={s.h} />
-              : <Placeholder lang={lang} ratio="1 / 1" caption={false} subject={`${c.eyebrow} · ${s.label}`} message={s.brief} />}
-            <span class="pack-badge">{s.n} · {s.label}</span>
+              : <Placeholder lang={lang} ratio="4 / 5" caption={false} subject={`${c.eyebrow} · ${s.label}`} message={s.brief} />}
+            <span class="cat-shot-pil mono">{s.n} · {s.label}</span>
           </div>
-        </div>
+        </li>
       ))}
-    </div>
-    <p class="pack-open">{c.packOpen}</p>
-    <!-- THE RUNG LIST. Five rows, not a "from €x": this page sells one kind
-         of thing, so it has the room to print the whole ladder, and a reader
-         who wants to know what twelve products cost each should be able to
-         find the row and stop reading. The VAT label is a column heading
-         rather than a repeat on every cell — one column, one kind of number,
-         so the label belongs to the column. -->
-    <div class="rungs reveal pending">
-      <span class="rungs-h">{c.ladderH}</span>
-      <table class="rung-table">
-        <thead>
-          <tr>
-            <th scope="col">{c.ladderProductsCol}</th>
-            <th scope="col">{c.ladderRateCol}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rungRows.map((r) => (
-            <tr><th scope="row">{r.label}</th><td>{r.rate}</td></tr>
-          ))}
-        </tbody>
-      </table>
-      <p class="rungs-note">{c.ladderNote}</p>
-    </div>
+    </ul>
+    <p class="cat-open-noot">{c.packOpen}</p>
 
-    <div class="flex" style="justify-content:center;margin-top:1.8rem">
-      <a href={lp('/start/catalog')} class="btn btn-primary">{c.packCta}</a>
-    </div>
-  </div>
-</section>
-
-{/* ── DE STIJLEN STAAN NU VÓÓR HET UITLEGBLOK — 30 AUGUSTUS 2026 ──────────
-    Lucas: *"zorg dat de catalog pagina ook consistent is met alle andere
-    services zodat het als een geheel voelt."*
-
-    /lifestyle en /video zetten allebei de keuze — de moods, de manieren om
-    beweging toe te voegen — direct onder wat je krijgt, en pas daarna het
-    uitlegblok met `whatH`/`whereH`. Deze pagina deed het andersom, en dat is
-    de enige plek waar de drie uit de pas liepen. Twee van de drie hadden het
-    al zo, dus deze verhuist.
-
-    Het is ook de volgorde die het meest visueel is: je ziet eerst waaruit je
-    kiest en leest daarna waarom. */}
-{/* Eén regel per stijl, de eigen look bovenaan — 4 september 2026. Hier stond
-    een raster van twee kaarten. Zie StyleRows.astro. */}
-<StyleRows lang={lang} h={c.stylesH} lead={eigenLook} items={vasteLooks} />
-
-<section class="section-tight">
-  <div class="container">
-    <div class="ed-head">
-      <span class="ed-meta">{c.edMeta}</span>
-      <div>
-        <h2>{c.edH}</h2>
-        <p class="ed-sub">{c.edSub}</p>
+    <div class="cat-ladder">
+      <p class="etiket">{c.ladderH}</p>
+      <div class="tabel-schuif">
+        <table class="lijst">
+          <thead>
+            <tr>
+              <th scope="col">{c.ladderProductsCol}</th>
+              <th scope="col">{c.ladderRateCol}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rungRows.map((r) => (
+              <tr><th scope="row">{r.label}</th><td><span class="tarief">{r.rate}</span></td></tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+      <p class="lopend cat-ladder-noot">{c.ladderNote}</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href={lp('/start/catalog')}>{c.packCta}</a>
+      </p>
     </div>
-    <!-- Het tweede argument van dit blok — "één stijl door je hele assortiment
-         heen laat je collectie als één merk lezen" — is een argument dat je
-         ZIET of niet gelooft. Het stond hier als de tweede alinea van `whatP`
-         en is daar ingekort: het beeld hieronder doet het werk, de tekst wijst
-         er alleen nog naar. Lucas, 19 augustus 2026: *"check waar tekst minder
-         kan worden en er visuele uitleg in de plaats kan komen."*
-         Breed en laag (21/9), omdat het rastereffect alleen te zien is als er
-         genoeg producten náást elkaar passen. -->
+  </section>
+
+  {/* ── 4 · WAT HET IS, EN WAAR HET STAAT ────────────────────────────────────
+      De donkere kamer van deze pagina. Het brede beeld van het productraster
+      staat erin: het is het argument van deze sectie, en een lichte kader op
+      donkere grond zet het apart zonder dat er een kop bij hoeft. */}
+  <section class="kamer cat-kamer" aria-labelledby="cat-wat">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <p class="etiket">{c.edMeta}</p>
+      <h2 id="cat-wat" class="hoog hoog-2">{c.edH}</h2>
+      <p class="lopend">{c.edSub}</p>
+    </header>
+
     <Placeholder
       lang={lang}
       space
@@ -509,244 +494,166 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
         : 'Must show at a glance the difference between "separate photos" and "one collection": same framing, same light, same background, same shadow. The products themselves should differ — a bag beside a bottle beside a jumper — so it is the photography that makes it whole, not the range. No single shot may stand out; if one sits differently, the image has failed.'}
     />
 
-    <div class="svc-explain">
-      <div class="svc-explain-main">
-        <h3>{c.whatH}</h3>
-        {c.whatP.map((p) => <p>{p}</p>)}
+    <div class="cat-twee">
+      <div class="cat-uitleg">
+        <h3 class="hoog hoog-3">{c.whatH}</h3>
+        {c.whatP.map((p) => <p class="lopend">{p}</p>)}
       </div>
-      <aside class="svc-explain-side">
-        <h3>{c.whereH}</h3>
-        <ul class="svc-where-list">
-          {c.where.map(([strong, rest]) => (
-            <li><strong>{strong}</strong> — {rest}</li>
-          ))}
+      <aside class="cat-waar">
+        <h3 class="hoog hoog-3">{c.whereH}</h3>
+        <ul class="cat-waar-lijst" role="list">
+          {c.where.map(([strong, rest]) => <li><b>{strong}</b><span class="lopend">{rest}</span></li>)}
         </ul>
       </aside>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section-tight">
-  <div class="container">
-    {/* ── DRIE STAPPEN OP ÉÉN RIJ — doorlichting 4 september 2026 ──────────
-        Hier stond een fotosplit van ~1.000 px: een foto links, de drie stappen
-        gestapeld rechts. De foto staat sinds de waaiers al hoger op de pagina;
-        wat overblijft zijn drie korte stappen, en die passen naast elkaar.
-        Zelfde `.steps`-raster als de homepage. */}
-    <h2 class="section-h">{c.stepsH}</h2>
-    <div class="steps reveal-group">
+  {/* ── 5 · DE DRIE STAPPEN ──────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="cat-stappen">
+    <header class="paneel-kop">
+      <h2 id="cat-stappen" class="hoog hoog-2">{c.stepsH}</h2>
+    </header>
+    <ol class="cat-stappen">
       {c.steps.map(([h, p], i) => (
-        <div class="step reveal pending"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+        <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{h}</b><span class="lopend">{p}</span></li>
       ))}
-    </div>
-  </div>
-</section>
+    </ol>
+  </section>
 
-<section class="section-tight">
-  <div class="container two-col">
-    <div class="reveal pending">
-      <h2>{c.checkH}</h2>
-      <ul class="checklist" style="margin-top:1.4rem">
-        {c.check.map((li) => (
-          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
-        ))}
-      </ul>
-    </div>
-    <div class="reveal pending">
-      <ProductScene icon="bag" width="40%" badge={c.eyebrow} wide />
-      <div class="chip-row" style="margin-top:1.2rem">
-        {c.chipsBg.map((chip) => (
-          <span class="chip"><span class="dot"></span>{chip}</span>
-        ))}
+  {/* ── 6 · WAT EEN LISTING NODIG HEEFT ──────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="cat-check">
+    <div class="cat-twee-licht">
+      <div>
+        <h2 id="cat-check" class="hoog hoog-2">{c.checkH}</h2>
+        <ul class="cat-check" role="list">
+          {c.check.map((li) => <li>{li}</li>)}
+        </ul>
+      </div>
+      <div class="cat-grond">
+        <p class="etiket">{nl ? 'Achtergrond' : 'Background'}</p>
+        <ul class="cat-grond-lijst" role="list">
+          {c.chipsBg.map((chip) => <li>{chip}</li>)}
+        </ul>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-{/* ── HET BEWIJS EN DE CONTROLE STONDEN IN TWEE SECTIES ──────────────────
-    30 augustus 2026, bij het gelijktrekken van deze pagina met /lifestyle en
-    /video. Hier stonden twee secties onder elkaar, samen 1703px:
-
-      "One photo in. A clean catalog image out."   de Compare, 840px
-      "Fast means nothing if it isn't right."      catalog-after.webp, 863px
-
-    Twee keer hetzelfde bestand, twee keer achter elkaar. De Compare TOONT dat
-    beeld al, met de telefoonfoto ernaast; de sectie eronder zette datzelfde
-    beeld er nog een keer neer om te zeggen dat een specialist het nakijkt.
-    Dat is één claim in twee secties, en de tweede voegt geen beeld toe dat je
-    niet net hebt gezien.
-
-    Nu één sectie: het paar staat er, en wat de specialist eraan doet staat
-    ernaast in plaats van eronder — dezelfde ordening als bij de modellenrij op
-    /custom-models en het voor/na-paar op de homepage. */}
-<section class="section-tight">
-  <div class="container">
-    <div class="section-head" style="text-align:center;margin-inline:auto"><h2>{c.baH}</h2><p style="margin-inline:auto">{c.baP}</p></div>
+  {/* ── 7 · HET BEWIJS ───────────────────────────────────────────────────────
+      Het voor/na-paar en wat de specialist eraan doet, naast elkaar. Zie de
+      noot die hier stond: dit waren twee secties met hetzelfde beeld erin. */}
+  <section class="paneel" aria-labelledby="cat-bewijs">
+    <header class="paneel-kop">
+      <h2 id="cat-bewijs" class="hoog hoog-2">{c.baH}</h2>
+      <p class="lopend">{c.baP}</p>
+    </header>
     <div class="cat-bewijs">
-      <div class="reveal pending">
-        <Compare
-          before="/img/catalog-before-1x1.webp"
-          after="/img/catalog-after.webp"
-          ratio="1/1"
-          beforeLabel={c.baBefore}
-          afterLabel="VISUAILS"
-          beforeAlt={c.baBeforeAlt}
-          afterAlt={c.baAfterAlt}
-        />
-      </div>
-      <div class="reveal pending">
-        <h3 class="cat-bewijs-h">{c.reviewH}</h3>
-        <p>{c.reviewP}</p>
-        <div class="chip-row" style="margin-top:1.4rem">
-          {c.reviewChips.map((chip) => (
-            <span class="chip"><span class="dot"></span>{chip}</span>
-          ))}
-        </div>
+      <Compare
+        before="/img/catalog-before-1x1.webp"
+        after="/img/catalog-after.webp"
+        ratio="1/1"
+        beforeLabel={c.baBefore}
+        afterLabel="VISUAILS"
+        beforeAlt={c.baBeforeAlt}
+        afterAlt={c.baAfterAlt}
+      />
+      <div class="cat-review">
+        <h3 class="hoog hoog-3">{c.reviewH}</h3>
+        <p class="lopend">{c.reviewP}</p>
+        <ul class="cat-review-lijst" role="list">
+          {c.reviewChips.map((chip) => <li>{chip}</li>)}
+        </ul>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- WHAT CHANGES AT WINDOW_THRESHOLD PRODUCTS. This block used to be section
-     13's two doors — "order individual products" against "run a whole drop" —
-     a choice the buyer made. Size makes it now, so the component states a line
-     rather than offering a fork; see TierCompare.astro's own header.
-     One shared component, not a paragraph pasted into each service page: the
-     tier facts it prints all come from pricing.js accessors, so /catalog,
-     /lifestyle, /video and /pricing cannot drift apart in either language.
-     See TierCompare.astro for why both columns are styled identically. -->
-<section class="section-tight">
-  <div class="container">
+  {/* ── 8 · WAT ER VERANDERT BIJ EEN GROTERE BESTELLING ──────────────────── */}
+  <section class="paneel">
     <TierCompare lang={lang} href0="/start/catalog/" label0={c.ctaPrimary} />
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="container" style="max-width:760px">
-    <h2 class="section-h">{c.faqH}</h2>
-    <div class="faq-stack">
-      {c.faqs.map((f) => (
-        <Disclose summary={f.q} tone="panel">
-          <p>{f.a}</p>
-        </Disclose>
-      ))}
+  {/* ── 9 · VRAGEN ───────────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="cat-faq">
+    <header class="paneel-kop">
+      <h2 id="cat-faq" class="hoog hoog-2">{c.faqH}</h2>
+    </header>
+    <div class="cat-vragen">
+      {c.faqs.map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section-tight">
-  <div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display cat-cta-h" set:html={c.ctaH} />
-      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/catalog')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
+  {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="cat-slot">
+    <h2 id="cat-slot" class="hoog" set:html={c.ctaH} />
+    <p class="lopend">{c.ctaP}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/start/catalog')}>{c.ctaPrimary}</a>
+      <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaSecondary}</a>
+      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+    </p>
+  </section>
+</div>
 
 <style>
-  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
-     --font-editorial comment. Same closing-word treatment as the other hero
-     H1s on the homepage and the model pages. */
-  .cat-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+  .cat-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  .cat-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
+  .cat-beeld { position: relative; }
+  .cat-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 40em; }
+  /* De link naar het merkmodel komt via set:html binnen en draagt dus geen
+     scope-attribuut; vandaar :global() op de afstammeling. Zelfde behandeling
+     als elke andere inline prozalink op de site. */
+  .cat-pack-p :global(a) { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
 
-  /* De maten stonden hier als met de hand ingetypte clamps in een style-
-     attribuut, en waren op het teken na gelijk aan de tokens. Dat is precies
-     hoe deze site aan acht verschillende H1-maten kwam: "paginatitel" had geen
-     token, dus werd hij overal opnieuw ingetypt en dreven de kopieën uit
-     elkaar. Nu staat de maat op één plek, in global.css. */
-  .cat-h1 { font-size: var(--t-page-h1); margin-top: 1rem; }
-  .cat-cta-h { font-size: var(--t-page-h2); }
+  /* De vier plekken van de set. Vier op een rij, 2×2 op een telefoon. De
+     <Placeholder> vult de kaart net zo als een foto zou doen. */
+  .cat-shots { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); }
+  .cat-shot { background: var(--wit); }
+  .cat-shot img { width: 100%; height: 100%; object-fit: cover; }
+  .cat-shot :global([data-placeholder]) { position: absolute; inset: 0; margin: 0; }
+  .cat-shot :global([data-placeholder] > *) { width: 100%; height: 100%; border-radius: 0; }
+  .cat-shot-pil { position: absolute; z-index: 1; left: .6rem; bottom: .6rem; background: var(--wit); color: var(--inkt); padding: .3rem .65rem; border-radius: 999px; }
+  .cat-open-noot { margin-top: 1rem; font-size: .84rem; color: var(--inkt-2); max-width: 52ch; }
 
-  /* The queue disclosure. Section 13 requires the "no fixed delivery date"
-     half of the promise to be visible, not hidden — so it is set at body
-     weight directly under the trust row rather than as footnote-sized grey. */
-  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+  /* De ladder. Smal en niet over de volle breedte: twee kolommen over 1400px
+     zet een meter wit tussen het aantal en het tarief, en dat is precies de
+     enige relatie die de tabel te tonen heeft. */
+  .cat-ladder { display: grid; gap: .9rem; justify-items: start; max-width: 34rem; margin-top: clamp(2.5rem, 5vw, 4rem); }
+  .cat-ladder .tabel-schuif { width: 100%; }
+  .cat-ladder-noot { font-size: .92rem; }
 
-  /* ── The rung list ────────────────────────────────────────────────────────
-     A real table, for the same reason /pricing's ladder is one: a rate card is
-     tabular data. It is narrow and centred because it has two columns rather
-     than four — a full-width two-column table puts a metre of white space
-     between the count and its rate, which is the one relationship it exists to
-     show. Tabular figures so the rates line up in the column. */
-  .rungs { max-width: 460px; margin: 2.4rem auto 0; }
-  .rungs-h { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-  .rung-table {
-    width: 100%;
-    margin-top: .8rem;
-    border-collapse: collapse;
-    font-variant-numeric: tabular-nums lining-nums;
+  .cat-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; margin-top: clamp(2.5rem, 5vw, 4rem); }
+  .cat-uitleg { display: grid; gap: .9rem; }
+  .cat-waar { padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); display: grid; gap: .9rem; }
+  .cat-waar-lijst { display: grid; gap: .7rem; }
+  .cat-waar-lijst li { display: grid; gap: .2rem; }
+  .cat-waar-lijst b { font-weight: 500; }
+
+  .cat-stappen { display: grid; }
+  .cat-stappen li { display: grid; grid-template-columns: auto minmax(0, 22rem) minmax(0, 30rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
+  .cat-stappen li:last-child { border-bottom: 1px solid var(--lijn); }
+  .cat-stappen .nr { color: var(--inkt-2); }
+  .cat-stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; }
+
+  .cat-twee-licht { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .cat-check { display: grid; gap: .6rem; margin-top: 1.4rem; }
+  .cat-check li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); }
+  .cat-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .cat-grond { display: grid; gap: .8rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
+  .cat-grond-lijst { display: grid; gap: .6rem; }
+  .cat-grond-lijst li { display: flex; align-items: baseline; gap: .6rem; color: var(--inkt-2); }
+  .cat-grond-lijst li::before { content: ""; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--geel); translate: 0 -.15em; }
+
+  .cat-bewijs { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3rem); align-items: center; }
+  .cat-review { display: grid; gap: .8rem; }
+  .cat-review-lijst { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
+  .cat-review-lijst li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); border: 1px solid var(--lijn); border-radius: 999px; padding: .4rem .85rem; }
+
+  .cat-vragen { display: grid; gap: .7rem; }
+
+  @media (max-width: 900px) {
+    .cat-open, .cat-twee, .cat-twee-licht, .cat-bewijs { grid-template-columns: 1fr; }
+    .cat-bewijs { max-width: 520px; }
+    .cat-shots { grid-template-columns: 1fr 1fr; }
+    .cat-stappen li { grid-template-columns: auto 1fr; }
+    .cat-stappen li .lopend { grid-column: 2; }
   }
-  .rung-table th, .rung-table td { padding: .7rem .2rem; text-align: right; }
-  .rung-table thead th {
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    border-bottom: 1px solid var(--line-strong);
-  }
-  .rung-table thead th:first-child, .rung-table tbody th { text-align: left; }
-  .rung-table tbody tr + tr th, .rung-table tbody tr + tr td { border-top: 1px solid var(--line); }
-  .rung-table tbody th { font-family: var(--font-display); font-weight: 700; font-size: .98rem; color: var(--ink); white-space: nowrap; }
-  .rung-table tbody td { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--ink); }
-  .rungs-note { margin-top: 1rem; font-size: .88rem; line-height: 1.55; color: var(--ink-3); }
-
-  .chip-row { display: flex; flex-wrap: wrap; gap: .6rem; }
-  .chip { display: inline-flex; align-items: center; gap: .5rem; font-size: .84rem; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); padding: .45rem .9rem; }
-  .chip .dot { width: 6px; height: 6px; background: var(--accent); flex: 0 0 auto; }
-
-  /* `.drop-note` lived here, and identically in LifestylePage.astro and
-     VideoPage.astro. Three copies of one block is what TierCompare.astro
-     replaced; its styles are scoped to that component now. */
-
-  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
-  .faq-item { background: var(--surface); border: 1px solid var(--line); padding: 1.1rem 1.3rem; }
-  .faq-item summary { cursor: pointer; list-style: none; font-weight: 600; color: var(--ink); font-size: .98rem; }
-  .faq-item summary::-webkit-details-marker { display: none; }
-  .faq-item summary::marker { content: ''; }
-  .faq-item summary::after { content: '+'; float: right; color: var(--ink-3); font-family: var(--font-display); font-size: 1.2rem; }
-  .faq-item[open] summary::after { content: '\2212'; }
-  .faq-item p { margin-top: .8rem; color: var(--ink-3); font-size: .92rem; line-height: 1.6; }
-
-  /* The scoped `.step` override that used to sit here is `.steps-stacked` in
-     global.css now — /lifestyle and /video use the same stacked row, and three
-     copies of five declarations is how the last four duplications started. */
-
-  /* The Brand Model link inside packP. It arrives through set:html, so it
-     carries no scope attribute and a plain `.pack-p a` rule would not reach
-     it — hence :global() on the descendant. Same treatment every other inline
-     prose link on the site gets (see .legal a, .pl-panel-link a). */
-  .pack-p :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
-
-  /* The 4-photo product set. Four tiles on desktop, 2×2 on phones. */
-  .pack-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-  @media (max-width: 720px) { .pack-row { grid-template-columns: 1fr 1fr; } }
-  .pack-card .photo-band { position: relative; aspect-ratio: 3 / 4; overflow: hidden; border: 1px solid var(--line); }
-  .pack-card .photo-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* De <Placeholder> vult de cel net zo als een foto zou doen, en de badge komt
-     er overheen. Zonder deze twee regels staat hij op zijn eigen 1/1 midden in
-     een cel van 3/4 en valt de rij uit elkaar. */
-  .pack-card .photo-band :global([data-placeholder]) { position: absolute; inset: 0; margin: 0; }
-  .pack-card .photo-band :global([data-placeholder] > *) { width: 100%; height: 100%; }
-
-  /* De regel onder de rij die zegt waarom er drie open staan. Klein en grijs:
-     het is een mededeling, geen verkoopargument. */
-  .pack-open { margin: 1rem 0 0; font-size: .84rem; color: var(--ink-4); max-width: 52ch; }
-
-  /* Het bewijspaar en wat de specialist eraan doet, naast elkaar. Zie de noot
-     bij die sectie: het waren twee secties met hetzelfde beeld erin. Onder
-     62rem stapelt het, en dan staat de uitleg weer onder het paar. */
-  .cat-bewijs { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3rem); align-items: center; margin-top: 2rem; }
-  .cat-bewijs-h { font-size: clamp(1.3rem, 2.4vw, 1.7rem); margin: 0 0 .8rem; }
-  @media (max-width: 62rem) {
-    .cat-bewijs { grid-template-columns: minmax(0, 1fr); max-width: 520px; margin-inline: auto; }
-  }
-
-  .pack-badge { position: absolute; left: 10px; bottom: 10px; padding: .35rem .7rem; border-radius: var(--r-pill); background: rgb(var(--scrim) / 0.86); color: var(--paper-on-dark); font-size: .78rem; font-weight: 600; }
 </style>

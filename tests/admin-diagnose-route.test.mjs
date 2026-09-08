@@ -16,8 +16,7 @@
  * Deze test bewaakt drie dingen, en de eerste is de belangrijkste omdat hij
  * over de hele MAP gaat en niet over dit ene bestand:
  *
- *   1 · er staat geen enkel los routebestand in functions/admin of
- *       functions/account — alleen de catch-all en de index;
+ *   1 · er staat geen enkel los routebestand naast de vangroute;
  *   2 · de leesroute hangt achter de sessiecontrole;
  *   3 · de route die iets AANMAAKT is een POST en hangt achter originIsSelf().
  */
@@ -38,17 +37,44 @@ function ok(naam, waarde, verwacht = true, extra = '') {
  * of `index.js` is, wint van de catch-all en krijgt daarmee de centrale
  * controles NIET. Wie er een neerzet, hoort hier tegenaan te lopen.
  */
-console.log('\nin functions/admin en functions/account staat niets naast de padtabel');
+/* ── DE MAP IS VERHUISD, HET GEVAAR NIET — 7 september 2026 ─────────────────
+ *
+ * Dit stuk keek in functions/admin en functions/account. Die mappen bestaan niet
+ * meer: sinds de site één Worker is (zie wrangler.toml) draait er van /functions
+ * alleen nog functions/api/*, dat vanuit src/pages/api/ geïmporteerd wordt, en de
+ * drie lege routemappen zijn vandaag verwijderd.
+ *
+ * De REGEL is ongewijzigd, alleen het adres. Astro kiest een statische route
+ * (`/admin/iets`) vóór een vangroute (`[...path].js`), net zoals Pages Functions
+ * een los bestand vóór `[[path]].js` koos. Wie hier een bestand neerzet, staat
+ * dus opnieuw buiten de padtabel in src/lib/admin.js en daarmee buiten de ene
+ * centrale originIsSelf()-controle. Dat is letterlijk debug-mollie.js opnieuw.
+ *
+ * /admin en /o mogen dus ALLEEN de vangroute bevatten.
+ *
+ * /account is de uitzondering, en met reden: de zeven schermen daar zijn
+ * Astro-pagina's die studioScreen() aanroepen, en die doet de sessie, de
+ * omleidingen en de rechten — dezelfde poort, alleen via een andere deur. Wat er
+ * NIET mag staan is een .js: dat zou een endpoint zijn dat zijn eigen
+ * controles moet meebrengen. */
+console.log('\nnaast de vangroute staat geen los routebestand');
 {
-  const TOEGESTAAN = new Set(['[[path]].js', 'index.js']);
-  for (const map of ['functions/admin', 'functions/account']) {
-    const inhoud = readdirSync(new URL('../' + map, import.meta.url));
-    const los = inhoud.filter((n) => !TOEGESTAAN.has(n));
-    ok(`${map} bevat alleen de padtabel`, los, [], los.length ? `los: ${los.join(', ')}` : '');
+  for (const [map, mag] of [['src/pages/admin', ['[...path].js']], ['src/pages/o', ['[...token].js']]]) {
+    const los = readdirSync(new URL('../' + map, import.meta.url)).filter((n) => !mag.includes(n));
+    ok(`${map} bevat alleen de vangroute`, los, [], los.length ? `los: ${los.join(', ')}` : '');
   }
-  /* En het bestand dat dit veroorzaakte is echt weg, niet hernoemd. */
-  const admin = readdirSync(new URL('../functions/admin', import.meta.url));
-  ok('debug-mollie.js bestaat niet meer', admin.includes('debug-mollie.js'), false);
+  /* In /account mag een scherm, maar geen tweede endpoint. */
+  const account = readdirSync(new URL('../src/pages/account', import.meta.url), { recursive: true })
+    .map((n) => String(n).replace(/\\/g, '/'));
+  const losseJs = account.filter((n) => n.endsWith('.js') && n !== '[...path].js');
+  ok('src/pages/account bevat maar één endpoint', losseJs, [], losseJs.length ? `los: ${losseJs.join(', ')}` : '');
+
+  /* En het bestand dat dit alles veroorzaakte is echt weg, niet hernoemd of
+     verplaatst. Zoeken in de hele boom, want "weg" moet weg betekenen. */
+  const overal = readdirSync(new URL('../', import.meta.url), { recursive: true })
+    .map((n) => String(n).replace(/\\/g, '/'))
+    .filter((n) => !n.startsWith('node_modules') && !n.startsWith('dist') && !n.startsWith('.git'));
+  ok('debug-mollie.js bestaat nergens meer', overal.some((n) => n.endsWith('debug-mollie.js')), false);
 }
 
 /* ══ 2 · DE TWEE ROUTES ZITTEN IN DE GOEDE HELFT VAN DE TABEL ══════════════ */

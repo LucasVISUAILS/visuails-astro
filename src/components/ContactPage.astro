@@ -1,0 +1,315 @@
+---
+/*
+ * VISUAILS — de contactpagina, gedeeld door /contact en /nl/contact.
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ *
+ * Het waren twee bestanden met dezelfde opbouw in twee talen, 152 en 150
+ * regels, tot op de woorden na identiek — inclusief een formulier dat naar
+ * /api/order post. Bij een formulier weegt dat zwaarder dan bij een
+ * verhaalpagina: een veld dat in één van de twee talen anders gaat heten, is
+ * geen verschil in opmaak maar een veld dat in de ene taal niet aankomt. Zelfde
+ * behandeling als /gallery, /thank-you, /guides, /upload-guidelines en /404.
+ *
+ * ── HET FORMULIER POST NAAR /api/order EN DAT IS GEEN VERGISSING ──────────
+ *
+ * Dat eindpunt is de intake voor bestellingen, aanmeldingen ÉN berichten; het
+ * verborgen `service`-veld kiest de tak. `service=contact` schrijft een regel in
+ * `messages` en mailt NOTIFY_EMAIL. Er komt geen bestelling van, en de agenda
+ * wordt niet aangeraakt.
+ *
+ * ── DE VELDEN ZELF STAAN IN global.css ────────────────────────────────────
+ *
+ * `.field`, `.input`, `.select`, `.textarea`, `.opt`, `.req` en `.hint` zijn van
+ * de hele site en niet van deze pagina — vijf pagina's droegen ooit hun eigen
+ * kopie en die liepen uit elkaar. De HUID voor sectie 22 (de letter van het
+ * label, de ronding, welke kleur "gekozen" betekent) staat in stijl22.css, ook
+ * weer op één plek, want /test-sample en de bestelstroom hebben hem net zo hard
+ * nodig.
+ */
+import { waHref, WHATSAPP_DISPLAY } from '../data/whatsapp.js';
+import { TEST_SAMPLE } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
+
+const c = nl ? {
+  etiket: 'Contact',
+  h1: ['Laten we ', 'samen groeien'],
+  lead: 'Een vraag, of iets wat we niet standaard aanbieden? Stuur een bericht — er leest een specialist mee, geen wachtrij.',
+  beeldAlt: 'Een lifestylebeeld van VISUAILS in de stijl Glow',
+
+  kanalenKop: 'De snelste manier om ons te bereiken',
+  waKop: 'WhatsApp',
+  waP: 'Meestal antwoord binnen het uur.',
+  waCta: 'Chat via WhatsApp',
+  waTekst: 'Hoi VISUAILS, ik heb een vraag.',
+  mailKop: 'E-mail',
+  mailP: 'Voor uitgebreide briefings, facturen of bijlagen.',
+  urenKop: 'Openingstijden',
+  uren: ['Ma–vr 08:00–20:00 CET', 'Za–zo 09:00–20:00 CET'],
+  plaatsKop: 'Locatie',
+  plaats: ['Enschede, Nederland', 'KVK 99742993'],
+  plaatsLink: 'Volledige bedrijfsgegevens',
+  plaatsHref: '/nl/terms/#bedrijfsgegevens',
+
+  vormKop: 'Stuur een bericht',
+  vormP: 'We reageren meestal binnen het uur, via het kanaal dat jij kiest.',
+  vNaam: 'Naam',
+  vNaamMelding: 'Vul je naam in, dan weten we wie er schrijft.',
+  vNaamHouder: 'Je naam',
+  vMail: 'E-mailadres',
+  vMailMelding: 'Vul een volledig e-mailadres in, zoals jij@jouwmerk.nl — anders kunnen we niet antwoorden.',
+  vMailHouder: 'jij@jouwmerk.nl',
+  vOnderwerp: 'Onderwerp',
+  onderwerpen: [
+    ['order-support', 'Vraag over een bestelling'],
+    ['new-order', 'Nieuwe bestelling'],
+    ['custom-request', 'Iets op maat'],
+    ['other', 'Anders'],
+  ],
+  vBericht: 'Bericht',
+  vBerichtMelding: 'Schrijf even waar het over gaat, dan kunnen we meteen inhoudelijk reageren.',
+  vBerichtHouder: 'Hoe kunnen we helpen?',
+  vKanaal: 'Voorkeurskanaal',
+  kMail: ['E-mail', 'We reageren op je hello@visuails.com-thread'],
+  kWa: ['WhatsApp', 'Snelst — meestal binnen het uur'],
+  vVerstuur: 'Verstuur bericht',
+  vFaq: ['Snel een antwoord nodig? Bekijk eerst de ', 'FAQ', '.'],
+
+  slotEtiket: 'Liever eerst zien',
+  slotH: ['Liever eerst ', 'één product', ' van jezelf?'],
+  slotP: `Je levert aan zoals bij een gewone bestelling en krijgt ${SAMPLE.deliverable} terug. Voor ${SAMPLE.price}, één per bedrijf.`,
+  slotCta: 'Probeer VISUAILS',
+  slotCta2: 'Bekijk prijzen',
+} : {
+  etiket: 'Contact',
+  h1: ['Let’s grow ', 'together'],
+  lead: 'A question, or something we do not offer as standard? Send a message — a specialist reads every one, and there is no queue in between.',
+  beeldAlt: 'A VISUAILS lifestyle image in the Glow style',
+
+  kanalenKop: 'The fastest way to reach us',
+  waKop: 'WhatsApp',
+  waP: 'Usually replies within the hour.',
+  waCta: 'Chat on WhatsApp',
+  waTekst: 'Hi VISUAILS, I have a question.',
+  mailKop: 'Email',
+  mailP: 'For a long request, an invoice question or files you want to attach.',
+  urenKop: 'Opening hours',
+  uren: ['Mon–Fri 08:00–20:00 CET', 'Sat–Sun 09:00–20:00 CET'],
+  plaatsKop: 'Location',
+  plaats: ['Enschede, the Netherlands', 'KVK 99742993'],
+  plaatsLink: 'Full company details',
+  plaatsHref: '/terms/#company-details',
+
+  vormKop: 'Send a message',
+  vormP: 'We usually reply within the hour, by your preferred channel.',
+  vNaam: 'Name',
+  vNaamMelding: 'Add your name, so we know who is writing.',
+  vNaamHouder: 'Your name',
+  vMail: 'Email',
+  vMailMelding: 'Add a full email address, like you@yourbrand.com — otherwise we cannot reply.',
+  vMailHouder: 'you@yourbrand.com',
+  vOnderwerp: 'Topic',
+  onderwerpen: [
+    ['order-support', 'Order support'],
+    ['new-order', 'New order'],
+    ['custom-request', 'Custom request'],
+    ['other', 'Other'],
+  ],
+  vBericht: 'Message',
+  vBerichtMelding: 'Tell us what it is about, so we can answer properly the first time.',
+  vBerichtHouder: 'How can we help?',
+  vKanaal: 'Preferred contact method',
+  kMail: ['Email', 'We reply to hello@visuails.com threads'],
+  kWa: ['WhatsApp', 'Fastest — usually within the hour'],
+  vVerstuur: 'Send message',
+  vFaq: ['Looking for quick answers? Check the ', 'FAQ', ' first.'],
+
+  slotEtiket: 'Rather see it first',
+  slotH: ['Rather see ', 'one of your own products', ' first?'],
+  slotP: `You send what a normal order needs and get ${SAMPLE.deliverable} back. For ${SAMPLE.price}, one per business.`,
+  slotCta: 'Test sample',
+  slotCta2: 'See pricing',
+};
+---
+
+<div class="s22 ct">
+
+  <section class="paneel ct-open">
+    <div class="ct-open-grid">
+      <div class="paneel-kop ct-open-kop">
+        <p class="etiket">{c.etiket}</p>
+        <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
+        <p class="lopend">{c.lead}</p>
+      </div>
+      {/* Eén beeld, en niet omdat er anders een gat valt: deze pagina is de
+          plek waar iemand belandt die nog twijfelt, en dan helpt het om te zien
+          waar het over gaat. Verder niets — een contactpagina is geen etalage. */}
+      <figure class="kaart kaart-stil ct-beeld">
+        <img src="/img/lifestyle-glow-03.webp" alt={c.beeldAlt} loading="lazy" decoding="async" width="768" height="1376" />
+      </figure>
+    </div>
+  </section>
+
+  <section class="paneel ct-body">
+    <div class="ct-grid">
+
+      {/* LINKS · de kanalen. Ze staan vóór het formulier omdat het antwoord op
+          "hoe bereik ik jullie" meestal WhatsApp is en niet een formulier — wie
+          liever typt, scrolt door naar rechts (of eronder, op een telefoon). */}
+      <div class="ct-kanalen">
+        <h2 class="hoog hoog-3">{c.kanalenKop}</h2>
+
+        <div class="ct-vak">
+          <h3 class="etiket">{c.waKop}</h3>
+          <p class="ct-groot">{WHATSAPP_DISPLAY}</p>
+          <p class="ct-klein">{c.waP}</p>
+          <p class="acties"><a class="knop knop-inkt" href={waHref(c.waTekst)} target="_blank" rel="noopener">{c.waCta}</a></p>
+        </div>
+
+        <div class="ct-vak">
+          <h3 class="etiket">{c.mailKop}</h3>
+          <p class="ct-groot"><a href="mailto:hello@visuails.com">hello@visuails.com</a></p>
+          <p class="ct-klein">{c.mailP}</p>
+        </div>
+
+        <div class="ct-twee">
+          <div class="ct-vak">
+            <h3 class="etiket">{c.urenKop}</h3>
+            <p class="ct-klein">{c.uren[0]}<br />{c.uren[1]}</p>
+          </div>
+          <div class="ct-vak">
+            <h3 class="etiket">{c.plaatsKop}</h3>
+            <p class="ct-klein">
+              {c.plaats[0]}<br />{c.plaats[1]}<br /><a href={c.plaatsHref}>{c.plaatsLink}</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* RECHTS · het formulier. Post naar /api/order met service=contact; zie
+          de kop van dit bestand voor waarom dat hetzelfde eindpunt is. */}
+      <div class="ct-vorm">
+        <h2 class="hoog hoog-3">{c.vormKop}</h2>
+        <p class="lopend ct-klein">{c.vormP}</p>
+
+        <form action="/api/order" method="post">
+          <input type="hidden" name="service" value="contact" />
+          <input type="hidden" name="redirect" value="/thank-you" />
+          <input type="hidden" name="lang" value={lang} />
+          {/* Het honeypotveld. Buiten beeld en buiten de tabvolgorde: een mens
+              komt er nooit langs, een bot vult hem. */}
+          <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" class="ct-val" />
+
+          <div class="field">
+            <label for="c-name">{c.vNaam} <span class="req">*</span></label>
+            <input class="input" type="text" id="c-name" name="name" required data-melding={c.vNaamMelding} autocomplete="name" placeholder={c.vNaamHouder} />
+          </div>
+          <div class="field">
+            <label for="c-email">{c.vMail} <span class="req">*</span></label>
+            <input class="input" type="email" id="c-email" name="email" required data-melding={c.vMailMelding} autocomplete="email" placeholder={c.vMailHouder} />
+          </div>
+          <div class="field">
+            <label for="c-topic">{c.vOnderwerp}</label>
+            <select class="select" id="c-topic" name="topic">
+              {c.onderwerpen.map(([waarde, label]) => <option value={waarde}>{label}</option>)}
+            </select>
+          </div>
+          <div class="field">
+            <label for="c-message">{c.vBericht} <span class="req">*</span></label>
+            <textarea class="textarea" id="c-message" name="message" rows="5" required data-melding={c.vBerichtMelding} placeholder={c.vBerichtHouder}></textarea>
+          </div>
+          <div class="field">
+            {/* Een <span> en geen <label>: een label wijst naar één control, en
+                dit is de kop van een GROEP. De groep draagt role="radiogroup"
+                met aria-labelledby hierheen. `.veldkop` geeft hem in stijl22.css
+                dezelfde letter als een echt veldlabel. */}
+            <span class="veldkop" id="preferred-label">{c.vKanaal}</span>
+            <div class="opt-stack" role="radiogroup" aria-labelledby="preferred-label">
+              <label class="opt">
+                <input type="radio" name="preferred" value="email" checked />
+                <span class="opt-main"><span class="opt-title">{c.kMail[0]}</span><span class="opt-desc">{c.kMail[1]}</span></span>
+              </label>
+              <label class="opt">
+                <input type="radio" name="preferred" value="whatsapp" />
+                <span class="opt-main"><span class="opt-title">{c.kWa[0]}</span><span class="opt-desc">{c.kWa[1]}</span></span>
+              </label>
+            </div>
+          </div>
+
+          <p class="acties ct-verstuur"><button type="submit" class="knop knop-inkt">{c.vVerstuur}</button></p>
+          <p class="ct-faq">{c.vFaq[0]}<a href={lp('/faq')}>{c.vFaq[1]}</a>{c.vFaq[2]}</p>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="paneel paneel-slot ct-slot">
+    <p class="etiket">{c.slotEtiket}</p>
+    <h2 class="hoog hoog-2">{c.slotH[0]}<em>{c.slotH[1]}</em>{c.slotH[2]}</h2>
+    <p class="lopend">{c.slotP}</p>
+    <div class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.slotCta}</a>
+      <a class="knop knop-lijn" href={lp('/pricing')}>{c.slotCta2}</a>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  .ct-open-grid { display: grid; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+  @media (min-width: 900px) { .ct-open-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+  .ct-open-kop { margin-bottom: 0; }
+  .ct-beeld { margin: 0; aspect-ratio: 4 / 5; }
+  .ct-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .ct-body { padding-block: clamp(2.5rem, 5vw, 4.5rem); }
+  .ct-grid { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: start; }
+  @media (min-width: 900px) { .ct-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } }
+
+  .ct-kanalen { display: grid; gap: 1.1rem; align-content: start; }
+  .ct-kanalen h2, .ct-vorm h2 { margin: 0 0 .4rem; }
+
+  .ct-vak {
+    padding: clamp(1.2rem, 2.5vw, 1.6rem);
+    border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 14px);
+    background: var(--wit);
+    display: grid; gap: .5rem; align-content: start;
+  }
+  .ct-vak h3 { margin: 0; color: var(--inkt-2); }
+  .ct-groot {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1rem, 1.6vw, 1.25rem); letter-spacing: -.01em; color: var(--inkt);
+  }
+  .ct-klein { color: var(--inkt-2); font-size: .92rem; line-height: 1.6; }
+  /* `:not(.knop)` — anders wint deze regel van `.s22 .knop-inkt`. Astro hangt
+     aan elke samengestelde selector een cid-attribuut, dus `.ct-vak a` telt als
+     twee klassen en `.s22 .knop-inkt` ook; bij gelijke specificiteit wint de
+     laatste, en dat is deze. Gevolg was inkt op inkt in de WhatsApp-knop, 1,0:1.
+     Exact dezelfde val als bij `.legal a` op de juridische pagina's. */
+  .ct-vak a:not(.knop), .ct-faq a {
+    color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
+    text-decoration-color: var(--geel); text-decoration-thickness: 2px;
+  }
+  .ct-vak a:not(.knop):hover, .ct-faq a:hover { text-decoration-color: var(--inkt); }
+  .ct-twee { display: grid; gap: 1.1rem; }
+  @media (min-width: 520px) { .ct-twee { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .ct-vorm form { margin-top: 1.6rem; }
+  .ct-vorm .lopend { margin-bottom: 0; }
+  /* Het honeypotveld: uit beeld zonder display:none, want een veld dat niet
+     gerenderd wordt, wordt door sommige bots ook niet ingevuld. */
+  .ct-val { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .ct-verstuur { margin-top: 1.4rem; }
+  @media (max-width: 520px) { .ct-verstuur .knop { width: 100%; justify-content: center; } }
+  .ct-faq { margin-top: .9rem; font-size: .85rem; color: var(--inkt-2); }
+
+  .ct-slot .lopend { max-width: 44em; }
+</style>

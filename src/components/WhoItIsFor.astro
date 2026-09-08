@@ -67,45 +67,70 @@ const COPY = {
 const c = COPY[lang] || COPY.en;
 ---
 
-<section class="band wif-band">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.whoH}</h2>
-      <p class="lede">{c.whoLede}</p>
-    </div>
-    <div class="tiles wif-tiles reveal-group">
-      {c.who.map(([t, b], i) => (
-        <div class="tile s-3 reveal">
-          <div class="tile-body">
-            {/* Geen kleurladder — zie de noot bij .hv-pipe-n in HomeV2.astro.
-                Dit zijn vier situaties naast elkaar, geen ranglijst, dus is er
-                al helemaal geen reden om de vierde het flauwst te zetten. */}
-            <span class="wif-i">{String(i + 1).padStart(2, '0')}</span>
-            <p class="tile-h">{t}</p>
-            <p class="tile-n">{b}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-    <div class="wif-notfor">
-      <Disclose summary={c.notForH} tone="plain">
-        <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
-      </Disclose>
-    </div>
+{/* ── SECTIE 22, 7 september 2026 ──────────────────────────────────────────
+    Dezelfde vier situaties en dezelfde bekentenis eronder; alleen de vorm is
+    nieuw. De vier staan in een donkere kamer omdat dit het moment op /about is
+    waarop de pagina de bezoeker een vraag stelt in plaats van iets vertelt, en
+    een hoofdstukwissel is precies wat dat markeert. */}
+<section class="kamer wif-kamer">
+  <span class="spook spook-links" aria-hidden="true">{lang === 'nl' ? 'VOOR WIE' : 'FOR WHOM'}</span>
+  <div class="kamer-kop">
+    <h2 class="hoog hoog-2">{c.whoH}</h2>
+    <p class="lopend">{c.whoLede}</p>
+  </div>
+
+  <ul class="wif-raster" role="list">
+    {c.who.map(([t, b], i) => (
+      <li class="wif-vak">
+        {/* Geen kleurladder — zie de noot bij .hv-pipe-n in Voorpagina.astro.
+            Dit zijn vier situaties naast elkaar, geen ranglijst, dus is er al
+            helemaal geen reden om de vierde het flauwst te zetten. */}
+        <b class="wif-h">{t}</b>
+        <p class="lopend wif-n">{b}</p>
+      </li>
+    ))}
+  </ul>
+
+  <div class="wif-notfor">
+    <Disclose summary={c.notForH} tone="plain">
+      <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
+    </Disclose>
   </div>
 </section>
 
 <style>
-  .wif-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  .wif-kamer { --wif-lijn: rgb(245 245 245 / .16); }
+  .wif-raster {
+    display: grid; gap: clamp(1.6rem, 3vw, 2.6rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    list-style: none; padding: 0; margin: 0;
+  }
+  .wif-vak { display: grid; gap: .6rem; align-content: start; padding-top: 1.2rem; border-top: 1px solid var(--wif-lijn); }
   /* Het nummer is een LABEL en geen stap: de vier situaties zijn alternatieven.
-     Daarom klein en gekleurd, en niet de omlijnde cijfers die de pijplijn
-     gebruikt — die betekenen volgorde, en die volgorde bestaat hier niet. */
-  .wif-i { display: block; font-family: var(--font-display); font-weight: 900; font-size: .74rem; letter-spacing: .14em; margin-bottom: 1.1rem; color: var(--accent-bright); }
-  .wif-notfor { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
-  .wif-notfor ul { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .65rem; max-width: 62ch; }
-  .wif-notfor li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
-  /* Koraal en niet het accent: dit is de enige lijst op de pagina die een
-     waarschuwing is in plaats van een aanbod, en het palet houdt koraal al
-     apart voor het getal dat tegen je meetelt. */
-  .wif-notfor li::before { content: ''; position: absolute; left: 0; top: .64em; width: 9px; height: 1px; background: var(--fill-coral); }
+     Daarom klein en in de accentletter, en niet de grote genummerde koppen die
+     .stappen gebruikt — die betekenen volgorde, en die bestaat hier niet. */
+  .wif-i { color: var(--geel-letter); }
+  .wif-h {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1rem, 1.7vw, 1.25rem); line-height: 1.15;
+    letter-spacing: -.01em; text-transform: uppercase; text-wrap: balance;
+  }
+  .wif-n { font-size: .95rem; }
+
+  .wif-notfor {
+    margin-top: clamp(2.4rem, 5vw, 4rem);
+    padding-top: clamp(1.4rem, 2.5vw, 2rem);
+    border-top: 1px solid var(--wif-lijn);
+  }
+  .wif-notfor ul { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .7rem; max-width: 62ch; }
+  .wif-notfor li {
+    position: relative; padding-left: 1.4rem;
+    font-size: .92rem; line-height: 1.6; color: rgb(245 245 245 / .72);
+  }
+  /* Een streepje en geen vinkje: dit is de enige lijst op de pagina die zegt
+     wat je NIET moet kopen, en een vinkje ervoor zou hem als aanbod lezen. */
+  .wif-notfor li::before {
+    content: ''; position: absolute; left: 0; top: .68em;
+    width: 10px; height: 1px; background: rgb(245 245 245 / .5);
+  }
 </style>

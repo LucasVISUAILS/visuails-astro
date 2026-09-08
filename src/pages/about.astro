@@ -1,121 +1,15 @@
 ---
-import { waHref } from '../data/whatsapp.js';
-// VISUAILS — About. Editorial page: who we are, what we hold to, a fast
-// strip of real photography, closing CTA. Ported from the SvelteKit about
-// page — see IMAGES.md for the photo strip and hero.
+// VISUAILS — /about (English). De inhoud staat in AboutPage.astro zodat deze
+// pagina en /nl/about niet uit elkaar kunnen lopen; zie de kop daar. Dit paar
+// wás al uit elkaar gelopen — de Engelse stond in sectie 22 en de Nederlandse
+// nog in de oude stijl — en dat is precies waarom het nu één bestand is.
 import Layout from '../layouts/Layout.astro';
-import WhoItIsFor from '../components/WhoItIsFor.astro';
-import { euro, ladderRate, ladderFloor, LADDER, vatLabel, reviewClaim, turnaround } from '../data/pricing.js';
-
-// This page carried four separate delivery promises — the meta description,
-// the hero lead, the body lead and a chip — every one of them saying "about a
-// day" or "~24h", none of which the capacity gate has ever cleared. They are
-// tier facts, so they come from pricing.js now. "No subscription" went with
-// them: it stopped being true the day monthly plans shipped, and the FAQ
-// answer that made the same claim was already rewritten for that reason.
-//
-// The one price on this page used to be a flat per-product rate. It is the
-// entry rung of a ladder now (section 0 of src/data/pricing.js), and the card
-// it sits on is headed "Open to everyone" — the exact claim the entry rate
-// alone would undersell, since the point of a falling rate is that a bigger
-// range costs less per product rather than more. So both ends are named.
-const CAT_ENTRY = euro(ladderRate('catalog', 1), 'en');
-const CAT_FLOOR = euro(ladderFloor('catalog'), 'en');
-const CAT_FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
-const TIMING = turnaround('unattended', 'en');
-const REVIEW = reviewClaim('unattended', 'en');
-
-// w/h are the INTRINSIC pixel size of each file in public/img, not the size
-// it renders at — .photo-grid's own aspect-ratio decides that. They are here
-// so the browser can reserve the box before the bytes arrive (§12).
-const strip = [
-  { src: '/img/lifestyle-glow-05.webp', w: 2400, h: 1792 },
-  { src: '/img/lifestyle-flash-06.webp', w: 2400, h: 1792 },
-  { src: '/img/lifestyle-dunes-02.webp', w: 928, h: 1152 },
-  { src: '/img/lifestyle-phone-made-09.webp', w: 2400, h: 1792 },
-  { src: '/img/banners-08.webp', w: 928, h: 1152 },
-];
+import AboutPage from '../components/AboutPage.astro';
 ---
 
 <Layout
   title="About VISUAILS — the studio behind the visuals"
   description="VISUAILS is a product-visual studio in Enschede, Netherlands — modern production speed with human judgement on every visual we deliver."
 >
-  <section class="hero-editorial compact">
-    {/* De foto en de sluier zitten in een STILLE vloer. Het masker dat de
-        onderrand laat oplossen hangt daaraan en niet aan .bg zelf: die laag
-        schuift met de parallax, en een masker schuift met zijn element mee —
-        dan valt de uitdoving naast de rand die ze moet oplossen. */}
-    <div class="hero-vloer rand-los-voet" aria-hidden="true">
-      <div class="bg" style="background-image:url('/img/banners-13.webp')"></div>
-      <div class="fade"></div>
-  <div class="korrel-mee" aria-hidden="true"></div>
-    </div>
-    <div class="hero-editorial-content container">
-      <h1 class="display" data-split-lines>Great visuals,<br />without the <em>studio</em>.</h1>
-      <p class="lead" style="margin-top:1.2rem">Studio-quality product visuals — modern speed, checked by real people.</p>
-      <div class="flex" style="margin-top:1.8rem">
-        <a href="/test-sample/" class="btn btn-primary btn-lg">Test sample</a>
-        <a href={waHref("Hi VISUAILS, I'd like to learn more about you.")} class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight"><div class="container">
-    <div class="photo-split reveal pending">
-      <div class="photo-split-media"><img src="/img/custom-models-01.webp" alt="A VISUAILS campaign scene, styled and shot for a client brand" loading="lazy" decoding="async" width="800" height="1071" /></div>
-      <div>
-        <h2>Speed and judgement, <em>together</em>.</h2>
-        <p class="lead" style="margin-top:1rem">A small team in Enschede, Netherlands. One photo becomes a full set — and a real person reviews every image before it reaches you.</p>
-        <div class="chip-row" style="margin-top:1.4rem">
-          <span class="chip"><span class="dot"></span>Enschede, NL</span>
-          <span class="chip"><span class="dot"></span>{REVIEW}</span>
-          <span class="chip"><span class="dot"></span>{TIMING}</span>
-        </div>
-      </div>
-    </div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <h2 class="section-h">Three things we hold to.</h2>
-    <div class="grid grid-3 reveal-group">
-      <div class="card card-hover reveal pending"><h3>Speed, without the shortcut</h3><p style="margin-top:.6rem;color:var(--ink-3)">Fast delivery, and still worth publishing.</p></div>
-      <div class="card card-hover reveal pending"><h3>Consistency wins</h3><p style="margin-top:.6rem;color:var(--ink-3)">One coherent look, across your whole range.</p></div>
-      <div class="card card-hover reveal pending"><h3>Open to everyone</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog at {CAT_ENTRY} per product, {CAT_FLOOR} from {CAT_FLOOR_FROM} up ({vatLabel('excl', 'en')}). Order one, or a whole collection.</p></div>
-    </div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div class="photo-grid reveal pending">
-      <img src={strip[0].src} alt="Glow-style lifestyle image" loading="lazy" decoding="async" width={strip[0].w} height={strip[0].h} class="wide" />
-      <img src={strip[1].src} alt="Flash-style lifestyle image" loading="lazy" decoding="async" width={strip[1].w} height={strip[1].h} />
-      <img src={strip[2].src} alt="Dunes-style lifestyle image" loading="lazy" decoding="async" width={strip[2].w} height={strip[2].h} />
-      <img src={strip[3].src} alt="Phone-made-style lifestyle image" loading="lazy" decoding="async" width={strip[3].w} height={strip[3].h} />
-      <img src={strip[4].src} alt="Campaign photography" loading="lazy" decoding="async" width={strip[4].w} height={strip[4].h} class="wide" />
-    </div>
-  </div></section>
-
-  {/* "Voor wie is dit" stond tot augustus 2026 als sectie 4 op de homepage.
-      Het staat hier omdat een bezoeker die vraag pas stelt als hij weet wie er
-      achter staat — en omdat de homepage elke sectie moest verdienen of een
-      link moest worden (HERONTWERP.md §3.1). Er is niets ingekort bij de
-      verhuizing; de component draagt de copy woord voor woord mee. */}
-  <WhoItIsFor lang="en" />
-
-  <section class="section-tight"><div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:var(--t-page-h2)">Let’s grow <em>together</em>.</h2>
-      <p class="lead" style="margin:1.2rem auto 0;text-align:center">Test sample, or message us on WhatsApp.</p>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <a href="/test-sample/" class="btn btn-primary btn-lg">Test sample</a>
-        <a href={waHref("Hi VISUAILS, I'd like to talk about visuals for my brand.")} class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
-      </div>
-    </div>
-  </div></section>
+  <AboutPage lang="en" />
 </Layout>
-
-<style>
-  .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
-  .chip .dot { width: 5px; height: 5px; background: var(--accent); }
-</style>

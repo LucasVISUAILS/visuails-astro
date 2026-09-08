@@ -77,92 +77,16 @@ const PORT = await new Promise((r) => server.listen(0, '127.0.0.1', () => r(serv
 const BASE = `http://127.0.0.1:${PORT}`;
 const browser = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
 
-/* ══ 1 · DE LAMP BLIJFT BOVENAAN ══════════════════════════════════════════ */
-console.log('\nde lamp schijnt op de pagina en niet op het venster');
-{
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
-  const page = await ctx.newPage();
-  await page.goto(`${BASE}/faq`, { waitUntil: 'networkidle' });
-  /* Alles wat zelf licht geeft weghalen, zodat er KALE GROND wordt gemeten en
-     niet een foto die toevallig groen is. */
-  await page.addStyleTag({ content: 'header, section, footer, .grain, [class*=beam], .foto-licht-laag, img, video, picture { visibility: hidden !important; }' });
+/* ══ 1 · DE LAMP STOND HIER ══════════════════════════════════════════════
+   Er lag een gele waas van 5% linksboven op het eerste scherm (body::after),
+   en deze paragraaf mat dat hij met de pagina meescrolde en niet aan het
+   venster hing. Sectie 21 (5 september 2026): de waas is weg — de grond is
+   wit en blijft wit — dus er is niets meer om te meten. */
 
-  const tint = async () => {
-    const png = PNG.sync.read(await page.screenshot());
-    const punt = (x, y) => { const i = (y * png.width + x) * 4; return png.data[i + 1] - png.data[i + 2]; };
-    /* Groen min blauw: de lamp is rgb(198 241 0) — veel groen, géén blauw. Het
-       vignet maakt hoeken donkerder maar laat die verhouding met rust, dus dit
-       getal meet de lamp en niets anders. */
-    return punt(60, 60) - punt(png.width - 60, png.height - 60);
-  };
-
-  const boven = await tint();
-  check('bovenaan ligt er licht linksboven', boven >= 5, true);
-
-  await page.evaluate(() => window.scrollTo(0, 2200));
-  await page.waitForTimeout(300);
-  const halverwege = await tint();
-  await page.evaluate(() => window.scrollTo(0, 5000));
-  await page.waitForTimeout(300);
-  const diep = await tint();
-
-  /* DIT IS DE TOETS. Met de lamp op `fixed` staat hier hetzelfde getal als
-     bovenaan; hoort hij bij de pagina, dan is hij weg. */
-  check('halverwege de pagina is hij weg', halverwege <= 2, true);
-  check('en diep in de pagina ook', diep <= 2, true);
-  check('en dat is een echt verschil met bovenaan', boven - diep >= 4, true);
-  await ctx.close();
-}
-
-/* ══ 2 · VIER KAARTEN DIE ELKAAR MET RUST LATEN ═══════════════════════════ */
-console.log('\néén FAQ-kaart openen laat de andere drie staan');
-{
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
-  const page = await ctx.newPage();
-  await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
-  await page.locator('.hv-ob').scrollIntoViewIfNeeded();
-  await page.waitForTimeout(300);
-
-  const staten = () => page.evaluate(() => [...document.querySelectorAll('.hv-ob-item')].map((d) => ({
-    open: d.open,
-    h: Math.round(d.getBoundingClientRect().height),
-    bg: getComputedStyle(d).backgroundColor,
-    rand: getComputedStyle(d).borderTopWidth,
-  })));
-
-  const dicht = await staten();
-  check('er staan vier kaarten', dicht.length, 4);
-  check('en dicht zijn ze even hoog', new Set(dicht.map((d) => d.h)).size, 1);
-  check('geen enkele staat open', dicht.filter((d) => d.open).length, 0);
-  /* Punt (b) uit de melding: dezelfde behandeling voor alle vier, en een échte
-     rand in plaats van alleen een spleet tussen de vakken. */
-  check('ze delen één achtergrond', new Set(dicht.map((d) => d.bg)).size, 1);
-  check('en ze hebben allemaal een rand', dicht.every((d) => d.rand !== '0px'), true);
-
-  await page.locator('.hv-ob-item').nth(1).locator('summary').click();
-  await page.waitForTimeout(300);
-  const na = await staten();
-  check('na de klik staat er precies één open', na.filter((d) => d.open).length, 1);
-  check('en dat is de aangeklikte', na.findIndex((d) => d.open), 1);
-  /* HET HART VAN DE MELDING. Vroeger groeiden alle vier mee naar 325px; nu groeit
-     alleen de kaart die je aanklikte. */
-  check('alleen die kaart is gegroeid', na[1].h > dicht[1].h, true);
-  check('de andere drie staan nog op hun oude hoogte',
-    [0, 2, 3].map((i) => na[i].h === dicht[i].h), [true, true, true]);
-  /* En de achtergrond blijft dezelfde in beide toestanden — alleen de rand wordt
-     sterker, want dat is de ene aanwijzing die er iets mee te maken heeft. */
-  check('de achtergrond verandert niet bij openen', na[1].bg, dicht[1].bg);
-  check('alleen de rand van de open kaart is anders',
-    (await page.evaluate(() => {
-      const it = [...document.querySelectorAll('.hv-ob-item')];
-      return getComputedStyle(it[1]).borderTopColor !== getComputedStyle(it[0]).borderTopColor;
-    })), true);
-
-  await page.locator('.hv-ob-item').nth(1).locator('summary').click();
-  await page.waitForTimeout(300);
-  check('nog een klik sluit hem weer', (await staten()).filter((d) => d.open).length, 0);
-  await ctx.close();
-}
+/* ══ 2 · DE VIER FAQ-KAARTEN OP DE HOMEPAGE STONDEN HIER ═════════════════
+   Sectie 21 (5 september 2026): de homepage heeft geen uitklapbare vragen meer
+   — vier vragen zijn nu vier regels met een link. De controle van §1 op /faq
+   dekt hetzelfde gedrag voor de kaarten die er nog zijn. */
 
 /* ══ 3 · DE SCROLL IS VAN DE BROWSER ══════════════════════════════════════
  *

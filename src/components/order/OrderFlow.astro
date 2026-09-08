@@ -47,8 +47,9 @@ import {
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
   AMOUNT, clause,
 } from '../../data/pricing.js';
-import { ATTENDED_IMAGES_PER_WINDOW, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
-import { kindImages } from '../../data/pricing.js';
+import { ATTENDED_PUNTEN_PER_VENSTER, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
+import { puntenVoor, beeldenVoor } from '../../data/pricing.js';
+import '../../styles/stijl22.css';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
 /* De beeldkeuring reist NIET mee in cfg. pipeline.js importeert keurBeeld()
    rechtstreeks uit shots.js en leest de drempels daar; ze hier ook nog eens
@@ -128,7 +129,7 @@ const { lang, service, mode = 'order', hero = true } = Astro.props;
 /* ── HET PLAFOND HANGT AF VAN DE DIENST — 31 augustus 2026 ──────────────────
  *
  * Hier stond ATTENDED_PER_WINDOW, en dat getal is 30: het aantal COMPLETE
- * producten dat in één venster past. Sinds de agenda in beelden rekent, is dat
+ * producten dat in één venster past. Sinds de agenda in punten rekent, is dat
  * niet meer het plafond van elke dienst. Een catalogset weegt vier beelden en een
  * compleet product zeven, dus in dezelfde 210 beelden passen 52 catalogsets waar
  * er 30 complete in gaan.
@@ -140,9 +141,9 @@ const { lang, service, mode = 'order', hero = true } = Astro.props;
  *
  * Terugval op ATTENDED_PER_WINDOW als de dienst geen gewicht heeft: dan is dit
  * geen ladderdienst en komt hij nooit bij de poort — zie tierFor() in pricing.js. */
-const perProduct = kindImages(service, 1);
+const perProduct = puntenVoor(service, 1);
 const capacityMax = perProduct
-  ? Math.floor(ATTENDED_IMAGES_PER_WINDOW / perProduct)
+  ? Math.floor(ATTENDED_PUNTEN_PER_VENSTER / perProduct)
   : ATTENDED_PER_WINDOW;
 /* ── EN HET FORMULIER STOPT BIJ TWINTIG — 3 september 2026 ──────────────────
  * Zie FORM_MAX_PRODUCTS in pricing.js. Boven dat aantal biedt stap 1 geen
@@ -176,6 +177,18 @@ const lp = (p: string) => localizedPath(lang, p);
  * scène gestyled wordt, en dáár kán een look wél een volledige outfit zijn.
  */
 const isCatalog = service === 'catalog';
+
+/* ── DE PRIJS BOVEN HET PLAFOND VAN HET FORMULIER — 4 september 2026 ─────────
+   Een doorloop met vier bezoekers leverde twee keer dezelfde klacht op: de
+   staffel eindigt op "20+" en het formulier zegt "tot 20 producten in één
+   bestelling", en wie er 60 heeft leest daaruit dat er voor hem geen prijs is.
+   Die is er wel — de laatste trede van LADDER heeft geen bovengrens, dus
+   ladderRate(60) is exact hetzelfde tarief als ladderRate(20). Wat er samen
+   gepland moet worden zijn de LEVERDATA en niet het bedrag, en dat hoort het
+   paneel te zeggen in plaats van "je krijgt één offerte". Afgeleid, niet
+   getypt: verandert de laatste trede, dan verandert deze zin mee. */
+const ladderVloer = LADDER[service] ? ladderFloor(service) : null;
+const vloerVanaf = LADDER[service] ? LADDER[service][LADDER[service].length - 1][0] : null;
 
 if (!LADDER[service]) {
   throw new Error(`OrderFlow.astro: "${service}" is not a kind on the ladder in src/data/pricing.js.`);
@@ -536,6 +549,9 @@ for (const l of ['en', 'nl'] as const) {
     extraNote: s.extraNote,
     extraPlaceholder: s.extraPlaceholder,
     extraRate: s.extraRate,
+    extraSum: s.extraSum,
+    extraSumOne: s.extraSumOne,
+    extraWhat: s.extraWhat,
     extraSlot: s.extraSlot,
     extraNoteLabel: s.extraNoteLabel,
     extraNoteErr: s.extraNoteErr,
@@ -557,6 +573,9 @@ for (const l of ['en', 'nl'] as const) {
     allDone: s.allDone,
     product: l === 'nl' ? 'Product {n}' : 'Product {n}',
     add: l === 'nl' ? 'Nog een product toevoegen' : 'Add another product',
+    /* De tegenhanger van `add`. Staat alleen op de laatste kaart en alleen
+       boven het bestelde aantal — zie paintCard() in pipeline.js. */
+    dropCard: l === 'nl' ? 'Weghalen' : 'Remove',
     // The disclosure opens the photos AND the question, so it says so. A
     // control whose label names half of what it does is a control a customer
     // learns to distrust.
@@ -593,10 +612,16 @@ for (const l of ['en', 'nl'] as const) {
     refAdd: l === 'nl' ? 'Nog een foto' : 'Another photo',
     /* Per DIENST, 3 september 2026: een lifestyle-carousel levert er drie, en
        deze regel zei op elke bestelpagina "4 beelden". Zelfde fout als
-       shots.js §back.buys beschrijft; nu uit kindImages(). */
+       shots.js §back.buys beschrijft.
+       ── EN UIT beeldenVoor() EN NIET UIT DE PUNTEN — 7 september 2026 ──────
+       Dit stond op `kindImages(service, 1)`, de agendaweging. Dat gaf toevallig
+       het goede getal zolang één punt één foto was. Zodra STYLE_PUNTEN een look
+       zwaarder mag maken, gaat de weging omhoog en het aantal foto's niet — en
+       dan belooft deze zin beelden die er niet komen. beeldenVoor() beantwoordt
+       de vraag die hier gesteld wordt; zie de noot bij KIND_BEELDEN. */
     refHint: l === 'nl'
-      ? `Gratis. Meer foto’s van hetzelfde product helpen ons — je krijgt nog steeds ${kindImages(service, 1) || CATALOG_IMAGES} beelden.`
-      : `Free. More photos of the same product help us — you still receive ${kindImages(service, 1) || CATALOG_IMAGES} images.`,
+      ? `Gratis. Meer foto’s van hetzelfde product helpen ons — je krijgt nog steeds ${beeldenVoor(service) || CATALOG_IMAGES} beelden.`
+      : `Free. More photos of the same product help us — you still receive ${beeldenVoor(service) || CATALOG_IMAGES} images.`,
     refSlot: l === 'nl' ? 'Referentie {n}' : 'Reference {n}',
     refFull: l === 'nl'
       ? 'Dat zijn er {max} — genoeg om je product goed te zien.'
@@ -683,13 +708,14 @@ const REQUIRED_COPY = [
   // instead of shipping a slot with no word under the drawing.
   'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
   'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.listAnd', 'pu.trayAssign',
-  'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate', 'pu.ownModel',
+  'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate',
+  'pu.extraSum', 'pu.extraSumOne', 'pu.extraWhat', 'pu.ownModel',
   'pu.ownLook', 'pu.ownLookH', 'pu.ownLookHint', 'pu.ownLookNone',
   'pu.extraSlot', 'pu.extraNoteLabel', 'pu.extraNoteErr', 'pu.extraShotHint',
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
   'pu.missingH', 'pu.missingHOne', 'pu.missingMore',
   'pu.allDone', 'pu.allDoneOne',
-  'pu.product', 'pu.add', 'pu.toggle', 'pu.placeIn',
+  'pu.product', 'pu.add', 'pu.dropCard', 'pu.toggle', 'pu.placeIn',
   ...SHOT_IDS.map((id) => `pu.shot.${id}`),
   ...SHOT_IDS.map((id) => `pu.how.${id}`),
   // Ook als deze stroom geen afwijking per beeld heeft. De sleutels staan altijd
@@ -784,7 +810,9 @@ const FORM = {
       qtyQuick: 'Quick pick',
       moreBtn: `More than ${maxProducts} products?`,
       moreH: `More than ${maxProducts} products — we plan that with you`,
-      moreBody: `That is more than one order holds, so we split it over delivery dates together and you get one quote. Send us the number and a link to your shop; we usually answer the same day.`,
+      moreBody: ladderVloer
+        ? `That is more than one order holds, so we split it over delivery dates together. The rate does not change: from ${vloerVanaf} products up it is ${euro(ladderVloer, 'en')} per product, however many there are. Send us the number and a link to your shop; we usually answer the same day.`
+        : `That is more than one order holds, so we split it over delivery dates together and you get one quote. Send us the number and a link to your shop; we usually answer the same day.`,
       moreWa: 'Send a WhatsApp',
       moreWaText: `Hi VISUAILS, I want more than ${maxProducts} products photographed. `,
       moreMail: 'Send an email',
@@ -1005,7 +1033,9 @@ const FORM = {
       qtyQuick: 'Snel kiezen',
       moreBtn: `Meer dan ${maxProducts} producten?`,
       moreH: `Meer dan ${maxProducts} producten — dat plannen we samen`,
-      moreBody: `Dat is meer dan er in één bestelling past, dus we verdelen het samen over leverdata en je krijgt één offerte. Stuur ons het aantal en een link naar je shop; we antwoorden meestal dezelfde dag.`,
+      moreBody: ladderVloer
+        ? `Dat is meer dan er in één bestelling past, dus verdelen we het samen over leverdata. Aan de prijs verandert dat niets: vanaf ${vloerVanaf} producten is het ${euro(ladderVloer, 'nl')} per product, hoeveel het er ook worden. Stuur ons het aantal en een link naar je shop; we antwoorden meestal dezelfde dag.`
+        : `Dat is meer dan er in één bestelling past, dus we verdelen het samen over leverdata en je krijgt één offerte. Stuur ons het aantal en een link naar je shop; we antwoorden meestal dezelfde dag.`,
       moreWa: 'Stuur een WhatsApp',
       moreWaText: `Hoi VISUAILS, ik wil meer dan ${maxProducts} producten laten fotograferen. `,
       moreMail: 'Stuur een mail',
@@ -1247,6 +1277,10 @@ const config = {
    * `gateStep: null` is uitdrukkelijk "deze stroom heeft geen poort", en dus iets
    * anders dan niets meesturen: dat laatste betekent "gebruik de oude waarde".
    */
+  /* Dat dit het proefbeeld is, en niet een gewone bestelling. pipeline.js leest
+     het op één plek: maxCards() — het proefbeeld is er één per bedrijf, dus
+     één product, dus één kaart en geen knop om er nog een bij te zetten. */
+  sample: isSample,
   steps: isSample ? 4 : 5,
   gateStep: isSample ? null : 4,
   /*
@@ -1326,22 +1360,42 @@ const counts = Array.from({ length: maxProducts }, (_, i) => i + 1);
 const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i);
 ---
 
+{/* ── SECTIE 22 OM HET FORMULIER HEEN — 7 september 2026 ────────────────────
+ *
+ * Alleen het OMHULSEL is omgezet: de hero is een paneel geworden, het formulier
+ * staat in een tweede paneel, en het slot is het donkere slotpaneel. Alle
+ * `pl-*`-klassen binnen het formulier zijn ONAANGERAAKT gebleven, en dat is geen
+ * halfheid maar de enige veilige volgorde.
+ *
+ * src/scripts/pipeline.js is dertig kilobyte machinerie die op tientallen van
+ * die klassen en data-attributen selecteert — de stappen, de teller, de
+ * uploader, de foutmeldingen per veld. Ze hernoemen is niet een opmaakwijziging
+ * maar een herbouw van het betaalpad, en dat hoort niet in dezelfde ronde als
+ * "de pagina krijgt de nieuwe stijl".
+ *
+ * Wat de velden er wél anders uit laat zien: de formulierhuid in stijl22.css.
+ * Die hangt aan .field, .input, .select, .textarea en .opt — de primitieven uit
+ * global.css die dit formulier al gebruikte — dus hij pakt hier vanzelf. */}
+<div class="s22 of">
+
 <!-- HERO -->
 {hero && (
-<section class="page-hero"><div class="container">
-  <span class="eyebrow-page">{isSample ? sample.name : (lang === 'nl' ? 'Bestellen' : 'Order')}</span>
-  {/* DE PROEF HEEFT ZIJN EIGEN KOP, en niet die van de dienst. `svc.lead` is de
-      staffelzin — *"het tarief daalt naarmate het aantal stijgt"* — en die is bij
-      een proef van EEN vast bedrag voor EEN product ronduit onwaar. Bovendien is
-      de dienst hier nog niet gekozen: dat is de eerste vraag van het formulier
-      eronder. `sample.line` zegt wat je krijgt zonder de soort te noemen. */}
-  <h1 class="display">{isSample ? sample.h : svc.title}</h1>
-  <p class="lead" style="margin-top:1.2rem">{isSample ? sample.line : `${svc.gets}. ${svc.lead}`}</p>
-</div></section>
+<section class="paneel of-open">
+  <div class="paneel-kop">
+    <p class="etiket">{isSample ? sample.name : (lang === 'nl' ? 'Bestellen' : 'Order')}</p>
+    {/* DE PROEF HEEFT ZIJN EIGEN KOP, en niet die van de dienst. `svc.lead` is de
+        staffelzin — *"het tarief daalt naarmate het aantal stijgt"* — en die is bij
+        een proef van EEN vast bedrag voor EEN product ronduit onwaar. Bovendien is
+        de dienst hier nog niet gekozen: dat is de eerste vraag van het formulier
+        eronder. `sample.line` zegt wat je krijgt zonder de soort te noemen. */}
+    <h1 class="hoog">{isSample ? sample.h : svc.title}</h1>
+    <p class="lopend">{isSample ? sample.line : `${svc.gets}. ${svc.lead}`}</p>
+  </div>
+</section>
 )}
 
 <!-- THE PIPELINE -->
-<section class="section-tight"><div class="container">
+<section class="paneel of-vorm">
   <form
     id="pl-form"
     class="pl-form"
@@ -1416,7 +1470,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           op vier Nederlandse pagina's, tot 18 augustus 2026. Een reparatie op één
           plek terwijl hetzelfde patroon nog ergens anders staat, is geen reparatie.
           Sectie 10 van tests/nav.test.mjs bewaakt het nu over de hele bron. */}
-      <a href={`/account?lang=${lang}`} class="btn btn-primary pl-signin-cta">{f.signInCta}</a>
+      <a href={`/account?lang=${lang}`} class="knop knop-inkt pl-signin-cta">{f.signInCta}</a>
     </aside>
 
     {/* De vierde rail-ingang is 'Levertijd' / 'Timing', en die stap bestaat niet
@@ -1553,8 +1607,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <h3 class="pl-sub-h">{f.s1.moreH}</h3>
         <p>{f.s1.moreBody}</p>
         <p class="pl-more-btns">
-          <a href={waHref(f.s1.moreWaText)} target="_blank" rel="noopener" class="btn btn-primary">{f.s1.moreWa}</a>
-          <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(f.s1.moreMailSubject)}&body=${encodeURIComponent(f.s1.moreMailBody)}`} class="btn btn-ghost">{f.s1.moreMail}</a>
+          <a href={waHref(f.s1.moreWaText)} target="_blank" rel="noopener" class="knop knop-inkt">{f.s1.moreWa}</a>
+          <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(f.s1.moreMailSubject)}&body=${encodeURIComponent(f.s1.moreMailBody)}`} class="knop knop-lijn">{f.s1.moreMail}</a>
         </p>
         <p class="pl-more-alt">{WHATSAPP_DISPLAY} · {CONTACT_EMAIL}</p>
         <button type="button" class="pl-qty-back" data-pl-qty-back>{f.s1.moreBack}</button>
@@ -1718,7 +1772,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
       <div class="pl-nav">
         <span></span>
-        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
     </section>
 
@@ -1745,8 +1799,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <p class="pl-step-err" id="pl-err-2" data-pl-step-error hidden></p>
 
       <div class="pl-nav">
-        <button type="button" class="btn btn-ghost" data-pl-back>{f.back}</button>
-        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
+        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
     </section>
 
@@ -1759,7 +1813,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <div class="pl-saved" data-pl-saved hidden>
         <p class="pl-saved-h">{f.s3.savedH}</p>
         <ul class="pl-saved-list" data-pl-saved-list></ul>
-        <button type="button" class="btn btn-ghost pl-saved-edit" data-pl-saved-edit>{f.s3.savedEdit}</button>
+        <button type="button" class="knop knop-lijn pl-saved-edit" data-pl-saved-edit>{f.s3.savedEdit}</button>
         <p class="hint pl-saved-hint">{f.s3.savedHint}</p>
       </div>
 
@@ -2076,8 +2130,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <p class="pl-step-err" id="pl-err-3" data-pl-step-error hidden></p>
 
       <div class="pl-nav">
-        <button type="button" class="btn btn-ghost" data-pl-back>{f.back}</button>
-        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
+        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
     </section>
 
@@ -2132,7 +2186,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <div class="pl-gate-panel" data-pl-gate="unavailable" hidden>
           <h3 class="pl-gate-h">{f.s4.unavailableH}</h3>
           <p class="pl-gate-body">{f.s4.unavailableBody}</p>
-          <button type="button" class="btn btn-ghost" data-pl-gate-retry>{f.s4.retry}</button>
+          <button type="button" class="knop knop-lijn" data-pl-gate-retry>{f.s4.retry}</button>
         </div>
       </div>
 
@@ -2141,8 +2195,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <p class="pl-step-err" id="pl-err-4" data-pl-step-error hidden></p>
 
       <div class="pl-nav">
-        <button type="button" class="btn btn-ghost" data-pl-back>{f.back}</button>
-        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+        <button type="button" class="knop knop-lijn" data-pl-back>{f.back}</button>
+        <button type="button" class="knop knop-inkt" data-pl-next>{f.next}</button>
       </div>
     </section>
     )}
@@ -2170,7 +2224,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <div class="pl-lost" data-pl-lost hidden role="alert">
         <h3 class="pl-lost-h">{f.s5.lostH}</h3>
         <p class="pl-lost-body">{f.s5.lostBody}</p>
-        <button type="button" class="btn btn-primary" data-pl-lost-go>{f.s5.lostGo}</button>
+        <button type="button" class="knop knop-inkt" data-pl-lost-go>{f.s5.lostGo}</button>
       </div>
 
       <div class="pl-after">
@@ -2255,8 +2309,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </div>
 
       <div class="pl-submit-row">
-        <button type="button" class="btn btn-ghost pl-back-inline" data-pl-back>{f.back}</button>
-        <button type="submit" class="btn btn-primary btn-lg" data-pl-submit>{f.s5.submit}</button>
+        <button type="button" class="knop knop-lijn pl-back-inline" data-pl-back>{f.back}</button>
+        <button type="submit" class="knop knop-inkt" data-pl-submit>{f.s5.submit}</button>
       </div>
 
       {/* THE TERMS, AT THE MOMENT THE CONTRACT IS FORMED.
@@ -2283,34 +2337,34 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </p>
     </section>
   </form>
-</div></section>
+</section>
 
 <!-- WHAT IS THE SAME IN BOTH -->
-<section class="section-tight on-ink"><div class="container">
-  <h2>{f.sharedH}</h2>
-  <div class="shared-grid reveal-group">
-    {f.shared.map(([k, v]) => (
-      <div class="shared-item reveal pending">
-        <h3>{k}</h3>
-        <p>{v}</p>
-      </div>
-    ))}
+<section class="kamer of-gelijk">
+  <div class="kamer-kop">
+    <h2 class="hoog hoog-2">{f.sharedH}</h2>
   </div>
-</div></section>
+  <ul class="shared-grid" role="list">
+    {f.shared.map(([k, v]) => (
+      <li class="shared-item">
+        <h3 class="hoog hoog-3">{k}</h3>
+        <p class="lopend">{v}</p>
+      </li>
+    ))}
+  </ul>
+</section>
 
 <!-- NOT SURE YET -->
-<section class="section-tight"><div class="container">
-  <div class="start-foot">
-    <div>
-      <h2>{f.footH}</h2>
-      <p class="start-foot-body">{f.footBody}</p>
-    </div>
-    <div class="start-foot-cta">
-      <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{f.footCta}</a>
-      <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="btn btn-ghost btn-lg">{f.footWa}</a>
-    </div>
+<section class="paneel paneel-slot of-slot">
+  <h2 class="hoog hoog-2">{f.footH}</h2>
+  <p class="lopend">{f.footBody}</p>
+  <div class="acties">
+    <a href={lp('/test-sample')} class="knop knop-inkt">{f.footCta}</a>
+    <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="knop knop-lijn">{f.footWa}</a>
   </div>
-</div></section>
+</section>
+
+</div>
 
 <script>
   // Page-local, deliberately. pipeline.js is 30 kB of order-form machinery and
@@ -2318,6 +2372,45 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   import '../../scripts/pipeline.js';
 </script>
 <style>
+  /* ── DE HUID VAN SECTIE 22, ALLEEN OP HET OMHULSEL ────────────────────────
+   *
+   * Zie de noot bij de markup: de `pl-*`-klassen zelf zijn niet aangeraakt,
+   * want pipeline.js selecteert erop. Wat hier staat is wat de nieuwe stijl
+   * eromheen nodig heeft — de panelen, de koptypografie van de stappen, en de
+   * stappenbalk in mono. Alles binnen de stap blijft draaien op de tokens van
+   * global.css, en die wijzen op een licht paneel de goede kant op. */
+  .of-open { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .of-vorm { padding-block: clamp(2.2rem, 5vw, 4rem); }
+
+  /* De koppen van een stap in de koptypografie van sectie 22. Ze staan als
+     .pl-h en .pl-sub-h in de markup en houden die namen; alleen de letter
+     verandert. */
+  .of :global(.pl-h) {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: clamp(1.3rem, 2.8vw, 2.2rem); line-height: 1.05;
+    letter-spacing: -.02em; text-transform: uppercase; text-wrap: balance;
+    color: var(--inkt);
+  }
+  .of :global(.pl-sub-h) {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: 1.05rem; line-height: 1.25; letter-spacing: -.01em;
+    text-transform: uppercase; color: var(--inkt);
+  }
+  /* De stappenbalk: mono, zoals elk etiket in deze stijl. */
+  .of :global(.pl-rail-t) { font-family: var(--mono2); font-stretch: 82%; font-size: .72rem; }
+  .of :global(.pl-rail-n) { font-family: var(--mono2); font-stretch: 82%; font-weight: 400; }
+  .of :global(.pl-rail-item.is-current) { background: var(--tint); color: var(--inkt); }
+
+  /* ── DE DRIE DINGEN DIE VOOR ELKE DIENST GELDEN, IN DE DONKERE KAMER ───── */
+  .of-gelijk .shared-grid {
+    display: grid; gap: clamp(1.4rem, 3vw, 2.4rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    list-style: none; padding: 0; margin: 0;
+  }
+  .of-gelijk .shared-item { display: grid; gap: .7rem; align-content: start; }
+  .of-gelijk .shared-item h3 { margin: 0; }
+  .of-slot .lopend { max-width: 44em; }
+
   /* ═══════════════════════════════════════════════════════════════════════════
      /start — the order pipeline.
 
@@ -2356,16 +2449,22 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
   /* The signed-out sign-in prompt. Deliberately not a .mail-note clone: this
      one is asking for an action rather than offering reassurance, so it gets a
-     real primary button and a heading, and it sits on the raised surface with
-     an accent edge so it reads as an offer at the top of the form rather than
-     as a warning about it. */
+     real primary button and a heading.
+
+     ── DE ZIJSTREEP IS WEG — 7 september 2026 ──────────────────────────────
+     Hier stond `box-shadow: inset 3px 0 0 var(--accent)`: een gekleurde rand
+     van 3px links. Dat is precies het accent dat deze codebase elders met
+     zoveel woorden verbiedt, en het stond hier alleen omdat een box-shadow
+     geen `border-left` heet. Een eigen vlak met een hele rand zegt hetzelfde
+     zonder de streep — dezelfde reparatie als bij de betaalregel op
+     /thank-you. */
   .pl-signin {
     display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem); flex-wrap: wrap;
     margin: 0 0 clamp(1.4rem, 3vw, 2rem);
-    padding: clamp(1rem, 2vw, 1.3rem) clamp(1.1rem, 2.2vw, 1.5rem);
-    border-radius: var(--r-lg);
-    background: var(--surface);
-    box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
+    padding: clamp(1.1rem, 2.2vw, 1.5rem) clamp(1.2rem, 2.4vw, 1.7rem);
+    border: 1px solid var(--lijn);
+    border-radius: calc(var(--ronding) - 14px);
+    background: var(--wit);
   }
   .pl-signin > div { flex: 1 1 22rem; }
   .pl-signin-h { margin: 0; font-weight: 700; color: var(--ink); font-size: .98rem; }
@@ -2735,8 +2834,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     border-bottom: 1px solid var(--line);
     min-height: calc(2 * 1.5 * .9rem + 1.5rem + 1px);
   }
+  /* 11,7px in plaats van 10,9 — de ondergrens van de keuring is 11,5px, en dit
+     is het label dat zegt WAT de regel ernaast belooft. */
   .level-row dt {
-    font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+    font-size: .73rem; font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3); padding-top: .18rem;
   }
   .level-row dd { margin: 0; font-size: .9rem; color: var(--ink-2); line-height: 1.5; }
@@ -2777,7 +2878,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-gate-claim { margin-top: .6rem; font-weight: 700; color: var(--signal-ink); font-size: .95rem; }
   .pl-gate-body { margin-top: .7rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
   .pl-gate-foot { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
-  .pl-gate-panel .btn { margin-top: 1.2rem; }
+  .pl-gate-panel .knop { margin-top: 1.2rem; }
   .pl-gate-checking {
     margin: 0;
     padding: 1.1rem 1.25rem;
@@ -2867,7 +2968,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   }
   .pl-lost-h { font-size: 1.1rem; line-height: 1.3; color: var(--signal-ink); }
   .pl-lost-body { margin-top: .7rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
-  .pl-lost .btn { margin-top: 1.2rem; }
+  .pl-lost .knop { margin-top: 1.2rem; }
 
   .pl-after { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); }
   /* Rules, not numerals. What happens after an order is a list of facts, and
@@ -2980,7 +3081,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   /* Zelfde correctie als in StartPage.astro: `flex: 1 0 auto` liet een knop
      groeien maar niet krimpen, dus stak een lang Nederlands label bij 150 %
      tekstgrootte buiten het scherm in plaats van af te breken. */
-  .start-foot-cta > .btn { flex: 1 1 auto; min-width: 0; }
+  .start-foot-cta > .knop { flex: 1 1 auto; min-width: 0; }
 
   /* ── Breakpoints ─────────────────────────────────────────────────────────*/
   @media (max-width: 900px) {

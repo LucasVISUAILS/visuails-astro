@@ -244,9 +244,20 @@ for (const flow of FLOWS) {
       if (knop) knop.click();
       const stap = document.querySelector('.pl-step.is-current');
       const fout = stap && stap.querySelector('[data-pl-step-error]');
+      /* Stap 2 legt zichzelf níet uit in het foutvak: ontbrekende foto's zijn
+         geen fout maar een vraag ("je kunt hem ook zo versturen"), en die staat
+         in een eigen paneel — zie askMissing() in pipeline.js. Zonder deze
+         regel meldde deze verrekijker bij elke run dat /test-sample "niet zegt
+         waarom", terwijl er een paneel met de reden op het scherm stond. Een
+         bevinding die altijd rood staat en altijd onterecht is, leert je de
+         lijst overslaan. */
+      const ontbreekt = document.querySelector('[data-pl-missing]');
+      const uitleg = fout && !fout.hidden
+        ? String(fout.textContent || '').trim()
+        : (ontbreekt && !ontbreekt.hidden ? String(ontbreekt.textContent || '').trim() : '');
       return {
         nu: Number(stap?.dataset.plStep || 0),
-        gezegd: fout && !fout.hidden ? String(fout.textContent || '').trim() : '',
+        gezegd: uitleg,
         knop: !!knop,
       };
     });

@@ -16,7 +16,7 @@
  */
 import { d1, verseDb } from './lib/d1sqlite.mjs';
 import { adminGet, adminPost } from '../src/lib/admin.js';
-import { accountGet } from '../src/lib/account.js';
+import { accountGet, studioScreen } from '../src/lib/account.js';
 import { hashToken } from '../src/lib/token.js';
 import { STOCK_OFF_BRAND } from '../src/data/pricing.js';
 
@@ -59,6 +59,13 @@ for (const [id, token] of [[1, 'volt-token'], [2, 'noord-token'], [3, 'lumen-tok
   db.prepare(`INSERT INTO account_sessions (customer_id, token_hash, expires_at) VALUES (?, ?, '2099-01-01T00:00:00Z')`).run(id, await hashToken(token));
 }
 const klant = (token, path) => accountGet({ request: new Request(`https://visuails.com${path}`, { headers: { cookie: `vis_account=${token}; vis_lang=nl` } }), env, waitUntil() {} });
+/* /account/plan als staat — wat src/pages/account/plan.astro tekent (studioScreen,
+   6 september 2026). `maandset` is null als de kaart niet te zien hoort te zijn;
+   anders { nu, eerder } met per set de beelden als /account/set/<id>/f en de zip. */
+const abonnement = async (token, path = '/account/plan') => {
+  const r = await studioScreen({ request: new Request(`https://visuails.com${path}`, { headers: { cookie: `vis_account=${token}; vis_lang=nl` } }), env, waitUntil() {} }, 'plan');
+  return r instanceof Response ? null : r.v;
+};
 
 const png = (naam) => new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82])], naam, { type: 'image/png' });
 const maand = new Date().toISOString().slice(0, 7);
@@ -97,8 +104,8 @@ let setId;
 
 console.log('\n2 · onzichtbaar zolang het concept is');
 {
-  const plan = await (await klant('volt-token', '/account/plan')).text();
-  ok('de abonnee ziet de kaart, maar nog geen set', /De gedeelde set van deze maand/.test(plan) && /wordt gemaakt/.test(plan) && !/Nazomer/.test(plan));
+  const plan = await abonnement('volt-token');
+  ok('de abonnee ziet de kaart, maar nog geen set', !!plan.maandset && plan.maandset.nu === null && plan.maandset.eerder.length === 0);
   const f = db.prepare('SELECT id FROM shared_files WHERE set_id = ? ORDER BY id').get(setId);
   ok('  en het beeld van een concept-set is 404', (await klant('volt-token', `/account/set/${f.id}/f`)).status, 404);
   ok('  net als de zip', (await klant('volt-token', `/account/set/${setId}/zip`)).status, 404);
@@ -111,11 +118,11 @@ console.log('\n3 · gepubliceerd');
   ok('  en zet de datum', !!db.prepare('SELECT published_at FROM shared_sets WHERE id = ?').get(setId).published_at);
   ok('  in het logboek', /gepubliceerd/.test(db.prepare("SELECT detail FROM admin_log WHERE action = 'maandset.publish'").get()?.detail || ''));
 
-  const plan = await (await klant('volt-token', '/account/plan')).text();
-  ok('de abonnee ziet de set op de maand-tab', /Nazomer/.test(plan) && /2 beelden/.test(plan));
-  ok('  met de beelden via /account/set/<id>/f', /\/account\/set\/\d+\/f/.test(plan));
-  ok('  en de zipknop', new RegExp(`/account/set/${setId}/zip`).test(plan));
-  ok('  niet op de bestellen-tab', !/Nazomer/.test(await (await klant('volt-token', '/account/plan?tab=bestellen')).text()));
+  const plan = await abonnement('volt-token');
+  ok('de abonnee ziet de set op de maand-tab', /Nazomer/.test(plan.maandset?.nu?.label || '') && plan.maandset.nu.n === '2 beelden');
+  ok('  met de beelden via /account/set/<id>/f', plan.maandset.nu.beelden.every((b) => /^\/account\/set\/\d+\/f$/.test(b)) && plan.maandset.nu.beelden.length === 2);
+  ok('  en de zipknop', plan.maandset.nu.zip, `/account/set/${setId}/zip`);
+  ok('  niet op de bestellen-tab', (await abonnement('volt-token', '/account/plan?tab=bestellen')).maandset, null);
 
   const f = db.prepare('SELECT id FROM shared_files WHERE set_id = ? ORDER BY id').get(setId);
   const beeld = await klant('volt-token', `/account/set/${f.id}/f`);
@@ -135,17 +142,17 @@ console.log('\n3 · gepubliceerd');
 console.log('\n4 · wie er niet bij mag');
 {
   const f = db.prepare('SELECT id FROM shared_files WHERE set_id = ? ORDER BY id').get(setId);
-  const wacht = await (await klant('noord-token', '/account/plan')).text();
-  ok("een abonnement dat nog op de eerste incasso wacht ('pending') ziet de kaart niet", !/De gedeelde set van deze maand/.test(wacht));
+  const wacht = await abonnement('noord-token');
+  ok("een abonnement dat nog op de eerste incasso wacht ('pending') ziet de kaart niet", wacht.maandset, null);
   ok('  en krijgt op het beeld een 404', (await klant('noord-token', `/account/set/${f.id}/f`)).status, 404);
   ok('  en op de zip', (await klant('noord-token', `/account/set/${setId}/zip`)).status, 404);
-  const geen = await (await klant('lumen-token', '/account/plan')).text();
-  ok('zonder abonnement ook niet', !/De gedeelde set van deze maand/.test(geen));
+  const geen = await abonnement('lumen-token');
+  ok('zonder abonnement ook niet', geen.geen === true && !geen.maandset);
   ok('  404 op de zip', (await klant('lumen-token', `/account/set/${setId}/zip`)).status, 404);
   ok('uitgelogd: het beeld is 404', (await accountGet({ request: new Request(`https://visuails.com/account/set/${f.id}/f`), env, waitUntil() {} })).status, 404);
 
   await post(`/admin/maandset/${setId}`, { action: 'unpublish' });
-  ok('teruggetrokken: de abonnee ziet hem niet meer', !/Nazomer/.test(await (await klant('volt-token', '/account/plan')).text()));
+  ok('teruggetrokken: de abonnee ziet hem niet meer', (await abonnement('volt-token')).maandset?.nu, null);
 }
 
 console.log(`\n${geslaagd} geslaagd, ${gezakt} gezakt\n`);

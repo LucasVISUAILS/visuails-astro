@@ -1,32 +1,14 @@
 ---
-import { waHref } from '../../data/whatsapp.js';
-// VISUAILS — de 404 van de site. Toegevoegd 2026-07-28 (audit taak #263,
-// live-site steekproef, bevinding 7 — de ernstigste van de hele lijst).
-//
-// Zie 404.astro (Engels) voor de volledige uitleg. Kort: Cloudflare Pages
-// serveert zonder een eigen 404.html de homepage (200, geen fout) voor elk
-// pad dat nergens op matcht — bevestigd live op visuails.com. Astro bouwt een
-// pagina die exact 404.astro heet altijd naar /404.html, ongeacht
-// trailingSlash/build.format, precies omdat hosts naar die bestandsnaam
-// zoeken. Deze /nl/404.astro doet hetzelfde voor alles onder /nl — Cloudflare
-// Pages serveert per map de dichtstbijzijnde 404.html.
+// VISUAILS — /nl/404. Zie de Engelse variant en de kop van NotFoundPage.astro.
+// Cloudflare Pages serveert per map de dichtstbijzijnde 404.html; deze dekt
+// alles onder /nl.
 import Layout from '../../layouts/Layout.astro';
+import NotFoundPage from '../../components/NotFoundPage.astro';
 
 const description =
   'Deze pagina bestaat niet. De link is verouderd of het adres verkeerd getypt — ga terug naar de homepage of bekijk Catalog, Lifestyle en Video.';
 ---
 
 <Layout title="Pagina niet gevonden — VISUAILS" description={description} noindex>
-  <section class="page-hero"><div class="container" style="max-width:640px;text-align:center;margin-inline:auto">
-    <span class="eyebrow-page">404</span>
-    <h1 class="display">Deze pagina bestaat niet.</h1>
-    <p class="lead" style="margin:1.2rem auto 0">De link is misschien verouderd, of het adres is verkeerd getypt. Hier kun je verder.</p>
-    <div class="flex" style="justify-content:center;margin-top:2rem">
-      <a href="/nl/" class="btn btn-primary btn-lg">Terug naar home</a>
-      <a href="/nl/start/" class="btn btn-ghost btn-lg">Start een aanvraag</a>
-      <a href={waHref("Hoi VISUAILS, ik volgde een link die niet werkte.")} class="btn btn-wa" target="_blank" rel="noopener">
-        Meld wat er stuk is
-      </a>
-    </div>
-  </div></section>
+  <NotFoundPage lang="nl" />
 </Layout>

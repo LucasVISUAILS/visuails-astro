@@ -77,9 +77,30 @@
      cijfers hoeven dus niet opnieuw, ze worden alleen ruimer. Wat wél opnieuw
      moet als er ooit iets DONKERS op een van deze treden komt te staan, is dat
      ene geval — en dat staat er nu niet. */
-  --bg-0:        #030406;   /* page ground                                  */
-  --bg-raise:    #060709;   /* a band that lifts off the page               */
-  --surface:     #08090B;   /* tiles and panels                             */
+  /* ── SECTIE 20 · LICHT, MET HET GEEL VAN KOMMA — 5 SEPTEMBER 2026 ────────
+     Lucas: "Wat ik nu heb voelt ergens onprofessioneel en ik zou het liever
+     een wat serieuzere feeling willen geven zoals de kleuren in het scherm met
+     inlogcode" — en als referentie ovyonlabs.com/works/komma. Daar gemeten:
+     een witte grond, neutrale grijzen, en één metallic zuurgeel (#DED812 en
+     #E4DE18 op het materiaal, #AEBA60 als gloed om de panelen). Het blauw op
+     die pagina is van het bureau, niet van het merk, en komt hier niet.
+
+     Wat dat voor dit blok betekent: de grond wordt licht, de inkt donker, en
+     alles wat donker MOET blijven — de voet, de cta-band, de scrims over
+     foto's, de conversiebalk — wordt een glaspaneel (--glass) op die lichte
+     grond, via de .on-ink-scope verderop, die daar al voor gebouwd was in de
+     harbor-tijd. De tokens --ink-900/850/800 zijn daarom niet meer "de grond"
+     maar "het glas"; --paper-on-dark is echt wit en volgt --ink-1 niet meer. */
+  /* STRAK, NIET VRIENDELIJK — Lucas, later op 5 september: "hoe het nu wordt
+     voelt zo vriendelijk nog". Wat Komma strak maakt is meetbaar: zuiver wit
+     en zuiver zwart zonder warme zweem, neutrale grijzen, geen enkele kleur als
+     letter (het geel is materiaal en vulling, nooit tekst), haarlijnen in
+     plaats van schaduwen, en rechte hoeken op alles behalve de knoppen. De
+     warme tint die hier eerst stond (#FAFAF8, olijf in de inkt) was precies het
+     "vriendelijke". */
+  --bg-0:        #F5F5F5;   /* page ground — Komma's lichte grond (gemeten)  */
+  --bg-raise:    #EDEDED;   /* a band that lifts off the page               */
+  --surface:     #FFFFFF;   /* tiles and panels                             */
   /* ── DE GROND VAN EEN ZWEVEND PANEEL — 18 augustus 2026 ──────────────────
      Dezelfde waarde als --surface en met opzet een EIGEN naam. De koptekst
      heeft een scope voor "balk boven een foto" die --surface op een scrim van
@@ -89,8 +110,18 @@
      toen er een tweede, breder paneel bij kwam.
      Een paneel dat over onbekende inhoud zweeft, is de ene plek die ondoorzichtig
      MOET zijn. Vandaar een token dat door geen enkele scope wordt herschreven. */
-  --menu-surface: #17191E;
-  --surface-2:   #0C0E11;   /* an inset, or a tile on a tile                */
+  --menu-surface: #FFFFFF;
+  --surface-2:   #EAEAEA;   /* an inset, or a tile on a tile                */
+  /* Het glas: de donkere panelen op de lichte grond. Drie treden, zoals de
+     grond er drie had, plus de kanalen voor een scrim. Gemeten: wit op
+     --glass 16,96:1. */
+  /* Sectie 21: nagemeten op ovyonlabs.com/works/komma (schermafdruk van Lucas,
+     5 september 2026): het donkere vlak is #111111 — geen zwart, en ook niet
+     het #212121 dat hier even stond. De lichte grond daar is #F5F5F5, met de
+     posters en foto's als witte kaarten (#FFFFFF) erop. Die drie zijn het. */
+  --glass:       #111111;
+  --glass-2:     #1A1A1A;
+  --glass-3:     #242424;
 
   /* ---- ink: white at four alphas ---------------------------------------
      Alphas rather than solids so the ramp composites correctly on any of the
@@ -101,13 +132,21 @@
        --ink-3  .66       7.67:1
        --ink-4  .52       5.30:1
      All four clear 4.5:1, which is the point of stopping at four. */
-  --ink-1:       #FFFFFF;
-  --ink-2:       rgb(255 255 255 / 0.80);
-  --ink-3:       rgb(255 255 255 / 0.66);
-  --ink-4:       rgb(255 255 255 / 0.52);
-  --line:        rgb(255 255 255 / 0.12);
-  --line-strong: rgb(255 255 255 / 0.22);
-  --line-ui:     rgb(255 255 255 / 0.42);
+  /* Gemeten op --bg-0 (#FAFAF8): 17,98 / 9,22 / 5,14 — en --ink-4 is een
+     lijnwaarde, geen tekst. Een zweem olijf in de inkt, zodat hij bij het geel
+     hoort en niet als een tweede, koudere kleur leest. */
+  --ink-1:       #0A0A0A;
+  --ink-2:       #454545;
+  /* 7 september 2026: van #6E6E6E naar #686868. Op wit haalde hij 5,3:1 en dat
+     was genoeg; op --bg-raise (#EDEDED), waar de kleine bijschriften op /plans
+     staan, kwam hij uit op 4,36:1 en dat is nét onder de eis van 4,5. Deze
+     waarde haalt 4,53:1 op #EDEDED en 5,6:1 op wit, en scheelt met het oog
+     niets. Gevonden met de leesbaarheidsmeting, niet met het oog. */
+  --ink-3:       #686868;   /* 5,6:1 op wit · 4,53:1 op #EDEDED */
+  --ink-4:       rgb(10 10 10 / 0.42);
+  --line:        #DFDFDF;
+  --line-strong: #BDBDBD;
+  --line-ui:     rgb(10 10 10 / 0.45);
 
   /* ---- the accent — #C6F100 -------------------------------------------
      Was #90BEFF, a light blue, until August 2026. Lucas: "ik wil denk ik af
@@ -147,9 +186,22 @@
      rule, one word in a heading. The photograph stays the most saturated
      object on the screen, which is the principle in PRODUCT.md this palette
      had stopped obeying. */
-  --accent:      #C6F100;
-  --accent-ink:  #08090B;   /* what sits ON an accent fill                  */
-  --accent-dim:  #ABD200;   /* hover / pressed, one step down               */
+  /* Het Komma-geel: als VULLING met inkt erop; als LETTER op de lichte grond
+     1,3:1 en dus nooit — daar is het inkt (--accent-text hieronder). */
+  /* De Komma-familie, per pixel gemeten op 6 september 2026 (kladblok/
+     komma-kleur.html): #D2E04A als vulling — tussen de ring (#B8CC46) en de
+     UI-lime (#E4F474) in, 13,7:1 met zwarte letter; #B8CC46 als hover en meter;
+     #E4F474 als letter op inkt (in de .on-ink-scope); #9EB42F als gloeirand.
+     Verving #C8F206 (verzadigder en groener dan alles in die beelden). */
+  --accent:      #D2E04A;
+  --accent-ink:  #0A0A0A;   /* what sits ON an accent fill                  */
+  --accent-dim:  #B8CC46;   /* hover / pressed, one step down — de ring     */
+  /* Het accent als LETTER op licht bestaat niet meer: bij Komma is het geel
+     materiaal en vulling, nooit tekst. Waar een regel het accent als tekst
+     vraagt (een woord in een kop, een link), komt gewoon inkt — dat is wat de
+     kop strak maakt. Op glas (de .on-ink-scope) is het wél het geel. */
+  --accent-text: var(--ink-1);
+  --glow:        #9EB42F;   /* de gloed om een glaspaneel — Komma's gloeirand  */
 
   /* ---- decorative gradients ---------------------------------------------
      Panels and one or two tiles. NEVER under body copy: measured, every stop
@@ -167,7 +219,7 @@
      the near-black that .on-bright writes over an inverted ramp, it has eleven
      readers, and renaming it is churn. Read it as "the ink a bright surface
      uses". */
-  --grad-ink: #08090B;
+  --grad-ink: #0A0A0A;
 
   /* ---- the bright tile fills --------------------------------------------
      Lucas: *"de tegels (met bijvoorbeeld headers en uitleg) vellere kleuren"*,
@@ -209,8 +261,8 @@
      kicker or a link it is simply the accent. */
   --fill-blue:   var(--accent);
   --fill-violet: var(--accent-dim);
-  --fill-pink:   rgb(255 255 255 / 0.66);
-  --fill-coral:  rgb(255 255 255 / 0.40);
+  --fill-pink:   #E6E6E6;
+  --fill-coral:  #C2C2C2;
 
   /* ---- radius: three steps, and only three ------------------------------
      24 / 14 / 8, raised from 16 / 8 / 4 in August 2026 at Lucas's direction
@@ -229,9 +281,11 @@
      cannot reach a hashed build asset — see each file's own header on why the
      duplication is honest rather than accidental. All four must move together
      or the dashboard stops matching the site it belongs to. */
-  --r-lg: 24px;
-  --r-md: 14px;
-  --r-sm: 8px;
+  /* Sectie 20: rechte hoeken op vlakken en kaarten — dat is wat Komma strak
+     maakt; alleen knoppen en chips blijven een pil (--r-pill). */
+  --r-lg: 4px;
+  --r-md: 4px;
+  --r-sm: 2px;
 
   /* --r-pill is not a fourth step on the scale, it is the absence of one: a
      radius large enough that the shape is decided by the element's height. It
@@ -255,7 +309,7 @@
      made replacing the palette a change to this block rather than to 100 kB
      of stylesheet. */
   --bg:          var(--bg-0);
-  --bg-deep:     #000000;
+  --bg-deep:     var(--glass);
   /* --surface-3 (an alias of --surface-2) was here — nothing var()'d it. */
 
   --ink:         var(--ink-1);
@@ -266,14 +320,14 @@
      (white, the obvious reading of the name) turned every one of those
      grounds white — the footer, the conversion bar and three hero scrims went
      paper-on-paper in a single line. It is the ground. It stays the ground. */
-  --ink-900:     var(--bg-0);
+  --ink-900:     var(--glass);
   --ink-700:     var(--ink-2);
   --ink-500:     var(--ink-3);
   --ink-300:     var(--ink-4);
   --ink-200:     var(--line);
   --ink-100:     var(--ink-1);
-  --ink-850:     var(--surface);
-  --ink-800:     var(--surface-2);
+  --ink-850:     var(--glass-2);
+  --ink-800:     var(--glass-3);
   --ink-faint:   var(--ink-4);
 
   /* Scrim channels. Every dark veil over a photograph — hero fades, tile
@@ -283,14 +337,14 @@
      A gradient stop cannot take a colour token and apply its own alpha, so
      what is tokenised is the CHANNELS; every scrim reads
      `rgb(var(--scrim) / a)` and the whole family moves with the palette. */
-  --scrim:            8 9 11;
+  --scrim:            17 17 17;
 
   --paper:            var(--bg-0);
   --paper-2:          var(--bg-raise);
   --paper-lift:       var(--surface);
-  --paper-on-dark:    var(--ink-1);
-  --paper-soft-on-dark:  var(--ink-2);
-  --paper-muted-on-dark: var(--ink-3);
+  --paper-on-dark:    #FFFFFF;
+  --paper-soft-on-dark:  rgb(255 255 255 / 0.80);
+  --paper-muted-on-dark: rgb(255 255 255 / 0.66);
 
   /* The harbor names still resolve, because portal.css, account.css,
      admin.css and a dozen components read them. They now point at the new
@@ -303,7 +357,7 @@
      functions and dist, not assumed from this comment. */
   --teal:        var(--accent);
   --teal-hover:  var(--accent-dim);
-  --teal-text:   var(--accent);
+  --teal-text:   var(--accent-text);
   /* ONE ATTENTION COLOUR, August 2026, and it used to be two.
      
      --clay was #E86BB0, a pink, described as "the pink end of the panel
@@ -321,18 +375,18 @@
      orange. 8.43:1 on the page ground and 7.44:1 on the raised surface, the
      worst ground it lands on, so it is safe as text and not only as a border. */
   --clay:        #E9963B;
-  --clay-text:   #E9963B;
+  --clay-text:   #8A4F06;   /* klei als tekst op licht: 5,7:1                */
   --mist-clay:   var(--bg-raise);
   --mist-stone:  var(--bg-raise);
 
   --signal:      var(--accent);
-  --signal-ink:  var(--accent);
+  --signal-ink:  var(--accent-text);
   --warn:        var(--clay);
   --warn-ink:    var(--clay);
   --verify:      var(--accent);
-  --verify-ink:  var(--accent);
+  --verify-ink:  var(--accent-text);
   --flag:        var(--clay);
-  --flag-ink:    var(--clay);
+  --flag-ink:    var(--clay-text);
 
   /* THE LOGOTYPE IS THE ACCENT NOW, August 2026. It was --ink-1 (flat white)
      for as long as the mark has been an SVG, which was the right value while
@@ -349,27 +403,27 @@
      restates --brand for exactly that reason — do not delete it on the grounds
      that it "looks like it does nothing", which is true only because :root got
      there first. */
-  --brand:       var(--accent);
+  --brand:       var(--ink-1);   /* sectie 20: op licht draagt het merk inkt; op glas (de voet) weer het accent */
   --accent-on:   var(--accent-ink);
   /* --accent-2 was declared here and in the two scopes that restate this
      block (the dark ground, and the accent-on-light scope). No rule anywhere
      var()'d it, in any of the three, so all three declarations are gone. */
-  --accent-word: var(--accent);
-  --accent-bright: var(--accent-dim);
-  --accent-soft: rgb(198 241 0 / 0.14);
+  --accent-word: var(--accent-text);
+  --accent-bright: var(--accent-text);   /* als tekst gebruikt, dus de tekstvariant */
+  --accent-soft: rgb(210 224 74 / 0.18);
   --accent-line: var(--line-strong);
-  --focus-ring:  var(--accent);
+  --focus-ring:  var(--ink-1);
 
-  --ghost:                 rgb(255 255 255 / 0.08);
-  --btn-ghost-fill:        rgb(255 255 255 / 0.08);
-  --btn-ghost-fill-hover:  rgb(255 255 255 / 0.16);
+  --ghost:                 #F0F0F0;
+  --btn-ghost-fill:        #F0F0F0;
+  --btn-ghost-fill-hover:  #E4E4E4;
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(255 255 255 / 0.08);
+  --btn-2nd-fill-hover:    #F0F0F0;
   --btn-2nd-ink:           var(--ink-1);
-  --btn-2nd-border:        rgb(255 255 255 / 0.28);
-  --btn-2nd-border-hover:  rgb(255 255 255 / 0.55);
+  --btn-2nd-border:        #C2C2C2;
+  --btn-2nd-border-hover:  #0A0A0A;
 
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230A0A0A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   /* THREE ROLES, THREE FACES — August 2026. One family used to do all of it
      and that is what "ik mis hier wat aesthetic" was describing: a page where
@@ -388,9 +442,44 @@
      --font-body     reading text. Archivo, unchanged and not up for debate —
                      it does that job well and body copy is where legibility is
                      won or lost. */
-  --font-heading: "Big Shoulders Display Variable", "Big Shoulders Display", "Archivo Variable", Impact, sans-serif;
-  --font-display: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Sectie 20: Hanken Grotesk voor alles wat leest (koppen, tekst, UI) en
+     Space Mono voor datalabels, referenties, bijschriften en de knoplabels —
+     de taal van Komma (PP Neue Montreal + Fragment Mono) in vrije families.
+     Big Shoulders was smal; Hanken is normaal breed, dus de kopmaten hieronder
+     zijn een trede kleiner dan ze waren. */
+  /* ── DE LETTERS VAN SECTIE 22 — 7 september 2026 ──────────────────────────
+     Lucas, bij de nieuwe stijl: *"Pas de fonts wel aan naar eentje die er beter
+     op aansluit, zoek online naar niche open source fonts."* Drie variabele,
+     open source families, alle drie met een BREEDTE-as — dat is het punt: de
+     regel "nadruk is breedte" werkt nu overal, van de kop tot het kleinste
+     label.
+
+       Anybody (Etienne Aubert Bonn / ANRT, OFL) — de kop. Vlakke uiteinden,
+         vierkante rondingen, breedte 50–150%. Technischer dan Hubot Sans en
+         dichter bij de futuristische snit van de nieuwe voorpagina. Stond al
+         in dit bestand als accentletter; hij draagt nu de hele koppenrij.
+       Instrument Sans (Rodrigo Fuenzalida & Jordan Egstad, OFL) — de lopende
+         tekst en de UI. Rustige neo-grotesk, breedte 75–100%.
+       Martian Mono (Evil Martians, OFL) — de labels. Een echte machineletter,
+         breedte 75–112,5%. Hij is breder dan Sometype Mono, dus overal waar
+         --font-mono wordt gebruikt staat `font-stretch: 82%` ernaast; dan neemt
+         een label evenveel ruimte in als voorheen.
+
+     Alle drie zelf gehost via @fontsource-variable — geen enkele verbinding met
+     een lettertypeserver, net als hiervoor. */
+  --font-heading: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* De merkletter: Anybody op zijn breedste stand (font-stretch 125%) — voor
+     de merknaam in een labelregel. De koppen staan op 118%, en de tekst
+     (Instrument Sans) heeft ook een breedte-as maar blijft op 100%: twee
+     breedtes in één alinea leest als twee lettertypes. */
+  --font-merk: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
+  --stretch-merk: 125%;
+  /* Het merkteken, ook voor CSS. Bron: MERKTEKEN in src/data/brand.js. */
+  --merkteken: "\2122";
+  --stretch-kop: 118%;
   /* The editorial accent (task #271b) — high-contrast serif italic, used
      nowhere near body text. Georgia/Times New Roman are the fallback stack
      so a slow font load still reads as "a serif", not as Archivo pretending
@@ -400,9 +489,9 @@
      reads as emphasis in an industrial voice instead of as a quotation from
      another magazine. Same few places, same restraint: a heading's one word, a
      pull quote, the editorial statement. Never a paragraph. */
-  --font-editorial: "Anybody Variable", "Anybody", "Archivo Variable", sans-serif;
+  --font-editorial: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
 
-  --t-hero:  clamp(3.2rem, 7.4vw, 6rem);
+  --t-hero:  clamp(2.6rem, 5.6vw, 4.6rem);
   /* ── DE TREDE DIE ONTBRAK — 19 augustus 2026 ──────────────────────────────
    *
    * Gemeten op de homepage: er stonden twee koppen van 96px op één pagina — de
@@ -424,9 +513,9 @@
    *     67  --t-h1         een hoofdstukkop (.band-chapter)
    *     53  --t-h2         een sectie binnen een hoofdstuk (.band-tight)
    */
-  --t-statement: clamp(2.8rem, 6vw, 5rem);
-  --t-h1:    clamp(2.5rem, 5.2vw, 4.2rem);
-  --t-h2:    clamp(2.1rem, 4vw, 3.3rem);
+  --t-statement: clamp(2.3rem, 4.6vw, 3.8rem);
+  --t-h1:    clamp(2.1rem, 4.2vw, 3.4rem);
+  --t-h2:    clamp(1.75rem, 3.2vw, 2.6rem);
   /* ── DE PAGINATITEL WAS ZES KEER MET DE HAND GETYPT — 19 augustus 2026 ────
    *
    * Gemeten over 43 Nederlandse pagina's: acht verschillende h1-groottes en
@@ -462,9 +551,9 @@
    * (64px) voor de 75 andere, --t-page-h1-sm (51px) waar de kop het bijschrift
    * van een figuur is, en 27px in de bevestigingsbalk van /thank-you — dat is
    * een statusregel en geen paginatitel. */
-  --t-page-h1:    clamp(2.4rem, 5vw, 4rem);
-  --t-page-h1-sm: clamp(2rem, 4.5vw, 3.2rem);
-  --t-page-h2:    clamp(2.2rem, 5vw, 3.6rem);
+  --t-page-h1:    clamp(2rem, 4vw, 3.2rem);
+  --t-page-h1-sm: clamp(1.7rem, 3.6vw, 2.6rem);
+  --t-page-h2:    clamp(1.8rem, 3.8vw, 2.9rem);
   --t-h3:    clamp(1.2rem, 1.7vw, 1.45rem);
   --t-lg:    clamp(1.05rem, 1.35vw, 1.18rem);
   --t-body:  1.0625rem;
@@ -608,7 +697,7 @@
    * probleem dat alleen op een monitor bestond. Dezelfde afweging als in augustus,
    * de andere kant op.
    */
-  --pad-x: clamp(20px, 3.5vw, 64px);
+  --pad-x: clamp(20px, 4.5vw, 96px);
   /* De leesbare regellengte voor kleine noten. Zie MAX-WIDTH OP PROZA verderop
      voor waarom dit 68ch is en .section-head 62ch. */
   --measure-note: 68ch;
@@ -645,13 +734,16 @@
   /* De bovengrens als eigen token, want twee dingen moeten hem kennen: de
      container zelf, en --rand-x hieronder. Hem twee keer intypen is hem één keer
      vergeten bij te werken. */
-  --container-cap: 1640px;
+  /* Sectie 21: breder. Lucas: "de website mag ook weer breder om meer white
+     space te creëren" — de inhoud mag tot 1920 lopen, met een ruimere zijmarge
+     (--pad-x hieronder), zoals Komma: van rand tot rand met lucht. */
+  --container-cap: 1760px;
   --container: min(var(--container-cap), 100%);
   --container-narrow: 760px;
   /* Eén trede breder dan de standaard en niet meer schermvullend, anders betekent
      de klasse het tegenovergestelde van zijn naam. De galerij is de enige
      gebruiker; die wil elke pixel die er verantwoord is. */
-  --container-wide: min(1760px, 100%);
+  --container-wide: min(1920px, 100%);
 
   /* ── DE AFSTAND VAN DE RAND TOT DE TEKST ───────────────────────────────────
    *
@@ -827,8 +919,46 @@
 .hero-cover,
 .hero-editorial,
 /* .ch-promise stond hier; die sectie is 7 augustus 2026 herbouwd zonder eigen
-   ondergrond en staat nu gewoon op de paginagrond, die al donker is. */
-.convbar {
+   ondergrond en staat nu gewoon op de paginagrond, die toen donker was.
+   Sectie 20 (5 september 2026): de grond is licht, dus de hero van de homepage
+   — tekst over een foto met een donkere scrim — hoort hier weer bij. */
+/* Sectie 21: de hero en het slot van /studio waren donkere sfeerbeelden met
+   een masker; nu zijn het gewone inktvlakken, dus ze horen hier. */
+.sp-hero,
+.sp-close,
+/* ── HET LIMEPANEEL HOORT HIER OOK — 7 september 2026 ────────────────────────
+   Lucas stuurde een schermafdruk van /plans: *"Wel even altijd goed
+   controleren op leesbaarheid. Hier gaat dat bijvoorbeeld fout."* De kop van
+   dit paneel stond in inkt op een bijna zwarte foto, en het accentwoord in
+   lime op een lime blok — allebei onzichtbaar.
+
+   De noot bij `.lime-panel` in dit bestand legt uit waarom: op 20 augustus werd
+   de grond van dat paneel een DONKERE foto met een limoen bundel, en toen ging
+   `.on-bright` er terecht af. Alleen kwam er niets voor in de plaats. Een
+   paneel op een donkere grond hoort in deze lijst — dan lost `--ink` op naar de
+   lichte kant van dezelfde ladder en klopt elke regel die het al gebruikte, in
+   plaats van dat er veertig losse overschrijvingen bij moeten. Precies waarvoor
+   deze lijst bestaat. */
+/* ── DE DONKERE KAMERS VAN SECTIE 22 — 7 september 2026 ──────────────────────
+   `.kamer` is de donkere hoofdstukwissel van de nieuwe stijl (zie
+   src/styles/stijl22.css). De stijl zet daar zijn eigen kleuren neer, maar een
+   GEDEELDE component die erin staat — een <Placeholder>, een <Compare> — leest
+   nog de rollen van global.css, en die wijzen naar de lichte kant. Op /catalog
+   stond de opdrachttekst van een plaatshouder daardoor in #454545 op #111111:
+   2,0:1. Dezelfde oplossing als bij het limepaneel hierboven: de kamer in deze
+   lijst, dan lost --ink op naar de lichte kant van dezelfde ladder en klopt
+   elke regel die die rollen al gebruikte. `--ink-900` is #111111, precies de
+   grond van de kamer, dus --surface en --bg landen waar ze horen. */
+.s22 .kamer,
+/* En het slotpaneel, om exact dezelfde reden: sinds 7 september 2026 is
+   `.paneel-slot` donker (het stond als geel vlak bovenop de gele voet). Zijn
+   grond is #1A1A1A in plaats van #111111 — een halve toon lichter zodat het
+   paneel op de inktgrond nog een blok is — en dat blijft ruim binnen wat de
+   donkere kant van deze ladder aankan: --ink-850 hieronder is de lichtste
+   donkere grond waar deze rollen op gemeten zijn. */
+.s22 .paneel-slot,
+.lime-panel-in,
+.plan-band {
   --bg:         var(--ink-900);
   --bg-deep:    var(--ink-900);
   --bg-raise:   var(--ink-850);
@@ -846,9 +976,14 @@
      rule value; on a dark ground it would be a different colour doing a
      different job under the same name, which is exactly how a 2.6:1 ships. */
   --ink:        var(--paper-on-dark);
+  --ink-1:      var(--paper-on-dark);
   --ink-2:      var(--paper-soft-on-dark);
   --ink-3:      var(--paper-muted-on-dark);
+  --ink-4:      rgb(255 255 255 / 0.52);
   --ink-faint:  var(--paper-muted-on-dark);
+  --ghost:      rgb(255 255 255 / 0.08);
+  --surface-2:  var(--ink-800);
+  --menu-surface: var(--ink-850);
 
   /* These four are longhand --paper with alpha, because a token cannot carry
      one. They are hand-copies and do not follow --paper; when it moves, they
@@ -875,8 +1010,12 @@
      now the same value everywhere and this block no longer overrides them. */
   --accent:        var(--teal);
   --accent-on:     var(--accent-ink);
-  --accent-word:   var(--accent);
-  --accent-bright: var(--accent);
+  /* Als LETTER op inkt is het geel bij Komma lichter dan als vulling: de
+     mono-regel "FIBER SYNC" op de zwarte pil meet #E4F474 (16,5:1), de knop
+     #D2E04A. Gemeten op 6 september 2026 in de Komma-beelden. */
+  --accent-text:   #E4F474;
+  --accent-word:   #E4F474;
+  --accent-bright: #E4F474;
   --accent-soft:   rgb(255 255 255 / 0.10);
   --accent-line:   rgb(255 255 255 / 0.28);
 
@@ -917,7 +1056,14 @@
    daardoor aan beide kanten een rand. De klasse doet nog steeds wat ze moet
    doen — de hele inktladder omdraaien — en schildert alleen geen grond meer.
    body draagt --bg-0 al, dus de kleur eronder is tot op de pixel dezelfde. */
-.on-ink { background: transparent; color: var(--ink-2); }
+/* Sectie 20: de grond is licht, dus elk lid van de scope hierboven schildert
+   zijn eigen glas. Tot nu toe stonden de meeste op de paginagrond, die al donker
+   was; een hero of fotoband zonder eigen vulling is nu wit met witte tekst zolang
+   de foto laadt — en tests/leesbaar.test.mjs, die door de voorouders loopt, ziet
+   precies dat. Een lid met een eigen achtergrond (de voet, de cta-band) wint van
+   deze regel door zijn eigen, latere declaratie. */
+.on-ink, .site-footer, .cta-band, .photo-band, .cmp, .hero-cover, .hero-editorial, .sp-hero, .sp-close, .plan-band { background-color: var(--bg); }
+.on-ink { color: var(--ink-2); }
 
 /* ── CORNERS — ONE PLACE, BECAUSE THEY WERE EVERYWHERE ───────────────────────
    HISTORY, so this block is not undone by someone reading an old comment. The
@@ -1008,9 +1154,11 @@ figure > img, figure > picture > img, .card img, .grid img,
    is where the pill rule stops. .cb-cta is a real button and was already caught
    by .btn; it stays in the list because it is a mark first. */
 .chip, .vis-badge, .cmp-tag, .tile-cap, .plate-cap,
-.ls, .cb-cta, .wa-launcher-label {
+.wa-launcher-label {
   border-radius: var(--r-pill);
 }
+/* De taalwissel is weer een pil, net als de knoppen (sectie 21, tweede ronde). */
+.ls { border-radius: var(--r-pill); }
 
 /* Round objects, not pills. A control that is as tall as it is wide has no long
    axis for a pill to express — 999px on a square is a circle, which is what
@@ -1048,7 +1196,15 @@ main:focus { outline: none; }
    documented cause of erratic pinning. A property that changed no behaviour we
    want and destabilised the one pinned section on the site is not a trade. */
 html {
-  overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+  /* `clip` en niet `hidden` (sectie 21, 5 september 2026). Lucas: "De pagina
+     scrolt naar rechts." Op iOS laat `overflow-x: hidden` op html de pagina
+     nog steeds zijwaarts meebewegen zodra iets — een gedraaid teken, een
+     tabel, een menu buiten beeld — breder is dan het venster. `clip` snijdt
+     zonder een scrollcontainer te maken, dus ook de scroll-reveal
+     (animation-timeline: view(), zie de noot bij body) blijft werken, en
+     daarom mag hij hier óók op body. */
+  overflow-x: clip; -webkit-text-size-adjust: 100%; }
+body { overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   /* iteration-count matters as much as duration. A .001ms animation that is
@@ -1271,7 +1427,7 @@ p, li, dd, dt, figcaption, blockquote, .lead, .hint {
   hyphens: manual;
 }
 
-h1, h2, .display { font-family: var(--font-heading); color: var(--ink); font-weight: 800; line-height: 1.0; letter-spacing: -0.012em; text-wrap: balance; margin: 0; }
+h1, h2, .display { font-family: var(--font-heading); font-stretch: var(--stretch-kop); color: var(--ink); font-weight: 500; line-height: 1.04; letter-spacing: -0.03em; text-wrap: balance; margin: 0; }
 h1 { font-size: var(--t-h1); }
 h2 { font-size: var(--t-h2); }
 .display { font-size: var(--t-hero); line-height: 0.96; }
@@ -1291,15 +1447,21 @@ h1 em, h2 em, .display em { font-style: normal; color: var(--accent-word); }
    die zouden er dan allemaal in krimpen. Gemeten voordat ik het probeerde. */
 h3, .as-h3 { font-family: var(--font-body); color: var(--ink); font-weight: 700; font-size: var(--t-h3); line-height: 1.2; letter-spacing: -0.012em; text-wrap: balance; margin: 0; }
 
-/* De kaartkop zoals hij was toen hij nog een h4 was. Gemeten in de browser vóór de
-   wijziging: 17px, gewicht 700, regelhoogte 27,54px, marge 22,61px boven en onder —
-   dat laatste is de standaardmarge die de browser aan een h4 geeft en die dus
-   verdween zodra het een h3 werd. */
-.as-card-h {
-  font-family: var(--font-body); color: var(--ink);
-  font-weight: 700; font-size: 1.0625rem; line-height: 1.62;
-  letter-spacing: normal; margin: 1.413rem 0;
-}
+/* ── `.as-card-h` IS WEG — 7 september 2026 ─────────────────────────────────
+   Hier stond de kaartkop zoals hij eruitzag toen hij nog een <h4> was: 17px,
+   gewicht 700, regelhoogte 1,62, marge 1,413rem. Die maten stonden er om één
+   reden — een koptag was gerepareerd (h4 → h3, tegen een sprong in de
+   koppenreeks) en dat mocht geen ONTWERPwijziging worden.
+
+   Die reparatie is inmiddels drie maanden oud en de laatste markup die de
+   klasse droeg — de "waar een shootdag nog wint"-kaarten op /compare — is bij
+   het overzetten naar de stijl van sectie 22 vervangen door een rij met een
+   eigen kop. De klasse stond daarna in nul .astro-bestanden.
+
+   Dode opmaak weghalen is geen opruimen maar onderhoud: een regel die niets
+   selecteert, is een regel die de volgende lezer laat denken dat er ergens een
+   kaartkop bestaat die zich anders gedraagt dan alle andere. tests/a11y.test.mjs
+   houdt hem tegen als hij terugkomt. */
 .accent-word { color: var(--accent-word); font-style: normal; }
 p { text-wrap: pretty; margin: 0; }
 
@@ -1588,18 +1750,18 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    assumed near-black". It sets no background of its own — what colour the
    bright thing is, is the caller's business. */
 .on-bright {
-  color: rgb(8 9 11 / 0.82);
+  color: rgb(17 18 16 / 0.82);
 
   --bg:          transparent;
   --ink:         var(--grad-ink);
   --ink-1:       var(--grad-ink);
-  --ink-2:       rgb(8 9 11 / 0.82);
-  --ink-3:       rgb(8 9 11 / 0.68);
-  --ink-4:       rgb(8 9 11 / 0.55);
-  --ink-faint:   rgb(8 9 11 / 0.68);
+  --ink-2:       rgb(17 18 16 / 0.82);
+  --ink-3:       rgb(17 18 16 / 0.68);
+  --ink-4:       rgb(17 18 16 / 0.55);
+  --ink-faint:   rgb(17 18 16 / 0.68);
   --paper-on-dark:       var(--grad-ink);
-  --paper-soft-on-dark:  rgb(8 9 11 / 0.82);
-  --paper-muted-on-dark: rgb(8 9 11 / 0.68);
+  --paper-soft-on-dark:  rgb(17 18 16 / 0.82);
+  --paper-muted-on-dark: rgb(17 18 16 / 0.68);
   /* The logotype does NOT follow the accent here. :root moved --brand to
      #C6F100, which is 15.16:1 on the near-black ground and 1.31:1 on a bright
      one — the green and white are within a hair of the same luminance. This
@@ -1610,30 +1772,31 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      contrast checker reads text and this is an <svg>. */
   --brand:       var(--grad-ink);
 
-  --line:        rgb(8 9 11 / 0.16);
-  --line-strong: rgb(8 9 11 / 0.30);
-  --line-ui:     rgb(8 9 11 / 0.55);
+  --line:        rgb(17 18 16 / 0.16);
+  --line-strong: rgb(17 18 16 / 0.30);
+  --line-ui:     rgb(17 18 16 / 0.55);
 
   /* The accent cannot be itself here: #90BEFF on this plate is 1.6:1. The
      panel's own accent is the ink, and the CTA carries the colour by being
      the dark object on a bright ground rather than the bright one on a dark. */
   --accent:      var(--grad-ink);
+  --accent-text: var(--grad-ink);
   --accent-ink:  #FFFFFF;
   --accent-on:   #FFFFFF;
-  --accent-dim:  rgb(8 9 11 / 0.84);
+  --accent-dim:  rgb(17 18 16 / 0.84);
   --accent-word: var(--grad-ink);
   --accent-bright: var(--grad-ink);
-  --accent-soft: rgb(8 9 11 / 0.10);
-  --accent-line: rgb(8 9 11 / 0.30);
+  --accent-soft: rgb(17 18 16 / 0.10);
+  --accent-line: rgb(17 18 16 / 0.30);
   --focus-ring:  var(--grad-ink);
 
-  --btn-ghost-fill:        rgb(8 9 11 / 0.08);
-  --btn-ghost-fill-hover:  rgb(8 9 11 / 0.16);
+  --btn-ghost-fill:        rgb(17 18 16 / 0.08);
+  --btn-ghost-fill-hover:  rgb(17 18 16 / 0.16);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(8 9 11 / 0.10);
+  --btn-2nd-fill-hover:    rgb(17 18 16 / 0.10);
   --btn-2nd-ink:           var(--grad-ink);
-  --btn-2nd-border:        rgb(8 9 11 / 0.42);
-  --btn-2nd-border-hover:  rgb(8 9 11 / 0.70);
+  --btn-2nd-border:        rgb(17 18 16 / 0.42);
+  --btn-2nd-border-hover:  rgb(17 18 16 / 0.70);
 }
 
 /* ---- .panel-tonal — the closing plate, August 2026 --------------------------
@@ -1833,14 +1996,14 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   background:
     /* de plas */
     radial-gradient(var(--fl-w, 72%) var(--fl-h, 24%) at var(--fl-x, 50%) var(--fl-y, 76%),
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.085)) 0%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.032)) 40%,
+      rgb(210 224 74 / calc(var(--fl-o, 1) * 0.085)) 0%,
+      rgb(210 224 74 / calc(var(--fl-o, 1) * 0.032)) 40%,
       transparent 74%),
     /* de terugkaatsing — kleiner, zwakker, en met opzet uit het lood */
     radial-gradient(calc(var(--fl-w, 72%) * .58) calc(var(--fl-h, 24%) * .66)
       at var(--fl-x2, calc(var(--fl-x, 50%) + 16%)) var(--fl-y2, 24%),
-      rgb(198 241 0 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.040)) 0%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.014)) 44%,
+      rgb(210 224 74 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.040)) 0%,
+      rgb(210 224 74 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.014)) 44%,
       transparent 76%);
 }
 .foto-licht-enkel .foto-licht-laag { --fl-o2: 0; }
@@ -2026,9 +2189,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    parallax (`translateY`) en het masker zou meeschuiven, zodat de uitdoving
    naast de onderrand komt te liggen. Daar zit de foto en de sluier daarom in
    `<div class="hero-vloer rand-los-voet">`: een omhulsel dat stil staat, met de
-   bewegende laag erin. `.hv-hero` heeft dat probleem niet — die lagen staan
-   stil — en draagt het masker rechtstreeks. */
-.hv-hero,
+   bewegende laag erin. */
 .hero-cover,
 .hero-editorial {
   position: relative;
@@ -2110,7 +2271,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    is (0,2,0) and clears it without reaching for !important — which would win
    the argument and then lose the next one, inside .on-bright, where these have
    to give way. */
-.w-blue.w-blue     { color: var(--fill-blue); }
+.w-blue.w-blue     { color: var(--accent-text); }
 .w-violet.w-violet { color: var(--fill-violet); }
 .w-pink.w-pink     { color: var(--fill-pink); }
 .w-coral.w-coral   { color: var(--fill-coral); }
@@ -2609,13 +2770,15 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      lowercase and 1rem uppercase are the same apparent weight. The tracking is
      what stops caps from setting solid, and the extra horizontal padding is
      what stops a tracked label from touching the pill's curve. */
-  font-family: var(--font-heading); font-weight: 800; font-size: 1rem;
-  text-transform: uppercase; letter-spacing: .06em;
+  /* Sectie 20: het knoplabel in Space Mono, klein en in kapitalen. Zonder
+     haakjes — Lucas: "Ik wil de haakjes om de tekst bij een knop weg hebben." */
+  font-family: var(--font-mono); font-stretch: 82%; font-weight: 400; font-size: .82rem;
+  text-transform: uppercase; letter-spacing: .04em;
   /* 40, not 38. Every .btn on the site measured 38px tall — two pixels under
      the minimum touch target, everywhere, which an audit picks up on every
      page and a thumb picks up on none of them individually. Two pixels is
      free; being under the line on 84 pages is not. */
-  min-height: 40px; padding: 0 1.35rem;
+  min-height: 42px; padding: 0 1.5rem;
   /* ── NOWRAP IS EEN BELOFTE DIE OP 320px NIET TE HOUDEN IS ────────────────
      Gemeten 21 augustus 2026 op een venster van 320px, twaalf pagina's die
      zijwaarts schoven. De oorzaak was elke keer dezelfde: een knop mag van
@@ -2636,6 +2799,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      is een zichtbare verslechtering om een probleem op te lossen dat alleen
      op de smalste telefoons bestaat. */
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
+  /* Sectie 21, tweede ronde — Lucas: "Knoppen moeten pilvormig zijn en een fijne
+     modieuze feel hebben." Dus weer de pil, met wat ruimere zijkanten, en op
+     glas (zie .glas hieronder) een doorschijnende vulling. */
   background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--r-pill);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
               border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
@@ -2734,8 +2900,22 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 .kicker { display: inline-flex; align-items: center; gap: .5rem; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .kicker::before { content: ""; width: 5px; height: 5px; background: var(--accent); }
-.eyebrow-page { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-3); font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1.2rem; }
-.eyebrow-page::before { content: ""; width: 5px; height: 5px; background: var(--accent); }
+/* Sectie 20: het paginalabel als datalabel in mono — "CATALOG", "ABONNEMENT" —
+   zoals Komma "KOMMA® BRANDING" boven een beeld zet. Geen gekleurd blokje
+   ervoor: het geel is materiaal, geen leesteken. */
+.eyebrow-page { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-3); font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 1.2rem; }
+/* ── HET MERKTEKEN KOMT UIT ÉÉN BRON — 8 september 2026 ───────────────────
+   Hier stond de naam met een ® letterlijk, als een van zeven kopieën over vijf
+   bestanden. Het teken staat nu in src/data/brand.js (MERKTEKEN) — zie de
+   noot daar voor waarom het ™ is en geen ®.
+
+   CSS kan die constante niet lezen, dus staat hier een tweede waarheid. Die
+   is niet vrij: tests/merkteken.test.mjs leest --merkteken uit dit bestand en
+   MERKTEKEN uit brand.js en eist dat ze gelijk zijn. Wie de een verandert en
+   de ander vergeet, krijgt een rode test in plaats van een site waar het
+   merkteken op de ene helft anders is dan op de andere. */
+.eyebrow-page::before { content: "VISUAILS" var(--merkteken); color: var(--ink-1); }
+.eyebrow-page::after { content: ""; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
  * RAAKVLAKKEN VAN 24 PIXELS — WCAG 2.2, 2.5.8, NIVEAU AA
@@ -2923,7 +3103,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    en zou een witte lichtlijn een streep zijn die nergens vandaan komt. */
 .on-bright .card, .on-bright .tile, .on-paper .card, .on-paper .tile {
   box-shadow:
-    inset 0 1px 0 rgb(8 9 11 / 0.06),
+    inset 0 1px 0 rgb(17 18 16 / 0.06),
     0 18px 34px -26px rgb(0 0 0 / 0.22);
 }
 .card { background: var(--surface); border: 1px solid var(--line); padding: clamp(1.4rem, 2.5vw, 2rem); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); }
@@ -3118,7 +3298,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, rgb(var(--scrim) / 0.13)); }
 .vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px rgb(var(--scrim) / 0.24)); }
 .vis .vis-obj svg { width: 100%; height: auto; display: block; }
-.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--paper-on-dark); background: rgb(var(--scrim) / 0.82); padding: .3rem .65rem; }
+.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--paper-on-dark); background: rgb(var(--scrim) / 0.82); padding: .3rem .65rem; }
 
 /* ============================================================
    Editorial motion system. Base state is fully visible/static; the `.in`
@@ -3461,10 +3641,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
  *
  * `.seam-top` zelf is weg. Een klasse die nergens staat en niet kán werken, is
  * geen gereedschap maar een valstrik voor de volgende die hem probeert. */
-.hv-hero {
-  border-end-start-radius: var(--r-lg);
-  border-end-end-radius: var(--r-lg);
-}
+/* `.hv-hero { border-end-*-radius }` stond hier; HomeV2 is weg (sectie 21). */
 
 /* The one earned rise. interactions.js sets --stagger-i on each direct child
    before observing it, so the delay is DOM order and nothing has to be
@@ -4285,7 +4462,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    shadow layer. Only on hover — a green edge at rest would make every card
    look selected. */
 @media (hover: hover) {
-  a.lift:hover, .tile a:hover ~ .tile-media { box-shadow: inset 0 1px 0 rgb(198 241 0 / 0.5); }
+  a.lift:hover, .tile a:hover ~ .tile-media { box-shadow: inset 0 1px 0 rgb(210 224 74 / 0.5); }
 }
 
 /* ============================================================
@@ -4353,7 +4530,7 @@ a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
 }
 .foot-social a::before { width: 1.15rem; height: 1.15rem; margin: 0; }
 .foot-social a:hover, .foot-social a:focus-visible {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent-line);
 }
@@ -4498,15 +4675,10 @@ body::before {
  * hij weer aan het venster vast — dan is er niets veranderd behalve de uitleg.
  */
 body { position: relative; }
-body::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 100vh;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%);
-}
+/* body::after STOND HIER: een gele waas van 5% linksboven over het eerste
+   scherm. Sectie 21 (5 september 2026): weg. De grond is wit en blijft wit —
+   die waas was precies het grijze randje bovenin dat de kop op de voorpagina
+   een andere tint gaf dan het witte paneel eronder. */
 
 /* ══ .beam — DE LICHTBUNDEL, ALS MERKTAAL ══════════════════════════════════
    21 augustus 2026. Lucas leverde een reeks beelden aan met de vraag ze
@@ -4560,9 +4732,9 @@ body::after {
   clip-path: polygon(100% 2%, 100% 30%, 0% 92%, 0% 58%);
   background: linear-gradient(
     255deg,
-    rgb(198 241 0 / 0.055) 0%,
-    rgb(198 241 0 / 0.030) 46%,
-    rgb(198 241 0 / 0.008) 78%,
+    rgb(210 224 74 / 0.055) 0%,
+    rgb(210 224 74 / 0.030) 46%,
+    rgb(210 224 74 / 0.008) 78%,
     transparent 100%);
   -webkit-mask-image: linear-gradient(255deg, #000 0%, #000 62%, transparent 100%);
   mask-image: linear-gradient(255deg, #000 0%, #000 62%, transparent 100%);
@@ -4571,9 +4743,9 @@ body::after {
   clip-path: polygon(0% 2%, 0% 30%, 100% 92%, 100% 58%);
   background: linear-gradient(
     105deg,
-    rgb(198 241 0 / 0.055) 0%,
-    rgb(198 241 0 / 0.030) 46%,
-    rgb(198 241 0 / 0.008) 78%,
+    rgb(210 224 74 / 0.055) 0%,
+    rgb(210 224 74 / 0.030) 46%,
+    rgb(210 224 74 / 0.008) 78%,
     transparent 100%);
   -webkit-mask-image: linear-gradient(105deg, #000 0%, #000 62%, transparent 100%);
   mask-image: linear-gradient(105deg, #000 0%, #000 62%, transparent 100%);
@@ -4962,6 +5134,21 @@ body::after {
  accent staan — `--fill-blue` en `--accent-word` gaan daarom naar een donkerder
  groen uit dezelfde familie (#445A00, 5,90 op deze grond tegenover 15,16 voor
  de zwarte helft van een kop). */
+/* ── HET ACCENTWOORD IN DIT PANEEL IS EEN LETTER, GEEN BLOK ──────────────────
+   De regel `h1 em, h2 em, .display em` zet een blok in --accent met een letter
+   in --accent-ink erop. Dat is de juiste behandeling op een LICHTE grond. Hier
+   is de grond een donkere foto, en dan levert diezelfde regel lime op lime —
+   het woord verdwijnt, zoals Lucas op 7 september liet zien.
+
+   Op een donkere grond is het accentwoord daarom gewoon de letter, in het
+   lichtere lime dat DESIGN.md §21 daarvoor aanwijst: #E4F474 haalt 16,5:1 op
+   inkt, waar een geel blok het woord juist wegneemt. */
+.lime-panel-in :is(h1, h2, .display) em {
+  background: none;
+  padding: 0;
+  color: var(--accent-word);
+}
+
 .lime-panel {
   position: relative;
   isolation: isolate;
@@ -5080,7 +5267,7 @@ body::after {
      En het kost geen tweede download: dezelfde URL, dus dezelfde cache. */
   background-color: #2A3412;
   background-image:
-    radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(8 9 11 / 0.28) 62%, rgb(8 9 11 / 0.70) 100%),
+    radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(17 18 16 / 0.28) 62%, rgb(17 18 16 / 0.70) 100%),
     image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp')),
     image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp'));
   background-size: cover, cover, cover;
@@ -5096,7 +5283,7 @@ body::after {
      rand op de pagina zonder dat er nog een lap kleur voor nodig is. */
   /* Iets sterker dan de 0,22 die hier stond: de grond is nu lichter, dus een
      rand van 22 procent verdween erin. */
-  border: 1px solid rgb(198 241 0 / 0.30);
+  border: 1px solid rgb(210 224 74 / 0.30);
   padding: clamp(1.5rem, 3.2vw, 2.8rem);
   box-shadow: 0 30px 70px -34px rgb(0 0 0 / 0.55);
 }
@@ -5114,7 +5301,7 @@ body::after {
 @media (max-width: 900px) {
   .lime-panel {
     background-image:
-      radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(8 9 11 / 0.28) 62%, rgb(8 9 11 / 0.70) 100%),
+      radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(17 18 16 / 0.28) 62%, rgb(17 18 16 / 0.70) 100%),
       image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp')),
       image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp'));
   }
@@ -5154,7 +5341,7 @@ body::after {
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  background: linear-gradient(to bottom, rgb(198 241 0 / 0.10), transparent 34%);
+  background: linear-gradient(to bottom, rgb(210 224 74 / 0.10), transparent 34%);
   mix-blend-mode: screen;
 }
 
@@ -5205,19 +5392,26 @@ body::after {
 .lime-plate {
   color: var(--paper-on-dark);
   --ink: #FFFFFF;
+  --ink-1: #FFFFFF;
   --ink-2: rgb(255 255 255 / 0.80);
   --ink-3: rgb(255 255 255 / 0.66);
-  --accent: #C6F100;
+  --ink-4: rgb(255 255 255 / 0.52);
+  --line: rgb(255 255 255 / 0.16);
+  --line-strong: rgb(255 255 255 / 0.28);
+  --ghost: rgb(255 255 255 / 0.08);
+  --accent: #D2E04A;
+  --accent-text: #D2E04A;
+  --accent-word: #D2E04A;
   /* --accent-dim STOND HIER NIET, en dat was een knop die op hover verdween.
      `.btn-primary:hover` schildert `var(--accent-dim)`, en die kwam uit de
      .on-bright-scope van het paneel eromheen: daar is hij bijna zwart, want
      daar staat hij op een heldere grond. Op deze donkere plaat werd de
      limoenknop dus zwart-op-zwart zodra je hem aanwees. Elke plek die --accent
      terugdraait, moet zijn hele familie terugdraaien. */
-  --accent-dim: #ABD200;
-  --accent-ink: #08090B;
-  --accent-on: #08090B;
-  --accent-bright: #C6F100;
+  --accent-dim: #B8CC46;
+  --accent-ink: #111210;
+  --accent-on: #111210;
+  --accent-bright: #D2E04A;
   --btn-ghost-fill: rgb(255 255 255 / 0.08);
   --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
 }
@@ -5325,40 +5519,219 @@ body::after {
  *
  * ── DE VAL DIE HIER AL EEN KEER IS INGESTAPT ──────────────────────────────
  *
- * `background: #C6F100` staat er LETTERLIJK en niet als `var(--accent)`. Dit
+ * `background: #D2E04A` staat er LETTERLIJK en niet als `var(--accent)`. Dit
  * blok zet `--accent` zelf om naar bijna-zwart (zodat de knop erin klopt), en
  * een achtergrond die `var(--accent)` leest, leest dan zijn eigen omkering en
  * wordt zwart. Dat is precies wat er bij `.lime-panel` staat beschreven, en het
  * is bij het bouwen van deze klasse nog een keer gebeurd. */
 .plaat-vol.lime-plate {
-  background: #C6F100;
-  border: 1px solid rgb(8 9 11 / 0.18);
+  background: #D2E04A;
+  border: 1px solid rgb(17 18 16 / 0.18);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 18px 40px -20px rgb(0 0 0 / 0.7);
-  color: #08090B;
-  --ink: #08090B;
-  --ink-1: #08090B;
-  --ink-2: rgb(8 9 11 / 0.82);
-  --ink-3: rgb(8 9 11 / 0.66);
-  --ink-4: rgb(8 9 11 / 0.56);
-  --line: rgb(8 9 11 / 0.16);
-  --line-strong: rgb(8 9 11 / 0.30);
-  --line-ui: rgb(8 9 11 / 0.52);
+  color: #111210;
+  --ink: #111210;
+  --ink-1: #111210;
+  --ink-2: rgb(17 18 16 / 0.82);
+  --ink-3: rgb(17 18 16 / 0.66);
+  --ink-4: rgb(17 18 16 / 0.56);
+  --line: rgb(17 18 16 / 0.16);
+  --line-strong: rgb(17 18 16 / 0.30);
+  --line-ui: rgb(17 18 16 / 0.52);
   /* De hele accentfamilie draait om, niet alleen --accent — zie de noot bij
      .lime-plate hierboven: wie er één vergeet, krijgt een knop die op hover
      verdwijnt. */
-  --accent: #08090B;
-  --accent-dim: #23262C;
-  --accent-ink: #C6F100;
-  --accent-on: #C6F100;
-  --accent-bright: #08090B;
-  --accent-word: #08090B;
-  --fill-blue: #08090B;
-  --focus-ring: #08090B;
-  --btn-ghost-fill: rgb(8 9 11 / 0.10);
-  --btn-ghost-fill-hover: rgb(8 9 11 / 0.20);
-  --btn-2nd-fill: rgb(8 9 11 / 0.08);
-  --btn-2nd-fill-hover: rgb(8 9 11 / 0.16);
-  --btn-2nd-ink: #08090B;
-  --btn-2nd-border: rgb(8 9 11 / 0.42);
-  --btn-2nd-border-hover: rgb(8 9 11 / 0.70);
+  --accent: #111210;
+  --accent-dim: #2E2F28;
+  --accent-ink: #D2E04A;
+  --accent-on: #D2E04A;
+  --accent-bright: #111210;
+  --accent-word: #111210;
+  --fill-blue: #111210;
+  --focus-ring: #111210;
+  --btn-ghost-fill: rgb(17 18 16 / 0.10);
+  --btn-ghost-fill-hover: rgb(17 18 16 / 0.20);
+  --btn-2nd-fill: rgb(17 18 16 / 0.08);
+  --btn-2nd-fill-hover: rgb(17 18 16 / 0.16);
+  --btn-2nd-ink: #111210;
+  --btn-2nd-border: rgb(17 18 16 / 0.42);
+  --btn-2nd-border-hover: rgb(17 18 16 / 0.70);
 }
+
+/* ═══ SECTIE 21 · GLAS ══════════════════════════════════════════════════════
+   Lucas: "Doorzichtige blokken vind ik mooi om toe te voegen." Eén recept, twee
+   standen. .glas is donker glas over een foto of op de lichte grond (witte
+   tekst), .glas-licht is licht glas op een donker paneel of foto (donkere
+   tekst). Beide: een dunne rand van 1px in de tegenkleur, een blur eronder, en
+   verder niets — geen glans, geen schaduw. De chips, de feitenkaart op de hero
+   en de proefkaart lezen dit. */
+:root {
+  --glas-vul:        rgb(17 17 17 / .62);
+  --glas-rand:       rgb(255 255 255 / .18);
+  --glas-licht-vul:  rgb(245 245 245 / .72);
+  --glas-licht-rand: rgb(17 17 17 / .14);
+  --glas-waas:       blur(16px) saturate(1.2);
+}
+.glas, .glas-licht {
+  -webkit-backdrop-filter: var(--glas-waas); backdrop-filter: var(--glas-waas);
+  /* 22px en niet --r-lg: de kantige huid zet die op 0, en een glazen kaart met
+     scherpe hoeken is een scherm, geen kaart. Komma's kaarten zijn rond. */
+  border-radius: 22px;
+}
+.glas { background: var(--glas-vul); color: #FFFFFF; box-shadow: inset 0 0 0 1px var(--glas-rand); }
+.glas-licht { background: var(--glas-licht-vul); color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--glas-licht-rand); }
+/* Knoppen op donker glas: de gewone .btn-ghost is een grijs vlak en dat staat
+   als een pleister op glas. Hier wordt hij zelf doorschijnend. */
+.glas .btn-ghost { background: rgb(255 255 255 / .12); color: #FFFFFF; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .28); }
+.glas .btn-ghost:hover, .glas .btn-ghost:focus-visible { background: rgb(255 255 255 / .22); }
+
+/* ═══ SECTIE 21 · DE VOET ALS GEEL VLAK, OP ELKE PAGINA — 5 september 2026 ═══
+   Lucas, augustus: *"Ik wil de footer toxic green hebben."* Dat stond tot nu
+   alleen op de homepage, in de kantige huid (HuidKantig.astro, nu weg). Bij
+   Komma is de voet het enige vlak in de merkkleur over de volle breedte —
+   precies één keer per pagina — en met de panelen van sectie 21 is dat ook
+   hier de rol: wit, zwart, wit, zwart, en dan één keer geel.
+
+   ZWART OP GEEL, NOOIT WIT: wit op #D2E04A is 1,3:1. De hele inkttrap kantelt
+   dus naar zwarte varianten; de alfa's zijn gemeten tegen #D2E04A
+   (luminantie 0,68): .74 → 5,0:1, dus ook de laagste trede haalt 4,5:1. */
+.site-footer {
+  background: var(--accent);
+  color: var(--accent-ink);
+  --bg:         var(--accent);
+  --ink:        var(--accent-ink);
+  --ink-1:      var(--accent-ink);
+  --ink-2:      rgb(28 29 24 / .88);
+  --ink-3:      rgb(28 29 24 / .82);
+  --ink-4:      rgb(28 29 24 / .78);
+  --ink-faint:  rgb(28 29 24 / .74);
+  --paper:              var(--accent-ink);
+  --paper-on-dark:      var(--accent-ink);
+  --paper-soft-on-dark: rgb(28 29 24 / .82);
+  --paper-muted-on-dark: rgb(28 29 24 / .76);
+  --line:        rgb(28 29 24 / .18);
+  --line-strong: rgb(28 29 24 / .32);
+  --line-ui:     rgb(28 29 24 / .42);
+  --brand:       var(--accent-ink);
+  --mk-ink:      var(--accent-ink);
+  --accent-text: var(--accent-ink);
+  --ghost:       rgb(28 29 24 / .08);
+  --surface:     rgb(28 29 24 / .06);
+  --surface-2:   rgb(28 29 24 / .10);
+}
+.site-footer a { color: inherit; }
+.site-footer :is(.brand-word, .brand-mark, .mk) { fill: var(--accent-ink); }
+/* De hoofdknop draait om: de vulling wordt de inkt en de letters geel. Zonder
+   dit staat er een gele knop op een geel vlak. */
+.site-footer .btn-primary { background: var(--accent-ink); color: var(--accent); }
+.site-footer .btn-primary:hover, .site-footer .btn-primary:focus-visible { background: #000000; color: var(--accent); }
+.site-footer .btn-ghost { background: rgb(28 29 24 / .08); color: var(--accent-ink); }
+/* Het grote woordmerk onderaan: zwart op 14%, geen wit. fill en niet color —
+   het is een <svg> met een <use>. */
+/* Drie klassen diep, want Layout.astro zet `fill: #FFFFFF` op een scoped
+   selector van dezelfde sterkte en staat later in de cascade. */
+.site-footer .foot-mark .foot-mark-w { fill: var(--accent-ink); --mk-ink: var(--accent-ink); opacity: .14; }
+.site-footer .foot-mark { background: none; }
+.site-footer .foot-mark-light { display: none; }
+
+/* ═══ SECTIE 21 · DE REST VAN DE SITE IN DEZELFDE TAAL — 5 september 2026 ═══
+   De voorpagina (Voorpagina.astro) zet de toon: panelen met lucht, koppen in
+   Hubot Sans op 110%, één accentwoord als geel vlak, haarlijnen in plaats van
+   schaduwen, mono-labels als tweede stem. De andere 44 pagina's zijn gebouwd
+   in de taal van sectie 17–19: kaarten met een slagschaduw, cursieve
+   accentwoorden, accentwoorden als gele letters. Dit blok trekt ze mee zonder
+   elke pagina te herbouwen — het zijn de regels die het verschil maken,
+   niet de opmaak van elke component. Wat een pagina echt anders moet, krijgt
+   later zijn eigen ronde. */
+
+/* 1 · Het accentwoord in een kop is een geel vlak achter zwarte letters, zoals
+   op de hero — nooit gele of cursieve letters. Op glas ook: geel vlak, zwarte
+   letters, want geel op zwart leest, maar het vlak is het merkgebaar. */
+h1 em, h2 em, .display em, .cover-title em, .editorial-statement em,
+h1 em.ital, h2 em.ital, .display em.ital {
+  font-style: normal; color: var(--accent-ink);
+  /* Geen volle achtergrond: die vult het hele lettervak (stok- tot staartlijn)
+     en loopt bij een regelhoogte van 1,04 over de regel erboven. Een verloop
+     van één kleur dekt precies de kapitalen en de x-hoogte.
+
+     ── DE TWEE GETALLEN ZIJN GEMETEN, 7 september 2026 ────────────────────
+     Ze stonden op .27em en .9em: de maten van Hubot Sans. Met Anybody erin
+     zakte het blok onder de letters — op /plans stond "for €1." met de
+     bovenkant van de letters ernaast in inkt op inkt. Lucas zag het: *"Wel
+     even altijd goed controleren op leesbaarheid."*
+
+     Anybody op 100px, gemeten met TextMetrics: klimlijn 80, staartlijn 24
+     (lettervak dus 1,04em), kaphoogte 68. De bovenkant van een kapitaal ligt
+     daarmee op 80 − 68 = 12px onder de bovenkant van het vak, en de basislijn
+     op 80. Vandaar 0,12em van boven en 0,78em hoog: van de kaplijn tot een
+     haartje onder de basislijn. Verandert de kopletter, dan verandert dit
+     mee — het zijn metrieken en geen smaak. */
+  background: linear-gradient(var(--accent), var(--accent)) 0 .05em / 100% .87em no-repeat;
+  padding: 0 .12em; margin: 0 -.02em;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.editorial-statement, .hero-editorial-content .lead-ital { font-style: normal; font-weight: 500; }
+
+/* 2 · Kaarten en tegels: een haarlijn, geen schaduw, geen lift bij hover. */
+.card, .tile, .on-bright .card, .on-bright .tile, .on-paper .card, .on-paper .tile { box-shadow: none; }
+.card { border: 1px solid var(--line); }
+.card-hover:hover { transform: none; border-color: var(--line-strong); }
+
+/* 3 · Meer lucht: secties zo ruim als de panelen van de voorpagina. */
+section { padding-block: clamp(5rem, 11vw, 11rem); }
+.band-tight { padding-block: clamp(3.5rem, 6vw, 5.5rem); }
+
+/* 4 · De paginalabel ("VISUAILS<merkteken> · CATALOG") in de merkletter, met het motief
+   ervoor als CSS-masker — dezelfde drie omtrekken als op de voorpagina. */
+.eyebrow-page::before {
+  font-family: var(--font-merk); font-stretch: var(--stretch-merk); font-weight: 700; letter-spacing: .08em;
+}
+.eyebrow-page { gap: .7em; }
+.eyebrow-page::after {
+  content: ""; order: -1; width: 2.2em; height: .9em; background-color: var(--ink-3);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%23000' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%23000' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* 5 · Harde randen. De voorpagina-banner is een vlak met een rand, geen
+   vervaging; de lamp-laag van augustus (`.foto-licht`, `.korrel-mee`, de
+   sfeerbeelden `brand-beam`/`brand-glow`, de maskers `.rand-los`) hoort bij de
+   vorige taal en leest naast de nieuwe vlakken als een veeg. Hier uit, zonder
+   de opmaak per pagina te herschrijven: het masker gaat weg, de lichtvlekken
+   en de korrel worden niet meer getekend. De sluier (`.fade`, `.sp-sfeer-scrim`)
+   blijft, want die houdt de tekst leesbaar op een foto. */
+.rand-los, .rand-los-voet { -webkit-mask-image: none; mask-image: none; }
+.foto-licht-laag, .korrel-mee, .sp-sfeer { display: none; }
+.sp-hero, .sp-close { color: var(--ink-2); }
+.sp-hero h1 .sp-accent { color: var(--accent-ink); }
+
+/* 6 · Een hoekje lijn om het slotvlak en om een foto naast tekst — hetzelfde
+   kader als om de tarieventabel op de voorpagina (`.vp-hoek`), maar dan met
+   twee pseudo-elementen zodat er geen opmaak bij hoeft. Twee hoeken, niet
+   vier: vier is een fotolijst, twee is een aantekening. */
+.cta-band::before, .cta-band::after,
+.photo-split-media::before, .photo-split-media::after,
+.page-hero .photo-band::before, .page-hero .photo-band::after {
+  content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  --l: var(--line-strong);
+}
+.cta-band::before, .photo-split-media::before, .page-hero .photo-band::before {
+  top: 10px; left: 10px;
+  background: linear-gradient(var(--l), var(--l)) 0 0 / 100% 1px no-repeat, linear-gradient(var(--l), var(--l)) 0 0 / 1px 100% no-repeat;
+}
+.cta-band::after, .photo-split-media::after, .page-hero .photo-band::after {
+  bottom: 10px; right: 10px;
+  background: linear-gradient(var(--l), var(--l)) 100% 100% / 100% 1px no-repeat, linear-gradient(var(--l), var(--l)) 100% 100% / 1px 100% no-repeat;
+}
+.cta-band::before, .cta-band::after { --l: rgb(255 255 255 / .28); }
+/* Op een foto: wit, boven de sluier en het bijschrift. */
+.page-hero .photo-band::before, .page-hero .photo-band::after { --l: rgb(255 255 255 / .55); z-index: 3; }
+.photo-split-media { position: relative; }
+
+/* 7 · Geen korrel en geen vignet meer. `body::before` (hierboven, sectie 15)
+   legt een korrel van 5% en een vignet van 45% zwart in de hoeken over het
+   venster. Op de site zelf zag je hem niet meer — elk paneel schildert zijn
+   eigen grond — maar op een pagina zonder panelen (het inlogscherm van Studio)
+   stond de kaart in een grijze wolk. Komma's grond is een vlak. De regel zelf
+   blijft staan als geschiedenis (tests/korrel.test.mjs leest hem), maar hij
+   tekent niet meer. */
+body::before { display: none; }

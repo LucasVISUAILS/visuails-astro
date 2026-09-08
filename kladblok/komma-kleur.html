@@ -1,0 +1,61 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Komma-kleuren, gemeten</title>
+<style>
+  body { margin: 0; background: #111111; color: #F5F5F5; font: 14px/1.4 system-ui, sans-serif; padding: 40px; width: 1200px; box-sizing: border-box; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.l { color: #9A9A9A; margin: 0 0 28px; max-width: 70ch; }
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #9A9A9A; margin: 26px 0 10px; }
+  .rij { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .vak { border: 1px solid #2A2A2A; }
+  .kleur { height: 90px; display: flex; align-items: flex-end; padding: 8px; font: 700 12px ui-monospace, monospace; }
+  .meta { padding: 8px; font-size: 11px; color: #BDBDBD; background: #171717; }
+  .meta b { color: #F5F5F5; display: block; font-size: 12px; margin-bottom: 2px; }
+  .licht { background: #F5F5F5; color: #111; padding: 22px; margin-top: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .donker { background: #111; padding: 22px; margin-top: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border: 1px solid #2A2A2A; }
+  .btn { display: inline-block; padding: 12px 22px; border-radius: 999px; font: 700 12px/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: #0A0A0A; }
+  .em { font: 800 40px/1 system-ui; letter-spacing: -.02em; }
+  .em i { font-style: normal; padding: 0 .1em; }
+  .mono { font: 12px ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; }
+</style>
+<h1>De gele van Komma, gemeten — naast de onze</h1>
+<p class="l">Uit de vier beelden die je stuurde, per pixel. De grond klopt al (#111111 donker, #F5F5F5 licht, wit vel #FFFFFF). Het verschil zit in het geel: bij Komma is het nooit één neonvlak — in de UI is het een <em>lichte, zachte lime</em> als letter en ring op zwart, en in de foto's een <em>metallic olijfgoud</em>. Ons #C8F206 is verzadigder en groener dan alles wat in die beelden voorkomt.</p>
+
+<h2>Gemeten in de Komma-beelden</h2>
+<div class="rij">
+  <div class="vak"><div class="kleur" style="background:#E9FB7F;color:#111">#E9FB7F</div><div class="meta"><b>"FIBER SYNC"</b> mono-letter op de zwarte pil (beeld 4). 17,5:1 op zwart.</div></div>
+  <div class="vak"><div class="kleur" style="background:#E4F474;color:#111">#E4F474</div><div class="meta"><b>de UI-lime</b> — het meest voorkomende geel in de app-pil. 16,5:1 op zwart.</div></div>
+  <div class="vak"><div class="kleur" style="background:#B8CC46;color:#111">#B8CC46</div><div class="meta"><b>de ring</b> om de meter (beeld 4). 11,1:1 op zwart.</div></div>
+  <div class="vak"><div class="kleur" style="background:#9EB42F;color:#111">#9EB42F</div><div class="meta"><b>de gloeirand</b> om "KOMMA APP" (beeld 1). Olijf; 8,5:1 op zwart.</div></div>
+  <div class="vak"><div class="kleur" style="background:#D4D444;color:#111">#D4D444</div><div class="meta"><b>de stof</b> — het metallic goudgeel van de folie (beeld 1, 3). 12,5:1.</div></div>
+  <div class="vak"><div class="kleur" style="background:#8C8C1C;color:#F5F5F5">#8C8C1C</div><div class="meta"><b>de schaduw in de stof</b> (beeld 3). Olijf, waar de folie in het donker valt.</div></div>
+</div>
+
+<h2>Wat wij nu hebben</h2>
+<div class="rij">
+  <div class="vak"><div class="kleur" style="background:#C8F206;color:#111">#C8F206</div><div class="meta"><b>--accent (keuze C)</b> — hue 74°, verzadiging 95%. Groener en feller dan alles hierboven.</div></div>
+  <div class="vak"><div class="kleur" style="background:#DEDA14;color:#111">#DEDA14</div><div class="meta"><b>het oude geel</b> (vóór C). Hue 59°: dichter bij de stof, verder van de UI-lime.</div></div>
+</div>
+
+<h2>Voorstel: één familie uit de meting</h2>
+<div class="rij">
+  <div class="vak"><div class="kleur" style="background:#D2E04A;color:#111">#D2E04A</div><div class="meta"><b>--accent</b> knoppen, vlakken, het blok achter een woord. Tussen de ring (#B8CC46) en de UI-lime (#E4F474) in; 13,7:1 met zwarte letter.</div></div>
+  <div class="vak"><div class="kleur" style="background:#E4F474;color:#111">#E4F474</div><div class="meta"><b>--accent-text</b> letters en ringen op inkt — letterlijk de Komma-UI-lime.</div></div>
+  <div class="vak"><div class="kleur" style="background:#B8CC46;color:#111">#B8CC46</div><div class="meta"><b>--accent-dim</b> hover, de meter, de ring.</div></div>
+  <div class="vak"><div class="kleur" style="background:#9EB42F;color:#111">#9EB42F</div><div class="meta"><b>--accent-line</b> de gloeirand, hairlines op inkt.</div></div>
+  <div class="vak"><div class="kleur" style="background:#7A8A1A;color:#F5F5F5">#7A8A1A</div><div class="meta"><b>--accent-on-light</b> geel als LETTER op licht (5,1:1) — nu is dat teal-tekst.</div></div>
+</div>
+
+<h2>Zo ziet het eruit — licht en donker</h2>
+<div class="licht">
+  <span class="btn" style="background:#C8F206">Nu · #C8F206</span>
+  <span class="btn" style="background:#D2E04A">Voorstel · #D2E04A</span>
+  <span class="em">Nu <i style="background:linear-gradient(#C8F206,#C8F206) 0 .27em / 100% .9em no-repeat">geel</i> · voorstel <i style="background:linear-gradient(#D2E04A,#D2E04A) 0 .27em / 100% .9em no-repeat">geel</i></span>
+</div>
+<div class="donker">
+  <span class="btn" style="background:#C8F206">Nu · #C8F206</span>
+  <span class="btn" style="background:#D2E04A">Voorstel · #D2E04A</span>
+  <span class="mono" style="color:#C8F206">Nu · fiber sync</span>
+  <span class="mono" style="color:#E4F474">Voorstel · fiber sync</span>
+  <span class="mono" style="color:#F5F5F5;border:1px solid #9EB42F;box-shadow:0 0 18px rgba(158,180,47,.55);padding:10px 16px;border-radius:999px">Komma app</span>
+</div>

@@ -1,0 +1,6 @@
+---
+/* De statuspil: het woord draagt de status, de kleur onderstreept. */
+import { statusLabel } from '../../lib/account.js';
+const { status, lang } = Astro.props;
+---
+<span class={`st-pil is-${status}`}>{statusLabel(status, lang) || status}</span>

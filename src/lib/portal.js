@@ -79,7 +79,7 @@ import { offsitePage } from './offsite.js';
 // Dezelfde bouwer als VISUAILS Studio gebruikt. Zie de kop van delivery.js: dit
 // portaal had helemaal geen archief, en de query's van de twee schermen waren al
 // uit elkaar gelopen op superseded_at.
-import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames } from './delivery.js';
+import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames, leveringIngetrokken } from './delivery.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
@@ -208,6 +208,11 @@ const COPY = {
 
     replacedTitle: 'This link has been replaced',
     replacedBody: 'A newer link was issued for this order. Check the most recent email from us — that one works.',
+    /* De link BLIJFT werken en de pagina zegt wat er is. Een ingetrokken sleutel
+       zou een dode link geven, en dan weet de klant niet of hij verlopen is,
+       verkeerd gekopieerd, of stuk. Zie leveringIngetrokken() in delivery.js. */
+    cancelledTitle: 'This order was cancelled',
+    cancelledBody: 'The order was cancelled and the payment was settled with you, so the files are no longer available here. Everything about it is still in your account, and we are happy to pick it up again.',
 
     busyTitle: 'Too many requests',
     busyBody: 'Wait a minute and reload the page.',
@@ -293,6 +298,8 @@ const COPY = {
 
     replacedTitle: 'Deze link is vervangen',
     replacedBody: 'Voor deze bestelling is een nieuwere link uitgegeven. Kijk in de meest recente mail van ons — die werkt.',
+    cancelledTitle: 'Deze bestelling is geannuleerd',
+    cancelledBody: 'De bestelling is geannuleerd en de betaling is met je afgerekend, dus de bestanden staan hier niet meer. Alles erover blijft in je account staan, en we pakken hem graag weer op.',
 
     busyTitle: 'Te veel verzoeken',
     busyBody: 'Wacht een minuut en laad de pagina opnieuw.',
@@ -376,6 +383,12 @@ export async function portalGet(context) {
   const lang = order.lang === 'nl' ? 'nl' : 'en';
   if (order.revoked_at) return plainPage(env, request, 'replaced', 410, lang);
   if (tokenVerlopen(order)) return plainPage(env, request, 'expired', 410, lang);
+  /* ── GEANNULEERD EN AFGEREKEND ────────────────────────────────────────────
+     Boven de drie routes, want hij geldt voor alle drie: de pagina, een los
+     beeld en het archief. Stond hij lager, dan was hij drie keer nodig en zou
+     hij er een keer af vallen — precies hoe dit gat is ontstaan. De regel en de
+     meting die hem veroorzaakte staan in delivery.js. */
+  if (leveringIngetrokken(order)) return plainPage(env, request, 'cancelled', 410, lang);
 
   if (isFile) return serveFile(context, order, route);
   if (route.kind === 'zip') return serveOrderFolder(context, order, lang);
@@ -414,6 +427,10 @@ export async function portalPost(context) {
   const lang = order.lang === 'nl' ? 'nl' : 'en';
   if (order.revoked_at) return plainPage(env, request, 'replaced', 410, lang);
   if (tokenVerlopen(order)) return plainPage(env, request, 'expired', 410, lang);
+  /* Ook hier. Goedkeuren of een revisie aanvragen op werk dat is teruggedraaid
+     zou een handeling zijn op een bestelling die niet meer loopt — en het zou de
+     studio een taak geven die nergens meer heen kan. */
+  if (leveringIngetrokken(order)) return plainPage(env, request, 'cancelled', 410, lang);
 
   const home = `/o/${route.token}`;
 
@@ -839,6 +856,9 @@ const ORDER_SQL =
             t.issued_at    AS issued_at,
             o.id           AS order_id,
             o.ref, o.service, o.status, o.tier, o.lang,
+            -- cancel_payment hoort bij status: samen beslissen ze of deze levering
+            -- nog van de klant is. Zie leveringIngetrokken() in delivery.js.
+            o.cancel_payment,
             o.product_count, o.window_start, o.window_end, o.closed_at,
             o.customer_id,
             -- De ene revisieronde (migratie 0034). Deze drie horen bij de order en
@@ -1607,6 +1627,7 @@ function plainPage(env, request, kind, status, lang = null) {
     unknown: [t.unknownTitle, t.unknownBody, t.footAsk],
     expired: [t.expiredTitle, t.expiredBody(PORTAL_TTL_DAYS), t.footAsk],
     replaced: [t.replacedTitle, t.replacedBody, t.footAsk],
+    cancelled: [t.cancelledTitle, t.cancelledBody, t.footAsk],
     busy: [t.busyTitle, t.busyBody, t.footAsk],
     down: [t.downTitle, t.downBody, t.footAsk],
   }[kind];
@@ -1651,6 +1672,7 @@ function page({ lang, title, body }) {
 <meta name="color-scheme" content="light">
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="/fonts/gedeeld.css">
 <link rel="stylesheet" href="/portal.css">
 <!-- Het tevredenheidsblok, uit één stylesheet die ook VISUAILS Studio inlaadt.
      Zie de kop van public/feedback.css over waarom dat een derde bestand is en

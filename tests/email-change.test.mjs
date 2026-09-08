@@ -287,7 +287,10 @@ console.log('\nen wat de code zelf belooft');
      vond pas de link in de mail — twintig regels na de sessiecontrole, en dus een
      toets die groen had kunnen zijn om de verkeerde reden. */
   const undoRegel = src.indexOf('undoMatch');
-  const naSessie = src.indexOf("if (path === '/account') return sectionGet(context, customer, 'overview');");
+  /* Sinds 6 september 2026 staan de schermen niet meer in accountGet(); wat na
+     de sessiecontrole overblijft is de 404 voor een ingelogde klant — dat is
+     het ijkpunt. */
+  const naSessie = src.indexOf("title: COPY[lang].notFound");
   ok('de terugzetlink zit vóór de routes die een sessie eisen',
     undoRegel > 0 && naSessie > 0 && undoRegel < naSessie, true);
   /* En hij krijgt geen `customer` mee, want die is er misschien niet. */

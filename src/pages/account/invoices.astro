@@ -1,0 +1,50 @@
+---
+/**
+ * /account/invoices — Facturen, als Astro-pagina. Studio fase 2, 5 september 2026.
+ * Gegevens: invoicesView() in account.js (dezelfde bron als het oude
+ * invoicesBody()); de PDF-routes blijven in accountGet().
+ */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import { pagesContext } from '../../lib/route.js';
+import { studioScreen } from '../../lib/account.js';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'invoices');
+if (s instanceof Response) return s;
+
+const { st, v } = s;
+const { t, lang, customer, thema, navDicht } = st;
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="invoices" customer={customer}
+  title={t.invHeading} kop={t.invHeading} lede={t.invLede}
+>
+  <section class="st-blok" aria-label={t.invHeading}>
+    {v.rows.length === 0
+      ? <p class="st-leeg">{v.emptyText}</p>
+      : (
+        <div class="st-kaart-vlak st-tabelvlak">
+          <table class="st-tabel">
+            <thead><tr>
+              <th>{t.invNumber}</th><th>{t.invDate}</th><th>{t.invOrder}</th>
+              <th class="is-bedrag">{t.invAmount}</th><th><span class="sr-only">{t.invDownloadCol}</span></th>
+            </tr></thead>
+            <tbody>
+              {v.rows.map((r) => (
+                <tr>
+                  <td><b>{r.number}</b>{r.flags.map((f) => <span class="st-vlag">{f}</span>)}</td>
+                  <td data-label={t.invDate}>{r.date}</td>
+                  <td data-label={t.invOrder}>{r.ref}</td>
+                  <td class="is-bedrag" data-label={t.invAmount}>{r.amount}</td>
+                  <td class="is-actie">{r.href ? <a class="btn btn-ghost btn-sm" href={r.href}>{t.invDownload}</a> : <span class="st-meta">{r.state}</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {v.anyPending && <p class="st-meta st-tabel-noot">{t.invPendingNote}</p>}
+          <p class="st-meta st-tabel-noot">{t.invKeepNote}</p>
+        </div>
+      )}
+  </section>
+</StudioLayout>

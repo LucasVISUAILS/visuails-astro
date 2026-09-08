@@ -15,30 +15,41 @@ import Layout from '../../layouts/Layout.astro';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
 import { bijgewerktOp } from '../../data/juridischeDatums.js';
+import '../../styles/stijl22.css';
 ---
 
 <Layout
   title="Privacybeleid — VISUAILS"
   description="Hoe VISUAILS je persoonsgegevens verzamelt, gebruikt en beschermt — in gewone taal en in lijn met de EU-AVG (GDPR). Enschede, Nederland."
 >
-  <section class="page-hero">
-    <div class="container narrow">
-      <span class="eyebrow-page">Juridisch</span>
-      <h1 class="display">Privacybeleid</h1>
-      <p class="lead" style="margin-top:1.2rem">Hoe wij bij VISUAILS met je persoonsgegevens omgaan — in gewone taal, in lijn met de Algemene Verordening Gegevensbescherming (AVG/GDPR) van de EU.</p>
-      <p class="legal-meta">{bijgewerktOp('privacy', 'nl')}</p>
-      {/* De sjabloonnoot is hier weg op 11 augustus 2026, tegelijk met die op
-          /nl/terms en /nl/cookie-policy. De volledige uitleg staat in
-          src/pages/nl/terms.astro; kort: de Engelse versies waren die zin op
-          8 augustus al kwijt, de Nederlandse niet, en een privacybeleid dat zelf
-          zegt dat het niet is nagekeken is precies het tegenovergestelde van wat
-          een privacybeleid moet doen. De teksten zijn nog steeds niet door een
-          jurist gezien — dat punt staat op de werklijst, niet op deze pagina. */}
-    </div>
-  </section>
+{/* ═══ EEN JURIDISCHE PAGINA IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══
+    De TEKST is woord voor woord onaangeraakt. Wat verandert is de omhulling:
+    één `.paneel` in plaats van drie secties, en de letters van sectie 22 op het
+    `.legal`-blok — dat blok zelf staat nog steeds in global.css en wordt hier
+    niet overgetypt. Zie `.s22.s22 .legal` in src/styles/stijl22.css; die zet de
+    letters voor alle zes juridische pagina's tegelijk.
 
-  <section class="section-tight">
-    <div class="container narrow legal">
+    ALLE VIJF TEGELIJK, en dat is geen keuze maar een eis van de toets.
+    tests/juridische-datums.test.mjs bewaakt deze documenten als GROEP: vijf
+    pagina's die er hetzelfde uit horen te zien en waar niets afgaat als er
+    eentje uit de pas loopt. Toen /ai-act als eerste overging, viel die toets om
+    met de naam van dat bestand erin — precies zoals bedoeld. Het antwoord
+    daarop is niet de toets versoepelen maar de andere vier meenemen.
+
+    GEEN SLOTPANEEL. De andere pagina's eindigen op een `.paneel-slot`; een
+    juridische pagina niet. Het accent wijst een keuze aan, en aan het eind van
+    een document valt niets te kiezen — er staat een adres waar je terecht kunt.
+    Een slotpaneel met knoppen eronder zou daar een aanbieding van maken. */}
+<div class="s22">
+  <section class="paneel">
+    <header class="paneel-kop jur-kop">
+      <p class="etiket">Juridisch</p>
+      <h1 class="hoog">Privacybeleid</h1>
+      <p class="lopend jur-lead">Hoe wij bij VISUAILS met je persoonsgegevens omgaan — in gewone taal, in lijn met de Algemene Verordening Gegevensbescherming (AVG/GDPR) van de EU.</p>
+      <p class="legal-meta">{bijgewerktOp('privacy', 'nl')}</p>
+    </header>
+
+    <div class="legal jur-tekst">
 
       <h2>1. Wie we zijn</h2>
       <p>VISUAILS is een AI-ondersteunde, door mensen gecontroleerde dienst voor productvisuals, gevestigd in Enschede, Nederland.</p>
@@ -141,24 +152,32 @@ import { bijgewerktOp } from '../../data/juridischeDatums.js';
       <h2>10. Hoe je contact met ons opneemt</h2>
       <p>Als je vragen hebt over dit beleid of over hoe wij met je gegevens omgaan, neem dan contact met ons op via <a href="mailto:hello@visuails.com">hello@visuails.com</a> of via WhatsApp op <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>. We streven ernaar snel te reageren.</p>
 
+    <div class="jur-uit">
+      <h2>Vragen over je gegevens?</h2>
+      <p>We leggen graag alles in dit beleid uit. Neem contact op en we komen bij je terug.</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href="/nl/contact/">Neem contact op</a>
+        <a class="knop knop-lijn" href={waHref("Hoi VISUAILS, ik heb een vraag over privacy.")} target="_blank" rel="noopener">WhatsApp</a>
+      </p>
+    </div>
     </div>
   </section>
-
-  <section>
-    <div class="container">
-      <div class="cta-band">
-        <h2 class="display" style="font-size:var(--t-page-h2)">Vragen over je gegevens?</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">We leggen graag alles in dit beleid uit. Neem contact op en we komen bij je terug.</p>
-        <div class="flex" style="justify-content:center;margin-top:2rem">
-          <a href="/nl/contact/" class="btn btn-primary btn-lg">Neem contact op</a>
-          <a href={waHref("Hoi VISUAILS, ik heb een vraag over privacy.")} class="btn btn-wa" target="_blank" rel="noopener">
-            WhatsApp
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
+</div>
 </Layout>
+
+<style>
+  /* Een juridisch document leest in één kolom. 46rem is ongeveer 75 tekens in
+     deze letter — de bovengrens uit de leesbaarheidsregel van DESIGN.md, en
+     ruimer dan de 34em van `.lopend` omdat dit een document is en geen
+     verkooptekst. */
+  .jur-kop { max-width: 46rem; margin-bottom: clamp(1.6rem, 3vw, 2.4rem); }
+  .jur-lead { max-width: none; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--inkt); }
+  .jur-tekst { max-width: 46rem; }
+
+  /* Het slot: een adres, geen aanbieding. Zie de noot bovenaan. */
+  .jur-uit { margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .jur-uit .acties { margin-top: 1.4rem; }
+</style>
 
 <style>
   /* De opmaak van een juridische pagina staat sinds 24 augustus 2026 één keer in

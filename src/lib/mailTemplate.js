@@ -50,21 +50,25 @@ import { tagline } from '../data/brand.js';
 const SITE = 'https://visuails.com';
 
 /* The palette, matched to global.css. Written out rather than imported because
- * email cannot use custom properties and these are the resolved values anyway. */
+ * email cannot use custom properties and these are the resolved values anyway.
+ * Sectie 21 (5 september 2026): het geel van Komma (#D2E04A) en het donkergrijs
+ * (#111111) van de site; de naam `green` blijft omdat de sjablonen hem lezen.
+ * De tint onder een notitie is het geel op 12% over wit, de letter erop inkt —
+ * geel als letter is op wit 1,5:1 en komt in geen enkele mail voor. */
 const C = {
-  green: '#C6F100',
-  ink: '#08090B',
-  text: '#2D3138',
-  head: '#0B0C0F',
-  muted: '#6B7078',
-  faint: '#8A8F98',
-  rule: '#E6E7EB',
-  ruleSoft: '#F0F1F4',
+  green: '#D2E04A',
+  ink: '#111111',
+  text: '#454545',
+  head: '#0A0A0A',
+  muted: '#6E6E6E',
+  faint: '#8A8A8A',
+  rule: '#DFDFDF',
+  ruleSoft: '#EDEDED',
   paper: '#FFFFFF',
-  foot: '#FAFAFB',
-  tintBg: '#F7FBE8',
-  tintInk: '#5C6318',
-  page: '#EFEFF1',
+  foot: '#F5F5F5',
+  tintBg: '#F8FDE1',
+  tintInk: '#454545',
+  page: '#EDEDED',
 };
 
 const FONT = 'Arial,Helvetica,sans-serif';
@@ -160,7 +164,7 @@ export const payPanel = ({ label, amount, sub, href, cta }) =>
 /** A quiet aside with a hairline down its left — the spam note lives in one. */
 export const note = html =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 0"><tr>
-    <td width="3" bgcolor="#D8DBE1" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
+    <td width="3" bgcolor="#DFDFDF" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
     <td style="padding:2px 0 2px 14px">
       <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.6;color:${C.muted}">${html}</p>
     </td>

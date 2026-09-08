@@ -37,7 +37,9 @@ const SECTION = process.argv[2] || '/account';
    een afdruk te beoordelen is. Zonder deze regel is er geen manier om ernaar te
    kijken zonder in te loggen — en dan beoordeel je hem niet, precies waar dit
    script tegen bestaat. */
-const THEMA = process.env.VISUAILS_THEMA === 'licht' ? 'licht' : 'donker';
+/* Sinds sectie 21 is licht de standaard, dus dat is ook hier de beginstand;
+   VISUAILS_THEMA=donker geeft het donkere scherm. */
+const THEMA = process.env.VISUAILS_THEMA === 'donker' ? 'donker' : 'licht';
 /* VISUAILS_THEMA=licht zet de themacookie mee, zodat het lichte scherm ook op
    een afdruk te beoordelen is. Zonder deze regel is er geen manier om ernaar te
    kijken zonder in te loggen — en dan beoordeel je hem niet, precies waar dit
@@ -348,8 +350,14 @@ const context = await browser.newContext();
 await context.route('**/*', async (route) => {
   const u = new URL(route.request().url());
   if (u.pathname === '/account.css' || u.pathname.endsWith('.css')) {
-    const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
-    if (fs.existsSync(file)) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(file) });
+    /* Eerst public/, dan dist/: /fonts/gedeeld.css schrijft de build (zie
+       scripts/fonts-voor-worker.mjs) en staat niet in public/. */
+    const file = ['public', 'dist'].map((d) => path.join(ROOT, d, u.pathname.replace(/^\//, ''))).find((p) => fs.existsSync(p));
+    if (file) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(file) });
+  }
+  if (u.pathname.endsWith('.woff2')) {
+    const file = path.join(ROOT, 'dist', u.pathname.replace(/^\//, ''));
+    if (fs.existsSync(file)) return route.fulfill({ contentType: 'font/woff2', body: fs.readFileSync(file) });
   }
   /* /img/* uit public/img. Zonder deze regel viel elk beeld dat de CSS zelf
      ophaalt stil weg — het achtergrondvlak van .leegabo kwam er zwart uit, en

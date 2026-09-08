@@ -55,6 +55,8 @@ import { AMOUNT, euro, vatLabel, vatLead } from '../data/pricing.js';
 import { BUSINESS_VERSION, currentBusiness } from '../data/business.js';
 import { CONSENT_VERSION_BRAND_MODEL, currentBrandModelConsent } from '../data/consent.js';
 import { localizedPath } from '../i18n/ui.js';
+/* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
+import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -101,19 +103,24 @@ const prijs = euro(AMOUNT.brandModel, lang);
 const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
 ---
 
-<section class="page-hero">
-  <div class="container narrow">
-    <span class="eyebrow-page">{c.eyebrow}</span>
-    <h1 class="display">{c.h1}</h1>
-    <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-    <p class="bm-price-hero">
-      <strong>{prijs}</strong> <span>{vatLabel('excl', lang)}</span>
-    </p>
-  </div>
+{/* ── SECTIE 22 — 7 september 2026 ─────────────────────────────────────────
+    /start/brand-model was samen met /start/video en /start/plan het laatste
+    stuk site buiten het systeem. Alleen de OMLIJSTING gaat om: elke .bm-* klasse
+    blijft staan, want het script onderaan dit bestand selecteert op data-bm-*
+    én op .bm-step, en het <style>-blok hangt aan diezelfde namen. Wat verandert
+    is de schil en de vorm van de knoppen. */}
+<div class="s22">
+<section class="paneel bm-kop">
+  <p class="etiket">{c.eyebrow}</p>
+  <h1 class="hoog">{c.h1}</h1>
+  <p class="lopend bm-lede">{c.lead}</p>
+  <p class="bm-price-hero">
+    <strong>{prijs}</strong> <span>{vatLabel('excl', lang)}</span>
+  </p>
 </section>
 
-<section class="section-tight">
-  <div class="container narrow">
+<section class="paneel">
+  <div class="bm-binnen">
 
     {/* De stappenbalk is puur oriëntatie en geen navigatie: er valt niet op te
         klikken. Wie stap 4 aanklikt zonder stap 2 in te vullen, zou langs de
@@ -432,7 +439,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           </label>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg bm-submit">{c.submit}</button>
+        <button type="submit" class="knop knop-inkt bm-submit">{c.submit}</button>
         <p class="bm-legal">
           {c.legal[0]}<a href={lp('/terms')}>{c.legalTerms}</a>{c.legal[1]}
           <a href={lp('/privacy')}>{c.legalPrivacy}</a>{c.legal[2]}
@@ -445,14 +452,21 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           Verborgen tot het script draait: zonder script staat alles onder elkaar
           en is de verzendknop in stap 5 de enige knop die iets moet doen. */}
       <div class="bm-nav" data-bm-nav hidden>
-        <button type="button" class="btn btn-ghost" data-bm-back hidden>{c.back}</button>
-        <button type="button" class="btn btn-primary" data-bm-next>{c.next}</button>
+        <button type="button" class="knop knop-lijn" data-bm-back hidden>{c.back}</button>
+        <button type="button" class="knop knop-inkt" data-bm-next>{c.next}</button>
       </div>
     </form>
   </div>
 </section>
+</div>
 
 <style>
+  /* De kop staat sinds sectie 22 in een eigen paneel; .hoog en .etiket doen het
+     letterwerk. .bm-binnen vervangt .container.narrow, want binnen een paneel
+     hoort de leesbreedte bij het blok en niet bij de pagina. */
+  .bm-kop { padding-bottom: clamp(2rem, 4vw, 3rem); }
+  .bm-lede { margin-top: 1.2rem; }
+  .bm-binnen { max-width: 68ch; }
   .bm-h { font-size: 1.5rem; margin-top: 0; }
   .bm-h3 { font-size: 1.05rem; margin-top: 0; margin-bottom: .8rem; }
   .bm-lead { color: var(--ink-2); line-height: 1.7; max-width: 66ch; margin-top: .6rem; }

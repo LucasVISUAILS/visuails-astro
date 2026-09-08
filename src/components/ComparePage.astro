@@ -96,6 +96,7 @@ import {
 import { localizedPath } from '../i18n/ui.js';
 import FigConverge from './FigConverge.astro';
 import Placeholder from './Placeholder.astro';
+import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -439,93 +440,100 @@ const nl = lang === 'nl';
 const t = COPY[lang];
 ---
 
-<!-- HERO -->
-<section class="page-hero"><div class="container">
-  <p class="eyebrow-page">{t.eyebrow}</p>
-  <h1 class="display">{t.h1a}<em>{t.h1b}</em>{t.h1c}</h1>
-  <p class="lead" style="margin-top:1.2rem;max-width:62ch">{t.lead}</p>
-  <div class="flex" style="margin-top:1.8rem">
-    <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg" data-track="compare-start">{t.ctaPrimary}</a></span></span>
-    <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{t.ctaGhost}</a>
-  </div>
-</div></section>
+{/* ═══ /compare IN DE STIJL VAN SECTIE 22 — 7 september 2026 ════════════════
+    Twaalfde pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in
+    beide talen, dezelfde <FigConverge>, dezelfde twee <Placeholder>s met hun
+    opdracht erin, dezelfde tabelrollen en dezelfde `#ai-tools`-anker waar
+    /custom-models naartoe wijst.
 
-<!-- THE MATRIX.
-     A three-column grid on desktop (row label · production day · order). Below
-     760px each row becomes its own stacked block and the two answers pick up
-     their column name from data-col via ::before, so the comparison survives
-     the collapse instead of turning into two unlabelled paragraphs. -->
-{/* ── DEZE PAGINA VERGELEEK TWEE DINGEN EN LIET ER GEEN ÉÉN ZIEN ────────────
-    19 augustus 2026. Gemeten over zeventien pagina's: 878 woorden, nul beelden.
-    Op een pagina die letterlijk "een shootdag of een bestelling" heet is dat de
-    duurste lege plek van de site — de hele vergelijking is visueel, en hij stond
-    er als een tabel met woorden.
+    DE TABEL BLIJFT EEN TABEL, met zijn role="table"/row/cell erin. Dat is geen
+    opmaak maar toegankelijkheid: zonder die rollen hoort een schermlezer het
+    rijlabel en daarna twee antwoorden zonder te weten van wie ze zijn, en dat
+    is precies de ene lezing van deze sectie die actief misleidt. Onder de 900px
+    valt de kopregel weg en haalt elke cel zijn kolomnaam terug uit `data-col`.
 
-    Lucas: *"check waar tekst minder kan worden en er visuele uitleg in de plaats
-    kan komen."* Twee foto’s naast elkaar doen hier wat vijftien tabelregels
-    proberen te doen. De tabel blijft — die draagt de details — maar hij komt nu
-    ná het beeld in plaats van in plaats daarvan. */}
-<section class="section-tight"><div class="container">
-  <div class="cmp-worlds">
-    <Placeholder
-      lang={lang}
-      ratio="4 / 3"
-      subject={nl ? 'Een shootdag: statieven, lampen, rekken kleding, mensen die wachten'
-                  : 'A shoot day: tripods, lights, clothing rails, people waiting'}
-      message={nl
-        ? 'Moet de DAG laten zien en niet de foto die eruit komt: opbouw, spullen, wachten. De kijker moet denken "dit kost me een dag" voordat hij één woord van de tabel leest. Rommelig mag; geromantiseerd niet.'
-        : 'Must show the DAY, not the photo that comes out of it: setup, gear, waiting. The viewer should think "this costs me a day" before reading a word of the table. Messy is fine; romanticised is not.'}
-    />
-    <Placeholder
-      lang={lang}
-      ratio="4 / 3"
-      subject={nl ? 'Een laptop met VISUAILS Studio open, ernaast één kledingstuk en een telefoon'
-                  : 'A laptop with VISUAILS Studio open, one garment and a phone beside it'}
-      message={nl
-        ? 'Hetzelfde moment, andere wereld: alles wat je nodig hebt past op een tafel. Geen studio, geen team. Dezelfde uitsnede en hetzelfde licht als de foto ernaast, want het verschil moet in de INHOUD zitten en niet in de fotografie.'
-        : 'Same moment, other world: everything you need fits on a table. No studio, no crew. Same crop and same light as the photo beside it — the difference has to be in the content, not in the photography.'}
-    />
-  </div>
-  <!-- ARIA table roles rather than aria-hidden on the header: without them a
-       screen reader hears the row label and then two unattributed answers,
-       which is the one reading of this section that is actively misleading.
-       Below 760px the header row is display:none — out of the a11y tree — and
-       the column name comes back per cell through the data-col ::before. -->
-  <div class="vs reveal pending" role="table" aria-label={t.matrixLabel}>
-    <div class="vs-head" role="row">
-      <span class="vs-label" role="columnheader">{t.colLabel}</span>
-      <span class="vs-col" role="columnheader">{t.colA}</span>
-      <span class="vs-col vs-col-us" role="columnheader">{t.colB}</span>
+    DE VERGELIJKING ZELF IS DE DONKERE KAMER. Op deze pagina is de wissel niet
+    "van tonen naar betogen" maar letterlijk de twee werelden naast elkaar — en
+    dat is het hoofdstuk waar de pagina om draait. */}
+<div class="s22">
+
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="cmp-h1">
+    <header class="paneel-kop cmp-kop">
+      <p class="etiket">{t.eyebrow}</p>
+      <h1 id="cmp-h1" class="hoog">{t.h1a}<em>{t.h1b}</em>{t.h1c}</h1>
+      <p class="lopend">{t.lead}</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href={lp('/start')} data-track="compare-start">{t.ctaPrimary}</a>
+        <a class="knop knop-lijn" href={lp('/pricing')}>{t.ctaGhost}</a>
+      </p>
+    </header>
+  </section>
+
+  {/* ── 2 · TWEE WERELDEN, EN DE TABEL ERONDER ──────────────────────────────
+      Deze pagina vergeleek twee dingen en liet er geen één zien: 878 woorden,
+      nul beelden, op de pagina die letterlijk "een shootdag of een bestelling"
+      heet. Lucas: *"check waar tekst minder kan worden en er visuele uitleg in
+      de plaats kan komen."* De twee vlakken doen wat vijftien tabelregels
+      proberen te doen; de tabel blijft, maar komt erná. */}
+  <section class="paneel" aria-labelledby="cmp-matrix">
+    <h2 id="cmp-matrix" class="visueel-verborgen">{t.matrixLabel}</h2>
+    <div class="cmp-werelden">
+      <Placeholder
+        lang={lang}
+        ratio="4 / 3"
+        caption={false}
+        subject={nl ? 'Een shootdag: statieven, lampen, rekken kleding, mensen die wachten'
+                    : 'A shoot day: tripods, lights, clothing rails, people waiting'}
+        message={nl
+          ? 'Moet de DAG laten zien en niet de foto die eruit komt: opbouw, spullen, wachten. De kijker moet denken "dit kost me een dag" voordat hij één woord van de tabel leest. Rommelig mag; geromantiseerd niet.'
+          : 'Must show the DAY, not the photo that comes out of it: setup, gear, waiting. The viewer should think "this costs me a day" before reading a word of the table. Messy is fine; romanticised is not.'}
+      />
+      <Placeholder
+        lang={lang}
+        ratio="4 / 3"
+        caption={false}
+        subject={nl ? 'Een laptop met VISUAILS Studio open, ernaast één kledingstuk en een telefoon'
+                    : 'A laptop with VISUAILS Studio open, one garment and a phone beside it'}
+        message={nl
+          ? 'Hetzelfde moment, andere wereld: alles wat je nodig hebt past op een tafel. Geen studio, geen team. Dezelfde uitsnede en hetzelfde licht als de foto ernaast, want het verschil moet in de INHOUD zitten en niet in de fotografie.'
+          : 'Same moment, other world: everything you need fits on a table. No studio, no crew. Same crop and same light as the photo beside it — the difference has to be in the content, not in the photography.'}
+      />
     </div>
-    {t.rows.map((r) => (
-      <div class="vs-row" role="row">
-        <span class="vs-label" role="rowheader">{r.label}</span>
-        <span class="vs-cell" role="cell" data-col={t.colA}>{r.a}</span>
-        <span class="vs-cell vs-cell-us" role="cell" data-col={t.colB}>{r.b}</span>
-      </div>
-    ))}
-  </div>
-  <!-- shoot.caveat travels with the number wherever the number goes (§H·2). -->
-  <p class="vs-caveat">{t.caveat} {t.caveatNote}</p>
-</div></section>
 
-<!-- WHAT HAS TO LINE UP (task #246). Two of the matrix rows above — "When it
-     lands" and "If something is wrong" — are one fact stated twice: a day needs
-     four separate schedules to meet on one date, so a reshoot is that meeting
-     again. The table can only ever say it twice. Drawn once, the second row
-     stops needing an argument.
-     It sits HERE, immediately after the matrix, for two reasons. It is those
-     rows and no others, so putting it anywhere else would make it a third
-     argument instead of a reading of the second. And the matrix is the densest
-     text on the page while everything below it is more text — a table, then
-     cards, then two lists; a change of medium at this exact point is the whole
-     of what #246 asks for. -->
-<section class="section-tight"><div class="container">
-  <div class="fig-lede">
-    <h2>{t.convergeH}</h2>
-    <p>{t.convergeSub}</p>
-  </div>
-  <div class="reveal pending">
+    <div class="cmp-tabel" role="table" aria-label={t.matrixLabel}>
+      <div class="cmp-kopregel" role="row">
+        <span class="mono" role="columnheader">{t.colLabel}</span>
+        <span class="mono" role="columnheader">{t.colA}</span>
+        <span class="mono is-ons" role="columnheader">{t.colB}</span>
+      </div>
+      {t.rows.map((r) => (
+        <div class="cmp-rij" role="row">
+          <span class="cmp-label" role="rowheader">{r.label}</span>
+          <span class="cmp-cel" role="cell" data-col={t.colA}>{r.a}</span>
+          <span class="cmp-cel is-ons" role="cell" data-col={t.colB}>{r.b}</span>
+        </div>
+      ))}
+    </div>
+    {/* shoot.caveat reist mee met het getal, waar dat getal ook staat (§H·2). */}
+    <p class="lopend cmp-noot">{t.caveat} {t.caveatNote}</p>
+  </section>
+
+  {/* ── 3 · WAT ER MOET SAMENVALLEN ─────────────────────────────────────────
+      Twee rijen uit de tabel hierboven — "wanneer het er is" en "als er iets
+      mis is" — zijn één feit dat twee keer gezegd wordt: een dag vraagt dat
+      vier agenda's op één datum samenvallen, en een herhaling is die afspraak
+      nog een keer. Een tabel kan dat alleen maar twee keer zeggen. Getekend
+      hoeft de tweede rij geen argument meer.
+
+      In de donkere kamer, en dat is de plek waar de pagina van opsomming naar
+      argument gaat. */}
+  <section class="kamer cmp-kamer" aria-labelledby="cmp-conv">
+    <p class="spook spook-rechts" aria-hidden="true"><span>{t.eyebrow}</span><span>{t.eyebrow}</span></p>
+    <header class="kamer-kop">
+      <h2 id="cmp-conv" class="hoog hoog-2">{t.convergeH}</h2>
+      <p class="lopend">{t.convergeSub}</p>
+    </header>
     <FigConverge
       convergeTitle={t.convTitle}
       lanes={t.convLanes}
@@ -536,223 +544,136 @@ const t = COPY[lang];
       seqOut={t.seqOut}
       note={t.convNote}
     />
-  </div>
-</div></section>
+  </section>
 
-<!-- DE WEEK OM DE DAG HEEN. Verhuisd van de homepage op 30 augustus 2026; zie
-     de noot bij weekHead in de copytabel voor waarom hij eerst hier moest staan
-     voordat hij daar weg mocht. -->
-<section class="section-tight"><div class="container">
-  <div class="section-head">
-    <h2>{t.weekHead}</h2>
-    <p>{t.weekSub}</p>
-  </div>
-  <ul class="weeklijst reveal-group">
-    {t.weekList.map((r) => (<li class="reveal pending">{r}</li>))}
-  </ul>
-  <p class="weekslot">{t.weekOrder}</p>
-</div></section>
+  {/* ── 4 · DE WEEK OM DE DAG HEEN ──────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="cmp-week">
+    <header class="paneel-kop">
+      <h2 id="cmp-week" class="hoog hoog-2">{t.weekHead}</h2>
+      <p class="lopend">{t.weekSub}</p>
+    </header>
+    <ol class="cmp-week">
+      {t.weekList.map((r) => <li><span class="lopend">{r}</span></li>)}
+    </ol>
+    <p class="lopend cmp-week-voet">{t.weekOrder}</p>
+  </section>
 
-<!-- WHERE A SHOOT DAY STILL WINS — the page is not credible without it. -->
-<section class="section-tight"><div class="container">
-  <div class="section-head">
-    <h2>{t.winsHead}</h2>
-    <p>{t.winsSub}</p>
-  </div>
-  <div class="wins reveal-group">
-    {t.wins.map((w) => (
-      <div class="card reveal pending">
-        <h3 class="as-card-h">{w.t}</h3>
-        <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{w.b}</p>
+  {/* ── 5 · WAAR EEN SHOOTDAG NOG STEEDS WINT ───────────────────────────────
+      De pagina is niet geloofwaardig zonder deze sectie. */}
+  <section class="paneel" aria-labelledby="cmp-wint">
+    <header class="paneel-kop">
+      <h2 id="cmp-wint" class="hoog hoog-2">{t.winsHead}</h2>
+      <p class="lopend">{t.winsSub}</p>
+    </header>
+    <ul class="cmp-wint" role="list">
+      {t.wins.map((w) => (
+        <li><b>{w.t}</b><span class="lopend">{w.b}</span></li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 6 · DE ZELFBEDIENINGSTOOLS ──────────────────────────────────────────
+      Twee lijsten en geen zeven kaarten: het is een echt argument dat de pagina
+      moet houden, maar het is niet langer het onderwerp van de pagina.
+      `#ai-tools` wordt vanaf /custom-models gelinkt. */}
+  <section class="paneel" id="ai-tools" aria-labelledby="cmp-tools">
+    <header class="paneel-kop">
+      <h2 id="cmp-tools" class="hoog hoog-2">{t.toolHead}</h2>
+      <p class="lopend">{t.toolSub}</p>
+    </header>
+    <div class="cmp-tools">
+      <div>
+        <h3 class="hoog hoog-3">{t.enoughHead}</h3>
+        <ul class="cmp-tool-lijst" role="list">
+          {t.enough.map((line) => <li>{line}</li>)}
+        </ul>
       </div>
-    ))}
-  </div>
-</div></section>
+      <div>
+        <h3 class="hoog hoog-3">{t.costsHead}</h3>
+        <ul class="cmp-tool-lijst" role="list">
+          {t.costs.map((line) => <li>{line}</li>)}
+        </ul>
+      </div>
+    </div>
+    <p class="lopend cmp-tool-slot">{t.toolClose}</p>
+    <p class="acties">
+      <a class="pijl" href={lp('/test-sample')} data-track="compare-tool-sample">{t.toolCta}</a>
+    </p>
+  </section>
 
-<!-- THE SELF-SERVE TOOL SECTION (§H·5). Compressed to two lists rather than
-     seven cards: it is a real argument the page has to keep, but it is no
-     longer the page's subject. #ai-tools is linked from /custom-models. -->
-<section class="section-tight" id="ai-tools"><div class="container narrow">
-  <div class="section-head">
-    <h2>{t.toolHead}</h2>
-    <p>{t.toolSub}</p>
-  </div>
-  <div class="tool-split">
-    <div>
-      <h3 class="tool-h">{t.enoughHead}</h3>
-      <ul class="tool-list">
-        {t.enough.map((line) => <li>{line}</li>)}
-      </ul>
-    </div>
-    <div>
-      <h3 class="tool-h">{t.costsHead}</h3>
-      <ul class="tool-list">
-        {t.costs.map((line) => <li>{line}</li>)}
-      </ul>
-    </div>
-  </div>
-  <p class="tool-close">{t.toolClose}</p>
-  <a href={lp('/test-sample')} class="link-arrow" data-track="compare-tool-sample">{t.toolCta} <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-</div></section>
-
-<!-- CTA -->
-<section class="section-tight"><div class="container">
-  <div class="cta-band reveal pending">
-    <h2 class="display" style="font-size:var(--t-page-h2)">{t.ctaHead}<em>{t.ctaHeadEm}</em>.</h2>
-    <p style="margin:1rem auto 0;max-width:52ch;color:var(--ink-2)">{t.ctaBody}</p>
-    <div class="flex" style="justify-content:center;margin-top:2rem">
-      <a href={lp('/test-sample')} class="btn btn-primary btn-lg" data-track="compare-test-bottom">{t.ctaSample}</a>
-      <a href={lp('/start')} class="btn btn-ghost btn-lg">{t.ctaStart}</a>
-      <a href={t.wa} class="btn btn-wa" target="_blank" rel="noopener">{t.ctaWa}</a>
-    </div>
-    <p class="cta-reply">{t.ctaReply}</p>
-  </div>
-</div></section>
+  {/* ── 7 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="cmp-slot">
+    <h2 id="cmp-slot" class="hoog">{t.ctaHead}<em>{t.ctaHeadEm}</em>.</h2>
+    <p class="lopend">{t.ctaBody}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')} data-track="compare-test-bottom">{t.ctaSample}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{t.ctaStart}</a>
+      <a class="knop knop-lijn" href={t.wa} target="_blank" rel="noopener">{t.ctaWa}</a>
+    </p>
+    <p class="mono cmp-antwoord">{t.ctaReply}</p>
+  </section>
+</div>
 
 <style>
-  /* Twee werelden naast elkaar, met dezelfde verhouding en dezelfde maat: als de
-     ene foto groter is dan de andere, kiest de opmaak al een winnaar voordat de
-     lezer de tabel heeft gezien. Onder 52rem onder elkaar — dan is het geen
-     vergelijking meer maar een volgorde, en dat is op een telefoon het enige dat
-     werkt. */
-  .cmp-worlds {
-    display: grid; gap: clamp(1rem, 2vw, 1.5rem);
-    margin-bottom: clamp(2rem, 4vw, 3.2rem);
-  }
-  @media (min-width: 52rem) { .cmp-worlds { grid-template-columns: 1fr 1fr; } }
+  .cmp-kop { max-width: 46rem; margin-bottom: 0; }
 
-  /* ── THE MATRIX ────────────────────────────────────────────────────────── */
-  .vs { border-top: 1px solid var(--line-strong); }
-  .vs-head,
-  .vs-row {
-    display: grid;
-    grid-template-columns: minmax(7rem, .7fr) 1fr 1fr;
-    gap: clamp(1rem, 2.4vw, 2.4rem);
-    align-items: start;
-    padding: 1.25rem 0;
-    box-shadow: inset 0 -1px 0 var(--line);
-  }
-  .vs-head { padding: .9rem 0 1rem; box-shadow: inset 0 -1px 0 var(--line-strong); }
-  .vs-label {
-    font-family: var(--font-body);
-    font-size: .78rem;
-    font-weight: 600;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .vs-col { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
-  /* The only weight given to our own column: the label is set solid, the cells
-     take ink rather than ink-2. No colour, no highlight fill — the argument is
-     the rows, not a chosen-plan flourish. */
-  .vs-col-us { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
-  .vs-cell { font-size: .95rem; line-height: 1.55; color: var(--ink-3); }
-  .vs-cell-us { color: var(--ink-2); }
-  .vs-caveat { margin-top: 1.1rem; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 78ch; }
+  .cmp-werelden { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(.9rem, 2vw, 1.6rem); margin-bottom: clamp(2.5rem, 5vw, 4rem); }
 
-  @media (max-width: 760px) {
-    .vs { border-top: none; }
-    .vs-head { display: none; }
-    .vs-row {
-      display: block;
-      padding: 1.4rem 0;
-    }
-    .vs-row .vs-label { display: block; margin-bottom: .7rem; color: var(--ink); }
-    .vs-cell { display: block; }
-    .vs-cell + .vs-cell { margin-top: .9rem; }
-    /* The column name has to come back once the columns are gone. */
-    .vs-cell::before {
-      content: attr(data-col);
-      display: block;
-      font-family: var(--font-body);
-      font-size: .72rem;
-      font-weight: 600;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: var(--ink-3);
-      margin-bottom: .25rem;
-    }
-  }
+  /* ── DE TABEL ────────────────────────────────────────────────────────────
+     Drie kolommen op een breed scherm: het rijlabel, de shootdag, de
+     bestelling. Onze kolom draagt een gele lijn en geen vlak — een gevulde
+     kolom naast een lege leest als een reclamefolder, een lijn leest als
+     nadruk.
 
-  /* ── WHAT HAS TO LINE UP ───────────────────────────────────────────────── */
-  /* Deliberately NOT .section-head, and that is the whole point of the class.
-     Both sections below this one already open with that stack — h2 over a 62ch
-     paragraph — so introducing the drawing the same way would put three
-     identical openings in a row and make the page MORE uniform at the exact
-     spot #246 asks for variation. This is a horizontal band instead: heading
-     left, sentence right, one rule under both, so the shape differs before a
-     word of it is read.
-     The 880px breakpoint is FigConverge's own, not a round number picked here:
-     the lede goes two-column at the moment the figure it introduces does, so
-     the pair never sits in the state where one is split and the other is not. */
-  .fig-lede {
-    display: grid;
-    gap: .8rem clamp(1.6rem, 4vw, 3.2rem);
-    align-items: end;
-    padding-bottom: 1.2rem;
-    margin-bottom: clamp(2rem, 4vw, 3rem);
-    box-shadow: inset 0 -1px 0 var(--line-strong);
-  }
-  @media (min-width: 880px) {
-    .fig-lede { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
-  }
-  .fig-lede p {
-    font-size: .95rem;
-    line-height: 1.6;
-    color: var(--ink-2);
-    max-width: 56ch;
-  }
+     Onder 900px wordt elke rij een eigen blok en halen de twee antwoorden hun
+     kolomnaam terug uit `data-col` via ::before, zodat de vergelijking de
+     inklapping overleeft in plaats van twee alinea's zonder etiket te worden.
+     De kopregel gaat dan op `display: none` en dus uit de a11y-boom — daarom
+     staat de naam per cel terug. */
+  .cmp-tabel { display: grid; }
+  .cmp-kopregel, .cmp-rij { display: grid; grid-template-columns: minmax(0, 14rem) minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2.5rem); align-items: baseline; padding: clamp(.9rem, 2vw, 1.3rem) 0; border-top: 1px solid var(--lijn); }
+  .cmp-kopregel { border-top: 0; padding-top: 0; }
+  .cmp-kopregel .mono { color: var(--inkt-2); }
+  .cmp-kopregel .is-ons { color: var(--inkt); }
+  .cmp-rij:last-child { border-bottom: 1px solid var(--lijn); }
+  .cmp-label { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1rem, 1.6vw, 1.25rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .cmp-cel { font-size: .92rem; line-height: 1.55; color: var(--inkt-2); }
+  .cmp-cel.is-ons { color: var(--inkt); box-shadow: inset 3px 0 0 var(--geel); padding-left: .9rem; }
+  .cmp-noot { margin-top: 1.4rem; font-size: .88rem; }
 
-  /* ── WHERE A SHOOT DAY WINS ────────────────────────────────────────────── */
-  .wins { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
-  @media (max-width: 760px) { .wins { grid-template-columns: 1fr; } }
+  .cmp-week { display: grid; }
+  .cmp-week li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: clamp(1rem, 3vw, 2rem); padding: clamp(.9rem, 2vw, 1.3rem) 0; border-top: 1px solid var(--lijn); counter-increment: cmpweek; }
+  .cmp-week li::before { content: counter(cmpweek, decimal-leading-zero); font-family: var(--mono2); font-size: .75rem; font-stretch: 82%; letter-spacing: .04em; color: var(--inkt-2); }
+  .cmp-week li:last-child { border-bottom: 1px solid var(--lijn); }
+  .cmp-week { counter-reset: cmpweek; }
+  .cmp-week-voet { margin-top: 1.4rem; font-size: .92rem; }
 
-  /* ── SELF-SERVE TOOL ───────────────────────────────────────────────────── */
-  .tool-split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.6rem, 4vw, 3.2rem); }
-  @media (max-width: 760px) { .tool-split { grid-template-columns: 1fr; } }
-  .tool-h {
-    font-family: var(--font-body);
-    font-size: .82rem;
-    font-weight: 600;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    padding-bottom: .8rem;
-    box-shadow: inset 0 -1px 0 var(--line-strong);
-  }
-  /* margin-top EN NIET 0. De kop erboven draagt een lijn (box-shadow onderaan)
-     en de lijst begon daar direct tegenaan: gemeten nul pixels tussen de lijn en
-     de eerste regel, terwijl elke andere kop op deze site 12 tot 19px lucht
-     onder zich heeft. Een kop met een streep eronder heeft die ruimte harder
-     nodig dan een kop zonder, want de streep is al een grens — zonder lucht
-     leest hij als de bovenrand van de lijst in plaats van als het einde van de
-     kop. `margin: 0` won hier van de bodemregel in global.css omdat een klasse
-     zwaarder weegt dan een typeselector, dus staat het hier en niet daar. */
-  .tool-list { list-style: none; margin: .9rem 0 0; padding: 0; }
-  .tool-list li {
-    padding: .85rem 0;
-    font-size: .95rem;
-    line-height: 1.55;
-    color: var(--ink-2);
-    box-shadow: inset 0 -1px 0 var(--line);
-  }
-  .tool-close { margin: 1.8rem 0 1rem; font-size: 1.05rem; color: var(--ink); max-width: 60ch; }
+  .cmp-wint { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.2rem, 3vw, 2.5rem); }
+  .cmp-wint li { display: grid; gap: .5rem; align-content: start; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .cmp-wint b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.3rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .cmp-wint .lopend { font-size: .92rem; }
 
-  /* De week om de dag heen. Zelfde vorm als .tool-list hierboven — het is
-     dezelfde soort inhoud (een opsomming van wat er werkelijk gebeurt) en twee
-     verschillende lijstvormen op één pagina zouden suggereren dat er een
-     verschil is dat er niet is. In twee kolommen zodra er ruimte voor is: vijf
-     regels onder elkaar leest als een waslijst, twee kolommen als een lijst. */
-  .weeklijst { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: 0; }
-  @media (min-width: 720px) { .weeklijst { grid-template-columns: 1fr 1fr; column-gap: 2.4rem; } }
-  .weeklijst li {
-    padding: .85rem 0;
-    font-size: .95rem;
-    line-height: 1.55;
-    color: var(--ink-2);
-    box-shadow: inset 0 -1px 0 var(--line);
-  }
-  .weekslot { margin: 1.6rem 0 0; font-size: 1.02rem; color: var(--ink); max-width: 62ch; }
+  .cmp-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .cmp-tools h3 { margin-bottom: 1.2rem; }
+  .cmp-tool-lijst { display: grid; gap: .7rem; }
+  .cmp-tool-lijst li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); font-size: .92rem; line-height: 1.55; }
+  .cmp-tool-lijst li::before { content: ""; position: absolute; left: 0; top: .62em; width: 7px; height: 7px; border-radius: 50%; background: var(--geel); }
+  .cmp-tool-slot { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
 
-  .cta-reply { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
+  /* ── ERFT NU VAN HET DONKERE SLOT — 7 september 2026 ─────────────────────
+     Deze regel stond op var(--inkt) omdat het slotpaneel geel was. Sinds het
+     donker is, was dat inkt op #1A1A1A: 1,08:1, en dat is precies het soort
+     restant dat een klassenaam die "geel" heette had moeten voorkomen. De
+     etiket-tint van .paneel-slot zegt hetzelfde en is 8:1. */
+  .cmp-antwoord { color: rgb(245 245 245 / .72); }
+
+  @media (max-width: 900px) {
+    .cmp-werelden, .cmp-tools { grid-template-columns: 1fr; }
+    .cmp-wint { grid-template-columns: 1fr; }
+    /* De kopregel weg, de kolomnaam per cel terug. Zie de noot hierboven. */
+    .cmp-kopregel { display: none; }
+    .cmp-rij { grid-template-columns: 1fr; gap: .5rem; }
+    .cmp-cel::before { content: attr(data-col); display: block; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; color: var(--inkt-2); margin-bottom: .2rem; }
+    .cmp-cel.is-ons { box-shadow: inset 3px 0 0 var(--geel); }
+  }
 </style>

@@ -19,6 +19,7 @@ import { chromium } from 'playwright';
 import { d1, verseDb } from '../tests/lib/d1sqlite.mjs';
 import { hashToken } from '../src/lib/token.js';
 import { addDays, firstOfferableDay } from '../src/data/capacity.js';
+import { keur } from './werkscherm-keuring.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const OUT = path.join(ROOT, 'kladblok', 'keten');
@@ -134,8 +135,11 @@ const bctx = await browser.newContext({ viewport: { width: 1440, height: 900 } }
 const beeld = fs.readFileSync(path.join(ROOT, 'public/img/catalog-after-w420.webp'));
 await bctx.route('**/*', async (route) => {
   const u = new URL(route.request().url());
-  const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
-  if (/\.(css|woff2?|ico|svg|png|webp|js)$/.test(u.pathname) && fs.existsSync(file)) {
+  /* public/ eerst, dist/ als terugval: /fonts/gedeeld.css en de woff2's eronder
+     schrijft scripts/fonts-voor-worker.mjs pas BIJ de build, in dist/. Zonder
+     die terugval draaien deze afdrukken in Arial. */
+  const file = ['public', 'dist'].map((m) => path.join(ROOT, m, u.pathname.replace(/^\//, ''))).find(fs.existsSync);
+  if (file && /\.(css|woff2?|ico|svg|png|webp|js)$/.test(u.pathname)) {
     const type = u.pathname.endsWith('.css') ? 'text/css' : u.pathname.endsWith('.js') ? 'text/javascript' : u.pathname.endsWith('.woff2') ? 'font/woff2' : u.pathname.endsWith('.svg') ? 'image/svg+xml' : 'image/webp';
     return route.fulfill({ contentType: type, body: fs.readFileSync(file) });
   }
@@ -143,7 +147,17 @@ await bctx.route('**/*', async (route) => {
   return route.fulfill({ status: 204, body: '' });
 });
 let nr = 0;
+let keurfouten = 0;
+/* Een foutpagina is geen scherm. Zonder deze controle fotografeert het harnas
+   een 404 met dezelfde tevredenheid als een dashboard — precies wat er tussen
+   6 en 7 september gebeurde. */
+const FOUTZINNEN = ['This page does not exist', 'Deze pagina bestaat niet', 'Something went wrong', 'Er ging iets mis'];
 async function afdruk(naam, html, { width = 1440, open = '' } = {}) {
+  const fout = FOUTZINNEN.find((z) => html.includes(z));
+  if (fout) BAD(`${naam}: dit is een FOUTPAGINA ("${fout}"), geen scherm`);
+  /* KEUR=1: geen plaatje maar de leesbaarheidsmeting op 1440 / 768 / 390.
+     Dezelfde meetlat als op de site — zie kladblok/werkscherm-keuring.mjs. */
+  if (process.env.KEUR) { keurfouten += await keur(bctx, naam, html); return naam; }
   const page = await bctx.newPage();
   await page.setViewportSize({ width, height: 900 });
   await page.route('**/__page*', (r) => r.fulfill({ contentType: 'text/html', body: html }));
@@ -174,9 +188,79 @@ async function studioLogin(email, lang = 'nl') {
   L(`GET ${link.slice(0, 30)}… → ${r2.status} → ${r2.headers.get('location')}`);
   return cookieUit(r2);
 }
-const studioGet = async (p, cookie) => { const r = await account.accountGet(ctx(req(p, { cookie }))); return { res: r, html: await r.text() }; };
+/* ── WAAROM DIT HARNAS ZIJN EIGEN STATUS BEWAAKT — 7 september 2026 ─────────
+ *
+ * Op 6 september zijn de Studio-schermen uit accountGet() naar Astro-pagina's
+ * onder src/pages/account/ verhuisd; wat er in accountGet overblijft is een
+ * bewuste 404 voor "een pad dat geen scherm is". Dit harnas riep accountGet
+ * rechtstreeks aan en bleef dat doen — dus twintig van de eenenveertig
+ * schermafdrukken waren sindsdien de 404-pagina, en zowel de afdrukken als de
+ * leesbaarheidsmeting meldden vrolijk "schoon". Een groen licht op niets.
+ *
+ * Dat mag niet nog een keer stil gebeuren, en daarom twee dingen.
+ *
+ * EEN: afdruk() weigert een foutpagina te fotograferen alsof het een scherm was.
+ * Wat er ook misgaat, een 404 komt nooit meer als schermafdruk het logboek in.
+ *
+ * TWEE: de Studio-stappen vragen nu de VIEW op in plaats van de HTML.
+ * studioScreen() is precies wat de Astro-pagina zelf aanroept — sessie,
+ * omleidingen, queries, viewobject — dus deze doorloop bewijst nog steeds de
+ * hele keten, alleen op feiten in plaats van op een plaatje. Dat is voor een
+ * ketencontrole ook het betere bewijs: "3 lopend · uitgelicht VIS-… · strook 12
+ * beelden" zegt meer dan een screenshot waar je zelf naar moet turen.
+ *
+ * De OPMAAK van diezelfde schermen staat in kladblok/studio-proef.mjs, dat de
+ * gebouwde Worker start en beide standen op twee breedtes fotografeert. */
+const SECTIES = {
+  '/account': 'overview',
+  '/account/orders': 'orders',
+  '/account/invoices': 'invoices',
+  '/account/details': 'details',
+  '/account/brand-kit': 'brand',
+  '/account/plan': 'plan',
+};
+
+/* Studio wordt bevraagd op zijn VIEW en niet op zijn HTML. studioScreen() is
+   precies wat de Astro-pagina zelf aanroept: sessie, omleidingen, de queries en
+   het viewobject. Wat er daarna van gemaakt wordt is opmaak, en die staat in
+   kladblok/studio-proef.mjs. Zo blijft deze doorloop wat hij is — het bewijs dat
+   de KETEN klopt — zonder te doen alsof hij ook de opmaak bewaakt. */
+const studioView = async (p, cookie) => {
+  const pad = p.split('?')[0].replace(/\/+$/, '') || '/account';
+  const sectie = SECTIES[pad];
+  if (!sectie) { BAD(`geen sectie bekend voor ${p}`); return null; }
+  const uit = await account.studioScreen(ctx(req(p, { cookie })), sectie);
+  if (uit instanceof Response) { BAD(`studio ${p} → ${uit.status} in plaats van een scherm`); return null; }
+  return uit;
+};
 const studioPost = (p, cookie, form) => account.accountPost(ctx(req(p, { cookie, method: 'POST', form })));
 
+
+/* Wat er van een Studio-scherm in het logboek belandt. Geen HTML: de feiten die
+   je zou controleren als je ernaar keek. */
+function vat(sectie, uit) {
+  if (!uit) return 'GEEN SCHERM';
+  const { st, v } = uit;
+  /* De veldnamen komen uit de view zelf — overviewView() geeft stats/featured/
+     latest/active/recent terug, ordersView() shown/filters/empty, enzovoort. Ze
+     hier verzinnen levert een samenvatting op die altijd "0" zegt en dus nooit
+     een fout aanwijst; dat is precies de val waar dit harnas net in was gelopen. */
+  if (sectie === 'overview') {
+    return [
+      v.stats.map(([, l, n]) => `${l} ${n}`).join(' · '),
+      `uitgelicht ${v.featured?.ref || '—'}`,
+      `lopend ${v.active?.length ?? 0}`,
+      `strook ${v.latest?.length ?? 0} beelden`,
+      `recent ${v.recent?.length ?? 0}`,
+    ].join(' · ');
+  }
+  if (sectie === 'orders') return `${v.shown.length}/${st.orders.length} zichtbaar · ${v.kaarten.map((k) => `${k.o.ref}:${k.o.status}`).join(' ')}${v.rondeTekst ? ` · melding "${v.rondeTekst}"` : ''}`;
+  if (sectie === 'invoices') return `${(v.rows || []).length} facturen: ${(v.rows || []).map((r) => `${r.number} ${r.amount}${r.state ? ` (${r.state})` : ''}`).join(', ') || 'geen'}`;
+  if (sectie === 'brand') return `${(v.kaarten || []).map((k) => `${k.style}[${(k.samenvatting || []).join(' + ') || 'niets'}]${k.saved ? ' ✓opgeslagen' : ''}`).join(' · ')} · eigen modellen ${(v.eigenModellen || []).length} · eigen looks ${(v.eigenLooks || []).length}`;
+  if (sectie === 'details') return `${v.rijen.flat().length} velden${v.saved ? ` · "${v.saved}"` : ''}${v.warn ? ` · WAARSCHUWING "${v.warn}"` : ''}`;
+  if (sectie === 'plan') return v.geen ? 'geen abonnement' : `tab ${v.nu}`;
+  return 'ok';
+}
 /* ═════════════════════════════════════════════════════════════════════════ */
 H('0 · Een lege winkel: hoe zien Studio en /admin eruit zonder klanten?');
 {
@@ -225,9 +309,7 @@ H('2 · Mara opent VISUAILS Studio (nog niet betaald)');
 {
   cookieA = await studioLogin('mara@voorbeeld-volt.nl');
   for (const p of ['/account', '/account/orders', '/account/brand-kit', '/account/details', '/account/invoices', '/account/plan']) {
-    const { res, html } = await studioGet(p, cookieA);
-    L(`${p} → ${res.status}`);
-    await afdruk(`studio-onbetaald${p.replace(/\//g, '-')}`, html);
+    L(`${p} → ${vat(SECTIES[p], await studioView(p, cookieA))}`);
   }
 }
 
@@ -241,8 +323,8 @@ H('3 · Mara betaalt (Mollie → webhook)');
   L(`bestelling: betaling ${orderA.payment_status}, status ${orderA.status}, paid_at ${orderA.paid_at}`);
   L(`facturen: ${db.prepare('SELECT number, status FROM invoices').all().map((i) => `${i.number} ${i.status}`).join(', ') || 'geen'}`);
   L(`mails: ${mails.slice(-3).map((m) => `[${m.to.split('@')[0]}] ${m.subject}`).join(' · ')}`);
-  const { html } = await studioGet('/account', cookieA); await afdruk('studio-betaald-overzicht', html);
-  const { html: h2 } = await studioGet('/account/invoices', cookieA); await afdruk('studio-betaald-facturen', h2);
+  L(`Studio overzicht → ${vat('overview', await studioView('/account', cookieA))}`);
+  L(`Studio facturen  → ${vat('invoices', await studioView('/account/invoices', cookieA))}`);
   const r2 = await adminGet('/admin'); await afdruk('admin-na-bestelling', await r2.text());
   const r3 = await adminGet(`/admin/orders/${orderA.id}/files`); await afdruk('admin-bestelling-A', await r3.text());
 }
@@ -251,7 +333,7 @@ H('4 · Studio: de bestelling van A in productie zetten, beelden leveren, aankon
 {
   let r = await adminPost(`/admin/orders/${orderA.id}/status`, { status: 'in_production', note: 'We zijn begonnen.' });
   L(`status → in_production: ${r.status} → ${r.headers.get('location')}`);
-  const { html } = await studioGet('/account', cookieA); await afdruk('studio-in-productie', html);
+  L(`Studio overzicht → ${vat('overview', await studioView('/account', cookieA))}`);
   // leveren: 4 beelden per product, per slot
   for (const p of ['p1', 'p2', 'p3']) for (const s of ['front', 'back', 'detail', 'worn']) {
     r = await adminPost(`/admin/orders/${orderA.id}/deliver`, { product: p, shot: s, files: [new File([beeld], `${orderA.ref}-${p}-${s}.webp`, { type: 'image/webp' })] });
@@ -271,8 +353,8 @@ H('4 · Studio: de bestelling van A in productie zetten, beelden leveren, aankon
   L(`portaallink in de mail: ${portalLink || 'GEEN'}`);
   for (const t of db.prepare('SELECT id, order_id, issued_at, expires_at, revoked_at, token_hash FROM order_tokens').all()) L(`order_tokens: ${JSON.stringify(t)} · hash van maillink = ${portalLink ? (await hashToken(portalLink.slice(3))) === t.token_hash : '-'}`);
   globalThis.__portalA = portalLink;
-  const { html: h2 } = await studioGet('/account', cookieA); await afdruk('studio-geleverd-overzicht', h2);
-  const { html: h3 } = await studioGet(`/account/orders?order=${orderA.id}`, cookieA); await afdruk('studio-geleverd-bestelling', h3); await afdruk('studio-geleverd-product-open', h3, { open: 'details.prod' });
+  L(`Studio overzicht → ${vat('overview', await studioView('/account', cookieA))}`);
+  L(`Studio bestelling → ${vat('orders', await studioView(`/account/orders?order=${orderA.id}`, cookieA))}`);
   const zip = await account.accountGet(ctx(req(`/account/orders/${orderA.id}/zip`, { cookie: cookieA })));
   L(`zip-download → ${zip.status} ${zip.headers.get('content-type')} ${zip.headers.get('content-disposition') || ''}`);
 }
@@ -287,7 +369,7 @@ H('5 · Mara keurt goed, vraagt één revisie aan, en rondt de ronde af');
   L(`revisieronde met 1 beeld ${files[1].product_key}/${files[1].shot} → ${r.status} → ${r.headers.get('location')}; mails: ${mails.slice(before0).map((m) => `[${m.to.split('@')[0]}] ${m.subject}`).join(' · ') || 'geen'}`);
   const st = db.prepare('SELECT review_state, review_note FROM files WHERE id = ?').get(files[1].id);
   L(`bestand staat op ${st.review_state} met notitie "${st.review_note}"`);
-  const { html } = await studioGet(`/account/orders?order=${orderA.id}`, cookieA); await afdruk('studio-revisie-aangevraagd', html);
+  L(`Studio na revisieverzoek → ${vat('orders', await studioView(`/account/orders?order=${orderA.id}`, cookieA))}`);
   r = await studioPost('/account/review', cookieA, { action: 'round', order: String(orderA.id) });
   L(`nog een ronde zonder beelden → ${r.status} → ${r.headers.get('location')} (verwacht: geweigerd)`);
   orderA = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderA.id);
@@ -309,7 +391,7 @@ H('6 · Studio vervangt het beeld en kondigt aan; Mara ziet het nieuwe beeld');
   const na = db.prepare('SELECT superseded_at, review_state FROM files WHERE id = ?').get(f.id);
   L(`oude beeld na aankondigen: review_state ${na.review_state}`);
   L(`open revisieverzoeken in admin-inbox: ${db.prepare("SELECT COUNT(*) n FROM files WHERE review_state = 'revision_requested' AND superseded_at IS NULL").get().n}`);
-  const { html } = await studioGet(`/account/orders?order=${orderA.id}`, cookieA); await afdruk('studio-na-vervanging', html, { open: 'details.prod' });
+  L(`Studio na vervanging → ${vat('orders', await studioView(`/account/orders?order=${orderA.id}`, cookieA))}`);
   const a = await adminGet('/admin'); await afdruk('admin-na-vervanging', await a.text());
 }
 
@@ -338,7 +420,7 @@ H('8 · Mara geeft feedback en een aanbeveling; de studio keurt die goed');
   }
   orderA = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderA.id);
   L(`alles goedgekeurd → closed_at ${orderA.closed_at}; mails: ${mails.slice(before).map((m) => `[${m.to.split('@')[0]}] ${m.subject}`).join(' · ') || 'geen'}`);
-  const { html: h0 } = await studioGet('/account', cookieA); await afdruk('studio-A-afgerond', h0);
+  L(`Studio A afgerond → ${vat('overview', await studioView('/account', cookieA))}`);
   let r = await studioPost('/account/feedback', cookieA, { order: String(orderA.id), fb: 'score', score: '5' });
   L(`feedback score → ${r.status} → ${r.headers.get('location')}`);
   r = await studioPost('/account/feedback', cookieA, { order: String(orderA.id), fb: 'quote', quote: 'Binnen een dag stonden er twaalf producten online die er eindelijk bij elkaar uitzien.', quote_name: 'Mara', quote_consent: '1' });
@@ -352,7 +434,7 @@ H('8 · Mara geeft feedback en een aanbeveling; de studio keurt die goed');
   L(`goedkeuren → ${r.status} → ${r.headers.get('location')}`);
   const fb2 = db.prepare('SELECT testimonial_approved FROM order_feedback WHERE order_id = ?').get(orderA.id);
   L(`approved nu: ${fb2?.testimonial_approved}`);
-  const { html } = await studioGet('/account', cookieA); await afdruk('studio-na-feedback', html);
+  L(`Studio na feedback → ${vat('overview', await studioView('/account', cookieA))}`);
 }
 
 H('9 · Klant B (Joris, NOORD, Duitsland, btw-nummer) bestelt 12 producten met leverdatum');
@@ -377,7 +459,7 @@ let orderB; let cookieB = '';
   const a = await adminGet('/admin/vat'); await afdruk('admin-btw-controle', await a.text());
   const p = await adminGet('/admin/planning'); await afdruk('admin-planning-met-B', await p.text());
   cookieB = await studioLogin('joris@voorbeeld-noord.de', 'en');
-  const { html } = await studioGet('/account', cookieB); await afdruk('studio-B-overzicht-en', html);
+  L(`Studio B overzicht → ${vat('overview', await studioView('/account', cookieB))}`);
 }
 
 H('10 · Btw-besluit in /admin, daarna betaalt B; planning; venster verzetten');
@@ -386,7 +468,7 @@ H('10 · Btw-besluit in /admin, daarna betaalt B; planning; venster verzetten');
   L(`btw-besluit → ${r.status} → ${r.headers.get('location')}`);
   orderB = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderB.id);
   L(`review_state ${orderB.review_state}, betaling ${orderB.payment_status}, payment_ref ${orderB.payment_ref}, Mollie-betalingen ${betalingen.size}, mails: ${mails.slice(-1).map((m) => `[${m.to.split('@')[0]}] ${m.subject}`).join('')}`);
-  const { html } = await studioGet('/account', cookieB); await afdruk('studio-B-na-btw', html);
+  L(`Studio B na btw → ${vat('overview', await studioView('/account', cookieB))}`);
   const ids = [...betalingen.keys()];
   const id = ids[ids.length - 1];
   if (id && betalingen.get(id).status !== 'paid') {
@@ -399,7 +481,7 @@ H('10 · Btw-besluit in /admin, daarna betaalt B; planning; venster verzetten');
   r = await adminPost(`/admin/orders/${orderB.id}/window`, { do: 'verzet', dag: addDays(orderB.window_start, 3), reason: 'materiaal te laat', back: 'planning' });
   L(`verzetten → ${r.status} → ${r.headers.get('location')}`);
   const p = await adminGet(`/admin/planning?verzet=${orderB.id}`); await afdruk('admin-planning-verzet', await p.text());
-  const { html: h2 } = await studioGet('/account/orders', cookieB); await afdruk('studio-B-bestellingen-na-verzet', h2);
+  L(`Studio B bestellingen → ${vat('orders', await studioView('/account/orders', cookieB))}`);
 }
 
 H('11 · Klant C bestelt met leverdatum en betaalt NIET → cron laat het venster los');
@@ -436,20 +518,50 @@ H('12 · Annuleren met terugbetaling (A) en de creditnota');
   L(`refund-webhook → ${wr.status}`);
   orderA = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderA.id);
   L(`refunded_cents ${orderA.refunded_cents}; creditnota's: ${db.prepare('SELECT * FROM credit_notes').all().map((c) => `${c.number} ${c.status}`).join(', ') || 'geen'}; mails: ${mails.slice(before2).map((m) => `[${m.to.split('@')[0]}] ${m.subject}`).join(' · ') || 'geen'}`);
-  const { html } = await studioGet('/account/invoices', cookieA); await afdruk('studio-A-facturen-na-annulering', html);
-  const { html: h2 } = await studioGet('/account', cookieA); await afdruk('studio-A-na-annulering', h2);
+  L(`Studio A facturen → ${vat('invoices', await studioView('/account/invoices', cookieA))}`);
+  L(`Studio A overzicht → ${vat('overview', await studioView('/account', cookieA))}`);
+
+  /* ── WAT HOUDT EEN GEANNULEERDE, TERUGBETAALDE KLANT NOG IN HANDEN? ────────
+   *
+   * Deze vraag stelde niemand. Annuleren zet orders.status op 'cancelled' en
+   * start de restitutie; het trekt de portaalsleutel NIET in en het laat de
+   * bestanden staan. En noch portalGet() noch serveAccountFile() kijkt naar de
+   * status. Dit meet wat er dan feitelijk overblijft, zodat het antwoord in het
+   * logboek staat in plaats van in iemands hoofd. */
+  const links = globalThis.__portalA;
+  const eersteBeeld = db.prepare("SELECT id FROM files WHERE order_id = ? AND kind = 'delivery' LIMIT 1").get(orderA.id);
+  const deuren = [];
+  if (links) deuren.push(['portaalpagina', await portal.portalGet(ctx(req(links)))]);
+  if (links) deuren.push(['portaal-zip', await portal.portalGet(ctx(req(`${links}/zip`)))]);
+  deuren.push(['studio-zip', await account.accountGet(ctx(req(`/account/orders/${orderA.id}/zip`, { cookie: cookieA })))]);
+  if (eersteBeeld) deuren.push(['studio-beeld', await account.accountGet(ctx(req(`/account/files/${eersteBeeld.id}/f`, { cookie: cookieA })))]);
+  for (const [naam, r] of deuren) {
+    L(`${naam} ná annulering + restitutie → ${r.status}`);
+    if (r.status !== 410) BAD(`${naam} geeft ${r.status} terwijl het geld terug is — dit hoort 410 te zijn (zie leveringIngetrokken() in delivery.js)`);
+  }
+  /* En de strook op het overzicht mag er ook geen tegels meer van tonen: twaalf
+     plaatjes die stuk voor stuk 410 geven leest als een kapot dashboard. */
+  const na = await studioView('/account', cookieA);
+  const strook = na?.v?.latest?.length ?? -1;
+  L(`strook op het overzicht ná annulering → ${strook} beelden`);
+  if (strook !== 0) BAD(`de strook toont nog ${strook} beeld(en) van een teruggedraaide bestelling`);
 }
 
 H('13 · Klantgegevens, e-mail wijzigen, vaste look, eigen model');
 {
   let r = await studioPost('/account/details', cookieA, { first_name: 'Mara', last_name: 'Visser', brand: 'VOLT', phone: '06 12345678', country: 'NL', address_line1: 'Proefstraat 1', postal_code: '1234 AB', city: 'Proefstad', no_vat_number: '1', reg_number: '99999999' });
   L(`details opslaan → ${r.status} → ${r.headers.get('location')}`);
-  r = await studioPost('/account/lock', cookieA, { style: 'catalog', face: 'rava', background_hex: '#FFFFFF', ratio: '1:1', channels: 'amazon' });
+  /* `square` en niet '1:1'. De id's staan in src/data/ratios.js (square,
+     portrait45, portrait34, wide, story); handleLockUpdate() toetst er tegen en
+     gooit alles wat er niet in staat stil weg. Tot 7 september stond hier '1:1'
+     en '4:5', dus werd de verhouding NOOIT opgeslagen en bewees deze stap niets
+     over het enige veld dat hij eigenlijk moest bewaken. */
+  r = await studioPost('/account/lock', cookieA, { style: 'catalog', face: 'rava', background_hex: '#FFFFFF', ratio: 'square', channels: 'amazon' });
   L(`vaste look catalog → ${r.status} → ${r.headers.get('location')}`);
-  r = await studioPost('/account/lock', cookieA, { style: 'lifestyle', face: '', look: 'glow', ratio: '4:5' });
+  r = await studioPost('/account/lock', cookieA, { style: 'lifestyle', face: '', look: 'glow', ratio: 'portrait45' });
   L(`vaste look lifestyle → ${r.status} → ${r.headers.get('location')}`);
   L(`locks: ${db.prepare('SELECT style, roster_model, background_hex, look, ratio, channels FROM customer_style_locks').all().map((l) => JSON.stringify(l)).join(' ')}`);
-  const { html } = await studioGet('/account/brand-kit?saved=lifestyle', cookieA); await afdruk('studio-vaste-look', html);
+  L(`Studio vaste look → ${vat('brand', await studioView('/account/brand-kit?saved=lifestyle', cookieA))}`);
   const before = mails.length;
   r = await account.accountPost(ctx(req('/account/email', { cookie: cookieA, method: 'POST', form: { new_email: 'mara.nieuw@voorbeeld-volt.nl' }, headers: { 'cf-connecting-ip': '10.1.2.3' } })));
   L(`e-mail wijzigen → ${r.status} → ${r.headers.get('location')}; mails: ${mails.slice(before).map((m) => `[${m.to}] ${m.subject}`).join(' · ') || 'geen'}`);
@@ -482,3 +594,7 @@ for (const m of mails) L(`${String(m.at).padStart(2, '0')} → ${m.to} · **${m.
 await browser.close();
 schrijfLog();
 console.log(`\nlogboek: kladblok/keten/LOGBOEK.md · ${nr} schermafdrukken`);
+if (process.env.KEUR) {
+  console.log(keurfouten ? `\n${keurfouten} meting(en) met een probleem` : '\nalle schermen schoon op 1440 / 768 / 390');
+  process.exit(keurfouten ? 1 : 0);
+}

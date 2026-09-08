@@ -24,7 +24,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { safeRedirect } from '../functions/api/order.js';
-import { isPayableService, PAYABLE_SERVICES } from '../src/lib/quote.js';
+import { isPayableService, PAYABLE_SERVICES, quoteVideo } from '../src/lib/quote.js';
 
 let pass = 0;
 let fail = 0;
@@ -42,7 +42,34 @@ ok('de verzameling alléén weet dat niet', PAYABLE_SERVICES.has('drop'), false)
 ok("'catalog' blijft gewoon te betalen", isPayableService('catalog'));
 ok("'lifestyle' ook", isPayableService('lifestyle'));
 ok("het testexemplaar niet — dat heeft zijn eigen pad", isPayableService('test-sample'), false);
-ok("'video' niet", isPayableService('video'), false);
+/* ── VIDEO IS TE BETALEN GEWORDEN, MAAR NIET ELKE CLIP — 7 september 2026 ────
+ *
+ * Hier stond `isPayableService('video') === false`, en die regel is precies
+ * zoals bedoeld omgevallen op de dag dat video een prijs kreeg. Lucas koos:
+ * alleen Motion rekent af; lifestyle, campagne en custom worden met de hand
+ * geoffreerd, want die twee laatste staan in videoStyles.js als "Quoted per
+ * project" en een lifestyle-clip heeft een ondergrens en geen tarief.
+ *
+ * LET OP WAT DEZE FUNCTIE ZEGT. isPayableService() zegt dat er voor deze DIENST
+ * een prijs kan bestaan, niet dat er voor deze BESTELLING een bedrag is. Dat
+ * onderscheid is de hele veiligheid van deze verandering, dus het staat hier
+ * ook als toets: de drie ongeprijsde soorten leveren null op, en null betekent
+ * op het bestelpad "maak geen betaling aan".
+ */
+ok("'video' is te prijzen — maar alleen de juiste soort", isPayableService('video'));
+ok('motion levert een bedrag op',
+  quoteVideo({ style: 'motion', clips: 2, vatRate: 0.21 })?.netCents, 13800);
+ok('een lifestyle-clip niet — die wordt geoffreerd',
+  quoteVideo({ style: 'lifestyle', clips: 2, vatRate: 0.21 }), null);
+ok('een campagne niet', quoteVideo({ style: 'campaign', clips: 2, vatRate: 0.21 }), null);
+ok('een custom clip niet', quoteVideo({ style: 'custom', clips: 2, vatRate: 0.21 }), null);
+ok('en zonder gekozen soort ook niet',
+  quoteVideo({ style: '', clips: 2, vatRate: 0.21 }), null);
+/* "Weet ik nog niet" komt als tekst binnen en countOf() maakt er null van; een
+   aantal dat we niet kennen is geen aantal van één. Zelfde weigering als in
+   quoteOrder(), en die noot daar staat er niet voor niets. */
+ok('en zonder aantal evenmin',
+  quoteVideo({ style: 'motion', clips: null, vatRate: 0.21 }), null);
 ok('onbekend niet', isPayableService('bestaat-niet'), false);
 ok('leeg valt niet om', isPayableService(''), false);
 ok('undefined ook niet', isPayableService(undefined), false);
@@ -421,7 +448,11 @@ console.log('\nen de bezoeker krijgt te zien waarom');
   const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
   const api = read('../functions/api/order.js');
   const wiring = read('../src/scripts/interactions.js');
-  const pages = { en: read('../src/pages/test-sample.astro'), nl: read('../src/pages/nl/test-sample.astro') };
+  /* Eén component sinds 7 september 2026 — zie de kop van TestSamplePage.astro.
+     De twee talen komen uit dezelfde bron, dus de blokken worden hier één keer
+     gecontroleerd en niet twee keer op hetzelfde bestand. */
+  const tsComp = read('../src/components/TestSamplePage.astro');
+  const pages = { component: tsComp };
 
   ok('de server stuurt error=sample-used mee', api.includes("'error=sample-used'"));
   ok('initFormRefusal leest data-form-refusal', /data-form-refusal="\$\{code\}"/.test(wiring));

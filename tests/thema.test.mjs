@@ -143,15 +143,19 @@ console.log('\nhet accent wisselt van rol en niet van kleur');
 console.log('\nde schakelaar werkt zonder JavaScript');
 {
   ok('het thema komt uit een cookie', /function themaCookie\(/.test(acc));
-  ok('en de standaard is donker', /\? 'licht' : 'donker'/.test(acc));
+  /* Sectie 21 (5 september 2026): de site is licht, dus zonder cookie is Studio
+     het ook — 'donker' is de keuze, niet het uitgangspunt. */
+  ok('en de standaard is licht', /\? 'donker' : 'licht'/.test(acc));
   ok('?thema= legt de keuze vast', /searchParams\.get\('thema'\)/.test(acc));
   ok('en stuurt terug zonder de parameter', /searchParams\.delete\('thema'\)/.test(acc));
   ok('de cookie heet vis_thema', /vis_thema=\$\{kleur\}/.test(acc));
   /* Een LINK en geen knop met een handler: dit dashboard draait op nul
      JavaScript — er staat geen script-src in de CSP, alleen default-src 'none'. */
-  ok('de schakelaar is een link', /class="sidethema" href="\?thema=/.test(acc));
+  /* Sinds 6 september 2026 staat de schil in src/layouts/StudioLayout.astro. */
+  const schil = lees('../src/layouts/StudioLayout.astro');
+  ok('de schakelaar is een link', /class="st-stand" href=\{`\?thema=/.test(schil));
   ok('en hij wijst naar de andere stand',
-    /thema === 'licht' \? 'donker' : 'licht'/.test(acc));
+    /\?thema=\$\{licht \? 'donker' : 'licht'\}/.test(schil));
   ok('het wortelelement draagt de stand', /data-thema="licht"/.test(acc));
   /* color-scheme stond onvoorwaardelijk op light, op een donker dashboard. Dat
      vertelt de browser: teken je scrollbalk en je <progress> licht. */

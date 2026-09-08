@@ -1,0 +1,413 @@
+---
+/*
+ * VISUAILS — de proefpagina, gedeeld door /test-sample en /nl/test-sample.
+ *
+ * ── 13 AUGUSTUS 2026: DE PAGINA WIJST NAAR DE STROOM DIE ER AL LAG ─────────
+ *
+ * Deze pagina had een eigen bestelformulier: twee stappen, een eigen uploader,
+ * een eigen wizard in interactions.js, een eigen stijlkiezer en een eigen
+ * modelkiezer — allemaal naast de stroom die /start al gebruikt. OrderFlow.astro
+ * kreeg op 11 augustus een `mode="sample"` die dat allemaal overbodig maakte, en
+ * die stand werd door geen enkele pagina meegegeven. Het formulier is daarom weg
+ * en de component staat ervoor in de plaats.
+ *
+ * WAT ER BLIJFT is de verkooppagina eromheen: de kop, wat je krijgt, hoe het
+ * werkt, en het blok over de foto die je stuurt. Die tekst hoort bij deze pagina
+ * en bij geen andere. Vandaar `hero={false}` op de component: de kop staat hier
+ * al, en twee koppen is er een te veel.
+ *
+ * ── ÉÉN COMPONENT SINDS 7 SEPTEMBER 2026 ─────────────────────────────────
+ *
+ * Het waren twee bestanden van 270 en 265 regels, tot op de woorden na identiek
+ * — inclusief twee weigeringsblokken die het bestel-endpoint met een `?error=`
+ * opent. Bij zo'n blok weegt uit elkaar lopen zwaarder dan bij een verhaal: het
+ * is de tekst die iemand leest op het moment dat zijn bestelling NIET doorging.
+ * Zelfde behandeling als /gallery, /thank-you, /guides, /upload-guidelines, /404
+ * en /contact.
+ *
+ * ── DE "NIET DOEN"-KAART IS EEN "WAT HET MAKKELIJKER MAAKT" GEWORDEN ──────
+ *
+ * Lucas, over de fotogids die met een verzoek om een foto meegaat: *"Ik wil niet
+ * dat klanten denken dat ze niet goed genoeg hun best hebben gedaan."* Diezelfde
+ * regel geldt hier, en hier zelfs eerder: dit is de pagina waar iemand voor het
+ * eerst iets van zichzelf opstuurt. Een kaart met "Niet doen" ernaast leest als
+ * een cijfer voordat er iets ingeleverd is. De inhoud is dezelfde; alleen de kop
+ * en de volgorde van de zin zijn omgedraaid.
+ */
+import OrderFlow from './order/OrderFlow.astro';
+/* Allebei de kiezers, en niet één. Op /start ligt de dienst vast voordat de
+   pagina laadt; hier is hij de eerste vraag van het formulier, dus moeten ze er
+   allebei staan en laat pipeline.js er één zien. Zie syncStyle() daar. */
+import StylePicker from './order/StylePicker.astro';
+import Step1Options from './order/Step1Options.astro';
+import { waHref } from '../data/whatsapp.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
+const TIMING = turnaround('unattended', lang);
+
+const c = nl ? {
+  etiket: 'Probeer VISUAILS',
+  h1: ['Test VISUAILS met ', '1 product'],
+  lead: `Je levert aan zoals bij een gewone bestelling — voorkant en achterkant in elk geval, plus een detail- of draagfoto als je die hebt — en je krijgt ${SAMPLE.deliverable} terug. Precies wat je bij een betaalde bestelling per product krijgt. Hoe meer je meestuurt, hoe beter we het kunnen maken.`,
+  pillen: [`${CATALOG_IMAGES} foto’s, of ${LIFESTYLE_IMAGES}`, `Slechts ${SAMPLE.price}`, 'Met de hand gecontroleerd'],
+
+  krijgKop: `${SAMPLE.deliverable}, van je eigen product.`,
+  krijgP: 'Dezelfde productie en menselijke controle die we bij elke betaalde bestelling gebruiken — de eerlijke manier om de kwaliteit te beoordelen voordat je je vastlegt.',
+  krijg: [
+    `Kies je catalog: ${CATALOG_IMAGES} foto’s — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
+    `Kies je lifestyle: ${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
+    'In hoge resolutie, in VISUAILS Studio — met de rechtstreekse link in je mail.',
+    'Een echte blik op onze belichting, kadrering en afwerking.',
+    'Door een specialist gecontroleerd voordat het je bereikt.',
+    `Eenmalig ${SAMPLE.feeNote}, één proef per bedrijf.`,
+  ],
+  beeldAlt: 'Voorbeeld van een VISUAILS-visual, Glow-stijl',
+  beeldBij: 'Jouw proef, met de hand gecontroleerd',
+
+  stapEtiket: 'Van foto naar set',
+  stapKop: 'Hoe de proef werkt',
+  stapLead: 'Vier korte stappen van jouw foto tot een afgewerkte set in je inbox.',
+  stappen: [
+    ['Upload je productfoto’s', 'Voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt.'],
+    ['Kies een stijl', 'Kies de look en, als je wilt, een model — of laat ons kiezen.'],
+    ['Wij maken het', 'Geproduceerd in onze studio, daarna met de hand gecontroleerd.'],
+    ['Keur goed en download', `Je afgewerkte foto’s staan in VISUAILS Studio, met de link in je mail — ${TIMING.toLowerCase()}.`],
+  ],
+
+  fotoKop: 'Scherpe foto erin, publicatieklare foto eruit',
+  fotoLead: 'Je hoeft geen studio te hebben — een telefoon bij het raam is genoeg. Deze vier maken het verschil.',
+  welKop: 'Wat het meest helpt',
+  wel: ['Helder en haarscherp', 'Neutrale, rustige achtergrond', 'Goede, gelijkmatige belichting', 'Het hele product in beeld'],
+  makkelijkKop: 'Wat het ons makkelijker maakt',
+  makkelijk: [
+    'Een foto op ware grootte in plaats van een schermafbeelding',
+    'Daglicht in plaats van een lamp recht boven het product',
+    'Een egale ondergrond in plaats van een drukke',
+    'De kleur zoals hij is — zonder filter of watermerk',
+  ],
+  gidsLink: 'Lees de fotogids',
+  gidsPdf: 'Download de fotogids (pdf)',
+  naarVorm: 'Naar het formulier',
+
+  vormEtiket: 'De aanvraag',
+  vormKop: 'Probeer VISUAILS met één product',
+  vormLead: 'Hetzelfde formulier als bij een betaalde bestelling, met het aantal vast op één product.',
+  weigerGebruiktKop: 'Je hebt VISUAILS al geprobeerd.',
+  weigerGebruikt: ['Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven — je hebt hier niet voor betaald. Klaar voor het echte werk? De ', 'volledige diensten', ' beginnen bij één product, zonder minimumafname — of ', 'stuur ons een bericht', ' als de eerste proef nooit is aangekomen, of als een collega hem heeft aangevraagd zonder het te zeggen.'],
+  weigerMailKop: 'Dat e-mailadres kwam niet door.',
+  weigerMail: 'Controleer het even op een typefout en stuur het opnieuw — het is het adres waar de afgeronde visual op binnenkomt.',
+
+  fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} · meer betaal je niet voor de proef.`,
+  hulp: ['Vast bij een stap, of ergens niet zeker van? ', 'Stuur ons een bericht op WhatsApp', ' — meestal binnen een uur antwoord op werkdagen, en we plaatsen de bestelling met je.'],
+  hulpWa: 'Hoi VISUAILS, ik ben een bestelling aan het invullen en heb een vraag.',
+
+  slotEtiket: 'Liever even overleggen',
+  slotH: 'Liever gewoon even overleggen?',
+  slotP: 'Stuur ons je product op WhatsApp en we helpen je een stijl kiezen.',
+  slotWa: 'Hoi VISUAILS, ik wil VISUAILS graag eerst proberen.',
+  slotCta: 'WhatsApp',
+  slotCta2: 'Start een bestelling',
+} : {
+  etiket: 'Test sample',
+  h1: ['Test VISUAILS with ', '1 product'],
+  lead: `You send what a normal order needs — front and back at least, plus a detail or worn shot if you have them — and back come ${SAMPLE.deliverable}. Exactly what a paid order gets you per product. The more you send, the better we can make it.`,
+  pillen: [`${CATALOG_IMAGES} photos, or ${LIFESTYLE_IMAGES}`, `Just ${SAMPLE.price}`, 'Human quality-checked'],
+
+  krijgKop: `${SAMPLE.deliverable}, from your own product.`,
+  krijgP: 'The same production and human review used on every paid order — the honest way to judge quality before you commit.',
+  krijg: [
+    `Pick catalog: ${CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.`,
+    `Pick lifestyle: ${LIFESTYLE_IMAGES} photos in one styled look — a scene, one on a model, and a detail close-up.`,
+    'High resolution, in VISUAILS Studio — with the direct link in your email.',
+    'A real look at our lighting, framing and finish.',
+    'Reviewed by a specialist before it reaches you.',
+    `A one-off ${SAMPLE.feeNote}, one sample per business.`,
+  ],
+  beeldAlt: 'Example VISUAILS lifestyle image, Glow style',
+  beeldBij: 'Your sample, human-checked',
+
+  stapEtiket: 'From photo to set',
+  stapKop: 'How the sample works',
+  stapLead: 'Four short steps from your photo to a finished set in your inbox.',
+  stappen: [
+    ['Upload your product photos', 'Front and back at least, and a detail or worn shot if you have one.'],
+    ['Choose a style', 'Pick the look and, if you like, a model — or let us choose for you.'],
+    ['We create it', 'Produced in our studio, then quality-checked by hand.'],
+    ['Approve and download', `Your finished images land in VISUAILS Studio, with the link in your email — ${TIMING.toLowerCase()}.`],
+  ],
+
+  fotoKop: 'Sharp photo in, publish-ready image out',
+  fotoLead: 'You do not need a studio — a phone by a window is enough. These four make the difference.',
+  welKop: 'What helps most',
+  wel: ['Clear, sharp and in focus', 'Neutral, uncluttered background', 'Good, even lighting', 'The whole product in frame'],
+  makkelijkKop: 'What makes it easier for us',
+  makkelijk: [
+    'A full-size photo rather than a screenshot',
+    'Daylight rather than a lamp straight overhead',
+    'A plain surface rather than a busy one',
+    'The colour as it is — no filter, no watermark',
+  ],
+  gidsLink: 'Read the photo guide',
+  gidsPdf: 'Download the photo guide (pdf)',
+  naarVorm: 'Go to the form',
+
+  vormEtiket: 'The request',
+  vormKop: 'Request your test sample',
+  vormLead: 'The same form a paid order uses, with the count fixed at one product.',
+  weigerGebruiktKop: 'You’ve already had your test sample.',
+  weigerGebruikt: ['It is one per business, so nothing has been ordered and nothing has been charged — you have not paid for this. Ready for the real thing? The ', 'full services', ' start at a single product, with no minimum order — or ', 'send us a message', ' if the first sample never arrived, or a colleague ordered it without telling you.'],
+  weigerMailKop: 'That email address didn’t go through.',
+  weigerMail: 'Check it for a typo and send it again — it is the address the finished images arrive at.',
+
+  fijndruk: `One sample per business · a ${SAMPLE.feeNote} · that’s all you pay for the sample.`,
+  hulp: ['Stuck on a step, or unsure about something? ', 'Message us on WhatsApp', ' — we usually reply within the hour on weekdays and can place the order with you.'],
+  hulpWa: 'Hi VISUAILS, I’m filling in an order and have a question.',
+
+  slotEtiket: 'Rather talk it through',
+  slotH: 'Rather just talk it through?',
+  slotP: 'Send us your product on WhatsApp and we’ll help you pick a style.',
+  slotWa: 'Hi VISUAILS, I’d like to try a test sample.',
+  slotCta: 'WhatsApp',
+  slotCta2: 'Place a full order',
+};
+
+const vink = 'M20 6L9 17l-5-5';
+---
+
+<div class="s22 ts">
+
+  {/* ── EEN KNOP IN DE OPENING — 7 september 2026 ──────────────────────────
+      Gemeten op 390px: het eerste invulveld stond op 3991px, van een pagina van
+      9241px. Bijna vijf schermen scrollen om aan een proef van één euro te
+      beginnen — op de pagina met de laagste drempel van de hele site.
+
+      De uitleg eronder blijft staan; die is niet te lang, hij staat alleen in
+      de weg van wie al overtuigd is. Deze knop springt eroverheen. Wie hem niet
+      nodig heeft, leest gewoon verder en komt op dezelfde plek uit.
+
+      Dezelfde vorm als "#looks" op /catalog, /lifestyle en /video: een
+      `href="#…"` naar een sectie verderop, zonder JavaScript. */}
+  <section class="paneel ts-open">
+    <div class="paneel-kop">
+      <p class="etiket">{c.etiket}</p>
+      <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
+      <p class="lopend">{c.lead}</p>
+      <p class="acties ts-open-acties">
+        <a class="knop knop-inkt" href="#aanvraag">{c.naarVorm}</a>
+      </p>
+    </div>
+    <ul class="ts-pillen" role="list">
+      {c.pillen.map((p) => <li class="mono">{p}</li>)}
+    </ul>
+  </section>
+
+  <section class="paneel ts-krijg">
+    <div class="ts-twee">
+      <div>
+        <h2 class="hoog hoog-2">{c.krijgKop}</h2>
+        <p class="lopend ts-krijg-p">{c.krijgP}</p>
+        <ul class="ts-lijst" role="list">
+          {c.krijg.map((r) => (
+            <li>
+              <svg viewBox="0 0 24 24" class="ts-i" aria-hidden="true"><path d={vink} /></svg>
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <figure class="kaart kaart-stil ts-beeld">
+        <img src="/img/lifestyle-glow-03.webp" alt={c.beeldAlt} loading="lazy" decoding="async" width="768" height="1376" />
+        <figcaption class="foto-pil mono">{c.beeldBij}</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="kamer ts-stappen-kamer">
+    <span class="spook spook-rechts" aria-hidden="true">{nl ? 'PROEF' : 'SAMPLE'}</span>
+    <div class="kamer-kop">
+      <p class="etiket">{c.stapEtiket}</p>
+      <h2 class="hoog hoog-2">{c.stapKop}</h2>
+      <p class="lopend">{c.stapLead}</p>
+    </div>
+    <ol class="stappen ts-stappen" role="list">
+      {c.stappen.map(([kop, tekst], i) => (
+        <li>
+          <span class="stap-nr" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <b>{kop}</b>
+          <p class="lopend">{tekst}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="paneel ts-foto">
+    <div class="paneel-kop">
+      <h2 class="hoog hoog-2">{c.fotoKop}</h2>
+      <p class="lopend">{c.fotoLead}</p>
+    </div>
+    <div class="ts-twee ts-twee-gelijk">
+      <div class="ts-vak">
+        <h3 class="hoog hoog-3">{c.welKop}</h3>
+        <ul class="ts-lijst" role="list">
+          {c.wel.map((r) => (
+            <li><svg viewBox="0 0 24 24" class="ts-i" aria-hidden="true"><path d={vink} /></svg><span>{r}</span></li>
+          ))}
+        </ul>
+      </div>
+      {/* Zie de kop van dit bestand: dit was een "Niet doen"-kaart met vier
+          kruisjes. Dezelfde vier dingen, gezegd als wat het makkelijker maakt —
+          op de pagina waar iemand voor het eerst iets van zichzelf opstuurt. */}
+      <div class="ts-vak ts-vak-stil">
+        <h3 class="hoog hoog-3">{c.makkelijkKop}</h3>
+        <ul class="ts-lijst" role="list">
+          {c.makkelijk.map((r) => (
+            <li><svg viewBox="0 0 24 24" class="ts-i ts-i-stil" aria-hidden="true"><path d={vink} /></svg><span>{r}</span></li>
+          ))}
+        </ul>
+        {/* De gids staat hier twee keer, en dat is opzet: lezen en meenemen
+            zijn twee verschillende dingen. Wie hier is, gaat zo staan
+            fotograferen — met de telefoon in de hand en de pagina niet meer in
+            beeld. `download` en niet alleen een link, dus hij landt in de
+            downloadmap. Zelfde bestand als op /upload-guidelines. */}
+        <p class="acties ts-gids">
+          <a class="pijl" href={lp('/upload-guidelines')}>{c.gidsLink}</a>
+          <a class="pijl" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.gidsPdf}</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="paneel ts-aanvraag" id="aanvraag">
+    <div class="paneel-kop">
+      <p class="etiket">{c.vormEtiket}</p>
+      <h2 class="hoog hoog-2">{c.vormKop}</h2>
+      <p class="lopend">{c.vormLead}</p>
+    </div>
+
+    {/* Weigeringen komen van /api/order terug als een redirect met ?error=…,
+        omdat het versturen eindigt in een echte navigatie. initFormRefusal() in
+        interactions.js haalt het `hidden` van het passende blok en zet de focus
+        erop. In de opmaak en niet vanuit JS, zodat de tekst mee vertaald wordt
+        met de rest van de pagina en in een diff te zien is.
+
+        role="status" en niet role="alert": de bezoeker is zojuist genavigeerd,
+        dus dit is de toestand van de pagina waar hij aankomt — niet iets dat hem
+        onderbrak. */}
+    <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerGebruiktKop}</strong>
+      <span>{c.weigerGebruikt[0]}<a href={lp('/start')}>{c.weigerGebruikt[1]}</a>{c.weigerGebruikt[2]}<a href={lp('/contact')}>{c.weigerGebruikt[3]}</a>{c.weigerGebruikt[4]}</span>
+    </div>
+    <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerMailKop}</strong>
+      <span>{c.weigerMail}</span>
+    </div>
+  </section>
+
+  <OrderFlow lang={lang} service="lifestyle" mode="sample" hero={false}>
+    <StylePicker lang={lang} />
+    <Step1Options lang={lang} />
+  </OrderFlow>
+
+  <section class="paneel ts-fijndruk">
+    <p class="mono ts-fijn">{c.fijndruk}</p>
+    <p class="lopend ts-hulp">{c.hulp[0]}<a href={waHref(c.hulpWa)} target="_blank" rel="noopener">{c.hulp[1]}</a>{c.hulp[2]}</p>
+  </section>
+
+  <section class="paneel paneel-slot ts-slot">
+    <p class="etiket">{c.slotEtiket}</p>
+    <h2 class="hoog hoog-2">{c.slotH}</h2>
+    <p class="lopend">{c.slotP}</p>
+    <div class="acties">
+      <a class="knop knop-inkt" href={waHref(c.slotWa)} target="_blank" rel="noopener">{c.slotCta}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.slotCta2}</a>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  .ts-open { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .ts-pillen { display: flex; flex-wrap: wrap; gap: .6rem; list-style: none; padding: 0; margin: 2rem 0 0; }
+  .ts-pillen li {
+    padding: .4rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px;
+    color: var(--inkt-2); font-size: .75rem;
+  }
+
+  .ts-twee { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: center; }
+  @media (min-width: 900px) { .ts-twee { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+  .ts-twee-gelijk { align-items: start; }
+  @media (min-width: 900px) { .ts-twee-gelijk { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.4rem, 3vw, 2.4rem); } }
+
+  .ts-krijg-p { margin: 1.1rem 0 0; }
+  .ts-lijst { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }
+  .ts-lijst li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
+  .ts-lijst span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
+  .ts-i {
+    width: 20px; height: 20px; margin-top: .15rem; flex: 0 0 auto;
+    fill: none; stroke: var(--gloed); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ts-i-stil { stroke: var(--lijn-sterk); }
+
+  .ts-beeld { margin: 0; aspect-ratio: 4 / 5; }
+  .ts-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .ts-vak {
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+    border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 12px);
+    background: var(--wit);
+  }
+  /* "Minder" is een lagere ondergrond, geen andere kleur — dezelfde keuze als op
+     /upload-guidelines, en om dezelfde reden: rood zou hier een cijfer zijn. */
+  .ts-vak-stil { background: transparent; }
+  .ts-vak h3 { margin: 0; }
+  .ts-open-acties { margin-top: .6rem; }
+  /* Het doel van de knop hierboven. De kop van de site zweeft over de pagina,
+     dus zonder marge landt het etiket "De aanvraag" eronder en lijkt de sectie
+     afgesneden. Nagemeten: op 390px valt het etiket precies achter de balk.
+     Dezelfde waarde als .faq-groep in FaqPage.astro, de enige andere plek op de
+     site waar een `href="#…"` naar een kop springt. */
+  .ts-aanvraag { scroll-margin-top: clamp(5rem, 10vw, 7rem); }
+
+  .ts-gids { margin-top: 1.6rem; }
+  .ts-gids .pijl { color: var(--inkt); }
+
+  .ts-stappen { list-style: none; padding: 0; margin: 0; }
+
+  /* ── DE WEIGERINGSBLOKKEN ─────────────────────────────────────────────────
+     Ze staan `hidden` in de opmaak en interactions.js haalt dat weg. Vandaar
+     `display: grid` en niet `display: block` met een override: `[hidden]` wint
+     van een typeselector maar niet van een klasse, dus een `.ts-refused
+     { display: grid }` zou het blok altijd tonen. `:not([hidden])` lost dat op
+     zonder dat er ergens !important bij hoeft. */
+  .ts-refused:not([hidden]) {
+    display: grid; gap: .5rem;
+    margin-top: 1.6rem;
+    padding: clamp(1.2rem, 2.5vw, 1.8rem);
+    border: 2px solid var(--inkt); border-radius: calc(var(--ronding) - 12px);
+    background: var(--wit);
+  }
+  .ts-refused:focus-visible { outline: 3px solid var(--gloed); outline-offset: 3px; }
+  .ts-refused strong {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
+    font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em; color: var(--inkt);
+  }
+  .ts-refused span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
+
+  .ts-fijndruk { padding-block: clamp(1.8rem, 4vw, 3rem); display: grid; gap: .9rem; justify-items: center; text-align: center; }
+  .ts-fijn { color: var(--inkt-2); font-size: .75rem; }
+  .ts-hulp { max-width: 44em; font-size: .92rem; }
+  .ts-refused a, .ts-hulp a {
+    color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
+    text-decoration-color: var(--geel); text-decoration-thickness: 2px;
+  }
+  .ts-refused a:hover, .ts-hulp a:hover { text-decoration-color: var(--inkt); }
+
+  .ts-slot .lopend { max-width: 44em; }
+</style>

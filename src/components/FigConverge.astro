@@ -157,10 +157,26 @@ const LANE_W = [86, 62, 74, 55];
 
   /* The one date. A solid rule the full height of the lane stack, so every
      lane visibly terminates on the same thing. */
+  /* ── DE LIJN WORDT GETEKEND, NIET GEVULD — 7 september 2026 ──────────────
+     `background: var(--ink)` stond op dit element zelf, en het label hieronder
+     staat er absoluut IN. Daarmee was de 2px-lijn de dichtstbijzijnde geverfde
+     ondergrond van dat label: in de donkere kamer op /compare werd de lijn wit
+     én het label wit, en de leesbaarheidsmeting vond terecht 1,0 : 1. Op een
+     lichte grond viel het niet op omdat de lijn daar toevallig dezelfde kleur
+     had als de tekst hoort te hebben.
+
+     De lijn is nu een ::before over de volle hoogte, en het element zelf is
+     doorzichtig. Het label erft dan de grond van de sectie waar het in staat —
+     wat het altijd al hoorde te doen. Er verandert niets aan wat je ziet. */
   .cv-meet {
     position: relative;
     flex: 0 0 auto;
     width: 2px;
+  }
+  .cv-meet::before {
+    content: "";
+    position: absolute;
+    inset: 0;
     background: var(--ink);
   }
   /* The label hangs to the RIGHT of the 2px rule, which is the last thing in
@@ -174,7 +190,8 @@ const LANE_W = [86, 62, 74, 55];
     left: .55rem;
     top: 50%;
     transform: translateY(-50%);
-    font-size: .7rem;
+    /* 11,2px lag onder de ondergrens van 11,5 die de keuring aanhoudt. */
+    font-size: .75rem;
     font-weight: 600;
     line-height: 1.15;
     color: var(--ink);

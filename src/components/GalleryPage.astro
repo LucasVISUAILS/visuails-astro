@@ -1,0 +1,359 @@
+---
+import { waHref } from '../data/whatsapp.js';
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VISUAILS — /gallery en /nl/gallery delen dit lichaam. 7 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAAROM DIT BESTAND ER IS, EN NIET TWEE PAGINA'S ────────────────────────
+ *
+ * Ze waren al uit elkaar gelopen. Gemeten bij het overzetten naar de stijl van
+ * sectie 22: de Engelse galerij droeg `srcset` en `sizes` op elke foto plus een
+ * `.container wide`, de Nederlandse geen van drieën. Dat is niet cosmetisch —
+ * de noot over srcset hieronder is er precies om te voorkomen dat een bezoeker
+ * 3,12 MB aan beeld binnenhaalt op een telefoon, en die reparatie is vier weken
+ * lang alleen aan Engelstalige bezoekers gegeven.
+ *
+ * Elke andere herbouwde pagina in dit project neemt een `lang` mee om precies
+ * die reden — /start, /pricing, /catalog, /lifestyle, de voorpagina. Deze twee
+ * waren de laatste losse kopieën van één pagina, en de drift die dat oplevert is
+ * geen kwestie van zorgvuldigheid maar van bestandsindeling.
+ *
+ * ── DE GALERIJ IS EEN DONKERE KAMER ────────────────────────────────────────
+ *
+ * Dit is de ene pagina waar de FOTO'S het onderwerp zijn en de tekst ernaast
+ * staat. Op een lichte grond concurreert het vel met elk beeld erin; op inkt
+ * niet. Vandaar één kamer van rand tot rand voor het hele raster, met de kop en
+ * de filterknoppen erin, en alleen de opening en het slot als paneel.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+import { readdirSync } from 'node:fs';
+import path from 'node:path';
+import { TEST_SAMPLE } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+const nl = lang === 'nl';
+const SAMPLE = TEST_SAMPLE[lang];
+
+// Intrinsic pixel size of every photo in the grid, read off the files in
+// public/img — NOT the size it renders at (.photo-grid pins aspect-ratio 4/5,
+// .wide runs free). The library was produced in batches, so a family mostly
+// shares one size; grouping by size keeps the odd ones out visible instead of
+// buried in 38 near-identical lines. An unlisted src throws at build time,
+// which is the point: a new photo cannot ship without its box.
+const INTRINSIC: Record<string, [number, number]> = Object.fromEntries(
+  ([
+    [[928, 1152], ['banners-01', 'banners-02', 'banners-03', 'banners-04', 'banners-05', 'banners-06', 'banners-07', 'banners-08', 'lifestyle-dunes-01', 'lifestyle-dunes-02', 'lifestyle-flash-01']],
+    [[1340, 2400], ['lifestyle-flash-02', 'lifestyle-flash-03', 'lifestyle-glow-01']],
+    [[768, 1376], ['lifestyle-glow-03']],
+    [[1200, 896], ['lifestyle-glow-04']],
+    [[2400, 1792], ['lifestyle-flash-04', 'lifestyle-flash-05', 'lifestyle-flash-06', 'lifestyle-flash-07', 'lifestyle-flash-08', 'lifestyle-glow-02', 'lifestyle-glow-05', 'lifestyle-glow-06', 'lifestyle-phone-made-01', 'lifestyle-phone-made-02', 'lifestyle-phone-made-03', 'lifestyle-phone-made-04', 'lifestyle-phone-made-05', 'lifestyle-phone-made-06', 'lifestyle-phone-made-07', 'lifestyle-phone-made-08', 'lifestyle-phone-made-09', 'lifestyle-phone-made-10', 'lifestyle-phone-made-11', 'lifestyle-phone-made-12', 'lifestyle-phone-made-13', 'lifestyle-phone-made-14']],
+    [[760, 1140], ['brand-boots']],
+    [[2048, 1152], ['brand-car-lens']],
+    [[760, 428], ['brand-knit']],
+    [[760, 760], ['brand-rest', 'brand-silhouet']],
+    [[1872, 1248], ['brand-stair']],
+  ] as Array<[[number, number], string[]]>).flatMap(([wh, names]) => names.map((n) => [`/img/${n}.webp`, wh] as const)),
+);
+
+/* ── DE ALT-TEKSTEN ZIJN VERTAALD EN NIET GEKOPIEERD ───────────────────────
+ * Ze stonden in twee pagina's, elk in hun eigen taal, en dat is het ene stuk
+ * van deze galerij dat écht per taal verschilt — de rest (welke bestanden,
+ * welke soorten, welke maten) is identiek en hoort dus maar één keer te
+ * bestaan. Vandaar één fotolijst met een `alt` die de taal kent, in plaats van
+ * twee lijsten die uit elkaar lopen.
+ *
+ * tests/galerij.test.mjs bewaakt dat ze verschillen: zes verschillende
+ * alt-teksten in de Beam-reeks, in beide talen, en niet zes keer hetzelfde. */
+const A = nl ? {
+  campagne: (i: number) => `Campagnefotografie ${i}`,
+  dunes: 'Lifestyle-visual in Dunes-stijl',
+  flash: (i: number) => `Lifestyle-visual in Flash-stijl ${i}`,
+  glow: (i: number) => `Lifestyle-visual in Glow-stijl ${i}`,
+  phone: (i: number) => `Lifestyle-visual in Phone-made-stijl ${i}`,
+  silhouet: 'Silhouet tegen één harde lichtbundel',
+  boots: 'Laarzen op nat asfalt, uitgelicht door één bundel',
+  car: 'Outerwear in een auto-interieur, één lichtbron',
+  knit: 'Kabelbrei van dichtbij onder strijklicht',
+  stair: 'Een figuur in een trappenhuis, hard licht en schaduw',
+  rest: 'Een rustmoment in een auto, één lichtbron',
+} : {
+  campagne: (i: number) => `Campaign photography ${i}`,
+  dunes: 'Dunes-style lifestyle visual',
+  flash: (i: number) => `Flash-style lifestyle visual ${i}`,
+  glow: (i: number) => `Glow-style lifestyle visual ${i}`,
+  phone: (i: number) => `Phone-made-style lifestyle visual ${i}`,
+  silhouet: 'Silhouette against a single hard light',
+  boots: 'Boots on a wet road, lit by one beam',
+  car: 'Outerwear in a car interior, one light source',
+  knit: 'Cable knit up close under raking light',
+  stair: 'A figure on a stairwell, hard light and shadow',
+  rest: 'A quiet moment in a car, single light source',
+};
+
+const photos = [
+  ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/banners-0${i + 1}.webp`, tag: 'campaign', alt: A.campagne(i + 1) })),
+  { src: '/img/lifestyle-dunes-01.webp', tag: 'dunes', alt: A.dunes },
+  { src: '/img/lifestyle-dunes-02.webp', tag: 'dunes', alt: A.dunes },
+  ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/lifestyle-flash-0${i + 1}.webp`, tag: 'flash', alt: A.flash(i + 1) })),
+  ...Array.from({ length: 6 }, (_, i) => ({ src: `/img/lifestyle-glow-0${i + 1}.webp`, tag: 'glow', alt: A.glow(i + 1) })),
+  ...Array.from({ length: 14 }, (_, i) => ({ src: `/img/lifestyle-phone-made-${String(i + 1).padStart(2, '0')}.webp`, tag: 'phone-made', alt: A.phone(i + 1) })),
+  /* ── DE BEAM-REEKS — 30 augustus 2026 ──────────────────────────────────────
+   *
+   * Deze zes stonden al op de site (de voorpagina, StudioPage, Layout) en
+   * nergens in deze galerij. Dat is precies andersom: dit is de pagina die laat
+   * zien wat we maken, en dit is het meest herkenbare wat er staat.
+   *
+   * ── DRIE KEUZES DIE HIERONDER VASTLIGGEN ──────────────────────────────────
+   *
+   * 1 · DE NAAM IS 'Beam' EN NIET 'Mood' OF 'Editions'. De andere filters zijn
+   *     LOOKS — Dunes, Flash, Glow, Phone-made — en dit is er ook een: één harde
+   *     lichtbundel in het donker. 'Mood' zou liegen, want er staan producten op
+   *     (laarzen, een gebreide trui, jassen), en de voorpagina gebruikt dat
+   *     woord juist voor beeld ZONDER product. En 'Editions' zou erger liegen:
+   *     dat is een dienst die nog niet leverbaar is, en een filter met die naam
+   *     leest als iets wat je vandaag kunt bestellen.
+   *
+   * 2 · ZES EN NIET ELF. Van de elf brand-bestanden zijn er vier abstracte
+   *     lichtstudies (beam, desk, glow, pool). Die worden gebruikt als
+   *     ACHTERGROND — onder de kop op /studio, achter het lege abonnementsscherm
+   *     — en dat is goed werk op die plek. In een galerij die "de stijlen die we
+   *     maken" heet, staan het verlopen tussen de foto's, en dan verwatert de
+   *     reeks in plaats van dat hij hem draagt.
+   *
+   * 3 · brand-car.webp STAAT ER NIET BIJ, want hij is byte voor byte hetzelfde
+   *     bestand als brand-car-lens.webp (beide 176.552 bytes, gelijke md5). Twee
+   *     keer dezelfde foto in één raster valt op; twee keer 172 kB op schijf
+   *     niet. Zie de noot hierover in WERKLIJST.md.
+   *
+   * De namen blijven onvertaald, net als Dunes, Flash, Glow en Phone-made. */
+  { src: '/img/brand-silhouet.webp', tag: 'beam', alt: A.silhouet },
+  { src: '/img/brand-boots.webp', tag: 'beam', alt: A.boots },
+  { src: '/img/brand-car-lens.webp', tag: 'beam', alt: A.car },
+  { src: '/img/brand-knit.webp', tag: 'beam', alt: A.knit },
+  { src: '/img/brand-stair.webp', tag: 'beam', alt: A.stair },
+  { src: '/img/brand-rest.webp', tag: 'beam', alt: A.rest },
+].map((p, i) => ({ ...p, wide: i % 7 === 0, w: INTRINSIC[p.src][0], h: INTRINSIC[p.src][1] }));
+
+/*
+ * ── SRCSET, EN WAAROM DE MAAT GEMETEN IS ───────────────────────────────────
+ *
+ * Deze galerij leverde elke foto op zijn volle grootte uit: 2400px in een vakje
+ * van 375. Gemeten met de netwerklaag en niet met een optelsom — Chromium,
+ * /gallery, telefoon van 390px: 3,12 MB aan beeld VOORDAT er gescrold is. Op een
+ * desktop van 1440 was dat 0,79 MB, en dat verschil is precies verkeerd om: de
+ * trager verbonden bezoeker betaalde het meest. Doorgescrold was de pagina 9,03 MB.
+ *
+ * DE MATEN KOMEN UIT DE BROWSER en niet uit de CSS. Elf vensterbreedtes van 360
+ * tot 2560: een gewone cel wordt nooit breder dan 375 CSS px, een `.wide` nooit
+ * breder dan 766. Boven 1280 groeit er niets meer, want het raster zit dan tegen
+ * de max-width van de container. Maal twee voor retina: 760 en 1560. Dezelfde
+ * rekenregel als in scripts/make-thumbs.mjs, dat de bestanden maakt.
+ *
+ * `sizes` STAAT ERBIJ EN IS GEEN DECORATIE. Zonder die regel gaat de browser uit
+ * van de volle vensterbreedte en kiest hij alsnog de grootste kandidaat — dan is
+ * een srcset een langere regel html zonder effect.
+ *
+ * EEN DERIVAAT DAT ER NIET IS, WORDT NIET GENOEMD. Er wordt op schijf gekeken en
+ * niet aangenomen; staat een maat er niet, dan blijft de srcset korter en valt de
+ * browser terug op het origineel. Dat is met opzet geen fout: de 928px-familie
+ * hoort geen 760px-derivaat te hebben (zie de noot in make-thumbs.mjs), en een
+ * srcset die naar een 404 wijst, is erger dan geen srcset.
+ */
+/* Via process.cwd() en niet via import.meta.url: dit bestand wordt tijdens de
+   build vanuit dist/ uitgevoerd, en dan wijst een relatief pad naar
+   dist/public/img — dat bestaat niet en de build viel erop om. De werkmap is de
+   projectmap, bij `astro build` en bij `astro dev` allebei. */
+const OP_SCHIJF = new Set(readdirSync(path.join(process.cwd(), 'public', 'img')));
+
+/** De srcset voor deze foto, of '' als er geen enkele kleinere maat bestaat. */
+function srcset(src: string, breed: boolean, echteBreedte: number) {
+  const basis = src.replace(/^\/img\//, '').replace(/\.webp$/, '');
+  const maten = (breed ? [380, 760, 1560] : [380, 760]).filter((w) => OP_SCHIJF.has(`${basis}-w${w}.webp`));
+  if (!maten.length) return '';
+  return maten
+    .map((w) => `/img/${basis}-w${w}.webp ${w}w`)
+    .concat(`${src} ${echteBreedte}w`)
+    .join(', ');
+}
+
+/* Gemeten CSS-breedtes, als `sizes`. Onder 640px is het raster één kolom en is
+   de cel dus zo breed als het venster min de marge van de container; daarboven
+   staat hij vast op wat hierboven gemeten is. */
+/* Drie stops en niet twee, omdat het raster dat ook heeft. Gemeten in Chromium:
+   een gewone cel is 171 CSS px op een telefoon van 390, 244 op een tablet van 768,
+   en nooit breder dan 375 daarboven. Een brede cel is het dubbele plus de tussen-
+   ruimte. Deze regel is wat de browser laat kiezen; zonder klopt de srcset wel en
+   werkt hij niet. */
+const SIZES_GEWOON = '(max-width: 480px) 45vw, (max-width: 900px) 32vw, 375px';
+const SIZES_BREED = '(max-width: 480px) 92vw, (max-width: 900px) 66vw, 766px';
+
+/* De namen van de looks blijven onvertaald — Dunes, Flash, Glow, Phone-made en
+   Beam zijn productnamen en geen woorden. Alleen "Alles" vertaalt. */
+const filters = [
+  { key: 'all', label: nl ? 'Alles' : 'All' },
+  { key: 'campaign', label: nl ? 'Campagne' : 'Campaign' },
+  { key: 'dunes', label: 'Dunes' },
+  { key: 'flash', label: 'Flash' },
+  { key: 'glow', label: 'Glow' },
+  { key: 'phone-made', label: 'Phone-made' },
+  { key: 'beam', label: 'Beam' },
+];
+
+const c = nl ? {
+  eyebrow: 'Galerij',
+  h1: 'Een blik op de stijlen die we maken',
+  lead: 'De echte fotobibliotheek van de studio — geen voorbeelden van elders, geen gekochte beelden. Wat hier staat is gemaakt zoals jouw bestelling gemaakt wordt.',
+  filterLabel: 'Stijlen filteren',
+  ctaSample: SAMPLE.cta,
+  ctaStart: 'Start een bestelling',
+  slotH: 'Zie je eigen product',
+  slotEm: 'in deze reeks.',
+  slotBody: `Probeer VISUAILS eerst — één per bedrijf, en je betaalt ${SAMPLE.feeNote}.`,
+  wa: waHref('Hoi VISUAILS, ik wil VISUAILS graag eerst proberen met mijn product.'),
+} : {
+  eyebrow: 'Gallery',
+  h1: 'A look at the styles we produce',
+  lead: 'The studio’s real photo library — nothing borrowed, nothing bought in. What stands here was made the way your order will be.',
+  filterLabel: 'Filter styles',
+  ctaSample: SAMPLE.cta,
+  ctaStart: 'Start an order',
+  slotH: 'See your own product',
+  slotEm: 'in this range.',
+  slotBody: `Start with a test sample — one per business, just a ${SAMPLE.feeNote}.`,
+  wa: waHref("Hi VISUAILS, I'd like to see a sample for my product."),
+};
+---
+
+<div class="s22">
+
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="gal-h1">
+    <header class="paneel-kop gal-kop">
+      <p class="etiket">{c.eyebrow}</p>
+      <h1 id="gal-h1" class="hoog">{c.h1}</h1>
+      <p class="lopend">{c.lead}</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
+        <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+      </p>
+    </header>
+  </section>
+
+  {/* ── 2 · DE BIBLIOTHEEK ──────────────────────────────────────────────────
+      Van rand tot rand op inkt: zie de noot bovenaan. De filterbalk staat in
+      src/scripts/galerij-filter.js — die stond ooit twee keer woord voor woord
+      gelijk in beide pagina's en begon met een import van GSAP: 68 kB voor één
+      crossfade. Nu doet de Web Animations API hetzelfde. */}
+  <section class="kamer gal-kamer" aria-labelledby="gal-werk">
+    <h2 id="gal-werk" class="visueel-verborgen">{c.h1}</h2>
+    <div class="gal-filters" role="group" aria-label={c.filterLabel}>
+      {filters.map((f) => (
+        <button type="button" class="gal-pil" data-filter-key={f.key} aria-pressed={f.key === 'all' ? 'true' : 'false'}>{f.label}</button>
+      ))}
+    </div>
+
+    <div class="gal-raster" data-filterable>
+      {photos.map((p, i) => (
+        <img
+          src={p.src}
+          srcset={srcset(p.src, p.wide, p.w) || undefined}
+          sizes={srcset(p.src, p.wide, p.w) ? (p.wide ? SIZES_BREED : SIZES_GEWOON) : undefined}
+          alt={p.alt}
+          {/* De EERSTE foto is de grootste zichtbare van de pagina — hij is
+              `wide` (i % 7 === 0) en staat boven de vouw — en stond op
+              `loading="lazy"`. Een luie eerste foto is precies de foto waarop
+              een bezoeker wacht: de browser mag hem dan pas ophalen nadat de
+              opmaak klaar is. De rest blijft lui, want die staat eronder. */}
+          loading={i === 0 ? 'eager' : 'lazy'}
+          fetchpriority={i === 0 ? 'high' : undefined}
+          decoding="async"
+          width={p.w}
+          height={p.h}
+          class={p.wide ? 'is-breed' : ''}
+          data-tag={p.tag}
+        />
+      ))}
+    </div>
+  </section>
+
+  {/*
+    ═══════════════════════════════════════════════════════════════════════════
+    HET "VOOR & NA"-BLOK IS WEG — 10 augustus 2026 (en), 18 augustus (nl)
+    ═══════════════════════════════════════════════════════════════════════════
+
+    Hier stonden vier Compare-schuivers onder de kop "Voor & na", met de belofte
+    dat een vlak beeld een afgewerkte VISUAILS-visual wordt. Alle vier hadden
+    HETZELFDE bestand als `before` en als `after`, met een CSS-filter op de
+    linkerhelft.
+
+    Dat is een resultaatclaim met geënsceneerd bewijs, op precies de pagina waar
+    een merk komt om te controleren of het echt is. Het eerste ontwerpprincipe
+    van dit merk luidt "Never borrow credibility we haven't earned", en
+    IMAGES.md:36 zegt zelf dat er ÉÉN echt voor/na-paar bestaat op de hele site.
+    Juridisch is een bewerkt "voor"-beeld naast een "na"-beeld van hetzelfde
+    bestand een misleidende handelspraktijk (art. 6:193c BW).
+
+    Het bleef acht dagen langer op de Nederlandse pagina staan dan op de
+    Engelse — Nederlands recht, op de Nederlandse pagina. Precies het soort
+    scheefstand dat dit gedeelde bestand onmogelijk maakt.
+
+    Zodra er vier ECHTE paren zijn — een middag werk, en meer waard dan de rest
+    van deze pagina bij elkaar — komt dit blok terug met de echte bestanden en
+    ZONDER `grade`. De <Compare>-component blijft bestaan.
+  */}
+
+  {/* ── 3 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="gal-slot">
+    <h2 id="gal-slot" class="hoog">{c.slotH}<br /><em>{c.slotEm}</em></h2>
+    <p class="lopend">{c.slotBody}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
+      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">WhatsApp</a>
+    </p>
+  </section>
+</div>
+
+<script>
+  import '../scripts/galerij-filter.js';
+</script>
+
+<style>
+  .gal-kop { max-width: 46rem; margin-bottom: 0; }
+
+  /* ── DE FILTERKNOPPEN ────────────────────────────────────────────────────
+     Op inkt, dus de lijn en de letter zijn het vel. De ingedrukte knop keert om
+     — dat is dezelfde afspraak als de dienstenrij en de filterpillen elders in
+     deze stijl, en het is ook het enige verschil dat je zonder kleur ziet. */
+  .gal-filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+  .gal-pil {
+    font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase;
+    padding: .6rem 1.15rem; border: 1px solid rgb(245 245 245 / .3); border-radius: 999px;
+    background: none; color: var(--vel); cursor: pointer;
+    transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit);
+  }
+  .gal-pil:hover { border-color: var(--vel); }
+  .gal-pil[aria-pressed="true"] { background: var(--vel); color: var(--inkt); border-color: var(--vel); }
+  .gal-pil:focus-visible { outline: 2px solid var(--geel); outline-offset: 3px; }
+
+  /* Het raster. Vier kolommen op een breed scherm, en één cel op de zeven is
+     dubbel breed — dat is `wide` in de fotolijst hierboven en het is wat het
+     raster laat ademen in plaats van een contactvel te worden. */
+  .gal-raster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.5rem, 1.2vw, .9rem); }
+  .gal-raster img {
+    width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4 / 5;
+    border-radius: calc(var(--ronding) - 12px); background: rgb(245 245 245 / .06);
+  }
+  .gal-raster img.is-breed { grid-column: span 2; aspect-ratio: 16 / 10; }
+
+  @media (max-width: 900px) {
+    .gal-raster { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 620px) {
+    .gal-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gal-raster img.is-breed { grid-column: span 2; }
+  }
+</style>

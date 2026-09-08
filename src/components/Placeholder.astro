@@ -164,7 +164,9 @@ const woord = kind === 'video' ? (nl ? 'Video volgt' : 'Video to come') : (nl ? 
   .ph-mark { width: 34px; height: auto; fill: var(--ink-1); opacity: .14; }
   .ph-kind {
     font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--ink-4);
+    /* --ink-4 is de lijnkleur (.42 alpha) en haalt als tekst 2,8:1. Voor tekst
+       geldt --ink-3 of donkerder — zie KLEURENSCHEMA.md. 7 september 2026. */
+    color: var(--ink-3);
   }
 
   /* ── DE OPDRACHT ─────────────────────────────────────────────────────────
@@ -183,7 +185,7 @@ const woord = kind === 'video' ? (nl ? 'Video volgt' : 'Video to come') : (nl ? 
   .ph-message {
     margin-top: .45rem; padding-top: .45rem;
     border-top: 1px solid var(--line);
-    color: var(--ink-4); font-size: .8rem; line-height: 1.55;
+    color: var(--ink-3); font-size: .8rem; line-height: 1.55;
     max-width: var(--measure-note, 68ch);
     font-style: italic;
   }

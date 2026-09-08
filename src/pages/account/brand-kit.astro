@@ -1,0 +1,80 @@
+---
+/**
+ * /account/brand-kit — Je vaste look, als Astro-pagina. Studio fase 2, 5 september 2026.
+ * Drie blokken, dezelfde volgorde als brandKitBody(): je eigen modellen, je
+ * eigen looks, en per dienst wat er vastligt (VasteLook.astro). Gegevens en
+ * regels: brandKitView() in account.js; opslaan blijft accountPost().
+ */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import VasteLook from '../../components/studio/VasteLook.astro';
+import { pagesContext } from '../../lib/route.js';
+import { studioScreen, STUDIO_ICONS } from '../../lib/account.js';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'brand');
+if (s instanceof Response) return s;
+
+const { st, v } = s;
+const { t, lang, customer, thema, navDicht } = st;
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="brand" customer={customer}
+  title={t.navBrandKit} kop={t.navBrandKit} lede={t.bkLede}
+>
+  <section class="st-blok" aria-label={t.bkOwnH}>
+    {v.eigenModellen.length === 0
+      ? (
+        <div class="st-kaart-vlak st-leegvlak">
+          <span class="st-leegvlak-fig" aria-hidden="true"><Fragment set:html={STUDIO_ICONS.face} /></span>
+          <div><h2>{t.bkOwnEmptyH}</h2><p>{t.bkOwnEmptyBody}</p></div>
+          <a class="btn btn-2nd" href={v.startModel}>{t.bkOwnEmptyCta}</a>
+        </div>
+      ) : (
+        <Fragment>
+          <div class="st-blok-kop"><h2>{t.bkOwnH}</h2></div>
+          <p class="st-meta st-blok-lede">{t.bkOwnLede}</p>
+          <div class="st-modellen">
+            {v.eigenModellen.map((m) => (
+              <figure class={`st-model${m.ready ? ' is-klaar' : ' is-wacht'}`}>
+                {m.preview ? <img class="st-model-img" src={m.preview} alt={m.label} loading="lazy" decoding="async" width="400" height="535" /> : <span class="st-model-img is-leeg" aria-hidden="true"><Fragment set:html={STUDIO_ICONS.face} /></span>}
+                <figcaption><span class="st-model-naam">{m.label}</span><span class="st-model-staat">{m.state}</span></figcaption>
+              </figure>
+            ))}
+          </div>
+        </Fragment>
+      )}
+  </section>
+
+  <section class="st-blok" aria-label={t.osH}>
+    <div class="st-blok-kop"><h2>{t.osH}</h2></div>
+    <p class="st-meta st-blok-lede">{t.osLede}</p>
+    {v.eigenLooks.length === 0
+      ? (
+        <div class="st-kaart-vlak st-leegvlak">
+          <div><h2>{t.osEmptyH}</h2><p>{t.osEmptyBody}</p></div>
+          <a class="btn btn-2nd" href={v.startLook}>{t.osEmptyCta}</a>
+        </div>
+      ) : (
+        <div class="st-eigenlooks">
+          {v.eigenLooks.map((s) => (
+            <article class={`st-kaart-vlak st-eigenlook${s.proposed ? ' is-voorstel' : ''}`}>
+              <div class="st-eigenlook-fig">{s.preview ? <img src={s.preview} alt="" loading="lazy" decoding="async" width="320" height="240" /> : <span class="is-leeg" aria-hidden="true"></span>}</div>
+              <div class="st-eigenlook-body">
+                <h3>{s.name}</h3>
+                <p class="st-meta">{s.dienst}{s.extra && ` · ${s.extra}`}</p>
+                {s.description && <p class="st-eigenlook-lijn">{s.description}</p>}
+                {s.proposed ? <p class="st-meta">{t.osProposed}</p> : <a class="btn btn-primary btn-sm" href={s.orderHref}>{t.osOrder}</a>}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+  </section>
+
+  <section class="st-blok" aria-label={t.lockH}>
+    <div class="st-blok-kop"><h2>{t.lockH}</h2></div>
+    <p class="st-meta st-blok-lede">{t.lockLede}</p>
+    <div class="st-vls">{v.kaarten.map((k) => <VasteLook t={t} k={k} />)}</div>
+  </section>
+</StudioLayout>

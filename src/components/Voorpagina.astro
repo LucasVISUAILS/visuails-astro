@@ -1,0 +1,541 @@
+---
+/**
+ * VISUAILS — de voorpagina. Sectie 21, 5 september 2026.
+ *
+ * WAT DIT VERVANGT. HomeV2.astro: 5.150 regels, elf secties, een hero-carrousel
+ * met zeven dia's en een copytabel van duizend regels. Lucas, na de eerste ronde
+ * van het lichte palet: *"hoe het nu wordt voelt zo vriendelijk nog"* en, met
+ * ovyonlabs.com/works/komma en de Lue-site als voorbeeld: *"Ik wil hetzelfde
+ * strakke voelen."* En over de tekst: *"je mag tekst schrappen zolang de kern van
+ * de boodschap helder blijft, ik wil voornamelijk visueel uitleggen wat visuails
+ * doet."*
+ *
+ * WAT "STRAK" HIER CONCREET IS, nagemeten op die twee sites:
+ *   · panelen van rand tot rand, voornamelijk wit, twee in Komma's donkergrijs
+ *     (#212121 — Lucas: "de donkere kleur wordt donkergrijs … voornamelijk wit"),
+ *     zonder ruimte ertussen;
+ *   · een gesplitste hero: beeld links, wit paneel rechts, mono-labels erboven;
+ *   · haarlijnen in plaats van kaarten en schaduwen;
+ *   · kleinere, lichtere koppen met veel lucht eromheen;
+ *   · kleine mono-labels in kapitalen als tweede stem naast de kop;
+ *   · het geel alleen als vlak — knoppen, één woord in de kop, de voettekst —
+ *     nooit als tekstkleur op wit (1,5:1).
+ *
+ * DE PAGINA LEGT UIT MET BEELD. Acht panelen, en in zes daarvan is het beeld
+ * het argument: de telefoonfoto naast de studioproductie, de zeven beelden die
+ * één product oplevert, de vier stappen, de prijstabel, het beoordeelscherm, de
+ * gezichten. Tekst is één kop en één regel per paneel.
+ *
+ * GEEN ENKEL GETAL IS GETYPT. Aantallen komen uit pricing.js en lexicon.js,
+ * prijzen uit euro()/ladderRate(), de proef uit TEST_SAMPLE, de belofte van één
+ * revisieronde staat op slot tegen AFTERCARE — precies zoals HomeV2 dat deed.
+ *
+ * DE FOTO'S ZIJN NIEUW EN BESTAAN NOG NIET. Elk beeld hier heet voorpagina-*
+ * en ligt niet in public/img; scripts/plaatshouders.mjs maakt er in de build een
+ * plaatshouder van in de maat die het <img> vraagt (width/height). Lucas zet de
+ * echte foto onder die naam in public/img en hij verschijnt vanzelf — zie
+ * src/data/beeld.js.
+ */
+/* DE LETTERS VAN DE NIEUWE STIJL. Drie variabele, open source families, alle
+   drie met een breedte-as zodat "nadruk is breedte" overal werkt: Anybody voor
+   de koppen (technischer dan Hubot Sans), Instrument Sans voor de lopende
+   tekst, Martian Mono voor de labels. Zelf gehost, geen externe verbinding.
+   Ze staan hier en niet in Layout.astro: zolang alleen de voorpagina in deze
+   stijl staat, hoeft de rest van de site ze niet te laden. */
+import '@fontsource-variable/anybody/standard.css';
+import '@fontsource-variable/instrument-sans/standard.css';
+import '@fontsource-variable/martian-mono/standard.css';
+import {
+  AMOUNT, euro, TEST_SAMPLE, reviewClaim, aftercare,
+  LADDER, ladderRate, vatLabel, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, plans,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
+} from '../data/pricing.js';
+import { countedShort } from '../data/lexicon.js';
+import { MERK } from '../data/brand.js';
+import { binnenkortNamen } from '../data/binnenkort.js';
+import { localizedPath } from '../i18n/ui.js';
+import { TAGLINE } from '../data/brand.js';
+import { ROSTER, modelId, telwoord } from '../data/models.js';
+import { REQUIRED_SHOT_IDS } from '../data/shots.js';
+import '../styles/stijl22.css';
+import FigApproval from './FigApproval.astro';
+
+const { lang } = Astro.props as { lang: 'en' | 'nl' };
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const sample = TEST_SAMPLE[lang];
+const e = (n: number) => euro(n, lang);
+/* Hoeveel telefoonfoto's er nodig zijn komt uit shots.js, niet uit een getypt
+   woord — tests/uploadbelofte.test.mjs leest deze zin. */
+const FOTOS = telwoord(REQUIRED_SHOT_IDS.length, lang, true);
+
+/* De ladder als tabel: dezelfde drie kolommen en vijf treden als /pricing. De
+   rijlabels komen van één soort en gelden voor alle drie — dat klopt alleen als
+   ze op dezelfde aantallen breken, en dat wordt hier nagekeken zoals /pricing
+   dat doet. */
+const KINDS = ['complete', 'catalog', 'lifestyle'] as const;
+const KIND_PAGE: Record<string, string | null> = { complete: null, catalog: '/catalog', lifestyle: '/lifestyle' };
+const vorm = (id: string) => LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
+for (const id of KINDS) if (vorm(id) !== vorm('complete')) throw new Error(`Voorpagina: staffel "${id}" breekt op andere aantallen dan "complete".`);
+const RUNGS = LADDER.complete.map(([lo, hi]) => ({ at: lo, label: hi === null ? `${lo}+` : `${lo}–${hi}` }));
+
+const PLAN_CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
+const PLAN_FROM = PLAN_AMOUNT[PLAN_CHEAPEST];
+const PLAN_FROM_PRODUCTS = PLAN_PRODUCTS[PLAN_CHEAPEST];
+/* De drie abonnementen als rijen: naam, producten, clips, prijs — uit plans(). */
+const PLANS = plans(lang);
+
+/* Het slot op "één revisieronde" — zie de noot in HomeV2 van 27 augustus: de
+   belofte staat op de pagina, dus de controle blijft. */
+if (!/\b1 revision round\b/i.test(aftercare('attended', 'en'))) {
+  throw new Error(`Voorpagina: de Studio-regel belooft één revisieronde, AFTERCARE zegt nu: "${aftercare('attended', 'en')}"`);
+}
+
+/* De zeven beelden van één product: vier catalog, drie lifestyle. De namen van de
+   frames komen uit dezelfde zinnen als TEST_SAMPLE.catalogLine / lifestyleLine. */
+const FRAMES = {
+  en: ['Front', 'Back', 'Detail', 'On model', 'Scene', 'On model', 'Close-up'],
+  nl: ['Voor', 'Achter', 'Detail', 'Op model', 'Scène', 'Op model', 'Close-up'],
+};
+if (FRAMES.en.length !== COMPLETE_IMAGES) throw new Error(`Voorpagina: ${FRAMES.en.length} frames voor ${COMPLETE_IMAGES} beelden.`);
+
+const COPY = {
+  en: {
+    labels: [MERK, 'Studio', 'Enschede, NL'],
+    secties: ['What we make', 'Studio production', 'The set', 'The process', 'Rates', 'Studio', 'Faces', 'Test sample'],
+    posterLine: [MERK, 'All rights reserved · 2026'],
+    h1: TAGLINE.en.lines,
+    lede: 'Catalog, lifestyle and video from the product photos you already have. No shoot, no minimum — one product is fine.',
+    ctaStart: 'Start an order',
+    heroAlt: 'A VISUAILS campaign visual', heroChip: 'Campaign',
+    facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Your own week on the calendar', 'Every image checked by a specialist'],
+    svcH: 'What we make.',
+    svcLede: 'Four services, all from the photos you already have — a phone by a window is enough.',
+    svc: [
+      ['Catalog set', `${countedShort('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/catalog'],
+      ['Lifestyle carousel', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
+      ['Video clip', 'One vertical clip, cut for Reels and TikTok', `${e(AMOUNT.video)} per clip`, '/video'],
+      ['Your brand model', 'One face, yours alone, in every order', `once ${e(AMOUNT.brandModel)}`, '/custom-models'],
+    ],
+    svcMore: 'See',
+    svcSoon: ['Coming:', `${binnenkortNamen('en').join(' & ')} — what they are`],
+    vnH: 'You send a phone photo. We turn it into a studio production.',
+    vnLede: 'The garment stays as it is. Light, background, model and crop are built around it.',
+    vnIn: ['Sent in', 'Phone photo'], vnOut: ['Delivered', `Catalog 01/${String(CATALOG_IMAGES).padStart(2, '0')}`],
+    vnInAlt: 'The phone photo a customer sent in', vnOutAlt: 'The finished catalog image made from it',
+    vnLink: 'See the gallery',
+    vnNotenLabel: 'What is built around the garment',
+    vnNoten: [['Light', 22, 18], ['Background', 78, 30], ['Model', 30, 58], ['Crop', 72, 86]],
+    setH: `One product. ${COMPLETE_IMAGES} images.`,
+    setLede: 'A catalog set for your shop and a lifestyle carousel for your socials, from the same order.',
+    setGroups: [[`Catalog set · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, '/catalog'], [`Lifestyle carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, '/lifestyle']],
+    frames: FRAMES.en,
+    extras: [
+      ['Video clip', `One vertical clip for Reels and TikTok · ${e(AMOUNT.video)}`, '/video'],
+      ['Your brand model', `One face, yours alone · once ${e(AMOUNT.brandModel)}`, '/custom-models'],
+    ],
+    stepsH: 'From folder to launch.',
+    stepsLede: 'You do two things: send and approve.',
+    steps: [
+      ['You send a folder', `One folder per product. ${FOTOS} phone photos are all you need.`],
+      ['Your week is set', 'The calendar follows our real capacity.'],
+      ['The studio runs', 'Catalog, lifestyle and video in your style, fully finished.'],
+      ['A specialist checks', 'Every image, before it reaches you.'],
+    ],
+    priceH: 'One rate per product. It drops as the count rises.',
+    priceCount: 'Products',
+    priceKinds: [`Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`, `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`],
+    priceVat: `Per product, ${vatLabel('excl', 'en')}.`,
+    priceCta: 'Start an order', priceCta2: 'Full price list',
+    planH: 'Or every month.',
+    planLede: 'A fixed number of finished products a month, in a week on the calendar that is yours.',
+    planCols: ['Plan', 'Products a month', 'Video clips', 'Per month'],
+    planLink: 'Compare the plans', planCta: 'Start a plan', planVat: `Per month, ${vatLabel('excl', 'en')}.`,
+    studioH: 'Then: VISUAILS Studio.',
+    studioLede: 'Live status, approve image by image, one revision round, download as jpg, png and webp.',
+    studioFig: { head: 'Your delivered images, one by one', ok: 'Approved', rev: 'Sent back', wait: 'On its way' },
+    studioLink: 'See Studio', studioLink2: 'How an order runs',
+    beloften: [
+      ['No final delivery without your check', 'Something off? We go through it together until it is right.'],
+      ['Full commercial rights included', 'Shop, marketplaces, ads and social — no extra licence fees.'],
+    ],
+    facesH: 'Pick a face — or claim one.',
+    facesLede: 'A model from the roster, or a brand model nobody else gets. The face, background and format you approve stay with your brand, so the next order starts where the last one ended.',
+    facesLink: 'How a brand model works', facesLink2: 'The roster',
+    qH: 'Straight answers.',
+    qs: [
+      ['What if the visuals are not right?', 'See Studio', '/portal'],
+      ['Will a customer see it is AI?', 'Read the AI Act page', '/ai-act'],
+      ['Are my photos good enough?', 'What makes a photo usable', '/upload-guidelines'],
+      ['Why not do it myself?', 'The honest comparison', '/compare'],
+    ],
+    qAll: 'All questions',
+    closeH: `See it first. One product for ${sample.price}.`,
+    closeLede: `${sample.deliverable} · made from your own photo · ${sample.unit}.`,
+    closeAlt: 'Or start an order',
+    trust: ['Made in Enschede, NL', 'Registered with the KVK', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
+  },
+  nl: {
+    labels: [MERK, 'Studio', 'Enschede, NL'],
+    secties: ['Wat we maken', 'Studioproductie', 'De set', 'Het proces', 'Tarieven', 'Studio', 'Gezichten', 'Proef'],
+    posterLine: [MERK, 'Alle rechten voorbehouden · 2026'],
+    h1: TAGLINE.nl.lines,
+    lede: 'Catalog, lifestyle en video van de productfoto’s die je al hebt. Geen shoot, geen minimum — één product mag ook.',
+    ctaStart: 'Start een bestelling',
+    heroAlt: 'Een VISUAILS-campagnebeeld', heroChip: 'Campagne',
+    facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Jouw eigen week op de kalender', 'Elk beeld gecheckt door een specialist'],
+    svcH: 'Wat we maken.',
+    svcLede: 'Vier diensten, allemaal uit de foto’s die je al hebt — een telefoon bij het raam is genoeg.',
+    svc: [
+      ['Catalogset', `${countedShort('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/catalog'],
+      ['Lifestyle-carousel', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
+      ['Videoclip', 'Eén verticale clip, gesneden voor Reels en TikTok', `${e(AMOUNT.video)} per clip`, '/video'],
+      ['Je merkmodel', 'Eén gezicht, alleen van jou, in elke bestelling', `eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
+    ],
+    svcMore: 'Bekijk',
+    svcSoon: ['Binnenkort:', `${binnenkortNamen('nl').join(' & ')} — wat het is`],
+    vnH: 'Jij stuurt een telefoonfoto. Wij maken er een studioproductie van.',
+    vnLede: 'Het kledingstuk blijft zoals het is. Licht, achtergrond, model en uitsnede bouwen wij eromheen.',
+    vnIn: ['Ingestuurd', 'Telefoonfoto'], vnOut: ['Geleverd', `Catalog 01/${String(CATALOG_IMAGES).padStart(2, '0')}`],
+    vnInAlt: 'De telefoonfoto die een klant instuurde', vnOutAlt: 'De afgewerkte catalogfoto die daaruit is gemaakt',
+    vnLink: 'Bekijk de galerij',
+    vnNotenLabel: 'Wat er om het kledingstuk heen wordt gebouwd',
+    vnNoten: [['Licht', 22, 18], ['Achtergrond', 78, 30], ['Model', 30, 58], ['Uitsnede', 72, 86]],
+    setH: `Eén product. ${COMPLETE_IMAGES} beelden.`,
+    setLede: 'Een catalogset voor je shop en een lifestyle-carousel voor je socials, uit dezelfde bestelling.',
+    setGroups: [[`Catalogset · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
+    frames: FRAMES.nl,
+    extras: [
+      ['Videoclip', `Eén verticale clip voor Reels en TikTok · ${e(AMOUNT.video)}`, '/video'],
+      ['Je merkmodel', `Eén gezicht, alleen van jou · eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
+    ],
+    stepsH: 'Van map tot lancering.',
+    stepsLede: 'Jij doet twee dingen: sturen en goedkeuren.',
+    steps: [
+      ['Jij stuurt een map', `Eén map per product. ${FOTOS} telefoonfoto’s zijn genoeg om te beginnen.`],
+      ['Je week staat vast', 'De kalender volgt onze echte capaciteit.'],
+      ['De studio draait', 'Catalog, lifestyle en video in jouw stijl, volledig afgewerkt.'],
+      ['Een specialist kijkt', 'Elk beeld, voordat het bij je staat.'],
+    ],
+    priceH: 'Eén tarief per product. Daalt met het aantal.',
+    priceCount: 'Producten',
+    priceKinds: [`Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`, `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`],
+    priceVat: `Per product, ${vatLabel('excl', 'nl')}.`,
+    priceCta: 'Start een bestelling', priceCta2: 'De volledige prijslijst',
+    planH: 'Of elke maand.',
+    planLede: 'Een vast aantal afgewerkte producten per maand, in een week op de kalender die van jou is.',
+    planCols: ['Abonnement', 'Producten per maand', 'Videoclips', 'Per maand'],
+    planLink: 'Vergelijk de abonnementen', planCta: 'Sluit een abonnement af', planVat: `Per maand, ${vatLabel('excl', 'nl')}.`,
+    studioH: 'Daarna: VISUAILS Studio.',
+    studioLede: 'Live status, beeld voor beeld goedkeuren, één revisieronde, downloaden als jpg, png en webp.',
+    studioFig: { head: 'Je geleverde beelden, stuk voor stuk', ok: 'Goedgekeurd', rev: 'Teruggestuurd', wait: 'Nog onderweg' },
+    studioLink: 'Bekijk Studio', studioLink2: 'Hoe een bestelling draait',
+    beloften: [
+      ['Geen definitieve oplevering zonder jouw check', 'Klopt er iets niet? Dan gaan we er samen doorheen tot het klopt.'],
+      ['Volledige commerciële rechten inbegrepen', 'Webshop, marktplaatsen, ads en social — zonder extra licentiekosten.'],
+    ],
+    facesH: 'Kies een gezicht — of claim er een.',
+    facesLede: 'Een model uit de roster, of een merkmodel dat niemand anders krijgt. Het gezicht, de achtergrond en het formaat die je goedkeurt blijven bij je merk, dus een volgende bestelling begint waar de vorige ophield.',
+    facesLink: 'Hoe een merkmodel werkt', facesLink2: 'De roster',
+    qH: 'Direct antwoord.',
+    qs: [
+      ['Wat als ze niet goed zijn?', 'Bekijk Studio', '/portal'],
+      ['Ziet een klant dat het AI is?', 'Lees de AI Act-pagina', '/ai-act'],
+      ['Zijn mijn foto’s goed genoeg?', 'Wat maakt een foto bruikbaar', '/upload-guidelines'],
+      ['Waarom niet zelf?', 'De eerlijke vergelijking', '/compare'],
+    ],
+    qAll: 'Alle vragen',
+    closeH: `Eerst zien? Eén product voor ${sample.price}.`,
+    closeLede: `${sample.deliverable} · gemaakt van jouw eigen foto · ${sample.unit}.`,
+    closeAlt: 'Of start een bestelling',
+    trust: ['Gemaakt in Enschede, NL', 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
+  },
+};
+const c = COPY[lang];
+const nn = (i: number) => String(i).padStart(2, '0');
+/* ── DE BEELDEN ───────────────────────────────────────────────────────────────
+   De hero is de echte foto, vrijstaand gemaakt: de studiowand en de olijfgroene
+   slagschaduw zijn eruit, zodat de grond van de pagina er doorheen valt en er
+   nergens een rand van een foto te zien is. De rest zijn voorlopig de negen
+   sfeerbeelden met het groene licht uit Lucas' map — plaatshouders tot de echte
+   voorpagina-foto's er zijn, maar wel echte beelden en geen grijs vlak. */
+const HERO = '/img/voorpagina/hero-model.webp';
+const b = (n: number, w: number, h: number) => ({
+  src: `/img/concept/sfeer-0${n}.webp`, klein: `/img/concept/sfeer-0${n}-w1000.webp`, w, h,
+});
+const BEELD = [b(1, 2000, 1125), b(2, 1248, 1872), b(3, 2000, 1125), b(4, 1536, 1536), b(5, 2000, 1125), b(6, 1536, 1536), b(7, 1872, 1248), b(8, 2000, 1125), b(9, 2000, 1125)];
+const B = (n: number) => BEELD[n - 1];
+/* Welk beeld bij welke dienst hoort, en de zeven beelden van één set. */
+const DIENST_BEELD = [1, 2, 9, 6];
+const SET = [1, 5, 4, 2, 3, 7, 6];
+---
+
+{/* ═══ DE VOORPAGINA IN DE NIEUWE STIJL ══════════════════════════════════════
+    Het document is inkt; de lichte secties liggen erop als panelen met een
+    flinke ronding en een rand inkt eromheen. Elke overgang licht → donker is
+    een hoofdstukwissel, en in het donker staat altijd een spookwoord: een kop
+    in dezelfde bijna-zwarte toon als de grond, schermvullend.
+
+    De koptekst van dit bestand legt uit waar het vandaan komt. */}
+<div class="s22 thuis">
+
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────────
+      De opbouw van VEXO: kop gecentreerd met één accentwoord, twee pillen, het
+      model dat over de onderrand heen loopt, links drie gezichten met één zin,
+      rechts een donkere clipkaart. De animatie is teruggebracht tot zeven
+      banden — het aantal beelden van één complete set — die met 70 ms verschil
+      veertien pixels op hun plaats schuiven, en een kop die per regel opkomt.
+      Binnen één seconde staat alles stil. */}
+  <section class="hero" aria-labelledby="vp-h1">
+    <div class="stralen" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+    <div class="hero-kop">
+      <p class="etiket">{c.labels[0]} · {c.labels[2]}</p>
+      <h1 id="vp-h1" class="hoog hero-h1">
+        {c.h1.map((line, i) => <span class="kop-regel" style={`--i:${i}`}><span set:html={line} /></span>)}
+      </h1>
+      <p class="acties hero-acties">
+        <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
+        <a class="knop knop-wit" href={lp('/test-sample')}>{sample.cta}</a>
+      </p>
+    </div>
+
+    <div class="strook" role="img" aria-label={c.heroAlt} style={`--src:url(${HERO})`}>
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => <span style={`--i:${i}`}></span>)}
+    </div>
+
+    {/* ── DE ZIN STAAT OP DE TELEFOON BOVEN HET BEELD — 8 september 2026 ──
+        Gemeten op 390px: de kop stond op 153px, de knoppen op 254px, en daarna
+        kwam 460 pixels beeld. Deze zin — de enige plek waar staat WAT er
+        verkocht wordt — begon op 900px, net onder de vouw. Wie de site op zijn
+        telefoon opende, zag een kop, twee knoppen en een foto van een hoodie,
+        en nergens het woord productfoto.
+
+        Op breed staat dit blok linksonder in de hero en is het gewoon in beeld;
+        daar verandert niets. Alleen in de stapel op smal schuift hij naar
+        boven — met `order` in stijl22.css, en dat mag hier omdat er niets in
+        dit blok is dat focus krijgt: drie <img> en een <p>. De tabvolgorde
+        verandert dus niet, alleen wat je ziet. */}
+    <div class="hero-links">
+      <ul class="koppen" role="list">
+        {ROSTER.slice(0, 3).map((m) => <li><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></li>)}
+      </ul>
+      <p class="hero-zin">{c.lede}</p>
+    </div>
+
+    <a class="hero-clip" href={lp('/video')}>
+      <img src={B(9).klein} width="1000" height="563" alt="" loading="lazy" decoding="async">
+      <span class="rond" aria-hidden="true">▶</span>
+      <span class="mono">{c.extras[0][0]}</span>
+    </a>
+  </section>
+
+  {/* De maatlijn: een haarlijn, een streepje per waarde, het nummer erboven. */}
+  <ul class="maatlijn" role="list">
+    {c.facts.map((f) => <li><span>{f}</span></li>)}
+    <li><span>{c.trust[0]}</span></li>
+  </ul>
+
+  {/* ── 2 · WAT WE MAKEN ─────────────────────────────────────────────────────
+      De pillenrij is echt: vier radioknoppen, nul regels JavaScript. De gekozen
+      dienst blijft vol, de andere drie zakken terug. */}
+  <section id="maken" class="paneel kiezer" aria-labelledby="vp-sv">
+    <header class="paneel-kop">
+      <p class="etiket">{c.secties[0]}</p>
+      <h2 id="vp-sv" class="hoog hoog-2">{c.svcH}</h2>
+      <p class="lopend">{c.svcLede}</p>
+    </header>
+    {c.svc.map((_, i) => <input class="visueel-verborgen keuze" type="radio" name="vp-dienst" id={`vp-dienst-${i}`} checked={i === 0} />)}
+    <fieldset class="filterrij">
+      <legend class="visueel-verborgen">{c.svcH}</legend>
+      {c.svc.map(([naam], i) => <label class="filterpil" for={`vp-dienst-${i}`}>{naam}</label>)}
+    </fieldset>
+    <ul class="kaarten" role="list">
+      {c.svc.map(([naam, wat, prijs, href], i) => (
+        <li>
+          <a class="kaart" href={lp(href)}>
+            <img src={B(DIENST_BEELD[i]).klein} width="1000" height="1250" alt="" loading="lazy" decoding="async">
+            <span class="kaart-merk mono">{nn(i + 1)}</span>
+            <span class="kaart-pil">
+              <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
+              <span class="rond" aria-hidden="true">→</span>
+            </span>
+          </a>
+          <p class="kaart-wat">{wat}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="voetregel"><span class="mono">{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+  </section>
+
+  {/* ── 3 · STUDIOPRODUCTIE ──────────────────────────────────────────────────
+      Het donker in. Links wat erin gaat, rechts wat eruit komt, ertussen één
+      gele draad met de vier termen die wij eromheen bouwen. */}
+  <section class="kamer kamer-draad" aria-labelledby="vp-vn">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.secties[1]}</span><span>{c.secties[1]}</span></p>
+    <header class="kamer-kop op-inkt">
+      <p class="etiket">{c.secties[1]}</p>
+      <h2 id="vp-vn" class="hoog hoog-2">{c.vnH}</h2>
+      <p class="lopend">{c.vnLede}</p>
+    </header>
+    <div class="draad-blok">
+      <figure class="werk werk-in">
+        <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnInAlt} loading="lazy" decoding="async">
+        <figcaption class="etiket">{c.vnIn[0]} · {c.vnIn[1]}</figcaption>
+      </figure>
+      <ol class="draad" aria-label={c.vnNotenLabel}>
+        {c.vnNoten.map(([naam], i) => <li><b class="mono">{nn(i + 1)}</b>{naam}</li>)}
+      </ol>
+      <figure class="werk werk-uit">
+        <img src={B(7).src} width={B(7).w} height={B(7).h} alt={c.vnOutAlt} loading="lazy" decoding="async">
+        <figcaption class="etiket">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
+      </figure>
+    </div>
+    <p class="voetregel"><a class="pijl" href={lp('/gallery')}>{c.vnLink}</a></p>
+  </section>
+
+  {/* ── 4 · DE SET ───────────────────────────────────────────────────────────
+      Zeven kaarten op een rij; de splitsing tussen catalog en lifestyle is een
+      balk erboven in dezelfde verhouding als de beelden eronder. */}
+  <section class="paneel" aria-labelledby="vp-set">
+    <header class="paneel-kop">
+      <p class="etiket">{c.secties[2]}</p>
+      <h2 id="vp-set" class="hoog hoog-2">{c.setH}</h2>
+      <p class="lopend">{c.setLede}</p>
+    </header>
+    <p class="groepen" style={`--a:${CATALOG_IMAGES}fr;--b:${SET.length - CATALOG_IMAGES}fr`}>
+      <a class="groep" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a>
+      <a class="groep" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a>
+    </p>
+    <ol class="rij">
+      {c.frames.map((naam, i) => (
+        <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
+          <span class="kaart kaart-stil">
+            <img src={B(SET[i]).klein} width="800" height="1000" alt="" loading="lazy" decoding="async">
+            <span class="kaart-merk mono">{nn(i + 1)}</span>
+          </span>
+          <span class="mono">{naam}</span>
+        </li>
+      ))}
+    </ol>
+    <ul class="extras" role="list">
+      {c.extras.map(([k, v, href]) => <li><a class="pijl" href={lp(href)}>{k}</a><span>{v}</span></li>)}
+    </ul>
+  </section>
+
+  {/* ── 5 · HET PROCES ───────────────────────────────────────────────────────*/}
+  <section class="kamer kamer-stappen" aria-labelledby="vp-st">
+    <p class="spook spook-rechts" aria-hidden="true"><span>{c.secties[3]}</span><span>{c.secties[3]}</span></p>
+    <header class="kamer-kop op-inkt">
+      <p class="etiket">{c.secties[3]}</p>
+      <h2 id="vp-st" class="hoog hoog-2">{c.stepsH}</h2>
+      <p class="lopend">{c.stepsLede}</p>
+    </header>
+    <ol class="stappen">
+      {c.steps.map(([k, v], i) => (
+        <li><span class="stap-nr" aria-hidden="true">{nn(i + 1)}</span><b>{k}</b><span class="lopend">{v}</span></li>
+      ))}
+    </ol>
+  </section>
+
+  {/* ── 6 · TARIEVEN ─────────────────────────────────────────────────────────*/}
+  <section id="tarieven" class="paneel" aria-labelledby="vp-pr">
+    <header class="paneel-kop">
+      <p class="etiket">{c.secties[4]}</p>
+      <h2 id="vp-pr" class="hoog hoog-2">{c.priceH}</h2>
+    </header>
+    <div class="tabellen">
+      <div class="blad">
+        <div class="tabel-schuif">
+        <table class="lijst">
+          <thead><tr><th scope="col" class="mono">{c.priceCount}</th>{KINDS.map((id, i) => <th scope="col" class="mono">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id])}>{c.priceKinds[i]}</a> : c.priceKinds[i]}</th>)}</tr></thead>
+          <tbody>{RUNGS.map((r) => <tr><th scope="row" class="mono">{r.label}</th>{KINDS.map((id) => <td class="tarief">{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
+        </table>
+        </div>
+        <p class="mono">{c.priceVat}</p>
+        <p class="acties"><a class="knop knop-inkt" href={lp('/start')}>{c.priceCta}</a><a class="knop knop-lijn" href={lp('/pricing')}>{c.priceCta2}</a></p>
+      </div>
+      <div class="blad">
+        <h3 class="hoog hoog-3">{c.planH}</h3>
+        <p class="lopend">{c.planLede}</p>
+        <div class="tabel-schuif">
+        <table class="lijst">
+          <thead><tr>{c.planCols.map((k) => <th scope="col" class="mono">{k}</th>)}</tr></thead>
+          <tbody>{PLANS.map((pl) => <tr><th scope="row"><a href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td class="tarief">{pl.products}</td><td class="tarief">{PLAN_CLIPS[pl.id] || '—'}</td><td class="tarief">{pl.price}</td></tr>)}</tbody>
+        </table>
+        </div>
+        <p class="mono">{c.planVat}</p>
+        <p class="acties"><a class="knop knop-lijn" href={lp('/start/plan')}>{c.planCta}</a><a class="pijl" href={lp('/plans')}>{c.planLink}</a></p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 7 · STUDIO ───────────────────────────────────────────────────────────
+      Het beoordeelscherm blijft een tekening en geen nagemaakte schermafdruk —
+      zie de noot in FigApproval.astro. Daarom staat deze sectie op licht: de
+      haarlijnen van die tekening hebben een lichte grond nodig. */}
+  <section id="studio" class="paneel" aria-labelledby="vp-sd">
+    <header class="paneel-kop">
+      <p class="etiket">{c.secties[5]}</p>
+      <h2 id="vp-sd" class="hoog hoog-2">{c.studioH}</h2>
+      <p class="lopend">{c.studioLede}</p>
+    </header>
+    <FigApproval head={c.studioFig.head} okLabel={c.studioFig.ok} revLabel={c.studioFig.rev} waitLabel={c.studioFig.wait} />
+    <ul class="beloften" role="list">{c.beloften.map(([k, v]) => <li><b>{k}</b><span class="lopend">{v}</span></li>)}</ul>
+    <p class="acties"><a class="knop knop-lijn" href={lp('/portal')}>{c.studioLink}</a><a class="pijl" href={lp('/studio')}>{c.studioLink2}</a></p>
+  </section>
+
+  {/* ── 8 · GEZICHTEN ────────────────────────────────────────────────────────*/}
+  <section id="gezichten" class="paneel" aria-labelledby="vp-gz">
+    <header class="paneel-kop">
+      <p class="etiket">{c.secties[6]}</p>
+      <h2 id="vp-gz" class="hoog hoog-2">{c.facesH}</h2>
+      <p class="lopend">{c.facesLede}</p>
+    </header>
+    <ul class="cast" role="list">
+      {ROSTER.map((m) => (
+        <li>
+          <a href={`${lp('/models')}#${modelId(m.name)}`}>
+            <span class="kaart kaart-stil"><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></span>
+            <span class="mono">{m.name}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="acties"><a class="knop knop-lijn" href={lp('/custom-models')}>{c.facesLink}</a><a class="pijl" href={lp('/models')}>{c.facesLink2}</a></p>
+  </section>
+
+  {/* ── 9 · DIRECT ANTWOORD ──────────────────────────────────────────────────*/}
+  <section class="paneel" aria-labelledby="vp-q">
+    <header class="paneel-kop">
+            <h2 id="vp-q" class="hoog hoog-2">{c.qH}</h2>
+    </header>
+    <ul class="vragen" role="list">
+      {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="pijl" href={lp(href)}>{l}</a></li>)}
+      <li><span></span><a class="pijl" href={lp('/faq')}>{c.qAll}</a></li>
+    </ul>
+  </section>
+
+  {/* ── 10 · HET SLUITSTUK ───────────────────────────────────────────────────
+      Eén donkere kaart precies in het midden van het donker, met het
+      spookwoord erachter langs — en daarna het gele paneel met de proef. */}
+  <section class="kamer kamer-poster" aria-hidden="false">
+    <p class="spook spook-midden" aria-hidden="true"><span>{c.labels[0]}</span><span>{c.labels[0]}</span></p>
+    <article class="poster">
+      <img src={B(5).src} width={B(5).w} height={B(5).h} alt={c.heroAlt} loading="lazy" decoding="async">
+      <div class="poster-tekst op-inkt">
+        <p class="etiket">{c.labels[0]} · {c.heroChip}</p>
+        <p class="hoog hoog-3">{c.setH}</p>
+      </div>
+    </article>
+  </section>
+
+  <section class="paneel paneel-slot" aria-labelledby="vp-sl">
+    <p class="etiket">{c.secties[7]}</p>
+    <h2 id="vp-sl" class="hoog">{c.closeH}</h2>
+    <p class="lopend">{c.closeLede}</p>
+    <p class="acties"><a class="knop knop-inkt" href={lp('/test-sample')}>{sample.cta}</a><a class="knop knop-lijn" href={lp('/start')}>{c.closeAlt}</a></p>
+  </section>
+
+  <ul class="trustlijn" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+</div>

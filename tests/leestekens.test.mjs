@@ -185,5 +185,120 @@ console.log('\nen geen enkele gebouwde pagina heeft er een');
   }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EN DE MAILS — 7 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Alles hierboven leest de FAQ en de gebouwde site. Een mail staat in geen van
+   beide: hij wordt pas samengesteld op het moment van versturen, en de kop van
+   customerEmail() noemt dat zelf "the one surface nobody greps".
+
+   Vandaag stond er in de orderbevestiging, in beide talen:
+
+     "Een leverdatum die we vastleggen en bevestigen voordat je betaalt.. We
+      komen bij je terug met de exacte data…"
+     "Standard turnaround — estimated delivery, no fixed date.. As soon as it
+      is ready…"
+
+   Precies dezelfde fout als in augustus, op precies dezelfde manier ontstaan:
+   `turnaround()` en `tierRow()` zijn afgeronde zinnen geworden en de plek die ze
+   middenin een zin plakt, plakte er nog een punt achter. Niemand zag het, want
+   een mail komt niet voor in dist/ en niet in faq.js.
+
+   Deze roept de acht echte bouwers aan — dezelfde functies die de Worker
+   aanroept — over beide talen en over de takken die van elkaar verschillen.
+   Er wordt alleen op `..` en `.,` gelet, om dezelfde reden als bij de gebouwde
+   pagina's: tussen twee tags valt een spatie die er in de tekst niet staat. */
+console.log('\nen geen enkele mail heeft er een');
+{
+  const { customerEmail, subscriberEmail } = await import('../functions/api/order.js');
+  const { magicLinkEmail } = await import('../src/lib/account.js');
+  const { deliveryEmail, redeliveryEmail } = await import('../src/lib/admin.js');
+  const { invoiceEmail } = await import('../src/lib/invoiceMail.js');
+  const { cancelEmail, creditNoteEmail } = await import('../src/lib/cancelMail.js');
+
+  const PORTAAL = 'https://visuails.com/o/3f9a2c7d5e1b48a6';
+  const BETAAL = 'https://pay.mollie.com/checkout/select-method/abc123';
+  const QUOTE = { products: 12, netCents: 102000, vatCents: 21420, grossCents: 123420 };
+
+  /* Een mail is HTML. Alleen de tekst telt: in een href zit `.` naast `.` zonder
+     dat iemand dat leest. */
+  const alsTekst = (h) => String(h || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<a\b[^>]*>/gi, '<a>')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ');
+  const tekstFouten = (h) => {
+    const t = alsTekst(h);
+    const uit = [];
+    for (const m of t.matchAll(/.{0,60}(?<!\.)(\.\.(?!\.)|\.,).{0,40}/g)) uit.push(m[0].trim());
+    return uit;
+  };
+  /* Sommige bouwers geven { html, text } terug, andere een kale string. */
+  const hv = (r) => (typeof r === 'string' ? r : (r && r.html) || '');
+
+  const mails = [];
+  for (const lang of ['nl', 'en']) {
+    const order = { ref: 'VIS-2608-4471', name: 'Sanne', email: 'sanne@voltbrand.nl', lang };
+
+    /* ── de orderbevestiging: de tak beslist welke zinnen aan elkaar geplakt
+       worden, dus alle vier de takken langs. ─────────────────────────────── */
+    mails.push([`customerEmail.${lang} attended met datum`, customerEmail(lang, order.ref, 'catalog', 'Sanne', {
+      tier: 'attended',
+      window: { start: '2026-08-12', end: '2026-08-14' },
+      portal: PORTAAL, pay: BETAAL, quote: QUOTE,
+      upgrade: 'Vanaf 30 producten valt de prijs per product lager uit — het loont om in één keer te bestellen.',
+    })]);
+    mails.push([`customerEmail.${lang} attended zonder datum`, customerEmail(lang, order.ref, 'lifestyle', 'Sanne', {
+      tier: 'attended', portal: PORTAAL, quote: QUOTE,
+    })]);
+    mails.push([`customerEmail.${lang} unattended`, customerEmail(lang, order.ref, 'catalog', 'Sanne', {
+      tier: 'unattended', portal: PORTAAL, pay: BETAAL, quote: QUOTE,
+    })]);
+    mails.push([`customerEmail.${lang} kaal — geen naam, geen offerte`, customerEmail(lang, order.ref, 'video', '', {})]);
+    mails.push([`customerEmail.${lang} in beoordeling`, customerEmail(lang, order.ref, 'catalog', 'Sanne', {
+      tier: 'unattended', inReview: true, portal: PORTAAL,
+    })]);
+
+    mails.push([`magicLinkEmail.${lang}`, magicLinkEmail(lang, 'https://visuails.com/account/verify/7Kd2p9QbXm4Rt6Zv', '048210')]);
+    mails.push([`magicLinkEmail.${lang} zonder code`, magicLinkEmail(lang, 'https://visuails.com/account/verify/7Kd2p9QbXm4Rt6Zv')]);
+    mails.push([`deliveryEmail.${lang}`, deliveryEmail({ order, link: PORTAAL, n: 24 })]);
+    mails.push([`deliveryEmail.${lang} één beeld`, deliveryEmail({ order, link: PORTAAL, n: 1 })]);
+    mails.push([`redeliveryEmail.${lang} revisie`, redeliveryEmail({
+      order, link: PORTAAL, n: 3, revisions: 2,
+      note: 'De achtergrond op beeld 4 en 7 is nu egaal wit.',
+    })]);
+    mails.push([`redeliveryEmail.${lang} aanvulling`, redeliveryEmail({ order, link: PORTAAL, n: 2, product: 'p7' })]);
+    mails.push([`invoiceEmail.${lang}`, invoiceEmail({
+      lang, order: { ref: order.ref }, invoice: { number: 'VIS-2026-0031' },
+      snap: { date: '2026-08-09', netCents: 102000, vatCents: 21420, treatment: 'nl_standard' },
+    })]);
+    mails.push([`invoiceEmail.${lang} verlegd`, invoiceEmail({
+      lang, order: { ref: order.ref }, invoice: { number: 'VIS-2026-0031' },
+      snap: { date: '2026-08-09', netCents: 102000, vatCents: 0, treatment: 'reverse_charge' },
+    })]);
+    for (const money of ['refund', 'credit', 'none', 'unpaid']) {
+      mails.push([`cancelEmail.${lang} ${money}`, cancelEmail({
+        order, reason: 'De lijn is uit de collectie gehaald voordat we konden starten.',
+        money, grossCents: 123420,
+      })]);
+    }
+    mails.push([`creditNoteEmail.${lang}`, creditNoteEmail({
+      lang, order: { ref: order.ref }, note: { number: 'VIS-2026-0032' },
+      snap: { date: '2026-08-11', grossCents: 123420, creditsNumber: 'VIS-2026-0031' },
+    })]);
+    mails.push([`subscriberEmail.${lang}`, subscriberEmail(lang)]);
+  }
+
+  const kapot = [];
+  for (const [waar, mail] of mails) {
+    for (const stukje of tekstFouten(hv(mail))) kapot.push([waar, stukje]);
+  }
+  check(`${mails.length} samengestelde mails nagelopen`, kapot.length, 0);
+  for (const [waar, stukje] of kapot) console.log(`      ${waar}: …${stukje}…`);
+}
+
 console.log(`\n${goed}/${totaal} geslaagd`);
 if (goed !== totaal) process.exit(1);

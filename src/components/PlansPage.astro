@@ -40,7 +40,17 @@ import {
   euro, vatLabel, plans, turnaround, AMOUNT,
   PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_ROLLOVER_MONTHS,
   STOCK_OFF_BRAND, STOCK_ON_BRAND, TEST_SAMPLE, WINDOW_THRESHOLD,
+  /* ── DE MAAND OP MAAT STOND HIER NIET, EN DRIE ANDERE PAGINA'S BELOOFDEN HEM ──
+     4 september 2026. De homepage (PlanBand), /pricing en het bestelformulier
+     noemen alle drie "of jouw maand op maat, vanaf N producten". Wie daarop
+     klikte kwam hier en vond drie vaste pakketten en verder niets — een van de
+     vier bezoekers in de doorloop van vandaag zei het letterlijk: *"ik klikte en
+     vond drie vaste pakketten."* Dus staat hij hier nu ook, met hetzelfde
+     minimum en hetzelfde bedrag als op die andere drie plekken: afgeleid uit
+     customMonthTotal(), niet getypt. */
+  CUSTOM_MONTH_MIN_PRODUCTS, CUSTOM_MONTH_MAX_PRODUCTS, customMonthTotal,
 } from '../data/pricing.js';
+import { planName } from '../data/planNames.js';
 // Het juiste woord per soort beeld — zie de kop van lexicon.js.
 import { noun } from '../data/lexicon.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -57,6 +67,7 @@ import { waHref } from '../data/whatsapp.js';
 
 import ServiceSwitch from './ServiceSwitch.astro';
 import Note from './Note.astro';
+import '../styles/stijl22.css';
 const { lang = 'en' } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p) => localizedPath(lang, p);
@@ -73,6 +84,23 @@ const JAAR_PRIJZEN = Object.fromEntries(
   Object.keys(PLAN_AMOUNT).map((id) => [id, monthlyCents(id, 'yearly') / 100])
 );
 const planList = plans(lang, { jaarRollover: TERMS.yearly.rollover, jaarPrijzen: JAAR_PRIJZEN });
+
+/* De maand op maat — zie de noot bij de import. Het bedrag is wat een maand met
+   het MINIMUM aantal producten kost, dus "vanaf". */
+const maatNaam = planName('maat', lang);
+const maatVanaf = euro(customMonthTotal({ products: CUSTOM_MONTH_MIN_PRODUCTS }).total, lang);
+const maat = nl ? {
+  /* Dezelfde formulering als PlanBand op de homepage: "Of jouw maand op maat". */
+  h: `Of jouw ${maatNaam.toLowerCase()}`,
+  body: `Past geen van de drie? Stel je maand zelf samen: jij kiest hoeveel catalogsets, carrousels en clips erin zitten, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten en tot ${CUSTOM_MONTH_MAX_PRODUCTS}. Dezelfde afspraken als hierboven — maandelijks opzegbaar, ongebruikte plekken schuiven een maand door.`,
+  prijs: `Vanaf ${maatVanaf} per maand`,
+  cta: 'Stel je maand samen',
+} : {
+  h: `Or your ${maatNaam.toLowerCase()}`,
+  body: `None of the three fitting? Build the month yourself: you decide how many catalog sets, carousels and clips are in it, from ${CUSTOM_MONTH_MIN_PRODUCTS} products up to ${CUSTOM_MONTH_MAX_PRODUCTS}. Same terms as above — cancel monthly, unused slots roll over one month.`,
+  prijs: `From ${maatVanaf} a month`,
+  cta: 'Build your month',
+};
 
 /* De twee concepten die nog niet te bestellen zijn. Verhuisd van de homepage op
    30 augustus 2026 — zie de kop van src/data/binnenkort.js voor waarom ze hier
@@ -207,403 +235,309 @@ const COPY = {
 const c = COPY[nl ? 'nl' : 'en'];
 ---
 
-<section class="page-hero"><div class="container">
-  <span class="eyebrow-page">{c.eyebrow}</span>
-  <h1 class="display">{c.h1a}<em>{c.h1b}</em>{c.h1c}</h1>
-  <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-</div></section>
+{/* ═══ /plans IN DE STIJL VAN SECTIE 22 — 7 september 2026 ══════════════════
+    Elfde pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in beide
+    talen, dezelfde drie abonnementen uit plans.js met hun jaartermijn, dezelfde
+    maand op maat, dezelfde <Note> en <Placeholder>, dezelfde binnenkort-lijst
+    met het anker #binnenkort waar het menu naar wijst.
 
-{/* ── HET PANEEL ─────────────────────────────────────────────────────────────
-    Hetzelfde blok als op de homepage, uit global.css. Hier draagt het de
-    propositie plus het instapbedrag; de drie plannen staan eronder op de
-    paginagrond, zodat het paneel de UITLEG is en de kaarten de KEUZE. Zet je ze
-    allebei in het paneel, dan is het weer één lange band met twee onderwerpen —
-    precies waar deze pagina voor is opgesplitst. */}
-<section class="section-tight"><div class="container">
-  <div class="lime-panel">
-    <div class="lime-panel-light" aria-hidden="true"></div>
-    {/* ── `.on-bright` IS ERAF — 21 augustus 2026 ─────────────────────────
-        En dit was geen schoonheidsfoutje. `.on-bright` is de scope die zegt
-        "de grond onder mij is HELDER, draai de hele inktladder om naar
-        bijna-zwart". Dat klopte zolang dit paneel een vlak van #C6F100 was.
+    ── HET LIMEPANEEL IS EEN DONKERE KAMER GEWORDEN ─────────────────────────
 
-        Op 20 augustus werd de grond een donkere foto met een limoen bundel.
-        In HomeV2.astro is `.on-bright` toen weggehaald — met een noot erbij
-        dat half omdraaien hier het gevaar is — maar deze pagina gebruikt
-        hetzelfde blok en is vergeten. Sindsdien stond het hele
-        abonnementspaneel op /plans en /nl/plans in bijna-zwarte letters op een
-        bijna-zwarte foto.
+    En dat lost meteen de fout op die Lucas op 7 september aanwees met een
+    schermafdruk van deze pagina: *"Wel even altijd goed controleren op
+    leesbaarheid. Hier gaat dat bijvoorbeeld fout."*
 
-        Gemeten op 21 augustus: vijftien tekstregels op 1,0 tot 1,04 : 1, waar
-        4,5 de eis is. Dat is niet moeilijk leesbaar maar ONZICHTBAAR — de kop
-        "What a plan actually is." was op een schermafdruk alleen te vinden door
-        te weten waar hij stond.
+    Wat daar mis ging staat in de noot die hier stond, en het was geen
+    schoonheidsfoutje: `.lime-panel` kreeg op 20 augustus een DONKERE foto als
+    grond terwijl `.on-bright` — de scope die zegt "de grond is helder, draai de
+    inktladder om" — er op de homepage wél af ging en hier niet. Vijftien
+    tekstregels op 1,0 tot 1,04 : 1, waar 4,5 de eis is. Niet moeilijk leesbaar
+    maar ONZICHTBAAR.
 
-        Gevonden door de leesbaarheidsmeting die de pagina twee keer afdrukt,
-        één keer met alle tekstkleuren op doorzichtig, en de twee vergelijkt.
-        Geen enkele controle die naar de STYLESHEET kijkt kon dit zien: daar
-        stond keurig een kleur, alleen de grond eronder was een foto. */}
-    <div class="lime-panel-in">
-      <div class="pl-top">
-        <div>
-          <h2 class="pl-h">{c.panelH[0]} <em class="pl-em">{c.panelH[1]}</em></h2>
-          <p class="pl-lede">{c.panelLede}</p>
-          <ul class="pl-facts">
-            {c.facts.map((f) => (
-              <li>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5" /></svg>
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-          {/* ── DE ZIJDEUR STOND OP EEN EIGEN RASTERRIJ — 31 AUGUSTUS 2026 ──
-              Hij hing als DERDE kind in een raster van twee kolommen, dus hij
-              viel naar rij 2 — en rij 1 is zo hoog als de limoenplaat ernaast.
-              Gemeten gaf dat 110px leegte tussen de drie vinkjes en deze regel,
-              midden in het paneel dat de propositie draagt.
+    De reparatie was toen het paneel in de inversielijst zetten. Nu is het een
+    `.kamer`: één grond, één kleurenset, geen foto eronder en dus niets meer om
+    half om te draaien. Het paneel dat de propositie draagt is daarmee ook de
+    hoofdstukwissel van de pagina, en dat klopt — hier gaat het van "wat is dit"
+    naar "welke neem ik". */}
+<div class="s22">
 
-              Hij hoort ook inhoudelijk hier: het is de laatste regel van de
-              linkerkolom, niet een derde blok. Buiten de limoen plaat blijft
-              hij, want daarbinnen zou een rij grijze links de plaat rommelig
-              maken — dat deel van de oude noot klopt nog. */}
-          <ServiceSwitch current={['plan', 'complete']} lang={lang} class="pl-svcsw" />
-        </div>
+  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
+  <section class="paneel" aria-labelledby="pl-h1">
+    <header class="paneel-kop pl-kop">
+      <p class="etiket">{c.eyebrow}</p>
+      <h1 id="pl-h1" class="hoog">{c.h1a}<em>{c.h1b}</em>{c.h1c}</h1>
+      <p class="lopend">{c.lead}</p>
+    </header>
+  </section>
 
-        <div class="lime-plate plaat-vol">
-          {/* Dezelfde vorm als op de homepage en op /pricing, sinds 30 augustus
-              2026 één keer gedefinieerd in global.css onder `.bedrag-*`. De maat
-              wijkt hier bewust af — dit bedrag staat alleen in zijn kolom, niet
-              naast een tweede — en dat staat als variabele op het blok in plaats
-              van als eigen klasse. */}
-          <div class="bedrag pl-bedrag">
-            <span class="bedrag-label">{c.from}</span>
-            <span class="bedrag-cijfer">{euro(FROM_AMOUNT, lang)}</span>
-            <span class="bedrag-eenheid">{c.unit}</span>
-            <span class="bedrag-btw">{vatLabel('excl', lang)}</span>
-          </div>
-          <div class="pl-cta">
-            <a class="btn btn-primary" href={lp('/start/plan')}>{c.cta}</a>
-            <a class="btn btn-ghost" href={lp('/pricing')}>{c.cta2}</a>
-          </div>
-        </div>
+  {/* ── 2 · WAT EEN ABONNEMENT IS ──────────────────────────────────────────
+      De uitleg en het instapbedrag; de drie kaarten staan eronder in het licht.
+      Zo is de kamer de UITLEG en zijn de kaarten de KEUZE — zet je ze allebei
+      hier, dan is het weer één lange band met twee onderwerpen. */}
+  <section class="kamer pl-kamer" aria-labelledby="pl-wat">
+    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
+    {/* ── DE PLAAT STAAT EERST IN DE BRON — 7 september 2026 ────────────────
+        Gemeten op 390px: de eerste prijs stond op 1050px en de eerste knop op
+        1128px, van een pagina van 9622px. Iemand die op de abonnementenpagina
+        komt, komt voor het bedrag — en kreeg eerst 137 woorden.
+
+        De plaat staat daarom vóór de uitleg in de HTML, en de twee kolommen
+        hieronder worden op breed EXPLICIET geplaatst zodat de uitleg links
+        blijft en de plaat rechts. Niet met `order`: dat laat de leesvolgorde
+        (bron) en de kijkvolgorde (scherm) uit elkaar lopen, en op smal — waar
+        het probleem zat — lopen ze dan juist verkeerd om. Zo klopt het op
+        allebei: op smal is de bron de volgorde, op breed staan ze naast
+        elkaar en is "bedrag, dan uitleg" een geldige leesvolgorde. */}
+    <div class="pl-top">
+      <div class="pl-plaat">
+        <p class="pl-bedrag">
+          <span class="mono">{c.from}</span>
+          <span class="tarief pl-groot">{euro(FROM_AMOUNT, lang)}</span>
+          <span class="mono">{c.unit}, {vatLabel('excl', lang)}</span>
+        </p>
+        <p class="acties">
+          <a class="knop knop-wit" href={lp('/start/plan')}>{c.cta}</a>
+          <a class="knop pl-knop-lijn" href={lp('/pricing')}>{c.cta2}</a>
+        </p>
       </div>
 
-      {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
-      <div class="pl-credit">
-        <p class="pl-credit-h">{c.creditH}</p>
-        <p class="pl-credit-b">{c.creditBody} <Note lang={lang} term={c.creditNoteTerm}>{c.creditNote}</Note></p>
-        <p class="pl-credit-b">{c.cycleBody}</p>
-        <p class="pl-credit-ask">
-          <span>{c.creditAsk}</span>
-          <a class="pl-credit-a" href={waHref(c.creditWa)} target="_blank" rel="noopener">{c.creditAskCta}<span class="pl-nb">&#160;<svg viewBox="0 0 24 24" class="i" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
+      <div class="pl-uitleg">
+        <h2 id="pl-wat" class="hoog hoog-2">{c.panelH[0]} <em>{c.panelH[1]}</em></h2>
+        <p class="lopend">{c.panelLede}</p>
+        <ul class="pl-vink" role="list">
+          {c.facts.map((f) => <li>{f}</li>)}
+        </ul>
+        <ServiceSwitch current={['plan', 'complete']} lang={lang} class="pl-svcsw" />
+      </div>
+    </div>
+
+    {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
+    <div class="pl-credit">
+      <p class="etiket">{c.creditH}</p>
+      <p class="lopend">{c.creditBody} <Note lang={lang} term={c.creditNoteTerm}>{c.creditNote}</Note></p>
+      <p class="lopend">{c.cycleBody}</p>
+      <p class="lopend pl-credit-vraag">
+        {c.creditAsk} <a class="pijl pl-credit-a" href={waHref(c.creditWa)} target="_blank" rel="noopener">{c.creditAskCta}</a>
+      </p>
+    </div>
+  </section>
+
+  {/* ── 3 · DE DRIE ABONNEMENTEN ────────────────────────────────────────────
+      De knop draagt ?plan= mee: zonder die parameter opent /start/plan altijd
+      op Studio, en wie op de Merk-kaart klikte kwam op een machtiging voor het
+      verkeerde bedrag. */}
+  <section class="paneel" aria-labelledby="plans">
+    <header class="paneel-kop">
+      <h2 id="plans" class="hoog hoog-2">{c.plansH}</h2>
+      <p class="lopend">{c.plansSub}</p>
+    </header>
+
+    <ul class="pl-kaarten" role="list">
+      {planList.map((p) => (
+        <li class="pl-kaart">
+          {/* Hier stond `{c.eyebrow}` als etiket boven elke naam, en dat
+              was drie keer hetzelfde woord ("Abonnement") boven drie
+              abonnementen in een sectie die "De drie abonnementen" heet. Een
+              etiket dat op elke kaart hetzelfde zegt, zegt niets. */}
+          <h3 class="hoog hoog-3 pl-naam">{p.name}</h3>
+          <p class="lopend pl-regel">{p.line}</p>
+
+          <p class="pl-prijs">
+            <span class="tarief pl-groot">{p.price}</span>
+            <span class="mono">{p.unit}, {vatLabel('excl', lang)}</span>
+            {/* Alleen als hij AFWIJKT, en dat is bij precies één plan zo. Bij
+                Studio en Merk geeft de jaartermijn geen korting — zie
+                discountMonths in plans.js — en twee keer hetzelfde bedrag naast
+                elkaar laat de jaartermijn zinloos lijken terwijl hij dat niet
+                is. Wat hij daar wél geeft, staat onderaan de kaart. */}
+            {p.jaarPrijs && (
+              <span class="mono pl-jaar">{nl ? `of ${p.jaarPrijs} op de jaartermijn` : `or ${p.jaarPrijs} on the 12-month term`}</span>
+            )}
+          </p>
+
+          <ul class="pl-vink pl-vink-licht" role="list">
+            {p.includes.map((f) => <li>{f}</li>)}
+          </ul>
+
+          {p.saving && (
+            <p class="mono pl-besparing">{p.saving} ({vatLabel('excl', lang)})</p>
+          )}
+
+          <p class="pl-kaart-voet">
+            <a href={`${lp('/start/plan')}?plan=${p.id}`} class="knop knop-inkt">{c.plansCta}</a>
+          </p>
+        </li>
+      ))}
+    </ul>
+
+    {/* De vierde weg, en met opzet geen vierde kaart: hij heeft geen vaste
+        inhoud en dus geen lijstje om af te vinken. Een regel onder de drie zegt
+        wat hij is — de kaarten blijven de keuze, dit is de uitweg eronder. */}
+    <div class="pl-maat">
+      <div class="pl-maat-t">
+        <h3 class="hoog hoog-3">{maat.h}</h3>
+        <p class="lopend">{maat.body}</p>
+      </div>
+      <div class="pl-maat-a">
+        <p class="pl-bedrag">
+          <span class="tarief">{maat.prijs}</span>
+          <span class="mono">{vatLabel('excl', lang)}</span>
+        </p>
+        <p class="acties">
+          <a href={`${lp('/start/plan')}?plan=maat`} class="knop knop-inkt">{maat.cta}</a>
         </p>
       </div>
     </div>
-  </div>
-</div></section>
+  </section>
 
-{/* ── DE DRIE KAARTEN ────────────────────────────────────────────────────────
-    Dezelfde `.pack`-opmaak als de rest van de site gebruikt, zodat een kaart
-    hier hetzelfde leest als een kaart elders. De knop draagt ?plan= mee: zonder
-    dat parameter opent /start/plan altijd op Studio, en wie op de Merk-kaart
-    klikte kwam op een machtiging voor het verkeerde bedrag. */}
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2 id="plans">{c.plansH}</h2><p>{c.plansSub}</p></div>
-
-  <div class="packs plans-3 reveal-group">
-    {planList.map((p) => (
-      <div class="pack reveal pending">
-        <div class="pack-top"><h3 class="pack-name">{p.name}</h3></div>
-        <p class="pack-line">{p.line}</p>
-
-        <div class="pack-price">
-          <span class="pp-amount">{p.price}</span>
-          <span class="pp-unit">{p.unit}</span>
-          {/* Alleen als hij AFWIJKT, en dat is bij precies één plan zo. Bij Studio
-              en Merk geeft de jaartermijn geen korting — zie discountMonths in
-              plans.js — en twee keer hetzelfde bedrag naast elkaar laat de
-              jaartermijn zinloos lijken terwijl hij dat niet is. Wat hij daar wél
-              geeft, staat in de regel onderaan de kaart. */}
-          {p.jaarPrijs && (
-            <span class="pp-jaar">{nl ? `of ${p.jaarPrijs} op de jaartermijn` : `or ${p.jaarPrijs} on the 12-month term`}</span>
-          )}
-          <span class="pp-vat">{vatLabel('excl', lang)}</span>
-        </div>
-
-        <ul class="checklist pack-inc">
-          {p.includes.map((f) => (
-            <li><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
-          ))}
-        </ul>
-
-        {p.saving && (
-          <p class="pack-saving">{p.saving} <span class="pack-saving-vat">{`(${vatLabel('excl', lang)})`}</span></p>
-        )}
-
-        <a href={`${lp('/start/plan')}?plan=${p.id}`} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
-      </div>
-    ))}
-  </div>
-</div></section>
-
-{/* ── DE BEELDBANK ───────────────────────────────────────────────────────────
-    Wat er naast de bestellingen in de maand zit. Staat hier en niet in het
-    paneel, omdat het geen eigenschap van het abonnement is maar iets dat
-    ernaast wordt geleverd. */}
-<section class="section-tight"><div class="container">
-  <div class="pl-stock">
-    <div class="pl-stock-shot">
+  {/* ── 4 · WAT ER NAAST DE BESTELLINGEN IN DE MAAND ZIT ─────────────────────
+      Staat apart en niet in de kamer hierboven, omdat het geen eigenschap van
+      het abonnement is maar iets dat ernaast geleverd wordt. */}
+  <section class="paneel" aria-labelledby="pl-bank">
+    <div class="pl-bank">
       <Placeholder
         lang={lang}
         ratio="4 / 3"
+        caption={false}
         subject={c.stockShot}
         message={c.stockShotMsg}
       />
-    </div>
-    <div>
-      <h2 class="pl-stock-h">{c.stockH}</h2>
-      <div class="pl-stock-item">
-        <p class="pl-stock-n">{c.stockNow[0]} <em class="pl-soon">{c.stockNowTag}</em></p>
-        <p class="pl-stock-b">{c.stockNow[1]}</p>
+      <div class="pl-bank-t">
+        <h2 id="pl-bank" class="hoog hoog-2">{c.stockH}</h2>
+        <div class="pl-bank-item">
+          <p class="pl-bank-n">{c.stockNow[0]} <span class="mono pl-tag">{c.stockNowTag}</span></p>
+          <p class="lopend">{c.stockNow[1]}</p>
+        </div>
+        <div class="pl-bank-item is-later">
+          <p class="pl-bank-n">{c.stockSoon[0]} <span class="mono pl-tag">{c.stockSoonTag}</span></p>
+          <p class="lopend">{c.stockSoon[1]}</p>
+        </div>
       </div>
-      <div class="pl-stock-item is-soon">
-        <p class="pl-stock-n">{c.stockSoon[0]} <em class="pl-soon">{c.stockSoonTag}</em></p>
-        <p class="pl-stock-b">{c.stockSoon[1]}</p>
-      </div>
     </div>
-  </div>
-</div></section>
+  </section>
 
-{/* ── HOOKS EN EDITIONS ──────────────────────────────────────────────────────
-    Verhuisd van de homepage op 30 augustus 2026. Daar was dit ruim 450 woorden
-    — bijna een vijfde van de hele pagina — over twee dingen die er zelf bij
-    zeggen dat je ze nog niet kunt bestellen.
+  {/* ── 5 · HOOKS EN EDITIONS ───────────────────────────────────────────────
+      HET ANKER IS EEN AFSPRAAK. In src/i18n/ui.js staan Hooks en Editions bij
+      de diensten in het menu en die twee wijzen hierheen; verandert
+      `#binnenkort`, dan verandert daar de href mee — tests/binnenkort.test.mjs
+      legt de twee naast elkaar.
 
-    HET ANKER IS EEN AFSPRAAK. In src/i18n/ui.js staan Hooks en Editions bij de
-    diensten in het menu, en die twee wijzen sinds vandaag hierheen. Verandert
-    `#binnenkort`, dan verandert daar de href mee — tests/binnenkort.test.mjs
-    legt de twee naast elkaar.
+      Uitgeklapt en niet dichtgeklapt: wie doorklikt naar /plans#binnenkort
+      heeft de vraag al gesteld, en die dan nog een keer laten klikken is een
+      deur voor een deur. */}
+  <section class="paneel" id="binnenkort" aria-labelledby="pl-soon">
+    <header class="paneel-kop">
+      <h2 id="pl-soon" class="hoog hoog-2">{c.soonH}</h2>
+      <p class="lopend">{c.soonLede}</p>
+    </header>
+    <ul class="pl-soon-lijst" role="list">
+      {binnenkort(lang).map((b) => (
+        <li id={b.id}>
+          <p class="pl-soon-n">{b.name} <span class="mono pl-tag">{c.soonTag}</span></p>
+          <p class="lopend">{b.desc}</p>
+          <dl class="pl-soon-dl">
+            {b.qBody.map(([kop, tekst]) => (<Fragment><dt class="mono">{kop}</dt><dd class="lopend">{tekst}</dd></Fragment>))}
+          </dl>
+        </li>
+      ))}
+    </ul>
+    <p class="lopend pl-soon-voet">{c.soonFoot}</p>
+  </section>
 
-    UITGEKLAPT EN NIET DICHTGEKLAPT, anders dan op de homepage. Daar was de
-    uitklapper er om ruimte te sparen op een pagina waar iemand nog aan het
-    kijken is wát je maakt. Hier is dat de reden om te komen: wie doorklikt naar
-    /plans#binnenkort heeft de vraag al gesteld, en die dan nog een keer laten
-    klikken is een deur voor een deur. */}
-<section class="section-tight" id="binnenkort"><div class="container">
-  <div class="section-head">
-    <h2>{c.soonH}</h2>
-    <p>{c.soonLede}</p>
-  </div>
-  <div class="pl-soon-grid">
-    {binnenkort(lang).map((b) => (
-      <article class="pl-soon-card" id={b.id}>
-        <p class="pl-soon-n">{b.name} <em class="pl-soon">{c.soonTag}</em></p>
-        <p class="pl-soon-d">{b.desc}</p>
-        <dl class="pl-soon-dl">
-          {b.qBody.map(([kop, tekst]) => (<Fragment><dt>{kop}</dt><dd>{tekst}</dd></Fragment>))}
-        </dl>
-      </article>
-    ))}
-  </div>
-  <p class="pl-soon-foot">{c.soonFoot}</p>
-</div></section>
+  {/* ── 6 · DE UITGANG ───────────────────────────────────────────────────────
+      Eén regel naar de prijslijst, en dat is de hele verbinding tussen de twee
+      pagina's. Wie hier is en géén abonnement wil, hoort niet doodlopend te
+      eindigen — en wie de staffel zoekt, hoort hem niet op deze pagina te
+      vinden. */}
+  <section class="paneel pl-uit" aria-labelledby="pl-out">
+    <h2 id="pl-out" class="hoog hoog-3">{c.outH}</h2>
+    <p class="lopend">{c.outBody}</p>
+    <p class="acties"><a class="pijl" href={lp('/pricing')}>{c.outCta}</a></p>
+  </section>
 
-{/* ── DE UITGANG ─────────────────────────────────────────────────────────────
-    Eén regel naar de prijslijst, en dat is de hele verbinding tussen de twee
-    pagina's. Wie hier is en géén abonnement wil, hoort niet doodlopend te
-    eindigen — en wie de staffel zoekt, hoort hem niet op deze pagina te vinden. */}
-<section class="section-tight"><div class="container narrow">
-  <div class="pl-out">
-    <h2 class="pl-out-h">{c.outH}</h2>
-    <p class="pl-out-b">{c.outBody}</p>
-    <a class="link-arrow" href={lp('/pricing')}>{c.outCta}
-      <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-    </a>
-  </div>
-</div></section>
-
-<section class="section-tight"><div class="container">
-  <div class="cta-band reveal pending">
-    <h2 class="display" style="font-size:var(--t-page-h2)">{c.ctaH}<br /><em>{c.ctaEm}</em></h2>
-    <p style="margin-top:1rem;color:var(--ink-3);max-width:52ch;margin-inline:auto">{c.ctaBody}</p>
-    <div class="flex" style="justify-content:center;margin-top:2rem">
-      <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.ctaSample}</a>
-      <a href={lp('/start/plan')} class="btn btn-ghost btn-lg">{c.ctaPlan}</a>
-    </div>
-  </div>
-</div></section>
+  {/* ── 7 · HET SLOT ─────────────────────────────────────────────────────── */}
+  <section class="paneel paneel-slot" aria-labelledby="pl-slot">
+    <h2 id="pl-slot" class="hoog">{c.ctaH}<br /><em>{c.ctaEm}</em></h2>
+    <p class="lopend">{c.ctaBody}</p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
+      <a class="knop knop-lijn" href={lp('/start/plan')}>{c.ctaPlan}</a>
+    </p>
+  </section>
+</div>
 
 <style>
-  .pl-svcsw { margin-top: 1.4rem; }
-  /* De opmaak binnen het paneel. De paneelvorm zelf, het licht, de korrel en de
-     donkere plaat staan in global.css onder `.lime-panel` — zie de noot daar.
-     Wat hier staat is alleen wat deze pagina in dat blok zet. */
-  .pl-top { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.6rem, 3.2vw, 3rem); align-items: start; }
-  @media (max-width: 60rem) { .pl-top { grid-template-columns: 1fr; } }
+  .pl-kop { max-width: 46rem; margin-bottom: 0; }
 
-  /* ── DRIE KOPMATEN WERDEN ÉÉN — 31 AUGUSTUS 2026 ─────────────────────────
-     Lucas: *"Ook is de abonnement pagina wat onoverzichtelijk."* Gemeten op
-     1440px stonden er vijf verschillende kopmaten op deze pagina:
+  .pl-top { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  /* Expliciet geplaatst, want in de bron staat de plaat eerst — zie de noot in
+     de opmaak. Zonder deze twee regels zou de plaat in de linkerkolom landen. */
+  .pl-uitleg { grid-column: 1; grid-row: 1; display: grid; gap: 1.1rem; justify-items: start; }
+  .pl-plaat { grid-column: 2; grid-row: 1; }
+  .pl-vink { display: grid; gap: .7rem; }
+  .pl-vink li { position: relative; padding-left: 1.5rem; color: rgb(245 245 245 / .78); }
+  .pl-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--geel); }
+  /* De lichte variant, voor de drie kaarten in een paneel. */
+  .pl-vink-licht li { color: var(--inkt-2); }
+  .pl-vink-licht li::before { color: var(--gloed, #9EB42F); }
 
-       64,0px  <h1>                          de paginakop
-       57,6px  .pl-h  "What a plan actually is."
-       52,8px  <h2>   "The three plans" / "And two things…"
-       23,2px  .pl-stock-h  "And a month that is already filled."
-       23,2px  .pl-out-h    "Not every month, then."
-       57,6px  .cta-band h2
+  .pl-plaat { display: grid; gap: 1.4rem; justify-items: start; padding: clamp(1.5rem, 3.5vw, 2.4rem); border: 1px solid rgb(245 245 245 / .22); border-radius: calc(var(--ronding) - 8px); }
+  .pl-bedrag { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+  .pl-groot { font-size: clamp(2rem, 4.5vw, 3.2rem); line-height: .95; }
+  .pl-plaat .mono { color: rgb(245 245 245 / .66); }
+  /* Een lijnknop op inkt: `.knop-lijn` zet inkt op inkt, want die is voor de
+     lichte panelen gemaakt. Hier is de lijn en de letter het vel. */
+  .pl-knop-lijn { color: var(--vel); }
+  .pl-knop-lijn:hover { background: var(--vel); color: var(--inkt); }
 
-     Die 23,2px is `--t-h3` — kleiner dan een tussenkop en maar vier pixels
-     boven de lede eronder. Twee sectiekoppen die niet als sectiekop lezen, en
-     dan wéét je niet meer waar een sectie begint. Dat is precies wat
-     "onoverzichtelijk" is.
+  .pl-credit { display: grid; gap: .7rem; max-width: 46rem; margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid rgb(245 245 245 / .22); }
+  .pl-credit .lopend { font-size: .92rem; }
+  .pl-credit-vraag { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+  .pl-credit-a { color: var(--geel-letter); }
 
-     De dienstpagina's houden één regel aan, gemeten op /catalog: elke
-     sectiekop is `--t-h2` (52,8px) en alleen de afsluitende band is
-     `--t-page-h2` (57,6px). /plans volgt die regel nu ook — inclusief `.pl-h`,
-     dat op 57,6px stond terwijl het een sectiekop is en geen afsluiter. */
-  .pl-h { margin: 0; font-size: var(--t-h2); }
-  .pl-em { font-style: normal; color: var(--accent-word); }
-  .pl-lede { margin: .7rem 0 0; font-size: 1.02rem; line-height: 1.6; color: var(--ink-2); max-width: 56ch; }
-  .pl-facts { list-style: none; margin: clamp(1.1rem, 2.2vw, 1.6rem) 0 0; padding: 0; display: grid; gap: .6rem; }
-  .pl-facts li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
-  .pl-facts svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--accent); stroke-width: 2; }
+  /* De drie abonnementen. Geen kaartjes met een schaduw maar drie kolommen met
+     een lijn erboven: het zijn drie versies van één ding, en een rand eromheen
+     maakt er drie losse dingen van. */
+  .pl-kaarten { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.2rem, 3vw, 2.5rem); }
+  .pl-kaart { display: flex; flex-direction: column; gap: .6rem; padding-top: 1.2rem; border-top: 2px solid var(--inkt); }
+  .pl-naam { margin-bottom: .2rem; }
+  .pl-regel { font-size: .92rem; }
+  .pl-prijs { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .5rem; margin: .6rem 0 .4rem; }
+  .pl-prijs .mono { color: var(--inkt-2); }
+  .pl-jaar { flex-basis: 100%; }
+  .pl-besparing { color: var(--inkt-2); }
+  /* De knop zakt naar de onderrand, zodat de drie op één lijn staan ook als de
+     ene lijst langer is dan de andere. */
+  .pl-kaart-voet { margin-top: auto; padding-top: 1.4rem; }
 
-  /* Vier eigen regels stonden hier; ze zijn opgegaan in `.bedrag-*` in
-     global.css. Alleen de maat blijft van deze pagina. */
-  .pl-bedrag { --bedrag-maat: clamp(2.6rem, 6vw, 3.8rem); }
-  .pl-cta { margin-top: clamp(1.4rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .7rem; }
+  .pl-maat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: clamp(1.4rem, 4vw, 3rem); align-items: center; margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
+  .pl-maat-t { display: grid; gap: .6rem; }
+  .pl-maat-a { display: grid; gap: 1rem; justify-items: start; }
+  .pl-maat-a .mono { color: var(--inkt-2); }
 
-  /* ── DE ZIJSTREEP IS EEN BOVENLIJN GEWORDEN — 31 AUGUSTUS 2026 ───────────
-     Hier stond `border-left: 2px solid var(--accent)`: een limoenkleurige
-     streep langs de linkerkant van dit blok, in een paneel dat zelf al een
-     limoenkleurige plaat en een limoenkleurige lichtveeg draagt. Drie keer
-     dezelfde kleur in één paneel, waarvan één als versiering langs een rand —
-     en dan markeert de kleur niets meer, wat precies is wat DESIGN.md ervan
-     zegt.
+  .pl-bank { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .pl-bank-t { display: grid; gap: 1.4rem; }
+  .pl-bank-item { display: grid; gap: .4rem; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .pl-bank-n { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+  .pl-bank-item.is-later .lopend { color: var(--inkt-3, #6E6E6E); }
+  .pl-tag { color: var(--inkt); background: var(--geel); border-radius: 999px; padding: .25rem .6rem; }
 
-     Wat dit blok IS, is een correctie op het getal erboven. De site heeft daar
-     al een vorm voor: een haarlijn erboven en wat lucht, zoals `.bmcost-seq`
-     op /custom-models en `.rungs-note` op /catalog. Dezelfde vorm dus, en de
-     kleur blijft waar hij hoort — op de plaat met het bedrag. */
-  .pl-credit {
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    padding-top: clamp(1rem, 2vw, 1.4rem);
-    border-top: 1px solid var(--line);
-    max-width: 80ch;
+  .pl-soon-lijst { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.4rem, 3.5vw, 3rem); }
+  .pl-soon-lijst li { display: grid; gap: .6rem; align-content: start; padding-top: 1.2rem; border-top: 1px solid var(--lijn); }
+  .pl-soon-n { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.15rem, 2vw, 1.5rem); text-transform: uppercase; letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+  .pl-soon-dl { display: grid; gap: .5rem; margin-top: .4rem; }
+  .pl-soon-dl dt { color: var(--inkt-2); }
+  .pl-soon-dl dd { margin: 0; font-size: .92rem; }
+  .pl-soon-voet { margin-top: clamp(1.6rem, 3vw, 2.4rem); font-size: .92rem; }
+
+  .pl-uit { display: grid; gap: .8rem; justify-items: start; }
+
+  @media (max-width: 900px) {
+    .pl-top, .pl-bank, .pl-maat, .pl-soon-lijst { grid-template-columns: 1fr; }
+    /* Eén kolom: de plaatsing hierboven losgelaten, zodat de bronvolgorde de
+       volgorde op het scherm is — eerst het bedrag, dan de uitleg. */
+    .pl-uitleg, .pl-plaat { grid-column: auto; grid-row: auto; }
+    .pl-kaarten { grid-template-columns: 1fr; }
+    .pl-maat, .pl-bank { align-items: start; }
   }
-  .pl-credit-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
-  .pl-credit-b { margin: .5rem 0 0; font-size: .95rem; line-height: 1.65; color: var(--ink-2); }
-  .pl-credit-ask { margin: .9rem 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; font-size: .9rem; color: var(--ink-3); }
-  .pl-credit-a { display: inline; font-weight: 700; color: var(--accent-bright); }
-  /* `display: inline-block` op het pijltje, want de reset in global.css zet
-     `img, svg, video { display: block }` en een blokdoos in een regel tekst
-     dwingt altijd zijn eigen regel af. Zelfde reparatie als op de homepage. */
-  .pl-nb { white-space: nowrap; }
-  .pl-credit-a .i { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-
-  /* ── DE DRIE KAARTEN ──────────────────────────────────────────────────────
-     Meeverhuisd van PricingPage.astro toen de plannen deze eigen pagina kregen.
-     Eén frame met scheidingslijnen en geen losse kaarten met schaduw: het
-     middelste plan wordt niet aanbevolen door een rand, en het enige op deze
-     pagina dat mag zeggen welk plan voordeliger is, is de bespaarregel — en dat
-     is een aftreksom. */
-  /* ── The plans ───────────────────────────────────────────────────────────
-     Same frame, same dividing rules, same type as the packages this replaced.
-     No shadow, no "most popular" ring: the middle plan is not recommended by a
-     border, and the only thing on this page allowed to say a plan is the
-     better buy is the saving line, which is a subtraction. */
-  .packs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--line-strong);
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-  }
-  .plans-3 { grid-template-columns: repeat(3, 1fr); }
-  .pack {
-    display: flex;
-    flex-direction: column;
-    padding: clamp(1.6rem, 3vw, 2.6rem);
-  }
-  .pack + .pack { border-left: 1px solid var(--line-strong); }
-
-  .pack-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-  .pack-name { font-size: var(--t-h3); line-height: 1.2; }
-  .pack-line {
-    margin-top: .7rem;
-    color: var(--ink-3);
-    font-size: .95rem;
-    line-height: 1.6;
-    max-width: 38ch;
-    min-height: 4.8em;   /* keeps all three price blocks on the same line */
-  }
-
-  .pack-price { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-  /* Op zijn eigen regel: naast het maandbedrag zou het als één prijs lezen. */
-  .pp-jaar { flex: 1 0 100%; font-size: .82rem; color: var(--ink-3); }
-  .pp-amount {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(2rem, 3.4vw, 2.7rem);
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-  .pp-unit { font-size: .88rem; color: var(--ink-3); }
-
-  .pack-inc { margin-top: 1.4rem; font-size: .93rem; }
-  /* The saving sits BELOW what the plan contains, not above it. Above the
-     list it would be the card's headline, which turns a subtraction into a
-     sales line; below it, it is the last thing read and it is still a fact. */
-  .pack-saving {
-    margin-top: 1.2rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-    font-size: .9rem;
-    line-height: 1.55;
-    color: var(--ink-2);
-  }
-  .pack-saving-vat { color: var(--ink-3); }
-  .pack-cta { margin-top: 1.8rem; }
-
-  /* Op smal vallen ze onder elkaar en verdwijnt de scheiding naar boven, want
-     een linkerrand tussen twee blokken die onder elkaar staan is een streep in
-     het niets. `min-height` op de regel gaat er ook af: die stond er alleen om
-     drie prijsblokken op één lijn te houden, en dat probleem bestaat niet meer
-     zodra ze onder elkaar staan. */
-  @media (max-width: 62rem) {
-    .plans-3 { grid-template-columns: 1fr; }
-    .plans-3 .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
-    .plans-3 .pack-line { min-height: 0; }
-  }
-  @media (max-width: 40rem) {
-    .pack-top { flex-direction: column; align-items: flex-start; gap: .6rem; }
-  }
-
-  .pl-stock { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.6rem, 3.5vw, 3rem); align-items: center; }
-  @media (max-width: 60rem) { .pl-stock { grid-template-columns: 1fr; } }
-  .pl-stock-shot { width: min(100%, 26rem); }
-  .pl-stock-h { margin: 0 0 clamp(1.4rem, 2.6vw, 2rem); font-size: var(--t-h2); }
-  .pl-stock-item + .pl-stock-item { margin-top: clamp(.9rem, 1.8vw, 1.3rem); padding-top: clamp(.9rem, 1.8vw, 1.3rem); box-shadow: inset 0 1px 0 var(--line); }
-  .pl-stock-n { margin: 0; font-size: 1.02rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
-  .pl-stock-b { margin: .4rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
-  .pl-soon { font-style: normal; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: .18rem .55rem; }
-  .pl-stock-item.is-soon .pl-stock-n { color: var(--ink-2); }
-
-  /* De twee concepten. Naast elkaar zodra er ruimte is, want het zijn twee
-     dingen van gelijk gewicht en onder elkaar leest de tweede als een voetnoot
-     bij de eerste. De <dl> is de juiste lijst: elk paar is een term en wat hij
-     betekent, en dat is letterlijk wat een definitielijst is. */
-  .pl-soon-grid { display: grid; gap: clamp(1.4rem, 3vw, 2.4rem); grid-template-columns: 1fr; margin-top: clamp(1.4rem, 3vw, 2.2rem); }
-  @media (min-width: 62rem) { .pl-soon-grid { grid-template-columns: 1fr 1fr; } }
-  .pl-soon-card { padding-top: clamp(1rem, 2vw, 1.4rem); box-shadow: inset 0 1px 0 var(--line); }
-  .pl-soon-n { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
-  .pl-soon-d { margin: .5rem 0 0; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 56ch; }
-  .pl-soon-dl { margin: clamp(1rem, 2vw, 1.4rem) 0 0; }
-  .pl-soon-dl dt { font-size: .88rem; font-weight: 700; color: var(--ink); margin-top: 1rem; }
-  .pl-soon-dl dt:first-child { margin-top: 0; }
-  .pl-soon-dl dd { margin: .3rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
-  .pl-soon-foot { margin: clamp(1.4rem, 3vw, 2rem) 0 0; font-size: .85rem; color: var(--ink-3); max-width: 62ch; }
-
-  .pl-out { padding: clamp(1.3rem, 2.4vw, 1.9rem); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 34px -26px rgb(0 0 0 / 0.5); }
-  .pl-out-h { margin: 0 0 clamp(1rem, 2vw, 1.4rem); font-size: var(--t-h2); }
-  .pl-out-b { margin: .5rem 0 1rem; font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: 60ch; }
 </style>

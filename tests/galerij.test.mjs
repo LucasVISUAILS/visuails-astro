@@ -39,8 +39,27 @@ function ok(naam, kreeg, verwacht = true) {
 }
 
 const lees = (p) => readFileSync(path.join(ROOT, p), 'utf8');
-const EN = lees('src/pages/gallery.astro');
-const NL = lees('src/pages/nl/gallery.astro');
+
+/* ── ÉÉN BRON, EN DAT IS DE HELE REPARATIE — 7 september 2026 ────────────────
+ *
+ * Deze toets las twee pagina's en legde ze naast elkaar, want de galerij bestond
+ * twee keer: /gallery en /nl/gallery, elk met hun eigen fotolijst. De kop
+ * hierboven zegt waarom dat nodig was ("EN DE TWEEDE TAAL LOOPT ACHTER,
+ * ALTIJD"), en dat klopte tot vandaag — de Engelse kant had `srcset` en `sizes`
+ * en de Nederlandse niet, vier weken lang.
+ *
+ * Er is nu één GalleryPage.astro met een `lang`, zoals elke andere herbouwde
+ * pagina in dit project. Daarmee is "lopen de twee talen uit de pas" geen vraag
+ * meer die je kunt stellen: er is niets om uit de pas te lopen.
+ *
+ * WAT DEZE TOETS DAAROM DOET. Hij leest die ene bron, en hij toetst er twee
+ * dingen bij die de vorige versie niet kon toetsen: dat beide paginabestanden
+ * echt die component gebruiken (anders is er stilletjes weer een tweede kopie),
+ * en dat de alt-teksten — het ENIGE dat per taal hoort te verschillen — ook
+ * echt per taal geschreven zijn en niet één keer in het Engels. */
+const BRON = lees('src/components/GalleryPage.astro');
+const PAGINA_EN = lees('src/pages/gallery.astro');
+const PAGINA_NL = lees('src/pages/nl/gallery.astro');
 
 /* De lijsten uit de frontmatter halen. Bewust met een regex op de LITERALEN en
    niet door het bestand uit te voeren: een .astro-bestand is geen module die je
@@ -53,18 +72,25 @@ const NL = lees('src/pages/nl/gallery.astro');
 const losseUit = (bron) => [...bron.matchAll(/src: '\/img\/([a-z0-9-]+)\.webp'/g)].map((m) => m[1]);
 const srcsUit = (bron) => [...bron.matchAll(/src: [`']\/img\//g)].map(() => 1);
 const tagsUit = (bron) => [...bron.matchAll(/tag: '([a-z-]+)'/g)].map((m) => m[1]);
-const filtersUit = (bron) => [...bron.matchAll(/\{ key: '([a-z-]+)', label: '([^']+)' \}/g)].map((m) => m[1]);
+/* De sleutel, niet het label: sinds de galerij één bron heeft, staat het label
+   er als `nl ? 'Alles' : 'All'` en is het geen enkele letterlijke tekst meer. */
+const filtersUit = (bron) => [...bron.matchAll(/\{ key: '([a-z-]+)', label:/g)].map((m) => m[1]);
 
-console.log('de twee talen tonen dezelfde bibliotheek');
+console.log('de twee talen delen één bron');
 {
-  ok('evenveel foto-regels', srcsUit(EN).length, srcsUit(NL).length);
-  ok('dezelfde soorten', [...new Set(tagsUit(EN))].sort(), [...new Set(tagsUit(NL))].sort());
-  ok('dezelfde filters', filtersUit(EN), filtersUit(NL));
+  ok('/gallery gebruikt de gedeelde component', /<GalleryPage lang="en"/.test(PAGINA_EN), true);
+  ok('/nl/gallery ook', /<GalleryPage lang="nl"/.test(PAGINA_NL), true);
+  /* Geen tweede fotolijst in een paginabestand. Zou er ooit weer een `src: '/img/`
+     in een van de twee wrappers verschijnen, dan is de kopie terug en zegt deze
+     regel het meteen. */
+  ok('en geen van beide draagt zelf nog een fotolijst',
+    /src: ['`]\/img\//.test(PAGINA_EN + PAGINA_NL), false);
+
   /* Elk filter moet foto's hebben en elke foto een filter. Een knop die niets
      toont is een dood eind; een foto zonder knop is beeld dat alleen in "Alle"
      te vinden is. */
-  const tags = new Set(tagsUit(EN));
-  const keys = filtersUit(EN).filter((k) => k !== 'all');
+  const tags = new Set(tagsUit(BRON));
+  const keys = filtersUit(BRON).filter((k) => k !== 'all');
   ok('elk filter heeft foto’s', keys.filter((k) => !tags.has(k)), []);
   ok('en elke foto valt onder een filter', [...tags].filter((t) => !keys.includes(t)), []);
 }
@@ -79,7 +105,7 @@ console.log('\nelke foto bestaat, en geen enkele gaat op volle grootte mee');
     ...Array.from({ length: 6 }, (_, i) => `lifestyle-glow-0${i + 1}`),
     ...Array.from({ length: 14 }, (_, i) => `lifestyle-phone-made-${String(i + 1).padStart(2, '0')}`),
   ];
-  const alle = [...new Set([...reeksen, ...losseUit(EN)])];
+  const alle = [...new Set([...reeksen, ...losseUit(BRON)])];
 
   const ontbreekt = alle.filter((n) => !existsSync(path.join(IMG, `${n}.webp`)));
   ok('elk bestand ligt er', ontbreekt, []);
@@ -108,10 +134,11 @@ console.log('\nelke foto bestaat, en geen enkele gaat op volle grootte mee');
 
 console.log('\nde Beam-reeks is de keuze die hij hoort te zijn');
 {
-  const beamEN = [...EN.matchAll(/src: '\/img\/(brand-[a-z-]+)\.webp', tag: 'beam'/g)].map((m) => m[1]);
-  const beamNL = [...NL.matchAll(/src: '\/img\/(brand-[a-z-]+)\.webp', tag: 'beam'/g)].map((m) => m[1]);
+  const beamEN = [...BRON.matchAll(/src: '\/img\/(brand-[a-z-]+)\.webp', tag: 'beam'/g)].map((m) => m[1]);
   ok('zes foto’s', beamEN.length, 6);
-  ok('en in beide talen dezelfde zes', beamEN, beamNL);
+  /* "In beide talen dezelfde zes" is geen toets meer maar een eigenschap van de
+     bestandsindeling: er is één lijst. Wat ervoor in de plaats komt staat
+     hierboven bij "de twee talen delen één bron". */
 
   /* DE VIER ACHTERGRONDEN HOREN ER NIET IN. beam, desk, glow en pool zijn
      abstracte lichtstudies die op /studio en achter het lege abonnementsscherm
@@ -126,15 +153,27 @@ console.log('\nde Beam-reeks is de keuze die hij hoort te zijn');
   /* HET LABEL IS EEN LOOK EN GEEN DIENST. 'Editions' zou een nog niet leverbare
      dienst als filter neerzetten; 'Mood' zou zeggen dat er geen producten op
      staan, en die staan er wel. De andere filters zijn ook looks. */
-  ok('het filter heet Beam', /\{ key: 'beam', label: 'Beam' \}/.test(EN) && /\{ key: 'beam', label: 'Beam' \}/.test(NL), true);
+  ok('het filter heet Beam', /\{ key: 'beam', label: 'Beam' \}/.test(BRON), true);
   ok('en niet Editions of Mood',
-    /key: 'beam', label: '(Editions|Mood|Sfeer)'/.test(EN + NL), false);
+    /key: 'beam', label: '(Editions|Mood|Sfeer)'/.test(BRON), false);
 
   /* Elke foto een eigen alt, en niet één zin zes keer. Zes identieke alts zijn
      voor een schermlezer hetzelfde als zes lege. */
-  const altsEN = [...EN.matchAll(/tag: 'beam', alt: '([^']+)'/g)].map((m) => m[1]);
+  /* De zes alt-teksten staan als sleutel in het A-blok bovenaan de component en
+     zijn daar twee keer geschreven: één keer Nederlands, één keer Engels. Uit
+     de twee helften van dat blok gelezen, want dat is waar ze staan. */
+  const beamSleutels = ['silhouet', 'boots', 'car', 'knit', 'stair', 'rest'];
+  const helft = (taal) => {
+    const nlDeel = BRON.split('const A = nl ? {')[1] || '';
+    const [nlKant, enKant] = nlDeel.split('\n} : {');
+    return taal === 'nl' ? (nlKant || '') : (enKant || '');
+  };
+  const altsVan = (taal) => beamSleutels
+    .map((k) => (helft(taal).match(new RegExp(`${k}: '([^']+)'`)) || [])[1])
+    .filter(Boolean);
+  const altsNL = altsVan('nl');
+  const altsEN = altsVan('en');
   ok('zes verschillende alt-teksten', new Set(altsEN).size, 6);
-  const altsNL = [...NL.matchAll(/tag: 'beam', alt: '([^']+)'/g)].map((m) => m[1]);
   ok('ook in het Nederlands', new Set(altsNL).size, 6);
   ok('en die zijn vertaald en niet gekopieerd', altsEN.some((a) => altsNL.includes(a)), false);
 }

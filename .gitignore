@@ -26,3 +26,30 @@ visual/beelden/
 # geen bron. De wijzigingen die eruit komen landen in src/.
 tekstronde/
 kladblok/doorlichting/*.png
+kladblok/looks/*.png
+kladblok/tekst/*.txt
+
+# De lokale Cloudflare-staat: de D1-database, R2 en KV van `wrangler dev` en
+# `astro dev`, plus .wrangler/deploy/config.json dat Astro bij elke build schrijft.
+# Dit stond tot 5 september 2026 in git, mét een lokale database erin — het is
+# werkstaat van één machine, geen bron. `npm run migrate -- --local` bouwt hem
+# op elke machine opnieuw op.
+.wrangler/
+kladblok/site-*.png
+kladblok/studio/*.png
+kladblok/stijl/*.png
+kladblok/klantreis/*.png
+
+# De contactvel-uitvoer van scripts/mail-render.mjs: de acht mails naast elkaar
+# als één afbeelding, opnieuw te maken met `node scripts/mail-render.mjs`. De
+# mails zelf staan in de bouwers; dit is een foto ervan.
+mails-definitief.png
+
+# De contactvel-uitvoer van scripts/make-favicons.mjs en make-logo-pack.mjs:
+# gegenereerd, geen bron. De favicons zelf staan in public/.
+brand/
+# gezaaide ontwerpcanvas (3 MB, wordt opnieuw gemaakt uit kladblok/concepten/*.dc.html)
+kladblok/concepten/visuails-homepage-richtingen.html
+
+# schermafbeeldingen van de conceptpagina's (27 MB, opnieuw te maken met kladblok/concept-schermen.mjs)
+kladblok/concepten/schermen/
