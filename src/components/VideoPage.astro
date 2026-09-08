@@ -154,8 +154,12 @@ const strip = [
 const COPY = {
   en: {
     eyebrow: 'Video',
-    h1: 'Short product videos<br />that <em>move</em>.',
-    lead: `8 seconds, subtle motion. ${clip} per clip, ${vatLabel('excl', 'en')} — the same rate whether it is one clip or twenty.`,
+    h1: 'Short product videos <br />that <em>move</em>.',
+    /* De prijszin is eruit, zoals op /catalog: het bedrag staat twee regels
+       lager in de specificatiestrook, en een bedrag lees je niet in lopende
+       tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
+       krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
+    lead: `8 seconds of subtle motion, cut vertical for Reels and TikTok — made from the product photos you already sent.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note. Used in the hero and the closing band; the buy block lower
     // down names the tier from TIERS.unattended.label instead.
@@ -252,14 +256,18 @@ const COPY = {
     },
     faqH: 'Video questions, answered',
     faqs: serviceFaqs('video', 'en'),
-    ctaH: 'Give your product<br>a little movement.',
+    ctaH: 'Give your product <br>a little movement.',
     ctaP: `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()}, no fixed delivery date.`,
     ctaSecondary: 'Contact us',
   },
   nl: {
     eyebrow: 'Video',
-    h1: 'Korte productvideo’s<br />die <em>bewegen</em>.',
-    lead: `8 seconden, subtiele beweging. ${clip} per clip, ${vatLabel('excl', 'nl')} — hetzelfde tarief of het er nu één is of twintig.`,
+    h1: 'Korte productvideo’s <br />die <em>bewegen</em>.',
+    /* De prijszin is eruit, zoals op /catalog: het bedrag staat twee regels
+       lager in de specificatiestrook, en een bedrag lees je niet in lopende
+       tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
+       krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
+    lead: `8 seconden subtiele beweging, verticaal gesneden voor Reels en TikTok — gemaakt van de productfoto’s die je al stuurde.`,
     ctaPrimary: 'Vraag een videoclip aan',
     wa: waHref("Hoi VISUAILS, ik wil graag praten over een productvideo."),
     waQuote: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
@@ -326,7 +334,7 @@ const COPY = {
     },
     faqH: 'Video-vragen, beantwoord',
     faqs: serviceFaqs('video', 'nl'),
-    ctaH: 'Geef je product<br>een beetje beweging.',
+    ctaH: 'Geef je product <br>een beetje beweging.',
     ctaP: `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()}, geen vaste leverdatum.`,
     ctaSecondary: 'Neem contact op',
   },
@@ -424,20 +432,24 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
   {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="vid-h1">
     <div class="vid-open">
+      {/* Dezelfde opbouw als /catalog — zie de noot daar voor waarom deze
+          volgorde en waarom de WhatsApp-knop weg is. De volgorde volgt de
+          vragen: wat is het, wat kost het, wat is de haak, wat doe ik nu, en
+          anders. Alle dienstpagina's dragen deze vorm; dat was het punt van
+          Lucas' *"maak dit consistent bij alle pagina's"*. */}
       <div class="paneel-kop">
         <p class="etiket">{c.eyebrow}</p>
         <h1 id="vid-h1" class="hoog" set:html={c.h1} />
         <p class="lopend">{c.lead}</p>
+        <HeroFacts eigen={c.trust} lang={lang} />
+        <p class="vid-wacht">{c.queueNote}</p>
         <p class="acties">
           <a class="knop knop-inkt" href="#looks">{c.kiesCta}</a>
           <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
-          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
         </p>
         <ServiceSwitch current={['video', 'complete']} lang={lang} />
-        <HeroFacts eigen={c.trust} lang={lang} />
-        <p class="vid-wacht">{c.queueNote}</p>
       </div>
-      <figure class="kaart kaart-stil vid-beeld">
+      <figure class="kaart kaart-stil kaart-breed vid-beeld">
         <img src="/img/banners-03.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="1200" height="896" />
         <figcaption class="mono foto-pil">{c.heroCap}</figcaption>
       </figure>
@@ -452,7 +464,6 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
   {/* ── 3 · WAT HET IS, EN WAAR HET STAAT ────────────────────────────────────
       De donkere kamer van deze pagina. */}
   <section class="kamer vid-kamer" aria-labelledby="vid-wat">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <p class="etiket">{c.edMeta}</p>
       <h2 id="vid-wat" class="hoog hoog-2">{c.edH}</h2>

@@ -184,7 +184,6 @@ const nn = (i: number) => String(i).padStart(2, '0');
         <li>
           <a class="kaart kaart-stil" href={`${lp('/models')}#${modelId(m.name)}`} id={modelId(m.name)}>
             <img src={m.thumb} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.tw} height={m.th} transition:name={`face-${modelId(m.name)}`} />
-            <span class="kaart-merk mono">{nn(i + 1)}</span>
           </a>
           <p class="mp-naam"><b>{m.name}</b><span class="mono">{m.traits.map((t) => traits[t]).join(' · ')}</span></p>
         </li>
@@ -203,7 +202,6 @@ const nn = (i: number) => String(i).padStart(2, '0');
       De donkere kamer van deze pagina. Links de zin die het argument draagt,
       rechts de deur naar het merkmodel — twee blokken, geen derde raster. */}
   <section class="kamer mp-kamer" aria-labelledby="mp-inc">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <p class="etiket">{c.incMeta}</p>
       <h2 id="mp-inc" class="hoog hoog-2">{c.incH}</h2>
@@ -241,7 +239,24 @@ const nn = (i: number) => String(i).padStart(2, '0');
   .mp-maatlijn b { font-weight: 500; }
 
   /* Vier portretten op een rij, groot genoeg om een gezicht te beoordelen. */
-  .rooster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.7rem, 1.6vw, 1.2rem); }
+  /* ── VIJF PER RIJ IN PLAATS VAN VIER — 8 september 2026 ────────────────────
+     Lucas: *"Modellen pagina kan ook wat compacter."*
+
+     Gemeten: het rooster was 1345px hoog en de pagina 4931, voor een pagina die
+     tien gezichten laat zien. Met vier kolommen vielen elf tegels (tien
+     modellen plus de kies-kaart) in drie rijen van 4-4-3, met een gat rechts
+     onderin dat er als een ontbrekend model uitzag.
+
+     Vijf kolommen is precies 5-5-1 — nog steeds een gat. Zes is 6-5, en dat
+     klopt: elf items, twee rijen, geen gat. De tegels worden smaller maar
+     blijven op 4/5 staan, en dat is nog altijd ruim boven wat de kop van deze
+     sectie belooft ("geen miniatuurtjes van zestig pixels") — op 1440 is een
+     tegel 210px breed.
+
+     `auto-fit` met een ondergrens en niet een vast getal: dan schuift het
+     vanzelf naar vijf, vier, drie en twee als het scherm smaller wordt, en
+     hoeven de twee breekpunten hieronder alleen nog de telefoon te regelen. */
+  .rooster { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(11.5rem, 100%), 1fr)); gap: clamp(.7rem, 1.6vw, 1.2rem); }
   .rooster li { display: grid; gap: .7rem; align-content: start; }
   .mp-naam { display: grid; gap: .15rem; }
   .mp-naam b { font-weight: 500; font-size: .95rem; }
@@ -254,11 +269,23 @@ const nn = (i: number) => String(i).padStart(2, '0');
 
   @media (max-width: 900px) {
     .mp-open-in, .mp-twee { grid-template-columns: 1fr; }
-    .rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* Het rooster staat hier NIET meer op twee kolommen. Met `auto-fit`
+       hierboven regelt het zichzelf — op 768px worden dat er drie, en die
+       regel dwong ze terug naar twee: gemeten 2584px rooster waar 1700 kon.
+       Alleen de telefoon heeft nog een eigen regel, hieronder. */
     .mp-kies { grid-column: span 2; }
   }
+  /* ── OOK OP EEN TELEFOON TWEE PER RIJ — 8 september 2026 ──────────────────
+     Hier stond `1fr` onder 560px: elf portretten over de volle breedte onder
+     elkaar. Gemeten op 390px was het rooster daarmee 4955px hoog — bijna zes
+     schermen aan gezichten, op een pagina die "compacter" moest.
+
+     Twee per rij maakt een tegel 145px breed, en dat is precies waar de kop van
+     deze sectie over gaat: groot genoeg om een gezicht op te beoordelen, en niet
+     de miniatuurtjes van zestig pixels waar hij zich tegen afzet. De kies-kaart
+     loopt over allebei de kolommen, want daar staat tekst in. */
   @media (max-width: 560px) {
-    .rooster { grid-template-columns: 1fr; }
-    .mp-kies { grid-column: auto; }
+    .rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mp-kies { grid-column: span 2; }
   }
 </style>

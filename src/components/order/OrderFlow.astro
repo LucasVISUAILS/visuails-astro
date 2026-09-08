@@ -46,6 +46,7 @@ import {
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
   AMOUNT, clause,
+  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND,
 } from '../../data/pricing.js';
 import { ATTENDED_PUNTEN_PER_VENSTER, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { puntenVoor, beeldenVoor } from '../../data/pricing.js';
@@ -298,6 +299,16 @@ const PIPE = {
       one: `One more product and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
       many: `{add} more products and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
     },
+    /* De abonnementsregel. Twee vormen, en het verschil is niet toon maar
+       waarheid — zie de kop bij PLAN_ROWS. `compare` noemt twee bedragen die
+       allebei over het ABONNEMENT gaan: wat het kost en wat diezelfde levering
+       los kost. Er staat nergens "goedkoper"; de klant trekt zelf af, en dat
+       is precies waarom hij het gelooft. */
+    plan: {
+      compare: 'Every month the same? The {name} plan covers {covers} a month for {price} — the same delivery ordered one at a time is {ladder}.',
+      steady: `Every month the same? A plan fixes the count and holds a week in the calendar for you, with ${STOCK_OFF_BRAND} Editions visuals on top.`,
+      cta: 'See the plans',
+    },
     level: {
       attended: `${WINDOW_THRESHOLD} products or more, so this order goes in the calendar. ${clause(turnaround('attended', 'en'))}.`,
       unattended: `${clause(TIERS.unattended.queue.en)}. From ${WINDOW_THRESHOLD} products we hold a delivery date for you instead.`,
@@ -422,6 +433,12 @@ const PIPE = {
     rung: {
       one: `Nog één product en het tarief zakt van {now} naar {rate} per product — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
       many: `Nog {add} producten en het tarief zakt van {now} naar {rate} per product — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
+    },
+    /* Zie de Engelse noot hierboven. */
+    plan: {
+      compare: 'Elke maand hetzelfde? Het {name}-abonnement dekt {covers} per maand voor {price} — dezelfde levering los besteld is {ladder}.',
+      steady: `Elke maand hetzelfde? Een abonnement legt het aantal vast en houdt een week in de planning voor je vrij, met ${STOCK_OFF_BRAND} Editions-beelden erbij.`,
+      cta: 'Bekijk de abonnementen',
     },
     level: {
       attended: `${WINDOW_THRESHOLD} producten of meer, dus we zetten voor deze bestelling een leverdatum vast. ${clause(turnaround('attended', 'nl'))}.`,
@@ -687,6 +704,7 @@ for (const l of ['en', 'nl'] as const) {
 const REQUIRED_COPY = [
   'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.outfit', 'total.extra',
   'rung.one', 'rung.many',
+  'plan.compare', 'plan.steady', 'plan.cta',
   'level.attended', 'level.unattended',
   'kind.complete', 'kind.catalog', 'kind.lifestyle',
   'err.generic',
@@ -1254,6 +1272,57 @@ const levels = [
   },
 ];
 
+/*
+ * ── DE ABONNEMENTEN, ALS VERGELIJKINGSMATERIAAL ────────────────────────────
+ *
+ * 8 september 2026. Tot vandaag kwam het woord "abonnement" in dit formulier
+ * niet voor: twintig minuten invullen, een totaal dat live meeloopt, en nergens
+ * dat hetzelfde werk ook op een vaste afspraak kan. De enige plek waar een
+ * kopende klant er een aangeboden kreeg, was de bevestigingsmail — ná de
+ * bestelling. Zie kladblok/VOORSTEL-D4-ABONNEMENTEN.md.
+ *
+ * ── WAAROM DE TWEE BEDRAGEN NIET BIJ ELKE DIENST STAAN ─────────────────────
+ *
+ * Een abonnement levert `complete`: een catalogset ÉN een lifestyle-carousel
+ * per product (PLAN_SERVICE in plans.js). Daartegen is het goedkoper. Tegen een
+ * CATALOGbestelling van hetzelfde aantal is het dat niet, en niet een beetje:
+ * twaalf producten kosten los € 612 op de catalogladder en € 790 op Studio.
+ * Een regel met twee bedragen erin is daar dus wel waar — beide getallen gaan
+ * over het abonnement — maar hij nodigt uit tot een vergelijking die de klant
+ * met een rekenmachine wint. Bij catalog staat er daarom een regel zonder
+ * bedragen. Dezelfde afweging die in de kop van upgradePrompt() in pricing.js
+ * staat uitgeschreven: *"a prompt a client can disprove with a calculator costs
+ * more than it earns."*
+ *
+ * ── WAAROM NIET planFor() ──────────────────────────────────────────────────
+ *
+ * planFor(n) geeft het KLEINSTE plan dat n producten dekt, en dat springt boven
+ * de twaalf meteen naar Merk: wie dertien complete producten bestelt (€ 1.105)
+ * zou € 1.690 voorgeschoteld krijgen. Hier staat het plan dat qua AANTAL het
+ * dichtst bij de bestelling ligt, met de kleinste bij gelijkspel. Het formulier
+ * gaat tot FORM_MAX_PRODUCTS = 20, dus Merk (30 per maand) komt hier nooit
+ * langs — dat is geen gemis maar de juiste uitkomst: dertig per maand is geen
+ * bestelling meer, dat is /plans.
+ *
+ * `ladder` is planSaving().onLadder en niet zelf uitgerekend: dezelfde
+ * optelsom (de complete-ladder plus de clips tegen AMOUNT.video) die /plans en
+ * de FAQ al afdrukken. Eén bron, drie pagina\u2019s.
+ */
+const PLAN_ROWS = plans(lang).map((p) => {
+  const clips = PLAN_CLIPS[p.id];
+  const saving = planSaving(p.id);
+  return {
+    id: p.id,
+    name: p.name,
+    products: PLAN_PRODUCTS[p.id],
+    covers: lang === 'nl'
+      ? (clips ? `${PLAN_PRODUCTS[p.id]} producten en ${clips} clips` : `${PLAN_PRODUCTS[p.id]} producten`)
+      : (clips ? `${PLAN_PRODUCTS[p.id]} products and ${clips} clips` : `${PLAN_PRODUCTS[p.id]} products`),
+    price: euro(PLAN_AMOUNT[p.id], lang),
+    ladder: saving ? euro(saving.onLadder, lang) : null,
+  };
+});
+
 // ── The config blob ────────────────────────────────────────────────────────
 // Every number the script needs, from the module that owns it. Nothing here is
 // authoritative: the server re-derives every price and every limit.
@@ -1305,6 +1374,9 @@ const config = {
    */
   samplePrice: isSample ? AMOUNT.testSample : null,
   ladder: LADDER,
+  /* De abonnementen — zie PLAN_ROWS hierboven voor waarom er twee vormen van
+     deze regel zijn en waarom Merk hier nooit langskomt. */
+  plans: PLAN_ROWS,
   windowThreshold: WINDOW_THRESHOLD,
   maxProducts,
   maxFileBytes: MAX_FILE_BYTES,
@@ -1692,6 +1764,18 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <p class="pl-total-note" data-pl-total-note></p>
         </div>
         <p class="pl-total-rung" data-pl-rung hidden></p>
+        {/* ── DE ABONNEMENTSREGEL ─────────────────────────────────────────────
+            Onder de ladderregel en niet ernaast: het zijn twee versies van
+            dezelfde vraag — "kan dit voordeliger" — en de ladder gaat over DEZE
+            bestelling terwijl deze over ELKE MAAND gaat. De volgorde is dus de
+            volgorde waarin ze relevant worden.
+            De tekst en het linklabel worden allebei door pipeline.js gezet, want
+            een sleutel die in REQUIRED_COPY staat maar nergens door c() wordt
+            opgehaald, is een sleutel die stilletjes kan verrotten. */}
+        <p class="pl-total-plan" data-pl-plan hidden>
+          <span data-pl-plan-t></span>
+          <a class="pl-total-plan-a" href={lp('/plans')} data-pl-plan-cta></a>
+        </p>
         {/* De wettelijke helft blijft staan, de uitleg gaat de notitie in — zie
             vatLead()/vatDetail() in pricing.js. Juist hier telt dat: dit staat
             recht onder het bedrag, en een lezer die naar zijn totaal kijkt, moet
@@ -2468,7 +2552,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   }
   .pl-signin > div { flex: 1 1 22rem; }
   .pl-signin-h { margin: 0; font-weight: 700; color: var(--ink); font-size: .98rem; }
-  .pl-signin-body { margin: .3rem 0 0; font-size: .88rem; line-height: 1.55; color: var(--ink-3); }
+  /* .3rem was 5px na de regelhoogte — gemeten met kladblok/te-dicht.mjs. Op
+     de kaart die als eerste ding op het bestelformulier staat, is dat te krap:
+     de vraag en het antwoord lezen dan als één regel. */
+  .pl-signin-body { margin: .6rem 0 0; font-size: .88rem; line-height: 1.55; color: var(--ink-3); }
   .pl-signin-cta { flex: 0 0 auto; }
   @media (max-width: 560px) { .pl-signin-cta { width: 100%; } }
 
@@ -2782,6 +2869,22 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     font-size: .9rem;
     line-height: 1.5;
   }
+  /* ── DE ABONNEMENTSREGEL, EEN TOON ZACHTER DAN DE LADDERREGEL ─────────────
+     De ladderregel staat in een gesignaleerd kader: hij gaat over deze
+     bestelling, is nu waar en morgen niet meer, en dat verdient een rand. De
+     abonnementsregel is een tweede gedachte over ELKE maand — dezelfde plek,
+     geen kader, alleen een lijntje erboven. Twee gekaderde blokken onder elkaar
+     zouden allebei minder gaan tellen, en de bovenste is de belangrijkste. */
+  .pl-total-plan {
+    margin-top: .7rem;
+    padding-top: .7rem;
+    border-top: 1px solid var(--line);
+    font-size: .86rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 62ch;
+  }
+  .pl-total-plan-a { margin-left: .35rem; color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
   .pl-total-first,
   .pl-total-display { margin-top: .6rem; font-size: .82rem; color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
   .pl-total-display { font-style: italic; }

@@ -219,6 +219,23 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
 </div>
 
 <style>
+  /* ── DE TWEE FIGUREN IN EEN ANTWOORD RAAKTEN ELKAAR — 8 september 2026 ─────
+     Gemeten met kladblok/te-dicht.mjs: 0px tussen "Catalogset" en
+     "Lifestyle-carousel" in het opengeklapte antwoord. `.acc-figs` had nooit
+     een eigen regel — het was een <div> zonder opmaak, dus twee <figure>'s
+     eronder stapelden zonder tussenruimte en lazen als één beeld met twee
+     onderschriften.
+
+     Een rooster en geen marge: op een breed scherm staan ze naast elkaar (dat
+     is wat een vergelijking van twee sets hoort te doen) en op een telefoon
+     onder elkaar met dezelfde tussenruimte. */
+  .acc-figs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: 1.2rem;
+    margin: 1.2rem 0 0;
+  }
+  .acc-fig { margin: 0; display: grid; gap: .5rem; }
   .faq-open { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
   .faq-open .paneel-kop { margin-bottom: 0; }
   .faq-beeld { aspect-ratio: 4 / 3; }

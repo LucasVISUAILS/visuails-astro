@@ -152,7 +152,16 @@ const COPY = {
     // closing-word-emphasis convention already used on the other hero H1s
     // (homepage's "visualized.", custom-models' "Only yours.").
     h1: `Product-page images, ${CATALOG_IMAGES} per product — <em>the same on every product.</em>`,
-    lead: `A full set per product, from 4 photos — front, back, a fabric or logo close-up and one on-model shot, with more available per product. <strong>${euro(entry, 'en')} per product</strong> ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
+    /* ── DE PRIJSZIN IS ERUIT — 8 september 2026 ──────────────────────────
+       Hier stond het bedrag óók: "€89 per product excl. VAT, falling to €39
+       from 20 products up." Twee regels lager staat in de specificatiestrook
+       "€89 – €39 · per product · excl. VAT". Twee keer hetzelfde getal binnen
+       één blok, één keer in een zin en één keer als getal — en de zin is de
+       zwakkere van de twee, want een bedrag lees je niet in lopende tekst.
+
+       Wat de lead nog doet is het enige wat de strook niet kan: zeggen WAT er
+       in die set zit. Dat is waar hij voor is. */
+    lead: `A full set per product, from 4 photos — front, back, a fabric or logo close-up and one on-model shot, with more available per product.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
     // read the tier label verbatim ("Order individual products"), which put the
     // Tier 0 offer in the hero of all three service pages. It was also slightly
@@ -252,13 +261,13 @@ const COPY = {
     heroCap: 'Catalog · a delivered image',
     faqH: 'Catalog questions, answered',
     faqs: serviceFaqs('catalog', 'en'),
-    ctaH: 'Build a catalog that<br>looks like one brand.',
+    ctaH: 'Build a catalog that <br>looks like one brand.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
   },
   nl: {
     eyebrow: 'Catalog',
     h1: 'Strakke, consistente catalogfoto’s — <em>ook bij dertig producten.</em>',
-    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer catalogfoto’s per product kan altijd. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
+    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer catalogfoto’s per product kan altijd.`,
     ctaPrimary: 'Bestel catalogfoto’s',
     ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag catalogfoto’s bestellen voor mijn producten."),
@@ -326,7 +335,7 @@ const COPY = {
     heroCap: 'Catalog · een geleverd beeld',
     faqH: 'Catalog-vragen, beantwoord',
     faqs: serviceFaqs('catalog', 'nl'),
-    ctaH: 'Bouw een catalogus die<br>eruitziet als één merk.',
+    ctaH: 'Bouw een catalogus die <br>eruitziet als één merk.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
   },
 };
@@ -387,23 +396,45 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
   {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="cat-h1">
     <div class="cat-open">
+      {/* ── DE OPBOUW VAN HET OPENINGSBLOK — 8 september 2026 ─────────────
+          Lucas plakte de hele opening in de chat en schreef eronder: *"Kan
+          gewoon een stuk schoner, ook bij andere services, fix dit dan ook en
+          maak dit consistent bij alle pagina's."*
+
+          Er stonden zes dingen onder elkaar, en drie ervan zeiden hetzelfde:
+          de lead noemde de prijs, de specificatiestrook noemde de prijs, en
+          de tweede knop ging naar de prijzenpagina. Daaronder vijf pillen die
+          net zo hard riepen als de bestelknop, en pas onderaan de zin die
+          uitlegt of je een datum krijgt.
+
+          De volgorde is nu de volgorde van de vragen die iemand stelt:
+
+            1  wat is het        kop en lead
+            2  wat kost het      de strook, met alle vier de getallen
+            3  wat is de haak    de wachtregel, direct onder die getallen
+            4  wat doe ik nu     twee knoppen
+            5  en anders         de dienstenrij, rustig, onderaan
+
+          DE WHATSAPP-KNOP IS WEG en dat is geen bezuiniging: er zweeft op elke
+          pagina van de site een WhatsApp-knop rechtsonder. Een derde knop
+          ernaast voor hetzelfde gesprek maakt de rij van drie zwaarder zonder
+          één weg extra te openen. */}
       <div class="paneel-kop">
         <p class="etiket">{c.eyebrow}</p>
         <h1 id="cat-h1" class="hoog" set:html={c.h1} />
         <p class="lopend" set:html={c.lead} />
+        <HeroFacts eigen={c.trust} lang={lang} />
+        <p class="cat-wacht">{c.queueNote}</p>
         <p class="acties">
           <a class="knop knop-inkt" href="#looks">{c.kiesCta}</a>
           <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaSecondary}</a>
-          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
         </p>
         <ServiceSwitch current="catalog" lang={lang} />
-        <HeroFacts eigen={c.trust} lang={lang} />
-        <p class="cat-wacht">{c.queueNote}</p>
       </div>
       {/* Dezelfde foto als voorheen: `catalog-after.webp`, het shirt uit het
           voor/na-paar verderop. Zie de noot bij SHOTS — het is het enige echt
           geleverde catalogbeeld dat er is, en dus ook het enige dat hier hoort. */}
-      <figure class="kaart kaart-stil cat-beeld">
+      <figure class="kaart kaart-stil kaart-breed kaart-product cat-beeld">
         <img src="/img/catalog-after.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="1800" height="1800" />
         <figcaption class="mono foto-pil">{c.heroCap}</figcaption>
       </figure>
@@ -476,7 +507,6 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
       staat erin: het is het argument van deze sectie, en een lichte kader op
       donkere grond zet het apart zonder dat er een kop bij hoeft. */}
   <section class="kamer cat-kamer" aria-labelledby="cat-wat">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <p class="etiket">{c.edMeta}</p>
       <h2 id="cat-wat" class="hoog hoog-2">{c.edH}</h2>

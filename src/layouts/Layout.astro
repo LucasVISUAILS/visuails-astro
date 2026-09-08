@@ -209,6 +209,19 @@ const base = stripLang(path);                        // language-neutral path (f
    NAV_SOON in src/i18n/ui.js. Hier stond een map() die drie parallelle lijsten
    op index aan elkaar reeg, en die kon stil verschuiven. */
 const drops = (ui[lang] || ui.en).drops;
+/* ── DE DIENSTEN IN GROEPEN — 8 september 2026 ───────────────────────────────
+   De volgorde van de groepen staat in dropGroepen (src/i18n/ui.js) en niet in
+   de volgorde waarin de items toevallig in `drops` staan: die lijst is
+   historisch gegroeid en Hooks kwam er later bij dan Video. Zo bepaalt één
+   plek de indeling, en kan een item verhuizen door één sleutel te wijzigen. */
+const dropGroepen = (ui[lang] || ui.en).dropGroepen || {};
+const dropRijen = Object.entries(dropGroepen)
+  .map(([sleutel, kop]) => ({ sleutel, kop, items: drops.filter((d) => d.groep === sleutel) }))
+  .filter((g) => g.items.length);
+/* Wat geen groep heeft, valt er niet uit: het komt onderaan zonder kopje. Een
+   dienst die stil uit het menu verdwijnt omdat iemand een sleutel vergat, is
+   precies de fout die dit soort indelingen maakt. */
+const dropLos = drops.filter((d) => !d.groep || !dropGroepen[d.groep]);
 /* De tweede laag — zie de noot bij `how` in src/i18n/ui.js. Dezelfde vorm als
    `drops`, dus dezelfde renderlus kan hem tekenen. */
 const how = (ui[lang] || ui.en).how || [];
@@ -682,7 +695,20 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
                   menu, en `aria-disabled` zegt tegen een schermlezer wat de grijze
                   tint tegen een oog zegt. `tabindex="-1"` haalt hem uit de
                   toetsenbordronde: er is niets te activeren. */}
-              {drops.map((s) => (s.href
+              {dropRijen.map((g) => (
+                <div class="mi-groep">
+                  <p class="mi-groep-kop" aria-hidden="true">{g.kop}</p>
+                  {g.items.map((s) => (s.href
+                    ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                        <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
+                      </a>
+                    : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
+                        <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
+                      </span>
+                  ))}
+                </div>
+              ))}
+              {dropLos.map((s) => (s.href
                 ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
                     <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                   </a>
@@ -1728,6 +1754,20 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      tegen één klasse plus een pseudo) en gaat er weer af zodra de bezoeker iets
      anders doet dan Escape — zie interactions.js. */
   .has-menu.esc-closed:focus-within .nav-menu { opacity: 0; visibility: hidden; transform: translateY(-6px); }
+  /* ── DE GROEPEN IN HET DIENSTENMENU — 8 september 2026 ────────────────────
+     Het paneel was een raster van twee kolommen waar zeven items in willekeurige
+     volgorde in vielen. Nu is elke groep zelf een cel, met zijn items eronder —
+     dus de kolommen zijn de groepen en niet een toevallige afbreking.
+
+     Het kopje is `aria-hidden`: een schermlezer loopt dit menu als een lijst
+     menu-items af, en een los woord ertussen dat geen item is, onderbreekt die
+     lijst zonder iets toe te voegen. Voor het oog doet het wél werk. */
+  .mi-groep { display: grid; align-content: start; gap: .1rem; }
+  .mi-groep-kop {
+    margin: .55rem .85rem .3rem; font-family: var(--font-mono); font-size: .66rem;
+    font-stretch: 82%; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-4); border-bottom: 1px solid var(--line); padding-bottom: .45rem;
+  }
   .nav-menu a,
   .nav-menu .mi-off { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
 
@@ -1790,19 +1830,39 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   /* Language switcher (EN · NL · DE). Desktop version lives in .nav-actions;
      a second copy sits inside the mobile drawer (.mobile-lang). */
-  .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; border-radius: var(--r-pill); }
-  /* 36x27 measured on all 84 pages — under the 40px minimum in both axes, on
-     a control people hit while holding a phone. The visible chip keeps its
-     size; the hit area grows into the padding, which is what min-height and
-     the vertical padding do here. */
-  .lang-switch .ls { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 40px; min-height: 40px; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; font-weight: 400; letter-spacing: .06em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
+  /* ── 8 september 2026: DE PIL IS WEG ──────────────────────────────────────
+     Lucas: *"Maak taal kiezen wat mooier en subtieler, is nu een te grote knop,
+     onnodig."* En dat klopte: de wissel had een eigen rand, een eigen vlak, een
+     eigen ronding en een zwarte gevulde chip — vier stukken chroom voor een
+     keuze die de meeste bezoekers één keer in hun leven maken, direct naast de
+     bestelknop die de belangrijkste van de balk is. Twee zware elementen naast
+     elkaar maken allebei minder zwaar.
+     WAT ER BLIJFT IS HET RAAKVLAK. De rand is weg, de 40×40 niet: de vorige
+     ronde mat 36×27 op alle 84 pagina's en dat is te klein voor een duim. Het
+     vlak is nu onzichtbaar in plaats van kleiner — de chip lijkt zo groot als
+     de twee letters, en is zo groot als een vingertop. */
+  .lang-switch { display: inline-flex; align-items: center; background: none; border: 0; padding: 0; border-radius: 0; }
+  .lang-switch .ls { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 38px; min-height: 40px; font-family: var(--font-mono); font-stretch: 82%; font-size: .7rem; font-weight: 400; letter-spacing: .08em; color: color-mix(in srgb, var(--ink) 62%, transparent); padding: 4px 7px; transition: color var(--dur-1) var(--ease); }
+  /* Het streepje tussen de twee, en niet een gat: zonder scheiding lezen "EN"
+     en "NL" als één woord van vier letters. 11px hoog, dus kleiner dan de
+     letters — een scheiding en geen kader. */
+  .lang-switch .ls + .ls::before { content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 11px; transform: translateY(-50%); background: color-mix(in srgb, var(--ink) 28%, transparent); }
+  /* ── DE NIET-GEKOZEN TAAL IS EEN DOORZICHTIGE --ink EN GEEN --ink-3 ────────
+     Gemeten op 8 september 2026, en het was al fout vóór deze ronde: alleen
+     --ink klapt binnen de balk om naar papier-op-donker; --ink-2 en --ink-3
+     blijven #454545 en #686868, dus de LINK NAAR DE ANDERE TAAL stond op
+     3,77:1 tegen #1B1C1E — onder de 4,5:1 die tekst van 11,2px nodig heeft, op
+     precies het element dat een anderstalige bezoeker moet kunnen vinden. Een
+     doorzichtigheid van --ink volgt de ramp wél, in allebei de scopes. */
   .lang-switch .ls:hover { color: var(--ink); }
-  /* The active chip reads --accent-soft, which is a MIST TINT on the paper
-     side. Inside the dark-hero header scope --ink flips to paper-on-dark and
-     the fill does not, so the selected language measured 1.06:1 — the chip
-     that tells you which language you are reading was the least legible thing
-     on the page. The fill is scoped with the ramp instead. */
-  .lang-switch .ls.on { color: var(--bg-0); background: var(--ink-1); }
+  /* DE ACTIEVE TAAL HEEFT GEEN VULLING MEER, en dat lost het oude probleem bij
+     de wortel op in plaats van eromheen. De gevulde chip las --accent-soft, een
+     misttint op de papierkant; binnen de donkere-heroscope klapt --ink om naar
+     papier-op-donker en de vulling niet, waardoor de geselecteerde taal 1,06:1
+     mat — de chip die zegt welke taal je leest was het slechtst leesbare op de
+     pagina. Kleur en gewicht dragen het verschil nu, en die volgen de ramp in
+     beide scopes vanzelf. */
+  .lang-switch .ls.on { color: var(--ink); background: none; font-weight: 500; }
   .mobile-lang { align-self: center; margin-top: .5rem; }
 
   /* THE DRAWER DID NOT FIT AND DID NOT SAY SO. Its content is 967px tall; a
@@ -2170,8 +2230,26 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     transition: opacity 1.3s cubic-bezier(0.33, 1, 0.68, 1) .35s,
                 transform 1.8s cubic-bezier(0.33, 1, 0.68, 1) .35s;
   }
+  /* ── DE EINDSTAND IS --merk-alpha EN NIET 1 — 8 september 2026 ────────────
+     Lucas: *"Ook staat er in het midden van de footer het logo terwijl dit de
+     tekst blokkeert."*
+
+     Het merk hoort een watermerk te zijn: global.css zet
+     `.site-footer .foot-mark .foot-mark-w { opacity: .14 }`. Die regel telt
+     drie klassen. Deze regel telde er vijf en zette hem terug op 1 — dus zodra
+     de onthulling was afgelopen stond er een gitzwarte VISUAILS van 233px over
+     de volle breedte van de voet. Op een korte voet (minder links, of een
+     smal scherm waar de kolommen stapelen) ligt die dwars over de tekst.
+
+     Gemeten voordat het gerepareerd was: opacity 1, fill rgb(10,10,10).
+
+     De onthulling is niet het probleem — hij animeerde alleen naar het
+     verkeerde eindpunt. Nu staat de bedoelde waarde als token op het merk zelf
+     en gaat de animatie daarheen. Verandert het watermerk ooit van sterkte,
+     dan is dat één waarde en niet twee die uit elkaar kunnen lopen. */
+  .foot-mark { --merk-alpha: .14; }
   .js .foot-mark.reveal.pending.in .foot-mark-w {
-    opacity: 1;
+    opacity: var(--merk-alpha);
     transform: translateY(0);
   }
 
@@ -2190,7 +2268,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Wie beweging uitzet, krijgt de eindstand en verder niets. */
   @media (prefers-reduced-motion: reduce) {
     .js .foot-mark.reveal.pending .foot-mark-w {
-      opacity: 1; transform: none; transition: none;
+      opacity: var(--merk-alpha); transform: none; transition: none;
     }
     .js .foot-mark.reveal.pending .foot-mark-light {
       opacity: 1; transform: none; transition: none;

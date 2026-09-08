@@ -132,7 +132,10 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
   .pl-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .pl-ratio { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
   .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
-  .pl-ratio-hint { display: block; max-width: 66ch; margin-top: .35rem; }
+  /* .35rem was 6px na de regelhoogte van het label — gemeten met
+     kladblok/te-dicht.mjs. Een hint hoort ONDER zijn label te hangen, niet
+     ertegenaan. */
+  .pl-ratio-hint { display: block; max-width: 66ch; margin-top: .6rem; }
 
   /* auto-fit en niet vier vaste kolommen: als 16:9 bij catalog wegvalt, vullen
      de overgebleven drie de rij netjes op in plaats van een gat te laten waar de

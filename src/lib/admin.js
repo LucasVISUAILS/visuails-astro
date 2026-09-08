@@ -3168,7 +3168,7 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   if (failed.length) {
     return html(page({
       title: 'Upload',
-      body: errorBody(`${stored} stored, ${failed.length} failed:<br>${failed.map(esc).join('<br>')}`),
+      body: errorBody(`${stored} stored, ${failed.length} failed: <br>${failed.map(esc).join(', <br>')}`),
     }), 500);
   }
   /*

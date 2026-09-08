@@ -198,7 +198,7 @@ const COPY = {
     /* Het accentwoord is "one" en niet "video": wat deze dienst verkoopt is de
        naad — twee beelden die als één lezen — en dat is het woord dat de kop
        moet dragen. Zie de noot bij .hk-h1 em onderaan. */
-    h1: 'Two frames that read<br />as <em>one</em>.',
+    h1: 'Two frames that read <br />as <em>one</em>.',
     lead: `A short vertical video of your product, built on a format we have used before. From ${vanaf} per product, ${vatLabel('excl', 'en')}.`,
     /* GEEN BESTELKNOP. Zie punt 3 in de kop van dit bestand. Het label zegt wat
        er achter de knop gebeurt: een gesprek, geen bestelling. */
@@ -273,7 +273,7 @@ const COPY = {
     tierNote: `The two columns below describe the price per quantity for catalog and lifestyle products. A hook is not on that ladder and does not count towards it, so ordering hooks does not reach either column — they are here because most brands who ask about a hook are ordering photos as well.`,
     faqH: 'Hook questions, answered',
     faqs: serviceFaqs('hooks', 'en'),
-    ctaH: 'Send the photos<br>you already have.',
+    ctaH: 'Send the photos <br>you already have.',
     ctaP: `From ${vanaf} per product, ${vatLabel('excl', 'en')}. Tell us what you sell and we will say which format fits it.`,
     /* De regel onderaan, letterlijk de belofte die de vorige versie van deze
        pagina brak. Hij staat er als laatste zin op de pagina en niet in een
@@ -283,7 +283,7 @@ const COPY = {
   },
   nl: {
     eyebrow: '( Hooks )',
-    h1: 'Twee beelden die als<br /><em>één</em> lezen.',
+    h1: 'Twee beelden die als <br /><em>één</em> lezen.',
     lead: `Een korte verticale video van je product, gebouwd op een format dat we eerder gebruikt hebben. Vanaf ${vanaf} per product, ${vatLabel('excl', 'nl')}.`,
     ctaPrimary: 'Praat met ons over Hooks',
     ctaPrices: 'Bekijk de tarieven',
@@ -344,7 +344,7 @@ const COPY = {
     tierNote: `De twee kolommen hieronder beschrijven de prijs per aantal voor catalog- en lifestyleproducten. Een hook staat niet op die ladder en telt er niet in mee, dus met hooks bereik je geen van beide kolommen — ze staan hier omdat de meeste merken die naar een hook vragen ook foto’s bestellen.`,
     faqH: 'Vragen over Hooks, beantwoord',
     faqs: serviceFaqs('hooks', 'nl'),
-    ctaH: 'Stuur de foto’s<br>die je al hebt.',
+    ctaH: 'Stuur de foto’s <br>die je al hebt.',
     ctaP: `Vanaf ${vanaf} per product, ${vatLabel('excl', 'nl')}. Vertel wat je verkoopt, dan zeggen wij welk format erbij past.`,
     beloofte: 'Wij beloven geen views, likes of volgers. Wij beloven het format, de uitvoering en de controle door een specialist. Of een post ergens terechtkomt, hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven.',
   },
@@ -410,7 +410,6 @@ const c = COPY[lang];
 
   {/* ── 3 · WAT HET IS EN WAAR HET STAAT ─────────────────────────────────── */}
   <section class="kamer hk-kamer" aria-labelledby="hk-wat">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <p class="etiket">{c.edMeta}</p>
       <h2 id="hk-wat" class="hoog hoog-2">{c.edH}</h2>

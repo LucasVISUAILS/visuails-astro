@@ -177,7 +177,6 @@ const DIENST_BEELD = [1, 2, 9, 6];
             <li>
               <a class="kaart" href={lp(href)}>
                 <img src={s.klein} width="1000" height="1250" alt={s.alt} loading="lazy" decoding="async">
-                <span class="kaart-merk mono">{nn(i + 1)}</span>
                 <span class="kaart-pil">
                   <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
                   <span class="rond" aria-hidden="true">→</span>
@@ -195,7 +194,6 @@ const DIENST_BEELD = [1, 2, 9, 6];
         Terug het donker in. Links wat erin gaat, rechts wat eruit komt, en
         ertussen één gele draad met de vier termen erop. */}
     <section class="kamer kamer-draad" aria-labelledby="h-vn">
-      <p class="spook spook-links" aria-hidden="true"><span>STUDIO</span><span>STUDIO</span></p>
       <header class="kamer-kop op-inkt">
         <p class="etiket">{c.secties[1]}</p>
         <h2 id="h-vn" class="hoog hoog-2">{c.vnH}</h2>
@@ -235,7 +233,6 @@ const DIENST_BEELD = [1, 2, 9, 6];
           <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
             <span class="kaart kaart-stil">
               <img src={S(SET[i]).klein} width="800" height="1000" alt="" loading="lazy" decoding="async">
-              <span class="kaart-merk mono">{nn(i + 1)}</span>
             </span>
             <span class="mono">{naam}</span>
           </li>
@@ -250,7 +247,6 @@ const DIENST_BEELD = [1, 2, 9, 6];
         Vier regels in het donker, elk met een reusachtig nummer dat half in de
         spookletter valt. Geen beeld: dit is de adempauze. */}
     <section class="kamer kamer-stappen" aria-labelledby="h-st">
-      <p class="spook spook-rechts" aria-hidden="true"><span>PROCES</span><span>PROCES</span></p>
       <header class="kamer-kop op-inkt">
         <p class="etiket">{c.secties[3]}</p>
         <h2 id="h-st" class="hoog hoog-2">{c.stepsH}</h2>
@@ -303,7 +299,6 @@ const DIENST_BEELD = [1, 2, 9, 6];
         Het posterbeeld uit video 2: één donkere kaart, precies in het midden,
         met de spookwoorden erachter langs. De twee beloften staan eronder. */}
     <section id="studio" class="kamer kamer-poster" aria-labelledby="h-sd">
-      <p class="spook spook-midden" aria-hidden="true"><span>{c.secties[5]}</span><span>{c.secties[5]}</span></p>
       <article class="poster">
         <img src={S(5).src} width={S(5).w} height={S(5).h} alt={S(5).alt} loading="lazy" decoding="async">
         <div class="poster-tekst op-inkt">
@@ -562,7 +557,6 @@ const DIENST_BEELD = [1, 2, 9, 6];
   .kaart img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
   .kaart:hover img { scale: 1.04; }
   .kaart::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(17 17 17 / .55), transparent 42%); }
-  .kaart-merk { position: absolute; top: .6rem; left: .6rem; z-index: 1; background: var(--wit); color: var(--inkt); padding: .3rem .6rem; border-radius: 999px; }
   .kaart-pil {
     position: absolute; z-index: 1; inset-inline: .6rem; bottom: .6rem;
     display: flex; align-items: center; justify-content: space-between; gap: .6rem;

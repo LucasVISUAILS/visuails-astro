@@ -178,7 +178,7 @@ const r = (sleutel: string) => PLEKKEN[sleutel].ratio;
 const COPY = {
   en: {
     eyebrow: '( Editions )',
-    h1: 'The months with<br />nothing <em>new</em> to shoot.',
+    h1: 'The months with <br />nothing <em>new</em> to shoot.',
     lead: `Every month, a set of visuals with no product in them — mood, texture and light. ${STOCK_OFF_BRAND} come with every plan. ${STOCK_ON_BRAND} more, built on your brand alone, are ${maand} a month.`,
     ctaPrimary: 'Talk to us about Editions',
     ctaPlans: 'See the plans',
@@ -284,13 +284,13 @@ const COPY = {
 
     faqH: 'Editions questions, answered',
     faqs: serviceFaqs('editions', 'en'),
-    ctaH: 'Fill the month<br>you have nothing for.',
+    ctaH: 'Fill the month <br>you have nothing for.',
     ctaP: `${STOCK_OFF_BRAND} shared visuals come with every plan. ${STOCK_ON_BRAND} of your own are ${maand} a month after a ${opzet} setup.`,
     belofte: 'Neither set is running yet, so there is nothing to buy today and nothing is charged. What this page is for is that you know which half is included and which half is not, before the first invoice rather than after it.',
   },
   nl: {
     eyebrow: '( Editions )',
-    h1: 'De maanden waarin je<br /><em>niets</em> te fotograferen hebt.',
+    h1: 'De maanden waarin je <br /><em>niets</em> te fotograferen hebt.',
     lead: `Elke maand een set beelden zonder product erin — sfeer, textuur en licht. ${STOCK_OFF_BRAND} zitten bij elk abonnement. ${STOCK_ON_BRAND} extra, alleen op jouw merk gebouwd, kosten ${maand} per maand.`,
     ctaPrimary: 'Praat met ons over Editions',
     ctaPlans: 'Bekijk de abonnementen',
@@ -390,7 +390,7 @@ const COPY = {
 
     faqH: 'Vragen over Editions, beantwoord',
     faqs: serviceFaqs('editions', 'nl'),
-    ctaH: 'Vul de maand waar<br>je niets voor hebt.',
+    ctaH: 'Vul de maand waar <br>je niets voor hebt.',
     ctaP: `${STOCK_OFF_BRAND} gedeelde beelden zitten bij elk abonnement. ${STOCK_ON_BRAND} eigen beelden kosten ${maand} per maand, na een opzet van ${opzet}.`,
     belofte: 'Geen van beide sets loopt al, dus er valt vandaag niets te kopen en er wordt niets afgeschreven. Waar deze pagina voor is: dat je weet welke helft inbegrepen is en welke niet, vóór de eerste factuur in plaats van erna.',
   },
@@ -464,7 +464,6 @@ const c = COPY[lang];
       Twee beelden naast elkaar, en allebei nodig: één ervan laten zien legt
       niets uit. */}
   <section class="kamer ed-kamer" aria-labelledby="ed-niet">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <h2 id="ed-niet" class="hoog hoog-2">{c.nietH}</h2>
       <p class="lopend">{c.nietSub}</p>

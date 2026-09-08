@@ -5629,7 +5629,9 @@ body { position: relative; }
    het is een <svg> met een <use>. */
 /* Drie klassen diep, want Layout.astro zet `fill: #FFFFFF` op een scoped
    selector van dezelfde sterkte en staat later in de cascade. */
-.site-footer .foot-mark .foot-mark-w { fill: var(--accent-ink); --mk-ink: var(--accent-ink); opacity: .14; }
+/* De sterkte staat als --merk-alpha op .foot-mark in Layout.astro, want de
+   onthullingsanimatie moet hem als eindpunt kunnen lezen — zie de noot daar. */
+.site-footer .foot-mark .foot-mark-w { fill: var(--accent-ink); --mk-ink: var(--accent-ink); opacity: var(--merk-alpha, .14); }
 .site-footer .foot-mark { background: none; }
 .site-footer .foot-mark-light { display: none; }
 

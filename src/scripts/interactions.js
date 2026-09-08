@@ -1059,6 +1059,34 @@ function initThankYou() {
     if (cel && mail) cel.textContent = mail;
   } catch { /* geen opslag */ }
 
+  /* ── DE ABONNEMENTSREGEL — 8 september 2026 ──────────────────────────────
+     Het aantal en de soort komen uit sessionStorage, waar pipeline.js ze na een
+     geslaagde bestelling neerlegt. Niet uit de adresbalk, om de reden die
+     bovenaan deze functie staat: een query string wordt gelezen door de
+     referrer, de geschiedenis en alles wat URL's logt.
+     De drempel staat in het data-attribuut en komt uit UPGRADE_TRIGGER_PRODUCTS
+     — dezelfde constante als de bevestigingsmail gebruikt, zodat de pagina en
+     de mail niet uit elkaar kunnen lopen.
+     GEEN OPSLAG IS GEEN FOUT. Blijft de regel verborgen, dan mist de pagina
+     niets; hij is een aanbod en geen bevestiging. */
+  const abo = document.querySelector('[data-ty-plan]');
+  if (abo) {
+    try {
+      const aantal = parseInt(sessionStorage.getItem('vis-ty-n') || '', 10);
+      const soort = sessionStorage.getItem('vis-ty-kind') || '';
+      const drempel = parseInt(abo.dataset.tyPlanMin || '', 10);
+      if (Number.isInteger(aantal) && Number.isInteger(drempel) && aantal >= drempel
+          && (soort === 'complete' || soort === 'lifestyle' || soort === 'catalog')) {
+        /* Bij catalog geen bedragen: een abonnement levert `complete` en is
+           tegen een catalogbestelling van hetzelfde aantal duurder. Dezelfde
+           poort als paintPlan() in pipeline.js. */
+        const welke = soort === 'catalog' ? '[data-ty-plan-steady]' : '[data-ty-plan-compare]';
+        const span = abo.querySelector(welke);
+        if (span) { span.hidden = false; abo.hidden = false; }
+      }
+    } catch { /* geen opslag */ }
+  }
+
   /* De betaalvraag in de kaart hoort alleen bij een bestelling MET link. */
   const vraag = document.querySelector('[data-ty-payq]');
   if (vraag) vraag.hidden = !pay;

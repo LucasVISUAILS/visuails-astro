@@ -94,10 +94,28 @@ const sample = TEST_SAMPLE[lang];
    gelezen. */
 
 // ── The ladder table ───────────────────────────────────────────────────────
-// The three kinds, in the order the table reads them. Complete first because
-// it is the scope everything else on the page quotes — the two singles are
-// what you buy when you want half of it, not the default.
-const KIND_IDS = ['complete', 'catalog', 'lifestyle'] as const;
+/* ── DE INSTAP STAAT VOORAAN — 8 september 2026 ────────────────────────────
+   Lucas: *"Ook mag de pricing page wat logischer worden omdat ik te horen
+   krijg dat hier vaak verwarring over ontstaat dus dan is simpeler en
+   duidelijk maken de beste oplossing."*
+
+   Hier stond `['complete', 'catalog', 'lifestyle']`, met als reden: "Complete
+   first because it is the scope everything else on the page quotes." Dat klopte
+   voor deze PAGINA en niet voor de SITE. Overal elders — de dienstkaarten op de
+   voorpagina, /catalog, het menu — begint het verhaal bij "vanaf €89 per
+   product", en dat is de catalogset. Wie op die belofte doorklikt naar de
+   prijzen, kreeg als eerste getal €149.
+
+   Drie framings op één pagina: €89 in de aanloop, €149 als eerste kolom, €545
+   in het rekenvoorbeeld. Alle drie waar, en samen precies de verwarring waar
+   Lucas het over heeft.
+
+   De volgorde is nu die van het verhaal: catalogset, lifestyle-carousel, en de
+   bundel als derde — want een bundel is per definitie iets wat je pas begrijpt
+   als je weet wat erin zit. De besparingsregel staat er nog steeds bij, en die
+   doet in de derde kolom meer werk dan in de eerste: daar is hij een korting
+   op iets wat je al kent. */
+const KIND_IDS = ['catalog', 'lifestyle', 'complete'] as const;
 
 // Two of the three kinds are a pillar page under another name, so the column
 // heading is the link — the brief's internal-linking rule (§1) without a row
@@ -206,7 +224,8 @@ const COPY = {
     },
 
     workedH: 'What that comes to',
-    workedSub: 'Three order sizes for catalog and lifestyle together, with the sum already done for you.',
+    workedSub: 'Three order sizes with the sum already done for you — the catalog set, and the same order with lifestyle added.',
+    workedBundle: 'with lifestyle added',
     workedUnit: 'products',
     perProduct: 'per product',
 
@@ -283,7 +302,7 @@ const COPY = {
     // De plannen staan sinds 20 augustus 2026 op /plans; hier blijft één regel
     // die zegt dat de andere manier van kopen bestaat.
     toPlansH: 'Or the same work every month',
-    toPlansB: 'If the same output comes round every month, buying it by the month costs less than buying it order by order — same products, lower rate, a week in the calendar kept free for you.',
+    toPlansB: 'If the same output comes round every month, buying it by the month costs less than buying it order by order — provided it is that same output: a catalog set and a lifestyle carousel for every product. It also holds a week in the calendar for you.',
     toPlansCta: 'See the plans',
 
     sampleH: 'Before you place an order',
@@ -320,7 +339,10 @@ const COPY = {
     },
 
     workedH: 'Wat dat wordt',
-    workedSub: 'Drie aantallen compleet uitgerekend, zodat je niet zelf hoeft te rekenen.',
+    /* "Compleet" is ook de naam van een product op deze pagina; als bijwoord
+       liet het in het midden welk tarief er gerekend werd. Nu staat het er. */
+    workedSub: 'Drie aantallen uitgerekend, zodat je niet zelf hoeft te rekenen — de catalogset, en dezelfde bestelling met lifestyle erbij.',
+    workedBundle: 'met lifestyle erbij',
     workedUnit: 'producten',
     perProduct: 'per product',
 
@@ -370,7 +392,7 @@ const COPY = {
     gateBody: 'Je vastgezette leverdatum staat vast voordat je betaalt, nooit erna. Kunnen we de week die je nodig hebt niet vrijhouden, dan zeggen we dat meteen. Je krijgt geen optimistische gok.',
 
     toPlansH: 'Of hetzelfde werk elke maand',
-    toPlansB: 'Heb je elke maand hetzelfde nodig, dan is per maand kopen goedkoper dan bestelling voor bestelling — dezelfde producten, een lager tarief, en een week in de planning die voor je wordt vrijgehouden.',
+    toPlansB: 'Heb je elke maand hetzelfde nodig, dan is per maand kopen goedkoper dan bestelling voor bestelling — mits het om diezelfde levering gaat: een catalogset én een lifestyle-carousel per product. Er wordt ook een week in de planning voor je vrijgehouden.',
     toPlansCta: 'Bekijk de abonnementen',
 
     sampleH: 'Voordat je een bestelling plaatst',
@@ -515,13 +537,25 @@ const nn = (i: number) => String(i).padStart(2, '0');
         <p class="lopend">{c.workedSub}</p>
       </header>
       <ul class="pr-som" role="list">
+        {/* ── HET VOORBEELD REKENT MET DE CATALOGSET — 8 september 2026 ────
+            Het rekende met `complete`, zonder dat ergens stond dat dat de
+            bundel was: "5 producten · €545". Wie hier kwam op "vanaf €89"
+            zag een bedrag dat bij een ander product hoort, en de Nederlandse
+            ondertitel zei alleen "compleet uitgerekend" — waar "compleet" óók
+            de naam van dat product is. Dat woord deed twee dingen tegelijk.
+
+            Nu staat het instapproduct groot en de bundel eronder, met de naam
+            erbij. Twee bedragen die zichzelf uitleggen in plaats van één dat
+            uitleg nodig heeft. */}
         {WORKED.map((n) => {
-          const q = quote('complete', n);
+          const q = quote('catalog', n);
+          const qb = quote('complete', n);
           return (
             <li>
               <span class="mono">{n} {c.workedUnit}</span>
               <b class="hoog hoog-3">{euro(q.net, lang)}</b>
               <span class="mono pr-som-sub">{euro(q.rate, lang)} {c.perProduct} · {vatLabel('excl', lang)}</span>
+              <span class="mono pr-som-bundel">{c.workedBundle} {euro(qb.net, lang)}</span>
             </li>
           );
         })}
@@ -539,7 +573,6 @@ const nn = (i: number) => String(i).padStart(2, '0');
       De donkere kamer van deze pagina: twee dingen die je bij een bestelling
       zet, en daaronder de kleine regels als haarlijnen. */}
   <section class="kamer pr-kamer" aria-labelledby="pr-add">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.addOnH}</span><span>{c.addOnH}</span></p>
     <header class="kamer-kop">
       <p class="etiket">{c.eyebrow}</p>
       <h2 id="pr-add" class="hoog hoog-2">{c.addOnH}</h2>
@@ -639,6 +672,10 @@ const nn = (i: number) => String(i).padStart(2, '0');
   .pr-som { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.7rem, 2vw, 1.5rem); }
   .pr-som li { display: grid; gap: .35rem; padding-top: 1rem; border-top: 1px solid var(--inkt); }
   .pr-som-sub { color: var(--inkt-2); }
+  /* De bundel als tweede regel: kleiner en lichter dan het hoofdbedrag, met een
+     haarlijn erboven zodat het als een aparte mededeling leest en niet als een
+     vervolg op de regel erboven. */
+  .pr-som-bundel { margin-top: .6rem; padding-top: .5rem; border-top: 1px solid var(--lijn); color: var(--inkt-3); font-size: .74rem; }
   .pr-eerste { margin-top: clamp(2rem, 4vw, 3rem); max-width: 46em; }
   .pr-eerste b { font-weight: 500; }
   .pr-eerste + .acties { margin-top: 1.5rem; }

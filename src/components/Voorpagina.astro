@@ -108,6 +108,9 @@ const COPY = {
     lede: 'Catalog, lifestyle and video from the product photos you already have. No shoot, no minimum — one product is fine.',
     ctaStart: 'Start an order',
     heroAlt: 'A VISUAILS campaign visual', heroChip: 'Campaign',
+    /* De hero heeft een eigen alt: `heroAlt` staat ook onder een ander beeld
+       verderop, en een alt die twee foto's moet dekken beschrijft er geen. */
+    heroFotoAlt: 'Two models in a white capsule, in black, with lime green on their nails and sunglasses',
     facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Your own week on the calendar', 'Every image checked by a specialist'],
     svcH: 'What we make.',
     svcLede: 'Four services, all from the photos you already have — a phone by a window is enough.',
@@ -183,6 +186,8 @@ const COPY = {
     lede: 'Catalog, lifestyle en video van de productfoto’s die je al hebt. Geen shoot, geen minimum — één product mag ook.',
     ctaStart: 'Start een bestelling',
     heroAlt: 'Een VISUAILS-campagnebeeld', heroChip: 'Campagne',
+    /* Zie de Engelse noot. */
+    heroFotoAlt: 'Twee modellen in een witte capsule, in het zwart, met limoengroen op hun nagels en zonnebril',
     facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Jouw eigen week op de kalender', 'Elk beeld gecheckt door een specialist'],
     svcH: 'Wat we maken.',
     svcLede: 'Vier diensten, allemaal uit de foto’s die je al hebt — een telefoon bij het raam is genoeg.',
@@ -259,7 +264,27 @@ const nn = (i: number) => String(i).padStart(2, '0');
    nergens een rand van een foto te zien is. De rest zijn voorlopig de negen
    sfeerbeelden met het groene licht uit Lucas' map — plaatshouders tot de echte
    voorpagina-foto's er zijn, maar wel echte beelden en geen grijs vlak. */
-const HERO = '/img/voorpagina/hero-model.webp';
+/* ── DE HERO IS EEN FOTO GEWORDEN — 8 september 2026 ────────────────────────
+   Lucas stuurde de foto en koos ervoor hem de hele hero te laten vullen. Wat
+   hier stond was `hero-model.webp`: één vrijstaande figuur, in zeven banden
+   uitgesneden met clip-path, die op zijn plaats schoof. Mooi gemaakt, maar het
+   was een SILHOUET op een verloop — de hero liet zien dat er iets bewoog, niet
+   wat de studio maakt.
+
+   Deze foto doet dat wel: kleding, licht, huid, een echte scène.
+
+   ── DE TWEEDE FOTO, 8 september 2026 's middags ──────────────────────────
+   Lucas stuurde er later op de dag een andere: twee modellen in een witte
+   capsule, zwarte kleding, en limoen op de nagels en op de bril. Dat laatste
+   is de reden dat hij hier hoort en niet alleen dat hij mooi is — het accent
+   van de site zit ín het beeld en niet eromheen, dus de hero draagt de kleur
+   in plaats van hem op te leggen. Bovendien: de bovenste veertig procent is
+   leeg wit, en dat is precies waar de kop en de knoppen staan.
+
+   2048×1152, en dus 16:9 — de vorm van een hero. Vier maten, want een hero is
+   het eerste wat laadt: 640, 960, 1560 en 2048. Niet opgeschaald naar 2560:
+   een groter bestand met dezelfde informatie erin is alleen maar trager. */
+const HERO = '/img/voorpagina/hero-moment.webp';
 const b = (n: number, w: number, h: number) => ({
   src: `/img/concept/sfeer-0${n}.webp`, klein: `/img/concept/sfeer-0${n}-w1000.webp`, w, h,
 });
@@ -300,9 +325,18 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       </p>
     </div>
 
-    <div class="strook" role="img" aria-label={c.heroAlt} style={`--src:url(${HERO})`}>
-      {[0, 1, 2, 3, 4, 5, 6].map((i) => <span style={`--i:${i}`}></span>)}
-    </div>
+    {/* Een <img> en geen achtergrond: een achtergrondafbeelding wordt pas
+        gevonden als de stylesheet er is, en dit is het element dat de LCP van
+        de voorpagina bepaalt. `fetchpriority="high"` en geen lazy, om dezelfde
+        reden. De `sizes` is 100vw want hij vult de hele hero. */}
+    <img
+      class="hero-foto"
+      src={HERO}
+      srcset={`/img/voorpagina/hero-moment-w640.webp 640w, /img/voorpagina/hero-moment-w960.webp 960w, /img/voorpagina/hero-moment-w1560.webp 1560w, ${HERO} 2048w`}
+      sizes="100vw"
+      width="2048" height="1152"
+      alt={c.heroFotoAlt}
+      fetchpriority="high" decoding="async" />
 
     {/* ── DE ZIN STAAT OP DE TELEFOON BOVEN HET BEELD — 8 september 2026 ──
         Gemeten op 390px: de kop stond op 153px, de knoppen op 254px, en daarna
@@ -345,17 +379,30 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       <h2 id="vp-sv" class="hoog hoog-2">{c.svcH}</h2>
       <p class="lopend">{c.svcLede}</p>
     </header>
-    {c.svc.map((_, i) => <input class="visueel-verborgen keuze" type="radio" name="vp-dienst" id={`vp-dienst-${i}`} checked={i === 0} />)}
-    <fieldset class="filterrij">
-      <legend class="visueel-verborgen">{c.svcH}</legend>
-      {c.svc.map(([naam], i) => <label class="filterpil" for={`vp-dienst-${i}`}>{naam}</label>)}
-    </fieldset>
+    {/* ── DE FILTERRIJ IS WEG, EN DAT WAS MEER DAN EEN KNOPPENRIJ ─────────
+        8 september 2026. Lucas: *"De knoppen boven de services zijn overbodig
+        en mogen weg."*
+
+        Overbodig waren ze — vier pillen met dezelfde vier namen die twee
+        centimeter lager als kaart staan. Maar ze deden iets, en dat iets was
+        het echte probleem: elke pil was een <input type="radio">, en de regel
+        `.kiezer .kaarten .kaart { opacity: .42 }` zette DRIE VAN DE VIER
+        KAARTEN op 42 procent tot je er een aanklikte.
+
+        Netto: wie de voorpagina opende zag één dienst scherp en drie als
+        schimmen. Op een pagina waarvan de kop "Wat we maken" is, en waar die
+        vier de hele etalage zijn. Het is te zien op elke schermafdruk van de
+        live site — de catalogset staat er vol, de andere drie liggen eronder
+        in grijs.
+
+        Alles gaat weg: de radio's, de pillen, en de dimming. Vier kaarten,
+        alle vier even scherp, en de bezoeker kiest door te klikken in plaats
+        van eerst te moeten aanwijzen wat hij mag zien. */}
     <ul class="kaarten" role="list">
       {c.svc.map(([naam, wat, prijs, href], i) => (
         <li>
           <a class="kaart" href={lp(href)}>
             <img src={B(DIENST_BEELD[i]).klein} width="1000" height="1250" alt="" loading="lazy" decoding="async">
-            <span class="kaart-merk mono">{nn(i + 1)}</span>
             <span class="kaart-pil">
               <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
               <span class="rond" aria-hidden="true">→</span>
@@ -372,7 +419,6 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       Het donker in. Links wat erin gaat, rechts wat eruit komt, ertussen één
       gele draad met de vier termen die wij eromheen bouwen. */}
   <section class="kamer kamer-draad" aria-labelledby="vp-vn">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.secties[1]}</span><span>{c.secties[1]}</span></p>
     <header class="kamer-kop op-inkt">
       <p class="etiket">{c.secties[1]}</p>
       <h2 id="vp-vn" class="hoog hoog-2">{c.vnH}</h2>
@@ -412,7 +458,6 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
         <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
           <span class="kaart kaart-stil">
             <img src={B(SET[i]).klein} width="800" height="1000" alt="" loading="lazy" decoding="async">
-            <span class="kaart-merk mono">{nn(i + 1)}</span>
           </span>
           <span class="mono">{naam}</span>
         </li>
@@ -425,7 +470,6 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
 
   {/* ── 5 · HET PROCES ───────────────────────────────────────────────────────*/}
   <section class="kamer kamer-stappen" aria-labelledby="vp-st">
-    <p class="spook spook-rechts" aria-hidden="true"><span>{c.secties[3]}</span><span>{c.secties[3]}</span></p>
     <header class="kamer-kop op-inkt">
       <p class="etiket">{c.secties[3]}</p>
       <h2 id="vp-st" class="hoog hoog-2">{c.stepsH}</h2>
@@ -474,15 +518,32 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       Het beoordeelscherm blijft een tekening en geen nagemaakte schermafdruk —
       zie de noot in FigApproval.astro. Daarom staat deze sectie op licht: de
       haarlijnen van die tekening hebben een lichte grond nodig. */}
+  {/* ── HET SCHERM STAAT NAAST DE TEKST — 8 september 2026 ──────────────────
+      Lucas: *"Ook de VISUAILS Studio sectie op de homepage naast de tekst
+      zetten omdat het mock up scherm onnodig veel ruimte in beslag neemt."*
+
+      Gemeten: de sectie was 1523px hoog, waarvan 881px de figuur en 213px de
+      tekst. Vier staande tegels over de volle breedte, om te laten zien dat je
+      per beeld goedkeurt — een boodschap van één zin, in een scherm van bijna
+      duizend pixels.
+
+      Naast elkaar is de figuur ongeveer de helft breed, valt hij op zijn eigen
+      breekpunt terug naar twee bij twee (FigApproval doet dat zelf op 520px, en
+      een kolom van 1440/2 is smal genoeg om dat te halen), en staat de tekst
+      ernaast in plaats van erboven. Op een telefoon stapelen ze zoals ze deden. */}
   <section id="studio" class="paneel" aria-labelledby="vp-sd">
-    <header class="paneel-kop">
-      <p class="etiket">{c.secties[5]}</p>
-      <h2 id="vp-sd" class="hoog hoog-2">{c.studioH}</h2>
-      <p class="lopend">{c.studioLede}</p>
-    </header>
-    <FigApproval head={c.studioFig.head} okLabel={c.studioFig.ok} revLabel={c.studioFig.rev} waitLabel={c.studioFig.wait} />
-    <ul class="beloften" role="list">{c.beloften.map(([k, v]) => <li><b>{k}</b><span class="lopend">{v}</span></li>)}</ul>
-    <p class="acties"><a class="knop knop-lijn" href={lp('/portal')}>{c.studioLink}</a><a class="pijl" href={lp('/studio')}>{c.studioLink2}</a></p>
+    <div class="vp-studio">
+      <div class="vp-studio-tekst">
+        <header class="paneel-kop">
+          <p class="etiket">{c.secties[5]}</p>
+          <h2 id="vp-sd" class="hoog hoog-2">{c.studioH}</h2>
+          <p class="lopend">{c.studioLede}</p>
+        </header>
+        <ul class="beloften" role="list">{c.beloften.map(([k, v]) => <li><b>{k}</b><span class="lopend">{v}</span></li>)}</ul>
+        <p class="acties"><a class="knop knop-lijn" href={lp('/portal')}>{c.studioLink}</a><a class="pijl" href={lp('/studio')}>{c.studioLink2}</a></p>
+      </div>
+      <FigApproval head={c.studioFig.head} okLabel={c.studioFig.ok} revLabel={c.studioFig.rev} waitLabel={c.studioFig.wait} />
+    </div>
   </section>
 
   {/* ── 8 · GEZICHTEN ────────────────────────────────────────────────────────*/}
@@ -520,7 +581,6 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       Eén donkere kaart precies in het midden van het donker, met het
       spookwoord erachter langs — en daarna het gele paneel met de proef. */}
   <section class="kamer kamer-poster" aria-hidden="false">
-    <p class="spook spook-midden" aria-hidden="true"><span>{c.labels[0]}</span><span>{c.labels[0]}</span></p>
     <article class="poster">
       <img src={B(5).src} width={B(5).w} height={B(5).h} alt={c.heroAlt} loading="lazy" decoding="async">
       <div class="poster-tekst op-inkt">

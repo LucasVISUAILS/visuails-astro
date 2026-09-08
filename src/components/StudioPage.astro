@@ -53,6 +53,7 @@ import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capa
 import { localizedPath } from '../i18n/ui.js';
 import FigGate from './FigGate.astro';
 import FigBoard from './FigBoard.astro';
+import FigOverzicht from './FigOverzicht.astro';
 import Placeholder from './Placeholder.astro';
 import '../styles/stijl22.css';
 
@@ -187,8 +188,14 @@ const nl = lang === 'nl';
 
 {/* ═══ /studio IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═════════════════
     Dertiende pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in
-    beide talen, dezelfde <FigGate> en <FigBoard>, dezelfde twee <Placeholder>s
-    met hun opdracht erin, dezelfde getallen uit capacity.js.
+    beide talen, dezelfde <FigGate> en <FigBoard>, dezelfde <Placeholder> met
+    zijn opdracht erin, dezelfde getallen uit capacity.js.
+
+    SINDS 8 SEPTEMBER STAAN ER NOG TWEE FIGUREN EN ÉÉN PLAATSHOUDER. Van de twee
+    plaatshouders vroeg de bovenste om een SCHERMAFDRUK — en een scherm hoef je
+    niet te fotograferen, dat teken je: <FigOverzicht>. Wat overblijft is de
+    foto van iemand die zit te vergelijken, en dat is er één die echt gemaakt
+    moet worden. Zie kladblok/PLAN-RONDE-23.md, blok E.
 
     DE POORT EN DE HANDCONTROLE ZIJN DE TWEE DONKERE KAMERS. Dat zijn ook de
     twee plekken waar de pagina van "hier is een scherm" naar "en dit is waarom
@@ -211,16 +218,17 @@ const nl = lang === 'nl';
           <a class="knop knop-lijn" href={lp('/portal')}>{c.ctaPortal}</a>
         </p>
       </div>
-      <Placeholder
-        lang={lang}
-        ratio="4 / 3"
-        caption={false}
-        subject={nl ? 'Schermafdruk van VISUAILS Studio — het overzicht met één lopende bestelling'
-                    : 'Screenshot of VISUAILS Studio — the overview with one live order'}
-        message={nl
-          ? 'Moet in één blik laten zien dat dit een échte werkomgeving is en geen mailtje met een downloadlink: statusregel, leverdatum, en beelden die op goedkeuring wachten. Liever een halfvolle bestelling dan een lege — een leeg scherm bewijst niets.'
-          : 'Must show at a glance that this is a real workspace and not an email with a download link: status row, delivery date, and images waiting for approval. A half-full order beats an empty one — an empty screen proves nothing.'}
-      />
+      {/* ── HET OVERZICHT ZOALS DE KLANT HET ZIET ────────────────────────
+          Hier stond een <Placeholder> met de opdracht "Schermafdruk van
+          VISUAILS Studio — het overzicht met één lopende bestelling", en
+          eronder wat hij moest bewijzen: statusregel, leverdatum, en beelden
+          die op goedkeuring wachten, met een halfvolle bestelling omdat een
+          leeg scherm niets bewijst.
+          Dat is geen foto maar een SCHERM, en een scherm kun je tekenen — met
+          dezelfde gegevens waar FigGate en FigBoard verderop uit lezen, zodat
+          het overzicht van de klant niet een andere leverweek kan tonen dan de
+          agenda ernaast. Zie de kop van FigOverzicht.astro. */}
+      <FigOverzicht lang={lang} />
     </div>
   </section>
 
@@ -228,7 +236,6 @@ const nl = lang === 'nl';
       De agenda zelf, met de dag erin die geweigerd wordt. Het venster dat hij
       "aangeboden" noemt komt uit offerableWindows() — zie FigGate.astro. */}
   <section class="kamer sp-kamer" aria-labelledby="sp-poort">
-    <p class="spook spook-links" aria-hidden="true"><span>Studio</span><span>Studio</span></p>
     <header class="kamer-kop">
       <h2 id="sp-poort" class="hoog hoog-2">{c.gateH}</h2>
       <p class="lopend">{c.gateLede}</p>
@@ -265,7 +272,6 @@ const nl = lang === 'nl';
       de plaatshouder met de opdracht erin, en niet een lichtstudie: een
       lichtkegel bewijst niet dat er met de hand gekeken wordt. */}
   <section class="kamer sp-kamer-hand" aria-labelledby="sp-hand">
-    <p class="spook spook-rechts" aria-hidden="true"><span>Studio</span><span>Studio</span></p>
     <header class="kamer-kop">
       <h2 id="sp-hand" class="hoog hoog-2">{c.humanH}</h2>
       <p class="lopend">{c.humanLede}</p>

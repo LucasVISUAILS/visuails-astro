@@ -39,7 +39,12 @@
 import { waHref } from '../data/whatsapp.js';
 /* AMOUNT erbij: de annuleringstekst noemt het teruggestorte bedrag van de
    proefvisual, en dat is een prijs — die hoort uit pricing.js te komen. */
-import { TIERS, turnaround, AMOUNT, euro } from '../data/pricing.js';
+import {
+  TIERS, turnaround, AMOUNT, euro,
+  /* Voor de abonnementsregel onderaan — zie PLAN_REGEL hieronder. */
+  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND,
+  UPGRADE_TRIGGER_PRODUCTS,
+} from '../data/pricing.js';
 import { mailNote } from '../data/mailNote.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
@@ -51,6 +56,44 @@ const lp = (p: string) => localizedPath(lang, p);
 
 const T0 = TIERS.unattended;
 const TIMING = turnaround('unattended', lang);
+
+/*
+ * ── DE ABONNEMENTSREGEL — 8 september 2026 ─────────────────────────────────
+ *
+ * Deze pagina zei niets over abonnementen. Iemand die net twintig producten
+ * heeft besteld, stond op een scherm dat hem bedankte en verder niets vroeg,
+ * terwijl de bevestigingsmail die een minuut later binnenkomt er via
+ * upgradePrompt() wél over begint. Zie kladblok/VOORSTEL-D4-ABONNEMENTEN.md §4C.
+ *
+ * DEZELFDE DREMPEL ALS DE MAIL, en letterlijk dezelfde constante:
+ * UPGRADE_TRIGGER_PRODUCTS. De mail telt een rollend kwartaal en deze pagina
+ * kent alleen deze bestelling, dus de drempel is hier strenger — dat is de
+ * goede kant om op te verschillen.
+ *
+ * TWEE VORMEN, OM DE REDEN DIE IN pipeline.js STAAT UITGESCHREVEN: een
+ * abonnement levert `complete`, en tegen een CATALOGbestelling van hetzelfde
+ * aantal is het duurder. Bij catalog staat er dus een regel zonder bedragen.
+ * Allebei staan ze al in de HTML en interactions.js kiest er één — het aantal
+ * en de soort komen uit sessionStorage en niet uit de adresbalk, om de reden
+ * die in de kop van initThankYou() staat.
+ */
+const PLAN_ID = 'studio';
+const PLAN_KAART = plans(lang).find((p) => p.id === PLAN_ID);
+const PLAN_LADDER = planSaving(PLAN_ID);
+const PLAN_DEKT = nl
+  ? `${PLAN_PRODUCTS[PLAN_ID]} producten en ${PLAN_CLIPS[PLAN_ID]} clips`
+  : `${PLAN_PRODUCTS[PLAN_ID]} products and ${PLAN_CLIPS[PLAN_ID]} clips`;
+const PLAN_REGEL = nl ? {
+  h: 'Elke maand hetzelfde nodig?',
+  compare: `Het ${PLAN_KAART.name}-abonnement dekt ${PLAN_DEKT} per maand voor ${euro(PLAN_AMOUNT[PLAN_ID], 'nl')} — dezelfde levering los besteld is ${euro(PLAN_LADDER.onLadder, 'nl')}.`,
+  steady: `Een abonnement legt het aantal vast en houdt een week in de planning voor je vrij, met ${STOCK_OFF_BRAND} Editions-beelden erbij.`,
+  cta: 'Bekijk de abonnementen',
+} : {
+  h: 'Need the same every month?',
+  compare: `The ${PLAN_KAART.name} plan covers ${PLAN_DEKT} a month for ${euro(PLAN_AMOUNT[PLAN_ID], 'en')} — the same delivery ordered one at a time is ${euro(PLAN_LADDER.onLadder, 'en')}.`,
+  steady: `A plan fixes the count and holds a week in the calendar for you, with ${STOCK_OFF_BRAND} Editions visuals on top.`,
+  cta: 'See the plans',
+};
 
 const c = nl ? {
   title: 'Bedankt — we hebben je aanvraag.',
@@ -233,6 +276,16 @@ const bronnen = nl
         </div>
       </div>
     </div>
+
+    {/* Verborgen tot interactions.js het aantal uit sessionStorage heeft
+        gelezen. Blijft hij verborgen, dan mist de pagina niets — een
+        bedankpagina die zonder opslag opent, is een bedankpagina. */}
+    <p class="ty-plan" data-ty-plan data-ty-plan-min={String(UPGRADE_TRIGGER_PRODUCTS)} hidden>
+      <b>{PLAN_REGEL.h}</b>
+      <span data-ty-plan-compare hidden>{PLAN_REGEL.compare}</span>
+      <span data-ty-plan-steady hidden>{PLAN_REGEL.steady}</span>
+      <a class="ty-plan-a" href={lp('/plans')}>{PLAN_REGEL.cta}</a>
+    </p>
   </section>
 
 </div>
@@ -262,6 +315,20 @@ const bronnen = nl
   /* Een bedankpagina hoeft niet de volle paneelhoogte van een verhaalpagina. */
   .ty-body { padding-block: clamp(2.2rem, 5vw, 4rem); }
   .ty-foot { padding-block: clamp(2rem, 4.5vw, 3.4rem); }
+  /* Onder de twee gunsten, met een lijntje ertussen: het is een derde ding op
+     een pagina die er twee had, en het hoort niet even hard te klinken. Geen
+     kader, geen vlak — een zin met een link erachter. */
+  .ty-plan {
+    margin: clamp(1.6rem, 3vw, 2.2rem) 0 0;
+    padding-top: clamp(1.2rem, 2.4vw, 1.6rem);
+    border-top: 1px solid var(--lijn);
+    font-size: .92rem;
+    line-height: 1.6;
+    color: var(--inkt-2);
+    max-width: 68ch;
+  }
+  .ty-plan b { color: var(--inkt); font-weight: 500; margin-right: .3rem; }
+  .ty-plan-a { margin-left: .4rem; color: inherit; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 
   /* Actie links, feiten rechts. Onder de 880px vallen ze onder elkaar met de
      actie eerst, want dat is de volgorde waarin ze gelezen moeten worden. */

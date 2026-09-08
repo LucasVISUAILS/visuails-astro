@@ -113,7 +113,11 @@ const COPY = {
     // <em> added task #271b (Lucas's own request, editorial accent) — same
     // closing-phrase-emphasis convention as the other hero H1s.
     h1: 'Your product, in scenes <em>that sell.</em>',
-    lead: `Four signature looks. A 3-photo carousel per product — ${euro(entry, 'en')} ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
+    /* De prijszin is eruit, zoals op /catalog: het bedrag staat twee regels
+       lager in de specificatiestrook, en een bedrag lees je niet in lopende
+       tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
+       krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
+    lead: `Four signature looks. A 3-photo carousel per product: one scene shot, one on-model shot and a detail close-up, all matched.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note — this button carried the tier label verbatim, in the hero,
     // on a link that lands on /start's two-way fork.
@@ -204,13 +208,17 @@ const COPY = {
     reviewNote: reviewClaim('unattended', 'en'),
     faqH: 'Lifestyle questions, answered',
     faqs: serviceFaqs('lifestyle', 'en'),
-    ctaH: 'Put your product<br>in a scene that sells.',
+    ctaH: 'Put your product <br>in a scene that sells.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
   },
   nl: {
     eyebrow: 'Lifestyle',
     h1: 'Jouw product, in scènes <em>die verkopen.</em>',
-    lead: `Vier vaste looks. Een carousel van 3 foto’s per product — ${euro(entry, 'nl')} ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
+    /* De prijszin is eruit, zoals op /catalog: het bedrag staat twee regels
+       lager in de specificatiestrook, en een bedrag lees je niet in lopende
+       tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
+       krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
+    lead: `Vier vaste looks. Een carousel van 3 foto’s per product: een sfeershot, een foto op model en een detail-close-up, met dezelfde grading.`,
     ctaPrimary: 'Bestel lifestylefoto’s',
     ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag lifestylefoto’s bestellen voor mijn producten."),
@@ -286,7 +294,7 @@ const COPY = {
     reviewNote: reviewClaim('unattended', 'nl'),
     faqH: 'Lifestyle-vragen, beantwoord',
     faqs: serviceFaqs('lifestyle', 'nl'),
-    ctaH: 'Zet je product<br>in een scène die verkoopt.',
+    ctaH: 'Zet je product <br>in een scène die verkoopt.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
   },
 };
@@ -359,20 +367,24 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
   {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="ls-h1">
     <div class="ls-open">
+      {/* Dezelfde opbouw als /catalog — zie de noot daar voor waarom deze
+          volgorde en waarom de WhatsApp-knop weg is. De volgorde volgt de
+          vragen: wat is het, wat kost het, wat is de haak, wat doe ik nu, en
+          anders. Alle dienstpagina's dragen deze vorm; dat was het punt van
+          Lucas' *"maak dit consistent bij alle pagina's"*. */}
       <div class="paneel-kop">
         <p class="etiket">{c.eyebrow}</p>
         <h1 id="ls-h1" class="hoog" set:html={c.h1} />
         <p class="lopend">{c.lead}</p>
+        <HeroFacts eigen={c.trust} lang={lang} />
+        <p class="ls-wacht">{c.queueNote}</p>
         <p class="acties">
           <a class="knop knop-inkt" href="#looks">{c.kiesCta}</a>
           <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaSecondary}</a>
-          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
         </p>
         <ServiceSwitch current="lifestyle" lang={lang} />
-        <HeroFacts eigen={c.trust} lang={lang} />
-        <p class="ls-wacht">{c.queueNote}</p>
       </div>
-      <figure class="kaart kaart-stil ls-beeld">
+      <figure class="kaart kaart-stil kaart-breed ls-beeld">
         <img src="/img/lifestyle-dunes-01.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="928" height="1152" />
         <figcaption class="mono foto-pil">{c.eyebrow} &middot; Dunes</figcaption>
       </figure>
@@ -433,7 +445,6 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
 
   {/* ── 4 · WAT HET IS, EN WAAR HET STAAT ─────────────────────────────────── */}
   <section class="kamer ls-kamer" aria-labelledby="ls-wat">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <p class="etiket">{c.edMeta}</p>
       <h2 id="ls-wat" class="hoog hoog-2">{c.edH}</h2>
@@ -498,7 +509,6 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
       schuift de rij zijwaarts in plaats van te stapelen: vijf staande beelden
       onder elkaar is een halve kilometer scrollen voor één argument. */}
   <section class="kamer ls-galerij" aria-labelledby="ls-range">
-    <p class="spook spook-rechts" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <h2 id="ls-range" class="hoog hoog-2">{c.rangeH}</h2>
     </header>

@@ -366,7 +366,11 @@ const c = nl ? {
 
   .sr-eyebrow { margin: 0 0 .5rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .68rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
   .sr-alt-h { margin: 0; font-size: clamp(1.3rem, 2.2vw, 1.7rem); }
-  .sr-alt-sub { margin: .4rem 0 0; color: var(--ink-3); font-size: .92rem; line-height: 1.6; max-width: 60ch; }
+  /* .4rem was 6px na de regelhoogte van de kop — gemeten met
+     kladblok/te-dicht.mjs, en dat is te krap voor een kop en zijn lead. Op
+     .7rem staan ze als kop-met-uitleg en niet als twee regels die tegen
+     elkaar aan liggen. */
+  .sr-alt-sub { margin: .7rem 0 0; color: var(--ink-3); font-size: .92rem; line-height: 1.6; max-width: 60ch; }
 
   /* ── DE VASTE LOOKS ────────────────────────────────────────────────────── */
   .sr-rows { margin-top: clamp(1.6rem, 3vw, 2.4rem); display: grid; }
@@ -443,7 +447,17 @@ const c = nl ? {
 
   /* De telefoonfoto: een smallere kaart met een dikkere lichte rand, zoals een
      telefoonscherm, en het etiket in de hoek. De grote kaart krijgt GELEVERD. */
-  .sr-card.is-voor { aspect-ratio: 3 / 4; border: 2px solid rgb(255 255 255 / 0.5); border-radius: 10px; }
+  /* ── DE VOOR-KAART HEEFT EEN BODEM — 8 september 2026 ────────────────────
+     Het etiket "Ingestuurd" is 87px breed en de kaart was op een telefoon 70px:
+     er stond "INGESTU" en de rest lag buiten de kaart, die afknipt. In de
+     mediaquery hieronder stond daar een reparatie voor — `.sr-etiket` op .5rem
+     — maar die verloor het van `.s22.s22 .sr-etiket` en deed dus al een tijd
+     niets. Kleiner mocht sowieso niet: 11,52px is de ondergrens van de
+     leesbaarheidskeuring, en dat is precies wat dit etiket meet.
+     Dus niet de letter kleiner maar de kaart groter, en alleen waar het nodig
+     is: 6,4rem is 102px, ruim boven de 87 van het woord, en op een breed scherm
+     is de kaart met zijn 112px toch al groter — daar verandert er niets. */
+  .sr-card.is-voor { aspect-ratio: 3 / 4; border: 2px solid rgb(255 255 255 / 0.5); border-radius: 10px; min-width: 6.4rem; }
   .sr-etiket {
     position: absolute; left: .4rem; bottom: .4rem; z-index: 2;
     padding: .2em .5em; border-radius: 999px;
@@ -553,7 +567,10 @@ const c = nl ? {
     /* De kaarten worden op een telefoon smaller dan het etiket breed is, en
        .sr-card knipt af (overflow: hidden) — "Ingestuurd" stond er half op.
        Kleiner lettertype en minder ruimte eromheen houdt het woord heel. */
-    .sr-etiket { font-size: .5rem; padding: .18em .4em; letter-spacing: .04em; left: .3rem; bottom: .3rem; }
+    /* Het lettertype NIET kleiner — zie de noot bij .sr-card.is-voor. Wat hier
+       blijft staan is de plaatsing: strakker tegen de hoek, zodat er meer kaart
+       overblijft voor het woord zelf. */
+    .sr-etiket { padding: .18em .4em; letter-spacing: .04em; left: .3rem; bottom: .3rem; }
     .sr-etiket.is-na { top: .3rem; }
     .sr-row { grid-template-columns: 1fr; gap: 1.1rem; }
     .sr-row.is-flip .sr-media { order: 0; }

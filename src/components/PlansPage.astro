@@ -275,7 +275,6 @@ const c = COPY[nl ? 'nl' : 'en'];
       Zo is de kamer de UITLEG en zijn de kaarten de KEUZE — zet je ze allebei
       hier, dan is het weer één lange band met twee onderwerpen. */}
   <section class="kamer pl-kamer" aria-labelledby="pl-wat">
-    <p class="spook spook-links" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     {/* ── DE PLAAT STAAT EERST IN DE BRON — 7 september 2026 ────────────────
         Gemeten op 390px: de eerste prijs stond op 1050px en de eerste knop op
         1128px, van een pagina van 9622px. Iemand die op de abonnementenpagina
@@ -457,7 +456,7 @@ const c = COPY[nl ? 'nl' : 'en'];
 
   {/* ── 7 · HET SLOT ─────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="pl-slot">
-    <h2 id="pl-slot" class="hoog">{c.ctaH}<br /><em>{c.ctaEm}</em></h2>
+    <h2 id="pl-slot" class="hoog">{c.ctaH} <br /><em>{c.ctaEm}</em></h2>
     <p class="lopend">{c.ctaBody}</p>
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
@@ -518,7 +517,10 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-bank { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
   .pl-bank-t { display: grid; gap: 1.4rem; }
   .pl-bank-item { display: grid; gap: .4rem; padding-top: 1rem; border-top: 1px solid var(--lijn); }
-  .pl-bank-n { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+  /* margin-bottom en niet de gap van de ouder: deze alinea is een KOP in
+     alinea-vorm en de zin eronder is zijn uitleg. Gemeten stonden ze 6px uit
+     elkaar — te krap voor kop-met-uitleg. Zie kladblok/te-dicht.mjs. */
+  .pl-bank-n { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; margin-bottom: .55rem; }
   .pl-bank-item.is-later .lopend { color: var(--inkt-3, #6E6E6E); }
   .pl-tag { color: var(--inkt); background: var(--geel); border-radius: 999px; padding: .25rem .6rem; }
 

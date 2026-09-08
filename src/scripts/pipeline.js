@@ -99,6 +99,8 @@
 //                                                that is not a number
 //           [data-pl-total]                      the net order value, one line
 //           [data-pl-total-note] [data-pl-rung]  the rate line and the upsell
+//           [data-pl-plan] [data-pl-plan-t] [data-pl-plan-cta]  het abonnement,
+//                                                als tweede lezing van dezelfde vraag
 //           [data-pl-level="attended"|"unattended"] [data-pl-level-note]
 //           [data-pl-outfit] input[name=outfit_count]   task #271f — full outfit
 //           [data-pl-bg]                         the background fieldset; hidden
@@ -2043,6 +2045,76 @@ function syncTotal() {
       rung.hidden = true;
     }
   }
+
+  paintPlan(kind, n);
+}
+
+/*
+ * ── DE ABONNEMENTSREGEL ─────────────────────────────────────────────────────
+ *
+ * 8 september 2026. Tot vandaag noemde dit formulier het abonnement nergens —
+ * de bevestigingsmail was de enige plek waar een kopende klant er een aangeboden
+ * kreeg, ná de bestelling. Zie de kop bij PLAN_ROWS in OrderFlow.astro en
+ * kladblok/VOORSTEL-D4-ABONNEMENTEN.md.
+ *
+ * DRIE POORTEN, EN ALLE DRIE OM DEZELFDE REDEN: een regel die de klant met een
+ * rekenmachine kan weerleggen, kost meer dan hij oplevert.
+ *
+ *   1 · DE PROEF NIET. Eén product van één euro; een maandbedrag ernaast is
+ *       geen aanbod maar een grap.
+ *   2 · ONDER HET KLEINSTE PLAN NIET. Wie vier producten bestelt, heeft niets
+ *       aan een maandbedrag voor vijf. De drempel komt uit cfg.plans en is
+ *       hier niet ingetypt.
+ *   3 · BIJ CATALOG GEEN BEDRAGEN. Een abonnement levert `complete`; tegen een
+ *       catalogbestelling van hetzelfde aantal is het duurder (twaalf
+ *       producten: € 612 om € 790). De twee bedragen in `plan.compare` gaan
+ *       allebei over het abonnement en zijn dus waar, maar ze nodigen uit tot
+ *       een vergelijking van twee verschillende dingen. Daar staat `plan.steady`
+ *       — dezelfde uitnodiging, zonder de rekensom die niet klopt.
+ *
+ * HET PLAN DAT ERBIJ STAAT is dat met het aantal dat het DICHTST bij de
+ * bestelling ligt, met de kleinste bij gelijkspel — niet het kleinste plan dat
+ * het aantal dekt. Dat laatste springt boven de twaalf meteen naar Merk, en dan
+ * krijgt iemand die dertien producten bestelt een maandbedrag van € 1.690
+ * voorgeschoteld. Zie dezelfde noot in OrderFlow.astro.
+ */
+function paintPlan(kind, n) {
+  const host = q('[data-pl-plan]');
+  if (!host) return;
+  const zin = q('[data-pl-plan-t]', host);
+  const cta = q('[data-pl-plan-cta]', host);
+  const rijen = Array.isArray(cfg.plans) ? cfg.plans : [];
+
+  const verberg = () => {
+    if (zin) zin.textContent = '';
+    if (cta) cta.textContent = '';
+    host.hidden = true;
+  };
+
+  if (!zin) return verberg();
+  if (cfg.sample || !rijen.length || !kind || !Number.isInteger(n) || n < 1) return verberg();
+  if (kind !== 'complete' && kind !== 'lifestyle' && kind !== 'catalog') return verberg();
+
+  const kleinste = rijen.reduce((a, b) => (b.products < a.products ? b : a), rijen[0]);
+  if (n < kleinste.products) return verberg();
+
+  // Dichtstbijzijnd op aantal; bij gelijkspel de kleinste, want `<` en niet `<=`
+  // laat de eerste (en de lijst staat oplopend) staan.
+  const plan = rijen.reduce((a, b) =>
+    (Math.abs(b.products - n) < Math.abs(a.products - n) ? b : a), rijen[0]);
+
+  if (kind === 'catalog' || !plan.ladder) {
+    zin.textContent = c('plan.steady');
+  } else {
+    zin.textContent = c('plan.compare', {
+      name: plan.name,
+      covers: plan.covers,
+      price: plan.price,
+      ladder: plan.ladder,
+    });
+  }
+  if (cta) cta.textContent = c('plan.cta');
+  host.hidden = false;
 }
 
 /**
@@ -5586,6 +5658,18 @@ function finishSubmit(status, body) {
     try {
       const em = (q('input[name="email"]') || {}).value || '';
       if (em) sessionStorage.setItem('vis-ty-mail', em.trim());
+      /* ── EN HET AANTAL EN DE SOORT — 8 september 2026 ───────────────────
+         De bedankpagina wil één regel over het abonnement tonen, en alleen aan
+         wie genoeg besteld heeft om er iets aan te hebben. Ze kan dat niet uit
+         de URL halen en dat is met opzet: de kop van initThankYou() in
+         interactions.js legt uit waarom er niets anders dan het kenmerk in de
+         adresbalk staat — een query string wordt gelezen door de referrer, de
+         geschiedenis en alles wat URL's logt. sessionStorage doet de deur
+         achter zich dicht: één tabblad, weg bij sluiten, nooit onderweg. */
+      const aantal = productCount();
+      if (Number.isInteger(aantal) && aantal > 0) sessionStorage.setItem('vis-ty-n', String(aantal));
+      const soort = kindOf();
+      if (soort) sessionStorage.setItem('vis-ty-kind', soort);
     } catch { /* geen opslag is geen fout */ }
 
     if (body.windowLost) {

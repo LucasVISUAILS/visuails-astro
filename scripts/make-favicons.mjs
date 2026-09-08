@@ -82,14 +82,27 @@ const WHITE = '#FFFFFF';   // --ink-1
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {
-  c:  { ground: DARK,      ink: GREEN,     note: 'gifgroen op bijna-zwart — LIVE' },
-  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — 1.31:1' },
-  b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen — 15.16:1' },
+  c:  { ground: DARK,      ink: GREEN,     note: 'gifgroen op bijna-zwart' },
+  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — LIVE' },
+  b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen' },
   a:  { ground: WHITE,     ink: GREEN,     note: 'gifgroen op wit' },
   a2: { ground: WHITE,     ink: GREEN_DIM, note: 'dieper groen op wit' },
   mono: { ground: DARK,    ink: WHITE,     note: 'wit op bijna-zwart — het vorige stel' },
 };
-const ACTIVE = 'c';
+/* ── WIT OP GIFGROEN — 8 september 2026 ────────────────────────────────────
+   Lucas stuurde de tegel: het witte V-teken op #D2E04A. Dat is variant `b`,
+   die hier al klaarlag.
+
+   HET GETAL STAAT ERBIJ EN IS NIET MOOI. Dat is geen overtreding — de
+   noot hierboven legt uit dat WCAG 1.4.11 een logo uitzondert — maar het is wél
+   het getal dat bepaalt of je het teken nog ziet op zestien pixels in een
+   tabstrook: 1,45:1, gemeten door dit script zelf. Wit op limoen is helder op
+   elke ondergrond en zacht in zichzelf.
+
+   `b2` is dezelfde tegel met een bijna-zwart teken en meet 13,04:1. Zelfde
+   limoen, zelfde vorm, alleen de inkt is anders. Als de tab ooit te vaag
+   blijkt, is dat de regel die verandert en verder niets. */
+const ACTIVE = 'b';
 
 /* Relative luminance and contrast, WCAG 2.x. Twenty lines rather than a
  * dependency, and the same maths the palette in global.css was solved with. */

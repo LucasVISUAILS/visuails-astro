@@ -14,9 +14,6 @@
 // The €1 test-sample figure is read from the price ladder, never typed here.
 // src/data/pricing.js is the single source of truth for every euro on the site.
 import { TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
-// En om dezelfde reden komt het aantal modellen in de menu-omschrijving uit
-// de roster: zie de noot bij ROSTER_COUNT in src/data/models.js.
-import { rosterWoord } from '../data/models.js';
 
 export const languages = { en: 'English', nl: 'Nederlands' };
 export const localeNames = { en: 'EN', nl: 'NL' };
@@ -87,10 +84,31 @@ export const ui = {
     // No prices here. Section 13 of the brief puts the per-product tier on
     // /pricing, /catalog, /lifestyle and /video only — never in the nav — so
     // these descriptions say what the work is, not what one product costs.
+    /* ── DRIE GROEPEN MET EEN KOPJE — 8 september 2026 ───────────────────────
+     * Lucas: *"Maak 'what we make' knoppen allemaal weer logisch omdat het nu
+     * een beetje rommelig aanvoelt (…) bijvoorbeeld video klopt niet meer, want
+     * je hebt nu meerdere soorten videos: Video, Hooks."*
+     *
+     * Zeven items in één kolom is een lijst en geen menu, en de volgorde was
+     * historisch: Catalog, Lifestyle, Video, Merkmodel, Abonnement, Hooks,
+     * Editions. Video en Hooks stonden vier items uit elkaar terwijl het
+     * allebei bewegend beeld is; het merkmodel stond tussen de diensten terwijl
+     * je het niet in plaats van maar NAAST een bestelling koopt.
+     *
+     * De groepen beantwoorden elk een andere vraag:
+     *   photos  wat maak je van mijn productfoto's
+     *   video   en wat als het moet bewegen
+     *   maand   en als het elke maand terugkomt
+     *   erbij   wat rijdt er mee met elke bestelling
+     *
+     * `groep` is een sleutel op het item en geen geneste structuur, met opzet:
+     * `how` deelt de renderlus met `drops`, en tests/nav.test.mjs leest deze
+     * lijst als een platte reeks objecten. Beide blijven werken. */
+    dropGroepen: { photos: 'Photos', video: 'Video', maand: 'Every month', erbij: 'With every order' },
     drops: [
-      { href: '/catalog', title: 'Catalog', desc: 'Front, back, detail and on-model, for every product' },
-      { href: '/lifestyle', title: 'Lifestyle', desc: 'Your product in a styled scene, ready to post' },
-      { href: '/video', title: 'Video', desc: 'Short clips that move, on any product in the order' },
+      { href: '/catalog', title: 'Catalog', desc: 'Front, back, detail and on-model, for every product', groep: 'photos' },
+      { href: '/lifestyle', title: 'Lifestyle', desc: 'Your product in a styled scene, ready to post', groep: 'photos' },
+      { href: '/video', title: 'Video', desc: 'Short clips that move, on any product in the order', groep: 'video' },
       /* ── MERKMODEL EN ABONNEMENT STAAN NU HIER — 21 augustus 2026 ────────
        *
        * Allebei stonden ze als los item bovenin, naast Prijzen, Galerij en
@@ -101,8 +119,8 @@ export const ui = {
        *
        * Wat het oplevert: twee items minder in de balk, en één plek waar de
        * vraag "wat kan ik hier bestellen" volledig beantwoord wordt. */
-      { href: '/custom-models', title: 'Your Brand Model', desc: 'One face, made for your brand and used by nobody else' },
-      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of products every month, below the per-product rate' },
+      { href: '/custom-models', title: 'Your Brand Model', desc: 'One face, made for your brand and used by nobody else', groep: 'erbij' },
+      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of products every month, below the per-product rate', groep: 'maand' },
       /*
        * HOOKS HEEFT GEEN href, EN DAT IS HET HELE PUNT — 9 augustus 2026.
        *
@@ -136,7 +154,7 @@ export const ui = {
       /* `soon` als tekst: het label in het menu. Hooks is sinds 4 september 2026
          "op aanvraag" — geen bestelknop, wél te laten maken — en "Binnenkort"
          zei iets anders dan de pagina. Layout.astro toont een string letterlijk. */
-      { href: '/hooks', title: 'Hooks', desc: 'On request — a short video on a proven format', soon: 'On request' },
+      { href: '/hooks', title: 'Hooks', desc: 'On request — a short video on a proven format', soon: 'On request', groep: 'video' },
       /* EDITIONS — aangekondigd op 18 augustus 2026, zelfde behandeling als
          Hooks: in het menu waar de diensten staan, zonder href, en Layout.astro
          tekent hem daarom als uitgeschakeld menu-item.
@@ -150,7 +168,7 @@ export const ui = {
       /* Editions wijst sinds 2 september 2026 naar zijn eigen pagina, om
          dezelfde reden als Hooks: daar staat de uitleg, en het ankerblok op
          /plans is de samenvatting. Het merkje blijft — bestellen kan nog niet. */
-      { href: '/editions', title: 'Editions', desc: 'Not ready to order — monthly brand imagery with no product in it', soon: true },
+      { href: '/editions', title: 'Editions', desc: 'Not ready to order — monthly brand imagery with no product in it', soon: true, groep: 'maand' },
     ],
     /*
      * ── DE TWEEDE LAAG, 18 AUGUSTUS 2026 ──────────────────────────────────
@@ -178,13 +196,29 @@ export const ui = {
     nav_how: 'How it works',
     how: [
       { href: '/how-it-works', title: 'From order to delivery', desc: 'The four steps, and the two you are in' },
-      /* GEEN href: /demo BESTAAT NIET. Zie de noot in Layout.astro bij how.map.
-         Het item blijft staan als "binnenkort", want de pagina is gepland
-         (PLAN-DEMO-SPEL.md) en een lege plek in het menu vertelt niets. */
-      { title: 'See an order run', desc: 'Walk through one, screen by screen' },
-      { href: '/studio', title: 'How an order is run', desc: 'The studio day, the calendar, the capacity' },
+      /* ── HET DEMO-ITEM IS WEG — 8 september 2026 ──────────────────────────
+       * Hier stond "See an order run", zonder href, en Layout.astro tekende hem
+       * als grijs item met "binnenkort". Er is nooit een /demo gekomen.
+       *
+       * De noot bij Hooks in `drops` zegt dat een aangekondigde DIENST in het
+       * menu hoort ook als hij nog niet kan — "een gat dat een bezoeker kan
+       * zien, is erger dan een onafgemaakt ding dat zegt wat het is". Dat klopt
+       * daar en niet hier: Hooks is iets wat je kunt kopen, dit was een
+       * rondleiding. Niemand wacht erop, en /how-it-works en /studio
+       * beantwoorden samen al de vraag die het zou beantwoorden.
+       *
+       * Wat een permanent uitgeschakeld item wél doet, is de bezoeker leren dat
+       * dit menu dingen belooft die er niet zijn. Komt /demo er ooit, dan is het
+       * één regel terug.
+       *
+       * EN /studio HEET NU NAAR WAT ER STAAT. "How an order is run" naast "From
+       * order to delivery" is twee keer bijna dezelfde belofte; in het
+       * Nederlands stond er zelfs "Hoe een bestelling draait" onder "Van
+       * bestelling tot levering". Wat /studio werkelijk laat zien is de
+       * capaciteit en de kalender — dus dat zegt hij nu. */
+      { href: '/studio', title: 'The calendar and the capacity', desc: 'What a studio day holds, and when a date can be held for you' },
       { href: '/portal', title: 'VISUAILS Studio', desc: 'Where your work lands, and how you approve it' },
-      { href: '/models', title: 'The models', desc: `The ${rosterWoord('en')} faces included in every order` },
+      { href: '/models', title: 'The models', desc: 'The ten faces included in every order' },
       { href: '/upload-guidelines', title: 'Sending your photos', desc: 'What we need, and what a phone can do' },
       /* ── TWEE ERAF, EN ALLEBEI NAAR EEN BETERE PLEK — 21 augustus 2026 ────
        *
@@ -216,7 +250,8 @@ export const ui = {
     foot_company: 'Company',
     foot_touch: 'Get in touch',
     foot_about: 'About',
-    foot_studio: 'How an order is run',
+    /* Dezelfde link als in het menu; dus dezelfde naam. Zie de noot bij `how`. */
+    foot_studio: 'The calendar and the capacity',
     foot_guides: 'Guides',
     // /compare is now "a shoot day, or a drop" (AUDIT §F). The AI-tools
     // argument still lives on that page at #ai-tools and in its <title>, so
@@ -343,27 +378,29 @@ export const ui = {
     nav_contact: 'Contact',
     nav_start: 'Bestellen',
     nav_account: 'Inloggen',
+    dropGroepen: { photos: 'Foto’s', video: 'Video', maand: 'Elke maand', erbij: 'Bij elke bestelling' },
     drops: [
-      { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en on-model, voor elk product' },
-      { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten' },
-      { href: '/video', title: 'Video', desc: 'Korte clips met beweging, op elk product in de bestelling' },
+      { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en on-model, voor elk product', groep: 'photos' },
+      { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten', groep: 'photos' },
+      { href: '/video', title: 'Video', desc: 'Korte clips met beweging, op elk product in de bestelling', groep: 'video' },
       /* Zie de noot bij de Engelse lijst hierboven: alles wat je koopt, staat
          in het menu waar staat wat we maken. */
-      { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt' },
-      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, onder het tarief per product' },
+      { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt', groep: 'erbij' },
+      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, onder het tarief per product', groep: 'maand' },
       /* Zie de noot bij de Engelse tegenhanger. */
-      { href: '/hooks', title: 'Hooks', desc: 'Op aanvraag — een korte video op een bewezen format', soon: 'Op aanvraag' },
+      { href: '/hooks', title: 'Hooks', desc: 'Op aanvraag — een korte video op een bewezen format', soon: 'Op aanvraag', groep: 'video' },
       /* Zie de noot bij de Engelse tegenhanger. */
-      { href: '/editions', title: 'Editions', desc: 'Nog niet te bestellen — elke maand merkbeeld zonder product erin', soon: true },
+      { href: '/editions', title: 'Editions', desc: 'Nog niet te bestellen — elke maand merkbeeld zonder product erin', soon: true, groep: 'maand' },
     ],
     nav_how: 'Hoe het werkt',
     how: [
       { href: '/how-it-works', title: 'Van bestelling tot levering', desc: 'De vier stappen, en de twee waar jij in zit' },
-      /* Zie de Engelse kant: geen href, want /demo bestaat niet. */
-      { title: 'Zie een bestelling draaien', desc: 'Loop er \u00e9\u00e9n door, scherm voor scherm' },
-      { href: '/studio', title: 'Hoe een bestelling draait', desc: 'De studiodag, de kalender, de capaciteit' },
+      /* Zelfde reden als bij de Engelse lijst hierboven: het demo-item is weg,
+         en /studio heet nu naar wat er staat in plaats van naar iets wat bijna
+         hetzelfde is als de regel erboven. */
+      { href: '/studio', title: 'De planning en de capaciteit', desc: 'Wat een studiodag aankan, en wanneer een datum vast kan staan' },
       { href: '/portal', title: 'VISUAILS Studio', desc: 'Waar je werk landt, en hoe je het goedkeurt' },
-      { href: '/models', title: 'De modellen', desc: `De ${rosterWoord('nl')} gezichten die bij elke bestelling horen` },
+      { href: '/models', title: 'De modellen', desc: 'De tien gezichten die bij elke bestelling horen' },
       { href: '/upload-guidelines', title: 'Je foto\u2019s aanleveren', desc: 'Wat we nodig hebben, en wat een telefoon kan' },
       /* /compare staat nu op de prijzenpagina en /ai-act in de juridische regel
          onderaan — zie de noot bij de Engelse lijst. */
@@ -379,7 +416,7 @@ export const ui = {
     foot_company: 'Bedrijf',
     foot_touch: 'Contact',
     foot_about: 'Over ons',
-    foot_studio: 'Hoe een bestelling draait',
+    foot_studio: 'De planning en de capaciteit',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
     foot_sample: TEST_SAMPLE.nl.cta,

@@ -1,0 +1,306 @@
+---
+/*
+ * FigOverzicht — VISUAILS Studio zoals de KLANT hem ziet, met één lopende
+ * bestelling erin.
+ *
+ * ── WAAROM DIT BESTAAT ──────────────────────────────────────────────────────
+ *
+ * Op /studio stond hier een <Placeholder> met de opdracht: *"Schermafdruk van
+ * VISUAILS Studio — het overzicht met één lopende bestelling"*, en eronder wat
+ * hij moest bewijzen: *"Moet in één blik laten zien dat dit een échte
+ * werkomgeving is en geen mailtje met een downloadlink: statusregel,
+ * leverdatum, en beelden die op goedkeuring wachten. Liever een halfvolle
+ * bestelling dan een lege — een leeg scherm bewijst niets."*
+ *
+ * Dat is geen foto. Het is een SCHERM, en een scherm kun je tekenen — met
+ * dezelfde gegevens waar de andere figuren op deze pagina uit lezen, waardoor
+ * het bovendien niet kan gaan afwijken van wat ernaast staat. Lucas, 8
+ * september 2026: *"kijken naar placeholders die door een mock up bijvoorbeeld
+ * kunnen worden ingevuld, bijvoorbeeld de dashboard mock up als voorbeeld, deze
+ * kan jij namelijk al gewoon toevoegen, dan ga ik bezig met de content die ik
+ * zelf moet maken."*
+ *
+ * ── WAT HIJ NIET IS ─────────────────────────────────────────────────────────
+ *
+ * Geen tweede FigDash. Die staat op /portal en is een DOORLOOPTOUR: vier
+ * schermen na elkaar, met knoppen om ertussen te wisselen. Deze is één scherm
+ * in één toestand, want hij vervangt een schermAFDRUK — het beeld dat je in de
+ * eerste seconde van de pagina ziet, niet iets om doorheen te klikken.
+ *
+ * Geen tweede FigGallery. Die legt uit hoe beoordelen wérkt (vier tegels, drie
+ * toestanden, het tekstvak waarin je zegt wat er niet klopt). Hier zijn de
+ * tegels een TELLER: hoeveel er nog op je wachten. De ene figuur legt een
+ * handeling uit, deze laat een stand van zaken zien.
+ *
+ * ── EN GEEN ENKEL GETAL IS INGETYPT ─────────────────────────────────────────
+ *
+ * De referentie, het merk, het aantal producten en het leververster komen uit
+ * src/data/figdemo.js — dezelfde bron als FigGate en FigBoard op deze pagina.
+ * Zonder dat kan het overzicht van de klant een andere datum tonen dan de agenda
+ * ernaast, en dat is precies het soort tegenspraak waar tests/figures.test.mjs
+ * voor is gemaakt. De verdeling goedgekeurd/wachtend/revisie is wél gekozen —
+ * dat is geen feit over de studio maar de toestand die deze tekening laat zien,
+ * en de opdracht vroeg om een halfvolle bestelling.
+ *
+ * De knoppen zijn <span>'s. Er valt niets te klikken, en een echte knop die
+ * niets doet is een leugen met een cursor — dezelfde regel als in FigBoard.
+ */
+import { DEMO_ORDER, demoWindow, windowLabel } from '../data/figdemo.js';
+import { COMPLETE_IMAGES } from '../data/pricing.js';
+
+interface Props { lang?: 'en' | 'nl' }
+const { lang = 'en' } = Astro.props;
+const nl = lang === 'nl';
+
+const venster = windowLabel(demoWindow(DEMO_ORDER.products), lang);
+
+/* De tegels. VIER, en niet acht: er zijn vier bruikbare voorbeeldbeelden, en
+   acht tegels betekende dus twee keer dezelfde foto in één raster — dat leest
+   als een fout in het scherm in plaats van als een scherm.
+   `state` bepaalt de rand én het woord eronder: een toestand die alleen een
+   kleur is, is voor niemand te lezen die de twee tinten niet kan scheiden. */
+const TEGELS = ['ok', 'wacht', 'rev', 'wacht'] as const;
+const WACHT = TEGELS.filter((t) => t === 'wacht').length;
+
+/* Hoeveel beelden deze bestelling in totaal oplevert. Uitgerekend en niet
+   ingetypt: het aantal producten komt uit de fixture, het aantal beelden per
+   product uit pricing.js. Zo kan deze figuur niet gaan afwijken van de rest van
+   de site zodra een set groter of kleiner wordt. */
+const TOTAAL = DEMO_ORDER.products * COMPLETE_IMAGES;
+
+/* De beelden onder de tegels. Dezelfde reeks als FigGallery gebruikt, zodat er
+   geen tweede lijst bestaat die stilletjes naar een verwijderd bestand wijst. */
+const BEELD = [
+  '/img/lifestyle-flash-01.webp',
+  '/img/lifestyle-flash-03.webp',
+  '/img/lifestyle-flash-05.webp',
+  '/img/lifestyle-flash-07.webp',
+];
+
+const C = nl
+  ? {
+      kant: 'Studio',
+      badge: 'Voorbeeld met verzonnen gegevens',
+      ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
+      wat: `${DEMO_ORDER.products} producten · catalog en lifestyle`,
+      stroom: ['Ontvangen', 'In productie', 'Nagekeken', 'Geleverd'],
+      stroomNu: 1,
+      datumL: 'Jouw leverweek',
+      datumFijn: 'vastgezet voordat je betaalde',
+      wachtH: 'De eerste beelden staan er',
+      wachtSub: `${WACHT} wachten op jouw goedkeuring · 1 terug voor revisie`,
+      staat: { ok: 'Goedgekeurd', wacht: 'Wacht op jou', rev: 'Revisie' },
+      cap: ['Product 1 · voorkant', 'Product 1 · achterkant', 'Product 2 · voorkant', 'Product 2 · detail'],
+      knop1: 'Bekijk en keur goed',
+      knop2: 'Alles downloaden',
+      fijn: `Zo komen alle ${TOTAAL} beelden van deze bestelling binnen — ${COMPLETE_IMAGES} per product. Je keurt ze stuk voor stuk goed, en de rest van de levering loopt gewoon door.`,
+    }
+  : {
+      kant: 'Studio',
+      badge: 'Example with made-up data',
+      ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
+      wat: `${DEMO_ORDER.products} products · catalog and lifestyle`,
+      stroom: ['Received', 'In production', 'Checked', 'Delivered'],
+      stroomNu: 1,
+      datumL: 'Your delivery week',
+      datumFijn: 'fixed before you paid',
+      wachtH: 'The first images are in',
+      wachtSub: `${WACHT} waiting for your approval · 1 back for revision`,
+      staat: { ok: 'Approved', wacht: 'Waiting for you', rev: 'Revision' },
+      cap: ['Product 1 · front', 'Product 1 · back', 'Product 2 · front', 'Product 2 · detail'],
+      knop1: 'Open and approve',
+      knop2: 'Download everything',
+      fijn: `All ${TOTAAL} images of this order arrive the same way — ${COMPLETE_IMAGES} per product. You approve them one at a time and the rest of the delivery keeps moving.`,
+    };
+---
+
+<figure class="fo" aria-label={`${C.kant} — ${C.ref}`}>
+  <div class="fo-frame">
+    <div class="fo-bar">
+      <span class="fo-mark">VISUAILS</span>
+      <span class="fo-kant">{C.kant}</span>
+      <span class="fo-badge">{C.badge}</span>
+    </div>
+
+    <div class="fo-body">
+      {/* ── 1 · WELKE BESTELLING ────────────────────────────────────────── */}
+      <header class="fo-kop">
+        <p class="fo-ref">{C.ref}</p>
+        <p class="fo-wat">{C.wat}</p>
+      </header>
+
+      {/* ── 2 · DE STATUSREGEL ──────────────────────────────────────────────
+          Vier stappen, met de derde nog leeg: een balk die al vol staat, laat
+          niet zien dat er iets loopt. `aria-current` op de stap waar hij is, en
+          de stap zegt zijn stand ook in woorden — een streepje dat alleen
+          dikker is, is geen mededeling. */}
+      <ol class="fo-stroom">
+        {C.stroom.map((s, i) => (
+          <li
+            class:list={['fo-stap', i < C.stroomNu && 'is-klaar', i === C.stroomNu && 'is-nu']}
+            aria-current={i === C.stroomNu ? 'step' : undefined}>
+            <span class="fo-stip" aria-hidden="true"></span>
+            <span class="fo-stap-n">{s}</span>
+          </li>
+        ))}
+      </ol>
+
+      {/* ── 3 · DE LEVERDATUM ──────────────────────────────────────────────
+          Uit de poort en niet ingetypt — zie de kop. De regel eronder is de
+          belofte die deze pagina doet, in vier woorden. */}
+      <div class="fo-datum">
+        <span class="fo-datum-l">{C.datumL}</span>
+        <b class="fo-datum-v">{venster}</b>
+        <span class="fo-datum-f">{C.datumFijn}</span>
+      </div>
+
+      {/* ── 4 · WAT ER OP GOEDKEURING WACHT ────────────────────────────── */}
+      <section class="fo-wacht">
+        <div class="fo-wacht-kop">
+          <p class="fo-h">{C.wachtH}</p>
+          <p class="fo-sub">{C.wachtSub}</p>
+        </div>
+        <ul class="fo-tegels" role="list">
+          {TEGELS.map((staat, i) => (
+            <li class={`fo-tegel is-${staat}`}>
+              <img src={BEELD[i]} alt="" width="480" height="600" loading="lazy" decoding="async" />
+              <span class="fo-cap">{C.cap[i]}</span>
+              <span class={`fo-staat is-${staat}`}>{C.staat[staat]}</span>
+            </li>
+          ))}
+        </ul>
+        <div class="fo-acts">
+          <span class="fo-btn is-primary">{C.knop1}</span>
+          <span class="fo-btn">{C.knop2}</span>
+        </div>
+      </section>
+
+      <p class="fo-fijn">{C.fijn}</p>
+    </div>
+  </div>
+</figure>
+
+<style>
+  /* De maat komt van de KOLOM waar deze figuur in staat en niet van het
+     venster: op /studio staat hij naast een tekstblok. Zelfde reden als in
+     FigDash en FigGallery — zie de langere noot daar. */
+  .fo { container-type: inline-size; margin: 0; }
+
+  .fo-frame {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .fo-bar {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+    padding: .7rem .9rem;
+    background: var(--surface-2);
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .fo-mark { font-family: var(--font-display); font-weight: 900; font-size: .78rem; letter-spacing: .16em; color: var(--ink); }
+  .fo-kant { font-size: .75rem; color: var(--ink-2); }
+  /* Het woord "voorbeeld" hoort in beeld te staan en niet alleen in de tekst
+     ernaast: een schermafdruk wordt gedeeld zonder zijn pagina. */
+  .fo-badge {
+    margin-left: auto;
+    font-size: .72rem; letter-spacing: .04em; color: var(--ink-3);
+    padding: .18rem .5rem;
+    border: 1px solid var(--line); border-radius: var(--r-pill);
+  }
+
+  /* ── EEN KOLOM MET FLEX EN NIET MET GRID — 8 september 2026 ──────────────
+     Dit was `display: grid; gap`, en dan zat er midden in het scherm twee keer
+     anderhalve centimeter lucht. Gemeten en uitgezocht: een grid-RIJ op `auto`
+     wordt max-content hoog, en de max-content van de tegelstrook rekent met de
+     eigen afmeting van de foto's — 600 pixels per stuk — en niet met de breedte
+     die ze in de kolom krijgen. De rij werd zo 602 hoog voor 285 aan inhoud.
+     Een flexkolom heeft dat probleem niet: die meet de werkelijke hoogte. Zelfde
+     gat, zelfde reden, in .fo-wacht hieronder. */
+  .fo-body { padding: .9rem; display: flex; flex-direction: column; gap: .85rem; }
+
+  .fo-kop { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .fo-ref { margin: 0; font-size: .82rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fo-wat { margin: 0; font-size: .75rem; color: var(--ink-3); }
+
+  /* ── DE STATUSREGEL ───────────────────────────────────────────────────────
+     Een rij en geen balk: vier stappen met een lijntje ertussen leest als een
+     weg, een gevulde balk leest als een percentage — en er is hier geen
+     percentage, er is een stap. */
+  .fo-stroom {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem;
+  }
+  .fo-stap { display: grid; gap: .3rem; font-size: .72rem; color: var(--ink-3); }
+  .fo-stip { display: block; height: 3px; border-radius: 999px; background: var(--line); }
+  .fo-stap.is-klaar .fo-stip { background: color-mix(in srgb, var(--accent) 62%, var(--line)); }
+  .fo-stap.is-klaar { color: var(--ink-2); }
+  .fo-stap.is-nu .fo-stip { background: var(--accent); }
+  .fo-stap.is-nu { color: var(--ink); font-weight: 600; }
+  .fo-stap-n { display: block; }
+
+  .fo-datum {
+    display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap;
+    padding: .6rem .7rem;
+    border: 1px solid var(--line); border-radius: var(--r-sm, 6px);
+    background: var(--surface-2);
+  }
+  .fo-datum-l { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .fo-datum-v { font-size: .88rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fo-datum-f { font-size: .72rem; color: var(--ink-3); margin-left: auto; }
+
+  /* ── padding: 0, EN DAT IS GEEN OPSCHONING ───────────────────────────────
+     global.css §"section { padding-block: clamp(4.5rem, 9vw, 9rem) }" is een
+     KALE elementselector: elke <section> op de site krijgt daar bijna anderhalve
+     centimeter lucht boven en onder, ook een <section> die diep in een getekend
+     scherm zit. Hier waren dat 158 pixels aan beide kanten — twee gaten midden
+     in de figuur, terwijl elke marge die ik nameet nul was. Gevonden door de
+     computed padding uit te lezen, niet door te kijken.
+     Elke figuur die een <section> gebruikt moet dit zelf terugzetten; FigBoard
+     doet het met zijn eigen kaartpadding. Vandaar dat het hier expliciet staat
+     en niet impliciet klopt. */
+  .fo-wacht { display: flex; flex-direction: column; gap: .55rem; padding: 0; }
+  .fo-wacht-kop { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .fo-h { margin: 0; font-size: .9rem; font-weight: 700; color: var(--ink); }
+  .fo-sub { margin: 0; font-size: .74rem; color: var(--ink-3); }
+
+  /* Vier op een rij zodra het past, anders twee, en onder de 20rem één: een
+     foto van tachtig pixels breed bewijst niets. */
+  .fo-tegels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+  @container (max-width: 34rem) { .fo-tegels { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container (max-width: 20rem) { .fo-tegels { grid-template-columns: 1fr; } }
+
+  .fo-tegel { display: grid; gap: .22rem; align-content: start; }
+  .fo-tegel img {
+    width: 100%; aspect-ratio: 4 / 5; object-fit: cover;
+    border-radius: var(--r-sm, 6px);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .fo-tegel.is-ok img { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .fo-tegel.is-wacht img { box-shadow: inset 0 0 0 2px var(--ink-3); }
+  .fo-tegel.is-rev img { box-shadow: inset 0 0 0 2px var(--warn-ink, #C9A227); }
+  /* Wat wacht is lichter dan wat af is: de tegels die nog een handeling van je
+     vragen mogen niet wegvallen tegen de zeven die dat niet doen. */
+  .fo-tegel.is-ok img { opacity: .72; }
+  .fo-cap { font-size: .74rem; color: var(--ink-2); }
+  .fo-staat { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .fo-staat.is-ok { color: var(--accent-text); }
+  .fo-staat.is-wacht { color: var(--ink-2); }
+  /* De donkere klei-waarde en niet --warn-ink: die meet als TEKST op wit
+     2,36:1. Dezelfde reparatie als in FigBoard en FigGallery. */
+  .fo-staat.is-rev { color: var(--flag-ink, #8A4F06); }
+
+  .fo-acts { display: flex; flex-wrap: wrap; gap: .3rem; }
+  /* Geen echte knoppen — zie de kop van dit bestand. */
+  .fo-btn {
+    display: inline-block;
+    font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+    padding: .3rem .55rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    color: var(--ink-2); white-space: nowrap;
+  }
+  .fo-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+
+  .fo-fijn { margin: 0; font-size: .74rem; line-height: 1.55; color: var(--ink-3); }
+</style>

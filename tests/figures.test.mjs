@@ -274,7 +274,12 @@ console.log('\nvier figuren, één bron');
      read() gooit op een bestand dat er niet is, dus dit hele testbestand viel
      om zodra het bestand weg was. Dat is de reden dat sectie 8 hieronder er nu
      staat. */
-  const figs = ['FigGate', 'FigBoard', 'FigDash'];
+  /* VIER SINDS 8 SEPTEMBER 2026. FigOverzicht tekent VISUAILS Studio zoals de
+     KLANT hem ziet, met de leverweek erin — en dat is precies het getal dat op
+     dezelfde pagina ook door FigGate wordt uitgerekend. Twee figuren die naast
+     elkaar een andere week tonen is de fout waar dit hele testbestand voor is
+     gemaakt, dus hij hoort in deze lus. */
+  const figs = ['FigGate', 'FigBoard', 'FigDash', 'FigOverzicht'];
   for (const f of figs) {
     const src = read(`src/components/${f}.astro`);
     check(`${f} leest de fixture`, /from '\.\.\/data\/figdemo\.js'/.test(src), true);
@@ -297,6 +302,11 @@ console.log('\nvier figuren, één bron');
   const page = codeOnly(read('src/components/StudioPage.astro'));
   check('StudioPage leest de constanten', /from '\.\.\/data\/capacity\.js'/.test(page), true);
   check('en tekent de figuren', /<FigGate lang=\{lang\} \/>/.test(page) && /<FigBoard lang=\{lang\} \/>/.test(page), true);
+  /* De schermafdruk die er niet was. Op deze plek stond een <Placeholder> met de
+     opdracht "Schermafdruk van VISUAILS Studio"; sinds 8 september staat daar een
+     getekend scherm. Als die regel ooit weer verdwijnt, hoort de plaatshouder
+     terug te komen en niet de lege plek. */
+  check('en het klantoverzicht', /<FigOverzicht lang=\{lang\} \/>/.test(page), true);
   check('de grijze vlakken zijn weg', /class="ph"/.test(page), false);
   // Geen hardgecodeerd 18 / 15 / 3 in de tekst: dat is precies hoe /pricing en
   // /studio ooit twee verschillende plafonds gingen noemen.
@@ -351,6 +361,7 @@ console.log('\nhet is een voorbeeld, en dat staat erin');
     'src/components/FigBoard.astro',
     'src/components/FigDash.astro',
     'src/components/FigGallery.astro',
+    'src/components/FigOverzicht.astro',
   ];
   for (const f of dataFiles) {
     const found = [...new Set(read(f).match(/\b\d{4}\s?[A-Z]{2}\b/g) || [])];

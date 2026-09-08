@@ -60,10 +60,13 @@ import { waHref } from '../data/whatsapp.js';
  * ── DE OPBOUW NU: VIER GROEPEN, VIER VERSCHILLENDE VRAGEN ──────────────────
  *
  *   1. WAT WORDT ER GEMAAKT?      vier deuren, op bestemming gesorteerd
- *   2. WAT GEBEURT ER DAARNA?     de vijf stappen, en wanneer je betaalt
- *   3. WAT GAAT ER MEE?           merkmodel en eigen look — bij een bestelling
- *   4. HOE BETAAL JE?             eenmalig, of maandelijks
+ *   2. HOE BETAAL JE HET?         eenmalig, of maandelijks — één rij
+ *   3. WAT GEBEURT ER DAARNA?     de vijf stappen, en wanneer je betaalt
+ *   4. WAT GAAT ER MEE?           merkmodel en eigen look — bij een bestelling
  *   ...en voor wie het nog niet weet: de proef.
+ *
+ * DE BETAALVRAAG STAAT SINDS 8 SEPTEMBER 2026 OP TWEE en niet meer op vier. Hij
+ * gaat over de deuren die er vlak boven staan, en stond er twee panelen vanaf.
  *
  * De deuren heten naar WAAR DE BEELDEN HEEN GAAN en niet naar hoe wij ze
  * noemen. "Catalogsets" is ons woord; "op je productpagina" is het zijne. De
@@ -88,7 +91,7 @@ import {
   ladderRate, euro, vatLabel, vatLead, vatDetail, AMOUNT, plans,
   WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause,
   CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
-  STOCK_OFF_BRAND, STOCK_ON_BRAND,
+  STOCK_OFF_BRAND, STOCK_ON_BRAND, PLAN_ROLLOVER_MONTHS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -319,7 +322,7 @@ const COPY = {
     ],
 
     payH: 'Or pay for it monthly instead',
-    payLine: `The same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you. Every plan costs less than the same number of products ordered one by one, and ${STOCK_OFF_BRAND} Editions visuals come with it.`,
+    payLine: `The same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you. ${STOCK_OFF_BRAND} Editions visuals come with it for the months you have nothing new to shoot, and what you do not use rolls over ${PLAN_ROLLOVER_MONTHS} month.`,
     payCta: 'Start a plan',
     payCta2: 'Compare the plans',
 
@@ -502,7 +505,7 @@ const COPY = {
     ],
 
     payH: 'Of betaal er maandelijks voor',
-    payLine: `Hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt. Elk abonnement kost minder dan datzelfde aantal producten los besteld, en er zitten ${STOCK_OFF_BRAND} Editions-beelden bij.`,
+    payLine: `Hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt. Er zitten ${STOCK_OFF_BRAND} Editions-beelden bij voor de maanden waarin je niets nieuws te fotograferen hebt, en wat je niet opmaakt schuift ${PLAN_ROLLOVER_MONTHS} maand door.`,
     payCta: 'Sluit een abonnement af',
     payCta2: 'Vergelijk de abonnementen',
 
@@ -613,12 +616,51 @@ const nl = lang === 'nl';
     </div>
   </section>
 
+  {/* ── 2 · HOE JE HET BETAALT ─────────────────────────────────────────────
+      DIRECT ONDER DE DEUREN, en tot 8 september 2026 stond dit als paneel 5:
+      ná "wat er daarna gebeurt" en ná "wat er meegaat". Dat is twee panelen
+      verder dan waar de vraag thuishoort, want dit is een vraag OVER de deuren
+      die er vlak boven staan — dezelfde beelden, een andere manier van betalen
+      — en elk paneel ertussen is een plek om te stoppen met lezen. Zie
+      kladblok/VOORSTEL-D4-ABONNEMENTEN.md §4B.
+
+      HET BLIJFT EEN RIJ EN WORDT GEEN TEGEL. Punt 4 van de kop hierboven staat
+      onverkort: een abonnement is geen vierde dienst. Alleen de VOLGORDE is
+      veranderd, niet de vorm.
+
+      DE PRIJSBEWERING IS ERUIT. payLine zei "kost minder dan datzelfde aantal
+      producten los besteld", en dat is alleen waar tegenover een complete
+      levering — een catalogbestelling van hetzelfde aantal is goedkoper dan
+      elk abonnement (12 producten: € 612 los tegen € 790 Studio). De regel
+      noemt nu wat een abonnement wél alleen heeft: de week in de planning, de
+      Editions-beelden en het doorschuiven. De prijsvergelijking staat op de
+      plek waar de twee echte getallen naast elkaar passen — het bestelformulier
+      en /plans. */}
+  <section class="paneel st-abo" aria-labelledby="st-betalen">
+    <div class="st-rij">
+      <div class="st-rij-tekst">
+        <h2 id="st-betalen" class="hoog hoog-3">{c.payH}</h2>
+        <p class="lopend">{c.payLine}</p>
+      </div>
+      <div class="st-rij-zij">
+        <p class="st-mee-bedrag">
+          <span class="mono">{c.from}</span>
+          <span class="tarief st-groot">{planFrom.price}</span>
+          <span class="mono">{planFrom.unit}, {vatLabel('excl', lang)}</span>
+        </p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start/plan')}>{c.payCta}</a>
+          <a class="knop knop-lijn" href={lp('/plans')}>{c.payCta2}</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
   {/* ── 3 · WAT ER DAARNA GEBEURT ───────────────────────────────────────────
       De pagina die de bestelling begint, zei nergens wat drukken doet. De vijf
       stappen komen letterlijk uit de rail van OrderFlow.astro, zodat ze niet
       uiteen kunnen lopen met het formulier waar ze over gaan. */}
   <section class="kamer st-kamer" aria-labelledby="st-daarna">
-    <p class="spook spook-rechts" aria-hidden="true"><span>{c.eyebrow}</span><span>{c.eyebrow}</span></p>
     <header class="kamer-kop">
       <h2 id="st-daarna" class="hoog hoog-2">{c.afterH}</h2>
       <p class="lopend">{c.afterLead}</p>
@@ -666,30 +708,7 @@ const nl = lang === 'nl';
     </ul>
   </section>
 
-  {/* ── 5 · HOE JE BETAALT ──────────────────────────────────────────────────
-      Eén rij en geen tegel naast de deuren: een abonnement is geen dienst maar
-      een andere manier van betalen voor precies het werk dat hierboven staat. */}
-  <section class="paneel st-abo" aria-labelledby="st-betalen">
-    <div class="st-rij">
-      <div class="st-rij-tekst">
-        <h2 id="st-betalen" class="hoog hoog-3">{c.payH}</h2>
-        <p class="lopend">{c.payLine}</p>
-      </div>
-      <div class="st-rij-zij">
-        <p class="st-mee-bedrag">
-          <span class="mono">{c.from}</span>
-          <span class="tarief st-groot">{planFrom.price}</span>
-          <span class="mono">{planFrom.unit}, {vatLabel('excl', lang)}</span>
-        </p>
-        <p class="acties">
-          <a class="knop knop-inkt" href={lp('/start/plan')}>{c.payCta}</a>
-          <a class="knop knop-lijn" href={lp('/plans')}>{c.payCta2}</a>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  {/* ── 6 · NOG NIET ZEKER ──────────────────────────────────────────────── */}
+  {/* ── 5 · NOG NIET ZEKER ──────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="st-slot">
     <h2 id="st-slot" class="hoog">{c.footH}</h2>
     <p class="lopend">{c.footBody}</p>
@@ -775,7 +794,10 @@ const nl = lang === 'nl';
   /* De beschrijving slikt de speling op, en niet de knop met `margin-top:auto`.
      Verschil: zo staan de VIER TARIEFREGELS ook op één lijn, en niet alleen de
      vier knoppen — en dat is de regel die je vergelijkt. */
-  .st-regel { font-size: .88rem; flex: 1; }
+  /* .6rem en niet niets: gemeten met kladblok/te-dicht.mjs stonden deze twee
+     alinea's 6px uit elkaar en lazen ze als één blok grijs. Het zijn twee
+     verschillende dingen — wat je krijgt, en waar het voor is. */
+  .st-regel { font-size: .88rem; flex: 1; margin-top: .6rem; }
   /* `min-height` van twee regels, want "On request · no standard rate" past
      niet op één en elke andere deur wel. Zonder deze regel zakte de knop van die
      ene deur een regel lager dan de rest — en de vier knoppen op één lijn is
