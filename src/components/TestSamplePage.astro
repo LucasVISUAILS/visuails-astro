@@ -372,7 +372,23 @@ const vink = 'M20 6L9 17l-5-5';
   }
   .ts-i-stil { stroke: var(--lijn-sterk); }
 
-  .ts-beeld { margin: 0; aspect-ratio: 4 / 5; }
+  /* ── HORIZONTAAL, NIET VERTICAAL — 9 september 2026 ───────────────────────
+     Lucas: *"Ik wou ook dat de afbeeldingen in 1 scherm paste maar dat is nog
+     steeds niet zo. Dit soort afbeeldingen werken niet zo fijn op een website.
+     Maak al dit soort afbeeldingen horizontaal lang en niet verticaal."*
+
+     Gemeten op 1440 breed: dit beeld stond op 568×710. Een staand beeld naast een
+     kolom tekst duwt de sectie hoger dan het scherm, en dan lees je de tekst
+     ernaast nooit in één blik. 3/2 is liggend zonder een filmstrook te worden;
+     `object-position` houdt het onderwerp in beeld nu er van boven en onder
+     wordt bijgesneden.
+
+     DE KLEINE TEGELS BLIJVEN STAAND. Een producttegel in een raster (de
+     galerij, de modellen, de voorbeelden) is een FOTO die je bekijkt, geen
+     sectiebeeld dat naast tekst moet passen — en staand is de vorm waarin die
+     beelden gemaakt zijn. */
+  .ts-beeld { margin: 0; aspect-ratio: 3 / 2; }
+  .ts-beeld img { object-position: 50% 34%; }
   .ts-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
   .ts-vak {
@@ -419,7 +435,10 @@ const vink = 'M20 6L9 17l-5-5';
 
   .ts-fijndruk { padding-block: clamp(1.8rem, 4vw, 3rem); display: grid; gap: .9rem; justify-items: center; text-align: center; }
   .ts-fijn { color: var(--inkt-2); font-size: .75rem; }
-  .ts-hulp { max-width: 44em; font-size: .92rem; }
+  /* 14px onder de kleine lettertjes was krap voor twee alinea's die niets met
+     elkaar te maken hebben — de een is een voorwaarde, de ander een aanbod om
+     te helpen. Gemeten met kladblok/witruimte.mjs. */
+  .ts-hulp { max-width: 44em; font-size: .92rem; margin-top: clamp(1.1rem, 2vw, 1.5rem); }
   .ts-refused a, .ts-hulp a {
     color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
     text-decoration-color: var(--geel); text-decoration-thickness: 2px;

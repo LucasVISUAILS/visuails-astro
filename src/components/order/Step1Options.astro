@@ -47,9 +47,29 @@ import BackgroundPicker from './BackgroundPicker.astro';
 import ModelPicker from './ModelPicker.astro';
 import { copy as chCopy } from '../../data/channels.js';
 import { background, DEFAULT_ID, copy as bgCopy } from '../../data/backgrounds.js';
+import { catalogStyles as looksEn } from '../../data/catalogStyles.js';
+import { catalogStyles as looksNl } from '../../data/catalogStyles.nl.js';
+import { localizedPath } from '../../i18n/ui.js';
 
-interface Props { lang: 'en' | 'nl'; }
-const { lang } = Astro.props;
+/*
+ * ── `huisLook`: DE LOOK STAAT ER, OOK ALS ER NIETS TE KIEZEN VALT ──────────
+ *
+ * Lucas, 9 september 2026: *"Als je vanaf deze pagina op start order klikt ga
+ * je gelijk naar het bestelformulier zonder een style gekozen te hebben."*
+ *
+ * Op /lifestyle en /complete klopte dat niet — daar staat de stijlkiezer in de
+ * stap en dragen de looklinks hun keuze mee in `?style=`. Op CATALOG klopte het
+ * wel, en anders dan het lijkt is dat geen vergeten stap: er zijn er twee, en
+ * de tweede ("Custom Brand") is een eigen aanvraagstroom en geen optie in dit
+ * formulier. Er valt hier dus niets te kiezen.
+ *
+ * Maar /catalog kondigt "stap 1 — kies je catalog-stijl" aan, en dan hoort het
+ * formulier te BEVESTIGEN waar je terechtgekomen bent in plaats van erover te
+ * zwijgen. Eén regel: welke look dit is, en waar de andere zit. De naam komt
+ * uit de data, dus hij kan niet gaan afwijken van de pagina die ernaar wijst.
+ */
+interface Props { lang: 'en' | 'nl'; huisLook?: boolean; }
+const { lang, huisLook = false } = Astro.props;
 
 const ch = chCopy(lang);
 const bg = bgCopy(lang);
@@ -72,7 +92,26 @@ const START = {
   },
 };
 const s = START[lang];
+
+/* De huisstijl van de catalogset: de eerste die niet naar een eigen
+   aanvraagstroom wijst. Uit de data en niet ingetypt. */
+const LOOKS = lang === 'nl' ? looksNl : looksEn;
+const HUIS = LOOKS.find((x) => x.slug !== 'custom') || LOOKS[0];
+const LOOK_COPY = lang === 'nl'
+  ? { label: 'De look', anders: 'Iets anders voor ogen?', link: 'Vraag een eigen look aan' }
+  : { label: 'The look', anders: 'Something else in mind?', link: 'Ask for a look of your own' };
+const lpx = (q: string) => localizedPath(lang, q);
 ---
+
+{huisLook && HUIS && (
+  <p class="s1-look">
+    <span class="mono s1-look-l">{LOOK_COPY.label}</span>
+    <b>{HUIS.name}</b>
+    {/* `{' '}` en geen gewone spatie: Astro knipt witruimte tussen een
+        expressie en een element weg, en dan staat er "ogen?Vraag". */}
+    <span class="s1-look-r">{LOOK_COPY.anders}{' '}<a href={lpx('/start/custom-look')}>{LOOK_COPY.link}</a></span>
+  </p>
+)}
 
 <div class="s1-folds">
   <Disclose
@@ -104,6 +143,23 @@ const s = START[lang];
 </div>
 
 <style>
+  /* Eén regel en geen kaart: er valt niets te kiezen, dus het is een mededeling
+     en geen vraag. Dezelfde maat als de vouwen eronder, zodat de kolom niet
+     verspringt. */
+  .s1-look {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
+    max-width: var(--pl-measure);
+    margin-top: clamp(1.6rem, 3vw, 2.2rem);
+    padding-bottom: .9rem;
+    border-bottom: 1px solid var(--line);
+    font-size: .95rem;
+  }
+  .s1-look-l { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .s1-look b { color: var(--ink); font-weight: 600; }
+  .s1-look-r { margin-left: auto; font-size: .85rem; color: var(--ink-3); }
+  .s1-look-r a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .s1-look + .s1-folds { margin-top: clamp(1rem, 2vw, 1.4rem); }
+
   /* Capped at the same measure the pickers were, so folding them changes what
      is visible and not where the column sits. */
   .s1-folds { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }

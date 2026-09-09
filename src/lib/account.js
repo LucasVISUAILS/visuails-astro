@@ -1663,6 +1663,28 @@ export async function accountGet(context) {
      [...path]-route die hierheen leidt. Wat hier nog langskomt is een pad dat
      geen scherm is, en dat krijgt de 404 hieronder — ingelogd, want dat is de
      enige klant die deze pagina hoort te zien. */
+  /* ── EEN SCHERM ZONDER ZIJN SLASH KREEG DE 404 — 9 september 2026 ────────
+     Lucas stuurde `visuails.com/account?lang=en` met "This page does not
+     exist." erop. Niets kapot aan het scherm: de SCHERMEN zijn Astro-pagina's
+     (zie de noot hierboven) en die worden op de Worker gevonden onder hun pad
+     MET slash. Komt er een verzoek zonder — en dat is precies wat je krijgt als
+     iemand /account intypt, of als een link de slash weglaat — dan matcht de
+     statische pagina niet en valt het door naar deze vangroute, die er geen
+     scherm van kent en dus de 404 geeft. Uitgelogd viel het niet op, want dan
+     stuurt de sessiecontrole hierboven je al naar /account/login.
+
+     Eén doorverwijzing lost de hele klasse op. Alleen als de URL de slash NIET
+     had: had hij hem wél en komt hij hier toch, dan is er echt geen scherm en
+     hoort de 404 te blijven staan — anders wordt dit een lus. De query gaat
+     mee, want `?lang=en` is precies waar dit voorbeeld mee begon. */
+  const SCHERMEN = new Set([
+    '/account', '/account/orders', '/account/invoices', '/account/details',
+    '/account/brand-kit', '/account/plan', '/account/code', '/account/verify',
+  ]);
+  if (!url.pathname.endsWith('/') && SCHERMEN.has(url.pathname)) {
+    return seeOther(`${url.pathname}/${url.search}`);
+  }
+
   const lang = negotiate(request);
   return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
 }

@@ -624,7 +624,22 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
 </div>
 
 <style>
-  .cat-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  /* ── DE KOP BEGINT BOVENAAN, HET BEELD MAG ZWEVEN — 8 september 2026 ──────
+     Lucas over /portal: *"bij deze pagina ook niet eerste sectie volledig
+     gevuld."* Gemeten: de tekstkolom is daar 418 hoog naast een figuur van 954,
+     en met `align-items: center` zweeft die tekst in het midden — 268 pixels
+     wit bóven de kop. Een kop die op een derde van het paneel begint, leest als
+     een fout en niet als lucht.
+     Alle tien de openingsrasters op de site zijn nagemeten (kladblok/_open):
+     vier stonden op 145 tot 268 pixels scheef. De regel is nu overal dezelfde:
+     alles begint BOVEN. Daar begin je met lezen, daar staat de kop, en daar
+     hoort het beeld ernaast te beginnen. Een uitzondering voor het beeld is
+     geprobeerd en weer weggehaald: de plaatshouderfiguren komen uit een ander
+     component en krijgen in Astro een eigen scope-attribuut, dus die regel
+     raakte de helft van de gevallen niet — en een consistentieregel die op de
+     helft van de pagina's iets anders doet, is geen regel. Eén uitlijning,
+     tien pagina's, geen uitzonderingen. */
+  .cat-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: start; }
   .cat-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   .cat-beeld { position: relative; }
   .cat-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 40em; }

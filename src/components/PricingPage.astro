@@ -251,8 +251,8 @@ const COPY = {
        ziet er in de bron levend uit. Een vertaler of een prijsronde kan er
        eindeloos aan werken zonder dat er ooit iets van op een pagina staat. */
 
-    addOnH: 'Added to an order',
-    addOnSub: 'Neither of these is a way to buy visuals on its own. Both sit on top of an order you are already running.',
+    addOnH: 'What else has a rate',
+    addOnSub: 'Not everything is priced per product, so these are not on the ladder above. Each has a rate of its own: a brand model is built once and then travels with every order you place; a clip costs the same on its own as inside one.',
     brandModelName: 'Your Brand Model',
     brandModelLine: 'One face. Every order. Only yours.',
     brandModelUnit: 'one-time setup',
@@ -281,8 +281,8 @@ const COPY = {
        Vijf posten die op hun eigen pagina een prijs of "op aanvraag" dragen en
        hier ontbraken, terwijl die pagina's zeggen "zie de tarieven". Eén rustige
        lijst, geen kaarten: het zijn regels bij een bestelling, geen producten. */
-    moreH: 'Also on an order',
-    moreSub: 'Small lines that sit on top of the per-product rate. Each has its own page for the detail.',
+    moreH: 'The smaller lines',
+    moreSub: 'Some add something to an order you are placing, others stand on their own. Each has its own page for the detail.',
     moreRows: [
       ['Extra catalog angle', `${euro(extraPhotoRate(1), 'en')} to ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'en')} per photo, falling with your count`, 'A side, the inside, a second detail — added per product in the order form.', '/catalog'],
       ['Complete outfit', `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS} per order`, 'Several pieces worn together in one lifestyle shot.', '/lifestyle'],
@@ -353,8 +353,27 @@ const COPY = {
 
     /* Zie de noot bij de Engelse tak: deze zeven stonden hier ook. */
 
-    addOnH: 'Toe te voegen aan een bestelling',
-    addOnSub: 'Deze twee zijn geen bestelling op zichzelf. Ze komen bovenop een bestelling die je al doet.',
+    /* ── NIET "ERBOVENOP", MAAR "MET EEN EIGEN TARIEF" — 9 september 2026 ───
+       Lucas: *"Het is nu alsof catalog en lifestyle prioriteit zijn maar ik wil
+       dat de klant zelf kiest wat zijn prioriteit is, er is geen goed of
+       fout."*
+
+       Hier stond: *"Toe te voegen aan een bestelling — deze twee zijn geen
+       bestelling op zichzelf. Ze komen bovenop een bestelling die je al doet."*
+       Twee dingen mis, en het tweede is een feitelijke fout:
+
+         1. Het zet de staffel hierboven neer als DE bestelling en alles
+            eronder als bijwerk. Dat is een rangorde die wij verzinnen; een
+            merk dat alleen clips nodig heeft, heeft geen bijwerk gekocht.
+         2. Het is niet waar voor de videoclip. Twee regels lager staat, in
+            dezelfde sectie: *"Dezelfde prijs los of toegevoegd aan elke
+            bestelling."* Die twee zinnen spraken elkaar tegen op één scherm.
+
+       Wat er wél klopt, is dat deze niet PER PRODUCT worden afgerekend en
+       daarom niet op de staffel passen. Dat is een rekenverschil en geen
+       waardeoordeel, en dat is wat de kop nu zegt. */
+    addOnH: 'Wat er verder een tarief heeft',
+    addOnSub: 'Niet alles wordt per product afgerekend, dus deze staan niet in de staffel hierboven. Elk heeft een eigen tarief: een merkmodel wordt één keer gebouwd en gaat daarna mee in elke bestelling die je plaatst; een clip kost hetzelfde los als binnen een bestelling.',
     brandModelName: 'Jouw merkmodel',
     brandModelLine: 'Eén gezicht. Elke bestelling. Alleen van jou.',
     brandModelUnit: 'eenmalige setup',
@@ -373,8 +392,8 @@ const COPY = {
     videoCta: 'Bekijk wat een clip is',
 
     /* Zie de noot bij de Engelse moreH. */
-    moreH: 'Ook op een bestelling',
-    moreSub: 'Kleine regels bovenop het tarief per product. Elk heeft een eigen pagina voor de details.',
+    moreH: 'De kleinere posten',
+    moreSub: 'Sommige zetten iets bij een bestelling die je plaatst, andere staan er los van. Elk heeft een eigen pagina voor de details.',
     moreRows: [
       ['Extra cataloghoek', `${euro(extraPhotoRate(1), 'nl')} tot ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'nl')} per foto, dalend met je aantal`, 'Een zijkant, de binnenkant, een tweede detail — per product bij te zetten in het bestelformulier.', '/catalog'],
       ['Compleet setje', `${euro(OUTFIT_SURCHARGE, 'nl')} per zo gestyled product, tot ${MAX_OUTFIT_PRODUCTS} per bestelling`, 'Meerdere stukken samen gedragen in één lifestyleshot.', '/lifestyle'],
@@ -620,12 +639,16 @@ const nn = (i: number) => String(i).padStart(2, '0');
   </section>
 
   {/* ── 4 · OF ELKE MAAND ────────────────────────────────────────────────────
-      PlanBand blijft staan zoals hij is: hij draagt `id="plans"` voor oude
-      links en wordt ook op /plans gebruikt. Hij ligt hier in een licht paneel,
-      zodat hij niet los op de inkt hangt. */}
-  <section class="paneel pr-plan">
-    <PlanBand lang={lang} id="plans" />
-  </section>
+      Lucas, 9 september: *"Deze sectie voelt ook heel erg random en kan beter
+      in de website geïntegreerd worden."*
+
+      Hier stond `<section class="paneel pr-plan">` met de band erin: een
+      donkere rechthoek in een witte kaart op een donkere ondergrond. Drie
+      kaders om elkaar heen, en dat is waar "random" vandaan kwam. PlanBand IS
+      nu de sectie — een kamer van deze pagina, in dezelfde taal als de kamer
+      erboven — dus er hoort geen paneel meer omheen. Hij draagt `id="plans"`
+      voor oude links. */}
+  <PlanBand lang={lang} id="plans" />
 
   {/* ── 5 · DE PROEF ─────────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="pr-proef">
@@ -698,7 +721,6 @@ const nn = (i: number) => String(i).padStart(2, '0');
   .pr-regel dd b { font-weight: 500; }
 
   /* PlanBand komt uit de oude opmaak; hij krijgt hier alleen lucht. */
-  .pr-plan { padding-block: clamp(2rem, 5vw, 4rem); }
 
   .pr-proef { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
   .pr-proef .paneel-kop { margin-bottom: 0; }

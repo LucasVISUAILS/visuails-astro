@@ -294,11 +294,12 @@ const bronnen = nl
   /* ── DE BALK ─────────────────────────────────────────────────────────────
      Geel vlak met inkt erop, in dezelfde marge en ronding als een paneel, zodat
      hij bovenaan de pagina hetzelfde ritme heeft als alles eronder. */
-  /* Dezelfde behandeling als elk eerste blok van sectie 22: zijmarges (de
-     zwarte balk ernaast), een rechte bovenkant tegen de balk, en onderaan de
-     ronding van een kaart. Zie de noot bij .paneel in stijl22.css. */
+  /* Dezelfde behandeling als elk eerste blok van sectie 22: van rand tot rand,
+     een rechte bovenkant tegen de balk, en onderaan de ronding van een kaart.
+     Zie de noot bij :first-child in stijl22.css — sinds 9 september spreidt de
+     opening van ELKE pagina, en de balk erboven neemt hier de limoen over. */
   .ty-bar {
-    margin: 0 var(--rand);
+    margin: 0;
     border-radius: 0 0 var(--ronding) var(--ronding);
     padding: clamp(1.6rem, 4vw, 2.8rem) clamp(1.5rem, 5vw, 4rem);
     background: var(--geel);

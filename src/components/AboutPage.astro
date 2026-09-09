@@ -208,7 +208,23 @@ const c = nl ? {
   .ab-open, .ab-twee { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
   .ab-open .paneel-kop, .ab-zin { margin-bottom: 0; }
   .ab-beeld { aspect-ratio: 4 / 3; }
-  .ab-portret { aspect-ratio: 3 / 4; }
+  /* ── HORIZONTAAL, NIET VERTICAAL — 9 september 2026 ───────────────────────
+     Lucas: *"Ik wou ook dat de afbeeldingen in 1 scherm paste maar dat is nog
+     steeds niet zo. Dit soort afbeeldingen werken niet zo fijn op een website.
+     Maak al dit soort afbeeldingen horizontaal lang en niet verticaal."*
+
+     Gemeten op 1440 breed: dit beeld stond op 637×849. Een staand beeld naast een
+     kolom tekst duwt de sectie hoger dan het scherm, en dan lees je de tekst
+     ernaast nooit in één blik. 3/2 is liggend zonder een filmstrook te worden;
+     `object-position` houdt het onderwerp in beeld nu er van boven en onder
+     wordt bijgesneden.
+
+     DE KLEINE TEGELS BLIJVEN STAAND. Een producttegel in een raster (de
+     galerij, de modellen, de voorbeelden) is een FOTO die je bekijkt, geen
+     sectiebeeld dat naast tekst moet passen — en staand is de vorm waarin die
+     beelden gemaakt zijn. */
+  .ab-portret { aspect-ratio: 3 / 2; }
+  .ab-portret img { object-position: 50% 30%; }
   .ab-beeld img, .ab-portret img, .ab-strook img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .ab-pillen { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
   .ab-pillen li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; padding: .42rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px; }

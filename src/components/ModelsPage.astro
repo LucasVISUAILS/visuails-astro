@@ -234,7 +234,23 @@ const nn = (i: number) => String(i).padStart(2, '0');
   /* Alleen wat deze pagina eigen is; de rest komt uit stijl22.css. */
   .mp-open-in { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(1.5rem, 5vw, 4.5rem); align-items: center; }
   .mp-open .paneel-kop { margin-bottom: 0; }
-  .mp-portret { aspect-ratio: 3 / 4; }
+  /* ── HORIZONTAAL, NIET VERTICAAL — 9 september 2026 ───────────────────────
+     Lucas: *"Ik wou ook dat de afbeeldingen in 1 scherm paste maar dat is nog
+     steeds niet zo. Dit soort afbeeldingen werken niet zo fijn op een website.
+     Maak al dit soort afbeeldingen horizontaal lang en niet verticaal."*
+
+     Gemeten op 1440 breed: dit beeld stond op 532×710. Een staand beeld naast een
+     kolom tekst duwt de sectie hoger dan het scherm, en dan lees je de tekst
+     ernaast nooit in één blik. 3/2 is liggend zonder een filmstrook te worden;
+     `object-position` houdt het onderwerp in beeld nu er van boven en onder
+     wordt bijgesneden.
+
+     DE KLEINE TEGELS BLIJVEN STAAND. Een producttegel in een raster (de
+     galerij, de modellen, de voorbeelden) is een FOTO die je bekijkt, geen
+     sectiebeeld dat naast tekst moet passen — en staand is de vorm waarin die
+     beelden gemaakt zijn. */
+  .mp-portret { aspect-ratio: 3 / 2; }
+  .mp-portret img { object-position: 50% 32%; }
   .mp-maatlijn { margin: clamp(2.5rem, 5vw, 4rem) 0 0; padding-inline: 0; background: none; }
   .mp-maatlijn b { font-weight: 500; }
 

@@ -1539,7 +1539,19 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      white slab with paper ink on it, invisible for the whole page rather
      than for one frame. Same class of defect as section 16's, in a new
      place, caught the same way — by reading the rendered colour. */
-  :global(body.ground-espresso) .site-header::after { background: rgb(245 245 245 / 0.88); box-shadow: 0 1px 0 var(--line); }
+  /* ── EN NIET MEER OP EEN PAGINA VAN SECTIE 22 — 8 september 2026 ────────
+     Lucas: *"Sommige pagina's top balk heel slecht zichtbaar en leesbaar."*
+     Het waren er precies twee: /portal en /studio, de enige met
+     `ground="espresso"`. Die twee zijn intussen pagina's van sectie 22, en
+     sectie 22 zet een DONKERE balk met lichte letters. Deze regel zette daar
+     een licht vlak overheen en liet de letters licht — gemeten 1,15 tot
+     1,28:1, dus het hele menu onzichtbaar zodra je scrolde, op twee pagina's.
+
+     Precies het defect dat de noot hierboven beschrijft, één laag dieper: die
+     ging over een scoped regel die van global.css won, deze over dezelfde
+     scoped regel die nu van sectie 22 wint. `:not(:has(.s22))` laat hem staan
+     waar hij nog werk doet en haalt hem weg waar sectie 22 het overneemt. */
+  :global(body.ground-espresso:not(:has(.s22))) .site-header::after { background: rgb(245 245 245 / 0.88); box-shadow: 0 1px 0 var(--line); }
 
   /* ---- the header over a dark hero -------------------------------------
      MEASURED BUG, not a refinement: on every page that opens with a
@@ -1763,10 +1775,18 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      menu-items af, en een los woord ertussen dat geen item is, onderbreekt die
      lijst zonder iets toe te voegen. Voor het oog doet het wél werk. */
   .mi-groep { display: grid; align-content: start; gap: .1rem; }
+  /* ── 10,56px OP 2,88:1 — 9 september 2026 ───────────────────────────────
+     Twee normen tegelijk gemist, op het kopje dat de twee kolommen van het
+     uitklapmenu benoemt: .66rem is 10,56px en de ondergrens van de
+     leesbaarheidskeuring is 11,52px, en `--ink-4` haalde 2,88:1 tegen het witte
+     menuvlak. Gevonden bij het opmeten van het menu, niet met het oog — een
+     kopje van tien pixels lees je toch niet, en dat is precies waarom het
+     niemand opviel. Nu de labelmaat van de rest van de site, en --ink-2: --ink-3 kwam op dit
+     vlak nog steeds maar op 3,79:1 uit. Nagemeten, niet geschat. */
   .mi-groep-kop {
-    margin: .55rem .85rem .3rem; font-family: var(--font-mono); font-size: .66rem;
+    margin: .55rem .85rem .3rem; font-family: var(--font-mono); font-size: .72rem;
     font-stretch: 82%; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--ink-4); border-bottom: 1px solid var(--line); padding-bottom: .45rem;
+    color: var(--ink-2); border-bottom: 1px solid var(--line); padding-bottom: .45rem;
   }
   .nav-menu a,
   .nav-menu .mi-off { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }

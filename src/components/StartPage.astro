@@ -138,19 +138,23 @@ const COPY = {
   en: {
     eyebrow: 'Start',
     h1: 'What are we making?',
-    lead: 'Two questions, and the second one is short. Nothing is created and nothing is charged until you press send.',
+    lead: 'Nine doors, no order of importance. Narrow them by where the images have to end up, or read all nine. Nothing is created and nothing is charged until you press send.',
 
-    /* ── DE EERSTE VRAAG ────────────────────────────────────────────────── */
-    takLabel: 'Still images or video?',
+    /* ── DE VRAAG IS EEN BESTEMMING, GEEN MEDIUM ─────────────────────────
+       Zie de noot bij `takken` in de Nederlandse tekst hieronder. */
+    takLabel: 'Where do the images have to end up?',
     takken: [
-      { id: 'beeld', naam: 'Photos', kort: 'Stills for your page, your feed and your ads' },
-      { id: 'video', naam: 'Video', kort: 'Clips that move, from a product turn to a campaign' },
+      { id: 'alles', naam: 'All nine', kort: 'Everything we make, side by side' },
+      { id: 'pagina', naam: 'Your product page', kort: 'Where someone decides to buy' },
+      { id: 'feed', naam: 'Your feed and ads', kort: 'Where someone sees you for the first time' },
+      { id: 'merk', naam: 'Around your brand', kort: 'Atmosphere, and anything built to order' },
     ],
 
-    /* ── DE TWEEDE VRAAG, PER TAK ───────────────────────────────────────── */
-    beeld: [
+    /* ── DE NEGEN DEUREN ────────────────────────────────────────────────── */
+    deuren: [
       {
         id: 'catalog',
+        doel: 'pagina',
         kind: 'catalog',
         href: '/start/catalog/',
         name: 'Catalog',
@@ -163,20 +167,8 @@ const COPY = {
         readCta: 'See catalog work',
       },
       {
-        id: 'lifestyle',
-        kind: 'lifestyle',
-        href: '/start/lifestyle/',
-        name: 'Lifestyle',
-        where: 'In your feed and your ads',
-        gets: `${LIFESTYLE_IMAGES} images per product — one styled look, posted as a carousel`,
-        line: 'The same product in a scene someone wants to step into, in one of four house styles or your own.',
-        unit: `a product, ${vatLabel('excl', 'en')}`,
-        cta: 'Start this order',
-        read: '/lifestyle',
-        readCta: 'See lifestyle work',
-      },
-      {
         id: 'complete',
+        doel: 'pagina feed',
         kind: 'complete',
         href: '/start/complete/',
         /* ── DE NAAM VAN DE BUNDEL — 7 september 2026 ──────────────────────
@@ -199,12 +191,70 @@ const COPY = {
         line: 'A whole range shot once for both. Cheaper per image than ordering the two apart.',
         unit: `a product, ${vatLabel('excl', 'en')}`,
         cta: 'Start this order',
-        merk: 'Most orders',
         read: '/pricing',
         readCta: 'What it costs per count',
       },
       {
+        id: 'video-product',
+        doel: 'pagina',
+        href: '/start/video',
+        name: 'Product video',
+        where: 'The product itself, moving',
+        gets: 'One short clip per product — eight seconds, one clean move',
+        line: 'The turn, the pour, the fabric catching light. Enough to hold the eye in a feed, never enough to distract from the product.',
+        fig: euro(AMOUNT.video, 'en'),
+        unit: `a clip, ${vatLabel('excl', 'en')}`,
+        cta: 'Ask about a clip',
+        read: '/video/motion',
+        readCta: 'See product clips',
+      },
+      {
+        id: 'lifestyle',
+        doel: 'feed',
+        kind: 'lifestyle',
+        href: '/start/lifestyle/',
+        name: 'Lifestyle',
+        where: 'In your feed and your ads',
+        gets: `${LIFESTYLE_IMAGES} images per product — one styled look, posted as a carousel`,
+        line: 'The same product in a scene someone wants to step into, in one of four house styles or your own.',
+        unit: `a product, ${vatLabel('excl', 'en')}`,
+        cta: 'Start this order',
+        read: '/lifestyle',
+        readCta: 'See lifestyle work',
+      },
+      {
+        id: 'hooks',
+        doel: 'feed',
+        href: '/contact',
+        name: 'Hooks',
+        where: 'The first two seconds of an ad',
+        gets: 'A short vertical clip built on a format that already works',
+        line: 'Two frames that read as one, cut to stop a thumb. Built on a format we have used before rather than invented per order.',
+        fig: euro(AMOUNT.hooks, 'en'),
+        unit: `a product, ${vatLabel('excl', 'en')}`,
+        vanaf: true,
+        cta: 'Talk about Hooks',
+        read: '/hooks',
+        readCta: 'See how a Hook is built',
+      },
+      {
+        id: 'video-scene',
+        doel: 'feed',
+        href: '/start/video',
+        name: 'Lifestyle & campaign',
+        where: 'The product in a scene, in motion',
+        gets: 'A styled clip with a model and a world around it',
+        line: 'What a lifestyle image is, set moving. A campaign is the same idea at length and is quoted per project rather than per clip.',
+        fig: euro(AMOUNT.videoLifestyle, 'en'),
+        unit: `a clip, ${vatLabel('excl', 'en')}`,
+        vanaf: true,
+        cta: 'Ask about a clip',
+        read: '/video/lifestyle',
+        readCta: 'See lifestyle clips',
+      },
+      {
         id: 'editions',
+        doel: 'merk',
         href: '/start/plan',
         name: 'Editions',
         where: 'Brand imagery with no product in it',
@@ -220,9 +270,10 @@ const COPY = {
       },
       {
         id: 'custom-photo',
+        doel: 'merk',
         href: '/start/custom-look',
         name: 'Custom photos',
-        where: 'Something we do not offer yet',
+        where: 'A look that does not exist yet',
         gets: 'A look built around your product instead of picked from the house styles',
         line: 'Have something in mind that is not on this page? It gets designed rather than chosen, so it starts with a short brief and a written answer.',
         fig: 'On request',
@@ -232,55 +283,12 @@ const COPY = {
         read: '/lifestyle',
         readCta: 'See the house styles',
       },
-    ],
-
-    video: [
-      {
-        id: 'video-product',
-        href: '/start/video',
-        name: 'Product video',
-        where: 'The product itself, moving',
-        gets: 'One short clip per product — eight seconds, one clean move',
-        line: 'The turn, the pour, the fabric catching light. Enough to hold the eye in a feed, never enough to distract from the product.',
-        fig: euro(AMOUNT.video, 'en'),
-        unit: `a clip, ${vatLabel('excl', 'en')}`,
-        cta: 'Ask about a clip',
-        read: '/video/motion',
-        readCta: 'See product clips',
-      },
-      {
-        id: 'video-scene',
-        href: '/start/video',
-        name: 'Lifestyle & campaign',
-        where: 'The product in a scene, in motion',
-        gets: 'A styled clip with a model and a world around it',
-        line: 'What a lifestyle image is, set moving. A campaign is the same idea at length and is quoted per project rather than per clip.',
-        fig: euro(AMOUNT.videoLifestyle, 'en'),
-        unit: `a clip, ${vatLabel('excl', 'en')}`,
-        vanaf: true,
-        cta: 'Ask about a clip',
-        read: '/video/lifestyle',
-        readCta: 'See lifestyle clips',
-      },
-      {
-        id: 'hooks',
-        href: '/contact',
-        name: 'Hooks',
-        where: 'The first two seconds of an ad',
-        gets: 'A short vertical clip built on a format that already works',
-        line: 'Two frames that read as one, cut to stop a thumb. Built on a format we have used before rather than invented per order.',
-        fig: euro(AMOUNT.hooks, 'en'),
-        unit: `a product, ${vatLabel('excl', 'en')}`,
-        vanaf: true,
-        cta: 'Talk about Hooks',
-        read: '/hooks',
-        readCta: 'See how a Hook is built',
-      },
       {
         id: 'video-custom',
+        doel: 'merk',
         href: '/start/video',
         name: 'Custom video',
-        where: 'Something we do not offer yet',
+        where: 'A concept that does not exist yet',
         gets: 'A concept built entirely around your brand',
         line: 'Have something in mind that is not on this page? Say what you want made and the studio answers in writing, with a date and a price.',
         fig: 'On request',
@@ -336,17 +344,38 @@ const COPY = {
   nl: {
     eyebrow: 'Start',
     h1: 'Wat gaan we maken?',
-    lead: 'Twee vragen, en de tweede is kort. Er wordt niets aangemaakt en niets in rekening gebracht tot je op versturen drukt.',
+    lead: 'Negen deuren, geen rangorde. Filter ze op waar het beeld terecht moet, of lees ze alle negen. Er wordt niets aangemaakt en niets in rekening gebracht tot je op versturen drukt.',
 
-    takLabel: 'Foto’s of video?',
+    /* ── DE VRAAG IS EEN BESTEMMING, GEEN MEDIUM — 9 september 2026 ───────
+       Lucas: *"Het is nu alsof catalog en lifestyle prioriteit zijn maar ik wil
+       dat de klant zelf kiest wat zijn prioriteit is, er is geen goed of
+       fout."*
+
+       Hier stonden twee tabs — Foto's en Video — met Foto's aangevinkt. Dat is
+       twee keer een rangorde in één regel: het MEDIUM is de eerste vraag (alsof
+       de klant al weet of hij stil of bewegend beeld wil), en de helft van wat
+       we maken zit achter een tab die dicht staat.
+
+       De vraag is nu een BESTEMMING, en dat is de vraag die de klant zichzelf
+       toch al stelt: waar moet dit beeld terecht? Op de productpagina, in de
+       feed, of eromheen. Foto of video volgt daaruit in plaats van eraan vooraf
+       te gaan — een productclip en een catalogset horen op dezelfde plek thuis.
+
+       EN DE EERSTE KNOP IS "ALLES", AANGEVINKT. Een tab die aan staat, is een
+       aanbeveling; staat "alles" aan, dan is er niets verborgen en is elke
+       bestemming een filter dat de klant zelf kiest. Dat is het verschil tussen
+       een volgorde die wij opleggen en een volgorde die hij maakt. */
     takken: [
-      { id: 'beeld', naam: 'Foto’s', kort: 'Stilstaand beeld voor je pagina, je feed en je advertenties' },
-      { id: 'video', naam: 'Video', kort: 'Bewegend beeld, van een productdraai tot een campagne' },
+      { id: 'alles', naam: 'Alle negen', kort: 'Alles wat we maken, naast elkaar' },
+      { id: 'pagina', naam: 'Je productpagina', kort: 'Waar iemand besluit te kopen' },
+      { id: 'feed', naam: 'Je feed en advertenties', kort: 'Waar iemand je voor het eerst ziet' },
+      { id: 'merk', naam: 'Rondom je merk', kort: 'Sfeer, en alles wat op maat gebouwd wordt' },
     ],
 
-    beeld: [
+    deuren: [
       {
         id: 'catalog',
+        doel: 'pagina',
         kind: 'catalog',
         href: '/start/catalog/',
         name: 'Catalog',
@@ -359,7 +388,37 @@ const COPY = {
         readCta: 'Bekijk catalogwerk',
       },
       {
+        id: 'complete',
+        doel: 'pagina feed',
+        kind: 'complete',
+        href: '/start/complete/',
+        /* Zie de noot bij de Engelse tegenhanger. */
+        name: 'Catalog + Lifestyle',
+        where: 'Je pagina en je feed in één keer',
+        gets: `${COMPLETE_IMAGES} foto’s per product — ${CATALOG_IMAGES} catalog en ${LIFESTYLE_IMAGES} lifestyle`,
+        line: 'Een hele collectie in één keer, voor allebei. Per beeld goedkoper dan de twee los bestellen.',
+        unit: `per product, ${vatLabel('excl', 'nl')}`,
+        cta: 'Start deze bestelling',
+        read: '/pricing',
+        readCta: 'Wat het per aantal kost',
+      },
+      {
+        id: 'video-product',
+        doel: 'pagina',
+        href: '/start/video',
+        name: 'Productvideo',
+        where: 'Het product zelf, in beweging',
+        gets: 'Eén korte clip per product — acht seconden, één schone beweging',
+        line: 'De draai, de schenkbeweging, de stof die licht vangt. Genoeg om het oog vast te houden in een feed, nooit genoeg om van het product af te leiden.',
+        fig: euro(AMOUNT.video, 'nl'),
+        unit: `per clip, ${vatLabel('excl', 'nl')}`,
+        cta: 'Vraag een clip aan',
+        read: '/video/motion',
+        readCta: 'Bekijk productclips',
+      },
+      {
         id: 'lifestyle',
+        doel: 'feed',
         kind: 'lifestyle',
         href: '/start/lifestyle/',
         name: 'Lifestyle',
@@ -372,22 +431,38 @@ const COPY = {
         readCta: 'Bekijk lifestylewerk',
       },
       {
-        id: 'complete',
-        kind: 'complete',
-        href: '/start/complete/',
-        /* Zie de noot bij de Engelse tegenhanger. */
-        name: 'Catalog + Lifestyle',
-        where: 'Je pagina en je feed in één keer',
-        gets: `${COMPLETE_IMAGES} foto’s per product — ${CATALOG_IMAGES} catalog en ${LIFESTYLE_IMAGES} lifestyle`,
-        line: 'Een hele collectie in één keer, voor allebei. Per beeld goedkoper dan de twee los bestellen.',
+        id: 'hooks',
+        doel: 'feed',
+        href: '/contact',
+        name: 'Hooks',
+        where: 'De eerste twee seconden van een advertentie',
+        gets: 'Een korte verticale clip op een format dat al werkt',
+        line: 'Twee beelden die als één lezen, gemonteerd om een duim te stoppen. Gebouwd op een format dat we eerder gebruikt hebben in plaats van per bestelling bedacht.',
+        fig: euro(AMOUNT.hooks, 'nl'),
         unit: `per product, ${vatLabel('excl', 'nl')}`,
-        cta: 'Start deze bestelling',
-        merk: 'Meest besteld',
-        read: '/pricing',
-        readCta: 'Wat het per aantal kost',
+        vanaf: true,
+        cta: 'Praat over Hooks',
+        read: '/hooks',
+        readCta: 'Bekijk hoe een Hook gebouwd wordt',
+      },
+      {
+        id: 'video-scene',
+        doel: 'feed',
+        href: '/start/video',
+        name: 'Lifestyle & campagne',
+        where: 'Het product in een scène, in beweging',
+        gets: 'Een gestylede clip met een model en een wereld eromheen',
+        line: 'Wat een lifestylefoto is, maar dan bewegend. Een campagne is hetzelfde idee op lengte en wordt per project geoffreerd in plaats van per clip.',
+        fig: euro(AMOUNT.videoLifestyle, 'nl'),
+        unit: `per clip, ${vatLabel('excl', 'nl')}`,
+        vanaf: true,
+        cta: 'Vraag een clip aan',
+        read: '/video/lifestyle',
+        readCta: 'Bekijk lifestyleclips',
       },
       {
         id: 'editions',
+        doel: 'merk',
         href: '/start/plan',
         name: 'Editions',
         where: 'Merkbeeld zonder product erin',
@@ -403,9 +478,10 @@ const COPY = {
       },
       {
         id: 'custom-photo',
+        doel: 'merk',
         href: '/start/custom-look',
         name: 'Foto’s op maat',
-        where: 'Iets wat we nog niet aanbieden',
+        where: 'Een look die er nog niet is',
         gets: 'Een look die om jouw product heen gebouwd wordt in plaats van gekozen uit de huisstijlen',
         line: 'Heb je iets in gedachten dat hier niet staat? Het wordt ontworpen en niet gekozen, dus het begint met een korte brief en een antwoord op schrift.',
         fig: 'Op aanvraag',
@@ -415,55 +491,12 @@ const COPY = {
         read: '/lifestyle',
         readCta: 'Bekijk de huisstijlen',
       },
-    ],
-
-    video: [
-      {
-        id: 'video-product',
-        href: '/start/video',
-        name: 'Productvideo',
-        where: 'Het product zelf, in beweging',
-        gets: 'Eén korte clip per product — acht seconden, één schone beweging',
-        line: 'De draai, de schenkbeweging, de stof die licht vangt. Genoeg om het oog vast te houden in een feed, nooit genoeg om van het product af te leiden.',
-        fig: euro(AMOUNT.video, 'nl'),
-        unit: `per clip, ${vatLabel('excl', 'nl')}`,
-        cta: 'Vraag een clip aan',
-        read: '/video/motion',
-        readCta: 'Bekijk productclips',
-      },
-      {
-        id: 'video-scene',
-        href: '/start/video',
-        name: 'Lifestyle & campagne',
-        where: 'Het product in een scène, in beweging',
-        gets: 'Een gestylede clip met een model en een wereld eromheen',
-        line: 'Wat een lifestylefoto is, maar dan bewegend. Een campagne is hetzelfde idee op lengte en wordt per project geoffreerd in plaats van per clip.',
-        fig: euro(AMOUNT.videoLifestyle, 'nl'),
-        unit: `per clip, ${vatLabel('excl', 'nl')}`,
-        vanaf: true,
-        cta: 'Vraag een clip aan',
-        read: '/video/lifestyle',
-        readCta: 'Bekijk lifestyleclips',
-      },
-      {
-        id: 'hooks',
-        href: '/contact',
-        name: 'Hooks',
-        where: 'De eerste twee seconden van een advertentie',
-        gets: 'Een korte verticale clip op een format dat al werkt',
-        line: 'Twee beelden die als één lezen, gemonteerd om een duim te stoppen. Gebouwd op een format dat we eerder gebruikt hebben in plaats van per bestelling bedacht.',
-        fig: euro(AMOUNT.hooks, 'nl'),
-        unit: `per product, ${vatLabel('excl', 'nl')}`,
-        vanaf: true,
-        cta: 'Praat over Hooks',
-        read: '/hooks',
-        readCta: 'Bekijk hoe een Hook gebouwd wordt',
-      },
       {
         id: 'video-custom',
+        doel: 'merk',
         href: '/start/video',
         name: 'Video op maat',
-        where: 'Iets wat we nog niet aanbieden',
+        where: 'Een concept dat er nog niet is',
         gets: 'Een concept dat volledig om jouw merk heen gebouwd is',
         line: 'Heb je iets in gedachten dat hier niet staat? Zeg wat je wilt laten maken en de studio antwoordt op schrift, met een datum en een prijs.',
         fig: 'Op aanvraag',
@@ -563,10 +596,22 @@ const nl = lang === 'nl';
       ))}
     </fieldset>
 
-    {[c.beeld, c.video].map((deuren, tak) => (
-      <ul class={`st-deuren st-groep st-groep-${tak}`} role="list" data-telling={deuren.length}>
-        {deuren.map((d) => (
-          <li class={`st-deur${d.later ? ' is-later' : ''}${d.voorwaarde ? ' is-voorwaarde' : ''}`}>
+    {/* ÉÉN LIJST VAN NEGEN, en de tabs verbergen wat er niet bij hoort — geen
+        aparte lijst per bestemming. Twee redenen, en de tweede is de
+        belangrijkste:
+
+          1. Een deur die op twee plekken thuishoort (Catalog + Lifestyle is
+             de pagina ÉN de feed) staat dan maar één keer in de HTML.
+          2. De standaardstand toont alle negen, dus wat een bezoeker zonder
+             te klikken ziet, is het hele aanbod — en niet de helft die wij
+             hebben uitgekozen.
+
+        `data-doel` draagt één of twee woorden; de CSS hieronder verbergt op
+        `:not([data-doel~="..."])`, en `~=` is precies de selector voor een
+        woord uit een lijst. */}
+    <ul class="st-deuren" role="list">
+      {c.deuren.map((d) => (
+          <li class={`st-deur${d.later ? ' is-later' : ''}${d.voorwaarde ? ' is-voorwaarde' : ''}`} data-doel={d.doel}>
             <span class="kaart st-beeld">
               {SHOT[d.id]
                 ? <img src={SHOT[d.id].src} alt="" width={SHOT[d.id].w} height={SHOT[d.id].h} loading="lazy" decoding="async" />
@@ -606,9 +651,8 @@ const nl = lang === 'nl';
               </p>
             </div>
           </li>
-        ))}
-      </ul>
-    ))}
+      ))}
+    </ul>
 
     <div class="st-onder">
       <p class="lopend st-ladder">{c.ladderLine} <a class="st-link" href={lp('/pricing')}>{c.ladderCta}</a></p>
@@ -722,33 +766,49 @@ const nl = lang === 'nl';
 <style>
   .st-kop { max-width: 46rem; }
 
-  /* ── DE EERSTE VRAAG: STIL OF BEWEGEND ────────────────────────────────────
-     Twee knoppen, en met opzet groot: dit is de belangrijkste klik van de
-     pagina en niet een filter. De radio's zelf staan visueel verborgen boven de
-     fieldset; het label is de knop. Zie de noot bij de markup voor waarom hier
-     geen script bij hoort. */
-  .st-takrij { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(.6rem, 1.5vw, 1rem); border: 0; padding: 0; margin: 0 0 clamp(2rem, 4vw, 3rem); max-width: 46rem; }
+  /* ── DE EERSTE VRAAG: WAAR MOET HET BEELD TERECHT ─────────────────────────
+     Vier knoppen, en de eerste ("alles") staat aan. Ze zijn kleiner dan de twee
+     die hier stonden, en dat is met opzet: dit is nu een FILTER en niet de
+     beslissing zelf. De beslissing staat eronder, in negen deuren die allemaal
+     even zwaar zijn. De radio's zelf staan visueel verborgen boven de fieldset;
+     het label is de knop. Zie de noot bij de markup voor waarom hier geen
+     script bij hoort. */
+  .st-takrij { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.5rem, 1.2vw, .8rem); border: 0; padding: 0; margin: 0 0 clamp(2rem, 4vw, 3rem); max-width: 62rem; }
   .st-tak {
     display: grid; gap: .3rem; cursor: pointer;
     padding: clamp(1rem, 2.2vw, 1.4rem) clamp(1.1rem, 2.4vw, 1.6rem);
     border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 10px);
     transition: background .3s var(--uit), border-color .3s var(--uit), color .3s var(--uit);
   }
-  .st-tak b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.15rem, 2.2vw, 1.6rem); text-transform: uppercase; letter-spacing: -.01em; line-height: 1; }
+  .st-tak b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1rem, 1.5vw, 1.2rem); text-transform: uppercase; letter-spacing: -.01em; line-height: 1.05; }
   .st-tak .mono { color: var(--inkt-2); text-transform: none; letter-spacing: 0; font-size: .82rem; line-height: 1.45; }
   .st-tak:hover { border-color: var(--inkt); }
 
-  /* De gekozen tak, en de rij die erbij hoort. Eén regel per combinatie, want
-     een zusterselector kan niet rekenen. */
+  /* De gekozen knop. Eén regel per combinatie, want een zusterselector kan niet
+     rekenen. */
   .st-kies #st-tak-0:checked ~ .st-takrij label[for="st-tak-0"],
-  .st-kies #st-tak-1:checked ~ .st-takrij label[for="st-tak-1"] {
+  .st-kies #st-tak-1:checked ~ .st-takrij label[for="st-tak-1"],
+  .st-kies #st-tak-2:checked ~ .st-takrij label[for="st-tak-2"],
+  .st-kies #st-tak-3:checked ~ .st-takrij label[for="st-tak-3"] {
     background: var(--inkt); border-color: var(--inkt); color: var(--vel);
   }
   .st-kies #st-tak-0:checked ~ .st-takrij label[for="st-tak-0"] .mono,
-  .st-kies #st-tak-1:checked ~ .st-takrij label[for="st-tak-1"] .mono { color: rgb(245 245 245 / .7); }
-  .st-groep { display: none; }
-  .st-kies #st-tak-0:checked ~ .st-groep-0,
-  .st-kies #st-tak-1:checked ~ .st-groep-1 { display: grid; }
+  .st-kies #st-tak-1:checked ~ .st-takrij label[for="st-tak-1"] .mono,
+  .st-kies #st-tak-2:checked ~ .st-takrij label[for="st-tak-2"] .mono,
+  .st-kies #st-tak-3:checked ~ .st-takrij label[for="st-tak-3"] .mono { color: rgb(245 245 245 / .7); }
+
+  /* ── HET FILTER VERBERGT, HET SORTEERT NIET ─────────────────────────────
+     Bij `#st-tak-0` (alles) staat hier niets: dan geldt geen enkele regel en
+     staan alle negen deuren er. Elke andere knop verbergt wat niet bij die
+     bestemming hoort. `~=` en niet `=`, want Catalog + Lifestyle draagt er
+     twee: `data-doel="pagina feed"`.
+
+     `display: none` en geen `opacity`: een deur die er nog half staat, is nog
+     steeds een deur waar je overheen moet lezen — en dat was precies het
+     probleem met de gedimde kaarten op de voorpagina. */
+  .st-kies #st-tak-1:checked ~ .st-deuren .st-deur:not([data-doel~="pagina"]),
+  .st-kies #st-tak-2:checked ~ .st-deuren .st-deur:not([data-doel~="feed"]),
+  .st-kies #st-tak-3:checked ~ .st-deuren .st-deur:not([data-doel~="merk"]) { display: none; }
   /* De toetsenbordring hoort om de knop die je met de pijltjes verplaatst, en
      de radio zelf is onzichtbaar. */
   .st-kies .keuze:focus-visible ~ .st-takrij label { outline: 2px solid var(--inkt); outline-offset: 3px; }
@@ -763,11 +823,17 @@ const nl = lang === 'nl';
      Dat is precies genoeg om te zeggen "hier gebeurt iets anders" en te weinig
      om te zeggen "dit doen we niet".
      ═══════════════════════════════════════════════════════════════════════════ */
-  /* Vier of vijf deuren, en het raster telt ze zelf. `data-telling` staat op de
-     <ul> zodat de fototak (vijf) en de videotak (vier) niet elk een eigen
-     klassenaam nodig hebben. */
-  .st-deuren { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.8rem, 1.8vw, 1.4rem); }
-  .st-deuren[data-telling="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  /* DRIE KOLOMMEN, en dat is geen willekeurig getal: er zijn negen deuren en
+     drie bestemmingen, en ze staan in die volgorde. De standaardstand leest
+     daardoor als drie rijen van drie — de productpagina, de feed, en wat om het
+     merk heen zit — zonder dat er een kopje boven elke rij hoeft. Klik je een
+     bestemming aan, dan blijft precies die rij over.
+
+     Rij- en kolomafstand apart: gestapeld op een telefoon moet de ruimte TUSSEN
+     twee blokken groter zijn dan die erbinnen, anders hoort een regel evenveel
+     bij het blok eronder als bij het blok waar hij bij hoort. Zelfde reparatie
+     als bij .kaarten in stijl22.css; gemeten met kladblok/witruimte.mjs. */
+  .st-deuren { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: clamp(.8rem, 1.8vw, 1.4rem); row-gap: clamp(2.2rem, 5.5vw, 2.8rem); }
   /* Flex en geen grid: de knop moet met `margin-top: auto` naar de onderrand
      zakken zodat de vier knoppen op één lijn staan, ook als de ene regel twee
      keer afbreekt en de andere niet. */
@@ -777,12 +843,15 @@ const nl = lang === 'nl';
   .st-beeld :global([data-placeholder]) { position: absolute; inset: 0; margin: 0; }
   .st-beeld :global([data-placeholder] > *) { width: 100%; height: 100%; border-radius: 0; }
   .st-deur:hover .st-beeld img { scale: 1.04; }
-  /* Het etiket op het beeld draagt twee verschillende dingen en ziet er dus
-     twee keer anders uit: geel is een AANBEVELING ("meest besteld"), wit is een
-     STAAT ("formulier nog niet af"). Allebei op de plek waar je ze leest
-     voordat je de tekst leest. */
-  .st-merk { position: absolute; z-index: 1; top: .6rem; left: .6rem; background: var(--geel); color: var(--inkt); padding: .3rem .65rem; border-radius: 999px; }
-  .st-deur.is-later .st-merk, .st-deur.is-voorwaarde .st-merk { background: var(--wit); }
+  /* ── HET ETIKET DRAAGT NOG MAAR ÉÉN DING — 9 september 2026 ──────────────
+     Hier stond: geel is een AANBEVELING ("meest besteld"), wit is een STAAT
+     ("hoort bij een abonnement"). De gele helft is weg met "meest besteld"
+     zelf — een populariteitsbadge zegt de bezoeker welke deur de goede is, en
+     dat is precies wat deze pagina sinds vandaag niet meer doet.
+
+     Wat overblijft is de staat, en die is altijd wit: een feit over hoe je het
+     bestelt, niet een oordeel over of je het zou moeten. */
+  .st-merk { position: absolute; z-index: 1; top: .6rem; left: .6rem; background: var(--wit); color: var(--inkt); padding: .3rem .65rem; border-radius: 999px; }
   /* De videodeur: het beeld iets teruggenomen, want er zit nog geen kassa
      achter. Niet grijs — het werk bestaat wel. */
   .st-deur.is-later .st-beeld img { opacity: .72; }
@@ -845,11 +914,9 @@ const nl = lang === 'nl';
   .st-rij-zij { display: grid; gap: 1.2rem; justify-items: start; }
   .st-groot { font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1; }
 
-  @media (max-width: 1400px) {
-    .st-deuren[data-telling="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  }
   @media (max-width: 1100px) {
-    .st-deuren, .st-deuren[data-telling="5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .st-deuren { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .st-takrij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 900px) {
     .st-stappen { grid-auto-flow: row; }
@@ -857,7 +924,7 @@ const nl = lang === 'nl';
     .st-rij { grid-template-columns: 1fr; align-items: start; }
   }
   @media (max-width: 620px) {
-    .st-deuren, .st-deuren[data-telling="5"] { grid-template-columns: minmax(0, 1fr); }
+    .st-deuren { grid-template-columns: minmax(0, 1fr); }
     .st-takrij { grid-template-columns: minmax(0, 1fr); }
   }
 </style>

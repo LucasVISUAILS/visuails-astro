@@ -398,18 +398,70 @@
     --btn-ghost-fill-hover: rgb(245 245 245 / .22);
     --focus-ring: #F5F5F5;
   }
+  /* ── HET UITKLAPMENU IS EEN WIT VLAK EN ERFT DUS DE ZWARTE INKT ──────────
+     Lucas: *"Bij sommige pagina's dropdowns slecht leesbaar."* Dezelfde fout
+     als bij de espressobalk en bij de menulinks, nu een laag dieper.
+
+     Het blok hierboven klapt de inktschaal om omdat de BALK donker is. Het
+     uitklapmenu hangt in die balk en erft die omslag — maar het heeft een eigen
+     ondergrond, `--menu-surface`, en die is wit. Lichte letters op wit: de
+     titels en de omschrijvingen stonden er als spookjes op.
+
+     Hier gaat de schaal dus terug naar de leeskant. Dezelfde waarden als
+     `:root` in dit bestand, want dat is precies wat het menu is: een stuk
+     pagina dat toevallig uit de balk hangt. */
+  body:has(.s22) .site-header .nav-menu {
+    --ink: #111111;
+    --ink-900: #0A0A0A;
+    --ink-700: #333333;
+    --ink-500: #555555;
+    --ink-2: #454545;
+    --ink-3: #6E6E6E;
+    --brand: #111111;
+    --line: #DFDFDF;
+    --line-strong: #BDBDBD;
+    --ghost: rgb(17 17 17 / .08);
+    --btn-ghost-fill: rgb(17 17 17 / .08);
+    --focus-ring: #111111;
+  }
+
   /* Het teken erft geen `fill`; die staat als attribuut. */
   body:has(.s22) .site-header :is(.brand-word, .brand-mark, .mk) { fill: #F5F5F5; }
-  /* ── OP DE VOORPAGINA MENGT DE BALK MET DE HERO — 8 september 2026 ───────
-     Lucas: *"ik wil dat op de homepagina de top bar in de achtergrond mengt en
-     dus wit word en wanneer je scrollt hij naar donker fade."*
+  /* ── DE BALK MENGT MET DE EERSTE SECTIE — OP ELKE PAGINA ─────────────────
+     Lucas, 9 september 2026: *"Nogmaals, eerste sectie geen zwarte balken en
+     top bar moet mengen met achtergrond van eerste sectie en veranderd na mate
+     je scrollt. Fix dit op elke pagina."*
 
-     Alleen daar, en alleen boven aan de pagina. De hero van de voorpagina is
-     het enige lichte vlak dat direct onder de balk begint; overal elders staat
-     er donkergrijze ondergrond of een donkere kamer, en een witte balk zou daar
-     weer een vreemd voorwerp zijn.
+     Dit stond hier sinds gisteren als uitzondering voor de voorpagina
+     (`body:has(.s22.thuis)`): daar werd de balk wit boven de hero en klapte hij
+     bij het scrollen naar donkergrijs. Overal elders bleef hij donker, ook
+     bovenaan — en daar staat een lichte opening ónder een donkere balk, wat
+     precies de losse strook is waar deze opmerking over gaat.
 
-     ── WAAROM DIT MAG FADEN EN DE REST NIET ────────────────────────────────
+     Nu geldt het overal, en het wordt gedragen door één token:
+
+       --kop-vlak   de kleur van de sectie die als eerste op de pagina staat.
+
+     Nagemeten met kladblok/_opening.mjs over 34 pagina's: op alle behalve drie
+     is dat een `.paneel` op --vel (#F5F5F5). De drie uitzonderingen krijgen hun
+     eigen waarde hieronder. Een pagina die morgen met iets anders opent, hoeft
+     alleen dat token te zetten.
+
+     De balk staat `sticky` en niet `fixed`: hij ligt dus NAAST de opening en
+     niet erover. "Mengen" is hier dus letterlijk dezelfde kleur hebben — en
+     omdat de opening sinds vandaag van rand tot rand loopt (zie de noot bij
+     :first-child hierboven), is de naad tussen die twee vlakken weg. */
+  body:has(.s22) .site-header { --kop-vlak: #F5F5F5; }
+  /* De voorpagina en /proef openen met de hero: een verloop dat bovenaan bij
+     #E9EDEE begint. #F7F8F8 is de waarde die daar sinds gisteren staat en die
+     Lucas heeft goedgekeurd; hij loopt onderin uit over de foto (zie verderop),
+     dus de kleine sprong met het verloop erachter is niet te zien. */
+  body:has(.s22.thuis) .site-header { --kop-vlak: #F7F8F8; }
+  /* De bedankpagina opent met de limoen balk. Zwarte letters daarop meten
+     9,6:1 — dezelfde inkt als op --vel, dus het blok hieronder klopt ook hier. */
+  body:has(.s22.ty) .site-header { --kop-vlak: #D2E04A; }
+
+  /* ── WAAROM DIT MAG FADEN EN DE REST NIET ────────────────────────────────
      Elders in dit bestand staat `transition: none` op de letters van de balk,
      met de reden: daar zit de tekst één frame op een grond die al is omgeklapt
      en die stand BLIJFT staan. Hier vloeien de grond én de letters samen over
@@ -419,9 +471,9 @@
      toestand waarin iemand zit te lezen. De norm gaat over waar je op uitkomt.
 
      `:not(.scrolled)`: interactions.js zet die klasse vanaf 20 pixels. */
-  body:has(.s22.thuis) .site-header::after,
-  body:has(.s22.thuis) .site-header,
-  body:has(.s22.thuis) .site-header :is(.nav-links > li > a, .nav-trigger, .nav-account-link, .lang-switch .ls, .brand-word, .brand-mark, .mk) {
+  body:has(.s22) .site-header::after,
+  body:has(.s22) .site-header,
+  body:has(.s22) .site-header :is(.nav-links > li > a, .nav-trigger, .nav-account-link, .lang-switch .ls, .brand-word, .brand-mark, .mk) {
     /* De curve staat hier UITGESCHREVEN en niet als var(--uit). Die variabele
        is gedefinieerd op `.s22`, en de balk is geen kind van `.s22` maar een
        broer ervan — dus stond er `var(--uit)` zonder waarde, was de hele
@@ -438,17 +490,42 @@
      pagina van sectie 22 zie je daardoor niet de balk maar de BODYGROND —
      #111111, zwarter dan de pagina zelf. Zolang de letters daar licht op
      stonden viel het niet op; zet je ze donker, dan is de balk leeg.
-     Dus: op de voorpagina staat het glas altijd aan, en wat overvloeit is de
-     KLEUR ervan in plaats van zijn dekking. Allebei de standen zijn dekkend,
-     zodat er onderweg geen zwart doorheen komt kijken. */
-  body:has(.s22.thuis) .site-header::after { opacity: 1; }
-  body:has(.s22.thuis) .site-header:not(.scrolled)::after {
-    background: #F7F8F8;
+     Dus: het glas staat altijd aan, en wat overvloeit is de KLEUR ervan in
+     plaats van zijn dekking. Allebei de standen zijn dekkend, zodat er
+     onderweg geen zwart doorheen komt kijken. */
+  body:has(.s22) .site-header::after { opacity: 1; }
+  body:has(.s22) .site-header:not(.scrolled)::after {
+    background: var(--kop-vlak, #F5F5F5);
     backdrop-filter: none;
     box-shadow: none;
   }
-  body:has(.s22.thuis) .site-header.scrolled::after { background: var(--s22-grond, #1B1C1E); }
-  body:has(.s22.thuis) .site-header:not(.scrolled) {
+  body:has(.s22.thuis) .site-header:not(.scrolled)::after {
+    /* ── EN HIJ LOOPT ONDERIN UIT — 8 september 2026 ────────────────────────
+       Lucas: *"Ook wanneer de top bar helemaal aan de top staat een lichte fade
+       naar beneden zodat hij mooi overloopt in de afbeelding op de
+       voorpagina."*
+
+       Twee dingen tegelijk, en ze bijten elkaar: de ONDERRAND moet oplossen,
+       en de LETTERS moeten op een egale grond blijven staan. Dat lukt door het
+       vlak dóór te laten lopen tot 34 pixels ónder de balk en pas daar te laten
+       uitdoven: over de volle hoogte van de balk is het dekkend — daar staan de
+       letters — en de vervaging gebeurt in de strook eronder, op de foto.
+       Vandaar `bottom: -34px` en geen kortere stops: een verloop dat al binnen
+       de balk begint, zet de onderste helft van elke letter op de foto.
+
+       ALLEEN op de voorpagina, en dat blijft zo nu de rest van de site ook een
+       lichte balk heeft: elders is de opening een EGAAL vlak in exact dezelfde
+       kleur als de balk, en dan is er geen naad om weg te vagen. Een verloop
+       zou daar juist een lichte veeg over een egaal paneel leggen. */
+    inset: 0 0 -34px 0;
+    background: linear-gradient(180deg,
+      #F7F8F8 0%,
+      #F7F8F8 69%,
+      rgb(247 248 248 / .55) 84%,
+      rgb(247 248 248 / 0) 100%);
+  }
+  body:has(.s22) .site-header.scrolled::after { background: var(--s22-grond, #1B1C1E); }
+  body:has(.s22) .site-header:not(.scrolled) {
     --ink: #111111;
     --ink-900: #0A0A0A;
     --ink-700: rgb(17 17 17 / .78);
@@ -464,7 +541,25 @@
     --btn-ghost-fill-hover: rgb(17 17 17 / .14);
     --focus-ring: #111111;
   }
-  body:has(.s22.thuis) .site-header:not(.scrolled) :is(.brand-word, .brand-mark, .mk) { fill: #111111; }
+  body:has(.s22) .site-header:not(.scrolled) :is(.brand-word, .brand-mark, .mk) { fill: #111111; }
+  /* ── DE LIMOEN BALK IS LICHTER DAN HET PAPIER — 9 september 2026 ─────────
+     De bedankpagina opent met het limoen vlak, en dat heeft een lichtsterkte
+     van 0,675 tegen de 0,90 van --vel. Dat klinkt als "donkerder", maar voor
+     contrast telt de AFSTAND tot de letter: de doorzichtige inkten die op vel
+     ruim 6:1 halen, halen op limoen net 4,3:1. Nagemeten met balkkeuring.mjs —
+     "Inloggen" (--ink-3, .6) stond op 4,35:1 en de taalwissel op 4,49:1,
+     allebei onder de norm van 4,5.
+
+     Dus staan de twee zwakste inkten hier steviger. Op .72 meet "Inloggen"
+     6,3:1; de taalwissel gaat van 62% naar 74% van dezelfde inkt. */
+  body:has(.s22.ty) .site-header:not(.scrolled) {
+    --ink-2: rgb(17 17 17 / .82);
+    --ink-3: rgb(17 17 17 / .72);
+    --ink-500: rgb(17 17 17 / .72);
+  }
+  body:has(.s22.ty) .site-header:not(.scrolled) .lang-switch .ls {
+    color: color-mix(in srgb, var(--ink) 74%, transparent);
+  }
 
 
   /* De bestelknop is de enige plek in de balk die kleur mág dragen, en op
@@ -516,12 +611,28 @@
      morgen met iets anders opent, hoort dit vanzelf te krijgen. De marge aan de
      bovenkant gaat mee weg; anders blijft er een streepje ondergrond staan waar
      de hoek net weg is, en dat is hetzelfde probleem in een dunnere vorm. */
-  /* Blijft gelden, óók nu elke sectie weer vier hoeken heeft: het eerste blok
-     raakt de balk en houdt daar twee RECHTE hoeken. Zijn zijmarges houdt hij
-     wel — die horen bij de regel dat alles behalve de opening van de voorpagina
-     een zwarte balk naast zich heeft. */
+  /* ── EN HIJ LOOPT VAN RAND TOT RAND — 9 september 2026 ───────────────────
+     Lucas: *"Nogmaals, eerste sectie geen zwarte balken en top bar moet mengen
+     met achtergrond van eerste sectie en veranderd na mate je scrollt. Fix dit
+     op elke pagina."*
+
+     Tot vandaag gold dat alleen voor de voorpagina: daar spreidde de hero en
+     hield elke andere pagina zijn zijmarge, ook op de eerste sectie. Dat was
+     precies de zwarte balk naast de opening waar deze opmerking over gaat.
+
+     Nu is het één regel voor de hele site: DE OPENING SPREIDT, DE REST IS EEN
+     KAART. De zijmarge eraf en de twee bovenhoeken recht — de balk erboven is
+     ook recht en loopt ook van rand tot rand, dus de opening en de balk zijn
+     samen één vlak. De ONDERSTE twee hoeken blijven rond: dat is wat de
+     kaartvorm draagt, en het is dezelfde vorm die de maatlijn op de voorpagina
+     al had.
+
+     De marge aan de bovenkant gaat mee weg; anders blijft er een streepje
+     ondergrond staan tussen de balk en de opening, en dat is dezelfde zwarte
+     balk in een dunnere vorm. */
   .s22 > :is(.paneel, .kamer):first-child {
     margin-top: 0;
+    margin-inline: 0;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }
@@ -529,20 +640,20 @@
   /* Dezelfde inperking als bij .paneel hierboven; een kamer houdt meer lucht
      omdat hij het donker moet dragen, maar 9rem was ook daar te veel. */
   .s22 .kamer { position: relative; padding: clamp(3rem, 7.5vw, 6.5rem) var(--x); overflow: clip; }
-  /* ── HET RASTER, VEEL ZACHTER — 7 september 2026 ──────────────────────────
-     Lucas: *"Ik wil die infographics grid effecten veel minder en heel
-     subtiel."* Het stond op .045 alpha met vakken van 70 tot 120px: dat leest
-     als ruitjespapier. Nu .018 met vakken van 130 tot 200px, en het masker laat
-     hem pas op 22% van de kamer beginnen en op 78% weer los. Je ziet hem
-     nauwelijks — dat is de bedoeling: hij geeft de zwarte kamer diepte en
-     vraagt verder niets. */
-  .s22 .kamer::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background:
-      repeating-linear-gradient(to right, rgb(245 245 245 / .018) 0 1px, transparent 1px clamp(130px, 11vw, 200px)),
-      repeating-linear-gradient(to bottom, rgb(245 245 245 / .018) 0 1px, transparent 1px clamp(130px, 11vw, 200px));
-    mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
-  }
+  /* ── HET RASTER IS WEG — 9 september 2026 ────────────────────────────────
+     Lucas: *"De lichte grid op de achtergrond tussen secties door mag ook
+     weg."* Hij stond er sinds 7 september al veel zachter dan daarvoor (.018
+     in plaats van .045, met vakken van 130 tot 200px in plaats van 70 tot 120),
+     en dat was toen het antwoord op *"ik wil die infographics grid effecten veel
+     minder en heel subtiel"*. Twee keer zachter is nog steeds aanwezig, en wat
+     een donkere kamer nodig heeft is niet textuur maar rust: hij is er om een
+     hoofdstukwissel te zijn, en dat doet hij met zijn kleur.
+
+     Weggehaald en niet op nul gezet: een regel die niets meer tekent maar wel
+     blijft staan, is de vorm waarin dit over drie maanden per ongeluk
+     terugkomt. `.kamer > * { position: relative }` blijft wél — dat zette de
+     inhoud boven dit vlak, en boven de kaartvorm van de kamer doet het nog
+     steeds werk. */
   .s22 .kamer > * { position: relative; }
   .s22 .kamer-kop { display: grid; gap: .9rem; max-width: 46rem; margin-bottom: clamp(1.8rem, 4vw, 3.2rem); }
 
@@ -705,7 +816,22 @@
      kreeg daar `display: flex` en dan valt de prijstabel uit elkaar. Vandaar
      `tarief`. (`filterpil` stond hier ook genoemd; die klasse is op 8 september
      verdwenen met de pillenrij boven de diensten.) */
-  .s22 .kaarten { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); }
+  /* ── DE RUIMTE TUSSEN KAARTEN IS GROTER DAN DIE ERBINNEN ─────────────────
+     Lucas: *"Op telefoon mag op alle pagina's nog wel even goed gekeken worden
+     naar of er genoeg white space is, dit is onder andere een probleem op de
+     'what we make' page."*
+
+     Gemeten op 390px: 12 pixels tussen een kaart en zijn eigen onderschrift,
+     en 11 tussen dat onderschrift en de VOLGENDE kaart. Die twee afstanden zijn
+     gelijk, en dan kan een lezer niet zien bij welke kaart de regel hoort —
+     nabijheid is het enige dat dat vertelt zodra de kaarten onder elkaar staan.
+     Op breed viel het niet op omdat de kaarten dan naast elkaar liggen en die
+     11 pixels horizontaal staan.
+
+     De rijafstand is daarom losgekoppeld van de kolomafstand: kolommen houden
+     hun krappe 11 (ze staan naast elkaar, daar is het een scheiding), rijen
+     krijgen ruim het dubbele van de afstand binnen een kaart. */
+  .s22 .kaarten { display: grid; grid-template-columns: repeat(4, 1fr); column-gap: clamp(.7rem, 1.6vw, 1.1rem); row-gap: clamp(2rem, 5vw, 2.6rem); }
   .s22 .kaarten li { display: grid; gap: .8rem; }
   .s22 .kaart { position: relative; display: block; border-radius: calc(var(--ronding) - 8px); overflow: hidden; background: var(--inkt); aspect-ratio: 4 / 5; }
   .s22 .kaart img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
@@ -792,7 +918,10 @@
   .s22 .stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; text-wrap: balance; }
 
   /* ── DE SET ───────────────────────────────────────────────────────────────*/
-  .s22 .groepen { display: grid; grid-template-columns: var(--a) var(--b); gap: clamp(.5rem, 1.2vw, .9rem); margin-bottom: .7rem; }
+  /* De onderrand van de groepsbalk stond 11px boven de tegels die eronder
+     horen — gemeten op alle drie de breedtes. Een kop die zijn eigen inhoud
+     bijna raakt leest niet als kop maar als eerste regel. */
+  .s22 .groepen { display: grid; grid-template-columns: var(--a) var(--b); gap: clamp(.5rem, 1.2vw, .9rem); margin-bottom: clamp(1rem, 2vw, 1.4rem); }
   .s22 .groep { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; padding-bottom: .55rem; border-bottom: 1px solid var(--inkt); }
   .s22 .rij { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(.5rem, 1.2vw, .9rem); }
   .s22 .rij li { display: grid; gap: .55rem; }

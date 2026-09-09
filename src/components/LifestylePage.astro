@@ -555,7 +555,22 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
 </div>
 
 <style>
-  .ls-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
+  /* ── DE KOP BEGINT BOVENAAN, HET BEELD MAG ZWEVEN — 8 september 2026 ──────
+     Lucas over /portal: *"bij deze pagina ook niet eerste sectie volledig
+     gevuld."* Gemeten: de tekstkolom is daar 418 hoog naast een figuur van 954,
+     en met `align-items: center` zweeft die tekst in het midden — 268 pixels
+     wit bóven de kop. Een kop die op een derde van het paneel begint, leest als
+     een fout en niet als lucht.
+     Alle tien de openingsrasters op de site zijn nagemeten (kladblok/_open):
+     vier stonden op 145 tot 268 pixels scheef. De regel is nu overal dezelfde:
+     alles begint BOVEN. Daar begin je met lezen, daar staat de kop, en daar
+     hoort het beeld ernaast te beginnen. Een uitzondering voor het beeld is
+     geprobeerd en weer weggehaald: de plaatshouderfiguren komen uit een ander
+     component en krijgen in Astro een eigen scope-attribuut, dus die regel
+     raakte de helft van de gevallen niet — en een consistentieregel die op de
+     helft van de pagina's iets anders doet, is geen regel. Eén uitlijning,
+     tien pagina's, geen uitzonderingen. */
+  .ls-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: start; }
   .ls-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   .ls-beeld { position: relative; }
   .ls-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 40em; }
@@ -588,7 +603,23 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
   .ls-check { display: grid; gap: .6rem; margin-top: 1.4rem; }
   .ls-check li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); }
   .ls-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
-  .ls-checkbeeld { aspect-ratio: 3 / 4; }
+  /* ── HORIZONTAAL, NIET VERTICAAL — 9 september 2026 ───────────────────────
+     Lucas: *"Ik wou ook dat de afbeeldingen in 1 scherm paste maar dat is nog
+     steeds niet zo. Dit soort afbeeldingen werken niet zo fijn op een website.
+     Maak al dit soort afbeeldingen horizontaal lang en niet verticaal."*
+
+     Gemeten op 1440 breed: dit beeld stond op 543×723. Een staand beeld naast een
+     kolom tekst duwt de sectie hoger dan het scherm, en dan lees je de tekst
+     ernaast nooit in één blik. 3/2 is liggend zonder een filmstrook te worden;
+     `object-position` houdt het onderwerp in beeld nu er van boven en onder
+     wordt bijgesneden.
+
+     DE KLEINE TEGELS BLIJVEN STAAND. Een producttegel in een raster (de
+     galerij, de modellen, de voorbeelden) is een FOTO die je bekijkt, geen
+     sectiebeeld dat naast tekst moet passen — en staand is de vorm waarin die
+     beelden gemaakt zijn. */
+  .ls-checkbeeld { aspect-ratio: 3 / 2; }
+  .ls-checkbeeld img { object-position: 50% 34%; }
   .ls-checkbeeld img { width: 100%; height: 100%; object-fit: cover; }
 
   /* De modelregel: een portret, één zin, en de pijl. Geen kaart met een
