@@ -73,6 +73,10 @@
  * telling is en tellingen bijna altijd boven de één liggen. `noun()` hieronder
  * kiest zelf.
  */
+/* Waar de klant foto's kan bijbestellen, is het aantal in een set een
+   ondergrens en geen uitkomst — zie de noot bij setSize() onderaan. */
+import { isUitbreidbaar } from './angles.js';
+
 export const NOUN = {
   /**
    * DE PARAPLU. Catalog, lifestyle en video samen — het hele aanbod.
@@ -299,4 +303,39 @@ export function counted(service, count, lang = 'en') {
  */
 export function countedShort(service, count, lang = 'en') {
   return `${count} ${serviceNounShort(service, lang, count)}`;
+}
+
+/*
+ * ── DE MAAT VAN EEN SET, ZOALS DE KLANT HEM MAG LEZEN — 10 sept 2026 ────────
+ *
+ * Lucas: *"Catalog wordt nu vanaf 4 foto's omdat klanten nu extra foto's erbij
+ * kunnen kiezen."*
+ *
+ * `setSize('catalog', 4, 'nl')` → "vanaf 4 foto's"
+ * `setSize('lifestyle', 3, 'nl')` → "3 foto's"
+ *
+ * WAAROM DIT EEN FUNCTIE IS EN GEEN "Vanaf " DIE JE ERVOOR TYPT. Dat laatste
+ * stond er namelijk al, op één plek: /pricing schreef `From ${countedShort(…)}`
+ * met de hand, terwijl de voorpagina, /start en /catalog gewoon "4 foto's"
+ * zeiden. Erger nog, de twee talen liepen uit elkaar — catalogStyles.nl.js zei
+ * "vanaf 4 foto's" en zijn Engelse tweelingbestand "4 photos". Zo'n verschil
+ * ontstaat niet door slordigheid maar doordat het woord op twaalf plekken los
+ * naast het getal staat. Eén functie is de enige vorm waarin dat niet nóg een
+ * keer gebeurt.
+ *
+ * En WELKE diensten open staan, wordt hier niet beslist: dat komt uit
+ * isUitbreidbaar() in angles.js, waar de hoeken zelf ook staan. Dit bestand gaat
+ * over woorden, niet over wat je kunt bijbestellen.
+ */
+export function setSize(service, count, lang = 'en') {
+  const kaal = countedShort(service, count, lang);
+  if (!isUitbreidbaar(service)) return kaal;
+  return lang === 'nl' ? `vanaf ${kaal}` : `from ${kaal}`;
+}
+
+/** Hetzelfde met de categorie erbij: "vanaf 4 catalog foto's". */
+export function setSizeLong(service, count, lang = 'en') {
+  const kaal = counted(service, count, lang);
+  if (!isUitbreidbaar(service)) return kaal;
+  return lang === 'nl' ? `vanaf ${kaal}` : `from ${kaal}`;
 }

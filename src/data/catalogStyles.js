@@ -42,7 +42,7 @@ export const catalogStyles = [
     tagline: 'Clean. Consistent. Relentlessly so.',
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
-    metaPrice: `${CAT_FROM} / product ${CAT_VAT} — 4 photos`,
+    metaPrice: `${CAT_FROM} / product ${CAT_VAT} — from 4 photos`,
     /* ── WAAR DEZE KNOP HEEN GAAT — 21 augustus 2026 ──────────────────────
        Hier stond `/start`, de keuzepagina. Een knop die "Order Classic" zegt en
        je vervolgens vraagt WAT we gaan maken, heeft de vraag gesteld die je net

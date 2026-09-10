@@ -1445,10 +1445,25 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
 .s22.s22 .cmp-divider { background: var(--vel); }
 
 /* De formaatvergelijking: haarlijnen in plaats van kaders. */
-.s22.s22 .tierc, .s22.s22 .tierc-col { border: 0; background: none; }
-.s22.s22 .tierc-row { border-top: 1px solid var(--lijn); padding-block: 1rem; }
-.s22.s22 .tierc-head { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
-.s22.s22 .tierc-cta { margin-top: 1.2rem; }
+.s22.s22 .tierc { border: 0; background: none; }
+.s22.s22 .tierc-r > * { border-top-color: var(--lijn); }
+/* ── DE LEAD STOND IN KAPITALEN — 10 september 2026 ─────────────────────────
+   De regel hieronder mikte op `.tierc-head`, en dat is niet de KOP maar het
+   blok waar de kop én zijn leadzin in staan. Gevolg: *"Je kiest geen
+   serviceniveau — de omvang van je bestelling bepaalt het"* stond als volle zin
+   in kapitale kopletter, op /catalog, /lifestyle en /video, in beide talen.
+   Kapitalen halen het woordbeeld weg; voor een etiket van twee woorden is dat
+   de prijs waard, voor een zin van elf niet — dezelfde meting als bij "Past
+   bij" hierboven.
+   Wat de kopletter WEL hoort te krijgen: de kop zelf, en de twee kolomkoppen
+   van de tabel, want dat zijn koppen. */
+.s22.s22 :is(.tierc-head h2, .tierc-kolkop) { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
+.s22.s22 .tierc-l, .s22.s22 .tierc-beide { font-family: var(--mono2); font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); }
+.s22.s22 .tierc-l { font-size: .72rem; }
+/* Gestapeld op een telefoon is het rijlabel de kop van het blokje en niet meer
+   de rand van een tabel; zie de media query in TierCompare.astro. */
+@media (max-width: 760px) { .s22.s22 .tierc-l { font-size: .82rem; color: var(--inkt); } }
+.s22.s22 .tierc-kolnaam { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3); }
 
 /* De stijlenrijen: kaarten met dezelfde ronding als elders, labels in mono. */
 .s22.s22 .sr img { border-radius: calc(var(--ronding) - 10px); }
@@ -1483,3 +1498,15 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
   letter-spacing: .04em;
 }
 .s22.s22 .sr-etiket { font-size: .72rem; }
+
+/* ── HET CONTACTBLAD VAN DE LOOKS — 10 september 2026 ───────────────────────
+   De vier looks staan sinds vandaag in een raster in plaats van in rijen (zie
+   StyleRows.astro). De naam in een tegel is een KOP en geen zin, dus krijgt hij
+   dezelfde behandeling als .sr-alt-h: de kopletter, in kapitalen. En het vak
+   van een look zonder foto staat in mono — het is een etiket ("foto volgt") en
+   geen tekst om te lezen. */
+.s22.s22 .sr-t-h { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
+.s22.s22 .sr-t-leeg { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; color: var(--inkt-3); }
+/* Het beeld in een tegel houdt de ronding van deze stijl; de haarlijn eronder
+   is de tint van de look en blijft recht. */
+.s22.s22 .sr-t-beeld { border-radius: calc(var(--ronding) - 10px); }

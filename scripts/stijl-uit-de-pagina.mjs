@@ -184,9 +184,39 @@ function haalStijlblokkenUitTekst(html, blokken) {
   };
 }
 
+/* ── HTML-ENTITEITEN HOREN NIET IN CSS — 10 september 2026 ──────────────────
+ * Wat er uit de HTML komt is een ATTRIBUUTWAARDE, en daar staan aanhalingstekens
+ * als `&quot;` in. Die gingen letterlijk het stylesheet in:
+ *
+ *     style={`--k0:${JSON.stringify(label)}`}   in de bron
+ *     --k0:&quot;Onder 10 producten&quot;        in het stylesheet
+ *
+ * Dat is geen geldige CSS-string, dus de declaratie viel weg — zonder fout, want
+ * een browser slaat een onbegrepen declaratie stil over. En het ging twee keer
+ * mis: de `;` waar `&quot;` op eindigt werd óók nog aangezien voor de puntkomma
+ * aan het einde van de waarde en weggeknipt, zodat er `&quot}` overbleef.
+ *
+ * Gevonden bij TierCompare, waar de kolomnaam via een custom property naar
+ * `content:` ging. Die component doet het nu anders, maar de fout zat hier en
+ * niet daar: elke inline stijl met een aanhalingsteken erin zou hem hebben.
+ * Vandaar dat de waarde eerst wordt teruggelezen naar wat er in de bron stond,
+ * en de puntkomma pas dáárna wordt geteld. `&amp;` gaat als laatste, anders
+ * wordt `&amp;quot;` twee keer vertaald. */
+const ENTITEITEN = [
+  [/&quot;/g, '"'], [/&#0*34;/g, '"'],
+  [/&#0*39;/g, "'"], [/&apos;/g, "'"],
+  [/&lt;/g, '<'], [/&gt;/g, '>'],
+  [/&amp;/g, '&'],
+];
+function ontsnap(waarde) {
+  let uit = String(waarde);
+  for (const [van, naar] of ENTITEITEN) uit = uit.replace(van, naar);
+  return uit;
+}
+
 /** De regel voor één waarde. Eén klasse — de laag doet het werk, zie de kop. */
 export function regelVoor(waarde, klasse) {
-  return `.${klasse}{${waarde.replace(/;\s*$/, '')}}`;
+  return `.${klasse}{${ontsnap(waarde).replace(/;\s*$/, '')}}`;
 }
 
 /** De naam van de laag waarin alles behalve deze stylesheet terechtkomt. */

@@ -161,6 +161,43 @@ const columns = (['unattended', 'attended'] as const).map((id) => ({
   cta: id === 'unattended' ? (label0 || t.cta0) : t.cta1,
   cells: TIER_ROWS.map((r) => tierRow(id, r.key, lang)),
 }));
+
+/* ── ÉÉN TABEL IN PLAATS VAN TWEE LIJSTEN — 10 september 2026 ───────────────
+ * Lucas, over dit blok: *"Deze blokken zien er ook niet zo mooi uit."*
+ *
+ * Wat er stond waren twee kaarten naast elkaar, elk met dezelfde vijf rijen
+ * eronder. Drie dingen gingen daar mis, en de eerste is de ergste:
+ *
+ * · DE RIJEN LIEPEN NIET GELIJK. "Planning" wikkelt rechts naar twee regels en
+ *   links naar één, en vanaf dat moment staat rij drie links naast rij twee
+ *   rechts. De kop van dit bestand zegt het zelf, over de VOLGORDE van de
+ *   rijen: *"a comparison where the rows do not line up is not a comparison."*
+ *   Dat gold voor de volgorde en het gold net zo goed voor de hoogte, en met
+ *   twee losse lijsten was er niets dat het afdwong. Eén raster wel: label,
+ *   waarde, waarde — de rij is de rij, wat de tekst ook doet.
+ *
+ * · TWEE VAN DE VIJF RIJEN WAREN WOORD VOOR WOORD GELIJK. "Controle" en "Na
+ *   levering" staan links en rechts hetzelfde, dus veertig procent van een blok
+ *   dat "wat er verandert" heet, ging over wat er niet verandert. Ze blijven
+ *   staan — dat een controle bij elke bestelling hoort, is precies wat een
+ *   koper van tien producten wil weten — maar ze staan nu ÉÉN keer, over de
+ *   volle breedte, met het woord "bij allebei" ervoor. Wat wél verschilt, valt
+ *   daardoor vanzelf op, en dat is de hele opdracht van dit blok.
+ *
+ * · EN DE STREEP ERTUSSEN. Twee kaarten met een grijze balk in het midden is de
+ *   vorm die de kop hierboven in augustus al een keer heeft weggehaald op een
+ *   ander niveau. Nu haarlijnen per rij, zoals overal in deze stijl.
+ *
+ * De regel die BOVEN alles gaat, gaat er nog steeds boven: de twee kolommen
+ * zijn typografisch identiek. Geen accent, geen lint, geen groter lettertype op
+ * één van de twee. Een lezer kiest hier niets — zijn aantal koos al.
+ */
+const rijen = TIER_ROWS.map((r, i) => {
+  const onder = columns[0].cells[i];
+  const vanaf = columns[1].cells[i];
+  return { key: r.key, label: rowLabels[i], onder, vanaf, gelijk: onder === vanaf };
+});
+const beideL = lang === 'nl' ? 'Bij allebei' : 'Both';
 ---
 
 <div class="tierc reveal pending">
@@ -171,23 +208,51 @@ const columns = (['unattended', 'attended'] as const).map((id) => ({
     </div>
   )}
 
-  <div class="tierc-grid">
+  {/* Een echte tabel en geen raster van losse blokjes: dit IS rijen en
+      kolommen met koppen erboven, en dan hoort de vorm die te zijn. Een
+      voorleeshulp leest hier "Planning — onder 10 producten — standaard
+      doorlooptijd"; met twee losse definitielijsten moest hij de kolomkop uit
+      de omgeving raden. De samengevoegde rijen dragen colspan={2}, dus ook daar
+      klopt wat er wordt voorgelezen. */}
+  <div class="tierc-schuif">
+  <table class="tierc-tabel">
+    <thead>
+      <tr>
+        <th scope="col" class="tierc-hoek"><span class="vh">{rowLabels[0] ? (lang === 'nl' ? 'Onderdeel' : 'What') : ''}</span></th>
+        {columns.map((col) => <th scope="col" class="tierc-kolkop">{col.label}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {rijen.map((r) => (
+        <tr class={r.gelijk ? 'tierc-r is-gelijk' : 'tierc-r'}>
+          <th scope="row" class="tierc-l">{r.label}</th>
+          {r.gelijk
+            ? <td class="tierc-v is-beide" colspan={2}><span class="tierc-beide">{beideL}</span>{r.onder}</td>
+            : <>
+                {/* De kolomnaam staat in de cel en niet alleen in de koprij. Op
+                    een breed scherm is hij `display: none` — dus ook wég voor
+                    een voorleeshulp, die de kop dan uit de tabel haalt zoals het
+                    hoort. Op een telefoon valt de tabelstructuur weg (zie de
+                    media query) en is dit de enige plek waar nog staat welke
+                    kant je leest. Eén bron: dezelfde `columns` als de koprij. */}
+                <td class="tierc-v"><span class="tierc-kolnaam">{columns[0].label}</span>{r.onder}</td>
+                <td class="tierc-v"><span class="tierc-kolnaam">{columns[1].label}</span>{r.vanaf}</td>
+              </>}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+  </div>
+
+  {/* De twee links stonden onder hun eigen kolom. In een tabel is er geen
+      kolomvoet om ze in te hangen zonder de rijen te breken, dus staan ze
+      eronder, in dezelfde volgorde als de kolommen erboven. */}
+  <div class="tierc-voet">
     {columns.map((col) => (
-      <div class="tierc-col">
-        <h3>{col.label}</h3>
-        <dl class="tierc-rows">
-          {col.cells.map((cell, i) => (
-            <div class="tierc-row">
-              <dt>{rowLabels[i]}</dt>
-              <dd>{cell}</dd>
-            </div>
-          ))}
-        </dl>
-        <a href={col.href} class="link-arrow tierc-cta">
-          {col.cta}
-          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-      </div>
+      <a href={col.href} class="link-arrow tierc-cta">
+        {col.cta}
+        <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
     ))}
   </div>
 </div>
@@ -200,78 +265,96 @@ const columns = (['unattended', 'attended'] as const).map((id) => ({
      17 tot 26 aanhoudt. Zie de noot bij dat token in global.css. */
   .tierc-head p { margin-top: var(--gap-head-lede); color: var(--ink-2); }
 
-  /* TWO CARDS, NOT ONE BOX WITH A LINE DOWN IT — August 2026. Lucas: *"bij
-     sommige elementen zit een soort grijze rand eromheen, maak dit mooier."*
-     This block was the worst of them.
+  /* ── DE TABEL ────────────────────────────────────────────────────────────
+     De hoekcel is leeg en de kolomkoppen dragen de twee kanten van de grens.
+     Vaste indeling (`table-layout: fixed`) omdat de breedte van een kolom niet
+     mag afhangen van welke zin er toevallig het langst is: de twee kanten zijn
+     even breed, en dat is dezelfde regel als de typografie — geen van beide is
+     de aanbevolen kant.
 
-     What it was: a 1px grid gap over a --line-strong ground, plus a 1px border
-     of the same colour around the whole thing. That is the site's hairline
-     trick and it is a good trick — one background showing through the gutter
-     gives a true 1px rule at every zoom level instead of two adjacent borders
-     that composite to 2px on some. But the trick draws a BOX, and a box in a
-     mid grey on a near-black page is the single most dated shape a dark UI
-     can make: it reads as a table border from 2009, and it flattens two
-     independent choices into one object with a divider.
+     De labelkolom is smal en in de kleine letter: hij is de rand van de tabel
+     en niet de inhoud. Op een telefoon schuift de tabel binnen zijn eigen vak
+     (.tierc-schuif) in plaats van de pagina breder te maken — dezelfde ingreep
+     als bij de prijsladder op /pricing. */
+  .tierc-schuif { margin-top: clamp(1.6rem, 3vw, 2.4rem); overflow-x: auto; }
+  .tierc-tabel { width: 100%; min-width: 34rem; border-collapse: collapse; table-layout: fixed; }
+  .tierc-hoek { width: 8.5rem; }
 
-     They are two choices. So they are two cards, separated by real space, each
-     with a raised surface and the site's radius, and both wearing .lift from
-     global.css — a lit top edge, a contact shadow and a cast shadow, which is
-     how an object sits above a dark ground when a grey outline cannot. The
-     hover lift is what tells you they are each clickable, which the box never
-     did.
-
-     The hairline trick is NOT deleted from the codebase; .compare-static still
-     uses it, correctly, for a genuine table. */
-  .tierc-grid {
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(.9rem, 1.8vw, 1.4rem);
+  .tierc-kolkop {
+    text-align: left; vertical-align: bottom;
+    padding: 0 0 .8rem 1.2rem;
+    font-size: clamp(1.05rem, 1.7vw, 1.25rem); line-height: 1.25; font-weight: 600;
   }
 
-  .tierc-col {
-    background: var(--surface);
-    border-radius: var(--r-lg);
-    padding: clamp(1.5rem, 2.8vw, 2.1rem);
-    display: flex;
-    flex-direction: column;
+  .tierc-r > * { border-top: 1px solid var(--line); padding: .95rem 0 1rem 1.2rem; vertical-align: top; }
+  .tierc-l {
+    padding-left: 0; text-align: left; vertical-align: top;
+    font-size: .78rem; font-weight: 600; color: var(--ink-3); line-height: 1.4;
+  }
+  .tierc-v { color: var(--ink); font-size: .95rem; line-height: 1.45; text-wrap: pretty; }
+  /* display:none en niet visueel verstoppen: op een breed scherm zegt de koprij
+     het al, en een tweede keer dezelfde kop in elke cel is precies wat een
+     voorleeshulp onleesbaar maakt. Weg is hier beter dan verstopt. */
+  .tierc-kolnaam { display: none; }
+
+  /* De rij die voor allebei geldt. Geen grijs vlak en geen kader — alleen het
+     woordje ervoor, in dezelfde kleine letter als de labels links, zodat je in
+     een oogopslag ziet welke rijen niet meedoen aan het verschil. */
+  .tierc-beide {
+    display: inline-block; margin-right: .55rem;
+    font-size: .72rem; font-weight: 600; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: .04em;
   }
 
-  /* Identical on both columns. See the file header — the moment one of these
-     grows a larger font, an accent colour or a ribbon, the block is arguing for
-     a tier instead of describing two. */
-  .tierc-col h3 {
-    font-size: clamp(1.05rem, 1.7vw, 1.25rem);
-    line-height: 1.25;
+  .tierc-voet {
+    margin-top: 1.4rem;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.2rem; align-items: start;
   }
-
-  .tierc-rows { margin-top: var(--gap-head-block); flex: 1; }
-  .tierc-row { padding: .85rem 0; border-top: 1px solid var(--line); }
-  .tierc-row:first-child { border-top: 0; padding-top: 0; }
-
-  .tierc-row dt {
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--ink-3);
-  }
-  .tierc-row dd {
-    margin: .3rem 0 0;
-    color: var(--ink);
-    font-size: .95rem;
-    line-height: 1.45;
-    text-wrap: pretty;
-  }
-
   /* No `.i` override here on purpose. The site's arrow is 20px at
      stroke-width 1.8 with butt caps (global.css `.i`), and it is the same
      arrow in every link-arrow on every page. A local resize would make this
      one block's arrow subtly wrong. */
-  .tierc-cta { margin-top: 1.5rem; align-self: start; }
+  .tierc-cta { align-self: start; }
 
-  /* One column below the point where two 5-row stacks stop being scannable
-     side by side. The row labels repeat in each column rather than living in a
-     shared rail, which is what makes the stacked state readable at all. */
+  .vh {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+  }
+
+  /* ── OP EEN TELEFOON GEEN TABEL MAAR EEN STAPEL ──────────────────────────
+     Twee kolommen van elk een halve zin passen niet op 390 pixels, en de eerste
+     versie liet de tabel daarom schuiven binnen zijn eigen vak. Gemeten viel
+     daarmee de hele rechterkolom buiten beeld: op een blok dat "wat er
+     verandert" heet, zag een telefoon alleen de kant waarvan hij al wist.
+     Schuiven is prima voor een prijsladder waar de eerste kolom de rij
+     benoemt; het is niet prima voor een vergelijking, want daar is de tweede
+     kolom de helft van het antwoord.
+
+     Dus stapelt hij: per rij het label, daaronder de twee waarden, elk met de
+     naam van zijn kolom erboven. Die naam staat als `.tierc-kolnaam` in de cel
+     zelf en komt uit dezelfde `columns` als de koprij, dus er is geen tweede
+     plek waar de tekst kan afwijken. De tabelstructuur valt hier weg (display:
+     block haalt de tabelrol weg), en daarom draagt elke waarde zijn kolomnaam
+     hier zichtbaar: wat de koprij eerst voorlas, staat er dan gewoon. */
   @media (max-width: 760px) {
-    .tierc-grid { grid-template-columns: 1fr; }
+    .tierc-schuif { overflow-x: visible; }
+    .tierc-tabel { min-width: 0; }
+    .tierc-tabel thead { display: none; }
+    .tierc-tabel tbody, .tierc-r, .tierc-l, .tierc-v { display: block; width: auto; }
+    .tierc-r { border-top: 1px solid var(--line); padding: 1.1rem 0 1.2rem; }
+    .tierc-r > * { border-top: 0; padding: 0; }
+    /* Het rijlabel en de kolomnaam staan gestapeld allebei in de kleine
+       hoofdletter, en dan lijken ze even zwaar terwijl de een de rij benoemt en
+       de ander een waarde erin. Het rijlabel gaat daarom een maat omhoog en
+       krijgt de gewone inktkleur: het is hier de kop van het blokje. */
+    .tierc-l { font-size: .88rem; color: var(--ink); }
+    .tierc-v { margin-top: .7rem; }
+    .tierc-kolnaam {
+      display: block; margin-bottom: .15rem;
+      font-size: .68rem; font-weight: 600; color: var(--ink-3);
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .tierc-voet { grid-template-columns: 1fr; }
   }
 </style>

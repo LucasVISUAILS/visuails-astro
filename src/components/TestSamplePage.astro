@@ -45,7 +45,7 @@ import BackgroundPicker from './order/BackgroundPicker.astro';
    zitten ze in LifestyleModelFold.astro met een label dat "in de carousel" zegt;
    dat woord klopt hier maar de helft van de tijd. */
 import Disclose from './Disclose.astro';
-import ModelPicker from './order/ModelPicker.astro';
+import ModelKeuze from './order/ModelKeuze.astro';
 import { waHref } from '../data/whatsapp.js';
 import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -287,16 +287,16 @@ const vink = 'M20 6L9 17l-5-5';
         `name="s1"` is dezelfde accordeongroep als de beeldvormvouw op /start:
         twee vouwen die elkaar sluiten in plaats van samen de pagina verlengen.
         Op deze pagina is dit voorlopig de enige. */}
-    <div class="ts-modelvouw">
-      <Disclose
-        summary={c.modelVouw}
-        name="s1"
-        liveAttr="data-pl-sum-model"
-        liveText={c.modelStand}
-      >
-        <ModelPicker lang={lang} soort="proef" />
-      </Disclose>
-    </div>
+    {/* ── EN SINDS 10 SEPTEMBER STAAT HIJ IN STAP 2 ────────────────────
+        Lucas: *"Verplaats model keuze naar material gedeelte van bestelform bij
+        alle bestelforms."* Alle, dus ook deze. De vouw hierboven is daarmee
+        vervallen: het gezicht staat nu boven de productkaart in stap 2, waar de
+        foto's staan waar het gezicht bij hoort.
+
+        ZONDER de eis die de andere formulieren wel dragen — zie de noot bij
+        `verplicht` in ModelKeuze.astro. Op een proef van één euro blijft "wij
+        kiezen er een" gewoon voorstaan. */}
+    <ModelKeuze slot="model" lang={lang} soort="proef" verplicht={false} />
   </OrderFlow>
 
   <section class="paneel ts-krijg">
@@ -411,7 +411,18 @@ const vink = 'M20 6L9 17l-5-5';
   }
 
   .ts-twee { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: center; }
-  @media (min-width: 900px) { .ts-twee { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+  /* ── HET BEELD BEPAALT DE HOOGTE NIET MEER — 10 september 2026 ──────────
+     Lucas, over deze pagina: *"De foto's hier nemen zoveel ruimte in beslag dat
+     je overzicht kwijt raakt."* Gemeten klopte dat precies hier: drie regels
+     tekst van samen 102 pixels naast een foto van 568 × 379, in een sectie van
+     537. De foto zette de hoogte, de tekst zweefde in het midden van een kolom
+     die tweeënhalf keer zo hoog was als zijn inhoud.
+
+     Het beeld gaat nergens heen — het is het enige BEWIJS op deze pagina, en
+     drie vinkjes zonder foto zijn een belofte zonder onderpand. Maar 380 is de
+     breedte waarop hij nog steeds leest als een foto en niet meer als de
+     sectie. De verhouding 3:2 blijft, dus er wordt niets anders bijgesneden. */
+  @media (min-width: 900px) { .ts-twee { grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: clamp(2rem, 4vw, 3rem); } }
 
   .ts-lijst { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }
   .ts-lijst li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
@@ -457,8 +468,9 @@ const vink = 'M20 6L9 17l-5-5';
      en ModelPicker). Zonder dat krijgt de selector het data-astro-cid van dit
      bestand en raakt hij niets — dat is hier de zesde keer, dus het staat er nu
      bij. */
-  .ts-modelvouw { margin-top: clamp(1.4rem, 3vw, 2rem); max-width: var(--pl-measure); }
-  .ts-modelvouw :global(.pl-model) { margin-top: 0; }
+  /* `.ts-modelvouw` stond hier: de wikkel om de modelvouw in stap 1. Die vouw
+     is op 10 september naar stap 2 verhuisd en draagt daar zijn eigen maten;
+     zie ModelKeuze.astro. */
 
   .ts-aanvraag { scroll-margin-top: clamp(5rem, 10vw, 7rem); }
 

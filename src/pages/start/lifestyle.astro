@@ -7,12 +7,15 @@
 import Layout from '../../layouts/Layout.astro';
 import OrderFlow from '../../components/order/OrderFlow.astro';
 import StylePicker from '../../components/order/StylePicker.astro';
-import LifestyleModelFold from '../../components/order/LifestyleModelFold.astro';
+import ModelKeuze from '../../components/order/ModelKeuze.astro';
 ---
 
 <Layout title="Order lifestyle carousels — VISUAILS" description="Your product in a styled scene, three images per product. Pick the look and the count; the rate falls as the count rises.">
   <OrderFlow lang="en" service="lifestyle">
+    {/* Stap 2, boven de productkaarten — zie ModelKeuze.astro. De slot
+        heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
+        deze bron staat maakt dus niet uit voor waar het terechtkomt. */}
+    <ModelKeuze slot="model" lang="en" soort="lifestyle" />
     <StylePicker lang="en" />
-    <LifestyleModelFold lang="en" />
   </OrderFlow>
 </Layout>

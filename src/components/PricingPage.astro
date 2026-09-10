@@ -65,7 +65,7 @@ import {
   RESOLUTIE,
 } from '../data/pricing.js';
 // Het juiste woord per dienst — zie de kop van lexicon.js.
-import { counted, countedShort } from '../data/lexicon.js';
+import { counted, countedShort, setSize } from '../data/lexicon.js';
 // The six pricing questions are NOT in this file. They live in
 // src/data/faq.js, because src/data/schema.js emits them a second time as this
 // page's FAQPage JSON-LD, and an answer written twice is an answer that will
@@ -220,7 +220,10 @@ const COPY = {
       /* countedShort() en niet counted(): de kop ernaast NOEMT de categorie al.
          "Catalog set — 4 catalog images" zet het woord twee keer neer. Zie de
          noot bij SHORTER in lexicon.js. */
-      catalog: { name: 'Catalog set', sub: `From ${countedShort('catalog', CATALOG_IMAGES, 'en')}` },
+      /* `From` stond hier met de hand; sinds 10 september 2026 zegt setSize()
+         het, zodat /pricing en de voorpagina niet meer uit elkaar kunnen lopen.
+         Zie de noot bij setSize() in src/data/lexicon.js. */
+      catalog: { name: 'Catalog set', sub: setSize('catalog', CATALOG_IMAGES, 'en') },
       lifestyle: { name: 'Lifestyle carousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'en') },
     },
 
@@ -335,7 +338,7 @@ const COPY = {
          het over catalog en lifestyle gaat; dat hoort "foto's" te zijn. */
       saveUnit: 'minder dan de twee los',
       complete: { name: 'Complete bundel', sub: `Eén tarief voor de catalogset en de lifestyle-carousel samen — ${counted('complete', COMPLETE_IMAGES, 'nl')}` },
-      catalog: { name: 'Catalogset', sub: `Vanaf ${countedShort('catalog', CATALOG_IMAGES, 'nl')}` },
+      catalog: { name: 'Catalogset', sub: setSize('catalog', CATALOG_IMAGES, 'nl') },
       lifestyle: { name: 'Lifestyle-carousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl') },
     },
 

@@ -240,7 +240,7 @@ export function faqPageGroups(lang = 'en') {
             // over de lancering van de KLANT — precies de botsing die het
             // prijsmodel heeft veranderd. Zie de kop van dit bestand.
             q: 'Wat is een bestelling?',
-            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} foto’s, een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
+            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} foto’s of meer, een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
           },
           {
             q: 'Wat moet ik opsturen?',
@@ -469,7 +469,7 @@ export function faqPageGroups(lang = 'en') {
           // model. See this file's header. Do not reintroduce it as a name for
           // what we sell; that is what "an order" and "a batch" are for.
           q: 'What is an order?',
-          a: `An order is everything you send in one go: one upload, one rate, one invoice. Per product you pick a catalog set of ${CATALOG_IMAGES} photos, a lifestyle carousel of ${LIFESTYLE_IMAGES} photos, or both. There is no minimum and no package to fit your line into — the more products, the lower the rate per product.`,
+          a: `An order is everything you send in one go: one upload, one rate, one invoice. Per product you pick a catalog set of ${CATALOG_IMAGES} photos or more, a lifestyle carousel of ${LIFESTYLE_IMAGES} photos, or both. There is no minimum and no package to fit your line into — the more products, the lower the rate per product.`,
         },
         {
           q: 'What do I need to send you?',

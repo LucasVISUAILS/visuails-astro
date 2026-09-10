@@ -50,7 +50,8 @@ import {
   LADDER, ladderRate, vatLabel, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, plans,
   CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
 } from '../data/pricing.js';
-import { countedShort } from '../data/lexicon.js';
+import { countedShort, setSize } from '../data/lexicon.js';
+import { ALLE_DEUREN } from '../data/eigenproduct.js';
 import { MERK } from '../data/brand.js';
 import { binnenkortNamen } from '../data/binnenkort.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -152,18 +153,35 @@ const COPY = {
     facts: ['One product is enough, no shoot', `From ${e(AMOUNT.catalog)} per product`, 'Your own week on the calendar', RECHTEN.en],
     svcH: 'What we make.',
     svcLede: 'All of it from the photos you already have — a phone by a window is enough.',
+    /* ── DRIE SOORTEN BEELD, EN GEEN DRIE DIENSTNAMEN — 10 september 2026 ──
+       Lucas: *"ik wil op de homepage bij 'What we make' de service blokken
+       wisselen naar wat algemenere categorieën, dus bijvoorbeeld 'Productfoto's',
+       'Lifestyle beelden', en 'Productvideo's'."*
+
+       Er stonden drie PRODUCTNAMEN — Catalog, Lifestyle, Catalog + Lifestyle —
+       en die vragen van een bezoeker dat hij het jargon van deze studio al kent
+       voordat hij iets kan kiezen. "Catalog" is een woord dat wij gebruiken;
+       "productfoto's" is het woord waarmee hij hier binnenkomt.
+
+       En de derde was een optelsom van de eerste twee (zie de noot bij
+       `complete` in StartPage). Op zijn plek staat nu video — de derde SOORT
+       beeld die deze studio maakt, en de enige die op de voorpagina helemaal
+       ontbrak terwijl er vier van de acht deuren over gaan.
+
+       De link gaat naar /start met het filter er al in, en niet meer naar de
+       dienstpagina: wie hier klikt, kiest een richting en geen dienst. */
     svc: [
-      ['Catalog', `${countedShort('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/catalog'],
-      ['Lifestyle', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
-      ['Catalog + Lifestyle', `${countedShort('complete', COMPLETE_IMAGES, 'en')} per product — your page and your feed in one order`, `from ${e(AMOUNT.complete)} per product`, '/pricing'],
+      ['Product photos', `${setSize('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/start/?zie=foto'],
+      ['Lifestyle imagery', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
+      ['Product video', 'One clip per product — eight seconds, one clean move', `from ${e(AMOUNT.video)} a clip`, '/start/?zie=video'],
     ],
     svcAllKop: 'See all services',
     /* De namen van de andere deuren. De canonieke lijst staat in StartPage.astro
        (`deuren`); dit is bewust een KORTE opsomming en geen tweede kopie ervan —
        vier woorden die zeggen wat voor soort werk er nog meer is, zodat de tegel
        iets zegt in plaats van alleen ergens heen te wijzen. */
-    svcAllLijst: ['Video', 'Hooks', 'Editions', 'Made to order'],
-    svcAllPrijs: 'nine doors',
+    svcAllLijst: ['Hooks', 'Editions', 'Lifestyle video', 'Made to order'],
+    svcAllPrijs: '{n} doors',
     svcAll: 'Everything we make',
     svcMore: 'See',
     svcSoon: ['Coming:', `${binnenkortNamen('en').join(' & ')} — what they are`],
@@ -189,7 +207,7 @@ const COPY = {
        zonder de belofte dat dit het hele aanbod is. */
     setH: `One product. Up to ${COMPLETE_IMAGES} images and a clip.`,
     setLede: 'The catalog set for your shop, the lifestyle carousel for your socials, a clip for the feed — together in one order, or any one of them on its own.',
-    setGroups: [[`Catalog set · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, '/catalog'], [`Lifestyle carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, '/lifestyle']],
+    setGroups: [[`Catalog set · ${setSize('catalog', CATALOG_IMAGES, 'en')}`, '/catalog'], [`Lifestyle carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, '/lifestyle']],
     frames: FRAMES.en,
     /* Het opschrift boven de twee onderaan. Zonder dit lezen video en merkmodel
        als een voetnoot bij de set; met dit lezen ze als wat ze zijn — twee dingen
@@ -213,7 +231,7 @@ const COPY = {
        meelopen, is een lijst die bij de eerstvolgende herordening stilletjes de
        verkeerde kop boven de verkeerde kolom zet. */
     priceKinds: {
-      catalog: `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`,
+      catalog: `Catalog · ${setSize('catalog', CATALOG_IMAGES, 'en')}`,
       lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`,
       complete: `Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`,
     },
@@ -260,15 +278,17 @@ const COPY = {
     facts: ['Eén product mag, geen shoot nodig', `Vanaf ${e(AMOUNT.catalog)} per product`, 'Jouw eigen week op de kalender', RECHTEN.nl],
     svcH: 'Wat we maken.',
     svcLede: 'Allemaal uit de foto’s die je al hebt — een telefoon bij het raam is genoeg.',
+    /* Zie de Engelse noot hierboven voor waarom hier geen dienstnamen meer
+       staan. */
     svc: [
-      ['Catalog', `${countedShort('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/catalog'],
-      ['Lifestyle', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
-      ['Catalog + Lifestyle', `${countedShort('complete', COMPLETE_IMAGES, 'nl')} per product — je pagina en je feed in één bestelling`, `vanaf ${e(AMOUNT.complete)} per product`, '/pricing'],
+      ['Productfoto’s', `${setSize('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/start/?zie=foto'],
+      ['Lifestyle beelden', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
+      ['Productvideo’s', 'Eén clip per product — acht seconden, één rustige beweging', `vanaf ${e(AMOUNT.video)} per clip`, '/start/?zie=video'],
     ],
     svcAllKop: 'Bekijk alle diensten',
     /* Zie de Engelse tegenhanger. */
-    svcAllLijst: ['Video', 'Hooks', 'Editions', 'Werk op maat'],
-    svcAllPrijs: 'negen deuren',
+    svcAllLijst: ['Hooks', 'Editions', 'Lifestyle-video', 'Werk op maat'],
+    svcAllPrijs: '{n} deuren',
     svcAll: 'Alles wat we maken',
     svcMore: 'Bekijk',
     svcSoon: ['Binnenkort:', `${binnenkortNamen('nl').join(' & ')} — wat het is`],
@@ -282,7 +302,7 @@ const COPY = {
     /* Zie de Engelse tegenhanger. */
     setH: `Eén product. Tot ${COMPLETE_IMAGES} beelden en een clip.`,
     setLede: 'De catalogset voor je shop, de lifestyle-carousel voor je socials, een clip voor de feed — samen in één bestelling, of elk apart.',
-    setGroups: [[`Catalogset · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
+    setGroups: [[`Catalogset · ${setSize('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
     frames: FRAMES.nl,
     /* Zie de Engelse tegenhanger. */
     extrasLabel: 'Bij hetzelfde product',
@@ -302,7 +322,7 @@ const COPY = {
     priceCount: 'Producten',
     /* Zie de Engelse noot. */
     priceKinds: {
-      catalog: `Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`,
+      catalog: `Catalog · ${setSize('catalog', CATALOG_IMAGES, 'nl')}`,
       lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`,
       complete: `Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`,
     },
@@ -337,7 +357,17 @@ const COPY = {
     trust: ['Gemaakt in Enschede, NL', 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
   },
 };
-const c = COPY[lang];
+/* ── HET AANTAL DEUREN KOMT UIT DE LIJST — 10 september 2026 ───────────────
+   In de vierde tegel stond "negen deuren", getypt, terwijl de lijst zelf in
+   StartPage.astro staat. Toen daar de negende weg ging, klopte dit getal niet
+   meer — en niets zou dat gemeld hebben.
+
+   ALLE_DEUREN in eigenproduct.js is de plek waar dat wél opvalt: die lijst
+   wordt door tests/eigenproduct.test.mjs regel voor regel vergeleken met de
+   deuren die StartPage echt rendert. Een deur erbij of eraf en die toets valt
+   om; het getal hier volgt vanzelf. */
+const c = { ...COPY[lang] };
+c.svcAllPrijs = c.svcAllPrijs.replace('{n}', String(ALLE_DEUREN.length));
 const nn = (i: number) => String(i).padStart(2, '0');
 /* ── DE BEELDEN ───────────────────────────────────────────────────────────────
    De hero is de echte foto, vrijstaand gemaakt: de studiowand en de olijfgroene
@@ -391,7 +421,30 @@ const B = (n: number) => BEELD[n - 1];
    DRIE EN NIET VIER sinds 10 september 2026: de vierde tegel is de deur naar
    /start geworden en draagt geen foto (zie de noot bij `kaart-deur` verderop).
    De 9 die hier stond was die van de clip en hing nergens meer aan. */
-const DIENST_BEELD = [1, 2, 3];
+/* ── HET EERSTE BEELD IS EEN CATALOGUS EN GEEN SFEERFOTO — 10 september 2026
+   Lucas: *"Pas ook de product- en catalogfoto's foto aan naar de catalog banner
+   in de map."*
+
+   Op de tegel "Productfoto's" stond een sfeerbeeld: een model in groen licht.
+   Mooi, en het zegt het tegenovergestelde van wat eronder staat — een
+   catalogfoto is juist niet moody, hij is schoon, vlak en overal hetzelfde. De
+   tegel verkocht daarmee de buurdienst.
+
+   Wat er nu staat is het raster uit /img: twaalf kledingstukken op wit, in
+   hetzelfde kader en hetzelfde licht. Dat is letterlijk het product van deze
+   dienst, en het is meteen het argument — je ziet in één blik dat een hele
+   reeks als één lijn leest.
+
+   De andere twee houden hun sfeerbeeld, en dat is nu geen inconsistentie meer
+   maar het verschil zelf: platte productfoto's naast twee beelden met een
+   wereld eromheen. De rij toont drie soorten werk in plaats van drie keer
+   dezelfde toon. */
+const CATALOG_BANNER = {
+  src: '/img/catalog-raster.webp',
+  klein: '/img/catalog-raster-w760.webp',
+  w: 1600, h: 1207,
+};
+const DIENST_BEELD = [CATALOG_BANNER, B(2), B(3)];
 const SET = [1, 5, 4, 2, 3, 7, 6];
 ---
 
@@ -506,7 +559,13 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       {c.svc.map(([naam, wat, prijs, href], i) => (
         <li>
           <a class="kaart" href={lp(href)}>
-            <img src={B(DIENST_BEELD[i]).klein} width="1000" height="1250" alt="" loading="lazy" decoding="async">
+            {/* De maten komen van het bestand en niet uit de lucht: er stond
+                1000×1250 op elke tegel terwijl geen van de drie beelden die
+                verhouding heeft. De kaart snijdt toch bij (aspect-ratio 4/5 met
+                object-fit: cover), dus je zag er niets van — maar een browser
+                die een verkeerde verhouding krijgt, reserveert de verkeerde
+                ruimte en schuift de pagina op zodra het beeld binnen is. */}
+            <img src={DIENST_BEELD[i].klein} width={DIENST_BEELD[i].w} height={DIENST_BEELD[i].h} alt="" loading="lazy" decoding="async">
             <span class="kaart-pil">
               <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
               <span class="rond" aria-hidden="true">→</span>

@@ -8,10 +8,21 @@ import Layout from '../../layouts/Layout.astro';
 import OrderFlow from '../../components/order/OrderFlow.astro';
 import Step1Options from '../../components/order/Step1Options.astro';
 import AnglePicker from '../../components/order/AnglePicker.astro';
+import CombiKeuze from '../../components/order/CombiKeuze.astro';
+import ModelKeuze from '../../components/order/ModelKeuze.astro';
 ---
 
 <Layout title="Order catalog sets — VISUAILS" description="Product-page images, four per product. Pick the count and the background; the rate falls as the count rises.">
   <OrderFlow lang="en" service="catalog">
+    {/* Stap 2, boven de productkaarten — zie ModelKeuze.astro. De slot
+        heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
+        deze bron staat maakt dus niet uit voor waar het terechtkomt. */}
+    <ModelKeuze slot="model" lang="en" soort="catalog" />
+    {/* De combinatie staat als eerste in de slot, dus direct onder het
+        meelopende totaal: daar heeft de klant net gezien wat zijn aantal
+        kost, en dat is het moment waarop een lager tarief per beeld iets
+        betekent. Zie CombiKeuze.astro. */}
+    <CombiKeuze lang="en" richting="erbij" />
     <Step1Options lang="en" huisLook />
     {/* De hoeken staan NA de drie vouwen en niet ertussen: het is de enige vraag
         in stap 1 die geld kost, en een blok met een prijskaartje hoort niet

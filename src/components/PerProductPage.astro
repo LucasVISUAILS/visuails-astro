@@ -1,0 +1,201 @@
+---
+/*
+ * VISUAILS — WAT JE PER PRODUCT KRIJGT
+ * 10 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Dit blok is ook veel te groot en ik wou dit als eerste eigen pagina
+ * zodat je duidelijk overzicht hebt van wat je van elk product kan verwachten,
+ * nu zit alles bij elkaar gepropt op 1 pagina."*
+ *
+ * ── WAT ER HIERVOOR STOND ───────────────────────────────────────────────────
+ *
+ * De hoekenkiezer in stap 1 van het bestelformulier. Gemeten: 1045 pixels voor
+ * ÉÉN vraag, in een stap die in totaal 1085 hoog was. Dat is niet een blok dat
+ * te groot is uitgevallen — het is een overzichtspagina die per ongeluk in een
+ * formulierveld terecht is gekomen. Acht tekeningen, twee groepen, een tarief,
+ * een uitleg en een lijst van wat er altijd bij zit: dat is een pagina.
+ *
+ * ── DE KEUZE DIE LUCAS MAAKTE: 03 ALS STRUCTUUR, 02 ALS UITERLIJK ───────────
+ *
+ * Kijken en invullen zijn twee dingen en horen niet op één pagina. Hier kijk
+ * je: groot genoeg om te zien wat een hoek betekent, rustig genoeg om te lezen
+ * wat er altijd bij zit. In het formulier staat straks alleen nog de keuze
+ * zelf, op één regel.
+ *
+ * En het uiterlijk is dat van een CONTACTBLAD: een strak raster, haarlijnen in
+ * plaats van kaarten, mono-onderschriften, geen schaduw en geen ronding. Het
+ * beeld blijft klein zodat je alle twaalf in één blik hebt — dat is precies wat
+ * "overzicht" hier betekent.
+ *
+ * ── ALLES KOMT UIT DE DATA ──────────────────────────────────────────────────
+ *
+ * De vier vaste opnames uit shots.js, de acht hoeken uit angles.js, het tarief
+ * uit pricing.js, en elk woord uit ANGLE_COPY — dezelfde bron als de kiezer in
+ * het formulier. Er staat hier dus niets overgetypt dat daar ook staat, en dat
+ * is de enige manier waarop deze pagina en dat formulier hetzelfde blijven
+ * zeggen.
+ */
+import ShotDiagram from './order/ShotDiagram.astro';
+import AngleSketch from './order/AngleSketch.astro';
+import { SHOTS } from '../data/shots.js';
+import { ANGLES, ANGLE_GROUPS, ANGLE_COPY } from '../data/angles.js';
+import { MAX_EXTRA_PER_PRODUCT, extraPhotoRate, euro, vatLabel, CATALOG_IMAGES } from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import '../styles/stijl22.css';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const c = ANGLE_COPY[lang];
+
+const vast = SHOTS.map((s) => ({
+  id: s.id,
+  naam: s.name[lang] || s.name.en,
+  /* `buys` en niet `how`: dat laatste is de instructie voor wat JIJ opstuurt en
+     hoort bij de uploadgids. Deze pagina gaat over wat je TERUGKRIJGT, dus de
+     regel die zegt wat die foto voor je doet. Eén zin — de volledige uitleg
+     staat in de gids en hoeft hier niet nog een keer. */
+  regel: (s.buys[lang] || s.buys.en).split(/(?<=\.)\s/)[0],
+}));
+
+const perGroep = ANGLE_GROUPS.map((g) => ({
+  id: g,
+  naam: c.groups[g],
+  hoeken: ANGLES.filter((a) => a.group === g),
+}));
+
+const tarief = euro(extraPhotoRate(1), lang);
+
+const t = nl ? {
+  etiket: 'Wat je krijgt',
+  h1: ['Per product,', 'wat je terugkrijgt.'],
+  lead: `Elk product in je bestelling krijgt dezelfde set. Hieronder staat wat daar altijd in zit en wat je er per foto bij kunt bestellen — zodat je het één keer bekijkt in plaats van tijdens het invullen.`,
+  vastKop: `Zit er altijd bij · ${CATALOG_IMAGES} foto’s`,
+  extraKop: 'Erbij te bestellen',
+  extraTarief: `vanaf ${tarief} per foto, per product · ${vatLabel('excl', lang)}`,
+  naarBestellen: 'Naar het bestelformulier',
+  naarGids: 'Wat je zelf opstuurt',
+} : {
+  etiket: 'What you get',
+  h1: ['Per product,', 'what comes back.'],
+  lead: `Every product in your order gets the same set. Below is what is always in it and what you can add per photo — so you look at it once, instead of while filling in a form.`,
+  vastKop: `Always included · ${CATALOG_IMAGES} photos`,
+  extraKop: 'Available to add',
+  extraTarief: `from ${tarief} per photo, per product · ${vatLabel('excl', lang)}`,
+  naarBestellen: 'To the order form',
+  naarGids: 'What you send us',
+};
+
+---
+
+<div class="s22 pp">
+
+  {/* ── DE HUISVORM EN GEEN EIGEN ────────────────────────────────────────
+      Elke sectie is een `.paneel`: het lichte vlak met ronding op de donkere
+      grond dat elke andere pagina in deze stijl ook gebruikt. De eerste versie
+      van deze pagina had eigen secties zonder die klasse, en dat was meteen te
+      zien — de tekst liep tot tegen de schermrand en de tegels dreven op een
+      zwarte achtergrond. Zie stijl22.css: `.paneel` draagt de marge, de padding
+      en de kleur, en dat hoort deze pagina niet zelf te regelen. */}
+
+  <section class="paneel pp-open">
+    <p class="etiket">{t.etiket}</p>
+    <h1 class="hoog pp-h1">{t.h1[0]} <br />{t.h1[1]}</h1>
+    <p class="lopend pp-lead">{t.lead}</p>
+  </section>
+
+  {/* ── DE VIER DIE ER ALTIJD ZIJN ──────────────────────────────────────
+      Geen vinkjes en geen prijs: er valt niets te kiezen. Ze staan er zodat
+      "vier foto's per product" een rij met namen en tekeningen is in plaats
+      van een getal in een zin. */}
+  <section class="paneel pp-blok">
+    <div class="pp-blokkop">
+      <h2 class="pp-h">{t.vastKop}</h2>
+      <p class="pp-noot">{c.fixedLine}</p>
+    </div>
+    <ul class="pp-rooster" role="list">
+      {vast.map((s) => (
+        <li class="pp-tegel">
+          <span class="pp-beeld"><ShotDiagram shot={s.id} /></span>
+          <p class="pp-naam">{s.naam}</p>
+          <p class="pp-regel">{s.regel}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── EN WAT JE ERBIJ KUNT ZETTEN ─────────────────────────────────────
+      Zelfde raster, zelfde maat, één verschil: hier staat een tarief. Dat is
+      met opzet het enige onderscheid — twee verschillende rasters zouden
+      suggereren dat het twee verschillende soorten beeld zijn, en dat is niet
+      zo. Het is dezelfde set, alleen langer. */}
+  <section class="paneel pp-blok">
+    <div class="pp-blokkop">
+      <h2 class="pp-h">{t.extraKop}</h2>
+      <p class="pp-tarief">{t.extraTarief}</p>
+      <p class="pp-noot">{c.extraLine.replace('{max}', String(MAX_EXTRA_PER_PRODUCT))}</p>
+    </div>
+
+    {perGroep.map((g) => (
+      <div class="pp-groep">
+        <p class="etiket pp-groepkop">{g.naam}</p>
+        <ul class="pp-rooster" role="list">
+          {g.hoeken.map((a) => (
+            <li class="pp-tegel">
+              <span class="pp-beeld"><AngleSketch id={a.id} /></span>
+              <p class="pp-naam">{a.name[lang] || a.name.en}</p>
+              <p class="pp-regel">{a.line[lang] || a.line.en}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+
+  <section class="paneel paneel-slot pp-slot">
+    <a class="knop knop-inkt" href={lp('/start/catalog')}>{t.naarBestellen}</a>
+    <a class="pijl" href={lp('/upload-guidelines')}>{t.naarGids}</a>
+  </section>
+
+</div>
+
+<style>
+  .pp-open { max-width: none; }
+  .pp-h1 { margin: .4rem 0 0; }
+  .pp-lead { margin-top: 1rem; max-width: 62ch; }
+
+  /* De kop van een blok staat op de leesbreedte en niet op de rasterbreedte:
+     een zin die net zo breed is als vier tegels leest niet meer als een zin. */
+  .pp-blokkop { max-width: 62ch; margin-bottom: 1.4rem; }
+  .pp-h { font-size: 1.05rem; margin: 0; }
+  .pp-tarief { margin: .35rem 0 0; font-size: .95rem; }
+  .pp-noot { margin: .5rem 0 0; font-size: .9rem; color: var(--inkt-3); line-height: 1.5; }
+
+  .pp-groep + .pp-groep { margin-top: 2rem; }
+  .pp-groepkop { margin: 0 0 .7rem; }
+
+  /* ── HET CONTACTBLAD ───────────────────────────────────────────────────
+     Vier op een rij, haarlijn ertussen en verder niets: geen kaart, geen
+     ronding, geen schaduw. Wat de tegels bij elkaar houdt is het RASTER en niet
+     een rand om elk stuk — dat is precies het verschil tussen deze pagina en
+     wat er stond. */
+  .pp-rooster {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px; background: var(--lijn);
+    border: 1px solid var(--lijn);
+  }
+  .pp-tegel { background: var(--vel); padding: 1rem .9rem 1.1rem; display: grid; gap: .3rem; align-content: start; }
+  .pp-beeld { display: block; width: 100%; aspect-ratio: 4 / 3; }
+  .pp-beeld :global(svg) { width: 100%; height: 100%; display: block; }
+  .pp-naam { margin: .5rem 0 0; font-weight: 600; font-size: .95rem; }
+  .pp-regel { margin: 0; font-size: .84rem; line-height: 1.45; color: var(--inkt-3); }
+
+  .pp-slot { display: flex; flex-wrap: wrap; gap: 1rem 1.6rem; align-items: center; }
+
+  /* Twee op een rij op een tablet, twee op een telefoon — nooit één, want dan
+     is het weer een stapel van twaalf blokken en zijn we terug bij af. */
+  @media (max-width: 900px) { .pp-rooster { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>

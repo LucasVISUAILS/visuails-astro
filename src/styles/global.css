@@ -1107,14 +1107,14 @@
 .tile > .tile-media:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
 
 /* surfaces */
-.card, .step, .anchor, .addon, .svc-explain-side, .ed-head, .tierc-col,
+.card, .step, .anchor, .addon, .svc-explain-side, .ed-head,
 .hv-vs-col, .hv-dash-row, .hv-dash-log, .hv-ob-item, .hv-faq-item,
 .pl-total, .acc-item {
   border-radius: var(--r-md);
 }
 
 /* hairline grids — radius plus clipping, per the note above */
-.hv-pipe, .hv-week, .hv-ch, .hv-vs, .hv-dash, .hv-ob, .hv-faq, .tierc-grid,
+.hv-pipe, .hv-week, .hv-ch, .hv-vs, .hv-dash, .hv-ob, .hv-faq,
 .compare-grid, .ladder-wrap {
   border-radius: var(--r-md);
   overflow: hidden;
@@ -4398,9 +4398,11 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    cards visibly reflows under the pointer and the whole page feels loose.
 
    WHERE IT IS APPLIED, and this list IS the consistency Lucas asked for.
-   Four selectors: .tile (the site's card primitive, which is most of the cards
-   on most of the pages), .tierc-col (the two service-level cards),
-   .guide-card, and .lift itself for anything that has to opt in by hand.
+   Three selectors: .tile (the site's card primitive, which is most of the cards
+   on most of the pages), .guide-card, and .lift itself for anything that has to
+   opt in by hand. (.tierc-col stond hier ook: de twee serviceniveau-kaarten. Op
+   10 september 2026 werden die één tabel met haarlijnen — zie TierCompare.astro
+   — en een tabelrij is geen rechthoek die je optilt.)
 
    A block qualifies if it is a self-contained RECTANGLE — two dimensions,
    readable as one object, plausibly clickable. It does NOT go on bands,
@@ -4426,7 +4428,6 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    elsewhere, which is a card that stays 1.2% larger for no reason. */
 .lift,
 .tile,
-.tierc-col,
 /* De twee kolommen van de vergelijking op /editions dragen dezelfde
    verhoging als de tierband, en om dezelfde reden: het zijn twee objecten
    boven een donkere ondergrond en geen doos met een streep erdoor. */
@@ -4441,13 +4442,11 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .lift,
   .tile,
-  .tierc-col,
   .guide-card {
     transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
   }
   .lift:hover,
   .tile:hover,
-  .tierc-col:hover,
   .guide-card:hover {
     transform: translateY(-3px) scale(1.012);
     box-shadow:

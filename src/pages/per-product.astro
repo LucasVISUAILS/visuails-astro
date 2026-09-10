@@ -1,0 +1,15 @@
+---
+// VISUAILS — /per-product (Engels). De inhoud staat in PerProductPage.astro
+// zodat deze pagina en /nl/per-product niet uit elkaar kunnen lopen; zie de kop
+// daar voor waarom deze pagina bestaat en wat er hiervoor in het bestelformulier
+// stond.
+import Layout from '../layouts/Layout.astro';
+import PerProductPage from '../components/PerProductPage.astro';
+---
+
+<Layout
+  title="What you get per product — VISUAILS"
+  description="The four photos every product gets, and the angles you can add per photo. Look at it once, before you fill anything in."
+>
+  <PerProductPage lang="en" />
+</Layout>

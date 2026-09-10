@@ -1218,6 +1218,30 @@ function bindQty() {
   // Een herstelde of voorgevulde select (bfcache, terug-knop) landt ook in het veld.
   const start = Number.parseInt(select.value, 10);
   if (Number.isInteger(start)) input.value = String(start);
+
+  /* ── EEN AANTAL DAT UIT DE VORIGE PAGINA KOMT — 10 september 2026 ─────────
+     `?producten=<n>` wordt gezet door CombiKeuze.astro: wie in het catalogue-
+     formulier op "lifestyle erbij" klikt, komt in het combinatieformulier
+     terecht en hoort niet opnieuw te moeten typen hoeveel producten hij heeft.
+     Zie de kop van die component voor waarom dat een link is en geen vinkje.
+
+     NA het herstel hierboven en niet ervoor: een terug-knop met een ingevulde
+     select is een klant die zijn eigen antwoord terugkrijgt, en dat wint van
+     een getal uit de URL. Alleen als er nog niets staat telt de parameter mee.
+
+     Gefilterd op cijfers en geknepen tot het maximum, want dit is invoer van
+     buiten: `?producten=999` mag geen bestelling van 999 producten opleveren,
+     en `?producten=<script>` mag hier niet eens langskomen. */
+  if (!Number.isInteger(start)) {
+    try {
+      const raw = new URLSearchParams(location.search).get('producten') || '';
+      if (/^\d{1,3}$/.test(raw)) {
+        const n = clamp(Number.parseInt(raw, 10));
+        if (n >= 1) apply(n);
+      }
+    } catch { /* geen URL, geen voorkeur */ }
+  }
+
   paint();
 }
 

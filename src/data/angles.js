@@ -50,6 +50,44 @@
  *  is wat je daarNAAST kunt kiezen. */
 export const ANGLE_GROUPS = ['model', 'ground'];
 
+/*
+ * ── WELKE DIENSTEN HIERDOOR OPEN KOMEN TE STAAN — 10 september 2026 ─────────
+ *
+ * Lucas: *"Catalog wordt nu vanaf 4 foto's omdat klanten nu extra foto's erbij
+ * kunnen kiezen."*
+ *
+ * Dat klopt, en het raakt de tekst op meer plekken dan je zou denken: de
+ * voorpagina, /start, /pricing, /catalog, de veelgestelde vragen en de
+ * metabeschrijvingen zeiden allemaal "4 foto's" als een vast getal. Sinds de
+ * hoekenkiezer bestaat is vier de ONDERGRENS en niet de uitkomst.
+ *
+ * Maar niet overal. Deze lijst is precies de verzameling pagina's waar
+ * AnglePicker.astro gerenderd wordt — /start/catalog en /start/complete, in
+ * beide talen — en dat is geen toeval maar de definitie: waar je hoeken kunt
+ * bijbestellen, is het aantal open; waar dat niet kan, is het exact.
+ *
+ * Wat er dus BUITEN valt, en waarom:
+ *   · lifestyle — een carousel is een gestylede scène en geen set hoeken; de
+ *     kiezer staat niet op /start/lifestyle;
+ *   · de proef van € 1 — tidyTestSampleDetails() in functions/api/order.js
+ *     GOOIT elk `angle_*`-veld weg, met opzet: een proef is één set en verder
+ *     niets. "Vanaf 4" zou daar een belofte zijn die het formulier weigert;
+ *   · een abonnementsmaand — de maandset ligt vast in het plan, en het
+ *     bestelscherm daarvan draagt de hoekenkiezer niet.
+ *
+ * Zou een van die drie ooit wél hoeken krijgen, dan hoort hij hier bij te komen
+ * en verandert de tekst sitebreed mee. Dat is het hele punt van deze regel:
+ * tests/hoeken.test.mjs vergelijkt hem met de pagina's die de kiezer echt
+ * renderen, dus de lijst kan niet stil achterlopen op de werkelijkheid.
+ */
+export const UITBREIDBARE_DIENSTEN = ['catalog', 'complete'];
+
+/** Kan de klant bij deze dienst foto's bijbestellen? Zo ja, dan is het aantal in
+ *  de set een ondergrens ("vanaf 4") en geen uitkomst ("4"). */
+export function isUitbreidbaar(service) {
+  return UITBREIDBARE_DIENSTEN.includes(String(service || ''));
+}
+
 export const ANGLES = [
   // ── OP MODEL ─────────────────────────────────────────────────────────────
   {
@@ -155,6 +193,13 @@ export const ANGLE_COPY = {
     note: 'Anything specific? (optional)',
     notePh: 'e.g. show the chest logo',
     per: '{price} per photo, per product',
+    /* De weg naar /per-product, vanuit het formulier. "alle twaalf" en niet "de
+       hoeken": op die pagina staan de vier vaste opnames én de acht extra's, en
+       dat is precies waarom hij bestaat. Het getal komt niet uit de lucht — het
+       is SHOTS.length + ANGLES.length — maar het staat hier als woord omdat een
+       linktekst met een berekening erin niet te lezen valt. Verandert een van de
+       twee lijsten, dan zegt tests/hoeken.test.mjs het. */
+    seeAll: 'See all twelve',
     chosen: '{n} chosen',
     full: 'That is the maximum of {max}.',
     /* De rekensom uitgeschreven en niet alleen de uitkomst. Dit bedrag is het
@@ -174,6 +219,13 @@ export const ANGLE_COPY = {
     note: 'Iets specifieks erbij? (optioneel)',
     notePh: 'bijv. laat het logo op de borst zien',
     per: '{price} per foto, per product',
+    /* De weg naar /per-product, vanuit het formulier. "alle twaalf" en niet "de
+       hoeken": op die pagina staan de vier vaste opnames én de acht extra's, en
+       dat is precies waarom hij bestaat. Het getal komt niet uit de lucht — het
+       is SHOTS.length + ANGLES.length — maar het staat hier als woord omdat een
+       linktekst met een berekening erin niet te lezen valt. Verandert een van de
+       twee lijsten, dan zegt tests/hoeken.test.mjs het. */
+    seeAll: 'Bekijk alle twaalf',
     chosen: '{n} gekozen',
     full: 'Dat is het maximum van {max}.',
     /* Zie de Engelse tegenhanger. */

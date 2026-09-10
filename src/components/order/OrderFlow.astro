@@ -1903,8 +1903,28 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           {counts.map((n) => <option value={String(n)}>{countLabel(n)}</option>)}
           <option value={f.s1.more}>{f.s1.more}</option>
         </select>
-        <span class="hint">{f.s1.countHint}</span>
-        <button type="button" class="pl-qty-more" data-pl-qty-more aria-expanded="false" aria-controls="pl-more">{f.s1.moreBtn}</button>
+        {/* ── DE UITLEG EN DE UITWEG OP ÉÉN REGEL — 10 september 2026 ──────
+            Twee regels onder elkaar: "tot 20 producten in één bestelling, het
+            tarief zakt bij 5, 10 en 20" en daaronder "meer dan 20 producten?".
+            De tweede is het antwoord op de eerste — de zin noemt de bovengrens
+            en de knop is wat je doet als je eroverheen zit — en dan is naast
+            elkaar de plek waar ze horen. Ze wikkelen onder elkaar zodra de
+            regel niet past, dus op een telefoon staat er wat er stond. */}
+        <p class="pl-qty-onder">
+          <span class="hint">{f.s1.countHint}</span>
+          {/* ── EN DE SETJESREGEL HOORT HIER OOK — 10 september 2026 ────────
+              "Eén product per catalogset" stond als eigen alinea tussen het
+              aantal en het totaal, met zijn eigen marges eromheen: 24 pixels
+              tekst in een blok van ruim vijftig. Het is geen mededeling op
+              zichzelf maar de tweede helft van het antwoord op "hoeveel?" —
+              wat één product is. Dus staat hij achter de eerste helft, en niet
+              als losse regel ertussen. Alleen bij catalog: bij de andere
+              diensten kiest de klant zelf outfits en is de vraag een andere. */}
+          {isCatalog && (
+            <span class="hint pl-outfit-note">{f.s1.outfitCatalogShort} <Note lang={lang} term={f.s1.outfitCatalogTerm}>{f.s1.outfitCatalogNote}</Note></span>
+          )}
+          <button type="button" class="pl-qty-more" data-pl-qty-more aria-expanded="false" aria-controls="pl-more">{f.s1.moreBtn}</button>
+        </p>
       </div>
       )}
 
@@ -1965,10 +1985,9 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       )}
 
       {/* De setjes-waarschuwing als notitie achter een vraagteken en niet als
-          alinea vóór iemand erom vroeg — 3 september 2026. */}
-      {isCatalog && (
-        <p class="hint pl-outfit-note">{f.s1.outfitCatalogShort} <Note lang={lang} term={f.s1.outfitCatalogTerm}>{f.s1.outfitCatalogNote}</Note></p>
-      )}
+          alinea vóór iemand erom vroeg — 3 september 2026. Sinds 10 september
+          staat hij niet meer hier maar op de regel onder het aantal, samen met
+          de andere zin die over de telling gaat; zie .pl-qty-onder hierboven. */}
 
       {/* ── WAT JE MERKKIT AL WEET — 9 september 2026 ────────────────────────
           Lucas: *"Dan kan bij ingelogde klanten de modelvraag blok in het
@@ -2078,7 +2097,18 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             Hij is de notitie in gegaan, achter hetzelfde vraagtekentje als de
             btw-uitleg. Wie het wil weten, klikt; wie naar zijn totaal kijkt, ziet
             één regel in plaats van twee. */}
-        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail} {f.s1.displayNote}</Note> {f.s1.euroNote}</p>
+        {/* ── EN DE VALUTA-ALINEA GING MEE — 10 september 2026 ─────────────
+            Er stond nog één zin achter de notitie: "alle bedragen zijn in
+            euro's; staat je kaart in een andere munt, dan rekent je bank om
+            tegen zijn eigen koers". Die zin bracht de kleine letters op twee
+            regels terug — pal onder het bedrag, bij iemand die nog niets
+            gekozen heeft.
+
+            Hij is niet weg maar staat achter hetzelfde vraagtekentje. Dat is
+            waar hij hoort: het is een antwoord op een vraag die alleen een
+            klant buiten de eurozone stelt, en die klant klikt. Wat blijft is
+            de wettelijke helft, op één regel. */}
+        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail} {f.s1.displayNote} {f.s1.euroNote}</Note></p>
       </div>
       )}
 
@@ -2216,6 +2246,22 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         code that has to mean it. */}
     <section class="pl-step" data-pl-step="2">
       <h2 class="pl-h" data-pl-head>{f.s2.h}</h2>
+
+      {/* ── WIE HET DRAAGT, BOVEN DE KAARTEN — 10 september 2026 ────────────
+          Lucas: *"Verplaats model keuze naar material gedeelte van bestelform
+          bij alle bestelforms. Dan word het eerste scherm al wat rustiger en de
+          klant moet toch bij elk product kunnen kiezen wie het draagt."*
+
+          Een eigen slot en niet vast ingebouwd: welke zin er boven de tegels
+          hoort verschilt per dienst (een catalogset heeft één modelfoto, een
+          carrousel heeft er een ín de carrousel), en de proef heeft weer een
+          eigen tekst. De pagina die de dienst kiest, kiest dus ook deze regel —
+          zelfde afspraak als bij de slot eronder in stap 1.
+
+          Een formulier zonder modelvraag (video, abonnement) laat de slot leeg
+          en er staat niets: een lege slot rendert niets, en er is geen vlag om
+          te vergeten. */}
+      <slot name="model" />
 
       <ProductUploader lang={lang} />
 
@@ -3009,6 +3055,33 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-step[data-pl-step="1"] { max-width: none; }
   .pl-step[data-pl-step="1"] > :not(.pl-fieldset) { max-width: var(--pl-measure); }
 
+  /* ── EN DE REGEL HIERBOVEN HAALDE TWEE VOUWEN NIET — 10 september 2026 ────
+     Gemeten op /start/catalog: de drie vouwen uit Step1Options stonden op 880
+     en "Add an angle" en "Image shape" op 1130. Twee blokken die 250 pixels
+     verder doorliepen dan de rest van de stap, met een rafelrand als gevolg.
+
+     De oorzaak zit in de regel hierboven en niet in die twee vouwen. Astro
+     plakt zijn eigen scope-haakje op elk deel van een selector, dus
+     `> :not(.pl-fieldset)` wordt `> [cid-van-OrderFlow]:not(.pl-fieldset)` —
+     en een <details> die uit Disclose.astro komt draagt het haakje van DAT
+     bestand. De belofte in de noot hierboven ("een kind dat later aan stap 1
+     wordt toegevoegd erft het veilige gedrag") gold dus alleen voor kinderen
+     die in DIT bestand geschreven staan, en dat is precies niet waar ze
+     vandaan komen.
+
+     Vandaar :global() eromheen. Dat is geen omweg om de scope heen maar het
+     enige wat een regel over KINDEREN VAN ELDERS kan zeggen: de ouder blijft
+     gescopeerd — `.pl-step[data-pl-step="1"]` krijgt zijn haakje gewoon — en
+     alleen het kind is vrijgelaten. `.pl-fieldset` blijft de uitweg voor wat
+     wél breder mag, zoals de stijlkiezer op /start/lifestyle. */
+  .pl-step[data-pl-step="1"] > :global(:not(.pl-fieldset)) { max-width: var(--pl-measure); }
+
+  /* En daarmee is het één stapel en geen drie groepjes: de drie vouwen uit
+     Step1Options raken elkaar (ze zitten elk in een eigen wikkel, dus de
+     6px-regel van .dc-panel vuurt daar niet), en dan hoort de vouw erna dat
+     ook te doen in plaats van er los onder te zweven. */
+  .pl-step[data-pl-step="1"] > :global(.dc-panel + .dc-panel) { margin-top: 0; }
+
   .pl-h { font-size: var(--t-h3); line-height: 1.2; text-wrap: balance; }
   /* show() calls .focus() on the heading so the step change is announced. A
      programmatic focus on tabindex="-1" does not satisfy :focus-visible, so the
@@ -3769,6 +3842,23 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     cursor: pointer;
   }
   .pl-qty-more[aria-expanded='true'] { display: none; }
+  /* Baseline en niet center: de uitlegregel en het knoplabel hebben een andere
+     grootte, en dan is de onderkant van de letters de lijn die je ziet. */
+  .pl-qty-onder {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    /* Geen eigen bovenmarge: .field is een kolom met gap .45rem, en die
+       levert de afstand al. */
+    gap: .1rem .9rem; margin: 0;
+  }
+  .pl-qty-onder .pl-qty-more { margin-top: 0; margin-left: auto; }
+  /* De setjesregel houdt zijn eigen marges niet meer aan: hij is nu een deel
+     van de regel en geen alinea. */
+  .pl-qty-onder .pl-outfit-note { margin: 0; }
+  /* Op een telefoon past de regel niet en wikkelt hij naar drie regels. Dan is
+     `margin-left: auto` geen uitlijning meer maar een link die in zijn eentje
+     rechts hangt onder twee zinnen die links staan — gemeten op 390px. Onder
+     de vouwbreedte staat hij dus gewoon links, in de leesrichting. */
+  @media (max-width: 780px) { .pl-qty-onder .pl-qty-more { margin-left: 0; } }
   .pl-more {
     margin-top: 1.1rem;
     padding: 1.1rem 1.25rem;

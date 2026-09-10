@@ -379,11 +379,18 @@ console.log('\n/start/complete vraagt nu ook om een look');
        waar het antwoord van de klant zelf komt in plaats van uit een standaard. */
     ok('  met de stijlen boven de optionele blokken',
       src.indexOf('<StijlRegel') < src.indexOf('<Step1Options'), true);
-    /* En de modelvraag dekt allebei de helften. Er staat met opzet GEEN tweede
-       kiezer: LifestyleModelFold en Step1Options posten allebei name="model",
-       dus twee kiezers op één pagina zijn in HTML één radiogroep. */
-    ok('  en de modelvraag noemt allebei de helften', /modelSoort="beide"/.test(src), true);
-    ok('  en er staat geen tweede modelkiezer', /<LifestyleModelFold/.test(src), false);
+    /* En er is ÉÉN modelvraag, in stap 2. Er staat met opzet geen tweede kiezer:
+       elke kiezer post `name="model"`, dus twee op één pagina zijn in HTML één
+       radiogroep — een gezicht kiezen voor de carousel zou het gezicht voor de
+       catalogset uitvinken.
+
+       Tot 10 september stond de vraag in stap 1 en droeg hij een eigen label
+       voor deze bestelling (`modelSoort="beide"`, "de foto op een model, in de
+       set én in de carousel"). Sinds de verhuizing naar stap 2 stelt hij één
+       korte vraag — "wie draagt het?" — die voor allebei de helften geldt
+       zonder ze te noemen; zie ModelKeuze.astro. */
+    ok('  en de modelvraag staat in stap 2', /<ModelKeuze slot="model"/.test(src), true);
+    ok('  en er staat geen tweede modelkiezer', /<ModelPicker/.test(src), false);
   }
 
   /* De twee regels posten twee VERSCHILLENDE velden; ze staan tegelijk in
@@ -488,16 +495,22 @@ console.log('\nde proefvisual: catalog krijgt de achtergrond, lifestyle de look'
        of een carousel wordt, en /catalog en /lifestyle beloven allebei dat je
        dat gezicht mag kiezen. Wat er wegmocht waren de twee vragen ERNAAST.
 
-       De drie regels hieronder meten alle drie iets anders, en samen zijn ze
-       precies de opdracht: de kiezer staat er (anders is de belofte weer leeg),
-       hij staat in een vouw (anders is het formulier weer elf portretten lang),
-       en de dichte regel draagt zelf het standaardantwoord (anders lijkt het een
-       onbeantwoorde vraag in plaats van "wij kiezen er een"). */
-    ok(`${taal}: maar de modelkeuze wél`, /<ModelPicker lang=\{lang\} soort="proef" \/>/.test(src), true);
-    ok(`${taal}: in een dichte vouw`,
-      /<Disclose[\s\S]{0,200}<ModelPicker/.test(src) && !/<Disclose[^>]*\bopen\b/.test(src), true);
-    ok(`${taal}: met "wij kiezen er een" als zichtbare stand`,
-      /liveAttr="data-pl-sum-model"[\s\S]{0,80}liveText=\{c\.modelStand\}/.test(src), true);
+       ── EN OP 10 SEPTEMBER VERHUISDE HIJ NAAR STAP 2 ────────────────────
+       Lucas: *"Verplaats model keuze naar material gedeelte van bestelform bij
+       alle bestelforms."* Alle, dus ook deze. De vouw in stap 1 is daarmee weg
+       en het gezicht staat boven de productkaart, in ModelKeuze.astro.
+
+       De drie regels hieronder meten nog steeds alle drie iets anders, en samen
+       zijn ze nog steeds de opdracht — alleen is de tweede van vorm veranderd:
+       de kiezer staat er (anders is de belofte weer leeg), hij staat in stap 2
+       via de slot (anders is stap 1 weer elf portretten lang), en hij is hier
+       NIET verplicht (anders is de proef weer een formulier met een drempel,
+       terwijl "wij kiezen er een" een echt antwoord is). */
+    ok(`${taal}: maar de modelkeuze wél`, /<ModelKeuze slot="model"/.test(src), true);
+    ok(`${taal}: in stap 2 en niet meer in een vouw in stap 1`,
+      /<ModelKeuze[^>]*slot="model"/.test(src) && !/<Disclose[\s\S]{0,200}<ModelPicker/.test(src), true);
+    ok(`${taal}: en zonder de verplichte keuze die de andere formulieren wél hebben`,
+      /<ModelKeuze[^>]*verplicht=\{false\}/.test(src), true);
     /* En geen eigen formulier meer ernaast. Twee bestelformulieren op één site is
        hoe de proef de vorige keer achterbleef bij wat /start al kon. */
     ok(`${taal}: geen eigen bestelformulier meer`, /<form[^>]*action="\/api\/order"/.test(src), false);

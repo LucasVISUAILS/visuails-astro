@@ -1,0 +1,153 @@
+---
+/*
+ * VISUAILS — CATALOG ÉN LIFESTYLE, ALS ÉÉN VRAAG IN HET FORMULIER
+ * 10 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"wellicht is het handig om catalog + lifestyle dan ook weg te halen,
+ * het voelt gewoon niet logisch voor me en niet iets wat bij een serieuze
+ * agency past ofzo."*
+ *
+ * ── WAT ER WEG IS EN WAT ER BLIJFT ──────────────────────────────────────────
+ *
+ * De DEUR is weg (zie StartPage.astro). Naast "Catalog" en "Lifestyle" een
+ * derde deur zetten die "Catalog + Lifestyle" heet, vraagt de bezoeker te
+ * kiezen tussen twee dingen en hun optelsom — dat is geen keuze maar een
+ * rekensom die hij zelf al had gemaakt.
+ *
+ * De DIENST blijft. Het tarief per beeld ligt lager als je ze samen bestelt, en
+ * dat is een echt voordeel dat een klant hoort te kunnen pakken. Alleen niet op
+ * de etalagepagina: hier, in het formulier, op het moment dat hij al weet
+ * hoeveel producten hij heeft. Dan is het geen dienst maar een vraag — "wil je
+ * er ook lifestyle bij?" — en dat is precies wat het is.
+ *
+ * ── WAAROM DIT EEN LINK IS EN GEEN SCHAKELAAR ───────────────────────────────
+ *
+ * Het eerlijke alternatief was een vinkje dat de dienst ter plekke omzet. Dat
+ * kan niet zonder de rest te slopen: het formulier krijgt zijn ladder, zijn
+ * aantallen beelden, zijn uploadvakken en zijn hele configuratieblok op basis
+ * van ÉÉN dienst, bij het renderen. Een vinkje dat halverwege `catalog` in
+ * `complete` verandert, moet dat blok, de prijstabel, het aantal vakken per
+ * product en de tekst van elke stap opnieuw opbouwen — en elke plek die dat
+ * vergeet, laat de klant iets anders zien dan hij bestelt.
+ *
+ * Wat er wél kan: hem naar het formulier sturen dat er al voor gemaakt is, mét
+ * zijn aantal. Dat is één klik, hij ziet meteen het nieuwe tarief, en er is
+ * geen tweede waarheid over wat een bestelling is. In stap 1 is dat gratis —
+ * daar staat alleen het aantal, en dat gaat mee.
+ *
+ * VANDAAR OOK: alleen in stap 1. `.pl-step[data-pl-step="1"]` draagt dit blok,
+ * en zodra de klant verder is, is de vraag weg. Iemand die op stap 3 zijn
+ * dienst wisselt, verliest wat hij heeft ingevuld — dat is geen aanbod maar een
+ * val.
+ */
+import { AMOUNT, euro, vatLabel, CATALOG_IMAGES, COMPLETE_IMAGES } from '../../data/pricing.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  /** 'erbij' — je zit in catalog en kunt lifestyle erbij nemen.
+   *  'eraf'  — je zit in de combinatie en kunt terug naar alleen catalog. */
+  richting: 'erbij' | 'eraf';
+}
+const { lang, richting } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+/* Prijzen altijd via de accessors van pricing.js en nooit getypt: dit blok
+   noemt twee tarieven naast elkaar, en juist dáár zou een getypt getal een
+   vergelijking maken die niet klopt. */
+const perCatalog = euro(AMOUNT.catalog, lang);
+const perCombi = euro(AMOUNT.complete, lang);
+const btw = vatLabel('excl', lang);
+
+const erbij = richting === 'erbij';
+const doel = erbij ? '/start/complete/' : '/start/catalog/';
+
+/* ── ÉÉN REGEL, EN DAT IS EEN EIS EN GEEN STIJL ────────────────────────────
+   De eerste versie hiervan legde het uit in drie zinnen: welke beelden erbij
+   komen, wat de carrousel is, en waarom samen goedkoper is. Gemeten kostte dat
+   121 pixels op een scherm en 188 op een telefoon — in een stap die er die
+   ochtend net 99 kwijtgeraakt was omdat Lucas hem te druk vond.
+
+   Dat is de verkeerde ruil. Dit blok is een ZIJPAD: wie het niet wil, moet er
+   met één blik overheen kunnen kijken, en wie het wel wil, heeft aan drie
+   feiten genoeg — hoeveel beelden, wat het kost, en dat het per beeld
+   goedkoper is. De carrousel en de opbouw staan op /lifestyle en op /pricing,
+   waar iemand ze zoekt. */
+const c = nl ? {
+  vraag: 'Ook lifestyle erbij?',
+  regel: `${COMPLETE_IMAGES} beelden per product in plaats van ${CATALOG_IMAGES}, voor ${perCombi} per product — per beeld goedkoper dan los bestellen.`,
+  knop: 'Lifestyle erbij',
+  vraagEraf: 'Toch alleen catalog?',
+  regelEraf: `${CATALOG_IMAGES} beelden per product, voor ${perCatalog} per product. Je aantal gaat mee.`,
+  knopEraf: 'Alleen catalog',
+  btwNoot: btw,
+} : {
+  vraag: 'Add lifestyle too?',
+  regel: `${COMPLETE_IMAGES} images per product instead of ${CATALOG_IMAGES}, at ${perCombi} a product — less per image than ordering them apart.`,
+  knop: 'Add lifestyle',
+  vraagEraf: 'Only catalog after all?',
+  regelEraf: `${CATALOG_IMAGES} images per product, at ${perCatalog} a product. Your count comes along.`,
+  knopEraf: 'Catalog only',
+  btwNoot: btw,
+};
+---
+
+<div class="ck" data-pl-combi>
+  <p class="ck-regel">
+    <b class="ck-vraag">{erbij ? c.vraag : c.vraagEraf}</b>
+    {erbij ? c.regel : c.regelEraf} <span class="ck-btw">{c.btwNoot}</span>
+  </p>
+  {/* `data-ck-doel` en niet gewoon een href: het aantal wordt er bij het
+      klikken aan geplakt (zie het script hieronder), en een href die al een
+      vraagteken draagt maakt dat een gok over wat er al in staat. */}
+  <a class="pijl ck-knop" href={lp(doel)} data-ck-doel={lp(doel)}>{erbij ? c.knop : c.knopEraf}</a>
+</div>
+
+{/* ── HET AANTAL GAAT MEE ────────────────────────────────────────────────────
+    Eén ding, en alleen op het moment van klikken: lees het getal uit het
+    aantalveld en plak het aan de link. Niet doorlopend bijhouden — dan staat er
+    een href die verandert terwijl je erop staat, en dat is precies hoe je een
+    klik naar het verkeerde adres stuurt.
+
+    Zonder script werkt de link gewoon; je begint dan op één product, en dat is
+    de stand waarin elk formulier begint. Geen script is dus geen kapotte link
+    maar een leeg aantal. */}
+<script is:inline data-astro-rerun>
+  (function () {
+    var a = document.querySelector('[data-ck-doel]');
+    if (!a) return;
+    a.addEventListener('click', function () {
+      try {
+        var v = document.querySelector('[data-pl-qty-input]');
+        var n = v && parseInt(v.value, 10);
+        a.href = a.getAttribute('data-ck-doel') + (n > 0 ? '?producten=' + n : '');
+      } catch (e) { /* dan gewoon zonder aantal */ }
+    });
+  })();
+</script>
+
+<style>
+  /* ── EEN REGEL EN GEEN KAART ───────────────────────────────────────────────
+     Dit is een aanbod midden in een formulier, en een kader eromheen zou het
+     tot een tweede vraag maken die net zo zwaar weegt als "hoeveel producten".
+     Dat is het niet: het is een zijpad met een prijskaartje. Vandaar één
+     haarlijn erboven en verder niets — dezelfde vorm als de uitlegregels
+     eronder, met alleen de eerste regel in de inktkleur zodat je hem ziet. */
+  .ck {
+    margin-top: 1.1rem;
+    padding-top: .9rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .3rem 1.2rem;
+  }
+  /* De vraag is vet en staat vóór de feiten in dezelfde alinea, niet erboven:
+     twee alinea's maken hier twee blokken, en dit is één aanbod. */
+  .ck-vraag { color: var(--ink); margin-right: .15rem; }
+  .ck-regel { margin: 0; font-size: .88rem; line-height: 1.55; color: var(--ink-3); flex: 1 1 30ch; max-width: 74ch; }
+  .ck-btw { white-space: nowrap; }
+  .ck-knop { flex: 0 0 auto; font-size: .86rem; }
+</style>

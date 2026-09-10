@@ -59,8 +59,44 @@ import Note from '../Note.astro';
    Vandaar `soort`: dezelfde kiezer, dezelfde tegels, één regel die zegt waar de
    modelfoto in JOUW bestelling zit. LifestyleModelFold geeft 'lifestyle' mee;
    Step1Options (catalog) laat hem weg en houdt de bestaande tekst. */
-interface Props { lang: 'en' | 'nl'; soort?: 'catalog' | 'lifestyle' | 'proef'; }
-const { lang, soort = 'catalog' } = Astro.props;
+/* ── DEZELFDE KIEZER, TWEE VORMEN — 10 september 2026 ──────────────────────
+ * Lucas: *"Verplaats model keuze naar material gedeelte van bestelform bij alle
+ * bestelforms. (…) Maak de model keuze naast het product invul gedeelte en klein
+ * zodat het niet te veel plek in beslag neemt, het gaat namelijk voornamelijk om
+ * het product en het model hoort er bij."*
+ *
+ * `vorm` is die tweede vorm en niet een tweede component: het zijn dezelfde
+ * elf radio's met dezelfde namen, dezelfde waarden en hetzelfde sjabloon voor
+ * de eigen merkmodellen. Een tweede kiezer zou betekenen dat pipeline.js twee
+ * plekken moet vullen met de merkmodellen van het account, en dat de ene het
+ * stilletjes anders doet dan de andere.
+ *
+ *   'raster' — vier kolommen met portret, naam en kenmerken. De oude vorm; nog
+ *              in gebruik op de proefpagina, waar de kiezer de hoofdvraag is.
+ *   'strook' — kleine portretten die de breedte delen en wikkelen, zonder
+ *              kenmerken. De vorm voor stap 2, náást de productkaarten. Hij
+ *              schoof eerst opzij; zie de noot bij `.is-strook` in de CSS voor
+ *              waarom dat fout was.
+ *
+ * ── EN `verplicht`, WAT EEN ECHTE GEDRAGSVERANDERING IS ────────────────────
+ * Lucas: *"De eerste keer dat klanten bestellen moeten ze een keuze maken en is
+ * het model nog niet geselecteerd."* Met `verplicht` staat "wij kiezen er een"
+ * dus NIET meer voor. Die tegel blijft bestaan en is nog steeds een prima
+ * antwoord — hij is alleen niet meer het antwoord dat je krijgt door niets te
+ * doen.
+ *
+ * Let op waar dat toe verplicht: de radio's dragen `required`, en syncRequired()
+ * in pipeline.js zet die eis alleen aan voor wat ZICHTBAAR is. In een dichte
+ * vouw telt hij dus niet — en dat is precies waarom dit blok in stap 2 open in
+ * beeld staat en niet achter een samenvatting. */
+interface Props {
+  lang: 'en' | 'nl';
+  soort?: 'catalog' | 'lifestyle' | 'proef';
+  vorm?: 'raster' | 'strook';
+  verplicht?: boolean;
+}
+const { lang, soort = 'catalog', vorm = 'raster', verplicht = false } = Astro.props;
+const strook = vorm === 'strook';
 const lp = (p: string) => localizedPath(lang, p);
 const t = TRAITS[lang];
 
@@ -109,7 +145,14 @@ const COPY = {
        ("We read the products and what you told us…"), dus hier hoeft alleen te
        staan WIE er kiest. */
     any: 'We choose for you',
+    /* De korte vorm voor de strook; zie de noot bij `.mp-opt-any .mp-name` in
+       de CSS voor waarom de lange zin daar elke tegel drie regels hoog maakt. */
+    anyKort: 'We choose',
     anyNote: `We read the products and what you told us, and pick from the ${rosterWoord('en')} faces. This is the default, and it is a real answer — not a blank we will chase you about.`,
+    /* De foutmelding hoort te zeggen dat er een UITWEG is: "wij kiezen er een"
+       is een van de elf antwoorden, en zonder die zin leest de eis als "je moet
+       een gezicht uitzoeken" terwijl dat niet zo is. */
+    kiesErr: 'Pick who wears it — or pick the first tile and we choose one.',
     why: 'About these faces',
     whyP: [
       `These ${rosterWoord('en')} are our standard roster and it is shared. A face you pick here can appear on another brand next month, in the same way a stock model can. For most catalogues that is fine — a shopper is judging the garment.`,
@@ -133,7 +176,11 @@ const COPY = {
     leadProef: 'In je proef zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     /* Zie de Engelse tegenhanger. */
     any: 'Wij kiezen voor jou',
+    /* Zie de Engelse noot. */
+    anyKort: 'Wij kiezen',
     anyNote: `Wij kijken naar de producten en naar wat je ons vertelde, en kiezen uit de ${rosterWoord('nl')} gezichten. Dit is de standaard, en het is een echt antwoord — geen leeg veld waar we je achteraf over lastigvallen.`,
+    /* Zie de Engelse noot. */
+    kiesErr: 'Kies wie het draagt — of kies de eerste tegel, dan kiezen wij er een.',
     why: 'Over deze gezichten',
     whyP: [
       `Deze ${rosterWoord('nl')} modellen gebruiken we voor al onze klanten. Een gezicht dat je hier kiest, kan volgende maand bij een ander merk staan, net zoals bij een stockmodel. Voor de meeste catalogi is dat prima — een koper beoordeelt het kledingstuk.`,
@@ -155,9 +202,12 @@ const nl = lang === 'nl';
       uitgelegd, en dan nog binnen een dichtgeklapte vraag. Hier staat het als
       kop boven een keuze die de klant moet maken. */}
   <h3 class="pl-sub-h" id="pl-model-h">{c.label} <Note lang={lang} term={nl ? 'de foto op een model' : 'the on-model shot'}>{c.labelNote}</Note></h3>
-  <p class="pl-model-lead">{soort === 'proef' ? c.leadProef : soort === 'lifestyle' ? c.leadLifestyle : c.lead}</p>
+  {/* In de strook staat de leadzin niet: die legt uit WAAR de modelfoto in je
+      bestelling zit, en dat is een pagina-uitleg. Naast de productkaarten is de
+      vraag "wie draagt het" al beantwoord door de kop erboven. */}
+  {!strook && <p class="pl-model-lead">{soort === 'proef' ? c.leadProef : soort === 'lifestyle' ? c.leadLifestyle : c.lead}</p>}
 
-  <div class="mp-grid" role="radiogroup" aria-labelledby="pl-model-h">
+  <div class={`mp-grid${strook ? ' is-strook' : ''}`} role="radiogroup" aria-labelledby="pl-model-h">
     {/* "Let us choose" comes FIRST and is checked. It is the honest default —
         most brands have no opinion on the tenth face and every one of them has
         an opinion on their own product — and putting it last would have made
@@ -170,16 +220,38 @@ const nl = lang === 'nl';
           betekent "wij kiezen". Tussen tien portretten is het merkteken het
           enige beeld dat zegt wie er dan kiest.
 
-          Hetzelfde <symbol id="markglyph"> als de topbar en de favicon, via
-          <use>, dus deze tegel verandert mee als de vorm ooit weer verandert.
-          Layout.astro's brand-lockup-guard bewaakt dat wordmark en glyph geen
-          gedeelde voorouder krijgen; dit is een losse glyph en valt daarbuiten. */}
-      <span class="mp-thumb mp-thumb-any" aria-hidden="true">
-        <svg class="mp-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><use href="#markglyph" /></svg>
-      </span>
+          ── EN HET IS HET ECHTE LOGOBESTAND, NIET HET GETEKENDE TEKEN ──────
+          10 september 2026. Lucas: *"Ik vind dit logo nog steeds er goedkoop en
+          veel te dik uitzien. Gebruik gewoon een logo foto uit bestanden
+          hiervoor."*
+
+          Hier stond `<use href="#markglyph">`: hetzelfde getraceerde pad als de
+          favicon en de topbar, op 42% van een tegel van honderd pixels gezet.
+          Dat pad is getekend om op 24 pixels in een balk te staan; op deze maat
+          worden dezelfde lijnen mee opgeschaald en leest het teken als een dikke
+          sticker in plaats van als een merk.
+
+          Wat er nu staat is het logopakket zelf — `visuails-tegel-wit-op-groen`
+          uit images/Logo/visuails-logo, verkleind naar 512 en omgezet naar webp,
+          verder onaangeroerd. Dezelfde soort <img> als de tien portretten
+          ernaast, dus dezelfde vorm, dezelfde ronding, dezelfde bijsnijding. En
+          het is een <img> en geen <use>, dus de brand-lockup-guard van
+          Layout.astro heeft hier helemaal niets meer te bewaken. */}
+      <img
+        class="mp-thumb mp-thumb-merk"
+        src="/img/merk-tegel.webp"
+        width="512" height="512"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+      />
       <span class="mp-row">
-        <input type="radio" name="model" value={MODEL_ANY} checked />
-        <span class="mp-name">{c.any}</span>
+        <input type="radio" name="model" value={MODEL_ANY} checked={!verplicht} required={verplicht} data-pl-err-msg={verplicht ? c.kiesErr : undefined} />
+        {/* De volledige zin blijft de toegankelijke naam; `data-kort` is wat de
+            strook toont. Twee teksten en niet twee tegels, zodat een voorleeshulp
+            in beide vormen hetzelfde hoort. */}
+        <span class="mp-name" data-kort={c.anyKort}>{c.any}</span>
       </span>
     </label>
 
@@ -195,7 +267,7 @@ const nl = lang === 'nl';
           decoding="async"
         />
         <span class="mp-row">
-          <input type="radio" name="model" value={modelId(m.name)} />
+          <input type="radio" name="model" value={modelId(m.name)} required={verplicht} data-pl-err-msg={verplicht ? c.kiesErr : undefined} />
           <span class="mp-name">{m.name}</span>
         </span>
         <span class="mp-traits">{m.traits.map((k) => t[k]).join(' · ')}</span>
@@ -227,7 +299,7 @@ const nl = lang === 'nl';
           <span class="mp-badge">{c.ownBadge}</span>
         </span>
         <span class="mp-row">
-          <input type="radio" name="model" value="" />
+          <input type="radio" name="model" value="" required={verplicht} data-pl-err-msg={verplicht ? c.kiesErr : undefined} />
           <span class="mp-name"></span>
         </span>
       </label>
@@ -334,18 +406,19 @@ const nl = lang === 'nl';
      het teken in lime — dezelfde combinatie als de bestelknop, dus de tegel zegt
      nu ook in kleur "dit is VISUAILS die kiest" in plaats van "hier ontbreekt
      een foto". */
-  .mp-thumb-any {
-    display: grid;
-    place-items: center;
-    box-shadow: none;
-    background: #111111;
-    color: var(--accent);
-  }
-  .mp-thumb-any svg {
-    width: 22px; height: 22px;
-    fill: none; stroke: currentColor; stroke-width: 1.5;
-    stroke-linecap: round;
-  }
+  /* De merktegel is een BEELD en geen tekening meer (zie de noot bij de markup).
+     Hij deelt alles met een portret behalve de haarlijn: die zet een kader om
+     een lichte foto zodat hij niet in de tegel wegvalt, en een vlak in het
+     accent valt nergens in weg — daar wordt het een hokje van.
+
+     `object-fit: CONTAIN` en niet cover, en dat is gemeten en niet beredeneerd.
+     Cover schaalt een vierkant bestand tot het de 3:4-tegel vult en snijdt dan
+     de ZIJKANTEN weg — precies waar de armen van de V zitten, dus het teken
+     kwam er met afgeknipte punten uit. Contain legt het hele vierkant in de
+     tegel en laat boven en onder een strook over; die strook is lime, en de
+     tegel eronder ook, dus je ziet er niets van. Het bestand blijft daarmee
+     onaangeroerd — geen bijgesneden logo, geen tweede versie om bij te houden. */
+  .mp-thumb-merk { box-shadow: none; background: var(--accent); object-fit: contain; }
   .mp-row { display: flex; align-items: center; gap: .4rem; }
   .mp-row input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
   .mp-name { font-size: .8rem; color: var(--ink); line-height: 1.25; }
@@ -373,17 +446,6 @@ const nl = lang === 'nl';
   .mp-signin > span { flex: 1 1 20rem; }
   .mp-signin-btn { flex: 0 0 auto; }
 
-  /* De merktegel. Het glyph vult de tegel niet zoals een portret dat doet —
-     een logo op ware grootte tussen tien gezichten leest als een fout — dus
-     het staat gecentreerd op ongeveer een derde van de hoogte, in het accent.
-     `fill: currentColor` zodat de kleur uit één plek komt. */
-  .mp-thumb-any .mp-mark {
-    /* Iets groter dan de 34% van eerst: zonder kader eromheen mag het teken de
-       tegel dragen in plaats van erin te zweven. */
-    width: 42%; height: 42%; display: block;
-    fill: var(--accent); color: var(--accent);
-  }
-  .mp-thumb-any { display: grid; place-items: center; }
 
   /* ── DE EIGEN TEGEL MAG ERUIT SPRINGEN — 10 september 2026 ────────────
      Lucas: *"Ook mag de het custom model er wel wat meer uitspringen en
@@ -488,8 +550,129 @@ const nl = lang === 'nl';
      chosen by how wide a readable portrait tile is rather than by the count:
      six up on a desktop, four on a tablet, three on a phone. The trailing gap
      on the last row is the price of not stretching a face. */
-  @media (max-width: 1100px) { .mp-grid { grid-template-columns: repeat(4, 1fr); } }
-  @media (max-width: 700px)  { .mp-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1100px) { .mp-grid:not(.is-strook) { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 700px)  { .mp-grid:not(.is-strook) { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ══ DE STROOK — NAAST DE PRODUCTKAARTEN ═══════════════════════════════════
+     Eén rij kleine portretten in plaats van een raster dat naar beneden groeit.
+     Gemeten was de kiezer open 1051 pixels hoog; zo is hij er 125, en dat is het
+     verschil tussen "een vraag die je stap overneemt" en "een vraag die ernaast
+     staat".
+
+     ── EN HIJ SCHUIFT NIET MEER — 10 september 2026, 's avonds ───────────────
+     De eerste versie was een rij die opzij schoof: `overflow-x: auto` met
+     scroll-snap, tegels van 5,6rem. Elf tegels van 90 pixels plus de tussen-
+     ruimte is 1070, en de kolom is er 880 — dus vielen er twee buiten beeld.
+
+     Lucas, met een schermafdruk erbij: *"Ik heb in totaal 10 modellen, ik zie
+     hier 8."* Precies. Fabi en Seme stonden gewoon in de HTML, maar Windows
+     tekent een schuifbalk pas als je hem aanraakt, dus wat je ziet is een nette
+     afgesloten rij van acht. Er was geen enkel teken dat er meer was.
+
+     Dat is de fout, en hij zit niet in de breedte maar in de KEUZE om te
+     schuiven. Een kiezer waarvan een deel onzichtbaar is, is geen kiezer: je
+     kiest uit wat je ziet, en wie tien gezichten heeft en er acht toont,
+     verkoopt er acht. Een blok dat op een telefoon twee regels hoog wordt is
+     daar een goedkope prijs voor.
+
+     Dus: WIKKELEN, en de tegels delen de breedte. `flex: 1 1 4.2rem` laat ze
+     krimpen tot alles op één regel past en groeien tot ze de rij vullen; de
+     bovengrens houdt ze op tegelmaat als er ooit maar vier zijn. Op 880 staan
+     alle elf op één regel, op een telefoon in twee of drie — en er valt nooit
+     iets buiten beeld. */
+  .mp-grid.is-strook {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-top: .6rem;
+    /* De strook mag de volle breedte van zijn kolom gebruiken; de tegels zijn
+       smal genoeg dat een leesmaat hier niets toevoegt. */
+    max-width: none;
+  }
+  .mp-grid.is-strook .mp-opt {
+    flex: 1 1 4.2rem;
+    max-width: 6rem;
+    padding: .3rem;
+    gap: .28rem;
+  }
+  /* Het sjabloon voor de eigen merkmodellen is geen tegel en mag de rij niet
+     meetellen als flexitem — hij staat er alleen om gekloond te worden. */
+  .mp-grid.is-strook template { display: none; }
+  /* Op een telefoon zijn elf tegels van 75 pixels drie rijen en samen 606 —
+     meer dan het blok waar Lucas om vroeg. Smaller mogen ze daar dus wél: een
+     portret van vijftig pixels is klein, maar je kiest op haar, huid en houding
+     en niet op de neus, en alle elf blijven in beeld. Dat laatste is hier de
+     eis: liever een kleine tegel dan een gezicht dat er niet lijkt te zijn.
+
+     De maat is gekozen op het AANTAL RIJEN en niet op smaak: elf tegels van 59
+     pixels zijn 5 + 5 + 1 — drie rijen waarvan de laatste één tegel draagt, en
+     dat leest als een fout. Op 48 passen er zes op een regel en wordt het 6 + 5:
+     twee volle rijen, en het blok zakt van 551 naar ongeveer 360. */
+  @media (max-width: 700px) {
+    .mp-grid.is-strook .mp-opt { flex: 1 1 2.9rem; max-width: 4.4rem; }
+  }
+  /* De kenmerken ("blond · lang") vallen weg: op 90 pixels breed zijn dat drie
+     regels van twee woorden, en de vraag hier is wie het draagt en niet welke
+     kenmerken hij heeft. Ze staan nog in de rastervorm, op de proefpagina. */
+  .mp-grid.is-strook .mp-traits { display: none; }
+  .mp-grid.is-strook .mp-name { font-size: .72rem; line-height: 1.2; }
+  /* "Wij kiezen voor jou" is op tegelmaat drie regels en maakt daarmee élke
+     tegel in de rij drie regels hoog — flexitems zijn even hoog. In deze vorm
+     draagt hij daarom de korte naam; de volledige zin staat een regel lager,
+     in de uitleg die verschijnt zodra je hem kiest. */
+  .mp-grid.is-strook .mp-opt-any .mp-name { font-size: 0; }
+  .mp-grid.is-strook .mp-opt-any .mp-name::after {
+    content: attr(data-kort); font-size: .72rem; line-height: 1.2;
+  }
+  /* Het bolletje van de radio is op deze maat groter dan de naam ernaast; de
+     tegel zelf toont de keuze al met zijn rand en zijn vulling. Verborgen en
+     niet weggehaald — hij is nog steeds het bedienbare element, en hij houdt
+     zijn focusring via .mp-opt:focus-within. */
+  .mp-grid.is-strook .mp-row input {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%);
+  }
+  .mp-grid.is-strook .mp-row { position: relative; }
+
+  /* ── EN DE DRIE REGELS ERONDER, IN STROOKVORM ─────────────────────────────
+     Gemeten stond onder de strook nog 174 pixels aan begeleidende tekst: het
+     inlogkader (72), de uitleg bij "wij kiezen er een" (41) en de vouw over de
+     gedeelde gezichten (61). Samen meer dan de kiezer zelf, in een blok waarvan
+     Lucas vroeg *"klein zodat het niet te veel plek in beslag neemt."*
+
+     Er gaat niets weg — alle drie de teksten staan er nog, want alle drie zeggen
+     iets dat een klant op enig moment nodig heeft. Wat verandert is WANNEER en
+     HOE GROOT. */
+
+  /* Het inlogkader wordt één regel. Het is een terzijde voor de klant die al
+     een merkmodel heeft, en die herkent zijn eigen situatie in vier woorden;
+     een kader met een knop erin maakt er een tweede hoofdvraag van. */
+  .pl-model:has(.is-strook) .mp-signin {
+    display: block;
+    margin: .7rem 0 0; padding: 0;
+    background: none; box-shadow: none; border-radius: 0;
+    font-size: .82rem; color: var(--ink-3);
+  }
+  .pl-model:has(.is-strook) .mp-signin > span { flex: none; }
+  /* De knop wordt een tekstlink in dezelfde regel: dezelfde bestemming, maar
+     hij trekt niet meer harder aan de aandacht dan de gezichten erboven. */
+  .pl-model:has(.is-strook) .mp-signin-btn {
+    display: inline; margin-left: .35rem; padding: 0;
+    border: 0; background: none; min-height: 0;
+    font: inherit; color: var(--accent-bright);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  /* De uitleg bij "wij kiezen er een" verschijnt als je die tegel kiest, en
+     anders niet. Hij gaat over ÉÉN van de elf antwoorden: wat wij doen als je
+     ons laat kiezen. Zolang er niets gekozen is — de nieuwe beginstand, zie
+     `verplicht` — beantwoordt hij een vraag die nog niet gesteld is, en zodra
+     iemand een gezicht heeft aangewezen gaat hij over iets wat hij net niet
+     gekozen heeft. */
+  .pl-model:has(.is-strook) .pl-model-note { display: none; }
+  .pl-model:has(.is-strook):has(.mp-opt-any input:checked) .pl-model-note {
+    display: block; margin-top: .6rem; font-size: .82rem;
+  }
   .mp-traits { overflow-wrap: anywhere; }
   @media (prefers-reduced-motion: reduce) { .mp-opt { transition: none; } }
 </style>

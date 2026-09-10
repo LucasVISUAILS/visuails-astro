@@ -44,7 +44,6 @@
 import Disclose from '../Disclose.astro';
 import MarketplacePicker from './MarketplacePicker.astro';
 import BackgroundPicker from './BackgroundPicker.astro';
-import ModelPicker from './ModelPicker.astro';
 import { copy as chCopy } from '../../data/channels.js';
 import { background, DEFAULT_ID, copy as bgCopy } from '../../data/backgrounds.js';
 import StijlRegel from './StijlRegel.astro';
@@ -69,15 +68,14 @@ import StijlRegel from './StijlRegel.astro';
 interface Props {
   lang: 'en' | 'nl';
   huisLook?: boolean;
-  /* ── `modelSoort`: WELKE HELFT KRIJGT DAT GEZICHT — 9 september 2026 ───────
-     Op /start/catalog gaat de modelvraag over de ene foto op een model in de
-     catalogset. Op /start/complete zijn het er twee — één in de set en één in
-     de carousel — en het antwoord geldt voor allebei: het is hetzelfde merk in
-     dezelfde bestelling. Alleen het LABEL verandert, want een vraag die "de
-     foto op een model" heet terwijl er twee zijn, laat de klant raden welke. */
-  modelSoort?: 'catalog' | 'beide';
+  /* `modelSoort` stond hier: welk label de modelvouw kreeg op /start/complete,
+     waar er twee modelfoto's in één bestelling zitten. De vouw is op 10
+     september naar stap 2 verhuisd (ModelKeuze.astro) en stelt daar één korte
+     vraag — "wie draagt het?" — die voor allebei de helften geldt zonder ze te
+     noemen. De prop is daarmee dood en weg; hij stond nog op twee pagina's en
+     deed daar niets. */
 }
-const { lang, huisLook = false, modelSoort = 'catalog' } = Astro.props;
+const { lang, huisLook = false } = Astro.props;
 
 const ch = chCopy(lang);
 const bg = bgCopy(lang);
@@ -89,16 +87,10 @@ const START = {
   en: {
     channels: 'not chosen yet',
     background: `${background(DEFAULT_ID).name.en} · ${background(DEFAULT_ID).hex}`,
-    model: 'we choose one',
-    modelLabel: 'The on-model shot',
-    modelLabelBeide: 'The on-model shot, in the set and in the carousel',
   },
   nl: {
     channels: 'nog niet gekozen',
     background: `${background(DEFAULT_ID).name.nl} · ${background(DEFAULT_ID).hex}`,
-    model: 'wij kiezen er een',
-    modelLabel: 'De foto op een model',
-    modelLabelBeide: 'De foto op een model, in de set én in de carousel',
   },
 };
 const s = START[lang];
@@ -144,16 +136,14 @@ const s = START[lang];
     </Disclose>
   </div>
 
-  <div data-pl-model-fold>
-    <Disclose
-      summary={modelSoort === 'beide' ? s.modelLabelBeide : s.modelLabel}
-      name="s1"
-      liveAttr="data-pl-sum-model"
-      liveText={s.model}
-    >
-      <ModelPicker lang={lang} />
-    </Disclose>
-  </div>
+  {/* ── DE MODELVOUW STOND HIER — 10 september 2026 ──────────────────────
+      Lucas: *"Verplaats model keuze naar material gedeelte van bestelform bij
+      alle bestelforms. Dan word het eerste scherm al wat rustiger."*
+
+      Hij staat nu in stap 2, boven de productkaarten; zie ModelKeuze.astro. De
+      wikkel `data-pl-model-fold` waarop toonMerkkit() in pipeline.js deze vraag
+      verbergt voor een account dat het antwoord al draagt, is met de vouw mee
+      verhuisd — die haak hoort bij de vraag en niet bij de plek. */}
 </div>
 
 <style>

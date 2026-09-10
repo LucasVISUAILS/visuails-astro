@@ -20,7 +20,7 @@
  *   2 · de leesroute hangt achter de sessiecontrole;
  *   3 · de route die iets AANMAAKT is een POST en hangt achter originIsSelf().
  */
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { adminGet, adminPost } from '../src/lib/admin.js';
 import { mintToken } from '../src/lib/token.js';
 
@@ -206,6 +206,57 @@ console.log('\nde proberoute hangt achter sessie én origin');
   ok('het antwoord draagt de vier probes',
     Object.keys(json.probes || {}).sort(), ['A_transport', 'B_auth', 'C_minimalPayment', 'D_realPayment']);
   ok('en geen enkele secretwaarde', /test_0123456789abcdefghijklmnopqrstuv/.test(JSON.stringify(json)), false);
+}
+
+/* ══ 4 · ELKE PAGES FUNCTION HEEFT EEN DEUR IN DE WORKER ═══════════════════
+ *
+ * ── DE FOUT DIE DEZE REGEL AFDWINGT — 11 september 2026 ──────────────────────
+ *
+ * Lucas: *"Als ik op abonnement kopen knop druk kom ik op een 404 terecht."*
+ * Met een schermafdruk van visuails.com/api/plan met de 404-pagina erop, en het
+ * abonnementsformulier al helemaal ingevuld.
+ *
+ * Sinds de verhuizing van 10 september wordt visuails.com bediend door de Worker
+ * `visuails-site` en niet meer door het Pages-project. Een Worker draait wat de
+ * Astro-build erin stopt, en die build kent alleen `src/pages/`. Alles onder
+ * `functions/` is een Cloudflare PAGES Function — een ander mechanisme, dat de
+ * Worker niet leest.
+ *
+ * Vijf van de zes ingangen hadden daarom al een dun bestandje in src/pages/api/
+ * dat de echte handler importeert. `plan` was de enige zonder, en zolang het
+ * domein op Pages stond viel dat niet op. Na de verhuizing bestond het adres
+ * domweg niet meer.
+ *
+ * Dat is precies het soort fout waar geen enkele toets over klaagt: de code is
+ * er, hij is goed, en hij is onbereikbaar. Vandaar deze regel — hij vergelijkt
+ * de twee bomen bestand voor bestand, en een nieuwe function zonder deur valt
+ * hier om in plaats van bij een klant met een ingevuld formulier.
+ */
+console.log('\nelke Pages Function heeft een route in de Worker');
+{
+  const boom = (map) => readdirSync(new URL('../' + map, import.meta.url), { recursive: true })
+    .map((n) => String(n).replace(/\\/g, '/'))
+    .filter((n) => n.endsWith('.js'))
+    .sort();
+
+  const functies = boom('functions');
+  ok('er staan Pages Functions om te controleren', functies.length > 0, true, `${functies.length}`);
+
+  const paginas = new Set(boom('src/pages/api').map((n) => 'api/' + n));
+  const zonderDeur = functies.filter((n) => !paginas.has(n));
+  ok('en elke function heeft zijn tegenhanger in src/pages/api',
+    zonderDeur, [], zonderDeur.length ? `onbereikbaar: ${zonderDeur.join(', ')}` : '');
+
+  /* En de deur importeert de function ook echt. Een leeg bestand met de goede
+     naam is geen route maar een 200 zonder inhoud — dat zou de 404 vervangen
+     door iets wat er nog erger uitziet: een knop die lijkt te werken. */
+  for (const naam of functies) {
+    /* `naam` draagt de map al ("api/plan.js"), dus vanuit src/pages/ en niet
+       vanuit src/pages/api/ — anders zoek je api/api/plan.js. */
+    const bron = readFileSync(new URL('../src/pages/' + naam, import.meta.url), 'utf8');
+    ok(`  ${naam} wordt geïmporteerd en niet overgetypt`,
+      new RegExp(`from '[^']*functions/${naam.replace(/\./g, '\\.')}'`).test(bron), true);
+  }
 }
 
 console.log(`\n${geslaagd}/${geslaagd + gezakt} geslaagd`);

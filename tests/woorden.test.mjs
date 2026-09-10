@@ -174,10 +174,23 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
   /* De kolomkoppen NOEMEN de categorie ("Catalog set", "Catalogset"), dus daar
      hoort de korte vorm. Stond hier counted(), dan las de kop "Catalog set —
      4 catalog images". Zie de noot bij SHORTER in lexicon.js. */
+  /* ── setSize() TELT MEE — 10 september 2026 ────────────────────────────
+     Lucas: *"Catalog wordt nu vanaf 4 foto's omdat klanten nu extra foto's erbij
+     kunnen kiezen."* Sinds de hoekenkiezer is vier de ONDERGRENS, en daarvoor is
+     setSize() bijgekomen: die zet er "vanaf" / "from" voor als de dienst
+     uitbreidbaar is, en roept daarvoor gewoon countedShort() aan.
+
+     Deze twee regels telden alleen de naam `countedShort`, en werden dus rood
+     terwijl er niets kapot was — ze spelden de uitvoering na in plaats van de
+     belofte. De belofte is: de korte vorm komt uit het lexicon en niet uit
+     handgetypte woorden, op al deze plekken en in beide talen. Allebei de
+     functies doen dat, dus tellen ze allebei mee. Het TOTAAL blijft staan: wie
+     er een plek uithaalt, wordt hier nog steeds rood. */
+  const uitLexicon = /(?:countedShort|setSize)\('(catalog|lifestyle)'/g;
   check('Voorpagina gebruikt de korte vorm onder de kop (diensten, set én tabel, twee talen)',
-    (home.match(/countedShort\('(catalog|lifestyle)'/g) || []).length, 12);
+    (home.match(uitLexicon) || []).length, 12);
   check('PricingPage ook',
-    (prijs.match(/countedShort\('(catalog|lifestyle)'/g) || []).length, 4);
+    (prijs.match(uitLexicon) || []).length, 4);
   check('en nergens meer de lange vorm onder een kop',
     /counted\('(catalog|lifestyle)'/.test(home + prijs), false);
 

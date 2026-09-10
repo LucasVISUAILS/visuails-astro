@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drie richtingen — VISUAILS</title>
+<style>
+  :root{
+    --inkt:#0A0A0A; --inkt-2:#454545; --inkt-3:#7A7A7A;
+    --vel:#F5F5F5; --wit:#fff; --lijn:#E2E2E2; --lijn-2:#C9C9C9;
+    --accent:#D2E04A; --maat:640px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--vel);color:var(--inkt);
+    font:15px/1.6 "Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1160px;margin:0 auto;padding:56px 20px 120px}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--inkt-3)}
+  h1{font-size:clamp(1.9rem,4vw,2.6rem);line-height:1.08;letter-spacing:-.02em;margin:.3rem 0 1rem;text-wrap:balance}
+  h2{font-size:1.25rem;letter-spacing:-.01em;margin:0}
+  p{max-width:66ch}
+  .lead{color:var(--inkt-2);font-size:1.02rem}
+
+  /* de meting */
+  .meet{margin:38px 0 64px;border-top:1px solid var(--lijn-2)}
+  .meet .r{display:grid;grid-template-columns:150px 1fr 90px;gap:14px;align-items:center;
+    padding:9px 0;border-bottom:1px solid var(--lijn)}
+  .meet .bal{height:6px;background:var(--inkt);opacity:.9}
+  .meet .n{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;text-align:right}
+  .meet .r.piek .bal{background:var(--accent)}
+
+  /* richtingen */
+  .richting{margin:0 0 74px;border-top:2px solid var(--inkt);padding-top:16px}
+  .kop{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;margin-bottom:6px}
+  .kop .nr{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:var(--inkt);color:var(--vel);padding:2px 7px}
+  .plus{color:var(--inkt-2);font-size:.93rem;max-width:70ch;margin:.5rem 0 0}
+  .min{color:var(--inkt-3);font-size:.88rem;max-width:70ch;margin:.35rem 0 1.4rem}
+  .paneel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;align-items:start}
+  .paneel > div{min-width:0}
+  .vlak{background:var(--wit);padding:20px;border:1px solid var(--lijn)}
+  .vlaklabel{margin:0 0 14px}
+
+  /* ── 1 · BLAUWDRUK ─────────────────────────────────────────── */
+  .bd{font-family:ui-monospace,Menlo,monospace;font-size:.82rem}
+  .bd .r{display:grid;grid-template-columns:14px 1fr auto;gap:12px;padding:7px 0;border-bottom:1px solid var(--lijn)}
+  .bd .r:first-child{border-top:1px solid var(--inkt)}
+  .bd .i{color:var(--inkt-3)}
+  .bd .w{color:var(--inkt-2)}
+  .bd .r.kies{background:linear-gradient(to right,rgba(210,224,74,.35),transparent 60%)}
+  .bdgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--lijn-2);border:1px solid var(--lijn-2)}
+  .bdgrid figure{margin:0;background:var(--wit);padding:8px}
+  .bdgrid .vk{aspect-ratio:1;background:var(--vel);position:relative}
+  .bdgrid .vk::after{content:attr(data-n);position:absolute;left:5px;top:4px;font-family:ui-monospace,Menlo,monospace;font-size:.62rem;color:var(--inkt-3)}
+  .bdgrid figcaption{font-family:ui-monospace,Menlo,monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+
+  /* ── 2 · CONTACTBLAD ───────────────────────────────────────── */
+  .cb .r{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--lijn)}
+  .cb .r:first-child{border-top:1px solid var(--inkt)}
+  .cb .v{font-weight:600}
+  .cb .a{color:var(--inkt-2);font-size:.92rem}
+  .cb .a b{font-weight:600;color:var(--inkt)}
+  .cbgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .cbgrid figure{margin:0}
+  .cbgrid .vk{aspect-ratio:3/4;background:#DADAD6;background-image:linear-gradient(135deg,#cfcfca 0 40%,#e3e3df 100%)}
+  .cbgrid figcaption{font-size:.78rem;margin-top:5px;display:flex;justify-content:space-between;gap:6px}
+  .cbgrid figcaption span:last-child{color:var(--inkt-3);font-family:ui-monospace,Menlo,monospace;font-size:.68rem}
+  .cbgrid figure.aan .vk{outline:2px solid var(--inkt);outline-offset:2px}
+
+  /* ── 3 · TWEE DEUREN ───────────────────────────────────────── */
+  .td .stap{border:1px solid var(--lijn-2);background:var(--wit);padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:baseline}
+  .td .stap .nr{font-family:ui-monospace,Menlo,monospace;font-size:.7rem;color:var(--inkt-3);flex:none;width:22px}
+  .td .stap h4{margin:0 0 2px;font-size:.98rem}
+  .td .stap p{margin:0;font-size:.86rem;color:var(--inkt-3)}
+  .td .stap.nu{border-color:var(--inkt);border-left:3px solid var(--accent)}
+  .td .regel{display:grid;grid-template-columns:1fr auto;gap:12px;padding:9px 0;border-bottom:1px solid var(--lijn);font-size:.92rem}
+  .td .regel:first-of-type{border-top:1px solid var(--inkt)}
+  .td .regel span:last-child{color:var(--inkt-3)}
+
+
+  /* ── het merkteken "jouw product" ──────────────────────────── */
+  .bewijs{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,Menlo,monospace;
+    font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--inkt);white-space:nowrap}
+  .bewijs.echt{background:var(--accent);border-color:var(--accent)}
+  .bewijs.sfeer{color:var(--inkt-3);border-color:var(--lijn-2)}
+  .bewijs .stip{width:6px;height:6px;background:var(--inkt);border-radius:50%}
+  .bewijs.sfeer .stip{background:var(--lijn-2)}
+  .deuren{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--lijn-2);border:1px solid var(--lijn-2);margin-top:12px}
+  .deuren .d{background:var(--wit);padding:13px 15px;display:grid;gap:6px}
+  .deuren .d h5{margin:0;font-size:.95rem}
+  .deuren .d p{margin:0;font-size:.83rem;color:var(--inkt-3)}
+  .groepkop{display:flex;align-items:baseline;gap:12px;margin:22px 0 0}
+  .groepkop h4{margin:0;font-size:1rem}
+  .slot{border-top:2px solid var(--inkt);padding-top:18px;margin-top:20px}
+  .slot ul{margin:.4rem 0 0;padding-left:1.05rem;color:var(--inkt-2);max-width:74ch}
+  .slot li{margin:.35rem 0}
+  @media(max-width:820px){ .paneel{grid-template-columns:1fr} .meet .r{grid-template-columns:120px 1fr 70px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="mono">VISUAILS · ontwerprichting</p>
+<h1>Niet te veel informatie.<br>Te zware verpakking.</h1>
+<p class="lead">Je zei het zes keer over zes verschillende schermen, dus het is één probleem. Ik heb je
+pagina’s gemeten voor ik iets ging tekenen. Wat eruit komt is niet dat er te veel op staat — het is dat
+elk stukje informatie een eigen kaart, een eigen foto en een eigen ondertitel heeft gekregen. Eén zo’n
+blok op een pagina werkt. Vijf onder elkaar is geen pagina meer maar een stapel folders.</p>
+
+<div class="meet">
+  <div class="r"><span class="mono">/lifestyle</span><span class="bal" style="width:100%"></span><span class="n">14 schermen</span></div>
+  <div class="r"><span class="mono">/catalog</span><span class="bal" style="width:96%"></span><span class="n">13 schermen</span></div>
+  <div class="r"><span class="mono">voorpagina</span><span class="bal" style="width:83%"></span><span class="n">11 schermen</span></div>
+  <div class="r"><span class="mono">/start</span><span class="bal" style="width:47%"></span><span class="n">6,5 schermen</span></div>
+  <div class="r"><span class="mono">/test-sample</span><span class="bal" style="width:37%"></span><span class="n">5 schermen</span></div>
+  <div class="r piek"><span class="mono">grootste sectie</span><span class="bal" style="width:26%"></span><span class="n">3563 px</span></div>
+  <div class="r piek"><span class="mono">hoekenblok</span><span class="bal" style="width:8%"></span><span class="n">1045 px</span></div>
+</div>
+<p class="lead" style="margin-top:-38px">Die laatste twee zijn de kern: <b>één sectie van vier schermen hoog</b>, en <b>één vraag in
+het bestelformulier die 1045&nbsp;px inneemt</b>. Daar raak je het overzicht kwijt — niet bij het aantal
+secties.</p>
+
+<!-- ═══ 1 ═══ -->
+<section class="richting">
+  <div class="kop"><span class="nr">01</span><h2>Blauwdruk</h2><span class="mono">lab · technisch · geen beeld in de keuze</span></div>
+  <p class="plus">Alles wordt een regel in een raster met haarlijnen en mono-labels. Beeld verdwijnt uit de
+  keuzeschermen; wat je kiest staat er als tekst, met een nummer ervoor. Dit is de meest "lab"-richting
+  en veruit de compactste: het hoekenblok gaat van 1045&nbsp;px naar ongeveer 180.</p>
+  <p class="min">Tegen: je verkoopt beeld. Een keuzescherm zonder beeld is direct en duidelijk, maar het
+  laat niet zien hoe goed het werk is. Werkt beter voor het formulier dan voor de stijlpagina’s.</p>
+  <div class="paneel">
+    <div class="vlak">
+      <p class="mono vlaklabel">Bestelstap</p>
+      <div class="bd">
+        <div class="r"><span class="i">01</span><span>aantal producten</span><span class="w">2</span></div>
+        <div class="r"><span class="i">02</span><span>achtergrond</span><span class="w">#FFFFFF</span></div>
+        <div class="r"><span class="i">03</span><span>model</span><span class="w">auto</span></div>
+        <div class="r"><span class="i">04</span><span>beeldvorm</span><span class="w">1:1</span></div>
+        <div class="r kies"><span class="i">05</span><span>extra hoeken</span><span class="w">0 / 4</span></div>
+        <div class="r"><span class="i">06</span><span>kanalen</span><span class="w">amazon, shop</span></div>
+      </div>
+    </div>
+    <div class="vlak">
+      <p class="mono vlaklabel">Stijlen</p>
+      <div class="bdgrid">
+        <figure><div class="vk" data-n="01"></div><figcaption>Classic</figcaption></figure>
+        <figure><div class="vk" data-n="02"></div><figcaption>Dunes</figcaption></figure>
+        <figure><div class="vk" data-n="03"></div><figcaption>Flash</figcaption></figure>
+        <figure><div class="vk" data-n="04"></div><figcaption>Glow</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 2 ═══ -->
+<section class="richting">
+  <div class="kop"><span class="nr">02</span><h2>Contactblad</h2><span class="mono">fotografisch · minimaal · beeld klein</span></div>
+  <p class="plus">Zoals een contactvel bij een fotograaf: de beelden blijven, maar klein, in een strak
+  raster zonder kaders en zonder kaarten. Onderschrift in twee delen — naam links, feit rechts. Klikken
+  maakt groot. Acht stijlen passen zo op één scherm in plaats van op drie.</p>
+  <p class="min">Tegen: kleine beelden vragen goede beelden — een rommelige foto valt in het klein harder
+  op. En "klik voor groot" is een stap extra voor wie alleen even wil kijken.</p>
+  <div class="paneel">
+    <div class="vlak">
+      <p class="mono vlaklabel">Bestelstap</p>
+      <div class="cb">
+        <div class="r"><span class="v">Aantal producten</span><span class="a"><b>2</b> · € 178</span></div>
+        <div class="r"><span class="v">Achtergrond</span><span class="a">Wit</span></div>
+        <div class="r"><span class="v">Model</span><span class="a">wij kiezen</span></div>
+        <div class="r"><span class="v">Beeldvorm</span><span class="a">1:1</span></div>
+        <div class="r"><span class="v">Extra hoeken</span><span class="a"><b>geen</b> · vanaf € 39</span></div>
+      </div>
+    </div>
+    <div class="vlak">
+      <p class="mono vlaklabel">Stijlen</p>
+      <div class="cbgrid">
+        <figure class="aan"><div class="vk"></div><figcaption><span>Classic</span><span>01</span></figcaption></figure>
+        <figure><div class="vk"></div><figcaption><span>Dunes</span><span>02</span></figcaption></figure>
+        <figure><div class="vk"></div><figcaption><span>Flash</span><span>03</span></figcaption></figure>
+        <figure><div class="vk"></div><figcaption><span>Glow</span><span>04</span></figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 3 ═══ -->
+<section class="richting">
+  <div class="kop"><span class="nr">03</span><h2>Twee deuren</h2><span class="mono">eerst kijken · dan invullen</span></div>
+  <p class="plus">Jouw eigen idee bij het hoekenblok, doorgetrokken naar alles: <b>kijken en invullen zijn
+  twee verschillende dingen en horen niet op één pagina</b>. Eén pagina "wat je per product krijgt" — de
+  vier vaste foto’s, de vier bij te bestellen hoeken, de stijlen, groot en rustig. Daarna een formulier
+  dat alleen nog regels is, want je hebt alles al gezien.</p>
+  <p class="min">Tegen: één klik extra voor wie precies weet wat hij wil. Meeste bouwwerk van de drie.</p>
+  <div class="paneel">
+    <div class="vlak">
+      <p class="mono vlaklabel">De stroom</p>
+      <div class="td">
+        <div class="stap"><span class="nr">01</span><div><h4>Wat je krijgt</h4><p>Vier foto’s per product, plus wat je erbij kunt kiezen. Eigen pagina, groot beeld.</p></div></div>
+        <div class="stap nu"><span class="nr">02</span><div><h4>Je bestelling</h4><p>Zes regels. Geen beeld meer nodig.</p></div></div>
+        <div class="stap"><span class="nr">03</span><div><h4>Je foto’s</h4><p>Uploaden.</p></div></div>
+      </div>
+    </div>
+    <div class="vlak">
+      <p class="mono vlaklabel">Stap 02, uitgeklapt</p>
+      <div class="td">
+        <div class="regel"><span>Aantal producten</span><span>2 · € 178</span></div>
+        <div class="regel"><span>Stijl</span><span>Classic</span></div>
+        <div class="regel"><span>Achtergrond</span><span>Wit</span></div>
+        <div class="regel"><span>Beeldvorm</span><span>1:1</span></div>
+        <div class="regel"><span>Extra hoeken</span><span>geen</span></div>
+        <p class="mono" style="margin-top:14px">± 210 px in plaats van 1085</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ 4 ═══ -->
+<section class="richting">
+  <div class="kop"><span class="nr">04</span><h2>Eén merkteken dat de hele lijst sorteert</h2><span class="mono">jouw idee, doorgetrokken</span></div>
+  <p class="plus">Je stelde een label voor als <i>"photos made using your own real product"</i>. Dat is
+  meer dan een label — het is precies de <b>eerste vraag die een bezoeker heeft</b>: moet ik mijn spullen
+  opsturen, ja of nee? Zet die vraag als sorteervolgorde op /start en de negen deuren vallen vanzelf in
+  twee groepen. Geen alfabet, geen "negen deuren, geen volgorde van belang" — twee groepen met een
+  merkteken dat op elke dienstpagina terugkomt.</p>
+  <p class="min">Woordkeus telt hier: <b>"Made with your product"</b> is korter en klopt ook voor video en
+  hooks. Voor Editions wordt het <b>"No product needed"</b> — en dat is geen mindere belofte maar een
+  andere: je kunt bestellen zonder iets op te sturen, en dat is voor sommige klanten juist de reden.</p>
+
+  <div class="groepkop"><h4>Met jouw product</h4><span class="bewijs echt"><span class="stip"></span>Made with your product</span></div>
+  <div class="deuren">
+    <div class="d"><h5>Catalog</h5><p>Op je productpagina</p></div>
+    <div class="d"><h5>Lifestyle</h5><p>Waar iemand je eerst ziet</p></div>
+    <div class="d"><h5>Catalog + Lifestyle</h5><p>Je pagina en je feed in één</p></div>
+    <div class="d"><h5>Productvideo</h5><p>Het product zelf, bewegend</p></div>
+    <div class="d"><h5>Hooks</h5><p>De eerste drie seconden</p></div>
+    <div class="d"><h5>Werk op maat</h5><p>Een look die alleen van jou is</p></div>
+  </div>
+
+  <div class="groepkop"><h4>Zonder jouw product</h4><span class="bewijs sfeer"><span class="stip"></span>No product needed</span></div>
+  <div class="deuren">
+    <div class="d"><h5>Editions</h5><p>Sfeer en branding, direct te gebruiken</p></div>
+    <div class="d"><h5>Merkmodel</h5><p>Een gezicht dat alleen van jou is</p></div>
+  </div>
+
+  <p class="min" style="margin-top:18px">Hetzelfde merkteken staat daarna op de dienstpagina onder de kop,
+  op de prijstabel en in het bestelformulier — dus je hoeft het nergens uit te leggen, je ziet het.
+  En het geeft de negen deuren de ruimte die je vroeg: twee groepen van zes en twee in plaats van
+  negen even zware kaarten onder elkaar.</p>
+</section>
+
+<div class="slot">
+  <p class="mono">Mijn voorstel</p>
+  <p class="lead"><b>03 als structuur, 02 als uiterlijk.</b> De structuur van "twee deuren" lost op wat je
+  zes keer aanwees — het beeld gaat naar een pagina waar je ervoor gaat zitten, het formulier wordt een
+  formulier. Het uiterlijk van het contactblad houdt je werk in beeld zonder dat een stijlkiezer drie
+  schermen wordt. Blauwdruk is de mooiste "lab"-taal maar te koud voor een bedrijf dat beeld verkoopt —
+  ik zou daar alleen de mono-labels en de haarlijnen uit lenen.</p>
+  <p class="mono" style="margin-top:26px">Wat er dan gebeurt, in dezelfde volgorde als jouw berichten</p>
+  <ul>
+    <li><b>Bestelformulier</b> — van 1085 naar ± 210 px, één kolom, één breedte.</li>
+    <li><b>Hoekenblok</b> — weg uit het formulier, wordt de bovenkant van de "wat je krijgt"-pagina.</li>
+    <li><b>Stijlsecties</b> — contactblad-raster: acht stijlen op één scherm, klik voor groot.</li>
+    <li><b>Test sample</b> — zelfde raster, dus de foto’s nemen niet meer de hele pagina.</li>
+    <li><b>"Wat verandert bij 10 producten"</b> — die twee kolommen worden één tabel met twee
+      kolommen in plaats van twee blokken met elk vijf kopjes.</li>
+    <li><b>/start · alle diensten</b> — gesorteerd op "moet ik mijn product opsturen?" (richting 04),
+      met veel meer lucht ertussen.</li>
+  </ul>
+  <p class="lead" style="margin-top:22px">Zeg welk nummer, of welke combinatie, dan bouw ik het —
+  te beginnen bij het scherm dat jij als eerste wilt zien.</p>
+</div>
+
+</div>
+</body>
+</html>

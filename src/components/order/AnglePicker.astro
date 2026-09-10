@@ -56,11 +56,15 @@ import AngleSketch from './AngleSketch.astro';
 import { SHOTS } from '../../data/shots.js';
 import { MAX_EXTRA_PER_PRODUCT, extraPhotoRate, euro, vatLabel } from '../../data/pricing.js';
 import Disclose from '../Disclose.astro';
+import { localizedPath } from '../../i18n/ui.js';
 import { SHOTS as VASTE_SHOTS } from '../../data/shots.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const c = ANGLE_COPY[lang];
+/* De weg naar de overzichtspagina. localizedPath, want /nl/per-product bestaat
+   ook en een harde /per-product zou de Nederlandse bezoeker op de Engelse zetten. */
+const lp = (p) => localizedPath(lang, p);
 const vast = SHOTS.map((s) => ({ id: s.id, name: s.name[lang] || s.name.en }));
 const perGroep = ANGLE_GROUPS.map((g) => ({
   id: g,
@@ -116,21 +120,23 @@ const vasteRegel = lang === 'nl'
 >
   <legend class="pl-sr">{c.extraH}</legend>
 
-  {/* ── DE VIER DIE ER ALTIJD ZIJN ─────────────────────────────────────────
-      Geen vinkjes: er valt niets te kiezen. Ze staan er zodat "vier beelden per
-      product" een lijst met namen is in plaats van een getal. */}
-  <p class="pl-hoeken-h">{c.fixedH}</p>
-  <ul class="pl-hoeken-vast" role="list">
-    {vast.map((s) => <li>{s.name}</li>)}
-  </ul>
-  <p class="hint pl-hoeken-hint">{c.fixedLine}</p>
+  {/* ── DE UITLEG STAAT NIET MEER IN HET FORMULIER — 10 september 2026 ─────
+      Lucas: *"Dit blok is ook veel te groot en ik wou dit als eerste eigen
+      pagina zodat je duidelijk overzicht hebt van wat je van elk product kan
+      verwachten."* Gemeten was dit blok 1045 pixels in een stap van 1085.
 
-  {/* De kop van dit blok staat nu op de vouw zelf; hier blijft alleen het
-      tarief, want dát is wat je moet weten voordat je aanvinkt. */}
+      Wat hier stond — de vier die er altijd bij zitten, met hun namen, plus twee
+      alinea's uitleg — is /per-product geworden. Een formulier hoort de vraag te
+      stellen; het antwoord op "wat krijg ik dan eigenlijk" hoort op een pagina
+      waar je even voor gaat zitten. Wat blijft is het tarief (dat moet je weten
+      vóór je aanvinkt) en één regel naar die pagina.
+
+      De regel in de DICHTE vouw zegt nog steeds wat je krijgt ("vier foto's per
+      product"), dus wie hier nooit klikt mist niets. */}
   <p class="pl-hoeken-h pl-hoeken-h2">
     <span class="pl-hoeken-tarief" data-pl-angle-rate>{c.per.replace('{price}', euro(startTarief, lang))} · {vatLabel('excl', lang)}</span>
+    <a class="pijl pl-hoeken-uit" href={lp('/per-product')}>{c.seeAll}</a>
   </p>
-  <p class="hint pl-hoeken-hint">{c.extraLine.replace('{max}', String(MAX_EXTRA_PER_PRODUCT))}</p>
 
   {perGroep.map((g) => (
     <div class="pl-hoek-groep">
@@ -154,9 +160,12 @@ const vasteRegel = lang === 'nl'
                     `a.shot` blijft in de data staan voor de plekken waar een
                     foto wél het antwoord is. */}
                 <span class="pl-hoek-shot"><AngleSketch id={a.id} /></span>
+                {/* Alleen de naam. De zin die hier stond is verhuisd naar
+                    /per-product — acht zinnen onder acht tegels was het halve
+                    gewicht van dit blok, en je leest ze toch pas als je twijfelt.
+                    De tekening zegt in het klein al wat de hoek is. */}
                 <span class="pl-hoek-t">
                   <b class="pl-hoek-naam">{a.name[lang] || a.name.en}</b>
-                  <span class="pl-hoek-regel">{a.line[lang] || a.line.en}</span>
                 </span>
               </span>
             </label>
@@ -196,7 +205,10 @@ const vasteRegel = lang === 'nl'
   }
 
   .pl-hoeken-h { margin: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
-  .pl-hoeken-h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .8rem; margin-top: clamp(1.6rem, 3vw, 2.2rem); }
+  /* Geen marge meer bovenaan: sinds 10 september staat er niets meer boven dit
+     blok — de vier vaste opnames en de uitleg zijn /per-product geworden. */
+  .pl-hoeken-h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .8rem; margin-top: 0; }
+  .pl-hoeken-uit { margin-left: auto; font-size: .85rem; }
   .pl-hoeken-tarief { font-family: var(--font-mono); font-size: .74rem; letter-spacing: .04em; color: var(--ink-3); font-weight: 400; }
   /* .6rem en niet .3rem: bij .3rem stond er vijf pixels tussen deze zin en het
      blok erboven, en kladblok/te-dicht.mjs telt alles onder acht als plakken. */
@@ -204,13 +216,6 @@ const vasteRegel = lang === 'nl'
 
   /* De vier vaste hoeken: chips en geen tegels. Ze zijn een mededeling, en een
      tegel met een foto zou ze even zwaar maken als de acht die je wél kiest. */
-  .pl-hoeken-vast { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; }
-  .pl-hoeken-vast li {
-    padding: .35rem .75rem; border-radius: var(--r-pill);
-    background: var(--ghost, rgb(17 17 17 / .06));
-    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .05em; text-transform: uppercase;
-    color: var(--ink-2);
-  }
 
   .pl-hoek-groep { margin-top: clamp(1.1rem, 2.2vw, 1.5rem); }
   .pl-hoek-groep-h {
@@ -269,7 +274,6 @@ const vasteRegel = lang === 'nl'
      de langste buurtegel opeist — vier namen naast elkaar op vier hoogtes. */
   .pl-hoek-t { display: grid; align-content: start; gap: .15rem; padding: 0 .7rem .7rem; }
   .pl-hoek-naam { font-size: .88rem; color: var(--ink); }
-  .pl-hoek-regel { font-size: .78rem; line-height: 1.45; color: var(--ink-3); }
 
   /* Vol: de vier zijn op. De overige tegels blijven staan en blijven leesbaar —
      ze zijn alleen niet meer aan te vinken. Verdwijnen zou de klant laten zoeken

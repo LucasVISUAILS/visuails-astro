@@ -318,7 +318,7 @@ export const PLAN_SLOTS = {
    typefout in een plan bij de bouw omvalt en niet bij een klant. */
 export const SLOT_KINDS = {
   complete:        { en: 'Complete bundle',  nl: 'Complete bundel',    per: { en: '4 catalog images and a 3-image lifestyle carousel', nl: '4 catalogbeelden en een lifestylecarrousel van 3' } },
-  catalog:         { en: 'Catalog set',      nl: 'Catalogset',         per: { en: '4 images — front, back, detail, on model',          nl: '4 beelden — front, back, detail, op model' } },
+  catalog:         { en: 'Catalog set',      nl: 'Catalogset',         per: { en: 'from 4 images — front, back, detail, on model',     nl: 'vanaf 4 beelden — front, back, detail, op model' } },
   lifestyle:       { en: 'Lifestyle carousel', nl: 'Lifestylecarrousel', per: { en: '3 images in your fixed look',                     nl: '3 beelden in jouw vaste look' } },
   'video-motion':  { en: 'Motion clip',      nl: 'Motion-clip',        per: { en: 'the product in motion, 8 seconds',                  nl: 'het product in beweging, 8 seconden' } },
   'video-lifestyle': { en: 'Lifestyle clip', nl: 'Lifestyle-clip',     per: { en: 'a clip in a styled scene',                          nl: 'een clip in een gestileerde scène' } },

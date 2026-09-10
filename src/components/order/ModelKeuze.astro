@@ -1,0 +1,125 @@
+---
+/*
+ * VISUAILS — WIE HET DRAAGT, IN STAP 2 NAAST DE PRODUCTEN
+ * 10 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Verplaats model keuze naar material gedeelte van bestelform bij alle
+ * bestelforms. Dan word het eerste scherm al wat rustiger en de klant moet toch
+ * bij elk product kunnen kiezen wie het draagt."*
+ *
+ * ── WAAROM STAP 2 DE JUISTE PLEK IS EN STAP 1 NIET ──────────────────────────
+ *
+ * In stap 1 stond het gezicht tussen de achtergrond en de beeldverhouding: drie
+ * vouwen die alle drie een veilige standaard hadden, in een stap die verder
+ * over AANTAL en PRIJS gaat. Een gezicht heeft daar niets te zoeken — het hoort
+ * bij het product, niet bij de bestelling.
+ *
+ * In stap 2 staat het product zelf: de foto's die je opstuurt, per product een
+ * kaart. Naast die kaarten is "wie draagt het" een eigenschap van wat je stuurt,
+ * en dan klopt ook de volgorde die Lucas noemt — *"het gaat namelijk
+ * voornamelijk om het product en het model hoort er bij."* Vandaar dat dit blok
+ * BOVEN de kaarten staat en klein is: het zet de standaard voor alles wat
+ * eronder komt, en elke kaart mag ervan afwijken met zijn eigen keuzelijst
+ * (buildModelKeuze in pipeline.js).
+ *
+ * ── OPEN IN BEELD, EN DAT IS EEN EIS ────────────────────────────────────────
+ *
+ * Het stond in een <details>. Dat kan hier niet meer: syncRequired() in
+ * pipeline.js zet de eis alleen aan voor velden die ZICHTBAAR zijn — een
+ * verplichte radio in een dichte vouw is een val die niemand kan invullen en
+ * die de knop Verder stilletjes zou blokkeren. Wie moet kiezen, moet kunnen
+ * zien waaruit.
+ *
+ * En daarom is de vorm een STROOK en geen raster: elf portretten onder elkaar
+ * zouden de productkaarten van het scherm duwen. Gemeten is de kiezer als
+ * raster 1051 pixels open en als strook 140.
+ */
+import ModelPicker from './ModelPicker.astro';
+
+interface Props {
+  lang: 'en' | 'nl';
+  /** Dezelfde drie soorten als ModelPicker: welke zin er boven de tegels hoort. */
+  soort?: 'catalog' | 'lifestyle' | 'proef';
+  /* ── EN OP DE PROEF IS HET GÉÉN EIS ────────────────────────────────────────
+     Lucas vroeg om een gedwongen keuze bij een eerste bestelling, en op dezelfde
+     dag om een proef die *"zo min mogelijk moeite is om in te vullen voor de
+     klant."* Op een bestelling van één euro met één product wint die tweede: de
+     proef is er om te laten zien wat er terugkomt, en een verplicht veld tussen
+     de klant en dat antwoord is een drempel zonder opbrengst. "Wij kiezen er
+     een" staat daar dus gewoon voor — een echt antwoord, geen leeg veld. */
+  verplicht?: boolean;
+}
+const { lang, soort = 'catalog', verplicht = true } = Astro.props;
+const nl = lang === 'nl';
+
+const c = nl ? {
+  h: 'Wie draagt het?',
+  hint: verplicht
+    ? 'Eén keuze voor de hele bestelling. Per product kun je hem hieronder aanpassen.'
+    : 'Laat je hem staan, dan kiezen wij een gezicht dat bij je merk past.',
+} : {
+  h: 'Who wears it?',
+  hint: verplicht
+    ? 'One choice for the whole order. You can change it per product below.'
+    : 'Leave it as it is and we pick a face that fits your brand.',
+};
+---
+
+{/* `data-pl-merkkit`-haak: toonMerkkit() in pipeline.js verbergt dit blok voor
+    een account dat zijn gezicht al heeft vastgelegd, en zet er in stap 1 een
+    regel voor in de plaats. Die haak zat op de wikkel om de oude vouw in stap 1
+    en is met de vraag meeverhuisd — hij hoort bij de VRAAG en niet bij de plek.
+
+    Verborgen blijft de radio gewoon aangevinkt en gaat hij gewoon mee met de
+    bestelling; syncRequired() zet de eis eraf omdat het blok niet zichtbaar is,
+    en dat is precies goed: er valt niets te kiezen wat al gekozen is. */}
+{/* De klasse heet `mdl` en niet `mk`: `.mk` is de merkletter in de kop van
+    elke pagina (BrandMark.astro, en een ongescopeerde animatie in global.css).
+    Twee betekenissen voor één naam is precies hoe je een logo laat meebewegen
+    met een modelkiezer — gevonden bij het nameten, toen `.mk` een element van
+    26 bij 30 pixels in de sitekop bleek te zijn. */}
+<div class="mdl" data-pl-model-fold>
+  <div class="mdl-kop">
+    <h3 class="mdl-h">{c.h}</h3>
+    <p class="mdl-hint">{c.hint}</p>
+  </div>
+  {/* `verplicht` haalt de voorselectie van "wij kiezen er een" weg en zet de
+      eis op de radio's. Zie de kop van ModelPicker voor waarom dat alleen werkt
+      als dit blok open in beeld staat. */}
+  <ModelPicker lang={lang} soort={soort} vorm="strook" verplicht={verplicht} />
+</div>
+
+<style>
+  /* Een haarlijn eronder en verder niets: dit blok hoort bij de kaarten die
+     eronder komen, en een kader eromheen zou het ervan losmaken. Dezelfde vorm
+     als elke andere scheiding in dit formulier. */
+  .mdl {
+    margin-bottom: 1.2rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  /* De kop en de uitleg naast elkaar zolang het past: samen zijn ze één zin —
+     "wie draagt het, en dat geldt voor alles hieronder" — en twee regels zouden
+     er twee mededelingen van maken. */
+  .mdl-kop {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2rem .8rem;
+  }
+  .mdl-h { margin: 0; font-size: .95rem; font-weight: 600; color: var(--ink); }
+  .mdl-hint { margin: 0; font-size: .82rem; line-height: 1.5; color: var(--ink-3); }
+
+  /* De kiezer draagt zijn eigen kop ("De foto op een model") en die zou hier
+     boven de onze staan. Weg ermee: `.mdl-h` zegt het al, korter, en twee koppen
+     boven één rij tegels is precies het soort dubbeling waar dit hele blok een
+     antwoord op is. De kop blijft in de HTML staan omdat de radiogroep er via
+     aria-labelledby naar wijst — verbergen en niet verwijderen. */
+  .mdl :global(#pl-model-h) {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  /* Ook de eigen marge van de kiezer valt weg: de afstand komt van dit blok. */
+  .mdl :global(.pl-model) { margin-top: 0; padding-top: 0; border-top: 0; }
+</style>

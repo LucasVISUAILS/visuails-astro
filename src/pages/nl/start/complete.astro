@@ -52,24 +52,36 @@
 // catalogbewoording gesteld ("bij elke catalogset zit één foto op een model"),
 // terwijl deze bestelling ook een foto op een model in de carousel heeft.
 //
-// Er staat GEEN TWEEDE kiezer, en dat is een bewuste keuze en geen gemak:
-// LifestyleModelFold en Step1Options posten allebei `name="model"`, dus twee
-// kiezers op één pagina zijn in HTML één radiogroep — een gezicht kiezen voor
-// de carousel zou het gezicht voor de catalogset uitvinken. En los daarvan is
-// één gezicht het antwoord dat klopt: het is hetzelfde merk in dezelfde
-// bestelling. `modelSoort="beide"` zegt dat in de vraag zelf.
+// Er staat GEEN TWEEDE kiezer, en dat is een bewuste keuze en geen gemak: elke
+// kiezer post `name="model"`, dus twee kiezers op één pagina zijn in HTML één
+// radiogroep — een gezicht kiezen voor de carousel zou het gezicht voor de
+// catalogset uitvinken. En los daarvan is één gezicht het antwoord dat klopt:
+// het is hetzelfde merk in dezelfde bestelling. Sinds 10 september staat die
+// ene kiezer in stap 2, boven de productkaarten (ModelKeuze.astro), en stelt
+// hij één korte vraag die voor allebei de helften geldt.
 import Layout from '../../../layouts/Layout.astro';
 import OrderFlow from '../../../components/order/OrderFlow.astro';
 import Step1Options from '../../../components/order/Step1Options.astro';
 import AnglePicker from '../../../components/order/AnglePicker.astro';
 import StijlRegel from '../../../components/order/StijlRegel.astro';
+import CombiKeuze from '../../../components/order/CombiKeuze.astro';
+import ModelKeuze from '../../../components/order/ModelKeuze.astro';
 ---
 
 <Layout title="Catalogsets en lifestyle-carousels bestellen — VISUAILS" description="De pagina en de feed in één bestelling: zeven beelden per product. Kies het aantal, de look en de achtergrond.">
   <OrderFlow lang="nl" service="complete">
+    {/* Stap 2, boven de productkaarten — zie ModelKeuze.astro. De slot
+        heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
+        deze bron staat maakt dus niet uit voor waar het terechtkomt. */}
+    <ModelKeuze slot="model" lang="nl" soort="catalog" />
+    {/* De combinatie staat als eerste in de slot, dus direct onder het
+        meelopende totaal: daar heeft de klant net gezien wat zijn aantal
+        kost, en dat is het moment waarop een lager tarief per beeld iets
+        betekent. Zie CombiKeuze.astro. */}
+    <CombiKeuze lang="nl" richting="eraf" />
     <StijlRegel lang="nl" categorie="catalog" toonHelft />
     <StijlRegel lang="nl" categorie="lifestyle" toonHelft />
-    <Step1Options lang="nl" modelSoort="beide" />
+    <Step1Options lang="nl" />
     {/* De hoeken staan NA de drie vouwen en niet ertussen: het is de enige vraag
         in stap 1 die geld kost, en een blok met een prijskaartje hoort niet
         tussen drie antwoorden te staan die alle drie al een veilige standaard
