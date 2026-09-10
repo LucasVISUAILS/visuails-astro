@@ -444,6 +444,10 @@ export async function adminPost(context) {
   const deleteMatch = path.match(/^\/admin\/orders\/(\d+)\/delete$/);
   if (deleteMatch) return handleOrderDelete(context, Number(deleteMatch[1]));
 
+  /* Alle proefbestellingen in één keer uit de lijsten. Zie handleProefOpruimen()
+     voor waarom dit VERBERGEN is en geen verwijderen. */
+  if (path === '/admin/proef/opruimen') return handleProefOpruimen(context);
+
   const wipeMatch = path.match(/^\/admin\/customers\/(\d+)\/wipe$/);
   if (wipeMatch) return handleCustomerWipe(context, Number(wipeMatch[1]));
 
@@ -1290,6 +1294,48 @@ async function handleOrderHide(context, orderId) {
   ).bind(orderId).run().catch(() => {});
   await logAdmin(env, admin, show ? 'order.unhide' : 'order.hide', { orderId, detail: order.ref });
   return seeOther(show ? '/admin?hidden=1' : '/admin');
+}
+
+/*
+ * ── ALLE PROEFBESTELLINGEN IN ÉÉN KEER — 10 september 2026 ───────────────────
+ *
+ * Lucas: *"Ik wil namelijk nog test bestellingen doen omdat niet alles nog
+ * klopt en visuails studio ook nog vaker getest moet worden."* Dat worden er
+ * tientallen, en ze staan straks door zijn echte werk heen.
+ *
+ * VERBERGEN EN NIET VERWIJDEREN, en dat is met opzet. Het blok boven
+ * handleOrderCancel() legt uit waarom die twee niet hetzelfde zijn: verbergen
+ * haalt een bestelling uit de lijsten en uit de cijfers en laat de rij staan,
+ * verwijderen mag alleen als er niet betaald is. Een proefbestelling ís betaald
+ * — met testgeld, maar de kolom zegt 'paid' — dus zou een opruimknop die
+ * verwijdert precies de controle omzeilen die er staat om een échte betaalde
+ * bestelling te beschermen. Eén knop die per ongeluk op de verkeerde rij landt,
+ * is dan onherstelbaar.
+ *
+ * Verbergen is dat niet: het is één UPDATE, hij is terug te draaien met de
+ * bestaande "weer tonen"-knop op /admin?hidden=1, en het resultaat op het scherm
+ * is hetzelfde — de lijsten en de cijfers zijn schoon. Wie een proefbestelling
+ * daarna écht weg wil hebben, gebruikt de bestaande verwijderknop per rij.
+ *
+ * De facturen blijven ook staan, en dat hóórt: ze dragen een PROEF-nummer uit
+ * een eigen reeks (zie src/lib/invoice.js) en zitten dus per definitie niet in
+ * de boekhouding. Ze weggooien zou niets oplossen en het bewijs wegnemen dat de
+ * factuurstap werkte toen hij getest werd.
+ */
+async function handleProefOpruimen(context) {
+  const { env } = context;
+  const admin = await currentAdmin(context);
+
+  const uit = await env.DB.prepare(
+    "UPDATE orders SET hidden_at = datetime('now') WHERE testmodus = 1 AND hidden_at IS NULL"
+  ).run().catch((err) => {
+    console.error('[admin] proefbestellingen opruimen mislukt:', err?.message || err);
+    return null;
+  });
+
+  const aantal = Number(uit?.meta?.changes ?? uit?.changes ?? 0) || 0;
+  await logAdmin(env, admin, 'order.proef.hide', { detail: `${aantal} proefbestelling(en) verborgen` });
+  return seeOther('/admin');
 }
 
 /**
@@ -6692,6 +6738,9 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
     `SELECT id, customer_id, ref, service, status, tier, brand, email, product_count,
             window_start, window_end, payment_status, total_cents, created_at,
             delivered_at, delivery_mailed_at, hidden_at, cancel_reason, cancel_payment,
+            /* COALESCE, want deze kolom komt uit migratie 0046 en een database die
+               daarop achterloopt hoort een lege lijst te tonen en geen fout. */
+            COALESCE(testmodus, 0) AS testmodus,
             (SELECT COUNT(*) FROM files f WHERE f.order_id = orders.id) AS file_count
        FROM orders
       ${where}
@@ -9024,6 +9073,17 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
     return `<a class="fl-chip${on ? ' is-active' : ''}" href="/admin${qs ? `?${qs}` : ''}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
   };
 
+  /* ── DE OPRUIMKNOP VERSCHIJNT ALLEEN ALS ER IETS OP TE RUIMEN VALT ─────────
+     Geteld uit de lijst die hier toch al staat, en niet met een extra query: het
+     getal hoeft niet exact te zijn over alle 200+ rijen heen, het moet alleen
+     kloppen met wat je vóór je ziet. Staat er niets, dan is er ook geen knop —
+     een knop die "verberg 0 proefbestellingen" zegt, is een knop die je leert
+     negeren.
+
+     `hidden_at` erin, want een proefbestelling die al verborgen is hoeft niet
+     nog een keer. Op /admin?hidden=1 telt hij dus alleen wat er nog open staat. */
+  const proefZichtbaar = (orders || []).filter((o) => Number(o.testmodus) === 1 && !o.hidden_at).length;
+
   const searchRow = `
 <form class="searchrow" method="get" action="/admin">
   ${statusFilter ? `<input type="hidden" name="status" value="${esc(statusFilter)}">` : ''}
@@ -9040,6 +9100,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
   ${chip('paid_undelivered', 'Betaald, niet geleverd')}
   ${chip('delivered_unpaid', 'Geleverd, niet betaald')}
   <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Verborgen weer weg' : 'Ook verborgen'}</a>
+  ${proefZichtbaar ? `<form class="fl-form" method="post" action="/admin/proef/opruimen"><button class="fl-chip fl-chip-doe" type="submit">Verberg ${proefZichtbaar} proefbestelling${proefZichtbaar === 1 ? '' : 'en'}</button></form>` : ''}
 </div>`;
 
   /* ── RECHTS: WAT VANDAAG TELT ─────────────────────────────────────────── */
@@ -9273,6 +9334,15 @@ function orderCard(o, models, statusFilter = '') {
   const waar = o.window_start
     ? `${esc(o.window_start)} → ${esc(o.window_end)}`
     : '<span class="muted">zo snel mogelijk</span>';
+  /* ── HET PROEFMERK STAAT NAAST DE ANDERE MERKTEKENS, NIET IN PLAATS ERVAN ──
+     De keten hieronder kiest er precies één, want die merktekens zijn allemaal
+     "iets vraagt aandacht" en dan is de dringendste de juiste. Dit is een andere
+     soort: het zegt niet dat er iets moet gebeuren, het zegt wat voor bestelling
+     dit ÍS. Een proefbestelling die ook nog een gebouncete mail heeft, moet
+     allebei laten zien — anders lees je een testregel als echt werk. */
+  const proefmerk = Number(o.testmodus) === 1
+    ? '<span class="or-let is-proef" title="Aangenomen met een test_-sleutel: geen echt geld, en de factuur komt uit de PROEF-reeks">proef</span>'
+    : '';
   const merkteken = o.bounce
     ? `<span class="or-let is-rood" title="${esc(bounceLine(o.bounce))}">mail bounced</span>`
     : (o.status === 'delivered' && !o.delivery_mailed_at)
@@ -9283,7 +9353,7 @@ function orderCard(o, models, statusFilter = '') {
   return `
 <details class="or" id="order-${o.id}">
   <summary class="or-rij">
-    <span class="or-ref"><span class="ref">${esc(o.ref)}</span>${merkteken}</span>
+    <span class="or-ref"><span class="ref">${esc(o.ref)}</span>${proefmerk}${merkteken}</span>
     <span class="or-merk"><strong>${esc(o.brand || '—')}</strong><span class="meta">${esc(o.email)}</span></span>
     <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : 'wachtrij')}</span></span>
     <span class="or-wanneer">${waar}<span class="meta">binnen ${esc(when(o.created_at).slice(0, 10))}</span></span>

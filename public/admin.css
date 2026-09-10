@@ -577,6 +577,13 @@ table.files tr:last-child td { border-bottom: 0; }
 }
 a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: var(--ghost); }
 .fl-chip.is-active { border-color: var(--teal); color: var(--teal-text); background: var(--ghost); font-weight: 700; }
+/* De opruimknop staat in dezelfde rij als de filters en ziet er ook zo uit — het
+   is één klik met hetzelfde gewicht als een filter, en hij is terug te draaien
+   met "Ook verborgen". Een <button> in een <form> tussen de <a>-chips, dus de
+   knopeigen opmaak van de browser moet er nog af. */
+.fl-form { display: inline; }
+button.fl-chip { font-family: inherit; background: none; cursor: pointer; }
+button.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: var(--ghost); }
 /* De btw-controle, als er iets in behandeling is. Amber en niet rood, om dezelfde
    reden als de twee tellers in de strook: er is niets stuk, er wacht iemand op jou.
    Rood zou zeggen dat er een fout is, en de meeste bestellingen die hier belanden
@@ -1081,6 +1088,12 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .or-ref { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
 .or-let { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--warn-ink); border: 1px solid var(--warn-ink); border-radius: var(--r-pill); padding: .05rem .4rem; }
 .or-let.is-stil { color: var(--ink-3); border-color: var(--line-strong); }
+/* Het proefmerk — 10 september 2026. GEVULD en niet omlijnd, als enige van de
+   merktekens: de andere zijn waarschuwingen op een echte bestelling en horen
+   dezelfde vorm te delen, dit zegt dat de hele regel geen echt werk is. In het
+   accentgeel met donkere letter, dus onmiskenbaar en toch niet alarmerend —
+   alarmrood zou zeggen dat er iets mis is, en er is niets mis. */
+.or-let.is-proef { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 .or-merk strong { display: block; font-weight: 600; overflow-wrap: anywhere; }
 .or-merk .meta { overflow-wrap: anywhere; }
 .or-betaal { font-size: .82rem; color: var(--ink-3); }

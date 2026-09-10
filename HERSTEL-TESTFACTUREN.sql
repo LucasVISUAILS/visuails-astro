@@ -1,4 +1,18 @@
 -- ─────────────────────────────────────────────────────────────────────────────
+-- ⚠ VERVANGEN — GEBRUIK RESET-FACTUURREEKS.sql (10 september 2026)
+--
+-- Dit bestand doet de helft van het werk en dat is sinds migratie 0046 niet meer
+-- genoeg: het gooit de facturen weg en zet de teller terug, maar merkt de
+-- BESTELLINGEN niet als proef. Gevolg is dat de inhaalslag in issueInvoice() ze
+-- bij je eerstvolgende bezoek aan VISUAILS Studio → Facturen gewoon opnieuw
+-- aanmaakt, met dezelfde nummers uit dezelfde echte reeks. Je bent dan precies
+-- waar je begon.
+--
+-- RESET-FACTUURREEKS.sql doet hetzelfde MET het merken, in de goede volgorde.
+-- Hieronder blijft staan als verslag van 9 augustus 2026; draai het niet.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- DE TESTFACTUREN OPRUIMEN EN DE TELLER OP NUL
 --
 -- ⚠ ALLEEN VÓÓR DE EERSTE ECHTE KLANTFACTUUR. Daarna nooit meer.

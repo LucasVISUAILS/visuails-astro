@@ -1546,3 +1546,19 @@ CREATE TABLE IF NOT EXISTS mail_bounces (
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_mail_bounces_email ON mail_bounces(email, resolved_at);
+
+-- Proefbestellingen — migratie 0046, 10 september 2026.
+--
+-- Een bestelling die is aangenomen terwijl de Mollie-sleutel met `test_` begon,
+-- draagt hier een 1. Dat is wat haar uit de échte factuurreeks houdt: zie
+-- issueInvoice() in src/lib/invoice.js, dat voor zo'n bestelling een nummer uit
+-- een eigen PROEF-reeks geeft in plaats van uit de reeks die geen gaten mag
+-- hebben. De stand wordt OPGESLAGEN en niet afgeleid, want de sleutel wordt
+-- straks een `live_`-sleutel en dan zou elke oude proefbestelling ineens echt
+-- lijken. Zie de kop van migrations/0046-proefbestellingen.sql.
+ALTER TABLE orders                ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE invoices              ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE subscriptions         ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE subscription_invoices ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE credit_notes          ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_orders_proef ON orders(testmodus) WHERE testmodus = 1;

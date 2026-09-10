@@ -153,23 +153,53 @@ export function sellerOf(env) {
  * overheen genummerd, dan raakt de UPDATE niets en blijft het gat staan. Liever
  * een gat dan twee facturen met hetzelfde nummer.
  */
-async function geefNummerTerug(env, year, seq) {
-  await env.DB.prepare(
-    'UPDATE invoice_series SET last_number = last_number - 1 WHERE year = ?1 AND last_number = ?2'
-  ).bind(year, seq).run().catch(() => {});
+/*
+ * ── DE PROEFREEKS — 10 september 2026 ───────────────────────────────────────
+ *
+ * Lucas wil nog een reeks proefbestellingen doen voordat er echt geld door de
+ * site loopt. Alles daaraan is terug te draaien behalve dit bestand: een nummer
+ * wordt uitgegeven en nooit meer teruggegeven, dus twintig proefbestellingen
+ * zijn twintig echte facturen in zijn boekhouding en de eerste échte klant
+ * begint op nummer 21.
+ *
+ * Een proefbestelling krijgt daarom een nummer uit een TWEEDE reeks. Die reeks
+ * gedraagt zich precies zoals de echte — één teller die door facturen,
+ * abonnementsfacturen én creditnota's samen wordt opgehoogd, zodat twee
+ * documenten nooit hetzelfde nummer kunnen dragen — en dat is ook waarom hij
+ * dezelfde tabel gebruikt in plaats van een eigen tabel of een nummer dat uit
+ * de bestelling zelf wordt afgeleid. Alles wat hierna komt, geldt voor allebei
+ * de reeksen zonder dat er ergens een tweede code-pad bij komt.
+ *
+ * DE SLEUTEL IS HET NEGATIEVE JAAR. `invoice_series.year` is de primaire sleutel
+ * en INTEGER; -2026 is dus een geldige, gegarandeerd botsingsvrije tweede rij
+ * naast 2026. Het is een truc, en daarom staat hij hier opgeschreven in plaats
+ * van dat iemand hem over een half jaar in een query tegenkomt en zich afvraagt
+ * hoe een factuur uit het jaar min tweeduizend zesentwintig kan komen. Het jaar
+ * dat in `invoices.year` terechtkomt is gewoon 2026: de reeks staat in het
+ * NUMMER (`PROEF-…`) en in de kolom `testmodus`, niet in het jaartal.
+ */
+function reeksSleutel(year, proef) {
+  return proef ? -Number(year) : Number(year);
 }
 
-async function nextNumber(env, year) {
+async function geefNummerTerug(env, year, seq, proef = false) {
+  await env.DB.prepare(
+    'UPDATE invoice_series SET last_number = last_number - 1 WHERE year = ?1 AND last_number = ?2'
+  ).bind(reeksSleutel(year, proef), seq).run().catch(() => {});
+}
+
+async function nextNumber(env, year, proef = false) {
+  const sleutel = reeksSleutel(year, proef);
   await env.DB.prepare(
     'INSERT INTO invoice_series (year, last_number) VALUES (?1, 0) ON CONFLICT(year) DO NOTHING'
-  ).bind(year).run();
+  ).bind(sleutel).run();
 
   const row = await env.DB.prepare(
     `UPDATE invoice_series
         SET last_number = last_number + 1, updated_at = datetime('now')
       WHERE year = ?1
       RETURNING last_number`
-  ).bind(year).first();
+  ).bind(sleutel).first();
 
   if (!row || !Number.isInteger(row.last_number)) {
     throw new Error('invoice: kon geen nummer uitgeven voor ' + year);
@@ -177,9 +207,21 @@ async function nextNumber(env, year) {
   return row.last_number;
 }
 
-/** 'VIS-2026-0001'. Vier cijfers, want een reeks die op 10000 komt is een luxeprobleem. */
-export function formatNumber(year, seq) {
-  return `VIS-${year}-${String(seq).padStart(4, '0')}`;
+/**
+ * 'VIS-2026-0001'. Vier cijfers, want een reeks die op 10000 komt is een
+ * luxeprobleem.
+ *
+ * `PROEF-2026-0001` voor de proefreeks. Het woord staat vooraan en niet
+ * achteraan omdat een factuurnummer overal wordt afgekapt — in een lijst, in een
+ * bestandsnaam, in een mailonderwerp — en wat er dan overblijft is het begin.
+ */
+export function formatNumber(year, seq, proef = false) {
+  return `${proef ? 'PROEF' : 'VIS'}-${year}-${String(seq).padStart(4, '0')}`;
+}
+
+/** Is dit nummer uit de proefreeks? Voor een lezer die alleen het nummer heeft. */
+export function isProefNummer(number) {
+  return /^PROEF-/.test(String(number || ''));
 }
 
 /*
@@ -449,17 +491,24 @@ export async function issueInvoice(env, orderId, { today } = {}) {
   // Bestaat er al een nummer maar geen pdf, dan gebruiken we DAT nummer opnieuw.
   // Een tweede uitgeven zou een gat in de reeks achterlaten op de plek van de
   // eerste poging.
+  /* De stand komt van de BESTELLING en niet van de sleutel van dit moment. Een
+     bestelling die vorige week met een `test_`-sleutel is aangenomen, blijft een
+     proefbestelling ook nadat de live-sleutel erin staat — zie de kop van
+     migrations/0046-proefbestellingen.sql. Dat is precies waarom die kolom
+     bestaat in plaats van dat hier isTestmodus(env) wordt gelezen. */
+  const proef = Number(order.testmodus) === 1;
+
   let row = existing;
   if (!row) {
-    const seq = await nextNumber(env, year);
-    const number = formatNumber(year, seq);
+    const seq = await nextNumber(env, year, proef);
+    const number = formatNumber(year, seq, proef);
     const snap = snapshotFromOrder(order, env, { number, date });
     try {
       await env.DB.prepare(
-        `INSERT INTO invoices (number, year, seq, order_id, customer_id, status, snapshot_json, lang)
-         VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6, ?7)`
+        `INSERT INTO invoices (number, year, seq, order_id, customer_id, status, snapshot_json, lang, testmodus)
+         VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?8)`
       ).bind(number, year, seq, orderId, order.customer_id || null,
-             JSON.stringify(snap), snap.lang).run();
+             JSON.stringify(snap), snap.lang, proef ? 1 : 0).run();
     } catch (e) {
       /* `invoices.order_id` is UNIQUE, en dat is precies de bedoeling: twee
          gelijktijdige aanroepen — twee tabbladen op /account/invoices, allebei
@@ -468,7 +517,7 @@ export async function issueInvoice(env, orderId, { today } = {}) {
          gemaakt, dus hoort de verliezer díé terug te geven in plaats van een
          fout. Zijn eigen nummer gaat terug in de reeks. */
       if (!/UNIQUE/i.test(String(e && e.message))) throw e;
-      await geefNummerTerug(env, year, seq);
+      await geefNummerTerug(env, year, seq, proef);
       console.log('[factuur] gelijktijdige uitgifte voor bestelling', orderId, '— nummer', number, 'teruggegeven');
     }
     row = await env.DB.prepare('SELECT * FROM invoices WHERE order_id = ?1').bind(orderId).first();
@@ -686,27 +735,32 @@ export async function issueSubscriptionInvoice(env, subscriptionPaymentId, { tod
   if (!date) throw new Error('factuur: geen datum voor abonnementsbetaling ' + subscriptionPaymentId);
   const year = Number(date.slice(0, 4));
 
+  /* Van het ABONNEMENT, niet van de sleutel van dit moment — dezelfde reden als
+     bij een bestelfactuur: wat het was toen het werd afgesloten, verandert niet
+     meer als de live-sleutel erin gaat. */
+  const proef = Number(sub.testmodus) === 1;
+
   let row = bestaand;
   if (!row) {
-    const seq = await nextNumber(env, year);
-    const number = formatNumber(year, seq);
+    const seq = await nextNumber(env, year, proef);
+    const number = formatNumber(year, seq, proef);
     const snap = snapshotFromSubscription(
       { sub, customer, payment: betaling, month: betaling.month, lang: taal }, env, { number, date }
     );
     try {
       await env.DB.prepare(
         `INSERT INTO subscription_invoices
-           (number, year, seq, subscription_id, subscription_payment_id, customer_id, month, status, snapshot_json, lang)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9)`
+           (number, year, seq, subscription_id, subscription_payment_id, customer_id, month, status, snapshot_json, lang, testmodus)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9, ?10)`
       ).bind(number, year, seq, sub.id, subscriptionPaymentId, sub.customer_id || null,
-             betaling.month || null, JSON.stringify(snap), snap.lang).run();
+             betaling.month || null, JSON.stringify(snap), snap.lang, proef ? 1 : 0).run();
     } catch (e) {
       /* Zie de gelijkluidende noot in issueInvoice(): de UNIQUE sleutel op
          subscription_payment_id is de idempotentie, en de verliezer van een race
          hoort de factuur van de winnaar terug te geven — niet te gooien en zijn
          nummer mee te nemen. */
       if (!/UNIQUE/i.test(String(e && e.message))) throw e;
-      await geefNummerTerug(env, year, seq);
+      await geefNummerTerug(env, year, seq, proef);
       console.log('[factuur] gelijktijdige uitgifte voor abonnementsbetaling', subscriptionPaymentId, '— nummer', number, 'teruggegeven');
     }
     row = await env.DB.prepare(
@@ -904,19 +958,25 @@ export async function issueCreditNote(env, orderId, { refundedGrossCents, reason
 
   const date = String(today || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
   const year = Number(date.slice(0, 4));
-  const seq = await nextNumber(env, year);
-  const number = formatNumber(year, seq);
+  /* GEËRFD VAN DE FACTUUR, en niet opnieuw vastgesteld. Een creditnota bestaat
+     alleen als tegenhanger van één bepaalde factuur; is die uit de proefreeks,
+     dan kán deze nota niet echt zijn. Zou hij hier zijn eigen stand bepalen, dan
+     kon een sleutelwissel tussen factuur en creditering een echte negatieve
+     regel opleveren die nergens een tegenboeking heeft. */
+  const proef = Number(invoice.testmodus) === 1;
+  const seq = await nextNumber(env, year, proef);
+  const number = formatNumber(year, seq, proef);
   const creditSnap = creditSnapshotFrom(snap, { number, date, netCents: net, grossCents: room, reason });
 
   await env.DB.prepare(
     `INSERT INTO credit_notes
        (number, year, seq, invoice_id, order_id, customer_id, net_cents, vat_cents, gross_cents,
-        reason, status, snapshot_json, lang)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'pending', ?11, ?12)`
+        reason, status, snapshot_json, lang, testmodus)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'pending', ?11, ?12, ?13)`
   ).bind(
     number, year, seq, invoice.id, orderId, invoice.customer_id || null,
     creditSnap.netCents, creditSnap.vatCents, creditSnap.grossCents,
-    reason || null, JSON.stringify(creditSnap), creditSnap.lang
+    reason || null, JSON.stringify(creditSnap), creditSnap.lang, proef ? 1 : 0
   ).run();
 
   const row = await env.DB.prepare('SELECT * FROM credit_notes WHERE number = ?1').bind(number).first();

@@ -58,6 +58,10 @@ import {
 // geeft het TARIEF door uit pricing.js. Het getal staat hier met opzet niet: een
 // noot die het tarief herhaalt, is de vierde plek waar het kan verouderen.
 import { VAT_RATE } from './quote.js';
+/* Alleen voor het proefmerk op een nieuw abonnement: het voorvoegsel van de
+   Mollie-sleutel bepaalt of er echt geld door dit abonnement kan lopen. Zie
+   isTestmodus() daar, en migrations/0046-proefbestellingen.sql. */
+import { isTestmodus } from './mollie.js';
 
 /* De maanden die meetellen voor het saldo: deze plus het venster dat mag
  * doorschuiven. Drie bij een jaartermijn, één bij een maandtermijn — en dus
@@ -999,13 +1003,19 @@ export async function createSubscriptionRow(env, {
     const row = await env.DB.prepare(
       `INSERT INTO subscriptions (customer_id, ref, plan, term, status, window_day,
                                   amount_cents, slots_json,
-                                  vat_treatment, vat_rate, vat_country, vat_number)
-       VALUES (?1, ?2, ?3, ?4, 'pending', ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+                                  vat_treatment, vat_rate, vat_country, vat_number, testmodus)
+       VALUES (?1, ?2, ?3, ?4, 'pending', ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
        RETURNING id, ref, plan, term, status, window_day, amount_cents, slots_json`
     ).bind(customerId, ref, planId, termId, dag,
            planId === CUSTOM_MONTH_ID ? Math.round(Number(amountCents)) : null,
            slots && Object.keys(slots).length ? JSON.stringify(slots) : null,
-           btw.treatment, btw.rate, btw.country, btw.number).first();
+           btw.treatment, btw.rate, btw.country, btw.number,
+           /* Het proefmerk, hier wél in de INSERT en niet als losse UPDATE zoals bij
+              een bestelling. Het verschil is de terugval: de INSERT van een bestelling
+              heeft drie lagen voor ontbrekende migraties en die mogen niet stuk, deze
+              heeft er geen — hij werpt gewoon, en een ontbrekende migratie 0046 hoort
+              hier luidruchtig te zijn. Zie migrations/0046-proefbestellingen.sql. */
+           isTestmodus(env) ? 1 : 0).first();
     return { row, bestaat: false };
   } catch (e) {
     const bestaand = await loadSubscription(env, customerId);

@@ -383,6 +383,19 @@ console.log('\nde proefkaart onderin draagt tekst en merk');
   const bron = read('src/layouts/Layout.astro');
   check('Layout rendert de proefkaart', /<Proefkaart lang=\{lang\} \/>/.test(bron), true);
   check('de kaart leest de proef uit TEST_SAMPLE', /TEST_SAMPLE\[lang\]/.test(kaart), true);
+  /* ── DE TWEEDE VOORWAARDE HEEFT EEN EIGEN SEIN NODIG — 10 september 2026 ──
+     Lucas: *"Ik krijg geen test sample pop up."* De kaart komt na twee dingen:
+     voorbij de hero gescrold, én de cookiebanner beantwoord. Beide werden alleen
+     bij SCROLLEN nagekeken, en dus viel er precies één veelvoorkomende volgorde
+     buiten: scrollen (banner staat nog open, kaart mag niet), dan de banner
+     wegklikken — en daarna scrolt er niemand meer. Op die pagina kwam de kaart
+     nooit. In een echte browser gemeten, in allebei de volgordes.
+
+     Twee helften, dus twee controles: writeConsent() moet het omroepen, en de
+     kaart moet luisteren. Eén ervan alleen is geen werkende keten. */
+  const toestemming = read('src/scripts/consent.js');
+  check('writeConsent roept de keuze om', /dispatchEvent\(new CustomEvent\('vis:consent'/.test(toestemming), true);
+  check('en de kaart kijkt dan opnieuw', /addEventListener\('vis:consent'/.test(kaart), true);
   check('en noemt prijs en inhoud', /s\.price/.test(kaart) && /s\.deliverableShort/.test(kaart), true);
   /* ── DE BEDOELING EN NIET DE SPELLING — 8 september 2026 ────────────────
      Hier stond /VISUAILS®/, en dat werd rood toen het merkteken op 8 september

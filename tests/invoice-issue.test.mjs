@@ -88,7 +88,8 @@ const ORDER_COLS = `
   total_cents INTEGER, vat_cents INTEGER, vat_rate REAL, vat_treatment TEXT,
   vat_number TEXT, vat_consultation TEXT,
   first_name TEXT, last_name TEXT, name TEXT, brand TEXT, country TEXT,
-  address_line1 TEXT, address_line2 TEXT, postal_code TEXT, city TEXT, region TEXT`;
+  address_line1 TEXT, address_line2 TEXT, postal_code TEXT, city TEXT, region TEXT,
+  testmodus INTEGER NOT NULL DEFAULT 0`;
 
 function fresh() {
   const db = new DatabaseSync(':memory:');
@@ -98,6 +99,17 @@ function fresh() {
   // Het echte migratiebestand, niet een kopie ervan. Wijkt het schema af van wat
   // deze test aanneemt, dan valt dat hier om en niet in productie.
   db.exec(readFileSync(new URL('../migrations/0021-invoices.sql', import.meta.url), 'utf8'));
+  /* ── DE PROEFKOLOM — migratie 0046, 10 september 2026 ─────────────────────
+     Alleen de regel die over `invoices` gaat. Het hele bestand uitvoeren kan
+     niet: 0046 raakt ook `subscriptions`, `subscription_invoices` en
+     `credit_notes`, en die tabellen bestaan in deze opzet niet. De regel wordt
+     UIT HET MIGRATIEBESTAND GELEZEN en niet overgetypt, om dezelfde reden als
+     de regel erboven: wijkt de migratie af van wat deze test aanneemt, dan valt
+     dat hier om. */
+  const m0046 = readFileSync(new URL('../migrations/0046-proefbestellingen.sql', import.meta.url), 'utf8');
+  const invoiceAlter = m0046.split('\n').find((r) => /^ALTER TABLE invoices\b/.test(r.trim()));
+  if (!invoiceAlter) throw new Error('0046 heeft geen ALTER voor invoices meer — pas deze opzet aan');
+  db.exec(invoiceAlter);
   /* ── payments HOORT ERBIJ, EN DAT WAS EERST NIET ZO ──────────────────────
      issueInvoice() telt sinds 20 augustus 2026 op wat er binnengekomen is en
      weigert een factuur die daar bovenuit gaat (zie FACTUUR_SPELING_CENT in
@@ -539,6 +551,94 @@ console.log('\nde postcode wordt netjes opgeschreven');
   ok('en de Nederlandse vorm in een ander land wordt niet herschreven', normalisePostal('1234ab', 'DE') === '1234ab', '1234ab', normalisePostal('1234ab', 'DE'));
   ok('leeg blijft leeg', normalisePostal('', 'NL') === '', '', normalisePostal('', 'NL'));
   ok('null valt niet om', normalisePostal(null, 'NL') === '', '', normalisePostal(null, 'NL'));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DE PROEFREEKS — 10 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Lucas wil nog een reeks proefbestellingen doen voordat er echt geld door de
+   site loopt. Alles daaraan is terug te draaien behalve dit bestand: een nummer
+   wordt uitgegeven en nooit meer teruggegeven, dus twintig proefbestellingen
+   zijn twintig echte facturen in zijn boekhouding en de eerste échte klant
+   begint op nummer 21.
+
+   Wat hier bewezen moet worden is precies één ding, en het is een eigenschap
+   van de TELLER en niet van een etiket: een proefbestelling mag de echte reeks
+   niet laten opschuiven. Een test die alleen kijkt of er "PROEF" in het nummer
+   staat, bewijst dat niet — het nummer kan er goed uitzien terwijl de teller
+   eronder gewoon is opgehoogd. Dus: echte bestellingen erdoorheen gevlochten,
+   en daarna kijken of die 1, 2, 3 zijn geworden. */
+console.log('\nde proefreeks loopt naast de echte');
+{
+  const db = fresh();
+  const b = bucket();
+  const e = env(db, b);
+
+  const echt1 = addOrder(db, { ref: 'VIS-ECHT-1' });
+  const proef1 = addOrder(db, { ref: 'VIS-PROEF-1', testmodus: 1 });
+  const proef2 = addOrder(db, { ref: 'VIS-PROEF-2', testmodus: 1 });
+  const echt2 = addOrder(db, { ref: 'VIS-ECHT-2' });
+
+  const a = await issueInvoice(e, echt1, { today: '2026-09-10' });
+  const p1 = await issueInvoice(e, proef1, { today: '2026-09-10' });
+  const p2 = await issueInvoice(e, proef2, { today: '2026-09-10' });
+  const c = await issueInvoice(e, echt2, { today: '2026-09-10' });
+
+  ok('de eerste echte factuur is nummer 1', a.number === 'VIS-2026-0001', 'VIS-2026-0001', a.number);
+  ok('een proefbestelling krijgt een PROEF-nummer', p1.number === 'PROEF-2026-0001', 'PROEF-2026-0001', p1.number);
+  ok('en de tweede proef telt in zijn eigen reeks', p2.number === 'PROEF-2026-0002', 'PROEF-2026-0002', p2.number);
+  /* DE KERN VAN HET GEHEEL. Zonder de aparte teller zou dit VIS-2026-0004 zijn:
+     twee proefbestellingen hadden dan twee echte nummers opgesoupeerd. */
+  ok('de echte reeks is NIET opgeschoven door de twee proeven',
+    c.number === 'VIS-2026-0002', 'VIS-2026-0002', c.number);
+
+  const tellers = db.prepare('SELECT year, last_number FROM invoice_series ORDER BY year').all();
+  const echteTeller = tellers.find((t) => t.year === 2026)?.last_number;
+  const proefTeller = tellers.find((t) => t.year === -2026)?.last_number;
+  ok('er staan twee tellers', tellers.length === 2, 2, tellers.length);
+  ok('  de echte op 2', echteTeller === 2, 2, echteTeller);
+  ok('  en de proefteller onder het negatieve jaar', proefTeller === 2, 2, proefTeller);
+
+  /* Het JAAR op de rij blijft gewoon 2026: het negatieve jaar is de sleutel van
+     de teller en niet een eigenschap van de factuur. Stond het wél op de rij,
+     dan zou elke lijst en elke som die op jaar filtert de proeven kwijtraken —
+     of erger, ze meetellen onder een jaartal dat niet bestaat. */
+  const rij = db.prepare('SELECT year, seq, testmodus FROM invoices WHERE number = ?').get('PROEF-2026-0002');
+  ok('de proeffactuur staat op het echte jaar', rij.year === 2026, 2026, rij.year);
+  ok('en draagt het merk in zijn eigen kolom', rij.testmodus === 1, 1, rij.testmodus);
+  const echteRij = db.prepare('SELECT testmodus FROM invoices WHERE number = ?').get('VIS-2026-0001');
+  ok('een echte factuur draagt het merk niet', echteRij.testmodus === 0, 0, echteRij.testmodus);
+
+  /* En de pdf ligt onder zijn eigen nummer in R2, zodat een proef nooit over een
+     echte factuur heen kan schrijven. */
+  ok('de pdf staat onder het PROEF-nummer',
+    [...b.objects.keys()].includes('invoices/2026/PROEF-2026-0001.pdf'), true,
+    [...b.objects.keys()].filter((k) => k.includes('PROEF')).join(','));
+}
+
+console.log('\nhet merk komt van de bestelling en niet van de sleutel van vandaag');
+{
+  /* De belangrijkste eigenschap na de teller zelf. Zodra Lucas de live-sleutel
+     erin zet, moet een bestelling die vorige week met een test_-sleutel is
+     aangenomen nog steeds een proefbestelling zijn — anders krijgt zijn oudste
+     testrommel alsnog een echt factuurnummer op de dag dat hij live gaat. Dat
+     is de reden dat `testmodus` een KOLOM is en geen aanroep van isTestmodus(). */
+  const db = fresh();
+  const e = env(db);
+  const id = addOrder(db, { ref: 'VIS-OUD-PROEF', testmodus: 1 });
+  const f = await issueInvoice(e, id, { today: '2026-09-10' });
+  ok('een oude proefbestelling houdt zijn proefnummer', f.number.startsWith('PROEF-'), 'PROEF-…', f.number);
+
+  const bron = readFileSync(new URL('../src/lib/invoice.js', import.meta.url), 'utf8');
+  ok('invoice.js leest de kolom van de bestelling',
+    /Number\(order\.testmodus\) === 1/.test(bron), true, 'order.testmodus');
+  /* Op de IMPORT en niet op de naam: de noot boven de proefreeks legt uit waarom
+     de sleutel hier NIET gelezen wordt, en die uitleg hoort deze toets niet te
+     breken. Wat niet mag, is dat dit bestand de sleutel binnenhaalt. */
+  ok('  en haalt de sleutel van vandaag niet binnen',
+    !/^import[^\n]*isTestmodus/m.test(bron), true,
+    /^import[^\n]*isTestmodus/m.test(bron) ? 'importeert isTestmodus' : 'geen import');
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

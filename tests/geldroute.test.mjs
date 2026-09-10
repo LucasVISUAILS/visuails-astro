@@ -150,7 +150,20 @@ function maakBucket() {
 }
 
 const ENV_BASIS = {
-  MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123',
+  /* ── EEN `live_`-SLEUTEL, EN DAT IS EEN KEUZE — 10 september 2026 ──────────
+   *
+   * Hier stond een `test_`-sleutel, en dat was tot vandaag betekenisloos: de
+   * stub van Mollie kijkt niet naar het voorvoegsel. Sinds het proefmerk
+   * (migratie 0046) betekent het wél iets — een bestelling die met een
+   * `test_`-sleutel wordt aangenomen, is een PROEFbestelling en krijgt een
+   * nummer uit de PROEF-reeks. Deze toets viel daar meteen op om, en dat was het
+   * juiste signaal: dit bestand heet "de geldroute" en bewijst wat er met ECHT
+   * geld gebeurt. Dan hoort er ook een echte sleutel in te staan.
+   *
+   * De proefkant wordt bewezen waar hij hoort: tests/proefmerk.test.mjs voor de
+   * keten en tests/invoice-issue.test.mjs voor de nummering, tegen een echte
+   * SQLite. */
+  MOLLIE_API_KEY: 'live_abcdefghijklmnopqrstuvwxyz0123',
   RESEND_API_KEY: 're_test',
   NOTIFY_EMAIL: 'hello@visuails.com',
   FROM_EMAIL: 'VISUAILS <orders@visuails.com>',
@@ -706,6 +719,67 @@ console.log('\neen abonnementstermijn levert een factuur op');
  *
  * En de levering zelf (delivery.js, 779 regels): welke bestanden er in de zip
  * gaan, met welke naam, met welke herkomsttag. Zelfde verhaal, zelfde reden. */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * 6 · DEZELFDE ROUTE MET EEN TEST-SLEUTEL — 10 september 2026
+ * ═════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas gaat nog een reeks proefbestellingen doen voordat er echt geld door de
+ * site loopt. Alles daaraan is terug te draaien behalve het factuurnummer: dat
+ * wordt uitgegeven en nooit meer teruggegeven, dus twintig proefbestellingen
+ * zijn twintig echte facturen in zijn boekhouding.
+ *
+ * Wat hier wordt bewezen is de KETEN, en dat is iets anders dan wat
+ * tests/proefmerk.test.mjs (de schakels) en tests/invoice-issue.test.mjs (de
+ * teller) bewijzen: dat een bestelling die via het ECHTE eindpunt binnenkomt met
+ * een `test_`-sleutel, aan het eind van de rit een PROEF-nummer draagt. Als er
+ * één schakel tussenuit valt — de UPDATE die niet loopt, een migratie die
+ * ontbreekt, een kolom die niet wordt meegelezen — dan komt daar stilletjes een
+ * echt nummer uit, en dat is precies de fout die pas opvalt als het te laat is.
+ */
+console.log('\ndezelfde route met een test-sleutel levert een proefnummer');
+{
+  const omg = maakOmgeving();
+  try {
+    const { db, env: basis } = verseOmgeving(omg);
+    const env = { ...basis, MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123' };
+
+    await bestel(env, {
+      service: 'drop', products: 5,
+      name: 'Voorbeeld Merk', brand: 'VOORBEELD', email: 'proefmerk@voorbeeld.nl',
+      country: 'NL', address_line1: 'Voorbeeldstraat 12', postal_code: '1234 AB',
+      city: 'Rotterdam', lang: 'nl',
+      style: 'classic', background: 'studio-white',
+      /* Het zakelijke bewijs hoort erbij — zie de noot bij de eerste bestelling
+         in dit bestand. Zonder deze vier velden gaat de bestelling naar de
+         beoordeellijst en komt er BEWUST geen betaallink, en dan meet dit blok
+         iets anders dan het denkt te meten. */
+      business_declaration: 'yes', business_version: 'v1',
+      no_vat_number: '1', reg_number: '99999999',
+    });
+
+    const order = db.prepare('SELECT * FROM orders WHERE email = ?').get('proefmerk@voorbeeld.nl');
+    ok('de bestelling is aangenomen', !!order);
+    ok('en draagt het proefmerk', order && Number(order.testmodus), 1);
+
+    const id = [...omg.betalingen.keys()][0];
+    omg.zetBetaald(id);
+    await webhook(env, id);
+
+    const { issueInvoice } = await import('../src/lib/invoice.js');
+    await issueInvoice(env, order.id, { today: '2026-09-10' });
+    const frow = db.prepare('SELECT * FROM invoices WHERE order_id = ?').get(order.id);
+    ok('er is een factuur', !!frow);
+    ok('en die komt uit de PROEF-reeks',
+      String(frow && frow.number).startsWith('PROEF-'), true);
+    /* En de echte teller staat nog op nul: er is geen enkel echt nummer verbruikt.
+       Dit is de regel waar het hele bouwsel om draait. */
+    const echteTeller = db.prepare('SELECT last_number FROM invoice_series WHERE year = 2026').get();
+    ok('de echte reeks is niet aangeraakt', echteTeller ? echteTeller.last_number : 0, 0);
+  } finally {
+    omg.herstel();
+  }
+}
 
 console.log(`\n${geslaagd}/${geslaagd + gezakt} passed`);
 if (gezakt) process.exitCode = 1;

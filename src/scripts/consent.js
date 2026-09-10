@@ -62,6 +62,21 @@ export function writeConsent(analytics) {
   // silently drop the cookie and make the banner look broken in development.
   if (location.protocol === 'https:') attrs.push('Secure');
   document.cookie = attrs.join('; ');
+  /* ── WIE OP DE COOKIEKEUZE WACHT, MOET HET HOREN — 10 september 2026 ───────
+   *
+   * De proefkaart komt pas als de bezoeker de banner beantwoord heeft; zonder
+   * dat zou hij de banner overlappen. Hij hing die voorwaarde aan een
+   * scrolluisteraar, en dat gaat mis in precies één volgorde die veel voorkomt:
+   * scrollen tot voorbij de hero (kaart mag nog niet, banner staat open), dan
+   * de banner wegklikken — en daarna scrollt er niemand meer, dus de kaart
+   * kwam op die pagina nooit. Gemeten in een echte browser, niet vermoed.
+   *
+   * Eén gebeurtenis in plaats van dat elke wachter zelf de cookie gaat pollen.
+   * Op `document` en niet op `window`, zodat hij door een zachte navigatie heen
+   * op dezelfde plek te vinden blijft. */
+  try {
+    document.dispatchEvent(new CustomEvent('vis:consent', { detail: value }));
+  } catch { /* een oude browser zonder CustomEvent-constructor: dan geen signaal */ }
   return value;
 }
 

@@ -176,6 +176,13 @@ const c = nl
   let kijkHuidig = null;
   let huidig = null;
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && huidig) huidig(); });
+  /* De cookiekeuze is de tweede voorwaarde, en tot 10 september 2026 werd er
+     alleen op SCROLLEN gekeken of aan allebei voldaan was. Wie eerst voorbij de
+     hero scrolde en pas daarna de banner wegklikte, scrolde daarna vaak niet
+     meer — en zag de kaart op die pagina dus nooit. writeConsent() roept dit nu
+     zelf om; zie de noot daar. Dezelfde `kijk` als de scrolluisteraar, dus alle
+     andere voorwaarden (pad, zeven dagen stil, al open) gelden onverkort. */
+  document.addEventListener('vis:consent', () => { if (kijkHuidig) kijkHuidig(); });
   const start = () => {
     huidig = null;
     if (kijkHuidig) { window.removeEventListener('scroll', kijkHuidig); kijkHuidig = null; }

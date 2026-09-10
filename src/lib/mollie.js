@@ -86,6 +86,30 @@ export function mollieKey(env) {
   return cleaned;
 }
 
+/*
+ * ── STAAT DEZE BESTELLING IN TESTMODUS? — 10 september 2026 ──────────────────
+ *
+ * Lucas wil nog een reeks proefbestellingen doen voordat er echt geld door de
+ * site loopt, en Studio moet vaker nagelopen worden. Met een `test_`-sleutel kan
+ * dat allemaal — alleen kwam er dan één ding uit dat NIET terug te draaien is:
+ * een factuurnummer. Zie de kop van invoice.js: een nummer wordt uitgegeven en
+ * nooit meer teruggegeven, want een gat in de reeks leest bij een controle als
+ * een verdwenen factuur. Twintig proefbestellingen zijn dus twintig echte
+ * facturen in zijn boekhouding, en de eerste échte klant begint op nummer 21.
+ *
+ * Dit is de bron van de stand, en er komt met opzet GEEN aparte schakelaar bij.
+ * Een tweede veld dat "we testen nu" zegt, is een tweede veld dat kan afwijken
+ * van de sleutel die het geld daadwerkelijk verwerkt — en dan is de vraag welke
+ * van de twee gelijk heeft. De sleutel bepaalt of er echt geld komt; dus bepaalt
+ * de sleutel ook of het een echte bestelling is.
+ *
+ * Werpt niet. Een ontbrekende of onleesbare sleutel is GEEN testmodus: die
+ * levert helemaal geen betaling op, en dat probleem hoort bij mollieKey() thuis.
+ */
+export function isTestmodus(env) {
+  return /^test_/.test(String(env?.MOLLIE_API_KEY || '').trim());
+}
+
 /** What was wrong with the stored key, for a diagnostic to report without ever
  *  showing the key. Returns null when it is clean. */
 export function mollieKeyProblems(env) {

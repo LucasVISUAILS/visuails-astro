@@ -85,7 +85,7 @@ import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
 import { shell, h1, p, rows, quote, payPanel, note, spamNote, linkLine, greeting } from '../../src/lib/mailTemplate.js';
-import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
+import { createTestSampleMolliePayment, createOrderMolliePayment, isTestmodus } from '../../src/lib/mollie.js';
 /* PAYABLE_SERVICES en ladderKey stonden hier ook en zijn 23 augustus 2026
    weggehaald: ze werden alleen nog door de servercopie van tierFor() gebruikt,
    en die is weg (zie de noot verderop). isPayableService blijft — zie de lange
@@ -1253,6 +1253,29 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const row = await env.DB?.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first();
     orderId = row?.id ?? null;
   });
+
+  /* ── HET PROEFMERK — 10 september 2026 ─────────────────────────────────────
+   *
+   * Een bestelling die is aangenomen met een `test_`-sleutel is een
+   * proefbestelling, en dat wordt hier vastgelegd. Wat het doet, staat in
+   * issueInvoice(): zo'n bestelling krijgt een nummer uit een eigen PROEF-reeks
+   * in plaats van uit de reeks die geen gaten mag hebben. Zie de kop van
+   * migrations/0046-proefbestellingen.sql voor het waarom.
+   *
+   * EEN LOSSE UPDATE EN NIET EEN KOLOM ERBIJ IN DE INSERT, en dat is met opzet.
+   * De INSERT hierboven is de belangrijkste schrijfactie van het hele project en
+   * heeft al drie lagen terugval voor ontbrekende migraties; er een vierde laag
+   * bij bouwen betekent dat het invoegen van een ECHTE bestelling kan struikelen
+   * over een kolom die alleen voor proefbestellingen bestaat. Deze regel draait
+   * bovendien alléén in testmodus: met een `live_`-sleutel is er geen tweede
+   * schrijfactie, geen extra ronde naar D1, en verandert er niets.
+   *
+   * In safe(), want een ontbrekende migratie 0046 mag een aangenomen bestelling
+   * niet alsnog laten omvallen. Wat er dan gebeurt is precies de oude situatie —
+   * de bestelling telt als echt — en dat is zichtbaar op /admin/diagnose. */
+  if (orderId && isTestmodus(env)) {
+    await safe(() => env.DB.prepare('UPDATE orders SET testmodus = 1 WHERE id = ?1').bind(orderId).run());
+  }
 
   /*
    * ── EEN BESTELLING DIE NIET IS WEGGESCHREVEN MOET IEMAND HOREN — 11 AUG 2026 ─
