@@ -846,56 +846,123 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     </div>
   </header>
 
+  {/* ══════════════════════════════════════════════════════════════════════
+      DE LADE OP EEN TELEFOON — herbouwd 9 september 2026
+
+      Lucas: *"Maak daarna het burgermenu op telefoon wat mooier,
+      overzichtelijker en consistenter."*
+
+      ── WAT ER MIS WAS, GEMETEN ─────────────────────────────────────────────
+
+      1.699 pixels aan inhoud in een lade van 844 — drieëntwintig links in één
+      platte lijst, waarvan je twee keer moet scrollen om bij "Bestellen" te
+      komen. Van de twee groepen droeg er één een kop ("Hoe het werkt") en de
+      andere niet, dus las de eerste helft als een lijst zonder naam. En elke
+      regel had dezelfde maat: "Catalog" en "Je foto's aanleveren" wogen even
+      zwaar, terwijl het ene een dienst is en het andere een uitlegpagina.
+
+      ── DE VIER DINGEN DIE VERANDEREN ──────────────────────────────────────
+
+      1. DE KOP VAN DE LADE LIJKT OP DE BALK. Merkteken links, sluitknop
+         rechts, op één regel en op dezelfde hoogte als de echte balk. Dat is
+         wat "consistenter" hier betekent: je ziet dat het dezelfde site is en
+         niet een tweede scherm. De sluitknop stond eerst boven het merkteken,
+         in een andere hoek dan de burger waar je net op drukte.
+
+      2. TWEE GROEPEN, ALLEBEI MET EEN KOP. "Wat we maken" en "Hoe het werkt",
+         in dezelfde vorm — precies de twee uitklappers die de balk op een
+         desktop ook heeft. Wat de balk als losse links draagt (Prijzen,
+         Galerij, Contact) staat eronder als één compacte rij.
+
+      3. DE MATEN VOLGEN DE BETEKENIS. Een dienst is de grote regel, een
+         uitlegpagina de kleine. Netto zakt de lade van 1.699 naar één scherm
+         op de meeste telefoons.
+
+      4. DE BESTELKNOP STAAT VAST ONDERAAN. Hij scrolt niet meer weg: op een
+         menu waar de helft van de bezoekers voor komt, hoort de deur altijd
+         in beeld te staan.
+      ══════════════════════════════════════════════════════════════════════ */}
   <div class="mobile-nav" id="mobile-nav" inert aria-hidden="true">
-    <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
-    {/* ── HET MERK IS EEN LINK NAAR HUIS — 21 augustus 2026 ────────────────
-        Op desktop is hij dat al; in de lade stond hij als kale <svg>. Wie op een
-        telefoon het menu opende, had geen enkele weg terug naar de homepage
-        behalve de terugknop van de browser. */}
-    <a href={lp('/')} class="mobile-home" aria-label={t('nav_home')}>
-      <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
-    </a>
-    {drops.map((s) => (s.href
-      ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</a>
-      : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
-    ))}
-    {/* Merkmodel en Abonnement stonden hier ook los; ze zitten nu in `drops`
-        hierboven en zouden dus twee keer in de lade staan. */}
-    <a href={lp('/pricing')}>{t('nav_pricing')}</a>
-    <a href={lp('/gallery')}>{t('nav_gallery')}</a>
-    <a href={lp('/contact')}>{t('nav_contact')}</a>
-    {/* Op een telefoon geen tweede uitklapper maar een groep met een kop: een
-        lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
-    <p class="mobile-group">{t('nav_how')}</p>
-    {how.map((s) => (s.href
-      ? <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</a>
-      : <span class="mobile-sub mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
-    ))}
-    <div class="mobile-cta">
-      <a href={lp('/start')} class="btn btn-primary btn-block btn-lg">{t('nav_start')}</a>
-      <a href={waHref(wa.order)} class="btn btn-wa btn-block" target="_blank" rel="noopener">{t('mob_chat')}
+    <div class="mobile-top">
+      {/* ── HET MERK IS EEN LINK NAAR HUIS — 21 augustus 2026 ────────────────
+          Op desktop is hij dat al; in de lade stond hij als kale <svg>. Wie op
+          een telefoon het menu opende, had geen enkele weg terug naar de
+          homepage behalve de terugknop van de browser. */}
+      <a href={lp('/')} class="mobile-home" aria-label={t('nav_home')}>
+        <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
       </a>
-      <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
-      {/* Literal "/account", not lp('/account') — see the desktop nav link's
-          comment above for why: /account has no /nl/ counterpart to localize
-          to, and lp() sending Dutch visitors to a 404 was live from task
-          #259 until this fix. */}
-      <a href={`/account?lang=${lang}`} class="mobile-account-link" data-acct="out">{t('nav_account')}</a>
-      {/* The drawer's own copy of the signed-in state. Not a second mechanism:
-          the script at the foot of this file fills every [data-acct-label] and
-          toggles every [data-acct] on the page in one pass, so the drawer and
-          the desktop bar cannot end up disagreeing about who is signed in. */}
-      <div class="mobile-account-in" data-acct="in" hidden>
-        <a href={`/account?lang=${lang}`} class="mobile-account-link" data-acct-label aria-label={acct.aria}></a>
-        <form method="post" action="/account/logout" class="mobile-signout" data-acct-signout>
-          <button type="submit" class="nav-signout-btn">{acct.signout}</button>
-        </form>
-      </div>
-      <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
-        {switchLangs.map((l) => (
-          <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+      <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
+    </div>
+
+    <div class="mobile-body">
+      <p class="mobile-group">{t('nav_drops')}</p>
+      <div class="mobile-lijst">
+        {drops.map((s) => (s.href
+          ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</a>
+          : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
         ))}
       </div>
+
+      {/* Op een telefoon geen tweede uitklapper maar een groep met een kop: een
+          lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
+      <p class="mobile-group">{t('nav_how')}</p>
+      <div class="mobile-lijst mobile-lijst-klein">
+        {how.map((s) => (s.href
+          ? <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</a>
+          : <span class="mobile-sub mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
+        ))}
+      </div>
+
+      {/* Prijzen, Galerij en Contact: op de balk staan ze los naast de twee
+          uitklappers, dus hier ook — als één rij en niet als drie regels van
+          dezelfde maat als een dienst. Merkmodel en Abonnement zitten in
+          `drops` hierboven en zouden anders twee keer in de lade staan. */}
+      <div class="mobile-rij">
+        <a href={lp('/pricing')} aria-current={isActive('/pricing') ? 'page' : undefined}>{t('nav_pricing')}</a>
+        <a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a>
+        <a href={lp('/contact')} aria-current={isActive('/contact') ? 'page' : undefined}>{t('nav_contact')}</a>
+      </div>
+
+      {/* ── ALLEEN "BESTELLEN" STAAT VAST — 9 september 2026 ────────────────
+          De eerste versie zette de héle voet vast: twee knoppen, een hint, het
+          account en de taalwissel. Samen 280 van de 844 pixels, en dan viel de
+          vouw precies op de kop "Hoe het werkt" met niets eronder — een groep
+          die er kapot uitziet in plaats van een lijst die doorloopt.
+
+          Wat écht altijd in beeld moet, is één deur. Deze drie horen bij de
+          lijst en scrollen dus mee. */}
+      <a href={waHref(wa.order)} class="btn btn-wa btn-block mobile-wa" target="_blank" rel="noopener">{t('mob_chat')}</a>
+      <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
+
+      {/* ── ACCOUNT EN TAAL OP ÉÉN REGEL — 9 september 2026 ─────────────────
+          Ze stonden onder elkaar, elk gecentreerd. Nu is het één rustige regel:
+          links wie je bent, rechts de taal. */}
+      <div class="mobile-voet">
+        {/* Literal "/account", not lp('/account') — see the desktop nav link's
+            comment above for why: /account has no /nl/ counterpart to localize
+            to, and lp() sending Dutch visitors to a 404 was live from task
+            #259 until this fix. */}
+        <a href={`/account?lang=${lang}`} class="mobile-account-link" data-acct="out">{t('nav_account')}</a>
+        {/* The drawer's own copy of the signed-in state. Not a second mechanism:
+            the script at the foot of this file fills every [data-acct-label] and
+            toggles every [data-acct] on the page in one pass, so the drawer and
+            the desktop bar cannot end up disagreeing about who is signed in. */}
+        <div class="mobile-account-in" data-acct="in" hidden>
+          <a href={`/account?lang=${lang}`} class="mobile-account-link" data-acct-label aria-label={acct.aria}></a>
+          <form method="post" action="/account/logout" class="mobile-signout" data-acct-signout>
+            <button type="submit" class="nav-signout-btn">{acct.signout}</button>
+          </form>
+        </div>
+        <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
+          {switchLangs.map((l) => (
+            <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-cta">
+      <a href={lp('/start')} class="btn btn-primary btn-block btn-lg">{t('nav_start')}</a>
     </div>
   </div>
 
@@ -988,7 +1055,20 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       function paint(signedIn, label) {
         var nodes = document.querySelectorAll('[data-acct]');
         for (var i = 0; i < nodes.length; i += 1) {
-          nodes[i].hidden = (nodes[i].getAttribute('data-acct') === 'in') !== signedIn;
+          var uit = (nodes[i].getAttribute('data-acct') === 'in') !== signedIn;
+          nodes[i].hidden = uit;
+          /* ── EN EEN FIELDSET GAAT OOK UIT — 9 september 2026 ────────────────
+             `hidden` haalt een veld van het scherm en NIET uit de inzending, en
+             ook niet uit de verplichtcontrole van de browser. Op /start/plan
+             staat sinds vandaag een blok met verplichte velden voor wie geen
+             account heeft; is de bezoeker wél ingelogd, dan wordt dat blok
+             verborgen — en een verborgen verplicht veld blokkeert het versturen
+             zonder dat iemand ziet waarom.
+
+             Een uitgezette fieldset doet niet mee aan de controle én post
+             niets. Dezelfde regel en dezelfde reden als bij syncStyle() in
+             pipeline.js: CSS houdt geen veld uit een POST. */
+          if (nodes[i].tagName === 'FIELDSET') nodes[i].disabled = uit;
         }
         if (!signedIn) return;
         var labels = document.querySelectorAll('[data-acct-label]');
@@ -1748,7 +1828,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     transition: color var(--dur-1) var(--ease);
   }
   .nav-signout-btn:hover { color: var(--ink); }
-  .mobile-account-in { display: none; flex-direction: column; align-items: center; gap: .2rem; }
+  .mobile-account-in { display: none; flex-direction: row; align-items: baseline; gap: .6rem; }
   .mobile-account-in:not([hidden]) { display: flex; }
   .mobile-account-in .mobile-account-link { color: var(--ink); }
   .mobile-signout { margin: 0; }
@@ -1804,13 +1884,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* De groepskop in de mobiele lade. Geen tweede uitklapper daar: een lade die
      zelf laden bevat, is een lade waarin je zoekt. */
   .mobile-group {
-    margin: 1.6rem 0 .2rem; font-family: var(--font-display);
+    margin: 1.4rem 0 .2rem; font-family: var(--font-display);
     font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
     color: var(--ink-3);
-  }
-  .mobile-nav > .mobile-sub {
-    display: block; padding: .55rem 0; font-size: 1.05rem;
-    color: var(--ink-2); box-shadow: inset 0 -1px 0 var(--line);
   }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
   .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: .92rem; }
@@ -1883,7 +1959,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      pagina. Kleur en gewicht dragen het verschil nu, en die volgen de ramp in
      beide scopes vanzelf. */
   .lang-switch .ls.on { color: var(--ink); background: none; font-weight: 500; }
-  .mobile-lang { align-self: center; margin-top: .5rem; }
+  /* ── DE VOET VAN DE LADE ────────────────────────────────────────────────
+     Eén regel: links het account, rechts de taal. `.mobile-lang` stond op
+     `align-self: center` met een eigen marge, wat hem een eigen regel gaf. */
+  .mobile-voet { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .5rem; }
+  .mobile-lang { margin: 0; }
 
   /* THE DRAWER DID NOT FIT AND DID NOT SAY SO. Its content is 967px tall; a
      740px phone therefore hid "Log in" and the EN/NL switcher below the fold.
@@ -1893,23 +1973,42 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      exactly when you reach the end), the close button is pinned rather than
      scrolling away with the list, and short viewports get a smaller type scale
      so most phones need no scrolling at all. */
-  .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform var(--dur-3) var(--ease); overflow-y: auto; overscroll-behavior: contain;
+  /* ── DRIE LAGEN: KOP, LIJST, KNOPPEN — 9 september 2026 ────────────────────
+     Een grid van drie rijen waarvan alleen de MIDDELSTE scrolt. De kop staat
+     vast bovenaan (zoals de balk erbuiten) en de knoppen vast onderaan, zodat
+     "Bestellen" er altijd is — dat was de reden dat deze lade werd herbouwd.
+     `100dvh` en niet `100vh`: op iOS is de laatste de hoogte ZONDER de balk van
+     de browser, en dan valt de bestelknop er precies onder. */
+  .mobile-nav {
+    position: fixed; inset: 0; z-index: var(--z-modal);
+    height: 100dvh;
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 0 clamp(1.2rem, 5vw, 2.5rem);
+    transform: translateX(100%);
+    transition: transform var(--dur-3) var(--ease);
+    overscroll-behavior: contain;
+    background: var(--bg);
+  }
+  /* De kop van de lade heeft dezelfde hoogte als de balk erbuiten, zodat het
+     merkteken niet verspringt als je het menu opent. */
+  .mobile-top {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 72px; flex: 0 0 auto;
+  }
+  /* Alleen dit deel scrolt. De schaduwrand onderaan zegt dat er meer is, en
+     verdwijnt precies wanneer je onderaan bent (`local`). */
+  .mobile-body {
+    overflow-y: auto; overscroll-behavior: contain;
+    padding: .4rem 0 1rem;
     background:
-      linear-gradient(to top, var(--bg), transparent) bottom / 100% 48px no-repeat local,
-      radial-gradient(farthest-side at 50% 100%, rgb(255 255 255 / 0.16), transparent) bottom / 100% 16px no-repeat scroll,
-      var(--bg); }
-  @media (max-height: 820px) {
-    .mobile-nav { padding-top: 74px; }
-    .mobile-nav > a:not(.mobile-home),
-    .mobile-nav > .mi-off { font-size: 1.35rem; padding: .62rem 0; }
-    .mobile-mark { height: 26px; margin-bottom: 1rem; }
-    .mobile-cta { margin-top: 1.2rem; }
+      linear-gradient(to top, var(--bg), transparent) bottom / 100% 32px no-repeat local,
+      var(--bg);
   }
   .mobile-nav.open { transform: translateX(0); }
   /* Height only. The monogram is 639x655, not square, and the old <img> was
      forced to 30x30 — a 2.4% horizontal squash nobody would name but the eye
      reads as "slightly off". The SVG keeps its own ratio. */
-  .mobile-mark { height: 30px; margin-bottom: 1.6rem; }
+  .mobile-mark { height: 26px; display: block; }
   /* Het merkteken zit sinds 21 augustus in een <a> naar de homepage. De link
      moet zelf een blok zijn, anders is het raakvlak de regelhoogte van een lege
      inline en niet de tekening. */
@@ -1941,11 +2040,43 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
      Het merkteken is geen ingang in de lijst; het is de weg terug naar huis.
      Het hoort er dus boven te staan en niet in te staan. */
-  .mobile-nav > a:not(.mobile-home),
-  .mobile-nav > .mi-off { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
-  .mobile-cta { display: flex; flex-direction: column; gap: var(--gap-actions); margin-top: 1.8rem; }
+  /* ── DE MATEN VOLGEN DE BETEKENIS ────────────────────────────────────────
+     Een dienst is de grote regel (1,25rem), een uitlegpagina de kleine (1rem),
+     en de losse pagina's onderaan zijn een rij chips. Eerst was alles 1,7rem en
+     woog "Je foto's aanleveren" even zwaar als "Catalog".
+
+     `.mobile-lijst > *` en niet `.mobile-nav > a`: sinds de herbouw zitten de
+     links in twee groepen, en de oude selector op directe kinderen van de lade
+     raakte daardoor niets meer — én raakte eerder per ongeluk het merkteken en
+     de knoppen. Zie de noot van 21 augustus die daarover ging. */
+  .mobile-lijst > a,
+  .mobile-lijst > .mi-off {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .7rem 0; font-family: var(--font-display); font-size: 1.25rem;
+    color: var(--ink); box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .mobile-lijst-klein > a,
+  .mobile-lijst-klein > .mi-off { font-size: 1rem; font-family: var(--font-body); color: var(--ink-2); padding: .6rem 0; }
+  .mobile-lijst > a[aria-current="page"] { color: var(--accent-bright, var(--ink)); }
+  /* De laatste regel van een groep draagt geen lijn: de kop van de volgende
+     groep is de scheiding, en twee scheidingen boven elkaar is een streep te
+     veel. */
+  .mobile-lijst > :last-child { box-shadow: none; }
+
+  /* Prijzen · Galerij · Contact — één rij chips, niet drie volle regels. */
+  .mobile-rij { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
+  .mobile-rij a {
+    padding: .5rem .9rem; border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    font-family: var(--font-mono); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .mobile-rij a[aria-current="page"] { border-color: var(--ink); color: var(--ink); }
+
+  /* Alleen de primaire knop staat vast; zie de noot in de markup. */
+  .mobile-cta { padding: .9rem 0 max(.9rem, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); flex: 0 0 auto; }
+  .mobile-wa { margin-top: 1.4rem; }
   .mobile-cta .btn { font-size: 1.05rem; }
-  .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
+  .mobile-cta-hint { margin-top: .1rem; text-align: center; font-size: .86rem; color: var(--ink-3); }
   /* ── 138×16 WAS HET RAAKVLAK, EN 24×24 IS DE ONDERGRENS ──────────────────
      Gemeten 21 augustus 2026 op elke mobiele breedte: deze link — "Probeer een
      proefvisual · €1", de goedkoopste manier om ja te zeggen — was zestien
@@ -1957,7 +2088,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      schuift niets. WCAG 2.2 SC 2.5.8. */
   .mobile-cta-hint a { display: inline-block; padding-block: .45rem; color: var(--accent-bright); font-weight: 600; }
   .mobile-account-link { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: .9rem; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
-  .mobile-close { border-radius: 50%; position: fixed; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
+  /* Niet meer `fixed`: hij staat in de kop van de lade, tegenover het
+     merkteken en op de plek waar de burgerknop stond waar je net op drukte. Dat
+     was de grootste inconsistentie van de oude lade — je opende het menu
+     rechtsboven en sloot het in een andere hoek dan waar je vandaan kwam. */
+  .mobile-close { border-radius: 50%; width: 44px; height: 44px; flex: 0 0 auto; color: var(--ink); font-size: 1.4rem; line-height: 1; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
   /* The signed-in pair goes with the link it replaces — the drawer carries its
      own copy (.mobile-account-in). :not([hidden]) is repeated here for the same
      reason it exists above: without it, the rule that shows the signed-in state
@@ -2419,7 +2554,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      not-allowed, want daar beweegt een muis over. */
   .nav-menu .mi-off { color: var(--ink-3); cursor: not-allowed; }
   .nav-menu .mi-off .mi-title { color: var(--ink-3); }
-  .mobile-nav > .mi-off, .footer-col .mi-off { color: var(--ink-3); cursor: default; }
+  .mobile-lijst > .mi-off, .footer-col .mi-off { color: var(--ink-3); cursor: default; }
   .footer-col a:hover { color: var(--ink); }
   /* Matches the anchors beside it exactly — a withdrawal route that looks
      like a button among links reads as an ad, and one that is quieter than the
@@ -2491,7 +2626,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* fill, no stroke — the mark is a solid glyph now, not an outlined bubble.
      A stroke-width on a filled path thickens every counter until the phone
      inside the bubble closes up at 20px. */
-  .wa-launcher-i { width: 20px; height: 20px; flex: 0 0 auto; fill: currentColor; stroke: none; }
+  /* BOVEN HET LABEL, en dat is sinds 10 september nodig. Het label schuift 24px
+     ONDER de knop door om er één capsule van te maken (zie HuidKantig.astro), en
+     het staat in de DOM ná dit merkje — dus het schilderde er zonder deze regel
+     overheen en sneed het glyph doormidden. Een stapelcontext van één regel; het
+     merkje hoort per definitie bovenop, want het is waar de knop aan te herkennen is. */
+  .wa-launcher-i { position: relative; z-index: 1; width: 20px; height: 20px; flex: 0 0 auto; fill: currentColor; stroke: none; }
   /* Clipped, not squeezed. The old rule transitioned max-width and margin-left,
      which is layout animation — banned outright by DESIGN.md — and it moved the
      mark out from under the pointer as the label arrived. The label is now a
@@ -2525,6 +2665,28 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      by a pixel — the convbar is centred and grows toward both edges as the
      viewport shrinks, so "beside" is only true down to about 380px. Stacking
      is true at every width. */
-  @media (max-width: 600px) { .wa-launcher { right: 12px; --wa-bottom: 12px; } }
+  @media (max-width: 600px) {
+    .wa-launcher { right: 12px; --wa-bottom: 12px; }
+    /* ── EN BOVEN DE PROEFKAART — 10 september 2026 ─────────────────────────
+       De noot hierboven zegt dat de knop rechtsonder en de kaart linksonder
+       elkaar niet raken. Dat klopt op een breed scherm, waar de kaart 24rem
+       breed is. Op een telefoon is hij SCHERMBREED, en daar lag deze knop over
+       de "Probeer VISUAILS"-knop van die kaart heen.
+
+       Dezelfde oplossing als de oude conversiebalk had: de kaart meet zichzelf
+       en zet `--pk-h`, deze regel telt hem op bij de onderkant. `--wa-bottom`
+       bestaat precies hiervoor, en de knop heeft al een overgang op `bottom`,
+       dus hij schuift mee in plaats van te springen. De terugval van 150px is er
+       voor het geval het script niet aan bod komt: dan staat de knop iets te
+       hoog, en dat is beter dan erover.
+
+       EN `:global()` OM DE KAART, want dit is de vijfde keer dat die val
+       toeslaat: `.proefkaart` staat in een ANDER component, dus hij draagt niet
+       het `data-astro-cid` van dit bestand. Astro plakt dat kenmerk op elk deel
+       van de selector, en `.proefkaart[data-astro-cid-layout]` bestaat nergens —
+       de regel werd netjes gebouwd en raakte niets. Gemeten met een botsingsproef
+       in kladblok/proefmaat.mjs, niet aangenomen. */
+    :global(.proefkaart.is-open) ~ .wa-dock .wa-launcher { --wa-bottom: calc(12px + var(--pk-h, 150px) + 10px); }
+  }
   @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

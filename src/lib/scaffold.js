@@ -49,6 +49,7 @@
    shots er per product zijn en in welke volgorde. Een tweede kopie hier zou de
    mapstructuur laten afwijken van het werkbord op /admin, en dan komt een beeld in
    een map te staan waar geen vakje voor is. */
+import { RESOLUTIE, VOORRANG } from '../data/pricing.js';
 import { SHOT_IDS } from '../data/shots.js';
 
 /**
@@ -295,6 +296,16 @@ export function briefingText({ order, product }) {
    * en de rest volgt de bestelling. Zonder deze regels zou de studio drie keer
    * dezelfde vorm maken en zou de banner pas bij de revisie boven water komen. */
   if (product.ratio) regels.push(`Verhouding  ${product.ratio}`);
+  /* De resolutie staat er ALLEEN als hij afwijkt van de standaard. Zie
+     RESOLUTIE in pricing.js: 2048 px is elke bestelling, en een regel die op
+     elk product hetzelfde zegt, is een regel die niemand meer leest. */
+  if (product.hoogRes) regels.push(`Resolutie   ${RESOLUTIE.hoog} px (besteld als hoge resolutie)`);
+  /* Het gezicht staat er ALLEEN als er een gekozen is. Leeg betekent "wij
+     kiezen er een", en dat is een instructie die in de briefing van de hele
+     bestelling thuishoort en niet dertig keer per product. Wijkt dit product af
+     van de rest, dan staat er hier iets anders dan op de kaart ernaast — en dat
+     is precies waarom deze regel per product staat en niet bovenaan. */
+  if (product.model) regels.push(`Gezicht     ${product.model}`);
   if (Array.isArray(product.imageRatios)) {
     for (const [i, r] of product.imageRatios.entries()) {
       if (r) regels.push(`  beeld ${i + 1}    ${r}`);
@@ -305,14 +316,33 @@ export function briefingText({ order, product }) {
     regels.push('achtergrond opgegeven.');
   }
   regels.push('');
+  /* ── DE BIJBESTELDE HOEKEN — 9 september 2026 ────────────────────────────
+     Wat hier stond was een lijst notities die de klant per product zelf had
+     getypt, met de opmerking dat de beelden in de losse map horen. Beide zijn
+     veranderd: de klant kiest de hoeken nu één keer voor de HELE bestelling uit
+     een lijst met namen, en elk product krijgt dezelfde. Ze zijn daarmee gewoon
+     beelden van DIT product, dus ze horen in deze map en niet in de losse.
+     De naam staat er altijd; de notitie alleen als de klant er een gaf. */
   if (product.extras && product.extras.length) {
-    regels.push(`EXTRA FOTO'S (${product.extras.length})`);
+    regels.push(`EXTRA HOEKEN (${product.extras.length}, bij elk product gelijk)`);
     regels.push('-'.repeat(60));
-    for (const [i, note] of product.extras.entries()) {
-      regels.push(`${i + 1}. ${note || '(geen notitie)'}`);
+    for (const [i, hoek] of product.extras.entries()) {
+      regels.push(`${i + 1}. ${hoek}`);
     }
     regels.push('');
-    regels.push(`Zet die in ${LOOSE_FOLDER}/ - ze horen niet in een vast vakje.`);
+    regels.push('Deze komen bovenop de vaste vier, in deze productmap.');
+    regels.push('');
+  }
+  /* ── VOORRANG STAAT BOVEN DE NOTITIE — 9 september 2026 ────────────────────
+     Het is geen wens maar een AFSPRAAK met een klok eraan: er is een bedrag
+     voor betaald en het komt terug als het niet lukt. Dus staat het in de map
+     die de studio als eerste opent, en niet ergens in een e-mail. */
+  if (order.voorrang) {
+    regels.push('VOORRANG BIJ LEVERING - BETAALD');
+    regels.push('-'.repeat(60));
+    regels.push(`Deze bestelling gaat bovenaan de lijst. Streeftijd ${VOORRANG.uren} uur na`);
+    regels.push('bevestiging. Wordt dat niet gehaald, dan gaat de toeslag terug naar');
+    regels.push('de klant en loopt de bestelling gewoon door.');
     regels.push('');
   }
   if (order.notes) {

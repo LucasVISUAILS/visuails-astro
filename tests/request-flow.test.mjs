@@ -357,16 +357,43 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
 
 console.log('\n/start/complete vraagt nu ook om een look');
 {
+  /* ── STylePicker WERD StijlRegel, EN HET WERDEN ER TWEE — 9 september 2026 ──
+     Lucas: *"Bij complete product bundle catalog + lifestyle beide stylen onder
+     elkaar zetten en hetzelfde systeem toepassen."*
+
+     Deze paragraaf eiste tot vandaag StylePicker — het beeldenraster van
+     /start/lifestyle — op deze pagina. Wat hij WILDE eisen staat in zijn eigen
+     kop: dat een complete-bestelling om een stijl vraagt in plaats van erover
+     te zwijgen. Dat is nog steeds de eis; alleen zijn het er nu twee, één per
+     helft, want deze bestelling heeft er twee. */
   for (const p of ['src/pages/start/complete.astro', 'src/pages/nl/start/complete.astro']) {
     const src = read(p);
-    ok(`${p} importeert StylePicker`, /import StylePicker from/.test(src), true);
-    ok('  en rendert hem', /<StylePicker lang=/.test(src), true);
+    ok(`${p} importeert StijlRegel`, /import StijlRegel from/.test(src), true);
+    ok('  en rendert de catalogstijl', /<StijlRegel lang="[a-z]{2}" categorie="catalog" toonHelft/.test(src), true);
+    ok('  en de lifestylestijl', /<StijlRegel lang="[a-z]{2}" categorie="lifestyle" toonHelft/.test(src), true);
+    ok('  met `toonHelft`, want anders staat er twee keer "Stijl"',
+      (src.match(/toonHelft \/>/g) || []).length === 2, true);
     ok('  naast Step1Options, want deze bestelling heeft beide helften',
       /<Step1Options lang=/.test(src), true);
-    /* De look staat boven de drie folds: het is het enige blok in stap 1 waar
-       niets is voorgeselecteerd, dus het enige dat echt beantwoord moet worden. */
-    ok('  met de look boven de optionele blokken',
-      src.indexOf('<StylePicker') < src.indexOf('<Step1Options'), true);
+    /* De stijlen staan boven de drie folds: dat zijn de enige blokken in stap 1
+       waar het antwoord van de klant zelf komt in plaats van uit een standaard. */
+    ok('  met de stijlen boven de optionele blokken',
+      src.indexOf('<StijlRegel') < src.indexOf('<Step1Options'), true);
+    /* En de modelvraag dekt allebei de helften. Er staat met opzet GEEN tweede
+       kiezer: LifestyleModelFold en Step1Options posten allebei name="model",
+       dus twee kiezers op één pagina zijn in HTML één radiogroep. */
+    ok('  en de modelvraag noemt allebei de helften', /modelSoort="beide"/.test(src), true);
+    ok('  en er staat geen tweede modelkiezer', /<LifestyleModelFold/.test(src), false);
+  }
+
+  /* De twee regels posten twee VERSCHILLENDE velden; ze staan tegelijk in
+     dezelfde POST en één veld kan maar één antwoord dragen. */
+  {
+    const regel = read('src/components/order/StijlRegel.astro');
+    ok('StijlRegel post `style` voor lifestyle en `catalog_style` voor catalog',
+      /catalog_style/.test(regel) && /'style'/.test(regel), true);
+    ok('  en de stijl op maat staat niet in de keuzelijst',
+      /slug !== 'custom'/.test(regel), true);
   }
 
   /* En de meta description moet het meebeloven, want die stond er nog zonder. */

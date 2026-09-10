@@ -80,12 +80,20 @@ console.log('\nhet is gratis, en niets in de prijs weet ervan');
   ok('pricing.js kent het woord referentievak niet als prijsregel',
     /EXTRA_PHOTO_LADDER[\s\S]{0,400}ref[0-9]/.test(pricing), false);
   const pl = read('src/scripts/pipeline.js');
-  /* extrasCount() voedt het totaal. Hij telt card.extra — de keuzelijst van het
-     BETAALDE vak — en mag nooit over card.refs of over card.slots lopen. */
-  const teller = pl.slice(pl.indexOf('function extrasCount()'), pl.indexOf('function extrasCount()') + 300);
+  /* extrasCount() voedt het totaal. Hij telt de BETAALDE keuze en mag nooit over
+     card.refs of over card.slots lopen.
+
+     ── DE BETAALDE KEUZE IS VERHUISD — 9 september 2026 ──────────────────────
+     Tot die dag was het `card.extra`: een keuzelijst op elke productkaart. Sinds
+     de hoekenkiezer is het één keuze vooraf voor de hele bestelling, en telt de
+     som HOEKEN × PRODUCTEN. Wat deze paragraaf bewaakt is niet veranderd — een
+     gratis referentievak mag in geen enkel bedrag opduiken — alleen de vorm van
+     het betaalde deel. */
+  const teller = pl.slice(pl.indexOf('function extrasCount()'), pl.indexOf('function extrasCount()') + 400);
   ok('de teller voor het totaal raakt de referentievakken niet',
     /refs|ref[0-9]|refShot/.test(teller), false);
-  ok('en telt het betaalde vak', /card\.extra/.test(teller), true);
+  ok('en telt de gekozen hoeken maal het aantal producten',
+    /anglesChosen\(\)\.length \* n/.test(teller), true);
 }
 
 console.log('\nen de klant krijgt er geen beeld bij');
@@ -176,12 +184,22 @@ console.log('\nen het formulier zegt in beide talen wat het is');
   ok('  uit shots.js en niet uit pricing.js',
     /import \{ SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy \} from '\.\.\/\.\.\/data\/shots\.js';/.test(flow), true);
 
-  /* EN HET BETAALDE VAK BLIJFT. Lucas: *"wel moet de optie voor een extra foto
-     behouden worden als apart vak die gewoon de huidige extra prijs behouden."* */
+  /* EN DE BETAALDE FOTO BLIJFT BESTAAN. Lucas, 13 augustus 2026: *"wel moet de
+     optie voor een extra foto behouden worden als apart vak die gewoon de huidige
+     extra prijs behouden."* Dat is nog steeds waar, maar het vak staat sinds
+     9 september niet meer op de productkaart: het is de hoekenkiezer in stap 1
+     geworden, één keuze voor de hele bestelling. Lucas daarover: *"Wanneer hij in
+     het eerste scherm de angles heeft gekozen krijgt elk product die angles."*
+
+     Deze drie regels toetsten de OUDE vorm. Ze toetsen nu de nieuwe, want de eis
+     eronder is ongewijzigd: er is een betaald pad met een eigen tarief uit
+     EXTRA_PHOTO_LADDER, en het loopt niet door de gratis referentievakken heen. */
   const pl = read('src/scripts/pipeline.js');
-  ok('het betaalde vak bestaat nog', /function buildExtras\(card\)/.test(pl), true);
-  ok('  met zijn eigen teller', /select\.name = `extra_\$\{card\.key\}`/.test(pl), true);
-  ok('  en zijn eigen tarief', /c\('pu\.extraRate', \{ rate: euro\(extraRateNow\(\)\), max \}\)/.test(pl), true);
+  const kiezer = read('src/components/order/AnglePicker.astro');
+  ok('het betaalde pad bestaat nog', /function bindAngles\(\)/.test(pl), true);
+  ok('  met zijn eigen velden', /name=\{`angle_\$\{a\.id\}`\}/.test(kiezer), true);
+  ok('  en zijn eigen tarief uit de ladder', /const tarief = extraRateNow\(\);/.test(pl), true);
+  ok('  en de oude teller per kaart is weg', /function buildExtras\(card\)/.test(pl), false);
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

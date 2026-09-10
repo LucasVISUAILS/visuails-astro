@@ -67,9 +67,13 @@ import { styles as ALLE_LOOKS } from '../data/styles.js';
 import { catalogStyles as ALLE_CATALOG_LOOKS } from '../data/catalogStyles.js';
 import { videoStyles as ALLE_VIDEO_LOOKS } from '../data/videoStyles.js';
 import { background as achtergrondVan } from '../data/backgrounds.js';
+/* De hoeken die bij de bestelling zijn bijgekozen. Zie de kop van
+   src/data/angles.js; ze staan in details_json als `angle_<id>` met een optionele
+   `angle_note_<id>` ernaast, en ze gelden voor de HELE bestelling. */
+import { ANGLES } from '../data/angles.js';
 const STYLE_LOOKS = ALLE_LOOKS.filter((l) => !l.priceTrust);
 import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from '../data/modelChecks.js';
-import { rosterWoord } from '../data/models.js';
+import { rosterWoord, ROSTER, modelId, MODEL_ANY } from '../data/models.js';
 /* DE ABONNEMENTSWEEK. Zie de kop van planStart.js: deze twee functies zijn het
    stuk dat van een klantenlijst werk maakt, en Lucas' keuze was uitdrukkelijk
    dat een MENS daarop drukt. Vandaar dat ze hier binnenkomen en niet in cron/. */
@@ -1931,17 +1935,31 @@ async function serveScaffold(context, orderId) {
   const count = Math.max(1, Math.min(Number(order.product_count) || 1, 200));
   const tekst = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
+  /* De hoeken, één keer voor de hele bestelling. Uit ANGLES en niet uit de
+     sleutels van details_json: dan staan ze in de volgorde van het scherm, en een
+     verzonnen `angle_iets` levert niets op. */
+  const hoeken = ANGLES
+    .filter((a) => details[`angle_${a.id}`])
+    .map((a) => {
+      const naam = a.name.nl || a.name.en;
+      const notitie = tekst(details[`angle_note_${a.id}`]);
+      return notitie ? `${naam} — ${notitie}` : naam;
+    });
+
   const products = [];
   for (let i = 1; i <= count; i++) {
     const key = `p${i}`;
-    /* De extra foto’s van dit product: `extra_p3` is het AANTAL en
-       `extra_note_p3_1..n` zijn de notities. Alleen de notities gaan mee -- het
-       aantal staat in de briefing als de lijst zelf. */
-    const extras = [];
-    const n = Math.max(0, Math.min(Number(details[`extra_${key}`]) || 0, 20));
-    for (let k = 1; k <= n; k++) {
-      extras.push(tekst(details[`extra_note_${key}_${k}`]) || '');
-    }
+    /* ── DE BIJBESTELDE HOEKEN — 9 september 2026 ──────────────────────────
+       Ze zijn ORDERBREED en niet per product (Lucas: *"krijgt elk product die
+       angles, dus dit is niet per product aan te passen"*), maar ze worden bij
+       ELK product afgedrukt. Reden: de studio werkt per productmap, en een lijst
+       die alleen in de bestelbrief staat is een lijst die je bij product elf
+       niet meer voor je hebt. Eén regel per hoek — de naam, en de notitie van de
+       klant erachter als hij er een gaf.
+
+       Het staat buiten de lus berekend (`hoeken`), zodat acht sleutels niet
+       twintig keer opnieuw uit details_json gehaald worden. */
+    const extras = hoeken.slice();
     /* ── DE BEELDVERHOUDING IN DE WERKMAP — 13 AUGUSTUS 2026 ────────────────
      *
      * `ratio` geldt voor de hele bestelling; `ratio_p3_2` is de afwijking voor
@@ -1956,6 +1974,17 @@ async function serveScaffold(context, orderId) {
      * ALLEEN DE ECHTE AFWIJKINGEN. Een leeg veld betekent "volg de bestelling",
      * en drie regels die alle drie hetzelfde zeggen als de regel erboven, zijn
      * drie regels die niemand meer leest. */
+    /* `c12` is een eigen merkmodel van deze klant (zie addBrandModels() in
+       pipeline.js, dat die waarde zet). De naam ervan staat in custom_models en
+       niet in deze lus; wat de studio hier moet weten is dát het er een is, en
+       welke — het nummer is de sleutel waarmee /admin hem opzoekt. */
+    const modelLabel = (waarde) => {
+      const v = String(waarde || '').trim();
+      if (!v || v === MODEL_ANY) return null;
+      if (/^c\d+$/.test(v)) return `eigen merkmodel #${v.slice(1)}`;
+      const hit = ROSTER.filter((m) => modelId(m.name) === v)[0];
+      return hit ? hit.name : v;
+    };
     const orderRatio = ratioById(tekst(details.ratio) || '', order.service);
     const imageRatios = [];
     for (let k = 1; k <= RATIO_IMAGES_MAX; k++) {
@@ -1971,11 +2000,38 @@ async function serveScaffold(context, orderId) {
       background: tekst(details.background_hex) || tekst(details.background),
       ratio: orderRatio ? orderRatio.label : null,
       imageRatios: imageRatios.some(Boolean) ? imageRatios : null,
+      /* ── 4K OP DIT PRODUCT — 9 september 2026 ──────────────────────────
+         Eén vinkje per kaart in het bestelformulier (`hi_p3`), en het is een
+         LEVERINGSFEIT: de studio moet weten op welke maat dit product de deur
+         uit gaat voordat hij begint, niet erna. Alleen als het aan staat —
+         "standaard" bij twintig producten is twintig regels die niets zeggen. */
+      hoogRes: tekst(details[`hi_${key}`]) ? true : false,
+      /* ── HET GEZICHT VAN DIT PRODUCT — 9 september 2026 ──────────────────
+         Lucas: *"Klant kan bij catalog en lifestyle per product kiezen welk
+         model ervoor gebruikt word."*
+
+         Drie lagen, en deze regel is waar ze samenkomen: het gezicht van de
+         BESTELLING (`model`, dat zelf uit het vaste model in het dashboard kan
+         komen) tenzij dit product ervan afwijkt (`model_p3`). Leeg betekent
+         "volg de bestelling" — dezelfde afspraak als bij de verhouding per
+         beeld hierboven, en om dezelfde reden: dan hoeft een klant die niets
+         afwijkt ook niets te posten.
+
+         DE NAAM EN NIET DE ID. In de map staat "Ava" en niet "ava", en bij een
+         eigen merkmodel staat er dat het er een is — dit is het bestand dat
+         iemand in de studio leest voordat hij begint. */
+      model: modelLabel(tekst(details[`model_${key}`]) || tekst(details.model)),
       extras,
     });
   }
 
-  const orderForText = { ...order, notes: tekst(details.message) || tekst(details.notes) };
+  const orderForText = {
+    ...order,
+    notes: tekst(details.message) || tekst(details.notes),
+    /* Zie de noot bij VOORRANG in de briefing: een betaalde afspraak met een
+       klok eraan hoort in de werkmap en niet alleen in een e-mail. */
+    voorrang: !!tekst(details.voorrang),
+  };
   const files = scaffoldFiles(orderForText, products, {
     origin: new URL(context.request.url).origin,
   });

@@ -43,6 +43,14 @@ export const SFEER = [
   { n: '09', w: 2000, h: 1125, alt: 'Een baan groen licht over de vloer' },
 ].map((s) => ({ ...s, src: `/img/concept/sfeer-${s.n}.webp`, klein: `/img/concept/sfeer-${s.n}-w1000.webp` }));
 
+/* De belofte over de rechten staat op één plek, omdat hij op de pagina twee keer
+   voorkomt: als punt onder de hero en als belofte bij Studio. Zie de lange noot in
+   Voorpagina.astro; dit bestand moet daar woord voor woord gelijk aan blijven. */
+const RECHTEN = {
+  en: 'Full commercial rights included',
+  nl: 'Volledige commerciële rechten inbegrepen',
+};
+
 /**
  * @param {'en'|'nl'} lang
  */
@@ -76,7 +84,7 @@ export function inhoud(lang) {
       lede: 'Catalog, lifestyle and video, made from the product photos you already have. No shoot.',
       ctaStart: 'Start an order',
       heroAlt: 'A VISUAILS campaign visual', heroChip: 'Campaign',
-      facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Your own week on the calendar', 'Every image checked by a specialist'],
+      facts: ['One product is enough, no shoot', `From ${e(AMOUNT.catalog)} per product`, 'Your own week on the calendar', RECHTEN.en],
       svcH: 'What we make.',
       svcLede: 'Four services, all from the photos you already have.',
       svc: [
@@ -92,10 +100,13 @@ export function inhoud(lang) {
       vnIn: ['Sent in', 'Phone photo'], vnOut: ['Delivered', `Catalog 01/${String(CATALOG_IMAGES).padStart(2, '0')}`],
       vnLink: 'See the gallery',
       vnNoten: ['Light', 'Background', 'Model', 'Crop'],
-      setH: `One product. ${COMPLETE_IMAGES} images.`,
-      setLede: 'A catalog set for your shop and a lifestyle carousel for your socials, from the same order.',
+      /* Zie de lange noot bij setH in Voorpagina.astro: de set is een bovengrens
+         en geen pakket. */
+      setH: `One product. Up to ${COMPLETE_IMAGES} images and a clip.`,
+      setLede: 'The catalog set for your shop, the lifestyle carousel for your socials, a clip for the feed — together in one order, or any one of them on its own.',
       setGroups: [[`Catalog set · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, '/catalog'], [`Lifestyle carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, '/lifestyle']],
       frames: FRAMES.en,
+      extrasLabel: 'On the same product',
       extras: [
         ['Video clip', `One vertical clip for Reels and TikTok · ${e(AMOUNT.video)}`, '/video'],
         ['Your brand model', `One face, yours alone · once ${e(AMOUNT.brandModel)}`, '/custom-models'],
@@ -123,7 +134,7 @@ export function inhoud(lang) {
       studioLink: 'See Studio', studioLink2: 'How an order runs',
       beloften: [
         ['No final delivery without your check', 'Something off? We go through it together until it is right.'],
-        ['Full commercial rights included', 'Shop, marketplaces, ads and social — no extra licence fees.'],
+        [RECHTEN.en, 'Shop, marketplaces, ads and social — no extra licence fees.'],
       ],
       facesH: 'Pick a face — or claim one.',
       facesLede: 'A model from the roster, or a brand model nobody else gets. The face, background and format you approve stay with your brand, so the next order starts where the last one ended.',
@@ -150,7 +161,7 @@ export function inhoud(lang) {
       lede: 'Catalog, lifestyle en video van de productfoto’s die je al hebt. Geen shoot.',
       ctaStart: 'Start een bestelling',
       heroAlt: 'Een VISUAILS-campagnebeeld', heroChip: 'Campagne',
-      facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Jouw eigen week op de kalender', 'Elk beeld gecheckt door een specialist'],
+      facts: ['Eén product mag, geen shoot nodig', `Vanaf ${e(AMOUNT.catalog)} per product`, 'Jouw eigen week op de kalender', RECHTEN.nl],
       svcH: 'Wat we maken.',
       svcLede: 'Vier diensten, allemaal uit de foto’s die je al hebt.',
       svc: [
@@ -166,10 +177,12 @@ export function inhoud(lang) {
       vnIn: ['Ingestuurd', 'Telefoonfoto'], vnOut: ['Geleverd', `Catalog 01/${String(CATALOG_IMAGES).padStart(2, '0')}`],
       vnLink: 'Bekijk de galerij',
       vnNoten: ['Licht', 'Achtergrond', 'Model', 'Uitsnede'],
-      setH: `Eén product. ${COMPLETE_IMAGES} beelden.`,
-      setLede: 'Een catalogset voor je shop en een lifestyle-carousel voor je socials, uit dezelfde bestelling.',
+      /* Zie de Engelse tegenhanger. */
+      setH: `Eén product. Tot ${COMPLETE_IMAGES} beelden en een clip.`,
+      setLede: 'De catalogset voor je shop, de lifestyle-carousel voor je socials, een clip voor de feed — samen in één bestelling, of elk apart.',
       setGroups: [[`Catalogset · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
       frames: FRAMES.nl,
+      extrasLabel: 'Bij hetzelfde product',
       extras: [
         ['Videoclip', `Eén verticale clip voor Reels en TikTok · ${e(AMOUNT.video)}`, '/video'],
         ['Je merkmodel', `Eén gezicht, alleen van jou · eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
@@ -197,7 +210,7 @@ export function inhoud(lang) {
       studioLink: 'Bekijk Studio', studioLink2: 'Hoe een bestelling draait',
       beloften: [
         ['Geen definitieve oplevering zonder jouw check', 'Klopt er iets niet? Dan gaan we er samen doorheen tot het klopt.'],
-        ['Volledige commerciële rechten inbegrepen', 'Webshop, marktplaatsen, ads en social — zonder extra licentiekosten.'],
+        [RECHTEN.nl, 'Webshop, marktplaatsen, ads en social — zonder extra licentiekosten.'],
       ],
       facesH: 'Kies een gezicht — of claim er een.',
       facesLede: 'Een model uit de roster, of een merkmodel dat niemand anders krijgt. Het gezicht, de achtergrond en het formaat die je goedkeurt blijven bij je merk, dus een volgende bestelling begint waar de vorige ophield.',

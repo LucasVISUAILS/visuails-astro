@@ -2569,7 +2569,12 @@ export async function sectionState(context, customer) {
   };
 }
 
-async function currentCustomer(env, request) {
+/* GEËXPORTEERD SINDS 9 SEPTEMBER 2026 — functions/api/plan.js heeft hem nodig.
+   Die ingang is publiek (een abonnement zonder account), maar moet wél weten of
+   er tóch een sessie is: dan is de ingelogde klant de klant, en niet wat er in
+   het formulier is getypt. Anders zou iemand die is ingelogd een abonnement
+   kunnen afsluiten op het e-mailadres van een ander. */
+export async function currentCustomer(env, request) {
   const token = readSessionCookie(request);
   if (!token) return null;
   const hash = await hashToken(token);

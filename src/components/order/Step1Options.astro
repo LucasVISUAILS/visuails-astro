@@ -47,9 +47,7 @@ import BackgroundPicker from './BackgroundPicker.astro';
 import ModelPicker from './ModelPicker.astro';
 import { copy as chCopy } from '../../data/channels.js';
 import { background, DEFAULT_ID, copy as bgCopy } from '../../data/backgrounds.js';
-import { catalogStyles as looksEn } from '../../data/catalogStyles.js';
-import { catalogStyles as looksNl } from '../../data/catalogStyles.nl.js';
-import { localizedPath } from '../../i18n/ui.js';
+import StijlRegel from './StijlRegel.astro';
 
 /*
  * ── `huisLook`: DE LOOK STAAT ER, OOK ALS ER NIETS TE KIEZEN VALT ──────────
@@ -68,8 +66,18 @@ import { localizedPath } from '../../i18n/ui.js';
  * zwijgen. Eén regel: welke look dit is, en waar de andere zit. De naam komt
  * uit de data, dus hij kan niet gaan afwijken van de pagina die ernaar wijst.
  */
-interface Props { lang: 'en' | 'nl'; huisLook?: boolean; }
-const { lang, huisLook = false } = Astro.props;
+interface Props {
+  lang: 'en' | 'nl';
+  huisLook?: boolean;
+  /* ── `modelSoort`: WELKE HELFT KRIJGT DAT GEZICHT — 9 september 2026 ───────
+     Op /start/catalog gaat de modelvraag over de ene foto op een model in de
+     catalogset. Op /start/complete zijn het er twee — één in de set en één in
+     de carousel — en het antwoord geldt voor allebei: het is hetzelfde merk in
+     dezelfde bestelling. Alleen het LABEL verandert, want een vraag die "de
+     foto op een model" heet terwijl er twee zijn, laat de klant raden welke. */
+  modelSoort?: 'catalog' | 'beide';
+}
+const { lang, huisLook = false, modelSoort = 'catalog' } = Astro.props;
 
 const ch = chCopy(lang);
 const bg = bgCopy(lang);
@@ -83,82 +91,75 @@ const START = {
     background: `${background(DEFAULT_ID).name.en} · ${background(DEFAULT_ID).hex}`,
     model: 'we choose one',
     modelLabel: 'The on-model shot',
+    modelLabelBeide: 'The on-model shot, in the set and in the carousel',
   },
   nl: {
     channels: 'nog niet gekozen',
     background: `${background(DEFAULT_ID).name.nl} · ${background(DEFAULT_ID).hex}`,
     model: 'wij kiezen er een',
     modelLabel: 'De foto op een model',
+    modelLabelBeide: 'De foto op een model, in de set én in de carousel',
   },
 };
 const s = START[lang];
 
-/* De huisstijl van de catalogset: de eerste die niet naar een eigen
-   aanvraagstroom wijst. Uit de data en niet ingetypt. */
-const LOOKS = lang === 'nl' ? looksNl : looksEn;
-const HUIS = LOOKS.find((x) => x.slug !== 'custom') || LOOKS[0];
-const LOOK_COPY = lang === 'nl'
-  ? { label: 'De look', anders: 'Iets anders voor ogen?', link: 'Vraag een eigen look aan' }
-  : { label: 'The look', anders: 'Something else in mind?', link: 'Ask for a look of your own' };
-const lpx = (q: string) => localizedPath(lang, q);
 ---
 
-{huisLook && HUIS && (
-  <p class="s1-look">
-    <span class="mono s1-look-l">{LOOK_COPY.label}</span>
-    <b>{HUIS.name}</b>
-    {/* `{' '}` en geen gewone spatie: Astro knipt witruimte tussen een
-        expressie en een element weg, en dan staat er "ogen?Vraag". */}
-    <span class="s1-look-r">{LOOK_COPY.anders}{' '}<a href={lpx('/start/custom-look')}>{LOOK_COPY.link}</a></span>
-  </p>
-)}
+{/* ── "DE LOOK" HEET NU "STIJL", EN JE KUNT ER EEN KIEZEN — 9 september 2026 ─
+    Lucas: *"Ik denk dat 'De look' wat raar klinkt, maak dit gewoon simpelweg
+    'Style' of Chosen style (…) en laat klanten ook met een dropdown een andere
+    style kiezen, wanneer de categorie meer stylen heeft."*
+
+    Hier stond een handgeschreven regel die de eerste stijl uit catalogStyles.js
+    OPZOCHT en als tekst neerzette. Dat was een mededeling die deed alsof er
+    niets te kiezen viel — waar is voor vandaag (er staat één catalogstijl in de
+    data), maar niet iets wat je in de opmaak vastzet. StijlRegel telt de lijst:
+    één stijl is een mededeling, meer is een keuzelijst. */}
+{huisLook && <StijlRegel lang={lang} categorie="catalog" />}
 
 <div class="s1-folds">
-  <Disclose
-    summary={ch.label}
-    name="s1"
-    liveAttr="data-pl-sum-channels"
-    liveText={s.channels}
-  >
-    <MarketplacePicker lang={lang} />
-  </Disclose>
+  {/* De haken waarop toonMerkkit() in pipeline.js deze blokken verbergt zodra
+      het account het antwoord al draagt. Op de wrapper en niet op de <Disclose>
+      zelf: `hidden` op een <details> laat de samenvatting staan in browsers die
+      hem als display:list-item tekenen. */}
+  <div data-pl-ch-fold>
+    <Disclose
+      summary={ch.label}
+      name="s1"
+      liveAttr="data-pl-sum-channels"
+      liveText={s.channels}
+    >
+      <MarketplacePicker lang={lang} />
+    </Disclose>
+  </div>
 
-  <Disclose
-    summary={bg.label}
-    name="s1"
-    liveAttr="data-pl-sum-bg"
-    liveText={s.background}
-  >
-    <BackgroundPicker lang={lang} />
-  </Disclose>
+  <div data-pl-bg-fold>
+    <Disclose
+      summary={bg.label}
+      name="s1"
+      liveAttr="data-pl-sum-bg"
+      liveText={s.background}
+    >
+      <BackgroundPicker lang={lang} />
+    </Disclose>
+  </div>
 
-  <Disclose
-    summary={s.modelLabel}
-    name="s1"
-    liveAttr="data-pl-sum-model"
-    liveText={s.model}
-  >
-    <ModelPicker lang={lang} />
-  </Disclose>
+  <div data-pl-model-fold>
+    <Disclose
+      summary={modelSoort === 'beide' ? s.modelLabelBeide : s.modelLabel}
+      name="s1"
+      liveAttr="data-pl-sum-model"
+      liveText={s.model}
+    >
+      <ModelPicker lang={lang} />
+    </Disclose>
+  </div>
 </div>
 
 <style>
-  /* Eén regel en geen kaart: er valt niets te kiezen, dus het is een mededeling
-     en geen vraag. Dezelfde maat als de vouwen eronder, zodat de kolom niet
-     verspringt. */
-  .s1-look {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
-    max-width: var(--pl-measure);
-    margin-top: clamp(1.6rem, 3vw, 2.2rem);
-    padding-bottom: .9rem;
-    border-bottom: 1px solid var(--line);
-    font-size: .95rem;
-  }
-  .s1-look-l { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
-  .s1-look b { color: var(--ink); font-weight: 600; }
-  .s1-look-r { margin-left: auto; font-size: .85rem; color: var(--ink-3); }
-  .s1-look-r a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
-  .s1-look + .s1-folds { margin-top: clamp(1rem, 2vw, 1.4rem); }
+  /* De stijlregel draagt zijn eigen opmaak; zie StijlRegel.astro. Wat hier
+     stond (.s1-look en zijn vier hulpklassen) is met die component meegegaan. */
+  :global(.sr1) + .s1-folds { margin-top: clamp(1rem, 2vw, 1.4rem); }
 
   /* Capped at the same measure the pickers were, so folding them changes what
      is visible and not where the column sits. */

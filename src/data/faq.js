@@ -79,6 +79,8 @@ import {
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, extraPhotoRate,
   /* Wat er na de ene revisieronde gebeurt — zie REVISIEBELEID in pricing.js. */
   revisiebeleid,
+  RESOLUTIE,
+  HOOG_PER_PRODUCT,
 } from './pricing.js';
 /* De doorschuiftermijnen staan in plans.js; hier alleen gelezen, niet overgetypt. */
 import { TERMS } from './plans.js';
@@ -149,7 +151,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Is een plan goedkoper dan bestellen wanneer ik het nodig heb?',
-        a: `Alleen als dezelfde output elke maand terugkomt. Het ${planName.studio}-plan is ${ex(PLAN_AMOUNT.studio, 'nl')} per maand voor ${PLAN_PRODUCTS.studio} producten en ${PLAN_CLIPS.studio} clips; op de prijs per product kost diezelfde output ${ex(studioSaving.onLadder, 'nl')}. Bestel je per seizoen in plaats van elke maand, dan ben je goedkoper uit met de prijs per product. Een plan waarvan je de producten niet opmaakt, bespaart je niets.`,
+        a: `Alleen als je elke maand ongeveer evenveel nodig hebt. Het ${planName.studio}-plan is ${ex(PLAN_AMOUNT.studio, 'nl')} per maand voor ${PLAN_PRODUCTS.studio} producten en ${PLAN_CLIPS.studio} clips; op de prijs per product kost dezelfde hoeveelheid ${ex(studioSaving.onLadder, 'nl')}. Bestel je per seizoen in plaats van elke maand, dan ben je goedkoper uit met de prijs per product. Een plan waarvan je de producten niet opmaakt, bespaart je niets.`,
       },
       {
         q: 'Wat gebeurt er met planproducten die ik niet gebruik?',
@@ -376,7 +378,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Hoe krijg ik de bestanden precies?',
-            a: `${clause(TIERS.attended.delivery.nl)}, vanaf ${WINDOW_THRESHOLD} producten. ${clause(TIERS.unattended.delivery.nl)}, daaronder. Hoe dan ook zijn ze hoge resolutie en e-commerce-klaar, op maat voor shoplistings, marktplaatsen en advertenties.`,
+            a: `${clause(TIERS.attended.delivery.nl)}, vanaf ${WINDOW_THRESHOLD} producten. ${clause(TIERS.unattended.delivery.nl)}, daaronder. Hoe dan ook worden ze geleverd op ${RESOLUTIE.standaard} px aan de lange zijde, op maat voor shoplistings, marktplaatsen en advertenties. Catalogbeelden zijn altijd die maat; bij lifestyle kun je per product alle drie de beelden op ${RESOLUTIE.hoog} px laten leveren voor ${euro(HOOG_PER_PRODUCT, 'nl')} extra.`,
           },
         ],
       },
@@ -393,7 +395,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Is er een abonnement?',
-            a: `Alleen als dezelfde output elke maand terugkomt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan diezelfde output op de prijs per product. Op de maandtermijn is hij maandelijks opzegbaar en schuiven ongebruikte producten ${PLAN_ROLLOVER_MONTHS} maand door; de jaartermijn ligt twaalf maanden vast en schuift ${TERMS.yearly.rollover} maanden door. Bestel je zonder plan, dan loopt er niets door.`,
+            a: `Alleen als je elke maand ongeveer evenveel nodig hebt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan dezelfde hoeveelheid op de prijs per product. Op de maandtermijn is hij maandelijks opzegbaar en schuiven ongebruikte producten ${PLAN_ROLLOVER_MONTHS} maand door; de jaartermijn ligt twaalf maanden vast en schuift ${TERMS.yearly.rollover} maanden door. Bestel je zonder plan, dan loopt er niets door.`,
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
@@ -637,7 +639,7 @@ export function faqPageGroups(lang = 'en') {
           // lezer het verkeerde pad op ("…or request-revision from 10 products").
           // En nog steeds NIET kleinschrijven: in een van deze strings staat
           // "WhatsApp", en .toLowerCase() maakt daar "whatsapp" van.
-          a: `${clause(TIERS.attended.delivery.en)}, from ${WINDOW_THRESHOLD} products. ${clause(TIERS.unattended.delivery.en)}, below that. Either way they are high-resolution and e-commerce-ready, sized for shop listings, marketplaces and ads.`,
+          a: `${clause(TIERS.attended.delivery.en)}, from ${WINDOW_THRESHOLD} products. ${clause(TIERS.unattended.delivery.en)}, below that. Either way they are delivered at ${RESOLUTIE.standaard} px on the long edge, sized for shop listings, marketplaces and ads. Catalog images are always that size; on lifestyle you can have all three images of a product delivered at ${RESOLUTIE.hoog} px instead, for ${euro(HOOG_PER_PRODUCT, 'en')} extra.`,
         },
       ],
     },

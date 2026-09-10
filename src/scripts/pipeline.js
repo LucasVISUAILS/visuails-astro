@@ -1122,12 +1122,19 @@ function bindOrder() {
   // Task #271f.
   const outfit = q('select[name="outfit_count"]');
   if (outfit) outfit.addEventListener('change', syncTotal);
+  /* Voorrang — 9 september 2026. Eén vinkje, en het bedrag eronder beweegt mee
+     met het aantal producten; syncTotal() doet allebei via syncVoorrang(). */
+  const vrng = q('input[name="voorrang"]');
+  if (vrng) vrng.addEventListener('change', syncTotal);
   bindBackground();
   // AFTER bindBackground, and the order matters: bindChannels() ends by running
   // the lock, which reaches into the background radios that bindBackground has
   // just finished binding. Bound first, constrained second.
   bindChannels();
   bindModel();
+  /* De hoeken — 9 september 2026. Ná bindModel omdat paintAngles() het lopende
+     totaal aanraakt en dat pas klopt als de rest van stap 1 gebonden is. */
+  bindAngles();
   // De omschakeling tussen per-product en map. Na de rest, want show() roept
   // syncRequired() en refreshUploader() aan en die willen dat de kaarten en de
   // achtergrond al gebonden zijn.
@@ -1465,7 +1472,13 @@ function bindModel() {
   if (!form) return;
   form.addEventListener('change', (e) => {
     const t = e.target;
-    if (t && t.name === 'model') syncSummaries();
+    if (t && t.name === 'model') {
+      syncSummaries();
+      /* De eerste optie van elke kaart draagt de NAAM van het gezicht van de
+         bestelling ("Hetzelfde als de bestelling · Ava"). Verandert dat gezicht,
+         dan klopt die regel op dertig kaarten niet meer. Zie paintModelDefaults. */
+      paintModelDefaults();
+    }
   });
 }
 
@@ -1727,14 +1740,45 @@ function syncStyle(kind) {
  * klant niet gekozen heeft. Dus: terug naar de standaard, zichtbaar, in het
  * formulier waar hij het kan zien.
  */
+/* ── EN `complete` IS GEEN LIFESTYLEBESTELLING — 9 september 2026 ───────────
+ *
+ * Lucas: *"catalog is allemaal hetzelfde formaat maar lifestyle kan de klant
+ * per product kiezen welk formaat hij wilt, dus check de gehele bestelform even
+ * op dit soort fouten."*
+ *
+ * Hier stond `styleApplies(kind)`, en dat is waar voor lifestyle ÉN complete.
+ * Gevolg: op een complete-bestelling stonden 16:9 en 9:16 in de rij — en die
+ * verhouding is de verhouding van de HELE bestelling, dus ook van de vier
+ * catalogbeelden. Precies het scheve grid waar de kop van ratios.js voor
+ * waarschuwt, aangeboden door het formulier zelf.
+ *
+ * Een complete-bestelling is twee dingen in één, en deze radiogroep hoort bij
+ * de helft die er GEEN uitzondering op kent: de catalogset is vier beelden in
+ * hetzelfde kader. De lifestylehelft wijkt daarvan af waar het nodig is, en dat
+ * gebeurt op de productkaart — per beeld, wat fijner is dan per product.
+ * `cfg.ratio.perImage` staat op complete nog gewoon aan (zie OrderFlow), dus
+ * die weg blijft open; alleen de ORDERverhouding is nu catalogveilig. */
 function ratioApplies(kind, id) {
   const only = (cfg.ratio && cfg.ratio.lifestyleOnly) || [];
-  return only.indexOf(id) === -1 || styleApplies(kind);
+  return only.indexOf(id) === -1 || kind === 'lifestyle';
 }
 
 function syncRatio(kind) {
   const field = q('[data-pl-ratio]');
   if (!field) return;
+
+  /* De regel in de dichte vouw — 10 september 2026. De beeldvorm zit sinds
+     vandaag achter een <Disclose>, en een vouw die zijn eigen antwoord niet toont
+     is een vouw die iets verstopt. Het label plus de naam, uit de tegel zelf zodat
+     hij nooit iets anders kan zeggen dan wat er aanstaat. */
+  const aan = q('input[name="ratio"]:checked');
+  const tegel = aan && aan.closest('[data-pl-ratio-tile]');
+  if (tegel) {
+    const label = q('.ratio-label', tegel);
+    const naam = q('.ratio-naam', tegel) || q('.ratio-name', tegel);
+    const stukken = [label && label.textContent.trim(), naam && naam.textContent.trim()].filter(Boolean);
+    if (stukken.length) setSummary('data-pl-sum-ratio', stukken.join(' · '));
+  }
 
   let bumped = false;
   qa('[data-pl-ratio-tile]').forEach((tile) => {
@@ -1755,11 +1799,18 @@ function syncRatio(kind) {
     if (target) target.checked = true;
   }
 
+  /* Drie zinnen en niet twee, sinds complete zijn eigen geval is: bij catalog
+     één verhouding voor alles, bij lifestyle een startpunt waar elk beeld van
+     mag afwijken, en bij complete allebei tegelijk — vast voor de catalogset,
+     afwijkbaar in de carousel. Zie de noot bij ratioApplies() hierboven. */
   const each = !!(cfg.ratio && cfg.ratio.perImage) && styleApplies(kind);
+  const beide = each && kind === 'complete';
   const batchHint = q('[data-pl-ratio-hint-batch]');
   const eachHint = q('[data-pl-ratio-hint-each]');
+  const beideHint = q('[data-pl-ratio-hint-complete]');
   if (batchHint) batchHint.hidden = each;
-  if (eachHint) eachHint.hidden = !each;
+  if (eachHint) eachHint.hidden = !each || beide;
+  if (beideHint) beideHint.hidden = !beide;
 
   // De keuzelijstjes op de kaarten dragen de gekozen verhouding in hun eerste
   // optie ("Zelfde als de bestelling"), zodat een klant daar niet hoeft te
@@ -1957,7 +2008,7 @@ function nextRung(kind, n) {
  * would be wrong for whichever way it guessed. The page says in words that it
  * is applied on the invoice.
  */
-function quoteFor(kind, n, outfits, extras = 0) {
+function quoteFor(kind, n, outfits, extras = 0, hoog = 0) {
   const rate = rateFor(kind, n);
   if (rate === null) return null;
   // Extra photos follow the ladder (pricing.js EXTRA_PHOTO_LADDER), so their
@@ -1965,10 +2016,14 @@ function quoteFor(kind, n, outfits, extras = 0) {
   // rung for the whole order, which is the consistency that choice was made
   // for. The outfit surcharge is flat and does not move with n.
   const extraRate = extraRateNow();
+  /* 4K is VLAK en volgt de ladder niet: het werk achter een opschaling daalt
+     niet met het aantal. Zie HOOG_PER_PRODUCT in pricing.js. */
+  const hoogPrijs = Number((cfg.hoogRes && cfg.hoogRes.prijs) || 0);
   return {
     rate,
     extraRate,
-    net: round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0) + extras * extraRate),
+    hoogPrijs,
+    net: round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0) + extras * extraRate + hoog * hoogPrijs),
   };
 }
 
@@ -1988,12 +2043,19 @@ function syncTotal() {
   const n = productCount();
   const outfits = outfitCount();
   const extras = extrasCount();
-  const quote = kind ? quoteFor(kind, n, outfits, extras) : null;
-  // The per-card rate line moves with the PRODUCT count, not with the extras,
-  // so changing the product select has to repaint every card or the cards keep
-  // quoting the rung the order has just left. paint() never calls back into
-  // this function, so there is no loop to guard against.
-  cards.forEach((k) => { if (k.paintExtra) k.paintExtra(); });
+  const hoog = hoogResCount();
+  const quote = kind ? quoteFor(kind, n, outfits, extras, hoog) : null;
+  /* Voorrang staat BUITEN quoteFor(), want het is geen regel maar een deel van
+     de uitkomst: eerst weten wat de bestelling kost, dan pas wat voorrang erop
+     kost. Dezelfde volgorde als in quoteOrder() op de server. */
+  syncVoorrang(quote ? quote.net : NaN);
+  const voorrang = voorrangAan() && quote ? voorrangBedragNu(quote.net) : null;
+  if (quote && voorrang !== null) quote.net = round2(quote.net + voorrang);
+  // Het tarief van een bijbestelde foto hangt aan het AANTAL PRODUCTEN, dus een
+  // gewijzigd aantal moet de hoekenkiezer opnieuw laten rekenen — anders blijft
+  // hij de trede noemen die de bestelling zojuist verlaten heeft. paintAngles()
+  // roept nooit terug in deze functie, dus er is geen lus om tegen te waken.
+  paintAngles();
 
   const dash = c('total.onRequest');
   // NET, not gross. The gross figure would be the Dutch 21% shown to a buyer
@@ -2007,6 +2069,8 @@ function syncTotal() {
     // surcharge with no base price to attach to is meaningless.
     if (outfits > 0) noteText += c('total.outfit', { price: euro(cfg.outfitSurcharge), n: outfits });
     if (extras > 0) noteText += c('total.extra', { price: euro(quote.extraRate), n: extras });
+    if (hoog > 0) noteText += c('total.hoogRes', { price: euro(quote.hoogPrijs), n: hoog, px: String((cfg.hoogRes && cfg.hoogRes.hoog) || '') });
+    if (voorrang !== null) noteText += c('total.voorrang', { price: euro(voorrang) });
   } else if (kind && !Number.isInteger(n) && q('select[name="products"]')?.value) {
     // The escape hatch. Not a failure to price — a count this form is not
     // willing to guess at, which the gate has its own panel for.
@@ -2767,13 +2831,166 @@ function buildCard(card) {
   const ratios = buildRatios(card);
   if (ratios) toggle.setAttribute('aria-controls', `${slots.id} ${about.id} ${ratios.id}`);
 
-  li.append(head, slots, about);
-  if (ratios) li.append(ratios);
+  /* ── ALLES WAT MEESTAL HETZELFDE IS, GAAT IN ÉÉN LADE — 9 september 2026 ──
+   *
+   * Lucas: *"Herontwerp het per product invoeren in bestelformulieren, maak het
+   * veel overzichtelijker, consistenter en ruimtelijker omdat dit de meest zware
+   * taak is voor de klant."*
+   *
+   * ── WAT ER MIS WAS, IN GETALLEN ────────────────────────────────────────────
+   *
+   * Gemeten met kladblok/_stap2.mjs op de stand van vanochtend: één kaart was
+   * 1.058 pixels hoog op een desktop en 1.722 op een telefoon, met dertien
+   * velden in acht losse blokken. Zes producten maakten een pagina van 9.916
+   * pixels; twintig zou ruim dertigduizend zijn.
+   *
+   * En de verdeling klopte niet. Het UPLOADEN is echt werk per product — daar
+   * is geen weg omheen, elk product heeft eigen foto's. Materiaal, kleur, extra
+   * foto's, 4K, gezicht en verhouding zijn voor verreweg de meeste klanten bij
+   * ELK product hetzelfde, en die stonden even zwaar, twintig keer herhaald.
+   *
+   * ── DE REGEL DIE ERUIT VOLGT ───────────────────────────────────────────────
+   *
+   * EEN KAART TOONT WAT ANDERS IS, NIET ALLES. De foto's blijven staan. De rest
+   * gaat achter één knop die zegt wat er afwijkt — "Volgt de bestelling", of
+   * "Ava · 4K · beeld 2 breed". Wie niets bijzonders heeft, ziet die regel en
+   * scrollt door; wie wél iets afwijkt, ziet het van een afstand op de kaart
+   * waar het gebeurt.
+   *
+   * Vier soorten klant, en alle vier winnen ze iets anders:
+   *
+   *   ÉÉN PRODUCT      de kaart is een half scherm in plaats van een heel; alles
+   *                    is nog te bereiken met één klik.
+   *   VIJF TOT TIEN    dezelfde stof, hetzelfde gezicht, geen extra's — hij vult
+   *                    alleen foto's in en raakt de lade nooit aan.
+   *   TWINTIG, GEMENGD hij ziet in één blik welke producten afwijken, in plaats
+   *                    van twintig identieke muren te moeten aflezen.
+   *   OP EEN TELEFOON  van 1.722 naar een paar honderd pixels per product.
+   *
+   * ── WAAROM ÉÉN LADE EN NIET VIJF ───────────────────────────────────────────
+   *
+   * Vijf uitklappers is dezelfde muur met deurtjes ervoor. Wat de klant wil
+   * weten is niet "waar staat de 4K-knop" maar "wijkt dit product ergens van
+   * af" — één vraag, dus één deur, met het antwoord op de deur geschreven. */
+  const meer = buildMeer(card, [about, ratios]);
+  toggle.setAttribute('aria-controls', `${slots.id} ${meer.id}`);
+
+  li.append(head, slots, meer);
   card.el = li;
   card.input = input;
   card.stateEl = state;
   card.toggleEl = toggle;
   paintCard(card);
+}
+
+/**
+ * De lade: één knop met de samenvatting erop, en alles wat kan afwijken erin.
+ *
+ * De blokken worden NIET hier gebouwd — ze komen binnen als ze al bestaan, en
+ * blijven dus precies wat ze waren. Dit is een herindeling en geen herschrijving
+ * van de vragen zelf: `about` draagt nog steeds materiaal, kleur en de extra
+ * foto's uit attributes.js, en `ratios` nog steeds de verhouding per beeld.
+ */
+function buildMeer(card, blokken) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-meer';
+  wrap.id = `pu-meer-${card.key}`;
+
+  const knop = document.createElement('button');
+  knop.type = 'button';
+  knop.className = 'pu-meer-knop';
+  knop.setAttribute('aria-expanded', 'false');
+  knop.setAttribute('aria-controls', `pu-meer-in-${card.key}`);
+
+  const kop = document.createElement('span');
+  kop.className = 'pu-meer-t';
+  kop.textContent = c('pu.meerH');
+
+  /* De samenvatting is het hele punt van deze knop, dus hij staat erop en niet
+     eronder: wie scrollt leest per kaart één regel en weet genoeg. */
+  const vat = document.createElement('span');
+  vat.className = 'pu-meer-vat';
+
+  const pijl = document.createElement('span');
+  pijl.className = 'pu-meer-pijl';
+  pijl.setAttribute('aria-hidden', 'true');
+  pijl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6 L8 11 L13 6"/></svg>';
+
+  knop.append(kop, vat, pijl);
+
+  const in_ = document.createElement('div');
+  in_.className = 'pu-meer-in';
+  in_.id = `pu-meer-in-${card.key}`;
+  in_.hidden = true;
+  for (const blok of blokken) if (blok) in_.appendChild(blok);
+
+  knop.addEventListener('click', () => {
+    card.meerOpen = !card.meerOpen;
+    paintMeer(card);
+  });
+  /* Wat er in de lade verandert, verandert de regel erop. Eén luisteraar op de
+     lade zelf en niet één per veld: de velden worden door vier verschillende
+     bouwers gemaakt en een nieuwe bouwer zou de zijne moeten onthouden. */
+  ['input', 'change'].forEach((ev) => in_.addEventListener(ev, () => paintMeer(card)));
+
+  wrap.append(knop, in_);
+  card.meerKnop = knop;
+  card.meerIn = in_;
+  card.meerVat = vat;
+  card.meerOpen = false;
+  return wrap;
+}
+
+/**
+ * Wat wijkt dit product af van de bestelling? Eén regel, of de mededeling dat
+ * er niets afwijkt.
+ *
+ * ALLEEN ECHTE AFWIJKINGEN. Materiaal en kleur staan er als ze zijn ingevuld —
+ * dat is geen afwijking maar wel iets wat je op de kaart wilt terugzien zonder
+ * te openen. Een lege waarde levert nooit een woord op: een regel die bij twintig
+ * producten twintig keer "geen" zegt, is twintig keer ruis.
+ */
+function meerSamenvatting(card) {
+  const uit = [];
+  const waarde = (naam) => {
+    const el = q(`[name="${naam}_${card.key}"]`, card.meerIn);
+    return el ? String(el.value || '').trim() : '';
+  };
+
+  const materiaal = waarde('material');
+  if (materiaal) uit.push(materiaal);
+  const kleur = waarde('colour');
+  if (kleur) uit.push(kleur);
+
+  /* Het gezicht: de naam zoals hij in de keuzelijst staat, en niet de sleutel. */
+  if (card.modelSel && card.modelSel.value) {
+    const opt = card.modelSel.options[card.modelSel.selectedIndex];
+    if (opt) uit.push(opt.textContent.trim());
+  }
+
+  if (card.hoogRes && card.hoogRes.checked) uit.push(c('pu.meerHoog'));
+
+  /* De bijbestelde foto's stonden hier ook in. Ze staan niet meer op de kaart —
+     het is één keuze voor de hele bestelling geworden — en een samenvatting van
+     een lade hoort alleen te noemen wat IN die lade staat. */
+
+  /* De verhouding: welke BEELDEN afwijken, niet welke vorm ze krijgen. Drie
+     vormen uitschrijven maakt de regel langer dan de kaart breed is. */
+  const anders = qa('select[data-pl-ratio-each]', card.meerIn).filter((sel) => sel.value);
+  if (anders.length) uit.push(c('pu.meerRatio', { n: anders.length }));
+
+  return uit;
+}
+
+function paintMeer(card) {
+  if (!card.meerKnop) return;
+  card.meerIn.hidden = !card.meerOpen;
+  card.meerKnop.setAttribute('aria-expanded', card.meerOpen ? 'true' : 'false');
+  card.meerKnop.classList.toggle('is-open', !!card.meerOpen);
+
+  const delen = meerSamenvatting(card);
+  card.meerVat.textContent = delen.length ? delen.join(' · ') : c('pu.meerVolgt');
+  card.meerVat.classList.toggle('is-afwijkend', delen.length > 0);
 }
 
 /**
@@ -2891,8 +3108,16 @@ function buildAbout(card) {
     card.answers[qn.id] = ctrl;
   });
 
-  const extras = buildExtras(card);
-  if (extras) wrap.appendChild(extras);
+  /* HIER STOND buildExtras(card) — 9 september 2026 weggehaald.
+     De bijbestelde foto's zijn geen productvraag meer maar één keuze vooraf voor
+     de hele bestelling; zie AnglePicker.astro en bindAngles() onderaan dit
+     bestand. Lucas: *"Wanneer hij in het eerste scherm de angles heeft gekozen
+     krijgt elk product die angles, dus dit is niet per product aan te passen."* */
+  const hoog = buildHoogRes(card);
+  if (hoog) wrap.appendChild(hoog);
+
+  const gezicht = buildModelKeuze(card);
+  if (gezicht) wrap.appendChild(gezicht);
 
   // THE FIRST CARD CARRIES THE COPY-DOWN, and only the first. A button on
   // every card is 25 buttons doing 25 slightly different things; one, at the
@@ -2903,6 +3128,239 @@ function buildAbout(card) {
   ['input', 'change'].forEach((ev) => wrap.addEventListener(ev, () => syncCopyDown(cards[0])));
 
   return wrap;
+}
+
+/**
+ * ── 4K OP DIT PRODUCT — 9 september 2026 ────────────────────────────────────
+ *
+ * Lucas: *"lifestyle heeft echter wel de mogelijkheid op een 4k upsell per foto
+ * die niet verplicht is en de klant kan kiezen anders zijn die afbeeldingen ook
+ * allemaal 2k kwaliteit maar dit kan de klant wel in het bestelform per foto
+ * kiezen voor een kleine extra prijs per 4k foto."*
+ *
+ * PER PRODUCT EN NIET PER FOTO — zijn eigen keuze uit drie voorstellen, en de
+ * reden staat in pricing.js: een lifestylecarousel is drie beelden, dus bij
+ * twintig producten zouden dat zestig vinkjes zijn. Eén vinkje zet de drie.
+ *
+ * Het veld heet `hi_pX` en staat niet in TOP_FIELDS, dus het landt in
+ * details_json. De SERVER telt ze opnieuw (functions/api/order.js) en rekent
+ * het bedrag zelf uit; wat hier gebeurt is een voorbeeld, net als elk ander
+ * bedrag in dit bestand.
+ *
+ * Niets is verplicht: niet aanvinken is een compleet antwoord, en dan post het
+ * veld ook niets — een uitgevinkte checkbox reist niet mee.
+ */
+function buildHoogRes(card) {
+  if (!cfg.hoogRes || !cfg.hoogRes.aan) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-hoog';
+
+  const label = document.createElement('label');
+  label.className = 'pu-hoog-rij';
+
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.name = `hi_${card.key}`;
+  box.value = '1';
+  box.addEventListener('change', syncTotal);
+
+  const tekst = document.createElement('span');
+  tekst.className = 'pu-hoog-t';
+  tekst.textContent = c('pu.hoogResLabel');
+
+  label.appendChild(box);
+  label.appendChild(tekst);
+
+  const hint = document.createElement('p');
+  hint.className = 'pu-hoog-hint';
+  hint.textContent = c('pu.hoogResHint');
+
+  wrap.appendChild(label);
+  wrap.appendChild(hint);
+  card.hoogRes = box;
+  return wrap;
+}
+
+/**
+ * ── HET GEZICHT, PER PRODUCT — 9 september 2026 ─────────────────────────────
+ *
+ * Lucas: *"Klant kan bij catalog en lifestyle per product kiezen welk model
+ * ervoor gebruikt word. De klant kan in het dashboard nog wel een vast model
+ * kiezen en deze word dan automatisch bij elk product geplaatst, hij kan dan per
+ * product dit nog aanpassen."*
+ *
+ * Twee van de drie lagen bestonden al:
+ *
+ *   HET DASHBOARD    customer_style_locks draagt per stijl een `roster_model` of
+ *                    een `custom_model_id`. paintLock() hieronder vinkt dat aan
+ *                    zodra /account/me antwoordt.
+ *   DE BESTELLING    de radiogroep `model` in ModelPicker — één gezicht voor de
+ *                    hele bestelling, en dus ook de plek waar het vaste gezicht
+ *                    van het dashboard landt.
+ *
+ * Wat ontbrak is deze derde: PER PRODUCT. Hij hangt onder de twee andere, in die
+ * volgorde — dashboard vult de bestelling, bestelling vult elk product, en het
+ * product mag afwijken.
+ *
+ * ── DEZELFDE VORM ALS DE VERHOUDING PER BEELD ──────────────────────────────
+ *
+ * Eén <select> per kaart, met als eerste optie de LEGE waarde: "hetzelfde als de
+ * bestelling". Wie niets doet, post niets, en de server hoeft geen lijst met
+ * dertig keer hetzelfde gezicht te lezen. Niets is verplicht — het gezicht van
+ * de bestelling is altijd al een antwoord.
+ *
+ * ── DE OPTIES KOMEN VAN DE RADIO'S EN NIET UIT EEN EIGEN LIJST ─────────────
+ *
+ * De tien gedeelde modellen staan in de HTML; de eigen merkmodellen van een
+ * ingelogde klant zet addOwnModels() er later bij. Een tweede lijst hier zou die
+ * tweede groep missen — en dat is precies het gezicht dat een merk het liefst
+ * per product kiest. Dus wordt de keuzelijst GEVULD uit de radiogroep, en
+ * opnieuw gevuld zodra die verandert. Zie paintModelDefaults().
+ */
+function buildModelKeuze(card) {
+  if (!cfg.model || !cfg.model.perProduct) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-model';
+  wrap.setAttribute('role', 'group');
+  wrap.setAttribute('aria-label', `${c('pu.modelH')} — ${c('pu.product', { n: card.n })}`);
+
+  const head = document.createElement('p');
+  head.className = 'pu-model-h';
+  head.textContent = c('pu.modelH');
+
+  const id = `pu-model-${card.key}`;
+  const label = document.createElement('label');
+  label.className = 'pu-model-label';
+  label.htmlFor = id;
+  label.textContent = c('pu.modelLabel');
+
+  const sel = document.createElement('select');
+  sel.className = 'select pu-model-sel';
+  sel.id = id;
+  sel.name = `model_${card.key}`;
+  sel.setAttribute('data-pl-model-sel', '');
+
+  const hint = document.createElement('p');
+  hint.className = 'pu-model-hint';
+  hint.textContent = c('pu.modelHint');
+
+  wrap.appendChild(head);
+  wrap.appendChild(label);
+  wrap.appendChild(sel);
+  wrap.appendChild(hint);
+  card.modelSel = sel;
+  vulModelOpties(sel);
+  return wrap;
+}
+
+/** De naam die bij een gezicht-radio hoort, zoals hij op het scherm staat. */
+function modelNaam(radio) {
+  const lab = radio.closest('label');
+  const t = lab ? lab.querySelector('.mp-name') : null;
+  return ((t && t.textContent) || radio.value || '').trim();
+}
+
+/**
+ * Vul één keuzelijst met de gezichten die op de pagina staan, en houd de keuze
+ * van de klant vast. De eerste optie is leeg — "hetzelfde als de bestelling" —
+ * met de naam van dat gezicht erbij, zodat je op de kaart niet hoeft te
+ * onthouden wat je bovenaan koos. Dezelfde zet als bij ratioSameText().
+ */
+function vulModelOpties(sel) {
+  const radios = qa('input[name="model"]');
+  if (!radios.length) return;
+  const had = sel.value;
+
+  const gekozen = radios.filter((r) => r.checked)[0];
+  const zelfde = document.createElement('option');
+  zelfde.value = '';
+  /* "Wij kiezen er een die bij je merk past" is een ZIN en geen naam, en achter
+     "Hetzelfde als de bestelling ·" wordt dat een optie van tien woorden in een
+     keuzelijst van dertig kaarten. Bij die ene waarde dus de korte variant: er
+     valt daar ook geen naam te herhalen. */
+  const naam = gekozen && gekozen.value && gekozen.value !== 'any' ? modelNaam(gekozen) : '';
+  zelfde.textContent = naam
+    ? c('pu.modelSame', { naam: naam })
+    : c('pu.modelSamePlain');
+
+  sel.textContent = '';
+  sel.appendChild(zelfde);
+  radios.forEach((r) => {
+    /* Een radio die uitstaat omdat de vraag niet van toepassing is (zie
+       syncStyle en syncBackground) hoort hier ook niet te staan. */
+    if (r.disabled) return;
+    const opt = document.createElement('option');
+    opt.value = r.value;
+    opt.textContent = modelNaam(r);
+    sel.appendChild(opt);
+  });
+
+  /* De keuze van de klant overleeft het opnieuw vullen — anders springt elke
+     kaart terug naar "hetzelfde als de bestelling" zodra hij bovenaan een ander
+     gezicht aanwijst, en dat is precies het tegenovergestelde van wat een
+     afwijking per product moet doen. */
+  if (had && qa('option', sel).some((o) => o.value === had)) sel.value = had;
+}
+
+/** Alle keuzelijstjes bijwerken: na een wissel bovenaan, en na addOwnModels(). */
+function paintModelDefaults() {
+  qa('[data-pl-model-sel]').forEach(vulModelOpties);
+}
+
+/** Hoeveel producten er op de hoge maat besteld zijn. */
+function hoogResCount() {
+  return qa('input[type="checkbox"][name^="hi_"]').filter((b) => b.checked && !b.disabled).length;
+}
+
+/**
+ * ── VOORRANG BIJ LEVERING ───────────────────────────────────────────────────
+ *
+ * Eén vinkje in stap 1. Twee dingen bewegen mee met het aantal producten:
+ *
+ *   HET BEDRAG      een deel van het orderbedrag, met een bodem en een plafond.
+ *                   Zonder aantal is er geen bedrag, en dan staat er een
+ *                   streepje — hetzelfde als bij het totaal erboven.
+ *   OF HIJ ER STAAT boven VOORRANG.maxProducten kan het niet, en dan verdwijnt
+ *                   het blok. `disabled` en niet alleen `hidden`, om dezelfde
+ *                   reden als bij syncStyle(): CSS houdt geen veld uit een POST,
+ *                   en een aangevinkt vakje in een verborgen blok zou voorrang
+ *                   op een bestelling zetten die hem niet kan krijgen.
+ */
+function voorrangBedragNu(net) {
+  const v = cfg.voorrang;
+  if (!v || !Number.isFinite(net) || net <= 0) return null;
+  return Math.min(v.plafond, Math.max(v.bodem, Math.ceil(net * v.deel)));
+}
+
+function voorrangAan() {
+  const box = q('input[name="voorrang"]');
+  return !!(box && box.checked && !box.disabled);
+}
+
+function syncVoorrang(net) {
+  const blok = q('[data-pl-voorrang]');
+  if (!blok || !cfg.voorrang || !cfg.voorrang.aan) return;
+  const n = productCount();
+  const kan = Number.isInteger(n) && n > 0 && n <= cfg.voorrang.maxProducten;
+  blok.hidden = !kan;
+  qa('input, button, select', blok).forEach((el) => { el.disabled = !kan; });
+  if (!kan) {
+    const box = q('input[name="voorrang"]', blok);
+    if (box) box.checked = false;
+  }
+  /* De tekst zonder bedrag staat al in de HTML (Astro rendert hem), dus die
+     wordt hier ONTHOUDEN in plaats van uit cfg.copy gehaald. Reden: PIPE draagt
+     de woorden die dit bestand zelf tekent, en dit is er geen van — het is een
+     regel die het formulier al had en die alleen vervangen wordt zodra er een
+     bedrag te noemen valt. */
+  const vak = q('[data-pl-voorrang-bedrag]');
+  if (vak) {
+    if (!vak.dataset.plLeeg) vak.dataset.plLeeg = vak.textContent || '';
+    const bedrag = voorrangBedragNu(net);
+    vak.textContent = bedrag === null ? vak.dataset.plLeeg : `+ ${euro(bedrag)}`;
+  }
 }
 
 /**
@@ -2982,6 +3440,10 @@ function buildRatios(card) {
     // hij landt in details_json naast `product_p3`, op de sleutel `p3` die ze
     // aan elkaar knoopt.
     sel.name = `ratio_${card.key}_${i}`;
+    /* De haak waarop meerSamenvatting() telt hoeveel beelden afwijken. Op het
+       ELEMENT en niet op de naam: een `select[name^="ratio_"]` zou ook de
+       verhouding van de bestelling vangen als die ooit een select wordt. */
+    sel.setAttribute('data-pl-ratio-each', '');
     sel.setAttribute('aria-describedby', hint.id);
 
     const same = document.createElement('option');
@@ -3009,59 +3471,27 @@ function buildRatios(card) {
   return wrap;
 }
 
-/**
- * Extra photos on one product — a counter, and a description that only exists
- * once the counter is above zero.
- *
- * WHY THE DESCRIPTION IS CONDITIONAL. attributes.js's own header states the
- * rule this has to live with: "A field per product times thirty products is
- * thirty units of friction, so anything that can be asked once per ORDER is
- * asked once per order." A free-text box on all thirty cards is exactly what
- * that paragraph refuses. The reconciliation is that the COUNTER is cheap —
- * one small select sitting at 0 costs a glance — and the box it reveals is
- * only ever seen by somebody who has already said they want one. A 25-product
- * order with no extras shows 25 zeros and not a single textarea.
- *
- * WHY IT IS NOT IN attributes.js. That file is product FACTS, the things that
- * change what the renderer does with a garment. How many extra frames somebody
- * is buying is a commercial choice about the order, so it is built here and
- * priced from pricing.js. Keeping it out of PRODUCT_QUESTIONS also keeps that
- * array's "a second question is a data edit" property true.
- *
- * A <select> rather than <input type=number>, matching outfit_count: it is a
- * short closed range, and a number spinner invites a typed 40 that the form
- * then has to argue with.
- */
 /*
- * ── EXTRA FOTO'S: N GEKOZEN IS N UPLOADVAKKEN ────────────────────────────────
+ * ── HIER STOND HET BLOK "EXTRA FOTO'S" VAN DE PRODUCTKAART ──────────────────
+ * Weggehaald op 9 september 2026.
  *
- * Lucas, 8 augustus 2026: *"een extra foto toevoegen zou een extra upload vak
- * moeten openen maar opent nu een tekstblok. Wanneer je 1 extra foto kiest krijg
- * je 1 upload mogelijkheid erbij met daaronder een verplichte notitie van wat de
- * klant wilt, foto is niet verplicht notitie wel, en 3 extra foto’s dus 3 upload
- * mogelijkheden erbij."*
+ * Wat het was: een keuzelijst per productkaart ("hoeveel extra foto's?"), en per
+ * gekozen foto een uploadvakje met een VERPLICHTE notitie. Bij twintig producten
+ * met vier extra's waren dat tachtig verplichte tekstvelden waarin de klant
+ * tachtig keer ongeveer hetzelfde typte, en hij moest zelf onder woorden brengen
+ * wat hij kocht.
  *
- * Wat er stond was één tekstveld voor alle bijbestelde foto’s samen. Bij drie
- * extra's moest de klant dus drie wensen in één regel proppen, en er was geen
- * plek voor het voorbeeld dat de wens uitlegt.
+ * Lucas: *"De klant krijgt nu 4 beelden per product maar kan dus ook 4 extra
+ * foto's per product toevoegen alleen vind ik hoe dat nu gaat niet handig en niet
+ * duidelijk voor mij en voor de klant. (…) Wanneer hij in het eerste scherm de
+ * angles heeft gekozen krijgt elk product die angles, dus dit is niet per product
+ * aan te passen."*
  *
- * DE OMGEKEERDE VERPLICHTING. Bij de vier vaste hoeken is de FOTO het antwoord.
- * Hier is de BESCHRIJVING het antwoord en is de foto een hulpmiddel: wij maken
- * het beeld, de klant zegt wat het moet worden. Dus notitie verplicht, foto niet.
- *
- * HOE DE VERPLICHTING WORDT AFGEDWONGEN. Via dataset.plReq, dezelfde ene bron die
- * syncRequired() leest — niet via een `required`-attribuut, want de sweep in
- * bindForm() die attributen omzet is al gedraaid als deze kaarten gebouwd worden.
- * syncRequired() kijkt bovendien of het veld ZICHTBAAR is, dus een rij die weer
- * dichtgaat houdt niemand tegen. Stap 2 had tot vandaag niets met plReq erop en
- * was daarmee feitelijk geen poort; dit is het eerste veld dat er wel een van
- * maakt, en alleen voor wie extra's bijbestelt.
- *
- * ROWS WORDEN ÉÉN KEER GEBOUWD EN DAARNA BEWAARD. Niet opnieuw opgebouwd bij elke
- * wijziging van de teller: wie van 3 naar 1 en terug naar 3 gaat, zou anders twee
- * al geüploade voorbeelden kwijt zijn. Ze worden ook pas gebouwd als iemand ze
- * nodig heeft — bij dertig producten zou vier sloten per kaart vooruitbouwen
- * honderdtwintig widgets in de pagina zetten die niemand heeft gevraagd.
+ * Wat ervoor in de plaats kwam: één keuze in stap 1, uit een lijst met een FOTO
+ * per hoek, geldig voor de hele bestelling. Zie AnglePicker.astro voor het
+ * scherm en bindAngles() verderop voor de rekensom. De GRATIS referentievakken
+ * (`ref1`…) hieronder zijn gebleven — die waren altijd al iets anders: invoer in
+ * plaats van uitvoer.
  */
 /**
  * Het plusje: nog een foto van hetzelfde product, gratis.
@@ -3129,6 +3559,12 @@ function buildRefs(card, slots) {
   hint.id = `pu-ref-hint-${card.key}`;
   hint.textContent = c('pu.refHint');
   add.setAttribute('aria-describedby', hint.id);
+  /* Dezelfde regel als bij de uitleg in de vakjes hierboven: op kaart één te
+     lezen, daarna alleen als iemand ernaar zoekt. `aria-describedby` blijft
+     staan — een schermlezer leest hem dan nog steeds bij de knop, want een
+     verborgen element blijft in de boom zolang het niet `hidden` is. Vandaar
+     `.is-stil` en geen `hidden`. */
+  if (card.n !== 1) hint.classList.add('is-stil');
 
   const paint = () => {
     const vol = card.refs >= max;
@@ -3181,165 +3617,121 @@ function buildRefs(card, slots) {
   paint();
 }
 
-function buildExtras(card) {
-  /* ── NIET BIJ DE PROEF — 4 september 2026 ─────────────────────────────────
-     Dezelfde fout als de knop "nog een product", en gevonden door ernaar te
-     zoeken toen Lucas die aanwees: /test-sample bood vier bijbestelde foto's
-     van € 35 aan op een proef die € 1 kost en één product groot is. De toeslag
-     voor een compleet setje was hier al om precies dezelfde reden weggehaald
-     (zie de noot bij `outfit_count` in OrderFlow.astro): een proef is één vast
-     bedrag, dus mag er geen enkele vraag in staan die daar geld bij optelt. */
-  if (cfg && cfg.sample) return null;
 
-  const wrap = document.createElement('div');
-  wrap.className = 'pu-extra';
+/*
+ * ── DE HOEKEN: ÉÉN KEUZE, VOOR ELK PRODUCT ─────────────────────────────────
+ * 9 september 2026.
+ *
+ * Het scherm staat in AnglePicker.astro; hier gebeuren de drie dingen die het
+ * pas een keuze maken:
+ *
+ *   1. HET MAXIMUM. Vier bovenop de vier vaste, en dat is niet toevallig hetzelfde
+ *      getal als MAX_EXTRA_PER_PRODUCT — het IS dat getal, doorgegeven via
+ *      `data-max`. De vijfde tegel kan niet aangevinkt worden en de kiezer zegt
+ *      waarom, in plaats van stil te weigeren.
+ *   2. DE NOTITIE. Verschijnt bij de hoek die je aanvinkt en verdwijnt weer, maar
+ *      wordt nooit LEEGGEMAAKT: wie zich bedenkt en opnieuw aanvinkt, vindt zijn
+ *      zin terug. Een verborgen veld post niets, dus een teruggetrokken hoek
+ *      neemt zijn notitie vanzelf niet mee.
+ *   3. HET BEDRAG. Hoeken × producten × het tarief van de trede waar de
+ *      bestelling nu op staat. Uitgeschreven als som en niet als uitkomst, want
+ *      dit is het enige getal in stap 1 dat over de hele bestelling gaat.
+ *
+ * NIETS HIERVAN IS BEPALEND. Zoals overal in dit bestand: de server telt de
+ * vinkjes zelf opnieuw en rekent het bedrag zelf uit — zie functions/api/order.js.
+ */
+/*
+ * DE KIEZER WORDT ELKE KEER OPGEZOCHT EN NIET ONTHOUDEN, en dat is geen
+ * slordigheid maar een eis van dit bestand: boot() draait op regel 402, tijdens
+ * het uitvoeren van de module, dus alles wat hieronder met `let` of `const` op
+ * moduleniveau staat, bestaat op dat moment nog niet. Een gecachte verwijzing
+ * hier werd een "Cannot access before initialization" die pipeline.js netjes
+ * opvangt en waardoor de hele kiezer stil niets deed. Eén querySelector per
+ * herteken is de prijs, en die is nul.
+ */
+function angleBoxEl() {
+  return q('[data-pl-angles]');
+}
 
-  const max = Math.max(0, Math.floor(Number(cfg.maxExtraPerProduct) || 0));
+/** De aangevinkte hoeken, in de volgorde waarin ze op het scherm staan. */
+function anglesChosen(box) {
+  const el = box || angleBoxEl();
+  if (!el) return [];
+  return qa('input[data-pl-angle]', el).filter((b) => b.checked);
+}
 
-  /* ── EEN BLOK MET EEN PRIJSKAARTJE, GEEN VOETNOOT — 4 september 2026 ───────
-     Lucas: *"Ook extra foto's beter in het bestelproces per product verwerken.
-     Dit kost de klant extra geld dus dit moet wat serieuzer dan een klein
-     blokje onderin."*
+/**
+ * Het tarief, het maximum en de som opnieuw opschrijven. Draait bij elke
+ * verandering van de vinkjes én bij elke verandering van het aantal producten,
+ * want de trede hangt aan dat aantal.
+ */
+function paintAngles() {
+  const angleBox = angleBoxEl();
+  if (!angleBox) return;
+  const gekozen = anglesChosen(angleBox);
+  const max = Math.max(0, Math.floor(Number(angleBox.dataset.max) || 0));
+  const vol = gekozen.length >= max;
+  const tarief = extraRateNow();
 
-     Wat er stond: een kopje van 0,74rem, een keuzelijst, en het tarief eronder
-     in 0,7rem grijs. Alles klopte en niets woog. Een keuze die geld kost, hoort
-     te lezen als een keuze die geld kost — dus: een eigen omkaderd blok, een
-     kop op leesformaat met het tarief ernaast, één zin die zegt wát je koopt,
-     en zodra er één gekozen is een regel die het BEDRAG noemt (niet het tarief,
-     het bedrag) plus een accentrand om het blok. */
-  const head = document.createElement('span');
-  head.className = 'pu-extra-h';
-  head.textContent = c('pu.extraH');
+  /* Vol is niet "verborgen": de tegels blijven staan en blijven leesbaar, ze
+     zijn alleen niet meer aan te vinken. Een tegel die verdwijnt zodra je er
+     vier hebt, laat de klant zoeken naar wat hij net nog zag. */
+  qa('input[data-pl-angle]', angleBox).forEach((b) => {
+    b.disabled = vol && !b.checked;
+    const li = b.closest('li');
+    if (li) li.classList.toggle('is-vol', vol && !b.checked);
+    const id = String(b.name || '').slice('angle_'.length);
+    const note = q(`[data-pl-angle-note="${id}"]`, angleBox);
+    if (note) note.hidden = !b.checked;
+  });
 
-  const wat = document.createElement('p');
-  wat.className = 'pu-extra-wat';
-  wat.textContent = c('pu.extraWhat');
-
-  const som = document.createElement('p');
-  som.className = 'pu-extra-som';
-  som.hidden = true;
-
-  const countField = document.createElement('div');
-  countField.className = 'pu-q pu-extra-count';
-  const countId = `pu-extra-${card.key}`;
-  const countLabel = document.createElement('label');
-  countLabel.className = 'pu-q-label';
-  countLabel.htmlFor = countId;
-  countLabel.textContent = c('pu.extraCount');
-  const select = document.createElement('select');
-  select.className = 'select pu-q-field';
-  select.id = countId;
-  select.name = `extra_${card.key}`;
-  for (let i = 0; i <= max; i++) {
-    const opt = document.createElement('option');
-    opt.value = String(i);
-    opt.textContent = String(i);
-    select.appendChild(opt);
+  const rate = q('[data-pl-angle-rate]', angleBox);
+  if (rate) {
+    const per = (angleBox.dataset.per || '').replace('{price}', euro(tarief));
+    rate.textContent = vol ? `${per} — ${angleBox.dataset.full || ''}`.trim() : per;
   }
-  countField.append(countLabel, select);
 
-  const rows = document.createElement('div');
-  rows.className = 'pu-extra-rows';
+  /* De regel in de DICHTE vouw. Zonder gekozen hoek zegt hij wat je sowieso
+     krijgt; met hoeken zegt hij hoeveel je erbij hebt gezet. Zo hoeft niemand de
+     vouw open te doen om te zien wat er staat. Zie de kop van AnglePicker.astro. */
+  setSummary('data-pl-sum-angles', gekozen.length
+    ? `${(angleBox.dataset.gekozen || '{n} chosen').replace('{n}', String(gekozen.length))}`
+    : '');
 
-  const rate = document.createElement('span');
-  rate.className = 'pu-extra-rate';
+  const som = q('[data-pl-angle-som]', angleBox);
+  if (!som) return;
+  const n = gekozen.length;
+  const p = productCount();
+  if (!n || !Number.isInteger(p) || p < 1) {
+    /* Niets gekozen, of een aantal producten dat dit formulier niet weet. In
+       beide gevallen is er geen som, en een regel die "0" zegt zegt niets. */
+    som.hidden = true;
+    som.textContent = '';
+    return;
+  }
+  const totaal = n * p * tarief;
+  const sjabloon = n === 1 && p === 1
+    ? angleBox.dataset.totalOneboth
+    : n === 1
+      ? angleBox.dataset.totalOne
+      : p === 1
+        ? angleBox.dataset.totalOnep
+        : angleBox.dataset.total;
+  som.textContent = String(sjabloon || '')
+    .replace('{n}', String(n))
+    .replace('{p}', String(p))
+    .replace('{price}', euro(tarief))
+    .replace('{sum}', euro(totaal));
+  som.hidden = false;
+}
 
-  const built = new Map();
-
-  const ensure = (i) => {
-    if (built.has(i)) return built.get(i);
-    const id = extraShotId(i);
-    // Het slot leeft in card.slots, naast de vaste hoeken. Alles wat readiness,
-    // voortgang en de "lege kaart"-toets berekent, loopt over SHOT_IDS en niet
-    // over card.slots — dus een extra slot telt daar niet mee, en dat is precies
-    // goed: een bijbestelde foto is geen ontbrekende hoek.
-    if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
-
-    const row = document.createElement('div');
-    row.className = 'pu-extra-row';
-    row.dataset.puExtraRow = String(i);
-
-    row.appendChild(buildSlot(card, id));
-    // buildSlot() bouwt alleen; paintSlot() bepaalt wat je ziet. Voor de vaste
-    // hoeken doet buildCard() dat in zijn eigen lus — sla je het hier over, dan
-    // staan Vervangen, Verwijderen en Overslaan onder een leeg vak, want die
-    // elementen beginnen zichtbaar en worden pas door paintSlot() weggezet.
-    paintSlot(card, id);
-
-    const noteField = document.createElement('div');
-    noteField.className = 'pu-q pu-extra-note';
-    const noteId = `pu-extra-note-${card.key}-${i}`;
-    const noteLabel = document.createElement('label');
-    noteLabel.className = 'pu-q-label';
-    noteLabel.htmlFor = noteId;
-    noteLabel.textContent = c('pu.extraNoteLabel', { n: i });
-    const note = document.createElement('input');
-    note.className = 'input pu-q-field';
-    note.type = 'text';
-    note.id = noteId;
-    note.name = `extra_note_${card.key}_${i}`;
-    note.autocomplete = 'off';
-    note.maxLength = 200;
-    const ph = c('pu.extraPlaceholder');
-    if (ph) note.placeholder = ph;
-    note.dataset.plReq = '1';
-    note.dataset.plErrMsg = c('pu.extraNoteErr', { n: i });
-    /* De regel "een voorbeeldfoto mag, hoeft niet" stond hier per rij, en met
-       vier extra foto's stond hij dus vier keer op één kaart. Sinds het blok
-       zelf één zin heeft die zegt wat een extra foto is (`extraWhat`, boven de
-       teller), is dit dezelfde uitleg nog een keer — precies de vermenigvuldiging
-       waar de kop van ProductUploader.astro tegen waarschuwt. */
-    noteField.append(noteLabel, note);
-    row.appendChild(noteField);
-
-    rows.appendChild(row);
-    const entry = { i, id, row, note };
-    built.set(i, entry);
-    return entry;
-  };
-
-  const paint = () => {
-    const n = Math.min(max, Number(select.value) || 0);
-    for (let i = 1; i <= n; i++) {
-      const r = ensure(i);
-      r.row.hidden = false;
-      r.note.disabled = false;
-    }
-    built.forEach((r, i) => {
-      if (i <= n) return;
-      r.row.hidden = true;
-      r.note.disabled = true;
-      r.note.value = '';
-      // Ook het beeld weg. Zelfde reden als bij de oude notitie: een voorbeeld
-      // dat is geüpload en daarna weggeklikt mag niet meereizen en geproduceerd
-      // worden. clearSlot() haalt hem ook uit de staging-lijst.
-      if (card.slots[r.id] && (card.slots[r.id].file || card.slots[r.id].key)) clearSlot(card, r.id);
-    });
-    rate.textContent = c('pu.extraRate', { rate: euro(extraRateNow()), max });
-    /* Het bedrag, en pas als er iets gekozen is. Nul extra foto's kosten niets
-       en verdienen dus ook geen regel die over geld gaat. */
-    const bedrag = n * extraRateNow();
-    som.hidden = n < 1;
-    som.textContent = n === 1
-      ? c('pu.extraSumOne', { sum: euro(bedrag) })
-      : c('pu.extraSum', { n, rate: euro(extraRateNow()), sum: euro(bedrag) });
-    wrap.classList.toggle('is-aan', n > 0);
-    // De verplichting van de notities hangt aan zichtbaarheid, dus na elke
-    // wijziging opnieuw laten bepalen.
-    syncRequired();
-  };
-
-  select.addEventListener('change', () => { paint(); syncTotal(); refreshUploader(); });
-  card.extra = select;
-  card.paintExtra = paint;
-  paint();
-
-  /* De volgorde is het argument: wat het is, wat het kost, wat je krijgt,
-     hoeveel je er wilt, wat dat bij elkaar is, en dan pas de invulvelden. Het
-     tarief stond onderaan, ná de velden — de prijs las je dus pas nadat je had
-     gekozen. */
-  wrap.append(head, rate, wat, countField, som, rows);
-  return wrap;
+function bindAngles() {
+  const angleBox = angleBoxEl();
+  if (!angleBox) return;
+  qa('input[data-pl-angle]', angleBox).forEach((b) => {
+    b.addEventListener('change', () => { paintAngles(); syncTotal(); });
+  });
+  paintAngles();
 }
 
 /** The extra-photo rate at the order’s CURRENT product count. */
@@ -3350,9 +3742,21 @@ function extraRateNow() {
   return rung ? rung[2] : 0;
 }
 
-/** Every extra photo asked for across every card. */
+/**
+ * Hoeveel bijbestelde foto's deze bestelling telt.
+ *
+ * HOEKEN × PRODUCTEN, en dat is de hele rekensom. Een gekozen hoek geldt voor
+ * élk product (Lucas: *"krijgt elk product die angles"*), dus vier hoeken op
+ * twaalf producten zijn achtenveertig extra foto's — niet vier.
+ *
+ * Het aantal producten kan nog onbekend zijn (de klant heeft het vakje nog niet
+ * ingevuld, of koos "meer dan"): dan is er niets te vermenigvuldigen en levert
+ * dit 0 op, want een bedrag noemen bij een onbekend aantal is raden.
+ */
 function extrasCount() {
-  return cards.reduce((n, card) => n + (Number(card.extra && card.extra.value) || 0), 0);
+  const n = productCount();
+  if (!Number.isInteger(n) || n < 1) return 0;
+  return anglesChosen().length * n;
 }
 
 /**
@@ -3486,14 +3890,38 @@ function buildSlot(card, id) {
 
   btn.append(dia, img, vink, nameEl);
 
-  /* De ene regel die zegt wat erin hoort — sinds 3 september staat de uitleg
-     onder de kaarten ingeklapt, dus het vakje draagt hem zelf. */
+  /* ── DE UITLEG STAAT OP DE EERSTE KAART, EN DAARNA NIET MEER ──────────────
+     9 september 2026, bij de herindeling van deze stap.
+
+     Sinds 3 september droeg élk vakje zijn eigen zin ("Het hele product, plat
+     of hangend, recht van voren"). Bij zes producten zijn dat vierentwintig
+     alinea's van dezelfde vier zinnen, en bij twintig producten tachtig — exact
+     de vermenigvuldiging die attributes.js in zijn eigen kop verbiedt en die de
+     lade hiernaast net heeft opgeruimd.
+
+     Wat de eerste kaart leert, weet je bij de tweede al. Dus: de zin staat op
+     kaart één, en op elke kaart daarna draagt het vakje alleen zijn naam.
+
+     HIJ IS NIET WEG voor wie hem nodig heeft. De uitleg staat óók in de gids
+     bovenaan deze stap (ProductUploader.astro), en het vakje verwijst er met
+     `title` naar — zodat een muis hem alsnog geeft. Voor een schermlezer
+     verandert er niets: `aria-label` op de knop draagt de naam en de staat, en
+     die staat op elk vakje.
+
+     GEEN KLASSE OP DE KAART maar een tak hier, om dezelfde reden als bij het
+     plusje: card.n is de waarheid over welke kaart dit is, en een CSS-regel die
+     `:first-child` gebruikt breekt zodra iemand een kaart uit het midden
+     weghaalt. */
   const how = lookup(`pu.how.${id}`);
   if (how) {
-    const howEl = document.createElement('span');
-    howEl.className = 'pu-slot-how';
-    howEl.textContent = how;
-    btn.appendChild(howEl);
+    if (card.n === 1) {
+      const howEl = document.createElement('span');
+      howEl.className = 'pu-slot-how';
+      howEl.textContent = how;
+      btn.appendChild(howEl);
+    } else {
+      btn.title = how;
+    }
   }
 
   if (isRequiredShot(id)) {
@@ -3709,6 +4137,10 @@ function paintCard(card) {
   if (card.toggleEl) card.toggleEl.setAttribute('aria-expanded', card.collapsed ? 'false' : 'true');
   if (card.stateEl) card.stateEl.textContent = ready ? c('pu.ready') : c('pu.needsShots', { list: shotListText(missingRequired(card)) });
   SHOT_IDS.forEach((id) => paintSlot(card, id));
+  /* De regel op de lade hoort bij de kaart en wordt hier bijgewerkt, niet alleen
+     bij een verandering ín de lade: het gezicht van de BESTELLING kan wijzigen
+     (paintModelDefaults) en dan verandert wat "volgt de bestelling" betekent. */
+  paintMeer(card);
 }
 
 /**
@@ -4768,6 +5200,10 @@ function addBrandModels(me) {
   // own face sees the fold still saying "we choose one".
   bindModel();
   syncSummaries();
+  /* En de keuzelijstjes per product, want die worden GEVULD uit deze
+     radiogroep — zie vulModelOpties(). Zonder deze regel mist elke productkaart
+     precies het gezicht dat een merk het liefst per product kiest: zijn eigen. */
+  paintModelDefaults();
 }
 
 /* ── DE EIGEN LOOKS VAN DE KLANT — 4 september 2026 ─────────────────────────
@@ -5017,6 +5453,133 @@ function applyBrandKit(me) {
       boxes.forEach((b) => { b.checked = lock.channels.indexOf(b.value) !== -1; });
       syncChannels();
     }
+  }
+
+  toonMerkkit(lock);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WAT HET ACCOUNT AL WEET, WORDT GEEN VRAAG — 9 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Lucas: *"Dan kan bij ingelogde klanten de modelvraag blok in het eerste
+   bestelformulier scherm ook weg omdat deze dan ingesteld staat in zijn account
+   en hij kan dan per product nog afwijken als hij dat wilt. Kijk naar meer
+   dingen als deze die het bestellen nog efficiënter kunnen maken."*
+
+   applyBrandKit() hierboven vinkte de opgeslagen antwoorden al aan — het
+   gezicht, de achtergrond, de look, de verhouding, de kanalen. Wat het NIET
+   deed, is de vraag weghalen. Een merk dat zijn merkkit vorig kwartaal heeft
+   ingericht, kreeg bij elke bestelling dus vijf vragen die het al beantwoord
+   had, met het goede antwoord er al in — en dat leest niet als service maar als
+   twijfel: heb ik dit nou ingesteld of niet?
+
+   ── WAT ER NU GEBEURT ──────────────────────────────────────────────────────
+
+   Elke vraag die de merkkit beantwoordt, verdwijnt uit de lijst en komt terug
+   als één regel in een strook erboven: "Uit je merkkit · Gezicht Ava ·
+   Achtergrond Wit · Verhouding 1:1", met één knop om ze alsnog te openen.
+
+   ── VIER REGELS DIE ERONDER LIGGEN ─────────────────────────────────────────
+
+   1. VERBERGEN EN NIET UITZETTEN. Een verborgen veld post gewoon; een
+      uitgezette fieldset post niets. De bestelling moet exact dezelfde
+      antwoorden dragen als eerst — dit is een presentatiewijziging en geen
+      wijziging in wat er verstuurd wordt. Zelfde regel als bij stap 3
+      hieronder, die dat sinds augustus al zo doet.
+
+   2. ALLEEN WAT ER ECHT IN STAAT. Een merkkit met alleen een gezicht laat de
+      andere vier vragen gewoon staan. De strook telt wat hij vindt; hij verzint
+      geen regel voor een leeg veld.
+
+   3. WIJZIGEN IS ÉÉN KLIK EN HIJ IS DEFINITIEF VOOR DEZE BESTELLING. Klikt de
+      klant op "wijzigen", dan komen alle vragen terug en verdwijnt de strook —
+      geen half-open toestand waarin je twee plekken moet lezen om te weten wat
+      er gebeurt.
+
+   4. HET GEZICHT BLIJFT PER PRODUCT TE WIJZIGEN. Dat was Lucas' eigen
+      voorwaarde, en het werkt vanzelf: de lade op elke productkaart leest de
+      radiogroep, en die staat er nog — hij is alleen niet meer zichtbaar.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function toonMerkkit(lock) {
+  const strook = q('[data-pl-merkkit]');
+  if (!strook || strook.dataset.plGeopend) return;
+
+  /* Elke regel: een label, de waarde zoals hij op het scherm staat, en het blok
+     dat daarmee overbodig wordt. De waarde komt uit de PAGINA en niet uit de
+     merkkit: applyBrandKit() heeft net aangevinkt, en wat er staat is dus wat
+     er straks gepost wordt. Zou hij uit `lock` komen, dan kan de strook iets
+     anders zeggen dan het formulier draagt — bijvoorbeeld bij een opgeslagen
+     16:9 op een catalogbestelling, die syncRatio() weigert. */
+  const regels = [];
+  const teVerbergen = [];
+
+  const voeg = (label, waarde, blok) => {
+    if (!waarde || !blok) return;
+    regels.push({ label: label, waarde: waarde });
+    teVerbergen.push(blok);
+  };
+
+  const gekozenModel = q('input[name="model"]:checked');
+  if (gekozenModel && gekozenModel.value && gekozenModel.value !== 'any') {
+    voeg(c('s1.kitModel'), modelNaam(gekozenModel), q('[data-pl-model-fold]'));
+  }
+
+  const bgTekst = (q('[data-pl-sum-bg]') || {}).textContent;
+  if (lock.background) voeg(c('s1.kitBg'), (bgTekst || '').trim(), q('[data-pl-bg-fold]'));
+
+  const chTekst = (q('[data-pl-sum-channels]') || {}).textContent;
+  if (Array.isArray(lock.channels) && lock.channels.length) {
+    voeg(c('s1.kitCh'), (chTekst || '').trim(), q('[data-pl-ch-fold]'));
+  }
+
+  const ratioNu = q('input[name="ratio"]:checked');
+  if (lock.ratio && ratioNu) voeg(c('s1.kitRatio'), c(`ratio.name.${ratioNu.value}`), q('[data-pl-ratio]'));
+
+  const stijlNu = q('input[name="style"]:checked') || q('select[name="style"]');
+  if (lock.look && stijlNu && stijlNu.value) {
+    const naam = stijlNu.tagName === 'SELECT'
+      ? (stijlNu.options[stijlNu.selectedIndex] || {}).textContent
+      : stijlNu.dataset.plStyleName;
+    voeg(c('s1.kitLook'), (naam || stijlNu.value).trim(), q('[data-pl-look]'));
+  }
+
+  if (!regels.length) { strook.hidden = true; return; }
+
+  const lijst = q('[data-pl-merkkit-lijst]', strook);
+  if (lijst) {
+    lijst.textContent = '';
+    regels.forEach((r) => {
+      const li = document.createElement('li');
+      const l = document.createElement('span');
+      l.className = 'pl-kit-l';
+      l.textContent = r.label;
+      const v = document.createElement('b');
+      v.textContent = r.waarde;
+      li.append(l, v);
+      lijst.appendChild(li);
+    });
+  }
+
+  teVerbergen.forEach((el) => { el.hidden = true; });
+  strook.hidden = false;
+
+  const knop = q('[data-pl-merkkit-open]', strook);
+  if (knop && !knop.dataset.plGebonden) {
+    knop.dataset.plGebonden = '1';
+    knop.addEventListener('click', () => {
+      strook.dataset.plGeopend = '1';
+      strook.hidden = true;
+      teVerbergen.forEach((el) => { el.hidden = false; });
+      /* De eerste vraag krijgt de aandacht: wie op "wijzigen" klikt, wil daar
+         zijn en niet zoeken waar de vragen ineens vandaan komen. */
+      const eerste = teVerbergen[0];
+      if (eerste && typeof eerste.scrollIntoView === 'function') {
+        eerste.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const focusbaar = q('summary, input, select, button', eerste);
+        if (focusbaar && typeof focusbaar.focus === 'function') focusbaar.focus({ preventScroll: true });
+      }
+    });
   }
 }
 
@@ -5287,39 +5850,199 @@ function renderGate(body) {
   gateShow(panel);
 }
 
+/*
+ * ── DE LEVERDATA ALS AGENDA — 10 september 2026 ──────────────────────────────
+ *
+ * Lucas: *"Ik zou dit liever als een agenda willen zien waar de klant kan klikken
+ * op een beschikbare datum."*
+ *
+ * Wat er stond waren zes tegels met in elke tegel de hele zin: "Saturday 12
+ * September – Sunday 13 September". Zes keer een datum uitgeschreven naast elkaar
+ * is zes keer lezen om te zien wat er vrij is, en het verband tussen die zes —
+ * dat het opeenvolgende dagen zijn — moest je er zelf uit halen. In een maandruit
+ * staat dat verband er gewoon: je ziet in één blik welke dagen vrij zijn, welke
+ * niet, en waar het gat zit.
+ *
+ * ── WAT DE AGENDA WEL EN NIET IS ───────────────────────────────────────────
+ *
+ * Hij toont ALLEEN de maanden waarin iets vrij is, en per maand alle dagen ervan.
+ * Geen maandwisselaar, geen pijltjes: het venster van de planning is een week of
+ * twee vooruit (zie HORIZON_DAYS in capacity.js), en een agenda waarin je kunt
+ * bladeren naar maanden zonder aanbod, is een agenda die belooft dat daar iets te
+ * halen valt.
+ *
+ * EEN DAG IS EEN KNOP OF HIJ IS NIETS. Alleen de startdagen die de server
+ * teruggaf zijn aanklikbaar; de rest staat er als getal zonder handeling. Dat is
+ * met opzet geen `disabled`-knop: een uitgeschakelde knop belooft nog steeds dat
+ * er iets te klikken valt en zit in de tabvolgorde in de weg.
+ *
+ * DE HELE PERIODE LICHT OP. Een venster is meestal twee dagen; klik je de eerste,
+ * dan kleurt ook de tweede. Anders kiest iemand een zaterdag en leest hij pas in
+ * de bevestiging dat er een zondag bij hoort.
+ *
+ * DE MAANDNAMEN EN WEEKDAGEN KOMEN UIT Intl en niet uit de copy: elke browser
+ * kent ze al in beide talen, en een eigen lijst is een lijst die op een dag
+ * afwijkt van wat de rest van de pagina zegt.
+ */
 function renderWindows(windows) {
   const host = q('[data-pl-windows]');
   if (!host) return;
   host.textContent = '';
 
-  windows.forEach((w) => {
-    if (!w || !w.start) return;
-    const b = button('', 'pl-window');
-    b.dataset.start = w.start;
-    b.dataset.end = w.end || w.start;
+  const geldig = (windows || []).filter((w) => w && typeof w.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(w.start));
+  if (!geldig.length) {
+    const leeg = document.createElement('p');
+    leeg.className = 'pl-kal-leegzin';
+    leeg.textContent = c('gate.none');
+    host.appendChild(leeg);
+    return;
+  }
 
-    const label = document.createElement('span');
-    label.className = 'pl-window-days';
-    label.textContent = w.end && w.end !== w.start ? `${day(w.start)} – ${day(w.end)}` : day(w.start);
+  const opStart = new Map(geldig.map((w) => [w.start, w]));
+  const taal = cfg.lang === 'nl' ? 'nl-NL' : 'en-GB';
 
-    /* Geen onderregel per tegel meer — zes keer "Data die we kunnen vrijhouden"
-       onder zes tegels zei zes keer hetzelfde. De kop van het paneel zegt het
-       één keer; de tegel draagt alleen de dagen. 3 september 2026. */
-    b.appendChild(label);
-    b.setAttribute('aria-pressed', 'false');
+  /* Eén regel onder de agenda die de gekozen periode uitschrijft. De ruit toont
+     WELKE dagen; deze regel bevestigt WAT je gekozen hebt, in dezelfde woorden
+     als de bevestigingsstap straks. */
+  const keuze = document.createElement('p');
+  keuze.className = 'pl-kal-keuze';
+  keuze.hidden = true;
 
-    b.addEventListener('click', () => {
-      qa('.pl-window', host).forEach((o) => {
-        o.classList.remove('is-picked');
-        o.setAttribute('aria-pressed', 'false');
-      });
-      b.classList.add('is-picked');
-      b.setAttribute('aria-pressed', 'true');
-      setHidden('window_start', b.dataset.start);
-      setHidden('window_end', b.dataset.end);
+  const maanden = [];
+  geldig.forEach((w) => {
+    const m = w.start.slice(0, 7);
+    if (maanden.indexOf(m) === -1) maanden.push(m);
+  });
+  maanden.sort();
+
+  maanden.forEach((maand) => {
+    host.appendChild(kalenderMaand(maand, opStart, taal, host, keuze));
+  });
+  host.appendChild(keuze);
+}
+
+/** Eén maandruit. */
+function kalenderMaand(maand, opStart, taal, host, keuze) {
+  const [jaar, mnd] = maand.split('-').map(Number);
+  const blok = document.createElement('div');
+  blok.className = 'pl-kal';
+  /* De maand op het blok, zodat markeerBereik() de datum van een niet-klikbare
+     dag kan terugrekenen uit het dagnummer. */
+  blok.dataset.maand = maand;
+
+  const kop = document.createElement('p');
+  kop.className = 'pl-kal-maand';
+  try {
+    kop.textContent = new Intl.DateTimeFormat(taal, { month: 'long', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(Date.UTC(jaar, mnd - 1, 1)));
+  } catch { kop.textContent = maand; }
+  blok.appendChild(kop);
+
+  /* De koprij met de weekdagen. `aria-hidden`, want elke knop draagt zijn eigen
+     volledige datum als label — een schermlezer die eerst zeven afkortingen moet
+     doorlopen, is er niet mee geholpen. */
+  const week = document.createElement('div');
+  week.className = 'pl-kal-week';
+  week.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < 7; i++) {
+    const cel = document.createElement('span');
+    /* 5 maart 2026 was een maandag; vandaar dat vaste anker om zeven namen te
+       krijgen zonder een lijst per taal. */
+    try {
+      cel.textContent = new Intl.DateTimeFormat(taal, { weekday: 'short', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(2026, 0, 5 + i)));
+    } catch { cel.textContent = ''; }
+    week.appendChild(cel);
+  }
+  blok.appendChild(week);
+
+  const dagen = document.createElement('div');
+  dagen.className = 'pl-kal-dagen';
+
+  /* Maandag als eerste kolom: getDay() geeft zondag = 0, dus omrekenen. */
+  const eerste = new Date(Date.UTC(jaar, mnd - 1, 1));
+  const schuif = (eerste.getUTCDay() + 6) % 7;
+  for (let i = 0; i < schuif; i++) {
+    const leeg = document.createElement('span');
+    leeg.className = 'pl-kal-leeg';
+    leeg.setAttribute('aria-hidden', 'true');
+    dagen.appendChild(leeg);
+  }
+
+  const aantal = new Date(Date.UTC(jaar, mnd, 0)).getUTCDate();
+  for (let d = 1; d <= aantal; d++) {
+    const iso = `${maand}-${String(d).padStart(2, '0')}`;
+    const venster = opStart.get(iso);
+    if (!venster) {
+      const uit = document.createElement('span');
+      uit.className = 'pl-kal-dag is-uit';
+      uit.textContent = String(d);
+      uit.setAttribute('aria-hidden', 'true');
+      dagen.appendChild(uit);
+      continue;
+    }
+    const knop = button(String(d), 'pl-kal-dag');
+    knop.dataset.start = venster.start;
+    knop.dataset.end = venster.end || venster.start;
+    knop.setAttribute('aria-pressed', 'false');
+    /* Het volledige bereik als label, want "12" zegt een schermlezer niets. */
+    knop.setAttribute('aria-label', knop.dataset.end !== knop.dataset.start
+      ? `${day(knop.dataset.start)} – ${day(knop.dataset.end)}`
+      : day(knop.dataset.start));
+    knop.addEventListener('click', () => kiesVenster(knop, host, keuze));
+    dagen.appendChild(knop);
+  }
+
+  blok.appendChild(dagen);
+  return blok;
+}
+
+/** Eén venster kiezen: de knop aan, de hele periode oplichten, de velden gezet. */
+function kiesVenster(knop, host, keuze) {
+  qa('.pl-kal-dag', host).forEach((o) => {
+    o.classList.remove('is-picked', 'in-bereik');
+    if (o.tagName === 'BUTTON') o.setAttribute('aria-pressed', 'false');
+  });
+  knop.classList.add('is-picked');
+  knop.setAttribute('aria-pressed', 'true');
+
+  /* De dagen tússen start en eind, ook als die in de volgende maandruit staan.
+     Op datum en niet op positie: een venster dat over een maandgrens loopt, hoort
+     in beide ruiten op te lichten. */
+  const start = knop.dataset.start;
+  const eind = knop.dataset.end;
+  /* Eén doorloop voor alle cellen, ook de niet-klikbare: een venster van twee
+     dagen heeft meestal een tweede dag die zelf geen startdag is, en die hoort
+     net zo goed op te lichten. */
+  if (eind !== start) markeerBereik(host, start, eind);
+
+  setHidden('window_start', start);
+  setHidden('window_end', eind);
+
+  keuze.hidden = false;
+  keuze.textContent = eind !== start
+    ? `${c('gate.chosen')}: ${day(start)} – ${day(eind)}`
+    : `${c('gate.chosen')}: ${day(start)}`;
+}
+
+/**
+ * De dagen binnen een gekozen venster oplichten, ook de dagen die zelf geen
+ * startdag zijn. Die staan als `<span>` in de ruit en hebben geen dataset, dus de
+ * datum wordt hier uit de maandkop en het dagnummer teruggerekend.
+ */
+function markeerBereik(host, start, eind) {
+  qa('.pl-kal', host).forEach((blok) => {
+    const cellen = qa('.pl-kal-dag', blok);
+    cellen.forEach((cel) => {
+      let iso = cel.dataset.start;
+      if (!iso) {
+        const nr = Number(cel.textContent);
+        const maand = blok.dataset.maand;
+        if (!maand || !Number.isInteger(nr)) return;
+        iso = `${maand}-${String(nr).padStart(2, '0')}`;
+      }
+      if (iso > start && iso <= eind) cel.classList.add('in-bereik');
     });
-
-    host.appendChild(b);
   });
 }
 
@@ -5408,8 +6131,33 @@ function renderSummary() {
   // zodat hij hem terugvindt — en zet alleen de fieldset uit. Een radio in een
   // uitgezette fieldset post niet, dus hij hoort ook hier niet te staan; op de
   // bevestiging zou hij anders een antwoord tonen dat de studio nooit krijgt.
-  const look = q('input[name="style"]:checked');
-  if (look && !look.matches(':disabled')) rows.push([c('sum.style'), look.dataset.plStyleName || look.value]);
+  /* ── EEN RADIO OF EEN KEUZELIJST — 9 september 2026 ──────────────────────
+     Tot vandaag was de look altijd een radiogroep (StylePicker, het raster op
+     /start/lifestyle). Sinds StijlRegel bestaat, kan hetzelfde antwoord ook uit
+     een <select> komen — op /start/catalog en op /start/complete — en dan is er
+     niets `:checked`. Deze functie leest allebei.
+
+     `data-pl-style-name` staat op de radio én op de <option>, zodat hier de
+     NAAM van de stijl staat en niet de slug. Valt hij weg, dan is de waarde
+     zelf nog altijd leesbaar ("dunes"), en dat is beter dan een lege regel. */
+  const stijlRij = (naam, sleutel) => {
+    const radio = q(`input[name="${naam}"]:checked`);
+    if (radio) {
+      if (!radio.matches(':disabled')) rows.push([c(sleutel), radio.dataset.plStyleName || radio.value]);
+      return;
+    }
+    const keuze = q(`select[name="${naam}"], input[type="hidden"][name="${naam}"]`);
+    if (!keuze || keuze.matches(':disabled') || !keuze.value) return;
+    const gekozen = keuze.tagName === 'SELECT' ? keuze.options[keuze.selectedIndex] : keuze;
+    rows.push([c(sleutel), (gekozen && gekozen.dataset.plStyleName) || keuze.value]);
+  };
+  /* De catalogstijl staat er alleen als hij gevraagd is — op /start/catalog en
+     /start/complete. Bij een bestelling met allebei krijgen ze een eigen
+     etiket, want "Stijl · Classic" en "Stijl · Dunes" onder elkaar zegt niet
+     welke helft welke is. */
+  const heeftBeide = !!q('[name="catalog_style"]') && !!q('[name="style"]');
+  stijlRij('catalog_style', heeftBeide ? 'sum.styleCatalog' : 'sum.style');
+  stijlRij('style', heeftBeide ? 'sum.styleLifestyle' : 'sum.style');
 
   // De verhouding. Altijd, want elke bestelling heeft er een — er is geen
   // stroom waar deze vraag niet wordt gesteld, en dus geen leeg antwoord dat
@@ -5421,6 +6169,27 @@ function renderSummary() {
 
   // Task #271f.
   if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);
+
+  /* ── DE TWEE BETAALDE KEUZES VAN 9 SEPTEMBER ──────────────────────────────
+     Ze staan hier om dezelfde reden als het setje erboven: het zijn de enige
+     twee dingen op dit scherm die het bedrag veranderen zonder dat er een
+     product bij komt. Wie ze niet koos, ziet ze niet — een regel "0 producten
+     in 4K" is ruis. */
+  const hoogN = hoogResCount();
+  if (hoogN > 0) rows.push([c('sum.hoogRes'), c('sum.hoogResN', { n: hoogN, px: String((cfg.hoogRes && cfg.hoogRes.hoog) || '') })]);
+  if (voorrangAan()) rows.push([c('sum.voorrang'), c('sum.voorrangJa', { uren: String((cfg.voorrang && cfg.voorrang.uren) || 24) })]);
+
+  /* De hoeken bij NAAM. Het bedrag staat al in de totaalregel; wat hier hoort is
+     WAT er gemaakt wordt, want dat is het enige op dit scherm dat de klant nog
+     kan terugdraaien. De naam komt van de tegel waarop hij klikte, dus hij kan
+     niet gaan afwijken van wat hij zag. */
+  const hoeken = anglesChosen()
+    .map((b) => {
+      const naam = q('.pl-hoek-naam', b.closest('li'));
+      return naam ? naam.textContent.replace(/\s*✓\s*$/, '').trim() : '';
+    })
+    .filter(Boolean);
+  if (hoeken.length) rows.push([c('sum.angles'), c('sum.anglesN', { list: hoeken.join(', ') })]);
 
   /*
    * Computed again — NOT scraped back off step 1. Reading the rendered total

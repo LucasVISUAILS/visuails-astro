@@ -28,15 +28,52 @@
 // print die regel al zodra de stroom de vraag heeft. bgApplies('complete') was
 // al waar, dus de achtergrond blijft ook staan — deze bestelling heeft ze echt
 // allebei.
+
+// ── TWEE STIJLEN ONDER ELKAAR, EN DE MODELVRAAG VAN DE LIFESTYLE-HELFT ──────
+// 9 september 2026. Lucas: *"Bij complete product bundle catalog + lifestyle
+// beide stylen onder elkaar zetten en hetzelfde systeem toepassen."*
+//
+// Hier stond StylePicker: het beeldenraster van /start/lifestyle, één keer, met
+// één veld `style`. Twee dingen mis:
+//
+//   1. Het vroeg alleen de LIFESTYLE-stijl. De catalog-helft van deze
+//      bestelling — vier van de zeven beelden — had geen stijl in de POST,
+//      terwijl /start/catalog die sinds vandaag wel meestuurt.
+//   2. Het raster is er om een look te KIEZEN op beeld. Dat hoort op
+//      /start/lifestyle, waar het de eerste vraag is. Hier zijn het er twee, en
+//      twee rasters onder elkaar zijn een scherm vol keuzes voordat je bij het
+//      aantal producten bent.
+//
+// Nu twee regels van StijlRegel, met `toonHelft` zodat er letterlijk staat
+// welke helft je aan het beantwoorden bent. Ze posten twee verschillende
+// velden — `catalog_style` en `style` — want ze staan tegelijk in dezelfde POST.
+//
+// EN DE MODELVRAAG DEKT NU ALLEBEI DE HELFTEN. Hij werd alleen in de
+// catalogbewoording gesteld ("bij elke catalogset zit één foto op een model"),
+// terwijl deze bestelling ook een foto op een model in de carousel heeft.
+//
+// Er staat GEEN TWEEDE kiezer, en dat is een bewuste keuze en geen gemak:
+// LifestyleModelFold en Step1Options posten allebei `name="model"`, dus twee
+// kiezers op één pagina zijn in HTML één radiogroep — een gezicht kiezen voor
+// de carousel zou het gezicht voor de catalogset uitvinken. En los daarvan is
+// één gezicht het antwoord dat klopt: het is hetzelfde merk in dezelfde
+// bestelling. `modelSoort="beide"` zegt dat in de vraag zelf.
 import Layout from '../../../layouts/Layout.astro';
 import OrderFlow from '../../../components/order/OrderFlow.astro';
 import Step1Options from '../../../components/order/Step1Options.astro';
-import StylePicker from '../../../components/order/StylePicker.astro';
+import AnglePicker from '../../../components/order/AnglePicker.astro';
+import StijlRegel from '../../../components/order/StijlRegel.astro';
 ---
 
 <Layout title="Catalogsets en lifestyle-carousels bestellen — VISUAILS" description="De pagina en de feed in één bestelling: zeven beelden per product. Kies het aantal, de look en de achtergrond.">
   <OrderFlow lang="nl" service="complete">
-    <StylePicker lang="nl" />
-    <Step1Options lang="nl" />
+    <StijlRegel lang="nl" categorie="catalog" toonHelft />
+    <StijlRegel lang="nl" categorie="lifestyle" toonHelft />
+    <Step1Options lang="nl" modelSoort="beide" />
+    {/* De hoeken staan NA de drie vouwen en niet ertussen: het is de enige vraag
+        in stap 1 die geld kost, en een blok met een prijskaartje hoort niet
+        tussen drie antwoorden te staan die alle drie al een veilige standaard
+        hebben. Zie AnglePicker.astro. */}
+    <AnglePicker lang="nl" />
   </OrderFlow>
 </Layout>

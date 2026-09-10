@@ -186,7 +186,18 @@ for (const lang of LANGS) {
   const selectors = [...css.matchAll(/([^{}]+)\{[^{}]*\}/g)].map((m) => m[1].trim());
   const pairs = [
     ['de dropdown', '.nav-menu a', '.nav-menu .mi-off'],
-    ['de mobiele lade', '.mobile-nav > a', '.mobile-nav > .mi-off'],
+    /* ── DE LADE HEEFT SINDS 9 SEPTEMBER TWEE GROEPEN ────────────────────
+       Lucas: *"Maak daarna het burgermenu op telefoon wat mooier,
+       overzichtelijker en consistenter."* De links stonden als directe kinderen
+       van `.mobile-nav` en zijn nu verdeeld over twee `.mobile-lijst`-groepen,
+       elk met een eigen kop — dus is `.mobile-nav > a` de selector van een
+       vorm die niet meer bestaat.
+
+       Wat deze paragraaf BEWAAKT verandert niet: dat de link en het
+       uitgeschakelde item (Hooks, Editions) dezelfde opmaak krijgen, zodat
+       "binnenkort" niet als een fout in de lijst gaat staan. Alleen de selector
+       volgt de nieuwe vorm. */
+    ['de mobiele lade', '.mobile-lijst > a', '.mobile-lijst > .mi-off'],
     ['de footer', '.footer-col a', '.footer-col .mi-off'],
   ];
   for (const [naam, link, off] of pairs) {
@@ -216,8 +227,11 @@ for (const lang of LANGS) {
    * dropdown, die toevallig wél achteraan stond — dus bleef de test groen terwijl de
    * tint van de LADE naar voren was gehaald. Nu wordt precies die ene regel gezocht.
    */
-  const tint = css.lastIndexOf('.mobile-nav > .mi-off, .footer-col .mi-off');
-  const size = css.lastIndexOf('.mobile-nav > .mi-off { display: block');
+  /* De selectors volgen de nieuwe vorm van de lade (9 september 2026); wat deze
+     regel bewaakt is onveranderd: de grijstint moet ná de maat komen, anders
+     wint de maatregel en staat een uitgeschakeld item in de leeskleur. */
+  const tint = css.lastIndexOf('.mobile-lijst > .mi-off, .footer-col .mi-off');
+  const size = css.lastIndexOf('.mobile-lijst > .mi-off {');
   check('de tint van de lade komt ná zijn maat', tint > size && size > -1, true);
 }
 

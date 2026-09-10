@@ -269,6 +269,7 @@ export async function createMollieCustomer(env, { customerId, email, name }) {
  */
 export async function createFirstPayment(env, {
   subscriptionRef, mollieCustomerId, valueEuros, description, lang, successUrl, webhookUrl,
+  oneOff = false,
 }) {
   const cents = Math.round(Number(valueEuros) * 100);
   if (!Number.isFinite(cents) || cents < 1) {
@@ -277,7 +278,27 @@ export async function createFirstPayment(env, {
   return mollieRequest(env, 'POST', '/payments', {
     amount: { currency: 'EUR', value: Number(valueEuros).toFixed(2) },
     customerId: mollieCustomerId,
-    sequenceType: 'first',
+    /* ── EEN VOORUITBETAALD JAAR VRAAGT GEEN MANDAAT — 10 september 2026 ─────
+     *
+     * `sequenceType: 'first'` doet twee dingen tegelijk: het int geld én het laat
+     * de bank een SEPA-mandaat afgeven. Bij een maand- of jaartermijn wil je
+     * allebei. Bij een vooruitbetaald jaar wil je alleen het eerste — er wordt
+     * daarna nooit meer afgeschreven (zie koppelSubscription() in subscribe.js,
+     * dat voor die termijn geen subscription aanmaakt).
+     *
+     * EN HET IS MEER DAN OPRUIMEN. `first` beperkt de betaalmethoden tot de
+     * methoden die een mandaat KUNNEN afgeven: iDEAL, creditcard, Bancontact.
+     * Bankoverschrijving valt daarbuiten, en dat is precies de methode die je bij
+     * een bedrag als dit nodig hebt — een vooruitbetaald Brand-jaar is € 18.590,
+     * en de daglimiet die een Nederlandse bank standaard op iDEAL zet, ligt daar
+     * bij veel klanten onder. Met 'oneoff' biedt Mollie de hele lijst aan en kan
+     * een klant die niet zoveel in één keer via iDEAL kwijt kan, gewoon
+     * overmaken.
+     *
+     * De rest blijft identiek: hetzelfde kenmerk in `sub_ref`, dezelfde webhook,
+     * dezelfde terugkeerpagina. Alleen de vraag "mag ik hierna nog eens
+     * afschrijven" wordt niet meer gesteld. */
+    sequenceType: oneOff ? 'oneoff' : 'first',
     description: String(description || 'VISUAILS abonnement').slice(0, 255),
     redirectUrl: successUrl,
     webhookUrl,

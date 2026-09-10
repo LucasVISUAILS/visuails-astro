@@ -584,15 +584,106 @@ const hint = lang === 'nl'
      disclosure: a collapsed card is one row, open or nothing. Twenty-five
      cards each showing a text field is the same mile of boxes the collapse
      exists to prevent. */
-  .pu-cards :global(.pu-card.is-collapsed .pu-about) { display: none; }
+  /* ── DE LADE VOUWT MEE MET DE KAART — 9 september 2026 ───────────────────
+     Sinds de herindeling zit alles wat kan afwijken in één `.pu-meer`, en die
+     valt onder dezelfde uitklap als de vier vakken: een ingeklapte kaart is één
+     regel, open of niets. De losse regels voor .pu-about, .pu-ratios, .pu-hoog
+     en .pu-model die hier stonden, zijn daarmee overbodig — die blokken zitten
+     nu in de lade. Ze zijn weg en niet op `display:none` gezet: een regel die
+     niets meer verbergt maar wel blijft staan, is de vorm waarin dit over drie
+     maanden per ongeluk terugkomt. */
+  .pu-cards :global(.pu-card.is-collapsed .pu-meer) { display: none; }
   /* De verhouding per beeld vouwt mee met de vraag en de vier vakken: het is
      dezelfde uitklap, en de knop noemt ze alle drie in aria-controls. Alleen op
      lifestyle en complete aanwezig — buildRatios() in pipeline.js geeft null
      terug waar de dienst één verhouding voor de hele bestelling heeft. */
-  .pu-cards :global(.pu-card.is-collapsed .pu-ratios) { display: none; }
   .pu-cards :global(.pu-ratios) { margin-top: .8rem; }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DE LADE — 9 september 2026
+
+     Eén knop over de volle breedte met de samenvatting erop, en alles wat kan
+     afwijken erin. Zie de lange noot bij buildMeer() in pipeline.js voor de
+     meting die hiertoe leidde.
+
+     GEEN KADER OM DE LADE. Hij hoort bij de kaart waar hij in staat; een tweede
+     rand binnen een kaart maakt er een kaart-in-een-kaart van, en dat is precies
+     de gestapelde vorm waar deze herindeling vanaf wilde. Eén haarlijn erboven
+     is genoeg om te zeggen "hier houdt het werk op en begint de verfijning".
+     ═══════════════════════════════════════════════════════════════════════ */
+  /* ── STIL, MAAR NIET WEG — 9 september 2026 ──────────────────────────────
+     De uitleg bij het plusje staat op kaart één en daarna niet meer; zie de
+     noot in pipeline.js. `clip` en geen `display: none`, want de knop wijst er
+     met aria-describedby naar en dat moet blijven werken voor wie het vakje met
+     een schermlezer bereikt. */
+  .pu-cards :global(.pu-ref-hint.is-stil) {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+  }
+
+  .pu-cards :global(.pu-meer) { margin-top: .9rem; border-top: 1px solid var(--line); }
+  .pu-cards :global(.pu-meer-knop) {
+    display: flex; align-items: baseline; gap: .6rem; width: 100%;
+    padding: .7rem 0 .1rem; margin: 0;
+    background: none; border: 0; cursor: pointer; text-align: left;
+    font: inherit; color: var(--ink-2);
+  }
+  .pu-cards :global(.pu-meer-t) { font-size: .82rem; font-weight: 600; color: var(--ink-2); flex: 0 0 auto; }
+  /* De samenvatting is de reden dat deze knop bestaat, dus hij krijgt de ruimte
+     en de rest schuift op. `min-width: 0` zodat een lange regel afbreekt in
+     plaats van de pijl van de kaart af te duwen. */
+  .pu-cards :global(.pu-meer-vat) {
+    flex: 1 1 auto; min-width: 0;
+    font-size: .82rem; line-height: 1.45; color: var(--ink-3);
+  }
+  /* Wijkt er iets af, dan is dat een FEIT over dit product en geen bijzin: het
+     krijgt de leeskleur en een limoen stip ervoor, zodat je bij twintig kaarten
+     in één blik ziet welke anders zijn. */
+  .pu-cards :global(.pu-meer-vat.is-afwijkend) { color: var(--ink); font-weight: 600; }
+  .pu-cards :global(.pu-meer-vat.is-afwijkend)::before {
+    content: ''; display: inline-block; vertical-align: .08em;
+    width: 6px; height: 6px; margin-right: .45rem; border-radius: 50%;
+    background: var(--accent, #9EB42F);
+  }
+  .pu-cards :global(.pu-meer-pijl) { flex: 0 0 auto; width: 14px; height: 14px; color: var(--ink-3); transition: rotate .2s var(--ease, ease); }
+  .pu-cards :global(.pu-meer-pijl svg) { width: 100%; height: 100%; display: block; }
+  .pu-cards :global(.pu-meer-knop.is-open .pu-meer-pijl) { rotate: 180deg; }
+  .pu-cards :global(.pu-meer-knop:hover .pu-meer-t) { color: var(--ink); }
+  .pu-cards :global(.pu-meer-knop:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: var(--r-sm, 6px); }
+  /* De inhoud krijgt de ruimte die de kaart erbuiten juist inlevert: dit is de
+     plek waar iemand oplet, dus hier mag het ademen. */
+  .pu-cards :global(.pu-meer-in) { display: grid; gap: 1.4rem; padding: 1rem 0 .4rem; }
+  /* En de blokken erin dragen hun eigen scheiding niet meer: de `gap` hierboven
+     doet dat, en een haarlijn per blok zou vier lijnen in één lade zetten. */
+  .pu-cards :global(.pu-meer-in .pu-hoog),
+  .pu-cards :global(.pu-meer-in .pu-model) { margin-top: 0; padding-top: 0; border-top: 0; }
+  .pu-cards :global(.pu-meer-in .pu-ratios),
+  .pu-cards :global(.pu-meer-in .pu-about) { margin-top: 0; }
   .pu-cards :global(.pu-ratios-h) { margin: 0; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
   .pu-cards :global(.pu-ratios-hint) { margin: .15rem 0 0; font-size: .76rem; color: var(--ink-3); }
+
+  /* ── 4K OP DIT PRODUCT — 9 september 2026 ─────────────────────────────────
+     Eén vinkje per kaart, en het vouwt mee met de rest van de kaart. Een lijn
+     erboven en niet een kader eromheen: het is een regel bij dit product, geen
+     los blok — en een kader zou hem zwaarder maken dan de vier uploadvakken
+     erboven, die het echte werk van deze kaart zijn. */
+  .pu-cards :global(.pu-hoog) { margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+  .pu-cards :global(.pu-hoog-rij) { display: flex; align-items: flex-start; gap: .55rem; cursor: pointer; }
+  .pu-cards :global(.pu-hoog-rij input) { margin-top: .18rem; flex: 0 0 auto; }
+  .pu-cards :global(.pu-hoog-t) { font-size: .82rem; font-weight: 600; color: var(--ink); }
+  .pu-cards :global(.pu-hoog-hint) { margin: .25rem 0 0 1.6rem; font-size: .76rem; line-height: 1.5; color: var(--ink-3); }
+
+  /* ── HET GEZICHT PER PRODUCT — 9 september 2026 ───────────────────────────
+     Dezelfde vorm als de verhouding per beeld erboven: een kopje, een label en
+     één keuzelijst, met de uitleg eronder. Geen tegels met foto's: de tien
+     gezichten staan al als tegels in stap 1, en ze dertig keer herhalen is de
+     muur die deze stap juist opruimt. */
+  .pu-cards :global(.pu-model) { margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+  .pu-cards :global(.pu-model-h) { margin: 0; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+  .pu-cards :global(.pu-model-label) { display: block; margin: .5rem 0 .25rem; font-size: .78rem; color: var(--ink-3); }
+  .pu-cards :global(.pu-model-sel) { width: 100%; max-width: 22rem; }
+  .pu-cards :global(.pu-model-hint) { margin: .3rem 0 0; font-size: .76rem; line-height: 1.5; color: var(--ink-3); }
   /* auto-fit met een ruime minimum: drie beelden passen op een desktop naast
      elkaar en gaan op een telefoon onder elkaar, zonder mediaquery en zonder
      dat een lange optienaam de kolom uit loopt. */

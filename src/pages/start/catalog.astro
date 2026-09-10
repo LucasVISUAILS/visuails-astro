@@ -7,10 +7,16 @@
 import Layout from '../../layouts/Layout.astro';
 import OrderFlow from '../../components/order/OrderFlow.astro';
 import Step1Options from '../../components/order/Step1Options.astro';
+import AnglePicker from '../../components/order/AnglePicker.astro';
 ---
 
 <Layout title="Order catalog sets — VISUAILS" description="Product-page images, four per product. Pick the count and the background; the rate falls as the count rises.">
   <OrderFlow lang="en" service="catalog">
     <Step1Options lang="en" huisLook />
+    {/* De hoeken staan NA de drie vouwen en niet ertussen: het is de enige vraag
+        in stap 1 die geld kost, en een blok met een prijskaartje hoort niet
+        tussen drie antwoorden te staan die alle drie al een veilige standaard
+        hebben. Zie AnglePicker.astro. */}
+    <AnglePicker lang="en" />
   </OrderFlow>
 </Layout>

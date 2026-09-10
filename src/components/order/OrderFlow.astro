@@ -49,7 +49,14 @@ import {
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND,
 } from '../../data/pricing.js';
 import { ATTENDED_PUNTEN_PER_VENSTER, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
-import { puntenVoor, beeldenVoor } from '../../data/pricing.js';
+import { puntenVoor, beeldenVoor, RESOLUTIE, HOOG_PER_PRODUCT, VOORRANG, VOORRANG_COPY, voorrangBedrag } from '../../data/pricing.js';
+/* De drie diensten die op de ladder staan; video en hooks hebben nog geen
+   kassa in dit formulier, dus daar is voorrang nog geen knop maar een zin in
+   het gesprek. Zie voorrangKan() in pricing.js. */
+const VOORRANG_DIENSTEN = new Set(['catalog', 'lifestyle', 'complete']);
+/* De drie stromen met een gezichtsvraag. Video en hooks hebben er geen — daar
+   is het gezicht onderdeel van het concept en niet een keuze in een formulier. */
+const MODEL_DIENSTEN = new Set(['catalog', 'lifestyle', 'complete']);
 import '../../styles/stijl22.css';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
 /* De beeldkeuring reist NIET mee in cfg. pipeline.js importeert keurBeeld()
@@ -64,7 +71,7 @@ import ProductUploader from './ProductUploader.astro';
 /* De beeldverhouding — 13 augustus 2026. Niet in de slot maar hier, want deze
    vraag verschilt niet per dienst; zie de kop van RatioPicker.astro. */
 import RatioPicker from './RatioPicker.astro';
-import { LIFESTYLE_RATIOS, CATALOG_RATIOS, DEFAULT_RATIO_ID, ratiosPerImage } from '../../data/ratios.js';
+import { LIFESTYLE_RATIOS, CATALOG_RATIOS, DEFAULT_RATIO_ID, ratiosPerImage, ratioById } from '../../data/ratios.js';
 const CATALOG_RATIO_IDS = CATALOG_RATIOS.map((r) => r.id);
 import { localizedPath } from '../../i18n/ui.js';
 import {
@@ -292,6 +299,8 @@ const PIPE = {
       onRequest: '—',
       outfit: ' Plus {price} × {n} for a complete look — trousers, top and shoes in one shot.',
       extra: ' Plus {price} × {n} for extra photos.',
+      hoogRes: ' Plus {price} × {n} for lifestyle images at {px} px.',
+      voorrang: ' Plus {price} for priority delivery.',
     },
     // NOT "{then} instead of {now}" — see the note this line kept in the old
     // file: what falls is the per-product rate, so that is what is compared.
@@ -322,6 +331,18 @@ const PIPE = {
     // that can actually fail has one in [data-pl-err-msg]; this is what a
     // future field gets before anybody writes it one.
     err: { generic: 'This still needs an answer before you can continue.' },
+    /* ── DE MERKKIT-STROOK ────────────────────────────────────────────────
+       Zie toonMerkkit() in pipeline.js. Deze labels worden in de BROWSER
+       gezet, dus ze horen hier en niet bij `f.s1` — dat is de kopie die Astro
+       zelf rendert. Kort, omdat ze naast hun waarde staan en niet erboven:
+       "Gezicht · Ava" leest in één oog. */
+    s1: {
+      kitModel: 'Face',
+      kitBg: 'Background',
+      kitCh: 'Selling on',
+      kitRatio: 'Shape',
+      kitLook: 'Style',
+    },
     sum: {
       kind: 'What we make',
       count: 'Products',
@@ -355,7 +376,21 @@ const PIPE = {
       formatJpg: 'jpg (a marketplace order is not delivered as webp)',
       model: 'The on-model photo',
       modelAny: 'We pick a face that suits your brand',
-      style: 'Look',
+      /* "Look" heet sinds 9 september "Style"; zie StijlRegel.astro. De twee
+         regels eronder staan er alleen bij een complete-bestelling, waar er
+         één per helft is. */
+      hoogRes: 'Resolution',
+      hoogResN: '{px} px on {n} product(s)',
+      voorrang: 'Delivery',
+      voorrangJa: `Priority — we aim for {uren} hours, or the surcharge comes back`,
+      /* De bijbestelde hoeken, met hun NAMEN en niet als getal: "4 extra photos"
+         zegt wat het kost, "Flat-lay, Side, Inside, One detail" zegt wat je krijgt,
+         en dit scherm is het laatste moment waarop dat nog te veranderen is. */
+      angles: 'Extra angles',
+      anglesN: '{list} — on every product',
+      style: 'Style',
+      styleCatalog: 'Style · catalog',
+      styleLifestyle: 'Style · lifestyle',
       ratio: 'Image shape',
       outfit: 'Complete look',
       outfitN: '{price} extra × {n}',
@@ -413,7 +448,17 @@ const PIPE = {
     s3: {
       prefillNote: "Filled in from your account ({email}) — change anything that’s out of date.",
     },
-    gate: { windowSub: 'Dates we can hold' },
+    gate: {
+      windowSub: 'Dates we can hold',
+      /* ── DE AGENDA — 10 september 2026 ────────────────────────────────
+         Lucas: *"Ik zou dit liever als een agenda willen zien waar de klant kan
+         klikken op een beschikbare datum."* De twee regels hieronder zijn het
+         enige wat de kalender aan tekst nodig heeft; de maandnamen en de
+         weekdagen komen uit Intl en niet uit deze lijst, want die kent elke
+         browser al in elke taal. */
+      chosen: 'Held for you',
+      none: 'No dates open in this window.',
+    },
     submit: {
       sending: 'Sending…',
       email: 'That does not look like a complete email address — it needs an @ and a domain, like naam@merk.nl. Check it and send again.',
@@ -429,6 +474,8 @@ const PIPE = {
       onRequest: '—',
       outfit: ' Plus {price} × {n} voor een compleet setje — broek, top en schoenen in één foto.',
       extra: ' Plus {price} × {n} voor extra foto’s.',
+      hoogRes: ' Plus {price} × {n} voor lifestylebeelden op {px} px.',
+      voorrang: ' Plus {price} voor voorrang bij levering.',
     },
     rung: {
       one: `Nog één product en het tarief zakt van {now} naar {rate} per product — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
@@ -450,6 +497,14 @@ const PIPE = {
       lifestyle: 'Lifestyle-carousel',
     },
     err: { generic: 'Hier moet nog een antwoord staan voordat je verder kunt.' },
+    /* Zie de Engelse tegenhanger. */
+    s1: {
+      kitModel: 'Gezicht',
+      kitBg: 'Achtergrond',
+      kitCh: 'Verkoopt op',
+      kitRatio: 'Verhouding',
+      kitLook: 'Stijl',
+    },
     sum: {
       kind: 'Wat we maken',
       count: 'Producten',
@@ -462,7 +517,17 @@ const PIPE = {
       formatJpg: 'jpg (een marktplaatsbestelling wordt niet als webp geleverd)',
       model: 'De foto op een model',
       modelAny: 'Wij kiezen een gezicht dat bij je merk past',
-      style: 'Look',
+      /* Zie de Engelse tegenhanger. */
+      hoogRes: 'Resolutie',
+      hoogResN: '{px} px bij {n} product(en)',
+      voorrang: 'Levering',
+      voorrangJa: `Voorrang — we mikken op {uren} uur, of de toeslag komt terug`,
+      /* Zie de Engelse tegenhanger. */
+      angles: 'Extra hoeken',
+      anglesN: '{list} — bij elk product',
+      style: 'Stijl',
+      styleCatalog: 'Stijl · catalog',
+      styleLifestyle: 'Stijl · lifestyle',
       ratio: 'Beeldverhouding',
       outfit: 'Compleet setje',
       outfitN: '{price} extra × {n}',
@@ -508,7 +573,12 @@ const PIPE = {
     s3: {
       prefillNote: 'Ingevuld vanuit je account ({email}) — pas aan wat niet meer klopt.',
     },
-    gate: { windowSub: 'Data die we kunnen vrijhouden' },
+    gate: {
+      windowSub: 'Data die we kunnen vrijhouden',
+      /* Zie de Engelse tegenhanger. */
+      chosen: 'Voor je vrijgehouden',
+      none: 'Geen data vrij in deze periode.',
+    },
     submit: {
       sending: 'Versturen…',
       email: 'Dat lijkt geen volledig e-mailadres — er moet een @ en een domein in, zoals naam@merk.nl. Kijk het na en verstuur opnieuw.',
@@ -561,18 +631,12 @@ for (const l of ['en', 'nl'] as const) {
     ready: s.ready,
     needsShots: s.needsShots,
     listAnd: s.listAnd,
-    extraH: s.extraH,
-    extraCount: s.extraCount,
-    extraNote: s.extraNote,
-    extraPlaceholder: s.extraPlaceholder,
-    extraRate: s.extraRate,
-    extraSum: s.extraSum,
-    extraSumOne: s.extraSumOne,
-    extraWhat: s.extraWhat,
+    /* Van het blok "extra foto's" op de productkaart is alleen `extraSlot` over —
+       de naam van een uploadvakje `extra1`. Het blok zelf is op 9 september 2026
+       vervangen door de hoekenkiezer in stap 1 (AnglePicker.astro), maar bestellingen
+       van vóór die datum hebben bestanden met die sleutel in hun metadata, en die
+       moeten een woord onder het vakje houden. */
     extraSlot: s.extraSlot,
-    extraNoteLabel: s.extraNoteLabel,
-    extraNoteErr: s.extraNoteErr,
-    extraShotHint: s.extraShotHint,
     ownModel: s.ownModel,
     ownLook: s.ownLook,
     ownLookH: s.ownLookH,
@@ -617,6 +681,45 @@ for (const l of ['en', 'nl'] as const) {
       : 'Only set this if one image needs a different shape from the rest.',
     ratioSame: l === 'nl' ? 'Zelfde als de bestelling' : 'Same as the order',
     ratioImage: l === 'nl' ? 'Beeld {n}' : 'Image {n}',
+
+    /* ── HET GEZICHT VAN DIT PRODUCT — 9 september 2026 ────────────────────
+     * Lucas: *"De klant kan in het dashboard nog wel een vast model kiezen en
+     * deze word dan automatisch bij elk product geplaatst, hij kan dan per
+     * product dit nog aanpassen."*
+     *
+     * `modelSame` draagt de NAAM van het gezicht dat bovenaan gekozen is, zodat
+     * je op kaart negentien niet hoeft te onthouden wat je bij het begin koos.
+     * `modelSamePlain` is de variant zonder naam, voor het ene moment waarop er
+     * nog niets is aangevinkt. */
+    modelH: l === 'nl' ? 'Het gezicht' : 'The face',
+    modelLabel: l === 'nl' ? 'Model voor dit product' : 'Model for this product',
+    modelSame: l === 'nl' ? 'Hetzelfde als de bestelling · {naam}' : 'Same as the order · {naam}',
+    modelSamePlain: l === 'nl' ? 'Hetzelfde als de bestelling' : 'Same as the order',
+    /* ── DE LADE — 9 september 2026 ────────────────────────────────────────
+     * Zie de noot bij buildMeer() in pipeline.js. `meerVolgt` is wat er staat
+     * als er niets afwijkt, en dat is bij verreweg de meeste producten het
+     * geval — dus is dat de rustigste regel van de kaart en niet de luidste. */
+    meerH: l === 'nl' ? 'Meer over dit product' : 'More about this product',
+    meerVolgt: l === 'nl' ? 'Volgt de bestelling' : 'Follows the order',
+    meerHoog: l === 'nl' ? '4K' : '4K',
+    meerRatio: l === 'nl' ? '{n} beeld anders' : '{n} image differs',
+    modelHint: l === 'nl'
+      ? 'Alleen invullen als dit product een ander gezicht moet krijgen dan de rest van de bestelling.'
+      : 'Only set this if this product needs a different face from the rest of the order.',
+
+    /* ── 4K OP DIT PRODUCT — 9 september 2026 ──────────────────────────────
+     * Eén vinkje per productkaart dat alle drie de lifestylebeelden van dat
+     * product op de hoge maat zet. De twee getallen komen uit RESOLUTIE en het
+     * bedrag uit HOOG_PER_PRODUCT; er staat hier niets overgetypt.
+     *
+     * "Alle drie" en niet "de foto's": de klant heeft net drie beelden per
+     * product beloofd gekregen, en dat is het aantal dat hij hier terugleest. */
+    hoogResLabel: l === 'nl'
+      ? `Alle ${LIFESTYLE_IMAGES} lifestylebeelden op ${RESOLUTIE.hoog} px · ${euro(HOOG_PER_PRODUCT, 'nl')}`
+      : `All ${LIFESTYLE_IMAGES} lifestyle images at ${RESOLUTIE.hoog} px · ${euro(HOOG_PER_PRODUCT, 'en')}`,
+    hoogResHint: l === 'nl'
+      ? `Standaard is ${RESOLUTIE.standaard} px aan de lange zijde — genoeg voor een webshop, een marktplaats en een feed. Zet dit aan voor een schermvullende banner, een druk of een scherm waar je voor staat.`
+      : `The standard is ${RESOLUTIE.standaard} px on the long edge — enough for a shop, a marketplace and a feed. Turn this on for a full-bleed banner, a print, or a screen you stand in front of.`,
 
     /* ── HET PLUSJE: NOG EEN FOTO, GRATIS ─────────────────────────────────
      * Lucas: *"meer foto’s toe te voegen van zijn product kosteloos [...] maar
@@ -703,12 +806,20 @@ for (const l of ['en', 'nl'] as const) {
 // with no line under it.
 const REQUIRED_COPY = [
   'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.outfit', 'total.extra',
+  'total.hoogRes', 'total.voorrang',
+  's1.kitModel', 's1.kitBg', 's1.kitCh', 's1.kitRatio', 's1.kitLook',
+  'pu.hoogResLabel', 'pu.hoogResHint',
+  'pu.modelH', 'pu.modelLabel', 'pu.modelSame', 'pu.modelSamePlain', 'pu.modelHint',
+  'pu.meerH', 'pu.meerVolgt', 'pu.meerHoog', 'pu.meerRatio',
   'rung.one', 'rung.many',
   'plan.compare', 'plan.steady', 'plan.cta',
   'level.attended', 'level.unattended',
   'kind.complete', 'kind.catalog', 'kind.lifestyle',
   'err.generic',
-  'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.ratio', 'sum.outfit', 'sum.outfitN',
+  'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.styleCatalog', 'sum.styleLifestyle',
+  'sum.hoogRes', 'sum.hoogResN', 'sum.voorrang', 'sum.voorrangJa',
+  'sum.angles', 'sum.anglesN',
+  'sum.ratio', 'sum.outfit', 'sum.outfitN',
   'sum.channels', 'sum.channelsNone', 'sum.bgLocked', 'sum.format', 'sum.formatJpg',
   'sum.model', 'sum.modelAny',
   // sum.net and NOTHING ELSE about money — VAT is charged at the rate of the
@@ -726,10 +837,9 @@ const REQUIRED_COPY = [
   // instead of shipping a slot with no word under the drawing.
   'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
   'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.listAnd', 'pu.trayAssign',
-  'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate',
-  'pu.extraSum', 'pu.extraSumOne', 'pu.extraWhat', 'pu.ownModel',
+  'pu.ownModel',
   'pu.ownLook', 'pu.ownLookH', 'pu.ownLookHint', 'pu.ownLookNone',
-  'pu.extraSlot', 'pu.extraNoteLabel', 'pu.extraNoteErr', 'pu.extraShotHint',
+  'pu.extraSlot',
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
   'pu.missingH', 'pu.missingHOne', 'pu.missingMore',
   'pu.allDone', 'pu.allDoneOne',
@@ -754,7 +864,7 @@ const REQUIRED_COPY = [
     ...(x.options ? x.options.map((o) => `pu.qopt.${x.id}.${o.id || '_'}`) : []),
   ]),
   's3.prefillNote',
-  'gate.windowSub',
+  'gate.windowSub', 'gate.chosen', 'gate.none',
   'submit.sending', 'submit.email', 'submit.network', 'submit.generic',
   ...(bgApplies
     ? ['bg.warn', `bg.note.${CUSTOM_ID}`, ...BACKGROUNDS.map((b) => `bg.note.${b.id}`)]
@@ -819,6 +929,11 @@ const FORM = {
     },
 
     s1: {
+      /* De kop en de startregel van de vouw om de beeldvorm. De naam van de
+         standaardvorm komt uit ratios.js en niet uit deze regel: de vouw mag
+         nooit iets anders zeggen dan wat er aangevinkt staat. */
+      ratioLabel: 'Image shape',
+      ratioStart: `${ratioById(DEFAULT_RATIO_ID).label} · ${ratioById(DEFAULT_RATIO_ID).name.en}`,
       h: 'How many, and what for?',
       countLabel: 'How many products?',
       countPick: 'Choose a number',
@@ -861,6 +976,26 @@ const FORM = {
       outfitCatalogTerm: 'complete looks',
       outfitCatalogNote: 'A catalog set is priced and shot per product, so complete looks are not part of this order. Need one because it matters to the brand? Ask us and we will look at it with you.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS}.`,
+      /* ── VOORRANG — de vier regels bij het vinkje ─────────────────────────
+         `voorrangGeen` staat er zolang er geen aantal is: het bedrag is een
+         deel van het orderbedrag, dus zonder aantal is er geen getal om te
+         drukken. Een streepje is dan het eerlijke antwoord, precies zoals bij
+         het totaal erboven. */
+      voorrangLabel: VOORRANG_COPY.en.label,
+      voorrangLine: VOORRANG_COPY.en.line,
+      voorrangWhen: 'When can it be rushed?',
+      voorrangLimits: VOORRANG_COPY.en.limits,
+      voorrangGeen: '— pick a count first',
+      /* ── DE MERKKIT-STROOK ────────────────────────────────────────────────
+         Zie toonMerkkit() in pipeline.js. De labels zijn kort omdat ze naast
+         hun waarde staan en niet erboven: "Face · Ava" leest in één oog. */
+      kitH: 'From your brand kit',
+      kitOpen: 'Change for this order',
+      kitModel: 'Face',
+      kitBg: 'Background',
+      kitCh: 'Selling on',
+      kitRatio: 'Shape',
+      kitLook: 'Style',
       outfitWhy: 'Why a complete look costs more',
       outfitWhyBody: OUTFIT_COPY.en,
       outfitNone: 'None — single product',
@@ -1007,7 +1142,13 @@ const FORM = {
     shared: [
       ['The production', `The same production run at one product and at ${maxProducts}.`],
       ['The review', `${clause(reviewClaim('unattended', 'en'))}. At every count.`],
-      ['The files', 'High-resolution and e-commerce-ready, with no per-use licence.'],
+      /* ── "HOGE RESOLUTIE" IS EEN GETAL GEWORDEN — 9 september 2026 ────
+         Lucas: *"Ook bij 'De bestanden' staat hoge resolutie en dit staat
+         waarschijnlijk op meer plekken. Even duidelijk maken: catalog foto's
+         zijn altijd 2k resolutie (…) lifestyle heeft echter wel de
+         mogelijkheid op een 4k upsell per foto."* Zie RESOLUTIE in
+         pricing.js: dat is de enige plek waar de twee getallen staan. */
+      ['The files', `${RESOLUTIE.standaard} px on the long edge, e-commerce-ready, with no per-use licence.`],
     ],
     footH: 'Not ready to order?',
     footBody: `${sample.deliverable}, made from one of your own products — for ${sample.price}, ${sample.unit}. Made the same way as a paid order.`,
@@ -1042,6 +1183,9 @@ const FORM = {
     },
 
     s1: {
+      /* Zie de Engelse tegenhanger. */
+      ratioLabel: 'Beeldvorm',
+      ratioStart: `${ratioById(DEFAULT_RATIO_ID).label} · ${ratioById(DEFAULT_RATIO_ID).name.nl}`,
       h: 'Hoeveel, en waarvoor?',
       countLabel: 'Hoeveel producten?',
       countPick: 'Kies een aantal',
@@ -1080,6 +1224,20 @@ const FORM = {
       outfitCatalogTerm: 'complete setjes',
       outfitCatalogNote: 'Bij een catalogset betaal je per product, dus een compleet setje — broek, top en schoenen samen — kan in deze bestelling niet. Toch nodig voor je merk? Vraag het ons, dan kijken we er samen naar.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}.`,
+      /* Zie de Engelse tegenhanger. */
+      voorrangLabel: VOORRANG_COPY.nl.label,
+      voorrangLine: VOORRANG_COPY.nl.line,
+      voorrangWhen: 'Wanneer kan het sneller?',
+      voorrangLimits: VOORRANG_COPY.nl.limits,
+      voorrangGeen: '— kies eerst een aantal',
+      /* Zie de Engelse tegenhanger. */
+      kitH: 'Uit je merkkit',
+      kitOpen: 'Wijzigen voor deze bestelling',
+      kitModel: 'Gezicht',
+      kitBg: 'Achtergrond',
+      kitCh: 'Verkoopt op',
+      kitRatio: 'Verhouding',
+      kitLook: 'Stijl',
       outfitWhy: 'Waarom een compleet setje meer kost',
       outfitWhyBody: OUTFIT_COPY.nl,
       outfitNone: 'Geen — los product',
@@ -1213,7 +1371,8 @@ const FORM = {
     shared: [
       ['De productie', `Dezelfde productie bij één product en bij ${maxProducts}.`],
       ['De controle', `${clause(reviewClaim('unattended', 'nl'))}. Bij elk aantal.`],
-      ['De bestanden', 'Hoge resolutie en klaar voor je webshop, zonder licentie per gebruik.'],
+      /* Zie de Engelse tegenhanger. */
+      ['De bestanden', `${RESOLUTIE.standaard} px aan de lange zijde, klaar voor je webshop, zonder licentie per gebruik.`],
     ],
     footH: 'Nog niet klaar om te bestellen?',
     footBody: `${sample.deliverable}, gemaakt van je eigen product — voor ${sample.price}, ${sample.unit}. Dezelfde productie als een betaalde bestelling.`,
@@ -1419,6 +1578,57 @@ const config = {
     lifestyleOnly: LIFESTYLE_RATIOS.filter((r) => !CATALOG_RATIO_IDS.includes(r.id)).map((r) => r.id),
     fallback: DEFAULT_RATIO_ID,
     perImage: isSample || !ratiosPerImage(service) ? 0 : LIFESTYLE_IMAGES,
+  },
+  /*
+   * ── 4K OP DE LIFESTYLEBEELDEN — 9 september 2026 ──────────────────────────
+   *
+   * Lucas: *"lifestyle heeft echter wel de mogelijkheid op een 4k upsell per
+   * foto die niet verplicht is en de klant kan kiezen anders zijn die
+   * afbeeldingen ook allemaal 2k kwaliteit."* Het werd per PRODUCT en niet per
+   * foto — zijn eigen keuze uit drie voorstellen; zie HOOG_PER_PRODUCT in
+   * pricing.js voor het waarom.
+   *
+   * `aan` volgt dezelfde regel als `perImage` hierboven en om dezelfde reden:
+   * alleen een stroom met lifestylebeelden kan dit aanbieden, en de proef niet
+   * (één beeld voor één vast bedrag; een toeslag die niet in rekening gebracht
+   * kan worden, is erger dan geen vraag).
+   */
+  hoogRes: {
+    aan: !isSample && ratiosPerImage(service),
+    prijs: HOOG_PER_PRODUCT,
+    standaard: RESOLUTIE.standaard,
+    hoog: RESOLUTIE.hoog,
+    beelden: LIFESTYLE_IMAGES,
+  },
+  /*
+   * ── VOORRANG BIJ LEVERING — 9 september 2026 ──────────────────────────────
+   *
+   * De grenzen staan in pricing.js (VOORRANG) en worden hier alleen doorgegeven,
+   * zodat de browser dezelfde som maakt als de server. Het BEDRAG rekent de
+   * browser mee als voorbeeld; wat er op de factuur komt, rekent quoteOrder()
+   * opnieuw uit — dezelfde afspraak als bij elk ander bedrag in dit bestand.
+   */
+  /*
+   * ── HET GEZICHT PER PRODUCT — 9 september 2026 ────────────────────────────
+   *
+   * Lucas: *"Klant kan bij catalog en lifestyle per product kiezen welk model
+   * ervoor gebruikt word."*
+   *
+   * DEZELFDE DIENSTEN ALS DE MODELVRAAG ZELF, en dat is de hele regel: heeft de
+   * stroom een gezichtsvraag, dan mag hij per product afwijken. Bij de proef
+   * niet — die is één product, en "wijk bij product 1 af van de bestelling" is
+   * dezelfde vraag twee keer stellen. Zelfde afweging als bij `ratio.perImage`.
+   */
+  model: {
+    perProduct: !isSample && MODEL_DIENSTEN.has(service),
+  },
+  voorrang: {
+    aan: !isSample && VOORRANG_DIENSTEN.has(service),
+    deel: VOORRANG.deel,
+    bodem: VOORRANG.bodem,
+    plafond: VOORRANG.plafond,
+    maxProducten: VOORRANG.maxProducten,
+    uren: VOORRANG.uren,
   },
   copy: PIPE[lang],
 };
@@ -1730,6 +1940,54 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <p class="hint pl-outfit-note">{f.s1.outfitCatalogShort} <Note lang={lang} term={f.s1.outfitCatalogTerm}>{f.s1.outfitCatalogNote}</Note></p>
       )}
 
+      {/* ── WAT JE MERKKIT AL WEET — 9 september 2026 ────────────────────────
+          Lucas: *"Dan kan bij ingelogde klanten de modelvraag blok in het
+          eerste bestelformulier scherm ook weg omdat deze dan ingesteld staat
+          in zijn account."*
+
+          Leeg en verborgen in de HTML; toonMerkkit() in pipeline.js vult hem
+          zodra /account/me een merkkit teruggeeft, en verbergt dan de vragen
+          die hij beantwoordt. Zonder account, zonder script of zonder merkkit
+          gebeurt er niets en staan alle vragen er gewoon — dat is de stand
+          waarin dit formulier het altijd al deed. */}
+      <div class="pl-kit" data-pl-merkkit hidden>
+        <p class="pl-kit-kop">{f.s1.kitH}</p>
+        <ul class="pl-kit-lijst" data-pl-merkkit-lijst role="list"></ul>
+        <button type="button" class="pl-kit-knop" data-pl-merkkit-open>{f.s1.kitOpen}</button>
+      </div>
+
+      {/* ── VOORRANG BIJ LEVERING — 9 september 2026 ─────────────────────────
+          Lucas: *"Ook kan de klant kiezen voor priority delivery, waarbij de
+          klant bovenaan de lijst komt te staan als upsell."*
+
+          EEN VINKJE EN GEEN KEUZELIJST: het is één ding dat je wel of niet
+          koopt. Niet `data-pl-req` — niet aanvinken is een compleet antwoord.
+
+          HIJ VERDWIJNT BOVEN DE GRENS. syncVoorrang() in pipeline.js verbergt
+          en DISABLEt dit blok zodra het aantal producten boven VOORRANG.
+          maxProducten komt. Disabled en niet alleen hidden, om dezelfde reden
+          als bij de lookvraag: een verborgen vinkje dat aan staat, post gewoon,
+          en dan staat er voorrang op een bestelling die hem niet kan krijgen.
+
+          HET BEDRAG STAAT ERBIJ EN BEWEEGT MEE. Het is een deel van het
+          orderbedrag, dus zonder aantal is er nog geen getal — dan staat er een
+          streepje, net als bij het totaal erboven. */}
+      {!isSample && VOORRANG_DIENSTEN.has(service) && (
+      <div class="field pl-voorrang" data-pl-voorrang>
+        <label class="pl-voorrang-rij">
+          <input type="checkbox" name="voorrang" value="1" />
+          <span class="pl-voorrang-t">
+            <b>{f.s1.voorrangLabel}</b>
+            <span class="pl-voorrang-bedrag" data-pl-voorrang-bedrag>{f.s1.voorrangGeen}</span>
+          </span>
+        </label>
+        <span class="hint">{f.s1.voorrangLine}</span>
+        <Disclose summary={f.s1.voorrangWhen} tone="plain">
+          <p>{f.s1.voorrangLimits}</p>
+        </Disclose>
+      </div>
+      )}
+
       {/* THE RUNNING TOTAL.
           Three things about this block are answers to an accessibility audit
           rather than to a design brief.
@@ -1780,8 +2038,17 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             vatLead()/vatDetail() in pricing.js. Juist hier telt dat: dit staat
             recht onder het bedrag, en een lezer die naar zijn totaal kijkt, moet
             niet eerst door vier zinnen belastingrecht heen. */}
-        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail}</Note></p>
-        <p class="pl-total-display">{f.s1.displayNote}</p>
+        {/* ── ÉÉN REGEL KLEINE LETTERS EN NIET TWEE — 10 september 2026 ─────
+            Hieronder stond nog een tweede alinea: "een voorbeeld, in je browser
+            uitgerekend; de factuur rekent hij bij ons opnieuw". Waar is dat, en
+            het hoort ook ergens te staan — maar niet als tweede grijze regel pal
+            onder het bedrag. Lucas: *"dit kan echt veel simpeler en misschien ook
+            compacter, vooral voor iemand die voor het eerst besteld."*
+
+            Hij is de notitie in gegaan, achter hetzelfde vraagtekentje als de
+            btw-uitleg. Wie het wil weten, klikt; wie naar zijn totaal kijkt, ziet
+            één regel in plaats van twee. */}
+        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail} {f.s1.displayNote}</Note></p>
       </div>
       )}
 
@@ -1812,7 +2079,23 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           die deze dienst DEFINIEERT — de achtergrond of de look — en die hoort
           boven de vraag te staan die hem opmaakt. Dezelfde volgorde als in de
           brand kit, waar de verhouding onder gezicht en achtergrond staat. */}
-      <RatioPicker lang={lang} />
+      {/* ── OOK DE BEELDVORM IN EEN VOUW — 10 september 2026 ─────────────
+          Lucas: *"dit kan echt veel simpeler en misschien ook compacter, vooral
+          voor iemand die voor het eerst besteld."* Gemeten was dit blok 307
+          pixels op een scherm en 547 op een telefoon, voor een vraag met een
+          veilig antwoord dat al aanstaat (1:1, de vorm die overal past).
+
+          Zelfde afspraak als de andere vouwen: de samenvatting toont de GEKOZEN
+          vorm, dus er verdwijnt geen antwoord — alleen de vijf tegels en de twee
+          uitlegregels staan pas open als je ze nodig hebt. */}
+      <Disclose
+        summary={f.s1.ratioLabel}
+        name="s1"
+        liveAttr="data-pl-sum-ratio"
+        liveText={f.s1.ratioStart}
+      >
+        <RatioPicker lang={lang} />
+      </Disclose>
 
       {/* What the count earns. Not a control: the level FOLLOWS the count
           (tierFor(), WINDOW_THRESHOLD), so this is a statement, and the
@@ -2996,30 +3279,96 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   }
   .pl-gate-lost .pl-gate-h { color: var(--warn-ink); }
 
-  .pl-windows {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
-    gap: .8rem;
-    margin-top: 1.2rem;
+  /* ══════════════════════════════════════════════════════════════════════
+     DE AGENDA — 10 september 2026
+     Lucas: *"Ik zou dit liever als een agenda willen zien waar de klant kan
+     klikken op een beschikbare datum."* Zie de lange noot bij renderWindows()
+     in pipeline.js voor waarom zes uitgeschreven tegels een maandruit zijn
+     geworden.
+
+     :global(), want pipeline.js bouwt deze knooppunten en die dragen het
+     scope-attribuut van Astro niet — dezelfde val die eerder de productkaarten
+     en de merkkitregel stil onopgemaakt liet.
+     ══════════════════════════════════════════════════════════════════════ */
+  .pl-windows { display: grid; gap: clamp(1.2rem, 3vw, 2rem); margin-top: 1rem; }
+  /* Twee maandruiten naast elkaar zodra het past; daaronder onder elkaar. Een
+     ruit is nooit smaller dan zeven leesbare kolommen. */
+  @media (min-width: 720px) {
+    .pl-windows { grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); align-items: start; }
   }
-  .pl-windows :global(.pl-window) {
-    display: flex;
-    flex-direction: column;
-    gap: .3rem;
-    align-items: flex-start;
-    padding: .95rem 1.1rem;
+  .pl-windows :global(.pl-kal) { min-width: 0; }
+  .pl-windows :global(.pl-kal-maand) {
+    margin: 0 0 .6rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .95rem;
+    text-transform: capitalize;
+  }
+  .pl-windows :global(.pl-kal-week),
+  .pl-windows :global(.pl-kal-dagen) {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .pl-windows :global(.pl-kal-week) {
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
+    font-size: .64rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  /* Elke cel is even hoog en even breed, klikbaar of niet — een ruit waarin de
+     vrije dagen groter zijn dan de rest, leest niet meer als een maand. */
+  .pl-windows :global(.pl-kal-dag),
+  .pl-windows :global(.pl-kal-leeg) {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    min-height: 2.2rem;
+    border-radius: var(--r-sm);
+    font-size: .88rem;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Een dag zonder aanbod: leesbaar maar duidelijk niet aan de beurt. Geen
+     `disabled`-knop — die belooft nog steeds dat er iets te klikken valt en zit
+     in de tabvolgorde in de weg. */
+  .pl-windows :global(.pl-kal-dag.is-uit) { color: var(--ink-3); opacity: .45; }
+  /* Een vrije dag. Border en niet alleen een kleur, zodat het verschil ook zonder
+     kleurwaarneming te zien is. */
+  .pl-windows :global(button.pl-kal-dag) {
     border: 1px solid var(--line-strong);
     background: var(--surface);
     color: var(--ink);
-    font: inherit;
-    text-align: left;
+    font-weight: 600;
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
-  .pl-windows :global(.pl-window:hover) { border-color: var(--accent-line); }
-  .pl-windows :global(.pl-window.is-picked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
-  .pl-windows :global(.pl-window-days) { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
-  .pl-windows :global(.pl-window-sub) { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .pl-windows :global(button.pl-kal-dag:hover) { border-color: var(--ink); }
+  .pl-windows :global(button.pl-kal-dag:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pl-windows :global(.pl-kal-dag.is-picked) {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink, #0A0A0A);
+  }
+  /* De tweede dag van een gekozen venster: dezelfde familie, een tint zachter.
+     Zonder dit kiest iemand een zaterdag en leest hij pas in de bevestiging dat
+     er een zondag bij hoort. */
+  .pl-windows :global(.pl-kal-dag.in-bereik) {
+    background: var(--accent-soft, rgb(210 224 74 / .3));
+    color: var(--ink);
+    opacity: 1;
+  }
+  .pl-windows :global(.pl-kal-keuze) {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .9rem;
+    color: var(--ink);
+  }
+  .pl-windows :global(.pl-kal-leegzin) { grid-column: 1 / -1; margin: 0; font-size: .9rem; color: var(--ink-3); }
 
   /* ── Step 5 · confirm ─────────────────────────────────────────────────────
      :empty is not defensive tidying. renderSummary() fills this on arrival; on
@@ -3238,7 +3587,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   @media (prefers-reduced-motion: reduce) {
     .level,
     .pl-rail-item { transition: none; }
-    .pl-windows :global(.pl-window) { transition: none; }
+    .pl-windows :global(button.pl-kal-dag) { transition: none; }
     /* .input, .textarea, .select, .opt and .dropzone are opted out in
        global.css now, alongside the transitions they cancel — which is also
        how test-sample and contact stopped animating through the setting. */
@@ -3482,4 +3831,63 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       --voet-onder: 5.5rem;
     }
   }
+
+  /* ── VOORRANG BIJ LEVERING — 9 september 2026 ──────────────────────────────
+     Eén vinkje met het bedrag ernaast, want dat bedrag is de hele afweging: je
+     koopt een dag en je wilt weten wat die kost. Het staat rechts uitgelijnd op
+     dezelfde lijn als de naam, zodat het meebeweegt zonder de regel te breken
+     als het van "— kies eerst een aantal" naar "+ € 65" springt. */
+  .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); }
+  .pl-voorrang-rij { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; }
+  .pl-voorrang-rij input { margin-top: .3rem; flex: 0 0 auto; }
+  .pl-voorrang-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; width: 100%; }
+  .pl-voorrang-t b { font-size: 1rem; }
+  .pl-voorrang-bedrag { margin-left: auto; font-family: var(--font-mono); font-size: .82rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .pl-voorrang .hint { display: block; margin-top: .4rem; margin-left: 1.7rem; }
+  .pl-voorrang :global(details) { margin-left: 1.7rem; }
+  @media (max-width: 620px) {
+    .pl-voorrang-bedrag { margin-left: 0; flex-basis: 100%; }
+  }
+
+  /* ── DE MERKKIT-STROOK — 9 september 2026 ─────────────────────────────────
+     Wat het account al weet, is geen vraag meer maar een mededeling. Zie
+     toonMerkkit() in pipeline.js.
+
+     GEEN KADER, WEL EEN VLAK. Hij hoort bij de vragen eronder en is er geen
+     vervanging van; een rand eromheen zou hem een blok maken dat op zichzelf
+     staat, terwijl hij juist zegt "deze vragen zijn al beantwoord". Een lichte
+     grond en een limoen streep links zijn genoeg. */
+  .pl-kit {
+    margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0;
+    padding: .9rem 1rem .9rem 1.1rem;
+    background: var(--ghost, rgb(17 17 17 / .04));
+    border-left: 3px solid var(--accent, #9EB42F);
+    border-radius: 0 var(--r-sm, 8px) var(--r-sm, 8px) 0;
+    max-width: var(--pl-measure);
+  }
+  .pl-kit-kop { margin: 0; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .pl-kit-lijst {
+    display: flex; flex-wrap: wrap; gap: .3rem 1.2rem;
+    margin: .5rem 0 0; padding: 0; list-style: none;
+  }
+  /* ── `:global()`, EN DAT IS GEEN NETHEID ──────────────────────────────────
+     Deze <li>'s worden door toonMerkkit() in de BROWSER gemaakt. Astro scoopt
+     de CSS van een component door elk element in de markup een
+     `data-astro-cid-*` te geven en de selectors daarop te compileren — en een
+     knooppunt dat JavaScript maakt, draagt dat attribuut niet. Zonder
+     `:global()` matcht hier dus geen enkele regel, en dat was precies te zien:
+     "GezichtAva" zonder spatie ertussen, omdat de `gap` niet aankwam.
+     Dezelfde val als in FigPipeline.astro en addBrandModels(); dit is de derde
+     keer dat dit project erin loopt, vandaar deze noot. */
+  .pl-kit-lijst :global(li) { display: flex; align-items: baseline; gap: .4rem; font-size: .9rem; }
+  .pl-kit-lijst :global(.pl-kit-l) { font-size: .78rem; color: var(--ink-3); }
+  .pl-kit-lijst :global(b) { color: var(--ink); font-weight: 600; }
+  .pl-kit-knop {
+    margin: .6rem 0 0; padding: 0;
+    background: none; border: 0; cursor: pointer;
+    font: inherit; font-size: .82rem; color: var(--ink-2);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .pl-kit-knop:hover { color: var(--ink); }
+  .pl-kit-knop:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
 </style>

@@ -90,7 +90,12 @@ const COPY = {
        eronder zegt "We read the products [...] and pick from the ten faces".
        Het Nederlands had het altijd al goed: "Wij kiezen er een die bij je merk
        past". Nu zeggen beide talen hetzelfde. */
-    any: 'We choose one that fits your brand',
+    /* ── KORTER, WANT HET IS EEN TEGELLABEL — 10 september 2026 ────────────
+       "We choose one that fits your brand" liep over drie regels en maakte deze
+       ene tegel hoger dan de tien ernaast. De zin zelf staat al onder het raster
+       ("We read the products and what you told us…"), dus hier hoeft alleen te
+       staan WIE er kiest. */
+    any: 'We choose for you',
     anyNote: `We read the products and what you told us, and pick from the ${rosterWoord('en')} faces. This is the default, and it is a real answer — not a blank we will chase you about.`,
     why: 'About these faces',
     whyP: [
@@ -111,7 +116,8 @@ const COPY = {
     labelNote: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij zit zonder meerprijs in elke catalogset, en hij is de reden dat die set uit vier foto\u2019s bestaat en niet uit drie.',
     lead: 'Bij elke catalogset zit één foto op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     leadLifestyle: 'In elke carousel zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
-    any: 'Wij kiezen er een die bij je merk past',
+    /* Zie de Engelse tegenhanger. */
+    any: 'Wij kiezen voor jou',
     anyNote: `Wij kijken naar de producten en naar wat je ons vertelde, en kiezen uit de ${rosterWoord('nl')} gezichten. Dit is de standaard, en het is een echt antwoord — geen leeg veld waar we je achteraf over lastigvallen.`,
     why: 'Over deze gezichten',
     whyP: [
@@ -303,10 +309,22 @@ const nl = lang === 'nl';
   }
   /* The "we choose" tile has no portrait, because showing one would be showing
      an eleventh model. A plus mark in the same box keeps the row even. */
+  /* ── GEEN KADER OM HET MERKTEKEN — 10 september 2026 ──────────────────
+     Lucas: *"gebruik het echte visuails logo voor 'Kies voor mij' zonder die
+     zwarte kader eromheen."* Die rand kwam van `.mp-thumb`, dat de haarlijn om
+     een PORTRET zet zodat een lichte foto niet in de tegel wegvalt. Een merkteken
+     is geen foto: het heeft die rand niet nodig en krijgt er een hokje van.
+
+     Wat ervoor in de plaats komt is een rustig vlak in de inkt van het merk met
+     het teken in lime — dezelfde combinatie als de bestelknop, dus de tegel zegt
+     nu ook in kleur "dit is VISUAILS die kiest" in plaats van "hier ontbreekt
+     een foto". */
   .mp-thumb-any {
     display: grid;
     place-items: center;
-    color: var(--ink-3);
+    box-shadow: none;
+    background: #111111;
+    color: var(--accent);
   }
   .mp-thumb-any svg {
     width: 22px; height: 22px;
@@ -345,13 +363,43 @@ const nl = lang === 'nl';
      het staat gecentreerd op ongeveer een derde van de hoogte, in het accent.
      `fill: currentColor` zodat de kleur uit één plek komt. */
   .mp-thumb-any .mp-mark {
-    width: 34%; height: 34%; display: block;
-    fill: var(--accent); color: var(--accent-text);
+    /* Iets groter dan de 34% van eerst: zonder kader eromheen mag het teken de
+       tegel dragen in plaats van erin te zweven. */
+    width: 42%; height: 42%; display: block;
+    fill: var(--accent); color: var(--accent);
   }
   .mp-thumb-any { display: grid; place-items: center; }
 
-  .mp-opt.is-own { border-color: var(--accent-line); }
-  .mp-opt.is-own .mp-traits { color: var(--accent-bright); font-weight: 600; }
+  /* ── DE EIGEN TEGEL MAG ERUIT SPRINGEN — 10 september 2026 ────────────
+     Lucas: *"Ook mag de het custom model er wel wat meer uitspringen en
+     specialer voelen."* Hij had één haarlijn in het accent, en tussen tien
+     tegels die allemaal een rand hebben is dat geen verschil dat je ziet.
+
+     Drie dingen die het wel doen, en geen ervan maakt de tegel groter — het
+     raster moet één rij blijven:
+       · een dubbele rand: de accentrand plus een ring ernaast, zodat de tegel
+         letterlijk dikker in het raster staat;
+       · een grond in de zachte accentkleur in plaats van wit — dit gezicht IS
+         immers van hen;
+       · het portret schaalt een fractie mee bij hover, wat geen andere tegel doet.
+     Wat er NIET bij komt is een tweede badge: het label linksboven zegt het al,
+     en twee keer hetzelfde zeggen leest als onzekerheid. */
+  .mp-opt.is-own {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 6px 18px rgb(17 17 17 / .07);
+    background: var(--accent-soft, rgb(210 224 74 / .12));
+  }
+  .mp-opt.is-own .mp-thumb {
+    box-shadow: inset 0 0 0 1px var(--accent);
+    transition: scale .35s var(--ease, ease);
+  }
+  .mp-opt.is-own:hover .mp-thumb { scale: 1.03; }
+  .mp-opt.is-own .mp-name { font-weight: 600; }
+  .mp-opt.is-own .mp-traits { color: var(--ink-2); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) {
+    .mp-opt.is-own .mp-thumb { transition: none; }
+    .mp-opt.is-own:hover .mp-thumb { scale: 1; }
+  }
 
   /* The photo needs a positioned parent for the badge to sit in. Only the own
      tiles have one — a roster portrait is still a bare <img>, because giving
@@ -375,8 +423,19 @@ const nl = lang === 'nl';
     left: .3rem;
     padding: .12rem .38rem;
     border-radius: var(--r-sm);
-    background: rgb(28 29 24 / .78);
-    color: var(--accent-bright);
+    background: rgb(17 17 17 / .88);
+    /* ── DONKER OP DONKER — 10 september 2026 ─────────────────────────────
+       Lucas: *"de label tekst is ook niet goed zichtbaar."* Hier stond
+       `var(--accent-bright)`, en die naam liegt: in global.css is
+       `--accent-bright: var(--accent-text)` en `--accent-text: var(--ink-1)`.
+       In het lichte thema is dat dus INKT en geen lime — bijna zwarte letters
+       op een bijna zwarte plaat. De naam is bedoeld als "het accent wanneer je
+       het als TEKST gebruikt", en op een lichte grond klopt dat; op deze donkere
+       plaat is de echte accentkleur juist wat je nodig hebt.
+
+       `--accent` en niet `--accent-bright`: #D2E04A op #111 is een contrast van
+       ruim 11:1, en dat is dezelfde lime als de knoppen. */
+    color: var(--accent);
     font-size: .73rem;
     font-weight: 700;
     letter-spacing: .06em;

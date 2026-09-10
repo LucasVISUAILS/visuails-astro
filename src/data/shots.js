@@ -427,32 +427,17 @@ export const COPY = {
     // telling them to look in the wrong place.
     needsShots: 'Needs {list}',
     listAnd: 'and',
-    // Extra photos — priced in pricing.js (EXTRA_PHOTO_LADDER). The counter is
-    // on every card because the choice is per product; the description field
-    // only appears once the counter is above zero, so a 25-product order with
-    // no extras shows 25 steppers and not one empty textarea.
-    extraH: 'Extra photos',
-    extraCount: 'How many?',
-    extraNote: 'What should they be?',
-    extraPlaceholder: 'e.g. close-up of the model cropped at the neck',
-    // Eén rij per bijbestelde foto. Het nummer staat erin omdat de klant met
-    // meerdere rijen tegelijk werkt en anders drie identieke labels ziet.
+    /* ── WAT HIER STOND — 9 september 2026 ──────────────────────────────────
+       Elf regels copy voor het blok "extra foto's" op de productkaart: een
+       teller, een tarief, een som en een verplichte notitie per bijbestelde
+       foto. Dat blok bestaat niet meer. De hoeken worden nu één keer vooraf
+       gekozen uit een lijst mét foto (src/data/angles.js, AnglePicker.astro), en
+       die copy staat daar.
+
+       `extraSlot` blijft, en alleen die: het is de naam onder een uploadvakje
+       met sleutel `extra1`, en bestellingen van vóór vandaag hebben bestanden
+       met die sleutel in hun metadata staan. */
     extraSlot: 'Extra {n}',
-    extraNoteLabel: 'What should Extra {n} be?',
-    // De notitie is verplicht en de foto niet — zie de noot bij isExtraShotId().
-    // Deze zin wordt de melding in het foutvak ÉN in de bubbel van de browser,
-    // dus hij moet zeggen welk veld het is en niet "vul dit in".
-    extraNoteErr: 'Describe what Extra {n} should be before you continue.',
-    extraShotHint: 'A reference is optional — describe it and we will make it.',
-    extraRate: '{rate} each at this order size, up to {max} per product.',
-    /* ── DE REGEL DIE HET BEDRAG NOEMT — 4 september 2026 ────────────────────
-       Lucas: *"Extra foto's (…) kost de klant extra geld dus dit moet wat
-       serieuzer dan een klein blokje onderin."* Het tarief stond er al, maar
-       niet wat het BIJ ELKAAR wordt — en dat is het getal waar iemand ja of nee
-       op zegt. Deze regel verschijnt pas zodra er één gekozen is. */
-    extraSum: '{n} extra × {rate} = {sum} on top, for this product',
-    extraSumOne: 'One extra photo: {sum} on top, for this product',
-    extraWhat: 'A photo you describe yourself — an angle, a crop or a detail that is not in the standard set. We make it; a reference photo is welcome but not needed.',
     ownModel: 'Yours only',
     ownLook: 'Your look',
     ownLookH: 'Your own look',
@@ -504,19 +489,8 @@ export const COPY = {
     ready: 'Klaar',
     needsShots: 'Mist {list}',
     listAnd: 'en',
-    extraH: 'Extra foto’s',
-    extraCount: 'Hoeveel?',
-    extraNote: 'Wat moeten het worden?',
-    extraPlaceholder: 'bijv. close-up van het model bijgesneden bij de hals',
+    /* Zie de Engelse tegenhanger voor waarom hier nog één regel staat. */
     extraSlot: 'Extra {n}',
-    extraNoteLabel: 'Wat moet Extra {n} worden?',
-    extraNoteErr: 'Beschrijf wat Extra {n} moet worden voordat je verdergaat.',
-    extraShotHint: 'Een voorbeeldfoto mag, hoeft niet — beschrijf het en wij maken het.',
-    extraRate: '{rate} per stuk bij deze bestelgrootte, tot {max} per product.',
-    /* Zie de Engelse tegenhanger. */
-    extraSum: '{n} extra × {rate} = {sum} erbij, voor dit product',
-    extraSumOne: 'Eén extra foto: {sum} erbij, voor dit product',
-    extraWhat: 'Een foto die je zelf omschrijft — een hoek, een uitsnede of een detail dat niet in de vaste set zit. Wij maken hem; een voorbeeldfoto mag, maar hoeft niet.',
     ownModel: 'Alleen van jou',
     ownLook: 'Jouw look',
     ownLookH: 'Je eigen look',

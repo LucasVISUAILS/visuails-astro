@@ -1,77 +1,65 @@
 ---
-// VISUAILS — FigWalk: één bestelling van formulier tot download, als een vast
-// kader bovenaan met negen stappen die eronder langsschuiven. Augustus 2026.
-//
-// WAAROM DIT BESTAAT. Lucas, met vijf schermafbeeldingen van een sticky
-// betaalvisual erbij: *"Ik wil eigenlijk dat het een sticky page is en dat je
-// dan 1 categorie selecteert … en dat je dan door het proces word geleidt."*
-// En daarna, over de eerste versie hiervan: *"Ik zou graag willen dat de foto
-// bovenaan het scherm sticky blijft en dat de tekst en de stylen van links
-// naar rechts gaan net als lenis tijdens het scrollen. Veel white space en
-// rust en duidelijk en gedetaileerd vertellen wat er precies gebeurt wanneer
-// een klant besteld."*
-//
-// Vier dingen staan in die tweede zin en alle vier sturen de vorm.
-//
-//   1 · HET BEELD BOVENAAN, NIET ERNAAST. De eerste versie zette het kader in
-//       een linkerkolom met de tekst rechts. Dat leest als een productpagina.
-//       Nu plakt het kader onder de navigatie, gecentreerd, en loopt de tekst
-//       eronder door — één kolom, één ding tegelijk in beeld.
-//
-//   2 · VAN LINKS NAAR RECHTS. Elke stap komt van links binnengeschoven, staat
-//       stil terwijl je hem leest, en schuift naar rechts weg. Dat is geen
-//       animatie met een eigen tijdlijn: de verschuiving hangt aan de
-//       scrollpositie, dus hij beweegt precies zo snel als jij scrolt. "Net als
-//       lenis" sloeg op de bibliotheek die de scroll van deze site lerpte; die
-//       is er sinds 1 september 2026 uit (zie de noot in Layout.astro). De
-//       verschuiving volgt nog steeds de scroll, alleen levert de browser die nu
-//       zelf.
-//
-//       Er is bewust GEEN horizontale baan gekozen die de scroll overneemt.
-//       Dat is de vorm van veel awardsites en het is ook de vorm waar
-//       trackpadgebruikers uit stappen; gevraagd, en het antwoord was de
-//       zachte variant.
-//
-//   3 · VEEL WHITE SPACE EN RUST. Eén kolom, één maximale leesbreedte, en per
-//       stap ruim een half scherm hoogte. De verschuiving is 72 pixels, niet
-//       driehonderd: genoeg om te merken dat er iets beweegt, te weinig om
-//       ernaar te moeten kijken.
-//
-//   4 · GEDETAILLEERD VERTELLEN WAT ER PRECIES GEBEURT. De vorige versie had
-//       vijf stappen die pas bij de foto begonnen. Het formulier, de agenda,
-//       de betaling, het portaal en de revisie ontbraken — en dat zijn juist
-//       de dingen waar iemand die op het punt staat te bestellen zich zorgen
-//       over maakt. Het zijn er negen nu, en de volgorde is de echte volgorde:
-//       het venster wordt bevestigd VOOR de betaling. Zie WALK_STEPS in
-//       src/data/demo.js.
-//
-// ── WAT DIT VERVING ──────────────────────────────────────────────────────────
-// FigFlow (de rail met prijsschuif en capaciteitspoort) en het demospel op
-// /demo. Eén ding in plaats van drie, dus één fotoserie om te schieten. De
-// prijsschuif en de poort zijn er op verzoek uitgehaald; de poort staat als
-// belofte in de tekst boven de doorloop en de prijzen staan op /pricing.
-//
-// (/demo zelf is op 24 augustus 2026 opgeheven; deze doorloop staat nu alleen
-// nog op /how-it-works. Zie de noot onderaan bij het script.)
-//
-// ── ALLES WORDT SERVERSIDE GERENDERD, NIETS WORDT GEMAAKT ────────────────────
-// Elke laag van het kader, voor elke dienst, voor elke keuze, staat als markup
-// in de pagina met `hidden` erop. Het script zet `hidden` om, zet een class, en
-// schrijft een transform. Verder niets. De reden is de val waar dit project al
-// drie keer in gelopen is: Astro's scoped CSS hangt aan `data-astro-cid-*`, dat
-// alleen op template-elementen staat, dus een node die JavaScript maakt matcht
-// geen enkele regel in dit bestand.
-//
-// ── ZONDER JAVASCRIPT ────────────────────────────────────────────────────────
-// De keuzeknoppen zijn `<input type="radio">` in `<label>`s, dus die werken.
-// Wat niet werkt is het omschakelen van het kader. Daarom hangt zowel het
-// sticky-gedrag als het verbergen van lagen achter `.js` op <html>: zonder
-// script staan alle lagen gewoon onder elkaar en scrollt de pagina er langs.
-// Lang, maar waar en volledig. Dezelfde afspraak als `.reveal.pending` in
-// global.css.
-//
-// GEEN ARROW FUNCTIONS IN JSX-ATTRIBUTEN en GEEN GEÏNTERPOLEERDE CLASSNAMEN —
-// zie de kop van FigPipeline.astro. Alles afgeleid wordt hieronder uitgerekend.
+/*
+ * VISUAILS — FigWalk: één bestelling van formulier tot download.
+ * Augustus 2026, volledig herbouwd op 9 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT ER WEG IS, EN WAAROM ────────────────────────────────────────────────
+ *
+ * Lucas, 9 september 2026: *"Je mag pick one to follow ook volledig opnieuw
+ * gaan maken omdat ik het niet prettig en onoverzichtelijk vind hoe het op dit
+ * moment werkt. Maak het simpeler en logischer, zonder de effecten die nu
+ * gebruikt worden."*
+ *
+ * Wat hier stond was een plakkend kader onder de navigatie met tweeëndertig
+ * lagen erin, en zes stappen die er scrollgebonden onderdoor schoven — van
+ * links binnen, stil terwijl je leest, naar rechts weg, met de doorzichtigheid
+ * gekoppeld aan hoe ver je gescrold was. 3.913 pixels hoog. Gemeten op de
+ * schermafdruk van vandaag: op elk moment stond er ÉÉN stap leesbaar en zes als
+ * spookjes eronder, en het kader zelf was een zwarte band van 450 pixels met
+ * één foto en drie gearceerde vakjes erin, want die foto's zijn nog niet
+ * geschoten.
+ *
+ * Drie dingen daarvan waren fout, en het derde is het ergste:
+ *
+ *   1 · DE DOORZICHTIGHEID. Tekst die pas leesbaar wordt als je er precies bij
+ *       staat, is tekst die je niet kunt overslaan, niet kunt terugzoeken en
+ *       niet kunt scannen. Een uitleg over hoe bestellen werkt, is juist iets
+ *       waar iemand doorheen bladert tot hij de stap vindt waar hij over
+ *       twijfelt.
+ *
+ *   2 · HET KADER. Het beloofde te tonen "wat er op dat moment bestaat", en wat
+ *       er bestaat zijn plaatshouders. Een zwarte band van een halve
+ *       schermhoogte die vier keer per doorloop van arcering wisselt, kost
+ *       leeshoogte en geeft er niets voor terug.
+ *
+ *   3 · HET WAS EEN DEMO GEWORDEN IN PLAATS VAN EEN UITLEG. Je moest hem
+ *       BEDIENEN — kiezen, scrollen, wachten tot de laag omsloeg — om te lezen
+ *       wat er in zes alinea's staat.
+ *
+ * ── WAT ERVOOR IN DE PLAATS KOMT ────────────────────────────────────────────
+ *
+ * Een genummerde lijst. Alle zes de stappen staan er tegelijk, alle zes even
+ * leesbaar, in dezelfde vorm als de vijf stappen op /start (zie `.st-stappen`
+ * in StartPage.astro): een nummer, wie het doet, een kop en een alinea.
+ *
+ * De keuze BLIJFT, want die is de vraag van de pagina: catalog, lifestyle en
+ * video delen geen proces, en een tekening die ze over elkaar heen legt heeft
+ * het over alle drie mis. Wat verandert is dat kiezen nu alleen de TEKST
+ * wisselt en geen animatie start — drie radio's en een zusterselector, zonder
+ * een regel JavaScript. `src/scripts/walk.js` is daarmee overbodig geworden.
+ *
+ * De twee inhoudelijke details die het kader wél droeg, staan nu in de stap
+ * waar ze over gaan: de looks bij "je kiest de look", de gezichten bij "er komt
+ * een gezicht bij". Daar zijn het feiten bij een alinea in plaats van lagen in
+ * een diavoorstelling.
+ *
+ * ── DE TEKST IS ONVERANDERD ─────────────────────────────────────────────────
+ *
+ * WALK_STEPS, WALK_SERVICES en WALK_COPY in src/data/demo.js blijven precies
+ * zoals ze waren, en elk getal daarin komt nog steeds uit pricing.js. Dit
+ * bestand is alleen de vorm; wat er staat, is niet opnieuw geschreven.
+ */
 import {
   WALK_SERVICES, WALK_STEPS, WALK_COPY,
   DEMO_MODEL, DEMO_LOCKED_MODELS, DEMO_BACKGROUNDS, walkResult,
@@ -80,15 +68,8 @@ import { styles } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
 import { videoStyles } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
-import { SHOTS } from '../data/shots.js';
 import { localizedPath } from '../i18n/ui.js';
 
-// LANG IS THE ONLY PROP, and this component localises its own links. The five
-// retired figures on /how-it-works took no `lang` because they took no copy
-// either — everything arrived as a prop, so parity was checkable in one file.
-// This one has a copy table AND two host pages, so threading three hrefs
-// through both of them would be the same paths typed twice with no checker on
-// either. The copy lives in WALK_COPY for the same reason.
 interface Props { lang: 'en' | 'nl' }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -98,77 +79,65 @@ const startHref = lp('/start');
 const rosterHref = lp('/custom-models');
 const sampleHref = lp('/test-sample');
 
-// Style NAMES come from the style modules, never from demo.js — a style cannot
-// be called "Dunes" here and something else on /lifestyle.
+/* Stijlnamen komen uit de stijlmodules en nooit uit demo.js — een stijl kan
+   hier niet "Dunes" heten en op /lifestyle iets anders. */
 const lifeStyles = lang === 'nl' ? stylesNl : styles;
 const vidStyles = lang === 'nl' ? videoStylesNl : videoStyles;
-function nameOf(list, slug) {
-  const hit = list.filter(function match(s) { return s.slug === slug; })[0];
+function nameOf(list: any[], slug: string) {
+  const hit = list.filter(function match(s: any) { return s.slug === slug; })[0];
   return hit ? hit.name : slug;
 }
-const bgHex = {};
+const bgHex: Record<string, string> = {};
 for (const b of DEMO_BACKGROUNDS) bgHex[b.id] = b.hex;
 
-// The whole tree, built in frontmatter. The markup below is then a nested map
-// with no logic in it, which is the only way a template this size stays
-// readable — and the only way the tag scanners can follow it.
-const SERVICES = WALK_SERVICES.map(function build(svc) {
-  const looks = svc.lookIds.map(function look(id) {
+/* De hele boom in de frontmatter, zodat de markup eronder een geneste map is
+   zonder logica erin. Dezelfde afspraak als in de vorige versie, en om dezelfde
+   reden: dit is de enige manier waarop een sjabloon van deze omvang leesbaar
+   blijft. GEEN pijlfuncties in JSX-attributen en geen geïnterpoleerde
+   klassenamen — zie de kop van FigPipeline.astro. */
+const SERVICES = WALK_SERVICES.map(function build(svc: any) {
+  const looks = svc.lookIds.map(function look(id: string) {
     let name = id;
     if (svc.look === 'background') name = t.backgroundNames[id] || id;
     else if (svc.look === 'style') name = nameOf(lifeStyles, id);
     else if (svc.look === 'videoStyle') name = nameOf(vidStyles, id);
     const set = walkResult(svc.id, id);
-    return { id: id, name: name, hex: bgHex[id] || null, preview: set[0], set: set };
-  });
-  // THE FOUR SHOTS THE CUSTOMER SENDS, named from src/data/shots.js and not
-  // from the delivery vocabulary. They are not the same words: `worn` is
-  // "Worn" when you are being asked for a photo of it on someone, and "On a
-  // model" when it is a frame we are handing back. The first pass used the
-  // delivery names here and the upload step asked the reader for an image we
-  // had not made yet. Only the first slot has a photograph; the other three
-  // are hatched, and the caption under the figure says why.
-  const shots = SHOTS.map(function shot(sh) {
-    return { id: sh.id, name: sh.name[lang] || sh.name.en };
+    return { id: id, name: name, hex: bgHex[id] || null, preview: set[0] };
   });
   return {
     id: svc.id,
-    out: svc.out,
     look: svc.look,
-    source: svc.source,
-    shots: shots,
     name: t.services[svc.id].name,
     line: t.services[svc.id].line,
     looks: looks,
-    startLook: looks[0].id,
   };
 });
 
-// Catalog is what the server renders: four outputs is the fullest end state,
-// and therefore the one worth showing to anyone whose JavaScript never arrives.
 const START = SERVICES[0].id;
+
+/* De nummers worden GEDRUKT, en dat is de uitzondering die DESIGN.md maakt op
+   zijn eigen afwijzing van "01/02/03"-decoratie: dit ís een volgorde, en het is
+   de echte volgorde — het venster wordt bevestigd vóór de betaling. Wie zich
+   afvraagt of hij al betaald heeft voordat de datum vaststaat, leest dat hier
+   af aan twee cijfers. */
+const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
+  return { id: id, nr: String(i + 1).padStart(2, '0'), ...t.steps[id] };
+});
 ---
 
-<section class="wk" data-walk aria-label={t.label}>
+<section class="wk" aria-label={t.label}>
 
-  {/* ── THE PICKER ────────────────────────────────────────────────────────
-      Radios, not buttons: one of three, mutually exclusive, arrow-key
-      navigable for free, and it survives with no script. */}
+  {/* ── DE KEUZE ──────────────────────────────────────────────────────────
+      Radio's in labels: één van drie, wederzijds uitsluitend, met de
+      pijltjestoetsen te bedienen, en het werkt zonder script. De radio's staan
+      vóór de lijsten omdat een zusterselector alleen vooruit kijkt — dezelfde
+      constructie als de dienstenkiezer op /start. */}
   <div class="wk-pick">
-    {/* Een h2 en geen h3: op de pagina die dit onderdeel plaatst is de <h1> de
-        paginakop en is dit de eerstvolgende kop, dus sprong het niveau van 1 naar 3.
-        De maat blijft die van .wk-pick-h en verandert dus niet.
-
-        Dit werd gemeten op /demo, en die pagina bestaat sinds 24 augustus 2026 niet
-        meer. De meting is daarom meeverhuisd: tests/a11y.test.mjs loopt nu langs
-        /how-it-works in plaats van /demo, want dat is de pagina waar dit onderdeel
-        nog staat. Een controle laten vervallen omdat de pagina waar hij op stond
-        verdween, is de fout die deze regel juist moest voorkomen. */}
-    <h2 class="wk-pick-h">{t.pickH}</h2>
-    <div class="wk-pick-row" role="radiogroup" aria-label={t.pickH}>
+    <h2 class="wk-pick-h" id="wk-pick-h">{t.pickH}</h2>
+    <div class="wk-pick-row" role="radiogroup" aria-labelledby="wk-pick-h">
       {SERVICES.map((svc) => (
         <label class="wk-svc">
-          <input type="radio" name="wk-service" value={svc.id} checked={svc.id === START} data-walk-service />
+          <input type="radio" name="wk-service" value={svc.id} checked={svc.id === START} />
           <span class="wk-svc-box">
             <span class="wk-svc-name">{svc.name}</span>
             <span class="wk-svc-line">{svc.line}</span>
@@ -180,515 +149,189 @@ const START = SERVICES[0].id;
   </div>
 
   {SERVICES.map((svc) => (
-    <div class="wk-body" data-walk-body={svc.id} hidden={svc.id !== START}>
+    <ol class="wk-steps" data-wk-body={svc.id}>
+      {STAPPEN.map((stap) => (
+        <li class="wk-step">
+          <p class="wk-nr" aria-hidden="true">{stap.nr}</p>
+          <div class="wk-step-in">
+            <p class="wk-step-n">{stap.n}</p>
+            <h3 class="wk-step-h">{stap.h}</h3>
+            <p class="wk-step-b">{stap.b}</p>
 
-      {/* ── THE STAGE ─────────────────────────────────────────────────────
-          Sticky under the header, centred, with room around it. Every layer
-          it can ever show is already here; the script only flips `hidden`.
-
-          The wrapper carries the page ground and a fade at its foot, because
-          the steps scroll UP BEHIND it — without that they would be legible
-          through the gap beside the frame, which reads as a rendering fault
-          rather than as depth. */}
-      <div class="wk-stage">
-        <div class="wk-frame">
-
-          {/* ── DRIE LAGEN ZIJN ER OP 30 AUGUSTUS 2026 UITGEGAAN ──────────────
-              Het formulierspoor (`order`), het vinkjespaneel (`make`) en de
-              tegels van het portaal (`portal`). Niet om ruimte te winnen — een
-              laag in dit kader kost geen hoogte, want alle lagen op één na
-              staan `hidden` — maar omdat de stappen die ze aanriepen zijn
-              samengevoegd, en één stap toont één laag. Zie WALK_STEPS in
-              src/data/demo.js voor welke drie paren dat waren.
-
-              WAT ER MET DE TEKENING VAN HET PORTAAL IS GEBEURD: die is niet
-              verdwenen maar verhuisd. FigApproval tekent hetzelfde — dezelfde
-              drie toestanden naast elkaar — en staat sinds vandaag in de sectie
-              van /how-it-works die de goedkeuringsbelofte doet en die daarvoor
-              nul beelden had. De andere twee waren panelen met tekst, en wat ze
-              zeiden staat elders op diezelfde pagina al: het vinkjespaneel in
-              "Finished by hand", het formulierspoor in de stap zelf. */}
-
-          {/* upload — the four shots the customer sends. De eerste laag die je
-              ziet, en daarom niet `hidden`. */}
-          <figure class="wk-layer is-shots" data-walk-layer="upload">
-            <ul class="wk-src">
-              {svc.shots.map((shot, i) => (
-                <li>
-                  {i === 0
-                    ? <img src={svc.source.src} alt={lang === 'nl' ? 'De ingestuurde telefoonfoto' : 'The submitted phone photo'} width="600" height="750" loading="lazy" decoding="async" />
-                    : <span class="wk-src-drawn" aria-hidden="true"></span>}
-                  <span class="wk-src-t">{shot.name}</span>
-                </li>
-              ))}
-            </ul>
-            <figcaption class="wk-cap">{t.capUpload}</figcaption>
-          </figure>
-
-          {/* look — one layer per option */}
-          {svc.looks.map((look) => (
-            <figure class="wk-layer" data-walk-layer="look" data-walk-look={look.id} hidden>
-              <img src={look.preview.src} alt="" width="900" height="1200" loading="lazy" decoding="async" />
-              <figcaption class="wk-cap">{look.name}</figcaption>
-            </figure>
-          ))}
-
-          {/* window — the gate, both sides. No scale, no bands, nothing to
-              count: FigCapacity's rule, kept. The claim is "this can say no",
-              not "here is how full next week is". */}
-          <figure class="wk-layer is-panel" data-walk-layer="window" hidden>
-            <div class="wk-gate">
-              <p class="wk-pass"><span class="wk-tick" aria-hidden="true"></span>{t.windowPass}</p>
-              <p class="wk-refuse"><span class="wk-ring" aria-hidden="true"></span>{t.windowRefuse}</p>
-            </div>
-            <figcaption class="wk-cap">{t.capWindow}</figcaption>
-          </figure>
-
-          {/* pay */}
-          <figure class="wk-layer is-panel" data-walk-layer="pay" hidden>
-            <p class="wk-pay">{t.payLine}</p>
-            <figcaption class="wk-cap">{t.capPay}</figcaption>
-          </figure>
-
-          {/* model — two frames, because the claim is that a face is ADDED.
-              A picture that replaces the product with a portrait says the
-              opposite. */}
-          <figure class="wk-layer is-pair" data-walk-layer="model" hidden>
-            <img src={svc.looks[0].preview.src} alt="" width="900" height="1200" loading="lazy" decoding="async" data-walk-model-look />
-            <img src={DEMO_MODEL.photo} alt="" width="800" height="1000" loading="lazy" decoding="async" />
-            <figcaption class="wk-cap">{DEMO_MODEL.name}</figcaption>
-          </figure>
-
-          {/* result — one grid per look */}
-          {svc.looks.map((look) => (
-            <figure class="wk-layer is-out" data-walk-layer="result" data-walk-look={look.id} hidden>
-              <ul class="wk-out" data-walk-count={String(svc.out)}>
-                {look.set.map((frame) => (
-                  <li class="wk-out-frame">
-                    <img src={frame.src} alt="" width="900" height="1200" loading="lazy" decoding="async" />
-                    {frame.shot && <span class="wk-out-t">{t.shotNames[frame.shot] || frame.shot}</span>}
+            {/* ── DE LOOKS, BIJ DE STAP DIE EROVER GAAT ────────────────────
+                Geen radio's meer. In de vorige versie stuurden ze een laag in
+                het kader aan; zonder kader sturen ze niets, en een keuzeknop
+                die niets doet is erger dan een plaatje. Het zijn nu wat ze
+                altijd al waren: de lijst met looks die deze dienst kent. */}
+            {stap.id === 'look' ? (
+              <ul class="wk-looks" role="list">
+                {svc.looks.map((look) => (
+                  <li class="wk-look">
+                    {look.hex
+                      ? <span class="wk-look-swatch" style={`background:${look.hex}`} aria-hidden="true"></span>
+                      : <img class="wk-look-thumb" src={look.preview.src} alt="" width="200" height="200" loading="lazy" decoding="async" />}
+                    <span class="wk-look-name">{look.name}</span>
                   </li>
                 ))}
               </ul>
-              {svc.id === 'video' && look.set[0] && !look.set[0].clip
-                ? <p class="wk-noclip">{t.noClip}</p>
-                : null}
-              <figcaption class="wk-cap">{t.outCount(svc.out)}</figcaption>
-            </figure>
-          ))}
-        </div>
-      </div>
+            ) : null}
+            {stap.id === 'look' && svc.look !== 'background'
+              ? <p class="wk-note">{t.lookCustom}</p>
+              : null}
 
-      {/* ── THE STEPS ─────────────────────────────────────────────────────
-          An <ol>, because the order carries meaning — the one case DESIGN.md's
-          rejection of "01/02/03 scaffolding" exempts. The numbers are not
-          printed; the sequence is the ordering. */}
-      <ol class="wk-steps">
-        {WALK_STEPS.map((id) => (
-          <li class="wk-step" data-walk-step={id === 'look' ? svc.look : id}>
-            <div class="wk-step-in">
-              <p class="wk-step-n">{t.steps[id].n}</p>
-              <h3 class="wk-step-h">{t.steps[id].h}</h3>
-              <p class="wk-step-b">{t.steps[id].b}</p>
-
-              {id === 'look' ? (
-                <div class="wk-looks">
-                  {svc.looks.map((look) => (
-                    <label class="wk-look">
-                      <input type="radio" name={`wk-look-${svc.id}`} value={look.id} checked={look.id === svc.startLook} data-walk-look-input />
-                      <span class="wk-look-box">
-                        {look.hex
-                          ? <span class="wk-look-swatch" style={`background:${look.hex}`} aria-hidden="true"></span>
-                          : <img class="wk-look-thumb" src={look.preview.src} alt="" width="200" height="200" loading="lazy" decoding="async" />}
-                        <span class="wk-look-name">{look.name}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : null}
-              {id === 'look' && svc.look !== 'background'
-                ? <p class="wk-note">{t.lookCustom}</p>
-                : null}
-
-              {id === 'model' ? (
-                <div class="wk-models">
-                  <ul class="wk-roster">
-                    <li class="wk-face is-on">
-                      <img src={DEMO_MODEL.photo} alt={`Model ${DEMO_MODEL.name}`} width="200" height="250" loading="lazy" decoding="async" />
-                      <span>{DEMO_MODEL.name}</span>
+            {stap.id === 'model' ? (
+              <div class="wk-models">
+                <ul class="wk-roster" role="list">
+                  <li class="wk-face">
+                    <img src={DEMO_MODEL.photo} alt={`Model ${DEMO_MODEL.name}`} width="200" height="250" loading="lazy" decoding="async" />
+                    <span>{DEMO_MODEL.name}</span>
+                  </li>
+                  {DEMO_LOCKED_MODELS.map((m) => (
+                    <li class="wk-face">
+                      <img src={m.photo} alt={`Model ${m.name}`} width="200" height="250" loading="lazy" decoding="async" />
+                      <span>{m.name}</span>
                     </li>
-                    {DEMO_LOCKED_MODELS.map((m) => (
-                      <li class="wk-face">
-                        <img src={m.photo} alt={`Model ${m.name}`} width="200" height="250" loading="lazy" decoding="async" />
-                        <span>{m.name}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p class="wk-note">{t.modelLocked} · <a href={rosterHref}>{t.modelRoster}</a></p>
-                </div>
-              ) : null}
+                  ))}
+                </ul>
+                <p class="wk-note"><a href={rosterHref}>{t.modelRoster}</a></p>
+              </div>
+            ) : null}
 
-              {id === 'result' ? (
-                <div class="wk-cta">
-                  <a href={sampleHref} class="btn btn-primary">{t.ctaPrimary}</a>
-                  <a href={startHref} class="btn btn-ghost">{t.ctaGhost}</a>
-                </div>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ol>
-    </div>
+            {stap.id === 'result' ? (
+              <p class="wk-cta">
+                <a href={sampleHref} class="knop knop-inkt">{t.ctaPrimary}</a>
+                <a href={startHref} class="knop knop-lijn">{t.ctaGhost}</a>
+              </p>
+            ) : null}
+          </div>
+        </li>
+      ))}
+    </ol>
   ))}
 
   <p class="wk-honest">{t.placeholderNote}</p>
 </section>
 
-<script>
-  // THE BEHAVIOUR LIVES WITH THE COMPONENT, not with the page. Two pages used to
-  // host this — /demo and /how-it-works — and an import in each of them is an
-  // import one of the two can be missing, which is exactly what happened on the
-  // first build: /demo rendered a perfect static walkthrough that responded to
-  // nothing. Astro hoists and de-duplicates component scripts, so it ships once
-  // even when the component appears twice, and it does not reach the other pages.
-  //
-  // SINCE 24 AUGUST 2026 THERE IS ONLY ONE HOST (/how-it-works), and the import
-  // stays here anyway. Moving it up to the page now would re-create the exact
-  // trap described above the moment a second host appears — and it would move
-  // the behaviour away from the markup it drives, which is the actual reason.
-  import '../scripts/walk.js';
-</script>
-
 <style>
-  /* ── LEESBAARHEID, 7 SEPTEMBER 2026 ────────────────────────────────────────
-     Elke `--ink-4` in dit bestand is `--ink-3` geworden, en vier maten onder
-     11,5px zijn omhoog. Reden: --ink-4 IS de lijnkleur (.42 alpha) en haalt als
-     tekst 2,8:1 — zie KLEURENSCHEMA.md, waar staat dat tekst op --ink-3 of
-     donkerder hoort. Op de oude, iets warmere paginagrond viel het niet op; op
-     het vel van sectie 22 (#F5F5F5) meet de keuring het en gaat het mis op
-     dertien plekken in deze ene tekening, inclusief de vier labels van de
-     catalogset. Lucas: *"Wel even altijd goed controleren op leesbaarheid."* */
   /* ═══════════════════════════════════════════════════════════════════════
-     FigWalk
+     FigWalk — de vorm
 
-     THE RULE THAT SHAPES EVERYTHING BELOW: the static form has to be readable.
-     `position: sticky`, the hidden layers and the left-to-right slide are all
-     applied only under `.js`, so with no script this is a plain column — every
-     layer stacked, every step at normal reading rhythm. Get this backwards and
-     a script failure leaves an empty box where the walkthrough was.
+     ÉÉN REGEL STUURT ALLES HIERONDER: er staat geen enkele stap verborgen,
+     doorzichtig of verschoven. Wat je ziet als de pagina laadt, is de hele
+     uitleg. `position: sticky`, `transform` en een doorzichtigheidsverloop
+     komen hier niet meer voor; zie de kop van dit bestand.
      ═══════════════════════════════════════════════════════════════════════ */
 
   .wk { margin: 0; }
 
-  /* ── the picker ───────────────────────────────────────────────────────── */
-  .wk-pick { max-width: 34rem; margin: 0 auto clamp(2rem, 4vw, 3rem); text-align: center; }
-  /* Een <h2> erft de koppenletter (Big Shoulders, smal) en op .74rem werd dat
-     een streepje van zeven pixels hoog — op de schermafdruk van 4 september
-     2026 niet te lezen. De broodletter, iets groter, en het label leest weer. */
-  .wk-pick-h { font-family: var(--font-body); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 1.1rem; font-weight: 700; }
+  /* ── de keuze ─────────────────────────────────────────────────────────── */
+  .wk-pick { max-width: 40rem; margin: 0 0 clamp(2.2rem, 4.5vw, 3.4rem); }
+  /* De broodletter en niet de koppenletter: op .78rem werd de smalle koplettter
+     een streepje van zeven pixels hoog en was het label niet te lezen. */
+  .wk-pick-h { font-family: var(--font-body); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 1rem; font-weight: 700; }
   .wk-pick-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
-  .wk-pick-hint { margin: 1.2rem auto 0; max-width: 46ch; font-size: .82rem; color: var(--ink-3); line-height: 1.6; }
+  .wk-pick-hint { margin: 1.1rem 0 0; max-width: 52ch; font-size: .84rem; color: var(--ink-3); line-height: 1.6; }
 
-  /* Clipped, not display:none — that would take the radio out of the tab order
-     and out of the accessibility tree, which is the usual way a "custom radio
-     group" quietly stops being one. */
-  .wk-svc input,
-  .wk-look input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
+  /* Weggeknipt en niet `display: none` — dat haalt de radio uit de tabvolgorde
+     en uit de toegankelijkheidsboom, en dat is de gebruikelijke manier waarop
+     een "eigen radiogroep" stilletjes ophoudt er een te zijn. */
+  .wk-svc input {
+    position: absolute; width: 1px; height: 1px; opacity: 0;
+    margin: 0; pointer-events: none;
   }
-  .wk-svc { display: block; cursor: pointer; }
-  /* De drie vakjes zijn even hoog en de tweede regel krijgt lucht — 4 september
-     2026, uit de ruimtemeting. Lifestyle's regel loopt over twee regels en de
-     andere twee niet, dus stonden er drie vakjes van drie verschillende hoogtes
-     naast elkaar; en .15rem tussen de naam en de regel eronder was zo krap dat
-     de twee als één blok lazen. */
-  .wk-svc { height: 100%; }
   .wk-svc-box {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    height: 100%;
-    gap: .3rem;
-    padding: .85rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+    display: grid; gap: .2rem; cursor: pointer; height: 100%;
+    padding: .8rem 1rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-md, 12px);
+    transition: background .25s var(--ease, ease), border-color .25s var(--ease, ease), color .25s var(--ease, ease);
   }
-  .wk-svc-name { font-size: .98rem; }
-  .wk-svc-line { font-size: .76rem; color: var(--ink-3); }
-  .wk-svc input:checked + .wk-svc-box { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
-  .wk-svc input:focus-visible + .wk-svc-box { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .wk-svc-box:hover { border-color: var(--ink); }
+  .wk-svc-name { font-weight: 700; font-size: .96rem; color: var(--ink); }
+  .wk-svc-line { font-size: .8rem; line-height: 1.4; color: var(--ink-3); }
+  .wk-svc input:focus-visible + .wk-svc-box { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .wk-svc input:checked + .wk-svc-box { background: var(--ink); border-color: var(--ink); }
+  .wk-svc input:checked + .wk-svc-box .wk-svc-name { color: var(--bg, #F5F5F5); }
+  .wk-svc input:checked + .wk-svc-box .wk-svc-line { color: rgb(245 245 245 / .72); }
 
-  .wk-body[hidden] { display: none; }
+  /* ── DE LIJST DIE BIJ DE KEUZE HOORT ──────────────────────────────────────
+     Drie lijsten in de HTML, één zichtbaar. Eén regel per combinatie, want een
+     zusterselector kan niet rekenen — dezelfde constructie en dezelfde noot als
+     bij de bestemmingen op /start.
 
-  /* ── the stage ────────────────────────────────────────────────────────── */
-  /* THE WRAPPER CARRIES THE GROUND, not just the frame. The steps scroll up
-     behind this, and without an opaque backing they stay legible in the gap
-     either side of the frame — which reads as a rendering fault, not as depth.
-     `--bg-seam` and not `--bg-0`: the visible ground on this site is lifted to
-     ≈#0F1011 by the fixed grain-and-lamp layer in global.css, so painting
-     #08090B here would show as a darker rectangle. The mask fades the last
-     couple of rem so the edge is not a hard line across the page. */
-  :global(.js) .wk-stage {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    padding: clamp(4.4rem, 7vh, 5.4rem) 0 clamp(1.4rem, 3vh, 2.2rem);
+     `:has()` is met opzet NIET gebruikt: de radio's staan in .wk-pick en de
+     lijsten zijn daar broers van, dus een gewone `~` volstaat en die werkt
+     overal. */
+  .wk-steps { display: none; }
+  .wk-pick:has(input[value="catalog"]:checked) ~ [data-wk-body="catalog"],
+  .wk-pick:has(input[value="lifestyle"]:checked) ~ [data-wk-body="lifestyle"],
+  .wk-pick:has(input[value="video"]:checked) ~ [data-wk-body="video"] { display: grid; }
+
+  /* ── de stappen ───────────────────────────────────────────────────────── */
+  .wk-steps {
+    grid-template-columns: 1fr;
+    gap: clamp(2.2rem, 4.5vw, 3.4rem);
+    margin: 0; padding: 0; list-style: none;
+    counter-reset: none;
   }
-  /* FULL-BLEED, because this element sits inside a .container and the ground it
-     is hiding does not. Painting the background on .wk-stage itself left a
-     visible vertical seam at the container edge — the flat fill against the
-     lamp-lit ground either side of it. The pseudo-element escapes the container
-     the way the rest of this site does it: 100vw, pulled back half a viewport.
-     100vw and not 100% because a scrollbar makes those differ, and a hair of
-     horizontal overflow is cheaper than a hair of ground showing through. */
-  :global(.js) .wk-stage::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 50%;
-    width: 100vw;
-    margin-left: -50vw;
-    z-index: -1;
-    background: var(--bg-seam);
-    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.6rem), transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 2.6rem), transparent 100%);
-  }
-
-  /* ONE COLUMN WIDTH FOR THE WHOLE THING. The frame was 30rem and the steps
-     46rem, both centred — so they shared a centre line and nothing else, and
-     every heading started 128px to the left of the picture above it. Two
-     centred blocks of different widths do not read as one column; they read as
-     two things laid out separately. 34rem is wide enough for a comfortable
-     measure (about sixty characters at this size) and narrow enough that the
-     result grid stays legible, so the frame and the text now share both edges. */
-  .wk-frame {
-    position: relative;
-    width: min(100%, 34rem);
-    margin: 0 auto;
+  /* Het nummer in een eigen kolom, met een haarlijn tussen de stappen: dat is
+     de vorm van een liniaal en niet van een kaart. Een kaart per stap zou zes
+     losse dingen maken van wat één volgorde is. */
+  .wk-step {
     display: grid;
-    place-items: center;
-    /* A fixed shape, so the sticky box does not resize under the reader as the
-       layers swap. A stage that grows and shrinks while you scroll past it is
-       the single thing that makes this pattern feel broken. */
-    min-height: min(26rem, 46svh);
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    gap: 0 clamp(1rem, 2.5vw, 1.8rem);
+    padding-top: clamp(1.2rem, 2.4vw, 1.6rem);
+    border-top: 1px solid var(--line);
   }
-
-  /* Under .js every layer sits in the same grid cell and one is shown. Without
-     .js they lay out in flow, one under the other, all visible. */
-  :global(.js) .wk-layer { grid-area: 1 / 1; }
-  .wk-layer { margin: 0; width: 100%; }
-
-  .wk-layer > img, .wk-layer > picture > img {
-    display: block;
-    width: 100%;
-    max-height: min(22rem, 40svh);
-    object-fit: cover;
-    border-radius: var(--r-md);
+  .wk-step:first-child { border-top: 0; padding-top: 0; }
+  .wk-nr {
+    margin: 0;
+    font-family: var(--font-mono); font-size: .8rem; font-variant-numeric: tabular-nums;
+    color: var(--ink-3); letter-spacing: .04em;
+    padding-top: .15rem;
   }
-
-  .wk-cap { margin-top: .8rem; font-size: .78rem; color: var(--ink-3); text-align: center; }
-
-  /* Panels — the steps with nothing to photograph. Deliberately quiet: a border
-     and text, no invented screenshot. */
-  .wk-layer.is-panel {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: min(22rem, 40svh);
-    padding: clamp(1.2rem, 3vw, 1.8rem);
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    background: var(--surface);
+  .wk-step-in { max-width: 58ch; }
+  .wk-step-n { margin: 0; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .wk-step-h {
+    margin: .35rem 0 0;
+    font-family: var(--font-heading, var(--font-body));
+    font-size: clamp(1.25rem, 2.2vw, 1.7rem); line-height: 1.15; letter-spacing: -.01em;
+    color: var(--ink); text-wrap: balance;
   }
+  .wk-step-b { margin: .7rem 0 0; font-size: .98rem; line-height: 1.7; color: var(--ink-2); text-wrap: pretty; }
 
-  /* `.wk-rail`, `.wk-dot` en `.wk-checks` stonden hier en zijn op 30 augustus
-     2026 mee weggegaan met de lagen die ze tekenden. Een regel die niets meer
-     raakt is geen dode letter maar een valstrik: de volgende die deze stijlen
-     leest denkt dat er een formulierspoor bestaat. */
-  .wk-tick { flex: 0 0 auto; width: .8rem; height: .8rem; border-radius: 50%; background: var(--accent); }
-  .wk-ring { flex: 0 0 auto; width: .8rem; height: .8rem; border-radius: 50%; border: 1px solid var(--line-strong); }
-
-  .wk-gate { display: grid; gap: 1rem; text-align: left; }
-  .wk-pass,
-  .wk-refuse { display: flex; align-items: flex-start; gap: .65rem; margin: 0; font-size: .9rem; line-height: 1.5; }
-  .wk-pass span,
-  .wk-refuse span { margin-top: .3rem; }
-  .wk-refuse { color: var(--ink-3); }
-  .wk-pay { margin: 0; text-align: center; font-size: .95rem; color: var(--ink-2); }
-
-  /* the model pair */
-  .wk-layer.is-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-  .wk-layer.is-pair .wk-cap { grid-column: 1 / -1; }
-
-  /* the four shots the customer sends */
-  .wk-layer.is-shots { display: block; }
-  .wk-src { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
-  .wk-src li { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
-  .wk-src img,
-  .wk-src-drawn { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-sm); }
-  /* Hatched, not a grey box: a grey box reads as an image that failed to load,
-     and the caption's promise is that these three are DRAWN. */
-  .wk-src-drawn {
-    border: 1px solid var(--line);
-    background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--line) 5px 6px);
+  /* ── de looks ─────────────────────────────────────────────────────────── */
+  .wk-looks {
+    display: flex; flex-wrap: wrap; gap: .8rem 1rem;
+    margin: 1.2rem 0 0; padding: 0; list-style: none;
   }
-  .wk-src-t { font-size: .75rem; color: var(--ink-3); }
+  .wk-look { display: flex; align-items: center; gap: .5rem; font-size: .86rem; color: var(--ink-2); }
+  /* VIERKANT EN NIET ROND, en dat is geen smaak: drie ronde vlakjes van 22px in
+     een rij met een woord ernaast zijn niet te onderscheiden van drie radio's,
+     en in de vorige versie wáren ze dat ook. Ze zijn nu een staal — de vorm
+     waarin de achtergrondkiezer in het bestelformulier ze ook laat zien.
+     De rand is de sterke lijn: wit op vel is anders een vlak zonder randen. */
+  .wk-look-swatch { width: 34px; height: 26px; border-radius: var(--r-sm, 6px); border: 1px solid var(--line-strong); flex: 0 0 auto; }
+  .wk-look-thumb { width: 44px; height: 34px; object-fit: cover; border-radius: var(--r-sm, 8px); flex: 0 0 auto; }
+  .wk-look-name { white-space: nowrap; }
+  .wk-note { margin: .9rem 0 0; font-size: .82rem; line-height: 1.6; color: var(--ink-3); }
+  .wk-note a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 
-  /* De tegels van het portaal stonden hier. Die tekening staat sinds 30
-     augustus 2026 als FigApproval op /how-it-works zelf; zie de noot bij de
-     lagen hierboven. */
+  /* ── de gezichten ─────────────────────────────────────────────────────── */
+  .wk-models { margin-top: 1.2rem; }
+  .wk-roster { display: flex; flex-wrap: wrap; gap: .7rem; margin: 0; padding: 0; list-style: none; }
+  .wk-face { display: grid; gap: .3rem; justify-items: center; font-size: .74rem; color: var(--ink-3); }
+  .wk-face img { width: 56px; height: 70px; object-fit: cover; border-radius: var(--r-sm, 8px); }
 
-  /* the result */
-  .wk-layer.is-out { display: flex; flex-direction: column; justify-content: center; }
-  /* CAPPED, so the frame does not grow at the last step. A 34rem-wide 4-up of
-     square crops is 536px tall — a hundred and fifty more than every other
-     layer — and a sticky box that changes height as you reach the payoff is
-     the thing that makes this pattern feel broken. 27rem keeps the two rows
-     inside the frame's own minimum — measured: at 27rem the last step still
-     grew the stage by 49px, at 24rem it does not grow at all. */
-  .wk-out { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: .45rem; width: 100%; max-width: 24rem; }
-  .wk-out[data-walk-count="4"] { grid-template-columns: 1fr 1fr; }
-  .wk-out[data-walk-count="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .wk-out[data-walk-count="1"] { grid-template-columns: 1fr; }
-  .wk-out-frame { position: relative; }
-  .wk-out-frame img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--r-sm); }
-  .wk-out[data-walk-count="3"] .wk-out-frame img { aspect-ratio: 4 / 5; }
-  .wk-out[data-walk-count="1"] .wk-out-frame img { aspect-ratio: 9 / 16; max-height: min(20rem, 38svh); width: auto; margin: 0 auto; }
-  .wk-out-t {
-    position: absolute;
-    left: .35rem;
-    bottom: .35rem;
-    padding: .12rem .4rem;
-    border-radius: 4px;
-    background: color-mix(in srgb, #1C1D18 74%, transparent);
-    font-size: .72rem;
-    color: var(--ink-2);
-  }
-  .wk-noclip { margin: .65rem 0 0; font-size: .74rem; color: var(--ink-3); text-align: center; }
+  .wk-cta { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.4rem 0 0; }
 
-  /* ── the steps ────────────────────────────────────────────────────────── */
-  /* Centred, and wider than the frame it sits under. The first pass left the
-     text hard against the container's left edge with the frame centred above
-     it, which reads as two things that were laid out separately. A 46rem column
-     centred under a 30rem frame is symmetric, and the text still starts on a
-     left edge — centred prose at this length is unreadable. */
-  .wk-steps { list-style: none; margin: 0 auto; padding: 0; max-width: 34rem; }
-  .wk-step { padding: clamp(1.6rem, 4vw, 2.4rem) 0; }
-  /* De scrollafstand IS het tempo, en er was om rust gevraagd. Elke stap krijgt
-     daarom bijna een half scherm, zodat er nooit meer dan één tegelijk bij de
-     leeslijn staat.
+  .wk-honest { margin: clamp(2rem, 4vw, 3rem) 0 0; font-size: .78rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }
 
-     ── 66svh WERD 48svh OP 30 AUGUSTUS 2026 ──────────────────────────────────
-     Gemeten op een venster van 900px waren negen stappen van 594px samen
-     5346px — bijna de helft van /how-it-works. Lucas koos "kortere blokken én
-     zes stappen"; zes van 432px is 2592px, dus samen scheelt dat 2754px.
-
-     48 EN NIET MINDER, en dat getal hangt vast aan walk.js. Die verdeelt de
-     stappen over een band en kiest de stap die het dichtst bij de leeslijn
-     staat; wordt een stap veel korter dan die band, dan zijn er twee tegelijk
-     halverwege hun verschuiving en leest de beweging als drift in plaats van
-     als tempo. De band leest sinds vandaag de échte staphoogte in plaats van
-     een vast deel van het venster, dus de twee kunnen niet meer uit de pas
-     lopen — zie de noot bij `band` in src/scripts/walk.js. */
-  /* 48 → 42svh, doorlichting 4 september 2026: op een scherm van 900 px was
-     dat 432 px per stap met ~350 px lucht tussen de keuze en de eerste beelden.
-     walk.js leest de echte staphoogte, dus het tempo blijft kloppen. */
-  :global(.js) .wk-step { min-height: 42svh; display: flex; flex-direction: column; justify-content: center; }
-
-  /* THE LEFT-TO-RIGHT SLIDE. `--wk-t` and `--wk-o` are written by walk.js from
-     the scroll position, once per frame, on the inner element only — never on
-     the <li>, whose height must not depend on anything the script does.
-     Transform and opacity are both compositor-only, so this cannot cause a
-     layout pass while the page scrolls.
-
-     Defaults are the resting state (0, 1), so a step the script never reaches
-     is simply in place rather than parked off-screen. */
-  /* THE SHIFT DISTANCE LIVES IN CSS, NOT IN THE SCRIPT. walk.js writes a
-     unitless `--wk-t` between -1 and 1 — how far this step is from the reading
-     line and in which direction — and the multiplication happens here. That is
-     what lets the distance be responsive: on a phone the text column is the
-     full width of the screen, and the 72px the desktop uses pushed the whole
-     paragraph past the right edge and clipped it. A script writing pixels
-     could not have known that. */
-  .wk-step-in { max-width: 100%; --wk-shift: 72px; }
-  @media (prefers-reduced-motion: no-preference) {
-    :global(.js) .wk-step-in {
-      transform: translate3d(calc(var(--wk-t, 0) * var(--wk-shift)), 0, 0);
-      opacity: var(--wk-o, 1);
-      will-change: transform, opacity;
-    }
-  }
-
-  .wk-step-n { margin: 0 0 .5rem; font-size: .75rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-text); }
-  .wk-step-h { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -.01em; }
-  .wk-step-b { margin: 1rem 0 0; color: var(--ink-3); font-size: 1rem; line-height: 1.75; }
-  .wk-note { margin: 1rem 0 0; font-size: .82rem; color: var(--ink-3); line-height: 1.6; }
-  .wk-note a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
-
-  .wk-looks { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.4rem; }
-  .wk-look { cursor: pointer; }
-  .wk-look-box {
-    display: flex;
-    align-items: center;
-    gap: .55rem;
-    padding: .35rem .85rem .35rem .35rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    transition: border-color var(--dur-1) var(--ease);
-  }
-  .wk-look-swatch,
-  .wk-look-thumb { width: 1.5rem; height: 1.5rem; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
-  .wk-look-name { font-size: .84rem; }
-  .wk-look input:checked + .wk-look-box { border-color: var(--accent); }
-  .wk-look input:focus-visible + .wk-look-box { outline: 2px solid var(--accent); outline-offset: 3px; }
-
-  .wk-models { margin-top: 1.4rem; }
-  .wk-roster { list-style: none; margin: 0; padding: 0; display: flex; gap: .45rem; }
-  .wk-face { display: flex; flex-direction: column; align-items: center; gap: .3rem; font-size: .75rem; color: var(--ink-3); }
-  .wk-face img { width: clamp(2.4rem, 6vw, 3rem); aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-sm); filter: grayscale(1); opacity: .4; }
-  .wk-face.is-on { color: var(--ink-2); }
-  .wk-face.is-on img { filter: none; opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; }
-
-  .wk-cta { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.8rem; }
-
-  .wk-honest { margin: clamp(3rem, 6vw, 4.5rem) auto 0; max-width: 34rem; font-size: .76rem; color: var(--ink-3); line-height: 1.65; }
-
-  /* ── narrow ───────────────────────────────────────────────────────────── */
   @media (max-width: 720px) {
     .wk-pick-row { grid-template-columns: 1fr; }
-    /* Stage plus step has to come to less than one screen, or the step the
-       reader is on can never be fully visible under it. */
-    :global(.js) .wk-stage { padding-top: 4.4rem; padding-bottom: 1.2rem; }
-    .wk-frame { min-height: min(17rem, 32svh); }
-    .wk-layer > img, .wk-layer > picture > img { max-height: 30svh; }
-    .wk-layer.is-panel { min-height: min(15rem, 28svh); }
-    .wk-out[data-walk-count="1"] .wk-out-frame img { max-height: 26svh; }
-    :global(.js) .wk-step { min-height: 58svh; justify-content: flex-start; padding-top: 1.2rem; }
-    .wk-step-b { font-size: .95rem; line-height: 1.7; }
-    /* Smaller than the container's own side padding, so a step at the far
-       right of its travel still cannot reach the edge of the screen. */
-    .wk-step-in { --wk-shift: 16px; }
+    /* Het nummer boven de stap in plaats van ernaast: een kolom van 3,2rem naast
+       een tekstkolom van 300px kost tien procent van de leesbreedte. */
+    .wk-step { grid-template-columns: 1fr; gap: .3rem; }
+    .wk-step-b { font-size: .95rem; }
   }
-
-  /* ── HIDING, LAST AND SPELLED OUT ─────────────────────────────────────────
-     This rule was higher up once and two layers ignored it completely: the
-     model pair and the panels, which set `display: grid` and `display: flex`
-     through `.wk-layer.is-pair` and `.wk-layer.is-panel`. Both are class +
-     class, which after Astro appends its scope attribute weighs exactly the
-     same as class + attribute — a tie, broken by source order, and they came
-     later. The stage drew three layers on top of each other at every step.
-
-     So the rule sits at the very end and names every selector it has to beat,
-     rather than reaching for !important. Anything added later that sets
-     `display` on a layer has to be added here too, which is the point: it is a
-     list you cannot forget quietly. */
-  .wk-layer[hidden],
-  .wk-layer.is-panel[hidden],
-  .wk-layer.is-pair[hidden],
-  .wk-layer.is-shots[hidden],
-  .wk-layer.is-out[hidden] { display: none; }
 </style>

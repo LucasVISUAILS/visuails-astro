@@ -9,7 +9,7 @@
 // unlike the lifestyle styles — there is no `heroPhoto` / `cardPhoto` here.
 // Icon fields drive ProductScene's placeholder rendering directly.
 
-import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel } from './pricing.js';
+import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -88,7 +88,7 @@ export const catalogStyles = [
     whatYouGet: [
       'From four photos per product: front, back, detail & on-model',
       'Consistent lighting, angle and background',
-      'High-resolution, marketplace-ready files',
+      `${RESOLUTIE.standaard} px, marketplace-ready files`,
       TIMING,
       REVIEW,
     ],

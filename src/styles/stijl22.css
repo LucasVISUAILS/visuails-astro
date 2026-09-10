@@ -956,7 +956,15 @@
   .s22 .kaart-product { background: var(--vel); }
   .s22 .kaart-product img { object-fit: contain; }
   .s22 .kaart-stil::after { display: none; }
+  /* ── HET OPSCHRIFT BOVEN DE TWEE ONDERAAN — 9 september 2026 ─────────────
+     Video en merkmodel stonden onder de set als een lijstje zonder kop, en dan
+     leest het als een voetnoot bij de zeven beelden erboven. Met een opschrift
+     leest het als wat het is: twee dingen die je bij hetzelfde product kunt
+     bestellen. De bovenmarge verhuist van de lijst naar het opschrift, anders
+     staat de kop tegen de fotorij en de lijst er ver onder. */
+  .s22 .set-extras-kop { margin: clamp(2rem, 4vw, 3rem) 0 .3rem; }
   .s22 .extras { display: grid; gap: .7rem; margin-top: clamp(2rem, 4vw, 3rem); }
+  .s22 .set-extras-kop + .extras { margin-top: 0; }
   .s22 .extras li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.2rem; padding-top: .8rem; border-top: 1px solid var(--lijn); }
   .s22 .extras span { font-size: .95rem; color: var(--inkt-2); }
 

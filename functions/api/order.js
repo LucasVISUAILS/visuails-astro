@@ -66,6 +66,10 @@ import { background as backgroundById, CUSTOM_ID } from '../../src/data/backgrou
 import { LIFESTYLE_RATIOS, parseRatioField } from '../../src/data/ratios.js';
 /* De stijlen, om te controleren welke er BESTELD mag worden. Zie vetAnswer(). */
 import { styles as STYLES } from '../../src/data/styles.js';
+/* De acht hoeken die bij een catalogset bijbesteld kunnen worden. De LIJST staat
+   hier en niet een reguliere expressie op de veldnaam: `angle_` is een naam die
+   iedereen kan verzinnen, en een verzonnen hoek hoort niet mee te tellen. */
+import { ANGLE_IDS } from '../../src/data/angles.js';
 const RATIO_IDS = new Set(LIFESTYLE_RATIOS.map((r) => r.id));
 import {
   ATTENDED_PER_WINDOW,
@@ -740,12 +744,42 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // extra photos. Counting them here rather than trusting a summary field means
   // there is no total to tamper with, only per-product answers to add up.
   const outfitCount = countOf(get('outfit_count'));
-  let extraCount = 0;
+  /* ── DE HOEKEN — 9 september 2026 ───────────────────────────────────────────
+     Tot vandaag stond hier een teller per productkaart (`extra_p3` = een AANTAL).
+     Nu is het één keuze voor de hele bestelling: per hoek één vinkje, en een
+     uitgevinkt vakje post niets. Het aantal bijbestelde foto's is dus
+
+         gekozen hoeken × het aantal producten
+
+     want elke hoek geldt voor élk product — Lucas: *"Wanneer hij in het eerste
+     scherm de angles heeft gekozen krijgt elk product die angles."*
+
+     De vermenigvuldiging staat hier en niet in de browser, om dezelfde reden als
+     de rest van dit blok: de klant post vinkjes, geen bedragen. quoteOrder()
+     klemt de uitkomst daarna alsnog op products × MAX_EXTRA_PER_PRODUCT, dus
+     zelfs een gesleuteld formulier met negen hoeken komt niet boven vier per
+     product uit. */
+  /* Op de WAARDE en niet op `!== null`: get() hierboven maakt van een ontbrekend
+     veld een lege string, dus een test op null telt élke hoek mee en rekent elke
+     bestelling het maximum. Precies dat gebeurde bij de eerste run — een
+     bestelling van € 1.020 werd € 2.412. */
+  const angles = ANGLE_IDS.filter((id) => get(`angle_${id}`) !== '');
+  let hoogResCount = 0;
   for (const [k, v] of form.entries()) {
-    if (typeof k === 'string' && k.startsWith('extra_') && !k.startsWith('extra_note_')) {
-      extraCount += Math.max(0, Math.floor(Number(v) || 0));
-    }
+    if (typeof k !== 'string') continue;
+    /* ── 4K PER PRODUCT — 9 september 2026 ────────────────────────────────
+       Eén veld per productkaart (`hi_p3`), en een uitgevinkt vakje post
+       niets — dus tellen is precies de vraag "hoeveel staan er aan". De
+       WAARDE doet er niet toe: hij komt uit de browser en die mag hier niets
+       bepalen. Dat het veld er IS, is het antwoord; quoteOrder() klemt het
+       daarna alsnog op het aantal producten, want twintig vinkjes op een
+       bestelling van drie producten is een gesleuteld formulier. */
+    if (/^hi_p\d+$/.test(k)) hoogResCount += 1;
   }
+  /* Voorrang is één vinkje voor de hele bestelling. Hetzelfde principe: dat het
+     veld er is, is het antwoord; het BEDRAG rekent quoteOrder() zelf uit, en
+     die weigert het als de bestelling buiten de grenzen valt. */
+  const voorrangGevraagd = get('voorrang') !== null && get('voorrang') !== '';
 
   // ── WHICH VAT, AND THE PROOF THAT IT IS THE RIGHT ONE ──────────────────────
   // Three outcomes and one rule: nothing goes to 0% without evidence. The whole
@@ -995,7 +1029,12 @@ export async function onRequestPost({ request, env, waitUntil }) {
           vatRate: vatCall.rate,
         })
         : quoteOrder({
-          service: svc, products, outfits: outfitCount, extras: extraCount,
+          /* hoeken × producten: zie de noot bij `angles` hierboven. `products` kan
+             null zijn ("weet ik nog niet"); dan is er niets te vermenigvuldigen
+             en gaat er 0 in, precies zoals bij een bestelling zonder hoeken. */
+          service: svc, products, outfits: outfitCount,
+          extras: angles.length * (Number.isInteger(products) ? products : 0),
+          hoogRes: hoogResCount, voorrang: voorrangGevraagd,
           vatRate: vatCall.rate,
           styleSurchargeCents: ownStyle ? Number(ownStyle.surcharge_cents) || 0 : 0,
         });
@@ -2185,7 +2224,13 @@ function fileSize(bytes) {
  * /account/details, behind the session cookie, from the dashboard or from the
  * end-of-order opt-in. See src/lib/account.js's handleDetails().
  */
-async function upsertCustomer(env, c) {
+/* GEËXPORTEERD SINDS 9 SEPTEMBER 2026. functions/api/plan.js roept hem aan om
+   dezelfde reden als deze route dat doet: een abonnement zonder account moet
+   een klant AANMAKEN, en dat is precies wat deze functie is — inclusief de
+   regel dat een klant die zijn gegevens heeft opgeslagen ze houdt, en dat een
+   nieuwe inzending alleen een leeg veld kan vullen. Twee plekken die elk hun
+   eigen INSERT schrijven, is twee keer die regel om te vergeten. */
+export async function upsertCustomer(env, c) {
   if (!env.DB) return null;
   /*
    * TWEE POGINGEN, OM DEZELFDE REDEN ALS DE INSERT INTO orders HIERBOVEN. Deze

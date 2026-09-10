@@ -55,9 +55,28 @@ console.log('geen plan zakt onder de bodem van de ladder');
   for (const id of PLAN_IDS) {
     for (const t of TERM_IDS) {
       const pp = perProductCents(id, t);
-      /* `brand` mag er BEWUST onder: daar zit het merkmodel bij, dat op de ladder
-         € 1.250 kost. Zie plans() in pricing.js. Elke andere is een prijsfout. */
-      if (id === 'brand') {
+      const tt = TERMS[t];
+      /* ── EEN VOORUITBETAALD JAAR MEET TEGEN EEN ANDERE BODEM — 10 sept 2026 ──
+         En dat is geen versoepeling maar een andere trede. De bodem van de ladder
+         is het laagste tarief van een LOSSE bestelling en die ladder stopt bij
+         twintig producten; een vooruitbetaald jaar op Studio is er
+         honderdvierenveertig, twaalf maanden vooruit betaald. Zie
+         PREPAY_FLOOR_SHARE in plans.js voor waarom driekwart de grens is.
+
+         Let op wie hier WEL en niet vrijgesteld is: op de gewone termijnen mag
+         `brand` er bewust onder (daar zit het merkmodel van € 1.250 bij), op de
+         vooruitbetaalde termijn juist niet — dat is het plan waar deze meting
+         voor bestaat, want het legt in zijn eentje 9,5% van de maand vast. */
+      if (tt.floorShare) {
+        const drempel = Math.round(bodem * tt.floorShare);
+        ok(`${id}/${t}: € ${(pp / 100).toFixed(2)} per product, boven de vooruitbodem`,
+          pp >= drempel, true, `€${(pp/100).toFixed(2)} vs €${(drempel/100).toFixed(2)}`);
+        /* En hij hoort er ook echt ONDER de gewone bodem te liggen, anders is de
+           vooruitbetaling geen korting maar een woord. */
+        ok(`  en onder de losse bodem, anders is er geen voordeel`, pp < bodem, true, `€${(pp/100).toFixed(2)}`);
+      } else if (id === 'brand') {
+        /* `brand` mag er BEWUST onder: daar zit het merkmodel bij, dat op de ladder
+           € 1.250 kost. Zie plans() in pricing.js. Elke andere is een prijsfout. */
         ok(`${id}/${t}: zit onder de bodem, en dat mag hier`, pp < bodem, true, `€${(pp/100).toFixed(2)}`);
       } else {
         ok(`${id}/${t}: € ${(pp / 100).toFixed(2)} per product, boven de bodem`, pp >= bodem, true, `€${(pp/100).toFixed(2)} vs €${(bodem/100).toFixed(2)}`);
@@ -72,6 +91,33 @@ console.log('geen plan zakt onder de bodem van de ladder');
     Object.keys(TERMS.yearly.discountMonths).join(','), 'starter');
   ok('en die brengt hem op precies de bodem',
     perProductCents('starter', 'yearly'), ladderFloorCents());
+}
+
+console.log('\nde plaat in PlanPicker kent elke combinatie van plan en termijn');
+{
+  /* ── WAAROM DIT EEN TOETS IS EN GEEN LUS IN HET COMPONENT — 10 sept 2026 ────
+   *
+   * De samenvattingsplaat wordt met `:has()` gekozen: één regel per plan × termijn,
+   * met de hand geschreven, omdat een <style>-blok in Astro geen selectors kan
+   * interpoleren. Dat werkt, maar het is precies de vorm waarin drift begint —
+   * er kwam vandaag een derde termijn bij en zonder deze toets zou de plaat bij
+   * "12 maanden vooruit" gewoon LEEG blijven, zonder dat er iets omvalt.
+   *
+   * Deze regel leest de CSS en eist dat elke combinatie erin staat. */
+  const bron = read('src/components/order/PlanPicker.astro');
+  for (const p of PLAN_IDS) {
+    for (const t of TERM_IDS) {
+      const kies = `[name="plan"][value="${p}"]:checked`;
+      const kiesT = `[name="term"][value="${t}"]:checked`;
+      const doel = `.ps-sumv[data-plan="${p}"][data-term="${t}"]`;
+      const regel = bron.split('\n').find((r) => r.includes(kies) && r.includes(kiesT) && r.includes(doel));
+      ok(`${p}/${t}: heeft een regel op de plaat`, !!regel, true);
+    }
+  }
+  // En elke termijn heeft een naam en een uitleg in het component.
+  for (const t of TERM_IDS) {
+    ok(`${t}: staat in de terugvalvrije teksttabel`, bron.includes(`  ${t}: { naam:`), true);
+  }
 }
 
 console.log('\nde termijnen kloppen met elkaar');

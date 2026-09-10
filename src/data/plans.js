@@ -95,6 +95,28 @@ export const PLAN_SERVICE = 'complete';
  * bouwen als een korting een plan onder de bodem duwt. Dat is geen stijlregel:
  * het is het enige getal in dit bestand waar je geld op verliest.
  */
+/**
+ * Hoe diep een VOORUITBETAALD jaar onder de bodem van de ladder mag komen.
+ *
+ * ── WAAROM DE BODEM HIER EEN ANDERE IS ─────────────────────────────────────
+ *
+ * De bodem van LADDER.complete (€ 65) is het laagste tarief van een LOSSE
+ * bestelling, en die ladder stopt bij twintig producten omdat dat de grootste
+ * losse bestelling is waar hij op gebouwd is. Een vooruitbetaald jaar op Studio
+ * is honderdvierenveertig producten, in één keer betaald, twaalf maanden van
+ * tevoren. Dat met de trede van twintig meten is de verkeerde trede pakken.
+ *
+ * Driekwart is de grens die dat verschil eerlijk maakt zonder hem weg te geven:
+ * € 48,75 per product. Elk plan mag daar met vooruitbetaling naartoe, geen enkel
+ * plan mag eronder. Dat is precies de controle die `{ starter: 2, studio: 2,
+ * brand: 2 }` zou laten omvallen — zie de noot bij `discountMonths` hieronder.
+ *
+ * Zet hem op 1 en een vooruitbetaald jaar mag nooit onder de losse bodem; zet hem
+ * lager en je verkoopt capaciteit onder je eigen laagste tarief. assertPlans()
+ * rekent het na bij het bouwen.
+ */
+export const PREPAY_FLOOR_SHARE = 0.75;
+
 export const TERMS = {
   monthly: {
     id: 'monthly',
@@ -118,9 +140,70 @@ export const TERMS = {
     perks: ['standingWindow', 'priceLock', 'brandModel'],
     name: { en: '12 months', nl: '12 maanden' },
   },
+  /* ── HET VOORUITBETAALDE JAAR — 10 september 2026 ─────────────────────────
+   *
+   * Lucas: *"Ik wil trouwens de jaar abonnementen ook gunstiger maken omdat dit
+   * perfect is voor de boekhouding en snelle omzet. De klant krijgt dan
+   * bijvoorbeeld 2 maanden gratis en betaald dan voor 10 maanden per jaar in
+   * plaats van 12."* En: *"als iemand halverwege stopt krijgt hij uiteraard geen
+   * geld terug, daarom betaal je ook een jaar vooruit."*
+   *
+   * DIT IS EEN DERDE TERMIJN EN GEEN BETAALWIJZE VAN DE TWEEDE. Een betaalwijze
+   * naast een termijn zou twee kolommen in de database opleveren en vier
+   * combinaties op de kaart, waarvan er één ("maandelijks, vooruitbetaald") niet
+   * bestaat. Eén radiogroep met drie standen houdt `subscriptions.term` één
+   * kolom en de kaart één keuze.
+   *
+   * EN DE KORTING HOORT HIER EN NIET OP `yearly`. Dat is het verschil dat de
+   * drie standen uit elkaar houdt en het is ook waar het geld zit: een
+   * verbintenis van twaalf maanden die per maand wordt afgeschreven, laat de
+   * studio nog steeds het incassorisico en de mislukte betalingen dragen en ze
+   * kan er niets mee doen. Vooruitbetaald geld staat op de rekening. Daarom
+   * koopt `yearly` VOORWAARDEN (een staande week, drie maanden doorschuiven, een
+   * prijsslot, het merkmodel op Studio) en koopt `prepaid` daar een PRIJS bij.
+   */
+  prepaid: {
+    id: 'prepaid',
+    months: 12,
+    fixed: true,
+    prepaid: true,
+    /* ── WAAROM DRIE, TWEE EN ÉÉN EN NIET DRIE KEER TWEE ────────────────────
+     *
+     * Lucas' regel — "betaal tien, krijg twaalf" — kan niet plat over de drie
+     * plannen, en dat is nagerekend en geen zuinigheid:
+     *
+     *   Starter  € 292,50/mnd = € 58,50 per product
+     *   Studio   € 658,33/mnd = € 54,86 per product
+     *   Brand    € 1.408,33/mnd = € 46,94 per product   ← 28% onder de ladderbodem
+     *
+     * Brand legt in zijn eentje 9,5% van de maandcapaciteit vast (zie DE PLEKKEN
+     * hieronder) en heeft het merkmodel van € 1.250 al inbegrepen. Twaalf
+     * maanden lang dertig producten per maand op € 46,94, met een prijsslot
+     * erbovenop, is de duurste klant tegen het laagste tarief vastzetten.
+     *
+     * Starter krijgt er juist één EXTRA, want anders is dit geen betere deal dan
+     * `yearly`: dat plan heeft daar al twee gratis maanden, dus twee hier zou
+     * hetzelfde bedrag zijn en niemand betaalt een jaar vooruit voor niets.
+     *
+     * Wat de klant ziet, ordent wél netjes oplopend, want hij leest euro's en
+     * geen maanden: € 1.170 · € 1.580 · € 1.690. En de zin die het uitlegt is
+     * één regel: hoe groter het plan, hoe meer de ladder al gedaan heeft.
+     *
+     * DIT IS ÉÉN REGEL OM TE VERANDEREN. Wil Lucas toch drie keer twee, dan is
+     * `{ starter: 2, studio: 2, brand: 2 }` genoeg — assertPlans() rekent de
+     * bodem opnieuw na en zegt het als het niet meer uit kan.
+     */
+    discountMonths: { starter: 3, studio: 2, brand: 1 },
+    /* De bodem geldt hier anders, en dat is geen uitzondering maar een andere
+       meting. Zie PREPAY_FLOOR_SHARE. */
+    floorShare: PREPAY_FLOOR_SHARE,
+    rollover: 3,
+    perks: ['standingWindow', 'priceLock', 'brandModel', 'prepaid'],
+    name: { en: '12 months up front', nl: '12 maanden vooruit' },
+  },
 };
 
-export const TERM_IDS = ['monthly', 'yearly'];
+export const TERM_IDS = ['monthly', 'yearly', 'prepaid'];
 
 /** Eén termijn opzoeken, met de maandelijkse als terugval. */
 export function term(id) {
@@ -150,9 +233,55 @@ export function monthlyCents(planId, termId) {
   return Math.round(netto / t.months) * 100;
 }
 
+/** Betaalt deze termijn het hele jaar vooruit? */
+export function isPrepaid(termId) {
+  return term(termId).prepaid === true;
+}
+
+/**
+ * Hoeveel maanden dit plan op een vooruitbetaald jaar GRATIS krijgt.
+ * Nul op elke andere termijn — dit getal hoort bij de vooruitbetaling.
+ */
+export function prepayFreeMonths(planId) {
+  return Number(TERMS.prepaid.discountMonths[planId] || 0);
+}
+
+/** En hoeveel maanden hij er dan wél voor betaalt. */
+export function prepayPaidMonths(planId) {
+  return TERMS.prepaid.months - prepayFreeMonths(planId);
+}
+
+/**
+ * Wat een vooruitbetaald jaar in één keer kost, in centen.
+ *
+ * DIT IS HET BEDRAG DAT DE KLANT AFREKENT en het wordt HIER uitgerekend en niet
+ * uit `monthlyCents()` afgeleid. Die functie rondt op hele euro's af omdat een
+ * abonnementsprijs van € 658,33 op een prijspagina een prijs is die niemand heeft
+ * bedacht — maar twaalf keer € 658 is € 7.896 en tien keer € 790 is € 7.900. Vier
+ * euro verschil op één factuur is een boekhouding die niet sluit.
+ *
+ * Vandaar: het maandbedrag is voor de PAGINA, dit bedrag is voor de BETALING.
+ */
+export function prepayTotalCents(planId) {
+  const base = PLAN_AMOUNT[planId];
+  if (!base) throw new Error(`plans.js: onbekend plan "${planId}"`);
+  return base * prepayPaidMonths(planId) * 100;
+}
+
+/** Wat een vooruitbetaald jaar scheelt ten opzichte van twaalf losse maanden. */
+export function prepaySaveCents(planId) {
+  const base = PLAN_AMOUNT[planId];
+  if (!base) throw new Error(`plans.js: onbekend plan "${planId}"`);
+  return base * prepayFreeMonths(planId) * 100;
+}
+
 /** Wat een heel jaar op deze termijn kost — voor de vergelijking op de pagina. */
 export function termTotalCents(planId, termId) {
   const t = term(termId);
+  /* Op een vooruitbetaald jaar is het jaartotaal het BETAALDE bedrag en niet
+     twaalf afgeronde maanden — zie prepayTotalCents() voor de vier euro die daar
+     tussen zit. */
+  if (t.prepaid) return prepayTotalCents(planId);
   return monthlyCents(planId, t.id) * t.months;
 }
 
@@ -437,11 +566,18 @@ function assertPlans() {
          tarief aan de klant die het meest van je capaciteit gebruikt.
          Uitzondering is `brand`, die er BEWUST onder zit omdat het merkmodel
          erbij hoort — zie plans() in pricing.js. */
-      if (id !== 'brand' && pp < bodem) {
+      /* Een VOORUITBETAALD jaar meet tegen een lagere bodem, en dan wél voor
+         alle drie de plannen — zie PREPAY_FLOOR_SHARE. Brand is daar juist niet
+         vrijgesteld: dat is het plan waar deze controle voor bestaat. */
+      const tt = term(t);
+      const drempel = tt.floorShare ? Math.round(bodem * tt.floorShare) : bodem;
+      const vrijgesteld = id === 'brand' && !tt.floorShare;
+      if (!vrijgesteld && pp < drempel) {
         throw new Error(
           `plans.js: ${id} op ${t} komt op € ${(pp / 100).toFixed(2)} per product, `
-          + `onder de bodem van de ladder (€ ${(bodem / 100).toFixed(2)}). `
-          + 'Verlaag de korting in TERMS of verhoog het plan in pricing.js.'
+          + `onder de bodem van € ${(drempel / 100).toFixed(2)}`
+          + (tt.floorShare ? ` (${Math.round(tt.floorShare * 100)}% van de ladderbodem van € ${(bodem / 100).toFixed(2)})` : '')
+          + '. Verlaag de korting in TERMS of verhoog het plan in pricing.js.'
         );
       }
     }
@@ -490,6 +626,51 @@ function assertPlans() {
         + 'Verhoog PLAN_CAPACITY_SHARE of de capaciteit in capacity.js.'
       );
     }
+  }
+
+  /* ── HET VOORUITBETAALDE JAAR — 10 september 2026 ─────────────────────────
+   *
+   * Vier dingen die geld kosten als ze wegzakken. Ze staan hier en niet in een
+   * toets, omdat een verkeerde waarde in `discountMonths` anders pas op de
+   * prijspagina zichtbaar wordt.
+   */
+  for (const id of PLAN_IDS) {
+    // 1 · Er is altijd minstens één maand voordeel, anders is de derde stand een
+    //     knop die de klant geld kost en niets oplevert.
+    if (prepayFreeMonths(id) < 1) {
+      throw new Error(`plans.js: ${id} krijgt geen enkele gratis maand op een vooruitbetaald jaar.`);
+    }
+    // 2 · En nooit zoveel dat het jaar gratis wordt.
+    if (prepayFreeMonths(id) >= TERMS.prepaid.months) {
+      throw new Error(`plans.js: ${id} krijgt ${prepayFreeMonths(id)} gratis maanden op twaalf.`);
+    }
+    // 3 · Vooruitbetalen moet GOEDKOPER zijn dan dezelfde twaalf maanden op de
+    //     jaartermijn — anders vraagt de pagina om geld vooruit voor niets.
+    if (prepayTotalCents(id) >= termTotalCents(id, 'yearly')) {
+      throw new Error(
+        `plans.js: een vooruitbetaald jaar op ${id} kost € ${(prepayTotalCents(id) / 100).toFixed(2)} `
+        + `en de jaartermijn € ${(termTotalCents(id, 'yearly') / 100).toFixed(2)}. `
+        + 'Verhoog de gratis maanden in TERMS.prepaid.'
+      );
+    }
+  }
+  /* 4 · WAT DE KLANT LEEST, LOOPT OPLOPEND. Hij vergelijkt euro's en geen
+   *     maanden: een groter plan dat minder bespaart dan een kleiner plan is een
+   *     prijslijst die zichzelf tegenspreekt. Deze regel is de reden dat de
+   *     verdeling 3-2-1 mag bestaan. */
+  for (let i = 1; i < PLAN_IDS.length; i += 1) {
+    const vorig = prepaySaveCents(PLAN_IDS[i - 1]);
+    const nu = prepaySaveCents(PLAN_IDS[i]);
+    if (nu < vorig) {
+      throw new Error(
+        `plans.js: ${PLAN_IDS[i]} bespaart € ${(nu / 100).toFixed(2)} met vooruitbetalen en `
+        + `${PLAN_IDS[i - 1]} € ${(vorig / 100).toFixed(2)}. Het grotere plan hoort niet minder te besparen.`
+      );
+    }
+  }
+  // 5 · En een langere verbintenis schuift nooit korter door.
+  if (TERMS.prepaid.rollover < TERMS.yearly.rollover) {
+    throw new Error('plans.js: het vooruitbetaalde jaar schuift korter door dan de jaartermijn');
   }
 
   // De meedenk-toevoeging moet op een plan hangen dat bestaat.

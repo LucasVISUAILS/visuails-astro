@@ -171,26 +171,49 @@
      vlak meer maar ligt op hetzelfde glas, dus wat je ziet is één ding dat
      breder wordt in plaats van twee dingen die naast elkaar verschijnen. */
   body.huid-kantig .wa-launcher { border-radius: var(--r-pill); }
-  /* Het label is een absoluut geplaatst zusje dat rechts uitschuift. Het schuift
-     nu 24px ONDER de knop door en krijgt links evenveel opvulling terug, zodat
-     de ronde knop op het label ligt en de twee samen één capsule vormen in
-     plaats van twee vormen met een naad. Zelfde glas, geen rand. */
-  body.huid-kantig .wa-launcher-label {
-    left: calc(100% - 24px);
-    padding: 0 16px 0 32px;
-    /* GEEN backdrop-filter HIER, EN DAT IS EEN GEMETEN LES. Het label is een
-       kind van de knop, en die knop heeft zelf al een backdrop-filter. Een
-       geneste filter neemt het resultaat van de ouder als achtergrond, en dat
-       resultaat bestaat alleen binnen de doos van die ouder — buiten de knop
-       heeft het label dus niets om te vervagen en bleef het volledig
-       doorzichtig. De tekst stond daardoor kaal over de pagina.
+  /* Het label is een absoluut geplaatst zusje dat onder de knop vandaan schuift.
+     Het schuift 24px ONDER de knop door en krijgt aan die kant evenveel opvulling
+     terug, zodat de ronde knop op het label ligt en de twee samen één capsule
+     vormen in plaats van twee vormen met een naad. Zelfde glas, geen rand.
 
-       Een vlakke donkere tint doet hier precies hetzelfde werk: over de
-       bijna-zwarte grond is het verschil met echt glas niet te zien, en de
-       tekst heeft weer een oppervlak. */
-    background: rgb(3 4 6 / .78);
-    border: 0;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / .12);
+     ── HET SCHOOF DE VERKEERDE KANT OP — 10 september 2026 ──────────────────
+
+     Lucas: *"is die knop ook niet mooi als je erover heen hovert."* Terecht, en
+     de oorzaak is een verhuizing die half is meegegaan. Deze regels zijn
+     geschreven toen de knop LINKSONDER stond; daar was rechts uitschuiven de
+     enige richting die kon. Op 31 augustus is de knop naar RECHTSONDER gegaan
+     (zie de noot bij `.wa-launcher` in Layout.astro) en deze regel bleef staan.
+
+     Gevolg, gemeten op 1280px: de knop loopt tot x=1260, het label begon op
+     x=1235 en liep tot 1283 — drieëntwintig pixels buiten het venster. Wat je
+     zag was een donkere plak die half van het scherm af liep, met de tekst
+     erin afgesneden.
+
+     Nu spiegelt hij mee: `right` in plaats van `left`, en de opvulling van 32px
+     staat aan de kant waar de knop overheen ligt. Layout.astro zet `right` al op
+     `calc(100% - 1px)`; hier wordt dat 24px, zodat de twee elkaar overlappen in
+     plaats van elkaar te raken. De clip-path van Layout veegt van rechts naar
+     links open en klopte dus al. */
+  body.huid-kantig .wa-launcher-label {
+    left: auto;
+    right: calc(100% - 24px);
+    padding: 0 32px 0 16px;
+    /* ── EN HET WAS OOK DE VERKEERDE KLEUR ──────────────────────────────────
+       Hier stond `background: rgb(3 4 6 / .78)` met een glansrand: een DONKERE
+       plak naast een LICHTE knop. Dat is precies de klacht waar dit blok ooit
+       voor geschreven is — *"twee vormen, twee gronden, twee radii"* — alleen
+       dan omgekeerd. De reden staat in de noot die hier stond: het label kon
+       geen `backdrop-filter` dragen, dus kreeg het een vlakke donkere tint die
+       over de toenmalige bijna-zwarte grond niet van glas te onderscheiden was.
+
+       Die grond is er niet meer. Sectie 21 haalde het glas weg en maakte de site
+       licht en vlak, en sindsdien is dit het enige donkere vlak dat uit een
+       lichte knop komt. Het glas is weg, dus de reden voor de tint is ook weg:
+       het label neemt gewoon de grond en de haarlijn van de knop over, die
+       Layout.astro al zet. Eén capsule, één kleur, één rand — nu ook echt.
+
+       Alleen de PILVORM blijft hier staan, want die ging over vorm en niet over
+       glas. Zie de noot boven `.wa-launcher` hierboven. */
     border-radius: var(--r-pill);
   }
 

@@ -121,11 +121,33 @@ const t0 = TIERS.unattended;
    Hooks heeft niets: /hooks draagt zelf ook alleen <Placeholder>s, want het
    tweebeeldsformaat is nog niet geschoten. Die deur krijgt dus de plaatshouder
    met de opdracht erin, dezelfde afspraak als overal. */
+/* ── DE DEUR MOET LATEN ZIEN WAT DE DIENST IS — 9 september 2026 ────────────
+ *
+ * Lucas: *"Deze kan je gebruiken om te laten zien wat catalog bijvoorbeeld is
+ * want het is nu alleen het t-shirt met witte achtergrond."*
+ *
+ * Dat was letterlijk zo: op de catalogdeur stond `catalog-after.webp`, één zwart
+ * T-shirt op wit. Een bezoeker die tassen verkoopt, of brillen, of schoenen, zag
+ * daar een T-shirt en moest zelf bedenken dat zijn product er ook onder valt.
+ *
+ * Het nieuwe beeld is het raster uit "Catalog banners": twaalf producten in
+ * dezelfde catalogbehandeling — T-shirt, hoodie, gebreide trui, puffer, bomber,
+ * overhemd, jeans, pantalon, pet, sneakers, TAS en sjaal. Dat beantwoordt de
+ * vraag die de vorige foto opriep in plaats van hem te stellen.
+ *
+ * De lifestyledeur draagt om dezelfde reden een scène met een tas en een
+ * zonnebril erin, en niet nog een foto van een jas. */
 const SHOT: Record<string, { src: string; w: number; h: number }> = {
-  catalog: { src: '/img/catalog-after.webp', w: 1800, h: 1800 },
-  lifestyle: { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
-  complete: { src: '/img/lifestyle-glow-04.webp', w: 1200, h: 896 },
-  editions: { src: '/img/brand-stair.webp', w: 1872, h: 1248 },
+  catalog: { src: '/img/catalog-raster.webp', w: 1600, h: 1207 },
+  lifestyle: { src: '/img/lifestyle-band-03.webp', w: 1800, h: 1013 },
+  /* Complete en Editions droegen `lifestyle-glow-04` en `brand-stair`: allebei
+     limegroen belicht. Met de catalogdeur en de lifestyledeur erbij stonden er
+     dan vier limebeelden in één rij, en dan is het niet meer een accent maar de
+     kleur van de pagina. Deze twee zijn de nieuwe banden — een brillenwand en
+     een woestijn — en die brengen tegelijk twee producttypes binnen die de
+     galerij nog niet heeft. */
+  complete: { src: '/img/lifestyle-band-06.webp', w: 1800, h: 1013 },
+  editions: { src: '/img/lifestyle-band-01.webp', w: 1800, h: 1005 },
   'custom-photo': { src: '/img/banners-16.webp', w: 2400, h: 1792 },
   'video-product': { src: '/img/banners-03.webp', w: 928, h: 1152 },
   'video-scene': { src: '/img/banners-05.webp', w: 928, h: 1152 },
@@ -138,16 +160,25 @@ const COPY = {
   en: {
     eyebrow: 'Start',
     h1: 'What are we making?',
-    lead: 'Nine doors, no order of importance. Narrow them by where the images have to end up, or read all nine. Nothing is created and nothing is charged until you press send.',
+    lead: 'Nine doors, no order of importance. Narrow them by where the images have to end up, or read all nine. Nothing is charged until you press send.',
 
     /* ── DE VRAAG IS EEN BESTEMMING, GEEN MEDIUM ─────────────────────────
        Zie de noot bij `takken` in de Nederlandse tekst hieronder. */
     takLabel: 'Where do the images have to end up?',
     takken: [
-      { id: 'alles', naam: 'All nine', kort: 'Everything we make, side by side' },
-      { id: 'pagina', naam: 'Your product page', kort: 'Where someone decides to buy' },
-      { id: 'feed', naam: 'Your feed and ads', kort: 'Where someone sees you for the first time' },
-      { id: 'merk', naam: 'Around your brand', kort: 'Atmosphere, and anything built to order' },
+      /* ── KORTE NAMEN, ÉÉN REGEL — 9 september 2026 ───────────────────────
+         Lucas: *"Ik zou ook graag de What are we making? pagina wat
+         overzichtelijker willen hebben, dus dat de eerste pagina bijna in 1
+         scherm past."*
+
+         De namen stonden hier in de vorm van een zin ("Your product page"), en
+         in de smalle kolom van een filterknop brak elk daarvan over twee regels
+         — vier knoppen van 149 pixels hoog voor vier woorden. De korte vorm past
+         op één regel, en de zin eronder zegt nog steeds waar hij over gaat. */
+      { id: 'alles', naam: 'All services', kort: 'Everything we make' },
+      { id: 'pagina', naam: 'The page', kort: 'Where someone decides to buy' },
+      { id: 'feed', naam: 'Feed & ads', kort: 'Where someone first sees you' },
+      { id: 'merk', naam: 'The brand', kort: 'Atmosphere, and made to order' },
     ],
 
     /* ── DE NEGEN DEUREN ────────────────────────────────────────────────── */
@@ -344,7 +375,7 @@ const COPY = {
   nl: {
     eyebrow: 'Start',
     h1: 'Wat gaan we maken?',
-    lead: 'Negen deuren, geen rangorde. Filter ze op waar het beeld terecht moet, of lees ze alle negen. Er wordt niets aangemaakt en niets in rekening gebracht tot je op versturen drukt.',
+    lead: 'Negen deuren, geen rangorde. Filter op waar het beeld terecht moet, of lees ze alle negen. Er wordt niets in rekening gebracht tot je op versturen drukt.',
 
     /* ── DE VRAAG IS EEN BESTEMMING, GEEN MEDIUM — 9 september 2026 ───────
        Lucas: *"Het is nu alsof catalog en lifestyle prioriteit zijn maar ik wil
@@ -366,10 +397,11 @@ const COPY = {
        bestemming een filter dat de klant zelf kiest. Dat is het verschil tussen
        een volgorde die wij opleggen en een volgorde die hij maakt. */
     takken: [
-      { id: 'alles', naam: 'Alle negen', kort: 'Alles wat we maken, naast elkaar' },
-      { id: 'pagina', naam: 'Je productpagina', kort: 'Waar iemand besluit te kopen' },
-      { id: 'feed', naam: 'Je feed en advertenties', kort: 'Waar iemand je voor het eerst ziet' },
-      { id: 'merk', naam: 'Rondom je merk', kort: 'Sfeer, en alles wat op maat gebouwd wordt' },
+      /* Zie de Engelse tegenhanger voor waarom deze namen kort zijn. */
+      { id: 'alles', naam: 'Alle diensten', kort: 'Alles wat we maken' },
+      { id: 'pagina', naam: 'De pagina', kort: 'Waar iemand besluit te kopen' },
+      { id: 'feed', naam: 'Feed & ads', kort: 'Waar iemand je voor het eerst ziet' },
+      { id: 'merk', naam: 'Het merk', kort: 'Sfeer, en alles op maat' },
     ],
 
     deuren: [
@@ -773,13 +805,69 @@ const nl = lang === 'nl';
      even zwaar zijn. De radio's zelf staan visueel verborgen boven de fieldset;
      het label is de knop. Zie de noot bij de markup voor waarom hier geen
      script bij hoort. */
-  .st-takrij { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.5rem, 1.2vw, .8rem); border: 0; padding: 0; margin: 0 0 clamp(2rem, 4vw, 3rem); max-width: 62rem; }
+  /* ═══════════════════════════════════════════════════════════════════════
+     HET EERSTE SCHERM — 9 september 2026
+
+     Lucas: *"Ik zou ook graag de What are we making? pagina wat overzichtelijker
+     willen hebben, dus dat de eerste pagina bijna in 1 scherm past. Kijk hoe je
+     dit mooi kan indelen."*
+
+     GEMETEN VOORAF, op 1440 × 900 (kladblok/startmaat.mjs): de kop liep tot 410,
+     de filterrij van 461 tot 610, en de eerste deur begon op 658. Van een kaart
+     van 632 pixels stond er dus 242 in beeld — een derde beeld en verder niets.
+     Je zag de vraag, je zag de knoppen, en je zag niet één antwoord.
+
+     WAT ER MIS WAS, was niet dat het te veel was maar dat het onder elkaar stond.
+     De kop is 46rem breed en het scherm is 1440: rechts van "What are we making?"
+     stond een half scherm leeg, terwijl de filterrij daaronder de volle breedte
+     nam voor vier woorden. Twee blokken van samen 455 pixels hoog, waarvan er één
+     de halve breedte niet gebruikte.
+
+     DUS STAAN ZE NU NAAST ELKAAR, vanaf 1024px: de vraag links, de vier filters
+     als kolom rechts. Samen zo hoog als de hoogste van de twee in plaats van de
+     som, en het gat rechts van de kop is precies waar ze staan.
+
+     WAAROM DIT ZONDER EEN EXTRA <div> KAN. De vier radioknoppen moeten broer en
+     zus blijven van zowel .st-takrij als .st-deuren — de hele filter is een
+     zusterselector en die kijkt alleen vooruit binnen één ouder. Een omhullende
+     div om kop en filters zou dat breken. Daarom wordt .st-kies zélf het raster:
+     de radio's staan op `position: absolute` (zie .visueel-verborgen) en nemen
+     dus geen enkele cel in, en de vier echte kinderen krijgen hun plek.
+
+     ONDER 1024px verandert er niets aan de volgorde — kop, filters, deuren — maar
+     staan de filters twee bij twee in plaats van vier onder elkaar. Op een
+     telefoon scheelde dat 180 pixels.
+     ═══════════════════════════════════════════════════════════════════════ */
+  /* Twee bij twee op smal, vier onder elkaar in de kolom op breed. Nooit vier
+     naast elkaar: dan is elke knop 200px breed en breekt zijn naam alsnog. */
+  .st-takrij { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(.5rem, 1.2vw, .8rem); border: 0; padding: 0; margin: 0 0 clamp(1.6rem, 3vw, 2.2rem); max-width: 62rem; }
   .st-tak {
-    display: grid; gap: .3rem; cursor: pointer;
-    padding: clamp(1rem, 2.2vw, 1.4rem) clamp(1.1rem, 2.4vw, 1.6rem);
+    display: grid; gap: .25rem; cursor: pointer;
+    /* Was clamp(1rem, 2.2vw, 1.4rem): met een naam die nu op één regel past, is
+       die binnenruimte hoger dan de tekst die erin staat. */
+    padding: clamp(.7rem, 1.4vw, .95rem) clamp(.9rem, 1.8vw, 1.2rem);
     border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 10px);
     transition: background .3s var(--uit), border-color .3s var(--uit), color .3s var(--uit);
   }
+
+  @media (min-width: 1024px) {
+    .st-kies {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(21rem, 30vw, 28rem);
+      column-gap: clamp(2rem, 5vw, 4rem);
+      align-items: start;
+    }
+    .st-kop { grid-column: 1; grid-row: 1; }
+    /* Twee bij twee blijft het ook hier, en dat is gemeten: vier onder elkaar
+       in deze kolom is 290 pixels hoog en twee bij twee 242, en die 48 pixels
+       zijn precies wat er van de eerste deur méér in beeld staat. */
+    .st-takrij { grid-column: 2; grid-row: 1; margin-bottom: 0; }
+    /* De deuren en de voetregels pakken beide kolommen: het raster geldt voor de
+       kop en het filter, niet voor de pagina eronder. */
+    .st-deuren, .st-onder { grid-column: 1 / -1; }
+    .st-deuren { margin-top: clamp(1.6rem, 2.6vw, 2.2rem); }
+  }
+
   .st-tak b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1rem, 1.5vw, 1.2rem); text-transform: uppercase; letter-spacing: -.01em; line-height: 1.05; }
   .st-tak .mono { color: var(--inkt-2); text-transform: none; letter-spacing: 0; font-size: .82rem; line-height: 1.45; }
   .st-tak:hover { border-color: var(--inkt); }
@@ -837,8 +925,11 @@ const nl = lang === 'nl';
   /* Flex en geen grid: de knop moet met `margin-top: auto` naar de onderrand
      zakken zodat de vier knoppen op één lijn staan, ook als de ene regel twee
      keer afbreekt en de andere niet. */
-  .st-deur { display: flex; flex-direction: column; gap: .9rem; }
-  .st-beeld { position: relative; aspect-ratio: 4 / 3; flex: 0 0 auto; }
+  .st-deur { display: flex; flex-direction: column; gap: .75rem; }
+  /* 3:2 en niet 4:3. Op 1440 scheelt dat 35 pixels per kaart, en drie kaarten
+     naast elkaar hebben die hoogte niet nodig: wat je van een deur moet zien is
+     wát het is, niet de foto beeldvullend. */
+  .st-beeld { position: relative; aspect-ratio: 3 / 2; flex: 0 0 auto; }
   .st-beeld img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
   .st-beeld :global([data-placeholder]) { position: absolute; inset: 0; margin: 0; }
   .st-beeld :global([data-placeholder] > *) { width: 100%; height: 100%; border-radius: 0; }
@@ -925,6 +1016,10 @@ const nl = lang === 'nl';
   }
   @media (max-width: 620px) {
     .st-deuren { grid-template-columns: minmax(0, 1fr); }
-    .st-takrij { grid-template-columns: minmax(0, 1fr); }
+    /* .st-takrij BLIJFT twee bij twee, ook hier. Hij stond op één kolom, en dat
+       was terecht zolang de namen zinnen waren ("Your feed and ads") die in een
+       halve telefoonbreedte over drie regels braken. Met de korte namen passen ze
+       op één regel naast elkaar, en de vier filters gaan van 361 naar 180 pixels
+       — precies de ruimte die de eerste deur nodig had om in beeld te komen. */
   }
 </style>

@@ -62,12 +62,22 @@ const COPY = {
        algemene zin leest en niet een lege plek. */
     hintBatch: 'One shape for the whole order. Images sit next to each other — in a grid or a carousel — and that only looks right when every image is the same shape.',
     hintEach: 'The shape every image starts on. On any product below you can set a single image differently — a banner among three square ones, for instance.',
+    /* ── EN DE DERDE, VOOR `complete` — 9 september 2026 ────────────────────
+       Zie de noot bij ratioApplies() in pipeline.js. Op een complete-bestelling
+       is deze keuze de verhouding van de CATALOGHELFT — vier beelden in
+       hetzelfde kader — en wijkt alleen de lifestylehelft er per beeld van af.
+       Dat verschil hoort in de zin te staan die eronder hangt; anders lijkt
+       "één verhouding voor de hele bestelling" te zeggen dat er niets kan
+       afwijken, of "elk beeld apart" dat de catalogset dat ook kan. */
+    hintComplete: 'One shape for the four catalog images — they sit in a grid, so they have to match. The three lifestyle images start on the same shape, and on any product below you can set one of them differently.',
     recommended: 'Recommended',
   },
   nl: {
     label: 'Beeldverhouding',
     hintBatch: 'Eén verhouding voor de hele bestelling. Beelden staan naast elkaar — in een grid of een carousel — en dat ziet er alleen goed uit als elk beeld dezelfde vorm heeft.',
     hintEach: 'De verhouding waar elk beeld op begint. Bij elk product hieronder kun je één beeld anders zetten — bijvoorbeeld één banner tussen drie vierkante.',
+    /* Zie de Engelse tegenhanger. */
+    hintComplete: 'Eén verhouding voor de vier catalogbeelden — die staan in een grid, dus die moeten gelijk zijn. De drie lifestylebeelden beginnen op dezelfde verhouding, en bij elk product hieronder kun je er daar één van anders zetten.',
     recommended: 'Aanbevolen',
   },
 };
@@ -77,9 +87,26 @@ const c = COPY[lang];
    catalog wegvallen, weet CATALOG_RATIOS en niet dit bestand. Zo blijft
    src/data/ratios.js de enige plek waar staat wat bij welke dienst hoort. */
 const CATALOG_IDS = CATALOG_RATIOS.map((r) => r.id);
+/* ── `css` STOND HIER NIET, EN DAAROM WAREN ALLE VIJF VIERKANT ─────────────
+   9 september 2026. Lucas: *"Zorg dat de maten/vormen ook visueel kloppen,
+   deze zijn nu allemaal hetzelfde."*
+
+   De markup hieronder zet `style={`aspect-ratio: ${r.css}`}` op elk kader —
+   maar deze map bouwde een nieuw object met zes velden, en `css` zat er niet
+   bij. Er stond dus letterlijk `aspect-ratio: undefined` op alle vijf de
+   tegels: een ongeldige waarde, die de browser weggooit, waarna `height: 96px;
+   width: auto` uit het stylesheet overblijft en elk kader even breed werd als
+   zijn inhoud. Vijf tegels die 1:1, 4:5, 3:4, 16:9 en 9:16 heten en er
+   identiek uitzien — precies de vergelijking die deze kiezer moet maken.
+
+   Niet te zien in een test die de HTML leest (het attribuut stáát er), en niet
+   te zien op een schermafdruk zonder te weten wat je zou moeten zien. Wel te
+   meten: kladblok/_verhouding.mjs leest de breedte-hoogteverhouding van elk
+   kader uit en zet hem naast de naam van de tegel. */
 const tiles = LIFESTYLE_RATIOS.map((r) => ({
   id: r.id,
   label: r.label,
+  css: r.css,
   name: r.name[lang] || r.name.en,
   use: r.use[lang] || r.use.en,
   viewBox: ratioViewBox(r),
@@ -94,6 +121,7 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
   <h3 class="pl-sub-h" id="pl-ratio-h">{c.label}</h3>
   <p class="hint pl-ratio-hint" data-pl-ratio-hint-batch>{c.hintBatch}</p>
   <p class="hint pl-ratio-hint" data-pl-ratio-hint-each hidden>{c.hintEach}</p>
+  <p class="hint pl-ratio-hint" data-pl-ratio-hint-complete hidden>{c.hintComplete}</p>
 
   <div class="ratio-grid" role="radiogroup" aria-labelledby="pl-ratio-h">
     {tiles.map((r) => (
@@ -173,13 +201,22 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
      vorm even breed en toont de tegelrij niets. 72px omdat het verschil tussen
      4:5 en 3:4 daaronder in de ruis van een paar pixels valt — bij 72 is het
      58 tegen 54. */
+  /* `height` vast en `width: auto`: dan bepaalt de aspect-ratio de BREEDTE, en
+     staan vijf tegels naast elkaar even hoog met een verschillende breedte —
+     wat een verhouding is. Bij 9:16 zou 96px hoog een kader van 54px breed
+     geven en bij 16:9 een van 171px; dat laatste past niet in een kolom van
+     vijf, dus staat er een bovengrens op de breedte en zakt de hoogte mee
+     (`aspect-ratio` doet dat vanzelf zodra `max-width` bijt). */
   .ratio-shape {
-    display: block; height: 96px; width: auto; max-width: 100%;
+    display: block; height: 76px; width: auto; max-width: 100%;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-sm);
     background: #fff;
     overflow: hidden;
   }
+  /* Het beeld VULT het kader; zonder deze regel houdt het zijn eigen vierkante
+     verhouding en staat er bij 16:9 wit naast in plaats van een uitsnede. */
+  .ratio-shape img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .ratio-shape img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
   .ratio:has(input:checked) .ratio-shape { border-color: var(--accent); background: var(--surface); }
 

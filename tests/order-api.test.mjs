@@ -24,7 +24,8 @@
  */
 import { readFileSync } from 'node:fs';
 import { safeRedirect } from '../functions/api/order.js';
-import { isPayableService, PAYABLE_SERVICES, quoteVideo } from '../src/lib/quote.js';
+import { isPayableService, PAYABLE_SERVICES, quoteVideo, quoteOrder } from '../src/lib/quote.js';
+import { extraPhotoRate } from '../src/data/pricing.js';
 
 let pass = 0;
 let fail = 0;
@@ -253,6 +254,15 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
       location: res?.headers?.get?.('Location') || '',
       ordersWritten: lastDb._inserted.length,
       payments: seen.filter((c) => c.url.includes('mollie')).length,
+      /* Het BEDRAG dat Mollie te zien krijgt, als getal. Dit stond er niet, en
+         daardoor kon een telfout in de opties (zie de hoeken hieronder) langs
+         elke proef in dit bestand komen: er wérd een betaling aangemaakt, alleen
+         voor iets anders dan de klant besteld had. */
+      amount: (() => {
+        const c = seen.filter((x) => x.url.includes('mollie'))[0];
+        if (!c) return null;
+        try { return Number(JSON.parse(c.body).amount.value); } catch { return null; }
+      })(),
       subjects: seen.filter((c) => c.url.includes('resend'))
         .map((c) => { try { return JSON.parse(c.body).subject; } catch { return ''; } }),
     };
@@ -284,6 +294,37 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
 
   const healthy = await post(base);
   ok('een gezonde bestelling krijgt één betaling', healthy.payments, 1);
+
+  /*
+   * ── DE HOEKEN TELLEN ALLEEN ALS ZE AANGEVINKT ZIJN — 9 september 2026 ──────
+   *
+   * De hoekenkiezer post één veld per gekozen hoek (`angle_flat-lay`), en een
+   * uitgevinkt vakje post niets. order.js telt ze en vermenigvuldigt met het
+   * aantal producten, want elke hoek geldt voor elk product.
+   *
+   * DE FOUT DIE DIT HAD MOETEN VANGEN, en die de eerste versie maakte: de test op
+   * "staat dit veld erin" was `get(k) !== null`, terwijl get() van een ontbrekend
+   * veld een LEGE STRING maakt. Alle acht hoeken telden dus altijd mee, de klem
+   * op vier per product sloeg toe, en een bestelling van € 1.020 werd € 2.412 —
+   * bij iedereen, ook bij wie geen enkele hoek had aangeraakt. Er ging een
+   * betaling uit, dus elke proef die alleen `payments` telt bleef groen.
+   */
+  const zonderHoeken = await post(base);
+  const netto = quoteOrder({ service: 'drop', products: 12 });
+  ok('zonder aangevinkte hoek kost een bestelling het gewone bedrag',
+    zonderHoeken.amount, Number((netto.grossCents / 100).toFixed(2)));
+
+  const tweeHoeken = await post({ ...base, 'angle_flat-lay': '1', 'angle_side': '1' });
+  const metHoeken = quoteOrder({ service: 'drop', products: 12, extras: 2 * 12 });
+  ok('twee hoeken zijn twee foto’s per product, niet twee in totaal',
+    tweeHoeken.amount, Number((metHoeken.grossCents / 100).toFixed(2)));
+  ok('en dat is het verschil van 24 extra foto’s',
+    Math.round((metHoeken.netCents - netto.netCents)), Math.round(24 * extraPhotoRate(12) * 100));
+
+  /* Een verzonnen hoek is geen hoek. Anders kan een gesleuteld formulier zichzelf
+     regels laten kosten die de studio niet levert. */
+  const verzonnen = await post({ ...base, angle_van_onderen: '1' });
+  ok('een hoek die niet bestaat kost niets', verzonnen.amount, zonderHoeken.amount);
 
   /* En de andere kant, want dat is wat de nieuwe poort eigenlijk doet: zonder de
      verklaring gaat er geen geld lopen. De bestelling zelf gaat NIET verloren --

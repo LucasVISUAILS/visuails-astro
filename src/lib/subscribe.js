@@ -38,18 +38,33 @@
  * er twee. Nu is er één plek die hem aanmaakt, en die is idempotent op
  * `mollie_subscription_id`: staat hij er al, dan gebeurt er niets.
  *
- * ── WIE ER EEN ABONNEMENT KAN AFSLUITEN, EN WAAROM ─────────────────────────
+ * ── WIE ER EEN ABONNEMENT KAN AFSLUITEN — HERZIEN 9 SEPTEMBER 2026 ─────────
  *
- * Alleen wie is ingelogd. Een abonnement hangt aan `customers.id`, en accounts
- * ontstaan in dit systeem uitsluitend door te bestellen — er is geen
- * registratieformulier en dat is een bestaande keuze, geen omissie.
+ * Hier stond: *"Alleen wie is ingelogd (…) Wil je dat wél openzetten, dan is dit
+ * de plek waar die beslissing hoort — en dan hoort er een accountaanmaak bij,
+ * niet een uitzondering hier."*
  *
- * Dat betekent dat een wildvreemde niet in één klik een SEPA-machtiging afgeeft
- * voor € 790 per maand. Dat is hier de goede kant om: elk pad naar VISUAILS
- * begint vandaag met een proefvisual van € 1 of een bestelling, en iemand die dat
- * nog nooit deed, koopt geen jaarverbintenis. Wil je dat wél openzetten, dan is
- * dit de plek waar die beslissing hoort — en dan hoort er een accountaanmaak bij,
- * niet een uitzondering hier.
+ * Lucas: *"Iemand kan geen abonnement afsluiten zonder een account te hebben."*
+ * Die beslissing is dus genomen, en precies zoals de oude noot voorschreef: MET
+ * een accountaanmaak, en zonder uitzondering in dit bestand.
+ *
+ * Hoe het nu loopt:
+ *
+ *   INGELOGD    /account/plan/start, achter de sessiecontrole in account.js.
+ *               Onveranderd.
+ *   UITGELOGD   /api/plan (functions/api/plan.js). Die ingang vraagt dezelfde
+ *               gegevens als het bestelformulier, maakt of vindt de klant met
+ *               upsertCustomer(), en roept daarna DEZE functie aan met die
+ *               klant. Eén validatie, één capaciteitspoort, één Mollie-pad.
+ *
+ * Het account ontstaat dus nog steeds uit een handeling en niet uit een
+ * registratieformulier — alleen is "bestellen" nu ook "een abonnement
+ * afsluiten". Inloggen gaat daarna zoals altijd: een e-mail met een link, geen
+ * wachtwoord.
+ *
+ * WAT DIT NIET VERZWAKT: de machtiging komt nog steeds uit een ECHTE betaling
+ * bij Mollie, met iDEAL of een kaart op naam. Wie betaalt, is wie tekent — een
+ * ingetypt e-mailadres van iemand anders levert geen mandaat op.
  */
 
 import {
@@ -58,14 +73,14 @@ import {
 } from './subscription.js';
 import {
   PLAN_IDS, SUB_PLAN_IDS, TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor,
-  planProductBudget, fitsBudget, fitsProducts,
+  planProductBudget, fitsBudget, fitsProducts, isPrepaid,
 } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
 import {
   MANDATE_AMOUNT, CUSTOM_MONTH_ID, CUSTOM_MONTH_MIN_PRODUCTS, CUSTOM_MONTH_MAX_PRODUCTS,
   customMonthSlots, customMonthTotal,
 } from '../data/pricing.js';
-import { subMaandCents, subProducten } from './slots.js';
+import { subMaandCents, subEersteBetalingCents, subProducten } from './slots.js';
 import {
   createMollieCustomer, createFirstPayment, firstPaymentMandate, createMollieSubscription,
   cancelMollieSubscription, mollieKeyProblems,
@@ -124,9 +139,17 @@ function terug(reden, lang) {
  * op het punt staat geld uit te geven, en een technische fout hoort daar een zin
  * te zijn.
  */
-export async function handleSubscribeStart(context, customer, offsite) {
+/* `vooraf` — 9 september 2026. Een al ingelezen FormData.
+ *
+ * Een verzoeklichaam kun je maar één keer lezen. Sinds er een publieke ingang
+ * bestaat (/api/plan, voor wie nog geen account heeft) moet die ingang het
+ * formulier ZELF lezen — hij haalt er de klantgegevens uit en maakt daarmee de
+ * klant aan — en daarna kan deze functie er niet meer bij. Dus geeft hij hem
+ * door. Blijft leeg bij de bestaande aanroep vanuit account.js, en dan leest
+ * deze functie hem gewoon zelf, precies zoals hij dat altijd deed. */
+export async function handleSubscribeStart(context, customer, offsite, vooraf = null) {
   const { env, request } = context;
-  const form = await request.formData().catch(() => null);
+  const form = vooraf || await request.formData().catch(() => null);
 
   const planId = String(form?.get('plan') || '');
   let termId = String(form?.get('term') || 'monthly');
@@ -256,10 +279,18 @@ export async function handleSubscribeStart(context, customer, offsite) {
        de webhook kent de maand toe op `sub_ref` (zie mollie.js in functions/api/
        webhook) en de Mollie-subscription begint bij eersteTermijn(), dus er wordt
        niet twee keer in dezelfde maand afgeschreven. */
+    /* ── EN OP EEN VOORUITBETAALD JAAR IS HET HET HELE JAAR — 10 sept 2026 ──
+       Lucas: *"daarom betaal je ook een jaar vooruit."* subEersteBetalingCents()
+       geeft daar prepayTotalCents() terug in plaats van één maand; op de twee
+       andere termijnen verandert er niets. Zie slots.js. */
     const betaling = await createFirstPayment(env, {
       subscriptionRef: rij.ref,
       mollieCustomerId,
-      valueEuros: subMaandCents(rij) / 100,
+      valueEuros: subEersteBetalingCents(rij) / 100,
+      /* Geen mandaat vragen voor een jaar dat in één keer betaald is — en dat is
+         ook wat bankoverschrijving als betaalmethode mogelijk maakt. Zie de noot
+         bij `sequenceType` in mollie.js. */
+      oneOff: isPrepaid(rij.term),
       description: `VISUAILS ${planName(planId, lang)} — ${rij.ref}`,
       lang,
       /* De klant komt terug op /account/plan/return, waar het mandaat wordt
@@ -326,6 +357,21 @@ export async function handleSubscribeReturn(context, customer) {
 export async function koppelSubscription(env, vol, origin) {
   if (vol?.mollie_subscription_id) return { staat: 'actief', sub: vol };
   if (!vol?.mollie_customer_id) return { staat: 'wacht', sub: vol };
+
+  /* ── EEN VOORUITBETAALD JAAR KRIJGT GEEN SUBSCRIPTION — 10 september 2026 ──
+   *
+   * Het hele jaar is met de eerste betaling voldaan; een Mollie-subscription
+   * ernaast zou elke maand nóg een keer afschrijven. Er is dus ook geen mandaat
+   * nodig — en dat is meer dan een besparing: een klant die per iDEAL betaalt en
+   * geen doorlopende machtiging wil afgeven, kan hierdoor gewoon een jaar kopen.
+   *
+   * De maandelijkse TOEKENNING loopt niet via de betaling maar via de
+   * maandtaak (zie subscription.js), en die kijkt naar de rij en niet naar
+   * Mollie. Twaalf maanden budget komen dus gewoon binnen. */
+  if (isPrepaid(vol.term)) {
+    await activateSubscription(env, vol.id);
+    return { staat: 'gelukt', sub: await loadSubscription(env, vol.customer_id) };
+  }
 
   let mandaat;
   try {
@@ -495,6 +541,10 @@ export async function stopIncasso(env, sub) {
  * bouwt een tweede waarheid.
  */
 export async function hervatIncasso(env, sub, origin) {
+  /* Een vooruitbetaald jaar heeft geen incasso om te hervatten: het is al
+     betaald, en er is geen mandaat. `true` en niet `false` — er is niets
+     misgegaan, er valt niets te doen. Zie koppelSubscription(). */
+  if (isPrepaid(sub?.term)) return true;
   if (!sub?.mollie_customer_id || !sub?.mollie_mandate_id) return false;
   if (mollieKeyProblems(env)) return false;
   try {

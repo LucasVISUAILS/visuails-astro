@@ -78,7 +78,7 @@ const fl = FIELD[lang];
         {/* Het product op de kleur, niet alleen de kleur — 3 september 2026. Hetzelfde
             catalogusbeeld op wit, met multiply over de swatch: wit wordt de kleur,
             het kledingstuk blijft zichtbaar. Eén klein bestand voor alle tegels. */}
-        <span class="bg-swatch" style={`--swatch:${b.hex}`}><img class="bg-eg" src="/img/catalog-after-w420.webp" alt="" width="420" height="420" loading="lazy" decoding="async" /></span>
+        <span class="bg-swatch" style={`--swatch:${b.hex}`}><img class="bg-eg" src="/img/bg-staal.webp" alt="" width="420" height="420" loading="lazy" decoding="async" /></span>
         <span class="bg-row">
           <input type="radio" name="background" value={b.id} data-pl-bg-hex={b.hex} data-pl-bg-name={b.name[lang]} checked={b.id === DEFAULT_ID} />
           <span class="bg-name">{b.name[lang]}</span>
@@ -91,7 +91,7 @@ const fl = FIELD[lang];
         sees their colour on the same row as the three we put forward, at the
         same size, and can compare them. */}
     <label class="bg-opt is-custom">
-      <span class="bg-swatch is-empty" data-pl-bg-preview><img class="bg-eg" src="/img/catalog-after-w420.webp" alt="" width="420" height="420" loading="lazy" decoding="async" /></span>
+      <span class="bg-swatch is-empty" data-pl-bg-preview><img class="bg-eg" src="/img/bg-staal.webp" alt="" width="420" height="420" loading="lazy" decoding="async" /></span>
       <span class="bg-row">
         <input type="radio" name="background" value={CUSTOM_ID} data-pl-bg-custom data-pl-bg-name={bgc.customH} />
         <span class="bg-name">{bgc.customH}</span>
@@ -186,15 +186,48 @@ const fl = FIELD[lang];
      hairline of its own — white on a white card is otherwise an empty box.
      --swatch is written by the markup for the four we recommend and by
      pipeline.js for the fifth. */
+  /* ── DE KLEUR MOET DE TEGEL DRAGEN — 10 september 2026 ─────────────────
+     Lucas: *"Fix ook de kleuren kies foto's die zijn nu niet goed zichtbaar."*
+     Dat klopte, en er waren drie oorzaken tegelijk:
+
+       1. HET SHIRT BEDEKTE DE KLEUR. Het catalogusbeeld stond op `object-fit:
+          cover` over de volle 84px, dus van de achtergrondkleur — het enige
+          waar deze tegel over gaat — bleef een randje over.
+       2. DE VERSCHILLEN ZIJN KLEIN. #FFFFFF, #F7F5F1 en #EDE4D8 liggen dicht bij
+          elkaar; op een strookje van een paar pixels zijn ze niet te scheiden.
+       3. DE PAGINA ZELF IS #F5F5F5. Gebroken wit lag daar zó dichtbij dat de
+          tegel eruitzag als een gat in het papier in plaats van als een staal.
+
+     Wat er nu gebeurt: de tegel is een KLEURVLAK met het product er klein in.
+     Het beeld staat op ongeveer twee derde van de breedte, onderaan uitgelijnd,
+     zodat er aan drie kanten kleur omheen staat. Hoger dan eerst, want een groter
+     vlak maakt een klein kleurverschil zichtbaar en een strook niet. En de
+     haarlijn is donkerder, zodat wit tegen het papier alsnog een rand houdt. */
+  /* ── HET BEELD MOET ZUIVER WIT ZIJN — 10 september 2026 ────────────────
+     `multiply` werkt alleen als de grond van de foto #FFFFFF is: elke tint
+     eronder VERMENIGVULDIGT met de swatch en maakt hem donkerder. Het beeld dat
+     hier stond (catalog-after-w420) heeft een grond van (245,245,240), en dat
+     tekende een zichtbare rechthoek in elk staal — een lap die vier procent
+     donkerder was dan de kleur eromheen. Vandaar bg-staal.webp: hetzelfde beeld
+     met alles boven de drempel op zuiver wit gezet. Het kledingstuk is donker en
+     blijft ongemoeid. */
   .bg-swatch {
-    display: block;
-    height: 84px;
+    display: grid;
+    align-items: end;
+    justify-items: center;
+    height: 104px;
+    padding: 0 12% 0;
     border-radius: var(--r-md);
     background: var(--swatch, var(--surface-2));
-    box-shadow: inset 0 0 0 1px var(--line-strong);
+    box-shadow: inset 0 0 0 1px rgb(17 17 17 / .22);
     overflow: hidden;
   }
-  .bg-eg { display: block; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
+  .bg-eg {
+    display: block;
+    width: 100%; height: 84%;
+    object-fit: contain; object-position: bottom;
+    mix-blend-mode: multiply;
+  }
   .bg-swatch.is-empty .bg-eg { display: none; }
   /* Before a custom colour exists there is no value to show, and showing a
      grey would be showing a fifth recommendation. A spectrum says "any colour"
@@ -214,7 +247,9 @@ const fl = FIELD[lang];
      zat eronder. Het is precies het soort tekst waar dat het meest telt: een
      hexwaarde is een reeks tekens zonder woordbeeld, dus je kunt hem niet
      half lezen en de rest raden. */
-  .bg-hex { font-size: .75rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  /* De hex een tint donkerder: hij staat naast een kleurvlak en is het enige
+     dat de twee bijna gelijke witten uit elkaar houdt voor wie ze niet ziet. */
+  .bg-hex { font-size: .75rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
   .bg-hex:empty { display: none; }
 
   /* One note at a time, for whichever swatch is selected. Four of them side by

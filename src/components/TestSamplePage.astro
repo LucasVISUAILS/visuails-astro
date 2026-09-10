@@ -41,7 +41,7 @@ import OrderFlow from './order/OrderFlow.astro';
 import StylePicker from './order/StylePicker.astro';
 import Step1Options from './order/Step1Options.astro';
 import { waHref } from '../data/whatsapp.js';
-import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
 
@@ -63,7 +63,7 @@ const c = nl ? {
   krijg: [
     `Kies je catalog: ${CATALOG_IMAGES} foto’s — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
     `Kies je lifestyle: ${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
-    'In hoge resolutie, in VISUAILS Studio — met de rechtstreekse link in je mail.',
+    `Op ${RESOLUTIE.standaard} px aan de lange zijde, in VISUAILS Studio — met de rechtstreekse link in je mail.`,
     'Een echte blik op onze belichting, kadrering en afwerking.',
     'Door een specialist gecontroleerd voordat het je bereikt.',
     `Eenmalig ${SAMPLE.feeNote}, één proef per bedrijf.`,
@@ -125,7 +125,7 @@ const c = nl ? {
   krijg: [
     `Pick catalog: ${CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.`,
     `Pick lifestyle: ${LIFESTYLE_IMAGES} photos in one styled look — a scene, one on a model, and a detail close-up.`,
-    'High resolution, in VISUAILS Studio — with the direct link in your email.',
+    `At ${RESOLUTIE.standaard} px on the long edge, in VISUAILS Studio — with the direct link in your email.`,
     'A real look at our lighting, framing and finish.',
     'Reviewed by a specialist before it reaches you.',
     `A one-off ${SAMPLE.feeNote}, one sample per business.`,

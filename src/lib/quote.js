@@ -43,6 +43,7 @@
 import {
   LADDER, ladderRate, OUTFIT_SURCHARGE, extraPhotoRate, MAX_EXTRA_PER_PRODUCT,
   MAX_OUTFIT_PRODUCTS, AMOUNT, VAT_RATE,
+  HOOG_PER_PRODUCT, voorrangBedrag, voorrangKan,
 } from '../data/pricing.js';
 /* Twee namen voor dezelfde import, met opzet: de controle onderaan vergelijkt
    ze en dat leest alleen als een controle wanneer er twee namen staan. Zou
@@ -262,7 +263,24 @@ function safeRate(vatRate) {
    /start/custom-look belooft ("daarna loopt elk product tegen het gewone
    tarief"). Geklemd op 0..500 euro per product: een getal daarbuiten is een
    typefout in /admin en geen prijs. */
-export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate = VAT_RATE, styleSurchargeCents = 0 }) {
+/* `hoogRes` en `voorrang` — 9 september 2026.
+ *
+ *   hoogRes   het AANTAL producten waarvan de lifestylebeelden op de hoge maat
+ *             geleverd worden. Vlak tarief (HOOG_PER_PRODUCT), geklemd op het
+ *             aantal producten: meer vinkjes dan producten is een gesleuteld
+ *             formulier, geen bestelling. Alleen bij een dienst die
+ *             lifestylebeelden HEEFT — bij catalog is 4K geen keuze in het
+ *             formulier maar een aanvraag via WhatsApp (zie RESOLUTIE_COPY).
+ *
+ *   voorrang  wel of niet. Het bedrag is een DEEL van wat de bestelling verder
+ *             kost, dus het wordt als laatste berekend en niet als regel
+ *             meegeteld — anders zou voorrang over zichzelf gerekend worden.
+ *             Buiten de grenzen van VOORRANG (te veel producten) wordt hij
+ *             genegeerd in plaats van in rekening gebracht: het formulier biedt
+ *             hem daar niet aan, en een POST die hem tóch meestuurt hoort niet
+ *             betaald te worden voor iets wat niet geleverd kan worden.
+ */
+export function quoteOrder({ service, products, outfits = 0, extras = 0, hoogRes = 0, voorrang = false, vatRate = VAT_RATE, styleSurchargeCents = 0 }) {
   // Translate first, then decide. Both the payable test and the ladder lookup
   // below have to see the same name, or this is the same bug in a new place.
   const kind = LADDER_KEY[service] || service;
@@ -330,8 +348,22 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
   const extraRate = extraPhotoRate(n);
 
   const surcharge = clamp(styleSurchargeCents, 0, 50000);
-  const net = n * rate + o * OUTFIT_SURCHARGE + x * extraRate;
+  /* 4K alleen waar er lifestylebeelden zijn om op te schalen. `ladderish()`
+     heeft `service` al naar `kind` vertaald, dus dit leest dezelfde twee namen
+     als styleApplies() in pipeline.js. */
+  const hoogKan = kind === 'lifestyle' || kind === 'complete';
+  const h = hoogKan ? clamp(hoogRes, 0, n) : 0;
+  const net = n * rate + o * OUTFIT_SURCHARGE + x * extraRate + h * HOOG_PER_PRODUCT;
   const netCents = cents(net) + n * surcharge;
+
+  /* Voorrang over het HELE bedrag tot hier, inclusief de toeslagen: wat opzij
+     moet, is de bestelling zoals hij is, niet alleen de producten erin. En over
+     het bedrag in euro's, want voorrangBedragNu() in de browser rekent met
+     hetzelfde getal — twee sommen die uit elkaar lopen op een cent zijn twee
+     bedragen op één scherm. */
+  const voorrangKanNu = voorrangKan({ kind, products: n });
+  const voorrangEuro = voorrang && voorrangKanNu ? voorrangBedrag(netCents / 100) : 0;
+  const netMetVoorrang = netCents + cents(voorrangEuro);
 
   // THE RATE IS AN ARGUMENT NOW, and the caller is the only one who can know
   // it: it depends on the customer's country and on whether VIES confirmed
@@ -350,19 +382,22 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
   // and adding them up drifts from the figure on the invoice by a cent or two
   // on a large order, and a payment that disagrees with its own invoice by a
   // cent is a reconciliation job every single time.
-  const vatCents = Math.round(netCents * effectiveRate);
+  const vatCents = Math.round(netMetVoorrang * effectiveRate);
 
   return {
     service,
     products: n,
     outfits: o,
     extras: x,
+    hoogRes: h,
+    voorrang: voorrangEuro > 0,
+    voorrangCents: cents(voorrangEuro),
     rate,
     extraRate,
     styleSurchargeCents: surcharge,
-    netCents,
+    netCents: netMetVoorrang,
     vatCents,
-    grossCents: netCents + vatCents,
+    grossCents: netMetVoorrang + vatCents,
     vatRate: effectiveRate,
   };
 }

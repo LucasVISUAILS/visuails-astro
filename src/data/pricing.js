@@ -1235,6 +1235,158 @@ export const OUTFIT_SURCHARGE = 50;
 export const MAX_OUTFIT_PRODUCTS = 3;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 1b-bis · DE RESOLUTIE VAN WAT WE LEVEREN — 9 september 2026.
+//
+// Lucas: *"Ook bij 'De bestanden' staat hoge resolutie en dit staat
+// waarschijnlijk op meer plekken. Even duidelijk maken: catalog foto's zijn
+// altijd 2k resolutie omdat 4k overkill is, wanneer de klant toch 4k catalog
+// beelden wil dan kan hij dat alleen aanvragen via whatsapp (…) lifestyle heeft
+// echter wel de mogelijkheid op een 4k upsell per foto die niet verplicht is."*
+//
+// ── WAAROM DIT EEN BREUK MET EEN OUDE REGEL IS ──────────────────────────────
+//
+// src/data/ratios.js zegt in zijn kop: *"WAT HIER NIET STAAT: pixelmaten… hoe
+// groot het bestand is, is een eigenschap van onze productie en die staat nog
+// niet vast."* Dat was juist zolang het antwoord niet vaststond. Nu staat het
+// vast, en dan is "hoge resolutie" niet bescheiden maar VAAG — het is precies
+// het soort belofte waar een klant een verkeerd getal bij bedenkt.
+//
+// Twee getallen, één keer opgeschreven:
+//
+//     STANDAARD  2048 px op de lange zijde. Elke bestelling, elke dienst.
+//     HOOG       4096 px. Bij lifestyle bij te bestellen; bij catalog alleen
+//                op aanvraag, want vier keer zoveel pixels voor een tegel van
+//                600 px in een webshop is werk waar niemand iets aan heeft.
+//
+// De 4K-toeslag staat hieronder in 1c-bis. Voor video staat hier NIETS: Lucas
+// moet eerst per videomodel nagaan wat er mogelijk is, en een getal verzinnen
+// dat de productie niet kan waarmaken is precies wat deze constanten moeten
+// voorkomen. Zodra het bekend is, hoort het hier.
+export const RESOLUTIE = { standaard: 2048, hoog: 4096 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1c-bis · 4K OP DE LIFESTYLEBEELDEN — 9 september 2026.
+//
+// €9 per PRODUCT en niet per foto — Lucas' eigen keuze uit drie voorstellen.
+// Het waarom is de bedienbaarheid: een lifestylecarousel is drie beelden, en
+// bij twintig producten zou "per foto" zestig vinkjes betekenen. Eén vinkje op
+// de productkaart zet alle drie de beelden van dat product op 4K.
+//
+// VLAK EN GEEN STAFFEL, anders dan elk ander tarief op deze site. Reden: het
+// werk achter een opschaling daalt niet met het aantal. Een tarief dat wél
+// daalt, zou zeggen dat het bij twintig producten minder moeite kost, en dat is
+// niet waar — het is twintig keer dezelfde bewerking.
+//
+// ALLEEN LIFESTYLEBEELDEN. Een catalogbeeld is een product op een egale grond
+// in een grid van 600 px; 4096 px daarvoor is opslag en geen kwaliteit. Wie het
+// tóch nodig heeft (een winkelpui, een beursdoek), vraagt het aan — zie
+// RESOLUTIE_COPY hieronder.
+export const HOOG_PER_PRODUCT = 9;
+
+export const RESOLUTIE_COPY = {
+  en: {
+    standaard: `Every image is delivered at ${2048} px on the long edge — the size a webshop, a marketplace and a feed all use.`,
+    catalog: `Catalog images are always ${2048} px. Four times that for a tile shown at 600 px is storage, not quality. If you do need a catalog image larger — a shop front, a trade-show banner — ask on WhatsApp and we look at what is possible.`,
+    lifestyle: `Lifestyle images are ${2048} px as standard. Per product you can have all three delivered at ${4096} px instead, for €${9} — for a full-bleed banner, a print, or a screen you stand in front of.`,
+    video: 'Clip resolution depends on the model a clip is made with, and that is being worked out. Until it is written here, it is agreed in writing before a clip runs.',
+  },
+  nl: {
+    standaard: `Elk beeld wordt geleverd op ${2048} px aan de lange zijde — de maat waar een webshop, een marktplaats en een feed alle drie mee werken.`,
+    catalog: `Catalogbeelden zijn altijd ${2048} px. Vier keer zoveel voor een tegel die op 600 px staat, is opslag en geen kwaliteit. Heb je een catalogbeeld tóch groter nodig — een winkelpui, een beursdoek — vraag het dan via WhatsApp, dan kijken we wat er mogelijk is.`,
+    lifestyle: `Lifestylebeelden zijn standaard ${2048} px. Per product kun je alle drie op ${4096} px laten leveren voor €${9} — voor een schermvullende banner, een druk, of een scherm waar je voor staat.`,
+    video: 'Welke resolutie een clip kan halen, hangt af van het model waarmee hij gemaakt wordt, en dat wordt nog uitgezocht. Zolang het hier niet staat, wordt het op schrift afgesproken voordat een clip draait.',
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1c-ter · VOORRANG BIJ LEVERING — 9 september 2026.
+//
+// Lucas: *"Ook kan de klant kiezen voor priority delivery, waarbij de klant
+// bovenaan de lijst komt te staan als upsell (…) we streven dan voor bezorging
+// binnen 24 uur (…) bij predefined/afgewerkte custom styles bestellingen tot en
+// met 20 gefotografeerde producten (…) en bij predefined/afgewerkte custom
+// styles video (bijvoorbeeld hooks) tot en met 10 videos."*
+//
+// ── HET BEDRAG SCHAALT MEE, EN DAT IS EEN KEUZE ─────────────────────────────
+//
+// Een vast bedrag zou 111% zijn bovenop een bestelling van één product en 8%
+// bovenop een van twintig — hetzelfde werk aan de kassa, een heel ander gevoel
+// bij de klant. Wat je koopt is dat er iets ANDERS opzij gaat, en hoeveel dat
+// is, hangt af van hoe groot jouw bestelling is. Vandaar een deel van het
+// orderbedrag, met een bodem (onder de bodem is het de moeite van het
+// omgooien niet waard) en een plafond (daarboven wordt het een tweede
+// bestelling in plaats van een voorrangsregel).
+//
+// ── EN HET IS EEN BELOFTE, GEEN VOORNEMEN ───────────────────────────────────
+//
+// Lucas koos: lukt 24 uur niet, dan gaat de toeslag terug en loopt de
+// bestelling gewoon door. Dat is wat "we streven naar" een belofte maakt in
+// plaats van een slag om de arm — en het past bij de regel die elders op deze
+// site al geldt: er wordt geen datum gedrukt die de agenda niet kan dragen.
+//
+// ── DE GRENZEN ZIJN GEEN KLEINE LETTERS ─────────────────────────────────────
+//
+// Voorrang wordt alleen AANGEBODEN als de bestelling erbinnen valt. Buiten die
+// grenzen staat de knop er niet — een optie die je kunt aanvinken en daarna
+// niet waargemaakt wordt, is erger dan geen optie.
+export const VOORRANG = {
+  deel: 0.20,            // 20% van het orderbedrag, excl. btw
+  bodem: 49,
+  plafond: 249,
+  uren: 24,
+  maxProducten: 20,      // catalog/lifestyle/complete — 20 producten
+  maxClips: 10,          // video en hooks
+};
+
+/**
+ * Wat voorrang kost bij een orderbedrag in HELE EURO'S, excl. btw.
+ * Afgerond op hele euro's naar boven: een toeslag van €64,80 op een scherm
+ * waar alle andere bedragen heel zijn, leest als een rekenfout.
+ */
+export function voorrangBedrag(orderbedrag) {
+  const ruw = Math.ceil(Number(orderbedrag || 0) * VOORRANG.deel);
+  return Math.min(VOORRANG.plafond, Math.max(VOORRANG.bodem, ruw));
+}
+
+/** Mag deze bestelling voorrang kopen? Buiten de grenzen wordt hij niet getoond. */
+export function voorrangKan({ kind, products, clips }) {
+  if (kind === 'video' || kind === 'hooks') return Number(clips || 0) > 0 && Number(clips) <= VOORRANG.maxClips;
+  if (kind !== 'catalog' && kind !== 'lifestyle' && kind !== 'complete') return false;
+  const n = Number(products || 0);
+  return n > 0 && n <= VOORRANG.maxProducten;
+}
+
+export const VOORRANG_COPY = {
+  en: {
+    label: 'Priority delivery',
+    line: `Your order goes to the top of the list and we aim to deliver within ${24} hours. If we do not make it, the surcharge comes back and your order runs on as normal.`,
+    limits: `Available up to ${20} products, or ${10} clips, on a style that already exists — a house style or a custom look that has been built. A style still being designed cannot be rushed, because designing it is the work.`,
+    busy: 'Priority is not available for this week — the calendar is full. Saying so here is better than taking the surcharge and giving it back.',
+  },
+  nl: {
+    label: 'Voorrang bij levering',
+    line: `Je bestelling gaat bovenaan de lijst en we mikken op levering binnen ${24} uur. Halen we dat niet, dan komt de toeslag terug en loopt je bestelling gewoon door.`,
+    limits: `Mogelijk tot ${20} producten, of ${10} clips, op een stijl die al bestaat — een huisstijl of een eigen look die al gebouwd is. Een stijl die nog ontworpen wordt, kan niet sneller: dat ontwerpen ís het werk.`,
+    busy: 'Voorrang kan deze week niet — de agenda zit vol. Dat hier zeggen is beter dan de toeslag aannemen en hem daarna terugstorten.',
+  },
+};
+
+// ── EN DE REKENSOM MOET KLOPPEN ─────────────────────────────────────────────
+// Dezelfde discipline als assertExtraLadder verderop: een bodem boven het
+// plafond, of een deel van nul, is een fout die je pas ziet op de factuur.
+(function assertVoorrang() {
+  const { deel, bodem, plafond } = VOORRANG;
+  if (!(deel > 0 && deel < 1)) throw new Error(`VOORRANG.deel moet tussen 0 en 1 liggen, niet ${deel}`);
+  if (bodem >= plafond) throw new Error(`VOORRANG.bodem (${bodem}) moet onder het plafond (${plafond}) liggen`);
+  // De bodem hoort te bijten bij de kleinste bestelling en het plafond bij de
+  // grootste; bijt geen van beide, dan zijn het decoratie.
+  const kleinste = LADDER.catalog[0][2];                 // één catalogproduct
+  const grootste = LADDER.complete[LADDER.complete.length - 1][2] * 20;
+  if (Math.ceil(kleinste * deel) >= bodem) throw new Error('VOORRANG.bodem bijt nergens — hij ligt onder 20% van de kleinste bestelling');
+  if (Math.ceil(grootste * deel) <= plafond) throw new Error('VOORRANG.plafond bijt nergens — hij ligt boven 20% van de grootste bestelling');
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 1c · EXTRA PHOTOS PER PRODUCT — August 2026.
 //
 // Lucas: "de mogelijkheid tot extra fotos voor hetzelfde product. Klanten
@@ -1274,7 +1426,21 @@ export const MAX_OUTFIT_PRODUCTS = 3;
 // gevolg: assertExtraLadder() hieronder eist dat deze ladder exact dezelfde
 // grenzen heeft als LADDER.catalog, omdat hij eruit is afgeleid. Eén van de
 // twee inkorten en de andere niet, laat de build vallen — precies zoals bedoeld.
-export const EXTRA_PHOTO_LADDER = [[1, 4, 35], [5, 9, 26], [10, 19, 20], [20, null, 15]];
+/* ── HERZIEN OP 9 SEPTEMBER 2026 ────────────────────────────────────────────
+ *
+ * Lucas: *"Een extra foto word dan 39 euro en loopt af naar mate de hoeveelheid
+ * producten die hij kiest. Dus bij 10 producten word het 29 per extra foto en
+ * bij 20 producten 19."*
+ *
+ * Drie getallen, vier treden. De ladder houdt met opzet dezelfde treden als
+ * LADDER.catalog — de controle onderaan dit bestand dwingt dat af, en de reden
+ * staat daar: hij is ervan afgeleid, en een extra foto die op een andere trede
+ * springt dan het product waar hij bij hoort, is een tarief dat je niet kunt
+ * uitleggen. Lucas' drie getallen landen op trede 1, 3 en 4; trede 2 (5–9
+ * producten) ligt ertussen op € 34, want gelijk mag niet (de ladder moet strikt
+ * dalen) en 39 tot aan tien producten zou de tussenstap laten verdwijnen die de
+ * rest van de site wél heeft. */
+export const EXTRA_PHOTO_LADDER = [[1, 4, 39], [5, 9, 34], [10, 19, 29], [20, null, 19]];
 
 // Past four extra frames on one product it is no longer "one more angle", it
 // is a second brief — the same reasoning MAX_OUTFIT_PRODUCTS applies to "more
@@ -1734,9 +1900,16 @@ export const TIERS = {
     // weg (zie canReviewOrder). Wat er in deze kolom overblijft is precies wat
     // er ook echt gebeurt, en het verschil met de trede hiernaast staat in de
     // regels erboven — het venster en de voorrang — waar het thuishoort.
+    /* ── HET HEET VISUAILS STUDIO, EN NERGENS ANDERS "DASHBOARD" ────────────
+       9 september 2026. Deze twee regels waren de laatste plek op de site waar
+       de klantomgeving "dashboard" heette; overal elders — de navigatie, de
+       voorpagina, StudioPage — heet hij VISUAILS Studio. Twee namen voor
+       hetzelfde scherm is één naam te veel, en het is de naam met het minste
+       merk erin die moest wijken. Meteen ook het Engelse leenwoord uit de
+       Nederlandse zin weg. */
     delivery: {
-      en: 'View, download, and approve everything right in your dashboard, or use the direct link sent via email or WhatsApp.',
-      nl: 'Bekijk, download en keur alles goed in je dashboard — of gebruik de rechtstreekse link via e-mail of WhatsApp.',
+      en: 'View, download, and approve everything right in VISUAILS Studio, or use the direct link sent via email or WhatsApp.',
+      nl: 'Bekijk, download en keur alles goed in VISUAILS Studio — of gebruik de rechtstreekse link via e-mail of WhatsApp.',
     },
     // Eén waarde voor beide treden — zie de noot bij AFTERCARE hierboven.
     aftercare: AFTERCARE,
@@ -1809,8 +1982,9 @@ export const TIERS = {
     // unattendedBody rendert geen tijdlijn). Dat is een echt verschil, geen
     // herschreven versie van hetzelfde.
     delivery: {
-      en: 'The same dashboard, plus a dedicated order page tracking every step with key dates.',
-      nl: 'Hetzelfde dashboard, plus een bestelpagina die elke stap met bijbehorende datum toont.',
+      /* Zie de noot bij de tegenhanger op de trede hierboven. */
+      en: 'The same Studio, plus a dedicated order page tracking every step with key dates.',
+      nl: 'Dezelfde Studio, plus een bestelpagina die elke stap met bijbehorende datum toont.',
     },
     // Dezelfde waarde als hierboven, en dat is nu ook letterlijk zo: hier stond
     // tot 24 augustus 2026 de oude belofte ("Anything you flag, we'll review

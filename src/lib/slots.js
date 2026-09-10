@@ -39,7 +39,7 @@
  * product vastzet; wanneer het gemaakt wordt is daarna onze planning.
  */
 import { PLAN_SLOTS, SLOT_KINDS, CUSTOM_MONTH_ID, slotProducts } from '../data/pricing.js';
-import { monthlyCents, productsFor, rolloverMonths } from '../data/plans.js';
+import { monthlyCents, productsFor, rolloverMonths, isPrepaid, prepayTotalCents } from '../data/plans.js';
 
 /** De maandsleutel 'YYYY-MM' van vandaag, of van een datum. */
 export function monthKey(d = new Date()) {
@@ -119,6 +119,31 @@ export function subMaandCents(sub) {
   const eigen = Number(sub?.amount_cents);
   if (Number.isFinite(eigen) && eigen > 0) return Math.round(eigen);
   return monthlyCents(sub?.plan, sub?.term);
+}
+
+/**
+ * Wat er bij het AFSLUITEN van dit abonnement wordt afgerekend, in centen.
+ *
+ * ── DRIE BEDRAGEN DIE NIET HETZELFDE ZIJN — 10 september 2026 ──────────────
+ *
+ * Op een maand- of jaartermijn is dit de eerste maand: de betaling die tegelijk
+ * het mandaat afgeeft, waarna Mollie elke maand opnieuw afschrijft.
+ *
+ * Op een VOORUITBETAALD jaar is het het hele jaar in één keer, en dan is er ook
+ * geen tweede afschrijving — zie koppelSubscription() in subscribe.js, dat voor
+ * deze termijn helemaal geen Mollie-subscription aanmaakt. Het bedrag komt uit
+ * prepayTotalCents() en niet uit twaalf keer het maandbedrag: dat scheelt een
+ * paar euro afronding, en dat is precies het soort verschil dat een boekhouding
+ * niet laat sluiten.
+ *
+ * Een maand op maat heeft geen vooruitbetaalde vorm — die wordt in subscribe.js
+ * op 'monthly' gezet — dus het eigen bedrag op de rij gaat hier vóór.
+ */
+export function subEersteBetalingCents(sub) {
+  const eigen = Number(sub?.amount_cents);
+  if (Number.isFinite(eigen) && eigen > 0) return Math.round(eigen);
+  if (isPrepaid(sub?.term)) return prepayTotalCents(sub?.plan);
+  return subMaandCents(sub);
 }
 
 /** Hoeveel producten DIT abonnement per maand vasthoudt — voor de capaciteitspoort. */

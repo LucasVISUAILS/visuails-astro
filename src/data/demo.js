@@ -320,7 +320,7 @@ export const WALK_COPY = {
       result: {
         n: 'You, in your account',
         h: 'It arrives image by image, you approve it, you download it',
-        b: 'Every paid order lands in a portal grouped by product — three products or three hundred. Each image is approved on its own, and what is not right goes back in one go, as the single revision round the order carries, with a note saying what is wrong — while the rest of the order keeps moving; nothing waits on anything else, and nothing is final until you say so. What you approve downloads as high-resolution, e-commerce-ready files, sized for shop listings, marketplaces and ads, with full commercial usage rights — one at a time, or the whole approved set as a zip.',
+        b: 'Every paid order lands in a portal grouped by product — three products or three hundred. Each image is approved on its own, and what is not right goes back in one go, as the single revision round the order carries, with a note saying what is wrong — while the rest of the order keeps moving; nothing waits on anything else, and nothing is final until you say so. What you approve downloads at 2048 px on the long edge, sized for shop listings, marketplaces and ads, with full commercial usage rights — one at a time, or the whole approved set as a zip.',
       },
     },
 
@@ -388,7 +388,7 @@ export const WALK_COPY = {
       result: {
         n: 'Jij, in je account',
         h: 'Het komt beeld voor beeld binnen, jij keurt goed, jij downloadt',
-        b: 'Elke betaalde bestelling komt in een portaal, gegroepeerd per product — of het er nu drie zijn of driehonderd. Elk beeld keur je apart goed. Wat niet goed is vink je aan en stuur je in één keer op als de ene revisieronde die bij de bestelling hoort, met een notitie erbij, terwijl de rest van de bestelling gewoon doorloopt; niets wacht op iets anders, en niets is definitief tot jij dat zegt. Wat je goedkeurt download je als hogeresolutiebestanden, klaar voor e-commerce, op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten — los, of de hele goedgekeurde set als zip.',
+        b: 'Elke betaalde bestelling komt in een portaal, gegroepeerd per product — of het er nu drie zijn of driehonderd. Elk beeld keur je apart goed. Wat niet goed is vink je aan en stuur je in één keer op als de ene revisieronde die bij de bestelling hoort, met een notitie erbij, terwijl de rest van de bestelling gewoon doorloopt; niets wacht op iets anders, en niets is definitief tot jij dat zegt. Wat je goedkeurt download je op 2048 px aan de lange zijde, op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten — los, of de hele goedgekeurde set als zip.',
       },
     },
 

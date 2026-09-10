@@ -46,6 +46,7 @@ import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
   WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
   clause, FORM_MAX_PRODUCTS,
+  RESOLUTIE,
 } from '../data/pricing.js';
 /* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
    schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
@@ -316,7 +317,7 @@ const COPY = {
       'Consistente belichting & hoeken',
       'Neutrale of je gekozen achtergrond',
       'Bijgesneden zoals marktplaatsen het willen',
-      'Bestanden in hoge resolutie',
+      `Bestanden op ${RESOLUTIE.standaard} px`,
       reviewClaim('unattended', 'nl'),
     ],
     chipsBg: ['Wit — standaard', 'Je eigen kleur — elke hexcode'],

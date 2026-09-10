@@ -2,7 +2,7 @@
 // src/data/catalogStyles.js — same shape and exports, only the
 // human-readable strings are translated. Order paths are prefixed with /nl.
 
-import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel } from './pricing.js';
+import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -78,7 +78,7 @@ export const catalogStyles = [
     whatYouGet: [
       'Vanaf vier foto’s per product: voorkant, achterkant, detail & on-model',
       'Consistente belichting, hoek en achtergrond',
-      'Hogeresolutiebestanden, klaar voor de marktplaatsen',
+      `Bestanden op ${RESOLUTIE.standaard} px, klaar voor de marktplaatsen`,
       TIMING,
       REVIEW,
     ],

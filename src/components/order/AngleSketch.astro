@@ -1,0 +1,296 @@
+---
+/*
+ * VISUAILS — WAT EEN HOEK VISUEEL BETEKENT, GETEKEND
+ * 9 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Maak voor de extra angles mock up schetsen zodat de klant ziet wat
+ * die angle visueel betekent."*
+ *
+ * ── WAAROM EEN SCHETS EN NIET (ALLEEN) EEN FOTO ────────────────────────────
+ *
+ * Een foto van een driekwarthoek is een foto van ÉÉN kledingstuk in één licht in
+ * één stijl. De klant die hem bekijkt, ziet een trui — en moet daar zelf de regel
+ * "het model veertig graden gedraaid" uit afleiden. Acht foto's naast elkaar
+ * verschillen vooral in wélk product erop staat; acht schetsen verschillen in wat
+ * je koopt.
+ *
+ * ── EN WAAROM HET GEEN CAMERADIAGRAM IS ────────────────────────────────────
+ *
+ * De eerste versie tekende het standpunt: een stip voor de camera, een gestreepte
+ * kijklijn, een kader voor de uitsnede. Nagekeken in de browser was het resultaat
+ * dat "driekwart" en "van voren" er identiek uitzagen — het VERSCHIL zat in een
+ * boogje bij de voeten, en dat leest niemand op een tegel van 190 pixels.
+ *
+ * Dus tekent elke schets nu simpelweg DE FOTO. Wat je ziet is wat je krijgt: bij
+ * driekwart staat er een gedraaide figuur, bij van achter een rug, bij een detail
+ * een uitsnede die de rand raakt. Het standpunt hoef je er niet bij te vertellen,
+ * want het is de tekening zelf.
+ *
+ * Eén vaste vorm eromheen: een liggend kader met een limegroen hoekteken. Dat is
+ * het enige gekleurde element, en het zegt bij alle acht hetzelfde — dit is een
+ * beeld dat geleverd wordt.
+ *
+ * ── EN ZE BLIJVEN, OOK ALS DE FOTO'S ER ZIJN ───────────────────────────────
+ *
+ * `shot` in src/data/angles.js wijst nog steeds naar /img/hoek-<id>.webp. Die
+ * foto's zijn nuttig op een dienstpagina of in de galerij; in de KIEZER zijn ze
+ * het antwoord op de verkeerde vraag. Wil je ze hier toch, dan is het één regel in
+ * AnglePicker.astro en blijft deze component gewoon staan.
+ *
+ * ── HOE ZE GETEKEND ZIJN ───────────────────────────────────────────────────
+ *
+ * Eén viewBox voor alle acht (400 × 300, dezelfde 4:3 als de tegel), `currentColor`
+ * voor de inkt zodat een donkere grond ze meeneemt, en geen enkele letter in de
+ * tekening — de naam staat er al onder, en tekst in een SVG vertaalt niet mee.
+ *
+ * `aria-hidden`: de schets illustreert een naam en een zin die er allebei al
+ * staan. Hem laten voorlezen laat de tegel drie keer zeggen wat hij is.
+ */
+import { ANGLE_IDS } from '../../data/angles.js';
+
+interface Props { id: string; }
+const { id } = Astro.props;
+if (!ANGLE_IDS.includes(id)) {
+  throw new Error(`AngleSketch: '${id}' staat niet in ANGLE_IDS — een schets zonder hoek is een tekening van niets.`);
+}
+---
+
+<svg
+  class="hs"
+  viewBox="0 0 400 300"
+  role="img"
+  aria-hidden="true"
+  focusable="false"
+  preserveAspectRatio="xMidYMid meet"
+>
+  {/* Het kader: de foto zelf. Alles wat erbuiten valt, valt weg — dat is bij de
+      uitsnedes (detail, in de hand, los detail) het halve verhaal. */}
+  <clipPath id={`hs-clip-${id}`}><rect x="34" y="26" width="332" height="248" rx="6" /></clipPath>
+  <rect class="hs-veld" x="34" y="26" width="332" height="248" rx="6" />
+
+  <g clip-path={`url(#hs-clip-${id})`}>
+
+    {id === 'three-quarter' && (
+      <g>
+        {/* Gedraaid, en dat moet je zien zonder de zin eronder te lezen. De
+            eerste versie deed dat met een neusje en een verschoven naad — te
+            weinig; naast "van achter" leek het gewoon een tweede vooraanzicht.
+            Nu doet de SILHOUET het werk: een driekwart romp is zichtbaar SMALLER
+            dan een romp van voren, de ene arm hangt ervóór en van de andere zie
+            je nog net een rand, en de voeten staan achter elkaar in plaats van
+            naast elkaar. Zet deze tegel naast "van achter" en het verschil is de
+            breedte, niet een detail. */}
+        <g class="hs-schaduw"><ellipse cx="186" cy="262" rx="38" ry="6" /></g>
+        <circle class="hs-vlak" cx="176" cy="70" r="22" />
+        <circle class="hs-inkt" cx="176" cy="70" r="22" />
+        <path class="hs-inkt hs-dun" d="M154 66l-8 8 8 5" />
+        <path class="hs-inkt" d="M176 92v12" />
+        {/* De achterste arm: alleen een rand, want de romp staat ervoor. */}
+        <path class="hs-inkt hs-dun" d="M216 112c8 8 11 20 11 34l-8 4" />
+        <path class="hs-vlak" d="M150 104l26-8 32 8 14 18-10 20-8-6-4 106h-46l-4-106-10 6-10-20z" />
+        <path class="hs-inkt" d="M150 104l26-8 32 8 14 18-10 20-8-6-4 106h-46l-4-106-10 6-10-20z" />
+        <path class="hs-inkt hs-dun" d="M160 98a18 11 0 0 0 32 2" />
+        {/* De voorste arm hangt langs de romp en overlapt hem: dat is wat je van
+            opzij-schuin ziet en van voren nooit. */}
+        <path class="hs-wit" d="M144 128c-6 20-6 44 0 66h16c-4-22-4-46 0-66z" />
+        <path class="hs-inkt" d="M144 128c-6 20-6 44 0 66h16c-4-22-4-46 0-66z" />
+        <path class="hs-hulp" d="M196 118c4 40 3 82 1 126" />
+        {/* De voeten staan achter elkaar. */}
+        <path class="hs-inkt" d="M156 246h22l4 14h-26z" />
+        <path class="hs-wit" d="M186 238h20l6 14h-26z" />
+        <path class="hs-inkt" d="M186 238h20l6 14h-26z" />
+      </g>
+    )}
+
+    {id === 'back-on-model' && (
+      <g>
+        {/* Een rug herken je aan wat er NIET is: geen gezicht. En aan wat er wel
+            is: haar tot in de nek, een naad over het midden, en hielen in plaats
+            van tenen. Die drie samen zijn genoeg. */}
+        <g class="hs-schaduw"><ellipse cx="200" cy="262" rx="48" ry="7" /></g>
+        <circle class="hs-vlak" cx="200" cy="70" r="24" />
+        <circle class="hs-inkt" cx="200" cy="70" r="24" />
+        <path class="hs-vlak" d="M176 66a24 24 0 0 1 48 0c0 18-6 26-6 34h-36c0-8-6-16-6-34z" />
+        <path class="hs-inkt" d="M176 68a24 24 0 0 1 48 0c0 18-6 24-6 32h-36c0-8-6-14-6-32z" />
+        <path class="hs-vlak" d="M164 108l36-10 36 10 28 20-14 24-14-10-4 104h-64l-4-104-14 10-14-24z" />
+        <path class="hs-inkt" d="M164 108l36-10 36 10 28 20-14 24-14-10-4 104h-64l-4-104-14 10-14-24z" />
+        {/* De kraag van achteren: een boog die de andere kant op staat dan bij een
+            vooraanzicht. */}
+        <path class="hs-inkt hs-dun" d="M180 100a22 14 0 0 1 40 0" />
+        <path class="hs-hulp" d="M200 104v138" />
+        <path class="hs-inkt" d="M164 246h26v16h-26zM210 246h26v16h-26z" />
+      </g>
+    )}
+
+    {id === 'detail-on-model' && (
+      <g>
+        {/* Een uitsnede, dus het onderwerp raakt de rand aan alle kanten en er is
+            geen silhouet meer. De eerste versie tekende een naad recht door het
+            midden met steken erlangs — en dat is precies hoe je een rits tekent,
+            dus hij leek op de tegel "los detail". Nu is het een SCHOUDER: de
+            kraag linksboven, de schoudernaad schuin naar beneden, de mouwnaad
+            eronder, en de trekplooien die alleen ontstaan als er iemand in zit. */}
+        <path class="hs-vlak" d="M20 12h360v276H20z" />
+        {/* De kraag, aangesneden. */}
+        <path class="hs-wit" d="M20 12h108c-6 30-32 52-108 58z" />
+        <path class="hs-inkt" d="M128 12c-6 32-34 54-108 60" />
+        {/* De schoudernaad, met steken. */}
+        <path class="hs-inkt" d="M96 44c58 18 108 52 150 100" />
+        <g class="hs-inkt hs-dun">
+          <path d="M110 40l-6 12M134 50l-6 12M158 62l-7 11M180 76l-8 10M202 92l-9 9M222 110l-10 8M240 130l-11 7" />
+        </g>
+        {/* De mouwnaad: de tweede lijn, die met de eerste een hoek maakt. Zonder
+            hem is het één streep en geen kledingstuk. */}
+        <path class="hs-inkt" d="M246 136c-24 30-38 66-42 108" />
+        <path class="hs-hulp" d="M262 152c-22 34-34 74-36 122" />
+        {/* De plooien: het bewijs dat het gedragen wordt en niet plat ligt. */}
+        <g class="hs-hulp">
+          <path d="M64 108c46 6 78 24 98 54M56 168c42 2 72 18 90 46M74 236c30-2 54 8 70 30M300 60c-14 24-20 48-20 74M340 96c-12 22-16 44-16 68" />
+        </g>
+      </g>
+    )}
+
+    {id === 'in-hand' && (
+      <g>
+        {/* Vastgehouden. De hand is het enige op deze tekening dat de kijker al op
+            ware grootte kent, en daarom werkt hij als meetlat — dat is precies wat
+            deze hoek verkoopt.
+
+            De eerste versie tekende de vingers als open bogen zonder vulling, en
+            dan leest een hand als een kam. Ze zijn nu gevuld en liggen dus ECHT
+            vóór het product, met de duim eroverheen. Het product is ook kleiner
+            geworden: een hand die maar een hoekje van een reus vasthoudt, meet
+            niets. */}
+        <path class="hs-vlak" d="M146 84h146a12 12 0 0 1 12 12v104a12 12 0 0 1-12 12H146z" />
+        <path class="hs-inkt" d="M146 84h146a12 12 0 0 1 12 12v104a12 12 0 0 1-12 12H146z" />
+        <g class="hs-hulp"><path d="M252 110h32M252 186h32" /></g>
+        {/* De handpalm komt links onder het beeld in. */}
+        <path class="hs-vlak" d="M40 96h116v192H40z" />
+        <path class="hs-wit" d="M40 288V118c0-26 18-42 46-42h70v212z" />
+        <path class="hs-inkt" d="M156 76H86c-28 0-46 16-46 42v170" />
+        {/* Vier vingers, gevuld, over de voorkant van het product heen. */}
+        <g>
+          <path class="hs-wit" d="M156 92h58a17 17 0 0 1 0 34h-58z" />
+          <path class="hs-inkt" d="M156 92h58a17 17 0 0 1 0 34h-58" />
+          <path class="hs-wit" d="M156 126h72a17 17 0 0 1 0 34h-72z" />
+          <path class="hs-inkt" d="M156 126h72a17 17 0 0 1 0 34h-72" />
+          <path class="hs-wit" d="M156 160h64a17 17 0 0 1 0 34h-64z" />
+          <path class="hs-inkt" d="M156 160h64a17 17 0 0 1 0 34h-64" />
+          <path class="hs-wit" d="M156 194h48a16 16 0 0 1 0 32h-48z" />
+          <path class="hs-inkt" d="M156 194h48a16 16 0 0 1 0 32h-48" />
+        </g>
+        {/* De duim, schuin over het product: dát maakt er "in de hand" van en geen
+            product dat toevallig naast een hand ligt. */}
+        <path class="hs-wit" d="M120 288c-4-40 10-70 42-90 16-10 32-8 40 6 8 14 4 30-12 40-24 16-36 30-38 44z" />
+        <path class="hs-inkt" d="M120 288c-4-40 10-70 42-90 16-10 32-8 40 6 8 14 4 30-12 40-24 16-36 30-38 44" />
+      </g>
+    )}
+
+    {id === 'flat-lay' && (
+      <g>
+        {/* Recht van boven, uitgelegd en rechtgelegd: het stuk ligt symmetrisch,
+            de mouwen staan even ver uit, en de zoom is een rechte lijn. Zo ziet
+            een flat-lay eruit en zo ziet geen enkele andere hoek eruit. */}
+        <g class="hs-schaduw"><path d="M108 122l14-16 62-20h32l62 20 14 16-22 34-24-16v112H154V140l-24 16z" /></g>
+        <path class="hs-vlak" d="M104 118l14-16 60-20h36l60 20 14 16-22 34-24-16v112H150V136l-24 16z" />
+        <path class="hs-inkt" d="M104 118l14-16 60-20h36l60 20 14 16-22 34-24-16v112H150V136l-24 16z" />
+        <path class="hs-inkt hs-dun" d="M178 82a22 14 0 0 0 44 0" />
+        <path class="hs-hulp" d="M200 100v164" />
+        {/* Hoektekens: "rechtgelegd", getekend. */}
+        <g class="hs-hulp">
+          <path d="M62 62h20M62 62v20M338 62h-20M338 62v20M62 266h20M62 266v-20M338 266h-20M338 266v-20" />
+        </g>
+      </g>
+    )}
+
+    {id === 'side' && (
+      <g>
+        {/* Het profiel. Alles staat in dienst van dikte en val: een smalle vorm,
+            een zoom die naar achteren uitloopt, en één mouw die naar voren wijst
+            omdat je hem van opzij niet als vlak ziet maar als lijn. */}
+        <g class="hs-schaduw"><ellipse cx="204" cy="262" rx="34" ry="6" /></g>
+        <path class="hs-vlak" d="M176 84h44c12 0 18 10 20 24l10 52-14 6-6 88h-52l-6-92-12-6 8-48c2-14 6-24 8-24z" />
+        <path class="hs-inkt" d="M176 84h44c12 0 18 10 20 24l10 52-14 6-6 88h-52l-6-92-12-6 8-48c2-14 6-24 8-24z" />
+        <path class="hs-inkt hs-dun" d="M176 86a16 11 0 0 0 30 0" />
+        {/* De mouw, van opzij: een lijn die naar de kijker wijst. */}
+        <path class="hs-inkt" d="M240 108c14 6 20 20 22 38l-16 6" />
+        <path class="hs-hulp" d="M168 252h72" />
+        <path class="hs-inkt hs-dun" d="M168 252h72m-72 0l8-6m-8 6l8 6m64-6l-8-6m8 6l-8 6" />
+      </g>
+    )}
+
+    {id === 'inside' && (
+      <g>
+        {/* De binnenkant: opengeslagen, met de voering als arcering en het label
+            als het enige rechthoekige ding in de tekening. Dat contrast maakt
+            "binnenkant" leesbaar zonder er een woord bij te zetten. */}
+        <path class="hs-vlak" d="M72 74h256l-22 190H94z" />
+        <path class="hs-inkt" d="M72 74h256l-22 190H94z" />
+        <path class="hs-inkt" d="M200 74v190" />
+        {/* De omgeslagen rand: de reden dat je de binnenkant ziet. */}
+        <path class="hs-vlak" d="M72 74c40 26 86 38 128 38v-38z" />
+        <path class="hs-inkt" d="M72 74c40 26 86 38 128 38" />
+        <path class="hs-inkt hs-dun" d="M96 90c30 16 66 24 104 26" />
+        <g class="hs-arcering">
+          <path d="M214 132h84M212 156h84M210 180h82M208 204h80M206 228h78" />
+        </g>
+        <rect class="hs-wit" x="112" y="150" width="62" height="46" rx="4" />
+        <rect class="hs-inkt" x="112" y="150" width="62" height="46" rx="4" />
+        <g class="hs-inkt hs-dun">
+          <path d="M124 164h38M124 174h38M124 184h22" />
+        </g>
+      </g>
+    )}
+
+    {id === 'hardware' && (
+      <g>
+        {/* Eén ding, beeldvullend — dus het loopt aan drie kanten het kader uit.
+            Een rits: twee banen, de tanden ertussen, de trekker eronder. Het
+            detail dat op een productpagina het vaakst gevraagd wordt en het minst
+            vaak te zien is. */}
+        <path class="hs-vlak" d="M20 12h150v276H20zM230 12h150v276H230z" />
+        <path class="hs-inkt" d="M170 12v276M230 12v276" />
+        <g class="hs-arcering">
+          <path d="M40 40h110M40 76h110M40 112h110M40 148h110M40 184h110M40 220h110M40 256h110M250 40h110M250 76h110M250 112h110M250 148h110M250 184h110M250 220h110M250 256h110" />
+        </g>
+        {/* De tanden: om en om, en boven de trekker in elkaar. */}
+        <g class="hs-inkt hs-dun">
+          <path d="M170 24h26v18h-26M230 42h-26v18h26M170 60h26v18h-26M230 78h-26v18h26M170 96h26v18h-26M230 114h-26v18h26" />
+          <path d="M172 140h24M204 140h24M172 164h24M204 164h24M172 188h24M204 188h24M172 212h24M204 212h24M172 236h24M204 236h24M172 260h24M204 260h24" />
+        </g>
+        <path class="hs-wit" d="M166 122h68v34h-68z" />
+        <path class="hs-inkt" d="M166 122h68v34h-68z" />
+        <path class="hs-inkt" d="M188 156c-4 16-4 30 0 42h24c4-12 4-26 0-42" />
+        <path class="hs-inkt" d="M194 168h12" />
+      </g>
+    )}
+  </g>
+
+  {/* Het hoekteken. Het enige gekleurde element, en het zegt bij alle acht
+      hetzelfde: dit is een beeld dat geleverd wordt. */}
+  <path class="hs-hoek" d="M34 52V32a6 6 0 0 1 6-6h20" />
+  <rect class="hs-rand" x="34" y="26" width="332" height="248" rx="6" />
+</svg>
+
+<style>
+  /* De hele tekening staat in `currentColor`, zodat een tegel op een donkere
+     grond hem meeneemt zonder een tweede set kleuren. */
+  .hs { display: block; width: 100%; height: auto; color: var(--inkt, #111); }
+  .hs line, .hs path, .hs rect, .hs circle, .hs ellipse { vector-effect: non-scaling-stroke; }
+
+  .hs-veld { fill: var(--vel, #F5F5F5); stroke: none; }
+  .hs-rand { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .32; }
+  .hs-hoek { fill: none; stroke: var(--accent, #D2E04A); stroke-width: 3; stroke-linecap: round; }
+
+  /* Het onderwerp: een vlak met een lijn eromheen. Het vlak is er zodat een
+     tekening met veel binnenwerk (de binnenkant, de rits) niet als een net van
+     lijntjes leest. */
+  .hs-vlak { fill: currentColor; opacity: .08; stroke: none; }
+  .hs-wit { fill: var(--vel, #F5F5F5); stroke: none; }
+  .hs-schaduw { fill: currentColor; opacity: .1; }
+  .hs-inkt { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+  .hs-dun { stroke-width: 1.4; }
+  .hs-hulp { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .4; }
+  .hs-arcering { fill: none; stroke: currentColor; stroke-width: 1; opacity: .3; }
+</style>

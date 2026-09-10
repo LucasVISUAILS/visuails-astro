@@ -1,0 +1,195 @@
+---
+/*
+ * VISUAILS — DE STIJLREGEL — 9 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ik denk dat 'De look' wat raar klinkt, maak dit gewoon simpelweg
+ * 'Style' of Chosen style (…) en laat klanten ook met een dropdown een andere
+ * style kiezen, wanneer de categorie meer stylen heeft, wel alleen binnen de
+ * categorie die ze hebben gekozen (…). Bij complete product bundle catalog +
+ * lifestyle beide stylen onder elkaar zetten en hetzelfde systeem toepassen."*
+ *
+ * ── WAT DIT IS ─────────────────────────────────────────────────────────────
+ *
+ * Eén regel per CATEGORIE, en de categorie bepaalt uit welke lijst je kiest:
+ *
+ *     catalog     src/data/catalogStyles.js   vandaag één vaste stijl
+ *     lifestyle   src/data/styles.js          vandaag vier vaste stijlen
+ *
+ * Staat er één stijl in die lijst, dan is er niets te kiezen en is deze regel
+ * een MEDEDELING: "Stijl · Classic". Staan er meer, dan is het een keuzelijst.
+ * Dat is geen instelling maar een telling — komt er morgen een tweede
+ * catalogstijl bij in de data, dan staat de keuzelijst er vanzelf.
+ *
+ * ── WAAROM EEN KEUZELIJST EN GEEN RASTER ───────────────────────────────────
+ *
+ * Op /start/lifestyle blijft het beeldenraster van StylePicker staan: daar
+ * kies je een look en dan wil je hem zien. Deze regel is voor de twee plekken
+ * waar dat niet geldt:
+ *
+ *   /start/catalog    de stijl ligt vast; er valt (nog) niets te kiezen.
+ *   /start/complete   er zijn er TWEE — een catalogstijl en een lifestylestijl
+ *                     — en twee beeldenrasters onder elkaar is een scherm vol
+ *                     keuzes voordat je bij het aantal producten bent.
+ *
+ * ── WAT DIT POST ───────────────────────────────────────────────────────────
+ *
+ *     categorie="lifestyle"   name="style"           bestond al
+ *     categorie="catalog"     name="catalog_style"   nieuw
+ *
+ * Geen van beide staat in TOP_FIELDS, dus ze landen allebei in details_json —
+ * geen serverwijziging. `catalog_style` is een NIEUW veld en niet een tweede
+ * gebruik van `style`, en dat is met opzet: op een complete-bestelling staan ze
+ * allebei tegelijk in dezelfde POST, en één veld kan maar één antwoord dragen.
+ *
+ * `data-pl-style-name` staat op de gekozen optie zodat het bevestigingsscherm
+ * de NAAM toont en niet de slug. pipeline.js leest dat attribuut op een
+ * aangevinkte radio én op een <select>; zie syncSummaries().
+ */
+import { catalogStyles as catEn } from '../../data/catalogStyles.js';
+import { catalogStyles as catNl } from '../../data/catalogStyles.nl.js';
+import { styles as lsEn } from '../../data/styles.js';
+import { styles as lsNl } from '../../data/styles.nl.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  categorie: 'catalog' | 'lifestyle';
+  /* Alleen op /start/complete: dan staan er twee onder elkaar en moet het
+     etiket zeggen wélke helft het is. Op een pagina met er maar één is
+     "Stijl" genoeg en zou "Stijl · Catalog" een onderscheid maken dat er niet
+     is. */
+  toonHelft?: boolean;
+}
+const { lang, categorie, toonHelft = false } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+const nl = lang === 'nl';
+
+/* De stijl op maat hoort NIET in de keuzelijst. Hij heeft geen tarief per
+   product zolang niemand weet wat hij is — het is een aanvraag met een prijs op
+   schrift, en dat is precies wat de link rechts zegt. Een aanvraag tussen vier
+   direct bestelbare stijlen zetten, is hem laten lezen als de vijfde optie. */
+const BRON = categorie === 'catalog'
+  ? (nl ? catNl : catEn)
+  : (nl ? lsNl : lsEn);
+const KEUZES = BRON.filter((s: any) => s.slug !== 'custom');
+const veld = categorie === 'catalog' ? 'catalog_style' : 'style';
+
+const C = nl ? {
+  stijl: 'Stijl',
+  helft: { catalog: 'Stijl · catalog', lifestyle: 'Stijl · lifestyle' },
+  waar: {
+    catalog: 'Geldt voor de catalogbeelden.',
+    lifestyle: 'Geldt voor de lifestylebeelden.',
+  },
+  anders: 'Iets anders voor ogen?',
+  link: 'Vraag een eigen stijl aan',
+  bekijk: 'Bekijk de stijlen',
+} : {
+  stijl: 'Style',
+  helft: { catalog: 'Style · catalog', lifestyle: 'Style · lifestyle' },
+  waar: {
+    catalog: 'Applies to the catalog images.',
+    lifestyle: 'Applies to the lifestyle images.',
+  },
+  anders: 'Something else in mind?',
+  link: 'Ask for a style of your own',
+  bekijk: 'See the styles',
+};
+
+const etiket = toonHelft ? C.helft[categorie] : C.stijl;
+const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
+---
+
+{KEUZES.length > 0 && (
+  <p class="sr1" data-sr-categorie={categorie}>
+    <span class="mono sr1-l">{etiket}</span>
+
+    {KEUZES.length === 1 ? (
+      <a class="sr1-naam" href={lp(leespagina)}>{KEUZES[0].name}</a>
+    ) : (
+      <span class="sr1-select">
+        <select name={veld} class="sr1-keuze" aria-label={etiket}>
+          {KEUZES.map((s: any) => (
+            <option value={s.slug} data-pl-style-name={s.name}>{s.name}</option>
+          ))}
+        </select>
+      </span>
+    )}
+
+    {/* Bij één stijl post het <b> hierboven niets, dus reist de waarde als
+        verborgen veld mee. Anders staat er op het bevestigingsscherm en in de
+        briefing geen stijl bij werk waar wel degelijk een stijl aan te pas
+        komt — en de studio weet het dan alleen omdat er maar één is. */}
+    {KEUZES.length === 1 && (
+      <input type="hidden" name={veld} value={KEUZES[0].slug} data-pl-style-name={KEUZES[0].name} />
+    )}
+
+    {toonHelft && <span class="sr1-waar">{C.waar[categorie]}</span>}
+
+    {/* ── ÉÉN LINK EN NIET DRIE ─────────────────────────────────────────────
+        Hier stonden er twee naast elkaar — "Bekijk de stijlen" en "Vraag een
+        eigen stijl aan" — met een vraagzin ertussen. Op /start/complete staan
+        deze regels dubbel, en dan zijn dat zes links en twee vragen op twee
+        regels die samen niet eens de helft van het scherm vullen: meer weg dan
+        keuze. Wat overblijft is de aanvraag, want dát is de deur die je hier
+        niet ziet. Wie de stijlen wíl zien, klikt op de naam links. */}
+    <span class="sr1-r">
+      {C.anders}{' '}
+      <a href={lp('/start/custom-look')}>{C.link}</a>
+    </span>
+  </p>
+)}
+
+<style>
+  /* Eén regel en geen kaart. Bij catalog valt er niets te kiezen en is het een
+     mededeling; bij lifestyle is het één keuzelijst. Allebei te klein voor een
+     blok met een rand eromheen — dat zou ze zwaarder maken dan het aantal
+     producten erboven, en dat is wél de vraag die telt. */
+  .sr1 {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem .7rem;
+    max-width: var(--pl-measure);
+    margin-top: clamp(1.4rem, 2.6vw, 1.9rem);
+    padding-bottom: .9rem;
+    border-bottom: 1px solid var(--line);
+    font-size: .95rem;
+  }
+  .sr1 + .sr1 { margin-top: .9rem; }
+  .sr1-l { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .sr1-naam { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+  .sr1-naam:hover { text-decoration-color: var(--ink); }
+  .sr1-waar { font-size: .82rem; color: var(--ink-3); }
+
+  /* De keuzelijst draagt de inkt van de pagina en niet die van het besturings-
+     systeem: een <select> erft standaard een eigen achtergrond en die valt op
+     een licht paneel op als een vreemd blok. Het pijltje is een achtergrond-
+     afbeelding en geen extra element, zodat er niets naast de tekst hoeft te
+     staan dat kan verschuiven. */
+  .sr1-keuze {
+    appearance: none;
+    font: inherit; font-weight: 600; color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: .3rem 2rem .3rem .8rem;
+    min-height: 34px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23111' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .75rem center;
+    background-size: 10px 7px;
+  }
+  .sr1-keuze:hover { border-color: var(--ink); }
+  .sr1-keuze:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .sr1-r { margin-left: auto; font-size: .85rem; color: var(--ink-3); }
+  .sr1-r a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .sr1-r a:hover { color: var(--ink); }
+  .sr1-of { padding: 0 .15rem; }
+
+  /* Op een telefoon staat de rechterkolom onder de keuze in plaats van ernaast:
+     `margin-left: auto` duwt hem anders tegen de rechterrand van een regel die
+     al vol is, en dan breekt hij midden in "Vraag een eigen stijl aan". */
+  @media (max-width: 620px) {
+    .sr1-r { margin-left: 0; flex-basis: 100%; }
+  }
+</style>

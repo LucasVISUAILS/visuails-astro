@@ -110,6 +110,33 @@ const FRAMES = {
 };
 if (FRAMES.en.length !== COMPLETE_IMAGES) throw new Error(`Voorpagina: ${FRAMES.en.length} frames voor ${COMPLETE_IMAGES} beelden.`);
 
+/*
+ * ── DE VIER PUNTEN ONDER DE HERO — 9 september 2026 ─────────────────────────
+ *
+ * Lucas: *"hier staat trouwens ook 4 catalog + 3 lifestyle maar dat is heel vaag
+ * en is niet het enige wat wij verkopen en dat lijkt nu wel zo."*
+ *
+ * Dat klopte, en het was de eerste regel van de maatlijn: `4 catalog + 3
+ * lifestyle per product`. Die zin beschrijft ÉÉN bundel — de complete-bestelling
+ * — en stond op de plek waar een bezoeker leest wat VISUAILS is. Wie daar stopt,
+ * denkt dat het aanbod één setje van zeven beelden is en niet vier diensten met
+ * een eigen tarief. Bovendien is het een getal zonder eenheid: "4 + 3" zegt niets
+ * over wat je ervoor betaalt of hoe snel het er is.
+ *
+ * Wat er nu staat zijn vier ANTWOORDEN op de twijfel van iemand die dit nog nooit
+ * zo besteld heeft: mag het klein beginnen, wat kost het, wanneer is het er, en
+ * van wie zijn de beelden daarna. Geen van vieren noemt een bundel, en geen van
+ * vieren staat in de weg van de dienstenrij eronder.
+ *
+ * DE RECHTEN STAAN OP ÉÉN PLEK. `RECHTEN` wordt hieronder óók in `beloften`
+ * gebruikt. Zonder die ene bron zouden er twee zinnen over dezelfde belofte op
+ * dezelfde pagina staan, en dan verandert er op een dag één van de twee.
+ */
+const RECHTEN = {
+  en: 'Full commercial rights included',
+  nl: 'Volledige commerciële rechten inbegrepen',
+};
+
 const COPY = {
   en: {
     labels: [MERK, 'Studio', 'Enschede, NL'],
@@ -122,15 +149,16 @@ const COPY = {
     /* De hero heeft een eigen alt: `heroAlt` staat ook onder een ander beeld
        verderop, en een alt die twee foto's moet dekken beschrijft er geen. */
     heroFotoAlt: 'Two models in a white capsule, in black, with lime green on their nails and sunglasses',
-    facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Your own week on the calendar', 'Every image checked by a specialist'],
+    facts: ['One product is enough, no shoot', `From ${e(AMOUNT.catalog)} per product`, 'Your own week on the calendar', RECHTEN.en],
     svcH: 'What we make.',
-    svcLede: 'Four services, all from the photos you already have — a phone by a window is enough.',
+    svcLede: 'All of it from the photos you already have — a phone by a window is enough.',
     svc: [
-      ['Catalog set', `${countedShort('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/catalog'],
-      ['Lifestyle carousel', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
+      ['Catalog', `${countedShort('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/catalog'],
+      ['Lifestyle', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
+      ['Catalog + Lifestyle', `${countedShort('complete', COMPLETE_IMAGES, 'en')} per product — your page and your feed in one order`, `from ${e(AMOUNT.complete)} per product`, '/pricing'],
       ['Video clip', 'One vertical clip, cut for Reels and TikTok', `${e(AMOUNT.video)} per clip`, '/video'],
-      ['Your brand model', 'One face, yours alone, in every order', `once ${e(AMOUNT.brandModel)}`, '/custom-models'],
     ],
+    svcAll: 'Everything we make',
     svcMore: 'See',
     svcSoon: ['Coming:', `${binnenkortNamen('en').join(' & ')} — what they are`],
     vnH: 'You send a phone photo. We turn it into a studio production.',
@@ -140,10 +168,27 @@ const COPY = {
     vnLink: 'See the gallery',
     vnNotenLabel: 'What is built around the garment',
     vnNoten: [['Light', 22, 18], ['Background', 78, 30], ['Model', 30, 58], ['Crop', 72, 86]],
-    setH: `One product. ${COMPLETE_IMAGES} images.`,
-    setLede: 'A catalog set for your shop and a lifestyle carousel for your socials, from the same order.',
+    /* ── DE SET IS EEN MAXIMUM, GEEN PAKKET — 9 september 2026 ──────────────
+       Dit is dezelfde reparatie als bij de vier punten onder de hero, en dezelfde
+       reden. Lucas over die punten: *"dat is heel erg vaag en is niet het enige
+       wat wij verkopen en dat lijkt nu wel zo."*
+
+       De kop zei "Eén product. 7 beelden." — één getal, één configuratie, en wie
+       daar stopt denkt dat het aanbod dát is. Terwijl er drie regels lager twee
+       diensten staan (video, merkmodel) die er net zo goed bij horen.
+
+       Wat blijft: het getal, want dat is concreet en het is waar. Wat verandert:
+       het is nu een BOVENGRENS ("tot") met de clip erbij genoemd, en de zin
+       eronder zegt uitdrukkelijk dat elk deel ook los kan. Zelfde concreetheid,
+       zonder de belofte dat dit het hele aanbod is. */
+    setH: `One product. Up to ${COMPLETE_IMAGES} images and a clip.`,
+    setLede: 'The catalog set for your shop, the lifestyle carousel for your socials, a clip for the feed — together in one order, or any one of them on its own.',
     setGroups: [[`Catalog set · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, '/catalog'], [`Lifestyle carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, '/lifestyle']],
     frames: FRAMES.en,
+    /* Het opschrift boven de twee onderaan. Zonder dit lezen video en merkmodel
+       als een voetnoot bij de set; met dit lezen ze als wat ze zijn — twee dingen
+       die je bij hetzelfde product kunt bestellen. */
+    extrasLabel: 'On the same product',
     extras: [
       ['Video clip', `One vertical clip for Reels and TikTok · ${e(AMOUNT.video)}`, '/video'],
       ['Your brand model', `One face, yours alone · once ${e(AMOUNT.brandModel)}`, '/custom-models'],
@@ -178,7 +223,7 @@ const COPY = {
     studioLink: 'See Studio', studioLink2: 'How an order runs',
     beloften: [
       ['No final delivery without your check', 'Something off? We go through it together until it is right.'],
-      ['Full commercial rights included', 'Shop, marketplaces, ads and social — no extra licence fees.'],
+      [RECHTEN.en, 'Shop, marketplaces, ads and social — no extra licence fees.'],
     ],
     facesH: 'Pick a face — or claim one.',
     facesLede: 'A model from the roster, or a brand model nobody else gets. The face, background and format you approve stay with your brand, so the next order starts where the last one ended.',
@@ -206,15 +251,16 @@ const COPY = {
     heroAlt: 'Een VISUAILS-campagnebeeld', heroChip: 'Campagne',
     /* Zie de Engelse noot. */
     heroFotoAlt: 'Twee modellen in een witte capsule, in het zwart, met limoengroen op hun nagels en zonnebril',
-    facts: [`${CATALOG_IMAGES} catalog + ${LIFESTYLE_IMAGES} lifestyle per product`, 'Jouw eigen week op de kalender', 'Elk beeld gecheckt door een specialist'],
+    facts: ['Eén product mag, geen shoot nodig', `Vanaf ${e(AMOUNT.catalog)} per product`, 'Jouw eigen week op de kalender', RECHTEN.nl],
     svcH: 'Wat we maken.',
-    svcLede: 'Vier diensten, allemaal uit de foto’s die je al hebt — een telefoon bij het raam is genoeg.',
+    svcLede: 'Allemaal uit de foto’s die je al hebt — een telefoon bij het raam is genoeg.',
     svc: [
-      ['Catalogset', `${countedShort('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/catalog'],
-      ['Lifestyle-carousel', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
+      ['Catalog', `${countedShort('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/catalog'],
+      ['Lifestyle', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
+      ['Catalog + Lifestyle', `${countedShort('complete', COMPLETE_IMAGES, 'nl')} per product — je pagina en je feed in één bestelling`, `vanaf ${e(AMOUNT.complete)} per product`, '/pricing'],
       ['Videoclip', 'Eén verticale clip, gesneden voor Reels en TikTok', `${e(AMOUNT.video)} per clip`, '/video'],
-      ['Je merkmodel', 'Eén gezicht, alleen van jou, in elke bestelling', `eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
     ],
+    svcAll: 'Alles wat we maken',
     svcMore: 'Bekijk',
     svcSoon: ['Binnenkort:', `${binnenkortNamen('nl').join(' & ')} — wat het is`],
     vnH: 'Jij stuurt een telefoonfoto. Wij maken er een studioproductie van.',
@@ -224,10 +270,13 @@ const COPY = {
     vnLink: 'Bekijk de galerij',
     vnNotenLabel: 'Wat er om het kledingstuk heen wordt gebouwd',
     vnNoten: [['Licht', 22, 18], ['Achtergrond', 78, 30], ['Model', 30, 58], ['Uitsnede', 72, 86]],
-    setH: `Eén product. ${COMPLETE_IMAGES} beelden.`,
-    setLede: 'Een catalogset voor je shop en een lifestyle-carousel voor je socials, uit dezelfde bestelling.',
+    /* Zie de Engelse tegenhanger. */
+    setH: `Eén product. Tot ${COMPLETE_IMAGES} beelden en een clip.`,
+    setLede: 'De catalogset voor je shop, de lifestyle-carousel voor je socials, een clip voor de feed — samen in één bestelling, of elk apart.',
     setGroups: [[`Catalogset · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
     frames: FRAMES.nl,
+    /* Zie de Engelse tegenhanger. */
+    extrasLabel: 'Bij hetzelfde product',
     extras: [
       ['Videoclip', `Eén verticale clip voor Reels en TikTok · ${e(AMOUNT.video)}`, '/video'],
       ['Je merkmodel', `Eén gezicht, alleen van jou · eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
@@ -260,7 +309,7 @@ const COPY = {
     studioLink: 'Bekijk Studio', studioLink2: 'Hoe een bestelling draait',
     beloften: [
       ['Geen definitieve oplevering zonder jouw check', 'Klopt er iets niet? Dan gaan we er samen doorheen tot het klopt.'],
-      ['Volledige commerciële rechten inbegrepen', 'Webshop, marktplaatsen, ads en social — zonder extra licentiekosten.'],
+      [RECHTEN.nl, 'Webshop, marktplaatsen, ads en social — zonder extra licentiekosten.'],
     ],
     facesH: 'Kies een gezicht — of claim er een.',
     facesLede: 'Een model uit de roster, of een merkmodel dat niemand anders krijgt. Het gezicht, de achtergrond en het formaat die je goedkeurt blijven bij je merk, dus een volgende bestelling begint waar de vorige ophield.',
@@ -314,7 +363,22 @@ const b = (n: number, w: number, h: number) => ({
 const BEELD = [b(1, 2000, 1125), b(2, 1248, 1872), b(3, 2000, 1125), b(4, 1536, 1536), b(5, 2000, 1125), b(6, 1536, 1536), b(7, 1872, 1248), b(8, 2000, 1125), b(9, 2000, 1125)];
 const B = (n: number) => BEELD[n - 1];
 /* Welk beeld bij welke dienst hoort, en de zeven beelden van één set. */
-const DIENST_BEELD = [1, 2, 9, 6];
+/* ── VIER TEGELS, EN SINDS 10 SEPTEMBER 2026 DE VIER JUISTE ────────────────
+   Lucas: *"Moet 'What we make.' sectie nog rechtgetrokken worden met wat er op
+   /start nu staat?"* Ja — de sectie zei "vier diensten" terwijl /start er negen
+   opent, hij noemde het merkmodel een dienst terwijl dat een toevoeging bínnen
+   een bestelling is (en drie blokken lager al in "Bij hetzelfde product" staat),
+   en de bundel — de deur met de laagste prijs per beeld — stond er niet op.
+
+   Wat er NIET gebeurt is alle negen erop zetten. Deze sectie en /start doen
+   ander werk: hier staat iemand die nog niet weet wat VISUAILS is, en negen
+   tegels is dan een muur. Vier is goed; het waren de verkeerde vier. De link
+   eronder brengt wie meer wil zien naar /start, waar ze alle negen staan.
+
+   De beelden: 1 en 2 blijven bij catalog en lifestyle, de bundel krijgt 3 (de
+   trui van dichtbij — een kledingstuk, niet weer een auto-interieur zoals 4, dat
+   naast 1 als dezelfde foto zou lezen) en de clip houdt 9. */
+const DIENST_BEELD = [1, 2, 3, 9];
 const SET = [1, 5, 4, 2, 3, 7, 6];
 ---
 
@@ -388,9 +452,13 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
   </section>
 
   {/* De maatlijn: een haarlijn, een streepje per waarde, het nummer erboven. */}
+  {/* Vier punten, en ze komen alle vier uit `facts`. Hier stond er een vijfde
+      los onder: `trust[0]`, "Made in Enschede, NL". Die staat nog steeds op de
+      pagina — onderaan, in de trustlijn, waar de rest van dat rijtje ook staat —
+      maar hij hoorde niet als losse regel in de opmaak te hangen terwijl de
+      andere vier uit één lijst komen. */}
   <ul class="maatlijn" role="list">
     {c.facts.map((f) => <li><span>{f}</span></li>)}
-    <li><span>{c.trust[0]}</span></li>
   </ul>
 
   {/* ── 2 · WAT WE MAKEN ─────────────────────────────────────────────────────
@@ -435,6 +503,10 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
         </li>
       ))}
     </ul>
+    {/* Vier tegels zijn de etalage; de negen deuren staan op /start. Deze link is
+        de brug ertussen, en hij staat er sinds de tegels niet meer "vier
+        diensten" beweren. */}
+    <p class="voetregel"><a class="pijl" href={lp('/start')}>{c.svcAll}</a></p>
     <p class="voetregel"><span class="mono">{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
   </section>
 
@@ -486,6 +558,7 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
         </li>
       ))}
     </ol>
+    <p class="etiket set-extras-kop">{c.extrasLabel}</p>
     <ul class="extras" role="list">
       {c.extras.map(([k, v, href]) => <li><a class="pijl" href={lp(href)}>{k}</a><span>{v}</span></li>)}
     </ul>

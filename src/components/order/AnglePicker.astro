@@ -1,0 +1,290 @@
+---
+/*
+ * VISUAILS — DE HOEKEN, ÉÉN KEER GEKOZEN VOOR DE HELE BESTELLING
+ * 9 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Wellicht is het handig om de klant vooraf te laten kiezen voor hij
+ * de bestelling in gaat met invullen van producten dat hij eerst een scherm
+ * heeft waar hij kan kiezen hoeveel product angles er moeten komen met de
+ * huidige 4 al toegevoegd in de lijst als minimale hoeveelheid maar dat hij
+ * daarachter nog meer extra foto's kan toevoegen. Ik wil dan dat hij onder dat
+ * blok angles kan kiezen met een foto van die angle erbij zodat hij weet wat
+ * hij erbij kiest en per foto ook nog een note kan achterlaten."*
+ *
+ * ── DRIE DINGEN DIE HIER SAMENKOMEN ────────────────────────────────────────
+ *
+ *   1. DE VIER DIE ER ALTIJD ZIJN, als vaste tegels zonder vinkje. Ze staan er
+ *      niet als keuze maar als antwoord op "wat krijg ik eigenlijk" — dezelfde
+ *      vier uit shots.js die stap 2 ook opvraagt, met dezelfde namen.
+ *   2. DE ACHT DIE JE ERBIJ KUNT KIEZEN, elk met een foto. Dat is het hele
+ *      punt: je ziet wat je koopt in plaats van het te moeten omschrijven.
+ *   3. EEN NOTITIE PER GEKOZEN HOEK, optioneel. De hoek IS al de opdracht; de
+ *      notitie is voor wie iets specifieks wil. Verplicht maken zou bij vier
+ *      hoeken vier lege verplichte vakken opleveren voor een vraag die meestal
+ *      al beantwoord is door de tegel waar je op klikte.
+ *
+ * ── EN HET IS ORDERBREED, NIET PER PRODUCT ─────────────────────────────────
+ *
+ * Lucas: *"Wanneer hij in het eerste scherm de angles heeft gekozen krijgt elk
+ * product die angles, dus dit is niet per product aan te passen."*
+ *
+ * Dat is ook waar het oude ontwerp op stukliep: een teller op elke productkaart
+ * met per bijbestelde foto een verplicht tekstveld — bij twintig producten met
+ * vier extra's tachtig velden, waarin de klant tachtig keer ongeveer hetzelfde
+ * typt. Nu is het één keuze, en de prijs is het aantal hoeken × het aantal
+ * producten × het tarief van die trede.
+ *
+ * ── WAT DIT POST ───────────────────────────────────────────────────────────
+ *
+ *     angle_<id>        "1" als de hoek gekozen is (een uitgevinkt vakje post niets)
+ *     angle_note_<id>   de notitie, of niets
+ *
+ * Geen van beide staat in TOP_FIELDS, dus ze landen in details_json. De SERVER
+ * telt de vinkjes opnieuw en rekent het bedrag zelf uit — zie de noot bij
+ * `hoogResCount` in functions/api/order.js voor dezelfde afspraak.
+ *
+ * ── DE FOTO'S BESTAAN NOG NIET ─────────────────────────────────────────────
+ *
+ * Zie de kop van src/data/angles.js: elk beeld wijst naar /img/hoek-<id>.webp
+ * en de plaatshoudermachinerie tekent er bij de build een vakje met de naam en
+ * de maat in zolang het bestand er niet is. Er hoeft hier dus niets te wachten
+ * op een fotoshoot.
+ */
+import { ANGLES, ANGLE_GROUPS, ANGLE_COPY } from '../../data/angles.js';
+import AngleSketch from './AngleSketch.astro';
+import { SHOTS } from '../../data/shots.js';
+import { MAX_EXTRA_PER_PRODUCT, extraPhotoRate, euro, vatLabel } from '../../data/pricing.js';
+import Disclose from '../Disclose.astro';
+import { SHOTS as VASTE_SHOTS } from '../../data/shots.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const c = ANGLE_COPY[lang];
+const vast = SHOTS.map((s) => ({ id: s.id, name: s.name[lang] || s.name.en }));
+const perGroep = ANGLE_GROUPS.map((g) => ({
+  id: g,
+  naam: c.groups[g],
+  hoeken: ANGLES.filter((a) => a.group === g),
+}));
+/* Het instaptarief, als voorbeeld naast de kop. Het ECHTE tarief hangt aan het
+   aantal producten en wordt door pipeline.js bijgewerkt zodra dat bekend is —
+   vandaar `data-pl-angle-rate`. Hier staat de eerste trede, zodat er iets staat
+   voordat er een aantal gekozen is. */
+const startTarief = extraPhotoRate(1);
+/* De regel die in de dichte vouw staat. Hij zegt wat je KRIJGT en niet wat je
+   kunt kiezen: dat is het antwoord waar een eerste bezoeker naar zoekt, en het is
+   waar zolang er geen hoek is aangevinkt. pipeline.js schrijft hem over zodra dat
+   wel zo is. Het aantal komt uit shots.js en is niet getypt. */
+const vasteRegel = lang === 'nl'
+  ? `${VASTE_SHOTS.length} foto’s per product`
+  : `${VASTE_SHOTS.length} photos per product`;
+---
+
+{/* ── DE KIEZER STAAT IN EEN VOUW — 10 september 2026 ──────────────────────
+    Lucas: *"Ook op het eerste bestelform vind ik het te druk en te ingewikkeld
+    eruit zien, dit kan echt veel simpeler en misschien ook compacter, vooral
+    voor iemand die voor het eerst besteld."*
+
+    Gemeten (kladblok/stap1.mjs) was dit blok de grootste van stap 1: 883 pixels
+    op een scherm en 1.334 op een telefoon — meer dan een derde van de hele stap,
+    voor een vraag waarop het antwoord bij verreweg de meeste bestellingen "nee,
+    de vier is prima" is.
+
+    Een vouw is hier het goede instrument en geen weglating: de samenvattingsregel
+    BLIJFT zeggen wat je krijgt ("Vier foto's per product"), dus een eerste
+    bezoeker leest het antwoord zonder de acht tegels te hoeven zien, en wie er
+    wél een hoek bij wil, klikt één keer. Dezelfde afspraak als de drie vouwen
+    erboven — en dezelfde `name="s1"`, zodat er nooit twee tegelijk openstaan. */}
+<Disclose
+  summary={c.extraH}
+  name="s1"
+  liveAttr="data-pl-sum-angles"
+  liveText={vasteRegel}
+>
+<fieldset
+  class="pl-fieldset pl-hoeken"
+  data-pl-angles
+  data-max={String(MAX_EXTRA_PER_PRODUCT)}
+  data-per={`${c.per} · ${vatLabel('excl', lang)}`}
+  data-full={c.full.replace('{max}', String(MAX_EXTRA_PER_PRODUCT))}
+  data-total={c.total}
+  data-total-one={c.totalOne}
+  data-total-onep={c.totalOneP}
+  data-total-oneboth={c.totalOneBoth}
+  data-gekozen={c.chosen}
+>
+  <legend class="pl-sr">{c.extraH}</legend>
+
+  {/* ── DE VIER DIE ER ALTIJD ZIJN ─────────────────────────────────────────
+      Geen vinkjes: er valt niets te kiezen. Ze staan er zodat "vier beelden per
+      product" een lijst met namen is in plaats van een getal. */}
+  <p class="pl-hoeken-h">{c.fixedH}</p>
+  <ul class="pl-hoeken-vast" role="list">
+    {vast.map((s) => <li>{s.name}</li>)}
+  </ul>
+  <p class="hint pl-hoeken-hint">{c.fixedLine}</p>
+
+  {/* De kop van dit blok staat nu op de vouw zelf; hier blijft alleen het
+      tarief, want dát is wat je moet weten voordat je aanvinkt. */}
+  <p class="pl-hoeken-h pl-hoeken-h2">
+    <span class="pl-hoeken-tarief" data-pl-angle-rate>{c.per.replace('{price}', euro(startTarief, lang))} · {vatLabel('excl', lang)}</span>
+  </p>
+  <p class="hint pl-hoeken-hint">{c.extraLine.replace('{max}', String(MAX_EXTRA_PER_PRODUCT))}</p>
+
+  {perGroep.map((g) => (
+    <div class="pl-hoek-groep">
+      <p class="pl-hoek-groep-h">{g.naam}</p>
+      <ul class="pl-hoek-rooster" role="list">
+        {g.hoeken.map((a) => (
+          <li>
+            <label class="pl-hoek">
+              {/* Het vinkje ligt ONDER de foto in de leesvolgorde maar wordt met
+                  CSS op de tegel gelegd. Reden: een <label> dat een <img> en een
+                  <input> bevat is één raakvlak van 100% van de tegel, en dat is
+                  wat je op een telefoon wilt. */}
+              <input type="checkbox" name={`angle_${a.id}`} value="1" data-pl-angle />
+              <span class="pl-hoek-box">
+                {/* ── EEN SCHETS EN GEEN FOTO — 9 september 2026 ─────────────
+                    Lucas: *"Maak voor de extra angles mock up schetsen zodat de
+                    klant ziet wat die angle visueel betekent."* Zie de kop van
+                    AngleSketch.astro voor waarom een tekening hier meer zegt dan
+                    een foto: acht foto's verschillen vooral in wélk kledingstuk
+                    erop staat, acht schetsen verschillen in wat je koopt.
+                    `a.shot` blijft in de data staan voor de plekken waar een
+                    foto wél het antwoord is. */}
+                <span class="pl-hoek-shot"><AngleSketch id={a.id} /></span>
+                <span class="pl-hoek-t">
+                  <b class="pl-hoek-naam">{a.name[lang] || a.name.en}</b>
+                  <span class="pl-hoek-regel">{a.line[lang] || a.line.en}</span>
+                </span>
+              </span>
+            </label>
+            {/* De notitie hoort bij de hoek en verschijnt pas als hij gekozen is:
+                acht lege tekstvakken onder acht tegels is de muur waar dit blok
+                juist vanaf wil. `hidden` en niet weggelaten, zodat de waarde
+                blijft staan als iemand zich bedenkt en opnieuw aanvinkt. */}
+            <span class="pl-hoek-note" data-pl-angle-note={a.id} hidden>
+              <label class="pl-sr" for={`pl-angle-note-${a.id}`}>{c.note}</label>
+              <input
+                class="input"
+                type="text"
+                id={`pl-angle-note-${a.id}`}
+                name={`angle_note_${a.id}`}
+                placeholder={c.notePh}
+                autocomplete="off"
+                maxlength="200"
+              />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+
+  {/* Wat het samen wordt. Leeg zolang er niets gekozen is — een regel die
+      "0 extra foto's" zegt, is een regel die niets zegt. */}
+  <p class="pl-hoeken-som" data-pl-angle-som hidden></p>
+</fieldset>
+</Disclose>
+
+<style>
+  .pl-hoeken { border: 0; padding: 0; margin: clamp(1.4rem, 3vw, 2rem) 0 0; min-width: 0; }
+  .pl-sr {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+
+  .pl-hoeken-h { margin: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
+  .pl-hoeken-h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .8rem; margin-top: clamp(1.6rem, 3vw, 2.2rem); }
+  .pl-hoeken-tarief { font-family: var(--font-mono); font-size: .74rem; letter-spacing: .04em; color: var(--ink-3); font-weight: 400; }
+  /* .6rem en niet .3rem: bij .3rem stond er vijf pixels tussen deze zin en het
+     blok erboven, en kladblok/te-dicht.mjs telt alles onder acht als plakken. */
+  .pl-hoeken-hint { display: block; margin: .6rem 0 0; font-size: .84rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
+
+  /* De vier vaste hoeken: chips en geen tegels. Ze zijn een mededeling, en een
+     tegel met een foto zou ze even zwaar maken als de acht die je wél kiest. */
+  .pl-hoeken-vast { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; }
+  .pl-hoeken-vast li {
+    padding: .35rem .75rem; border-radius: var(--r-pill);
+    background: var(--ghost, rgb(17 17 17 / .06));
+    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .pl-hoek-groep { margin-top: clamp(1.1rem, 2.2vw, 1.5rem); }
+  .pl-hoek-groep-h {
+    margin: 0 0 .5rem; font-family: var(--font-mono);
+    font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  }
+  /* TWEE OP EEN TELEFOON EN VIER OP EEN SCHERM, en dat zijn geen willekeurige
+     getallen: elke groep TELT er vier, dus vier naast elkaar is precies één
+     groep per regel en twee is precies twee regels. `auto-fit` deed het eerder
+     zonder mediaquery, maar gaf op een telefoon één kolom — acht foto-tegels
+     onder elkaar, ruim vijfduizend pixels scrollen voor een vraag die optioneel
+     is. Op een telefoon staat de foto dus kleiner en staan ze naast elkaar. */
+  .pl-hoek-rooster {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem; margin: 0; padding: 0; list-style: none;
+  }
+  @media (min-width: 720px) {
+    .pl-hoek-rooster { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  /* De tegel vult de rij en de notitie hangt eronder: `1fr auto`. Zonder dat
+     krijgt elke tegel de hoogte van zijn eigen tekst, en dan lopen de onderranden
+     van vier tegels naast elkaar niet gelijk — wat er als een uitlijnfout uitziet
+     terwijl het een zin van drie woorden is die er vier zijn geworden. */
+  .pl-hoek-rooster > li { display: grid; grid-template-rows: 1fr auto; gap: .4rem; min-width: 0; }
+
+  .pl-hoek { display: block; cursor: pointer; height: 100%; }
+  /* Weggeknipt en niet `display: none` — dat haalt het vakje uit de tabvolgorde
+     en uit de toegankelijkheidsboom. Zelfde regel als bij de dienstenkiezer. */
+  .pl-hoek input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
+  .pl-hoek-box {
+    display: grid; grid-template-rows: auto 1fr; gap: .5rem; height: 100%;
+    border: 1px solid var(--line-strong); border-radius: var(--r-md, 12px);
+    overflow: hidden; background: var(--surface, #fff);
+    transition: border-color .2s var(--ease, ease), box-shadow .2s var(--ease, ease);
+  }
+  .pl-hoek-box:hover { border-color: var(--ink); }
+  .pl-hoek input:focus-visible + .pl-hoek-box { outline: 2px solid var(--ink); outline-offset: 2px; }
+  /* Gekozen: een dikkere rand van de inkt en een vinkje in de hoek. Niet een
+     ander vlak — dan zou de foto van kleur lijken te veranderen, en juist die
+     foto is het antwoord op "wat kies ik hier". */
+  .pl-hoek input:checked + .pl-hoek-box { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .pl-hoek input:checked + .pl-hoek-box .pl-hoek-naam::after {
+    content: '✓'; margin-left: .4rem; color: var(--accent-bright, #9EB42F); font-weight: 700;
+  }
+  /* Het vak van de schets. `place-items: center` en wat lucht eromheen: een
+     tekening die tot de rand loopt, leest als een afgesneden foto. */
+  .pl-hoek-shot {
+    display: grid; place-items: center;
+    width: 100%; aspect-ratio: 4 / 3;
+    padding: .5rem;
+    background: var(--surface-2, #EFEFEF);
+    border-bottom: 1px solid var(--line, #E4E4E4);
+  }
+  /* `align-content: start` en niet stretch: de tekstrij is de 1fr-rij van de
+     tegel, dus zonder dit zakt een korte zin naar het midden van de ruimte die
+     de langste buurtegel opeist — vier namen naast elkaar op vier hoogtes. */
+  .pl-hoek-t { display: grid; align-content: start; gap: .15rem; padding: 0 .7rem .7rem; }
+  .pl-hoek-naam { font-size: .88rem; color: var(--ink); }
+  .pl-hoek-regel { font-size: .78rem; line-height: 1.45; color: var(--ink-3); }
+
+  /* Vol: de vier zijn op. De overige tegels blijven staan en blijven leesbaar —
+     ze zijn alleen niet meer aan te vinken. Verdwijnen zou de klant laten zoeken
+     naar wat hij net nog zag; het tarief naast de kop zegt intussen waarom. */
+  .pl-hoek-rooster > li.is-vol .pl-hoek { cursor: not-allowed; }
+  .pl-hoek-rooster > li.is-vol .pl-hoek-box { opacity: .45; }
+  .pl-hoek-rooster > li.is-vol .pl-hoek-box:hover { border-color: var(--line-strong); }
+
+  .pl-hoek-note { display: block; }
+  .pl-hoek-note .input { width: 100%; font-size: .84rem; }
+
+  .pl-hoeken-som {
+    margin: clamp(1rem, 2vw, 1.4rem) 0 0; padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .88rem; color: var(--ink-2);
+  }
+  .pl-hoeken-som b { color: var(--ink); }
+</style>

@@ -1037,8 +1037,16 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   -- customer_style_locks.ratio: welke plannen bestaan is een verkoopbesluit dat
   -- meebeweegt, en een CHECK zou bij elk nieuw plan een migratie vragen.
   plan              TEXT NOT NULL,
-  -- 'monthly' | 'yearly'. Bepaalt de prijs, het doorschuiven en de extra's —
-  -- allemaal via term() in plans.js en niet via een kolom hier.
+  -- 'monthly' | 'yearly' | 'prepaid' — de id's uit TERM_IDS in src/data/plans.js.
+  -- Bepaalt de prijs, het doorschuiven en de extra's, allemaal via term() daar en
+  -- niet via een kolom hier. Geen CHECK, om dezelfde reden als bij `plan`
+  -- hierboven: 'prepaid' kwam er op 10 september 2026 bij zonder migratie, en met
+  -- een CHECK was dat een migratie geweest voor een verkoopbesluit.
+  --
+  -- 'prepaid' is bijzonder in één opzicht dat buiten plans.js zichtbaar is: er
+  -- hoort GEEN mollie_subscription_id bij. Het hele jaar is met de eerste betaling
+  -- voldaan, dus er is niets om maandelijks af te schrijven en geen mandaat nodig.
+  -- Zie koppelSubscription() in src/lib/subscribe.js.
   term              TEXT NOT NULL DEFAULT 'monthly',
 
   -- ── 0038 · DE MAAND OP MAAT ────────────────────────────────────────────────

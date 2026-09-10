@@ -750,10 +750,39 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
     ok(`${lang}: er is een paragraaf over abonnementen`,
       /<h2>9a\. (Subscriptions|Abonnementen)<\/h2>/.test(tekst));
 
-    // 1 · DE MACHTIGING. De €1 is geen eerste maand. Zie MANDATE_EUROS en
-    //     eersteTermijn() in src/lib/subscribe.js.
-    ok(`${lang}: de € 1 wordt uitgelegd als machtiging en niet als eerste maand`,
-      /(not a first month|geen eerste maand)/.test(tekst));
+    /* 1 · DE EERSTE BETALING IS DE EERSTE MAAND — en dat is sinds 10 september
+     *     2026 wat hier staat, niet meer het omgekeerde.
+     *
+     *     HIER STOND EEN TOETS DIE DE VERKEERDE KANT VASTHIELD. Tot 4 september
+     *     betaalde een nieuwe abonnee € 1 voor alleen de machtiging en viel de
+     *     eerste échte termijn een maand later; toen dat veranderde (zie de noot
+     *     bij createFirstPayment() in subscribe.js) bleef de voorwaardenpagina
+     *     het oude verhaal vertellen, en deze regel hield dat verhaal
+     *     ONGEWIJZIGD OVEREIND — de test eiste letterlijk dat er "geen eerste
+     *     maand" zou staan. Een toets die de tekst bewaakt in plaats van de
+     *     overeenkomst tussen tekst en code, doet precies het tegenovergestelde
+     *     van wat deze sectie belooft te doen. Zie de kop hierboven.
+     *
+     *     Wat er nu moet staan: de eerste betaling IS de eerste maand, en
+     *     diezelfde betaling geeft het mandaat af. Allebei, want allebei is
+     *     waar en de tweede helft is de reden dat er later iets afgeschreven
+     *     kan worden. */
+    ok(`${lang}: de eerste betaling is de eerste maand`,
+      /(first month straight away|meteen je eerste maand)/.test(tekst));
+    ok(`${lang}: en diezelfde betaling geeft het mandaat af`,
+      /(issues the mandate|de machtiging afgeeft)/.test(tekst));
+
+    /* 1b · DE VOORUITBETAALDE TERMIJN. Drie bedingen, en alle drie staan ze in
+     *      de code: PREPAY_REFUNDABLE = false, restantTranches() dat per maand
+     *      vrijgeeft, en TERMS.prepaid dat in TERM_IDS zit. Een korting die de
+     *      klant koopt met "geen geld terug" hoort met zoveel woorden in de
+     *      voorwaarden te staan en niet alleen op de prijspagina. */
+    ok(`${lang}: de derde termijn staat erin`,
+      /(Three terms|Drie termijnen)/.test(tekst));
+    ok(`${lang}: een vooruitbetaald jaar wordt niet terugbetaald`,
+      /(not refundable|niet terugbetaald)/.test(tekst));
+    ok(`${lang}: en het restant komt per maand vrij, niet in één keer`,
+      /(one month at a time|per maand)/.test(tekst) && /(not released as one balance|niet in één keer als één saldo)/.test(tekst));
 
     // 2 · GEEN MINIMALE LOOPTIJD op de maandtermijn. De code dwingt er geen af:
     //     handlePlanCancel() zegt direct op. Zie de noot bij PLAN_COMPARE_MONTHS.

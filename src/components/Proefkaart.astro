@@ -31,16 +31,39 @@ const { lang } = Astro.props;
 const s = TEST_SAMPLE[lang];
 const nl = lang === 'nl';
 const href = localizedPath(lang, '/test-sample');
+/* ── DE ZIN IN TWEE STUKKEN — 10 september 2026 ─────────────────────────────
+ * Lucas: *"Op telefoon mag de Try visuails pop up een stuk kleiner en compacter
+ * zijn."*
+ *
+ * De zin is één zin met een uitneembaar MIDDENSTUK. `zin` + `staart` staan er
+ * altijd en dragen het aanbod compleet — één product, de prijs, en dat het van
+ * je eigen foto gemaakt wordt. `detail` is de opsomming van wat je precies
+ * terugkrijgt, en die valt onder 560px met CSS weg. Op een groot scherm leest de
+ * kaart dus letterlijk hetzelfde als hiervoor; op een telefoon één regel korter.
+ *
+ * Waarom het middenstuk en niet de staart: zo blijft de zin in beide vormen een
+ * hele zin met leestekens die kloppen. Hij staat ook in beide gevallen in de DOM
+ * en wordt door een schermlezer gewoon voorgelezen, en de hele belofte staat hoe
+ * dan ook op /test-sample, één tik verderop.
+ */
 const c = nl
-  ? { kop: 'Eerst zien?', zin: `Eén product voor ${s.price}: ${s.deliverableShort}, gemaakt van jouw eigen foto.`, chip: s.unit, sluit: 'Sluiten', naam: 'Proef VISUAILS' }
-  : { kop: 'See it first?', zin: `One product for ${s.price}: ${s.deliverableShort}, made from your own photo.`, chip: s.unit, sluit: 'Close', naam: 'Try VISUAILS' };
+  ? { kop: 'Eerst zien?', zin: `Eén product voor ${s.price}`, detail: `: ${s.deliverableShort}`, staart: ', gemaakt van jouw eigen foto.', chip: s.unit, sluit: 'Sluiten', naam: 'Proef VISUAILS' }
+  : { kop: 'See it first?', zin: `One product for ${s.price}`, detail: `: ${s.deliverableShort}`, staart: ', made from your own photo.', chip: s.unit, sluit: 'Close', naam: 'Try VISUAILS' };
 ---
 <aside class="proefkaart glas" id="proefkaart" hidden aria-label={c.naam} data-proefkaart>
   <div class="pk-kop">
     <span class="pk-merk">{MERK}</span>
-    <button type="button" class="btn btn-ghost btn-sm pk-sluit" data-pk-sluit>{c.sluit}</button>
+    {/* Eén knop, twee gedaanten. Op een breed scherm het woord in een pil, zoals
+        overal op deze site; op een telefoon een rond kruisje in de hoek, want
+        daar kostte die pil een hele rij. De accessible name blijft in beide
+        gevallen het WOORD — het kruisje is aria-hidden, de tekst schuift alleen
+        visueel weg. */}
+    <button type="button" class="btn btn-ghost btn-sm pk-sluit" data-pk-sluit>
+      <span class="pk-sluit-woord">{c.sluit}</span>
+      <span class="pk-sluit-kruis" aria-hidden="true">×</span>
+    </button>
   </div>
-  <p class="pk-tekst"><strong>{c.kop}</strong> {c.zin}</p>
+  <p class="pk-tekst"><strong>{c.kop}</strong> {c.zin}<span class="pk-detail">{c.detail}</span>{c.staart}</p>
   <div class="pk-voet">
     <span class="pk-chip">{c.chip}</span>
     <a class="btn btn-primary" href={href}>{s.cta}</a>
@@ -65,9 +88,75 @@ const c = nl
   .pk-tekst { margin: 0; font-size: .95rem; line-height: 1.5; color: rgb(255 255 255 / .86); }
   .pk-tekst strong { color: #FFFFFF; font-weight: 500; }
   .pk-voet { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; }
-  .pk-chip { font-family: var(--font-mono); font-stretch: 82%; font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; color: rgb(255 255 255 / .7); padding: .45rem .8rem; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .18); }
+  /* ── EEN LABEL EN GEEN TWEEDE KNOP — 10 september 2026 ────────────────────
+     Lucas: *"'een per bedrijf' voelt hier als een klop, maak het meer een
+     subtiel label."* Klopt, en het kwam van de VORM en niet van de tekst: een
+     pil met een randje eromheen, op dezelfde regel en dezelfde hoogte als de
+     echte knop ernaast. Alles wat op deze site rond is met een rand eromheen,
+     is aanklikbaar — dus las dit als de tweede van twee knoppen, en dan moet je
+     kiezen terwijl er niets te kiezen valt.
+
+     De rand en de pilvorm gaan eraf; wat overblijft is de tekst zelf. Dezelfde
+     mono, iets kleiner, iets stiller — dezelfde behandeling als de bijschriften
+     onder de dienstkaarten op de voorpagina. Niet zó stil dat hij onleesbaar
+     wordt: 60% wit op deze grond haalt de contrasteis nog ruim. */
+  .pk-chip {
+    font-family: var(--font-mono); font-stretch: 82%; font-size: .64rem;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: rgb(255 255 255 / .6);
+    padding: 0; border-radius: 0; box-shadow: none;
+  }
+  .pk-detail { color: rgb(255 255 255 / .72); }
+  /* ── OP EEN TELEFOON EEN STUK KLEINER — 10 september 2026 ─────────────────
+     Lucas: *"Op telefoon mag de Try visuails pop up een stuk kleiner en
+     compacter zijn."* Gemeten (kladblok/proefmaat.mjs) was hij 366×252 px: 28%
+     van een scherm van 390×844, over een pagina die de bezoeker aan het lezen
+     is. Vier dingen gaan eraf, op volgorde van wat ze opleveren:
+
+       · de chip ("één per bedrijf") — hij brak de onderrij in tweeën en kostte
+         daarmee 42 px voor een detail waar niemand op klikt. Hij staat nog op
+         /test-sample, waar de knop naartoe gaat;
+       · het middenstuk van de zin — zie `detail` hierboven;
+       · de merknaam linksboven — die staat al in de knop eronder;
+       · en overal een maat minder: padding, tussenruimte, tekst, knophoogte.
+
+     Wat blijft is precies het aanbod en de knop. */
+  .pk-sluit-kruis { display: none; }
   @media (max-width: 560px) {
-    .proefkaart { left: .75rem; right: .75rem; bottom: .75rem; width: auto; }
+    /* ── TWEE KOLOMMEN IN PLAATS VAN DRIE RIJEN ────────────────────────────
+       De kaart bestond uit drie rijen boven elkaar: merknaam + sluitknop, de
+       zin, en de chip + de knop. Op een telefoon las dat als los zand — drie
+       verschillende hoogtes, drie verschillende pilvormen, en een sluitpil die
+       als enige aan de rechterkant hing.
+
+       Nu is het één blok tekst met het kruisje in de hoek, en daaronder één
+       knop over de volle breedte. Twee dingen in plaats van vijf, allebei
+       links uitgelijnd op dezelfde lijn, en één hoekmaat voor de hele kaart. */
+    .proefkaart {
+      left: .6rem; right: .6rem; bottom: .6rem; width: auto;
+      padding: .8rem .85rem .85rem; gap: .6rem; border-radius: 18px;
+    }
+    /* De kop wordt de hoek: hij neemt geen rij meer in. */
+    .pk-kop { position: absolute; top: .55rem; right: .55rem; margin: 0; }
+    .pk-merk { display: none; }
+    /* Rond, even groot als het merkje van de knop eronder, en met dezelfde
+       haarlijn als de chip had. 30px is klein maar het raakvlak is groter dan
+       het kruisje: de knop vult zijn hele hoek. */
+    .pk-sluit {
+      min-height: 30px; width: 30px; padding: 0; border-radius: 999px;
+      display: grid; place-items: center; font-size: 1.05rem; line-height: 1;
+    }
+    .pk-sluit-woord {
+      position: absolute; width: 1px; height: 1px; margin: -1px;
+      overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+    }
+    .pk-sluit-kruis { display: block; }
+    /* De tekst houdt de hoek vrij, op elke regel even veel — een blok dat aan
+       twee kanten recht loopt leest rustiger dan één ingesprongen eerste regel. */
+    .pk-tekst { font-size: .86rem; line-height: 1.42; padding-right: 2rem; }
+    .pk-detail { display: none; }
+    .pk-chip { display: none; }
+    .pk-voet .btn { flex: 1 1 auto; min-height: 40px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .proefkaart { transform: none; transition: opacity 200ms linear; }
@@ -104,10 +193,23 @@ const c = nl
       if (!/(^|; )vis_consent=/.test(document.cookie)) return; /* eerst de cookiekeuze */
       open = true;
       el.hidden = false;
-      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-open')));
+      /* ── DE WHATSAPP-KNOP MOET ERBOVEN — 10 september 2026 ─────────────────
+         Op een breed scherm staat deze kaart linksonder en de knop rechtsonder,
+         en raken ze elkaar niet — dat staat ook zo in Layout.astro. Op een
+         TELEFOON is de kaart schermbreed, en daar lag de knop over de
+         "Probeer VISUAILS"-knop heen. Gemeten, niet vermoed.
+
+         De hoogte gaat als variabele mee omdat hij niet vaststaat: hij hangt aan
+         de taal, de tekstlengte en de lettergrootte van de bezoeker. Layout.astro
+         tilt de knop ermee op via `--wa-bottom`, precies zoals de oude
+         conversiebalk dat deed. */
+      const meetOp = () => document.documentElement.style.setProperty('--pk-h', `${el.offsetHeight}px`);
+      requestAnimationFrame(() => requestAnimationFrame(() => { meetOp(); el.classList.add('is-open'); }));
+      window.addEventListener('resize', meetOp, { passive: true });
     };
     const sluit = () => {
       el.classList.remove('is-open');
+      document.documentElement.style.removeProperty('--pk-h');
       const weg = () => { el.hidden = true; };
       el.addEventListener('transitionend', weg, { once: true });
       setTimeout(weg, 600);

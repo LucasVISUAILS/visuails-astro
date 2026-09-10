@@ -32,6 +32,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { d1, verseDb, telling } from './lib/d1sqlite.mjs';
 import { hashToken } from '../src/lib/token.js';
 import { handleSubscribeStart, handleSubscribeReturn, eersteTermijn } from '../src/lib/subscribe.js';
+import { prepayTotalCents, monthlyCents } from '../src/data/plans.js';
 import { productsFor, planProductBudget } from '../src/data/plans.js';
 import { customMonthSlots, customMonthTotal } from '../src/data/pricing.js';
 import { bundelVoor, subMaandCents, subProducten } from '../src/lib/slots.js';
@@ -215,6 +216,52 @@ console.log('\nterugkomen mag zo vaak als de klant wil');
     staat.aanroepen.filter((a) => a.includes('subscriptions')).length, voor);
 }
 
+console.log('\neen vooruitbetaald jaar loopt anders: één betaling en verder niets');
+{
+  /* ── DE DRIE DINGEN DIE HIER ANDERS ZIJN — 10 september 2026 ───────────────
+   *
+   * Lucas: *"Vooruitbetaling vorm toepassen (…) als iemand halverwege stopt
+   * krijgt hij uiteraard geen geld terug, daarom betaal je ook een jaar
+   * vooruit."*
+   *
+   * Alle drie kosten ze geld als ze wegzakken, en geen van drieën valt op zonder
+   * toets — het scherm ziet er in alle gevallen hetzelfde uit:
+   *
+   *   1 · HET BEDRAG IS HET HELE JAAR en niet één maand. Eén maand innen op een
+   *       termijn die verder nooit meer afschrijft, is elf maanden weggeven.
+   *   2 · GEEN MANDAAT. 'oneoff' en niet 'first'. Een mandaat dat nooit gebruikt
+   *       wordt is niet alleen rommel: 'first' beperkt de betaalmethoden tot de
+   *       methoden die een mandaat kunnen afgeven, en bankoverschrijving valt
+   *       daarbuiten — precies de methode die je bij € 18.590 nodig hebt.
+   *   3 · GEEN SUBSCRIPTION BIJ MOLLIE. Anders wordt er twaalf maanden lang
+   *       maandelijks afgeschreven bovenop een jaar dat al betaald is.
+   */
+  db.exec("DELETE FROM subscriptions");
+  const voorSubs = staat.aanroepen.filter((a) => a.includes('subscriptions')).length;
+
+  const res = await start({ plan: 'brand', term: 'prepaid', window_day: '8', lang: 'nl' });
+  ok('de klant gaat naar het betaalscherm', res.status, 303);
+  const r = rij();
+  ok('de termijn staat op de rij', r.term, 'prepaid');
+
+  const betaling = staat.bodies.filter((b) => b.pad === '/v2/payments').pop()?.body;
+  ok('het bedrag is het hele jaar', betaling?.amount?.value, (prepayTotalCents('brand') / 100).toFixed(2));
+  ok('  en dus niet één maand', betaling?.amount?.value !== (monthlyCents('brand', 'prepaid') / 100).toFixed(2), true);
+  ok('er wordt geen mandaat gevraagd', betaling?.sequenceType, 'oneoff');
+  ok('  met het kenmerk in de metadata', betaling?.metadata?.sub_ref, r.ref);
+
+  const uit = await terug(r.ref);
+  ok('terugkomen maakt het abonnement actief', uit.staat, 'gelukt');
+  ok('  en de rij staat op active', rij().status, 'active');
+  /* GEEN SUBSCRIPTION. Deze regel is de duurste van het blok: hij is het verschil
+     tussen "een jaar betaald" en "een jaar betaald plus twaalf afschrijvingen". */
+  ok('er is geen Mollie-subscription aangemaakt',
+    staat.aanroepen.filter((a) => a.includes('subscriptions')).length, voorSubs);
+  ok('  en er staat er ook geen op de rij', rij().mollie_subscription_id, null);
+  /* En er is geen mandaat opgehaald, want er valt niets te machtigen. */
+  ok('  en geen mandaat', rij().mollie_mandate_id, null);
+}
+
 console.log('\neen kenmerk uit de url is van iedereen');
 {
   /* Zonder de eigenaarscontrole zou iemand het abonnement van een ander kunnen
@@ -296,7 +343,21 @@ console.log('\nen de weg bestaat echt — geen knop zonder draad');
   ok('en een om terug te komen', existsSync(new URL('../src/pages/account/plan/return.astro', import.meta.url)) && /'plan-return'/.test(src), true);
 
   const pagina = readFileSync(new URL('../src/components/order/PlanPicker.astro', import.meta.url), 'utf8');
-  ok('de keuzepagina post naar die route', /action="\/account\/plan\/start"/.test(pagina), true);
+  /* ── DE KEUZEPAGINA POST SINDS 9 SEPTEMBER NAAR /api/plan ──────────────────
+     Lucas: *"Iemand kan geen abonnement afsluiten zonder een account te
+     hebben."* /account/plan/start bestaat nog en doet nog precies hetzelfde —
+     de twee regels hierboven bewaken dat — maar hij zit achter de
+     sessiecontrole, dus een bezoeker zonder account kwam daar op de
+     inlogpagina uit.
+
+     Wat het formulier nu aanwijst is de publieke ingang, die zélf kijkt of er
+     een sessie is en anders eerst de klant aanmaakt. Zie
+     functions/api/plan.js en tests/plan-zonder-account.test.mjs, dat de rest
+     van dat pad bewaakt. */
+  ok('de keuzepagina post naar de publieke ingang', /action="\/api\/plan"/.test(pagina), true);
+  ok('en die ingang bestaat', existsSync(new URL('../functions/api/plan.js', import.meta.url)), true);
+  ok('en roept dezelfde motor aan', /handleSubscribeStart\(context, klant/.test(
+    readFileSync(new URL('../functions/api/plan.js', import.meta.url), 'utf8')), true);
   /* DE PLANKAARTEN STAAN SINDS 20 AUGUSTUS 2026 OP /plans EN NIET MEER OP
      /pricing — twee manieren om te kopen, twee pagina's. Deze test volgt de
      kaarten mee: wat hij bewaakt is dat de knop op de plankaart naar de

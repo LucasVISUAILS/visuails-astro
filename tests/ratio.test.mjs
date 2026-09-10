@@ -197,8 +197,25 @@ console.log('\nhet bestelformulier stelt de vraag');
 console.log('\nen hij schakelt mee met de soort');
 {
   const pl = read('src/scripts/pipeline.js');
+  /* ── DE FUNCTIE ZELF, EN NIET DE EERSTE 600 TEKENS ERVAN — 10 sept 2026 ────
+   *
+   * Hier stond `/function syncRatio\(kind\)[\s\S]{0,600}tile.hidden = !on;/`, en
+   * die viel vandaag om — niet omdat het verbergen weg was, maar omdat er bóven
+   * die regel een blok bijkwam (de samenvatting voor de nieuwe vouw). Een toets
+   * die op AFSTAND meet, meet de lengte van een functie en niet wat hij doet, en
+   * hij faalt precies wanneer iemand er iets goeds aan toevoegt.
+   *
+   * Nu wordt de body van syncRatio uitgesneden en dáárin gezocht. Dat is wat de
+   * regel altijd al bedoelde te zeggen. */
+  const body = (() => {
+    const start = pl.indexOf('function syncRatio(kind)');
+    if (start < 0) return '';
+    const eind = pl.indexOf('\nfunction ', start + 1);
+    return pl.slice(start, eind < 0 ? undefined : eind);
+  })();
+  ok('syncRatio bestaat als functie', body.length > 0, true);
   ok('syncRatio verbergt wat deze dienst niet kent',
-    /function syncRatio\(kind\)[\s\S]{0,600}tile\.hidden = !on;/.test(pl), true);
+    /tile\.hidden = !on;/.test(body), true);
   /* VERBERGEN IS NIET GENOEG. Een verborgen radio post gewoon door; zonder deze
      regel zou een catalogbestelling een verhouding meesturen die catalog niet
      kent, en dan corrigeert de server stilletjes iets wat de klant niet koos. */
