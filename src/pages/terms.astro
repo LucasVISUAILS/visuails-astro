@@ -145,8 +145,10 @@ import { bijgewerktOp } from '../data/juridischeDatums.js';
 import '../styles/stijl22.css';
 
 /* Van–tot over de drie plannen, op de maandtermijn: dat is het bedrag dat op
-   /plans het grootst wordt afgedrukt. De jaartermijn is goedkoper en zou hier
-   een lagere ondergrens geven dan wat iemand op de plannenpagina ziet staan. */
+   /plans het grootst wordt afgedrukt. Het VOORUITBETAALDE jaar is goedkoper en
+   zou hier een lagere ondergrens geven dan wat iemand op de plannenpagina ziet
+   staan. (Tot 10 september gold dat ook voor de gewone jaartermijn; die geeft
+   sinds vandaag geen korting meer — zie discountMonths in plans.js.) */
 const planLo = Math.min(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
 const planHi = Math.max(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
 const planLoNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planLo), 'en');

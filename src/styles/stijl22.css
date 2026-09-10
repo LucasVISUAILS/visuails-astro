@@ -861,6 +861,29 @@
   .s22 .kaart:hover .rond { transform: translateX(3px); }
   .s22 .kaart-wat { font-size: .95rem; color: var(--inkt-2); }
 
+  /* ── DE VIERDE TEGEL: EEN DEUR ─────────────────────────────────────────────
+     10 september 2026. Zie de noot in Voorpagina.astro voor waarom hij geen
+     foto draagt. Hij houdt wél alles wat hem tot dezelfde tegel maakt: dezelfde
+     verhouding, dezelfde ronding, dezelfde pil onderin met dezelfde pijl. Wat
+     verschilt is de grond — de kleur van de site in plaats van een beeld — en
+     dat is precies het verschil dat hij moet uitdrukken.
+
+     Geen `::after`-verloop: dat bestaat om witte foto's onder de pil leesbaar te
+     houden, en hier ligt geen foto. */
+  .s22 .kaart-deur { background: var(--geel); display: grid; align-content: start; }
+  .s22 .kaart-deur::after { content: none; }
+  .s22 .deur-binnen { display: grid; gap: .5rem; padding: clamp(1rem, 2vw, 1.4rem); color: var(--inkt); }
+  .s22 .deur-kop { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; font-size: clamp(1.05rem, 1.9vw, 1.45rem); line-height: 1.05; }
+  /* De andere deuren, als lijst met een haarlijn ertussen. Ze vullen het vlak
+     niet op om het te vullen: ze zeggen wat er achter de tegel zit, wat precies
+     de vraag is die "bekijk alle diensten" oproept. */
+  .s22 .deur-lijst { display: grid; margin-top: .3rem; }
+  .s22 .deur-item { font-size: .92rem; line-height: 1; padding: .55rem 0; color: rgb(17 17 17 / .78); border-top: 1px solid rgb(17 17 17 / .16); }
+  .s22 .deur-item:first-child { border-top: 0; padding-top: .1rem; }
+  /* De pil op deze tegel is wit op lime; de ronde pijl daarin is dus lime op
+     wit in plaats van andersom, anders verdwijnt hij in zijn eigen grond. */
+  .s22 .kaart-deur .rond { background: var(--inkt); color: var(--geel); }
+
   /* ── EEN BIJSCHRIFT OVER EEN FOTO IS EEN PIL, GEEN LOSSE TEKST ─────────────
      7 september 2026. Op /catalog stond "CATALOG · A DELIVERED IMAGE" in wit
      met een schaduw over de onderrand van een foto die daar juist bijna wit is:

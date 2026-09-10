@@ -298,7 +298,11 @@ const c = nl ? {
   termMaand: 'Maandelijks',
   termMaandSub: 'Elke maand opzegbaar, in je dashboard.',
   termJaar: '12 maanden',
-  termJaarSub: 'Vaste looptijd. Daarvoor terug: een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio. Op Starter bovendien goedkoper per maand.',
+  /* De staartzin "Op Starter bovendien goedkoper per maand" is weg sinds 10
+     september: die korting hoort nu bij het vooruitbetaalde jaar. Deze termijn
+     koopt voorwaarden, de volgende koopt een prijs — zie de noot bij
+     discountMonths in plans.js. */
+  termJaarSub: 'Vaste looptijd, hetzelfde maandbedrag. Daarvoor terug: een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio.',
   termVooruit: '12 maanden vooruit',
   termVooruitSub: `Alles van de twaalf maanden, en je betaalt het jaar in één keer — dat scheelt ${gratisMin === gratisMax ? `${gratisMin} maanden` : `${gratisMin} tot ${gratisMax} maanden`}, afhankelijk van je plan. Stop je tussentijds, dan komt er geen geld terug: wat er van je jaar overblijft, wordt tegoed dat per maand vrijkomt.`,
   termMaat: 'Een maand op maat loopt altijd maandelijks.',
@@ -385,7 +389,8 @@ const c = nl ? {
   termMaand: 'Monthly',
   termMaandSub: 'Cancel any month, in your dashboard.',
   termJaar: '12 months',
-  termJaarSub: 'A fixed term. In return: a standing week, three months of rollover, a price lock, and the brand model on Studio too. On Starter also cheaper per month.',
+  /* Zie de Nederlandse tegenhanger. */
+  termJaarSub: 'A fixed term at the same monthly price. In return: a standing week, three months of rollover, a price lock, and the brand model on Studio too.',
   termVooruit: '12 months up front',
   termVooruitSub: `Everything the 12-month term has, and you pay the year in one go — that saves ${gratisMin === gratisMax ? `${gratisMin} months` : `${gratisMin} to ${gratisMax} months`}, depending on your plan. Stop partway and there is no refund: what is left of your year becomes credit that unlocks month by month.`,
   termMaat: 'A custom month always runs monthly.',

@@ -585,6 +585,11 @@ console.log('\nde proefvisual van € 1');
       postal_code: '1234 AB',
       city: 'Rotterdam',
       lang: 'nl',
+      /* `sample_type` en niet alleen `deliverable`: sinds 10 september weigert
+         /api/order een proef die niet zegt wat er gemaakt moet worden — een
+         catalogset en een lifestyle-carousel zijn ander werk en er is geen
+         veilige kant om naar te vallen. Zie de poort in dat bestand. */
+      sample_type: 'catalog',
       deliverable: 'catalog',
       style: 'classic',
       background: 'studio-white',

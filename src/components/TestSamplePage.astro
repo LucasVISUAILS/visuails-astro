@@ -39,7 +39,13 @@ import OrderFlow from './order/OrderFlow.astro';
    pagina laadt; hier is hij de eerste vraag van het formulier, dus moeten ze er
    allebei staan en laat pipeline.js er één zien. Zie syncStyle() daar. */
 import StylePicker from './order/StylePicker.astro';
-import Step1Options from './order/Step1Options.astro';
+import BackgroundPicker from './order/BackgroundPicker.astro';
+/* De modelkeuze, in een dichte vouw — zie de noot bij het blok zelf, onderaan
+   het formulier. Dezelfde twee componenten als op /start/lifestyle, alleen daar
+   zitten ze in LifestyleModelFold.astro met een label dat "in de carousel" zegt;
+   dat woord klopt hier maar de helft van de tijd. */
+import Disclose from './Disclose.astro';
+import ModelPicker from './order/ModelPicker.astro';
 import { waHref } from '../data/whatsapp.js';
 import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -58,22 +64,32 @@ const c = nl ? {
   lead: `Je levert aan zoals bij een gewone bestelling — voorkant en achterkant in elk geval, plus een detail- of draagfoto als je die hebt — en je krijgt ${SAMPLE.deliverable} terug. Precies wat je bij een betaalde bestelling per product krijgt. Hoe meer je meestuurt, hoe beter we het kunnen maken.`,
   pillen: [`${CATALOG_IMAGES} foto’s, of ${LIFESTYLE_IMAGES}`, `Slechts ${SAMPLE.price}`, 'Met de hand gecontroleerd'],
 
-  krijgKop: `${SAMPLE.deliverable}, van je eigen product.`,
-  krijgP: 'Dezelfde productie en menselijke controle die we bij elke betaalde bestelling gebruiken — de eerlijke manier om de kwaliteit te beoordelen voordat je je vastlegt.',
+  /* ── ZES VINKJES WAREN ER DRIE — 10 september 2026 ─────────────────────────
+     Lucas: *"ik wil de test sample zo kort mogelijk en compact mogelijk
+     hebben."* Van de zes regels die hier stonden, stonden er drie al ergens
+     anders op deze pagina:
+
+       · "Kies je catalog: 4 foto's…" en "Kies je lifestyle: 3 foto's…" zijn
+         letterlijk de twee keuzetegels van de eerste vraag van het formulier,
+         die allebei hun aantal en hun inhoud dragen — én ze staan in de
+         openingszin bovenaan;
+       · "Eenmalig € 1, één proef per bedrijf" staat woordelijk in de kleine
+         lettertjes onderaan.
+
+     Wat overblijft zijn de drie dingen die NERGENS anders staan: waar het
+     binnenkomt en hoe groot, dat je onze belichting en afwerking te zien krijgt,
+     en dat er een specialist naar kijkt. Dat zijn ook precies de drie waarop
+     iemand besluit. */
   krijg: [
-    `Kies je catalog: ${CATALOG_IMAGES} foto’s — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
-    `Kies je lifestyle: ${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
     `Op ${RESOLUTIE.standaard} px aan de lange zijde, in VISUAILS Studio — met de rechtstreekse link in je mail.`,
     'Een echte blik op onze belichting, kadrering en afwerking.',
     'Door een specialist gecontroleerd voordat het je bereikt.',
-    `Eenmalig ${SAMPLE.feeNote}, één proef per bedrijf.`,
   ],
   beeldAlt: 'Voorbeeld van een VISUAILS-visual, Glow-stijl',
   beeldBij: 'Jouw proef, met de hand gecontroleerd',
 
   stapEtiket: 'Van foto naar set',
   stapKop: 'Hoe de proef werkt',
-  stapLead: 'Vier korte stappen van jouw foto tot een afgewerkte set in je inbox.',
   stappen: [
     ['Upload je productfoto’s', 'Voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt.'],
     ['Kies een stijl', 'Kies de look en, als je wilt, een model — of laat ons kiezen.'],
@@ -81,20 +97,8 @@ const c = nl ? {
     ['Keur goed en download', `Je afgewerkte foto’s staan in VISUAILS Studio, met de link in je mail — ${TIMING.toLowerCase()}.`],
   ],
 
-  fotoKop: 'Scherpe foto erin, publicatieklare foto eruit',
-  fotoLead: 'Je hoeft geen studio te hebben — een telefoon bij het raam is genoeg. Deze vier maken het verschil.',
-  welKop: 'Wat het meest helpt',
-  wel: ['Helder en haarscherp', 'Neutrale, rustige achtergrond', 'Goede, gelijkmatige belichting', 'Het hele product in beeld'],
-  makkelijkKop: 'Wat het ons makkelijker maakt',
-  makkelijk: [
-    'Een foto op ware grootte in plaats van een schermafbeelding',
-    'Daglicht in plaats van een lamp recht boven het product',
-    'Een egale ondergrond in plaats van een drukke',
-    'De kleur zoals hij is — zonder filter of watermerk',
-  ],
   gidsLink: 'Lees de fotogids',
   gidsPdf: 'Download de fotogids (pdf)',
-  naarVorm: 'Naar het formulier',
 
   vormEtiket: 'De aanvraag',
   vormKop: 'Probeer VISUAILS met één product',
@@ -103,14 +107,25 @@ const c = nl ? {
   weigerGebruikt: ['Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven — je hebt hier niet voor betaald. Klaar voor het echte werk? De ', 'volledige diensten', ' beginnen bij één product, zonder minimumafname — of ', 'stuur ons een bericht', ' als de eerste proef nooit is aangekomen, of als een collega hem heeft aangevraagd zonder het te zeggen.'],
   weigerMailKop: 'Dat e-mailadres kwam niet door.',
   weigerMail: 'Controleer het even op een typefout en stuur het opnieuw — het is het adres waar de afgeronde visual op binnenkomt.',
+  /* ── 10 september 2026 ────────────────────────────────────────────────────
+     Zonder soort weet de studio niet wát ze moet maken: een catalogset en een
+     lifestyle-carousel zijn ander werk. Het formulier vraagt het als eerste en
+     de radio is verplicht, dus dit haalt alleen iemand die met de hand post —
+     maar dan hoort er een zin te staan en geen stilte. */
+  weigerSoortKop: 'Kies eerst wat we gaan maken.',
+  weigerSoort: 'Een catalogset of een lifestyle-carousel — dat is ander werk, dus we kunnen er niet één van kiezen. Zet het hieronder aan en stuur het opnieuw.',
+
+  modelVouw: 'De foto op een model',
+  modelStand: 'wij kiezen er een',
 
   fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} · meer betaal je niet voor de proef.`,
-  hulp: ['Vast bij een stap, of ergens niet zeker van? ', 'Stuur ons een bericht op WhatsApp', ' — meestal binnen een uur antwoord op werkdagen, en we plaatsen de bestelling met je.'],
-  hulpWa: 'Hoi VISUAILS, ik ben een bestelling aan het invullen en heb een vraag.',
 
   slotEtiket: 'Liever even overleggen',
   slotH: 'Liever gewoon even overleggen?',
-  slotP: 'Stuur ons je product op WhatsApp en we helpen je een stijl kiezen.',
+  /* De reactietijd en het aanbod om de bestelling samen te plaatsen stonden in
+     de hulpregel onder de kleine lettertjes; die regel is samengevoegd met dit
+     slot (zie de noot bij ts-fijndruk) en de belofte reist mee. */
+  slotP: 'Stuur ons je product op WhatsApp en we helpen je een stijl kiezen — meestal binnen een uur antwoord op werkdagen, en we plaatsen de bestelling met je.',
   slotWa: 'Hoi VISUAILS, ik wil VISUAILS graag eerst proberen.',
   slotCta: 'WhatsApp',
   slotCta2: 'Start een bestelling',
@@ -120,22 +135,17 @@ const c = nl ? {
   lead: `You send what a normal order needs — front and back at least, plus a detail or worn shot if you have them — and back come ${SAMPLE.deliverable}. Exactly what a paid order gets you per product. The more you send, the better we can make it.`,
   pillen: [`${CATALOG_IMAGES} photos, or ${LIFESTYLE_IMAGES}`, `Just ${SAMPLE.price}`, 'Human quality-checked'],
 
-  krijgKop: `${SAMPLE.deliverable}, from your own product.`,
-  krijgP: 'The same production and human review used on every paid order — the honest way to judge quality before you commit.',
+  /* Zie de Nederlandse tegenhanger. */
   krijg: [
-    `Pick catalog: ${CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.`,
-    `Pick lifestyle: ${LIFESTYLE_IMAGES} photos in one styled look — a scene, one on a model, and a detail close-up.`,
     `At ${RESOLUTIE.standaard} px on the long edge, in VISUAILS Studio — with the direct link in your email.`,
     'A real look at our lighting, framing and finish.',
     'Reviewed by a specialist before it reaches you.',
-    `A one-off ${SAMPLE.feeNote}, one sample per business.`,
   ],
   beeldAlt: 'Example VISUAILS lifestyle image, Glow style',
   beeldBij: 'Your sample, human-checked',
 
   stapEtiket: 'From photo to set',
   stapKop: 'How the sample works',
-  stapLead: 'Four short steps from your photo to a finished set in your inbox.',
   stappen: [
     ['Upload your product photos', 'Front and back at least, and a detail or worn shot if you have one.'],
     ['Choose a style', 'Pick the look and, if you like, a model — or let us choose for you.'],
@@ -143,20 +153,8 @@ const c = nl ? {
     ['Approve and download', `Your finished images land in VISUAILS Studio, with the link in your email — ${TIMING.toLowerCase()}.`],
   ],
 
-  fotoKop: 'Sharp photo in, publish-ready image out',
-  fotoLead: 'You do not need a studio — a phone by a window is enough. These four make the difference.',
-  welKop: 'What helps most',
-  wel: ['Clear, sharp and in focus', 'Neutral, uncluttered background', 'Good, even lighting', 'The whole product in frame'],
-  makkelijkKop: 'What makes it easier for us',
-  makkelijk: [
-    'A full-size photo rather than a screenshot',
-    'Daylight rather than a lamp straight overhead',
-    'A plain surface rather than a busy one',
-    'The colour as it is — no filter, no watermark',
-  ],
   gidsLink: 'Read the photo guide',
   gidsPdf: 'Download the photo guide (pdf)',
-  naarVorm: 'Go to the form',
 
   vormEtiket: 'The request',
   vormKop: 'Request your test sample',
@@ -165,14 +163,19 @@ const c = nl ? {
   weigerGebruikt: ['It is one per business, so nothing has been ordered and nothing has been charged — you have not paid for this. Ready for the real thing? The ', 'full services', ' start at a single product, with no minimum order — or ', 'send us a message', ' if the first sample never arrived, or a colleague ordered it without telling you.'],
   weigerMailKop: 'That email address didn’t go through.',
   weigerMail: 'Check it for a typo and send it again — it is the address the finished images arrive at.',
+  /* Zie de Nederlandse tegenhanger. */
+  weigerSoortKop: 'Pick what we should make first.',
+  weigerSoort: 'A catalog set or a lifestyle carousel — that is different work, so we cannot pick one for you. Choose below and send it again.',
+
+  modelVouw: 'The on-model shot',
+  modelStand: 'we choose one',
 
   fijndruk: `One sample per business · a ${SAMPLE.feeNote} · that’s all you pay for the sample.`,
-  hulp: ['Stuck on a step, or unsure about something? ', 'Message us on WhatsApp', ' — we usually reply within the hour on weekdays and can place the order with you.'],
-  hulpWa: 'Hi VISUAILS, I’m filling in an order and have a question.',
 
   slotEtiket: 'Rather talk it through',
   slotH: 'Rather just talk it through?',
-  slotP: 'Send us your product on WhatsApp and we’ll help you pick a style.',
+  /* Zie de Nederlandse tegenhanger. */
+  slotP: 'Send us your product on WhatsApp and we’ll help you pick a style — we usually reply within the hour on weekdays and can place the order with you.',
   slotWa: 'Hi VISUAILS, I’d like to try a test sample.',
   slotCta: 'WhatsApp',
   slotCta2: 'Place a full order',
@@ -183,36 +186,136 @@ const vink = 'M20 6L9 17l-5-5';
 
 <div class="s22 ts">
 
-  {/* ── EEN KNOP IN DE OPENING — 7 september 2026 ──────────────────────────
-      Gemeten op 390px: het eerste invulveld stond op 3991px, van een pagina van
-      9241px. Bijna vijf schermen scrollen om aan een proef van één euro te
-      beginnen — op de pagina met de laagste drempel van de hele site.
+  {/* ── EN NU STAAT HET FORMULIER TWEEDE — 10 september 2026 ────────────────
+      Lucas: *"een test sample moet snel en moeiteloos zijn voor een eerste
+      klant."*
 
-      De uitleg eronder blijft staan; die is niet te lang, hij staat alleen in
-      de weg van wie al overtuigd is. Deze knop springt eroverheen. Wie hem niet
-      nodig heeft, leest gewoon verder en komt op dezelfde plek uit.
+      Hier stond een SPRONGKNOP ("Naar het formulier", #aanvraag), en die was op
+      7 september het antwoord op precies deze klacht: het eerste invulveld lag
+      toen op 3.991 van 9.241 pixels. Op 8 september ging het formulier van zesde
+      naar derde en werd dat 1.848. Beter, en nog steeds twee volle schermen
+      lezen voor een proef van één euro — terwijl /start/catalog, dat véél meer
+      vraagt, zijn eerste veld op 371 pixels heeft staan.
 
-      Dezelfde vorm als "#looks" op /catalog, /lifestyle en /video: een
-      `href="#…"` naar een sectie verderop, zonder JavaScript. */}
+      De rest van de reparatie is de volgorde zelf, en die kan nu wél: de eerste
+      vraag van het formulier IS "wat moeten we maken?", met bij allebei de
+      keuzes wat je ervoor terugkrijgt. "Wat je krijgt" stond dus twee keer op
+      deze pagina, en één daarvan stond in de weg. Die uitleg staat nu ONDER het
+      formulier, waar hij is wat hij altijd al was: geruststelling voor wie hem
+      zoekt, in plaats van een drempel voor wie al besloten heeft.
+
+      De sprongknop gaat daarmee weg. Een knop die naar het blok eronder springt
+      is geen kortere weg maar een extra handeling. */}
   <section class="paneel ts-open">
     <div class="paneel-kop">
       <p class="etiket">{c.etiket}</p>
       <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
       <p class="lopend">{c.lead}</p>
-      <p class="acties ts-open-acties">
-        <a class="knop knop-inkt" href="#aanvraag">{c.naarVorm}</a>
-      </p>
     </div>
     <ul class="ts-pillen" role="list">
       {c.pillen.map((p) => <li class="mono">{p}</li>)}
     </ul>
   </section>
 
+  {/* Weigeringen komen van /api/order terug als een redirect met ?error=…, omdat
+      het versturen eindigt in een echte navigatie. initFormRefusal() in
+      interactions.js haalt het `hidden` van het passende blok en zet de focus
+      erop. In de opmaak en niet vanuit JS, zodat de tekst mee vertaald wordt met
+      de rest van de pagina en in een diff te zien is.
+
+      role="status" en niet role="alert": de bezoeker is zojuist genavigeerd, dus
+      dit is de toestand van de pagina waar hij aankomt — niet iets dat hem
+      onderbrak.
+
+      Ze staan direct BOVEN het formulier en niet meer in een eigen sectie met
+      een kop erboven: die sectie was 378 pixels voor twintig woorden, en de kop
+      erin ("Vraag je proef aan") stond een paar centimeter boven een formulier
+      dat zichzelf al aankondigt. */}
+  <div class="ts-weigeringen" id="aanvraag">
+    <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerGebruiktKop}</strong>
+      <span>{c.weigerGebruikt[0]}<a href={lp('/start')}>{c.weigerGebruikt[1]}</a>{c.weigerGebruikt[2]}<a href={lp('/contact')}>{c.weigerGebruikt[3]}</a>{c.weigerGebruikt[4]}</span>
+    </div>
+    <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerMailKop}</strong>
+      <span>{c.weigerMail}</span>
+    </div>
+    <div class="ts-refused" data-form-refusal="sample-soort" role="status" tabindex="-1" hidden>
+      <strong>{c.weigerSoortKop}</strong>
+      <span>{c.weigerSoort}</span>
+    </div>
+  </div>
+
+  <OrderFlow lang={lang} service="lifestyle" mode="sample" hero={false}>
+    {/* ── ÉÉN VRAAG, EN DAARNA PRECIES ÉÉN VERVOLGVRAAG — 10 september 2026 ──
+        Dat was het ontwerp van 13 augustus en het staat nog steeds in de kop van
+        tidyTestSampleDetails() in /api/order: *"catalog of lifestyle, en daarna
+        precies één vervolgvraag — bij catalog de achtergrond, bij lifestyle de
+        look."*
+
+        Hier stond `<Step1Options>`, en die legde er drie vragen bovenop:
+        waar-verkoop-je (zes vinkjes), welk gezicht (elf knoppen) en de
+        achtergrond. Samen met de beeldvorm erboven vroeg een proef van één euro
+        VIJF keuzes uit zesentwintig knoppen — méér dan /start/catalog, dat er
+        drie uit twintig vraagt voor een bestelling van honderden euro's.
+
+        Alleen de achtergrondkiezer blijft, want dát is de vervolgvraag bij
+        catalog. De andere twee hebben allebei een veilig antwoord dat de studio
+        zelf neemt: geen gekozen gezicht betekent "wij kiezen er een" (zoals de
+        knop het ook noemt), en waar je verkoopt bepaalt niets aan één proefbeeld
+        — dat is een vraag voor je eerste échte bestelling. */}
+    <StylePicker lang={lang} />
+    <BackgroundPicker lang={lang} />
+    {/* ── DE MODELKEUZE, DICHT — 10 september 2026 ──────────────────────────
+        Lucas: *"waar kan de klant het model kiezen voor de test sample, dit
+        moet hij ook kunnen invullen."*
+
+        Hij was hier vanmorgen uit gevallen: `<Step1Options>` droeg hem, en die
+        is weggehaald omdat er nog twee vragen aan vastzaten die de proef niet
+        stelt. De keuze zelf hoorde te blijven — in de proef zit één foto op een
+        model, of het nu een catalogset of een carousel wordt, en op /catalog en
+        /lifestyle staat allebei dat je dat gezicht mag kiezen.
+
+        DICHT, EN NIET OPEN, want de andere eis van vandaag staat er nog:
+        *"zo min mogelijk moeite [...] en zo snel mogelijk geleverd."* Elf
+        portretten zijn de grootste keuze van het formulier en de minst
+        dringende — de standaard is een ECHT antwoord ("wij kiezen er een"), en
+        die staat in de dichte regel zelf, zodat je kunt zien wat er gebeurt als
+        je hem laat staan. Wie wél een gezicht in gedachten heeft, klapt open.
+        Dat is exact de behandeling die /start/lifestyle er al aan geeft.
+
+        `name="s1"` is dezelfde accordeongroep als de beeldvormvouw op /start:
+        twee vouwen die elkaar sluiten in plaats van samen de pagina verlengen.
+        Op deze pagina is dit voorlopig de enige. */}
+    <div class="ts-modelvouw">
+      <Disclose
+        summary={c.modelVouw}
+        name="s1"
+        liveAttr="data-pl-sum-model"
+        liveText={c.modelStand}
+      >
+        <ModelPicker lang={lang} soort="proef" />
+      </Disclose>
+    </div>
+  </OrderFlow>
+
   <section class="paneel ts-krijg">
     <div class="ts-twee">
+      {/* ── DRIE KEER DEZELFDE ZIN IS TWEE KEER TE VEEL — 10 september 2026 ──
+          Lucas: *"ik wil de test sample zo kort mogelijk en compact mogelijk
+          hebben."*
+
+          Hier stond `krijgKop` — letterlijk TEST_SAMPLE.deliverable, "4
+          catalogbeelden of een lifestyle-carousel van 3" — en dat staat al in de
+          openingszin bovenaan, én in de eerste vraag van het formulier, waar
+          allebei de keuzes hun eigen aantal dragen. Drie plekken, dezelfde zin.
+
+          De alinea eronder ("dezelfde productie en menselijke controle…") zegt
+          wat de eerste twee vinkjes in de lijst hieronder ook zeggen.
+
+          Wat WEL uniek was, blijft: de lijst en het voorbeeldbeeld. Dat beeld is
+          het enige bewijs op deze pagina en gaat nergens heen. */}
       <div>
-        <h2 class="hoog hoog-2">{c.krijgKop}</h2>
-        <p class="lopend ts-krijg-p">{c.krijgP}</p>
         <ul class="ts-lijst" role="list">
           {c.krijg.map((r) => (
             <li>
@@ -229,58 +332,16 @@ const vink = 'M20 6L9 17l-5-5';
     </div>
   </section>
 
-  {/* ── HET FORMULIER STAAT DERDE EN NIET ZESDE — 8 september 2026 ──────────
-      Lucas: *"Het bestelformulier van test sample zou toch hoger moeten staan,
-      dat had je een tijdje terug gezegd dat dat beter was."* Klopt — en wat er
-      toen van gemaakt is, was een SPRONGKNOP onder de kop ("Naar het
-      formulier", #aanvraag). Die staat er nog en werkt, maar hij lost het
-      halve probleem op: wie hem niet ziet, scrolt nog steeds vier secties door
-      voordat er iets in te vullen valt. Gemeten op een telefoon: het eerste
-      veld lag op 4193 van 9579 pixels.
-
-      De volgorde is nu: wat het is → wat je krijgt → HET FORMULIER → hoe het
-      werkt → hoe je fotografeert → de kleine lettertjes. De twee dingen die
-      iemand nodig heeft vóór hij begint staan er dus nog steeds vóór; de rest
-      is geruststelling en die leest hij als hij hem nodig heeft.
-
-      De sprongknop blijft: hij is nu korter van weg, en op een breed scherm
-      scheelt hij nog steeds een halve pagina. */}
-  <section class="paneel ts-aanvraag" id="aanvraag">
+  {/* De vier stappen stonden in een `kamer` — een donkere sectie met veel lucht
+      eromheen, 970 pixels voor 105 woorden. Op deze pagina is dat de duurste
+      geruststelling van allemaal. Als `paneel` staan dezelfde vier stappen er
+      nog, in de helft van de ruimte. De leadzin ("vier korte stappen van jouw
+      foto tot een afgewerkte set") is weg: dat is een omschrijving van de lijst
+      die eronder staat. */}
+  <section class="paneel ts-stappen-paneel">
     <div class="paneel-kop">
-      <p class="etiket">{c.vormEtiket}</p>
-      <h2 class="hoog hoog-2">{c.vormKop}</h2>
-      <p class="lopend">{c.vormLead}</p>
-    </div>
-
-    {/* Weigeringen komen van /api/order terug als een redirect met ?error=…,
-        omdat het versturen eindigt in een echte navigatie. initFormRefusal() in
-        interactions.js haalt het `hidden` van het passende blok en zet de focus
-        erop. In de opmaak en niet vanuit JS, zodat de tekst mee vertaald wordt
-        met de rest van de pagina en in een diff te zien is.
-
-        role="status" en niet role="alert": de bezoeker is zojuist genavigeerd,
-        dus dit is de toestand van de pagina waar hij aankomt — niet iets dat hem
-        onderbrak. */}
-    <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
-      <strong>{c.weigerGebruiktKop}</strong>
-      <span>{c.weigerGebruikt[0]}<a href={lp('/start')}>{c.weigerGebruikt[1]}</a>{c.weigerGebruikt[2]}<a href={lp('/contact')}>{c.weigerGebruikt[3]}</a>{c.weigerGebruikt[4]}</span>
-    </div>
-    <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
-      <strong>{c.weigerMailKop}</strong>
-      <span>{c.weigerMail}</span>
-    </div>
-  </section>
-
-  <OrderFlow lang={lang} service="lifestyle" mode="sample" hero={false}>
-    <StylePicker lang={lang} />
-    <Step1Options lang={lang} />
-  </OrderFlow>
-
-  <section class="kamer ts-stappen-kamer">
-    <div class="kamer-kop">
       <p class="etiket">{c.stapEtiket}</p>
       <h2 class="hoog hoog-2">{c.stapKop}</h2>
-      <p class="lopend">{c.stapLead}</p>
     </div>
     <ol class="stappen ts-stappen" role="list">
       {c.stappen.map(([kop, tekst], i) => (
@@ -293,48 +354,40 @@ const vink = 'M20 6L9 17l-5-5';
     </ol>
   </section>
 
-  <section class="paneel ts-foto">
-    <div class="paneel-kop">
-      <h2 class="hoog hoog-2">{c.fotoKop}</h2>
-      <p class="lopend">{c.fotoLead}</p>
-    </div>
-    <div class="ts-twee ts-twee-gelijk">
-      <div class="ts-vak">
-        <h3 class="hoog hoog-3">{c.welKop}</h3>
-        <ul class="ts-lijst" role="list">
-          {c.wel.map((r) => (
-            <li><svg viewBox="0 0 24 24" class="ts-i" aria-hidden="true"><path d={vink} /></svg><span>{r}</span></li>
-          ))}
-        </ul>
-      </div>
-      {/* Zie de kop van dit bestand: dit was een "Niet doen"-kaart met vier
-          kruisjes. Dezelfde vier dingen, gezegd als wat het makkelijker maakt —
-          op de pagina waar iemand voor het eerst iets van zichzelf opstuurt. */}
-      <div class="ts-vak ts-vak-stil">
-        <h3 class="hoog hoog-3">{c.makkelijkKop}</h3>
-        <ul class="ts-lijst" role="list">
-          {c.makkelijk.map((r) => (
-            <li><svg viewBox="0 0 24 24" class="ts-i ts-i-stil" aria-hidden="true"><path d={vink} /></svg><span>{r}</span></li>
-          ))}
-        </ul>
-        {/* De gids staat hier twee keer, en dat is opzet: lezen en meenemen
-            zijn twee verschillende dingen. Wie hier is, gaat zo staan
-            fotograferen — met de telefoon in de hand en de pagina niet meer in
-            beeld. `download` en niet alleen een link, dus hij landt in de
-            downloadmap. Zelfde bestand als op /upload-guidelines. */}
-        <p class="acties ts-gids">
-          <a class="pijl" href={lp('/upload-guidelines')}>{c.gidsLink}</a>
-          <a class="pijl" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.gidsPdf}</a>
-        </p>
-      </div>
-    </div>
-  </section>
+  {/* ── DE FOTOSECTIE IS WEG — 10 september 2026 ─────────────────────────────
+      Lucas: *"Laatste 580px van proef pagina kunnen weg."*
+
+      Hier stonden twee lijstjes van vier ("Wat het meest helpt" en "Wat het ons
+      makkelijker maakt") met daaronder twee links naar de fotogids. Goede raad,
+      maar op de verkeerde plek: wie hier is heeft nog niets geüpload. Stap 2 van
+      het formulier — het scherm waar hij zijn foto's daadwerkelijk kiest — draagt
+      dezelfde gids al als download, en /upload-guidelines heeft het hele verhaal.
+
+      Drie plekken voor dezelfde vier tips, waarvan deze de enige was die je leest
+      vóórdat het ertoe doet. Wat blijft is de link in de kleine lettertjes
+      hieronder: één regel, op de pagina, voor wie hem zoekt. */}
 
 
 
+
+  {/* ── TWEE KEER WHATSAPP ONDER ELKAAR IS ÉÉN KEER TE VEEL — 10 sept 2026 ───
+      Hier stonden twee blokken op elkaar die allebei hetzelfde aanboden. De
+      kleine lettertjes eindigden met *"Vastgelopen? Stuur ons een bericht op
+      WhatsApp"* en het slot eronder vroeg *"Liever even overleggen?"* met
+      dezelfde WhatsApp-knop. Samen 562 pixels om twee keer hetzelfde te zeggen.
+
+      De voorwaarde blijft waar hij hoort — klein, onder het formulier — en het
+      aanbod om te helpen staat nog één keer, in het slot, waar het een knop is
+      in plaats van een zin. */}
   <section class="paneel ts-fijndruk">
     <p class="mono ts-fijn">{c.fijndruk}</p>
-    <p class="lopend ts-hulp">{c.hulp[0]}<a href={waHref(c.hulpWa)} target="_blank" rel="noopener">{c.hulp[1]}</a>{c.hulp[2]}</p>
+    {/* Het enige dat uit de fotosectie hierboven meeverhuisd is: de gids zelf.
+        Eén regel in plaats van 580 pixels, en het formulier biedt hem straks
+        nog een keer aan op het scherm waar je je foto's kiest. */}
+    <p class="mono ts-fijn ts-gidsregel">
+      <a href={lp('/upload-guidelines')}>{c.gidsLink}</a>
+      <a href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.gidsPdf}</a>
+    </p>
   </section>
 
   <section class="paneel paneel-slot ts-slot">
@@ -359,10 +412,7 @@ const vink = 'M20 6L9 17l-5-5';
 
   .ts-twee { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: center; }
   @media (min-width: 900px) { .ts-twee { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
-  .ts-twee-gelijk { align-items: start; }
-  @media (min-width: 900px) { .ts-twee-gelijk { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.4rem, 3vw, 2.4rem); } }
 
-  .ts-krijg-p { margin: 1.1rem 0 0; }
   .ts-lijst { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }
   .ts-lijst li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem; align-items: start; }
   .ts-lijst span { color: var(--inkt-2); font-size: .95rem; line-height: 1.6; }
@@ -391,27 +441,55 @@ const vink = 'M20 6L9 17l-5-5';
   .ts-beeld img { object-position: 50% 34%; }
   .ts-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
-  .ts-vak {
-    padding: clamp(1.4rem, 3vw, 2.2rem);
-    border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 12px);
-    background: var(--wit);
-  }
   /* "Minder" is een lagere ondergrond, geen andere kleur — dezelfde keuze als op
      /upload-guidelines, en om dezelfde reden: rood zou hier een cijfer zijn. */
-  .ts-vak-stil { background: transparent; }
-  .ts-vak h3 { margin: 0; }
-  .ts-open-acties { margin-top: .6rem; }
   /* Het doel van de knop hierboven. De kop van de site zweeft over de pagina,
      dus zonder marge landt het etiket "De aanvraag" eronder en lijkt de sectie
      afgesneden. Nagemeten: op 390px valt het etiket precies achter de balk.
      Dezelfde waarde als .faq-groep in FaqPage.astro, de enige andere plek op de
      site waar een `href="#…"` naar een kop springt. */
+  /* De modelvouw hangt onder de achtergrondkiezer en houdt dezelfde maat als de
+     rest van stap 1 — `--pl-measure` is de leesbreedte die OrderFlow voor al
+     zijn velden aanhoudt, en een vouw die daar breder uitsteekt leest als een
+     los blok in plaats van als de laatste vraag van dezelfde stap.
+
+     :global() omdat allebei de klassen uit ANDERE componenten komen (Disclose
+     en ModelPicker). Zonder dat krijgt de selector het data-astro-cid van dit
+     bestand en raakt hij niets — dat is hier de zesde keer, dus het staat er nu
+     bij. */
+  .ts-modelvouw { margin-top: clamp(1.4rem, 3vw, 2rem); max-width: var(--pl-measure); }
+  .ts-modelvouw :global(.pl-model) { margin-top: 0; }
+
   .ts-aanvraag { scroll-margin-top: clamp(5rem, 10vw, 7rem); }
 
   .ts-gids { margin-top: 1.6rem; }
   .ts-gids .pijl { color: var(--inkt); }
 
+  /* ── DE VIER STAPPEN OP EEN LICHT VLAK ────────────────────────────────────
+     10 september 2026. Ze stonden in een `kamer` (donker) en staan nu op een
+     `paneel` (licht), en dat is meer dan een achtergrond: `.s22 .stappen li` in
+     stijl22.css trekt zijn scheidingslijn met `rgb(245 245 245 / .14)` — wit op
+     14 procent. Op inkt is dat een haarlijn, op papier is het niets. Deze regels
+     zetten de lijn in inkt.
+
+     En ze staan naast elkaar in plaats van onder elkaar. Vier stappen van elk
+     één zin zijn een RIJ, geen lijst: dezelfde vier stappen, in een derde van de
+     hoogte. Onder 900px vallen ze terug op de gestapelde vorm die stijl22.css al
+     geeft — daar is naast elkaar niet te lezen. */
   .ts-stappen { list-style: none; padding: 0; margin: 0; }
+  .ts-stappen li { border-top-color: rgb(17 17 17 / .16) !important; }
+  .ts-stappen li:last-child { border-bottom-color: rgb(17 17 17 / .16) !important; }
+  @media (min-width: 900px) {
+    .ts-stappen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(1rem, 2.4vw, 2rem); }
+    .ts-stappen li {
+      display: grid !important; grid-template-columns: 1fr !important;
+      align-content: start; align-items: start !important; gap: .5rem !important;
+      padding: 1rem 0 0 !important;
+      border-bottom: 0 !important;
+    }
+    .ts-stappen li:last-child { border-bottom: 0 !important; }
+    .ts-stappen .lopend { font-size: .95rem; }
+  }
 
   /* ── DE WEIGERINGSBLOKKEN ─────────────────────────────────────────────────
      Ze staan `hidden` in de opmaak en interactions.js haalt dat weg. Vandaar
@@ -419,6 +497,10 @@ const vink = 'M20 6L9 17l-5-5';
      van een typeselector maar niet van een klasse, dus een `.ts-refused
      { display: grid }` zou het blok altijd tonen. `:not([hidden])` lost dat op
      zonder dat er ergens !important bij hoeft. */
+  /* De doos eromheen valt weg zolang er niets in staat: hij bestaat alleen om
+     de weigeringen op dezelfde breedte te zetten als het formulier eronder. */
+  .ts-weigeringen:not(:has(.ts-refused:not([hidden]))) { display: none; }
+  .ts-weigeringen { padding-inline: var(--rand, 0); }
   .ts-refused:not([hidden]) {
     display: grid; gap: .5rem;
     margin-top: 1.6rem;
@@ -435,11 +517,11 @@ const vink = 'M20 6L9 17l-5-5';
 
   .ts-fijndruk { padding-block: clamp(1.8rem, 4vw, 3rem); display: grid; gap: .9rem; justify-items: center; text-align: center; }
   .ts-fijn { color: var(--inkt-2); font-size: .75rem; }
-  /* 14px onder de kleine lettertjes was krap voor twee alinea's die niets met
-     elkaar te maken hebben — de een is een voorwaarde, de ander een aanbod om
-     te helpen. Gemeten met kladblok/witruimte.mjs. */
-  .ts-hulp { max-width: 44em; font-size: .92rem; margin-top: clamp(1.1rem, 2vw, 1.5rem); }
-  .ts-refused a, .ts-hulp a {
+  /* De twee gidslinks op één regel, met dezelfde maat als de kleine lettertjes
+     erboven: het is een verwijzing en geen aanbod. */
+  .ts-gidsregel { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1.4rem; }
+  .ts-gidsregel a { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; }
+  .ts-refused a {
     color: var(--inkt); text-decoration: underline; text-underline-offset: 3px;
     text-decoration-color: var(--geel); text-decoration-thickness: 2px;
   }

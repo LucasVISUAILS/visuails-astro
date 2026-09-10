@@ -833,6 +833,26 @@ const hint = lang === 'nl'
     object-fit: cover;
     border-radius: calc(var(--r-md) - 1px);
   }
+  /* ── EEN VOORBEELD OM IETS AAN TE ZIEN — 10 september 2026 ─────────────────
+     Lucas: *"ik wil als een klant een productfoto upload dat hij die foto ook
+     kan zien om overzicht te houden [...] of het wel de goede was."*
+
+     Het vakje is 96px hoog omdat het LEEG een tekening en een woord draagt, en
+     bij vijfentwintig producten is honderd keer 96px al een lange stap. Met een
+     foto erin is diezelfde maat een liggende strook van ongeveer 200 bij 94 —
+     en `object-fit: cover` snijdt daar bij een staande productfoto de kop en de
+     zoom vanaf. Je ziet dat er íets in zit; je ziet niet wélke.
+
+     Dus: alleen een vakje MET voorbeeld krijgt een staande verhouding. Leeg
+     blijft het vakje zo klein als het was, dus de stap wordt niet langer voor
+     wie nog niets geüpload heeft — hij groeit precies daar waar er iets te
+     zien is. 4:5 en niet 1:1, omdat kleding staand gefotografeerd wordt en een
+     vierkant er nog steeds bovenaan en onderaan af haalt.
+
+     De rij trekt zichzelf gelijk (grid), dus een vakje zonder voorbeeld — een
+     HEIC die deze browser niet kan tekenen — groeit mee en houdt zijn vinkje
+     gecentreerd. */
+  .pu-cards :global(.pu-slot.is-thumb .pu-slot-btn) { aspect-ratio: 4 / 5; }
   .pu-cards :global(.pu-slot[data-state="filled"] .pu-slot-btn),
   .pu-cards :global(.pu-slot[data-state="sending"] .pu-slot-btn) { border-style: solid; border-color: var(--line-strong); }
   .pu-cards :global(.pu-slot.is-thumb .pu-slot-name) {

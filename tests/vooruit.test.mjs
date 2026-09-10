@@ -77,12 +77,24 @@ console.log('\nhet bedrag dat de klant afrekent is exact en niet afgerond');
       prepayTotalCents(id), PLAN_AMOUNT[id] * betaald * 100);
     ok('  en termTotalCents geeft precies datzelfde bedrag',
       termTotalCents(id, 'prepaid'), prepayTotalCents(id));
-    /* En het is NIET twaalf keer het afgeronde maandbedrag. Op alle drie de
-       plannen scheelt dat een paar euro; precies daarvoor bestaat
-       prepayTotalCents(). Zou deze regel ooit `true` worden, dan is de afronding
-       op de factuur beland. */
-    ok('  en niet twaalf afgeronde maandbedragen',
-      termTotalCents(id, 'prepaid') === monthlyCents(id, 'prepaid') * 12, false);
+    /* ── WAAROM HIER GEEN VASTE UITKOMST STAAT — 10 september 2026 ─────────
+       Deze regel eiste eerst dat het jaartotaal NOOIT gelijk is aan twaalf keer
+       het afgeronde maandbedrag, want daar zat op 3-2-1 bij alle drie de plannen
+       een paar euro tussen. Op twee gratis maanden valt Starter precies goed uit
+       (12 × € 325 = € 3.900 = 10 × € 390) en Studio en Brand niet.
+
+       Dat de twee soms samenvallen is geen fout — het is afronding die toevallig
+       nul is. Wat bewaakt moet worden is dat er ALTIJD uit prepayTotalCents()
+       wordt gerekend en niet uit het maandbedrag, en dat staat twee regels
+       hierboven. Deze regel meet dus nog maar één ding: dat het verschil tussen de
+       twee manieren AFRONDING is en geen andere rekensom. Twaalf maanden die elk
+       hooguit een halve euro afwijken, kunnen samen niet meer dan zes euro
+       schelen — alles daarboven betekent dat er ergens een ander getal in staat.
+       De richting doet er niet toe: € 658 × 12 is € 7.896 en de factuur € 7.900,
+       dus hij kan ook naar beneden afwijken. */
+    const viaMaand = monthlyCents(id, 'prepaid') * 12;
+    ok('  het verschil met het maandbedrag is afronding en niet meer',
+      Math.abs(viaMaand - termTotalCents(id, 'prepaid')) <= 600, true);
   }
   ok('betaalde plus gratis maanden zijn samen twaalf',
     PLAN_IDS.every((id) => prepayPaidMonths(id) + prepayFreeMonths(id) === 12), true);
@@ -112,16 +124,20 @@ console.log('\nen geen enkel plan zakt door de vooruitbodem');
 {
   const bodem = ladderFloorCents();
   const drempel = Math.round(bodem * PREPAY_FLOOR_SHARE);
-  ok('de vooruitbodem is driekwart van de ladderbodem', drempel, Math.round(bodem * 0.75));
+  /* Zeventig procent sinds 10 september; hij stond op 75 en ging mee omlaag toen
+     Lucas voor twee gratis maanden op elk plan koos. Zie PREPAY_FLOOR_SHARE. */
+  ok('de vooruitbodem is zeventig procent van de ladderbodem', drempel, Math.round(bodem * 0.70));
   for (const id of PLAN_IDS) {
     ok(`${id}: € ${(perProductCents(id, 'prepaid') / 100).toFixed(2)} per product, boven de vooruitbodem`,
       perProductCents(id, 'prepaid') >= drempel, true);
   }
-  /* Zou iemand er drie keer twee van maken, dan hoort dit om te vallen. Deze
-     toets rekent dat na zonder het bestand te veranderen. */
-  const brandBij2 = Math.round((PLAN_AMOUNT.brand * 10 / 12) * 100 / 30);
-  ok('drie keer twee gratis maanden zou Brand er wél doorheen duwen',
-    brandBij2 < drempel, true);
+  /* DE TEGENPROEF. De grens moet nog ergens bijten, anders is hij een getal
+     zonder werk. Bij twee gratis maanden komt Brand op 72% en past hij; bij drie
+     op 65% en valt de build om. Deze regel rekent dat na zonder het bestand te
+     veranderen — en hij is de reden dat de grens verlaagd is en niet uitgezet. */
+  const brandBij3 = Math.round((PLAN_AMOUNT.brand * 9 / 12) * 100 / 30);
+  ok('drie gratis maanden zouden Brand er wél doorheen duwen',
+    brandBij3 < drempel, true);
 }
 
 console.log('\nen er komt geen geld terug — dat is waar de korting voor betaalt');

@@ -138,17 +138,36 @@ console.log('\nde leesroute vraagt een sessie en raakt Mollie niet aan');
   ok('zonder sessie: doorverwijzing naar de inlogpagina', zonder.status, 303);
   ok('en wel naar /admin/login', zonder.headers.get('location'), '/admin/login');
 
-  /* GEEN ENKELE FETCH. Dat is de kern van de splitsing: de GET kijkt alleen naar
-     de vorm van de secrets en praat met niemand. Zou iemand de probes ooit
-     terugzetten in de leesroute, dan telt deze regel ze. */
+  /* ── NIETS DAT IETS AANMAAKT — 10 september 2026 ──────────────────────────
+   *
+   * Hier stond "GEEN ENKELE FETCH", en dat was de juiste regel op de dag dat de
+   * probes uit deze route werden gehaald: een GET die betalingen aanmaakte, kon
+   * door een preloader of een linkchecker worden afgevuurd.
+   *
+   * Sinds vandaag leest de leesroute wél iets: welke betaalmethoden er in het
+   * Mollie-profiel aanstaan (`GET /v2/methods`). Dat is precies het soort
+   * verzoek dat de oude regel niet bedoelde tegen te houden — het maakt niets
+   * aan, het verandert niets, en het antwoord is de reden dat het scherm bestaat:
+   * staat SEPA-incasso uit, dan int een abonnement de eerste maand wél en daarna
+   * nooit meer, en dat merk je pas een maand na je eerste abonnee.
+   *
+   * De regel meet nu dus wat hij altijd bedoelde: er mag naar Mollie GELEZEN
+   * worden, en er mag niets worden aangemaakt. Elke POST, en elk pad buiten
+   * /methods, telt als overtreding. */
   const echt = globalThis.fetch;
-  let geteld = 0;
-  globalThis.fetch = async (...a) => { geteld++; return echt(...a); };
+  const gezien = [];
+  globalThis.fetch = async (url, opties) => {
+    gezien.push({ url: String(url), method: String(opties?.method || 'GET').toUpperCase() });
+    return echt(url, opties);
+  };
   const met = await verzoek('GET', '/admin/diagnose');
   globalThis.fetch = echt;
 
   ok('met sessie: 200', met.status, 200);
-  ok('en er is geen enkel extern verzoek gedaan', geteld, 0);
+  ok('de leesroute maakt niets aan bij Mollie',
+    gezien.filter((v) => v.method !== 'GET' && v.method !== 'HEAD'), []);
+  ok('en leest alleen de methodelijst',
+    gezien.filter((v) => !/\/v2\/methods(\?|$)/.test(v.url)), []);
   const html = await met.text();
   ok('de pagina noemt de secrets bij naam', /MOLLIE_API_KEY/.test(html) && /RESEND_API_KEY/.test(html));
   ok('en toont geen enkele waarde', /test_0123456789/.test(html), false);

@@ -71,9 +71,12 @@ console.log('geen plan zakt onder de bodem van de ladder');
         const drempel = Math.round(bodem * tt.floorShare);
         ok(`${id}/${t}: € ${(pp / 100).toFixed(2)} per product, boven de vooruitbodem`,
           pp >= drempel, true, `€${(pp/100).toFixed(2)} vs €${(drempel/100).toFixed(2)}`);
-        /* En hij hoort er ook echt ONDER de gewone bodem te liggen, anders is de
-           vooruitbetaling geen korting maar een woord. */
-        ok(`  en onder de losse bodem, anders is er geen voordeel`, pp < bodem, true, `€${(pp/100).toFixed(2)}`);
+        /* En hij hoort er ook echt op of ONDER de gewone bodem te liggen, anders
+           is de vooruitbetaling geen korting maar een woord. Starter komt er
+           sinds 10 september precies OP uit (€ 65,00) — twee gratis maanden
+           brengen hem op de laagste losse trede en geen cent lager — dus `<=`
+           en niet `<`. */
+        ok(`  en op of onder de losse bodem, anders is er geen voordeel`, pp <= bodem, true, `€${(pp/100).toFixed(2)}`);
       } else if (id === 'brand') {
         /* `brand` mag er BEWUST onder: daar zit het merkmodel bij, dat op de ladder
            € 1.250 kost. Zie plans() in pricing.js. Elke andere is een prijsfout. */
@@ -83,14 +86,24 @@ console.log('geen plan zakt onder de bodem van de ladder');
       }
     }
   }
-  /* DE KORTINGSREKENING DIE DE JAARVORM BEPAALT. Twee maanden korting op Studio
-     zou € 54,80 per product opleveren en op Brand € 46,90 — allebei onder de
-     bodem. Dat is de meting waarop TERMS.yearly.discountMonths alleen Starter
-     bevat, en deze toets is wat die meting vasthoudt. */
-  ok('alleen Starter krijgt jaarkorting',
-    Object.keys(TERMS.yearly.discountMonths).join(','), 'starter');
-  ok('en die brengt hem op precies de bodem',
-    perProductCents('starter', 'yearly'), ladderFloorCents());
+  /* ── DE KORTING ZIT OP ÉÉN TERMIJN, EN DAT IS DE VOORUITBETAALDE ──────────
+   * 10 september 2026. Hier stond dat alleen Starter jaarkorting krijgt; dat was
+   * waar tot Lucas koos voor *"2 gratis maanden"* op elk plan. Die regel kan niet
+   * op allebei de jaartermijnen staan — dan kost een vooruitbetaald Starterjaar
+   * precies evenveel als een jaar dat je per maand afbetaalt, en is er geen reden
+   * om vooruit te betalen. Zie de noot bij `discountMonths` in plans.js.
+   *
+   * Deze twee regels bewaken nu dát onderscheid, en niet meer welk plan wat
+   * krijgt: de ene termijn koopt voorwaarden, de andere koopt een prijs. */
+  ok('de jaartermijn geeft zelf geen korting meer',
+    Object.keys(TERMS.yearly.discountMonths).length, 0);
+  ok('en de vooruitbetaalde termijn geeft hem aan elk plan',
+    PLAN_IDS.every((id) => (TERMS.prepaid.discountMonths[id] || 0) > 0), true);
+  /* Twee gratis maanden brengen Starter op precies de bodem van de ladder: op een
+     vooruitbetaald jaar betaal je daar wat twintig producten los kosten. Dat is
+     de zin die op de prijspagina uitlegbaar is, en dit is de meting eronder. */
+  ok('en dat brengt Starter op precies de bodem',
+    perProductCents('starter', 'prepaid'), ladderFloorCents());
 }
 
 console.log('\nde plaat in PlanPicker kent elke combinatie van plan en termijn');

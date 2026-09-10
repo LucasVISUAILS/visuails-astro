@@ -106,16 +106,21 @@ export const PLAN_SERVICE = 'complete';
  * is honderdvierenveertig producten, in één keer betaald, twaalf maanden van
  * tevoren. Dat met de trede van twintig meten is de verkeerde trede pakken.
  *
- * Driekwart is de grens die dat verschil eerlijk maakt zonder hem weg te geven:
- * € 48,75 per product. Elk plan mag daar met vooruitbetaling naartoe, geen enkel
- * plan mag eronder. Dat is precies de controle die `{ starter: 2, studio: 2,
- * brand: 2 }` zou laten omvallen — zie de noot bij `discountMonths` hieronder.
+ * Zeventig procent is de grens die dat verschil eerlijk maakt zonder hem weg te
+ * geven: € 45,50 per product. Elk plan mag daar met vooruitbetaling naartoe,
+ * geen enkel plan mag eronder.
+ *
+ * HIJ STOND OP 0,75 TOT 10 SEPTEMBER 2026. Toen koos Lucas voor twee gratis
+ * maanden op élk plan, en daarmee komt Brand op € 46,93 — 72% van de bodem, en
+ * onder de oude grens. De grens is dus mee omlaag gegaan, bewust en met dit
+ * getal erbij. Wat hij nog steeds tegenhoudt: drie gratis maanden op Brand
+ * leveren € 42,25 op, 65%, en dan valt de build om.
  *
  * Zet hem op 1 en een vooruitbetaald jaar mag nooit onder de losse bodem; zet hem
  * lager en je verkoopt capaciteit onder je eigen laagste tarief. assertPlans()
  * rekent het na bij het bouwen.
  */
-export const PREPAY_FLOOR_SHARE = 0.75;
+export const PREPAY_FLOOR_SHARE = 0.70;
 
 export const TERMS = {
   monthly: {
@@ -131,11 +136,29 @@ export const TERMS = {
     id: 'yearly',
     months: 12,
     fixed: true,
-    /* ALLEEN STARTER. Zie de rekensom hierboven: bij Studio en Brand gaat elke
-       korting onder de ladderbodem. Twee maanden op Starter brengt hem op exact
-       € 65 per product — precies de bodem, en een lijn die in één zin uitlegbaar
-       is: *"op een jaar betaal je wat dertig producten los kosten."* */
-    discountMonths: { starter: 2 },
+    /* ── GEEN KORTING MEER OP DEZE TERMIJN — 10 september 2026 ──────────────
+     *
+     * Hier stond `{ starter: 2 }`: twee gratis maanden, alleen op Starter, omdat
+     * dezelfde korting op Studio en Brand onder de ladderbodem zakte.
+     *
+     * Lucas koos vandaag voor één regel over de hele lijn: *"2 gratis maanden
+     * (klant betaald voor 10 maanden en krijgt 12 maanden)"*. Die regel kan niet
+     * op ALLEBEI de jaartermijnen staan — dan kost een vooruitbetaald jaar op
+     * Starter precies evenveel als een jaar dat je per maand afbetaalt, en
+     * betaalt niemand vooruit. Eén van de twee moet de korting dragen.
+     *
+     * Het is deze geworden, en dat is ook de eerlijkste kant. Een verbintenis van
+     * twaalf maanden die per maand wordt geïncasseerd, laat de studio nog steeds
+     * het incassorisico en de mislukte betalingen dragen en ze kan er niets mee
+     * doen; vooruitbetaald geld staat op de rekening. Deze termijn koopt daarom
+     * VOORWAARDEN — een staande week, drie maanden doorschuiven, een prijsslot,
+     * het merkmodel op Studio — en `prepaid` koopt daar een PRIJS bij.
+     *
+     * WAT HET KOST: Starter op de jaartermijn gaat van € 325 terug naar € 390 per
+     * maand. Dat is een prijsverhoging op een bestaand aanbod, en het kan vandaag
+     * gratis omdat er nog geen abonnees zijn. Over drie maanden was het een
+     * gesprek met klanten geweest. */
+    discountMonths: {},
     rollover: 3,
     perks: ['standingWindow', 'priceLock', 'brandModel'],
     name: { en: '12 months', nl: '12 maanden' },
@@ -167,33 +190,32 @@ export const TERMS = {
     months: 12,
     fixed: true,
     prepaid: true,
-    /* ── WAAROM DRIE, TWEE EN ÉÉN EN NIET DRIE KEER TWEE ────────────────────
+    /* ── ÉÉN REGEL: BETAAL TIEN, KRIJG TWAALF ──────────────────────────────
      *
-     * Lucas' regel — "betaal tien, krijg twaalf" — kan niet plat over de drie
-     * plannen, en dat is nagerekend en geen zuinigheid:
+     * Lucas, 10 september 2026: *"2 gratis maanden (klant betaald voor 10
+     * maanden en krijgt 12 maanden)"*. Op elk plan hetzelfde, en dat is de
+     * uitlegbaarste vorm die er is — één zin op de prijspagina, geen tabel.
      *
-     *   Starter  € 292,50/mnd = € 58,50 per product
-     *   Studio   € 658,33/mnd = € 54,86 per product
-     *   Brand    € 1.408,33/mnd = € 46,94 per product   ← 28% onder de ladderbodem
+     * Hier stond eerst 3-2-1 (Starter drie gratis maanden, Studio twee, Brand
+     * één), omdat een platte twee op Brand onder de ladderbodem zakt. Dat is nog
+     * steeds waar en het is de moeite waard om te weten waar het geld dan zit:
+     *
+     *   Starter  € 325/mnd = € 65,00 per product   ← precies de ladderbodem
+     *   Studio   € 658/mnd = € 54,83 per product   ← 84% van die bodem
+     *   Brand    € 1.408/mnd = € 46,93 per product ← 72% van die bodem
      *
      * Brand legt in zijn eentje 9,5% van de maandcapaciteit vast (zie DE PLEKKEN
-     * hieronder) en heeft het merkmodel van € 1.250 al inbegrepen. Twaalf
-     * maanden lang dertig producten per maand op € 46,94, met een prijsslot
-     * erbovenop, is de duurste klant tegen het laagste tarief vastzetten.
+     * hieronder) en heeft het merkmodel van € 1.250 al inbegrepen. Twaalf maanden
+     * dertig producten per maand op € 46,93, met een prijsslot erbovenop, is de
+     * grootste klant op het laagste tarief vastzetten. Dat is Lucas' besluit en
+     * niet dat van dit bestand — maar het staat hier opgeschreven, zodat het over
+     * een half jaar een keuze blijkt te zijn geweest en geen ongeluk.
      *
-     * Starter krijgt er juist één EXTRA, want anders is dit geen betere deal dan
-     * `yearly`: dat plan heeft daar al twee gratis maanden, dus twee hier zou
-     * hetzelfde bedrag zijn en niemand betaalt een jaar vooruit voor niets.
-     *
-     * Wat de klant ziet, ordent wél netjes oplopend, want hij leest euro's en
-     * geen maanden: € 1.170 · € 1.580 · € 1.690. En de zin die het uitlegt is
-     * één regel: hoe groter het plan, hoe meer de ladder al gedaan heeft.
-     *
-     * DIT IS ÉÉN REGEL OM TE VERANDEREN. Wil Lucas toch drie keer twee, dan is
-     * `{ starter: 2, studio: 2, brand: 2 }` genoeg — assertPlans() rekent de
-     * bodem opnieuw na en zegt het als het niet meer uit kan.
+     * PREPAY_FLOOR_SHARE is daarom mee omlaag gegaan, van 0,75 naar 0,70. Niet
+     * uitgezet: bij drie gratis maanden komt Brand op 65% en valt de build alsnog
+     * om. De controle bijt nog steeds, één stap verderop.
      */
-    discountMonths: { starter: 3, studio: 2, brand: 1 },
+    discountMonths: { starter: 2, studio: 2, brand: 2 },
     /* De bodem geldt hier anders, en dat is geen uitzondering maar een andere
        meting. Zie PREPAY_FLOOR_SHARE. */
     floorShare: PREPAY_FLOOR_SHARE,

@@ -53,7 +53,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { readCalendar } from '../../src/lib/agenda.js';
-import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS } from '../../src/data/pricing.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
    browser. `background` heet hier backgroundById, want `background` is in dit
@@ -614,6 +614,33 @@ export async function onRequestPost({ request, env, waitUntil }) {
    * kijkt naar de bankrekening, die niet van dit formulier komt.
    */
   if (svc === 'test-sample') {
+    /* ── EEN PROEF ZONDER SOORT IS GEEN OPDRACHT — 10 september 2026 ─────────
+     *
+     * De radio op /test-sample is `required`, dus dit haalt alleen een POST die
+     * het formulier overslaat. Gemeten (kladblok/proef-breek.mjs): met
+     * `sample_type=allebei` én met een leeg veld kwam er gewoon een bestelling
+     * binnen — in het eerste geval met een verzonnen woord in het dossier, in
+     * het tweede zonder enige aanwijzing wat er gemaakt moet worden. Een
+     * catalogset en een lifestyle-carousel zijn ander werk; er is geen veilige
+     * kant om naar te vallen, dus valt hij niet.
+     *
+     * Vóór de controle op één-per-bedrijf: wie niet zegt wat hij wil, hoort
+     * niet te horen dat hij het al eens gehad heeft. */
+    const soort = String(details.sample_type || '').toLowerCase();
+    if (soort !== 'catalog' && soort !== 'lifestyle') {
+      console.log('[order] proef zonder geldige soort geweigerd:', JSON.stringify(details.sample_type || ''));
+      if (wantsJson) return json({ ok: false, error: 'sample-soort' }, 400);
+      let waarheen = back;
+      try {
+        const from = request.headers.get('Referer');
+        if (from) {
+          const u = new URL(from);
+          if (u.origin === new URL(request.url).origin) waarheen = u.pathname + u.search;
+        }
+      } catch {}
+      return redirect(waarheen + (waarheen.includes('?') ? '&' : '?') + 'error=sample-soort');
+    }
+
     let used = 0;
     let checked = false;
     await safe(async () => {
@@ -659,7 +686,50 @@ export async function onRequestPost({ request, env, waitUntil }) {
     }
   }
 
-  const products = countOf(get('products'));
+  /* ── EEN PROEF IS ÉÉN PRODUCT, EN DAT WORDT HIER AFGEDWONGEN ──────────────
+   * 10 september 2026. Lucas: *"wel is 1 product uiteraard de max per order."*
+   *
+   * Op /test-sample staat `products` als verborgen veld op 1 en er is geen
+   * teller. Maar een verborgen veld is een suggestie: gemeten met een POST van
+   * `products=30` (kladblok/proef-breek.mjs) kwam er een bestelling binnen met
+   * `product_count = 30` en een bedrag van € 1. De prijs klopte — die ligt vast
+   * — maar het RECORD zei dertig producten, en dat is wat de studiomail, /admin
+   * en de werkmap lezen. Dertig producten fotograferen voor een euro, en niets
+   * dat opvalt.
+   *
+   * Eén regel, en hij staat hier en niet op de pagina: een aantal dat de prijs
+   * niet raakt, wordt door geen enkele andere controle in dit bestand gewogen. */
+  /* ── EN BOVEN HET PLAFOND VAN HET FORMULIER IS HET GEEN AANTAL ────────────
+   * 10 september 2026, na dezelfde inbraakproef op de betaalde formulieren
+   * (kladblok/order-breek.mjs).
+   *
+   * `products=999` leverde een bestelling op met `product_count = 999`, tier
+   * `attended` en GEEN bedrag. Dat laatste klopt — boven FORM_MAX_PRODUCTS
+   * biedt stap 1 geen teller meer maar een gesprek, dus er is geen prijs om uit
+   * te rekenen — maar de eerste twee niet: er stond een getal in het dossier dat
+   * het formulier nooit kan produceren, met een serviceniveau eraan dat
+   * capaciteit belooft, op een bestelling waar niets voor betaald wordt.
+   *
+   * Dit maakt er de toestand van die de site voor "meer dan twintig" al kent:
+   * AANTAL ONBEKEND. Dat is een bestaande, ondersteunde vorm — het formulier
+   * post daar zelf "Meer dan 20 producten" en countOf() geeft er ook null voor
+   * terug — met een bevestigingsmail en een gesprek erachteraan, en zonder prijs
+   * of tier die iets beloven.
+   *
+   * WAT DE KLANT ZEI GAAT NIET VERLOREN: het blijft als `products_gevraagd` in
+   * details_json staan, zodat de studio ziet dat er om driehonderd producten
+   * gevraagd is en niet alleen dat het aantal onbekend was.
+   *
+   * `<= 0` valt door dezelfde deur: countOf() maakte er al null van, en nul of
+   * min vijf producten bestellen is geen aantal maar een leeg formulier. */
+  const gevraagdAantal = countOf(get('products'));
+  const products = svc === 'test-sample'
+    ? 1
+    : (gevraagdAantal !== null && gevraagdAantal > FORM_MAX_PRODUCTS ? null : gevraagdAantal);
+  if (products === null && svc !== 'test-sample') {
+    const ruw = String(get('products') || '').trim();
+    if (ruw) details.products_gevraagd = ruw.slice(0, 60);
+  }
 
   // DERIVED, NOT POSTED. This used to read `get('tier') === 'attended'`, which
   // let the browser tell the server which service level the order gets. Under
@@ -1946,8 +2016,45 @@ const PRODUCT_ANSWER_KEY = /^([a-z]+)_(p[0-9]{1,3})$/;
  * uitdrukking kan bekijken. Geëxporteerd om precies die reden: een opschoning die
  * niemand kan nakijken, is er over een half jaar niet meer.
  */
+/**
+ * Wat een proefvisual NOOIT mag dragen, hoe hard het formulier ook post.
+ *
+ * Alle drie kosten ze de studio werk dat niet betaald is, en alle drie komen ze
+ * van vragen die /test-sample niet stelt: voorrang in de wachtrij, complete
+ * looks stylen, en hoge-resolutiebestanden. De `angle_*`-velden zitten er niet
+ * in maar worden op prefix opgeruimd — die zijn er acht en dat aantal beweegt
+ * mee met src/data/angles.js.
+ */
+const TEST_SAMPLE_GEEN_WERK = new Set(['voorrang', 'outfit_count', 'outfits', 'hoogres', 'hoog_res']);
+
 export function tidyTestSampleDetails(details) {
   const soort = String(details.sample_type || '').toLowerCase();
+
+  /* ── EN DE OMVANG VAN HET WERK, NIET ALLEEN DE VORM — 10 september 2026 ────
+   *
+   * Lucas: *"probeer ook het systeem te breken door het van meerdere kanten te
+   * bekijken."* Dat leverde hier het echte gat op, en het zat niet in de prijs.
+   *
+   * De PRIJS van een proef ligt vast: quoteTestSample() rekent € 1 uit, wat er
+   * ook gepost wordt. Precies daardoor ontbrak de rem op alles wat de prijs
+   * normaal bewaakt. Gemeten op een echt eindpunt (kladblok/proef-breek.mjs):
+   * een proef met `voorrang=1`, `outfit_count=5` en vier `angle_*`-velden werd
+   * aangenomen en stond compleet in details_json — dus in de studiomail, in
+   * /admin en in de werkmap. Vijf complete looks stylen, vier extra hoeken
+   * fotograferen en voorrang in de wachtrij, voor één euro, en nergens een
+   * melding: het ziet er niet uit als een aanval maar als een bestelling.
+   *
+   * Wat een proef IS, staat in TEST_SAMPLE.deliverable: één product, één set.
+   * Alles wat daar iets bovenop legt, hoort er niet in te staan — en dit is de
+   * plek waar dat hoort, om dezelfde reden als de opschoning hieronder: het
+   * eindpunt bewaakt de vorm van zijn eigen record, ook als er met de hand
+   * gepost wordt.
+   *
+   * De velden gaan WEG en worden niet op nul gezet. Een `voorrang: '0'` in het
+   * dossier is een antwoord op een vraag die de proef niet stelt. */
+  for (const sleutel of Object.keys(details)) {
+    if (sleutel.startsWith('angle_') || TEST_SAMPLE_GEEN_WERK.has(sleutel)) delete details[sleutel];
+  }
 
   if (soort === 'lifestyle') {
     delete details.background;

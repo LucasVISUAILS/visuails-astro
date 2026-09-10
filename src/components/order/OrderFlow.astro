@@ -971,6 +971,21 @@ const FORM = {
       vatLead: vatLead('en'),
       vatDetail: vatDetail('en'),
       displayNote: 'A preview, worked out in your browser. The invoice is calculated again on our side, from the same price per product.',
+      /* ── VOOR WIE NIET IN EURO'S DENKT — 10 september 2026 ─────────────────
+         Lucas vroeg het na een gedachte over Amerikaanse klanten: betaalt zo
+         iemand in euro's, en wordt dat omgerekend? Ja en nee, en allebei de
+         helften horen hier te staan. Het BEDRAG staat vast in euro's — Mollie
+         krijgt altijd `currency: 'EUR'`, zie de kop van mollie.js — en de bank
+         of kaartmaatschappij van de klant rekent dat om tegen zijn eigen koers,
+         meestal met een toeslag voor vreemde valuta. Wij rekenen niets om en
+         kunnen die koers ook niet noemen.
+
+         Hij staat er ALTIJD en niet alleen bij een niet-EU-land: het land wordt
+         pas in stap 3 gekozen, dus een regel die op het land wacht, komt te laat
+         voor precies de bezoeker die hem nodig heeft. Een Nederlandse klant
+         leest "in euro's" en haalt zijn schouders op; een Amerikaanse weet
+         waar hij aan toe is. */
+      euroNote: 'All amounts are in euros. If your card or bank is in another currency, they convert at their own rate — usually with a small foreign-currency fee.',
       outfitLabel: 'Any complete outfits in here? (trousers, top and shoes together)',
       outfitCatalogShort: 'One product per catalog set.',
       outfitCatalogTerm: 'complete looks',
@@ -1219,6 +1234,8 @@ const FORM = {
       vatLead: vatLead('nl'),
       vatDetail: vatDetail('nl'),
       displayNote: 'Dit rekent je browser uit. Op de factuur rekenen wij het opnieuw uit, met dezelfde prijs per product.',
+      /* Zie de Engelse tegenhanger. */
+      euroNote: 'Alle bedragen zijn in euro’s. Staat je kaart of rekening in een andere munt, dan rekent je bank om tegen zijn eigen koers — meestal met een kleine toeslag voor vreemde valuta.',
       outfitLabel: 'Zitten er complete setjes bij? (broek, top en schoenen samen)',
       outfitCatalogShort: 'Eén product per catalogset.',
       outfitCatalogTerm: 'complete setjes',
@@ -1776,7 +1793,17 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
     <!-- STEP 1 · THE ORDER -->
     <section class="pl-step" data-pl-step="1">
-      <h2 class="pl-h" data-pl-head>{f.s1.h}</h2>
+      {/* ── DE PROEF VRAAGT GEEN AANTAL — 10 september 2026 ─────────────────
+          "Hoeveel, en waarvoor?" is de kop van stap 1 op /start/*, en daar klopt
+          hij: het aantal is de eerste vraag en bepaalt de prijs. Op /test-sample
+          is het aantal altijd één — het staat als verborgen veld in het
+          formulier en wordt sinds vandaag ook op de server geklemd — dus daar
+          stelt die kop een vraag die de pagina niet stelt, met er direct onder
+          de vraag die hij wél stelt ("Wat moeten we maken?").
+
+          De proef leent de kop van zijn eigen eerste vraag. Eén tekst minder om
+          uit elkaar te laten lopen, en de kop zegt weer wat eronder staat. */}
+      <h2 class="pl-h" data-pl-head>{isSample ? f.s1.sampleKindLabel : f.s1.h}</h2>
 
       {/* What was picked, and a way back. Seven photographs and three
           paragraphs of comparison used to live here; the chooser at /start is
@@ -1802,9 +1829,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           want een gestileerde scène heeft geen achtergrond om te kiezen. */}
       {isSample && (
       <fieldset class="pl-fieldset pl-kinds">
+        {/* De zichtbare <h3> is weg sinds de stapkop dezelfde zin draagt: hij
+            stond er letterlijk twee keer onder elkaar. De <legend> blijft, want
+            die is voor schermlezers en die horen de stapkop niet als naam van
+            deze groep. */}
         <legend class="pl-sr">{f.s1.sampleKindLabel}</legend>
-        <h3 class="pl-sub-h" id="pl-kind-h">{f.s1.sampleKindLabel}</h3>
-        <div class="pl-kind-row" role="radiogroup" aria-labelledby="pl-kind-h">
+        <div class="pl-kind-row" role="radiogroup" aria-label={f.s1.sampleKindLabel}>
           {[['catalog', f.s1.sampleKindCatalog, f.s1.sampleKindCatalogGets],
             ['lifestyle', f.s1.sampleKindLifestyle, f.s1.sampleKindLifestyleGets]].map(([k, name, gets], i) => (
             <label class="pl-kind">
@@ -2048,7 +2078,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             Hij is de notitie in gegaan, achter hetzelfde vraagtekentje als de
             btw-uitleg. Wie het wil weten, klikt; wie naar zijn totaal kijkt, ziet
             één regel in plaats van twee. */}
-        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail} {f.s1.displayNote}</Note></p>
+        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail} {f.s1.displayNote}</Note> {f.s1.euroNote}</p>
       </div>
       )}
 
@@ -2088,6 +2118,19 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           Zelfde afspraak als de andere vouwen: de samenvatting toont de GEKOZEN
           vorm, dus er verdwijnt geen antwoord — alleen de vijf tegels en de twee
           uitlegregels staan pas open als je ze nodig hebt. */}
+      {/* ── DE PROEF KIEST GEEN BEELDVORM — 10 september 2026 ────────────────
+          Lucas: *"Ik wil dat de sample zo min mogelijk moeite is om in te vullen
+          voor de klant."*
+
+          Vijf tegels om een beeldverhouding te kiezen is een goede vraag op een
+          bestelling die op een webshop en in een feed terechtkomt. Op een proef
+          van één euro is het een vraag die niets beslist: je kijkt naar de
+          kwaliteit, niet naar de uitsnede. Het vierkant staat al voor en past
+          overal, en het gaat als verborgen veld mee zodat het record dezelfde
+          vorm houdt als bij een gewone bestelling. */}
+      {isSample
+        ? <input type="hidden" name="ratio" value={DEFAULT_RATIO_ID} />
+        : (
       <Disclose
         summary={f.s1.ratioLabel}
         name="s1"
@@ -2096,6 +2139,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       >
         <RatioPicker lang={lang} />
       </Disclose>
+        )}
 
       {/* What the count earns. Not a control: the level FOLLOWS the count
           (tierFor(), WINDOW_THRESHOLD), so this is a statement, and the
@@ -2106,6 +2150,19 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           behind a disclosure, with a link to the page that owns it. Section 13
           forbids styling Tier 0 as the lesser option, and equal columns still
           hold that up wherever the reader chooses to open it. */}
+      {/* ── EN OP DE PROEF STAAT HIER NIETS — 10 september 2026 ──────────────
+          Lucas: *"Ik wil dat de sample zo min mogelijk moeite is om in te vullen
+          voor de klant."*
+
+          Dit blok zegt wat het AANTAL je oplevert: "standaard doorlooptijd —
+          vanaf 10 producten houden we een leverdatum voor je vrij". Op de proef
+          is het aantal altijd één, dus het beloofde daar iets over een drempel
+          die je op die pagina niet kunt halen, met een uitklaptabel van 120
+          woorden eronder over twee serviceniveaus waarvan er maar één bestaat.
+
+          Wat de proef over levering te zeggen heeft, staat in stap 4 van "Hoe de
+          proef werkt": zodra het klaar is, vaak binnen een dag. */}
+      {!isSample && (
       <div class="pl-levels">
         <p class="pl-level-note" data-pl-level-note></p>
         <Disclose summary={f.s1.levelsH} tone="plain" class="pl-levels-why">
@@ -2128,6 +2185,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <p class="pl-panel-note"><a href={lp('/pricing')}>{f.s1.ladderLink}</a></p>
         </Disclose>
       </div>
+      )}
 
       {/* THE ERROR STATE, which did not exist. Pressing Continue with nothing
           chosen left the step visually unchanged: no [aria-invalid] anywhere on
@@ -2441,7 +2499,20 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           regels komen uit CONTEXT_RULES in garments.js, waar ze staan omdat het
           een belofte is en een belofte die op twee plekken staat, staat er op een
           dag twee keer anders. */}
-      {!isCatalog && (
+      {/* ── EN OP DE PROEF HELEMAAL NIET — 10 september 2026 ─────────────────
+          Lucas: *"Ik wil dat de sample zo min mogelijk moeite is om in te vullen
+          voor de klant."*
+
+          Deze vragen (welk type kledingstuk, en daarna welke schoenen, welke top
+          of welke broek erbij) beslissen de uitsnede van een lifestyle-beeld, en
+          op een echte bestelling zijn ze hun plek waard. Op een proef van één
+          product zijn het vier keuzelijsten voor iets wat de studio op de foto
+          ziet liggen — en ze stonden er zelfs als de klant CATALOG koos, want de
+          proefpagina draait op `service="lifestyle"` en erft daarmee de
+          lifestyle-vragen.
+
+          Wie na de proef bestelt, krijgt ze alsnog: daar bepalen ze wél iets. */}
+      {!isCatalog && !isSample && (
       <div class="field pl-garment">
         <label for="pl-garment">{f.garment.label}</label>
         <select class="select" id="pl-garment" name="garment" data-pl-garment>
@@ -2706,6 +2777,26 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   </form>
 </section>
 
+{/* ── DE TWEE SLOTSECTIES SLAAN WE OVER OP DE PROEF — 10 september 2026 ─────
+    Lucas: *"Deze bestelform klopt nog niet helemaal en is ook niet consistent
+    qua flow met catalog en lifestyle."*
+
+    Op /test-sample stonden ze allebei DUBBEL, en allebei zeiden ze iets wat daar
+    niet klopt:
+
+      · "Wat is er hetzelfde bij elk aantal" gaat over de trede van de ladder.
+        Een proef heeft geen aantal — hij is er altijd één — dus die sectie
+        beantwoordt daar een vraag die niemand kan stellen. De pagina heeft er
+        bovendien haar eigen versie van staan ("Hoe de proef werkt").
+      · "Nog niet zover?" eindigt met de knop *"Probeer VISUAILS · € 1"* naar
+        /test-sample. Op /test-sample is dat een knop naar de pagina waar je al
+        staat. De pagina heeft ook hier haar eigen slot ("Liever even overleggen?"
+        naar /contact), en dat is het slot dat op een proefpagina klopt.
+
+    Samen 807 pixels onder een formulier dat juist korter moest. Op /start/*
+    blijven ze ongewijzigd staan: daar zijn ze allebei waar. */}
+{!isSample && (
+<>
 <!-- WHAT IS THE SAME IN BOTH -->
 <section class="kamer of-gelijk">
   <div class="kamer-kop">
@@ -2730,6 +2821,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="knop knop-lijn">{f.footWa}</a>
   </div>
 </section>
+</>
+)}
 
 </div>
 

@@ -156,8 +156,14 @@ const COPY = {
       ['Catalog', `${countedShort('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/catalog'],
       ['Lifestyle', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
       ['Catalog + Lifestyle', `${countedShort('complete', COMPLETE_IMAGES, 'en')} per product — your page and your feed in one order`, `from ${e(AMOUNT.complete)} per product`, '/pricing'],
-      ['Video clip', 'One vertical clip, cut for Reels and TikTok', `${e(AMOUNT.video)} per clip`, '/video'],
     ],
+    svcAllKop: 'See all services',
+    /* De namen van de andere deuren. De canonieke lijst staat in StartPage.astro
+       (`deuren`); dit is bewust een KORTE opsomming en geen tweede kopie ervan —
+       vier woorden die zeggen wat voor soort werk er nog meer is, zodat de tegel
+       iets zegt in plaats van alleen ergens heen te wijzen. */
+    svcAllLijst: ['Video', 'Hooks', 'Editions', 'Made to order'],
+    svcAllPrijs: 'nine doors',
     svcAll: 'Everything we make',
     svcMore: 'See',
     svcSoon: ['Coming:', `${binnenkortNamen('en').join(' & ')} — what they are`],
@@ -258,8 +264,11 @@ const COPY = {
       ['Catalog', `${countedShort('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/catalog'],
       ['Lifestyle', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
       ['Catalog + Lifestyle', `${countedShort('complete', COMPLETE_IMAGES, 'nl')} per product — je pagina en je feed in één bestelling`, `vanaf ${e(AMOUNT.complete)} per product`, '/pricing'],
-      ['Videoclip', 'Eén verticale clip, gesneden voor Reels en TikTok', `${e(AMOUNT.video)} per clip`, '/video'],
     ],
+    svcAllKop: 'Bekijk alle diensten',
+    /* Zie de Engelse tegenhanger. */
+    svcAllLijst: ['Video', 'Hooks', 'Editions', 'Werk op maat'],
+    svcAllPrijs: 'negen deuren',
     svcAll: 'Alles wat we maken',
     svcMore: 'Bekijk',
     svcSoon: ['Binnenkort:', `${binnenkortNamen('nl').join(' & ')} — wat het is`],
@@ -502,11 +511,34 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
           <p class="kaart-wat">{wat}</p>
         </li>
       ))}
+      {/* ── DE VIERDE TEGEL IS EEN DEUR EN GEEN DIENST — 10 september 2026 ───
+          Lucas: *"de what we make op de homepage zou 3 blokken moeten zijn en 4e
+          blok see all services."*
+
+          Waarom dat beter is dan vier diensten: wat er ook in die vierde tegel
+          staat, hij is de laatste van de rij en leest als "en dit is de rest".
+          Dat wás hij niet — er stond een dienst in, en dan belooft de rij
+          stilzwijgend dat dit alles is. Er zijn er negen.
+
+          Hij draagt daarom GEEN foto. Een foto zou hem tot een vierde dienst
+          maken en de vraag oproepen welke dienst dat dan is. Wat er staat is de
+          kleur van de site, één zin en dezelfde pijl als de drie ernaast — zelfde
+          vorm, andere belofte. */}
+      <li>
+        <a class="kaart kaart-deur" href={lp('/start')}>
+          <span class="deur-binnen">
+            <span class="deur-kop">{c.svcAllKop}</span>
+            <span class="deur-lijst">
+              {c.svcAllLijst.map((naam) => <span class="deur-item">{naam}</span>)}
+            </span>
+          </span>
+          <span class="kaart-pil">
+            <span class="kaart-tekst"><b>{c.svcAll}</b><span class="mono">{c.svcAllPrijs}</span></span>
+            <span class="rond" aria-hidden="true">→</span>
+          </span>
+        </a>
+      </li>
     </ul>
-    {/* Vier tegels zijn de etalage; de negen deuren staan op /start. Deze link is
-        de brug ertussen, en hij staat er sinds de tegels niet meer "vier
-        diensten" beweren. */}
-    <p class="voetregel"><a class="pijl" href={lp('/start')}>{c.svcAll}</a></p>
     <p class="voetregel"><span class="mono">{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
   </section>
 

@@ -6894,10 +6894,76 @@ function readSessionCookie(request) {
 
 const MOLLIE_API = 'https://api.mollie.com/v2';
 
+/**
+ * ── WELKE BETAALMETHODEN STAAN AAN, EN MISSEN DE TWEE DIE ERTOE DOEN ────────
+ * 10 september 2026.
+ *
+ * Lucas stuurde zijn Mollie-instellingen en daar bleek iets uit dat je aan de
+ * site niet kunt zien en pas een MAAND na de eerste abonnee merkt.
+ *
+ * `SEPA-incasso` stond uit. iDEAL, Bancontact, Belfius, EPS, KBC en Pay by Bank
+ * geven bij een eerste betaling een `directdebit`-mandaat af, en Mollie schrijft
+ * daar de maanden daarna op af. Mollie's eigen documentatie zegt het zo:
+ * *"If you want to use a payment method that creates a directdebit mandate, make
+ * sure to also enable the SEPA Direct Debit payment method in your Mollie
+ * profile."* Staat hij uit, dan lukt de eerste maand gewoon — de klant betaalt
+ * via iDEAL, het abonnement springt op actief — en komt er daarna nooit meer
+ * geld binnen. Zonder foutmelding, want er gaat aan onze kant niets mis.
+ *
+ * `Overboeking` is de andere kant van hetzelfde: een vooruitbetaald Merk-jaar is
+ * € 16.900 en de daglimiet die een Nederlandse bank standaard op iDEAL zet, ligt
+ * daar bij veel klanten onder. Zonder bankoverschrijving heeft zo iemand geen
+ * weg om het te betalen.
+ *
+ * DIT IS EEN LEESVERZOEK EN MAAKT NIETS AAN — `GET /v2/methods`, dezelfde route
+ * die probe A en B al gebruiken. Het hoort daarom op de GET-helft van dit scherm
+ * en niet achter de knop.
+ */
+const METHODEN_DIE_ERTOE_DOEN = [
+  ['directdebit', 'SEPA-incasso',
+    'zonder: een abonnement int de eerste maand wél en daarna nooit meer — iDEAL geeft een SEPA-mandaat af en daar wordt maandelijks op afgeschreven'],
+  ['banktransfer', 'Overboeking',
+    'zonder: een vooruitbetaald jaar (tot € 16.900) kan alleen via iDEAL of kaart, en dat past bij veel klanten niet binnen hun daglimiet'],
+];
+
+async function mollieMethoden(env) {
+  if (mollieKeyProblems(env)) return { staat: 'sleutel', methoden: null };
+  let key;
+  try { key = mollieKey(env); } catch { return { staat: 'sleutel', methoden: null }; }
+  try {
+    /* `?sequenceType=first` NIET meegeven: die lijst toont alleen wat een mandaat
+       kan afgeven, en juist de twee methoden die hier gecontroleerd worden vallen
+       daarbuiten of erbinnen om verschillende redenen. Dit is de gewone lijst van
+       wat er in het profiel aan staat. */
+    /* MET EEN KLOK EROP. Dit is de enige plek waar de LEESroute van dit scherm
+       naar buiten praat, en een adminpagina die blijft hangen omdat Mollie traag
+       is, is erger dan een tabel die "niet te lezen" zegt. Drie seconden is ruim
+       voor een lijst van twintig regels. */
+    const res = await fetch(`${MOLLIE_API}/methods`, {
+      headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return { staat: 'fout', methoden: null };
+    const data = await res.json();
+    const ids = (data?._embedded?.methods || []).map((m) => String(m.id));
+    return { staat: 'gelezen', methoden: ids };
+  } catch {
+    return { staat: 'fout', methoden: null };
+  }
+}
+
 /** Leesroute: wat er van de secrets te zeggen valt zonder er één te lezen. */
 async function renderDiagnose(context) {
   const { env } = context;
-  const namen = ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
+  /* ── PORTAL_SALT STOND HIER, EN DAT GAF VALS ALARM — 10 september 2026 ────
+     Deze tabel is voor secrets die een VORM hebben die stuk kan zijn (een
+     sleutel met een plakteken erin). PORTAL_SALT hoort daar niet: ontbreekt hij,
+     dan maakt getSalt() in ratelimit.js er één keer zelf een aan en bewaart die
+     in app_settings — precies zoals PAYER_SALT, die daarom in de lijst
+     hieronder staat met "leeg mag". Zolang hij hier stond, las het scherm
+     "NIET INGESTELD" bij iets wat helemaal in orde is, en dat is precies de
+     soort ruis waardoor je een echte melding een keer overslaat. */
+  const namen = ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
   const vormen = namen.map((naam) => [naam, secretShape(env?.[naam])]);
   /* ── DE LANCEERLIJST — 3 september 2026 ────────────────────────────────────
      Dit scherm toonde vijf secrets en zweeg over de rest. Bij de ketendoorloop
@@ -6910,7 +6976,16 @@ async function renderDiagnose(context) {
     ['SELLER_ADDRESS', 'zonder: de factuur draagt een voorbeeldadres'],
     ['VISUAILS_VAT', 'zonder: geen VIES-bewijsnummer, en een plaatshouder op de factuur'],
     ['VISUAILS_KVK', 'zonder: een plaatshouder-KVK op de factuur'],
+    /* ── 10 september 2026 ────────────────────────────────────────────────
+       Hij stond niet in deze lijst, en dat viel pas op toen de vier
+       factuurgegevens op de Worker gezet werden: drie ervan kon je hier
+       nakijken en deze niet, terwijl hij wél op de factuur komt te staan
+       (`seller.iban` in invoice.js, afgedrukt in invoicePdf.js). Een scherm dat
+       "is het gezet" beantwoordt, hoort dat over álles te doen wat op papier
+       verschijnt. */
+    ['VISUAILS_IBAN', 'leeg mag: dan staat er geen rekeningnummer op de factuur en kan een klant niet zelf overmaken'],
     ['PAYER_SALT', 'leeg mag: dan maakt de code één keer zelf een zout aan in app_settings'],
+    ['PORTAL_SALT', 'leeg mag: dan maakt de code één keer zelf een zout aan in app_settings'],
     ['NOTIFY_EMAIL', 'zonder: de studio krijgt geen melding van nieuwe bestellingen'],
     ['FROM_EMAIL', 'zonder: mails gaan uit met de standaardafzender'],
     ['INVOICE_BCC', 'leeg mag: dan krijgt de studio geen kopie van elke factuur'],
@@ -6924,6 +6999,14 @@ async function renderDiagnose(context) {
     return `<tr><td><code>${esc(naam)}</code></td><td>${gezet ? '<span class="pill">gezet</span>' : `<span class="pill${mag ? '' : ' is-warn'}">niet gezet</span>`}</td><td class="meta">${gezet ? '&mdash;' : esc(gevolg)}</td></tr>`;
   };
   const problemen = mollieKeyProblems(env);
+  const methoden = await mollieMethoden(env);
+  const methodeRij = ([id, naam, gevolg]) => {
+    if (methoden.staat !== 'gelezen') {
+      return `<tr><td><code>${esc(naam)}</code></td><td><span class="pill">niet te lezen</span></td><td class="meta">${esc(gevolg)}</td></tr>`;
+    }
+    const aan = methoden.methoden.includes(id);
+    return `<tr><td><code>${esc(naam)}</code></td><td>${aan ? '<span class="pill">aan</span>' : '<span class="pill is-warn">UIT</span>'}</td><td class="meta">${aan ? '&mdash;' : esc(gevolg)}</td></tr>`;
+  };
 
   const rij = ([naam, v]) => {
     const staat = !v.set
@@ -6953,6 +7036,16 @@ async function renderDiagnose(context) {
     <table class="tbl">
       <thead><tr><th>Variabele</th><th>Staat</th><th>Als hij leeg is</th></tr></thead>
       <tbody>${VERWACHT.map(lanceerRij).join('')}</tbody>
+    </table>
+    <h2>De twee betaalmethoden waar geld op staat</h2>
+    <p class="meta">Wat er in je Mollie-profiel aanstaat, gelezen met <code>GET /v2/methods</code> &mdash; er wordt
+    niets aangemaakt. Deze twee vallen stil om als ze uitstaan: de eerste pas een maand na je eerste abonnee,
+    de tweede pas als iemand een heel jaar vooruit wil betalen.
+    ${methoden.staat === 'sleutel' ? ' <strong>De Mollie-sleutel is niet bruikbaar, dus deze lijst is niet opgehaald.</strong>' : ''}
+    ${methoden.staat === 'fout' ? ' <strong>Mollie gaf geen leesbare lijst terug.</strong>' : ''}</p>
+    <table class="tbl">
+      <thead><tr><th>Methode</th><th>Staat</th><th>Als hij uitstaat</th></tr></thead>
+      <tbody>${METHODEN_DIE_ERTOE_DOEN.map(methodeRij).join('')}</tbody>
     </table>
     <h2>De vier probes</h2>
     <p class="meta">Vier verzoeken aan Mollie, goedkoopste eerst, elk met één variabele erin: transport met een

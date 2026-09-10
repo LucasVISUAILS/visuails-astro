@@ -350,6 +350,37 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   ok('maar krijgt wel gewoon een bevestiging',
     vague.subjects.some((s) => s.includes("We've got your request")), true, vague.subjects);
 
+  /* ── EN EEN AANTAL BOVEN HET PLAFOND VAN HET FORMULIER — 10 september 2026 ──
+   *
+   * Lucas: *"probeer ook het systeem te breken."* Gemeten met een echte POST
+   * (kladblok/order-breek.mjs): `products=999` leverde een bestelling op met
+   * `product_count = 999`, tier `attended` en géén bedrag. Dat laatste klopte —
+   * boven FORM_MAX_PRODUCTS biedt stap 1 geen teller meer maar een gesprek — de
+   * eerste twee niet: een getal dat het formulier niet kan produceren, met een
+   * serviceniveau eraan dat capaciteit belooft, op iets waar niet voor betaald
+   * wordt.
+   *
+   * Het valt nu in de toestand die de site daar al voor kent: aantal onbekend,
+   * geen prijs, geen tier die iets belooft — en wat de klant zei blijft staan. */
+  const teveel = await post({ ...base, products: '999' });
+  ok('negenhonderd producten leveren geen betaling op', teveel.payments, 0);
+  ok('  en de klant krijgt wel een bevestiging',
+    teveel.subjects.some((s) => s.includes("We've got your request")), true, teveel.subjects);
+
+  const nul = await post({ ...base, products: '0' });
+  ok('nul producten ook niet', nul.payments, 0);
+  const negatief = await post({ ...base, products: '-5' });
+  ok('en een negatief aantal ook niet', negatief.payments, 0);
+
+  /* De regel zelf, want de drie proeven hierboven zeggen alleen dat er geen
+     betaling komt — dat was vóór de reparatie ook al zo. Wat erbij kwam is de
+     KLEM op het aantal en het bewaren van wat er gevraagd is. */
+  const route = readFileSync(new URL('../functions/api/order.js', import.meta.url), 'utf8');
+  ok('het aantal wordt op het plafond van het formulier geklemd',
+    /gevraagdAantal > FORM_MAX_PRODUCTS \? null : gevraagdAantal/.test(route), true);
+  ok('  en wat de klant vroeg gaat niet verloren',
+    /details\.products_gevraagd = ruw\.slice\(0, 60\);/.test(route), true);
+
   /*
    * ── ÉÉN PROEFVISUAL PER BEDRIJF ─────────────────────────────────────────────
    *
@@ -362,7 +393,11 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
    * waarom dit open faalt en niet dicht).
    */
   console.log('\néén proefvisual per bedrijf');
-  const sample = { service: 'test-sample', email: 'klant@merk.nl', name: 'Jan', brand: 'Merk', back: '/thank-you' };
+  /* `sample_type` hoort erbij sinds 10 september 2026: een proef zonder geldige
+     soort wordt geweigerd voordat deze controle draait — zie de noot bij die
+     poort in /api/order. Zonder dit veld toetst dit blok de nieuwe weigering en
+     niet de éénper-bedrijfregel waar het voor bestaat. */
+  const sample = { service: 'test-sample', sample_type: 'catalog', email: 'klant@merk.nl', name: 'Jan', brand: 'Merk', back: '/thank-you' };
 
   const first = await post(sample, { samplesPaid: 0 });
   ok('de eerste proef gaat door', first.payments, 1);
@@ -502,10 +537,18 @@ console.log('\nen de bezoeker krijgt te zien waarom');
   for (const [lang, src] of Object.entries(pages)) {
     ok(`${lang}: er is een blok voor sample-used`, src.includes('data-form-refusal="sample-used"'));
     ok(`${lang}: en een voor email`, src.includes('data-form-refusal="email"'));
+    /* En sinds 10 september een voor een proef zonder soort. */
+    ok(`${lang}: en een voor sample-soort`, src.includes('data-form-refusal="sample-soort"'));
     /* Zonder `hidden` staat de melding er bij ieder bezoek — een bezoeker die
-     * nooit geweigerd is leest dan dat hij zijn proef al gehad heeft. */
-    ok(`${lang}: allebei verborgen tot ze nodig zijn`,
-      (src.match(/data-form-refusal="[a-z-]+"[^>]*\shidden/g) || []).length, 2);
+     * nooit geweigerd is leest dan dat hij zijn proef al gehad heeft.
+     *
+     * GETELD EN NIET VASTGEPIND OP EEN AANTAL: hier stond `, 2)`, en dat viel om
+     * op de dag dat er een derde weigering bij kwam — terwijl er niets mis was.
+     * Wat bewaakt moet worden is dat er geen blok ZONDER `hidden` staat, en dat
+     * is precies wat deze vorm zegt, hoeveel het er ook worden. */
+    const blokken = (src.match(/data-form-refusal="[a-z-]+"/g) || []).length;
+    ok(`${lang}: en ze staan allemaal verborgen tot ze nodig zijn`,
+      (src.match(/data-form-refusal="[a-z-]+"[^>]*\shidden/g) || []).length, blokken);
   }
 }
 

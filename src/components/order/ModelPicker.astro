@@ -59,7 +59,7 @@ import Note from '../Note.astro';
    Vandaar `soort`: dezelfde kiezer, dezelfde tegels, één regel die zegt waar de
    modelfoto in JOUW bestelling zit. LifestyleModelFold geeft 'lifestyle' mee;
    Step1Options (catalog) laat hem weg en houdt de bestaande tekst. */
-interface Props { lang: 'en' | 'nl'; soort?: 'catalog' | 'lifestyle'; }
+interface Props { lang: 'en' | 'nl'; soort?: 'catalog' | 'lifestyle' | 'proef'; }
 const { lang, soort = 'catalog' } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 const t = TRAITS[lang];
@@ -84,6 +84,19 @@ const COPY = {
     labelNote: 'One photo of the product being worn, so a shopper can see the fit and the drape instead of guessing at them. It is part of every catalog set at no extra cost, and it is the reason the set is four photos and not three.',
     lead: 'Every catalog set includes one on-model photo at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
     leadLifestyle: 'Every carousel includes one photo of the product being worn, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
+    /* ── DE PROEF KENT ZIJN SOORT NOG NIET — 10 september 2026 ──────────────
+       Op /test-sample staat de soort in dezelfde stap als deze keuze: een
+       radio die van catalogset naar carousel kan springen zolang de klant nog
+       niet verzonden heeft. De twee zinnen hierboven noemen allebei één van die
+       twee, dus allebei kunnen ze halverwege onwaar worden. Deze noemt geen van
+       beide, en hoeft dus nergens op te reageren — één zin die klopt is beter
+       dan twee die met JavaScript gelijkgehouden moeten worden.
+
+       Dat mag hier ook, want de foto op een model zit in ALLEBEI: een catalogset
+       is vier foto's waarvan één gedragen (zie `labelNote` hierboven), en in
+       elke carousel zit er ook één. Wat de klant kiest, verandert niet DAT de
+       vraag geldt. */
+    leadProef: 'Your test sample includes one photo of the product being worn, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
     /* "Choose one that fits OUR brand" stond hier, en dat wisselt halverwege het
        blok van spreker: de regel erboven zegt "Pick the face that fits YOUR
        brand, or leave the choice to us" — VISUAILS aan het woord — en de noot
@@ -117,6 +130,8 @@ const COPY = {
     lead: 'Bij elke catalogset zit één foto op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     leadLifestyle: 'In elke carousel zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     /* Zie de Engelse tegenhanger. */
+    leadProef: 'In je proef zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
+    /* Zie de Engelse tegenhanger. */
     any: 'Wij kiezen voor jou',
     anyNote: `Wij kijken naar de producten en naar wat je ons vertelde, en kiezen uit de ${rosterWoord('nl')} gezichten. Dit is de standaard, en het is een echt antwoord — geen leeg veld waar we je achteraf over lastigvallen.`,
     why: 'Over deze gezichten',
@@ -140,7 +155,7 @@ const nl = lang === 'nl';
       uitgelegd, en dan nog binnen een dichtgeklapte vraag. Hier staat het als
       kop boven een keuze die de klant moet maken. */}
   <h3 class="pl-sub-h" id="pl-model-h">{c.label} <Note lang={lang} term={nl ? 'de foto op een model' : 'the on-model shot'}>{c.labelNote}</Note></h3>
-  <p class="pl-model-lead">{soort === 'lifestyle' ? c.leadLifestyle : c.lead}</p>
+  <p class="pl-model-lead">{soort === 'proef' ? c.leadProef : soort === 'lifestyle' ? c.leadLifestyle : c.lead}</p>
 
   <div class="mp-grid" role="radiogroup" aria-labelledby="pl-model-h">
     {/* "Let us choose" comes FIRST and is checked. It is the honest default —

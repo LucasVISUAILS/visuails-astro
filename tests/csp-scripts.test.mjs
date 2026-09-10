@@ -139,6 +139,19 @@ if (!vers) {
   const buiten = bladen.filter((f) => !/vis-uit-de-pagina/.test(f))
     .filter((f) => !readFileSync(f, 'utf8').startsWith('@layer basis{'));
   check('elke andere stylesheet zit wél in @layer basis', buiten.map((f) => f.split('/').pop()), []);
+  /* ── HET VOORBEELDJE VAN DE EIGEN UPLOAD — 10 september 2026 ─────────────
+     `URL.createObjectURL()` in src/scripts/pipeline.js geeft een blob:-URL, en
+     'self' dekt dat scheme niet. Zonder `blob:` weigert de browser de <img>
+     stil: hij valt op onerror terug, `thumb` blijft false, en de klant ziet een
+     vinkje in plaats van de foto die hij net verstuurde. Dat is precies de
+     afloop van een HEIC die niet te tekenen is, dus er valt niets op om te
+     zien. Vandaar dat de twee helften hier samen gemeten worden en niet apart:
+     de richtlijn is alleen betekenisvol zolang de code hem nodig heeft. */
+  const pijp = readFileSync(new URL('../src/scripts/pipeline.js', import.meta.url), 'utf8');
+  check('pipeline.js maakt een blob:-URL voor het voorbeeld',
+    /URL\.createObjectURL\(/.test(pijp), true);
+  check('en img-src laat blob: toe', /img-src[^;]*\bblob:/.test(regel), true);
+
   check('frame-ancestors blijft staan', /frame-ancestors 'none'/.test(regel), true);
   check('object-src staat uit', /object-src 'none'/.test(regel), true);
   check('en base-uri is vastgezet', /base-uri 'self'/.test(regel), true);

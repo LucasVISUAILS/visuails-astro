@@ -464,9 +464,40 @@ console.log('\nde proefvisual: catalog krijgt de achtergrond, lifestyle de look'
     ok(`${taal}: gebruikt de gedeelde stroom in proefstand`,
       /<OrderFlow lang=\{lang\} service="lifestyle" mode="sample" hero=\{false\}>/.test(src), true);
     /* BEIDE KIEZERS IN DE SLOT, want de soort wordt hier in het formulier
-       gekozen. Eén ervan weglaten is de helft van de klacht terugzetten. */
+       gekozen: bij lifestyle de look, bij catalog de achtergrond. Eén ervan
+       weglaten is de helft van de klacht terugzetten.
+       ── DE ACHTERGRONDKIEZER RECHTSTREEKS — 10 september 2026 ───────────────
+       Hier stond `<Step1Options>`, en dat component draagt er nog twee vragen
+       bij: waar-verkoop-je en welk gezicht. Op een proef van één euro zijn dat
+       vragen met een veilig antwoord dat de studio zelf neemt, en samen met de
+       beeldvorm maakten ze van de proef een formulier met méér keuzes dan
+       /start/catalog. Alleen de achtergrondkiezer blijft — dat is de
+       vervolgvraag die bij catalog hoort. Zie de noot in TestSamplePage.astro. */
     ok(`${taal}: met de lookkiezer erin`, /<StylePicker lang=\{lang\} \/>/.test(src), true);
-    ok(`${taal}: en de achtergrondkiezer erin`, /<Step1Options lang=\{lang\} \/>/.test(src), true);
+    ok(`${taal}: en de achtergrondkiezer erin`, /<BackgroundPicker lang=\{lang\} \/>/.test(src), true);
+    /* En de twee die er NIET meer bij horen. Zonder deze regel kan de hele
+       optiestrook er over een half jaar zonder discussie weer in staan. Op de
+       IMPORT en niet op de naam: de noot erboven noemt `Step1Options` om uit te
+       leggen wat er weg is, en die uitleg hoort deze toets niet te breken. */
+    ok(`${taal}: en niet de hele optiestrook`,
+      /^import Step1Options/m.test(src), false);
+    /* ── MAAR DE MODELKEUZE WEL, EN DICHT — 10 september 2026 ───────────────
+       Lucas, dezelfde dag, nadat de optiestrook eruit ging: *"waar kan de klant
+       het model kiezen voor de test sample, dit moet hij ook kunnen invullen."*
+       Terecht: in de proef zit één foto op een model, of het nu een catalogset
+       of een carousel wordt, en /catalog en /lifestyle beloven allebei dat je
+       dat gezicht mag kiezen. Wat er wegmocht waren de twee vragen ERNAAST.
+
+       De drie regels hieronder meten alle drie iets anders, en samen zijn ze
+       precies de opdracht: de kiezer staat er (anders is de belofte weer leeg),
+       hij staat in een vouw (anders is het formulier weer elf portretten lang),
+       en de dichte regel draagt zelf het standaardantwoord (anders lijkt het een
+       onbeantwoorde vraag in plaats van "wij kiezen er een"). */
+    ok(`${taal}: maar de modelkeuze wél`, /<ModelPicker lang=\{lang\} soort="proef" \/>/.test(src), true);
+    ok(`${taal}: in een dichte vouw`,
+      /<Disclose[\s\S]{0,200}<ModelPicker/.test(src) && !/<Disclose[^>]*\bopen\b/.test(src), true);
+    ok(`${taal}: met "wij kiezen er een" als zichtbare stand`,
+      /liveAttr="data-pl-sum-model"[\s\S]{0,80}liveText=\{c\.modelStand\}/.test(src), true);
     /* En geen eigen formulier meer ernaast. Twee bestelformulieren op één site is
        hoe de proef de vorige keer achterbleef bij wat /start al kon. */
     ok(`${taal}: geen eigen bestelformulier meer`, /<form[^>]*action="\/api\/order"/.test(src), false);
@@ -551,9 +582,68 @@ console.log('\nen wat er verborgen is, komt niet in het record');
     ok('zonder sample_type blijft alles staan', `${r.style}|${r.background}`, 'glow|white');
   }
 
+  /* ── DE OMVANG VAN HET WERK, EN NIET ALLEEN DE VORM — 10 september 2026 ────
+   *
+   * Lucas: *"probeer ook het systeem te breken door het van meerdere kanten te
+   * bekijken."* Dat leverde precies hier het gat op, en het zat NIET in de prijs.
+   *
+   * quoteTestSample() rekent € 1, wat er ook binnenkomt. Juist daardoor viel de
+   * rem weg op alles wat bij een gewone bestelling dóór de prijs bewaakt wordt.
+   * Gemeten met een echte POST naar het eindpunt (kladblok/proef-breek.mjs):
+   * `voorrang=1`, `outfit_count=5` en vier `angle_*`-velden werden aangenomen en
+   * stonden compleet in details_json — dus in de studiomail, in /admin en in de
+   * werkmap. Vijf complete looks stylen, vier extra hoeken fotograferen en
+   * voorrang in de wachtrij, voor één euro.
+   *
+   * Deze vier regels zijn wat dat tegenhoudt. Ze staan op de FUNCTIE en niet op
+   * het formulier, want het formulier vraagt er niet eens naar — wie ze post,
+   * post ze met de hand. */
+  {
+    const r = na({
+      sample_type: 'catalog', background: 'white',
+      voorrang: '1', outfit_count: '5',
+      angle_side: '1', angle_inside: '1', 'angle_detail-on-model': '1',
+    });
+    ok('een proef draagt geen voorrang', 'voorrang' in r, false);
+    ok('  en geen complete looks', 'outfit_count' in r, false);
+    ok('  en geen extra hoeken', Object.keys(r).some((k) => k.startsWith('angle_')), false);
+    /* Wat de proef WEL is, blijft staan — anders repareert deze opschoning het
+       ene gat door het antwoord van de klant weg te gooien. */
+    ok('  maar houdt wat hij zelf gekozen heeft', `${r.sample_type}|${r.background}`, 'catalog|white');
+  }
+
+  {
+    /* Hetzelfde aan de lifestyle-kant, want daar loopt de opschoning door een
+       andere tak van de functie. */
+    const r = na({ sample_type: 'lifestyle', style: 'glow', voorrang: '1', angle_side: '1' });
+    ok('ook een lifestyle-proef draagt geen voorrang', 'voorrang' in r, false);
+    ok('  en geen hoeken', 'angle_side' in r, false);
+    ok('  en houdt zijn look', r.style, 'glow');
+  }
+
   /* En de koppeling: dat de functie bestaat zegt niets zolang de route hem niet
      aanroept. */
   const api = read('functions/api/order.js');
+  /* ── ÉÉN PRODUCT, AFGEDWONGEN OP DE SERVER ───────────────────────────────
+     Lucas: *"wel is 1 product uiteraard de max per order."* Op de pagina staat
+     `products` als verborgen veld op 1; een verborgen veld is een suggestie.
+     Gemeten: `products=30` leverde een bestelling met `product_count = 30` op
+     voor € 1 — de prijs klopte, het record niet, en dat record is wat de studio
+     leest. Deze regel is de klem. */
+  /* Op de VORM van de klem en niet op de hele regel: die regel kreeg er later
+     op dezelfde dag het plafond van het formulier bij (zie order-api.test.mjs),
+     en een toets die op een letterlijke regel staat, valt om zodra iemand er
+     iets goeds naast zet. Wat vast moet liggen is dat de proef vóór alles op één
+     wordt gezet. */
+  ok('een proef telt op de server altijd één product',
+    /const products = svc === 'test-sample'\s*\?\s*1\b/.test(api), true);
+  /* En zonder geldige soort komt er geen bestelling. Een catalogset en een
+     lifestyle-carousel zijn ander werk; er is geen veilige kant om naar te
+     vallen, dus valt hij niet. */
+  ok('en zonder geldige soort wordt hij geweigerd',
+    /soort !== 'catalog' && soort !== 'lifestyle'/.test(api) && /error=sample-soort/.test(api), true);
+  ok('  met een uitleg op de pagina zelf',
+    /data-form-refusal="sample-soort"/.test(read('src/components/TestSamplePage.astro')), true);
   ok('/api/order roept de opschoning aan',
     /if \(service === 'test-sample'\) tidyTestSampleDetails\(details\);/.test(api), true);
   /* Ná de details-lus en niet ervoor: de lus is wat details vult. */

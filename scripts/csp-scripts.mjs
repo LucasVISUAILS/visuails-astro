@@ -157,9 +157,23 @@ export function cspWaarde(hashes, stijlHashes = []) {
      *
      * Elke waarde hieronder is aan de BUILD gemeten, niet uit het hoofd:
      *
-     *   img-src   'self' data: — 651 verwijzingen naar visuails.com zelf, en in
-     *             de stylesheets drie data:image/svg+xml-achtergronden (de ruis-
-     *             filter en twee chevrons). Geen enkele externe afbeelding.
+     *   img-src   'self' data: blob: — 651 verwijzingen naar visuails.com zelf,
+     *             en in de stylesheets drie data:image/svg+xml-achtergronden (de
+     *             ruisfilter en twee chevrons). Geen enkele externe afbeelding.
+     *
+     *             `blob:` staat erbij sinds 10 september 2026, en dat is geen
+     *             versoepeling maar een REPARATIE. Een blob:-URL kan alleen door
+     *             script op deze origin gemaakt worden — het is de eigen upload
+     *             van de bezoeker, terug uit zijn eigen browser, en er is geen
+     *             manier waarop een geïnjecteerde <img> er iets mee naar buiten
+     *             stuurt. Wat hij wél deed: 'self' dekt het scheme blob: niet
+     *             (CSP3, §6.6.2.6 — 'self' vergelijkt scheme/host/port en een
+     *             blob:-URL heeft er geen), dus het voorbeeldje van de zojuist
+     *             geüploade productfoto werd stil geweigerd. Stil, want de <img>
+     *             valt dan op zijn onerror terug en pipeline.js zet `thumb` op
+     *             false — precies dezelfde afloop als bij een HEIC die de
+     *             browser niet kan tekenen. De klant zag een vinkje in plaats
+     *             van zijn foto, en niets in de code was kapot.
      *   font-src  'self' — alle woff2 staan onder /_astro/. Geen Google Fonts,
      *             geen Typekit; als er ooit één bij komt, valt hij hier om en
      *             dat is de bedoeling.
@@ -181,7 +195,7 @@ export function cspWaarde(hashes, stijlHashes = []) {
      * lijst die zegt wat hij dekt, en die omvalt bij het eerste nieuwe soort
      * verzoek — dan staan we ervoor in plaats van dat het stil goed gaat.
      */
-    "img-src 'self' data:",
+    "img-src 'self' data: blob:",
     "font-src 'self'",
     ['connect-src', "'self'", ...CONNECT_HOSTS].join(' '),
     "media-src 'self'",
