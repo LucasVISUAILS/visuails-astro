@@ -115,3 +115,22 @@
 /demo/                  /how-it-works       301
 /nl/demo                /nl/how-it-works    301
 /nl/demo/               /nl/how-it-works    301
+
+# ── /proef, opgeheven (12 september 2026) ──────────────────────────────────
+# /proef en /nl/proef toonden de voorpagina ZONDER de stijllaag, om te kunnen
+# vergelijken wat die laag doet. Dezelfde <Voorpagina>, dezelfde teksten,
+# dezelfde prijzen — het enige verschil was `huid="geen"`.
+#
+# Die vergelijking is klaar: de stijl staat sinds 27 augustus op / en /nl en is
+# sindsdien niet meer ter discussie. Wat overbleef was een tweede homepage die
+# bij elke wijziging óók moest blijven werken — en op 12 september, toen de
+# lopende band erin kwam, was dat voor het eerst echt werk zonder opbrengst.
+#
+# WAAROM ER TOCH EEN 301 STAAT TERWIJL DE PAGINA OP `noindex` STOND. Noindex
+# houdt hem uit de zoekresultaten, niet uit iemands geschiedenis of uit een link
+# die ooit in een gesprek is geplakt. Een 301 kost hier niets en een 404 kost
+# iemand een moment verwarring op een adres dat hij van ons heeft gekregen.
+/proef                  /                   301
+/proef/                 /                   301
+/nl/proef               /nl                 301
+/nl/proef/              /nl                 301

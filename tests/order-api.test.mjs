@@ -285,9 +285,15 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
    * eenmanszaak laat het btw-veld routineus leeg terwijl hij altijd een KVK-nummer
    * heeft. Dat is precies het geval waarvoor het veld bestaat.
    */
+  /* `phone` staat hierin sinds 11 september 2026: elk formulier op de site
+     vraagt er sindsdien om en /api/order weigert zonder — behalve op
+     `service=contact`. Zonder dit veld meet elke test hieronder de weigering in
+     plaats van wat hij denkt te meten; dat is precies wat er gebeurde toen de
+     eis erin ging, en het is de bedoeling dat het opvalt. */
   const base = {
     service: 'drop', email: 'klant@merk.nl', name: 'Jan Jansen',
     brand: 'Merk', products: '12', country: 'NL', back: '/thank-you',
+    phone: '+31 6 12345678',
     business_declaration: 'yes', business_version: 'business-v1-2026-08',
     no_vat: '1', reg_number: '99742993',
   };
@@ -397,7 +403,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
      soort wordt geweigerd voordat deze controle draait — zie de noot bij die
      poort in /api/order. Zonder dit veld toetst dit blok de nieuwe weigering en
      niet de éénper-bedrijfregel waar het voor bestaat. */
-  const sample = { service: 'test-sample', sample_type: 'catalog', email: 'klant@merk.nl', name: 'Jan', brand: 'Merk', back: '/thank-you' };
+  const sample = { service: 'test-sample', sample_type: 'catalog', email: 'klant@merk.nl', name: 'Jan', brand: 'Merk', phone: '+31 6 12345678', back: '/thank-you' };
 
   const first = await post(sample, { samplesPaid: 0 });
   ok('de eerste proef gaat door', first.payments, 1);
@@ -474,10 +480,20 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
     { samplePeople: [{ email: 'klant@merk.nl', phone: null }] });
   ok('twee lege nummers zijn niet dezelfde persoon', noPhones.payments, 1);
 
+  /* ── EN SINDS 11 SEPTEMBER KOMT EEN HALF NUMMER ER NIET EENS IN ───────────
+     Dit blok mat dat "06" op niemand matcht: twee mensen met een onbruikbaar
+     nummer zijn niet dezelfde persoon. Dat klopt nog steeds, maar het is niet
+     langer de eerste verdedigingslinie — /api/order weigert een bestelling nu
+     als normalizePhone() er niets van maakt. Een half nummer haalt de
+     vergelijking dus niet, omdat er geen bestelling is om te vergelijken.
+
+     De regel meet daarom de sterkere garantie. Dat is geen versoepeling: alles
+     wat hij eerst afving, vangt hij nog steeds af — alleen eerder. */
   const shortPhone = await post(
     { ...sample, email: 'nieuw2@ander.nl', phone: '06' },
     { samplePeople: [{ email: 'klant@merk.nl', phone: '06' }] });
-  ok('een half nummer matcht op niemand', shortPhone.payments, 1);
+  ok('een half nummer komt de deur niet door', shortPhone.payments, 0);
+  ok('  en er wordt niets weggeschreven', shortPhone.ordersWritten, 0);
 
   /*
    * ── OOK EEN PROEFVISUAL VAN € 1 MAG NIET ZONDER RIJ BETAALD WORDEN ─────────
@@ -627,6 +643,7 @@ console.log('\nen er is een ratelimiet op de bestelroute');
        "geen betaling" straks het verkeerde ding. */
     const all = { service: 'drop', email: 'klant@merk.nl', name: 'Jan Jansen',
       brand: 'Merk', products: '12', country: 'NL', back: '/thank-you',
+      phone: '+31 6 12345678',
       business_declaration: 'yes', business_version: 'business-v1-2026-08',
       no_vat: '1', reg_number: '99742993', ...fields };
     for (const [k, v] of Object.entries(all)) fd.append(k, v);
@@ -723,7 +740,7 @@ console.log('\neen stijl op aanvraag haalt de bestelling niet');
     const fd = new FormData();
     const all = {
       service: 'lifestyle', email: 'klant@merk.nl', name: 'Jan Jansen', brand: 'Merk',
-      products: '3', country: 'NL', back: '/thank-you',
+      products: '3', country: 'NL', back: '/thank-you', phone: '+31 6 12345678',
       business_declaration: 'yes', business_version: 'business-v1-2026-08',
       no_vat: '1', reg_number: '99742993', style,
     };

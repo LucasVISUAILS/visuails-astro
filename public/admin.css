@@ -733,7 +733,40 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   border-radius: var(--r-sm, 5px); background: var(--paper-2);
 }
 .slot-state { font-size: .72rem; color: var(--ink-3); }
-.slot input[type=file] { font-size: .72rem; width: 100%; }
+/* ── HET BESTANDSVELD — 12 september 2026 ───────────────────────────────────
+   Lucas: *"voelt het dashboard en admin nog wat inconsistent en kan het ook wat
+   rustiger ogen."*
+
+   Op het bord stonden acht native bestandsvelden — "Choose File · No file
+   chosen" — met de knopvorm, de letter en de hoogte die de BROWSER kiest, direct
+   boven een knop die wél de vorm van deze site heeft. Dat is de enige plek op
+   het hele scherm waar twee bedieningsvormen naast elkaar staan, en met acht
+   stuks tegelijk is dat precies hoe "onrustig" eruitziet. Het veld liep er ook
+   nog links buiten zijn kaart: `width: 100%` zonder `min-width: 0` telt de
+   knop van de browser niet mee in de breedte.
+
+   `::file-selector-button` is de ene haak waarmee een native bestandsveld tóch
+   de vorm van de rest kan krijgen. Hij wordt door elke browser ondersteund die
+   dit scherm ooit te zien krijgt; doet hij het niet, dan staat er nog gewoon een
+   werkend veld en is er niets stuk. */
+.slot input[type=file] {
+  font-size: .72rem;
+  width: 100%;
+  min-width: 0;
+  color: var(--ink-500);
+}
+.slot input[type=file]::file-selector-button {
+  font: inherit;
+  font-weight: 600;
+  margin-inline-end: .5rem;
+  padding: .25rem .6rem;
+  border: 1px solid var(--ink-200);
+  border-radius: var(--r-sm, 2px);
+  background: var(--paper-lift);
+  color: var(--ink-900);
+  cursor: pointer;
+}
+.slot input[type=file]:hover::file-selector-button { border-color: var(--ink-300); }
 .slot .btn { width: 100%; }
 
 /* Nog niet gemeld: groen randje, want dit is werk dat af is en wacht op één

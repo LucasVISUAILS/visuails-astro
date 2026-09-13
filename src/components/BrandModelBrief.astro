@@ -100,6 +100,17 @@ const gezichtRijen = [
 ];
 
 const prijs = euro(AMOUNT.brandModel, lang);
+
+/* Vier verschillende mensen staan in EXAMPLES op BrandModelPage.astro; hier
+   staan er drie, want naast een prijs is een raster van vier al een galerij en
+   dit moet een bevestiging blijven. Vaste breedte-en-hoogte op elke <img>, want
+   ze staan boven de vouw en een portret dat na het laden nog van maat verandert
+   duwt het hele formulier naar beneden. */
+const BEWIJS = [
+  { src: '/img/custom-models-01.webp', w: 800, h: 1071 },
+  { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
+  { src: '/img/custom-models-05.webp', w: 1200, h: 1200 },
+].map((b, i) => ({ ...b, alt: lang === 'nl' ? `Geleverd merkmodel ${i + 1} van 3` : `Delivered brand model ${i + 1} of 3` }));
 const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
 ---
 
@@ -117,6 +128,27 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   <p class="bm-price-hero">
     <strong>{prijs}</strong> <span>{vatLabel('excl', lang)}</span>
   </p>
+
+  {/* ── DRIE GEZICHTEN BIJ HET BEDRAG — 12 september 2026 ──────────────────
+      Lucas' bezoeker over het bestelformulier: *"niet visueel genoeg wat mensen
+      krijgen voor hun geld waardoor het erg duur lijkt allemaal."* Dat gold
+      hier het sterkst van alle bestelpagina's: er stond een bedrag voor "een
+      gezicht" en op de hele pagina geen enkel gezicht. Wie via /pricing
+      binnenkomt in plaats van via /custom-models, zag er dus nooit één.
+
+      Dit zijn dezelfde drie uit het raster op /custom-models dat "echt
+      geleverd werk" heet — geen gedeelde bibliotheekgezichten, want die
+      zeggen op deze pagina het tegenovergestelde van wat er verkocht wordt.
+      De regel eronder is geen disclaimer maar het argument zelf. */}
+  <figure class="bm-bewijs">
+    <figcaption class="bm-bewijs-h">{c.bewijsH}</figcaption>
+    <div class="bm-bewijs-rij">
+      {BEWIJS.map((b) => (
+        <img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" />
+      ))}
+    </div>
+    <p class="bm-bewijs-noot">{c.bewijsNoot}</p>
+  </figure>
 </section>
 
 <section class="paneel">
@@ -294,8 +326,8 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
             <input class="input" type="text" id="bm-brand" name="brand" autocomplete="organization" required data-melding={b.brandErr} />
           </div>
           <div class="field">
-            <label for="bm-phone">{b.phone} <span class="bm-opt">{b.optional}</span></label>
-            <input class="input" type="tel" id="bm-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" />
+            <label for="bm-phone">{b.phone} <span class="req">*</span></label>
+            <input class="input" type="tel" id="bm-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" required data-melding={b.phoneErr} />
           </div>
         </div>
 
@@ -476,6 +508,31 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-price-hero strong { font-size: clamp(1.6rem, 3vw, 2.1rem); color: var(--ink); letter-spacing: -.01em; }
   .bm-price-hero span { font-size: .82rem; color: var(--ink-3); }
 
+  /* ── DE DRIE GEZICHTEN BIJ HET BEDRAG ───────────────────────────────────
+     Vlak onder de prijs en niet ergens verderop: het bedrag en het bewijs
+     horen op één blik te staan, anders leest het bedrag alleen.
+
+     `max-width` op de rij en niet op de figure: de kop en de noot mogen de
+     leesbreedte van de rest van de sectie houden, de beelden niet — drie
+     portretten over de volle paneelbreedte zijn een galerij en geen
+     bevestiging, en dan begint deze pagina opnieuw met kijken in plaats van
+     met invullen. */
+  .bm-bewijs { margin: 1.6rem 0 0; display: grid; gap: .5rem; justify-items: start; }
+  .bm-bewijs-h {
+    font-family: var(--font-mono);
+    font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .bm-bewijs-rij {
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+    gap: 6px; width: 100%; max-width: 27rem;
+  }
+  .bm-bewijs-rij img {
+    width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover;
+    display: block; border: 1px solid var(--line); border-radius: 2px;
+    background: var(--ghost);
+  }
+  .bm-bewijs-noot { margin: 0; max-width: 30rem; font-size: .84rem; line-height: 1.5; color: var(--ink-2); }
+
   /* ── DE STAPPENBALK ──────────────────────────────────────────────────────
      Alleen zichtbaar als het script draait: zonder script is er geen stap om
      op te staan, en een balk die "1 van 5" zegt boven een formulier dat er in
@@ -602,7 +659,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
    * vatDecision() op de server. Astro bundelt dit script, dus die import kost
    * niets extra's en houdt de lijst met EU-landen op één plek.
    */
-  import { isEu, HOME_COUNTRY } from '../data/vat.js';
+  import { isEu, HOME_COUNTRY, vatShape, vatFormatError } from '../data/vat.js';
 
   function bmBoot() {
     const form = document.querySelector('form[data-bm-form]');
@@ -709,6 +766,32 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
          is geen verklaring, en hij zou meeliften naar een land waar hij niet
          over gaat. */
       const up = String((land && land.value) || '').trim().toUpperCase();
+
+      /* ── DE VORM VAN HET NUMMER, PER LAND — 12 september 2026 ───────────
+         Zelfde regel als op het bestelformulier; de uitleg staat bij vatShape()
+         in src/data/vat.js. Het `pattern` verhuist mee met het land, want één
+         attribuut kan niet zevenentwintig vormen tegelijk zijn — en een Duitse
+         vorm op een Nederlandse aanvraag keurt een goed nummer af.
+
+         Kent vatShape() het land niet (alles buiten de EU), dan gaat het
+         attribuut eraf: daar heeft een btw-nummer geen betekenis, en een
+         patroon dat van het vorige land blijft staan is erger dan geen. */
+      if (vat) {
+        const vorm = vatShape(up);
+        if (!vorm) {
+          vat.removeAttribute('pattern');
+          vat.setCustomValidity('');
+        } else {
+          vat.setAttribute('pattern', vorm.pattern);
+          /* De eigen zin alleen zolang het veld ongeldig is. Blijft hij staan,
+             dan is het veld ongeldig ook nádat de klant het heeft verbeterd. */
+          vat.setCustomValidity('');
+          if (vat.value.trim() && !vat.checkValidity()) {
+            vat.setCustomValidity(vatFormatError(up, document.documentElement.lang === 'nl' ? 'nl' : 'en'));
+          }
+        }
+      }
+
       const geldt = !!up && up !== HOME_COUNTRY && isEu(up) && !!(vat && vat.value.trim()) && !geen;
       if (vcBlok) vcBlok.hidden = !geldt;
       if (vcVeld) {

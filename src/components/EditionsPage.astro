@@ -84,6 +84,7 @@ import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
+import Uitleg from './Uitleg.astro';
 import Placeholder from './Placeholder.astro';
 import '../styles/stijl22.css';
 
@@ -190,7 +191,13 @@ const COPY = {
       [`${maand} / mo`, `on top of your plan · ${vatLabel('excl', 'en')}`],
     ],
     soonTag: 'Not running yet',
-    queueNote: `Neither set is running yet, so nothing is charged for either. When they start, the shared set arrives with your plan at no extra cost and Editions is the paid half — this page is here so that difference is clear before there is a bill.`,
+    /* ── DEZELFDE MEDEDELING STOND TWEE KEER — 12 september 2026 ──────────
+       Deze noot en `belofte` onderaan zeiden allebei, in bijna dezelfde
+       woorden, dat geen van beide sets al loopt en waar deze pagina dan voor
+       is: samen 89 woorden voor één feit. De volledige versie hoort onderaan,
+       vlak bij de knop, waar iemand op het punt staat iets te doen. Bovenaan
+       hoeft er maar één ding te staan, en dat is dat er nu niets te kopen is. */
+    queueNote: `Neither set is running yet, so nothing is charged for either.`,
 
     /* ── DE VERGELIJKING, DE RUGGENGRAAT VAN DE PAGINA ─────────────────── */
     vglH: 'Two sets, and only one of them costs anything.',
@@ -302,7 +309,7 @@ const COPY = {
       [`${maand} p/m`, `bovenop je abonnement · ${vatLabel('excl', 'nl')}`],
     ],
     soonTag: 'Nog niet actief',
-    queueNote: `Geen van beide sets loopt al, dus er wordt voor allebei nog niets afgeschreven. Zodra ze lopen, komt de gedeelde set zonder meerprijs met je abonnement mee en is Editions de betaalde helft — deze pagina staat er zodat dat verschil duidelijk is vóór er een factuur ligt.`,
+    queueNote: `Geen van beide sets loopt al, dus er wordt voor allebei nog niets afgeschreven.`,
 
     vglH: 'Twee sets, en maar één ervan kost iets.',
     vglSub: 'Allebei zijn het beelden zonder product erin. Wat ze scheidt is wie ze verder krijgt.',
@@ -543,7 +550,11 @@ const c = COPY[lang];
         <h3 class="hoog hoog-3">{c.prijsH}</h3>
         <p class="lopend" set:html={c.prijsMaand} />
         <p class="lopend" set:html={c.prijsOpzet} />
-        <p class="lopend ed-prijs-waarom"><b>{c.prijsWaaromH}</b> {c.prijsWaarom}</p>
+        {/* De vraag blijft staan — hij is terecht en hij wordt gesteld — maar
+            het antwoord van 53 woorden stond tussen twee bedragen en een knop
+            in, op de plek waar iemand juist besluit. Nu staat de vraag er en is
+            het antwoord één hover ver. */}
+        <p class="lopend ed-prijs-waarom"><b>{c.prijsWaaromH}</b><Uitleg tekst={c.prijsWaarom} over={c.prijsWaaromH} lang={lang} /></p>
         <p class="acties">
           <a class="knop knop-inkt" href={lp('/contact')}>{c.prijsCta}</a>
           <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
@@ -561,8 +572,24 @@ const c = COPY[lang];
       <h2 id="ed-recht" class="hoog hoog-2">{c.rechtH}</h2>
     </header>
     <div class="ed-twee">
+      {/* ── ÉÉN ALINEA OP HET SCHERM, DE TWEEDE ERACHTER — 12 sept 2026 ────
+          Deze sectie was met 265 zichtbare woorden de zwaarste van de pagina,
+          en de tweede alinea (72 woorden over de twee licenties) staat vier
+          secties hoger al in de vergelijking: "Je licentie — niet-exclusief /
+          exclusief", met precies dezelfde inhoud in een vorm die je kunt
+          scannen.
+
+          Wat hier alleen hier staat, is het ARGUMENT: onze klanten zijn
+          elkaars concurrenten, dus gedeeld is geen detail. Dat is de kop en de
+          eerste alinea, en die blijven onaangeroerd staan. De onderbouwing
+          erachter zit één hover verderop en is geen woord korter geworden. */}
       <div class="ed-uitleg">
-        {c.rechtP.map((alinea) => <p class="lopend">{alinea}</p>)}
+        {c.rechtP.map((alinea, i) => (
+          <p class="lopend">
+            {alinea}
+            {i === 0 && c.rechtP[1] ? <Uitleg tekst={c.rechtP[1]} over={lang === 'nl' ? 'de twee licenties' : 'the two licences'} lang={lang} /> : null}
+          </p>
+        )).slice(0, 1)}
       </div>
       <aside class="ed-waar">
         <ul class="ed-waar-lijst" role="list">

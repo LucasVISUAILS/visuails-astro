@@ -52,6 +52,7 @@ import { WINDOW_THRESHOLD, aim48 } from '../data/pricing.js';
 import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capacity.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigGate from './FigGate.astro';
+import Disclose from './Disclose.astro';
 import FigBoard from './FigBoard.astro';
 import FigOverzicht from './FigOverzicht.astro';
 import Placeholder from './Placeholder.astro';
@@ -69,6 +70,7 @@ const COPY = {
     ctaPortal: 'See a delivered order',
 
     gateH: 'We check the calendar before we offer you a date.',
+    gateRegelsH: 'The four rules the planning runs on',
     gateLede: 'The date picker on the order form does not show a list of dates. It asks the calendar what the studio has actually committed to on those days, removes every window the studio cannot hold, and offers the first one it can.',
     gate: [
       // Zie de noot bovenaan dit bestand: dit zei "a week has room", en de poort
@@ -83,6 +85,7 @@ const COPY = {
     ],
 
     boardH: 'One table, every order.',
+    boardRegelsH: 'What sits in that table',
     boardLede: 'Our side of it is deliberately boring: a list of orders, the state each one is in, and the calendar the picker reads from. There is no dashboard of graphs, because a graph has never told anyone which order is late.',
     board: [
       ['Every order, one row', 'Reference, brand, product count, the window it holds and the state it is in.'],
@@ -133,6 +136,7 @@ const COPY = {
     ctaPortal: 'Bekijk een geleverde bestelling',
 
     gateH: 'We kijken eerst in de agenda, en pas daarna noemen we een datum.',
+    gateRegelsH: 'De vier regels waar de planning op draait',
     gateLede: 'De datumkiezer in het bestelformulier toont geen lijstje datums. Hij vraagt de planning waar de studio zich op die dagen werkelijk aan verbonden heeft, haalt elk venster weg dat de studio niet kan vasthouden, en biedt het eerstvolgende venster aan dat wél vrij te houden is.',
     gate: [
       ['Werkdruk, geen beschikbaarheid', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten, en een vastgelegd venster is ${WINDOW_DAYS} dagen. Een bestelling van dertig vraagt vijftien op elk van die twee dagen — niet "dertig ergens daarin".`],
@@ -143,6 +147,7 @@ const COPY = {
     ],
 
     boardH: 'Eén tabel, elke order.',
+    boardRegelsH: 'Wat er in die tabel staat',
     boardLede: 'Onze kant is met opzet saai: een lijst orders, de staat waarin elke order zit, en de kalender waar de kiezer uit leest. Geen dashboard vol grafieken, want een grafiek heeft nog nooit iemand verteld welke bestelling te laat is.',
     board: [
       ['Elke order, één regel', 'Kenmerk, merk, aantal producten, het venster dat hij vasthoudt en de staat waarin hij zit.'],
@@ -228,7 +233,11 @@ const nl = lang === 'nl';
           dezelfde gegevens waar FigGate en FigBoard verderop uit lezen, zodat
           het overzicht van de klant niet een andere leverweek kan tonen dan de
           agenda ernaast. Zie de kop van FigOverzicht.astro. */}
-      <FigOverzicht lang={lang} />
+      {/* Het scherm op zwart — zie `.op-nacht` in src/styles/global.css voor de
+          regel: beeld en interface staan op donker, tekst staat op papier. */}
+      <div class="op-nacht">
+        <FigOverzicht lang={lang} />
+      </div>
     </div>
   </section>
 
@@ -240,12 +249,28 @@ const nl = lang === 'nl';
       <h2 id="sp-poort" class="hoog hoog-2">{c.gateH}</h2>
       <p class="lopend">{c.gateLede}</p>
     </header>
+    {/* ── DE VIER REGELS ZIJN INGEKLAPT — 12 september 2026 ─────────────────
+        Gemeten: deze sectie droeg 461 van de 1.363 zichtbare woorden op
+        /studio, en 115 daarvan zaten in deze vier regels. Het zijn de REGELS
+        van het planningssysteem — werkdruk boven beschikbaarheid, één plafond,
+        de drempel, geen dubbele belofte — en ze zijn alle vier waar en het
+        nalezen waard. Maar wie op deze pagina landt heeft één vraag: klopt de
+        datum die ik krijg? De kop en de zin eronder beantwoorden die, en de
+        tekening ernaast laat hem zien.
+
+        De kop van de uitklap noemt daarom niet "meer informatie" maar wat er
+        in staat: wie de regels wíl nalezen, weet aan één regel genoeg dat hij
+        ze hier vindt. Dicht, want dit is de uitzondering niet. */}
     <div class="sp-twee">
-      <ul class="sp-regels" role="list">
-        {c.gate.map(([k, v]) => (
-          <li><span class="mono">{k}</span><b>{v}</b></li>
-        ))}
-      </ul>
+      <div class="sp-regels-in">
+        <Disclose summary={c.gateRegelsH} tone="panel">
+          <ul class="sp-regels" role="list">
+            {c.gate.map(([k, v]) => (
+              <li><span class="mono">{k}</span><b>{v}</b></li>
+            ))}
+          </ul>
+        </Disclose>
+      </div>
       <FigGate lang={lang} />
     </div>
   </section>
@@ -257,11 +282,22 @@ const nl = lang === 'nl';
       <div class="sp-bord-t">
         <h2 id="sp-bord" class="hoog hoog-2">{c.boardH}</h2>
         <p class="lopend">{c.boardLede}</p>
-        <dl class="sp-def">
-          {c.board.map(([k, v]) => (<Fragment><dt>{k}</dt><dd class="lopend">{v}</dd></Fragment>))}
-        </dl>
+        {/* Dezelfde zet als bij de vier planningsregels hierboven, en om
+            dezelfde reden: dit zijn vijf definities over hoe ons eigen bord
+            werkt, samen 170 woorden, naast een schermafdruk die datzelfde bord
+            laat zien. Wie wil weten wat er in die tabel staat, kijkt ernaar;
+            wie wil weten hoe hij werkt, klapt dit open. */}
+        <Disclose summary={c.boardRegelsH} tone="panel">
+          <dl class="sp-def">
+            {c.board.map(([k, v]) => (<Fragment><dt>{k}</dt><dd class="lopend">{v}</dd></Fragment>))}
+          </dl>
+        </Disclose>
       </div>
-      <FigBoard lang={lang} />
+      {/* Het scherm op zwart — zie `.op-nacht` in src/styles/global.css voor de
+          regel: beeld en interface staan op donker, tekst staat op papier. */}
+      <div class="op-nacht">
+        <FigBoard lang={lang} />
+      </div>
     </div>
   </section>
 

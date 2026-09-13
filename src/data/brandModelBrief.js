@@ -144,6 +144,15 @@ export const COPY = {
     h1: 'One face, made only for you.',
     lead: 'A Brand Model is designed once, for your brand, and used nowhere else. Not picked off a list, not licensed from a library, not shared with the shop that sells beside you.',
 
+    /* ── HET BEWIJS BIJ DE PRIJS — 12 september 2026 ────────────────────────
+       Dit formulier noemde een bedrag en toonde geen enkel beeld. Wie hier
+       binnenkomt via de prijslijst in plaats van via /custom-models, leest dus
+       een prijs voor "een gezicht" zonder ooit een gezicht gezien te hebben.
+       Drie echt geleverde merkmodellen, en één regel die zegt dat die van hem
+       er juist NIET bij staat — want dat is precies wat hij koopt. */
+    bewijsH: 'Brand models we made',
+    bewijsNoot: 'Three we delivered. Yours will not be among them — that is the point.',
+
     stepsLabel: 'Steps',
     next: 'Continue',
     back: 'Back',
@@ -209,6 +218,9 @@ export const COPY = {
     eyebrow: 'Merkmodel',
     h1: 'Eén gezicht, alleen voor jou gemaakt.',
     lead: 'Een merkmodel wordt één keer ontworpen, voor jouw merk, en nergens anders gebruikt. Niet uit een lijst gekozen, niet uit een bibliotheek gelicentieerd, niet gedeeld met de winkel die naast je verkoopt.',
+
+    bewijsH: 'Merkmodellen die we maakten',
+    bewijsNoot: 'Drie die we leverden. Dat van jou staat er straks niet tussen — dat is het punt.',
 
     stepsLabel: 'Stappen',
     next: 'Verder',

@@ -80,6 +80,7 @@ import {
 } from '../../src/data/attributes.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
+import { voorkeurMet } from '../../src/data/contactvoorkeur.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail, toBase64 } from '../../src/lib/mail.js';
@@ -98,7 +99,7 @@ import {
 import { businessCheck } from '../../src/data/business.js';
 import {
   vatDecision, VAT_TREATMENT, normaliseVat, viesCode, vatShort, HOME_COUNTRY,
-  vatGate, REVIEW, REVIEW_HOURS,
+  vatGate, REVIEW, REVIEW_HOURS, vatFormatOk,
 } from '../../src/data/vat.js';
 import { checkVat, viesEvidence } from '../../src/lib/vies.js';
 import { composeName, composeAddress, normalisePostal } from '../../src/data/address.js';
@@ -152,6 +153,9 @@ const MAIL_ATTACH_MAX_FILES = 10;
 const TOP_FIELDS = [
   'service', 'redirect', 'lang', 'name', 'brand', 'company', 'email', 'phone', 'vat', 'website',
   'company_hp', 'source',
+  // De contactvoorkeur — migratie 0047. In TOP_FIELDS omdat hij naar een eigen
+  // kolom op `customers` gaat en niet naar details_json; zie hieronder.
+  'contact_preference',
   // ── section 15 · who the customer is, for VAT ──
   // `country` decides the VAT treatment and `address` is a formal invoice
   // requirement; both belong in their own column rather than buried in
@@ -281,6 +285,54 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const name = composeName(get('first_name'), get('last_name')) || get('name');
   const brand = get('brand') || get('company');
   const phone = get('phone');
+  /* ── EEN NUMMER IS VERPLICHT SINDS 11 SEPTEMBER 2026 ────────────────────────
+     Lucas: *"Ik wil daarnaast over de gehele website telefoonnummer voor whatsapp
+     ook verplicht maken behalve bij contact."*
+
+     GECONTROLEERD OP INHOUD EN NIET OP AANWEZIGHEID. normalizePhone() gooit alles
+     weg wat geen cijfer is en houdt er minstens acht over; "ja hoor" en "-" komen
+     er dus niet doorheen, en dat is precies wat een verplicht veld oplevert als de
+     enige controle "niet leeg" is. Dezelfde functie die de betaler-vergelijking
+     gebruikt, zodat een nummer dat hier goed is daar ook herkend wordt.
+
+     De TEKST die de klant intypte gaat naar de database, niet de genormaliseerde
+     vorm: "+31 6 12 34 56 78" is hoe hij hem zelf leest, en de studio belt hem.
+     Genormaliseerd is een VERGELIJKINGSvorm en geen opslagvorm. */
+  /* ── BEHALVE OP /contact ────────────────────────────────────────────────
+     Lucas' uitzondering, letterlijk: *"behalve bij contact, daar is alleen mail
+     echt verplicht."* Het contactformulier post naar ditzelfde eindpunt met
+     `service=contact` (zie de kop van ContactPage.astro), dus zonder deze regel
+     zou een vraag stellen ineens een telefoonnummer kosten.
+
+     En dat is niet alleen een instructie maar ook de juiste keuze: iemand die
+     iets wíl vragen, is nog geen klant. Een verplicht nummer op een
+     contactformulier is de eerste drempel die een merk opwerpt tegen mensen die
+     nog aan het kijken zijn. Wie daar WhatsApp aanwijst, laat een nummer achter
+     omdat hij dat wil — het veld staat er, optioneel, ernaast. */
+  const isContact = service === 'contact';
+
+  /* ── TERUG NAAR HET FORMULIER, MET DE REDEN ERBIJ ─────────────────────────
+     Twee controles gebruiken dit (het telefoonnummer hieronder en de vorm van
+     het btw-nummer verderop), en ze deden het eerst allebei met hun eigen kopie
+     van deze tien regels. De Referer-truc is het punt: `back` is waar het
+     formulier ZEGT dat het vandaan komt, en dat is de bedankpagina. De klant
+     hoort terug te komen op de pagina waar hij stond, met zijn antwoorden er
+     nog in — vandaar dat de Referer voorgaat, en alleen als die van onszelf is. */
+  const terugMet = (code) => {
+    if (wantsJson) return json({ ok: false, error: code }, 400);
+    let dest = back;
+    try {
+      const ref = request.headers.get('Referer');
+      if (ref) {
+        const u = new URL(ref);
+        if (u.origin === new URL(request.url).origin) dest = u.pathname + u.search;
+      }
+    } catch {}
+    return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=' + code);
+  };
+
+  if (!isContact && !normalizePhone(phone)) return terugMet('phone');
+  const contactPreference = voorkeurMet(get('contact_preference'), phone);
   const vat = get('vat');
   const website = get('website');
   // Uppercased and length-capped rather than trusted: this string picks the VAT
@@ -499,7 +551,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (service === 'contact') {
     const body = details.message || details.notes || '';
     let customerId = null;
-    await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, ...addressParts }); });
+    await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }); });
     await safe(() => env.DB && env.DB
       .prepare('INSERT INTO messages (customer_id, email, name, subject, body) VALUES (?1,?2,?3,?4,?5)')
       .bind(customerId, email, name || null, get('subject') || 'Contact form', body || null).run());
@@ -777,7 +829,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
 
   let customerId = null;
-  await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, ...addressParts }); });
+  await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }); });
   /* HET KVK-NUMMER OP DE KLANT — 4 september 2026 (migratie 0043). Een losse
      UPDATE en geen zestiende kolom in upsertWide(): die valt bij een ontbrekende
      kolom al terug op een smallere query, en een derde variant zou het gat
@@ -922,6 +974,30 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // uit, dan is er langs het formulier heen gepost, en dat is precies wat de
   // poort hieronder tegenhoudt.
   const vatConfirmed = get('vat_confirmed') === 'yes';
+
+  /* ── DE VORM VAN HET BTW-NUMMER — 12 SEPTEMBER 2026 ────────────────────────
+   *
+   * Lucas: *"Ook had hij een test order geplaatst met btwnummer NL000 die gewoon
+   * doorkwam terwijl dit uiteraard geen goed btwnummer is."*
+   *
+   * Die bestelling kreeg het juiste tarief — een Nederlandse klant betaalt 21%
+   * wat er ook in dit veld staat — maar `NL000` belandde wél in `orders` én in
+   * `customers`, en daarmee op zijn factuur en op elke volgende. Zie de kop van
+   * vatShape() in src/data/vat.js voor de volledige redenering.
+   *
+   * WAAROM DIT DE BESTELLING TEGENHOUDT EN NIET ALLEEN MARKEERT. Nederland is
+   * het enige land waar VIES niet wordt gebeld, dus hier is de vorm de enige
+   * controle die er is. En de klant heeft een uitweg die één klik kost: het
+   * vinkje "ik heb geen btw-nummer". Doorlaten zou betekenen dat we een factuur
+   * maken met een nummer waarvan we op dit moment al weten dat het niet bestaat.
+   *
+   * WAAROM HET NIET VAAK ONTERECHT AFKEURT. Voor Nederland is het een exacte
+   * vorm die vastligt. Voor de andere lidstaten is het alleen een lengtebereik
+   * uit het officiële overzicht van de Europese Commissie — genoeg voor `000`
+   * en voor een half geplakt nummer, en te ruim om een echt nummer te raken.
+   * Wat daarna van het nummer klopt zegt VIES, hieronder, zoals altijd. */
+  const vatVorm = vatFormatOk(effCountry, vat);
+  if (vatVorm === false) return terugMet('vat');
 
   const vatParts = normaliseVat(vat);
   const vatCc = viesCode(effCountry);
@@ -2425,8 +2501,8 @@ async function upsertWide(env, c) {
     // zie hieronder.
     `INSERT INTO customers (email, name, brand, phone, website, vat_number, country, billing_address,
                             first_name, last_name, address_line1, address_line2, postal_code, city, region,
-                            no_vat_number, save_requested_at)
-     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)
+                            no_vat_number, save_requested_at, contact_preference)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)
      ON CONFLICT(email) DO UPDATE SET
        name=CASE WHEN customers.details_saved_at IS NULL
                  THEN COALESCE(excluded.name, customers.name)
@@ -2515,13 +2591,20 @@ async function upsertWide(env, c) {
                  WHEN customers.details_saved_at IS NOT NULL THEN NULL
                  WHEN excluded.save_requested_at IS NOT NULL THEN COALESCE(customers.save_requested_at, excluded.save_requested_at)
                  ELSE customers.save_requested_at END,
+       -- De contactvoorkeur is een KEUZE en geen gegeven, dus hij valt niet
+       -- onder de details_saved_at-regel: wie op dit formulier "WhatsApp"
+       -- aanwijst, bedoelt dat, ook als hij zijn gegevens ooit heeft
+       -- opgeslagen. Een inzending zonder de vraag (een oud tabblad) stuurt
+       -- NULL en laat de vorige keuze staan.
+       contact_preference=COALESCE(excluded.contact_preference, customers.contact_preference),
        updated_at=datetime('now')`
   ).bind(c.email, c.name || null, c.brand || null, c.phone || null, c.website || null, c.vat || null,
          c.country || null, c.address || null,
          c.firstName || null, c.lastName || null,
          c.line1 || null, c.line2 || null, c.postal || null, c.city || null, c.region || null,
          c.noVat ? 1 : 0,
-         c.saveRequested ? new Date().toISOString() : null).run();
+         c.saveRequested ? new Date().toISOString() : null,
+         c.contactPreference || null).run();
 }
 
 // sendMail() moved to src/lib/mail.js on 2026-07-27 — see that file's header
@@ -3120,7 +3203,17 @@ export function subscriberEmail(lang) {
       : 'The four angles, the light and the background — on one page.',
     body: [
       h1(nl ? 'Zo maak je de productfoto’s die wij nodig hebben' : 'How to shoot the product photos we need'),
-      p('Hi,'),
+      /* ── DE AANHEF VOLGT DE TAAL — 12 september 2026 ────────────────────────
+         Hier stond `p('Hi,')`, zonder `nl ?`. Elke andere zin in deze mail is
+         tweetalig; deze ene niet. Resultaat: een volledig Nederlandse mail die
+         opende met "Hi," — gezien bij het naast elkaar leggen van de acht mails,
+         niet in de code.
+
+         En dit is de mail waarin het het meest kost. Hij gaat naar iemand die
+         zich zojuist heeft ingeschreven en VISUAILS verder niet kent: het is het
+         éérste wat zo iemand van ons leest. De andere Nederlandse mails zeggen
+         "Hoi Sanne,", dus zonder naam is "Hoi," de vorm die daarbij hoort. */
+      p(nl ? 'Hoi,' : 'Hi,'),
       p(nl
         ? 'Hier staat het in vier punten — de hoeken, het licht en de achtergrond die van een telefoonfoto een campagnebeeld maken.'
         : "Here it is in four points — the angles, lighting and background that turn a phone photo into a campaign image."),
@@ -3132,9 +3225,12 @@ export function subscriberEmail(lang) {
          handen vol heeft; het bestand kan hij nu meenemen.
 
          Als bijlage kan niet: deze mail gaat naar een inschrijving en niet naar
-         een klant, en een pdf van 170 kB bij een eerste contact is precies wat
-         een spamfilter opmerkt. Een link naar het bestand doet hetzelfde en
-         weegt niets. */
+         een klant, en een pdf bij een eerste contact is precies wat een
+         spamfilter opmerkt. Een link naar het bestand doet hetzelfde en weegt
+         niets. (Hier stond "een pdf van 170 kB". Het bestand is sinds
+         12 september 360 kB — er staat nu een echte catalogset in — en een getal
+         in een noot dat niemand bijhoudt, is een getal dat gaat liegen. Het
+         argument had het nooit nodig.) */
       linkLine(`https://visuails.com/downloads/visuails-fotogids-${nl ? 'nl' : 'en'}.pdf`,
         nl ? 'Of neem hem mee als pdf' : 'Or take it with you as a pdf'),
       spamNote(lang),

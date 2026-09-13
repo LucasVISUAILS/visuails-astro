@@ -12,8 +12,19 @@
  *
  * Die angst is de reden dat de kantige stijl een HUID is en geen verbouwing:
  * alles staat achter één klasse op <body>, en die klasse zet Layout.astro
- * alleen wanneer een pagina er om vraagt. Op dit moment vragen alleen /proef en
- * /nl/proef erom.
+ * wanneer een pagina er niet uitdrukkelijk van afziet.
+ *
+ * ── /proef IS ER NIET MEER — 12 SEPTEMBER 2026 ─────────────────────────────
+ *
+ * Tot vandaag waren er twee pagina's die de huid NIET droegen: /proef en
+ * /nl/proef, de voorpagina zonder de stijllaag, zodat je kon vergelijken wat die
+ * laag doet. Die vergelijking is klaar — de stijl staat sinds 27 augustus op /
+ * en /nl en is niet meer ter discussie — en wat overbleef was een tweede
+ * homepage die bij elke wijziging óók moest blijven werken.
+ *
+ * Deze toets wordt er strenger van in plaats van korter: waar hij eerst zei
+ * "precies deze twee missen de huid", zegt hij nu "geen enkele pagina mist hem".
+ * De uitzondering die je met naam moest bewaken, bestaat niet meer.
  *
  * ── WAAROM DIT EEN TOETS IS EN GEEN AFSPRAAK ───────────────────────────────
  *
@@ -50,8 +61,6 @@ function check(naam, waarde, verwacht) {
 
 const huid   = readFileSync('src/components/HuidKantig.astro', 'utf8');
 const layout = readFileSync('src/layouts/Layout.astro', 'utf8');
-const proefEN = readFileSync('src/pages/proef.astro', 'utf8');
-const proefNL = readFileSync('src/pages/nl/proef.astro', 'utf8');
 const indexEN = readFileSync('src/pages/index.astro', 'utf8');
 const indexNL = readFileSync('src/pages/nl/index.astro', 'utf8');
 
@@ -221,19 +230,30 @@ console.log('\nde huid staat op elke gebouwde pagina, op twee na');
       .filter((f) => !/class="[^"]*huid-kantig/.test(readFileSync(f, 'utf8')))
       .map((f) => f.replace(/^dist/, '').replace(/index\.html$/, ''))
       .sort();
-    /* Precies twee, en met naam. Een toets die alleen "hoogstens twee" zegt, laat
-       de dag door waarop het de verkeerde twee zijn. */
-    check('alleen /proef en /nl/proef missen de huid', zonder, ['/nl/proef/', '/proef/']);
+    /* GEEN ENKELE, en dat is sinds 12 september de hele lijst. Hier stond
+       `['/nl/proef/', '/proef/']` — precies twee, met naam, omdat een toets die
+       alleen "hoogstens twee" zegt de dag doorlaat waarop het de verkeerde twee
+       zijn. Die twee pagina's bestaan niet meer; de lijst is daarmee leeg, en
+       een lege lijst is de strengste vorm die deze controle kan hebben. */
+    check('geen enkele pagina mist de huid', zonder, []);
   }
 
   /* De regels hieronder lezen de BRON en niet dist/, dus ze staan buiten de
      leeftijdscontrole hierboven: ze blijven ook zonder verse build gewoon gelden. */
 
-  /* En die twee missen hem omdat ze er expliciet om vragen, niet omdat iemand
-     vergat de prop mee te geven. Zonder deze twee regels is "de huid staat er
-     niet op" niet te onderscheiden van "er is iets stukgegaan". */
-  check('/proef vraagt expliciet om GEEN huid', /huid="geen"/.test(proefEN), true);
-  check('/nl/proef vraagt expliciet om GEEN huid', /huid="geen"/.test(proefNL), true);
+  /* Hier stonden twee regels die controleerden dat /proef en /nl/proef de huid
+     misten OMDAT ze er expliciet om vroegen (`huid="geen"`) en niet omdat iemand
+     de prop vergat — zonder dat onderscheid is "de huid staat er niet op" niet
+     te scheiden van "er is iets stukgegaan".
+
+     Die twee pagina's bestaan sinds 12 september niet meer, en daarmee is de
+     vraag zelf weg: sectie 5 eist nu dat GEEN ENKELE pagina de huid mist, dus
+     elk ontbreken is per definitie een storing en hoeft niet meer van een
+     bedoelde uitzondering onderscheiden te worden.
+
+     `huid="geen"` blijft wel bestaan in Layout.astro. Dat is met opzet: de
+     ontsnappingsklep hoort te blijven werken voor de volgende keer dat er
+     vergeleken moet worden, ook nu er niemand gebruik van maakt. */
 
   /* De homepage noemt de prop juist NIET meer: hij komt uit de standaard. Stond
      hij er nog wel, dan waren er twee plekken die hetzelfde zeggen, en dan is de
@@ -243,23 +263,17 @@ console.log('\nde huid staat op elke gebouwde pagina, op twee na');
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   6 · DE PROEFROUTE IS DE HOMEPAGE, NIET EEN KOPIE ERVAN
+   6 · WAS: "DE PROEFROUTE IS DE HOMEPAGE, NIET EEN KOPIE ERVAN"
+   ─────────────────────────────────────────────────────────────────────────────
+   Deze groep controleerde dat /proef en /nl/proef dezelfde <Voorpagina> renderden
+   als / en /nl, op dezelfde grond en op noindex — zodat het verschil tussen de
+   twee adressen alléén de stijllaag was en niet stilletjes ook de inhoud.
+
+   Beide routes zijn op 12 september 2026 opgeheven. De groep is weggehaald en
+   niet leeggemaakt: een controle die niets meer kan aantreffen en toch groen
+   meldt, is erger dan geen controle. Zie public/_redirects voor waar die adressen
+   nu heen gaan, en sectie 5 hierboven voor wat er in de plaats is gekomen.
    ───────────────────────────────────────────────────────────────────────────── */
-console.log('\n/proef rendert dezelfde component als /');
-{
-  for (const [naam, bron, taal] of [['en', proefEN, 'en'], ['nl', proefNL, 'nl']]) {
-    check(`/proef (${naam}) importeert Voorpagina`, /import Voorpagina from '\.\.?\/[^']*components\/Voorpagina\.astro'/.test(bron), true);
-    check(`/proef (${naam}) rendert Voorpagina lang="${taal}"`, bron.includes(`<Voorpagina lang="${taal}" />`), true);
-    /* noindex, want een pagina die de site half toont hoort niet in een
-       zoekresultaat. scripts/sitemap-and-404.mjs leest de robots-tag en laat
-       hem daardoor vanzelf weg. */
-    check(`/proef (${naam}) staat op noindex`, /\bnoindex\b/.test(bron), true);
-  }
-  /* Dezelfde grond als de homepage, anders vergelijk je twee dingen tegelijk.
-     Sectie 21: de grond is de standaard (licht), dus geen van beide noemt hem. */
-  check('/proef staat op dezelfde grond als /',
-    /ground=/.test(proefEN) === /ground=/.test(indexEN), true);
-}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    7 · DE UITZONDERINGEN OP DESIGN.md BLIJVEN BENOEMD
@@ -285,13 +299,14 @@ if (!distStaat.er || distStaat.oud) {
 } else {
   const lees = (f) => (existsSync(f) ? readFileSync(f, 'utf8') : null);
   const home = lees('dist/index.html');
-  const proef = lees('dist/proef/index.html');
-  check('dist/proef bestaat', proef !== null, true);
-  if (proef) {
-    check('/proef draagt de klasse NIET', /<body[^>]*huid-kantig/.test(proef), false);
-    check('/proef draagt geen eigen aanwijzer', /id="aw"/.test(proef), false);
-    check('/proef staat op noindex', /name="robots"[^>]*noindex/.test(proef), true);
-  }
+  /* Hier werd dist/proef/index.html gelezen en gecontroleerd op de AFWEZIGHEID
+     van de huid. Die route is op 12 september opgeheven; wat ervoor in de plaats
+     komt is de omgekeerde eis, en die is scherper: de gebouwde pagina mag er
+     niet meer ZIJN. Zonder deze regel zou een oude /proef in dist/ blijven
+     rondslingeren na een build die hem niet meer maakt, en dat is precies hoe
+     een verwijderde pagina alsnog live gaat. */
+  check('dist/proef bestaat niet meer', lees('dist/proef/index.html'), null);
+  check('dist/nl/proef bestaat niet meer', lees('dist/nl/proef/index.html'), null);
   check('/ draagt de klasse', /<body[^>]*huid-kantig/.test(home), true);
   /* Omgedraaid op 7 september 2026: de eigen aanwijzer is eruit, dus ook de
      homepage hoort er geen te dragen. Zie sectie 3 hierboven. */
@@ -301,6 +316,9 @@ if (!distStaat.er || distStaat.oud) {
   check('/ heeft het merk met zijn twee lagen nog', /mk-line/.test(home) && /mk-fill/.test(home), true);
 
   const kaart = lees('dist/sitemap.xml');
+  /* Stond er al op noindex en dus nooit in; nu bestaat de route helemaal niet
+     meer, en blijft deze regel staan als de goedkoopste bewaking dat een
+     opgeheven adres niet terugkomt via de kaart. */
   if (kaart) check('en /proef staat niet in de sitemap', /\/proef/.test(kaart), false);
 }
 

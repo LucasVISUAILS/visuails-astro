@@ -77,12 +77,51 @@ console.log('\nde motor wordt gedeeld, niet nagebouwd');
     /export async function upsertCustomer/.test(lees('functions/api/order.js')));
 }
 
-console.log('\nhet verborgen blok doet niet mee aan de controle');
+/* ── HET BLOK WORDT NIET MEER VERBORGEN — 11 september 2026 ─────────────────
+ *
+ * Lucas: *"Er staat onderaan ook 'You are signed in. We use the details from
+ * your account.' en niks bij de gegevens. Plaats de gegevens van het ingelogde
+ * account automatisch in de open velden staan en zorg ervoor dat de klant alsnog
+ * zijn gegevens daar kan bewerken wanneer dat nodig is."*
+ *
+ * Dit blok mat de OPLOSSING van gisteren: stap 4 was een <fieldset> met
+ * `data-acct="out"`, zodat Layout hem voor een ingelogde klant kon verbergen én
+ * uitzetten — want een verborgen verplicht veld blokkeert het versturen zonder
+ * dat iemand ziet waarom.
+ *
+ * Die oplossing is vervangen, niet gerepareerd: de velden worden nu INGEVULD in
+ * plaats van verborgen (zie het script onderaan PlanPicker.astro). Daarmee is er
+ * geen verborgen verplicht veld meer, en meet dit blok voortaan de nieuwe eis —
+ * dat het blok er altijd staat, en dat een ingelogde klant zijn eigen gegevens
+ * ziet in plaats van een zin erover.
+ *
+ * De regel in Layout blijft gemeten: hij geldt nog voor elk ander
+ * `data-acct`-fieldset dat er ooit bij komt, en hij is precies het soort ding
+ * dat stilletjes verdwijnt bij een opruimactie. */
+console.log('\nde gegevens staan er, ingevuld en bewerkbaar');
 {
   const form = lees('src/components/order/PlanPicker.astro');
-  ok('stap 4 is een <fieldset> en geen <div>', /<fieldset class="ps-set ps-geg" data-acct="out">/.test(form));
+  ok('stap 4 is een <fieldset>', /<fieldset class="ps-set ps-geg" data-ps-geg>/.test(form));
+  ok('  en wordt niet meer verborgen voor wie is ingelogd',
+    /<fieldset class="ps-set ps-geg"[^>]*data-acct=/.test(form), false);
+  ok('  het script vult hem uit het account', /window\.visAccount\(\)\.then/.test(form));
+  ok('  en overschrijft niet wat de bezoeker al typte', /if \(el\.value\) return;/.test(form));
+  /* Het e-mailadres IS het account. Zichtbaar, ingevuld, en niet te wijzigen in
+     een afrekenscherm — readOnly en niet disabled, want een disabled veld post
+     niets en de server leest dit adres. */
+  ok('  het e-mailadres gaat op readonly', /mail\.readOnly = true;/.test(form));
+  ok('  en niet op disabled', /mail\.disabled = true/.test(form), false);
+  /* En de server moet die bewerking ook AANNEMEN, anders is het veld een leugen. */
+  const api = lees('functions/api/plan.js');
+  ok('de server werkt de gegevens van een ingelogde klant bij',
+    /await werkGegevensBij\(env, klant, form\);/.test(api));
+  ok('  maar raakt het e-mailadres niet aan',
+    /email\s*=\s*\?\d/.test(api), false);
+  ok('  en laat details_saved_at met rust',
+    /details_saved_at = datetime/.test(api), false);
+
   const layout = lees('src/layouts/Layout.astro');
-  ok('en Layout zet een verborgen fieldset ook op disabled',
+  ok('en Layout zet een verborgen fieldset nog steeds op disabled',
     /if \(nodes\[i\]\.tagName === 'FIELDSET'\) nodes\[i\]\.disabled = uit;/.test(layout));
 }
 
@@ -93,7 +132,11 @@ console.log('\nde velden die de factuur nodig heeft, worden gevraagd');
      vat_number van `customers`. Alles behalve brand en btw is verplicht: een
      factuur zonder adresregel mag de deur niet uit — zie de noot bij
      composeAddress(). */
-  for (const veld of ['name', 'email', 'address_line1', 'postal_code', 'city', 'country']) {
+  /* `name` is sinds 11 september twee velden — voornaam en achternaam, net als
+     op het bestelformulier en in het accountscherm. De server bouwt `name`
+     ervan met composeName(); zie de noot in PlanPicker.astro voor waarom het
+     andersom (splitsen) niet kan. */
+  for (const veld of ['first_name', 'last_name', 'email', 'address_line1', 'postal_code', 'city', 'country']) {
     ok(`  ${veld} is verplicht`, new RegExp(`name="${veld}"[^>]*required|required[^>]*name="${veld}"`).test(form));
   }
   for (const veld of ['brand', 'vat']) {
@@ -101,6 +144,8 @@ console.log('\nde velden die de factuur nodig heeft, worden gevraagd');
   }
   const api = lees('functions/api/plan.js');
   ok('en de server weigert zonder die velden', /return terug\('gegevens', lang\)/.test(api));
+  ok('  en stelt `name` zelf samen uit de twee velden',
+    /composeName\(voornaam, achternaam\)/.test(api));
   ok('  het adres gaat als één veld met regeleindes naar billing_address',
     /\.join\('\\n'\)/.test(api));
 }

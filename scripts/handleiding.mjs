@@ -54,6 +54,9 @@
  */
 import { chromium } from 'playwright';
 import { readFile, mkdir } from 'node:fs/promises';
+/* Alleen om de voorbeeldbeelden te verkleinen voordat ze in de PDF gaan — zie
+   beeldData(). sharp zit al in het project voor scripts/make-avif.mjs. */
+import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { createRequire } from 'node:module';
@@ -238,6 +241,31 @@ const KOPIJ = {
     vraagKop: 'Vragen we je om één specifieke foto?',
     vraagP: 'Dan is er niets mis met wat je stuurde. Het betekent alleen dat er één kant van dit product is die we niet uit de rest kunnen aflezen — vaak de achterkant of een detail. Eén foto erbij en we gaan verder.',
 
+    /* ── HET DERDE BLAD — 12 september 2026 ────────────────────────────────
+       Lucas: *"Ik heb daarnaast ook gelijk een voorbeeld voor catalog set, pas
+       deze toe op de website waar nodig en in de guidelines PDF om beter uit te
+       leggen wat wat is."*
+
+       "Wat wat is" is precies het gat dat deze gids had: hij beschreef vier
+       opnamen met een tekening erbij, en liet nergens zien wat zo'n foto
+       ópbrengt. Een klant die leest "de achterkant, zelfde afstand als de
+       voorkant" weet daarna hoe hij moet fotograferen, maar niet waaróm het de
+       moeite waard is. Eén echte set beantwoordt die vraag zonder één extra zin. */
+    zetKop: 'Zo ziet één set eruit',
+    zetLead: 'Een echte bestelling: vijf telefoonfoto’s van een magazijnvloer erin, vier afgewerkte beelden eruit. Dezelfde broek, dezelfde dag.',
+    zetIn: 'Wat de klant stuurde',
+    zetInNoot: 'Telefoon, magazijnverlichting, betonvloer. Een hand in beeld is geen probleem.',
+    /* De namen onder de beelden zijn de kern van wat Lucas vroeg: *"om beter uit
+       te leggen wat wat is."* Zonder deze regel is het een mooi plaatje; mét is
+       het een legenda waarin je je eigen foto's herkent. De instuurrij telt er
+       vijf en niet vier: naast de vier vaste opnamen stuurde deze klant ook een
+       stofdetail mee, en dat is precies wat "meer hoeken, preciezer resultaat"
+       op blad één aanbeveelt. */
+    zetInNamen: ['Voorkant', 'Achterkant', 'Detail', 'Stof', 'Gedragen'],
+    zetUitNamen: ['Voorkant', 'Achterkant', 'Detail', 'Op model'],
+    zetUit: 'Wat hij terugkreeg',
+    zetUitNoot: 'Vier beelden van 2048 × 2048, klaar voor de webshop.',
+
     contactKop: 'Even overleggen?',
     contactP: 'Stuur gerust een foto vooruit als je twijfelt of hij bruikbaar is. Liever één berichtje vooraf dan een dag wachten.',
     wa: `WhatsApp ${WHATSAPP_DISPLAY}`,
@@ -280,6 +308,15 @@ const KOPIJ = {
 
     vraagKop: 'Did we ask you for one specific photo?',
     vraagP: 'Then there is nothing wrong with what you sent. It only means there is one side of this product we cannot read from the rest — usually the back, or a detail. One more photo and we are on our way.',
+
+    zetKop: 'What one set looks like',
+    zetLead: 'A real order: five phone photos off a warehouse floor going in, four finished images coming out. Same jeans, same day.',
+    zetIn: 'What the client sent',
+    zetInNoot: 'Phone, warehouse lighting, concrete floor. A hand in shot is no problem.',
+    zetInNamen: ['Front', 'Back', 'Detail', 'Fabric', 'Worn'],
+    zetUitNamen: ['Front', 'Back', 'Detail', 'On model'],
+    zetUit: 'What came back',
+    zetUitNoot: 'Four images at 2048 × 2048, ready for the shop.',
 
     contactKop: 'Want to check first?',
     contactP: 'Send a photo ahead if you are unsure whether it works. One quick message beats waiting a day.',
@@ -396,6 +433,33 @@ p { margin: 0; }
 /* ── DE VOET ─────────────────────────────────────────────────────────────── */
 .voet { position: absolute; left: 16mm; right: 16mm; bottom: 8mm; display: flex; justify-content: space-between; align-items: baseline; padding-top: 3mm; border-top: .3mm solid var(--lijn); }
 .voet span { font-family: var(--mono); font-size: 6.5pt; font-stretch: 82%; letter-spacing: .07em; text-transform: uppercase; color: var(--inkt-2); }
+
+  /* ── HET DERDE BLAD: ÉÉN ECHTE SET ────────────────────────────────────────
+     Vijf staande foto's op de bovenste rij, vier vierkanten op de onderste. Die
+     twee vormen zijn het verhaal: een telefoonfoto is staand, een catalogbeeld
+     is vierkant. Vandaar geen gemeenschappelijke verhouding — het verschil is
+     precies wat er te zien valt. */
+  .zet { margin-top: 6mm; }
+  .zet-uit { margin-top: 8mm; }
+  .zet-h {
+    margin: 0 0 2.5mm; font-family: var(--mono); font-size: 7pt; font-weight: 400;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-3);
+  }
+  .zet-rij { display: grid; gap: 2mm; }
+  .zet-rij-in { grid-template-columns: repeat(5, 1fr); }
+  .zet-rij-uit { grid-template-columns: repeat(4, 1fr); }
+  .zet-f { margin: 0; }
+  .zet-f figcaption {
+    margin-top: 1.4mm; font-family: var(--mono); font-size: 6.5pt; font-weight: 400;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3);
+  }
+  /* Een haarlijn om de geleverde beelden: ze staan op wit, en zonder rand lopen
+     ze over in het papier — dan zie je vier vlekken in plaats van vier beelden. */
+  .zet-t { display: block; overflow: hidden; background: var(--vel-2, #EDEDED); border: 0.3mm solid var(--lijn, #DFDFDF); }
+  .zet-t-in { aspect-ratio: 3 / 4; }
+  .zet-t-uit { aspect-ratio: 1; }
+  .zet-t img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .zet-noot { margin: 2mm 0 0; font-size: 8.5pt; line-height: 1.45; color: var(--inkt-3); }
 `;
 }
 
@@ -501,10 +565,91 @@ async function fontRegels() {
   return stukken.join('\n');
 }
 
-async function maak(browser, c, fonts) {
+/*
+ * ── DE BEELDEN VAN ÉÉN ECHTE SET, ALS BASE64 ─────────────────────────────────
+ * 12 september 2026. Dezelfde negen bestanden die de lopende band op de
+ * voorpagina dragen (BA2, de roze jeans). Eén klus, vijf foto's erin, vier
+ * beelden eruit.
+ *
+ * BASE64 EN GEEN PAD, om precies dezelfde reden als de letters hierboven: deze
+ * PDF komt vaak via WhatsApp aan en wordt op een telefoon geopend, soms zonder
+ * netwerk. Een <img src="/img/..."> is daar een leeg kader. Het kost ruim 300 kB
+ * en dat is het waard — het alternatief is een gids die uitlegt hoe je moet
+ * fotograferen en niet laat zien waarvoor.
+ *
+ * De smalste variant (w380) is genoeg: op de gedrukte breedte staan ze met vijf
+ * of vier naast elkaar, dus geen enkele wordt breder dan 33 mm.
+ */
+const ZET_IN = ['ba2-voor-front', 'ba2-voor-achter', 'ba2-voor-detail', 'ba2-voor-textuur', 'ba2-voor-pasvorm'];
+const ZET_UIT = ['ba2-na-front', 'ba2-na-achter', 'ba2-na-detail', 'ba2-na-model'];
+
+/* ── EERST KLEINER MAKEN, DAN PAS INSLUITEN ──────────────────────────────────
+ * De eerste versie plakte de bestanden uit public/img/ zoals ze zijn in de PDF.
+ * Resultaat: 8,0 MB per taal. Chromium slaat een ingesloten beeld verliesvrij op
+ * bij het printen, dus een webp van 760 pixels wordt in de PDF veel zwaarder dan
+ * op de site. Gemeten, niet vermoed.
+ *
+ * Op het blad is geen tegel breder dan 33 mm. Op 150 dpi — ruim voor een PDF die
+ * vrijwel altijd op een scherm wordt gelezen — is dat 195 pixels. 420 is dus al
+ * meer dan het dubbele, en dat is de marge voor wie inzoomt.
+ *
+ * JPEG en geen webp: de winst van webp verdwijnt zodra Chromium hem herkleurt
+ * voor de PDF, en JPEG opent overal. */
+const ZET_BREEDTE = 420;
+
+async function beeldData(naam) {
+  const pad = new URL(`../public/img/${naam}.webp`, import.meta.url);
+  try {
+    const bin = await sharp(fileURLToPath(pad))
+      .resize({ width: ZET_BREEDTE, withoutEnlargement: true })
+      .jpeg({ quality: 78, mozjpeg: true })
+      .toBuffer();
+    return `data:image/jpeg;base64,${bin.toString('base64')}`;
+  } catch (err) {
+    /* Ontbreekt het bestand, dan valt alleen dit beeld weg en niet de hele gids.
+       Een PDF die niet gemaakt kan worden omdat er één foto mist, is erger dan
+       een PDF met een gat. */
+    console.warn(`  (beeld ${naam}.webp niet gebruikt — ${err?.message || 'niet gevonden'})`);
+    return null;
+  }
+}
+
+function bladDrie(c, beelden) {
+  const tegel = (src, klasse, naam) => (src
+    ? `<figure class="zet-f"><span class="zet-t ${klasse}"><img src="${src}" alt=""></span><figcaption>${esc(naam || '')}</figcaption></figure>`
+    : '');
+  return `
+  <section class="blad">
+    <header class="balk">
+      <div class="balk-merk">${MERK}<span class="woord">VISUAILS</span></div>
+      <span class="etiket">${esc(c.etiket)}</span>
+    </header>
+    <div class="binnen">
+      <div class="kopgroep" style="margin-top:7mm">
+        <h2>${esc(c.zetKop)}</h2>
+        <p>${esc(c.zetLead)}</p>
+      </div>
+
+      <div class="zet">
+        <h3 class="zet-h">${esc(c.zetIn)}</h3>
+        <div class="zet-rij zet-rij-in">${beelden.in.map((b, i) => tegel(b, 'zet-t-in', c.zetInNamen[i])).join('')}</div>
+        <p class="zet-noot">${esc(c.zetInNoot)}</p>
+      </div>
+
+      <div class="zet zet-uit">
+        <h3 class="zet-h">${esc(c.zetUit)}</h3>
+        <div class="zet-rij zet-rij-uit">${beelden.uit.map((b, i) => tegel(b, 'zet-t-uit', c.zetUitNamen[i])).join('')}</div>
+        <p class="zet-noot">${esc(c.zetUitNoot)}</p>
+      </div>
+    </div>
+    <div class="voet"><span>${esc(c.voet)}</span><span>${esc(c.web)}</span></div>
+  </section>`;
+}
+
+async function maak(browser, c, fonts, beelden) {
   const html = `<!doctype html><html lang="${c.taal}"><head><meta charset="utf-8">
 <title>${esc(c.titelMeta)}</title><style>${css(fonts)}</style></head>
-<body>${bladEen(c)}${bladTwee(c)}</body></html>`;
+<body>${bladEen(c)}${bladTwee(c)}${bladDrie(c, beelden)}</body></html>`;
 
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: 'load' });
@@ -540,7 +685,13 @@ async function main() {
   const browser = await chromium.launch({ executablePath: browserPad() });
   const gemaakt = [];
   try {
-    for (const c of [KOPIJ.nl, KOPIJ.en]) gemaakt.push(await maak(browser, c, fonts));
+    /* Eén keer inlezen voor beide talen: dezelfde negen bestanden, en base64 van
+       ruim 300 kB twee keer maken is twee keer wachten voor hetzelfde. */
+    const beelden = {
+      in: await Promise.all(ZET_IN.map(beeldData)),
+      uit: await Promise.all(ZET_UIT.map(beeldData)),
+    };
+    for (const c of [KOPIJ.nl, KOPIJ.en]) gemaakt.push(await maak(browser, c, fonts, beelden));
   } finally {
     await browser.close();
   }

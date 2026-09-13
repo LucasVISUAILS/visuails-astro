@@ -50,6 +50,18 @@ const WINDOW_THRESHOLD_ = WINDOW_THRESHOLD;
 const TURN_ATT_ = turnaround('attended', 'en');
 const TURN_UNATT_ = turnaround('unattended', 'en');
 const TURN_ATT_NL_ = turnaround('attended', 'nl');
+
+/* ── EEN ZIN MIDDEN IN EEN ANDERE ZIN ZETTEN ─────────────────────────────────
+   turnaround() geeft een AFGERONDE zin terug: "Een leverdatum die we vastleggen
+   en bevestigen voordat je betaalt." — met hoofdletter en punt, want op de
+   meeste plekken staat hij op zichzelf. Wie hem midden in een andere zin plakt
+   met alleen `.toLowerCase()`, houdt die punt, en dan staat er letterlijk
+   "...voordat je betaalt. — schriftelijk". Dat stond zo op /how-it-works.
+
+   Dus: punt eraf, eerste letter klein, en de rest onaangeroerd (toLowerCase op
+   de hele zin zou een merknaam of een afkorting slopen zodra er ooit een in
+   komt te staan). */
+const midden = (z) => z.replace(/\.\s*$/, '').replace(/^(.)/, (m) => m.toLowerCase());
 const TURN_UNATT_NL_ = turnaround('unattended', 'nl');
 
 /** Het gezicht dat door alle drie de wegen loopt. Eén model voor drie diensten
@@ -283,27 +295,32 @@ export const WALK_COPY = {
       upload: {
         n: 'You, on the site',
         h: 'You fill in the form and send your photos',
-        b: `Five screens: what you want made, your photos, a note on the look, when you need it, and a confirmation — one set of choices for the whole order rather than product by product. Drag a folder in and we read the folder name as the product. Two shots per product are required, the front and the back; a detail and a worn shot are welcome if you have them. Phone photos on a table in daylight are exactly right. Five minutes, however many products you have, and nothing is charged or booked yet.`,
+        b: 'Five screens: what you want made, your photos, a note on the look, when you need it, and a confirmation. Five minutes, however many products you have — and nothing is charged or booked yet.',
+        meer: 'One set of choices for the whole order rather than product by product. Drag a folder in and we read the folder name as the product. Two shots per product are required, the front and the back; a detail and a worn shot are welcome if you have them. Phone photos on a table in daylight are exactly right.',
       },
       look: {
         n: 'You, on the site',
         h: 'You choose the look',
-        b: 'One choice, applied to the whole order. That is the point of choosing it up front rather than per image: it is what makes twenty products come back looking like one shoot instead of twenty separate jobs.',
+        b: 'One choice, applied to the whole order — that is what makes twenty products come back looking like one shoot.',
+        meer: 'Which is why it is chosen up front rather than per image. Choosing per image turns one order into twenty separate jobs that happen to arrive together.',
       },
       window: {
         n: 'Us, before you pay',
         h: 'We check the calendar and confirm a delivery date',
-        b: `From ${WINDOW_THRESHOLD_} products the order goes into the calendar and gets ${TURN_ATT_.toLowerCase()} — in writing, and before anything is charged. If the week you need cannot be held, you are told that, with the next delivery date that can. No date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround: ${TURN_UNATT_.toLowerCase()}.`,
+        b: `From ${WINDOW_THRESHOLD_} products the order goes into the calendar and gets ${midden(TURN_ATT_)} — in writing.`,
+        meer: `If the week you need cannot be held, you are told that, with the next delivery date that can. No date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround: ${midden(TURN_UNATT_)}.`,
       },
       pay: {
         n: 'You, by email',
         h: 'You pay, and production starts',
-        b: 'A confirmation email arrives with the payment link. The order does not enter production until that payment is completed. The invoice follows automatically, and from that moment the order is visible in your account with its own timeline.',
+        b: 'A confirmation email arrives with the payment link. The order does not enter production until that payment is completed.',
+        meer: 'The invoice follows automatically, and from that moment the order is visible in your account with its own timeline.',
       },
       model: {
         n: 'Us, in production',
         h: 'A face is added, and every product runs as one batch',
-        b: `Every order includes a model from the shared roster: no per-model fee, no upgrade to unlock one. In this walkthrough it is one face; on a real order you pick from ${rosterWoord('en')}, or we design one that is only yours. Then every product in the order runs through together, which is what makes the lighting, the angle and the grade match across all of them — run separately they would not. Each image is finished by hand in professional editing tools, colour-graded to your brand, and a specialist checks fit, colour against your own photo, and framing before anything leaves.`,
+        b: 'Every order includes a model from the shared roster, at no extra cost. Every product then runs through together, which is what makes the lighting, the angle and the grade match across all of them.',
+        meer: `In this walkthrough it is one face; on a real order you pick from ${rosterWoord('en')}, or we design one that is only yours. Run separately, the products would not match. Each image is finished by hand in professional editing tools, colour-graded to your brand, and a specialist checks fit, colour against your own photo, and framing before anything leaves.`,
       },
       /* ── DE DREMPEL STOND HIER NOG, EN HIJ IS ER SINDS 7 AUGUSTUS AF ────────
          Deze twee zinnen zeiden dat per beeld goedkeuren pas vanaf
@@ -320,7 +337,8 @@ export const WALK_COPY = {
       result: {
         n: 'You, in your account',
         h: 'It arrives image by image, you approve it, you download it',
-        b: 'Every paid order lands in a portal grouped by product — three products or three hundred. Each image is approved on its own, and what is not right goes back in one go, as the single revision round the order carries, with a note saying what is wrong — while the rest of the order keeps moving; nothing waits on anything else, and nothing is final until you say so. What you approve downloads at 2048 px on the long edge, sized for shop listings, marketplaces and ads, with full commercial usage rights — one at a time, or the whole approved set as a zip.',
+        b: 'Every paid order lands in a portal grouped by product. Each image is approved on its own; what is not right goes back as the revision round the order carries. What you approve downloads at 2048 px on the long edge.',
+        meer: 'Three products or three hundred. A revision goes back in one go, with a note saying what is wrong, while the rest of the order keeps moving; nothing waits on anything else, and nothing is final until you say so. Downloads are sized for shop listings, marketplaces and ads, with full commercial usage rights — one at a time, or the whole approved set as a zip.',
       },
     },
 
@@ -362,33 +380,39 @@ export const WALK_COPY = {
       upload: {
         n: 'Jij, op de site',
         h: 'Je vult het formulier in en stuurt je foto\u2019s',
-        b: 'Vijf schermen: wat je wilt laten maken, je foto\u2019s, een notitie over de look, wanneer je het nodig hebt, en een bevestiging — één set keuzes voor de hele bestelling en niet per product. Sleep een map erin en we lezen de mapnaam als het product. Twee shots per product zijn verplicht, voorkant en achterkant; een detail en een gedragen shot zijn welkom als je ze hebt. Telefoonfoto\u2019s op tafel bij daglicht zijn precies goed. Vijf minuten, hoeveel producten het ook zijn, en er wordt nog niets in rekening gebracht en niets vastgelegd.',
+        b: 'Vijf schermen: wat je wilt laten maken, je foto\u2019s, een notitie over de look, wanneer je het nodig hebt, en een bevestiging. Vijf minuten, hoeveel producten het ook zijn — en er wordt nog niets in rekening gebracht.',
+        meer: 'Eén set keuzes voor de hele bestelling en niet per product. Sleep een map erin en we lezen de mapnaam als het product. Twee shots per product zijn verplicht, voorkant en achterkant; een detail en een gedragen shot zijn welkom als je ze hebt. Telefoonfoto\u2019s op tafel bij daglicht zijn precies goed.',
       },
       look: {
         n: 'Jij, op de site',
         h: 'Je kiest de look',
-        b: 'Eén keuze, voor de hele bestelling. Dat is precies waarom hij vooraf wordt gemaakt en niet per beeld: het is wat ervoor zorgt dat twintig producten terugkomen alsof het één shoot was in plaats van twintig losse opdrachten.',
+        b: 'Eén keuze, voor de hele bestelling — dat is wat ervoor zorgt dat twintig producten terugkomen alsof het één shoot was.',
+        meer: 'Daarom wordt hij vooraf gemaakt en niet per beeld. Per beeld kiezen maakt van één bestelling twintig losse opdrachten die toevallig samen aankomen.',
       },
       window: {
         n: 'Wij, voordat je betaalt',
         h: 'Wij checken de agenda en bevestigen een leverdatum',
-        b: `Vanaf ${WINDOW_THRESHOLD_} producten gaat de bestelling de agenda in en krijgt hij ${TURN_ATT_NL_.toLowerCase()} — schriftelijk, en voordat er iets in rekening wordt gebracht. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat, met de eerstvolgende leverdatum die het wél kan. Er wordt geen datum verzonnen om een bestelling binnen te houden. Onder ${WINDOW_THRESHOLD_} producten valt er geen leverdatum te reserveren: die bestelling loopt in de normale doorlooptijd, ${TURN_UNATT_NL_.toLowerCase()}.`,
+        b: `Vanaf ${WINDOW_THRESHOLD_} producten gaat de bestelling de agenda in en krijgt hij ${midden(TURN_ATT_NL_)} — op schrift.`,
+        meer: `Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat, met de eerstvolgende leverdatum die het wél kan. Er wordt geen datum verzonnen om een bestelling binnen te houden. Onder ${WINDOW_THRESHOLD_} producten valt er geen leverdatum te reserveren: die bestelling loopt in de normale doorlooptijd, ${midden(TURN_UNATT_NL_)}.`,
       },
       pay: {
         n: 'Jij, per mail',
         h: 'Je betaalt, en dan start de productie',
-        b: 'Je krijgt een bevestigingsmail met de betaallink. De bestelling gaat pas in productie zodra die betaling is voltooid — dat is de enige poort tussen een opdracht beschrijven en ons eraan laten beginnen. De factuur volgt automatisch, en vanaf dat moment staat de bestelling in je account met een eigen tijdlijn.',
+        b: 'Je krijgt een bevestigingsmail met de betaallink. De bestelling gaat pas in productie zodra die betaling is voltooid.',
+        meer: 'Dat is de enige poort tussen een opdracht beschrijven en ons eraan laten beginnen. De factuur volgt automatisch, en vanaf dat moment staat de bestelling in je account met een eigen tijdlijn.',
       },
       model: {
         n: 'Wij, in productie',
         h: 'Er komt een gezicht bij, en alles gaat als één batch door',
-        b: `Elke bestelling bevat een model uit de gedeelde bibliotheek: geen kosten per model, geen upgrade om er een vrij te spelen. In deze doorloop is het één gezicht; bij een echte bestelling kies je uit ${rosterWoord('nl')}, of we ontwerpen er één die alleen van jou is. Daarna gaat elk product in de bestelling samen door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar — los gedraaid lukt dat niet. Elk beeld wordt met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en een specialist controleert de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.`,
+        b: 'Elke bestelling bevat een model uit de gedeelde bibliotheek, zonder extra kosten. Daarna gaat elk product samen door de productie, en daardoor kloppen de belichting, de hoek en de kleur over de hele bestelling.',
+        meer: `In deze doorloop is het één gezicht; bij een echte bestelling kies je uit ${rosterWoord('nl')}, of we ontwerpen er één die alleen van jou is. Los gedraaid kloppen de producten niet met elkaar. Elk beeld wordt met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en een specialist controleert de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.`,
       },
       // Zie de noot bij de Engelse result-tekst hierboven.
       result: {
         n: 'Jij, in je account',
         h: 'Het komt beeld voor beeld binnen, jij keurt goed, jij downloadt',
-        b: 'Elke betaalde bestelling komt in een portaal, gegroepeerd per product — of het er nu drie zijn of driehonderd. Elk beeld keur je apart goed. Wat niet goed is vink je aan en stuur je in één keer op als de ene revisieronde die bij de bestelling hoort, met een notitie erbij, terwijl de rest van de bestelling gewoon doorloopt; niets wacht op iets anders, en niets is definitief tot jij dat zegt. Wat je goedkeurt download je op 2048 px aan de lange zijde, op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten — los, of de hele goedgekeurde set als zip.',
+        b: 'Elke betaalde bestelling komt in een portaal, gegroepeerd per product. Elk beeld keur je apart goed; wat niet goed is vink je aan voor de revisieronde. Wat je goedkeurt download je op 2048 px aan de lange zijde.',
+        meer: 'Of het er nu drie zijn of driehonderd. De revisie stuur je in één keer op, met een notitie erbij, terwijl de rest van de bestelling gewoon doorloopt; niets wacht op iets anders, en niets is definitief tot jij dat zegt. De downloads zijn op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten — los, of de hele goedgekeurde set als zip.',
       },
     },
 

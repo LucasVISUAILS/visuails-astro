@@ -473,6 +473,64 @@ h1 {
 
 /* ---- controls ------------------------------------------------------------ */
 .acts { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
+
+/* ── TWEE KEUZES VAN GELIJK GEWICHT — 12 september 2026 ──────────────────────
+   Lucas, over wat een bezoeker hem vertelde: *"alleen duidelijk een approven
+   maar niet goed kon zien of hij een revisie aanvroeg."*
+
+   Er stond hier niets. "Goedkeuren" was een gevulde primaire knop en "Niet goed"
+   een kale browser-checkbox eronder — niet één regel CSS. Twee keuzes die even
+   geldig zijn hoorden er niet uit te zien als een knop met een voetnoot.
+
+   `.pick` krijgt daarom de MAAT van een knop: dezelfde hoogte, dezelfde
+   binnenruimte, dezelfde letter. Wat het verschil houdt is de VULLING —
+   goedkeuren maakt de bestelling af, dus dat is de gevulde knop. Dat is een
+   rangorde, geen verstopping. */
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .5rem .8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: transparent;
+  font-size: .88rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+.pick input { margin: 0; accent-color: var(--warn); flex: 0 0 auto; }
+.pick:hover { border-color: var(--warn); }
+/* Aangevinkt is een TOESTAND en geen hover: hij hoort te blijven staan terwijl
+   je de rest van de serie langsloopt. */
+.pick:has(input:checked) {
+  border-color: var(--warn);
+  background: var(--mist-clay, var(--paper-2));
+  color: var(--warn-ink);
+}
+.pick input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* ── EN DE TEGEL ZEGT HET OOK ────────────────────────────────────────────────
+   Dit is het tweede deel van dezelfde klacht: het vinkje hoort bij het
+   rondeformulier onder het raster (`form="rr"`), dus aanvinken veranderde op de
+   TEGEL helemaal niets. Bij twaalf beelden weet je na drie klikken niet meer
+   welke je hebt aangewezen.
+
+   De regel staat standaard uit en verschijnt zodra er aangevinkt is; het kader
+   eromheen maakt hem vindbaar in een raster zonder dat je hoeft te lezen.
+
+   `:has()` en geen script: dit portaal wordt geopend op een telefoon in een
+   hotel, en een toestand die pas klopt nadat er een bundel binnen is, klopt niet
+   op het moment dat het uitmaakt. Kent een browser `:has()` niet, dan is dit
+   precies het gedrag van gisteren — het vinkje werkt, alleen zonder het kader. */
+.state.picked { display: none; color: var(--warn-ink); }
+.shot:has(.pick input:checked) .state.picked { display: inline-block; }
+.shot:has(.pick input:checked) img {
+  outline: 2px solid var(--warn);
+  outline-offset: 2px;
+}
 /* text-decoration wordt hier gereset en niet overgelaten aan de ankerregel
    hierboven. De aanleiding was Download naast Goedkeuren — een <a> naast een
    <button> in dezelfde rij, waarvan er één onderstreept aankwam. Die

@@ -183,7 +183,14 @@ function verseOmgeving(omg) {
 async function bestel(env, velden) {
   const { onRequestPost } = await import('../functions/api/order.js');
   const fd = new FormData();
-  for (const [k, v] of Object.entries(velden)) fd.append(k, String(v));
+  /* ── EEN TELEFOONNUMMER HOORT ER SINDS 11 SEPTEMBER 2026 BIJ ───────────────
+     /api/order weigert een bestelling zonder bruikbaar nummer (behalve op
+     `service=contact`). Dat hier standaard meegeven en niet in elk blok
+     opnieuw: deze toetsen gaan over GELD — btw, bedragen, facturen — en niet
+     over de contactgegevens. Een blok dat het nummer wél wil meten, overschrijft
+     hem gewoon; `velden` komt na de standaard. */
+  const alles = { phone: '+31 6 12345678', ...velden };
+  for (const [k, v] of Object.entries(alles)) fd.append(k, String(v));
   return onRequestPost({
     request: new Request('https://visuails.com/api/order', { method: 'POST', body: fd }),
     env,

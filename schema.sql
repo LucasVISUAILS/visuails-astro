@@ -1562,3 +1562,13 @@ ALTER TABLE subscriptions         ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 
 ALTER TABLE subscription_invoices ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE credit_notes          ADD COLUMN testmodus INTEGER NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_orders_proef ON orders(testmodus) WHERE testmodus = 1;
+
+-- ── MIGRATIE 0047 · HOE DE KLANT BEREIKT WIL WORDEN — 11 september 2026 ──────
+--
+-- Lucas: *"De klant mag wel een contact voorkeur hebben (mail of whatsapp)."*
+--
+-- 'email' of 'whatsapp'. Leeg betekent "nooit gevraagd", en dat is bewust niet
+-- hetzelfde als een gekozen e-mailvoorkeur — zie de kop van de migratie en
+-- normaliseerVoorkeur() in src/data/contactvoorkeur.js, dat de enige plek is
+-- waar deze waarde wordt uitgelegd.
+ALTER TABLE customers ADD COLUMN contact_preference TEXT;

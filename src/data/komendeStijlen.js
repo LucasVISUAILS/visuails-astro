@@ -76,6 +76,34 @@ export const KOMEND = {
       { naam: 'Detail', regel: 'Macro across stitching, weave and fastening — the second clip beside a product film.' },
     ],
   },
+
+  /* ── HOOKS — 12 september 2026 ────────────────────────────────────────────
+     Lucas: *"Ik heb niet alleen de Instagram dubbele overlopende posten hook
+     bij hooks uiteindelijk, dat is 1 van de stylen die ik wil toevoegen."*
+
+     Dat klopte, en het was op /hooks niet te zien: de hele pagina beschrijft
+     dat ene format — de video die doorloopt in het beeld eronder — terwijl er
+     wel staat *"wij kiezen het format, uit formats die we eerder gebouwd
+     hebben"*. Meervoud in de tekst, enkelvoud op het scherm.
+
+     De doorloper staat daarom NIET in deze lijst: die bestaat en staat als
+     eerste kaart op de pagina zelf. Wat hier staat zijn de andere formats,
+     onder dezelfde drie regels als de rest van dit bestand — geen datum, geen
+     prijs, geen knop, en alleen wat er echt komt. */
+  hooks: {
+    nl: [
+      { naam: 'De lus', regel: 'Het laatste beeld sluit naadloos aan op het eerste, zodat de clip eindeloos doorloopt zonder dat je de naad ziet.' },
+      { naam: 'Drieluik', regel: 'Drie posts naast elkaar die in je grid één beeld vormen — de hook zit in het openen van je profiel.' },
+      { naam: 'De onthulling', regel: 'De eerste seconden tonen alles behalve het product; het komt pas in beeld als de duim al gestopt is.' },
+      { naam: 'Stapel', regel: 'Meerdere producten wisselen elkaar af in hetzelfde kader, op dezelfde plek. Voor een drop van een serie.' },
+    ],
+    en: [
+      { naam: 'The loop', regel: 'The last frame joins the first seamlessly, so the clip runs forever without the seam showing.' },
+      { naam: 'Triptych', regel: 'Three posts side by side that form one image in your grid — the hook is opening your profile.' },
+      { naam: 'The reveal', regel: 'The first seconds show everything but the product; it arrives once the thumb has already stopped.' },
+      { naam: 'Stack', regel: 'Several products swap places inside one frame, in the same spot. For dropping a series.' },
+    ],
+  },
 };
 
 /** De looks die in de maak zijn voor één dienst, of een lege lijst. */

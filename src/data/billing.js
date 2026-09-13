@@ -48,7 +48,13 @@ export const BILLING = {
     email: 'Email',
     emailErr: 'Add a full email address, like you@yourbrand.com — otherwise we cannot reply.',
     emailHint: 'Where the confirmation, the invoice and the directions go.',
-    phone: 'Phone',
+    phone: 'Phone or WhatsApp',
+    /* ── VERPLICHT SINDS 11 SEPTEMBER 2026 ──────────────────────────────────
+       Lucas: *"over de gehele website telefoonnummer voor whatsapp ook
+       verplicht maken behalve bij contact."* De melding noemt de reden dat het
+       veld er staat en niet dat het leeg is — zie de noot bij `phoneErr` in
+       OrderFlow.astro. */
+    phoneErr: 'Fill in a number we can reach you on — we message you if anything is unclear.',
     street: 'Street and number',
     streetPh: 'Voorbeeldstraat 12',
     streetErr: 'An invoice needs an address on it.',
@@ -89,7 +95,9 @@ export const BILLING = {
     email: 'E-mail',
     emailErr: 'Vul een volledig e-mailadres in, zoals jij@jouwmerk.nl — anders kunnen we niet antwoorden.',
     emailHint: 'Hier komen de bevestiging, de factuur en de richtingen binnen.',
-    phone: 'Telefoon',
+    phone: 'Telefoon of WhatsApp',
+    /* Zie de Engelse noot. */
+    phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets onduidelijk is.',
     street: 'Straat en huisnummer',
     streetPh: 'Voorbeeldstraat 12',
     streetErr: 'Op een factuur hoort een adres te staan.',

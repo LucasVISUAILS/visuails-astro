@@ -78,6 +78,8 @@ import TierCompare from './TierCompare.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
 import Placeholder from './Placeholder.astro';
+import { komendeStijlen } from '../data/komendeStijlen.js';
+import Uitleg from './Uitleg.astro';
 import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -198,7 +200,7 @@ const COPY = {
     /* Het accentwoord is "one" en niet "video": wat deze dienst verkoopt is de
        naad — twee beelden die als één lezen — en dat is het woord dat de kop
        moet dragen. Zie de noot bij .hk-h1 em onderaan. */
-    h1: 'Two frames that read <br />as <em>one</em>.',
+    h1: 'Video that breaks <br />the <em>scroll</em>.',
     lead: `A short vertical video of your product, built on a format we have used before. From ${vanaf} per product, ${vatLabel('excl', 'en')}.`,
     /* GEEN BESTELKNOP. Zie punt 3 in de kop van dit bestand. Het label zegt wat
        er achter de knop gebeurt: een gesprek, geen bestelling. */
@@ -217,7 +219,18 @@ const COPY = {
        dit vandaag niet zelf bestellen. Dat is geen ongemak om weg te schrijven
        maar het eerste wat een bezoeker moet weten. */
     soonTag: 'On request',
+    queueKort: 'Hooks are made and planned by hand, so there is no order button yet.',
     queueNote: `Hooks are made by hand and planned by hand, so there is no order button yet — you tell us what you have and we say what is possible, in writing, before anything runs. The work itself runs at the standard turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, and no date is named before the calendar clears it.`,
+    /* ── DE FORMATS — 12 september 2026 ──────────────────────────────────
+       Kort gehouden met opzet: een kop, één regel en per kaart een naam met
+       één zin. Wat een hook IS staat in de donkere kamer eronder, en wie hier
+       scant hoeft alleen te zien dat het er meerdere zijn. */
+    formatsH: 'The formats.',
+    formatsSub: 'Which one fits depends on the product. One is running; the rest are being built.',
+    formatNu: 'Running',
+    formatStraks: 'Coming',
+    formatNuNaam: 'The carry-over',
+    formatNuRegel: 'The clip runs on into the image below it — together the two read as one image.',
     krijgH: 'What lands in your folder.',
     krijg: [
       ['The video', 'Vertical, and readable without sound.', 'video'],
@@ -283,7 +296,17 @@ const COPY = {
   },
   nl: {
     eyebrow: '( Hooks )',
-    h1: 'Twee beelden die als <br /><em>één</em> lezen.',
+    /* ── DE KOP DEKTE ÉÉN FORMAT — 12 september 2026 ─────────────────────
+       Hier stond "Twee beelden die als één lezen": een beschrijving van de
+       doorloper, en dat was correct zolang dat het enige format was. Sinds de
+       formats-sectie eronder staat dat format er als één van vijf, en dan
+       belooft deze kop iets smallers dan de pagina levert.
+
+       Wat alle vijf gemeen hebben is dit: de scroll stopt. Dat is geen
+       bereikbelofte (zie regel 2 in de kop van dit bestand) maar de
+       beschrijving van wat het format DOET — dezelfde woorden die verderop al
+       staan: "een duim die al aan het doorscrollen was, staat even stil". */
+    h1: 'Video die de <br /><em>scroll</em> onderbreekt.',
     lead: `Een korte verticale video van je product, gebouwd op een format dat we eerder gebruikt hebben. Vanaf ${vanaf} per product, ${vatLabel('excl', 'nl')}.`,
     ctaPrimary: 'Praat met ons over Hooks',
     ctaPrices: 'Bekijk de tarieven',
@@ -295,7 +318,14 @@ const COPY = {
       ['Verticaal', 'plus een 4:5 en een 1:1'],
     ],
     soonTag: 'Op aanvraag',
+    queueKort: 'Hooks maken en plannen we met de hand, dus er is nog geen bestelknop.',
     queueNote: `Hooks maken we met de hand en plannen we met de hand in, dus er is nog geen bestelknop — jij zegt wat je hebt, wij zetten op schrift wat er kan voordat we beginnen. Het werk zelf loopt mee in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, en we noemen geen datum voordat we in de agenda hebben gekeken.`,
+    formatsH: 'De formats.',
+    formatsSub: 'Welk format past, hangt van het product af. Eén draait er; aan de rest wordt gebouwd.',
+    formatNu: 'Draait',
+    formatStraks: 'Binnenkort',
+    formatNuNaam: 'De doorloper',
+    formatNuRegel: 'De clip loopt door in het beeld eronder — samen lezen die twee als één beeld.',
     krijgH: 'Wat er in je map komt te staan.',
     krijg: [
       ['De video', 'Verticaal, en leesbaar zonder geluid.', 'video'],
@@ -382,7 +412,12 @@ const c = COPY[lang];
         </p>
         <ServiceSwitch current={['complete']} lang={lang} />
         <HeroFacts eigen={c.trust} lang={lang} />
-        <p class="hk-wacht"><span class="mono hk-tag">{c.soonTag}</span> {c.queueNote}</p>
+        {/* Van 58 woorden naar één zin. Wat er moet staan op het scherm waar
+            iemand net een bedrag heeft gezien, is dat er geen bestelknop is en
+            waarom niet; hoe het daarna loopt — op schrift, in de normale
+            doorlooptijd, geen datum voordat de agenda hem vrijgeeft — hoort
+            erbij en hoeft niet in de opening gelezen te worden. */}
+        <p class="hk-wacht"><span class="mono hk-tag">{c.soonTag}</span> {c.queueKort}<Uitleg tekst={c.queueNote} over={lang === 'nl' ? 'hoe een hook loopt' : 'how a hook runs'} lang={lang} /></p>
       </div>
       <Placeholder lang={lang} ratio={r('hero')} caption={false} kind="video" subject={p('hero', 'subject')} message={p('hero', 'message')} />
     </div>
@@ -406,6 +441,53 @@ const c = COPY[lang];
       ))}
     </ul>
     <p class="lopend hk-voet">{c.krijgFoot}</p>
+  </section>
+
+  {/* ── 2b · DE FORMATS ──────────────────────────────────────────────────
+      12 september 2026. Lucas: *"Ik heb niet alleen de Instagram dubbele
+      overlopende posten hook bij hooks uiteindelijk, dat is 1 van de stylen die
+      ik wil toevoegen."*
+
+      Deze pagina beschreef één format van boven tot onder — de video die
+      doorloopt in het beeld eronder — en zei tegelijk bij stap 2 *"wij kiezen
+      het format, uit formats die we eerder gebouwd hebben"*. Meervoud in de
+      tekst, enkelvoud op het scherm; wie hier landt denkt dat Hooks één trucje
+      is.
+
+      De doorloper staat daarom als eerste kaart, met de volle rand van iets
+      dat bestaat. De rest komt uit komendeStijlen.js en draagt de stippellijn
+      en het etiket "Binnenkort" — geen prijs, geen knop. Dezelfde vorm en
+      dezelfde regels als het blok onder de looks op catalog, lifestyle en
+      video, zodat dit niet als een aparte uitvinding leest.
+
+      DRIE WOORDEN PER KAART EN NIET MEER. De uitleg van het format staat in de
+      donkere kamer hieronder; wie scant heeft hier alleen de namen nodig om te
+      zien dat het er meerdere zijn. */}
+  <section class="paneel" aria-labelledby="hk-formats">
+    <header class="paneel-kop">
+      <h2 id="hk-formats" class="hoog hoog-2">{c.formatsH}</h2>
+      <p class="lopend">{c.formatsSub}</p>
+    </header>
+    <ul class="hk-formats" role="list">
+      <li class="hk-format hk-format-nu">
+        <div class="hk-format-beeld">
+          <Placeholder lang={lang} ratio="9/16" caption={false} kind="video" subject={`${c.formatNuNaam} — hooks`} message={c.formatNuRegel} />
+          <span class="hk-format-vlag hk-format-vlag-nu">{c.formatNu}</span>
+        </div>
+        <b>{c.formatNuNaam}</b>
+        <span class="lopend">{c.formatNuRegel}</span>
+      </li>
+      {komendeStijlen('hooks', lang).map((k) => (
+        <li class="hk-format">
+          <div class="hk-format-beeld">
+            <Placeholder lang={lang} ratio="9/16" caption={false} kind="video" subject={`${k.naam} — hooks`} message={k.regel} />
+            <span class="hk-format-vlag">{c.formatStraks}</span>
+          </div>
+          <b>{k.naam}</b>
+          <span class="lopend">{k.regel}</span>
+        </li>
+      ))}
+    </ul>
   </section>
 
   {/* ── 3 · WAT HET IS EN WAAR HET STAAT ─────────────────────────────────── */}
@@ -511,6 +593,46 @@ const c = COPY[lang];
 </div>
 
 <style>
+  /* ── DE FORMATS ─────────────────────────────────────────────────────────
+     Eén raster, vijf kaarten, en het enige verschil tussen "draait" en
+     "binnenkort" zit in de rand en de vlag. Dat is genoeg: wie scant leest de
+     stippellijn sneller dan het woord erin.
+
+     `auto-fit` met een minimum van 9rem en niet 12rem. Gemeten op een telefoon
+     van 390 pixels: met 12rem paste er maar ÉÉN kolom, en een kaart van 9:16
+     over de volle breedte is daar 660 pixels hoog — vijf daarvan is 3.300
+     pixels scrollen langs lege kaders, op de pagina die juist snel te scannen
+     moet zijn. Met 9rem staan er twee naast elkaar (kaarten van ongeveer 260
+     hoog), op een tablet drie en op een breed scherm alle vijf. */
+  .hk-formats {
+    list-style: none; margin: clamp(1.4rem, 3vw, 2.2rem) 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: clamp(.7rem, 2vw, 1.6rem);
+  }
+  .hk-format { display: grid; gap: .4rem; align-content: start; }
+  .hk-format b { font-family: var(--font-display); font-weight: 800; font-size: clamp(.94rem, 2.4vw, 1.02rem); color: var(--ink-2); }
+  .hk-format .lopend { font-size: clamp(.8rem, 2.1vw, .88rem); line-height: 1.5; color: var(--ink-3); }
+  .hk-format-nu b { color: var(--ink); }
+  .hk-format-nu .lopend { color: var(--ink-2); }
+
+  .hk-format-beeld {
+    position: relative; overflow: hidden;
+    border: 1px dashed var(--line-strong); border-radius: var(--r-sm, 6px);
+  }
+  /* De doorloper bestaat, dus volle rand. Het beeld erin is nog wel een
+     placeholder — er is nog geen hookvideo gemaakt — maar het FORMAT is geen
+     voornemen, en dat onderscheid is waar deze sectie voor staat. */
+  .hk-format-nu .hk-format-beeld { border-style: solid; border-color: var(--ink); }
+
+  .hk-format-vlag {
+    position: absolute; inset-block-start: .5rem; inset-inline-start: .5rem;
+    padding: .18rem .5rem; border-radius: 999px;
+    background: var(--paper); border: 1px solid var(--line);
+    font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-2); white-space: nowrap;
+  }
+  .hk-format-vlag-nu { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
   /* ── DE KOP BEGINT BOVENAAN, HET BEELD MAG ZWEVEN — 8 september 2026 ──────
      Lucas over /portal: *"bij deze pagina ook niet eerste sectie volledig
      gevuld."* Gemeten: de tekstkolom is daar 418 hoog naast een figuur van 954,

@@ -216,7 +216,7 @@ import { keurBeeld } from '../data/shots.js';
 // De EU-lijst staat op één plek. Hem hier overtypen zou betekenen dat het
 // formulier en de server het ooit oneens worden over of een land in de EU zit,
 // en dan biedt het formulier 0% aan waar de server 21% rekent.
-import { isEu, HOME_COUNTRY } from '../data/vat.js';
+import { isEu, HOME_COUNTRY, vatShape, vatFormatError } from '../data/vat.js';
 
 /*
  * ── HOEVEEL STAPPEN, EN WELKE IS DE POORT — 11 AUGUSTUS 2026 ─────────────────
@@ -661,6 +661,10 @@ function show(n, opts) {
   }
 
   syncVatConfirm();
+  /* En de vorm van het btw-nummer, want het land kan al ingevuld zijn vanuit een
+     account -- dan is er nooit een change-gebeurtenis geweest en zou het veld
+     zonder pattern staan. */
+  syncVatFormat();
   /* En het registratienummer, om dezelfde reden als syncVatConfirm() hierboven:
      wie terugloopt naar stap 3 en zijn vinkje weghaalt, moet het veld ook zien
      verdwijnen -- anders staat er een verplicht veld op een stap die de bezoeker
@@ -738,6 +742,58 @@ function syncVatConfirm() {
     if (box) box.checked = false;
   }
   syncRequired();
+}
+
+/*
+ * ── DE VORM VAN HET BTW-NUMMER, ZODRA HET LAND BEKEND IS ─────────────────────
+ *
+ * 12 september 2026. Lucas kreeg een testbestelling binnen met `NL000` erin, en
+ * die kwam er gewoon doorheen. Waarom dat fiscaal goed ging en administratief
+ * niet staat in de kop van vatShape() in src/data/vat.js.
+ *
+ * Wat hier gebeurt is alleen het formulier: het `pattern`-attribuut wordt gezet
+ * op de vorm die bij het GEKOZEN LAND hoort, en meeverhuisd zodra de klant een
+ * ander land aanwijst. Vandaar dat dit script bestaat en er geen vast
+ * `pattern=""` in de HTML staat: één attribuut kan niet zevenentwintig vormen
+ * tegelijk zijn, en de vorm van een Duits nummer op een Nederlandse bestelling
+ * zou precies de valse afkeuring opleveren die een klant wegjaagt.
+ *
+ * DE MELDING VERHUIST MEE. `data-pl-err-msg` op het veld zegt nu nog "vul een
+ * btw-nummer in" — dat is het juiste antwoord op een leeg veld, en het verkeerde
+ * op een verkeerd ingevuld veld. Staat er iets én klopt de vorm niet, dan zegt
+ * de melding wat de vorm voor dít land is, met een voorbeeld. Die twee zinnen
+ * staan allebei in vat.js, zodat de server dezelfde kan teruggeven.
+ *
+ * EN DIT IS NIET DE CONTROLE. Het is de eerste. De echte staat in
+ * functions/api/order.js, want een formulier is niet de waarheid — wie langs het
+ * formulier heen post krijgt daar hetzelfde antwoord.
+ */
+function syncVatFormat() {
+  const veld = q('input[name=vat]');
+  if (!veld) return;
+  const land = ((q('select[name=country]') || {}).value || '').trim().toUpperCase();
+  const vorm = vatShape(land);
+
+  if (!vorm) {
+    /* Geen vorm bekend — buiten de EU, of nog geen land gekozen. Dan niets
+       afdwingen: een `pattern` dat blijft staan van het vorige land is erger
+       dan geen pattern, want hij keurt een goed nummer af. */
+    veld.removeAttribute('pattern');
+    delete veld.dataset.plVormFout;
+    if (veld.dataset.plErrMsgLeeg) veld.dataset.plErrMsg = veld.dataset.plErrMsgLeeg;
+    return;
+  }
+
+  veld.setAttribute('pattern', vorm.pattern);
+
+  /* De oorspronkelijke melding één keer bewaren, want hij wordt hieronder
+     overschreven en moet terug kunnen komen zodra het veld weer leeg is. */
+  if (!veld.dataset.plErrMsgLeeg) veld.dataset.plErrMsgLeeg = veld.dataset.plErrMsg || '';
+
+  const ingevuld = (veld.value || '').trim();
+  veld.dataset.plErrMsg = ingevuld
+    ? vatFormatError(land, document.documentElement.lang === 'nl' ? 'nl' : 'en')
+    : (veld.dataset.plErrMsgLeeg || '');
 }
 
 /*
@@ -842,6 +898,8 @@ function bindErrors() {
   const watch = (e) => {
     const n = e.target && e.target.name;
     if (n === 'country' || n === 'vat' || n === 'no_vat') syncVatConfirm();
+    // De vorm hangt aan het land en de melding aan wat er staat, dus beide.
+    if (n === 'country' || n === 'vat') syncVatFormat();
     // Het registratienummer hangt alleen aan het vinkje, niet aan het land: de
     // eis is "geen btw-nummer, dus iets anders", en die geldt overal.
     if (n === 'no_vat') syncReg();
@@ -1438,11 +1496,26 @@ function syncOrder() {
  * is the expensive kind of failure, and a dataset key cannot reproduce it
  * because there is no binding to be too early for.
  */
+/* ── ÉÉN HAAK, ALLE PLEKKEN — 12 september 2026 ──────────────────────────────
+ * Dit schreef naar de EERSTE treffer. Dat klopte zolang elke haak één keer in de
+ * pagina stond: de samenvatting op stap 5 en verder niets.
+ *
+ * Sinds vandaag staat er een meelopend overzicht naast het formulier (richting
+ * B, BestelOverzicht.astro) dat dezelfde antwoorden toont zodra ze gegeven zijn
+ * — dus staan `data-pl-total` en de `data-pl-sum-*`-haken nu op twee plekken.
+ * Met querySelector() zou de tweede stilletjes leeg blijven: geen foutmelding,
+ * geen kapotte pagina, alleen een overzicht dat niet meeloopt. Precies het soort
+ * gebrek dat pas opvalt als een klant erover mailt.
+ *
+ * `qa` in plaats van `q`, en verder verandert er niets: dit zijn schrijvers naar
+ * het scherm, dus naar alle plekken schrijven is nooit minder juist dan naar
+ * één. `dcDefault` wordt per element bewaard, dus elk element houdt zijn eigen
+ * terugvaltekst. */
 function setSummary(attr, text) {
-  const el = q(`[${attr}]`);
-  if (!el) return;
-  if (el.dataset.dcDefault === undefined) el.dataset.dcDefault = el.textContent.trim();
-  el.textContent = text || el.dataset.dcDefault;
+  for (const el of qa(`[${attr}]`)) {
+    if (el.dataset.dcDefault === undefined) el.dataset.dcDefault = el.textContent.trim();
+    el.textContent = text || el.dataset.dcDefault;
+  }
 }
 
 function syncSummaries() {
@@ -2103,6 +2176,20 @@ function syncTotal() {
     noteText = c('total.quote');
   }
   setText('[data-pl-total-note]', noteText);
+
+  /* ── HET MEELOPENDE OVERZICHT — 12 september 2026 ────────────────────────
+     Lucas: *"bij het bestelformulier is het gewoon super onduidelijk en niet
+     visueel genoeg wat mensen krijgen voor hun geld waardoor het erg duur lijkt
+     allemaal."*
+
+     Dit zijn de twee getallen die dat antwoord dragen, en ze staan hier omdat
+     het aantal en de offerte hier al berekend zijn. Er wordt niets opnieuw
+     uitgerekend — een tweede som is een tweede waarheid, en dan kan het
+     overzicht een ander aantal tonen dan het totaal waar het onder staat. */
+  setSummary('data-pl-bo-aantal', Number.isInteger(n) && n > 0 ? String(n) : '');
+  const perProduct = Number(cfg.beeldenPerProduct) || 0;
+  setSummary('data-pl-bo-beelden',
+    perProduct && Number.isInteger(n) && n > 0 ? String(perProduct * n) : '');
 
   // THE LADDER'S OWN UPSELL, and it has to be honest: both totals are computed
   // from the ladder rather than estimated, so a client with a calculator finds
@@ -6564,9 +6651,10 @@ function setHidden(name, val) {
 
 /** Write text into a hook if the page has it. A missing hook degrades that one
  * line and nothing else — the same contract every other selector here keeps. */
+/* Zelfde reden als bij setSummary() hierboven: `data-pl-total` staat sinds het
+   meelopende overzicht op twee plekken. */
 function setText(sel, text) {
-  const el = q(sel);
-  if (el) el.textContent = text || '';
+  for (const el of qa(sel)) el.textContent = text || '';
 }
 
 function value(name) {

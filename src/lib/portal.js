@@ -178,6 +178,9 @@ const COPY = {
     rrLabel: 'What is wrong with the ones you ticked?',
     rrHint: 'One note for the whole round. Mention which image if it differs per image.',
     rrPick: 'Not right',
+    /* Wat de tegel zegt zodra het vinkje aanstaat. Zie de noot bij `tik`
+       verderop: zonder deze regel gebeurde er bij het aanvinken niets zichtbaars. */
+    rrPicked: 'In your revision round',
     rrSend: 'Send this revision round',
     rrNoneChosen: 'Tick at least one image first.',
     rrChosen: (n) => (n === 1 ? '1 image ticked' : `${n} images ticked`),
@@ -268,6 +271,7 @@ const COPY = {
     rrLabel: 'Wat klopt er niet aan wat je hebt aangevinkt?',
     rrHint: 'Eén notitie voor de hele ronde. Noem het beeld erbij als het per beeld verschilt.',
     rrPick: 'Niet goed',
+    rrPicked: 'Staat in je revisieronde',
     rrSend: 'Verstuur deze revisieronde',
     rrNoneChosen: 'Vink eerst minstens één beeld aan.',
     rrChosen: (n) => (n === 1 ? '1 beeld aangevinkt' : `${n} beelden aangevinkt`),
@@ -1558,6 +1562,29 @@ function shot(t, lang, f, token, { review, history, round = false }) {
        * verderop in het document; dat is precies waarvoor het bestaat. Het
        * rondeformulier zelf staat onder het raster, in roundBlock().
        */
+      /* ── HET VINKJE STAAT NAAST DE KNOP EN ZEGT WAT HET DOET ──────────────
+       * 12 september 2026. Lucas, over wat een bezoeker met een frisse blik hem
+       * vertelde: *"wanneer hij foto's binnen kreeg [kon hij] alleen duidelijk
+       * een approven maar niet goed [zien] of hij een revisie aanvroeg."*
+       *
+       * Hij had gelijk, en het waren twee dingen tegelijk:
+       *
+       *   1 · ONGELIJK GEWICHT. "Goedkeuren" was een gevulde primaire knop,
+       *       "Niet goed" een kale browser-checkbox eronder. In public/portal.css
+       *       stond geen enkele regel voor `.pick`. Twee keuzes die even geldig
+       *       zijn, hoorden er niet uit te zien als een knop met een voetnoot.
+       *
+       *   2 · GEEN ANTWOORD. Het vinkje hoort bij het rondeformulier verderop
+       *       (`form="rr"`), dus aanvinken deed op de TEGEL helemaal niets. Je
+       *       zette een vinkje en het beeld zag er daarna precies hetzelfde uit
+       *       — bij twaalf beelden weet je dan na drie klikken niet meer welke
+       *       je hebt aangewezen. Vandaar de regel hieronder die pas verschijnt
+       *       als er aangevinkt is, en het kader dat de tegel dan krijgt
+       *       (`.shot:has(.pick input:checked)` in portal.css).
+       *
+       * Het blijft één ronde die je onderaan in één keer verstuurt — zie de noot
+       * hieronder. Wat verandert is dat je kunt ZIEN wat erin zit voordat je hem
+       * verstuurt. */
       const tik = round
         ? `<label class="pick">
     <input type="checkbox" form="rr" name="bad" value="${f.id}">
@@ -1568,8 +1595,9 @@ function shot(t, lang, f, token, { review, history, round = false }) {
   <input type="hidden" name="file" value="${f.id}">
   <div class="acts">
     <button class="btn btn-primary" type="submit" name="action" value="approve">${esc(t.bApprove)}</button>
+    ${tik}
   </div>
-</form>${tik}`;
+</form>${round ? `<span class="state picked">${esc(t.rrPicked)}</span>` : ''}`;
     }
   }
 

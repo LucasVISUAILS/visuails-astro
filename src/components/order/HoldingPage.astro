@@ -89,6 +89,9 @@ const UI = {
     brand: 'Brand or shop name',
     email: 'Email',
     phone: 'Phone or WhatsApp',
+    /* Verplicht sinds 11 september 2026 — zie de noot bij `phoneErr` in
+       OrderFlow.astro voor waarom de melding de reden noemt. */
+    phoneErr: 'Fill in a number we can reach you on — we message you if anything is unclear.',
     website: 'Website or shop link',
     optional: 'optional',
     message: 'What do you have in mind?',
@@ -125,6 +128,8 @@ const UI = {
     brand: 'Merk- of shopnaam',
     email: 'E-mail',
     phone: 'Telefoon of WhatsApp',
+    /* Zie de Engelse noot. */
+    phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets onduidelijk is.',
     website: 'Website of shoplink',
     optional: 'optioneel',
     message: 'Wat heb je in gedachten?',
@@ -391,8 +396,8 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
             <input class="input" type="email" id="h-email" name="email" autocomplete="email" required data-melding={ui.emailErr} />
           </div>
           <div class="field">
-            <label for="h-phone">{ui.phone} <span class="hold-opt">{ui.optional}</span></label>
-            <input class="input" type="tel" id="h-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" />
+            <label for="h-phone">{ui.phone} <span class="req">*</span></label>
+            <input class="input" type="tel" id="h-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" required data-melding={ui.phoneErr} />
           </div>
         </div>
 

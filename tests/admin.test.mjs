@@ -502,12 +502,16 @@ section('§4 · de herlevering — "je revisie staat klaar", los van de eerste m
 
   const res = await adminReq('GET', '/admin/orders/90/files', { env });
   const body = await res.text();
+  /* De knopteksten zijn op 12 september Nederlands geworden — het adminportaal
+     was half vertaald (42 zichtbare stukken Engels tegenover 38 Nederlands) en
+     dat is wat Lucas als "inconsistent" beschreef. tests/admin-taal.test.mjs
+     bewaakt dat nu; deze drie regels lazen nog de oude Engelse tekst. */
   check('the files page offers the button, counted from the files themselves',
-    /Announce 2 new images/.test(body));
+    /2 nieuwe beelden melden/.test(body));
   check('it posts to the announce route',
     /action="\/admin\/orders\/90\/announce"/.test(body));
   check('and each delivered file says whether the customer knows about it',
-    /not announced/.test(body));
+    /niet gemeld/.test(body));
 
   order.delivery_mailed_at = prev;
 }
@@ -520,9 +524,9 @@ section('§4 · de herlevering — "je revisie staat klaar", los van de eerste m
   const res = await adminReq('GET', '/admin/orders/91/files', { env });   // nooit aangekondigd
   const body = await res.text();
   check('an order that was never announced gets no announce button',
-    !/Announce 1 new image/.test(body));
+    !/1 nieuw beeld melden/.test(body));
   check('it is pointed at the delivered status instead',
-    /never been announced/.test(body));
+    /nog nooit gemeld/.test(body));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -628,8 +632,12 @@ section('§6 · het werkbord: eerst invullen, dan pushen');
   });
   const res = await adminReq('GET', '/admin/orders/90/files', { env });
   const body = await res.text();
+  /* De vakjeslabels komen sinds 12 september uit src/data/shots.js in plaats
+     van uit een eigen Engels lijstje in admin.js — zie de noot bij SHOT_LABEL
+     daar. Ze zijn daarmee Nederlands, en dat is precies wat deze regel hoort
+     te bewaken: dat er een vakje per fotosoort staat, mét naam. */
   check('the board draws a slot per shot, labelled',
-    /FRONT|Front/.test(body) && body.includes('On model') && body.includes('Detail'));
+    /VOORKANT|Voorkant/.test(body) && body.includes('Gedragen') && body.includes('Detail'));
   check('an empty slot carries the product and shot it stands for',
     /name="product" value="p1"[\s\S]{0,200}name="shot" value="back"/.test(body));
   check('and it counts what is filled', /1\/4/.test(body));

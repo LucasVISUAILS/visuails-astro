@@ -386,3 +386,180 @@ export function paymentMismatch({ method, country, treatment }) {
   if (treatment === VAT_TREATMENT.standard) return null;
   return `betaald met iDEAL terwijl het land ${up} is en er 0% is gerekend`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DE VORM VAN HET NUMMER — 12 september 2026
+//
+// Lucas: *"Ook had hij een test order geplaatst met btwnummer NL000 die gewoon
+// doorkwam terwijl dit uiteraard geen goed btwnummer is. Klopt dit wel dat hij
+// dan alsnog door kon bestellen of maakt dat niet uit voor de rest."*
+//
+// ── WAT ER GEBEURDE, EN WAAROM ER GÉÉN GELD IS MISGELOPEN ───────────────────
+//
+// vatDecision() hierboven geeft een Nederlandse klant altijd 21%, wat er ook in
+// het btw-veld staat — de binnenlandse verlegging is een gesloten lijst en deze
+// dienst staat er niet op. En VIES wordt voor Nederland bewust niet gebeld
+// (functions/api/order.js: `effCountry !== HOME_COUNTRY`), want er valt niets te
+// verleggen en dus niets te controleren. Fiscaal is er dus niets fout gegaan.
+//
+// ── WAT ER WÉL FOUT GING ────────────────────────────────────────────────────
+//
+// Er zat geen enkele controle op de VORM. `NL000` werd opgeslagen in
+// `orders.vat_number` én — via upsertCustomer() — in `customers.vat_number`.
+// Daarmee staat een verzonnen nummer op zijn factuur, en op élke volgende
+// factuur van die klant, tot iemand het met de hand weghaalt. Een factuur met
+// een btw-nummer dat niet bestaat is geen boete waard, maar het is wel het
+// eerste wat een boekhouder eruit pikt.
+//
+// ── WAAROM DIT GEEN TABEL MET 27 REGEXES IS ─────────────────────────────────
+//
+// Dat was de verleiding, en het is de verkeerde keuze. Een te strenge regex
+// voor Litouwen weigert een klant die wél een geldig nummer heeft, en die klant
+// bestelt dan niet — dat kost meer dan een verkeerd nummer op een factuur. De
+// echte toets voor het buitenland is VIES, en die staat er al.
+//
+// Dus twee soorten strengheid, en ze hebben allebei hun reden:
+//
+//   NEDERLAND — exact. `NL` + 9 cijfers + `B` + 2 cijfers. Dit is het enige
+//   land waar VIES niet wordt gebeld, dus het enige waar de vorm de énige
+//   controle is. De vorm ligt vast sinds het btw-identificatienummer in 2020
+//   werd ingevoerd en verandert niet met een tariefwijziging mee.
+//
+//   DE REST — alleen lengte. Per land een minimum en een maximum uit het
+//   officiële overzicht van de Europese Commissie (EUIPO, "European Union VAT
+//   identification numbers"). Dat vangt `000` en een half overgetypt nummer,
+//   en laat alles door wat er ook maar op lijkt. Wat er daarna van klopt zegt
+//   VIES, en die heeft het laatste woord.
+//
+// Buiten de EU wordt er niets gecontroleerd en hoort het veld er niet te staan:
+// een btw-nummer heeft daar geen betekenis, en 0% volgt daar uit het land.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Hoeveel tekens het nummer ná het landprefix heeft, per lidstaat.
+ * Bron: Europese Commissie / EUIPO, "European Union VAT identification numbers".
+ * Gesleuteld op de ISO-code (niet de VIES-code), zodat het land uit het
+ * formulier er rechtstreeks in past.
+ */
+const VAT_LENGTE = {
+  AT: [9, 9],   // U + 8 cijfers
+  BE: [10, 10],
+  BG: [9, 10],
+  HR: [11, 11],
+  CY: [9, 9],
+  CZ: [8, 10],
+  DK: [8, 8],
+  EE: [9, 9],
+  FI: [8, 8],
+  FR: [11, 11], // 2 tekens + 9 cijfers
+  DE: [9, 9],
+  GR: [9, 9],
+  HU: [8, 8],
+  IE: [8, 9],
+  IT: [11, 11],
+  LV: [11, 11],
+  LT: [9, 12],  // 9 of 12, en de 10 en 11 ertussen laten we door — VIES beslist
+  LU: [8, 8],
+  MT: [8, 8],
+  NL: [12, 12], // 9 cijfers + B + 2 cijfers, en zie VAT_NL hieronder
+  PL: [10, 10],
+  PT: [9, 9],
+  RO: [2, 10],
+  SK: [10, 10],
+  SI: [8, 8],
+  ES: [9, 9],
+  SE: [12, 12],
+};
+
+/** De enige exacte vorm in dit bestand, en de enige die er een nodig heeft. */
+const VAT_NL = /^\d{9}B\d{2}$/;
+
+/**
+ * Wat het formulier moet afdwingen voor dit land.
+ *
+ * @returns {{ pattern: string, voorbeeld: string }|null}
+ *   `pattern` is geschreven om rechtstreeks in een `pattern`-attribuut te
+ *   passen: hij staat toe dat de klant het landprefix meetypt (dat doet de
+ *   helft) en dat er spaties en punten in staan (dat doet de andere helft).
+ *   normaliseVat() haalt dat er later weer af. `null` betekent: niets af te
+ *   dwingen — buiten de EU, of een land dat we niet kennen.
+ */
+/* ── HET `pattern`-ATTRIBUUT WORDT MET DE v-VLAG GELEZEN ────────────────────
+ *
+ * Gevonden in de browser, niet in een toets, en dat is precies het punt.
+ * `new RegExp(p, 'u')` slikt `[ .-]` zonder klagen; de HTML-specificatie zegt
+ * dat een `pattern` als `unicodeSets` (de v-vlag) wordt gecompileerd, en daar is
+ * een kaal koppelteken in een tekenklasse een SyntaxError. Chrome meldt dat in
+ * de console en behandelt het veld vervolgens als GELDIG — de controle valt dus
+ * stil weg in plaats van luid om te vallen, en `NL000` kwam er in de browser
+ * gewoon doorheen terwijl de toets groen stond.
+ *
+ * Vandaar deze constante in plaats van `[ .-]` op zes plekken uitgeschreven: één
+ * plek waar het ontsnappen goed staat, en tests/btw-vorm.test.mjs compileert nu
+ * met 'v' zodat dezelfde fout een tweede keer niet ongemerkt blijft. */
+const SCHEIDING = ' .\\-';
+
+export function vatShape(country) {
+  const up = String(country || '').trim().toUpperCase();
+  if (!up || !VAT_LENGTE[up]) return null;
+  /* Het prefix in beide schrijfwijzen: een `pattern`-attribuut let op
+     hoofdletters, en wie "nl0054…" typt heeft een geldig nummer en hoort geen
+     rode rand te krijgen. normaliseVat() maakt er op de server toch hoofdletters
+     van. Zelfde reden als de `[Bb]` verderop. */
+  const prefix = `(${up.split('').map((ch) => `[${ch}${ch.toLowerCase()}]`).join('')}[${SCHEIDING}]?)?`;
+  if (up === HOME_COUNTRY) {
+    return {
+      pattern: `${prefix}[0-9][0-9${SCHEIDING}]{8,}[Bb][${SCHEIDING}]?[0-9][${SCHEIDING}]?[0-9]`,
+      voorbeeld: 'NL000000000B00',
+    };
+  }
+  const [min, max] = VAT_LENGTE[up];
+  /* `{min-1,}` en niet `{min-1,max-1}`: één teken is al in de klasse ervoor
+     geteld, en een bovengrens in het attribuut zou een klant met scheidingstekens
+     tegenhouden. De echte bovengrens staat in vatFormatOk() hieronder, ná het
+     normaliseren, waar hij pas iets betekent. */
+  return {
+    pattern: `${prefix}[A-Za-z0-9][A-Za-z0-9${SCHEIDING}]{${Math.max(min - 1, 0)},}`,
+    voorbeeld: `${up}${'0'.repeat(Math.min(max, 12))}`,
+  };
+}
+
+/**
+ * Klopt de vorm? Dit is de controle die op de SERVER staat, want het formulier
+ * is niet de waarheid.
+ *
+ * @returns {true|false|null}
+ *   `null` = geen oordeel: geen nummer ingevuld, of een land waarvoor we geen
+ *   vorm kennen. Dat is nadrukkelijk niet hetzelfde als `false`, want een leeg
+ *   veld heeft zijn eigen regel (het vinkje "ik heb er geen") en een onbekend
+ *   land hoort geen bestelling te blokkeren.
+ */
+export function vatFormatOk(country, raw) {
+  const up = String(country || '').trim().toUpperCase();
+  const { country: prefix, number } = normaliseVat(raw);
+  if (!number) return null;
+  if (!VAT_LENGTE[up]) return null;
+
+  /* Een prefix die niet bij het gekozen land hoort is op zichzelf al fout: wie
+     "DE123456789" invult bij Nederland heeft of het verkeerde land aangewezen
+     of het verkeerde nummer geplakt, en beide wil hij weten vóór hij betaalt.
+     Griekenland is de uitzondering met twee codes — zie viesCode(). */
+  if (prefix && prefix !== up && prefix !== viesCode(up)) return false;
+
+  if (up === HOME_COUNTRY) return VAT_NL.test(number);
+
+  const [min, max] = VAT_LENGTE[up];
+  return number.length >= min && number.length <= max;
+}
+
+/** De zin die de klant te zien krijgt als de vorm niet klopt. Eén plek, want
+ *  hij staat in het formulier én in het antwoord van de server. */
+export function vatFormatError(country, lang) {
+  const nl = lang === 'nl';
+  const vorm = vatShape(country);
+  const vb = vorm ? vorm.voorbeeld : '';
+  if (!vb) return nl ? 'Dit btw-nummer klopt niet.' : 'That VAT number is not valid.';
+  return nl
+    ? `Dit btw-nummer heeft niet de juiste vorm. Voor dit land ziet het eruit als ${vb}.`
+    : `That VAT number has the wrong shape. For this country it looks like ${vb}.`;
+}

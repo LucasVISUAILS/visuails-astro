@@ -1,0 +1,319 @@
+---
+/*
+ * VISUAILS — HET VRAAGTEKEN
+ * 12 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Focus echt op een logische en rustige indeling met grote koppen en
+ * weinig extra tekst maar houd het duidelijk en wanneer er ergens extra
+ * informatie voor nodig is, pas dan het hover vraagteken toe."*
+ *
+ * ── WAAROM DIT IETS ANDERS IS DAN Disclose.astro ────────────────────────────
+ *
+ * Disclose is een <details>: hij staat in de tekst, hij kost een regel, en
+ * opengeklapt duwt hij alles eronder omlaag. Dat is precies goed voor een
+ * vraag die SOMMIGE lezers hebben en die het antwoord waard is om naar te
+ * scrollen — een veelgestelde vraag, een juridische noot.
+ *
+ * Dit is voor het andere geval: een woord in een zin dat uitleg nodig heeft
+ * zonder dat de zin langer wordt. Het kost NUL verticale ruimte, en dat is de
+ * hele reden dat het bestaat. Elke keer dat er hieronder een zin uit een pagina
+ * verdwijnt en in zo'n vraagteken belandt, wordt de pagina korter zonder dat er
+ * iets wegvalt.
+ *
+ * DE REGEL WANNEER HET MAG, en die is streng, want een pagina bezaaid met
+ * vraagtekens is drukker dan de tekst die je wegnam:
+ *
+ *   Een vraagteken is voor uitleg die je NIET nodig hebt om te beslissen.
+ *   Heb je hem wél nodig om te beslissen, dan hoort hij in de zin.
+ *
+ * "Wat kost het" hoort nooit achter een vraagteken. "Waarom vragen we je
+ * KVK-nummer" wel.
+ *
+ * ── WAAROM `popover` EN GEEN TITLE, TOOLTIP OF <details> ────────────────────
+ *
+ *   · `title=""` is onbereikbaar met een toetsenbord, onleesbaar op een
+ *     telefoon, en de browser bepaalt hoe lang hij blijft staan. Het is geen
+ *     oplossing, het is een gewoonte.
+ *   · Een absoluut geplaatste <span> in de tekst wordt afgesneden door elke
+ *     ouder met `overflow: hidden`, en dit formulier en die panelen zitten er
+ *     vol mee. Gemeten, niet gevreesd.
+ *   · `popover` zet het paneel in de TOP LAYER: boven alles, buiten elke
+ *     overflow, met sluiten-op-escape en sluiten-bij-klik-ernaast van de
+ *     browser zelf. Het `popovertarget`-attribuut opent hem ZONDER script —
+ *     met een muisklik, met een tik op een telefoon en met de spatiebalk.
+ *
+ * Het script hieronder doet dus maar twee dingen die de browser niet doet: het
+ * paneel op de goede plek zetten, en hem ook op HOVER openen. Zonder script
+ * werkt het vraagteken nog steeds — dan is het een klik in plaats van een hover,
+ * en staat het paneel gecentreerd. Degraderen naar omslachtig, niet naar stuk.
+ *
+ * ── EN HET IS EEN <button> ──────────────────────────────────────────────────
+ * Geen <span> met een klikluisteraar. Een schermlezer noemt hem dan als knop,
+ * hij zit vanzelf in de tabvolgorde, en hij reageert op Enter en spatie zonder
+ * dat wij daar iets voor schrijven.
+ */
+interface Props {
+  /** De uitleg zelf. Eén tot drie zinnen; langer hoort in de tekst of in een Disclose. */
+  tekst: string;
+  /** Waar het vraagteken over gaat — voor de schermlezer, niet zichtbaar.
+   *  "de levertijd" wordt "Uitleg over de levertijd". */
+  over: string;
+  lang?: 'en' | 'nl';
+}
+const { tekst, over, lang = 'nl' } = Astro.props;
+const nl = lang === 'nl';
+/* Eén id per vraagteken op de pagina. Astro geeft elk component een eigen
+   `cid`, maar dat is een KLASSE en geen id — twee vraagtekens zouden hetzelfde
+   id krijgen, en dan opent de tweede knop het eerste paneel. */
+const id = `ul-${Math.random().toString(36).slice(2, 9)}`;
+const aria = nl ? `Uitleg over ${over}` : `More about ${over}`;
+---
+
+<button
+  type="button"
+  class="uitleg-mark"
+  popovertarget={id}
+  aria-label={aria}
+  data-uitleg-knop
+><span aria-hidden="true">?</span></button><span
+  class="uitleg-paneel"
+  id={id}
+  popover="auto"
+  role="note"
+>{tekst}</span>
+
+<style>
+  /* ── HET TEKEN ───────────────────────────────────────────────────────────
+     Klein genoeg om een zin niet te breken, groot genoeg om aan te wijzen.
+     `vertical-align: super` met een kleinere maat: hij hoort bij het woord
+     ervoor zoals een voetnootcijfer, niet ernaast zoals een pictogram. */
+  .uitleg-mark {
+    -webkit-appearance: none; appearance: none;
+    display: inline-grid; place-items: center;
+    inline-size: 1.05em; block-size: 1.05em;
+    /* Draagt het onzichtbare aanraakvlak hieronder. */
+    position: relative;
+    margin-inline-start: .3em;
+    vertical-align: super;
+    font: inherit; font-size: .72em; line-height: 1;
+    color: var(--ink-3, #686868);
+    background: transparent;
+    border: 1px solid var(--line-strong, #BDBDBD);
+    border-radius: 999px;
+    cursor: help;
+    padding: 0;
+    transition: color .12s, border-color .12s, background-color .12s;
+  }
+
+  /* ── HET AANRAAKVLAK IS 24×24, HET TEKEN NIET — 12 september 2026 ─────────
+     Gemeten op een telefoon van 390 pixels: dit vraagteken was 11 bij 11
+     pixels. Note.astro lost datzelfde probleem al op met een knop van 24×24 en
+     een kleiner teken erin (zie de noot over SC 2.5.8 daar) — deze component
+     is die maatregel bij het bouwen vergeten, en dat gold dus voor élk
+     vraagteken dat er sinds gisteren bij is gekomen: het bestelformulier,
+     /how-it-works, /editions, /hooks.
+
+     Waarom een ::after en geen knop van 24 pixels zoals bij Note: dit teken
+     staat MIDDEN IN EEN ZIN en niet naast een label. Een knop van 24 pixels
+     zou de regelhoogte oprekken op elke regel waar hij in staat, en dan
+     springt de tekst eromheen. Een onzichtbaar vlak dat vanuit het midden
+     naar 24×24 groeit, laat de opmaak precies zoals hij is en maakt alleen het
+     raken makkelijker.
+
+     `max(100%, 24px)`: op een plek waar het teken al groter is dan 24 (een
+     grote kop), wordt het vlak niet kleiner dan het teken zelf. */
+  .uitleg-mark::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    translate: -50% -50%;
+    inline-size: max(100%, 24px);
+    block-size: max(100%, 24px);
+  }
+  /* ── WAT DIT VLAK KOST, EN WAAROM DAT AANVAARDBAAR IS ────────────────────
+     Het vlak is absoluut gepositioneerd en groeit vanuit het midden, dus het
+     steekt zo'n zes pixels buiten het teken uit. Staat het teken aan het einde
+     van een regel, dan wordt de `scrollWidth` van die alinea een paar pixels
+     groter dan zijn `clientWidth` — gemeten op /how-it-works: 390 tegen 386.
+
+     Dat is geen fout en het is niet te zien: er is geen schuifbalk (deze
+     alinea's staan op `overflow: visible`), er wordt niets afgesneden, en de
+     pagina zelf schuift niet zijwaarts — dat laatste is op 390, 834 en 1440
+     pixels nagemeten. Wie later een controle schrijft die op
+     `scrollWidth > clientWidth` let, vindt deze vier pixels en moet weten dat
+     ze hier vandaan komen en met opzet blijven staan: een vinger die het
+     vraagteken raakt weegt zwaarder. */
+  .uitleg-mark span { transform: translateY(.02em); }
+  .uitleg-mark:hover,
+  .uitleg-mark:focus-visible,
+  /* Zolang het paneel openstaat blijft het teken opgelicht. Zonder deze regel
+     lijkt een paneel dat met het toetsenbord is geopend bij niets te horen. */
+  .uitleg-mark:has(+ .uitleg-paneel:popover-open) {
+    color: var(--ink, #0A0A0A);
+    border-color: var(--ink, #0A0A0A);
+  }
+  .uitleg-mark:focus-visible {
+    outline: 2px solid var(--accent-bright, #0A0A0A);
+    outline-offset: 2px;
+  }
+
+  /* ── HET PANEEL ──────────────────────────────────────────────────────────
+     `position: fixed` omdat het in de top layer staat: daar bestaat de pagina
+     niet meer, alleen het scherm. Het script schrijft `left` en `top`.
+     De maten staan hier en niet in het script, zodat een aanpassing aan de
+     vorm geen aanpassing aan de logica is. */
+  .uitleg-paneel {
+    position: fixed;
+    margin: 0;
+    inset: auto;
+    /* ── DE TYPOGRAFIE WORDT HIER OPNIEUW GEZET, EN DAT IS GEEN OVERDAAD ────
+       Een popover staat in de TOP LAYER maar hangt in de DOM nog gewoon onder
+       zijn buurman — en erft dus alles wat daar geldt. Het eerste vraagteken
+       stond in een <label>, en labels op deze site zijn mono, in hoofdletters,
+       met letterafstand. Het paneel kwam er zo ook uit: vijf regels
+       KAPITAAL in een uitlegvenster. Gezien in de browser, niet bedacht.
+
+       Dus staat hier de volle set, en niet alleen `text-transform`: elke
+       eigenschap die een ouder kan zetten en die leesbaarheid raakt. Het
+       paneel is uitleg en hoort er overal hetzelfde uit te zien, ongeacht waar
+       het vraagteken toevallig staat. */
+    font-family: var(--font-body, system-ui, sans-serif);
+    font-weight: 400;
+    font-style: normal;
+    font-stretch: normal;
+    text-transform: none;
+    letter-spacing: normal;
+    word-spacing: normal;
+    font-variant: normal;
+    max-inline-size: min(34ch, calc(100vw - 2rem));
+    padding: .7rem .85rem;
+    border: 1px solid var(--line, #DFDFDF);
+    border-radius: 0;
+    background: var(--surface, #FFF);
+    color: var(--ink-2, #454545);
+    font-size: .86rem;
+    line-height: 1.5;
+    text-align: start;
+    box-shadow: 0 8px 28px rgb(0 0 0 / .12);
+    /* Een paneel dat in beeld valt in plaats van verschijnt is makkelijker te
+       volgen met je ogen. Twaalf honderdsten, want langer voelt traag bij iets
+       wat je met de muis aanwijst. */
+    transition: opacity .12s, translate .12s, overlay .12s allow-discrete, display .12s allow-discrete;
+    opacity: 0; translate: 0 -3px;
+  }
+  .uitleg-paneel:popover-open { opacity: 1; translate: 0 0; }
+  @starting-style { .uitleg-paneel:popover-open { opacity: 0; translate: 0 -3px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .uitleg-paneel { transition: none; translate: none; }
+  }
+
+  /* Op donkere secties draait het mee. `.op-nacht` is de klasse die de rest van
+     de site op een donkere band zet; zonder deze regel staat er wit paneel met
+     grijze tekst midden in het zwart, wat opvalt als een fout en niet als een
+     keuze. */
+  :global(.op-nacht) .uitleg-mark { color: rgb(255 255 255 / .55); border-color: rgb(255 255 255 / .3); }
+  :global(.op-nacht) .uitleg-mark:hover,
+  :global(.op-nacht) .uitleg-mark:focus-visible { color: #FFF; border-color: #FFF; }
+</style>
+
+<script>
+  /*
+   * Twee dingen die `popover` zelf niet doet: het paneel bij zijn vraagteken
+   * zetten, en opengaan als je er met de muis overheen gaat.
+   *
+   * ── WAAROM GEEN CSS-ANKERPOSITIONERING ─────────────────────────────────
+   * `anchor-name` / `position-anchor` doet dit in CSS en zou dit hele bestand
+   * overbodig maken. Het is alleen nog niet overal te vertrouwen, en een
+   * uitlegpaneel dat in de linkerbovenhoek belandt is erger dan geen uitleg.
+   * Zodra Firefox meedoet kan dit script weg; de vorm staat dan al in de CSS.
+   *
+   * ── DE HOVER HEEFT EEN VERTRAGING, BEIDE KANTEN OP ──────────────────────
+   * Openen na 120 ms, zodat een muis die over een zin schiet niet drie panelen
+   * achter zich laat. Sluiten na 220 ms, zodat je de muis VAN het teken NAAR
+   * het paneel kunt bewegen zonder dat het onder je hand wegvalt — de klassieke
+   * reden dat een tooltip onbereikbaar is. Aanwijzen van het paneel zelf houdt
+   * hem open.
+   *
+   * ── EN OP EEN TELEFOON GEBEURT ER HIER NIETS ────────────────────────────
+   * `(hover: hover)` sluit aanraakschermen uit. Daar doet `popovertarget` zijn
+   * werk al: één tik opent, een tik ernaast sluit. Een hover nabootsen op
+   * aanraking geeft een paneel dat opent bij het scrollen.
+   */
+  const KAN_HOVER = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const RUIMTE = 8;   /* tussen teken en paneel */
+  const RAND = 12;    /* minimale afstand tot de schermrand */
+
+  function plaats(knop: HTMLElement, paneel: HTMLElement) {
+    /* Meten ná het openen: een paneel dat nog `display: none` is heeft geen
+       maat, en dan wordt alles nul. */
+    const k = knop.getBoundingClientRect();
+    const p = paneel.getBoundingClientRect();
+
+    let links = k.left + k.width / 2 - p.width / 2;
+    links = Math.max(RAND, Math.min(links, window.innerWidth - p.width - RAND));
+
+    /* Onder het teken, tenzij het daar niet past — dan erboven. Niet andersom:
+       onder is de leesrichting, en boven is de uitwijkplek. */
+    let boven = k.bottom + RUIMTE;
+    if (boven + p.height > window.innerHeight - RAND) {
+      const erboven = k.top - p.height - RUIMTE;
+      if (erboven >= RAND) boven = erboven;
+      else boven = Math.max(RAND, window.innerHeight - p.height - RAND);
+    }
+    paneel.style.left = `${Math.round(links)}px`;
+    paneel.style.top = `${Math.round(boven)}px`;
+  }
+
+  function bind() {
+    const knoppen = document.querySelectorAll<HTMLElement>('[data-uitleg-knop]');
+    for (const knop of knoppen) {
+      if (knop.dataset.uitlegGebonden === '1') continue;
+      knop.dataset.uitlegGebonden = '1';
+
+      const id = knop.getAttribute('popovertarget');
+      const paneel = id ? document.getElementById(id) : null;
+      if (!paneel || !('showPopover' in paneel)) continue;
+
+      /* Plaatsen bij élke opening, ook die van popovertarget zelf. `toggle` is
+         de gebeurtenis die de browser stuurt, dus dit werkt evengoed voor een
+         tik op een telefoon als voor onze hover. */
+      paneel.addEventListener('toggle', (e) => {
+        if ((e as ToggleEvent).newState === 'open') plaats(knop, paneel);
+      });
+
+      if (!KAN_HOVER) continue;
+
+      let openTimer = 0;
+      let dichtTimer = 0;
+      const open = () => {
+        clearTimeout(dichtTimer);
+        openTimer = window.setTimeout(() => {
+          try { (paneel as any).showPopover(); } catch { /* stond al open */ }
+        }, 120);
+      };
+      const dicht = () => {
+        clearTimeout(openTimer);
+        dichtTimer = window.setTimeout(() => {
+          try { (paneel as any).hidePopover(); } catch { /* stond al dicht */ }
+        }, 220);
+      };
+      for (const el of [knop, paneel]) {
+        el.addEventListener('pointerenter', open);
+        el.addEventListener('pointerleave', dicht);
+      }
+      /* Focus opent hem ook, want wie met het toetsenbord langsloopt hoort
+         hetzelfde te zien als wie hem aanwijst. Escape sluit hem — dat doet de
+         browser. */
+      knop.addEventListener('focus', open);
+      knop.addEventListener('blur', dicht);
+    }
+  }
+
+  bind();
+  /* Zachte navigatie: Astro vervangt de inhoud zonder de pagina te herladen,
+     dus de nieuwe vraagtekens moeten opnieuw gebonden worden. Zie de noot in
+     Note.astro en tests/zachte-navigatie.test.mjs. */
+  document.addEventListener('astro:page-load', bind);
+</script>

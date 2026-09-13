@@ -30,9 +30,36 @@ CREATE TABLE IF NOT EXISTS blackout_days (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Stores a SHA-256 hash of the portal token, never the token. One live token per
--- order; re-issuing revokes the previous row. The partial unique index makes
--- that a database constraint rather than a convention.
+-- Stores a SHA-256 hash of the portal token, never the token.
+--
+-- ── HIER STOND EEN UNIEKE INDEX, EN DIE IS OP 12 SEPTEMBER 2026 WEGGEHAALD ──
+--
+-- Er stond:
+--     CREATE UNIQUE INDEX IF NOT EXISTS idx_order_tokens_live
+--       ON order_tokens(order_id) WHERE revoked_at IS NULL;
+-- met de zin "één levend token per bestelling; de partiële unieke index maakt
+-- daar een databaseregel van in plaats van een afspraak".
+--
+-- Die regel geldt sinds 4 september niet meer. Migratie 0044 haalt de index er
+-- uitdrukkelijk weer af, want een klant die de eerste leveringsmail twee dagen
+-- later opende kreeg "deze link is vervangen" te zien. Sindsdien mag een
+-- bestelling meerdere levende links hebben.
+--
+-- Waarom dat tot vandaag geen probleem was en nu wel: scripts/migrate.mjs draait
+-- ALLE migraties bij elke run opnieuw — dat is met opzet, want zo kan een run die
+-- halverwege strandt gewoon opnieuw. Op een lege database is 0001 → 0044 dus
+-- "aanmaken, weer weghalen", en dat klopt. Op de ECHTE database staan inmiddels
+-- bestellingen met twee levende tokens, precies zoals 0044 bedoelde — en dan
+-- botst 0001 op zijn eigen index:
+--
+--     UNIQUE constraint failed: order_tokens.order_id
+--
+-- En omdat het script bij een fout stopt, kwam geen enkele migratie erna nog aan
+-- de beurt. Migratie 0047 (de contactvoorkeur) is daardoor nooit gedraaid.
+--
+-- De regel is dus niet "de index terugzetten en de dubbele tokens opruimen" —
+-- die dubbele tokens HOREN er te zijn. De regel is dat 0001 niet meer aanmaakt
+-- wat 0044 weghaalt. schema.sql zei dit al goed; alleen deze migratie liep achter.
 CREATE TABLE IF NOT EXISTS order_tokens (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id     INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -44,8 +71,6 @@ CREATE TABLE IF NOT EXISTS order_tokens (
   uses         INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_order_tokens_order ON order_tokens(order_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_order_tokens_live
-  ON order_tokens(order_id) WHERE revoked_at IS NULL;
 
 -- Fixed-window rate limiting for portal lookups. The key is a salted hash of the
 -- IP plus a minute stamp — no IP address is stored here.

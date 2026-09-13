@@ -68,6 +68,11 @@ import {
   PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
 } from '../../data/attributes.js';
 import ProductUploader from './ProductUploader.astro';
+/* Het vraagteken: uitleg die geen verticale ruimte kost. Zie de kop van
+   Uitleg.astro voor de regel wanneer een zin er wél en niet in mag. */
+import Uitleg from '../Uitleg.astro';
+/* Het meelopende overzicht naast de stappen — richting B. Zie de kop daar. */
+import BestelOverzicht from './BestelOverzicht.astro';
 /* De beeldverhouding — 13 augustus 2026. Niet in de slot maar hier, want deze
    vraag verschilt niet per dienst; zie de kop van RatioPicker.astro. */
 import RatioPicker from './RatioPicker.astro';
@@ -90,6 +95,7 @@ import {
   copy as garmentCopy,
 } from '../../data/garments.js';
 import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
+import { VOORKEUREN, VOORKEUR_STANDAARD, VOORKEUR_COPY } from '../../data/contactvoorkeur.js';
 
 import Note from '../Note.astro';
 interface Props {
@@ -1047,6 +1053,16 @@ const FORM = {
       emailHint: 'Where the confirmation and the files go.',
       emailErr: 'We need an email address to send the confirmation to.',
       phone: 'Phone or WhatsApp',
+      /* ── VERPLICHT SINDS 11 SEPTEMBER 2026 ────────────────────────────────
+         Lucas: *"Ik wil daarnaast over de gehele website telefoonnummer voor
+         whatsapp ook verplicht maken behalve bij contact."*
+
+         De melding zegt WAAROM het veld er staat en niet dat het leeg is. Een
+         nummer vragen zonder te zeggen waarvoor, leest als een marketinglijst;
+         "we appen je als er iets aan je foto's onduidelijk is" is de reden dat
+         het er is, en het is ook wat er gebeurt. */
+      phoneErr: 'Fill in a number we can reach you on — we message you if anything about your photos is unclear.',
+      phoneHint: 'We only use it for this order.',
       website: 'Website or shop link',
       country: 'Country',
       countryPick: 'Choose a country',
@@ -1071,6 +1087,10 @@ const FORM = {
       regionHint: 'Only where an address needs one — most of Europe does not.',
       vat: 'VAT number',
       vatErr: 'Fill in your VAT number, or tick the box below if you do not have one.',
+      /* Wat er staat als de server ons terugstuurt. Zie data-form-refusal verderop:
+         een omleiding zonder zichtbare reden is een doodlopende weg. */
+      refusePhone: 'We could not read a phone number in what you sent. Fill in a number we can reach you on and send it again.',
+      refuseVat: 'That VAT number does not have the right shape for the country you picked. Correct it, or tick “I do not have a VAT number”.',
       noVat: 'I do not have a VAT number',
       vatConfirm: 'I confirm that my company is established outside the Netherlands and that this VAT number belongs to it.',
       vatConfirmHint: 'Required before we can invoice at 0%. The tax authority holds us liable for a reverse charge that turns out to be wrong, so this is the one thing we cannot decide for you.',
@@ -1303,6 +1323,9 @@ const FORM = {
       emailHint: 'Hier komen de bevestiging en de bestanden binnen.',
       emailErr: 'We hebben een e-mailadres nodig om de bevestiging naartoe te sturen.',
       phone: 'Telefoon of WhatsApp',
+      /* Zie de Engelse noot. */
+      phoneErr: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets aan je foto’s onduidelijk is.',
+      phoneHint: 'We gebruiken het alleen voor deze bestelling.',
       website: 'Website of shoplink',
       country: 'Land',
       countryPick: 'Kies een land',
@@ -1323,6 +1346,8 @@ const FORM = {
       regionHint: 'Alleen invullen als je adres een provincie of staat heeft. In het grootste deel van Europa is dat niet zo.',
       vat: 'Btw-nummer',
       vatErr: 'Vul je btw-nummer in, of zet het vinkje hieronder aan als je er geen hebt.',
+      refusePhone: 'We konden in wat je verstuurde geen telefoonnummer lezen. Vul een nummer in waarop we je kunnen bereiken en verstuur het opnieuw.',
+      refuseVat: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of zet het vinkje “Ik heb geen btw-nummer” aan.',
       noVat: 'Ik heb geen btw-nummer',
       vatConfirm: 'Ik verklaar dat mijn bedrijf buiten Nederland is gevestigd en dat dit btw-nummer van dat bedrijf is.',
       vatConfirmHint: 'Nodig voordat we 0% op je factuur kunnen zetten. Blijkt de btw-verlegging later onjuist, dan krijgen wij de aanslag. Daarom moet je dit zelf aanvinken.',
@@ -1403,6 +1428,9 @@ const FORM = {
 };
 
 const f = FORM[lang];
+/* De woorden van de contactvoorkeur, uit dezelfde bron als het formulier op
+   /contact en het abonnementsformulier — zie src/data/contactvoorkeur.js. */
+const vk = VOORKEUR_COPY[lang];
 
 /* De stappen die deze pagina ECHT toont. De vierde rail-ingang is 'Levertijd' /
    'Timing', en die stap bestaat niet bij een proefvisual — zie de noot bij de
@@ -1559,6 +1587,11 @@ const config = {
   maxBatchFiles: MAX_BATCH_FILES,
   uploadExt: Object.keys(UPLOAD_TYPES),
   outfitSurcharge: OUTFIT_SURCHARGE,
+  /* Hoeveel beelden één product oplevert, of null als dat bij deze dienst geen
+     vraag is (video). Alleen voor het meelopende overzicht: pipeline.js
+     vermenigvuldigt het met het aantal en toont het, en rekent er verder niets
+     mee. De prijs komt uit de ladder, nooit hieruit. */
+  beeldenPerProduct: beeldenVoor(service),
   // The extra-photo ladder travels whole rather than as one rate: the rate
   // depends on the product count, which changes in the browser, so resolving
   // it here would freeze the wrong rung into the page.
@@ -1715,6 +1748,22 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         derived (tierFor(count)) rather than answered. Its default is the tier
         that reserves nothing: a no-JS order arrives in the queue and the window
         is agreed by email, which is what the <noscript> promises. */}
+    {/* ── ALS DE SERVER ONS TERUGSTUURT ───────────────────────────────────
+        functions/api/order.js weigert een bestelling zonder bruikbaar
+        telefoonnummer (`?error=phone`) en sinds 12 september 2026 ook een
+        btw-nummer met de verkeerde vorm (`?error=vat`). Zonder deze twee blokken
+        is dat allebei een doodlopende weg: de klant komt terug op een formulier
+        dat er precies zo uitziet als voor hij op verzenden drukte, zonder enige
+        aanwijzing waarom er niets is gebeurd — dezelfde fout die op
+        /test-sample al eens is gemaakt en daar met data-form-refusal is opgelost.
+
+        In de praktijk komt hier bijna niemand: het formulier controleert allebei
+        al vóór het verzenden (`required` voor het nummer, `pattern` voor de
+        vorm — syncVatFormat() in pipeline.js). Dit is het vangnet voor wie
+        langs het formulier heen post, en voor de dag dat een script niet laadt. */}
+    <div class="pl-weigering" data-form-refusal="phone" role="status" tabindex="-1" hidden>{f.s3.refusePhone}</div>
+    <div class="pl-weigering" data-form-refusal="vat" role="status" tabindex="-1" hidden>{f.s3.refuseVat}</div>
+
     <input type="hidden" name="service" value={wire} />
     <input type="hidden" name="tier" value="unattended" />
     <input type="hidden" name="redirect" value={lp('/thank-you')} />
@@ -2334,10 +2383,32 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <span class="hint">{f.s3.emailHint}</span>
         </div>
         <div class="field">
-          <label for="pl-phone">{f.s3.phone} <span class="pl-opt">{f.optional}</span></label>
-          <input class="input" type="tel" id="pl-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" />
+          <label for="pl-phone">{f.s3.phone} <span class="req">*</span></label>
+          <input class="input" type="tel" id="pl-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" required data-pl-req="1" data-pl-err-msg={f.s3.phoneErr} />
+          <span class="hint">{f.s3.phoneHint}</span>
         </div>
       </div>
+
+      {/* ── EN HOE WE JE BEREIKEN ─────────────────────────────────────────
+          Twee radio's, geen keuzelijst: het zijn er twee, ze passen naast
+          elkaar, en een lijst met twee opties is een klik meer voor niets.
+
+          `email` staat voor. Dat is niet de veilige gok maar het antwoord dat
+          altijd klopt — het mailadres is het enige dat we zeker hebben, en de
+          factuur en de link naar de beelden gaan sowieso daarheen. Zie de kop
+          van src/data/contactvoorkeur.js. */}
+      <fieldset class="field pl-voorkeur">
+        <legend class="pl-voorkeur-h">{vk.vraag}</legend>
+        <div class="pl-voorkeur-rij">
+          {VOORKEUREN.map((v) => (
+            <label class="pl-voorkeur-optie">
+              <input type="radio" name="contact_preference" value={v} checked={v === VOORKEUR_STANDAARD} />
+              <span>{vk[v]}</span>
+            </label>
+          ))}
+        </div>
+        <span class="hint">{vk.noot}</span>
+      </fieldset>
 
       {/* ── WAAR DE KLANT ZIT, EN HET FACTUURADRES ────────────────────────
           Allebei VERPLICHT, en allebei nieuw in augustus 2026.
@@ -2433,13 +2504,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             tweede plek waar de regel staat. data-pl-req-unless wijst naar het
             vinkje, en validate() in pipeline.js leest die ene bron. */}
         <div class="field">
-          <label for="pl-vat">{f.s3.vat} <span class="req">*</span></label>
+          <label for="pl-vat">{f.s3.vat} <span class="req">*</span><Uitleg tekst={f.s3.vatHint} over={f.s3.vat} lang={lang} /></label>
           <input class="input" type="text" id="pl-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" data-pl-req="1" data-pl-req-unless="no_vat" data-pl-err-msg={f.s3.vatErr} />
           <label class="pl-check" for="pl-no-vat">
             <input type="checkbox" id="pl-no-vat" name="no_vat" value="1" />
             <span>{f.s3.noVat}</span>
           </label>
-          <span class="hint">{f.s3.vatHint}</span>
 
           {/* ── DE VERKLARING BIJ 0% ────────────────────────────────────────
               Uit btwverleggingspecificatie.md §4. Verborgen tot er werkelijk 0%
@@ -2820,6 +2890,16 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <a href={lp('/privacy')}>{f.s5.legalPrivacy}</a>{f.s5.legal[2]}
       </p>
     </section>
+    {/* ── HET MEELOPENDE OVERZICHT ─────────────────────────────────────────
+        Als LAATSTE kind van het formulier, en dat is de leesvolgorde die je
+        wilt: eerst de stappen, dan de samenvatting. In de opmaak staat hij
+        rechts (zie de grid hieronder), maar een schermlezer loopt de HTML af en
+        hoort dus eerst de vragen en pas daarna wat er van de antwoorden is
+        gemaakt — precies andersom zou zijn: een samenvatting van niets.
+
+        Onder 1100 pixels valt het blok weg; het totaal staat daar al onderaan
+        het scherm vastgeplakt. Zie de noot in BestelOverzicht.astro. */}
+    <BestelOverzicht lang={lang} service={wire} isSample={isSample} />
   </form>
 </section>
 
@@ -3045,6 +3125,62 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      Specificity is (0,3,0) — :not() contributes its argument's weight — against
      Astro's zero-weight :where(.astro-HASH). Nothing in this block competes. */
   .pl-form { --pl-measure: 880px; }
+
+  /* ── TWEE KOLOMMEN, MET HET OVERZICHT ERNAAST — 12 september 2026 ────────
+     Richting B, door Lucas gekozen uit vier: links de vragen, rechts een
+     overzicht dat meeloopt.
+
+     WAAROM DE FORM ZELF DE GRID IS en er geen wikkel om de stappen zit: dat
+     zou vijf stappen, vier verborgen velden, het configblok en twee
+     meldingsblokken moeten omvatten — één herschikking van de hele boom om
+     één kolom toe te voegen, met elke `> `-selector hierboven als risico.
+     Zo hoeft er niets te verhuizen: alles gaat standaard in kolom 1, en het
+     overzicht wijst zichzelf kolom 2 toe over alle rijen.
+
+     De verborgen velden en het <script> maken hier geen rijen: `input[type=
+     hidden]` en `script` staan in de browserstijl al op `display: none`, en
+     een element dat niet weergegeven wordt is ook geen grid-item.
+
+     `align-items: start` is wat `position: sticky` in het overzicht mogelijk
+     maakt — een item dat over de volle hoogte wordt uitgerekt heeft niets om
+     binnen te plakken. */
+  @media (min-width: 1100px) {
+    .pl-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      column-gap: clamp(1.6rem, 3vw, 3.4rem);
+      align-items: start;
+    }
+    .pl-form > :global(*) { grid-column: 1; }
+    /* ── `span 99` EN NIET `1 / -1`, EN DAT IS GEEN SLORDIGHEID ────────────
+       `-1` wijst naar de laatste lijn van het EXPLICIETE raster. Deze grid
+       heeft geen `grid-template-rows`, dus al zijn rijen zijn impliciet en
+       bestaat die lijn niet: `1 / -1` kromp tot rij 1 alleen, en het overzicht
+       duwde die ene rij op zijn eigen hoogte van 557 pixels. Het resultaat was
+       een gat van een halve schermhoogte tussen de inlogregel en de stappen —
+       gemeten in de browser, want in de bron ziet `1 / -1` er juist goed uit.
+
+       Een span die groter is dan het aantal kinderen loopt wél door in de
+       impliciete rijen. Negenennegentig tegenover de zes kinderen die er nu
+       staan: ruim genoeg om nooit te knellen, en klein genoeg om geen raster
+       van duizend lege rijen te maken. */
+    .pl-form > :global(.bo) { grid-column: 2; grid-row: 1 / span 99; }
+
+    /* ── EN HET BEDRAG STAAT DAN NOG MAAR OP ÉÉN PLEK ─────────────────────
+       `.pl-total-live` (het bedrag plus de tariefregel) staat in stap 1, en
+       het overzicht hiernaast toont hetzelfde bedrag. Twee keer hetzelfde
+       getal op één scherm is precies de drukte waar dit hele overzicht een
+       antwoord op is.
+
+       Alleen dat blok gaat weg, niet `.pl-total` eromheen: de ladderregel
+       ("bij 20 producten betaal je …") en de abonnementsregel eronder staan
+       níét in het overzicht en zijn hier op hun plek — ze horen bij de vraag
+       hoeveel je bestelt, niet bij de samenvatting van wat je koos.
+
+       De aankondiging voor een schermlezer verhuist mee: zie de noot bij
+       .bo-geld in BestelOverzicht.astro. */
+    .pl-total-live { display: none; }
+  }
   .pl-step { max-width: var(--pl-measure); }
   /* Op de levertijdstap staat de agenda met zes weken naast elkaar, en die
      heeft meer breedte nodig dan de leesmaat. Dat mikte op `data-pl-step="4"`,
@@ -3568,6 +3704,25 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     font-size: .95rem; color: var(--ink); line-height: 1.5;
   }
 
+  /* ── DE MELDING NA EEN WEIGERING VAN DE SERVER ─────────────────────────
+     Dezelfde vorm als .pl-error, maar bovenaan het formulier in plaats van bij
+     de knop: de klant komt hier binnen met een verse paginalading, en dan is
+     "boven alles" de enige plek waar hij hem zeker ziet. Ruimte eronder en niet
+     erboven, want er staat niets boven. */
+  .pl-weigering {
+    margin: 0 0 1.4rem;
+    padding: .95rem 1.15rem;
+    border: 1px solid var(--warn);
+    background: var(--paper-2);
+    color: var(--warn-ink);
+    font-size: .95rem;
+    line-height: 1.55;
+    max-width: 64ch;
+  }
+  /* [hidden] wint van display, anders staat de melding er altijd. Zelfde val
+     als bij .ps-mailnoot op 11 september. */
+  .pl-weigering[hidden] { display: none; }
+
   .pl-error {
     margin-top: 1.2rem;
     padding: .95rem 1.15rem;
@@ -3854,6 +4009,27 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   /* De setjesregel houdt zijn eigen marges niet meer aan: hij is nu een deel
      van de regel en geen alinea. */
   .pl-qty-onder .pl-outfit-note { margin: 0; }
+
+  /* ── DE CONTACTVOORKEUR ────────────────────────────────────────────────────
+     Een fieldset zonder rand: hij groepeert twee radio's onder één vraag, en
+     dat is precies waar een fieldset voor is — maar het kader eromheen zou hem
+     tot een eigen blok maken naast de velden waar hij bij hoort. */
+  .pl-voorkeur { border: 0; padding: 0; margin: 0 0 1.1rem; }
+  .pl-voorkeur-h { padding: 0; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+  .pl-voorkeur-rij { display: flex; flex-wrap: wrap; gap: .5rem .9rem; margin-top: .45rem; }
+  /* Het hele label is het raakvlak en niet alleen het bolletje: 44 pixels hoog,
+     zodat een duim hem raakt zonder te mikken. */
+  .pl-voorkeur-optie {
+    display: inline-flex; align-items: center; gap: .45rem;
+    min-height: 44px; padding: 0 .8rem 0 .6rem;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    font-size: .9rem; cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .pl-voorkeur-optie input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
+  .pl-voorkeur-optie:hover { border-color: var(--accent-line); }
+  .pl-voorkeur-optie:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .pl-voorkeur-optie:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   /* Op een telefoon past de regel niet en wikkelt hij naar drie regels. Dan is
      `margin-left: auto` geen uitlijning meer maar een link die in zijn eentje
      rechts hangt onder twee zinnen die links staan — gemeten op 390px. Onder

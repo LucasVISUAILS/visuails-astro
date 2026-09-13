@@ -1,0 +1,234 @@
+---
+/*
+ * VISUAILS — HET MEELOPENDE OVERZICHT
+ * 12 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"ook bij het bestelformulier is het gewoon super onduidelijk en niet
+ * visueel genoeg wat mensen krijgen voor hun geld waardoor het erg duur lijkt
+ * allemaal."*
+ *
+ * Uit vier voorgelegde vormrichtingen koos hij B: twee kolommen, links de
+ * vragen, rechts een overzicht dat meeloopt. Dit is die rechterkolom.
+ *
+ * ── WAAROM DIT HET ANTWOORD IS OP "HET LIJKT DUUR" ──────────────────────────
+ *
+ * Een bedrag is nooit duur of goedkoop op zichzelf; het is duur tegenóver wat
+ * je ervoor krijgt. Op dit formulier stond het bedrag in stap 1 en stond wat je
+ * ervoor krijgt verspreid over stap 1 tot en met 5 — en de helft ervan stond er
+ * als zin en niet als beeld. De klant zag dus een getal en moest zelf de rest
+ * bij elkaar lezen. Dan wint het getal.
+ *
+ * Hier staan ze bij elkaar en blijven ze staan: vier beelden die tonen wat één
+ * product oplevert, het aantal, het totaal aantal beelden, elke keuze zodra hij
+ * gemaakt is, en pas daarna het bedrag. In die volgorde, want dat is de
+ * volgorde waarin het bedrag betekenis krijgt.
+ *
+ * ── HET REKENT NIETS ZELF UIT, EN DAT IS EEN EIS ────────────────────────────
+ *
+ * Elk getal en elke regel hier komt uit een `data-pl-*`-haak die pipeline.js al
+ * vulde voor de samenvatting op stap 5. Er staat geen enkele som in dit bestand.
+ * Een tweede som zou een tweede waarheid zijn, en dan kan dit overzicht een
+ * ander aantal tonen dan het totaal waar het onder staat — op precies het
+ * scherm waar de klant besluit of hij het vertrouwt.
+ *
+ * Dat werkte niet meteen: setSummary() en setText() in pipeline.js schreven naar
+ * de EERSTE treffer, en dat was tot vandaag altijd de samenvatting op stap 5.
+ * Ze schrijven nu naar alle treffers. Zie de noot daar.
+ *
+ * ── EN HET STAAT ER ALLEEN ALS ER RUIMTE IS ─────────────────────────────────
+ *
+ * Onder 1100 pixels is er geen tweede kolom, en dan zou dit blok het formulier
+ * verdubbelen in plaats van verhelderen: dezelfde antwoorden nog een keer, onder
+ * de vragen waar ze net gegeven zijn. Daar staat het totaal al onderaan het
+ * scherm vastgeplakt (.pl-total-bar), en dat is genoeg. Het blok blijft wel in
+ * de HTML — `display: none` en geen conditie in de opmaak — zodat een
+ * schermlezer op smal niets mist wat op breed wel wordt aangeboden... nee: het
+ * gaat er met `hidden` uit, want de gegevens staan dan letterlijk twee keer in
+ * de leesvolgorde. Zie de media query onderaan.
+ */
+import { beeldenVoor } from '../../data/pricing.js';
+/* De strook staat sinds vandaag ook op de plaat van /start/plan; de lijst
+   staat daarom in data/ en niet hier. Zie de kop van dat bestand. */
+import { tegelsVoor, ECHTE_BESTELLING } from '../../data/overzichtbeelden.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  /** De dienst zoals /api/order hem kent: catalog, lifestyle, complete, video, … */
+  service: string;
+  /** De proefvisual heeft één product en één beeld; daar is een overzicht ruis. */
+  isSample?: boolean;
+}
+const { lang, service, isSample = false } = Astro.props;
+const nl = lang === 'nl';
+const perProduct = beeldenVoor(service);
+
+const tegels = tegelsVoor(service, lang);
+
+const c = nl ? {
+  h: 'Wat je krijgt',
+  perProduct: (n: number) => `${n} beelden per product`,
+  aantal: 'Producten',
+  beelden: 'Beelden in totaal',
+  model: 'Gezicht',
+  bg: 'Achtergrond',
+  ratio: 'Formaat',
+  leeg: '—',
+  totaal: 'Totaal',
+  excl: 'excl. btw',
+  noot: ECHTE_BESTELLING.nl,
+} : {
+  h: 'What you get',
+  perProduct: (n: number) => `${n} images per product`,
+  aantal: 'Products',
+  beelden: 'Images in total',
+  model: 'Face',
+  bg: 'Background',
+  ratio: 'Aspect ratio',
+  leeg: '—',
+  totaal: 'Total',
+  excl: 'excl. VAT',
+  noot: ECHTE_BESTELLING.en,
+};
+---
+
+{!isSample && (
+<aside class="bo" data-pl-overzicht aria-labelledby="bo-h">
+  <h2 id="bo-h" class="bo-h">{c.h}</h2>
+
+  {tegels.length > 0 && (
+    <div class="bo-set">
+      <ul class="bo-tegels" role="list">
+        {tegels.map((t) => (
+          <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
+        ))}
+      </ul>
+      {perProduct && <p class="bo-set-noot">{c.perProduct(perProduct)}</p>}
+      <p class="bo-set-noot bo-set-klein">{c.noot}</p>
+    </div>
+  )}
+
+  {/* ── DE REGELS ────────────────────────────────────────────────────────
+      `data-pl-sum-*` zijn dezelfde haken als de samenvatting op stap 5; de
+      tekst tussen de tags is de terugvalwaarde die setSummary() bewaart en
+      terugzet zodra een keuze weer leeg wordt. Vandaar een streepje en geen
+      lege tag: een regel die verdwijnt laat het overzicht springen. */}
+  <dl class="bo-regels">
+    <div class="bo-regel"><dt>{c.aantal}</dt><dd data-pl-bo-aantal>{c.leeg}</dd></div>
+    {perProduct && (
+      <div class="bo-regel"><dt>{c.beelden}</dt><dd data-pl-bo-beelden>{c.leeg}</dd></div>
+    )}
+    <div class="bo-regel"><dt>{c.model}</dt><dd data-pl-sum-model>{c.leeg}</dd></div>
+    <div class="bo-regel"><dt>{c.bg}</dt><dd data-pl-sum-bg>{c.leeg}</dd></div>
+    <div class="bo-regel"><dt>{c.ratio}</dt><dd data-pl-sum-ratio>{c.leeg}</dd></div>
+  </dl>
+
+  {/* Het bedrag onderaan en niet bovenaan: alles hierboven is wat het bedrag
+      betekenis geeft, en die volgorde is het hele punt van dit blok.
+
+      ── EN DIT IS HIER DE LIVE REGIO ────────────────────────────────────
+      Boven 1100 pixels verbergt OrderFlow het totaalblok IN het formulier,
+      want dan staat hetzelfde bedrag twee keer op één scherm. Dat blok droeg
+      `aria-live`, en zonder deze regel zou een schermlezer het bedrag dus
+      horen veranderen op smal en niets horen op breed — precies het gat dat
+      de noot bij .pl-total-live beschrijft, opnieuw gemaakt door het op te
+      lossen. Beide blokken zijn nooit tegelijk zichtbaar, dus er wordt ook
+      nooit dubbel aangekondigd. */}
+  <div class="bo-geld" aria-live="polite" aria-atomic="true">
+  <p class="bo-totaal">
+    <span class="bo-totaal-l">{c.totaal}</span>
+    <b class="bo-totaal-b" data-pl-total>{c.leeg}</b>
+    <small class="bo-totaal-s">{c.excl}</small>
+  </p>
+  <p class="bo-noot" data-pl-total-note></p>
+  </div>
+</aside>
+)}
+
+<style>
+  /* ── HET BLOK ────────────────────────────────────────────────────────────
+     Haarlijnen en geen kaart: dit is de taal van de rest van dit formulier.
+     `position: sticky` zodat het meeloopt terwijl de stappen langsgaan — dat
+     is het woord "meelopend" in richting B, en zonder dat is het gewoon een
+     kolom die na twee schermen uit beeld is. */
+  .bo {
+    position: sticky;
+    top: calc(var(--nav-h, 4rem) + 1rem);
+    align-self: start;
+    display: grid;
+    gap: 1.1rem;
+    padding: 1.2rem;
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+  }
+  .bo-h {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: .7rem; font-weight: 400; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ── DE BEELDEN ──────────────────────────────────────────────────────────
+     Vierkant, want dat is wat er geleverd wordt, en klein genoeg om samen één
+     ding te zijn in plaats van vier plaatjes.
+
+     `grid-auto-flow: column` en niet `repeat(4, …)`: lifestyle heeft er drie en
+     catalog vier. Met een vast viertal hield lifestyle een lege vierde kolom
+     over, en de drie beelden stonden dus smaller dan de strook waar ze in
+     zaten — een gat aan de rechterkant dat er als een ontbrekend beeld uitzag. */
+  .bo-tegels {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px;
+  }
+  .bo-tegels li { aspect-ratio: 1; overflow: hidden; background: var(--surface); }
+  .bo-tegels img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .bo-set-noot { margin: .55rem 0 0; font-size: .8rem; line-height: 1.45; color: var(--ink-2); }
+  .bo-set-klein { color: var(--ink-3); font-size: .74rem; }
+
+  /* ── DE REGELS ───────────────────────────────────────────────────────────
+     Eén haarlijn per regel, label links en antwoord rechts. Zelfde vorm als
+     het contactblad elders op de site. */
+  .bo-regels { margin: 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
+  .bo-regel {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem;
+    align-items: baseline; padding: .5rem 0; border-bottom: 1px solid var(--line);
+  }
+  .bo-regel dt {
+    font-family: var(--font-mono);
+    font-size: .66rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .bo-regel dd {
+    margin: 0; text-align: end; font-size: .88rem; line-height: 1.4; color: var(--ink);
+    /* Een lang antwoord (een achtergrond met een eigen naam) mag afbreken in
+       plaats van de kolom uit elkaar te duwen. */
+    overflow-wrap: anywhere;
+  }
+
+  .bo-totaal {
+    margin: 0;
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .6rem;
+  }
+  .bo-totaal-l {
+    font-family: var(--font-mono);
+    font-size: .66rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+    flex: 1 1 auto;
+  }
+  .bo-totaal-b {
+    font-family: var(--font-display, var(--font-heading));
+    font-size: 1.5rem; font-weight: 500; letter-spacing: -.02em; color: var(--ink);
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .bo-totaal-s { flex: 0 0 100%; text-align: end; font-size: .72rem; color: var(--ink-3); }
+  .bo-geld { display: grid; gap: .5rem; }
+  .bo-noot { margin: 0; font-size: .78rem; line-height: 1.5; color: var(--ink-3); }
+
+  /* ── EN ONDER 1100 PIXELS STAAT HET ER NIET ──────────────────────────────
+     Daar is geen tweede kolom, en dan komt dit blok ONDER de vragen te staan —
+     dezelfde antwoorden nog een keer, vlak nadat ze gegeven zijn. Dat is geen
+     overzicht meer maar herhaling, ook voor een schermlezer, die alles dan
+     twee keer in de leesvolgorde tegenkomt.
+
+     Het totaal is daar niet weg: .pl-total-bar plakt op smal onderaan het
+     scherm zolang stap 1 in beeld is. Zie de noot daarbij in OrderFlow.astro. */
+  @media (max-width: 1099px) { .bo { display: none; } }
+</style>

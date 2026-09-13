@@ -1,0 +1,419 @@
+---
+/*
+ * VISUAILS — DE LOPENDE BAND
+ * 12 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Uiteindelijk moet het gewoon heel duidelijk worden voor de klant dat
+ * hij of zij productfoto's opstuurt naar mij, ik de foto's/videos maak die ze
+ * willen en ze het allemaal kunnen downloaden in hun dashboard. Dat is het
+ * concept, en het voelt op de website wat rommelig waardoor je dat niet snel
+ * eruit kan halen."*
+ *
+ * Hij had gelijk, en het was te meten: de voorpagina telde 720 woorden over elf
+ * secties die allemaal iets UITLEGDEN en bijna niets TOONDEN. Het concept stond
+ * er als zin en nergens als beeld.
+ *
+ * Uit vier gebouwde richtingen koos hij deze: de pagina als één beweging in
+ * vier stations. Jij — wij — je dashboard — je shop. Elk station één woord van
+ * schermhoogte, één zin, één beeld. Verder niets.
+ *
+ * ── WAAROM PAPIER EN ZWART ELKAAR AFWISSELEN ────────────────────────────────
+ *
+ * Niet als opmaak. De kleur zegt aan welke kant van de tafel je staat: station
+ * 01 en 04 zijn van de KLANT (papier, zoals de rest van de site), 02 en 03 zijn
+ * van ONS (zwart, zoals elk scherm op deze site sinds `.op-nacht`). Wie
+ * doorscrollt ziet dus letterlijk het werk van hem naar ons en weer terug gaan.
+ *
+ * Diezelfde afwisseling is het antwoord op wat Lucas' bezoeker vroeg: *"wat meer
+ * contrast in secties van de pagina."* De regel staat bij `.op-nacht` in
+ * src/styles/global.css en geldt hier net zo.
+ *
+ * ── EN STATION 03 IS GEEN FOTO MAAR EEN SCHERM ──────────────────────────────
+ *
+ * Dezelfde bezoeker: *"wanneer hij foto's binnen kreeg [kon hij] alleen duidelijk
+ * een approven maar niet goed [zien] of hij een revisie aanvroeg."* Dus staan
+ * die twee hier als knoppen van GELIJK GEWICHT naast elkaar — zelfde hoogte,
+ * zelfde letters, zelfde binnenruimte — en niet als een gele knop met een
+ * tekstlinkje ernaast. Wat je op de voorpagina belooft, is wat je in het
+ * portaal hoort te vinden.
+ *
+ * Het is een tekening en geen schermafdruk, om dezelfde reden als bij FigDash:
+ * een afdruk veroudert stil zodra het echte scherm verandert. Er staat met
+ * zoveel woorden bij dat het een voorbeeld is.
+ *
+ * ── DE BEELDEN ZIJN ÉÉN ECHTE KLUS ──────────────────────────────────────────
+ *
+ * BA2, de roze jeans. Vijf telefoonfoto's van een magazijnvloer erin, vier
+ * afgewerkte beelden eruit. Niet vier losse mooie plaatjes: hetzelfde product,
+ * dezelfde dag, en dat is precies waarom het overtuigt.
+ *
+ * De VERHOUDINGEN zijn met opzet verschillend gelaten. Wat erin gaat staat 9:16
+ * (een telefoon houd je rechtop), wat eruit komt staat 1:1 (een catalogbeeld is
+ * vierkant). Die vormwissel vertelt het verhaal nog een keer, zonder woorden.
+ */
+import { localizedPath } from '../i18n/ui';
+
+interface Props { lang: 'en' | 'nl' }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (pad: string) => localizedPath(lang, pad);
+
+/* De vijf die erin gingen. `w`/`h` zijn de werkelijke maten van het bestand in
+   public/img — zonder die twee reserveert de browser geen ruimte en springt de
+   pagina tijdens het laden. */
+const INGESTUURD = [
+  { src: '/img/ba2-voor-front.webp', w: 760, h: 1013,
+    alt: nl ? 'Telefoonfoto: een roze jeans plat op een betonnen magazijnvloer, voorkant' : 'Phone photo: pink jeans flat on a concrete warehouse floor, front' },
+  { src: '/img/ba2-voor-achter.webp', w: 760, h: 1013,
+    alt: nl ? 'Telefoonfoto: dezelfde jeans omgedraaid, achterkant' : 'Phone photo: the same jeans turned over, back' },
+  { src: '/img/ba2-voor-detail.webp', w: 760, h: 1013,
+    alt: nl ? 'Telefoonfoto: een hand houdt de tailleband met de knoop omhoog' : 'Phone photo: a hand holding up the waistband with the button' },
+  { src: '/img/ba2-voor-textuur.webp', w: 760, h: 1013,
+    alt: nl ? 'Telefoonfoto: het weefsel van dichtbij, tussen twee vingers' : 'Phone photo: the fabric up close, between two fingers' },
+  { src: '/img/ba2-voor-pasvorm.webp', w: 760, h: 1013,
+    alt: nl ? 'Spiegelselfie waarop de jeans gedragen wordt' : 'Mirror selfie showing the jeans being worn' },
+];
+
+/* En de vier die eruit kwamen. */
+const GELEVERD = [
+  { src: '/img/ba2-na-front.webp', w: 760, h: 760,
+    alt: nl ? 'Afgewerkt catalogbeeld: de jeans recht van voren op wit' : 'Finished catalog image: the jeans straight on, on white' },
+  { src: '/img/ba2-na-achter.webp', w: 760, h: 760,
+    alt: nl ? 'Afgewerkt catalogbeeld: de achterkant op wit' : 'Finished catalog image: the back, on white' },
+  { src: '/img/ba2-na-detail.webp', w: 760, h: 760,
+    alt: nl ? 'Afgewerkt detailbeeld: de knoop en de tailleband van dichtbij' : 'Finished detail image: the button and waistband up close' },
+  { src: '/img/ba2-na-model.webp', w: 760, h: 760,
+    alt: nl ? 'Afgewerkt beeld: de jeans gedragen door een model' : 'Finished image: the jeans worn by a model' },
+];
+
+/* Station 04 toont NIET opnieuw dezelfde vier beelden — dat zou herhaling zijn
+   waar het over iets anders gaat. Het toont één product in drie vormen, want
+   dat is wat die stap oplevert: dezelfde bestelling, drie plekken. */
+const VORMEN = [
+  { src: '/img/ba2-na-front.webp', ratio: '1 / 1', maat: '1:1', waar: nl ? 'je webshop' : 'your shop',
+    alt: nl ? 'Het vierkante catalogbeeld zoals het in een webshop staat' : 'The square catalog image as it sits in a shop' },
+  { src: '/img/ba2-na-model.webp', ratio: '4 / 5', maat: '4:5', waar: nl ? 'je advertentie' : 'your ad',
+    alt: nl ? 'Hetzelfde beeld bijgesneden op 4:5 voor een advertentie' : 'The same image cropped to 4:5 for an ad' },
+  { src: '/img/ba2-na-detail.webp', ratio: '9 / 16', maat: '9:16', waar: nl ? 'je reel' : 'your reel',
+    alt: nl ? 'Het detailbeeld bijgesneden op 9:16 voor een reel' : 'The detail image cropped to 9:16 for a reel' },
+];
+
+const c = nl ? {
+  h2: 'Van jouw foto naar je shop.',
+  stations: [
+    ['01', 'Jij', 'Fotografeer je product zoals het erbij ligt. Magazijnvloer, telefoon, geen statief. Vijf foto’s zijn genoeg.'],
+    ['02', 'Wij', 'Wij bouwen de beelden op jouw eigen product. Een specialist kijkt elk beeld na voordat het weggaat.'],
+    ['03', 'Je dashboard', 'Eén link, geen account. Beeld voor beeld goedkeuren of een revisie vragen, en alles in één keer downloaden.'],
+    ['04', 'Je shop', 'Vierkant voor je webshop, staand voor je advertenties, verticaal voor je reels. Uit dezelfde bestelling.'],
+  ],
+  inLabel: 'Ingestuurd', inNoot: '5 foto’s · telefoon',
+  uitLabel: 'Geleverd', uitNoot: '4 beelden · 2048 × 2048',
+  dashRef: 'VIS-2608-4471 · 4 beelden',
+  dashVoorbeeld: 'Voorbeeld',
+  dashJa: 'Goedkeuren',
+  dashRev: 'Revisie aanvragen',
+  dashDl: 'Alles downloaden',
+  dashNoot: 'Twee van de vier goedgekeurd. Eén revisieronde zit bij elke bestelling in.',
+  goedgekeurd: 'Goedgekeurd',
+  /* De twee links die meeverhuizen uit de secties die deze band vervangt: de
+     galerij hing onder "studioproductie" en het portaal onder "Daarna:
+     VISUAILS Studio". Beide secties zijn weg; de links horen bij het station
+     dat hun onderwerp draagt en niet bij de voettekst. */
+  linkWerk: 'Meer werk zien',
+  linkPortaal: 'Het portaal van binnen',
+} : {
+  h2: 'From your photo to your shop.',
+  stations: [
+    ['01', 'You', 'Photograph your product the way it lies. Warehouse floor, phone, no tripod. Five photos is enough.'],
+    ['02', 'Us', 'We build the visuals on your own product. A specialist checks every image before it ships.'],
+    ['03', 'Your dashboard', 'One link, no account. Approve image by image or ask for a revision, and download it all at once.'],
+    ['04', 'Your shop', 'Square for your shop, upright for your ads, vertical for your reels. From the same order.'],
+  ],
+  inLabel: 'Sent in', inNoot: '5 photos · phone',
+  uitLabel: 'Delivered', uitNoot: '4 images · 2048 × 2048',
+  dashRef: 'VIS-2608-4471 · 4 images',
+  dashVoorbeeld: 'Example',
+  dashJa: 'Approve',
+  dashRev: 'Request a revision',
+  dashDl: 'Download everything',
+  dashNoot: 'Two of four approved. One revision round comes with every order.',
+  goedgekeurd: 'Approved',
+  linkWerk: 'See more work',
+  linkPortaal: 'Look inside the portal',
+};
+---
+
+<section class="lb" aria-labelledby="lb-h">
+  <header class="lb-kop">
+    <h2 id="lb-h" class="hoog hoog-2">{c.h2}</h2>
+  </header>
+
+  {/* ── 01 · JIJ ─────────────────────────────────────────────────────────── */}
+  <div class="lb-station lb-licht">
+    <div class="lb-tekst">
+      <p class="mono lb-n">{c.stations[0][0]}</p>
+      <h3 class="hoog lb-woord">{c.stations[0][1]}</h3>
+      <p class="lopend lb-zin">{c.stations[0][2]}</p>
+    </div>
+    <div class="lb-beeld">
+      <p class="mono lb-etiket"><span>{c.inLabel}</span><span>{c.inNoot}</span></p>
+      <ul class="lb-vijf" role="list">
+        {INGESTUURD.map((b) => (
+          <li><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  {/* ── 02 · WIJ ─────────────────────────────────────────────────────────── */}
+  <div class="lb-station lb-donker op-nacht">
+    <div class="lb-tekst">
+      <p class="mono lb-n">{c.stations[1][0]}</p>
+      <h3 class="hoog lb-woord">{c.stations[1][1]}</h3>
+      <p class="lopend lb-zin">{c.stations[1][2]}</p>
+      <p class="lb-link"><a class="pijl" href={lp('/gallery')}>{c.linkWerk}</a></p>
+    </div>
+    <div class="lb-beeld">
+      <p class="mono lb-etiket"><span>{c.uitLabel}</span><span>{c.uitNoot}</span></p>
+      <ul class="lb-vier" role="list">
+        {GELEVERD.map((b) => (
+          <li><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  {/* ── 03 · JE DASHBOARD ────────────────────────────────────────────────── */}
+  <div class="lb-station lb-donker op-nacht">
+    <div class="lb-tekst">
+      <p class="mono lb-n">{c.stations[2][0]}</p>
+      <h3 class="hoog lb-woord">{c.stations[2][1]}</h3>
+      <p class="lopend lb-zin">{c.stations[2][2]}</p>
+      <p class="lb-link"><a class="pijl" href={lp('/portal')}>{c.linkPortaal}</a></p>
+    </div>
+    <div class="lb-beeld">
+      {/* Een tekening, geen schermafdruk — zie de kop. `aria-hidden` op de
+          tegels: de vier beelden staan hierboven al met hun eigen alt, en een
+          schermlezer die ze nog een keer hoort krijgt geen informatie maar
+          herhaling. De KNOPPEN blijven leesbaar, want die zijn de belofte. */}
+      <div class="lb-dash">
+        <div class="lb-dash-balk">
+          <span class="lb-dash-merk">VISUAILS</span>
+          <span class="mono lb-dash-ref">{c.dashRef}</span>
+          <span class="mono lb-dash-voorbeeld">{c.dashVoorbeeld}</span>
+        </div>
+        <div class="lb-dash-body">
+          <ul class="lb-dash-tegels" role="list" aria-hidden="true">
+            {GELEVERD.map((b, i) => (
+              <li class:list={['lb-dash-tegel', i < 2 && 'is-ja']}>
+                <img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" />
+                {i < 2 && <span class="lb-dash-vink" title={c.goedgekeurd}>✓</span>}
+              </li>
+            ))}
+          </ul>
+          {/* DE TWEE KNOPPEN VAN GELIJK GEWICHT. Dit is het punt van dit
+              station; zie de kop. Ze zijn <span> en geen <button>: er valt hier
+              niets te doen, en een knop die niets doet is erger dan een
+              tekening van een knop. */}
+          <p class="lb-dash-acties">
+            <span class="lb-dash-knop is-ja">{c.dashJa}</span>
+            <span class="lb-dash-knop is-rev">{c.dashRev}</span>
+            <span class="lb-dash-knop is-dl">{c.dashDl}</span>
+          </p>
+          <p class="lb-dash-noot">{c.dashNoot}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* ── 04 · JE SHOP ─────────────────────────────────────────────────────── */}
+  <div class="lb-station lb-licht">
+    <div class="lb-tekst">
+      <p class="mono lb-n">{c.stations[3][0]}</p>
+      <h3 class="hoog lb-woord">{c.stations[3][1]}</h3>
+      <p class="lopend lb-zin">{c.stations[3][2]}</p>
+    </div>
+    <div class="lb-beeld">
+      <ul class="lb-vormen" role="list">
+        {VORMEN.map((v) => (
+          <li>
+            <span class="lb-vorm" style={`--lb-ratio:${v.ratio}`}>
+              <img src={v.src} width="760" height="760" alt={v.alt} loading="lazy" decoding="async" />
+            </span>
+            <p class="mono lb-vorm-etiket"><b>{v.maat}</b> {v.waar}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ── HET RAAM ───────────────────────────────────────────────────────────
+     De band loopt van rand tot rand. Geen kaartvorm, geen marge: dit is de
+     ruggengraat van de pagina en niet een blok erin. */
+  .lb { display: grid; }
+  .lb-kop {
+    padding: clamp(2.6rem, 6vw, 5rem) var(--x, 1.25rem) clamp(1.6rem, 3vw, 2.6rem);
+    max-width: 46rem;
+  }
+
+  /* ── EEN STATION ─────────────────────────────────────────────────────────
+     44/56: de tekst is kort en het beeld is het argument, dus het beeld krijgt
+     de grotere helft. `align-items: center` en niet `start`: bij één woord en
+     één zin naast vijf foto's oogt bovenlijnen uitgelijnd als een fout. */
+  .lb-station {
+    display: grid;
+    grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
+    align-items: center;
+  }
+  /* De even stations spiegelen, zodat de pagina heen en weer loopt in plaats van
+     vier keer hetzelfde te herhalen. `order` en niet een tweede kolomdefinitie:
+     de leesvolgorde in de HTML blijft tekst-dan-beeld, en dat is de volgorde
+     waarin een schermlezer hem hoort. */
+  .lb-station:nth-of-type(even) .lb-tekst { order: 2; }
+
+  .lb-licht { background: var(--paper); color: var(--ink); }
+  /* ── DE DONKERE STATIONS DRAGEN `.op-nacht` ──────────────────────────────
+     Die klasse staat in global.css en draait de kleurROLLEN om: --ink, --line,
+     --paper en --surface wijzen daarbinnen naar de donkere kant van dezelfde
+     ladder. Zonder hem zou elk stukje van dit station dat een rol gebruikt in
+     plaats van een vaste kleur — de tegelgronden, de haarlijnen, de knopvulling
+     — zijn lichte waarde houden, en dan staat er een wit vlak in het zwart.
+
+     Meegeleverd komt ook de meting: tests/donkere-blokken.test.mjs loopt élk
+     `.op-nacht`-blok op élke gebouwde pagina na op leesbaarheid. Een eigen
+     klasse bedenken zou dat station buiten die meting hebben gezet.
+
+     Wat `.op-nacht` er óók bij doet — lucht eromheen en een ronding — hoort
+     hier niet: een station is een band van rand tot rand en geen kaart. Die
+     twee gaan er daarom weer af. */
+  .lb-station.op-nacht { padding: 0; border-radius: 0; }
+
+  /* `container-type` zodat het woord hieronder met ZIJN EIGEN KOLOM schaalt en
+     niet met het scherm — zie de noot bij .lb-woord. */
+  .lb-tekst { padding: clamp(2rem, 4.5vw, 4.6rem) var(--x, 1.25rem); container-type: inline-size; }
+  .lb-n { color: var(--ink-3); margin: 0 0 .9rem; }
+  .lb-donker .lb-n { color: var(--accent-bright, var(--accent)); }
+  /* ── HET WOORD SCHAALT MET ZIJN KOLOM, NIET MET HET SCHERM ───────────────
+     Eén woord dat je niet kunt missen — dat is de hele afspraak van deze
+     richting. Maar `vw` weet niets van de kolom waarin het staat, en op 1600px
+     brak "JE DASHBOARD" daardoor middenin: DASHBOA / RD. Gezien in de browser.
+
+     `cqw` meet de kolom zelf (zie `container-type` op .lb-tekst hierboven), dus
+     het langste woord past per definitie, op elke breedte, zonder dat er een
+     getal met de hand is nagerekend.
+
+     En `overflow-wrap: normal` eroverheen, want global.css zet op alle koppen
+     `break-word` + `hyphens: auto`. Dat is goed beleid voor een kop van een
+     halve zin en verkeerd voor een kop die ÉÉN WOORD is: daar is afbreken geen
+     redding maar de fout zelf. Loopt het ooit toch niet, dan steekt het woord
+     uit — zichtbaar, en dus te repareren — in plaats van stil te breken. */
+  .lb-woord {
+    font-size: clamp(2.4rem, 13cqw, 5.4rem);
+    letter-spacing: -.045em;
+    line-height: .95;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+  .lb-donker .lb-woord { color: #FFF; }
+  .lb-zin { margin-top: 1rem; max-width: 34ch; }
+  .lb-donker .lb-zin { color: rgb(255 255 255 / .72); }
+
+  .lb-link { margin-top: 1.2rem; }
+  /* `.pijl` is de sitebrede tekstlink met een pijl ervoor; op zwart pakt hij
+     zijn kleur uit `--ink`, die daar al de lichte kant is. Alleen de hover
+     moet expliciet, want die staat in global.css op een vaste inktwaarde. */
+  .lb-donker .lb-link :global(.pijl) { color: #FFF; }
+
+  .lb-beeld { padding: clamp(1.4rem, 3vw, 3.2rem) var(--x, 1.25rem); display: grid; gap: .9rem; }
+  .lb-etiket {
+    display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    margin: 0; padding-bottom: .6rem; border-bottom: 1px solid var(--line);
+    color: var(--ink-3);
+  }
+  .lb-donker .lb-etiket { color: rgb(255 255 255 / .55); border-color: rgb(255 255 255 / .18); }
+
+  /* ── DE VIJF EN DE VIER ──────────────────────────────────────────────────
+     De verhoudingen blijven staan zoals ze zijn — 9:16 erin, 1:1 eruit — want
+     die vormwissel vertelt het verhaal nog een keer. Zie de kop. */
+  .lb-vijf, .lb-vier, .lb-vormen { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(5px, .7vw, 10px); }
+  .lb-vijf { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .lb-vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lb-vijf li, .lb-vier li { overflow: hidden; background: var(--paper-2); }
+  .lb-vijf li { aspect-ratio: 3 / 4; }
+  .lb-vier li { aspect-ratio: 1; }
+  .lb-vijf img, .lb-vier img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ── STATION 04 · DRIE VORMEN ────────────────────────────────────────────
+     Drie kaders van gelijke BREEDTE en verschillende hoogte, onderaan
+     uitgelijnd: de vergelijking gaat over vorm, en dan moeten ze op één lijn
+     eindigen om te zien wat er verschilt. */
+  .lb-vormen { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.7rem, 1.4vw, 1.2rem); align-items: end; }
+  .lb-vormen li { display: grid; gap: .5rem; align-content: end; }
+  .lb-vorm { display: block; aspect-ratio: var(--lb-ratio, 1); overflow: hidden; background: var(--paper-2); }
+  .lb-vorm img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lb-vorm-etiket { margin: 0; color: var(--ink-3); }
+  .lb-vorm-etiket b { color: var(--ink); font-weight: 500; }
+
+  /* ── STATION 03 · HET SCHERM ─────────────────────────────────────────────
+     Eén toon lichter dan de grond eromheen, zodat het als een venster leest en
+     niet als een gat. Dezelfde trap die `.op-nacht` gebruikt. */
+  .lb-dash { border: 1px solid rgb(255 255 255 / .16); background: var(--ink-850, #1A1A1A); }
+  .lb-dash-balk {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+    padding: .65rem .9rem; border-bottom: 1px solid rgb(255 255 255 / .14);
+  }
+  .lb-dash-merk { font-family: var(--font-heading); font-weight: 700; font-size: .8rem; letter-spacing: .04em; color: #FFF; }
+  .lb-dash-ref { color: rgb(255 255 255 / .55); }
+  .lb-dash-voorbeeld {
+    margin-left: auto; color: rgb(255 255 255 / .55);
+    border: 1px solid rgb(255 255 255 / .22); border-radius: var(--r-pill); padding: .1rem .5rem;
+  }
+  .lb-dash-body { padding: .9rem; display: grid; gap: .8rem; }
+  .lb-dash-tegels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .lb-dash-tegel { position: relative; aspect-ratio: 1; overflow: hidden; background: #111; border: 1px solid rgb(255 255 255 / .1); }
+  .lb-dash-tegel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Een niet-goedgekeurd beeld wacht nog; dat zie je aan de halve dekking en
+     niet aan een tweede kleur. */
+  .lb-dash-tegel:not(.is-ja) img { opacity: .55; }
+  .lb-dash-vink {
+    position: absolute; right: 4px; top: 4px; width: 15px; height: 15px;
+    display: grid; place-items: center; font-size: 9px; line-height: 1; font-weight: 700;
+    background: var(--accent); color: var(--accent-ink);
+  }
+
+  /* ── DE TWEE KNOPPEN VAN GELIJK GEWICHT ──────────────────────────────────
+     Zelfde hoogte, zelfde binnenruimte, zelfde lettergrootte en -dikte. Alleen
+     de VULLING verschilt, want goedkeuren is de handeling die de bestelling
+     afmaakt. Dat is een rangorde, geen verstopping — en het verschil met wat
+     er stond is dat "revisie" nu een knop is en geen tekstlinkje. */
+  .lb-dash-acties {
+    display: flex; flex-wrap: wrap; gap: .45rem; margin: 0;
+    padding-top: .75rem; border-top: 1px solid rgb(255 255 255 / .14);
+  }
+  .lb-dash-knop {
+    font-size: .78rem; font-weight: 600; line-height: 1.2;
+    padding: .52rem .9rem; border: 1px solid transparent; white-space: nowrap;
+  }
+  .lb-dash-knop.is-ja { background: var(--accent); color: var(--accent-ink); }
+  .lb-dash-knop.is-rev { background: transparent; color: #FFF; border-color: rgb(255 255 255 / .55); }
+  .lb-dash-knop.is-dl { background: transparent; color: rgb(255 255 255 / .6); border-color: rgb(255 255 255 / .2); margin-left: auto; }
+  .lb-dash-noot { margin: 0; font-size: .76rem; line-height: 1.5; color: rgb(255 255 255 / .55); }
+
+  /* ── SMAL ────────────────────────────────────────────────────────────────
+     Stapelen, en de spiegeling eraf: op één kolom is "om en om" betekenisloos
+     en zou het alleen de leesvolgorde omgooien. */
+  @media (max-width: 880px) {
+    .lb-station { grid-template-columns: 1fr; }
+    .lb-station:nth-of-type(even) .lb-tekst { order: 0; }
+    .lb-tekst { padding-bottom: 0; }
+    /* Vijf staande foto's naast elkaar op 390px is 70 pixels per foto: dan zie
+       je dat er vijf zijn en niet wat erop staat. Twee rijen van drie en twee. */
+    .lb-vijf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lb-vier { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lb-dash-knop.is-dl { margin-left: 0; }
+  }
+</style>

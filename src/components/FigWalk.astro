@@ -69,9 +69,11 @@ import { styles as stylesNl } from '../data/styles.nl.js';
 import { videoStyles } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
 import { localizedPath } from '../i18n/ui.js';
+import Uitleg from './Uitleg.astro';
 
 interface Props { lang: 'en' | 'nl' }
 const { lang } = Astro.props;
+const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 
 const t = WALK_COPY[lang] || WALK_COPY.en;
@@ -156,7 +158,27 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
           <div class="wk-step-in">
             <p class="wk-step-n">{stap.n}</p>
             <h3 class="wk-step-h">{stap.h}</h3>
-            <p class="wk-step-b">{stap.b}</p>
+            {/* ── DE KORTE TEKST OP HET SCHERM, DE REST ACHTER HET VRAAGTEKEN ──
+                12 september 2026. Lucas: *"Focus echt op een logische en rustige
+                indeling met grote koppen en weinig extra tekst maar houd het
+                duidelijk en wanneer er ergens extra informatie voor nodig is,
+                pas dan het hover vraagteken toe."*
+
+                Gemeten: deze sectie droeg 768 van de 1.296 zichtbare woorden op
+                /how-it-works — zestig procent van de hele pagina in één blok van
+                zes alinea's van tachtig tot honderdtien woorden. Een stappenlijst
+                waar je doorheen bladert tot je de stap vindt waar je over
+                twijfelt, is precies het verkeerde meubel voor alinea's van die
+                lengte: je moet ze alle zes lezen om te weten welke je nodig had.
+
+                De splitsing zit in demo.js en niet hier: `b` is wat er staat, en
+                `meer` is wat er achter zit. Geen woord is weggegooid — wat niet
+                op het scherm staat, staat één hover verderop.
+
+                `over` is het stapnummer en niet de kop: een schermlezer leest
+                anders "Uitleg over Je vult het formulier in en stuurt je foto's",
+                en die kop heeft hij net al gehoord. */}
+            <p class="wk-step-b">{stap.b}{stap.meer ? <Uitleg tekst={stap.meer} over={`${nl ? 'stap' : 'step'} ${stap.nr}`} lang={lang} /> : null}</p>
 
             {/* ── DE LOOKS, BIJ DE STAP DIE EROVER GAAT ────────────────────
                 Geen radio's meer. In de vorige versie stuurden ze een laag in

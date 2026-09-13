@@ -939,6 +939,50 @@
    lichte kant van dezelfde ladder en klopt elke regel die het al gebruikte, in
    plaats van dat er veertig losse overschrijvingen bij moeten. Precies waarvoor
    deze lijst bestaat. */
+/* ── HET BLOK ZELF ──────────────────────────────────────────────────────────
+   De lijst hieronder verzet alleen de KLEURROLLEN. Dit zet de grond, de lucht
+   eromheen, en de twee rollen die de lijst mist.
+
+   `--paper` en `--paper-2` staan er apart bij omdat ze niet naar `--bg` wijzen
+   maar naar `--bg-0` en `--bg-raise`, en de donkere lijst zet `--bg-0` niet.
+   `--paper-2` komt er dus vanzelf goed uit en `--paper` niet: de balk bovenin
+   FigDash bleef wit op een verder zwart paneel. Gezien in de browser.
+
+   Ze staan hier en niet in de gedeelde lijst, want dat zou ook `.kamer` en
+   `.paneel-slot` raken en die dragen deze figuren vandaag niet. Blijkt later
+   dat daar hetzelfde nodig is, dan verhuizen deze twee regels naar boven — dan
+   is het één plek en niet twee. */
+.op-nacht {
+  background: var(--ink-900);
+  /* ── EN DE LETTERKLEUR ZELF, NIET ALLEEN DE ROLLEN ─────────────────────────
+     De lijst hierboven verzet waar `--ink` naar wijst, maar niet wat er
+     werkelijk geërfd wordt: elk element in deze figuur dat GEEN eigen `color`
+     heeft, erft hem van een voorouder BUITEN dit blok — en dat is de `.s22`-
+     inkt, #111111. Zonder deze ene regel stonden er zes dingen in zwart op
+     zwart: het woordmerk in de balk, de vier getallen boven de tegels en de
+     productkop. Ratio 1,0 — onzichtbaar, niet moeilijk leesbaar.
+
+     Gemeten in de browser met een contrastmeting over elk tekstelement binnen
+     dit blok, niet met het oog: zwart op zwart valt bij het kijken niet op,
+     want je ziet gewoon niets staan waar je niets verwacht. */
+  color: var(--ink);
+  --paper:   var(--ink-900);
+  --paper-2: var(--ink-850);
+  /* Lucht, want een donker vlak dat tegen de inhoud aan staat leest als een
+     fout in plaats van als een keuze. En de figuur erin heeft zijn eigen rand;
+     die mag niet tegen de rand van dit blok liggen. */
+  padding: clamp(.9rem, 2vw, 1.6rem);
+  border-radius: var(--r-lg);
+  /* Vanzelfsprekend voor een blok dat een afgeronde grond schildert onder een
+     kind dat ook afrondt, en toch de reden dat de hoeken anders lichte puntjes
+     krijgen. */
+  overflow: hidden;
+}
+/* Binnen het donker heeft de figuur geen eigen rand meer nodig: de grond doet
+   al wat de rand deed, en twee kaders om elkaar heen is precies de drukte waar
+   dit een antwoord op is. */
+.op-nacht > :is(figure, div) { border-color: transparent; }
+
 /* ── DE DONKERE KAMERS VAN SECTIE 22 — 7 september 2026 ──────────────────────
    `.kamer` is de donkere hoofdstukwissel van de nieuwe stijl (zie
    src/styles/stijl22.css). De stijl zet daar zijn eigen kleuren neer, maar een
@@ -958,6 +1002,44 @@
    donkere grond waar deze rollen op gemeten zijn. */
 .s22 .paneel-slot,
 .lime-panel-in,
+/* ── .op-nacht — 12 september 2026 ────────────────────────────────────────────
+   Lucas, over wat een bezoeker met een frisse blik hem vertelde: *"bijvoorbeeld
+   bij 'One link. Your whole order.' gaf hij aan het dashboard in een donkere
+   kleur te willen zien omdat je dan meer onderscheid ziet in waar je naar wilt
+   kijken, visuele uitleg of tekst uitleg (links), pas dit ook toe op meerdere
+   andere secties waar dit van toepassing zou kunnen zijn."*
+
+   Hij heeft gelijk, en het is meer dan smaak. Een sectie met links uitleg en
+   rechts een schermafbeelding is TWEE dingen op één grond: je oog moet zelf
+   uitzoeken waar het ene ophoudt en het andere begint. Zet het rechterdeel op
+   zwart en die vraag is weg voordat hij gesteld wordt.
+
+   ── DE REGEL, ZODAT DIT GEEN SMAAKKWESTIE PER SECTIE WORDT ─────────────────
+
+     BEELD EN INTERFACE STAAN OP DONKER. TEKST STAAT OP PAPIER.
+
+   Dus: een dashboard, een portaalscherm, een reeks voor-en-na-beelden —
+   donker. Een kop, een alinea, een lijst, een prijs — papier. Niet "deze sectie
+   mag wel wat contrast gebruiken": dan staat er over drie maanden een
+   willekeurig schaakbord.
+
+   ── EN ÉÉN UITZONDERING, GEVONDEN DOOR HEM TE MAKEN ───────────────────────
+   Een TEKENING die zélf met licht en donker iets zegt, blijft op papier.
+   FigApproval op de voorpagina kreeg dit blok ook, en daar betekent een lichte
+   tegel "goedgekeurd" en een donkere "teruggestuurd". Op zwart werden de
+   goedgekeurde beelden vier felwitte blokken en verdween de teruggestuurde
+   tegel in de grond: de tegenstelling die de figuur moet tonen, omgekeerd.
+   Een schermafbeelding draait dus mee met de grond; een diagram waarvan de
+   waarde-as licht-tot-donker is, niet.
+
+   ── WAAROM HET IN DEZE LIJST STAAT EN NIET IN EEN EIGEN BLOK ───────────────
+   Omdat de figuren die erin gaan — FigDash, FigGallery, FigBoard — hun kleuren
+   al uit deze rollen halen. `.op-nacht` hoeft dus niets aan die componenten te
+   veranderen; het verzet alleen waar de rollen naar wijzen, precies zoals
+   `.kamer` dat hierboven doet. Achttien plekken in FigDash die `--ink-3`
+   gebruiken, draaien met één klasse mee. Een donkere variant per component zou
+   achttien plekken zijn geweest, en over een maand zeventien. */
+.op-nacht,
 .plan-band {
   --bg:         var(--ink-900);
   --bg-deep:    var(--ink-900);
@@ -999,6 +1081,38 @@
   --line:        rgb(255 255 255 / 0.16);
   --line-strong: rgb(255 255 255 / 0.28);
   --line-ui:     var(--paper-muted-on-dark);
+
+  /* ── DE KLEIKLEUR ALS TEKST, OP DONKER — 12 september 2026 ────────────────
+     `--clay-text` is #8A4F06: de amberkleur donker genoeg gemaakt om op PAPIER
+     als tekst te kunnen staan (5,7:1). Op een donkere grond is dat precies de
+     verkeerde kant op — gemeten 2,37:1 in het bestelbord en 2,65:1 in de
+     galerij, allebei ruim onder de eis.
+
+     En het is niet zomaar een kleur die eronder zat. `--flag-ink` wijst
+     hiernaar, en dat is de kleur van het woord "Revisie". Lucas, over zijn
+     bezoeker: *"Ook gaf hij aan wanneer hij foto's binnen kreeg alleen duidelijk
+     een kon approven maar niet goed kon zien of hij een revisie aanvroeg."*
+     Op een donkere grond was dat letterlijk waar: goedkeuren is het gele
+     accent met 15:1, en revisie was bruin op bijna-zwart.
+
+     Op donker is de amberkleur ZELF de leestekst — #E9963B haalt 6,9:1 op
+     --ink-850. Dezelfde kleur, en dat is het punt: de klant hoort "revisie" in
+     beide standen aan dezelfde kleur te herkennen.
+
+     ── EN `--flag-ink` MOET ER APART BIJ, EN DAAR ZIT DE VAL ─────────────────
+     `--flag-ink: var(--clay-text)` staat op `:root`. Een var() BINNEN een
+     eigenschapsdeclaratie lost op in de scope waar die declaratie geldt — dus
+     op `:root`, met de lichte waarde — en wat descendants erven is de al
+     opgeloste #8A4F06. Alleen `--clay-text` hier verzetten doet dus niets, en
+     dat was precies wat de eerste poging deed: de meting bleef ongewijzigd
+     2,37:1 rapporteren terwijl de nieuwe regel er gewoon stond.
+
+     Elke rol die naar een andere rol wijst, moet in deze lijst dus OPNIEUW
+     gezet worden en niet alleen zijn doel. Dat geldt hier voor --flag-ink en
+     --warn-ink; de rest van deze lijst deed dat al. */
+  --clay-text:   var(--clay);
+  --flag-ink:    var(--clay);
+  --warn-ink:    var(--clay);
 
   /* The primary action does NOT flip on a dark ground: one accent, one primary
      button, sitewide. What DID have to change here is the label on it.

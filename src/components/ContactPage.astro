@@ -66,6 +66,17 @@ const c = nl ? {
   vMail: 'E-mailadres',
   vMailMelding: 'Vul een volledig e-mailadres in, zoals jij@jouwmerk.nl — anders kunnen we niet antwoorden.',
   vMailHouder: 'jij@jouwmerk.nl',
+  /* ── OPTIONEEL, EN DAT IS DE UITZONDERING — 11 september 2026 ──────────────
+     Lucas: *"over de gehele website telefoonnummer voor whatsapp ook verplicht
+     maken behalve bij contact, daar is alleen mail echt verplicht."*
+
+     Het veld stond er helemaal niet, en dat was erger dan optioneel: je kon
+     hieronder "WhatsApp" aanwijzen als voorkeurskanaal zonder ergens een nummer
+     te kunnen achterlaten. Een voorkeur zonder adres. */
+  vTelefoon: 'Telefoon of WhatsApp',
+  vTelefoonHouder: '+31 6 …',
+  vTelefoonHint: 'Alleen nodig als je liever een appje krijgt.',
+  vOptioneel: 'optioneel',
   vOnderwerp: 'Onderwerp',
   onderwerpen: [
     ['order-support', 'Vraag over een bestelling'],
@@ -115,6 +126,11 @@ const c = nl ? {
   vMail: 'Email',
   vMailMelding: 'Add a full email address, like you@yourbrand.com — otherwise we cannot reply.',
   vMailHouder: 'you@yourbrand.com',
+  /* Zie de Nederlandse noot. */
+  vTelefoon: 'Phone or WhatsApp',
+  vTelefoonHouder: '+31 6 …',
+  vTelefoonHint: 'Only needed if you would rather have a message.',
+  vOptioneel: 'optional',
   vOnderwerp: 'Topic',
   onderwerpen: [
     ['order-support', 'Order support'],
@@ -216,6 +232,11 @@ const c = nl ? {
             <input class="input" type="email" id="c-email" name="email" required data-melding={c.vMailMelding} autocomplete="email" placeholder={c.vMailHouder} />
           </div>
           <div class="field">
+            <label for="c-phone">{c.vTelefoon} <span class="ct-opt">{c.vOptioneel}</span></label>
+            <input class="input" type="tel" id="c-phone" name="phone" autocomplete="tel" placeholder={c.vTelefoonHouder} maxlength="40" />
+            <span class="hint">{c.vTelefoonHint}</span>
+          </div>
+          <div class="field">
             <label for="c-topic">{c.vOnderwerp}</label>
             <select class="select" id="c-topic" name="topic">
               {c.onderwerpen.map(([waarde, label]) => <option value={waarde}>{label}</option>)}
@@ -233,11 +254,16 @@ const c = nl ? {
             <span class="veldkop" id="preferred-label">{c.vKanaal}</span>
             <div class="opt-stack" role="radiogroup" aria-labelledby="preferred-label">
               <label class="opt">
-                <input type="radio" name="preferred" value="email" checked />
+                {/* `contact_preference` en niet meer `preferred`: sinds 11 september
+                    2026 stelt elk formulier op de site deze vraag, en het
+                    antwoord landt in één kolom op `customers` (migratie 0047).
+                    Twee namen voor hetzelfde veld is één plek waar de studio op
+                    de verkeerde vergelijkt — zie src/data/contactvoorkeur.js. */}
+                <input type="radio" name="contact_preference" value="email" checked />
                 <span class="opt-main"><span class="opt-title">{c.kMail[0]}</span><span class="opt-desc">{c.kMail[1]}</span></span>
               </label>
               <label class="opt">
-                <input type="radio" name="preferred" value="whatsapp" />
+                <input type="radio" name="contact_preference" value="whatsapp" />
                 <span class="opt-main"><span class="opt-title">{c.kWa[0]}</span><span class="opt-desc">{c.kWa[1]}</span></span>
               </label>
             </div>
@@ -289,6 +315,13 @@ const c = nl ? {
     font-size: clamp(1rem, 1.6vw, 1.25rem); letter-spacing: -.01em; color: var(--inkt);
   }
   .ct-klein { color: var(--inkt-2); font-size: .92rem; line-height: 1.6; }
+  /* Het woordje "optioneel" achter een label. Dezelfde behandeling als `.req`
+     ernaast krijgt, maar dan stil: het is een geruststelling en geen eis. */
+  .ct-opt {
+    font-family: var(--mono2); font-size: .68rem; font-stretch: 82%;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-3);
+    margin-left: .35rem;
+  }
   /* `:not(.knop)` — anders wint deze regel van `.s22 .knop-inkt`. Astro hangt
      aan elke samengestelde selector een cid-attribuut, dus `.ct-vak a` telt als
      twee klassen en `.s22 .knop-inkt` ook; bij gelijke specificiteit wint de

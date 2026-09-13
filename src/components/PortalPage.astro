@@ -225,7 +225,20 @@ const c = COPY[lang];
           <a class="knop knop-lijn" href={lp('/how-it-works')}>{c.ctaHow}</a>
         </p>
       </div>
-      <FigDash lang={lang} />
+      {/* ── HET SCHERM OP ZWART — 12 september 2026 ──────────────────────
+          Lucas, over wat een bezoeker met een frisse blik hem vertelde: *"bij
+          'One link. Your whole order.' gaf hij aan het dashboard in een donkere
+          kleur te willen zien omdat je dan meer onderscheid ziet in waar je naar
+          wilt kijken, visuele uitleg of tekst uitleg (links)."*
+
+          Precies de sectie waar dat het hardst telt: links staat wat het portaal
+          IS, rechts staat het portaal ZELF, en tot vandaag stonden die twee op
+          dezelfde grond. `.op-nacht` verzet alleen de kleurrollen — FigDash
+          zelf is niet aangeraakt. De regel wanneer een blok dit verdient staat
+          bij `.op-nacht` in src/styles/global.css. */}
+      <div class="op-nacht">
+        <FigDash lang={lang} />
+      </div>
     </div>
   </section>
 
@@ -259,7 +272,11 @@ const c = COPY[lang];
           {c.galleryList.map(([k, v]) => (<Fragment><dt>{k}</dt><dd class="lopend">{v}</dd></Fragment>))}
         </dl>
       </div>
-      <FigGallery lang={lang} />
+      {/* Het scherm op zwart — zie `.op-nacht` in src/styles/global.css voor de
+          regel: beeld en interface staan op donker, tekst staat op papier. */}
+      <div class="op-nacht">
+        <FigGallery lang={lang} />
+      </div>
     </div>
   </section>
 

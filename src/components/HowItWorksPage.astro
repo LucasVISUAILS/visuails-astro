@@ -192,6 +192,7 @@ import {
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
+import Uitleg from './Uitleg.astro';
 import Note from './Note.astro';
 import '../styles/stijl22.css';
 interface Props { lang: 'en' | 'nl'; }
@@ -235,7 +236,14 @@ const COPY = {
     // /demo renders the same component and copy kept in two page files is copy
     // that drifts. These two are this page's own framing of it.
     flowH: 'Your order, end to end.',
-    flowLede: 'One service at a time, from the phone photo you send to the files that come back. Pick one and scroll: the frame holds still and shows what exists at that moment.',
+    /* ── DE ZIN OVER HET KADER IS WEG — 12 september 2026 ────────────────
+       Hier stond *"the frame holds still and shows what exists at that
+       moment"* / *"het beeld bovenaan verandert mee met de stap waar je bent"*.
+       Dat kader bestaat sinds 9 september niet meer — zie de kop van
+       FigWalk.astro, waar het vervangen werd door een genummerde lijst. De zin
+       beschreef dus drie dagen lang een element dat er niet was, op de pagina
+       die uitlegt hoe het werkt. */
+    flowLede: 'One service at a time, from the phone photo you send to the files that come back. Pick the one you need.',
     gateLead: 'No date is printed until the calendar clears it.',
     gateBody: 'A reserved delivery date is confirmed before you pay, never after. If the week you need cannot be held, you hear that — not an optimistic guess. It is the one promise on this site we would rather lose an order over than break.',
     craftH: 'More than AI. Finished by hand.',
@@ -332,7 +340,7 @@ const COPY = {
     ctaSample: TEST_SAMPLE.nl.cta,
 
     flowH: 'Je bestelling, van begin tot eind.',
-    flowLede: 'Eén dienst tegelijk, van de telefoonfoto die je stuurt tot de bestanden die terugkomen. Kies er één en scroll — het beeld bovenaan verandert mee met de stap waar je bent.',
+    flowLede: 'Eén dienst tegelijk, van de telefoonfoto die je stuurt tot de bestanden die terugkomen. Kies degene die je nodig hebt.',
     gateLead: 'We noemen pas een datum als we in de agenda hebben gekeken of die week nog vrij is.',
     gateBody: 'Een vastgezette leverdatum wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — geen optimistische gok. Het is de enige belofte op deze site waarvoor we liever een bestelling verliezen dan dat we hem breken.',
     craftH: 'Meer dan AI. Met de hand afgewerkt.',
@@ -438,9 +446,17 @@ const c = COPY[lang];
       <h2 id="hiw-flow" class="hoog hoog-2">{c.flowH}</h2>
       <p class="lopend">{c.flowLede}</p>
     </header>
+    {/* ── DE BELOFTE BLIJFT, DE TOELICHTING GAAT ERACHTER — 12 sept 2026 ───
+        `gateBody` zei in drie zinnen wat stap 03 van de lijst eronder ook al
+        zegt: bevestigd voordat je betaalt, en anders hoor je dat. Twee alinea's
+        met dezelfde inhoud, vier centimeter uit elkaar.
+
+        Wat hier hoort te staan is de BELOFTE — één zin, groot — en niet de
+        onderbouwing ervan; wie die wil, klikt of hovert. De zin over liever een
+        bestelling verliezen dan hem breken is het sterkste wat op deze pagina
+        staat, en die staat nu niet meer weggestopt in een derde alinea. */}
     <div class="hiw-poort">
-      <p class="hoog hoog-3 hiw-poort-kop">{c.gateLead}</p>
-      <p class="lopend">{c.gateBody}</p>
+      <p class="hoog hoog-3 hiw-poort-kop">{c.gateLead}<Uitleg tekst={c.gateBody} over={lang === 'nl' ? 'de leverdatum' : 'the delivery date'} lang={lang} /></p>
     </div>
     <FigWalk lang={lang} />
   </section>
@@ -629,5 +645,19 @@ const c = COPY[lang];
   @media (max-width: 900px) {
     .hiw-open, .hiw-twee, .hiw-details { grid-template-columns: 1fr; }
     .hiw-land { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* ── EN ONDER 560 PIXELS ÉÉN KOLOM — 12 september 2026 ──────────────────
+     Gemeten op 390 pixels: twee kolommen van 154 pixels, met koppen als
+     "MARKTPLAATSEN" in hoofdletters op font-stretch 125%. Die woorden zijn
+     172 tot 177 pixels breed en ze breken niet, dus ze liepen 18 tot 23 pixels
+     buiten hun kolom — over de kop van de buur heen.
+
+     Eén kolom en niet afbreken of kleiner zetten: dit zijn vier bestemmingen
+     en geen lopende tekst. Een afgebroken "MARKT-PLAATSEN" leest slechter dan
+     vier regels onder elkaar, en kleiner zetten haalt de nadruk weg die deze
+     hele sectie draagt. */
+  @media (max-width: 560px) {
+    .hiw-land { grid-template-columns: 1fr; }
   }
 </style>

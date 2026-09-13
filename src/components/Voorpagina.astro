@@ -59,7 +59,7 @@ import { TAGLINE } from '../data/brand.js';
 import { ROSTER, modelId, telwoord } from '../data/models.js';
 import { REQUIRED_SHOT_IDS } from '../data/shots.js';
 import '../styles/stijl22.css';
-import FigApproval from './FigApproval.astro';
+import LopendeBand from './LopendeBand.astro';
 
 const { lang } = Astro.props as { lang: 'en' | 'nl' };
 const nl = lang === 'nl';
@@ -527,6 +527,34 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     {c.facts.map((f) => <li><span>{f}</span></li>)}
   </ul>
 
+  {/* ── 2 · DE LOPENDE BAND ──────────────────────────────────────────────────
+      12 september 2026, en het is de grootste ingreep op deze pagina sinds hij
+      bestaat. Lucas: *"Uiteindelijk moet het gewoon heel duidelijk worden voor
+      de klant dat hij of zij productfoto's opstuurt naar mij, ik de foto's/
+      videos maak die ze willen en ze het allemaal kunnen downloaden in hun
+      dashboard. Dat is het concept, en het voelt op de website wat rommelig
+      waardoor je dat niet snel eruit kan halen."*
+
+      Uit vier gebouwde richtingen koos hij deze: vier stations — jij, wij, je
+      dashboard, je shop — met de beelden van één echte klus.
+
+      ── WAT HIERVOOR IS WEGGEHAALD, EN WAAROM DAT GEEN VERLIES IS ──────────
+      Drie secties en een poster, samen ruim een derde van deze pagina:
+
+        · "Jij stuurt een telefoonfoto. Wij maken er een studioproductie van"
+          — één voorbeeld, één nabeeld en een draad met vier termen ertussen.
+          Precies wat station 01 en 02 doen, met vijf foto's in plaats van één.
+        · "Van map tot lancering" — vier genummerde stappen als tekst. Dat is
+          de band, in woorden, zonder beeld.
+        · "Daarna: VISUAILS Studio" — het portaal uitgelegd naast een tekening.
+          Dat is station 03, en daar staan goedkeuren en revisie nu als twee
+          knoppen van gelijk gewicht — het tweede punt van Lucas' bezoeker.
+        · De posterkamer — een schermvullend vlak zonder inhoud.
+
+      De twee links die aan die secties hingen (de galerij en het portaal) zijn
+      meeverhuisd naar het station waar hun onderwerp staat. */}
+  <LopendeBand lang={lang} />
+
   {/* ── 2 · WAT WE MAKEN ─────────────────────────────────────────────────────
       De pillenrij is echt: vier radioknoppen, nul regels JavaScript. De gekozen
       dienst blijft vol, de andere drie zakken terug. */}
@@ -605,30 +633,6 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     <p class="voetregel"><span class="mono">{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
   </section>
 
-  {/* ── 3 · STUDIOPRODUCTIE ──────────────────────────────────────────────────
-      Het donker in. Links wat erin gaat, rechts wat eruit komt, ertussen één
-      gele draad met de vier termen die wij eromheen bouwen. */}
-  <section class="kamer kamer-draad" aria-labelledby="vp-vn">
-    <header class="kamer-kop op-inkt">
-      <p class="etiket">{c.secties[1]}</p>
-      <h2 id="vp-vn" class="hoog hoog-2">{c.vnH}</h2>
-      <p class="lopend">{c.vnLede}</p>
-    </header>
-    <div class="draad-blok">
-      <figure class="werk werk-in">
-        <img src="/img/catalog-before.webp" width="1350" height="1800" alt={c.vnInAlt} loading="lazy" decoding="async">
-        <figcaption class="etiket">{c.vnIn[0]} · {c.vnIn[1]}</figcaption>
-      </figure>
-      <ol class="draad" aria-label={c.vnNotenLabel}>
-        {c.vnNoten.map(([naam], i) => <li><b class="mono">{nn(i + 1)}</b>{naam}</li>)}
-      </ol>
-      <figure class="werk werk-uit">
-        <img src={B(7).src} width={B(7).w} height={B(7).h} alt={c.vnOutAlt} loading="lazy" decoding="async">
-        <figcaption class="etiket">{c.vnOut[0]} · {c.vnOut[1]}</figcaption>
-      </figure>
-    </div>
-    <p class="voetregel"><a class="pijl" href={lp('/gallery')}>{c.vnLink}</a></p>
-  </section>
 
   {/* ── 4 · DE SET ───────────────────────────────────────────────────────────
       Zeven kaarten op een rij; de splitsing tussen catalog en lifestyle is een
@@ -659,19 +663,6 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     </ul>
   </section>
 
-  {/* ── 5 · HET PROCES ───────────────────────────────────────────────────────*/}
-  <section class="kamer kamer-stappen" aria-labelledby="vp-st">
-    <header class="kamer-kop op-inkt">
-      <p class="etiket">{c.secties[3]}</p>
-      <h2 id="vp-st" class="hoog hoog-2">{c.stepsH}</h2>
-      <p class="lopend">{c.stepsLede}</p>
-    </header>
-    <ol class="stappen">
-      {c.steps.map(([k, v], i) => (
-        <li><span class="stap-nr" aria-hidden="true">{nn(i + 1)}</span><b>{k}</b><span class="lopend">{v}</span></li>
-      ))}
-    </ol>
-  </section>
 
   {/* ── 6 · TARIEVEN ─────────────────────────────────────────────────────────*/}
   <section id="tarieven" class="paneel" aria-labelledby="vp-pr">
@@ -705,39 +696,7 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     </div>
   </section>
 
-  {/* ── 7 · STUDIO ───────────────────────────────────────────────────────────
-      Het beoordeelscherm blijft een tekening en geen nagemaakte schermafdruk —
-      zie de noot in FigApproval.astro. Daarom staat deze sectie op licht: de
-      haarlijnen van die tekening hebben een lichte grond nodig. */}
-  {/* ── HET SCHERM STAAT NAAST DE TEKST — 8 september 2026 ──────────────────
-      Lucas: *"Ook de VISUAILS Studio sectie op de homepage naast de tekst
-      zetten omdat het mock up scherm onnodig veel ruimte in beslag neemt."*
-
-      Gemeten: de sectie was 1523px hoog, waarvan 881px de figuur en 213px de
-      tekst. Vier staande tegels over de volle breedte, om te laten zien dat je
-      per beeld goedkeurt — een boodschap van één zin, in een scherm van bijna
-      duizend pixels.
-
-      Naast elkaar is de figuur ongeveer de helft breed, valt hij op zijn eigen
-      breekpunt terug naar twee bij twee (FigApproval doet dat zelf op 520px, en
-      een kolom van 1440/2 is smal genoeg om dat te halen), en staat de tekst
-      ernaast in plaats van erboven. Op een telefoon stapelen ze zoals ze deden. */}
-  <section id="studio" class="paneel" aria-labelledby="vp-sd">
-    <div class="vp-studio">
-      <div class="vp-studio-tekst">
-        <header class="paneel-kop">
-          <p class="etiket">{c.secties[5]}</p>
-          <h2 id="vp-sd" class="hoog hoog-2">{c.studioH}</h2>
-          <p class="lopend">{c.studioLede}</p>
-        </header>
-        <ul class="beloften" role="list">{c.beloften.map(([k, v]) => <li><b>{k}</b><span class="lopend">{v}</span></li>)}</ul>
-        <p class="acties"><a class="knop knop-lijn" href={lp('/portal')}>{c.studioLink}</a><a class="pijl" href={lp('/studio')}>{c.studioLink2}</a></p>
-      </div>
-      <FigApproval head={c.studioFig.head} okLabel={c.studioFig.ok} revLabel={c.studioFig.rev} waitLabel={c.studioFig.wait} />
-    </div>
-  </section>
-
-  {/* ── 8 · GEZICHTEN ────────────────────────────────────────────────────────*/}
+  {/* ── 5 · GEZICHTEN ────────────────────────────────────────────────────────*/}
   <section id="gezichten" class="paneel" aria-labelledby="vp-gz">
     <header class="paneel-kop">
       <p class="etiket">{c.secties[6]}</p>
@@ -757,7 +716,7 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     <p class="acties"><a class="knop knop-lijn" href={lp('/custom-models')}>{c.facesLink}</a><a class="pijl" href={lp('/models')}>{c.facesLink2}</a></p>
   </section>
 
-  {/* ── 9 · DIRECT ANTWOORD ──────────────────────────────────────────────────*/}
+  {/* ── 6 · DIRECT ANTWOORD ──────────────────────────────────────────────────*/}
   <section class="paneel" aria-labelledby="vp-q">
     <header class="paneel-kop">
             <h2 id="vp-q" class="hoog hoog-2">{c.qH}</h2>
@@ -768,19 +727,16 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     </ul>
   </section>
 
-  {/* ── 10 · HET SLUITSTUK ───────────────────────────────────────────────────
-      Eén donkere kaart precies in het midden van het donker, met het
-      spookwoord erachter langs — en daarna het gele paneel met de proef. */}
-  <section class="kamer kamer-poster" aria-hidden="false">
-    <article class="poster">
-      <img src={B(5).src} width={B(5).w} height={B(5).h} alt={c.heroAlt} loading="lazy" decoding="async">
-      <div class="poster-tekst op-inkt">
-        <p class="etiket">{c.labels[0]} · {c.heroChip}</p>
-        <p class="hoog hoog-3">{c.setH}</p>
-      </div>
-    </article>
-  </section>
+  {/* ── 7 · HET SLUITSTUK ────────────────────────────────────────────────────
+      De posterkamer die hier vóór stond — een schermvullend donker vlak met een
+      woord erin — is op 12 september weggehaald met de andere drie secties die
+      in de lopende band zijn opgegaan. Hij droeg geen inhoud en kostte een heel
+      scherm vlak vóór de enige vraag die deze pagina stelt.
 
+      Wat er nu gebeurt is beter: het slotpaneel IS het donker. Het is het enige
+      donkere blok in de onderste helft van de pagina, en daarmee is de
+      hoofdstukwissel er nog steeds — alleen draagt hij nu de knop in plaats van
+      een decor. */}
   <section class="paneel paneel-slot" aria-labelledby="vp-sl">
     <p class="etiket">{c.secties[7]}</p>
     <h2 id="vp-sl" class="hoog">{c.closeH}</h2>

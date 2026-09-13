@@ -91,7 +91,12 @@ const get = (path) => adminGet({ request: new Request(`https://visuails.com${pat
 async function bestel(velden, ip = '10.0.0.1') {
   const { onRequestPost } = await import('../functions/api/order.js');
   const fd = new FormData();
-  for (const [k, v] of Object.entries(velden)) fd.append(k, String(v));
+  /* Een telefoonnummer standaard erbij: /api/order weigert sinds 11 september
+     2026 zonder (behalve op `service=contact`), en deze toetsen gaan over de
+     eigen look en niet over contactgegevens. Zie tests/geldroute.test.mjs voor
+     dezelfde zet en dezelfde reden. */
+  const alles = { phone: '+31 6 12345678', ...velden };
+  for (const [k, v] of Object.entries(alles)) fd.append(k, String(v));
   return onRequestPost({ request: new Request('https://visuails.com/api/order', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: fd }), env, waitUntil: () => {} });
 }
 const KLANT = {

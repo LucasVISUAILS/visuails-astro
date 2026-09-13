@@ -45,8 +45,12 @@ import { planName } from '../../data/planNames.js';
    de clip die op elk plan hetzelfde kost terwijl een catalogset dat niet doet. */
 import { planBudget } from '../../data/budget.js';
 import { localizedPath } from '../../i18n/ui.js';
-import { EU_COUNTRIES, OTHER_COUNTRIES } from '../../data/vat.js';
+import { EU_COUNTRIES, OTHER_COUNTRIES, vatShape, vatFormatError } from '../../data/vat.js';
+import { VOORKEUREN, VOORKEUR_STANDAARD, VOORKEUR_COPY } from '../../data/contactvoorkeur.js';
 
+/* De beeldstrook op de plaat — dezelfde lijst als het bestelformulier. Zie de
+   kop van overzichtbeelden.js voor waarom hij daar staat en niet hier. */
+import { tegelsVoor, ECHTE_BESTELLING } from '../../data/overzichtbeelden.js';
 import Note from '../Note.astro';
 /* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
 import '../../styles/stijl22.css';
@@ -55,9 +59,25 @@ interface Props {
 }
 const { lang } = Astro.props;
 const nl = lang === 'nl';
+/* De woorden van de contactvoorkeur, uit dezelfde bron als het bestelformulier
+   en /contact — zie src/data/contactvoorkeur.js. */
+const vk = VOORKEUR_COPY[lang];
 const lp = (p: string) => localizedPath(lang, p);
 
 const planList = plans(lang);
+
+/* ── WAT EEN PLAN OPLEVERT, ALS BEELD — 12 september 2026 ──────────────────
+   Deze plaat vertelde in woorden wat je krijgt (de vinkjeslijst) en zette daar
+   een bedrag naast. Precies de klacht die Lucas' bezoeker over het
+   bestelformulier had: *"niet visueel genoeg wat mensen krijgen voor hun geld
+   waardoor het erg duur lijkt allemaal."*
+
+   De strook staat BOVEN de varianten en niet erin, en dat is geen luiheid: elk
+   plan levert per product hetzelfde — een catalogset én een lifestyle-carrousel
+   — alleen het aantal producten verschilt. Vier keer dezelfde vier beelden
+   onder elkaar zetten zou vier keer hetzelfde zeggen, en het zou de plaat bij
+   het wisselen van plan laten springen op beelden die niet veranderen. */
+const tegels = tegelsVoor('plan', lang);
 
 /* ── DE LANDENLIJST ────────────────────────────────────────────────────────
    Uit vat.js en niet overgetypt: dat is dezelfde lijst waar vatDecision() mee
@@ -84,6 +104,7 @@ const FOUTEN: Record<string, string> = nl ? {
   vol: 'Er is deze maand geen plek meer voor dit abonnement. Mail hello@visuails.com — dan zetten we je op de lijst voor de eerstvolgende plek.',
   maat: `Kies bij een maand op maat minstens ${CUSTOM_MONTH_MIN_PRODUCTS} en hoogstens ${CUSTOM_MONTH_MAX_PRODUCTS} producten, en niet meer carrousels dan producten.`,
   gegevens: 'Vul je naam, e-mailadres en adres in — die staan straks op de factuur.',
+  btw: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of laat het veld leeg.',
   opslaan: 'We konden je aanvraag niet vastleggen. Probeer het opnieuw, of mail hello@visuails.com.',
   mollie: 'Het betaalscherm ging niet open. Er is niets afgeschreven. Probeer het opnieuw, of mail hello@visuails.com.',
 } : {
@@ -92,10 +113,31 @@ const FOUTEN: Record<string, string> = nl ? {
   vol: 'There is no room for this plan this month. Email hello@visuails.com and we will put you on the list for the next opening.',
   maat: `A custom month needs at least ${CUSTOM_MONTH_MIN_PRODUCTS} and at most ${CUSTOM_MONTH_MAX_PRODUCTS} products, and no more carousels than products.`,
   gegevens: 'Fill in your name, email address and address — they go on the invoice.',
+  btw: 'That VAT number does not have the right shape for the country you picked. Correct it, or leave the field empty.',
   opslaan: 'We could not record your request. Try again, or email hello@visuails.com.',
   mollie: 'The payment screen did not open. Nothing has been charged. Try again, or email hello@visuails.com.',
 };
 const foutTekst = FOUTEN[fout] || '';
+
+/* ── DE VORM VAN HET BTW-NUMMER, PER LAND — 12 september 2026 ────────────────
+ *
+ * Lucas kreeg een testbestelling binnen met `NL000` erin. De volledige uitleg
+ * staat bij vatShape() in src/data/vat.js; kort: het TARIEF was goed, maar het
+ * verzonnen nummer belandde wel in `customers.vat_number` en daarmee op de
+ * facturen. Op een abonnement telt dat zwaarder dan op een losse bestelling,
+ * want hier volgt er elke maand een.
+ *
+ * Waarom dit een JSON-blok is en geen import in het script: de scripts op deze
+ * pagina zijn `is:inline` en draaien dus zonder bundelaar — ze kunnen niets
+ * importeren. Het patroon en de zin worden hier bij het bouwen berekend en als
+ * data meegegeven, zodat er nog steeds één bron is (vat.js) en geen tweede
+ * kopie van de regel in een script. */
+const BTW_VORMEN = JSON.stringify(Object.fromEntries(
+  EU_COUNTRIES.map((land) => [land.id, {
+    p: vatShape(land.id).pattern,
+    m: vatFormatError(land.id, lang),
+  }])
+));
 
 /*
  * ── DE FOUTMELDING WERD NOOIT GETOOND, 18 augustus 2026 ────────────────────
@@ -310,6 +352,10 @@ const c = nl ? {
   weekNote: 'Wij reserveren die week in de planning voor jou, elke maand opnieuw, vóórdat er andere bestellingen in mogen. Heb je die maand niets klaarstaan, dan vervalt de week niet: je producten schuiven door. Je kunt de dag altijd wijzigen in je dashboard.',
   weekLabel: 'Dag van de maand',
   sumLabel: 'Jouw maand',
+  /* De aantallen komen uit pricing.js en staan hier niet ingetypt: de dag dat
+     een catalogset vijf beelden wordt, klopt deze regel nog. */
+  perProductRegel: `Elk product: ${CATALOG_IMAGES} catalogbeelden en ${LIFESTYLE_IMAGES} lifestylebeelden — hierboven vier ervan`,
+  tegelNoot: ECHTE_BESTELLING.nl,
   sumElke: 'Elke maand',
   sumMaatH: 'Wat een maand op maat kost',
   sumMaatSub: `Het bedrag volgt jouw aantal en staat op het scherm na de machtiging. Drie voorbeelden, elk product met carrousel:`,
@@ -332,7 +378,10 @@ const c = nl ? {
      factuur. Zie functions/api/plan.js. */
   stap4: 'Jouw gegevens',
   gegHint: 'Voor de factuur en je account. Wie al bij ons besteld heeft, hoeft dit niet nog een keer in te vullen — log dan even in.',
-  gegNaam: 'Naam',
+  gegTelefoon: 'Telefoon of WhatsApp',
+  errTelefoon: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets onduidelijk is.',
+  gegVoornaam: 'Voornaam',
+  gegAchternaam: 'Achternaam',
   gegEmail: 'E-mailadres',
   gegMerk: 'Bedrijf of merk',
   gegMerkHint: 'Optioneel — staat op de factuur als je hem invult.',
@@ -347,13 +396,27 @@ const c = nl ? {
      wordt — zie tests/verplichte-velden.test.mjs. De browsertekst ("Vul dit veld
      in") staat in de taal van de browser en niet van de pagina, en dit is het
      scherm vlak voor een doorlopende machtiging. */
-  errNaam: 'Vul je naam in — die komt op de factuur.',
+  errVoornaam: 'Vul je voornaam in — die komt op de factuur.',
+  errAchternaam: 'Op de factuur hoort een achternaam.',
   errEmail: 'Vul een e-mailadres in. Daar sturen we je bevestiging en je inloglink naartoe.',
   errStraat: 'Vul je straat en huisnummer in — een factuur zonder adres mag niet de deur uit.',
   errPostcode: 'Vul je postcode in.',
   errStad: 'Vul je plaats in.',
   errLand: 'Kies je land — daar hangt het btw-tarief van af.',
-  ingelogdAls: 'Je bent ingelogd. We gebruiken de gegevens uit je account.',
+  /* ── WAT ER STOND, EN WAAROM HET WEG IS — 11 september 2026 ───────────────
+     Er stond "Je bent ingelogd. We gebruiken de gegevens uit je account." onder
+     een stap 4 die verder helemaal leeg was. Lucas: *"Er staat onderaan ook 'You
+     are signed in. We use the details from your account.' en niks bij de
+     gegevens."*
+
+     Twee dingen waren daar mis. Je kon niet ZIEN welke gegevens dat dan waren —
+     je tekent een doorlopende machtiging op een adres dat je niet te zien
+     krijgt. En je kon ze niet wijzigen: verhuisd, ander btw-nummer, andere
+     merknaam? Dan eerst uitloggen of naar je account, en daarna hier opnieuw
+     beginnen.
+     Nu staan ze er ingevuld, en je mag ze aanpassen. */
+  ingelogdAls: 'Deze gegevens komen uit je account. Klopt er iets niet, pas het hier aan — we bewaren de wijziging.',
+  ingelogdMail: 'Dit is het adres van je account.',
   signIn: 'Inloggen',
   /* Zie de Engelse tegenhanger. */
   budgetKop: 'Zelf te verdelen',
@@ -398,6 +461,8 @@ const c = nl ? {
   weekNote: 'We reserve that week in the calendar for you, every month, before any other order can take it. If you have nothing ready that month the week is not lost: your products roll over. You can change the day at any time in your dashboard.',
   weekLabel: 'Day of the month',
   sumLabel: 'Your month',
+  perProductRegel: `Every product: ${CATALOG_IMAGES} catalog images and ${LIFESTYLE_IMAGES} lifestyle images — four of them above`,
+  tegelNoot: ECHTE_BESTELLING.en,
   sumElke: 'Every month',
   sumMaatH: 'What a custom month costs',
   sumMaatSub: 'The amount follows your numbers and is shown after the mandate. Three examples, every product with a carousel:',
@@ -414,7 +479,10 @@ const c = nl ? {
   /* Zie de Nederlandse tegenhanger. */
   stap4: 'Your details',
   gegHint: 'For the invoice and your account. Ordered from us before? You do not have to type this again — sign in instead.',
-  gegNaam: 'Name',
+  gegTelefoon: 'Phone or WhatsApp',
+  errTelefoon: 'Fill in a number we can reach you on — we message you if anything is unclear.',
+  gegVoornaam: 'First name',
+  gegAchternaam: 'Last name',
   gegEmail: 'Email address',
   gegMerk: 'Company or brand',
   gegMerkHint: 'Optional — it goes on the invoice if you fill it in.',
@@ -426,13 +494,16 @@ const c = nl ? {
   gegStad: 'City',
   gegAccount: 'This creates your account at the same time. You sign in afterwards with a link in your email — there is no password.',
   /* Zie de Nederlandse tegenhanger. */
-  errNaam: 'Fill in your name — it goes on the invoice.',
+  errVoornaam: 'Fill in your first name — it goes on the invoice.',
+  errAchternaam: 'An invoice needs a last name.',
   errEmail: 'Fill in an email address. Your confirmation and your sign-in link go there.',
   errStraat: 'Fill in your street and number — an invoice cannot go out without an address.',
   errPostcode: 'Fill in your postcode.',
   errStad: 'Fill in your city.',
   errLand: 'Choose your country — the VAT rate follows from it.',
-  ingelogdAls: 'You are signed in. We use the details from your account.',
+  /* Zie de Nederlandse noot. */
+  ingelogdAls: 'These come from your account. If something is not right, change it here — we keep the change.',
+  ingelogdMail: 'This is your account address.',
   signIn: 'Sign in',
   budgetKop: 'Yours to spend',
   budgetLine: 'That is what the month is worth in production. Spend it on whatever you need — the amount does not change.',
@@ -662,9 +733,28 @@ const kaarten = planList.map((p) => {
               ZONDER SCRIPT blijft het blok staan, ook voor wie is ingelogd. Dat
               is de goede kant om: de server kijkt eerst naar de sessie en
               negeert wat hier is ingevuld. */}
-          <fieldset class="ps-set ps-geg" data-acct="out">
+          {/* ── DIT BLOK WORDT NIET MEER VERBORGEN — 11 september 2026 ─────
+              Er stond `data-acct="out"` op: voor wie was ingelogd ging de hele
+              stap 4 uit beeld én uit de inzending, met één regel eronder die
+              zei dat we de gegevens uit het account gebruikten. Zie de noot bij
+              `ingelogdAls` voor waarom dat fout was.
+
+              Nu staat het blok er altijd, en vult het script onderaan deze
+              component het in zodra /account/me antwoordt. Daarmee vervalt ook
+              de reden waarom dit per se een <fieldset> met `data-acct` moest
+              zijn (een verborgen verplicht veld blokkeert het versturen zonder
+              dat iemand ziet waarom) — het blijft een fieldset omdat het een
+              groep velden met een legenda is, wat het altijd al was.
+
+              ZONDER SCRIPT staan de velden leeg en vult de klant ze zelf in;
+              de server kijkt dan naar de sessie en niet naar wat hier staat.
+              Dat is dezelfde veilige kant als voorheen. */}
+          <fieldset class="ps-set ps-geg" data-ps-geg>
             <legend><span class="ps-n">4</span>{c.stap4}</legend>
             <p class="ps-hint">{c.gegHint}</p>
+            {/* De regel die zegt waar de ingevulde waarden vandaan komen. Boven
+                de velden en niet eronder: hij gaat over wat je gaat lezen. */}
+            <p class="ps-uitacct" data-acct="in" hidden>{c.ingelogdAls}</p>
 
             {/* De honeypot, hetzelfde veld en dezelfde naam als op het
                 bestelformulier. Buiten beeld, niet in de tabvolgorde, en niet
@@ -674,16 +764,63 @@ const kaarten = planList.map((p) => {
               <input id="ps-hp" type="text" name="company_hp" tabindex="-1" autocomplete="off" />
             </p>
 
+            {/* ── VOORNAAM EN ACHTERNAAM, NIET ÉÉN VELD — 11 september 2026 ──
+                Hier stond één `name`. Het bestelformulier en het accountscherm
+                vragen allebei om twee velden, en dat verschil is niet cosmetisch:
+                zodra een ingelogde klant deze gegevens mag BEWERKEN (zie de
+                noot bij `ingelogdAls`), moet wat hij typt terug in dezelfde
+                kolommen als waar het vandaan kwam. Uit één veld twee namen
+                afleiden kan niet — bij "Van der Meer" is niet te raden waar de
+                voornaam ophoudt, en dat staat met zoveel woorden in
+                src/lib/account.js. Dus vraagt dit formulier het nu net zo als de
+                andere twee, en is `name` weer wat het overal is: de
+                samengestelde weergave, één keer opgebouwd in de server. */}
             <div class="ps-geg-rij">
               <label class="ps-veld">
-                <span>{c.gegNaam}</span>
-                <input type="text" name="name" required data-melding={c.errNaam} autocomplete="name" maxlength="120" />
+                <span>{c.gegVoornaam}</span>
+                <input type="text" name="first_name" required data-melding={c.errVoornaam} autocomplete="given-name" maxlength="60" />
               </label>
               <label class="ps-veld">
-                <span>{c.gegEmail}</span>
-                <input type="email" name="email" required data-melding={c.errEmail} autocomplete="email" maxlength="254" inputmode="email" />
+                <span>{c.gegAchternaam}</span>
+                <input type="text" name="last_name" required data-melding={c.errAchternaam} autocomplete="family-name" maxlength="60" />
               </label>
             </div>
+
+            <div class="ps-geg-rij">
+              <label class="ps-veld">
+                <span>{c.gegEmail}</span>
+                <input type="email" name="email" required data-melding={c.errEmail} autocomplete="email" maxlength="254" inputmode="email" data-ps-email />
+                {/* Alleen zichtbaar voor wie is ingelogd; het script hieronder
+                    zet hem dan ook op readonly. Het e-mailadres IS het account,
+                    en dat verander je in je account en niet in een afrekening. */}
+                <small class="ps-mailnoot" data-acct="in" hidden>{c.ingelogdMail}</small>
+              </label>
+              {/* ── EN EEN NUMMER, VERPLICHT — 11 september 2026 ─────────────
+                  Lucas: *"over de gehele website telefoonnummer voor whatsapp
+                  ook verplicht maken."* Dit formulier had er helemaal geen,
+                  terwijl het het zwaarste is dat de site heeft: het eindigt in
+                  een doorlopende machtiging op een bankrekening. Als er één
+                  plek is waar de studio de klant moet kunnen bereiken zonder
+                  op een mailtje te wachten, is het deze. */}
+              <label class="ps-veld">
+                <span>{c.gegTelefoon}</span>
+                <input type="tel" name="phone" required data-melding={c.errTelefoon} autocomplete="tel" placeholder="+31 6 …" maxlength="40" />
+              </label>
+            </div>
+
+            {/* De contactvoorkeur, uit dezelfde bron als het bestelformulier. */}
+            <fieldset class="ps-voorkeur">
+              <legend>{vk.vraag}</legend>
+              <div class="ps-voorkeur-rij">
+                {VOORKEUREN.map((v) => (
+                  <label class="ps-voorkeur-optie">
+                    <input type="radio" name="contact_preference" value={v} checked={v === VOORKEUR_STANDAARD} />
+                    <span>{vk[v]}</span>
+                  </label>
+                ))}
+              </div>
+              <small>{vk.noot}</small>
+            </fieldset>
 
             <div class="ps-geg-rij">
               <label class="ps-veld">
@@ -693,7 +830,7 @@ const kaarten = planList.map((p) => {
               </label>
               <label class="ps-veld">
                 <span>{c.gegBtw}</span>
-                <input type="text" name="vat" autocomplete="off" maxlength="32" />
+                <input type="text" name="vat" autocomplete="off" maxlength="32" data-ps-btw />
                 <small>{c.gegBtwHint}</small>
               </label>
             </div>
@@ -728,12 +865,14 @@ const kaarten = planList.map((p) => {
               </label>
             </div>
 
-            <p class="ps-geg-slot">{c.gegAccount}</p>
+            {/* "Hiermee maken we meteen je account aan" — alleen waar voor
+                wie er nog geen heeft. */}
+            <p class="ps-geg-slot" data-acct="out">{c.gegAccount}</p>
           </fieldset>
 
-          {/* En de tegenhanger: wie WEL is ingelogd, hoort te lezen waaróm hier
-              geen gegevens staan. Zonder deze regel lijkt stap 4 te ontbreken. */}
-          <p class="ps-ingelogd" data-acct="in" hidden>{c.ingelogdAls}</p>
+          {/* Hier stond de regel "je bent ingelogd, we gebruiken je
+              accountgegevens", onder een lege stap 4. Hij staat nu bóven de
+              ingevulde velden, in de fieldset zelf. */}
         </div>
 
         {/* ── DE PLAAT: WAT DEZE MAAND OPLEVERT ───────────────────────────────
@@ -741,6 +880,18 @@ const kaarten = planList.map((p) => {
             variant per plan-en-termijn; CSS onderaan zet er één aan. */}
         <aside class="ps-sum lime-plate plaat-vol">
           <p class="ps-sum-label">{c.sumLabel}</p>
+
+          {tegels.length > 0 && (
+            <div class="ps-tegelblok">
+              <ul class="ps-tegels" role="list">
+                {tegels.map((t) => (
+                  <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
+                ))}
+              </ul>
+              <p class="ps-tegels-noot">{c.perProductRegel}</p>
+              <p class="ps-tegels-noot ps-tegels-klein">{c.tegelNoot}</p>
+            </div>
+          )}
 
           {varianten.map((v) => (
             <div class="ps-sumv" data-plan={v.plan} data-term={v.term}>
@@ -806,6 +957,141 @@ const kaarten = planList.map((p) => {
   </div>
 </section>
 </div>
+
+{/* ── DE GEGEVENS UIT HET ACCOUNT, INGEVULD EN BEWERKBAAR ────────────────────
+    11 september 2026. Lucas: *"Plaats de gegevens van het ingelogde account
+    automatisch in de open velden staan en zorg ervoor dat de klant alsnog zijn
+    gegevens daar kan bewerken wanneer dat nodig is."*
+
+    Dit is dezelfde zet die het bestelformulier al doet (applyAccount() in
+    pipeline.js): velden invullen, zichtbaar laten, en er één regel boven zetten
+    die zegt waar ze vandaan komen. Wat dit formulier deed was het tegenovergestelde
+    — de hele stap verbergen en een zin achterlaten.
+
+    DRIE DINGEN DIE DIT MET OPZET NIET DOET.
+
+    · Het OVERSCHRIJFT NIETS wat de bezoeker al heeft getypt. Iemand die begint te
+      typen en dan pas antwoord krijgt van /account/me, moet zijn eigen tekst
+      houden. Alleen lege velden worden gevuld.
+    · Het maakt het E-MAILADRES niet bewerkbaar. Dat adres IS het account: hij
+      bepaalt wie je bent, waar de inloglink heen gaat en aan welke klant dit
+      abonnement hangt. Wijzigen doe je in je account, niet halverwege een
+      afrekening — hier staat hij ingevuld en op readonly, met één regel eronder
+      die dat zegt.
+    · En het gebruikt window.visAccount(), dat Layout.astro één keer per
+      paginabezoek doet en memoïseert. Een tweede fetch hier zou een tweede
+      antwoord op dezelfde vraag zijn, en die twee kunnen niet gelijk blijven. */}
+<script is:inline data-astro-rerun>
+  (function () {
+    var blok = document.querySelector('[data-ps-geg]');
+    if (!blok || typeof window.visAccount !== 'function') return;
+
+    window.visAccount().then(function (me) {
+      if (!me || !blok.isConnected) return;
+
+      /* Leeg = vullen, ingevuld = met rust laten. `select` hoort er ook bij:
+         het land staat op NL voorgeselecteerd, en dat is precies een waarde die
+         een account mag overrulen — vandaar dat de landkeuze zijn eigen regel
+         krijgt hieronder in plaats van deze. */
+      var vul = function (naam, waarde) {
+        var el = blok.querySelector('[name="' + naam + '"]');
+        if (!el || !waarde) return;
+        if (el.value) return;
+        el.value = waarde;
+      };
+
+      vul('first_name', me.first_name);
+      vul('last_name', me.last_name);
+      vul('brand', me.brand);
+      vul('vat', me.vat);
+      vul('address_line1', me.address_line1);
+      vul('postal_code', me.postal_code);
+      vul('city', me.city);
+      vul('phone', me.phone);
+
+      /* De contactvoorkeur staat op e-mail voorgeselecteerd en is dus nooit
+         "leeg"; een opgeslagen keuze wint daarvan, om dezelfde reden als bij
+         het land hieronder. */
+      if (me.contactPreference) {
+        var v = blok.querySelector('[name="contact_preference"][value="' + me.contactPreference + '"]');
+        if (v && !v.checked) v.checked = true;
+      }
+
+      /* Het land staat al op NL en is dus nooit "leeg". Een opgeslagen land
+         wint daarvan, want NL is een gok en dit is een antwoord — en een
+         verkeerd land is hier geen schoonheidsfoutje maar het verkeerde
+         btw-tarief op een doorlopende machtiging. Alleen als de bezoeker zelf
+         al iets anders heeft aangewezen, blijft dat staan. */
+      var land = blok.querySelector('[name="country"]');
+      if (land && me.country && !land.dataset.psAangeraakt) {
+        var heeft = Array.prototype.some.call(land.options, function (o) { return o.value === me.country; });
+        if (heeft) land.value = me.country;
+      }
+      if (land && !land.dataset.psGebonden) {
+        land.dataset.psGebonden = '1';
+        land.addEventListener('change', function () { land.dataset.psAangeraakt = '1'; });
+      }
+
+      /* Het e-mailadres: invullen én vastzetten. `readOnly` en niet `disabled`,
+         want een disabled veld post niets — en de server leest dit adres om te
+         controleren dat de inzending bij deze sessie hoort. */
+      var mail = blok.querySelector('[data-ps-email]');
+      if (mail && me.email) {
+        mail.value = me.email;
+        mail.readOnly = true;
+        mail.setAttribute('aria-readonly', 'true');
+        mail.classList.add('is-vast');
+      }
+    }).catch(function () { /* geen antwoord: de velden blijven leeg en de klant vult ze zelf */ });
+  })();
+</script>
+
+<script type="application/json" data-ps-btwvormen is:inline set:html={BTW_VORMEN}></script>
+<script is:inline data-astro-rerun>
+  /* ── HET BTW-NUMMER MOET DE VORM VAN HET LAND HEBBEN ────────────────────────
+     De server weigert sinds 12 september een nummer met de verkeerde vorm
+     (`?fout=btw`). Dit script is de eerste controle, zodat de klant het hoort
+     vóór hij op verzenden drukt in plaats van erna.
+
+     Het `pattern` verhuist mee met het land: één attribuut kan niet zeven-
+     entwintig vormen tegelijk zijn, en de vorm van een Duits nummer op een
+     Nederlandse aanvraag zou precies de valse afkeuring opleveren die een klant
+     wegjaagt. Kent het blok het land niet — alles buiten de EU — dan gaat het
+     attribuut eraf en wordt er niets afgedwongen; daar heeft een btw-nummer
+     geen betekenis.
+
+     `setCustomValidity` en niet alleen `pattern`: zonder eigen zin krijgt de
+     klant de melding van de browser ("Match the requested format"), en die
+     vertelt hem niet wat de vorm dan wél is. */
+  (function () {
+    var bron = document.querySelector('[data-ps-btwvormen]');
+    var veld = document.querySelector('[data-ps-btw]');
+    var land = document.querySelector('[data-ps-geg] [name="country"]');
+    if (!bron || !veld || !land || veld.dataset.psBtwGebonden) return;
+    veld.dataset.psBtwGebonden = '1';
+
+    var vormen = {};
+    try { vormen = JSON.parse(bron.textContent || '{}'); } catch (e) { return; }
+
+    function zet() {
+      var vorm = vormen[(land.value || '').toUpperCase()];
+      if (!vorm) {
+        veld.removeAttribute('pattern');
+        veld.setCustomValidity('');
+        return;
+      }
+      veld.setAttribute('pattern', vorm.p);
+      /* De eigen zin alleen zolang het veld echt ongeldig is. Blijft hij staan,
+         dan is het veld ongeldig ook nádat de klant het heeft verbeterd — de
+         val die in pipeline.js met clearStepError() is opgelost. */
+      veld.setCustomValidity(veld.value && !veld.checkValidity() ? vorm.m : '');
+    }
+
+    land.addEventListener('change', zet);
+    veld.addEventListener('input', function () { veld.setCustomValidity(''); zet(); });
+    zet();
+  })();
+</script>
 
 <script is:inline data-astro-rerun>
   /* ── `data-astro-rerun`, OM DEZELFDE REDEN ALS IN HomeV2.astro ─────────────
@@ -1023,6 +1309,34 @@ const kaarten = planList.map((p) => {
      de indeling. Eén variant zichtbaar, gekozen door de radio's. */
   .ps-sum { padding: clamp(1.4rem, 2.6vw, 2rem); border-radius: var(--r-lg); display: grid; gap: 1.1rem; }
   .ps-sum-label { margin: 0; font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* ── DE BEELDSTROOK OP DE PLAAT ─────────────────────────────────────────
+     Vierkant en op één rij, dezelfde vorm als het overzicht op het
+     bestelformulier (.bo-tegels in BestelOverzicht.astro) — dat is met opzet:
+     wie van /start/plan naar /start/catalog loopt, moet niet het gevoel hebben
+     dat hij op een andere site is beland.
+
+     `grid-auto-flow: column` zodat de strook meeschaalt met het aantal beelden
+     en er geen lege kolom overblijft als de lijst ooit korter wordt.
+
+     De donkere randlijn is nodig: deze plaat is limoen, en een beeld met een
+     lichte hoek loopt daar zonder rand in de grond over. */
+  .ps-tegelblok { display: grid; gap: 0; }
+  .ps-tegels {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px;
+  }
+  .ps-tegels li {
+    aspect-ratio: 1; overflow: hidden;
+    background: rgb(17 18 16 / 0.10);
+    border: 1px solid rgb(17 18 16 / 0.18);
+    border-radius: 2px;
+  }
+  .ps-tegels img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* --ink-2 en niet --ink-3: op limoen is 66% zwart al randje, en dit is de
+     regel die zegt wat je per product krijgt — precies wat gelezen moet worden. */
+  .ps-tegels-noot { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink-2); }
+  .ps-tegels-klein { margin-top: .3rem; font-size: .78rem; color: var(--ink-2); opacity: .78; }
   .ps-sumv { display: grid; gap: .9rem; }
   @supports selector(:has(input)) {
     .ps-sumv { display: none; }
@@ -1084,7 +1398,43 @@ const kaarten = planList.map((p) => {
      bot die het formulier parseert vindt hem dan alsnog, en dat is de bedoeling. */
   .ps-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
-  .ps-ingelogd { margin: .4rem 0 0; font-size: .86rem; color: var(--ink-3); }
+  /* `.ps-ingelogd` stond hier: de losse regel onder een lege stap 4. Die regel
+     staat nu boven de INGEVULDE velden en heet .ps-uitacct. */
+  .ps-uitacct {
+    margin: .5rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2);
+    /* Een accentstreepje ervoor: het is de enige regel in dit blok die over de
+       herkomst van de waarden gaat, en niet over een veld. */
+    padding-left: .7rem; border-left: 2px solid var(--accent);
+  }
+  /* Het vastgezette e-mailveld. Zichtbaar anders dan de rest, want een veld dat
+     eruitziet als de andere maar niet reageert op typen is precies het soort
+     ding waar iemand drie keer op klikt. */
+  .ps-geg input.is-vast {
+    background: var(--surface-2, rgb(0 0 0 / .04));
+    color: var(--ink-2);
+    cursor: default;
+  }
+  /* `:not([hidden])` en niet kaal. `hidden` verbergt via `display: none` in de
+     browserstijl, en een klassenregel wint daarvan — deze regel zette de noot
+     "dit is het adres van je account" dus ook aan voor wie NIET is ingelogd, op
+     een leeg veld. Gevonden op de schermafdruk van de uitgelogde stand. */
+  .ps-mailnoot:not([hidden]) { display: block; }
+
+  /* De contactvoorkeur: dezelfde pillen als in het bestelformulier, want het is
+     dezelfde vraag met dezelfde twee antwoorden. */
+  .ps-voorkeur { border: 0; padding: 0; margin: 0 0 1.1rem; }
+  .ps-voorkeur legend { padding: 0; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+  .ps-voorkeur-rij { display: flex; flex-wrap: wrap; gap: .5rem .9rem; margin: .45rem 0 .4rem; }
+  .ps-voorkeur-optie {
+    display: inline-flex; align-items: center; gap: .45rem;
+    min-height: 44px; padding: 0 .8rem 0 .6rem;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    font-size: .9rem; cursor: pointer;
+  }
+  .ps-voorkeur-optie input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
+  .ps-voorkeur-optie:hover { border-color: var(--accent-line); }
+  .ps-voorkeur-optie:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .ps-voorkeur-optie:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .plan-al-klant { margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line); font-size: .86rem; line-height: 1.6; color: var(--ink-3); max-width: 70ch; }
   .plan-al-klant a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 

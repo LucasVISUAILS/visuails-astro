@@ -97,6 +97,7 @@ import {
   canRequestRevisionRound, revisionRoundState,
 } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
+import { normaliseerVoorkeur } from '../data/contactvoorkeur.js';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 // De kanaallijst staat op één plek. Hier alleen de ids om tegen te valideren
 // en de namen om te tonen — welke kanalen wit eisen is de zaak van
@@ -2821,6 +2822,10 @@ async function handleMe({ request, env }) {
     /* Het KVK-nummer (migratie 0043), zodat stap 3 het voorinvult bij een klant
        zonder btw-nummer — die typte het tot vandaag bij elke bestelling opnieuw. */
     regNumber: row.reg_number || '',
+    /* Hoe deze klant bereikt wil worden — migratie 0047. Leeg blijft leeg: dat
+       betekent "nooit gevraagd", en dat is niet hetzelfde als een gekozen
+       e-mailvoorkeur. Elk formulier haalt hem door normaliseerVoorkeur(). */
+    contactPreference: row.contact_preference || '',
     country: row.country || '',
     // De losse velden, want dat zijn de velden die het bestelformulier sinds
     // 7 augustus 2026 heeft. `address` blijft als samengesteld blok voor wie
@@ -2959,7 +2964,7 @@ function detailsRowFull(env, customerId) {
     // Beide worden gelezen: het formulier vult de losse velden, en een rij van
     // vóór 0016 heeft alleen de samengestelde — zie detailsSection(), dat de
     // oude naam in het voornaamveld zet zodat er niets zoekraakt.
-    `SELECT email, name, first_name, last_name, brand, phone, website,
+    `SELECT email, name, first_name, last_name, brand, phone, website, contact_preference,
             vat_number, no_vat_number, reg_number, country, billing_address,
             address_line1, address_line2, postal_code, city, region,
             default_background, default_background_hex, details_saved_at
@@ -3127,6 +3132,9 @@ async function handleDetails({ request, env }, customer, asJson) {
   const add = (sql, value) => { binds.push(value); sets.push(`${sql} = ?${binds.length + 1}`); };
   if (form.has('brand')) add('brand', one('brand'));
   if (form.has('phone')) add('phone', one('phone'));
+  /* De contactvoorkeur — migratie 0047. Presentie-gestuurd zoals alles hier:
+     een POST die het veld niet stuurt, laat de keuze staan. */
+  if (form.has('contact_preference')) add('contact_preference', normaliseerVoorkeur(one('contact_preference')));
   if (form.has('website')) add('website', one('website'));
   if (hasVat) { add('vat_number', vatNumber); add('no_vat_number', noVat ? 1 : 0); }
   if (form.has('reg_number')) add('reg_number', one('reg_number').slice(0, 40) || null);

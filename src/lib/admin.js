@@ -48,6 +48,25 @@ import {
    komen als de nachtelijke opruiming en de juridische pagina's. */
 import { stampDeliveryRetention, DELIVERY_DAYS } from './retention.js';
 import { serviceLabel } from '../data/services.js';
+/* De fotosoorten met hun Nederlandse naam — zie SHOT_LABEL verderop voor waarom
+   dit geen eigen lijstje meer is. */
+import { SHOTS as SHOTS_DATA } from '../data/shots.js';
+
+/* ── DE FOTOLABELS KOMEN UIT shots.js — 12 september 2026 ────────────────
+   Hier stond `{ front: 'Front', back: 'Back', detail: 'Detail', worn: 'On
+   model' }`: een tweede, Engelse kopie van wat src/data/shots.js allang in
+   beide talen heeft. Twee gevolgen, en ze zijn allebei gezien en niet bedacht.
+
+   Ten eerste stond het bord in het Engels terwijl de navigatie erboven
+   Nederlands is. Geteld op de negen gerenderde adminschermen: 42 zichtbare
+   stukken Engels tegenover 38 Nederlands. Dát is wat Lucas "inconsistent"
+   noemt — niet de ruimte, want die is nagemeten en klopt.
+
+   Ten tweede: een tweede lijst met fotosoorten kan uit de pas lopen met de
+   eerste. Komt er ooit een vijfde foto bij, dan staat hij op de bestelpagina
+   en niet op het bord waar hij geüpload moet worden. */
+const SHOT_LABEL = Object.fromEntries(SHOTS_DATA.map((s) => [s.id, s.name.nl]));
+
 /* De vier huisstijlen, voor de keuzelijst bij een bestelling namens de klant.
    Alleen wat een tarief heeft (geen priceTrust) is via het formulier te kiezen. */
 import { styles as ALLE_LOOKS } from '../data/styles.js';
@@ -2120,12 +2139,12 @@ async function renderFiles(context, orderId) {
   ${factuur.status === 'issued'
     ? `<form class="controls" method="post" action="/admin/orders/${order.id}/invoice">
          <input type="hidden" name="action" value="resend">
-         <button class="btn btn-ghost btn-sm" type="submit">Send it again</button>
-         <span class="meta">Same document, same attachment &mdash; for a mail that got stuck in a filter.</span>
+         <button class="btn btn-ghost btn-sm" type="submit">Opnieuw versturen</button>
+         <span class="meta">Zelfde document, zelfde bijlage &mdash; voor een mail die in een filter is blijven hangen.</span>
        </form>`
     : `<form class="controls" method="post" action="/admin/orders/${order.id}/invoice">
          <input type="hidden" name="action" value="render">
-         <button class="btn btn-primary btn-sm" type="submit">Finish this invoice</button>
+         <button class="btn btn-primary btn-sm" type="submit">Deze factuur afmaken</button>
          <span class="meta">The number exists, the pdf does not. This renders it from the stored snapshot &mdash; same number, no gap in the series.</span>
        </form>`}`;
 
@@ -2175,11 +2194,11 @@ async function renderFiles(context, orderId) {
     The face searches answer the question; the file searches catch a generator that handed back
     an existing photograph. See <code>src/data/modelChecks.js</code>.</p>
   <form method="post" action="/admin/orders/${order.id}/model-check">
-    <label>Date it was run
+    <label>Datum waarop het is gedraaid
       <input type="date" name="checked_at" value="${esc(controle.model_check_at || '')}" required />
     </label>
     <fieldset>
-      <legend>Searches run</legend>
+      <legend>Zoekopdrachten gedaan</legend>
       ${ENGINES.map((e) => `<label><input type="checkbox" name="engines" value="${esc(e.id)}"${
         gedaan.includes(e.id) ? ' checked' : ''}> ${esc(e.naam)} <span class="meta">(${
         e.soort === 'gezicht' ? 'face &mdash; required' : 'file'})</span></label>`).join('\n      ')}
@@ -2190,13 +2209,13 @@ async function renderFiles(context, orderId) {
         controle.model_check_result === u ? ' checked' : ''} required> ${
         u === 'treffer' ? 'A match was found' : 'No match'}</label>`).join('\n      ')}
     </fieldset>
-    <label>Who ran it
+    <label>Wie het heeft gedraaid
       <input type="text" name="by" maxlength="80" value="${esc(controle.model_check_by || '')}" required />
     </label>
-    <label>Note <span class="meta">On a match: what you found and what you did about it.</span>
+    <label>Note <span class="meta">Bij een treffer: wat je vond en wat je ermee hebt gedaan.</span>
       <textarea name="note" maxlength="1000" rows="3">${esc(controle.model_check_note || '')}</textarea>
     </label>
-    <button class="btn btn-primary" type="submit">Record this check</button>
+    <button class="btn btn-primary" type="submit">Deze controle vastleggen</button>
   </form>
   <p class="muted">This goes on the customer&rsquo;s timeline as well &mdash; there is nothing about a check
     that was run that needs hiding, and it is exactly what was promised.</p>`;
@@ -2217,12 +2236,12 @@ async function renderFiles(context, orderId) {
     ${showAnnounced
       ? `<td>${f.announced_at
           ? `<span class="muted">${esc(when(f.announced_at))}</span>`
-          : '<strong>not announced</strong>'}</td>`
+          : '<strong>niet gemeld</strong>'}</td>`
       : ''}
   </tr>`;
 
   const table = (rows, empty, showAnnounced = false) => rows.length
-    ? `<table class="files"><thead><tr><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th>${showAnnounced ? '<th>Announced</th>' : ''}</tr></thead>
+    ? `<table class="files"><thead><tr><th>Product</th><th>Foto</th><th>Bestand</th><th class="num">Grootte</th>${showAnnounced ? '<th>Gemeld</th>' : ''}</tr></thead>
        <tbody>${rows.map((f) => row(f, showAnnounced)).join('')}</tbody></table>`
     : `<p class="muted">${empty}</p>`;
 
@@ -2313,14 +2332,14 @@ async function renderFiles(context, orderId) {
     const cls = [revising ? 'is-revising' : '', dead ? 'is-superseded' : ''].filter(Boolean).join(' ');
     return `<tr class="${cls}">
       <td class="thumbcell"><a href="/admin/files/${f.id}" aria-label="Open ${esc(f.filename || `file ${f.id}`)} full size"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
-      <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— not set —', `Product for ${f.filename || `file ${f.id}`}`)}</td>
-      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, k]), '— not set —', `Shot for ${f.filename || `file ${f.id}`}`)}</td>
+      <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— niet gezet —', `Product voor ${f.filename || `bestand ${f.id}`}`)}</td>
+      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, SHOT_LABEL[k] || k]), '— niet gezet —', `Foto voor ${f.filename || `bestand ${f.id}`}`)}</td>
       <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a>
         ${dead ? '<br><span class="muted">replaced</span>' : ''}
         ${revising ? '<br><strong>revision asked</strong>' : ''}</td>
       <td class="num">${f.bytes ? Math.round(f.bytes / 1024) + ' kB' : ''}</td>
       ${showAnnounced
-        ? `<td>${f.announced_at ? `<span class="muted">${esc(when(f.announced_at))}</span>` : '<strong>not announced</strong>'}</td>`
+        ? `<td>${f.announced_at ? `<span class="muted">${esc(when(f.announced_at))}</span>` : '<strong>niet gemeld</strong>'}</td>`
         : ''}
     </tr>`;
   };
@@ -2347,7 +2366,6 @@ async function renderFiles(context, orderId) {
    * een hulpmiddel en geen norm — vandaar dat er onderaan altijd een vrij
    * uploadveld blijft en losse bestanden gewoon in de indeeltabel komen.
    */
-  const SHOT_LABEL = { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On model' };
   const liveByKey = new Map();
   for (const f of delivery) {
     if (f.superseded_at || !f.product_key || !f.shot) continue;
@@ -2374,8 +2392,8 @@ async function renderFiles(context, orderId) {
         <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
           <input type="hidden" name="product" value="${esc(productKey)}">
           <input type="hidden" name="shot" value="${esc(shotKey)}">
-          <input type="file" name="files" required aria-label="Upload ${esc(SHOT_LABEL[shotKey] || shotKey)} for product ${esc(productKey.slice(1))}">
-          <button class="btn btn-ghost btn-sm" type="submit">Upload</button>
+          <input type="file" name="files" required aria-label="${esc(SHOT_LABEL[shotKey] || shotKey)} uploaden voor product ${esc(productKey.slice(1))}">
+          <button class="btn btn-ghost btn-sm" type="submit">Uploaden</button>
         </form>
       </div>`;
     }
@@ -2387,16 +2405,16 @@ async function renderFiles(context, orderId) {
            dus axe-core las "Links must have discernible text" — twaalf keer.
            Het alt blijft leeg, want het beeld zelf is decoratie in deze rij; de
            LINK krijgt de naam, want dat is wat er aangeklikt wordt. */ ''}
-      <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="Open ${esc(SHOT_LABEL[shotKey] || shotKey)} of product ${esc(productKey.slice(1))} full size"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
-      <span class="slot-state">${revising ? 'revision asked' : fresh ? 'not announced' : 'announced'}</span>
+      <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(SHOT_LABEL[shotKey] || shotKey)} van product ${esc(productKey.slice(1))} op ware grootte openen"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
+      <span class="slot-state">${revising ? 'revisie gevraagd' : fresh ? 'niet gemeld' : 'gemeld'}</span>
       <!-- Vervangen gaat via hetzelfde vakje: een nieuw bestand op dezelfde
            product+shot maakt het vorige automatisch vervangen (resupersede),
            dus "opnieuw" is hier één handeling en geen opruimklus. -->
       <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
         <input type="hidden" name="product" value="${esc(productKey)}">
         <input type="hidden" name="shot" value="${esc(shotKey)}">
-        <input type="file" name="files" required aria-label="Replace ${esc(SHOT_LABEL[shotKey] || shotKey)} for product ${esc(productKey.slice(1))}">
-        <button class="btn btn-quiet btn-sm" type="submit">Replace</button>
+        <input type="file" name="files" required aria-label="${esc(SHOT_LABEL[shotKey] || shotKey)} vervangen voor product ${esc(productKey.slice(1))}">
+        <button class="btn btn-quiet btn-sm" type="submit">Vervangen</button>
       </form>
     </div>`;
   };
@@ -2413,7 +2431,7 @@ async function renderFiles(context, orderId) {
     const push = fresh && order.delivery_mailed_at
       ? `<form method="post" action="/admin/orders/${order.id}/announce" class="board-push">
            <input type="hidden" name="product" value="${esc(key)}">
-           <button class="btn btn-primary btn-sm" type="submit">Push ${fresh} to the customer</button>
+           <button class="btn btn-primary btn-sm" type="submit">${fresh} naar de klant sturen</button>
          </form>`
       : '';
     return `<section class="board-row" id="${esc(key)}">
@@ -2427,14 +2445,14 @@ async function renderFiles(context, orderId) {
   };
 
   const board = boardProducts.length
-    ? `<p class="muted">${filledSlots} of ${totalSlots} slots filled. Files are saved as you go — the customer sees nothing until you press push.</p>
+    ? `<p class="muted">${filledSlots} van ${totalSlots} vakjes gevuld. Bestanden worden meteen opgeslagen — de klant ziet niets tot je op versturen drukt.</p>
        ${boardProducts.map(productRow).join('')}`
     : '<p class="muted">This order has no product count on it, so there is no grid to fill. Upload below and map the files by hand.</p>';
 
   const unmapped = delivery.filter((f) => !f.superseded_at && (!f.product_key || !f.shot)).length;
   const mapForm = delivery.length
     ? `<form method="post" action="/admin/orders/${order.id}/map">
-      <table class="files"><thead><tr><th><span class="sr-only">Preview</span></th><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th>${showAnnounced ? '<th>Announced</th>' : ''}</tr></thead>
+      <table class="files"><thead><tr><th><span class="sr-only">Preview</span></th><th>Product</th><th>Foto</th><th>Bestand</th><th class="num">Grootte</th>${showAnnounced ? '<th>Gemeld</th>' : ''}</tr></thead>
       <tbody>${delivery.map(mapRow).join('')}</tbody></table>
       <div class="controls is-under">
         <button class="btn btn-primary" type="submit">Save mapping</button>
@@ -2466,13 +2484,13 @@ async function renderFiles(context, orderId) {
     try { return new URL(request.url).searchParams.get('namens') === '1'; } catch { return false; }
   })();
   const flash = flag === 'none'
-    ? '<p class="muted">Nothing new to announce — every delivered file on this order has already been mailed.</p>'
+    ? '<p class="muted">Niets nieuws te melden — elk geleverd bestand van deze bestelling is al gemaild.</p>'
     : Number(flag) > 0
       ? `<p class="okline">Mailed. ${Number(flag)} ${Number(flag) === 1 ? 'image' : 'images'} announced to ${esc(order.email || 'the customer')}.</p>`
       : mappedFlag
         ? `<p class="okline">Mapping saved for ${mappedFlag} ${mappedFlag === 1 ? 'file' : 'files'}. The customer&rsquo;s dashboard now groups them per product.</p>`
         : notedFlag
-          ? '<p class="okline">Note saved.</p>'
+          ? '<p class="okline">Notitie opgeslagen.</p>'
           : quoteFlag === 'sent'
             ? `<p class="okline">Offerte vastgelegd en betaallink gemaild naar ${esc(order.email || 'de klant')}.</p>`
             : quoteFlag === 'nolink'
@@ -2536,10 +2554,10 @@ async function renderFiles(context, orderId) {
   const announce = !migrated
     ? ''
     : !order.delivery_mailed_at
-      ? `<p class="muted">This order has never been announced. Set its status to <strong>delivered</strong> on the dashboard — that sends the &ldquo;your order is ready&rdquo; mail.</p>`
+      ? `<p class="muted">Deze bestelling is nog nooit gemeld. Zet de status op <strong>geleverd</strong> op het dashboard — dat verstuurt de mail dat de bestelling klaar is.</p>`
       : `
   <p class="muted">
-    First announced ${esc(when(order.delivery_mailed_at))}${
+    Voor het eerst gemeld ${esc(when(order.delivery_mailed_at))}${
       order.redelivery_count
         ? ` &middot; ${order.redelivery_count} re-${order.redelivery_count === 1 ? 'delivery' : 'deliveries'} announced, last ${esc(when(order.redelivery_mailed_at))}`
         : ''}.
@@ -2547,10 +2565,10 @@ async function renderFiles(context, orderId) {
   ${pending.length
     ? `<form class="controls" method="post" action="/admin/orders/${order.id}/announce">
          <input type="text" name="note" maxlength="${ANNOUNCE_NOTE_MAX}" placeholder="Optional: what changed (goes in the mail and on their timeline)" class="in-grow">
-         <button class="btn btn-primary" type="submit">Announce ${pending.length} new ${pending.length === 1 ? 'image' : 'images'}</button>
+         <button class="btn btn-primary" type="submit">${pending.length} nieuw${pending.length === 1 ? ' beeld' : 'e beelden'} melden</button>
        </form>
        <p class="muted">One mail for everything that is still unannounced — upload all of it first, then press once.</p>`
-    : '<p class="muted">Everything delivered here has been announced.</p>'}
+    : '<p class="muted">Alles wat hier geleverd is, is gemeld.</p>'}
   ${order.delivery_mailed_at ? `
   <hr style="border:0;border-top:1px solid var(--line);margin:1.4rem 0">
   <form method="post" action="/admin/orders/${order.id}/fresh-link" class="controls">
@@ -2575,20 +2593,20 @@ async function renderFiles(context, orderId) {
   const noteBlocks = `
   <h2>Notes</h2>
   <div class="notepanel is-shared">
-    <h3>The customer reads this</h3>
+    <h3>Dit leest de klant</h3>
     <p class="muted">One standing message on their order page. Not a chat — what is true now, not what was true last week.${
       order.customer_note_at ? ` Last changed ${esc(when(order.customer_note_at))}.` : ''}</p>
     <form method="post" action="/admin/orders/${order.id}/note">
       <textarea name="note" rows="3" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="e.g. The fabric on product 4 came out darker than your photo, so we lifted the exposure a touch.">${esc(order.customer_note || '')}</textarea>
       <div class="controls is-under">
         <button class="btn btn-primary btn-sm" type="submit">Save${order.customer_note ? ' / clear' : ''}</button>
-        <span class="muted">Empty saves as no message.</span>
+        <span class="muted">Leeg opslaan betekent geen bericht.</span>
       </div>
     </form>
   </div>
 
   <div class="notepanel is-internal">
-    <h3>Only you see this</h3>
+    <h3>Dit zie alleen jij</h3>
     <form method="post" action="/admin/orders/${order.id}/internal">
       <textarea name="body" rows="2" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="Why this order took an extra round, what to watch for next time, what you agreed on the phone." required></textarea>
       <div class="controls is-under">
@@ -2774,13 +2792,13 @@ ${adminNav('')}
   ${aanvraagBlok}
   ${keuzeBlok}
 
-  <h2>Client uploads (${intake.length})</h2>
+  <h2>Aangeleverd door de klant (${intake.length})</h2>
   ${table(intake, 'Nothing was uploaded with this order.')}
 
-  <h2>The board</h2>
-  ${migrated ? board : '<p class="muted">Run migration 0012 to get the per-product board.</p>'}
+  <h2>Het bord</h2>
+  ${migrated ? board : '<p class="muted">Draai migratie 0012 voor het bord per product.</p>'}
 
-  <h2>Every delivered file (${delivery.length})</h2>
+  <h2>Alle geleverde bestanden (${delivery.length})</h2>
   ${migrated ? mapForm : table(delivery, 'Nothing delivered yet.', showAnnounced)}
 
   <!-- ── DE WERKMAP, HEEN EN TERUG — 12 augustus 2026 ────────────────────────
@@ -2810,17 +2828,17 @@ ${adminNav('')}
     <button type="submit">Map uploaden</button>
   </form>
 
-  <h2>Upload the finished work</h2>
-  <p class="muted">Losse bestanden, zonder mappen. Files land against this order and appear in the client&rsquo;s portal. Setting the status to <strong>delivered</strong> on the dashboard is what emails them the link &mdash; uploading alone does not.</p>
+  <h2>Het afgewerkte werk uploaden</h2>
+  <p class="muted">Losse bestanden, zonder mappen. Ze komen bij deze bestelling te staan en verschijnen in het portaal van de klant. Pas als je de status op <strong>geleverd</strong> zet op het dashboard, krijgt hij de link gemaild &mdash; uploaden alleen doet dat niet.</p>
   <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
     <input type="file" name="files" multiple required aria-label="Losse bestanden voor deze bestelling" />
-    <button type="submit">Upload</button>
+    <button type="submit">Uploaden</button>
   </form>
 
   <h2 id="wanneer">Wanneer</h2>
   ${wanneerBlok}
 
-  <h2>Tell the customer</h2>
+  <h2>De klant op de hoogte brengen</h2>
   ${announce}
 
   ${noteBlocks}
@@ -4142,7 +4160,7 @@ async function handleAnnounceRedelivery(context, orderId) {
   // mail die naar iets verwijst wat de klant nog nooit gezien heeft.
   if (!order.delivery_mailed_at) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This order has never been announced. Set its status to <strong>delivered</strong> first — that sends the "your order is ready" mail. This button is for what comes after.'
+      'Deze bestelling is nog nooit gemeld. Zet de status op <strong>delivered</strong> first — that sends the "your order is ready" mail. This button is for what comes after.'
     ) }), 400);
   }
 
@@ -4570,7 +4588,7 @@ ${adminNav('customers')}
       <td class="num">${r.orders}</td>
       <td class="num">${r.paid_cents ? '€' + (r.paid_cents / 100).toFixed(2) : '—'}</td>
       <td>${esc((r.last_order || '').slice(0, 10) || '—')}</td>
-    </tr>`).join('')}</tbody></table>` : '<p class="empty">No customers yet.</p>'}
+    </tr>`).join('')}</tbody></table>` : '<p class="empty">Nog geen klanten.</p>'}
   `;
   return html(page({ title: 'Customers', body }));
 }
@@ -5242,7 +5260,7 @@ async function renderCustomer(context, customerId) {
          <td>${esc(l.style === 'lifestyle' ? (l.look || '—') : '—')}</td>
          <td>${esc(l.ratio || '—')}</td>
          <td>${esc(l.channels || '—')}</td></tr>`).join('')}</tbody></table>`
-    : '<p class="empty">No standing preferences set. Every order asks from scratch.</p>';
+    : '<p class="empty">Nog geen vaste voorkeuren. Elke bestelling vraagt het opnieuw.</p>';
 
   // WHAT MAKES A MODEL ORDERABLE, spelled out on the card rather than left to
   // be learned. Two conditions, both visible here: it needs a picture, and it
@@ -5276,7 +5294,7 @@ async function renderCustomer(context, customerId) {
                like every other file route here. -->
           ${m.preview_key
             ? `<img class="modelcard-img" src="/admin/models/${m.id}/image" alt="${esc(m.label)}" width="300" height="400" loading="lazy" decoding="async">`
-            : '<span class="modelcard-img is-blank">no picture</span>'}
+            : '<span class="modelcard-img is-blank">geen foto</span>'}
           <div class="modelcard-side">
             <p class="meta">${esc(missing)}</p>
             <form class="stack" method="post" action="/admin/models/${m.id}/preview" enctype="multipart/form-data">
@@ -5300,7 +5318,7 @@ async function renderCustomer(context, customerId) {
         <form class="controls" method="post" action="/admin/models/${m.id}/status">
           <select name="status">${MODEL_STATUSES.map((st) =>
             `<option value="${st}"${st === m.status ? ' selected' : ''}>${st}</option>`).join('')}</select>
-          <button class="btn btn-ghost" type="submit">Set status</button>
+          <button class="btn btn-ghost" type="submit">Status zetten</button>
         </form>
 
         <!-- ── HERNOEMEN, VERBERGEN, VERWIJDEREN — 12 augustus 2026 ────────────
@@ -5438,7 +5456,7 @@ async function renderCustomer(context, customerId) {
          <td class="num">${o.total_cents ? '€' + (o.total_cents / 100).toFixed(2) : '—'}</td>
          <td>${esc((o.created_at || '').slice(0, 10))}</td>
        </tr>`).join('')}</tbody></table>`
-    : '<p class="empty">No orders yet.</p>';
+    : '<p class="empty">Nog geen bestellingen.</p>';
 
   /*
    * REVISIERECHTEN — het enige knopje op deze pagina dat iets van de klant
@@ -5519,7 +5537,7 @@ async function renderCustomer(context, customerId) {
     ])];
     const slotCorrectie = !soorten.length ? '' : `
     <details class="slotfix">
-      <summary>Slots bijstellen</summary>
+      <summary>Vakjes bijstellen</summary>
       <form method="post" action="/admin/customers/${customer.id}/slots">
         <label for="sf-kind">Soort</label>
         <select id="sf-kind" name="kind">${soorten.map((k) =>
@@ -5603,7 +5621,7 @@ async function renderCustomer(context, customerId) {
   const wipeName = (customer.brand || customer.name || customer.email || '').trim();
   const wipePanel = `
 <details class="danger">
-  <summary>Erase this customer (GDPR request)</summary>
+  <summary>Deze klant wissen (AVG-verzoek)</summary>
   <div class="danger-body">
     <div class="danger-block is-worst">
       <h4>Alles van dit merk weg, op één uitzondering</h4>
@@ -5628,7 +5646,7 @@ async function renderCustomer(context, customerId) {
       <p class="meta">Er is geen ongedaan maken.</p>
       <form method="post" action="/admin/customers/${customer.id}/wipe">
         <input type="text" name="confirm" required autocomplete="off" placeholder="Type ${esc(wipeName)} to confirm">
-        <button class="btn btn-ghost btn-sm" type="submit">Erase everything</button>
+        <button class="btn btn-ghost btn-sm" type="submit">Alles wissen</button>
       </form>
     </div>
   </div>
@@ -5814,7 +5832,7 @@ ${adminNav('customers')}
     <input type="file" name="preview" accept="image/*">
     <button class="btn btn-primary" type="submit">Add brand model</button>
   </form>
-  <p class="meta">Only you see this. The moment a model has a picture it appears as a tile the customer can pick when they place an order.</p>
+  <p class="meta">Dit zie alleen jij. Zodra een model een foto heeft, verschijnt hij als tegel die de klant bij een bestelling kan kiezen.</p>
 
   <h2 id="eigen-looks">Eigen looks</h2>
   <p class="meta">Een look op maat, na intake en offerte. Wat hier op <em>actief</em> staat, ziet de klant in Studio onder &ldquo;Je eigen looks&rdquo; en als tegel in het gewone bestelformulier &mdash; bij lifestyle tussen de vier huisstijlen, bij catalog als keuze na de achtergrond.</p>
@@ -7437,14 +7455,14 @@ ${adminNav('log')}
 <h1>Activity log</h1>
 <p class="lede">Every change made from this dashboard. The customer never sees this — their own timeline lives on the order.</p>
 ${missing
-  ? '<p class="warnline">The log table is not there yet. Run migration 0014.</p>'
+  ? '<p class="warnline">De logtabel bestaat nog niet. Draai migratie 0014.</p>'
   : rows.length
     ? `<table class="files"><thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead><tbody>
         ${rows.map((r) => `<tr>
           <td class="muted">${esc(when(r.created_at))}</td>
           <td class="muted">${esc(r.admin_email || '—')}</td>
           <td><code>${esc(r.action)}</code></td>
-          <td>${esc(r.detail || '')}${r.order_id ? ` <a href="/admin/orders/${r.order_id}/files">order &rarr;</a>` : ''}${r.customer_id ? ` <a href="/admin/customers/${r.customer_id}">customer &rarr;</a>` : ''}</td>
+          <td>${esc(r.detail || '')}${r.order_id ? ` <a href="/admin/orders/${r.order_id}/files">order &rarr;</a>` : ''}${r.customer_id ? ` <a href="/admin/customers/${r.customer_id}">klant &rarr;</a>` : ''}</td>
         </tr>`).join('')}
       </tbody></table>`
     : '<p class="empty">Nothing logged yet.</p>'}`;
@@ -9236,7 +9254,7 @@ function revisionCard(r) {
            op de bestandenpagina dicht. -->
       <p class="rev-what">${r.product_key
         ? `<strong>Product ${esc(r.product_key.replace(/^p/, ''))}${r.shot ? ` &middot; ${esc(r.shot)}` : ''}</strong>`
-        : '<strong class="muted">not mapped to a product</strong>'}</p>
+        : '<strong class="muted">niet aan een product gekoppeld</strong>'}</p>
       <p class="meta">${esc(r.filename || 'file #' + r.file_id)} ${repeat} ${often} ${revoked}</p>
       ${r.review_note ? `<div class="note">${esc(r.review_note)}</div>` : '<p class="meta">Geen notitie achtergelaten.</p>'}
 
@@ -9317,7 +9335,7 @@ function orderCard(o, models, statusFilter = '') {
   // de praktijk niet.
   const pendingAnnounce = o.delivery_mailed_at && o.unannounced
     ? `<p class="warnline">${o.unannounced} delivered ${o.unannounced === 1 ? 'file has' : 'files have'} not been announced.
-        <a href="/admin/orders/${o.id}/files">Tell the customer &rarr;</a></p>`
+        <a href="/admin/orders/${o.id}/files">De klant op de hoogte brengen &rarr;</a></p>`
     : '';
   /* EN DE DERDE STILTE — 4 september 2026 (doorlichting §3.7). Resend zei 200,
      de klant kreeg niets: het adres bestaat niet of wij staan in zijn spam. Rood
@@ -9382,7 +9400,7 @@ function orderCard(o, models, statusFilter = '') {
   ${orderDanger(o)}
   <form class="controls" method="post" action="/admin/orders/${o.id}/models">
     <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" class="in-grow" required>
-    <button class="btn btn-ghost" type="submit">Add custom model</button>
+    <button class="btn btn-ghost" type="submit">Merkmodel toevoegen</button>
   </form>
   </div>
 </details>`;
@@ -9405,26 +9423,26 @@ function orderDanger(o) {
   const cancelled = o.status === 'cancelled';
   return `
 <details class="danger">
-  <summary>Cancel, hide or delete</summary>
+  <summary>Annuleren, verbergen of verwijderen</summary>
   <div class="danger-body">
     ${cancelled
       ? '<p class="meta">Already cancelled.</p>'
       : `<form method="post" action="/admin/orders/${o.id}/cancel" class="danger-block">
-           <h4>Cancel</h4>
+           <h4>Annuleren</h4>
            <p class="meta">The order stays on file, the customer sees &ldquo;cancelled&rdquo; and your reason on their timeline.</p>
-           <input type="text" name="reason" required maxlength="500" placeholder="Why is this not going ahead? The customer reads this.">
+           <input type="text" name="reason" required maxlength="500" placeholder="Waarom gaat dit niet door? Dit leest de klant.">
            ${paid
-             ? `<label class="danger-money">What happens with the money?
+             ? `<label class="danger-money">Wat gebeurt er met het geld?
                   <select name="payment" required>
                     <option value="">— choose —</option>
-                    <option value="refund">Refund it</option>
-                    <option value="credit">Credit for a future order</option>
-                    <option value="none">Nothing, keep it</option>
+                    <option value="refund">Terugbetalen</option>
+                    <option value="credit">Tegoed voor een volgende bestelling</option>
+                    <option value="none">Niets, houden zo</option>
                   </select>
                 </label>
-                <p class="meta">Choosing <strong>Refund it</strong> sends the money back through Mollie right here. The credit note follows by itself once Mollie confirms.</p>`
+                <p class="meta">Choosing <strong>Terugbetalen</strong> stuurt het geld hier meteen terug via Mollie. De creditfactuur volgt vanzelf zodra Mollie bevestigt.</p>`
              : '<p class="meta">Nothing was paid, so there is nothing to decide about money.</p>'}
-           <button class="btn btn-ghost btn-sm" type="submit">Cancel this order</button>
+           <button class="btn btn-ghost btn-sm" type="submit">Deze bestelling annuleren</button>
          </form>`}
 
     <form method="post" action="/admin/orders/${o.id}/hide" class="danger-block">
@@ -9433,16 +9451,16 @@ function orderDanger(o) {
         ? 'Put it back in the lists and the counts.'
         : 'Your own test orders and accidental doubles. Out of the lists and the counts, still in the database.'}</p>
       <input type="hidden" name="action" value="${o.hidden_at ? 'show' : 'hide'}">
-      <button class="btn btn-ghost btn-sm" type="submit">${o.hidden_at ? 'Show again' : 'Hide from my lists'}</button>
+      <button class="btn btn-ghost btn-sm" type="submit">${o.hidden_at ? 'Weer tonen' : 'Verbergen uit mijn lijsten'}</button>
     </form>
 
     ${paid
-      ? '<div class="danger-block"><h4>Delete</h4><p class="meta">Not available: this order was paid, and a paid order has to stay on file. Cancel or hide it instead.</p></div>'
+      ? '<div class="danger-block"><h4>Verwijderen</h4><p class="meta">Niet mogelijk: deze bestelling is betaald, en een betaalde bestelling moet bewaard blijven. Annuleer hem of verberg hem.</p></div>'
       : `<form method="post" action="/admin/orders/${o.id}/delete" class="danger-block is-worst">
-           <h4>Delete for good</h4>
-           <p class="meta">Unpaid only. The row and its files in R2 go, and nothing brings them back. Type <strong>${esc(o.ref)}</strong> to confirm.</p>
+           <h4>Voorgoed verwijderen</h4>
+           <p class="meta">Alleen als er niet betaald is. De regel en zijn bestanden in R2 verdwijnen, en niets haalt ze terug. Typ <strong>${esc(o.ref)}</strong> om te bevestigen.</p>
            <input type="text" name="confirm" required placeholder="${esc(o.ref)}" autocomplete="off">
-           <button class="btn btn-ghost btn-sm" type="submit">Delete this order</button>
+           <button class="btn btn-ghost btn-sm" type="submit">Deze bestelling verwijderen</button>
          </form>`}
   </div>
 </details>`;

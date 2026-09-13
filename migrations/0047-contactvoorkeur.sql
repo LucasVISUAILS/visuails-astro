@@ -1,0 +1,19 @@
+-- VISUAILS — hoe de klant bereikt wil worden, 11 september 2026.
+--
+-- Lucas: *"De klant mag wel een contact voorkeur hebben (mail of whatsapp)."*
+--
+-- Eén kolom, met twee waarden: 'email' of 'whatsapp'. De lijst, de woorden en
+-- het normaliseren staan in src/data/contactvoorkeur.js — dit is alleen de
+-- plek waar het antwoord blijft staan.
+--
+-- GEEN CHECK-CONSTRAINT en geen DEFAULT, met reden. Een lege kolom betekent
+-- hier iets echts: "deze klant heeft de vraag nooit gekregen", en dat is niet
+-- hetzelfde als "deze klant koos e-mail". Elke lezer haalt de waarde door
+-- normaliseerVoorkeur(), en die maakt van leeg net zo goed e-mail — maar dan
+-- weet de studio nog steeds wie het zelf heeft gezegd. Bestaande klanten
+-- krijgen dus NULL en niet stilzwijgend een keuze die ze niet gemaakt hebben.
+--
+-- Het TELEFOONNUMMER krijgt geen migratie: `customers.phone` bestaat al sinds
+-- het eerste schema. Wat er vandaag verandert is dat de formulieren hem
+-- verplicht stellen — behalve op /contact, waar alleen het mailadres moet.
+ALTER TABLE customers ADD COLUMN contact_preference TEXT;
