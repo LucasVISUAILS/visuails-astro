@@ -147,7 +147,13 @@ const looks = ORDERABLE.map((s) => {
     lookvraag dus moet kunnen verdwijnen. */}
 <fieldset class="pl-fieldset pl-look" data-pl-look>
   <legend class="pl-sr">{c.label}</legend>
-  <h3 class="pl-sub-h" id="pl-look-h">{c.label}</h3>
+  {/* HET STERRETJE, want dit veld IS verplicht — 13 september 2026.
+      Op hetzelfde scherm draagt "Hoeveel producten?" er een en deze vraag niet,
+      terwijl je aan allebei vastzit om verder te komen. Een sterretje dat de ene
+      verplichte vraag wel markeert en de andere niet, maakt het teken
+      betekenisloos: de bezoeker leert dat de rest optioneel is en loopt dan
+      tegen een fout aan die hij niet zag aankomen. */}
+  <h3 class="pl-sub-h" id="pl-look-h">{c.label} <span class="req">*</span></h3>
   <p class="hint pl-look-hint">{c.hint}</p>
 
   {/* ── DE LOOK IS AL GEKOZEN ──────────────────────────────────────────────
@@ -208,12 +214,24 @@ const looks = ORDERABLE.map((s) => {
 
   {/* Alleen als styles.js daadwerkelijk iets op aanvraag heeft. Een blok dat
       naar een lege verzameling verwijst, is een dode deur. */}
+  {/* ── DE AANVRAAG IS EEN REGEL GEWORDEN — 13 september 2026 ──────────────
+      Dit was een gestippeld kader met een kop, een alinea van vier regels en een
+      knop, en het stond tussen de vier looks en de vraag "hoeveel producten?".
+      Sinds de looks vandaag bóven het aantal staan, is dat de plek waar de
+      bezoeker doorloopt naar de rest van het formulier — en daar stond dus het
+      grootste blok van stap 1 voor de uitzondering: een look die niet in de
+      lijst staat.
+
+      Wat overblijft is één regel met dezelfde link. Waarom de uitleg weg mag:
+      /start/custom-look zegt in zijn eigen eerste alinea wat een look op maat
+      is en dat er geen tarief per product op zit. Dat twee keer vertellen, en
+      de tweede keer bóven de vraag die iedereen wél moet beantwoorden, is de
+      uitzondering zwaarder maken dan de regel. */}
   {opAanvraag.length > 0 && (
-    <div class="look-ask">
-      <p class="look-ask-h">{c.askH}</p>
-      <p class="look-ask-body">{c.askBody}</p>
-      <a class="look-ask-cta" href={lp('/start/custom-look')}>{c.askCta}</a>
-    </div>
+    <p class="look-ask-regel">
+      <span>{c.askH}</span>
+      <a href={lp('/start/custom-look')}>{c.askCta}</a>
+    </p>
   )}
 </fieldset>
 
@@ -267,7 +285,7 @@ const looks = ORDERABLE.map((s) => {
     var naamEl = vak.querySelector('[data-look-vast-naam]');
     var shot = vak.querySelector('[data-look-vast-shot]');
     var hint = document.querySelector('.pl-look-hint');
-    var ask = document.querySelector('.look-ask');
+    var ask = document.querySelector('.look-ask-regel');
 
     function toon(open) {
       raster.hidden = !open;
@@ -316,6 +334,16 @@ const looks = ORDERABLE.map((s) => {
   .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
   .pl-look-hint { display: block; max-width: 66ch; margin-top: .35rem; }
 
+  /* Eén regel, geen kader: zie de noot bij .look-ask-regel in de markup. De
+     oude .look-ask-* klassen zijn weg — een gestippeld kader hier concurreert
+     met de vier looks erboven, en dat is precies andersom dan het hoort. */
+  .look-ask-regel {
+    margin: .9rem 0 0;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem;
+    font-size: .88rem; line-height: 1.5; color: var(--ink-3);
+  }
+  .look-ask-regel a { color: var(--ink); text-underline-offset: .2em; }
+
   /* Two up, so the photograph is big enough to be the answer. Four across at
      this measure would be 200px each and we would be back to describing the
      look in words beside a thumbnail of it. */
@@ -356,27 +384,6 @@ const looks = ORDERABLE.map((s) => {
   .pl-panel-note :global(a),
   .pl-panel-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 
-  /* De weg naar de stijl die geen radio meer is. Een kader en geen tegel: het
-     moet lezen als "en dit is er ook", niet als een vijfde optie in dezelfde
-     rij — dat is precies het verschil dat deze wijziging maakt. */
-  .look-ask {
-    margin-top: 1.4rem;
-    padding: 1rem 1.1rem;
-    border: 1px dashed var(--line-strong, var(--line));
-    border-radius: var(--r-lg);
-    display: grid;
-    gap: .4rem;
-    justify-items: start;
-  }
-  .look-ask-h { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
-  .look-ask-body { margin: 0; font-size: .86rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
-  .look-ask-cta {
-    margin-top: .3rem;
-    font-size: .88rem; font-weight: 700;
-    color: var(--accent-bright);
-    text-decoration: underline; text-underline-offset: 3px;
-  }
-
   /* The radio pipeline.js marks when the step is submitted unanswered.
      Scoped to this component, so the selector cannot reach for .pl-form —
      Astro would append this component's hash to that too, and the form does
@@ -407,7 +414,22 @@ const looks = ORDERABLE.map((s) => {
   .look-vast-btn:hover { border-color: var(--accent); }
   .look-vast-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
-  @media (max-width: 640px) { .look-grid { grid-template-columns: 1fr; } }
+  /* ── OP EEN TELEFOON BLIJVEN HET ER TWEE — 13 september 2026 ────────────
+     Hier stond één kolom onder 640 pixels. Sinds de looks vandaag bóven het
+     aantal staan, is dat het EERSTE wat een bezoeker op zijn telefoon ziet, en
+     vier beelden van de volle breedte onder elkaar zijn daar ruim 1.300 pixels
+     scrollen voordat je bij "hoeveel producten" bent.
+
+     Twee naast elkaar is op 390 pixels een beeld van ongeveer 165 breed. Klein,
+     maar het gaat hier om het HERKENNEN van een sfeer — zon en zand tegenover
+     nachtflits — en dat leest op die maat prima; wie er één wil uitvergroten
+     heeft "Bekijk de hele stijl" eronder. De keuze blijft raakbaar: het hele
+     kader is het label, niet alleen het rondje.
+
+     Onder 22rem (352 pixels, kleiner dan elke telefoon in gebruik) valt hij
+     alsnog terug op één kolom, want daar wordt een beeld van 140 breed met een
+     naam eronder wél te klein. */
+  @media (max-width: 22rem) { .look-grid { grid-template-columns: 1fr; } }
   @media (max-width: 30rem) {
     .look-vast { grid-template-columns: 3.4rem minmax(0, 1fr); }
     .look-vast-shot { width: 3.4rem; height: 2.6rem; }

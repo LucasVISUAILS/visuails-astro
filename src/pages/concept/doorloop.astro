@@ -1,0 +1,327 @@
+---
+/**
+ * OPBOUW 1 · DOORLOOP — de pagina als één afdaling langs één lijn.
+ * 15 september 2026.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ * WAT ER MIS IS, EN WAAR DAT VANDAAN KOMT
+ * ══════════════════════════════════════════════════════════════════════════
+ * Lucas: *"sommige secties voelen gewoon los van de website."*
+ *
+ * Smashing Magazine, Compositional Flow and Rhythm: *"Lines can also be used
+ * to cut off motion in one direction by being perpendicular to that motion.
+ * When this happens they act as barriers, stopping or possibly reversing the
+ * path the eye was following."*
+ *
+ * Daar staat het probleem, letterlijk. Een bezoeker leest van boven naar
+ * beneden. Elke horizontale rand over de volle breedte staat LOODRECHT op die
+ * beweging en werkt dus als een slagboom. De huidige voorpagina heeft er zes:
+ * de gele feitenband, het donkere procespaneel, de donkere voet, en de
+ * haarlijnen tussen de secties. Zes keer stoppen in één pagina — dat is niet
+ * "een sectie die niet bij de site hoort", dat is een sectie die van de vorige
+ * is AFGESNEDEN.
+ *
+ * ── WAT DEZE OPBOUW ERVOOR IN DE PLAATS ZET ───────────────────────────────
+ * Alle slagbomen eruit, en er één LANGSLOPENDE lijn voor terug. Eén grond van
+ * boven tot onder, geen enkele band over de volle breedte, en links een
+ * doorlopende haarlijn met de sectienummers erop. Het oog volgt nu een
+ * verticale lijn in plaats van tegen horizontale te lopen — precies de
+ * "linear alignment" die Attention Insight als eerste techniek noemt:
+ * *"arranging elements along a single axis to create a clear sequence."*
+ *
+ * Kleur komt exact twee keer voor: het limoen markeert één ding per sectie op
+ * de lijn, en er is één donker vlak, helemaal onderaan, waar de pagina ophoudt
+ * en de bestelling begint. Een donker vlak halverwege zou weer een slagboom
+ * zijn.
+ *
+ * ── HET RISICO, EERLIJK ───────────────────────────────────────────────────
+ * Zonder banden is er ook minder afwisseling. Wie snel scrollt ziet één lange
+ * lichte pagina, en dat kan saai lezen. Het tegengif zit in de beelden, niet in
+ * de vlakken: die moeten dan wel groot genoeg zijn om ritme te geven.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import LaptopCarousel from '../../components/LaptopCarousel.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+import '../../styles/stelsel.css';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const { c, sample, RUNGS, SFEER, ladderRate } = inhoud(lang);
+
+const INGESTUURD = [
+  ['/img/ba2-voor-front.webp', 'Telefoonfoto: een roze jeans plat op een betonnen magazijnvloer, voorkant'],
+  ['/img/ba2-voor-achter.webp', 'Telefoonfoto: dezelfde jeans omgedraaid, achterkant'],
+  ['/img/ba2-voor-detail.webp', 'Telefoonfoto: een hand houdt de tailleband met de knoop omhoog'],
+  ['/img/ba2-voor-textuur.webp', 'Telefoonfoto: het weefsel van dichtbij'],
+  ['/img/ba2-voor-pasvorm.webp', 'Spiegelselfie waarop de jeans gedragen wordt'],
+];
+const GELEVERD = [
+  ['/img/ba2-na-front.webp', 'Afgewerkt catalogbeeld: de jeans recht van voren op wit'],
+  ['/img/ba2-na-achter.webp', 'Afgewerkt catalogbeeld: de achterkant op wit'],
+  ['/img/ba2-na-detail.webp', 'Afgewerkt detailbeeld: de knoop en de tailleband'],
+  ['/img/ba2-na-model.webp', 'Afgewerkt beeld: de jeans gedragen door een model'],
+];
+---
+<ConceptLayout
+  title="Opbouw 1 · Doorloop — VISUAILS"
+  description="De voorpagina als één afdaling: geen banden over de volle breedte, maar één doorlopende lijn met de secties eraan."
+  lang={lang}
+  grond="vel"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  <header class="balk">
+    <div class="binnen balk-in">
+      <a href={lp('/')} aria-label="VISUAILS"><svg class="merkteken" aria-hidden="true"><use href="#markglyph" /></svg></a>
+      <nav class="balk-nav" aria-label="Hoofd">{c.nav.map(([naam, doel]) => <a href={doel}>{naam}</a>)}</nav>
+      <a class="knop knop-geel" href={lp('/start')}>{c.ctaStart}</a>
+    </div>
+  </header>
+
+  <main id="inhoud">
+    <div class="binnen spil">
+      <!-- ═══ 00 · DE OPENING ═══════════════════════════════════════════ -->
+      <section class="stap stap-open">
+        <span class="nr" aria-hidden="true">00</span>
+        <div class="woord">
+          <h1 class="kop op-h" set:html={c.h1.join(' ')} />
+          <p class="op-lede">{c.lede}</p>
+          <p class="knoppen">
+            <a class="knop knop-geel" href={lp('/start')}>{c.ctaStart}</a>
+            <a class="knop" href={lp('/test-sample')}>{sample.cta}</a>
+          </p>
+        </div>
+        <LaptopCarousel lang={lang} titel="Werk van VISUAILS, per stijl" />
+      </section>
+
+      <!-- ═══ 01 · DE VIER FEITEN ═══════════════════════════════════════
+           Wat eerst een gele band over de volle breedte was, is nu een rij
+           aan dezelfde lijn. Zelfde informatie, geen slagboom. -->
+      <section class="stap">
+        <span class="nr" aria-hidden="true">01</span>
+        <ul class="feiten">
+          {c.facts.map((f) => <li>{f}</li>)}
+        </ul>
+      </section>
+
+      <!-- ═══ 02 · WAT WE MAKEN ═════════════════════════════════════════ -->
+      <section class="stap" id="maken">
+        <span class="nr" aria-hidden="true">02</span>
+        <header class="kop-groep">
+          <h2 class="kop">{c.svcH}</h2>
+          <p class="lopend">{c.svcLede}</p>
+        </header>
+        <ul class="diensten">
+          {c.svc.map(([naam, wat, prijs, pad]) => (
+            <li>
+              <a class="dienst" href={lp(pad)}>
+                <span class="dienst-woord">
+                  <span class="kop dienst-h">{naam}</span>
+                  <span class="dienst-wat">{wat}</span>
+                </span>
+                <span class="getal dienst-prijs">{prijs}</span>
+                <span class="dienst-knop">{c.svcMore}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <!-- ═══ 03 · ERIN, ERUIT ══════════════════════════════════════════ -->
+      <section class="stap">
+        <span class="nr" aria-hidden="true">03</span>
+        <header class="kop-groep">
+          <h2 class="kop">{c.vnH}</h2>
+          <p class="lopend">{c.setH}</p>
+        </header>
+        <p class="rij-etiket etiket"><span>{c.vnIn[0]}</span><span class="rij-noot">5 &middot; telefoon</span></p>
+        <ul class="strook strook-in">
+          {INGESTUURD.map(([src, alt]) => (
+            <li class="beeld-vak"><img class="beeld" src={src} width="760" height="1013" alt={alt} loading="lazy" decoding="async" /></li>
+          ))}
+        </ul>
+        <p class="rij-etiket etiket"><span>{c.vnOut[0]}</span><span class="rij-noot">4 &middot; 2048 &times; 2048</span></p>
+        <ul class="strook strook-uit">
+          {GELEVERD.map(([src, alt]) => (
+            <li class="beeld-vak"><img class="beeld" src={src} width="760" height="760" alt={alt} loading="lazy" decoding="async" /></li>
+          ))}
+        </ul>
+      </section>
+
+      <!-- ═══ 04 · HET PROCES ═══════════════════════════════════════════
+           Geen donker paneel. De vier stappen hangen aan dezelfde lijn als
+           al het andere, met hun eigen nummers erop. -->
+      <section class="stap">
+        <span class="nr" aria-hidden="true">04</span>
+        <header class="kop-groep"><h2 class="kop">{c.stepsH}</h2></header>
+        <ol class="stappen">
+          {c.steps.map(([kop, zin], i) => (
+            <li class="sub">
+              <span class="mono sub-nr">{String(i + 1).padStart(2, '0')}</span>
+              <span class="kop sub-h">{kop}</span>
+              <span class="sub-p">{zin}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <!-- ═══ 05 · TARIEVEN ═════════════════════════════════════════════ -->
+      <section class="stap" id="tarieven">
+        <span class="nr" aria-hidden="true">05</span>
+        <header class="kop-groep">
+          <h2 class="kop">{c.priceH}</h2>
+          <p class="lopend">{c.priceVat}</p>
+        </header>
+        <div class="ladder">
+          {RUNGS.map((r, i) => (
+            <div class={`trede${i === 0 ? ' is-aan' : ''}`}>
+              <span class="etiket">{r.label} producten</span>
+              <span class="getal trede-bedrag">&euro;{ladderRate('catalog', r.at)}</span>
+            </div>
+          ))}
+        </div>
+        <p class="knoppen"><a class="knop knop-geel" href={lp('/pricing')}>{c.priceCta}</a></p>
+      </section>
+    </div>
+
+    <!-- ═══ 06 · DE PROEF — het enige donkere vlak, en het laatste ══════
+         Onderaan mag een vlak wél de volle breedte nemen: daar hoeft het oog
+         niet meer verder. Een slagboom aan het eind van de weg is geen
+         slagboom maar een eindpunt. -->
+    <section class="slot">
+      <div class="binnen slot-in">
+        <div>
+          <h2 class="kop slot-h">{c.closeH}</h2>
+          <p class="slot-p">{c.closeLede}</p>
+        </div>
+        <p class="knoppen">
+          <a class="knop knop-geel" href={lp('/test-sample')}>{sample.cta}</a>
+          <a class="knop slot-knop" href={lp('/start')}>{c.ctaStart}</a>
+        </p>
+      </div>
+      <div class="binnen voet-in">
+        <p class="etiket">{c.labels[0]} &middot; {c.labels[2]}</p>
+        <ul class="voet-trust">{c.trust.map((t) => <li>{t}</li>)}</ul>
+      </div>
+    </section>
+  </main>
+</ConceptLayout>
+
+<style>
+  .balk-in { display: flex; align-items: center; gap: var(--s-2); min-height: 72px; }
+  .balk-nav { display: flex; gap: var(--s-2); margin-inline: auto; }
+  .balk-nav a { font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2); }
+  .balk-nav a:hover { color: var(--inkt); }
+  @media (max-width: 64rem) { .balk-nav { display: none; } }
+
+  /* ── DE LIJN ────────────────────────────────────────────────────────────
+     Eén haarlijn, van de eerste sectie tot de laatste, met de nummers erop.
+     Hij staat in de linkermarge en niet tussen de secties in — dat is het
+     hele punt: verticaal meelopen in plaats van horizontaal afsnijden. */
+  .spil { position: relative; padding-left: 0; }
+  @media (min-width: 64rem) {
+    .spil { padding-left: 7.5rem; }
+    .spil::before {
+      content: ""; position: absolute; left: 3.25rem; top: 1.2rem; bottom: 0;
+      width: 1px; background: var(--lijn);
+    }
+  }
+
+  /* ── EEN STAP ───────────────────────────────────────────────────────────
+     Geen rand, geen eigen grond, geen scheiding. Alleen lucht ertussen, en
+     die lucht is overal dezelfde maat. */
+  .stap { position: relative; padding-block: var(--s-5); }
+  .stap:first-child { padding-top: var(--s-2); }
+  .nr {
+    display: none;
+    font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%;
+    letter-spacing: .06em; color: var(--inkt-3);
+  }
+  @media (min-width: 64rem) {
+    .nr {
+      display: block; position: absolute; left: -5.5rem; top: calc(var(--s-5) + .2rem);
+      background: var(--vel); padding-block: .35rem; width: 3.5rem; text-align: center;
+    }
+    .stap:first-child .nr { top: calc(var(--s-2) + .2rem); }
+  }
+
+  .kop-groep { max-width: 44rem; margin-bottom: var(--s-3); display: grid; gap: var(--s-1); }
+  .kop-groep h2 { font-size: var(--t-2); }
+  .knoppen { display: flex; flex-wrap: wrap; gap: var(--s-1); margin-top: var(--s-2); }
+
+  /* ── 00 · DE OPENING ────────────────────────────────────────────────── */
+  .stap-open { display: grid; gap: var(--s-3); }
+  .woord { max-width: 40rem; display: grid; gap: var(--s-1); }
+  .op-h { font-size: clamp(2rem, 3.4vw, 3.2rem); font-stretch: 112%; }
+  .op-lede { max-width: 46ch; font-size: var(--t-tekst); color: var(--inkt-2); }
+
+  /* ── 01 · DE FEITEN, zonder band ────────────────────────────────────── */
+  .feiten { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--kolomgat); }
+  .feiten li {
+    padding-top: var(--s-1); border-top: 2px solid var(--inkt);
+    font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%;
+    letter-spacing: .04em; text-transform: uppercase; line-height: 1.5;
+  }
+  @media (max-width: 64rem) { .feiten { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 34rem) { .feiten { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ── 02 · DIENSTEN ──────────────────────────────────────────────────── */
+  .diensten { border-top: 1px solid var(--lijn); }
+  .dienst {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s-2);
+    align-items: center; padding: var(--s-2) var(--s-1); border-bottom: 1px solid var(--lijn);
+    border-radius: var(--rond-m); transition: background-color .25s var(--uit);
+  }
+  .dienst:hover { background: var(--wit); }
+  .dienst-woord { display: grid; gap: .25rem; min-width: 0; }
+  .dienst-h { font-size: var(--t-3); }
+  .dienst-wat { color: var(--inkt-2); font-size: var(--t-klein); }
+  .dienst-prijs { font-size: var(--t-3); white-space: nowrap; }
+  .dienst-knop { border: 1px solid var(--lijn-sterk); border-radius: var(--rond-knop); padding: .5rem .95rem; font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .dienst:hover .dienst-knop { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
+  @media (max-width: 48rem) { .dienst { grid-template-columns: minmax(0, 1fr); gap: var(--s-1); justify-items: start; } }
+
+  /* ── 03 · ERIN, ERUIT ───────────────────────────────────────────────── */
+  .rij-etiket { justify-content: space-between; padding-bottom: .6rem; border-bottom: 1px solid var(--lijn); margin-bottom: var(--s-1); }
+  .rij-etiket + .strook { margin-bottom: var(--s-3); }
+  .rij-noot { color: var(--inkt-3); }
+  .strook { display: grid; gap: var(--kolomgat); }
+  .strook-in { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .strook-uit { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .strook-in li { aspect-ratio: 3 / 4; }
+  .strook-uit li { aspect-ratio: 1; }
+  @media (max-width: 48rem) {
+    .strook-in { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .strook-uit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* ── 04 · HET PROCES ────────────────────────────────────────────────── */
+  .stappen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--kolomgat); }
+  .sub { display: grid; gap: .35rem; align-content: start; padding-top: var(--s-1); border-top: 1px solid var(--lijn); }
+  .sub-nr { color: var(--inkt-3); }
+  .sub-h { font-size: var(--t-3); }
+  .sub-p { color: var(--inkt-2); font-size: var(--t-klein); line-height: 1.5; }
+  @media (max-width: 64rem) { .stappen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 34rem) { .stappen { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ── 05 · TARIEVEN ──────────────────────────────────────────────────── */
+  .ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--kolomgat); }
+  .trede { display: grid; gap: var(--s-0); padding-top: var(--s-1); border-top: 1px solid var(--lijn); }
+  /* Het enige limoen boven de vouw: één trede gemarkeerd, en verder niets. */
+  .trede.is-aan { border-top: 2px solid var(--gloed); }
+  .trede-bedrag { font-size: clamp(2rem, 3.4vw, 3rem); font-stretch: 118%; }
+  @media (max-width: 64rem) { .ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  /* ── 06 · HET EINDPUNT ──────────────────────────────────────────────── */
+  .slot { background: var(--inkt); color: var(--vel); margin-top: var(--s-5); padding-block: var(--s-5) var(--s-3); border-radius: var(--rond-l) var(--rond-l) 0 0; }
+  .slot-in { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: end; justify-content: space-between; }
+  .slot-h { font-size: var(--t-2); max-width: 20ch; }
+  .slot-p { color: rgb(255 255 255 / .8); font-size: var(--t-klein); max-width: 46ch; margin-top: var(--s-1); }
+  .slot-knop { border-color: rgb(255 255 255 / .55); color: var(--vel); }
+  .slot-knop:hover { background: var(--vel); color: var(--inkt); border-color: var(--vel); }
+  .voet-in { display: grid; gap: var(--s-1); margin-top: var(--s-5); padding-top: var(--s-2); border-top: 1px solid rgb(255 255 255 / .16); }
+  .voet-in .etiket { color: rgb(255 255 255 / .6); }
+  .voet-trust { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-1); font-size: var(--t-klein); color: rgb(255 255 255 / .78); }
+  @media (max-width: 64rem) { .voet-trust { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>

@@ -531,7 +531,55 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-groot { font-family: var(--font-heading); font-weight: 700; font-size: 2rem; line-height: 1.1; letter-spacing: -.01em; color: var(--ink-1); }
 .st-knoppen { display: flex; gap: .5rem; flex-wrap: wrap; }
 
-.st-geenabo { padding: clamp(1.5rem, 4vw, 2.6rem); display: flex; flex-direction: column; gap: .6rem; align-items: flex-start; background: var(--ink-900); color: var(--paper-soft-on-dark); border: 0; }
+/* ── HET DONKERE BLOK DRAAGT ZIJN EIGEN TOKENS — 13 september 2026 ──────────
+   Lucas: *"Ook zijn er nog knoppen op de website die niet goed leesbaar zijn
+   (zie bijvoorbeeld VISUAILS Studio in de subscription tab)."*
+
+   Gemeten op /account/plan in het lichte thema: de knop "Order one-off" stond
+   op 1,14:1 — wit (#FFFFFF) op rgb(240,240,240). Praktisch onzichtbaar; de eis
+   is 4,5:1.
+
+   DE OORZAAK IS NIET DE KNOP. Dit blok schildert een donkere grond en zet de
+   tekstkleur, maar het verzet de TOKENS niet. `.btn` haalt zijn vulling uit
+   `var(--ghost)`, en die staat in het lichte thema op `rgb(10 10 10 / 0.06)` —
+   een lichte alfa, want op een lichte pagina hoort hij dat te zijn. Op deze
+   donkere grond werd dat dus een bijna-witte pil, met witte letters erop uit
+   `.st-geenabo .btn-2nd { color: #FFFFFF }` een paar regels verderop.
+
+   Twee halve waarheden die elkaar niet kennen: het ene deel weet dat het donker
+   is, het andere niet. Dezelfde fout als bij `--flag-ink` op de voorpagina deze
+   week — een `var()` die in de verkeerde scope wordt opgelost.
+
+   Dus: het blok zet de tokens die zijn kinderen lezen, zoals `.op-nacht` in
+   global.css dat doet. Dan klopt niet alleen deze knop maar alles wat hier ooit
+   nog in komt te staan. */
+.st-geenabo {
+  padding: clamp(1.5rem, 4vw, 2.6rem);
+  display: flex; flex-direction: column; gap: .6rem; align-items: flex-start;
+  background: var(--ink-900);
+  color: var(--paper-soft-on-dark);
+  border: 0;
+
+  /* De vullingen keren om: op bijna-zwart is een inkt-alfa onzichtbaar en een
+     paper-alfa precies de zachte pil die hier hoort. Dezelfde waarden als de
+     donkere lijst in account.css; ze staan hier opnieuw omdat dit blok ook in
+     het LICHTE thema donker is en de lijst daar dus niet geldt. */
+  --ghost: rgb(255 255 255 / 0.08);
+  --btn-ghost-fill: rgb(255 255 255 / 0.08);
+  --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
+  --btn-2nd-fill: transparent;
+  --btn-2nd-fill-hover: rgb(255 255 255 / 0.08);
+  --btn-2nd-ink: #FFFFFF;
+  --btn-2nd-border: rgb(255 255 255 / 0.28);
+  --btn-2nd-border-hover: rgb(255 255 255 / 0.55);
+  /* --ink is wat `.btn` als letterkleur pakt; zonder deze regel is dat de
+     bijna-zwarte inkt van de lichte pagina. */
+  --ink: #FFFFFF;
+  --line: rgb(255 255 255 / 0.16);
+}
+/* De secundaire knop is nu transparant met een witte rand, en dat is precies
+   wat de tokens hierboven zeggen. Deze regel blijft staan als expliciete
+   bevestiging van de rand — hij was tot vandaag het enige wat klopte. */
 .st-geenabo .st-eyebrow { color: var(--accent); }
 .st-geenabo h2 { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.05; letter-spacing: -.01em; color: #FFFFFF; margin: 0; max-width: 24ch; }
 .st-geenabo p { margin: 0; max-width: 56ch; }

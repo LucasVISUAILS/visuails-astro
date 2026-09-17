@@ -60,7 +60,17 @@
 import { SHOTS, copy as shotCopy } from '../../data/shots.js';
 import { PRODUCT_QUESTIONS, copy as attrCopy } from '../../data/attributes.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES } from '../../lib/uploads.js';
+/* De belofte over herkenbaarheid staat in pricing.js, niet hier — zie de kop
+   van PRODUCTTROUW. Dit is de derde plek waar hij staat en de enige waar de
+   klant op dat moment zijn eigen foto voor zich heeft. */
+import { producttrouw } from '../../data/pricing.js';
 import ShotDiagram from './ShotDiagram.astro';
+/* ── DE TIPS NAAST DEZE STAP ───────────────────────────────────────────────
+   Uit een eigen module en niet hier uitgeschreven, want /concept/bestelrij
+   toont dezelfde reeks. Twee kopieën is één kopie die na de eerste wijziging
+   stil uit elkaar loopt; zie de kop van src/data/uploadTips.js. */
+import { tipsVoor, belofteVoor, TIP_COPY, TIP_INTERVAL_MS } from '../../data/uploadTips.js';
+import { VLAK, FON, PLAAT, OVERLAY, overlayAlt } from '../../data/laptopVlak.js';
 import Disclose from '../Disclose.astro';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -99,6 +109,30 @@ const mb = Math.round(MAX_FILE_BYTES / (1024 * 1024));
 const hint = lang === 'nl'
   ? `JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF · max ${mb} MB per stuk · ${MAX_BATCH_FILES} bestanden per bestelling`
   : `JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF · up to ${mb} MB each · ${MAX_BATCH_FILES} files per order`;
+
+/* ── HET TIPPANEEL ─────────────────────────────────────────────────────────
+   De tips reizen als JSON mee in een data-attribuut, zoals de conceptpagina
+   het ook doet. Niet via de PIPE-tabel in OrderFlow.astro: dat is een tabel van
+   platte sleutels en dit is een reeks objecten met beeldpaden erbij. Eén regel
+   JSON is hier eerlijker dan vijf sleutels per tip die je met de hand moet
+   bijhouden zodra er een tip bij komt.
+
+   De NAAM van het vak komt uit shots.js en wordt niet in uploadTips.js
+   overgetypt, anders heet "Voorkant" in dit paneel ooit anders dan in het
+   vakje drie centimeter hoger. */
+const tipCopy = TIP_COPY[lang === 'nl' ? 'nl' : 'en'];
+const tips = tipsVoor(lang).map((tip) => ({
+  ...tip,
+  naam: (SHOTS.find((sh) => sh.id === tip.vak) || { name: {} }).name[lang] || tip.vak,
+}));
+/* De belofte per vak reist apart mee: hij hoort bij het vakje dat je aanraakt
+   en niet bij de tip die toevallig langskomt. */
+const beloftes = Object.fromEntries(SHOTS.map((sh) => [sh.id, belofteVoor(sh.id, lang)]));
+const lcStijl = [
+  `--lc-plaat:${PLAAT}`,
+  `--lc-l:${VLAK.links}%`, `--lc-t:${VLAK.boven}%`, `--lc-w:${VLAK.breed}%`, `--lc-h:${VLAK.hoog}%`,
+  `--lc-fl:${FON.links}%`, `--lc-ft:${FON.boven}%`, `--lc-fw:${FON.breed}%`, `--lc-fh:${FON.hoog}%`,
+].join(';');
 ---
 
 <div class="pu">
@@ -133,10 +167,135 @@ const hint = lang === 'nl'
           cards each carrying a sentence about what to type in their name field
           is twenty-five copies of one instruction. */}
       <p class="pu-sub-lead">{k.leadShort} {k.productNameHint}</p>
+      {/* ═══ ÉÉN PRODUCT TEGELIJK, VAN LINKS NAAR RECHTS — 17 SEPTEMBER 2026 ══
+          Lucas: *"Misschien kan het bestelformulier wel van links naar rechts
+          gaan — dat zorgt voor overzicht, je vult per product de foto's in en
+          klikt op klaar, en dan gaat hij naar de volgende productinvulpagina.
+          Je kan dan met pijltjes nog wel terug naar het vorige product of juist
+          vooruit; op het einde krijg je een melding als er nog een product of
+          meerdere niet ingevuld is."* En na het prototype: *"bestelformulier van
+          links naar rechts is goed en overzichtelijker."*
+
+          ── WAT ER NIET VERANDERT ────────────────────────────────────────────
+          De KAART zelf niet, en dat is opzet. De vakjes, het slepen, de lade,
+          de gratis referentievakken, de bijbestelde foto's, het gezicht per
+          product — dat werkt allemaal en het is het duurste deel van dit
+          formulier om opnieuw te maken. Wat verandert is wat je ERVAN ZIET:
+          één kaart in beeld in plaats van een kolom van vijfentwintig, met een
+          balk erboven die zegt waar je bent en twee pijlen om te verplaatsen.
+
+          ── DE BALK IS GEEN VERSIERING ───────────────────────────────────────
+          Hij is de enige plek waar je in één blik ziet hoeveel er nog moet, en
+          hij is aanklikbaar: naar product 14 springen is één tik in plaats van
+          dertien keer vooruit. Hij wordt gekloond uit het <li> hieronder en
+          niet met createElement gebouwd — Astro hangt zijn data-astro-cid aan
+          elke selector, en wat na de bouw ontstaat draagt dat niet en krijgt
+          dus geen enkele scoped regel. Drie keer eerder in gelopen in dit
+          project; zie de kop van bestelrij.astro.
+
+          ── EN DE VOORUITKNOP IS DE POORT ───────────────────────────────────
+          Lucas, over de draagfoto: *"'Sla deze over' moet aangeklikt worden,
+          anders kan de klant niet verder naar het volgende product."* In een
+          kolom is er geen "verder" om tegen te houden; hier wel. De knop staat
+          uit zolang de kaart niet af is, met de reden eronder — dezelfde zin
+          die op de kaart zelf staat, uit cardStateText(). */}
+      <div class="pu-rij" data-pl-rij hidden>
+        <ol class="pu-rail" data-pl-rail role="list">
+          <li class="pu-rail-item"><button type="button" class="pu-rail-knop" data-pl-rail-knop><span class="pu-sr" data-pl-rail-naam></span></button></li>
+        </ol>
+        <p class="pu-rij-tel" data-pl-rij-tel aria-live="polite"></p>
+      </div>
+
       {/* Built by pipeline.js from the count on step 1, and rebuilt when that
           count changes. Empty in the markup on purpose: a card list rendered
           here would be a guess at a number the visitor has already answered. */}
       <ol class="pu-cards" data-pl-cards></ol>
+
+      {/* De twee pijlen staan ONDER de kaart en niet erboven: je leest de kaart
+          van boven naar beneden en de handeling "klaar, volgende" hoort aan het
+          eind van dat lezen. Verborgen tot pipeline.js weet dat er meer dan één
+          product is. */}
+      <div class="pu-nav" data-pl-nav hidden>
+        <button type="button" class="btn btn-ghost pu-nav-knop" data-pl-vorige>
+          <svg viewBox="0 0 24 24" class="i" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          <span data-pl-vorige-tekst>{k.vorige}</span>
+        </button>
+        <span class="pu-nav-reden hint" data-pl-nav-reden></span>
+        <button type="button" class="btn btn-primary pu-nav-knop" data-pl-volgende>
+          <span data-pl-volgende-tekst>{k.volgende}</span>
+          <svg viewBox="0 0 24 24" class="i" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      {/* ── DE TIPS ─────────────────────────────────────────────────────────
+          Lucas: *"rechts tips die de klant elke 10 seconden kort vertellen wat
+          waarvoor is en waarom het handig is."* Gebouwd op /concept/bestelrij,
+          op 17 september hiernaartoe gehaald.
+
+          ── ONDER DE KAART EN NIET VASTGEPLAKT ONDERAAN ─────────────────────
+          Op de conceptpagina plakt dit paneel aan de onderkant van het scherm.
+          Hier kan dat niet: deze stap heeft onderaan al twee dingen die om die
+          rand vechten — de pijlen van de rij en de Vorige/Verder van de wizard
+          — en op stap 1 zit daar op een telefoon ook nog de totaalbalk. Een
+          derde zwevende strook is er één te veel.
+
+          Dus staat hij in de stroom, direct onder de pijlen: je leest de kaart,
+          je gaat door, en wie twijfelt vindt de uitleg op de plek waar hij
+          stopte. Open op een groot scherm, dicht op een telefoon — daar is de
+          ruimte waar je in werkt te kostbaar om er ongevraagd een paneel in te
+          zetten.
+
+          ALLES STAAT IN DE MARKUP. Geen enkel deel hiervan wordt door
+          pipeline.js gemaakt: dat script wisselt alleen teksten en bronnen om.
+          Dat is met opzet — een element dat tijdens het gebruik ontstaat, krijgt
+          geen van de gescopeerde regels hieronder (zie de kop van dit bestand),
+          en die val heeft dit project al vier keer gekost. */}
+      <aside
+        class="pu-tips"
+        data-pu-tips={JSON.stringify(tips)}
+        data-pu-beloftes={JSON.stringify(beloftes)}
+        data-pu-tip-ms={TIP_INTERVAL_MS}
+        data-pu-merk={tipCopy.merk}
+      >
+        <h3 class="pu-tips-kop">
+          <button
+            type="button"
+            class="pu-tips-knop"
+            data-pu-tips-schuif
+            aria-expanded="true"
+            aria-controls="pu-tips-in"
+          >
+            <span class="pu-tips-woord">{tipCopy.kop}</span>
+            {/* De regel naast de knop verschijnt pas als het paneel dicht is:
+                dan is hij het enige dat er nog van over is. Staat hij er ook
+                open bij, dan staat dezelfde zin twee keer op het scherm. */}
+            <span class="pu-tips-nu" data-pu-tips-nu></span>
+            <svg class="pu-tips-pijl" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </h3>
+
+        <div class="pu-tips-in" id="pu-tips-in">
+          <div class="pu-tips-doek" style={lcStijl}>
+            <div class="pu-tips-vlak"><img data-pu-tips-laptop src={tips[0].na} alt="" width="760" height="760" loading="lazy" decoding="async" /></div>
+            <div class="pu-tips-fon"><img data-pu-tips-fon src={tips[0].voor} alt="" width="760" height="1013" loading="lazy" decoding="async" /></div>
+            <img class="pu-tips-plaat" src={OVERLAY} alt={overlayAlt(lang)} width="1792" height="1013" loading="lazy" decoding="async" />
+            {/* Het label hoort bij het LAPTOPbeeld en staat daarom binnen het
+                schermvlak, linksboven, waar nooit een telefoon overheen valt. */}
+            <p class="pu-tips-merk" data-pu-tips-merk></p>
+          </div>
+
+          <div class="pu-tips-woorden">
+            <p class="pu-tips-vaknaam" data-pu-tips-vaknaam></p>
+            <p class="pu-tips-zin" data-pu-tips-zin></p>
+            <p class="pu-tips-noot" set:html={tipCopy.noot}></p>
+            {/* De streepjes zeggen hoeveel tips er zijn en waar je bent. Geen
+                knoppen: dit is iets dat langskomt, niet iets dat je bedient. */}
+            <p class="pu-tips-tikken" data-pu-tips-tikken aria-hidden="true">
+              {tips.map(() => (<i></i>))}
+            </p>
+          </div>
+        </div>
+      </aside>
+
       {/* Verborgen tot pipeline.js beslist heeft of hij nodig is — hij bestaat
           alleen voor de keuze "meer dan N" (het plafond per dienst), waar het aantal onbekend is. Zonder
           dit stond er een lege ghost-knop in beeld zolang het script nog niet
@@ -232,6 +391,9 @@ const hint = lang === 'nl'
   <section class="pu-guide" aria-labelledby="pu-guide-h">
     <h3 class="pu-guide-h" id="pu-guide-h">{t.guideH}</h3>
     <p class="pu-lead">{k.lead}</p>
+    {/* Wat er met die foto's gebeurt. Binnen de uitklapper en niet erbuiten: wie
+        hem opent, vraagt zich af wat er van zijn product terugkomt. */}
+    <p class="pu-lead pu-trouw">{producttrouw(lang)}</p>
     <ul class="pu-guide-list">
       {SHOTS.map((s) => (
         <li class="pu-guide-item">
@@ -305,11 +467,14 @@ const hint = lang === 'nl'
     <p class="pu-sub-lead">{k.laterLead}</p>
   </div>
 
-  {/* The four drawings, once each, for pipeline.js to clone into generated
-      slots. A <template> is inert — nothing here paints, nothing is announced,
-      and the SVG keeps ShotDiagram.astro's own scoped styling because the
-      scope is an attribute on the element and cloneNode copies attributes. */}
-  {SHOTS.map((s) => <template data-pl-dia={s.id}><ShotDiagram shot={s.id} /></template>)}
+  {/* ── DE VIER TEKENINGEN STAAN NOG MAAR OP ÉÉN PLEK — 17 september 2026 ────
+      Ze werden hiervandaan door pipeline.js in elk leeg vakje gekloond. Sinds
+      een leeg vakje een plusje draagt (zie buildSlot), gebeurt dat niet meer en
+      zou deze reeks <template>'s vier onbereikbare SVG's per pagina zijn.
+
+      Ze zijn niet weg: in de gids bovenaan deze stap staan ze naast elkaar
+      (.pu-guide-dia), en dáár doen ze hun werk — vier hoeken naast elkaar leert
+      je het verschil, dezelfde vier los in vier vakken laat je raden. */}
 
   {/* One <datalist> per question that has examples, shared by every card's
       input through `list="pu-dl-<id>"`. Suggestions, never a closed list —
@@ -385,6 +550,9 @@ const hint = lang === 'nl'
     text-transform: uppercase; color: var(--ink-3);
   }
   .pu-lead { margin-top: .5rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
+  /* Onder een haarlijn en niet in een kader — zie dezelfde afweging op
+     /how-to-photograph. */
+  .pu-trouw { margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--line, #DFDFDF); }
 
   .pu-guide-list {
     list-style: none;
@@ -567,6 +735,80 @@ const hint = lang === 'nl'
 
   .pu-cards { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .7rem; }
 
+  /* ═══ DE RIJ ══════════════════════════════════════════════════════════════
+     Zie de noot bij `data-pl-rij` in de markup hierboven. De kaart zelf is
+     onaangeraakt; wat hier staat is de balk erboven en de twee pijlen eronder. */
+  .pu-rij { margin-top: 1rem; display: grid; gap: .5rem; }
+  /* De balk. Vierkantjes en geen bolletjes: een bolletjesrij leest als een
+     carrousel ("er is hier iets moois te zien") en dit is een voortgangsmaat. */
+  .pu-rail {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 5px;
+  }
+  .pu-rail-item { display: block; }
+  /* 22 pixels en niet kleiner: dit is een aanraakdoel op een telefoon, en onder
+     de 24 pixels wordt het op een duim een gokspel. Met de tussenruimte erbij
+     komt het doel op 27 — de ondergrens die de toegankelijkheidskeuring van dit
+     project aanhoudt voor een doel dat naast zijn buren staat. */
+  .pu-rail-knop {
+    display: block; width: 22px; height: 22px; padding: 0;
+    border: 1px solid var(--line-strong); border-radius: 4px;
+    background: var(--paper); cursor: pointer;
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .pu-rail-knop:hover { border-color: var(--ink); }
+  .pu-rail-knop:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  /* Af: gevuld met het accent. Nu: een dikke inktrand, zodat "waar ben ik" en
+     "wat is af" twee verschillende signalen zijn en niet één kleur die beide
+     moet dragen. */
+  .pu-rail-knop.is-af { background: var(--accent); border-color: var(--accent); }
+  .pu-rail-knop.is-nu { border-color: var(--ink); border-width: 2px; transform: scale(1.12); }
+  /* De naam van het product zit in de knop voor een schermlezer; op het scherm
+     doet het vierkantje het werk. `aria-label` draagt daarnaast de toestand. */
+  /* ── TWEE KEER DEZELFDE REGEL, EN DAT MOET ────────────────────────────────
+     Astro plakt bij de bouw `data-astro-cid-…` achter elk deel van een selector.
+     De bovenste regel geldt dus alleen voor `.pu-sr` die HIER in de markup staat
+     — het railvakje. Het woordje "Verplicht" naast het sterretje op een vakje
+     wordt door pipeline.js gemaakt, draagt dat attribuut niet, en zou zonder de
+     tweede regel gewoon zichtbaar op het scherm komen te staan.
+
+     Dit is de vierde keer dat deze val in dit project toeslaat. Vandaar de
+     regel in de kop van dit bestand: wat tijdens het gebruik verschijnt, wordt
+     gekloond of gedekt door een `:global()`. */
+  .pu-sr {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .pu-cards :global(.pu-sr) {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .pu-rij-tel { margin: 0; font-size: .82rem; color: var(--ink-2); font-variant-numeric: tabular-nums lining-nums; }
+
+  /* ── DE TWEE PIJLEN ─────────────────────────────────────────────────────
+     De reden staat ERTUSSEN en niet onder de knop: op het moment dat de
+     vooruitknop uitstaat, is de vraag "waarom" — en die hoort op ooghoogte met
+     de knop te staan, niet eronder waar je hem pas ziet na het klikken dat niet
+     werkte. */
+  .pu-nav {
+    margin-top: .9rem; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem;
+  }
+  .pu-nav-knop { display: inline-flex; align-items: center; gap: .45rem; }
+  .pu-nav-knop .i { width: 1em; height: 1em; flex: none; }
+  .pu-nav-knop:disabled { opacity: .45; cursor: not-allowed; }
+  .pu-nav-reden { flex: 1 1 14ch; min-width: 0; margin: 0; }
+  /* De vooruitknop rechts, de terugknop links, en de reden in het midden: op een
+     telefoon valt de reden dan onder de twee knoppen in plaats van ertussen. */
+  @media (max-width: 34rem) {
+    .pu-nav { gap: .5rem; }
+    .pu-nav-reden { flex-basis: 100%; order: 3; }
+    .pu-nav-knop { flex: 1 1 auto; justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pu-rail-knop { transition: none; }
+    .pu-rail-knop.is-nu { transform: none; }
+  }
+
   .pu-cards :global(.pu-card) {
     border: 1px solid var(--line-strong);
     border-radius: var(--r-lg);
@@ -696,19 +938,41 @@ const hint = lang === 'nl'
   .pu-cards :global(.pu-ratio-field) { padding: .45rem .6rem; font-size: .86rem; border-radius: var(--r-md); }
   .pu-cards :global(.pu-card.is-ready) { border-color: var(--signal); }
 
+  /* ── DE KOP IS ÉÉN REGEL — 17 september 2026 ──────────────────────────────
+     Hij bestond uit vier dingen naast elkaar: een nummerchip, een omkaderd
+     invoerveld, een chevron en daaronder de staatregel. In de rij is de helft
+     daarvan overbodig geworden. Er staat nog maar één kaart in beeld, dus
+     in- en uitklappen bestaat niet meer (pipeline.js verbergt de chevron al in
+     rijmodus), en het nummer staat al in het balkje erboven.
+
+     Wat overblijft is wat het concept liet zien: een klein nummer, en de naam
+     als een regel waarop je schrijft. Een onderstreepte regel en geen doosje —
+     zoals je op papier een naam op een lijn zet. Het kader eromheen zei alleen
+     maar "dit is een formulierveld", en dat wist je al.
+
+     `.input` is een globale primitieve met een eigen rand, achtergrond en
+     ronding; die worden hier alle drie teruggedraaid. Expliciet en niet met
+     `all: unset`, want de primitieve levert ook de focusring en de
+     tekstkleur, en die wil ik juist houden. */
   .pu-cards :global(.pu-head) {
     display: grid;
-    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: .5rem .7rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: .35rem .8rem;
   }
   .pu-cards :global(.pu-n) {
-    font-family: var(--font-display); font-weight: 800; font-size: .82rem;
-    color: var(--ink-3); font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono); font-weight: 400; font-size: .68rem;
+    letter-spacing: .08em; color: var(--ink-3); font-variant-numeric: tabular-nums;
   }
-  /* .input is a global primitive; this only trims it to a head-row height so
-     the row reads as one object rather than a box with a number beside it. */
-  .pu-cards :global(.pu-name) { padding: .5rem .7rem; font-size: .92rem; border-radius: var(--r-md); }
+  .pu-cards :global(.pu-name) {
+    padding: .2rem 0;
+    font-size: clamp(1.05rem, 2.2vw, 1.35rem); font-weight: 600; letter-spacing: -.01em;
+    border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+    background: none;
+  }
+  .pu-cards :global(.pu-name:focus-visible),
+  .pu-cards :global(.pu-name:focus) { outline: none; border-bottom-color: var(--ink); }
+  .pu-cards :global(.pu-name::placeholder) { font-weight: 400; color: var(--ink-3); }
 
   .pu-cards :global(.pu-state) {
     grid-column: 2 / -1;
@@ -758,65 +1022,158 @@ const hint = lang === 'nl'
      ZACHTER DAN EEN UPLOADVAK, want dit is een aanbod en geen verzoek. Dunnere
      rand, geen streepjes: de streepjesrand betekent op deze kaart "hier hoort een
      foto en die is er nog niet", en dat is precies wat dit NIET is. */
+  /* ── DE GRATIS REFERENTIEVAKKEN, IN EEN EIGEN STROOK ──────────────────────
+     17 september 2026. Ze stonden als vijfde cel in het raster hierboven, even
+     groot als een uploadvak. Sinds de vier vakken staande beelden van 3/4 zijn
+     geworden, maakt een vijfde van dat formaat van een AANBOD een vijfde
+     VERZOEK — en dat is precies wat deze vakken niet zijn.
+
+     Duimnagels van 78 pixels, vierkant, onder een eigen regel. Klein genoeg om
+     te lezen als "en dit mag er ook nog bij", groot genoeg om een foto in te
+     herkennen en om met een vinger te raken (78 > 44). */
+  .pu-cards :global(.pu-refs) {
+    display: grid; gap: .45rem;
+    margin-top: .9rem; padding-top: .8rem;
+    border-top: 1px solid var(--line);
+  }
+  .pu-cards :global(.pu-refs-rij) { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; }
+  /* De vakken in de strook krijgen het kleine formaat, en niet de staande
+     3/4 van de vier hierboven. Alles wat eraan hangt — slepen, vervangen,
+     weghalen — blijft hetzelfde; alleen de maat verschilt. */
+  .pu-cards :global(.pu-refs .pu-slot) { width: 92px; gap: .25rem; }
+  .pu-cards :global(.pu-refs .pu-slot-btn) { aspect-ratio: 1; padding: .3rem; }
+  .pu-cards :global(.pu-refs .pu-slot-dia) { width: 16px; height: 16px; }
+  /* .72rem = 11.5px, de ondergrens die op deze site geldt voor tekst die
+     gelezen moet worden. Vandaar ook 92 en geen 78 pixels breed: "Referentie 1"
+     en "Nog een foto" moeten er in twee regels in passen zonder af te breken. */
+  .pu-cards :global(.pu-refs .pu-slot-name) {
+    font-family: var(--font-mono); font-size: .72rem; font-weight: 400;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+  }
+
+  /* Het plusje heeft dezelfde bouw als een referentievakje ernaast: een
+     vierkant waar de foto zou komen, met het woord eronder. De RAND zit op het
+     vierkant en niet op de knop, anders staat het bijschrift binnen het kader
+     en leest de knop weer als een doosje met tekst erin — precies wat deze
+     ronde bij de vier vakken hierboven heeft weggehaald. */
   .pu-cards :global(.pu-ref-add) {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: .25rem;
-    width: 100%; min-height: 96px;
-    padding: .6rem .4rem;
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    background: none;
+    display: grid; gap: .25rem;
+    width: 92px;
+    padding: 0; border: 0; background: none;
     color: var(--ink-3);
-    font: inherit; font-size: .78rem; line-height: 1.3; text-align: center;
+    font: inherit; line-height: 1.3; text-align: left;
     cursor: pointer;
+  }
+  .pu-cards :global(.pu-ref-plus) {
+    display: grid; place-items: center;
+    width: 100%; aspect-ratio: 1;
+    border: 1px dashed var(--line);
+    border-radius: var(--r-md);
+    font-size: 1.2rem; line-height: 1; font-weight: 400;
     transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
   }
-  .pu-cards :global(.pu-ref-add:hover) { border-color: var(--accent-line); color: var(--ink-2); }
-  .pu-cards :global(.pu-ref-add:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-  .pu-cards :global(.pu-ref-plus) { font-size: 1.4rem; line-height: 1; font-weight: 400; }
-  /* De uitleg loopt over de HELE rij en niet onder het plusje: "je krijgt nog
-     steeds 4 beelden" is de zin die de verwachting recht zet, en in een kolom van
-     een kwart breed wordt hij zes regels die niemand leest. */
-  .pu-cards :global(.pu-ref-hint) {
-    grid-column: 1 / -1;
-    font-size: .74rem; color: var(--ink-3); line-height: 1.4;
+  .pu-cards :global(.pu-ref-add:hover .pu-ref-plus) { border-color: var(--ink); color: var(--ink-2); }
+  .pu-cards :global(.pu-ref-add:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: var(--r-sm); }
+  .pu-cards :global(.pu-ref-add-label) {
+    font-family: var(--font-mono); font-size: .72rem;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
   }
+  /* De uitleg loopt over de HELE breedte en niet onder het plusje: "je krijgt nog
+     steeds 4 beelden" is de zin die de verwachting recht zet, en in een kolom van
+     78 pixels breed wordt hij zes regels die niemand leest. */
+  .pu-cards :global(.pu-ref-hint) {
+    margin: 0;
+    font-size: .82rem; color: var(--ink-2); line-height: 1.45;
+  }
+  .pu-cards :global(.pu-ref-lead) { color: var(--ink); font-weight: 600; margin-right: .2em; }
   /* Even hoog, allemaal. De vier vakjes hebben teksten van verschillende lengte
      en dus vier verschillende hoogtes — waardoor "Sla deze over" eronder op vier
      hoogtes stond en de rij er rommelig uitzag. Het vakje rekt nu mee met de
      hoogste van de rij. */
-  .pu-cards :global(.pu-slot) { display: flex; flex-direction: column; }
-  .pu-cards :global(.pu-slot > .pu-slot-btn) { flex: 1 1 auto; }
+  /* ── DE KNOP IS HET BEELD — 17 september 2026 ─────────────────────────────
+     Lucas: *"Ik vind die nieuwe juist wel rustiger ogen."*
+
+     Hiervoor was de knop een kadertje met de tekening, de naam, twee regels
+     uitleg en een badge er allemaal IN. Vier daarvan naast elkaar leest als
+     vier blokjes tekst. Nu is de knop niets anders dan de plek waar de foto
+     komt, en staan de woorden eronder als bijschrift — zie buildSlot() in
+     pipeline.js voor de kant van de DOM.
+
+     3/4, want dat is de verhouding waarin kleding gefotografeerd wordt, en het
+     is dezelfde verhouding die het vakje straks vult zodra er een foto in zit.
+     Een vak dat van vorm verandert zodra je hem vult, springt.
+
+     GEEN VULLING. De rust komt voor een groot deel hiervandaan: vier grijze
+     vlakken naast elkaar zijn vier objecten, vier omlijnde open plekken zijn
+     één rij. Alleen bij slepen kleurt hij op, en dan is die kleur informatie. */
+  .pu-cards :global(.pu-slot) { display: flex; flex-direction: column; gap: .4rem; }
 
   .pu-cards :global(.pu-slot-btn) {
     position: relative;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: .3rem;
-    width: 100%; min-height: 96px;
+    display: grid; place-items: center;
+    width: 100%; aspect-ratio: 3 / 4;
     padding: .6rem .4rem;
-    border: 1.5px dashed var(--line-strong);
+    border: 1px dashed var(--line-strong);
     border-radius: var(--r-md);
-    background: var(--paper-2);
+    background: none;
     color: var(--ink-3);
     font: inherit;
     cursor: pointer;
     overflow: hidden;
-    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+    transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
-  .pu-cards :global(.pu-slot-btn:hover) { border-color: var(--accent-line); background: var(--accent-soft); color: var(--ink-2); }
+  /* Doorlopend = we wachten hierop. Onderbroken = het mag ontbreken. Hetzelfde
+     onderscheid dat het concept maakt, en het enige verschil dat je nog zonder
+     lezen ziet nu de gevulde badge weg is. */
+  .pu-cards :global(.pu-slot[data-req="1"] .pu-slot-btn) { border-style: solid; }
+  .pu-cards :global(.pu-slot-btn:hover) { border-color: var(--ink); color: var(--ink-2); }
   .pu-cards :global(.pu-slot-btn:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .pu-cards :global(.pu-slot.is-over .pu-slot-btn) { border-color: var(--accent); background: var(--accent-soft); }
-  .pu-cards :global(.pu-slot-dia) { display: block; width: 34px; height: 34px; }
-  .pu-cards :global(.pu-slot-name) { font-size: .74rem; font-weight: 600; color: var(--ink-2); text-align: center; }
-  .pu-cards :global(.pu-slot-how) { font-size: .66rem; color: var(--ink-3); line-height: 1.35; text-align: center; max-width: 18ch; }
+  /* Het plusje. 22 pixels, zoals op /concept/bestelrij — groot genoeg om te
+     zien dat er iets hoort, klein genoeg om de open plek open te laten. */
+  .pu-cards :global(.pu-slot-dia) { display: block; width: 22px; height: 22px; color: var(--ink-3); }
+  .pu-cards :global(.pu-slot-dia svg) { width: 100%; height: 100%; display: block; }
+
+  /* ── NAAM EN EIS OP ÉÉN REGEL ─────────────────────────────────────────────
+     Precies de vorm die stap 3 boven elk invoerveld gebruikt: de naam, en er
+     direct achter in klein kapitaal of hij moet. Dat is geen toevallige
+     gelijkenis maar het punt van deze ronde — het formulier hoorde overal
+     dezelfde taal te spreken en dit vakje was de enige plek die het anders
+     deed. */
+  .pu-cards :global(.pu-slot-woord) {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .5rem;
+    min-width: 0;
+  }
+  /* ── EN DIT IS HET BIJSCHRIFT UIT HET CONCEPT ─────────────────────────────
+     Tussenstand van 17 september: ik had hier eerst het VELDLABEL van stap 3
+     neergezet — alles in mono kapitaal met een sterretje erachter — omdat het
+     formulier overal dezelfde taal hoort te spreken. Dat klopte als redenering
+     en was lelijk in de praktijk: vier regels kapitaal onder vier foto's leest
+     als vier kopjes, en de foto's raken hun bijschrift kwijt.
+
+     Lucas, met beide platen naast elkaar: *"Ik vind het huidige beeld zo lelijk,
+     pas deze toch aan naar degene met de roze broek."*
+
+     Dus: de naam in gewone letters met gewicht, en de eis er klein in kapitaal
+     achter. Een bijschrift onder een foto, niet een kop boven een veld. Het
+     verschil met stap 3 is nu een bewuste keuze en geen slordigheid — daar staat
+     een label BOVEN een leeg veld en moet het opvallen, hier staat het ONDER een
+     beeld dat het al uitlegt.
+
+     .72rem en niet de .64rem van het concept: 10,2 pixels viel onder de
+     leesbaarheidsgrens die op deze site geldt. Bij kapitaal mono is het verschil
+     op het scherm nauwelijks te zien en gelezen wordt het wel. */
+  .pu-cards :global(.pu-slot-name) { font-size: .95rem; font-weight: 600; color: var(--ink); }
+  .pu-cards :global(.pu-slot-eis) {
+    font-family: var(--font-mono); font-size: .72rem; font-weight: 400;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .pu-cards :global(.pu-slot-how) { font-size: .82rem; color: var(--ink-2); line-height: 1.45; }
   .pu-cards :global(.pu-slot.is-thumb .pu-slot-how) { display: none; }
   .pu-guide-fold { margin-top: clamp(1.4rem, 3vw, 2rem); max-width: var(--pl-measure); }
   .pu-guide-eg { width: 72px; height: 90px; object-fit: cover; border-radius: var(--r-sm); flex: none; }
-  .pu-cards :global(.pu-slot-req) {
-    position: absolute; top: 4px; right: 5px;
-    font-size: .58rem; font-weight: 700; letter-spacing: .06em;
-    text-transform: uppercase; color: var(--signal-ink);
-  }
+  /* .pu-slot-req — de gevulde VERPLICHT-badge in de hoek — is op 17 september
+     2026 vervangen door .pu-slot-eis onder het beeld. Zie het blok hierboven. */
 
   /* FILLED. The photograph fills the box and the drawing goes — the drawing was
      the instruction and the instruction has been followed.
@@ -852,17 +1209,22 @@ const hint = lang === 'nl'
      De rij trekt zichzelf gelijk (grid), dus een vakje zonder voorbeeld — een
      HEIC die deze browser niet kan tekenen — groeit mee en houdt zijn vinkje
      gecentreerd. */
-  .pu-cards :global(.pu-slot.is-thumb .pu-slot-btn) { aspect-ratio: 4 / 5; }
+  /* ── EN SINDS 17 SEPTEMBER 2026 HOEFT DAT NIET MEER ───────────────────────
+     Het stuk hierboven beschrijft een vakje dat LEEG klein was (96px hoog) en
+     GEVULD naar 4:5 groeide, zodat de stap niet langer werd voor wie nog niets
+     had geüpload. Dat probleem is verdwenen met de herindeling: het vakje is nu
+     altijd 3/4, leeg zowel als vol, want de woorden staan eronder en nemen geen
+     hoogte meer weg uit het beeld.
+
+     Twee verhoudingen zijn nu bovendien schadelijk in plaats van nuttig: een
+     vak dat 3/4 is zolang het leeg is en 4:5 zodra de foto binnen is, verspringt
+     op het moment dat de klant net iets heeft neergezet — precies het moment
+     waarop je hem niet wilt laten schrikken. Eén verhouding, altijd.
+
+     De naam hoeft ook niet meer over de foto heen: hij staat nu ONDER het
+     beeld, dus er is geen chipje meer nodig om hem leesbaar te houden. */
   .pu-cards :global(.pu-slot[data-state="filled"] .pu-slot-btn),
   .pu-cards :global(.pu-slot[data-state="sending"] .pu-slot-btn) { border-style: solid; border-color: var(--line-strong); }
-  .pu-cards :global(.pu-slot.is-thumb .pu-slot-name) {
-    position: relative; z-index: 1;
-    align-self: stretch; margin-top: auto;
-    padding: .12rem .3rem;
-    border-radius: var(--r-sm);
-    background: var(--surface);
-    color: var(--ink);
-  }
   /* ── DE WEGHAALKNOP OP DE LAATSTE KAART ─────────────────────────────────── */
   .pu-cards :global(.pu-weg) {
     grid-column: 2 / -1; justify-self: start;
@@ -875,8 +1237,6 @@ const hint = lang === 'nl'
   }
   .pu-cards :global(.pu-weg:hover) { color: var(--warn-ink, var(--ink)); }
   .pu-cards :global(.pu-weg:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-sm); }
-
-  .pu-cards :global(.pu-slot.is-thumb .pu-slot-req) { display: none; }
 
   /* GEVULD, MAAR ZONDER VOORBEELD. De tekening blijft (er is niets anders te
      tonen) maar zakt weg, de uitleg verdwijnt — die is gevolgd — en er komt een
@@ -912,7 +1272,9 @@ const hint = lang === 'nl'
     transition: transform var(--dur-1) var(--ease);
   }
   .pu-cards :global(.pu-slot[data-state="filled"] .pu-slot-bar > i) { background: var(--signal); }
-  .pu-cards :global(.pu-slot-msg) { font-size: .7rem; color: var(--ink-3); line-height: 1.35; overflow-wrap: anywhere; }
+  /* .72rem en niet .7rem: 11.2 pixels viel net onder de leesbaarheidsgrens die
+     op deze site geldt, en dit is de regel waarin een foutmelding staat. */
+  .pu-cards :global(.pu-slot-msg) { font-size: .72rem; color: var(--ink-3); line-height: 1.45; overflow-wrap: anywhere; }
   .pu-cards :global(.pu-slot[data-state="failed"] .pu-slot-msg) { color: var(--warn-ink); }
   /* ── DE BEELDKEURING LEEST ALS EEN OPMERKING EN NIET ALS EEN FOUT ──────────
      `data-let` staat op een vakje waarvan de foto DOOR is en waar alleen iets
@@ -1196,17 +1558,112 @@ const hint = lang === 'nl'
     cursor: pointer; border-radius: var(--r-sm);
   }
 
+  /* ── HET TIPPANEEL ────────────────────────────────────────────────────────
+     Twee kolommen op een groot scherm: links de plaat, rechts de woorden. De
+     plaat is een laptop met een telefoon ervoor, en de twee gaten daarin komen
+     als percentages uit src/data/laptopVlak.js — niet overgetypt, want twee
+     kopieën van die maten schuiven ooit stil uit elkaar en dan liggen de
+     beelden naast hun gat.
+
+     De hele strook staat in de gewone stroom en plakt nergens aan vast; de
+     reden staat bij de markup. */
+  .pu-tips {
+    margin-top: clamp(1.4rem, 3vw, 2.2rem);
+    padding-top: .2rem;
+    border-top: 1px solid var(--line);
+  }
+  .pu-tips-kop { margin: 0; }
+  .pu-tips-knop {
+    width: 100%; display: flex; align-items: center; gap: .7rem;
+    padding: .7rem 0; background: none; border: 0; color: inherit; font: inherit;
+    text-align: left; cursor: pointer;
+  }
+  .pu-tips-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-sm); }
+  .pu-tips-woord {
+    font-family: var(--font-mono); font-size: .72rem;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .pu-tips-nu {
+    flex: 1; min-width: 0; font-size: .84rem; color: var(--ink-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    opacity: 0; transition: opacity var(--dur-1) var(--ease);
+  }
+  .pu-tips.is-dicht .pu-tips-nu { opacity: 1; }
+  .pu-tips-pijl { width: 18px; height: 18px; flex: none; transition: rotate var(--dur-1) var(--ease); }
+  .pu-tips.is-dicht .pu-tips-pijl { rotate: 180deg; }
+  .pu-tips.is-dicht .pu-tips-in { display: none; }
+
+  .pu-tips-in {
+    display: grid; grid-template-columns: minmax(0, 390px) minmax(0, 1fr);
+    gap: clamp(1rem, 3vw, 2rem); align-items: center;
+    padding-bottom: 1rem;
+  }
+  .pu-tips-doek {
+    position: relative; aspect-ratio: var(--lc-plaat);
+    border-radius: var(--r-md); overflow: hidden; background: var(--paper-2);
+  }
+  .pu-tips-vlak {
+    position: absolute;
+    left: var(--lc-l); top: var(--lc-t); width: var(--lc-w); height: var(--lc-h);
+    background: #FFF; display: grid; place-items: center;
+    /* Rechts meer lucht dan links: daar valt de telefoon overheen. */
+    padding: 6% 26% 6% 6%;
+  }
+  .pu-tips-fon {
+    position: absolute;
+    left: var(--lc-fl); top: var(--lc-ft); width: var(--lc-fw); height: var(--lc-fh);
+  }
+  .pu-tips-vlak img { max-width: 100%; max-height: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .pu-tips-fon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pu-tips-plaat { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  .pu-tips-merk {
+    position: absolute; left: calc(var(--lc-l) + 2%); top: calc(var(--lc-t) + 4%); margin: 0;
+    background: var(--accent); color: #141414;
+    padding: .18em .45em;
+    font-family: var(--font-mono); font-size: .62rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+
+  .pu-tips-woorden { display: grid; gap: .45rem; max-width: 46rem; }
+  .pu-tips-vaknaam {
+    margin: 0; font-family: var(--font-mono); font-size: .72rem;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2);
+  }
+  /* Een vaste hoogte, zodat de regel eronder niet op en neer springt bij elke
+     tip. Drie regels is de langste tip; korter laat de plaat verspringen. */
+  .pu-tips-zin { margin: 0; min-height: 4.4em; font-size: .95rem; line-height: 1.55; color: var(--ink); }
+  .pu-tips-noot { margin: 0; font-size: .82rem; color: var(--ink-3); max-width: 58ch; line-height: 1.5; }
+  .pu-tips-noot :global(b) { color: var(--ink-2); font-weight: 600; }
+  .pu-tips-tikken { display: flex; gap: 5px; margin: .2rem 0 0; }
+  .pu-tips-tikken i {
+    width: 16px; height: 2px; display: block;
+    background: currentColor; opacity: .2;
+    transition: opacity var(--dur-1) var(--ease);
+  }
+  .pu-tips-tikken i.is-aan { opacity: .8; }
+
   /* ── Breakpoints ──────────────────────────────────────────────────────────*/
   @media (max-width: 560px) {
     .pu-guide-item { grid-template-columns: 38px auto 1fr; gap: .7rem; }
     .pu-guide-dia { width: 38px; height: 38px; }
     /* Two across, not four. See the note on .pu-slots. */
     .pu-cards :global(.pu-slots) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .pu-cards :global(.pu-slot-btn) { min-height: 108px; }
-    .pu-cards :global(.pu-head) { grid-template-columns: 1.7rem minmax(0, 1fr) auto; }
+    /* GEEN min-height meer: het vakje heeft sinds 17 september een vaste
+       verhouding, en een minimumhoogte erbovenop zou hem op een smal scherm
+       stiekem vierkant trekken. Twee kolommen op 390px geeft een vak van ±170
+       bij 227 pixels — ruim boven de 44 die een vinger nodig heeft. */
+    .pu-cards :global(.pu-head) { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .pu-tips-in { grid-template-columns: 1fr; gap: .8rem; }
+    .pu-tips-doek { max-width: 320px; }
+    /* De zin mag hier wél meebewegen: op één kolom staat de plaat erboven en
+       springt er niets van op en neer. */
+    .pu-tips-zin { min-height: 0; }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .pu-tips-pijl,
+    .pu-tips-nu,
+    .pu-tips-tikken i,
     .pu-cards :global(.pu-toggle),
     .pu-cards :global(.pu-toggle > svg),
     .pu-cards :global(.pu-slot-btn) { transition: none; }

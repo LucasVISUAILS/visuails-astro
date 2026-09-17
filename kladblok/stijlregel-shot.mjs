@@ -1,0 +1,27 @@
+import { chromium } from 'playwright';
+import { createServer } from 'node:http';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { extname, join } from 'node:path';
+const TYPES={'.html':'text/html','.css':'text/css','.js':'text/javascript','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml','.woff2':'font/woff2','.avif':'image/avif','.json':'application/json'};
+const srv=createServer((req,res)=>{let p=join('dist',decodeURIComponent(req.url.split('?')[0]));
+ if(existsSync(p)&&statSync(p).isDirectory())p=join(p,'index.html');
+ if(!existsSync(p)&&existsSync(p+'/index.html'))p=p+'/index.html';
+ if(!existsSync(p)){res.writeHead(404);res.end('nee');return;}
+ res.writeHead(200,{'content-type':TYPES[extname(p)]||'application/octet-stream'});res.end(readFileSync(p));});
+await new Promise(r=>srv.listen(4321,r));
+const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+const pg=await b.newPage({viewport:{width:1100,height:900}});
+await pg.goto('http://localhost:4321/nl/start/complete/',{waitUntil:'networkidle'});
+await pg.addStyleTag({content:'#cc-bar,[data-cc-bar]{display:none !important}'});
+const rij=pg.locator('[data-sr-categorie="lifestyle"]').first();
+await rij.scrollIntoViewIfNeeded();
+await pg.waitForTimeout(400);
+console.log('voor keuze zichtbaar:', await rij.locator('[data-sr1-vb]').first().isVisible());
+await rij.screenshot({path:'kladblok/sr1-leeg.png'});
+await rij.locator('.sr1-keuze').selectOption('glow');
+await pg.waitForTimeout(500);
+console.log('na keuze zichtbaar :', await rij.locator('[data-sr1-vb]').first().isVisible());
+console.log('zichtbaar item     :', await rij.locator('[data-sr1-slug]:not([hidden])').first().getAttribute('data-sr1-slug'));
+const box=await rij.boundingBox(); console.log('rij', Math.round(box.width),'x',Math.round(box.height));
+await rij.screenshot({path:'kladblok/sr1-glow.png'});
+await b.close(); srv.close();

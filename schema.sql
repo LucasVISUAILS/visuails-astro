@@ -1221,6 +1221,9 @@ CREATE TABLE IF NOT EXISTS subscription_payments (
   amount_cents     INTEGER NOT NULL,
   currency         TEXT NOT NULL DEFAULT 'EUR',
   month            TEXT,
+  -- Hoeveel er van deze termijn is teruggeboekt. Zie migratie 0048: de status
+  -- kan dit niet dragen, want een gedeeltelijke restitutie laat hem op 'paid'.
+  refunded_cents   INTEGER NOT NULL DEFAULT 0,
   raw_payload      TEXT,
   created_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );

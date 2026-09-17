@@ -35,7 +35,7 @@ import { handleSubscribeStart, handleSubscribeReturn, eersteTermijn } from '../s
 import { prepayTotalCents, monthlyCents } from '../src/data/plans.js';
 import { productsFor, planProductBudget } from '../src/data/plans.js';
 import { customMonthSlots, customMonthTotal } from '../src/data/pricing.js';
-import { bundelVoor, subMaandCents, subProducten } from '../src/lib/slots.js';
+import { bundelVoor, subMaandCents, subProducten, subBrutoCents } from '../src/lib/slots.js';
 import { subscriptionShape } from '../src/lib/subscription.js';
 
 let ok_ = 0; let totaal = 0;
@@ -155,9 +155,17 @@ console.log('\nde weg naar de machtiging');
 
   /* ── DE EERSTE BETALING IS DE EERSTE MAAND — 4 september 2026 ──────────
      Geen euro voor het mandaat meer: het bedrag is het maandbedrag van het plan,
-     zodat de klant meteen saldo heeft. Het mandaat komt uit dezelfde betaling. */
+     zodat de klant meteen saldo heeft. Het mandaat komt uit dezelfde betaling.
+
+     ── EN SINDS 17 SEPTEMBER 2026 MET BTW EROP ─────────────────────────────
+     Hier stond `subMaandCents(r)` kaal, en die toets was GROEN op een fout: de
+     prijs op /plans is exclusief btw, er werd netto geïncasseerd, en invoice.js
+     rekende uit datzelfde bedrag netto terug alsof het inclusief was. Deze regel
+     hield die fout vast. Zie de kop van subBrutoCents() in src/lib/slots.js en
+     tests/abo-btw.test.mjs, dat de hele keten narekent. */
   const eerste = staat.bodies.find((b) => b.pad === '/v2/payments')?.body;
-  ok('de eerste betaling is het maandbedrag en geen euro', eerste?.amount?.value, (subMaandCents(r) / 100).toFixed(2));
+  ok('de eerste betaling is het maandbedrag inclusief btw',
+    eerste?.amount?.value, (subBrutoCents(r, subMaandCents(r)) / 100).toFixed(2));
   ok('  en geeft het mandaat af', eerste?.sequenceType, 'first');
   ok('  met het kenmerk in de metadata', eerste?.metadata?.sub_ref, r.ref);
 }
@@ -245,7 +253,9 @@ console.log('\neen vooruitbetaald jaar loopt anders: één betaling en verder ni
   ok('de termijn staat op de rij', r.term, 'prepaid');
 
   const betaling = staat.bodies.filter((b) => b.pad === '/v2/payments').pop()?.body;
-  ok('het bedrag is het hele jaar', betaling?.amount?.value, (prepayTotalCents('brand') / 100).toFixed(2));
+  /* Inclusief btw, om dezelfde reden als bij de maandtermijn hierboven. */
+  ok('het bedrag is het hele jaar, inclusief btw',
+    betaling?.amount?.value, (subBrutoCents(r, prepayTotalCents('brand')) / 100).toFixed(2));
   ok('  en dus niet één maand', betaling?.amount?.value !== (monthlyCents('brand', 'prepaid') / 100).toFixed(2), true);
   ok('er wordt geen mandaat gevraagd', betaling?.sequenceType, 'oneoff');
   ok('  met het kenmerk in de metadata', betaling?.metadata?.sub_ref, r.ref);

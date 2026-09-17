@@ -15,6 +15,9 @@ import ModelKeuze from '../../../components/order/ModelKeuze.astro';
         heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
         deze bron staat maakt dus niet uit voor waar het terechtkomt. */}
     <ModelKeuze slot="model" lang="nl" soort="lifestyle" />
-    <StylePicker lang="nl" />
+    {/* slot="look" — de look staat nu BOVEN het aantal en niet als negende
+        blok in stap 1. Zie de noot bij <slot name="look" /> in
+        OrderFlow.astro voor de meting die dat besliste. */}
+    <StylePicker slot="look" lang="nl" />
   </OrderFlow>
 </Layout>

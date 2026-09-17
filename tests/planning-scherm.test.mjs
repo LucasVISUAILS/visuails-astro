@@ -123,5 +123,91 @@ console.log('\n5 · de bovenbalk');
   check('de bestandenpagina draagt de balk zonder actief item', /bar-nav/.test(h) && !/is-active/.test(h), true);
 }
 
+/* ══ OPPAKKEN EN NEERZETTEN ══════════════════════════════════════════════════
+ * 13 september 2026. Lucas: *"Ik zou in /admin de planning met de muis willen
+ * aanpassen dus een datum van de klant interactief willen verplaatsen."*
+ *
+ * Slepen kan niet — dit paneel draait onder `default-src 'none'` en laadt geen
+ * script; zie de noot bij `pakId` in admin.js. Wat er wel is: ?pak=<id> maakt
+ * van elke dag een knop. Deze paragraaf controleert de drie dingen die daarbij
+ * fout kunnen gaan, en alle drie zouden ze een datum kunnen verzetten die niet
+ * had gemogen.
+ */
+console.log('\n5 · een bestelling oppakken en neerzetten');
+{
+  const zonder = await (await get('/admin/planning')).text();
+  check('zonder ?pak staat er geen neerzetknop', /pl-zet-knop/.test(zonder), false);
+  check('maar wel een oppak-pijltje per bestelling', /class="pl-pak"/.test(zonder), true);
+  /* Een geleverde bestelling is niet op te pakken: verzetten zou een dag in de
+     agenda zetten voor werk dat niet meer gaat gebeuren. handleWindowMove()
+     weigert het ook, maar een knop die naar een weigering leidt hoort er niet
+     te staan. */
+  check('en niet bij de geleverde bestelling', (zonder.match(/pak=4\b/g) || []).length, 0);
+
+  const met = await (await get('/admin/planning?pak=1')).text();
+  check('met ?pak=1 staat de balk erboven', /pl-pakbalk/.test(met) && /VIS-T-0001/.test(met), true);
+  check('en er staan neerzetknoppen', /pl-zet-knop/.test(met), true);
+  check('die naar de verzetroute posten', /action="\/admin\/orders\/1\/window"/.test(met), true);
+  check('met back=planning, zodat je hier terugkomt', /name="back" value="planning"/.test(met), true);
+
+  /* De dag waar hij nu al begint, is geen bestemming. Zonder deze regel staat
+     er een knop die niets doet en een regel in het logboek schrijft. */
+  /* De startdag UIT DE DATABASE en niet uit de fixture: paragraaf 3 hierboven
+     verzet deze bestelling twee keer, dus `d(1)` is hier allang niet meer waar.
+     Een toets die zijn eigen beginwaarde aanneemt nadat een eerdere paragraaf
+     hem heeft veranderd, meet iets anders dan hij zegt.
+
+     En het raster moet de dag ook TONEN. Het raster is veertien dagen vanaf de
+     maandag van deze week, en na twee keer verzetten ligt deze bestelling daar
+     net buiten — dan staat er terecht geen "staat hier al", want de dag is niet
+     in beeld. Vandaar ?van= op de maandag van die dag: dezelfde vraag, op het
+     scherm waar het antwoord zichtbaar is. */
+  const nu = db.prepare('SELECT window_start FROM orders WHERE id = 1').get();
+  const staatOp = nu?.window_start || '';
+  const maandag = addDays(staatOp, -((new Date(`${staatOp}T00:00:00Z`).getUTCDay() + 6) % 7));
+  const opDeDag = await (await get(`/admin/planning?van=${maandag}&pak=1`)).text();
+  check('de huidige startdag zegt "staat hier al"', /staat hier al/.test(opDeDag), true);
+
+  /* En alles binnen de aanloop is geweigerd MET de reden erin. De aanloop is de
+     reden dat de belofte te halen is; een venster dat morgen begint is een
+     belofte waarvan het systeem al weet dat hij niet klopt. */
+  const eerste = firstOfferableDay(vandaag, new Set());
+  check('en dagen vóór de eerste te beloven dag zijn geweigerd', /te vroeg/.test(met), true);
+  check('   met een reden in beeld en niet alleen een dode knop',
+    /pl-zet is-nee/.test(met), true);
+  check('   en die eerste dag ligt in de toekomst', eerste > vandaag, true);
+
+  /* Een id dat niet op deze planning staat, verandert niets. Anders kan een
+     verdwaalde link een scherm vol knoppen opleveren voor een bestelling die
+     er niet ligt. */
+  const onzin = await (await get('/admin/planning?pak=999')).text();
+  check('een onbekend id laat het scherm met rust', /pl-zet-knop/.test(onzin), false);
+
+  /* ── EN DE KNOP DOET HET OOK ECHT ────────────────────────────────────────
+     Alles hierboven controleert wat er op het scherm STAAT. Dat een knop er
+     staat en ergens naartoe wijst, is niet hetzelfde als dat hij werkt: de
+     route kan de dag weigeren om een reden die dit scherm niet kende, en dan
+     is elke knop een doodlopende weg met een nette opmaak.
+
+     Dus: pak de dag die de eerste klikbare knop noemt, post hem, en kijk of
+     het venster verschoven is. Datzelfde pad als een muisklik. */
+  const eersteKnop = met.match(/<form class="pl-zet"[\s\S]*?<\/form>/);
+  const gekozenDag = eersteKnop && eersteKnop[0].match(/name="dag" value="(\d{4}-\d{2}-\d{2})"/);
+  check('er is een klikbare dag om te proberen', !!gekozenDag, true);
+  if (gekozenDag) {
+    const voor = db.prepare('SELECT window_start FROM orders WHERE id = 1').get();
+    const res = await post('/admin/orders/1/window', {
+      do: 'verzet', dag: gekozenDag[1], reason: 'verplaatst vanaf de planning', back: 'planning',
+    });
+    const na = db.prepare('SELECT window_start, window_end FROM orders WHERE id = 1').get();
+    check('  klikken verzet het venster echt', na.window_start, gekozenDag[1]);
+    check('  en het is een andere dag dan hij stond', na.window_start !== voor.window_start, true);
+    check('  de tweede dag van het paar komt uit de agenda', !!na.window_end && na.window_end >= na.window_start, true);
+    check('  en je landt terug op de planning', res.headers.get('location'), '/admin/planning?verzet=1');
+    const ev = db.prepare("SELECT note FROM order_events WHERE order_id = 1 ORDER BY id DESC LIMIT 1").get();
+    check('  met een regel op de tijdlijn van de klant', /Venster verzet naar/.test(ev?.note || ''), true);
+  }
+}
+
 console.log(`\n${n - fouten}/${n} geslaagd`);
 process.exit(fouten ? 1 : 0);

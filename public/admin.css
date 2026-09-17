@@ -1527,3 +1527,89 @@ input, select, textarea { max-width: 100%; }
 @media (max-width: 720px) {
   .btn { white-space: normal; max-width: 100%; height: auto; padding-block: .5rem; }
 }
+
+/* ── DE FORMAATKOLOM — 13 september 2026 ──────────────────────────────────────
+   Lucas: *"de map die de klant kan downloaden moet per product een jpg, png en
+   webp map bevatten met de correcte foto's erin, ik weet niet of dit al zo is
+   maar volgensmij niet."*
+
+   Er zijn twee manieren om te leveren en ze doen niet hetzelfde: `npm run
+   deliver` maakt de drie formaten, uploaden in dit paneel niet (een Worker kan
+   geen beeld omzetten). Dat verschil was op geen enkel scherm te zien, dus kon
+   een bestelling als "geleverd" de deur uit terwijl de klant één formaat kreeg.
+
+   Drie merktekens per beeld en geen enkel vinkje: "twee van de drie" is een
+   echte uitkomst — een omzetting die halverwege stukliep — en dan wil je zien
+   wélke ontbreekt. Het verschil zit in kleur én in doorstreping, want kleur
+   alleen is geen drager van betekenis. */
+.fmt { display: inline-flex; gap: .28rem; font-family: var(--mono, ui-monospace, monospace); font-size: .66rem; letter-spacing: .04em; }
+.fmt-ja,
+.fmt-nee { padding: .1rem .34rem; border: 1px solid var(--line-strong); white-space: nowrap; }
+/* Dezelfde vorm als .pill hierboven: dit paneel heeft met opzet geen
+   groen/rood-systeem — elke mist-kleur is #EDEDED — dus het verschil zit in de
+   inkt en in de doorstreping, niet in een kleurvlak. Kleur alleen is hier ook
+   nooit de drager van betekenis geweest. */
+.fmt-ja { color: var(--ink-2); border-color: var(--ink-700); }
+.fmt-nee { color: var(--ink-3); border-style: dashed; text-decoration: line-through; }
+.fmt-geen {
+  font-family: var(--mono, ui-monospace, monospace); font-size: .66rem; letter-spacing: .04em;
+  color: var(--warn-ink); white-space: nowrap;
+}
+
+/* ── OPPAKKEN EN NEERZETTEN IN DE PLANNING — 13 september 2026 ────────────────
+   Lucas: *"Ik zou in /admin de planning met de muis willen aanpassen dus een
+   datum van de klant interactief willen verplaatsen."*
+
+   Slepen kan hier niet: dit paneel draait onder `default-src 'none'` en laadt
+   geen enkel script — zie de noot bij `pakId` in admin.js voor waarom dat zo
+   blijft. Wat er wel is: oppakken met één klik, en dan wordt elke dag in het
+   raster een knop die zegt of hij past. Dat is één klik meer dan slepen en het
+   scheelt de klik die je anders doet om te ontdekken dat het niet kon. */
+.pl-chip-paar { display: flex; align-items: stretch; gap: 2px; }
+.pl-chip-paar > .pl-chip { flex: 1 1 auto; min-width: 0; }
+
+/* Het pijltje is smal maar raakbaar: 24 px breed en zo hoog als de chip. Onder
+   de 24 zou het onder de ondergrens van WCAG 2.5.8 duiken, en dit is een
+   bediening die je tientallen keren per week gebruikt. */
+.pl-pak {
+  flex: 0 0 auto; display: inline-grid; place-items: center;
+  min-width: 24px; padding: 0 .2rem;
+  border: 1px solid var(--line); border-radius: 4px;
+  font-size: .8rem; line-height: 1; color: var(--ink-3); text-decoration: none;
+}
+.pl-pak:hover, .pl-pak:focus-visible { border-color: var(--ink-700); color: var(--ink); }
+.pl-pak.is-aan { background: var(--ink-900); border-color: var(--ink-900); color: var(--paper); }
+.pl-chip.is-opgepakt { outline: 2px solid var(--ink-900); outline-offset: 1px; }
+
+.pl-pakbalk {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .8rem;
+  margin: 0 0 .7rem; padding: .6rem .8rem;
+  border: 1px solid var(--ink-700); border-radius: 6px; background: var(--mist-stone);
+}
+.pl-pakbalk-l {
+  font-family: var(--mono, ui-monospace, monospace); font-size: .68rem;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+}
+.pl-pakbalk-hint { flex: 1 1 16rem; }
+
+/* De dagkaart tijdens het kiezen: iets meer lucht onderin, zodat de knop niet
+   tegen de chips aan komt te staan. Zonder deze regel raken ze elkaar op een
+   dag met drie bestellingen erin. */
+.pl-dag.is-kiezen { padding-bottom: .5rem; }
+.pl-zet { margin: .45rem 0 0; }
+.pl-zet-knop {
+  width: 100%; min-height: 28px; padding: .2rem .4rem;
+  border: 1px solid var(--ink-900); border-radius: 4px;
+  background: var(--ink-900); color: var(--paper);
+  font-family: inherit; font-size: .72rem; font-weight: 700; letter-spacing: .03em;
+  cursor: pointer;
+}
+.pl-zet-knop:hover, .pl-zet-knop:focus-visible { background: var(--ink-800); }
+/* De geweigerde dag: geen knop, maar wel de reden. Een uitgeschakelde knop
+   zonder uitleg is een deur zonder bordje. */
+.pl-zet.is-nee {
+  min-height: 28px; display: grid; place-items: center;
+  border: 1px dashed var(--line); border-radius: 4px;
+  font-size: .7rem; color: var(--ink-3); text-align: center;
+}
+.pl-pak-link { font-size: .8rem; color: var(--ink-2); }

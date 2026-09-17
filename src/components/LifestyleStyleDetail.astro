@@ -277,9 +277,29 @@ const vink = 'M20 6L9 17l-5-5';
   .ls-sfeerbeeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .ls-sfeer-p { margin-top: 1.1rem; }
 
+  /* ── HET BEWIJS STOND OP 520 IN EEN PANEEL VAN 1392 — 13 september 2026 ──
+     Gemeten op een scherm van 1440: de schuif stond 520 breed, gecentreerd,
+     met 872 pixels leeg eromheen — en dit is het blok dat laat zien wat er
+     met JOUW foto gebeurt. Het overtuigendste element van de pagina was het
+     kleinste.
+
+     Breder maken alleen helpt niet: de schuif is vierkant, dus 900 breed is
+     ook 900 hoog en dan past het bewijs niet meer op één scherm. De tekst
+     gaat daarom ERNAAST staan in plaats van erboven. Het blok vult de
+     breedte, de schuif wordt een derde groter, en de uitleg staat naast het
+     beeld waar hij over gaat. Onder 62rem blijft alles onder elkaar. */
   .ls-midden { max-width: 46rem; margin-inline: auto; text-align: center; }
   .ls-midden .lopend { margin-inline: auto; }
   .ls-compare { max-width: 520px; margin: 0 auto; }
+  @media (min-width: 62rem) {
+    .ls-bewijs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
+    .ls-midden { max-width: 46ch; margin-inline: 0; text-align: start; }
+    /* Vier regels waarvan de laatste twee woorden telt, leest als een fout.
+       `balance` verdeelt de kop over even lange regels. */
+    .ls-midden h2 { text-wrap: balance; }
+    .ls-midden .lopend { margin-inline: 0; }
+    .ls-compare { max-width: 680px; margin: 0; width: 100%; }
+  }
 
   .ls-stappen {
     display: grid; gap: clamp(1.2rem, 2.5vw, 2rem);

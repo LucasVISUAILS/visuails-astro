@@ -34,7 +34,7 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     return null;
   }
   const o = await env.DB.prepare(
-    `SELECT id, ref, email, lang, service, product_count, total_cents, vat_cents, vat_rate, payment_status, window_start
+    `SELECT id, ref, email, lang, service, product_count, total_cents, vat_cents, vat_rate, payment_status, status, window_start
        FROM orders WHERE id = ?1`
   ).bind(orderId).first();
   if (!o || !o.email) return null;
@@ -117,12 +117,22 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     }),
   });
 
+  /* ── 'pending' IS GEEN BESTELSTATUS — 17 september 2026 ───────────────────
+         `order_events.status` draagt de status waarin de bestelling stond toen
+         dit gebeurde, en de klanttijdlijn vertaalt die met statusLabel(). Die
+         lijst kent received / in_production / human_check / delivered /
+         cancelled — 'pending' staat er niet in, en account.js valt dan terug op
+         `|| e.status`: op een Nederlandse tijdlijn stond letterlijk het kale
+         Engelse woord "pending".
+         De eigen status van de bestelling, met dezelfde terugval als in
+         invoice.js. Er verandert niets aan de bestelling; er wordt alleen
+         vastgelegd wat er gebeurde. */
   await env.DB.prepare(
     `INSERT INTO order_events (order_id, status, note, actor)
-     VALUES (?1, 'pending', ?2, 'studio')`
+     VALUES (?1, ?3, ?2, 'studio')`
   ).bind(orderId, lang === 'nl'
     ? `${herinnering ? 'Betaalherinnering' : 'Betaallink'} verstuurd naar ${o.email} voor ${bedrag}.`
-    : `${herinnering ? 'Payment reminder' : 'Payment link'} sent to ${o.email} for ${bedrag}.`).run();
+    : `${herinnering ? 'Payment reminder' : 'Payment link'} sent to ${o.email} for ${bedrag}.`, o.status || 'received').run();
 
   console.log('[admin] betaallink verstuurd voor', o.ref);
   return url;

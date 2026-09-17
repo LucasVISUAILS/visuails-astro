@@ -106,6 +106,8 @@ const maat = nl ? {
    30 augustus 2026 — zie de kop van src/data/binnenkort.js voor waarom ze hier
    zijn komen te staan en niet op twee eigen pagina's. */
 import { binnenkort } from '../data/binnenkort.js';
+import LaptopCarousel from './LaptopCarousel.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
 
 const COPY = {
   en: {
@@ -269,6 +271,24 @@ const c = COPY[nl ? 'nl' : 'en'];
       <p class="lopend">{c.lead}</p>
     </header>
   </section>
+
+  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
+      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
+      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
+      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
+      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
+      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
+      hetzelfde ding als op de voorpagina. */}
+  <section class="paneel" aria-labelledby="pl-lc">
+    <div class="paneel-kop">
+      <p class="etiket">{nl ? 'Wat er elke maand uitkomt' : 'What lands each month'}</p>
+      <h2 id="pl-lc" class="hoog hoog-2">{nl ? 'Elk product krijgt dit.' : 'Every product gets this.'}</h2>
+      <p class="lopend">{nl ? 'Je maandelijkse set gaat per product op deze manier de deur uit, klaar om te plaatsen.' : 'Your monthly set goes out per product like this, ready to place.'}</p>
+    </div>
+    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
+      titel={nl ? 'Elk product krijgt dit.' : 'Every product gets this.'} />
+  </section>
+
 
   {/* ── 2 · WAT EEN ABONNEMENT IS ──────────────────────────────────────────
       De uitleg en het instapbedrag; de drie kaarten staan eronder in het licht.

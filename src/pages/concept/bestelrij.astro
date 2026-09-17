@@ -1,0 +1,1279 @@
+---
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DE BESTELRIJ — één product per scherm, van links naar rechts
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 16 september 2026. Werkend prototype, nog niet de live stroom.
+ *
+ * Lucas: *"Misschien kan het bestelformulier wel van links naar rechts gaan
+ * ... dat je dan per product de foto's invult en op klaar klikt en dat hij dan
+ * naar de volgende product invulpagina gaat. Je kan dan met pijltjes nog wel
+ * terug ... op het einde krijg je een melding als er nog een product of
+ * meerdere niet ingevuld is. Dan kan het scherm onderin alsnog gezet worden om
+ * de klant te laten zien wat hij heeft geupload en wat hij hierdoor van het
+ * resultaat wel en niet kan verwachten."*
+ *
+ * ── WAT ER AL WAS ─────────────────────────────────────────────────────────
+ * Eerlijk vooraf: stap 2 van de echte stroom doet al een deel hiervan. De
+ * kaarten staan onder elkaar met een accordeon die de eerstvolgende
+ * onvolledige kaart openklapt, er is een regel "8 van de 25 producten klaar",
+ * en bij Verder verschijnt al een tussenblok met de producten die nog iets
+ * missen. Wat er NIET is, is positie: je weet wel hóéveel er nog liggen, maar
+ * niet waar je bent.
+ *
+ * ── WAT DE RIJ TOEVOEGT, VANUIT DE KLANT GEZIEN ───────────────────────────
+ * 1  Eén scherm is één taak. De eenheid op het scherm is dezelfde eenheid als
+ *    in zijn hoofd en op zijn tafel: dít kledingstuk, déze vier foto's.
+ * 2  Positie ís voortgang. "3 van de 12" met een rail erboven leest in één
+ *    oogopslag; een teller in een lange kolom moet je geloven.
+ * 3  Terugkijken kost je je plek niet. Met pijltjes stap je heen en weer; in
+ *    een kolom van twintig kaarten scroll je jezelf kwijt.
+ * 4  Het scherm onderin kan eindelijk iets zeggen. In een kolom van twintig
+ *    kaarten bestaat "het huidige product" niet, dus kan er ook niets
+ *    meebewegen. In een rij wel.
+ *
+ * ── EN WAAR HET LANGZAMER ZOU WORDEN ──────────────────────────────────────
+ * Voor wie twintig producten heeft en tachtig foto's in één keer wil dumpen,
+ * is twintig schermen LANGZAMER dan één sorteervak. Dat is het echte risico
+ * van dit ontwerp, en daarom heeft het twee uitgangen:
+ *
+ *   · de sorteerzone blijft bovenaan staan. Alles er in één keer in, het
+ *     verdeelt zichzelf over de producten, en de rij is daarna alleen nog
+ *     controle: doorpijlen en bevestigen.
+ *   · het overzicht is een raster en geen lijst. Aan het eind (en tussendoor
+ *     met één knop) zie je alle producten met hun vier vakjes tegelijk. De
+ *     gaten zíe je; je hoeft ze niet te lezen.
+ *
+ * Zonder die twee is dit sneller voor één product en trager voor twintig, en
+ * twintig is nu juist de bestelling waar het om gaat.
+ *
+ * ── WAT HET SCHERM MAG BEWEREN ────────────────────────────────────────────
+ * Op de telefoon staat de foto van de KLANT. Op de laptop staat een VOORBEELD
+ * van wat dat vak oplevert — niet zijn product, want dat bestaat nog niet. Dat
+ * onderscheid staat er met zoveel woorden bij. Zonder dat label leest iemand
+ * een afgewerkte roze jeans naast zijn eigen jas als "dit wordt mijn
+ * resultaat", en dat is een belofte die we niet doen.
+ *
+ * ── VIER VAKKEN IS NIET HET MAXIMUM ───────────────────────────────────────
+ * Lucas: *"Klanten kunnen per product ook meer foto's aanleveren, niet
+ * maximaal 4."*
+ *
+ * Klopt, en de eerste versie van dit prototype had dat mis. Nagelopen in het
+ * echte formulier: een kaart heeft de vier genoemde vakken én een plusje
+ * "Nog een foto" dat er tot MAX_REF_PER_PRODUCT bij zet. Dat zijn er nu vier,
+ * dus je kunt er acht STUREN.
+ *
+ * Er lopen hier twee dingen door elkaar die uit elkaar moeten blijven:
+ *
+ *   STUREN   4 genoemde vakken + tot {MAX_REF_PER_PRODUCT} losse referenties.
+ *            Gratis. Meer foto's helpen ons, maar je krijgt er geen extra
+ *            beelden door.
+ *   KRIJGEN  de set van de dienst, plus tot {MAX_EXTRA_PER_PRODUCT} extra
+ *            beelden die je zelf omschrijft. Die kosten geld en kies je in
+ *            stap 1.
+ *
+ * Beide getallen komen uit shots.js en pricing.js en worden hier niet
+ * overgetypt: anders belooft dit scherm ooit iets anders dan het formulier.
+ *
+ * Dit is een PROTOTYPE: klikken op een vak vult het met een voorbeeldfoto,
+ * nog een keer klikken maakt het leeg. Er wordt niets geüpload en niets
+ * verstuurd.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { SHOTS, MAX_REF_PER_PRODUCT } from '../../data/shots.js';
+import { ANGLES, ANGLE_COPY } from '../../data/angles.js';
+import { extraPhotoRate, euro, vatLabel } from '../../data/pricing.js';
+/* ── GEEN TWEEDE SET TEKENINGEN ────────────────────────────────────────────
+   Ik had hier eerst een eigen `HoekSchets.astro` voor gemaakt. Dat was dubbel
+   werk: `src/components/order/AngleSketch.astro` bestaat al sinds 9 september,
+   is op Lucas' eigen verzoek gemaakt en wordt al gebruikt door de échte
+   hoekkiezer én door /per-product. Twee sets tekeningen voor dezelfde zes
+   hoeken is precies de kopie die na één wijziging uit elkaar loopt. */
+import AngleSketch from '../../components/order/AngleSketch.astro';
+import { MAX_EXTRA_PER_PRODUCT } from '../../data/pricing.js';
+import { VLAK, FON, PLAAT, OVERLAY, overlayAlt } from '../../data/laptopVlak.js';
+import '../../styles/stelsel.css';
+
+const lang = 'nl' as const;
+
+/* Zes producten: genoeg om de rail, de gaten en het overzicht te laten werken
+   zonder dat het prototype een uitdraai van een echte bestelling wordt. */
+const PRODUCTEN = [
+  'Wide leg jeans — roze',
+  'Puffer jacket — gebroken wit',
+  'Cargo broek — zand',
+  'Hoodie — antraciet',
+  'Overhemd — lichtblauw',
+  'Riem — cognac',
+];
+
+/* Wat elk vak oplevert, en wat het NIET kan opleveren. De tweede helft is het
+   punt: een klant die vooraf leest dat een bedekt detail niet terugkomt,
+   verspilt zijn revisieronde daar niet aan. */
+/* ── DE TIPS DRAAIEN VANZELF ───────────────────────────────────────────────
+   Lucas: *"rechts tips die de klant elke 10 seconden kort vertellen wat
+   waarvoor is en waarom het handig is."*
+
+   Kort houden is hier de hele opgave: dit staat naast een taak, niet in plaats
+   ervan. Twee regels, één ding per tip, en de foto's eronder wisselen mee zodat
+   je ziet waar het over gaat in plaats van het te moeten lezen.
+
+   De laatste tip is er een die nergens anders op de site staat en die het
+   duurste misverstand wegneemt: extra foto's opsturen kost niets en levert geen
+   extra beelden op — het voorkomt dat je je revisieronde kwijt bent aan een
+   misverstand dat met één foto te vermijden was. */
+const TIPS = [
+  { vak: 'front',
+    kop: 'De voorkant draagt de rest',
+    tekst: 'Alles wordt hieruit opgebouwd. Vul het beeld met het product — hoe meer je erin legt, hoe scherper wat eruit komt.' },
+  { vak: 'back',
+    kop: 'De achterkant kunnen we niet raden',
+    tekst: 'Een print, een pasnaad, een logo achterop bestaat alleen als jij hem stuurt. Zelfde afstand en hoek als de voorkant is genoeg.' },
+  { vak: 'worn',
+    kop: 'Eén kiekje zet de pasvorm vast',
+    tekst: 'Wie het ook draagt, elke telefoon, elke kamer. Zonder die foto is het modelbeeld onze beste inschatting van een platte foto.' },
+  { vak: 'detail',
+    kop: 'Eén close-up houdt jouw stof herkenbaar',
+    tekst: 'De weefselstructuur, de wassing, de glans. Een hand in beeld mag, maar wat de hand bedekt komt niet terug.' },
+  { vak: 'detail',
+    kop: 'Extra foto&rsquo;s kosten je niets',
+    tekst: 'Ze leveren geen extra beelden op. Ze zorgen dat het beeld dat je krijgt meteen klopt — en dat je je revisieronde niet kwijt bent aan een misverstand.' },
+];
+
+const BELOFTE: Record<string, string> = {
+  front: 'Hieruit komt het hoofdbeeld. Wat deze foto niet laat zien, kunnen wij ook niet tonen.',
+  back: 'Alles wat alléén achterop zit — een print, een pasnaad, een logo — komt hiervandaan. Geen achterkantfoto, geen achterkantbeeld.',
+  detail: 'Hiermee blijft de stof van jóuw product herkenbaar. Een hand in beeld mag, maar wat de hand bedekt komt niet terug.',
+  worn: 'Hiermee klopt de pasvorm op het modelbeeld. Zonder deze foto is dat onze beste inschatting van een platte foto.',
+};
+
+/* Voorbeeldmateriaal. Links wat een klant stuurt, rechts wat dat vak oplevert.
+   Dit zijn echte paren van één kledingstuk — zie de noot boven in
+   src/data/laptopSlides.js. */
+const VOOR: Record<string, string> = {
+  front: '/img/ba2-voor-front.webp',
+  back: '/img/ba2-voor-achter.webp',
+  detail: '/img/ba2-voor-detail.webp',
+  worn: '/img/ba2-voor-pasvorm.webp',
+};
+const NA: Record<string, string> = {
+  front: '/img/ba2-na-front.webp',
+  back: '/img/ba2-na-achter.webp',
+  detail: '/img/ba2-na-detail.webp',
+  worn: '/img/ba2-na-model.webp',
+};
+
+/* ── DE HOEKEN, VÓÓRDAT DE BESTELLING BEGINT ───────────────────────────────
+   Lucas: *"De klant moet voordat de hele order begint aangeven of hij meer
+   angles per product wil ... product only of on-model gescheiden voor overzicht
+   ... en krijgt dan een foto-upload erbij specifiek voor die angle, verplicht,
+   zodat wij zeker weten wat hij er precies mee bedoelt."*
+
+   Twee van de drie bestonden al: `src/data/angles.js` scheidt ze in `model` en
+   `ground`, en de kiezer staat in stap 1 — één keer voor de hele bestelling.
+   Wat er NIET was, is het derde: de foto bij zo'n hoek was vrijblijvend. Alleen
+   het omschrijvingsveld was verplicht.
+
+   ── WAAROM "ALTIJD EEN FOTO VERPLICHT" NIET KAN ────────────────────────────
+   Een extra hoek is iets wat de klant KOOPT, niet iets wat hij heeft. Bij
+   `ground` valt dat samen: de binnenkant, de zijkant, een rits — hij houdt het
+   product vast, die foto kost hem tien seconden en neemt al het gokwerk weg.
+   Daar is verplicht terecht.
+
+   Bij `model` valt het uit elkaar. "Driekwart op model" bestelt iemand juist
+   OMDAT hij geen modelfoto heeft. Een verplichte foto zou precies de hoeken
+   blokkeren die het meest verkocht worden.
+
+   Dus: op de ondergrond een foto, verplicht. Op een model een foto ÓF één regel
+   uitleg — minstens een van de twee, nooit geen van beide. Zo wordt geen hoek
+   besteld zonder dat wij weten wat ermee bedoeld wordt, en blijft de verkoop
+   heel. */
+/* ── WAT EEN HOEK KOST, EN WAAR DAT GETAL VANDAAN KOMT ─────────────────────
+   Lucas: *"Er zit een bedrag vast per extra angle, dit zie ik niet staan."*
+
+   Klopt: mijn kiezer toonde alleen de keuze en niet de rekening. Een knop die
+   geld kost en dat niet zegt, is de ene soort knop die je niet moet bouwen.
+
+   Het tarief hangt aan het AANTAL PRODUCTEN en niet aan het aantal hoeken —
+   `extraPhotoRate(producten)` leest de ladder uit pricing.js. Bij zes producten
+   is dat de tweede trede. Geen enkel bedrag is hier getypt: de tarieven én de
+   uitkomsten komen uit `euro()` en `extraPhotoRate()`, en de sommen voor één
+   tot vier hoeken worden vooraf uitgerekend zodat het script alleen nog hoeft
+   te kiezen. Zo kan er in de browser nooit een bedrag ontstaan dat pricing.js
+   niet kent. */
+const TARIEF = extraPhotoRate(PRODUCTEN.length);
+const BTW = vatLabel('excl', lang);
+const TARIEF_TEKST = `${ANGLE_COPY[lang].per.replace('{price}', euro(TARIEF, lang))} \u00b7 ${BTW}`;
+const SOMMEN = [1, 2, 3, 4].map((n) => {
+  const sjabloon = PRODUCTEN.length === 1
+    ? (n === 1 ? ANGLE_COPY[lang].totalOneBoth : ANGLE_COPY[lang].totalOneP)
+    : (n === 1 ? ANGLE_COPY[lang].totalOne : ANGLE_COPY[lang].total);
+  return sjabloon
+    .replace('{n}', String(n))
+    .replace('{p}', String(PRODUCTEN.length))
+    .replace('{price}', euro(TARIEF, lang))
+    .replace('{sum}', euro(TARIEF * n * PRODUCTEN.length, lang));
+});
+
+const HOEK_GROEP = {
+  model: { naam: ANGLE_COPY[lang].groups.model, eis: 'foto óf één regel uitleg' },
+  ground: { naam: ANGLE_COPY[lang].groups.ground, eis: 'foto verplicht' },
+};
+const hoeken = ANGLES.map((a) => ({ id: a.id, groep: a.group, naam: a.name[lang], regel: a.line[lang] }));
+
+const vakken = SHOTS.map((s) => ({
+  id: s.id,
+  naam: s.name[lang],
+  hoe: s.how[lang],
+  nodig: s.required,
+  belofte: BELOFTE[s.id],
+  voor: VOOR[s.id],
+  na: NA[s.id],
+}));
+---
+<ConceptLayout
+  title="VISUAILS — de bestelrij"
+  description="Prototype: één product per scherm, van links naar rechts, met het laptopscherm eronder."
+  lang={lang}
+  grond="vel"
+>
+  <main
+    class="br"
+    data-br
+    style={`--lc-plaat:${PLAAT};--lc-l:${VLAK.links}%;--lc-t:${VLAK.boven}%;--lc-w:${VLAK.breed}%;--lc-h:${VLAK.hoog}%;--lc-fl:${FON.links}%;--lc-ft:${FON.boven}%;--lc-fw:${FON.breed}%;--lc-fh:${FON.hoog}%`}
+    data-br-n={PRODUCTEN.length}
+    data-br-maxref={MAX_REF_PER_PRODUCT}
+    data-br-kanten={JSON.stringify({ model: HOEK_GROEP.model.naam, ground: HOEK_GROEP.ground.naam })}
+    data-br-sommen={JSON.stringify(SOMMEN)}
+    data-br-tips={JSON.stringify(TIPS.map((t) => ({ ...t, voor: VOOR[t.vak], na: NA[t.vak] })))}
+  >
+    <div class="binnen">
+      <header class="br-kop">
+        <p class="etiket">Stap 2 van 5</p>
+        <h1 class="kop br-h">Stuur de productfoto&rsquo;s.</h1>
+        <p class="lopend br-lede">
+          Eén product per scherm. Vul de vakken, klik op <b>Klaar</b>, en je staat bij de volgende.
+          Met de pijlen ga je heen en weer zonder je plek kwijt te raken.
+        </p>
+      </header>
+
+      <!-- ══ DE HOEKEN ═══════════════════════════════════════════════════
+           Eén keer, vóór de producten. De twee groepen staan gescheiden omdat
+           ze een andere vraag beantwoorden: op een model gaat over hoe het
+           gedragen wordt, op de ondergrond over wat het product zelf is. -->
+      <section class="br-hoeken" aria-labelledby="br-hoek-h">
+        <div class="br-hoeken-kop">
+          <div>
+            <p class="etiket">{ANGLE_COPY[lang].extraH}</p>
+            <h2 id="br-hoek-h" class="br-hoeken-h">Wil je meer dan de vier vaste beelden?</h2>
+            <p class="lopend br-hoeken-p">
+              Eén keer gekozen, voor de hele bestelling &mdash; elk product krijgt dezelfde hoeken.
+              Kies je er een, dan komt er bij elk product één vak bij, zodat wij precies weten wat je bedoelt.
+            </p>
+          </div>
+          <p class="br-hoeken-prijs">
+            <span class="br-hoeken-tel" data-br-hoektel aria-live="polite"></span>
+            <span class="br-hoeken-tarief">{TARIEF_TEKST}</span>
+            <span class="br-hoeken-som" data-br-hoeksom aria-live="polite"></span>
+          </p>
+        </div>
+
+        {['model', 'ground'].map((groep) => (
+          <div class="br-hoekgroep">
+            <p class="br-hoekgroep-kop">
+              <b>{HOEK_GROEP[groep].naam}</b>
+              <span class="br-hoekgroep-eis">{HOEK_GROEP[groep].eis}</span>
+            </p>
+            <ul class="br-hoeklijst" data-br-groeplijst={groep}>
+              {hoeken.filter((h) => h.groep === groep).map((h) => (
+                <li>
+                  <button class="br-hoek" type="button" data-br-hoek={h.id} data-br-hoekgroep={h.groep}
+                    data-br-hoeknaam={h.naam} aria-pressed="false">
+                    <span class="br-hoek-schets"><AngleSketch id={h.id} /></span>
+                    <span class="br-hoek-woord">
+                      <span class="br-hoek-naam">{h.naam}</span>
+                      <span class="br-hoek-regel">{h.regel}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+              <!-- ── DE VIERDE PLEK IS VAN DE KLANT ─────────────────────────
+                   Lucas: *"zet de custom optie per categorie op de vierde
+                   plek."* Hij staat dus IN de rij en niet als los blok
+                   eronder: op de plek waar tot vandaag een hoek stond die we
+                   hebben laten vallen, en op dezelfde regel als de drie
+                   waarmee je hem vergelijkt.
+
+                   Per groep één, want de vraag verschilt: een eigen hoek op
+                   een model is ander werk dan een eigen hoek op de
+                   ondergrond, en de klant is de enige die weet welke hij
+                   bedoelt. Door hem per categorie te zetten hoeft hij dat
+                   niet apart aan te wijzen — de rij waar hij in typt, zegt
+                   het al. -->
+              <li class="br-eigenvak">
+                <div class="br-eigen">
+                  <span class="br-hoek-schets"><AngleSketch id="eigen" /></span>
+                  <div class="br-eigen-woord">
+                    <span class="br-hoek-naam">Zelf bedenken</span>
+                    <label>
+                      <span class="visueel-verborgen">Hoe noem je deze hoek?</span>
+                      <input type="text" data-br-eigennaam={groep} maxlength="40"
+                        placeholder={groep === 'model' ? 'bijv. van opzij, gedragen' : 'bijv. flat-lay voor de banner'} />
+                    </label>
+                    <button class="br-eigen-knop" type="button" data-br-eigenvoeg={groep}>
+                      Toevoegen &mdash; foto verplicht
+                    </button>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        ))}
+
+        <!-- ── EEN HOEK DIE NIET IN DE LIJST STAAT ───────────────────────
+             Lucas: *"Misschien ook een eigen flat-lay of on-model idee
+             toevoegen, dus dat de klant zelf de naam van de shot bedenkt, een
+             naam toevoegt en verplicht een foto erbij moet uploaden van wat hij
+             wil."*
+
+             Hier is de foto NIET optioneel en ook geen alternatief voor een
+             regel tekst, zoals bij de modelhoeken. Bij de acht vaste hoeken
+             weten we wat "driekwart" betekent — er staat een tekening bij. Bij
+             een hoek die de klant zelf verzint, weten we dat niet, en dan IS die
+             foto de opdracht. Een naam zonder beeld is een raadsel dat wij
+             moeten oplossen, en precies dat willen we niet.
+
+             De groepskeuze staat erbij omdat het voor ons verschil maakt: op
+             een model is ander werk dan op de ondergrond, en de klant weet als
+             enige welke van de twee hij bedoelt. -->
+        <!-- Zijn eigen woorden, en ze horen precies hier: op het moment dat
+             iemand iets bestelt dat niet in een lijstje past. -->
+        <p class="br-hoeken-noot">
+          Twijfelen wij over wat je bedoelt, dan nemen we contact met je op vóórdat we beginnen.
+          Liever één berichtje vooraf dan een beeld dat je niet bedoelde.
+        </p>
+      </section>
+
+      <!-- De snelle weg blijft bovenaan: alles er in één keer in. Zonder dit
+           vak is een rij van twintig schermen trager dan de kolom die er nu
+           staat, en twintig is nu juist de bestelling waar het om gaat. -->
+      <div class="br-sorteer">
+        <p class="br-sorteer-h">Heb je alles al klaarstaan?</p>
+        <p class="br-sorteer-p">
+          Sleep de hele map hierheen — we verdelen ze over je producten en je loopt de rij daarna
+          alleen nog na. <span class="br-proef">In dit prototype doet dit niets.</span>
+        </p>
+      </div>
+
+      <!-- De rail. Klikbaar in beide richtingen, want terugkijken is geen fout. -->
+      <!-- De tegel van een zelfbedachte hoek. Gekloond uit de bron en niet
+           opgebouwd, om dezelfde reden als overal in dit bestand: een element
+           dat het script zelf maakt draagt Astro's scope-kenmerk niet en krijgt
+           dan geen enkele opmaakregel mee. -->
+      <template data-br-eigensjabloon>
+        <li>
+          <button class="br-hoek br-eigenhoek" type="button" data-br-hoek="" data-br-hoekgroep="model"
+            data-br-hoeknaam="" aria-pressed="true">
+            <span class="br-hoek-schets"><AngleSketch id="eigen" /></span>
+            <span class="br-hoek-woord">
+              <span class="br-hoek-naam"></span>
+              <!-- Welke kant hij koos, blijft op de tegel staan. Anders is dat
+                   een keuze die je één keer maakt en daarna nergens meer kunt
+                   nalezen — en het is juist de helft die voor ons uitmaakt. -->
+              <span class="br-hoek-kant" data-br-eigenkant></span>
+              <span class="br-hoek-regel">Jouw eigen hoek. De foto die je erbij zet, is de opdracht.</span>
+            </span>
+            <span class="br-eigen-weg" aria-hidden="true">&times;</span>
+          </button>
+        </li>
+      </template>
+
+      <nav class="br-rail" aria-label="Producten">
+        {PRODUCTEN.map((naam, i) => (
+          <button class="br-rail-knop" type="button" data-br-ga={i} aria-label={`${i + 1} · ${naam}`}>
+            <span class="br-rail-nr">{String(i + 1).padStart(2, '0')}</span>
+            <span class="br-rail-vakjes" aria-hidden="true">
+              {vakken.map(() => (<i></i>))}
+            </span>
+          </button>
+        ))}
+      </nav>
+    </div>
+
+    <!-- ══ DE RIJ ═══════════════════════════════════════════════════════════
+         Eén paneel per product, naast elkaar, verschoven met translate. Geen
+         schuifbak hier: een horizontale schuifbak op een pagina die verticaal
+         scrollt is op een trackpad een loterij. -->
+    <div class="br-venster">
+      <ol class="br-rij" data-br-rij>
+        {PRODUCTEN.map((naam, i) => (
+          <li class={`br-paneel${i === 0 ? ' is-aan' : ''}`} data-br-paneel={i}>
+            <div class="binnen br-paneel-in">
+              <div class="br-titel">
+                <span class="br-tel etiket">{String(i + 1).padStart(2, '0')} / {String(PRODUCTEN.length).padStart(2, '0')}</span>
+                <label class="br-naam">
+                  <span class="visueel-verborgen">Productnaam</span>
+                  <input type="text" value={naam} data-br-naam />
+                </label>
+              </div>
+
+              <ul class="br-vakken">
+                {vakken.map((v) => (
+                  <li>
+                    <button
+                      class="br-vak"
+                      type="button"
+                      data-br-vak={v.id}
+                      data-br-voor={v.voor}
+                      data-br-na={v.na}
+                      data-br-nodig={v.nodig ? '1' : '0'}
+                      data-br-vakbelofte={v.belofte}
+                      aria-pressed="false"
+                    >
+                      <span class="br-vak-beeld"><img src={v.voor} alt="" width="760" height="1013" loading="lazy" decoding="async" /></span>
+                      <span class="br-vak-leeg" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                      </span>
+                      <span class="br-vak-woord">
+                        <b>{v.naam}</b>
+                        <span class="br-vak-eis">{v.nodig ? 'nodig' : 'optioneel'}</span>
+                      </span>
+                      <span class="br-vak-hoe">{v.hoe}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              <!-- De referenties staan NIET in hetzelfde raster als de vier
+                   genoemde vakken. Negen tegels van dezelfde maat maken één
+                   product drie rijen hoog, en dan is "één scherm, één taak"
+                   meteen weer weg. Kleine vierkantjes op één regel, met de
+                   uitleg één keer ernaast in plaats van per tegel. -->
+              <div class="br-extra">
+                <p class="br-extra-woord">
+                  <b>Nog meer foto&rsquo;s van dit product?</b>
+                  Gratis, en je krijgt er geen extra beelden door &mdash; ze zorgen dat wat je
+                  terugkrijgt meteen klopt, zodat je je revisieronde overhoudt voor iets dat er
+                  echt toe doet.
+                </p>
+                <!-- ── WAAROM EEN <template> EN GEEN createElement ──────────
+                     Astro scopet zijn CSS: `.br-refs .br-vak` wordt bij de bouw
+                     `.br-refs[data-astro-cid-…] .br-vak[data-astro-cid-…]`. Een
+                     knop die het script zelf in elkaar zet, draagt dat kenmerk
+                     niet en krijgt dus GEEN van die regels. Gemeten toen dat
+                     misging: een tegel van 86 pixels werd er 760, en het paneel
+                     schoot van 660 naar 3905 pixels hoog.
+
+                     Dit sjabloon staat in de bron, wordt dus wél gescopet, en
+                     het script kloont het alleen maar. Zelfde reden als de
+                     `:global(picture)` in LaptopCarousel.astro. -->
+                <!-- Het vak dat bij een gekozen hoek hoort. Zelfde vorm als de
+                     vier vaste vakken, want het is er een: alleen de naam en de
+                     eis komen uit de hoek die de klant koos. -->
+                <template data-br-hoeksjabloon>
+                  <li>
+                    <button class="br-vak br-hoekvak" type="button" data-br-hoekvak="" data-br-nodig="1"
+                      data-br-voor={VOOR.detail} data-br-na={NA.detail} aria-pressed="false">
+                      <span class="br-vak-beeld"><img src={VOOR.detail} alt="" width="760" height="1013" /></span>
+                      <span class="br-vak-leeg" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                      </span>
+                      <span class="br-vak-woord"><b></b><span class="br-vak-eis"></span></span>
+                      <span class="br-vak-hoe"></span>
+                    </button>
+                    <!-- Alleen bij een hoek op een model, en dan als volwaardig
+                         alternatief voor de foto — niet als extraatje eronder.
+                         Wie "driekwart op model" bestelt heeft daar per definitie
+                         geen foto van; wat hij wél kan, is in één regel zeggen
+                         wat hij bedoelt. -->
+                    <label class="br-hoekregel" hidden>
+                      <span class="visueel-verborgen">Wat bedoel je met deze hoek?</span>
+                      <input type="text" data-br-hoektekst placeholder="of schrijf hier wat je bedoelt" />
+                    </label>
+                  </li>
+                </template>
+                <template data-br-sjabloon>
+                  <li>
+                    <button class="br-vak br-ref is-vol" type="button" data-br-ref="1">
+                      <span class="br-vak-beeld"><img src={VOOR.detail} alt="" width="760" height="1013" /></span>
+                      <span class="br-ref-naam">Referentie 1</span>
+                    </button>
+                  </li>
+                </template>
+                <ul class="br-refs" data-br-refs>
+                  <li>
+                    <button class="br-vak br-plus" type="button" data-br-plus aria-label="Nog een foto toevoegen">
+                      <span class="br-vak-leeg" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                      </span>
+                      <span class="br-ref-naam">Nog een foto</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <p class="br-stand" data-br-stand aria-live="polite"></p>
+              <p class="br-erbij">
+                Meer beelden <b>terug</b>? Tot {MAX_EXTRA_PER_PRODUCT} extra per product, die beschrijf je zelf in stap&nbsp;1.
+                Dat is iets anders dan de foto&rsquo;s hierboven: die stuur je ons, deze krijg je van ons.
+              </p>
+
+              <div class="br-bediening">
+                <button class="knop knop-lijn br-terug" type="button" data-br-stap="-1">Vorige</button>
+                <button class="knop knop-geel br-klaar" type="button" data-br-stap="1">Klaar &mdash; volgende product</button>
+              </div>
+            </div>
+          </li>
+        ))}
+
+        <!-- Het overzicht is het laatste paneel van dezelfde rij. Niet een
+             melding die over je scherm valt: een raster waarin je de gaten
+             ZIET staan en er met één klik heen springt. -->
+        <li class="br-paneel br-slot" data-br-paneel={PRODUCTEN.length}>
+          <div class="binnen br-paneel-in">
+            <h2 class="kop br-slot-h" data-br-slot-h></h2>
+            <p class="lopend br-slot-p" data-br-slot-p></p>
+            <ol class="br-raster" data-br-raster>
+              {PRODUCTEN.map((naam, i) => (
+                <li>
+                  <button class="br-tegel" type="button" data-br-ga={i}>
+                    <span class="br-tegel-nr">{String(i + 1).padStart(2, '0')}</span>
+                    <span class="br-tegel-naam">{naam}</span>
+                    <span class="br-tegel-vakjes" aria-hidden="true">
+                      {vakken.map((v) => (<i data-br-tegelvak={v.id}></i>))}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <div class="br-bediening">
+              <button class="knop knop-lijn" type="button" data-br-stap="-1">Terug naar de rij</button>
+              <button class="knop knop-geel" type="button" data-br-door>Verder naar je gegevens</button>
+            </div>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <!-- ══ HET SCHERM ═══════════════════════════════════════════════════════
+         Zelfde plaat en zelfde twee schermgaten als op de voorpagina, maar hier
+         omgedraaid van rol: de TELEFOON is het onderwerp (dit stuurde je) en de
+         laptop toont wat dat vak oplevert. Vandaar dat het label op de laptop
+         "voorbeeld" zegt en niet "resultaat". -->
+    <aside class="br-scherm" data-br-scherm>
+      <!-- Inklapbaar, want niet iedereen heeft dit nodig. Wie het snapt schuift
+           hem dicht en houdt zijn scherm; wie vastloopt schuift hem open. Op een
+           telefoon staat hij daarom dicht en op een groot scherm open: daar kost
+           hij niets en is hij precies op het moment nuttig dat iemand twijfelt. -->
+      <div class="binnen br-schuif">
+        <button class="br-schuif-knop" type="button" data-br-schuif aria-expanded="true" aria-controls="br-tips">
+          <span class="br-schuif-woord">Tips &mdash; wat komt waar terecht</span>
+          <span class="br-schuif-nu" data-br-schuif-nu></span>
+          <svg class="br-schuif-pijl" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+      </div>
+      <div class="binnen br-scherm-in" id="br-tips">
+        <div class="br-doek">
+          <div class="br-vlak"><img data-br-laptop src={NA.front} alt="" width="760" height="760" decoding="async" /></div>
+          <div class="br-fon"><img data-br-fon src={VOOR.front} alt="" width="760" height="1013" decoding="async" /></div>
+          <img class="br-plaat" src={OVERLAY} alt={overlayAlt(lang)} width="1792" height="1013" decoding="async" />
+          <p class="br-merk" data-br-merk></p>
+        </div>
+        <div class="br-uitleg">
+          <p class="etiket" data-br-vaknaam></p>
+          <p class="lopend br-zin" data-br-belofte></p>
+          <p class="br-noot">Rechts jouw foto. Op het laptopscherm een <b>voorbeeld</b> van wat dit vak
+            oplevert &mdash; van een ánder product, want dat van jou moet nog gemaakt worden.</p>
+          <!-- De streepjes zeggen hoeveel tips er zijn en waar je bent. Geen
+               knoppen: dit is iets dat langskomt, niet iets dat je bedient. -->
+          <p class="br-tikken" data-br-tikken aria-hidden="true">
+            {TIPS.map(() => (<i></i>))}
+          </p>
+        </div>
+      </div>
+    </aside>
+  </main>
+</ConceptLayout>
+
+<style>
+  .br { display: grid; gap: clamp(1.6rem, 4vw, 2.8rem); padding-block: clamp(2rem, 5vw, 4rem) 0; }
+  .br-kop { max-width: 52rem; display: grid; gap: .7rem; }
+  .br-h { font-size: clamp(1.9rem, 4.4vw, 3rem); }
+  .br-lede { max-width: 46rem; }
+
+  /* ── DE SNELLE WEG ──────────────────────────────────────────────────────── */
+  .br-sorteer {
+    margin-top: clamp(1.2rem, 3vw, 2rem);
+    border: 1px dashed var(--lijn-sterk, rgb(0 0 0 / .22));
+    border-radius: var(--rond-m, 16px); padding: clamp(1rem, 2.4vw, 1.5rem);
+    display: grid; gap: .3rem;
+  }
+  .br-sorteer-h { margin: 0; font-weight: 600; }
+  .br-sorteer-p { margin: 0; color: var(--inkt-2); max-width: 60ch; }
+  .br-proef { font-family: var(--mono, var(--font-mono)); font-size: .7rem; font-stretch: 82%;
+              letter-spacing: .06em; text-transform: uppercase; opacity: .55; }
+
+  /* ── DE HOEKEN ──────────────────────────────────────────────────────────── */
+  .br-hoeken { margin-top: clamp(1.4rem, 3.5vw, 2.2rem); display: grid; gap: 1.1rem;
+               border-top: 1px solid var(--lijn, rgb(0 0 0 / .14)); padding-top: clamp(1.2rem, 3vw, 1.8rem); }
+  .br-hoeken-kop { display: flex; align-items: flex-start; gap: 1.5rem; justify-content: space-between; flex-wrap: wrap; }
+  .br-hoeken-h { margin: .5rem 0 .4rem; font-size: clamp(1.15rem, 2.4vw, 1.5rem); font-weight: 600; letter-spacing: -.02em; }
+  .br-hoeken-p { max-width: 54ch; }
+  .br-hoeken-prijs { margin: 0; flex: none; display: grid; gap: .3rem; justify-items: end; text-align: right; }
+  .br-hoeken-tel { font-family: var(--mono, var(--font-mono)); font-size: .72rem;
+                   font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; }
+  .br-hoeken-tarief { font-size: .82rem; color: var(--inkt-2); }
+  /* De som staat er alleen als er iets gekozen is. Een lege regel met "€ 0"
+     erin zou zeggen dat je iets betaalt voor niets. */
+  .br-hoeken-som { font-size: .88rem; font-weight: 600; }
+  .br-hoeken-som:empty { display: none; }
+  .br-hoekgroep { display: grid; gap: .5rem; }
+  .br-hoekgroep-kop { margin: 0; display: flex; align-items: baseline; gap: .7rem; }
+  .br-hoekgroep-kop b { font-weight: 600; font-size: .94rem; }
+  .br-hoekgroep-eis { font-family: var(--mono, var(--font-mono)); font-size: .64rem; font-stretch: 82%;
+                      letter-spacing: .08em; text-transform: uppercase; color: var(--inkt-2); }
+  .br-hoeklijst { list-style: none; margin: 0; padding: 0;
+                  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; }
+  .br-hoek {
+    width: 100%; height: 100%; display: grid; grid-template-columns: 56px minmax(0, 1fr);
+    gap: .2rem .8rem; align-items: start; text-align: left;
+    padding: .75rem .85rem; border: 1px solid var(--lijn, rgb(0 0 0 / .14));
+    border-radius: var(--rond-s, 10px); background: none; color: inherit; font: inherit; cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease;
+  }
+  .br-hoek:hover { border-color: var(--inkt); }
+  .br-hoek[aria-pressed="true"] { border-color: var(--inkt); background: var(--accent, #C6F100); }
+  .br-hoek-schets { grid-row: span 2; width: 56px; opacity: .85; }
+  .br-hoek[aria-pressed="true"] .br-hoek-schets { opacity: 1; }
+  .br-hoek-woord { display: grid; gap: .25rem; min-width: 0; }
+  .br-hoek-naam { font-weight: 600; font-size: .92rem; }
+  .br-hoek-kant { font-family: var(--mono, var(--font-mono)); font-size: .62rem; font-stretch: 82%;
+                  letter-spacing: .07em; text-transform: uppercase; opacity: .7; }
+  .br-hoek-regel { font-size: .8rem; color: var(--inkt-2); line-height: 1.45; }
+  .br-hoek[aria-pressed="true"] .br-hoek-regel { color: #141414; }
+  .br-eigenhoek { position: relative; }
+  .br-eigen-weg { position: absolute; top: .3rem; right: .45rem; font-size: 1rem; line-height: 1; opacity: .5; }
+  .br-eigenhoek:hover .br-eigen-weg { opacity: 1; }
+  .br-eigenlijst { margin-bottom: .2rem; }
+  /* De vierde tegel heeft dezelfde vorm als de drie ernaast — zelfde raster,
+     zelfde schets links — maar hij is een invulveld in plaats van een knop. Dat
+     verschil moet je kunnen zien zonder te lezen: een onderbroken rand tegen de
+     doorlopende randen van de andere drie. */
+  .br-eigenvak .br-eigen {
+    height: 100%; display: grid; grid-template-columns: 56px minmax(0, 1fr);
+    gap: .2rem .8rem; align-items: start; padding: .75rem .85rem;
+    border: 1px dashed var(--lijn-sterk, rgb(0 0 0 / .26)); border-radius: var(--rond-s, 10px);
+  }
+  .br-eigen-woord { display: grid; gap: .35rem; min-width: 0; }
+  .br-eigen-woord input {
+    width: 100%; font: inherit; font-size: .8rem; color: inherit; background: none;
+    border: 0; border-bottom: 1px solid var(--lijn-sterk, rgb(0 0 0 / .22)); padding: .25rem 0;
+  }
+  .br-eigen-woord input::placeholder { color: var(--inkt-2); opacity: .8; }
+  .br-eigen-woord input:focus-visible { outline: none; border-bottom-color: var(--inkt); }
+  .br-eigen-knop {
+    justify-self: start; font: inherit; font-family: var(--mono, var(--font-mono));
+    font-size: .62rem; font-stretch: 82%; letter-spacing: .07em; text-transform: uppercase;
+    padding: .35rem .6rem; cursor: pointer; color: inherit; background: none;
+    border: 1px solid var(--inkt); border-radius: var(--rond-knop, 0);
+  }
+  .br-eigen-knop:hover { background: var(--inkt); color: var(--vel, #F5F5F5); }
+  .br-eigen-knop[disabled] { opacity: .35; cursor: not-allowed; }
+  .br-eigen-knop[disabled]:hover { background: none; color: inherit; }
+
+  .br-hoeken-noot { margin: 0; font-size: .84rem; color: var(--inkt-2); max-width: 62ch;
+                    border-left: 0; padding-top: .2rem; }
+
+  /* ── DE RAIL ────────────────────────────────────────────────────────────── */
+  .br-rail { margin-top: clamp(1.2rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .5rem; }
+  .br-rail-knop {
+    display: grid; gap: .4rem; justify-items: start;
+    padding: .55rem .7rem; border: 1px solid var(--lijn, rgb(0 0 0 / .14));
+    border-radius: var(--rond-s, 10px); background: none; cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease;
+  }
+  .br-rail-knop:hover { border-color: var(--inkt); }
+  .br-rail-knop.is-aan { border-color: var(--inkt); background: var(--inkt); color: var(--vel, #F5F5F5); }
+  .br-rail-nr { font-family: var(--mono, var(--font-mono)); font-size: .68rem; font-stretch: 82%; letter-spacing: .08em; }
+  .br-rail-vakjes { display: flex; gap: 3px; }
+  .br-rail-vakjes i { width: 9px; height: 9px; border: 1px solid currentColor; opacity: .32; display: block; }
+  .br-rail-vakjes i.vol { background: var(--accent, #C6F100); border-color: var(--accent, #C6F100); opacity: 1; }
+  .br-rail-vakjes i.mist { border-color: currentColor; opacity: .75; }
+
+  /* ── DE RIJ ─────────────────────────────────────────────────────────────── */
+  /* Het venster is even hoog als het paneel dat in beeld staat. Zonder deze
+     regel is het altijd even hoog als het hóógste paneel, en dan gaapt er onder
+     het overzicht een half scherm leegte. De hoogte wordt door het script
+     gezet, want alleen dat weet welk paneel actief is. */
+  .br-venster { overflow: hidden; transition: height .45s cubic-bezier(.16, 1, .3, 1); }
+  .br-rij { display: flex; align-items: flex-start; margin: 0; padding: 0; list-style: none;
+            transition: translate .55s cubic-bezier(.16, 1, .3, 1); }
+  .br-paneel { flex: 0 0 100%; min-width: 0; opacity: .25; transition: opacity .4s ease; }
+  .br-paneel.is-aan { opacity: 1; }
+  .br-paneel-in { display: grid; gap: clamp(1rem, 2.4vw, 1.6rem); padding-block: clamp(1.2rem, 3vw, 2rem); }
+
+  .br-titel { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+  .br-tel { flex: none; }
+  .br-naam { flex: 1 1 18rem; }
+  .br-naam input {
+    width: 100%; font: inherit; font-size: clamp(1.15rem, 2.4vw, 1.6rem); font-weight: 600;
+    letter-spacing: -.02em; color: inherit; background: none;
+    border: 0; border-bottom: 1px solid var(--lijn, rgb(0 0 0 / .18)); padding: .2rem 0;
+  }
+  .br-naam input:focus-visible { outline: none; border-bottom-color: var(--inkt); }
+
+  /* Vier vakken naast elkaar. Onder 52rem worden het er twee, want vier van
+     160 pixels naast elkaar op een telefoon is vier keer niets. */
+  .br-vakken { list-style: none; margin: 0; padding: 0; max-width: 62rem;
+               display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.6rem, 1.6vw, 1rem); }
+  .br-vak {
+    width: 100%; display: grid; gap: .5rem; text-align: left; cursor: pointer;
+    background: none; border: 0; padding: 0; color: inherit; font: inherit;
+  }
+  .br-vak-beeld, .br-vak-leeg {
+    grid-area: 1 / 1; aspect-ratio: 3 / 4; border-radius: var(--rond-s, 10px); overflow: hidden;
+  }
+  .br-vak-beeld { display: none; }
+  .br-vak-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .br-vak-leeg {
+    display: grid; place-items: center;
+    border: 1px dashed var(--lijn-sterk, rgb(0 0 0 / .22)); color: var(--inkt-2);
+    transition: border-color .2s ease, color .2s ease;
+  }
+  .br-vak-leeg svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .br-vak:hover .br-vak-leeg { border-color: var(--inkt); color: var(--inkt); }
+  .br-vak[data-br-nodig="1"] .br-vak-leeg { border-style: solid; }
+  .br-vak.is-vol .br-vak-beeld { display: block; }
+  .br-vak.is-vol .br-vak-leeg { display: none; }
+  .br-vak-woord { display: flex; align-items: baseline; gap: .5rem; }
+  .br-vak-woord b { font-weight: 600; }
+  .br-vak-eis { font-family: var(--mono, var(--font-mono)); font-size: .64rem; font-stretch: 82%;
+                letter-spacing: .08em; text-transform: uppercase; opacity: .55; }
+  .br-vak-hoe { font-size: .82rem; color: var(--inkt-2); line-height: 1.45; }
+  .br-vak:focus-visible { outline: 2px solid var(--accent, #C6F100); outline-offset: 4px; }
+
+  .br-extra { display: grid; gap: .55rem; max-width: 62rem; }
+  .br-extra-woord { margin: 0; font-size: .84rem; color: var(--inkt-2); }
+  .br-extra-woord b { color: var(--inkt); font-weight: 600; margin-right: .3em; }
+  .br-refs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+  .br-refs .br-vak { width: 86px; gap: .3rem; }
+  .br-refs .br-vak-beeld, .br-refs .br-vak-leeg { aspect-ratio: 1; }
+  .br-refs .br-vak-leeg svg { width: 16px; height: 16px; }
+  .br-ref-naam { font-family: var(--mono, var(--font-mono)); font-size: .6rem; font-stretch: 82%;
+                 letter-spacing: .05em; text-transform: uppercase; color: var(--inkt-2); }
+  .br-plus .br-vak-leeg { border-style: dashed; }
+  .br-erbij { margin: 0; max-width: 62rem; font-size: .84rem; color: var(--inkt-2);
+              border-top: 1px solid var(--lijn, rgb(0 0 0 / .12)); padding-top: .8rem; }
+  .br-erbij b { color: var(--inkt); font-weight: 600; }
+  .br-hoekregel { display: block; margin-top: .45rem; }
+  .br-hoekregel input {
+    width: 100%; font: inherit; font-size: .8rem; color: inherit; background: none;
+    border: 0; border-bottom: 1px solid var(--lijn-sterk, rgb(0 0 0 / .22)); padding: .3rem 0;
+  }
+  .br-hoekregel input::placeholder { color: var(--inkt-2); opacity: .8; }
+  .br-hoekregel input:focus-visible { outline: none; border-bottom-color: var(--inkt); }
+  .br-hoekregel.is-vol input { border-bottom-color: var(--accent, #C6F100); border-bottom-width: 2px; }
+  .br-stand { margin: 0; font-family: var(--mono, var(--font-mono)); font-size: .72rem;
+              font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; }
+  .br-stand.is-klaar { color: var(--inkt); }
+  .br-stand.is-mist { opacity: .62; }
+
+  .br-bediening { display: flex; gap: .7rem; flex-wrap: wrap; }
+  .br-bediening .knop { border-radius: var(--rond-knop, 0); }
+
+  /* ── HET OVERZICHT ──────────────────────────────────────────────────────── */
+  .br-slot-h { font-size: clamp(1.4rem, 3vw, 2.1rem); }
+  .br-slot-p { max-width: 48rem; }
+  .br-raster { list-style: none; margin: 0; padding: 0;
+               display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .7rem; }
+  .br-raster li { display: grid; }
+  .br-tegel { height: 100%; align-content: start; }
+  .br-tegel {
+    width: 100%; display: grid; gap: .45rem; justify-items: start; text-align: left;
+    padding: .8rem .9rem; border: 1px solid var(--lijn, rgb(0 0 0 / .14));
+    border-radius: var(--rond-s, 10px); background: none; color: inherit; font: inherit; cursor: pointer;
+  }
+  .br-tegel:hover { border-color: var(--inkt); }
+  .br-tegel.is-gat { border-color: var(--inkt); }
+  .br-tegel-nr { font-family: var(--mono, var(--font-mono)); font-size: .66rem; letter-spacing: .08em; opacity: .55; }
+  .br-tegel-naam { font-weight: 600; font-size: .9rem; }
+  .br-tegel-vakjes { display: flex; gap: 4px; margin-top: .2rem; }
+  .br-tegel-vakjes i { width: 12px; height: 12px; border: 1px solid currentColor; opacity: .3; display: block; }
+  .br-tegel-vakjes i.vol { background: var(--accent, #C6F100); border-color: var(--accent, #C6F100); opacity: 1; }
+  .br-tegel-vakjes i.mist { opacity: .85; border-width: 2px; }
+
+  /* ── HET SCHERM ─────────────────────────────────────────────────────────── */
+  .br.is-slot .br-scherm { display: none; }
+  .br-schuif { display: flex; }
+  .br-schuif-knop {
+    width: 100%; display: flex; align-items: center; gap: .7rem; cursor: pointer;
+    padding: .7rem 0; background: none; border: 0; color: inherit; font: inherit; text-align: left;
+  }
+  .br-schuif-woord { font-family: var(--mono, var(--font-mono)); font-size: .72rem; font-stretch: 82%;
+                     letter-spacing: .06em; text-transform: uppercase; }
+  .br-schuif-nu { flex: 1; min-width: 0; font-size: .84rem; color: var(--inkt-2);
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0;
+                  transition: opacity .25s ease; }
+  /* De regel naast de knop verschijnt pas als het paneel dicht is: dan is hij
+     het enige dat er nog van over is. Staat hij er ook open bij, dan staat
+     dezelfde zin twee keer op het scherm. */
+  .br.is-dicht .br-schuif-nu { opacity: 1; }
+  .br-schuif-pijl { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor;
+                    stroke-width: 1.6; transition: rotate .3s cubic-bezier(.16, 1, .3, 1); }
+  .br.is-dicht .br-schuif-pijl { rotate: 180deg; }
+  .br.is-dicht #br-tips { display: none; }
+
+  .br-tikken { display: flex; gap: 5px; margin: .2rem 0 0; }
+  .br-tikken i { width: 16px; height: 2px; background: currentColor; opacity: .2; display: block;
+                 transition: opacity .3s ease; }
+  .br-tikken i.aan { opacity: .8; }
+  .br-zin { min-height: 3em; }
+  .br-scherm { position: sticky; bottom: 0; z-index: 3;
+               background: var(--vel, #F5F5F5); border-top: 1px solid var(--lijn, rgb(0 0 0 / .12)); }
+  .br-scherm-in { display: grid; grid-template-columns: minmax(0, 390px) minmax(0, 1fr);
+                  gap: clamp(1rem, 3vw, 2rem); align-items: center; padding-block: 1rem; }
+  .br-doek { position: relative; aspect-ratio: var(--lc-plaat); border-radius: var(--rond-m, 16px);
+             overflow: hidden; background: var(--bg-raise, #EDEDED); }
+  .br-vlak { position: absolute; left: var(--lc-l); top: var(--lc-t); width: var(--lc-w); height: var(--lc-h);
+             background: #FFF; display: grid; place-items: center; padding: 6% 26% 6% 6%; }
+  .br-fon { position: absolute; left: var(--lc-fl); top: var(--lc-ft); width: var(--lc-fw); height: var(--lc-fh); }
+  .br-vlak img { max-width: 100%; max-height: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .br-fon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .br-plaat { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  /* Het label hoort bij het LAPTOPbeeld en staat daarom binnen het schermvlak,
+     linksboven, waar nooit een telefoon overheen valt. */
+  .br-merk { position: absolute; left: calc(var(--lc-l) + 2%); top: calc(var(--lc-t) + 4%); margin: 0;
+             background: var(--accent, #C6F100); color: #141414; padding: .18em .45em;
+             font-family: var(--mono, var(--font-mono)); font-stretch: 82%;
+             letter-spacing: .1em; text-transform: uppercase; font-weight: 700; font-size: .62rem; }
+  .br-uitleg { display: grid; gap: .45rem; max-width: 46rem; }
+  .br-noot { margin: 0; font-size: .82rem; color: var(--inkt-2); max-width: 58ch; }
+
+  @media (max-width: 52rem) {
+    .br-vakken { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .br-scherm-in { grid-template-columns: 1fr; gap: .8rem; }
+    .br-doek { max-width: 320px; }
+    /* Onderaan plakken kost op een telefoon te veel van het scherm waar je in
+       werkt. Daar staat het gewoon onder de rij. */
+    .br-scherm { position: static; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .br-rij, .br-paneel { transition: none; }
+  }
+</style>
+
+<script is:inline data-astro-rerun>
+  (() => {
+    const s = document.querySelector('[data-br]');
+    if (!s || s.dataset.brAan) return;
+    s.dataset.brAan = '1';
+
+    const rij = s.querySelector('[data-br-rij]');
+    const panelen = [...s.querySelectorAll('[data-br-paneel]')];
+    const railKnoppen = [...s.querySelectorAll('.br-rail-knop')];
+    const laptop = s.querySelector('[data-br-laptop]');
+    const fon = s.querySelector('[data-br-fon]');
+    const merk = s.querySelector('[data-br-merk]');
+    const vaknaam = s.querySelector('[data-br-vaknaam]');
+    const belofte = s.querySelector('[data-br-belofte]');
+    const n = Number(s.dataset.brN) || 0;
+    if (!rij || !n) return;
+
+    /* De namen en de beloftes staan in de HTML bij de vakken zelf, niet nog
+       een keer hier. Twee lijsten met dezelfde tekst is één lijst die ooit stil
+       gaat afwijken.
+
+       LET OP DE ATTRIBUUTNAAM. Dit stond eerst als `data-br-belofte` op de
+       knoppen, en de regel eronder — querySelector('[data-br-belofte]') voor de
+       uitleg naast het scherm — pakte toen het EERSTE voorkomen in het
+       document: het voorkantvak. Het script schreef de uitleg dus in dat vak en
+       vaagde de foto, de naam en de plusknop weg. Vandaar twee namen die niet
+       op elkaar lijken. */
+    const VAK = {};
+    /* Niet `.br-vak` kaal: het plusje en de referentietegels dragen dezelfde
+       klas omdat ze er hetzelfde uitzien, maar ze hebben geen naamregel. Zonder
+       deze uitzondering valt het script bij het laden om op een null. */
+    s.querySelectorAll('[data-br-paneel="0"] .br-vak:not(.br-plus):not(.br-ref)').forEach((v) => {
+      VAK[v.dataset.brVak] = {
+        naam: v.querySelector('.br-vak-woord b').textContent,
+        belofte: v.dataset.brVakbelofte || '',
+      };
+    });
+
+    let i = 0, eerst = true;
+    const venster = s.querySelector('.br-venster');
+    const stilZetten = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    /* De hoogte van het venster volgt het actieve paneel. Meten en niet raden:
+       een paneel met vier gevulde vakken is hoger dan een leeg, en het overzicht
+       is de helft van allebei. */
+    const meet = () => {
+      if (!venster) return;
+      const actief = panelen[i];
+      if (actief) venster.style.height = actief.offsetHeight + 'px';
+    };
+    addEventListener('resize', meet, { passive: true });
+
+    /* `.br-vak:not(.br-plus)` — het plusje draagt dezelfde klas omdat het er
+       hetzelfde uitziet, maar het is geen vak dat gevuld kan worden. Zonder
+       deze uitzondering telt het mee in de stand en staat er "mist nog:
+       nog een foto". */
+    const vakkenVan = (k) => [...s.querySelectorAll(`[data-br-paneel="${k}"] .br-vak:not(.br-plus):not(.br-ref)`)];
+    const MAX_REF = Number(s.dataset.brMaxref) || 4;
+    /* Een vak is compleet als er een foto in zit. Bij een hoek op een model
+       telt een ingevulde regel net zo goed: dat is daar de afspraak, niet een
+       uitzondering die we stilletjes toestaan. */
+    const heeftTekst = (v) => {
+      const li = v.closest('li');
+      const veld = li && li.querySelector('[data-br-hoektekst]');
+      return !!(veld && veld.value.trim());
+    };
+    const compleet = (v) => v.classList.contains('is-vol') || (v.dataset.brOf === '1' && heeftTekst(v));
+    const mistVan = (k) => vakkenVan(k).filter((v) => v.dataset.brNodig === '1' && !compleet(v));
+
+    /* ── HET SCHERM ONDERIN ───────────────────────────────────────────────
+       Volgt het vak waar de klant MEE BEZIG is en niet waar zijn muis hangt.
+       Hoveren bestaat niet op een telefoon, en dat is precies het apparaat
+       waar de foto's op staan. */
+    /* ── DE TIPS EN DE VAKKEN ZIJN ÉÉN DING ───────────────────────────────
+       Een tip die iets anders vertelt dan wat er op de twee schermen staat, is
+       erger dan geen tip: dan moet de klant eerst uitzoeken welke van de twee
+       hij moet geloven. Elke tip draagt daarom zijn eigen paar foto's mee, en
+       er is maar één functie die het scherm zet.
+
+       Klikken op een vak zet de tip die bij dát vak hoort, en de klok begint
+       daarna opnieuw. Zo loopt hij nooit weg onder je handen. */
+    const TIPS = JSON.parse(s.dataset.brTips || '[]');
+    const tikken = [...s.querySelectorAll('[data-br-tikken] i')];
+    const kortje = s.querySelector('[data-br-schuif-nu]');
+    let t = 0, tKlok = null;
+
+    const zetScherm = ({ voor, na, naam, kop, tekst }) => {
+      fon.src = voor;
+      laptop.src = na;
+      merk.textContent = 'Voorbeeld · ' + naam;
+      vaknaam.textContent = kop;
+      belofte.innerHTML = tekst;
+      if (kortje) kortje.textContent = kop;
+    };
+
+    const toonTip = (k) => {
+      if (!TIPS.length) return;
+      t = (k + TIPS.length) % TIPS.length;
+      const tip = TIPS[t];
+      zetScherm({ voor: tip.voor, na: tip.na, naam: VAK[tip.vak].naam, kop: tip.kop, tekst: tip.tekst });
+      tikken.forEach((b, q) => b.classList.toggle('aan', q === t));
+    };
+
+    const stilZet = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const draai = () => {
+      clearTimeout(tKlok);
+      /* Niet doorlopen als het paneel dicht staat of als iemand om rust vroeg:
+         een klok die tikt achter een gesloten deur kost accu en levert niets. */
+      if (s.classList.contains('is-dicht') || stilZet()) return;
+      tKlok = setTimeout(() => { toonTip(t + 1); draai(); }, 10000);
+    };
+
+    const toonVak = (v) => {
+      if (!v) return;
+      /* Een hoekvak leent het voorbeeldmateriaal van het detailvak, maar het
+         heeft zijn eigen naam. Zonder deze regel zoekt de uitleg een ingang in
+         VAK[] die er niet is. */
+      if (v.dataset.brHoekvak) {
+        zetScherm({ voor: v.dataset.brVoor, na: v.dataset.brNa,
+          naam: v.querySelector('.br-vak-woord b').textContent,
+          kop: v.querySelector('.br-vak-woord b').textContent,
+          tekst: v.querySelector('.br-vak-hoe').textContent });
+        return;
+      }
+      const id = v.dataset.brVak;
+      const k = TIPS.findIndex((x) => x.vak === id);
+      if (k >= 0) { toonTip(k); draai(); return; }
+      zetScherm({ voor: v.dataset.brVoor, na: v.dataset.brNa, naam: VAK[id].naam,
+                  kop: VAK[id].naam, tekst: VAK[id].belofte });
+    };
+
+    /* ── EEN GEKOZEN HOEK ZET OP ELK PRODUCT EEN VAK ──────────────────────
+       Dit is het hele punt van de keuze: hij verandert niet alleen de prijs,
+       hij verandert wat je moet aanleveren. Eén keer kiezen, op elk product een
+       vak erbij — en dat vak is verplicht, zodat er geen hoek besteld wordt
+       waarvan wij moeten raden wat ermee bedoeld is.
+
+       Op de ondergrond: een foto. Die heeft de klant, want hij houdt het
+       product vast.
+       Op een model: een foto óf één regel uitleg. Die hoek koopt hij juist
+       omdat hij er geen foto van heeft; een verplichte foto zou precies de
+       best verkochte hoeken blokkeren. */
+    const MAX_HOEK = 4;
+    const SOMMEN = JSON.parse(s.dataset.brSommen || '[]');
+    /* Levend en niet één keer vastgelegd: er kunnen zelfbedachte hoeken bij
+       komen en weer af. De eerste versie las deze lijst bij het laden uit, en
+       dan telt een zelfbedachte hoek nooit mee in het maximum. */
+    const hoekKnoppenNu = () => [...s.querySelectorAll('[data-br-hoek]')];
+    const hoekTel = s.querySelector('[data-br-hoektel]');
+
+    const gekozenHoeken = () => hoekKnoppenNu().filter((h) => h.getAttribute('aria-pressed') === 'true');
+
+    const zetHoeken = () => {
+      const gekozen = gekozenHoeken();
+      if (hoekTel) {
+        hoekTel.textContent = gekozen.length
+          ? gekozen.length + ' van ' + MAX_HOEK + ' gekozen'
+          : 'Geen extra hoeken';
+      }
+      /* De som komt uit de lijst die de server heeft uitgerekend; het script
+         kiest alleen welke regel erbij hoort. Zo kan er in de browser geen
+         bedrag ontstaan dat pricing.js niet kent. */
+      const som = s.querySelector('[data-br-hoeksom]');
+      if (som) som.textContent = gekozen.length ? (SOMMEN[gekozen.length - 1] || '') : '';
+      hoekKnoppenNu().forEach((h) => {
+        const aan = h.getAttribute('aria-pressed') === 'true';
+        h.disabled = !aan && gekozen.length >= MAX_HOEK;
+      });
+      s.querySelectorAll('[data-br-eigenvoeg]').forEach((k) => { k.disabled = gekozen.length >= MAX_HOEK; });
+      /* De vakken op elk product opnieuw opbouwen. Weggooien en opnieuw zetten
+         en niet bijwerken: een hoek die eraf gaat laat anders een vak staan dat
+         nergens meer bij hoort, en dat vak telt dan mee in "mist nog". */
+      for (let k = 0; k < n; k++) {
+        const paneel = s.querySelector(`[data-br-paneel="${k}"]`);
+        const lijst = paneel.querySelector('.br-vakken');
+        paneel.querySelectorAll('[data-br-hoekvak]').forEach((e) => e.closest('li').remove());
+        const sjabloon = paneel.querySelector('[data-br-hoeksjabloon]');
+        gekozen.forEach((h) => {
+          const li = sjabloon.content.firstElementChild.cloneNode(true);
+          const knop = li.querySelector('.br-hoekvak');
+          /* Een zelfbedachte hoek heeft GEEN tekening en dus geen gedeelde
+             betekenis. Daar is de foto de opdracht, en daarom geldt de
+             foto-of-uitleg-afspraak van de modelhoeken er niet. */
+          const eigen = h.classList.contains('br-eigenhoek');
+          const opModel = !eigen && h.dataset.brHoekgroep === 'model';
+          knop.dataset.brHoekvak = h.dataset.brHoek;
+          knop.dataset.brVak = 'detail';                       /* voorbeeldmateriaal */
+          knop.dataset.brNodig = '1';
+          if (opModel) knop.dataset.brOf = '1';           /* foto ÓF tekst voldoet */
+          knop.querySelector('.br-vak-woord b').textContent = h.dataset.brHoeknaam;
+          knop.querySelector('.br-vak-eis').textContent = eigen ? 'foto nodig' : (opModel ? 'foto óf uitleg' : 'nodig');
+          if (opModel) li.querySelector('.br-hoekregel').hidden = false;
+          knop.querySelector('.br-vak-hoe').textContent = eigen
+            ? 'Jouw eigen hoek \u2014 de foto die je hier zet, is de opdracht. Zonder beeld moeten wij raden.'
+            : opModel
+            ? 'Heb je hier geen foto van? Schrijf dan in één regel wat je bedoelt \u2014 dat is genoeg.'
+            : 'Deze heb je zelf in handen. Eén foto en we hoeven niets te raden.';
+          lijst.appendChild(li);
+        });
+        schilder(k);
+      }
+      meet();
+    };
+
+    const HOEK_KANT = JSON.parse(s.dataset.brKanten || '{}');
+    let eigenTeller = 0;
+
+    s.addEventListener('click', (e) => {
+      /* Toevoegen gebeurt nu PER GROEP: de knop draagt zijn eigen groep, dus er
+         hoeft nergens meer apart aangewezen te worden waar de hoek bij hoort. */
+      const voeg = e.target.closest('[data-br-eigenvoeg]');
+      if (voeg) {
+        const groep = voeg.dataset.brEigenvoeg;
+        const veld = s.querySelector(`[data-br-eigennaam="${groep}"]`);
+        const naam = (veld.value || '').trim();
+        if (!naam) { veld.focus(); return; }
+        eigenTeller += 1;
+        const sjabloon = s.querySelector('[data-br-eigensjabloon]');
+        const li = sjabloon.content.firstElementChild.cloneNode(true);
+        const knop = li.querySelector('.br-eigenhoek');
+        knop.dataset.brHoek = 'eigen-' + eigenTeller;
+        knop.dataset.brHoekgroep = groep;
+        knop.dataset.brHoeknaam = naam;
+        knop.querySelector('.br-hoek-naam').textContent = naam;
+        knop.querySelector('[data-br-eigenkant]').textContent = 'zelf bedacht \u00b7 foto nodig';
+        /* Vóór het invulvak, zodat dat het laatste blijft: de plek waar je typt
+           hoort onderaan de rij te staan en niet middenin. */
+        const lijst = s.querySelector(`[data-br-groeplijst="${groep}"]`);
+        lijst.insertBefore(li, lijst.querySelector('.br-eigenvak'));
+        veld.value = '';
+        zetHoeken();
+        return;
+      }
+      const h = e.target.closest('[data-br-hoek]');
+      if (!h || h.disabled) return;
+      /* Een zelfbedachte hoek zet je niet uit, die haal je weg: hij bestaat
+         alleen omdat de klant hem heeft getypt. */
+      if (h.classList.contains('br-eigenhoek')) { h.closest('li').remove(); zetHoeken(); return; }
+      h.setAttribute('aria-pressed', h.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+      zetHoeken();
+    });
+
+    const schuif = s.querySelector('[data-br-schuif]');
+    if (schuif) {
+      /* Dicht op een telefoon, open op een groot scherm. Daar kost hij niets en
+         is hij nuttig op het moment dat iemand twijfelt; op een klein scherm
+         neemt hij de ruimte weg waar je in staat te werken. */
+      if (!matchMedia('(min-width: 52rem)').matches) s.classList.add('is-dicht');
+      schuif.setAttribute('aria-expanded', s.classList.contains('is-dicht') ? 'false' : 'true');
+      schuif.addEventListener('click', () => {
+        const dicht = s.classList.toggle('is-dicht');
+        schuif.setAttribute('aria-expanded', dicht ? 'false' : 'true');
+        dicht ? clearTimeout(tKlok) : draai();
+        meet();
+      });
+    }
+
+    const schilder = (k) => {
+      const vakken = vakkenVan(k);
+      const mist = mistVan(k);
+      const stand = s.querySelector(`[data-br-paneel="${k}"] [data-br-stand]`);
+      if (stand) {
+        stand.textContent = mist.length
+          ? 'Mist nog: ' + mist.map((v) => v.querySelector('.br-vak-woord b').textContent.toLowerCase()).join(', ')
+          : 'Klaar';
+        stand.classList.toggle('is-klaar', !mist.length);
+        stand.classList.toggle('is-mist', !!mist.length);
+      }
+      /* Rail en overzicht lezen dezelfde drie toestanden: vol, mist (nodig en
+         leeg) of gewoon leeg (optioneel). */
+      /* De rail en de tegels tekenen één vierkantje per vak. Met een hoek erbij
+         zijn dat er meer dan de vier uit de HTML, dus vullen we aan of halen we
+         weg voordat we ze inkleuren — anders blijft een gekozen hoek onzichtbaar
+         in het overzicht, precies waar je de gaten hoort te zien.
+
+         ── KLONEN EN NIET createElement ───────────────────────────────────
+         Derde keer dat dit misgaat in dit project, dus hier staat het voluit.
+         Astro scopet zijn CSS: `.br-rail-vakjes i` wordt bij de bouw
+         `.br-rail-vakjes[data-astro-cid-…] i[data-astro-cid-…]`. Een <i> die
+         het script zelf maakt, draagt dat kenmerk niet en krijgt dus GEEN van
+         die regels. Gemeten toen dat misging: de eerste vier vierkantjes 9 × 9
+         pixels, de twee nieuwe 0 × 9 — onzichtbaar, zonder dat er iets kapot
+         leek. Een kloon van een bestaande <i> draagt het kenmerk wél.
+
+         Zelfde fout als de <picture> in LaptopCarousel.astro en als de
+         referentietegels hierboven. Regel voor dit hele bestand: elementen die
+         tijdens het gebruik ontstaan, worden gekloond uit de HTML — nooit
+         opgebouwd. */
+      const pas = (rij) => {
+        while (rij.children.length < vakken.length) {
+          rij.appendChild(rij.firstElementChild.cloneNode(false));
+        }
+        while (rij.children.length > vakken.length) rij.lastElementChild.remove();
+        return [...rij.children];
+      };
+      const stempel = (bolletjes) => bolletjes.forEach((b, q) => {
+        const v = vakken[q];
+        b.classList.toggle('vol', !!v && compleet(v));
+        b.classList.toggle('mist', !!v && v.dataset.brNodig === '1' && !compleet(v));
+      });
+      stempel(pas(railKnoppen[k].querySelector('.br-rail-vakjes')));
+      const tegel = s.querySelector(`.br-tegel[data-br-ga="${k}"]`);
+      if (tegel) {
+        stempel(pas(tegel.querySelector('.br-tegel-vakjes')));
+        tegel.classList.toggle('is-gat', mist.length > 0);
+      }
+    };
+
+    const slot = () => {
+      const gaten = [];
+      for (let k = 0; k < n; k++) if (mistVan(k).length) gaten.push(k);
+      const h = s.querySelector('[data-br-slot-h]');
+      const p = s.querySelector('[data-br-slot-p]');
+      if (!gaten.length) {
+        h.textContent = 'Alles staat erop.';
+        p.textContent = 'Zes producten, elk met de foto’s die we nodig hebben. Je kunt door.';
+      } else {
+        h.textContent = gaten.length === 1
+          ? 'Eén product mist nog iets.'
+          : gaten.length + ' producten missen nog iets.';
+        p.textContent = 'Klik op een tegel om er meteen heen te gaan. Je mag ook doorgaan — we vragen het dan per mail na, maar dat kost een dag.';
+      }
+    };
+
+    const ga = (k) => {
+      i = Math.max(0, Math.min(k, n));           /* n = het overzicht */
+      rij.style.translate = (-i * 100) + '% 0';
+      panelen.forEach((e, q) => e.classList.toggle('is-aan', q === i));
+      railKnoppen.forEach((e, q) => e.classList.toggle('is-aan', q === i));
+      s.classList.toggle('is-slot', i === n);
+      if (i < n) {
+        const vakken = vakkenVan(i);
+        const eerste = vakken.find((v) => !v.classList.contains('is-vol')) || vakken[0];
+        toonVak(eerste);
+      } else { slot(); clearTimeout(tKlok); }
+      meet();
+      /* Bij het WISSELEN naar de kop van het venster springen, maar niet bij het
+         laden: dan zou de pagina uit zichzelf langs zijn eigen kop schieten. */
+      if (!eerst && venster && venster.getBoundingClientRect().top < -120) {
+        venster.scrollIntoView({ behavior: stilZetten() ? 'auto' : 'smooth', block: 'start' });
+      }
+      eerst = false;
+    };
+
+    s.addEventListener('click', (e) => {
+      const vak = e.target.closest('[data-br-vak]');
+      if (vak) {
+        vak.classList.toggle('is-vol');
+        vak.setAttribute('aria-pressed', vak.classList.contains('is-vol') ? 'true' : 'false');
+        const k = Number(vak.closest('[data-br-paneel]').dataset.brPaneel);
+        schilder(k);
+        toonVak(vak);
+        meet();
+        return;
+      }
+      /* Een referentietegel weghalen. Hij is er met één klik bij gekomen, dus
+         hij hoort er ook met één klik weer af te kunnen. */
+      const ref = e.target.closest('[data-br-ref]');
+      if (ref) {
+        const paneel = ref.closest('[data-br-paneel]');
+        ref.closest('li').remove();
+        [...paneel.querySelectorAll('[data-br-ref]')].forEach((r, q) => {
+          r.dataset.brRef = String(q + 1);
+          r.querySelector('.br-ref-naam').textContent = 'Referentie ' + (q + 1);
+        });
+        const knop = paneel.querySelector('[data-br-plus]');
+        if (knop) knop.closest('li').hidden = false;
+        meet();
+        return;
+      }
+      const plus = e.target.closest('[data-br-plus]');
+      if (plus) {
+        const paneel = plus.closest('[data-br-paneel]');
+        const lijst = paneel.querySelector('[data-br-refs]');
+        const refs = paneel.querySelectorAll('[data-br-ref]').length;
+        if (refs >= MAX_REF) return;
+        const sjabloon = paneel.querySelector('[data-br-sjabloon]');
+        const li = sjabloon.content.firstElementChild.cloneNode(true);
+        const knop = li.querySelector('.br-ref');
+        knop.dataset.brRef = String(refs + 1);
+        knop.querySelector('.br-ref-naam').textContent = 'Referentie ' + (refs + 1);
+        lijst.insertBefore(li, plus.closest('li'));
+        if (paneel.querySelectorAll('[data-br-ref]').length >= MAX_REF) plus.closest('li').hidden = true;
+        meet();
+        return;
+      }
+      const stap = e.target.closest('[data-br-stap]');
+      if (stap) { ga(i + Number(stap.dataset.brStap)); return; }
+      const naar = e.target.closest('[data-br-ga]');
+      if (naar) { ga(Number(naar.dataset.brGa)); return; }
+      const door = e.target.closest('[data-br-door]');
+      if (door) { ga(n); return; }
+    });
+
+    /* Pijltjestoetsen doen hetzelfde als de knoppen, maar niet terwijl iemand
+       in het naamveld staat te typen. */
+    s.addEventListener('input', (e) => {
+      const veld = e.target.closest('[data-br-hoektekst]');
+      if (!veld) return;
+      veld.closest('.br-hoekregel').classList.toggle('is-vol', !!veld.value.trim());
+      schilder(Number(veld.closest('[data-br-paneel]').dataset.brPaneel));
+    });
+
+    s.addEventListener('keydown', (e) => {
+      if (e.target.matches('input, textarea')) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); ga(i + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); ga(i - 1); }
+    });
+
+    zetHoeken();
+    for (let k = 0; k < n; k++) schilder(k);
+    ga(0);
+    toonTip(0);
+    draai();
+  })();
+</script>

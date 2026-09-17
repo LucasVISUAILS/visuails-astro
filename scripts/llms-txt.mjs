@@ -118,15 +118,21 @@ function tekst(distDir) {
 
   return `# VISUAILS
 
-> An AI visual studio for clothing brands and e-commerce. Brands send phone
-> photos of a product; we deliver catalog images, lifestyle sets, short video
-> and monthly brand imagery. Based in Enschede, the Netherlands; we work
-> worldwide and publish in English and Dutch.
+> A done-for-you product content service for clothing brands and e-commerce.
+> Brands send phone photos of a product and we make their catalog images,
+> lifestyle sets, short video and monthly brand imagery for them. Based in
+> Enschede, the Netherlands; we work worldwide and publish in English and Dutch.
 
-We are not a photo studio and we do not run shoots. There is no shoot day, no
-crew and no location: the input is a set of photographs the brand already has.
-Every visual is checked by a person before it is delivered, and every delivered
-file carries a machine-readable AI provenance tag.
+VISUAILS does the work. A brand does not operate a tool, write prompts or
+generate anything: it sends the product photographs it already has, and gets
+finished, ready-to-publish visuals back. AI is one of the techniques we use to
+produce them, the way a studio uses lighting and retouching — it is how the work
+is made, not what is bought.
+
+We are not a photo studio and we do not run shoots either. There is no shoot
+day, no crew and no location. Every visual is made, corrected and checked by a
+specialist before it is delivered, and every delivered file carries a
+machine-readable AI provenance tag.
 
 ## Prices
 

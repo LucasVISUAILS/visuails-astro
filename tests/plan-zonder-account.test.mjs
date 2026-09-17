@@ -34,6 +34,25 @@ function ok(naam, kreeg, verwacht = true) {
   console.log(`${gelijk ? ' ok  ' : ' FAIL'} ${naam}${gelijk ? '' : `   verwacht ${JSON.stringify(verwacht)} kreeg ${JSON.stringify(kreeg)}`}`);
 }
 const lees = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
+/* Commentaar eruit voordat er naar code wordt gezocht. De noten in plan.js en
+   account.js noemen de OUDE, dode aanroep woordelijk — zonder deze stripper
+   gaat de controle rood op zijn eigen uitleg. */
+const zonderNoten = (t) => t
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/(^|[^:])\/\/.*$/gm, '$1');
+/* En de body van één functie, zodat "raakt X niet aan" over díé functie gaat en
+   niet over het hele bestand van tienduizend regels. */
+const functieBody = (src, naam) => {
+  const i = src.indexOf(`function ${naam}(`);
+  if (i < 0) return '';
+  const open = src.indexOf('{', i);
+  let diep = 0;
+  for (let k = open; k < src.length; k += 1) {
+    if (src[k] === '{') diep += 1;
+    else if (src[k] === '}') { diep -= 1; if (!diep) return src.slice(open, k + 1); }
+  }
+  return src.slice(open);
+};
 
 console.log('\nde ingang bestaat en het formulier wijst ernaar');
 {
@@ -111,14 +130,38 @@ console.log('\nde gegevens staan er, ingevuld en bewerkbaar');
      niets en de server leest dit adres. */
   ok('  het e-mailadres gaat op readonly', /mail\.readOnly = true;/.test(form));
   ok('  en niet op disabled', /mail\.disabled = true/.test(form), false);
-  /* En de server moet die bewerking ook AANNEMEN, anders is het veld een leugen. */
-  const api = lees('functions/api/plan.js');
-  ok('de server werkt de gegevens van een ingelogde klant bij',
-    /await werkGegevensBij\(env, klant, form\);/.test(api));
-  ok('  maar raakt het e-mailadres niet aan',
-    /email\s*=\s*\?\d/.test(api), false);
-  ok('  en laat details_saved_at met rust',
-    /details_saved_at = datetime/.test(api), false);
+  /* ── EN DE SERVER MOET DIE BEWERKING AANNEMEN ─────────────────────────────
+   *
+   * ⚠ DEZE TOETS WAS GROEN OP EEN DODE TAK — gevonden 17 september 2026.
+   *
+   * Er stond: `functions/api/plan.js bevat await werkGegevensBij(env, klant,
+   * form)`. Die regel stond er inderdaad, en hij liep nooit. De aanroep zat
+   * achter `if (klant)`, en `klant` kwam uit currentCustomer() op een route die
+   * de sessiecookie niet krijgt — die is Path=/account. De klant bewerkte zijn
+   * adres, de toets was groen, en er veranderde niets.
+   *
+   * Dit is precies waar een broncontrole voor valt: hij bewijst dat een regel
+   * ERGENS staat, niet dat hij wordt uitgevoerd. Wat er nu getoetst wordt is de
+   * hele weg — het formulier moet naar de route gaan die de sessie wél ziet, en
+   * die route moet het bijwerken doen. */
+  ok('het formulier gaat naar de route die de sessie ziet zodra er een account is',
+    /f\.setAttribute\('action', '\/account\/plan\/start'\)/.test(form));
+
+  const acc = lees('src/lib/account.js');
+  ok('en /account/plan/start werkt de gegevens bij',
+    /await werkKlantgegevensBij\(env, customer, planForm\);/.test(acc));
+  /* Het formulier wordt één keer gelezen en doorgegeven: een Request kan maar
+     één keer worden uitgelezen, en handleSubscribeStart() neemt hem daarom aan
+     als vierde argument. Zonder dat zou het bijwerken de betaling breken. */
+  ok('  met hetzelfde, één keer gelezen formulier', /\}, planForm\);/.test(acc));
+  const body = functieBody(zonderNoten(acc), 'werkKlantgegevensBij');
+  ok('  de functie bestaat en heeft een body', body.length > 200);
+  ok('  maar raakt het e-mailadres niet aan', /\bemail\s*=\s*\?\d/.test(body), false);
+  ok('  en laat details_saved_at met rust', /details_saved_at/.test(body), false);
+  /* En de dode tak is echt weg, niet alleen omzeild. */
+  const api = zonderNoten(lees('functions/api/plan.js'));
+  ok('  en de dode tak in /api/plan is verdwenen',
+    /await werkGegevensBij\(/.test(api), false);
 
   const layout = lees('src/layouts/Layout.astro');
   ok('en Layout zet een verborgen fieldset nog steeds op disabled',

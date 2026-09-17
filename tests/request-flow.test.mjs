@@ -369,8 +369,23 @@ console.log('\n/start/complete vraagt nu ook om een look');
   for (const p of ['src/pages/start/complete.astro', 'src/pages/nl/start/complete.astro']) {
     const src = read(p);
     ok(`${p} importeert StijlRegel`, /import StijlRegel from/.test(src), true);
-    ok('  en rendert de catalogstijl', /<StijlRegel lang="[a-z]{2}" categorie="catalog" toonHelft/.test(src), true);
-    ok('  en de lifestylestijl', /<StijlRegel lang="[a-z]{2}" categorie="lifestyle" toonHelft/.test(src), true);
+    /* ── DE REGEX KEEK NAAR DE VOLGORDE VAN DE ATTRIBUTEN — 13 sept 2026 ────
+       Hij eiste letterlijk `lang="xx" categorie="catalog" toonHelft`, in die
+       volgorde. Toen deze twee regels vandaag `slot="look"` kregen (de stijl
+       staat nu bóven het aantal — zie tests/stijlkeuze.test.mjs), viel de toets
+       om terwijl de EIS gewoon klopte: de pagina rendert nog steeds beide
+       stijlen. Een toets die op schrijfwijze valt in plaats van op gedrag,
+       kost een reparatie zonder er een te vinden. Nu: het element, en de twee
+       attributen die ertoe doen, in welke volgorde dan ook. */
+    const stijlregel = (cat) => new RegExp(`<StijlRegel(?=[^>]*categorie="${cat}")(?=[^>]*toonHelft)[^>]*>`).test(src);
+    ok('  en rendert de catalogstijl', stijlregel('catalog'), true);
+    ok('  en de lifestylestijl', stijlregel('lifestyle'), true);
+    /* En allebei in de look-slot, want die staat boven het aantal. Zonder deze
+       regel schuift een volgende wijziging ze stilletjes terug naar onderen —
+       precies waar ze vandaan komen. */
+    ok('  allebei in de look-slot, dus boven het aantal',
+      (src.match(/<StijlRegel[^>]*slot="look"/g) || []).length === 2, true,
+      `${(src.match(/<StijlRegel[^>]*slot="look"/g) || []).length} van de 2`);
     ok('  met `toonHelft`, want anders staat er twee keer "Stijl"',
       (src.match(/toonHelft \/>/g) || []).length === 2, true);
     ok('  naast Step1Options, want deze bestelling heeft beide helften',

@@ -80,6 +80,8 @@ import Placeholder from './Placeholder.astro';
 
 import Note from './Note.astro';
 import PlanBand from './PlanBand.astro';
+import LaptopCarousel from './LaptopCarousel.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -512,6 +514,24 @@ const nn = (i: number) => String(i).padStart(2, '0');
       </p>
     </div>
   </section>
+
+  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
+      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
+      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
+      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
+      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
+      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
+      hetzelfde ding als op de voorpagina. */}
+  <section class="paneel" aria-labelledby="pr-lc">
+    <div class="paneel-kop">
+      <p class="etiket">{nl ? 'Wat je krijgt' : 'What you get'}</p>
+      <h2 id="pr-lc" class="hoog hoog-2">{nl ? 'Dit is één product.' : 'This is one product.'}</h2>
+      <p class="lopend">{nl ? 'De ladder hieronder rekent per product. Dit is er één, op de plek waar het straks staat.' : 'The ladder below prices per product. This is one, in the place it ends up.'}</p>
+    </div>
+    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
+      titel={nl ? 'Dit is één product.' : 'This is one product.'} />
+  </section>
+
 
   {/* ── 2 · DE STAFFEL ───────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="pr-ladder">

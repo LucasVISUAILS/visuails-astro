@@ -283,5 +283,35 @@ console.log('\nde voorwaarden staan in de UPDATE zelf, niet alleen in de peiling
     /UPDATE subscription_slots SET granted = granted \+ \?4[\s\S]{0,280}?granted \+ \?4 >= 0/.test(adm), true);
 }
 
+/* ── EN DE VIJFDE WEG: EEN BETALING DIE DE TERMIJN NIET DEKT ───────────────
+ *
+ * 17 september 2026. Hierboven staat dat grantSlots() alleen bereikbaar is via
+ * de Mollie-webhook, "op een betaling die wij bij Mollie zelf ophalen". Dat
+ * klopte, en het was niet genoeg: de webhook keek naar het KENMERK en niet naar
+ * het BEDRAG. Een betaling van € 1 die met de hand in het Mollie-dashboard wordt
+ * gemaakt met `metadata.sub_ref` erin, leverde een volle maand Brand op.
+ *
+ * Voor bestellingen was dat gat in augustus gedicht met betalingGedekt(); voor
+ * abonnementen bestond die vraag niet. Deze toets leest de bron, want de
+ * uitkomst is "er gebeurt NIETS" en dat is precies wat je met een draaiende
+ * webhook moeilijk kunt aanwijzen zonder de hele keten op te tuigen —
+ * abo-keten.test.mjs doet dat wél, met een bedrag dat sindsdien afgeleid is in
+ * plaats van ingetypt.
+ */
+console.log('\neen betaling die de termijn niet dekt, kent niets toe');
+{
+  const { readFileSync: lezen } = await import('node:fs');
+  const wh = lezen(new URL('../functions/api/webhook/mollie.js', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  ok('het verwachte bedrag wordt bruto uitgerekend',
+    /const verwacht = subRef \? subEersteBetalingBruto\(sub\) : subMaandBruto\(sub\)/.test(wh), true);
+  ok('en een te lage betaling keert terug vóór de toekenning',
+    /if \(verwacht > 0 && cents \+ TERMIJN_SPELING_CENT < verwacht\)[\s\S]{0,900}?return;/.test(wh), true);
+  /* De volgorde is het halve punt: de controle moet vóór de INSERT in
+     subscription_months staan, anders moet er iets teruggedraaid worden. */
+  ok('de controle staat vóór de maandtoekenning',
+    wh.indexOf('const verwacht = subRef') < wh.indexOf('INSERT INTO subscription_months'), true);
+}
+
 console.log(`\n${goed}/${totaal} geslaagd`);
 process.exit(goed === totaal ? 0 : 1);

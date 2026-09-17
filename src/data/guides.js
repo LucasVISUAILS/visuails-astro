@@ -67,7 +67,7 @@ export function guides(lang = 'en') {
     ['Vragen, beantwoord', 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', '/faq', 'FAQ'],
   ] : [
     ['How to photograph your product with your phone', 'The four angles, the lighting, the background — everything that turns a phone photo into a campaign-ready result. The single most useful thing to read before you order.', '/upload-guidelines', 'Checklist'],
-    ['From photo to publish — how it works', 'What actually happens between sending one photo and getting a finished, human-checked visual back.', '/how-it-works', 'Process'],
+    ['From photo to publish — how it works', 'What actually happens between sending one photo and getting a finished, carefully checked visual back.', '/how-it-works', 'Process'],
     ['AI tools vs a done-for-you studio', 'When a self-serve AI tool is genuinely enough — and where it quietly costs you in redos, off-brand colour and hours.', '/compare', 'Compare'],
     ['What product visuals actually cost', `Catalog from ${catInstap} for a four-photo set and lifestyle from ${lifeInstap}, falling to ${catVloer} and ${lifeVloer} from ${vanaf} products up; video from ${vid} a clip. All ${vatLabel('excl', 'en')}.`, '/pricing', 'Pricing'],
     ['Questions, answered', 'Payment, VAT, models, delivery, what if something is off — the practical things brands ask before their first order.', '/faq', 'FAQ'],

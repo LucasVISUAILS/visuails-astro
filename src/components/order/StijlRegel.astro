@@ -85,6 +85,8 @@ const C = nl ? {
   anders: 'Iets anders voor ogen?',
   link: 'Vraag een eigen stijl aan',
   bekijk: 'Bekijk de stijlen',
+  kies: 'Kies een stijl…',
+  kiesErr: 'Kies een stijl — zonder een stijl weten we niet hoe je beelden eruit moeten zien.',
 } : {
   stijl: 'Style',
   helft: { catalog: 'Style · catalog', lifestyle: 'Style · lifestyle' },
@@ -95,6 +97,8 @@ const C = nl ? {
   anders: 'Something else in mind?',
   link: 'Ask for a style of your own',
   bekijk: 'See the styles',
+  kies: 'Choose a style…',
+  kiesErr: 'Pick a style — without one we do not know what your images should look like.',
 };
 
 const etiket = toonHelft ? C.helft[categorie] : C.stijl;
@@ -109,7 +113,28 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
       <a class="sr1-naam" href={lp(leespagina)}>{KEUZES[0].name}</a>
     ) : (
       <span class="sr1-select">
-        <select name={veld} class="sr1-keuze" aria-label={etiket}>
+        {/* ── DE EERSTE OPTIE IS LEEG, EN DAT IS HET HELE PUNT — 13 sept 2026 ──
+          Lucas: *"De klant moet altijd een style kiezen voor elke service die
+          ze kiezen."*
+
+          Deze keuzelijst deed precies het tegenovergestelde. Een <select>
+          zonder lege eerste optie staat altijd op zijn eerste waarde, dus op
+          /start/complete kreeg iedereen die de lijst niet openklapte "Dunes" —
+          een antwoord dat niemand gegeven had, op de helft van de bestelling
+          die zeven beelden per product oplevert.
+
+          Een lege optie met `required` maakt er weer een vraag van. `disabled`
+          erbij zodat hij na het kiezen niet terug te kiezen is: een formulier
+          dat je kunt terugzetten naar "nog niets gekozen" is een formulier dat
+          je ongeldig kunt maken zonder dat het iets oplevert.
+
+          De eis staat als `data-pl-req` én als `required`: pipeline.js haalt
+          `required` er bij het binden af en zet hem terug op wat zichtbaar is
+          (zie syncRequired() daar), en zonder script blijft de native eis
+          staan. Allebei dus, precies zoals elk ander verplicht veld op dit
+          formulier. */}
+        <select name={veld} class="sr1-keuze" aria-label={etiket} required data-pl-req="1" data-pl-err-msg={C.kiesErr}>
+          <option value="" disabled selected>{C.kies}</option>
           {KEUZES.map((s: any) => (
             <option value={s.slug} data-pl-style-name={s.name}>{s.name}</option>
           ))}
@@ -123,6 +148,42 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
         komt — en de studio weet het dan alleen omdat er maar één is. */}
     {KEUZES.length === 1 && (
       <input type="hidden" name={veld} value={KEUZES[0].slug} data-pl-style-name={KEUZES[0].name} />
+    )}
+
+    {/* ── JE ZIET WAAR JE NAARTOE WISSELT — 17 SEPTEMBER 2026 ──────────────
+        Lucas: *"Op het begin van het formulier wil ik dat klanten een nieuwe
+        style kunnen kiezen zoals nu, maar dat ze visueel kunnen zien naar welke
+        style ze wisselen — het is nu alleen maar de naam."*
+
+        Hij heeft gelijk en het is erger dan het klinkt: de klant heeft de stijl
+        op /lifestyle gekozen ná vier werelden naast elkaar te hebben gezien, en
+        hier kan hij hem omzetten op basis van het woord "Glow". Dat is dezelfde
+        keuze, met alle informatie eraf gehaald.
+
+        DE KEUZELIJST BLIJFT. Een raster van vier tegels hoort op de stijlpagina
+        en niet halverwege een formulier — daar is het een tweede keuzemoment op
+        de plek waar iemand net besloten heeft. Wat erbij komt is het BEWIJS van
+        de keuze: de foto van de gekozen stijl en de zin eronder. Wisselt hij,
+        dan wisselt het beeld mee; heeft hij nog niets gekozen, dan staat er
+        niets — het lege eerste item in de lijst is met opzet leeg (zie de noot
+        hierboven) en een voorbeeld erbij zou dat weer ongedaan maken.
+
+        ALLE VOORBEELDEN STAAN IN DE HTML en worden alleen verborgen. Elders in
+        dit project is drie keer een element met JS gebouwd dat vervolgens geen
+        enkele scoped stijlregel kreeg — Astro hangt zijn data-astro-cid aan de
+        selectors en wat na de bouw ontstaat, draagt dat niet. Zie de kop van
+        bestelrij.astro. */}
+    {KEUZES.length > 1 && (
+      <span class="sr1-vb" data-sr1-vb hidden>
+        {KEUZES.map((s: any) => (
+          <span class="sr1-vb-item" data-sr1-slug={s.slug} hidden>
+            {s.cardPhoto
+              ? <img src={s.cardPhoto} alt="" width="48" height="60" loading="lazy" decoding="async" />
+              : <span class="sr1-vb-plaat" aria-hidden="true" />}
+            <span class="sr1-vb-tag">{s.tagline}</span>
+          </span>
+        ))}
+      </span>
     )}
 
     {toonHelft && <span class="sr1-waar">{C.waar[categorie]}</span>}
@@ -181,6 +242,36 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
   .sr1-keuze:hover { border-color: var(--ink); }
   .sr1-keuze:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+  /* ── HET VOORBEELD BIJ DE KEUZE ─────────────────────────────────────────
+     Klein: dit is een regel in een formulier en niet de stijlpagina. Wat het
+     moet doen is bevestigen dat je de goede te pakken hebt — de foto zegt dat
+     in één oogopslag, de zin vangt de twijfel op als de foto dat niet doet. */
+  /* ── HET VOORBEELD OP EEN EIGEN REGEL — 17 september 2026, tweede ronde ──
+     Eerst stond het naast de keuzelijst: een staand kaartje van 42 bij 52 in
+     een rij die op baseline uitlijnt. Nagekeken op een telefoon was dat een
+     uitgeknipt stukje mens tussen twee zinnen — precies wat "goedkoop" er in de
+     praktijk uit ziet.
+
+     Nu onder de regel, over de volle breedte, met een LIGGEND kader. Liggend,
+     omdat 3:2 op deze maat een staal is en 3:4 een pasfoto; en groter, omdat
+     een voorbeeld dat je moet zoeken geen voorbeeld is. `flex-basis: 100%`
+     zet hem op zijn eigen regel zonder dat de flexrij eromheen iets hoeft te
+     weten van wat er in zit. */
+  .sr1-vb {
+    display: flex; align-items: center; gap: .7rem; min-width: 0;
+    flex-basis: 100%; margin-top: .15rem;
+  }
+  .sr1-vb-item { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+  .sr1-vb-item[hidden] { display: none; }
+  .sr1-vb img, .sr1-vb-plaat {
+    width: 5.25rem; height: 3.5rem; flex: 0 0 auto;
+    object-fit: cover; display: block; border-radius: 2px;
+    background: var(--paper-2); box-shadow: 0 0 0 1px var(--line) inset;
+  }
+  /* 13px in --ink-2 en niet --ink-3: deze zin staat naast een foto en moet
+     gelezen kunnen worden, niet aangevoeld. */
+  .sr1-vb-tag { font-size: .82rem; line-height: 1.35; color: var(--ink-2); min-width: 0; }
+
   .sr1-r { margin-left: auto; font-size: .85rem; color: var(--ink-3); }
   .sr1-r a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
   .sr1-r a:hover { color: var(--ink); }
@@ -193,3 +284,32 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
     .sr1-r { margin-left: 0; flex-basis: 100%; }
   }
 </style>
+
+{/* ── HET VOORBEELD VOLGT DE KEUZE ─────────────────────────────────────────
+    `is:inline` met `data-astro-rerun`, zoals elk script op deze site: geen
+    losse bundel, en scripts/csp-scripts.mjs neemt de hash bij de bouw op.
+
+    Zonder script blijft alles verborgen en is er niets kapot — de keuzelijst
+    werkt dan gewoon zoals hij altijd deed. Dat is de reden dat het voorbeeld
+    standaard `hidden` staat en niet standaard zichtbaar met JS dat verbergt. */}
+<script is:inline data-astro-rerun>
+  (() => {
+    for (const rij of document.querySelectorAll('[data-sr-categorie]')) {
+      const keuze = rij.querySelector('.sr1-keuze');
+      const vb = rij.querySelector('[data-sr1-vb]');
+      if (!keuze || !vb || keuze.dataset.sr1Aan === '1') continue;
+      keuze.dataset.sr1Aan = '1';
+      const toon = () => {
+        const nu = keuze.value || '';
+        for (const el of vb.querySelectorAll('[data-sr1-slug]')) {
+          el.hidden = el.getAttribute('data-sr1-slug') !== nu;
+        }
+        vb.hidden = !nu;
+      };
+      keuze.addEventListener('change', toon);
+      /* En één keer nu: een browser die na terugnavigeren de vorige keuze
+         herstelt, stuurt daar geen change voor. */
+      toon();
+    }
+  })();
+</script>

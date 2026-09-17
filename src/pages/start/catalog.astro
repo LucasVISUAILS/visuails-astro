@@ -9,6 +9,7 @@ import OrderFlow from '../../components/order/OrderFlow.astro';
 import Step1Options from '../../components/order/Step1Options.astro';
 import AnglePicker from '../../components/order/AnglePicker.astro';
 import CombiKeuze from '../../components/order/CombiKeuze.astro';
+import StijlRegel from '../../components/order/StijlRegel.astro';
 import ModelKeuze from '../../components/order/ModelKeuze.astro';
 ---
 
@@ -22,8 +23,18 @@ import ModelKeuze from '../../components/order/ModelKeuze.astro';
         meelopende totaal: daar heeft de klant net gezien wat zijn aantal
         kost, en dat is het moment waarop een lager tarief per beeld iets
         betekent. Zie CombiKeuze.astro. */}
+    {/* ── DE STIJL STOND HIER NIET — 13 september 2026 ─────────────────
+        /start/complete toont twee stijlregels, /start/lifestyle een
+        beeldenraster, en deze pagina toonde niets: wie hier bestelde kreeg
+        nooit te zien of te lezen in welke stijl zijn catalogset gemaakt
+        wordt, en op de bevestiging stond hij dus ook niet.
+    
+        Er is vandaag één catalogstijl, dus dit is een mededeling en geen
+        keuzelijst — StijlRegel telt de lijst en beslist dat zelf. Komt er
+        een tweede bij in catalogStyles.js, dan staat de keuze er vanzelf. */}
+    <StijlRegel slot="look" lang="en" categorie="catalog" />
     <CombiKeuze lang="en" richting="erbij" />
-    <Step1Options lang="en" huisLook />
+    <Step1Options lang="en" />
     {/* De hoeken staan NA de drie vouwen en niet ertussen: het is de enige vraag
         in stap 1 die geld kost, en een blok met een prijskaartje hoort niet
         tussen drie antwoorden te staan die alle drie al een veilige standaard

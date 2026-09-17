@@ -200,6 +200,10 @@ export async function loadSubscription(env, customerId, nu = new Date()) {
                twee kolommen valt een maand op maat stil terug op een leeg plan,
                en dan staat er een dashboard zonder slots en een bedrag van nul. */
             amount_cents, slots_json,
+            /* Sinds migratie 0032 — en sinds 17 september 2026 ook hier gelezen:
+               koppelSubscription() maakt de maandelijkse afschrijving bruto met
+               deze twee. Zie subBrutoCents() in slots.js. */
+            vat_treatment, vat_rate,
             mollie_customer_id, mollie_mandate_id, mollie_subscription_id,
             started_at, cancelled_at, cancel_reason, paused_at, pause_reason,
             created_at
@@ -267,6 +271,7 @@ export async function subscriptionByRef(env, ref) {
   if (!ref) return null;
   return stil(() => env.DB.prepare(
     `SELECT id, ref, customer_id, plan, term, status, amount_cents, slots_json,
+            vat_treatment, vat_rate,
             mollie_customer_id
        FROM subscriptions WHERE ref = ?1`
   ).bind(String(ref)).first());
@@ -1005,7 +1010,12 @@ export async function createSubscriptionRow(env, {
                                   amount_cents, slots_json,
                                   vat_treatment, vat_rate, vat_country, vat_number, testmodus)
        VALUES (?1, ?2, ?3, ?4, 'pending', ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
-       RETURNING id, ref, plan, term, status, window_day, amount_cents, slots_json`
+       /* vat_treatment en vat_rate komen mee sinds 17 september 2026: de eerste
+          betaling wordt hiermee bruto gemaakt (zie subBrutoCents() in slots.js),
+          en die rij is precies deze. Zonder deze twee valt hij terug op 21% —
+          veilig, maar fout voor een klant met verlegde btw. */
+       RETURNING id, ref, plan, term, status, window_day, amount_cents, slots_json,
+                 vat_treatment, vat_rate`
     ).bind(customerId, ref, planId, termId, dag,
            planId === CUSTOM_MONTH_ID ? Math.round(Number(amountCents)) : null,
            slots && Object.keys(slots).length ? JSON.stringify(slots) : null,

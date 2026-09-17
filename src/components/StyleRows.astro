@@ -51,6 +51,9 @@
  */
 import ProductScene from './ProductScene.astro';
 import { komendeStijlen } from '../data/komendeStijlen.js';
+/* De namen van de geleverde beelden — zie de kop van LEVERVLAKKEN in
+   pricing.js. Geen bedragen hier; alleen hoe de vakken heten. */
+import { levervlakken } from '../data/pricing.js';
 import Placeholder from './Placeholder.astro';
 
 export interface Media {
@@ -104,22 +107,106 @@ const altVan = (naam: string, m: Media | null, i: number, voor?: boolean) =>
   voor ? (nl ? `De ingestuurde telefoonfoto waar ${naam} van gemaakt wordt` : `The phone photo ${naam} is made from`)
        : (m?.alt || (nl ? `${naam} — voorbeeld ${i + 1}` : `${naam} — example ${i + 1}`));
 
-/* ── HET BEELD DAT DE TEGEL DRAAGT — 10 september 2026 ─────────────────────
- * Eén beeld en niet de waaier. De waaier vertelt het verhaal "drie foto's plus
- * de telefoonfoto waar ze van gemaakt zijn", en dat verhaal is de kern van wat
- * VISUAILS verkoopt — maar het staat al twee keer op deze pagina: als etiket
- * onder de kop ("elke look levert drie foto's per product") en als eigen sectie
- * met de voor-en-na. Een derde keer, vier keer herhaald, in een tegel van 280
- * pixels, is niet nog een keer vertellen maar de keuze onleesbaar maken.
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE SET IS TERUG IN DE TEGEL — 17 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Dus draagt de tegel het GELEVERDE beeld: de foto waar je naar kijkt als je
- * kiest. `photos[0]` als die er is, anders `media`, en anders het vak met de
- * naam erop — een look zonder foto zegt dat zelf, in plaats van een tegel die
- * wegvalt. */
-const tegelbeeld = (it: Item): Media | null => {
-  const eerste = (it.photos && it.photos.length ? it.photos[0] : it.media) || null;
-  return eerste && (eerste.src || eerste.icon) ? eerste : null;
+ * Lucas: *"Ik wil weer de oude, maar wel geupgraded, look van de stylekeuze —
+ * 1 kleine foto en 3 foto's erachter met de resultaten, zodat de klant gelijk
+ * kan zien wat hij kan verwachten. 1 foto voor een style is simpelweg te
+ * weinig."*
+ *
+ * ── WAT ER OP 10 SEPTEMBER WERD WEGGEHAALD, EN OF DAT KLOPTE ──────────────
+ *
+ * Toen verving één beeld de waaier, met als reden: *"drie van de vier waaiers
+ * waren leeg — vijftien kaarten, één echte foto."* Nagemeten op 17 september
+ * klopt die reden nog steeds voor /catalog en /video (die hebben nul foto's en
+ * draaien op getekende scènes) en klopt hij NIET voor /lifestyle: flash heeft
+ * er acht op schijf, glow zes, phone-made elf. Daar was de waaier niet leeg,
+ * en daar is hij dus ten onrechte gesneuveld.
+ *
+ * Het echte probleem was nooit de waaier maar het LEGE VAK: een grijs kader met
+ * "Foto volgt" leest als een gat, en vier gaten naast elkaar lezen als een site
+ * die niet af is. Dus is dát wat verandert, en niet de vorm.
+ *
+ * ── DE PLAAT ─────────────────────────────────────────────────────────────
+ *
+ * Een vak zonder foto is nu een PLAAT: de kleur van de look, en de naam van het
+ * beeld dat er komt ("Achterkant", "Op model") in mono. Het leest als een
+ * gereserveerd kader op een contactvel, niet als een mislukte afbeelding — en
+ * het doet iets wat een foto niet doet: het zegt WAT je krijgt. Zodra Lucas'
+ * content er is, wordt dezelfde plek een foto en verdwijnt de naam; de volgorde
+ * en het aantal veranderen niet mee.
+ *
+ * De namen komen uit LEVERVLAKKEN in pricing.js, één bron met wat de dienst
+ * belooft — zie de kop daar. Vier bij catalog, drie bij lifestyle, één bij
+ * video, en dat is meteen waarom deze drie pagina's er nu hetzelfde uitzien
+ * zonder dat er ergens een aantal is ingetypt.
+ *
+ * ── WAAROM DE KAARTEN NIET MEER SCHUIN OVER ELKAAR VALLEN ────────────────
+ *
+ * De oude waaier was gemaakt voor een blok van een halve pagina; in een tegel
+ * van 280 pixels wordt datzelfde gebaar een kluwen waarin geen enkel beeld nog
+ * te herkennen is. Hier staan ze bijna naast elkaar met een paar graden
+ * verschil en een kleine overlap — genoeg om een SET te zijn en niet drie losse
+ * tegels, weinig genoeg om alle drie te kunnen zien. De telefoonfoto staat
+ * linksonder, kleiner, met een lichte rand: het formaat zegt al dat het de
+ * invoer is en niet het resultaat.
+ */
+type Vlak = { m: Media | null; naam: string; links: number; breed: number; draai: number };
+
+/* De verhouding van een geleverd beeld per dienst. Een catalogbeeld is
+   vierkant, een lifestylebeeld staand, een clip verticaal — dezelfde
+   verhoudingen als komendRatio hierboven, en om dezelfde reden: een kader met
+   de verkeerde vorm belooft een ander bestand dan er komt. */
+const VELRATIO: Record<string, string> = { catalog: '1 / 1', lifestyle: '3 / 4', video: '9 / 16' };
+/* ── EN DE VERHOUDING VAN HET VEL VOLGT DAARUIT — nagemeten 17 september ───
+   Eerst stond het vel voor alle drie op 4:5. Bij lifestyle klopte dat; bij
+   catalog stonden vier VIERKANTE kaarten in een vel van vijf hoog en bleef er
+   een gat van veertig procent onder de rij staan. Een vel is zo hoog als wat
+   erin hangt: vier vierkanten naast elkaar zijn laag, drie staande kaarten zijn
+   hoog, één clip is het hoogst. Dat de drie pagina's daardoor niet dezelfde
+   verhouding hebben is geen inconsistentie — de tegels van één pagina zijn
+   onderling gelijk, en dat is wat een raster vraagt. */
+const VELVORM: Record<string, string> = { catalog: '5 / 4', lifestyle: '4 / 5', video: '4 / 5' };
+/* Hoe breed één kaart is, als deel van de tegel. Meer kaarten is smaller, maar
+   niet evenredig: bij vier mogen ze elkaar een stukje raken. */
+const VELBREED: Record<number, number> = { 1: 46, 2: 42, 3: 40, 4: 34 };
+
+const velVan = (it: Item): { vlakken: Vlak[]; voor: Media | null } => {
+  const namen = levervlakken(dienst, lang);
+  const n = namen.length || 1;
+  const bron = (it.photos && it.photos.length ? it.photos : [it.media]).slice(0, n);
+  const breed = VELBREED[n] || 30;
+  /* De laatste kaart eindigt op de rechterrand, de eerste begint links: de
+     tussenruimte volgt uit het aantal in plaats van uit een tabel per aantal. */
+  const stap = n > 1 ? (100 - breed) / (n - 1) : 0;
+  const vlakken = namen.map((naam, i) => {
+    const m = bron[i] || null;
+    return {
+      m: m && (m.src || m.icon) ? m : null,
+      naam,
+      links: n > 1 ? i * stap : (100 - breed) / 2,
+      breed,
+      /* Symmetrisch om het midden: de stapel helt niet één kant op. */
+      draai: Number(((i - (n - 1) / 2) * 2.4).toFixed(2)),
+    };
+  });
+  return { vlakken, voor: it.before && (it.before.src || it.before.icon) ? it.before : null };
 };
+
+/* ── HET BEELD DAT DE TEGEL DROEG — 10 september, vervangen 17 september ────
+ * Hier stond tegelbeeld(): één beeld per look in plaats van de set, met als
+ * argument dat het verhaal "drie foto's plus de telefoonfoto" al twee keer op
+ * de pagina staat en een derde keer de keuze onleesbaar maakt.
+ *
+ * Dat argument ging over HERHALING en het echte probleem was de LEGE KAART —
+ * zie de kop van velVan(). Een set die je kunt zien is geen herhaling van een
+ * etiket; het is het enige moment waarop een bezoeker ziet wat hij koopt, en
+ * dat is precies wat Lucas terugvroeg: *"1 foto voor een style is simpelweg te
+ * weinig."* De functie is weg en niet uitgezet, zodat er geen tweede manier
+ * blijft bestaan om dezelfde tegel te vullen.
+ */
 
 /* ── EN DE PRIJS ÉÉN KEER ─────────────────────────────────────────────────
  * Vier tegels met exact dezelfde regel eronder ("€109 – €49 / product · excl.
@@ -147,6 +234,15 @@ const c = nl ? {
   bekijk: 'Bekijk voorbeelden',
   bestFor: 'Past bij',
   voor: 'Ingestuurd', na: 'Geleverd',
+  /* ── EN EEN KORTERE VOOR DE TEGEL — 17 september 2026 ────────────────────
+     "Ingestuurd" is 87 pixels en de telefoonkaart in een tegel is er 74. Het
+     woord kleiner zetten mag niet (11,5px is de ondergrens van de
+     leesbaarheidskeuring) en de kaart groter maken ook niet — het formaat is
+     juist wat hem als invoer laat lezen. Dus een korter woord, en het is
+     bovendien beter: "jouw foto" zegt van wie hij is, "ingestuurd" zegt alleen
+     dat er iets gebeurd is. In de grote waaier blijft "Ingestuurd" staan; daar
+     is de ruimte er wel en staat het naast "Geleverd" als een paar. */
+  voorKort: 'Jouw foto',
   eigenH: 'Jouw eigen look',
   eigenSub: 'Voor jouw merk gemaakt. Alleen jij ziet hem hier.',
   eigenKies: 'Kies deze look',
@@ -164,6 +260,8 @@ const c = nl ? {
   bekijk: 'See examples',
   bestFor: 'Best for',
   voor: 'Submitted', na: 'Delivered',
+  /* Zie de Nederlandse tegenhanger. */
+  voorKort: 'Your photo',
   eigenH: 'Your own look',
   eigenSub: 'Made for your brand. Nobody else sees it here.',
   eigenKies: 'Pick this look',
@@ -179,11 +277,17 @@ const c = nl ? {
 <section class="sr" id="looks">
   <div class="container">
     <header class="sr-top">
-      <p class="sr-stap">{c.stap}</p>
-      <h2 class="sr-h2" set:html={h} />
-      <p class="sr-intro">{c.intro}</p>
-      <p class="sr-levert"><span>{c.levertL}</span> {levert}</p>
-      {prijsSamen && <p class="sr-kopprijs">{prijsSamen}</p>}
+      <div class="sr-top-woord">
+        <p class="sr-stap">{c.stap}</p>
+        <h2 class="sr-h2" set:html={h} />
+        <p class="sr-intro">{c.intro}</p>
+      </div>
+      {/* Wat de look LEVERT en wat hij KOST horen bij elkaar en niet onder de
+          inleiding: zie de noot bij .sr-top in de stijl hieronder. */}
+      <div class="sr-top-feit">
+        <p class="sr-levert"><span>{c.levertL}</span> {levert}</p>
+        {prijsSamen && <p class="sr-kopprijs">{prijsSamen}</p>}
+      </div>
     </header>
 
     {/* ── DE EIGEN LOOK VAN DEZE KLANT ────────────────────────────────────────
@@ -233,44 +337,99 @@ const c = nl ? {
         hij voor is, en één handeling. De beschrijving en het verhaal van de
         waaier staan op de detailpagina, waar je heen gaat als deze look je iets
         doet — kijken en kiezen zijn twee dingen. */}
-    {/* Het aantal kolommen is het AANTAL LOOKS en niet een vast getal: /catalog
-        heeft er vandaag één en /lifestyle vier, en een raster van vier met één
-        tegel erin is een lege regel met iets in de linkerhoek. Boven de vier
-        breekt hij af — meer dan vier naast elkaar is geen blik meer maar een
-        rij. Zie de maximumbreedte in de CSS voor wat er gebeurt als het er één
-        of twee zijn: dan wordt niet de tegel breder, maar het raster smaller. */}
-    <ul class="sr-rooster" role="list" style={`--sr-kol:${Math.min(Math.max(items.length, 1), 4)}`}>
-      {items.map((s) => {
-        const beeld = tegelbeeld(s);
+    {/* ═══ ELKE LOOK EEN EIGEN KAMER — 17 SEPTEMBER 2026 ════════════════════
+        Lucas, na de tegelrij van vanochtend: *"Ik vind dit er echt niet goed
+        uitzien en laat elke style lijken als maar zomaar iets, terwijl elke
+        style zijn eigen identiteit is en belangrijk aan moet voelen voor de
+        klant. Je mag die hele look van die pagina aanpassen en de stylen van
+        elkaar los trekken om ze hun eigen sectie te geven."*
+
+        Hij heeft gelijk, en het is niet de eerste keer dat deze sectie hierop
+        omvalt. Op 10 september werd een rij van vier gelijke tegels gekozen
+        met als argument dat je looks moet kunnen VERGELIJKEN, en dat klopt —
+        maar vier identieke kaders naast elkaar leveren geen vergelijking op.
+        Ze leveren het idee op dat het vier varianten van hetzelfde zijn, en
+        dan is er niets te vergelijken. Een look is geen optie in een lijst;
+        het is de wereld waarin het product komt te staan.
+
+        ── WAT ELKE KAMER DOET ──────────────────────────────────────────────
+        Eén zin, van links naar rechts: JOUW FOTO → een pijl → WAT JE TERUG
+        KRIJGT. Dat is de hele dienst in één beeld, en het staat nu vier keer
+        op de pagina in vier verschillende werelden in plaats van één keer
+        weggestopt in een tegel van 280 pixels.
+
+        ── EN HOE ZE UIT ELKAAR GETROKKEN ZIJN ─────────────────────────────
+        Niet met links-rechts-links-rechts: dat is de vorm zelf en zegt niets
+        (het was op 10 september een van de drie redenen om die opzet weg te
+        halen, en die reden staat nog steeds). Wél met KLEUR: elke kamer draagt
+        de tint van zijn eigen look als grond, als lijn en als nummerteken.
+        Dunes is zand, Flash is koud licht, Glow is paars, Phone-made is
+        telefoonblauw — dat stond al in TINT in de pagina's en werd tot vandaag
+        uitgegeven aan een streepje van drie pixels.
+
+        ── VERGELIJKEN KAN NOG STEEDS ──────────────────────────────────────
+        Elke kamer draagt dezelfde vier dingen op dezelfde plek: naam, waar hij
+        bij past, wat hij levert, wat hij kost. Wie wil vergelijken leest die
+        vier regels op vier plekken; wie wil kiezen ziet vier werelden. Dat is
+        de goede volgorde — niemand vergelijkt looks op een spec. */}
+    <ol class="sr-kamers" role="list">
+      {items.map((s, ki) => {
+        const { vlakken, voor } = velVan(s);
         return (
-        <li class="sr-tegel" id={`look-${s.slug}`} style={s.tint ? `--sr-tint:${s.tint}` : undefined}>
-          <a class="sr-t-beeld" href={s.detailHref} aria-label={s.detailLabel}>
-            {beeld?.src
-              ? <img src={beeld.src} alt={altVan(s.name, beeld, 0)} loading="lazy" decoding="async" width={beeld.w} height={beeld.h} />
-              : beeld?.icon ? <ProductScene icon={beeld.icon} width={beeld.width || '46%'} badge={beeld.badge} wide />
-              : <span class="sr-t-leeg">{nl ? 'Foto volgt' : 'Photo to come'}</span>}
-            {/* GEEN "GELEVERD"-ETIKET MEER. In de waaier had dat woord een
-                tegenhanger — de kleine kaart met "Ingestuurd" ernaast — en
-                daar zei het iets: dit is wat eruit komt, dat is wat erin ging.
-                In een tegel staat die tegenhanger niet, en dan is het vier keer
-                hetzelfde gele blokje op vier foto's waarvan niemand dacht dat
-                ze iets anders waren. Het voor-en-na staat verderop op deze
-                pagina, in de sectie die er wél over gaat. */}
-          </a>
-          {/* De tekst in een eigen vak, zodat het beeld ernaast kan staan zodra
-              er maar één look is — zie `.sr-tegel:only-child` in de CSS. Zonder
-              dat vak zou het beeld één van zeven losse kinderen zijn en moest
-              elk kind met de hand een plek in het raster krijgen. */}
-          <div class="sr-t-tekst">
-            <h3 class="sr-t-h">{s.name}</h3>
-            <p class="sr-t-tag">{s.tagline}</p>
-            {s.bestFor.length > 0 && (
-              <p class="sr-best sr-t-best"><span class="sr-best-l">{c.bestFor}</span> {s.bestFor.slice(0, 2).join(' · ')}</p>
+        <li class="sr-kamer" id={`look-${s.slug}`} style={s.tint ? `--sr-tint:${s.tint}` : undefined}>
+          <div class="sr-k-kop">
+            <h3 class="sr-k-h">{s.name}</h3>
+            <p class="sr-k-tag">{s.tagline}</p>
+          </div>
+
+          {/* ── JOUW FOTO → WAT JE KRIJGT ──────────────────────────────────
+              De ingestuurde foto staat VOOR de set en niet erin. In de tegel
+              hing hij als klein kaartje over de resultaten heen en was hij een
+              vierde beeld dat toevallig kleiner was. Hier is hij het begin van
+              een zin: dit gaf je, dat krijg je. De pijl doet het werk dat
+              anders twee etiketten moesten doen. */}
+          <div class="sr-k-baan">
+            {voor && (
+              <figure class="sr-k-voor">
+                <span class="sr-p is-voor">
+                  {voor.src
+                    ? <img src={voor.src} alt={altVan(s.name, voor, 0, true)} loading="lazy" decoding="async" />
+                    : <ProductScene icon={voor.icon!} width="52%" wide />}
+                </span>
+                <figcaption class="sr-k-bij">{c.voorKort}</figcaption>
+              </figure>
             )}
-            {/* De prijs alleen als de looks NIET allemaal hetzelfde kosten; staat
-                hij bij de kop, dan is hij hier ruis. Zie prijsSamen hierboven. */}
+            {voor && (
+              <span class="sr-k-pijl" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+              </span>
+            )}
+            <figure class="sr-k-set" style={`--sr-n:${vlakken.length}; --sr-rest:${Math.max(vlakken.length - 1, 1)}; --sr-vr:${VELRATIO[dienst] || '3 / 4'}`}>
+              <div class="sr-k-vakken">
+                {vlakken.map((v, i) => (
+                  <a class={`sr-k-vak${v.m ? '' : ' is-plaat'}`} href={s.detailHref}
+                     aria-label={i === 0 ? s.detailLabel : undefined}
+                     tabindex={i === 0 ? undefined : -1} aria-hidden={i === 0 ? undefined : 'true'}>
+                    {v.m?.src
+                      ? <img src={v.m.src} alt={i === 0 ? altVan(s.name, v.m, 0) : ''} loading="lazy" decoding="async" width={v.m.w} height={v.m.h} />
+                      : v.m?.icon ? <ProductScene icon={v.m.icon} width={v.m.width || '52%'} badge={v.m.badge} wide />
+                      : <span class="sr-p-naam">{v.naam}</span>}
+                  </a>
+                ))}
+              </div>
+              {/* Alleen wat dit beeld IS. Wat een look levert staat één keer op
+                  de pagina, in de chip naast de kop — hier erbij zetten gaf op
+                  /video letterlijk "CLIP · 8 SEC · ÉÉN CLIP VAN ACHT SECONDEN". */}
+              <figcaption class="sr-k-bij is-na">{s.naLabel || c.na}</figcaption>
+            </figure>
+          </div>
+
+          <div class="sr-k-woord">
+            {s.bestFor.length > 0 && (
+              <p class="sr-best sr-k-best"><span class="sr-best-l">{c.bestFor}</span> {s.bestFor.slice(0, 3).join(' · ')}</p>
+            )}
             {!prijsSamen && s.price && <p class="sr-t-prijs">{s.price}</p>}
-            <div class="sr-t-cta">
+            <div class="sr-k-cta">
               {s.orderHref && <a class="btn btn-primary sr-t-knop" href={s.orderHref}>{s.orderLabel || c.kies}</a>}
               <a class={s.orderHref ? 'sr-link' : 'btn btn-primary sr-t-knop'} href={s.detailHref}>
                 {s.orderHref ? c.bekijk : s.detailLabel}
@@ -281,7 +440,7 @@ const c = nl ? {
         </li>
         );
       })}
-    </ul>
+    </ol>
 
     {/* ── WAT ER IN DE MAAK IS ────────────────────────────────────────────── */}
     {komend.length > 0 && (
@@ -449,7 +608,22 @@ const c = nl ? {
 
 <style>
   /* ── DE KOP VAN DE SECTIE ───────────────────────────────────────────────── */
+  /* ── DE KOP VULDE 55% EN DE RIJEN ERONDER 100% — 13 september 2026 ──────
+     Gemeten op 1440: de kop stond 702 breed in een kolom van 1277, de
+     stijlrijen eronder 1147. Dat verschil van 445 pixels zie je, en het leest
+     als "hier is iets vergeten".
+
+     De lopende tekst mag NIET breder: 62ch is de leesbare regellengte en
+     daarboven wordt een inleiding vervelend om te lezen. Wat wel kan is de
+     twee FEITEN — wat je krijgt en wat het kost — naast de tekst zetten in
+     plaats van eronder. De kop vult daarmee de breedte, de regel blijft even
+     lang, en de prijs staat op de plek waar het oog na de kop naartoe gaat in
+     plaats van drie regels lager. Onder 62rem staat alles weer onder elkaar. */
   .sr-top { max-width: 62ch; }
+  @media (min-width: 62rem) {
+    .sr-top { display: grid; grid-template-columns: minmax(0, 62ch) minmax(0, auto); gap: clamp(1.6rem, 4vw, 3.5rem); align-items: end; max-width: none; }
+    .sr-top-feit { display: grid; gap: .55rem; justify-items: start; align-content: end; }
+  }
   /* Sectie 21: de stap- en etiketlabels in de mono-stem van de site — sinds
      sectie 22 is dat Martian Mono, en de regel leest --font-mono, dus hij
      verhuisde vanzelf mee. Zoals de kopregels op de voorpagina: het label is
@@ -476,93 +650,128 @@ const c = nl ? {
      elkaar aan liggen. */
   .sr-alt-sub { margin: .7rem 0 0; color: var(--ink-3); font-size: .92rem; line-height: 1.6; max-width: 60ch; }
 
-  /* ── DE VASTE LOOKS: HET CONTACTBLAD ───────────────────────────────────
-     Dezelfde vorm als /per-product en om dezelfde reden: wat de tegels bij
-     elkaar houdt is het RASTER en niet een rand om elk stuk. Eén haarlijn
-     ertussen, één eromheen, en verder niets — geen ronding, geen schaduw, geen
-     kaart. Vier looks passen zo in één blik, en dat is precies wat "een look
-     kiezen" nodig heeft.
+  /* ═══ DE KAMERS ═════════════════════════════════════════════════════════
+     Zie de noot bij de markup hierboven voor waarom elke look een eigen blok
+     is. Wat hier volgt is de tweede ronde van 17 september.
 
-     Vier kolommen en niet auto-fit: het AANTAL looks is de indeling. Met
-     auto-fit zou een vijfde look stilletjes een tweede rij van één beginnen, en
-     dan staat er een tegel alleen op een lege regel. */
-  .sr-rooster {
-    list-style: none; margin: clamp(1.6rem, 3vw, 2.4rem) 0 0; padding: 0;
-    display: grid; grid-template-columns: repeat(var(--sr-kol, 4), minmax(0, 1fr));
-    gap: 1px; background: var(--line); border: 1px solid var(--line);
-    /* Een tegel wordt niet breder dan een tegel. Bij vier looks is 4 × 340 =
-       1360 breder dan de kolom en doet deze regel niets; bij één look houdt hij
-       het beeld op tegelmaat in plaats van er een reclamebord van te maken. */
-    max-width: calc(var(--sr-kol, 4) * 340px);
-  }
-  /* Eén look wordt een strook over de volle breedte (zie hieronder), en dan
-     mag de maximumbreedte hem niet alsnog tot tegelmaat knijpen — daar liep
-     hij op 340 breed met een beeldkolom van 260, dus tachtig pixels tekst. */
-  .sr-rooster:has(> li:only-child) { max-width: none; }
-  /* Flexkolom en geen grid met align-content:start, omdat de KNOPPEN op één
-     lijn horen te staan: "past bij" is bij de ene look twee regels en bij de
-     andere drie, en dan schuift de knop mee als hij achter de tekst aan hangt.
-     Gemeten stond hij 21 pixels uit de pas. Met margin-top:auto op de knoppen
-     duwt de tegel ze naar de onderrand, en die is voor alle vier gelijk. */
-  .sr-tegel {
-    --sr-tint: var(--accent);
-    background: var(--paper); padding: 1rem .95rem 1.15rem;
-    display: flex; flex-direction: column; gap: .7rem; min-width: 0;
-  }
-  .sr-t-tekst { flex: 1; display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+     ── GEEN KLEUR MEER ────────────────────────────────────────────────────
+     De eerste versie gaf elke kamer de tint van zijn look als grond, met een
+     gekleurde balk erboven en een gekleurde plaat voor een ontbrekende foto.
+     Lucas: *"Ik vind de style secties wat goedkoop ogen door allemaal van die
+     kleuren toe te voegen. Dit moet gewoon echt strak en clean overkomen, meer
+     white space, de foto's moeten die style sectie echt gevoel geven — niet
+     kleuren eromheen."*
 
-  /* ── EN ALS ER MAAR ÉÉN LOOK IS, IS HET GEEN TEGEL ─────────────────────
-     /catalog heeft er vandaag één (Classic; Ghost, Kleurvlak en Podium staan
-     eronder in "in de maak"). Als tegel werd die 340 breed en 640 hoog: een
-     staand beeld met vier regels eronder, in de linkerhoek van een lege sectie.
-     Gemeten was de sectie daarmee 237 pixels HOGER dan de rij die er stond, en
-     dat is precies de verkeerde kant op.
+     Hij heeft gelijk en het is een fout met een naam: ik loste "deze looks
+     voelen inwisselbaar" op met DECORATIE in plaats van met de foto's. Vier
+     gekleurde vlakken maken vier verschillende vlakken, niet vier verschillende
+     werelden — en een zandkleurig verloop achter een strandfoto vertelt precies
+     niets wat die foto niet al zegt.
 
-     Eén look is een strook: beeld links, tekst rechts, over de volle breedte.
-     Zodra er een tweede bij komt, is het weer een raster — de vorm volgt het
-     aantal en niemand hoeft er iets voor om te zetten. */
-  .sr-tegel:only-child {
-    display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
-    gap: 1.6rem; align-items: start; padding: 1.2rem 1.2rem 1.4rem;
+     Wat een look nu uit elkaar trekt: witruimte, formaat en de beelden zelf.
+     Geen grond, geen rand, geen schaduw, geen ronding om over te praten, geen
+     draaiing. Eén haarlijn tussen twee kamers, en verder lucht.
+
+     De tint is niet weg uit de gegevens — TINT staat nog in de pagina's en de
+     detailpagina's gebruiken hem. Hij staat alleen niet meer OM de foto's heen. */
+  .sr-kamers {
+    list-style: none; margin: clamp(2.4rem, 5vw, 4rem) 0 0; padding: 0;
+    display: grid; gap: 0;
   }
-  /* 4:5 en niet 4:3: een lifestyle-beeld staat rechtop, en een liggend vak zou
-     elke foto bijsnijden tot een strook. Gemeten op de tegels van /per-product,
-     waar dezelfde verhouding de vakjes in het bestelformulier vult. */
-  .sr-t-beeld {
-    position: relative; display: block; width: 100%; aspect-ratio: 4 / 5;
-    overflow: hidden; background: var(--paper-2); border-radius: var(--r-sm);
+  .sr-kamer {
+    min-width: 0;
+    display: grid; gap: clamp(1.2rem, 2.6vw, 2.2rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 14rem);
+    grid-template-areas: "kop kop" "baan woord";
+    align-items: start;
+    padding: clamp(2.2rem, 4.6vw, 3.6rem) 0;
   }
-  .sr-t-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* Het streepje in de tintkleur van de look zit niet meer onder de naam maar
-     ONDER HET BEELD, over de volle breedte: in een tegel is de bovenrand van de
-     tekst de plek waar je het ziet, en zo draagt elke look nog steeds zijn eigen
-     kleur zonder dat er een los liggend streepje in de tekst hangt. */
-  .sr-t-beeld::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
-    background: var(--sr-tint, var(--accent));
+  /* De enige scheiding tussen twee looks. Niet eromheen maar ertussen: een
+     kader maakt er een kaart van en een kaart maakt er weer een optie in een
+     lijst van. */
+  .sr-kamer + .sr-kamer { border-top: 1px solid var(--line); }
+
+  .sr-k-kop { grid-area: kop; display: grid; gap: .25rem; min-width: 0; margin-bottom: clamp(.4rem, 1.2vw, 1rem); }
+  /* Groot, en met ruimte eromheen: dit is de naam van een wereld. Het plafond
+     van 3,2rem is gemeten op "PHONE-MADE" in de smalste kolom waarin een kamer
+     nog naast zijn tekst staat. */
+  .sr-k-h {
+    margin: 0; font-size: clamp(1.7rem, 3.6vw, 3.2rem); line-height: .96;
+    letter-spacing: -.025em; text-wrap: balance;
   }
-  .sr-t-leeg {
-    display: grid; place-items: center; width: 100%; height: 100%;
-    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .06em;
-    text-transform: uppercase; color: var(--ink-3); text-align: center; padding: .5rem;
+  .sr-k-tag { margin: 0; font-size: clamp(.98rem, 1.5vw, 1.15rem); color: var(--ink-2); max-width: 46ch; }
+
+  /* ── DE BAAN: JOUW FOTO → DE SET ───────────────────────────────────────── */
+  .sr-k-baan { grid-area: baan; display: flex; align-items: flex-start; gap: clamp(.8rem, 2vw, 1.6rem); min-width: 0; }
+  .sr-k-voor { margin: 0; flex: 0 0 auto; width: clamp(3.6rem, 7vw, 5rem); }
+  /* Rechtop en zonder schaduw. De vorige versie stond scheef met een witte rand
+     eromheen — dat is de opmaak van een plakboek, en dit is een productfoto. */
+  .sr-k-voor .sr-p.is-voor {
+    position: static; display: block; width: 100%; aspect-ratio: 3 / 4;
+    overflow: hidden; border-radius: 2px; background: var(--paper-2);
+    box-shadow: 0 0 0 1px var(--line) inset; rotate: none; border: 0;
   }
-  .sr-t-h { margin: .6rem 0 0; font-size: 1.15rem; line-height: 1.15; }
-  .sr-t-tag { margin: 0; font-size: .92rem; color: var(--ink-2); line-height: 1.45; }
-  /* Alleen de marge is van de tegel; letter en kleur komen uit .sr-best, dat
-     in stijl22.css al de leesletter kreeg in plaats van kapitale monospace. */
-  .sr-t-best { margin: .25rem 0 0; font-size: .82rem; line-height: 1.45; }
-  .sr-t-prijs { margin: .25rem 0 0; font-weight: 700; font-size: .88rem; font-variant-numeric: tabular-nums lining-nums; }
-  /* De knop en de link onder elkaar en niet naast elkaar: in een kolom van 280
-     pixels zou "Kies deze look" naast "Bekijk voorbeelden" allebei afbreken. */
-  .sr-t-cta { margin-top: auto; padding-top: .8rem; display: grid; justify-items: start; gap: .45rem; }
-  /* En een vangnet dat op elke breedte geldt: een knop mag nooit breder worden
-     dan de tegel waar hij in staat. Zonder deze twee regels hangt het van het
-     LABEL af of een look past — "Kies deze look" past en "Kies deze campagne"
-     niet, en dat is geen verschil dat een opmaak mag maken. */
-  .sr-t-knop {
-    font-size: .82rem; padding: .5rem .9rem;
-    max-width: 100%; text-wrap: balance;
+  /* De pijl hoort bij de TELEFOONFOTO en niet bij de set: hij staat op de halve
+     hoogte van dat kleine kaartje, niet op de halve hoogte van een vel dat vijf
+     keer zo hoog is. Met `align-self: center` zweefde hij op driehonderd pixels
+     onder een foto van honderd — twee losse dingen in plaats van één zin.
+     De rekensom is de breedte van de kaart maal 4/3 (zijn verhouding), gedeeld
+     door twee, min de halve pijl. */
+  .sr-k-pijl {
+    flex: 0 0 auto; align-self: flex-start;
+    margin-top: calc(clamp(3.6rem, 7vw, 5rem) * 2 / 3 - .65rem);
+    display: grid; place-items: center; width: clamp(.9rem, 1.8vw, 1.3rem); color: var(--ink-3);
   }
+  .sr-k-pijl svg { width: 100%; height: auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .sr-k-set { margin: 0; flex: 1 1 auto; min-width: 0; }
+
+  /* ── DE SET ────────────────────────────────────────────────────────────
+     Het openingsbeeld draagt de volle hoogte, de rest staat er in een kolom
+     naast en verdeelt diezelfde hoogte. Kleine gelijke tussenruimte, scherpe
+     hoeken, geen schaduw: een contactvel en geen stapel kaarten. */
+  .sr-k-vakken {
+    display: grid; gap: 8px;
+    grid-template-columns: 1.7fr minmax(0, 1fr);
+    grid-template-rows: repeat(var(--sr-rest, 2), minmax(0, 1fr));
+    height: clamp(15rem, 27vw, 24rem);
+  }
+  .sr-k-set:has(.sr-k-vak:only-child) .sr-k-vakken { grid-template-columns: minmax(0, 20rem); }
+  .sr-k-vak {
+    display: block; overflow: hidden; border-radius: 2px;
+    background: var(--paper-2); min-height: 0;
+  }
+  .sr-k-vak img, .sr-k-vak :global(.vis) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sr-k-vak:first-child { grid-row: 1 / -1; }
+  /* ── EEN VAK WAAR DE FOTO NOG VOOR GEMAAKT WORDT ───────────────────────
+     Geen kleur en geen streepjespatroon meer — dat was precies het "goedkoop"
+     waar Lucas op wees. Wat overblijft is het stilste dat nog iets zegt: een
+     leeg vlak in de papierkleur, een haarlijn eromheen, en de naam van het
+     beeld dat er komt. Naast een echte foto leest dat als een gereserveerd
+     kader; het trekt geen aandacht weg van de beelden die er wél zijn. */
+  .sr-k-vak.is-plaat {
+    display: grid; place-items: center; padding: .5rem;
+    background: var(--paper);
+    box-shadow: 0 0 0 1px var(--line) inset;
+  }
+  /* 12px in --ink-3 op papier (4,9:1) — ruim boven de grens, en bewust lichter
+     dan de tekst eromheen: het is een aanduiding en geen mededeling. */
+  .sr-p-naam {
+    font-family: var(--font-mono); font-size: .75rem; line-height: 1.25; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--ink-3); text-align: center; text-wrap: balance;
+  }
+  /* De twee bijschriften dragen de zin: JOUW FOTO links, GELEVERD rechts. */
+  .sr-k-bij {
+    margin: .5rem 0 0; font-family: var(--font-mono); font-size: .68rem;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3;
+  }
+  .sr-k-bij.is-na { color: var(--ink-2); }
+
+  /* ── HET WOORD ───────────────────────────────────────────────────────── */
+  .sr-k-woord { grid-area: woord; display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+  .sr-k-best { margin: 0; font-size: .85rem; line-height: 1.55; }
+  .sr-k-cta { margin-top: .4rem; display: grid; justify-items: start; gap: .6rem; }
+  .sr-t-prijs { margin: 0; font-weight: 700; font-size: .9rem; font-variant-numeric: tabular-nums lining-nums; }
+  .sr-t-knop { font-size: .84rem; padding: .55rem 1rem; max-width: 100%; text-wrap: balance; }
 
   /* De gedeelde prijs, één keer, bij de kop waar hij hoort. */
   .sr-kopprijs {
@@ -728,6 +937,24 @@ const c = nl ? {
 
   /* ── IN DE MAAK ─────────────────────────────────────────────────────────── */
   .sr-komend { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.6rem, 3vw, 2.2rem); border-top: 1px solid var(--line); }
+  /* ── DE KOP GAAT ERNAAST — 13 september 2026 ────────────────────────────
+     Lucas: *"je propt vaak dingen bij elkaar of op een helft van de volledige
+     breedte."* Gemeten op 1440 stond dit blok er zo bij: drie kaarten van 208
+     breed tegen de linkerkant van een kolom van 1147, met 450 pixels leeg
+     rechts, en de kop erboven.
+
+     De kaarten zelf mogen NIET groter — de reden staat hieronder bij
+     .sr-komend-lijst en die geldt onverkort: wat je nog niet kunt bestellen
+     hoort niet het grootste op de pagina te zijn. Wat wel kan is de kop naast
+     de kaarten zetten in plaats van erboven. Dan vult het blok de breedte
+     zonder dat er iets groter wordt, en het leest sneller: links wát dit is,
+     rechts wat er komt. */
+  @media (min-width: 62rem) {
+    .sr-komend { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3.2rem); align-items: start; }
+    .sr-komend-kop { grid-column: 1; }
+    .sr-komend-lijst { grid-column: 2; margin-top: 0; }
+    .sr-komend-kop .sr-alt-sub { max-width: none; }
+  }
   .sr-komend-lijst {
     list-style: none; margin: 1.4rem 0 0; padding: 0;
     /* ── TWEE GRENZEN, EN ALLEBEI GEMETEN ─────────────────────────────────
@@ -800,20 +1027,25 @@ const c = nl ? {
        overblijft voor het woord zelf. */
     .sr-etiket { padding: .18em .4em; letter-spacing: .04em; left: .3rem; bottom: .3rem; }
     .sr-etiket.is-na { top: .3rem; }
-    /* Twee op een telefoon en nooit één: bij één kolom is het weer een stapel
-       van vier schermen en zijn we terug bij wat er stond. De tegel wordt dan
-       ~170px breed, dus de knop gaat over de volle breedte en de "past
-       bij"-regel valt weg — die is de derde reden om te klikken en niet de
-       eerste. Gemeten op 390px. */
-    /* Twee, of één als er maar één look is. min() en niet een vast getal:
-       anders staat er op /catalog een lege tweede kolom naast de enige tegel. */
-    .sr-rooster { grid-template-columns: repeat(min(var(--sr-kol, 2), 2), minmax(0, 1fr)); max-width: none; }
-    .sr-tegel { padding: .8rem .7rem 1rem; }
-    /* Onder deze breedte past beeld-naast-tekst niet meer; dan is de enige look
-       gewoon weer een tegel over de volle breedte. */
-    .sr-tegel:only-child { display: flex; padding: .8rem .7rem 1rem; }
-    .sr-t-best { display: none; }
-    .sr-t-cta { justify-items: stretch; }
+    /* ── DE KAMER OP EEN TELEFOON ────────────────────────────────────────
+       Eén kolom, en de baan gaat van links-naar-rechts naar boven-naar-onder:
+       jouw foto bovenaan, de pijl omlaag, de set eronder. De zin blijft
+       dezelfde zin, alleen gekanteld — dat is wat de pijl kan en een etiket
+       niet. Gemeten op 390 en 430px. */
+    .sr-kamer {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "kop" "baan" "woord";
+      gap: 1rem; padding: 1rem .9rem 1.2rem;
+    }
+    /* Eén kolom en geen twee: naast een foto van 70 pixels bleef er een strook
+       van 250 over voor drie beelden, en het bijschrift brak in tweeën naast
+       een pijl die nergens heen wees. Nu staat de zin rechtop — foto, wat het
+       is, pijl omlaag, wat je terugkrijgt. */
+    .sr-k-baan { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: stretch; gap: .35rem; }
+    .sr-k-voor { width: 4.6rem; }
+    .sr-k-pijl { width: 1.4rem; rotate: 90deg; margin: .1rem 0 .1rem 1.6rem; justify-self: start; }
+    .sr-k-bij { white-space: nowrap; }
+    .sr-k-cta { justify-items: stretch; }
     .sr-t-knop { text-align: center; }
     .sr-maat { grid-template-columns: 1fr; }
     /* De oude twee regels hier zetten de tekstrijen op smal om. Het raster

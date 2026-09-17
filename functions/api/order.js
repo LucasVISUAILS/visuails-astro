@@ -1563,7 +1563,24 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // Seven days, and the number lives here rather than in a sweep query for the
   // reason migration 0006 gives: a policy recomputed at read time is a policy
   // that lives in whichever query ran last.
-  if (finalWindow && quote) {
+  /* ── DE KLOK BEGINT PAS ALS ER BETAALD KÁN WORDEN — 17 september 2026 ─────
+   *
+   * Hier stond `if (finalWindow && quote)`. Die twee zeggen samen "er is een
+   * week gereserveerd en er is een bedrag", en dat is één voorwaarde te weinig:
+   * de btw-poort even verderop kan besluiten dat er GEEN betaallink wordt
+   * gemaakt (`vatReview.payableNow && !review.needsReview`). Een bestelling die
+   * op de beoordelingslijst staat, kreeg dus een betaaltermijn van zeven dagen
+   * zonder ooit een betaalmogelijkheid te hebben gehad — en werd na die zeven
+   * dagen door de nachtelijke taak opgeruimd, mét een mail aan de klant dat "de
+   * betaaltermijn is verstreken". Over een link die nooit is verstuurd.
+   *
+   * Dezelfde voorwaarde als bij de betaallink zelf, en met opzet woordelijk
+   * dezelfde: twee plekken die hetzelfde moeten beslissen, horen het met
+   * dezelfde woorden te doen.
+   *
+   * WIE ALSNOG WORDT GOEDGEKEURD, KRIJGT ZIJN ZEVEN DAGEN DAAR — zie
+   * handleVatDecision() in src/lib/admin.js, waar de betaallink uitgaat. */
+  if (finalWindow && quote && vatReview.payableNow && !review.needsReview) {
     await safe(() => env.DB && env.DB
       .prepare(`UPDATE orders SET window_expires_at = datetime('now', '+7 days') WHERE ref = ?1`)
       .bind(ref).run());

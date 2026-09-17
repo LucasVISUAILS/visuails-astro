@@ -97,7 +97,10 @@ import {
   canRequestRevisionRound, revisionRoundState,
 } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
-import { normaliseerVoorkeur } from '../data/contactvoorkeur.js';
+import { normaliseerVoorkeur, voorkeurMet } from '../data/contactvoorkeur.js';
+/* Voor werkKlantgegevensBij() onderaan: een telefoonnummer dat geen nummer is,
+   hoort niet over een opgeslagen nummer heen geschreven te worden. */
+import { normalizePhone } from './payer.js';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 // De kanaallijst staat op één plek. Hier alleen de ids om tegen te valideren
 // en de namen om te tonen — welke kanalen wit eisen is de zaak van
@@ -134,7 +137,7 @@ import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT, REVIEW } from '../data/vat.js';
 import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '../data/address.js';
 import { createOrderMolliePayment } from './mollie.js';
-import { bundelVoor, kindLabel, kindPer } from './slots.js';
+import { bundelVoor, kindLabel, kindPer, subMaandBruto } from './slots.js';
 /*
  * HET ABONNEMENT. src/data/plans.js is het contract (wat een plan kost en geeft),
  * src/lib/subscription.js zijn de rijen (wie er een heeft en wat er nog van over
@@ -1766,6 +1769,19 @@ export async function accountPost(context) {
   /* STARTEN. Via offsitePage(), zodat de klant weet dat hij VISUAILS verlaat —
      dezelfde behandeling als een betaallink bij een bestelling. */
   if (path === '/account/plan/start') {
+    /* ── EERST DE CORRECTIE, DAN DE MACHTIGING — 17 september 2026 ──────────
+       Het formulier op /start/plan vult de opgeslagen gegevens in en laat ze
+       BEWERKBAAR; wat de klant daar aanpast hoort op zijn facturen te komen.
+       Dat werd gebouwd in functions/api/plan.js en liep nooit — zie de noot bij
+       werkKlantgegevensBij() hieronder.
+
+       Het formulier wordt hier ÉÉN KEER gelezen en doorgegeven:
+       handleSubscribeStart() neemt een vooraf gelezen formulier aan (zijn vierde
+       argument) juist omdat een Request maar één keer uitgelezen kan worden.
+       Eerst bijwerken, dan starten — andersom zou de factuur van deze maand nog
+       het oude adres dragen. */
+    const planForm = await request.formData().catch(() => null);
+    if (planForm) await werkKlantgegevensBij(env, customer, planForm);
     return handleSubscribeStart(context, customer, (url, lang) => {
       const p = offsitePage({ url, name: 'Mollie', lang, css: '/account.css' });
       /* Ook hier de taal mee — zie terug() in subscribe.js. Deze regel valt
@@ -1773,7 +1789,7 @@ export async function accountPost(context) {
          moment waarop je een klant niet ook nog in de verkeerde taal moet
          zetten. */
       return p ? html(p) : seeOther(`${lang === 'en' ? '' : '/nl'}/start/plan?fout=mollie`);
-    });
+    }, planForm);
   }
 
   if (path === '/account/plan/queue') return handlePlanQueue(context, customer);
@@ -4335,7 +4351,13 @@ async function handleOrderPay({ request, env }, customer, orderId) {
 
   let order;
   try {
-    order = await byId(`${COLS}, vat_cents, review_state`);
+    /* `vat_rate` erbij sinds 17 september 2026 — zie de noot bij `excludeIdeal`
+       hieronder. Hij staat in de RUIME set en niet in COLS: op een database
+       zonder migratie 0023 bestaat de kolom niet, en dan valt deze query
+       terug op de smalle set en werkt de knop gewoon. Zonder tarief wordt
+       iDEAL dan aangeboden zoals het altijd deed — dezelfde terugval als voor
+       `vat_cents`, en om dezelfde reden. */
+    order = await byId(`${COLS}, vat_cents, vat_rate, review_state`);
   } catch (err) {
     if (!/no such column/i.test(String(err?.message || err))) return seeOther(anchor);
     /*
@@ -4429,6 +4451,17 @@ async function handleOrderPay({ request, env }, customer, orderId) {
       // het gelukt is.
       successUrl: `${origin}${anchor}`,
       webhookUrl: `${origin}/api/webhook/mollie`,
+      /* ── GEEN iDEAL OP EEN BESTELLING ZONDER BTW — 17 september 2026 ──────
+         functions/api/order.js:1642 en src/lib/betaallink.js:67 doen dit al; dit
+         derde betaalpad deed het niet, en juist dit is het pad waar een klant
+         zélf op drukt. Een Nederlandse bank op een bestelling die op 0% is
+         afgerekend — verlegd, of buiten de EU — is precies de tegenspraak waar
+         de btw-poort voor gebouwd is: wie met iDEAL betaalt, zit in Nederland.
+         src/lib/mollie.js waarschuwt er bij `excludeIdeal` letterlijk voor.
+
+         Number(...) === 0 en niet !Number(...): zonder de kolom is `vat_rate`
+         undefined, en dan hoort iDEAL gewoon aangeboden te worden. */
+      excludeIdeal: Number(order.vat_rate) === 0,
     });
     checkout = payment?._links?.checkout?.href || null;
   } catch (err) {
@@ -8199,7 +8232,16 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     nudge: bkOnaf.length ? { h: t.planBkNudgeH, p: t.planBkNudgeBody, which: `${t.planBkNudgeWhich} ${bkOnaf.map((r) => r.label).join(', ')}`, cta: t.planBkNudgeCta } : null,
     saldo: {
       naam: `${planName(state.plan, lang)} · ${state.sub.term === 'yearly' ? t.planTermYearly : t.planTermMonthly}`,
-      volgende: state.volgendeAfschrijving ? `${maandNaam(state.volgendeAfschrijving, lang)} · ${money(vorm.monthlyCents, lang)}` : '',
+      /* ── HET BEDRAG DAT HIER STAAT IS HET BEDRAG DAT WORDT AFGESCHREVEN ────
+         17 september 2026. Hier stond `vorm.monthlyCents`, en dat is NETTO — de
+         prijs zoals /plans hem toont, met "excl. btw" ernaast. Op het dashboard
+         staat geen "excl. btw" ernaast, en de zin eromheen is "volgende
+         afschrijving": dan hoort er het bedrag te staan dat van de rekening
+         gaat. Sinds vandaag wordt er bruto geïncasseerd (zie subBrutoCents() in
+         slots.js), dus dit getal was vanaf nu ook feitelijk onjuist geweest.
+         Het btw-etiket staat erbij zodat het niet leest als een prijsverhoging
+         ten opzichte van de plannenpagina. */
+      volgende: state.volgendeAfschrijving ? `${maandNaam(state.volgendeAfschrijving, lang)} · ${money(subMaandBruto(state.sub), lang)} ${btwLabel('incl', lang)}` : '',
       slots, elkProduct, betaald: Boolean(state.betaald), startComplete,
     },
     week: state.sub.window_day ? dagVanDeMaand(state.sub.window_day, lang) : '',
@@ -8210,7 +8252,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     look: bk.map((r) => ({ label: r.label, waarde: r.waarde || '' })),
     opgebouwd: { geleverd, beelden: files.length, sinds: state.sub.started_at ? `${maandNaam(String(state.sub.started_at).slice(0, 7), lang)} ${String(state.sub.started_at).slice(0, 4)}` : '', opgehaald: state.opgehaald.map((o) => ({ name: o.name, ref: o.order_ref || '' })) },
     beheer: {
-      term: state.sub.term === 'yearly' ? t.planBillingYearly : t.planBillingMonthly, bedrag: money(vorm.monthlyCents, lang), status: planStatus,
+      term: state.sub.term === 'yearly' ? t.planBillingYearly : t.planBillingMonthly, bedrag: `${money(subMaandBruto(state.sub), lang)} ${btwLabel('incl', lang)}`, status: planStatus,
       beeindigd: state.sub.status === 'cancelled' ? t.planCancelledNote(state.termijnTot ? datumKort(state.termijnTot, lang) : maandNaam(state.maand, lang)) : '',
       plansHref: lang === 'nl' ? '/nl/plans' : '/plans', gepauzeerd: state.sub.status === 'paused',
     },
@@ -8321,3 +8363,90 @@ export const STUDIO_ICONS = {
 };
 
 export { COPY, negotiate, themaCookie, navCookie, langCookie, statusLabel, shortDate, isViewable, money, orderMoney, esc, LOGIN_CODE_TTL_MINUTES };
+
+/*
+ * ── DE GEGEVENS VAN EEN INGELOGDE KLANT BIJWERKEN — 11 september 2026 ───────
+ *
+ * ⚠ VERHUISD UIT functions/api/plan.js OP 17 SEPTEMBER 2026, en niet om
+ * opruimredenen: daar stond hij achter `if (klant)` en die tak liep NOOIT. De
+ * sessiecookie is Path=/account (zie COOKIE_FLAGS verderop in dit bestand) en
+ * bereikt /api/plan niet, dus currentCustomer() gaf daar altijd null. Een
+ * ingelogde klant die zijn adres aanpaste op /start/plan, zag die wijziging
+ * stil verdwijnen — precies wat de noot hieronder zegt dat niet mag gebeuren.
+ *
+ * Hier, onder /account, is de sessie er wél.
+ *
+ * Waarom dit NIET via upsertCustomer() gaat, terwijl de uitgelogde tak dat wel
+ * doet: die functie draagt de regel dat een klant die zijn gegevens heeft
+ * OPGESLAGEN ze houdt, en dat een nieuwe inzending alleen een leeg veld kan
+ * vullen (`details_saved_at`). Dat is een goede regel — hij beschermt bewaarde
+ * gegevens tegen wat er in een haastige bestelling wordt getypt.
+ *
+ * Hier geldt hij precies niet. De klant KIJKT naar zijn opgeslagen gegevens,
+ * ingevuld in de velden voor zijn neus, en verandert er iets aan. Dat is geen
+ * bestelling die iets denkt te weten; dat is de eigenaar die corrigeert. Via
+ * upsertCustomer() zou die correctie stil worden genegeerd — een bewerkbaar
+ * veld dat niets doet, en dat is erger dan een veld dat op slot zit.
+ *
+ * WAT ER NIET WORDT GESCHREVEN: het e-mailadres. Dat adres is de identiteit van
+ * het account; het formulier zet dat veld op readonly en deze kant leest het
+ * niet eens. Ook `details_saved_at` blijft ongemoeid: dit is een correctie en
+ * geen "onthou mij" — die keuze hoort in het accountscherm.
+ *
+ * EN HET BLOKKEERT NOOIT DE BETALING. Lukt het bijwerken niet, dan gaat het
+ * abonnement gewoon door met de gegevens die er al stonden. Een mislukte
+ * adreswijziging is een reden om te loggen, niet om iemand die wil betalen bij
+ * de deur te weigeren.
+ */
+export async function werkKlantgegevensBij(env, klant, form) {
+  if (!env?.DB || !klant?.customer_id) return;
+
+  /* Dezelfde knipfunctie als in functions/api/plan.js, waar deze functie
+     vandaan komt. Lokaal en niet geëxporteerd: het is één regel, en een
+     gedeelde mini-helper voor `String(x).trim().slice()` is meer koppeling dan
+     hij waard is. */
+  const tekst = (v, max = 200) => String(v || '').trim().slice(0, max);
+
+  const voornaam = tekst(form.get('first_name'), 60);
+  const achternaam = tekst(form.get('last_name'), 60);
+  const straat = tekst(form.get('address_line1'), 120);
+  const postcode = tekst(form.get('postal_code'), 24);
+  const stad = tekst(form.get('city'), 80);
+  const land = tekst(form.get('country'), 2).toUpperCase();
+  const telefoon = tekst(form.get('phone'), 40);
+
+  /* Alles of niets, en met opzet. Deze velden vormen samen één factuuradres;
+     de helft ervan overschrijven levert een adres op dat noch het oude noch het
+     nieuwe is. Komt er een halve inzending binnen — een oude pagina, een bot,
+     een script dat niet gedraaid heeft — dan verandert er niets. */
+  if (!voornaam || !achternaam || !straat || !postcode || !stad || land.length !== 2) return;
+  if (!normalizePhone(telefoon)) return;
+
+  const naam = composeName(voornaam, achternaam);
+  const adres = composeAddress({ line1: straat, postal: postcode, city: stad });
+  const merk = tekst(form.get('brand'), 120);
+  const btw = tekst(form.get('vat'), 32);
+
+  try {
+    await env.DB.prepare(
+      `UPDATE customers SET
+         first_name = ?2, last_name = ?3, name = ?4,
+         address_line1 = ?5, postal_code = ?6, city = ?7,
+         billing_address = ?8, country = ?9,
+         brand = ?10, vat_number = ?11,
+         phone = ?12, contact_preference = ?13,
+         updated_at = datetime('now')
+       WHERE id = ?1`
+    ).bind(
+      klant.customer_id,
+      voornaam, achternaam, naam,
+      straat, postcode, stad,
+      adres, land,
+      merk || null, btw || null,
+      telefoon, voorkeurMet(form.get('contact_preference'), telefoon),
+    ).run();
+  } catch (err) {
+    /* Zoals de kop zegt: loggen en doorgaan. */
+    console.error('[abonnement] gegevens van ingelogde klant niet bijgewerkt —', err?.message || err);
+  }
+}

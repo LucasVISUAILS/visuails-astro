@@ -1,5 +1,7 @@
 ---
 import { waHref } from '../data/whatsapp.js';
+import LaptopCarousel from './LaptopCarousel.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
 // VISUAILS — /catalog and /nl/catalog share this body.
 //
 // Before this rewrite the two locales were separate 256-line inline pages
@@ -149,6 +151,9 @@ const SHOTS = {
 const COPY = {
   en: {
     eyebrow: 'Catalog',
+    lcEyebrow: 'Where they land',
+    lcH: 'Four images, and the place they end up.',
+    lcP: 'On the phone what you send us. On the screen what comes back, sitting in a product page gallery. Scroll through the set — every result shows the shot it was made from.',
     // <em> added task #271b (Lucas's own request, editorial accent) — same
     // closing-word-emphasis convention already used on the other hero H1s
     // (homepage's "visualized.", custom-models' "Only yours.").
@@ -269,6 +274,9 @@ const COPY = {
   },
   nl: {
     eyebrow: 'Catalog',
+    lcEyebrow: 'Waar ze landen',
+    lcH: 'Vier beelden, en de plek waar ze komen te staan.',
+    lcP: 'Op de telefoon wat jij opstuurt. Op het scherm wat je terugkrijgt, in de galerij van een productpagina. Scroll door de set — bij elk resultaat staat de opname waar het uit gemaakt is.',
     h1: 'Strakke, consistente catalogfoto’s — <em>ook bij dertig producten.</em>',
     lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer catalogfoto’s per product kan altijd.`,
     ctaPrimary: 'Bestel catalogfoto’s',
@@ -444,6 +452,25 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
     </div>
   </section>
 
+  {/* ── 1b · WAAR DE BEELDEN LANDEN ────────────────────────────────────────
+      Niet in de rechterkolom van de opening: die kolom is krap 48% breed, en
+      een liggende plaat van 1,77 wordt daar zo klein dat de tekst op het
+      nagebouwde scherm onleesbaar is. Een eigen paneel over de volle breedte
+      dus, direct onder de opening, waar hij wél op maat is.
+
+      En hier staat ALLEEN de catalogset. De lifestyle- en videoslides van de
+      voorpagina horen hier niet: op een dienstpagina leest zo'n scherm als
+      bewijs van díe dienst, en dat bewijs is er voor die twee nog niet.
+      Zie de noot boven in src/data/laptopSlides.js. */}
+  <section class="paneel" aria-labelledby="cat-lc">
+    <header class="paneel-kop">
+      <p class="etiket">{c.lcEyebrow}</p>
+      <h2 id="cat-lc" class="hoog hoog-2">{c.lcH}</h2>
+      <p class="lopend">{c.lcP}</p>
+    </header>
+    <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]} titel={c.lcH} />
+  </section>
+
   {/* ── 2 · DE LOOKS ─────────────────────────────────────────────────────── */}
   <section class="paneel" id="looks">
     <StyleRows
@@ -482,6 +509,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
     <p class="cat-open-noot">{c.packOpen}</p>
 
     <div class="cat-ladder">
+      <div class="cat-ladder-tabel">
       <p class="etiket">{c.ladderH}</p>
       <div class="tabel-schuif">
         <table class="lijst">
@@ -498,10 +526,13 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
           </tbody>
         </table>
       </div>
-      <p class="lopend cat-ladder-noot">{c.ladderNote}</p>
-      <p class="acties">
-        <a class="knop knop-inkt" href={lp('/start/catalog')}>{c.packCta}</a>
-      </p>
+      </div>
+      <div class="cat-ladder-naast">
+        <p class="lopend cat-ladder-noot">{c.ladderNote}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start/catalog')}>{c.packCta}</a>
+        </p>
+      </div>
     </div>
   </section>
 
@@ -661,10 +692,25 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
   .cat-shot-pil { position: absolute; z-index: 1; left: .6rem; bottom: .6rem; background: var(--wit); color: var(--inkt); padding: .3rem .65rem; border-radius: 999px; }
   .cat-open-noot { margin-top: 1rem; font-size: .84rem; color: var(--inkt-2); max-width: 52ch; }
 
-  /* De ladder. Smal en niet over de volle breedte: twee kolommen over 1400px
-     zet een meter wit tussen het aantal en het tarief, en dat is precies de
-     enige relatie die de tabel te tonen heeft. */
-  .cat-ladder { display: grid; gap: .9rem; justify-items: start; max-width: 34rem; margin-top: clamp(2.5rem, 5vw, 4rem); }
+  /* De TABEL blijft smal en niet over de volle breedte: twee kolommen over
+     1400px zet een meter wit tussen het aantal en het tarief, en dat is precies
+     de enige relatie die de tabel te tonen heeft.
+
+     ── MAAR HET BLOK ERAAN NIET — 13 september 2026 ──────────────────────
+     Gemeten op 1440: de tabel stond 544 breed in een paneel van 1392, en
+     rechts ervan bleef 848 pixels leeg — de prijsladder, het belangrijkste
+     blok van deze pagina, gebruikte 39% van de breedte. De noot en de knop
+     stonden eronder en maakten de kolom alleen maar langer.
+
+     De tabel blijft dus even breed als hij was; de noot en de knop gaan
+     ERNAAST staan. Het blok vult nu de breedte, de tabel wordt niet
+     uitgerekt, en de knop komt hoger op de pagina te staan. */
+  .cat-ladder { display: grid; gap: clamp(1.4rem, 3vw, 3rem); margin-top: clamp(2.5rem, 5vw, 4rem); align-items: start; }
+  .cat-ladder-tabel { display: grid; gap: .9rem; justify-items: start; max-width: 34rem; }
+  .cat-ladder-naast { display: grid; gap: 1.1rem; justify-items: start; align-content: center; max-width: 40ch; }
+  @media (min-width: 62rem) {
+    .cat-ladder { grid-template-columns: minmax(0, 34rem) minmax(0, 1fr); align-items: center; }
+  }
   .cat-ladder .tabel-schuif { width: 100%; }
   .cat-ladder-noot { font-size: .92rem; }
 

@@ -320,7 +320,13 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   ok('zonder aangevinkte hoek kost een bestelling het gewone bedrag',
     zonderHoeken.amount, Number((netto.grossCents / 100).toFixed(2)));
 
-  const tweeHoeken = await post({ ...base, 'angle_flat-lay': '1', 'angle_side': '1' });
+  /* `angle_side` bestond hier tot 17 september; die hoek is samen met
+     `angle_in-hand` uit de lijst gehaald (zie de kop van ANGLES in
+     src/data/angles.js). Een veld met een id dat niet meer bestaat wordt
+     genegeerd, dus deze proef rekende met ÉÉN hoek terwijl hij er twee
+     beweerde — en dat is precies het soort stille misrekening dat deze test
+     hoort te vangen. Nu twee ids die er allebei zijn. */
+  const tweeHoeken = await post({ ...base, 'angle_flat-lay': '1', 'angle_inside': '1' });
   const metHoeken = quoteOrder({ service: 'drop', products: 12, extras: 2 * 12 });
   ok('twee hoeken zijn twee foto’s per product, niet twee in totaal',
     tweeHoeken.amount, Number((metHoeken.grossCents / 100).toFixed(2)));

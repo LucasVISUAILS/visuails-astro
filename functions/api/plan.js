@@ -27,16 +27,16 @@
  *                      bestelformulier, want ze gaan naar dezelfde kolommen en
  *                      op dezelfde factuur.
  *
- *                      ── EN SINDS 11 SEPTEMBER OOK VOOR WIE INGELOGD IS ─────
- *                      Lucas: *"Plaats de gegevens van het ingelogde account
- *                      automatisch in de open velden (…) en zorg ervoor dat de
- *                      klant alsnog zijn gegevens daar kan bewerken wanneer dat
- *                      nodig is."* Het formulier vult ze nu in en laat ze open
- *                      staan, dus moet deze kant ze ook AANNEMEN — anders
- *                      bewerkt de klant iets wat niet op zijn factuur komt, en
- *                      dat is erger dan een veld dat hij niet mocht wijzigen.
- *                      Zie werkGegevensBij() onderaan voor wat er dan precies
- *                      geschreven wordt, en waarom niet via upsertCustomer().
+ *                      ── EN WIE INGELOGD IS, KOMT HIER NIET MEER LANGS ──────
+ *                      Lucas vroeg in september of een ingelogde klant zijn
+ *                      gegevens op dit formulier kon BEWERKEN. Dat werd hier
+ *                      gebouwd en het liep nooit: de sessiecookie is
+ *                      `Path=/account` en bereikt deze route niet. Sinds
+ *                      17 september stuurt PlanPicker.astro het formulier voor
+ *                      een ingelogde klant naar /account/plan/start, waar de
+ *                      sessie er wél is en werkKlantgegevensBij() in
+ *                      src/lib/account.js de correctie doorvoert. Zie de noot
+ *                      bij `klant` hieronder.
  *   4. upsertCustomer  Uit functions/api/order.js, niet nagebouwd. Die functie
  *                      draagt de regel dat een klant die zijn gegevens heeft
  *                      opgeslagen ze HOUDT, en dat een nieuwe inzending alleen
@@ -63,7 +63,7 @@ import { handleSubscribeStart } from '../../src/lib/subscribe.js';
 import { offsitePage } from '../../src/lib/offsite.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
-import { composeName, composeAddress } from '../../src/data/address.js';
+import { composeName } from '../../src/data/address.js';
 import { voorkeurMet } from '../../src/data/contactvoorkeur.js';
 import { vatFormatOk } from '../../src/data/vat.js';
 
@@ -116,12 +116,28 @@ export async function onRequestPost(context) {
     klant = null;
   }
 
-  /* Ingelogd: de gegevens uit het formulier zijn de gegevens van deze klant,
-     want hij heeft ze net op zijn scherm zien staan en mogen aanpassen. Het
-     e-mailadres blijft dat van de sessie. */
-  if (klant) {
-    await werkGegevensBij(env, klant, form);
-  }
+  /* ── DEZE TAK WAS DOOD, EN HET GAT ZAT IN DE COOKIE — 17 september 2026 ──
+   *
+   * Hier stond: `if (klant) await werkGegevensBij(env, klant, form)`, met als
+   * bedoeling dat een ingelogde klant zijn factuurgegevens op dit formulier kon
+   * CORRIGEREN — upsertCustomer() doet dat niet, die vult alleen lege velden.
+   * Lucas vroeg daar in september uitdrukkelijk om.
+   *
+   * Hij liep nooit. De sessiecookie is `Path=/account` (zie COOKIE_FLAGS in
+   * src/lib/account.js, mét de reden), dus hij bereikt /api/plan niet en
+   * currentCustomer() gaf hier ALTIJD null. Een ingelogde klant die zijn adres
+   * aanpaste, zag die wijziging stil verdwijnen.
+   *
+   * ── WAAROM DE COOKIE NIET BREDER IS GEMAAKT ─────────────────────────────
+   * Dat zou het gat dichten door het oppervlak te vergroten, en er was een
+   * kortere weg: /account/plan/start BESTAAT al, ligt wél achter de sessie en
+   * draait dezelfde handleSubscribeStart(). PlanPicker.astro stuurt het
+   * formulier daar sinds vandaag heen zodra /account/me zegt dat er iemand is
+   * ingelogd; het bijwerken van de gegevens gebeurt daar, in account.js.
+   *
+   * Wat hier overblijft is de UITGELOGDE weg, en die was altijd al de enige die
+   * echt liep. `klant` blijft staan omdat handleSubscribeStart() hem verwacht.
+   */
 
   if (!klant) {
     const email = normalizeEmail(tekst(form.get('email'), 254));
@@ -203,77 +219,6 @@ export async function onRequestPost(context) {
   }, form);
 }
 
-/*
- * ── DE GEGEVENS VAN EEN INGELOGDE KLANT BIJWERKEN — 11 september 2026 ───────
- *
- * Waarom dit NIET via upsertCustomer() gaat, terwijl de uitgelogde tak dat wel
- * doet: die functie draagt de regel dat een klant die zijn gegevens heeft
- * OPGESLAGEN ze houdt, en dat een nieuwe inzending alleen een leeg veld kan
- * vullen (`details_saved_at`). Dat is een goede regel — hij beschermt bewaarde
- * gegevens tegen wat er in een haastige bestelling wordt getypt.
- *
- * Hier geldt hij precies niet. De klant KIJKT naar zijn opgeslagen gegevens,
- * ingevuld in de velden voor zijn neus, en verandert er iets aan. Dat is geen
- * bestelling die iets denkt te weten; dat is de eigenaar die corrigeert. Via
- * upsertCustomer() zou die correctie stil worden genegeerd — een bewerkbaar
- * veld dat niets doet, en dat is erger dan een veld dat op slot zit.
- *
- * WAT ER NIET WORDT GESCHREVEN: het e-mailadres. Dat adres is de identiteit van
- * het account; het formulier zet dat veld op readonly en deze kant leest het
- * niet eens. Ook `details_saved_at` blijft ongemoeid: dit is een correctie en
- * geen "onthou mij" — die keuze hoort in het accountscherm.
- *
- * EN HET BLOKKEERT NOOIT DE BETALING. Lukt het bijwerken niet, dan gaat het
- * abonnement gewoon door met de gegevens die er al stonden. Een mislukte
- * adreswijziging is een reden om te loggen, niet om iemand die wil betalen bij
- * de deur te weigeren.
- */
-async function werkGegevensBij(env, klant, form) {
-  if (!env?.DB || !klant?.customer_id) return;
-
-  const voornaam = tekst(form.get('first_name'), 60);
-  const achternaam = tekst(form.get('last_name'), 60);
-  const straat = tekst(form.get('address_line1'), 120);
-  const postcode = tekst(form.get('postal_code'), 24);
-  const stad = tekst(form.get('city'), 80);
-  const land = tekst(form.get('country'), 2).toUpperCase();
-  const telefoon = tekst(form.get('phone'), 40);
-
-  /* Alles of niets, en met opzet. Deze velden vormen samen één factuuradres;
-     de helft ervan overschrijven levert een adres op dat noch het oude noch het
-     nieuwe is. Komt er een halve inzending binnen — een oude pagina, een bot,
-     een script dat niet gedraaid heeft — dan verandert er niets. */
-  if (!voornaam || !achternaam || !straat || !postcode || !stad || land.length !== 2) return;
-  if (!normalizePhone(telefoon)) return;
-
-  const naam = composeName(voornaam, achternaam);
-  const adres = composeAddress({ line1: straat, postal: postcode, city: stad });
-  const merk = tekst(form.get('brand'), 120);
-  const btw = tekst(form.get('vat'), 32);
-
-  try {
-    await env.DB.prepare(
-      `UPDATE customers SET
-         first_name = ?2, last_name = ?3, name = ?4,
-         address_line1 = ?5, postal_code = ?6, city = ?7,
-         billing_address = ?8, country = ?9,
-         brand = ?10, vat_number = ?11,
-         phone = ?12, contact_preference = ?13,
-         updated_at = datetime('now')
-       WHERE id = ?1`
-    ).bind(
-      klant.customer_id,
-      voornaam, achternaam, naam,
-      straat, postcode, stad,
-      adres, land,
-      merk || null, btw || null,
-      telefoon, voorkeurMet(form.get('contact_preference'), telefoon),
-    ).run();
-  } catch (err) {
-    /* Zoals de kop zegt: loggen en doorgaan. */
-    console.error('[abonnement] gegevens van ingelogde klant niet bijgewerkt —', err?.message || err);
-  }
-}
 
 /* Een GET hier is iemand die het adres heeft geplakt. Terug naar het formulier,
    zonder foutmelding: er is niets misgegaan, hij staat alleen op de verkeerde

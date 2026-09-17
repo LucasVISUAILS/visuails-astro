@@ -1,0 +1,963 @@
+---
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DE LAPTOPCAROUSEL — campagnebeelden die op een laptopscherm afspelen
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 13 september 2026.
+ *
+ * ── HOE HET WERKT ─────────────────────────────────────────────────────────
+ * Eén vaste plaat (laptop + hand + telefoon) waarin het LAPTOPSCHERM
+ * transparant is uitgesneden. De campagnebeelden liggen daaronder, precies op
+ * het uitgesneden vlak. De hand en de telefoon zitten in diezelfde plaat en
+ * vallen dus altijd vóór het wisselende beeld — zonder één regel maskerwerk.
+ *
+ * ── DE MATEN KOMEN UIT DE PLAAT, NIET UIT EEN SCHATTING ───────────────────
+ * Het schermvlak is met een vloedvulling uit de bron gemeten (de vulling loopt
+ * vanuit het midden van het scherm en stopt vanzelf op de zwarte rand, dus de
+ * ronde hoeken, de notch én de plek waar de telefoon eroverheen valt zitten er
+ * automatisch goed in). Gemeten op de bron van 2688 × 1520:
+ *
+ *     scherm x 401..2309, y 244..1401   →   1909 × 1158
+ *     links 14,9182%  boven 16,0526%  breed 71,0193%  hoog 76,1842%
+ *
+ * Die vier percentages staan hieronder als VLAK. Ze zijn relatief, dus de
+ * overlay mag op elke maat geleverd worden zolang de verhouding klopt; wat
+ * niet mag is het beeld bijsnijden, want dan verschuiven ze allemaal.
+ *
+ * ── DE SLIDES HEBBEN ÉÉN VERHOUDING ───────────────────────────────────────
+ * 1909 / 1158 = 1,6485. De plaatshouders staan op 1200 × 728. Wie er een
+ * aanlevert die dat niet is, krijgt geen scheve boel maar een bijgesneden
+ * beeld (object-fit: cover) — dat is met opzet: liever een strakke uitsnede
+ * dan een uitgerekt model.
+ *
+ * ── WAAROM GEEN BIBLIOTHEEK ───────────────────────────────────────────────
+ * De site staat op nul externe scripts vanwege de cookiebanner, en de CSP
+ * hasht de inline scripts bij de build (scripts/csp-scripts.mjs). Dit is
+ * daarom vanilla JS in een `is:inline`-script, met `data-astro-rerun` omdat de
+ * site zachte navigatie gebruikt en het script na elke overgang opnieuw moet
+ * binden.
+ *
+ * ── ZONDER JAVASCRIPT ─────────────────────────────────────────────────────
+ * Slide 1 draagt `is-aan` in de HTML en staat dus gewoon in beeld, met zijn
+ * naam eronder als echte link. Er gebeurt alleen niets meer.
+ */
+import { VLAK, FON, PLAAT, OVERLAY, overlayAlt } from '../data/laptopVlak.js';
+import { laptopReeks } from '../data/laptopSlides.js';
+
+interface Beeld {
+  src: string;
+  /* De telefoonfoto waar juist DIT beeld uit is gemaakt. Zonder waarde blijft
+     de telefoonfoto van de slide staan. */
+  fon?: string;
+  fonAlt?: string;
+  /* De plek die dit beeld op de productpagina inneemt — dat is het hele punt
+     van dit scherm. Kort houden: het staat in een etiket van één regel. */
+  naam: string;
+  alt: string;
+}
+/* ── DE SOCIAL-MOCK ────────────────────────────────────────────────────────
+   Een lifestyle-carousel landt niet in een productgalerij maar op een tijdlijn.
+   Daarom krijgt die slide geen winkelpagina maar een nagebouwd bericht: de
+   beelden links, het gepraat eromheen rechts, grotendeels achter de telefoon.
+
+   WAT HIER ECHT IS EN WAT NIET: de naam en het logo zijn van VISUAILS. Al het
+   andere — het bijschrift, de reacties, de namen die reageren en het aantal
+   vind-ik-leuks — is verzonnen en hoort verzonnen te BLIJVEN lezen. Dit is
+   geen schermafdruk van een echt bericht en mag er ook niet voor doorgaan.
+   Het is met opzet geen kopie van de vormgeving van een bepaald platform:
+   geen merknaam, geen woordmerk, geen overgenomen pictogrammen. */
+interface Reactie { naam: string; tekst: string; tijd: string; }
+interface Post {
+  naam: string;
+  avatar: string;
+  /* Het grijze label naast de naam. */
+  vlag?: string;
+  bijschrift: string[];
+  reacties: Reactie[];
+  likes: string;
+  /* Twee keer dezelfde datum in twee vormen: kort onder het bijschrift zoals
+     bij de reacties, voluit onderaan het bericht. */
+  kort: string;
+  datum: string;
+}
+interface Slide {
+  src?: string;
+  alt: string;
+  /* Staat dit veld er, dan komt er GEEN platte plaat op het scherm maar een
+     stapel losse foto's onder elkaar die vanzelf doorschuift. */
+  beelden?: Beeld[];
+  /* De verbleekte winkelonderdelen naast de foto's. Alleen waar ze kloppen:
+     een catalogbeeld landt in een productgalerij, een sfeerbeeld niet. */
+  schim?: boolean;
+  /* Staat dit veld er, dan komen de beelden in een nagebouwd social-bericht te
+     staan en schuift de stapel opzij in plaats van omlaag. */
+  post?: Post;
+  naam: string;
+  href: string;
+  /* Het beeld op het TELEFOONSCHERM: de foto die de klant zélf maakte. Laat je
+     hem weg, dan blijft dat scherm leeg zoals op de plaat. */
+  fon?: string;
+  fonAlt?: string;
+  /* Een clip in plaats van een foto op het laptopscherm. Zonder geluid, in een
+     lus, en zonder bedieningsbalk — het is een beeld en geen speler. `src`
+     blijft dan het stilstaande beeld dat ervoor in de plaats komt zolang de
+     clip nog laadt, en wat een schermlezer krijgt. */
+  video?: string;
+  /* Hoe lang deze slide blijft staan, in milliseconden. Zonder waarde geldt de
+     standaard van 2500. Een clip van zeven seconden zet je hier op 7000, want
+     halverwege wegspringen is erger dan geen clip. */
+  duur?: number;
+}
+interface Props {
+  slides?: Slide[];
+  overlay?: string;
+  overlayAlt?: string;
+  titel?: string;
+  lang?: 'nl' | 'en';
+  /* STIL: één beeld, geen bediening, geen script. Voor pagina's waar dit een
+     illustratie is en geen attractie — een prijstabel, een bedankpagina, een
+     mail. De plaat en de twee schermgaten blijven precies hetzelfde, dus het
+     blijft herkenbaar hetzelfde ding. */
+  stil?: boolean;
+}
+
+const {
+  overlay = OVERLAY,
+  titel = 'Werk van VISUAILS',
+  lang = 'nl',
+  stil = false,
+} = Astro.props as Props;
+
+const nl = lang === 'nl';
+const plaatAlt = (Astro.props as Props).overlayAlt ?? overlayAlt(lang);
+
+/* De maten van de plaat en de inhoud van de schermen staan niet meer hier maar
+   in src/data/laptopVlak.js en src/data/laptopSlides.js. Zodra meer dan één
+   pagina ze nodig heeft is een kopie in een component een kopie die ooit stil
+   gaat afwijken — en dan schuiven de beelden onder het gat vandaan zonder dat
+   een test daarop slaat. De noten die erbij horen staan in die twee bestanden. */
+const gegeven = (Astro.props as Props).slides?.length ? (Astro.props as Props).slides! : laptopReeks(lang);
+/* Stil betekent: de eerste slide, en daarvan het eerste beeld. Zo kan een
+   pagina dezelfde gegevens doorgeven als de bewegende versie en hoeft er geen
+   tweede waarheid te bestaan over wat er te zien is. */
+const slides: Slide[] = stil
+  ? [{ ...gegeven[0], beelden: gegeven[0].beelden?.slice(0, 1), duur: undefined }]
+  : gegeven;
+/* De streep telt BEELDEN en geen slides. Met vier catalogfoto's in één slide
+   zou een streep per slide bijna tien seconden stilstaan, en een streep die
+   stilstaat leest als een streep die stuk is. */
+const totaal = slides.reduce((a, s) => a + (s.beelden?.length || 1), 0);
+/* Eén telefoonbeeld per STAP en niet per slide: bij de catalogset hoort bij
+   elk resultaat zijn eigen inzending. Een beeld zonder `fon` valt terug op de
+   foto van de slide, en een slide zonder `fon` laat het scherm gewoon leeg. */
+const fonStappen = slides.flatMap((s, si) =>
+  (s.beelden ?? [null]).map((b, bi) => ({
+    si, bi,
+    src: b?.fon ?? s.fon,
+    alt: b?.fonAlt ?? s.fonAlt,
+  })),
+);
+const t = nl
+  ? { vorige: 'Vorig beeld', volgende: 'Volgend beeld', van: (a: number, b: number) => `Beeld ${a} van ${b}`, omlaag: 'Volgende foto', bron: '\u2191 Wat jij stuurt' }
+  : { vorige: 'Previous image', volgende: 'Next image', van: (a: number, b: number) => `Image ${a} of ${b}`, omlaag: 'Next photo', bron: '\u2191 What you send' };
+---
+<section
+  class:list={['lc', stil && 'is-stil']}
+  data-lc={stil ? undefined : true}
+  aria-roledescription="carousel"
+  aria-label={titel}
+  tabindex="0"
+  style={`--lc-plaat:${PLAAT};--lc-l:${VLAK.links}%;--lc-t:${VLAK.boven}%;--lc-w:${VLAK.breed}%;--lc-h:${VLAK.hoog}%;--lc-fl:${FON.links}%;--lc-ft:${FON.boven}%;--lc-fw:${FON.breed}%;--lc-fh:${FON.hoog}%;--lc-n:${totaal}`}
+>
+  <div class="lc-doek">
+    <!-- De beelden liggen ONDER de plaat, precies op het uitgesneden vlak. -->
+    <ul class="lc-slides">
+      {slides.map((s, i) => (
+        <li class={`lc-slide${i === 0 ? ' is-aan' : ''}`} data-lc-slide data-lc-duur={s.duur} aria-hidden={i === 0 ? 'false' : 'true'}>
+          {s.post && s.beelden ? (
+            <div class="lc-post">
+              <div class="lc-post-beeld">
+                <div class="lc-rol" data-lc-rol data-lc-zij>
+                  {s.beelden.map((b) => (
+                    <figure class="lc-vak-zij"><img src={b.src} alt={b.alt} width="928" height="1152" loading="lazy" decoding="async" /></figure>
+                  ))}
+                </div>
+                {!stil && <div class="lc-post-stip" data-lc-stip aria-hidden="true">
+                  {s.beelden.map((_, k) => (<i class={k === 0 ? 'aan' : ''}></i>))}
+                </div>}
+                {!stil && <button class="lc-omlaag lc-omlaag-zij" type="button" data-lc-stap="1" aria-label={t.omlaag}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+                </button>}
+              </div>
+
+              <div class="lc-post-kant">
+                <div class="lc-post-kop">
+                  <img class="lc-post-ei" src={s.post.avatar} alt="" width="48" height="48" loading="lazy" decoding="async" />
+                  <b>{s.post.naam}</b>
+                  {s.post.vlag && <span class="lc-post-grijs">&middot; {s.post.vlag}</span>}
+                  <span class="lc-post-grijs">&middot;</span>
+                  <span class="lc-post-volg">Volgen</span>
+                  <span class="lc-post-meer" aria-hidden="true">&#8943;</span>
+                </div>
+
+                <div class="lc-post-stroom">
+                  <div class="lc-post-regel">
+                    <img class="lc-post-ei" src={s.post.avatar} alt="" width="48" height="48" loading="lazy" decoding="async" />
+                    <div class="lc-post-body">
+                      <p><b>{s.post.naam}</b> {s.post.bijschrift.join(' ')}</p>
+                      <p class="lc-post-meta"><span>{s.post.kort}</span><span>Vertaling weergeven</span></p>
+                    </div>
+                  </div>
+
+                  <ul class="lc-post-reacties">
+                    {s.post.reacties.map((r) => (
+                      <li class="lc-post-regel">
+                        <i class="lc-post-bol" aria-hidden="true"></i>
+                        <div class="lc-post-body">
+                          <p><b>{r.naam}</b> {r.tekst}</p>
+                          <p class="lc-post-meta"><span>{r.tijd}</span><span>1 vind-ik-leuk</span><span>Reageren</span></p>
+                        </div>
+                        <svg class="lc-post-hartje" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.2A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 7 2.8C19 15.6 12 20 12 20z"/></svg>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div class="lc-post-voet">
+                  <div class="lc-post-acties" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 20.5S3.5 15.4 3.5 9.6A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8.5 2.6c0 5.8-8.5 10.9-8.5 10.9z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M21 11.5A8.5 8.5 0 0 1 12 20a9 9 0 0 1-3.8-.8L3 20.5l1.4-4.9A8.4 8.4 0 0 1 3.5 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M21.5 3.5 2.5 10.2l7.3 2.4 2.4 7.3z"/><path d="M9.8 12.6 21.5 3.5"/></svg>
+                    <svg class="lc-post-eind" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4.3-5.5 4.3z"/></svg>
+                  </div>
+                  <p class="lc-post-likes">{s.post.likes}</p>
+                  <p class="lc-post-datum">{s.post.datum}</p>
+                </div>
+
+                <div class="lc-post-invoer" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.6 14.2a4.3 4.3 0 0 0 6.8 0"/><circle cx="9.2" cy="10" r=".9" fill="currentColor"/><circle cx="14.8" cy="10" r=".9" fill="currentColor"/></svg>
+                  <span class="lc-post-grijs">Een opmerking toevoegen&hellip;</span>
+                  <span class="lc-post-plaats">Plaatsen</span>
+                </div>
+              </div>
+
+            </div>
+          ) : s.beelden ? (
+            <div class="lc-blad">
+              {s.schim && (
+                <div class="lc-schim" aria-hidden="true">
+                  <p class="lc-schim-kruim">Home / Denim</p>
+                  <p class="lc-schim-kop">Wide leg jeans</p>
+                  <p class="lc-schim-prijs">&euro; 79,95</p>
+                  <div class="lc-schim-bollen"><i></i><i></i><i></i><i></i></div>
+                  <div class="lc-schim-maten"><i>XS</i><i>S</i><i>M</i><i>L</i></div>
+                  <div class="lc-schim-knop">In winkelmand</div>
+                </div>
+              )}
+              <div class="lc-rol" data-lc-rol>
+                {s.beelden.map((b, k) => (
+                  <figure class="lc-vak">
+                    <span class="lc-beeld">
+                      <img
+                        src={b.src}
+                        alt={b.alt}
+                        width="760"
+                        height="760"
+                        loading={i === 0 && k < 2 ? 'eager' : 'lazy'}
+                        fetchpriority={i === 0 && k === 0 ? 'high' : undefined}
+                        decoding="async"
+                      />
+                    </span>
+                    <figcaption class="lc-merkje"><b>{String(k + 1).padStart(2, '0')}</b>{b.naam}</figcaption>
+                  </figure>
+                ))}
+              </div>
+              {!stil && (
+                <button class="lc-omlaag" type="button" data-lc-stap="1" aria-label={t.omlaag}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+              )}
+            </div>
+          ) : s.video ? (
+            <video src={s.video} poster={s.src} width="1200" height="728" muted loop playsinline preload={i < 2 ? 'auto' : 'none'} aria-label={s.alt}></video>
+          ) : (
+            <img
+              src={s.src}
+              alt={s.alt}
+              width="1200"
+              height="728"
+              loading={i < 2 ? 'eager' : 'lazy'}
+              fetchpriority={i === 0 ? 'high' : undefined}
+              decoding="async"
+            />
+          )}
+        </li>
+      ))}
+    </ul>
+
+    <!-- Hetzelfde, maar op het telefoonscherm: wat de klant instuurde. -->
+    <ul class="lc-fons">
+      {fonStappen.map((f, k) => (
+        <li class={`lc-slide${k === 0 ? ' is-aan' : ''}`} data-lc-fon data-lc-si={f.si} data-lc-bi={f.bi} aria-hidden="true">
+          {f.src && (
+            <img src={f.src} alt="" width="380" height="800" loading={k < 2 ? 'eager' : 'lazy'} decoding="async" />
+          )}
+        </li>
+      ))}
+    </ul>
+
+    <!-- De plaat. Hij is het enige wat de maat van de doos bepaalt. -->
+    <img class="lc-plaat" src={overlay} alt={plaatAlt} width="1792" height="1013" fetchpriority="high" decoding="async" />
+
+    {!stil && <button class="lc-pijl lc-pijl-vorige" type="button" data-lc-stap="-1" aria-label={t.vorige}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" /></svg>
+    </button>}
+    {!stil && <button class="lc-pijl lc-pijl-volgende" type="button" data-lc-stap="1" aria-label={t.volgende}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+    </button>}
+  </div>
+
+  {!stil && <div class="lc-voet">
+    <p class="lc-naam">
+      {slides.map((s, i) => (
+        <a href={s.href} data-lc-naam hidden={i !== 0}>{s.naam}</a>
+      ))}
+    </p>
+    <div class="lc-balk" aria-hidden="true"><span class="lc-balk-in" data-lc-balk></span></div>
+    <p class="lc-bron">{t.bron}</p>
+  </div>}
+
+  {!stil && <p class="lc-melding" data-lc-melding aria-live="polite">{t.van(1, totaal)}</p>}
+</section>
+
+<style>
+  /* ── DE DOOS ──────────────────────────────────────────────────────────────
+     `aspect-ratio` op de doek en niet op het beeld: dan staat de hoogte vast
+     vóórdat de plaat geladen is en springt er niets. */
+  .lc {
+    --lc-accent: var(--accent, var(--geel, #D2E04A));
+    --lc-rond: var(--rond-m, var(--r-lg, 16px));
+    display: grid; gap: clamp(.9rem, 1.8vw, 1.4rem);
+    width: min(100%, 68rem); margin-inline: auto;
+  }
+  .lc:focus-visible { outline: 2px solid var(--lc-accent); outline-offset: 8px; }
+
+  .lc-doek {
+    position: relative; aspect-ratio: var(--lc-plaat);
+    border-radius: var(--lc-rond); overflow: hidden;
+    /* Neutraal grijs en niet zwart: dit is wat je door de twee uitgesneden
+       schermen ziet zolang een beeld nog laadt. Zwart gaf een knipperende
+       donkere flits op een lichte pagina. */
+    background: var(--bg-raise, #EDEDED);
+    touch-action: pan-y;                /* verticaal scrollen blijft van de pagina */
+  }
+
+  /* ── DE BEELDEN ───────────────────────────────────────────────────────────
+     Alle acht liggen op elkaar op het schermvlak; alleen de actieve is
+     zichtbaar. Overvloeien en niet schuiven: schuiven vraagt om een tweede
+     laag rekenwerk en om beweging die naast een stilstaande laptop juist
+     onrustig oogt. */
+  .lc-slides { position: absolute; left: var(--lc-l); top: var(--lc-t); width: var(--lc-w); height: var(--lc-h); margin: 0; padding: 0; list-style: none; }
+  .lc-fons { position: absolute; left: var(--lc-fl); top: var(--lc-ft); width: var(--lc-fw); height: var(--lc-fh); margin: 0; padding: 0; list-style: none; }
+  /* `pointer-events: none` op wat niet in beeld staat. Zonder die regel ligt
+     de onzichtbare laatste slide over de hele stapel heen en vangt hij de klik
+     op het pijltje van de slide die je wél ziet — de knop werkt dan niet en er
+     is niets aan te zien. */
+  .lc-slide { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .55s cubic-bezier(.33, 1, .68, 1); }
+  .lc-slide.is-aan { opacity: 1; pointer-events: auto; }
+  /* ── LET OP: DE BOUW WIKKELT ELKE <img> IN EEN <picture> ───────────────────
+     De beeldstap van de build zet er een <source type="image/avif"> voor en
+     stopt het geheel in een <picture>. Dat heeft twee gevolgen die allebei een
+     keer stuk zijn gegaan:
+
+     1. In een flexrij is die <picture> het item en niet de <img>. Zonder de
+        regel hieronder kreeg de avatar naast het bijschrift `flex-shrink: 1`
+        van de picture mee en werd hij van 19 naar 12 pixels geknepen: een
+        ovaal in plaats van een rondje. `display: contents` laat de picture uit
+        de opmaak verdwijnen zodat de <img> zelf weer het item is.
+     2. Een kindselector met `>` slaat de <img> over, want in de DOM zit de
+        picture ertussen. Vandaar het tweede pad in de regel daaronder.
+
+     Waarom niet gewoon `.lc-slide img`? Omdat die regel het dan ook wint van
+     elke foto diep in een nagebouwd scherm — een avatar van 44 pixels werd zo
+     een schijf van 125.
+
+     3. De <picture> komt er ná het scopen van Astro in en draagt dus GEEN
+        `data-astro-cid-…`. Een gewone regel wordt gescopet tot
+        `picture[data-astro-cid-…]` en raakt hem daarom nooit. Vandaar
+        `:global(picture)` — de enige plek in dit bestand waar dat nodig is. */
+  .lc-slide :global(picture) { display: contents; }
+  .lc-slide > img, .lc-slide > video,
+  .lc-slide > :global(picture) > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+
+  /* ── DE STAPEL: VIER FOTO'S ONDER ELKAAR ──────────────────────────────────
+     Geen samengestelde plaat meer maar echte losse beelden in het scherm, met
+     de winkelonderdelen ernaast op 30%. Alle maten in `cq`-eenheden, want de
+     doos schaalt met het venster en een vaste pixelmaat zou op een telefoon
+     twee keer zo groot ogen als op een groot scherm.
+
+     `container-type: size` mag hier omdat de slide `inset: 0` in een doos met
+     een vaste procentuele maat staat: zijn hoogte hangt niet van zijn inhoud
+     af, dus er ontstaat geen kringverwijzing. */
+  .lc-slide { container-type: size; }
+  .lc-blad { position: absolute; inset: 0; overflow: hidden; background: #FFF; }
+
+  /* ── DE ROL IS EEN ECHTE SCHUIFBAK ────────────────────────────────────────
+     Lucas: *"Bij catalog wil ik echt een beetje een editorial vibe dat je de
+     volgende foto groot eronder ziet. Als de klant met zijn muis op de laptop
+     staat moet hij ook naar beneden kunnen scrollen op die pagina omdat de
+     diaslides dan pauzeren."*
+
+     Dat kan niet met `translate`: dan bepaalt het script waar je bent en kun je
+     er zelf niet in. Dit is daarom een gewone schuifbak met snappunten. Het
+     afspelen schuift hem programmatisch op, de muis kan hetzelfde doen, en
+     omdat hoveren het afspelen al pauzeerde vechten die twee elkaar niet.
+
+     Een vak is 80% van de schermhoogte en niet 100%: daardoor staat de vólgende
+     foto er altijd al voor een vijfde onder. Dat is de hele editorial-truc — je
+     ziet dat er meer is zonder dat er een balk of een bolletje voor nodig is.
+     De balk zelf is verborgen; de foto eronder is de aanwijzing.
+
+     De ::after is geen versiering maar rekenwerk: zonder die 20% extra ruimte
+     onderaan kan het láátste vak nooit bovenaan komen (4 × 80% inhoud in een
+     bak van 100% geeft 220% schuifruimte, en het laatste vak wil naar 240%). */
+  .lc-rol { display: flex; flex-direction: column; height: 100%; translate: 0 0;
+            /* Uit-expo: hard weg, zacht aan. Dat leest als "dit stopt precies
+               waar het hoort" in plaats van als een schuif die uitbolt. */
+            transition: translate .72s cubic-bezier(.16, 1, .3, 1);
+            scroll-behavior: smooth;
+            overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; }
+  .lc-rol::-webkit-scrollbar { display: none; }
+  .lc-rol::after { content: ""; flex: 0 0 20cqh; }
+  .lc-slide:not(.is-aan) .lc-rol { transition: none; }
+
+  /* Een vak is een editorial opmaak: het etiket in de buitenmarge, de foto
+     ernaast. Samen staan ze gecentreerd in de ZICHTBARE 74,4% — de telefoon
+     begint daar, (67,7827 − 14,9182) ÷ 71,0193. */
+  /* Stil is er geen volgende foto om onder te laten doorkijken, dus dan vult
+     het vak het hele scherm en staat het beeld gewoon gecentreerd. */
+  .lc.is-stil .lc-vak { flex-basis: 100cqh; padding-bottom: 5cqh; }
+  .lc.is-stil .lc-rol::after { content: none; }
+  .lc-vak {
+    flex: 0 0 80cqh; min-height: 0; margin: 0; scroll-snap-align: start;
+    display: flex; align-items: flex-start; justify-content: center;
+    gap: 2.6cqw; padding: 5cqh 25.6cqw 4cqh 0;
+  }
+  .lc-beeld { flex: none; height: 100%; aspect-ratio: 1; display: block; }
+  .lc-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* Het etiket zegt welke plek dit beeld inneemt. In de marge, klein, want de
+     foto is de hoofdzaak; limoen, want het is het enige op dit scherm dat van
+     ons is. */
+  .lc-merkje {
+    /* In de DOM staat het bijschrift ná de foto — zo hoort een <figure> te
+       lezen. Op het scherm hoort het in de LINKERmarge: rechts botst het tegen
+       de verbleekte winkelkolom aan. `order` verplaatst alleen het beeld. */
+    order: -1;
+    flex: none; width: 12cqw; margin-top: .4cqh;
+    display: flex; flex-direction: column; align-items: flex-start; gap: .55em;
+    font-family: var(--mono, var(--font-mono)); font-size: 1.95cqh; font-stretch: 82%;
+    letter-spacing: .1em; text-transform: uppercase; color: #141414;
+  }
+  .lc-merkje b { background: var(--lc-accent); color: #141414; font-weight: 700; padding: .25em .5em; }
+
+
+  /* ── SCROLLGESTUURDE BEWEGING ─────────────────────────────────────────────
+     Lucas: *"Voeg wat fijne satisfying scrollanimaties toe."*
+
+     Dit loopt op de scrolpositie zelf, niet op een klok: `animation-timeline:
+     view()` koppelt de animatie aan hoe ver een vak in de schuifbak zichtbaar
+     is. Daardoor volgt de beweging je vinger of je wiel precies, ook als je
+     halverwege stopt of terugscrollt — dát is wat het prettig maakt, niet de
+     animatie zelf.
+
+     De foto die onderaan staat te wachten is iets kleiner en lichter; hij komt
+     op maat en op kleur zodra hij de hoofdfoto wordt, en zakt weer weg als hij
+     er bovenuit schuift. Het etiket loopt een tikje achter, zodat het beeld
+     eerst landt en het bijschrift erna. Meer niet: deze sectie is eerder al
+     als te druk beoordeeld en beweging die opvalt is beweging die stoort.
+
+     Alles staat achter twee sloten: `@supports` voor browsers die deze
+     tijdlijn nog niet kennen (daar gebeurt gewoon niets, de foto's staan er
+     dan normaal), en `prefers-reduced-motion` voor wie er niet om vraagt. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .lc-beeld { animation: lc-adem linear both; animation-timeline: view(block); }
+      .lc-merkje { animation: lc-etiket linear both; animation-timeline: view(block); }
+    }
+  }
+  @keyframes lc-adem {
+    entry 0%   { opacity: .18; scale: .93; }
+    entry 100% { opacity: 1;   scale: 1; }
+    exit 0%    { opacity: 1;   scale: 1; }
+    exit 100%  { opacity: .18; scale: .97; }
+  }
+  @keyframes lc-etiket {
+    entry 0%   { opacity: 0; translate: 0 .9rem; }
+    entry 92%  { opacity: 1; translate: 0 0; }
+    exit 30%   { opacity: 1; translate: 0 0; }
+    exit 100%  { opacity: 0; translate: 0 -.6rem; }
+  }
+
+  /* ── DE VERBLEEKTE WINKEL ─────────────────────────────────────────────────
+     Dit is geen ontwerp en mag er ook niet als één uitzien. Het staat op 30%
+     en grotendeels achter de telefoon: genoeg om te lezen als productpagina,
+     te weinig om te lezen als aanbod. */
+  .lc-schim {
+    position: absolute; right: 3cqw; top: 11cqh; width: 26cqw;
+    opacity: .3; color: #141414; font-size: 2.4cqh; line-height: 1.35;
+    display: flex; flex-direction: column; align-items: flex-start;
+  }
+  .lc-schim p { margin: 0; }
+  .lc-schim-kruim { font-size: .72em; opacity: .7; }
+  .lc-schim-kop { font-size: 1.5em; font-weight: 600; letter-spacing: -.02em; margin-top: .6em !important; }
+  .lc-schim-prijs { font-weight: 600; margin-top: .45em !important; }
+  .lc-schim-bollen { display: flex; gap: .5em; margin-top: 1.3em; }
+  .lc-schim-bollen i { width: 1.5em; height: 1.5em; border-radius: 50%; background: currentColor; opacity: .35; }
+  .lc-schim-bollen i:first-child { opacity: .6; }
+  .lc-schim-maten { display: flex; gap: .4em; margin-top: 1.2em; }
+  .lc-schim-maten i {
+    min-width: 2.4em; padding: .45em 0; text-align: center; font-style: normal;
+    font-size: .8em; border: 1px solid currentColor; opacity: .8;
+  }
+  .lc-schim-knop {
+    margin-top: 1.2em; width: 100%; padding: .85em 0; text-align: center;
+    background: currentColor; color: #FFF; font-weight: 600; font-size: .9em;
+  }
+
+  /* ── HET PIJLTJE OMLAAG ───────────────────────────────────────────────────
+     Eén haarlijn, gecentreerd onder de foto's en dus óók in de zichtbare 74,4%.
+     Het wipt zachtjes: zonder die beweging ziet niemand dat er meer onder zit,
+     met een balk eromheen wordt het een knop die aandacht opeist. */
+  /* Het pijltje staat in de linkeronderhoek. Niet middenonder, want daar ligt
+     inmiddels de vólgende foto en een grijze haarlijn op een foto is geen
+     aanwijzing maar een vlek; en niet onder het etiket, want daar staat het
+     etiket van de volgende foto al. */
+  .lc-omlaag {
+    position: absolute; bottom: 3.4cqh; left: 4.6cqw; translate: -50% 0;
+    width: 7cqh; height: 7cqh; display: grid; place-items: center;
+    border: 0; background: none; color: #141414; opacity: .38; cursor: pointer;
+    transition: opacity .25s ease;
+    animation: lc-wip 2.4s ease-in-out infinite;
+  }
+  .lc-omlaag { transition: opacity .25s ease, scale .25s cubic-bezier(.16, 1, .3, 1); }
+  .lc-omlaag:hover { scale: 1.14; }
+  .lc-omlaag svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
+  .lc-omlaag:hover { opacity: 1; animation: none; }
+  /* Onderaan de galerij is er niets meer om naar te wijzen. */
+  .lc-blad.is-eind .lc-omlaag { opacity: 0; pointer-events: none; }
+  .lc-omlaag:focus-visible { opacity: 1; outline: 2px solid var(--lc-accent); outline-offset: 2px; }
+  @keyframes lc-wip { 0%, 72%, 100% { translate: -50% 0; } 84% { translate: -50% 18%; } }
+
+
+  /* ── HET NAGEBOUWDE BERICHT ───────────────────────────────────────────────
+     Beelden links, gepraat rechts. De telefoon begint op 74,4% van de breedte
+     en op 34,5% van de hoogte, dus de kop met de naam staat er nog vóór en de
+     onderkant van de zijkolom verdwijnt erachter — precies de goede helft. */
+  .lc-post { position: absolute; inset: 0; display: flex; background: #000; color: #FAFAFA;
+             font-size: 2.35cqh; line-height: 1.45; letter-spacing: -.005em; }
+  .lc-post-beeld { position: relative; width: 53.3cqw; flex: none; overflow: hidden; background: #0A0A0A; }
+  .lc-rol[data-lc-zij] { flex-direction: row; width: 100%; overflow: hidden; scroll-snap-type: none; }
+  .lc-rol[data-lc-zij]::after { content: none; }
+  .lc-vak-zij { flex: 0 0 100%; height: 100%; margin: 0; }
+  .lc-vak-zij img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .lc-post-stip { position: absolute; bottom: 2.4cqh; left: 50%; translate: -50% 0; display: flex; gap: .55em; }
+  .lc-post-stip i { width: .62em; height: .62em; border-radius: 50%; background: #FFF; opacity: .35; transition: opacity .3s ease; }
+  .lc-post-stip i.aan { opacity: 1; }
+
+  .lc-omlaag-zij {
+    left: auto; bottom: auto; right: 1.6cqh; top: 50%; translate: 0 -50%;
+    width: 4.6cqh; height: 4.6cqh; border-radius: 50%;
+    background: rgb(255 255 255 / .8); color: #141414; opacity: .8; animation: none;
+    display: grid; place-items: center;
+  }
+  .lc-omlaag-zij svg { width: 60%; height: 60%; stroke-width: 2.2; }
+  .lc-omlaag-zij:hover { opacity: 1; background: #FFF; }
+
+  /* De zijkolom is opgebouwd zoals een berichtvenster dat echt is: een kop met
+     een streep eronder, daaronder de stroom met het bijschrift en de reacties,
+     en onderaan vast de knoppenrij, het aantal en het invoerveld. Elke regel
+     heeft dezelfde vorm — rondje, tekst, meta-regel eronder — zodat het
+     bijschrift en een reactie op elkaar rijmen in plaats van te botsen. */
+  .lc-post-kant { flex: 1; min-width: 0; border-left: 1px solid #262626;
+                  display: flex; flex-direction: column; overflow: hidden; }
+  .lc-post-ei { width: 4.4cqh; height: 4.4cqh; border-radius: 50%; object-fit: cover; flex: none; display: block; }
+  .lc-post-bol { width: 4.4cqh; height: 4.4cqh; border-radius: 50%; background: #2A2A2A; flex: none; display: block; }
+  .lc-post-grijs { color: #A8A8A8; }
+
+  .lc-post-kop { display: flex; align-items: center; gap: .55em; flex: none;
+                 padding: 1.9cqh 2.2cqh; border-bottom: 1px solid #262626; }
+  .lc-post-kop b { font-weight: 600; }
+  .lc-post-volg { color: #4A9BF7; font-weight: 600; }
+  .lc-post-meer { margin-left: auto; color: #FAFAFA; font-size: 1.15em; line-height: 1; }
+
+  .lc-post-stroom { flex: 1; min-height: 0; overflow: hidden;
+                    padding: 2.2cqh 2.2cqh 0; display: flex; flex-direction: column; gap: 2.4cqh; }
+  .lc-post-regel { display: flex; gap: .85em; align-items: flex-start; }
+  .lc-post-body { min-width: 0; }
+  .lc-post-regel p { margin: 0; }
+  .lc-post-regel b { font-weight: 600; margin-right: .35em; }
+  /* De meta-regel is het verschil tussen "lijkt erop" en "klopt": tijd, aantal
+     en Reageren, kleiner en grijs, met ruimte ertussen. */
+  .lc-post-meta { display: flex; gap: 1.1em; margin-top: .55cqh !important;
+                  font-size: .82em; color: #A8A8A8; }
+  .lc-post-hartje { width: 2.6cqh; height: 2.6cqh; flex: none; margin-top: .9cqh;
+                    fill: none; stroke: #A8A8A8; stroke-width: 1.7; }
+  .lc-post-reacties { list-style: none; margin: 0; padding: 0;
+                      display: flex; flex-direction: column; gap: 2.2cqh; }
+
+  .lc-post-voet { flex: none; padding: 1.7cqh 2.2cqh 1.4cqh; border-top: 1px solid #262626; }
+  .lc-post-acties { display: flex; gap: 1.6cqh; align-items: center; }
+  .lc-post-acties svg { width: 3.6cqh; height: 3.6cqh; fill: none; stroke: #FAFAFA;
+                        stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .lc-post-acties .lc-post-eind { margin-left: auto; }
+  .lc-post-likes { margin: 1.4cqh 0 0; font-weight: 600; }
+  .lc-post-datum { margin: .5cqh 0 0; font-size: .78em; color: #A8A8A8;
+                   text-transform: uppercase; letter-spacing: .02em; }
+
+  .lc-post-invoer { flex: none; display: flex; align-items: center; gap: .9em;
+                    padding: 1.6cqh 2.2cqh; border-top: 1px solid #262626; }
+  .lc-post-invoer svg { width: 3.2cqh; height: 3.2cqh; flex: none; fill: none;
+                        stroke: #FAFAFA; stroke-width: 1.5; }
+  .lc-post-plaats { margin-left: auto; color: #4A9BF7; font-weight: 600; }
+
+  /* De plaat ligt erbovenop. `pointer-events: none` zodat de sleepbeweging en
+     de knoppen eronder gewoon bereikbaar blijven. */
+  .lc-plaat { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+
+  /* ── DE PIJLEN ────────────────────────────────────────────────────────────
+     Alleen op een apparaat met een echte aanwijzer, alleen bij hover of focus,
+     en vierkant omdat het knoppen zijn. Ze staan buiten het laptopscherm, in
+     het grijs van de plaat, zodat ze nooit over een beeld vallen. */
+  .lc-pijl {
+    position: absolute; top: 50%; translate: 0 -50%;
+    width: 2.75rem; height: 2.75rem; display: grid; place-items: center;
+    border: 1px solid rgb(255 255 255 / .35); border-radius: var(--rond-knop, 0);
+    background: rgb(10 10 10 / .55); backdrop-filter: blur(6px); color: #FFF;
+    opacity: 0; transition: opacity .25s ease, background-color .25s ease;
+    cursor: pointer;
+  }
+  .lc-pijl svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; }
+  .lc-pijl-vorige { left: .75rem; }
+  .lc-pijl-volgende { right: .75rem; }
+  .lc-pijl:hover { background: rgb(10 10 10 / .8); }
+  .lc-doek:hover .lc-pijl, .lc:focus-within .lc-pijl { opacity: 1; }
+  .lc-pijl:focus-visible { opacity: 1; outline: 2px solid var(--lc-accent); outline-offset: 2px; }
+  /* Geen aanwijzer (telefoon, tablet) of een smal scherm: weg ermee. Daar is
+     swipen de bediening en een knop alleen maar een ding dat in de weg staat.
+
+     En de schuifbak gaat daar óók uit. Zelf door de galerij scrollen is bedacht
+     voor een muis: hoveren pauzeert het afspelen en je scrollt gericht. Op een
+     telefoon bestaat hoveren niet en is verticaal vegen hoe je de PAGINA leest
+     — dan wordt de laptop een val waar je eerst vier foto's doorheen moet vegen
+     voordat de pagina weer meegeeft. Daar blijft het dus bij vanzelf afspelen
+     en tikken. */
+  @media (hover: none), (max-width: 64rem) {
+    .lc-pijl { display: none; }
+    .lc-rol { overflow: hidden; }
+  }
+
+  /* ── DE VOET: één naam en één streep ──────────────────────────────────────
+     Geen bolletjes. Acht bolletjes onder een laptop zijn acht dingen die om
+     aandacht vragen voor een keuze die niemand hoeft te maken; een streep die
+     opschuift zegt hetzelfde en vraagt niets. */
+  /* ── ÉÉN ETIKET, GEEN PIJLENREGEN ─────────────────────────────────────────
+     Lucas vroeg of er getekende pijlen bij moesten om laptop en telefoon uit
+     elkaar te houden. Dat is hier één etiket geworden, en wel om drie redenen.
+
+     1. De plaat BLOEDT de rechterrand uit. Gemeten loopt de doek op 1440 door
+        tot 1561 terwijl het venster op 1440 ophoudt; op 1600 is dat 135 pixels
+        en op 1280 nog 107. Alles wat je in die rechtermarge tekent — precies
+        waar een pijl naar de telefoon zou moeten staan — is op elke gangbare
+        breedte weggesneden. Dit etiket staat daarom ONDER de plaat, waar niets
+        wordt afgesneden, uitgelijnd op het midden van het telefoonscherm.
+     2. De laptop hoeft geen uitleg: een laptop met een webwinkel erop leest
+        zichzelf, zeker onder een kop die "Jij uploadt. Wij leveren de campagne."
+        zegt. De enige helft die vragen oproept is de telefoon — is dat nou een
+        resultaat of een inzending? Eén regel beantwoordt dat.
+     3. Deze sectie is eerder al als te druk beoordeeld. Twee pijlen en twee
+        onderschriften erbij zijn vier dingen die om aandacht vragen voor één
+        vraag.
+
+     De pijl is een gewoon teken in dezelfde mono als de rest, geen tekening:
+     die schaalt mee, is te vertalen en veroudert niet. */
+  .lc-voet { position: relative; display: flex; align-items: center; gap: clamp(1rem, 3vw, 2rem);
+             padding-right: 38%; }
+  .lc-naam { margin: 0; flex: none; }
+  .lc-naam a {
+    font-family: var(--mono, var(--font-mono)); font-size: .72rem; font-stretch: 82%;
+    letter-spacing: .06em; text-transform: uppercase; color: inherit; opacity: .78;
+    text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: .15rem;
+  }
+  .lc-naam a:hover { opacity: 1; }
+  /* De streep stond dubbel: een achtergrond op .lc-balk zélf én een ::before,
+     en omdat de opacity er een regel later weer op 1 werd gezet werd die
+     achtergrond een volle zwarte lijn. Nu één spoor: het ::before is de
+     haarlijn, de span erin is de stand. */
+  .lc-balk { position: relative; flex: 1; height: 1px; overflow: hidden; }
+  .lc-balk::before { content: ""; position: absolute; inset: 0; background: currentColor; opacity: .2; }
+  .lc-balk-in {
+    position: absolute; inset-block: 0; left: 0; width: calc(100% / var(--lc-n));
+    background: var(--lc-accent); transition: transform .6s cubic-bezier(.16, 1, .3, 1);
+  }
+
+  /* Het midden van het telefoonscherm, uitgerekend uit dezelfde twee getallen
+     die het gat in de plaat bepalen — geen tweede waarheid die kan gaan
+     afwijken als de plaat ooit vervangen wordt. De voet is even breed als de
+     doek. Dat laatste is niet vanzelfsprekend: een pagina mag de voet smaller
+     maken dan de plaat, zodat de laptop de rand uit loopt maar het bijschrift
+     netjes in de kolom blijft. Zet die pagina dan ook `--lc-voet-deel` op het
+     aandeel dat ze kiest (0,78 bij een voet van 78%), anders wijst dit etiket
+     naast de telefoon. Gemeten zonder die correctie: 150 pixels ernaast. */
+  .lc-bron {
+    position: absolute;
+    left: calc((var(--lc-fl) + var(--lc-fw) / 2) / var(--lc-voet-deel, 1));
+    translate: -50% 0;
+    margin: 0; white-space: nowrap;
+    font-family: var(--mono, var(--font-mono)); font-size: .72rem; font-stretch: 82%;
+    letter-spacing: .06em; text-transform: uppercase; opacity: .62;
+  }
+  /* Op een smal scherm is er geen ruimte om ergens onder uit te lijnen: dan
+     gaat hij gewoon op zijn eigen regel staan. */
+  @media (max-width: 48rem) {
+    .lc-voet { padding-right: 0; flex-wrap: wrap; }
+    .lc-bron { position: static; translate: none; flex-basis: 100%; }
+  }
+
+  .lc-melding { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ── RUSTIG VOOR WIE DAAROM VRAAGT ────────────────────────────────────────
+     Geen overvloeiing, en het script start niet vanzelf. Slide 1 blijft staan
+     en de pijlen blijven werken. */
+  @media (prefers-reduced-motion: reduce) {
+    .lc-slide, .lc-balk-in, .lc-pijl, .lc-rol { transition: none; }
+    .lc-rol { scroll-behavior: auto; }
+    .lc-omlaag { animation: none; transition: opacity .25s ease; }
+    .lc-omlaag:hover { scale: 1; }
+  }
+</style>
+
+<script is:inline data-astro-rerun>
+  (() => {
+    const s = document.querySelector('[data-lc]');
+    if (!s || s.dataset.lcAan) return;
+    s.dataset.lcAan = '1';
+
+    const dia = [...s.querySelectorAll('[data-lc-slide]')];
+    const fons = [...s.querySelectorAll('[data-lc-fon]')];
+    const namen = [...s.querySelectorAll('[data-lc-naam]')];
+    const balk = s.querySelector('[data-lc-balk]');
+    const melding = s.querySelector('[data-lc-melding]');
+    const n = dia.length;
+
+    /* Een slide is óf één beeld, óf een stapel beelden onder elkaar. Beide
+       tellen mee als stappen, zodat de streep per FOTO opschuift en niet per
+       dienst — anders staat hij bij de catalogset tien seconden stil. */
+    const rollen = dia.map((e) => e.querySelector('[data-lc-rol]'));
+    const stappen = rollen.map((r) => (r ? r.children.length : 1));
+    const totaal = stappen.reduce((a, b) => a + b, 0);
+    if (totaal < 2) return;
+    const plat = (k, m) => stappen.slice(0, k).reduce((a, b) => a + b, 0) + m;
+
+    const stil = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let i = 0, j = 0, klok = null, zicht = false, gestopt = stil;
+
+    const toon = (k, m) => {
+      i = (k + n) % n;
+      j = Math.max(0, Math.min(m || 0, stappen[i] - 1));
+      dia.forEach((e, q) => {
+        e.classList.toggle('is-aan', q === i);
+        e.setAttribute('aria-hidden', q === i ? 'false' : 'true');
+      });
+      /* De telefoonbeelden staan per STAP in de HTML, niet per slide: welke
+         erbij hoort staat in het element zelf en niet in een telling hier. */
+      fons.forEach((e) => e.classList.toggle('is-aan', +e.dataset.lcSi === i && +e.dataset.lcBi === j));
+      /* Elke rol krijgt zijn stand mee. De rollen die niet in beeld staan gaan
+         terug naar boven; de CSS zet hun overgang dan uit, dus dat gebeurt
+         zonder zichtbaar terugschuiven. */
+      /* Een social-carousel schuift opzij met `translate`; een productgalerij
+         is een echte schuifbak, zodat de bezoeker er met zijn muis zélf in kan.
+         De richting staat in de HTML en niet in het script. */
+      rollen.forEach((r, q) => {
+        if (!r) return;
+        const m = q === i ? j : 0;
+        if (r.hasAttribute('data-lc-zij')) { r.style.translate = -m * 100 + '% 0'; return; }
+        const hg = r.firstElementChild ? r.firstElementChild.offsetHeight : 0;
+        r.scrollTo({ top: m * hg, behavior: q === i && !stil ? 'smooth' : 'auto' });
+        const blad = r.parentElement;
+        if (blad) blad.classList.toggle('is-eind', q === i && j === stappen[q] - 1);
+      });
+      dia.forEach((e, q) => {
+        const st = e.querySelector('[data-lc-stip]');
+        if (st) [...st.children].forEach((b, m) => b.classList.toggle('aan', q === i && m === j));
+      });
+      /* Alleen de zichtbare clip speelt. Vijf clips die allemaal tegelijk in
+         een lus staan te draaien is vijf keer werk voor niets, en op een
+         telefoon is dat meteen te merken. */
+      dia.forEach((e, q) => {
+        const v = e.querySelector('video');
+        if (!v) return;
+        if (q === i) { v.currentTime = 0; v.play().catch(() => {}); } else { v.pause(); }
+      });
+      namen.forEach((e, q) => { e.hidden = q !== i; });
+      balk.style.transform = 'translateX(' + plat(i, j) * 100 + '%)';
+      melding.textContent = melding.textContent.replace(/\d+/, String(plat(i, j) + 1));
+    };
+
+    /* Eén stap is één FOTO. Binnen een stapel schuift de rol op; is die op,
+       dan pas gaat hij naar de volgende dienst. Terug gaat altijd naar het
+       begin van de vorige stapel: halverwege een galerij binnenvallen is
+       verwarrender dan bovenaan beginnen. */
+    const volgende = () => { if (j < stappen[i] - 1) toon(i, j + 1); else toon(i + 1, 0); };
+    const vorige = () => { if (j > 0) toon(i, j - 1); else toon(i - 1, 0); };
+
+    /* ── HETZELFDE, MAAR ZONDER RONDJE ────────────────────────────────────
+       De knoppen mogen ronddraaien: wie op het pijltje drukt wil blijven
+       kijken. Het MUISWIEL mag dat niet, want dan kom je er nooit meer uit —
+       de pagina zou onder je cursor eeuwig in de hero blijven hangen. Deze
+       twee lopen dus tot het einde en geven daarna `false` terug, en dát is
+       het sein om het wiel weer aan de pagina te geven. */
+    const wielVooruit = () => {
+      if (j < stappen[i] - 1) { toon(i, j + 1); return true; }
+      if (i < n - 1) { toon(i + 1, 0); return true; }
+      return false;
+    };
+    const wielTerug = () => {
+      if (j > 0) { toon(i, j - 1); return true; }
+      if (i > 0) { toon(i - 1, stappen[i - 1] - 1); return true; }
+      return false;
+    };
+
+    /* Wie met de muis in de galerij scrolt, bepaalt zelf waar hij is. Dat mag:
+       hoveren pauzeert het afspelen toch al. Alleen de streep en de melding
+       moeten meelopen, anders klopt de stand niet meer zodra het afspelen na
+       het weghalen van de muis weer aanslaat. Geen `stop()` dus — scrollen is
+       kijken, geen ingreep. */
+    rollen.forEach((r, q) => {
+      if (!r || r.hasAttribute('data-lc-zij')) return;
+      let wacht = null;
+      r.addEventListener('scroll', () => {
+        clearTimeout(wacht);
+        wacht = setTimeout(() => {
+          if (q !== i) return;
+          const hg = r.firstElementChild ? r.firstElementChild.offsetHeight : 0;
+          if (!hg) return;
+          const m = Math.max(0, Math.min(Math.round(r.scrollTop / hg), stappen[q] - 1));
+          if (m === j) return;
+          j = m;
+          const blad = r.parentElement;
+          if (blad) blad.classList.toggle('is-eind', j === stappen[q] - 1);
+          balk.style.transform = 'translateX(' + plat(i, j) * 100 + '%)';
+          melding.textContent = melding.textContent.replace(/\d+/, String(plat(i, j) + 1));
+        }, 130);
+      }, { passive: true });
+    });
+
+    /* setTimeout en geen setInterval: elke slide mag zijn eigen duur hebben, en
+       een clip van zeven seconden hoort niet na tweeënhalf weg te springen. De
+       volgende wachttijd wordt dus per slide opnieuw bepaald. */
+    const duurVan = (k) => Number(dia[k].dataset.lcDuur) || 2500;
+    const pauze = () => { clearTimeout(klok); klok = null; };
+    const start = () => {
+      if (gestopt || !zicht || klok) return;
+      klok = setTimeout(() => { klok = null; volgende(); start(); }, duurVan(i));
+    };
+    /* Eén keer ingrijpen en het afspelen komt niet meer terug. Dat is met opzet
+       definitief: een carousel die na drie seconden weer verder springt terwijl
+       iemand aan het kijken is, is de meest gehate vorm die er bestaat. */
+    const stop = () => { gestopt = true; pauze(); };
+
+    s.addEventListener('click', (e) => {
+      const k = e.target.closest('[data-lc-stap]');
+      if (!k) return;
+      stop(); Number(k.dataset.lcStap) > 0 ? volgende() : vorige();
+    });
+    s.addEventListener('keydown', (e) => {
+      const vooruit = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+      const terug = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
+      if (!vooruit && !terug) return;
+      e.preventDefault(); stop(); vooruit ? volgende() : vorige();
+    });
+
+    let x0 = null;
+    s.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+    s.addEventListener('pointerup', (e) => {
+      if (x0 === null) return;
+      const d = e.clientX - x0; x0 = null;
+      if (Math.abs(d) < 40) return;
+      stop(); d < 0 ? volgende() : vorige();
+    });
+    s.addEventListener('pointercancel', () => { x0 = null; });
+
+    /* ── HET MUISWIEL LOOPT DOOR DE HELE REEKS ────────────────────────────
+       Lucas: *"als je op de laatste foto van catalog zit en je hard door
+       scrollt dat je dan ook naar de volgende dia slide gaat ... en bij de
+       laatste weer hard doorscrollen en je gaat naar de volgende dia slide."*
+
+       Drie soorten slides, drie afspraken:
+
+       · Een PRODUCTGALERIJ scrollt zichzelf — dat is een echte schuifbak en
+         daar hoort het script vanaf te blijven. Alleen aan de uiteinden nemen
+         we het over, want daar zou de pagina anders wegglijden.
+       · Een SOCIAL-CAROUSEL schuift opzij en heeft dus geen eigen scrol. Daar
+         vertaalt het wiel meteen naar de volgende foto.
+       · Een LOSSE SLIDE heeft niets om doorheen te lopen en geeft het wiel
+         meteen door.
+
+       De drempel is er met opzet: zonder die 200 pixels springt de reeks al
+       verder bij het minste trackpadtrilletje, en dan is de laptop een val.
+       Met de drempel is het een bewuste duw — "hard doorscrollen". De teller
+       loopt leeg na 350 ms stilte, zodat twee losse duwtjes niet stiekem bij
+       elkaar worden opgeteld.
+
+       En op de laatste slide grijpen we NIET in: daar geeft het wiel gewoon de
+       pagina weer terug. Zonder die uitgang kom je er met de muis nooit meer
+       onderuit. Op aanraakschermen staat het hele ding uit; daar is verticaal
+       vegen hoe je de pagina leest. */
+    const muis = matchMedia('(hover: hover) and (min-width: 64rem)');
+    /* TWEE drempels, en dat is de hele bediening in één regel: binnen een
+       galerij is één muiswiel genoeg, eruit springen kost er twee. Zo loop je
+       vanzelf door de foto's en moet je bewust duwen om de dienst te wisselen.
+
+       Waarom het wiel óók binnen de galerij wordt overgenomen, terwijl dat een
+       echte schuifbak is: met `scroll-snap: mandatory` haalt één muiswiel van
+       100 pixels de helft van een vak van 352 niet, en snapt de browser netjes
+       terug naar waar je vandaan kwam. Gemeten: zestien losse wielen achter
+       elkaar en er gebeurde niets. Nu telt het script de duwen op en zet het
+       de schuifbak zelf naar het volgende vak. */
+    const BINNEN = 50, ERUIT = 240;
+    let pot = 0, potKlok = null;
+    s.addEventListener('wheel', (e) => {
+      if (!muis.matches || e.ctrlKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const omlaag = e.deltaY > 0;
+      const kan = omlaag ? (j < stappen[i] - 1 || i < n - 1) : (j > 0 || i > 0);
+      /* Op de laatste slide grijpen we NIET in: daar geeft het wiel de pagina
+         weer terug. Zonder die uitgang kom je er met de muis nooit meer
+         onderuit. Op aanraakschermen staat het hele ding uit; daar is
+         verticaal vegen hoe je de pagina leest. */
+      if (!kan) { pot = 0; return; }
+      e.preventDefault();
+      if ((pot > 0) !== omlaag) pot = 0;   /* van richting gewisseld: opnieuw tellen */
+      pot += e.deltaY;
+      clearTimeout(potKlok);
+      potKlok = setTimeout(() => { pot = 0; }, 500);
+      const eigen = omlaag ? j < stappen[i] - 1 : j > 0;
+      if (Math.abs(pot) < (eigen ? BINNEN : ERUIT)) return;
+      pot = 0;
+      (omlaag ? wielVooruit : wielTerug)();
+    }, { passive: false });
+
+    s.addEventListener('mouseenter', pauze);
+    s.addEventListener('mouseleave', start);
+    /* Buiten beeld ook de clip stilzetten: een lus die doordraait in een tab
+       waar niemand kijkt, kost accu en levert niets op. */
+    const clipsUit = () => dia.forEach((e) => { const v = e.querySelector('video'); if (v) v.pause(); });
+
+    new IntersectionObserver((rs) => {
+      zicht = rs[0].isIntersecting;
+      if (zicht) { start(); toon(i, j); } else { pauze(); clipsUit(); }
+    }, { threshold: .35 }).observe(s);
+  })();
+</script>

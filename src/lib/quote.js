@@ -649,16 +649,26 @@ export function paymentDescription(quote, lang = 'en') {
 
   for (const service of PAYABLE_SERVICES) {
     for (const [lo] of LADDER[service]) {
-      for (const [o, x] of [[0, 0], [1, 0], [0, 3], [2, 5]]) {
-        const q = quoteOrder({ service, products: lo, outfits: o, extras: x });
+      /* ── DE STIJLTOESLAG LOOPT MEE — 17 september 2026 ────────────────────
+         Deze lus liep vier combinaties van outfits en extra's af en liet de
+         toeslag van een eigen stijl buiten beeld. Dat was precies het gat: het
+         lopende totaal in de browser kende het veld niet, deze controle keek er
+         niet naar, en dertig producten met een toeslag van € 10 gaven een
+         verschil van € 300 dat de klant pas bij Mollie zag.
+
+         De vierde waarde in elk paar is de toeslag in CENTEN per product —
+         nul, een rond bedrag, en één dat niet rond deelt, omdat afronding
+         precies is waar twee implementaties uit elkaar lopen. */
+      for (const [o, x, sc] of [[0, 0, 0], [1, 0, 0], [0, 3, 0], [2, 5, 0], [0, 0, 1000], [1, 2, 733]]) {
+        const q = quoteOrder({ service, products: lo, outfits: o, extras: x, styleSurchargeCents: sc });
         const expectedNet = cents(
           lo * ladderRate(service, lo)
           + Math.min(o, Math.min(lo, MAX_OUTFIT_PRODUCTS)) * OUTFIT_SURCHARGE
           + Math.min(x, lo * MAX_EXTRA_PER_PRODUCT) * extraPhotoRate(lo)
-        );
+        ) + lo * sc;
         if (q.netCents !== expectedNet) {
           throw new Error(
-            `quote.js: ${service} at ${lo} products (${o} outfits, ${x} extras) came to `
+            `quote.js: ${service} at ${lo} products (${o} outfits, ${x} extras, ${sc}c style surcharge) came to `
             + `${q.netCents} cents, expected ${expectedNet}. The server quote and the ladder `
             + 'have drifted — see src/data/pricing.js.'
           );

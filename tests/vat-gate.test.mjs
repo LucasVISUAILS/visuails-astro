@@ -152,6 +152,73 @@ console.log('\n── de termijnen staan in de code, niet in een pagina ──')
     Object.keys(REVIEW).sort(), ['approved', 'expired', 'pending', 'rejected']);
 }
 
+/* ── EN GEEN NEDERLANDSE BANK OP EEN BESTELLING ZONDER BTW ─────────────────
+ *
+ * 17 september 2026. `excludeIdeal` haalt iDEAL uit de betaalmethoden zodra een
+ * bestelling op 0% is afgerekend — verlegd, of buiten de EU. Dat is de
+ * voorkoming die hoort bij paymentMismatch() hierboven: die MELDT achteraf dat
+ * er met een Nederlandse bank is betaald op een buitenlandse claim, deze zorgt
+ * dat het niet kan.
+ *
+ * Er zijn DRIE plekken waar een betaling ontstaat, en tot vandaag deden er twee
+ * dit wel: de bestelroute en de betaallink. Het derde — "nu betalen" in het
+ * dashboard van de klant, en juist het pad waar de klant zélf op drukt — deed
+ * het niet, en haalde `vat_rate` niet eens op.
+ *
+ * Op de bron en niet op gedrag: de drie aanroepen zijn drie regels, en wat deze
+ * toets moet vangen is dat er een vierde bijkomt zonder die regel. */
+console.log('\nelk betaalpad sluit iDEAL uit op een bestelling zonder btw');
+{
+  const { readFileSync: lezen } = await import('node:fs');
+  const zonderNoten = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  for (const [bestand, patroon] of [
+    ['functions/api/order.js', /excludeIdeal:\s*vatCall\.rate === 0/],
+    ['src/lib/betaallink.js', /excludeIdeal:\s*Number\(o\.vat_rate\) === 0/],
+    ['src/lib/account.js', /excludeIdeal:\s*Number\(order\.vat_rate\) === 0/],
+  ]) {
+    const bron = zonderNoten(lezen(new URL(`../${bestand}`, import.meta.url), 'utf8'));
+    check(`${bestand} sluit iDEAL uit op 0%`, patroon.test(bron), true);
+  }
+  /* En het dashboardpad moet het tarief ook echt ophalen — zonder die kolom is
+     de regel hierboven altijd onwaar en doet hij niets. */
+  const acc = zonderNoten(lezen(new URL('../src/lib/account.js', import.meta.url), 'utf8'));
+  check('en haalt vat_rate op', /vat_cents,\s*vat_rate,\s*review_state/.test(acc), true);
+}
+
+/* ── EEN BESTELLING IN BEOORDELING VERLIEST ZIJN WEEK NIET ─────────────────
+ *
+ * 17 september 2026. De btw-poort houdt een bestelling tegen: geen betaallink,
+ * netjes op de lijst. Maar `window_expires_at` werd bij het bestellen gezet
+ * zodra er een week én een bedrag was — zonder te kijken of er ook betaald KON
+ * worden. Zeven dagen later ruimde de nachtelijke taak de reservering op en
+ * kreeg de klant een mail dat "de betaaltermijn is verstreken", over een link
+ * die nooit is verstuurd.
+ *
+ * Drie reparaties, en ze horen bij elkaar: de klok start niet meer bij een
+ * gesloten poort, hij start alsnog bij goedkeuring, en de opruimtaak slaat over
+ * wat nog in beoordeling staat. Deze toets bewaakt alle drie op de bron — het
+ * gedrag zit verdeeld over drie processen die je niet in één doorloop hebt. */
+console.log('\neen bestelling in btw-beoordeling houdt zijn reservering');
+{
+  const { readFileSync: lezen } = await import('node:fs');
+  const zonderNoten = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const order = zonderNoten(lezen(new URL('../functions/api/order.js', import.meta.url), 'utf8'));
+  check('de betaaltermijn start alleen als er betaald kan worden',
+    /if \(finalWindow && quote && vatReview\.payableNow && !review\.needsReview\)/.test(order), true);
+  /* Woordelijk dezelfde voorwaarde als bij de betaallink zelf: twee plekken die
+     hetzelfde moeten beslissen, horen dat met dezelfde woorden te doen. */
+  check('en met dezelfde voorwaarde als de betaallink',
+    (order.match(/vatReview\.payableNow && !review\.needsReview/g) || []).length >= 2, true);
+
+  const cron = lezen(new URL('../cron/index.js', import.meta.url), 'utf8');
+  check('de opruimtaak slaat een bestelling in beoordeling over',
+    /COALESCE\(review_state, ''\) <> 'pending'/.test(cron), true);
+
+  const adm = lezen(new URL('../src/lib/admin.js', import.meta.url), 'utf8');
+  check('en de klok start alsnog bij goedkeuring',
+    /window_expires_at = CASE[\s\S]{0,200}?window_start IS NOT NULL AND window_expires_at IS NULL/.test(adm), true);
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) { console.log(`${fail} FAILED`); process.exit(1); }
 console.log('all passed');

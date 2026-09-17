@@ -102,9 +102,16 @@ const VORMEN = [
 const c = nl ? {
   h2: 'Van jouw foto naar je shop.',
   stations: [
-    ['01', 'Jij', 'Fotografeer je product zoals het erbij ligt. Magazijnvloer, telefoon, geen statief. Vijf foto’s zijn genoeg.'],
+    ['01', 'Jij', 'Fotografeer je product zoals het erbij ligt. Magazijnvloer, telefoon, geen statief. Een voor- en achterkant nemen we al aan; zit er meer op te zien, stuur er dan meer mee.'],
     ['02', 'Wij', 'Wij bouwen de beelden op jouw eigen product. Een specialist kijkt elk beeld na voordat het weggaat.'],
-    ['03', 'Je dashboard', 'Eén link, geen account. Beeld voor beeld goedkeuren of een revisie vragen, en alles in één keer downloaden.'],
+    /* ── "DASHBOARD" WAS HET MEEST TOOL-ACHTIGE WOORD OP DE VOORPAGINA ──────
+       17 september 2026. Deze band is de plek waar een bezoeker in vier stappen
+       leest wat er gebeurt, en stap 3 heette naar een SCHERM in plaats van naar
+       wat je krijgt. Samen met stap 1 en 4 ("Jij", "Je shop") stonden er dan
+       drie stappen van de klant tegenover één van ons. De inhoud verandert niet
+       — het is nog steeds één link zonder account — alleen heet de stap nu naar
+       de beelden en niet naar de bediening. */
+    ['03', 'Jouw beelden', 'Eén link, geen account. Beeld voor beeld goedkeuren of een revisie vragen, en alles in één keer downloaden.'],
     ['04', 'Je shop', 'Vierkant voor je webshop, staand voor je advertenties, verticaal voor je reels. Uit dezelfde bestelling.'],
   ],
   inLabel: 'Ingestuurd', inNoot: '5 foto’s · telefoon',
@@ -125,9 +132,10 @@ const c = nl ? {
 } : {
   h2: 'From your photo to your shop.',
   stations: [
-    ['01', 'You', 'Photograph your product the way it lies. Warehouse floor, phone, no tripod. Five photos is enough.'],
+    ['01', 'You', 'Photograph your product the way it lies. Warehouse floor, phone, no tripod. A front and a back is all we need to start; if there is more to see, send more.'],
     ['02', 'Us', 'We build the visuals on your own product. A specialist checks every image before it ships.'],
-    ['03', 'Your dashboard', 'One link, no account. Approve image by image or ask for a revision, and download it all at once.'],
+    /* Zie de Nederlandse tegenhanger. */
+    ['03', 'Your images', 'One link, no account. Approve image by image or ask for a revision, and download it all at once.'],
     ['04', 'Your shop', 'Square for your shop, upright for your ads, vertical for your reels. From the same order.'],
   ],
   inLabel: 'Sent in', inNoot: '5 photos · phone',
@@ -263,9 +271,17 @@ const c = nl ? {
      44/56: de tekst is kort en het beeld is het argument, dus het beeld krijgt
      de grotere helft. `align-items: center` en niet `start`: bij één woord en
      één zin naast vijf foto's oogt bovenlijnen uitgelijnd als een fout. */
+  /* ── 13 september 2026 · 40/60 EN NIET 44/56 ────────────────────────────
+     Lucas: *"Ik vind de sectie met de roze broek ontzettend chaotisch."*
+     Gemeten op 1440 was dat geen kwestie van smaak: de beeldkolom was 806
+     breed, waarvan 648 voor de tegels, en met vijf naast elkaar werd elke foto
+     121 pixels. Op 121 pixels is de detailfoto (een hand op de knoop) een roze
+     vlek en zijn de voor- en achterkant niet uit elkaar te houden. Vijf
+     onleesbare vlekken naast elkaar — dát is wat er chaotisch uitzag.
+     De tekst ernaast had 634 en gebruikte er 360. */
   .lb-station {
     display: grid;
-    grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
+    grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
     align-items: center;
   }
   /* De even stations spiegelen, zodat de pagina heen en weer loopt in plaats van
@@ -273,6 +289,14 @@ const c = nl ? {
      de leesvolgorde in de HTML blijft tekst-dan-beeld, en dat is de volgorde
      waarin een schermlezer hem hoort. */
   .lb-station:nth-of-type(even) .lb-tekst { order: 2; }
+  /* ── EN DE KOLOMMEN SPIEGELEN MEE — 13 september 2026 ───────────────────
+     `order` verwisselt de plek van de twee blokken, niet de BREEDTE van de
+     kolommen. Op de even stations kwam het beeld daardoor in de SMALLE kolom
+     te staan: /02 Wij toonde de vier geleverde beelden — het resultaat waar de
+     hele pagina naartoe werkt — op 96 pixels, terwijl drie regels tekst er 864
+     kregen. Gemeten, en het verklaart waarom de band als geheel druk oogde:
+     bij elk tweede station stond het argument in de kleine helft. */
+  .lb-station:nth-of-type(even) { grid-template-columns: minmax(0, 60fr) minmax(0, 40fr); }
 
   .lb-licht { background: var(--paper); color: var(--ink); }
   /* ── DE DONKERE STATIONS DRAGEN `.op-nacht` ──────────────────────────────
@@ -339,11 +363,24 @@ const c = nl ? {
   /* ── DE VIJF EN DE VIER ──────────────────────────────────────────────────
      De verhoudingen blijven staan zoals ze zijn — 9:16 erin, 1:1 eruit — want
      die vormwissel vertelt het verhaal nog een keer. Zie de kop. */
-  .lb-vijf, .lb-vier, .lb-vormen { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(5px, .7vw, 10px); }
-  .lb-vijf { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .lb-vijf, .lb-vier, .lb-vormen { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(6px, .8vw, 12px); }
+  /* ── EEN FOTO DIE LEIDT, EN VIER DIE ERBIJ HOREN ────────────────────────
+     Vijf gelijke tegels naast elkaar zeggen dat de vijf foto's even belangrijk
+     zijn, en dat zijn ze niet: de voorkant is waar het beeld uit opgebouwd
+     wordt en de rest vult aan. Met de eerste over twee kolommen en twee rijen
+     wordt hij ruim twee keer zo groot als de andere vier, en staat er een
+     compositie in plaats van een contactvel. De rij is precies vol — vier
+     kolommen, twee rijen, acht vakken, waarvan de eerste foto er vier vult. */
+  .lb-vijf { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .lb-vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .lb-vijf li, .lb-vier li { overflow: hidden; background: var(--paper-2); }
-  .lb-vijf li { aspect-ratio: 3 / 4; }
+  .lb-vijf li { aspect-ratio: 1; }
+  /* `aspect-ratio: 1` en niet `auto`: zonder verhouding neemt de leidende foto
+     zijn eigen 3:4 aan, wordt 469 hoog waar de twee rijen ernaast 352 zijn, en
+     dan zweeft elk van de vier kleine tegels met 54 pixels lucht onder zich in
+     een te hoge rij. Vierkant klopt de rekensom precies: twee kolommen plus de
+     tussenruimte is even breed als twee rijen plus de tussenruimte hoog. */
+  .lb-vijf li:first-child { grid-column: span 2; grid-row: span 2; aspect-ratio: 1; }
   .lb-vier li { aspect-ratio: 1; }
   .lb-vijf img, .lb-vier img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -359,22 +396,35 @@ const c = nl ? {
   .lb-vorm-etiket b { color: var(--ink); font-weight: 500; }
 
   /* ── STATION 03 · HET SCHERM ─────────────────────────────────────────────
-     Eén toon lichter dan de grond eromheen, zodat het als een venster leest en
-     niet als een gat. Dezelfde trap die `.op-nacht` gebruikt. */
-  .lb-dash { border: 1px solid rgb(255 255 255 / .16); background: var(--ink-850, #1A1A1A); }
+     ── WIT OP ZWART, EN NIET DONKER OP DONKER — 13 september 2026 ──────────
+     Lucas: *"Wat ik eerder ook al aangaf, bij mock-ups altijd tegenovergestelde
+     kleur gebruiken om contrast te creëren. Dus dit dashboard moet wit worden
+     op een zwarte achtergrond."*
+
+     Wat er stond was een kaart van #1A1A1A op een grond van #0D0D0D: één toon
+     verschil. Dat leest niet als een scherm dat vóór de pagina hangt maar als
+     een vlek erin, en de randen ervan moest je zoeken. Wit op zwart is precies
+     wat een mock-up moet doen — het ding dat je laat zien staat los van de
+     pagina eromheen.
+
+     Binnen de kaart draaien daarom ALLE kleuren mee: de balk, de randen van de
+     tegels, de knoppen en de noot. Een enkele regel die nog wit zou zijn,
+     verdwijnt nu in de kaart in plaats van in de grond, en dat is dezelfde fout
+     één laag dieper. */
+  .lb-dash { border: 1px solid rgb(0 0 0 / .1); background: #FFF; color: var(--ink, #111); }
   .lb-dash-balk {
     display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
-    padding: .65rem .9rem; border-bottom: 1px solid rgb(255 255 255 / .14);
+    padding: .65rem .9rem; border-bottom: 1px solid rgb(0 0 0 / .1);
   }
-  .lb-dash-merk { font-family: var(--font-heading); font-weight: 700; font-size: .8rem; letter-spacing: .04em; color: #FFF; }
-  .lb-dash-ref { color: rgb(255 255 255 / .55); }
+  .lb-dash-merk { font-family: var(--font-heading); font-weight: 700; font-size: .8rem; letter-spacing: .04em; color: #111; }
+  .lb-dash-ref { color: rgb(0 0 0 / .55); }
   .lb-dash-voorbeeld {
-    margin-left: auto; color: rgb(255 255 255 / .55);
-    border: 1px solid rgb(255 255 255 / .22); border-radius: var(--r-pill); padding: .1rem .5rem;
+    margin-left: auto; color: rgb(0 0 0 / .55);
+    border: 1px solid rgb(0 0 0 / .18); border-radius: var(--r-pill); padding: .1rem .5rem;
   }
   .lb-dash-body { padding: .9rem; display: grid; gap: .8rem; }
   .lb-dash-tegels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
-  .lb-dash-tegel { position: relative; aspect-ratio: 1; overflow: hidden; background: #111; border: 1px solid rgb(255 255 255 / .1); }
+  .lb-dash-tegel { position: relative; aspect-ratio: 1; overflow: hidden; background: #F2F2F2; border: 1px solid rgb(0 0 0 / .08); }
   .lb-dash-tegel img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* Een niet-goedgekeurd beeld wacht nog; dat zie je aan de halve dekking en
      niet aan een tweede kleur. */
@@ -392,16 +442,16 @@ const c = nl ? {
      er stond is dat "revisie" nu een knop is en geen tekstlinkje. */
   .lb-dash-acties {
     display: flex; flex-wrap: wrap; gap: .45rem; margin: 0;
-    padding-top: .75rem; border-top: 1px solid rgb(255 255 255 / .14);
+    padding-top: .75rem; border-top: 1px solid rgb(0 0 0 / .1);
   }
   .lb-dash-knop {
     font-size: .78rem; font-weight: 600; line-height: 1.2;
     padding: .52rem .9rem; border: 1px solid transparent; white-space: nowrap;
   }
   .lb-dash-knop.is-ja { background: var(--accent); color: var(--accent-ink); }
-  .lb-dash-knop.is-rev { background: transparent; color: #FFF; border-color: rgb(255 255 255 / .55); }
-  .lb-dash-knop.is-dl { background: transparent; color: rgb(255 255 255 / .6); border-color: rgb(255 255 255 / .2); margin-left: auto; }
-  .lb-dash-noot { margin: 0; font-size: .76rem; line-height: 1.5; color: rgb(255 255 255 / .55); }
+  .lb-dash-knop.is-rev { background: transparent; color: #111; border-color: rgb(0 0 0 / .45); }
+  .lb-dash-knop.is-dl { background: transparent; color: rgb(0 0 0 / .6); border-color: rgb(0 0 0 / .18); margin-left: auto; }
+  .lb-dash-noot { margin: 0; font-size: .76rem; line-height: 1.5; color: rgb(0 0 0 / .58); }
 
   /* ── SMAL ────────────────────────────────────────────────────────────────
      Stapelen, en de spiegeling eraf: op één kolom is "om en om" betekenisloos
@@ -412,7 +462,11 @@ const c = nl ? {
     .lb-tekst { padding-bottom: 0; }
     /* Vijf staande foto's naast elkaar op 390px is 70 pixels per foto: dan zie
        je dat er vijf zijn en niet wat erop staat. Twee rijen van drie en twee. */
+    /* Op één kolom is er breedte zat en heeft de leidende foto geen functie
+       meer: twee rijen van drie en twee, alle vijf even groot. */
     .lb-vijf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lb-vijf li { aspect-ratio: 3 / 4; }
+    .lb-vijf li:first-child { grid-column: auto; grid-row: auto; aspect-ratio: 3 / 4; }
     .lb-vier { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .lb-dash-knop.is-dl { margin-left: 0; }
   }

@@ -420,6 +420,7 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
     <p class="ls-set-noot mono">{c.setNote}</p>
 
     <div class="ls-ladder">
+      <div class="ls-ladder-tabel">
       <p class="etiket">{c.ladderH}</p>
       <div class="tabel-schuif">
         <table class="lijst">
@@ -436,10 +437,13 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
           </tbody>
         </table>
       </div>
-      <p class="lopend ls-ladder-noot">{c.ladderNote}</p>
-      <p class="acties">
-        <a class="knop knop-inkt" href={lp('/start/lifestyle')}>{c.ladderCta}</a>
-      </p>
+      </div>
+      <div class="ls-ladder-naast">
+        <p class="lopend ls-ladder-noot">{c.ladderNote}</p>
+        <p class="acties">
+          <a class="knop knop-inkt" href={lp('/start/lifestyle')}>{c.ladderCta}</a>
+        </p>
+      </div>
     </div>
   </section>
 
@@ -584,7 +588,17 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
   .ls-set b, .ls-stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; }
   .ls-set-noot { margin-top: 1.2rem; color: var(--inkt-2); }
 
-  .ls-ladder { display: grid; gap: .9rem; justify-items: start; max-width: 34rem; margin-top: clamp(2.5rem, 5vw, 4rem); }
+  /* ── DE TABEL BLIJFT SMAL, HET BLOK NIET — 13 september 2026 ────────────
+     Zelfde meting als op /catalog: de tabel stond 544 breed in een paneel van
+     1392 en liet 848 pixels leeg staan. De tabel zelf mag niet breder worden —
+     twee kolommen over 1400px zetten een meter wit tussen het aantal en het
+     tarief — dus gaan de noot en de knop ernaast in plaats van eronder. */
+  .ls-ladder { display: grid; gap: clamp(1.4rem, 3vw, 3rem); margin-top: clamp(2.5rem, 5vw, 4rem); align-items: start; }
+  .ls-ladder-tabel { display: grid; gap: .9rem; justify-items: start; max-width: 34rem; }
+  .ls-ladder-naast { display: grid; gap: 1.1rem; justify-items: start; align-content: center; max-width: 40ch; }
+  @media (min-width: 62rem) {
+    .ls-ladder { grid-template-columns: minmax(0, 34rem) minmax(0, 1fr); align-items: center; }
+  }
   .ls-ladder .tabel-schuif { width: 100%; }
   .ls-ladder-noot { font-size: .92rem; }
 

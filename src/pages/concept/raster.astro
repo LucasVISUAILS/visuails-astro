@@ -1,0 +1,334 @@
+---
+/**
+ * VOORSTEL A · RASTER — de voorpagina als meetblad. 13 september 2026.
+ *
+ * Lucas: *"ik wil dat je hem volledig van de grond af puur front end weer gaat
+ * opbouwen door het echt minimalistisch en duidelijk te maken."*
+ *
+ * ── WAT DIT VOORSTEL DOET ─────────────────────────────────────────────────
+ * Het raster dat de hele site draagt, wordt ZICHTBAAR. Twaalf kolommen met
+ * haarlijnen lopen van boven naar beneden door de pagina, en er is geen enkel
+ * blok dat er niet op staat. Consistentie is hier geen belofte in een
+ * ontwerpdocument maar iets wat een bezoeker letterlijk ziet: als één ding
+ * naast het raster zou staan, zie je dat meteen — en dus gebeurt het niet.
+ *
+ * Waarom dat bij VISUAILS past: PRODUCT.md zegt *"a visitor should feel they
+ * are looking at an instrument, not a service page — the confidence on display
+ * comes from visible control."* Een zichtbaar meetraster is de kortste weg naar
+ * zichtbare controle, en het kost geen enkele kleur.
+ *
+ * ── DE LETTERS ───────────────────────────────────────────────────────────
+ * Anybody, Instrument Sans en Martian Mono blijven, op jouw keuze "licht +
+ * limoen behouden". Dat is ook de juiste keuze: een merk dat zijn letter al
+ * gekozen heeft, moet die niet elke ronde opnieuw ter discussie stellen.
+ *
+ * Alle maten komen uit src/styles/stelsel.css. Alle tekst uit conceptInhoud.js.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+import '../../styles/stelsel.css';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const { c, sample, RUNGS, SFEER, ladderRate } = inhoud(lang);
+
+const KOLOMMEN = Array.from({ length: 12 });
+
+/* De vijf ingestuurde telefoonfoto's en de vier die eruit kwamen — dezelfde
+   bestelling die de huidige voorpagina ook toont, maar hier op het raster. */
+const INGESTUURD = [
+  ['/img/ba2-voor-front.webp', 'Telefoonfoto: een roze jeans plat op een betonnen magazijnvloer, voorkant'],
+  ['/img/ba2-voor-achter.webp', 'Telefoonfoto: dezelfde jeans omgedraaid, achterkant'],
+  ['/img/ba2-voor-detail.webp', 'Telefoonfoto: een hand houdt de tailleband met de knoop omhoog'],
+  ['/img/ba2-voor-textuur.webp', 'Telefoonfoto: het weefsel van dichtbij'],
+  ['/img/ba2-voor-pasvorm.webp', 'Spiegelselfie waarop de jeans gedragen wordt'],
+];
+const GELEVERD = [
+  ['/img/ba2-na-front.webp', 'Afgewerkt catalogbeeld: de jeans recht van voren op wit'],
+  ['/img/ba2-na-achter.webp', 'Afgewerkt catalogbeeld: de achterkant op wit'],
+  ['/img/ba2-na-detail.webp', 'Afgewerkt detailbeeld: de knoop en de tailleband'],
+  ['/img/ba2-na-model.webp', 'Afgewerkt beeld: de jeans gedragen door een model'],
+];
+---
+<ConceptLayout
+  title="Voorstel A · Raster — VISUAILS"
+  description="Voorstel A voor de nieuwe voorpagina: een zichtbaar meetraster van twaalf kolommen waar elk blok op staat."
+  lang={lang}
+  grond="vel"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  <div class="raster-achter" aria-hidden="true">
+    <div class="binnen"><div class="rij">{KOLOMMEN.map(() => <span />)}</div></div>
+  </div>
+
+  <div class="vel">
+    <header class="balk lijn-onder">
+      <div class="binnen balk-in">
+        <a class="balk-merk" href={lp('/')} aria-label="VISUAILS">
+          <svg class="merkteken" aria-hidden="true"><use href="#markglyph" /></svg>
+        </a>
+        <nav class="balk-nav mono" aria-label="Hoofd">
+          {c.nav.map(([naam, doel]) => <a href={doel}>{naam}</a>)}
+        </nav>
+        <a class="knop knop-geel" href={lp('/start')}>{c.ctaStart}</a>
+      </div>
+    </header>
+
+    <main id="inhoud">
+      <!-- ═══ 01 · DE UITSPRAAK ═══════════════════════════════════════════ -->
+      <section class="blok hero">
+        <div class="binnen">
+          <p class="etiket hero-etiket"><span class="etiket-nr">00</span><span>{c.labels[0]}</span><span>{c.labels[2]}</span></p>
+          <h1 class="kop h1" set:html={c.h1.join(' ')} />
+          <div class="rij hero-onder">
+            <p class="lopend hero-lede">{c.lede}</p>
+            <ul class="hero-feiten">
+              {c.facts.map((f, i) => (
+                <li><span class="mono hero-f-nr">{String(i + 1).padStart(2, '0')}</span><span>{f}</span></li>
+              ))}
+            </ul>
+          </div>
+          <div class="beeld-vak hero-beeld">
+            <img class="beeld" src={SFEER[0].src} width={SFEER[0].w} height={SFEER[0].h} alt={SFEER[0].alt} fetchpriority="high" decoding="async" />
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 02 · WAT WE MAKEN ═══════════════════════════════════════════ -->
+      <section class="blok lijn-boven" id="maken">
+        <div class="binnen">
+          <div class="blok-kop">
+            <p class="etiket"><span class="etiket-nr">01</span><span>{c.secties[0]}</span></p>
+            <div>
+              <h2 class="kop">{c.svcH}</h2>
+              <p class="lopend">{c.svcLede}</p>
+            </div>
+          </div>
+          <ul class="rij diensten">
+            {c.svc.map(([naam, wat, prijs, pad]) => (
+              <li class="kaart dienst">
+                <h3>{naam}</h3>
+                <p>{wat}</p>
+                <p class="dienst-prijs getal">{prijs}</p>
+                <a class="pijl" href={lp(pad)}>Bekijken</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <!-- ═══ 03 · ERIN, ERUIT ════════════════════════════════════════════
+           Dit is de sectie die volgens jou niet bij de website hoorde. Hij
+           hoort er nu bij omdat hij op hetzelfde raster staat als al het
+           andere: de ingestuurde foto's vullen zes kolommen, de geleverde
+           beelden de andere zes, met dezelfde ronding en dezelfde
+           tussenruimte als elke kaart op de pagina. -->
+      <section class="blok lijn-boven">
+        <div class="binnen">
+          <div class="blok-kop">
+            <p class="etiket"><span class="etiket-nr">02</span><span>{c.secties[1]}</span></p>
+            <div><h2 class="kop">{c.vnH}</h2></div>
+          </div>
+          <div class="vn">
+            <div class="vn-kant">
+              <p class="etiket vn-etiket"><span>{c.vnIn[0]}</span><span class="vn-noot">5 · telefoon</span></p>
+              <ul class="vn-lijst vn-in">
+                {INGESTUURD.map(([src, alt]) => (
+                  <li class="beeld-vak"><img class="beeld" src={src} width="760" height="1013" alt={alt} loading="lazy" decoding="async" /></li>
+                ))}
+              </ul>
+            </div>
+            <div class="vn-kant">
+              <p class="etiket vn-etiket"><span>{c.vnOut[0]}</span><span class="vn-noot">4 · 2048 × 2048</span></p>
+              <ul class="vn-lijst vn-uit">
+                {GELEVERD.map(([src, alt]) => (
+                  <li class="beeld-vak"><img class="beeld" src={src} width="760" height="760" alt={alt} loading="lazy" decoding="async" /></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 04 · HET PROCES ═════════════════════════════════════════════ -->
+      <section class="blok lijn-boven">
+        <div class="binnen">
+          <div class="blok-kop">
+            <p class="etiket"><span class="etiket-nr">03</span><span>{c.secties[3]}</span></p>
+            <div><h2 class="kop">{c.stepsH}</h2></div>
+          </div>
+          <ol class="rij stappen">
+            {c.steps.map(([kop, zin], i) => (
+              <li class="stap">
+                <span class="mono stap-nr">{String(i + 1).padStart(2, '0')}</span>
+                <h3 class="kop stap-h">{kop}</h3>
+                <p>{zin}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <!-- ═══ 05 · TARIEVEN ═══════════════════════════════════════════════ -->
+      <section class="blok lijn-boven" id="tarieven">
+        <div class="binnen">
+          <div class="blok-kop">
+            <p class="etiket"><span class="etiket-nr">04</span><span>{c.secties[4]}</span></p>
+            <div>
+              <h2 class="kop">{c.priceH}</h2>
+              <p class="lopend">{c.priceVat}</p>
+            </div>
+          </div>
+          <div class="rij tarief">
+            {RUNGS.map((r) => (
+              <div class="tarief-trede">
+                <span class="mono tarief-bereik">{r.label} producten</span>
+                <span class="getal tarief-bedrag">&euro;{ladderRate('catalog', r.at)}</span>
+              </div>
+            ))}
+          </div>
+          <p class="tarief-actie"><a class="knop knop-geel" href={lp('/pricing')}>{c.priceCta}</a></p>
+        </div>
+      </section>
+
+      <!-- ═══ 06 · DE PROEF ═══════════════════════════════════════════════ -->
+      <section class="blok slot op-inkt">
+        <div class="binnen">
+          <div class="rij slot-rij">
+            <div class="slot-woord">
+              <p class="etiket slot-etiket"><span class="etiket-nr">05</span><span>{c.secties[7]}</span></p>
+              <h2 class="kop slot-h">{c.closeH}</h2>
+              <p class="lopend slot-p">{sample.deliverable} — {sample.feeNote}.</p>
+              <p class="slot-knoppen">
+                <a class="knop knop-geel" href={lp('/test-sample')}>{sample.cta}</a>
+                <a class="knop" href={lp('/start')}>{c.ctaStart}</a>
+              </p>
+            </div>
+            <div class="beeld-vak slot-beeld">
+              <img class="beeld" src={SFEER[3].src} width={SFEER[3].w} height={SFEER[3].h} alt={SFEER[3].alt} loading="lazy" decoding="async" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="voet lijn-boven">
+      <div class="binnen voet-in mono">
+        <span>{c.labels[0]} · {c.labels[2]}</span>
+        <span>Voorstel A · Raster</span>
+      </div>
+    </footer>
+  </div>
+</ConceptLayout>
+
+<style>
+  /* ── HET ZICHTBARE RASTER ────────────────────────────────────────────────
+     Dezelfde container en hetzelfde kolomgat als elke sectie, dus de lijnen
+     vallen per definitie samen met de kolommen waar de inhoud op staat. Zou ik
+     de lijnen met een repeating-gradient tekenen, dan moet ik de rekensom van
+     de goot overtypen — en dan lopen ze op de dag dat --x verandert uit de pas. */
+  .raster-achter { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .raster-achter .binnen, .raster-achter .rij { height: 100%; }
+  .raster-achter .rij { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .raster-achter span { border-inline-start: 1px solid var(--lijn); }
+  .raster-achter span:last-child { border-inline-end: 1px solid var(--lijn); }
+  @media (max-width: 48rem) { .raster-achter { display: none; } }
+
+  .vel { position: relative; z-index: 1; }
+
+  /* ── DE BALK ──────────────────────────────────────────────────────────── */
+  .balk { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--vel) 86%, transparent); backdrop-filter: blur(10px); }
+  .balk-in { display: flex; align-items: center; gap: var(--s-2); min-height: 68px; }
+  .balk-nav { display: flex; gap: var(--s-2); margin-inline: auto; }
+  .balk-nav a { font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2); }
+  .balk-nav a:hover { color: var(--inkt); }
+  @media (max-width: 64rem) { .balk-nav { display: none; } }
+
+  /* ── 01 · DE UITSPRAAK ────────────────────────────────────────────────── */
+  .hero { padding-block: var(--s-4) var(--s-5); }
+  .hero-etiket { margin-bottom: var(--s-3); }
+  .h1 { font-size: var(--t-1); font-stretch: 112%; max-width: 18ch; }
+  .hero-onder { margin-top: var(--s-3); align-items: start; }
+  .hero-lede { grid-column: span 5; font-size: var(--t-tekst); color: var(--inkt-2); }
+  .hero-feiten { grid-column: 7 / span 6; display: grid; gap: var(--s-0); }
+  .hero-feiten li { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: var(--s-1); align-items: baseline; padding-block: .45rem; border-top: 1px solid var(--lijn); font-size: var(--t-klein); }
+  .hero-f-nr { color: var(--inkt-3); }
+  .hero-beeld { margin-top: var(--s-4); aspect-ratio: 2000 / 1125; }
+  @media (max-width: 64rem) {
+    .hero-lede, .hero-feiten { grid-column: auto; }
+    .hero-feiten { margin-top: var(--s-2); }
+  }
+
+  /* ── 02 · DIENSTEN ────────────────────────────────────────────────────── */
+  /* Vier diensten, dus vier kolommen van drie. Met `span 4` viel de vierde
+     kaart in zijn eentje op een tweede rij — precies het soort losse eind dat
+     een pagina rommelig maakt. */
+  .diensten > li { grid-column: span 3; }
+  .dienst-prijs { font-size: var(--t-3); margin-top: auto; }
+  .dienst .pijl { margin-top: var(--s-0); }
+  @media (max-width: 64rem) { .diensten > li { grid-column: span 6; } }
+  @media (max-width: 48rem) { .diensten > li { grid-column: auto; } }
+
+  /* ── 03 · ERIN, ERUIT ─────────────────────────────────────────────────── */
+  /* ── NAAST ELKAAR WERKTE NIET, ONDER ELKAAR WEL ─────────────────────────
+     Eerst stonden de twee kanten naast elkaar op zes kolommen elk. Gemeten:
+     vijf foto's in zes kolommen worden kleiner dan vier in zes, dus de linker
+     rij eindigde 220 pixels hoger dan de rechter en de sectie zag er scheef
+     uit. Onder elkaar, allebei over de volle twaalf kolommen, is elke foto
+     ruim 300 pixels breed — en "erin, eruit" leest van boven naar beneden,
+     wat sowieso de volgorde van het verhaal is. */
+  .vn { display: grid; gap: var(--s-4); }
+  .vn-kant { display: grid; gap: var(--s-1); align-content: start; }
+  .vn-etiket { justify-content: space-between; padding-bottom: .55rem; border-bottom: 1px solid var(--lijn); }
+  .vn-noot { color: var(--inkt-3); }
+  .vn-lijst { display: grid; gap: var(--kolomgat); }
+  .vn-in { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .vn-in li { aspect-ratio: 3 / 4; }
+  .vn-uit { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .vn-uit li { aspect-ratio: 1; }
+  @media (max-width: 48rem) {
+    .vn-in { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .vn-uit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* ── 04 · HET PROCES ──────────────────────────────────────────────────── */
+  .stappen > li { grid-column: span 3; display: grid; gap: var(--s-0); align-content: start; padding-top: var(--s-1); border-top: 2px solid var(--inkt); }
+  .stap-nr { color: var(--inkt-3); }
+  .stap-h { font-size: var(--t-3); }
+  .stappen p { color: var(--inkt-2); font-size: var(--t-klein); line-height: 1.5; }
+  @media (max-width: 64rem) { .stappen > li { grid-column: span 6; } }
+  @media (max-width: 48rem) { .stappen > li { grid-column: auto; } }
+
+  /* ── 05 · TARIEVEN ────────────────────────────────────────────────────── */
+  /* De ladder stond op 544 pixels met 848 leeg ernaast. Als vier treden naast
+     elkaar leest hij bovendien zoals hij bedoeld is: van links naar rechts
+     omlaag. */
+  .tarief-trede { grid-column: span 3; display: grid; gap: var(--s-0); padding-top: var(--s-1); border-top: 1px solid var(--lijn); }
+  .tarief-trede:first-child { border-top-color: var(--inkt); border-top-width: 2px; }
+  .tarief-bereik { color: var(--inkt-3); font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; }
+  .tarief-bedrag { font-size: clamp(2.25rem, 4vw, 3.5rem); font-stretch: 118%; }
+  .tarief-actie { margin-top: var(--s-3); }
+  @media (max-width: 64rem) { .tarief-trede { grid-column: span 6; } }
+  @media (max-width: 48rem) { .tarief-trede { grid-column: auto; } }
+
+  /* ── 06 · DE PROEF ────────────────────────────────────────────────────── */
+  .slot { background: var(--inkt); color: var(--vel); border-radius: var(--rond-groot); margin-block: var(--s-4); }
+  .slot-rij { align-items: center; }
+  .slot-woord { grid-column: span 6; display: grid; gap: var(--s-1); align-content: start; }
+  .slot-etiket { color: rgb(255 255 255 / .6); }
+  .slot-etiket .etiket-nr { color: var(--vel); }
+  .slot-h { font-size: var(--t-2); }
+  .slot-p { color: rgb(255 255 255 / .74); font-size: var(--t-klein); }
+  .slot-knoppen { display: flex; flex-wrap: wrap; gap: var(--s-1); margin-top: var(--s-1); }
+  .slot-beeld { grid-column: 8 / span 5; aspect-ratio: 1; }
+  @media (max-width: 64rem) {
+    .slot-woord, .slot-beeld { grid-column: auto; }
+    .slot-beeld { aspect-ratio: 16 / 10; }
+  }
+
+  /* ── DE VOET ──────────────────────────────────────────────────────────── */
+  .voet { padding-block: var(--s-2); }
+  .voet-in { display: flex; flex-wrap: wrap; gap: var(--s-1); justify-content: space-between; color: var(--inkt-3); }
+</style>

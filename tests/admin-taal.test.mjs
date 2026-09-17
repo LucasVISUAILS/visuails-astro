@@ -45,7 +45,23 @@ console.log('\nVISUAILS — het adminportaal spreekt Nederlands\n');
    én geen enkel Nederlands — "Slots bijstellen" was zo'n gemengd geval, en die
    hoort gevonden te worden, niet weggefilterd. */
 const NL = /\b(de|het|een|en|van|voor|met|niet|wordt|zijn|naar|bij|aan|op|je|jij|wij|dit|deze|die|dat|als|nog|geen|wel|maar|uit|om|per|kan|klant|bestelling|beeld|foto|bestand|grootte|gemeld|vakjes|wat|hier)\b/i;
-const EN = /\b(the|and|for|with|not|are|this|that|from|your|you|will|has|have|been|we|it|when|then|each|only|still|slots|board|uploads|customer|files|saved|press|push|run|again|never|everything|every|asks|scratch|announced|replace|upload|size|shot|front|back|delete|erase|refund|cancel|set|no)\b/i;
+/* ── DE LIJST MISTE DE LOSSE ZELFSTANDIGE NAAMWOORDEN — 13 september 2026 ────
+   Gemeten in de browser op /admin/orders/73/files: tussen elf Nederlandse
+   koppen stonden er twee in het Engels, "Notes" en "Invoice". Deze toets vond
+   ze niet, want de lijst hieronder bestond uit functiewoorden (the, and, for)
+   en werkwoorden — precies de woorden die in een ZIN staan. Een kop is geen
+   zin; het is één woord, en dat woord kwam er niet in voor.
+
+   De nieuwe woorden zijn allemaal opschriften die op dit paneel voorkomen of
+   kunnen voorkomen. Ze staan er als losse termen omdat een kop van één woord
+   het meest voorkomende geval is waarin een scherm half vertaald blijft: de
+   zinnen krijg je, de opschriften vergeet je. */
+const EN = /\b(the|and|for|with|not|are|this|that|from|your|you|will|has|have|been|we|it|when|then|each|only|still|slots|board|uploads|customer|files|saved|press|push|run|again|never|everything|every|asks|scratch|announced|replace|upload|size|shot|front|back|delete|erase|refund|cancel|set|no|notes|invoice|invoices|payment|history|timeline|summary|overview|settings|preview|search|export|edit|remove|created|updated|sent|pending|failed|amount|address|company|last)\b/i;
+/* WAT ER MET OPZET NIET IN STAAT. "Status", "order", "detail", "totaal",
+   "e-mail", "telefoon" en "datum" zijn in het Nederlands net zo gangbaar als in
+   het Engels — die opnemen levert een toets op die "Status zetten" afkeurt. Een
+   woordenlijst die Nederlands voor Engels aanziet, wordt uitgezet en dan
+   controleert hij niets meer. */
 
 /* Strings die met opzet Engels zijn en dat mogen blijven. Elk met een reden —
    een uitzondering zonder reden wordt een uitzondering die groeit. */
@@ -63,6 +79,22 @@ const MAG_ENGELS = [
      geen woordteken. Die eerste versie liet "= ?1 AND day" er dus gewoon
      doorheen — gevonden door de toets te draaien, niet door hem te lezen. */
   /(\bSELECT\b|\bFROM\b|\bWHERE\b|\bJOIN\b|\bINSERT\b|\bUPDATE\b|\bCOALESCE\b|IS NOT NULL|\?\d|\bAND\b\s+\w+\s*[<>=])/,
+  /* En JAVASCRIPT tussen twee vergelijkingstekens. Hetzelfde als bij SQL: het
+     patroon `>...<` vist hier een stuk code uit dat nooit op een scherm komt.
+     Herkenbaar aan de combinatie van een return en een puntkomma. */
+  /\breturn\b[\s\S]*;|=>|\bconst\b|\bif\s*\(/,
+  /* ── DE PIJL VALT MIDDENDOOR — 13 september 2026 ───────────────────────
+     De regel hierboven zoekt naar `=>`, maar het patroon dat de stukken
+     uitknipt begint ná een `>`. Bij een arrow-functie is dát de `>` van de
+     pijl zelf, dus wat er overblijft is de staart zonder pijl:
+     `!f.superseded_at && (assets.get(f.id) || new Set()).size`. Die staat
+     nergens op een scherm, maar hij bevat "new" en "set" en werd dus als
+     Engelse schermtekst gemeld.
+
+     Vandaar deze drie tekens: `&&`, `||` en `new Hoofdletter(`. Alle drie
+     komen ze in code voor en in geen enkel opschrift — smal genoeg om
+     echte schermtekst niet te laten ontsnappen. */
+  /&&|\|\||\bnew [A-Z]\w*\(/,
 ];
 
 {
@@ -108,6 +140,37 @@ const MAG_ENGELS = [
   for (const woord of ['Dashboard', 'Planning', 'Agenda', 'Klanten', 'Uitloggen']) {
     ok(`de balk noemt ${woord}`, new RegExp(`>${woord}<|'${woord}'`).test(bron));
   }
+}
+
+/* ── EN DE TIJDLIJN VAN DE KLANT KRIJGT GEEN ONVERTAALBARE STATUS ──────────
+ *
+ * 17 september 2026. `order_events.status` draagt de status waarin de bestelling
+ * stond, en account.js vertaalt die met statusLabel() — een tabel met vijf
+ * waarden. Op vier plekken werd er 'pending' ingeschreven, en dat staat niet in
+ * die tabel: account.js valt dan terug op `|| e.status` en er stond letterlijk
+ * het kale Engelse woord "pending" op een Nederlandse klanttijdlijn.
+ *
+ * Hetzelfde half-vertaalde gevoel als hierboven, alleen dan op het scherm van
+ * een klant in plaats van dat van Lucas.
+ *
+ * DE TOETS IS OP DE BRON EN OP LETTERLIJKE WAARDEN. Een status die uit een
+ * variabele komt (`o.status || 'received'`) kan deze toets niet nalopen en hoeft
+ * dat ook niet: de fout was een ingetypte string. */
+console.log('\nde klanttijdlijn krijgt alleen statussen die vertaald kunnen worden');
+{
+  const STATUSSEN = ['received', 'in_production', 'human_check', 'delivered', 'cancelled'];
+  const bestanden = ['src/lib/admin.js', 'src/lib/betaallink.js', 'src/lib/account.js',
+    'src/lib/portal.js', 'src/lib/close.js', 'src/lib/invoice.js', 'cron/index.js'];
+  const fout = [];
+  for (const f of bestanden) {
+    const bron = lees(f);
+    /* Elke INSERT in order_events, met de VALUES-regel erachter. De status is
+       het tweede veld; alleen een letterlijke string wordt beoordeeld. */
+    for (const m of bron.matchAll(/INSERT INTO order_events[\s\S]{0,200}?VALUES\s*\(\s*\?\d+\s*,\s*'([a-z_]+)'/g)) {
+      if (!STATUSSEN.includes(m[1])) fout.push(`${f} → '${m[1]}'`);
+    }
+  }
+  ok(`geen onvertaalbare status in order_events${fout.length ? ` — ${fout.join(', ')}` : ''}`, fout.length === 0);
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

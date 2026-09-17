@@ -48,6 +48,8 @@ import {
 import { mailNote } from '../data/mailNote.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
+import LaptopCarousel from './LaptopCarousel.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -252,6 +254,24 @@ const bronnen = nl
 
     </div>
   </section>
+
+  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
+      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
+      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
+      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
+      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
+      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
+      hetzelfde ding als op de voorpagina. */}
+  <section class="paneel" aria-labelledby="ty-lc">
+    <div class="paneel-kop">
+      <p class="etiket">{nl ? 'Wat eraan komt' : 'What’s coming'}</p>
+      <h2 id="ty-lc" class="hoog hoog-2">{nl ? 'Zo ziet het eruit als het klaar is.' : 'This is what it looks like when it’s done.'}</h2>
+      <p class="lopend">{nl ? 'Je krijgt de bestanden los aangeleverd. Dit is waar ze daarna staan.' : 'You get the files delivered separately. This is where they end up after that.'}</p>
+    </div>
+    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
+      titel={nl ? 'Zo ziet het eruit als het klaar is.' : 'This is what it looks like when it’s done.'} />
+  </section>
+
 
   {/* ── DE TWEE GUNSTEN, ONDERAAN ──────────────────────────────────────────
       Extra foto's sturen helpt het resultaat, en de vraag hoe iemand ons vond

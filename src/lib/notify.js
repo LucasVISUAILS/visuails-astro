@@ -374,3 +374,60 @@ export async function notifySubscriptionFailed(env, {
     console.error('[notify] incassobericht niet verstuurd voor', subRef, '—', err?.message || err);
   }
 }
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ER IS GELD TERUG OP EEN ABONNEMENT — 17 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Een restitutie op een abonnementstermijn is zeldzaam en heeft altijd een
+ * verhaal: een chargeback, een dubbele afschrijving, of een afspraak met de
+ * klant. Er is geen enkele situatie waarin de goede afhandeling automatisch is
+ * — vandaar dat de webhook hem vastlegt en STOPT, en dit bericht eruit gaat.
+ *
+ * Wat er NIET gebeurt en met opzet niet: de al toegekende maand intrekken. Die
+ * kan half besteed zijn, en slots weghalen waar een klant al producten mee
+ * heeft vastgezet, maakt van een boekhoudkundige correctie een kapotte
+ * bestelling. Wat de webhook wél doet is het abonnement pauzeren, zodat er geen
+ * volgende maand bij komt.
+ *
+ * ⚠ DE CREDITNOTA IS HANDWERK. issueCreditNote() in src/lib/invoice.js werkt op
+ * `invoices` en `orders`; abonnementsfacturen staan in `subscription_invoices`
+ * en hebben nog geen eigen creditnotaroute. Dat staat in dit bericht, zodat het
+ * niet stil blijft liggen.
+ */
+export async function notifySubscriptionRefunded(env, {
+  subRef, plan, brand, email, bedragCents = 0, terugCents = 0, maand = '', volledig = false, molliestatus = '',
+}) {
+  try {
+    const ref = subRef || '(zonder kenmerk)';
+    await toStudio(
+      env,
+      `Geld terug op een abonnement · ${ref}${volledig ? ' · volledig' : ' · gedeeltelijk'}`,
+      [
+        h1('Er is geld teruggegaan op een abonnement', ref),
+        mailRows([
+          ['Abonnement', ref],
+          ['Klant', brand || email || '—'],
+          ['E-mail', email || ''],
+          ['Plan', plan || ''],
+          ['Termijn', maand || '—'],
+          ['Afgeschreven', cents(bedragCents)],
+          ['Terugbetaald', cents(terugCents)],
+          ['Status bij Mollie', molliestatus || 'onbekend'],
+        ]),
+        mailP(volledig
+          ? 'De hele termijn is terug. Het abonnement staat op pauze, dus er komt geen '
+            + 'volgende maand bij. De maand die al was toegekend is NIET ingetrokken — die kan '
+            + 'half besteed zijn, en dan haal je slots weg onder een bestelling die al loopt.'
+          : 'Een deel van de termijn is terug. Het abonnement loopt door; alleen het bedrag is '
+            + 'vastgelegd. Klopt dat niet, dan is dit het moment om het met de hand recht te zetten.'),
+        mailP('Twee dingen die JIJ moet doen: de creditnota uitschrijven (abonnementsfacturen '
+          + 'hebben nog geen automatische creditnotaroute — zie de noot bij deze functie), en de '
+          + 'klant laten weten wat er is gebeurd.'),
+      ].join('')
+    );
+  } catch (err) {
+    console.error('[notify] restitutiebericht niet verstuurd voor', subRef, '—', err?.message || err);
+  }
+}

@@ -38,7 +38,10 @@
  * agenda vol zat — zijn schuld niet. Het slot gaat er dus af zodra hij het
  * product vastzet; wanneer het gemaakt wordt is daarna onze planning.
  */
-import { PLAN_SLOTS, SLOT_KINDS, CUSTOM_MONTH_ID, slotProducts } from '../data/pricing.js';
+import { PLAN_SLOTS, SLOT_KINDS, CUSTOM_MONTH_ID, slotProducts, VAT_RATE } from '../data/pricing.js';
+/* Alleen de namen van de drie behandelingen — geen beslissing, geen VIES. Zie
+   de kop van subBrutoCents(). */
+import { VAT_TREATMENT } from '../data/vat.js';
 import { monthlyCents, productsFor, rolloverMonths, isPrepaid, prepayTotalCents } from '../data/plans.js';
 
 /** De maandsleutel 'YYYY-MM' van vandaag, of van een datum. */
@@ -144,6 +147,82 @@ export function subEersteBetalingCents(sub) {
   if (Number.isFinite(eigen) && eigen > 0) return Math.round(eigen);
   if (isPrepaid(sub?.term)) return prepayTotalCents(sub?.plan);
   return subMaandCents(sub);
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * EN WAT ER ECHT WORDT AFGESCHREVEN — 17 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Alles hierboven is NETTO. PLAN_AMOUNT in pricing.js is netto, /plans drukt bij
+ * elk bedrag `vatLabel('excl')` af, en customMonthTotal() rekent met dezelfde
+ * netto ladder. Dat is consequent en het klopt — tot het bedrag naar Mollie gaat.
+ *
+ * ── DE FOUT DIE HIER DRIE WEKEN ZAT ───────────────────────────────────────
+ *
+ * subscribe.js gaf subEersteBetalingCents()/100 en subMaandCents()/100 ONGEWIJZIGD
+ * door aan createFirstPayment() en createMollieSubscription(). Er werd dus netto
+ * afgeschreven op een prijs die "excl. btw" heet. En de andere kant van de keten
+ * maakte het erger in plaats van zichtbaar: snapshotFromSubscription() in
+ * invoice.js behandelt `payment.amount_cents` als BRUTO en rekent terug met
+ * `net = round(gross / (1 + rate))`.
+ *
+ * Studio, maandtermijn, Nederlandse klant:
+ *   de pagina belooft   € 658 excl. btw  (€ 796,18 te betalen)
+ *   Mollie schrijft af  € 658
+ *   de factuur zegt     netto € 543,80 + btw € 114,20
+ * De btw wordt dus afgedragen over geld dat nooit is geïnd: € 114,20 per abonnee
+ * per maand uit eigen zak. Bij verlegde btw (0%) betaalt diezelfde klant wél de
+ * volle € 658 — twee klanten met dezelfde prijs op de pagina betalen een ander
+ * bedrag, en degene die het MEEST betaalt is degene die geen btw draagt.
+ *
+ * ── WAAROM DE REPARATIE AAN DEZE KANT ZIT ────────────────────────────────
+ *
+ * Er zijn twee kanten om gelijk te trekken en maar één goede. De factuur
+ * aanpassen (netto = het afgeschreven bedrag) zou betekenen dat de site € 658
+ * excl. btw belooft en € 658 incl. btw levert: een prijsverlaging van 17,4% die
+ * niemand heeft besloten. De betaling optrekken is wat de pagina al zegt.
+ *
+ * En dan sluit de keten ook rond: bruto = round(netto × (1 + tarief)), en de
+ * factuur maakt daar netto = round(bruto / (1 + tarief)) van. Bij 21% en hele
+ * euro's komt dat exact terug (65800 → 79618 → 65800).
+ *
+ * ── HET TARIEF KOMT VAN DE RIJ EN NIET UIT EEN CONSTANTE ─────────────────
+ *
+ * `vat_treatment` en `vat_rate` staan sinds migratie 0032 op de abonnementsrij,
+ * één keer vastgelegd bij het afsluiten (zie vatVoorAbonnement() in
+ * subscription.js). Dezelfde bron die de factuur leest, leest nu ook de
+ * incasso — anders kan er opnieuw een verschil tussen die twee ontstaan.
+ *
+ * Alleen de standaardbehandeling draagt btw. Verlegd (art. 196) en buiten de
+ * EU-heffing zijn allebei 0%, en dan is bruto gelijk aan netto. Vergelijken op
+ * de BEHANDELING en niet op het tarief — precies om dezelfde reden als in
+ * invoice.js: een `vat_rate` van 0 op een standaardbehandeling is een lege kolom
+ * en geen fiscaal standpunt.
+ *
+ * ⚠ DE RIJ MOET DIE TWEE KOLOMMEN BIJ ZICH HEBBEN. createSubscriptionRow()
+ * geeft ze sinds vandaag terug in zijn RETURNING en loadSubscription() haalt ze
+ * op. Een rij zonder die kolommen valt hieronder terug op het HOGE tarief — de
+ * veilige kant, dezelfde keuze als in invoice.js: te veel rekenen is een
+ * correctie, te weinig is een naheffing.
+ */
+export function subBrutoCents(sub, nettoCents) {
+  const netto = Math.max(0, Math.round(Number(nettoCents) || 0));
+  if (!netto) return 0;
+  const behandeling = (sub && sub.vat_treatment) || VAT_TREATMENT.standard;
+  if (behandeling !== VAT_TREATMENT.standard) return netto;
+  const tarief = Number(sub && sub.vat_rate) > 0 ? Number(sub.vat_rate) : VAT_RATE;
+  return Math.round(netto * (1 + tarief));
+}
+
+/** De eerste afschrijving, inclusief btw. Dit is wat Mollie te zien krijgt. */
+export function subEersteBetalingBruto(sub) {
+  return subBrutoCents(sub, subEersteBetalingCents(sub));
+}
+
+/** De maandelijkse afschrijving, inclusief btw. */
+export function subMaandBruto(sub) {
+  return subBrutoCents(sub, subMaandCents(sub));
 }
 
 /** Hoeveel producten DIT abonnement per maand vasthoudt — voor de capaciteitspoort. */

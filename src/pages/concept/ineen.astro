@@ -1,0 +1,309 @@
+---
+/**
+ * OPBOUW 3 · INEEN — de secties grijpen in elkaar, er is geen naad.
+ * 15 september 2026.
+ *
+ * ── HET MECHANISME ────────────────────────────────────────────────────────
+ * De gestaltwet die hier het werk doet heet "uniform connectedness": dingen
+ * die zichtbaar met elkaar verbonden zijn, worden als één ding gezien — en dat
+ * weegt zwaarder dan nabijheid of gelijkenis. Attention Insight vat het
+ * praktisch samen: consistente marges en een voorspelbare as vormen het
+ * *"perceptual framework"* waarin het oog vanzelf doorloopt.
+ *
+ * Deze opbouw doet dat op de meest letterlijke manier: DE SECTIES OVERLAPPEN.
+ * Er is één doorlopend wit blad dat van de diensten tot en met de tarieven
+ * loopt, en de beelden steken daar bovenuit en onderuit. Waar een sectie
+ * eindigt en de volgende begint is daardoor nergens aan te wijzen — precies
+ * het tegenovergestelde van de zes horizontale slagbomen die er nu staan.
+ *
+ * De laptop uit de opening zakt met zijn onderkant al het witte blad in. Zo is
+ * de eerste overgang van de hele pagina meteen ook de duidelijkste
+ * demonstratie: je kunt niet zeggen waar de hero ophoudt.
+ *
+ * ── HET RISICO, EERLIJK ───────────────────────────────────────────────────
+ * Overlap is lastiger te onderhouden dan een stapel. Een sectie die langer
+ * wordt duwt de overlap scheef, en negatieve marges zijn het soort CSS dat
+ * op een telefoon als eerste omvalt. Onder 64rem gaan alle overlappen er
+ * daarom af en staat het weer gewoon onder elkaar — dat is geen noodgreep
+ * maar de enige eerlijke keuze: op 390 pixels is er geen ruimte om iets
+ * overtuigend te laten overlappen.
+ */
+import ConceptLayout from '../../layouts/ConceptLayout.astro';
+import LaptopCarousel from '../../components/LaptopCarousel.astro';
+import { inhoud } from '../../data/conceptInhoud.js';
+import { localizedPath } from '../../i18n/ui.js';
+import '../../styles/stelsel.css';
+
+const lang = 'nl' as const;
+const lp = (p: string) => localizedPath(lang, p);
+const { c, sample, RUNGS, SFEER, ladderRate } = inhoud(lang);
+
+const INGESTUURD = [
+  ['/img/ba2-voor-front.webp', 'Telefoonfoto: een roze jeans plat op een betonnen magazijnvloer, voorkant'],
+  ['/img/ba2-voor-achter.webp', 'Telefoonfoto: dezelfde jeans omgedraaid, achterkant'],
+  ['/img/ba2-voor-detail.webp', 'Telefoonfoto: een hand houdt de tailleband met de knoop omhoog'],
+  ['/img/ba2-voor-textuur.webp', 'Telefoonfoto: het weefsel van dichtbij'],
+  ['/img/ba2-voor-pasvorm.webp', 'Spiegelselfie waarop de jeans gedragen wordt'],
+];
+const GELEVERD = [
+  ['/img/ba2-na-front.webp', 'Afgewerkt catalogbeeld: de jeans recht van voren op wit'],
+  ['/img/ba2-na-achter.webp', 'Afgewerkt catalogbeeld: de achterkant op wit'],
+  ['/img/ba2-na-detail.webp', 'Afgewerkt detailbeeld: de knoop en de tailleband'],
+  ['/img/ba2-na-model.webp', 'Afgewerkt beeld: de jeans gedragen door een model'],
+];
+---
+<ConceptLayout
+  title="Opbouw 3 · Ineen — VISUAILS"
+  description="De voorpagina zonder naden: één doorlopend blad waar de secties in elkaar grijpen en de beelden overheen steken."
+  lang={lang}
+  grond="vel"
+>
+  <a class="visueel-verborgen" href="#inhoud">Naar de inhoud</a>
+
+  <header class="balk">
+    <div class="binnen balk-in">
+      <a href={lp('/')} aria-label="VISUAILS"><svg class="merkteken" aria-hidden="true"><use href="#markglyph" /></svg></a>
+      <nav class="balk-nav" aria-label="Hoofd">{c.nav.map(([naam, doel]) => <a href={doel}>{naam}</a>)}</nav>
+      <a class="knop knop-geel" href={lp('/start')}>{c.ctaStart}</a>
+    </div>
+  </header>
+
+  <main id="inhoud">
+    <!-- ═══ DE OPENING — zakt het blad in ═══════════════════════════════ -->
+    <section class="opening">
+      <div class="binnen">
+        <div class="woord">
+          <h1 class="kop op-h" set:html={c.h1.join(' ')} />
+          <p class="op-lede">{c.lede}</p>
+          <p class="knoppen">
+            <a class="knop knop-geel" href={lp('/start')}>{c.ctaStart}</a>
+            <a class="knop" href={lp('/test-sample')}>{sample.cta}</a>
+          </p>
+        </div>
+        <div class="laptop-zak">
+          <LaptopCarousel lang={lang} titel="Werk van VISUAILS, per stijl" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ HET BLAD — één wit vlak onder drie secties ══════════════════ -->
+    <div class="blad">
+      <div class="binnen blad-in">
+        <!-- de feiten liggen op de bovenrand, half over de naad heen -->
+        <ul class="feiten">{c.facts.map((f) => <li>{f}</li>)}</ul>
+
+        <section class="deel" id="maken">
+          <header class="kop-groep">
+            <p class="etiket"><span class="etiket-nr">01</span><span>{c.secties[0]}</span></p>
+            <h2 class="kop">{c.svcH}</h2>
+            <p class="lopend">{c.svcLede}</p>
+          </header>
+          <ul class="diensten">
+            {c.svc.map(([naam, wat, prijs, pad]) => (
+              <li>
+                <a class="dienst" href={lp(pad)}>
+                  <span class="dienst-woord">
+                    <span class="kop dienst-h">{naam}</span>
+                    <span class="dienst-wat">{wat}</span>
+                  </span>
+                  <span class="getal dienst-prijs">{prijs}</span>
+                  <span class="dienst-knop">{c.svcMore}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section class="deel">
+          <header class="kop-groep">
+            <p class="etiket"><span class="etiket-nr">02</span><span>{c.secties[1]}</span></p>
+            <h2 class="kop">{c.vnH}</h2>
+          </header>
+          <p class="rij-etiket etiket"><span>{c.vnIn[0]}</span><span class="rij-noot">5 &middot; telefoon</span></p>
+          <ul class="strook strook-in">
+            {INGESTUURD.map(([src, alt]) => (
+              <li class="beeld-vak"><img class="beeld" src={src} width="760" height="1013" alt={alt} loading="lazy" decoding="async" /></li>
+            ))}
+          </ul>
+          <p class="rij-etiket etiket"><span>{c.vnOut[0]}</span><span class="rij-noot">4 &middot; 2048 &times; 2048</span></p>
+          <ul class="strook strook-uit">
+            {GELEVERD.map(([src, alt]) => (
+              <li class="beeld-vak"><img class="beeld" src={src} width="760" height="760" alt={alt} loading="lazy" decoding="async" /></li>
+            ))}
+          </ul>
+        </section>
+
+        <section class="deel">
+          <header class="kop-groep">
+            <p class="etiket"><span class="etiket-nr">03</span><span>{c.secties[3]}</span></p>
+            <h2 class="kop">{c.stepsH}</h2>
+          </header>
+          <ol class="stappen">
+            {c.steps.map(([kop, zin], i) => (
+              <li class="sub">
+                <span class="mono sub-nr">{String(i + 1).padStart(2, '0')}</span>
+                <span class="kop sub-h">{kop}</span>
+                <span class="sub-p">{zin}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
+    </div>
+
+    <!-- ═══ TARIEVEN — steekt met zijn bovenkant het blad nog in ════════ -->
+    <section class="tarief" id="tarieven">
+      <div class="binnen">
+        <header class="kop-groep">
+          <p class="etiket"><span class="etiket-nr">04</span><span>{c.secties[4]}</span></p>
+          <h2 class="kop">{c.priceH}</h2>
+          <p class="lopend">{c.priceVat}</p>
+        </header>
+        <div class="ladder">
+          {RUNGS.map((r) => (
+            <div class="prijs">
+              <span class="etiket">{r.label} producten</span>
+              <span class="getal prijs-bedrag">&euro;{ladderRate('catalog', r.at)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ HET SLOT — het beeld steekt over de bovenrand van het vlak ══ -->
+    <section class="slot">
+      <div class="binnen slot-in">
+        <div class="slot-beeld beeld-vak">
+          <img class="beeld" src={SFEER[3].src} width={SFEER[3].w} height={SFEER[3].h} alt={SFEER[3].alt} loading="lazy" decoding="async" />
+        </div>
+        <div class="slot-woord">
+          <h2 class="kop slot-h">{c.closeH}</h2>
+          <p class="slot-p">{c.closeLede}</p>
+          <p class="knoppen">
+            <a class="knop knop-geel" href={lp('/test-sample')}>{sample.cta}</a>
+            <a class="knop slot-knop" href={lp('/start')}>{c.ctaStart}</a>
+          </p>
+        </div>
+      </div>
+      <div class="binnen voet-in">
+        <p class="etiket">{c.labels[0]} &middot; {c.labels[2]}</p>
+        <ul class="voet-trust">{c.trust.map((t) => <li>{t}</li>)}</ul>
+      </div>
+    </section>
+  </main>
+</ConceptLayout>
+
+<style>
+  .balk-in { display: flex; align-items: center; gap: var(--s-2); min-height: 72px; }
+  .balk-nav { display: flex; gap: var(--s-2); margin-inline: auto; }
+  .balk-nav a { font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2); }
+  .balk-nav a:hover { color: var(--inkt); }
+  @media (max-width: 64rem) { .balk-nav { display: none; } }
+
+  .kop-groep { display: grid; gap: var(--s-1); margin-bottom: var(--s-3); max-width: 46rem; }
+  .kop-groep h2 { font-size: var(--t-2); }
+  .knoppen { display: flex; flex-wrap: wrap; gap: var(--s-1); margin-top: var(--s-2); }
+
+  /* ── DE OPENING ─────────────────────────────────────────────────────── */
+  .opening { padding-block: var(--s-3) 0; }
+  .woord { max-width: 40rem; display: grid; gap: var(--s-1); margin-bottom: var(--s-3); }
+  .op-h { font-size: clamp(2rem, 3.4vw, 3.2rem); font-stretch: 112%; }
+  .op-lede { max-width: 46ch; font-size: var(--t-tekst); color: var(--inkt-2); }
+  /* De laptop krijgt een z-index zodat hij ÓVER het blad hieronder valt. */
+  .laptop-zak { position: relative; z-index: 2; }
+
+  /* ── HET BLAD ───────────────────────────────────────────────────────────
+     Eén wit vlak onder drie secties. Het komt omhoog tot onder de laptop en
+     loopt door tot onder de stappen; daarbinnen zijn er geen randen meer. */
+  .blad { position: relative; background: var(--wit); border-radius: var(--rond-l); margin-top: -7rem; }
+  .blad-in { padding-block: calc(7rem + var(--s-4)) var(--s-5); }
+  .deel { padding-block: var(--s-4); }
+  .deel:first-of-type { padding-top: var(--s-3); }
+
+  /* De feitenrij ligt op de bovenrand van het blad en steekt er half boven
+     uit: dat is de naad, en die is dus letterlijk bezet. */
+  .feiten {
+    position: relative; z-index: 1; margin-top: calc(var(--s-4) * -1);
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--kolomgat);
+  }
+  .feiten li {
+    background: var(--vel); border: 1px solid var(--lijn); border-radius: var(--rond-m);
+    padding: var(--s-1) var(--s-2);
+    font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%;
+    letter-spacing: .04em; text-transform: uppercase; line-height: 1.5;
+  }
+  @media (max-width: 64rem) { .feiten { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 34rem) { .feiten { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ── DIENSTEN ───────────────────────────────────────────────────────── */
+  .diensten { border-top: 1px solid var(--lijn); }
+  .dienst { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s-2); align-items: center; padding: var(--s-2) var(--s-1); border-bottom: 1px solid var(--lijn); border-radius: var(--rond-m); transition: background-color .25s var(--uit); }
+  .dienst:hover { background: var(--vel); }
+  .dienst-woord { display: grid; gap: .25rem; min-width: 0; }
+  .dienst-h { font-size: var(--t-3); }
+  .dienst-wat { color: var(--inkt-2); font-size: var(--t-klein); }
+  .dienst-prijs { font-size: var(--t-3); white-space: nowrap; }
+  .dienst-knop { border: 1px solid var(--lijn-sterk); border-radius: var(--rond-knop); padding: .5rem .95rem; font-family: var(--mono); font-size: var(--t-label); font-stretch: 82%; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .dienst:hover .dienst-knop { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
+  @media (max-width: 48rem) { .dienst { grid-template-columns: minmax(0, 1fr); gap: var(--s-1); justify-items: start; } }
+
+  /* ── ERIN, ERUIT ────────────────────────────────────────────────────── */
+  .rij-etiket { justify-content: space-between; padding-bottom: .6rem; border-bottom: 1px solid var(--lijn); margin-bottom: var(--s-1); }
+  .rij-etiket + .strook { margin-bottom: var(--s-3); }
+  .rij-noot { color: var(--inkt-3); }
+  .strook { display: grid; gap: var(--kolomgat); }
+  .strook-in { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .strook-uit { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .strook-in li { aspect-ratio: 3 / 4; }
+  .strook-uit li { aspect-ratio: 1; }
+  @media (max-width: 48rem) {
+    .strook-in { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .strook-uit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* ── PROCES ─────────────────────────────────────────────────────────── */
+  .stappen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--kolomgat); }
+  .sub { display: grid; gap: .35rem; align-content: start; padding-top: var(--s-1); border-top: 1px solid var(--lijn); }
+  .sub-nr { color: var(--inkt-3); }
+  .sub-h { font-size: var(--t-3); }
+  .sub-p { color: var(--inkt-2); font-size: var(--t-klein); line-height: 1.5; }
+  @media (max-width: 64rem) { .stappen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  /* ── TARIEVEN ───────────────────────────────────────────────────────── */
+  .tarief { padding-block: var(--s-5); }
+  .ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--kolomgat); }
+  .prijs { display: grid; gap: var(--s-0); padding-top: var(--s-1); border-top: 1px solid var(--lijn); }
+  .prijs:first-child { border-top: 2px solid var(--inkt); }
+  .prijs-bedrag { font-size: clamp(2rem, 3.4vw, 3rem); font-stretch: 118%; }
+  @media (max-width: 64rem) { .ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  /* ── HET SLOT ───────────────────────────────────────────────────────────
+     Het beeld begint BOVEN de bovenrand van het donkere vlak en steekt er
+     dus overheen. De naad tussen licht en donker loopt door het beeld, en
+     daardoor leest hij niet als een grens maar als een overlap. */
+  .slot { background: var(--inkt); color: var(--vel); margin-top: 9rem; padding-bottom: var(--s-3); border-radius: var(--rond-l) var(--rond-l) 0 0; }
+  .slot-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .slot-beeld { margin-top: -9rem; aspect-ratio: 4 / 3; }
+  .slot-woord { padding-block: var(--s-4); display: grid; gap: var(--s-1); }
+  .slot-h { font-size: var(--t-2); max-width: 20ch; }
+  .slot-p { color: rgb(255 255 255 / .8); font-size: var(--t-klein); max-width: 46ch; }
+  .slot-knop { border-color: rgb(255 255 255 / .55); color: var(--vel); }
+  .slot-knop:hover { background: var(--vel); color: var(--inkt); border-color: var(--vel); }
+
+  .voet-in { display: grid; gap: var(--s-1); margin-top: var(--s-4); padding-top: var(--s-2); border-top: 1px solid rgb(255 255 255 / .16); }
+  .voet-in .etiket { color: rgb(255 255 255 / .6); }
+  .voet-trust { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-1); font-size: var(--t-klein); color: rgb(255 255 255 / .78); }
+
+  /* ── ONDER 64REM GAAN DE OVERLAPPEN ERAF ────────────────────────────────
+     Negatieve marges op een smal scherm leveren geen overlap op maar een
+     stapel die net niet klopt. Daar wordt het gewoon onder elkaar. */
+  @media (max-width: 64rem) {
+    .blad { margin-top: 0; border-radius: var(--rond-l); }
+    .blad-in { padding-block: var(--s-4); }
+    .feiten { margin-top: 0; }
+    .slot { margin-top: var(--s-5); }
+    .slot-in { grid-template-columns: minmax(0, 1fr); }
+    .slot-beeld { margin-top: calc(var(--s-4) * -1); aspect-ratio: 16 / 10; }
+    .voet-trust { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>

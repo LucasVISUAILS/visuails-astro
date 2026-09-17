@@ -27,24 +27,33 @@
 // the front alone and describe the back as merely making things "more accurate",
 // which under-sold a shot the studio cannot honestly fake.
 //
-// THE OTHER TWO STAY OPTIONAL, for two different reasons, and the difference is
-// worth keeping straight:
-//   detail — the product may simply not have one. Lucas: "bijvoorbeeld als deze
-//     er niet op staat." Where there is no logo, print or hardware to close in
-//     on, the delivered close-up becomes a fabric shot instead, so the set is
-//     still four images either way. Sending your own only makes that one truer.
-//   worn — it is about fit, and fit can be READ from a flat photo. A worse
-//     reading than a real one, but a reading rather than a fabrication.
-// What each optional shot buys is written into `buys` below, because
-// "recommended" with no reason attached is just nagging — a customer who knows
-// what skipping costs can make the trade themselves.
+// ── EN SINDS 17 SEPTEMBER 2026 IS DE CLOSE-UP DE DERDE ──────────────────────
+// Hier stond dat detail en worn allebei optioneel waren, met per stuk een reden.
+// Die van `detail` hield geen stand: "het product heeft misschien geen logo" is
+// waar, maar er is altijd stof, en de close-up wordt hoe dan ook GELEVERD. Zie
+// de noot bij `detail` zelf. Wat overblijft van dat blok:
+//   worn — het gaat om pasvorm, en pasvorm is te LEZEN van een platte foto. Een
+//     slechtere lezing dan een echte, maar een lezing en geen verzinsel. Hij
+//     blijft dus optioneel — met één toevoeging: leeg laten is geen antwoord
+//     meer, overslaan moet gezegd worden. Zie `mustDecide` bij `worn`.
+// Wat de draagfoto oplevert staat in `buys`, want "aanbevolen" zonder reden is
+// zeuren — wie weet wat overslaan kost, kan die afweging zelf maken.
 //
-// WHAT WE DO NOT DO: refuse an order, block a step, or mark a product invalid
-// for a missing optional shot. The only hard gate is a front and a back per
-// product, and even that only applies once a customer has started uploading at
-// all — uploads are optional on every path through /start, and a client who
-// would rather send files over WhatsApp afterwards is a client, not an error
-// state.
+// WHAT WE DO NOT DO: refuse an order outright over a photo. Wat een kaart
+// tegenhoudt is nu drie foto's plus één antwoord — front, back, close-up, en
+// "komt de draagfoto?" — en dat betekent dat het product niet op AF komt te
+// staan en de volgende kaart niet openklapt. Het betekent níét dat de
+// bestelling geweigerd wordt: de waarschuwing bij het versturen noemt de
+// producten die nog iets nodig hebben en laat de klant alsnog door, want
+// uploads zijn op elk pad door /start optioneel en wie zijn bestanden liever
+// achteraf via WhatsApp stuurt is een klant en geen foutmelding.
+//
+// ⚠ IN DE LINKS-NAAR-RECHTS-OPZET IS DIE LAATSTE ONTSNAPPING STRAKKER. Lucas,
+// 17 september: *"'Sla deze over' moet aangeklikt worden, anders kan de klant
+// niet verder naar het volgende product."* In de huidige kolomvorm is er geen
+// "volgende" om tegen te houden — de kaart blijft open staan en dat is de hele
+// rem. Zodra de rij-opzet live gaat (zie /concept/bestelrij) hoort de
+// vooruitknop op een onbeantwoorde kaart uit te staan.
 
 /**
  * The four, in the order they are asked for. `id` is what travels in the R2
@@ -88,30 +97,75 @@ export const SHOTS = [
       nl: 'De achterkant is de enige kant die we niet uit de voorkant kunnen afleiden. Alles wat alléén daar zit — een print, een pasnaad, een logo — zou anders gokwerk zijn dat we je toesturen.',
     },
   },
+  /* ── DE CLOSE-UP IS VERPLICHT GEWORDEN — 17 SEPTEMBER 2026 ────────────────
+   *
+   * Lucas: *"ik wil dat detail close up of stof close up verplicht wordt, want
+   * anders moet ik gokken op dat vlak en krijgt de klant een niet bruikbare
+   * close-up foto terug."*
+   *
+   * Dit is dezelfde redenering als bij de achterkant, één stap verder
+   * doorgetrokken. Een catalogset LEVERT een close-up. Kwam er geen binnen, dan
+   * werd die close-up gemaakt uit een foto waarop het materiaal net niet te
+   * lezen is — en dan krijgt de klant een beeld terug van een stof die hij niet
+   * verkoopt. Dat is geen mindere foto, dat is een onbruikbare.
+   *
+   * DE EIS IS BREDER DAN DE NAAM. Een stoffoto telt net zo goed als een logo of
+   * een naad: wat we nodig hebben is één opname waarop je het materiaal van
+   * dichtbij ziet. Dat staat daarom in `how` en niet alleen in de gids, want de
+   * meeste klanten lezen alleen wat er op het vakje staat. De oude reden om hem
+   * optioneel te houden ("het product heeft misschien geen logo") verdwijnt
+   * daarmee: er is altijd stof.
+   *
+   * WAT HIERMEE VERVALT: de zin dat de close-up "een stoffoto wordt" als er
+   * niets is om op in te zoomen. Die beschreef wat er gebeurde als deze foto
+   * ontbrak, en die situatie bestaat niet meer. */
   {
     id: 'detail',
-    required: false,
+    required: true,
     name: { en: 'Detail', nl: 'Detail' },
     how: {
-      en: 'Close in on the fabric, a seam, the label or the hardware. One is enough.',
-      nl: 'Ga dichtbij op de stof, een naad, het label of de fournituren. Eén is genoeg.',
+      en: 'Close in on the fabric, a seam, the label or the hardware. A plain fabric shot counts — one is enough.',
+      nl: 'Ga dichtbij op de stof, een naad, het label of de fournituren. Een gewone stoffoto telt ook — één is genoeg.',
     },
     buys: {
-      en: 'This is what keeps the material honest — the weave, the wash, the sheen. It is the difference between your garment and a garment. If the product has no logo or hardware to close in on, the close-up you get back is a fabric shot instead, and this is the photo it is read from.',
-      nl: 'Dit houdt het materiaal eerlijk — de weefselstructuur, de wassing, de glans. Het verschil tussen jouw kledingstuk en een kledingstuk. Heeft het product geen logo of fournituren om op in te zoomen, dan wordt de close-up die je terugkrijgt een stoffoto, en dit is de foto waar die van gelezen wordt.',
+      en: 'This is what keeps the material honest — the weave, the wash, the sheen. It is the difference between your garment and a garment, and a close-up comes back to you as a delivered image, so without one we would be reading the material off a photo that cannot show it.',
+      nl: 'Dit houdt het materiaal eerlijk — de weefselstructuur, de wassing, de glans. Het verschil tussen jouw kledingstuk en een kledingstuk. En je krijgt een close-up terug als geleverd beeld, dus zonder deze foto zouden we het materiaal moeten aflezen van een opname die het niet kan laten zien.',
     },
   },
+  /* ── EN DE DRAAGFOTO VRAAGT OM EEN ANTWOORD — 17 SEPTEMBER 2026 ───────────
+   *
+   * Lucas: *"On-model voor fit kan nog wel overgeslagen worden en 'Sla deze
+   * over' moet aangeklikt worden, anders kan de klant niet verder naar het
+   * volgende product."*
+   *
+   * Dat is een DERDE soort vakje, en het verschil met de twee andere is de hele
+   * reden dat `mustDecide` bestaat:
+   *
+   *   verplicht   — er moet een foto in. Geen uitweg.
+   *   mustDecide  — er hoeft geen foto in, maar de klant moet het gezegd hebben.
+   *   vrij        — leeg laten is een antwoord (de gratis referentievakken).
+   *
+   * WAAROM DAT GEEN WOORDENSPEL IS. Een leeg vakje betekent nu twee dingen
+   * tegelijk: "ik heb hem niet" en "ik ben er nog niet aan toegekomen". De
+   * studio kan die twee niet uit elkaar houden en moet dus alsnog bellen — over
+   * precies de foto die optioneel heet. Eén klik haalt die dubbelzinnigheid
+   * weg, en hij kost de klant niets: overslaan blijft overslaan.
+   *
+   * HET BLIJFT OPTIONEEL, en het etiket op het vakje zegt dat ook. Wat verplicht
+   * is, is de keuze — niet de foto. Zie needsChoice in de copytabel onderaan
+   * voor de regel die de kaart daarover toont. */
   {
     id: 'worn',
     required: false,
+    mustDecide: true,
     name: { en: 'Worn', nl: 'Gedragen' },
     how: {
       en: 'Anyone wearing it, any phone, any room. It is for the fit, not for the picture.',
       nl: 'Wie het ook draagt, elke telefoon, elke kamer. Het gaat om de pasvorm, niet om de foto.',
     },
     buys: {
-      en: 'How it actually hangs on a body — the drop of the shoulder, where the hem lands, how oversized oversized really is. Without it the on-model shot is our best reading of a flat photo.',
-      nl: 'Hoe het echt op een lichaam valt — de val van de schouder, waar de zoom eindigt, hoe oversized oversized werkelijk is. Zonder deze is de on-model foto onze beste inschatting van een platte foto.',
+      en: 'How it actually hangs on a body — the drop of the shoulder, where the hem lands, how oversized oversized really is. Without it the on-model shot is our best reading of a flat photo. Skipping it is fine; we only ask you to say so, because an empty slot and a deliberate no look identical from our side.',
+      nl: 'Hoe het echt op een lichaam valt — de val van de schouder, waar de zoom eindigt, hoe oversized oversized werkelijk is. Zonder deze is de on-model foto onze beste inschatting van een platte foto. Overslaan mag; we vragen alleen of je het zegt, want een leeg vakje en een bewuste nee zien er van onze kant hetzelfde uit.',
     },
   },
 ];
@@ -134,6 +188,22 @@ export const REQUIRED_SHOT_IDS = SHOTS.filter((s) => s.required).map((s) => s.id
 /** Is this one of the shots we will not proceed without? */
 export function isRequiredShot(id) {
   return REQUIRED_SHOT_IDS.includes(id);
+}
+
+/**
+ * De hoeken waarbij leeg laten geen antwoord is — zie de noot bij `worn`.
+ *
+ * Bewust dezelfde vorm als REQUIRED_SHOT_IDS hierboven, en bewust een APARTE
+ * lijst: wie ze door elkaar haalt, maakt van een optionele foto een verplichte
+ * en zet daarmee een etiket op het scherm dat niet klopt. Het verschil zit in
+ * wat er moet gebeuren, niet in hoe streng het is — bij allebei kan de klant
+ * niet verder, alleen is "overslaan" hier een geldige uitweg en daar niet.
+ */
+export const MUST_DECIDE_SHOT_IDS = SHOTS.filter((s) => s.mustDecide).map((s) => s.id);
+
+/** Moet de klant hier iets over zeggen voordat het product af kan zijn? */
+export function mustDecideShot(id) {
+  return MUST_DECIDE_SHOT_IDS.includes(id);
 }
 
 /** Is this a shot id we are willing to store? Anything else is refused. */
@@ -387,8 +457,12 @@ export const COPY = {
   en: {
     h: 'Your product photos',
     /* De korte vorm boven de kaarten; de lange staat in de uitklapper eronder. */
-    leadShort: 'Front and back are required; a detail and a worn shot make the result more accurate.',
-    lead: 'One product at a time. The front and the back are both required — both come back to you as delivered images, so neither is ours to guess. The other two are optional and each makes one specific thing more accurate.',
+    /* ── DRIE VERPLICHT, ÉÉN KEUZE — 17 september 2026 ──────────────────
+       Zie de noten bij `detail` en `worn` bovenaan dit bestand. Deze regel
+       stond op "front and back"; dat was twee versies van de waarheid zodra
+       de close-up verplicht werd. */
+    leadShort: 'Front, back and a close-up are required; the worn shot is yours to send or skip.',
+    lead: 'One product at a time. The front, the back and one close-up are required — all three come back to you as delivered images, so none of them is ours to guess. The worn shot is optional, and the only thing we ask is that you say whether it is coming.',
     bulkH: 'Have them all ready?',
     bulkLead: 'Drop the whole lot in and we will sort them. A folder per product works best — we read the folder name as the product.',
     bulkCta: 'Drop files or folders',
@@ -415,6 +489,16 @@ export const COPY = {
     toCardsWhy: 'Takes longer and needs nothing from us afterwards — every photo is already against the right product and the right angle.',
     required: 'Required',
     optional: 'Optional',
+    /* ── DE RIJ — 17 september 2026 ──────────────────────────────────────
+       Eén product tegelijk, met twee pijlen eronder. `rijTel` is de regel boven
+       de balk: "Product 3 van 12 · 2 af". De {n} is er alleen als hij klopt —
+       zie de noot bij de Nederlandse tegenhanger over "van {n}". */
+    vorige: 'Previous',
+    volgende: 'Next product',
+    volgendeLaatste: 'Done',
+    rijTel: 'Product {i} of {n}',
+    rijAf: '{done} finished',
+    railNaam: 'Product {i}',
     skipShot: 'Skip this one',
     undoSkip: 'Add it after all',
     replace: 'Replace',
@@ -426,6 +510,13 @@ export const COPY = {
     // "needs a front photo" to a customer who sent one and skipped the back is
     // telling them to look in the wrong place.
     needsShots: 'Needs {list}',
+    /* Niet "mist": de draagfoto mág ontbreken. Wat ontbreekt is het antwoord,
+       en de regel zegt daarom allebei de uitwegen erbij. Zie `mustDecide`. */
+    /* De naam van de hoek staat ERACHTER en niet midden in de zin: "send a worn
+       photo" leest nog, maar de Nederlandse tegenhanger gaf "stuur een gedragen
+       of sla hem over" — een bijvoeglijk naamwoord waar een zelfstandig
+       naamwoord hoort. Deze vorm werkt bij elke naam die er ooit bij komt. */
+    needsChoice: 'One thing left on {shot}: send it or skip it',
     listAnd: 'and',
     /* ── WAT HIER STOND — 9 september 2026 ──────────────────────────────────
        Elf regels copy voor het blok "extra foto's" op de productkaart: een
@@ -450,8 +541,14 @@ export const COPY = {
     progressOne: '{done} of 1 product ready',
     /* De tussenstap bij ontbrekende verplichte foto's — 3 september 2026. Geen
        poort: de tweede knop stuurt gewoon door. Wél het gevolg erbij. */
-    missingH: '{n} products are still missing a required photo',
-    missingHOne: '1 product is still missing a required photo',
+    /* ── "MISSING A REQUIRED PHOTO" DEKTE DE LADING NIET MEER ──────────────
+       17 september 2026: een product kan nu ook tegengehouden worden door een
+       keuze in plaats van een foto (zie `mustDecide` bovenaan). De kop zei
+       "mist een verplichte foto" — voor die producten onwaar, en precies het
+       soort onwaarheid dat iemand laat zoeken naar iets dat er al is. De lijst
+       eronder zegt per product wát er moet. */
+    missingH: '{n} products are not finished yet',
+    missingHOne: '1 product is not finished yet',
     missingBody: 'You can send the order anyway. Production then starts once the missing photos are in, and we will contact you to ask for them — which usually costs a day.',
     missingMore: 'and {n} more',
     missingFix: 'Add the photos',
@@ -466,8 +563,8 @@ export const COPY = {
   },
   nl: {
     h: 'Je productfoto’s',
-    leadShort: 'Voor- en achterkant zijn verplicht; een detail en een gedragen foto maken het resultaat nauwkeuriger.',
-    lead: 'Eén product tegelijk. De voorkant en de achterkant zijn allebei verplicht — je krijgt ze allebei terug als geleverde foto, dus geen van beide is aan ons om te raden. De andere twee zijn optioneel en maken elk één ding nauwkeuriger.',
+    leadShort: 'Voorkant, achterkant en één close-up zijn verplicht; de draagfoto stuur je mee of sla je over.',
+    lead: 'Eén product tegelijk. De voorkant, de achterkant en één close-up zijn verplicht — je krijgt ze alle drie terug als geleverde foto, dus geen ervan is aan ons om te raden. De draagfoto is optioneel; het enige wat we vragen is dat je zegt of hij komt.',
     bulkH: 'Heb je ze allemaal klaar?',
     bulkLead: 'Sleep de hele hoop erin, dan sorteren wij. Een map per product werkt het best — we lezen de mapnaam als het product.',
     bulkCta: 'Sleep bestanden of mappen',
@@ -480,6 +577,13 @@ export const COPY = {
     toCardsWhy: 'Kost meer tijd en daarna niets meer van ons — elke foto staat dan al bij het juiste product en de juiste hoek.',
     required: 'Verplicht',
     optional: 'Optioneel',
+    /* Zie de Engelse tegenhanger. */
+    vorige: 'Vorige',
+    volgende: 'Volgend product',
+    volgendeLaatste: 'Klaar',
+    rijTel: 'Product {i} van {n}',
+    rijAf: '{done} af',
+    railNaam: 'Product {i}',
     skipShot: 'Sla deze over',
     undoSkip: 'Toch toevoegen',
     replace: 'Vervangen',
@@ -488,6 +592,9 @@ export const COPY = {
     productNameHint: 'Hoe je het zelf in je shop noemt. Het komt met dezelfde naam terug op de bestanden.',
     ready: 'Klaar',
     needsShots: 'Mist {list}',
+    /* Zie de Engelse tegenhanger. */
+    /* Zie de Engelse tegenhanger. */
+    needsChoice: 'Nog één ding bij {shot}: stuur hem mee of sla hem over',
     listAnd: 'en',
     /* Zie de Engelse tegenhanger voor waarom hier nog één regel staat. */
     extraSlot: 'Extra {n}',
@@ -501,8 +608,9 @@ export const COPY = {
     trayAssign: 'Plaats deze',
     progress: '{done} van {total} producten klaar',
     progressOne: '{done} van 1 product klaar',
-    missingH: 'Bij {n} producten mist nog een verplichte foto',
-    missingHOne: 'Bij 1 product mist nog een verplichte foto',
+    /* Zie de Engelse tegenhanger. */
+    missingH: '{n} producten zijn nog niet af',
+    missingHOne: '1 product is nog niet af',
     missingBody: 'Je kunt de bestelling toch versturen. De productie start dan pas als de ontbrekende foto’s binnen zijn, en we nemen contact met je op om ze te vragen — dat kost meestal een dag.',
     missingMore: 'en nog {n}',
     missingFix: 'Foto’s toevoegen',

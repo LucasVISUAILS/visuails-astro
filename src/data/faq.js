@@ -79,6 +79,8 @@ import {
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, extraPhotoRate,
   /* Wat er na de ene revisieronde gebeurt — zie REVISIEBELEID in pricing.js. */
   revisiebeleid,
+  /* Dat het product herkenbaar blijft — zie PRODUCTTROUW in pricing.js. */
+  producttrouw,
   RESOLUTIE,
   HOOG_PER_PRODUCT,
 } from './pricing.js';
@@ -365,6 +367,17 @@ export function faqPageGroups(lang = 'en') {
             a: 'Dan zeggen we dat, voordat je betaalt, in plaats van je een datum te geven en te hopen. Een vastgezette leverdatum wordt eerst tegen de agenda gehouden en pas daarna aangeboden — nooit andersom. Een bestelling die al in de agenda staat, wijkt nooit voor een latere.',
           },
           {
+            /* ── DE DUURSTE VRAAG STOND ER NIET IN — 17 SEPTEMBER 2026 ────
+               Zie de kop van PRODUCTTROUW in pricing.js. De belofte zelf komt
+               daarvandaan; hier staat alleen wat er NIET beloofd wordt, want
+               dat is de helft die deze vraag stelt. De vangnetregel wordt niet
+               overgetypt maar aangewezen: hij staat drie vragen verderop en
+               twee kopieën van een geldbelofte lopen binnen een maand uit
+               elkaar. */
+            q: 'Lijkt het beeld echt op mijn product?',
+            a: `${producttrouw('nl')} Wat we niet beloven, is dat AI je product tot op de draad kopieert — dat kan geen enkele tool, en zo’n belofte merk je pas bij levering. Wat we wél doen: elk verschil dat we zien met de hand rechtzetten, en bij twijfel nemen we contact met je op voordat we verdergaan, in plaats van te gokken. Lukt het alsnog niet, dan lees je bij “Wat als de visuals niet kloppen?” hieronder wat er dan gebeurt.`,
+          },
+          {
             q: 'Wordt elk beeld echt door een specialist gecontroleerd?',
             a: `${clause(reviewClaim('attended', 'nl'))} — een specialist bekijkt elk beeld en controleert het op juistheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
           },
@@ -583,6 +596,12 @@ export function faqPageGroups(lang = 'en') {
         {
           q: 'What if the week I need cannot be held?',
           a: 'Then we tell you that, before you pay, instead of giving you a date and hoping. A reserved delivery date is confirmed against the calendar before it is offered — never after. An order already in the calendar is never pushed to make room for a later one.',
+        },
+        {
+          /* Zie de noot bij de Nederlandse tegenhanger, en de kop van
+             PRODUCTTROUW in pricing.js. */
+          q: 'Will the image really look like my product?',
+          a: `${producttrouw('en')} What we do not promise is that AI copies your product thread for thread — no tool does, and a promise like that only breaks on delivery. What we do: correct every difference we spot by hand, and when we are unsure we contact you before going further instead of guessing. If it still cannot be done, “What if the visuals are not right?” below says what happens then.`,
         },
         {
           q: 'Is every image really checked by a person?',

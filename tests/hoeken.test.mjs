@@ -44,17 +44,23 @@ function ok(naam, kreeg, verwacht) {
 }
 const net = (o) => { const r = quoteOrder(o); return r ? r.netCents / 100 : null; };
 
-console.log('\nde acht hoeken zijn een lijst en geen vrije tekst');
+/* ── ZES, NIET ACHT — 17 SEPTEMBER 2026 ────────────────────────────────────
+   Deze test stond op acht en op vier per groep. Lucas haalde *In de hand* en
+   *Zijkant* eruit en gaf de vrijgekomen vierde plek in beide groepen aan de
+   hoek die de klant zelf bedenkt. Die vierde heeft geen id, geen vaste naam en
+   geen tekening en hoort dus niet in deze lijst — de plek is opmaak, geen data.
+   Zie de kop van ANGLES in src/data/angles.js. */
+console.log('\nde zes hoeken zijn een lijst en geen vrije tekst');
 {
-  ok('er zijn er acht', ANGLES.length, 8);
-  ok('en de ids zijn uniek', new Set(ANGLE_IDS).size, 8);
+  ok('er zijn er zes', ANGLES.length, 6);
+  ok('en de ids zijn uniek', new Set(ANGLE_IDS).size, 6);
   ok('twee groepen', ANGLE_GROUPS, ['model', 'ground']);
   for (const g of ANGLE_GROUPS) {
-    ok(`groep ${g} heeft er vier`, ANGLES.filter((a) => a.group === g).length, 4);
+    ok(`groep ${g} heeft er drie`, ANGLES.filter((a) => a.group === g).length, 3);
   }
   /* Elke hoek draagt zijn eigen foto, want dat is de hele reden dat deze kiezer
      bestaat: je ziet wat je koopt in plaats van het te moeten omschrijven. */
-  ok('elke hoek heeft een eigen beeld', new Set(ANGLES.map((a) => a.shot)).size, 8);
+  ok('elke hoek heeft een eigen beeld', new Set(ANGLES.map((a) => a.shot)).size, 6);
   ok('en dat beeld heet naar zijn hoek',
     ANGLES.every((a) => a.shot === `/img/hoek-${a.id}.webp`), true);
   ok('elke hoek heeft een naam en een regel in beide talen',

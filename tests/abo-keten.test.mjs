@@ -46,7 +46,7 @@ import {
   createSubscriptionRow, activateSubscription, pauseSubscription, cancelSubscription,
   queueAdd, queueLock, monthKey,
 } from '../src/lib/subscription.js';
-import { slotBalans, vensterVoor, monthMinus } from '../src/lib/slots.js';
+import { slotBalans, vensterVoor, monthMinus, subMaandBruto, subEersteBetalingBruto } from '../src/lib/slots.js';
 import { startPlanWindow } from '../src/lib/planStart.js';
 import { PLAN_SLOTS } from '../src/data/pricing.js';
 
@@ -93,7 +93,14 @@ async function incasso(id, maand, status = 'paid') {
     resource: 'payment', id, mode: 'test',
     createdAt: `${maand}-01T10:00:00+00:00`,
     paidAt: status === 'paid' ? `${maand}-01T10:01:00+00:00` : undefined,
-    amount: { value: '790.00', currency: 'EUR' },
+    /* ── HET BRUTOBEDRAG, EN AFGELEID IN PLAATS VAN INGETYPT ────────────────
+       Hier stond '790.00' — het NETTO maandbedrag. Sinds 17 september 2026 wordt
+       er bruto geïncasseerd (zie subBrutoCents() in src/lib/slots.js) én toetst
+       de webhook of de betaling een hele termijn dekt. Een ingetypt nettobedrag
+       is daarmee een betaling die te laag is: de maand werd niet toegekend en
+       vier toetsen verderop viel om. Afgeleid, zodat dit bij de volgende
+       prijswijziging niet opnieuw gebeurt. */
+    amount: { value: (subMaandBruto({ plan: 'studio', term: 'monthly' }) / 100).toFixed(2), currency: 'EUR' },
     description: 'VISUAILS Studio', method: 'directdebit',
     sequenceType: 'recurring', status,
     customerId: 'cst_1', mandateId: 'mdt_1', subscriptionId: 'sub_TEST01',
@@ -286,7 +293,10 @@ console.log('\n10 · de eerste maand telt meteen');
   betaling = {
     resource: 'payment', id: 'tr_EERSTE', mode: 'test',
     createdAt: `${DEZE}-03T10:00:00+00:00`, paidAt: `${DEZE}-03T10:01:00+00:00`,
-    amount: { value: '790.00', currency: 'EUR' },
+    /* Zie de noot bij incasso() hierboven: bruto, en afgeleid. Dit is de EERSTE
+       betaling, dus subEersteBetalingBruto() — op een maandtermijn hetzelfde
+       bedrag, op een vooruitbetaald jaar het hele jaar. */
+    amount: { value: (subEersteBetalingBruto({ plan: 'studio', term: 'monthly' }) / 100).toFixed(2), currency: 'EUR' },
     description: 'VISUAILS Studio', method: 'ideal',
     sequenceType: 'first', status: 'paid',
     customerId: 'cst_2', mandateId: 'mdt_2',

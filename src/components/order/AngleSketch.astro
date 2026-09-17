@@ -51,7 +51,18 @@ import { ANGLE_IDS } from '../../data/angles.js';
 
 interface Props { id: string; }
 const { id } = Astro.props;
-if (!ANGLE_IDS.includes(id)) {
+/* ── 'eigen' IS DE ENIGE UITZONDERING — 17 SEPTEMBER 2026 ──────────────────
+   Deze bewaking hield tegen dat er een schets wordt gevraagd voor een hoek die
+   niet bestaat, en dat blijft zo: een tekening zonder hoek is een tekening van
+   niets. Er is nu één id dat met opzet NIET in ANGLE_IDS staat en toch een
+   schets heeft — de hoek die de klant zelf bedenkt. Die heeft geen vaste naam
+   en geen vaste betekenis, dus hij hoort niet in de datalijst; wat hij wél
+   heeft is een plek in de kiezer, en daar moet iets staan.
+
+   Eén uitzondering, met naam genoemd. Een `if (id === 'eigen') return` zonder
+   deze noot zou over een half jaar lezen als een gat in de bewaking. */
+const VRIJE_SCHETSEN = ['eigen'];
+if (!ANGLE_IDS.includes(id) && !VRIJE_SCHETSEN.includes(id)) {
   throw new Error(`AngleSketch: '${id}' staat niet in ANGLE_IDS — een schets zonder hoek is een tekening van niets.`);
 }
 ---
@@ -151,39 +162,23 @@ if (!ANGLE_IDS.includes(id)) {
       </g>
     )}
 
-    {id === 'in-hand' && (
-      <g>
-        {/* Vastgehouden. De hand is het enige op deze tekening dat de kijker al op
-            ware grootte kent, en daarom werkt hij als meetlat — dat is precies wat
-            deze hoek verkoopt.
 
-            De eerste versie tekende de vingers als open bogen zonder vulling, en
-            dan leest een hand als een kam. Ze zijn nu gevuld en liggen dus ECHT
-            vóór het product, met de duim eroverheen. Het product is ook kleiner
-            geworden: een hand die maar een hoekje van een reus vasthoudt, meet
-            niets. */}
-        <path class="hs-vlak" d="M146 84h146a12 12 0 0 1 12 12v104a12 12 0 0 1-12 12H146z" />
-        <path class="hs-inkt" d="M146 84h146a12 12 0 0 1 12 12v104a12 12 0 0 1-12 12H146z" />
-        <g class="hs-hulp"><path d="M252 110h32M252 186h32" /></g>
-        {/* De handpalm komt links onder het beeld in. */}
-        <path class="hs-vlak" d="M40 96h116v192H40z" />
-        <path class="hs-wit" d="M40 288V118c0-26 18-42 46-42h70v212z" />
-        <path class="hs-inkt" d="M156 76H86c-28 0-46 16-46 42v170" />
-        {/* Vier vingers, gevuld, over de voorkant van het product heen. */}
-        <g>
-          <path class="hs-wit" d="M156 92h58a17 17 0 0 1 0 34h-58z" />
-          <path class="hs-inkt" d="M156 92h58a17 17 0 0 1 0 34h-58" />
-          <path class="hs-wit" d="M156 126h72a17 17 0 0 1 0 34h-72z" />
-          <path class="hs-inkt" d="M156 126h72a17 17 0 0 1 0 34h-72" />
-          <path class="hs-wit" d="M156 160h64a17 17 0 0 1 0 34h-64z" />
-          <path class="hs-inkt" d="M156 160h64a17 17 0 0 1 0 34h-64" />
-          <path class="hs-wit" d="M156 194h48a16 16 0 0 1 0 32h-48z" />
-          <path class="hs-inkt" d="M156 194h48a16 16 0 0 1 0 32h-48" />
-        </g>
-        {/* De duim, schuin over het product: dát maakt er "in de hand" van en geen
-            product dat toevallig naast een hand ligt. */}
-        <path class="hs-wit" d="M120 288c-4-40 10-70 42-90 16-10 32-8 40 6 8 14 4 30-12 40-24 16-36 30-38 44z" />
-        <path class="hs-inkt" d="M120 288c-4-40 10-70 42-90 16-10 32-8 40 6 8 14 4 30-12 40-24 16-36 30-38 44" />
+    {/* ── DE HOEK DIE DE KLANT ZELF BEDENKT — 17 SEPTEMBER 2026 ──────────
+        Bewust leeg. Bij de zes vaste hoeken tekent deze component de FOTO: je
+        ziet wat je krijgt. Hier bestaat dat beeld nog niet — de klant typt een
+        naam en zet er zelf een foto bij, en die foto is de opdracht.
+
+        Een potlood op een leeg veld zegt precies dat, en het zegt het zonder te
+        beloven hoe het eruit gaat zien. Zou hier wél een tekening staan, dan is
+        het de tekening van ONZE invulling van zijn idee, en dat is de ene
+        belofte die we op deze plek niet moeten doen. */}
+    {id === 'eigen' && (
+      <g>
+        <path class="hs-hulp" d="M96 96h140M96 132h96" />
+        <path class="hs-vlak" d="M132 214l96-96 34 34-96 96-46 12z" />
+        <path class="hs-inkt" d="M132 214l96-96 34 34-96 96-46 12z" />
+        <path class="hs-inkt" d="M216 134l34 34" />
+        <path class="hs-inkt hs-dun" d="M132 214l12 12 34 22" />
       </g>
     )}
 
@@ -204,21 +199,6 @@ if (!ANGLE_IDS.includes(id)) {
       </g>
     )}
 
-    {id === 'side' && (
-      <g>
-        {/* Het profiel. Alles staat in dienst van dikte en val: een smalle vorm,
-            een zoom die naar achteren uitloopt, en één mouw die naar voren wijst
-            omdat je hem van opzij niet als vlak ziet maar als lijn. */}
-        <g class="hs-schaduw"><ellipse cx="204" cy="262" rx="34" ry="6" /></g>
-        <path class="hs-vlak" d="M176 84h44c12 0 18 10 20 24l10 52-14 6-6 88h-52l-6-92-12-6 8-48c2-14 6-24 8-24z" />
-        <path class="hs-inkt" d="M176 84h44c12 0 18 10 20 24l10 52-14 6-6 88h-52l-6-92-12-6 8-48c2-14 6-24 8-24z" />
-        <path class="hs-inkt hs-dun" d="M176 86a16 11 0 0 0 30 0" />
-        {/* De mouw, van opzij: een lijn die naar de kijker wijst. */}
-        <path class="hs-inkt" d="M240 108c14 6 20 20 22 38l-16 6" />
-        <path class="hs-hulp" d="M168 252h72" />
-        <path class="hs-inkt hs-dun" d="M168 252h72m-72 0l8-6m-8 6l8 6m64-6l-8-6m8 6l-8 6" />
-      </g>
-    )}
 
     {id === 'inside' && (
       <g>

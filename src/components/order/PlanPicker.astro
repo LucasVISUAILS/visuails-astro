@@ -470,7 +470,11 @@ const c = nl ? {
   nuH: 'What happens next',
   nu: [
     'You pay your first month through Mollie. That same payment makes your bank issue the mandate for the months after it.',
-    'Your fixed week is planned straight away and your credits are ready.',
+    /* "Credits" is het woord van een tool waar je tegoeden in koopt; het
+       Nederlands zei al "saldo". Op het scherm waar de machtiging wordt
+       afgegeven, is dat het laatste moment om te klinken als software.
+       17 september 2026. */
+    'Your fixed week is planned straight away and your balance is ready.',
     'You upload your products in VISUAILS Studio; we make them in your week.',
   ],
   mandateNote: 'A mandate is the permission your bank needs to let us collect monthly — a SEPA direct debit, the same shape as an energy supplier uses. You give it once and you can withdraw it at any time. Paying your first month is the transaction that makes your bank issue it.',
@@ -598,13 +602,24 @@ const kaarten = planList.map((p) => {
       ))}
     </div>
 
-    {/* ── NAAR /api/plan EN NIET MEER NAAR /account/plan/start ────────────────
-        Die tweede route zit achter de sessiecontrole in account.js: wie niet is
-        ingelogd, kwam op de inlogpagina en niet op een betaalscherm. /api/plan
-        is publiek, kijkt zélf of er een sessie is — is die er, dan is dat de
-        klant en telt stap 4 niet mee — en maakt anders de klant aan voordat hij
-        dezelfde motor start. Zie de kop van functions/api/plan.js. */}
-    <form method="post" action="/api/plan" class="plan-form">
+    {/* ── NAAR /api/plan, EN NAAR /account/plan/start ZODRA ER EEN SESSIE IS ──
+        /api/plan is publiek: wie niet is ingelogd, hoort op een betaalscherm te
+        komen en niet op een inlogpagina. Dat blijft de standaardweg.
+
+        ── WAT ER OP 17 SEPTEMBER 2026 BIJ KWAM ────────────────────────────
+        Hier stond dat /api/plan "zélf kijkt of er een sessie is". Dat deed hij,
+        en het antwoord was altijd nee: de sessiecookie is Path=/account (zie
+        COOKIE_FLAGS in src/lib/account.js) en bereikt die route niet. Gevolg:
+        een ingelogde klant die zijn factuurgegevens in deze velden CORRIGEERDE,
+        zag die correctie stil verdwijnen — upsertCustomer() vult alleen lege
+        velden, en de tak die het wél zou bijwerken liep nooit.
+
+        Dus verhuist het formulier van bestemming zodra /account/me zegt dat er
+        iemand is ingelogd: /account/plan/start ligt achter diezelfde sessie,
+        werkt de gegevens bij en start daarna dezelfde motor
+        (handleSubscribeStart). Zonder script verandert er niets en werkt de
+        publieke weg zoals hij altijd deed — één van de twee is altijd goed. */}
+    <form method="post" action="/api/plan" class="plan-form" data-ps-form>
       <input type="hidden" name="lang" value={lang} />
 
       <div class="ps-grid">
@@ -1041,6 +1056,14 @@ const kaarten = planList.map((p) => {
         mail.readOnly = true;
         mail.setAttribute('aria-readonly', 'true');
         mail.classList.add('is-vast');
+      }
+
+      /* En het formulier naar de route die de sessie WÉL ziet. Zie de noot bij
+         het <form> hierboven. Alleen als er echt een account is: `me.email` is
+         wat /account/me teruggeeft voor een ingelogde klant en verder niets. */
+      if (me.email) {
+        var f = document.querySelector('[data-ps-form]');
+        if (f) f.setAttribute('action', '/account/plan/start');
       }
     }).catch(function () { /* geen antwoord: de velden blijven leeg en de klant vult ze zelf */ });
   })();

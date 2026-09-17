@@ -38,7 +38,7 @@
 
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, turnaround, turnaroundShort, reviewClaimShort, aim48 } from '../src/data/pricing.js';
+import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, turnaround, turnaroundShort, reviewClaimShort, aim48, PRODUCTTROUW, producttrouw, producttrouwKort, revisiebeleid } from '../src/data/pricing.js';
 import { ROSTER } from '../src/data/models.js';
 import { styles } from '../src/data/styles.js';
 import { WINDOW_DAYS } from '../src/data/capacity.js';
@@ -738,9 +738,47 @@ console.log('\nde korte belofte zegt hetzelfde als de lange, met minder woorden'
   check('kort nl noemt geen uurgetal', /\d+\s*uur/i.test(turnaroundShort('attended', 'nl')), false);
   check('kort en zegt dat het vooraf vaststaat', /before you pay/i.test(turnaroundShort('attended', 'en')), true);
   check('kort nl zegt dat het vooraf vaststaat', /voor je betaalt/i.test(turnaroundShort('attended', 'nl')), true);
-  /* En de korte controlebelofte blijft over MENSEN gaan. */
-  check('kort en noemt een mens', /human/i.test(reviewClaimShort('attended', 'en')), true);
-  check('kort nl noemt een mens', /hand/i.test(reviewClaimShort('attended', 'nl')), true);
+  /* ── DIT BEWAAKTE HET WOORD "HUMAN" — 17 SEPTEMBER 2026 ────────────────────
+     Er stond: de korte controlebelofte moet over MENSEN gaan (/human/ en /hand/).
+     Dat was juist zolang de belofte "human-checked" heette. Lucas koos op 25
+     augustus voor het Nederlands *"zorgvuldig gecontroleerd"* en op 17 september
+     ook voor het Engels — zie de noot bij REVIEW_CLAIM. Deze twee regels hielden
+     dus een woord vast dat het besluit niet meer draagt.
+
+     WAT ER VOOR IN DE PLAATS KOMT IS STERKER, want het is afgeleid in plaats van
+     ingetypt: het dragende woord van de LANGE regel moet in de korte staan. Dat
+     is precies waar de korte vorm voor bedoeld is (zie REVIEW_CLAIM_SHORT) en het
+     blijft kloppen als het woord ooit weer verandert. Hij vangt ook de scheefstand
+     die op 17 september werd gevonden: NL zei kort "met de hand" en lang
+     "zorgvuldig" — twee verschillende beloftes onder één naam. */
+  /* ── EN SINDS 17 SEPTEMBER, LATER OP DE DAG: DE MAKER OOK ────────────────
+     Het dragende woord was "zorgvuldig/carefully" en dat stond in allebei de
+     vormen. Toen bleek dat de site op veertig pagina's alleen zei dat er
+     gecontroleerd wordt en nergens dat er gemaakt wordt — zie de noot bij
+     REVIEW_CLAIM. Beide helften horen er nu in te staan, in de lange én in de
+     korte vorm: de korte is de tegel op de hero, en daar is de vraag "wie maakt
+     dit" het scherpst. */
+  const KERN = { en: /carefully/i, nl: /zorgvuldig/i };
+  /* "Made and checked by us" en "Made by us, …": allebei zeggen ze dat wij het
+     maken, maar niet met dezelfde woordvolgorde. De zoeker toetst de BEWERING
+     en niet een zinsbouw — anders dwingt hij een formulering af in plaats van
+     een betekenis. */
+  const MAKER = { en: /\bmade\b[\s\S]{0,20}\bby us\b|\bwe make\b/i, nl: /door ons gemaakt|wij maken/i };
+  for (const taal of ['en', 'nl']) {
+    check(`lang ${taal} draagt het zorgvuldigheidswoord`, KERN[taal].test(REVIEW_CLAIM.full[taal]), true);
+    check(`lang ${taal} zegt dat WIJ het maken`, MAKER[taal].test(REVIEW_CLAIM.full[taal]), true);
+    check(`kort ${taal} zegt dat ook`, MAKER[taal].test(reviewClaimShort('attended', taal)), true);
+    /* De korte vorm mag minder zeggen, nooit meer: hij blijft korter. */
+    check(`kort ${taal} is niet langer dan lang`,
+      reviewClaimShort('attended', taal).length <= REVIEW_CLAIM.full[taal].length, true);
+  }
+  /* En de badge belooft geen persoon meer — /terms en /faq doen dat wel, met
+     zoveel woorden, en dáár hoort het ook. Deze regel houdt tegen dat het als
+     los bijvoeglijk naamwoord terugkruipt in de tegel. */
+  for (const taal of ['en', 'nl']) {
+    check(`kort ${taal} belooft geen persoon in de tegel`,
+      /human|met de hand|handmatig/i.test(reviewClaimShort('attended', taal)), false);
+  }
 }
 
 /* ══ GETYPTE AANTALLEN TEGEN DE ECHTE LIJSTEN ══════════════════════════════
@@ -881,6 +919,66 @@ console.log('\nde homepage belooft niets buiten de studio');
   const BUITEN = /click-?through|doorklik|bereik\b|reach\b|impressie|engagement|volgers|followers|conversie|conversion|meer verkopen|sell more|viral/i;
   const treffers = [...home.matchAll(new RegExp(BUITEN.source, 'gi'))].map((m) => m[0]);
   check('de homepage belooft niets van het platform', treffers, []);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * 14 · DE GELIJKENISBELOFTE BELOOFT GEEN GELIJKENIS
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 17 september 2026: *"ik kan niet beloven dat het product met AI er
+ * exact hetzelfde uitziet"*. PRODUCTTROUW is de zin die daar wél iets over zegt,
+ * en de hele constructie eronder — met als sluitstuk REVISIEBELEID punt vier,
+ * waarin geld terug wordt overwogen als een product niet na te maken blijkt —
+ * werkt alleen zolang die zin geen gelijkenis garandeert.
+ *
+ * Dit is precies het soort belofte dat in een latere ronde "sterker" wordt
+ * gemaakt door iemand die de vangnetregel niet naast zich had liggen. Eén woord
+ * ("exact", "identiek", "gegarandeerd") maakt van een eerlijke belofte een
+ * claim die één klant met één screenshot omver duwt — en die klant heeft dan
+ * gelijk, wat het dure deel is.
+ *
+ * DE ZOEKER GELDT VOOR DE CLAIM ÉN VOOR DE PAGINA'S DIE HEM DRAGEN. De kop van
+ * /how-to-photograph zei tot vandaag in het Engels letterlijk "match it
+ * exactly" — geen van de vijf beloftes uit de kop van dit bestand was ooit zo
+ * stellig. Daarom kijkt deze sectie ook in die pagina.
+ */
+console.log('\nde gelijkenisbelofte garandeert geen gelijkenis');
+{
+  const ABSOLUUT = /\b(exact(ly|e|te)?|identiek|identical|pixel[- ]?perfect|gegarandeerd|guaranteed?|1[- ]op[- ]1|one[- ]to[- ]one|precies hetzelfde|exactly the same)\b/i;
+
+  for (const taal of ['nl', 'en']) {
+    const lang = producttrouw(taal);
+    const kort = producttrouwKort(taal);
+    check(`${taal}: de lange belofte bestaat`, typeof lang === 'string' && lang.length > 60, true);
+    check(`${taal}: de korte belofte bestaat`, typeof kort === 'string' && kort.length > 0, true);
+    /* Dezelfde afspraak als bij REVIEW_CLAIM_SHORT: de korte vorm mag minder
+       zeggen, nooit iets anders — en dus ook nooit meer. */
+    check(`${taal}: de korte vorm is korter`, kort.length < lang.length, true);
+    check(`${taal}: de belofte gebruikt geen absoluut woord`, ABSOLUUT.test(lang) || ABSOLUUT.test(kort), false);
+    /* De belofte moet wél iets zeggen: "herkenbaar" is het woord waar de hele
+       zin op staat, en zonder dat is het een zin over inspanning zonder maat. */
+    check(`${taal}: en noemt wel herkenbaarheid`, /herkenbaar|recognis|recogniz/i.test(lang), true);
+  }
+
+  /* De vangnetregel moet bestaan, want zonder hem staat de belofte hierboven
+     alleen. Vier punten, en het laatste gaat over geld terug. */
+  for (const taal of ['nl', 'en']) {
+    const beleid = revisiebeleid(taal);
+    check(`${taal}: het revisiebeleid heeft vier punten`, beleid.length, 4);
+    check(`${taal}: en het laatste gaat over terugbetalen`,
+      /terugbetal|geld terug|refund|money back/i.test(beleid[beleid.length - 1].join(' ')), true);
+  }
+
+  /* De twee talen moeten dezelfde belofte doen; een kant die meebeweegt en een
+     kant die blijft staan is fout nummer drie uit de kop van dit bestand. */
+  check('beide talen staan er', Object.keys(PRODUCTTROUW.lang).sort(), ['en', 'nl']);
+  check('en beide korte vormen ook', Object.keys(PRODUCTTROUW.kort).sort(), ['en', 'nl']);
+
+  /* En de pagina waar de vraag gesteld wordt, mag hem niet zelf beantwoorden
+     met een sterkere belofte dan de claim hierboven. */
+  const gids = codeOnly(read('src/components/UploadGuidelinesPage.astro'));
+  const treffers = [...gids.matchAll(new RegExp(ABSOLUUT.source, 'gi'))].map((m) => m[0]);
+  check('/how-to-photograph belooft nergens een exacte kopie', treffers, []);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

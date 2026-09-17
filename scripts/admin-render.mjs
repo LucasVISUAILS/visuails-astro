@@ -47,6 +47,26 @@ FILES.push({ id: fid++, kind: 'delivery', filename: 'VOLT-p2-back.webp', bytes: 
 FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1001.jpg', bytes: 2_400_000, product_key: 'p1', shot: null, created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
 FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1002.jpg', bytes: 2_500_000, product_key: 'p2', shot: null, created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
 
+/* De afgeleide formaten per beeld — zie de noot bij `FROM file_assets` in
+   makeEnv(). 500 t/m 503 zijn compleet, 504 mist zijn webp, 505 heeft niets. */
+/* Drie bestellingen voor /admin/planning — zie de noot bij `FROM orders` in
+   makeEnv(). De dagen worden vanaf vandaag gerekend, zodat de schermafdruk niet
+   over een maand naar een lege agenda kijkt. */
+const _vandaag = new Date();
+const _dag = (n) => new Date(_vandaag.getTime() + n * 86400000).toISOString().slice(0, 10);
+const PLANNING_ORDERS = [
+  { ...ORDER, id: 90, ref: 'VIS-2607-9920', brand: 'VOLT', status: 'in_production', tier: 'attended',
+    product_count: 6, window_start: _dag(2), window_end: _dag(3), payment_status: 'paid', created_at: _dag(-4) },
+  { ...ORDER, id: 91, ref: 'VIS-2609-1140', brand: 'NOORD', status: 'received', tier: 'attended',
+    product_count: 14, window_start: _dag(5), window_end: _dag(6), payment_status: 'paid', created_at: _dag(-2) },
+  { ...ORDER, id: 92, ref: 'VIS-2609-2277', brand: 'KADE', status: 'received', tier: 'unattended',
+    product_count: 3, window_start: null, window_end: null, payment_status: 'unpaid', created_at: _dag(-1) },
+];
+
+const ASSETS = [];
+for (const id of [500, 501, 502, 503]) for (const format of ['jpg', 'png', 'webp']) ASSETS.push({ id, format });
+for (const format of ['jpg', 'png']) ASSETS.push({ id: 504, format });
+
 /* Verzonnen, en met opzet niet zoals een echte klant schrijft: één korte en één
    die over drie alinea's gaat, zodat de opmaak van allebei te beoordelen is. Geen
    echte bedrijfsnaam en geen echt adres — zie de regel daarover in FigDash.astro. */
@@ -70,6 +90,16 @@ const TESTIMONIALS = [
 function makeEnv() {
   const pick = (sql) => {
     const s = sql.replace(/\s+/g, ' ');
+    /* ── DE AFGELEIDE FORMATEN — 13 september 2026 ───────────────────────────
+       De bestandenpagina toont sinds vandaag per beeld of er een jpg, png en
+       webp van is (zie de formaatkolom in admin.js). Zonder deze fixture staat
+       er op elke schermafdruk "nog niet omgezet", en dan is precies de kolom
+       die je wilt beoordelen de enige die je niet ziet.
+
+       Met opzet niet alle beelden compleet: het eerste heeft alle drie, het
+       tweede mist de webp (een omzetting die halverwege stopte) en het derde
+       heeft er geen — dat zijn de drie toestanden die de kolom kan tonen. */
+    if (s.includes('FROM file_assets a')) return ASSETS;
     if (s.includes('FROM admin_sessions') || s.includes('FROM admin_users')) {
       return { admin_id: 1, id: 1, email: 'hello@visuails.com', expires_at: '2099-01-01' };
     }
@@ -98,7 +128,16 @@ function makeEnv() {
     if (s.includes('FROM custom_models')) return [];
     if (s.includes('FROM customer_style_locks')) return [];
     if (s.includes('FROM orders WHERE id')) return ORDER;
-    if (s.includes('FROM orders')) return [ORDER];
+    /* ── DE PLANNING HEEFT MEER DAN ÉÉN BESTELLING NODIG — 13 september 2026 ─
+       /admin/planning tekent veertien dagen met de bestellingen erin, en met
+       één rij (die bovendien al geleverd is) is elke dag leeg. Dan staat er op
+       de schermafdruk precies niets van wat je wilt beoordelen: de chips, de
+       bezetting, en sinds vandaag de neerzetknoppen.
+
+       De data zijn met opzet ongelijk: één vastgelegd paar dat vandaag begint,
+       één zwaar paar verderop, en één zonder vaste dag ("zo snel mogelijk").
+       Dat zijn de drie manieren waarop werk op deze planning terechtkomt. */
+    if (s.includes('FROM orders')) return PLANNING_ORDERS;
     if (s.includes("review_state = 'revision_requested'")) return [];
     return null;
   };

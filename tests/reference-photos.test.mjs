@@ -128,11 +128,22 @@ console.log('\nde batchgrens rekent er wél mee');
 console.log('\nhet plusje staat er, naast de vier');
 {
   const pl = read('src/scripts/pipeline.js');
-  ok('buildRefs bestaat', /function buildRefs\(card, slots\)/.test(pl), true);
-  /* IN het raster van de vier en niet in een blok eronder — dat is letterlijk wat
-     Lucas beschreef: *"een plusje naast de 4 aanbevolen foto's"*. */
-  ok('en wordt in het slotraster gehangen',
-    /SHOT_IDS\.forEach\(\(id\) => slots\.appendChild\(buildSlot\(card, id\)\)\);[\s\S]{0,400}buildRefs\(card, slots\);/.test(pl), true);
+  ok('buildRefs bestaat', /function buildRefs\(card\)/.test(pl), true);
+  /* ── EN HIJ HANGT SINDS 17 SEPTEMBER 2026 IN EEN EIGEN STROOK ──────────────
+     Deze twee regels legden vast dat het plusje IN het raster van de vier stond:
+     *"een plusje naast de 4 aanbevolen foto's"*, 13 augustus. Dat klopte zolang
+     een uploadvak 96 pixels hoog was.
+
+     Vandaag zijn het staande beelden van 3/4 en heeft Lucas om de indeling van
+     /concept/bestelrij gevraagd, waar dit kleine duimnagels zijn in een eigen
+     rij eronder. Een vijfde vak van 3/4 maakt van een aanbod een verzoek.
+
+     De test legt dus de NIEUWE plek vast, en niet minder streng dan de oude:
+     buildRefs geeft een strook terug, en die strook komt in de kaart terecht. */
+  ok('en geeft een eigen strook terug',
+    /const strip = document\.createElement\('div'\);[\s\S]{0,120}strip\.className = 'pu-refs';/.test(pl), true);
+  ok('die onder de vier vakken in de kaart wordt gehangen',
+    /li\.append\(head, slots\);[\s\S]{0,200}if \(refs\) li\.append\(refs\);/.test(pl), true);
   ok('het maximum komt uit de config en niet uit een getal hier',
     /Number\(cfg\.maxRefPerProduct\)/.test(pl), true);
   ok('en de knop verdwijnt als het vol is', /add\.hidden = vol;/.test(pl), true);
@@ -176,10 +187,41 @@ console.log('\nen het formulier zegt in beide talen wat het is');
      zwaarder mag maken, stijgt de weging en het aantal foto's niet — en dan
      belooft die zin beelden die er niet komen. Deze regel bewaakt dus niet
      alleen "uit de bron", maar uit de JUISTE bron. */
-  ok('de hint rekent het aantal beelden uit pricing.js',
-    /refHint:[\s\S]{0,700}\$\{beeldenVoor\(service\) \|\| CATALOG_IMAGES\}/.test(flow), true);
+  /* ── HET GETAL IS OP 17 SEPTEMBER 2026 UIT DE TEKST GEHAALD ────────────────
+     Lucas: *"het getal van je 'krijgt nog steeds 4 foto's' moet aangepast worden
+     wanneer iemand een extra angle heeft toegevoegd."* Terecht: dit stond als
+     `${beeldenVoor(service)}` in de zin en werd dus bij de BOUW vastgezet, ver
+     voordat de klant in stap 1 een hoek kan bijkiezen. Wie er één koos, las
+     "je krijgt nog steeds 4 beelden" terwijl er vijf komen.
+
+     De bron is niet veranderd — het is nog steeds beeldenVoor(service) — maar hij
+     reist nu via cfg naar de browser en wordt daar opgeteld bij de gekozen
+     hoeken. Deze drie regels bewaken die hele keten: geen getal in de zin, de
+     juiste bron in de config, en de optelling in pipeline.js. */
+  ok('de hint bakt geen getal meer in',
+    /refHint:[\s\S]{0,700}\$\{beeldenVoor\(service\)/.test(flow), false);
+  ok('  maar draagt een {n} die de browser invult',
+    /refHint:[\s\S]{0,700}\{n\}/.test(flow), true);
+  ok('  en het aantal van de dienst reist mee in de config',
+    /beeldenPerProduct: beeldenVoor\(service\)/.test(flow), true);
   ok('  en niet uit de puntenweging van de agenda',
     /refHint:[\s\S]{0,700}puntenVoor\(/.test(flow), false);
+  {
+    const pl2 = read('src/scripts/pipeline.js');
+    const som = pl2.slice(pl2.indexOf('function beeldenPerProductNu()'),
+                          pl2.indexOf('function beeldenPerProductNu()') + 400);
+    ok('  pipeline telt de gekozen hoeken erbij',
+      /Number\(cfg\.beeldenPerProduct\)[\s\S]{0,200}anglesChosen\(\)\.length/.test(som), true);
+    /* PER PRODUCT en niet maal het aantal producten: dat is de som van
+       extrasCount() hiernaast, en die twee door elkaar halen zou hier
+       "je krijgt er 30" onder één productkaart zetten. */
+    ok('  maar vermenigvuldigt niet met het aantal producten',
+      /\* n\b/.test(som), false);
+    /* En het meelopende overzicht bij het totaal rekent met dezelfde som — dat
+       vakje zei "24 beelden" waar er met een extra hoek 30 komen. */
+    ok('  en het overzicht bij het totaal rekent met dezelfde som',
+      /const perProduct = beeldenPerProductNu\(\);/.test(pl2), true);
+  }
   ok('het maximum reist mee in de config', /maxRefPerProduct: MAX_REF_PER_PRODUCT/.test(flow), true);
   ok('  uit shots.js en niet uit pricing.js',
     /import \{ SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy \} from '\.\.\/\.\.\/data\/shots\.js';/.test(flow), true);

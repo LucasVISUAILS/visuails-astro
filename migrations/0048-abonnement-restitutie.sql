@@ -1,0 +1,26 @@
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0048 · WAT ER VAN EEN ABONNEMENTSTERMIJN IS TERUGBETAALD
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Gevonden op 17 september 2026, bij een gerichte doorlichting van de backend.
+--
+-- Mollie stuurt dezelfde webhook als er geld terug gaat. Voor een BESTELLING is
+-- dat sinds augustus afgehandeld: `payments.refunded_cents` (migratie 0029) legt
+-- vast hoeveel er terug is, en daar hangt de creditnota aan.
+--
+-- Voor een ABONNEMENT was er niets. `recordSubscriptionPaid()` las
+-- `amountRefunded` nooit, dus een teruggeboekte incasso van € 796,18 liet de rij
+-- op 'paid' staan, de maand toegekend, de factuur vol en het abonnement lopend.
+-- Geld terug, dienst blijft.
+--
+-- ── WAAROM EEN KOLOM EN NIET DE STATUS ────────────────────────────────────
+--
+-- `subscription_payments.status` draagt wat Mollie zegt, en dat is bij een
+-- GEDEELTELIJKE restitutie gewoon 'paid' met een bedrag ernaast. De status kan
+-- dus niet het antwoord dragen op "hoeveel is er terug". Precies dezelfde
+-- afweging als bij `payments.refunded_cents` — zie de kop van migratie 0029.
+--
+-- NOT NULL DEFAULT 0, zodat elke bestaande rij meteen een geldig antwoord heeft:
+-- er is niets terugbetaald tot het tegendeel is vastgelegd.
+
+ALTER TABLE subscription_payments ADD COLUMN refunded_cents INTEGER NOT NULL DEFAULT 0;

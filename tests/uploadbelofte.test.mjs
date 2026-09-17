@@ -43,6 +43,7 @@
 
 import { readFileSync } from 'node:fs';
 import { SHOTS, REQUIRED_SHOT_IDS } from '../src/data/shots.js';
+import { telwoord } from '../src/data/models.js';
 import { UPLOAD_TYPES, uploadFormats, uploadFormatsSentence } from '../src/lib/uploads.js';
 
 let goed = 0, totaal = 0;
@@ -67,8 +68,18 @@ const nodig = REQUIRED_SHOT_IDS.length;
 
 console.log('de bron van het getal');
 ok('shots.js heeft verplichte hoeken', nodig > 0, true);
-ok('en het zijn er twee: voorkant en achterkant',
-  SHOTS.filter((s) => s.required).map((s) => s.id), ['front', 'back']);
+/* ── DRIE SINDS 17 SEPTEMBER 2026 ─────────────────────────────────────────
+   De close-up is verplicht geworden (Lucas: *"anders moet ik gokken op dat
+   vlak en krijgt de klant een niet bruikbare close-up foto terug"*). Het getal
+   op de voorpagina leidt zichzelf af uit deze lijst, dus die hoefde niet mee —
+   maar deze toets pinde de lijst vast op twee en hield daarmee de verandering
+   tegen die hij juist moest bewaken. Zie de kop van src/data/shots.js. */
+ok('en het zijn er drie: voorkant, achterkant en de close-up',
+  SHOTS.filter((s) => s.required).map((s) => s.id), ['front', 'back', 'detail']);
+/* En de draagfoto is de enige waar leeg laten geen antwoord is. Staat hier,
+   zodat het verdwijnen ervan opvalt in dezelfde toets die het getal bewaakt. */
+ok('en precies één hoek vraagt om een keuze',
+  SHOTS.filter((s) => s.mustDecide).map((s) => s.id), ['worn']);
 
 /* ── WELKE REGELS TELLEN MEE, EN WAAROM NIET ALLEMAAL ──────────────────────
  *
@@ -85,7 +96,11 @@ ok('en het zijn er twee: voorkant en achterkant',
  * sturen, en alleen die.
  */
 const BELOFTE = /(all (?:you|we) need|genoeg om te beginnen|enough to start|are all)/i;
-const REGELS = home.replace(/\$\{FOTOS\}/g, nodig === 2 ? 'Two' : String(nodig)).split('\n')
+/* Het telwoord komt uit dezelfde functie als de pagina zelf gebruikt. Hier
+   stond `nodig === 2 ? 'Two' : String(nodig)` — een tweede vertaling van getal
+   naar woord, die bij drie een cijfer opleverde waar de regex een woord zoekt.
+   Eén bron, en dan klopt hij bij elk aantal. */
+const REGELS = home.replace(/\$\{FOTOS\}/g, telwoord(nodig, 'en', true)).split('\n')
   .filter((r) => /phone photos?|smartphone photos?|telefoonfoto/i.test(r))
   .filter((r) => BELOFTE.test(r));
 

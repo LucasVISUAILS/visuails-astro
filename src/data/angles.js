@@ -88,6 +88,22 @@ export function isUitbreidbaar(service) {
   return UITBREIDBARE_DIENSTEN.includes(String(service || ''));
 }
 
+/* ── DRIE PER GROEP, EN DE VIERDE PLEK IS VAN DE KLANT — 17 SEPTEMBER 2026 ──
+ *
+ * Er stonden er acht: vier op een model en vier op de ondergrond. Lucas haalde
+ * *In de hand* en *Zijkant* eruit en zette op de vrijgekomen vierde plek in
+ * beide groepen de hoek die de klant ZELF bedenkt: een naam die hij typt, plus
+ * een foto die verplicht is, want bij een zelfbedachte hoek is die foto de
+ * opdracht.
+ *
+ * Die vierde staat daarom NIET in deze lijst — hij bestaat alleen zodra iemand
+ * hem intypt, en hij heeft geen vaste id, geen vaste naam en geen tekening.
+ * `tests/hoeken.test.mjs` telt er dus zes en drie per groep; de vierde plek is
+ * een plek in de OPMAAK, geen regel in deze data.
+ *
+ * Wat dit raakt: /api/order leest per id een veld `angle_<id>`, dus die twee
+ * velden worden niet meer gelezen. Bestellingen die er al zijn, staan los van
+ * dit bestand. */
 export const ANGLES = [
   // ── OP MODEL ─────────────────────────────────────────────────────────────
   {
@@ -120,16 +136,6 @@ export const ANGLES = [
       nl: 'Dichtbij terwijl het gedragen wordt: de stof op spanning, de pasvorm bij een naad.',
     },
   },
-  {
-    id: 'in-hand',
-    group: 'model',
-    shot: '/img/hoek-in-hand.webp',
-    name: { en: 'In the hand', nl: 'In de hand' },
-    line: {
-      en: 'Held, so the size reads. The one thing a photo on white cannot say.',
-      nl: 'Vastgehouden, zodat de maat afleesbaar is. Het enige wat een foto op wit niet kan zeggen.',
-    },
-  },
 
   // ── OP DE ONDERGROND ─────────────────────────────────────────────────────
   {
@@ -140,16 +146,6 @@ export const ANGLES = [
     line: {
       en: 'Straight down from above, laid out and squared up.',
       nl: 'Recht van boven, uitgelegd en rechtgelegd.',
-    },
-  },
-  {
-    id: 'side',
-    group: 'ground',
-    shot: '/img/hoek-side.webp',
-    name: { en: 'Side', nl: 'Zijkant' },
-    line: {
-      en: 'The profile — thickness, drape, the shape from the side.',
-      nl: 'Het profiel — dikte, val, de vorm van opzij.',
     },
   },
   {

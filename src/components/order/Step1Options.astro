@@ -46,28 +46,24 @@ import MarketplacePicker from './MarketplacePicker.astro';
 import BackgroundPicker from './BackgroundPicker.astro';
 import { copy as chCopy } from '../../data/channels.js';
 import { background, DEFAULT_ID, copy as bgCopy } from '../../data/backgrounds.js';
-import StijlRegel from './StijlRegel.astro';
 
 /*
- * ── `huisLook`: DE LOOK STAAT ER, OOK ALS ER NIETS TE KIEZEN VALT ──────────
+ * ── DE STIJLREGEL IS HIER WEGGEGAAN — 13 september 2026 ────────────────────
  *
- * Lucas, 9 september 2026: *"Als je vanaf deze pagina op start order klikt ga
- * je gelijk naar het bestelformulier zonder een style gekozen te hebben."*
+ * Hier stond een `huisLook`-prop die op /start/catalog de stijlregel rendeerde.
+ * Lucas, 9 september: *"Als je vanaf deze pagina op start order klikt ga je
+ * gelijk naar het bestelformulier zonder een style gekozen te hebben."* De
+ * oplossing van toen — de stijl NOEMEN op de catalogpagina — was goed maar niet
+ * genoeg, want hij kwam terecht op de plek waar dit blok staat: onder het
+ * meelopende totaal.
  *
- * Op /lifestyle en /complete klopte dat niet — daar staat de stijlkiezer in de
- * stap en dragen de looklinks hun keuze mee in `?style=`. Op CATALOG klopte het
- * wel, en anders dan het lijkt is dat geen vergeten stap: er zijn er twee, en
- * de tweede ("Custom Brand") is een eigen aanvraagstroom en geen optie in dit
- * formulier. Er valt hier dus niets te kiezen.
- *
- * Maar /catalog kondigt "stap 1 — kies je catalog-stijl" aan, en dan hoort het
- * formulier te BEVESTIGEN waar je terechtgekomen bent in plaats van erover te
- * zwijgen. Eén regel: welke look dit is, en waar de andere zit. De naam komt
- * uit de data, dus hij kan niet gaan afwijken van de pagina die ernaar wijst.
+ * Lucas, 13 september, over precies hetzelfde: *"anders is het voor de klant
+ * ook totaal niet duidelijk wat ze kunnen ontvangen en verlaten dan gelijk de
+ * bestelpagina."* De stijl staat nu boven het aantal, in de look-slot van
+ * OrderFlow — één plek, voor alle drie de diensten, en niet per pagina anders.
  */
 interface Props {
   lang: 'en' | 'nl';
-  huisLook?: boolean;
   /* `modelSoort` stond hier: welk label de modelvouw kreeg op /start/complete,
      waar er twee modelfoto's in één bestelling zitten. De vouw is op 10
      september naar stap 2 verhuisd (ModelKeuze.astro) en stelt daar één korte
@@ -75,7 +71,7 @@ interface Props {
      noemen. De prop is daarmee dood en weg; hij stond nog op twee pagina's en
      deed daar niets. */
 }
-const { lang, huisLook = false } = Astro.props;
+const { lang } = Astro.props;
 
 const ch = chCopy(lang);
 const bg = bgCopy(lang);
@@ -107,7 +103,17 @@ const s = START[lang];
     niets te kiezen viel — waar is voor vandaag (er staat één catalogstijl in de
     data), maar niet iets wat je in de opmaak vastzet. StijlRegel telt de lijst:
     één stijl is een mededeling, meer is een keuzelijst. */}
-{huisLook && <StijlRegel lang={lang} categorie="catalog" />}
+{/* ── DE STIJLREGEL STAAT HIER NIET MEER — 13 september 2026 ──────────────
+    Hij stond hier achter `huisLook`, en dat betekende op /start/catalog: als
+    ZEVENDE blok in stap 1, onder het meelopende totaal en onder de vraag of er
+    lifestyle bij moet. Sinds vandaag hoort de stijl bóven het aantal te staan —
+    zie de noot bij <slot name="look" /> in OrderFlow.astro — en de catalogpagina
+    vult die slot nu zelf.
+
+    De prop is met opzet HELEMAAL weg en niet op false blijven staan: zolang hij
+    bestaat, kan een volgende pagina hem aanzetten en staat de stijl er twee keer
+    (dat gebeurde vandaag letterlijk, bij het bouwen hiervan). tests/stijlkeuze
+    bewaakt dat er per pagina precies één stijlveld per categorie staat. */}
 
 <div class="s1-folds">
   {/* De haken waarop toonMerkkit() in pipeline.js deze blokken verbergt zodra

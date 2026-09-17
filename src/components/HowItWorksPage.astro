@@ -247,10 +247,18 @@ const COPY = {
     gateLead: 'No date is printed until the calendar clears it.',
     gateBody: 'A reserved delivery date is confirmed before you pay, never after. If the week you need cannot be held, you hear that — not an optimistic guess. It is the one promise on this site we would rather lose an order over than break.',
     craftH: 'More than AI. Finished by hand.',
-    craftBody: "The images are generated first, and then every one goes through a pair of hands. We finish it in professional editing software and grade the colour to your brand. Then a specialist checks three things: does the product match your own photo, do all the images look the same, and is the framing right.",
+    /* ── DE VOLGORDE ZEI HET VERKEERDE — 17 september 2026 ──────────────────
+       Hier stond: *"The images are generated first, and then every one goes
+       through a pair of hands."* Dat is waar en het leest als: de machine maakt
+       het, wij kijken het na. Over de hele site stond dat patroon — zie de noot
+       bij REVIEW_CLAIM in pricing.js.
+       Dezelfde stappen, dezelfde eerlijkheid over de techniek, maar met de
+       maker vooraan: wij bouwen het beeld, en generatie is een van de dingen
+       die we daarbij gebruiken. */
+    craftBody: "We build every image ourselves. Generating is one of the steps — then it goes through a pair of hands: finished in professional editing software, colour graded to your brand. Then a specialist checks three things: does the product match your own photo, do all the images look the same, and is the framing right.",
     chips: ['Professional editing & retouch', 'Colour grading to your brand', reviewClaim('attended', 'en')],
     beforeAlt: 'A flat, ungraded product scene before VISUAILS finishing',
-    afterAlt: 'The same scene, finished and human-checked by VISUAILS',
+    afterAlt: 'The same scene, finished and carefully checked by VISUAILS',
 
     portalH: 'You approve it, image by image.',
     portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${clause(TIERS.attended.delivery.en)}.`,
@@ -344,7 +352,8 @@ const COPY = {
     gateLead: 'We noemen pas een datum als we in de agenda hebben gekeken of die week nog vrij is.',
     gateBody: 'Een vastgezette leverdatum wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — geen optimistische gok. Het is de enige belofte op deze site waarvoor we liever een bestelling verliezen dan dat we hem breken.',
     craftH: 'Meer dan AI. Met de hand afgewerkt.',
-    craftBody: 'De beelden worden eerst gegenereerd, en daarna gaat elk beeld door de hand. We werken het af in professionele editingsoftware en corrigeren de kleur naar je merk. Daarna kijkt een specialist naar drie dingen: klopt het product met je eigen foto, zien alle beelden er hetzelfde uit, en zit de uitsnede goed.',
+    /* Zie de Engelse tegenhanger voor waarom de volgorde is omgedraaid. */
+    craftBody: 'Wij bouwen elk beeld zelf op. Genereren is daarin één stap — daarna gaat het beeld door de hand: afgewerkt in professionele editingsoftware, kleur gecorrigeerd naar je merk. Daarna kijkt een specialist naar drie dingen: klopt het product met je eigen foto, zien alle beelden er hetzelfde uit, en zit de uitsnede goed.',
     chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
     beforeAlt: 'Een platte, ongecorrigeerde productscène vóór de afwerking van VISUAILS',
     afterAlt: 'Dezelfde scène, afgewerkt en met de hand gecontroleerd door VISUAILS',

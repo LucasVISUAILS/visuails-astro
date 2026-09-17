@@ -1,0 +1,114 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+@font-face{font-family:'IS';src:url('file:///home/claude/repo/dist/fonts/gedeeld/instrument-sans-latin-standard-normal.woff2') format('woff2');font-weight:100 900;font-style:normal;}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:728px;overflow:hidden}
+body{font-family:'IS',sans-serif;background:#fff;color:#141414;-webkit-font-smoothing:antialiased}
+
+/* ---------- winkelbalk ---------- */
+.bar{position:absolute;inset:0 0 auto 0;height:66px;border-bottom:1px solid #E6E6E6;
+     display:flex;align-items:center;padding:0 24px 0 56px;gap:40px;background:#fff}
+.merk{font-weight:700;font-size:22px;letter-spacing:.24em}
+.nav{display:flex;gap:28px;font-size:15px;color:#555}
+.nav b{color:#141414;font-weight:600}
+.iconen{margin-left:auto;display:flex;gap:22px;align-items:center;color:#141414}
+.ic{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
+
+/* ---------- linkerkolom: koopinformatie ---------- */
+.info{position:absolute;left:56px;top:118px;width:370px}
+.kruim{font-size:13px;color:#8A8A8A;letter-spacing:.02em}
+h1{font-size:34px;line-height:1.14;font-weight:600;letter-spacing:-.02em;margin-top:14px}
+.prijs{margin-top:16px;font-size:24px;font-weight:600;display:flex;align-items:baseline;gap:12px}
+.prijs s{font-size:17px;font-weight:400;color:#9A9A9A}
+.kopje{margin-top:28px;font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#6A6A6A}
+.kleuren{margin-top:12px;display:flex;gap:10px}
+.kleuren i{width:30px;height:30px;border-radius:50%;display:block;border:1px solid #E0E0E0}
+.kleuren i.aan{outline:1.5px solid #141414;outline-offset:3px}
+.maten{margin-top:12px;display:flex;gap:8px}
+.maten span{min-width:50px;height:44px;border:1px solid #D8D8D8;display:flex;align-items:center;
+            justify-content:center;font-size:15px;color:#141414}
+.maten span.aan{border-color:#141414;background:#141414;color:#fff}
+.maten span.op{color:#C2C2C2;border-color:#ECECEC;text-decoration:line-through}
+.mand{margin-top:26px;height:54px;background:#141414;color:#fff;display:flex;align-items:center;
+      justify-content:center;font-size:16px;font-weight:600;letter-spacing:.02em}
+.borg{margin-top:18px;display:flex;flex-direction:column;gap:9px;font-size:13.5px;color:#666}
+.borg div{display:flex;gap:9px;align-items:center}
+.borg svg{width:15px;height:15px;stroke:#141414;fill:none;stroke-width:1.7;flex:none}
+.tekst{margin-top:24px;padding-top:22px;border-top:1px solid #EDEDED;
+       font-size:14.5px;line-height:1.6;color:#4A4A4A}
+
+/* ---------- rechterkolom: de galerij ---------- */
+.strip{position:absolute;left:458px;top:112px;display:flex;flex-direction:column;gap:14px}
+.strip figure{width:104px;height:104px;position:relative;background:#F2F2F2}
+.strip img{width:100%;height:100%;object-fit:cover;display:block}
+.strip figure.aan{outline:1.5px solid #141414;outline-offset:-1.5px}
+.strip figcaption{background:#C6F100;color:#141414;font-size:11px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;padding:3px 6px;margin-bottom:5px;
+  display:inline-block}
+
+.hoofd{position:absolute;left:590px;top:118px;width:520px;height:520px;background:#F2F2F2}
+.hoofd img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ---------- blauwdruk-etiketten ---------- */
+.et{position:absolute;background:#C6F100;color:#141414;font-size:13px;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;white-space:nowrap;z-index:5}
+.et.mini{font-size:11px;padding:3px 6px;letter-spacing:.04em}
+
+/* ---------- onder de vouw ---------- */
+.verder{position:absolute;left:590px;top:664px;width:520px}
+.verder .rij{border-top:1px solid #E6E6E6;height:52px;display:flex;align-items:center;
+             justify-content:space-between;font-size:15px;color:#141414}
+.verder .rij span{color:#9A9A9A;font-size:20px;line-height:1}
+</style>
+
+<div class="bar">
+  <div class="merk">KWARTS</div>
+  <div class="nav"><span>Nieuw</span><b>Denim</b><span>Tops</span><span>Schoenen</span><span>Sale</span></div>
+  <div class="iconen">
+    <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
+    <svg class="ic" viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+  </div>
+</div>
+
+<div class="info">
+  <div class="kruim">Home / Denim / Wide leg</div>
+  <h1>Wide leg jeans</h1>
+  <div class="prijs">€ 79,95 <s>€ 99,95</s></div>
+
+  <div class="kopje">Kleur — Roze</div>
+  <div class="kleuren">
+    <i class="aan" style="background:#E8A7B8"></i>
+    <i style="background:#2F3B52"></i>
+    <i style="background:#E8E4DC"></i>
+    <i style="background:#1A1A1A"></i>
+  </div>
+
+  <div class="kopje">Maat</div>
+  <div class="maten"><span>XS</span><span class="aan">S</span><span>M</span><span>L</span><span class="op">XL</span></div>
+
+  <div class="mand">In winkelmand</div>
+
+  <div class="borg">
+    <div><svg viewBox="0 0 24 24"><path d="M3 7h13v10H3zM16 10h4l1 3v4h-5z"/><circle cx="7" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg>Gratis verzending vanaf € 50</div>
+    <div><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 3 6"/><path d="M4 8v4h4"/></svg>30 dagen bedenktijd</div>
+  </div>
+  <p class="tekst">Hoge taille, ruime pijp en een verwassen roze tint. Gemaakt van
+  stevig katoendenim dat met het dragen zachter wordt.</p>
+</div>
+
+<div class="strip">
+  <div><figcaption>01 Voorkant</figcaption><figure class="aan"><img src="file:///home/claude/repo/public/img/ba2-na-front.webp"></figure></div>
+  <div><figcaption>02 Achterkant</figcaption><figure><img src="file:///home/claude/repo/public/img/ba2-na-achter.webp"></figure></div>
+  <div><figcaption>03 Op model</figcaption><figure><img src="file:///home/claude/repo/public/img/ba2-na-model.webp"></figure></div>
+  <div><figcaption>04 Detail</figcaption><figure><img src="file:///home/claude/repo/public/img/ba2-na-detail.webp"></figure></div>
+</div>
+
+<div class="hoofd"><img src="file:///home/claude/repo/public/img/ba2-na-front.webp"></div>
+
+<!-- etiketten: waar de geleverde beelden landen -->
+<div class="et" style="left:590px;top:86px">Hoofdbeeld</div>
+
+<div class="verder">
+  <div class="rij">Productdetails <span>+</span></div>
+</div>

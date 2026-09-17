@@ -66,12 +66,19 @@ import { productsFor } from '../../../src/data/plans.js';
 import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
 import { mailCreditNote } from '../../../src/lib/cancelMail.js';
-import { notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed } from '../../../src/lib/notify.js';
+import { notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
 import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
-import { grantSlots } from '../../../src/lib/slots.js';
+import { grantSlots, subMaandBruto, subEersteBetalingBruto } from '../../../src/lib/slots.js';
+
+/* Dezelfde twee cent als FACTUUR_SPELING_CENT in src/lib/invoice.js, en om
+   dezelfde reden — zie de noot bij de dekkingscontrole in
+   recordSubscriptionPaid(). Apart en niet geïmporteerd: dat is een constante
+   over FACTUREN en deze gaat over TOEKENNING, en twee dingen die toevallig
+   hetzelfde getal hebben horen niet aan elkaar vast te zitten. */
+const TERMIJN_SPELING_CENT = 2;
 import { pauseSubscription, loadSubscription, subscriptionByRef } from '../../../src/lib/subscription.js';
 import { koppelSubscription } from '../../../src/lib/subscribe.js';
 import { payerHash } from '../../../src/lib/payer.js';
@@ -318,6 +325,82 @@ export async function onRequestPost({ request, env }) {
  * aanbieden verandert niets aan een rij die er niet is — maar wel een foutregel
  * die de subscription-id noemt, want dat is het enige waarmee je hem terugvindt.
  */
+/**
+ * Een abonnementstermijn waarvan (een deel van) het geld terug is.
+ *
+ * Zie de noot in recordSubscriptionPaid() voor waarom dit een aparte weg is en
+ * geen tak halverwege, en de kop van notifySubscriptionRefunded() voor wat er
+ * met opzet NIET gebeurt.
+ *
+ * DE BETALING WORDT VASTGELEGD, ook als zij er nog niet stond. Bij een
+ * chargeback op een termijn die om wat voor reden dan ook nooit is
+ * binnengekomen in `subscription_payments`, is dit de enige rij die er ooit van
+ * komt — en een restitutie zonder betaling in de boeken is erger dan een
+ * betaling zonder restitutie.
+ */
+async function recordSubscriptionRefund(env, payment, mode, { sub, cents, terug }) {
+  const betaald = String(payment.paidAt || payment.createdAt || '');
+  const month = /^\d{4}-\d{2}/.test(betaald) ? betaald.slice(0, 7) : new Date().toISOString().slice(0, 7);
+  const volledig = terug >= cents && cents > 0;
+
+  /* ── EEN TOEWIJZING EN GEEN OPTELLING ──────────────────────────────────────
+     `amountRefunded` is bij Mollie een LOPEND TOTAAL. Optellen bij elke
+     aflevering zou bij twee webhooks voor dezelfde restitutie het dubbele
+     opleveren. Dezelfde afweging als bij recordRefundOnPayment() verderop —
+     daar staat hij uitgeschreven. De `?1 > refunded_cents` houdt bovendien een
+     late her-aflevering met een LAGER totaal tegen. */
+  try {
+    await env.DB.prepare(
+      `INSERT INTO subscription_payments (subscription_id, external_id, status, amount_cents, currency, month, refunded_cents, raw_payload)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+       ON CONFLICT (external_id) DO UPDATE
+          SET status = excluded.status,
+              refunded_cents = excluded.refunded_cents
+        WHERE excluded.refunded_cents > subscription_payments.refunded_cents`
+    ).bind(
+      sub.id, payment.id, payment.status, cents,
+      (payment.amount?.currency || 'EUR').toUpperCase(), month, terug,
+      payloadZonderPersoon(payment)
+    ).run();
+  } catch (err) {
+    if (/no such column/i.test(String(err?.message || err))) {
+      console.error('[mollie-webhook] subscription_payments.refunded_cents ontbreekt — draai migratie 0048. De restitutie is NIET vastgelegd —', payment.id);
+    } else {
+      console.error('[mollie-webhook] restitutie op abonnement niet vastgelegd —', payment.id, '—', err?.message || err);
+    }
+  }
+
+  /* Bij een volledige restitutie komt er geen maand bij. `pause_reason` is een
+     eigen reden en niet 'payment_failed': die laatste wordt door een geslaagde
+     afschrijving automatisch opgeheven (zie de zelfherstelregel verderop), en
+     dat is precies wat hier NIET mag gebeuren — een teruggeboekte termijn hoort
+     door een mens bekeken te worden. Een pauze die de klant zelf heeft gezet,
+     blijft ook hier van hem. */
+  if (volledig) {
+    await env.DB.prepare(
+      `UPDATE subscriptions
+          SET status = 'paused', paused_at = COALESCE(paused_at, datetime('now')),
+              pause_reason = 'refunded', updated_at = datetime('now')
+        WHERE id = ?1 AND (status <> 'paused' OR pause_reason <> 'customer')`
+    ).bind(sub.id).run().catch((e) => console.error('[mollie-webhook] pauze na restitutie mislukt —', sub.id, '—', e?.message || e));
+  }
+
+  console.error('[mollie-webhook] GELD TERUG op abonnement', sub.id, '—', payment.id,
+    `(${mode}) — ${terug} van ${cents} cent${volledig ? ', volledig, abonnement gepauzeerd' : ', gedeeltelijk'}`);
+
+  const klant = await env.DB.prepare(
+    'SELECT email, brand FROM customers WHERE id = ?1'
+  ).bind(sub.customer_id).first().catch(() => null);
+  const ref = await env.DB.prepare(
+    'SELECT ref FROM subscriptions WHERE id = ?1'
+  ).bind(sub.id).first().catch(() => null);
+
+  await notifySubscriptionRefunded(env, {
+    subRef: ref?.ref || '', plan: sub.plan, brand: klant?.brand, email: klant?.email,
+    bedragCents: cents, terugCents: terug, maand: month, volledig, molliestatus: payment.status,
+  });
+}
+
 async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}) {
   const subId = String(payment.subscriptionId || '');
   const cents = mollieAmountToCents(payment.amount) ?? 0;
@@ -332,12 +415,15 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
        kenmerk gevonden en verder precies zo behandeld als elke termijn: een rij in
        subscription_payments, de maand toegekend, de slots gezet. */
     sub = subRef
+      /* `ref` en de btw-kolommen komen sinds 17 september mee: de eerste voor de
+         meldingen, de laatste twee omdat het VERWACHTE bedrag hieronder bruto is.
+         Zie subBrutoCents() in src/lib/slots.js. */
       ? await env.DB.prepare(
-        `SELECT id, customer_id, plan, term, status, amount_cents, slots_json
+        `SELECT id, ref, customer_id, plan, term, status, amount_cents, slots_json, vat_treatment, vat_rate
            FROM subscriptions WHERE ref = ?1`
       ).bind(String(subRef)).first()
       : await env.DB.prepare(
-        `SELECT id, customer_id, plan, term, status, amount_cents, slots_json
+        `SELECT id, ref, customer_id, plan, term, status, amount_cents, slots_json, vat_treatment, vat_rate
            FROM subscriptions WHERE mollie_subscription_id = ?1`
       ).bind(subId).first();
   } catch (err) {
@@ -354,12 +440,77 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
     return;
   }
 
+  /* ═══ EERST: IS ER GELD TERUGGEGAAN? ══════════════════════════════════════
+   *
+   * Gevonden op 17 september 2026. De poort bovenaan dit bestand laat 'refunded'
+   * met opzet door — dat is nodig voor bestellingen, waar de restitutie verderop
+   * wordt verrekend. Voor een abonnement ging die betaling rechtstreeks door
+   * deze functie heen en werd hij behandeld als een geslaagde incasso: rij op
+   * 'paid', maand toegekend, pauze opgeheven, factuur vol.
+   *
+   * Een teruggeboekte termijn van € 796,18 leverde dus een volledige maand op.
+   *
+   * ── DE VOLGORDE IS NIET VRIJ ──────────────────────────────────────────────
+   * Deze controle staat vóór de INSERT en vóór de toekenning, en niet erna. Een
+   * restitutie die pas na het toekennen wordt opgemerkt, moet iets ongedaan
+   * maken; een restitutie die ervoor wordt opgemerkt, hoeft alleen niets te
+   * doen. Dat scheelt de hele klasse fouten waarin de terugdraai zelf omvalt.
+   *
+   * ── EN EEN LATERE RESTITUTIE OP EEN OUDERE TERMIJN ───────────────────────
+   * Die komt hier ook langs — Mollie levert dezelfde webhook opnieuw af met een
+   * hoger `amountRefunded`. De maandrij bestaat dan al en blijft staan; zie de
+   * kop van notifySubscriptionRefunded() voor waarom een toegekende maand niet
+   * wordt ingetrokken. Wat er wél gebeurt is het bedrag vastleggen en, bij een
+   * volledige restitutie, het abonnement pauzeren zodat er geen maand bij komt.
+   */
+  const terug = mollieAmountToCents(payment.amountRefunded) ?? 0;
+  if (terug > 0 || payment.status === 'refunded') {
+    await recordSubscriptionRefund(env, payment, mode, { sub, cents, terug });
+    return;
+  }
+
   /* De maand waar deze termijn bij hoort, uit de betaaldatum van Mollie en niet
      uit `datetime('now')`. Een melding die een dag later wordt afgeleverd — of
      opnieuw wordt aangeboden na een storing — hoort bij de maand waarin betaald
      is en niet bij de maand waarin wij hem verwerkten. */
   const betaald = String(payment.paidAt || payment.createdAt || '');
   const month = /^\d{4}-\d{2}/.test(betaald) ? betaald.slice(0, 7) : new Date().toISOString().slice(0, 7);
+
+  /* ═══ DEKT DIT BEDRAG EEN HELE TERMIJN? ═══════════════════════════════════
+   *
+   * Gevonden op 17 september 2026. Voor BESTELLINGEN is deze vraag in augustus
+   * gesteld en beantwoord — betalingGedekt() in src/lib/invoice.js houdt tegen
+   * dat een factuur uitgaat op een bedrag dat er niet is, juist met het oog op
+   * betalingen die met de hand in het Mollie-dashboard worden gemaakt.
+   *
+   * Voor ABONNEMENTEN werd hij niet gesteld. Deze functie kende de volle bundel
+   * toe ongeacht `cents`: een betaling van € 1 met `metadata.sub_ref` erin
+   * leverde een complete maand Brand op — dertig producten.
+   *
+   * ── DE SPELING IS DEZELFDE TWEE CENT, EN OM DEZELFDE REDEN ───────────────
+   * Te streng is erger dan te ruim: een klant die correct betaalt en géén saldo
+   * krijgt, merkt dat meteen en Lucas hoort het pas als iemand belt. Twee cent
+   * dekt afronding en niets anders. Zie de kop van FACTUUR_SPELING_CENT.
+   *
+   * ── WAT ER GEBEURT ALS HET NIET KLOPT ────────────────────────────────────
+   * De betaling wordt WEL vastgelegd — geld dat binnenkomt hoort in de boeken,
+   * ook als het te weinig is — en de maand wordt NIET toegekend. Dat is de minst
+   * ingrijpende uitkomst: er hoeft niets teruggedraaid te worden, en zodra er
+   * alsnog een volledige termijn binnenkomt, loopt het gewoon door.
+   */
+  const verwacht = subRef ? subEersteBetalingBruto(sub) : subMaandBruto(sub);
+  if (verwacht > 0 && cents + TERMIJN_SPELING_CENT < verwacht) {
+    await env.DB.prepare(
+      `INSERT INTO subscription_payments (subscription_id, external_id, status, amount_cents, currency, month, raw_payload)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+       ON CONFLICT (external_id) DO NOTHING`
+    ).bind(sub.id, payment.id, payment.status, cents,
+           (payment.amount?.currency || 'EUR').toUpperCase(), month, payloadZonderPersoon(payment))
+      .run().catch((e) => console.error('[mollie-webhook] te lage abonnementsbetaling niet vastgelegd —', payment.id, '—', e?.message || e));
+    console.error('[mollie-webhook] abonnementsbetaling DEKT DE TERMIJN NIET —', sub.ref || sub.id, '—', payment.id,
+      `(${mode}) — ${cents} van ${verwacht} cent; maand NIET toegekend`);
+    return;
+  }
 
   const granted = productsFor(sub.plan);
 

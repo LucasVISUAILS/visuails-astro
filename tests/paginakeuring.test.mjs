@@ -102,7 +102,22 @@ for (const f of paginas) {
   }
 
   for (const m of html.matchAll(/<img\b([^>]*)>/g)) {
-    if (!/\salt\s*=/.test(m[1])) zonderAlt.push(`${naam} → ${m[1].trim().slice(0, 60)}`);
+    /* ── `alt` ZONDER = IS OOK EEN ALT — 17 SEPTEMBER 2026 ──────────────────
+       Deze toets zocht op `alt=` en viel daarmee over correcte markup. Astro
+       schrijft een attribuut met een LEGE string weg als kale `alt`, zonder
+       `=""`, en dat is geldige HTML met precies dezelfde betekenis: een leeg
+       alternatief, wat een schermlezer het beeld laat overslaan. Dat is wat je
+       wílt bij het tweede en derde beeld van een set waar het eerste de
+       beschrijving draagt.
+
+       Met de oude zoeker ging de toets rood op zeven van die beelden per taal
+       en zou de reparatie zijn geweest: een alt-tekst verzinnen voor een beeld
+       dat niets toevoegt. Dat is de dure soort toets — hij dwingt je iets te
+       veranderen wat klopte.
+
+       Wat hij WEL moet vangen staat er nog: een <img> zonder enig alt-attribuut,
+       want dan leest een schermlezer de bestandsnaam voor. */
+    if (!/\salt(\s*=|[\s>]|$)/.test(m[1])) zonderAlt.push(`${naam} → ${m[1].trim().slice(0, 60)}`);
   }
 
   const rij = [...html.matchAll(/<h([1-6])\b/g)].map((m) => Number(m[1]));

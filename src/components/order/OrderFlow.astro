@@ -636,6 +636,17 @@ for (const l of ['en', 'nl'] as const) {
     productName: s.productName,
     ready: s.ready,
     needsShots: s.needsShots,
+    /* De regel voor de kaart die alleen nog een KEUZE nodig heeft — de
+       draagfoto sturen of hem overslaan. Zie `mustDecide` in shots.js. */
+    needsChoice: s.needsChoice,
+    /* De rij: twee pijlen, de balk erboven en de telregel. Zie de noot bij
+       `data-pl-rij` in ProductUploader.astro. */
+    vorige: s.vorige,
+    volgende: s.volgende,
+    volgendeLaatste: s.volgendeLaatste,
+    rijTel: s.rijTel,
+    rijAf: s.rijAf,
+    railNaam: s.railNaam,
     listAnd: s.listAnd,
     /* Van het blok "extra foto's" op de productkaart is alleen `extraSlot` over —
        de naam van een uploadvakje `extra1`. Het blok zelf is op 9 september 2026
@@ -745,9 +756,24 @@ for (const l of ['en', 'nl'] as const) {
        zwaarder mag maken, gaat de weging omhoog en het aantal foto's niet — en
        dan belooft deze zin beelden die er niet komen. beeldenVoor() beantwoordt
        de vraag die hier gesteld wordt; zie de noot bij KIND_BEELDEN. */
+    /* ── DE ZIN STAAT AAN DE KANT VAN DE KLANT — 17 september 2026 ──────────
+       Hij begon met "Meer foto's van hetzelfde product helpen ONS". Lucas:
+       *"Dit moest niet zijn het helpt ons want het helpt de klant."* Klopt, en
+       het is geen woordenspel: dit is het enige vakje op de kaart waar niets
+       verplicht is, dus de enige reden om er iets in te leggen is wat de klant
+       eraan overhoudt. "Het helpt ons" is dan een reden om het niet te doen.
+
+       ── EN HET GETAL LOOPT MEE ─────────────────────────────────────────────
+       `{n}` en geen ingebakken cijfer. Het getal hier was `beeldenVoor(service)`,
+       vastgezet bij de bouw, en dat is het aantal van de dienst zónder de hoeken
+       die de klant in stap 1 kan bijbestellen. Wie er één bijkoos las dus "je
+       krijgt nog steeds 4 beelden" terwijl er vijf komen. pipeline.js vult {n}
+       met beeldenPerProductNu() en schrijft hem opnieuw zodra er een hoek bij
+       of af gaat. */
     refHint: l === 'nl'
-      ? `Gratis. Meer foto’s van hetzelfde product helpen ons — je krijgt nog steeds ${beeldenVoor(service) || CATALOG_IMAGES} beelden.`
-      : `Free. More photos of the same product help us — you still receive ${beeldenVoor(service) || CATALOG_IMAGES} images.`,
+      ? 'Gratis, en hoe meer we van je product zien, hoe beter we het nabootsen — je krijgt er geen extra beelden door, het blijven er {n}.'
+      : 'Free, and the more of your product we can see, the closer we get it — it does not add images, you still receive {n}.',
+    refLead: l === 'nl' ? 'Nog meer foto’s van dit product?' : 'More photos of this product?',
     refSlot: l === 'nl' ? 'Referentie {n}' : 'Reference {n}',
     refFull: l === 'nl'
       ? 'Dat zijn er {max} — genoeg om je product goed te zien.'
@@ -842,7 +868,8 @@ const REQUIRED_COPY = [
   // typed, so a fifth angle added to shots.js brings its own build-time check
   // instead of shipping a slot with no word under the drawing.
   'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
-  'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.listAnd', 'pu.trayAssign',
+  'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.needsChoice', 'pu.listAnd', 'pu.trayAssign',
+  'pu.vorige', 'pu.volgende', 'pu.volgendeLaatste', 'pu.rijTel', 'pu.rijAf', 'pu.railNaam',
   'pu.ownModel',
   'pu.ownLook', 'pu.ownLookH', 'pu.ownLookHint', 'pu.ownLookNone',
   'pu.extraSlot',
@@ -856,7 +883,7 @@ const REQUIRED_COPY = [
   // in de blob, want een dienst die hem morgen wél krijgt, hoort geen kaart met
   // een leeg label te tekenen — dat is precies wat deze lijst voorkomt.
   'pu.ratioH', 'pu.ratioHint', 'pu.ratioSame', 'pu.ratioImage',
-  'pu.refAdd', 'pu.refHint', 'pu.refSlot', 'pu.refFull', 'pu.refDrop',
+  'pu.refAdd', 'pu.refHint', 'pu.refLead', 'pu.refSlot', 'pu.refFull', 'pu.refDrop',
   ...LIFESTYLE_RATIOS.map((r) => `ratio.name.${r.id}`),
   // The product questions, generated from src/data/attributes.js rather than
   // typed, for the reason the shot names are: a second question added there
@@ -1904,6 +1931,36 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         </div>
       </fieldset>
       )}
+
+      {/* ── DE LOOK STAAT VÓÓR HET AANTAL — 13 september 2026 ────────────────
+          Lucas: *"De klant moet altijd een style kiezen voor elke service die ze
+          kiezen dus fix dit … anders is het voor de klant ook totaal niet
+          duidelijk wat ze kunnen ontvangen en verlaten dan gelijk de
+          bestelpagina."*
+
+          Gemeten op /nl/start/lifestyle vóór vandaag: "Welke look?" was het
+          NEGENDE blok in stap 1 — ná het aantal, ná de uitleg over wat een
+          compleet setje kost, en ná het meelopende totaal. Geen van de vier
+          looks stond aan, en geen van de vier radio's was `required`. Een
+          bezoeker die via /start binnenkwam zag dus eerst een bedrag en
+          daarna pas, als hij ver genoeg scrolde, waar dat bedrag over ging —
+          en kon doorklikken zonder ooit een look te kiezen.
+
+          De volgorde die hier hoort is: eerst WAT, dan HOEVEEL. Een bedrag is
+          nooit duur of goedkoop op zichzelf (zie de kop van
+          BestelOverzicht.astro); het is duur tegenóver wat je ervoor krijgt, en
+          dat moet de klant dus eerst gezien hebben.
+
+          ── WAAROM EEN TWEEDE SLOT EN NIET DE BESTAANDE VERPLAATST ──────────
+          De bestaande <slot /> verderop draagt méér dan de look: bij catalog
+          zitten daar ook CombiKeuze en de hoeken in, en CombiKeuze staat er met
+          opzet ONDER het totaal — dat is het moment waarop een lager tarief per
+          beeld iets betekent (zie de noot in catalog.astro). Die twee hebben
+          dus tegengestelde eisen, en één slot kan er maar aan één voldoen.
+
+          Een pagina die deze slot niet vult, verliest niets: een lege slot
+          rendert niets. */}
+      <slot name="look" />
 
       {/* One select, one name. Every option is a real count and the last one
           deliberately is not — countOf() in /api/order would read "30+" as
@@ -3261,10 +3318,21 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      the decision being made on this screen — an opt-in that competes with the
      submit is an opt-in people tick to get past it. --r-md, one step down from
      the panel above, because it is a control and not a surface. */
+  /* ── GEEN KADER, WANT DIT IS GEEN VERKLARING — 17 september 2026 ──────────
+     De twee vinkjes hierboven staan in een kader, en daar staat de reden bij:
+     het zijn verklaringen, en die moeten in een schermafdruk terug te vinden
+     zijn. Dit is geen verklaring maar een AANBOD — "zal ik dit bewaren voor de
+     volgende keer" — en het droeg toch hetzelfde kader, alleen een halve regel
+     smaller (62ch tegen 64ch). Drie kaders onder elkaar in drie breedtes, en
+     het derde beloofde een gewicht dat het niet heeft.
+
+     Een streep erboven in plaats van een doos eromheen: dat zegt "hier begint
+     iets anders" zonder te zeggen "hier moet je tekenen". Dezelfde breedte als
+     de twee erboven, zodat de linkerkant van alle drie op één lijn ligt. */
   .pl-save-offer {
-    margin: 1.4rem 0 0; padding: .9rem 1rem;
-    border: 1px solid var(--line); border-radius: var(--r-md);
-    max-width: 62ch;
+    margin: 1.4rem 0 0; padding: .9rem 0 0;
+    border-top: 1px solid var(--line);
+    max-width: 64ch;
   }
   .pl-save-row { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; }
   /* Same 22px as .cc-check in CookieConsent.astro, the only other checkbox on

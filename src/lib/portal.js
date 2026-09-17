@@ -1067,6 +1067,28 @@ function dispositionFilename(name) {
 // PAGES
 // ─────────────────────────────────────────────────────────────────────────────
 
+/*
+ * ── DE STUDIO KIJKT MEE — 13 september 2026 ────────────────────────────────
+ *
+ * Lucas keurde dit goed: er staat in /admin nergens een knop om te zien wat de
+ * klant van een bestelling ziet. Je kon dus niet controleren of een levering er
+ * goed uitziet zonder de link uit een oude mail te vissen.
+ *
+ * Waarom dit een aparte export is en geen link naar /o/<token>: het token wordt
+ * GEHASHT opgeslagen (zie hashToken in token.js), dus het staat nergens meer in
+ * leesbare vorm. Een knop die er een nieuw token voor maakt, zou het token van
+ * de klant intrekken — dan kijk je mee en is zijn link stuk.
+ *
+ * Dus rendert het adminpaneel deze functie met zijn eigen sessie. Het is
+ * dezelfde HTML als de klant ziet, met hetzelfde token-veld leeg: elke knop
+ * erin post naar /o/<token> en doet dus niets. Dat is precies goed — dit is een
+ * VOORVERTONING en geen tweede bediening; wie wil goedkeuren, doet dat in het
+ * paneel zelf.
+ */
+export async function portalVoorvertoning(env, order, lang = 'nl') {
+  return renderOrder(env, order, '', lang);
+}
+
 async function renderOrder(env, order, token, lang) {
   const t = COPY[lang];
   const attended = order.tier === 'attended';

@@ -43,6 +43,7 @@
  */
 import { AMOUNT, euro, vatLabel, CATALOG_IMAGES, COMPLETE_IMAGES } from '../../data/pricing.js';
 import { localizedPath } from '../../i18n/ui.js';
+import { tegelsVoor } from '../../data/overzichtbeelden.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -64,6 +65,32 @@ const btw = vatLabel('excl', lang);
 const erbij = richting === 'erbij';
 const doel = erbij ? '/start/complete/' : '/start/catalog/';
 
+/* ── WAAROM DIT OP 13 SEPTEMBER OPNIEUW IS GEBOUWD ─────────────────────────
+   Lucas, over een bezoeker: *"De upsell van add lifestyle to this order bij
+   bijvoorbeeld catalog is ook heel onlogisch (…) hij gaf aan erop geklikt te
+   hebben en uit het niets opeens meer moest betalen zonder te weten waar en wat
+   hij voor betaalde."*
+
+   De diagnose is niet dat de tekst te kort was — die stond er, met het tarief
+   erin. Het is de VOLGORDE. Wat er stond was een bedrag PER PRODUCT, en het
+   enige getal dat de bezoeker op dat moment in zijn hoofd had, was zijn TOTAAL,
+   twee centimeter hoger op het scherm. Om te weten wat er ging gebeuren moest
+   hij zelf vermenigvuldigen. Doet niemand. Dus klikte hij, sprong de pagina
+   naar een ander formulier, en stond er een groter getal waar hij niet om
+   gevraagd had.
+
+   Drie dingen veranderen dat, en alle drie gaan ze over VÓÓR de klik:
+
+     1 · HET BEDRAG. Zijn totaal nu, en zijn totaal straks, naast elkaar.
+         Uitgerekend door pipeline.js met dezelfde ladder als het totaal
+         erboven — zie de noot bij `data-pl-combi-nu` daar.
+     2 · HET BEELD. Drie lifestylebeelden: dit is wat erbij komt. Een aanbod
+         waarvan je alleen de prijs ziet, is een prijsverhoging.
+     3 · DE WAARSCHUWING DAT JE VERSPRINGT. Er staat nu letterlijk dat je naar
+         een ander formulier gaat en wat er meegaat. Dat was het tweede deel van
+         de verrassing: hij dacht dat hij iets aanvinkte.
+*/
+
 /* ── ÉÉN REGEL, EN DAT IS EEN EIS EN GEEN STIJL ────────────────────────────
    De eerste versie hiervan legde het uit in drie zinnen: welke beelden erbij
    komen, wat de carrousel is, en waarom samen goedkoper is. Gemeten kostte dat
@@ -77,32 +104,94 @@ const doel = erbij ? '/start/complete/' : '/start/catalog/';
    waar iemand ze zoekt. */
 const c = nl ? {
   vraag: 'Ook lifestyle erbij?',
-  regel: `${COMPLETE_IMAGES} beelden per product in plaats van ${CATALOG_IMAGES}, voor ${perCombi} per product — per beeld goedkoper dan los bestellen.`,
+  /* Het aantal beelden als VERSCHIL en niet als twee losse getallen: "4 wordt
+     7" is één feit; "7 in plaats van 4" laat de lezer zelf aftrekken. */
+  beelden: `${CATALOG_IMAGES} beelden per product wordt ${COMPLETE_IMAGES}`,
+  erbijLabel: 'Wat erbij komt',
+  nuLabel: 'Je totaal nu',
+  straksLabel: 'Met lifestyle erbij',
   knop: 'Lifestyle erbij',
+  /* De waarschuwing dat je verspringt. Geen kleine letter maar het tweede deel
+     van de verrassing die de bezoeker had: hij dacht dat hij iets aanvinkte, en
+     kwam op een ander formulier terecht. */
+  sprong: 'Je gaat naar het gecombineerde formulier. Je aantal en je catalogstijl gaan mee; de lifestylelook kies je daar.',
   vraagEraf: 'Toch alleen catalog?',
-  regelEraf: `${CATALOG_IMAGES} beelden per product, voor ${perCatalog} per product. Je aantal gaat mee.`,
+  beeldenEraf: `${COMPLETE_IMAGES} beelden per product wordt ${CATALOG_IMAGES}`,
+  erbijLabelEraf: 'Wat eraf gaat',
+  straksLabelEraf: 'Alleen catalog',
   knopEraf: 'Alleen catalog',
+  sprongEraf: 'Je gaat naar het catalogformulier. Je aantal en je catalogstijl gaan mee.',
   btwNoot: btw,
+  tarief: (p: string) => `${p} per product`,
 } : {
   vraag: 'Add lifestyle too?',
-  regel: `${COMPLETE_IMAGES} images per product instead of ${CATALOG_IMAGES}, at ${perCombi} a product — less per image than ordering them apart.`,
+  beelden: `${CATALOG_IMAGES} images per product becomes ${COMPLETE_IMAGES}`,
+  erbijLabel: 'What gets added',
+  nuLabel: 'Your total now',
+  straksLabel: 'With lifestyle added',
   knop: 'Add lifestyle',
+  sprong: 'This takes you to the combined form. Your count and your catalog style come along; you pick the lifestyle look there.',
   vraagEraf: 'Only catalog after all?',
-  regelEraf: `${CATALOG_IMAGES} images per product, at ${perCatalog} a product. Your count comes along.`,
+  beeldenEraf: `${COMPLETE_IMAGES} images per product becomes ${CATALOG_IMAGES}`,
+  erbijLabelEraf: 'What comes off',
+  straksLabelEraf: 'Catalog only',
   knopEraf: 'Catalog only',
+  sprongEraf: 'This takes you to the catalog form. Your count and your catalog style come along.',
   btwNoot: btw,
+  tarief: (p: string) => `${p} a product`,
 };
+
+/* De beelden die erbij komen. Uit dezelfde lijst als het meelopende overzicht
+   en de plaat op /start/plan — zie de kop van overzichtbeelden.js voor waarom
+   die lijst op één plek staat.
+
+   Alleen bij 'erbij'. Bij 'eraf' laat je zien wat er WEGGAAT, en drie beelden
+   naast de vraag "wil je hier vanaf" is een aanbod dat zichzelf tegenspreekt. */
+const tegels = erbij ? tegelsVoor('lifestyle', lang).slice(0, 3) : [];
 ---
 
 <div class="ck" data-pl-combi>
-  <p class="ck-regel">
+  <div class="ck-tekst">
     <b class="ck-vraag">{erbij ? c.vraag : c.vraagEraf}</b>
-    {erbij ? c.regel : c.regelEraf} <span class="ck-btw">{c.btwNoot}</span>
-  </p>
-  {/* `data-ck-doel` en niet gewoon een href: het aantal wordt er bij het
-      klikken aan geplakt (zie het script hieronder), en een href die al een
-      vraagteken draagt maakt dat een gok over wat er al in staat. */}
-  <a class="pijl ck-knop" href={lp(doel)} data-ck-doel={lp(doel)}>{erbij ? c.knop : c.knopEraf}</a>
+    <p class="ck-beelden">{erbij ? c.beelden : c.beeldenEraf}</p>
+
+    {/* ── DE TWEE BEDRAGEN ────────────────────────────────────────────────
+        Leeg gerenderd en door pipeline.js gevuld — zie de noot bij
+        `data-pl-combi-nu` daar. Zonder script blijven ze leeg en verbergt de
+        CSS het hele blok (`.ck:not(.heeft-bedrag) .ck-geld`), want twee lege
+        bedragen naast elkaar zijn erger dan geen bedragen: dan lijkt het alsof
+        het gratis is. */}
+    <p class="ck-geld">
+      <span class="ck-geld-deel">
+        <span class="ck-geld-l">{c.nuLabel}</span>
+        <b data-pl-combi-nu></b>
+      </span>
+      <span class="ck-pijl" aria-hidden="true">&rarr;</span>
+      <span class="ck-geld-deel is-straks">
+        <span class="ck-geld-l">{erbij ? c.straksLabel : c.straksLabelEraf}</span>
+        <b data-pl-combi-straks></b>
+      </span>
+      <span class="ck-btw">{c.btwNoot}</span>
+    </p>
+
+    <p class="ck-sprong">{erbij ? c.sprong : c.sprongEraf}</p>
+
+    {/* `data-ck-doel` en niet gewoon een href: het aantal en de stijl worden er
+        bij het klikken aan geplakt (zie het script hieronder), en een href die
+        al een vraagteken draagt maakt dat een gok over wat er al in staat. */}
+    <a class="pijl ck-knop" href={lp(doel)} data-ck-doel={lp(doel)}>{erbij ? c.knop : c.knopEraf}</a>
+  </div>
+
+  {tegels.length > 0 && (
+    <figure class="ck-beeld">
+      <ul class="ck-tegels" role="list">
+        {tegels.map((t) => (
+          <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
+        ))}
+      </ul>
+      <figcaption>{c.erbijLabel}</figcaption>
+    </figure>
+  )}
 </div>
 
 {/* ── HET AANTAL GAAT MEE ────────────────────────────────────────────────────
@@ -120,34 +209,107 @@ const c = nl ? {
     if (!a) return;
     a.addEventListener('click', function () {
       try {
+        var p = [];
         var v = document.querySelector('[data-pl-qty-input]');
         var n = v && parseInt(v.value, 10);
-        a.href = a.getAttribute('data-ck-doel') + (n > 0 ? '?producten=' + n : '');
-      } catch (e) { /* dan gewoon zonder aantal */ }
+        if (n > 0) p.push('producten=' + n);
+        /* ── DE STIJL GAAT OOK MEE — 13 september 2026 ─────────────────────
+           Sinds de stijl bóven het aantal staat (zie de look-slot in
+           OrderFlow.astro), is dat het EERSTE wat de klant beantwoordt. Die
+           dan laten vallen bij een overstap betekent: hij komt op het andere
+           formulier en de vraag die hij net heeft beantwoord staat er weer,
+           leeg. De tekst onder dit blok belooft met zoveel woorden dat hij
+           meegaat, dus hij moet ook echt meegaan.
+
+           Alleen de CATALOGSTIJL. De lifestylelook bestaat op dit formulier
+           niet en kan dus niets meesturen; dat staat er ook bij. */
+        var st = document.querySelector('[name="catalog_style"]:checked, select[name="catalog_style"], input[name="catalog_style"][type="hidden"]');
+        var sv = st && String(st.value || '').trim();
+        if (sv && /^[a-z-]{2,24}$/.test(sv)) p.push('style=' + sv);
+        a.href = a.getAttribute('data-ck-doel') + (p.length ? '?' + p.join('&') : '');
+      } catch (e) { /* dan gewoon zonder parameters */ }
     });
   })();
 </script>
 
 <style>
-  /* ── EEN REGEL EN GEEN KAART ───────────────────────────────────────────────
-     Dit is een aanbod midden in een formulier, en een kader eromheen zou het
-     tot een tweede vraag maken die net zo zwaar weegt als "hoeveel producten".
-     Dat is het niet: het is een zijpad met een prijskaartje. Vandaar één
-     haarlijn erboven en verder niets — dezelfde vorm als de uitlegregels
-     eronder, met alleen de eerste regel in de inktkleur zodat je hem ziet. */
+  /* ── HET AANBOD KRIJGT RUIMTE — 13 september 2026 ──────────────────────────
+     Hier stond één regel met een link erachter, en dat was de vorige poging om
+     dit blok licht te houden. Het werd te licht: het aanbod verdween, en wat
+     overbleef was een knop die een bedrag veranderde.
+
+     Wat het nu is: twee kolommen op een breed scherm — links wat er gebeurt en
+     wat het kost, rechts de beelden die erbij komen. Een haarlijn erboven en
+     lucht eromheen, geen kader: het blijft een ZIJPAD in een formulier, en een
+     kaart zou het even zwaar maken als de vraag "hoeveel producten". Wat het
+     zwaar genoeg maakt is dat er nu iets te zien is. */
   .ck {
-    margin-top: 1.1rem;
-    padding-top: .9rem;
+    margin-top: clamp(1.2rem, 2.4vw, 1.8rem);
+    padding-top: clamp(1rem, 2vw, 1.4rem);
     border-top: 1px solid var(--line);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: .3rem 1.2rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(.9rem, 2vw, 1.6rem);
+    align-items: start;
   }
-  /* De vraag is vet en staat vóór de feiten in dezelfde alinea, niet erboven:
-     twee alinea's maken hier twee blokken, en dit is één aanbod. */
-  .ck-vraag { color: var(--ink); margin-right: .15rem; }
-  .ck-regel { margin: 0; font-size: .88rem; line-height: 1.55; color: var(--ink-3); flex: 1 1 30ch; max-width: 74ch; }
-  .ck-btw { white-space: nowrap; }
-  .ck-knop { flex: 0 0 auto; font-size: .86rem; }
+  /* Vanaf 40rem staan de beelden ernaast. Daaronder eronder — drie beelden van
+     70 pixels naast een alinea is geen tweede kolom maar een verdrukking. */
+  @media (min-width: 40rem) {
+    .ck { grid-template-columns: minmax(0, 1fr) minmax(9rem, 15rem); }
+  }
+
+  .ck-tekst { display: grid; gap: .45rem; justify-items: start; }
+  .ck-vraag {
+    font-family: var(--font-display, inherit); font-weight: 800;
+    font-size: clamp(1rem, 2.2vw, 1.12rem); color: var(--ink);
+  }
+  .ck-beelden { margin: 0; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+
+  /* ── DE TWEE BEDRAGEN ──────────────────────────────────────────────────────
+     Het hele punt van deze herbouw. Ze staan op één regel met een pijl ertussen,
+     want dat is wat er gebeurt: dit bedrag wordt dat bedrag. Twee losse regels
+     zouden er twee feiten van maken die de lezer zelf moet verbinden, en precies
+     dat verbinden is wat de bezoeker niet deed. */
+  .ck-geld {
+    margin: .35rem 0 0;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .7rem;
+  }
+  .ck-geld-deel { display: inline-flex; align-items: baseline; gap: .4rem; }
+  .ck-geld-l {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: .66rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .ck-geld b {
+    font-family: var(--font-display, inherit); font-weight: 700;
+    font-size: clamp(1.05rem, 2.6vw, 1.3rem); color: var(--ink-2);
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  /* Het bedrag waar je naartoe gaat, in de volle inkt: dat is het getal waar de
+     klik over gaat, en het mag niet zachter staan dan het getal dat je al kent. */
+  .ck-geld-deel.is-straks b { color: var(--ink); }
+  .ck-pijl { color: var(--ink-3); font-size: 1rem; }
+  .ck-btw { font-size: .74rem; color: var(--ink-3); white-space: nowrap; }
+  /* Zonder script blijven de bedragen leeg. Twee lege plekken naast elkaar met
+     een pijl ertussen lezen als "van niets naar niets", en dat is erger dan het
+     weglaten. Dan valt de regel weg en blijft de rest staan. */
+  .ck:not(.heeft-bedrag) .ck-geld { display: none; }
+
+  .ck-sprong { margin: .2rem 0 0; font-size: .82rem; line-height: 1.5; color: var(--ink-3); max-width: 62ch; }
+  .ck-knop { margin-top: .5rem; font-size: .88rem; }
+
+  /* ── DE BEELDEN ────────────────────────────────────────────────────────────
+     Drie, want een lifestyle-carrousel is er drie — hetzelfde getal als wat de
+     regel erboven belooft. Vierkant en klein: ze zijn er om te laten zien WAT
+     voor beeld het is, niet om het te beoordelen; daarvoor staat /lifestyle. */
+  .ck-beeld { margin: 0; display: grid; gap: .4rem; }
+  .ck-tegels {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
+  }
+  .ck-tegels li { aspect-ratio: 1; overflow: hidden; background: var(--ghost); border-radius: 2px; }
+  .ck-tegels img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ck-beeld figcaption {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: .64rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
+  }
 </style>

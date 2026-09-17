@@ -235,6 +235,8 @@ const KOPIJ = {
       ['Zo groot als je telefoon hem maakt', `Verstuur als bestand of op ‘originele grootte’ in plaats van als chatfoto. Onder ${MIN_LANGE_ZIJDE} pixels op de lange zijde zegt het formulier het meteen, zodat je het weet terwijl je er nog achter zit.`],
     ],
 
+    /* Het opschrift onder de echte foto op blad één. Kort, want er is 22 mm. */
+    echtZo: 'Zo ingestuurd',
     meerKop: 'Meer hoeken, preciezer resultaat',
     meerP: 'Er zit geen maximum op. Heb je vier foto’s van hetzelfde product vanuit verschillende hoeken, stuur ze alle vier — het kost niets extra en elke hoek is één ding minder dat wij moeten afleiden.',
 
@@ -254,7 +256,18 @@ const KOPIJ = {
     zetKop: 'Zo ziet één set eruit',
     zetLead: 'Een echte bestelling: vijf telefoonfoto’s van een magazijnvloer erin, vier afgewerkte beelden eruit. Dezelfde broek, dezelfde dag.',
     zetIn: 'Wat de klant stuurde',
-    zetInNoot: 'Telefoon, magazijnverlichting, betonvloer. Een hand in beeld is geen probleem.',
+    /* ── WAT EEN HAND MAG, EN WAT HIJ BEDEKT — 13 september 2026 ─────────
+       Lucas: *"'A hand in shot is no problem.' klopt maar de hand moet geen
+       belangrijke details verbergen omdat deze dan mogelijk niet op het
+       eindresultaat kunnen verschijnen, dit is uiteindelijk dan zonde van je
+       revisieronde en de verantwoordelijkheid van de klant."*
+
+       De regel blijft dus staan zoals hij stond — een hand in beeld is écht
+       geen probleem, en dat is de zin die mensen geruststelt. Wat eraan komt
+       is het enige geval waarin hij dat wél is, en dat staat er als een
+       gevolg en niet als een verbod: wat een hand bedekt, kunnen wij niet
+       laten zien. */
+    zetInNoot: 'Telefoon, magazijnverlichting, betonvloer. Een hand in beeld is geen probleem, zolang hij het product niet afdekt: wat een hand voor een knoop, een label of een naad houdt, staat straks ook niet op het eindbeeld. Dat kost je een revisieronde, en die keuze ligt bij jou.',
     /* De namen onder de beelden zijn de kern van wat Lucas vroeg: *"om beter uit
        te leggen wat wat is."* Zonder deze regel is het een mooi plaatje; mét is
        het een legenda waarin je je eigen foto's herkent. De instuurrij telt er
@@ -303,6 +316,7 @@ const KOPIJ = {
       ['As large as your phone makes it', `Send as a file or at ‘actual size’ rather than as a chat photo. Below ${MIN_LANGE_ZIJDE} pixels on the long side the form says so on the spot, while you are still at your desk.`],
     ],
 
+    echtZo: 'Sent in like this',
     meerKop: 'More angles, a closer match',
     meerP: 'There is no maximum. If you have four photos of the same product from different angles, send all four — it costs nothing extra, and every angle is one thing less for us to work out.',
 
@@ -312,7 +326,7 @@ const KOPIJ = {
     zetKop: 'What one set looks like',
     zetLead: 'A real order: five phone photos off a warehouse floor going in, four finished images coming out. Same jeans, same day.',
     zetIn: 'What the client sent',
-    zetInNoot: 'Phone, warehouse lighting, concrete floor. A hand in shot is no problem.',
+    zetInNoot: 'Phone, warehouse lighting, concrete floor. A hand in shot is no problem, as long as it leaves the product visible: whatever a hand covers — a button, a label, a seam — cannot appear in the finished image either. That costs you a revision round, and that call is yours.',
     zetInNamen: ['Front', 'Back', 'Detail', 'Fabric', 'Worn'],
     zetUitNamen: ['Front', 'Back', 'Detail', 'On model'],
     zetUit: 'What came back',
@@ -384,12 +398,22 @@ p { margin: 0; }
    Vier rijen over de volle breedte in plaats van een raster van twee bij twee:
    een tekening van 38mm naast zijn eigen tekst leest als één uitleg, terwijl
    dezelfde tekening boven een smalle kolom een plaatje wordt dat je overslaat. */
-.opnamen { display: grid; gap: 3mm; }
+.opnamen { display: grid; gap: 2.4mm; }
 .opname {
-  border: .35mm solid var(--lijn); border-radius: 3mm; padding: 3.5mm 5mm;
-  display: grid; grid-template-columns: 31mm 1fr; gap: 5mm; align-items: center;
+  border: .35mm solid var(--lijn); border-radius: 3mm; padding: 3mm 4.5mm;
+  display: grid; grid-template-columns: 24mm 17mm 1fr; gap: 4mm; align-items: center;
 }
-.opname-beeld { position: relative; }
+/* De foto staat in dezelfde verhouding als het bestand (3:4) en wordt bijgesneden
+   in plaats van uitgerekt, zodat vier foto's onder elkaar één rustige kolom
+   vormen en niet vier verschillende hoogtes. */
+.opname-foto { margin: 0; }
+.opname-foto img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 1.5mm; }
+
+/* Het nummer stond over de tekening heen zodra de tekening smaller werd (de
+   foto ernaast nam breedte af). Een eigen goot van 5mm links zet het er weer
+   naast in plaats van erop, en de tekening wordt daar niet kleiner van dan hij
+   leesbaar is. */
+.opname-beeld { position: relative; padding-left: 5mm; }
 .opname-nr {
   position: absolute; left: 0; top: 0;
   font-family: var(--kop); font-weight: 500; font-stretch: 125%;
@@ -463,13 +487,30 @@ p { margin: 0; }
 `;
 }
 
-function bladEen(c) {
-  const opname = (s, i) => `
+/* ── DE ECHTE FOTO NAAST DE TEKENING — 13 september 2026 ──────────────────────
+   Lucas: *"Ook wil ik dat de foto's die hier staan meer in de uitleg van de pdf
+   worden gebruikt en niet alleen onderaan staan."*
+
+   De vier opnamen op blad één werden uitgelegd met een tekening: het kader, de
+   hoeken, de draaipijl. Die tekening doet iets wat een foto niet kan — hij
+   wijst aan wat je moet doen. Maar hij laat niet zien hoe dat er in het echt
+   uitziet, en dat stond drie bladen verderop.
+
+   Nu staan ze naast elkaar: links wat je moet kaderen, rechts dezelfde opname
+   zoals een klant hem met zijn telefoon maakte. Dezelfde roze broek als op blad
+   drie, dus wie doorbladert herkent het stuk meteen terug. */
+const FOTO_BIJ_OPNAME = { front: 0, back: 1, detail: 2, worn: 4 };
+
+function bladEen(c, beelden) {
+  const opname = (s, i) => {
+    const foto = beelden?.in?.[FOTO_BIJ_OPNAME[s.id]] || null;
+    return `
     <div class="opname">
       <div class="opname-beeld">
         <span class="opname-nr">${String(i + 1).padStart(2, '0')}</span>
         ${TEKENINGEN[s.id] || ''}
       </div>
+      ${foto ? `<figure class="opname-foto"><img src="${foto}" alt="${esc(c.echtZo)}"></figure>` : ''}
       <div class="opname-tekst">
         <div class="opname-kop">
           <h3>${esc(s.name[c.taal])}</h3>
@@ -479,6 +520,7 @@ function bladEen(c) {
         <p class="hoe"><b>${esc(c.hoeKop)}</b>${esc(s.how[c.taal])}</p>
       </div>
     </div>`;
+  };
 
   return `
   <section class="blad">
@@ -505,7 +547,7 @@ function bladEen(c) {
   </section>`;
 }
 
-function bladTwee(c) {
+function bladTwee(c, beelden) {
   const tip = ([kop, tekst]) => `
     <li>
       <svg class="vink" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
@@ -649,7 +691,7 @@ function bladDrie(c, beelden) {
 async function maak(browser, c, fonts, beelden) {
   const html = `<!doctype html><html lang="${c.taal}"><head><meta charset="utf-8">
 <title>${esc(c.titelMeta)}</title><style>${css(fonts)}</style></head>
-<body>${bladEen(c)}${bladTwee(c)}${bladDrie(c, beelden)}</body></html>`;
+<body>${bladEen(c, beelden)}${bladTwee(c, beelden)}${bladDrie(c, beelden)}</body></html>`;
 
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: 'load' });

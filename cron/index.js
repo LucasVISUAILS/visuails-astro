@@ -50,7 +50,15 @@
  */
 
 import { EXPIRED_FILES_SQL, UPLOAD_DAYS, DELIVERY_DAYS } from '../src/lib/retention.js';
-import { planState } from '../src/lib/subscription.js';
+import { planState, termijnMaand } from '../src/lib/subscription.js';
+/* Voor grantPrepaidMonths(): de bundel van een abonnement en hoeveel producten
+   er per maand bij horen. Zie de kop van die taak. */
+import { grantSlots, subProducten } from '../src/lib/slots.js';
+import { TERMS } from '../src/data/plans.js';
+
+/* Hoeveel maanden een vooruitbetaald jaar draagt. Uit de termijn zelf, zodat
+   een jaar van veertien maanden hier niet hoeft te worden bijgewerkt. */
+const PREPAID_MAANDEN = TERMS.prepaid.months;
 import { klaarOmTeStarten } from '../src/lib/planStart.js';
 /* De betaallinkmail (4 september 2026): dezelfde als na een btw-goedkeuring en
    een offerte, hier als herinnering. En de mailschil voor het vervalbericht van
@@ -97,7 +105,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge]) {
+    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, checkPlanQueues, weekTeStarten, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -189,7 +197,7 @@ async function releaseExpiredWindows(env) {
 
 /* De query apart, zodat de foutafhandeling hierboven leesbaar blijft. */
 const FIND_EXPIRED_WINDOWS = (
-    `SELECT id, ref, window_start, window_end, email, lang
+    `SELECT id, ref, window_start, window_end, email, lang, status
        FROM orders
       WHERE tier = 'attended'
         AND window_start IS NOT NULL
@@ -197,6 +205,20 @@ const FIND_EXPIRED_WINDOWS = (
         AND window_expires_at IS NOT NULL
         AND window_expires_at <= datetime('now')
         AND status NOT IN ('cancelled', 'delivered')
+        /* ── EN NIET WAT NOG IN BTW-BEOORDELING STAAT — 17 september 2026 ───
+           Een bestelling die door de btw-poort is tegengehouden, heeft geen
+           betaallink gekregen. Zijn reservering opruimen wegens "de
+           betaaltermijn is verstreken" is dan een verwijt over iets wat de
+           klant nooit heeft kunnen doen — en de mail die deze taak stuurt zegt
+           dat ook letterlijk.
+           De klok wordt sinds vandaag ook niet meer gestart voor zo'n
+           bestelling (zie functions/api/order.js), maar rijen van vóór vandaag
+           dragen hem nog; deze regel vangt die op. COALESCE omdat de kolom
+           leeg is op alles wat de poort nooit geraakt heeft.
+           LET OP: deze noot staat IN een sjabloonstring, dus geen accenten
+           rond woorden — een backtick sluit de string en de hele taak valt om
+           bij het laden. Eén keer in gelopen. */
+        AND COALESCE(review_state, '') <> 'pending'
       ORDER BY id
       LIMIT 100`);
 
@@ -213,7 +235,10 @@ async function releaseAll(env, rows) {
          VALUES (?1, ?2, ?3, 'system')`
       ).bind(
         o.id,
-        'pending',
+        /* Zie de noot bij dezelfde reparatie in src/lib/betaallink.js:
+           'pending' is geen bestelstatus en kwam als kaal Engels woord op de
+           tijdlijn van een Nederlandse klant terecht. */
+        o.status || 'received',
         `Reservering ${o.window_start}${o.window_end ? ` – ${o.window_end}` : ''} vrijgegeven: de betaaltermijn is verstreken. De bestelling blijft staan; een nieuwe datum kan opnieuw worden gekozen.`
       ),
     ]);
@@ -856,7 +881,10 @@ async function issuePendingInvoices(env) {
   let rows;
   try {
     const res = await env.DB.prepare(
-      `SELECT id, number, order_id, snapshot_json
+      /* `year` hoort erbij — zie de sleutel hieronder. Zonder die kolom
+         schreef de hersteltaak de pdf op `invoices/<nummer>.pdf` terwijl
+         issueInvoice() hem op `invoices/<jaar>/<nummer>.pdf` zet. */
+      `SELECT id, number, year, order_id, snapshot_json
          FROM invoices
         WHERE status = 'pending'
           AND pdf_key IS NULL
@@ -963,7 +991,16 @@ async function issuePendingInvoices(env) {
     try {
       const snap = JSON.parse(inv.snapshot_json || '{}');
       const pdf = await renderInvoicePdf(snap);
-      const key = `invoices/${inv.number}.pdf`;
+      /* ── DE JAARMAP ONTBRAK — 17 september 2026 ────────────────────────
+         Hier stond `invoices/${inv.number}.pdf`. issueInvoice() in
+         src/lib/invoice.js zet hem op `invoices/${row.year}/${row.number}.pdf`,
+         en de abonnementsvariant vijftig regels lager doet dat óók — mét een
+         noot die letterlijk waarschuwt dat een afwijkende vorm naar een object
+         wijst dat niet bestaat. Precies dat gebeurde hier: elke factuur die
+         door de HERSTELtaak werd uitgegeven in plaats van door de webhook,
+         landde buiten de jaarmap. De rij wees ernaar, dus hij was vindbaar —
+         maar niet waar de rest van de boekhouding kijkt. */
+      const key = `invoices/${inv.year}/${inv.number}.pdf`;
       await env.UPLOADS.put(key, pdf, { httpMetadata: { contentType: 'application/pdf' } });
       await env.DB.prepare(
         `UPDATE invoices
@@ -1118,6 +1155,109 @@ function weekBeginntOver(windowDay, dagen, nu = new Date()) {
   const d = new Date(nu.getTime());
   d.setUTCDate(d.getUTCDate() + dagen);
   return d.getUTCDate() === Number(windowDay);
+}
+
+/* ══ DE MAANDEN VAN EEN VOORUITBETAALD JAAR ════════════════════════════════
+ *
+ * Gevonden op 17 september 2026. Een vooruitbetaald jaar krijgt met opzet GEEN
+ * Mollie-subscription — het hele jaar is met de eerste betaling voldaan, en een
+ * abonnement ernaast zou elke maand nóg een keer afschrijven (zie
+ * koppelSubscription() in src/lib/subscribe.js).
+ *
+ * Maar de maandelijkse TOEKENNING hing aan diezelfde afschrijving. De webhook
+ * schrijft een rij in `subscription_months` bij elke geslaagde betaling, en bij
+ * een vooruitbetaald jaar is er maar één betaling. De noot in subscribe.js zei
+ * dat "de maandtaak" het overnam; die taak bestond niet.
+ *
+ * WAT DAT KOSTTE. Brand, twaalf maanden vooruit: € 14.080 betaald, één maand
+ * toegekend. `rolloverMonths('prepaid')` is 3, dus na vier maanden stond er nul
+ * saldo op een abonnement dat nog acht maanden loopt. De klant die het MEEST
+ * vooruitbetaalt, krijgt het minst.
+ *
+ * ── WAAROM NIET TWAALF RIJEN INEENS BIJ HET AFSLUITEN ────────────────────
+ *
+ * Dat was de eerste gedachte en hij is fout. Het saldo wordt berekend over de
+ * laatste `monthsNeeded()` maanden uit `subscription_months`, gesorteerd op
+ * maand — twaalf rijen met TOEKOMSTIGE maandsleutels zetten die telling op de
+ * kop, en dan heeft een klant in september het saldo van volgend augustus. De
+ * doorschuifregel (drie maanden geldig) zou er bovendien betekenisloos van
+ * worden: alles zou tegelijk zijn toegekend en tegelijk vervallen.
+ *
+ * Dus: één maand per maand, precies zoals bij een lopende incasso — alleen komt
+ * het sein hier van de kalender in plaats van van de bank.
+ *
+ * ── DE TERMIJN EN NIET DE KALENDER ───────────────────────────────────────
+ *
+ * termijnMaand() zegt welke maand er nu loopt, en die kijkt naar de dag waarop
+ * de termijn omslaat en niet naar de eerste van de maand. Wie op de 20e begon,
+ * krijgt zijn volgende maand op de 20e. Dezelfde maat als overal elders in de
+ * abonnementsketen; de kalendermaand gebruiken zou betekenen dat de eerste
+ * termijn elf dagen korter is.
+ *
+ * ── EN HIJ STOPT VANZELF ─────────────────────────────────────────────────
+ *
+ * Twaalf maanden zijn betaald, dus twaalf maanden worden toegekend. Het
+ * getelde aantal rijen in `subscription_months` is de teller: staat het er al
+ * twaalf, dan gebeurt er niets meer. Dat is ook de reden dat er nergens een
+ * einddatum hoeft te worden bijgehouden — de boekhouding IS de teller.
+ *
+ * IDEMPOTENT. De INSERT heeft dezelfde ON CONFLICT als de webhook en
+ * grantSlots() doet INSERT OR IGNORE, dus twee keer draaien op één nacht levert
+ * niets extra's op. Dat is geen luxe: deze taak draait elke nacht, en de maand
+ * slaat maar één keer om.
+ */
+/* `nu` is een parameter en geen `new Date()` in de body, zodat een toets de klok
+   twaalf maanden vooruit kan zetten zonder de globale Date te vervangen. Dat
+   laatste is geprobeerd en het brak op een plek die er niets mee te maken had:
+   een gestubde Date-subklasse gaf `toISOString()` niet meer door, en dan staat
+   er een maandsleutel als "Wed Oct" in de database. De scheduler geeft hem niet
+   mee en krijgt dus gewoon vandaag. */
+async function grantPrepaidMonths(env, nu = new Date()) {
+  if (!env.DB) return '';
+  let gezet = 0;
+  const namen = [];
+
+  const rijen = await env.DB.prepare(
+    `SELECT s.id, s.ref, s.plan, s.term, s.window_day, s.started_at, s.amount_cents, s.slots_json,
+            (SELECT COUNT(*) FROM subscription_months m WHERE m.subscription_id = s.id) AS maanden
+       FROM subscriptions s
+      WHERE s.status = 'active' AND s.term = 'prepaid'`
+  ).all().catch(() => ({ results: [] }));
+
+  for (const sub of (rijen?.results || [])) {
+    /* Het jaar is op. Geen nieuwe toekenning, en ook geen melding: een
+       afgelopen vooruitbetaald jaar is geen probleem maar een einde. */
+    if (Number(sub.maanden || 0) >= PREPAID_MAANDEN) continue;
+
+    const maand = termijnMaand(sub, nu);
+    const bestaat = await env.DB.prepare(
+      'SELECT 1 AS er FROM subscription_months WHERE subscription_id = ?1 AND month = ?2 LIMIT 1'
+    ).bind(sub.id, maand).first().catch(() => null);
+    if (bestaat) continue;
+
+    const producten = subProducten(sub);
+    /* `payment_id` blijft leeg: er hoort geen betaling bij deze maand, hij is
+       vorig jaar al betaald. Dat is ook precies wat de factuurroute nodig heeft
+       om deze maand NIET nog een keer te factureren — die gaat over
+       subscription_payments en niet over deze tabel. */
+    const rij = await env.DB.prepare(
+      `INSERT INTO subscription_months (subscription_id, month, granted, payment_id)
+       VALUES (?1, ?2, ?3, NULL)
+       ON CONFLICT (subscription_id, month) DO NOTHING
+       RETURNING id`
+    ).bind(sub.id, maand, producten).first().catch((e) => {
+      console.error('[cron] vooruitbetaalde maand niet toegekend —', sub.ref, '—', e?.message || e);
+      return null;
+    });
+    if (!rij) continue;
+
+    await grantSlots(env, sub.id, maand, sub, null);
+    gezet += 1;
+    namen.push(`${sub.ref} (${maand})`);
+  }
+
+  if (!gezet) return '';
+  return `Vooruitbetaald: ${gezet} maand${gezet === 1 ? '' : 'en'} toegekend — ${namen.join(', ')}.`;
 }
 
 async function checkPlanQueues(env) {
@@ -1504,6 +1644,6 @@ async function sweepAbandonedIntake(env) {
     + ` (${verlaten.length} batch${verlaten.length === 1 ? '' : 'es'}, ongeveer ${mb} MB).`;
 }
 
-export const tasks = { remindUnpaid, releaseExpiredWindows, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, checkPlanQueues, weekTeStarten, checkBackupAge };
+export const tasks = { remindUnpaid, releaseExpiredWindows, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, checkPlanQueues, weekTeStarten, checkBackupAge };
 export const QUEUE_WATCH = { QUEUE_WARN_DAYS, weekBeginntOver };
 export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };

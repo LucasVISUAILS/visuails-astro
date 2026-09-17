@@ -80,7 +80,7 @@ import {
   MANDATE_AMOUNT, CUSTOM_MONTH_ID, CUSTOM_MONTH_MIN_PRODUCTS, CUSTOM_MONTH_MAX_PRODUCTS,
   customMonthSlots, customMonthTotal,
 } from '../data/pricing.js';
-import { subMaandCents, subEersteBetalingCents, subProducten } from './slots.js';
+import { subMaandCents, subEersteBetalingCents, subMaandBruto, subEersteBetalingBruto, subProducten } from './slots.js';
 import {
   createMollieCustomer, createFirstPayment, firstPaymentMandate, createMollieSubscription,
   cancelMollieSubscription, mollieKeyProblems,
@@ -286,7 +286,10 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
     const betaling = await createFirstPayment(env, {
       subscriptionRef: rij.ref,
       mollieCustomerId,
-      valueEuros: subEersteBetalingCents(rij) / 100,
+      /* BRUTO en niet netto — zie de kop van subBrutoCents() in slots.js. De
+         prijs op /plans is exclusief btw; wat er wordt afgeschreven is inclusief,
+         en de factuur rekent daar weer netto uit terug. */
+      valueEuros: subEersteBetalingBruto(rij) / 100,
       /* Geen mandaat vragen voor een jaar dat in één keer betaald is — en dat is
          ook wat bankoverschrijving als betaalmethode mogelijk maakt. Zie de noot
          bij `sequenceType` in mollie.js. */
@@ -385,10 +388,12 @@ export async function koppelSubscription(env, vol, origin) {
 
   await setMollieIds(env, vol.id, { mandateId: mandaat.id });
 
-  /* subMaandCents() en niet monthlyCents(): bij een maand op maat staat het bedrag
-     op de rij, bevroren op het moment van afsluiten. Zie migratie 0038 voor
-     waarom het daar staat en niet elke maand opnieuw uit de ladder komt. */
-  const maandBedrag = subMaandCents(vol) / 100;
+  /* subMaandBruto() en niet monthlyCents(): bij een maand op maat staat het
+     bedrag op de rij, bevroren op het moment van afsluiten (zie migratie 0038
+     voor waarom het daar staat en niet elke maand opnieuw uit de ladder komt),
+     en er gaat btw overheen omdat de prijs op /plans exclusief is. Zie de kop
+     van subBrutoCents() in slots.js. */
+  const maandBedrag = subMaandBruto(vol) / 100;
 
   try {
     const sc = await createMollieSubscription(env, {
@@ -551,7 +556,17 @@ export async function hervatIncasso(env, sub, origin) {
     const sc = await createMollieSubscription(env, {
       mollieCustomerId: sub.mollie_customer_id,
       mandateId: sub.mollie_mandate_id,
-      valueEuros: monthlyCents(sub.plan, sub.term) / 100,
+      /* ── subMaandBruto() EN NIET monthlyCents() — 17 september 2026 ───────
+         Twee fouten in één regel, en de eerste was fataal voor precies één soort
+         klant. `monthlyCents('maat', …)` WERPT — een maand op maat staat niet in
+         PLAN_AMOUNT, hij draagt zijn bedrag op de rij — dus liep deze functie
+         voor elke klant met een eigen samengestelde maand in de catch, gaf
+         `false` terug en stuurde account.js naar `?fout=hervatten`. Permanent:
+         hervatten kon nooit meer lukken. Overal elders in dit bestand staat al
+         subMaandCents() om precies deze reden.
+         De tweede is dezelfde als bij koppelSubscription(): er hoort btw
+         overheen. Zie de kop van subBrutoCents() in slots.js. */
+      valueEuros: subMaandBruto(sub) / 100,
       description: `VISUAILS ${sub.plan} — ${sub.ref}`,
       webhookUrl: `${origin}/api/webhook/mollie`,
       startDate: eersteTermijn(),

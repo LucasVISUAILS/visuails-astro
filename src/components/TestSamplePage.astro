@@ -50,6 +50,8 @@ import { waHref } from '../data/whatsapp.js';
 import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
+import LaptopCarousel from './LaptopCarousel.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -142,7 +144,7 @@ const c = nl ? {
     'Reviewed by a specialist before it reaches you.',
   ],
   beeldAlt: 'Example VISUAILS lifestyle image, Glow style',
-  beeldBij: 'Your sample, human-checked',
+  beeldBij: 'Your sample, carefully checked',
 
   stapEtiket: 'From photo to set',
   stapKop: 'How the sample works',
@@ -216,6 +218,24 @@ const vink = 'M20 6L9 17l-5-5';
       {c.pillen.map((p) => <li class="mono">{p}</li>)}
     </ul>
   </section>
+
+  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
+      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
+      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
+      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
+      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
+      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
+      hetzelfde ding als op de voorpagina. */}
+  <section class="paneel" aria-labelledby="ts-lc">
+    <div class="paneel-kop">
+      <p class="etiket">{nl ? 'Wat je terugkrijgt' : 'What you get back'}</p>
+      <h2 id="ts-lc" class="hoog hoog-2">{nl ? 'Zo ziet je proefbeeld eruit als het klaar is.' : 'This is what your sample looks like when it’s done.'}</h2>
+      <p class="lopend">{nl ? 'Eén beeld voor €1, op de plek waar het straks staat. Rechts de telefoonfoto die erin ging.' : 'One image for €1, in the place it ends up. On the phone, the shot that went in.'}</p>
+    </div>
+    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
+      titel={nl ? 'Zo ziet je proefbeeld eruit als het klaar is.' : 'This is what your sample looks like when it’s done.'} />
+  </section>
+
 
   {/* Weigeringen komen van /api/order terug als een redirect met ?error=…, omdat
       het versturen eindigt in een echte navigatie. initFormRefusal() in

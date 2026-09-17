@@ -22,7 +22,11 @@
  * opnamen is precies waar `.stappen` voor gemaakt is, en het geeft de pagina
  * halverwege een adempauze.
  */
-import { TEST_SAMPLE } from '../data/pricing.js';
+/* PRODUCTTROUW staat in pricing.js en niet hier: deze pagina is de plek waar de
+   vraag "lijkt het straks op mijn product" het scherpst is, maar hij wordt op
+   drie plekken gesteld en één formulering die uiteenloopt is precies wat
+   tests/promises.test.mjs moet vangen. Zie de kop van PRODUCTTROUW. */
+import { TEST_SAMPLE, producttrouwDelen } from '../data/pricing.js';
 /* ── DE ONDERGRENS KOMT UIT DE CODE DIE HEM AFDWINGT — 23 augustus 2026 ──
  *
  * Hier stond ooit "stuur de hoogste resolutie die je hebt" en verder niets over
@@ -36,6 +40,8 @@ import { TEST_SAMPLE } from '../data/pricing.js';
  * eigen versie van bijhoudt, belooft op een dag iets anders dan er gebeurt. */
 import { MIN_LANGE_ZIJDE } from '../data/shots.js';
 import Placeholder from './Placeholder.astro';
+import LaptopCarousel from './LaptopCarousel.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -82,11 +88,16 @@ const c = nl ? {
   setLead: 'We hebben je product bijna nooit in handen, dus hoe meer hoeken je stuurt, hoe nauwkeuriger we het kunnen nabouwen. Dat is het verschil tussen je product nábouwen en het benaderen.',
   set: [
     ['Voor- en achterkant', 'Het hele product van beide kanten, zodat er niets aan de vorm wordt gegokt.'],
-    ['Een detail-close-up', 'Logo’s, stiksels, prints, hardware — de dingen die exact moeten blijven.'],
+    ['Een detail-close-up', 'Logo’s, stiksels, prints, hardware — de dingen die we met de hand nalopen.'],
     ['De stof', 'Een close-up van het materiaal zodat textuur, weefselstructuur en glans natuurgetrouw overkomen.'],
     ['Iemand die het aanheeft', 'Iemand die het daadwerkelijk draagt, zodat we de pasvorm en val uit de praktijk kunnen reproduceren.'],
   ],
-  setNoot: ['De eerste is verplicht. De rest is aanbevolen.', ' Voorkant en achterkant krijg je allebei terug als geleverd beeld, dus vragen we ze allebei in plaats van de kant te verzinnen die we niet zien. De close-up en de draagfoto zijn optioneel — elk maakt één ding nauwkeuriger, en heeft een product geen logo of fournituren om op in te zoomen, dan wordt de close-up die je terugkrijgt een stoffoto.'],
+  /* ── DRIE VERPLICHT SINDS 17 SEPTEMBER 2026 ───────────────────────────────
+     De close-up is verplicht geworden; zie de noot bij `detail` in
+     src/data/shots.js. Deze regel zei nog "de close-up is optioneel" op de
+     pagina die uitlegt wát je moet sturen — de gevaarlijkste plek om dat te
+     laten staan, want hier maakt iemand zijn foto's. */
+  setNoot: ['De eerste drie zijn verplicht. De draagfoto is aan jou.', ' Voorkant, achterkant en close-up krijg je alle drie terug als geleverd beeld, dus vragen we ze alle drie in plaats van te verzinnen wat we niet zien — bij de close-up telt een gewone stoffoto net zo goed als een logo of een naad. De draagfoto is optioneel: hij maakt de pasvorm echt in plaats van ingeschat, en in het bestelformulier vragen we alleen of hij komt.'],
 
   slotEtiket: 'Klaar om te sturen',
   slotH: 'Foto klaar? Stuur hem in.',
@@ -94,7 +105,13 @@ const c = nl ? {
   slotCta: 'Probeer VISUAILS',
 } : {
   etiket: 'Getting the best results',
-  h1: ['How to photograph your product so we can ', 'match it exactly'],
+  /* ── "MATCH IT EXACTLY" STOND HIER TOT 17 SEPTEMBER 2026 ────────────────
+     Op de pagina waar de klant besluit wát hij stuurt, stond de zwaarste
+     belofte van de hele site: dat wij zijn product exact namaken. Lucas,
+     17 september: *"ik kan niet beloven dat het product met AI er exact
+     hetzelfde uitziet"*. De Nederlandse kop deed die belofte nooit — die zegt
+     alleen "de foto die wij nodig hebben". Zie PRODUCTTROUW in pricing.js. */
+  h1: ['How to photograph your product so we can ', 'rebuild it faithfully'],
   lead: 'You don’t need a studio — just a clear photo and a few simple habits.',
   hub: ['Of everything in the ', 'guides', ', this is the one to read before you order — every step after it works better when the photo going in is right.'],
   ctaProef: SAMPLE.cta,
@@ -127,14 +144,15 @@ const c = nl ? {
 
   setEtiket: 'The recommended set',
   setH: ['The set we recommend — ', 'and why'],
-  setLead: 'We almost never hold your product in our hands, so the more angles you send, the more exactly we can rebuild it. That is what makes the difference between matching your product and approximating it.',
+  setLead: 'We almost never hold your product in our hands, so the more angles you send, the more closely we can rebuild it. That is what makes the difference between matching your product and approximating it.',
   set: [
     ['Front and back', 'The whole product from both sides, so nothing about its shape is guessed.'],
-    ['A detail close-up', 'Logos, stitching, prints, hardware — the things that have to stay exact.'],
+    ['A detail close-up', 'Logos, stitching, prints, hardware — the things we match by hand.'],
     ['The fabric', 'A close shot of the material so texture, weave and sheen read true.'],
     ['Worn for fit', 'Someone actually wearing it, so we can reproduce the real-world fit and drape.'],
   ],
-  setNoot: ['The first one is required. The rest are recommended.', ' Front and back both come back to you as delivered images, so we ask for both rather than invent the side we cannot see. The close-up and the worn shot are optional — each one makes a specific thing more accurate, and if a product has no logo or hardware to close in on, the close-up you get back is a fabric shot instead.'],
+  /* Zie de Nederlandse tegenhanger. */
+  setNoot: ['The first three are required. The worn shot is up to you.', ' Front, back and the close-up all come back to you as delivered images, so we ask for all three rather than invent what we cannot see — and for the close-up a plain fabric shot counts just as much as a logo or a seam. The worn shot is optional: it makes the fit real instead of estimated, and in the order form we only ask whether it is coming.'],
 
   slotEtiket: 'Ready to send',
   slotH: 'Got a photo ready? Let’s see it transformed.',
@@ -168,6 +186,27 @@ import '../styles/stijl22.css';
           de taal van deze pagina. */}
       <a class="knop knop-lijn" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.pdf}</a>
     </div>
+  </section>
+
+  {/* ── WELKE FOTO WELK BEELD WORDT ─────────────────────────────────────────
+      Dit is de pagina waar dit scherm het meeste doet. De regels hieronder
+      zeggen WAT je moet sturen; dit laat zien wat er dan uit komt, opname voor
+      opname: de voorkant wordt de voorkant, de spiegelselfie wordt het
+      modelbeeld, de hand met de knoop wordt het detail. Dat zijn echte paren
+      van één kledingstuk — zie de noot boven in src/data/laptopSlides.js.
+
+      Het staat vóór de regels en niet erna: wie eerst ziet waar een foto voor
+      dient, leest een lijst eisen als uitleg in plaats van als drempel. */}
+  <section class="paneel" aria-labelledby="ug-lc">
+    <div class="paneel-kop">
+      <p class="etiket">{nl ? 'Van foto naar beeld' : 'From photo to image'}</p>
+      <h2 id="ug-lc" class="hoog hoog-2">{nl ? 'Welke foto welk beeld wordt.' : 'Which photo becomes which image.'}</h2>
+      <p class="lopend">{nl
+        ? 'Elke opname die je stuurt heeft een taak. Scroll door de set: bij elk geleverd beeld staat de telefoonfoto waar het uit gemaakt is.'
+        : 'Every shot you send has a job. Scroll through the set: each delivered image shows the phone photo it was made from.'}</p>
+    </div>
+    <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]}
+      titel={nl ? 'Welke foto welk beeld wordt' : 'Which photo becomes which image'} />
   </section>
 
   <section class="paneel ug-regels">
@@ -249,6 +288,10 @@ import '../styles/stijl22.css';
       ))}
     </ol>
     <p class="lopend ug-noot"><strong>{c.setNoot[0]}</strong>{c.setNoot[1]}</p>
+    {/* Wat er met die foto's gebeurt. Staat onder de set en niet erboven: eerst
+        wat we vragen, dan wat we ermee doen — omgekeerd leest het als een
+        garantie vooraf. */}
+    <p class="lopend ug-trouw"><strong>{producttrouwDelen(lang)[0]}</strong>{producttrouwDelen(lang)[1]}</p>
   </section>
 
   <section class="paneel paneel-slot ug-slot">
@@ -311,6 +354,16 @@ import '../styles/stijl22.css';
   .ug-stappen { list-style: none; padding: 0; margin: 0; counter-reset: none; }
   .ug-noot { margin-top: clamp(1.6rem, 3vw, 2.4rem); max-width: 46em; }
   .ug-noot strong { color: var(--vel); font-weight: 600; }
+  /* De belofte staat onder een haarlijn en niet in een kader: een kader maakt er
+     een badge van, en een badge over gelijkenis is precies het toontje dat deze
+     zin moet vermijden. Zie de kop van PRODUCTTROUW in pricing.js. */
+  .ug-trouw {
+    margin-top: clamp(1.2rem, 2.4vw, 1.8rem);
+    padding-top: clamp(1.2rem, 2.4vw, 1.8rem);
+    border-top: 1px solid var(--lijn, #DFDFDF);
+    max-width: 46em;
+  }
+  .ug-trouw strong { color: var(--vel); font-weight: 600; }
 
   .ug-slot .lopend { max-width: 40em; }
 </style>

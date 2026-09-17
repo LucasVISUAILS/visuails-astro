@@ -1689,14 +1689,22 @@ export function euroRange(low, high, lang = 'en') {
  * dat het om elke visual gaat; het belooft nergens minder dan de lange regel.
  * Een korte vorm die een zwaardere toezegging doet dan de lange is een fout,
  * geen samenvatting. */
+/* ── EN OP 17 SEPTEMBER 2026 ZIJN ALLE VIER GELIJKGETROKKEN ────────────────
+ * Lucas: *"REVIEW_CLAIM zorgvuldig gecontroleerd is de goede, pas dit toe."*
+ * Zie de noot bij REVIEW_CLAIM verderop voor het besluit zelf. Hier stond
+ * bovendien een tweede scheefstand die niemand had gezien: de NEDERLANDSE korte
+ * vorm zei *"met de hand gecontroleerd"* terwijl de lange *"zorgvuldig
+ * gecontroleerd"* zei. "Met de hand" zegt MEER dan "zorgvuldig" — het belooft
+ * een persoon — en de regel hierboven is dat de korte vorm minder mag zeggen,
+ * nooit iets anders en dus zeker niet iets zwaarders. Eén woord, vier plekken. */
 export const REVIEW_CLAIM_SHORT = {
   full: {
-    en: 'Human-checked',
-    nl: 'Met de hand gecontroleerd',
+    en: 'Made and checked by us',
+    nl: 'Door ons gemaakt en nagekeken',
   },
   spot: {
-    en: 'Human-checked on a sample',
-    nl: 'Steekproefsgewijs gecontroleerd',
+    en: 'Made by us, checked on a sample',
+    nl: 'Door ons gemaakt, steekproefsgewijs nagekeken',
   },
 };
 
@@ -1718,9 +1726,41 @@ export const REVIEW_CLAIM_SHORT = {
  * de tabel. Het venster en de voorrang verschillen wél; dit niet. Een rij die
  * in beide kolommen hetzelfde zegt, zegt precies dat.
  */
+/* ── HOE LANG DIE RONDE OPENSTAAT — 16 SEPTEMBER 2026 ──────────────────────
+ *
+ * Lucas: *"Ik wil de revisie na levering een week geldig houden, omdat de klant
+ * nadat hij zijn bestelling heeft gekregen een jaar later opeens een revisie
+ * kan aanvragen."*
+ *
+ * Er stond namelijk NERGENS een termijn. AFTERCARE zei hoeveel rondes erbij
+ * zaten en REVISIEBELEID zei wat er daarna gebeurt, maar geen van beide zei
+ * TOT WANNEER. Een belofte zonder einddatum is er een die nooit afloopt, en
+ * die stond op /faq, in de voorwaarden §10 en in Studio.
+ *
+ * Zeven en niet veertien: veertien dagen laat een bestelling twee weken open
+ * staan terwijl de klant in de praktijk binnen een paar dagen kijkt, en dat
+ * verschil is precies de ruimte waarin een bestelling uit beeld raakt. Lucas
+ * noemde twee weken als mogelijkheid en zei er "liever niet" bij.
+ *
+ * ── ÉÉN GETAL, EN DE ZINNEN LEIDEN ZICHZELF AF ────────────────────────────
+ * Dit getal staat één keer. AFTERCARE en REVISIEBELEID rekenen het erin, en
+ * /faq, de voorwaarden en Studio lezen die twee. Wie de termijn verandert,
+ * verandert hem overal — precies de reden waarom AFTERCARE zelf ooit van elf
+ * plekken naar één is teruggebracht.
+ *
+ * ── WAT DIT NIET DOET ─────────────────────────────────────────────────────
+ * Dit is TEKST. Het rekent niets af en het sluit niets. Wie de termijn ook
+ * wil hándhaven, moet de teller in Studio laten lopen vanaf het moment van
+ * LEVEREN — niet vanaf het bestellen en niet vanaf het betalen — en het
+ * aanvraagformulier na afloop sluiten met een uitleg in plaats van een fout.
+ * En hij hoort niet met terugwerkende kracht te gelden voor bestellingen die
+ * al geleverd zijn: die zijn gedaan onder een belofte zonder einddatum.
+ */
+export const REVISIE_DAGEN = 7;
+
 export const AFTERCARE = {
-  en: 'Satisfaction check: 1 revision round included per order to adjust any details.',
-  nl: 'Tevredenheidscheck: 1 revisieronde per bestelling om aanpassingen door te voeren.',
+  en: `Satisfaction check: 1 revision round included per order, to be requested within ${REVISIE_DAGEN} days of delivery.`,
+  nl: `Tevredenheidscheck: 1 revisieronde per bestelling, aan te vragen binnen ${REVISIE_DAGEN} dagen na levering.`,
 };
 
 /*
@@ -1774,13 +1814,13 @@ export const AFTERCARE = {
  */
 export const REVISIEBELEID = {
   nl: [
-    ['Eén ronde zit erbij', 'Bij elke bestelling hoort één revisieronde. Daarin verwerken we je aanpassingen, per beeld, in VISUAILS Studio.'],
+    ['Eén ronde zit erbij', `Bij elke bestelling hoort één revisieronde. Je vraagt hem aan binnen ${REVISIE_DAGEN} dagen na levering; daarin verwerken we je aanpassingen, per beeld, in VISUAILS Studio.`],
     ['Is het onze fout, dan lossen we het op', 'Verkeerd product, verkeerde kleur, iets mis in de afwerking — als het aan onze kant ligt, maken we het kosteloos goed. Ook na die ene ronde.'],
     ['Wil je daarna iets anders, dan kan dat', 'Aanpassingen die geen fout van ons zijn, doen we ook na de eerste ronde nog. Daar kunnen kosten aan verbonden zijn, en die spreken we vooraf af.'],
     ['Kan het niet, dan krijg je je geld terug', 'Blijkt bij het maken dat jouw product met AI en onze eigen gereedschappen niet goed na te maken is, dan kijken we naar een passende of volledige terugbetaling.'],
   ],
   en: [
-    ['One round is included', 'Every order comes with one revision round. That is where your adjustments go, image by image, in VISUAILS Studio.'],
+    ['One round is included', `Every order comes with one revision round. You request it within ${REVISIE_DAGEN} days of delivery; that is where your adjustments go, image by image, in VISUAILS Studio.`],
     ['If it is our mistake, we fix it', 'Wrong product, wrong colour, something off in the finishing — if it is on our side we put it right at no cost. Also after that one round.'],
     ['Want something else after that? Possible', 'Changes that are not a mistake of ours can still be made after the first round. There may be a cost, and we agree it beforehand.'],
     ['If it cannot be made, you get your money back', 'If it turns out your product cannot be reproduced properly with AI and our own tools, we look at a full or appropriate refund.'],
@@ -1796,30 +1836,163 @@ export function revisiebeleid(lang = 'nl') {
  *
  * De NL-regel zei *"Elke visual wordt handmatig gecontroleerd."* Ik heb hem
  * aangeraden te laten staan: "handmatig" betekent hier DOOR EEN MENS EN NIET
- * AUTOMATISCH, wat precies is wat het Engels ernaast zegt met "human-checked",
+ * AUTOMATISCH, wat precies is wat het Engels ernaast zei met "human-checked",
  * en "zorgvuldig" is een kwaliteitswoord dat niets garandeert. Lucas koos
  * bewust anders — het is zijn merk en zijn toon, en dit staat hier zodat de
  * volgende die het leest weet dat het een keuze was en geen slordigheid.
  *
- * ⚠ DE ENGELSE KANT IS NIET MEEGEGAAN. Daar staat nog steeds "human-checked",
- * en dat is de sterkere belofte van de twee. Wil je ze gelijk trekken, dan is
- * dat een aparte beslissing over WELKE kant meebeweegt.
+ * ── EN DE ENGELSE KANT IS OP 17 SEPTEMBER 2026 MEEGEGAAN ──────────────────
+ *
+ * Hier stond een ⚠ dat het Engels nog "human-checked" zei — de sterkere van de
+ * twee — met de opmerking dat gelijktrekken een aparte beslissing was over
+ * welke kant meebeweegt. Die beslissing is gevallen, en het is de Nederlandse
+ * kant geworden: *"REVIEW_CLAIM zorgvuldig gecontroleerd is de goede."*
+ *
+ * DRIE WEKEN LANG BELOOFDE DE ENGELSE SITE MEER DAN DE NEDERLANDSE, op precies
+ * hetzelfde punt en vaak op dezelfde pagina — /pricing en /compare tonen beide
+ * talen dezelfde tabel. Niet fataal, wel het soort verschil dat pas opvalt als
+ * iemand het je voorhoudt. Dat het hier drie weken stond en niet drie maanden,
+ * komt doordat het als ⚠ in de code stond en niet in iemands hoofd.
+ *
+ * WAT MEEVERANDERDE BUITEN DIT BESTAND: de losse "human-checked" in de alt-tekst
+ * van /how-it-works, op /test-sample en in de gidskaart. Dat waren echo's van
+ * deze regel, geen eigen beweringen — en een echo die achterblijft is precies
+ * hoe dit verschil opnieuw ontstaat. Wat NIET meeveranderde: /terms en /faq
+ * beschrijven het PROCES ("een specialist bekijkt elk beeld") en dat is geen
+ * badge maar een feit, dat waar blijft en juridisch nuttiger is dan een bijwoord.
  *
  * ⚠ NIET DOORVOEREN BIJ `payHeld` in src/lib/account.js. Daar staat "een
  * handmatige stap" en dat draagt de hele uitleg waarom een btw-controle buiten
  * de EU een werkdag kost — er is geen register. Lucas heeft die op 25 augustus
  * expliciet laten staan.
  */
+/* ── EN ER STOND MAAR ÉÉN HELFT VAN HET WERK IN — 17 SEPTEMBER 2026, later ──
+ *
+ * De regel hierboven zei: elke visual wordt zorgvuldig GECONTROLEERD. Dat is
+ * waar, en het was de enige rol die de site aan een mens gaf. Nagelezen over de
+ * hele site staat datzelfde patroon overal: *"checked by real people"*, *"the
+ * last step is a person"*, *"dan gaat elk beeld door de hand"*. Bij elkaar zegt
+ * dat: de machine maakt het, een mens kijkt het na.
+ *
+ * Dat is letterlijk het beeld dat vermeden moest worden. Een dienst waarvan de
+ * mens de kwaliteitscontroleur van machinewerk is, IS een AI-tool met een
+ * menselijk sausje — en deze regel stond op veertig pagina's.
+ *
+ * WAT ER VERANDERT IS DE HELFT DIE ONTBRAK, niet het woord dat Lucas koos.
+ * "Zorgvuldig gecontroleerd" blijft staan; er gaat "door ons gemaakt" vóór.
+ * Dat is ook wat er gebeurt: VISUAILS maakt de beelden, met AI als een van de
+ * technieken, en werkt ze met de hand bij (zie PRODUCTTROUW hierboven).
+ *
+ * ⚠ DIT IS EEN POSITIONERINGSKEUZE EN GEEN OPMAAK. Wie deze regel ooit weer
+ * inkort tot alleen de controle, haalt daarmee de enige plek weg waar de site
+ * op veertig pagina's zegt dat het werk van ONS komt. tests/promises.test.mjs
+ * houdt daarom vast dat beide helften erin staan.
+ */
 export const REVIEW_CLAIM = {
   full: {
-    en: 'Human-checked quality on every single visual.',
-    nl: 'Elke visual wordt zorgvuldig gecontroleerd.',
+    en: 'Every visual is made by us and carefully checked.',
+    nl: 'Elke visual wordt door ons gemaakt en zorgvuldig gecontroleerd.',
   },
   spot: {
-    en: 'Human-checked on a sample of every order',
-    nl: 'Steekproefsgewijs met de hand gecontroleerd',
+    en: 'Made by us, carefully checked on a sample of every order',
+    nl: 'Door ons gemaakt, steekproefsgewijs gecontroleerd',
   },
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DAT HET PRODUCT HERKENBAAR BLIJFT — 17 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Het is belangrijk om dit toe te passen — 'We make sure your product
+ * remains recognizable and accurately represented, with human quality control
+ * on every visual' — want ik kan niet beloven dat het product met AI er exact
+ * hetzelfde uitziet, maar doe dit op een manier dat alsnog vertrouwen geeft.
+ * Ik pas wanneer nodig altijd met Photoshop aan om het product zo goed mogelijk
+ * na te bootsen."*
+ *
+ * ── DE VRAAG DIE NERGENS OP DEZE SITE STOND ────────────────────────────────
+ *
+ * "Lijkt het straks écht op mijn product?" is de duurste vraag die een merk
+ * stelt voordat het betaalt, en er stond geen antwoord op. /faq had er
+ * negenenzestig vragen en deze niet. Wat er wél stond, stond verspreid: de
+ * how-it-works-pagina zegt dat een specialist kijkt "klopt het product met je
+ * eigen foto", REVIEW_CLAIM zegt dat elk beeld gecontroleerd wordt, en
+ * REVISIEBELEID zegt wat er gebeurt als het product niet na te maken blijkt.
+ * Drie halve antwoorden op drie pagina's zijn geen antwoord.
+ *
+ * ── WAAROM DEZE ZIN NIET BELOOFT WAT LUCAS' EIGEN ZIN BELOOFDE ─────────────
+ *
+ * "Accurately represented" is de helft die een sceptische koper natrekt, en het
+ * is precies de helft die Lucas er zelf bij zegt niet te kunnen garanderen. Dit
+ * bestand zegt op twee andere plekken al wat dat kost — bij de revisierondes:
+ * *"een belofte die je niet kunt waarmaken is erger dan een getal"*. Een claim
+ * over gelijkenis die één klant met één screenshot kan weerleggen, kost meer
+ * vertrouwen dan hij ophaalt.
+ *
+ * Dus gaat de zin over HET WERK en niet over de uitkomst. Het beeld naast de
+ * eigen foto leggen, kleur en print en logo en sluitingen nalopen, en met de
+ * hand bijwerken waar de AI afdwaalt — dat is controleerbaar, het is wat er
+ * echt gebeurt, en het is wat een koper eigenlijk wil weten. De uitkomst die
+ * er wél bij beloofd wordt, is de enige die hij kan nalopen: dat zijn klant het
+ * product ziet dat hij ook krijgt.
+ *
+ * WAT HIER MET OPZET NIET STAAT: "identiek", "exact", "pixel voor pixel",
+ * "gegarandeerd". tests/promises.test.mjs weigert ze — niet als stijlregel maar
+ * omdat de vangnetregel eronder (REVISIEBELEID, punt vier: kan het product niet
+ * worden nagemaakt, dan kijken we naar terugbetaling) alleen houdbaar is zolang
+ * de belofte erboven geen gelijkenis garandeert. De twee zinnen moeten samen
+ * kunnen staan op één pagina, en dat kunnen ze alleen in deze volgorde.
+ *
+ * ── PHOTOSHOP STAAT ER NIET MET NAAM ──────────────────────────────────────
+ *
+ * Lucas noemt het gereedschap; de zin noemt de handeling. "Met de hand
+ * bijgewerkt" is waar, blijft waar als het gereedschap verandert, en zegt de
+ * koper wat hij wil horen. Een merknaam van software in een belofte is een
+ * detail dat jaarlijks veroudert — REVISIEBELEID noemt het wel, omdat het daar
+ * gaat over wat er allemaal geprobeerd is voordat er geld terug gaat.
+ *
+ * ── WAAR HIJ STAAT ────────────────────────────────────────────────────────
+ *
+ * Op de momenten waarop de twijfel ontstaat, en nergens anders: bij het
+ * uploaden van de eigen productfoto (daar is de vraag het scherpst), op
+ * /how-it-works bij de afwerking, en als eigen vraag op /faq. Niet in de hero —
+ * daar staan drie bewijsregels en dat is Lucas' eigen grens.
+ */
+/* ── IN TWEE DELEN, EN DAAR IS EEN REDEN VOOR ──────────────────────────────
+   Nagekeken in de browser stond de belofte op /how-to-photograph in hetzelfde
+   grijs als de voetnoot erboven — de belangrijkste zin van de pagina, en de
+   stilste. Het eerste deel is de claim; de rest is het bewijs. Een pagina die
+   ze uit elkaar wil halen, kan dat via producttrouwDelen(); wie de zin gewoon
+   wil, roept producttrouw() aan en merkt er niets van. Geen tweede kopie. */
+export const PRODUCTTROUW = {
+  lang: {
+    en: ['Your product stays recognisable.', ' Every image is held against your own photo — colour, print, logo, closures and seams are checked and corrected by hand wherever the AI drifts, so your customer sees the product they will actually receive.'],
+    nl: ['Je product blijft herkenbaar.', ' Elk beeld wordt naast je eigen foto gelegd — kleur, print, logo, sluitingen en naden worden nagelopen en met de hand bijgewerkt waar de AI ervan afwijkt, zodat je klant het product ziet dat hij ook krijgt.'],
+  },
+  /* Zelfde afspraak als bij REVIEW_CLAIM_SHORT: de korte vorm mag MINDER
+     zeggen, nooit iets anders. Deze laat weg wát er nagelopen wordt; hij
+     belooft nergens meer dan de lange regel. */
+  kort: {
+    en: 'Recognisable, corrected by hand',
+    nl: 'Herkenbaar, met de hand nagelopen',
+  },
+};
+
+/** De producttrouwbelofte in één taal, als één zin. */
+export function producttrouw(lang = 'nl') {
+  return producttrouwDelen(lang).join('');
+}
+
+/** Dezelfde belofte in twee delen: [de claim, het bewijs]. Voor een pagina die
+ *  het eerste deel zwaarder wil zetten dan het tweede. */
+export function producttrouwDelen(lang = 'nl') {
+  return PRODUCTTROUW.lang[lang === 'nl' ? 'nl' : 'en'];
+}
+
+/** De korte vorm, voor een regel die naast andere regels staat. */
+export function producttrouwKort(lang = 'nl') {
+  return PRODUCTTROUW.kort[lang === 'nl' ? 'nl' : 'en'];
+}
 
 export const TIERS = {
   // TIER 0 — UNATTENDED.
@@ -2602,6 +2775,59 @@ export const LIFESTYLE_IMAGES = 3;
 /** Een compleet product is beide samen. */
 export const COMPLETE_IMAGES = CATALOG_IMAGES + LIFESTYLE_IMAGES;
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * HOE DIE BEELDEN HETEN — 17 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"1 foto voor een style is simpelweg te weinig (…) 1 kleine foto en 3
+ * foto's erachter met de resultaten zodat de klant gelijk kan zien wat hij kan
+ * verwachten."* De stijlkeuze toont sindsdien weer de hele set per look.
+ *
+ * ── WAAROM DE NAMEN HIER STAAN EN NIET IN DE COMPONENT ────────────────────
+ *
+ * Omdat een deel van die vakken vandaag nog leeg is. Lucas schiet de content
+ * morgen; tot die tijd staat er per vak een PLAAT met de naam erop in plaats
+ * van een grijs gat. Zodra er een foto is, verdwijnt de naam eronder — dezelfde
+ * volgorde, hetzelfde aantal. Dat werkt alleen als het aantal vakken en hun
+ * namen uit dezelfde bron komen als de belofte die de site doet: vier bij
+ * catalog, drie bij lifestyle, één clip bij video. Een namenlijst in de
+ * component zou een tweede waarheid zijn over hoeveel je krijgt, en dat is
+ * precies het soort dubbeling waar dit bestand vol waarschuwingen over staat.
+ *
+ * DE NAMEN ZIJN DE GELEVERDE BEELDEN EN NIET DE UPLOADS. Ze lijken op de vier
+ * uit src/data/shots.js en dat is geen toeval (zie de kop daar: wat je stuurt
+ * is wat je terugkrijgt), maar ze zijn het niet: daar heet de vierde "Gedragen"
+ * en dat is de foto die de KLANT stuurt, hier heet hij "Op model" en dat is het
+ * beeld dat WIJ leveren. Ze koppelen zou die twee door elkaar halen op het
+ * moment dat er één verandert.
+ *
+ * assertShotCounts() hieronder telt ze na tegen CATALOG_IMAGES en
+ * LIFESTYLE_IMAGES, zodat een vijfde naam hier bij de bouw omvalt in plaats van
+ * een vijfde vak te tonen bij een dienst die er vier levert.
+ */
+export const LEVERVLAKKEN = {
+  catalog: {
+    en: ['Front', 'Back', 'Detail', 'On model'],
+    nl: ['Voorkant', 'Achterkant', 'Detail', 'Op model'],
+  },
+  lifestyle: {
+    en: ['The scene', 'On model', 'Close-up'],
+    nl: ['De scène', 'Op model', 'Close-up'],
+  },
+  video: {
+    en: ['The clip'],
+    nl: ['De clip'],
+  },
+};
+
+/** De namen van wat een dienst levert, in één taal. Pagina's lezen dit. */
+export function levervlakken(dienst, lang = 'nl') {
+  const v = LEVERVLAKKEN[dienst];
+  if (!v) return [];
+  return v[lang === 'nl' ? 'nl' : 'en'];
+}
+
 /**
  * Hoeveel BEELDEN een dienst per product oplevert. Niet te verwarren met
  * KIND_PUNTEN, dat zegt hoeveel WERK hij kost.
@@ -2646,6 +2872,20 @@ function assertShotCounts() {
     throw new Error(
       `pricing.js: een compleet product is ${COMPLETE_IMAGES} beelden, maar de opmerking bij LADDER.complete zegt zeven. Werk beide bij.`,
     );
+  }
+  /* De namen van de vakken tellen mee met de belofte — zie de kop van
+     LEVERVLAKKEN. Eén naam te veel of te weinig is een stijltegel die iets
+     anders toont dan de prijs zegt, en dat valt pas op bij een klant. */
+  const hoort = { catalog: CATALOG_IMAGES, lifestyle: LIFESTYLE_IMAGES, video: 1 };
+  for (const [dienst, n] of Object.entries(hoort)) {
+    for (const taal of ['en', 'nl']) {
+      const lijst = LEVERVLAKKEN[dienst]?.[taal];
+      if (!Array.isArray(lijst) || lijst.length !== n) {
+        throw new Error(
+          `pricing.js: LEVERVLAKKEN.${dienst}.${taal} heeft ${lijst ? lijst.length : 0} namen, maar deze dienst levert er ${n}.`,
+        );
+      }
+    }
   }
 }
 assertShotCounts();

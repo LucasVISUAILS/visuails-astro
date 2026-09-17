@@ -1,0 +1,169 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * HET STELSEL — de gedeelde laag onder de nieuwe ontwerpvoorstellen
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 13 september 2026: *"het begint naarmate ik meer toevoeg steeds
+ * rommeliger en inconsistenter te worden en sommige secties voelen niet alsof
+ * ze bij de website horen."*
+ *
+ * ── WAT DE OORZAAK BLEEK, GEMETEN ─────────────────────────────────────────
+ *
+ * Dezelfde dag nagemeten over 105 pagina's, per sectie de bedekking per
+ * horizontale band. De rommeligheid zit niet in de pagina's maar in het feit
+ * dat ELK ONDERDEEL ZIJN EIGEN MATEN VERZON:
+ *
+ *   · de prijsladder stond op `max-width: 34rem`, de voor-na-schuif op 520px,
+ *     de stijlkop op 62ch en de rijen eronder op 100% — vier breedtes, vier
+ *     bedenkers, één pagina;
+ *   · de lopende band had een eigen beeldidioom (vierkant, rand tot rand, 10px
+ *     tussenruimte) naast een site die beelden in kaarten met ronding zet;
+ *   · de tussenruimtes kwamen uit negen verschillende clamp()-regels.
+ *
+ * Een pagina opnieuw tekenen lost daar niets van op — de volgende toevoeging
+ * verzint gewoon weer een eigen maat. Wat het wél oplost is dit bestand: één
+ * ritme, één raster, één kaart, drie lettergroottes. De drie voorstellen in
+ * src/pages/concept/ delen het allemaal. Ze verschillen in HOE ze eruitzien,
+ * niet in WAAR iets staat — en dat is precies het verschil tussen een site met
+ * variatie en een site die rommelig aanvoelt.
+ *
+ * Wat NIET in dit bestand hoort: kleur per sectie, een uitzondering voor één
+ * pagina, een tweede maat "alleen hier even". Komt dat er toch in, dan begint
+ * hetzelfde probleem opnieuw.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── HET RITME ────────────────────────────────────────────────────────────
+     Zeven treden op een grondmaat van 8 pixels, en verder niets. Elke marge,
+     elke tussenruimte en elke binnenruimte op de drie voorstellen komt hier
+     vandaan. Wie een achtste maat nodig heeft, heeft iets fout ontworpen. */
+  --s-0: .5rem;
+  --s-1: 1rem;
+  --s-2: 1.5rem;
+  --s-3: 2.5rem;
+  --s-4: clamp(3rem, 5vw, 5rem);
+  --s-5: clamp(4.5rem, 8vw, 8rem);
+  --s-6: clamp(6rem, 11vw, 11rem);
+
+  /* ── DE MAAT VAN DE PAGINA ────────────────────────────────────────────────
+     Eén breedte voor de hele site. 1680 en niet 1200: op een scherm van 1440
+     bleef er onder de oude maten tot 848 pixels leeg staan naast blokken die
+     de volle breedte hadden kunnen gebruiken. De goot schaalt mee zodat er op
+     een telefoon 20 pixels overblijft en op een breed scherm 72. */
+  --meet: 1680px;
+  --x: clamp(1.25rem, 4vw, 4.5rem);
+  --kolomgat: clamp(1rem, 1.6vw, 1.75rem);
+
+  /* ── DRIE LETTERGROOTTES, EN EEN LABEL ────────────────────────────────────
+     Verhouding ruim boven 1,25 tussen elke trede. Een vlakke schaal (1,1 uit
+     elkaar) leest als een schaal waar niemand over nagedacht heeft. */
+  --t-1: clamp(2.75rem, 7.4vw, 7rem);      /* de uitspraak — één per scherm   */
+  --t-2: clamp(1.75rem, 3.4vw, 3.25rem);   /* de sectiekop                    */
+  --t-3: clamp(1.15rem, 1.5vw, 1.5rem);    /* de kop in een kaart             */
+  --t-tekst: clamp(1rem, .55vw + .87rem, 1.1rem);
+  --t-klein: .9rem;
+  --t-label: .72rem;
+
+  /* ── ZACHTE VLAKKEN, SCHERPE KNOPPEN — 13 september 2026 ──────────────────
+     Lucas: *"Ik wil denk ik de knoppen ook vierkant maken en alle hoeken van
+     alle blokken en beelden op de website rond maken."*
+
+     Dat is geen willekeurige smaak maar een bruikbaar onderscheid, en daarom
+     staat het hier als regel en niet per onderdeel: ALLES WAT MATERIAAL IS —
+     een vlak, een kaart, een foto, een paneel — is rond. ALLES WAT JE BEDIENT
+     is scherp. Een bezoeker leert dat binnen één scherm en weet daarna zonder
+     nadenken waar hij op kan drukken: de scherpe hoek is de knop.
+
+     Vandaar ook dat de ronding fors is (16 en 22) en niet 6. Zes pixels leest
+     als "iemand heeft de hoeken een beetje afgehaald"; zestien leest als een
+     keuze. En 0 op de knop is ook echt 0 — 2 pixels zou de afspraak weer
+     verzachten tot niemand hem meer ziet. */
+  --rond-s: 10px;    /* pil, etiket, klein vlak                */
+  --rond-m: 16px;    /* kaart, foto, tegel                     */
+  --rond-l: 22px;    /* paneel, groot beeld, hele sectie       */
+  --rond-knop: 0;    /* de knop, en alles wat je indrukt       */
+
+  /* De oude namen blijven staan zodat de eerdere voorstellen niet breken; ze
+     wijzen naar de nieuwe schaal in plaats van naar hun oude waarde. */
+  --rond: var(--rond-s);
+  --rond-groot: var(--rond-m);
+}
+
+/* ── DE KNOP IS VIERKANT ────────────────────────────────────────────────────
+   ConceptLayout tekent een pil (999px). Die overschrijving staat hier en niet
+   daar, zodat alleen de pagina's die dit stelsel binnenhalen hem krijgen en de
+   oudere concepten blijven wat ze waren. */
+/* `.knop.knop` en niet `.knop`: de pil staat in een <style is:global> in
+   ConceptLayout en die komt ná deze import in de cascade. Met dezelfde
+   specificiteit wint de laatste, dus de knoppen bleven rond. De klasse twee
+   keer noemen tilt het gewicht één stap op en is eerlijker dan !important —
+   dat laatste maakt de regel onoverschrijfbaar en dan kan een pagina die
+   ooit wél een pil nodig heeft er niet meer omheen. */
+.knop.knop { border-radius: var(--rond-knop); }
+
+/* ── DE GOOT ──────────────────────────────────────────────────────────────── */
+.binnen { width: min(100%, var(--meet)); margin-inline: auto; padding-inline: var(--x); }
+
+/* ── HET RASTER ────────────────────────────────────────────────────────────
+   Twaalf kolommen, altijd dezelfde, op elk scherm hetzelfde gat. Onder 48rem
+   klapt hij naar één kolom — daaronder is twaalf kolommen een leugen. */
+.rij { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--kolomgat); }
+@media (max-width: 48rem) { .rij { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── DE SECTIE ─────────────────────────────────────────────────────────────
+   Elke sectie op elke pagina heeft dezelfde vorm: label links, uitspraak
+   rechts, inhoud eronder over de volle breedte. Dát is wat "consistent"
+   betekent; het is geen smaak maar een afspraak die je kunt nameten. */
+.blok { padding-block: var(--s-5); }
+.blok-kop { display: grid; gap: var(--s-2); margin-bottom: var(--s-4); }
+@media (min-width: 64rem) {
+  .blok-kop { grid-template-columns: 13rem minmax(0, 1fr); gap: var(--s-3); align-items: start; }
+}
+.blok-kop h2 { font-size: var(--t-2); }
+.blok-kop .lopend { margin-top: var(--s-1); }
+
+/* ── DE KAART ──────────────────────────────────────────────────────────────
+   Er is er één. Geen tweede variant met een andere binnenruimte, geen derde
+   met een andere rand. */
+.kaart {
+  background: var(--wit); border: 1px solid var(--lijn); border-radius: var(--rond-m);
+  padding: var(--s-2); display: grid; gap: var(--s-1); align-content: start; min-width: 0;
+}
+.kaart h3 { font-family: var(--kop); font-weight: 500; font-size: var(--t-3); line-height: 1.1; letter-spacing: -.02em; }
+.kaart p { color: var(--inkt-2); font-size: var(--t-klein); line-height: 1.5; }
+
+/* ── HET BEELD ─────────────────────────────────────────────────────────────
+   Eén behandeling voor elke foto op de site: dezelfde ronding als een kaart,
+   dekkend bijgesneden, en de verhouding staat op het element en niet in een
+   losse regel per sectie. Dit is het onderdeel dat de lopende band niet deelde
+   en precies daarom voelde die sectie als een andere website. */
+.beeld { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: var(--rond-m); background: var(--lijn); }
+.beeld-vak { position: relative; overflow: hidden; border-radius: var(--rond-m); background: var(--lijn); }
+
+/* ── DE HAARLIJN ───────────────────────────────────────────────────────────── */
+.lijn-boven { border-top: 1px solid var(--lijn); }
+.lijn-onder { border-bottom: 1px solid var(--lijn); }
+
+/* ── HET ETIKET ────────────────────────────────────────────────────────────
+   Mono, klein, hoofdletters. Eén per sectie en niet één per kop: een etiket
+   boven élke kop is geen stem maar behang. */
+.etiket {
+  font-family: var(--mono); font-size: var(--t-label); font-weight: 400; font-stretch: 82%;
+  letter-spacing: .06em; text-transform: uppercase; line-height: 1.4; color: var(--inkt-3);
+  display: flex; gap: .7em; align-items: baseline;
+}
+.etiket-nr { color: var(--inkt); font-variant-numeric: tabular-nums; }
+/* ── EN OP EEN DONKER VLAK VERHUIZEN DE KLEUREN MEE ────────────────────────
+   Gemeten op voorstel B: in de donkere processectie was het sectienummer
+   onzichtbaar. `--inkt` is bijna zwart en blijft dat ook binnen een zwart
+   blok — een custom property lost `var()` op in de scope waar hij GEDECLAREERD
+   is, niet waar hij gebruikt wordt. Dit is dezelfde fout die eerder een knop
+   onleesbaar maakte, en hij hoort dus hier opgelost te worden en niet per
+   sectie: elk blok met `.op-inkt` draait de twee kleuren om. */
+.op-inkt .etiket { color: rgb(255 255 255 / .6); }
+.op-inkt .etiket-nr { color: var(--vel); }
+.op-inkt .kaart { background: rgb(255 255 255 / .05); border-color: rgb(255 255 255 / .16); }
+.op-inkt .kaart p { color: rgb(255 255 255 / .72); }
+.op-inkt .lijn-boven, .op-inkt .lijn-onder { border-color: rgb(255 255 255 / .16); }
+
+/* ── DE CIJFERS ────────────────────────────────────────────────────────────── */
+.getal { font-family: var(--kop); font-weight: 500; font-stretch: 118%; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
