@@ -103,6 +103,9 @@ interface Slide {
      blijft dan het stilstaande beeld dat ervoor in de plaats komt zolang de
      clip nog laadt, en wat een schermlezer krijgt. */
   video?: string;
+  /* Het STAANDE beeld van een clip: hetzelfde beeld zonder het dode zwart
+     ernaast. Zie de noot bij `video` in src/data/laptopSlides.js. */
+  staand?: string;
   /* Hoe lang deze slide blijft staan, in milliseconden. Zonder waarde geldt de
      standaard van 2500. Een clip van zeven seconden zet je hier op 7000, want
      halverwege wegspringen is erger dan geen clip. */
@@ -228,6 +231,19 @@ const t = nl
                 {!stil && <div class="lc-post-stip" data-lc-stip aria-hidden="true">
                   {s.beelden.map((_, k) => (<i class={k === 0 ? 'aan' : ''}></i>))}
                 </div>}
+                {/* ── EN EEN PIJL TERUG — 18 september 2026 ──────────────────────
+                    Lucas: *"Ook moet de instagram carousel een pijl naar links
+                    hebben wanneer de klant naar rechts gaat, want hij moet ook
+                    terug kunnen."* Klopt: dit is een nagebouwde Instagram-post
+                    en daar staat die pijl ook zodra je één beeld verder bent.
+
+                    `hidden` op het eerste beeld en niet altijd zichtbaar: op
+                    beeld één is er niets om naar terug te gaan, en een pijl die
+                    niets doet is erger dan geen pijl. Het script zet hem aan en
+                    uit — zie `terugPijl` onderaan dit bestand. */}
+                {!stil && <button class="lc-omlaag lc-omlaag-zij lc-omlaag-terug" type="button" data-lc-stap="-1" data-lc-terug aria-label={t.vorige} hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" /></svg>
+                </button>}
                 {!stil && <button class="lc-omlaag lc-omlaag-zij" type="button" data-lc-stap="1" aria-label={t.omlaag}>
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
                 </button>}
@@ -321,8 +337,20 @@ const t = nl
                 </button>
               )}
             </div>
-          ) : s.video ? (
-            <video src={s.video} poster={s.src} width="1200" height="728" muted loop playsinline preload={i < 2 ? 'auto' : 'none'} aria-label={s.alt}></video>
+          ) : (s.video || s.staand) ? (
+            /* ── DE SPELER: ONSCHERPE GROND, SCHERPE CLIP ────────────────────
+               Zie de noot bij `video` in laptopSlides.js. Twee lagen van
+               hetzelfde beeld: achter vullend en onscherp, voor op volle hoogte
+               en heel. De achterste laag is `aria-hidden` — het is dezelfde
+               inhoud, en een voorleeshulp hoort hem niet twee keer te horen. */
+            <div class="lc-speler">
+              {s.video
+                ? <video class="lc-speler-grond" src={s.video} poster={s.staand || s.src} muted loop playsinline preload={i < 2 ? 'auto' : 'none'} aria-hidden="true"></video>
+                : <img class="lc-speler-grond" src={s.staand || s.src} alt="" width="830" height="1456" loading="lazy" decoding="async" aria-hidden="true" />}
+              {s.video
+                ? <video class="lc-speler-clip" src={s.video} poster={s.staand || s.src} width="830" height="1456" muted loop playsinline preload={i < 2 ? 'auto' : 'none'} aria-label={s.alt}></video>
+                : <img class="lc-speler-clip" src={s.staand || s.src} alt={s.alt} width="830" height="1456" loading={i < 2 ? 'eager' : 'lazy'} decoding="async" />}
+            </div>
           ) : (
             <img
               src={s.src}
@@ -352,12 +380,6 @@ const t = nl
     <!-- De plaat. Hij is het enige wat de maat van de doos bepaalt. -->
     <img class="lc-plaat" src={overlay} alt={plaatAlt} width="1792" height="1013" fetchpriority="high" decoding="async" />
 
-    {!stil && <button class="lc-pijl lc-pijl-vorige" type="button" data-lc-stap="-1" aria-label={t.vorige}>
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" /></svg>
-    </button>}
-    {!stil && <button class="lc-pijl lc-pijl-volgende" type="button" data-lc-stap="1" aria-label={t.volgende}>
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
-    </button>}
   </div>
 
   {!stil && <div class="lc-voet">
@@ -367,6 +389,29 @@ const t = nl
       ))}
     </p>
     <div class="lc-balk" aria-hidden="true"><span class="lc-balk-in" data-lc-balk></span></div>
+    {/* ── DE PIJLEN STAAN ONDER DE LAPTOP — 18 september 2026 ──────────────
+        Lucas: *"Ik wil dat de pijlen aan de zijkant van de laptop wat
+        dichterbij de laptop staan (…) de rechter pijl is niet eens
+        zichtbaar."* En even later: *"Misschien kunnen die pijlen aan de
+        zijkant onder de laptop komen om wat ruimte te besparen."*
+
+        Hij had gelijk over allebei. Ze stonden links en rechts IN de doek, en
+        die doek is breder dan de laptop: op de voorpagina begon hij op 646 en
+        eindigde op 1455 in een venster van 1440 — de rechterpijl stond dus
+        letterlijk buiten beeld, en wat er nog van te zien was viel onder het
+        masker dat de rechterrand laat uitlopen.
+
+        Onder de laptop is er geen van beide problemen: daar is geen masker, de
+        breedte is die van de voet, en ze staan naast de voortgangsstreep waar
+        ze horen — de streep zegt waar je bent, de pijlen wat je ermee kunt. */}
+    <div class="lc-pijlen">
+      <button class="lc-pijl lc-pijl-vorige" type="button" data-lc-stap="-1" aria-label={t.vorige}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7" /></svg>
+      </button>
+      <button class="lc-pijl lc-pijl-volgende" type="button" data-lc-stap="1" aria-label={t.volgende}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+      </button>
+    </div>
     <p class="lc-bron">{t.bron}</p>
   </div>}
 
@@ -377,11 +422,28 @@ const t = nl
   /* ── DE DOOS ──────────────────────────────────────────────────────────────
      `aspect-ratio` op de doek en niet op het beeld: dan staat de hoogte vast
      vóórdat de plaat geladen is en springt er niets. */
+  /* ── GEEN SECTIELUCHT — 18 september 2026 ─────────────────────────────────
+     Lucas: *"Er staan hier en daar ook laptop foto's die niet daar horen en
+     niet eens werken of goed in de achtergrond passen."*
+
+     Dit is de helft die "niet goed in de achtergrond past" verklaarde, en het
+     is dezelfde oorzaak als bij de opening van 17 september: dit component is
+     een `<section>`, en global.css geeft ELKE sectie `padding-block:
+     clamp(4.5rem, 9vw, 9rem)`. Op /plans, /pricing, /test-sample en /thank-you
+     staat de laptop in een `.paneel` dat zijn eigen ruimte al meebrengt, dus
+     kwam die lucht er bovenop: gemeten 159 pixels boven en 159 onder de plaat,
+     binnen een blok dat er zelf al 79 aan elke kant had. De laptop zweefde
+     daardoor in een lege kamer in plaats van bij de tekst te horen.
+
+     De ruimte OM dit blok hoort van de pagina te komen en niet van dit
+     bestand — precies zoals bij elk ander beeld op de site. `is-naast` deed dit
+     al voor de opening; nu geldt het overal. */
   .lc {
     --lc-accent: var(--accent, var(--geel, #D2E04A));
     --lc-rond: var(--rond-m, var(--r-lg, 16px));
     display: grid; gap: clamp(.9rem, 1.8vw, 1.4rem);
     width: min(100%, 68rem); margin-inline: auto;
+    padding-block: 0;
   }
   .lc:focus-visible { outline: 2px solid var(--lc-accent); outline-offset: 8px; }
 
@@ -510,7 +572,7 @@ const t = nl
      sectie `padding-block: clamp(4.5rem, 9vw, 9rem)`. Als eigen blok op een
      pagina is dat precies goed — het is dan een sectie. Naast een kop in een
      opening is het geen sectie maar een beeld, en dan is die lucht een gat. */
-  .lc.is-naast { width: auto; max-width: none; margin-inline: 0; padding-block: 0; }
+  .lc.is-naast { width: auto; max-width: none; margin-inline: 0; }
   @media (min-width: 60rem) {
     .lc.is-naast { margin-right: calc(-1 * var(--x, 2rem)); }
   }
@@ -589,6 +651,38 @@ const t = nl
      `container-type: size` mag hier omdat de slide `inset: 0` in een doos met
      een vaste procentuele maat staat: zijn hoogte hangt niet van zijn inhoud
      af, dus er ontstaat geen kringverwijzing. */
+  /* ── DE SPELER ─────────────────────────────────────────────────────────────
+     Een verticale clip in een liggend scherm. De grond is dezelfde clip,
+     uitvergroot tot hij het scherm vult, onscherp en donkerder; de clip zelf
+     staat er scherp voor op volle hoogte. Zo is er geen dood zwart meer naast
+     het beeld en blijft de clip heel. */
+  /* `grid-template: 100% / 100%` en niet alleen `place-items`: een automatische
+     rij groeit mee met de EIGEN hoogte van het beeld (1456 px), en dan rekent
+     `height: 100%` op de clip hieronder tegen die 1456 in plaats van tegen het
+     scherm. Gemeten toen dat misging: een clip van 1009 px hoog in een scherm
+     van 412. Een vaste baan van 100% houdt hem binnen het scherm. */
+  .lc-speler { position: absolute; inset: 0; overflow: hidden; background: #0A0A0A; display: grid; grid-template: 100% / 100%; place-items: center; }
+  .lc-speler-grond {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    filter: blur(28px) saturate(1.15) brightness(.55); scale: 1.18;
+  }
+  /* De clip: volle hoogte, breedte volgt de verhouding. `position: relative`
+     zodat hij boven de grond staat zonder een z-index te hoeven verzinnen. */
+  /* `position: relative` is hier geen opmaak maar stapelvolgorde: de grond
+     hierboven staat absoluut en zou anders ÓVER de clip vallen, want een
+     gepositioneerd element wint van een gewoon element in de stroom. Twee
+     gepositioneerde lagen laten de DOM-volgorde beslissen, en de clip staat
+     later. Gemeten toen dat misging: een scherm met alleen waas erop. */
+  .lc-speler-clip {
+    position: relative;
+    grid-area: 1 / 1; justify-self: center; align-self: center;
+    height: 100%; width: auto; max-width: 100%; max-height: 100%;
+    object-fit: contain; display: block;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lc-speler-grond { filter: blur(18px) brightness(.6); scale: 1.1; }
+  }
+
   .lc-slide { container-type: size; }
   .lc-blad { position: absolute; inset: 0; overflow: hidden; background: #FFF; }
 
@@ -787,6 +881,10 @@ const t = nl
   }
   .lc-omlaag-zij svg { width: 60%; height: 60%; stroke-width: 2.2; }
   .lc-omlaag-zij:hover { opacity: 1; background: #FFF; }
+  /* De pijl terug is de spiegel van de pijl vooruit: zelfde maat, zelfde
+     ronding, alleen aan de andere kant. NA de regel hierboven en niet ervoor —
+     die zet `left: auto` en zou hem anders gewoon weer naar rechts trekken. */
+  .lc-omlaag-terug { right: auto; left: 1.6cqh; }
 
   /* De zijkolom is opgebouwd zoals een berichtvenster dat echt is: een kop met
      een streep eronder, daaronder de stroom met het bijschrift en de reacties,
@@ -840,22 +938,27 @@ const t = nl
   .lc-plaat { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 
   /* ── DE PIJLEN ────────────────────────────────────────────────────────────
-     Alleen op een apparaat met een echte aanwijzer, alleen bij hover of focus,
-     en vierkant omdat het knoppen zijn. Ze staan buiten het laptopscherm, in
-     het grijs van de plaat, zodat ze nooit over een beeld vallen. */
+     Onder de laptop, naast de voortgangsstreep — zie de noot bij de markup.
+     Klein en in inkt: ze staan niet meer op een donkere plaat maar op de
+     pagina, en een zwarte pil met waas eromheen zou daar een derde element zijn
+     naast de naam en de streep.
+
+     Ze verschijnen bij hover op de hele carousel (de laptop plus deze voet is
+     precies "dichtbij de laptop") of zodra er focus in zit. Blijven staan doen
+     ze niet: ze zijn de uitzondering, het vanzelf doorlopen is de regel. */
+  .lc-pijlen { flex: none; display: flex; gap: .3rem; margin-left: auto; }
   .lc-pijl {
-    position: absolute; top: 50%; translate: 0 -50%;
-    width: 2.75rem; height: 2.75rem; display: grid; place-items: center;
-    border: 1px solid rgb(255 255 255 / .35); border-radius: var(--rond-knop, 0);
-    background: rgb(10 10 10 / .55); backdrop-filter: blur(6px); color: #FFF;
-    opacity: 0; transition: opacity .25s ease, background-color .25s ease;
+    width: 2rem; height: 2rem; display: grid; place-items: center;
+    border: 1px solid currentColor; border-radius: var(--rond-knop, 0);
+    background: none; color: inherit;
+    opacity: 0; transition: opacity .25s ease, background-color .25s ease, color .25s ease;
     cursor: pointer;
   }
-  .lc-pijl svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; }
-  .lc-pijl-vorige { left: .75rem; }
-  .lc-pijl-volgende { right: .75rem; }
-  .lc-pijl:hover { background: rgb(10 10 10 / .8); }
-  .lc-doek:hover .lc-pijl, .lc:focus-within .lc-pijl { opacity: 1; }
+  .lc-pijl svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; }
+  .lc-pijl:hover { background: currentColor; }
+  .lc-pijl:hover svg { stroke: var(--vel, #FAFAFA); }
+  .lc:hover .lc-pijl, .lc:focus-within .lc-pijl { opacity: .7; }
+  .lc:hover .lc-pijl:hover { opacity: 1; }
   .lc-pijl:focus-visible { opacity: 1; outline: 2px solid var(--lc-accent); outline-offset: 2px; }
   /* Geen aanwijzer (telefoon, tablet) of een smal scherm: weg ermee. Daar is
      swipen de bediening en een knop alleen maar een ding dat in de weg staat.
@@ -1009,9 +1112,20 @@ const t = nl
          een lus staan te draaien is vijf keer werk voor niets, en op een
          telefoon is dat meteen te merken. */
       dia.forEach((e, q) => {
-        const v = e.querySelector('video');
-        if (!v) return;
-        if (q === i) { v.currentTime = 0; v.play().catch(() => {}); } else { v.pause(); }
+        /* ALLE clips van deze slide en niet de eerste: sinds de speler een
+           onscherpe grondlaag heeft (zie .lc-speler) staan er twee <video>'s in
+           dezelfde slide, en `querySelector` zou de voorste laten doordraaien
+           terwijl de achterste stilstaat — twee lagen van hetzelfde beeld die
+           uit de pas lopen. */
+        e.querySelectorAll('video').forEach((v) => {
+          if (q === i) { v.currentTime = 0; v.play().catch(() => {}); } else { v.pause(); }
+        });
+      });
+      /* De pijl terug in een nagebouwde post: alleen als er iets achter je
+         ligt. Zie de noot bij de knop in de markup. */
+      dia.forEach((e, q) => {
+        const terug = e.querySelector('[data-lc-terug]');
+        if (terug) terug.hidden = !(q === i && j > 0);
       });
       namen.forEach((e, q) => { e.hidden = q !== i; });
       balk.style.transform = 'translateX(' + plat(i, j) * 100 + '%)';
@@ -1074,12 +1188,28 @@ const t = nl
     const pauze = () => { clearTimeout(klok); klok = null; };
     const start = () => {
       if (gestopt || !zicht || klok) return;
+      /* Staat de muis er nog op, of staat de focus erin? Dan niet. `:hover` in
+         plaats van een eigen vlag, zodat hij ook klopt na een klik op een pijl:
+         die pijl zit binnen de carousel, dus de aanwijzer is er nog. */
+      if (s.matches(':hover') || s.contains(document.activeElement)) return;
       klok = setTimeout(() => { klok = null; volgende(); start(); }, duurVan(i));
     };
-    /* Eén keer ingrijpen en het afspelen komt niet meer terug. Dat is met opzet
-       definitief: een carousel die na drie seconden weer verder springt terwijl
-       iemand aan het kijken is, is de meest gehate vorm die er bestaat. */
-    const stop = () => { gestopt = true; pauze(); };
+    /* ── INGRIJPEN PAUZEERT, WEGGAAN START WEER — 18 september 2026 ─────────
+       Hier stond: één keer ingrijpen en het afspelen komt niet meer terug.
+       Lucas: *"Ook als je van de laptop of pijlen afgaat met je muis moeten de
+       foto's automatisch afspelen en verder gaan naar de volgende diaslide."*
+
+       Zijn versie is beter, en de reden dat de oude regel bestond blijft
+       overeind: het gaat erom dat er niets wegspringt terwijl je KIJKT. Zolang
+       de muis op de laptop of de pijlen staat, staat hij dus stil — hoe lang je
+       ook blijft. Ga je weg, dan loopt hij weer.
+
+       `gestopt` blijft bestaan voor de enige twee gevallen waarin doorlopen
+       echt niet hoort: een bezoeker die om minder beweging heeft gevraagd, en
+       iemand die met het TOETSENBORD in de carousel staat — die ziet zijn
+       focus anders onder zich vandaan schuiven. */
+    const pauzeer = () => pauze();
+    const stop = () => { pauze(); };
 
     s.addEventListener('click', (e) => {
       const k = e.target.closest('[data-lc-stap]');
@@ -1161,11 +1291,15 @@ const t = nl
       (omlaag ? wielVooruit : wielTerug)();
     }, { passive: false });
 
-    s.addEventListener('mouseenter', pauze);
+    s.addEventListener('mouseenter', pauzeer);
     s.addEventListener('mouseleave', start);
+    /* Met het toetsenbord erin: stil. Eruit: weer verder. Zelfde afspraak als
+       met de muis, zodat er maar één regel te onthouden is. */
+    s.addEventListener('focusin', pauzeer);
+    s.addEventListener('focusout', () => setTimeout(start, 0));
     /* Buiten beeld ook de clip stilzetten: een lus die doordraait in een tab
        waar niemand kijkt, kost accu en levert niets op. */
-    const clipsUit = () => dia.forEach((e) => { const v = e.querySelector('video'); if (v) v.pause(); });
+    const clipsUit = () => dia.forEach((e) => e.querySelectorAll('video').forEach((v) => v.pause()));
 
     new IntersectionObserver((rs) => {
       zicht = rs[0].isIntersecting;

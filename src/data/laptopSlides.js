@@ -118,8 +118,27 @@ export function laptopSlides(lang = 'nl') {
     },
   };
 
+  /* ── DE CLIP VULT HET SCHERM — 18 september 2026 ──────────────────────────
+     Lucas: *"De video op de laatste slide moet gevuld worden in het hele
+     scherm."* Hij stond als één plaat van 1200 × 728 in het scherm, met de
+     verticale clip in het midden en aan weerszijden dood zwart: gemeten liep de
+     inhoud van kolom 239 tot 653, dus ruim de helft van het laptopscherm was
+     leeg.
+
+     Een verticale clip kan een liggend scherm niet vullen zonder er hard in te
+     snijden — dat is geen bug maar meetkunde. Wat een videospeler in dat geval
+     doet, doen wij nu ook: de clip zelf staat scherp en op volle hoogte in het
+     midden, en achter hem staat diezelfde clip uitvergroot en onscherp als
+     grond. Het scherm is vol, de clip is heel, en het leest als een speler in
+     plaats van als een plaat met randen.
+
+     `staand` is dus het bestand ZONDER dat dode zwart — uitgesneden uit de
+     oorspronkelijke plaat, niet opnieuw geschoten. Komt er een echte clip, dan
+     vervangt hij dit veld en werkt dezelfde opmaak. */
   const video = {
-    src: '/img/laptop/uit_video.webp', fon: HELE, duur: 3200,
+    src: '/img/laptop/uit_video.webp',
+    staand: '/img/laptop/uit_video_clip.webp',
+    fon: HELE, duur: 3200,
     fonAlt: nl ? 'Telefoonfoto van de klant: de hele broek plat op een betonnen magazijnvloer'
                : "The customer’s phone photo: the whole garment flat on a concrete floor",
     naam: nl ? 'Videoclip · verticaal' : 'Video clip · vertical',
