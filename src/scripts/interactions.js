@@ -1565,7 +1565,70 @@ function initVeldmeldingen() {
   }
 }
 
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * WAT EEN BESTAANDE KLANT TE ZIEN KRIJGT
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 17 september 2026: *"Ik wil wanneer iemand is ingelogd en dus al een
+ * order heeft geplaatst de test sample niet meer dominant maken en die
+ * knoppen/secties veranderen naar iets anders dat dan belangrijker is en meer
+ * conversiegericht is."*
+ *
+ * Hij heeft gelijk en het is niet alleen een kwestie van netheid: "Probeer
+ * VISUAILS voor € 1" naast iemand die er al € 267 heeft uitgegeven, leest als
+ * een site die niet weet wie er staat. En het is bovendien de duurste plek op
+ * de pagina die aan het goedkoopste aanbod wordt weggegeven.
+ *
+ * ── TWEE ATTRIBUTEN, EN VERDER NIETS ────────────────────────────────────────
+ *
+ *   data-vis-uit   alleen voor wie NIET is ingelogd
+ *   data-vis-in    alleen voor wie WEL is ingelogd
+ *
+ * Allebei mogen ze op elk element. Dat is met opzet zo klein gehouden: deze
+ * site is statisch gebouwd, dus de pagina weet bij het bouwen niet wie hem
+ * opvraagt. Alles wat per bezoeker verschilt, moet dus na het laden gebeuren —
+ * en dan wil je één mechanisme en niet per pagina een eigen fetch.
+ *
+ * ── DE BEGINSTAND IS "UITGELOGD", EN DAT IS DE VEILIGE KANT ─────────────────
+ *
+ * `data-vis-in` staat `hidden` in de markup en komt pas tevoorschijn als
+ * /account/me antwoordt. Andersom zou een bezoeker zonder account een halve
+ * seconde een knop zien die over ZIJN abonnement gaat, en dat is erger dan een
+ * bestaande klant die een halve seconde het proefaanbod ziet staan.
+ *
+ * Geen antwoord, geen netwerk, geen JavaScript: dan blijft alles staan zoals
+ * het gebouwd is — het proefaanbod zichtbaar, de klantvariant verborgen. De
+ * pagina is dan precies wat hij daarvoor ook was.
+ *
+ * ── ÉÉN VRAAG PER PAGINA ────────────────────────────────────────────────────
+ *
+ * Het antwoord wordt bewaard zolang de pagina leeft. Bij een zachte navigatie
+ * (ClientRouter) draait dit opnieuw, en dan is het antwoord er al: de knoppen
+ * staan meteen goed in plaats van een frame te knipperen.
+ */
+let ingelogd = null;
+
+function pasKlantstandToe() {
+  const uit = [...document.querySelectorAll('[data-vis-uit]')];
+  const aan = [...document.querySelectorAll('[data-vis-in]')];
+  if (!uit.length && !aan.length) return;
+
+  const zet = (klant) => {
+    uit.forEach((el) => { el.hidden = klant; });
+    aan.forEach((el) => { el.hidden = !klant; });
+  };
+
+  if (ingelogd !== null) { zet(ingelogd); return; }
+  if (typeof fetch !== 'function') return;
+
+  fetch('/account/me', { credentials: 'same-origin', headers: { accept: 'application/json' } })
+    .then((r) => { ingelogd = r.ok; zet(ingelogd); })
+    .catch(() => { /* offline of onbereikbaar: de pagina blijft zoals hij is */ });
+}
+
 export function init() {
+  pasKlantstandToe();
   initReveal();
   initSplitLines();
   initCompareDrag();

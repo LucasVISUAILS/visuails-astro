@@ -172,6 +172,35 @@ export const ANGLES = [
 
 export const ANGLE_IDS = ANGLES.map((a) => a.id);
 
+/*
+ * ── DE VELDNAMEN VAN DE ZELFBEDACHTE HOEK ───────────────────────────────────
+ *
+ * De vierde plek in elke groep is van de klant: hij typt zelf wat hij wil, en
+ * stuurt er bij elk product een foto van mee. Die hoek staat met opzet NIET in
+ * ANGLES — hij heeft geen vaste naam en geen tekening, en de noot boven die
+ * lijst legt uit waarom dat een plek in de opmaak is en geen regel in de data.
+ *
+ * Maar een formulierveld heeft een naam nodig, en die naam moet op TWEE plekken
+ * bekend zijn: in het formulier dat hem post, en op de server die hem telt.
+ * /api/order rekent de extra foto's uit met `ANGLE_IDS.filter(...)` — een lijst
+ * die deze twee niet bevat. Zonder de regel hieronder is een zelfbedachte hoek
+ * dus GRATIS: de klant kiest hem, krijgt er een verplicht uploadvak per product
+ * bij, en de rekening weet er niets van.
+ *
+ * Vandaar deze constante. Het is geen hoek met een naam en een beeld; het zijn
+ * de twee veldnamen waaronder de klant er zelf een kan beschrijven.
+ */
+export const EIGEN_ANGLE_PREFIX = 'eigen-';
+export const EIGEN_ANGLE_IDS = ANGLE_GROUPS.map((g) => `${EIGEN_ANGLE_PREFIX}${g}`);
+
+/** Is dit de zelfbedachte hoek van een groep? */
+export function isEigenAngleId(id) {
+  return EIGEN_ANGLE_IDS.includes(String(id || ''));
+}
+
+/** Alles wat als bijbestelde hoek mag meetellen: de vaste plus de zelfbedachte. */
+export const TELBARE_ANGLE_IDS = [...ANGLE_IDS, ...EIGEN_ANGLE_IDS];
+
 /** Eén hoek op id, of null. Nooit een gok: een onbekende id is een gesleuteld
  *  formulier en die hoort niets op te leveren. */
 export function angleById(id) {
@@ -188,6 +217,27 @@ export const ANGLE_COPY = {
     extraLine: 'Chosen once, for the whole order — every product gets the same angles, which is what makes a set read as a set. Up to {max} on top of the four.',
     note: 'Anything specific? (optional)',
     notePh: 'e.g. show the chest logo',
+    /* ── DE HOEK DIE ER NIET TUSSEN STAAT — 17 september 2026 ──────────────
+       Lucas: *"Custom angle mist ook."* Het zat in /concept/bestelrij en niet
+       in het echte formulier, terwijl het de enige uitweg is voor een product
+       dat niet in twaalf vaste hoeken past — een tas van binnen, een schoen van
+       onderen, een label dat alleen in een vouw zit.
+
+       De omschrijving is hier VERPLICHT en niet optioneel, en dat is het hele
+       verschil met de notitie hierboven. Bij een vaste hoek weten we wat we
+       maken en is de notitie een aanvulling. Bij een eigen hoek is de
+       omschrijving de opdracht: zonder die zin is er niets te maken. */
+    eigenNaam: 'Your own angle',
+    eigenPh: 'e.g. the inside of the bag, flat',
+    eigenNote: 'Describe the angle',
+    eigenHint: 'Same price. You send a photo of it with each product, so we know exactly what you mean.',
+    /* ── EN WAT ER GEBEURT ALS DIE ZIN ONS TOCH NIET GENOEG IS ─────────────
+       Dit stond in /concept/bestelrij en is er bij het overzetten uit gevallen.
+       Het hoort precies hier: op het moment dat iemand iets bestelt dat niet in
+       een lijstje past, is de eerste vraag "en als jullie het verkeerd
+       begrijpen?". Het antwoord daarop hoort niet in een veelgestelde vraag
+       drie pagina's verderop te staan. */
+    twijfelNoot: 'If we are unsure what you mean, we get in touch before we start. Better one message up front than an image you did not ask for.',
     per: '{price} per photo, per product',
     /* De weg naar /per-product, vanuit het formulier. "alle twaalf" en niet "de
        hoeken": op die pagina staan de vier vaste opnames én de acht extra's, en
@@ -214,6 +264,15 @@ export const ANGLE_COPY = {
     extraLine: 'Eén keer gekozen, voor de hele bestelling — elk product krijgt dezelfde hoeken, en dat is wat een set als een set laat lezen. Tot {max} bovenop de vier.',
     note: 'Iets specifieks erbij? (optioneel)',
     notePh: 'bijv. laat het logo op de borst zien',
+    /* Zie de noot bij de Engelse tegenhanger: de omschrijving is hier verplicht,
+       want bij een eigen hoek ís die omschrijving de opdracht. */
+    eigenNaam: 'Zelf bedenken',
+    eigenPh: 'bijv. de binnenkant van de tas, plat',
+    eigenNote: 'Omschrijf de hoek',
+    eigenHint: 'Zelfde prijs. Je stuurt er bij elk product een foto van mee, zodat we precies weten wat je bedoelt.',
+    /* Zijn eigen woorden van /concept/bestelrij; zie de noot bij de Engelse
+       tegenhanger voor waarom ze hier staan en niet in een FAQ. */
+    twijfelNoot: 'Twijfelen wij over wat je bedoelt, dan nemen we contact met je op vóórdat we beginnen. Liever één berichtje vooraf dan een beeld dat je niet bedoelde.',
     per: '{price} per foto, per product',
     /* De weg naar /per-product, vanuit het formulier. "alle twaalf" en niet "de
        hoeken": op die pagina staan de vier vaste opnames én de acht extra's, en

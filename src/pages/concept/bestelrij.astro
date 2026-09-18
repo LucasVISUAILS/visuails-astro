@@ -312,7 +312,7 @@ const vakken = SHOTS.map((s) => ({
                    het al. -->
               <li class="br-eigenvak">
                 <div class="br-eigen">
-                  <span class="br-hoek-schets"><AngleSketch id="eigen" /></span>
+                  <span class="br-hoek-schets"><AngleSketch id="eigen" sleutel={`eigen-${groep}`} /></span>
                   <div class="br-eigen-woord">
                     <span class="br-hoek-naam">Zelf bedenken</span>
                     <label>
@@ -374,7 +374,7 @@ const vakken = SHOTS.map((s) => ({
         <li>
           <button class="br-hoek br-eigenhoek" type="button" data-br-hoek="" data-br-hoekgroep="model"
             data-br-hoeknaam="" aria-pressed="true">
-            <span class="br-hoek-schets"><AngleSketch id="eigen" /></span>
+            <span class="br-hoek-schets"><AngleSketch id="eigen" sleutel="eigen-sjabloon" /></span>
             <span class="br-hoek-woord">
               <span class="br-hoek-naam"></span>
               <!-- Welke kant hij koos, blijft op de tegel staan. Anders is dat

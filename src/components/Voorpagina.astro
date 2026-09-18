@@ -59,6 +59,7 @@ import { TAGLINE } from '../data/brand.js';
 import { ROSTER, modelId, telwoord } from '../data/models.js';
 import { REQUIRED_SHOT_IDS } from '../data/shots.js';
 import '../styles/stijl22.css';
+import LaptopCarousel from './LaptopCarousel.astro';
 import LopendeBand from './LopendeBand.astro';
 
 const { lang } = Astro.props as { lang: 'en' | 'nl' };
@@ -405,6 +406,10 @@ const nn = (i: number) => String(i).padStart(2, '0');
    2048×1152, en dus 16:9 — de vorm van een hero. Vier maten, want een hero is
    het eerste wat laadt: 640, 960, 1560 en 2048. Niet opgeschaald naar 2560:
    een groter bestand met dezelfde informatie erin is alleen maar trager. */
+/* De heropagina-foto is op 17 september uit de opening gehaald; zie de noot bij
+   <section class="hero hero-split">. De constante blijft staan omdat het bestand
+   er nog is en de galerij hem gebruikt — weghalen zou hier een dood pad zijn,
+   maar hem hier nog gebruiken zou een tweede beeld naast de laptop zetten. */
 const HERO = '/img/voorpagina/hero-moment.webp';
 const b = (n: number, w: number, h: number) => ({
   src: `/img/concept/sfeer-0${n}.webp`, klein: `/img/concept/sfeer-0${n}-w1000.webp`, w, h,
@@ -474,7 +479,29 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       banden — het aantal beelden van één complete set — die met 70 ms verschil
       veertien pixels op hun plaats schuiven, en een kop die per regel opkomt.
       Binnen één seconde staat alles stil. */}
-  <section class="hero" aria-labelledby="vp-h1">
+  {/* ── DE OPENING TOONT NU WAT ERUIT KOMT — 17 september 2026 ───────────────
+      Lucas: *"Ik wil de laptop op de voorpagina hebben omdat een klant dan in
+      1x kan zien wat we maken en leveren met de diaslides naar instagram slide
+      etc. Op dit moment is het gewoon een mode foto en is het nog best
+      onduidelijk waar visuails voor staat en wat ze doen."*
+
+      Dat klopte. De kop zei in woorden wat we doen, en eronder stond een
+      modefoto — mooi, maar het BEWIJS ontbrak: een klant zag nergens het ding
+      dat hij koopt. De laptop is dat ding: een echte productpagina met de
+      geleverde beelden erin, en de telefoonfoto ernaast waar ze uit komen. De
+      reeks draait door van catalogset naar de instagram-carrousel naar de
+      video, dus de drie diensten staan er in één blik.
+
+      ── DE FOTO IS UIT DE HERO ────────────────────────────────────────────────
+      Niet uit zuinigheid maar omdat twee beelden om dezelfde aandacht vechten:
+      een schermvullende foto ACHTER een laptop maakt allebei minder leesbaar, en
+      de sluiers die de kop op die foto leesbaar hielden (.hero::before, ::after)
+      zijn dan een waas over de plaat. De grond die eronder lag — het verloop en
+      de stralen — blijft staan; dat was altijd al de echte achtergrond.
+
+      Het merk verdwijnt er niet mee: de mode zit nu IN de laptop (de jeans, de
+      carrousel met het model) en verder op de pagina in de lopende band. */}
+  <section class="hero hero-split" aria-labelledby="vp-h1">
     <div class="stralen" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
 
     <div class="hero-kop">
@@ -484,22 +511,38 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       </h1>
       <p class="acties hero-acties">
         <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
-        <a class="knop knop-wit" href={lp('/test-sample')}>{sample.cta}</a>
+        {/* ── DE TWEEDE KNOP HANGT AF VAN WIE ER STAAT — 17 september 2026 ──
+            Lucas: *"Ik wil wanneer iemand is ingelogd en dus al een order heeft
+            geplaatst de test sample niet meer dominant maken en die
+            knoppen/secties veranderen naar iets anders dat dan belangrijker is
+            en meer conversiegericht is."*
+
+            "Probeer VISUAILS voor € 1" naast iemand die er al honderden euro's
+            heeft uitgegeven, leest als een site die niet weet wie er staat — en
+            het geeft de op één na duurste plek van de voorpagina weg aan het
+            goedkoopste aanbod.
+
+            Wat er voor een bestaande klant voor in de plaats komt is het
+            ABONNEMENT en niet "bestel opnieuw". Opnieuw bestellen kan hij al met
+            de knop ernaast; het abonnement is het enige wat hij nog niet heeft
+            en het is het enige dat terugkerend is.
+
+            `data-vis-uit` / `data-vis-in`: zie pasKlantstandToe() in
+            interactions.js. Zonder JavaScript blijft de proefknop gewoon staan,
+            wat precies de oude situatie is. */}
+        <a class="knop knop-wit" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+        <a class="knop knop-wit" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
       </p>
     </div>
 
-    {/* Een <img> en geen achtergrond: een achtergrondafbeelding wordt pas
-        gevonden als de stylesheet er is, en dit is het element dat de LCP van
-        de voorpagina bepaalt. `fetchpriority="high"` en geen lazy, om dezelfde
-        reden. De `sizes` is 100vw want hij vult de hele hero. */}
-    <img
-      class="hero-foto"
-      src={HERO}
-      srcset={`/img/voorpagina/hero-moment-w640.webp 640w, /img/voorpagina/hero-moment-w960.webp 960w, /img/voorpagina/hero-moment-w1560.webp 1560w, ${HERO} 2048w`}
-      sizes="100vw"
-      width="2048" height="1152"
-      alt={c.heroFotoAlt}
-      fetchpriority="high" decoding="async" />
+    {/* De laptop, met alle drie de reeksen: catalogset, de instagram-carrousel
+        en de videoclip. `laptopReeks()` levert ze in die volgorde en de
+        carrousel draait er vanzelf doorheen — dat is de "diaslides" waar Lucas
+        om vroeg. `vorm="naast"` haalt de sectiepadding eraan weg en laat hem
+        rechts de pagina uitlopen met een verloop; zie LaptopCarousel.astro. */}
+    <div class="hero-beeld">
+      <LaptopCarousel lang={lang} vorm="naast" titel={c.h1.join(' ')} />
+    </div>
 
     {/* ── DE ZIN STAAT OP DE TELEFOON BOVEN HET BEELD — 8 september 2026 ──
         Gemeten op 390px: de kop stond op 153px, de knoppen op 254px, en daarna
@@ -520,11 +563,12 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       <p class="hero-zin">{c.lede}</p>
     </div>
 
-    <a class="hero-clip" href={lp('/video')}>
-      <img src={B(9).klein} width="1000" height="563" alt="" loading="lazy" decoding="async">
-      <span class="rond" aria-hidden="true">▶</span>
-      <span class="mono">{c.extras[0][0]}</span>
-    </a>
+    {/* HIER STOND DE CLIPKAART — een miniatuur rechtsonder die naar /video
+        linkte. Sinds de laptop er staat, is dat dubbelop: de derde slide ÍS de
+        videoclip, groter en in context. Twee dingen die hetzelfde beloven
+        naast elkaar maakt de opening drukker zonder één weg extra te openen —
+        dezelfde afweging als bij de WhatsApp-knop op de dienstpagina's. */}
+
   </section>
 
   {/* De maatlijn: een haarlijn, een streepje per waarde, het nummer erboven. */}
@@ -751,7 +795,14 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     <p class="etiket">{c.secties[7]}</p>
     <h2 id="vp-sl" class="hoog">{c.closeH}</h2>
     <p class="lopend">{c.closeLede}</p>
-    <p class="acties"><a class="knop knop-inkt" href={lp('/test-sample')}>{sample.cta}</a><a class="knop knop-lijn" href={lp('/start')}>{c.closeAlt}</a></p>
+    {/* Het slot van de pagina, met dezelfde omwisseling als in de opening: wie
+        al klant is krijgt het abonnement als eerste knop in plaats van de proef
+        van € 1. Zie de noot bij de heroknoppen hierboven. */}
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+      <a class="knop knop-inkt" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
+      <a class="knop knop-lijn" href={lp('/start')}>{c.closeAlt}</a>
+    </p>
   </section>
 
   <ul class="trustlijn" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>

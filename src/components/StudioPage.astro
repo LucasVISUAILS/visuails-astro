@@ -48,7 +48,7 @@
 // nergens in dat bestand. De regel is daarom aangepast naar de eenheid die de
 // poort werkelijk gebruikt — anders zou de figuur ernaast de tekst tegenspreken,
 // en dan is een mock-up erger dan een grijs vlak.
-import { WINDOW_THRESHOLD, aim48 } from '../data/pricing.js';
+import { WINDOW_THRESHOLD, aim48, TEST_SAMPLE } from '../data/pricing.js';
 import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capacity.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigGate from './FigGate.astro';
@@ -181,7 +181,9 @@ const COPY = {
     closeH: 'Boek een venster dat de planning heeft vrijgegeven.',
     closeLede: 'De datum die je krijgt aangeboden, is er een waarvan de studio al heeft gecontroleerd dat hij hem kan houden.',
     closeCta: 'Start een bestelling',
-    closeAlt: 'Probeer VISUAILS eerst voor €1',
+    /* Het bedrag uit pricing.js en niet overgetypt — zelfde reden als overal:
+       de dag dat de proef iets anders kost, is dit de regel die blijft staan. */
+    closeAlt: `Probeer VISUAILS eerst voor ${TEST_SAMPLE.nl.price}`,
   },
 };
 

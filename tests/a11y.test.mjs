@@ -517,8 +517,39 @@ console.log('\ngeen tekst ligt over andere tekst heen');
          `closest()` en geen eigen boomwandeling: een element in een dichte vouw
          is precies "een element met een gesloten <details> boven zich". */
       const inDichteVouw = (el) => Boolean(el.closest('details:not([open])'));
+      /* ── EN WAT NIET IN BEELD STAAT, TELT OOK NIET MEE — 17 september 2026 ──
+         Dezelfde redenering als bij de dichte vouw hierboven, één stap
+         algemener. Deze toets bestaat om te vinden wat een bezoeker ziet
+         botsen; iets dat onzichtbaar is, botst per definitie met alles eronder
+         en zegt niets over wat er op het scherm gebeurt.
+
+         Aanleiding: de laptopcarrousel op de voorpagina. Die legt zijn slides
+         op elkaar en laat ze overvloeien, dus de nagebouwde productpagina van
+         de ene slide ligt precies op het instagram-bericht van de andere:
+
+             FAIL "Wide leg jeans" × "Vertaling weergeven"
+
+         Onzichtbaar, want de niet-actieve slide staat op `visibility: hidden`
+         (zie LaptopCarousel.astro). Een rechthoek heeft hij nog steeds — dat is
+         precies waarom deze regel nodig is en waarom `getBoundingClientRect`
+         hem alleen niet kan uitsluiten.
+
+         OMHOOG LOPEN en niet alleen het element zelf: de slide draagt de
+         eigenschap, de tekst erin erft hem. `opacity: 0` staat erbij omdat een
+         overvloeiing daar doorheen gaat en een halve seconde lang precies
+         hetzelfde oplevert.
+
+         Wat dit NIET wegfiltert: tekst die wél zichtbaar is en toch overlapt.
+         Daar is de toets voor. */
+      const onzichtbaar = (el) => {
+        for (let e = el; e && e !== document.body; e = e.parentElement) {
+          const cs = getComputedStyle(e);
+          if (cs.visibility === 'hidden' || cs.display === 'none' || cs.opacity === '0') return true;
+        }
+        return false;
+      };
       const els = [...hero.querySelectorAll('h1, h2, p, span, strong, li, dt, dd')]
-        .filter((el) => draagtTekst(el) && !inDichteVouw(el))
+        .filter((el) => draagtTekst(el) && !inDichteVouw(el) && !onzichtbaar(el))
         .map((el) => ({ r: el.getBoundingClientRect(), t: el.textContent.trim().slice(0, 30) }))
         .filter((x) => x.r.width > 0 && x.r.height > 0);
       const uit = [];

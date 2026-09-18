@@ -49,8 +49,21 @@
  */
 import { ANGLE_IDS } from '../../data/angles.js';
 
-interface Props { id: string; }
-const { id } = Astro.props;
+interface Props { id: string; sleutel?: string; }
+/* ── WAAROM ER EEN TWEEDE NAAM IS — 17 september 2026 ─────────────────────────
+   De <clipPath> hieronder heeft een id nodig, en dat id was `hs-clip-${id}`.
+   Dat werkt zolang elke schets één keer op een pagina staat. Sinds de eigen
+   hoek erbij kwam, staat `eigen` er TWEE keer — één keer per hoekgroep — en dan
+   staan er twee clipPaths met hetzelfde id op één pagina. Ongeldige HTML, en
+   `url(#hs-clip-eigen)` pakt de eerste; dat het er nu hetzelfde uitziet, komt
+   alleen doordat beide rechthoeken toevallig gelijk zijn.
+
+   `sleutel` is de naam waaronder DIT exemplaar zijn clipPath zet. De kiezer
+   geeft er de hoekgroep in mee; wie niets meegeeft, houdt het oude gedrag. Geen
+   teller die bij elke bouw een ander nummer geeft: dan verandert dist/ bij elke
+   build zonder dat er iets veranderd is. */
+const { id, sleutel } = Astro.props;
+const clipId = `hs-clip-${sleutel || id}`;
 /* ── 'eigen' IS DE ENIGE UITZONDERING — 17 SEPTEMBER 2026 ──────────────────
    Deze bewaking hield tegen dat er een schets wordt gevraagd voor een hoek die
    niet bestaat, en dat blijft zo: een tekening zonder hoek is een tekening van
@@ -77,10 +90,10 @@ if (!ANGLE_IDS.includes(id) && !VRIJE_SCHETSEN.includes(id)) {
 >
   {/* Het kader: de foto zelf. Alles wat erbuiten valt, valt weg — dat is bij de
       uitsnedes (detail, in de hand, los detail) het halve verhaal. */}
-  <clipPath id={`hs-clip-${id}`}><rect x="34" y="26" width="332" height="248" rx="6" /></clipPath>
+  <clipPath id={clipId}><rect x="34" y="26" width="332" height="248" rx="6" /></clipPath>
   <rect class="hs-veld" x="34" y="26" width="332" height="248" rx="6" />
 
-  <g clip-path={`url(#hs-clip-${id})`}>
+  <g clip-path={`url(#${clipId})`}>
 
     {id === 'three-quarter' && (
       <g>

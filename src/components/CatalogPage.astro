@@ -442,34 +442,40 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
         </p>
         <ServiceSwitch current="catalog" lang={lang} />
       </div>
-      {/* Dezelfde foto als voorheen: `catalog-after.webp`, het shirt uit het
-          voor/na-paar verderop. Zie de noot bij SHOTS — het is het enige echt
-          geleverde catalogbeeld dat er is, en dus ook het enige dat hier hoort. */}
-      <figure class="kaart kaart-stil kaart-breed kaart-product cat-beeld">
-        <img src="/img/catalog-after.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="1800" height="1800" />
-        <figcaption class="mono foto-pil">{c.heroCap}</figcaption>
-      </figure>
+      {/* ── DE LAPTOP STAAT HIER, EN NIET MEER EEN HALF SCHERM LAGER ─────────
+          17 september 2026. Lucas: *"Ik wil de laptop ook bovenaan op de eerste
+          sectie en rechts van de tekst mooi consistent bij elke categorie zodat
+          de klant meteen ziet wat de categorie is en biedt."* En daarvoor:
+          *"Veel teveel whitespace om de laptop heen."*
+
+          Hier stond één geleverd catalogbeeld, en de laptop stond in een eigen
+          blok eronder — met een gat van een half scherm tussen de kop en de
+          plaat. Wie de pagina opende zag een kop, veel wit, en pas daarna waar
+          het over ging.
+
+          De laptop ZEGT meer dan die ene foto: hij toont het geleverde beeld én
+          de telefoonfoto waar het uit komt, in een echte productpagina. Dat is
+          precies het antwoord op "wat is deze categorie en wat biedt hij".
+
+          ── EN DE OUDE BEZWAREN ───────────────────────────────────────────────
+          De noot die hier stond zei: niet in de rechterkolom, want die is krap
+          48% en dan is de tekst op het nagebouwde scherm onleesbaar. Dat klopte
+          en is opgelost met `vorm="naast"`: de plaat loopt door tot voorbij de
+          rechterrand van de pagina en vervaagt daar, dus hij is breder dan zijn
+          kolom. Zie de noot bij `.lc.is-naast` in LaptopCarousel.astro. */}
+      <div class="cat-beeld">
+        <LaptopCarousel lang={lang} vorm="naast" slides={[laptopSlides(lang).catalog]} titel={c.lcH} />
+      </div>
     </div>
   </section>
 
-  {/* ── 1b · WAAR DE BEELDEN LANDEN ────────────────────────────────────────
-      Niet in de rechterkolom van de opening: die kolom is krap 48% breed, en
-      een liggende plaat van 1,77 wordt daar zo klein dat de tekst op het
-      nagebouwde scherm onleesbaar is. Een eigen paneel over de volle breedte
-      dus, direct onder de opening, waar hij wél op maat is.
-
-      En hier staat ALLEEN de catalogset. De lifestyle- en videoslides van de
-      voorpagina horen hier niet: op een dienstpagina leest zo'n scherm als
-      bewijs van díe dienst, en dat bewijs is er voor die twee nog niet.
-      Zie de noot boven in src/data/laptopSlides.js. */}
-  <section class="paneel" aria-labelledby="cat-lc">
-    <header class="paneel-kop">
-      <p class="etiket">{c.lcEyebrow}</p>
-      <h2 id="cat-lc" class="hoog hoog-2">{c.lcH}</h2>
-      <p class="lopend">{c.lcP}</p>
-    </header>
-    <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]} titel={c.lcH} />
-  </section>
+  {/* ── 1b IS VERVALLEN — 17 september 2026 ───────────────────────────────
+      Hier stond "Waar de beelden landen": een eigen paneel met dezelfde laptop
+      erin, direct onder de opening. Sinds de plaat in de opening zelf staat,
+      zou dit hetzelfde ding een tweede keer tonen — en het was juist de afstand
+      tussen die twee die de pagina leeg liet ogen. De kop en de zin die erbij
+      hoorden (c.lcEyebrow / c.lcH / c.lcP) staan nog in de tekstentabel; ze
+      worden nu gebruikt als titel van de carrousel in de opening. */}
 
   {/* ── 2 · DE LOOKS ─────────────────────────────────────────────────────── */}
   <section class="paneel" id="looks">
@@ -673,7 +679,21 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
      raakte de helft van de gevallen niet — en een consistentieregel die op de
      helft van de pagina's iets anders doet, is geen regel. Eén uitlijning,
      tien pagina's, geen uitzonderingen. */
-  .cat-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: start; }
+  /* ── DE LAPTOP KRIJGT DE GROOTSTE HELFT — 17 september 2026 ───────────────
+     Lucas: *"Het mag wel wat groter, het voelt nu alsof het niet belangrijk is.
+     Kijk of groter maken beter is of pas de indeling van de sectie aan waardoor
+     het alsnog groter gemaakt kan worden."*
+
+     De tweede weg, want de eerste loopt vast: de plaat groter maken binnen een
+     kolom van 48% betekent hem over de tekst heen leggen. De INDELING verandert
+     dus — de tekstkolom wordt de kleinste van de twee.
+
+     0,85 tegen 1,15 en niet 1,05 tegen 0,95. Op 1440 gaat de plaat daarmee van
+     678 naar ongeveer 860 pixels, een derde groter, en de tekstkolom houdt nog
+     ruim 500 — genoeg voor de kop, de vier feiten naast elkaar en twee knoppen
+     op een regel. Kleiner dan dat wordt de feitenstrook een kolom van één, en
+     dan wint de plaat ruimte die de tekst nodig had. */
+  .cat-open { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.2rem, 3.5vw, 2.6rem); align-items: start; }
   .cat-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   .cat-beeld { position: relative; }
   .cat-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 40em; }

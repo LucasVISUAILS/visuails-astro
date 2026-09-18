@@ -2,11 +2,13 @@
 // VISUAILS — /nl/gallery. Zie src/pages/gallery.astro; het lichaam is gedeeld.
 import Layout from '../../layouts/Layout.astro';
 import GalleryPage from '../../components/GalleryPage.astro';
+/* Zie /nl/test-sample: het bedrag van de proef staat in pricing.js. */
+import { TEST_SAMPLE } from '../../data/pricing.js';
 ---
 
 <Layout
   title="VISUAILS — Een blik op de stijlen die we maken"
-  description="De echte VISUAILS-fotobibliotheek — campagne, Dunes, Flash, Glow en Phone-made lifestylevisuals. Bekijk wat we maken en probeer VISUAILS eerst voor €1."
+  description={`De echte VISUAILS-fotobibliotheek — campagne, Dunes, Flash, Glow en Phone-made lifestylevisuals. Bekijk wat we maken en probeer VISUAILS eerst voor ${TEST_SAMPLE.nl.price}.`}
 >
   <GalleryPage lang="nl" />
 </Layout>

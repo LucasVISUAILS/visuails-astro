@@ -99,6 +99,14 @@ const {
        rij is bijna altijd al hoger, dus dit verandert niets aan hoe het eruit
        ziet en vangt alleen het geval van één korte regel op. */
     min-height: 24px;
+    /* ── EN LUCHT BOVEN EN ONDER — 17 september 2026 ───────────────────────
+       Lucas, over het bestelformulier: *"ruimte tussen lijnen en tekst mogen
+       ook van elkaar af."* Gemeten: deze rij had `padding-block: 0` en kwam
+       daarmee op precies die 24 pixels uit — twaalf van die rijen onder elkaar
+       met alleen een haarlijn ertussen leest als een tabel, niet als een reeks
+       vragen. Met .55rem erboven en eronder wordt de rij ruim 40 pixels, wat
+       ook dichter bij de 44 van een fatsoenlijk raakvlak komt. */
+    padding-block: .55rem;
     /* The glyph is a grid column rather than a float: a floated ::after drops
        out of flow, so a two-line summary wraps UNDER it and the plus ends up
        beside the first line with the second line running past it. */

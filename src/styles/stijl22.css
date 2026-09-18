@@ -172,6 +172,26 @@
      hele familie: wie een variant toevoegt zonder vulling hoort niet ineens een
      systeemgrijs te krijgen. De varianten hieronder winnen op volgorde. */
   .s22 .knop { background: transparent; display: inline-flex; align-items: center; gap: .6em; min-height: 46px; padding: 0 1.5rem; border-radius: 999px; border: 1px solid currentColor; font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; transition: background-color .25s var(--uit), color .25s var(--uit), border-color .25s var(--uit); }
+  /* ── OP EEN TELEFOON MAG EEN KNOP AFBREKEN — 17 september 2026 ──────────
+     `white-space: nowrap` hierboven staat er zodat een knop van twee woorden
+     niet na het eerste woord breekt. Op een breed scherm klopt dat. Op een
+     telefoon van 320 of 360 pixels betekent het dat "Start een bestelling met
+     je eigen productfoto's" 418 pixels breed wordt en er dus 58 buiten beeld
+     vallen — en `overflow-x: clip` op de body geeft je niet eens de kans om
+     erheen te schuiven.
+
+     Onder de 480 pixels weegt lezen zwaarder dan een rechte regel: de knop
+     breekt af en staat gecentreerd, met wat lucht boven en onder zodat twee
+     regels niet tegen de rand plakken. Op elk breder scherm verandert er
+     niets. */
+  @media (max-width: 480px) {
+    .s22 .knop {
+      white-space: normal;
+      text-align: center;
+      padding-block: .55rem;
+      line-height: 1.35;
+    }
+  }
   .s22 .knop-inkt { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
   .s22 .knop-inkt:hover { background: transparent; color: var(--inkt); }
   .s22 .knop-wit { background: var(--wit); border-color: var(--wit); color: var(--inkt); }
@@ -753,6 +773,89 @@
     background: linear-gradient(180deg, rgb(255 255 255 / 0) 0%, rgb(255 255 255 / .55) 46%, var(--wit) 100%);
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     DE GESPLITSTE OPENING — 17 september 2026
+     ══════════════════════════════════════════════════════════════════════════
+
+     Tekst links, de laptop rechts. Lucas: *"Ik wil de laptop op de voorpagina
+     hebben omdat een klant dan in 1x kan zien wat we maken en leveren."*
+
+     Een eigen klasse en niet een herschrijving van `.hero`: de twee
+     conceptpagina's (/concept/stilte en /concept/zweef) gebruiken dezelfde
+     opening met een foto erin, en die horen niet mee te veranderen met een
+     keuze die over de voorpagina gaat.
+
+     De sluiers (::before en ::after) bestonden om de kop leesbaar te houden OP
+     een foto. Zonder foto zijn ze een waas over de laptop, dus ze gaan uit. Het
+     verloop en de stralen blijven: dat was altijd al de grond.
+
+     Dezelfde verhouding als op de dienstpagina's — 0,85 tegen 1,15 — zodat de
+     opening van de voorpagina en die van /catalog hetzelfde ritme hebben. */
+  .s22 .hero.hero-split {
+    /* ── GEEN GLOED EN GEEN STRALEN — 17 september 2026 ──────────────────────
+       Lucas: *"Dat licht onderaan de sectie en die lijnen midden op de sectie
+       mogen weg."*
+
+       Twee overblijfselen van de fotohero. De gloed is een radiale limetint op
+       96% hoogte, gemaakt om de onderrand van een schermvullende foto op te
+       tillen; onder een laptop op een egale grond is het een vlek. De vier
+       stralen liepen vanuit het midden van die foto naar buiten en gaven de
+       compositie een middelpunt — dat middelpunt is nu de laptop, en dan
+       lopen er vier haarlijnen dwars over de plaat.
+
+       ── EN ÉÉN WIT, NIET DRIE ───────────────────────────────────────────────
+       Lucas: *"De achtergrond kleur is een ander wit dan wat het moet zijn zorg
+       dat alles dezelfde kleur heeft en het strak oogt."*
+
+       Gemeten op de gebouwde pagina:
+
+           .hero      verloop #E9EDEE → #F7F8F8 → #FFFFFF
+           .paneel    #F5F5F5
+
+       Drie waarden in de opening en een vierde eronder. Het verloop was er om
+       een schermvullende foto in de pagina te laten overlopen: bovenaan een
+       koele grijsblauwe zweem, onderaan puur wit zodat de foto wegliep in de
+       sectie die volgde. Zonder foto doet het niets meer, behalve een naad
+       tekenen waar de hero ophoudt en de rest begint.
+
+       Dus dezelfde grond als elke andere sectie: `--vel`, precies wat
+       `.s22 .paneel` gebruikt. Eén vlak, geen naad. De laptop staat er met een
+       verlopende rand in en lost er dus in op in plaats van als een lichtere
+       rechthoek op te vallen. */
+    background: var(--vel);
+    grid-template-rows: none;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    gap: clamp(1.2rem, 3.5vw, 2.6rem);
+    align-items: center;
+    justify-items: stretch;
+    min-height: min(78svh, 800px);
+  }
+  .s22 .hero.hero-split::before,
+  .s22 .hero.hero-split::after { content: none; }
+  .s22 .hero.hero-split .stralen { display: none; }
+  .s22 .hero.hero-split .hero-kop { justify-items: start; text-align: left; max-width: none; }
+  .s22 .hero.hero-split .hero-acties { justify-content: flex-start; }
+  /* De zin met de drie gezichten stond linksonder OVER de foto. Zonder foto
+     hoort hij gewoon onder de knoppen te staan, als slot van de tekstkolom. */
+  .s22 .hero.hero-split .hero-links {
+    position: static; width: auto; grid-column: 1; margin-top: clamp(1rem, 2.5vw, 1.8rem);
+  }
+  .s22 .hero.hero-split .hero-links::before { content: none; }
+  .s22 .hero.hero-split .hero-beeld { grid-column: 2; min-width: 0; }
+
+  @media (max-width: 900px) {
+    .s22 .hero.hero-split { grid-template-columns: 1fr; min-height: auto; }
+    .s22 .hero.hero-split .hero-kop { justify-items: start; }
+    .s22 .hero.hero-split .hero-links,
+    .s22 .hero.hero-split .hero-beeld { grid-column: 1; }
+    /* Op een telefoon staat de laptop direct onder de kop en de knoppen, vóór
+       de zin met de gezichten: daar is hij het antwoord op "wat is dit", en
+       dat antwoord hoort niet onderaan een stapel te staan. */
+    .s22 .hero.hero-split .hero-kop { order: 1; }
+    .s22 .hero.hero-split .hero-beeld { order: 2; }
+    .s22 .hero.hero-split .hero-links { order: 3; margin-top: 0; }
+  }
+
   .s22 .hero-links { position: absolute; z-index: 2; left: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem); width: min(32%, 250px); display: grid; gap: .9rem; }
   /* ── DE ZIN HEEFT EEN EIGEN WAS — 8 september 2026 ────────────────────────
      Gemeten met echte pixels en niet met de CSS-achtergrond: keuring.mjs kijkt
@@ -796,7 +899,17 @@
 
   /* Geen tussenruimte en geen bovenhoeken: de maatlijn is de voortzetting van
      het witte vlak waar de hero in oplost. Zie de noot bij .hero. */
-  .s22 .maatlijn { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: clamp(.6rem, 2vw, 1.5rem); margin: 0; padding: clamp(.9rem, 2vw, 1.4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.3rem, 2.6vw, 1.9rem); border-radius: 0 0 var(--ronding) var(--ronding); background: var(--wit); color: var(--inkt); }
+  /* ── DEZELFDE GROND ALS DE HERO — 17 september 2026 ───────────────────────
+     Stond op `--wit` (#FFFFFF) terwijl de opening erboven en elk paneel eronder
+     op `--vel` (#F5F5F5) staan. Gemeten: hero 245,245,245 en deze strook
+     255,255,255 — twee witten die tegen elkaar aan liggen, precies de naad die
+     Lucas aanwees met *"de achtergrond kleur is een ander wit dan wat het moet
+     zijn."*
+
+     Puur wit blijft waar het iets ZEGT: een kaart die van de grond af komt. Deze
+     strook is geen kaart maar de voet van de opening — hij hoort bij de grond en
+     draagt er dus dezelfde kleur. */
+  .s22 .maatlijn { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: clamp(.6rem, 2vw, 1.5rem); margin: 0; padding: clamp(.9rem, 2vw, 1.4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.3rem, 2.6vw, 1.9rem); border-radius: 0 0 var(--ronding) var(--ronding); background: var(--vel); color: var(--inkt); }
   .s22 .maatlijn li { display: grid; gap: .3rem; padding-left: 1rem; border-left: 1px solid var(--lijn); font-size: .82rem; color: var(--inkt-2); }
   .s22 .maatlijn li:first-child { border-left: 0; padding-left: 0; }
   .s22 .maatlijn .nr { color: var(--inkt-2); }
@@ -1388,13 +1501,36 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
    Een rooster met gelijke kolommen zet ze in een raster: twee bij twee in een
    smalle kolom, vier naast elkaar als er ruimte is, en de lijnen altijd op
    dezelfde hoogte. `auto-fit` met een ondergrens doet dat zonder breekpunt. */
+/* ── EN HIJ MAG DE PAGINA NIET BREDER MAKEN DAN HET SCHERM — 17 sep 2026 ───
+   Lucas, met een schermafdruk van /catalog op zijn telefoon: *"Check elke
+   pagina of de tekst op telefoon wel goed staat. Hier word het afgeknipt."*
+   Dat klopte, en deze strook was de oorzaak.
+
+   Gemeten op een scherm van 360 pixels: deze rij had een min-content van 420
+   pixels — twee kolommen van 197 plus de tussenruimte. `auto-fit` kiest dat
+   aantal aan de hand van de RUIMTE, maar bij het bepalen van de kleinst
+   mogelijke maat is die ruimte nog onbekend, en dan blijft die 420 staan.
+
+   De rij is zelf een roostercel (van `.paneel-kop`), en een roostercel krimpt
+   standaard niet onder zijn min-content: `min-width: auto`. Die 420 werd dus de
+   maat van de héle kolom — kop, alinea, knoppen — en `overflow-x: clip` op de
+   body sneed de rest eraf. Geen schuifbalk, geen waarschuwing: tekst die
+   ophoudt midden in een woord.
+
+   `min-width: 0` haalt die ondergrens weg. De rij krijgt dan de echte breedte
+   te zien (320), `auto-fit` rekent daarmee opnieuw, en er past er één per
+   regel. Op een breed scherm verandert er niets: daar was de ruimte al groter
+   dan de ondergrens. */
 .s22.s22 .hero-facts, .s22.s22 .trust-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
   gap: 1.1rem 1.6rem;
   align-items: start;
+  min-width: 0;
 }
-.s22.s22 .trust-item { display: grid; gap: .15rem; align-content: start; font-size: .92rem; color: var(--inkt-2); }
+/* Zelfde reden, één laag dieper: een lang label ("per product · excl. btw")
+   mag zijn eigen kolom niet oprekken. */
+.s22.s22 .trust-item { display: grid; gap: .15rem; align-content: start; font-size: .92rem; color: var(--inkt-2); min-width: 0; }
 .s22.s22 .trust-item strong { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; color: var(--inkt); }
 .s22.s22 .trust-label { font-family: var(--mono2); font-size: .75rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); }
 
@@ -1510,3 +1646,36 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
 /* Het beeld in een tegel houdt de ronding van deze stijl; de haarlijn eronder
    is de tint van de look en blijft recht. */
 .s22.s22 .sr-t-beeld { border-radius: calc(var(--ronding) - 10px); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANGE WOORDEN OP EEN SMAL SCHERM — 17 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Lucas, met een schermafdruk van zijn telefoon: *"Check elke pagina of de
+   tekst op telefoon wel goed staat. Hier word het afgeknipt."*
+
+   Na het herstellen van de feitenstrook en de stappenlijst bleef er één soort
+   over, en alle negen gevallen stonden op een NEDERLANDSE pagina:
+   "Verwerkersovereenkomst", "Catalogfotografie", "standaardbibliotheek",
+   "Lifestylefotografie". Eén woord van 524 pixels in een scherm van 360.
+
+   Waarom dat de hele kolom meesleept: een woord dat niet kan breken bepaalt de
+   kleinst mogelijke maat van zijn alinea, en die maat wordt de ondergrens van
+   de roosterkolom eromheen. De kop, de alinea én de knoppen schuiven dan mee
+   het scherm uit, en `overflow-x: clip` op de body snijdt ze af zonder dat er
+   iets te schuiven valt.
+
+   `overflow-wrap: anywhere` en niet `break-word`: die tweede breekt het woord
+   wél bij het tekenen, maar verandert niets aan die kleinst mogelijke maat —
+   en dan blijft de kolom precies even breed als het probleem. `hyphens: auto`
+   staat ervoor, zodat het woord eerst netjes met een koppelteken breekt waar
+   het Nederlands dat toestaat, en pas daarna zomaar ergens.
+
+   Alleen onder de 480 pixels. Op een breed scherm is er geen enkele kop die
+   niet past, en daar hoort een kop niet af te breken. */
+@media (max-width: 480px) {
+  .s22 :is(h1, h2, h3, .hoog, .lopend, .etiket, .legal-meta, .mono, .kop) {
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+}

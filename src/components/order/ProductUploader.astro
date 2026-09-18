@@ -201,7 +201,17 @@ const lcStijl = [
           die op de kaart zelf staat, uit cardStateText(). */}
       <div class="pu-rij" data-pl-rij hidden>
         <ol class="pu-rail" data-pl-rail role="list">
-          <li class="pu-rail-item"><button type="button" class="pu-rail-knop" data-pl-rail-knop><span class="pu-sr" data-pl-rail-naam></span></button></li>
+          {/* ── HET VAKJE ZEGT SINDS 17 SEPTEMBER OOK WÁÁR HET GAT ZIT ──────────
+          Tot vandaag was dit één vierkantje per product: vol of leeg, af of
+          niet af. Je wist dus hoeveel producten er nog lagen, maar niet wat er
+          aan ontbrak — waarvoor je elk product moest openklikken.
+
+          Nu draagt de knop een streepje per verplichte foto. Vol is binnen,
+          leeg mist nog. Die streepjes worden door pipeline.js gemaakt (het
+          aantal hangt van de bestelde hoeken af), dus de opmaak ervan staat
+          onder `:global()` verderop — een element dat tijdens het gebruik
+          ontstaat, draagt Astro's scope-attribuut niet. */}
+      <li class="pu-rail-item"><button type="button" class="pu-rail-knop" data-pl-rail-knop><span class="pu-rail-vakjes" data-pl-rail-vakjes aria-hidden="true"></span><span class="pu-sr" data-pl-rail-naam></span></button></li>
         </ol>
         <p class="pu-rij-tel" data-pl-rij-tel aria-live="polite"></p>
       </div>
@@ -349,7 +359,17 @@ const lcStijl = [
         poort: de tweede knop stuurt door. Wél het gevolg, in woorden. */}
     <div class="pu-missing" data-pl-missing hidden role="group" aria-labelledby="pu-missing-h">
       <h3 class="pu-sub-h" id="pu-missing-h" data-pl-missing-h>{k.missingHOne}</h3>
-      <ul class="pu-missing-list" data-pl-missing-list></ul>
+      {/* ── EEN RASTER EN GEEN OPSOMMING — 17 september 2026 ──────────────
+          Hier stond een lijstje dat na zes regels ophield met "en nog 19" —
+          op het enige scherm waar je juist wilt weten wélke negentien. Op
+          /concept/bestelrij was dit een raster van tegels: elk product met
+          zijn vakjes, en één klik om er heen te springen.
+
+          De tegels worden door askMissing() gemaakt (het aantal producten
+          staat pas vast als de klant het heeft ingevuld), dus hun opmaak
+          staat onder `:global()` — zie de noot bij de streepjes in de balk. */}
+      <p class="pu-missing-tik hint">{k.missingTap}</p>
+      <ol class="pu-missing-raster" data-pl-missing-list></ol>
       <p class="pu-sub-lead">{k.missingBody}</p>
       <p class="pu-missing-btns">
         <button type="button" class="btn btn-primary" data-pl-missing-fix>{k.missingFix}</button>
@@ -475,6 +495,37 @@ const lcStijl = [
       Ze zijn niet weg: in de gids bovenaan deze stap staan ze naast elkaar
       (.pu-guide-dia), en dáár doen ze hun werk — vier hoeken naast elkaar leert
       je het verschil, dezelfde vier los in vier vakken laat je raden. */}
+
+  {/* ── HET GEZICHT PER PRODUCT, ALS TEGELS — 18 september 2026 ────────────
+      Lucas: *"Het is ook belangrijk dat klanten per product visueel een ander
+      model kunnen kiezen per product, dit hoeft niet groot en is puur
+      optioneel."* Dit was een keuzelijst in de lade van de kaart: elf namen
+      onder elkaar, en je moest weten wie "Ava" is voordat je iets kon kiezen.
+
+      Nu is het een rij duimnagels op de kaart zelf, waarvan de eerste
+      "hetzelfde als de bestelling" is en het gezicht van de bestelling toont.
+      Wie niets doet, ziet één gekozen tegel en klaar.
+
+      ── WAAROM EEN <template> EN GEEN createElement ────────────────────────
+      Astro scopet zijn CSS met een attribuut dat een element dat pipeline.js
+      maakt niet draagt. Een tegel die hier in de bron staat, wordt wél gescopet,
+      en een kloon daarvan is dus een echte tegel — dezelfde afspraak als bij de
+      eigen modeltegel in ModelPicker.astro, en om dezelfde reden: die ging een
+      keer mis en leverde een portret van 760 pixels op in een raster van 86. */}
+  <template data-pu-model>
+    <div class="pu-mk" role="group">
+      <p class="pu-mk-h"></p>
+      <div class="pu-mk-rij" role="radiogroup"></div>
+      <p class="pu-mk-hint hint"></p>
+    </div>
+  </template>
+  <template data-pu-model-tegel>
+    <label class="pu-mk-tegel">
+      <input type="radio" class="pu-mk-radio" />
+      <img class="pu-mk-beeld" alt="" width="120" height="160" loading="lazy" decoding="async" />
+      <span class="pu-mk-naam"></span>
+    </label>
+  </template>
 
   {/* One <datalist> per question that has examples, shared by every card's
       input through `list="pu-dl-<id>"`. Suggestions, never a closed list —
@@ -696,8 +747,47 @@ const lcStijl = [
   }
   .pu-missing:focus { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .pu-missing .pu-sub-h { color: var(--warn-ink); }
-  .pu-missing-list { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .86rem; color: var(--ink-2); line-height: 1.55; }
-  .pu-missing-list:empty { display: none; }
+  .pu-missing-tik { margin: .35rem 0 0; }
+  .pu-missing-raster {
+    list-style: none; margin: .7rem 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .6rem;
+  }
+  /* Leeg komt in de praktijk niet voor — het paneel verschijnt alleen als er
+     iets mist — maar een leeg raster mag geen marge overhouden. */
+  .pu-missing-raster:empty { display: none; }
+  /* ── DE TEGELS ──────────────────────────────────────────────────────────
+     Gemaakt door askMissing(), dus `:global()`: een element dat tijdens het
+     gebruik ontstaat draagt Astro's scope-attribuut niet. */
+  .pu-missing :global(.pu-mis-tegel) {
+    width: 100%; height: 100%; display: grid; gap: .3rem; justify-items: start; text-align: left;
+    padding: .7rem .8rem; border: 1px solid var(--line); border-radius: var(--radius-s, 10px);
+    background: var(--paper); color: inherit; font: inherit; cursor: pointer;
+    transition: border-color .15s;
+  }
+  .pu-missing :global(.pu-mis-tegel:hover) { border-color: var(--ink); }
+  .pu-missing :global(.pu-mis-tegel:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  /* Een gat krijgt de inktrand. Niet de waarschuwingskleur: dit paneel staat er
+     al in, en dan zouden twintig tegels het hele blok rood maken terwijl het om
+     de twee gaat die er tussen staan. */
+  .pu-missing :global(.pu-mis-tegel.is-gat) { border-color: var(--ink); }
+  /* .72rem en niet de .66 van het prototype: onder 11,5 pixels houdt dit
+     project op met lezen, en dat is precies de maat die daar nog boven zit. */
+  .pu-missing :global(.pu-mis-nr) {
+    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; color: var(--ink-3);
+  }
+  .pu-missing :global(.pu-mis-naam) { font-weight: 600; font-size: .88rem; line-height: 1.35; }
+  .pu-missing :global(.pu-mis-wat) { font-size: .78rem; color: var(--ink-2); line-height: 1.5; }
+  .pu-missing :global(.pu-mis-vakjes) { display: flex; gap: 4px; margin-top: .15rem; }
+  .pu-missing :global(.pu-mis-vakjes i) {
+    width: 11px; height: 11px; display: block;
+    border: 1px solid currentColor; opacity: .3; border-radius: 2px;
+  }
+  .pu-missing :global(.pu-mis-vakjes i.is-vol) {
+    background: var(--accent); border-color: var(--accent); opacity: 1;
+  }
+  /* Een gat is niet "niets", het is een vakje dat wacht: vollere rand, geen
+     vulling. Zonder dit verschil lezen leeg en ontbrekend hetzelfde. */
+  .pu-missing :global(.pu-mis-vakjes i.is-gat) { opacity: .9; border-width: 2px; }
   .pu-missing .pu-sub-lead { margin-top: .6rem; }
   .pu-missing-btns { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .9rem; }
 
@@ -762,6 +852,22 @@ const lcStijl = [
      "wat is af" twee verschillende signalen zijn en niet één kleur die beide
      moet dragen. */
   .pu-rail-knop.is-af { background: var(--accent); border-color: var(--accent); }
+
+  /* ── DE STREEPJES IN DE KNOP ──────────────────────────────────────────────
+     Alleen bij een overzichtelijk aantal producten: zie paintRail() voor de
+     grens en waarom hij er is. `:global()` omdat pipeline.js ze maakt. */
+  .pu-rij :global(.pu-rail-vakjes) { display: none; gap: 2px; }
+  .pu-rail-knop.heeft-vakjes { width: auto; min-width: 22px; padding: 0 3px; }
+  .pu-rail-knop.heeft-vakjes :global(.pu-rail-vakjes) { display: flex; }
+  .pu-rij :global(.pu-rail-vakjes i) {
+    width: 3px; height: 10px; display: block;
+    background: currentColor; opacity: .26;
+    border-radius: 1px;
+  }
+  .pu-rij :global(.pu-rail-vakjes i.is-vol) { opacity: 1; }
+  /* Op een afgeronde knop staat het accent al als vulling; de streepjes moeten
+     daar de inkt dragen, anders is het geel op geel. */
+  .pu-rail-knop.is-af :global(.pu-rail-vakjes i) { background: var(--ink); }
   .pu-rail-knop.is-nu { border-color: var(--ink); border-width: 2px; transform: scale(1.12); }
   /* De naam van het product zit in de knop voor een schermlezer; op het scherm
      doet het vierkantje het werk. `aria-label` draagt daarnaast de toestand. */
@@ -813,7 +919,11 @@ const lcStijl = [
     border: 1px solid var(--line-strong);
     border-radius: var(--r-lg);
     background: var(--surface);
-    padding: .8rem clamp(.8rem, 2vw, 1.1rem) 1rem;
+    /* ── RUIMER — 17 september 2026 ────────────────────────────────────────
+       Lucas: *"het voelt heel krap allemaal nu."* Gemeten stond de kaart op
+       12,8 boven en 17,6 opzij; dat is de maat van een rij in een lijst, niet
+       van het scherm waar de klant het echte werk doet. */
+    padding: 1.35rem clamp(1.1rem, 2.4vw, 1.6rem) 1.5rem;
   }
   /* THE COLLAPSE. A card whose front photo is in has nothing left that needs
      asking, so it folds to one row — which is what makes a 25-product list
@@ -858,7 +968,8 @@ const lcStijl = [
      noot in pipeline.js. `clip` en geen `display: none`, want de knop wijst er
      met aria-describedby naar en dat moet blijven werken voor wie het vakje met
      een schermlezer bereikt. */
-  .pu-cards :global(.pu-ref-hint.is-stil) {
+  .pu-cards :global(.pu-ref-hint.is-stil),
+  .pu-cards :global(.pu-ref-terug.is-stil) {
     position: absolute; width: 1px; height: 1px;
     margin: -1px; padding: 0; overflow: hidden;
     clip-path: inset(50%); white-space: nowrap;
@@ -1005,8 +1116,10 @@ const lcStijl = [
   .pu-cards :global(.pu-slots) {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: .5rem;
-    margin-top: .8rem;
+    /* .9rem en niet .5: vier vakken met 8 pixels ertussen lezen als één
+       geblokte strook. Met 14 zijn het vier vakken. */
+    gap: .9rem;
+    margin-top: 1.1rem;
   }
   .pu-cards :global(.pu-slot) {
     display: flex; flex-direction: column; gap: .3rem;
@@ -1037,6 +1150,71 @@ const lcStijl = [
     border-top: 1px solid var(--line);
   }
   .pu-cards :global(.pu-refs-rij) { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; }
+
+  /* ── HET GEZICHT PER PRODUCT ────────────────────────────────────────────────
+     Een rij duimnagels op de kaart en geen keuzelijst in de lade: zie de noot
+     bij het <template> hierboven. De tegels worden door pipeline.js gekloond,
+     dus alles hieronder staat onder `:global()`.
+
+     Klein houden is de opgave — Lucas: *"dit hoeft niet groot"*. Een tegel is
+     52 pixels breed; met elf gezichten is dat één regel die opzij schuift, geen
+     tweede raster op elke kaart. */
+  .pu-cards :global(.pu-mk) {
+    margin-top: 1rem; padding-top: .9rem;
+    border-top: 1px solid var(--line);
+    display: grid; gap: .45rem;
+  }
+  .pu-cards :global(.pu-mk-h) {
+    margin: 0; font-family: var(--font-mono);
+    font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+  }
+  /* Eén regel die opzij schuift. `scroll-snap` zodat een tegel nooit half in
+     beeld blijft staan, en ruimte onderaan voor de schuifbalk op een muis. */
+  .pu-cards :global(.pu-mk-rij) {
+    display: flex; gap: .45rem;
+    overflow-x: auto; scroll-snap-type: x proximity;
+    padding-bottom: .35rem; margin-bottom: -.35rem;
+    scrollbar-width: thin;
+  }
+  .pu-cards :global(.pu-mk-tegel) {
+    position: relative;
+    flex: 0 0 auto; width: 52px; scroll-snap-align: start;
+    display: grid; gap: .25rem; cursor: pointer;
+    border-radius: var(--radius-s, 8px);
+  }
+  /* De radio blijft bereikbaar met een toetsenbord — weggeknipt en niet
+     `display: none`, want dat haalt hem uit de tabvolgorde én uit de groep. */
+  .pu-cards :global(.pu-mk-radio) {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%);
+  }
+  .pu-cards :global(.pu-mk-beeld) {
+    display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover;
+    border-radius: var(--radius-s, 8px);
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    transition: box-shadow .15s;
+  }
+  .pu-cards :global(.pu-mk-naam) {
+    font-size: .68rem; line-height: 1.25; color: var(--ink-3);
+    overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  }
+  /* Gekozen: dezelfde accentring als een tegel in de grote kiezer, zodat "dit
+     staat aan" er op beide plekken hetzelfde uitziet. */
+  .pu-cards :global(.pu-mk-tegel:has(input:checked) .pu-mk-beeld) {
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 1px var(--accent);
+  }
+  .pu-cards :global(.pu-mk-tegel:has(input:checked) .pu-mk-naam) { color: var(--ink); font-weight: 600; }
+  .pu-cards :global(.pu-mk-tegel:hover .pu-mk-beeld) { box-shadow: inset 0 0 0 2px var(--line-strong); }
+  .pu-cards :global(.pu-mk-tegel:has(input:focus-visible) .pu-mk-beeld) {
+    outline: 2px solid var(--focus-ring); outline-offset: 2px;
+  }
+  /* De naam onder de eerste tegel is de langste ("Zelfde als de bestelling" is
+     in de toegankelijke naam te vinden) en mag niet de rij hoger maken. */
+  .pu-cards :global(.pu-mk-hint) { margin: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .pu-cards :global(.pu-mk-beeld) { transition: none; }
+  }
   /* De vakken in de strook krijgen het kleine formaat, en niet de staande
      3/4 van de vier hierboven. Alles wat eraan hangt — slepen, vervangen,
      weghalen — blijft hetzelfde; alleen de maat verschilt. */
@@ -1086,6 +1264,14 @@ const lcStijl = [
     font-size: .82rem; color: var(--ink-2); line-height: 1.45;
   }
   .pu-cards :global(.pu-ref-lead) { color: var(--ink); font-weight: 600; margin-right: .2em; }
+  /* De weg terug naar stap 1, onder de strook. Een tint lichter dan de uitleg
+     erboven: die zin gaat over wat je hier doet, deze wijst ergens anders heen
+     en hoort daar niet mee te wedijveren. Niet kleiner dan .78rem — dat is de
+     leesbaarheidsondergrens van dit project. */
+  .pu-cards :global(.pu-ref-terug) {
+    margin: .55rem 0 0;
+    font-size: .78rem; color: var(--ink-3); line-height: 1.55;
+  }
   /* Even hoog, allemaal. De vier vakjes hebben teksten van verschillende lengte
      en dus vier verschillende hoogtes — waardoor "Sla deze over" eronder op vier
      hoogtes stond en de rij er rommelig uitzag. Het vakje rekt nu mee met de
@@ -1106,7 +1292,7 @@ const lcStijl = [
      GEEN VULLING. De rust komt voor een groot deel hiervandaan: vier grijze
      vlakken naast elkaar zijn vier objecten, vier omlijnde open plekken zijn
      één rij. Alleen bij slepen kleurt hij op, en dan is die kleur informatie. */
-  .pu-cards :global(.pu-slot) { display: flex; flex-direction: column; gap: .4rem; }
+  .pu-cards :global(.pu-slot) { display: flex; flex-direction: column; gap: .55rem; }
 
   .pu-cards :global(.pu-slot-btn) {
     position: relative;
@@ -1168,7 +1354,10 @@ const lcStijl = [
     font-family: var(--font-mono); font-size: .72rem; font-weight: 400;
     letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3);
   }
-  .pu-cards :global(.pu-slot-how) { font-size: .82rem; color: var(--ink-2); line-height: 1.45; }
+  /* 1,6 en niet 1,45: dit is de enige lopende tekst op de kaart en hij staat in
+     een kolom van een kwart breed, dus hij breekt sowieso in vier of vijf
+     regels. Die regels moeten dan wel uit elkaar staan. */
+  .pu-cards :global(.pu-slot-how) { font-size: .82rem; color: var(--ink-2); line-height: 1.6; }
   .pu-cards :global(.pu-slot.is-thumb .pu-slot-how) { display: none; }
   .pu-guide-fold { margin-top: clamp(1.4rem, 3vw, 2rem); max-width: var(--pl-measure); }
   .pu-guide-eg { width: 72px; height: 90px; object-fit: cover; border-radius: var(--r-sm); flex: none; }

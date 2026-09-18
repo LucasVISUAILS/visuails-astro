@@ -38,14 +38,29 @@ for (const [naam, breedte] of [['kaart-breed', 1280], ['kaart-smal', 430]]) {
   const pg = await b.newPage({ viewport: { width: breedte, height: 1100 } });
   await pg.goto(`${base}/nl/start/catalog`, { waitUntil: 'networkidle' });
   await pg.addStyleTag({ content: '#cc-bar,[data-cc-bar]{display:none !important}' });
+  /* Wachten tot pipeline.js gebonden heeft: een vinkje dat je aanzet vóórdat de
+     luisteraars staan, verandert wel de checkbox en verder niets. */
+  await pg.waitForTimeout(1500);
   await pg.evaluate(() => {
     const sel = document.querySelector('select[name="products"]');
     if (sel) { sel.value = '5'; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    /* Twee hoeken erbij, zodat de plaat ook de hoekvakken laat zien — sinds
+       17 september krijgt elke bestelde hoek een eigen verplicht vak. */
+    const hs = document.querySelectorAll('[data-pl-angles] input[data-pl-angle]');
+    [0, 3].forEach((i) => { if (hs[i]) { hs[i].checked = true; hs[i].dispatchEvent(new Event('change', { bubbles: true })); } });
   });
   await pg.waitForTimeout(400);
   await pg.evaluate(() => {
     document.querySelectorAll('[data-pl-step]').forEach((s) => {
       if (s.dataset.plStep === '2') { s.hidden = false; s.style.display = 'block'; s.classList.add('is-current'); }
+    });
+    /* Expliciet de kaartenweg kiezen. bindUploadMode() zet zelf een van de twee
+       panelen aan zodra het script gebonden heeft; welke dat is hangt van de
+       stand af, en een verborgen paneel meet 0 bij 0. */
+    const naarKaarten = document.querySelector('[data-pu-switch="cards"]');
+    if (naarKaarten) naarKaarten.click();
+    document.querySelectorAll('[data-pu-panel]').forEach((p) => {
+      p.hidden = p.dataset.puPanel !== 'cards';
     });
   });
   await pg.waitForTimeout(400);

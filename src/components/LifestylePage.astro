@@ -51,6 +51,8 @@ import { styles as stylesNl } from '../data/styles.nl.js';
 import ServiceSwitch from './ServiceSwitch.astro';
 import '../styles/stijl22.css';
 import HeroFacts from './HeroFacts.astro';
+import LaptopCarousel from './LaptopCarousel.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
 import StyleRows from './StyleRows.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -384,10 +386,22 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
         </p>
         <ServiceSwitch current="lifestyle" lang={lang} />
       </div>
-      <figure class="kaart kaart-stil kaart-breed ls-beeld">
-        <img src="/img/lifestyle-dunes-01.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="928" height="1152" />
-        <figcaption class="mono foto-pil">{c.eyebrow} &middot; Dunes</figcaption>
-      </figure>
+      {/* ── DE LAPTOP IN DE OPENING — 17 september 2026 ──────────────────────
+          Lucas: *"Ik wil de laptop ook bovenaan op de eerste sectie en rechts
+          van de tekst mooi consistent bij elke categorie zodat de klant meteen
+          ziet wat de categorie is en biedt."*
+
+          Hier stond één sfeerbeeld. Dat toont de LOOK, maar niet wat je krijgt
+          en waar het landt — en dat is de vraag waarmee iemand op een
+          dienstpagina binnenkomt. De laptop toont het geleverde beeld én de
+          telefoonfoto waar het uit komt, in een echte productpagina.
+
+          `vorm="naast"` laat hem doorlopen tot voorbij de rechterrand en daar
+          vervagen; zonder dat is de kolom te smal om het nagebouwde scherm
+          leesbaar te houden. Zie de noot bij `.lc.is-naast`. */}
+      <div class="ls-beeld">
+        <LaptopCarousel lang={lang} vorm="naast" slides={[laptopSlides(lang).lifestyle]} titel={c.h1 ?? c.eyebrow} />
+      </div>
     </div>
   </section>
 
@@ -574,7 +588,21 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
      raakte de helft van de gevallen niet — en een consistentieregel die op de
      helft van de pagina's iets anders doet, is geen regel. Eén uitlijning,
      tien pagina's, geen uitzonderingen. */
-  .ls-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: start; }
+  /* ── DE LAPTOP KRIJGT DE GROOTSTE HELFT — 17 september 2026 ───────────────
+     Lucas: *"Het mag wel wat groter, het voelt nu alsof het niet belangrijk is.
+     Kijk of groter maken beter is of pas de indeling van de sectie aan waardoor
+     het alsnog groter gemaakt kan worden."*
+
+     De tweede weg, want de eerste loopt vast: de plaat groter maken binnen een
+     kolom van 48% betekent hem over de tekst heen leggen. De INDELING verandert
+     dus — de tekstkolom wordt de kleinste van de twee.
+
+     0,85 tegen 1,15 en niet 1,05 tegen 0,95. Op 1440 gaat de plaat daarmee van
+     678 naar ongeveer 860 pixels, een derde groter, en de tekstkolom houdt nog
+     ruim 500 — genoeg voor de kop, de vier feiten naast elkaar en twee knoppen
+     op een regel. Kleiner dan dat wordt de feitenstrook een kolom van één, en
+     dan wint de plaat ruimte die de tekst nodig had. */
+  .ls-open { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.2rem, 3.5vw, 2.6rem); align-items: start; }
   .ls-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   .ls-beeld { position: relative; }
   .ls-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 40em; }

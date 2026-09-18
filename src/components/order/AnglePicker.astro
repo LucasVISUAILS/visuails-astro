@@ -187,9 +187,68 @@ const vasteRegel = lang === 'nl'
             </span>
           </li>
         ))}
+
+        {/* ── DE VIERDE PLEK IS VAN DE KLANT — 17 september 2026 ─────────────
+            Lucas: *"Custom angle mist ook."* Het stond in /concept/bestelrij en
+            is hier nooit gekomen, terwijl het de enige uitweg is voor een
+            product dat niet in de vaste hoeken past: een tas van binnen, een
+            zool van onderen, een label dat alleen in een vouw zichtbaar is.
+
+            Dezelfde vorm als de drie ernaast — zelfde tegel, zelfde tekening
+            (AngleSketch kent 'eigen'), zelfde vinkje dat in de prijs en in de
+            uploadvakken meeloopt. Eén verschil, en dat is het belangrijkste:
+            de omschrijving is hier VERPLICHT en niet optioneel. Bij een vaste
+            hoek weten we wat we maken en is de notitie een aanvulling; bij een
+            zelfbedachte hoek ís die zin de opdracht.
+
+            `data-pl-req="1"` en niet `required` in de markup: syncRequired()
+            zet de eis op zichtbare velden en haalt hem weg bij verborgen. Het
+            veld staat in de notitie-omhulling die pas verschijnt als het vinkje
+            aan staat, dus de eis geldt precies dan — en een klant die zich
+            bedenkt en uitvinkt, zit niet vast aan een leeg verplicht veld. */}
+        <li>
+          <label class="pl-hoek pl-hoek-eigen">
+            <input type="checkbox" name={`angle_eigen-${g.id}`} value="1" data-pl-angle />
+            <span class="pl-hoek-box">
+              {/* `sleutel` omdat deze schets twee keer op de pagina staat — één
+                  keer per hoekgroep — en zijn clipPath een eigen naam nodig
+                  heeft; zie de noot in AngleSketch.astro. */}
+              <span class="pl-hoek-shot"><AngleSketch id="eigen" sleutel={`eigen-${g.id}`} /></span>
+              <span class="pl-hoek-t">
+                <b class="pl-hoek-naam">{c.eigenNaam}</b>
+              </span>
+            </span>
+          </label>
+          <span class="pl-hoek-note" data-pl-angle-note={`eigen-${g.id}`} hidden>
+            <label class="pl-sr" for={`pl-angle-note-eigen-${g.id}`}>{c.eigenNote}</label>
+            <input
+              class="input"
+              type="text"
+              id={`pl-angle-note-eigen-${g.id}`}
+              name={`angle_note_eigen-${g.id}`}
+              placeholder={c.eigenPh}
+              autocomplete="off"
+              maxlength="200"
+              data-pl-req="1"
+              data-pl-err-msg={c.eigenNote}
+            />
+            <span class="pl-hoek-eigen-hint hint">{c.eigenHint}</span>
+          </span>
+        </li>
       </ul>
     </div>
   ))}
+
+  {/* ── EN WAT ER GEBEURT ALS WIJ HET NIET ZEKER WETEN ────────────────────
+      Uit /concept/bestelrij, waar hij onder de hoeken stond. Hij hoort hier en
+      niet bij de veelgestelde vragen: dit is het scherm waarop iemand een hoek
+      bestelt die hij zelf verzint, en de eerstvolgende gedachte is "en als
+      jullie het verkeerd begrijpen?". Eén regel op dát moment is meer waard dan
+      een alinea op een pagina die hij niet opzoekt.
+
+      Onder de groepen en boven de som: het gaat over alle hoeken samen, niet
+      over één tegel, en de som is het slot van dit blok. */}
+  <p class="pl-hoeken-noot hint">{c.twijfelNoot}</p>
 
   {/* Wat het samen wordt. Leeg zolang er niets gekozen is — een regel die
       "0 extra foto's" zegt, is een regel die niets zegt. */}
@@ -213,6 +272,11 @@ const vasteRegel = lang === 'nl'
   /* .6rem en niet .3rem: bij .3rem stond er vijf pixels tussen deze zin en het
      blok erboven, en kladblok/te-dicht.mjs telt alles onder acht als plakken. */
   .pl-hoeken-hint { display: block; margin: .6rem 0 0; font-size: .84rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
+  /* Zelfde maat en kleur als de hint erboven — het is dezelfde soort zin: iets
+     dat je leest terwijl je kiest, niet iets dat je moet beantwoorden. De marge
+     is ruimer omdat hij onder de laatste groep tegels komt en niet onder een
+     kop. */
+  .pl-hoeken-noot { margin: clamp(1.1rem, 2.2vw, 1.5rem) 0 0; max-width: 58ch; }
 
   /* De vier vaste hoeken: chips en geen tegels. Ze zijn een mededeling, en een
      tegel met een foto zou ze even zwaar maken als de acht die je wél kiest. */

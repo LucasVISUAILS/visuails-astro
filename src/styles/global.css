@@ -1040,7 +1040,24 @@
    gebruiken, draaien met één klasse mee. Een donkere variant per component zou
    achttien plekken zijn geweest, en over een maand zeventien. */
 .op-nacht,
-.plan-band {
+.plan-band,
+/* ── EN DE DONKERE STAND VAN VISUAILS STUDIO — 17 september 2026 ────────────
+   Lucas: *"Dark screen in visuails studio werkt ook niet meer."* Gemeten in een
+   browser: met de donkere stand aan bleef de body #F5F5F5. De schakelaar deed
+   zijn werk — `data-thema="donker"` op <html>, `.on-ink` op <body> — maar
+   `.on-ink` hierboven is een OUDERE, dunnere lijst die alleen --paper verzet.
+   De studio schildert zijn grond uit --bg (zie `body.studio` in studio.css) en
+   die bleef dus licht staan, met --ink als donkere letter erbovenop.
+
+   Een overblijfsel van sectie 20/21: toen de site licht werd, kreeg dit blok de
+   volledige donkere rollenset en bleef `.on-ink` achter op de oude namen.
+
+   De studio hoort bij DIT blok en niet bij die lijst: dit is de enige plek waar
+   de hele set in één keer wordt omgezet, en een handkopie ervan in studio.css
+   zou precies de scheefgroei herhalen die dit nu veroorzaakt. `body.studio` in
+   de selector, zodat het bij de studio blijft en geen enkel donker vlak op de
+   site van rol verandert. */
+body.studio.on-ink {
   --bg:         var(--ink-900);
   --bg-deep:    var(--ink-900);
   --bg-raise:   var(--ink-850);
@@ -4186,7 +4203,11 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    (the group carries role="radiogroup" + aria-labelledby to this id). */
 .ts-group-h { margin: 0; font-size: .88rem; font-weight: 600; color: var(--ink); }
 .req { color: var(--accent-bright); }
-.hint { font-size: .8rem; color: var(--ink-3); }
+/* line-height erbij op 17 september 2026: zonder eigen waarde erfde de hint de
+   regelafstand van zijn ouder, en dat is bij een formulierveld 1,55 op tekst van
+   16px — op 12,8px levert dat regels die tegen elkaar aan liggen. 1,7 is wat
+   kleine tekst nodig heeft om nog een alinea te zijn. */
+.hint { font-size: .8rem; line-height: 1.7; color: var(--ink-3); }
 
 .input, .textarea, .select {
   width: 100%;

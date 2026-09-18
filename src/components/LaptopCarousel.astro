@@ -119,6 +119,19 @@ interface Props {
      mail. De plaat en de twee schermgaten blijven precies hetzelfde, dus het
      blijft herkenbaar hetzelfde ding. */
   stil?: boolean;
+  /* ── WAAR HIJ STAAT ───────────────────────────────────────────────────────
+     'paneel'  een eigen blok over de volle breedte, met een kader en een
+               afgeronde hoek. Zoals hij tot 17 september overal stond.
+     'naast'   in de rechterkolom van een opening, naast de tekst. Hij loopt
+               dan door tot voorbij de rechterrand van de pagina en vervaagt
+               daar, in plaats van hard afgesneden te worden.
+
+     Lucas, 17 september 2026: *"Ik wil de laptop ook bovenaan op de eerste
+     sectie en rechts van de tekst mooi consistent bij elke categorie zodat de
+     klant meteen ziet wat de categorie is en biedt."* En: *"Ook zie je bij de
+     laptop te harde randen. Ik wil dat de schaduw rechts naar rechts fade en
+     een lichte fade onder de laptop."* */
+  vorm?: 'paneel' | 'naast';
 }
 
 const {
@@ -126,10 +139,40 @@ const {
   titel = 'Werk van VISUAILS',
   lang = 'nl',
   stil = false,
+  vorm = 'paneel',
 } = Astro.props as Props;
 
 const nl = lang === 'nl';
 const plaatAlt = (Astro.props as Props).overlayAlt ?? overlayAlt(lang);
+
+/* ── DE NAGEBOUWDE SCHERMEN PRATEN MEE — 17 september 2026 ───────────────────
+ *
+ * De knoppen van de nagemaakte Instagram-post en van de nagemaakte webshop
+ * stonden hier hardgecodeerd in het Nederlands: "Volgen", "In winkelmand",
+ * "Een opmerking toevoegen…". Zolang deze plaat op /nl stond viel dat niemand
+ * op. Sinds 17 september staat hij op de voorpagina — in BEIDE talen — en leest
+ * een Engelse bezoeker een Nederlandse webshop als eerste wat hij van ons ziet.
+ *
+ * Het is versiering (alles hieronder staat onder `aria-hidden`), maar versiering
+ * die iemand leest. Eén tabel, twee talen.
+ *
+ * Het bedrag is een VERZONNEN webshopprijs en geen tarief van ons — vandaar dat
+ * het hier staat en niet uit pricing.js komt. Wel per taal genoteerd, want een
+ * komma als decimaalteken is precies het soort detail dat de nabootsing verraadt.
+ */
+const SCHERM = {
+  nl: {
+    volgen: 'Volgen', vertaling: 'Vertaling weergeven', leuk: '1 vind-ik-leuk',
+    reageren: 'Reageren', opmerking: 'Een opmerking toevoegen…', plaatsen: 'Plaatsen',
+    kruimel: 'Home / Denim', prijs: '€ 79,95', mandje: 'In winkelmand',
+  },
+  en: {
+    volgen: 'Follow', vertaling: 'See translation', leuk: '1 like',
+    reageren: 'Reply', opmerking: 'Add a comment…', plaatsen: 'Post',
+    kruimel: 'Home / Denim', prijs: '€79.95', mandje: 'Add to cart',
+  },
+};
+const scherm = nl ? SCHERM.nl : SCHERM.en;
 
 /* De maten van de plaat en de inhoud van de schermen staan niet meer hier maar
    in src/data/laptopVlak.js en src/data/laptopSlides.js. Zodra meer dan één
@@ -162,7 +205,7 @@ const t = nl
   : { vorige: 'Previous image', volgende: 'Next image', van: (a: number, b: number) => `Image ${a} of ${b}`, omlaag: 'Next photo', bron: '\u2191 What you send' };
 ---
 <section
-  class:list={['lc', stil && 'is-stil']}
+  class:list={['lc', stil && 'is-stil', vorm === 'naast' && 'is-naast']}
   data-lc={stil ? undefined : true}
   aria-roledescription="carousel"
   aria-label={titel}
@@ -196,7 +239,7 @@ const t = nl
                   <b>{s.post.naam}</b>
                   {s.post.vlag && <span class="lc-post-grijs">&middot; {s.post.vlag}</span>}
                   <span class="lc-post-grijs">&middot;</span>
-                  <span class="lc-post-volg">Volgen</span>
+                  <span class="lc-post-volg">{scherm.volgen}</span>
                   <span class="lc-post-meer" aria-hidden="true">&#8943;</span>
                 </div>
 
@@ -205,7 +248,7 @@ const t = nl
                     <img class="lc-post-ei" src={s.post.avatar} alt="" width="48" height="48" loading="lazy" decoding="async" />
                     <div class="lc-post-body">
                       <p><b>{s.post.naam}</b> {s.post.bijschrift.join(' ')}</p>
-                      <p class="lc-post-meta"><span>{s.post.kort}</span><span>Vertaling weergeven</span></p>
+                      <p class="lc-post-meta"><span>{s.post.kort}</span><span>{scherm.vertaling}</span></p>
                     </div>
                   </div>
 
@@ -215,7 +258,7 @@ const t = nl
                         <i class="lc-post-bol" aria-hidden="true"></i>
                         <div class="lc-post-body">
                           <p><b>{r.naam}</b> {r.tekst}</p>
-                          <p class="lc-post-meta"><span>{r.tijd}</span><span>1 vind-ik-leuk</span><span>Reageren</span></p>
+                          <p class="lc-post-meta"><span>{r.tijd}</span><span>{scherm.leuk}</span><span>{scherm.reageren}</span></p>
                         </div>
                         <svg class="lc-post-hartje" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.2A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 7 2.8C19 15.6 12 20 12 20z"/></svg>
                       </li>
@@ -236,8 +279,8 @@ const t = nl
 
                 <div class="lc-post-invoer" aria-hidden="true">
                   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.6 14.2a4.3 4.3 0 0 0 6.8 0"/><circle cx="9.2" cy="10" r=".9" fill="currentColor"/><circle cx="14.8" cy="10" r=".9" fill="currentColor"/></svg>
-                  <span class="lc-post-grijs">Een opmerking toevoegen&hellip;</span>
-                  <span class="lc-post-plaats">Plaatsen</span>
+                  <span class="lc-post-grijs">{scherm.opmerking}</span>
+                  <span class="lc-post-plaats">{scherm.plaatsen}</span>
                 </div>
               </div>
 
@@ -246,12 +289,12 @@ const t = nl
             <div class="lc-blad">
               {s.schim && (
                 <div class="lc-schim" aria-hidden="true">
-                  <p class="lc-schim-kruim">Home / Denim</p>
+                  <p class="lc-schim-kruim">{scherm.kruimel}</p>
                   <p class="lc-schim-kop">Wide leg jeans</p>
-                  <p class="lc-schim-prijs">&euro; 79,95</p>
+                  <p class="lc-schim-prijs">{scherm.prijs}</p>
                   <div class="lc-schim-bollen"><i></i><i></i><i></i><i></i></div>
                   <div class="lc-schim-maten"><i>XS</i><i>S</i><i>M</i><i>L</i></div>
-                  <div class="lc-schim-knop">In winkelmand</div>
+                  <div class="lc-schim-knop">{scherm.mandje}</div>
                 </div>
               )}
               <div class="lc-rol" data-lc-rol>
@@ -352,6 +395,126 @@ const t = nl
     touch-action: pan-y;                /* verticaal scrollen blijft van de pagina */
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     NAAST DE TEKST, MET ZACHTE RANDEN — 17 september 2026
+     ══════════════════════════════════════════════════════════════════════════
+
+     Lucas: *"Ook zie je bij de laptop te harde randen. Ik wil dat de schaduw
+     rechts naar rechts fade en een lichte fade onder de laptop zodat het er wat
+     fijner uitziet om naar te kijken."*
+
+     Twee dingen maakten die rand hard. Het eerste is de GRIJZE DOOS: `.lc-doek`
+     schildert `--bg-raise` over zijn hele vlak, en dat is een rechthoek die net
+     iets lichter is dan de pagina — je ziet dus de doos en niet de laptop. Die
+     grond is er voor één geval (het scherm dat nog laadt) en hoort dus achter de
+     SCHERMEN te staan, niet achter de hele plaat.
+
+     Het tweede is de afsnijding zelf. De plaat heeft in zijn eigen beeld al een
+     zachte slagschaduw naar rechts en onder; die werd op de rand van het blok
+     recht afgesneden. Een masker laat hem uitlopen: rechts over de laatste 22%,
+     onder over de laatste 14%. Twee maskers die elkaar SNIJDEN, want ze moeten
+     allebei gelden — een `mask-composite: intersect` en niet twee losse lagen.
+
+     `-webkit-` erbij omdat Safari de ongeprefixte `mask-composite` pas sinds
+     kort kent en `source-in` daar het equivalent van `intersect` is. */
+  .lc.is-naast .lc-doek {
+    border-radius: 0;
+    overflow: visible;
+    background: none;
+    /* ── DE TWEE VERLOPEN, EN WAAROM ZE NIET GELIJK ZIJN ────────────────────
+       RECHTS mag ver doorlopen: daar staat de slagschaduw van de plaat en die
+       hoort uit te lopen in de pagina. Hij begint op 84% en niet eerder, want
+       de telefoon staat rechts in beeld en die mag niet half oplossen.
+
+       ONDER is het subtieler. Lucas: *"Het vervagen mag ook iets subtieler aan
+       de onderkant maar ik wil geen harde lijn zien."* En daarna nog een keer:
+       *"De vervaging onderaan mag nog wel iets lichter."*
+
+       Nu dus: tot 93% helemaal vol, dan 72%, dan 30%, en op 100% niets. Drie
+       stops in de laatste zeven procent — de voet van de laptop blijft staan en
+       alleen de schaduw eronder loopt weg.
+
+       Die tussenstops zijn het hele verschil met een rechte overgang: een
+       verloop van vol naar niets in één stap leest als een zachte streep, omdat
+       het oog de knik ziet waar het verloop begint. Drie stops maken er een
+       bocht van — en dat is ook de reden dat het er drie zijn en niet twee:
+       hoe korter het verloop, hoe meer stops je nodig hebt om de knik te
+       verbergen.
+
+       En hij MOET op transparent eindigen. Stopt het masker op 20% dekking, dan
+       staat daar alsnog een rand — een zwakke, maar een rechte. Dat is precies
+       wat er niet mag. */
+    /* ── VIER RANDEN, NIET TWEE — 17 september 2026 ─────────────────────────
+       Rechts en onder zijn wat Lucas vroeg. Boven en links kwamen erbij toen de
+       plaat in de opening van de voorpagina belandde: de overlay is zélf een
+       foto, van een laptop op een lichtgrijze achtergrond, en die achtergrond
+       is net niet de grond van de pagina. Op een dienstpagina viel dat weg tegen
+       het paneel; op de voorpagina stond er ineens een lichtgrijze rechthoek
+       achter de laptop, met een rechte bovenrand.
+
+       Boven en links dus ook een verloop, maar KORT — 6 en 5 procent. Daar staat
+       geen schaduw die mag uitlopen, alleen die achtergrond die weg moet; een
+       lang verloop zou de deksel van de laptop aanvreten.
+
+       RECHTS mag ver doorlopen: daar staat de slagschaduw van de plaat en die
+       hoort uit te lopen in de pagina. Hij begint op 84% en niet eerder, want de
+       telefoon staat rechts in beeld en die mag niet half oplossen.
+
+       ONDER is het subtieler. Lucas: *"Het vervagen mag ook iets subtieler aan
+       de onderkant maar ik wil geen harde lijn zien."* Dus: tot 90% helemaal
+       vol, dan een tussenstop op 55% dekking, en pas in de laatste procenten
+       naar niets. Zo blijft de voet van de laptop staan en loopt alleen de
+       schaduw eronder weg.
+
+       Die tussenstop is het hele verschil met een rechte overgang: een verloop
+       van vol naar niets in één stap leest als een zachte streep, omdat het oog
+       de knik ziet waar het verloop begint. Twee stops maken er een bocht van.
+
+       En elk verloop MOET op transparent eindigen. Stopt een masker op 20%
+       dekking, dan staat daar alsnog een rand — een zwakke, maar een rechte.
+       Dat is precies wat er niet mag. */
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0%, #000 5%, #000 84%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 6%, #000 93%, rgba(0, 0, 0, .72) 97%, rgba(0, 0, 0, .3) 99%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to right, transparent 0%, #000 5%, #000 84%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, #000 6%, #000 93%, rgba(0, 0, 0, .72) 97%, rgba(0, 0, 0, .3) 99%, transparent 100%);
+    mask-composite: intersect;
+  }
+  /* De laadgrond verhuist naar de twee schermgaten. Daar doet hij zijn werk —
+     voorkomen dat je door een gat heen een flits ziet — zonder een rechthoek om
+     de hele laptop te trekken. */
+  .lc.is-naast .lc-slides,
+  .lc.is-naast .lc-fons { background: var(--bg-raise, #EDEDED); }
+
+  /* ── HIJ LOOPT DE PAGINA UIT ──────────────────────────────────────────────
+     De kolom naast de tekst is krap de helft van de leesmaat, en een liggende
+     plaat van 1,77 wordt daar zo klein dat de tekst op het nagebouwde scherm
+     onleesbaar is. Dat was tot vandaag de reden dat hij eronder stond in een
+     eigen blok — met een gat van een half scherm ertussen.
+
+     Doorlopen tot voorbij de rechterrand lost allebei op: hij is breder dan
+     zijn kolom, dus leesbaar, en hij vervaagt precies waar hij de pagina
+     verlaat. `--x` is de paginamarge; `100vw` sluit aan op de echte
+     vensterrand, ook als het paneel zelf smaller is.
+
+     De negatieve marge alleen op grote schermen: onder 900 staat de kolom
+     onder de tekst en is er geen rechterrand om uit te lopen. */
+  /* ── EN GEEN SECTIEPADDING ────────────────────────────────────────────────
+     Lucas: *"Veel teveel whitespace om de laptop heen."* Gemeten op /catalog:
+     158 pixels boven de plaat en evenveel eronder, zonder dat er in dit bestand
+     ook maar één regel padding staat.
+
+     De oorzaak is dat dit component een `<section>` is, en global.css geeft ELKE
+     sectie `padding-block: clamp(4.5rem, 9vw, 9rem)`. Als eigen blok op een
+     pagina is dat precies goed — het is dan een sectie. Naast een kop in een
+     opening is het geen sectie maar een beeld, en dan is die lucht een gat. */
+  .lc.is-naast { width: auto; max-width: none; margin-inline: 0; padding-block: 0; }
+  @media (min-width: 60rem) {
+    .lc.is-naast { margin-right: calc(-1 * var(--x, 2rem)); }
+  }
+
   /* ── DE BEELDEN ───────────────────────────────────────────────────────────
      Alle acht liggen op elkaar op het schermvlak; alleen de actieve is
      zichtbaar. Overvloeien en niet schuiven: schuiven vraagt om een tweede
@@ -363,8 +526,34 @@ const t = nl
      de onzichtbare laatste slide over de hele stapel heen en vangt hij de klik
      op het pijltje van de slide die je wél ziet — de knop werkt dan niet en er
      is niets aan te zien. */
-  .lc-slide { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .55s cubic-bezier(.33, 1, .68, 1); }
-  .lc-slide.is-aan { opacity: 1; pointer-events: auto; }
+  /* ── EEN SLIDE DIE NIET IN BEELD IS, IS ER OOK NIET — 17 september 2026 ────
+     Er stond alleen `opacity: 0`. Dat maakt een slide onzichtbaar maar niet
+     afwezig: zijn tekst blijft in de opmaak staan, precies boven op de tekst van
+     de slide die je WEL ziet.
+
+     Gevonden door tests/a11y.test.mjs zodra de voorpagina de hele reeks kreeg in
+     plaats van één slide:
+
+         FAIL geen enkele paginakop legt tekst over tekst
+              "Wide leg jeans" × "Vertaling weergeven"
+
+     Dat is de productpagina van de catalogslide over het instagram-bericht van
+     de lifestyleslide heen. Onzichtbaar voor een ziend oog, en een stapel
+     dubbele tekst voor alles wat de pagina uitleest.
+
+     `visibility: hidden` haalt hem uit de opmaak, uit de toegankelijkheidsboom
+     en uit het aanraakgebied. De overgang blijft een overvloeiing: `visibility`
+     springt, en met `0s linear .55s` springt hij pas NA de vervaging bij het
+     verdwijnen, en meteen bij het verschijnen. */
+  .lc-slide {
+    position: absolute; inset: 0;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .55s cubic-bezier(.33, 1, .68, 1), visibility 0s linear .55s;
+  }
+  .lc-slide.is-aan {
+    opacity: 1; visibility: visible; pointer-events: auto;
+    transition: opacity .55s cubic-bezier(.33, 1, .68, 1), visibility 0s;
+  }
   /* ── LET OP: DE BOUW WIKKELT ELKE <img> IN EEN <picture> ───────────────────
      De beeldstap van de build zet er een <source type="image/avif"> voor en
      stopt het geheel in een <picture>. Dat heeft twee gevolgen die allebei een
@@ -429,7 +618,11 @@ const t = nl
             scroll-behavior: smooth;
             overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; }
   .lc-rol::-webkit-scrollbar { display: none; }
-  .lc-rol::after { content: ""; flex: 0 0 20cqh; }
+  /* 14 en niet 20: het vak is op 17 september van 80 naar 86cqh gegaan, en deze
+     staart is precies de ruimte die het láátste vak nodig heeft om bovenaan te
+     kunnen komen. Blijft hij op 20 staan, dan schuift de rol een stuk te ver
+     door en eindigt hij op leegte. */
+  .lc-rol::after { content: ""; flex: 0 0 14cqh; }
   .lc-slide:not(.is-aan) .lc-rol { transition: none; }
 
   /* Een vak is een editorial opmaak: het etiket in de buitenmarge, de foto
@@ -439,10 +632,29 @@ const t = nl
      het vak het hele scherm en staat het beeld gewoon gecentreerd. */
   .lc.is-stil .lc-vak { flex-basis: 100cqh; padding-bottom: 5cqh; }
   .lc.is-stil .lc-rol::after { content: none; }
+  /* ── DE FOTO MAG GROTER — 17 september 2026 ───────────────────────────────
+     Lucas: *"De productfoto's in de laptop mogen wel wat groter."*
+
+     Gemeten voor de ingreep: het scherm is 575 × 349 en de foto 248 × 248 —
+     71% van de hoogte en 43% van de breedte. Die 43% klinkt als ruimte over,
+     maar de foto is VIERKANT en wordt door de HOOGTE begrensd; de overgebleven
+     breedte kan hij niet gebruiken. Breder maken doet dus niets; hoger maken is
+     het enige dat werkt.
+
+     Twee stappen, en de tweede is de goedkoopste:
+
+       het vak      80cqh → 86cqh
+       de lucht     5 + 4 → 3 + 3 cqh
+
+     Samen gaat de foto van 71 naar 80cqh. Wat het kost is de doorkijk naar de
+     volgende foto: die zakt van 20% naar 14% van het scherm. Nog steeds genoeg
+     om te zien dat er meer is — en dat is precies waar die doorkijk voor is,
+     zie de noot bij .lc-rol hierboven. Onder de 10% zou hij een streep worden
+     in plaats van een aanwijzing, dus daar ligt de grens. */
   .lc-vak {
-    flex: 0 0 80cqh; min-height: 0; margin: 0; scroll-snap-align: start;
+    flex: 0 0 86cqh; min-height: 0; margin: 0; scroll-snap-align: start;
     display: flex; align-items: flex-start; justify-content: center;
-    gap: 2.6cqw; padding: 5cqh 25.6cqw 4cqh 0;
+    gap: 2.6cqw; padding: 3cqh 25.6cqw 3cqh 0;
   }
   .lc-beeld { flex: none; height: 100%; aspect-ratio: 1; display: block; }
   .lc-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }

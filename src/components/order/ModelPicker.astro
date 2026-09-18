@@ -460,14 +460,41 @@ const nl = lang === 'nl';
          immers van hen;
        · het portret schaalt een fractie mee bij hover, wat geen andere tegel doet.
      Wat er NIET bij komt is een tweede badge: het label linksboven zegt het al,
-     en twee keer hetzelfde zeggen leest als onzekerheid. */
+     en twee keer hetzelfde zeggen leest als onzekerheid.
+
+     ── EN GEEN ACCENT MEER — 18 september 2026 ──────────────────────────────
+     Lucas: *"Als iemand in visuails studio een vast model heeft gekozen kan hij
+     deze niet deselecteren in het bestelformulier en er staan dan 2 modellen
+     geselecteerd."*
+
+     Precies dit was het. De regel hierboven gaf de eigen tegel de accentrand én
+     de zachte accentgrond — en dat is LETTERLIJK dezelfde opmaak die
+     `:has(input:checked)` een tegel geeft. De eigen tegel zag er dus altijd
+     gekozen uit, ook als het vinkje ergens anders stond. Koos je daarna een
+     ander gezicht, dan lichtten er twee op en leek de eerste niet weg te
+     krijgen. Gemeten: rand rgb(210,224,74) en vulling rgba(210,224,74,.18) op
+     een tegel waarvan de radio uit stond.
+
+     Uitspringen mag, maar niet in de kleur die "aangevinkt" betekent. Het
+     accent is vanaf nu van één ding: de keuze. De eigen tegel houdt zijn
+     onderscheid in inkt — een dikkere rand, een lichte schaduw, het label
+     linksboven en een vette naam — en dat is genoeg om hem tussen tien
+     onbekenden te vinden. */
   .mp-opt.is-own {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink), 0 6px 18px rgb(17 17 17 / .07);
+    background: var(--surface);
+  }
+  /* Aangevinkt wint van "van jou": zonder deze regel houdt de inktrand hierboven
+     de accentrand tegen op de tegel die je net koos, en dan is de eigen tegel de
+     enige die niet laat zien dat hij aanstaat. */
+  .mp-opt.is-own:has(input:checked) {
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent), 0 6px 18px rgb(17 17 17 / .07);
-    background: var(--accent-soft, rgb(210 224 74 / .12));
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent), 0 6px 18px rgb(17 17 17 / .07);
   }
   .mp-opt.is-own .mp-thumb {
-    box-shadow: inset 0 0 0 1px var(--accent);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
     transition: scale .35s var(--ease, ease);
   }
   .mp-opt.is-own:hover .mp-thumb { scale: 1.03; }
@@ -580,9 +607,33 @@ const nl = lang === 'nl';
      bovengrens houdt ze op tegelmaat als er ooit maar vier zijn. Op 880 staan
      alle elf op één regel, op een telefoon in twee of drie — en er valt nooit
      iets buiten beeld. */
+  /* ── EEN RASTER EN GEEN WIKKELENDE FLEXRIJ — 17 september 2026 ────────────
+     Lucas: *"het 10e modelfoto is groter dan de rest."* Hij telde de elfde, en
+     hij had gelijk: die stond alleen op de tweede regel en was zichtbaar groter
+     dan de tien erboven.
+
+     Dat is wat `flex-grow` doet bij wikkelen. De tegels mochten groeien om hun
+     rij te vullen, en een rij met één tegel erin geeft die ene tegel álle
+     overgebleven ruimte — tot `max-width` hem tegenhield, op 6rem, terwijl de
+     elf erboven samengeperst op ongeveer 4,4rem stonden. Elke rij verdeelt zijn
+     eigen breedte, dus elke rij krijgt een andere tegelmaat.
+
+     Een raster met `auto-fill` heeft dat probleem niet: de KOLOMBREEDTE wordt
+     één keer voor het hele blok bepaald, en een halflege laatste rij laat de
+     lege sporen gewoon staan. Elf tegels of twaalf, één rij of drie — ze zijn
+     allemaal even groot.
+
+     `auto-fill` en niet `auto-fit`: die tweede vouwt lege sporen op en dan rekken
+     de overgebleven tegels alsnog uit. Dat is precies de fout die we hier
+     weghalen, met een ander mechanisme. */
   .mp-grid.is-strook {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    /* 3,7rem en niet 4,2: op de breedte die deze kolom in stap 2 werkelijk
+       heeft (±755px naast het overzichtspaneel) passen er bij 4,2rem tien op een
+       regel en blijft de elfde alleen achter. Bij 3,7rem passen alle elf op één
+       regel — en dat was de hele reden dat dit blok een strook werd: niemand mag
+       een gezicht missen. Meer merkmodellen wikkelen gewoon door, even groot. */
+    grid-template-columns: repeat(auto-fill, minmax(3.7rem, 1fr));
     gap: .45rem;
     margin-top: .6rem;
     /* De strook mag de volle breedte van zijn kolom gebruiken; de tegels zijn
@@ -590,8 +641,9 @@ const nl = lang === 'nl';
     max-width: none;
   }
   .mp-grid.is-strook .mp-opt {
-    flex: 1 1 4.2rem;
-    max-width: 6rem;
+    /* Geen max-width meer: het spoor bepaalt de maat, en een tegel die smaller
+       is dan zijn spoor zou de rij ongelijk laten ogen — precies het probleem
+       waar dit blok vanaf wilde. */
     padding: .3rem;
     gap: .28rem;
   }
@@ -609,7 +661,7 @@ const nl = lang === 'nl';
      dat leest als een fout. Op 48 passen er zes op een regel en wordt het 6 + 5:
      twee volle rijen, en het blok zakt van 551 naar ongeveer 360. */
   @media (max-width: 700px) {
-    .mp-grid.is-strook .mp-opt { flex: 1 1 2.9rem; max-width: 4.4rem; }
+    .mp-grid.is-strook { grid-template-columns: repeat(auto-fill, minmax(2.9rem, 1fr)); }
   }
   /* De kenmerken ("blond · lang") vallen weg: op 90 pixels breed zijn dat drie
      regels van twee woorden, en de vraag hier is wie het draagt en niet welke

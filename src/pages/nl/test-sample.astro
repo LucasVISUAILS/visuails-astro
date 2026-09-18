@@ -3,10 +3,14 @@
 // TestSamplePage.astro; alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
 import TestSamplePage from '../../components/TestSamplePage.astro';
+/* De kop en het bedrag komen uit pricing.js en worden hier niet overgetypt:
+   zolang de proef € 1 kost is dat hetzelfde, en op de dag dat hij iets anders
+   kost is een overgetypte titel de plek waar het oude bedrag blijft staan. */
+import { TEST_SAMPLE } from '../../data/pricing.js';
 ---
 
 <Layout
-  title="Test VISUAILS met 1 product — Probeer VISUAILS · €1"
+  title={`${TEST_SAMPLE.nl.h} — ${TEST_SAMPLE.nl.cta}`}
   description="Stuur de foto’s van een gewone bestelling en krijg vier catalogfoto’s of een lifestyle-carousel van drie terug. Eén per bedrijf, nagekeken door een specialist."
 >
   <TestSamplePage lang="nl" />

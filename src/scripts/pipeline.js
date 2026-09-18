@@ -207,6 +207,10 @@ import {
 // off this import reaches the screen: every label, placeholder and option name
 // is read out of the config blob like everything else on this page.
 import { PRODUCT_QUESTIONS } from '../data/attributes.js';
+/* Alleen de vraag "is dit de zelfbedachte hoek": de veldnamen staan in
+   angles.js zodat het formulier, de server en dit script er niet elk hun eigen
+   spelling van maken. Zie de noot bij EIGEN_ANGLE_IDS. */
+import { isEigenAngleId } from '../data/angles.js';
 /* Het oordeel over een aangeleverde foto staat naast de drempels in shots.js,
    zodat het te toetsen is zonder een browser. Het METEN staat hier, want daar
    zijn de pixels — zie meetBeeld(). */
@@ -277,6 +281,9 @@ let bodemProducten = 0;
 let telViaKnop = false;
 let tray = [];
 let trayN = 0;
+/* Welk extra-vaknummer bij welke hoek hoort, zolang die hoek gekozen is. Zie de
+   kop boven hoekVakken() verderop voor waarom het nummer bij de hoek blijft. */
+let hoekVak = {};
 let traySig = ''; // what the tray last rendered, so it is not rebuilt per file
 let dragging = ''; // the tray id currently under the cursor, for browsers whose
                    // dataTransfer is unreadable during dragover
@@ -658,6 +665,30 @@ function show(n, opts) {
     }
   }
 
+  /* ── DE LIFESTYLE-BALK HOORT BIJ STAP 2 ───────────────────────────────────
+     Daar vult de klant zijn producten in, en dat is het moment waarop "en er
+     ook lifestyle bij?" een vraag is die ergens over gaat: hij ziet net wat hij
+     stuurt. Op stap 1 staat op een telefoon al de totaalbalk onderaan geplakt —
+     twee balken op elkaar is één te veel — en vanaf stap 3 is hij aan het
+     afrekenen; een aanbod is dan een onderbreking.
+
+     `hidden` en niet alleen een klasse: de balk staat BUITEN de stappen (hij is
+     `position: fixed`, en dat werkt niet binnen een stap op `display: none`),
+     dus er is geen ouder die hem vanzelf wegneemt. */
+  const combiBalk = q('[data-pl-combi-balk]');
+  if (combiBalk) {
+    combiBalk.hidden = to !== 2;
+    /* Dichtklappen zodra je stap 2 verlaat: kom je terug, dan begin je weer bij
+       de regel van één hoog in plaats van bij een aanbod dat je scherm vult. */
+    if (to !== 2) {
+      combiBalk.classList.remove('is-open');
+      const binnen = q('.pl-combi-in', combiBalk);
+      const knop = q('[data-pl-combi-schuif]', combiBalk);
+      if (binnen) binnen.hidden = true;
+      if (knop) knop.setAttribute('aria-expanded', 'false');
+    }
+  }
+
   syncVatConfirm();
   /* En de vorm van het btw-nummer, want het land kan al ingevuld zijn vanuit een
      account -- dan is er nooit een change-gebeurtenis geweest en zou het veld
@@ -985,18 +1016,61 @@ function askMissing() {
   if (h) h.textContent = n === 1 ? c('pu.missingHOne') : c('pu.missingH', { n });
   const list = q('[data-pl-missing-list]', box);
   if (list) {
+    /* ── ALLE PRODUCTEN EN NIET DE EERSTE ZES ──────────────────────────────
+       Hier stond een opsomming die na zes regels ophield met "en nog 19" — op
+       het enige scherm waar iemand juist wil weten wélke negentien. Nu staan ze
+       er allemaal, ook de afgevinkte: het gat is pas een gat als je ziet waar
+       het tussen staat. Een tegel is smal, dus dertig ervan zijn vijf regels en
+       geen vijf schermen. */
+    const vakIds = [...REQUIRED_SHOT_IDS, ...hoekVakIds(), ...MUST_DECIDE_SHOT_IDS]
+      .filter((id, i, rij) => rij.indexOf(id) === i);
     list.textContent = '';
-    short.slice(0, 6).forEach((card) => {
+    cards.forEach((card) => {
+      const klaar = cardReady(card);
       const li = document.createElement('li');
-      const naam = card.input && card.input.value.trim();
-      li.textContent = `${naam || c('pu.product', { n: card.n })} — ${cardStateText(card, false)}`;
+      const knop = document.createElement('button');
+      knop.type = 'button';
+      knop.className = 'pu-mis-tegel';
+      knop.classList.toggle('is-gat', !klaar);
+
+      const nr = document.createElement('span');
+      nr.className = 'pu-mis-nr';
+      nr.textContent = String(card.n).padStart(2, '0');
+
+      const naam = document.createElement('span');
+      naam.className = 'pu-mis-naam';
+      const eigen = card.input && card.input.value.trim();
+      naam.textContent = eigen || c('pu.product', { n: card.n });
+
+      /* De vakjes zeggen WAAR het gat zit, de regel eronder zegt WAT er moet.
+         Allebei, want "één vakje leeg" vertelt niet of het om een foto of om
+         een keuze gaat — zie undecided(). */
+      const strook = document.createElement('span');
+      strook.className = 'pu-mis-vakjes';
+      strook.setAttribute('aria-hidden', 'true');
+      vakIds.forEach((id) => {
+        const vak = document.createElement('i');
+        const vol = slotFilled(card, id)
+          || (mustDecideShot(id) && card.slots[id] && card.slots[id].status === 'skipped');
+        vak.classList.toggle('is-vol', !!vol);
+        vak.classList.toggle('is-gat', !vol);
+        strook.appendChild(vak);
+      });
+
+      const wat = document.createElement('span');
+      wat.className = 'pu-mis-wat';
+      wat.textContent = cardStateText(card, klaar);
+
+      knop.append(nr, naam, strook, wat);
+      /* Dezelfde sprong als de knop "Foto's toevoegen", alleen naar DIT product
+         in plaats van naar het eerste dat nog iets mist. */
+      knop.addEventListener('click', () => {
+        box.hidden = true;
+        naarProduct(card);
+      });
+      li.appendChild(knop);
       list.appendChild(li);
     });
-    if (short.length > 6) {
-      const li = document.createElement('li');
-      li.textContent = c('pu.missingMore', { n: short.length - 6 });
-      list.appendChild(li);
-    }
   }
   box.hidden = false;
   if (box.tabIndex < 0) box.tabIndex = -1;
@@ -1004,6 +1078,30 @@ function askMissing() {
   const top = box.getBoundingClientRect().top + window.scrollY - 96;
   window.scrollTo({ top: Math.max(0, top), behavior: reduced() ? 'auto' : 'smooth' });
   return false;
+}
+
+/**
+ * Naar één product toe: openklappen, in beeld brengen, blik erin.
+ *
+ * Twee knoppen komen hier uit — "Foto's toevoegen" (naar het eerste gat) en een
+ * tegel in het raster (naar dát product). In de rij is een kaart alleen zichtbaar
+ * als hij aan de beurt is, dus dan moet de RIJ eerst verschuiven; buiten de rij
+ * staan ze allemaal onder elkaar en volstaat openklappen. Zonder dat onderscheid
+ * verdwijnt de melding en gebeurt er verder niets — de kaart waar je heen wilde
+ * staat dan nog steeds op `hidden`.
+ */
+function naarProduct(card) {
+  if (!card) return;
+  if (rijAan()) {
+    const i = cards.indexOf(card);
+    if (i >= 0) naarKaart(i);
+    return;
+  }
+  if (!card.el) return;
+  card.collapsed = false;
+  paintCard(card);
+  card.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  if (card.input) { try { card.input.focus({ preventScroll: true }); } catch { /* ok */ } }
 }
 
 function bindMissing() {
@@ -1014,12 +1112,7 @@ function bindMissing() {
   if (fix) fix.addEventListener('click', () => {
     box.hidden = true;
     const first = cards.find((card) => !cardReady(card));
-    if (first && first.el) {
-      first.collapsed = false;
-      paintCard(first);
-      first.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
-      if (first.input) { try { first.input.focus({ preventScroll: true }); } catch { /* ok */ } }
-    }
+    if (first) naarProduct(first);
   });
   if (go) go.addEventListener('click', () => {
     missingOk = true;
@@ -1214,6 +1307,186 @@ function bindOrder() {
      de markup en hangt aan niets hierboven, dus als het ooit stukloopt mag dat
      de rest van deze stroom niet meenemen. */
   bindTips();
+  bindVouwAnker();
+  bindCombiBalk();
+}
+
+/*
+ * ── DE LIFESTYLE-BALK ONDERAAN ──────────────────────────────────────────────
+ *
+ * Lucas: *"Ik wil de lifestyle als banner pop up onderaan het scherm krijgen die
+ * de klant tijdens product invullen kan inklappen en uitklappen."*
+ *
+ * Twee dingen, en verder niets: de knop klapt hem open en dicht, en de balk
+ * bestaat alleen zolang stap 2 in beeld staat. Dat tweede doet showStep() (zie
+ * daar); dit bindt alleen de knop.
+ *
+ * DICHT BIJ HET OPENEN. De balk ligt over het scherm waar de klant werkt, en
+ * open beginnen zou een aanbod over zijn taak heen leggen op het moment dat hij
+ * zijn eerste foto sleept. Dicht is hij één regel met de vraag en de twee
+ * bedragen — dat verkoopt nog steeds en het kost geen ruimte.
+ */
+function bindCombiBalk() {
+  const balk = q('[data-pl-combi-balk]');
+  if (!balk) return;
+  const knop = q('[data-pl-combi-schuif]', balk);
+  const binnen = q('.pl-combi-in', balk);
+  if (!knop || !binnen) return;
+  knop.addEventListener('click', () => {
+    const open = !balk.classList.contains('is-open');
+    balk.classList.toggle('is-open', open);
+    binnen.hidden = !open;
+    knop.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * EEN UITKLAPPER DIE OPENGAAT, BLIJFT WAAR HIJ STOND
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 17 september 2026: *"image shape is weg."*
+ *
+ * Hij was niet weg en hij ging ook gewoon open — gemeten: één klik, `open=true`,
+ * 431 pixels hoog, de vijf keuzes erin. Wat er gebeurde is dit:
+ *
+ *     beeldvorm stond op y = 471
+ *     na de klik      y = -43
+ *     VERSPRONGEN     : 514 pixels, het scherm uit, naar boven
+ *
+ * De vouwen in stap 1 delen een `name` en zijn daarmee een NATIEVE exclusieve
+ * accordeon: de browser sluit de andere zodra je er één opent. Dat is precies
+ * wat we wilden — één kiezer tegelijk, nul regels script. Maar de vouw die
+ * dichtgaat, staat vaak BOVEN de vouw die je aanklikt, en "Een hoek erbij" is
+ * 504 pixels hoog. Die hoogte valt onder je weg, dus de rij die je net aanraakte
+ * schuift het beeld uit — en wat je overhoudt is een scherm waarop het ding dat
+ * je zocht er niet meer is.
+ *
+ * ── WAAROM NIET GEWOON DE ACCORDEON WEGHALEN ────────────────────────────────
+ *
+ * Omdat die het drukke scherm juist oplost: stap 1 heeft twaalf uitklappers, en
+ * alles tegelijk open is de muur waar de accordeon voor gebouwd is. Het
+ * probleem is niet dat er iets dichtgaat, het is dat de PAGINA eronder
+ * verschuift. Dus blijft de accordeon en corrigeren we de sprong.
+ *
+ * ── HOE ─────────────────────────────────────────────────────────────────────
+ *
+ * Vóór de klik onthouden waar de aangeklikte rij stond; na afloop de pagina
+ * evenveel meeschuiven. De rij staat dan op dezelfde plek op je scherm als
+ * waar je hem aanraakte, en wat eronder verschijnt, verschijnt eronder.
+ *
+ * `requestAnimationFrame` en geen timeout: de browser heeft de andere vouw dan
+ * al gesloten en de nieuwe hoogte al berekend, en het scheelt de flikkering van
+ * een correctie die een frame te laat komt.
+ *
+ * GEEN GLAD SCROLLEN. Dit is geen verplaatsing die je moet kunnen volgen — het
+ * is het ONGEDAAN MAKEN van een verplaatsing die niet had moeten gebeuren. Een
+ * animatie zou er een beweging van maken waar er geen hoort te zijn.
+ */
+/**
+ * De hoekvakken op de kaarten gelijktrekken met wat er in stap 1 gekozen is.
+ *
+ * Draait bij elke verandering van de vinkjes én bij het bouwen van een kaart.
+ * Met één kaart als argument doet hij alleen die kaart; zonder argument alle.
+ *
+ * ── WAT ER MET EEN FOTO GEBEURT DIE ERAF VALT ───────────────────────────────
+ *
+ * Naar de bak onderaan, niet naar de prullenbak — dezelfde regel als bij
+ * dropCard(): de klant beantwoordde een vraag over zijn BESTELLING ("deze hoek
+ * toch niet"), geen vraag over die foto. Vinkt hij de hoek weer aan, dan staat
+ * de foto onderaan klaar om terug te slepen.
+ */
+function syncHoekVakken(alleen) {
+  const vakken = hoekVakken();
+  const wil = vakken.map((v) => v.id);
+  const lijst = alleen ? [alleen] : cards;
+
+  lijst.forEach((card) => {
+    if (!card.slotsEl) return;
+
+    /* WEG wat er niet meer bij hoort. Alleen extra-vakken bekijken: de vier
+       vaste hoeken en de gratis referentievakken staan hier buiten. */
+    Object.keys(card.slots).forEach((id) => {
+      if (!extraSlotNumber(id) || wil.includes(id)) return;
+      const sl = card.slots[id];
+      if (sl.file && sl.status !== 'failed') trayAdd(sl.file);
+      clearSlot(card, id);
+      if (sl.el && sl.el.wrap) sl.el.wrap.remove();
+      delete card.slots[id];
+    });
+
+    /* ERBIJ wat er nog niet is, en op volgorde achter de vaste vier. */
+    vakken.forEach((v) => {
+      if (card.slots[v.id] && card.slots[v.id].el) return;
+      if (!card.slots[v.id]) card.slots[v.id] = EMPTY_SLOT();
+      card.slotsEl.appendChild(buildSlot(card, v.id));
+      paintSlot(card, v.id);
+    });
+
+    /* De namen kunnen veranderd zijn zonder dat het vak dat is — een hoek die
+       vrijkomt en waar een andere hoek het nummer van overneemt. Hertekenen, of
+       er staat "Driekwart" boven het vak van "Van achteren". */
+    vakken.forEach((v) => {
+      const sl = card.slots[v.id];
+      if (sl && sl.el && sl.el.nameEl) sl.el.nameEl.textContent = shotLabel(v.id);
+    });
+  });
+
+  schrijfHoekKoppeling(vakken);
+  renderTray();
+}
+
+/**
+ * De koppeling vak → hoek, als één verborgen veld bij de bestelling.
+ *
+ * `extra1:three_quarter,extra2:flat_lay`. Zonder dit is een bestand dat als
+ * `extra2` binnenkomt een foto zonder opdracht, en dan is precies het gokwerk
+ * terug waar het uploadvak voor bestaat.
+ *
+ * Het veld wordt hier gemaakt en niet in de markup: het bestaat alleen zodra er
+ * een hoek gekozen is, en een leeg veld dat altijd meeposten zou een lege sleutel
+ * in details_json zetten bij elke bestelling zonder extra's.
+ */
+function schrijfHoekKoppeling(vakken) {
+  /* `form` is de module-variabele en IS het formulier. Niet `q('[data-pipeline]')`:
+     q() zoekt standaard BINNEN het formulier, en een element vindt zichzelf niet
+     met zijn eigen querySelector. Dat kostte hier één stille ronde waarin de
+     koppeling nooit werd geschreven. */
+  if (!form) return;
+  let veld = q('input[name="extra_slots"]');
+  if (!vakken.length) {
+    if (veld) veld.remove();
+    return;
+  }
+  if (!veld) {
+    veld = document.createElement('input');
+    veld.type = 'hidden';
+    veld.name = 'extra_slots';
+    form.appendChild(veld);
+  }
+  veld.value = vakken.map((v) => `${v.id}:${v.hoek}`).join(',');
+}
+
+function bindVouwAnker() {
+  /* De module-variabele `form` is het formulier zelf; valt terug op het
+     document zolang dat er nog niet is. */
+  const waar = form || document;
+  waar.addEventListener('click', (e) => {
+    const sum = e.target && e.target.closest ? e.target.closest('summary.dc-sum') : null;
+    if (!sum) return;
+    const vouw = sum.parentElement;
+    /* Alleen bij OPENGAAN. Een vouw die dichtgaat neemt zijn eigen hoogte weg
+       en dat is hoogte ONDER de rij: die verschuift niets aan wat erboven staat,
+       dus daar is niets recht te zetten. */
+    if (!vouw || vouw.open) return;
+    const voor = sum.getBoundingClientRect().top;
+    requestAnimationFrame(() => {
+      const na = sum.getBoundingClientRect().top;
+      const verschil = na - voor;
+      if (Math.abs(verschil) < 2) return;
+      window.scrollBy({ top: verschil, left: 0, behavior: 'auto' });
+    });
+  });
 }
 
 /*
@@ -2475,6 +2748,19 @@ function syncTotal() {
     setText('[data-pl-combi-straks]', toon ? euro(anderQuote.net) : '');
     const blok = q('[data-pl-combi]');
     if (blok) blok.classList.toggle('heeft-bedrag', toon);
+
+    /* ── DE DICHTE BALK DRAAGT DEZELFDE TWEE BEDRAGEN ───────────────────────
+       De balk onderaan begint dicht (zie .pl-combi-balk in OrderFlow.astro), en
+       dan is deze ene regel alles wat er van het aanbod te zien is. Hij hoort
+       dus hetzelfde te zeggen als het blok erin: van dit bedrag naar dat
+       bedrag. Zonder de bedragen blijft de regel leeg in plaats van "→" te
+       tonen — een pijl tussen twee lege plekken leest als een fout.
+
+       De vraag komt uit het blok zelf en wordt hier niet overgetypt: wat er
+       boven de balk staat, is wat er in het blok staat. */
+    const vraag = q('[data-pl-combi] .ck-vraag');
+    setText('[data-pl-combi-woord]', vraag ? vraag.textContent.trim() : '');
+    setText('[data-pl-combi-prijs]', toon ? `${euro(quote.net)} → ${euro(anderQuote.net)}` : '');
   }
 
   paintPlan(kind, n);
@@ -2638,7 +2924,17 @@ function shotLabel(id) {
   // vier en draagt zijn nummer. Hier en niet in buildSlot(), zodat er één plek is
   // waar een slot zijn woord vandaan haalt.
   const n = extraSlotNumber(id);
-  if (n) return c('pu.extraSlot', { n });
+  if (n) {
+    /* ── EEN HOEKVAK DRAAGT DE NAAM VAN ZIJN HOEK — 17 september 2026 ────────
+       "Extra foto 2" zegt de klant niets over wat hij moet fotograferen, en het
+       is juist dit vak waarvan Lucas zei: *"zodat wij zeker weten wat hij er
+       precies mee bedoelt."* Dus staat de naam van de hoek erop — Driekwart,
+       Van achteren — en valt hij alleen terug op het nummer als de kiezer er
+       niet is (bij een dienst zonder hoeken bestaat dit vak sowieso niet). */
+    const vak = hoekVakken().find((v) => v.id === id);
+    if (vak && vak.naam) return vak.naam;
+    return c('pu.extraSlot', { n });
+  }
   // Een gratis referentievak draagt zijn nummer op dezelfde manier. Een ANDER
   // woord dan bij de betaalde, en dat is het hele punt: "Extra foto 2" naast
   // "Referentie 2" is precies de verwarring waar de eigen prefix voor bestaat.
@@ -2781,6 +3077,121 @@ function slotFilled(card, id) {
  * Leeg is hier dus geen antwoord, maar "overgeslagen" wél. Zie de noot bij
  * `worn` in src/data/shots.js.
  */
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * EEN BESTELDE HOEK KRIJGT ZIJN EIGEN UPLOADVAK
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 16 september 2026: *"De klant ... krijgt dan een foto-upload erbij
+ * specifiek voor die angle, verplicht, zodat wij zeker weten wat hij er precies
+ * mee bedoelt."*
+ *
+ * En op 17 september, met het formulier voor zich: *"Ook heb ik 2 angles
+ * toegevoegd en zie die niet terug bij de aanbevolen/required foto's."*
+ *
+ * Hij had gelijk, en het formulier sprak zichzelf tegen: met twee hoeken aan
+ * stond eronder "je krijgt er 6", terwijl de kaart precies vier vakken toonde.
+ * Wij zouden dus twee beelden moeten maken van een hoek die de klant nooit heeft
+ * kunnen laten zien — precies het gokwerk waar zijn eis vanaf wil.
+ *
+ * ── HET NUMMER BLIJFT BIJ DE HOEK ──────────────────────────────────────────
+ *
+ * De vakken heten `extra1`…`extraN` — dat is wat /api/upload accepteert (zie
+ * isExtraShotId in shots.js) en het is een NUMMER, geen naam. Als dat nummer
+ * aan de VOLGORDE van de gekozen hoeken hing, zou het uitvinken van de eerste
+ * hoek de tweede tot `extra1` omdopen terwijl er al een bestand aan hangt in
+ * R2 — en dan hoort de foto van de ene hoek ineens bij de andere.
+ *
+ * Dus houdt `hoekVak` bij welk nummer bij welke hoek hoort, en dat nummer blijft
+ * staan zolang die hoek gekozen is. Uitvinken geeft het nummer vrij; de volgende
+ * hoek die erbij komt, pakt het laagste vrije nummer. Geen enkel bestaand vak
+ * verandert daarbij van naam.
+ *
+ * ── EN DE KOPPELING REIST MEE ──────────────────────────────────────────────
+ *
+ * Een vak dat `extra2` heet zegt de studio niets. Daarom gaat er één verborgen
+ * veld mee met de bestelling: `extra_slots` = "extra1:three_quarter,extra2:…".
+ * Eén veld voor de hele bestelling en niet per product, want de hoeken zijn één
+ * keuze vooraf en gelden voor elk product. Het staat niet in TOP_FIELDS, dus het
+ * landt in details_json — dezelfde weg als de rest van de briefing.
+ *
+ * ── DE STAAT ZELF STAAT BOVENAAN ────────────────────────────────────────────
+ * `hoekVak` is met de rest van de module-staat gedeclareerd (bij `cards` en
+ * `tray`) en niet hier. Hij stond hier eerst, en dat kostte een halve ronde: een
+ * `let` halverwege het bestand bestaat pas zodra de uitvoering die regel haalt,
+ * en de opstart roept hoekVakken() al aan vóór dat punt. Het resultaat was
+ * "[pipeline] ReferenceError: Cannot access 'hoekVak' before initialization" —
+ * netjes opgevangen, dus geen rode pagina, maar de opstart brak halverwege af en
+ * het formulier werd nooit live. Precies het soort stille breuk waar de
+ * browsercontrole voor bestaat.
+ */
+
+/**
+ * De naam van een hoek, zoals hij op zijn eigen tegel staat.
+ *
+ * ── BEHALVE BIJ DE ZELFBEDACHTE HOEK — 17 september 2026 ────────────────────
+ * Daar staat op de tegel "Zelf bedenken", en dat is precies het woord dat de
+ * klant niet wil terugzien boven zijn uploadvak. Wat hij er zelf intypte — "de
+ * binnenkant van de tas, plat" — is de naam van die hoek, voor hem en voor ons.
+ * Dus die zin komt op het vakje te staan, en "Zelf bedenken" is alleen nog de
+ * naam van de knop waarmee je hem aanmaakt.
+ *
+ * Valt terug op de tegelnaam zolang het veld leeg is: dat duurt precies zolang
+ * als het invullen van een verplicht veld, en een vakje zonder naam is erger
+ * dan een vakje met een voorlopige naam.
+ */
+function hoekNaam(hoekId) {
+  const box = angleBoxEl();
+  if (!box) return '';
+  if (isEigenAngleId(hoekId)) {
+    const veld = q(`input[name="angle_note_${hoekId}"]`, box);
+    const eigen = veld ? String(veld.value || '').trim() : '';
+    if (eigen) return eigen;
+  }
+  const vink = q(`input[name="angle_${hoekId}"]`, box);
+  const label = vink ? vink.closest('label') : null;
+  const naam = label ? q('.pl-hoek-naam', label) : null;
+  return naam ? naam.textContent.trim() : '';
+}
+
+/** De id van de hoek achter een vinkje: `angle_three_quarter` → `three_quarter`. */
+function hoekIdVan(input) {
+  const m = /^angle_(.+)$/.exec((input && input.name) || '');
+  return m ? m[1] : '';
+}
+
+/**
+ * De extra vakken zoals ze NU horen te zijn: één per gekozen hoek, met het
+ * nummer dat die hoek al had of het laagste dat vrij is.
+ */
+function hoekVakken() {
+  const gekozen = anglesChosen().map(hoekIdVan).filter(Boolean);
+
+  // Nummers vrijgeven van hoeken die niet meer gekozen zijn.
+  Object.keys(hoekVak).forEach((h) => { if (!gekozen.includes(h)) delete hoekVak[h]; });
+
+  const bezet = new Set(Object.values(hoekVak));
+  gekozen.forEach((h) => {
+    if (hoekVak[h]) return;
+    let n = 1;
+    while (bezet.has(n)) n += 1;
+    hoekVak[h] = n;
+    bezet.add(n);
+  });
+
+  return gekozen.map((h) => ({
+    hoek: h,
+    nr: hoekVak[h],
+    id: extraShotId(hoekVak[h]),
+    naam: hoekNaam(h),
+  })).sort((a, b) => a.nr - b.nr);
+}
+
+/** De vak-ids die op dit moment bij een gekozen hoek horen. */
+function hoekVakIds() {
+  return hoekVakken().map((v) => v.id);
+}
+
 function undecided(card) {
   return MUST_DECIDE_SHOT_IDS.filter((id) => (
     !slotFilled(card, id) && card.slots[id].status !== 'skipped'
@@ -2788,7 +3199,9 @@ function undecided(card) {
 }
 
 function cardReady(card) {
-  return REQUIRED_SHOT_IDS.every((id) => slotFilled(card, id)) && !undecided(card).length;
+  return REQUIRED_SHOT_IDS.every((id) => slotFilled(card, id))
+    && hoekVakIds().every((id) => slotFilled(card, id))
+    && !undecided(card).length;
 }
 
 /**
@@ -2800,12 +3213,24 @@ function cardReady(card) {
  * problem there because there is no problem there.
  */
 function missingRequired(card) {
-  return REQUIRED_SHOT_IDS.filter((id) => !slotFilled(card, id));
+  /* De vaste hoeken eerst, de bijbestelde daarna: de eerste vier zijn wat
+     iedereen stuurt, de rest is wat deze klant erbij koos. Ze staan in dezelfde
+     volgorde als de vakken op de kaart, zodat "mist achterkant en driekwart"
+     van links naar rechts te volgen is. */
+  return [...REQUIRED_SHOT_IDS, ...hoekVakIds()].filter((id) => !slotFilled(card, id));
 }
 
+/**
+ * Hoeveel uploads er op dit moment onderweg zijn.
+ *
+ * Over ALLE vakken van de kaart en niet over SHOT_IDS — sinds 17 september
+ * staan er ook hoekvakken en gratis referentievakken op. Een teller die alleen
+ * de vaste vier telde, zei "niets meer onderweg" terwijl een hoekfoto van 18 MB
+ * nog liep, en dan kon de bestelling weg zonder die foto.
+ */
 function pendingCount() {
   return cards.reduce(
-    (n, card) => n + SHOT_IDS.filter((id) => card.slots[id].status === 'sending').length,
+    (n, card) => n + Object.keys(card.slots).filter((id) => card.slots[id].status === 'sending').length,
     0
   );
 }
@@ -3283,14 +3708,37 @@ function buildCard(card) {
   const meer = buildMeer(card, [about, ratios]);
   toggle.setAttribute('aria-controls', `${slots.id} ${meer.id}`);
 
+  /* ── HET GEZICHT STAAT OP DE KAART EN NIET IN DE LADE — 18 september 2026 ──
+   *
+   * Lucas: *"Het is ook belangrijk dat klanten per product visueel een ander
+   * model kunnen kiezen per product."* In de lade is het onvindbaar: die opent
+   * pas als je vermoedt dat er iets in zit.
+   *
+   * Dat gaat niet in tegen de regel van 9 september ("een kaart toont wat
+   * anders is, niet alles"), want die regel is er tegen een MUUR van velden.
+   * Dit is één regel duimnagels van 52 pixels, en in de rij staat er toch maar
+   * één kaart tegelijk in beeld — het kost dus geen scrollhoogte die iemand
+   * anders had gebruikt.
+   *
+   * Onder de foto's: eerst wat je stuurt, dan wie het draagt. */
+  const gezicht = buildModelKeuze(card);
+
   li.append(head, slots);
   if (refs) li.append(refs);
+  if (gezicht) li.append(gezicht);
   li.append(meer);
   card.el = li;
+  /* Het raster wordt later nog aangeraakt: syncHoekVakken() hangt er een vak in
+     zodra er een hoek bij komt. */
+  card.slotsEl = slots;
   card.numEl = num;
   card.input = input;
   card.stateEl = state;
   card.toggleEl = toggle;
+  /* Een kaart die NU gebouwd wordt terwijl er al hoeken gekozen zijn — dat
+     gebeurt zodra iemand het aantal producten verhoogt — krijgt zijn hoekvakken
+     meteen mee. Zonder deze regel is de nieuwe kaart de enige zonder. */
+  syncHoekVakken(card);
   paintCard(card);
 }
 
@@ -3373,11 +3821,11 @@ function meerSamenvatting(card) {
   const kleur = waarde('colour');
   if (kleur) uit.push(kleur);
 
-  /* Het gezicht: de naam zoals hij in de keuzelijst staat, en niet de sleutel. */
-  if (card.modelSel && card.modelSel.value) {
-    const opt = card.modelSel.options[card.modelSel.selectedIndex];
-    if (opt) uit.push(opt.textContent.trim());
-  }
+  /* Het gezicht: de naam zoals hij op de tegel staat, en niet de sleutel. Leeg
+     betekent "volgt de bestelling" en hoort dus niet in een regel die opsomt
+     wat er AFWIJKT. */
+  const gezicht = modelNaamVan(card);
+  if (gezicht) uit.push(gezicht);
 
   if (card.hoogRes && card.hoogRes.checked) uit.push(c('pu.meerHoog'));
 
@@ -3527,9 +3975,6 @@ function buildAbout(card) {
   const hoog = buildHoogRes(card);
   if (hoog) wrap.appendChild(hoog);
 
-  const gezicht = buildModelKeuze(card);
-  if (gezicht) wrap.appendChild(gezicht);
-
   // THE FIRST CARD CARRIES THE COPY-DOWN, and only the first. A button on
   // every card is 25 buttons doing 25 slightly different things; one, at the
   // top of the list, is the affordance attributes.js asks for.
@@ -3632,38 +4077,143 @@ function buildHoogRes(card) {
 function buildModelKeuze(card) {
   if (!cfg.model || !cfg.model.perProduct) return null;
 
-  const wrap = document.createElement('div');
-  wrap.className = 'pu-model';
-  wrap.setAttribute('role', 'group');
+  const tpl = q('[data-pu-model]');
+  if (!tpl || !tpl.content) return null;
+  const wrap = tpl.content.firstElementChild.cloneNode(true);
+
   wrap.setAttribute('aria-label', `${c('pu.modelH')} — ${c('pu.product', { n: card.n })}`);
+  const kop = wrap.querySelector('.pu-mk-h');
+  if (kop) kop.textContent = c('pu.modelLabel');
+  const hint = wrap.querySelector('.pu-mk-hint');
+  if (hint) hint.textContent = c('pu.modelHint');
 
-  const head = document.createElement('p');
-  head.className = 'pu-model-h';
-  head.textContent = c('pu.modelH');
-
-  const id = `pu-model-${card.key}`;
-  const label = document.createElement('label');
-  label.className = 'pu-model-label';
-  label.htmlFor = id;
-  label.textContent = c('pu.modelLabel');
-
-  const sel = document.createElement('select');
-  sel.className = 'select pu-model-sel';
-  sel.id = id;
-  sel.name = `model_${card.key}`;
-  sel.setAttribute('data-pl-model-sel', '');
-
-  const hint = document.createElement('p');
-  hint.className = 'pu-model-hint';
-  hint.textContent = c('pu.modelHint');
-
-  wrap.appendChild(head);
-  wrap.appendChild(label);
-  wrap.appendChild(sel);
-  wrap.appendChild(hint);
-  card.modelSel = sel;
-  vulModelOpties(sel);
+  const rij = wrap.querySelector('.pu-mk-rij');
+  if (!rij) return null;
+  rij.setAttribute('aria-label', c('pu.modelLabel'));
+  card.modelRij = rij;
+  card.modelNaam = `model_${card.key}`;
+  vulModelTegels(card);
   return wrap;
+}
+
+/**
+ * De waarde die dit product nu draagt: leeg betekent "volg de bestelling".
+ *
+ * Eén functie en geen `card.modelSel.value` meer op vier plekken: de vorm van
+ * het besturingselement is sinds 18 september een rij radio's en niet langer een
+ * keuzelijst, en dat hoort maar op één plek te staan.
+ */
+function modelVan(card) {
+  if (!card || !card.modelRij) return '';
+  const aan = card.modelRij.querySelector('input[type="radio"]:checked');
+  return aan ? aan.value : '';
+}
+
+/** De naam van het gekozen gezicht van dit product, of '' als het de bestelling volgt. */
+function modelNaamVan(card) {
+  const waarde = modelVan(card);
+  if (!waarde) return '';
+  const aan = card.modelRij.querySelector('input[type="radio"]:checked');
+  const naam = aan && aan.closest('.pu-mk-tegel');
+  const t = naam && naam.querySelector('.pu-mk-naam');
+  return ((t && t.textContent) || waarde).trim();
+}
+
+/** Het portret dat bij een gezicht-radio hoort, zoals het in de kiezer staat. */
+function modelBeeld(radio) {
+  const lab = radio && radio.closest('label');
+  const img = lab ? lab.querySelector('.mp-thumb') : null;
+  return (img && (img.currentSrc || img.src)) || '';
+}
+
+/**
+ * De tegelrij van één kaart vullen uit de gezichtenkiezer van de bestelling.
+ *
+ * ── DE OPTIES KOMEN VAN DE RADIO'S EN NIET UIT EEN EIGEN LIJST ─────────────
+ * De tien gedeelde modellen staan in de HTML; de eigen merkmodellen van een
+ * ingelogde klant zet addBrandModels() er later bij. Een tweede lijst hier zou
+ * die tweede groep missen — en dat is precies het gezicht dat een merk het
+ * liefst per product kiest.
+ *
+ * ── DE EERSTE TEGEL IS "HETZELFDE ALS DE BESTELLING" ──────────────────────
+ * Met het portret van het gezicht dat bovenaan gekozen is, zodat je op de kaart
+ * niet hoeft te onthouden wie dat was. Zijn waarde is leeg: wie niets doet,
+ * post niets, en de server hoeft geen lijst met dertig keer hetzelfde gezicht te
+ * lezen.
+ */
+function vulModelTegels(card) {
+  const rij = card && card.modelRij;
+  if (!rij) return;
+  const radios = qa('input[name="model"]');
+  if (!radios.length) return;
+  const tpl = q('[data-pu-model-tegel]');
+  if (!tpl || !tpl.content) return;
+
+  /* De keuze van de klant overleeft het opnieuw vullen — anders springt elke
+     kaart terug naar "hetzelfde als de bestelling" zodra hij bovenaan een ander
+     gezicht aanwijst, en dat is precies het tegenovergestelde van wat een
+     afwijking per product moet doen. */
+  const had = modelVan(card);
+
+  const gekozen = radios.filter((r) => r.checked)[0];
+  const naamBoven = gekozen && gekozen.value && gekozen.value !== 'any' ? modelNaam(gekozen) : '';
+  /* Het portret van de eerste tegel. Staat er bovenaan nog niets aangevinkt —
+     op catalog is de keuze verplicht en ship't er dus niets als gekozen — dan
+     het merkteken van "wij kiezen er een", gelezen uit die tegel en niet als pad
+     overgetypt: het bestand is daar één keer gekozen en hoort daar te blijven. */
+  const anyRadio = radios.filter((r) => r.value === 'any')[0];
+  const beeldBoven = (gekozen && modelBeeld(gekozen)) || (anyRadio && modelBeeld(anyRadio)) || '';
+
+  const tegel = (waarde, beeld, kort, volledig) => {
+    const el = tpl.content.firstElementChild.cloneNode(true);
+    const inp = el.querySelector('input');
+    const img = el.querySelector('.pu-mk-beeld');
+    const naam = el.querySelector('.pu-mk-naam');
+    inp.name = card.modelNaam;
+    inp.value = waarde;
+    /* De volledige zin is de toegankelijke naam, het korte woord staat op het
+       scherm. Twee teksten en niet twee tegels — dezelfde zet als bij "wij
+       kiezen er een" in ModelPicker.astro. */
+    inp.setAttribute('aria-label', volledig);
+    if (beeld) img.src = beeld; else img.remove();
+    naam.textContent = kort;
+    return el;
+  };
+
+  rij.textContent = '';
+  const zelfdeZin = naamBoven ? c('pu.modelSame', { naam: naamBoven }) : c('pu.modelSamePlain');
+  rij.appendChild(tegel('', beeldBoven, c('pu.modelZelfdeKort'), zelfdeZin));
+
+  radios.forEach((r) => {
+    /* Een radio die uitstaat omdat de vraag niet van toepassing is (zie
+       syncStyle en syncBackground) hoort hier ook niet te staan. En "wij kiezen
+       er een" evenmin: dat IS wat "hetzelfde als de bestelling" betekent zolang
+       er bovenaan niets anders staat, en twee tegels voor één antwoord is een
+       keuze die niets verandert. */
+    if (r.disabled || r.value === 'any') return;
+    /* En het gezicht dat bovenaan gekozen IS, krijgt hier geen tweede tegel:
+       dat is precies wat de eerste tegel al betekent, en twee identieke
+       portretten naast elkaar leest als een fout. */
+    if (gekozen && r === gekozen) return;
+    const naam = modelNaam(r);
+    rij.appendChild(tegel(r.value, modelBeeld(r), naam, naam));
+  });
+
+  const terug = qa('input', rij).filter((i) => i.value === had)[0];
+  (terug || rij.querySelector('input')).checked = true;
+  /* De regel op de lade noemt wat er afwijkt, en die kan door het opnieuw
+     vullen veranderd zijn: koos je bovenaan het gezicht dat dit product al
+     apart had, dan volgt dit product de bestelling weer en hoort er geen naam
+     meer te staan. Zonder deze regel bleef daar de oude naam hangen. */
+  if (card.el) paintMeer(card);
+
+  if (!rij.dataset.plGebonden) {
+    rij.dataset.plGebonden = '1';
+    /* Eén luisteraar op de rij en niet één per tegel: de tegels worden opnieuw
+       gemaakt zodra er bovenaan iets verandert, en dan zouden de luisteraars
+       meeverdwijnen of zich opstapelen. */
+    rij.addEventListener('change', () => { paintCard(card); syncCopyDown(cards[0]); });
+  }
 }
 
 /** De naam die bij een gezicht-radio hoort, zoals hij op het scherm staat. */
@@ -3673,51 +4223,9 @@ function modelNaam(radio) {
   return ((t && t.textContent) || radio.value || '').trim();
 }
 
-/**
- * Vul één keuzelijst met de gezichten die op de pagina staan, en houd de keuze
- * van de klant vast. De eerste optie is leeg — "hetzelfde als de bestelling" —
- * met de naam van dat gezicht erbij, zodat je op de kaart niet hoeft te
- * onthouden wat je bovenaan koos. Dezelfde zet als bij ratioSameText().
- */
-function vulModelOpties(sel) {
-  const radios = qa('input[name="model"]');
-  if (!radios.length) return;
-  const had = sel.value;
-
-  const gekozen = radios.filter((r) => r.checked)[0];
-  const zelfde = document.createElement('option');
-  zelfde.value = '';
-  /* "Wij kiezen er een die bij je merk past" is een ZIN en geen naam, en achter
-     "Hetzelfde als de bestelling ·" wordt dat een optie van tien woorden in een
-     keuzelijst van dertig kaarten. Bij die ene waarde dus de korte variant: er
-     valt daar ook geen naam te herhalen. */
-  const naam = gekozen && gekozen.value && gekozen.value !== 'any' ? modelNaam(gekozen) : '';
-  zelfde.textContent = naam
-    ? c('pu.modelSame', { naam: naam })
-    : c('pu.modelSamePlain');
-
-  sel.textContent = '';
-  sel.appendChild(zelfde);
-  radios.forEach((r) => {
-    /* Een radio die uitstaat omdat de vraag niet van toepassing is (zie
-       syncStyle en syncBackground) hoort hier ook niet te staan. */
-    if (r.disabled) return;
-    const opt = document.createElement('option');
-    opt.value = r.value;
-    opt.textContent = modelNaam(r);
-    sel.appendChild(opt);
-  });
-
-  /* De keuze van de klant overleeft het opnieuw vullen — anders springt elke
-     kaart terug naar "hetzelfde als de bestelling" zodra hij bovenaan een ander
-     gezicht aanwijst, en dat is precies het tegenovergestelde van wat een
-     afwijking per product moet doen. */
-  if (had && qa('option', sel).some((o) => o.value === had)) sel.value = had;
-}
-
-/** Alle keuzelijstjes bijwerken: na een wissel bovenaan, en na addOwnModels(). */
+/** Alle tegelrijen bijwerken: na een wissel bovenaan, en na addBrandModels(). */
 function paintModelDefaults() {
-  qa('[data-pl-model-sel]').forEach(vulModelOpties);
+  cards.forEach((card) => { if (card.modelRij) vulModelTegels(card); });
 }
 
 /** Hoeveel producten er op de hoge maat besteld zijn. */
@@ -4008,6 +4516,22 @@ function buildRefs(card) {
      `.is-stil` en geen `hidden`. */
   if (card.n !== 1) hint.classList.add('is-stil');
 
+  /* ── EN WAAR JE WÉL MEER BEELDEN BESTELT ────────────────────────────────
+     De zin hierboven zegt dat deze foto's geen extra beelden opleveren. Dat is
+     waar, en het laat de vraag staan waar dat dan wél kan — precies hier, want
+     dit is het vak waar iemand aan het bijleggen is. Eén regel, onder de
+     uitleg, en op dezelfde manier stil op kaart twee en verder.
+
+     Alleen als er iets bij te bestellen ís: staat de bovengrens op nul, dan is
+     de zin een verwijzing naar een keuze die niet bestaat. */
+  const extraMax = Math.max(0, Math.floor(Number(cfg.maxExtraPerProduct) || 0));
+  const terug = document.createElement('p');
+  if (extraMax) {
+    terug.className = 'pu-ref-terug hint';
+    terug.textContent = c('pu.refTerug', { max: extraMax });
+    if (card.n !== 1) terug.classList.add('is-stil');
+  }
+
   const paint = () => {
     const vol = card.refs >= max;
     add.hidden = vol;
@@ -4064,6 +4588,7 @@ function buildRefs(card) {
      die niemand leest. */
   vakken.append(add);
   strip.append(hint, vakken);
+  if (extraMax) strip.append(terug);
   /* Naar buiten, want de weghaalknop op een vakje moet de knop en de uitleg weer
      terug kunnen zetten — die zit in buildSlot() en kan hier niet bij. */
   card.paintRefs = paintAll;
@@ -4138,6 +4663,14 @@ function paintAngles() {
     const note = q(`[data-pl-angle-note="${id}"]`, angleBox);
     if (note) note.hidden = !b.checked;
   });
+  /* ── EN DE EIS VOLGT DE ZICHTBAARHEID ─────────────────────────────────────
+     De omschrijving bij de zelfbedachte hoek draagt `data-pl-req="1"` en wordt
+     pas verplicht als hij in beeld staat; syncRequired() beslist dat op
+     zichtbaarheid. Die stond hier niet, dus het veld verscheen wél en werd nooit
+     verplicht — gemeten: `verplicht: false` na aanvinken. Bij een zelfbedachte
+     hoek is die zin de hele opdracht, dus dat is geen schoonheidsfoutje: het is
+     een bestelling waarvan wij niet weten wat we moeten maken. */
+  syncRequired();
 
   const rate = q('[data-pl-angle-rate]', angleBox);
   if (rate) {
@@ -4182,6 +4715,15 @@ function paintAngles() {
 function bindAngles() {
   const angleBox = angleBoxEl();
   if (!angleBox) return;
+
+  /* ── DE NAAM VAN DE ZELFBEDACHTE HOEK LOOPT MEE TERWIJL JE TYPT ───────────
+     Wat de klant hier intypt, is de naam boven zijn uploadvak in stap 2 (zie
+     hoekNaam). Zonder deze luisteraar blijft daar "Zelf bedenken" staan tot er
+     iets ANDERS verandert, en dan lijkt het vakje niet bij zijn eigen hoek te
+     horen. `input` en niet `change`: je wilt het zien terwijl je typt. */
+  qa('input[name^="angle_note_eigen-"]', angleBox).forEach((veld) => {
+    veld.addEventListener('input', () => { syncHoekVakken(); });
+  });
   qa('input[data-pl-angle]', angleBox).forEach((b) => {
     b.addEventListener('change', () => {
       paintAngles();
@@ -4190,6 +4732,9 @@ function bindAngles() {
          aantal verandert hier. Zonder deze lus blijft er "het blijven er 4"
          staan terwijl de klant er net een vijfde bij heeft gekozen. */
       cards.forEach((k) => { if (k.paintRefs) k.paintRefs(); });
+      /* En de kaarten krijgen het vak erbij waar die hoek om vraagt. */
+      syncHoekVakken();
+      refreshUploader();
     });
   });
   paintAngles();
@@ -4317,6 +4862,14 @@ function copyAnswersDown(from) {
       dst.value = value;
       touched = true;
     });
+    /* Het gezicht gaat mee op dezelfde voorwaarde als de rest: alleen naar een
+       kaart die zelf nog niets afwijkends heeft. Een product dat je al op een
+       ander gezicht hebt gezet, is een keuze en geen leeg veld. */
+    const gezicht = modelVan(from);
+    if (gezicht && card.modelRij && !modelVan(card)) {
+      const doel = qa('input', card.modelRij).filter((i) => i.value === gezicht)[0];
+      if (doel && !doel.checked) { doel.checked = true; paintCard(card); touched = true; }
+    }
     if (touched) n += 1;
   });
   return n;
@@ -4327,10 +4880,16 @@ function syncCopyDown(card) {
   if (!card || !card.copyRow) return;
   card.copyRow.hidden = cards.length < 2;
   if (!card.copyBtn) return;
-  card.copyBtn.disabled = !PRODUCT_QUESTIONS.some((qn) => {
+  const heeftAntwoord = PRODUCT_QUESTIONS.some((qn) => {
     const el = card.answers && card.answers[qn.id];
     return el && String(el.value || '').trim();
   });
+  /* ── EN HET GEZICHT TELT MEE — 18 september 2026 ─────────────────────────
+     Lucas: *"De klant kiest bij het eerste product een model en kan dan kiezen
+     om deze aan alle producten alvast toe te voegen."* Dat is precies wat deze
+     knop doet; hij keek alleen naar de vragen uit attributes.js, dus een
+     afwijkend gezicht op product 1 liet hem uit staan. */
+  card.copyBtn.disabled = !heeftAntwoord && !modelVan(card);
 }
 
 function buildSlot(card, id) {
@@ -4341,7 +4900,7 @@ function buildSlot(card, id) {
   /* Doorlopende rand = we wachten hierop, onderbroken rand = het mag ontbreken.
      Een attribuut en geen klasse, zodat het naast `data-state` staat en in de
      CSS als hetzelfde soort feit leest. */
-  wrap.dataset.req = isRequiredShot(id) ? '1' : '';
+  wrap.dataset.req = (isRequiredShot(id) || extraSlotNumber(id)) ? '1' : '';
 
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -4454,14 +5013,20 @@ function buildSlot(card, id) {
      kijkt er niet naar, dus "verplicht" of "optioneel" zou er een belofte doen
      die nergens wordt nagekeken. Zie het blok bij skipBtn hieronder, dat om
      dezelfde reden geen overslaan-knop op die vakken zet. */
-  if (!extraSlotNumber(id) && !refShotNumber(id)) {
+  if (!refShotNumber(id)) {
     /* Het woord zelf, klein en in kapitaal naast de naam — NODIG of OPTIONEEL,
        zoals op /concept/bestelrij. Ik heb hier een halve dag een sterretje
        gehad, geleend van het veldlabel in stap 3; dat was consequent en het zag
        er niet uit. Zie het blok bij .pu-slot-eis in ProductUploader.astro. */
     const eis = document.createElement('span');
     eis.className = 'pu-slot-eis';
-    eis.textContent = isRequiredShot(id) ? c('pu.required') : c('pu.optional');
+    /* Een bijbestelde hoek is VERPLICHT. Lucas, 16 september: *"krijgt dan een
+       foto-upload erbij specifiek voor die angle, verplicht."* Hij heeft die
+       hoek besteld en betaald; wij kunnen hem niet maken zonder te zien wat hij
+       ermee bedoelt. Vandaar `|| extraSlotNumber(id)` en niet alleen
+       isRequiredShot(): dat laatste gaat over de vier vaste hoeken uit
+       shots.js, en dit vak bestaat daar niet. */
+    eis.textContent = (isRequiredShot(id) || extraSlotNumber(id)) ? c('pu.required') : c('pu.optional');
     woord.appendChild(eis);
   }
 
@@ -4728,7 +5293,10 @@ function paintCard(card) {
   /* Drie toestanden en niet twee: af, mist een verplichte foto, of wacht op
      één keuze. De derde krijgt zijn eigen zin — zie undecided() hierboven. */
   if (card.stateEl) card.stateEl.textContent = cardStateText(card, ready);
-  SHOT_IDS.forEach((id) => paintSlot(card, id));
+  /* Alle vakken die op deze kaart staan, en niet alleen de vaste vier: sinds 17
+     september kunnen er hoekvakken bij staan, en die werden dan nooit
+     bijgewerkt — een hoekfoto die binnenkwam liet het vakje leeg staan. */
+  Object.keys(card.slots).forEach((id) => paintSlot(card, id));
   /* De regel op de lade hoort bij de kaart en wordt hier bijgewerkt, niet alleen
      bij een verandering ín de lade: het gezicht van de BESTELLING kan wijzigen
      (paintModelDefaults) en dan verandert wat "volgt de bestelling" betekent. */
@@ -4877,15 +5445,48 @@ function paintRij() {
   if (reden) reden.textContent = klaar ? '' : cardStateText(kaart, false);
 }
 
+/* ── BOVEN HOEVEEL PRODUCTEN DE STREEPJES RUIS WORDEN ────────────────────────
+   Twintig producten maal vijf verplichte foto's is honderd streepjes van drie
+   pixels op één regel. Dan telt niemand meer mee: je ziet een gearceerde balk
+   en geen gat. Tot en met acht producten is het een signaal — "bij dit ene
+   product mist er nog één" — en daarboven doet het vierkantje zijn oude werk
+   weer alleen: af of niet af, en openklikken voor de rest. */
+const RAIL_VAKJES_MAX = 8;
+
 /* De balk. Eén vierkantje per product, gekloond uit het <li> in de markup —
    nooit met createElement gebouwd, want dan draagt het geen scope-attribuut en
-   krijgt het geen enkele regel uit de <style> van dit onderdeel. */
+   krijgt het geen enkele regel uit de <style> van dit onderdeel.
+
+   De streepjes ERIN zijn de uitzondering: hoeveel het er zijn hangt af van de
+   hoeken die in stap 1 bijbesteld zijn, dus die kunnen niet in de markup staan.
+   Ze worden hier gemaakt en hun opmaak staat daarom onder `:global()` in
+   ProductUploader.astro — met een <i> en niet een <span>, zodat de selector
+   daar geen klassenaam nodig heeft die iemand hier ooit kan hernoemen. */
 function paintRail() {
   const rail = q('[data-pl-rail]');
   if (!rail || !rail.firstElementChild) return;
   const model = rail.firstElementChild;
   while (rail.children.length < cards.length) rail.appendChild(model.cloneNode(true));
   while (rail.children.length > cards.length) rail.removeChild(rail.lastElementChild);
+
+  /* Dezelfde reeks als op de kaart en in missingRequired(): de vaste hoeken
+     eerst, de bijbestelde daarna. Eén keer bepaald en niet per kaart, want hij
+     is voor elk product in de rij gelijk — zo staat het streepje van de
+     achterkant bij elk product op dezelfde plek en kun je een kolom lezen.
+
+     ── EN DE DRAAGFOTO STAAT ER OOK BIJ ────────────────────────────────────
+     Die is niet verplicht, maar hij houdt de kaart wél tegen tot je hem
+     beantwoordt — sturen of overslaan, zie undecided(). Zonder dat streepje
+     zou een kaart met alle streepjes vol toch niet afgevinkt zijn, en dan
+     wijst de balk naar een gat dat er niet is. Vol betekent hier dus
+     "beantwoord" en niet "opgestuurd". */
+  /* Ontdubbeld: als shots.js ooit een verplichte foto óók als te-beslissen
+     markeert, staat hij hier anders twee keer als streepje. */
+  const vakIds = [...REQUIRED_SHOT_IDS, ...hoekVakIds(), ...MUST_DECIDE_SHOT_IDS]
+    .filter((id, i, rij) => rij.indexOf(id) === i);
+  const vakAf = (kaart, id) => slotFilled(kaart, id)
+    || (mustDecideShot(id) && kaart.slots[id] && kaart.slots[id].status === 'skipped');
+  const toonVakjes = cards.length <= RAIL_VAKJES_MAX && vakIds.length > 0;
 
   cards.forEach((kaart, i) => {
     const li = rail.children[i];
@@ -4898,12 +5499,79 @@ function paintRail() {
     const label = naam || c('pu.railNaam', { i: i + 1 });
     knop.setAttribute('aria-label', `${label} — ${klaar ? c('pu.ready') : cardStateText(kaart, false)}`);
     knop.setAttribute('aria-current', i === rijNu ? 'true' : 'false');
+    /* Roving tabindex: één stop in de balk en niet twintig. Wie met Tab door
+       het formulier loopt, komt op het vierkantje waar hij staat en gaat met
+       de pijltjes verder — zie bindRailToetsen(). */
+    knop.tabIndex = i === rijNu ? 0 : -1;
     const tekst = knop.querySelector('[data-pl-rail-naam]');
     if (tekst) tekst.textContent = label;
+
+    /* ── WAAR HET GAT ZIT ───────────────────────────────────────────────────
+       Het vierkantje zei tot nu toe alleen "af" of "niet af". Eén streepje per
+       verplichte foto zegt er bij hoeveel er nog missen, zonder de kaart te
+       openen. De streepjes staan NIET in het aria-label: dat draagt al de zin
+       uit cardStateText(), die in woorden zegt wat er ontbreekt, en een
+       schermlezer heeft niets aan "streepje 3 van 5". Vandaar aria-hidden op
+       de strook in de markup. */
+    const strip = knop.querySelector('[data-pl-rail-vakjes]');
+    if (strip) {
+      knop.classList.toggle('heeft-vakjes', toonVakjes);
+      if (!toonVakjes) {
+        strip.textContent = '';
+      } else {
+        while (strip.children.length < vakIds.length) strip.appendChild(document.createElement('i'));
+        while (strip.children.length > vakIds.length) strip.removeChild(strip.lastElementChild);
+        vakIds.forEach((id, k) => {
+          strip.children[k].classList.toggle('is-vol', !!vakAf(kaart, id));
+        });
+      }
+    }
     if (!knop.dataset.plRailGebonden) {
       knop.dataset.plRailGebonden = '1';
       knop.addEventListener('click', () => naarKaart(i));
     }
+  });
+}
+
+/* ── PIJLTJESTOETSEN DOOR DE RIJ ─────────────────────────────────────────────
+ *
+ * Op /concept/bestelrij luisterde dit op de hele stap: waar je ook stond, een
+ * pijltje sprong naar het volgende product. Hier niet, en dat is een bewuste
+ * afwijking van het prototype. Het echte formulier staat vol met dingen die de
+ * pijltjes zelf gebruiken — een keuzelijst, een radiogroep, een getalveld, een
+ * vouw — en een formulier dat je keuze verspringt terwijl je een achtergrond
+ * aanwijst, is erger kapot dan een formulier zonder sneltoetsen.
+ *
+ * Dus luistert het op de balk. Daar staat de blik al op "welk product", de
+ * pijltjes betekenen daar niets anders, en het is de patroonafspraak die een
+ * schermlezer ook verwacht bij een roving tabindex. Home en End zitten erbij
+ * omdat ze bij datzelfde patroon horen en niets kosten.
+ *
+ * De poort wordt hier niet omzeild: de balk laat je met een muis ook naar elk
+ * product springen. Wat de poort tegenhoudt is de knop "volgende" — en die
+ * hoort niet op een pijltje te reageren, anders is de poort met één toets van
+ * tafel.
+ */
+function bindRailToetsen() {
+  const rail = q('[data-pl-rail]');
+  if (!rail || rail.dataset.plToetsen) return;
+  rail.dataset.plToetsen = '1';
+  rail.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const naar = { ArrowRight: rijNu + 1, ArrowLeft: rijNu - 1, Home: 0, End: cards.length - 1 }[e.key];
+    if (naar === undefined) return;
+    const doel = Math.max(0, Math.min(cards.length - 1, naar));
+    e.preventDefault();
+    if (doel === rijNu) return;
+    /* Zonder verplaatsing: naarKaart() zet de blik anders in het naamveld van
+       het product, en dan doet het vólgende pijltje niets meer omdat de balk
+       de blik kwijt is. De kaart komt hieronder wél in beeld. */
+    naarKaart(doel, false);
+    const kaart = cards[rijNu];
+    if (kaart && kaart.el) kaart.el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'nearest' });
+    const li = rail.children[rijNu];
+    const knop = li && li.querySelector('[data-pl-rail-knop]');
+    if (knop) { try { knop.focus({ preventScroll: true }); } catch { /* ok */ } }
   });
 }
 
@@ -4921,6 +5589,7 @@ function bindRij() {
     }
     naarKaart(rijNu + 1);
   });
+  bindRailToetsen();
   paintRij();
 }
 
@@ -5941,7 +6610,7 @@ function addBrandModels(me) {
   bindModel();
   syncSummaries();
   /* En de keuzelijstjes per product, want die worden GEVULD uit deze
-     radiogroep — zie vulModelOpties(). Zonder deze regel mist elke productkaart
+     radiogroep — zie vulModelTegels(). Zonder deze regel mist elke productkaart
      precies het gezicht dat een merk het liefst per product kiest: zijn eigen. */
   paintModelDefaults();
 }

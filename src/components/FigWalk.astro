@@ -312,7 +312,20 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
     color: var(--ink-3); letter-spacing: .04em;
     padding-top: .15rem;
   }
-  .wk-step-in { max-width: 58ch; }
+  /* ── min(58ch, 100%) EN NIET 58ch — 17 september 2026 ────────────────────
+     Lucas, met een schermafdruk van zijn telefoon: *"Check elke pagina of de
+     tekst op telefoon wel goed staat. Hier word het afgeknipt."* Deze stappen
+     waren er één van.
+
+     58ch is 339 pixels. Dit blok is een roostercel, en een roostercel zonder
+     `min-width: 0` draagt zijn eigen wensmaat door naar de kolom erboven — ook
+     als het scherm maar 320 of 360 pixels breed is. De kolom werd dus 339 en de
+     hele stap liep 43 pixels het scherm uit, waar `overflow-x: clip` hem
+     afsneed: geen schuifbalk, tekst die ophoudt midden in een woord.
+
+     `min(58ch, 100%)` houdt de leesbreedte op een breed scherm en geeft op een
+     smal scherm gewoon de ruimte die er is. */
+  .wk-step-in { max-width: min(58ch, 100%); min-width: 0; }
   .wk-step-n { margin: 0; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
   .wk-step-h {
     margin: .35rem 0 0;

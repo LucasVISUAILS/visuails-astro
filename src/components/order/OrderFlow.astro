@@ -665,6 +665,7 @@ for (const l of ['en', 'nl'] as const) {
     missingH: s.missingH,
     missingHOne: s.missingHOne,
     missingMore: s.missingMore,
+    missingTap: s.missingTap,
     allDoneOne: s.allDoneOne,
     progressExtra: s.progressExtra,
     progressExtraOne: s.progressExtraOne,
@@ -712,6 +713,10 @@ for (const l of ['en', 'nl'] as const) {
     modelLabel: l === 'nl' ? 'Model voor dit product' : 'Model for this product',
     modelSame: l === 'nl' ? 'Hetzelfde als de bestelling · {naam}' : 'Same as the order · {naam}',
     modelSamePlain: l === 'nl' ? 'Hetzelfde als de bestelling' : 'Same as the order',
+    /* Onder een duimnagel van 52 pixels past geen zin. Het korte woord staat op
+       de tegel, de hele zin blijft de toegankelijke naam — dezelfde zet als bij
+       de tegel "wij kiezen er een" in ModelPicker.astro. */
+    modelZelfdeKort: l === 'nl' ? 'Zelfde' : 'Same',
     /* ── DE LADE — 9 september 2026 ────────────────────────────────────────
      * Zie de noot bij buildMeer() in pipeline.js. `meerVolgt` is wat er staat
      * als er niets afwijkt, en dat is bij verreweg de meeste producten het
@@ -782,6 +787,19 @@ for (const l of ['en', 'nl'] as const) {
        gevuld vak en betekent daar "gooi mijn foto weg". Dit haalt een LEEG vakje
        weg dat per ongeluk is aangevraagd, en dat is een andere handeling. */
     refDrop: l === 'nl' ? 'Weghalen' : 'Remove slot',
+    /* ── EN WAAR JE WÉL MEER BEELDEN BESTELT — 17 september 2026 ───────────
+       De regel hierboven zegt dat extra foto's geen extra beelden opleveren, en
+       dat klopt. Maar hij liet de vraag staan waar je dat dan wél doet — en die
+       vraag stelt zich juist hier, op het scherm waar iemand foto's staat bij te
+       leggen. Op /concept/bestelrij stond dit antwoord er wel en bij het
+       overzetten is het eruit gevallen.
+
+       De richting is de hele zin: die stuur je ons, deze krijg je van ons. Zonder
+       dat onderscheid leest "meer beelden" als "meer uploaden". Het aantal komt
+       uit pricing.js via de config en wordt niet overgetypt. */
+    refTerug: l === 'nl'
+      ? 'Meer beelden terug? Dat bestel je in stap 1 — tot {max} extra per product. Die foto’s hierboven stuur jij ons; die beelden krijg je van ons.'
+      : 'More images back? You order those in step 1 — up to {max} extra per product. The photos above you send us; those images you get from us.',
 
     // ── The per-product questions ────────────────────────────────────────
     // Words only. src/data/attributes.js owns them the way shots.js owns the
@@ -841,7 +859,7 @@ const REQUIRED_COPY = [
   'total.hoogRes', 'total.voorrang',
   's1.kitModel', 's1.kitBg', 's1.kitCh', 's1.kitRatio', 's1.kitLook',
   'pu.hoogResLabel', 'pu.hoogResHint',
-  'pu.modelH', 'pu.modelLabel', 'pu.modelSame', 'pu.modelSamePlain', 'pu.modelHint',
+  'pu.modelH', 'pu.modelLabel', 'pu.modelSame', 'pu.modelSamePlain', 'pu.modelZelfdeKort', 'pu.modelHint',
   'pu.meerH', 'pu.meerVolgt', 'pu.meerHoog', 'pu.meerRatio',
   'rung.one', 'rung.many',
   'plan.compare', 'plan.steady', 'plan.cta',
@@ -874,7 +892,7 @@ const REQUIRED_COPY = [
   'pu.ownLook', 'pu.ownLookH', 'pu.ownLookHint', 'pu.ownLookNone',
   'pu.extraSlot',
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
-  'pu.missingH', 'pu.missingHOne', 'pu.missingMore',
+  'pu.missingH', 'pu.missingHOne', 'pu.missingMore', 'pu.missingTap',
   'pu.allDone', 'pu.allDoneOne',
   'pu.product', 'pu.add', 'pu.dropCard', 'pu.toggle', 'pu.placeIn',
   ...SHOT_IDS.map((id) => `pu.shot.${id}`),
@@ -883,7 +901,7 @@ const REQUIRED_COPY = [
   // in de blob, want een dienst die hem morgen wél krijgt, hoort geen kaart met
   // een leeg label te tekenen — dat is precies wat deze lijst voorkomt.
   'pu.ratioH', 'pu.ratioHint', 'pu.ratioSame', 'pu.ratioImage',
-  'pu.refAdd', 'pu.refHint', 'pu.refLead', 'pu.refSlot', 'pu.refFull', 'pu.refDrop',
+  'pu.refAdd', 'pu.refHint', 'pu.refLead', 'pu.refSlot', 'pu.refFull', 'pu.refDrop', 'pu.refTerug',
   ...LIFESTYLE_RATIOS.map((r) => `ratio.name.${r.id}`),
   // The product questions, generated from src/data/attributes.js rather than
   // typed, for the reason the shot names are: a second question added there
@@ -2957,6 +2975,36 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         Onder 1100 pixels valt het blok weg; het totaal staat daar al onderaan
         het scherm vastgeplakt. Zie de noot in BestelOverzicht.astro. */}
     <BestelOverzicht lang={lang} service={wire} isSample={isSample} />
+
+    {/* ── DE BALK ONDERAAN — 17 september 2026 ─────────────────────────────
+        Lucas: *"De lifestyle upsell mag weg [uit stap 1]. Ik wil de lifestyle
+        als banner pop up onderaan het scherm krijgen die de klant tijdens
+        product invullen kan inklappen en uitklappen."*
+
+        Hij stond in de gewone slot, dus IN stap 1 — een blok van 234 pixels
+        (313 op een telefoon) midden tussen het totaal en de instellingen, en
+        daarmee het grootste blok van die stap terwijl het het enige is dat geen
+        vraag stelt die de klant zelf kwam beantwoorden.
+
+        Hier staat hij BUITEN de stappen. Dat moet ook: een stap die niet aan de
+        beurt is staat op `display: none`, en een `position: fixed` binnen zo'n
+        stap is gewoon onzichtbaar. Zie `.pl-combi-balk` in de stijl hieronder
+        voor wanneer hij verschijnt.
+
+        Een eigen slot en niet vast ingebouwd, om dezelfde reden als bij `look`
+        en `model`: welke combinatie er te koop is, hangt van de dienst af, en
+        de pagina die de dienst kiest hoort dat te zeggen. Een lifestylepagina
+        geeft hem simpelweg niet mee. */}
+    <div class="pl-combi-balk" data-pl-combi-balk hidden>
+      <button type="button" class="pl-combi-knop" data-pl-combi-schuif aria-expanded="false" aria-controls="pl-combi-in">
+        <span class="pl-combi-woord" data-pl-combi-woord></span>
+        <span class="pl-combi-prijs" data-pl-combi-prijs></span>
+        <svg class="pl-combi-pijl" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="pl-combi-in" id="pl-combi-in" hidden>
+        <slot name="combi" />
+      </div>
+    </div>
   </form>
 </section>
 
@@ -3181,7 +3229,98 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
      Specificity is (0,3,0) — :not() contributes its argument's weight — against
      Astro's zero-weight :where(.astro-HASH). Nothing in this block competes. */
-  .pl-form { --pl-measure: 880px; }
+  /* ── DE LEESMAAT — 17 september 2026 ──────────────────────────────────────
+     Lucas: *"De ruimte in het bestelformulier is ook heel slecht en mag veel
+     meer ruimte gebruiken dan nu, het voelt heel krap allemaal nu."*
+
+     880 → 1000. Gemeten op 1440: de linkerkolom van deze grid is ongeveer 1040
+     pixels breed (1440 min het overzicht van 340, min de paginamarges en de
+     tussenruimte), en de stap gebruikte daar 880 van — ruim 150 pixels die
+     nergens heen gingen terwijl de vakken ernaast krap stonden.
+
+     DE LOPENDE TEKST WORDT NIET BREDER. `.pl-lead` houdt zijn eigen 62ch en de
+     uitlegregels hun eigen maat; wat breder wordt zijn de RASTERS — de vier
+     uploadvakken, de hoektegels, de gezichtenstrook. Precies de dingen die te
+     klein stonden. Een leesregel van 1000 pixels zou het tegenovergestelde
+     doen van wat hier gevraagd is. */
+  /* ══════════════════════════════════════════════════════════════════════════
+     DE LIFESTYLE-BALK ONDERAAN — 17 september 2026
+     ══════════════════════════════════════════════════════════════════════════
+
+     Lucas: *"Ik wil de lifestyle als banner pop up onderaan het scherm krijgen
+     die de klant tijdens product invullen kan inklappen en uitklappen."*
+
+     ── HIJ BEGINT DICHT, EN DAT IS EEN KEUZE ──────────────────────────────────
+     Dit ligt OVER het scherm waar de klant aan het werk is. Open beginnen zou
+     betekenen dat een aanbod de taak bedekt op het moment dat iemand net zijn
+     eerste foto sleept. Dicht is hij een strook van één regel met de vraag en de
+     twee bedragen erop — dat verkoopt nog steeds, en het kost geen ruimte die
+     de klant nodig heeft. Eén klik en hij staat open.
+
+     ── ALLEEN TIJDENS STAP 2 ──────────────────────────────────────────────────
+     `.is-stap2` wordt door pipeline.js gezet. Op stap 1 staat op een telefoon al
+     de totaalbalk onderaan vastgeplakt, en twee balken op elkaar is één te veel;
+     op stap 3 tot 5 is de klant klaar met kiezen en is een aanbod een
+     onderbreking van het afrekenen.
+
+     ── BOVEN DE COOKIEBALK ────────────────────────────────────────────────────
+     Zelfde reden als bij de totaalbalk, en die is uitgezocht: de consentbalk is
+     op 390px 218 pixels hoog en draagt --z-bar, dus alles daaronder is
+     onaanraakbaar zolang hij open staat. */
+  .pl-combi-balk {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: calc(var(--z-bar) + 1);
+    background: var(--surface);
+    border-top: 1px solid var(--line-strong);
+    box-shadow: 0 -6px 24px rgb(0 0 0 / .1);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    padding: 0 clamp(1rem, 4vw, 2rem) env(safe-area-inset-bottom);
+    max-height: 82vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  /* Verborgen tot pipeline.js weet welke stap er staat. Zonder JS is er geen
+     wizard en dus ook geen stap 2: dan hoort deze balk er niet te zijn. */
+  .pl-form:not(.is-live) .pl-combi-balk { display: none; }
+
+  .pl-combi-knop {
+    width: 100%; display: flex; align-items: center; gap: .9rem;
+    padding: .85rem 0;
+    background: none; border: 0; color: inherit; font: inherit;
+    text-align: left; cursor: pointer;
+  }
+  .pl-combi-knop:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; border-radius: var(--r-sm); }
+  .pl-combi-woord { font-weight: 600; font-size: .95rem; }
+  .pl-combi-prijs {
+    flex: 1; min-width: 0;
+    font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em;
+    color: var(--ink-2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pl-combi-pijl { width: 18px; height: 18px; flex: none; rotate: 180deg; transition: rotate var(--dur-1) var(--ease); }
+  .pl-combi-balk.is-open .pl-combi-pijl { rotate: 0deg; }
+  .pl-combi-in { padding-bottom: 1.1rem; }
+  /* Binnen de balk heeft het blok geen eigen kader meer nodig: de balk IS het
+     kader. */
+  .pl-combi-in :global(.ck) { border: 0; padding: 0; margin: 0; background: none; }
+  /* De vraag staat al op de knop van de balk — zie [data-pl-combi-woord], die
+     hem daar letterlijk uit dit blok overneemt. Hem in het opengeklapte blok
+     nóg een keer tonen zet dezelfde zin twee regels boven zichzelf. */
+  .pl-combi-in :global(.ck-vraag) { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pl-combi-pijl { transition: none; }
+  }
+
+  .pl-form { --pl-measure: 1000px; }
+
+  /* ── EN DE VELDEN STAAN VERDER UIT ELKAAR ─────────────────────────────────
+     `.field` is een globale primitieve met 1,1rem onder elk veld; dat is in een
+     korte formulier prima en in een formulier van dertig velden een muur. Hier
+     1,75rem, en de regels binnen een veld ook iets ruimer. Gescopeerd op het
+     bestelformulier: de rest van de site heeft dit probleem niet. */
+  .pl-form :global(.field) { margin-bottom: 1.75rem; gap: .55rem; }
 
   /* ── TWEE KOLOMMEN, MET HET OVERZICHT ERNAAST — 12 september 2026 ────────
      Richting B, door Lucas gekozen uit vier: links de vragen, rechts een
@@ -3281,7 +3420,9 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      ring appears for keyboard users and never as a stray outline after a click. */
   .pl-h:focus { outline: none; }
   .pl-h:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
-  .pl-lead { margin-top: .7rem; color: var(--ink-3); max-width: 62ch; }
+  /* .95rem en niet .7: de kop staat op regelafstand 1,2 en plakt daarmee aan
+     zijn eigen inleiding. Zie de noot bij --pl-measure. */
+  .pl-lead { margin-top: .95rem; color: var(--ink-3); max-width: 62ch; line-height: 1.65; }
   /* Task #271e, 2026-07-29: distinct from .pl-lead only in weight and size —
      smaller and italic, the way a caption reads next to a heading, not a
      second sentence of the same lead. It says what pipeline.js's

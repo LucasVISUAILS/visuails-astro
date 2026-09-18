@@ -69,7 +69,7 @@ import { styles as STYLES } from '../../src/data/styles.js';
 /* De acht hoeken die bij een catalogset bijbesteld kunnen worden. De LIJST staat
    hier en niet een reguliere expressie op de veldnaam: `angle_` is een naam die
    iedereen kan verzinnen, en een verzonnen hoek hoort niet mee te tellen. */
-import { ANGLE_IDS } from '../../src/data/angles.js';
+import { TELBARE_ANGLE_IDS } from '../../src/data/angles.js';
 const RATIO_IDS = new Set(LIFESTYLE_RATIOS.map((r) => r.id));
 import {
   ATTENDED_PER_WINDOW,
@@ -885,7 +885,12 @@ export async function onRequestPost({ request, env, waitUntil }) {
      veld een lege string, dus een test op null telt élke hoek mee en rekent elke
      bestelling het maximum. Precies dat gebeurde bij de eerste run — een
      bestelling van € 1.020 werd € 2.412. */
-  const angles = ANGLE_IDS.filter((id) => get(`angle_${id}`) !== '');
+  /* TELBARE_ANGLE_IDS en niet ANGLE_IDS — 17 september 2026. De zelfbedachte
+     hoek ("Zelf bedenken", de vierde plek in elke groep) staat niet in ANGLES en
+     viel dus buiten deze filter: de klant koos hem, kreeg er een verplicht
+     uploadvak per product bij, en de rekening wist er niets van. Zie de noot bij
+     EIGEN_ANGLE_IDS in src/data/angles.js. */
+  const angles = TELBARE_ANGLE_IDS.filter((id) => get(`angle_${id}`) !== '');
   let hoogResCount = 0;
   for (const [k, v] of form.entries()) {
     if (typeof k !== 'string') continue;

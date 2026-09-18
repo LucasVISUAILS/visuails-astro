@@ -487,7 +487,16 @@ export const COPY = {
     toFolderWhy: 'Faster, less precise: we read the folder name as the product, and we usually have to come back to you to ask what is what.',
     toCards: 'Fill them in per product instead',
     toCardsWhy: 'Takes longer and needs nothing from us afterwards — every photo is already against the right product and the right angle.',
-    required: 'Required',
+    /* ── KORT, WANT HET STAAT NAAST DE NAAM — 17 september 2026 ────────────
+       'Required' naast 'Back' past in één regel; naast 'One detail, off the
+       body' niet, en dan wikkelt het woord naar de volgende regel en beginnen
+       de uitlegregels van de vier vakken op verschillende hoogtes. Gemeten na
+       het ruimer zetten van de kaart: twee van de zes vakken wikkelden.
+
+       'Needed' is vier tekens korter en zegt hetzelfde — het is bovendien het
+       woord dat /concept/bestelrij gebruikt ('nodig'), en dat is de plaat waar
+       Lucas naar wees toen hij zei dat die look rustiger oogt. */
+    required: 'Needed',
     optional: 'Optional',
     /* ── DE RIJ — 17 september 2026 ──────────────────────────────────────
        Eén product tegelijk, met twee pijlen eronder. `rijTel` is de regel boven
@@ -550,7 +559,16 @@ export const COPY = {
     missingH: '{n} products are not finished yet',
     missingHOne: '1 product is not finished yet',
     missingBody: 'You can send the order anyway. Production then starts once the missing photos are in, and we will contact you to ask for them — which usually costs a day.',
+    /* ── HET OVERZICHT IS EEN RASTER GEWORDEN — 17 september 2026 ─────────
+       Dit was een opsomming die na zes regels ophield met "en nog 19". Precies
+       het moment waarop iemand wíl weten welke negentien. /concept/bestelrij
+       had er een raster van tegels van gemaakt: *"een raster waarin je de gaten
+       ZIET staan en er met één klik heen springt."* Dat is het nu ook hier.
+
+       `missingMore` blijft staan voor het geval de lijst ooit weer afgekapt
+       moet worden; hij wordt op dit moment niet gebruikt. */
     missingMore: 'and {n} more',
+    missingTap: 'Tap a product to jump straight to it.',
     missingFix: 'Add the photos',
     missingGo: 'Send without them',
     progressExtra: '{n} optional photos added',
@@ -575,7 +593,9 @@ export const COPY = {
     toFolderWhy: 'Sneller, minder precies: we lezen de mapnaam als het product, en meestal moeten we daarna bij je terugkomen om te vragen welke foto bij welk product hoort.',
     toCards: 'Toch per product invullen',
     toCardsWhy: 'Kost meer tijd en daarna niets meer van ons — elke foto staat dan al bij het juiste product en de juiste hoek.',
-    required: 'Verplicht',
+    /* Zie de noot bij de Engelse tegenhanger: 'Nodig' past naast een lange
+       vaknaam waar 'Verplicht' wikkelt, en het is het woord uit het concept. */
+    required: 'Nodig',
     optional: 'Optioneel',
     /* Zie de Engelse tegenhanger. */
     vorige: 'Vorige',
@@ -613,6 +633,7 @@ export const COPY = {
     missingHOne: '1 product is nog niet af',
     missingBody: 'Je kunt de bestelling toch versturen. De productie start dan pas als de ontbrekende foto’s binnen zijn, en we nemen contact met je op om ze te vragen — dat kost meestal een dag.',
     missingMore: 'en nog {n}',
+    missingTap: 'Klik op een product om er meteen heen te gaan.',
     missingFix: 'Foto’s toevoegen',
     missingGo: 'Toch versturen',
     progressExtra: '{n} optionele foto’s toegevoegd',

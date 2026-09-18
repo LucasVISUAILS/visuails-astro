@@ -161,10 +161,18 @@ const c = nl ? {
     border: 1px solid var(--line);
     background: var(--paper-2);
   }
+  /* ── DIT BLOK STOND ONDER DE LEESGRENS — 17 september 2026 ───────────────
+     Gemeten: de kop op 11,2 px en elk label op 10,6 px, allemaal in kapitalen,
+     mono en lichtgrijs — de zwaarste combinatie om te lezen die er is. En dit
+     is nou juist het blok waarin iemand NAKIJKT wat hij koopt voordat hij
+     betaalt: aantal producten, aantal beelden, gezicht, achtergrond, totaal.
+     De ondergrens van dit project is 11,5 px; labels staan nu op .72rem en de
+     kop op .74rem. De verhouding met het antwoord ernaast (.88rem) en met het
+     bedrag (1.5rem) blijft dezelfde, dus de rangorde verandert niet. */
   .bo-h {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: .7rem; font-weight: 400; letter-spacing: .06em; text-transform: uppercase;
+    font-size: .74rem; font-weight: 400; letter-spacing: .06em; text-transform: uppercase;
     color: var(--ink-3);
   }
 
@@ -195,7 +203,7 @@ const c = nl ? {
   }
   .bo-regel dt {
     font-family: var(--font-mono);
-    font-size: .66rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+    font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
   }
   .bo-regel dd {
     margin: 0; text-align: end; font-size: .88rem; line-height: 1.4; color: var(--ink);
@@ -210,7 +218,7 @@ const c = nl ? {
   }
   .bo-totaal-l {
     font-family: var(--font-mono);
-    font-size: .66rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
+    font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3);
     flex: 1 1 auto;
   }
   .bo-totaal-b {

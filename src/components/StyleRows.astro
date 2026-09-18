@@ -274,7 +274,15 @@ const c = nl ? {
 };
 ---
 
-<section class="sr" id="looks">
+{/* ── GEEN id="looks" HIER — 17 september 2026 ─────────────────────────────
+    Dat stond er wél, en op /catalog, /lifestyle en /video staat het óók op de
+    <section class="paneel"> die dit onderdeel omsluit. Twee elementen met
+    hetzelfde id op één pagina: ongeldige HTML, en een browser die `#looks`
+    oplost pakt de eerste — het werkte dus bij toeval. Het anker hoort bij de
+    PAGINA (die weet waar het blok begint, inclusief zijn eigen bovenruimte) en
+    niet bij dit onderdeel. Zet dit onderdeel ooit op een pagina die zelf geen
+    anker heeft, geef die pagina dan een id — niet dit bestand. */}
+<section class="sr">
   <div class="container">
     <header class="sr-top">
       <div class="sr-top-woord">
@@ -760,8 +768,11 @@ const c = nl ? {
     text-transform: uppercase; color: var(--ink-3); text-align: center; text-wrap: balance;
   }
   /* De twee bijschriften dragen de zin: JOUW FOTO links, GELEVERD rechts. */
+  /* .72rem en niet .68: gemeten 10,9 px, net onder de 11,5 die dit project
+     aanhoudt — en dit is het bijschrift dat zegt welk van de twee beelden JOUW
+     foto is en welk het geleverde. Dat is het hele punt van de rij. */
   .sr-k-bij {
-    margin: .5rem 0 0; font-family: var(--font-mono); font-size: .68rem;
+    margin: .5rem 0 0; font-family: var(--font-mono); font-size: .72rem;
     letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3;
   }
   .sr-k-bij.is-na { color: var(--ink-2); }

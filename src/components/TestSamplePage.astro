@@ -229,11 +229,25 @@ const vink = 'M20 6L9 17l-5-5';
   <section class="paneel" aria-labelledby="ts-lc">
     <div class="paneel-kop">
       <p class="etiket">{nl ? 'Wat je terugkrijgt' : 'What you get back'}</p>
-      <h2 id="ts-lc" class="hoog hoog-2">{nl ? 'Zo ziet je proefbeeld eruit als het klaar is.' : 'This is what your sample looks like when it’s done.'}</h2>
-      <p class="lopend">{nl ? 'Eén beeld voor €1, op de plek waar het straks staat. Rechts de telefoonfoto die erin ging.' : 'One image for €1, in the place it ends up. On the phone, the shot that went in.'}</p>
+      {/* ── "ÉÉN BEELD VOOR €1" IS HIER WEG — 17 september 2026 ──────────────
+          Dat stond er, dertig centimeter onder de chip die "4 foto's, of 3"
+          zegt. Twee zinnen op één pagina die elkaar tegenspreken, en de klant
+          gelooft de zuinigste. Lucas, 8 augustus 2026: *"test sample is niet 1
+          beeld maar 1 product volledig geleverd, dus bij keuze catalog 4
+          beelden en lifestyle 3 beelden. Dit is belangrijk om aan te passen
+          want dit laat de waarde zien van de test sample."* Precies hier ging
+          die waarde verloren.
+
+          De PLAAT toont er één — `stil` neemt de eerste slide en daarvan het
+          eerste beeld — dus de zin zegt nu wat je ziet én wat je krijgt, en de
+          aantallen komen uit pricing.js zodat ze niet los kunnen lopen. */}
+      <h2 id="ts-lc" class="hoog hoog-2">{nl ? 'Zo ziet je proef eruit als hij klaar is.' : 'This is what your sample looks like when it’s done.'}</h2>
+      <p class="lopend">{nl
+        ? `Eén van de ${CATALOG_IMAGES} catalogbeelden, op de plek waar het straks staat. Rechts de telefoonfoto die erin ging — voor ${SAMPLE.price} krijg je de hele set.`
+        : `One of the ${CATALOG_IMAGES} catalog images, in the place it ends up. On the phone, the shot that went in — for ${SAMPLE.price} you get the whole set.`}</p>
     </div>
     <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
-      titel={nl ? 'Zo ziet je proefbeeld eruit als het klaar is.' : 'This is what your sample looks like when it’s done.'} />
+      titel={nl ? 'Zo ziet je proef eruit als hij klaar is.' : 'This is what your sample looks like when it’s done.'} />
   </section>
 
 
