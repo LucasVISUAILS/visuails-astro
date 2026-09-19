@@ -1289,6 +1289,9 @@ CREATE TABLE IF NOT EXISTS plan_queue (
   window_start     TEXT,
   window_end       TEXT,
   asap             INTEGER NOT NULL DEFAULT 1,
+  -- 0050 · het gezicht per product ('ava' | 'c12' | NULL = volg de vaste look);
+  -- zie migrations/0050-abonnement-gezicht-per-product.sql.
+  model            TEXT,
   -- Zodra hij is opgepakt: naar welke bestelling. Niet verwijderen maar
   -- markeren, want een klant hoort te kunnen zien wat er met zijn item gebeurd
   -- is, en een verdwenen rij is niet te onderscheiden van een rij die er nooit
@@ -1374,6 +1377,10 @@ ALTER TABLE subscriptions ADD COLUMN vat_treatment TEXT;
 ALTER TABLE subscriptions ADD COLUMN vat_rate      REAL;
 ALTER TABLE subscriptions ADD COLUMN vat_country   TEXT;
 ALTER TABLE subscriptions ADD COLUMN vat_number    TEXT;
+-- De versie van de zakelijke verklaring en de herroepingsverklaring waarbij het
+-- vinkje is gezet (migratie 0049). NULL bij abonnementen van vóór 19 sep 2026.
+ALTER TABLE subscriptions ADD COLUMN business_declaration TEXT;
+ALTER TABLE subscriptions ADD COLUMN withdrawal_consent   TEXT;
 
 CREATE TABLE IF NOT EXISTS subscription_invoices (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,

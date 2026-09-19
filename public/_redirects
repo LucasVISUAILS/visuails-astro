@@ -83,6 +83,12 @@
 # Both languages land on /o. There is no /nl/o: the portal is one Function
 # that reads the order's own `lang` column, so it answers in the language the
 # order was placed in rather than the language of the URL that reached it.
+# /nl/account — Studio leeft op /account zonder taalprefix (de taal zit in een
+# cookie en ?lang=). Een Nederlandse bezoeker die de prefix meetypt kreeg een
+# Engelse 404. Gevonden 19 september 2026.
+/nl/account             /account?lang=nl    301
+/nl/account/            /account?lang=nl    301
+/nl/account/*           /account/:splat     301
 /order-status           /o                  301
 /order-status/          /o                  301
 /nl/order-status        /o                  301

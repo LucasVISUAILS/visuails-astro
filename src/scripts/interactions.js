@@ -48,6 +48,9 @@ const I18N = {
     tyPayNote: 'This order is not paid yet. Production starts once the payment comes through.',
     tyPayCta: 'Complete the payment',
     tyPaidNote: 'The payment came through. You will get a confirmation and the invoice by email.',
+    tyCheckingNote: 'Checking with the bank whether the payment came through…',
+    tyUnpaidNote: 'The payment was not completed — cancelled, declined or the link expired. Nothing has been charged. The order is recorded under this reference; pay now, or later through the link in your confirmation email.',
+    tyRetryCta: 'Pay again',
     tySignedIn: 'You are signed in — the order is already in VISUAILS Studio.',
     tsSending: 'Uploading…',
     tsDone: 'Uploaded',
@@ -85,6 +88,9 @@ const I18N = {
     tyPayNote: 'Deze bestelling is nog niet betaald. Zodra de betaling binnen is, gaan we aan de slag.',
     tyPayCta: 'Rond de betaling af',
     tyPaidNote: 'De betaling is binnengekomen. Je krijgt de bevestiging en de factuur per mail.',
+    tyCheckingNote: 'We kijken bij de bank of de betaling binnen is…',
+    tyUnpaidNote: 'De betaling is niet afgerond — afgebroken, geweigerd of de link was verlopen. Er is niets afgeschreven. Je bestelling staat genoteerd onder dit kenmerk; betaal nu, of later via de link in je bevestigingsmail.',
+    tyRetryCta: 'Opnieuw betalen',
     tySignedIn: 'Je bent ingelogd — de bestelling staat al in VISUAILS Studio.',
     tsSending: 'Uploaden…',
     tsDone: 'Geüpload',
@@ -1091,6 +1097,31 @@ function initThankYou() {
   const vraag = document.querySelector('[data-ty-payq]');
   if (vraag) vraag.hidden = !pay;
 
+  /* De kop volgt de toestand: nog betalen, of net betaald. Zie de noot bij
+     `titlePay` in ThankYouPage.astro. Een annulering (verderop) gaat vóór en
+     overschrijft dit weer. */
+  /* Een aanvraag (HoldingPage.astro stuurt ?soort=aanvraag mee): geen
+     productieverhaal en geen levertijd, maar het antwoord dat er komt. */
+  if (params.get('soort') === 'aanvraag') {
+    const flow = document.querySelector('[data-ty-flow]');
+    if (flow && flow.dataset.tyFlowRequest) flow.textContent = flow.dataset.tyFlowRequest;
+    document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
+  }
+
+  const kop = document.querySelector('[data-ty-title]');
+  if (kop) {
+    if (pay && kop.dataset.tyTitlePay) {
+      kop.textContent = kop.dataset.tyTitlePay;
+      const balk = document.querySelector('[data-ty-bar]');
+      if (balk) balk.setAttribute('data-ty-pay-state', '');
+    }
+    /* `?paid=` is de terugkeer van Mollie, en Mollie stuurt óók terug als de
+       betaling mislukte of werd afgebroken — de terugkeer-URL is per betaling
+       één adres. Dus eerst een neutrale kop; verifyPaid() hieronder vraagt
+       /api/order-status en zet dan pas "Betaald" of "Niet afgerond". */
+    else if (betaald && !params.get('ref') && kop.dataset.tyTitleChecking) kop.textContent = kop.dataset.tyTitleChecking;
+  }
+
   /* Wie al is ingelogd, hoeft geen inloglink: dan zegt de regel dat. */
   const signin = document.querySelector('[data-ty-signin]');
   if (signin && typeof fetch === 'function') {
@@ -1107,8 +1138,10 @@ function initThankYou() {
   if (betaald && !params.get('ref')) {
     const klaar = document.createElement('p');
     klaar.className = 'ty-paid-note';
-    klaar.textContent = d.tyPaidNote;
+    klaar.textContent = d.tyCheckingNote;
+    klaar.setAttribute('role', 'status');
     box.append(klaar);
+    verifyPaid(ref, klaar, d);
   }
 
   if (pay) {
@@ -1161,6 +1194,52 @@ function initThankYou() {
  * Een bezoeker die gewoon besteld heeft mag NOOIT een annuleringsmelding zien
  * omdat er iets omviel; dat is een veel duurdere fout dan de melding missen.
  */
+/*
+ * ── IS ER ÉCHT BETAALD? — 19 september 2026 ─────────────────────────────────
+ *
+ * Dezelfde wedloop als bij checkCancelled(): de klant komt van Mollie terug
+ * terwijl de webhook onderweg is. Vier pogingen over ongeveer tien seconden;
+ * zolang de bank nog niet heeft geantwoord, blijft de kop neutraal. Zegt het
+ * eindpunt `paid`, dan wordt het "Betaald — we gaan aan de slag." Blijft het
+ * na de laatste poging onbetaald én betaalbaar, dan is de betaling afgebroken
+ * of mislukt: de kop zegt dat, en er komt een knop naar /api/order-pay die een
+ * verse checkout aanmaakt. Faalt het eindpunt zelf, dan blijft de neutrale
+ * tekst staan — nooit "betaald" op de gok, en nooit "mislukt" op de gok.
+ */
+function verifyPaid(ref, noot, d, attempt = 0) {
+  const DELAYS = [0, 2000, 3000, 5000];
+  if (attempt >= DELAYS.length) return;
+  window.setTimeout(() => {
+    fetch(`/api/order-status?ref=${encodeURIComponent(ref)}`, { headers: { Accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (!s) return;
+        const kop = document.querySelector('[data-ty-title]');
+        const balk = document.querySelector('[data-ty-bar]');
+        if (s.paid) {
+          noot.textContent = d.tyPaidNote;
+          if (kop && kop.dataset.tyTitlePaid) kop.textContent = kop.dataset.tyTitlePaid;
+          return;
+        }
+        if (s.cancelled) return; /* checkCancelled() neemt het over */
+        if (attempt + 1 < DELAYS.length) { verifyPaid(ref, noot, d, attempt + 1); return; }
+        if (!s.payable) return;
+        noot.textContent = d.tyUnpaidNote;
+        if (kop && kop.dataset.tyTitleUnpaid) kop.textContent = kop.dataset.tyTitleUnpaid;
+        if (balk) balk.setAttribute('data-ty-pay-state', '');
+        const wrap = document.createElement('p');
+        wrap.className = 'ty-pay-cta';
+        const knop = document.createElement('a');
+        knop.className = 'knop knop-inkt';
+        knop.href = `/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${pageLang() === 'nl' ? 'nl' : 'en'}`;
+        knop.textContent = d.tyRetryCta;
+        wrap.append(knop);
+        noot.after(wrap);
+      })
+      .catch(() => { /* stil — zie de kop */ });
+  }, DELAYS[attempt]);
+}
+
 function checkCancelled(ref, attempt = 0) {
   const DELAYS = [0, 2000, 4000];
   if (attempt >= DELAYS.length) return;

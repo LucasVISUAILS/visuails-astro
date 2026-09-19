@@ -1,0 +1,46 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const iso = (d) => d.toISOString().slice(0, 10);
+await p.route('**/api/capacity**', async (route) => {
+  const u = new URL(route.request().url());
+  const from = u.searchParams.get('from') || '2026-09-22';
+  const start = new Date(from + 'T00:00:00Z');
+  const windows = Array.from({ length: 6 }, (_, i) => { const s = new Date(start); s.setUTCDate(s.getUTCDate() + i); const e = new Date(s); e.setUTCDate(e.getUTCDate() + 1); return { start: iso(s), end: iso(e) }; });
+  await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, reason: 'ok', tier: 'attended', products: 12, max: 30, windows, from, earlier: from !== '2026-09-22', more: from < '2026-11-01', queue: {} }) });
+});
+await p.goto('http://127.0.0.1:4399/nl/start/catalog', { waitUntil: 'networkidle' });
+await p.addStyleTag({ content: '.js .reveal.pending{opacity:1!important;transform:none!important}' });
+// aantal 12, dan naar stap 4 via de interne runGate: simuleer door tier veld + runGate aan te roepen is niet bereikbaar; dus: kies 12 en klik door de stappen heen kan niet zonder uploads. Roep de poort direct aan via het formulier: zet tier en trigger via het retry-knopje.
+await p.click('.pl-qty-chip[data-pl-qty-set="10"]');
+await p.waitForTimeout(200);
+const r = await p.evaluate(async () => {
+  document.querySelector('input[name="tier"]').value = 'attended';
+  const retry = document.querySelector('[data-pl-gate-retry]');
+  retry.click();
+  await new Promise((r) => setTimeout(r, 600));
+  const host = document.querySelector('[data-pl-windows]');
+  const dagen = [...host.querySelectorAll('.pl-dag')].map((d) => ({ h: Math.round(d.getBoundingClientRect().height), t: d.textContent.trim().replace(/\s+/g, ' ') }));
+  const nav = [...host.querySelectorAll('.pl-dagen-knop')].map((k) => ({ t: k.textContent, hidden: k.hidden }));
+  host.querySelectorAll('.pl-dag')[2].click();
+  const gekozen = document.querySelector('input[name="window_start"]').value + ' / ' + document.querySelector('input[name="window_end"]').value;
+  const keuze = host.querySelector('.pl-kal-keuze')?.textContent;
+  const later = [...host.querySelectorAll('.pl-dagen-knop')].find((k) => /Later/.test(k.textContent));
+  later.click();
+  await new Promise((r) => setTimeout(r, 600));
+  const host2 = document.querySelector('[data-pl-windows]');
+  const dagen2 = [...host2.querySelectorAll('.pl-dag')].map((d) => d.dataset.start);
+  const nav2 = [...host2.querySelectorAll('.pl-dagen-knop')].map((k) => ({ t: k.textContent, hidden: k.hidden }));
+  const nogGekozen = document.querySelector('input[name="window_start"]').value;
+  const hPicked = [...host2.querySelectorAll('.pl-dag.is-picked')].map((d) => d.dataset.start);
+  const keuze2 = host2.querySelector('.pl-kal-keuze')?.textContent;
+  return { keuze2, dagen, nav, gekozen, keuze, dagen2, nav2, nogGekozen, hPicked };
+});
+console.log(JSON.stringify(r, null, 1));
+await p.evaluate(() => { let el = document.querySelector('[data-pl-windows]'); while (el) { if (el.hidden) el.hidden = false; el = el.parentElement; } });
+await p.waitForTimeout(200);
+await p.evaluate(() => { document.querySelectorAll('.pl-step').forEach((s) => { s.classList.toggle('is-current', s.getAttribute('data-pl-step') === '4'); }); document.querySelector('[data-pl-gate="ok"]').scrollIntoView({ block: 'center' }); });
+await p.waitForTimeout(300);
+await p.screenshot({ path: 'kladblok/schermen/nacontrole/dagkaarten.png' });
+console.log(await p.evaluate(() => [...document.querySelectorAll('.pl-dag')].map((d) => Math.round(d.getBoundingClientRect().height)).join(' ')));
+await b.close();

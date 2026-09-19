@@ -131,10 +131,12 @@ section('§1 · het scherm biedt de handeling aan, zonder JavaScript');
 // ─────────────────────────────────────────────────────────────────────────────
 {
   const env = makeEnv({ dicht: [{ day: dag(9), reason: 'vakantie' }] });
-  const res = await req('GET', '/admin/agenda', { env });
+  /* Sinds 19 september 2026 staat dit blok onderaan /admin/planning; de oude
+     route /admin/agenda stuurt daarheen door. */
+  const res = await req('GET', '/admin/planning', { env });
   const h = await res.text();
 
-  check('de agenda laadt', res.status === 200, res.status);
+  check('de planning laadt', res.status === 200, res.status);
   check('er staat een kop "Dagen dichtzetten"', /Dagen dichtzetten/.test(h));
   check('met een echt datumveld', /<input id="bo-dag" type="date" name="dag"/.test(h));
   check('dat niet in het verleden begint', h.includes(`min="${VANDAAG}"`));
@@ -162,7 +164,7 @@ section('§2 · dichtzetten schrijft, openzetten wist, allebei met een logregel'
   });
   check('de handeling stuurt terug naar de agenda', res.status === 303, res.status);
   check('en de bestemming is het juiste anker',
-    res.headers.get('location') === '/admin/agenda#dagen', res.headers.get('location'));
+    res.headers.get('location') === '/admin/planning#dagen', res.headers.get('location'));
 
   const ins = schrijf(env, /INSERT INTO blackout_days/);
   check('er wordt precies één rij geschreven', ins.length === 1, ins.length);
@@ -260,7 +262,7 @@ section('§5 · het scherm leest dezelfde agenda als de poort');
 // ─────────────────────────────────────────────────────────────────────────────
 {
   const env = makeEnv();
-  await req('GET', '/admin/agenda', { env });
+  await req('GET', '/admin/planning', { env });
   const alle = env.DB.prepared.join('\n');
 
   /* De twee bronnen die agenda.js optelt. Stond plan_queue er niet bij, dan zag een

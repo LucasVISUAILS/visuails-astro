@@ -74,13 +74,12 @@ in de sitemap weg.)
 
 Dan de secrets. **Een Worker deelt geen secrets met een Pages-project**, dus
 alles wat je ooit met `wrangler pages secret put` zette, moet nu opnieuw, één
-voor één, zonder `pages`:
+voor één, zonder `pages` (Stripe is sinds 19 september 2026 uit de code; had je
+`STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` gezet, dan `npx wrangler secret delete` ze):
 
 ```
 npx wrangler secret put RESEND_API_KEY
 npx wrangler secret put MOLLIE_API_KEY
-npx wrangler secret put STRIPE_SECRET_KEY
-npx wrangler secret put STRIPE_WEBHOOK_SECRET
 npx wrangler secret put RESEND_WEBHOOK_SECRET
 npx wrangler secret put SELLER_ADDRESS
 npx wrangler secret put VISUAILS_IBAN

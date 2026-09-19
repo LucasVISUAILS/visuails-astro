@@ -57,7 +57,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD, PLAN_CLIPS, plans,
   reviewClaim, turnaround,
-  clause,
+  clause, VIDEO_OP_AANVRAAG,
 } from '../data/pricing.js';
 /* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
    schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
@@ -66,7 +66,6 @@ import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
 import '../styles/stijl22.css';
-import TierCompare from './TierCompare.astro';
 import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
 
@@ -85,6 +84,15 @@ const kinds = lang === 'nl' ? videoStylesNl : videoStylesEn;
 // clip price and its VAT label cannot get separated by an edit.
 const clip = euro(AMOUNT.video, lang);
 const t0 = TIERS.unattended;
+/* ── OP AANVRAAG ZOLANG DE PIJPLIJN NIET STAAT — 19 september 2026 ─────────
+   Zie VIDEO_OP_AANVRAAG in pricing.js. Op deze pagina betekent dat: geen
+   bedrag in de feitenrij en op de kaarten, geen bestelknop bij de vaste
+   kinds, en een "clip volgt"-plaat in plaats van een geleend sfeerbeeld —
+   dezelfde vorm als een lifestyle-look zonder foto, zodat Lucas ziet hoe de
+   pagina eruit komt te zien zodra de clips er zijn. De aanvraagknop blijft
+   bovenaan en bij de eigen look. */
+const opAanvraag = VIDEO_OP_AANVRAAG;
+const opAanvraagWoord = lang === 'nl' ? 'Op aanvraag' : 'On request';
 
 // The plan that includes clips, named rather than typed — /pricing says the
 // same thing off the same two constants, so the two pages cannot disagree
@@ -181,7 +189,7 @@ const COPY = {
        omgekeerd — formaat, dan prijs — en dat was de enige pagina van de drie
        waar de bezoeker de rij in een andere volgorde las. */
     trust: [
-      [clip, `per clip · ${vatLabel('excl', 'en')}`],
+      opAanvraag ? [opAanvraagWoord, 'we reply in writing with a price'] : [clip, `per clip · ${vatLabel('excl', 'en')}`],
       ['8s', 'clean product videos'],
     ],
     // Visible, not buried. Section 13: a visitor must not be able to leave
@@ -193,14 +201,16 @@ const COPY = {
     // THIS page it needs one sentence of context, because neither column is
     // reachable by ordering clips. Removing the component instead would take
     // away information a buyer who also orders photos does want.
-    tierNote: `The two columns below describe the price per quantity for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request runs at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
+    tierNote: opAanvraag
+      ? `The two columns below describe the price per quantity for catalog and lifestyle products. Clips are on request for now and run at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`
+      : `The two columns below describe the price per quantity for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request runs at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
     reviewNote: reviewClaim('unattended', 'en'),
     heroAlt: 'A still from a short VISUAILS product clip',
     heroCap: 'Video · a frame from an 8-second clip',
     kiesCta: 'Pick your clip',
     levert: 'one clip of eight seconds.',
     kindsH: 'Ways to add motion.',
-    perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
+    perClip: opAanvraag ? 'On request' : `${clip} / clip · ${vatLabel('excl', 'en')}`,
     quoted: 'Quoted per project',
     exampleAlt: (n: string) => `A product photo in the ${n} style`,
     edMeta: '( Where it fits )',
@@ -242,7 +252,9 @@ const COPY = {
     // expensive for arriving with a collection. Photos are priced per product
     // on a falling ladder; a clip is priced per clip and stays put, which is
     // the difference this block now has to state out loud rather than imply.
-    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we confirm what and when in writing before anything runs.`,
+    buyFixed: opAanvraag
+      ? '<strong>Motion &amp; Lifestyle</strong> — on request while the video pipeline is being built. You send the form, on its own or on top of an order, and we reply in writing with a price and a date before anything runs. Nothing is charged until you say yes.'
+      : `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we confirm what and when in writing before anything runs.`,
     buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
     buyFlat: `Catalog and lifestyle images are priced per product and the rate falls as the count rises. A clip does not work that way: it is one rate, whatever else is in the order. ${studioPlan ? `${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
     /* Deze knop wijst naar /start/video en heette "Start an order". Dat is
@@ -259,7 +271,9 @@ const COPY = {
     faqH: 'Video questions, answered',
     faqs: serviceFaqs('video', 'en'),
     ctaH: 'Give your product <br>a little movement.',
-    ctaP: `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()}, no fixed delivery date.`,
+    ctaP: opAanvraag
+      ? `On request — ${turnaround('unattended', 'en').toLowerCase()} once we have said yes in writing, no fixed delivery date.`
+      : `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()}, no fixed delivery date.`,
     ctaSecondary: 'Contact us',
   },
   nl: {
@@ -277,19 +291,21 @@ const COPY = {
     waQuoteLabel: 'Offerte voor een campagne',
     ctaPrices: 'Bekijk de prijzen',
     trust: [
-      [clip, `per clip · ${vatLabel('excl', 'nl')}`],
+      opAanvraag ? [opAanvraagWoord, 'we antwoorden schriftelijk met een prijs'] : [clip, `per clip · ${vatLabel('excl', 'nl')}`],
       ['8s', 'strakke productvideo’s'],
     ],
     queueNote: `Clips lopen mee in de ${clause(t0.queue.nl).toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
     // Zie de Engelse kant voor waarom deze regel er staat.
-    tierNote: `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
+    tierNote: opAanvraag
+      ? `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Clips zijn voorlopig op aanvraag en blijven in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`
+      : `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
     reviewNote: reviewClaim('unattended', 'nl'),
     heroAlt: 'Een stilstaand beeld uit een korte productclip van VISUAILS',
     heroCap: 'Video · een beeld uit een clip van 8 seconden',
     kiesCta: 'Kies je clip',
     levert: 'één clip van acht seconden.',
     kindsH: 'Manieren om beweging toe te voegen.',
-    perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
+    perClip: opAanvraag ? 'Op aanvraag' : `${clip} / clip · ${vatLabel('excl', 'nl')}`,
     quoted: 'Offerte per project',
     exampleAlt: (n: string) => `Een productfoto in de stijl ${n}`,
     edMeta: '( Waar het past )',
@@ -324,7 +340,9 @@ const COPY = {
       reviewClaim('unattended', 'nl'),
     ],
     buyH: 'Twee manieren om video te kopen',
-    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}. Video heeft nog geen afrekenstap: je vraagt het aan via het formulier, los of bovenop een bestelling, en we bevestigen op schrift wat en wanneer voordat er iets draait.`,
+    buyFixed: opAanvraag
+      ? '<strong>Motion &amp; Lifestyle</strong> — op aanvraag zolang de videopijplijn in aanbouw is. Je stuurt het formulier, los of bovenop een bestelling, en we antwoorden schriftelijk met een prijs en een datum voordat er iets draait. Er wordt niets afgeschreven voordat jij ja zegt.'
+      : `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}. Video heeft nog geen afrekenstap: je vraagt het aan via het formulier, los of bovenop een bestelling, en we bevestigen op schrift wat en wanneer voordat er iets draait.`,
     buyQuote: '<strong>Campaign</strong> — groter, meerdere scènes, offerte per project.',
     buyFlat: `Catalog- en lifestylefoto’s hebben een tarief per product, en dat daalt naarmate het aantal stijgt. Bij een clip werkt dat niet zo: het tarief blijft hetzelfde, wat er verder ook in de bestelling zit. ${studioPlan ? `${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
     buyCta: 'Vraag een videoclip aan',
@@ -337,7 +355,9 @@ const COPY = {
     faqH: 'Video-vragen, beantwoord',
     faqs: serviceFaqs('video', 'nl'),
     ctaH: 'Geef je product <br>een beetje beweging.',
-    ctaP: `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()}, geen vaste leverdatum.`,
+    ctaP: opAanvraag
+      ? `Op aanvraag — ${turnaround('unattended', 'nl').toLowerCase()} zodra we schriftelijk ja hebben gezegd, geen vaste leverdatum.`
+      : `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()}, geen vaste leverdatum.`,
     ctaSecondary: 'Neem contact op',
   },
 };
@@ -375,8 +395,16 @@ const naarRij = (s: (typeof kinds)[number]) => ({
   desc: s.cardDesc,
   price: kindPrice(s.slug),
   bestFor: s.bestFor || [],
-  media: { src: posters[s.slug].src, w: posters[s.slug].w, h: posters[s.slug].h, alt: c.exampleAlt(s.name) },
-  photos: (WAAIER[s.slug] || [posters[s.slug].src]).map((src, i) => ({ src, alt: i === 0 ? c.exampleAlt(s.name) : '' })),
+  /* Zolang video op aanvraag is, geen geleend sfeerbeeld maar een "clip
+     volgt"-plaat per kaart (StyleRows tekent een Media zonder src als
+     plaatshouder met dit label). Campaign houdt zijn twee kaarten, want dat
+     is een film met meerdere shots. */
+  media: opAanvraag && s.slug !== 'custom'
+    ? { label: nl ? 'Clip volgt' : 'Clip to follow' }
+    : { src: posters[s.slug].src, w: posters[s.slug].w, h: posters[s.slug].h, alt: c.exampleAlt(s.name) },
+  photos: opAanvraag && s.slug !== 'custom'
+    ? (WAAIER[s.slug] || [posters[s.slug].src]).map((_, i) => ({ label: nl ? (i === 0 ? 'Clip volgt' : `Shot ${i + 1} volgt`) : (i === 0 ? 'Clip to follow' : `Shot ${i + 1} to follow`) }))
+    : (WAAIER[s.slug] || [posters[s.slug].src]).map((src, i) => ({ src, alt: i === 0 ? c.exampleAlt(s.name) : '' })),
   /* Dezelfde telefoonfoto als op /catalog en /lifestyle: het ingestuurde beeld
      hoort bij elke dienst hetzelfde te zijn, want het IS bij elke dienst
      hetzelfde — één foto van je product. */
@@ -386,7 +414,10 @@ const naarRij = (s: (typeof kinds)[number]) => ({
   tint: TINT[s.slug],
   detailHref: lp(`/video/${s.slug}`),
   detailLabel: nl ? `Ontdek ${s.name}` : `Explore ${s.name}`,
-  orderHref: s.ctaHref,
+  /* Geen bestelknop op de vaste kinds zolang video op aanvraag is: de kaart
+     linkt naar de detailpagina, en aanvragen gaat via de knop bovenaan en bij
+     de eigen look. Campaign en custom blijven een offerte-aanvraag. */
+  orderHref: opAanvraag && (s.slug === 'motion' || s.slug === 'lifestyle') ? undefined : s.ctaHref,
   orderLabel: s.ctaLabel,
 });
 const eigenLook = naarRij(kinds.find((s) => s.slug === 'custom')!);
@@ -432,7 +463,7 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
 <div class="s22">
 
   {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="vid-h1">
+  <section class="paneel vid-grond" aria-labelledby="vid-h1">
     <div class="vid-open">
       {/* Dezelfde opbouw als /catalog — zie de noot daar voor waarom deze
           volgorde en waarom de WhatsApp-knop weg is. De volgorde volgt de
@@ -465,7 +496,7 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
           vervagen; zonder dat is de kolom te smal om het nagebouwde scherm
           leesbaar te houden. Zie de noot bij `.lc.is-naast`. */}
       <div class="vid-beeld">
-        <LaptopCarousel lang={lang} vorm="naast" slides={[laptopSlides(lang).video]} titel={c.h1 ?? c.eyebrow} />
+        <LaptopCarousel lang={lang} vorm="naast" slides={[laptopSlides(lang).video]} titel={c.lcH ?? c.h1 ?? c.eyebrow} />
       </div>
     </div>
   </section>
@@ -475,28 +506,12 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
     <StyleRows lang={lang} dienst="video" h={c.kindsH} lead={eigenLook} items={vasteLooks} levert={c.levert} />
   </section>
 
-  {/* ── 3 · WAT HET IS, EN WAAR HET STAAT ────────────────────────────────────
-      De donkere kamer van deze pagina. */}
-  <section class="kamer vid-kamer" aria-labelledby="vid-wat">
-    <header class="kamer-kop">
-      <p class="etiket">{c.edMeta}</p>
-      <h2 id="vid-wat" class="hoog hoog-2">{c.edH}</h2>
-      <p class="lopend">{c.edSub}</p>
-    </header>
-    <div class="vid-twee">
-      <div class="vid-uitleg">
-        <h3 class="hoog hoog-3">{c.whatH}</h3>
-        {c.whatP.map((p) => <p class="lopend">{p}</p>)}
-        <p class="lopend vid-noot" set:html={c.modelNote} />
-      </div>
-      <aside class="vid-waar">
-        <h3 class="hoog hoog-3">{c.whereH}</h3>
-        <ul class="vid-waar-lijst" role="list">
-          {c.where.map(([strong, rest]) => <li><b>{strong}</b><span class="lopend">{rest}</span></li>)}
-        </ul>
-      </aside>
-    </div>
-  </section>
+  {/* ── 3 · DE DONKERE KAMER IS WEG — 19 september 2026 ───────────────────
+      "Wat het is" en "Waar je het gebruikt" stonden hier als donkere kamer
+      (926 px op 1440). Lucas: *"Diepere snoei op /catalog e.d. … doorvoeren."*
+      De hero zegt al wat het is en de looks laten het zien; het enige dat
+      nergens anders stond — wáár je het gebruikt — staat nu als één regel
+      onder de checklist bij de drie stappen. De copy blijft in COPY staan. */}
 
   {/* ── 4 · DE DRIE STAPPEN ──────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="vid-stappen">
@@ -508,6 +523,8 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
         <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{h}</b><span class="lopend">{p}</span></li>
       ))}
     </ol>
+    <p class="vid-waar-regel"><span class="etiket">{c.whereH}</span> {c.where.map(([w]) => w).join(' · ')}</p>
+    <p class="lopend vid-noot" set:html={c.modelNote} />
   </section>
 
   {/* ── 5 · WAT ER SCHOON MOET, EN WAT HET KOST ──────────────────────────── */}
@@ -532,20 +549,21 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
     </div>
   </section>
 
-  {/* ── 6 · WAT ER VERANDERT BIJ EEN GROTERE BESTELLING ──────────────────── */}
-  <section class="paneel">
-    <p class="mono vid-tiernoot">{c.tierNote}</p>
-    <TierCompare lang={lang} href0="/start/video/" label0={c.ctaPrimary} />
-  </section>
+  {/* ── 6 · (WEG) WAT ER VERANDERT BIJ EEN GROTERE BESTELLING ──────────────
+      TierCompare stond hier tot 19 september 2026 met een noot erboven die
+      uitlegde dat geen van beide kolommen over clips ging. Een blok dat een
+      uitleg nodig heeft waarom hij er staat, hoort er niet te staan; de
+      leverdatum-regel staat in queueNote in de opening, het blok op /pricing. */}
 
-  {/* ── 7 · VRAGEN ───────────────────────────────────────────────────────── */}
+  {/* ── 7 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
   <section class="paneel" aria-labelledby="vid-faq">
     <header class="paneel-kop">
       <h2 id="vid-faq" class="hoog hoog-2">{c.faqH}</h2>
     </header>
     <div class="vid-vragen">
-      {c.faqs.map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
+      {c.faqs.slice(0, 5).map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
     </div>
+    {c.faqs.length > 5 && <p class="vid-vragen-meer"><a class="pijl" href={lp('/faq')}>{nl ? `Nog ${c.faqs.length - 5} vragen over video` : `${c.faqs.length - 5} more video questions`}</a></p>}
   </section>
 
   {/* ── 8 · HET SLOT ─────────────────────────────────────────────────────── */}
@@ -590,6 +608,53 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
      ruim 500 — genoeg voor de kop, de vier feiten naast elkaar en twee knoppen
      op een regel. Kleiner dan dat wordt de feitenstrook een kolom van één, en
      dan wint de plaat ruimte die de tekst nodig had. */
+  /* ── DE GROND VAN DE OPENING — 18 september 2026 ──────────────────────────
+     Lucas koos hier het vierde bannerbeeld: een harde schaduwlijn met een donker vlak ernaast.
+
+     Een laag onder de inhoud en geen `background` op de sectie zelf: zo blijft
+     `--vel` de grond en ligt het beeld erop als iets dat je in één regel uit
+     kunt zetten. Dezelfde constructie als op de voorpagina.
+
+     De laptop blijft staan waar hij stond — Lucas: *"de laptop blijft
+     overal"* — dus dit beeld moet ACHTER hem door kunnen lopen zonder de tekst
+     links te raken. Vandaar `right center`: de uitsnede houdt de harde schaduw met het donkere vlak aan de
+     rechterkant, waar de plaat eroverheen valt, en laat de tekstkolom op de
+     rustige helft staan. */
+  .vid-grond { position: relative; isolation: isolate; }
+  .vid-grond::before {
+    content: '';
+    /* ── ALLEEN DE RECHTERHELFT ──────────────────────────────────────────────
+       Over de hele breedte gemeten viel de schaduwband precies over de kop:
+       inkt op middengrijs, en dat is de enige plek op deze pagina waar de tekst
+       niet mag vechten. Deze band begint daarom op 38% en loopt met een masker
+       in vanaf links, zodat hij achter de laptop staat — daar waar hij hoort,
+       want dat is het donker waarin een clip leeft — en de tekstkolom op schoon
+       `--vel` blijft staan.
+
+       Hetzelfde masker als op de plaat zelf (zie `.lc.is-naast`): een verloop
+       dat op nul begint en niet op een rand, anders zie je een naad. */
+    position: absolute; inset: 0 0 0 38%;
+    background: url('/img/band-video.webp') no-repeat right center / cover;
+    /* Twee verlopen die elkaar SNIJDEN: links invaren, en onderaan weer
+       uitvaren. Dat tweede is er voor de regel onder de plaat ("↑ wat jij
+       stuurt") en de dienstenrij eronder — inkt op een donkere band is precies
+       het soort onleesbaarheid dat een sfeerbeeld niet waard is. */
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0%, #000 22%, #000 100%),
+      linear-gradient(to bottom, #000 0%, #000 44%, transparent 68%);
+    mask-image:
+      linear-gradient(to right, transparent 0%, #000 22%, #000 100%),
+      linear-gradient(to bottom, #000 0%, #000 44%, transparent 68%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    pointer-events: none;
+    z-index: -1;
+  }
+  /* Op een smal scherm staat de laptop ONDER de tekst en is er geen rechterhelft
+     meer; dan zou de band dwars over de kop vallen. Daar blijft hij weg. */
+  @media (max-width: 900px) {
+    .vid-grond::before { content: none; }
+  }
   .vid-open { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.2rem, 3.5vw, 2.6rem); align-items: start; }
   .vid-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   /* Geen vaste verhouding meer: de laptopplaat brengt zijn eigen 1,77 mee en
@@ -597,13 +662,11 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
   .vid-beeld { position: relative; }
   .vid-wacht { font-size: .92rem; color: var(--inkt-2); }
 
-  .vid-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
-  .vid-uitleg { display: grid; gap: .9rem; }
-  .vid-waar { padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); display: grid; gap: .9rem; }
-  .vid-waar-lijst { display: grid; gap: .7rem; }
-  .vid-waar-lijst li { display: grid; gap: .2rem; }
-  .vid-waar-lijst b { font-weight: 500; }
-  .vid-noot :global(a) { color: var(--geel-letter); text-decoration: underline; text-underline-offset: 3px; }
+  .vid-waar-regel { margin-top: 1.4rem; font-size: .92rem; color: var(--inkt-2); display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: baseline; }
+  /* Op licht sinds de kamer weg is: geen gele letter meer (die was voor inkt),
+     gewoon de inktkleur met een streep. */
+  .vid-noot { margin-top: .8rem; font-size: .92rem; color: var(--inkt-2); max-width: 62ch; }
+  .vid-noot :global(a) { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 
   .vid-stappen { display: grid; }
   .vid-stappen li { display: grid; grid-template-columns: auto minmax(0, 22rem) minmax(0, 30rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
@@ -620,10 +683,11 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
   .vid-vast b { font-weight: 500; }
 
   .vid-tiernoot { color: var(--inkt-2); margin-bottom: 1.6rem; }
+  .vid-vragen-meer { margin-top: 1rem; }
   .vid-vragen { display: grid; gap: .7rem; }
 
   @media (max-width: 900px) {
-    .vid-open, .vid-twee, .vid-twee-licht { grid-template-columns: 1fr; }
+    .vid-open, .vid-twee-licht { grid-template-columns: 1fr; }
     .vid-stappen li { grid-template-columns: auto 1fr; }
     .vid-stappen li .lopend { grid-column: 2; }
   }

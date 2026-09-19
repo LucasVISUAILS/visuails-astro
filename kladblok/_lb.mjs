@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await p.goto('http://127.0.0.1:4399/nl/', { waitUntil: 'networkidle' });
+await p.addStyleTag({ content: '.js .reveal.pending{opacity:1!important;transform:none!important}' });
+const r = await p.evaluate(() => { const s = document.querySelector('.lb'); const b = s.getBoundingClientRect(); return { top: Math.round(b.top + scrollY), h: Math.round(b.height), stations: [...s.querySelectorAll('.lb-station')].map(e => Math.round(e.getBoundingClientRect().height)) }; });
+console.log(JSON.stringify(r));
+await p.evaluate((t) => scrollTo(0, t), r.top);
+await p.waitForTimeout(300);
+const el = await p.$('.lb');
+await el.screenshot({ path: 'kladblok/schermen/lb-nu.png' });
+await b.close();

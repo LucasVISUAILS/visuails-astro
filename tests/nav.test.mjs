@@ -568,10 +568,14 @@ console.log('\nde hookspagina bestaat, en verkoopt niets');
      link die doet alsof je Hooks of Editions kunt bestellen. */
   for (const pagina of ['dist/plans/index.html', 'dist/nl/plans/index.html', 'dist/index.html', 'dist/nl/index.html']) {
     const h = read(pagina);
-    const blok = h.slice(h.indexOf('id="binnenkort"'));
+    /* Tot 19 september 2026 keek dit 4.000 tekens vooruit vanaf het anker;
+       sinds de sectie op /plans korter is (één sectie "wat eraan komt" in
+       plaats van twee) viel het slotpaneel met zijn abonnementsknop in dat
+       venster. De eis is en was: geen knop IN de sectie — dus tot </section>. */
+    const van = h.indexOf('id="binnenkort"');
+    const blok = van < 0 ? '' : h.slice(van, h.indexOf('</section>', van));
     check(`${pagina}: geen bestelknop bij de aangekondigde diensten`,
-      /id="binnenkort"[\s\S]{0,4000}?href="[^"]*\/start/.test(h), false);
-    void blok;
+      /href="[^"]*\/start/.test(blok), false);
   }
 
   /* ── EN DE PAGINA ZELF VERKOOPT NIETS ────────────────────────────────────

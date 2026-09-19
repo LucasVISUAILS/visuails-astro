@@ -35,6 +35,7 @@ const COPY = {
     hint: 'Four house styles, or describe a look of your own and we design it. Your choice here is not final.',
     see: 'See the whole style',
     err: 'Pick a look before you continue.',
+    gekozen: 'Chosen',
     /* De weg naar de stijl die hierboven niet meer als radio staat. Eén zin die
        zegt WAAROM hij er niet staat, want "vraag het ons" zonder reden leest als
        een gesloten deur. */
@@ -52,6 +53,7 @@ const COPY = {
     hint: 'Vier vaste stijlen, of een stijl die we om jouw product heen bouwen. Niets ligt vast.',
     see: 'Bekijk de hele stijl',
     err: 'Kies eerst een look.',
+    gekozen: 'Gekozen',
     /* Zie de Engelse tegenhanger. */
     askH: 'Iets heel anders voor ogen?',
     askBody: 'Een wereld die om jouw product heen gebouwd wordt, ontwerpen we in plaats van dat je hem kiest — en dus heeft hij geen tarief per product zolang we niet weten wat het is. Het is een aanvraag, en je krijgt er een prijs op schrift voor voordat er iets draait.',
@@ -204,6 +206,7 @@ const looks = ORDERABLE.map((s) => {
             data-pl-err-msg={i === 0 ? c.err : undefined}
           />
           <span class="look-name">{s.name}</span>
+          <span class="look-gekozen" aria-hidden="true">{c.gekozen}</span>
         </span>
         <span class="look-line">{s.tagline}</span>
       </label>
@@ -364,9 +367,29 @@ const looks = ORDERABLE.map((s) => {
     cursor: pointer;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
-  .look:hover { border-color: var(--accent-line); }
-  .look:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .look:hover { border-color: var(--ink-3); }
+  /* ── DE HELE KAART IS DE KEUZE — 19 september 2026 ──────────────────────
+     Uit de doorlichting: het vierkante keuzerondje (de site tekent radio's
+     vierkant, zie global.css) las op deze kaarten als een checkbox, dus als
+     meerkeuze. Het rondje is nu onzichtbaar maar blijft de radio voor
+     toetsenbord en schermlezer; de kaart zelf zegt wat gekozen is: een
+     inktrand, de accenttint en het woord "Gekozen" naast de naam. Rand én
+     woord, zodat het ook zonder kleurwaarneming te zien is. */
+  .look:has(input:checked) { border-color: var(--ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--ink); }
   .look:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .look-gekozen {
+    display: none;
+    margin-left: auto;
+    padding: .15rem .5rem;
+    border-radius: var(--r-pill);
+    background: var(--ink);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .look:has(input:checked) .look-gekozen { display: inline-block; }
   .look-shot {
     display: block;
     width: 100%;
@@ -376,7 +399,14 @@ const looks = ORDERABLE.map((s) => {
     background: var(--surface-2);
   }
   .look-row { display: flex; align-items: center; gap: .5rem; }
-  .look-row input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+  /* Aanwezig voor toetsenbord en schermlezer, onzichtbaar voor het oog — de
+     kaart neemt zijn rol over (zie hierboven). Niet display:none, want dan
+     valt hij uit de tabvolgorde en meldt required niets meer. */
+  .look-row input {
+    position: absolute; width: 1px; height: 1px; margin: 0; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); border: 0; opacity: 0;
+  }
+  .look { position: relative; }
   .look-name { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
   .look-line { font-size: .82rem; color: var(--ink-3); line-height: 1.45; }
 

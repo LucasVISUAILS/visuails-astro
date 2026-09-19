@@ -207,7 +207,7 @@ console.log('\nelke bijlagekop filtert stuurtekens en niet alleen het aanhalings
 console.log('\neen betaling die het totaal niet dekt, zet de bestelling niet op betaald');
 {
   const mol = lees('functions/api/webhook/mollie.js');
-  const str = lees('functions/api/webhook/stripe.js');
+  /* Stripe is op 19 september 2026 uit de code gehaald; alleen Mollie nog. */
 
   /* ── DE SOM GAAT OVER DE BESTELLING EN NIET OVER DEZE BETALING ───────────
      Dat verschil is de hele correctheid. Een controle per betaling breekt de
@@ -216,7 +216,7 @@ console.log('\neen betaling die het totaal niet dekt, zet de bestelling niet op 
      bestelling voor altijd hangen. En het is dezelfde vraag die issueInvoice()
      al stelde, dus het is dezelfde functie — een eigen kopie zou een tweede
      waarheid zijn. */
-  for (const [naam, bron] of [['Mollie', mol], ['Stripe', str]]) {
+  for (const [naam, bron] of [['Mollie', mol]]) {
     ok(`${naam} gebruikt betalingGedekt() uit invoice.js`,
       /import \{ betalingGedekt \} from/.test(bron), true);
     ok(`  en heeft geen eigen bedragvergelijking`,
@@ -231,7 +231,7 @@ console.log('\neen betaling die het totaal niet dekt, zet de bestelling niet op 
      en account.js lezen hem zonder filter op actor. issueInvoice() maakt dat
      onderscheid al bij precies dit geval; de weigering één stap eerder hoort
      dezelfde vorm te hebben. De getallen gaan naar admin_log. */
-  for (const [naam, bron] of [['Mollie', mol], ['Stripe', str]]) {
+  for (const [naam, bron] of [['Mollie', mol]]) {
     /* Op de zin zelf en niet op de omgeving: dit bestand schrijft óók een
        restitutieregel mét bedrag naar dezelfde tabel, en dat hoort — een klant wil
        weten hoeveel er terugkomt. Wat hij niet hoort te lezen is een verschil in

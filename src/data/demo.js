@@ -304,17 +304,20 @@ export const WALK_COPY = {
         b: 'One choice, applied to the whole order — that is what makes twenty products come back looking like one shoot.',
         meer: 'Which is why it is chosen up front rather than per image. Choosing per image turns one order into twenty separate jobs that happen to arrive together.',
       },
+      /* 19 september 2026: de datum kies je zelf uit dagkaarten en betalen is
+         direct na het formulier (besluiten 1 en 3). De oude tekst zei "wij
+         checken de agenda en bevestigen voordat je betaalt". */
       window: {
-        n: 'Us, before you pay',
-        h: 'We check the calendar and confirm a delivery date',
-        b: `From ${WINDOW_THRESHOLD_} products the order goes into the calendar and gets ${midden(TURN_ATT_)} — in writing.`,
-        meer: `If the week you need cannot be held, you are told that, with the next delivery date that can. No date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround: ${midden(TURN_UNATT_)}.`,
+        n: 'You, in the form',
+        h: 'You pick a delivery date',
+        b: `From ${WINDOW_THRESHOLD_} products you choose a day the calendar can still hold — a delivery date that is fixed the moment you order.`,
+        meer: `The calendar only offers days with room left. Should a day fill up between choosing and ordering, you are told at once and pick again; no date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround: ${midden(TURN_UNATT_)}.`,
       },
       pay: {
-        n: 'You, by email',
+        n: 'You, straight away',
         h: 'You pay, and production starts',
-        b: 'A confirmation email arrives with the payment link. The order does not enter production until that payment is completed.',
-        meer: 'The invoice follows automatically, and from that moment the order is visible in your account with its own timeline.',
+        b: 'The last step of the form takes you straight to the checkout. The order does not enter production until that payment is completed.',
+        meer: 'The confirmation email and the invoice follow automatically, and from that moment the order is visible in your account with its own timeline. Outside the EU we check the VAT details first and send the payment link by email.',
       },
       model: {
         n: 'Us, in production',
@@ -354,7 +357,7 @@ export const WALK_COPY = {
     capUpload: 'What you send',
     capWindow: 'The calendar check',
     capPay: 'Paid — production starts',
-    windowPass: 'The calendar can hold it — reserved and confirmed before you pay',
+    windowPass: 'The calendar can hold it — fixed the moment you order',
     windowRefuse: 'Or it cannot, and you are told that with the next delivery date that can',
     payLine: 'Nothing is produced before this is completed.',
 
@@ -390,16 +393,16 @@ export const WALK_COPY = {
         meer: 'Daarom wordt hij vooraf gemaakt en niet per beeld. Per beeld kiezen maakt van één bestelling twintig losse opdrachten die toevallig samen aankomen.',
       },
       window: {
-        n: 'Wij, voordat je betaalt',
-        h: 'Wij checken de agenda en bevestigen een leverdatum',
-        b: `Vanaf ${WINDOW_THRESHOLD_} producten gaat de bestelling de agenda in en krijgt hij ${midden(TURN_ATT_NL_)} — op schrift.`,
-        meer: `Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat, met de eerstvolgende leverdatum die het wél kan. Er wordt geen datum verzonnen om een bestelling binnen te houden. Onder ${WINDOW_THRESHOLD_} producten valt er geen leverdatum te reserveren: die bestelling loopt in de normale doorlooptijd, ${midden(TURN_UNATT_NL_)}.`,
+        n: 'Jij, in het formulier',
+        h: 'Je kiest een leverdatum',
+        b: `Vanaf ${WINDOW_THRESHOLD_} producten kies je een dag die de agenda nog kan vasthouden — een leverdatum die vastligt zodra je bestelt.`,
+        meer: `De agenda biedt alleen dagen aan waar nog ruimte is. Raakt een dag vol tussen kiezen en bestellen, dan hoor je dat meteen en kies je opnieuw; er wordt geen datum verzonnen om een bestelling binnen te houden. Onder ${WINDOW_THRESHOLD_} producten valt er geen leverdatum te reserveren: die bestelling loopt in de normale doorlooptijd, ${midden(TURN_UNATT_NL_)}.`,
       },
       pay: {
-        n: 'Jij, per mail',
+        n: 'Jij, meteen',
         h: 'Je betaalt, en dan start de productie',
-        b: 'Je krijgt een bevestigingsmail met de betaallink. De bestelling gaat pas in productie zodra die betaling is voltooid.',
-        meer: 'Dat is de enige poort tussen een opdracht beschrijven en ons eraan laten beginnen. De factuur volgt automatisch, en vanaf dat moment staat de bestelling in je account met een eigen tijdlijn.',
+        b: 'De laatste stap van het formulier brengt je meteen naar de checkout. De bestelling gaat pas in productie zodra die betaling is voltooid.',
+        meer: 'De bevestigingsmail en de factuur volgen automatisch, en vanaf dat moment staat de bestelling in je account met een eigen tijdlijn. Buiten de EU controleren we eerst de btw-gegevens en sturen we de betaallink per mail.',
       },
       model: {
         n: 'Wij, in productie',
@@ -426,7 +429,7 @@ export const WALK_COPY = {
     capUpload: 'Wat jij stuurt',
     capWindow: 'De agendacheck',
     capPay: 'Betaald — de productie start',
-    windowPass: 'De agenda kan het vasthouden — gereserveerd en bevestigd voordat je betaalt',
+    windowPass: 'De agenda kan het vasthouden — vast zodra je bestelt',
     windowRefuse: 'Of niet, en dan hoor je dat met de eerstvolgende leverdatum die het wél kan',
     payLine: 'Er wordt niets geproduceerd voordat dit is voltooid.',
 

@@ -60,6 +60,11 @@ export function studioSeed({ hash, hash2, img }) {
     `INSERT INTO subscription_slots (subscription_id, month, kind, granted, used) VALUES (${SUB_ID}, strftime('%Y-%m','now'), 'complete', 12, 3)`,
     `INSERT INTO plan_queue (customer_id, position, name, note, upload_batch, kind, locked_at) VALUES (${VOLT.id}, 1, 'Grijze hoodie', 'Voorkant met logo', 'proef-batch-1', 'complete', datetime('now'))`,
     `INSERT INTO plan_queue (customer_id, position, name, note, upload_batch, kind) VALUES (${VOLT.id}, 2, 'Zwarte cargo', NULL, NULL, 'complete')`,
+    /* De vaste look van VOLT (ronde 4): de catalogkant staat, de lifestylekant
+       NIET — zodat het scherm de poort kan tonen ("leg je look vast voor
+       Lifestyle") op het concept. */
+    `DELETE FROM customer_style_locks WHERE customer_id=${VOLT.id}`,
+    `INSERT INTO customer_style_locks (customer_id, style, background_hex, roster_model) VALUES (${VOLT.id}, 'catalog', '#FFFFFF', 'ava')`,
     /* Eén factuur per betaalde bestelling, al uitgegeven: anders probeert de
        facturenpagina ze te MAKEN (pdf renderen, R2) en dat hoort niet in een
        toets van de vorm. De 'in ontwerp' voor de nog onbetaalde komt vanzelf niet. */

@@ -677,7 +677,12 @@ function show(n, opts) {
      dus er is geen ouder die hem vanzelf wegneemt. */
   const combiBalk = q('[data-pl-combi-balk]');
   if (combiBalk) {
-    combiBalk.hidden = to !== 2;
+    /* Alleen met inhoud (19 september 2026): een lifestylepagina geeft het
+       slot niet mee, en dan stond er op stap 2 een lege witte balk van 46 px
+       met alleen een pijltje onderaan het scherm. */
+    const combiIn = q('.pl-combi-in', combiBalk);
+    const heeftCombi = !!(combiIn && combiIn.children.length);
+    combiBalk.hidden = to !== 2 || !heeftCombi;
     /* Dichtklappen zodra je stap 2 verlaat: kom je terug, dan begin je weer bij
        de regel van één hoog in plaats van bij een aanbod dat je scherm vult. */
     if (to !== 2) {
@@ -711,8 +716,23 @@ function show(n, opts) {
     } catch {
       /* older browsers ignore the option; focus is nice-to-have either way */
     }
-    const top = node.getBoundingClientRect().top + window.scrollY - 96;
-    window.scrollTo({ top: Math.max(0, top), behavior: reduced() ? 'auto' : 'smooth' });
+    /* ── NIET MEER 'SMOOTH', EN PAS NA DE VOLGENDE TEKENBEURT — 19 sept 2026 ──
+       Gemeten op de livesite: na "Verder" van stap 1 naar 2 werd scrollTo(641,
+       smooth) netjes aangeroepen en stond de pagina daarna op 0 — en van stap
+       2 naar 3 bleef hij op 2580 staan terwijl de nieuwe stap op 737 begon. De
+       klant keek dan naar "NOG NIET KLAAR OM TE BESTELLEN?" onder het
+       formulier. Een vloeiende scroll wordt door Chrome afgebroken zodra het
+       document tijdens de animatie van hoogte verandert, en dat doet het hier
+       altijd: de oude stap verdwijnt, de nieuwe verschijnt, de uploader tekent
+       na. Dus: één tekenbeurt wachten tot de nieuwe hoogte staat, en dan in
+       één keer springen. Een stapwissel is een paginawissel; daar hoort geen
+       animatie bij die halverwege kan stoppen. */
+    const spring = () => {
+      const top = node.getBoundingClientRect().top + window.scrollY - 96;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(spring));
+    else spring();
   }
 }
 
@@ -1173,8 +1193,38 @@ function validateStep(n) {
   if (typeof bad.setCustomValidity === 'function') {
     bad.setCustomValidity(bad.dataset.plErrMsg || c('err.generic'));
   }
-  bad.reportValidity();
+  /* ── DE FOUT STAAT BIJ HET VELD, EN HET VELD KOMT IN BEELD — 19 sep 2026 ──
+     Uit de doorlichting: "Kies wie het draagt" stond onderaan stap 2, twee
+     duizend pixels onder de modeltegels waar de keuze ontbrak. De stapfout
+     onderaan blijft (die hoort bij de knop die je net indrukte), maar dezelfde
+     zin staat nu ook bij het veld zelf, en het veld wordt in beeld gescrold.
+     reportValidity() alleen als de browser het veld kán tonen: een radio die
+     visueel verborgen is (de lookkaarten) krijgt geen bubbel maar de regel
+     bij het veld. */
+  const anker = bad.closest('fieldset, .field, .pl-veld, [data-pl-veldgroep]') || bad.closest('label') || bad;
+  markeerVeld(anker, bad.dataset.plErrMsg || c('err.generic'));
+  const kop = anker.querySelector('legend, h2, h3, .pl-veld-fout') || anker;
+  try { kop.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); } catch { /* ok */ }
+  const zichtbaar = bad.getClientRects().length > 0 && getComputedStyle(bad).opacity !== '0';
+  if (zichtbaar) bad.reportValidity();
+  else { try { bad.focus({ preventScroll: true }); } catch { /* ok */ } }
   return false;
+}
+
+/** Eén regel met de fout, direct onder de kop van het veld of de groep. */
+function markeerVeld(anker, tekst) {
+  if (!anker) return;
+  let noot = anker.querySelector(':scope > .pl-veld-fout');
+  if (!noot) {
+    noot = document.createElement('p');
+    noot.className = 'pl-veld-fout';
+    const kop = anker.querySelector(':scope > legend, :scope > h2, :scope > h3, :scope > .pl-veld-kop, :scope > label.pl-veld-label');
+    if (kop && kop.nextSibling) anker.insertBefore(noot, kop.nextSibling);
+    else if (kop) anker.appendChild(noot);
+    else anker.insertBefore(noot, anker.firstChild);
+  }
+  noot.textContent = tekst;
+  noot.hidden = false;
 }
 
 /** Fill the step's error box and tie it to the field that caused it. */
@@ -1208,6 +1258,7 @@ function clearStepError(node) {
     box.removeAttribute('role');
   }
   qa('[aria-invalid]', node).forEach((el) => el.removeAttribute('aria-invalid'));
+  qa('.pl-veld-fout', node).forEach((el) => el.remove());
   if (box && box.id) {
     qa(`[aria-describedby="${box.id}"]`, node).forEach((el) => el.removeAttribute('aria-describedby'));
   }
@@ -4161,8 +4212,14 @@ function vulModelTegels(card) {
      op catalog is de keuze verplicht en ship't er dus niets als gekozen — dan
      het merkteken van "wij kiezen er een", gelezen uit die tegel en niet als pad
      overgetypt: het bestand is daar één keer gekozen en hoort daar te blijven. */
-  const anyRadio = radios.filter((r) => r.value === 'any')[0];
-  const beeldBoven = (gekozen && modelBeeld(gekozen)) || (anyRadio && modelBeeld(anyRadio)) || '';
+  /* ── GEEN MERKTEKEN MEER ALS PORTRET — 19 september 2026 ──────────────────
+     Tot vandaag leende de tegel het beeld van "wij kiezen er een" (het lime
+     vlak met de V) zodra er bovenaan geen gezicht stond. Dat V-beeldmerk is
+     afgeschaft en hoort nergens meer te staan, en het las bovendien als een
+     keuze voor iets. "Zelfde" zonder gezicht is nu een stille tegel met een
+     =-teken: hetzelfde als de bestelling, wat dat ook wordt. Alleen een écht
+     gekozen gezicht komt als portret bovenaan. */
+  const beeldBoven = (gekozen && gekozen.value !== 'any' && modelBeeld(gekozen)) || '';
 
   const tegel = (waarde, beeld, kort, volledig) => {
     const el = tpl.content.firstElementChild.cloneNode(true);
@@ -4175,7 +4232,15 @@ function vulModelTegels(card) {
        scherm. Twee teksten en niet twee tegels — dezelfde zet als bij "wij
        kiezen er een" in ModelPicker.astro. */
     inp.setAttribute('aria-label', volledig);
-    if (beeld) img.src = beeld; else img.remove();
+    if (beeld) {
+      img.src = beeld;
+    } else {
+      const leeg = document.createElement('span');
+      leeg.className = 'pu-mk-leeg';
+      leeg.setAttribute('aria-hidden', 'true');
+      leeg.textContent = '=';
+      img.replaceWith(leeg);
+    }
     naam.textContent = kort;
     return el;
   };
@@ -7014,16 +7079,41 @@ function collapseBrief(me) {
   if (!panel || !fields || !list) return false;
 
   list.textContent = '';
-  PREFILL_FIELDS.forEach((key) => {
-    // `select` erbij: country is een keuzelijst, en zonder dit stond het land
-    // niet in het lijstje "je opgeslagen gegevens" terwijl het er wel is.
+  /* ── ALS ADRESKAART, NIET ALS KALE REGELS — 19 september 2026 ─────────────
+     Dertien losse regels zonder label ("Test", "NL", "7531HK") lazen als een
+     dump. Nu drie of vier regels zoals ze op een envelop staan: wie, hoe te
+     bereiken, waar, en het btw-nummer met het woord van zijn eigen veldlabel
+     ervoor. `select` erbij: country is een keuzelijst — de landnaam en niet de
+     code. */
+  const waarde = (key) => {
     const input = q(`input[name="${key}"], select[name="${key}"]`);
-    const val = input && input.value.trim();
-    if (!val) return;
+    if (!input) return '';
+    if (input.tagName === 'SELECT') {
+      const opt = input.options[input.selectedIndex];
+      return opt && input.value ? (opt.textContent || input.value).trim() : '';
+    }
+    return input.value.trim();
+  };
+  const labelVan = (key) => {
+    const input = q(`input[name="${key}"], select[name="${key}"]`);
+    const lab = input && input.id ? q(`label[for="${input.id}"]`) : null;
+    return lab ? lab.textContent.replace(/\*/g, '').replace(/\s+/g, ' ').trim() : key;
+  };
+  const regel = (delen, sep = ' · ') => {
+    const t = delen.filter(Boolean).join(sep);
+    if (!t) return;
     const li = document.createElement('li');
-    li.textContent = val;
+    li.textContent = t;
     list.appendChild(li);
-  });
+  };
+  regel([[waarde('first_name'), waarde('last_name')].filter(Boolean).join(' '), waarde('brand')]);
+  regel([waarde('email'), waarde('phone'), waarde('website')]);
+  regel([
+    [waarde('address_line1'), waarde('address_line2')].filter(Boolean).join(', '),
+    [waarde('postal_code'), waarde('city')].filter(Boolean).join(' '),
+    waarde('region'), waarde('country'),
+  ], ', ');
+  if (waarde('vat')) regel([`${labelVan('vat')}: ${waarde('vat')}`]);
   if (!list.children.length) return false;
 
   fields.hidden = true;
@@ -7185,12 +7275,14 @@ function clearWindow() {
   setHidden('window_end', '');
 }
 
-function runGate() {
+function runGate(from = null) {
   // The tier the count earned, read back from the field the server will read.
   // Not re-derived: two places deciding which orders get a window is how one of
   // them ends up asking the calendar a question the other never sends.
   const attended = value('tier') === 'attended';
-  clearWindow();
+  /* Bladeren ("eerder"/"later") houdt de gekozen datum vast; een verse
+     controle (na een stapwissel of "opnieuw checken") begint leeg. */
+  if (from === null) { clearWindow(); gateStapel.length = 0; }
 
   if (!attended) {
     // Tier 0. No request, no date, ever. Section 13's single most important
@@ -7230,7 +7322,9 @@ function runGate() {
   const dienst = (q('input[name="service"]') || {}).value || '';
   const svcDeel = dienst ? `&service=${encodeURIComponent(dienst)}` : '';
 
-  fetch(`/api/capacity?products=${encodeURIComponent(products)}&tier=attended${svcDeel}`, {
+  const vanaf = typeof from === 'string' ? `&from=${encodeURIComponent(from)}` : '';
+
+  fetch(`/api/capacity?products=${encodeURIComponent(products)}&tier=attended${svcDeel}${vanaf}`, {
     headers: { accept: 'application/json' },
   })
     .then((r) => r.json().then((b) => ({ status: r.status, body: b })))
@@ -7258,176 +7352,159 @@ function renderGate(body) {
     });
   }
 
-  if (panel === 'ok') renderWindows(body.windows || []);
+  if (panel === 'ok') renderWindows(body.windows || [], { from: body.from, earlier: body.earlier, more: body.more });
   gateShow(panel);
 }
 
 /*
- * ── DE LEVERDATA ALS AGENDA — 10 september 2026 ──────────────────────────────
+ * ── DE LEVERDATA ALS RIJ DAGKAARTEN — 19 september 2026 ─────────────────────
  *
- * Lucas: *"Ik zou dit liever als een agenda willen zien waar de klant kan klikken
- * op een beschikbare datum."*
+ * Van 10 tot 19 september stond hier een maandruit (Lucas: *"als een agenda
+ * waar de klant kan klikken op een beschikbare datum"*). De doorlichting met
+ * een bestelling van twintig producten liet zien wat die ruit deed: heel
+ * september getekend, 1–18 grijs, 28–30 grijs, alleen 22–27 klikbaar, geen
+ * oktober en geen manier om verder te kijken. Wie over drie weken een launch
+ * heeft, kon niets kiezen — en de cellen sprongen van 112 naar 56 px zodra je
+ * er een aanklikte.
  *
- * Wat er stond waren zes tegels met in elke tegel de hele zin: "Saturday 12
- * September – Sunday 13 September". Zes keer een datum uitgeschreven naast elkaar
- * is zes keer lezen om te zien wat er vrij is, en het verband tussen die zes —
- * dat het opeenvolgende dagen zijn — moest je er zelf uit halen. In een maandruit
- * staat dat verband er gewoon: je ziet in één blik welke dagen vrij zijn, welke
- * niet, en waar het gat zit.
+ * Nu: alleen het kiesbare venster, als rij van zes dagkaarten, met "eerder" en
+ * "later" om per zes dagen te schuiven. De poort levert per aanroep zes
+ * vensters vanaf een startdag (`from`) en zegt of er ervoor of erna nog iets
+ * is (`earlier`, `more`). Eén kaart is één startdag; de tweede dag van het
+ * venster staat op de kaart zelf ("– wo 23"), zodat niemand een zaterdag kiest
+ * en pas in de bevestiging leest dat er een zondag bij hoort.
  *
- * ── WAT DE AGENDA WEL EN NIET IS ───────────────────────────────────────────
+ * VASTE HOOGTE. De kaart heeft dezelfde maat vóór en na de keuze; wat
+ * verandert is de rand en de kleur, nooit de hoogte. De gekozen datum blijft
+ * bewaard als je verder bladert: de verborgen velden en de regel eronder
+ * volgen de keuze, niet de bladzijde.
  *
- * Hij toont ALLEEN de maanden waarin iets vrij is, en per maand alle dagen ervan.
- * Geen maandwisselaar, geen pijltjes: het venster van de planning is een week of
- * twee vooruit (zie HORIZON_DAYS in capacity.js), en een agenda waarin je kunt
- * bladeren naar maanden zonder aanbod, is een agenda die belooft dat daar iets te
- * halen valt.
- *
- * EEN DAG IS EEN KNOP OF HIJ IS NIETS. Alleen de startdagen die de server
- * teruggaf zijn aanklikbaar; de rest staat er als getal zonder handeling. Dat is
- * met opzet geen `disabled`-knop: een uitgeschakelde knop belooft nog steeds dat
- * er iets te klikken valt en zit in de tabvolgorde in de weg.
- *
- * DE HELE PERIODE LICHT OP. Een venster is meestal twee dagen; klik je de eerste,
- * dan kleurt ook de tweede. Anders kiest iemand een zaterdag en leest hij pas in
- * de bevestiging dat er een zondag bij hoort.
- *
- * DE MAANDNAMEN EN WEEKDAGEN KOMEN UIT Intl en niet uit de copy: elke browser
- * kent ze al in beide talen, en een eigen lijst is een lijst die op een dag
- * afwijkt van wat de rest van de pagina zegt.
+ * De weekdag- en maandnamen komen uit Intl, niet uit de copy — elke browser
+ * kent ze in beide talen.
  */
-function renderWindows(windows) {
+let gateFrom = null;   // de startdag van de rij die nu op het scherm staat
+const gateStapel = []; // de startdagen van eerdere bladzijden, voor "eerder"
+
+function renderWindows(windows, meta) {
   const host = q('[data-pl-windows]');
   if (!host) return;
+  /* De regel onder de rij die de gekozen periode uitschrijft. Hij overleeft
+     het bladeren: staat er al één, dan blijft die staan — dus ophalen VÓÓR
+     het vak wordt leeggemaakt. */
+  let keuze = q('[data-pl-kal-keuze]', host);
   host.textContent = '';
+  const info = meta || {};
+  gateFrom = typeof info.from === 'string' ? info.from : null;
 
   const geldig = (windows || []).filter((w) => w && typeof w.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(w.start));
+  const taal = cfg.lang === 'nl' ? 'nl-NL' : 'en-GB';
+  const gekozen = value('window_start') || '';
+
+  if (!keuze) {
+    keuze = document.createElement('p');
+    keuze.className = 'pl-kal-keuze';
+    keuze.setAttribute('data-pl-kal-keuze', '');
+    keuze.hidden = true;
+  }
+
+  const rij = document.createElement('div');
+  rij.className = 'pl-dagen';
+  rij.setAttribute('role', 'group');
+  rij.setAttribute('aria-label', c('gate.windowSub'));
+
   if (!geldig.length) {
     const leeg = document.createElement('p');
     leeg.className = 'pl-kal-leegzin';
     leeg.textContent = c('gate.none');
-    host.appendChild(leeg);
-    return;
+    rij.appendChild(leeg);
   }
 
-  const opStart = new Map(geldig.map((w) => [w.start, w]));
-  const taal = cfg.lang === 'nl' ? 'nl-NL' : 'en-GB';
-
-  /* Eén regel onder de agenda die de gekozen periode uitschrijft. De ruit toont
-     WELKE dagen; deze regel bevestigt WAT je gekozen hebt, in dezelfde woorden
-     als de bevestigingsstap straks. */
-  const keuze = document.createElement('p');
-  keuze.className = 'pl-kal-keuze';
-  keuze.hidden = true;
-
-  const maanden = [];
   geldig.forEach((w) => {
-    const m = w.start.slice(0, 7);
-    if (maanden.indexOf(m) === -1) maanden.push(m);
-  });
-  maanden.sort();
+    const eind = w.end || w.start;
+    const knop = button('', 'pl-dag');
+    knop.dataset.start = w.start;
+    knop.dataset.end = eind;
+    knop.setAttribute('aria-pressed', w.start === gekozen ? 'true' : 'false');
+    if (w.start === gekozen) knop.classList.add('is-picked');
+    knop.setAttribute('aria-label', eind !== w.start ? `${day(w.start)} – ${day(eind)}` : day(w.start));
 
-  maanden.forEach((maand) => {
-    host.appendChild(kalenderMaand(maand, opStart, taal, host, keuze));
+    const wd = document.createElement('span');
+    wd.className = 'pl-dag-wd';
+    wd.textContent = deel(taal, w.start, { weekday: 'short' });
+    const nr = document.createElement('span');
+    nr.className = 'pl-dag-nr';
+    nr.textContent = deel(taal, w.start, { day: 'numeric' });
+    const mnd = document.createElement('span');
+    mnd.className = 'pl-dag-mnd';
+    mnd.textContent = deel(taal, w.start, { month: 'short' });
+    knop.append(wd, nr, mnd);
+    if (eind !== w.start) {
+      const tot = document.createElement('span');
+      tot.className = 'pl-dag-tot';
+      tot.textContent = `– ${deel(taal, eind, { weekday: 'short', day: 'numeric' })}`;
+      knop.appendChild(tot);
+    }
+    knop.addEventListener('click', () => kiesVenster(knop, host, keuze));
+    rij.appendChild(knop);
   });
+  host.appendChild(rij);
+
+  /* Eerder / later. Alleen tonen wat er is: een knop naar een lege bladzijde
+     is een belofte die niet uitkomt. */
+  const nav = document.createElement('div');
+  nav.className = 'pl-dagen-nav';
+  const eerder = button(c('gate.earlier'), 'pl-dagen-knop');
+  eerder.hidden = !(info.earlier && gateStapel.length);
+  eerder.addEventListener('click', () => {
+    const terug = gateStapel.pop();
+    runGate(terug === undefined ? null : terug);
+  });
+  const later = button(c('gate.later'), 'pl-dagen-knop');
+  later.hidden = !info.more || !geldig.length;
+  later.addEventListener('click', () => {
+    gateStapel.push(gateFrom);
+    const laatste = geldig[geldig.length - 1];
+    runGate(dagNa(laatste.start));
+  });
+  const bereik = document.createElement('span');
+  bereik.className = 'pl-dagen-bereik';
+  if (geldig.length) {
+    const a = geldig[0].start;
+    const b = geldig[geldig.length - 1].start;
+    bereik.textContent = `${deel(taal, a, { day: 'numeric', month: 'short' })} – ${deel(taal, b, { day: 'numeric', month: 'short' })}`;
+  }
+  nav.append(eerder, bereik, later);
+  if (!eerder.hidden || !later.hidden) host.appendChild(nav);
+
   host.appendChild(keuze);
 }
 
-/** Eén maandruit. */
-function kalenderMaand(maand, opStart, taal, host, keuze) {
-  const [jaar, mnd] = maand.split('-').map(Number);
-  const blok = document.createElement('div');
-  blok.className = 'pl-kal';
-  /* De maand op het blok, zodat markeerBereik() de datum van een niet-klikbare
-     dag kan terugrekenen uit het dagnummer. */
-  blok.dataset.maand = maand;
-
-  const kop = document.createElement('p');
-  kop.className = 'pl-kal-maand';
+/** Eén deel van een datum, in de taal van de pagina. */
+function deel(taal, iso, opties) {
   try {
-    kop.textContent = new Intl.DateTimeFormat(taal, { month: 'long', year: 'numeric', timeZone: 'UTC' })
-      .format(new Date(Date.UTC(jaar, mnd - 1, 1)));
-  } catch { kop.textContent = maand; }
-  blok.appendChild(kop);
-
-  /* De koprij met de weekdagen. `aria-hidden`, want elke knop draagt zijn eigen
-     volledige datum als label — een schermlezer die eerst zeven afkortingen moet
-     doorlopen, is er niet mee geholpen. */
-  const week = document.createElement('div');
-  week.className = 'pl-kal-week';
-  week.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < 7; i++) {
-    const cel = document.createElement('span');
-    /* 5 maart 2026 was een maandag; vandaar dat vaste anker om zeven namen te
-       krijgen zonder een lijst per taal. */
-    try {
-      cel.textContent = new Intl.DateTimeFormat(taal, { weekday: 'short', timeZone: 'UTC' })
-        .format(new Date(Date.UTC(2026, 0, 5 + i)));
-    } catch { cel.textContent = ''; }
-    week.appendChild(cel);
-  }
-  blok.appendChild(week);
-
-  const dagen = document.createElement('div');
-  dagen.className = 'pl-kal-dagen';
-
-  /* Maandag als eerste kolom: getDay() geeft zondag = 0, dus omrekenen. */
-  const eerste = new Date(Date.UTC(jaar, mnd - 1, 1));
-  const schuif = (eerste.getUTCDay() + 6) % 7;
-  for (let i = 0; i < schuif; i++) {
-    const leeg = document.createElement('span');
-    leeg.className = 'pl-kal-leeg';
-    leeg.setAttribute('aria-hidden', 'true');
-    dagen.appendChild(leeg);
-  }
-
-  const aantal = new Date(Date.UTC(jaar, mnd, 0)).getUTCDate();
-  for (let d = 1; d <= aantal; d++) {
-    const iso = `${maand}-${String(d).padStart(2, '0')}`;
-    const venster = opStart.get(iso);
-    if (!venster) {
-      const uit = document.createElement('span');
-      uit.className = 'pl-kal-dag is-uit';
-      uit.textContent = String(d);
-      uit.setAttribute('aria-hidden', 'true');
-      dagen.appendChild(uit);
-      continue;
-    }
-    const knop = button(String(d), 'pl-kal-dag');
-    knop.dataset.start = venster.start;
-    knop.dataset.end = venster.end || venster.start;
-    knop.setAttribute('aria-pressed', 'false');
-    /* Het volledige bereik als label, want "12" zegt een schermlezer niets. */
-    knop.setAttribute('aria-label', knop.dataset.end !== knop.dataset.start
-      ? `${day(knop.dataset.start)} – ${day(knop.dataset.end)}`
-      : day(knop.dataset.start));
-    knop.addEventListener('click', () => kiesVenster(knop, host, keuze));
-    dagen.appendChild(knop);
-  }
-
-  blok.appendChild(dagen);
-  return blok;
+    return new Intl.DateTimeFormat(taal, { ...opties, timeZone: 'UTC' })
+      .format(new Date(`${iso}T00:00:00Z`)).replace(/\.$/, '');
+  } catch { return iso; }
 }
 
-/** Eén venster kiezen: de knop aan, de hele periode oplichten, de velden gezet. */
+/** De dag na een ISO-datum, als ISO-datum. */
+function dagNa(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Eén venster kiezen: de kaart aan, de velden gezet, de regel eronder gevuld. */
 function kiesVenster(knop, host, keuze) {
-  qa('.pl-kal-dag', host).forEach((o) => {
-    o.classList.remove('is-picked', 'in-bereik');
-    if (o.tagName === 'BUTTON') o.setAttribute('aria-pressed', 'false');
+  qa('.pl-dag', host).forEach((o) => {
+    o.classList.remove('is-picked');
+    o.setAttribute('aria-pressed', 'false');
   });
   knop.classList.add('is-picked');
   knop.setAttribute('aria-pressed', 'true');
 
-  /* De dagen tússen start en eind, ook als die in de volgende maandruit staan.
-     Op datum en niet op positie: een venster dat over een maandgrens loopt, hoort
-     in beide ruiten op te lichten. */
   const start = knop.dataset.start;
   const eind = knop.dataset.end;
-  /* Eén doorloop voor alle cellen, ook de niet-klikbare: een venster van twee
-     dagen heeft meestal een tweede dag die zelf geen startdag is, en die hoort
-     net zo goed op te lichten. */
-  if (eind !== start) markeerBereik(host, start, eind);
-
   setHidden('window_start', start);
   setHidden('window_end', eind);
 
@@ -7435,27 +7512,6 @@ function kiesVenster(knop, host, keuze) {
   keuze.textContent = eind !== start
     ? `${c('gate.chosen')}: ${day(start)} – ${day(eind)}`
     : `${c('gate.chosen')}: ${day(start)}`;
-}
-
-/**
- * De dagen binnen een gekozen venster oplichten, ook de dagen die zelf geen
- * startdag zijn. Die staan als `<span>` in de ruit en hebben geen dataset, dus de
- * datum wordt hier uit de maandkop en het dagnummer teruggerekend.
- */
-function markeerBereik(host, start, eind) {
-  qa('.pl-kal', host).forEach((blok) => {
-    const cellen = qa('.pl-kal-dag', blok);
-    cellen.forEach((cel) => {
-      let iso = cel.dataset.start;
-      if (!iso) {
-        const nr = Number(cel.textContent);
-        const maand = blok.dataset.maand;
-        if (!maand || !Number.isInteger(nr)) return;
-        iso = `${maand}-${String(nr).padStart(2, '0')}`;
-      }
-      if (iso > start && iso <= eind) cel.classList.add('in-bereik');
-    });
-  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7632,8 +7688,18 @@ function renderSummary() {
   if (vast !== null && Number.isFinite(vast)) {
     rows.push([c('sum.net'), euro(vast)]);
   } else {
-    const quote = kind ? quoteFor(kind, n, outfitN) : null;
-    if (quote) rows.push([c('sum.net'), euro(quote.net)]);
+    /* ── HETZELFDE GETAL ALS IN DE ZIJBALK — 19 september 2026 ──────────────
+       Dit stond als quoteFor(kind, n, outfitN): zonder extra hoeken, zonder
+       hoge resolutie en zonder voorrang. Gemeten op de livesite: zijbalk
+       "€492" (5 × €82 + €82 voorrang), samenvatting "Orderbedrag €410". Het
+       scherm dat vraagt of alles klopt, noemde een ander bedrag dan de kassa.
+       Nu dezelfde som als syncTotal(). */
+    const quote = kind ? quoteFor(kind, n, outfitN, extrasCount(), hoogResCount()) : null;
+    if (quote) {
+      const voorrang = voorrangAan() ? voorrangBedragNu(quote.net) : null;
+      const net = voorrang !== null ? round2(quote.net + voorrang) : quote.net;
+      rows.push([c('sum.net'), euro(net)]);
+    }
   }
 
   // WHAT WAS SENT, IN THE UNIT THE CUSTOMER CARES ABOUT. This row used to read

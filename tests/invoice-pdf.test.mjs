@@ -562,10 +562,12 @@ const markPdf = await renderInvoicePdf(base());
 const markStreams = streamsOf(markPdf).join('\n');
 // De vul-operator van PDF. Die staat alleen in de stroom als er een pad is
 // getekend; tekst en lijnen leveren hem niet op (een lijn eindigt op S).
-check('er wordt een gevuld pad getekend', /(^|\s)f\*?(\s|$)/m.test(markStreams), true);
-// Twee subpaden, dus minstens twee keer een 'moveto' in de kop. Het teken bestaat
-// uit de V en de bliksem eromheen; verdwijnt er één, dan is het geen merkteken meer.
-check('twee subpaden, niet één', (markStreams.match(/(^|\s)m(\s|$)/gm) || []).length >= 2, true);
+/* ── HET V-TEKEN STAAT ER NIET MEER OP — 19 september 2026 ───────────────────
+   Dat merk is uit de roulatie (Lucas: nooit meer gebruiken); WM_OPACITY staat
+   op 0 en watermark() tekent dan niets. Wat de suite nu bewaakt is het
+   omgekeerde: géén gevuld pad meer in de stroom, zodat een teruggedraaide
+   opacity of een nieuw ingeplakt merkteken hier meteen opvalt. */
+check('er wordt géén gevuld pad meer getekend (het V-watermerk is weg)', /(^|\s)f\*?(\s|$)/m.test(markStreams), false);
 check('het blijft vector: geen ingesloten afbeelding',
   Buffer.from(markPdf).toString('latin1').includes('/Image'), false);
 check('en het teken kost bijna niets', markPdf.length < 6000, true);

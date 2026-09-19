@@ -153,11 +153,23 @@ export const SHOTS = [
    *
    * HET BLIJFT OPTIONEEL, en het etiket op het vakje zegt dat ook. Wat verplicht
    * is, is de keuze — niet de foto. Zie needsChoice in de copytabel onderaan
-   * voor de regel die de kaart daarover toont. */
+   * voor de regel die de kaart daarover toont.
+   *
+   * ── EN WEER TERUG: LEEG IS OVERGESLAGEN — 19 SEPTEMBER 2026 ──────────────
+   *
+   * Uit de doorlichting: een klant met vijf producten moest vijf keer "sla
+   * over" klikken op een vakje dat OPTIONEEL heet, en las dat als een fout.
+   * Lucas: *"Gedragen écht optioneel: ja."* Dus `mustDecide: false`: een leeg
+   * vakje telt als overgeslagen, de knop "Sla deze over" blijft bestaan voor
+   * wie het expliciet wil zeggen, en de hint eronder blijft. De studio leest
+   * een leeg vakje voortaan als "niet meegestuurd" — dezelfde uitkomst als een
+   * bewuste nee, want in beide gevallen wordt de on-model foto uit de platte
+   * foto's gelezen. De derde soort vakje blijft in de code bestaan (de vlag en
+   * mustDecideShot()), alleen staat er nu geen hoek meer op. */
   {
     id: 'worn',
     required: false,
-    mustDecide: true,
+    mustDecide: false,
     name: { en: 'Worn', nl: 'Gedragen' },
     how: {
       en: 'Anyone wearing it, any phone, any room. It is for the fit, not for the picture.',

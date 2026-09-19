@@ -969,6 +969,35 @@ export function vatLabel(kind = 'excl', lang = 'en') {
   return nl ? 'excl. btw' : 'excl. VAT';
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * VIDEO IS OP AANVRAAG ZOLANG DE PIJPLIJN NOG NIET STAAT — 19 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Uit de doorlichting: de voorpagina, /start, /video en /pricing adverteerden
+ * "vanaf € 69 per clip" met een bestelknop, terwijl het formulier erachter een
+ * AANVRAAG is (geen afrekenstap, een schriftelijk antwoord). Lucas: *"Video op
+ * aanvraag tot de pijplijn staat."*
+ *
+ * Eén schakelaar. Staat hij aan, dan zeggen de deuren "op aanvraag" in plaats
+ * van het bedrag, en de looks op /video zijn kaarten zonder bestelknop (de
+ * vaste kinds tonen een "clip volgt"-plaat, zoals de lifestyle-looks zonder
+ * foto). AMOUNT.video zelf blijft staan: de abonnementen rekenen ermee
+ * (PLAN_CLIPS) en de prijs is niet veranderd — hij wordt alleen niet
+ * geadverteerd als iets wat je nu kunt afrekenen. Zet hem op false zodra de
+ * eerste clips geleverd kunnen worden; de deuren gaan dan vanzelf weer open.
+ */
+export const VIDEO_OP_AANVRAAG = true;
+
+/** Wat er op een deur staat als prijs voor video: het bedrag, of "op aanvraag". */
+export function videoPrijsLabel(lang = 'en', { hoofdletter = false } = {}) {
+  const nl = lang === 'nl';
+  if (VIDEO_OP_AANVRAAG) {
+    const t = nl ? 'op aanvraag' : 'on request';
+    return hoofdletter ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+  }
+  return nl ? `vanaf ${euro(AMOUNT.video, 'nl')} per clip` : `from ${euro(AMOUNT.video, 'en')} per clip`;
+}
+
 export const AMOUNT = {
   // Tier 0 · unattended, per product.
   //
@@ -1346,6 +1375,39 @@ export const VOORRANG = {
 export function voorrangBedrag(orderbedrag) {
   const ruw = Math.ceil(Number(orderbedrag || 0) * VOORRANG.deel);
   return Math.min(VOORRANG.plafond, Math.max(VOORRANG.bodem, ruw));
+}
+
+/**
+ * Heeft deze bestelling voorrang? Gelezen uit de opgeslagen details, want er
+ * is geen kolom voor: het formulier post `voorrang=1` en /api/order zet dat,
+ * met de rest van de velden, in details_json. Tot 19 september 2026 werd dat
+ * veld alleen bij het rekenen gelezen — de toeslag stond op de factuur, maar
+ * de bevestigingsmail, Studio en het beheerscherm zeiden allemaal "normale
+ * doorlooptijd". Dit is de ene plek die het antwoord geeft; wie het vraagt,
+ * vraagt het hier.
+ *
+ * Neemt een orderrij (met details_json als tekst of object) óf een kaal
+ * details-object. `/test-sample` haalt het veld eruit voordat het wordt
+ * opgeslagen, dus een proef geeft nooit ja.
+ */
+export function heeftVoorrang(bron) {
+  if (!bron || typeof bron !== 'object') return false;
+  let d = bron;
+  if ('details_json' in bron) {
+    const raw = bron.details_json;
+    if (!raw) return false;
+    if (typeof raw === 'string') { try { d = JSON.parse(raw); } catch { return false; } } else d = raw;
+  }
+  if (!d || typeof d !== 'object') return false;
+  const v = d.voorrang;
+  return v === true || v === 1 || v === '1' || v === 'on' || v === 'true';
+}
+
+/** De zin die overal staat als een bestelling voorrang heeft. */
+export function voorrangZin(lang) {
+  return lang === 'nl'
+    ? `Voorrang — we mikken op levering binnen ${VOORRANG.uren} uur, of de toeslag komt terug`
+    : `Priority — we aim for ${VOORRANG.uren} hours, or the surcharge comes back`;
 }
 
 /** Mag deze bestelling voorrang kopen? Buiten de grenzen wordt hij niet getoond. */
@@ -2127,9 +2189,14 @@ export const TIERS = {
     /* ÉÉN ZIN, want clause() maakt hier een bijzin van en zeventien FAQ-antwoorden
        plakken die middenin een andere zin. Het streven staat daarom apart in
        AIM_48 hieronder, en komt alleen op de plekken waar een tweede zin past. */
+    /* ── "VOORDAT JE BETAALT" IS WEG — 19 september 2026 ──────────────────
+       Sinds vandaag gaat een bestelling met een gekozen datum direct naar
+       Mollie; de datum komt uit een agenda die de poort al heeft vrijgegeven
+       en wordt vastgelegd zodra de bestelling binnen is. "Bevestigen voordat
+       je betaalt" beschreef een tussenstap die er niet meer is. */
     turnaround: {
-      en: 'A delivery date we reserve and confirm before you pay.',
-      nl: 'Een leverdatum die we vastleggen en bevestigen voordat je betaalt.',
+      en: 'A delivery date we reserve for you the moment your order is in.',
+      nl: 'Een leverdatum die we voor je vastleggen zodra je bestelling binnen is.',
     },
     /* De korte vorm houdt de vastgelegde datum en laat het streven weg. Dat is
        met opzet: in twee regels is er geen ruimte voor een nuance, en dan hoort
@@ -2137,8 +2204,8 @@ export const TIERS = {
        verwachting is. Zie de noot bij REVIEW_CLAIM_SHORT voor waarom de korte
        vorm hier staat en niet elders. */
     turnaroundShort: {
-      en: 'A delivery date, fixed before you pay',
-      nl: 'Een leverdatum, vast voor je betaalt',
+      en: 'A delivery date, fixed the moment you order',
+      nl: 'Een leverdatum, vast zodra je bestelt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
@@ -2550,7 +2617,11 @@ export function plans(lang = 'en', { jaarRollover = 3, jaarPrijzen = null } = {}
         nlx ? 'Een complete catalogusset en een lifestyle-carrousel voor elk product.' : 'A complete catalog set and a lifestyle carousel for every product.',
         ...(clips ? [nlx ? `${clips} videoclips per maand` : `${clips} video clips a month`] : []),
         ...(id === 'brand' ? [nlx ? 'Inclusief jouw eigen dedicated Merkmodel — volledig afgestemd op jouw merkesthetiek.' : 'Includes a dedicated Brand Model tailored to your brand — no separate casting or usage fees.'] : []),
-        turnaround('attended', l),
+        /* Een abonnement heeft geen leverdatum per bestelling maar een vaste
+           week per maand; de losse-bestelling-zin stond hier tot 19 september
+           2026 en klopte niet ("bevestigen voordat je betaalt" — een abonnee
+           betaalt vooraf). */
+        nlx ? 'Een vaste week per maand, voor jou vrijgehouden vóór losse bestellingen.' : 'A fixed week every month, held for you ahead of one-off orders.',
         /* ── DEZE REGEL GOLD VOOR ÉÉN VAN DE TWEE TERMIJNEN — 1 september 2026 ──
          *
          * Er stond onvoorwaardelijk "Maandelijks opzegbaar, ongebruikte producten

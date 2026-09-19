@@ -692,7 +692,11 @@ const c = nl ? {
     grid-template-columns: minmax(0, 1fr) minmax(0, 14rem);
     grid-template-areas: "kop kop" "baan woord";
     align-items: start;
-    padding: clamp(2.2rem, 4.6vw, 3.6rem) 0;
+    /* 19 september 2026: van 2.2–3.6rem naar 1.6–2.6rem, en de set hieronder
+       van 24rem naar 21rem hoog. Vier looks op /lifestyle waren 4.300 px;
+       de doorlichting vroeg om 30–40 % kortere dienstpagina's, en de ruimte
+       tussen twee looks was het grootste deel dat geen informatie droeg. */
+    padding: clamp(1.6rem, 3.2vw, 2.6rem) 0;
   }
   /* De enige scheiding tussen twee looks. Niet eromheen maar ertussen: een
      kader maakt er een kaart van en een kaart maakt er weer een optie in een
@@ -704,7 +708,7 @@ const c = nl ? {
      van 3,2rem is gemeten op "PHONE-MADE" in de smalste kolom waarin een kamer
      nog naast zijn tekst staat. */
   .sr-k-h {
-    margin: 0; font-size: clamp(1.7rem, 3.6vw, 3.2rem); line-height: .96;
+    margin: 0; font-size: clamp(1.6rem, 3.2vw, 2.8rem); line-height: .96;
     letter-spacing: -.025em; text-wrap: balance;
   }
   .sr-k-tag { margin: 0; font-size: clamp(.98rem, 1.5vw, 1.15rem); color: var(--ink-2); max-width: 46ch; }
@@ -741,7 +745,7 @@ const c = nl ? {
     display: grid; gap: 8px;
     grid-template-columns: 1.7fr minmax(0, 1fr);
     grid-template-rows: repeat(var(--sr-rest, 2), minmax(0, 1fr));
-    height: clamp(15rem, 27vw, 24rem);
+    height: clamp(14rem, 24vw, 21rem);
   }
   .sr-k-set:has(.sr-k-vak:only-child) .sr-k-vakken { grid-template-columns: minmax(0, 20rem); }
   .sr-k-vak {
@@ -1063,6 +1067,36 @@ const c = nl ? {
        hierboven doet dat nu zelf met auto-fit, dus er valt niets meer om te
        zetten. */
     .sr-eigen-kaart { grid-template-columns: 4.5rem minmax(0, 1fr); }
+  }
+  /* ── TWEE LOOKS NAAST ELKAAR — 19 september 2026 ──────────────────────────
+     Lucas, na de eerste snoeironde: *"Diepere snoei op /catalog e.d. …
+     doorvoeren."* Vier looks onder elkaar op /lifestyle waren 2.800 px, de
+     zes op /video 3.500: elke look een volle band van kop, baan en woord.
+     Op breed staan ze nu twee naast elkaar, elk als één kolom (kop, baan,
+     woord) met een lagere set. Wat blijft: jouw foto → de set, de pijl, de
+     namen — alleen kleiner en met z'n tweeën in het beeld. Eén look (Catalog)
+     houdt de volle breedte: één kolom van de helft naast niets is geen raster
+     maar een gat. */
+  @media (min-width: 64.01rem) {
+    .sr-kamers:has(.sr-kamer + .sr-kamer) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: clamp(2rem, 4vw, 3.5rem);
+    }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-kamer {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "kop" "baan" "woord";
+      gap: 1rem; padding: clamp(1.4rem, 2.4vw, 2rem) 0;
+      border-top: 1px solid var(--line);
+    }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-kop { margin-bottom: 0; }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-h { font-size: clamp(1.4rem, 2.2vw, 2rem); }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-tag { font-size: .98rem; }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-vakken { height: clamp(12rem, 17vw, 15rem); }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-woord {
+      flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1.2rem;
+    }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-best { flex: 1 1 16rem; }
+    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-cta { margin-top: 0; grid-auto-flow: column; align-items: center; gap: .9rem; }
   }
   @media (prefers-reduced-motion: reduce) {
     .sr-card { transition: none; }

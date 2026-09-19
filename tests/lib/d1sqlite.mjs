@@ -123,3 +123,24 @@ export function telling(db, sql, ...binds) {
   const rij = db.prepare(sql).get(...binds);
   return rij ? Object.values(rij)[0] : null;
 }
+
+/*
+ * ── DE VASTE LOOK VAN EEN TESTKLANT — ronde 4, 19 september 2026 ────────────
+ * queueLock() weigert sinds vandaag zonder look (zie src/lib/vasteLook.js).
+ * Elke test die iets vastzet, zet eerst de look: catalog met een achtergrond,
+ * lifestyle met een huisstijl, video met een lege rij. Eén plek, zodat de
+ * tests niet elk hun eigen INSERT dragen.
+ */
+export function zetLook(db, customerId, { catalog = true, lifestyle = true, video = true } = {}) {
+  const rijen = [];
+  if (catalog) rijen.push([customerId, 'catalog', '#FFFFFF', null]);
+  if (lifestyle) rijen.push([customerId, 'lifestyle', null, 'dunes']);
+  if (video) rijen.push([customerId, 'video', null, null]);
+  for (const [cid, style, bg, look] of rijen) {
+    db.prepare(
+      `INSERT INTO customer_style_locks (customer_id, style, background_hex, look)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(customer_id, style) DO UPDATE SET background_hex = excluded.background_hex, look = excluded.look`
+    ).run(cid, style, bg, look);
+  }
+}

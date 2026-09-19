@@ -47,11 +47,9 @@ import BackgroundPicker from './order/BackgroundPicker.astro';
 import Disclose from './Disclose.astro';
 import ModelKeuze from './order/ModelKeuze.astro';
 import { waHref } from '../data/whatsapp.js';
-import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE } from '../data/pricing.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE, vatLabel } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
-import LaptopCarousel from './LaptopCarousel.astro';
-import { laptopSlides } from '../data/laptopSlides.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -120,7 +118,9 @@ const c = nl ? {
   modelVouw: 'De foto op een model',
   modelStand: 'wij kiezen er een',
 
-  fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} · meer betaal je niet voor de proef.`,
+  /* "(excl. btw)" sinds 19 september 2026: de proef is € 1 netto, de kassa
+     vraagt er btw over — anders belooft deze regel een bedrag dat niet klopt. */
+  fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} (${vatLabel('excl', 'nl')}) · meer betaal je niet voor de proef.`,
 
   slotEtiket: 'Liever even overleggen',
   slotH: 'Liever gewoon even overleggen?',
@@ -172,7 +172,7 @@ const c = nl ? {
   modelVouw: 'The on-model shot',
   modelStand: 'we choose one',
 
-  fijndruk: `One sample per business · a ${SAMPLE.feeNote} · that’s all you pay for the sample.`,
+  fijndruk: `One sample per business · a ${SAMPLE.feeNote} (${vatLabel('excl', 'en')}) · that’s all you pay for the sample.`,
 
   slotEtiket: 'Rather talk it through',
   slotH: 'Rather just talk it through?',
@@ -219,37 +219,19 @@ const vink = 'M20 6L9 17l-5-5';
     </ul>
   </section>
 
-  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
-      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
-      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
-      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
-      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
-      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
-      hetzelfde ding als op de voorpagina. */}
-  <section class="paneel" aria-labelledby="ts-lc">
-    <div class="paneel-kop">
-      <p class="etiket">{nl ? 'Wat je terugkrijgt' : 'What you get back'}</p>
-      {/* ── "ÉÉN BEELD VOOR €1" IS HIER WEG — 17 september 2026 ──────────────
-          Dat stond er, dertig centimeter onder de chip die "4 foto's, of 3"
-          zegt. Twee zinnen op één pagina die elkaar tegenspreken, en de klant
-          gelooft de zuinigste. Lucas, 8 augustus 2026: *"test sample is niet 1
-          beeld maar 1 product volledig geleverd, dus bij keuze catalog 4
-          beelden en lifestyle 3 beelden. Dit is belangrijk om aan te passen
-          want dit laat de waarde zien van de test sample."* Precies hier ging
-          die waarde verloren.
+  {/* ── HIER STOND EEN LAPTOP, EN DIE IS WEG — 18 september 2026 ───────────
+      Lucas: *"Er staan hier en daar ook laptop foto's die niet daar horen en
+      niet eens werken of goed in de achtergrond passen."*
 
-          De PLAAT toont er één — `stil` neemt de eerste slide en daarvan het
-          eerste beeld — dus de zin zegt nu wat je ziet én wat je krijgt, en de
-          aantallen komen uit pricing.js zodat ze niet los kunnen lopen. */}
-      <h2 id="ts-lc" class="hoog hoog-2">{nl ? 'Zo ziet je proef eruit als hij klaar is.' : 'This is what your sample looks like when it’s done.'}</h2>
-      <p class="lopend">{nl
-        ? `Eén van de ${CATALOG_IMAGES} catalogbeelden, op de plek waar het straks staat. Rechts de telefoonfoto die erin ging — voor ${SAMPLE.price} krijg je de hele set.`
-        : `One of the ${CATALOG_IMAGES} catalog images, in the place it ends up. On the phone, the shot that went in — for ${SAMPLE.price} you get the whole set.`}</p>
-    </div>
-    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
-      titel={nl ? 'Zo ziet je proef eruit als hij klaar is.' : 'This is what your sample looks like when it’s done.'} />
-  </section>
+      Deze was er één van, en hij was gisteren nog het onderwerp van een andere
+      reparatie: het bijschrift zei "één beeld voor €1" terwijl de chip erboven
+      "4 foto's, of 3" zegt. Die tegenspraak is nu op de kortste manier opgelost
+      — de plaat toonde er namelijk toch maar één, en dat is precies het
+      misverstand dat deze pagina niet kan gebruiken.
 
+      Wat er blijft staan is wat de proef IS: de chip met het aantal, de uitleg
+      eronder en het formulier. Wie wil zien hoe het eruitziet, ziet dat op
+      /catalog en op de voorpagina — en daar loopt de plaat ook echt. */}
 
   {/* Weigeringen komen van /api/order terug als een redirect met ?error=…, omdat
       het versturen eindigt in een echte navigatie. initFormRefusal() in

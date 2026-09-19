@@ -52,6 +52,8 @@ import { VOORKEUREN, VOORKEUR_STANDAARD, VOORKEUR_COPY } from '../../data/contac
    kop van overzichtbeelden.js voor waarom hij daar staat en niet hier. */
 import { tegelsVoor, ECHTE_BESTELLING } from '../../data/overzichtbeelden.js';
 import Note from '../Note.astro';
+import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
+import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
 /* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
 import '../../styles/stijl22.css';
 interface Props {
@@ -107,6 +109,7 @@ const FOUTEN: Record<string, string> = nl ? {
   btw: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of laat het veld leeg.',
   opslaan: 'We konden je aanvraag niet vastleggen. Probeer het opnieuw, of mail hello@visuails.com.',
   mollie: 'Het betaalscherm ging niet open. Er is niets afgeschreven. Probeer het opnieuw, of mail hello@visuails.com.',
+  verklaring: 'Vink de twee verklaringen onderaan aan — VISUAILS levert uitsluitend zakelijk, en we beginnen in jouw week, vóór de bedenktijd voorbij is.',
 } : {
   plan: 'Choose a plan first.',
   termijn: 'Choose a term first.',
@@ -116,6 +119,7 @@ const FOUTEN: Record<string, string> = nl ? {
   btw: 'That VAT number does not have the right shape for the country you picked. Correct it, or leave the field empty.',
   opslaan: 'We could not record your request. Try again, or email hello@visuails.com.',
   mollie: 'The payment screen did not open. Nothing has been charged. Try again, or email hello@visuails.com.',
+  verklaring: 'Tick the two declarations at the bottom — VISUAILS supplies businesses only, and we start in your week, before the withdrawal period ends.',
 };
 const foutTekst = FOUTEN[fout] || '';
 
@@ -952,6 +956,24 @@ const kaarten = planList.map((p) => {
             </ol>
           </div>
 
+          {/* ── DEZELFDE TWEE VERKLARINGEN ALS OP HET BESTELFORMULIER — 19 sep 2026
+              Zie de lange noot bij .pl-consent in OrderFlow.astro: de zakelijke
+              verklaring (src/data/business.js) en de herroepingsverklaring
+              (src/data/consent.js), elk met de versie van de tekst in een
+              verborgen veld. Dit formulier eindigt in een machtiging en had ze
+              niet. functions/api/plan.js weigert zonder. */}
+          <div class="ps-verklaringen">
+            <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
+            <label class="ps-consent">
+              <input type="checkbox" name="business_declaration" value="yes" required data-melding={nl ? 'VISUAILS levert uitsluitend zakelijk. Vink dit aan om te bevestigen dat je voor je bedrijf afsluit.' : 'VISUAILS supplies businesses only. Please tick this to confirm you are subscribing for a business.'} />
+              <span>{currentBusiness(lang)}</span>
+            </label>
+            <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
+            <label class="ps-consent">
+              <input type="checkbox" name="withdrawal_consent" value="yes" required data-melding={nl ? 'Vink dit aan om te bevestigen dat we mogen beginnen voordat je bedenktijd voorbij is.' : 'Please tick this to confirm production may start before the withdrawal period ends.'} />
+              <span>{currentConsent(lang)}</span>
+            </label>
+          </div>
           <button class="knop knop-inkt ps-verzend" type="submit">{c.submit}</button>
           <p class="ps-sum-meta">{c.cancelNote}</p>
         </aside>
@@ -1293,6 +1315,9 @@ const kaarten = planList.map((p) => {
      voorwaarde in die de klant vóór het betalen moet lezen). Daarom: twee naast
      elkaar en de derde over de volle breedte eronder, waar hij de ruimte heeft
      om die zin uit te schrijven. Onder 34rem staan ze alle drie onder elkaar. */
+  .ps-verklaringen { display: grid; gap: .6rem; margin: 1.2rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .ps-consent { display: flex; gap: .6rem; align-items: flex-start; font-size: .84rem; line-height: 1.5; color: var(--inkt-2); cursor: pointer; }
+  .ps-consent input { margin-top: .2rem; }
   .ps-terms { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
   .ps-terms > .ps-term:nth-child(3) { grid-column: 1 / -1; }
   @media (max-width: 34rem) { .ps-terms { grid-template-columns: 1fr; } }
@@ -1313,7 +1338,7 @@ const kaarten = planList.map((p) => {
      in ModelPicker.astro, waar dezelfde fout stond. */
   .ps-term-label {
     padding: .12rem .5rem; border-radius: 999px; background: var(--accent); color: #111111;
-    font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+    font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
   }
   .ps-term-sub { font-size: .86rem; line-height: 1.5; color: var(--ink-3); }
   .ps-term-maat { display: none; margin: 0; font-size: .86rem; color: var(--ink-3); }

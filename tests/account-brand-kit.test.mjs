@@ -775,12 +775,14 @@ console.log('\nde staat van elke sectie');
   }
   const plan = await get('/account/plan');
   check('/account/plan telt zijn slots per soort', plan.view.geen === false && plan.view.saldo.slots.length === 2);
-  check('en tekent twaalf kaders voor deze maand', plan.view.saldo.slots[0].frames.length === 12);
+  /* Sinds 19 september 2026: de gemaakte en vastgezette slots als kaders, de
+     vrije als één getal — twaalf plus-tegels lazen als twaalf uploadvakken. */
+  check('en telt de vrije slots als één getal naast de kaders', plan.view.saldo.slots[0].frames.length + plan.view.saldo.slots[0].vrij === 12 && plan.view.saldo.slots[0].vrij > 0);
   const lijst = await get('/account/plan?tab=bestellen');
   check('de besteltab draagt de lijst met een vastzetknop per item', lijst.view.nu === 'bestellen' && lijst.view.wachtrij.length === 2 && lijst.view.wachtrij.every((q) => ['lock', 'unlock'].includes(q.lockDo)));
   const { AMOUNT: BEDRAG, euro: euroBedrag } = await import('../src/data/pricing.js');
   const ed = await get('/account/plan?tab=edities');
-  check('de editions-tab is een tab met vier kleine beelden en een mailto', ed.view.nu === 'edities' && ed.view.edities.beelden.length === 4 && ed.view.edities.beelden.every((b) => /-w380\.webp$/.test(b.src) && b.alt) && /^mailto:hello@visuails\.com\?subject=/.test(ed.view.edities.mailto));
+  check('een oude editions-link landt op het overzicht (de tab is sinds 19 sep 2026 één regel)', ed.view.nu === 'maand');
   check('en het bedrag komt uit AMOUNT, geen vanaf-prijs', typeof BEDRAG.editions === 'number' && euroBedrag(BEDRAG.editions, 'en').startsWith('€') && !/\bfrom €|vanaf €/i.test(ed.st.t.edPrice));
 }
 

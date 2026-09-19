@@ -27,7 +27,7 @@
  *   · en de melding blijft terugkomen zolang er niet gestart is — er zit
  *     bewust geen slot op, anders verdwijnt de herinnering na één nacht.
  */
-import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import { tasks } from '../cron/index.js';
 import { createSubscriptionRow, activateSubscription, queueAdd, queueLock, monthKey } from '../src/lib/subscription.js';
 import { grantSlots } from '../src/lib/slots.js';
@@ -59,6 +59,7 @@ const toegekend = productsFor('studio');
 
 async function abonnee(id, email, brand, dag) {
   db.prepare('INSERT INTO customers (id, email, brand) VALUES (?, ?, ?)').run(id, email, brand);
+  zetLook(db, id);
   const { row } = await createSubscriptionRow(env, { customerId: id, planId: 'studio', termId: 'monthly', windowDay: dag });
   await activateSubscription(env, row.id);
   db.prepare('INSERT INTO subscription_months (subscription_id, month, granted, used) VALUES (?, ?, ?, 0)')

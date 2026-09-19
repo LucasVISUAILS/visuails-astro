@@ -1,0 +1,16 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await p.goto('http://127.0.0.1:4399/nl/start/', { waitUntil: 'networkidle' });
+await p.addStyleTag({ content: '.reveal.pending{opacity:1!important;transform:none!important}' });
+const el = p.locator('.st-deuren').first();
+await el.scrollIntoViewIfNeeded();
+await el.screenshot({ path: '/tmp/claude-0/tegels.png', clip: undefined });
+const m = await p.evaluate(() => [...document.querySelectorAll('.st-deur')].slice(0,3).map(e => Math.round(e.getBoundingClientRect().height)));
+console.log('tegelhoogtes', m);
+const p2 = await b.newPage({ viewport: { width: 390, height: 800 } });
+await p2.goto('http://127.0.0.1:4399/nl/start/', { waitUntil: 'networkidle' });
+await p2.addStyleTag({ content: '.reveal.pending{opacity:1!important;transform:none!important}' });
+await p2.locator('.st-deur').first().screenshot({ path: '/tmp/claude-0/tegel-390.png' });
+console.log('overflow', await p2.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth));
+await b.close();

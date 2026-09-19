@@ -62,6 +62,10 @@ import { VAT_RATE } from './quote.js';
    Mollie-sleutel bepaalt of er echt geld door dit abonnement kan lopen. Zie
    isTestmodus() daar, en migrations/0046-proefbestellingen.sql. */
 import { isTestmodus } from './mollie.js';
+/* De poort op de vaste look (ronde 4, 19 september 2026) — zie de kop van
+   vasteLook.js: vastzetten mag pas als de look voor de dienst(en) van dit slot
+   gezet is. Lucas: *"Toestaan als de look gezet is."* */
+import { laadLocks, lookCompleet } from './vasteLook.js';
 
 /* De maanden die meetellen voor het saldo: deze plus het venster dat mag
  * doorschuiven. Drie bij een jaartermijn, één bij een maandtermijn — en dus
@@ -297,7 +301,7 @@ export async function loadQueue(env, customerId) {
        geen datum wil. Zie de kop van die migratie voor waarom dat op het item zit
        en niet in een aparte planningstabel. */
     `SELECT id, position, name, note, upload_batch, kind, locked_at, created_at,
-            window_start, window_end, asap
+            window_start, window_end, asap, model
        FROM plan_queue
       WHERE customer_id = ?1 AND taken_at IS NULL
       ORDER BY position ASC, id ASC`
@@ -633,7 +637,7 @@ export function queueMax() { return QUEUE_MAX; }
  * kunt onderbreken. Zou de eerste toets al een slot kosten, dan durft niemand te
  * beginnen zonder zeker te weten dat hij het afmaakt.
  */
-export async function queueAdd(env, customerId, { name, note = '', uploadBatch = null, kind = 'complete' }) {
+export async function queueAdd(env, customerId, { name, note = '', uploadBatch = null, kind = 'complete', model = null }) {
   const naam = String(name || '').trim().slice(0, 120);
   if (!naam) return null;
   const open = await loadQueue(env, customerId);
@@ -643,11 +647,11 @@ export async function queueAdd(env, customerId, { name, note = '', uploadBatch =
   if (open.length >= QUEUE_MAX) return null;
   const achteraan = open.length ? Math.max(...open.map((q) => Number(q.position) || 0)) + 1 : 0;
   return stil(() => env.DB.prepare(
-    `INSERT INTO plan_queue (customer_id, position, name, note, upload_batch, kind)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-     RETURNING id, position, name, note, upload_batch, kind, locked_at, created_at`
+    `INSERT INTO plan_queue (customer_id, position, name, note, upload_batch, kind, model)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+     RETURNING id, position, name, note, upload_batch, kind, locked_at, created_at, model`
   ).bind(customerId, achteraan, naam, String(note || '').trim().slice(0, 500) || null, uploadBatch,
-         String(kind || 'complete')).first());
+         String(kind || 'complete'), String(model || '').trim().slice(0, 40) || null).first());
 }
 
 /**
@@ -699,6 +703,14 @@ export async function queueLock(env, customerId, id) {
   if (!magVastzetten) return { ok: false, reden: `abonnement-${sub.status}` };
 
   const soort = String(rij.kind || 'complete');
+  /* ── ZONDER LOOK GEEN VASTZETTEN — 19 september 2026 ──────────────────────
+     Tot vandaag kon een item vast komen te staan terwijl er voor zijn dienst
+     geen achtergrond (catalog) of look (lifestyle) vastlag; de studio moest
+     het dan alsnog vragen. De poort staat hier, vóór het slot wordt
+     afgeschreven, en zegt welke dienst(en) nog open staan, zodat het scherm
+     naar precies die kaart op /account/brand-kit kan wijzen. */
+  const look = lookCompleet(await laadLocks(env, customerId), soort);
+  if (!look.ok) return { ok: false, reden: 'geen-look', ontbreekt: look.ontbreekt, soort };
   const geboekt = await verbruikSlot(env, sub.id, vensterVoor(sub), soort, 1);
   if (geboekt !== 1) return { ok: false, reden: 'geen-slot', soort };
 

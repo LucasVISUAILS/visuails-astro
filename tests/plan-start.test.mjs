@@ -28,7 +28,7 @@
  *     geen omzetsom de maand dubbel telt en de klant geen betaalknop krijgt;
  *   · een gepauzeerd abonnement start niets.
  */
-import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import { startPlanWindow, klaarOmTeStarten } from '../src/lib/planStart.js';
 import {
   createSubscriptionRow, activateSubscription, pauseSubscription,
@@ -52,6 +52,7 @@ if (mislukt.length) { console.error('schema kon niet geladen worden:', mislukt);
 const env = { DB: d1(db) };
 
 db.exec("INSERT INTO customers (id, email, brand, name) VALUES (1, 'mara@volt.test', 'VOLT', 'Mara')");
+zetLook(db, 1);
 const { row: sub } = await createSubscriptionRow(env, { customerId: 1, planId: 'studio', termId: 'monthly', windowDay: 8 });
 await activateSubscription(env, sub.id);
 
@@ -79,7 +80,26 @@ console.log('\nalleen wat VASTGEZET is telt mee');
  * keer als wij het maken — en dat is onzichtbaar tot iemand zijn saldo natelt. */
 const a1 = await queueAdd(env, 1, { name: 'Winterjas, zwart', uploadBatch: 'b-001' });
 const a2 = await queueAdd(env, 1, { name: 'Gebreide trui', uploadBatch: '' });      // geen foto's
-const a3 = await queueAdd(env, 1, { name: 'Cargobroek, sand', uploadBatch: 'b-002' });
+/* Met een eigen gezicht (migratie 0050): 'ava' uit de bibliotheek. */
+const a3 = await queueAdd(env, 1, { name: 'Cargobroek, sand', uploadBatch: 'b-002', model: 'ava' });
+
+console.log('\nzonder look geen vastzetten — ronde 4, 19 september 2026');
+{
+  /* Lucas: "Toestaan als de look gezet is." De look van klant 1 staat (zetLook);
+     haal de lifestylekant weg en een complete bundel mag niet meer vast — met
+     de dienst erbij, zodat het scherm naar de juiste kaart kan wijzen. */
+  db.exec("DELETE FROM customer_style_locks WHERE customer_id = 1 AND style = 'lifestyle'");
+  const dicht = await queueLock(env, 1, a1.id);
+  ok('de poort is dicht', dicht.ok, false);
+  ok('met de reden geen-look', dicht.reden, 'geen-look');
+  ok('en zegt welke dienst open staat', dicht.ontbreekt, ['lifestyle']);
+  const balans0 = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete');
+  ok('en er is géén slot afgeschreven', balans0.verbruikt, 0);
+  /* Een look zonder huisstijl telt niet als gezet. */
+  db.exec("INSERT INTO customer_style_locks (customer_id, style, ratio) VALUES (1, 'lifestyle', 'portrait45')");
+  ok('een lifestyle-rij zonder look houdt de poort dicht', (await queueLock(env, 1, a1.id)).reden, 'geen-look');
+  db.exec("UPDATE customer_style_locks SET look = 'dunes' WHERE customer_id = 1 AND style = 'lifestyle'");
+}
 
 let st = await planState(env, 1);
 ok('drie op de lijst, nog niets vastgezet', klaarOmTeStarten(st).items.length, 0);
@@ -114,6 +134,16 @@ const details = JSON.parse(bestelling.details_json);
 ok('de producten staan als product_pN', [details.product_p1, details.product_p2],
   ['Winterjas, zwart', 'Cargobroek, sand']);
 ok('en de bestelling weet van welk abonnement hij komt', details.abonnement, sub.ref);
+
+console.log('\nde vaste look gaat mee in de bestelling — ronde 4');
+/* Zie src/lib/vasteLook.js: dezelfde sleutels als het bestelformulier, zodat
+   /admin en de werkmap de bestelling lezen als elke andere. */
+ok('de achtergrond van de catalogkant staat erin', details.background_hex, '#FFFFFF');
+ok('met de id uit backgrounds.js', details.background, 'white');
+ok('de huisstijl van de lifestylekant als style', details.style, 'dunes');
+ok('het gezicht per product staat als model_pN', details.model_p2, 'ava');
+ok('en een product zonder eigen gezicht heeft er geen', 'model_p1' in details, false);
+ok('de soort slot staat per product', details.kind_p1, 'complete');
 
 console.log('\nde lijst loopt mee, en het saldo wordt NIET nog een keer geraakt');
 const rijen = db.prepare('SELECT name, taken_at, order_id FROM plan_queue ORDER BY position').all();

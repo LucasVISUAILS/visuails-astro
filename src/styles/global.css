@@ -1557,6 +1557,16 @@ p, li, dd, dt, figcaption, blockquote, .lead, .hint {
 .btn, label, code, kbd, th, .eyebrow, .eyebrow-page, [class*="-pill"], [class*="-tag"] {
   hyphens: manual;
 }
+/* ── NIET IN DE NAVIGATIE, EN NIET IN EEN KOP OP EEN BREED SCHERM — 19 sept 2026
+   Op 958 px brak het menu "PRIJ-ZEN", "GALE-RIJ" en "CON-TACT" af (de <li>-regel
+   hierboven), en de H1 van de voorpagina brak op 1424 px "CAM-PAGNE" af — het
+   merkwoord van de site, met een streepje. Een menu-item is een etiket, en een
+   kop op een breed scherm heeft de ruimte om op een woordgrens te breken. De
+   afbreking blijft aan onder 60rem, waar de smalle kolom hem nodig heeft. */
+nav a, nav li, .lang-switch, .nav-account-link { hyphens: manual; }
+@media (min-width: 60rem) {
+  h1, h2, .display { hyphens: manual; }
+}
 
 h1, h2, .display { font-family: var(--font-heading); font-stretch: var(--stretch-kop); color: var(--ink); font-weight: 500; line-height: 1.04; letter-spacing: -0.03em; text-wrap: balance; margin: 0; }
 h1 { font-size: var(--t-h1); }

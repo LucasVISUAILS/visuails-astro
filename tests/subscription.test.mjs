@@ -21,7 +21,7 @@
  *   · queueTakeIds() pakt niets twee keer, en een concept nooit.
  */
 import { readFileSync } from 'node:fs';
-import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import {
   monthKey, makeSubRef, verbruikToestaan, verbruikBoeken,
   createSubscriptionRow, loadSubscription, subscriptionByRef,
@@ -49,6 +49,7 @@ const env = { DB: d1(db) };
 /* Twee klanten, want de helft van wat hier bewezen wordt, gaat over het verschil
    tussen "van mij" en "van iemand anders". */
 db.exec("INSERT INTO customers (id, email) VALUES (1, 'een@voorbeeld.test'), (2, 'twee@voorbeeld.test')");
+zetLook(db, 1); zetLook(db, 2);
 
 console.log('\neen aanvraag wordt een rij, en maar één');
 const gemaakt = await createSubscriptionRow(env, { customerId: 1, planId: 'studio', termId: 'yearly', windowDay: 8 });

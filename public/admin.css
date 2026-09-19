@@ -727,7 +727,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   border: 1px solid var(--line); border-radius: var(--r-md, 8px); background: var(--paper-lift);
 }
 .slot.is-empty { border-style: dashed; background: none; }
-.slot-label { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.slot-label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
 .slot-img {
   width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block;
   border-radius: var(--r-sm, 5px); background: var(--paper-2);
@@ -1119,7 +1119,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .or[open] > .or-rij { background: var(--ghost); }
 .or-rij .meta { display: block; font-size: .76rem; }
 .or-ref { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
-.or-let { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--warn-ink); border: 1px solid var(--warn-ink); border-radius: var(--r-pill); padding: .05rem .4rem; }
+.or-let { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--warn-ink); border: 1px solid var(--warn-ink); border-radius: var(--r-pill); padding: .05rem .4rem; }
 .or-let.is-stil { color: var(--ink-3); border-color: var(--line-strong); }
 /* Het proefmerk — 10 september 2026. GEVULD en niet omlijnd, als enige van de
    merktekens: de andere zijn waarschuwingen op een echte bestelling en horen
@@ -1160,9 +1160,23 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .pl-dag-wd { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
 .pl-dag-nr { font-size: 1.1rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 .pl-dag-mnd { font-size: .72rem; color: var(--ink-3); }
-.pl-dag-nu { margin-left: auto; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--teal-text); }
+.pl-dag-nu { margin-left: auto; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--teal-text); }
 .pl-last { height: 4px; background: var(--ink-200); border-radius: 2px; overflow: hidden; }
-.pl-last span { display: block; height: 100%; background: var(--teal); }
+.pl-last span { display: block; height: 100%; background: var(--teal); width: 0; }
+/* GEEN INLINE style="width:…": de CSP van het paneel is style-src 'self', en
+   die laat een style-attribuut niet toe — de balk stond dus altijd op nul
+   (gevonden 19 september 2026, toen de agenda-toets over deze pagina ging).
+   Tien standen, afgerond op tien procent, is voor een bezettingsbalk genoeg. */
+.pl-last span[data-vol="10"] { width: 10%; }
+.pl-last span[data-vol="20"] { width: 20%; }
+.pl-last span[data-vol="30"] { width: 30%; }
+.pl-last span[data-vol="40"] { width: 40%; }
+.pl-last span[data-vol="50"] { width: 50%; }
+.pl-last span[data-vol="60"] { width: 60%; }
+.pl-last span[data-vol="70"] { width: 70%; }
+.pl-last span[data-vol="80"] { width: 80%; }
+.pl-last span[data-vol="90"] { width: 90%; }
+.pl-last span[data-vol="100"] { width: 100%; }
 .pl-last-n, .pl-dag-dicht { margin: 0; font-size: .7rem; color: var(--ink-3); }
 .pl-dag-dicht { color: var(--warn-ink); font-weight: 700; }
 .pl-chips { display: grid; gap: .3rem; margin-top: .2rem; }
@@ -1199,6 +1213,10 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .pl-item-wat .meta { overflow-wrap: anywhere; }
 .pl-item-wat .pill { justify-self: start; margin-top: .15rem; }
 .pl-onbetaald { color: var(--warn-ink); }
+/* Voorrang (19 september 2026): de klant betaalde ervoor, dus het woord staat
+   in dezelfde waarschuwingskleur als "onbetaald" — iets dat je niet mag missen. */
+.or-voorrang { color: var(--warn-ink); font-weight: 600; }
+.pill.is-voorrang { border-color: var(--warn-ink); color: var(--warn-ink); }
 .pl-verleng { grid-column: 1 / -1; }
 .pl-verleng > summary { cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--ink-2); padding: .3rem 0; min-height: 28px; display: flex; align-items: center; }
 .pl-verleng[open] > summary { color: var(--ink); }
@@ -1542,7 +1560,7 @@ input, select, textarea { max-width: 100%; }
    echte uitkomst — een omzetting die halverwege stukliep — en dan wil je zien
    wélke ontbreekt. Het verschil zit in kleur én in doorstreping, want kleur
    alleen is geen drager van betekenis. */
-.fmt { display: inline-flex; gap: .28rem; font-family: var(--mono, ui-monospace, monospace); font-size: .66rem; letter-spacing: .04em; }
+.fmt { display: inline-flex; gap: .28rem; font-family: var(--mono, ui-monospace, monospace); font-size: .72rem; letter-spacing: .04em; }
 .fmt-ja,
 .fmt-nee { padding: .1rem .34rem; border: 1px solid var(--line-strong); white-space: nowrap; }
 /* Dezelfde vorm als .pill hierboven: dit paneel heeft met opzet geen
@@ -1552,7 +1570,7 @@ input, select, textarea { max-width: 100%; }
 .fmt-ja { color: var(--ink-2); border-color: var(--ink-700); }
 .fmt-nee { color: var(--ink-3); border-style: dashed; text-decoration: line-through; }
 .fmt-geen {
-  font-family: var(--mono, ui-monospace, monospace); font-size: .66rem; letter-spacing: .04em;
+  font-family: var(--mono, ui-monospace, monospace); font-size: .72rem; letter-spacing: .04em;
   color: var(--warn-ink); white-space: nowrap;
 }
 
@@ -1587,7 +1605,7 @@ input, select, textarea { max-width: 100%; }
   border: 1px solid var(--ink-700); border-radius: 6px; background: var(--mist-stone);
 }
 .pl-pakbalk-l {
-  font-family: var(--mono, ui-monospace, monospace); font-size: .68rem;
+  font-family: var(--mono, ui-monospace, monospace); font-size: .72rem;
   letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
 }
 .pl-pakbalk-hint { flex: 1 1 16rem; }

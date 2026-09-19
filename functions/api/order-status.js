@@ -1,6 +1,6 @@
 // VISUAILS — het statuseindpunt van de bedankpagina (Cloudflare Pages Function).
 //
-// GET /api/order-status?ref=VIS-XXXX-YYY  →  { cancelled: boolean, kind: string|null }
+// GET /api/order-status?ref=VIS-XXXX-YYY  →  { cancelled, kind, paid, payable }
 //
 // ══════════════════════════════════════════════════════════════════════════════
 // WAAROM DIT BESTAND ER PAS NU IS
@@ -102,7 +102,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
   // Vormfout: nooit de database aanraken. Zelfde afspraak als
   // isWellFormedToken() voor de portal — de goedkoopste afwijzing is de eerste.
-  if (!REF_SHAPE.test(raw)) return json({ cancelled: false, kind: null });
+  if (!REF_SHAPE.test(raw)) return json({ cancelled: false, kind: null, paid: false, payable: false });
 
   const ref = raw.toUpperCase();
 
@@ -113,7 +113,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const gate = await checkRate(env, { ip: clientIp(request), action: 'order-status', limit: LIMIT });
   if (typeof waitUntil === 'function' && shouldSweep()) waitUntil(sweepRateLimits(env));
   if (!gate.allowed) {
-    return json({ cancelled: false, kind: null }, 429, {
+    return json({ cancelled: false, kind: null, paid: false, payable: false }, 429, {
       'retry-after': String(Math.max(1, gate.retryAfter || 1)),
     });
   }
@@ -125,28 +125,56 @@ export async function onRequestGet({ request, env, waitUntil }) {
   // — checkCancelled() behandelt elke niet-ok als "niets tonen" — maar het
   // verschil tussen "niet geannuleerd" en "ik kon niet kijken" blijft bestaan,
   // en dat verschil staat in de logs.
-  if (!env?.DB) return json({ cancelled: false, kind: null }, 503, { 'cache-control': 'no-store' });
+  if (!env?.DB) return json({ cancelled: false, kind: null, paid: false, payable: false }, 503, { 'cache-control': 'no-store' });
 
+  /* ── OOK `paid` EN `payable` — 19 september 2026 ───────────────────────────
+   *
+   * Sinds vandaag gaat elke bestelling met een betaallink direct naar Mollie
+   * (functions/api/order.js), en Mollie stuurt de klant daarna terug naar de
+   * bedankpagina met `?paid=` — óók als de betaling mislukte, verliep of werd
+   * afgebroken, want de terugkeer-URL is per betaling één adres. "Betaald" op
+   * grond van die URL zeggen is dus liegen op de dag dat het misging.
+   *
+   * Vandaar twee booleans erbij. `paid` is `orders.payment_status`, en die
+   * schrijft alleen de webhook. `payable` is "mag er nu een nieuwe betaallink
+   * komen": niet geannuleerd, niet betaald, niet op de btw-lijst (dezelfde
+   * lijst-van-wat-mag als handleOrderPay in src/lib/account.js) en er valt iets
+   * te betalen. De bedankpagina toont dan een knop naar /api/order-pay.
+   *
+   * Niet meer dan dat: geen bedrag, geen adres, geen naam. Twee vlaggen op een
+   * kenmerk dat toch al in de mail staat. */
   let row;
+  const WIDE = 'SELECT status, cancel_reason, payment_status, review_state, total_cents, vat_cents FROM orders WHERE ref = ?1';
+  const NARROW = 'SELECT status, cancel_reason, payment_status, total_cents, vat_cents FROM orders WHERE ref = ?1';
   try {
-    row = await env.DB.prepare('SELECT status, cancel_reason FROM orders WHERE ref = ?1')
-      .bind(ref)
-      .first();
+    try {
+      row = await env.DB.prepare(WIDE).bind(ref).first();
+    } catch (e) {
+      /* review_state komt uit migratie 0018; zonder die kolom telt hij als leeg. */
+      if (!/no such column/i.test(String(e && e.message))) throw e;
+      row = await env.DB.prepare(NARROW).bind(ref).first();
+    }
   } catch (err) {
     console.error('[order-status]', err && err.message ? err.message : err);
-    return json({ cancelled: false, kind: null }, 503, { 'cache-control': 'no-store' });
+    return json({ cancelled: false, kind: null, paid: false, payable: false }, 503, { 'cache-control': 'no-store' });
   }
 
   // Onbekende referentie: hetzelfde antwoord als een niet-geannuleerde. Zie de
   // noot over het orakel hierboven.
-  if (!row) return json({ cancelled: false, kind: null });
+  if (!row) return json({ cancelled: false, kind: null, paid: false, payable: false });
 
   const cancelled = row.status === 'cancelled';
   const reason = typeof row.cancel_reason === 'string' ? row.cancel_reason : '';
+  const paid = String(row.payment_status || 'unpaid') === 'paid';
+  const review = String(row.review_state || '');
+  const gross = (Number(row.total_cents) || 0) + (Number(row.vat_cents) || 0);
+  const payable = !cancelled && !paid && (review === '' || review === 'approved') && gross > 0;
 
   return json({
     cancelled,
     kind: cancelled && PUBLIC_REASONS.has(reason) ? reason : null,
+    paid,
+    payable,
   });
 }
 

@@ -15,7 +15,8 @@
 #
 #   deploy        npm run build && npx wrangler deploy
 #   secret        npx wrangler secret put RESEND_API_KEY      (idem MOLLIE_API_KEY,
-#                 STRIPE_*, ADMIN_*, SELLER_* — elke secret die de Pages-kant had)
+#                 ADMIN_*, SELLER_* — elke secret die de Pages-kant had; STRIPE_*
+#                 niet meer sinds 19 september 2026)
 #   logs          npx wrangler tail
 #   lokaal        npm run build && npx wrangler dev            (lokale D1 + R2 in
 #                 .wrangler/state; `npm run dev` kan het ook, via platformProxy)

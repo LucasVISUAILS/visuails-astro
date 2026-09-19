@@ -98,9 +98,12 @@ const woord = kind === 'video' ? (nl ? 'Video volgt' : 'Video to come') : (nl ? 
       .ph-box hieronder: de opdracht eronder mag de gereserveerde ruimte niet
       veranderen, en kon er niet in blijven staan zonder afgesneden te worden. */}
   <div class="ph-box" style={`--ph-ratio: ${ratio}`}>
-    {/* Het merkteken, sterk gedempt. Geen icoon uit een set: dit is de plek van
-        VISUAILS-werk, en het merkteken zegt dat zonder een woord. */}
-    <svg class="ph-mark" viewBox="0 0 702 813.25" aria-hidden="true"><use href="#markglyph" /></svg>
+    {/* Tot 19 september 2026 stond hier het V-beeldmerk, sterk gedempt. Dat
+        merk is uit de roulatie (Lucas: nooit meer gebruiken) — dit waren de
+        "FOTO VOLGT"-plaatshouders op de hele site. Nu een dun kruis van hoek
+        tot hoek in dezelfde demping: het universele teken voor "hier komt
+        beeld", en het zegt niets over het merk. */}
+    <svg class="ph-mark ph-kruis" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="0" x2="100" y2="100" /><line x1="100" y1="0" x2="0" y2="100" /></svg>
     <span class="ph-kind">{woord}</span>
   </div>
   {/* ── HET BIJSCHRIFT KAN UIT, DE BRIEFING NOOIT ────────────────────────
@@ -161,7 +164,16 @@ const woord = kind === 'video' ? (nl ? 'Video volgt' : 'Video to come') : (nl ? 
     padding: 1rem;
     text-align: center;
   }
-  .ph-mark { width: 34px; height: auto; fill: var(--ink-1); opacity: .14; }
+  /* Het kruis ligt over het hele vlak, achter het woord: absolute positie
+     zodat het de grid-plaatsing van het bijschrift niet verschuift. */
+  .ph-box { position: relative; }
+  .ph-kruis {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    stroke: var(--ink-1); stroke-width: 1; opacity: .10; pointer-events: none;
+    vector-effect: non-scaling-stroke;
+  }
+  .ph-kruis line { vector-effect: non-scaling-stroke; }
+  .ph-kind { position: relative; }
   .ph-kind {
     font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
     /* --ink-4 is de lijnkleur (.42 alpha) en haalt als tekst 2,8:1. Voor tekst

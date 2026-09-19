@@ -43,7 +43,11 @@ export const DOORS = [
   {
     id: 'catalog',
     lees: '/catalog',
-    bestel: '/start/catalog',
+    /* 19 september 2026 — Lucas: "Je moet altijd eerst een style kiezen van
+       de geselecteerde service voordat je op het bestelformulier komt." De
+       bestelknop gaat dus naar de look-keuze op de dienstpagina; daar leidt
+       "Kies deze look" naar het formulier met de look al ingevuld. */
+    bestel: '/catalog#looks',
     naam: { en: 'Catalog', nl: 'Catalog' },
     cta: { en: 'Order catalog images', nl: 'Bestel catalogfoto’s' },
     kort: { en: 'Front, back, detail and on-model', nl: 'Voorkant, achterkant, detail en on-model' },
@@ -51,7 +55,7 @@ export const DOORS = [
   {
     id: 'lifestyle',
     lees: '/lifestyle',
-    bestel: '/start/lifestyle',
+    bestel: '/lifestyle#looks',
     naam: { en: 'Lifestyle', nl: 'Lifestyle' },
     cta: { en: 'Order lifestyle images', nl: 'Bestel lifestylefoto’s' },
     kort: { en: 'Your product in a styled scene', nl: 'Je product in een gestylede scène' },

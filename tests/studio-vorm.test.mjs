@@ -133,30 +133,45 @@ try {
   console.log('\nhet abonnement');
   {
     const h = main(html['/account/plan']);
-    ok('de vijf tabben staan er', ['/account/plan"', 'tab=bestellen', 'tab=edities', 'tab=look', 'tab=facturering'].every((t) => h.includes(t)));
-    ok('de slots zijn twaalf kaders', tel(h, /class="st-frame is-(gemaakt|vast|vrij)"/g), 12);
+    /* ── DRIE TABBEN, ÉÉN VERHAAL — 19 september 2026 ───────────────────────
+       Vijf tabben werden er drie (overzicht, producten, facturering); de look
+       staat als feitenregel op het overzicht met een link naar /account/brand-kit,
+       Editions is één regel, de vrije slots zijn één tegel met het aantal en de
+       week is een zin met echte datums. Oude tab-links landen op het overzicht. */
+    ok('de drie tabben staan er', ['/account/plan"', 'tab=bestellen', 'tab=facturering'].every((t) => h.includes(t)));
+    ok('  en de twee oude niet meer', !/tab=edities|tab=look/.test(h));
+    ok('de gemaakte en vastgezette slots zijn kaders', tel(h, /class="st-frame is-(gemaakt|vast)"/g), 4);
     ok('waarvan drie met een echt beeld', tel(h, /class="st-frame is-gemaakt"[\s\S]*?<img src="\/account\/files\/\d+\/f"/g), 3);
-    ok('één vastgezet en de rest vrij', [tel(h, /class="st-frame is-vast"/g), tel(h, /class="st-frame is-vrij"/g)], [1, 8]);
-    ok('de week staat als strook van 28 dagen', tel(h, /class="st-dag[ "]/g), 28);
-    ok('met de vensterdag gemarkeerd', /st-dag is-week is-start/.test(h));
+    ok('één vastgezet, en de vrije als één tegel met het aantal', [tel(h, /class="st-frame is-vast"/g), tel(h, /class="st-frame is-vrij is-tel"/g)], [1, 1]);
+    ok('  met "8 vrij" erop', /8 vrij|8 free/.test(h));
+    ok('de week is een zin met echte datums, geen strook', tel(h, /class="st-dag[ "]/g) === 0 && /loopt van|runs from/.test(h));
+    ok('de vaste look staat als regel op het overzicht, met een link', /st-lookstrip/.test(h) && /href="\/account\/brand-kit"/.test(h));
+    ok('en Editions als één regel', /st-editions-regel/.test(h));
     ok('de maandset-kaart staat op de maandtab', /st-maandset|De gedeelde set|shared set/i.test(h));
 
     const lijst = main(html['/account/plan?tab=bestellen']);
     ok('de lijst noemt beide items', /Grijze hoodie/.test(lijst) && /Zwarte cargo/.test(lijst));
     ok('met een vastzetknop en een merkje', /name="do" value="(lock|unlock)"/.test(lijst) && /st-q-merk/.test(lijst));
     ok('elk item draagt een kader', tel(lijst, /class="st-q-frame/g), 2);
+    ok('het formulier vraagt per vak: voorkant, achterkant, detail, gedragen', ['fotos_voorkant', 'fotos_achterkant', 'fotos_detail', 'fotos_gedragen'].every((n) => lijst.includes(`name="${n}"`)));
+    ok('  en de productsoort', /name="soort"/.test(lijst));
+    ok('  en "foto\u2019s toevoegen" op een conceptregel', /name="do" value="fotos"/.test(lijst));
     ok('de lijst staat niet op de maandtab', !/Zwarte cargo/.test(h));
+    /* ── RONDE 4, 19 september 2026: sneller bestellen in Studio ──────────────
+       Het gezicht per product (migratie 0050), "meteen vastzetten" op het
+       productvak, de poort op de look als regel bij het concept, en de week
+       verzetten op het overzicht. */
+    ok('het productvak heeft een gezicht per product', /name="model"/.test(lijst) && /<optgroup/.test(lijst) && /Ava/.test(lijst));
+    ok('  en een vinkje "meteen vastzetten"', /name="meteen" value="1"/.test(lijst));
+    ok('  en een gezicht-keuze op de conceptregel', /name="do" value="model"/.test(lijst));
+    ok('de poort op de look staat bij het concept, met een link naar de kaart', /st-q-look-open/.test(lijst) && /href="\/account\/brand-kit#bk-lifestyle"/.test(lijst) && /Lifestyle/.test(lijst));
+    ok('  en de vastzetknop van dat concept staat uit', /value="lock"[\s\S]{0,200}disabled/.test(lijst));
+    ok('het overzicht laat de week verzetten', /action="\/account\/plan\/week"/.test(h) && /name="dag"/.test(h) && /value="8" selected/.test(h));
 
     const look = main(html['/account/plan?tab=look']);
-    ok('de look-tab is per dienst een beeldregel', tel(look, /class="st-lookrij"/g), 3);
-    ok('met gezicht, ondergrond, look en formaat als vakjes', tel(look, /class="st-lookvak"/g), 7);
-
+    ok('een oude look-link landt op het overzicht', /st-lookstrip/.test(look));
     const ed = main(html['/account/plan?tab=edities']);
-    ok('de edities noemen het maandbedrag uit AMOUNT', ed.includes(euro(AMOUNT.editions, 'nl')));
-    ok('en de eenmalige opzet', ed.includes(euro(AMOUNT.editionsSetup, 'nl')));
-    ok('en het is geen vanaf-prijs', /(vanaf|from)\s*€/i.test(ed), false);
-    ok('de interesseknop is een mailto, geen formulier', /href="mailto:hello@visuails\.com\?subject=/.test(ed) && !/<form/.test(ed));
-    ok('de sfeerbeelden staan er in hun kleine versie, elk met alt', [tel(ed, /\/img\/brand-[a-z-]+-w380\.webp/g), tel(ed, /<img[^>]+alt="[^"]+"/g)], [4, 4]);
+    ok('een oude editions-link landt op het overzicht', /st-editions-regel/.test(ed));
 
     const beheer = main(html['/account/plan?tab=facturering']);
     ok('beheer toont de termijn en het bedrag', /maand/i.test(beheer) && /€/.test(beheer));

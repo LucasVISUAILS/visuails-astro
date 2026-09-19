@@ -40,7 +40,7 @@
  * wordt. Alleen `fetch` naar Mollie is gestubd — dat is de buitenwereld, en de
  * rest is van ons.
  */
-import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import { onRequestPost } from '../functions/api/webhook/mollie.js';
 import {
   createSubscriptionRow, activateSubscription, pauseSubscription, cancelSubscription,
@@ -62,6 +62,7 @@ const { db, mislukt } = verseDb(new URL('../schema.sql', import.meta.url));
 if (mislukt.length) { console.error('schema kon niet geladen worden:', mislukt); process.exit(1); }
 
 db.exec("INSERT INTO customers (id, email, name, brand) VALUES (1, 'mara@volt.test', 'Mara', 'VOLT')");
+zetLook(db, 1);
 const { row: sub } = await createSubscriptionRow(env0(), { customerId: 1, planId: 'studio', termId: 'monthly', windowDay: 8 });
 function env0() { return { DB: d1(db) }; }
 await activateSubscription(env0(), sub.id);
@@ -289,6 +290,7 @@ console.log('\n9 · de klant zegt op');
 console.log('\n10 · de eerste maand telt meteen');
 {
   db.exec("INSERT INTO customers (id, email, name, brand) VALUES (2, 'joris@noord.test', 'Joris', 'NOORD')");
+  zetLook(db, 2);
   const { row: sub2 } = await createSubscriptionRow(env0(), { customerId: 2, planId: 'studio', termId: 'monthly', windowDay: 12 });
   betaling = {
     resource: 'payment', id: 'tr_EERSTE', mode: 'test',

@@ -292,7 +292,9 @@ const COPY = {
        met een eigen kop; het is nu de tweede helft van deze zin, want het is een
        tweede antwoord op dezelfde vraag. */
     libLead: `${rosterWoord('en', true)} models, shared across brands, included in every order at no extra cost. Pick one yourself, or tell us the product and the customer when you order and we match one — then keep using it.`,
-    libNote: `${telwoord(TOONBAAR, 'en', true)} of the ${rosterWoord('en')} are shown here. They cost nothing extra, and moving to a Brand Model later does not mean redoing anything.`,
+    /* 19 september 2026: de drie portretten staan hier niet meer (ze staan op
+       /models), dus de zin zegt niet meer "worden hier getoond". */
+    libNote: 'They cost nothing extra, and moving to a Brand Model later does not mean redoing anything.',
     libAllCta: `See all ${rosterWoord('en')}`,
     libOwnCta: 'Or have one made for you',
     traits: {
@@ -307,9 +309,11 @@ const COPY = {
     genH: 'Why not just prompt a generator?',
     genBody: [
       'You can, and for a single image you probably should. The thing a prompt cannot give you is the same person twice. Ask any general-purpose generator for the same face across thirty products and you get thirty relatives — near-misses that a customer reads as sloppiness long before they can say why.',
-      'What we sell is not the generation. It is the lock: an identity fixed once, driven by your own product photos, and looked at by a person before anything reaches you. That is the part that survives a catalog.',
+      'What we sell is not the generation. It is the lock: an identity fixed once, driven by your own product photos, and looked at by a specialist before anything reaches you. That is the part that survives a catalog.',
     ],
     genCta: 'The longer comparison, tools included',
+    /* De kamer "Why not just prompt a generator?" in één zin — 19 sept 2026. */
+    genKort: 'Why not prompt a generator? A prompt never gives you the same person twice; a Brand Model is that face, locked once and kept.',
 
     // CTA
     ctaH1: 'Design the face of',
@@ -411,7 +415,7 @@ const COPY = {
     libAlt: 'een VISUAILS-standaardmodel',
     /* Zie de noot bij de Engelse tabel. */
     libLead: `${rosterWoord('nl', true)} modellen die we voor alle merken gebruiken, inbegrepen in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons bij het bestellen wat je verkoopt en wie je klant is — dan kiezen wij er een dat past en blijven we dat gebruiken.`,
-    libNote: `${telwoord(TOONBAAR, 'nl', true)} van de ${rosterWoord('nl')} staan hier. Ze kosten niets extra, en later overstappen op een eigen merkmodel betekent niet dat je iets over moet doen.`,
+    libNote: 'Ze kosten niets extra, en later overstappen op een eigen merkmodel betekent niet dat je iets over moet doen.',
     libAllCta: `Bekijk alle ${rosterWoord('nl')}`,
     libOwnCta: 'Of laat er een voor je maken',
     traits: {
@@ -428,6 +432,7 @@ const COPY = {
       'Wij verkopen niet het maken van een beeld. Wij verkopen dat het vastligt: één identiteit die één keer wordt vastgezet, gestuurd door je eigen productfoto’s, en door een specialist bekeken voordat er iets naar je toe gaat. Dat is het deel dat een hele collectie meegaat.',
     ],
     genCta: 'De hele vergelijking, ook met AI-tools',
+    genKort: 'Waarom niet zelf iets met een generator maken? Een prompt geeft je nooit twee keer dezelfde persoon; een merkmodel is dat gezicht, één keer vastgezet en daarna bewaard.',
 
     ctaH1: 'Ontwerp het gezicht van',
     ctaEm: 'jouw merk.',
@@ -564,6 +569,15 @@ const wa = waHref(c.waText);
         <li><b>{p[0]}</b><span class="lopend">{p[1]}</span></li>
       ))}
     </ul>
+    {/* Twee regels die elk een eigen sectie hadden — 19 september 2026.
+        "Waar je het gebruikt" stond als donkere kamer (1.290 px) met een
+        9:2-plaatshouder; "Waarom niet zelf iets met een generator maken"
+        als tweede kamer (765 px) die /compare#ai-tools naspeelde. Lucas:
+        *"Diepere snoei … /custom-models … doorvoeren."* Het gebruik is nu één
+        regel, het generator-argument één zin met de link naar de pagina die
+        het echt draagt. De copy (fitWhat, genBody) blijft in COPY staan. */}
+    <p class="bm-regel"><span class="etiket">{c.fitWhereH}</span> {c.fitWhere.map((w) => w[0]).join(' · ')}</p>
+    <p class="bm-regel bm-gen-regel">{c.genKort} <a class="pijl" href={lp('/compare#ai-tools')}>{c.genCta}</a></p>
   </section>
 
   {/* ── 3 · WAT HET KOST ─────────────────────────────────────────────────────
@@ -589,49 +603,9 @@ const wa = waHref(c.waText);
         <p class="lopend bm-volgorde">{c.costSequence}</p>
       </div>
     </div>
-    <div class="bm-kost-noten">
-      <div>
-        <h3 class="hoog hoog-3">{c.costMathH}</h3>
-        <p class="lopend">{c.costMath}</p>
-      </div>
-      <div>
-        <p class="lopend">{c.costFree}</p>
-        <p class="acties"><a class="pijl" href={lp('/pricing')}>{c.costCta}</a></p>
-      </div>
-    </div>
-  </section>
-
-  {/* ── 4 · WAAR HET PAST ────────────────────────────────────────────────── */}
-  <section class="kamer bm-kamer" aria-labelledby="bm-past">
-    <header class="kamer-kop">
-      <p class="etiket">{c.fitMeta}</p>
-      <h2 id="bm-past" class="hoog hoog-2">{c.fitH}</h2>
-      <p class="lopend">{c.fitSub}</p>
-    </header>
-
-    <Placeholder
-      lang={lang}
-      space
-      ratio="9 / 2"
-      subject={nl ? 'Zes beelden naast elkaar met hetzelfde merkmodel: twee producten uit de webshop, een advertentie, een e-mailheader, een socialpost en een campagnebeeld'
-                  : 'Six frames side by side with the same brand model: two webshop products, an ad, an email header, a social post and a campaign image'}
-      message={nl
-        ? 'Moet bewijzen dat het om één persoon gaat en niet om zes modellen die op elkaar lijken — hetzelfde gezicht moet zó herkenbaar zijn dat je het al ziet voordat je de kaders los bekijkt. Product, kader en kleur mogen per beeld verschillen; alleen het gezicht ligt vast. Dat verschil is de hele boodschap: het merk komt van het gezicht, niet van de set.'
-        : 'Must prove this is one person and not six lookalikes — the same face has to be recognisable before you even look at the frames separately. Product, framing and colour may differ per frame; only the face is fixed. That contrast is the whole message: the brand comes from the face, not from the set.'}
-    />
-
-    <div class="bm-twee">
-      <div class="bm-uitleg">
-        <h3 class="hoog hoog-3">{c.fitWhatH}</h3>
-        {c.fitWhat.map((p) => <p class="lopend">{p}</p>)}
-      </div>
-      <aside class="bm-waar">
-        <h3 class="hoog hoog-3">{c.fitWhereH}</h3>
-        <ul class="bm-waar-lijst" role="list">
-          {c.fitWhere.map((w) => <li><b>{w[0]}</b><span class="lopend">{w[1]}</span></li>)}
-        </ul>
-      </aside>
-    </div>
+    {/* De rekensom ("wat het per beeld kost") stond hier uitgeschreven en
+        staat al op /pricing — één regel en de link, 19 september 2026. */}
+    <p class="bm-regel bm-kost-regel">{c.costFree} <a class="pijl" href={lp('/pricing')}>{c.costCta}</a></p>
   </section>
 
   {/* ── 5 · DE RICHTINGEN, EN WAT ERUIT KOMT ────────────────────────────────
@@ -670,27 +644,15 @@ const wa = waHref(c.waText);
     <header class="paneel-kop">
       <h2 id="bm-proces" class="hoog hoog-2">{c.procH}</h2>
     </header>
-    {/* Vijf stappen als tekst vertellen WAT er gebeurt; dit vlak laat zien hoe
-        het eruitziet terwijl het gebeurt. Het staat vóór de stappen: wie het
-        proces al herkent hoeft de vijf regels niet meer te lezen. */}
-    <Placeholder
-      lang={lang}
-      ratio="3 / 1"
-      subject={nl ? 'Een richtingenblad: drie voorgestelde gezichten naast elkaar, met aantekeningen van de klant erbij en één ervan aangekruist'
-                  : 'A directions sheet: three proposed faces side by side, the client’s notes beside them and one of them ticked'}
-      message={nl
-        ? 'Moet laten zien dat dit een gesprek is en geen bestelknop — er wordt iets voorgelegd, er wordt op gereageerd, er wordt gekozen. De drie gezichten moeten duidelijk verschillen (leeftijd, houding, styling), anders lijkt het een keuze zonder keuze. De aantekeningen mogen onleesbaar zijn; dat er óp het werk geschreven is, is het punt.'
-        : 'Must show this is a conversation, not a buy button — something is proposed, responded to, chosen. The three faces have to differ clearly (age, posture, styling), or it reads as a choice without a choice. The notes may be illegible; that someone wrote on the work is the point.'}
-    />
+    {/* Hier stond een 3:1-plaatshouder (het richtingenblad) vóór de stappen;
+        weg sinds 19 september 2026 — de vijf regels zijn het proces, en wat je
+        stuurt en terugkrijgt staat er nu meteen onder in dezelfde sectie in
+        plaats van als eigen paneel. */}
     <ol class="bm-stappen">
       {steps.map((s, i) => (
         <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{s[0]}</b><span class="lopend">{s[1]}</span></li>
       ))}
     </ol>
-  </section>
-
-  {/* ── 7 · WAT JE STUURT, WAT JE KRIJGT ─────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="bm-ruil">
     <div class="bm-ruil">
       <div>
         <h2 id="bm-ruil" class="hoog hoog-3">{c.giveH}</h2>
@@ -722,42 +684,17 @@ const wa = waHref(c.waText);
       <h2 id="bm-bieb" class="hoog hoog-2">{c.libH}</h2>
       <p class="lopend">{c.libLead}</p>
     </header>
-    <div class="bm-bieb">
-      <ul class="bm-rooster" role="list">
-        {ROSTER.slice(0, TOONBAAR).map((m) => (
-          <li>
-            <span class="kaart kaart-stil">
-              <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
-            </span>
-            <b>{m.name}</b>
-            <span class="mono">{m.traits.map((t) => c.traits[t]).join(' · ')}</span>
-          </li>
-        ))}
-      </ul>
-      <div class="bm-bieb-noot">
-        <p class="lopend">{c.libNote}</p>
-        <p class="bm-wegen">
-          <a class="pijl" href={lp('/models')}>{c.libAllCta}</a>
-          <a class="pijl" href={lp('/start/brand-model')}>{c.libOwnCta}</a>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  {/* ── 9 · WAAROM GEEN GENERATOR ───────────────────────────────────────────
-      Hier stond een vergelijking van twee panelen — "Generieke AI-tool" tegen
-      VISUAILS — met een van onze eigen renders onder het label van een
-      concurrent en drie tekortkomingen eraan gehangen die niemand gemeten had.
-      Dat is een verzonnen resultaat onder de eigen regel van de brief, en
-      overbodig: het argument is sterker zonder stropop. /compare draagt de
-      toolvergelijking. */}
-  <section class="kamer bm-kamer-gen" aria-labelledby="bm-gen">
-    <header class="kamer-kop">
-      <h2 id="bm-gen" class="hoog hoog-2">{c.genH}</h2>
-    </header>
-    <div class="bm-gen">
-      {c.genBody.map((p) => <p class="lopend">{p}</p>)}
-      <p class="acties"><a class="pijl bm-gen-link" href={lp('/compare#ai-tools')}>{c.genCta}</a></p>
+    {/* De drie portretten die hier stonden zijn weg (19 september 2026): ze
+        stonden óók op /models, en twee pagina's met dezelfde gezichten was
+        precies wat de kop van ModelsPage.astro wilde voorkomen. Het anker
+        #standard blijft — /lifestyle en het menu wijzen erheen — en de sectie
+        is nu wat hij moet zijn: de naam, één zin, en de twee wegen. */}
+    <div class="bm-bieb-noot">
+      <p class="lopend">{c.libNote}</p>
+      <p class="bm-wegen">
+        <a class="pijl" href={lp('/models')}>{c.libAllCta}</a>
+        <a class="pijl" href={lp('/start/brand-model')}>{c.libOwnCta}</a>
+      </p>
     </div>
   </section>
 
@@ -824,15 +761,11 @@ const wa = waHref(c.waText);
   .bm-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
   .bm-vink :global(a) { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
   .bm-volgorde { font-size: .92rem; }
-  .bm-kost-noten { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid var(--lijn); }
-  .bm-kost-noten h3 { margin-bottom: .6rem; }
-
-  .bm-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; margin-top: clamp(2.5rem, 5vw, 4rem); }
-  .bm-uitleg { display: grid; gap: .9rem; }
-  .bm-waar { padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); display: grid; gap: .9rem; }
-  .bm-waar-lijst { display: grid; gap: .7rem; }
-  .bm-waar-lijst li { display: grid; gap: .2rem; }
-  .bm-waar-lijst b { font-weight: 500; }
+  /* Eén regel met een etiket ervoor, of één zin met een pijl erachter: wat
+     eerst een sectie was. */
+  .bm-regel { margin-top: 1.2rem; font-size: .92rem; color: var(--inkt-2); display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: baseline; max-width: 62rem; }
+  .bm-gen-regel { margin-top: .8rem; }
+  .bm-kost-regel { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
 
   /* Negen richtingen in drie kolommen. De letter is een monogram en geen
      nummer: het is geen volgorde maar een lijst waar je uit kiest. */
@@ -853,31 +786,21 @@ const wa = waHref(c.waText);
   .bm-stappen .nr { color: var(--inkt-2); }
   .bm-stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; }
 
-  .bm-ruil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .bm-ruil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; margin-top: clamp(2rem, 4vw, 3rem); }
   .bm-ruil h2 { margin-bottom: 1.2rem; }
   .bm-krijgt { padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
 
-  .bm-bieb { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
-  .bm-rooster { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); }
-  .bm-rooster li { display: grid; gap: .5rem; }
-  .bm-rooster .kaart { aspect-ratio: 4 / 5; }
-  .bm-rooster img { width: 100%; height: 100%; object-fit: cover; }
-  .bm-rooster b { font-weight: 500; }
-  .bm-rooster .mono { font-size: .72rem; color: var(--inkt-2); }
-  .bm-bieb-noot { display: grid; gap: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--lijn); }
-  .bm-wegen { display: grid; gap: .8rem; justify-items: start; }
-
-  .bm-gen { display: grid; gap: .9rem; max-width: 46rem; }
-  .bm-gen-link { color: var(--geel-letter); }
+  .bm-bieb-noot { display: grid; gap: 1rem; max-width: 46rem; }
+  .bm-wegen { display: flex; flex-wrap: wrap; gap: .8rem 1.6rem; }
 
   @media (max-width: 900px) {
-    .bm-open, .bm-kost, .bm-twee, .bm-ruil, .bm-bieb, .bm-kost-noten { grid-template-columns: 1fr; }
+    .bm-open, .bm-kost, .bm-ruil { grid-template-columns: 1fr; }
     .bm-cast { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); }
     .bm-props li { grid-template-columns: 1fr; gap: .4rem; }
     .bm-richtingen { grid-template-columns: repeat(2, 1fr); }
     .bm-stappen li { grid-template-columns: auto 1fr; }
     .bm-stappen li .lopend { grid-column: 2; }
-    .bm-uit, .bm-rooster { grid-template-columns: repeat(2, 1fr); }
+    .bm-uit { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 560px) {
     .bm-richtingen { grid-template-columns: 1fr; }

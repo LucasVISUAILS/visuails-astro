@@ -44,7 +44,6 @@ import {
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
-import TierCompare from './TierCompare.astro';
 import { styles as stylesEn } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
 
@@ -367,7 +366,7 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
 <div class="s22">
 
   {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="ls-h1">
+  <section class="paneel ls-grond" aria-labelledby="ls-h1">
     <div class="ls-open">
       {/* Dezelfde opbouw als /catalog — zie de noot daar voor waarom deze
           volgorde en waarom de WhatsApp-knop weg is. De volgorde volgt de
@@ -400,7 +399,7 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
           vervagen; zonder dat is de kolom te smal om het nagebouwde scherm
           leesbaar te houden. Zie de noot bij `.lc.is-naast`. */}
       <div class="ls-beeld">
-        <LaptopCarousel lang={lang} vorm="naast" slides={[laptopSlides(lang).lifestyle]} titel={c.h1 ?? c.eyebrow} />
+        <LaptopCarousel lang={lang} vorm="naast" slides={[laptopSlides(lang).lifestyle]} titel={c.lcH ?? c.h1 ?? c.eyebrow} />
       </div>
     </div>
   </section>
@@ -455,61 +454,45 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
       <div class="ls-ladder-naast">
         <p class="lopend ls-ladder-noot">{c.ladderNote}</p>
         <p class="acties">
-          <a class="knop knop-inkt" href={lp('/start/lifestyle')}>{c.ladderCta}</a>
+          <a class="knop knop-inkt" href="#looks">{c.ladderCta}</a>
         </p>
       </div>
     </div>
   </section>
 
-  {/* ── 4 · WAT HET IS, EN WAAR HET STAAT ─────────────────────────────────── */}
-  <section class="kamer ls-kamer" aria-labelledby="ls-wat">
-    <header class="kamer-kop">
-      <p class="etiket">{c.edMeta}</p>
-      <h2 id="ls-wat" class="hoog hoog-2">{c.edH}</h2>
-      <p class="lopend">{c.edSub}</p>
-    </header>
-    <div class="ls-twee">
-      <div class="ls-uitleg">
-        <h3 class="hoog hoog-3">{c.whatH}</h3>
-        {c.whatP.map((p) => <p class="lopend">{p}</p>)}
-      </div>
-      <aside class="ls-waar">
-        <h3 class="hoog hoog-3">{c.whereH}</h3>
-        <ul class="ls-waar-lijst" role="list">
-          {c.where.map(([strong, rest]) => <li><b>{strong}</b><span class="lopend">{rest}</span></li>)}
-        </ul>
-      </aside>
-    </div>
-  </section>
+  {/* ── 4 · DE DONKERE KAMER IS WEG — 19 september 2026 ───────────────────
+      "Wat het is" en "Waar je het gebruikt" stonden hier als donkere kamer
+      (911 px op 1440). Lucas: *"Diepere snoei op /catalog e.d. … doorvoeren."*
+      De hero zegt al wat het is en de looks laten het zien; het enige dat
+      nergens anders stond — wáár je het gebruikt — staat nu als één regel
+      onder de checklist bij de drie stappen. De copy blijft in COPY staan. */}
 
-  {/* ── 5 · DE DRIE STAPPEN ──────────────────────────────────────────────── */}
+  {/* ── 5 · DE DRIE STAPPEN, MET WAT EEN FEEDPOST NODIG HEEFT ERNAAST ───────
+      Tot 19 september 2026 twee secties (668 + 700 px op 1440), met naast de
+      checklist nog een staand beeld van 1340×2400. De doorlichting mat
+      /lifestyle op 13.200 px; Lucas: "mag 30–40 % korter". De stappen staan nu
+      als kolom links, de checklist rechts, en de modelregel eronder — zelfde
+      belofte, één sectie. Het beeld is weg: de vier sferen erboven laten het
+      al zien. */}
   <section class="paneel" aria-labelledby="ls-stappen">
-    <header class="paneel-kop">
-      <h2 id="ls-stappen" class="hoog hoog-2">{c.stepsH}</h2>
-    </header>
-    <ol class="ls-stappen">
-      {c.steps.map(([h, p], i) => (
-        <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{h}</b><span class="lopend">{p}</span></li>
-      ))}
-    </ol>
-  </section>
-
-  {/* ── 6 · WAT EEN FEEDPOST NODIG HEEFT, EN HET VASTE GEZICHT ───────────────
-      De modelregel stond in een eigen sectie van bijna een schermhoogte voor
-      één zin met een link. Hij staat nu onder de checklist in dezelfde sectie:
-      het is dezelfde belofte — dit krijg je — met één regel eronder over wie
-      het draagt. */}
-  <section class="paneel" aria-labelledby="ls-check">
-    <div class="ls-twee-licht">
+    <div class="ls-stappen-check">
       <div>
-        <h2 id="ls-check" class="hoog hoog-2">{c.checkH}</h2>
+        <header class="paneel-kop">
+          <h2 id="ls-stappen" class="hoog hoog-2">{c.stepsH}</h2>
+        </header>
+        <ol class="ls-stappen">
+          {c.steps.map(([h, p], i) => (
+            <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{h}</b><span class="lopend">{p}</span></li>
+          ))}
+        </ol>
+      </div>
+      <aside aria-labelledby="ls-check">
+        <h3 id="ls-check" class="hoog hoog-3">{c.checkH}</h3>
         <ul class="ls-check" role="list">
           {c.check.map((li) => <li>{li}</li>)}
         </ul>
-      </div>
-      <figure class="kaart kaart-stil ls-checkbeeld">
-        <img src="/img/lifestyle-flash-02.webp" alt={c.checkAlt} loading="lazy" decoding="async" width="1340" height="2400" />
-      </figure>
+        <p class="ls-waar-regel"><span class="etiket">{c.whereH}</span> {c.where.map(([w]) => w).join(' · ')}</p>
+      </aside>
     </div>
 
     <a class="ls-model" href={`${lp('/custom-models')}#standard`}>
@@ -545,19 +528,19 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
     </p>
   </section>
 
-  {/* ── 8 · WAT ER VERANDERT BIJ EEN GROTERE BESTELLING ──────────────────── */}
-  <section class="paneel">
-    <TierCompare lang={lang} href0="/start/lifestyle/" label0={c.ctaPrimary} />
-  </section>
+  {/* ── 8 · (WEG) WAT ER VERANDERT BIJ EEN GROTERE BESTELLING ──────────────
+      TierCompare stond hier tot 19 september 2026; de zin die ertoe doet staat
+      in queueNote in de opening, het hele blok blijft op /pricing. */}
 
-  {/* ── 9 · VRAGEN ───────────────────────────────────────────────────────── */}
+  {/* ── 9 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
   <section class="paneel" aria-labelledby="ls-faq">
     <header class="paneel-kop">
       <h2 id="ls-faq" class="hoog hoog-2">{c.faqH}</h2>
     </header>
     <div class="ls-vragen">
-      {c.faqs.map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
+      {c.faqs.slice(0, 5).map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
     </div>
+    {c.faqs.length > 5 && <p class="ls-vragen-meer"><a class="pijl" href={lp('/faq')}>{nl ? `Nog ${c.faqs.length - 5} vragen over lifestyle` : `${c.faqs.length - 5} more lifestyle questions`}</a></p>}
   </section>
 
   {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
@@ -565,7 +548,7 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
     <h2 id="ls-slot" class="hoog" set:html={c.ctaH} />
     <p class="lopend">{c.ctaP}</p>
     <p class="acties">
-      <a class="knop knop-inkt" href={lp('/start/lifestyle')}>{c.ctaPrimary}</a>
+      <a class="knop knop-inkt" href="#looks">{c.ctaPrimary}</a>
       <a class="knop knop-lijn" href={`${lp('/custom-models')}#standard`}>{c.modelCta}</a>
       <a class="knop knop-lijn" href={c.waTalk} target="_blank" rel="noopener">{c.waLabel}</a>
     </p>
@@ -602,6 +585,26 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
      ruim 500 — genoeg voor de kop, de vier feiten naast elkaar en twee knoppen
      op een regel. Kleiner dan dat wordt de feitenstrook een kolom van één, en
      dan wint de plaat ruimte die de tekst nodig had. */
+  /* ── DE GROND VAN DE OPENING — 18 september 2026 ──────────────────────────
+     Lucas koos hier het eerste bannerbeeld: twee zachte banen licht over een witte muur. Het is op ons eigen wit gezet — het licht van de muur is exact `--vel` — zodat er niet ineens een tweede wit op de pagina staat.
+
+     Een laag onder de inhoud en geen `background` op de sectie zelf: zo blijft
+     `--vel` de grond en ligt het beeld erop als iets dat je in één regel uit
+     kunt zetten. Dezelfde constructie als op de voorpagina.
+
+     De laptop blijft staan waar hij stond — Lucas: *"de laptop blijft
+     overal"* — dus dit beeld moet ACHTER hem door kunnen lopen zonder de tekst
+     links te raken. Vandaar `right center`: de uitsnede houdt de twee zachte schuine banen aan de
+     rechterkant, waar de plaat eroverheen valt, en laat de tekstkolom op de
+     rustige helft staan. */
+  .ls-grond { position: relative; isolation: isolate; }
+  .ls-grond::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url('/img/band-lifestyle.webp') no-repeat right center / cover;
+    pointer-events: none;
+    z-index: -1;
+  }
   .ls-open { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.2rem, 3.5vw, 2.6rem); align-items: start; }
   .ls-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   .ls-beeld { position: relative; }
@@ -630,18 +633,18 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
   .ls-ladder .tabel-schuif { width: 100%; }
   .ls-ladder-noot { font-size: .92rem; }
 
-  .ls-twee { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
-  .ls-uitleg { display: grid; gap: .9rem; }
-  .ls-waar { padding-top: 1.2rem; border-top: 1px solid rgb(245 245 245 / .22); display: grid; gap: .9rem; }
-  .ls-waar-lijst { display: grid; gap: .7rem; }
-  .ls-waar-lijst li { display: grid; gap: .2rem; }
-  .ls-waar-lijst b { font-weight: 500; }
+  .ls-waar-regel { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--lijn); font-size: .92rem; color: var(--inkt-2); display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: baseline; }
 
   .ls-stappen { display: grid; }
   .ls-stappen li { display: grid; grid-template-columns: auto minmax(0, 22rem) minmax(0, 30rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
   .ls-stappen li:last-child { border-bottom: 1px solid var(--lijn); }
 
-  .ls-twee-licht { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .ls-stappen-check { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .ls-stappen-check .paneel-kop { margin-bottom: .6rem; }
+  .ls-stappen-check .ls-stappen li { grid-template-columns: auto minmax(0, 1fr); }
+  .ls-stappen-check .ls-stappen li .lopend { grid-column: 2; }
+  .ls-vragen-meer { margin-top: 1rem; }
+  @media (max-width: 760px) { .ls-stappen-check { grid-template-columns: minmax(0, 1fr); } }
   .ls-check { display: grid; gap: .6rem; margin-top: 1.4rem; }
   .ls-check li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); }
   .ls-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
@@ -689,7 +692,7 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
   .ls-vragen { display: grid; gap: .7rem; }
 
   @media (max-width: 900px) {
-    .ls-open, .ls-twee, .ls-twee-licht { grid-template-columns: 1fr; }
+    .ls-open, .ls-twee-licht { grid-template-columns: 1fr; }
     .ls-set li, .ls-stappen li { grid-template-columns: auto 1fr; }
     .ls-set li .lopend, .ls-stappen li .lopend { grid-column: 2; }
     .ls-model { grid-template-columns: 3.5rem minmax(0, 1fr); border-radius: var(--ronding); }

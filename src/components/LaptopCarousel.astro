@@ -450,12 +450,33 @@ const t = nl
   .lc-doek {
     position: relative; aspect-ratio: var(--lc-plaat);
     border-radius: var(--lc-rond); overflow: hidden;
-    /* Neutraal grijs en niet zwart: dit is wat je door de twee uitgesneden
-       schermen ziet zolang een beeld nog laadt. Zwart gaf een knipperende
-       donkere flits op een lichte pagina. */
-    background: var(--bg-raise, #EDEDED);
+    /* GEEN grond op de doos. Zolang de plaat een dichte witte studiogrond had,
+       zag je deze rechthoek nooit — de foto lag er volledig overheen. Sinds de
+       plaat rondom doorzichtig is (18 september 2026) zou hij als lichte
+       rechthoek ACHTER de laptop verschijnen, op elke pagina. De laadgrond
+       staat daarom in de twee schermgaten zelf; zie `.lc-slides` hieronder. */
+    background: none;
     touch-action: pan-y;                /* verticaal scrollen blijft van de pagina */
+    /* ── DE VOET MAG NIET RECHT AFGESNEDEN WORDEN ──────────────────────────
+       De laptop loopt in de bron door tot de onderrand van het beeld: de
+       aluminium voet raakt y 99,9%. Zolang er een grijze doos omheen stond las
+       die afsnijding als de onderkant van een kaart. Sinds de plaat rondom
+       doorzichtig is, is er geen kaart meer en zie je een laptop die halverwege
+       zijn voet ophoudt.
+
+       Ditzelfde verloop stond al op de vorm NAAST de tekst. Het hoort bij de
+       plaat en niet bij één vorm, dus staat het nu hier — in het blok op
+       /plans, /pricing en /upload-guidelines net zo goed als in een opening. */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 6%, #000 93%, rgba(0, 0, 0, .72) 97%, rgba(0, 0, 0, .3) 99%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 6%, #000 93%, rgba(0, 0, 0, .72) 97%, rgba(0, 0, 0, .3) 99%, transparent 100%);
   }
+
+  /* Neutraal grijs en niet zwart: dit is wat je door de twee uitgesneden
+     schermen ziet zolang een beeld nog laadt. Zwart gaf een knipperende donkere
+     flits op een lichte pagina. Precies zo groot als de gaten, dus zonder doos
+     om de laptop heen. */
+  .lc-slides,
+  .lc-fons { background: var(--bg-raise, #EDEDED); }
 
   /* ══════════════════════════════════════════════════════════════════════════
      NAAST DE TEKST, MET ZACHTE RANDEN — 17 september 2026
@@ -465,17 +486,15 @@ const t = nl
      rechts naar rechts fade en een lichte fade onder de laptop zodat het er wat
      fijner uitziet om naar te kijken."*
 
-     Twee dingen maakten die rand hard. Het eerste is de GRIJZE DOOS: `.lc-doek`
-     schildert `--bg-raise` over zijn hele vlak, en dat is een rechthoek die net
-     iets lichter is dan de pagina — je ziet dus de doos en niet de laptop. Die
-     grond is er voor één geval (het scherm dat nog laadt) en hoort dus achter de
-     SCHERMEN te staan, niet achter de hele plaat.
+     Twee dingen maakten die rand hard. Het eerste was de GRIJZE DOOS achter de
+     plaat; die staat inmiddels in de schermgaten zelf en niet meer achter het
+     hele beeld — zie `.lc-doek` hierboven.
 
-     Het tweede is de afsnijding zelf. De plaat heeft in zijn eigen beeld al een
-     zachte slagschaduw naar rechts en onder; die werd op de rand van het blok
-     recht afgesneden. Een masker laat hem uitlopen: rechts over de laatste 22%,
-     onder over de laatste 14%. Twee maskers die elkaar SNIJDEN, want ze moeten
-     allebei gelden — een `mask-composite: intersect` en niet twee losse lagen.
+     Het tweede is de afsnijding zelf, en dat geldt nog steeds. De laptop loopt
+     tot onderaan de plaat door: zonder masker eindigt de aluminium voet in een
+     rechte streep. Een masker laat hem oplossen. Twee maskers die elkaar
+     SNIJDEN, want ze moeten allebei gelden — een `mask-composite: intersect` en
+     niet twee losse lagen.
 
      `-webkit-` erbij omdat Safari de ongeprefixte `mask-composite` pas sinds
      kort kent en `source-in` daar het equivalent van `intersect` is. */
@@ -484,9 +503,13 @@ const t = nl
     overflow: visible;
     background: none;
     /* ── DE TWEE VERLOPEN, EN WAAROM ZE NIET GELIJK ZIJN ────────────────────
-       RECHTS mag ver doorlopen: daar staat de slagschaduw van de plaat en die
-       hoort uit te lopen in de pagina. Hij begint op 84% en niet eerder, want
-       de telefoon staat rechts in beeld en die mag niet half oplossen.
+       RECHTS is sinds de schone plaat bijna niets meer. Tot 18 september begon
+       het verloop op 84%: daar stond de ingebakken slagschaduw en die moest
+       uitlopen. Die schaduw is er niet meer, en het beeld zelf is rondom
+       doorzichtig — de hand loopt tot 90,7% en de voet tot 94,4%, gemeten op de
+       bron. Een verloop dat op 84% begint zou dus de hand en de voet half
+       oplossen in plaats van een schaduw. Het begint nu op 94%: precies de
+       laatste streep, op de plek waar de plaat de vensterrand raakt.
 
        ONDER is het subtieler. Lucas: *"Het vervagen mag ook iets subtieler aan
        de onderkant maar ik wil geen harde lijn zien."* En daarna nog een keer:
@@ -536,20 +559,14 @@ const t = nl
        dekking, dan staat daar alsnog een rand — een zwakke, maar een rechte.
        Dat is precies wat er niet mag. */
     -webkit-mask-image:
-      linear-gradient(to right, transparent 0%, #000 5%, #000 84%, transparent 100%),
+      linear-gradient(to right, transparent 0%, #000 4%, #000 94%, transparent 100%),
       linear-gradient(to bottom, transparent 0%, #000 6%, #000 93%, rgba(0, 0, 0, .72) 97%, rgba(0, 0, 0, .3) 99%, transparent 100%);
     -webkit-mask-composite: source-in;
     mask-image:
-      linear-gradient(to right, transparent 0%, #000 5%, #000 84%, transparent 100%),
+      linear-gradient(to right, transparent 0%, #000 4%, #000 94%, transparent 100%),
       linear-gradient(to bottom, transparent 0%, #000 6%, #000 93%, rgba(0, 0, 0, .72) 97%, rgba(0, 0, 0, .3) 99%, transparent 100%);
     mask-composite: intersect;
   }
-  /* De laadgrond verhuist naar de twee schermgaten. Daar doet hij zijn werk —
-     voorkomen dat je door een gat heen een flits ziet — zonder een rechthoek om
-     de hele laptop te trekken. */
-  .lc.is-naast .lc-slides,
-  .lc.is-naast .lc-fons { background: var(--bg-raise, #EDEDED); }
-
   /* ── HIJ LOOPT DE PAGINA UIT ──────────────────────────────────────────────
      De kolom naast de tekst is krap de helft van de leesmaat, en een liggende
      plaat van 1,77 wordt daar zo klein dat de tekst op het nagebouwde scherm
@@ -936,6 +953,25 @@ const t = nl
   /* De plaat ligt erbovenop. `pointer-events: none` zodat de sleepbeweging en
      de knoppen eronder gewoon bereikbaar blijven. */
   .lc-plaat { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  /* ── HET WIT OM DE LAPTOP IS UIT DE PLAAT ZELF GEHAALD — 18 sept 2026 ────
+     Lucas: *"Zorg wel dat de laptop er mooi in word verwerkt, ook het witte om
+     de laptop heen moet het liefst doorzichtig worden."* — en daarna: *"Ik heb
+     de laptop placeholder gefixt en de achtergrond weg gehaald."*
+
+     Hier stond een dag lang een blendstand op de plaat. Dat was de oplossing
+     zolang de bron een FOTO met een dichte witte studiogrond was: wit
+     vermenigvuldigt naar niets, dus het verdween, en de ingebakken slagschaduw
+     verdonkerde wat eronder lag.
+
+     Die truc moest weg zodra de bron zelf schoon werd. Vermenigvuldigen raakt
+     namelijk niet alleen het wit: het rekent ÁLLES door met wat eronder ligt,
+     dus op een sfeerbeeld zouden de zwarte lijst, de hand en de aluminium voet
+     meekleuren met de achtergrond in plaats van erop te liggen. Met een
+     doorzichtige plaat is dat niet meer nodig en ook niet meer gewenst — hij
+     ligt nu gewoon op de pagina, in elke vorm, op elke grond.
+
+     Wat er wél blijft is het masker op `.lc.is-naast .lc-doek` hierboven: dat
+     laat de laptop oplossen op de plek waar hij de pagina verlaat. */
 
   /* ── DE PIJLEN ────────────────────────────────────────────────────────────
      Onder de laptop, naast de voortgangsstreep — zie de noot bij de markup.

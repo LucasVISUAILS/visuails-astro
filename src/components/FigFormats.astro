@@ -102,6 +102,19 @@ const RATIOS = [
   .fmt-r { font-size: .74rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
   .fmt-t { font-size: .78rem; line-height: 1.35; color: var(--ink-3); }
 
+  /* ── OP EEN TELEFOON NAAST HET KADER — 19 september 2026 ─────────────────
+     Op 393 px is een 9:16-kader 69 px breed, en `overflow-wrap: anywhere`
+     doet dan precies wat het belooft: "JE WEBSHOP" brak per letter af ("JE
+     WEB SHO P"). Onder 480 px staat het bijschrift daarom naast het kader in
+     plaats van eronder; het kader houdt zijn hoogte en verhouding, de tekst
+     krijgt de rest van de regel. */
+  @media (max-width: 480px) {
+    .fmt-strip { flex-direction: column; gap: .8rem; }
+    .fmt-item { flex-direction: row; align-items: center; gap: .8rem; }
+    .fmt-frame { height: 96px; flex: 0 0 auto; }
+    .fmt-cap { margin-top: 0; overflow-wrap: normal; }
+  }
+
   .fmt-note {
     margin-top: 1.3rem;
     padding-top: .8rem;

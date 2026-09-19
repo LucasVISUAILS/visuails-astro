@@ -53,7 +53,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { readCalendar } from '../../src/lib/agenda.js';
-import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG } from '../../src/data/pricing.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
    browser. `background` heet hier backgroundById, want `background` is in dit
@@ -1118,12 +1118,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
    * genummerde factuur die "Betaald EUR 0,00" zegt is erger dan geen factuur.
    *
    * Dat is nu opgelost aan de bron in plaats van bij de factuur. quoteTestSample()
-   * rekent de btw uit het brutobedrag van EUR 1 en niet erbovenop -- de fiscale keuze
-   * staat daar uitgeschreven. Vanaf hier is een proefvisual een gewone bestelling met
-   * een bedrag, en de factuur volgt uit de plumbing die er al was.
+   * rekent sinds 19 september 2026 de btw BOVENOP het nettobedrag van EUR 1 (Lucas:
+   * "het is 1 euro inclusief btw op dit moment. Fix dit.") -- de fiscale keuze staat
+   * daar uitgeschreven. Vanaf hier is een proef een gewone bestelling met een bedrag,
+   * en de factuur volgt uit de plumbing die er al was.
    *
-   * HET TARIEF KOMT UIT DEZELFDE vatCall. Een Nederlandse proefvisual is EUR 0,83 +
-   * EUR 0,17; bij verlegging is het EUR 1,00 + EUR 0,00. Niet apart geregeld, want de
+   * HET TARIEF KOMT UIT DEZELFDE vatCall. Een Nederlandse proef is EUR 1,00 +
+   * EUR 0,21; bij verlegging is het EUR 1,00 + EUR 0,00. Niet apart geregeld, want de
    * btw-behandeling van een klant hangt niet af van hoe groot zijn bestelling is.
    */
   /* Drie takken en niet twee. Een merkmodel heeft geen aantal en geen
@@ -1671,7 +1672,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     subject: lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`,
     html: customerEmail(lang, ref, svc, name,
       { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink, pay: payUrl, quote, vat: vatCall,
-        inReview: !!review.needsReview }),
+        inReview: !!review.needsReview, voorrang: voorrangGevraagd }),
   }));
 
   /*
@@ -1782,8 +1783,14 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const payment = await safe(() => createTestSampleMolliePayment(env, {
       ref,
       lang,
-      successUrl: requestOrigin(request) + done,
+      /* `paid=` en niet `done` (met `ref=`), net als de gewone bestelling
+         hierboven: zo weet de bedankpagina dat dit de terugkeer ná het betalen
+         is en zegt hij "Betaald" in plaats van hetzelfde als vóór het betalen
+         (19 september 2026; gemeten op VIS-VX60-HON). */
+      successUrl: requestOrigin(request) + back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref),
       webhookUrl: requestOrigin(request) + '/api/webhook/mollie',
+      /* Het bruto uit de offerte — € 1 + btw sinds 19 september 2026. */
+      grossCents: quote?.grossCents,
     }));
     const checkoutUrl = payment?._links?.checkout?.href;
     if (checkoutUrl) {
@@ -1824,7 +1831,33 @@ export async function onRequestPost({ request, env, waitUntil }) {
    * foutpad: de bestelling bestaat, de mail is verstuurd, en de betaallink volgt
    * zodra er iemand naar gekeken heeft.
    */
-  if (svc === 'brand-model' && payUrl) {
+  /*
+   * ── EN SINDS 19 SEPTEMBER 2026 ELKE BESTELLING MET EEN BETAALLINK ──────────
+   *
+   * Lucas, na de doorlichting: *"Gewone bestelling kan gelijk naar Mollie."* De
+   * proefvisual en het merkmodel deden het al; de catalog-, lifestyle- en
+   * complete-bestelling landden eerst op de bedankpagina met een betaalknop
+   * rechts — en die pagina zei "Bedankt" terwijl er nog niets betaald was. Wie
+   * daar afhaakte dacht klaar te zijn.
+   *
+   * WAT ER NIET VERANDERT: de btw-poort. Een land buiten de EU, een VIES-
+   * antwoord dat uitbleef, een verlegging zonder verklaring — vatGate() zet die
+   * op de beoordelingslijst en dan is `payUrl` hierboven al null. Die klant
+   * krijgt dus nog steeds de bedankpagina met "we kijken er eerst naar" en de
+   * betaallink pas na Lucas' akkoord (stuurBetaallink in src/lib/betaallink.js).
+   * Het land van het ip (`origin_country`) staat daar naast de claim. Direct
+   * naar Mollie geldt alleen voor wie de poort niet raakt — precies de
+   * bestellingen die vóór vandaag al meteen konden betalen via de knop.
+   *
+   * `!raced`: is het gevraagde venster net vergeven, dan hoort de klant dát
+   * eerst te lezen (de bedankpagina zegt het), niet een betaalpagina. En
+   * `zonderVenster`: een bestelling van tien of meer producten die géén datum
+   * kon kiezen (agenda vol, of groter dan één venster) wordt eerst samen
+   * ingepland — de stap-4-tekst zegt dat — en de betaallink staat dan in de
+   * mail en op de bedankpagina, niet als eerste scherm.
+   */
+  const zonderVenster = tier === 'attended' && !finalWindow;
+  if (payUrl && !raced && !zonderVenster) {
     if (wantsJson) {
       return json({ ok: true, ref, tier, window: finalWindow, windowLost: raced, redirect: payUrl });
     }
@@ -2868,7 +2901,9 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     ? `<p style="margin:0 0 16px">Window reserved: <strong>${esc(window.start)} → ${esc(window.end)}</strong></p>`
     : tier === 'attended'
       ? `<p style="margin:0 0 16px;color:#8F4023">Attended order with <strong>no reserved window</strong>.</p>`
-      : `<p style="margin:0 0 16px;color:#666">Standard queue — no window, by design.</p>`;
+      : (details && (details.voorrang === '1' || details.voorrang === 1 || details.voorrang === true))
+        ? `<p style="margin:0 0 16px;color:#8F4023"><strong>VOORRANG</strong> — de klant betaalde de toeslag; streef: binnen ${VOORRANG.uren} uur na betaling.</p>`
+        : `<p style="margin:0 0 16px;color:#666">Standard queue — no window, by design.</p>`;
 
   // SECTION 13 · the upgrade path, from the studio's side. Deliberately its own
   // line rather than a fact buried in `meta`: a brand that has put 12+ products
@@ -2975,7 +3010,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  */
 export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
-    inReview = false } = {}) {
+    inReview = false, voorrang = false } = {}) {
   const nl = lang === 'nl';
   const hi = greeting(name, lang);
   const attended = tier === 'attended';
@@ -2995,7 +3030,16 @@ export function customerEmail(lang, ref, service, name,
     : `Thanks — we've received your ${esc(svcName)} request.`;
 
   let timing;
-  if (dated) {
+  if (voorrang && !dated) {
+    /* ── VOORRANG STAAT IN DE MAIL — 19 september 2026 ──────────────────────
+       Een klant die €82 voor voorrang betaalde, kreeg een mail met "Standaard
+       levertijd, geen vaste opleverdatum" — de toeslag stond wél in het bedrag.
+       Dezelfde zin als op stap 4 van het formulier (sum.voorrangJa), zodat de
+       mail zegt wat het scherm zei. */
+    timing = nl
+      ? `${voorrangZin('nl')}. Je bestelling gaat bovenaan de lijst; we mikken op levering binnen ${VOORRANG.uren} uur na je betaling.`
+      : `${voorrangZin('en')}. Your order goes to the top of the list; we aim to deliver within ${VOORRANG.uren} hours of your payment.`;
+  } else if (dated) {
     const from = formatDay(window.start, lang);
     const to = formatDay(window.end, lang);
     timing = nl

@@ -431,3 +431,39 @@ export async function notifySubscriptionRefunded(env, {
     console.error('[notify] restitutiebericht niet verstuurd voor', subRef, '—', err?.message || err);
   }
 }
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * EEN ABONNEE HEEFT ZIJN WEEK VERZET — RONDE 4, 19 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Week verzetten door de klant zelf."* Tot vandaag zei het scherm
+ * "antwoord op een van onze mails, dan schuiven we hem" — er was geen route.
+ * Nu verzet de klant hem zelf op /account/plan; dit bericht is er zodat jij
+ * het ziet, want jouw planning (checkPlanQueues, de weekmail vijf dagen vooraf)
+ * rekent met de nieuwe dag vanaf de eerstvolgende keer dat hij loopt.
+ */
+export async function notifyPlanWeekMoved(env, { subRef, brand, email, van, naar }) {
+  try {
+    const ref = subRef || '(zonder kenmerk)';
+    await toStudio(
+      env,
+      `Week verzet · ${ref} · van de ${van}e naar de ${naar}e`,
+      [
+        h1('Een abonnee verzette zijn week', ref),
+        mailRows([
+          ['Abonnement', ref],
+          ['Klant', brand || email || '—'],
+          ['E-mail', email || ''],
+          ['Was', van ? `vanaf de ${van}e van de maand` : '—'],
+          ['Wordt', `vanaf de ${naar}e van de maand`],
+        ]),
+        mailP('De klant deed dit zelf in Studio. Alles wat al vastgezet en op een dag '
+          + 'gepland stond, blijft staan; de weekmail en het oppakken van de lijst '
+          + 'volgen vanaf nu de nieuwe dag. Er hoeft niets van jou.'),
+      ].join('')
+    );
+  } catch (err) {
+    console.error('[notify] weekverzetbericht niet verstuurd voor', subRef, '—', err?.message || err);
+  }
+}

@@ -244,8 +244,11 @@ const COPY = {
        beschreef dus drie dagen lang een element dat er niet was, op de pagina
        die uitlegt hoe het werkt. */
     flowLede: 'One service at a time, from the phone photo you send to the files that come back. Pick the one you need.',
-    gateLead: 'No date is printed until the calendar clears it.',
-    gateBody: 'A reserved delivery date is confirmed before you pay, never after. If the week you need cannot be held, you hear that — not an optimistic guess. It is the one promise on this site we would rather lose an order over than break.',
+    /* 19 september 2026: betalen is direct (besluit 1) en de datum kies je
+       zelf uit dagkaarten (besluit 3) — de belofte is nu dat je alleen dagen
+       ziet die de agenda nog kan dragen. */
+    gateLead: 'You only see dates the calendar can still hold.',
+    gateBody: `From ${WINDOW_THRESHOLD} products you pick a delivery date in the form, and the calendar only offers days with room left. That date is held the moment your order is in, and you pay straight away. Should a day fill up between choosing and ordering, you hear that at once and pick again — no date is invented to keep an order. It is the one promise on this site we would rather lose an order over than break.`,
     craftH: 'More than AI. Finished by hand.',
     /* ── DE VOLGORDE ZEI HET VERKEERDE — 17 september 2026 ──────────────────
        Hier stond: *"The images are generated first, and then every one goes
@@ -301,8 +304,9 @@ const COPY = {
       { t: 'If something is off', b: `${aftercare('attended', 'en')}` },
       // No product band any more: the count is whatever you ordered, and the
       // claim is true at every count, so naming one would only date the page.
-      { t: 'Consistency', b: 'Same lighting, same angle, same grade across every product in the order. Running them together is what makes that possible.' },
-      { t: 'Two ways in', b: 'On-site, or WhatsApp — whichever suits you. The same production either way.' },
+      /* 19 september 2026: "Consistency" en "Two ways in" zijn eruit —
+         het eerste zegt stap 05 van de doorloop al, het tweede staat als
+         WhatsApp-knop in het slot. Drie regels, drie kolommen. */
       { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
     ],
     landH: 'One order, every place it has to go.',
@@ -349,8 +353,8 @@ const COPY = {
 
     flowH: 'Je bestelling, van begin tot eind.',
     flowLede: 'Eén dienst tegelijk, van de telefoonfoto die je stuurt tot de bestanden die terugkomen. Kies degene die je nodig hebt.',
-    gateLead: 'We noemen pas een datum als we in de agenda hebben gekeken of die week nog vrij is.',
-    gateBody: 'Een vastgezette leverdatum wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — geen optimistische gok. Het is de enige belofte op deze site waarvoor we liever een bestelling verliezen dan dat we hem breken.',
+    gateLead: 'Je ziet alleen dagen die de agenda nog kan vasthouden.',
+    gateBody: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum, en de agenda biedt alleen dagen aan waar nog ruimte is. Die datum ligt vast zodra je bestelling binnen is, en je betaalt meteen. Is een dag net vol geraakt tussen kiezen en bestellen, dan hoor je dat direct en kies je opnieuw — er wordt geen datum verzonnen om een bestelling binnen te houden. Het is de enige belofte op deze site waarvoor we liever een bestelling verliezen dan dat we hem breken.`,
     craftH: 'Meer dan AI. Met de hand afgewerkt.',
     /* Zie de Engelse tegenhanger voor waarom de volgorde is omgedraaid. */
     craftBody: 'Wij bouwen elk beeld zelf op. Genereren is daarin één stap — daarna gaat het beeld door de hand: afgewerkt in professionele editingsoftware, kleur gecorrigeerd naar je merk. Daarna kijkt een specialist naar drie dingen: klopt het product met je eigen foto, zien alle beelden er hetzelfde uit, en zit de uitsnede goed.',
@@ -377,9 +381,6 @@ const COPY = {
       /* Zie de noot bij de Engelse tegenhanger: dezelfde dubbele punt en
          hetzelfde verzonnen verschil tussen de twee treden. */
       { t: 'Als iets niet klopt', b: `${aftercare('attended', 'nl')}` },
-      // Zie de EN-tak: geen productbereik meer, de claim klopt bij elk aantal.
-      { t: 'Consistentie', b: 'Dezelfde belichting, dezelfde hoek, dezelfde grade over elk product in de bestelling. Dat ze samen door de productie gaan is precies wat dat mogelijk maakt.' },
-      { t: 'Twee ingangen', b: 'Via de site of via WhatsApp — wat jou uitkomt. In beide gevallen precies dezelfde productie.' },
       { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
     ],
     landH: 'Eén bestelling, overal waar hij heen moet.',
@@ -457,7 +458,7 @@ const c = COPY[lang];
     </header>
     {/* ── DE BELOFTE BLIJFT, DE TOELICHTING GAAT ERACHTER — 12 sept 2026 ───
         `gateBody` zei in drie zinnen wat stap 03 van de lijst eronder ook al
-        zegt: bevestigd voordat je betaalt, en anders hoor je dat. Twee alinea's
+        zegt: je kiest uit dagen die nog vrij zijn, en anders hoor je dat. Twee alinea's
         met dezelfde inhoud, vier centimeter uit elkaar.
 
         Wat hier hoort te staan is de BELOFTE — één zin, groot — en niet de
@@ -549,6 +550,9 @@ const c = COPY[lang];
       <h2 id="hiw-land" class="hoog hoog-2">{c.landH}</h2>
       <p class="lopend">{c.landLede}</p>
     </header>
+    {/* Acht kanalen als acht regels in twee kolommen (naam links, wat erheen
+        gaat rechts) in plaats van acht blokjes van kop-plus-regel in vier
+        kolommen — 873 → ±520 px, zelfde woorden. 19 september 2026. */}
     <ul class="hiw-land" role="list">
       {c.land.map(([t, b]) => (
         <li><span class="hiw-land-t">{t}</span><span class="mono">{b}</span></li>
@@ -557,14 +561,11 @@ const c = COPY[lang];
     <p class="lopend hiw-land-noot">{c.landNote}</p>
   </section>
 
-  {/* ── 7 · DE VRAGEN STAAN ERGENS ANDERS ────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="hiw-faq">
-    <header class="paneel-kop">
-      <h2 id="hiw-faq" class="hoog hoog-2">{c.faqH}</h2>
-      <p class="lopend hiw-gidsen" set:html={c.faqGuides} />
-    </header>
-    <p class="acties"><a class="knop knop-lijn" href={lp('/faq')}>{c.faqCta}</a></p>
-  </section>
+  {/* ── 7 · "NOG EEN VRAAG?" IS EEN REGEL IN HET SLOT — 19 september 2026 ──
+      Dit was een eigen paneel van 382 px met één knop. Lucas: *"How it works
+      snoeien naar wat je zou aanraden."* De verwijzing naar de FAQ en de
+      gidsen staat nu onder de knoppen van het slot; de tweede inkomende link
+      naar /guides (zie de noot bij faqGuides) blijft daarmee bestaan. */}
 
   {/* ── 8 · HET SLOT ────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="hiw-slot">
@@ -575,6 +576,7 @@ const c = COPY[lang];
       <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStartBtn}</a>
       <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">WhatsApp</a>
     </p>
+    <p class="lopend hiw-gidsen"><a href={lp('/faq')}>{c.faqCta}</a> · <span set:html={c.faqGuides} /></p>
     {/* vatNote() één keer per pagina. Elk bedrag hier draagt zijn eigen
         excl.-btw-label; dit is de ene regel die zegt hoe de btw echt werkt. Hij
         staat hier en niet onder de doorloop, want hier staat de enige prijs van
@@ -636,24 +638,25 @@ const c = COPY[lang];
 
   /* De details als regels en niet als kaartjes: het zijn korte antwoorden op
      losse vragen, en twaalf kaders zetten twaalf keer een rand om één zin. */
-  .hiw-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); }
+  .hiw-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); }
   .hiw-details li { display: grid; gap: .4rem; align-content: start; padding: clamp(1rem, 2.2vw, 1.5rem) 0; border-top: 1px solid var(--lijn); }
   .hiw-details b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em; }
   .hiw-details .lopend { font-size: .92rem; }
   .hiw-details a { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
 
-  .hiw-land { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2rem); }
-  .hiw-land li { display: grid; gap: .4rem; align-content: start; padding-top: 1rem; border-top: 1px solid rgb(245 245 245 / .18); }
-  .hiw-land-t { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; }
-  .hiw-land li .mono { color: rgb(245 245 245 / .66); text-transform: none; letter-spacing: 0; font-size: .88rem; line-height: 1.5; }
-  .hiw-land-noot { margin-top: clamp(1.6rem, 3vw, 2.4rem); font-size: .92rem; }
+  .hiw-land { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); }
+  .hiw-land li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: baseline; gap: .8rem; padding: .7rem 0; border-top: 1px solid rgb(245 245 245 / .18); }
+  .hiw-land-t { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(.95rem, 1.4vw, 1.1rem); text-transform: uppercase; letter-spacing: -.01em; }
+  .hiw-land li .mono { color: rgb(245 245 245 / .66); text-transform: none; letter-spacing: 0; font-size: .84rem; line-height: 1.5; }
+  .hiw-land-noot { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); font-size: .92rem; }
 
-  .hiw-gidsen :global(a) { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
+  .hiw-gidsen { margin-top: 1.2rem; font-size: .92rem; color: var(--inkt-2); max-width: 70ch; }
+  .hiw-gidsen a, .hiw-gidsen :global(a) { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
   .hiw-btw { margin-top: 1.6rem; font-size: .84rem; line-height: 1.6; max-width: 70ch; }
 
   @media (max-width: 900px) {
     .hiw-open, .hiw-twee, .hiw-details { grid-template-columns: 1fr; }
-    .hiw-land { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hiw-land { grid-template-columns: 1fr; }
   }
 
   /* ── EN ONDER 560 PIXELS ÉÉN KOLOM — 12 september 2026 ──────────────────

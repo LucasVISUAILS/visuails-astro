@@ -463,7 +463,9 @@ const PIPE = {
          weekdagen komen uit Intl en niet uit deze lijst, want die kent elke
          browser al in elke taal. */
       chosen: 'Held for you',
-      none: 'No dates open in this window.',
+      none: 'No dates open in this stretch.',
+      earlier: '← Earlier',
+      later: 'Later →',
     },
     submit: {
       sending: 'Sending…',
@@ -584,6 +586,8 @@ const PIPE = {
       /* Zie de Engelse tegenhanger. */
       chosen: 'Voor je vrijgehouden',
       none: 'Geen data vrij in deze periode.',
+      earlier: '← Eerder',
+      later: 'Later →',
     },
     submit: {
       sending: 'Versturen…',
@@ -915,7 +919,7 @@ const REQUIRED_COPY = [
     ...(x.options ? x.options.map((o) => `pu.qopt.${x.id}.${o.id || '_'}`) : []),
   ]),
   's3.prefillNote',
-  'gate.windowSub', 'gate.chosen', 'gate.none',
+  'gate.windowSub', 'gate.chosen', 'gate.none', 'gate.earlier', 'gate.later',
   'submit.sending', 'submit.email', 'submit.network', 'submit.generic',
   ...(bgApplies
     ? ['bg.warn', `bg.note.${CUSTOM_ID}`, ...BACKGROUNDS.map((b) => `bg.note.${b.id}`)]
@@ -967,7 +971,7 @@ const FORM = {
        veel is, maar omdat het meer is dan aangekondigd. De rail is een
        belofte over wat er nog komt, en hij moet op alle drie de diensten
        kloppen. */
-    rail: ['Order', 'Material', 'Your details', 'Timing', 'Confirm'],
+    rail: ['Order', 'Material', 'Your details', 'Timing', 'Pay'],
     next: 'Continue',
     back: 'Back',
     optional: 'optional',
@@ -1159,11 +1163,11 @@ const FORM = {
       queueH: 'This order does not need a reserved delivery date',
       queueBody: `Orders of up to ${WINDOW_THRESHOLD - 1} products are produced in the order they arrive — usually ${turnaround('unattended', 'en')}.`,
       okH: 'These delivery dates can be held for you',
-      okBody: 'Pick one. Nothing is reserved by looking at it — the delivery date is held when this order arrives, and confirmed before anything is invoiced.',
+      okBody: 'Pick one. Nothing is reserved by looking at it — the delivery date is held the moment your order and payment are in, and stays held for seven days if you pay later through the link in your email.',
       okMax: 'Per date we hold room for up to',
       okMaxTail: 'products.',
       fullH: 'The next few weeks are full',
-      fullBody: 'Send the order anyway and you get the first delivery date that opens, in writing, before anything is invoiced.',
+      fullBody: 'Send the order anyway: we come back in writing with the first delivery date that opens. Pay straight away through the link in your email, or wait until you have the date — production starts after payment either way.',
       tooLargeH: 'Larger than one date can hold',
       tooLargeBody: 'Per date we hold room for up to',
       tooLargeTail: 'products. More than that we split over two weeks, and we plan that with you. Send this and we will come back with the dates.',
@@ -1177,16 +1181,16 @@ const FORM = {
       nojs: 'Without JavaScript the calendar cannot be checked from this page. Send the form and we will come back with a delivery date in writing — no date is assumed in the meantime.',
     },
     s5: {
-      h: 'Check and send',
+      h: 'Check and pay',
       lead: 'Read it back. Nothing has been created yet, and nothing has been charged.',
-      afterH: 'What happens after you press send',
+      afterH: 'What happens after you press the button',
       after: [
-        'You get a confirmation with a reference, immediately.',
-        'You pay straight away or through the link in your confirmation email; production starts once the payment is in. A reserved delivery date is held for seven days while you pay.',
+        'You go straight to the payment page (Mollie). Production starts once the payment is in; a reserved delivery date is held for seven days while you pay.',
+        'Your confirmation with the reference and the same payment link arrives by email — pay later if you prefer. An address outside the EU gets a short check first, and the link follows by email within 24 hours.',
         'Every order lands in VISUAILS Studio, where you approve and download image by image — a standard order too. The direct link is in your email as well.',
       ],
-      payNote: 'No card details here. You are confirming an order — right after sending you can pay straight away, or later through the link in your confirmation email. Production starts once the payment is in, and a reserved delivery date is held for seven days while you pay.',
-      submit: 'Send this order',
+      payNote: 'No card details here — you pay on the next page through Mollie (iDEAL or card).',
+      submit: 'Order and pay',
       legal: ['By sending this order you agree to our ', ' and ', '.'],
       legalTerms: 'terms',
       legalPrivacy: 'privacy policy',
@@ -1250,7 +1254,7 @@ const FORM = {
     // 'Timing' stond hier onvertaald tussen vier Nederlandse woorden. pricing.js
     // heeft het juiste woord al: Levertijd. 8 augustus 2026.
     /* Zie de noot bij de Engelse rail: stap 3 is het factuurblok. */
-    rail: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
+    rail: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Betalen'],
     next: 'Verder',
     back: 'Terug',
     optional: 'optioneel',
@@ -1412,11 +1416,11 @@ const FORM = {
       /* 'onder dat aantal' verwees naar niets op dit scherm — 3 sep 2026. */
       queueBody: `Bestellingen tot en met ${WINDOW_THRESHOLD - 1} producten maken we in de volgorde waarin ze binnenkomen — meestal ${turnaround('unattended', 'nl')}.`,
       okH: 'Deze leverdata kunnen voor je worden vastgehouden',
-      okBody: 'Kies er één. Door te kijken reserveer je niets — we houden de leverdatum vast zodra je bestelling binnenkomt, en bevestigen hem voordat we iets factureren.',
+      okBody: 'Kies er één. Door te kijken reserveer je niets — de leverdatum staat vast zodra je bestelling en betaling binnen zijn, en blijft zeven dagen voor je staan als je later betaalt via de link in je mail.',
       okMax: 'Per leverdatum houden we ruimte voor maximaal',
       okMaxTail: 'producten.',
       fullH: 'De komende weken zitten vol',
-      fullBody: 'Stuur de bestelling toch: je krijgt de eerste leverdatum die vrijkomt, op schrift, voordat er iets gefactureerd wordt.',
+      fullBody: 'Stuur de bestelling toch: we komen op schrift terug met de eerste leverdatum die vrijkomt. Betalen kan meteen via de link in je mail, of pas als je de datum hebt — de productie start hoe dan ook na de betaling.',
       tooLargeH: 'Meer dan we in één leverdatum kwijt kunnen',
       tooLargeBody: 'Per leverdatum houden we ruimte voor maximaal',
       tooLargeTail: 'producten. Meer dan dat zijn twee leverdata en een gesprek. Stuur dit en we plannen het samen.',
@@ -1430,16 +1434,16 @@ const FORM = {
       nojs: 'Zonder JavaScript kunnen we de agenda niet vanaf deze pagina checken. Verstuur het formulier, dan komen we op schrift met een leverdatum terug — tot die tijd staat er geen datum vast.',
     },
     s5: {
-      h: 'Controleer en verstuur',
+      h: 'Controleer en betaal',
       lead: 'Lees het terug. Er is nog niets aangemaakt en er is nog niets in rekening gebracht.',
-      afterH: 'Wat er gebeurt nadat je op versturen drukt',
+      afterH: 'Wat er gebeurt nadat je op de knop drukt',
       after: [
-        'Je krijgt direct een bevestiging met een referentie.',
-        'Je betaalt meteen of via de link in je bevestigingsmail; we beginnen zodra de betaling binnen is. Een vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
+        'Je gaat meteen door naar de betaalpagina (Mollie). We beginnen zodra de betaling binnen is; een vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
+        'Je bevestiging met de referentie en dezelfde betaallink komt per mail — later betalen kan dus ook. Bij een adres buiten de EU kijken we eerst kort naar de gegevens; de link volgt dan per mail, binnen 24 uur.',
         'Elke bestelling komt in VISUAILS Studio, waar je beeld voor beeld goedkeurt en downloadt — ook een standaardbestelling. De rechtstreekse link staat ook in je mail.',
       ],
-      payNote: 'Hier vul je geen kaartgegevens in. Je bevestigt een bestelling — direct na het versturen kun je meteen betalen, of later via de link in je bevestigingsmail. We beginnen zodra de betaling binnen is, en een vastgezette leverdatum blijft zeven dagen staan terwijl je betaalt.',
-      submit: 'Verstuur deze bestelling',
+      payNote: 'Hier vul je geen kaartgegevens in — betalen doe je op de volgende pagina via Mollie (iDEAL of kaart).',
+      submit: 'Bestellen en betalen',
       legal: ['Door deze bestelling te versturen ga je akkoord met onze ', ' en ', '.'],
       legalTerms: 'algemene voorwaarden',
       legalPrivacy: 'privacyverklaring',
@@ -2247,9 +2251,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           niet afgevangen met een extra vlag in de config — een tak die niets
           doet omdat het doel er niet is, is minder om fout te doen dan een tak
           die overgeslagen wordt omdat een vlag dat zegt. */}
+      {/* "excl. btw" erbij sinds 19 september 2026: de proef is € 1 netto en de
+          kassa vraagt € 1,21 (Nederland) — het bedrag dat hier staat moet dus
+          hetzelfde zeggen als elk ander bedrag op de site. */}
       {isSample && (
       <p class="pl-total-flat">
-        <strong>{sample.price}</strong> {f.s1.sampleFlatNote}
+        <strong>{sample.price}</strong> <span class="pl-total-flat-btw">{vatLabel('excl', lang)}</span> {f.s1.sampleFlatNote}
       </p>
       )}
 
@@ -3070,7 +3077,13 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
    * eromheen nodig heeft — de panelen, de koptypografie van de stappen, en de
    * stappenbalk in mono. Alles binnen de stap blijft draaien op de tokens van
    * global.css, en die wijzen op een licht paneel de goede kant op. */
-  .of-open { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  /* ── KORTER, ZODAT HET FORMULIER IN HET EERSTE SCHERM BEGINT — 19 sept 2026
+     Gemeten op 1424 × 715: de kop met twee regels tekst vulde 455 px, het
+     formulier begon pas na scrollen. In de trechter valt 67–92 % van de
+     bezoekers af tussen stap 1 en 2, en het eerste wat ze zien is een kop met
+     lucht. Minder lucht boven en onder, en geen extra marge onder de lead. */
+  .of-open { padding-block: clamp(1.6rem, 3.6vw, 3rem); }
+  .of-open .paneel-kop { margin-bottom: 0; }
   .of-vorm { padding-block: clamp(2.2rem, 5vw, 4rem); }
 
   /* De koppen van een stap in de koptypografie van sectie 22. Ze staan als
@@ -3523,6 +3536,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      kwijtraakt. Vandaar :focus-within op de kaart en niet display:none. */
   .pl-total-flat { margin-top: 1.4rem; padding: .9rem 1.1rem; border: 1px solid var(--line-strong); background: var(--surface); font-size: .95rem; color: var(--ink-2); }
   .pl-total-flat strong { color: var(--ink); font-size: 1.15rem; }
+  .pl-total-flat-btw { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-right: .2rem; }
 
   .pl-kind-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
   @media (max-width: 34em) { .pl-kind-row { grid-template-columns: 1fr; } }
@@ -3555,7 +3569,13 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      as one invites a click that bindNav() then refuses. */
   .pl-rail {
     display: none;
-    grid-template-columns: repeat(5, 1fr);
+    /* Geen vaste vijf kolommen meer (19 september 2026): de stap "Levertijd"
+       bestaat alleen vanaf tien producten en wordt anders met `hidden` uit de
+       rij gehaald — maar een verborgen <li> liet zijn kolom leeg staan, dus bij
+       elke kleine bestelling stond er rechts een vijfde, leeg vak. Kolommen
+       volgen nu de zichtbare stappen. */
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     list-style: none;
     margin: 0 0 clamp(2rem, 4vw, 3rem);
     padding: 0;
@@ -3563,6 +3583,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   }
   .pl-form.is-live .pl-rail { display: grid; }
   .pl-rail > li { display: flex; }
+  .pl-rail > li[hidden] { display: none; }
   .pl-rail > li + li { border-left: 1px solid var(--line-strong); }
   .pl-rail-item {
     flex: 1;
@@ -3791,88 +3812,98 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-gate-lost .pl-gate-h { color: var(--warn-ink); }
 
   /* ══════════════════════════════════════════════════════════════════════
-     DE AGENDA — 10 september 2026
-     Lucas: *"Ik zou dit liever als een agenda willen zien waar de klant kan
-     klikken op een beschikbare datum."* Zie de lange noot bij renderWindows()
-     in pipeline.js voor waarom zes uitgeschreven tegels een maandruit zijn
-     geworden.
+     DE LEVERDATA ALS RIJ DAGKAARTEN — 19 september 2026
+     Van 10 tot 19 september stond hier een maandruit. Zie de noot bij
+     renderWindows() in pipeline.js voor wat de doorlichting daarvan liet zien
+     (hele maand grijs, geen volgende maand, cellen die van hoogte sprongen).
+     Nu: zes kaarten van vaste maat, met "eerder"/"later" eronder.
 
      :global(), want pipeline.js bouwt deze knooppunten en die dragen het
-     scope-attribuut van Astro niet — dezelfde val die eerder de productkaarten
-     en de merkkitregel stil onopgemaakt liet.
+     scope-attribuut van Astro niet.
      ══════════════════════════════════════════════════════════════════════ */
-  .pl-windows { display: grid; gap: clamp(1.2rem, 3vw, 2rem); margin-top: 1rem; }
-  /* Twee maandruiten naast elkaar zodra het past; daaronder onder elkaar. Een
-     ruit is nooit smaller dan zeven leesbare kolommen. */
-  @media (min-width: 720px) {
-    .pl-windows { grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); align-items: start; }
-  }
-  .pl-windows :global(.pl-kal) { min-width: 0; }
-  .pl-windows :global(.pl-kal-maand) {
-    margin: 0 0 .6rem;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: .95rem;
-    text-transform: capitalize;
-  }
-  .pl-windows :global(.pl-kal-week),
-  .pl-windows :global(.pl-kal-dagen) {
+  .pl-windows { display: grid; gap: .9rem; margin-top: 1rem; }
+  .pl-windows :global(.pl-dagen) {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
   }
-  .pl-windows :global(.pl-kal-week) {
-    margin-bottom: 4px;
-    font-family: var(--font-mono);
-    font-size: .64rem;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    text-align: center;
+  @media (max-width: 560px) {
+    .pl-windows :global(.pl-dagen) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
-  /* Elke cel is even hoog en even breed, klikbaar of niet — een ruit waarin de
-     vrije dagen groter zijn dan de rest, leest niet meer als een maand. */
-  .pl-windows :global(.pl-kal-dag),
-  .pl-windows :global(.pl-kal-leeg) {
+  /* VASTE MAAT: dezelfde hoogte vóór en na de keuze; alleen rand en kleur
+     veranderen. Rand én kleur, zodat het verschil ook zonder kleurwaarneming
+     te zien is. */
+  .pl-windows :global(.pl-dag) {
     display: grid;
-    place-items: center;
-    aspect-ratio: 1;
-    min-height: 2.2rem;
-    border-radius: var(--r-sm);
-    font-size: .88rem;
-    font-variant-numeric: tabular-nums;
-  }
-  /* Een dag zonder aanbod: leesbaar maar duidelijk niet aan de beurt. Geen
-     `disabled`-knop — die belooft nog steeds dat er iets te klikken valt en zit
-     in de tabvolgorde in de weg. */
-  .pl-windows :global(.pl-kal-dag.is-uit) { color: var(--ink-3); opacity: .45; }
-  /* Een vrije dag. Border en niet alleen een kleur, zodat het verschil ook zonder
-     kleurwaarneming te zien is. */
-  .pl-windows :global(button.pl-kal-dag) {
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
+    justify-items: center;
+    row-gap: .1rem;
+    height: 6.4rem;
+    padding: .7rem .3rem .5rem;
     border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
     background: var(--surface);
     color: var(--ink);
-    font-weight: 600;
     cursor: pointer;
+    font: inherit;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
-  .pl-windows :global(button.pl-kal-dag:hover) { border-color: var(--ink); }
-  .pl-windows :global(button.pl-kal-dag:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-  .pl-windows :global(.pl-kal-dag.is-picked) {
-    border-color: var(--accent);
+  .pl-windows :global(.pl-dag:hover) { border-color: var(--ink); }
+  .pl-windows :global(.pl-dag:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pl-windows :global(.pl-dag.is-picked) {
+    border-color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink);
     background: var(--accent);
     color: var(--accent-ink, #0A0A0A);
   }
-  /* De tweede dag van een gekozen venster: dezelfde familie, een tint zachter.
-     Zonder dit kiest iemand een zaterdag en leest hij pas in de bevestiging dat
-     er een zondag bij hoort. */
-  .pl-windows :global(.pl-kal-dag.in-bereik) {
-    background: var(--accent-soft, rgb(210 224 74 / .3));
-    color: var(--ink);
-    opacity: 1;
+  .pl-windows :global(.pl-dag-wd),
+  .pl-windows :global(.pl-dag-mnd),
+  .pl-windows :global(.pl-dag-tot) {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    line-height: 1.2;
   }
+  .pl-windows :global(.pl-dag.is-picked .pl-dag-wd),
+  .pl-windows :global(.pl-dag.is-picked .pl-dag-mnd),
+  .pl-windows :global(.pl-dag.is-picked .pl-dag-tot) { color: inherit; opacity: .8; }
+  .pl-windows :global(.pl-dag-nr) {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .pl-windows :global(.pl-dag-tot) { margin-top: .25rem; text-transform: none; letter-spacing: 0; }
+  /* Eerder / later, met het bereik van de rij ertussen. */
+  .pl-windows :global(.pl-dagen-nav) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .pl-windows :global(.pl-dagen-knop) {
+    padding: .35rem .7rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+  }
+  .pl-windows :global(.pl-dagen-knop:hover) { border-color: var(--ink); }
+  .pl-windows :global(.pl-dagen-knop:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pl-windows :global(.pl-dagen-knop[hidden]) { display: none; }
+  .pl-windows :global(.pl-dagen-bereik) { margin-inline: auto; }
   .pl-windows :global(.pl-kal-keuze) {
-    grid-column: 1 / -1;
     margin: 0;
     padding-top: .8rem;
     border-top: 1px solid var(--line);
@@ -4117,7 +4148,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   @media (prefers-reduced-motion: reduce) {
     .level,
     .pl-rail-item { transition: none; }
-    .pl-windows :global(button.pl-kal-dag) { transition: none; }
+    .pl-windows :global(.pl-dag) { transition: none; }
     /* .input, .textarea, .select, .opt and .dropzone are opted out in
        global.css now, alongside the transitions they cancel — which is also
        how test-sample and contact stopped animating through the setting. */
@@ -4184,9 +4215,25 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-qty-btn:hover, .pl-qty-chip:hover { border-color: var(--accent-line); }
   .pl-qty-btn:focus-visible, .pl-qty-chip:focus-visible, .pl-qty-more:focus-visible, .pl-qty-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .pl-qty-btn:disabled { opacity: .45; cursor: default; }
-  .pl-qty-chips { display: inline-flex; gap: .35rem; margin-left: .35rem; }
-  .pl-qty-chip { font-size: .86rem; font-variant-numeric: tabular-nums; }
-  .pl-qty-chip.is-on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  /* ── ÉÉN BEDIENING, EN EEN STILLE SNELKEUZE — 19 september 2026 ──────
+     Lucas: *"Sommige elementen van het bestelformulier mogen ook wel een iets
+     betere en rustiger design krijgen."* De vier snelknoppen hadden precies
+     dezelfde doos als − en +, dus de regel las als zes knoppen voor één getal.
+     Nu is het getalveld met − en + de enige bediening die eruitziet als een
+     bediening; 1 · 5 · 10 · 20 staan ernaast als tekst, met het woord dat de
+     groep al als aria-label droeg. Gekozen = inkt en een streep, niet een
+     tweede gekleurde doos. */
+  .pl-qty-chips { display: inline-flex; align-items: center; gap: .15rem; margin-left: .6rem; font-size: .84rem; color: var(--ink-3); }
+  .pl-qty-chips::before { content: attr(aria-label) ':'; margin-right: .35rem; font-family: var(--mono2, var(--font-mono)); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; }
+  .pl-qty-chip {
+    min-width: 0; height: auto; padding: .15rem .35rem;
+    border: 0; border-radius: 0; background: none;
+    font-size: .9rem; font-weight: 500; color: var(--ink-2);
+    text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .28em;
+    font-variant-numeric: tabular-nums;
+  }
+  .pl-qty-chip:hover { border-color: transparent; color: var(--ink); text-decoration-color: var(--line-strong); }
+  .pl-qty-chip.is-on { color: var(--ink); font-weight: 700; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
   .pl-qty-more, .pl-qty-back {
     display: block;
     width: max-content;
@@ -4275,7 +4322,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-sum-strip :global(.pl-sum-thumb.is-ratio) { width: auto; max-width: 84px; background: var(--surface-2); }
   .pl-sum-strip :global(.pl-sum-thumb.is-bg img) { mix-blend-mode: multiply; }
   .pl-sum-strip :global(.pl-sum-cap) {
-    font-size: .68rem; line-height: 1.25; color: var(--ink-3); text-align: center;
+    font-size: .72rem; line-height: 1.25; color: var(--ink-3); text-align: center;
     max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .pl-sum-strip :global(.pl-sum-more) { font-size: .78rem; color: var(--ink-3); align-self: center; }
@@ -4287,6 +4334,15 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      screen reader that has moved on. pipeline.js fills one of these per step
      with the offending field's own message and points the field's
      aria-describedby at it. */
+  /* De fout bij het veld zelf (markeerVeld() in pipeline.js). :global(), want
+     het script maakt hem aan. Zelfde kleur als de stapfout, kleiner, zonder
+     kader: hij staat ín de vraag en niet naast de knop. */
+  .pl-form :global(.pl-veld-fout) {
+    margin: .3rem 0 .6rem;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--warn-ink);
+  }
   .pl-step-err {
     margin-top: 1.2rem;
     padding: .85rem 1.05rem;
@@ -4343,6 +4399,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   /* The child combinator moved a level down when this became a Disclose:
      the component wraps its slot in .dc-body, so `> .levels` no longer
      matched and the table lost its spacing entirely. */
+  /* ── GEEN TWEEDE HAARLIJN — 19 september 2026 ─────────────────────────
+     Disclose.astro geeft de laatste `.dc-plain` van een reeks een onderlijn.
+     In dit formulier volgt daar altijd een blok op dat zijn eigen bovenlijn
+     tekent (het totaal, de stapvoet), en zo stonden er overal twee lijnen met
+     twintig pixels lucht ertussen: een lege "accordeonregel" die niets was.
+     Gemeten op 19 september onder "Beeldvorm" (catalog) en onder "Waarom een
+     compleet setje meer kost" (lifestyle). */
+  .pl-form :global(.dc-plain:last-of-type) { border-bottom: 0; }
   .pl-levels-why :global(.levels) { margin-top: 1rem; }
   .pl-levels-why :global(.pl-panel-note) { margin-top: .8rem; }
 
@@ -4405,14 +4469,32 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      koopt een dag en je wilt weten wat die kost. Het staat rechts uitgelijnd op
      dezelfde lijn als de naam, zodat het meebeweegt zonder de regel te breken
      als het van "— kies eerst een aantal" naar "+ € 65" springt. */
-  .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); }
-  .pl-voorrang-rij { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; }
-  .pl-voorrang-rij input { margin-top: .3rem; flex: 0 0 auto; }
+  /* ── SUBTIELER, WEL DUIDELIJK — 19 september 2026 ───────────────────────
+     Lucas: *"Priority delivery mag wel iets subtieler maar mag wel duidelijk
+     blijven."* De regel erfde de veldkop-stijl van `.field > label` (mono,
+     kapitalen, vet) en las daardoor als een waarschuwing boven een vinkje. Het
+     is een keuze, geen kop: dus de lopende letter in gewoon gewicht, het bedrag
+     rechts in mono zoals in het totaal, de uitleg één maat kleiner, en de
+     vraag "Wanneer kan het sneller?" als kleine regel eronder. De override op
+     de veldkop staat in stijl22.css (bij `.field > label`). */
+  .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-md); }
+  .pl-voorrang-rij { display: flex; align-items: flex-start; gap: .7rem; cursor: pointer; }
+  .pl-voorrang-rij input { margin-top: .25rem; flex: 0 0 auto; }
   .pl-voorrang-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; width: 100%; }
-  .pl-voorrang-t b { font-size: 1rem; }
+  .pl-voorrang-t b { font-size: .98rem; font-weight: 500; }
   .pl-voorrang-bedrag { margin-left: auto; font-family: var(--font-mono); font-size: .82rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-  .pl-voorrang .hint { display: block; margin-top: .4rem; margin-left: 1.7rem; }
-  .pl-voorrang :global(details) { margin-left: 1.7rem; }
+  .pl-voorrang:has(input:checked) { border-color: var(--line-strong); }
+  .pl-voorrang:has(input:checked) .pl-voorrang-bedrag { color: var(--ink); }
+  .pl-voorrang .hint { display: block; margin-top: .35rem; margin-left: 1.85rem; font-size: .84rem; max-width: 52ch; }
+  /* Dubbele klasse: Disclose.astro zet zelf `.dc-plain .dc-label { 1.05rem }`
+     en `.dc-plain { padding: 1.1rem 0 }` met dezelfde specificiteit, en wint
+     dan op volgorde. De uitklapper is hier een bijzin ónder de optie, niet een
+     kop ernaast — dus kleiner dan "Voorrang bij levering" erboven. */
+  .pl-voorrang.pl-voorrang :global(details) { margin-left: 1.85rem; }
+  .pl-voorrang.pl-voorrang :global(.dc-plain) { border-top: 0; padding: .45rem 0 0; }
+  .pl-voorrang.pl-voorrang :global(.dc-plain .dc-label) { font-size: .86rem; font-weight: 500; color: var(--ink-2); }
+  .pl-voorrang.pl-voorrang :global(.dc-plain .dc-body) { font-size: .86rem; color: var(--ink-2); }
+  .pl-voorrang.pl-voorrang :global(.dc-plain:last-of-type) { border-bottom: 0; }
   @media (max-width: 620px) {
     .pl-voorrang-bedrag { margin-left: 0; flex-basis: 100%; }
   }

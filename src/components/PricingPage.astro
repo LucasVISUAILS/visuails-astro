@@ -62,7 +62,7 @@ import {
   CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
   /* De kleine posten die elders wél genoemd worden en hier niet — 4 sept 2026. */
   extraPhotoRate, EXTRA_PHOTO_LADDER, OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS,
-  RESOLUTIE,
+  RESOLUTIE, VIDEO_OP_AANVRAAG,
 } from '../data/pricing.js';
 // Het juiste woord per dienst — zie de kop van lexicon.js.
 import { counted, countedShort, setSize } from '../data/lexicon.js';
@@ -273,7 +273,7 @@ const COPY = {
        is en houdt op. */
     brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once, when the model is designed. Not per visual, not per order, not per year — from then on every order you place with us carries the same face, at the normal per-product rate for its size.`,
     videoName: 'Video clip',
-    videoLine: 'One short clip. The same rate on its own or added to any order.',
+    videoLine: VIDEO_OP_AANVRAAG ? 'One short clip. On request while the video pipeline is being built — you ask, we reply with a price.' : 'One short clip. The same rate on its own or added to any order.',
     videoUnit: 'per clip',
     videoIncH: 'How it is priced:',
     videoList: [
@@ -302,8 +302,8 @@ const COPY = {
     svcBody: `From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets the reserved delivery date. Below that it runs in the normal turnaround. One line to cross, rather than a second question to answer.`,
     svcFromTag: `From ${WINDOW_THRESHOLD} products`,
     svcUnderTag: `Under ${WINDOW_THRESHOLD} products`,
-    gateLead: 'No date is printed until the calendar clears it.',
-    gateBody: 'A reserved delivery date is confirmed before you pay, never after. If the week you need cannot be held, you are told that instead of being given an optimistic guess.',
+    gateLead: 'You only see dates the calendar can still hold.',
+    gateBody: 'You pick the delivery date in the form, from days with room left, and it is fixed the moment you order. If a day fills up in between, you are told at once and pick again — no optimistic guess.',
 
     // De plannen staan sinds 20 augustus 2026 op /plans; hier blijft één regel
     // die zegt dat de andere manier van kopen bestaat.
@@ -387,7 +387,7 @@ const COPY = {
     // Zie de noot bij de Engelse brandModelNote.
     brandModelNote: `${euro(AMOUNT.brandModel, 'nl')}, één keer, als het model ontworpen wordt. Niet per beeld, niet per bestelling, niet per jaar — vanaf dat moment draagt elke bestelling die je bij ons doet hetzelfde gezicht, tegen het gewone tarief per product voor die grootte.`,
     videoName: 'Videoclip',
-    videoLine: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
+    videoLine: VIDEO_OP_AANVRAAG ? 'Eén korte clip. Op aanvraag zolang de videopijplijn in aanbouw is — jij vraagt, wij antwoorden met een prijs.' : 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
     videoUnit: 'per clip',
     videoIncH: 'Hoe de prijs werkt:',
     videoList: [
@@ -413,8 +413,8 @@ const COPY = {
     svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij een vastgezette leverdatum. Daaronder loopt hij in de normale doorlooptijd. Eén grens, en verder niets wat je hoeft te kiezen.`,
     svcFromTag: `Vanaf ${WINDOW_THRESHOLD} producten`,
     svcUnderTag: `Onder ${WINDOW_THRESHOLD} producten`,
-    gateLead: 'We noemen geen datum voordat we in de agenda hebben gekeken.',
-    gateBody: 'Je vastgezette leverdatum staat vast voordat je betaalt, nooit erna. Kunnen we de week die je nodig hebt niet vrijhouden, dan zeggen we dat meteen. Je krijgt geen optimistische gok.',
+    gateLead: 'Je ziet alleen dagen die de agenda nog kan vasthouden.',
+    gateBody: 'De leverdatum kies je in het formulier, uit dagen waar nog ruimte is, en hij ligt vast zodra je bestelt. Raakt een dag tussendoor vol, dan hoor je dat meteen en kies je opnieuw. Geen optimistische gok.',
 
     toPlansH: 'Of hetzelfde werk elke maand',
     toPlansB: 'Heb je elke maand hetzelfde nodig, dan is per maand kopen goedkoper dan bestelling voor bestelling — mits het om diezelfde levering gaat: een catalogset én een lifestyle-carousel per product. Er wordt ook een week in de planning voor je vrijgehouden.',
@@ -516,19 +516,30 @@ const nn = (i: number) => String(i).padStart(2, '0');
   </section>
 
   {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
-      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
-      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
-      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
-      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
-      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
-      hetzelfde ding als op de voorpagina. */}
+      ── EN HIJ LOOPT, SINDS 18 SEPTEMBER 2026 ──────────────────────────────
+      Hier stond "stilstaand met opzet: dit is hier een illustratie en geen
+      attractie". Lucas, met een schermafdruk: *"Er staan hier en daar ook
+      laptop foto's die niet daar horen en niet eens werken."*
+
+      Hij heeft gelijk, en de redenering erachter klopte ook niet meer. De
+      stilstaande plaat leest niet als "rustig", hij leest als een plaatje dat
+      per ongeluk is blijven staan — zeker nu dezelfde plaat op de voorpagina en
+      de categoriepagina's wél doorloopt. Wat er te zien valt is juist de
+      volgorde: voorkant, achterkant, detail, op model. Die volgorde is het
+      product.
+
+      Stil blijft hij alleen waar hij geen aandacht mag vragen; die twee plekken
+      (/test-sample en /thank-you) hebben hem sinds vandaag helemaal niet meer.
+
+      Hij pauzeert zodra je muis erop staat en loopt weer als je weggaat — zie
+      LaptopCarousel.astro. */}
   <section class="paneel" aria-labelledby="pr-lc">
     <div class="paneel-kop">
       <p class="etiket">{nl ? 'Wat je krijgt' : 'What you get'}</p>
       <h2 id="pr-lc" class="hoog hoog-2">{nl ? 'Dit is één product.' : 'This is one product.'}</h2>
       <p class="lopend">{nl ? 'De ladder hieronder rekent per product. Dit is er één, op de plek waar het straks staat.' : 'The ladder below prices per product. This is one, in the place it ends up.'}</p>
     </div>
-    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
+    <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]}
       titel={nl ? 'Dit is één product.' : 'This is one product.'} />
   </section>
 
@@ -641,7 +652,11 @@ const nn = (i: number) => String(i).padStart(2, '0');
       <article class="pr-toevoeging">
         <h3 class="hoog hoog-3"><a href={lp('/video')}>{c.videoName}</a></h3>
         <p class="lopend">{c.videoLine}</p>
-        <p class="pr-prijs"><b class="hoog hoog-3">{euro(AMOUNT.video, lang)}</b><span class="mono">{c.videoUnit} · {vatLabel('excl', lang)}</span></p>
+        {/* Op aanvraag zolang de videopijplijn niet staat — zie VIDEO_OP_AANVRAAG
+            in pricing.js. Het bedrag komt vanzelf terug als de schakelaar om gaat. */}
+        {VIDEO_OP_AANVRAAG
+          ? <p class="pr-prijs"><b class="hoog hoog-3">{lang === 'nl' ? 'Op aanvraag' : 'On request'}</b><span class="mono">{lang === 'nl' ? 'prijs volgt schriftelijk' : 'price follows in writing'}</span></p>
+          : <p class="pr-prijs"><b class="hoog hoog-3">{euro(AMOUNT.video, lang)}</b><span class="mono">{c.videoUnit} · {vatLabel('excl', lang)}</span></p>}
         <p class="mono pr-lijst-kop">{c.videoIncH}</p>
         <ul class="pr-lijst" role="list">{c.videoList.map((f) => <li>{f}</li>)}</ul>
         <p class="acties"><a class="pijl" href={lp('/video')}>{c.videoCta}</a></p>

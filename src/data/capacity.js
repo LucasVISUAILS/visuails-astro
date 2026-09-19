@@ -393,6 +393,7 @@ export function offerableWindows({
   booked = {},
   blackouts = new Set(),
   limit = 6,
+  from = null,
 }) {
   if (!Number.isInteger(products) || products < 1) return [];
   const punten = puntenVoor(service, products);
@@ -403,7 +404,12 @@ export function offerableWindows({
   const last = addDays(today, HORIZON_DAYS);
   const out = [];
 
-  let cur = first;
+  /* ── `from`: VERDER KIJKEN DAN DE EERSTE ZES — 19 september 2026 ──────────
+     De klant ziet een rij van zes dagkaarten met "later →". Die knop vraagt
+     dezelfde poort opnieuw met een startdag ná de laatste getoonde. Nooit vóór
+     de eerste dag die überhaupt mag (brieftijd), nooit voorbij de horizon —
+     buiten die twee grenzen is `from` gewoon `first`. */
+  let cur = (typeof from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(from) && from > first) ? from : first;
   while (cur <= last && out.length < limit) {
     const days = windowFor(cur, punten, booked, blackouts);
     if (days.length === WINDOW_DAYS) {
@@ -431,7 +437,7 @@ export function offerableWindows({
  * het getal meet werk en geen bestanden, en een naam die het tweede belooft komt
  * ooit als aantal foto's op een scherm terecht.
  */
-export function clearedWindows({ today, products, service = 'complete', booked = {}, blackouts = new Set(), limit = 6 }) {
+export function clearedWindows({ today, products, service = 'complete', booked = {}, blackouts = new Set(), limit = 6, from = null }) {
   const perProduct = puntenVoor(service, 1);
   const maxProducts = perProduct === null ? 0 : Math.floor(ATTENDED_PUNTEN_PER_VENSTER / perProduct);
   const leeg = (reason) => ({ windows: [], reason, max: maxProducts, maxPunten: ATTENDED_PUNTEN_PER_VENSTER, service });
@@ -440,13 +446,25 @@ export function clearedWindows({ today, products, service = 'complete', booked =
   if (!Number.isInteger(products) || products < 1) return leeg('invalid');
   if (puntenVoor(service, products) > ATTENDED_PUNTEN_PER_VENSTER) return leeg('too-large');
 
-  const windows = offerableWindows({ today, products, service, booked, blackouts, limit });
+  /* Eén venster méér vragen dan er getoond wordt: zo weet de pagina of "later →"
+     iets oplevert zonder een tweede aanroep. Het extra venster gaat er hieronder
+     weer af; `more` is wat er van overblijft. */
+  const alle = offerableWindows({ today, products, service, booked, blackouts, limit: limit + 1, from });
+  const windows = alle.slice(0, limit);
+  const first = firstOfferableDay(today, blackouts);
+  const vanaf = (typeof from === 'string' && from > first) ? from : first;
   return {
     windows,
-    reason: windows.length ? 'ok' : 'full',
+    /* 'full' alleen als er vanaf de EERSTE dag niets is. Een lege bladzijde
+       verderop (from voorbij het laatste vrije venster) is geen volle agenda —
+       de pagina toont dan "geen data in deze periode" met een knop terug. */
+    reason: windows.length ? 'ok' : (vanaf > first ? 'ok' : 'full'),
     max: maxProducts,
     maxPunten: ATTENDED_PUNTEN_PER_VENSTER,
     service,
+    from: vanaf,
+    earlier: vanaf > first,
+    more: alle.length > limit,
   };
 }
 

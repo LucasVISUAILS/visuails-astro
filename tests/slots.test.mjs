@@ -15,7 +15,7 @@
  * Vandaar een echte SQLite met het echte schema, en een klok die we zelf
  * vooruitzetten in plaats van te wachten.
  */
-import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import {
   grantSlots, loadSlots, slotBalans, verbruikSlot, geefSlotTerug,
   slotsFor, kindsFor, vervaltOp, monthMinus, monthKey, vensterVoor,
@@ -39,6 +39,7 @@ if (mislukt.length) { console.error('schema kon niet geladen worden:', mislukt);
 const env = { DB: d1(db) };
 
 db.exec("INSERT INTO customers (id, email, brand) VALUES (1, 'mara@volt.test', 'VOLT')");
+zetLook(db, 1);
 const { row: sub } = await createSubscriptionRow(env, { customerId: 1, planId: 'studio', termId: 'monthly', windowDay: 8 });
 await activateSubscription(env, sub.id);
 
@@ -246,6 +247,7 @@ console.log('\nopzeggen: de betaalde maand mag nog op, de vorige maand niet meer
   /* Een eigen klant met een eigen abonnement, want deze zeggen we op en dat is
      onomkeerbaar — hem op de klant hierboven doen zou alles erna vergiftigen. */
   db.exec("INSERT INTO customers (id, email, brand) VALUES (2, 'nina@stop.test', 'STOP')");
+  zetLook(db, 2);
   const { row: s2 } = await createSubscriptionRow(env, { customerId: 2, planId: 'starter', termId: 'monthly', windowDay: 8 });
   await activateSubscription(env, s2.id);
   await grantSlots(env, s2.id, AUG, 'starter');
@@ -288,6 +290,7 @@ console.log('\nopzeggen: de betaalde maand mag nog op, de vorige maand niet meer
 console.log('\neen gepauzeerd abonnement kan niets vastzetten');
 {
   db.exec("INSERT INTO customers (id, email, brand) VALUES (3, 'ruth@pauze.test', 'PAUZE')");
+  zetLook(db, 3);
   const { row: s3 } = await createSubscriptionRow(env, { customerId: 3, planId: 'starter', termId: 'monthly', windowDay: 8 });
   await activateSubscription(env, s3.id);
   await grantSlots(env, s3.id, monthKey(), 'starter');

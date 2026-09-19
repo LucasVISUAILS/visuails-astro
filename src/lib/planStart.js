@@ -80,6 +80,10 @@ import {
   planState,
   queueTakeIds, queueUntakeIds, queueLinkOrder, monthKey,
 } from './subscription.js';
+/* De vaste look gaat MEE in de bestelling — ronde 4, 19 september 2026. Zie de
+   kop van vasteLook.js: tot vandaag droeg deze bestelling geen achtergrond,
+   look, gezicht of verhouding, en moest de studio het opzoeken. */
+import { laadLocks, lookDetails } from './vasteLook.js';
 
 /* Zelfde vorm als makeRef() in functions/api/order.js: VIS-XXXX-XXX. Bewust
    hier herhaald en niet geïmporteerd — dat bestand is een Pages Function met
@@ -248,6 +252,9 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
   ).bind(customerId).first().catch(() => null);
   const taal = vorige?.lang === 'en' ? 'en' : 'nl';
 
+  /* Eén keer lezen voor alle groepen van deze week. */
+  const locks = await laadLocks(env, customerId);
+
   const bestellingen = [];
   const mislukt = [];
   for (const [sleutel, rijen] of gesorteerd) {
@@ -258,12 +265,23 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
        betaald werd. Zie termijnMaand() in subscription.js. */
     const details = { bron: 'abonnement', abonnement: state.sub.ref, maand: state.maand || monthKey() };
     if (vensterStart) { details.venster_start = vensterStart; details.venster_eind = vensterEind; }
+    /* De vaste look van de klant, in de sleutels die /admin en de werkmap al
+       lezen (style, background_hex, background, ratio, model, channels) — voor
+       de soorten die in DEZE bestelling zitten. */
+    Object.assign(details, lookDetails(locks, rijen.map((q) => q.kind)));
     rijen.forEach((q, i) => {
       details[`product_p${i + 1}`] = String(q.name || '').slice(0, 120);
       const note = String(q.note || '').trim();
       if (note) details[`note_p${i + 1}`] = note.slice(0, 500);
       const batch = String(q.upload_batch || '').trim();
       if (batch) details[`batch_p${i + 1}`] = batch;
+      /* Het gezicht per product (migratie 0050): alleen als het afwijkt van de
+         vaste look — leeg betekent "volg de bestelling", precies zoals
+         `model_pN` op het bestelformulier. */
+      const gezicht = String(q.model || '').trim();
+      if (gezicht) details[`model_p${i + 1}`] = gezicht;
+      const soort = String(q.kind || '').trim();
+      if (soort) details[`kind_p${i + 1}`] = soort;
     });
 
     const ref = maakRef();

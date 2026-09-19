@@ -620,9 +620,12 @@ console.log('\nde proefvisual van € 1');
 
     const post = omg.gezien.find(g => g.url.endsWith('/v2/payments') && g.method === 'POST');
     const gevraagdCents = post ? Math.round(parseFloat(JSON.parse(post.body).amount.value) * 100) : 0;
-    ok('en Mollie is om precies één euro gevraagd', gevraagdCents, offerte.grossCents);
-    ok('die één euro is inclusief btw', offerte.netCents + offerte.vatCents, offerte.grossCents);
-    ok('en het is echt honderd cent', offerte.grossCents, 100);
+    /* Sinds 19 september 2026: € 1 netto plus btw — Mollie vraagt het bruto uit
+       de offerte (€ 1,21 voor deze Nederlandse klant), niet AMOUNT zelf. */
+    ok('en Mollie is om het bruto uit de offerte gevraagd', gevraagdCents, offerte.grossCents);
+    ok('dat bruto is netto plus btw', offerte.netCents + offerte.vatCents, offerte.grossCents);
+    ok('het netto is honderd cent', offerte.netCents, 100);
+    ok('en het bruto is 121 cent', gevraagdCents, 121);
   } finally {
     omg.herstel();
   }

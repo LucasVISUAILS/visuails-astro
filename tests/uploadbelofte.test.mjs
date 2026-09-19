@@ -76,10 +76,13 @@ ok('shots.js heeft verplichte hoeken', nodig > 0, true);
    tegen die hij juist moest bewaken. Zie de kop van src/data/shots.js. */
 ok('en het zijn er drie: voorkant, achterkant en de close-up',
   SHOTS.filter((s) => s.required).map((s) => s.id), ['front', 'back', 'detail']);
-/* En de draagfoto is de enige waar leeg laten geen antwoord is. Staat hier,
-   zodat het verdwijnen ervan opvalt in dezelfde toets die het getal bewaakt. */
-ok('en precies één hoek vraagt om een keuze',
-  SHOTS.filter((s) => s.mustDecide).map((s) => s.id), ['worn']);
+/* De draagfoto vroeg van 17 tot 19 september 2026 om een expliciete keuze
+   ("sla deze over"). Uit de doorlichting: een klant met vijf producten klikte
+   vijf keer een vakje weg dat OPTIONEEL heet — Lucas: "Gedragen écht optioneel:
+   ja." Sindsdien vraagt geen enkele hoek om een keuze; leeg is overgeslagen.
+   Staat hier, zodat het terugkomen ervan opvalt in dezelfde toets. */
+ok('en geen enkele hoek vraagt om een keuze: leeg is overgeslagen',
+  SHOTS.filter((s) => s.mustDecide).map((s) => s.id), []);
 
 /* ── WELKE REGELS TELLEN MEE, EN WAAROM NIET ALLEMAAL ──────────────────────
  *

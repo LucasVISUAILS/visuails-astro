@@ -124,7 +124,13 @@ export async function onRequestGet({ request, env }) {
     );
   }
 
-  const gate = clearedWindows({ today, products, service, booked, blackouts });
+  /* `from`: de startdag voor de volgende rij dagkaarten ("later →" op de
+     bestelpagina). Alleen een ISO-datum telt; alles anders is "vanaf de eerste
+     dag". De cache-sleutel groeit hiermee met hooguit zestig waarden per
+     aantal — zie de noot over normaliseren hierboven. */
+  const fromRaw = url.searchParams.get('from') || '';
+  const from = /^\d{4}-\d{2}-\d{2}$/.test(fromRaw) ? fromRaw : null;
+  const gate = clearedWindows({ today, products, service, booked, blackouts, from });
 
   return json({
     ok: true,
@@ -139,6 +145,9 @@ export async function onRequestGet({ request, env }) {
     max: gate.max,
     maxPunten: gate.maxPunten,
     windows: gate.windows.map((w) => ({ start: w.start, end: w.end })),
+    from: gate.from,
+    earlier: !!gate.earlier,
+    more: !!gate.more,
     queue: QUEUE,
   });
 }

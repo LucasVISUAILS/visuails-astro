@@ -300,6 +300,20 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
 
   const healthy = await post(base);
   ok('een gezonde bestelling krijgt één betaling', healthy.payments, 1);
+  /* ── EN GAAT METEEN NAAR MOLLIE — 19 september 2026 ─────────────────────────
+     Lucas: "Gewone bestelling kan gelijk naar Mollie." De 302 wijst naar de
+     checkout, niet meer naar /thank-you met een betaalknop. De btw-poort blijft:
+     zie de niet-EU-proef verderop, die géén betaling en dus geen checkout krijgt. */
+  /* `base` heeft 12 producten en géén gekozen datum: dat is de bestelling die
+     de agenda niet kon plaatsen (vol, of te groot) en die eerst samen wordt
+     ingepland. Die landt met opzet op de bedankpagina mét de link. Een
+     bestelling zonder datum-stap (onder de drempel) gaat wél direct. */
+  ok('  een gedateerde bestelling zónder datum landt op de bedankpagina, met de link', /thank-you\?ref=VIS-.*&pay=/.test(healthy.location), true, healthy.location);
+  const klein = await post({ ...base, products: '5' });
+  ok('  een bestelling onder de datumdrempel gaat direct naar de Mollie-checkout', klein.location, 'https://pay.mollie.test/tr_TEST');
+  const buitenEu = await post({ ...base, country: 'US', email: 'us@merk.com' });
+  ok('een niet-EU-claim krijgt géén betaling (btw-poort, een specialist kijkt eerst)', buitenEu.payments, 0);
+  ok('  en landt op de bedankpagina, niet bij Mollie', /thank-you\?ref=VIS-/.test(buitenEu.location), true, buitenEu.location);
 
   /*
    * ── DE HOEKEN TELLEN ALLEEN ALS ZE AANGEVINKT ZIJN — 9 september 2026 ──────

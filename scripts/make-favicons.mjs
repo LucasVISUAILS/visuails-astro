@@ -83,8 +83,8 @@ const WHITE = '#FFFFFF';   // --ink-1
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {
   c:  { ground: DARK,      ink: GREEN,     note: 'gifgroen op bijna-zwart' },
-  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — LIVE' },
-  b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen' },
+  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — live tot 19 september 2026' },
+  b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen — LIVE' },
   a:  { ground: WHITE,     ink: GREEN,     note: 'gifgroen op wit' },
   a2: { ground: WHITE,     ink: GREEN_DIM, note: 'dieper groen op wit' },
   mono: { ground: DARK,    ink: WHITE,     note: 'wit op bijna-zwart — het vorige stel' },
@@ -102,7 +102,15 @@ const VARIANTS = {
    `b2` is dezelfde tegel met een bijna-zwart teken en meet 13,04:1. Zelfde
    limoen, zelfde vorm, alleen de inkt is anders. Als de tab ooit te vaag
    blijkt, is dat de regel die verandert en verder niets. */
-const ACTIVE = 'b';
+/* ── BIJNA-ZWART OP GIFGROEN — 19 september 2026 ───────────────────────────
+   Lucas: *"Ik zou wel van de huidige versie die ik heb een bijna zwart op
+   gifgroene versie willen hebben. Het bestand logo mag verder niet aangepast
+   of veranderd worden, alleen de kleuren aanpassen."* Dat is `b2`, die hier al
+   klaarlag: dezelfde tegel, dezelfde vorm, alleen de inkt van wit naar
+   #111111. Zijn eigen tegels (images/Logo/visuails-logo/png-tegel) hebben
+   dezelfde dag een zwart-op-groen-set gekregen, uit de wit-op-groen-bestanden
+   met alleen het wit vervangen. */
+const ACTIVE = 'b2';
 
 /* Relative luminance and contrast, WCAG 2.x. Twenty lines rather than a
  * dependency, and the same maths the palette in global.css was solved with. */

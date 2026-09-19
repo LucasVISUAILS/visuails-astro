@@ -691,7 +691,13 @@ const VIEWBOX_W = 702;
  */
 const WM_H = 420;
 const WM_W = (WM_H / VIEWBOX_H) * VIEWBOX_W;
-const WM_OPACITY = 0.04;
+/* ── OP NUL SINDS 19 SEPTEMBER 2026 ────────────────────────────────────────
+   Het V-beeldmerk is uit de roulatie (Lucas: nooit meer gebruiken — het staat
+   nergens meer op de site, in Studio of in de mail). Het watermerk was de
+   laatste plek. `0` zet watermark() uit zonder de tekening en de meting
+   hierboven weg te gooien: komt er ooit een nieuw teken, dan is dit de knop.
+   De factuur draagt alleen nog het woordmerk in de kop. */
+const WM_OPACITY = 0;
 /** Hoeveel van de breedte links buiten het blad valt. Zie de noot hierboven. */
 const WM_BLEED_X = 0.34;
 /** De bovenkant van het teken, gemeten van de onderrand. drawSvgPath tekent naar

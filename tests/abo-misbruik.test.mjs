@@ -44,7 +44,7 @@
  * alleen nog op wat op dát moment nog vastgezet is. De database beslist, niet
  * de peiling ervoor.
  */
-import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import {
   createSubscriptionRow, activateSubscription,
   queueAdd, queueLock, queueUnlock, queueRemove, queueTakeIds, queueUntakeIds, loadQueue,
@@ -68,6 +68,7 @@ const env = { DB: d1(db) };
 
 db.exec("INSERT INTO customers (id, email, brand) VALUES (1, 'mara@volt.test', 'VOLT')");
 db.exec("INSERT INTO customers (id, email, brand) VALUES (2, 'dief@ander.test', 'ANDER')");
+zetLook(db, 1); zetLook(db, 2);
 const { row: sub } = await createSubscriptionRow(env, { customerId: 1, planId: 'starter', termId: 'monthly', windowDay: 8 });
 await activateSubscription(env, sub.id);
 const maand = new Date().toISOString().slice(0, 7);

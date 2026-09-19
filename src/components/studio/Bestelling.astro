@@ -35,9 +35,27 @@ const { t, lang, v, order, events = [] } = Astro.props;
     {v.closedNote && <p class="st-meta st-gesloten">{v.closedNote}</p>}
     {v.feedbackHtml && <div class="st-tevreden" set:html={v.feedbackHtml} />}
 
-    {v.products && (
-      <div class="st-producten">{v.products.map((p) => <Product t={t} v={p} orderId={v.id} />)}</div>
-    )}
+    {/* ── TWINTIG LEGE RIJEN ZIJN ÉÉN REGEL — 19 september 2026 ──────────
+        Zolang er voor geen enkel product iets geleverd is, zegt elke rij
+        hetzelfde ("Hier is nog niets voor geleverd"). Bij een bestelling van
+        twintig was dat twintig keer dezelfde zin onder elkaar. Vanaf zeven
+        producten zonder levering staat de lijst dichtgeklapt achter één regel
+        met het aantal; wie zijn productnamen wil nalopen, klapt hem open. */}
+    {v.products && (() => {
+      const nietsGeleverd = v.products.every((p) => !(p.delivered && p.delivered.length));
+      const dicht = nietsGeleverd && v.products.length >= 7;
+      const lijst = <div class="st-producten">{v.products.map((p) => <Product t={t} v={p} orderId={v.id} />)}</div>;
+      return dicht
+        ? (
+          <details class="st-producten-dicht">
+            <summary class="st-meta">{lang === 'nl'
+              ? `${v.products.length} producten · nog niets geleverd`
+              : `${v.products.length} products · nothing delivered yet`}</summary>
+            {lijst}
+          </details>
+        )
+        : lijst;
+    })()}
     {v.sides && (
       <Fragment>
         {v.folder && (

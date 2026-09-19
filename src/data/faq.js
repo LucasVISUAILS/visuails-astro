@@ -70,6 +70,11 @@ import {
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
   LADDER, ladderRate, ladderFloor, ladderTotal,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
+  /* 19 september 2026: video is "op aanvraag" zolang de pijplijn niet staat
+     (besluit 5 van de doorlichting); de video-FAQ volgt dezelfde schakelaar
+     als /video, /start en /pricing in plaats van een bedrag te noemen dat de
+     pagina's zelf niet noemen. */
+  VIDEO_OP_AANVRAAG,
   PLAN_ROLLOVER_MONTHS,
   WINDOW_THRESHOLD, vatLabel, vatNote, clause,
   /* De twee aantallen voor Editions — zie de noot bij EDITIONS_FAQ. */
@@ -246,7 +251,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Wat moet ik opsturen?',
-            a: 'Per product een duidelijke foto van de voorkant en één van de achterkant, plus een korte notitie over de look die je wilt. Allebei die kanten krijg je terug als geleverde foto, dus vragen we ze allebei in plaats van te gokken naar wat er achterop zit. Een close-up en een draagfoto mogen erbij en maken het nauwkeuriger, maar hoeven niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de bestelling.',
+            a: 'Per product een duidelijke foto van de voorkant en één van de achterkant, en je kiest een look uit de huisstijlen (of je eigen). Allebei die kanten krijg je terug als geleverde foto, dus vragen we ze allebei in plaats van te gokken naar wat er achterop zit. Een close-up en een draagfoto mogen erbij en maken het nauwkeuriger, maar hoeven niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de bestelling.',
           },
           {
             q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
@@ -364,7 +369,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Wat als de week die ik nodig heb niet kan?',
-            a: 'Dan zeggen we dat, voordat je betaalt, in plaats van je een datum te geven en te hopen. Een vastgezette leverdatum wordt eerst tegen de agenda gehouden en pas daarna aangeboden — nooit andersom. Een bestelling die al in de agenda staat, wijkt nooit voor een latere.',
+            a: 'Dan staat die week niet tussen de dagen die je in het formulier kunt kiezen: je ziet alleen dagen waar nog ruimte is, en de datum die je kiest ligt vast zodra je bestelt. Een bestelling die al in de agenda staat, wijkt nooit voor een latere.',
           },
           {
             /* ── DE DUURSTE VRAAG STOND ER NIET IN — 17 SEPTEMBER 2026 ────
@@ -408,7 +413,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Is er een abonnement?',
-            a: `Alleen als je elke maand ongeveer evenveel nodig hebt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan dezelfde hoeveelheid op de prijs per product. Op de maandtermijn is hij maandelijks opzegbaar en schuiven ongebruikte producten ${PLAN_ROLLOVER_MONTHS} maand door; de jaartermijn ligt twaalf maanden vast en schuift ${TERMS.yearly.rollover} maanden door. Bestel je zonder plan, dan loopt er niets door.`,
+            a: `Alleen als je elke maand ongeveer evenveel nodig hebt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Per product kost een plan minder dan dezelfde complete levering (catalogset én carrousel) los besteld — een bestelling van alleen catalogsets blijft los goedkoper. Daarbovenop krijg je een vaste week in de planning. Op de maandtermijn is hij maandelijks opzegbaar en schuiven ongebruikte producten ${PLAN_ROLLOVER_MONTHS} maand door; de jaartermijn ligt twaalf maanden vast en schuift ${TERMS.yearly.rollover} maanden door. Bestel je zonder plan, dan loopt er niets door.`,
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
@@ -474,7 +479,7 @@ export function faqPageGroups(lang = 'en') {
       items: [
         {
           q: 'What is VISUAILS?',
-          a: 'VISUAILS turns a folder of product photos into catalog sets, lifestyle carousels and video for a whole product line. Our production does that at scale; a person checks every visual before it reaches you.',
+          a: 'VISUAILS turns a folder of product photos into catalog sets, lifestyle carousels and video for a whole product line. Our production does that at scale; a specialist checks every visual before it reaches you.',
         },
         {
           // THE ONE PLACE the word "drop" still appears, and there it means the
@@ -486,7 +491,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'What do I need to send you?',
-          a: 'Per product, a clear photo of the front and one of the back, plus a short note on the look you want. Both of those sides come back to you as delivered images, so we ask for both rather than guess at whatever is on the back. A close-up and a worn shot are welcome and make it more accurate, but they are not required. Five minutes, whether it is one product or thirty — the effort does not scale with the size of the order.',
+          a: 'Per product, a clear photo of the front and one of the back, and you pick a look from the house styles (or your own). Both of those sides come back to you as delivered images, so we ask for both rather than guess at whatever is on the back. A close-up and a worn shot are welcome and make it more accurate, but they are not required. Five minutes, whether it is one product or thirty — the effort does not scale with the size of the order.',
         },
         {
           q: 'Can I try it before ordering a whole collection?',
@@ -595,7 +600,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'What if the week I need cannot be held?',
-          a: 'Then we tell you that, before you pay, instead of giving you a date and hoping. A reserved delivery date is confirmed against the calendar before it is offered — never after. An order already in the calendar is never pushed to make room for a later one.',
+          a: 'Then that week is not among the days you can pick in the form: you only see days with room left, and the date you choose is fixed the moment you order. An order already in the calendar is never pushed to make room for a later one.',
         },
         {
           /* Zie de noot bij de Nederlandse tegenhanger, en de kop van
@@ -604,8 +609,8 @@ export function faqPageGroups(lang = 'en') {
           a: `${producttrouw('en')} What we do not promise is that AI copies your product thread for thread — no tool does, and a promise like that only breaks on delivery. What we do: correct every difference we spot by hand, and when we are unsure we contact you before going further instead of guessing. If it still cannot be done, “What if the visuals are not right?” below says what happens then.`,
         },
         {
-          q: 'Is every image really checked by a person?',
-          a: `${clause(reviewClaim('attended', 'en'))} — a person selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, on either route in.`,
+          q: 'Is every image really checked by a specialist?',
+          a: `${clause(reviewClaim('attended', 'en'))} — a specialist selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, on either route in.`,
         },
         {
           q: 'What if the visuals are not right?',
@@ -675,7 +680,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Is there a subscription?',
-          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Every plan costs less than the same output on the price per product. On the monthly term it can be cancelled any month and unused products roll over ${PLAN_ROLLOVER_MONTHS} month; the 12-month term is fixed for twelve months and rolls over ${TERMS.yearly.rollover} months. Order without one and nothing recurs.`,
+          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Per product a plan costs less than the same complete delivery (catalog set and carousel) ordered separately — an order of catalog sets alone stays cheaper on its own. On top of that you get a fixed week in the calendar. On the monthly term it can be cancelled any month and unused products roll over ${PLAN_ROLLOVER_MONTHS} month; the 12-month term is fixed for twelve months and rolls over ${TERMS.yearly.rollover} months. Order without one and nothing recurs.`,
         },
         {
           q: 'Can I add my VAT number?',
@@ -1128,7 +1133,7 @@ const EDITIONS_FAQ = {
       },
       {
         q: 'Do I have to pay for the shared set?',
-        a: 'No. It comes with every plan at no extra cost, from the smallest one up, and appears each month under "This month" in your plan in VISUAILS Studio — every image, and the whole set as a zip. Only Editions is paid for.',
+        a: 'No. It comes with every plan at no extra cost, from the smallest one up, and appears each month on the overview of your plan in VISUAILS Studio — every image, and the whole set as a zip. Only Editions is paid for.',
       },
       {
         q: 'What does Editions cost?',
@@ -1167,7 +1172,7 @@ const EDITIONS_FAQ = {
       },
       {
         q: 'Moet ik voor de gedeelde set betalen?',
-        a: 'Nee. Die komt zonder meerprijs met elk abonnement mee, vanaf het kleinste, en staat elke maand onder "Deze maand" bij je abonnement in VISUAILS Studio — elk beeld los, en de hele set als zip. Alleen Editions kost geld.',
+        a: 'Nee. Die komt zonder meerprijs met elk abonnement mee, vanaf het kleinste, en staat elke maand op het overzicht van je abonnement in VISUAILS Studio — elk beeld los, en de hele set als zip. Alleen Editions kost geld.',
       },
       {
         q: 'Wat kost Editions?',
@@ -1205,7 +1210,9 @@ const VIDEO_FAQ = {
   ({ clip, studioPlan, t0 }) => [
       {
         q: 'What does a clip cost?',
-        a: `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
+        a: VIDEO_OP_AANVRAAG
+          ? `On request for now: tell us what you sell and which photos you have, and we reply in writing with a price before anything starts — Motion and Lifestyle Video per clip, Campaign per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`
+          : `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
       },
       {
         q: 'Why does the clip rate not fall with volume?',
@@ -1232,7 +1239,9 @@ const VIDEO_FAQ = {
   ({ clip, studioPlan, t0 }) => [
       {
         q: 'Wat kost een clip?',
-        a: `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
+        a: VIDEO_OP_AANVRAAG
+          ? `Voorlopig op aanvraag: je vertelt wat je verkoopt en welke foto’s je hebt, en we antwoorden schriftelijk met een prijs voordat er iets begint — Motion en Lifestyle Video per clip, Campaign per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`
+          : `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
       },
       {
         q: 'Waarom daalt het cliptarief niet bij grotere aantallen?',

@@ -1,0 +1,20 @@
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0050 · HET GEZICHT PER PRODUCT OP DE ABONNEMENTSLIJST
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Ronde 4, 19 september 2026. Lucas: "Ik wou graag dat alles in VISUAILS
+-- Studio gedaan kan worden om abonnees sneller te laten bestellen en alles in
+-- 1 overzicht hebben."
+--
+-- Het bestelformulier kent sinds 18 september een gezicht PER PRODUCT
+-- (`model_pN` in details_json): een bestelling met mannen- en vrouwenkleding
+-- heeft per product een ander model. Het productvak in Studio had dat niet —
+-- daar gold alleen de vaste look. Deze kolom draagt dezelfde waarde als het
+-- formulier: 'ava' (standaardbibliotheek), 'c12' (eigen merkmodel #12), of
+-- NULL voor "volg de vaste look". planStart.js zet hem als `model_pN` in de
+-- bestelling, precies zoals het formulier dat doet.
+--
+-- De vaste look zelf (achtergrond, look, verhouding, kanalen) blijft in
+-- customer_style_locks en gaat sinds dezelfde dag orderbreed mee — zie
+-- src/lib/vasteLook.js. Wat hier staat is alleen de afwijking per product.
+ALTER TABLE plan_queue ADD COLUMN model TEXT;

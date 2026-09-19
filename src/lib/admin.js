@@ -133,7 +133,7 @@ const SESSION_COOKIE = 'vis_admin';
 import { sendMail } from './mail.js';
 import { stuurBetaallink as stuurBetaallinkMail } from './betaallink.js';
 import { createOrderMolliePayment, refundMolliePayment, mollieKey, mollieKeyProblems, describeHeaders } from './mollie.js';
-import { issueInvoice } from './invoice.js';
+import { issueInvoice, issueCreditNote } from './invoice.js';
 import { mailInvoice } from './invoiceMail.js';
 import { mailCancellation } from './cancelMail.js';
 import { bouncesFor, bounceLine } from './bounces.js';
@@ -145,7 +145,7 @@ import { AMOUNT, VAT_RATE, vatPercent, ladderTotal, STOCK_OFF_BRAND } from '../d
    ingetypt: functions/api/order.js zet dezelfde klok bij het bestellen, en
    tests/promises.test.mjs weigert een tweede getal in dit bestand. */
 import { PAYMENT_DAYS } from '../data/vat.js';
-import { puntenVoor } from '../data/pricing.js';
+import { puntenVoor, heeftVoorrang } from '../data/pricing.js';
 /* rowPunten() weegt een opgeslagen rij, video inbegrepen; videoVelden() haalt de
    stijl en het aantal clips uit details_json. Zie de noten daar — het beheerscherm
    moet dezelfde vertaling gebruiken als de poort, anders zegt de planning iets
@@ -283,9 +283,16 @@ export async function adminGet(context) {
      tot 14 augustus 2026 niet was en wat dat een klant kostte. */
   if (path === '/admin/testimonials') return renderTestimonials(context);
   if (path === '/admin/funnel') return renderFunnel(context, url);
-  /* De agenda. LEESROUTE: wat er nog af moet, op volgorde van de laatste dag.
-     Zie de kop van renderAgenda() voor waarom dit één lijst is en geen twee. */
-  if (path === '/admin/agenda') return renderAgenda(context, url);
+  /* ── DE AGENDA IS OPGEGAAN IN DE PLANNING — 19 september 2026 ─────────────
+     Twee schermen met bijna dezelfde rijen (de aflopende lijst hier, de
+     "agenda"-tabel daar) waren een bron van "waar stond dat ook alweer". Lucas:
+     "Planning en Agenda samenvoegen: ja." De filters (?soort=) en het blok
+     "Dagen dichtzetten" (#dagen) leven nu op /admin/planning; deze route
+     stuurt oude bladwijzers en de links in mails daarheen. */
+  if (path === '/admin/agenda') {
+    const soort = url?.searchParams?.get('soort') || '';
+    return seeOther(`/admin/planning${['datum', 'asap', 'voorrang'].includes(soort) ? `?soort=${soort}` : ''}#dagen`);
+  }
   /* De planning: twee weken als raster plus de aflopende lijst. LEESROUTE; het
      verlengen gaat via POST /admin/orders/<id>/window met back=planning. */
   if (path === '/admin/planning') return renderPlanning(context, url);
@@ -1165,6 +1172,40 @@ async function handleOrderCancel(context, orderId) {
   await logAdmin(env, admin, 'order.cancel', {
     orderId, detail: `${order.ref}: ${reason} (${moneyLine})`,
   });
+
+  /* ── DE CREDITNOTA BIJ "TEGOED" — 19 september 2026 ────────────────────────
+     Uit de doorlichting: een betaalde en daarna geannuleerde bestelling hield
+     zijn factuur zonder tegenboeking. Bij `refund` komt de creditnota vanzelf
+     zodra jij in Mollie terugbetaalt (de webhook leest amountRefunded en roept
+     issueCreditNote() aan). Bij `credit` — het geld blijft, als tegoed voor een
+     volgende bestelling — kwam er niets, terwijl de factuur voor werk staat dat
+     niet geleverd wordt. Dan hoort er een volledige creditnota tegenover; het
+     tegoed zelf noteer je op de volgende bestelling (offerte of korting).
+     Bij `none` blijft de factuur staan: er is geleverd of er is afgesproken
+     dat er niets terugkomt. Mislukt dit, dan is de annulering al gedaan en
+     staat het in het logboek — dezelfde afweging als bij de slots hieronder. */
+  if (paid && payment === 'credit') {
+    const bruto = Number(order.total_cents || 0) + Number(order.vat_cents || 0);
+    try {
+      const nota = await issueCreditNote(env, orderId, {
+        refundedGrossCents: bruto,
+        reason: order.lang === 'nl'
+          ? 'Bestelling geannuleerd — bedrag blijft staan als tegoed voor een volgende bestelling'
+          : 'Order cancelled — amount kept as credit for a future order',
+      });
+      if (nota) {
+        await env.DB.prepare(
+          "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+        ).bind(orderId, order.lang === 'nl'
+          ? `Creditnota ${nota.number} staat tegenover de factuur; het bedrag blijft als tegoed voor je volgende bestelling.`
+          : `Credit note ${nota.number} offsets the invoice; the amount stays as credit for your next order.`).run().catch(() => {});
+        await logAdmin(env, admin, 'credit-note.issued', { orderId, detail: `${order.ref}: ${nota.number} (tegoed)` }).catch(() => {});
+      }
+    } catch (e) {
+      console.error('[admin] creditnota bij tegoed niet uitgegeven —', e?.message || e);
+      await logAdmin(env, admin, 'credit-note.failed', { orderId, detail: `${order.ref}: ${e?.message || e}` }).catch(() => {});
+    }
+  }
 
   /* ── DE SLOTS TERUG, EN DE PRODUCTEN OOK ───────────────────────────────────
      Zie de kop van queueTerugNaAnnulering(). Dit staat NA de annulering en met
@@ -2904,13 +2945,64 @@ async function renderFiles(context, orderId) {
       ? `<div class="hold-fact"><dt>${esc(label)}</dt><dd>${waarde}</dd></div>`
       : '');
 
+    /* ── HET GEZICHT MET ZIJN NAAM, EN PER PRODUCT — 19 september 2026 ─────
+       Hier stond "any" of "c4": de id uit het formulier. En de keuze per
+       product (model_p1, model_p2 … — sinds 18 september in het formulier)
+       stond nergens op dit scherm, terwijl dat precies is wat er gemaakt moet
+       worden: een bestelling met mannen- en vrouwenkleding heeft per product
+       een ander gezicht. Ook het bericht van de klant en de voorrang stonden
+       alleen in de mail. Alles wat de klant koos, staat nu hier. */
+    const gezichtNaam = (id) => {
+      const ruw = String(id || '').trim();
+      if (!ruw) return '';
+      if (ruw === MODEL_ANY) return 'Wij kiezen er een';
+      const bekend = ROSTER.find((m) => modelId(m.name) === ruw.toLowerCase());
+      if (bekend) return esc(bekend.name);
+      /* Een eigen merkmodel (c4 …): het label staat op de klantregel, hier
+         alleen de id — beter dan niets, en eerlijk over wat het is. */
+      return `${esc(ruw)} <span class="meta">— eigen merkmodel</span>`;
+    };
+    const perProduct = Object.keys(d)
+      .filter((k) => /^model_p\d+$/.test(k) && String(d[k] || '').trim())
+      .sort((a, b) => Number(a.slice(7)) - Number(b.slice(7)))
+      .map((k) => {
+        const n = k.slice(7);
+        const naam = String(d[`product_p${n}`] || '').trim() || `product ${n}`;
+        /* De soort slot (kind_pN) staat erbij als de bestelling uit een
+           abonnement komt: een complete bundel en een losse catalogset in
+           één week zijn ander werk. */
+        const soort = String(d[`kind_p${n}`] || '').trim();
+        return `<span class="keuze-pp"><span class="meta">${esc(naam)}${soort ? ` · ${esc(soort)}` : ''}</span> ${gezichtNaam(d[k])}</span>`;
+      });
+    const berichtRegel = String(d.message || '').trim()
+      ? `<span class="keuze-bericht">${esc(String(d.message).trim()).replace(/\n/g, '<br>')}</span>`
+      : '';
+
+    /* ── DE VASTE LOOK VAN EEN ABONNEE, PER DIENST — ronde 4, 19 sept 2026 ──
+       Een abonnementsbestelling (bron: 'abonnement') draagt sinds vandaag de
+       vaste look mee — zie src/lib/vasteLook.js. Bij een complete bundel zijn
+       er twee gezichten en twee verhoudingen (catalog en lifestyle); `model`
+       en `ratio` dragen de lifestylekant, de catalogkant staat hier apart als
+       hij afwijkt. */
+    const perDienst = (sleutel, fn) => {
+      const cat = String(d[`${sleutel}_catalog`] || '').trim();
+      const ls = String(d[`${sleutel}_lifestyle`] || '').trim();
+      if (!cat || !ls || cat === ls) return '';
+      return `<span class="meta">catalog</span> ${fn(cat)}<br><span class="meta">lifestyle</span> ${fn(ls)}`;
+    };
+    const verhoudingVan = (id, dienst) => { const r = ratioById(id, dienst); return r ? esc(r.label) : esc(id); };
     const rijen = [
       rij('Stijl', stijlRegel()),
       rij('Achtergrond', achtergrondRegel()),
       rij('Verhouding', verhoudingRegel()),
-      rij('Gezicht', d.model ? esc(String(d.model)) : ''),
+      rij('Verhouding per dienst', perDienst('ratio', (v) => verhoudingVan(v, 'lifestyle'))),
+      rij('Gezicht', gezichtNaam(d.model)),
+      rij('Gezicht per dienst', perDienst('model', gezichtNaam)),
+      rij('Per product', perProduct.length ? perProduct.join('<br>') : ''),
+      rij('Levering', heeftVoorrang(order) ? '<strong class="or-voorrang">Voorrang</strong> — toeslag betaald, streef: binnen 24 uur na betaling' : ''),
       rij('Kanalen', d.channels ? esc(String(d.channels)) : ''),
       rij('Kledingsoort', d.garment ? esc(String(d.garment)) : ''),
+      rij('Bericht van de klant', berichtRegel),
     ].filter(Boolean);
 
     if (!rijen.length) return '';
@@ -2952,7 +3044,9 @@ async function renderFiles(context, orderId) {
     : `
   <p class="muted">${heeftVenster
     ? `Vastgelegd op <strong>${esc(order.window_start)}</strong> of <strong>${esc(order.window_end || order.window_start)}</strong>.`
-    : 'Geen vastgelegde dagen — deze bestelling telt in de agenda mee als &ldquo;zo snel mogelijk&rdquo;.'}</p>
+    : heeftVoorrang(order)
+      ? '<strong class="or-voorrang">Voorrang</strong> — de klant betaalde de toeslag; streef: binnen 24 uur na betaling. Geen vastgelegde dagen.'
+      : 'Geen vastgelegde dagen — deze bestelling telt in de agenda mee als &ldquo;zo snel mogelijk&rdquo;.'}</p>
   <form class="ag-dagform" method="post" action="/admin/orders/${order.id}/window">
     <input type="hidden" name="do" value="verzet">
     <div>
@@ -6980,6 +7074,7 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
             /* COALESCE, want deze kolom komt uit migratie 0046 en een database die
                daarop achterloopt hoort een lege lijst te tonen en geen fout. */
             COALESCE(testmodus, 0) AS testmodus,
+            details_json,
             (SELECT COUNT(*) FROM files f WHERE f.order_id = orders.id) AS file_count
        FROM orders
       ${where}
@@ -7251,7 +7346,9 @@ async function renderDiagnose(context) {
      hieronder staat met "leeg mag". Zolang hij hier stond, las het scherm
      "NIET INGESTELD" bij iets wat helemaal in orde is, en dat is precies de
      soort ruis waardoor je een echte melding een keer overslaat. */
-  const namen = ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
+  /* STRIPE_* staat hier niet meer: Stripe is op 19 september 2026 uit de code
+     gehaald (Lucas: "Stripe kan eruit"); Mollie is de enige betaaldienst. */
+  const namen = ['MOLLIE_API_KEY', 'RESEND_API_KEY'];
   const vormen = namen.map((naam) => [naam, secretShape(env?.[naam])]);
   /* ── DE LANCEERLIJST — 3 september 2026 ────────────────────────────────────
      Dit scherm toonde vijf secrets en zweeg over de rest. Bij de ketendoorloop
@@ -7365,7 +7462,7 @@ async function handleDiagnoseProbe(context) {
       problems: mollieKeyProblems(env),
     },
     secrets: Object.fromEntries(
-      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
+      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT']
         .map((naam) => [naam, secretShape(env?.[naam])])
     ),
     probes: {},
@@ -7938,7 +8035,7 @@ const BLACKOUT_MAX_DAYS = 730;
  */
 async function handleBlackoutDay(context, admin) {
   const { request, env } = context;
-  const terug = '/admin/agenda#dagen';
+  const terug = '/admin/planning#dagen';
 
   const form = await request.formData().catch(() => null);
   const doen = String(form?.get('do') || '').trim();
@@ -8002,7 +8099,7 @@ async function handleBlackoutDay(context, admin) {
     <td class="muted">${esc(r.window_start)} – ${esc(r.window_end || r.window_start)}</td>
   </tr>`).join('');
     return html(page({ title: 'Agenda', body: `
-<p><a href="/admin/agenda#dagen">&larr; Agenda</a></p>
+<p><a href="/admin/planning#dagen">&larr; Planning</a></p>
 <h1>Er staat al werk op ${esc(dag)}</h1>
 <p class="lede">Deze ${rijen.length === 1 ? 'bestelling heeft' : `${rijen.length} bestellingen hebben`}
 een venster dat over ${esc(dag)} heen loopt. Die vensters blijven staan — dichtzetten
@@ -8021,7 +8118,7 @@ lege map. Klik op een referentie om haar venster te verzetten.</p>
   <input type="hidden" name="reason" value="${esc(reden)}">
   <input type="hidden" name="confirm" value="ja">
   <button class="btn btn-primary" type="submit">Toch dichtzetten</button>
-  <a class="btn" href="/admin/agenda#dagen">Laat maar</a>
+  <a class="btn" href="/admin/planning#dagen">Laat maar</a>
 </form>` }), 409);
   }
 
@@ -8194,7 +8291,10 @@ function agendaUiterlijk(o, blackouts) {
   const vanaf = /^\d{4}-\d{2}-\d{2}$/.test(binnen) ? binnen : new Date().toISOString().slice(0, 10);
   /* QUEUE_AIM_DAYS en niet meer QUEUE_DAYS_MAX (3 september 2026): de site
      belooft geen marge meer, en de lat van de studio zelf is binnen een dag. */
-  return { dag: addOpenDays(vanaf, QUEUE_AIM_DAYS, blackouts), manier: 'asap' };
+  /* 'voorrang' is dezelfde dag als 'asap' — de lat is al één dag — maar een
+     andere manier, zodat de lijsten hem apart kunnen noemen: dit is de klant
+     die ervoor betaalde (19 september 2026). */
+  return { dag: addOpenDays(vanaf, QUEUE_AIM_DAYS, blackouts), manier: heeftVoorrang(o) ? 'voorrang' : 'asap' };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8277,7 +8377,14 @@ function waNummer(phone) {
 export function aantalLabel(o = {}, lang = 'nl') {
   const dienst = serviceLabel(o.service, lang) || o.service || '—';
   if (String(o.service || '') === 'video') {
-    const k = Number(o.clip_count ?? o.clips) || 0;
+    /* Het aantal clips is geen kolom maar een veld in details_json; wie deze
+       functie een kale orderrij gaf (het dashboard, "Eerst af") las "0 clips"
+       bij een aanvraag voor één clip. 19 september 2026. */
+    let uitDetails;
+    if (o.clip_count == null && o.clips == null && o.details_json) {
+      try { uitDetails = (JSON.parse(o.details_json) || {}).clips; } catch { uitDetails = undefined; }
+    }
+    const k = Number(o.clip_count ?? o.clips ?? uitDetails) || 0;
     return `${k} ${k === 1 ? 'clip' : 'clips'} × ${dienst}`;
   }
   return `${o.product_count || 0} × ${dienst}`;
@@ -8350,11 +8457,17 @@ async function renderPlanning({ env }, url) {
      Dat is één klik meer dan slepen en het scheelt de klik die je anders doet
      om te ontdekken dat het niet kon. */
   const pakId = Number(url?.searchParams?.get('pak')) || 0;
+  /* Het filter op de aflopende lijst — vastgelegd, zo snel mogelijk, voorrang.
+     Kwam mee uit de agenda toen die hierin opging (19 september 2026). */
+  const soort = ['datum', 'asap', 'voorrang'].includes(url?.searchParams?.get('soort') || '')
+    ? url.searchParams.get('soort')
+    : 'alles';
 
   let rijen = [];
   let blackouts = new Set();
   let belasting = {};
   let redenen = {};
+  let dichteDagen = [];
   let stuk = false;
   try {
     const [open, kalender, dicht] = await Promise.all([
@@ -8370,13 +8483,19 @@ async function renderPlanning({ env }, url) {
           LIMIT 300`
       ).bind(...AGENDA_OPEN).all(),
       readCalendar(env, vandaag),
-      env.DB.prepare('SELECT day, reason FROM blackout_days WHERE day >= ?1 AND day <= ?2')
-        .bind(van, tot).all(),
+      /* Alle dichtgezette dagen vanaf de eerste van de getoonde twee weken (of
+         vandaag, als dat eerder is): het raster heeft de reden per dag nodig, en
+         het blok "Dagen dichtzetten" onderaan de hele lijst — ook een vakantie in
+         maart, want anders staat er een dag dicht die nergens meer open kan.
+         Eén query voor allebei; het is de inhoud van één tabel. */
+      env.DB.prepare('SELECT day, reason FROM blackout_days WHERE day >= ?1 ORDER BY day LIMIT 200')
+        .bind(van < vandaag ? van : vandaag).all(),
     ]);
     rijen = open.results || [];
     blackouts = kalender.blackouts;
     belasting = kalender.booked;
     for (const r of dicht.results || []) redenen[r.day] = r.reason || '';
+    dichteDagen = (dicht.results || []).filter((r) => r.day >= vandaag);
   } catch (err) {
     stuk = String(err?.message || '');
   }
@@ -8496,7 +8615,7 @@ async function renderPlanning({ env }, url) {
   </div>
   ${dicht
     ? `<p class="pl-dag-dicht">dicht${redenen[dag] ? ` · ${esc(redenen[dag])}` : ''}</p>`
-    : `<div class="pl-last" title="${bezet} van ${ATTENDED_PUNTEN_PER_DAG} punten vastgelegd"><span style="width:${vol}%"></span></div>
+    : `<div class="pl-last" title="${bezet} van ${ATTENDED_PUNTEN_PER_DAG} punten vastgelegd"><span data-vol="${Math.round(vol / 10) * 10}"></span></div>
        <p class="pl-last-n">${bezet} / ${ATTENDED_PUNTEN_PER_DAG} punten</p>`}
   <div class="pl-chips">${lijst.map(({ o, rol }) => chip(o, rol)).join('')}</div>
   ${neerzetKnop(dag)}
@@ -8550,7 +8669,7 @@ ${pakBalk}
   <div class="pl-item-wat">
     <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
     <span class="meta">${esc(o.brand || o.name || '—')} · ${wat(o)}${o.punten ? ` · ${o.punten} ${o.punten === 1 ? 'punt' : 'punten'}` : ''}</span>
-    <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `zo snel mogelijk, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
+    <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `${o.manier === 'voorrang' ? '<strong class="or-voorrang">voorrang · 24 u</strong>' : 'zo snel mogelijk'}, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
     <span class="pill is-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
     ${['delivered', 'cancelled'].includes(String(o.status)) ? '' : `<a class="pl-pak-link" href="/admin/planning?van=${esc(van)}&amp;pak=${o.id}#raster">Verplaatsen in het raster &uarr;</a>`}
   </div>
@@ -8571,9 +8690,75 @@ ${pakBalk}
   };
 
   const teLaat = werk.filter((w) => w.uiterlijk < vandaag);
+  const zichtbaar = soort === 'alles' ? werk : werk.filter((w) => w.manier === soort);
   const lijst = werk.length
-    ? `<ol class="pl-lijst">${werk.map(item).join('')}</ol>`
+    ? (zichtbaar.length ? `<ol class="pl-lijst">${zichtbaar.map(item).join('')}</ol>` : '<p class="empty">Niets in deze filter.</p>')
     : '<p class="empty">Niets open. Alles is af.</p>';
+  const chipHref = (waarde) => `/admin/planning${van === maandagVan(vandaag) ? '' : `?van=${esc(van)}`}${waarde === 'alles' ? '' : `${van === maandagVan(vandaag) ? '?' : '&amp;'}soort=${waarde}`}`;
+  const filterChip = (waarde, label, n) => `<a class="fl-chip${soort === waarde ? ' is-active' : ''}"${soort === waarde ? ' aria-current="true"' : ''} href="${chipHref(waarde)}">${label} <span class="fl-n">${n}</span></a>`;
+  const filters = `
+<div class="fl pl-filters">
+  ${filterChip('alles', 'Alles', werk.length)}
+  ${filterChip('datum', 'Vastgelegd', werk.filter((w) => w.manier === 'datum').length)}
+  ${filterChip('asap', 'Zo snel mogelijk', werk.filter((w) => w.manier === 'asap').length)}
+  ${filterChip('voorrang', 'Voorrang', werk.filter((w) => w.manier === 'voorrang').length)}
+</div>`;
+
+  /*
+   * ── DE DAGEN DIE DICHT ZIJN ────────────────────────────────────────────────
+   *
+   * Stond op /admin/agenda tot die hierin opging (19 september 2026); de tekst
+   * hieronder is de oorspronkelijke. blackout_days werd sinds migratie 0001
+   * alleen GELEZEN. De poort hield er keurig rekening mee, capacity.js sloeg
+   * zo'n dag netjes over, en er was geen enkel scherm om er een rij in te
+   * zetten. "Het weekend is open tenzij jij hem dichtzet" was daarmee een
+   * belofte die Lucas niet kón nakomen: openzetten kon, dichtzetten niet.
+   *
+   * GEEN DATUMKIEZER MET JAVASCRIPT, want dit paneel draait er geen (CSP is
+   * `default-src 'none'`). <input type="date"> is de browser zelf; hij levert
+   * 'YYYY-MM-DD' aan en heeft geen script nodig. `min` houdt de kiezer bij
+   * vandaag — een dag in het verleden dichtzetten verandert niets meer.
+   *
+   * DE REDEN IS VERPLICHT, om dezelfde reden als bij een slotcorrectie: over
+   * drie maanden is "waarom stond 12 december dicht" de eerste vraag, en het
+   * antwoord hoort niet in iemands hoofd te zitten.
+   */
+  const dagRij = (d) => `
+<tr>
+  <td class="ag-dag">${esc(d.day)}${d.day === vandaag ? ' <span class="muted">(vandaag)</span>' : ''}</td>
+  <td class="muted">${esc(d.reason || '—')}</td>
+  <td>${belasting[d.day] ? `<span class="pill is-asap">${belasting[d.day]} punten staan hier nog</span>` : ''}</td>
+  <td>
+    <form method="post" action="/admin/agenda/dagen">
+      <input type="hidden" name="do" value="open">
+      <input type="hidden" name="dag" value="${esc(d.day)}">
+      <button class="btn" type="submit">Weer openzetten</button>
+    </form>
+  </td>
+</tr>`;
+  const dagenBlok = `
+<h2 id="dagen">Dagen dichtzetten</h2>
+<p class="lede">Het weekend staat open, want je bent in het weekend gewoon in te
+plannen. Een dag waarop je er niet bent — vakantie, een shoot elders, een
+feestdag — zet je hier dicht. De klant krijgt hem dan niet meer aangeboden, de
+aanloop telt eroverheen in plaats van erdoorheen, en een paar dat op deze dag zou
+vallen schuift naar de eerstvolgende dag die wel open is.</p>
+<div class="card">
+  <form method="post" action="/admin/agenda/dagen" class="ag-dagform">
+    <input type="hidden" name="do" value="dicht">
+    <label for="bo-dag">Dag</label>
+    <input id="bo-dag" type="date" name="dag" min="${esc(vandaag)}" required>
+    <label for="bo-reden">Waarom</label>
+    <input id="bo-reden" type="text" name="reason" maxlength="120" required
+           placeholder="vakantie, shoot in Antwerpen, feestdag">
+    <button class="btn btn-primary" type="submit">Dag dichtzetten</button>
+  </form>
+</div>
+${dichteDagen.length ? `
+<table class="ag-tabel ag-dagen">
+  <thead><tr><th>Dag</th><th>Reden</th><th>Bezet</th><th><span class="sr-only">Actie</span></th></tr></thead>
+  <tbody>${dichteDagen.map(dagRij).join('')}</tbody>
+</table>` : '<p class="empty">Er staat geen enkele dag dicht. Alles vanaf vandaag is inplanbaar, het weekend erbij.</p>'}`;
 
   /* ── NET VERZET: DE KLANT NU BEREIKEN ─────────────────────────────────── */
   const verzet = verzetId ? werk.find((w) => w.id === verzetId) : null;
@@ -8603,226 +8788,22 @@ ${verzetBlok}
   <section class="pl-links" aria-label="Twee weken">
     ${nav}
     ${raster}
-    <p class="meta">Een dag dichtzetten of weer openen doe je in de <a href="/admin/agenda#dagen">agenda</a>.</p>
+    <p class="meta">Een dag dichtzetten of weer openen doe je <a href="#dagen">onderaan deze pagina</a>.</p>
   </section>
   <aside class="pl-zij" aria-label="Aflopende lijst">
     <h2>Aflopend</h2>
+    ${filters}
     ${lijst}
   </aside>
-</div>`}`;
+</div>
+${dagenBlok}`}`;
 
   return html(page({ title: 'Planning', body }));
 }
 
-async function renderAgenda({ env }, url) {
-  const vandaag = new Date().toISOString().slice(0, 10);
-  const morgen = addOpenDays(vandaag, 1);
-  const soort = ['datum', 'asap'].includes(url?.searchParams?.get('soort') || '')
-    ? url.searchParams.get('soort')
-    : 'alles';
-
-  let rijen = [];
-  let blackouts = new Set();
-  let belasting = {};
-  let dichteDagen = [];
-  let stuk = false;
-  try {
-    /*
-     * ── DIT SCHERM LAS EEN DERDE AGENDA, EN DAT IS DE FOUT DIE agenda.js MOEST
-     *    VOORKOMEN ────────────────────────────────────────────────────────────
-     *
-     * Hier stonden twee eigen query's: één voor de vensters en één voor de
-     * dichtgezette dagen. Ze leken op readCalendar() maar waren het niet, en op
-     * twee punten telde dit scherm anders dan de poort die de klant tegenkomt:
-     *
-     *   · een VASTGEZET wachtrij-item (plan_queue) telde hier niet mee, dus een
-     *     dag die voor een abonnee al gereserveerd was, zag er hier leeg uit;
-     *   · een onbetaald venster waarvan de betaaltermijn verlopen is, telde hier
-     *     nog wel mee, dus een dag die de poort allang weer vrijgaf, zag er hier
-     *     vol uit.
-     *
-     * Twee kanten op fout, in het ene scherm dat Lucas gebruikt om te beslissen
-     * of hij er nog iets bij kan hebben. readCalendar() is sinds 31 augustus de
-     * enige lezing; dit scherm hoort daar geen uitzondering op te zijn.
-     */
-    const [open, kalender, lijst] = await Promise.all([
-      env.DB.prepare(
-        `SELECT id, ref, brand, name, service, status, tier, lang,
-                product_count, window_start, window_end, created_at, payment_status, details_json
-           FROM orders
-          WHERE status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')})
-            AND hidden_at IS NULL
-          ORDER BY id ASC
-          LIMIT 200`
-      ).bind(...AGENDA_OPEN).all(),
-      readCalendar(env, vandaag),
-      /* De REDACTIELIJST van dichtgezette dagen, en met opzet een eigen query.
-         readCalendar() kijkt tot de boekingshorizon (HORIZON_DAYS + 14) omdat verder
-         weg niets te boeken valt; deze lijst moet juist ook een vakantie in maart
-         tonen, want anders staat er een dag dicht die Lucas nergens meer kan
-         openzetten. Twee vragen, twee query's — het is niet dezelfde lezing van de
-         agenda die agenda.js bewaakt, het is de inhoud van één tabel. */
-      env.DB.prepare('SELECT day, reason FROM blackout_days WHERE day >= ?1 ORDER BY day LIMIT 200')
-        .bind(vandaag).all(),
-    ]);
-    rijen = open.results || [];
-    blackouts = kalender.blackouts;
-    belasting = kalender.booked;
-    dichteDagen = lijst.results || [];
-  } catch (err) {
-    stuk = String(err?.message || '');
-  }
-
-  const werk = rijen
-    .map((o) => {
-      const u = agendaUiterlijk(o, blackouts);
-      return {
-        ...videoVelden(o),
-        uiterlijk: u.dag,
-        manier: u.manier,
-        punten: rowPunten(videoVelden(o)),
-      };
-    })
-    .sort((a, b) => (a.uiterlijk < b.uiterlijk ? -1 : a.uiterlijk > b.uiterlijk ? 1 : a.id - b.id));
-
-  const zichtbaar = soort === 'alles' ? werk : werk.filter((w) => w.manier === soort);
-  const nu = zichtbaar[0] || null;
-  const vandaagAf = werk.filter((w) => w.uiterlijk <= vandaag);
-  const nietBegonnen = vandaagAf.filter((w) => w.status === 'received').length;
-
-  const dagLabel = (iso) => (iso === vandaag ? 'vandaag' : iso === morgen ? 'morgen' : iso);
-  /* ── PUNTEN, EN NIET "BEELDEN" — 7 september 2026 ──────────────────────────
-     Dit veld draagt rowPunten(), dus punten. Voor fotowerk is dat toevallig
-     hetzelfde getal (één punt is één afgewerkte foto), en dáárom viel het niet
-     op. Voor video loopt het uiteen: tien lifestyle-clips wegen honderd punten
-     en dat stond er als "100 beelden" — tien clips, geen honderd beelden.
-
-     Bovendien stond op hetzelfde scherm de dagteller al in punten ("54 / 79
-     punten"). Twee woorden voor één getal, naast elkaar. */
-  const gewicht = (w) => (w.punten === null ? 'nog te wegen' : `${w.punten} ${w.punten === 1 ? 'punt' : 'punten'}`);
-  const wat = (w) => esc(aantalLabel(w, 'nl'));
-  const dagen = (w) => (w.manier === 'datum'
-    ? `${esc(w.window_start)} – ${esc(w.window_end)}`
-    : `binnen sinds ${esc(normalizeStamp(w.created_at || '').slice(0, 10) || '—')}`);
-
-  const chip = (waarde, label, n) => `<a class="fl-chip${soort === waarde ? ' is-active' : ''}"${soort === waarde ? ' aria-current="true"' : ''} href="/admin/agenda${waarde === 'alles' ? '' : `?soort=${waarde}`}">${label} <span class="fl-n">${n}</span></a>`;
-
-  const rij = (w) => `
-<tr${w.uiterlijk <= vandaag ? ' class="is-laat"' : ''}>
-  <td class="ag-dag">${esc(dagLabel(w.uiterlijk))}</td>
-  <td><a href="/admin/orders/${encodeURIComponent(String(w.id))}/files"><span class="ref">${esc(w.ref)}</span></a><br><span class="muted">${esc(w.brand || w.name || '—')} · ${wat(w)}</span></td>
-  <td class="ag-gewicht">${esc(gewicht(w))}</td>
-  <td><span class="pill${w.manier === 'asap' ? ' is-asap' : ''}">${w.manier === 'datum' ? 'vastgelegd' : 'zo snel mogelijk'}</span></td>
-  <td class="muted">${dagen(w)}</td>
-  <td class="muted">${esc(STATUS_LABEL[w.status] || w.status)}</td>
-</tr>`;
-
-  /*
-   * ── DE DAGEN DIE DICHT ZIJN ────────────────────────────────────────────────
-   *
-   * blackout_days werd sinds migratie 0001 alleen GELEZEN. De poort hield er keurig
-   * rekening mee, capacity.js sloeg zo'n dag netjes over, en er was geen enkel scherm
-   * om er een rij in te zetten. "Het weekend is open tenzij jij hem dichtzet" was
-   * daarmee een belofte die Lucas niet kón nakomen: openzetten kon, dichtzetten niet.
-   *
-   * GEEN DATUMKIEZER MET JAVASCRIPT, want dit paneel draait er geen (CSP is
-   * `default-src 'none'`). <input type="date"> is de browser zelf; hij levert
-   * 'YYYY-MM-DD' aan en heeft geen script nodig. `min` houdt de kiezer bij vandaag —
-   * een dag in het verleden dichtzetten verandert niets meer.
-   *
-   * DE REDEN IS VERPLICHT, om dezelfde reden als bij een slotcorrectie: over drie
-   * maanden is "waarom stond 12 december dicht" de eerste vraag, en het antwoord
-   * hoort niet in iemands hoofd te zitten.
-   */
-  const dagRij = (d) => `
-<tr>
-  <td class="ag-dag">${esc(d.day)}${d.day === vandaag ? ' <span class="muted">(vandaag)</span>' : ''}</td>
-  <td class="muted">${esc(d.reason || '—')}</td>
-  <td>${belasting[d.day] ? `<span class="pill is-asap">${belasting[d.day]} beelden staan hier nog</span>` : ''}</td>
-  <td>
-    <form method="post" action="/admin/agenda/dagen">
-      <input type="hidden" name="do" value="open">
-      <input type="hidden" name="dag" value="${esc(d.day)}">
-      <button class="btn" type="submit">Weer openzetten</button>
-    </form>
-  </td>
-</tr>`;
-
-  const dagenBlok = `
-<div class="card">
-  <form method="post" action="/admin/agenda/dagen" class="ag-dagform">
-    <input type="hidden" name="do" value="dicht">
-    <label for="bo-dag">Dag</label>
-    <input id="bo-dag" type="date" name="dag" min="${esc(vandaag)}" required>
-    <label for="bo-reden">Waarom</label>
-    <input id="bo-reden" type="text" name="reason" maxlength="120" required
-           placeholder="vakantie, shoot in Antwerpen, feestdag">
-    <button class="btn btn-primary" type="submit">Dag dichtzetten</button>
-  </form>
-</div>
-
-${dichteDagen.length ? `
-<table class="ag-tabel ag-dagen">
-  <thead><tr><th>Dag</th><th>Reden</th><th>Bezet</th><th><span class="sr-only">Actie</span></th></tr></thead>
-  <tbody>${dichteDagen.map(dagRij).join('')}</tbody>
-</table>` : '<p class="empty">Er staat geen enkele dag dicht. Alles vanaf vandaag is inplanbaar, het weekend erbij.</p>'}`;
-
-  const body = `
-${adminNav('agenda')}
-<h1>Agenda</h1>
-<p class="lede">Alles wat nog werk is, op één hoop en op volgorde van de laatste dag
-waarop het af moet zijn. Een vastgelegde bestelling telt vanaf de tweede dag van
-haar paar, een bestelling uit de wachtrij vanaf de dag van binnenkomst plus
-${QUEUE_AIM_DAYS} — dat is je eigen lat, de klant is niets beloofd. Twee lijstjes zou betekenen dat jij ze in je hoofd moet
-samenvoegen, en ze vechten om dezelfde dag.</p>
-
-${stuk ? `<p class="warnline">De agenda is niet te lezen (${esc(stuk)}).</p>` : `
-<div class="stats">
-  <div class="stat"><span class="stat-n">${belasting[vandaag] || 0} / ${ATTENDED_PUNTEN_PER_DAG}</span><span class="stat-l">vandaag vastgelegd, in punten</span></div>
-  <div class="stat"><span class="stat-n">${belasting[morgen] || 0} / ${ATTENDED_PUNTEN_PER_DAG}</span><span class="stat-l">morgen vastgelegd</span></div>
-  <div class="stat"><span class="stat-n">${werk.length}</span><span class="stat-l">open bestellingen</span></div>
-  <div class="stat${vandaagAf.length ? ' is-warn' : ''}"><span class="stat-n">${vandaagAf.length}</span><span class="stat-l">moet vandaag af${nietBegonnen ? `, waarvan ${nietBegonnen} niet begonnen` : ''}</span></div>
-</div>
-
-${nu ? `
-<div class="card is-attention ag-nu">
-  <p class="eyebrow">Hier begin je</p>
-  <div class="row-head">
-    <span class="ref">${esc(nu.ref)}</span>
-    <span class="muted">${esc(nu.brand || nu.name || '—')} · ${wat(nu)}</span>
-  </div>
-  <p class="meta">Uiterlijk <strong>${esc(dagLabel(nu.uiterlijk))}</strong> &middot;
-    ${nu.manier === 'datum' ? `vastgelegd op ${dagen(nu)}` : dagen(nu)} &middot;
-    ${esc(gewicht(nu))} &middot; ${esc(STATUS_LABEL[nu.status] || nu.status)}</p>
-  ${nu.uiterlijk <= vandaag
-    ? `<p class="warnline">Dit is de laatste dag. Lukt het niet, dan hoort ${esc(nu.brand || nu.name || 'de klant')} dat vandaag — niet morgen.</p>`
-    : ''}
-  <p><a class="btn btn-primary" href="/admin/orders/${encodeURIComponent(String(nu.id))}/files">Naar deze bestelling</a></p>
-</div>` : '<p class="empty">Niets open. De agenda is leeg.</p>'}
-
-<div class="fl">
-  ${chip('alles', 'Alles', werk.length)}
-  ${chip('datum', 'Vastgelegd', werk.filter((w) => w.manier === 'datum').length)}
-  ${chip('asap', 'Zo snel mogelijk', werk.filter((w) => w.manier === 'asap').length)}
-</div>
-
-${zichtbaar.length ? `
-<table class="ag-tabel">
-  <thead><tr><th>Uiterlijk</th><th>Bestelling</th><th>Weegt</th><th>Manier</th><th>Dagen</th><th>Status</th></tr></thead>
-  <tbody>${zichtbaar.map(rij).join('')}</tbody>
-</table>` : '<p class="empty">Niets in deze filter.</p>'}
-
-<h2 id="dagen">Dagen dichtzetten</h2>
-<p class="lede">Het weekend staat open, want je bent in het weekend gewoon in te
-plannen. Een dag waarop je er niet bent — vakantie, een shoot elders, een
-feestdag — zet je hier dicht. De klant krijgt hem dan niet meer aangeboden, de
-aanloop telt eroverheen in plaats van erdoorheen, en een paar dat op deze dag zou
-vallen schuift naar de eerstvolgende dag die wel open is.</p>
-${dagenBlok}
-`}`;
-
-  return html(page({ title: 'Agenda', body }));
-}
+/* renderAgenda() stond hier van 21 augustus tot 19 september 2026. De lijst is
+   de aflopende lijst van renderPlanning() geworden (met dezelfde filters), en
+   het blok "Dagen dichtzetten" staat onderaan diezelfde pagina. */
 
 const FUNNEL_DAYS = 30;
 
@@ -9490,7 +9471,7 @@ async function loadAflopend(env, limiet = 6) {
   try {
     const [open, kalender] = await Promise.all([
       env.DB.prepare(
-        `SELECT id, ref, brand, name, service, status, tier, product_count, window_start, window_end, created_at, payment_status
+        `SELECT id, ref, brand, name, service, status, tier, product_count, window_start, window_end, created_at, payment_status, details_json
            FROM orders
           WHERE status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')}) AND hidden_at IS NULL
           ORDER BY id ASC LIMIT 300`
@@ -9592,7 +9573,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
 <li class="${o.uiterlijk < aflopend.vandaag ? 'is-laat' : o.uiterlijk === aflopend.vandaag ? 'is-vandaag' : ''}">
   <span class="db-af-dag">${esc(dagKort(o.uiterlijk, aflopend.vandaag))}</span>
   <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
-  <span class="meta">${esc(o.brand || o.name || '—')} · ${esc(aantalLabel(o, 'nl'))}${o.manier === 'asap' ? ' · zsm' : ''}</span>
+  <span class="meta">${esc(o.brand || o.name || '—')} · ${esc(aantalLabel(o, 'nl'))}${o.manier === 'asap' ? ' · zsm' : o.manier === 'voorrang' ? ' · <strong class="or-voorrang">voorrang</strong>' : ''}</span>
 </li>`).join('')}</ol>
         <p class="meta">${aflopend.open} open${aflopend.teLaat ? `, <strong class="pl-onbetaald">${aflopend.teLaat} te laat</strong>` : ''} · <a href="/admin/planning">Naar de planning &rarr;</a></p>`
       : '<p class="empty">Niets open.</p>';
@@ -9806,9 +9787,16 @@ function orderCard(o, models, statusFilter = '') {
      kunt DOEN staat in het klapje eronder en is ongewijzigd: dezelfde velden,
      dezelfde routes. De waarschuwingen (geleverd maar niet gemeld, geannuleerd)
      staan als merkteken óp de regel, want die moet je zien zonder te klikken. */
+  /* ── VOORRANG STAAT OP DE REGEL — 19 september 2026 ──────────────────────
+     De klant betaalde de toeslag en het dashboard zei "wachtrij · zo snel
+     mogelijk". De vlag zit in details_json (zie heeftVoorrang in pricing.js);
+     hier wordt hij een woord in de rij, zodat je hem ziet zonder te klikken. */
+  const voorrang = heeftVoorrang(o);
   const waar = o.window_start
     ? `${esc(o.window_start)} → ${esc(o.window_end)}`
-    : '<span class="muted">zo snel mogelijk</span>';
+    : voorrang
+      ? '<strong class="or-voorrang">voorrang · binnen 24 u</strong>'
+      : '<span class="muted">zo snel mogelijk</span>';
   /* ── HET PROEFMERK STAAT NAAST DE ANDERE MERKTEKENS, NIET IN PLAATS ERVAN ──
      De keten hieronder kiest er precies één, want die merktekens zijn allemaal
      "iets vraagt aandacht" en dan is de dringendste de juiste. Dit is een andere
@@ -9830,7 +9818,7 @@ function orderCard(o, models, statusFilter = '') {
   <summary class="or-rij">
     <span class="or-ref"><span class="ref">${esc(o.ref)}</span>${proefmerk}${merkteken}</span>
     <span class="or-merk"><strong>${esc(o.brand || '—')}</strong><span class="meta">${esc(o.email)}</span></span>
-    <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : 'wachtrij')}</span></span>
+    <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : voorrang ? 'voorrang' : 'wachtrij')}</span></span>
     <span class="or-wanneer">${waar}<span class="meta">binnen ${esc(when(o.created_at).slice(0, 10))}</span></span>
     <span class="or-status"><span class="pill is-${esc(o.status)}">${STATUS_LABEL[o.status] || esc(o.status)}</span></span>
     <span class="or-betaal${o.payment_status === 'paid' ? '' : ' is-open'}">${esc(o.payment_status === 'paid' ? 'betaald' : o.payment_status === 'unpaid' ? 'onbetaald' : o.payment_status)}</span>
@@ -9949,7 +9937,6 @@ function errorBody(message) {
 const NAV = [
   ['dashboard', '/admin', 'Dashboard'],
   ['planning', '/admin/planning', 'Planning'],
-  ['agenda', '/admin/agenda', 'Agenda'],
   ['customers', '/admin/customers', 'Klanten'],
   ['maandset', '/admin/maandset', 'Maandset'],
   ['testimonials', '/admin/testimonials', 'Aanbevelingen'],

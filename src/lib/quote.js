@@ -403,50 +403,39 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, hoogRes
 }
 
 /**
- * De proefvisual, en die rekent van boven naar beneden in plaats van omgekeerd.
+ * De proef: € 1 netto, en de btw gaat eróver — net als bij elk ander bedrag.
  *
- * ── DE FISCALE KEUZE, 12 AUGUSTUS 2026 ──────────────────────────────────────
+ * ── DE FISCALE KEUZE, HERZIEN OP 19 SEPTEMBER 2026 ─────────────────────────
  *
- * Deze functie had tot vandaag nul aanroepers en zei `vatCents: 0` met de noot
- * "treated as VAT-inclusive". Dat was geen behandeling maar een uitgestelde
- * beslissing: btw nul zetten en het bedrag inclusief noemen zijn twee verschillende
- * dingen, en de webhook sloeg de factuur daarom over (zie de noot bij de
- * factuurstap in functions/api/webhook/mollie.js).
+ * Van 12 augustus tot vandaag rekende deze functie van bruto naar netto: € 1 was
+ * wat er van de kaart ging en de btw zat erin (€ 0,83 + € 0,17). Lucas: *"Bij
+ * test sample wordt btw niet verrekend op de 1 euro maar het is 1 euro inclusief
+ * btw op dit moment. Fix dit."*
  *
- * De keuze is nu gemaakt: **€1 is een brutobedrag, inclusief btw.** Dat is de enige
- * variant die klopt met wat er gebeurt — Mollie schrijft precies €1,00 af, en dat
- * bedrag is dus per definitie wat de klant totaal betaalt. Er staat op geen enkele
- * pagina "excl. btw" bij, en dat mag ook niet: bij een prijs die aan een consument
- * getoond wordt is inclusief de norm, en €1 is juist gekozen omdat het rond is.
+ * Nu is het dezelfde regel als op de rest van de site (vatLead() op elke pagina
+ * met een prijs: alles exclusief btw): € 1 is het NETTO bedrag, de btw komt
+ * erbovenop, en Mollie vraagt het bruto — € 1,21 voor een Nederlandse klant,
+ * € 1,00 bij verlegging of buiten de heffing. Dezelfde rekenrichting als
+ * quoteBrandModel() hieronder, en om dezelfde reden: een zakelijke klant met een
+ * geldig nummer in een ander EU-land betaalt precies het bedrag dat er staat.
  *
- * ── WAAROM BRUTO MIN NETTO, EN NIET NETTO MAAL TARIEF ───────────────────────
- *
- * Hier zit de enige val in deze functie. Bij 21% is het netto 100 / 1,21 = 82,6446…
- * cent, dus 83 cent afgerond. Zou de btw dan `round(83 × 0,21) = 17` worden, dan
- * telt het toevallig op tot 100 — maar dat is toeval. Bij een brutobedrag van 100
- * cent doen 3068 van de 10.001 tarieven tussen 0% en 100% het anders, en op 21%
- * lopen 868 van de eerste 5000 bedragen uiteen. Neem je de btw als VERSCHIL
- * (100 − 83 = 17), dan tellen netto en btw altijd op tot precies het bedrag dat is
- * afgeschreven. Dat is dezelfde regel die de creditnota's aanhouden, en om dezelfde
- * reden: een factuur die een cent afwijkt van de betaling is elke keer handwerk.
- * tests/sample-invoice.test.mjs loopt alle tarieven langs.
- *
- * Bij verlegging of buiten de heffing (tarief 0) komt hier netto €1 en btw €0 uit,
- * en betaalt de klant nog steeds €1. Het brutobedrag verschuift nooit — alleen de
- * verdeling erbinnen.
+ * WAT ER DAARDOOR VERANDERT: createTestSampleMolliePayment() mag niet meer
+ * AMOUNT.testSample zelf naar Mollie sturen; hij krijgt het bruto uit deze
+ * offerte (grossCents), zoals createOrderMolliePayment() dat voor elke andere
+ * bestelling al deed. tests/sample-invoice.test.mjs toetst de nieuwe verdeling.
  */
 export function quoteTestSample({ vatRate = VAT_RATE } = {}) {
-  const grossCents = cents(AMOUNT.testSample);
+  const netCents = cents(AMOUNT.testSample);
   const effectiveRate = safeRate(vatRate);
-  const netCents = Math.round(grossCents / (1 + effectiveRate));
+  const vatCents = Math.round(netCents * effectiveRate);
   return {
     service: 'test-sample',
     products: 1,
     outfits: 0,
     extras: 0,
     netCents,
-    vatCents: grossCents - netCents,
-    grossCents,
+    vatCents,
+    grossCents: netCents + vatCents,
     vatRate: effectiveRate,
   };
 }

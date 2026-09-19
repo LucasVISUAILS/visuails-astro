@@ -375,7 +375,10 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
         <input type="hidden" name="service" value={wire} />
         <input type="hidden" name="request" value={kind} />
         <input type="hidden" name="lang" value={lang} />
-        <input type="hidden" name="redirect" value={lp('/thank-you')} />
+        {/* ?soort=aanvraag: de bedankpagina zegt dan dat er een antwoord komt,
+            niet dat er visuals gemaakt worden (19 september 2026). /api/order
+            plakt ?ref= er zelf achter, met & als er al een ? staat. */}
+        <input type="hidden" name="redirect" value={`${lp('/thank-you')}?soort=aanvraag`} />
         <input type="hidden" name="source" value={`start-${kind}`} />
         <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
 

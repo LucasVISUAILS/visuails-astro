@@ -52,6 +52,7 @@ import { readFileSync } from 'node:fs';
 import { d1, verseDb } from './lib/d1sqlite.mjs';
 import { buildStaat } from './lib/build.mjs';
 import { onRequestGet } from '../functions/api/order-status.js';
+import { onRequestGet as orderPayGet } from '../functions/api/order-pay.js';
 import { tierFor } from '../src/data/pricing.js';
 
 let pass = 0;
@@ -106,8 +107,55 @@ console.log('het eindpunt antwoordt, en zegt precies twee dingen');
   /* Het antwoord is precies twee sleutels. Niet omdat meer sleutels lelijk zijn,
      maar omdat elke extra sleutel iets over deze bestelling vertelt aan wie de
      referentie heeft — en een referentie is geen geheim. */
+  /* Sinds 19 september 2026 twee vlaggen erbij: `paid` (alleen de webhook
+     schrijft payment_status) en `payable` (mag er een verse betaallink komen).
+     Nog steeds geen bedrag, adres of naam — zie de noot in order-status.js. */
   ok('en het antwoord heeft niets anders in zich',
-    Object.keys(dubbel.body).sort().join(','), 'cancelled,kind');
+    Object.keys(dubbel.body).sort().join(','), 'cancelled,kind,paid,payable');
+  ok('  een onbetaalde bestelling is niet paid', gewoon.body.paid, false);
+  ok('  en zonder bedrag ook niet payable', gewoon.body.payable, false);
+  ok('  een geannuleerde is nooit payable', dubbel.body.payable, false);
+}
+
+/* ── /api/order-pay: OPNIEUW BETALEN NA EEN MISLUKTE MOLLIE-TERUGKEER ────────
+   19 september 2026. Zie de kop van functions/api/order-pay.js. */
+console.log('\n/api/order-pay — een verse checkout, alleen als het mag');
+{
+  db.exec(`INSERT INTO orders (id, ref, customer_id, service, email, status, payment_status, total_cents, vat_cents, lang)
+           VALUES (710, 'VIS-BETL-001', 700, 'catalog', 'aanvraag@voorbeeld.nl', 'received', 'unpaid', 8900, 1869, 'nl')`);
+  db.exec(`INSERT INTO orders (id, ref, customer_id, service, email, status, payment_status, total_cents, vat_cents, lang)
+           VALUES (711, 'VIS-BETL-002', 700, 'catalog', 'aanvraag@voorbeeld.nl', 'received', 'paid', 8900, 1869, 'nl')`);
+  db.exec(`INSERT INTO orders (id, ref, customer_id, service, email, status, payment_status, total_cents, vat_cents, lang, review_state)
+           VALUES (712, 'VIS-BETL-003', 700, 'catalog', 'aanvraag@voorbeeld.nl', 'received', 'unpaid', 8900, 0, 'nl', 'pending')`);
+  const realFetch = globalThis.fetch;
+  const gezien = [];
+  globalThis.fetch = async (url, init) => {
+    gezien.push(String(url));
+    return new Response(JSON.stringify({ id: 'tr_NEW', _links: { checkout: { href: 'https://pay.mollie.test/tr_NEW' } } }), { status: 201, headers: { 'content-type': 'application/json' } });
+  };
+  const payEnv = { DB: d1(db), MOLLIE_API_KEY: 'test_abcdefghijklmnopqrstuvwxyz0123' };
+  const roep = async (q) => orderPayGet({ request: new Request(`https://visuails.com/api/order-pay?${q}`), env: payEnv, waitUntil: () => {} });
+
+  const goed = await roep('ref=VIS-BETL-001&lang=nl');
+  ok('een onbetaalde, betaalbare bestelling krijgt een verse checkout', goed.status, 302);
+  ok('  en de 302 wijst naar Mollie', goed.headers.get('location'), 'https://pay.mollie.test/tr_NEW');
+  ok('  er is precies één betaling aangemaakt', gezien.filter((u) => /mollie/.test(u)).length, 1);
+
+  const betaald = await roep('ref=VIS-BETL-002&lang=nl');
+  ok('een betaalde bestelling gaat terug naar de bedankpagina zonder link', betaald.headers.get('location'), 'https://visuails.com/nl/thank-you?ref=VIS-BETL-002');
+  const lijst = await roep('ref=VIS-BETL-003&lang=nl');
+  ok('een bestelling op de btw-lijst krijgt géén checkout (de poort geldt ook hier)', lijst.headers.get('location'), 'https://visuails.com/nl/thank-you?ref=VIS-BETL-003');
+  const onbekend = await roep('ref=VIS-ZZZZ-999&lang=en');
+  ok('een onbekend kenmerk gaat stil naar de bedankpagina', onbekend.headers.get('location'), 'https://visuails.com/thank-you?ref=VIS-ZZZZ-999');
+  const rommel = await roep('ref=../etc&lang=nl');
+  ok('een kenmerk zonder de VIS-vorm gaat naar de kale bedankpagina', rommel.headers.get('location'), 'https://visuails.com/nl/thank-you');
+  ok('  en heeft nooit Mollie aangeroepen', gezien.filter((u) => /mollie/.test(u)).length, 1);
+
+  /* En order-status zegt bij dezelfde rijen wat de bedankpagina moet weten. */
+  const s1 = await vraag('VIS-BETL-001'); ok('order-status: onbetaald + betaalbaar', `${s1.body.paid} ${s1.body.payable}`, 'false true');
+  const s2 = await vraag('VIS-BETL-002'); ok('order-status: betaald, niet meer betaalbaar', `${s2.body.paid} ${s2.body.payable}`, 'true false');
+  const s3 = await vraag('VIS-BETL-003'); ok('order-status: op de btw-lijst is niet betaalbaar', `${s3.body.paid} ${s3.body.payable}`, 'false false');
+  globalThis.fetch = realFetch;
 }
 
 console.log('\nde met de hand getypte reden blijft binnen');
@@ -317,18 +365,13 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
   ok('  ook in het Nederlands',
     /zonder vaste leverdatum/.test(read('dist/nl/video/index.html')), true);
 
-  /* TierCompare staat op deze pagina en print de twee tredes van de ladder.
-     Weghalen zou informatie kosten aan wie ook foto's koopt; er staat dus één
-     regel context boven. */
-  ok('en er staat een voorbehoud boven de tredevergelijking', /c\.tierNote/.test(vid), true);
-  /* Ook deze twee pinden een woord dat STIJL.md §3 verbiedt ("ladder"). Wat het
-     voorbehoud moet zeggen is WELKE producten die twee kolommen beschrijven —
-     catalog en lifestyle, en dus niet clips. Dat is het feit; de formulering
-     eromheen mag veranderen. */
-  ok('  in het Engels, en het noemt waar de kolommen over gaan',
-    /two columns below/.test(vid) && /catalog and lifestyle products/.test(vid), true);
-  ok('  en in het Nederlands',
-    /twee kolommen hieronder/.test(vid) && /catalog- en lifestyleproducten/.test(vid), true);
+  /* TierCompare stond op deze pagina tot 19 september 2026, met een noot erboven
+     die uitlegde dat geen van beide kolommen over clips ging. Uit de doorlichting
+     (Lucas: "30–40 % korter"): een blok dat een uitleg nodig heeft waarom hij er
+     staat, hoort er niet; het staat op /pricing. De leverdatum-regel die ertoe
+     doet, blijft in de opening. */
+  ok('de tredevergelijking staat niet meer op /video', !/<TierCompare/.test(vid), true);
+  ok('  maar de leverdatum-regel wel, in de opening', /queueNote/.test(vid), true);
 
   /* De knoppen. Drie stuks, en ze gingen alle drie naar de keuzepagina waar de
      bezoeker net vandaan kwam.

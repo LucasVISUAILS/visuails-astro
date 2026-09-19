@@ -1022,10 +1022,19 @@ section('§17 · de agenda — wat moet er nu af');
 // soort niet meeleest (dan weegt alles als compleet), en een lijst die stiekem
 // twee lijstjes is.
 
+/* ── DE AGENDA IS DE PLANNING GEWORDEN — 19 september 2026 ──────────────────
+   Twee schermen met bijna dezelfde rijen zijn er één; /admin/agenda stuurt door
+   naar /admin/planning (met het filter en het anker #dagen mee). De controles
+   hieronder gelden ongewijzigd voor de samengevoegde pagina. */
+{
+  const oud = await adminReq('GET', '/admin/agenda?soort=datum', { env: makeEnv() });
+  check('/admin/agenda stuurt door naar de planning', oud.status === 303 || oud.status === 302, oud.status);
+  check('  met het filter en het anker mee', oud.headers.get('location') === '/admin/planning?soort=datum#dagen', oud.headers.get('location'));
+}
 {
   const env = makeEnv();
-  const res = await adminReq('GET', '/admin/agenda', { env });
-  check('de agenda is een gewone leesroute', res.status === 200, res.status);
+  const res = await adminReq('GET', '/admin/planning', { env });
+  check('de planning is een gewone leesroute', res.status === 200, res.status);
 
   const open = env.DB.prepared.find((sql) => /FROM orders/.test(sql) && /status IN \(/.test(sql));
   check('hij vraagt om het openstaande werk', Boolean(open), 'query met status IN (...)');
@@ -1043,29 +1052,30 @@ section('§17 · de agenda — wat moet er nu af');
   check('  inclusief de soort', /service/.test(vensters || ''));
 
   const html = await res.text();
-  check('er staat één tabel en geen twee lijstjes',
-    (html.match(/<table class="ag-tabel"/g) || []).length === 1,
-    (html.match(/<table class="ag-tabel"/g) || []).length);
-  check('met de uiterste dag als eerste kolom', /<th>Uiterlijk<\/th>/.test(html));
-  check('en met de drie filters erbij',
-    /href="\/admin\/agenda"/.test(html)
-    && /href="\/admin\/agenda\?soort=datum"/.test(html)
-    && /href="\/admin\/agenda\?soort=asap"/.test(html));
+  check('er staat één aflopende lijst en geen tweede lijstje',
+    (html.match(/<ol class="pl-lijst"/g) || []).length <= 1 && !/<table class="ag-tabel">/.test(html),
+    (html.match(/<ol class="pl-lijst"/g) || []).length);
+  check('en met de filters erbij',
+    /href="\/admin\/planning"/.test(html)
+    && /href="\/admin\/planning\?soort=datum"/.test(html)
+    && /href="\/admin\/planning\?soort=asap"/.test(html)
+    && /href="\/admin\/planning\?soort=voorrang"/.test(html));
+  check('en het blok "Dagen dichtzetten" staat eronder', /<h2 id="dagen">Dagen dichtzetten<\/h2>/.test(html));
   check('een ongewogen dienst zegt dat, in plaats van nul te tellen',
     !/>0 beelden</.test(html) || /nog te wegen/.test(html), 'geen stille nul');
 }
 
 {
   // Een filter is een filter en geen tweede scherm: dezelfde route, dezelfde
-  // tabel, alleen minder rijen.
+  // lijst, alleen minder rijen.
   const env = makeEnv();
-  const res = await adminReq('GET', '/admin/agenda?soort=datum', { env });
+  const res = await adminReq('GET', '/admin/planning?soort=datum', { env });
   const html = await res.text();
-  check('het datumfilter markeert zichzelf', /aria-current="true"[^>]*href="\/admin\/agenda\?soort=datum"|href="\/admin\/agenda\?soort=datum"[^>]*aria-current="true"/.test(html)
+  check('het datumfilter markeert zichzelf', /aria-current="true"[^>]*href="\/admin\/planning\?soort=datum"|href="\/admin\/planning\?soort=datum"[^>]*aria-current="true"/.test(html)
     || /fl-chip is-active[^>]*soort=datum/.test(html), true);
 
   const env2 = makeEnv();
-  const res2 = await adminReq('GET', '/admin/agenda?soort=verzonnen', { env: env2 });
+  const res2 = await adminReq('GET', '/admin/planning?soort=verzonnen', { env: env2 });
   check('een verzonnen filter valt terug op alles in plaats van op niets', res2.status === 200, res2.status);
 }
 
@@ -1076,7 +1086,7 @@ section('§17 · de agenda — wat moet er nu af');
   const env = makeEnv();
   const res = await adminReq('GET', '/admin', { env });
   const html = await res.text();
-  check('het dashboard wijst naar de agenda', /href="\/admin\/agenda"/.test(html));
+  check('het dashboard wijst naar de planning', /href="\/admin\/planning"/.test(html));
 }
 
 globalThis.fetch = realFetch;

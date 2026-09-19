@@ -422,15 +422,14 @@ Stripe. **Creating the accounts is independent of the checkout code landing**
    secret** (`whsec_…`) at that point, which is what proves a webhook call
    actually came from Stripe and not from anyone who found the URL.
 
-**What to hand over, once you have it — as Cloudflare Pages secrets, the same
+**Stripe was removed from the code on 19 September 2026 — Mollie is the only
+provider. What to hand over, once you have it — as Cloudflare Pages secrets, the same
 way `RESEND_API_KEY` was set up in §4, not pasted into chat or committed to
 the repo:**
 
 | Secret | From |
 |---|---|
 | `MOLLIE_API_KEY` | Mollie → Developers → API keys |
-| `STRIPE_SECRET_KEY` | Stripe → Developers → API keys |
-| `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → Webhooks, after the endpoint exists |
 
 These are not read by any code yet — task #258, the checkout and webhook
 handlers, is still ahead — so §4's binding table above does not list them

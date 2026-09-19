@@ -671,8 +671,11 @@ console.log('\nde levertijdbelofte is in beide talen dezelfde belofte');
    * die vóór de betaling vastligt en die de poort heeft goedgekeurd. */
   check('en noemt geen uurgetal meer', /\d+\s*(hour|hr)/i.test(en), false);
   check('nl noemt geen uurgetal meer', /\d+\s*uur/i.test(nl), false);
-  check('en zegt dat het vooraf vaststaat', /before you pay/i.test(en), true);
-  check('nl zegt dat het vooraf vaststaat', /voordat je betaalt/i.test(nl), true);
+  /* Sinds 19 september 2026 gaat een bestelling met datum direct naar Mollie;
+     "bevestigen voordat je betaalt" beschreef een tussenstap die er niet is.
+     Wat vastligt: de datum, zodra de bestelling binnen is. */
+  check('en zegt dat het vastligt zodra je bestelt', /reserve for you the moment your order is in/i.test(en), true);
+  check('nl zegt dat het vastligt zodra je bestelt', /vastleggen zodra je bestelling binnen is/i.test(nl), true);
 
   /* ── HET STREVEN IS EEN STREVEN, IN BEIDE TALEN ───────────────────────────
    *
@@ -736,8 +739,8 @@ console.log('\nde korte belofte zegt hetzelfde als de lange, met minder woorden'
      verwachting is. */
   check('kort en noemt geen uurgetal', /\d+\s*(hour|hr)/i.test(turnaroundShort('attended', 'en')), false);
   check('kort nl noemt geen uurgetal', /\d+\s*uur/i.test(turnaroundShort('attended', 'nl')), false);
-  check('kort en zegt dat het vooraf vaststaat', /before you pay/i.test(turnaroundShort('attended', 'en')), true);
-  check('kort nl zegt dat het vooraf vaststaat', /voor je betaalt/i.test(turnaroundShort('attended', 'nl')), true);
+  check('kort en zegt dat het vastligt', /fixed the moment you order/i.test(turnaroundShort('attended', 'en')), true);
+  check('kort nl zegt dat het vastligt', /vast zodra je bestelt/i.test(turnaroundShort('attended', 'nl')), true);
   /* ── DIT BEWAAKTE HET WOORD "HUMAN" — 17 SEPTEMBER 2026 ────────────────────
      Er stond: de korte controlebelofte moet over MENSEN gaan (/human/ en /hand/).
      Dat was juist zolang de belofte "human-checked" heette. Lucas koos op 25

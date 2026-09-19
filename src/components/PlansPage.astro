@@ -133,6 +133,13 @@ const COPY = {
     plansSub: 'Same service on all three. What changes is how much of the month you book.',
     plansCta: 'Set up this plan',
 
+    /* ── KORTER, EN IN DE WOORDEN VAN STUDIO — 19 september 2026 ──────────
+       Hier stonden een etiket, twee alinea's, een Note en een WhatsApp-vraag
+       over "credits" en "plekken" (de kamer was 1.045 px). Studio zegt sinds
+       het herontwerp "producten" en "vrij"; deze twee zinnen zeggen hetzelfde
+       in die woorden. De oude sleutels blijven staan voor wie ze terug wil. */
+    creditKort: `${FROM_PRODUCTS} products a month does not mean ${FROM_PRODUCTS} new products: a new item, an item you already sell in another look, or a set for your socials — you decide. What you do not use rolls over ${PLAN_ROLLOVER_MONTHS === 1 ? 'a' : PLAN_ROLLOVER_MONTHS} month${PLAN_ROLLOVER_MONTHS === 1 ? '' : 's'}.`,
+    cycleKort: 'Your first month is charged when you set the plan up and your week is planned straight away. You cancel in your account, effective at the end of the running term; whatever is made stays yours.',
     creditH: `${FROM_PRODUCTS} slots, not ${FROM_PRODUCTS} new products.`,
     // GESPLITST, 21 augustus 2026. Dit was één alinea van 55 woorden — de
     // langste van /plans. De twee zinnen die twijfel wegnemen ("je hoeft niets
@@ -151,6 +158,10 @@ const COPY = {
     creditAskCta: 'Ask us and we will go through it with you',
     creditWa: 'Hi! I have a plan and I would like to think through what to spend this month’s credits on.',
 
+    /* Sinds 19 september 2026 één sectie "Wat eraan komt" in plaats van twee
+       (de gevulde maand + de twee concepten, samen 1.600 px). */
+    soonAllH: 'And what is on the way.',
+    soonAllLede: 'Three things that are not part of a plan yet. None can be ordered, so there is no price and no button — what they are is written out here rather than announced with a date we cannot hold.',
     stockH: 'And a month that is already filled.',
     stockNow: [`${STOCK_OFF_BRAND} new ${noun('stock', 'en')} every month`, 'included with every plan, usable by any brand — something to post on the days you have no new product.'],
     stockSoon: [`${STOCK_ON_BRAND} on-brand ${noun('visual', 'en')} a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. They arrive with Editions and are set up once per brand.'],
@@ -200,6 +211,8 @@ const COPY = {
     plansSub: 'Dezelfde dienst bij alle drie. Wat verschilt is hoeveel van de maand je vastlegt.',
     plansCta: 'Dit abonnement opzetten',
 
+    creditKort: `${FROM_PRODUCTS} producten per maand betekent niet ${FROM_PRODUCTS} nieuwe producten: een nieuw item, een item dat je al verkoopt in een andere look, of een set voor je socials — jij bepaalt het. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
+    cycleKort: 'Je eerste maand wordt afgeschreven bij het afsluiten en je week staat meteen gepland. Opzeggen doe je in je account, per einde van de lopende termijn; wat al gemaakt is, blijft van jou.',
     creditH: `${FROM_PRODUCTS} plekken, geen ${FROM_PRODUCTS} nieuwe producten.`,
     creditBody: `Een credit is een plek in de maand, niet de eis dat je iets nieuws hebt. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
     /* Zie de noot bij de Engelse cycleBody. */
@@ -210,6 +223,8 @@ const COPY = {
     creditAskCta: 'Vraag het ons, dan lopen we het samen door',
     creditWa: 'Hoi! Ik heb een abonnement en wil graag even doornemen waar ik de credits van deze maand aan kan besteden.',
 
+    soonAllH: 'En wat eraan komt.',
+    soonAllLede: 'Drie dingen die nog geen deel van een abonnement zijn. Geen ervan is te bestellen, dus er staat geen prijs bij en geen knop — wat ze zijn staat hier uitgeschreven, in plaats van aangekondigd met een datum die we niet kunnen vasthouden.',
     stockH: 'En een maand die al gevuld is.',
     stockNow: [`${STOCK_OFF_BRAND} nieuwe ${noun('stock', 'nl')} per maand`, 'inbegrepen bij elk abonnement en bruikbaar voor elk merk — iets om te posten op de dagen dat je niets nieuws hebt.'],
     stockSoon: [`${STOCK_ON_BRAND} on-brand ${noun('visual', 'nl')} per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Ze komen met Editions en worden één keer per merk opgezet.'],
@@ -273,19 +288,30 @@ const c = COPY[nl ? 'nl' : 'en'];
   </section>
 
   {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
-      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
-      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
-      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
-      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
-      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
-      hetzelfde ding als op de voorpagina. */}
+      ── EN HIJ LOOPT, SINDS 18 SEPTEMBER 2026 ──────────────────────────────
+      Hier stond "stilstaand met opzet: dit is hier een illustratie en geen
+      attractie". Lucas, met een schermafdruk: *"Er staan hier en daar ook
+      laptop foto's die niet daar horen en niet eens werken."*
+
+      Hij heeft gelijk, en de redenering erachter klopte ook niet meer. De
+      stilstaande plaat leest niet als "rustig", hij leest als een plaatje dat
+      per ongeluk is blijven staan — zeker nu dezelfde plaat op de voorpagina en
+      de categoriepagina's wél doorloopt. Wat er te zien valt is juist de
+      volgorde: voorkant, achterkant, detail, op model. Die volgorde is het
+      product.
+
+      Stil blijft hij alleen waar hij geen aandacht mag vragen; die twee plekken
+      (/test-sample en /thank-you) hebben hem sinds vandaag helemaal niet meer.
+
+      Hij pauzeert zodra je muis erop staat en loopt weer als je weggaat — zie
+      LaptopCarousel.astro. */}
   <section class="paneel" aria-labelledby="pl-lc">
     <div class="paneel-kop">
       <p class="etiket">{nl ? 'Wat er elke maand uitkomt' : 'What lands each month'}</p>
       <h2 id="pl-lc" class="hoog hoog-2">{nl ? 'Elk product krijgt dit.' : 'Every product gets this.'}</h2>
       <p class="lopend">{nl ? 'Je maandelijkse set gaat per product op deze manier de deur uit, klaar om te plaatsen.' : 'Your monthly set goes out per product like this, ready to place.'}</p>
     </div>
-    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
+    <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]}
       titel={nl ? 'Elk product krijgt dit.' : 'Every product gets this.'} />
   </section>
 
@@ -332,12 +358,8 @@ const c = COPY[nl ? 'nl' : 'en'];
 
     {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
     <div class="pl-credit">
-      <p class="etiket">{c.creditH}</p>
-      <p class="lopend">{c.creditBody} <Note lang={lang} term={c.creditNoteTerm}>{c.creditNote}</Note></p>
-      <p class="lopend">{c.cycleBody}</p>
-      <p class="lopend pl-credit-vraag">
-        {c.creditAsk} <a class="pijl pl-credit-a" href={waHref(c.creditWa)} target="_blank" rel="noopener">{c.creditAskCta}</a>
-      </p>
+      <p class="lopend">{c.creditKort}</p>
+      <p class="lopend">{c.cycleKort}</p>
     </div>
   </section>
 
@@ -409,54 +431,33 @@ const c = COPY[nl ? 'nl' : 'en'];
     </div>
   </section>
 
-  {/* ── 4 · WAT ER NAAST DE BESTELLINGEN IN DE MAAND ZIT ─────────────────────
-      Staat apart en niet in de kamer hierboven, omdat het geen eigenschap van
-      het abonnement is maar iets dat ernaast geleverd wordt. */}
-  <section class="paneel" aria-labelledby="pl-bank">
-    <div class="pl-bank">
-      <Placeholder
-        lang={lang}
-        ratio="4 / 3"
-        caption={false}
-        subject={c.stockShot}
-        message={c.stockShotMsg}
-      />
-      <div class="pl-bank-t">
-        <h2 id="pl-bank" class="hoog hoog-2">{c.stockH}</h2>
-        <div class="pl-bank-item">
-          <p class="pl-bank-n">{c.stockNow[0]} <span class="mono pl-tag">{c.stockNowTag}</span></p>
-          <p class="lopend">{c.stockNow[1]}</p>
-        </div>
-        <div class="pl-bank-item is-later">
-          <p class="pl-bank-n">{c.stockSoon[0]} <span class="mono pl-tag">{c.stockSoonTag}</span></p>
-          <p class="lopend">{c.stockSoon[1]}</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  {/* ── 4 · WAT ERAAN KOMT ────────────────────────────────────────────────
+      Tot 19 september 2026 twee secties: "En een maand die al gevuld is"
+      (stockfoto's, nog niet actief, met een 4:3-plaatshouder) en "En twee
+      dingen die eraan komen" (Hooks en Editions, elk met een vraag-en-antwoord
+      lijst) — samen 1.600 px over dingen die nog niet bestaan. Lucas:
+      *"/plans … doorvoeren."* Nu één sectie met drie kolommen: naam, etiket,
+      één alinea. De vraag-en-antwoordlijsten (qBody) staan nog in
+      binnenkort.js voor de eigen pagina's van later.
 
-  {/* ── 5 · HOOKS EN EDITIONS ───────────────────────────────────────────────
       HET ANKER IS EEN AFSPRAAK. In src/i18n/ui.js staan Hooks en Editions bij
-      de diensten in het menu en die twee wijzen hierheen; verandert
-      `#binnenkort`, dan verandert daar de href mee — tests/binnenkort.test.mjs
-      legt de twee naast elkaar.
-
-      Uitgeklapt en niet dichtgeklapt: wie doorklikt naar /plans#binnenkort
-      heeft de vraag al gesteld, en die dan nog een keer laten klikken is een
-      deur voor een deur. */}
+      de diensten in het menu en die twee wijzen hierheen (#binnenkort, en
+      Studio wijst naar #editions); verandert een van beide, dan verandert daar
+      de href mee — tests/nav.test.mjs legt ze naast elkaar. */}
   <section class="paneel" id="binnenkort" aria-labelledby="pl-soon">
     <header class="paneel-kop">
-      <h2 id="pl-soon" class="hoog hoog-2">{c.soonH}</h2>
-      <p class="lopend">{c.soonLede}</p>
+      <h2 id="pl-soon" class="hoog hoog-2">{c.soonAllH}</h2>
+      <p class="lopend">{c.soonAllLede}</p>
     </header>
     <ul class="pl-soon-lijst" role="list">
+      <li id="stock">
+        <p class="pl-soon-n">{c.stockNow[0]} <span class="mono pl-tag">{c.stockNowTag}</span></p>
+        <p class="lopend">{c.stockNow[1]}</p>
+      </li>
       {binnenkort(lang).map((b) => (
         <li id={b.id}>
           <p class="pl-soon-n">{b.name} <span class="mono pl-tag">{c.soonTag}</span></p>
-          <p class="lopend">{b.desc}</p>
-          <dl class="pl-soon-dl">
-            {b.qBody.map(([kop, tekst]) => (<Fragment><dt class="mono">{kop}</dt><dd class="lopend">{tekst}</dd></Fragment>))}
-          </dl>
+          <p class="lopend">{b.desc}{b.id === 'editions' ? ` ${c.stockSoon[0]}: ${c.stockSoon[1]}` : ''}</p>
         </li>
       ))}
     </ul>
@@ -509,10 +510,8 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-knop-lijn { color: var(--vel); }
   .pl-knop-lijn:hover { background: var(--vel); color: var(--inkt); }
 
-  .pl-credit { display: grid; gap: .7rem; max-width: 46rem; margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.4rem); border-top: 1px solid rgb(245 245 245 / .22); }
+  .pl-credit { display: grid; gap: .7rem; max-width: 62rem; margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.6vw, 2rem); border-top: 1px solid rgb(245 245 245 / .22); }
   .pl-credit .lopend { font-size: .92rem; }
-  .pl-credit-vraag { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
-  .pl-credit-a { color: var(--geel-letter); }
 
   /* De drie abonnementen. Geen kaartjes met een schaduw maar drie kolommen met
      een lijn erboven: het zijn drie versies van één ding, en een rand eromheen
@@ -534,32 +533,22 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-maat-a { display: grid; gap: 1rem; justify-items: start; }
   .pl-maat-a .mono { color: var(--inkt-2); }
 
-  .pl-bank { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
-  .pl-bank-t { display: grid; gap: 1.4rem; }
-  .pl-bank-item { display: grid; gap: .4rem; padding-top: 1rem; border-top: 1px solid var(--lijn); }
-  /* margin-bottom en niet de gap van de ouder: deze alinea is een KOP in
-     alinea-vorm en de zin eronder is zijn uitleg. Gemeten stonden ze 6px uit
-     elkaar — te krap voor kop-met-uitleg. Zie kladblok/te-dicht.mjs. */
-  .pl-bank-n { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; margin-bottom: .55rem; }
-  .pl-bank-item.is-later .lopend { color: var(--inkt-3, #6E6E6E); }
-  .pl-tag { color: var(--inkt); background: var(--geel); border-radius: 999px; padding: .25rem .6rem; }
+  .pl-tag { color: var(--inkt); background: var(--geel); border-radius: 999px; padding: .25rem .6rem; font-size: .72rem; }
 
-  .pl-soon-lijst { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.4rem, 3.5vw, 3rem); }
+  .pl-soon-lijst { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.4rem, 3.5vw, 3rem); }
   .pl-soon-lijst li { display: grid; gap: .6rem; align-content: start; padding-top: 1.2rem; border-top: 1px solid var(--lijn); }
-  .pl-soon-n { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.15rem, 2vw, 1.5rem); text-transform: uppercase; letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
-  .pl-soon-dl { display: grid; gap: .5rem; margin-top: .4rem; }
-  .pl-soon-dl dt { color: var(--inkt-2); }
-  .pl-soon-dl dd { margin: 0; font-size: .92rem; }
-  .pl-soon-voet { margin-top: clamp(1.6rem, 3vw, 2.4rem); font-size: .92rem; }
+  .pl-soon-lijst .lopend { font-size: .92rem; }
+  .pl-soon-n { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.35rem); text-transform: uppercase; letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+  .pl-soon-voet { margin-top: clamp(1.6rem, 3vw, 2.4rem); font-size: .92rem; color: var(--inkt-2); }
 
   .pl-uit { display: grid; gap: .8rem; justify-items: start; }
 
   @media (max-width: 900px) {
-    .pl-top, .pl-bank, .pl-maat, .pl-soon-lijst { grid-template-columns: 1fr; }
+    .pl-top, .pl-maat, .pl-soon-lijst { grid-template-columns: 1fr; }
     /* Eén kolom: de plaatsing hierboven losgelaten, zodat de bronvolgorde de
        volgorde op het scherm is — eerst het bedrag, dan de uitleg. */
     .pl-uitleg, .pl-plaat { grid-column: auto; grid-row: auto; }
     .pl-kaarten { grid-template-columns: 1fr; }
-    .pl-maat, .pl-bank { align-items: start; }
+    .pl-maat { align-items: start; }
   }
 </style>

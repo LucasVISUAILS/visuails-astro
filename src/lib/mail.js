@@ -182,7 +182,14 @@ export function htmlToText(html) {
     .replace(/&middot;/gi, '·')
     .replace(/&rsquo;/gi, '’')
     .replace(/&mdash;/gi, '—')
-    .replace(/&ndash;/gi, '–');
+    .replace(/&ndash;/gi, '–')
+    /* `&rarr;` komt uit mailTemplate.js (elke knop-link eindigt erop) en stond
+       tot 19 september 2026 letterlijk in de platte tekst: "Volg je bestelling
+       in je portaal &rarr;". Gevonden in de bevestigingsmail van VIS-JMYK-XMO. */
+    .replace(/&rarr;/gi, '→')
+    .replace(/&larr;/gi, '←')
+    .replace(/&hellip;/gi, '…')
+    .replace(/&#(\d+);/g, (_m, n) => { try { return String.fromCodePoint(Number(n)); } catch { return ''; } });
 
   return s
     .replace(/[ \t]+/g, ' ')

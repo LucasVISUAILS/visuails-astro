@@ -109,6 +109,17 @@ export async function onRequestPost(context) {
      verbeteren, maar de gewone omleiding zonder dat er iets gebeurt. */
   if (tekst(form.get('company_hp'))) return terug('opslaan', lang);
 
+  /* ── DE TWEE VERKLARINGEN — 19 september 2026 ──────────────────────────────
+     Dezelfde twee vinkjes als op het bestelformulier (functions/api/order.js
+     ~1088): "ik bestel voor een bedrijf" en "jullie mogen beginnen vóór de
+     bedenktijd voorbij is". Dit formulier had ze niet, terwijl het in een
+     doorlopende machtiging eindigt. Ontbreekt er een, dan terug met een reden
+     die het formulier bij de vinkjes toont. De versie gaat mee naar de rij
+     (migratie 0049) via handleSubscribeStart(). */
+  if (tekst(form.get('business_declaration')) !== 'yes' || tekst(form.get('withdrawal_consent')) !== 'yes') {
+    return terug('verklaring', lang);
+  }
+
   let klant = null;
   try {
     klant = await currentCustomer(env, request);

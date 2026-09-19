@@ -119,9 +119,9 @@ const START = SERVICES[0].id;
 
 /* De nummers worden GEDRUKT, en dat is de uitzondering die DESIGN.md maakt op
    zijn eigen afwijzing van "01/02/03"-decoratie: dit ís een volgorde, en het is
-   de echte volgorde — het venster wordt bevestigd vóór de betaling. Wie zich
-   afvraagt of hij al betaald heeft voordat de datum vaststaat, leest dat hier
-   af aan twee cijfers. */
+   de echte volgorde — je kiest de datum vóór je betaalt. Wie zich afvraagt of
+   hij al betaald heeft voordat de datum vaststaat, leest dat hier af aan twee
+   cijfers. */
 const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
   return { id: id, nr: String(i + 1).padStart(2, '0'), ...t.steps[id] };
 });
@@ -362,6 +362,23 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
 
   .wk-honest { margin: clamp(2rem, 4vw, 3rem) 0 0; font-size: .78rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }
 
+  /* ── ZES STAPPEN IN TWEE KOLOMMEN — 19 september 2026 ─────────────────────
+     Onder elkaar was deze lijst 2.777 px op 1440 (een derde van /how-it-works).
+     Lucas: *"/how-it-works … doorvoeren."* Op breed staan de zes nu in twee
+     kolommen van drie: de volgorde loopt per kolom (01–03 links, 04–06
+     rechts), wat `grid-auto-flow: column` met drie rijen regelt, zodat je nog
+     steeds van boven naar beneden leest. Elke stap houdt zijn haarlijn, ook de
+     eerste — in een raster is "de eerste" er twee. */
+  @media (min-width: 900px) {
+    .wk-steps[data-wk-body] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(3, auto);
+      grid-auto-flow: column;
+      gap: clamp(1.4rem, 2.6vw, 2.2rem) clamp(2.4rem, 5vw, 4.5rem);
+    }
+    .wk-step:first-child { border-top: 1px solid var(--line); padding-top: clamp(1.2rem, 2.4vw, 1.6rem); }
+    .wk-step-in { max-width: none; }
+  }
   @media (max-width: 720px) {
     .wk-pick-row { grid-template-columns: 1fr; }
     /* Het nummer boven de stap in plaats van ernaast: een kolom van 3,2rem naast

@@ -1,4 +1,7 @@
-// VISUAILS — the one place any function talks to Mollie. Mirrors src/lib/stripe.js
+// VISUAILS — the one place any function talks to Mollie. Stripe (src/lib/stripe.js)
+// was removed on 19 September 2026 — Mollie is the only payment provider; the
+// notes below that mention stripe.js describe reasoning that still holds here.
+// It originally mirrored src/lib/stripe.js
 // in shape and reasoning; see that file's header for why bare fetch() over an
 // SDK is the right call in a Cloudflare Pages Function. This exists because
 // Stripe checkout sessions were coming back as blank HTTP 400s specifically
@@ -142,13 +145,24 @@ export function mollieKeyProblems(env) {
  * Mollie itself down) — the caller decides what a failed payment means for
  * the order, this function does not swallow it.
  */
-export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl }) {
+export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl, grossCents }) {
+  /* ── HET BRUTO KOMT UIT DE OFFERTE, NIET UIT AMOUNT — 19 september 2026 ──
+     Tot vandaag stond hier AMOUNT.testSample.toFixed(2): precies € 1,00, wat
+     de btw er per definitie IN zette. Sinds de proef € 1 exclusief btw is
+     (zie quoteTestSample() in quote.js) vraagt Mollie het bruto uit dezelfde
+     offerte als de factuur — € 1,21 voor een Nederlandse klant, € 1,00 bij
+     verlegging. Geen terugval op AMOUNT: een aanroeper die het bruto vergeet,
+     zou stilletjes weer € 1,00 afschrijven en een factuur van € 1,21 sturen. */
+  const asCents = Math.round(Number(grossCents));
+  if (!Number.isFinite(asCents) || asCents < Math.round(AMOUNT.testSample * 100)) {
+    throw new Error(`mollie: refusing to create a test-sample payment of ${grossCents} cents for ${ref} — pass quoteTestSample().grossCents`);
+  }
   return createMolliePayment(env, {
     ref,
     lang,
     successUrl,
     webhookUrl,
-    valueEuros: AMOUNT.testSample.toFixed(2),
+    valueEuros: (asCents / 100).toFixed(2),
     description: lang === 'nl' ? 'VISUAILS proef' : 'VISUAILS test sample',
   });
 }

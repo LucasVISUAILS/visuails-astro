@@ -62,73 +62,55 @@ const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 
 console.log('\nVISUAILS — de factuur van de proefvisual\n');
 
-console.log('het brutobedrag is €1 en verschuift bij geen enkel tarief');
+console.log('het nettobedrag is €1 en de btw komt erbovenop');
 {
   /* AMOUNT.testSample is de bron van het bedrag; het staat hier niet ingetypt, want
-     dan zou deze test blijven slagen nadat de prijs is veranderd. */
-  const bruto = Math.round(AMOUNT.testSample * 100);
-  ok('de constante staat op één euro', bruto, 100);
+     dan zou deze test blijven slagen nadat de prijs is veranderd.
+
+     ── HERZIEN OP 19 SEPTEMBER 2026 ────────────────────────────────────────────
+     Tot vandaag toetste dit blok het omgekeerde: € 1 bruto, btw eruit gerekend
+     (83 + 17). Lucas: *"het is 1 euro inclusief btw op dit moment. Fix dit."*
+     Nu geldt dezelfde regel als voor elk ander bedrag op de site — € 1 is netto,
+     de btw gaat eróver, en Mollie vraagt het bruto (€ 1,21 in Nederland). */
+  const netto = Math.round(AMOUNT.testSample * 100);
+  ok('de constante staat op één euro', netto, 100);
 
   for (const tarief of [0.21, 0, 0.19, 0.27, 0.055]) {
     const q = quoteTestSample({ vatRate: tarief });
-    ok(`tarief ${tarief}: bruto blijft het afgeschreven bedrag`, q.grossCents, bruto);
+    ok(`tarief ${tarief}: netto blijft de prijs die er staat`, q.netCents, netto);
+    ok(`tarief ${tarief}: btw is netto maal tarief, afgerond`, q.vatCents, Math.round(netto * tarief));
     ok(`tarief ${tarief}: netto plus btw is het bruto`, q.netCents + q.vatCents, q.grossCents);
-    ok(`tarief ${tarief}: netto is bruto gedeeld door 1+tarief`,
-      q.netCents, Math.round(bruto / (1 + tarief)));
     ok(`tarief ${tarief}: de btw is nooit negatief`, q.vatCents >= 0, true);
   }
 
-  /*
-   * ── DE BTW ALS VERSCHIL, EN WAAROM DIT EEN SWEEP MOET ZIJN ─────────────────
-   *
-   * Hier stond eerst een regel per tarief met het commentaar "deze zou omvallen met
-   * netto × tarief". Dat was NIET WAAR, en dat bleek pas toen ik de mutatie echt
-   * uitvoerde: bij 21%, 19%, 27%, 5,5% en 0% geven `round(netto × tarief)` en
-   * `bruto − netto` bij een bedrag van één euro exact hetzelfde antwoord. Vijf
-   * groene regels die niets bewaakten, met een commentaar dat het tegendeel beweerde
-   * — dat is erger dan geen test, want het leest als dekking.
-   *
-   * Ze lopen wél uiteen, maar niet op de tarieven die je toevallig opschrijft: bij
-   * een brutobedrag van 100 cent doen 3068 van de 10.001 tarieven tussen 0% en 100%
-   * het anders. Vandaar dat dit een uitputtende sweep is en geen steekproef —
-   * dezelfde aanpak als bij de creditnota's, waar de fout van één cent ook pas
-   * zichtbaar werd toen alle mogelijke bedragen langskwamen.
-   *
-   * Wat de sweep vasthoudt is de EIGENSCHAP en niet de formule: netto plus btw is
-   * altijd precies wat er is afgeschreven. Dat is de enige belofte die de
-   * boekhouding nodig heeft, en er is maar één manier om hem te houden.
-   */
+  /* Uitputtend en geen steekproef, om dezelfde reden als voorheen: de enige
+     belofte die de boekhouding nodig heeft is dat netto plus btw precies het
+     afgeschreven bedrag is, bij élk tarief. */
   {
     const scheef = [];
-    const zouBreken = [];
     for (let i = 0; i <= 10000; i++) {
       const tarief = i / 10000;
       const q = quoteTestSample({ vatRate: tarief });
-      if (q.netCents + q.vatCents !== bruto) scheef.push(tarief);
-      if (q.grossCents !== bruto) scheef.push(`bruto@${tarief}`);
-      if (q.netCents < 0 || q.vatCents < 0) scheef.push(`negatief@${tarief}`);
-      // Hoeveel tarieven zouden onder de PRODUCTformule scheef gaan? Dit getal is het
-      // bewijs dat de sweep de mutatie ook echt pakt, en niet alleen dekt.
-      if (Math.round(q.netCents * tarief) !== bruto - q.netCents) zouBreken.push(tarief);
+      if (q.netCents !== netto) scheef.push(`netto@${tarief}`);
+      if (q.netCents + q.vatCents !== q.grossCents) scheef.push(`som@${tarief}`);
+      if (q.vatCents < 0 || q.grossCents < netto) scheef.push(`negatief@${tarief}`);
     }
-    ok('over 10.001 tarieven telt netto + btw altijd op tot het afgeschreven bedrag',
+    ok('over 10.001 tarieven is netto altijd één euro en telt netto + btw op tot het bruto',
       scheef.length, 0, scheef.slice(0, 5).join(', '));
-    ok('en de productformule zou op duizenden tarieven scheef gaan',
-      zouBreken.length > 1000, true, `${zouBreken.length} tarieven`);
   }
 
-  /* Het Nederlandse geval uitgeschreven, omdat dit het bedrag is dat op de factuur
-     komt te staan en iemand het moet kunnen herkennen zonder te rekenen. */
+  /* Het Nederlandse geval uitgeschreven, omdat dit het bedrag is dat Mollie vraagt
+     en op de factuur komt, en iemand het moet kunnen herkennen zonder te rekenen. */
   const nl = quoteTestSample({ vatRate: 0.21 });
-  ok('nederlands: netto 83 cent', nl.netCents, 83);
-  ok('nederlands: btw 17 cent', nl.vatCents, 17);
-  ok('nederlands: totaal 100 cent', nl.grossCents, 100);
+  ok('nederlands: netto 100 cent', nl.netCents, 100);
+  ok('nederlands: btw 21 cent', nl.vatCents, 21);
+  ok('nederlands: totaal 121 cent', nl.grossCents, 121);
 
-  /* Verlegging en buiten de heffing: de klant betaalt hetzelfde, de verdeling niet. */
+  /* Verlegging en buiten de heffing: de klant betaalt precies de prijs die er staat. */
   const rc = quoteTestSample({ vatRate: 0 });
   ok('verlegd: netto is het hele bedrag', rc.netCents, 100);
   ok('verlegd: geen btw', rc.vatCents, 0);
-  ok('verlegd: de klant betaalt nog steeds één euro', rc.grossCents, 100);
+  ok('verlegd: de klant betaalt één euro', rc.grossCents, 100);
 
   /* Rommel valt terug op het Nederlandse tarief. Een NaN die hier langs komt zou
      grossCents NaN maken en centsToMollieValue() ergens veel verder laten omvallen. */
@@ -136,7 +118,7 @@ console.log('het brutobedrag is €1 en verschuift bij geen enkel tarief');
     const q = quoteTestSample({ vatRate: rommel });
     ok(`rommel ${JSON.stringify(rommel)} valt terug op ${VAT_RATE}`, q.vatRate, VAT_RATE);
     ok(`rommel ${JSON.stringify(rommel)} levert nog steeds een geldig bedrag`,
-      q.netCents + q.vatCents, 100);
+      q.netCents + q.vatCents, q.grossCents);
   }
   ok('geen argument doet hetzelfde', quoteTestSample().vatRate, VAT_RATE);
 }
@@ -147,18 +129,18 @@ console.log('\nhet tarief komt uit dezelfde beslissing als bij elke andere beste
      groot zijn bestelling is. Deze sectie toetst dat de combinatie klopt, want dat
      is waar order.js op vertrouwt. */
   const gevallen = [
-    ['NL, geen nummer', { country: 'NL', vatValid: false }, 83, 17],
-    ['NL, mét nummer (geen binnenlandse verlegging)', { country: 'NL', vatValid: true }, 83, 17],
-    ['DE, bij VIES bevestigd', { country: 'DE', vatValid: true }, 100, 0],
-    ['DE, niet bevestigd', { country: 'DE', vatValid: false }, 83, 17],
-    ['US, buiten de heffing', { country: 'US', vatValid: false }, 100, 0],
-    ['geen land opgegeven', { country: '', vatValid: false }, 83, 17],
+    ['NL, geen nummer', { country: 'NL', vatValid: false }, 21, 121],
+    ['NL, mét nummer (geen binnenlandse verlegging)', { country: 'NL', vatValid: true }, 21, 121],
+    ['DE, bij VIES bevestigd', { country: 'DE', vatValid: true }, 0, 100],
+    ['DE, niet bevestigd', { country: 'DE', vatValid: false }, 21, 121],
+    ['US, buiten de heffing', { country: 'US', vatValid: false }, 0, 100],
+    ['geen land opgegeven', { country: '', vatValid: false }, 21, 121],
   ];
-  for (const [naam, invoer, netto, btw] of gevallen) {
+  for (const [naam, invoer, btw, bruto] of gevallen) {
     const q = quoteTestSample({ vatRate: vatDecision(invoer).rate });
-    ok(`${naam}: netto ${netto}`, q.netCents, netto);
+    ok(`${naam}: netto één euro`, q.netCents, 100);
     ok(`${naam}: btw ${btw}`, q.vatCents, btw);
-    ok(`${naam}: totaal één euro`, q.grossCents, 100);
+    ok(`${naam}: totaal ${bruto}`, q.grossCents, bruto);
   }
 }
 

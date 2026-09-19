@@ -77,7 +77,7 @@
 // point; this file is where it turns into code.
 
 import { hashToken, isWellFormedToken, mintToken, isExpired, pastMaxLife } from './token.js';
-import { notifyRevisionRound } from './notify.js';
+import { notifyRevisionRound, notifyPlanWeekMoved } from './notify.js';
 import { clearUploadRetention } from './retention.js';
 /* De uploadgrenzen uit dezelfde module die /api/upload gebruikt. Zie de kop bij
    stageerFotos(): één lijst met toegestane types, niet twee die uit elkaar
@@ -124,7 +124,7 @@ import { mailNote } from '../data/mailNote.js';
 import { maybeCloseOrder } from './close.js';
 import { issueInvoice } from './invoice.js';
 /* Wat er na de ene revisieronde gebeurt — één bron, zie REVISIEBELEID daar. */
-import { revisiebeleid } from '../data/pricing.js';
+import { revisiebeleid, heeftVoorrang, voorrangZin } from '../data/pricing.js';
 import { feedbackBlock, loadFeedback, handleFeedbackPost } from './feedback.js';
 // Waarom een 303 naar buiten hier niet werkt en een tussenpagina wel: zie de kop
 // van offsite.js. Kort: form-action 'self' in de CSP van deze pagina geldt óók
@@ -165,6 +165,9 @@ import { STOCK_ON_BRAND, STOCK_OFF_BRAND } from '../data/pricing.js';
 import { AMOUNT as BEDRAG, euro as euroBedrag, vatLabel as btwLabel } from '../data/pricing.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
 import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
+import { GARMENTS } from '../data/garments.js';
+/* De vaste look als poort en als feit per product — ronde 4, 19 sept 2026. */
+import { laadLocks, lookCompleet, lookGezet } from './vasteLook.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 import { licenceText } from './scaffold.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
@@ -778,6 +781,7 @@ const COPY = {
     flowNow: {
       awaiting_payment: 'Your order is in, but not paid yet. Once the payment comes through we schedule it in.',
       received: 'We have your order and your files. We are scheduling it in.',
+      request: 'This is a request, not an order yet. We reply in writing with a proposal and a price — usually within a working day.',
       in_production: 'Our studio is making your images.',
       human_check: 'Someone is going through every image before it reaches you.',
       delivered: 'Your images are ready. Look them over and tell us if anything is off.',
@@ -820,9 +824,38 @@ const COPY = {
        niet meer: elke tab is één VRAAG die een abonnee heeft, in de volgorde
        waarin hij ze stelt. Zie de noot bij planTabs() voor waarom het links zijn
        en geen knoppen. */
-    planTabMaand: 'This month',
-    planTabBestellen: 'Order',
+    planTabMaand: 'Overview',
+    planTabBestellen: 'Products',
     planTabEdities: 'Editions',
+    /* ── HET OVERZICHT ALS ÉÉN VERHAAL — 19 september 2026 ──────────────── */
+    planVrijTegel: (n) => `${n} free`,
+    planWeekZin: (start, eind) => `Your next week runs from ${start} to ${eind}.`,
+    planWeekUitleg: 'Everything you confirm before that week is made in that week; anything after goes into the next one. Need something sooner? Pick a date on the product itself.',
+    planWeekVerzet: 'Move week',
+    planWeekDag: 'Starts on the',
+    planWeekOk: 'Your week has been moved. From now on we pick up your list in the new week.',
+    planWeekFoutDag: 'Pick a day between the 1st and the 28th.',
+    planWeekFoutKort: 'That start is within three days — pick a later day, or next month’s.',
+    planWeekFoutPlan: 'Your plan is not running, so the week cannot be moved right now.',
+    planLookStrip: 'Your fixed look',
+    planLookWijzig: 'Change',
+    /* Ronde 4: de look is een POORT — zonder look geen vastzetten — dus "wij
+       kiezen" klopte niet meer. */
+    planLookLeeg: 'not set yet',
+    planEditionsRegel: 'Editions — a monthly set made for your brand, without a product in it — is not live yet.',
+    planEditionsMeer: 'What it will be',
+    planQFotos: (n) => `${n} photo${n === 1 ? '' : 's'}`,
+    planQFotosAdd: 'Add photos',
+    planQType: 'What kind of product',
+    planQSlotFront: 'Front',
+    planQSlotBack: 'Back',
+    planQSlotDetail: 'Detail close-up',
+    planQSlotWorn: 'Worn (optional)',
+    planQSlotExtra: 'More photos (optional)',
+    planQSlotsHint: 'Front, back and a close-up are what a set needs. Worn helps the on-model shot; leave it empty if you do not have it.',
+    planWhenWeek: 'In your week',
+    planWhenWeekSub: 'The default. Confirmed before your week starts, made in that week.',
+    planWhenEarlier: 'Need it sooner? Pick a date',
     /* ── DE GEDEELDE MAANDSET — 4 september 2026 ─────────────────────────
        De STOCK_OFF_BRAND beelden die bij elk abonnement horen. Eén kaart op
        de maand-tab (STOCK-IDEE.md §6), de zip gaat dezelfde weg als een
@@ -977,6 +1010,18 @@ const COPY = {
     planQLockNoPhotos: 'Add photos first — without them we cannot make this product, so it cannot take a slot.',
     planQLockNoSlot: 'No slots left for this type this month. Unlock something, or order it separately.',
     planQLockNoPlan: 'Your plan is not running, so nothing can be confirmed right now.',
+    /* Ronde 4 — de poort op de look, het gezicht per product, meteen vastzetten, de week verzetten. */
+    planQLockNoLook: 'Lock in your look first — for this product that is still open for:',
+    planQLookOpenFor: 'Set your look for',
+    planQFace: 'Face for this product',
+    planQFaceFollow: 'Follow the fixed look',
+    planQFaceOwn: 'Own brand model',
+    planQFaceRoster: 'Standard roster',
+    planQMeteen: 'Lock it straight away (takes one slot now)',
+    planQMeteenHint: 'Needs photos and a fixed look; otherwise it lands on the list as a draft and you lock it later.',
+    planQFaceChange: 'Face',
+    planQFaceSave: 'Save',
+    planWeekWijzig: 'Move your week: pick the day of the month it should start on.',
     planQueueNameMissing: 'Give the product a name, then it can go on the list.',
     planBuiltH: 'What you have built',
     planBuiltEmpty: 'Nothing picked up yet.',
@@ -1282,6 +1327,9 @@ const COPY = {
     flowNow: {
       awaiting_payment: 'Je bestelling is binnen, maar nog niet betaald. Zodra de betaling binnen is, plannen we hem in.',
       received: 'We hebben je bestelling en je bestanden binnen. We plannen hem in.',
+      /* Een aanvraag (video, hooks, editions, eigen look) is nog geen bestelling
+         — tot 19 september 2026 zei de kaart ook daar "we plannen hem in". */
+      request: 'Dit is een aanvraag, nog geen bestelling. We antwoorden schriftelijk met een voorstel en een prijs — meestal binnen een werkdag.',
       in_production: 'Onze studio maakt je beelden.',
       human_check: 'Een specialist loopt elk beeld na voordat het naar je toe gaat.',
       delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
@@ -1313,8 +1361,34 @@ const COPY = {
 
     planHeading: 'Abonnement & facturering',
     /* Zie de noot bij de Engelse planTabMaand. */
-    planTabMaand: 'Deze maand',
-    planTabBestellen: 'Bestellen',
+    planTabMaand: 'Overzicht',
+    planVrijTegel: (n) => `${n} vrij`,
+    planWeekZin: (start, eind) => `Je volgende week loopt van ${start} tot en met ${eind}.`,
+    planWeekUitleg: 'Alles wat je vóór die week vastzet, maken we in die week; wat erna komt, gaat mee in de volgende. Eerder nodig? Kies dan een datum bij het product zelf.',
+    planWeekVerzet: 'Week verzetten',
+    planWeekDag: 'Begint op de',
+    planWeekOk: 'Je week is verzet. Vanaf nu pakken we je lijst in de nieuwe week op.',
+    planWeekFoutDag: 'Kies een dag tussen de 1e en de 28e.',
+    planWeekFoutKort: 'Die start valt binnen drie dagen — kies een latere dag, of die van volgende maand.',
+    planWeekFoutPlan: 'Je abonnement loopt niet, dus de week is nu niet te verzetten.',
+    planLookStrip: 'Je vaste look',
+    planLookWijzig: 'Wijzigen',
+    planLookLeeg: 'nog niet gezet',
+    planEditionsRegel: 'Editions — elke maand een set voor jouw merk, zonder product erin — is nog niet actief.',
+    planEditionsMeer: 'Wat het wordt',
+    planQFotos: (n) => `${n} foto${n === 1 ? '' : '’s'}`,
+    planQFotosAdd: 'Foto’s toevoegen',
+    planQType: 'Wat voor soort product',
+    planQSlotFront: 'Voorkant',
+    planQSlotBack: 'Achterkant',
+    planQSlotDetail: 'Detail-close-up',
+    planQSlotWorn: 'Gedragen (optioneel)',
+    planQSlotExtra: 'Meer foto’s (optioneel)',
+    planQSlotsHint: 'Voorkant, achterkant en een close-up zijn wat een set nodig heeft. Gedragen helpt de foto op model; laat hem leeg als je hem niet hebt.',
+    planWhenWeek: 'In je week',
+    planWhenWeekSub: 'De standaard. Vóór je week vastgezet, in die week gemaakt.',
+    planWhenEarlier: 'Eerder nodig? Kies een datum',
+    planTabBestellen: 'Producten',
     planTabEdities: 'Editions',
     /* Zie de noot bij de Engelse msH. */
     msH: 'De gedeelde set van deze maand',
@@ -1440,6 +1514,17 @@ const COPY = {
     planQLockNoPhotos: 'Zet er eerst foto\u2019s bij — zonder foto\u2019s kunnen we dit product niet maken, dus kan het geen slot kosten.',
     planQLockNoSlot: 'Geen slots meer van deze soort deze maand. Maak er een los, of bestel dit los bij.',
     planQLockNoPlan: 'Je abonnement loopt niet, dus er valt nu niets vast te zetten.',
+    planQLockNoLook: 'Leg eerst je look vast — voor dit product staat die nog open voor:',
+    planQLookOpenFor: 'Leg je look vast voor',
+    planQFace: 'Gezicht voor dit product',
+    planQFaceFollow: 'Volg de vaste look',
+    planQFaceOwn: 'Eigen merkmodel',
+    planQFaceRoster: 'Standaardbibliotheek',
+    planQMeteen: 'Meteen vastzetten (kost nu één slot)',
+    planQMeteenHint: 'Kan alleen met foto’s en een vastgelegde look; anders komt het als concept op de lijst en zet je het later vast.',
+    planQFaceChange: 'Gezicht',
+    planQFaceSave: 'Opslaan',
+    planWeekWijzig: 'Je week verzetten: kies de dag van de maand waarop hij begint.',
     planQueueNameMissing: 'Geef het product een naam, dan kan het op de lijst.',
     planBuiltH: 'Wat je hebt opgebouwd',
     planBuiltEmpty: 'Nog niets opgepakt.',
@@ -1501,6 +1586,11 @@ const COPY = {
 /** orders.status, in words. Mirrors portal.js's/admin.js's own copies. */
 const STATUS = {
   received: { en: 'Received', nl: 'Ontvangen' },
+  /* Geen echte orderstatus (de kolom kent hem niet) maar wel een toestand die
+     de kaart moet kunnen noemen: ontvangen en nog niet betaald. Tot 19
+     september 2026 zei de pil "Ontvangen" naast "Nog niet betaald" en een
+     tijdlijn op "Wacht op betaling" — drie woorden voor één toestand. */
+  awaiting_payment: { en: 'Awaiting payment', nl: 'Wacht op betaling' },
   in_production: { en: 'In production', nl: 'In productie' },
   human_check: { en: 'Being checked', nl: 'Wordt nagekeken' },
   delivered: { en: 'Delivered', nl: 'Geleverd' },
@@ -1529,6 +1619,11 @@ export async function accountGet(context) {
   if (previewMatch) return handleModelPreviewImage(context, Number(previewMatch[1]));
   const stylePreviewMatch = path.match(/^\/account\/styles\/(\d+)\/preview$/);
   if (stylePreviewMatch) return handleModelPreviewImage(context, Number(stylePreviewMatch[1]), 'customer_styles');
+  /* De miniatuur van een product op de abonnementslijst — 19 september 2026.
+     De lijst toonde een merkteken in plaats van de foto die de klant zelf
+     stuurde. Eigendom via de wachtrij: de batch moet bij een rij van deze
+     klant horen; de sleutel komt uit de R2-listing, nooit uit de URL. */
+  if (path === '/account/plan/foto') return handlePlanFoto(context, url);
 
   if (!env?.DB) {
     const lang = negotiate(request);
@@ -1794,6 +1889,7 @@ export async function accountPost(context) {
 
   if (path === '/account/plan/queue') return handlePlanQueue(context, customer);
   if (path === '/account/plan/pause') return handlePlanPause(context, customer);
+  if (path === '/account/plan/week') return handlePlanWeek(context, customer);
   if (path === '/account/plan/cancel') return handlePlanCancel(context, customer);
 
   if (path === '/account/feedback') return handleFeedback(context, customer);
@@ -4995,7 +5091,8 @@ export async function studioAuth(context) {
   if (path === '/account/login' && (method === 'GET' || method === 'HEAD')) {
     const customer = await currentCustomer(env, request);
     if (customer) return seeOther('/account');
-    return authPage(ctx, { view: 'login', lang: negotiate(request) });
+    const na = url.searchParams.get('na') === 'abonnement' ? 'abonnement' : '';
+    return authPage(ctx, { view: 'login', lang: negotiate(request), na });
   }
   if (path === '/account/login' && method === 'POST') return handleLoginPost(ctx);
   if (path === '/account/code' && method === 'POST') return handleCodePost(ctx);
@@ -5780,12 +5877,18 @@ function brandKitRegels(t, lang, models, lockByStyle, metClips) {
     /* `label` ("4:5") en niet `ratio` ("4x5"): dat eerste is de vorm die een merk
        zelf gebruikt, het tweede is hoe het in de database staat. */
     const ratio = lock.ratio ? ratioById(lock.ratio) : null;
-    const delen = [gezicht, bgNaam, ratio ? ratio.label : ''].filter(Boolean);
+    /* De huisstijl bij lifestyle hoort in de regel: dat is sinds ronde 4 wat
+       "gezet" betekent voor die dienst (zie vasteLook.js). */
+    const lookNaam = stijl === 'lifestyle' ? (lookById(String(lock.look || ''), lang)?.name || '') : '';
+    const delen = [lookNaam, gezicht, bgNaam, ratio ? ratio.label : ''].filter(Boolean);
     regels.push({
       stijl,
       label: serviceLabel(stijl, lang),
       waarde: delen.length ? delen.join(' · ') : '',
-      compleet: Boolean(gezicht || bgNaam),
+      /* Dezelfde maat als de poort in queueLock(): catalog = achtergrond,
+         lifestyle = huisstijl, video = de rij bestaat. Eerst gold "gezicht óf
+         achtergrond", en dan zei de kaart "af" terwijl vastzetten weigerde. */
+      compleet: lookGezet(lock.style ? lock : (Object.keys(lock).length ? { ...lock, style: stijl } : null), stijl),
     });
   }
   return regels;
@@ -5875,7 +5978,17 @@ function brandKitRegels(t, lang, models, lockByStyle, metClips) {
    met opzet: het is het tweede antwoord op "ik wil er iets bij" en hoort dus
    naast het eerste te staan, niet achter "wat ligt er vast" waar niemand meer
    kijkt. Facturering blijft de laatste, om de reden in de kop hierboven. */
-const PLAN_TABS = ['maand', 'bestellen', 'edities', 'look', 'facturering'];
+/* ── DRIE TABBEN, SINDS 19 SEPTEMBER 2026 ────────────────────────────────────
+   Uit de doorlichting: vijf tabben plus twee zijbalkpagina's die elkaar
+   overlapten ("Je look" hier én "Je vaste look" in de zijbalk; "Editions" als
+   tab voor iets wat nog niet bestaat; "Facturering" naast "Facturen"). Lucas:
+   *"het is nu totaal onlogisch"*. Wat overblijft is de volgorde van de vragen
+   van een abonnee: wat heb ik deze maand (overzicht), wat laat ik maken
+   (producten), wat betaal ik (facturering). De look staat als regel op het
+   overzicht met een link naar de zijbalkpagina; Editions is één regel daar.
+   Oude links met ?tab=look of ?tab=edities landen op het overzicht. */
+const PLAN_TABS = ['maand', 'bestellen', 'facturering'];
+const PLAN_TAB_OUD = { look: 'maand', edities: 'maand' };
 
 /** Een datum als "30 september" / "30 September" — kort, zonder jaar. */
 function datumKort(iso, lang) {
@@ -5989,7 +6102,7 @@ function planWanneer(q, t, lang) {
   if (q.window_start && q.window_end) {
     return `${shortDate(q.window_start, lang)} ${lang === 'nl' ? 'of' : 'or'} ${shortDate(q.window_end, lang)}`;
   }
-  return t.planWhenAsap;
+  return t.planWhenWeek;
 }
 
 /* ── DE GEDEELDE MAANDSET — 4 september 2026 ─────────────────────────────────
@@ -6135,21 +6248,71 @@ function dagVanDeMaand(dag, lang) {
  * De limieten komen uit src/lib/uploads.js, dezelfde module die /api/upload
  * gebruikt. Geen tweede lijst met toegestane types die uit elkaar kan lopen.
  */
-async function stageerFotos(env, files) {
-  if (!env?.UPLOADS || !files.length) return '';
-  const bruikbaar = files.filter((f) => f && typeof f.arrayBuffer === 'function' && f.size > 0);
-  if (!bruikbaar.length) return '';
+/**
+ * De miniatuur van één foto uit een wachtrij-batch. `?b=<batch>&n=<1..>`.
+ * Alleen voor de ingelogde eigenaar van die rij; 404 in elk ander geval, ook
+ * als de batch bestaat — een batchkenmerk is geen bewijs van eigendom.
+ */
+async function handlePlanFoto({ request, env }, url) {
+  const customer = await currentCustomer(env, request);
+  if (!customer) return new Response('Not found', { status: 404 });
+  const batch = String(url.searchParams.get('b') || '').trim();
+  const n = Math.max(1, Number.parseInt(url.searchParams.get('n') || '1', 10) || 1);
+  if (!batch || !/^[A-Za-z0-9_-]{4,64}$/.test(batch) || !env?.UPLOADS) return new Response('Not found', { status: 404 });
+  const rij = await env.DB.prepare(
+    'SELECT id FROM plan_queue WHERE customer_id = ?1 AND upload_batch = ?2 LIMIT 1'
+  ).bind(customer.customer_id, batch).first().catch(() => null);
+  if (!rij) return new Response('Not found', { status: 404 });
+  let lijst;
+  try { lijst = await env.UPLOADS.list({ prefix: batchPrefix(batch), limit: MAX_BATCH_FILES + 1 }); } catch { lijst = null; }
+  const sleutels = (lijst?.objects || []).map((o) => o.key).sort();
+  const sleutel = sleutels[n - 1];
+  if (!sleutel) return new Response('Not found', { status: 404 });
+  const obj = await env.UPLOADS.get(sleutel).catch(() => null);
+  if (!obj) return new Response('Not found', { status: 404 });
+  return new Response(obj.body, {
+    status: 200,
+    headers: {
+      'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
+      'cache-control': 'private, max-age=600',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+}
 
-  const batch = mintBatch();
+/**
+ * Foto's van een wachtrij-product in R2 zetten.
+ *
+ * Sinds 19 september 2026 met twee opties: `batch` om bij een BESTAANDE batch
+ * aan te vullen ("Foto's toevoegen" op de lijst), en `slot` per bestand — de
+ * naam krijgt dan het vak ervoor (voorkant--, achterkant--, detail--,
+ * gedragen--), zodat de studio op de bestandenpagina ziet welke foto wat is.
+ * `files` mag daarom ook een lijst van { file, slot } zijn.
+ */
+async function stageerFotos(env, files, { batch: bestaand = '' } = {}) {
+  if (!env?.UPLOADS || !files.length) return '';
+  const genormaliseerd = files.map((f) => (f && f.file ? f : { file: f, slot: '' }));
+  const bruikbaar = genormaliseerd.filter(({ file: f }) => f && typeof f.arrayBuffer === 'function' && f.size > 0);
+  if (!bruikbaar.length) return bestaand || '';
+
+  const batch = bestaand || mintBatch();
   const prefix = batchPrefix(batch);
   let gezet = 0;
+  let vanaf = 0;
+  if (bestaand) {
+    try {
+      const lijst = await env.UPLOADS.list({ prefix, limit: MAX_BATCH_FILES + 1 });
+      vanaf = (lijst?.objects || []).length;
+    } catch { vanaf = 0; }
+  }
 
-  for (const [i, f] of bruikbaar.slice(0, MAX_BATCH_FILES).entries()) {
+  for (const [j, { file: f, slot }] of bruikbaar.slice(0, Math.max(0, MAX_BATCH_FILES - vanaf)).entries()) {
+    const i = vanaf + j;
     /* Dezelfde vier controles als /api/upload, in dezelfde volgorde: te groot,
        onbekend type, leeg. Een bestand dat afvalt stopt de rest niet — elf goede
        foto's en één pdf hoort elf foto's op te leveren, niet nul. */
     if (f.size > MAX_FILE_BYTES) continue;
-    const naam = safeName(f.name || `foto-${i + 1}`);
+    const naam = safeName(`${slot ? `${slot}--` : ''}${f.name || `foto-${i + 1}`}`);
     const type = typeFor(naam);
     if (!type) continue;
     const sleutel = `${prefix}${String(i + 1).padStart(3, '0')}-${Math.random().toString(36).slice(2, 8)}-${naam}`;
@@ -6165,7 +6328,44 @@ async function stageerFotos(env, files) {
   }
   /* GEEN KENMERK ALS ER NIETS STAAT. Zie de kop: een kenmerk zonder bytes is
      erger dan geen kenmerk, want dan denkt de wachtrij dat het item klaar is. */
-  return gezet ? batch : '';
+  return (gezet || bestaand) ? batch : '';
+}
+
+/** De fotovelden van het lijstformulier, per vak, in de volgorde van de set. */
+function fotoVelden(form) {
+  if (!form) return [];
+  const uit = [];
+  const vakken = [['fotos_voorkant', 'voorkant'], ['fotos_achterkant', 'achterkant'], ['fotos_detail', 'detail'], ['fotos_gedragen', 'gedragen'], ['fotos', '']];
+  for (const [veld, slot] of vakken) {
+    const lijst = typeof form.getAll === 'function' ? form.getAll(veld) : [];
+    for (const f of lijst) {
+      if (f && typeof f === 'object' && f.size > 0) uit.push({ file: f, slot });
+    }
+  }
+  return uit;
+}
+
+/* De reden van queueLock() als ?fout=-sleutel. Vier redenen, vier handelingen
+   voor de klant; 'locklook' is nieuw sinds ronde 4 (zie vasteLook.js). */
+function lockFout(uit) {
+  return uit?.reden === 'geen-fotos' ? 'lockfoto'
+    : uit?.reden === 'geen-slot' ? 'lockslot'
+      : uit?.reden === 'geen-look' ? 'locklook'
+        : 'lockplan';
+}
+
+/* Een gezicht uit het productvak, getoetst: 'c12' alleen als custom_models #12
+   van deze klant is, 'ava' alleen als hij in de bibliotheek staat, anders null
+   (= volg de vaste look). Dezelfde toets als handleLockUpdate(). */
+async function gezichtGeldig(env, customerId, ruw) {
+  const v = String(ruw || '').trim();
+  if (!v) return null;
+  if (/^c\d+$/.test(v)) {
+    const owned = await env.DB.prepare('SELECT id FROM custom_models WHERE id = ?1 AND customer_id = ?2')
+      .bind(Number(v.slice(1)), customerId).first().catch(() => null);
+    return owned ? v : null;
+  }
+  return ROSTER.some((m) => modelId(m.name) === v.toLowerCase()) ? v.toLowerCase() : null;
 }
 
 async function handlePlanQueue({ request, env }, customer) {
@@ -6192,8 +6392,7 @@ async function handlePlanQueue({ request, env }, customer) {
     if ((await loadQueue(env, customer.customer_id)).length >= queueMax()) {
       return seeOther(`${lijst}&fout=vol`);
     }
-    const files = form ? form.getAll('fotos').filter((f) => f && typeof f === 'object' && f.size >= 0) : [];
-    const uploadBatch = await stageerFotos(env, files);
+    const uploadBatch = await stageerFotos(env, fotoVelden(form));
     /* En dan nog steeds kijken wat queueAdd zegt. De controle hierboven scheelt
        een nutteloze upload, maar hij is geen garantie — tussen die twee regels
        kan een tweede tabblad hetzelfde formulier posten. De weigering van
@@ -6208,18 +6407,64 @@ async function handlePlanQueue({ request, env }, customer) {
     const kanKiezen = Object.keys(bundelVoor(abo?.sub));
     const gevraagd = String(form?.get('kind') || '');
     const soort = kanKiezen.includes(gevraagd) ? gevraagd : (kanKiezen[0] || 'complete');
+    /* De productsoort gaat vóór de notitie in `note`: plan_queue heeft er geen
+       kolom voor, en de studio leest de notitie op de bestandenpagina. Zo
+       staat "Jas of mantel — rits aan de linkerkant" op één regel. */
+    const soortId = String(form?.get('soort') || '');
+    const soortNaam = GARMENTS.find((g) => g.id === soortId)?.name?.nl || '';
+    const notitie = String(form?.get('note') || '').trim();
     const rij = await queueAdd(env, customer.customer_id, {
       name: naam,
-      note: String(form?.get('note') || ''),
+      note: [soortNaam, notitie].filter(Boolean).join(' — '),
       uploadBatch,
       kind: soort,
+      /* Het gezicht per product (migratie 0050), getoetst zoals bij de vaste
+         look: een eigen model alleen als het van deze klant is, een naam uit
+         de bibliotheek alleen als hij bestaat. Leeg = volg de vaste look. */
+      model: await gezichtGeldig(env, customer.customer_id, String(form?.get('model') || '')),
     });
     if (!rij) return seeOther(`${lijst}&fout=vol`);
+    /* ── TOEVOEGEN ÉN VASTZETTEN IN ÉÉN KEER — ronde 4, 19 september 2026 ──
+       Lucas: *"abonnees sneller te laten bestellen."* Eén vinkje op het
+       productvak; de poort van queueLock() (foto's, look, slot, abonnement)
+       beslist net als bij de losse knop, en zegt via ?fout= waarom het niet
+       kon — het product staat dan gewoon als concept op de lijst. */
+    if (String(form?.get('meteen') || '') === '1') {
+      const uit = await queueLock(env, customer.customer_id, rij.id);
+      if (!uit.ok) return seeOther(`${lijst}&fout=${lockFout(uit)}`);
+    }
+    return seeOther(lijst);
+  }
+
+  /* ── HET GEZICHT VAN ÉÉN PRODUCT WIJZIGEN — ronde 4 ───────────────────────
+     Alleen op een concept: een vastgezet product is al geboekt en de studio
+     kan er al mee bezig zijn. */
+  if (doen === 'model') {
+    const id0 = Number.parseInt(String(form?.get('id') || ''), 10);
+    if (Number.isInteger(id0)) {
+      const gezicht = await gezichtGeldig(env, customer.customer_id, String(form?.get('model') || ''));
+      await env.DB.prepare('UPDATE plan_queue SET model = ?2 WHERE id = ?1 AND customer_id = ?3 AND locked_at IS NULL AND taken_at IS NULL')
+        .bind(id0, gezicht, customer.customer_id).run().catch(() => {});
+    }
     return seeOther(lijst);
   }
 
   const id = Number.parseInt(String(form?.get('id') || ''), 10);
   if (!Number.isInteger(id)) return seeOther(lijst);
+
+  /* ── FOTO'S ERBIJ, LATER — 19 september 2026 ──────────────────────────────
+     De lijst zei "mag ook later" maar had daar geen knop voor. Aanvullen in
+     dezelfde batch; heeft de rij nog geen batch, dan krijgt hij er nu een. */
+  if (doen === 'fotos') {
+    const eigen = (await loadQueue(env, customer.customer_id)).find((q) => q.id === id);
+    if (!eigen) return seeOther(lijst);
+    const batch = await stageerFotos(env, fotoVelden(form), { batch: String(eigen.upload_batch || '').trim() });
+    if (batch && batch !== String(eigen.upload_batch || '')) {
+      await env.DB.prepare('UPDATE plan_queue SET upload_batch = ?2 WHERE id = ?1 AND customer_id = ?3')
+        .bind(id, batch, customer.customer_id).run().catch(() => {});
+    }
+    return seeOther(lijst);
+  }
 
   if (doen === 'remove') {
     await queueRemove(env, customer.customer_id, id);
@@ -6288,10 +6533,7 @@ async function handlePlanQueue({ request, env }, customer) {
   if (doen === 'lock') {
     const uit = await queueLock(env, customer.customer_id, id);
     if (uit.ok) return seeOther(lijst);
-    const reden = uit.reden === 'geen-fotos' ? 'lockfoto'
-      : uit.reden === 'geen-slot' ? 'lockslot'
-        : 'lockplan';
-    return seeOther(`${lijst}&fout=${reden}`);
+    return seeOther(`${lijst}&fout=${lockFout(uit)}`);
   }
 
   if (doen === 'unlock') {
@@ -6360,6 +6602,40 @@ async function handlePlanPause({ request, env }, customer) {
     await pauseSubscription(env, state.sub.id, 'customer');
   }
   return seeOther(home);
+}
+
+/**
+ * ── DE WEEK VERZETTEN, DOOR DE KLANT ZELF — ronde 4, 19 september 2026 ─────
+ *
+ * Lucas: *"Week verzetten door de klant zelf."* De dag is `window_day` (1–28,
+ * zie migratie 0030): de dag van de maand waarop zijn week begint. Er is geen
+ * capaciteitspoort op deze dag — die zit op de items zelf (queueWindow /
+ * windowFor tegen de agenda) en op het aantal abonnementen (bezetting()).
+ * Wat er wél is: een ondergrens van drie dagen vooruit als de nieuwe week
+ * eerder in de maand valt dan vandaag, zodat de weekmail (vijf dagen vooraf)
+ * niet in het verleden komt te liggen en de studio niet morgen ineens een
+ * week begint. En een bericht naar de studio, zodat het niet stil gebeurt.
+ */
+async function handlePlanWeek({ request, env }, customer) {
+  const form = await request.formData().catch(() => null);
+  const home = '/account/plan';
+  const state = await planState(env, customer.customer_id);
+  if (!state.sub) return seeOther(home);
+  if (state.sub.status !== 'active') return seeOther(`${home}?fout=weekplan`);
+  const dag = Number.parseInt(String(form?.get('dag') || ''), 10);
+  if (!Number.isInteger(dag) || dag < 1 || dag > 28) return seeOther(`${home}?fout=weekdag`);
+  const was = Number(state.sub.window_day) || 0;
+  if (dag === was) return seeOther(home);
+  /* Drie dagen vooruit als de nieuwe start nog deze maand valt. */
+  const vandaag = new Date().getUTCDate();
+  if (dag >= vandaag && dag < vandaag + 3) return seeOther(`${home}?fout=weekkort`);
+  const gezet = await env.DB.prepare(
+    "UPDATE subscriptions SET window_day = ?2, updated_at = datetime('now') WHERE id = ?1 AND customer_id = ?3 RETURNING id"
+  ).bind(state.sub.id, dag, customer.customer_id).first().catch(() => null);
+  if (!gezet) return seeOther(`${home}?fout=weekplan`);
+  console.log('[abonnement] week verzet', state.sub.ref, 'van', was, 'naar', dag);
+  await notifyPlanWeekMoved(env, { subRef: state.sub.ref, brand: customer.brand, email: customer.email, van: was, naar: dag });
+  return seeOther(`${home}?ok=week`);
 }
 
 /**
@@ -6687,7 +6963,10 @@ export function progressView(t, lang, o, events = []) {
 
   // Wat er nu gebeurt, plus het venster als dat bekend is — een belofte met een
   // datum eraan is een ander bericht dan dezelfde belofte zonder.
-  const now = unpaid ? t.flowNow.awaiting_payment : (t.flowNow[status] || t.flowNow.received);
+  const isAanvraag = (() => {
+    try { const d = JSON.parse(o.details_json || '{}') || {}; return status === 'received' && !!String(d.request || '').trim(); } catch { return false; }
+  })();
+  const now = unpaid ? t.flowNow.awaiting_payment : isAanvraag ? t.flowNow.request : (t.flowNow[status] || t.flowNow.received);
   const when = !cancelled && status !== 'delivered' && o.window_start
     ? ` ${t.flowWindow(shortDate(o.window_start, lang), shortDate(o.window_end || o.window_start, lang))}`
     : '';
@@ -7734,7 +8013,18 @@ export async function studioSection(context) {
   }
   maybeSweep(context, env);
   const customer = await currentCustomer(env, request);
-  if (!customer) return seeOther('/account/login');
+  if (!customer) {
+    /* ── TERUG VAN MOLLIE ZONDER SESSIE — 19 september 2026 ─────────────────
+       Een nieuwe abonnee betaalt zijn eerste maand, komt terug op
+       /account/plan/return en heeft nog nooit ingelogd — dus landde hij op een
+       kale inlogkaart zonder één woord over de betaling. Wie net €956 heeft
+       overgemaakt, denkt dan dat er iets mis is. De omleiding neemt nu mee
+       waar hij vandaan kwam, en de inlogkaart zegt dat de betaling gelukt is
+       en waarom er ingelogd moet worden. */
+    let na = '';
+    try { na = new URL(request.url).pathname.replace(/\/+$/, '').endsWith('/plan/return') ? '?na=abonnement' : ''; } catch { na = ''; }
+    return seeOther('/account/login' + na);
+  }
   return sectionState(context, customer);
 }
 
@@ -7877,6 +8167,9 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
   );
   const openNow = index === 0 || needsAttention || Number(openOrderId) === Number(o.id);
   const unpaidMoney = String(o.payment_status || 'unpaid') !== 'paid' ? orderMoney(o) : null;
+  /* Dezelfde toestand als de tijdlijn (zie flowView): ontvangen, met een
+     bedrag, en nog niet betaald. */
+  const unpaid = o.status !== 'cancelled' && o.status === 'received' && !!unpaidMoney;
   const items = o.product_count
     ? (lang === 'nl'
       ? `${o.product_count} ${Number(o.product_count) === 1 ? 'product' : 'prod.'}`
@@ -7891,7 +8184,11 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
   const stepIdx = FLOW.indexOf(o.status || 'received');
   const mini = o.status === 'cancelled' ? [] : FLOW.map((key, i) => (i < stepIdx ? 'done' : i === stepIdx ? 'now' : 'todo'));
   const window = o.window_start ? `${o.window_start} → ${o.window_end || '—'}` : t.windowPending;
-  const windowLine = (o.window_start || o.tier === 'attended') ? `${t.fWindow}: ${window}` : t.fQueue;
+  /* Voorrang (19 september 2026): tot vandaag zei de kaart "Normale
+     doorlooptijd" tegen een klant die de toeslag betaald had. */
+  const windowLine = (o.window_start || o.tier === 'attended')
+    ? `${t.fWindow}: ${window}`
+    : heeftVoorrang(o) ? `${voorrangZin(lang)}.` : t.fQueue;
 
   /* De revisieronde, als toestand — dezelfde drie takken als revisionRound(). */
   const stand = revisionRoundState(o);
@@ -7908,7 +8205,8 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
 
   const grouped = groupByProduct(delivered, uploaded);
   return {
-    id: o.id, ref: o.ref, status: o.status, statusLabel: statusLabel(o.status, lang) || o.status,
+    id: o.id, ref: o.ref, status: unpaid ? 'awaiting_payment' : o.status,
+    statusLabel: statusLabel(unpaid ? 'awaiting_payment' : o.status, lang) || o.status,
     bits, mini, openNow, windowLine,
     payment: paymentView(t, lang, o),
     progress: progressView(t, lang, o, events),
@@ -8083,14 +8381,17 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     tab = u.searchParams.get('tab') || 'maand';
     kies = Number.parseInt(u.searchParams.get('kies') || '', 10);
   } catch { /* geen geldige URL */ }
-  const nu = PLAN_TABS.includes(tab) ? tab : 'maand';
+  const nu = PLAN_TABS.includes(tab) ? tab : (PLAN_TAB_OUD[tab] || 'maand');
 
   const planStatus = !state?.sub ? '' : (state.sub.status === 'active' ? t.planStatusActive
     : state.sub.status === 'pending' ? t.planStatusPending
       : state.sub.status === 'cancelled' ? t.planStatusEnding
         : state.sub.pause_reason === 'payment_failed' ? t.planStatusFailed
           : t.planStatusPaused);
-  const melding = { stoppen: t.planStopFail, hervatten: t.planResumeFail, vol: t.planQueueFull, naam: t.planQueueNameMissing, lockfoto: t.planQLockNoPhotos, lockslot: t.planQLockNoSlot, lockplan: t.planQLockNoPlan }[fout] || '';
+  let ok = '';
+  try { ok = new URL(request.url).searchParams.get('ok') || ''; } catch { /* geen */ }
+  const melding = { stoppen: t.planStopFail, hervatten: t.planResumeFail, vol: t.planQueueFull, naam: t.planQueueNameMissing, lockfoto: t.planQLockNoPhotos, lockslot: t.planQLockNoSlot, lockplan: t.planQLockNoPlan, locklook: t.planQLockNoLook, weekdag: t.planWeekFoutDag, weekkort: t.planWeekFoutKort, weekplan: t.planWeekFoutPlan }[fout] || '';
+  const bevestiging = { week: t.planWeekOk }[ok] || '';
   const startComplete = lang === 'nl' ? '/nl/start/complete' : '/start/complete';
   const account = { h: t.planAccountLabel, email: customer.email, brand: customer.brand || '', note: t.planNote, emailLabel: t.planEmailLabel, brandLabel: t.planBrandLabel };
 
@@ -8106,6 +8407,19 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   const vorm = subscriptionShape(state.sub);
   const bk = brandKitRegels(t, lang, models, lockByStyle, vorm.clips > 0);
   const bkOnaf = bk.filter((r) => !r.compleet);
+  /* De poort per soort (ronde 4): welke dienst(en) nog geen look hebben. Zelfde
+     toets als queueLock(), zodat de knop op het scherm zegt wat de server
+     straks ook zegt. `lockByStyle` is dezelfde tabel; laadLocks() leest hem
+     opnieuw met de labels van de eigen modellen erbij. */
+  const locks = await laadLocks(env, customer.customer_id);
+  const lookOpen = (kind) => lookCompleet(locks, kind).ontbreekt.map((s) => ({ stijl: s, label: serviceLabel(s, lang), href: `/account/brand-kit#bk-${s}` }));
+  /* De gezichten waaruit een product kan kiezen: eigen modellen eerst, dan de
+     bibliotheek — dezelfde waarden als het bestelformulier post. */
+  const gezichten = [
+    ...models.filter((m) => m.status !== 'hidden').map((m) => ({ value: `c${m.id}`, label: m.label || t.planQFaceOwn, groep: t.planQFaceOwn })),
+    ...ROSTER.map((m) => ({ value: modelId(m.name), label: m.name, groep: t.planQFaceRoster })),
+  ];
+  const gezichtNaam = (v) => gezichten.find((g) => g.value === String(v || ''))?.label || '';
   const productSoorten = Object.keys(bundelVoor(state.sub)).filter((k) => PRODUCT_SLOT_KINDS.includes(k));
   const elkProduct = productSoorten.length > 0 && productSoorten.every((k) => k === PLAN_SERVICE);
 
@@ -8132,21 +8446,37 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     return { value: k, label: `${kindLabel(k, lang)}${b ? ` (${b.saldo} ${t.planQueueKindLeft})` : ''}` };
   }) : null;
   const vastgezet = state.wachtrij.filter((q) => q.locked_at).length;
+  /* Hoeveel foto's er per product staan, en de eerste als miniatuur. Eén
+     R2-listing per product met een batch; zonder batch niets. Faalt de
+     listing, dan telt het als "foto's toegevoegd" zonder aantal. */
+  const fotoTelling = new Map();
+  for (const q of state.wachtrij) {
+    const batch = String(q.upload_batch || '').trim();
+    if (!batch || !env?.UPLOADS) continue;
+    try {
+      const lijst = await env.UPLOADS.list({ prefix: batchPrefix(batch), limit: MAX_BATCH_FILES + 1 });
+      fotoTelling.set(q.id, (lijst?.objects || []).length);
+    } catch { /* geen telling */ }
+  }
   const wachtrij = state.wachtrij.map((q, i) => ({
     id: q.id, name: q.name, note: q.note || '', fotos: Boolean(q.upload_batch),
-    fotosLabel: q.upload_batch ? t.planQPhotos : t.planQNoPhotos,
+    fotosN: fotoTelling.get(q.id) ?? null,
+    thumb: q.upload_batch && (fotoTelling.get(q.id) ?? 1) > 0 ? `/account/plan/foto?b=${encodeURIComponent(String(q.upload_batch))}&n=1` : '',
+    fotosLabel: q.upload_batch ? (fotoTelling.has(q.id) ? t.planQFotos(fotoTelling.get(q.id)) : t.planQPhotos) : t.planQNoPhotos,
     soort: soorten.length > 1 ? kindLabel(q.kind, lang) : '',
     vast: Boolean(q.locked_at), merk: q.locked_at ? t.planQLocked : t.planQConcept,
     wanneer: planWanneer(q, t, lang), wanneerVast: Boolean(q.window_start), kiesHref: `/account/plan?tab=bestellen&kies=${q.id}`,
     lockLabel: q.locked_at ? t.planQUnlock : t.planQLock, lockDo: q.locked_at ? 'unlock' : 'lock',
-    lockUit: !q.locked_at && !String(q.upload_batch || '').trim(),
+    lockUit: !q.locked_at && (!String(q.upload_batch || '').trim() || lookOpen(q.kind).length > 0),
+    lookOpen: q.locked_at ? [] : lookOpen(q.kind),
+    gezicht: gezichtNaam(q.model), gezichtWaarde: String(q.model || ''),
     eerste: i === 0, laatste: i === state.wachtrij.length - 1,
   }));
   const wachtrijNoot = state.wachtrij.length
     ? (state.sub.window_day
       ? (lang === 'nl'
-        ? (vastgezet ? `In je week pakken we de ${vastgezet} vastgezette ${vastgezet === 1 ? 'product' : 'producten'} op. Een concept blijft staan tot je het zelf vastzet.` : 'Er staat nog niets vastgezet. Zet vast wat je deze maand gemaakt wilt hebben — dan pakken we het in je week op.')
-        : (vastgezet ? `In your week we pick up the ${vastgezet} locked ${vastgezet === 1 ? 'product' : 'products'}. A draft stays on the list until you lock it.` : 'Nothing is locked yet. Lock what you want made this month and we pick it up in your week.'))
+        ? (vastgezet ? (vastgezet === 1 ? 'In je week pakken we het vastgezette product op. Een concept blijft staan tot je het zelf vastzet.' : `In je week pakken we de ${vastgezet} vastgezette producten op. Een concept blijft staan tot je het zelf vastzet.`) : 'Er staat nog niets vastgezet. Zet vast wat je deze maand gemaakt wilt hebben — dan pakken we het in je week op.')
+        : (vastgezet ? (vastgezet === 1 ? 'In your week we pick up the locked product. A draft stays on the list until you lock it.' : `In your week we pick up the ${vastgezet} locked products. A draft stays on the list until you lock it.`) : 'Nothing is locked yet. Lock what you want made this month and we pick it up in your week.'))
       : t.planWindowNone)
     : '';
 
@@ -8223,6 +8553,26 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     const inWeek = venster && d >= venster && d < venster + 7;
     return { n: d, start: d === venster, week: Boolean(inWeek), vandaag: d === vandaagDag };
   });
+  /* ── DE VRIJE SLOTS ALS ÉÉN TEGEL, DE WEEK ALS ÉÉN ZIN — 19 september 2026 ──
+     Twaalf plus-tegels lazen als twaalf uploadvakken (doorlichting), en een
+     strook van 28 dagnummers zonder maandnaam zei niet wanneer "de 8e" dan
+     was. De gemaakte en vastgezette frames blijven (dat is echt werk); de vrije
+     worden één tegel met het aantal, en de week wordt de eerstvolgende echte
+     datum. */
+  for (const sl of slots) {
+    sl.vrij = sl.frames.filter((fr) => fr.kind === 'vrij').length;
+    sl.frames = sl.frames.filter((fr) => fr.kind !== 'vrij');
+  }
+  let weekZin = '';
+  if (venster) {
+    const nuD = new Date(`${vandaagIso}T12:00:00Z`);
+    let jaar = nuD.getUTCFullYear();
+    let maand = nuD.getUTCMonth();
+    if (vandaagDag >= venster + 7) { maand += 1; if (maand > 11) { maand = 0; jaar += 1; } }
+    const startD = new Date(Date.UTC(jaar, maand, venster));
+    const eindD = new Date(Date.UTC(jaar, maand, venster + 6));
+    weekZin = t.planWeekZin(datumKort(startD.toISOString().slice(0, 10), lang), datumKort(eindD.toISOString().slice(0, 10), lang));
+  }
 
   return {
     geen: false, melding, nu, weekstrip, venster,
@@ -8245,11 +8595,16 @@ export async function planView(env, request, t, lang, customer, models = [], loc
       slots, elkProduct, betaald: Boolean(state.betaald), startComplete,
     },
     week: state.sub.window_day ? dagVanDeMaand(state.sub.window_day, lang) : '',
+    weekZin, weekDag: Number(state.sub.window_day) || 0, weekDagen: Array.from({ length: 28 }, (_, i) => i + 1),
+    weekVerzetbaar: state.sub.status === 'active',
+    bevestiging,
+    gezichten, gezichtGroepen: [t.planQFaceOwn, t.planQFaceRoster].filter((g) => gezichten.some((x) => x.groep === g)),
+    soortProduct: GARMENTS.map((g) => ({ value: g.id, label: g.name[lang === 'nl' ? 'nl' : 'en'] })),
     maandset,
     wachtrij, wachtrijNoot, soortKeuze, soortEnkel: soorten[0] || 'complete',
     kalender,
     edities: { beelden: EDITIE_BEELDEN.map(([naam, alt]) => ({ src: `/img/${naam}-w380.webp`, alt })), mailto: `mailto:hello@visuails.com?subject=${encodeURIComponent(t.edMailSubject)}` },
-    look: bk.map((r) => ({ label: r.label, waarde: r.waarde || '' })),
+    look: bk.map((r) => ({ label: r.label, waarde: r.waarde || '', stijl: r.stijl })),
     opgebouwd: { geleverd, beelden: files.length, sinds: state.sub.started_at ? `${maandNaam(String(state.sub.started_at).slice(0, 7), lang)} ${String(state.sub.started_at).slice(0, 4)}` : '', opgehaald: state.opgehaald.map((o) => ({ name: o.name, ref: o.order_ref || '' })) },
     beheer: {
       term: state.sub.term === 'yearly' ? t.planBillingYearly : t.planBillingMonthly, bedrag: `${money(subMaandBruto(state.sub), lang)} ${btwLabel('incl', lang)}`, status: planStatus,

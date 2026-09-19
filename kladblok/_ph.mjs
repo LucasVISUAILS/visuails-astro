@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1200, height: 900 } });
+await p.goto('http://127.0.0.1:4399/nl/catalog/', { waitUntil: 'networkidle' });
+await p.addStyleTag({ content: '.reveal.pending{opacity:1!important;transform:none!important}' });
+const el = p.locator('.ph').first();
+await el.scrollIntoViewIfNeeded();
+await el.screenshot({ path: '/tmp/ph.png' });
+await p.goto('http://127.0.0.1:4399/nl/', { waitUntil: 'networkidle' });
+await p.addStyleTag({ content: '.reveal.pending{opacity:1!important;transform:none!important}' });
+const lb = p.locator('.lb').first();
+await lb.scrollIntoViewIfNeeded();
+await lb.screenshot({ path: '/tmp/lb.png' });
+await b.close();

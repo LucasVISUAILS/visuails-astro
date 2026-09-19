@@ -49,6 +49,11 @@ const titel = view.view === 'check' ? t.checkTitle : view.view === 'badlink' ? t
     </Fragment>
   ) : (
     <Fragment>
+      {view.na === 'abonnement' && (
+        <p class="st-gelukt" role="status">{lang === 'nl'
+          ? 'Je betaling is gelukt en je abonnement staat klaar. Log in met het e-mailadres van je abonnement — dan zie je hem meteen.'
+          : 'Your payment went through and your plan is ready. Sign in with the email address of your plan and you will see it right away.'}</p>
+      )}
       <h1>{view.view === 'badlink' ? t.badLinkTitle : t.loginTitle}</h1>
       <p class="st-lede">{view.view === 'badlink' ? t.badLinkBody : t.loginLede}</p>
       {view.error && <p class="st-fout" role="alert">{view.error}</p>}

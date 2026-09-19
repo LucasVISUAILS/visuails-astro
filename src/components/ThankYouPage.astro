@@ -48,8 +48,6 @@ import {
 import { mailNote } from '../data/mailNote.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
-import LaptopCarousel from './LaptopCarousel.astro';
-import { laptopSlides } from '../data/laptopSlides.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -99,11 +97,26 @@ const PLAN_REGEL = nl ? {
 
 const c = nl ? {
   title: 'Bedankt — we hebben je aanvraag.',
+  /* ── DE KOP ZEGT WAT ER NOG MOET GEBEUREN — 19 september 2026 ───────────
+     Met een betaallink in de URL zei de balk "Bedankt — we hebben je
+     aanvraag" in lime met een vinkje, en stond de enige handeling die nog van
+     de klant gevraagd werd als tweede knop rechts. Wie de kop leest, is klaar.
+     Nu draagt de balk de stap die nog openstaat, en na de terugkeer van Mollie
+     de bevestiging dat het geld binnen is. interactions.js wisselt de tekst. */
+  titlePay: 'Nog één stap: betalen.',
+  titlePaid: 'Betaald — we gaan aan de slag.',
+  titleChecking: 'Even kijken of de betaling binnen is…',
+  titleUnpaid: 'De betaling is niet afgerond.',
   cancelled: 'Deze moesten we annuleren',
   nowH: 'Wat er nu gebeurt',
   payQ: 'Staat er een betaallink in je bevestigingsmail?',
   payA: 'Rond die betaling af — je bestelling staat genoteerd, maar de productie start pas als de betaling binnen is.',
   flow: 'Daarna lezen we wat je hebt gestuurd, maken we je visuals, en kijkt een specialist elk resultaat na voordat het bij jou komt.',
+  /* Een AANVRAAG (video, hooks, editions, eigen look) is geen bestelling: er
+     wordt niets gemaakt en er is geen levertijd. Tot 19 september 2026 kreeg
+     die dezelfde tekst als een bestelling — "we maken je visuals", "Levertijd:
+     zo snel mogelijk". interactions.js wisselt op ?soort=aanvraag. */
+  flowRequest: 'We lezen je aanvraag en antwoorden schriftelijk met een voorstel en een prijs — meestal binnen 24 uur. Pas als jij daar ja op zegt, wordt het een bestelling.',
   cta: 'Bekijk je bestelling',
   signin: 'Log in met het e-mailadres van deze bestelling — we sturen je een link, er is geen wachtwoord.',
   sumH: 'Samenvatting',
@@ -120,17 +133,22 @@ const c = nl ? {
   extraB: 'Hoe meer foto’s we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Een detailopname, de stof en een gedragen foto — gratis toe te voegen.',
   extraCta: 'Extra foto’s sturen',
   sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
-  cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en de ${euro(AMOUNT.testSample, "nl")} is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
+  cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en het betaalde bedrag is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
   cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
   cancelP3: 'Klaar voor het echte werk? De diensten beginnen bij de prijs per product, zonder minimum.',
   cancelCta: 'Bekijk de diensten',
 } : {
   title: 'Thanks — we have your request.',
+  titlePay: 'One more step: payment.',
+  titlePaid: 'Paid — we are on it.',
+  titleChecking: 'Checking whether the payment came through…',
+  titleUnpaid: 'The payment was not completed.',
   cancelled: 'This one we had to cancel',
   nowH: 'What happens now',
   payQ: 'Is there a payment link in your confirmation email?',
   payA: 'Complete that payment — your order is noted, but production only starts once the payment has come through.',
-  flow: 'After that we read what you sent, prepare your visuals, and a person checks every result before it reaches you.',
+  flow: 'After that we read what you sent, prepare your visuals, and a specialist checks every result before it reaches you.',
+  flowRequest: 'We read your request and reply in writing with a proposal and a price — usually within 24 hours. It only becomes an order once you say yes.',
   cta: 'See your order',
   signin: 'Sign in with the email address on this order — we send you a link, there is no password.',
   sumH: 'Summary',
@@ -147,7 +165,7 @@ const c = nl ? {
   extraB: 'The more we have, the more accurately we match fit, colour and detail first time. A detail close-up, the fabric and an on-body shot — free to add.',
   extraCta: 'Send extra photos',
   sourceQ: 'One quick thing — how did you find us?',
-  cancelP1: `Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the ${euro(AMOUNT.testSample, "en")} is on its way back to the account you paid from. That usually takes a few working days.`,
+  cancelP1: `Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the amount you paid is on its way back to the account you paid from. That usually takes a few working days.`,
   cancelP2: 'If that does not sound right — a colleague ordered without telling you, or the first sample never arrived — reply to the confirmation email and we will sort it out by hand.',
   cancelP3: 'Ready for the real thing? The services start at the per-product price, with no minimum order.',
   cancelCta: 'See the services',
@@ -173,7 +191,7 @@ const bronnen = nl
   <div class="ty-bar" data-ty-bar>
     <div class="ty-bar-in">
       <svg class="ty-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled}>{c.title}</h1>
+      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid}>{c.title}</h1>
     </div>
   </div>
 
@@ -200,7 +218,7 @@ const bronnen = nl
               zet hem aan bij ?pay=. Zonder link (contactformulier, checklist,
               terugkeer van Mollie) stond hier een vraag zonder antwoord. */}
           <p class="ty-pay" data-ty-payq hidden><strong>{c.payQ}</strong> {c.payA}</p>
-          <p class="lopend">{c.flow}</p>
+          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest}>{c.flow}</p>
           <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt">{c.cta}</a></p>
           <p class="ty-signin" data-ty-signin>{c.signin}</p>
         </div>
@@ -233,8 +251,8 @@ const bronnen = nl
           <dd><strong data-ty-mail></strong><span class="ty-mailnote">{mailNote(lang)}</span></dd>
         </div>
         <div class="ty-row">
-          <dt>{c.sumTiming}</dt>
-          <dd>{TIMING}. {c.sumQueue}</dd>
+          <dt data-ty-timing>{c.sumTiming}</dt>
+          <dd data-ty-timing>{TIMING}. {c.sumQueue}</dd>
         </div>
         <div class="ty-row ty-row-ask">
           <dt>{c.askH}</dt>
@@ -255,23 +273,19 @@ const bronnen = nl
     </div>
   </section>
 
-  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
-      Stilstaand met opzet: dit is hier een illustratie en geen attractie. De
-      bewegende versie hoort op /catalog en /upload-guidelines, waar iemand aan
-      het kiezen of aan het leren is. Hier is iemand aan het rekenen of aan het
-      wachten, en dan is een carousel die uit zichzelf doorspringt ruis.
-      Dezelfde plaat en dezelfde twee schermgaten, dus het blijft herkenbaar
-      hetzelfde ding als op de voorpagina. */}
-  <section class="paneel" aria-labelledby="ty-lc">
-    <div class="paneel-kop">
-      <p class="etiket">{nl ? 'Wat eraan komt' : 'What’s coming'}</p>
-      <h2 id="ty-lc" class="hoog hoog-2">{nl ? 'Zo ziet het eruit als het klaar is.' : 'This is what it looks like when it’s done.'}</h2>
-      <p class="lopend">{nl ? 'Je krijgt de bestanden los aangeleverd. Dit is waar ze daarna staan.' : 'You get the files delivered separately. This is where they end up after that.'}</p>
-    </div>
-    <LaptopCarousel stil lang={lang} slides={[laptopSlides(lang).catalog]}
-      titel={nl ? 'Zo ziet het eruit als het klaar is.' : 'This is what it looks like when it’s done.'} />
-  </section>
+  {/* ── HIER STOND EEN LAPTOP, EN DIE IS WEG — 18 september 2026 ───────────
+      Lucas: *"Er staan hier en daar ook laptop foto's die niet daar horen en
+      niet eens werken of goed in de achtergrond passen."* Deze was er één van.
 
+      Op deze pagina is de bestelling net binnen. Wat iemand hier wil weten is
+      wat er nu gebeurt en wanneer — en dat staat er allemaal al boven. Een
+      plaat van een product dat nog gemaakt moet worden is op dat moment geen
+      antwoord maar een herhaling van de voorpagina, en hij stond bovendien
+      stil: een plaatje dat lijkt te zijn blijven staan.
+
+      Waar hij wél hoort: op /catalog, /lifestyle, /video en de voorpagina, waar
+      iemand nog aan het kiezen is, en op /plans en /pricing, waar hij sinds
+      vandaag loopt in plaats van stil te staan. */}
 
   {/* ── DE TWEE GUNSTEN, ONDERAAN ──────────────────────────────────────────
       Extra foto's sturen helpt het resultaat, en de vraag hoe iemand ons vond
@@ -335,6 +349,9 @@ const bronnen = nl
      Geen rood: er is niets misgegaan en de klant heeft niets fout gedaan. */
   .ty-bar[data-ty-cancelled-state] { background: var(--vel); }
   .ty-bar[data-ty-cancelled-state] .ty-check { display: none; }
+  /* Zolang er nog betaald moet worden, is er ook nog niets af: geen vinkje
+     naast "Nog één stap: betalen". Het vinkje komt terug bij `?paid=`. */
+  .ty-bar[data-ty-pay-state] .ty-check { display: none; }
 
   /* Een bedankpagina hoeft niet de volle paneelhoogte van een verhaalpagina. */
   .ty-body { padding-block: clamp(2.2rem, 5vw, 4rem); }

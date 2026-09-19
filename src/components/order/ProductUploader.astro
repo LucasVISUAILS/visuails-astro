@@ -637,7 +637,7 @@ const lcStijl = [
     padding: .12rem .4rem;
     border: 1px solid var(--line);
     border-radius: var(--r-sm);
-    font-size: .64rem; font-weight: 700; letter-spacing: .07em;
+    font-size: .72rem; font-weight: 700; letter-spacing: .07em;
     text-transform: uppercase; color: var(--ink-3);
     white-space: nowrap;
   }
@@ -1072,7 +1072,7 @@ const lcStijl = [
     gap: .35rem .8rem;
   }
   .pu-cards :global(.pu-n) {
-    font-family: var(--font-mono); font-weight: 400; font-size: .68rem;
+    font-family: var(--font-mono); font-weight: 400; font-size: .72rem;
     letter-spacing: .08em; color: var(--ink-3); font-variant-numeric: tabular-nums;
   }
   .pu-cards :global(.pu-name) {
@@ -1195,8 +1195,22 @@ const lcStijl = [
     box-shadow: inset 0 0 0 1px var(--line-strong);
     transition: box-shadow .15s;
   }
+  /* De stille "Zelfde"-tegel zonder portret: zelfde maat en ring als een
+     portret, met een =-teken. Gekozen krijgt dezelfde accentring. */
+  .pu-cards :global(.pu-mk-leeg) {
+    display: grid; place-items: center; width: 100%; aspect-ratio: 3 / 4;
+    border-radius: var(--radius-s, 8px); background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; color: var(--ink-3);
+    transition: box-shadow .15s;
+  }
+  .pu-cards :global(.pu-mk-tegel:has(input:checked) .pu-mk-leeg) {
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 1px var(--accent); color: var(--ink);
+  }
+  .pu-cards :global(.pu-mk-tegel:hover .pu-mk-leeg) { box-shadow: inset 0 0 0 2px var(--line-strong); }
+  .pu-cards :global(.pu-mk-tegel:has(input:focus-visible) .pu-mk-leeg) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .pu-cards :global(.pu-mk-naam) {
-    font-size: .68rem; line-height: 1.25; color: var(--ink-3);
+    font-size: .72rem; line-height: 1.25; color: var(--ink-3);
     overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
   }
   /* Gekozen: dezelfde accentring als een tegel in de grote kiezer, zodat "dit
@@ -1624,7 +1638,7 @@ const lcStijl = [
      verplichting zit in het label en niet hier. */
   .pu-cards :global(.pu-extra-note .pu-q-hint) {
     display: block; margin-top: .2rem;
-    font-size: .68rem; line-height: 1.4; color: var(--ink-3);
+    font-size: .72rem; line-height: 1.4; color: var(--ink-3);
   }
   /* The rate sits under both columns rather than beside the counter: it is a
      sentence about the order, not a caption on the select, and at 25 cards a
@@ -1809,7 +1823,7 @@ const lcStijl = [
     position: absolute; left: calc(var(--lc-l) + 2%); top: calc(var(--lc-t) + 4%); margin: 0;
     background: var(--accent); color: #141414;
     padding: .18em .45em;
-    font-family: var(--font-mono); font-size: .62rem; font-weight: 700;
+    font-family: var(--font-mono); font-size: .72rem; font-weight: 700;
     letter-spacing: .1em; text-transform: uppercase;
   }
 

@@ -91,7 +91,7 @@ import {
   ladderRate, euro, vatLabel, vatLead, vatDetail, AMOUNT, plans,
   WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause,
   CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
-  STOCK_OFF_BRAND, STOCK_ON_BRAND, PLAN_ROLLOVER_MONTHS,
+  STOCK_OFF_BRAND, STOCK_ON_BRAND, PLAN_ROLLOVER_MONTHS, VIDEO_OP_AANVRAAG,
 } from '../data/pricing.js';
 /* ── HET ETIKET DAT ZEGT OF JE IETS MOET OPSTUREN — 10 september 2026 ────────
    Lucas' idee, en het is de eerste vraag die een bezoeker op deze pagina heeft
@@ -208,7 +208,7 @@ const COPY = {
         id: 'catalog',
         doel: 'foto',
         kind: 'catalog',
-        href: '/start/catalog/',
+        href: '/catalog#looks',
         name: 'Catalog',
         where: 'On your product page',
         gets: `From ${CATALOG_IMAGES} images per product — front, back, a detail and one on model`,
@@ -243,8 +243,8 @@ const COPY = {
         where: 'The product itself, moving',
         gets: 'One short clip per product — eight seconds, one clean move',
         line: 'The turn, the pour, the fabric catching light. Enough to hold the eye in a feed, never enough to distract from the product.',
-        fig: euro(AMOUNT.video, 'en'),
-        unit: `a clip, ${vatLabel('excl', 'en')}`,
+        fig: VIDEO_OP_AANVRAAG ? 'On request' : euro(AMOUNT.video, 'en'),
+        unit: VIDEO_OP_AANVRAAG ? 'we reply in writing with a price' : `a clip, ${vatLabel('excl', 'en')}`,
         cta: 'Ask about a clip',
         read: '/video/motion',
         readCta: 'See product clips',
@@ -253,7 +253,7 @@ const COPY = {
         id: 'lifestyle',
         doel: 'sfeer',
         kind: 'lifestyle',
-        href: '/start/lifestyle/',
+        href: '/lifestyle#looks',
         name: 'Lifestyle',
         where: 'In your feed and your ads',
         gets: `${LIFESTYLE_IMAGES} images per product — one styled look, posted as a carousel`,
@@ -286,9 +286,9 @@ const COPY = {
         where: 'The product in a scene, in motion',
         gets: 'A styled clip with a model and a world around it',
         line: 'What a lifestyle image is, set moving. A campaign is the same idea at length and is quoted per project rather than per clip.',
-        fig: euro(AMOUNT.videoLifestyle, 'en'),
-        unit: `a clip, ${vatLabel('excl', 'en')}`,
-        vanaf: true,
+        fig: VIDEO_OP_AANVRAAG ? 'On request' : euro(AMOUNT.videoLifestyle, 'en'),
+        unit: VIDEO_OP_AANVRAAG ? 'we reply in writing with a price' : `a clip, ${vatLabel('excl', 'en')}`,
+        vanaf: !VIDEO_OP_AANVRAAG,
         cta: 'Ask about a clip',
         read: '/video/lifestyle',
         readCta: 'See lifestyle clips',
@@ -349,8 +349,10 @@ const COPY = {
     afterLead: 'The five steps below are the photo order form, and you can go back through all of them. Video, Hooks and the two custom doors have no form yet: those take a short brief and the studio answers in writing, with a date and a price.',
     steps: ['Order', 'Material', 'Your details', 'Timing', 'Confirm'],
     facts: [
-      ['Nothing is charged in the form', 'You are confirming an order, not paying in it. No card details are asked anywhere in the five steps.'],
-      ['The delivery date is confirmed before you pay', `Never after. Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a date for the order and confirm it in writing.`],
+      /* 19 september 2026: het formulier eindigt in de checkout (besluit 1) en
+         de datum kies je zelf uit dagkaarten (besluit 3). */
+      ['You pay at the end, in the checkout', 'The last step takes you straight to the payment page; no card details are asked in the form itself, and nothing is charged until you pay there.'],
+      ['You pick the delivery date yourself', `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, you choose a day the calendar can still hold, and it is fixed the moment you order.`],
       ['Then you approve image by image', 'Every order lands in VISUAILS Studio, where you see each image, approve it or ask for a change, and download what is finished.'],
     ],
 
@@ -420,7 +422,7 @@ const COPY = {
         id: 'catalog',
         doel: 'foto',
         kind: 'catalog',
-        href: '/start/catalog/',
+        href: '/catalog#looks',
         name: 'Catalog',
         where: 'Op je productpagina',
         gets: `Vanaf ${CATALOG_IMAGES} foto’s per product — voorkant, achterkant, een detail en één op model`,
@@ -440,8 +442,8 @@ const COPY = {
         where: 'Het product zelf, in beweging',
         gets: 'Eén korte clip per product — acht seconden, één schone beweging',
         line: 'De draai, de schenkbeweging, de stof die licht vangt. Genoeg om het oog vast te houden in een feed, nooit genoeg om van het product af te leiden.',
-        fig: euro(AMOUNT.video, 'nl'),
-        unit: `per clip, ${vatLabel('excl', 'nl')}`,
+        fig: VIDEO_OP_AANVRAAG ? 'Op aanvraag' : euro(AMOUNT.video, 'nl'),
+        unit: VIDEO_OP_AANVRAAG ? 'we antwoorden schriftelijk met een prijs' : `per clip, ${vatLabel('excl', 'nl')}`,
         cta: 'Vraag een clip aan',
         read: '/video/motion',
         readCta: 'Bekijk productclips',
@@ -450,7 +452,7 @@ const COPY = {
         id: 'lifestyle',
         doel: 'sfeer',
         kind: 'lifestyle',
-        href: '/start/lifestyle/',
+        href: '/lifestyle#looks',
         name: 'Lifestyle',
         where: 'In je feed en je advertenties',
         gets: `${LIFESTYLE_IMAGES} foto’s per product — één gestylede look, als carousel te plaatsen`,
@@ -483,9 +485,9 @@ const COPY = {
         where: 'Het product in een scène, in beweging',
         gets: 'Een gestylede clip met een model en een wereld eromheen',
         line: 'Wat een lifestylefoto is, maar dan bewegend. Een campagne is hetzelfde idee op lengte en wordt per project geoffreerd in plaats van per clip.',
-        fig: euro(AMOUNT.videoLifestyle, 'nl'),
-        unit: `per clip, ${vatLabel('excl', 'nl')}`,
-        vanaf: true,
+        fig: VIDEO_OP_AANVRAAG ? 'Op aanvraag' : euro(AMOUNT.videoLifestyle, 'nl'),
+        unit: VIDEO_OP_AANVRAAG ? 'we antwoorden schriftelijk met een prijs' : `per clip, ${vatLabel('excl', 'nl')}`,
+        vanaf: !VIDEO_OP_AANVRAAG,
         cta: 'Vraag een clip aan',
         read: '/video/lifestyle',
         readCta: 'Bekijk lifestyleclips',
@@ -546,8 +548,8 @@ const COPY = {
     afterLead: 'De vijf stappen hieronder zijn het bestelformulier voor foto’s, en je kunt overal in terug. Video, Hooks en de twee deuren op maat hebben nog geen formulier: die nemen een korte brief aan en de studio antwoordt op schrift, met een datum en een prijs.',
     steps: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
     facts: [
-      ['In het formulier wordt niets afgeschreven', 'Je bevestigt een bestelling, je betaalt er niet in. Nergens in de vijf stappen wordt om je kaartgegevens gevraagd.'],
-      ['De leverdatum staat vast vóór je betaalt', `Nooit erna. Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} houden we een datum voor je vrij en zetten we die schriftelijk vast.`],
+      ['Je betaalt aan het eind, in de checkout', 'De laatste stap brengt je meteen naar de betaalpagina; in het formulier zelf wordt niet om kaartgegevens gevraagd en er wordt niets afgeschreven voordat je daar betaalt.'],
+      ['De leverdatum kies je zelf', `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} kies je een dag die de agenda nog kan vasthouden, en die ligt vast zodra je bestelt.`],
       ['Daarna keur je beeld voor beeld goed', 'Elke bestelling komt in VISUAILS Studio, waar je elk beeld ziet, het goedkeurt of een aanpassing vraagt, en downloadt wat af is.'],
     ],
 
@@ -704,7 +706,14 @@ const nl = lang === 'nl';
     <ul class="st-deuren" role="list">
       {c.deuren.map((d) => (
           <li class={`st-deur${d.later ? ' is-later' : ''}${d.voorwaarde ? ' is-voorwaarde' : ''}`} data-doel={d.doel}>
-            <span class="kaart st-beeld">
+            {/* ── DE FOTO IS DE KNOP — 19 september 2026 ──────────────────────
+                Lucas: *"Ook wil ik dat de foto's klikbaar worden en dat dat
+                hetzelfde doet als de 'start een bestelling' knop voor die
+                specifieke service."* Dezelfde href als de knop eronder. Voor
+                het toetsenbord en de schermlezer is het één link te veel — de
+                knop zegt al waar het heen gaat — dus deze staat buiten de
+                tabvolgorde en buiten de boom. */}
+            <a class="kaart st-beeld" href={lp(d.href)} aria-hidden="true" tabindex="-1">
               {SHOT[d.id]
                 ? <img src={SHOT[d.id].src} alt="" width={SHOT[d.id].w} height={SHOT[d.id].h} loading="lazy" decoding="async" />
                 : <Placeholder
@@ -718,7 +727,7 @@ const nl = lang === 'nl';
                       : 'One frame showing a Hook’s two-shot format: the first second and the second beside each other, so you see at a glance that it is one clip and not two. Until that exists, what stands here is what there is — an empty slot with the brief in it.'}
                   />}
               {d.merk && <span class="mono st-merk">{d.merk}</span>}
-            </span>
+            </a>
             <div class="st-tekst">
               <p class="st-kopregel">
                 <span class="mono st-dienst">{d.name}</span>
@@ -734,8 +743,11 @@ const nl = lang === 'nl';
                 </span>
               </p>
               <h2 class="st-waar">{d.where}</h2>
+              {/* De lange beschrijving (`d.line`) staat sinds 19 september 2026
+                  niet meer op de kaart — Lucas: *"die tegels kunnen wat
+                  compacter en overzichtelijker."* Wat je krijgt staat er; wat
+                  het is, staat op de dienstpagina achter "Bekijk …". */}
               <p class="st-krijgt">{d.gets}</p>
-              <p class="lopend st-regel">{d.line}</p>
               {/* Het bedrag draagt zijn eigen btw-label. BRIEF-14: het label
                   reist mee met het getal en staat niet alleen in de noot
                   eronder. Elke rij heeft dezelfde vorm — label, getal, eenheid
@@ -744,15 +756,17 @@ const nl = lang === 'nl';
                   `from` staat er bij alles wat een ONDERGRENS is: de drie op de
                   ladder, en Hooks. Bij een vaste prijs (de productclip) en bij
                   een maandbedrag staat het er niet, want dan zou het liegen. */}
-              <p class="st-tarief">
-                {(d.kind || d.vanaf) && <span class="mono">{c.from}</span>}
-                <span class="tarief">{d.fig || vanaf(d.kind)}</span>
-                <span class="mono">{d.unit}</span>
-              </p>
-              <p class="st-wegen">
-                <a class={`knop ${d.later ? 'knop-lijn' : 'knop-inkt'}`} href={lp(d.href)}>{d.cta}</a>
-                <a class="pijl st-lees" href={lp(d.read)}>{d.readCta}</a>
-              </p>
+              <div class="st-voet">
+                <p class="st-tarief">
+                  {(d.kind || d.vanaf) && <span class="mono">{c.from}</span>}
+                  <span class="tarief">{d.fig || vanaf(d.kind)}</span>
+                  <span class="mono">{d.unit}</span>
+                </p>
+                <p class="st-wegen">
+                  <a class={`knop ${d.later ? 'knop-lijn' : 'knop-inkt'}`} href={lp(d.href)}>{d.cta}</a>
+                  <a class="pijl st-lees" href={lp(d.read)}>{d.readCta}</a>
+                </p>
+              </div>
             </div>
           </li>
       ))}
@@ -1060,15 +1074,18 @@ const nl = lang === 'nl';
      twee blokken groter zijn dan die erbinnen, anders hoort een regel evenveel
      bij het blok eronder als bij het blok waar hij bij hoort. Zelfde reparatie
      als bij .kaarten in stijl22.css; gemeten met kladblok/witruimte.mjs. */
-  .st-deuren { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: clamp(.8rem, 1.8vw, 1.4rem); row-gap: clamp(2.2rem, 5.5vw, 2.8rem); }
+  .st-deuren { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: clamp(.8rem, 1.8vw, 1.4rem); row-gap: clamp(1.8rem, 4vw, 2.4rem); }
   /* Flex en geen grid: de knop moet met `margin-top: auto` naar de onderrand
      zakken zodat de vier knoppen op één lijn staan, ook als de ene regel twee
      keer afbreekt en de andere niet. */
-  .st-deur { display: flex; flex-direction: column; gap: .75rem; }
+  .st-deur { display: flex; flex-direction: column; gap: .65rem; }
   /* 3:2 en niet 4:3. Op 1440 scheelt dat 35 pixels per kaart, en drie kaarten
      naast elkaar hebben die hoogte niet nodig: wat je van een deur moet zien is
      wát het is, niet de foto beeldvullend. */
-  .st-beeld { position: relative; aspect-ratio: 3 / 2; flex: 0 0 auto; }
+  /* Een link en geen span sinds 19 september 2026 (zie de noot in de opmaak);
+     `display: block` omdat een <a> anders inline is en de verhouding niet
+     draagt. 16:10 en niet 3:2: 35 px minder per kaart op 1440. */
+  .st-beeld { position: relative; display: block; aspect-ratio: 16 / 10; flex: 0 0 auto; overflow: hidden; }
   .st-beeld img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
   .st-beeld :global([data-placeholder]) { position: absolute; inset: 0; margin: 0; }
   .st-beeld :global([data-placeholder] > *) { width: 100%; height: 100%; border-radius: 0; }
@@ -1086,7 +1103,7 @@ const nl = lang === 'nl';
      achter. Niet grijs — het werk bestaat wel. */
   .st-deur.is-later .st-beeld img { opacity: .72; }
 
-  .st-tekst { display: flex; flex-direction: column; gap: .35rem; flex: 1; }
+  .st-tekst { display: flex; flex-direction: column; gap: .3rem; flex: 1; }
   .st-dienst { color: var(--inkt-2); }
   /* ── HET PRODUCT-ETIKET — 10 september 2026 ──────────────────────────────
      Op dezelfde regel als de dienstnaam, want het is een eigenschap van die
@@ -1095,7 +1112,8 @@ const nl = lang === 'nl';
   .st-kopregel { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; margin: 0 0 .2rem; }
   .st-eigen {
     font-family: var(--mono, ui-monospace, monospace);
-    font-size: .62rem; letter-spacing: .07em; text-transform: uppercase;
+    /* .72rem en niet .62: de leesbaarheidsvloer van deze site (11,5 px). */
+    font-size: .72rem; letter-spacing: .07em; text-transform: uppercase;
     padding: .12rem .45rem; white-space: nowrap;
     border: 1px solid var(--inkt);
   }
@@ -1114,14 +1132,21 @@ const nl = lang === 'nl';
   /* .6rem en niet niets: gemeten met kladblok/te-dicht.mjs stonden deze twee
      alinea's 6px uit elkaar en lazen ze als één blok grijs. Het zijn twee
      verschillende dingen — wat je krijgt, en waar het voor is. */
-  .st-regel { font-size: .88rem; flex: 1; margin-top: .6rem; }
+  .st-krijgt { flex: 1; }
   /* `min-height` van twee regels, want "On request · no standard rate" past
      niet op één en elke andere deur wel. Zonder deze regel zakte de knop van die
      ene deur een regel lager dan de rest — en de vier knoppen op één lijn is
      precies wat een rij deuren vergelijkbaar maakt. */
-  .st-tarief { display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: .4rem .5rem; min-height: 3.4rem; margin-top: .5rem; padding-top: .8rem; border-top: 1px solid var(--lijn); }
+  /* ── DE VOET: TARIEF EN KNOPPEN IN ÉÉN BLOK — 19 september 2026 ───────────
+     Eén haarlijn, daaronder het bedrag en daaronder de knoppen, zonder de
+     minimale hoogte van twee regels die hier stond: de knoppen staan op één
+     lijn doordat `.st-krijgt` de speling opslikt (flex: 1), niet doordat de
+     tariefregel wordt opgerekt. */
+  .st-voet { margin-top: .5rem; padding-top: .7rem; border-top: 1px solid var(--lijn); display: grid; gap: .55rem; }
+  .st-tarief { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .5rem; margin: 0; }
   .st-tarief .mono { color: var(--inkt-2); }
-  .st-wegen { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-top: .6rem; }
+  .st-wegen { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin: 0; }
+  .st-wegen .knop { min-height: 40px; padding: 0 1.1rem; }
   .st-lees { color: var(--inkt-2); }
   .st-lees:hover { color: var(--inkt); }
 

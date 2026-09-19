@@ -75,7 +75,7 @@ const t = nl ? {
   vastKop: `Zit er altijd bij · ${CATALOG_IMAGES} foto’s`,
   extraKop: 'Erbij te bestellen',
   extraTarief: `vanaf ${tarief} per foto, per product · ${vatLabel('excl', lang)}`,
-  naarBestellen: 'Naar het bestelformulier',
+  naarBestellen: 'Kies je look en bestel',
   naarGids: 'Wat je zelf opstuurt',
 } : {
   etiket: 'What you get',
@@ -84,7 +84,7 @@ const t = nl ? {
   vastKop: `Always included · ${CATALOG_IMAGES} photos`,
   extraKop: 'Available to add',
   extraTarief: `from ${tarief} per photo, per product · ${vatLabel('excl', lang)}`,
-  naarBestellen: 'To the order form',
+  naarBestellen: 'Choose your look and order',
   naarGids: 'What you send us',
 };
 
@@ -155,7 +155,7 @@ const t = nl ? {
   </section>
 
   <section class="paneel paneel-slot pp-slot">
-    <a class="knop knop-inkt" href={lp('/start/catalog')}>{t.naarBestellen}</a>
+    <a class="knop knop-inkt" href={`${lp('/catalog')}#looks`}>{t.naarBestellen}</a>
     <a class="pijl" href={lp('/upload-guidelines')}>{t.naarGids}</a>
   </section>
 

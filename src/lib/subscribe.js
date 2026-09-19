@@ -242,6 +242,16 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
     });
     if (gemaakt.bestaat) return seeOtherLocal('/account/plan');
     rij = gemaakt.row;
+    /* De versie van de twee verklaringen erbij (migratie 0049). Aparte UPDATE:
+       zonder de kolommen blijft het abonnement gewoon staan en wordt alleen dit
+       gelogd — hetzelfde patroon als origin_country op een bestelling. */
+    const bv = String(form?.get('business_version') || '').slice(0, 40);
+    const cv = String(form?.get('consent_version') || '').slice(0, 40);
+    if (rij?.id && (bv || cv)) {
+      await env.DB.prepare('UPDATE subscriptions SET business_declaration = ?2, withdrawal_consent = ?3 WHERE id = ?1')
+        .bind(rij.id, bv || null, cv || null).run()
+        .catch((e) => console.error('[abonnement] verklaringen niet bewaard (migratie 0049?) —', e?.message || e));
+    }
   } catch (err) {
     console.error('[abonnement] rij niet aangemaakt —', err?.message || err);
     return seeOtherLocal(terug('opslaan', lang));

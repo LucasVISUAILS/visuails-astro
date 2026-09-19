@@ -191,6 +191,28 @@
       padding-block: .55rem;
       line-height: 1.35;
     }
+    /* ── EN DAN ALLEMAAL EVEN BREED — 18 september 2026 ──────────────────────
+       Lucas: *"De telefoon pagina ziet er nu wel een stuk rommeliger en minder
+       consistent uit."* Terecht, en dit was de reden.
+
+       Door de regel hierboven volgt een knop sinds gisteren zijn eigen tekst in
+       plaats van op één regel te blijven. Op de voorpagina stonden daardoor drie
+       knoppen onder elkaar in drie verschillende breedtes — gemeten 533, 505 en
+       540 pixels — en drie pillen die bijna even breed zijn lezen als een
+       uitlijnfout, niet als een keuze.
+
+       Op een telefoon is een knoppenrij geen rij maar een stapel. Eén kolom,
+       alles even breed: dan is de linkerrand van elke knop dezelfde lijn als de
+       tekst ernaast, en telt de lengte van het woord niet meer mee. */
+    /* `width` én `align-self`: de rij staat soms in een rooster dat zijn cellen
+       links uitlijnt (`justify-items: start` op de kop van de opening), en dan
+       is de rij zelf net zo breed als de langste knop — dan staan er drie
+       stapels van gelijke breedte die samen tóch niet tot de tekstrand lopen. */
+    .s22 .acties { flex-direction: column; align-items: stretch; width: 100%; align-self: stretch; }
+    .s22 .acties .knop, .s22 .acties .btn { width: 100%; }
+    /* Wat GEEN knop is in zo'n rij — een losse link, een prijsregel — blijft
+       links staan in plaats van over de volle breedte te rekken. */
+    .s22 .acties > :not(.knop):not(.btn) { align-self: flex-start; }
   }
   .s22 .knop-inkt { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
   .s22 .knop-inkt:hover { background: transparent; color: var(--inkt); }
@@ -291,7 +313,15 @@
      precies de rechte bovenkant waar deze opmerking over gaat: een kaart die
      bovenaan is afgesneden leest als een kolom, niet als een kaart. */
   .s22 :is(.paneel, .kamer) { margin: var(--rand); border-radius: var(--ronding); }
-  .s22 .paneel { position: relative; padding: clamp(2.25rem, 5.5vw, 5rem) clamp(1.25rem, 4vw, 4rem); background: var(--vel); color: var(--inkt); }
+  /* 19 september 2026: verticaal van 5rem naar 4rem op de bovengrens. Acht
+     panelen per dienstpagina waren 1.280 px aan alleen paneelruimte; Lucas
+     vroeg om compactere pagina's ("30–40 % korter") en dit is de ruimte die
+     geen informatie draagt. Horizontaal ongewijzigd. */
+  .s22 .paneel { position: relative; padding: clamp(2rem, 4.6vw, 4rem) clamp(1.25rem, 4vw, 4rem); background: var(--vel); color: var(--inkt); }
+  /* Een anker (#looks, #binnenkort, #standard) landt anders onder de plakkende
+     bovenbalk van 76px — sinds 19 september 2026 komt elke bestelknop op
+     /catalog#looks of /lifestyle#looks uit, dus dit moet kloppen. */
+  .s22 [id] { scroll-margin-top: 6rem; }
   .s22 .paneel + .paneel { margin-top: calc(var(--rand) * 1.6); }
 
   /* ── VOL OF INGEKADERD — 8 september 2026 ────────────────────────────────
@@ -830,7 +860,54 @@
     justify-items: stretch;
     min-height: min(78svh, 800px);
   }
-  .s22 .hero.hero-split::before,
+  /* ── EN ÉÉN LICHTBAAN ERONDER — 18 september 2026 ────────────────────────
+     Lucas, met een foto van een limebaan over een donkere vloer: *"Kan je deze
+     afbeelding bewerken zodat de kleuren het witte kleurenschema volgen en ik
+     deze afbeelding als beginpagina achtergrond kan gebruiken onder de kop en
+     laptop."*
+
+     De foto is omgezet in plaats van opnieuw gekleurd: de luminantie van de
+     opname is als LICHTKAART gebruikt, met `--vel` waar geen licht valt en
+     `--geel` waar de baan ligt, met een plafond van 62% zodat het een grond
+     blijft en geen vlak. Boven loopt hij uit naar schoon papier, want daar
+     staat de kop. Gemeten contrast van inkt op het resultaat: 15,3:1 op het
+     donkerste punt — ruim boven de 4,5 die tekst nodig heeft.
+
+     `::before` en niet `background` op de hero zelf: zo blijft `--vel` de
+     grond en ligt het beeld er als een laag overheen die je in één regel uit
+     kunt zetten. De laag stopt bij 68% hoogte en staat onderaan vast, dus hij
+     zit onder de kop en onder de laptop — precies waar hij gevraagd is. En
+     `::after` blijft uit: dat was de gloed die op 17 september weg moest. */
+  /* ── DE MUUR — 18 september 2026 ────────────────────────────────────────
+     Lucas gaf vier bannerbeelden en vroeg welke hier het beste werkt. Dit is
+     de rustigste: één zachte diagonaal op een witte muur, met de korrel van het
+     pleisterwerk erin. Geen tweede lichtbaan, geen zwart vlak, geen mens — een
+     grond hoort niets te vertellen.
+
+     ── EN HIJ IS OP ÓNS WIT GEZET ─────────────────────────────────────────
+     Lucas, 17 september: *"De achtergrond kleur is een ander wit dan wat het
+     moet zijn zorg dat alles dezelfde kleur heeft."* Een bannerfoto meebrengen
+     is precies de manier om dat opnieuw te breken. Daarom is het beeld niet
+     ingeladen zoals het was: het licht van de muur is exact `--vel` geworden en
+     de schaduw zakt daar hoogstens 10% onder. Er staat dus één wit op de
+     pagina, met een plooi erin.
+
+     De limebaan (`grond-licht.webp`) blijft in de map staan; die heeft kleur en
+     hoort op een plek waar het accent het onderwerp is, niet onder een kop. */
+  .s22 .hero.hero-split::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url('/img/grond-muur.webp') no-repeat center / cover;
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* Op een telefoon blijft hij staan: het verschil tussen licht en schaduw is
+     hier tien procent, dus ook een uitsnede van 390 pixels leest als één vlak
+     met een plooi. De limebaan die hier eerst stond moest daar wél weg — die
+     sneed met een harde diagonaal dwars door de kop. */
+  /* De inhoud erboven. Zonder deze regel valt de laag over de tekst heen — een
+     achtergrond die zijn eigen pagina bedekt. */
+  .s22 .hero.hero-split > * { position: relative; z-index: 1; }
   .s22 .hero.hero-split::after { content: none; }
   .s22 .hero.hero-split .stralen { display: none; }
   .s22 .hero.hero-split .hero-kop { justify-items: start; text-align: left; max-width: none; }
@@ -1117,6 +1194,22 @@
   .s22 .lijst tbody th a { text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--lijn-sterk); }
   .s22 .tarief { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(.95rem, 1.5vw, 1.15rem); font-variant-numeric: tabular-nums; }
   .s22 .abo-regel { display: block; font-size: .82rem; color: var(--inkt-2); }
+  /* De tariefstrip op de voorpagina (19 september 2026): drie vanaf-prijzen op
+     een rij, één regel voor het abonnement. De tabellen staan op /pricing. */
+  .s22 .tarief-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2.4vw, 2rem); }
+  .s22 .tarief-strip li { display: grid; gap: .35rem; padding: 1.1rem 0 1.2rem; border-top: 1px solid var(--lijn); }
+  .s22 .tarief-soort { font-size: .95rem; color: var(--inkt); text-decoration: none; }
+  .s22 a.tarief-soort { text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--lijn-sterk); }
+  .s22 .tarief-van { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem; }
+  .s22 .tarief-van .tarief { font-size: clamp(1.6rem, 2.6vw, 2.2rem); }
+  .s22 .tarief-tot { margin: 0; color: var(--inkt-2); }
+  .s22 .tarief-abo { margin: clamp(1.2rem, 2.4vw, 2rem) 0 0; padding-top: 1.1rem; border-top: 1px solid var(--lijn); display: grid; gap: .5rem; }
+  .s22 .tarief-abo-kop { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; font-size: clamp(1.05rem, 1.8vw, 1.3rem); }
+  .s22 .tarief-abo-rij { display: flex; flex-wrap: wrap; gap: .6rem 1.8rem; }
+  .s22 .tarief-abo-rij a { color: var(--inkt); text-decoration: none; }
+  .s22 .tarief-abo-rij a b { font-weight: 600; text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--lijn-sterk); }
+  .s22 .tarief-abo-rij .mono { color: var(--inkt-2); }
+  @media (max-width: 720px) { .s22 .tarief-strip { grid-template-columns: minmax(0, 1fr); } .s22 .tarief-strip li { padding: .8rem 0; } }
 
   /* ── STUDIO, GEZICHTEN, VRAGEN ────────────────────────────────────────────*/
   /* ── DE STUDIO-SECTIE: TEKST LINKS, HET SCHERM RECHTS — 8 september 2026 ──
@@ -1203,6 +1296,13 @@
   .s22.s22 .field > label, .s22.s22 .ts-group-h, .s22.s22 .veldkop {
     font-family: var(--mono2); font-size: .75rem; font-stretch: 82%;
     letter-spacing: .04em; text-transform: uppercase; color: var(--inkt); font-weight: 400;
+  }
+  /* De voorrangregel is een <label> als direct kind van zijn .field, maar het
+     is een keuze en geen veldkop: lopende letter, gewoon gewicht. Zie
+     `.pl-voorrang` in OrderFlow.astro (19 september 2026). */
+  .s22.s22 .field > label.pl-voorrang-rij {
+    font-family: var(--tekst2); font-size: .98rem; font-stretch: 100%;
+    letter-spacing: 0; text-transform: none; font-weight: 400;
   }
   .s22.s22 .req { color: var(--gloed); }
   .s22.s22 .hint { font-size: .8rem; color: var(--inkt-2); }
@@ -1678,4 +1778,8 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
     overflow-wrap: anywhere;
     hyphens: auto;
   }
+  /* Niet in een tabel die al zelf schuift (19 september 2026): daar brak de
+     regel hierboven de kolomkoppen midden in het woord ("PRO DUC TEN",
+     "ABONNEM ENT") terwijl de tabel gewoon opzij kan. */
+  .s22 .tabel-schuif :is(th, td, .mono, .etiket) { overflow-wrap: normal; hyphens: manual; white-space: nowrap; }
 }

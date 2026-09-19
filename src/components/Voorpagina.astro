@@ -47,8 +47,8 @@ import '@fontsource-variable/instrument-sans/standard.css';
 import '@fontsource-variable/martian-mono/standard.css';
 import {
   AMOUNT, euro, TEST_SAMPLE, reviewClaim, aftercare,
-  LADDER, ladderRate, vatLabel, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, plans,
-  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
+  LADDER, ladderRate, ladderFloor, vatLabel, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, plans,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES, videoPrijsLabel,
 } from '../data/pricing.js';
 import { countedShort, setSize } from '../data/lexicon.js';
 import { ALLE_DEUREN } from '../data/eigenproduct.js';
@@ -91,6 +91,9 @@ const KIND_PAGE: Record<string, string | null> = { complete: null, catalog: '/ca
 const vorm = (id: string) => LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
 for (const id of KINDS) if (vorm(id) !== vorm('complete')) throw new Error(`Voorpagina: staffel "${id}" breekt op andere aantallen dan "complete".`);
 const RUNGS = LADDER.complete.map(([lo, hi]) => ({ at: lo, label: hi === null ? `${lo}+` : `${lo}–${hi}` }));
+/* De bovenste trede: vanaf dit aantal geldt de laagste prijs. Uit de ladder
+   zelf, niet getypt — dezelfde afleiding als TOP_RUNG_AT in faq.js. */
+const TOP_AT = LADDER.complete[LADDER.complete.length - 1][0];
 
 const PLAN_CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
 const PLAN_FROM = PLAN_AMOUNT[PLAN_CHEAPEST];
@@ -183,7 +186,7 @@ const COPY = {
     svc: [
       ['Product photos', `${setSize('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/start/?zie=foto'],
       ['Lifestyle imagery', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
-      ['Product video', 'One clip per product — eight seconds, one clean move', `from ${e(AMOUNT.video)} a clip`, '/start/?zie=video'],
+      ['Product video', 'One clip per product — eight seconds, one clean move', videoPrijsLabel('en'), '/start/?zie=video'],
     ],
     svcAllKop: 'See all services',
     /* De namen van de andere deuren. De canonieke lijst staat in StartPage.astro
@@ -224,7 +227,7 @@ const COPY = {
        die je bij hetzelfde product kunt bestellen. */
     extrasLabel: 'On the same product',
     extras: [
-      ['Video clip', `One vertical clip for Reels and TikTok · ${e(AMOUNT.video)}`, '/video'],
+      ['Video clip', `One vertical clip for Reels and TikTok · ${videoPrijsLabel('en')}`, '/video'],
       ['Your brand model', `One face, yours alone · once ${e(AMOUNT.brandModel)}`, '/custom-models'],
     ],
     stepsH: 'From folder to launch.',
@@ -246,6 +249,8 @@ const COPY = {
       complete: `Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`,
     },
     priceVat: `Per product, ${vatLabel('excl', 'en')}.`,
+    vanaf: 'from', perProduct: `per product, ${vatLabel('excl', 'en')}`, perMaand: 'a month',
+    totVanaf: (laag: string, n: number) => `down to ${laag} from ${n} products`,
     priceCta: 'Start an order', priceCta2: 'Full price list',
     planH: 'Or every month.',
     planLede: 'A fixed number of finished products a month, in a week on the calendar that is yours.',
@@ -294,7 +299,7 @@ const COPY = {
     svc: [
       ['Productfoto’s', `${setSize('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/start/?zie=foto'],
       ['Lifestyle beelden', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
-      ['Productvideo’s', 'Eén clip per product — acht seconden, één rustige beweging', `vanaf ${e(AMOUNT.video)} per clip`, '/start/?zie=video'],
+      ['Productvideo’s', 'Eén clip per product — acht seconden, één rustige beweging', videoPrijsLabel('nl'), '/start/?zie=video'],
     ],
     svcAllKop: 'Bekijk alle diensten',
     /* Zie de Engelse tegenhanger. */
@@ -318,7 +323,7 @@ const COPY = {
     /* Zie de Engelse tegenhanger. */
     extrasLabel: 'Bij hetzelfde product',
     extras: [
-      ['Videoclip', `Eén verticale clip voor Reels en TikTok · ${e(AMOUNT.video)}`, '/video'],
+      ['Videoclip', `Eén verticale clip voor Reels en TikTok · ${videoPrijsLabel('nl')}`, '/video'],
       ['Je merkmodel', `Eén gezicht, alleen van jou · eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
     ],
     stepsH: 'Van map tot lancering.',
@@ -338,6 +343,8 @@ const COPY = {
       complete: `Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`,
     },
     priceVat: `Per product, ${vatLabel('excl', 'nl')}.`,
+    vanaf: 'vanaf', perProduct: `per product, ${vatLabel('excl', 'nl')}`, perMaand: 'per maand',
+    totVanaf: (laag: string, n: number) => `zakt tot ${laag} vanaf ${n} producten`,
     priceCta: 'Start een bestelling', priceCta2: 'De volledige prijslijst',
     planH: 'Of elke maand.',
     planLede: 'Een vast aantal afgewerkte producten per maand, in een week op de kalender die van jou is.',
@@ -718,36 +725,38 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
   </section>
 
 
-  {/* ── 6 · TARIEVEN ─────────────────────────────────────────────────────────*/}
+  {/* ── 6 · TARIEVEN, IN HET KORT — 19 september 2026 ───────────────────────
+      Hier stonden twee tabellen naast elkaar: de hele prijsladder (vier treden
+      × drie soorten) en de drie abonnementen met kolommen — samen ruim 600 px,
+      en letterlijk dezelfde tabellen als op /pricing en /plans. Op een voorpagina
+      is de vraag niet "wat kost 10–19 lifestyle" maar "in welke orde ligt het".
+      Dus per soort één regel: vanaf-prijs, en tot waar hij zakt; en één regel
+      voor het abonnement. De tabellen blijven waar ze horen: /pricing en /plans.
+      Alle bedragen uit pricing.js. */}
   <section id="tarieven" class="paneel" aria-labelledby="vp-pr">
     <header class="paneel-kop">
       <p class="etiket">{c.secties[4]}</p>
       <h2 id="vp-pr" class="hoog hoog-2">{c.priceH}</h2>
     </header>
-    <div class="tabellen">
-      <div class="blad">
-        <div class="tabel-schuif">
-        <table class="lijst">
-          <thead><tr><th scope="col" class="mono">{c.priceCount}</th>{KINDS.map((id) => <th scope="col" class="mono">{KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id])}>{c.priceKinds[id]}</a> : c.priceKinds[id]}</th>)}</tr></thead>
-          <tbody>{RUNGS.map((r) => <tr><th scope="row" class="mono">{r.label}</th>{KINDS.map((id) => <td class="tarief">{e(ladderRate(id, r.at))}</td>)}</tr>)}</tbody>
-        </table>
-        </div>
-        <p class="mono">{c.priceVat}</p>
-        <p class="acties"><a class="knop knop-inkt" href={lp('/start')}>{c.priceCta}</a><a class="knop knop-lijn" href={lp('/pricing')}>{c.priceCta2}</a></p>
-      </div>
-      <div class="blad">
-        <h3 class="hoog hoog-3">{c.planH}</h3>
-        <p class="lopend">{c.planLede}</p>
-        <div class="tabel-schuif">
-        <table class="lijst">
-          <thead><tr>{c.planCols.map((k) => <th scope="col" class="mono">{k}</th>)}</tr></thead>
-          <tbody>{PLANS.map((pl) => <tr><th scope="row"><a href={`${lp('/plans')}#${pl.id}`}>{pl.name}</a><span class="abo-regel">{pl.line}</span></th><td class="tarief">{pl.products}</td><td class="tarief">{PLAN_CLIPS[pl.id] || '—'}</td><td class="tarief">{pl.price}</td></tr>)}</tbody>
-        </table>
-        </div>
-        <p class="mono">{c.planVat}</p>
-        <p class="acties"><a class="knop knop-lijn" href={lp('/start/plan')}>{c.planCta}</a><a class="pijl" href={lp('/plans')}>{c.planLink}</a></p>
-      </div>
-    </div>
+    <ul class="tarief-strip" role="list">
+      {KINDS.map((id) => (
+        <li>
+          {KIND_PAGE[id] ? <a class="tarief-soort" href={lp(KIND_PAGE[id])}>{c.priceKinds[id]}</a> : <span class="tarief-soort">{c.priceKinds[id]}</span>}
+          <p class="tarief-van"><span class="mono">{c.vanaf}</span> <b class="tarief">{e(ladderRate(id, 1))}</b> <span class="mono">{c.perProduct}</span></p>
+          <p class="mono tarief-tot">{c.totVanaf(e(ladderFloor(id)), TOP_AT)}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="tarief-abo">
+      <span class="tarief-abo-kop">{c.planH}</span>
+      <span class="lopend">{c.planLede}</span>
+      <span class="tarief-abo-rij">{PLANS.map((pl) => <a href={`${lp('/plans')}#${pl.id}`}><b>{pl.name}</b> <span class="mono">{pl.price} {c.perMaand}</span></a>)}</span>
+    </p>
+    <p class="acties">
+      <a class="knop knop-inkt" href={lp('/start')}>{c.priceCta}</a>
+      <a class="knop knop-lijn" href={lp('/pricing')}>{c.priceCta2}</a>
+      <a class="pijl" href={lp('/plans')}>{c.planLink}</a>
+    </p>
   </section>
 
   {/* ── 5 · GEZICHTEN ────────────────────────────────────────────────────────*/}

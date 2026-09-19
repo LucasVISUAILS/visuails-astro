@@ -289,6 +289,7 @@ console.log('\ngeen enkele redirect-bron is een pagina die de site echt serveert
   const functieRoutes = /^\/(o|account|api|admin)(\/|$)/;
   const dood = regels
     .map((r) => r.split(/\s+/)[1])
+    .map((doel) => (doel || '').replace(/[?#].*$/, '')) /* ?lang=nl hoort bij het doel, niet bij het pad */
     .filter((doel) => doel && doel.startsWith('/') && !functieRoutes.test(doel))
     .filter((doel) => !routes.has(doel));
   ok('elke bestemming is een pagina die bestaat', [...new Set(dood)].join(', '), '');

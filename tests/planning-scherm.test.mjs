@@ -115,7 +115,9 @@ console.log('\n4 · het dashboard: één regel per bestelling');
 
 console.log('\n5 · de bovenbalk');
 {
-  for (const [pad, key] of [['/admin', 'Dashboard'], ['/admin/planning', 'Planning'], ['/admin/agenda', 'Agenda'], ['/admin/customers', 'Klanten'], ['/admin/log', 'Log'], ['/admin/vat', 'Btw']]) {
+  /* '/admin/agenda' stond hier tot 19 september 2026; die is in de planning
+     opgegaan en stuurt nu door. */
+  for (const [pad, key] of [['/admin', 'Dashboard'], ['/admin/planning', 'Planning'], ['/admin/customers', 'Klanten'], ['/admin/log', 'Log'], ['/admin/vat', 'Btw']]) {
     const h = await (await get(pad)).text();
     check(`${pad} draagt de balk en wijst "${key}" aan`, new RegExp(`bar-link is-active" aria-current="page">${key}<`).test(h), true);
   }
