@@ -28,7 +28,7 @@
  * printed so the judgement is made with the number in view, and printing it is
  * what caught the following.
  *
- * ACTIVE IS c — THE GREEN MARK ON A NEAR-BLACK TILE. Lucas: *"ik wil eigenlijk
+ * ACTIVE IS c — THE ACCENT MARK ON A NEAR-BLACK TILE. Lucas: *"ik wil eigenlijk
  * het toxic groene logo met transparante achtergrond."* This is that request
  * with the one part changed that could not survive: the mark IS the green now
  * rather than white, and it keeps a ground.
@@ -76,21 +76,23 @@ const PUBLIC = path.join(ROOT, 'public');
 const DRAWER = path.join(ROOT, 'brand', 'logo');
 
 /* ── DE KLEUREN KOMEN UIT KLEURENSCHEMA.md — 20 september 2026 ─────────────
-   De namen GREEN en GREEN_DIM blijven staan omdat de varianten hieronder en de
-   uitvoer van dit script ze bij naam noemen; ze dragen het violet. Wie ze
-   hernoemt, doet dat in een aparte ronde. */
-const GREEN = '#4A1FFF';       // --accent
-const GREEN_DIM = '#A694FF';   // --accent in de donkere modus (violet-licht)
+   Deze twee heetten GREEN en GREEN_DIM, ook nadat ze het violet waren gaan
+   dragen. Hernoemd op 22 september 2026, bij Lucas' ronde langs de verouderde
+   kleuren: een constante die GREEN heet en #4A1FFF is, is geen naam maar een
+   valstrik — de eerste die hem leest denkt dat hier nog gifgroen staat. De
+   bestandsnamen die dit script schrijft veranderen niet mee; die zijn extern. */
+const ACCENT = '#4A1FFF';      // --accent (violet; heette hier GREEN tot 22 sep 2026)
+const ACCENT_DIM = '#A694FF';  // --accent in de donkere modus (violet-licht)
 const DARK = '#000000';        // --panel
 const WHITE = '#F2F3F5';       // --on-panel — bewust niet #FFFFFF, zie het schema
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {
-  c:  { ground: DARK,      ink: GREEN,     note: 'violet op zwart — 2,93:1, AFGEKEURD' },
-  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op violet — 6,45:1, LIVE' },
-  b2: { ground: GREEN,     ink: DARK,      note: 'zwart op violet — 2,93:1, AFGEKEURD' },
-  a:  { ground: WHITE,     ink: GREEN,     note: 'violet op wit — 6,45:1' },
-  a2: { ground: DARK,      ink: GREEN_DIM, note: 'violet-licht op zwart — 8,30:1, het alternatief' },
+  c:  { ground: DARK,      ink: ACCENT,     note: 'violet op zwart — 2,93:1, AFGEKEURD' },
+  b:  { ground: ACCENT,     ink: WHITE,     note: 'wit op violet — 6,45:1, LIVE' },
+  b2: { ground: ACCENT,     ink: DARK,      note: 'zwart op violet — 2,93:1, AFGEKEURD' },
+  a:  { ground: WHITE,     ink: ACCENT,     note: 'violet op wit — 6,45:1' },
+  a2: { ground: DARK,      ink: ACCENT_DIM, note: 'violet-licht op zwart — 8,30:1, het alternatief' },
   mono: { ground: DARK,    ink: WHITE,     note: 'wit op zwart — 18,91:1' },
 };
 /* ── WIT OP GIFGROEN — 8 september 2026 ────────────────────────────────────

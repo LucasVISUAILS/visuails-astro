@@ -156,7 +156,11 @@ interface Props {
      klant meteen ziet wat de categorie is en biedt."* En: *"Ook zie je bij de
      laptop te harde randen. Ik wil dat de schaduw rechts naar rechts fade en
      een lichte fade onder de laptop."* */
-  vorm?: 'paneel' | 'naast';
+  /* `onder` (22 september 2026): dezelfde schone plaat als `naast` — geen
+     sectiepadding, geen doos, de twee verlopen — maar gecentreerd ónder de
+     kop in plaats van rechts ernaast de pagina uit. Lucas: *"de laptop in het
+     midden onderaan en daarboven de kop."* */
+  vorm?: 'paneel' | 'naast' | 'onder';
 }
 
 const {
@@ -248,7 +252,7 @@ const t = nl
       uitleg: 'This is one way to use the images, not the only one. You get the files themselves \u2014 where they go, in what order, and whether you use them all is yours to decide.' };
 ---
 <section
-  class:list={['lc', stil && 'is-stil', vorm === 'naast' && 'is-naast']}
+  class:list={['lc', stil && 'is-stil', vorm !== 'paneel' && 'is-naast', vorm === 'onder' && 'is-onder']}
   data-lc={stil ? undefined : true}
   aria-roledescription="carousel"
   aria-label={titel}
@@ -647,8 +651,13 @@ const t = nl
      opening is het geen sectie maar een beeld, en dan is die lucht een gat. */
   .lc.is-naast { width: auto; max-width: none; margin-inline: 0; }
   @media (min-width: 60rem) {
-    .lc.is-naast { margin-right: calc(-1 * var(--x, 2rem)); }
+    .lc.is-naast:not(.is-onder) { margin-right: calc(-1 * var(--x, 2rem)); }
   }
+  /* Onder de kop: gecentreerd. Lucas, 22 september: *"De laptop mag iets
+     groter zijn."* Van 68 naar 84rem — dat is op 1440 (waar de opening
+     1.360 px binnenwerk heeft) de volle breedte, en op een breder scherm
+     stopt hij bij 1.344 px zodat hij niet groter wordt dan het beeld zelf. */
+  .lc.is-onder { width: min(100%, 84rem); margin-inline: auto; }
 
   /* ── DE BEELDEN ───────────────────────────────────────────────────────────
      Alle acht liggen op elkaar op het schermvlak; alleen de actieve is

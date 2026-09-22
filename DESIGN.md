@@ -1,31 +1,25 @@
 # Design
 
-> **Status, 18 augustus 2026: de kleurentabel hieronder was nog die van sectie 18
-> en beschreef een accent dat de site niet meer draagt.** Bijgewerkt. Lees deze
-> noot voordat je iets hieronder leest.
+> **Stand: 22 september 2026.** `KLEURENSCHEMA.md` in de wortel draagt de
+> kleuren; dit bestand draagt de rest van het systeem (elevatie, focus, motion,
+> layout, z-index, toegankelijkheid, en de lijst met wat we niet doen). Wijkt
+> de code van KLEURENSCHEMA.md af, dan volgt de code dat document.
 >
-> Dit bestand heeft nu vier paletten beschreven, en drie keer bleef de vorige
-> als tabel staan. Dat is precies hoe iemand een waarde overneemt die nergens
-> meer bestaat: `#90BEFF` stond hier nog op vier plekken terwijl `global.css`
-> al sinds augustus `#C6F100` draagt. De regel die daaruit volgt en die
-> hieronder wordt toegepast: **een vervangen palet wordt uit dit bestand
-> VERWIJDERD, niet doorgestreept.**
+> **De regel van dit bestand, en waarom hij er is.** Er zijn nu zes paletten
+> beschreven en vijf keer bleef de vorige als tabel staan — zo houdt iemand een
+> waarde over die nergens meer bestaat. `#90BEFF` stond hier ooit op vier
+> plekken terwijl de site al `#C6F100` droeg, en op 22 september stond de hele
+> gele familie er nog terwijl het accent al twee dagen violet was. Dus: **een
+> vervangen palet en een vervangen lettersysteem worden uit dit bestand
+> VERWIJDERD, niet doorgestreept.** Die regel is op 22 september op de twee
+> ingetrokken paletten én op de typografiesectie toegepast.
 >
-> This file has now described three palettes. Sections 1–14 shipped an OKLCH ink/paper
-> system; section 15 replaced it with **VISUAILS harbor** (warm ink, cool paper,
-> espresso, teal and clay); section 18 replaced *that*, on Lucas's instruction, with a
-> **cool near-black scheme modelled on onlinepaymentplatform.com** — and reversed the
-> hard-edge rule at the same time, so the "Radius — zero, one token, no exceptions"
-> section below is wrong twice over: there is a scale now, and it is not zero.
+> Wat historie is, is als historie gemarkeerd: "Twee ingetrokken paletten" en
+> "Section 21" staan er om de REDENERING, niet om de waarden.
 >
-> The authoritative palette is the `:root` block in `src/styles/global.css`. The
-> summary immediately below is section 18's; the harbor table that used to sit here is
-> gone rather than kept for reference, because a superseded palette in a design file is
-> a palette somebody will copy a value out of.
->
-> Everything else in this file — elevation, focus, the chrome fence, motion, layout,
-> z-index, accessibility, and the rejection list — still holds, with two amendments
-> recorded in "Section 18 amendments" below.
+> De radius-paragraaf hieronder ("zero, one token, no exceptions") is sinds
+> augustus 2026 onwaar in beide richtingen: er is een schaal, en hij is niet
+> nul. Zie `--r-sm` / `--r-md` / `--r-card` / `--r-pill` in `global.css`.
 
 ---
 
@@ -83,286 +77,41 @@ randsimulatie met `inset 0 0 0 1px` mag). En hooguit zo'n 2% violet per scherm:
 is dat ergens niet haalbaar, dan wordt dat gemeld en niet opgelost met een
 extra kleur.
 
-## The shipped palette (section 20 — light, with Komma's yellow) ~ INGETROKKEN, 20 september 2026
+## Twee ingetrokken paletten — verwijderd, 22 september 2026
 
-> **5 september 2026.** Lucas: *"Wat ik nu heb voelt ergens onprofessioneel en ik
-> zou het liever een wat serieuzere feeling willen geven"* — reference
-> ovyonlabs.com/works/komma, measured there: a white ground, neutral greys, one
-> metallic acid yellow (#DED812 / #E4DE18 on the material). The section-18 table
-> that used to sit here is deleted, per this file's own rule; its values are in
-> git history. Hanken Grotesk + Space Mono replaced Archivo + Big Shoulders +
-> Anybody in the same change.
+Hier stonden de volledige paragrafen van **sectie 20** (Komma's geel,
+`#D2E04A` / `#B8CC46` / `#E4F474` / `#9EB42F`) en van **harbor** (warme inkt,
+teal en klei). Allebei weg, en dat is de regel die bovenaan dit bestand staat
+en die drie keer eerder niet is toegepast: *een vervangen palet wordt uit dit
+bestand VERWIJDERD, niet doorgestreept.*
 
-Pure white as the ground, near-black ink in four steps, one acid yellow that is a
-**fill and a material, never a letter** (yellow on white is 1.48:1), and dark
-"glass" panels for everything that must stay dark — the footer, the cta band, the
-scrims over photographs, the conversion bar — via the `.on-ink` scope.
+Lucas, 22 september: *"pas het ook aan op andere plekken waar de verouderde
+kleuren nog staan."* Dit bestand was de grootste plek. Er stonden 280 regels
+met hexwaarden die nergens meer bestaan, inclusief een tabel die zich als "the
+shipped palette" aanbood — precies het soort regel waar iemand een waarde uit
+overneemt.
 
-| Token | Value | Role | Measured |
-|---|---|---|---|
-| `--bg-0` | `#F5F5F5` | The page ground — Komma's light ground, measured 5 Sep 2026 | — |
-| `--bg-raise` | `#EDEDED` | Raised band, recessed panel | — |
-| `--surface` | `#FFFFFF` | A card off the ground — the white poster on Komma's grey | — |
-| `--surface-2` | `#EAEAEA` | The step above that | — |
-| `--ink-1` | `#0A0A0A` | Headings and primary text | 19.7:1 on `--bg-0` |
-| `--ink-2` | `#454545` | Body / secondary | 9.2:1 |
-| `--ink-3` | `#686868` | Muted, captions | 5,6:1 op wit · 4,53:1 op `#EDEDED` |
-| `--ink-4` | ink 42% | Faint — **a line value, never text** | — |
-| `--line` | `#DFDFDF` | Hairline | — |
-| `--line-strong` | `#BDBDBD` | Rule, control border — **never text** | — |
-| `--accent` | `#D2E04A` | Primary fill, the one coloured tile, the glow — Komma's yellow, measured (6 Sept 2026, see KLEURENSCHEMA.md) | 13.7:1 with ink on it |
-| `--accent-ink` | `#0A0A0A` | What sits ON an accent fill | white on the accent is 1.5:1 and is never correct |
-| `--accent-dim` | `#B8CC46` | Hover / pressed; the meter, the ring | — |
-| `--accent-text` | `var(--ink-1)` on light, `#E4F474` on glass | The accent where a rule asks for it as text: ink on white; on glass the lighter UI-lime Komma sets its mono labels in | 16.5:1 on `#111111` |
-| `--glass` | `#111111` | The dark panel — Komma's dark, measured on the page itself (`--ink-900` resolves to it) | white on it 18.9:1 |
-| `--glow` | `#9EB42F` | The glow along a glass panel's edge — Komma's glow border; light only, never text | — |
-| `--scrim` | `17 17 17` (channels) | Every veil over a photograph | see below |
+**Wat de twee wél hebben nagelaten, want dat gaat over methode en niet over
+een kleur:**
 
-> **De vier grondwaarden zijn bijgewerkt, 30 augustus 2026.** Ze stonden hier één
-> stap lichter dan wat `global.css` schildert: `#08090B / #101216 / #17191E /
-> #1F2229` tegen de werkelijke `#030406 / #060709 / #08090B / #0C0E11`. De
-> grond is bij §19 hieronder donkerder geworden — "één grond, en kleur als
-> nadruk" — en deze tabel is toen niet meegegaan. De rollen zijn ongewijzigd;
-> `--bg-raise` is sinds diezelfde §19 bovendien een no-op, want elke volle
-> grond is `--bg-0`.
->
-> `tests/promises.test.mjs` ving er maar twee van de vier: hij keurt een hex goed
-> zodra die *ergens* in `global.css` voorkomt, en `#08090B` en `#17191E` bestaan
-> allebei nog — als `--surface` en als `--menu-surface`. Twee foute regels
-> stonden dus jarenlang groen omdat hun waarde toevallig op een andere token
-> zat. De controle is daarmee zwakker dan hij eruitziet; wie hem ooit aanscherpt,
-> koppelt de token aan zijn eigen waarde in plaats van aan de verzameling.
+1. **Een flauwe waarde is geen tekstkleur.** Harbor's `--ink-300` haalde
+   2,31:1. Bijschriften en microcopy gaan naar de gedempte trede, en die trede
+   wordt gemeten op de DONKERSTE grond waar hij op landt — niet op papier.
+2. **Een accent zet geen lopende tekst tot het als lopende tekst is gemeten.**
+   Vandaar `--accent-text` (`#3D17D6`) náást `--accent` (`#4A1FFF`): de vulling
+   en de letter zijn niet dezelfde waarde, want de eisen zijn niet dezelfde.
+3. **Kleur draagt nooit alleen een status.** Elke capaciteit, validatie en
+   bestelstatus draagt ook een woord.
+4. **Een balk over een foto heeft ÉÉN inkttrede, geen drie.** Gemeten op
+   gerenderde pixels liep de tweede trede daar op 1,62–4,09:1. Hiërarchie komt
+   daar uit gewicht en positie. Dit is de enige plek waar de ladder bewust plat
+   is, en het is onzichtbaar voor een audit die alleen tokens naloopt — vandaar
+   dat er ook een pixelaudit is.
 
-Two things about this table are counter-intuitive and are the reason it is written down:
+De waarden zelf staan in de git-geschiedenis en in `REPORT-SECTION-15.md`.
+`KLEURENSCHEMA.md` draagt het huidige palet; de tabel hierboven is de
+samenvatting daarvan.
 
-**The accent carries near-black, not white.** `#C6F100` is a lime. The instinct is
-white text on it; white is 1.31:1. Everything set on an accent fill takes `--accent-ink`.
-
-*(Tot 18 augustus 2026 stond hier `#90BEFF` met 1.91:1 — het lichtblauw van
-sectie 18. De eigenschap die de regel draagt is dezelfde en zeldzaam: één waarde
-die zowel als tekst op de grond als als vlak onder bijna-zwarte tekst werkt.
-Lucas, over de aanleiding: "ik wil denk ik af van de pastelkleuren die nu veel
-gebruikt worden en een wat serieuzere kleurenschema kiezen".)*
-
-**So do the gradients.** Every stop of both gradients is more legible under near-black
-than under white, by a factor of two. `.panel-grad` in `global.css` is a scope that
-restates the entire ink ramp, the line values, the accent and all six button tokens for
-exactly this reason — a gradient panel is not a background change, it is an inversion,
-and doing it by hand produces white body copy at 2.28:1 every time.
-
-**`--scrim` is channels, not a colour.** A gradient stop cannot take a colour token and
-apply its own alpha to it, so scrims read `rgb(var(--scrim) / 0.62)`. Before section 18
-the same espresso was hand-written in two notations — `oklch(0.16 0.006 75 / a)` and
-`rgb(25 21 16 / a)` — in forty places that did not know they were the same colour.
-
-### The three names that changed ROLE, not value ~ INGETROKKEN met het palet hierboven
-
-A palette swap that only changes values is a find-and-replace. Three names in this
-codebase were doing two jobs each, and the second job is invisible until it breaks:
-
-- **`--ink-900`** was the darkest ink *and*, by coincidence of value, the token every
-  dark section used as its **ground** — `.on-ink`, the hero scrims, `.cta-band`,
-  `.convbar`, `::selection`. Aliased to white (the obvious reading of the name) it turned
-  the footer, the conversion bar and three hero scrims white in one line. It is the
-  ground. It resolves to `--bg-0`.
-- **`--paper`** was the light ground *and* the "light ink on a dark scrim" value, used as
-  `color: var(--paper)` on five badge and caption rules. Those now read
-  `--paper-on-dark`.
-- **`::selection`** inverted ink and paper, and needed a second rule for the dark scope.
-  On a near-black-everywhere palette that inversion collapses — both values are
-  near-black. Selection is the accent now, and there is one rule.
-
-### Een bedrag — één vorm, vier plekken
-
-*(Toegevoegd 30 augustus 2026, na de inkorting van de homepage.)*
-
-Een prijs op deze site heeft altijd dezelfde anatomie: een label in kapitalen, een
-groot getal in de displayletter, de eenheid eronder, de btw-regel daaronder. Die
-vorm bestond op 30 augustus **vier keer**, in vier bestanden, onder vier namen —
-`.pl-*` op /plans, `.hv-price-*` op de homepage, `.bmcost-*` op /custom-models en
-`.anchor-*` op /pricing — en ze liepen al uiteen in korpsgrootte (3,8 / 3,6 /
-3 rem) zonder dat iemand dat besloten had.
-
-Hij staat nu één keer, in `global.css`, als `.bedrag` / `.bedrag-label` /
-`.bedrag-cijfer` / `.bedrag-eenheid` / `.bedrag-btw`, plus `.bedrag-reeks` voor
-twee bedragen op één regel.
-
-- **De maat is een variabele, geen variant.** Een bedrag in een prijsplaat mag
-  groter zijn dan een bedrag naast drie andere; dat zet je met `--bedrag-maat` op
-  het blok. Geen `--groot` en `--klein`, want dan is het na drie maanden weer een
-  lijstje.
-- **`tabular-nums` hoort erbij.** Twee bedragen onder of naast elkaar staan op
-  dezelfde cijferbreedte; anders wiebelt de kolom zodra er een 1 in staat.
-- **Twee zijn er overgezet, twee nog niet.** `.bmcost-*` en `.anchor-*` doen naast
-  typografie ook de opbouw van hun eigen paneel — randen, een raster, een haarlijn
-  tussen twee bedragen. Die migreren is een verbouwing van twee panelen en hoort
-  een eigen ronde met een eigen controle te zijn. Ze staan bij naam genoemd in de
-  noot boven `.bedrag` in global.css, zodat het geen zoekplaatje is.
-
-### Radius — a three-step scale, and one place it is written
-
-Section 18 reversed the hard-edge rule on Lucas's instruction ("voeg ronde hoeken toe").
-The section below titled "Radius — zero, one token, no exceptions" describes the retired
-rule and is kept only because the *reasoning* in it is still the reason the scale is
-small.
-
-```css
---r-lg: 16px;   /* cards, panels, tiles      */
---r-md: 8px;    /* buttons, fields, pills    */
---r-sm: 4px;    /* the small stuff inside    */
---radius: var(--r-md);   /* legacy alias */
-```
-
-Three steps and no pill: a fully round control beside an 8px input is the undecided look.
-
-**There is no blanket reset.** `*, *::before, *::after { border-radius: … }` is how a
-radius ends up on a table cell and a horizontal rule; radius is applied per primitive.
-And there is exactly one place the scale is written — a second `--radius: 0` sitting
-below the alias in the same `:root` silently squared the entire site while the scale
-above it looked correct in the file.
-
-### Section 19 — one ground, and colour as emphasis
-
-Two instructions: *"ik wil dat de achtergrond van de website 1 kleur wordt"* and *"de
-tegels … vellere kleuren"*, again pointing at onlinepaymentplatform.com.
-
-**One ground.** The page was `--bg-0` for most of it, `--bg-raise` for a banded section,
-`#000` for the footer, plus four mist tints. Each step was small enough to read as a seam
-rather than a decision. Every full-width ground is `--bg-0` now; `.on-paper`,
-`.well-deep`, `.well-raise` and the four `.mist-*` classes are declared together as
-no-ops in one block. **If a section needs distinguishing, the answer is a tile, a panel, a
-rule or more space — not a second ground.**
-
-**De vier felle vlakken — HERZIEN, augustus 2026.**
-
-Ze waren blauw, violet, roze en koraal, en dat was het probleem: vier
-gelijkwaardige kleuren die niets onderscheidden omdat ze allemaal even hard
-riepen. HERONTWERP.md §2.2 telde het na op de gebouwde site — twee ervan
-renderden als hetzelfde groen en twee als hetzelfde grijs, want de tokens waren
-al herbenoemd zonder dat deze tabel meeging.
-
-De namen zijn gebleven (er hangen tientallen regels aan) en de waarden niet:
-
-| Token | Waarde | Rol |
-|---|---|---|
-| `--fill-blue` | `var(--accent)` | het ene vlak in een raster dat gelezen moet worden |
-| `--fill-violet` | `var(--accent-dim)` | de tweede stap, als er echt twee nodig zijn |
-| `--fill-pink` | `#E6E6E6` | een derde onderscheid, zonder tweede kleur |
-| `--fill-coral` | `#C2C2C2` | de zwakste; ook de waarschuwingsstreep in lijsten |
-
-Dat volgt het ontwerpprincipe dat PRODUCT.md sinds augustus draagt: *"Colour
-marks the point; the photograph still carries it."* Eén vlak per raster krijgt
-kleur, de rest onderscheidt zich met wittinten — want kleur op alles is kleur op
-niets, en dan concurreert de fotografie met het meubilair.
-
-*(De contrasttabel hieronder hoorde bij de oude vier waarden en staat er nog als
-verantwoording van de meetmethode. De GETALLEN gelden niet meer.)*
-
-The gradient stops themselves (`#5B7CFA` at 5.41, `#9A6BF5` at 5.50) **cannot carry body
-copy**: near-black at the muted step lands at 3.57 and 3.62 against a 4.5 floor. A tile
-has a paragraph in it, not just a headline, so the fills were lifted in OKLCH with hue and
-chroma held until the third ink step cleared. A fill needs roughly **8:1 against
-near-black** before a full three-step ramp holds on it — that is the number to reuse.
-
-**`.on-bright` is the inversion, worn by both devices.** `.panel-grad` used to own the
-whole ink/line/accent/button restatement privately. The coloured tiles need exactly the
-same, so it is a scope now and both wear it; each `.tile-c-*` class does nothing but name
-a colour, which is the test of whether the factoring was right.
-
-**Specificity, twice, and both were real bugs caught in the browser.** `.tile.tile-c-blue`
-is doubled because `.tile { background: var(--surface) }` sits lower in the file and wins
-on source order — a coloured tile rendered dark with near-black text on it. `.w-blue.w-blue`
-is doubled because `.hv-stat dt` is a descendant selector and outranks a single class.
-And the stat-row override still had to move **into HomeV2's own scoped block**, because
-Astro compiles component styles with a `[data-astro-cid]` attribute: a scoped rule always
-outranks a global utility, however many times you double it. The override has to live in
-the scope that caused the conflict.
-
-**The fence:** at most two coloured tiles per grid, never two of the same hue, and never
-behind a photograph.
-
-### Section 19 — cookie consent
-
-`src/components/CookieConsent.astro` + `src/scripts/consent.js`. Built to the Dutch AP's
-stated requirements, each one structural rather than remembered:
-
-- **Reject as prominent as accept** — one shared `.cc-btn` class, so they cannot diverge;
-  reject is first in the DOM and in the tab order. Asserted in the test from the *computed*
-  height, weight, size, radius and background of both buttons.
-- **Nothing pre-ticked** — the analytics box is off, and off is also what "no answer yet"
-  means.
-- **No cookies before consent** — the analytics beacon is no longer rendered in
-  `Layout.astro` at all; `consent.js` appends it after a yes. Verified with a real token:
-  0 requests before an answer, 0 after a refusal, 1 after a yes.
-- **No cookie wall** — a bottom bar, not a modal. The page scrolls and works identically
-  whether it is answered or ignored. Asserted by scrolling with the bar up.
-- **Withdrawal as easy as consent** — a "Cookie preferences" control in the footer of
-  every page and inside the cookie policy, showing the current answer rather than a blank
-  form.
-- Consent is **versioned and expires at 12 months**; bumping `CONSENT_VERSION` invalidates
-  every stored answer, because a yes to one question is not a yes to a different one.
-
-**Switching analytics on is a build setting, not a code edit.** Set
-`PUBLIC_CF_ANALYTICS_TOKEN` in the Pages project as a **plaintext Variable** (not a
-Secret — a Cloudflare Web Analytics token is public by design and ends up in the page
-source of every site that uses it) and redeploy. It used to be a literal in
-`Layout.astro`, which meant a deployment-owned value lived inside the thing being
-deployed. Verified with the variable set: 0 beacon requests before an answer, 0 after a
-refusal, 1 after a yes; and a build without the variable carries no token at all.
-
-The old comment on that line claimed cookieless analytics "needs no consent banner".
-Cookieless means no cookie-storage consent under ePrivacy, which is not the same as no
-consent at all — and the safe side of that argument costs one banner that was going to
-exist anyway.
-
-The site sets three cookies and `/cookie-policy` now names all three rather than
-describing categories. Worth stating plainly: **none of this was legally required today** —
-the only cookies are strictly necessary. It was built because the policy already promised
-it, and because the analytics switch needs a lawful gate the day it is turned on.
-
-### Section 18 amendments to the rest of this document
-
-- **The chrome fence still stands**, but the ramp moved hue: harbor ran it warm (75) with
-  one cool inflection; it runs cool (255) with one warm inflection now. The rule is that
-  the ramp runs on the ink hue with a single opposing reflection — not the numbers.
-- **The chrome scrim was on the wrong layer.** `.ch-promise`'s directional scrim was the
-  first background layer of `.hero-fallback`, i.e. *under* the canvas. Every visitor
-  whose browser ran the shader saw the copy on raw metal. The scrim is its own layer
-  above both paths now (`.ch-promise::before`).
-- **The two brand marks are never placed together.** The V glyph and the logotype are
-  alternative signatures, not a lockup. Enforced as a build failure —
-  `scripts/brand-lockup-guard.mjs` fails `astro build` if a wordmark and a glyph share
-  any ancestor below `<body>`.
-
----
-
-## Harbor — the retired palette (section 15, superseded by section 18)
-
-The value table that sat here is deleted. A superseded palette in a design file is a
-palette somebody copies a value out of, and this file has now carried two of them.
-Harbor's values are in git history and in `REPORT-SECTION-15.md`; the section-18 table
-above is the live one.
-
-What survives harbor, because it is about *method* rather than about warm ink:
-
-1. **A faint value is not a text colour.** Harbor's `--ink-300` was 2.31:1; the current
-   `--line-strong` is white at 22%. Both are rules. Captions and microcopy resolve to
-   the muted step, and `--ink-faint` is aliased to it for exactly this reason.
-2. **An accent does not set body text until it has been measured setting body text.**
-   Harbor needed a separate `-text` cut for both accents; `#C6F100` does not, and that
-   is a property of the value, not a licence.
-3. **A muted value is measured on the DARKEST ground it lands on.** Harbor's `.62`
-   cleared 4.5:1 on paper and failed at 4.36 on the mist tints, which is where half the
-   muted text sat. That is how `.62` became `.64`, and it is why section 18's ramp was
-   measured on `--surface` rather than on `--bg-0`.
-4. **Colour is never the sole carrier of state.** Every capacity, validation and order
-   status carries a word as well as a fill.
-5. **The sticky nav over a hero has ONE ink tier, not three.** Measured against rendered
-   pixels the second tier ran 1.62–4.09:1. A 76px bar standing on a photograph whose
-   exposure the studio does not control has room for one legible value; hierarchy comes
-   from weight and position. This is the one place the ramp is deliberately flattened,
-   and it is invisible to a token-walking contrast audit by construction — which is why
-   there is a pixel-sampling audit as well.
 
 ## Foundations
 
@@ -649,54 +398,38 @@ a colour change alone, and never suppressed on mouse input for form fields.
 
 ## Typography
 
-Archivo stays. It is already self-hosted through Fontsource, already licence-clean and
-AVG-clean (zero Google Fonts requests), and a heavy grotesque is the correct voice for a
-brand arguing engineered control. Replacing it would be change for its own sake.
+> **Herschreven 22 september 2026.** Wat hier stond ging over Archivo, over een
+> `wdth`-as die uit één familie display-contrast moest halen, en over IBM Plex
+> Mono als derde rol — een stapel beslissingen uit sectie 15. Daarna zijn de
+> letters nog drie keer gewisseld (Hubot Sans + Satoshi + Sometype Mono, toen
+> Instrument Sans, toen Figtree) en stond hier dus een typografisch systeem dat
+> de site al een half jaar niet meer draagt. Zelfde regel als bij de paletten:
+> weg, niet doorgestreept.
 
-Two changes, both functional:
+**Drie families, vier rollen.** Alle drie zelf gehost via Fontsource — nul
+verzoeken naar Google Fonts, dus niets wat de cookiebanner of de
+privacyverklaring raakt.
 
-**1. Move from eight static cuts to one variable file. — DONE, section 15.**
-`@fontsource-variable/archivo/wght.css` replaced the eight imports, and the latin
-roman is preloaded. `/catalog`'s LCP was 3372ms waiting on fonts and is now 2068ms.
-The `wdth` axis was not taken: nothing in the system varies width. `@fontsource/archivo` currently
-loads `400 / 500 / 600 / 700 / 800 / 900 / 400-italic / 700-italic` — eight requests on
-every page, against an LCP budget of under 2.5s on mobile 4G with a WebGL field running.
-`@fontsource-variable/archivo` is one file across the whole weight axis. Preload the
-variable roman; drop italic to a synthesised fallback or a single cut if the design
-actually uses it (it currently uses it in exactly one place, `/video`'s hero `<em>`).
+| Token | Familie | Rol |
+|---|---|---|
+| `--font-heading` | **Anybody Variable** | Koppen. Op `font-stretch: 125%` en in kapitalen; dat is het gezicht van de site. De perskop van de voorpagina draait diezelfde as de andere kant op — 78% en gewicht 900 — en is de enige plek waar dat mag. |
+| `--font-body` | **Figtree Variable** | Lopende tekst, labels in formulieren, alles wat je echt leest. |
+| `--font-mono` | **Martian Mono Variable** | Etiketten, maten, referenties, knoplabels. Op `font-stretch: 82%`: op 100% is hij zó breed dat een ordernummer uit zijn cel loopt. |
+| `--font-merk` | Anybody Variable, 125% | De merknaam in een labelregel. Dezelfde snit als de koppen, met eigen letterafstand. |
 
-**2. Get display contrast from the width axis, not a second family.** Archivo's variable
-build carries a `wdth` axis. Display sizes run expanded and heavy; body runs normal.
-That is a contrast axis inside one family, which the type rules permit and which costs
-zero additional bytes.
+**Waarom drie en niet twee.** Anybody en Martian Mono hebben allebei een
+breedte-as, en de site gebruikt die as als contrastmiddel in plaats van een
+vierde familie erbij te halen: breed voor koppen, smal voor mono. Figtree heeft
+er geen en hoeft er geen — twee breedtes binnen één alinea lezen als twee
+lettertypen.
 
-```css
---font-display: "Archivo Variable", "Archivo", system-ui, sans-serif;
---font-body:    "Archivo Variable", "Archivo", system-ui, sans-serif;
---font-editorial: "Anybody", "Archivo", system-ui, sans-serif;
---font-heading:  var(--font-display);
+**Wat een letterwissel wél raakt.** `scripts/fonts-voor-worker.mjs` bepaalt
+welke snitten de build meekopieert, en `public/admin.css` / `src/styles/studio.css`
+schrijven hun eigen `--font-kop` / `--font-mono` met dezelfde namen erin. Staat
+daar een familie die de build niet levert, dan rendert een heel werkscherm in
+Arial zonder dat er iets stukgaat — dat is op 7 september gebeurd en het is de
+reden dat die drie bestanden nu uit dezelfde lijst lezen.
 
-h1, h2, .display { font-variation-settings: "wdth" 112; font-weight: 800; }
-```
-
-If the published Fontsource variable package exposes `wght` only and not `wdth`, do not
-substitute a second display family — fall back to weight 900 plus `letter-spacing: -0.035em`
-and move on. The width axis is an improvement, not a dependency.
-
-**Third role: a monospace for data only.** `IBM Plex Mono`, 400 and 500, latin subset,
-self-hosted via Fontsource (OFL 1.1). It sets prices, deadlines, turnaround figures,
-capacity counts, order IDs, product counts, file specs, and table numerals — the things
-the brand claims to control. It is the "instrument" reading made literal, and it is why
-`€1,850`, `48h` and `8 products` can be legible as specifications rather than as marketing.
-
-The discipline that keeps it from becoming a terminal-aesthetic tell:
-
-- Mono never sets a heading.
-- Mono never sets a sentence or a paragraph.
-- Mono never appears for decoration, texture, or an "eyebrow".
-- Mono appears only where a number, unit, date, ID or spec label appears.
-
-If a mono string in a build is not a number or an identifier, it is wrong.
 
 ### Scale
 
@@ -1192,7 +925,15 @@ for JavaScript.
 
 ---
 
-## Section 21 — the homepage, flat and full-bleed (5 September 2026)
+## Section 21 — the homepage, flat and full-bleed (5 September 2026) ~ HISTORIE
+
+> **Lees dit als verslag, niet als opdracht (22 september 2026).** Deze
+> paragraaf beschrijft de homepage-ronde van 5 september, inclusief de kleuren
+> en letters van toen. Twee paletten en drie letterwissels later klopt er van
+> de WAARDEN niets meer; de redenering eronder — waarom een vol scherm, waarom
+> panelen in plaats van secties, wat er wegging en waarom — is waarom hij
+> blijft staan. Voor de geldende waarden: `KLEURENSCHEMA.md` en de tabel
+> bovenaan dit bestand.
 
 Lucas, after section 20: *"hoe het nu wordt voelt zo vriendelijk nog"* — the
 reference is ovyonlabs.com/works/komma and the Lue site, and the brief is
@@ -1225,11 +966,11 @@ the second round the same day:
   `.korrel-mee`, the `brand-beam`/`brand-glow` atmosphere images — is switched
   off in global.css; a panel ends where it ends. /studio's hero and closer are
   plain ink panels now, registered in the dark-ground scope.
-- **Type.** Hubot Sans Variable (headings at `font-stretch: 110%`, the
-  `VISUAILS®` mark at 125%), Satoshi for running text (self-hosted from
-  `public/fonts/satoshi/`, Hubot as fallback until the woff2 files land),
-  Sometype Mono as the second voice: labels, chips, the nav, the footer trust
-  row. Chosen from two font sheets (`kladblok/font-keuze*.html`).
+- **Type.** Toen: Hubot Sans + Satoshi + Sometype Mono, gekozen uit twee
+  letterbladen (`kladblok/font-keuze*.html`). Alle drie zijn vervangen — zie
+  "Typography" hierboven voor wat de site nu draagt. De rol-indeling uit deze
+  ronde is wél gebleven: een smalle kop, een leesletter, en een mono als
+  tweede stem voor labels, chips, de navigatie en de vertrouwensregel.
 - **Pills and glass.** Buttons are pills again (`--r-pill`, 42px, 1.5rem
   inset), as are the nav links, the language switch and the chips. Glass
   (`.glas`, `.glas-licht`: 62% ink, 16px blur, a 1px light rim, 22px radius)

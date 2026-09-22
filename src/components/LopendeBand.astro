@@ -133,4 +133,11 @@ const c = nl ? {
      achtergrond als de andere panelen op de pagina; de indeling van de rij
      staat in Stations.astro. */
   .lb-kop { max-width: 46rem; }
+  /* Groter beeldvak dan op /how-it-works: hier staan vier kolommen en geen
+     regels eronder, dus het beeld mag de kolom vullen (22 september 2026).
+     De drie uitsnedes in station 04 volgen in verhouding mee. */
+  .lb :global(.lb-rij) { --lb-vak: clamp(11.6rem, 15vw, 15.5rem); }
+  .lb :global(.lb-vormen li:nth-child(1) .lb-vorm) { height: calc(var(--lb-vak) * .55); }
+  .lb :global(.lb-vormen li:nth-child(2) .lb-vorm) { height: calc(var(--lb-vak) * .68); }
+  .lb :global(.lb-vormen li:nth-child(3) .lb-vorm) { height: var(--lb-vak); }
 </style>

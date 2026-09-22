@@ -44,13 +44,27 @@
    `<em>` markeert het zinsdeel dat het accent draagt. Sinds vandaag is dat een
    violette LETTER en geen violet vlak meer — zie `.hero-h1 em` in
    src/styles/stijl22.css voor waarom. */
+/* ── DRIE REGELS, EN HET ACCENTWOORD WISSELT — 22 september 2026 ────────────
+   Lucas: *"de kop is niet zo mooi verdeeld"* en *"een kop tekst waarbij het
+   paarse woord telkens verandert naar een andere service die we aanbieden."*
+
+   De kop stond als twee regels die de browser zelf brak: "AL JE PRODUCT- /
+   BEELDEN." in het Engels ("ALL YOUR PRODUCT / IMAGERY.") viel het accentwoord
+   over twee regels. Nu zijn het drie regels die nooit anders breken: het
+   bezit, het accentwoord, de belofte. En het accentwoord loopt door de
+   diensten heen — `wissel` is de lijst, het eerste woord is wat er staat
+   zonder beweging (en wat een schermlezer en Google lezen: `plain`). Elk woord
+   moet in de zin passen die eromheen staat: "Al je … . Zonder shoot." — dus
+   meervouden, geen merknaam, geen "video" alleen. */
 export const TAGLINE = {
   en: {
-    lines: ['All your <em>product imagery</em>.', 'Without a shoot.'],
+    lines: ['All your', '<em>product imagery</em>.', 'Without a shoot.'],
+    wissel: ['product imagery', 'catalog photos', 'lifestyle images', 'product videos'],
     plain: 'All your product imagery. Without a shoot.',
   },
   nl: {
-    lines: ['Al je <em>productbeelden</em>.', 'Zonder shoot.'],
+    lines: ['Al je', '<em>productbeelden</em>.', 'Zonder shoot.'],
+    wissel: ['productbeelden', 'catalogfoto’s', 'lifestylebeelden', 'productvideo’s'],
     plain: 'Al je productbeelden. Zonder shoot.',
   },
 };

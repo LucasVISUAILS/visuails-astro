@@ -2223,10 +2223,10 @@ Sans voor de tekst, Martian Mono voor de labels op 82% breedte. Hubot Sans en
 Sometype Mono zijn eruit, ook uit `scripts/fonts-voor-worker.mjs`, en de twee
 preloads wijzen naar de nieuwe bestanden.
 
-- [ ] 🟢 **Satoshi is niet meer nodig.** `--font-body` wijst nu naar Instrument
-  Sans. De @font-face en de glob op `public/fonts/satoshi/` staan er nog en doen
-  niets zolang die bestanden er niet liggen; ze mogen weg zodra je zeker weet
-  dat je Satoshi niet meer wilt.
+- [x] ~~🟢 **Satoshi is niet meer nodig.**~~ *(21 september 2026: `--font-body`
+  is Figtree, alle Satoshi-plumbing is uit de code — astro.config, de @font-face
+  en de preloads. Wat nog op Lucas' schijf staat: de map `public/fonts/`, die
+  mag weg.)*
 - [x] ~~🟡 Op `/plans` was de kop van het limepaneel niet te lezen.~~
   *(gerepareerd 7 september, nadat Lucas de schermafdruk stuurde: het paneel
   staat nu in de `.on-ink`-lijst in global.css, dus `--ink` lost op naar de
@@ -2362,10 +2362,12 @@ de live site. De conceptpagina's blijven staan ("laten staan"): ze staan op
 - [ ] 🔴 **Domeinwissel visuails.com → Worker** pas na fase 2/3: webhooks
   (Mollie, Stripe, Resend) omzetten, resterende secrets op de Worker
   (Stripe, SELLER_ADDRESS, VISUAILS_VAT/IBAN, RESEND_WEBHOOK_SECRET).
-- [ ] 🟢 `npm install` na het binnenhalen (Hubot Sans, Sometype Mono via npm;
-  Hanken, Space Mono, Manrope, DM Mono, Syncopate zijn weg).
-- [ ] 🟢 Satoshi: `Satoshi-Variable.woff2` en `Satoshi-VariableItalic.woff2` in
-  `public/fonts/satoshi/` (zie LEES-MIJ.txt daar).
+- [x] ~~🟢 `npm install` na het binnenhalen (Hubot Sans, Sometype Mono via npm)~~
+  *(vervallen 21 september 2026: de letters zijn nu Anybody, Figtree en Martian
+  Mono, alle drie via `@fontsource-variable`. Hubot, Sometype, Hanken, Space
+  Mono, Manrope, DM Mono en Syncopate zijn weg.)*
+- [x] ~~🟢 Satoshi: de woff2's in `public/fonts/satoshi/`~~ *(vervallen: geen
+  Satoshi meer. `public/fonts/` mag van Lucas' schijf.)*
 - [ ] 🟢 Op schijf wissen (staan niet meer in de repo): `functions/api/debug-
   egress-ip.js`, `src/components/HomeV2.astro`, `tests/carrousel.test.mjs`,
   `src/scripts/shader-hero.js`, `public/img/logo-mark.webp`, `logo-mark.avif`,

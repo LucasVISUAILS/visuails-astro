@@ -787,6 +787,38 @@
   }
   .s22 .paneel-kop { display: grid; gap: .9rem; max-width: 46rem; margin-bottom: clamp(1.8rem, 4vw, 3.2rem); }
 
+  /* ── DE VOORPAGINA: KOP LINKS, ZIN RECHTS — 22 september 2026 ─────────────
+     Lucas: *"hij voelt nogal leeg"*. Gemeten op 1440: elk paneel begon met een
+     kop van 46rem breed en daaronder de zin — de rechterhelft van elke kop was
+     leeg, zes keer onder elkaar. Op de voorpagina staat de zin nu rechts naast
+     de kop, op de onderlijn ervan; het etiket erboven over de hele breedte.
+     Zelfde woorden, geen lege helft. Alleen `.thuis`: op de dienstpagina's
+     zijn de ledes langer en daar blijft de kop boven de zin. */
+  .s22.thuis .paneel-kop { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(0, .85fr); column-gap: clamp(1.5rem, 4vw, 4rem); align-items: end; }
+  .s22.thuis .paneel-kop > .etiket { grid-column: 1 / -1; }
+  .s22.thuis .paneel-kop > .hoog { grid-column: 1; }
+  .s22.thuis .paneel-kop > .lopend { grid-column: 2; max-width: 34rem; padding-bottom: .35em; }
+  @media (max-width: 900px) {
+    .s22.thuis .paneel-kop { grid-template-columns: minmax(0, 1fr); }
+    .s22.thuis .paneel-kop > .lopend { grid-column: 1; padding-bottom: 0; }
+  }
+  /* Direct antwoord: vier vragen als twee-bij-twee in plaats van vier rijen
+     van schermbreedte met een woord links en een link rechts. */
+  .s22.thuis .vragen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1.5rem, 4vw, 4rem); }
+  .s22.thuis .vragen li { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .s22.thuis .vragen li:last-child { grid-column: 1 / -1; align-items: flex-end; padding-top: .8rem; padding-bottom: 0; }
+  @media (max-width: 700px) { .s22.thuis .vragen { grid-template-columns: minmax(0, 1fr); } }
+  /* Het slot: woorden links, de vier beelden van de proef rechts. */
+  .s22.thuis .slot-proef { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); align-items: center; column-gap: clamp(1.5rem, 4vw, 4rem); }
+  .s22.thuis .slot-woord { display: grid; gap: 1.1rem; justify-items: start; }
+  .s22.thuis .slot-beelden { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: 100%; justify-self: end; max-width: 30rem; }
+  .s22.thuis .slot-beelden li { aspect-ratio: 1; overflow: hidden; border-radius: calc(var(--ronding) - 8px); background: #2A2A2A; }
+  .s22.thuis .slot-beelden img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  @media (max-width: 900px) {
+    .s22.thuis .slot-proef { grid-template-columns: minmax(0, 1fr); }
+    .s22.thuis .slot-beelden { justify-self: start; }
+  }
+
   /* ── EEN KOP RAAKT ZIJN EIGEN LEAD NIET — 8 september 2026 ────────────────
      Gemeten: 2px op /studio, 5px op /test-sample, 6px op /contact, /plans,
      /start en de drie dienstpagina's. Steeds dezelfde vorm — een kop met de
@@ -1030,11 +1062,18 @@
        rechthoek op te vallen. */
     background: var(--vel);
     grid-template-rows: none;
-    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    /* ── TWEE GELIJKE KOLOMMEN, GEEN LEGE HOOGTE — 22 september 2026 ──────
+       Lucas: *"hij voelt nogal leeg"*. Gemeten: de tekstkolom was .85fr en de
+       kop, de knoppen en de zin stonden in twee losse gridcellen, waardoor de
+       zin pas ónder de laptoplijn kwam en er 130 px lucht tussen de knoppen en
+       de zin stond. Nu één kolom van 1fr met alles erin (kop, zin, knoppen),
+       verticaal gecentreerd naast de laptop, en geen min-height meer: de
+       laptop bepaalt de hoogte, niet het scherm. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
     gap: clamp(1.2rem, 3.5vw, 2.6rem);
     align-items: center;
     justify-items: stretch;
-    min-height: min(78svh, 800px);
+    min-height: 0;
   }
   /* ── EN ÉÉN LICHTBAAN ERONDER — 18 september 2026 ────────────────────────
      Lucas, met een foto van een limebaan over een donkere vloer: *"Kan je deze
@@ -1121,7 +1160,34 @@
     /* Groter dan de gewone `.hoog`: een smalle letter neemt per teken minder
        breedte, dus op dezelfde puntgrootte leest hij kleiner. 4,9rem tegen de
        3,9rem van de standaardkop houdt het optische gewicht gelijk. */
-    font-size: clamp(2.1rem, 5.4vw, 4.9rem);
+    font-size: clamp(2.5rem, 4.9vw, 4.9rem);
+  }
+  /* Drie regels die niet breken: het bezit, het accentwoord, de belofte. Op
+     een telefoon (onder 900) mag een regel wel breken. */
+  .s22 .hero.hero-split .kop-regel { white-space: nowrap; }
+  @media (max-width: 900px) { .s22 .hero.hero-split .kop-regel { white-space: normal; } }
+
+  /* ── HET WISSELENDE ACCENTWOORD ─────────────────────────────────────────
+     Een stapel woorden op één plek (inline-grid, alle kinderen in cel 1/1),
+     zo breed als het breedste woord. Woord 0 staat er standaard; de andere
+     zijn onzichtbaar tot hun beurt. Eén cyclus duurt n × 2,6 s; elk woord is
+     een kwart (bij n = 4) van de cyclus zichtbaar en wisselt met een korte
+     kruisvervaging. Geen JavaScript, en bij prefers-reduced-motion beweegt er
+     niets: dan staat woord 0. */
+  .s22 .wissel { display: inline-grid; }
+  .s22 .wissel-woord { grid-area: 1 / 1; opacity: 0; }
+  .s22 .wissel-woord:first-child { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    .s22 .wissel-woord {
+      --wissel-slot: 2.6s;
+      animation: vp-wissel calc(var(--n, 4) * var(--wissel-slot)) linear infinite;
+      animation-delay: calc(var(--j, 0) * var(--wissel-slot));
+    }
+    .s22 .wissel-woord:first-child { animation-name: vp-wissel-eerste; }
+    /* n = 4 → elk woord 25 % van de cyclus. Voor een andere n moeten deze
+       percentages mee; vier diensten is wat er is. */
+    @keyframes vp-wissel { 0% { opacity: 0; translate: 0 .18em; } 3%, 22% { opacity: 1; translate: 0 0; } 25%, 100% { opacity: 0; translate: 0 -.18em; } }
+    @keyframes vp-wissel-eerste { 0%, 22% { opacity: 1; translate: 0 0; } 25%, 97% { opacity: 0; translate: 0 -.18em; } 97.1% { opacity: 0; translate: 0 .18em; } 100% { opacity: 1; translate: 0 0; } }
   }
 
   /* ── HET ACCENTWOORD IS EEN LETTER GEWORDEN, GEEN VLAK ────────────────────
@@ -1151,22 +1217,67 @@
   /* De zin met de drie gezichten stond linksonder OVER de foto. Zonder foto
      hoort hij gewoon onder de knoppen te staan, als slot van de tekstkolom. */
   .s22 .hero.hero-split .hero-links {
-    position: static; width: auto; grid-column: 1; margin-top: clamp(1rem, 2.5vw, 1.8rem);
+    position: static; width: auto; margin: 0; max-width: 34rem;
+    display: flex; align-items: center; gap: 1rem;
   }
+  .s22 .hero.hero-split .hero-links .koppen { flex: 0 0 auto; }
+  .s22 .hero.hero-split .hero-zin { margin: 0; font-size: 1rem; line-height: 1.5; }
   .s22 .hero.hero-split .hero-links::before { content: none; }
   .s22 .hero.hero-split .hero-beeld { grid-column: 2; min-width: 0; }
+
+  /* ── DE STAPEL: ÉÉN AS, VIJF DINGEN — 22 september 2026 ──────────────────
+     Zie de noot in Voorpagina.astro. Eén kolom, alles op de middenas:
+     etiket · kop · zin · knoppen · laptop. De maten lopen van klein naar
+     groot naar klein — etiket .75rem, kop tot 5,8rem, zin 1,05rem — zodat de
+     kop het enige is dat schreeuwt.
+
+     DE RUIMTES ZIJN EEN LADDER EN GEEN LIJST. Binnen de tekstblok staat alles
+     dicht op elkaar (het is één uitspraak); tussen de tekst en de laptop staat
+     precies één trede meer, want dat is de enige echte scheiding in deze
+     opening. Eén getal, `--as`, en de rest is er een veelvoud van. */
+  .s22 .hero.hero-split.hero-stapel {
+    --as: clamp(.85rem, 1.6vw, 1.3rem);
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: calc(var(--as) * 2);
+    justify-items: center;
+    padding-top: clamp(2.5rem, 6vw, 5rem);
+  }
+  .s22 .hero.hero-split.hero-stapel .hero-kop {
+    justify-items: center; text-align: center; max-width: min(100%, 62rem);
+    gap: var(--as);
+  }
+  .s22 .hero.hero-split.hero-stapel .hero-h1 { font-size: clamp(2.5rem, 6.2vw, 5.8rem); }
+  /* De zin: één regel gedachte, op leesbreedte en niet op schermbreedte. 54ch
+     is waar een gecentreerde alinea nog als één blok leest; breder wordt het
+     een lap tekst met een rafelrand aan twee kanten. */
+  .s22 .hero.hero-split.hero-stapel .hero-zin {
+    margin: 0; max-width: 54ch; font-size: 1.05rem; line-height: 1.55; color: var(--inkt-2);
+  }
+  /* De twee knoppen: gelijke hoogte, gelijke vorm, één trede lucht erboven. */
+  .s22 .hero.hero-split.hero-stapel .hero-acties { justify-content: center; margin-top: calc(var(--as) * .5); gap: .7rem; }
+  .s22 .hero.hero-split.hero-stapel .hero-beeld { grid-column: 1; width: 100%; }
+
+  /* Op een telefoon dezelfde as, alleen krijgen de knoppen de volle breedte
+     (de siteregel voor .acties onder 700) en staat de zin iets kleiner. */
+  @media (max-width: 700px) {
+    .s22 .hero.hero-split.hero-stapel .hero-zin { font-size: 1rem; max-width: 42ch; }
+    .s22 .hero.hero-split.hero-stapel .hero-acties { width: 100%; }
+    /* Een knop die de volle breedte krijgt, houdt zijn label links — `.knop` is
+       een inline-flex zonder justify-content, en dat valt pas op als hij van
+       inhoudsbreedte naar schermbreedte gaat. Op de middenas van deze opening
+       staat een label dan tegen de linkerrand van een pil van 350 px. */
+    .s22 .hero.hero-split.hero-stapel .hero-acties .knop { justify-content: center; }
+  }
 
   @media (max-width: 900px) {
     .s22 .hero.hero-split { grid-template-columns: 1fr; min-height: auto; }
     .s22 .hero.hero-split .hero-kop { justify-items: start; }
-    .s22 .hero.hero-split .hero-links,
     .s22 .hero.hero-split .hero-beeld { grid-column: 1; }
     /* Op een telefoon staat de laptop direct onder de kop en de knoppen, vóór
        de zin met de gezichten: daar is hij het antwoord op "wat is dit", en
        dat antwoord hoort niet onderaan een stapel te staan. */
     .s22 .hero.hero-split .hero-kop { order: 1; }
     .s22 .hero.hero-split .hero-beeld { order: 2; }
-    .s22 .hero.hero-split .hero-links { order: 3; margin-top: 0; }
   }
 
   .s22 .hero-links { position: absolute; z-index: 2; left: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem); width: min(32%, 250px); display: grid; gap: .9rem; }
@@ -1227,26 +1338,7 @@
   .s22 .maatlijn li:first-child { border-left: 0; padding-left: 0; }
   .s22 .maatlijn .nr { color: var(--inkt-2); }
 
-  /* ── DE SCROLLWENK ──────────────────────────────────────────────────────
-     Zie de noot in Voorpagina.astro. Rechtsonder, op dezelfde hoogte als de
-     zin met de gezichten linksonder; een etiket en een lijn van 44 px waar een
-     streep van 12 px doorheen zakt. Inkt en de haarlijn, niets anders. */
-  /* `.hero.hero-split > *` zet elk kind op position: relative; vandaar de
-     specifiekere selector hier, anders staat de wenk in de gridstroom. */
-  .s22 .hero.hero-split .scroll-wenk {
-    position: absolute; z-index: 2; right: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem);
-    display: grid; justify-items: center; gap: .55rem; color: var(--inkt-2); text-decoration: none;
-  }
-  .s22 .scroll-wenk:hover, .s22 .scroll-wenk:focus-visible { color: var(--inkt); }
-  .s22 .scroll-wenk .mono { font-size: .72rem; letter-spacing: .12em; }
-  .s22 .scroll-wenk-lijn { position: relative; width: 1px; height: 44px; background: var(--lijn); overflow: hidden; }
-  .s22 .scroll-wenk-lijn i { position: absolute; left: 0; top: 0; width: 1px; height: 12px; background: currentColor; }
-  @media (max-width: 900px) { .s22 .scroll-wenk { display: none; } }
-
   @media (prefers-reduced-motion: no-preference) {
-    .s22 .scroll-wenk { animation: vp-zacht .9s var(--uit) both .9s; }
-    .s22 .scroll-wenk-lijn i { animation: vp-wenk 1.8s cubic-bezier(.22, 1, .36, 1) infinite; }
-    @keyframes vp-wenk { 0% { transform: translateY(-12px); } 60%, 100% { transform: translateY(44px); } }
     /* De banden zijn weg met .strook; de foto komt in één keer op. */
     .s22 .kop-regel > * { animation: vp-op 1s var(--uit) both; animation-delay: calc(var(--i) * .09s + .1s); }
     @keyframes vp-op { from { transform: translateY(110%); } }
@@ -1644,6 +1736,9 @@
        Er zit niets focusbaars in, dus de tabvolgorde blijft zoals hij was. */
     .s22 .hero-kop { order: 1; }
     .s22 .hero-links { order: 2; }
+    /* In de gesplitste hero staat dit blok ín de tekstkolom, tussen kop en
+       knoppen; daar geldt de bronvolgorde (22 september 2026). */
+    .s22 .hero.hero-split .hero-links { order: 0; }
     .s22 .hero-clip { order: 4; }
     /* Op een telefoon staat de kop op de foto in plaats van ernaast, dus de
        sluier is sterker dan op breed.

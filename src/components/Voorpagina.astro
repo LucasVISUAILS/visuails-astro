@@ -61,6 +61,7 @@ import { REQUIRED_SHOT_IDS } from '../data/shots.js';
 import '../styles/stijl22.css';
 import LaptopCarousel from './LaptopCarousel.astro';
 import LopendeBand from './LopendeBand.astro';
+import { geleverd } from '../data/voorbeeldset.js';
 
 const { lang } = Astro.props as { lang: 'en' | 'nl' };
 const nl = lang === 'nl';
@@ -151,7 +152,7 @@ const COPY = {
     labels: [MERK, 'Studio', 'Enschede, NL'],
     secties: ['What we make', 'Studio production', 'The set', 'The process', 'Rates', 'Studio', 'Faces', 'Test sample'],
     posterLine: [MERK, 'All rights reserved · 2026'],
-    h1: TAGLINE.en.lines,
+    h1: TAGLINE.en.lines, h1plain: TAGLINE.en.plain, wissel: TAGLINE.en.wissel,
     /* ── DE CATEGORIE WORDT NU UITGESPROKEN — 17 september 2026 ────────────
        Hier stond alleen WAT er geleverd wordt en wat er niet voor nodig is.
        Nagelezen over de hele site: "done-for-you" kwam twee keer voor, allebei
@@ -161,7 +162,6 @@ const COPY = {
        categorie kiezen, en de categorie die vandaag voor de hand ligt is
        "AI-tool". Eén bijzin, op de plek waar iemand in tien seconden beslist
        wat dit is. */
-    scrollWenk: 'Scroll',
     lede: 'Catalog, lifestyle and video from the product photos you already have — we make them for you. No shoot, no tool to learn, no minimum: one product is fine.',
     ctaStart: 'Start an order',
     heroAlt: 'A VISUAILS campaign visual', heroChip: 'Campaign',
@@ -303,9 +303,8 @@ const COPY = {
     labels: [MERK, 'Studio', 'Enschede, NL'],
     secties: ['Wat we maken', 'Studioproductie', 'De set', 'Het proces', 'Tarieven', 'Studio', 'Gezichten', 'Proef'],
     posterLine: [MERK, 'Alle rechten voorbehouden · 2026'],
-    h1: TAGLINE.nl.lines,
+    h1: TAGLINE.nl.lines, h1plain: TAGLINE.nl.plain, wissel: TAGLINE.nl.wissel,
     /* Zie de Engelse tegenhanger. */
-    scrollWenk: 'Scroll',
     lede: 'Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je. Geen shoot, niets om zelf te leren, geen minimum: één product mag ook.',
     ctaStart: 'Start een bestelling',
     heroAlt: 'Een VISUAILS-campagnebeeld', heroChip: 'Campagne',
@@ -529,14 +528,47 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
 
       Het merk verdwijnt er niet mee: de mode zit nu IN de laptop (de jeans, de
       carrousel met het model) en verder op de pagina in de lopende band. */}
-  <section class="hero hero-split" aria-labelledby="vp-h1">
+  {/* ── DE KOP BOVEN, DE LAPTOP ERONDER IN HET MIDDEN — 22 september 2026 ──
+      Lucas: *"Ik denk dat ik de laptop in het midden onderaan wil hebben en
+      daarboven de kop."* `hero-stapel` zet het raster van twee kolommen om in
+      één: kop, zin en knoppen gecentreerd, daaronder de laptop op volle
+      breedte. Zie .hero-stapel in stijl22.css. */}
+  <section class="hero hero-split hero-stapel" aria-labelledby="vp-h1">
     <div class="stralen" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
 
     <div class="hero-kop">
       <p class="etiket">{c.labels[0]} · {c.labels[2]}</p>
-      <h1 id="vp-h1" class="hoog hero-h1">
-        {c.h1.map((line, i) => <span class="kop-regel" style={`--i:${i}`}><span set:html={line} /></span>)}
+      {/* ── HET ACCENTWOORD WISSELT — 22 september 2026 ─────────────────────
+          Zie de noot bij TAGLINE in brand.js. De regel met <em> wordt hier
+          vervangen door een stapel woorden op dezelfde plek: het eerste staat
+          er zonder beweging (en is wat een schermlezer leest via aria-label),
+          de andere drie schuiven er om de beurt overheen — puur CSS, zie
+          .wissel in stijl22.css. Bij prefers-reduced-motion blijft het eerste
+          woord staan. De punt zit in elk woord, anders staat hij na het
+          breedste woord en niet na het woord dat je ziet. */}
+      <h1 id="vp-h1" class="hoog hero-h1" aria-label={c.h1plain}>
+        {c.h1.map((line, i) => (
+          <span class="kop-regel" style={`--i:${i}`} aria-hidden="true">
+            {line.includes('<em>') ? (
+              <em class="wissel" style={`--n:${c.wissel.length}`}>
+                {c.wissel.map((w, j) => <span class="wissel-woord" style={`--j:${j}`}>{w}.</span>)}
+              </em>
+            ) : <span set:html={line} />}
+          </span>
+        ))}
       </h1>
+      {/* ── ÉÉN AS, VIJF DINGEN ONDER ELKAAR — 22 september 2026 ────────────
+          Lucas: *"Ik vind de indeling van elementen niet mooi eruit zien, en
+          ook niet op telefoon."* Wat er misging: de zin stond LINKS uitgelijnd
+          naast drie gezichten, binnen een verder GECENTREERDE stapel. Drie
+          uitlijningen boven elkaar (etiket midden, kop midden, zin links met
+          een beeldje ervoor, knoppen midden) — en op een telefoon werd dat een
+          rommelig blok.
+          Nu staat alles op één middenas: etiket, kop, één zin, twee knoppen,
+          laptop. De drie gezichten zijn uit de opening gehaald; ze staan al in
+          de sectie "Kies een gezicht" verderop, en een rij koppen náást een
+          zin is precies het element dat de as brak. */}
+      <p class="lopend hero-zin">{c.lede}</p>
       <p class="acties hero-acties">
         <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
         {/* ── DE TWEEDE KNOP HANGT AF VAN WIE ER STAAT — 17 september 2026 ──
@@ -574,7 +606,7 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
           letterlijk "kleiner dan em groter dan" in. Stond er al sinds de kop
           een accentwoord heeft; gezien bij het omzetten van de kop
           (20 september 2026). */}
-      <LaptopCarousel lang={lang} vorm="naast" titel={TAGLINE[lang === 'nl' ? 'nl' : 'en'].plain} />
+      <LaptopCarousel lang={lang} vorm="onder" titel={TAGLINE[lang === 'nl' ? 'nl' : 'en'].plain} />
     </div>
 
     {/* ── DE ZIN STAAT OP DE TELEFOON BOVEN HET BEELD — 8 september 2026 ──
@@ -589,23 +621,6 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
         boven — met `order` in stijl22.css, en dat mag hier omdat er niets in
         dit blok is dat focus krijgt: drie <img> en een <p>. De tabvolgorde
         verandert dus niet, alleen wat je ziet. */}
-    {/* ── DE SCROLLWENK — 22 september 2026 ─────────────────────────────────
-        Lucas: *"scroll-icoon animatie"*. Rechtsonder in de opening, in de taal
-        van de rest van de site: een mono-etiket en een haarlijn waar een streep
-        langs naar beneden loopt — geen pijl, geen muisje, geen kleur. Een link
-        naar de band eronder, dus hij doet ook iets. Alleen op een breed scherm
-        (op een telefoon staat de opening al niet in één scherm) en stil bij
-        prefers-reduced-motion. Opmaak: .scroll-wenk in stijl22.css. */}
-    <a class="scroll-wenk" href="#lb-h" aria-label={c.scrollWenk}>
-      <span class="mono">{c.scrollWenk}</span>
-      <span class="scroll-wenk-lijn" aria-hidden="true"><i></i></span>
-    </a>
-    <div class="hero-links">
-      <ul class="koppen" role="list">
-        {ROSTER.slice(0, 3).map((m) => <li><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></li>)}
-      </ul>
-      <p class="hero-zin">{c.lede}</p>
-    </div>
 
     {/* HIER STOND DE CLIPKAART — een miniatuur rechtsonder die naar /video
         linkte. Sinds de laptop er staat, is dat dubbelop: de derde slide ÍS de
@@ -842,7 +857,8 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       donkere blok in de onderste helft van de pagina, en daarmee is de
       hoofdstukwissel er nog steeds — alleen draagt hij nu de knop in plaats van
       een decor. */}
-  <section class="paneel paneel-slot" aria-labelledby="vp-sl">
+  <section class="paneel paneel-slot slot-proef" aria-labelledby="vp-sl">
+    <div class="slot-woord">
     <p class="etiket">{c.secties[7]}</p>
     <h2 id="vp-sl" class="hoog">{c.closeH}</h2>
     <p class="lopend">{c.closeLede}</p>
@@ -854,6 +870,13 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       <a class="knop knop-inkt" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
       <a class="knop knop-lijn" href={lp('/start')}>{c.closeAlt}</a>
     </p>
+    </div>
+    {/* Wat de proef oplevert, als beeld naast de woorden: de vier van de
+        voorbeeldset (dezelfde als in de band bovenaan), twee-bij-twee. De
+        rechterhelft van dit paneel was leeg — 22 september 2026. */}
+    <ul class="slot-beelden" role="list" aria-hidden="true">
+      {geleverd(lang).map((b) => <li><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /></li>)}
+    </ul>
   </section>
 
   <ul class="trustlijn" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
