@@ -32,6 +32,20 @@ const ORDER = {
      neer. Een schermafdruk die iets toont wat in productie nooit zo staat, is
      een schermafdruk waar je de verkeerde dingen op nakijkt. */
   revision_count: 1, revisions_revoked_at: null,
+  /* ── WAT DE KLANT KOOS, PER PRODUCT — 22 september 2026 ─────────────────
+     Het bord toont sinds vandaag per product de brief: type, gezicht, wat er
+     binnenkwam en wat erbij gezet is. Zonder deze velden zou de schermafdruk
+     drie lege briefjes tonen en dus niets nakijken. Verzonnen namen, geen
+     echte SKU's. */
+  details_json: JSON.stringify({
+    garment: 'top', garment_p2: 'trousers',
+    product_p1: 'Boxy hoodie · washed black', product_p2: 'Wide-leg jeans · ecru', product_p3: 'Ribbed longsleeve',
+    model: 'any', model_p2: 'ava',
+    material_p1: 'katoen, 400 gsm',
+    context_underlayer_p1: 'own', context_bottom_p1: 'ours',
+    context_shoes_p2: 'ours', context_top_p2: 'ours',
+    context_underlayer_p3: 'ours', context_bottom_p3: 'ours',
+  }),
 };
 
 /* Product 1 compleet en gemeld, product 2 half af met één revisie, product 3
@@ -44,8 +58,15 @@ for (const shot of SHOTS) {
 }
 FILES.push({ id: fid++, kind: 'delivery', filename: 'VOLT-p2-front.webp', bytes: 1_100_000, product_key: 'p2', shot: 'front', created_at: '2026-08-01', review_state: 'revision_requested', announced_at: '2026-08-02 09:30', superseded_at: null });
 FILES.push({ id: fid++, kind: 'delivery', filename: 'VOLT-p2-back.webp', bytes: 1_150_000, product_key: 'p2', shot: 'back', created_at: '2026-08-06', review_state: 'pending', announced_at: null, superseded_at: null });
-FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1001.jpg', bytes: 2_400_000, product_key: 'p1', shot: null, created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
-FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1002.jpg', bytes: 2_500_000, product_key: 'p2', shot: null, created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
+/* Wat de klant instuurde: product 1 compleet mét een eigen stuk eronder,
+   product 2 twee hoeken en een referentie, product 3 nog niets. */
+for (const shot of ['front', 'back', 'detail', 'worn']) {
+  FILES.push({ id: fid++, kind: 'upload', filename: `IMG_10${fid}.jpg`, bytes: 2_400_000, product_key: 'p1', shot, created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
+}
+FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1099.jpg', bytes: 1_900_000, product_key: 'p1', shot: 'ctx-underlayer', created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
+FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1101.jpg', bytes: 2_500_000, product_key: 'p2', shot: 'front', created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
+FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1102.jpg', bytes: 2_500_000, product_key: 'p2', shot: 'back', created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
+FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1103.jpg', bytes: 2_100_000, product_key: 'p2', shot: 'ref1', created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
 
 /* De afgeleide formaten per beeld — zie de noot bij `FROM file_assets` in
    makeEnv(). 500 t/m 503 zijn compleet, 504 mist zijn webp, 505 heeft niets. */
@@ -232,11 +253,102 @@ await context.route('**/*', async (route) => {
   return route.fulfill({ status: 204, body: '' });
 });
 
+/* ── DE DONKERE STAND — 20 september 2026 ─────────────────────────────────
+   VIS_NACHT=1 zet `data-thema="donker"` op <html>, precies zoals de Worker dat
+   doet als het `vis_thema`-cookie op donker staat (zie metThema() in
+   src/lib/admin.js). De kleuren komen uit admin.css zelf — de proef-CSS in
+   kladblok/ is niet meer nodig en de stand is geen proef meer.
+
+   Er wordt hier dus NIETS geïnjecteerd: wat je op de afdruk ziet, is wat de
+   browser van een echte sessie te zien krijgt. */
+const NACHT = process.env.VIS_NACHT === '1';
 const page = await context.newPage();
 await page.setViewportSize({ width: 1280, height: 2000 });
 await page.goto('https://visuails.com/__page', { waitUntil: 'networkidle' });
+if (NACHT) {
+  await page.evaluate(() => document.documentElement.setAttribute('data-thema', 'donker'));
+  await page.waitForTimeout(200);
+}
 await page.setViewportSize({ width: 1280, height: 900 });
-const slug = SECTION.replace(/\W+/g, '-').replace(/^-|-$/g, '');
+/* VIS_OPEN=1 klapt elke <details> open voordat er gemeten wordt. De inhoud van
+   een dichte <details> wordt overgeslagen (zie de noot bij checkVisibility
+   hieronder), en dat is juist waar de helft van dit paneel in zit. */
+if (process.env.VIS_OPEN === '1') {
+  await page.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; }));
+  await page.waitForTimeout(150);
+}
+if (process.env.VIS_REGEL) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('DOM.enable'); await cdp.send('CSS.enable');
+  const doc = await cdp.send('DOM.getDocument');
+  const q = await cdp.send('DOM.querySelector', { nodeId: doc.root.nodeId, selector: process.env.VIS_REGEL });
+  if (q.nodeId) {
+    const m = await cdp.send('CSS.getMatchedStylesForNode', { nodeId: q.nodeId });
+    for (const r of m.matchedCSSRules || []) {
+      const k = r.rule.style.cssProperties.find((x) => x.name === 'color');
+      if (k) console.log(r.rule.origin, r.rule.selectorList.text.slice(0, 70), '=>', k.value);
+    }
+    console.log(JSON.stringify(await page.evaluate((sel) => {
+      const el = document.querySelector(sel); const c = getComputedStyle(el);
+      const keten = []; for (let n = el; n && n !== document.body; n = n.parentElement) keten.push(n.tagName + '.' + String(n.className).slice(0, 24));
+      return { kleur: c.color, vul: c.webkitTextFillColor, ink: c.getPropertyValue('--ink'), keten, bladen: [...document.styleSheets].map((x) => x.href || 'inline') };
+    }, process.env.VIS_REGEL)));
+  } else console.log('niet gevonden:', process.env.VIS_REGEL);
+}
+if (process.env.VIS_CONTRAST) {
+  console.log(JSON.stringify(await page.evaluate(() => {
+    const lum = (c) => { const [r, g, b] = c.match(/[\d.]+/g).map(Number).slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const meng = (voor, achter) => { const a = Number((voor.match(/[\d.]+/g) || [])[3] ?? 1); const v = voor.match(/[\d.]+/g).map(Number); const w = achter.match(/[\d.]+/g).map(Number); return `rgb(${v[0] * a + w[0] * (1 - a)}, ${v[1] * a + w[1] * (1 - a)}, ${v[2] * a + w[2] * (1 - a)})`; };
+    const uit = [];
+    for (const el of document.querySelectorAll('*')) {
+      if (el.children.length || !(el.textContent || '').trim()) continue;
+      /* ── ALLEEN WAT ER ÉCHT STAAT ──────────────────────────────────────
+         `display`/`visibility` op het element zelf is niet genoeg: de inhoud
+         van een DICHTE <details> heeft gewoon `display: inline-flex`, staat
+         niet in de flat tree, en dan geeft Chromium voor `color` de
+         UA-waarde terug in plaats van de berekende. Drie "Mail <klant>"-
+         knoppen op /admin/planning kwamen zo als linkblauw op 1,93:1 binnen,
+         terwijl ze opengeklapt gewoon 9:1 halen — gecontroleerd door het
+         paneel open te zetten. checkVisibility() kent de flat tree wél. */
+      if (!el.checkVisibility || !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
+      const c = getComputedStyle(el);
+      if (c.visibility === 'hidden' || c.display === 'none') continue;
+      /* ── DE GROND IS EEN STAPEL, GEEN KLEUR ────────────────────────────
+         Eerste versie pakte de eerste voorouder met een backgroundColor en
+         klaar. Op dit paneel is dat vaak `rgba(242,243,245,.10)` — de
+         spookknop — en dan rekende hij die 10 % papier tegen WIT af in plaats
+         van tegen de zwarte kaart eronder. Uitslag: drie knoppen op 1,00:1 die
+         in het echt 9:1 halen. Een veeg die onzin meldt, ga je negeren, en dan
+         mist hij de keer dat het wél waar is.
+
+         Nu wordt de hele stapel verzameld tot de eerste ONDOORZICHTIGE grond
+         en van onder naar boven over elkaar gelegd. */
+      const stapel = [];
+      for (let n = el; n; n = n.parentElement) {
+        const bg = getComputedStyle(n).backgroundColor;
+        if (!bg || bg === 'rgba(0, 0, 0, 0)') continue;
+        stapel.push(bg);
+        if (Number((bg.match(/[\d.]+/g) || [])[3] ?? 1) >= 1) break;
+      }
+      let g = 'rgb(255, 255, 255)';
+      for (let i = stapel.length - 1; i >= 0; i--) g = meng(stapel[i], g);
+      const px = parseFloat(c.fontSize); const vet = Number(c.fontWeight) >= 700;
+      const norm = (px >= 24 || (px >= 18.66 && vet)) ? 3 : 4.5;
+      const l1 = lum(meng(c.color, g)); const l2 = lum(g);
+      const r = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      if (r < norm) uit.push(`${r.toFixed(2)}:1 (eis ${norm}) ${el.tagName}.${String(el.className).slice(0, 24)} — "${(el.textContent || '').trim().slice(0, 28)}" ${Math.round(px)}px ${c.color} op ${g}`);
+    }
+    return uit;
+  }), null, 1));
+}
+if (process.env.VIS_METEN) {
+  console.log(JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('.stand')].slice(0, 6).map((e) => {
+    const r = e.getBoundingClientRect(); const c = getComputedStyle(e);
+    const o = e.parentElement; const oc = getComputedStyle(o);
+    return { w: Math.round(r.width), h: Math.round(r.height), disp: c.display, wrap: c.flexWrap, ws: c.whiteSpace, ouder: o.className, ouderDisp: oc.display };
+  })), null, 1));
+}
+const slug = (NACHT ? 'nacht-' : '') + SECTION.replace(/\W+/g, '-').replace(/^-|-$/g, '');
 const file = path.join(OUT, `${slug}.png`);
 await page.screenshot({ path: file, fullPage: true });
 await browser.close();

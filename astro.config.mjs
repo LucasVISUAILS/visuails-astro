@@ -24,20 +24,8 @@ import fontsVoorWorker from './scripts/fonts-voor-worker.mjs';
 // niet door astro:assets: het staat als vooraf geschaalde .webp in public/img en
 // krijgt bij de build een AVIF-bron ernaast — zie IMAGES.md voor waarom, en de
 // drie integraties onderaan voor wat er wél in de build gebeurt.
-/* ── LIGT SATOSHI ER? — 8 september 2026 ──────────────────────────────────
-   Eén keer per build gemeten, hier, met gewone fs. Layout.astro en
-   StudioLayout.astro lezen het als __SATOSHI__ en linken op grond daarvan
-   public/fonts/satoshi/satoshi.css — zie de noot in dat bestand voor wat er
-   dan omgaat, en de noot in Layout.astro voor wat hier eerst stond en waarom
-   dat de site sloopte zodra de schakelaar voor het eerst aan ging.
-
-   Waarom niet gewoon altijd linken: dan vraagt de browser een woff2 op die er
-   niet is, en dat is een 404 in de console — waar tests/consoleschoon.test.mjs
-   op let, en terecht.
-
-   Alleen het romeinse bestand telt. Ligt de cursieve er niet naast, dan valt
-   die ene stijl terug op Instrument Sans; dat is een detail, geen halve site. */
-const SATOSHI = fs.existsSync(new URL('./public/fonts/satoshi/Satoshi-Variable.woff2', import.meta.url));
+/* De Satoshi-check die hier stond is op 21 september 2026 weggehaald — zie de
+   noot op dezelfde plek in src/layouts/Layout.astro. */
 
 export default defineConfig({
   site: 'https://visuails.com',
@@ -165,8 +153,4 @@ export default defineConfig({
   // .svg, en de avif-stap laat alles wat geen .webp is met rust. Zie
   // src/data/beeld.js voor de knop en de lijst.
   integrations: [brandLockupGuard(), gewijzigdOp(), sitemapAnd404(), llmsTxt(), plaatshouders(), avifNaastWebp(), fontsVoorWorker(), stijlUitDePagina(), cspScripts()],
-  /* __SATOSHI__ wordt tijdens het bouwen vervangen door true of false — zie de
-     noot bij de constante bovenaan dit bestand. Vervanging en geen import, zodat
-     er in de Worker niets te lezen valt en er niets kan mislukken. */
-  vite: { define: { __SATOSHI__: JSON.stringify(SATOSHI) } },
 });

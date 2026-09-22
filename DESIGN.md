@@ -29,7 +29,61 @@
 
 ---
 
-## The shipped palette (section 20 — light, with Komma's yellow)
+## Het palet (sectie 22 — licht en donker, violet) — 20 september 2026
+
+> **20 september 2026.** `KLEURENSCHEMA.md` in de wortel van dit project is
+> leidend; wijkt de code daarvan af, dan volgt de code het document. Deze tabel
+> is de samenvatting, niet de bron. De gele set van sectie 20 staat hieronder
+> als ingetrokken paragraaf — de waarden gelden niet meer, de verantwoording
+> blijft leesbaar.
+
+Grond in drie stappen, inkt puur zwart in drie sterktes, en één violet dat
+**alleen actie** is: een knop, een link, een focusring. Nooit een groot vlak,
+nooit een icoon, nooit tekst die geen actie is.
+
+| Token | Waarde | Rol | Gemeten |
+|---|---|---|---|
+| `--paper` | `#F2F3F5` | De paginagrond | — |
+| `--surface` | `#E4E7EC` | Een kaart van de grond af | — |
+| `--sunken` | `#DADEE5` | Een verdiept vlak: invoer, tabelkop | — |
+| `--ink` | `#000000` | Koppen en lopende tekst | 19,3:1 op `--paper` |
+| `--ink-2` | zwart 66% | Secundair | 8,7:1 op `--paper` |
+| `--ink-3` | zwart 56% | Gedempt, bijschriften | 6,5:1 op `--paper` |
+| `--line` | zwart 20% | Haarlijn | — |
+| `--line-soft` | zwart 10% | De stillere haarlijn | — |
+| `--line-strong` | zwart 34% | Regel, randje om een veld — **nooit tekst** | — |
+| `--panel` | `#000000` | Het donkere paneel: voet, cta-band, scrim | — |
+| `--on-panel` | `#F2F3F5` | Wat op dat paneel staat | 19,3:1 |
+| `--accent` | `#4A1FFF` | Vulling van een actie, en verder niets | wit erop 7,16:1 |
+| `--on-accent` | `#FFFFFF` | Wat op een accentvlak staat — **nooit zwart**, dat is 2,93:1 en in het schema met zoveel woorden afgekeurd | 7,16:1 |
+| `--accent-text` | `#3D17D6` | Het accent als LETTER op papier | 9,0:1 op `--paper` |
+| `--accent-tint` | `#E4DFFF` | De lichte werktint: statusvlak, gemarkeerde rij | — |
+| `--on-accent-tint` | `#2A0E8F` | Wat op die tint staat | 10,5:1 |
+| `--scrim` | `0 0 0` (kanalen) | Elke sluier over een foto | zie hieronder |
+
+**De statusset — vijf standen, vijftien tokens.** Eén component (`.stand` in
+`global.css`, handkopie in `admin.css`, `portal.css` en `account.css`, en een
+mailversie in `mailTemplate.js`), en één tabel die zegt welke ruwe statuswaarde
+bij welke stand hoort: `src/data/status.js`. Het gelukte pad loopt voller
+naarmate het vordert, dus het werkt ook in grijswaarden.
+
+| Stand | Vulling | Rand | Letter | Waarvoor |
+|---|---|---|---|---|
+| `wait` | transparant | `#7C8096` | `#4A4E6B` | binnen, wacht op betaling, concept |
+| `work` | `#E4DFFF` | violet 30% | `#3D17D6` | in productie, wordt nagekeken, verstuurd |
+| `done` | `#1F0B66` | `#1F0B66` | `#FFFFFF` | geleverd, betaald, goedgekeurd |
+| `rev` | `#F6E7D1` | amber 30% | `#8A4D06` | revisie gevraagd, incasso mislukt |
+| `can` | `#E4E7EC` | `#83868A` | `#3E4145` | geannuleerd, vervallen, gearchiveerd |
+
+De pil is 28px hoog, mono, hoofdletters, 11px, met een stip van 6px in
+`currentColor` — en **altijd het woord ernaast**, nooit kleur alleen.
+
+**Drie regels die het schema hard maakt.** Geen verlopen. Geen slagschaduw (een
+randsimulatie met `inset 0 0 0 1px` mag). En hooguit zo'n 2% violet per scherm:
+is dat ergens niet haalbaar, dan wordt dat gemeld en niet opgelost met een
+extra kleur.
+
+## The shipped palette (section 20 — light, with Komma's yellow) ~ INGETROKKEN, 20 september 2026
 
 > **5 september 2026.** Lucas: *"Wat ik nu heb voelt ergens onprofessioneel en ik
 > zou het liever een wat serieuzere feeling willen geven"* — reference
@@ -101,7 +155,7 @@ apply its own alpha to it, so scrims read `rgb(var(--scrim) / 0.62)`. Before sec
 the same espresso was hand-written in two notations — `oklch(0.16 0.006 75 / a)` and
 `rgb(25 21 16 / a)` — in forty places that did not know they were the same colour.
 
-### The three names that changed ROLE, not value
+### The three names that changed ROLE, not value ~ INGETROKKEN met het palet hierboven
 
 A palette swap that only changes values is a find-and-replace. Three names in this
 codebase were doing two jobs each, and the second job is invisible until it breaks:

@@ -1,0 +1,14 @@
+import path from 'node:path';
+import { chromium } from 'playwright';
+const UIT = 'kladblok/heroproef';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const ctx = await b.newContext({ viewport: { width: 1360, height: 1100 }, deviceScaleFactor: 2 });
+const p = await ctx.newPage();
+await p.goto('file://' + path.resolve(UIT, 'index.html'), { waitUntil: 'load' });
+await p.evaluate(() => document.fonts.ready);
+await p.waitForTimeout(900);
+await p.screenshot({ path: path.join(UIT, 'alles.png'), fullPage: true });
+const blokken = await p.$$('.blok');
+for (let i = 0; i < blokken.length; i++) await blokken[i].screenshot({ path: path.join(UIT, `blok-${i + 1}.png`) });
+console.log(blokken.length + ' blokken');
+await b.close();

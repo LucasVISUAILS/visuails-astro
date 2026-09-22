@@ -49,9 +49,18 @@ import {
    komen als de nachtelijke opruiming en de juridische pagina's. */
 import { stampDeliveryRetention, DELIVERY_DAYS } from './retention.js';
 import { serviceLabel } from '../data/services.js';
+import { statPil } from '../data/status.js';
 /* De fotosoorten met hun Nederlandse naam — zie SHOT_LABEL verderop voor waarom
    dit geen eigen lijstje meer is. */
-import { SHOTS as SHOTS_DATA } from '../data/shots.js';
+import { SHOTS as SHOTS_DATA, contextShotSlot, isRefShotId } from '../data/shots.js';
+/* ── DE BRIEF PER PRODUCT — 22 september 2026 ────────────────────────────────
+   Het bord toont per product niet alleen de vier vakjes die ERUIT moeten, maar
+   ook alles wat ERIN kwam: type, uitsnede, gezicht, de foto's van de klant, de
+   stukken die hij erbij zette en wat wij daarnaast kiezen. Uit garments.js en
+   poppetje.js — dezelfde bron als het bestelformulier. */
+import { garment as garmentVan, cropFor, contextSlots, stylingVoor, CONTEXT_SLOTS, GARMENTS } from '../data/garments.js';
+import { poppetjeSvg } from './poppetje.js';
+import { PRODUCT_QUESTIONS } from '../data/attributes.js';
 
 /* ── DE FOTOLABELS KOMEN UIT shots.js — 12 september 2026 ────────────────
    Hier stond `{ front: 'Front', back: 'Back', detail: 'Detail', worn: 'On
@@ -198,7 +207,88 @@ const STATUS_LABEL = {
 // ENTRY POINTS
 // ─────────────────────────────────────────────────────────────────────────────
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   HET DONKERE SCHERM — 20 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   Lucas koos hiervoor na de proef: *"Alleen /admin dark mode."* De site blijft
+   licht; de reden staat in de noot bij .site-footer in global.css en in
+   kladblok/nachtproef.css — op de site is het geen tokenwissel maar ~480
+   gemeten plekken, hier is het er wél een.
+
+   DEZELFDE VORM ALS STUDIO: een cookie (`vis_thema`), gezet via een GET met
+   `?thema=`, gevolgd door een omleiding terug. Geen JavaScript, want de CSP van
+   dit paneel is `default-src 'none'` en daar hoort geen uitzondering voor een
+   schakelaar. Zonder cookie is het scherm licht — een donkere stand is een
+   keuze, geen verrassing, in beide richtingen.
+
+   DE COOKIE STAAT OP Path=/admin EN SameSite=Lax. Niet Strict zoals het
+   sessiecookie: dit is een voorkeur en geen sleutel, en Strict betekent dat de
+   stand wegvalt zodra je /admin vanuit een mail of een ander tabblad opent —
+   precies het moment waarop een wit scherm het hardst aankomt.
+
+   ── WAAROM HET ATTRIBUUT ER ACHTERAF IN GAAT ────────────────────────────────
+   `page()` wordt vanuit vijftig plekken aangeroepen en `adminNav()` vanuit
+   vijftien. Het thema daar doorheen rijgen is vijfenzestig plekken die je bij
+   de volgende pagina kunt vergeten — en een thema dat op één pagina ontbreekt,
+   is een wit scherm midden in een donkere sessie. Dus zet `metThema()` het
+   attribuut op het ENE punt waar elk antwoord langskomt: de uitgang. Daar kan
+   geen pagina langs.
+
+   De schakelaar in de balk rendert allebei de standen en laat CSS de verkeerde
+   verbergen (zie `.bar-thema` in public/admin.css). Dat scheelt hetzelfde
+   doorgeven, en het is de enige manier zonder JavaScript. */
+const THEMA_COOKIE_DAGEN = 365;
+
+function themaCookie(request) {
+  const raw = request?.headers?.get('cookie') || '';
+  return /(?:^|;\s*)vis_thema=donker(?:;|$)/.test(raw) ? 'donker' : 'licht';
+}
+
+/* De omleiding die de keuze vastlegt. Hij pakt de parameter eraf en stuurt je
+   terug naar hetzelfde pad, zodat `?thema=` niet in de adresbalk blijft hangen
+   en niemand per ongeluk een link deelt die andermans scherm omzet.
+
+   De link in de balk is `?thema=donker` — alleen een query, dus de browser
+   houdt het pad vast. Andere parameters (`?status=geleverd`) vallen daarbij
+   weg; dat is één keer per jaar en het alternatief is de hele URL door vijftien
+   aanroepen van adminNav() dragen. */
+function themaOmleiding(url) {
+  const kleur = url.searchParams.get('thema');
+  if (kleur !== 'licht' && kleur !== 'donker') return null;
+  url.searchParams.delete('thema');
+  const terug = `${url.pathname}${url.search}${url.hash}`;
+  return seeOther(terug, [
+    `vis_thema=${kleur}; Path=/admin; Max-Age=${THEMA_COOKIE_DAGEN * 86400}; Secure; SameSite=Lax`,
+  ]);
+}
+
+/* Zet `data-thema="donker"` op <html> in elk HTML-antwoord. Alleen HTML: een
+   omleiding, een zipbestand of een afbeelding gaat ongemoeid door.
+
+   `<html lang="en">` staat letterlijk in page() en nergens anders, dus één
+   vervanging is genoeg en hij kan niets anders raken. Faalt de vervanging (er
+   is geen <html> in dit antwoord), dan verandert er niets — een verkeerd
+   thema mag nooit een leeg scherm worden. */
+async function metThema(request, response) {
+  if (themaCookie(request) !== 'donker') return response;
+  const type = response.headers.get('content-type') || '';
+  if (!type.includes('text/html')) return response;
+  const body = await response.text();
+  const uit = body.replace('<html lang="en">', '<html lang="en" data-thema="donker">');
+  return new Response(uit, { status: response.status, headers: response.headers });
+}
+
 export async function adminGet(context) {
+  const omleiding = themaOmleiding(new URL(context.request.url));
+  if (omleiding) return omleiding;
+  return metThema(context.request, await adminGetInner(context));
+}
+
+export async function adminPost(context) {
+  return metThema(context.request, await adminPostInner(context));
+}
+
+async function adminGetInner(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/admin';
@@ -341,7 +431,7 @@ export async function adminGet(context) {
   return html(page({ title: 'Not found', body: errorBody('Not found.') }), 404);
 }
 
-export async function adminPost(context) {
+async function adminPostInner(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '');
@@ -2147,7 +2237,7 @@ async function servePortaalKijk(context, orderId) {
     <span style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.7">Voorvertoning</span>
     <strong>${esc(order.ref)}</strong>
     <span style="opacity:.75;font-weight:400">Dit is wat de klant ziet. De knoppen hier doen niets.</span>
-    <a href="/admin/orders/${order.id}/files" style="margin-inline-start:auto;color:#D2E04A">&larr; terug naar de bestelling</a>
+    <a href="/admin/orders/${order.id}/files" style="margin-inline-start:auto;color:var(--accent-text,#3D17D6)">&larr; terug naar de bestelling</a>
   </div>
   <div style="height:44px"></div>`;
 
@@ -2313,7 +2403,7 @@ async function renderFiles(context, orderId) {
   const factuurBlok = !factuur ? '' : `
   <h2>Factuur</h2>
   <p class="muted">
-    <strong>${esc(factuur.number)}</strong> &mdash; ${esc(factuur.status)}${
+    <strong>${esc(factuur.number)}</strong> ${statPil(factuur.status, factuur.status)}${
       factuur.issued_at ? ` on ${esc(when(factuur.issued_at))}` : ''
     }${factuur.pdf_bytes ? ` &middot; ${Math.round(factuur.pdf_bytes / 1024)} kB` : ''}
   </p>
@@ -2625,12 +2715,89 @@ async function renderFiles(context, orderId) {
     </div>`;
   };
 
+  /* ── DE BRIEF: ALLES WAT DE KLANT VOOR DIT PRODUCT INSTUURDE EN KOOS ──────
+   *
+   * Lucas, 22 september 2026: *"orders komen anders slordig aan, deze moeten
+   * dus beter en logischer gesorteerd worden zodat ik precies weet wat wat is,
+   * anders raak ik gegarandeerd het overzicht kwijt bij grote orders."*
+   *
+   * Wat er mis was: wat de klant INSTUURDE stond in een dichtgeklapte tabel
+   * onder het bord (bestandsnaam, product, foto — geen beeld), en wat hij KOOS
+   * stond in een losse lijst "Wat de klant koos" met rijen als "Per product:
+   * p3 · Ava". Om product 3 te maken moest je die twee plus het bord met
+   * elkaar verbinden, uit je hoofd, dertig keer.
+   *
+   * Nu staat per product ÉÉN blok met, in de volgorde waarin je het werk doet:
+   *   1. wat het is — naam, type, uitsnede (het poppetje), gezicht, materiaal
+   *   2. wat erin kwam — de foto's van de klant, als beeld, per hoek
+   *   3. wat erbij gaat — de stukken die de klant zelf erbij zette (rond, apart)
+   *      en wat wij daarnaast kiezen
+   *   4. wat eruit moet — de vier vakjes, zoals ze al waren
+   *
+   * Het blok is een <details>: af én gemeld klapt dicht, de rest staat open.
+   * Zonder JavaScript (CSP: default-src 'none') is dat de enige inklapper die
+   * werkt, en hij onthoudt zijn stand niet — wat hier goed is, want de stand
+   * volgt het werk en niet de muis.
+   */
+  let details = {};
+  try { details = JSON.parse(order.details_json || '{}') || {}; } catch { details = {}; }
+  const dPer = (sleutel, n) => String(details[`${sleutel}_p${n}`] || '').trim();
+  const gezichtKort = (id) => {
+    const ruw = String(id || '').trim();
+    if (!ruw) return '';
+    if (ruw === MODEL_ANY) return 'wij kiezen';
+    const bekend = ROSTER.find((m) => modelId(m.name) === ruw.toLowerCase());
+    return bekend ? bekend.name : `${ruw} (eigen)`;
+  };
+  const uploadsVan = (key) => intake.filter((f) => f.product_key === key && !f.superseded_at);
+  const duim = (f, rond = false) => `<a class="brief-duim${rond ? ' is-rond' : ''}" href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(f.filename || `bestand ${f.id}`)} openen"><img src="/admin/files/${f.id}" alt="" loading="lazy"></a>`;
+
+  const brief = (key) => {
+    const n = Number(key.slice(1)) || 0;
+    const naam = dPer('product', n);
+    const type = dPer('garment', n) || String(details.garment || '').trim();
+    const g = type ? garmentVan(type) : null;
+    const crop = type ? cropFor(type) : null;
+    const slots = type ? contextSlots(type) : [];
+    const keuzes = {};
+    for (const sl of slots) keuzes[sl.id] = dPer(`context_${sl.id}`, n) || String(details[`context_${sl.id}`] || '').trim() || 'ours';
+    const eigen = uploadsVan(key).filter((f) => contextShotSlot(f.shot));
+    for (const f of eigen) keuzes[contextShotSlot(f.shot)] = 'own';
+    const styling = type ? stylingVoor(type, keuzes, 'nl') : null;
+
+    const feiten = [
+      g ? `<b>${esc(g.name.nl)}</b>` : '<span class="brief-leeg">type niet gekozen</span>',
+      crop ? `${esc(({ lower: 'taille en lager', upper: 'heup en hoger', full: 'hele figuur', feet: 'voeten', waist: 'taille', head: 'hoofd', detail: 'detail', figure: 'lichaam' })[crop.id] || crop.id)}` : '',
+      (() => { const gz = gezichtKort(dPer('model', n) || details.model); return gz ? `gezicht: ${esc(gz)}` : ''; })(),
+      ...PRODUCT_QUESTIONS.map((qn) => { const v = dPer(qn.id, n); return v ? `${esc(qn.name.nl.replace(/\?$/, '').toLowerCase())}: ${esc(v)}` : ''; }),
+    ].filter(Boolean);
+
+    /* De foto's van de klant, per hoek: eerst de vier vaste, dan de referenties,
+       en de contextstukken apart (rond) — dat is het verschil dat het geld raakt. */
+    const perHoek = SHOT_KEYS.map((sh) => uploadsVan(key).filter((f) => f.shot === sh).map((f) => `<span class="brief-vak"><span class="brief-vak-l">${esc(SHOT_LABEL[sh] || sh)}</span>${duim(f)}</span>`).join('')).join('');
+    const refs = uploadsVan(key).filter((f) => isRefShotId(f.shot)).map((f) => `<span class="brief-vak"><span class="brief-vak-l">ref</span>${duim(f)}</span>`).join('');
+    const los = uploadsVan(key).filter((f) => !f.shot).map((f) => `<span class="brief-vak"><span class="brief-vak-l">?</span>${duim(f)}</span>`).join('');
+    const erbij = eigen.map((f) => { const sl = contextShotSlot(f.shot); return `<span class="brief-vak is-erbij"><span class="brief-vak-l">${esc(CONTEXT_SLOTS[sl] ? CONTEXT_SLOTS[sl].name.nl : sl)}</span>${duim(f, true)}</span>`; }).join('');
+    const ons = styling ? styling.delen.filter((d2) => !d2.eigen).map((d2) => `${esc(d2.naam.toLowerCase())}: ${esc(d2.tekst)}`).join(' · ') : '';
+
+    return `<div class="brief">
+      <div class="brief-pop">${poppetjeSvg({ crop: crop ? crop.id : 'full', product: type, own: Object.keys(keuzes).filter((k) => keuzes[k] === 'own'), klein: true })}</div>
+      <div class="brief-body">
+        <p class="brief-feiten">${feiten.join(' <span class="brief-sep">·</span> ')}</p>
+        <div class="brief-rij"><span class="brief-kop">Aangeleverd</span><div class="brief-vakken">${perHoek || refs || los ? perHoek + refs + los : '<span class="brief-leeg">nog geen foto’s</span>'}</div></div>
+        ${slots.length ? `<div class="brief-rij"><span class="brief-kop">Erbij gezet</span><div class="brief-vakken">${erbij || '<span class="brief-leeg">niets — wij kiezen alles</span>'}</div></div>` : ''}
+        ${slots.length ? `<div class="brief-rij"><span class="brief-kop">Wij kiezen</span><p class="brief-ons">${ons || '<span class="brief-leeg">—</span>'}</p></div>` : ''}
+      </div>
+    </div>`;
+  };
+
   const productRow = (key) => {
     const done = SHOT_KEYS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length;
     const fresh = SHOT_KEYS.filter((sh) => {
       const f = liveByKey.get(`${key}|${sh}`);
       return f && migrated && !f.announced_at;
     }).length;
+    const revisie = SHOT_KEYS.some((sh) => { const f = liveByKey.get(`${key}|${sh}`); return f && f.review_state === 'revision_requested'; });
     // Per product melden mag alleen als de bestelling al één keer aangekondigd
     // is — de eerste keer gaat via de status, met de mail die zegt dat de
     // bestelling klaar is. Zie handleAnnounceRedelivery.
@@ -2640,18 +2807,42 @@ async function renderFiles(context, orderId) {
            <button class="btn btn-primary btn-sm" type="submit">${fresh} naar de klant sturen</button>
          </form>`
       : '';
-    return `<section class="board-row" id="${esc(key)}">
-      <div class="board-head">
-        <h3>Product ${esc(key.slice(1))}</h3>
+    const n = Number(key.slice(1)) || 0;
+    const naam = dPer('product', n);
+    /* Dicht als er niets meer te doen is: alle vier geleverd, alles gemeld,
+       geen revisie. Alles daartussen staat open. */
+    const klaar = done === SHOT_KEYS.length && fresh === 0 && !revisie;
+    const stand = klaar ? 'af' : revisie ? 'revisie' : fresh ? `${fresh} niet gemeld` : done ? `${done}/${SHOT_KEYS.length}` : 'nog niets';
+    return `<details class="board-row${klaar ? ' is-af' : ''}${revisie ? ' is-revisie' : ''}" id="${esc(key)}"${klaar ? '' : ' open'}>
+      <summary class="board-head">
+        <h3>Product ${n}${naam ? ` <span class="board-naam">${esc(naam)}</span>` : ''}</h3>
         <span class="board-count${done === SHOT_KEYS.length ? ' is-full' : ''}">${done}/${SHOT_KEYS.length}</span>
-        ${push}
-      </div>
+        <span class="board-stand">${esc(stand)}</span>
+      </summary>
+      ${brief(key)}
+      <div class="board-uit"><span class="brief-kop">Leveren</span>${push}</div>
       <div class="slots">${SHOT_KEYS.map((sh) => slot(key, sh)).join('')}</div>
-    </section>`;
+    </details>`;
   };
 
+  /* ── DE INDEX BOVEN HET BORD — bij vier producten of meer ───────────────────
+     Dertig blokken onder elkaar zijn dertig keer scrollen om te zien waar je
+     bent. Eén regel bovenaan met elk product als schakel, en zijn stand als
+     kleur van de rand: af, open, revisie. Ankers naar de <details> hieronder. */
+  const index = boardProducts.length >= 4
+    ? `<p class="board-index">${boardProducts.map((key) => {
+        const done = SHOT_KEYS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length;
+        const fresh = SHOT_KEYS.filter((sh) => { const f = liveByKey.get(`${key}|${sh}`); return f && migrated && !f.announced_at; }).length;
+        const revisie = SHOT_KEYS.some((sh) => { const f = liveByKey.get(`${key}|${sh}`); return f && f.review_state === 'revision_requested'; });
+        const klaar = done === SHOT_KEYS.length && fresh === 0 && !revisie;
+        const n = Number(key.slice(1)) || 0;
+        return `<a class="board-idx${klaar ? ' is-af' : ''}${revisie ? ' is-revisie' : ''}${!klaar && done ? ' is-bezig' : ''}" href="#${esc(key)}" title="${esc(dPer('product', n) || `Product ${n}`)} · ${done}/${SHOT_KEYS.length}">${n}</a>`;
+      }).join('')}</p>`
+    : '';
+
   const board = boardProducts.length
-    ? `<p class="muted">${filledSlots} van ${totalSlots} vakjes gevuld. Bestanden worden meteen opgeslagen — de klant ziet niets tot je op versturen drukt.</p>
+    ? `<p class="muted">${filledSlots} van ${totalSlots} vakjes gevuld. Bestanden worden meteen opgeslagen — de klant ziet niets tot je op versturen drukt. Een product dat af én gemeld is, klapt dicht.</p>
+       ${index}
        ${boardProducts.map(productRow).join('')}`
     : '<p class="muted">This order has no product count on it, so there is no grid to fill. Upload below and map the files by hand.</p>';
 
@@ -2962,18 +3153,8 @@ async function renderFiles(context, orderId) {
          alleen de id — beter dan niets, en eerlijk over wat het is. */
       return `${esc(ruw)} <span class="meta">— eigen merkmodel</span>`;
     };
-    const perProduct = Object.keys(d)
-      .filter((k) => /^model_p\d+$/.test(k) && String(d[k] || '').trim())
-      .sort((a, b) => Number(a.slice(7)) - Number(b.slice(7)))
-      .map((k) => {
-        const n = k.slice(7);
-        const naam = String(d[`product_p${n}`] || '').trim() || `product ${n}`;
-        /* De soort slot (kind_pN) staat erbij als de bestelling uit een
-           abonnement komt: een complete bundel en een losse catalogset in
-           één week zijn ander werk. */
-        const soort = String(d[`kind_p${n}`] || '').trim();
-        return `<span class="keuze-pp"><span class="meta">${esc(naam)}${soort ? ` · ${esc(soort)}` : ''}</span> ${gezichtNaam(d[k])}</span>`;
-      });
+    /* De keuze per product (model_pN, kind_pN) staat sinds 22 september op het
+       bord, in de brief van het product — zie productRow(). */
     const berichtRegel = String(d.message || '').trim()
       ? `<span class="keuze-bericht">${esc(String(d.message).trim()).replace(/\n/g, '<br>')}</span>`
       : '';
@@ -2998,10 +3179,13 @@ async function renderFiles(context, orderId) {
       rij('Verhouding per dienst', perDienst('ratio', (v) => verhoudingVan(v, 'lifestyle'))),
       rij('Gezicht', gezichtNaam(d.model)),
       rij('Gezicht per dienst', perDienst('model', gezichtNaam)),
-      rij('Per product', perProduct.length ? perProduct.join('<br>') : ''),
+      /* "Per product" stond hier als losse regels (p3 · Ava). Sinds 22 september
+         staat dat op het bord, in de brief van het product zelf — daar hoort
+         het, naast de foto's waar het over gaat. Hier alleen nog wat voor de
+         hele bestelling geldt. */
       rij('Levering', heeftVoorrang(order) ? '<strong class="or-voorrang">Voorrang</strong> — toeslag betaald, streef: binnen 24 uur na betaling' : ''),
       rij('Kanalen', d.channels ? esc(String(d.channels)) : ''),
-      rij('Kledingsoort', d.garment ? esc(String(d.garment)) : ''),
+      rij('Kledingsoort', d.garment ? esc(garmentVan(String(d.garment)).name.nl) : ''),
       rij('Bericht van de klant', berichtRegel),
     ].filter(Boolean);
 
@@ -3078,69 +3262,110 @@ ${adminNav('')}
   ${aanvraagBlok}
   ${keuzeBlok}
 
-  <h2>Aangeleverd door de klant (${intake.length})</h2>
-  ${table(intake, 'Nothing was uploaded with this order.')}
+  <!-- ══════════════════════════════════════════════════════════════════════
+       DE VOLGORDE VAN DEZE PAGINA — 20 september 2026
+       ══════════════════════════════════════════════════════════════════════
+
+       Lucas: *"Over het algemeen is /admin op dit moment veel te druk en is het
+       invullen van een order ook moeilijker dan nodig is (…) je word nu soms nog
+       overdonderd door alle knoppen/teksten (…) Ook het uploaden van de
+       bestanden kan soepeler gaan."*
+
+       Zelf doorgelopen, en er waren drie dingen aan de hand.
+
+       1 · DRIE MANIEREN OM TE UPLOADEN, ONDER DRIE KOPPEN. Per vakje op het
+           bord, "Map uploaden" onder De werkmap, en "Uploaden" onder Het
+           afgewerkte werk. De laatste twee posten naar HETZELFDE endpoint en
+           verschillen alleen in het attribuut webkitdirectory — het was dus geen keuze maar
+           twee bestandskiezers die uit elkaar waren gegroeid. Ze staan nu onder
+           één kop naast elkaar, met één zin die zegt wanneer je welke pakt.
+
+       2 · HET WERK STOND VIJFDE. Wat je op deze pagina negen van de tien keer
+           komt doen — afgewerkte beelden erin zetten — stond onder het bord,
+           onder de tabel, onder de intake. Nu staat het bovenaan, want dat is
+           waarvoor je hier bent.
+
+       3 · DE PAGINA WAS ÉÉN KOLOM VAN ELF KOPPEN. Twee daarvan kijk je één keer
+           in: wat de klant instuurde, en de tabel met alle bestanden — die zegt
+           bovendien hetzelfde als het bord, in andere vorm. Allebei nu in een
+           dichtgeklapte <details>, zoals de correctieknop in het abonnementenpaneel
+           dat al deed. Ze zijn er nog, ze liggen alleen niet meer open op tafel.
+
+       Wat NIET is veranderd: elke knop doet precies wat hij deed, en elk endpoint
+       is hetzelfde. Dit is een herschikking en geen herbouw — dat is met opzet,
+       want de duurste fout op deze pagina is een bestelling die de deur uit gaat
+       met de verkeerde beelden erin. -->
+
+  <h2>Het werk erin zetten</h2>
+  <p class="muted">Download de mappen, zet je afgewerkte beelden erin &mdash; de bestandsnaam
+  maakt niet uit &mdash; en kies de hele map terug. De server leest uit het pad welk product
+  en welke shot het is en zet hem in het juiste vakje.</p>
+
+  <div class="werk">
+    <div class="werk-stap">
+      <span class="werk-label">1 &middot; De lege mappen</span>
+      <a class="btn" href="/admin/orders/${order.id}/scaffold">Downloaden (.zip)</a>
+    </div>
+
+    <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
+      <!-- webkitdirectory is geen standaard maar wel wat Chrome, Edge, Firefox en
+           Safari allemaal doen: de browser post de hele map en zet het relatieve pad
+           in de bestandsnaam. Kent een browser het attribuut niet, dan negeert hij het
+           en krijg je een gewone bestandskiezer — dan werkt het nog steeds, alleen valt
+           de indeling terug op de gok uit de naam. Geen script nodig, en dat is hier
+           een eis: deze pagina draait onder default-src 'none'. -->
+      <span class="werk-label">2 &middot; De hele map terug</span>
+      <input type="file" name="files" webkitdirectory directory multiple required aria-label="De hele map in één keer" />
+      <!-- 20 september 2026: deze twee stonden als kale <button> in het blok en
+           kregen dus de knop van de browser (22 px, 13,3 px letter) naast .btn-knoppen
+           van 42. Zie de meting in kladblok/_adminmaat.mjs en de noot bij .btn in
+           public/admin.css. -->
+      <button class="btn btn-primary" type="submit">Map uploaden</button>
+    </form>
+
+    <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
+      <span class="werk-label">Of losse bestanden &mdash; er één bij zetten of vervangen</span>
+      <input type="file" name="files" multiple required aria-label="Losse bestanden voor deze bestelling" />
+      <button class="btn" type="submit">Uploaden</button>
+    </form>
+  </div>
+
+  <!-- ── WAT DE UPLOAD WEL EN NIET DOET — 13 september 2026 ───────────────────
+       Lucas: *"de map die de klant kan downloaden moet per product een jpg, png
+       en webp map bevatten met de correcte foto's erin."*
+
+       Een Worker kan geen beeld omzetten — geen sharp, geen 128 MB om een png in
+       te laden — dus een upload hier is letterlijk het bestand dat je koos, in het
+       goede vakje. De drie formaten komen uit het commando npm run deliver, dat op
+       je eigen machine draait. (Geen backticks in deze noot: hij staat binnen een
+       template-literal, en een backtick sluit de string — zie dezelfde waarschuwing
+       bij checkPlanQueues in cron/index.js.)
+
+       Sinds 20 september staat dit in een <details> en niet meer als vier regels
+       vet gedrukte waarschuwing boven de knop: het is een ding dat je één keer
+       moet weten en daarna nooit meer, en tot vandaag las je het elke keer. -->
+  <details class="uitleg">
+    <summary>Waarom een upload de formaten niet omzet</summary>
+    <p class="muted">Uploaden zet het bestand in het goede vakje, maar zet het niet om.
+    De klant krijgt de mappen JPG, PNG en WEBP alleen voor beelden die via het commando zijn gegaan:
+    <code>npm run deliver -- ${esc(order.ref)} ./klaar --go</code>.
+    In de tabel onderaan zie je per beeld welke formaten er klaarstaan. Een Worker kan geen
+    beeld omzetten, dus dit is geen keuze tussen twee wegen: uploaden is voor één beeld
+    bijplaatsen of vervangen, het commando is hoe een bestelling de deur uit gaat.</p>
+  </details>
 
   <h2>Het bord</h2>
   ${migrated ? board : '<p class="muted">Draai migratie 0012 voor het bord per product.</p>'}
 
-  <h2>Alle geleverde bestanden (${delivery.length})</h2>
-  ${migrated ? mapForm : table(delivery, 'Nothing delivered yet.', showAnnounced, true)}
+  <details class="uitleg">
+    <summary>Aangeleverd door de klant (${intake.length})</summary>
+    ${table(intake, 'Nothing was uploaded with this order.')}
+  </details>
 
-  <!-- ── DE WERKMAP, HEEN EN TERUG — 12 augustus 2026 ────────────────────────
-       Lucas: "hernoemen helemaal weg, het moet zoveel mogelijk tijd schelen."
-
-       Twee knoppen die bij elkaar horen en daarom naast elkaar staan. De eerste
-       geeft de mapstructuur van DEZE bestelling; de tweede neemt dezelfde map
-       gevuld weer aan en leest product en shot uit het PAD. Dat is de reden dat
-       er niets hernoemd hoeft te worden — zie src/lib/scaffold.js. -->
-  <h2>De werkmap</h2>
-  <p class="muted">Download de mappen van deze bestelling, zet je afgewerkte beelden erin
-  &mdash; de bestandsnaam maakt niet uit &mdash; en kies daarna de hele map hieronder.
-  De server leest uit het pad welk product en welke shot het is, hernoemt het bestand
-  naar <code>${esc(order.ref)}-p1-voorkant.jpg</code> en zet het in het juiste vakje.</p>
-  <p><a class="btn" href="/admin/orders/${order.id}/scaffold">Mappen downloaden (.zip)</a></p>
-
-  <!-- ── WAT DE MAPUPLOAD WEL EN NIET DOET — 13 september 2026 ────────────────
-       Lucas: *"de map die de klant kan downloaden moet per product een jpg, png
-       en webp map bevatten met de correcte foto's erin, ik weet niet of dit al
-       zo is maar volgensmij niet."*
-
-       Het staat er wel, maar alleen langs één van de twee wegen, en dat verschil
-       stond nergens op dit scherm. Een Worker kan geen beeld omzetten — geen
-       sharp, geen 128 MB om een png in te laden — dus een upload hier is
-       letterlijk het bestand dat je koos, in het goede vakje. De drie formaten
-       en de herkomsttag komen uit het commando npm run deliver, dat op je eigen
-       machine draait.
-
-       Dit is dus geen keuze tussen twee gelijkwaardige wegen: uploaden is voor
-       één beeld bijplaatsen of vervangen, het commando is hoe een bestelling de
-       deur uit gaat. De formaatkolom in de tabel hierboven laat per beeld zien
-       welke van de twee het geweest is. -->
-  <p class="muted"><strong>Let op:</strong> uploaden zet het bestand in het goede vakje, maar zet het niet om.
-  De klant krijgt de mappen JPG, PNG en WEBP alleen voor beelden die via het commando zijn gegaan:
-  <code>npm run deliver -- ${esc(order.ref)} ./klaar --go</code>.
-  In de tabel hierboven zie je per beeld welke formaten er klaarstaan.</p>
-
-  <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
-    <!-- webkitdirectory is geen standaard maar wel wat Chrome, Edge, Firefox en
-         Safari allemaal doen: de browser post de hele map en zet het relatieve pad
-         in de bestandsnaam. Kent een browser het attribuut niet, dan negeert hij het
-         en krijg je een gewone bestandskiezer — dan werkt het nog steeds, alleen valt
-         de indeling terug op de gok uit de naam. Geen script nodig, en dat is hier
-         een eis: deze pagina draait onder default-src 'none'. -->
-    <label>De hele map in één keer
-      <input type="file" name="files" webkitdirectory directory multiple required aria-label="De hele map in één keer" />
-    </label>
-    <button type="submit">Map uploaden</button>
-  </form>
-
-  <h2>Het afgewerkte werk uploaden</h2>
-  <p class="muted">Losse bestanden, zonder mappen. Ze komen bij deze bestelling te staan en verschijnen in het portaal van de klant. Pas als je de status op <strong>geleverd</strong> zet op het dashboard, krijgt hij de link gemaild &mdash; uploaden alleen doet dat niet.</p>
-  <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
-    <input type="file" name="files" multiple required aria-label="Losse bestanden voor deze bestelling" />
-    <button type="submit">Uploaden</button>
-  </form>
+  <details class="uitleg">
+    <summary>Alle geleverde bestanden (${delivery.length}) &mdash; indeling bijstellen</summary>
+    ${migrated ? mapForm : table(delivery, 'Nothing delivered yet.', showAnnounced, true)}
+  </details>
 
   <h2 id="wanneer">Wanneer</h2>
   ${wanneerBlok}
@@ -5361,7 +5586,13 @@ async function handleCustomerCredit(context, customerId) {
  * verbruikBoeken(): een lees-dan-schrijf in JavaScript is hier een race die je
  * pas ziet als er twee tabbladen open staan.
  */
-const SLOT_CORRECTIE_MAX = 50;
+/* ── VERRUIMD MET DE CREDITS — 19 september 2026 ──────────────────────────
+   Dit stond op 50 toen een eenheid één product was. Een credit is een vierde
+   tot een twaalfde daarvan, dus dezelfde correctie in dezelfde werkelijkheid
+   vraagt een groter getal: een maand Brand is 270 credits. Driehonderd is nog
+   steeds een grens waar een typefout tegenaan loopt (een nul te veel wordt
+   geweigerd) en waar een echte correctie binnen valt. */
+const SLOT_CORRECTIE_MAX = 300;
 
 async function handleSlotCorrectie(context, customerId, admin) {
   const { request, env } = context;
@@ -5598,7 +5829,7 @@ async function renderCustomer(context, customerId) {
             ? 'Still in design — the customer cannot pick it.'
             : 'Live: the customer sees this as a tile when they order.';
       return `<div class="card modelcard${hidden ? ' is-superseded' : ''}" id="model-${m.id}">
-        <div class="row-head"><span class="ref">${esc(m.label)}</span><span class="pill${live ? ' is-delivered' : ''}">${hidden ? 'verborgen' : esc(m.status)}</span></div>
+        <div class="row-head"><span class="ref">${esc(m.label)}</span>${hidden ? statPil('archived', 'verborgen') : statPil(m.status, m.status)}</div>
         <div class="modelcard-body">
           <!-- THE PICTURE ITSELF, not just the fact that a key exists. Before
                this the studio uploaded a file and got back a sentence saying a
@@ -5701,7 +5932,7 @@ async function renderCustomer(context, customerId) {
           ? 'In ontwerp: staat in Studio als "in ontwerp", nog niet bestelbaar.'
           : 'Archief: de klant ziet deze look nergens meer. Alles blijft bewaard.';
       return `<div class="card modelcard stylecard${s.status === 'archived' ? ' is-superseded' : ''}" id="style-${s.id}">
-        <div class="row-head"><span class="ref">${esc(s.name)}</span><span class="pill${s.status === 'active' ? ' is-delivered' : ''}">${esc(s.status)}</span></div>
+        <div class="row-head"><span class="ref">${esc(s.name)}</span>${statPil(s.status, s.status)}</div>
         <div class="modelcard-body">
           ${s.preview_key
             ? `<img class="modelcard-img stylecard-img" src="/admin/styles/${s.id}/image" alt="${esc(s.name)}" width="400" height="300" loading="lazy" decoding="async">`
@@ -5766,8 +5997,8 @@ async function renderCustomer(context, customerId) {
        ${orders.map((o) => `<tr>
          <td><a href="/admin/orders/${o.id}/files">${esc(o.ref)}</a></td>
          <td>${esc(o.service)}${o.product_count ? ` · ${o.product_count}` : ''}</td>
-         <td>${esc(o.status)}</td>
-         <td>${esc(o.payment_status)}</td>
+         <td>${statPil(o.status, STATUS_LABEL[o.status] || o.status)}</td>
+         <td>${statPil(o.payment_status, o.payment_status)}</td>
          <td class="num">${o.total_cents ? '€' + (o.total_cents / 100).toFixed(2) : '—'}</td>
          <td>${esc((o.created_at || '').slice(0, 10))}</td>
        </tr>`).join('')}</tbody></table>`
@@ -5820,16 +6051,25 @@ async function renderCustomer(context, customerId) {
              : (String(q.upload_batch || '').trim() ? 'concept, foto&rsquo;s klaar' : 'concept, nog geen foto&rsquo;s')}</span>
          </li>`).join('')}</ol>`
       : '<p class="empty">De lijst is leeg.</p>';
-    /* Het saldo per soort, uit dezelfde slotBalans() die de klant op zijn eigen
-       scherm ziet. Eén bron, twee schermen — anders gaan ze uit elkaar lopen. */
-    const saldoRegel = (abo.slots || []).length
-      /* `13 × complete bundel` en niet `13 complete bundel`. De labels in
-         SLOT_KINDS staan in het enkelvoud omdat ze op de klantkant als KOP boven
-         een regel staan; er een getal voor plakken maakt er een telling van die
-         niet meer klopt. Het maalteken laat het label met rust en leest in een
-         adminpaneel als wat het is. */
-      ? (abo.slots || []).map((b) => `${b.saldo} &times; ${esc(kindLabel(b.kind, 'nl').toLowerCase())}${b.ouder ? ` (${b.ouder} doorgeschoven)` : ''}`).join(' &middot; ')
-      : 'geen slots deze maand';
+    /* ── HET SALDO IS WEER ÉÉN GETAL — 19 september 2026 ────────────────────
+     *
+     * Hier stond een regel per soort ("13 × complete bundel · 2 × motion-clip"),
+     * en daarboven een noot dat het paneel expres NIET over credits praat omdat
+     * het saldo toen geen één getal meer was. Dat is met het creditsysteem
+     * teruggedraaid: er is weer één pot, en elke dienst heeft een prijs.
+     *
+     * Wat blijft: één bron voor twee schermen. Dit is hetzelfde saldo dat de
+     * klant op /account/plan ziet, uit dezelfde planState().
+     *
+     * De oude rijen per soort worden er nog wél bij getoond zolang ze bestaan —
+     * dat is geschiedenis van vóór migratie 0051 en geen dubbeltelling; zie de
+     * kop van die migratie. */
+    const cr = abo.credits || { saldo: 0, toegekend: 0, ouder: 0 };
+    const oudeRijen = (abo.slots || []).filter((b) => b.kind !== 'credits');
+    const saldoRegel = cr.toegekend
+      ? `<strong>${cr.saldo}</strong> van ${cr.toegekend} credits over${cr.ouder ? ` (${cr.ouder} doorgeschoven)` : ''}`
+        + (oudeRijen.length ? ` <span class="meta">&middot; historie: ${oudeRijen.map((b) => `${b.saldo} &times; ${esc(kindLabel(b.kind, 'nl').toLowerCase())}`).join(', ')}</span>` : '')
+      : 'geen credits deze maand';
     const kan = abo.sub.status === 'active' && klaar.items.length > 0;
 
     /* ── DE CORRECTIEKNOP, DICHTGEKLAPT ────────────────────────────────────────
@@ -5844,34 +6084,31 @@ async function renderCustomer(context, customerId) {
      * in het plan zit; uit de balans alleen zou een soort missen waarvoor deze
      * maand nog niets is toegekend — en dat is juist het geval waarin je hier
      * komt, want een mislukte incasso laat precies zo'n leegte achter. */
-    const soorten = [...new Set([
-      /* bundelVoor() en niet slotsFor(): sinds migratie 0038 kan een abonnement een
-         maand op maat zijn en draagt hij zijn soorten op de rij. */
-      ...Object.keys(bundelVoor(abo.sub)),
-      ...(abo.slots || []).map((b) => b.kind),
-    ])];
-    const slotCorrectie = !soorten.length ? '' : `
+    /* ── ÉÉN SOORT OM BIJ TE STELLEN ────────────────────────────────────────
+     * Hier stond een keuzelijst met alle soorten uit het plan én uit de balans,
+     * omdat elk saldo apart bijgesteld moest worden. Met één pot is er één
+     * knop, en verdwijnt de hele klasse fouten waarbij je de verkeerde soort
+     * bijstelt en het pas maanden later ziet. */
+    const slotCorrectie = `
     <details class="slotfix">
-      <summary>Vakjes bijstellen</summary>
+      <summary>Credits bijstellen</summary>
       <form method="post" action="/admin/customers/${customer.id}/slots">
-        <label for="sf-kind">Soort</label>
-        <select id="sf-kind" name="kind">${soorten.map((k) =>
-          `<option value="${esc(k)}">${esc(kindLabel(k, 'nl'))}</option>`).join('')}</select>
+        <input type="hidden" name="kind" value="credits">
         <label for="sf-delta">Erbij of eraf</label>
-        <input id="sf-delta" name="delta" type="number" step="1" min="-50" max="50" value="1" required>
+        <input id="sf-delta" name="delta" type="number" step="1" min="-300" max="300" value="4" required>
         <label for="sf-reason">Waarom</label>
         <input id="sf-reason" name="reason" type="text" maxlength="200" required
                placeholder="bv. incasso van juli kwam alsnog binnen">
         <button class="btn btn-sm" type="submit">Bijstellen</button>
       </form>
-      <p class="meta">Past <code>granted</code> aan van de lopende maand &mdash; niet <code>used</code>, want wat al vastgezet is hoort zichtbaar te blijven. Eraf halen kan niet onder wat er vastgezet staat: daar is werk tegenover beloofd. Elke bijstelling komt met reden en al in het adminlogboek.</p>
+      <p class="meta">Past <code>granted</code> aan van de lopende maand &mdash; niet <code>used</code>, want wat al vastgezet is hoort zichtbaar te blijven. Een catalogset is 4 credits, een lifestylecarrousel 5, een motion-clip 5, een hook 10 en een lifestyle-clip 12. Eraf halen kan niet onder wat er vastgezet staat: daar is werk tegenover beloofd. Elke bijstelling komt met reden en al in het adminlogboek.</p>
     </details>`;
 
     return `
   <div class="card" id="week">
     <div class="row-head">
       <span class="ref">Abonnement &middot; ${esc(abo.sub.plan)}</span>
-      <span class="meta">${esc(abo.sub.status)}${abo.sub.window_day ? ` &middot; week vanaf de ${abo.sub.window_day}e` : ''}
+      <span class="meta">${statPil(abo.sub.status, abo.sub.status)}${abo.sub.window_day ? ` &middot; week vanaf de ${abo.sub.window_day}e` : ''}
         &middot; ${saldoRegel} over</span>
     </div>
     ${rijen}
@@ -6711,7 +6948,7 @@ async function renderMaandset(context) {
     const compleet = s.n >= doel;
     return `<div class="card maandset${live ? '' : ' is-concept'}" id="set-${s.id}">
       <div class="row-head"><span class="ref">${esc(maandLabel(s.month))}${s.title ? ` · ${esc(s.title)}` : ''}</span>
-        <span class="pill${live ? ' is-delivered' : ''}">${live ? 'gepubliceerd' : 'concept'}</span></div>
+        ${live ? statPil('active', 'gepubliceerd') : statPil('draft', 'concept')}</div>
       <p class="meta">${s.n} van ${doel} beelden${s.bytes ? ` · ${(s.bytes / 1024 / 1024).toFixed(1)} MB` : ''}${live ? ` · zichtbaar sinds ${esc(String(s.published_at).slice(0, 10))}` : compleet ? ' · compleet, nog niet gepubliceerd' : ` · nog ${doel - s.n} te gaan`}</p>
       ${s.files.length ? `<div class="maandset-strook">${s.files.map((f) =>
         `<figure class="maandset-beeld"><img src="/admin/shared/${f.id}" alt="${esc(f.filename)}" loading="lazy" decoding="async">
@@ -8670,7 +8907,7 @@ ${pakBalk}
     <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
     <span class="meta">${esc(o.brand || o.name || '—')} · ${wat(o)}${o.punten ? ` · ${o.punten} ${o.punten === 1 ? 'punt' : 'punten'}` : ''}</span>
     <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `${o.manier === 'voorrang' ? '<strong class="or-voorrang">voorrang · 24 u</strong>' : 'zo snel mogelijk'}, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
-    <span class="pill is-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
+    ${statPil(o.status, STATUS_LABEL[o.status] || o.status)}
     ${['delivered', 'cancelled'].includes(String(o.status)) ? '' : `<a class="pl-pak-link" href="/admin/planning?van=${esc(van)}&amp;pak=${o.id}#raster">Verplaatsen in het raster &uarr;</a>`}
   </div>
   <details class="pl-verleng">
@@ -9820,7 +10057,7 @@ function orderCard(o, models, statusFilter = '') {
     <span class="or-merk"><strong>${esc(o.brand || '—')}</strong><span class="meta">${esc(o.email)}</span></span>
     <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : voorrang ? 'voorrang' : 'wachtrij')}</span></span>
     <span class="or-wanneer">${waar}<span class="meta">binnen ${esc(when(o.created_at).slice(0, 10))}</span></span>
-    <span class="or-status"><span class="pill is-${esc(o.status)}">${STATUS_LABEL[o.status] || esc(o.status)}</span></span>
+    <span class="or-status">${statPil(o.status, STATUS_LABEL[o.status] || o.status)}</span>
     <span class="or-betaal${o.payment_status === 'paid' ? '' : ' is-open'}">${esc(o.payment_status === 'paid' ? 'betaald' : o.payment_status === 'unpaid' ? 'onbetaald' : o.payment_status)}</span>
     <span class="or-files"><a class="files-link" href="/admin/orders/${o.id}/files">Bestanden${o.file_count ? ` (${o.file_count})` : ''}</a></span>
   </summary>
@@ -9956,6 +10193,11 @@ function adminNav(actief = '') {
       : `<a class="bar-link" href="${href}">${esc(label)}</a>`)).join('')}
   </nav>
   <div class="bar-right">
+    ${/* Allebei de standen staan er; CSS verbergt de stand waar je al in zit.
+         Zie de noot bij themaCookie() voor waarom dat hier de enige manier is
+         zonder JavaScript, en `.bar-thema` in public/admin.css voor de regel. */ ''}
+    <a class="bar-thema is-donker" href="?thema=donker" title="Donker scherm">Donker</a>
+    <a class="bar-thema is-licht" href="?thema=licht" title="Licht scherm">Licht</a>
     <form method="post" action="/admin/logout"><button class="btn btn-ghost btn-sm" type="submit">Uitloggen</button></form>
   </div>
 </div>`;
@@ -9968,7 +10210,12 @@ function page({ title, body }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<meta name="color-scheme" content="light">
+${/* `light dark` en niet `light`: sinds het donkere scherm bestaat moet de
+     browser ook de donkere kant van zijn eigen onderdelen kunnen tekenen — de
+     datumprikker, het pijltje van een <select>, de schuifbalk. Welke van de
+     twee het wordt, zegt `color-scheme` in admin.css per stand; deze meta zegt
+     alleen dat allebei bestaan. */ ''}
+<meta name="color-scheme" content="light dark">
 <title>${esc(title)} — VISUAILS admin</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/fonts/gedeeld.css">

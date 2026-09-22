@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await (await b.newContext({ viewport: { width: 1440, height: 950 }, deviceScaleFactor: 2 })).newPage();
+await p.goto('http://127.0.0.1:4399/nl/how-it-works/', { waitUntil: 'load' });
+await p.evaluate(() => document.fonts.ready);
+await p.evaluate(() => document.querySelectorAll('.cc,[class*="cookie"]').forEach(e => e.remove()));
+await p.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise(x => setTimeout(x, 40)); } });
+await p.waitForTimeout(400);
+const el = await p.$('p.hoog.hoog-3');
+console.log(await el.evaluate(e => { const s = getComputedStyle(e); const r = e.getBoundingClientRect();
+  return { tekst: e.textContent.trim().slice(0,90), fs: s.fontSize, lh: s.lineHeight, h: Math.round(r.height), regels: Math.round(r.height / parseFloat(s.lineHeight)) }; }));
+await el.scrollIntoViewIfNeeded(); await p.waitForTimeout(300);
+const r = await el.boundingBox();
+await p.screenshot({ path: 'kladblok/spatie-hoog3.png', clip: { x: r.x - 20, y: r.y - 20, width: r.width + 40, height: r.height + 40 } });
+await b.close();

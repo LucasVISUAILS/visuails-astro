@@ -1,0 +1,84 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   NACHTPROEF — /admin in het zwart. 20 september 2026.
+   ═══════════════════════════════════════════════════════════════════════════
+   Proef, nog geen onderdeel van het adminportaal. Wordt door
+   scripts/admin-render.mjs ingeladen met VIS_NACHT=1.
+
+   admin.css heeft één `:root` met de lichte set; dit is dezelfde set, uit het
+   donkere blok van KLEURENSCHEMA.md. Wordt hij goedgekeurd, dan wordt dit
+   `:root[data-thema="donker"]` in admin.css zelf, met een schakelaar in de
+   balk die een cookie zet — precies zoals Studio het doet.
+
+   EÉN VERSCHIL MET DE SITE: /admin heeft geen foto's als grond en geen hero,
+   dus hier zijn er GEEN uitzonderingen nodig. Het is een tokenwissel en verder
+   niets. Dat is meteen het argument om hier te beginnen. */
+:root[data-nacht] {
+  --paper:      #0C0D10;
+  --paper-2:    #14161A;
+  --paper-lift: #14161A;
+  --sunken:     #1C1F25;
+  --panel:      #000000;
+  --on-panel:   #F2F3F5;
+
+  --ink-100:  #F2F3F5;
+  --ink-700:  rgb(242 243 245 / .72);
+  --ink-500:  rgb(242 243 245 / .55);
+  --ink-300:  rgb(242 243 245 / .34);
+  --ink-200:  rgb(242 243 245 / .20);
+  --ink-800:  #1C1F25;
+  --ink-850:  #14161A;
+  --ink-900:  #F2F3F5;
+  --line-soft: rgb(242 243 245 / .11);
+  --line-ui:   rgb(242 243 245 / .45);
+
+  --accent:         #A694FF;
+  --on-accent:      #000000;
+  --accent-text:    #A694FF;
+  --accent-tint:    #1E1840;
+  --on-accent-tint: #A694FF;
+  --accent-dim:     #BFB2FF;
+  --accent-soft:    #1E1840;
+  --focus-ring:     #F2F3F5;
+  --brand:          #F2F3F5;
+
+  --st-wait-fill: transparent;  --st-wait-edge: #5B5F7A;                --st-wait-ink: #A7ABC7;
+  --st-work-fill: #1E1840;      --st-work-edge: rgb(166 148 255 / .34);  --st-work-ink: #A694FF;
+  --st-done-fill: #A694FF;      --st-done-edge: #A694FF;                 --st-done-ink: #000000;
+  --st-rev-fill:  #2B1D0A;      --st-rev-edge:  rgb(233 150 59 / .34);   --st-rev-ink:  #E9963B;
+  --st-can-fill:  #1B1E23;      --st-can-edge:  #5C6066;                 --st-can-ink:  #A0A4AA;
+
+  --mist-teal:  #14161A;
+  --mist-slate: #14161A;
+  --mist-stone: #14161A;
+
+  --ghost:                rgb(242 243 245 / .08);
+  --btn-ghost-fill:       rgb(242 243 245 / .10);
+  --btn-ghost-fill-hover: rgb(242 243 245 / .18);
+  --btn-2nd-fill:         transparent;
+  --btn-2nd-fill-hover:   rgb(242 243 245 / .08);
+  --btn-2nd-ink:          #F2F3F5;
+  --btn-2nd-border:       rgb(242 243 245 / .34);
+  --btn-2nd-border-hover: rgb(242 243 245 / .60);
+
+  /* Het pijltje van een <select> is een SVG met een vaste streekkleur; die kan
+     geen variabele lezen, dus hij staat hier nog een keer in het wit. */
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F2F3F5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* De schil van /admin schildert zijn eigen grond op body en op .wrap; beide
+   lezen --paper, dus ze gaan vanzelf mee. Dit is alleen de kaartrand, die in
+   de lichte stand onzichtbaar mag zijn en hier de kaart moet aftekenen. */
+:root[data-nacht] .card { border-color: rgb(242 243 245 / .12); }
+
+/* ── DE ENIGE ECHTE VONDST VAN DEZE PROEF ──────────────────────────────────
+   #B02A28 is het signaalrood van /admin: 6,55:1 op wit, en dat is waarom het
+   die waarde heeft. Op #14161A haalt het 2,77:1 — gemeten met de
+   contrastveeg in scripts/admin-render.mjs (VIS_CONTRAST=1). Het staat op
+   drie plekken als letterlijke waarde en niet als token, dus het kan niet
+   vanzelf meekantelen.
+
+   #FF6B68 is dezelfde kleur, opgehaald tot 6,9:1 op de kaartgrond. Gaat de
+   nachtstand door, dan wordt dit een token (--gevaar / --gevaar-ink) met een
+   waarde per stand, precies zoals de statusset. */
+:root[data-nacht] .warnline.is-rood { border-color: #FF6B68; color: #FF6B68; }
+:root[data-nacht] .or-let.is-rood { color: #FF6B68; border-color: #FF6B68; }
+:root[data-nacht] .danger-block.is-worst h4 { color: #FF6B68; }

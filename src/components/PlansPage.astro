@@ -92,12 +92,12 @@ const maatVanaf = euro(customMonthTotal({ products: CUSTOM_MONTH_MIN_PRODUCTS })
 const maat = nl ? {
   /* Dezelfde formulering als PlanBand op de homepage: "Of jouw maand op maat". */
   h: `Of jouw ${maatNaam.toLowerCase()}`,
-  body: `Past geen van de drie? Stel je maand zelf samen: jij kiest hoeveel catalogsets, carrousels en clips erin zitten, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten en tot ${CUSTOM_MONTH_MAX_PRODUCTS}. Dezelfde afspraken als hierboven — maandelijks opzegbaar, ongebruikte plekken schuiven een maand door.`,
+  body: `Past geen van de drie? Stel je maand zelf samen: jij kiest hoeveel catalogsets, carrousels en clips erin zitten, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten en tot ${CUSTOM_MONTH_MAX_PRODUCTS}. Dezelfde afspraken als hierboven — maandelijks opzegbaar, ongebruikte credits schuiven een maand door.`,
   prijs: `Vanaf ${maatVanaf} per maand`,
   cta: 'Stel je maand samen',
 } : {
   h: `Or your ${maatNaam.toLowerCase()}`,
-  body: `None of the three fitting? Build the month yourself: you decide how many catalog sets, carousels and clips are in it, from ${CUSTOM_MONTH_MIN_PRODUCTS} products up to ${CUSTOM_MONTH_MAX_PRODUCTS}. Same terms as above — cancel monthly, unused slots roll over one month.`,
+  body: `None of the three fitting? Build the month yourself: you decide how many catalog sets, carousels and clips are in it, from ${CUSTOM_MONTH_MIN_PRODUCTS} products up to ${CUSTOM_MONTH_MAX_PRODUCTS}. Same terms as above — cancel monthly, unused credits roll over one month.`,
   prijs: `From ${maatVanaf} a month`,
   cta: 'Build your month',
 };
@@ -499,7 +499,7 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--geel); }
   /* De lichte variant, voor de drie kaarten in een paneel. */
   .pl-vink-licht li { color: var(--inkt-2); }
-  .pl-vink-licht li::before { color: var(--gloed, #9EB42F); }
+  .pl-vink-licht li::before { color: var(--gloed, currentColor); }
 
   .pl-plaat { display: grid; gap: 1.4rem; justify-items: start; padding: clamp(1.5rem, 3.5vw, 2.4rem); border: 1px solid rgb(245 245 245 / .22); border-radius: calc(var(--ronding) - 8px); }
   .pl-bedrag { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
@@ -533,7 +533,7 @@ const c = COPY[nl ? 'nl' : 'en'];
   .pl-maat-a { display: grid; gap: 1rem; justify-items: start; }
   .pl-maat-a .mono { color: var(--inkt-2); }
 
-  .pl-tag { color: var(--inkt); background: var(--geel); border-radius: 999px; padding: .25rem .6rem; font-size: .72rem; }
+  .pl-tag { color: var(--op-geel); background: var(--geel); border-radius: 999px; padding: .25rem .6rem; font-size: .72rem; }
 
   .pl-soon-lijst { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.4rem, 3.5vw, 3rem); }
   .pl-soon-lijst li { display: grid; gap: .6rem; align-content: start; padding-top: 1.2rem; border-top: 1px solid var(--lijn); }

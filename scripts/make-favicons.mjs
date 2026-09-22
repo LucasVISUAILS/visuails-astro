@@ -75,19 +75,23 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
 const DRAWER = path.join(ROOT, 'brand', 'logo');
 
-const GREEN = '#D2E04A';   // --accent (sectie 20: het Komma-geel)
-const GREEN_DIM = '#B8CC46';   // --accent-dim
-const DARK = '#111111';   // --glass (sectie 20: de grond is wit, het tegeltje blijft donker)
-const WHITE = '#FFFFFF';   // --ink-1
+/* ── DE KLEUREN KOMEN UIT KLEURENSCHEMA.md — 20 september 2026 ─────────────
+   De namen GREEN en GREEN_DIM blijven staan omdat de varianten hieronder en de
+   uitvoer van dit script ze bij naam noemen; ze dragen het violet. Wie ze
+   hernoemt, doet dat in een aparte ronde. */
+const GREEN = '#4A1FFF';       // --accent
+const GREEN_DIM = '#A694FF';   // --accent in de donkere modus (violet-licht)
+const DARK = '#000000';        // --panel
+const WHITE = '#F2F3F5';       // --on-panel — bewust niet #FFFFFF, zie het schema
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {
-  c:  { ground: DARK,      ink: GREEN,     note: 'gifgroen op bijna-zwart' },
-  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — live tot 19 september 2026' },
-  b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen — LIVE' },
-  a:  { ground: WHITE,     ink: GREEN,     note: 'gifgroen op wit' },
-  a2: { ground: WHITE,     ink: GREEN_DIM, note: 'dieper groen op wit' },
-  mono: { ground: DARK,    ink: WHITE,     note: 'wit op bijna-zwart — het vorige stel' },
+  c:  { ground: DARK,      ink: GREEN,     note: 'violet op zwart — 2,93:1, AFGEKEURD' },
+  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op violet — 6,45:1, LIVE' },
+  b2: { ground: GREEN,     ink: DARK,      note: 'zwart op violet — 2,93:1, AFGEKEURD' },
+  a:  { ground: WHITE,     ink: GREEN,     note: 'violet op wit — 6,45:1' },
+  a2: { ground: DARK,      ink: GREEN_DIM, note: 'violet-licht op zwart — 8,30:1, het alternatief' },
+  mono: { ground: DARK,    ink: WHITE,     note: 'wit op zwart — 18,91:1' },
 };
 /* ── WIT OP GIFGROEN — 8 september 2026 ────────────────────────────────────
    Lucas stuurde de tegel: het witte V-teken op #D2E04A. Dat is variant `b`,
@@ -110,7 +114,17 @@ const VARIANTS = {
    #111111. Zijn eigen tegels (images/Logo/visuails-logo/png-tegel) hebben
    dezelfde dag een zwart-op-groen-set gekregen, uit de wit-op-groen-bestanden
    met alleen het wit vervangen. */
-const ACTIVE = 'b2';
+/* ── VAN b2 NAAR b — 20 september 2026 ────────────────────────────────────
+   `b2` was bijna-zwart op gifgroen: 13,04:1, en dat was de goede keuze zolang
+   de grond lime was. De directe vertaling daarvan naar het nieuwe schema is
+   ZWART OP VIOLET, en die haalt 2,93:1. KLEURENSCHEMA.md keurt hem met zoveel
+   woorden af en waarschuwt er apart voor bij de favicon: *"zwart op violet is
+   de directe vertaling van het huidige icoon en haalt het niet."*
+
+   Het nieuwe icoon is dus `b`: WIT OP VIOLET, 6,45:1. Het alternatief in het
+   schema is `a2` (violet-licht op zwart, 8,30:1), dat aansluit op Studio
+   donker; dat is één regel hier als hij ooit de voorkeur krijgt. */
+const ACTIVE = 'b';
 
 /* Relative luminance and contrast, WCAG 2.x. Twenty lines rather than a
  * dependency, and the same maths the palette in global.css was solved with. */

@@ -140,10 +140,23 @@ try {
        week is een zin met echte datums. Oude tab-links landen op het overzicht. */
     ok('de drie tabben staan er', ['/account/plan"', 'tab=bestellen', 'tab=facturering'].every((t) => h.includes(t)));
     ok('  en de twee oude niet meer', !/tab=edities|tab=look/.test(h));
-    ok('de gemaakte en vastgezette slots zijn kaders', tel(h, /class="st-frame is-(gemaakt|vast)"/g), 4);
-    ok('waarvan drie met een echt beeld', tel(h, /class="st-frame is-gemaakt"[\s\S]*?<img src="\/account\/files\/\d+\/f"/g), 3);
-    ok('één vastgezet, en de vrije als één tegel met het aantal', [tel(h, /class="st-frame is-vast"/g), tel(h, /class="st-frame is-vrij is-tel"/g)], [1, 1]);
-    ok('  met "8 vrij" erop', /8 vrij|8 free/.test(h));
+    /* ── ÉÉN BALK EN EEN STROOK — 20 september 2026 ────────────────────────
+       Hier werden vier kaders geteld: de gemaakte en vastgezette slots van de
+       maand, plus één tegel met het aantal vrije. Dat hing aan een saldo PER
+       SOORT, en dat bestaat niet meer — er is één creditsaldo en een prijs per
+       dienst (zie SERVICE_CREDITS in pricing.js).
+
+       Wat ervoor in de plaats komt en hier getoetst wordt: de balk met zijn
+       stand als klasse (geen inline stijl, want CSP), en een strook met wat er
+       ECHT gemaakt is. De "vrije" tegel is weg en dat is geen verlies maar een
+       correctie: een credit is geen product, dus een leeg vakje per credit zou
+       120 beelden beloven waar er geen 120 in zitten. */
+    ok('de creditbalk staat er met zijn stand als klasse', /class="st-credit-vul is-p\d+"/.test(h));
+    ok('  en niet als inline stijl', !/style="[^"]*width:/.test(h));
+    ok('de strook toont echt werk en geen lege vakjes',
+      tel(h, /class="st-frame is-gemaakt"/g) >= 1 && tel(h, /class="st-frame is-vrij/g) === 0);
+    ok('elke dienst staat als kaart met zijn creditprijs', tel(h, /class="st-dienst["\s]/g) >= 4);
+    ok('  en de complete bundel staat er niet meer bij', !/Complete bundel|Complete bundle/.test(h));
     ok('de week is een zin met echte datums, geen strook', tel(h, /class="st-dag[ "]/g) === 0 && /loopt van|runs from/.test(h));
     ok('de vaste look staat als regel op het overzicht, met een link', /st-lookstrip/.test(h) && /href="\/account\/brand-kit"/.test(h));
     ok('en Editions als één regel', /st-editions-regel/.test(h));

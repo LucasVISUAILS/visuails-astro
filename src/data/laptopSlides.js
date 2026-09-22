@@ -76,9 +76,9 @@ export function laptopSlides(lang = 'nl') {
     fon: HELE, duur: 2600,
     fonAlt: nl ? 'Telefoonfoto van de klant: de hele broek plat op een betonnen magazijnvloer'
                : "The customer’s phone photo: the whole garment flat on a concrete floor",
-    naam: nl ? 'Lifestyle-carousel · 3 beelden' : 'Lifestyle carousel · 3 images',
+    naam: nl ? 'Lifestyle-carrousel · 3 beelden' : 'Lifestyle carousel · 3 images',
     href: lp('/lifestyle'),
-    alt: nl ? 'Drie lifestyle-beelden als carousel in een nagebouwd social-bericht'
+    alt: nl ? 'Drie lifestyle-beelden als carrousel in een nagebouwd social-bericht'
             : 'Three lifestyle images as a carousel in a mocked-up social post',
     beelden: [
       { src: '/img/lifestyle-flash-03.webp', naam: nl ? 'Opening' : 'Opening',
@@ -93,26 +93,29 @@ export function laptopSlides(lang = 'nl') {
       avatar: '/img/merk-tegel.webp',
       vlag: nl ? 'Door AI gegenereerd' : 'AI generated',
       bijschrift: nl
-        ? ['Eén telefoonfoto erin. Een hele carousel eruit.', 'Zelfde look, drie beelden, klaar om te plaatsen.']
+        ? ['Eén telefoonfoto erin. Een hele carrousel eruit.', 'Zelfde look, drie beelden, klaar om te plaatsen.']
         : ['One phone photo in. A whole carousel out.', 'Same look, three images, ready to post.'],
-      reacties: nl
-        ? [
-            { naam: 'studio.novem', tekst: 'Dit scheelt ons een hele shootdag', tijd: '2 d' },
-            { naam: 'mara.vanhoorn', tekst: 'De derde is mijn favoriet', tijd: '2 d' },
-            { naam: 'wolkenkade', tekst: 'Hoe lang duurt zoiets?', tijd: '1 d' },
-            { naam: 'atelier.brecht', tekst: 'Zo strak', tijd: '1 d' },
-            { naam: 'nova.bergman', tekst: 'Welke stijl is dit?', tijd: '1 d' },
-            { naam: 'kade.en.co', tekst: 'Het licht op de tweede', tijd: '22 u' },
-          ]
-        : [
-            { naam: 'studio.novem', tekst: 'This saves us a whole shoot day', tijd: '2 d' },
-            { naam: 'mara.vanhoorn', tekst: 'The third one is my favourite', tijd: '2 d' },
-            { naam: 'wolkenkade', tekst: 'How long does this take?', tijd: '1 d' },
-            { naam: 'atelier.brecht', tekst: 'So clean', tijd: '1 d' },
-            { naam: 'nova.bergman', tekst: 'Which style is this?', tijd: '1 d' },
-            { naam: 'kade.en.co', tekst: 'That light on the second one', tijd: '22 h' },
-          ],
-      likes: nl ? '412 vind-ik-leuks' : '412 likes',
+      /* ── GEEN VERZONNEN MENSEN MEER — 20 september 2026 ──────────────────
+         Hier stonden zes accountnamen met zes uitspraken, in twee talen. Zie de
+         noot bij `interface Reactie` in LaptopCarousel.astro voor waarom die
+         eruit zijn: een verzonnen handle kan morgen een echt account zijn, en
+         twee van de zes lazen als een aanbeveling van iemand die niet bestaat.
+
+         Wat blijft is de VORM: zes rijen met een naambalkje en een tekstbalkje,
+         in wisselende breedtes zodat het leest als een gesprek en niet als een
+         tabel. Twee getallen per rij, tussen 0 en 1. Ze zijn niet meer per taal
+         verschillend, want er staat geen taal meer in. */
+      reacties: [
+        { naam: 0.5, tekst: 0.9 },
+        { naam: 0.6, tekst: 0.6 },
+        { naam: 0.4, tekst: 0.7 },
+        { naam: 0.5, tekst: 0.4 },
+        { naam: 0.6, tekst: 0.5 },
+        { naam: 0.4, tekst: 0.8 },
+      ],
+      /* Het aantal is een balkje geworden: een getal is een bewering, ook
+         als niemand het gelooft. Zie dezelfde noot. */
+      likes: '',
       kort: nl ? '2 d' : '2 d',
       datum: nl ? '2 dagen geleden' : '2 days ago',
     },

@@ -64,6 +64,7 @@
 // ze kosten. Zie isExtraShotId() onderaan voor waarom hij hier nodig is.
 // pricing.js importeert niets uit dit bestand, dus dit maakt geen cyclus.
 import { MAX_EXTRA_PER_PRODUCT as MAX_EXTRA } from './pricing.js';
+import { CONTEXT_SLOT_IDS } from './garments.js';
 
 export const SHOTS = [
   {
@@ -322,6 +323,46 @@ export function refShotNumber(id) {
   return m ? Number.parseInt(m[1], 10) : 0;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EN DE CONTEXTSTUKKEN — 22 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Een stuk dat de klant ERBIJ zet — de broek onder zijn hoodie, de schoen onder
+ * zijn jeans — is een derde soort vakje, en net als bij de twee hierboven is het
+ * verschil het hele punt:
+ *
+ *   CONTEXT (`ctx-shoes`, `ctx-top`, …)  Gratis. INVOER, maar niet van het
+ *     product zelf: van iets wat ernaast in beeld komt. Levert GEEN beeld op
+ *     en wordt NIET als product gefotografeerd; het bestaat in precies één
+ *     beeld, de draagfoto. De grens met de betaalde outfitshot staat in
+ *     src/data/garments.js, en hij zit in de uitsnede, niet in dit vakje.
+ *
+ * De id draagt de PLEK en niet een nummer: er is per product hoogstens één
+ * stuk per plek (één broek, één paar schoenen), dus `ctx-bottom` zegt alles wat
+ * de werkmap moet weten. De plekken zelf komen uit garments.js; dit bestand
+ * kent alleen het voorvoegsel, zodat een nieuwe plek daar automatisch ook hier
+ * een geldig vakje is.
+ */
+export const CONTEXT_SHOT_PREFIX = 'ctx-';
+
+/** 'ctx-shoes' voor de plek 'shoes'. */
+export function contextShotId(slot) {
+  return `${CONTEXT_SHOT_PREFIX}${slot}`;
+}
+
+/** De plek uit 'ctx-shoes', of '' als dit geen contextvakje is. */
+export function contextShotSlot(id) {
+  const s = String(id || '');
+  return s.startsWith(CONTEXT_SHOT_PREFIX) ? s.slice(CONTEXT_SHOT_PREFIX.length) : '';
+}
+
+export function isContextShotId(id) {
+  if (typeof id !== 'string') return false;
+  const slot = contextShotSlot(id);
+  return Boolean(slot) && CONTEXT_SLOT_IDS.includes(slot);
+}
+
 /**
  * Kent /api/upload dit vakje?
  *
@@ -331,7 +372,7 @@ export function refShotNumber(id) {
  */
 export function isShotId(id) {
   if (typeof id !== 'string') return false;
-  return SHOT_IDS.includes(id) || isExtraShotId(id) || isRefShotId(id);
+  return SHOT_IDS.includes(id) || isExtraShotId(id) || isRefShotId(id) || isContextShotId(id);
 }
 
 /** One shot by id, or undefined. */

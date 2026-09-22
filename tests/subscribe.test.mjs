@@ -742,8 +742,11 @@ console.log('\nde contactpoort voor alles wat eerst opgezet moet worden');
   const plan = readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8');
   ok('de zin over elk product staat achter een voorwaarde',
     /\{v\.saldo\.elkProduct && <Fragment>\{t\.planEachProduct\}/.test(plan), true);
-  ok('en die voorwaarde leest de bundel van dit abonnement',
-    /const productSoorten = Object\.keys\(bundelVoor\(state\.sub\)\)/.test(acc), true);
+  /* Sinds 19 september 2026 komt de lijst uit dienstenVoorAbo() en niet meer
+     uit de bundel: `complete` bestaat niet meer, en welke diensten een abonnee
+     mag kiezen is daarmee een eigen vraag geworden met een eigen antwoord. */
+  ok('en die voorwaarde leest de diensten van dit abonnement',
+    /const productSoorten = \(state\.diensten \|\| \[\]\)/.test(acc), true);
   /* ── EN ZONDER ÉÉN SOORT BIJ NAAM ────────────────────────────────────────
      Eerste opzet schreef `k === 'complete' || k === 'video-motion'` en viel
      daarmee over de regel die tests/subscription.test.mjs sinds migratie 0035

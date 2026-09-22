@@ -81,7 +81,7 @@ import {
 import { noun } from '../data/lexicon.js';
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
-import Disclose from './Disclose.astro';
+import Vragen from './Vragen.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
 import Uitleg from './Uitleg.astro';
@@ -289,7 +289,6 @@ const COPY = {
       ['Cancel and you keep what you downloaded', 'Both licences survive the plan. Nothing has to come down; you simply stop receiving new sets.'],
     ],
 
-    faqH: 'Editions questions, answered',
     faqs: serviceFaqs('editions', 'en'),
     ctaH: 'Fill the month <br>you have nothing for.',
     ctaP: `${STOCK_OFF_BRAND} shared visuals come with every plan. ${STOCK_ON_BRAND} of your own are ${maand} a month after a ${opzet} setup.`,
@@ -395,7 +394,6 @@ const COPY = {
       ['Zeg je op, dan hou je wat je hebt opgehaald', 'Allebei de licenties blijven na het abonnement staan. Er hoeft niets offline; je krijgt alleen geen nieuwe sets meer.'],
     ],
 
-    faqH: 'Vragen over Editions, beantwoord',
     faqs: serviceFaqs('editions', 'nl'),
     ctaH: 'Vul de maand waar <br>je niets voor hebt.',
     ctaP: `${STOCK_OFF_BRAND} gedeelde beelden zitten bij elk abonnement. ${STOCK_ON_BRAND} eigen beelden kosten ${maand} per maand, na een opzet van ${opzet}.`,
@@ -600,14 +598,7 @@ const c = COPY[lang];
   </section>
 
   {/* ── 9 · VRAGEN ───────────────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="ed-faq">
-    <header class="paneel-kop">
-      <h2 id="ed-faq" class="hoog hoog-2">{c.faqH}</h2>
-    </header>
-    <div class="ed-vragen">
-      {c.faqs.map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
-    </div>
-  </section>
+  <Vragen lang={lang} id="ed-faq" dienst="editions" faqs={c.faqs} />
 
   {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="ed-slot">
@@ -688,13 +679,12 @@ const c = COPY[lang];
 
   .ed-vink { display: grid; gap: .7rem; margin-top: 1.4rem; }
   .ed-vink li { position: relative; padding-left: 1.5rem; color: var(--inkt-2); }
-  .ed-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .ed-vink li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, currentColor); }
   .ed-prijs { display: grid; gap: .8rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
   .ed-prijs :global(strong) { font-weight: 500; color: var(--inkt); }
   .ed-prijs-waarom { padding-top: .8rem; border-top: 1px solid var(--lijn); font-size: .92rem; }
   .ed-prijs-waarom b { font-weight: 500; }
 
-  .ed-vragen { display: grid; gap: .7rem; }
   /* ── ERFT NU VAN HET DONKERE SLOT — 7 september 2026 ─────────────────────
      Deze regel stond op var(--inkt) omdat het slotpaneel geel was. Sinds het
      donker is, was dat inkt op #1A1A1A: 1,08:1, en dat is precies het soort

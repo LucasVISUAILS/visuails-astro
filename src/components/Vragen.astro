@@ -1,0 +1,55 @@
+---
+/*
+ * VISUAILS — HET VRAGENBLOK OP EEN DIENSTPAGINA. 22 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Vijf pagina's (catalog, lifestyle, video, hooks, editions) hadden elk hun
+ * eigen vragenblok: dezelfde <Disclose>, maar vijf keer een eigen klasse
+ * (.cat-vragen, .ls-vragen, .vid-vragen, .hk-vragen, .ed-vragen), drie
+ * verschillende kopvormen ("Catalog-vragen, beantwoord", "Vragen over Hooks,
+ * beantwoord"), en twee gedragingen: catalog/lifestyle/video toonden er vijf
+ * met een link naar /faq, hooks en editions alles. Lucas: *"FAQ-blokken
+ * consistent maken."*
+ *
+ * Nu één blok. Kop "Vragen over <dienst>", de eerste vijf vragen, en één link
+ * "Nog N vragen over <dienst>" naar de groep van die dienst op /faq — die groep
+ * bestaat sinds vandaag (faq.js, SERVICE_FAQ_GROUPS), want tot dan wees de link
+ * naar een pagina waar die vragen niet stonden.
+ */
+import Disclose from './Disclose.astro';
+import { localizedPath } from '../i18n/ui.js';
+import { SERVICE_FAQ_NAMES } from '../data/faq.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  /** id van de <h2>, voor aria-labelledby op de sectie. */
+  id: string;
+  /** De dienst: sleutel in SERVICE_FAQ_GROUPS, en het anker op /faq. */
+  dienst: keyof typeof SERVICE_FAQ_NAMES;
+  faqs: { q: string; a: string }[];
+}
+const TOON = 5;
+const { lang, id, dienst, faqs } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+const naam = SERVICE_FAQ_NAMES[dienst][lang];
+const kop = nl ? `Vragen over ${naam}` : `Questions about ${naam}`;
+const rest = faqs.length - TOON;
+const meer = rest > 0
+  ? (nl ? `Nog ${rest} ${rest === 1 ? 'vraag' : 'vragen'} over ${naam}` : `${rest} more ${rest === 1 ? 'question' : 'questions'} about ${naam}`)
+  : (nl ? 'Alle vragen' : 'All questions');
+---
+<section class="paneel" aria-labelledby={id}>
+  <header class="paneel-kop">
+    <h2 id={id} class="hoog hoog-2">{kop}</h2>
+  </header>
+  <div class="vragen-lijst">
+    {faqs.slice(0, TOON).map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
+  </div>
+  <p class="vragen-meer"><a class="pijl" href={`${lp('/faq')}#${dienst}`}>{meer}</a></p>
+</section>
+
+<style>
+  .vragen-lijst { display: grid; gap: .7rem; }
+  .vragen-meer { margin-top: 1rem; }
+</style>

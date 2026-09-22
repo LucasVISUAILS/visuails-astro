@@ -37,36 +37,27 @@ import '../styles/global.css';
    <link> hier, dezelfde in StudioLayout, en de Satoshi-tak in
    scripts/fonts-voor-worker.mjs. Een schakelaar die niets meer aanzet is precies
    het soort bedrading dat de drie werkschermen maandenlang in Arial hield. */
-/* Sectie 22: Anybody voor de koppen, Instrument Sans voor de tekst, Martian
-   Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
-   noot bij --font-heading in global.css voor waarom deze drie. */
+/* Sectie 22: Anybody voor de koppen, Figtree voor de tekst, Martian Mono voor
+   de labels — alle drie variabel, open source en zelf gehost. Zie de noot bij
+   --font-body in global.css voor waarom Figtree en niet Satoshi. */
 import '@fontsource-variable/anybody/standard.css';
-import '@fontsource-variable/instrument-sans/standard.css';
+import '@fontsource-variable/figtree/index.css';
 import '@fontsource-variable/martian-mono/standard.css';
 
-/* ── SATOSHI, ALS HIJ ER LIGT — 8 september 2026 ──────────────────────────
-   Lucas wil Satoshi proberen als tekstletter. Hij staat niet op npm (Fontshare,
-   ITF Free Font License, gratis maar niet open source), dus de woff2's komen
-   met de hand in public/fonts/satoshi/ te liggen.
+/* ── DE SATOSHI-SCHAKELAAR IS WEG — 21 september 2026 ─────────────────────
+   Hier stond een voorwaardelijke <link> naar public/fonts/satoshi/satoshi.css,
+   die alleen verscheen als iemand twee woff2's met de hand in die map had
+   gelegd. Lucas, vandaag: *"ik wil niet de bestanden in de map zetten."*
 
-   Liggen ze er niet, dan wordt er niets gelinkt en verandert er niets: geen
-   404, en Instrument Sans blijft de tekstletter. Wat er gebeurt als ze er WEL
-   liggen, staat in public/fonts/satoshi/satoshi.css zelf.
+   Daarmee is de bedrading zelf het probleem geworden en niet de letter. Weg
+   zijn: deze constante, de <link> onderaan de <head>, dezelfde twee in
+   StudioLayout.astro, de fs-check en de `define` in astro.config.mjs, en de
+   map public/fonts/satoshi/. Wat ervoor in de plaats komt is Figtree — via
+   npm, zoals de andere twee — en dat is precies de reden dat het een keuze en
+   geen schakelaar is: er valt niets meer aan te vergeten.
 
-   ── EN WAAROM DIT GEEN VITE-ZOEKOPDRACHT MEER IS ─────────────────────────
-   Hier stond, uit de vorige ronde overgenomen, een statische mapzoekopdracht
-   van Vite over public/fonts/satoshi/. Die was NOOIT AAN GEWEEST: zolang de
-   map leeg was gaf hij een leeg object en leek alles in orde. Vandaag lag er
-   voor het eerst een bestand in, en de hele site gaf 500 met "i is not
-   defined" — Vite probeert elk gevonden pad als MODULE te laden, en een woff2
-   in public/ is geen module. De schakelaar werkte dus precies zolang hij niet
-   werd omgezet.
-
-   Nu leest astro.config.mjs de map met node:fs en zet het antwoord als
-   __SATOSHI__ in de build. Dat is één waarde, vervangen tijdens het bouwen, en
-   hij kan niets laden — de fout hierboven kán niet meer terugkomen. Onder
-   `astro dev` bestaat dezelfde vervanging, dus lokaal zie je hetzelfde. */
-const SATOSHI = __SATOSHI__;
+   (Deze tak had al één keer de hele site op 500 gezet, op de dag dat hij voor
+   het eerst aan ging. Zie de geschiedenis in git als je de redenering zoekt.) */
 
 // The latin roman is the only font file on the critical path — it sets the H1
 // that is the LCP element on most pages. Measured: /catalog's LCP was 2840ms
@@ -75,7 +66,7 @@ const SATOSHI = __SATOSHI__;
 // stylesheet has been fetched and parsed. Preloading it moves the request to
 // the first byte of the document. Only this one file — preloading a font the
 // page may never use costs the same bandwidth as one it does.
-import archivoRoman from '@fontsource-variable/instrument-sans/files/instrument-sans-latin-standard-normal.woff2?url';
+import archivoRoman from '@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2?url';
 // Bodoni Moda italic (task #271b) — same self-hosting reason as Archivo
 // above: AVG/GDPR-clean, no third-party font request. Two weights only —
 // 500 for quote-weight prose, 700 for the heavier heading-emphasis word —
@@ -320,8 +311,14 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       .ico goes first as the floor and the SVG last as the ceiling: anything
       modern renders the vector and stays crisp at 16px on a scaled display,
       anything old falls back down the list. */}
-  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  {/* ── DE REEKS UIT KLEURENSCHEMA.md — 20 september 2026 ─────────────────
+      Het schema schrijft vier regels voor: `sizes="any"` op de .ico, 32 en 16
+      als PNG, en 180 als apple-touch-icon. De 192 stond er al en blijft, want
+      Android leest hem voor het beginscherm; de SVG blijft als laatste om de
+      reden in de noot hierboven. */}
+  <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   {/* Full-bleed square, no rounded corners: iOS applies its own mask and does
@@ -338,7 +335,9 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       in DESIGN.md's swap checklist for that reason and nowhere else. It was
       still the retired paper value (#F3F5F8) after section 18, which painted a
       near-white address bar above a near-black page on Android Chrome. */}
-  <meta name="theme-color" content="#F5F5F5" />
+  {/* Uit KLEURENSCHEMA.md, 20 september 2026 — het schema noemt deze regel bij
+      naam. Was #F5F5F5 (de oude grond); de adresbalk draagt nu het accent. */}
+  <meta name="theme-color" content="#4A1FFF" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -419,9 +418,6 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
     </style>
   </noscript>
   <ClientRouter />
-  {/* Als laatste in de <head>: satoshi.css zet --font-body om, en staat
-      buiten @layer basis waar global.css in zit — zie de noot in dat bestand. */}
-  {SATOSHI && <link rel="stylesheet" href="/fonts/satoshi/satoshi.css" />}
 </head>
 <body class={[ground === "espresso" && "ground-espresso", huid === "kantig" && "huid-kantig"].filter(Boolean).join(" ") || undefined}>
 {/* THE FIRST TAB STOP. It has to be the first child of <body>, not merely
@@ -1788,7 +1784,18 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      dezelfde kleur mag hebben als de vulling. */
   .brand-mark, .brand-word { --mk-line-ink: var(--paper-on-dark); }
   .brand-word { --mk-off: 3.2%; --mk-sw: 0.45; }
-  .site-header:not(.scrolled) .brand-glyph { --mk-line-ink: var(--accent); }
+  /* ── DE GLITCHLIJN IS GEEN KLEUR MEER — 20 september 2026 ────────────────
+     Hier stond `var(--accent)`: de lijn die bij hover over het V-teken schuift,
+     in de merkkleur. Met limoen was dat een lichte lijn op een donkere balk;
+     met violet is het een gekleurd element ín het logo, en dat valt onder twee
+     regels van KLEURENSCHEMA.md tegelijk — geen violet in iconen, en geen
+     tweede kleur of glans in het merkteken.
+
+     `currentColor` houdt de animatie precies zoals hij is (de lijn verschuift,
+     dat is het effect) en maakt hem dezelfde kleur als het teken zelf. Sectie
+     22 deed dit al voor zijn eigen balk; nu geldt het op elke pagina, zodat de
+     hover niet van pagina tot pagina een andere kleur heeft. */
+  .site-header:not(.scrolled) .brand-glyph { --mk-line-ink: currentColor; }
   @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; --mk-ink: CanvasText; --mk-line-ink: CanvasText; } }
   @media print { .brand-word, .brand-mark { fill: #000; --mk-ink: #000; --mk-line-ink: #000; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
@@ -2245,10 +2252,19 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        keer NIET gebeurd: hier stond nog 91 124 250 en 154 107 245 van het
        vorige palet, een blauw-naar-violette bloem onder een limoenen site. Dat
        was de roze gloed op elke schermafdruk van de onderkant van de pagina. */
-    background: radial-gradient(ellipse 120% 100% at 50% 100%,
-      rgb(210 224 74 / 0.14) 0%,
-      rgb(210 224 74 / 0.055) 42%,
-      rgb(210 224 74 / 0) 72%);
+    /* ── DE GLOED IS WEG — 20 september 2026 ────────────────────────────
+       Hier stond een radiale gloed in de accentkleur onder het woordmerk in de
+       voettekst. KLEURENSCHEMA.md, regel "Nooit 2": geen gloed en geen schaduw
+       in de accentkleur. Dat is geen smaakoordeel maar de kern van het verschil
+       tussen een studio en een dashboard — een merk dat van onderaf oplicht is
+       precies de tell die het schema wil vermijden.
+
+       Het element blijft staan en is leeg. Dat is met opzet: de markup, de
+       maten en de animatie eromheen zijn uitgezocht (zie de twee noten
+       hierboven over het centreren en de breedte), en die kennis gaat verloren
+       zodra het blok weg is. Komt er ooit weer iets onder het merk, dan is dit
+       de plek en niet een nieuwe. */
+    background: none;
     pointer-events: none;
   }
   .foot-mark-w {

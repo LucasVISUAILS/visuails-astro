@@ -1199,7 +1199,11 @@ CREATE TABLE IF NOT EXISTS subscription_slots (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   subscription_id  INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
   month            TEXT NOT NULL,              -- 'YYYY-MM'
-  kind             TEXT NOT NULL,              -- 'complete' | 'catalog' | 'video-motion' | …
+  -- Sinds migratie 0051 altijd 'credits': één saldo per maand in plaats van een
+  -- rij per soort. De oude waarden ('complete', 'catalog', 'video-motion', …)
+  -- staan nog op rijen van vóór die datum en blijven leesbaar als geschiedenis.
+  -- Zie de kop bij CREDIT_KIND in src/lib/slots.js.
+  kind             TEXT NOT NULL,
   granted          INTEGER NOT NULL DEFAULT 0,
   used             INTEGER NOT NULL DEFAULT 0,
   payment_id       TEXT,

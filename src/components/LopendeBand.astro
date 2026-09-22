@@ -59,46 +59,10 @@ const { lang } = Astro.props;
 const nl = lang === 'nl';
 const lp = (pad: string) => localizedPath(lang, pad);
 
-/* De vijf die erin gingen. `w`/`h` zijn de werkelijke maten van het bestand in
-   public/img — zonder die twee reserveert de browser geen ruimte en springt de
-   pagina tijdens het laden. */
-const INGESTUURD = [
-  { src: '/img/ba2-voor-front.webp', w: 760, h: 1013,
-    alt: nl ? 'Telefoonfoto: een roze jeans plat op een betonnen magazijnvloer, voorkant' : 'Phone photo: pink jeans flat on a concrete warehouse floor, front' },
-  { src: '/img/ba2-voor-achter.webp', w: 760, h: 1013,
-    alt: nl ? 'Telefoonfoto: dezelfde jeans omgedraaid, achterkant' : 'Phone photo: the same jeans turned over, back' },
-  { src: '/img/ba2-voor-detail.webp', w: 760, h: 1013,
-    alt: nl ? 'Telefoonfoto: een hand houdt de tailleband met de knoop omhoog' : 'Phone photo: a hand holding up the waistband with the button' },
-  { src: '/img/ba2-voor-textuur.webp', w: 760, h: 1013,
-    alt: nl ? 'Telefoonfoto: het weefsel van dichtbij, tussen twee vingers' : 'Phone photo: the fabric up close, between two fingers' },
-  { src: '/img/ba2-voor-pasvorm.webp', w: 760, h: 1013,
-    alt: nl ? 'Spiegelselfie waarop de jeans gedragen wordt' : 'Mirror selfie showing the jeans being worn' },
-];
-
-/* En de vier die eruit kwamen. */
-const GELEVERD = [
-  { src: '/img/ba2-na-front.webp', w: 760, h: 760,
-    alt: nl ? 'Afgewerkt catalogbeeld: de jeans recht van voren op wit' : 'Finished catalog image: the jeans straight on, on white' },
-  { src: '/img/ba2-na-achter.webp', w: 760, h: 760,
-    alt: nl ? 'Afgewerkt catalogbeeld: de achterkant op wit' : 'Finished catalog image: the back, on white' },
-  { src: '/img/ba2-na-detail.webp', w: 760, h: 760,
-    alt: nl ? 'Afgewerkt detailbeeld: de knoop en de tailleband van dichtbij' : 'Finished detail image: the button and waistband up close' },
-  { src: '/img/ba2-na-model.webp', w: 760, h: 760,
-    alt: nl ? 'Afgewerkt beeld: de jeans gedragen door een model' : 'Finished image: the jeans worn by a model' },
-];
-
-/* Station 04 toont NIET opnieuw dezelfde vier beelden — dat zou herhaling zijn
-   waar het over iets anders gaat. Het toont één product in drie vormen, want
-   dat is wat die stap oplevert: dezelfde bestelling, drie plekken. */
-const VORMEN = [
-  { src: '/img/ba2-na-front.webp', ratio: '1 / 1', maat: '1:1', waar: nl ? 'je webshop' : 'your shop',
-    alt: nl ? 'Het vierkante catalogbeeld zoals het in een webshop staat' : 'The square catalog image as it sits in a shop' },
-  { src: '/img/ba2-na-model.webp', ratio: '4 / 5', maat: '4:5', waar: nl ? 'je advertentie' : 'your ad',
-    alt: nl ? 'Hetzelfde beeld bijgesneden op 4:5 voor een advertentie' : 'The same image cropped to 4:5 for an ad' },
-  { src: '/img/ba2-na-detail.webp', ratio: '9 / 16', maat: '9:16', waar: nl ? 'je reel' : 'your reel',
-    alt: nl ? 'Het detailbeeld bijgesneden op 9:16 voor een reel' : 'The detail image cropped to 9:16 for a reel' },
-];
-
+/* De beelden — de roze jeans, BA2 — staan in src/data/voorbeeldset.js en
+   de tekening zelf in Stations.astro, sinds /how-it-works dezelfde band
+   toont (22 september 2026). Hier alleen de woorden van de voorpagina. */
+import Stations from './Stations.astro';
 const c = nl ? {
   h2: 'Van jouw foto naar je shop.',
   stations: [
@@ -116,14 +80,7 @@ const c = nl ? {
   ],
   inLabel: 'Ingestuurd', inNoot: '3 van 5 · telefoon',
   uitLabel: 'Geleverd', uitNoot: '4 beelden · 2048 px',
-  dashRef: 'VIS-2608-4471 · 4 beelden',
-  vormLabel: 'Shop · advertentie · reel', vormNoot: '',
-  dashVoorbeeld: 'Voorbeeld',
-  dashJa: 'Goedkeuren',
-  dashRev: 'Revisie aanvragen',
-  dashDl: 'Alles downloaden',
-  dashNoot: 'Twee van de vier goedgekeurd. Eén revisieronde zit bij elke bestelling in.',
-  goedgekeurd: 'Goedgekeurd',
+  vormLabel: 'Shop · advertentie · reel',
   /* De twee links die meeverhuizen uit de secties die deze band vervangt: de
      galerij hing onder "studioproductie" en het portaal onder "Daarna:
      VISUAILS Studio". Beide secties zijn weg; de links horen bij het station
@@ -141,14 +98,7 @@ const c = nl ? {
   ],
   inLabel: 'Sent in', inNoot: '3 of 5 · phone',
   uitLabel: 'Delivered', uitNoot: '4 images · 2048 px',
-  dashRef: 'VIS-2608-4471 · 4 images',
-  vormLabel: 'Shop · ad · reel', vormNoot: '',
-  dashVoorbeeld: 'Example',
-  dashJa: 'Approve',
-  dashRev: 'Request a revision',
-  dashDl: 'Download everything',
-  dashNoot: 'Two of four approved. One revision round comes with every order.',
-  goedgekeurd: 'Approved',
+  vormLabel: 'Shop · ad · reel',
   linkWerk: 'See more work',
   linkPortaal: 'Look inside the portal',
 };
@@ -164,183 +114,23 @@ const c = nl ? {
 
       Nu één licht paneel in het paneelritme van de rest van de pagina: de kop,
       en de vier stappen naast elkaar als kolommen — nummer, woord, één beeld
-      dat de stap ís, één zin. Dezelfde beelden en dezelfde woorden als
-      hiervoor, alleen op een derde van de hoogte. Op een telefoon twee naast
-      elkaar, dan onder elkaar. */}
+      dat de stap ís, één zin. Op een telefoon twee naast elkaar, dan onder
+      elkaar. De tekening staat in Stations.astro; /how-it-works toont dezelfde
+      band met drie stations en de regels eronder. */}
   <header class="paneel-kop lb-kop">
     <h2 id="lb-h" class="hoog hoog-2">{c.h2}</h2>
   </header>
-
-  <ol class="lb-rij" role="list">
-    {/* 01 · JIJ — de telefoonfoto's die erin gingen */}
-    <li class="lb-stap">
-      <p class="mono lb-n">{c.stations[0][0]}</p>
-      <div class="lb-beeld lb-in">
-        <ul class="lb-vijf" role="list">
-          {INGESTUURD.slice(0, 3).map((b) => (
-            <li><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
-          ))}
-        </ul>
-        <p class="mono lb-etiket"><span>{c.inLabel}</span><span>{c.inNoot}</span></p>
-      </div>
-      <h3 class="hoog lb-woord">{c.stations[0][1]}</h3>
-      <p class="lopend lb-zin">{c.stations[0][2]}</p>
-    </li>
-
-    {/* 02 · WIJ — de vier die eruit kwamen */}
-    <li class="lb-stap">
-      <p class="mono lb-n">{c.stations[1][0]}</p>
-      <div class="lb-beeld">
-        <ul class="lb-vier" role="list">
-          {GELEVERD.map((b) => (
-            <li><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
-          ))}
-        </ul>
-        <p class="mono lb-etiket"><span>{c.uitLabel}</span><span>{c.uitNoot}</span></p>
-      </div>
-      <h3 class="hoog lb-woord">{c.stations[1][1]}</h3>
-      <p class="lopend lb-zin">{c.stations[1][2]}</p>
-      <p class="lb-link"><a class="pijl" href={lp('/gallery')}>{c.linkWerk}</a></p>
-    </li>
-
-    {/* 03 · JOUW BEELDEN — het portaal als tekening, geen schermafdruk */}
-    <li class="lb-stap">
-      <p class="mono lb-n">{c.stations[2][0]}</p>
-      <div class="lb-beeld">
-        <div class="lb-dash">
-          <div class="lb-dash-balk">
-            <span class="lb-dash-merk">VISUAILS</span>
-            <span class="mono lb-dash-voorbeeld">{c.dashVoorbeeld}</span>
-          </div>
-          <div class="lb-dash-body">
-            <ul class="lb-dash-tegels" role="list" aria-hidden="true">
-              {GELEVERD.map((b, i) => (
-                <li class:list={['lb-dash-tegel', i < 2 && 'is-ja']}>
-                  <img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" />
-                  {i < 2 && <span class="lb-dash-vink" title={c.goedgekeurd}>✓</span>}
-                </li>
-              ))}
-            </ul>
-            {/* De twee knoppen van gelijk gewicht — dat is het punt van deze
-                stap. <span> en geen <button>: er valt hier niets te doen. */}
-            <p class="lb-dash-acties">
-              <span class="lb-dash-knop is-ja">{c.dashJa}</span>
-              <span class="lb-dash-knop is-rev">{c.dashRev}</span>
-            </p>
-          </div>
-        </div>
-        <p class="mono lb-etiket"><span>{c.dashRef}</span></p>
-      </div>
-      <h3 class="hoog lb-woord">{c.stations[2][1]}</h3>
-      <p class="lopend lb-zin">{c.stations[2][2]}</p>
-      <p class="lb-link"><a class="pijl" href={lp('/portal')}>{c.linkPortaal}</a></p>
-    </li>
-
-    {/* 04 · JE SHOP — één product, drie vormen */}
-    <li class="lb-stap">
-      <p class="mono lb-n">{c.stations[3][0]}</p>
-      <div class="lb-beeld">
-        {/* ── DE MAAT OP HET BEELD, DE PLEK IN DE ETIKETREGEL — 19 sept 2026 ──
-            De drie etiketten ("1:1 je webshop / 4:5 je advertentie / 9:16 je
-            reel") braken elk over twee regels in drie smalle kolommen. Nu
-            staat de maat als klein etiket ín het beeld, en de drie plekken in
-            dezelfde etiketregel die stap 01 en 02 ook hebben. */}
-        <ul class="lb-vormen" role="list">
-          {VORMEN.map((v) => (
-            <li>
-              <span class="lb-vorm" style={`--lb-ratio:${v.ratio}`}>
-                <img src={v.src} width="760" height="760" alt={v.alt} loading="lazy" decoding="async" />
-                <b class="mono lb-vorm-maat" aria-hidden="true">{v.maat}</b>
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p class="mono lb-etiket"><span>{c.vormLabel}</span></p>
-      </div>
-      <h3 class="hoog lb-woord">{c.stations[3][1]}</h3>
-      <p class="lopend lb-zin">{c.stations[3][2]}</p>
-    </li>
-  </ol>
+  <Stations lang={lang} stations={[
+    { nr: c.stations[0][0], woord: c.stations[0][1], zin: c.stations[0][2], beeld: 'in', etiket: c.inLabel, etiketNoot: c.inNoot },
+    { nr: c.stations[1][0], woord: c.stations[1][1], zin: c.stations[1][2], beeld: 'uit', etiket: c.uitLabel, etiketNoot: c.uitNoot, link: { href: lp('/gallery'), tekst: c.linkWerk } },
+    { nr: c.stations[2][0], woord: c.stations[2][1], zin: c.stations[2][2], beeld: 'dash', etiket: '', link: { href: lp('/portal'), tekst: c.linkPortaal } },
+    { nr: c.stations[3][0], woord: c.stations[3][1], zin: c.stations[3][2], beeld: 'vormen', etiket: c.vormLabel },
+  ]} />
 </section>
 
 <style>
-  /* ── ÉÉN PANEEL, VIER KOLOMMEN — 19 september 2026 ──────────────────────
-     Zie de noot in de opmaak. De klasse `paneel` uit stijl22 geeft dit blok
-     dezelfde marge, vulling en achtergrond als de andere panelen op de pagina;
-     wat hier staat is alleen de indeling erbinnen. */
+  /* De klasse `paneel` uit stijl22 geeft dit blok dezelfde marge, vulling en
+     achtergrond als de andere panelen op de pagina; de indeling van de rij
+     staat in Stations.astro. */
   .lb-kop { max-width: 46rem; }
-  .lb-rij {
-    list-style: none; margin: 0; padding: 0;
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(1.2rem, 2.6vw, 2.4rem);
-    counter-reset: none;
-  }
-  .lb-stap { min-width: 0; display: grid; align-content: start; gap: .55rem; }
-  .lb-n { margin: 0; color: var(--inkt-2, var(--ink-3)); font-size: .72rem; letter-spacing: .08em; }
-  .lb-woord {
-    margin: .3rem 0 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); line-height: 1; letter-spacing: -.01em;
-  }
-  .lb-zin { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--inkt-2, var(--ink-2)); max-width: 30ch; }
-  .lb-link { margin: .1rem 0 0; }
-
-  /* Het beeldvak: vaste hoogte per kolom, zodat de vier woorden eronder op
-     één lijn staan. De inhoud vult de hoogte op zijn eigen manier. */
-  .lb-beeld { display: grid; gap: .5rem; align-content: end; height: 14rem; }
-  .lb-beeld > :first-child { max-height: 11.6rem; }
-  .lb-etiket {
-    display: flex; justify-content: space-between; gap: .6rem; margin: 0; white-space: nowrap; overflow: hidden;
-    font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2, var(--ink-3));
-  }
-  .lb-vijf, .lb-vier {
-    list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
-  }
-  /* Beide rasters vullen dezelfde hoogte: drie staande telefoonfoto's naast
-     elkaar, vier vierkante beelden als twee-bij-twee. Geen aspect-ratio op de
-     cellen — de rijhoogte komt uit het vak en het beeld snijdt bij. */
-  .lb-vijf { grid-template-columns: repeat(3, minmax(0, 1fr)); height: 11.6rem; }
-  .lb-vier { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); height: 11.6rem; }
-  .lb-vijf li, .lb-vier li { overflow: hidden; background: var(--paper-2, #EDEDED); min-height: 0; }
-  .lb-vijf img, .lb-vier img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  /* Drie vormen op één grondlijn, elk zo breed als zijn verhouding vraagt bij
-     de hoogte van het vak (11,6rem voor 9:16; de andere twee lager en breder,
-     aan de onderkant uitgelijnd) — geen drie gelijke kolommen meer die de
-     staande vorm smal en de vierkante hoog maakten. */
-  .lb-vormen { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-end; justify-content: flex-start; gap: .5rem; height: 11.6rem; overflow: hidden; }
-  .lb-vormen li { min-width: 0; flex: 0 0 auto; }
-  /* Drie hoogtes die samen in de kolom passen (gemeten op 1440: 99 + 95 + 77 px
-     breed), de staande het hoogst — zo lezen ze als drie uitsnedes en niet als
-     drie tegels. */
-  .lb-vormen li:nth-child(1) .lb-vorm { height: clamp(4.4rem, 6.4vw, 6.2rem); }
-  .lb-vormen li:nth-child(2) .lb-vorm { height: clamp(5.2rem, 7.6vw, 7.4rem); }
-  .lb-vormen li:nth-child(3) .lb-vorm { height: clamp(6rem, 8.8vw, 8.6rem); }
-  .lb-vorm { position: relative; display: block; aspect-ratio: var(--lb-ratio, 1); overflow: hidden; background: var(--paper-2, #EDEDED); }
-  .lb-vorm img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .lb-vorm-maat { position: absolute; left: 4px; bottom: 4px; padding: .15rem .35rem; background: rgb(17 17 17 / .82); color: #F5F5F5; font-size: .72rem; letter-spacing: .04em; font-weight: 600; }
-
-  /* De tekening van het portaal. */
-  .lb-dash { border: 1px solid rgb(0 0 0 / .12); background: #FFF; color: #111; }
-  .lb-dash-balk { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem .6rem; border-bottom: 1px solid rgb(0 0 0 / .08); }
-  .lb-dash-merk { font-family: var(--font-heading); font-weight: 700; font-size: .72rem; letter-spacing: .04em; }
-  .lb-dash-voorbeeld { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: rgb(0 0 0 / .5); }
-  .lb-dash-body { padding: .6rem; display: grid; gap: .55rem; }
-  .lb-dash-tegels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
-  .lb-dash-tegel { position: relative; aspect-ratio: 1; overflow: hidden; background: #F2F2F2; }
-  .lb-dash-tegel img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .lb-dash-vink { position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; display: grid; place-items: center; background: #C8F206; color: #111; font-size: 10px; font-weight: 700; }
-  .lb-dash-acties { margin: 0; display: flex; gap: .35rem; flex-wrap: wrap; }
-  .lb-dash-knop { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; padding: .3rem .55rem; border: 1px solid rgb(0 0 0 / .18); border-radius: 999px; }
-  .lb-dash-knop.is-ja { background: #C8F206; border-color: #C8F206; }
-
-  @media (max-width: 900px) {
-    .lb-rij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  }
-  @media (max-width: 520px) {
-    .lb-rij { grid-template-columns: minmax(0, 1fr); }
-    .lb-zin { max-width: none; }
-    /* Eén kolom: de drie vormen mogen weer op volle hoogte. */
-    .lb-vormen li:nth-child(1) .lb-vorm { height: 7rem; }
-    .lb-vormen li:nth-child(2) .lb-vorm { height: 8.6rem; }
-    .lb-vormen li:nth-child(3) .lb-vorm { height: 11.6rem; }
-  }
 </style>

@@ -200,7 +200,16 @@ const label = lang === 'nl'
     border: 1px solid var(--line-strong);
     border-radius: var(--r-sm, 8px);
     background: var(--surface-2, #1F2229);
-    box-shadow: 0 18px 40px -20px rgb(0 0 0 / 0.75);
+    /* ── EEN VLAK, GEEN SLAGSCHADUW — 20 september 2026 ──────────────────
+       Hier stond `0 18px 40px -20px rgb(0 0 0 / .75)`. Een notitie zweeft
+       boven de tekst en moet daar los van komen, maar KLEURENSCHEMA "Altijd 5"
+       wijst daar een andere vorm voor aan: een lijn of een tweede vlak.
+
+       Dit is hetzelfde harde vlak dat `.nav-menu` al draagt — geen onscherpte,
+       een verschoven kopie van de vorm in de scrimkleur. Eén idioom voor alles
+       wat op deze site boven de pagina hangt, in plaats van een menu met een
+       vlak en een notitie met een wolk. */
+    box-shadow: 5px 5px 0 0 rgb(var(--scrim, 0 0 0) / 0.16);
 
     font-family: var(--font-body, inherit);
     font-size: .84rem;

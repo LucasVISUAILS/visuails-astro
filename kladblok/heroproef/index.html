@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heroproef VISUAILS — zware smalle kop</title>
+<style>
+@font-face{font-family:"Anybody";src:url("f/anybody.woff2") format("woff2-variations");font-weight:100 900;font-stretch:50% 150%;font-display:block}
+@font-face{font-family:"Archivo";src:url("f/archivo.woff2") format("woff2-variations");font-weight:100 900;font-stretch:62% 125%;font-display:block}
+@font-face{font-family:"BigShoulders";src:url("f/bigshoulders.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Bricolage";src:url("f/bricolage.woff2") format("woff2-variations");font-weight:200 800;font-stretch:75% 100%;font-display:block}
+@font-face{font-family:"WixDisplay";src:url("f/wixdisplay.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"WixText";src:url("f/wixtext.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Instrument";src:url("f/instrument.woff2") format("woff2-variations");font-weight:400 700;font-stretch:75% 100%;font-display:block}
+@font-face{font-family:"PublicSans";src:url("f/publicsans.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Martian";src:url("f/martian.woff2") format("woff2-variations");font-weight:100 800;font-stretch:75% 112.5%;font-display:block}
+@font-face{font-family:"GeistMono";src:url("f/geistmono.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+
+:root{
+  --paper:#F2F3F5; --surface:#FFFFFF; --ink:#000000;
+  --ink-2:rgb(0 0 0/.66); --ink-3:rgb(0 0 0/.56);
+  --line:rgb(0 0 0/.20); --line-soft:rgb(0 0 0/.10);
+  --accent:#4A1FFF; --on-accent:#FFFFFF; --accent-text:#3D17D6; --accent-tint:#E4DFFF;
+  --panel:#000000; --on-panel:#F2F3F5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;
+     font-family:"PublicSans",system-ui,sans-serif}
+.wrap{max-width:1360px;margin:0 auto;padding:40px 32px 100px}
+.paginakop{font-weight:800;font-size:28px;letter-spacing:-.02em;margin:0 0 10px}
+.paginalead{color:var(--ink-3);max-width:80ch;margin:0 0 34px;line-height:1.6;font-size:15px}
+
+.blok{background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;
+      padding:34px 36px 30px;margin-bottom:22px}
+.blok.zwart{background:var(--panel);border-color:transparent}
+.blok.zwart .sub,.blok.zwart .kop{color:var(--on-panel)}
+.badge{display:block;font-family:"GeistMono";font-size:11px;letter-spacing:.1em;
+       text-transform:uppercase;color:var(--ink-3);margin-bottom:18px}
+.blok.zwart .badge{color:rgb(242 243 245/.55)}
+.sub{margin:16px 0 0;font-size:13px;color:var(--ink-3);line-height:1.6;max-width:86ch}
+.sub b{color:var(--ink);font-weight:700}
+.blok.zwart .sub b{color:var(--on-panel)}
+
+/* DE KOP. Dit is de maat die de hero op 1440 px echt draagt: clamp() loopt daar
+   tegen 5,2rem = 83px aan. Regelhoogte .88 en -.04em letterafstand zijn de twee
+   getallen die het beeld uit de referentie maken — de regels raken elkaar bijna
+   en de woorden staan tegen elkaar aan. */
+.kop{margin:0;font-size:83px;line-height:.88;letter-spacing:-.04em;text-transform:uppercase;
+     text-wrap:balance}
+.kop em{font-style:normal}
+
+/* De vijf snitten */
+.f-anybody  {font-family:"Anybody";font-weight:900;font-stretch:78%}
+.f-archivo  {font-family:"Archivo";font-weight:900;font-stretch:62%}
+.f-shoulders{font-family:"BigShoulders";font-weight:800;letter-spacing:-.01em}
+.f-bricolage{font-family:"Bricolage";font-weight:800;font-stretch:75%}
+.f-wix      {font-family:"WixDisplay";font-weight:800;letter-spacing:-.03em}
+
+/* De drie manieren om het accentwoord te zetten */
+.a-letter em{color:var(--accent)}
+.a-donker em{color:var(--accent-text)}
+.a-vlak em{color:var(--on-accent);background:var(--accent);
+           box-decoration-break:clone;-webkit-box-decoration-break:clone;
+           padding:0 .1em;margin:0 -.02em}
+.blok.zwart .a-letter em,
+.opzwart .a-letter em{color:#A694FF}
+
+.rij{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:22px}
+.rij .kop{font-size:52px}
+.half{flex:1 1 380px}
+.mini{font-family:"GeistMono";font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+      color:var(--ink-3);margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="paginakop">Heroproef — de zware smalle kop</h1>
+  <p class="paginalead">De vorm uit je voorbeeld: hoofdletters, zwaar, smal, regels die elkaar bijna raken, en één zinsdeel in kleur. Hieronder vijf snitten met exact dezelfde regel, op de echte herohoogte (83px op 1440 breed). Daaronder de drie manieren om het accentwoord te zetten, en vier koppen die zeggen wat VISUAILS ís.</p>
+
+  <section class="blok">
+    <span class="badge">1 · Anybody op 78% breedte — wat je al hebt</span>
+    <p class="kop f-anybody a-letter">Jij uploadt. Wij leveren de <em>campagne</em>.</p>
+    <p class="sub"><b>Nul nieuwe bestanden.</b> Anybody heeft een breedte-as van 50 tot 150%; de site zet hem nu op 125% (breed). Op 78% met gewicht 900 krijg je precies de perssnit uit je voorbeeld. Dit is één getal veranderen in global.css.</p>
+  </section>
+
+  <section class="blok">
+    <span class="badge">2 · Archivo op 62% breedte, gewicht 900</span>
+    <p class="kop f-archivo a-letter">Jij uploadt. Wij leveren de <em>campagne</em>.</p>
+    <p class="sub"><b>Ook al in het project.</b> Archivo Condensed Black is dichter bij het Amerikaanse krantenkarakter van je voorbeeld: rechtere schouders, kortere staarten. Iets minder eigen dan Anybody, iets zakelijker.</p>
+  </section>
+
+  <section class="blok">
+    <span class="badge">3 · Big Shoulders Display, gewicht 800</span>
+    <p class="kop f-shoulders a-letter">Jij uploadt. Wij leveren de <em>campagne</em>.</p>
+    <p class="sub"><b>Het smalst van de vijf.</b> Getekend voor Chicago, en dat hoor je: affiche, geen tekst. Past veel meer woorden op een regel — maar hij is zó smal dat hij op een telefoon tegen de leesbaarheidsgrens loopt.</p>
+  </section>
+
+  <section class="blok">
+    <span class="badge">4 · Bricolage Grotesque op 75%, gewicht 800</span>
+    <p class="kop f-bricolage a-letter">Jij uploadt. Wij leveren de <em>campagne</em>.</p>
+    <p class="sub"><b>Met eigen karakter.</b> Let op de R, de a en de g. Hoort bij recept C uit de fontproef.</p>
+  </section>
+
+  <section class="blok">
+    <span class="badge">5 · Wix Madefor Display, gewicht 800 — geen breedte-as</span>
+    <p class="kop f-wix a-letter">Jij uploadt. Wij leveren de <em>campagne</em>.</p>
+    <p class="sub"><b>Hoort bij recept B.</b> Geen smalle snit, dus hij wordt nooit zo dicht als je voorbeeld. Rustiger, en op een telefoon vriendelijker. De keuze is: perskracht (1–4) of kalmte (5).</p>
+  </section>
+
+  <h2 class="paginakop" style="margin-top:46px">Het accentwoord, drie manieren</h2>
+  <p class="paginalead">Je voorbeeld zet het woord in kléur. De site zet het nu als vlak met witte letters. Allebei mag van het kleurenschema — een letter in violet is `--accent-text`, een vlak is `--accent` met `--on-accent` erop. Wat NIET mag is zwarte tekst op violet: 2,93:1.</p>
+
+  <section class="blok">
+    <div class="rij">
+      <div class="half">
+        <p class="mini">a · violet als letter — #4A1FFF, 6,4:1</p>
+        <p class="kop f-anybody a-letter">Wij leveren de <em>campagne</em>.</p>
+      </div>
+      <div class="half">
+        <p class="mini">b · donkerder violet — #3D17D6, 9,0:1</p>
+        <p class="kop f-anybody a-donker">Wij leveren de <em>campagne</em>.</p>
+      </div>
+    </div>
+    <div class="rij">
+      <div class="half">
+        <p class="mini">c · violet vlak, witte letter — zoals nu</p>
+        <p class="kop f-anybody a-vlak">Wij leveren de <em>campagne</em>.</p>
+      </div>
+      <div class="half">
+        <p class="mini">d · en hoe a eruitziet als de kop op zwart staat</p>
+        <div class="opzwart" style="background:var(--panel);padding:18px 20px;border-radius:10px">
+          <p class="kop f-anybody a-letter" style="color:var(--on-panel)">Wij leveren de <em>campagne</em>.</p>
+        </div>
+      </div>
+    </div>
+    <p class="sub"><b>Mijn voorkeur: a.</b> Je voorbeeld werkt omdat de kleur ín de letter zit — een vlak maakt er een sticker van en legt een lap violet op het scherm die tegen de 2%-richtlijn van het schema duwt. Op zwart moet het lichte violet (#A694FF) gebruikt worden; dat staat al in de donkere set.</p>
+  </section>
+
+  <h2 class="paginakop" style="margin-top:46px">En wat er staat</h2>
+  <p class="paginalead">Je zei het zelf: VISUAILS is meer dan campagnes — het is een managed full content service voor kledingmerken. Vier koppen die dat zeggen, in de snit van optie 1.</p>
+
+  <section class="blok">
+    <span class="badge">kop A · de dienst, in vier woorden</span>
+    <p class="kop f-anybody a-letter">Al je <em>productbeelden</em>. Zonder shoot.</p>
+    <p class="sub">Noemt de categorie (productbeelden, niet campagnes) en de belofte (geen shoot) in één adem. "Al je" zegt dat het om de hele catalogus gaat, niet om één setje.</p>
+  </section>
+
+  <section class="blok">
+    <span class="badge">kop B · de rol, niet het product</span>
+    <p class="kop f-anybody a-letter">Jouw <em>beeldafdeling</em>. Zonder de afdeling.</p>
+    <p class="sub">Dit is wat een managed service ís: je huurt geen tool maar een afdeling. De woordgrap maakt hem onthoudbaar. Risico: "afdeling" klinkt groot voor een merk van twee man.</p>
+  </section>
+
+  <section class="blok">
+    <span class="badge">kop C · van telefoon naar winkel</span>
+    <p class="kop f-anybody a-letter">Van telefoonfoto naar <em>hele collectie</em>.</p>
+    <p class="sub">Vertelt de reis in vijf woorden en maakt meteen duidelijk wat de klant zelf moet doen. Sluit precies aan op wat het laptopscherm eronder laat zien.</p>
+  </section>
+
+  <section class="blok zwart">
+    <span class="badge">kop D · de belofte, kaal — en hoe het op zwart staat</span>
+    <p class="kop f-anybody a-letter">Eén merk. Eén look. <em>Elk beeld</em>.</p>
+    <p class="sub">De kortste, en de enige die over consistentie gaat in plaats van over snelheid. Consistentie is het echte probleem van een merk met tweehonderd producten — en het is wat een vaste look en een merkmodel oplossen.</p>
+  </section>
+</div>
+</body>
+</html>

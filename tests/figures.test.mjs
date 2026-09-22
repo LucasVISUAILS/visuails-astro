@@ -161,12 +161,13 @@ console.log('\nwat geweigerd wordt, wordt echt geweigerd');
   }
   /* LEAD_DAYS zijn VOLLE dagen tussen vandaag en de eerste aanwijsbare dag, en
      dat is er één meer dan de oude regel `addWorkingDays(today, LEAD_DAYS)` gaf —
-     zie de noot bij LEAD_DAYS in capacity.js. Maandag 3 augustus plus twee hele
-     dagen is donderdag 6 augustus. Dit getal stond hier met de hand ingetypt en
-     dat is met opzet: het is de enige plek waar de aanloop niet uit dezelfde
-     som komt die hem produceert. */
+     zie de noot bij LEAD_DAYS in capacity.js. Sinds 20 september 2026 staat die
+     aanloop op DRIE (Lucas: "minimaal 3 dagen van tevoren"), dus maandag
+     3 augustus plus drie hele dagen is vrijdag 7 augustus. Dit getal staat hier
+     met de hand ingetypt en dat is met opzet: het is de enige plek waar de
+     aanloop niet uit dezelfde som komt die hem produceert. */
   check(`de eerste aanwijsbare dag ligt ${LEAD_DAYS} volle dagen verder`,
-    DEMO_FIRST_OFFERABLE, '2026-08-06');
+    DEMO_FIRST_OFFERABLE, '2026-08-07');
 }
 
 /* ══ 3 · TWEE UITKOMSTEN UIT DEZELFDE AGENDA ═════════════════════════════════
@@ -181,7 +182,13 @@ console.log('\nkleiner is eerder, en dat is geen toeval');
   const small = demoWindow(DEMO_SMALL_PRODUCTS);
   check('de kleinere bestelling krijgt ook een venster', Boolean(small), true);
   check('en dat venster ligt eerder', small.start < big.start, true);
-  check('het kleine label', windowLabel(small, 'nl'), '6 – 7 aug');
+  /* Schuift mee met LEAD_DAYS: de kleine bestelling opende op 6 augustus en
+     opent sinds de aanloop van drie dagen op vrijdag de 7e. Zaterdag en zondag
+     staan in DEMO_BLACKOUTS (de demo toont een studio die het weekend
+     dichtzet), dus de tweede dag van het venster wordt maandag de 10e. Dat is
+     precies de "achter elkaar in de AGENDA en niet in de kalender"-regel uit
+     windowFor(), hier voor het eerst zichtbaar in een label. */
+  check('het kleine label', windowLabel(small, 'nl'), '7 – 10 aug');
 
   // En de vergelijking is alleen eerlijk als het écht dezelfde agenda is: zelfde
   // dag, zelfde boeking, alleen een ander aantal producten.

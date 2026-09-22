@@ -78,7 +78,7 @@ const UIT = join(wortel, 'public', 'downloads');
    en een kopie in de repo veroudert stil bij een npm update. */
 const LETTERS = [
   ['Anybody Variable', '@fontsource-variable/anybody/files/anybody-latin-standard-normal.woff2'],
-  ['Instrument Sans Variable', '@fontsource-variable/instrument-sans/files/instrument-sans-latin-standard-normal.woff2'],
+  ['Figtree Variable', '@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2'],
   ['Martian Mono Variable', '@fontsource-variable/martian-mono/files/martian-mono-latin-standard-normal.woff2'],
 ];
 
@@ -345,11 +345,22 @@ function css(fonts) {
   return `
 ${fonts}
 :root {
-  --inkt: #111111; --inkt-2: #454545; --vel: #F5F5F5; --wit: #FFFFFF;
-  --geel: #D2E04A; --geel-letter: #E4F474; --gloed: #9EB42F;
-  --lijn: #DFDFDF; --lijn-sterk: #BDBDBD;
+  /* ── DE HANDLEIDING IS MEE OMGEZET — 20 september 2026 ──────────────────
+     Handkopie van KLEURENSCHEMA.md: een PDF kent geen CSS-variabelen uit
+     global.css, dus de waarden staan hier letterlijk. Verandert het schema,
+     dan verandert dit blok mee — net als C in src/lib/mailTemplate.js.
+
+     De NAMEN blijven `--geel` en `--geel-letter`, om dezelfde reden als in
+     stijl22.css: ze staan tientallen keren in dit bestand en hernoemen is een
+     eigen ronde. `--op-geel` is nieuw en noodzakelijk: op limoen stond zwarte
+     tekst (13,7:1), op violet is dat 2,93:1 en in het schema afgekeurd. Wit
+     op violet is 7,16:1. */
+  --inkt: #000000; --inkt-2: rgba(0,0,0,.66); --vel: #F2F3F5; --wit: #FFFFFF;
+  --inkt-3: rgba(0,0,0,.56);
+  --geel: #4A1FFF; --op-geel: #FFFFFF; --geel-letter: #3D17D6; --gloed: #3D17D6;
+  --lijn: rgba(0,0,0,.20); --lijn-sterk: rgba(0,0,0,.34);
   --kop: "Anybody Variable", system-ui, sans-serif;
-  --tekst: "Instrument Sans Variable", system-ui, sans-serif;
+  --tekst: "Figtree Variable", system-ui, sans-serif;
   --mono: "Martian Mono Variable", ui-monospace, monospace;
 }
 * { box-sizing: border-box; }
@@ -365,13 +376,17 @@ body {
 /* ── DE KOPBALK ──────────────────────────────────────────────────────────── */
 .balk { background: var(--inkt); color: var(--vel); padding: 7mm 16mm; display: flex; align-items: center; justify-content: space-between; }
 .balk-merk { display: flex; align-items: center; gap: 3mm; }
-.merk { width: 6.5mm; height: 7.5mm; fill: var(--geel); }
+/* Het merk op de zwarte balk stond in het accent. Dat kon met limoen (9,3:1)
+   en kan niet met violet: 2,93:1 op zwart, de combinatie die het schema
+   afkeurt. Op een zwarte grond is het merk licht — precies zoals op het
+   tabicoon en in het logopakket. */
+.merk { width: 6.5mm; height: 7.5mm; fill: var(--vel); }
 .woord { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 13pt; letter-spacing: .02em; text-transform: uppercase; }
 .balk .etiket { color: rgba(245,245,245,.72); }
 .etiket { font-family: var(--mono); font-size: 7pt; font-stretch: 82%; letter-spacing: .09em; text-transform: uppercase; }
 
 h1 { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 23pt; line-height: 1.02; letter-spacing: -.02em; text-transform: uppercase; margin: 8mm 0 0; }
-h1 em { font-style: normal; color: var(--inkt); background: linear-gradient(var(--geel), var(--geel)) no-repeat 0 .06em / 100% .84em; padding-inline: .04em; }
+h1 em { font-style: normal; color: var(--op-geel); background: linear-gradient(var(--geel), var(--geel)) no-repeat 0 .06em / 100% .84em; padding-inline: .04em; }
 h2 { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 14pt; line-height: 1.1; letter-spacing: -.01em; text-transform: uppercase; margin: 0; }
 h3 { font-family: var(--kop); font-weight: 500; font-stretch: 125%; font-size: 10.5pt; line-height: 1.15; letter-spacing: -.01em; text-transform: uppercase; margin: 0; }
 p { margin: 0; }
@@ -422,7 +437,7 @@ p { margin: 0; }
 .opname-tekst { display: grid; gap: 1.5mm; }
 .opname-kop { display: flex; align-items: baseline; gap: 3mm; }
 .merkje { font-family: var(--mono); font-size: 6.5pt; font-stretch: 82%; letter-spacing: .07em; text-transform: uppercase; padding: 1mm 2.5mm; border-radius: 99mm; white-space: nowrap; }
-.merkje-vast { background: var(--geel); color: var(--inkt); }
+.merkje-vast { background: var(--geel); color: var(--op-geel); }
 .merkje-los { border: .3mm solid var(--lijn-sterk); color: var(--inkt-2); }
 .opname-tekst .wat { font-size: 9pt; line-height: 1.45; }
 .opname-tekst .hoe { color: var(--inkt-2); font-size: 8.5pt; line-height: 1.4; }
@@ -443,8 +458,8 @@ p { margin: 0; }
 
 /* ── DE BLOKKEN ──────────────────────────────────────────────────────────── */
 .blok { border-radius: 3mm; padding: 4.5mm 5.5mm; display: grid; gap: 1.8mm; margin-top: 5mm; }
-.blok-geel { background: var(--geel); color: var(--inkt); }
-.blok-geel p { color: var(--inkt); max-width: 150mm; }
+.blok-geel { background: var(--geel); color: var(--op-geel); }
+.blok-geel p { color: var(--op-geel); max-width: 150mm; }
 .blok-lijn { border: .35mm solid var(--lijn); }
 .blok-lijn p { color: var(--inkt-2); max-width: 150mm; }
 .blok-inkt { background: var(--inkt); color: var(--vel); }

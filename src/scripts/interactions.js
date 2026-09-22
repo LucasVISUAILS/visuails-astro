@@ -262,8 +262,39 @@ function initHeaderScroll() {
   // Query the header inside the handler: it is no longer transition:persist
   // (so it re-renders per page, in the right language), which means a captured
   // reference would go stale after a navigation.
-  const onScroll = () => { const h = document.querySelector('.site-header'); if (h) h.classList.toggle('scrolled', window.scrollY > 20); };
-  onScroll();
+  /* ── ÉÉN KEER PER FRAME, EN MET EEN DREMPEL DIE NIET KLAPPERT ───────────
+   *
+   * Lucas, 19 september 2026: *"Ook zou ik de scroll animatie wat beter en
+   * smoother willen hebben omdat deze nu wat hapert."*
+   *
+   * Gemeten viel het mee — 16,7 ms gemiddeld op vier pagina's, en zelfs met een
+   * vier keer afgeknepen processor geen enkel frame boven de 50 ms. Maar deze
+   * handler deed twee dingen die je op een drukke thread wél voelt:
+   *
+   *   1 · HIJ LAS `scrollY` EN SCHREEF EEN KLASSE OP ELKE GEBEURTENIS. Tijdens
+   *       snel scrollen zijn dat er tientallen per frame, en elke klassewissel
+   *       is een stijlherberekening van de hele balk. requestAnimationFrame
+   *       maakt er één per frame van — dezelfde vorm die heroBgUpdate()
+   *       hierboven al gebruikt, en om dezelfde reden.
+   *   2 · HIJ HAD ÉÉN DREMPEL. Precies op 20 pixels — bij een trackpad dat
+   *       tussen 19 en 21 blijft hangen — wisselde de balk heen en weer, en
+   *       dat is een zichtbare flikkering van een vervaging van 480 ms die
+   *       telkens opnieuw begint. Nu gaat hij aan op 24 en pas weer uit op 8:
+   *       daartussen gebeurt er niets. */
+  let aangevraagd = false;
+  let staat = false;
+  const meet = () => {
+    aangevraagd = false;
+    const h = document.querySelector('.site-header');
+    if (!h) return;
+    const y = window.scrollY;
+    const wil = staat ? y > 8 : y > 24;
+    if (wil === staat) return;
+    staat = wil;
+    h.classList.toggle('scrolled', wil);
+  };
+  const onScroll = () => { if (!aangevraagd) { aangevraagd = true; requestAnimationFrame(meet); } };
+  meet();
   if (!headerBound) { headerBound = true; window.addEventListener('scroll', onScroll, { passive: true }); }
 }
 

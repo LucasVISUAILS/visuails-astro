@@ -1,0 +1,229 @@
+---
+/*
+ * VISUAILS — DE STATIONS. 22 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Eén rij kolommen, en elke kolom is één stap: nummer, een beeld dat de stap
+ * ÍS, een woord, een zin — en op /how-it-works daaronder nog een paar regels.
+ *
+ * Dit was de opmaak van LopendeBand.astro op de voorpagina. Toen /how-it-works
+ * opnieuw werd gemaakt (Lucas: *"Deze pagina mag volledig opnieuw gemaakt
+ * worden, en dan met name het gedeelte waar uitgelegd word wat visuails doet
+ * van order tot levering"*), was het antwoord: dezelfde band als op de
+ * voorpagina, want dat IS de uitleg van order tot levering — en dan met de
+ * details erbij die de voorpagina weglaat. Twee pagina's met dezelfde tekening
+ * in twee bestanden zijn twee tekeningen die uit elkaar lopen; dus staat de
+ * tekening hier één keer en geven de pagina's alleen hun woorden mee.
+ *
+ * De vier tekeningen (`beeld`):
+ *   in      — drie van de vijf telefoonfoto's die de klant instuurde
+ *   uit     — de vier beelden die terugkwamen, twee-bij-twee
+ *   dash    — het portaal als tekening, geen schermafdruk (twee goedgekeurd)
+ *   vormen  — hetzelfde product in 1:1, 4:5 en 9:16
+ *
+ * Alle beelden komen uit src/data/voorbeeldset.js: één product, één set.
+ */
+import { ingestuurd, geleverd, vormen, VOORBEELD_REF } from '../data/voorbeeldset.js';
+
+export interface Station {
+  nr: string;
+  /** De monoregel boven het beeld. Leeg = alleen het nummer. */
+  n?: string;
+  woord: string;
+  /** Hoe lang de stap duurt, als monoregel onder het woord (alleen /how-it-works). */
+  duur?: string;
+  zin: string;
+  beeld: 'in' | 'uit' | 'dash' | 'vormen';
+  etiket: string;
+  etiketNoot?: string;
+  /** Korte regels onder de zin — de momenten binnen de stap. */
+  regels?: string[];
+  link?: { href: string; tekst: string };
+  noot?: string;
+}
+interface Props { lang: 'en' | 'nl'; stations: Station[]; kolommen?: number }
+const { lang, stations, kolommen = stations.length } = Astro.props;
+const nl = lang === 'nl';
+
+const IN = ingestuurd(lang);
+const UIT = geleverd(lang);
+const VORMEN = vormen(lang);
+
+/* De woorden op de tekening van het portaal. Die horen bij de tekening en
+   niet bij de pagina: op elke pagina staat hetzelfde portaal. */
+const dash = nl
+  ? { voorbeeld: 'Voorbeeld', ja: 'Goedkeuren', rev: 'Revisie aanvragen', ok: 'Goedgekeurd', ref: `${VOORBEELD_REF} · ${UIT.length} beelden` }
+  : { voorbeeld: 'Example', ja: 'Approve', rev: 'Request a revision', ok: 'Approved', ref: `${VOORBEELD_REF} · ${UIT.length} images` };
+---
+<ol class="lb-rij" role="list" style={`--lb-kolommen:${kolommen}`}>
+  {stations.map((s) => (
+    <li class="lb-stap">
+      <p class="mono lb-n">{s.n || s.nr}</p>
+      <div class:list={['lb-beeld', s.beeld === 'in' && 'lb-in']}>
+        {s.beeld === 'in' && (
+          <ul class="lb-vijf" role="list">
+            {IN.slice(0, 3).map((b) => (
+              <li><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
+            ))}
+          </ul>
+        )}
+        {s.beeld === 'uit' && (
+          <ul class="lb-vier" role="list">
+            {UIT.map((b) => (
+              <li><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>
+            ))}
+          </ul>
+        )}
+        {s.beeld === 'dash' && (
+          <div class="lb-dash">
+            <div class="lb-dash-balk">
+              <span class="lb-dash-merk">VISUAILS</span>
+              <span class="mono lb-dash-voorbeeld">{dash.voorbeeld}</span>
+            </div>
+            <div class="lb-dash-body">
+              <ul class="lb-dash-tegels" role="list" aria-hidden="true">
+                {UIT.map((b, i) => (
+                  <li class:list={['lb-dash-tegel', i < 2 && 'is-ja']}>
+                    <img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" />
+                    {i < 2 && <span class="lb-dash-vink" title={dash.ok}>✓</span>}
+                  </li>
+                ))}
+              </ul>
+              {/* Twee knoppen van gelijk gewicht — dat is het punt van deze
+                  stap. <span> en geen <button>: er valt hier niets te doen. */}
+              <p class="lb-dash-acties">
+                <span class="lb-dash-knop is-ja">{dash.ja}</span>
+                <span class="lb-dash-knop is-rev">{dash.rev}</span>
+              </p>
+            </div>
+          </div>
+        )}
+        {s.beeld === 'vormen' && (
+          <ul class="lb-vormen" role="list">
+            {VORMEN.map((v) => (
+              <li>
+                <span class="lb-vorm" style={`--lb-ratio:${v.ratio}`}>
+                  <img src={v.src} width="760" height="760" alt={v.alt} loading="lazy" decoding="async" />
+                  <b class="mono lb-vorm-maat" aria-hidden="true">{v.maat}</b>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p class="mono lb-etiket">
+          <span>{s.beeld === 'dash' ? dash.ref : s.etiket}</span>
+          {s.beeld !== 'dash' && s.etiketNoot && <span>{s.etiketNoot}</span>}
+        </p>
+      </div>
+      <h3 class="hoog lb-woord">{s.woord}</h3>
+      {s.duur && <p class="mono lb-duur">{s.duur}</p>}
+      <p class="lopend lb-zin">{s.zin}</p>
+      {s.regels && s.regels.length > 0 && (
+        <ol class="lb-regels" role="list">
+          {s.regels.map((r) => <li>{r}</li>)}
+        </ol>
+      )}
+      {s.noot && <p class="lopend lb-noot">{s.noot}</p>}
+      {s.link && <p class="lb-link"><a class="pijl" href={s.link.href}>{s.link.tekst}</a></p>}
+    </li>
+  ))}
+</ol>
+
+<style>
+  /* ── DE RIJ ─────────────────────────────────────────────────────────────
+     De pagina eromheen geeft het paneel (klasse `paneel` uit stijl22); wat hier
+     staat is alleen de indeling erbinnen. `--lb-kolommen` komt van de aanroep:
+     vier op de voorpagina, drie op /how-it-works. */
+  .lb-rij {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(var(--lb-kolommen, 4), minmax(0, 1fr));
+    gap: clamp(1.2rem, 2.6vw, 2.4rem);
+    counter-reset: none;
+  }
+  .lb-stap { min-width: 0; display: grid; align-content: start; gap: .55rem; }
+  .lb-n { margin: 0; color: var(--inkt-2, var(--ink-3)); font-size: .72rem; letter-spacing: .08em; }
+  .lb-woord {
+    margin: .3rem 0 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); line-height: 1; letter-spacing: -.01em;
+  }
+  .lb-duur { margin: -.15rem 0 0; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2, var(--ink-3)); }
+  .lb-zin { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--inkt-2, var(--ink-2)); max-width: 30ch; }
+  .lb-link { margin: .1rem 0 0; }
+
+  /* ── DE REGELS ONDER DE ZIN (alleen /how-it-works) ─────────────────────
+     De momenten binnen één stap, als korte regels met een haarlijn ertussen.
+     Geen nummers: de volgorde is van boven naar beneden, en de regels zijn de
+     kop van de stap zoals hij in demo.js staat — dus dezelfde woorden als de
+     HowTo-structuurdata in schema.js. */
+  .lb-regels { list-style: none; margin: .35rem 0 0; padding: 0; max-width: 30ch; }
+  .lb-regels li {
+    padding: .42rem 0; border-top: 1px solid var(--lijn, rgb(0 0 0 / .12));
+    font-size: .8rem; line-height: 1.4; color: var(--inkt, var(--ink));
+  }
+  .lb-regels li:last-child { border-bottom: 1px solid var(--lijn, rgb(0 0 0 / .12)); }
+  .lb-noot { margin: .3rem 0 0; font-size: .8rem; line-height: 1.5; color: var(--inkt-2, var(--ink-3)); max-width: 30ch; }
+
+  /* ── HET VAK MET HET BEELD ───────────────────────────────────────────────
+     Eén vaste hoogte, zodat de woorden van de vier stappen op één lijn staan.
+     De inhoud vult de hoogte op zijn eigen manier. */
+  .lb-beeld { display: grid; gap: .5rem; align-content: end; height: 14rem; }
+  .lb-beeld > :first-child { max-height: 11.6rem; }
+  .lb-etiket {
+    display: flex; justify-content: space-between; gap: .6rem; margin: 0; white-space: nowrap; overflow: hidden;
+    font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2, var(--ink-3));
+  }
+  .lb-vijf, .lb-vier {
+    list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
+  }
+  /* Drie staande foto's naast elkaar, vier vierkante beelden als twee-bij-twee.
+     Geen aspect-ratio op de cellen — de rijhoogte komt uit het vak en het
+     beeld snijdt bij. */
+  .lb-vijf { grid-template-columns: repeat(3, minmax(0, 1fr)); height: 11.6rem; }
+  .lb-vier { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); height: 11.6rem; }
+  .lb-vijf li, .lb-vier li { overflow: hidden; background: var(--paper-2, #EDEDED); min-height: 0; }
+  .lb-vijf img, .lb-vier img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* Drie uitsnedes, aan de onderkant uitgelijnd en oplopend in hoogte: de
+     vierkante het laagst (en het breedst), de staande het hoogst — zo lezen ze
+     als drie uitsnedes en niet als drie tegels. */
+  .lb-vormen { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-end; justify-content: flex-start; gap: .5rem; height: 11.6rem; overflow: hidden; }
+  .lb-vormen li { min-width: 0; flex: 0 0 auto; }
+  .lb-vormen li:nth-child(1) .lb-vorm { height: clamp(4.4rem, 6.4vw, 6.2rem); }
+  .lb-vormen li:nth-child(2) .lb-vorm { height: clamp(5.2rem, 7.6vw, 7.4rem); }
+  .lb-vormen li:nth-child(3) .lb-vorm { height: clamp(6rem, 8.8vw, 8.6rem); }
+  .lb-vorm { position: relative; display: block; aspect-ratio: var(--lb-ratio, 1); overflow: hidden; background: var(--paper-2, #EDEDED); }
+  .lb-vorm img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lb-vorm-maat { position: absolute; left: 4px; bottom: 4px; padding: .15rem .35rem; background: rgb(17 17 17 / .82); color: #F5F5F5; font-size: .72rem; letter-spacing: .04em; font-weight: 600; }
+
+  /* ── HET PORTAAL ALS TEKENING ────────────────────────────────────────────
+     Wit met een haarlijn, ook op een donker paneel: het is een tekening van
+     een scherm, en een scherm is licht. */
+  .lb-dash { border: 1px solid rgb(0 0 0 / .12); background: #FFF; color: #111; }
+  .lb-dash-balk { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem .6rem; border-bottom: 1px solid rgb(0 0 0 / .08); }
+  .lb-dash-merk { font-family: var(--font-heading); font-weight: 700; font-size: .72rem; letter-spacing: .04em; }
+  /* Gemeten met kladblok/leesbaar-alles.mjs: zwart op 50 % tegen wit komt uit
+     op 3,95:1, net onder de norm. Uitgerekend dit woordje mag niet te licht
+     zijn: het is het etiket dat zegt dat dit paneel een TEKENING is en geen
+     schermafdruk van een echte klant. 58 % is 5,3:1. */
+  .lb-dash-voorbeeld { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: rgb(0 0 0 / .58); }
+  .lb-dash-body { padding: .6rem; display: grid; gap: .55rem; }
+  .lb-dash-tegels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .lb-dash-tegel { position: relative; aspect-ratio: 1; overflow: hidden; background: #F2F2F2; }
+  .lb-dash-tegel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Het vinkje in de kleur van "geleverd" uit de statusset: massief en diep,
+     met een lichte letter erop. Zie de noot bij --st-done-fill in global.css. */
+  .lb-dash-vink { position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; display: grid; place-items: center; background: var(--st-done-fill, #1F0B66); color: var(--st-done-ink, #FFFFFF); font-size: 10px; font-weight: 700; }
+  .lb-dash-acties { margin: 0; display: flex; gap: .35rem; flex-wrap: wrap; }
+  .lb-dash-knop { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; padding: .3rem .55rem; border: 1px solid rgb(0 0 0 / .18); border-radius: 999px; }
+  .lb-dash-knop.is-ja { background: var(--accent, #4A1FFF); border-color: var(--accent, #4A1FFF); color: var(--on-accent, #FFFFFF); }
+
+  @media (max-width: 900px) {
+    .lb-rij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px) {
+    .lb-rij { grid-template-columns: minmax(0, 1fr); }
+    .lb-zin, .lb-regels, .lb-noot { max-width: none; }
+    .lb-vormen li:nth-child(1) .lb-vorm { height: 7rem; }
+    .lb-vormen li:nth-child(2) .lb-vorm { height: 8.6rem; }
+    .lb-vormen li:nth-child(3) .lb-vorm { height: 11.6rem; }
+  }
+</style>

@@ -49,27 +49,57 @@ import { tagline } from '../data/brand.js';
 
 const SITE = 'https://visuails.com';
 
-/* The palette, matched to global.css. Written out rather than imported because
- * email cannot use custom properties and these are the resolved values anyway.
- * Sectie 21 (5 september 2026): het geel van Komma (#D2E04A) en het donkergrijs
- * (#111111) van de site; de naam `green` blijft omdat de sjablonen hem lezen.
- * De tint onder een notitie is het geel op 12% over wit, de letter erop inkt —
- * geel als letter is op wit 1,5:1 en komt in geen enkele mail voor. */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE KLEUREN VAN DE MAIL — UIT KLEURENSCHEMA.md, 20 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Mail rendert zonder CSS-variabelen, dus de waarden staan hier letterlijk.
+ * Dit is een HANDKOPIE van KLEURENSCHEMA.md; verandert daar iets, dan hier ook.
+ * Dat is precies waar de noot bovenaan dit bestand voor waarschuwt — *"de
+ * voettekst hield een dood accent vast"* — en de reden dat ze bij elkaar staan
+ * in plaats van verspreid door de sjablonen.
+ *
+ * DRIE DINGEN KANTELEN MEE MET HET VIOLET, en alle drie zijn ze de omkering
+ * van wat het geel vroeg:
+ *   · `onAccent` is NIEUW. Op lime stond zwarte tekst (15:1); op violet staat
+ *     witte (7,16:1) en zwart haalt 2,93:1. Elke knop in elke mail draait dus
+ *     om, en zonder dit veld zou die omkering per sjabloon moeten gebeuren.
+ *   · `green` mag nu ook LETTER zijn. De naam blijft, want de sjablonen lezen
+ *     hem; `accentText` is de donkere variant voor waar hij op papier staat.
+ *   · `tintBg` was het geel op 12 % over wit. Dat is nu de werktint uit de
+ *     statusset (#E4DFFF) met zijn eigen letter erop.
+ *
+ * DE STATUSSET STAAT ER OOK IN. Een mail is de vierde plek waar een
+ * bestelstatus getoond wordt (na Studio, het klantportaal en admin), en tot
+ * vandaag zei hij daar iets anders dan de andere drie. */
 const C = {
-  green: '#D2E04A',
-  ink: '#111111',
-  text: '#454545',
-  head: '#0A0A0A',
-  muted: '#6E6E6E',
-  faint: '#8A8A8A',
-  rule: '#DFDFDF',
-  ruleSoft: '#EDEDED',
+  green: '#4A1FFF',
+  onAccent: '#FFFFFF',
+  accentText: '#3D17D6',
+  ink: '#000000',
+  text: 'rgba(0,0,0,.66)',
+  head: '#000000',
+  muted: 'rgba(0,0,0,.56)',
+  faint: 'rgba(0,0,0,.45)',
+  rule: 'rgba(0,0,0,.20)',
+  ruleSoft: 'rgba(0,0,0,.10)',
   paper: '#FFFFFF',
-  foot: '#F5F5F5',
-  tintBg: '#F8FDE1',
-  tintInk: '#454545',
-  page: '#EDEDED',
+  foot: '#F2F3F5',
+  tintBg: '#E4DFFF',
+  tintInk: '#2A0E8F',
+  page: '#E4E7EC',
+
+  /* De vijf toestanden, lichte stand — zie de tabel in KLEURENSCHEMA.md.
+     Mail kent geen donkere stand: een mailclient kan zijn eigen donkere modus
+     hebben, maar die herkleurt ons vlak niet, dus een tweede set zou alleen
+     maar een tweede waarheid zijn. */
+  stWaitFill: 'transparent', stWaitEdge: '#7C8096',            stWaitInk: '#4A4E6B',
+  stWorkFill: '#E4DFFF',     stWorkEdge: 'rgba(61,23,214,.30)', stWorkInk: '#3D17D6',
+  stDoneFill: '#1F0B66',     stDoneEdge: '#1F0B66',             stDoneInk: '#FFFFFF',
+  stRevFill:  '#F6E7D1',     stRevEdge:  'rgba(138,77,6,.30)',  stRevInk:  '#8A4D06',
+  stCanFill:  '#E4E7EC',     stCanEdge:  '#83868A',             stCanInk:  '#3E4145',
 };
+
+import { stand } from '../data/status.js';
 
 const FONT = 'Arial,Helvetica,sans-serif';
 
@@ -139,11 +169,47 @@ export const rows = pairs => {
   </table>`;
 };
 
+/**
+ * DE STATUSPIL, MAILVERSIE — 20 september 2026.
+ *
+ * Dezelfde vorm als `.stand` in src/styles/global.css: pil, 28px hoog,
+ * hoofdletters, 11px, een stip van 6px, en ALTIJD het woord ernaast. De stand
+ * komt uit dezelfde tabel als overal — src/data/status.js — zodat een mail
+ * nooit iets anders over een bestelling zegt dan Studio, portaal of admin.
+ *
+ * DRIE DINGEN ZIJN ANDERS DAN IN CSS, en alle drie omdat mail geen browser is:
+ *   · `border` in plaats van `inset box-shadow` — box-shadow bestaat niet in
+ *     Outlook, en de randsimulatie is precies wat KLEURENSCHEMA.md toestaat.
+ *   · `currentColor` staat er niet; de stip krijgt de inktkleur letterlijk.
+ *   · de letter is FONT (Arial), niet de mono van de site: een webfont laadt
+ *     in mail niet en de terugval zou een tweede vorm zijn.
+ * De hoogte klopt op de punt: 5 + 16 + 5 + 2 × 1px rand = 28px.
+ *
+ * De kleuren staan in C bovenaan dit bestand — handkopie van KLEURENSCHEMA.md.
+ */
+export const statusPil = (status, label) => {
+  const k = {
+    wait: [C.stWaitFill, C.stWaitEdge, C.stWaitInk],
+    work: [C.stWorkFill, C.stWorkEdge, C.stWorkInk],
+    done: [C.stDoneFill, C.stDoneEdge, C.stDoneInk],
+    rev: [C.stRevFill, C.stRevEdge, C.stRevInk],
+    can: [C.stCanFill, C.stCanEdge, C.stCanInk],
+  }[stand(status)];
+  const [vul, rand, inkt] = k;
+  return `<span style="display:inline-block;padding:5px 11px;border:1px solid ${rand};border-radius:999px;`
+    + `background:${vul === 'transparent' ? 'none' : vul};font-family:${FONT};font-size:11px;line-height:16px;`
+    + `font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${inkt};white-space:nowrap">`
+    + `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${inkt};margin-right:6px;vertical-align:1px"></span>`
+    + `${esc(label == null || label === '' ? status : label)}</span>`;
+};
+
 /** The green call-to-action. A table cell with bgcolor, which Outlook honours. */
 export const button = (href, label) =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
     <td bgcolor="${C.green}" align="center" style="background:${C.green};padding:14px 26px">
-      <a href="${esc(href)}" style="font-family:${FONT};font-size:15px;font-weight:700;color:${C.ink};text-decoration:none;display:block">${esc(label)}</a>
+      <!-- De letter op het accent is WIT sinds 20 september: zwart op violet
+           haalt 2,93:1 en is in KLEURENSCHEMA.md met zoveel woorden afgekeurd. -->
+      <a href="${esc(href)}" style="font-family:${FONT};font-size:15px;font-weight:700;color:${C.onAccent};text-decoration:none;display:block">${esc(label)}</a>
     </td>
   </tr></table>`;
 
@@ -164,7 +230,9 @@ export const payPanel = ({ label, amount, sub, href, cta }) =>
 /** A quiet aside with a hairline down its left — the spam note lives in one. */
 export const note = html =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 0"><tr>
-    <td width="3" bgcolor="#DFDFDF" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
+    <!-- #CCCCCC is --line (20% zwart) uitgerekend op wit: bgcolor slikt geen
+         rgba, en dit streepje is het enige dat hier nog een eigen grijs had. -->
+    <td width="3" bgcolor="#CCCCCC" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
     <td style="padding:2px 0 2px 14px">
       <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.6;color:${C.muted}">${html}</p>
     </td>

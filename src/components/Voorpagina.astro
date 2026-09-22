@@ -38,17 +38,17 @@
  */
 /* DE LETTERS VAN DE NIEUWE STIJL. Drie variabele, open source families, alle
    drie met een breedte-as zodat "nadruk is breedte" overal werkt: Anybody voor
-   de koppen (technischer dan Hubot Sans), Instrument Sans voor de lopende
+   de koppen (technischer dan Hubot Sans), Figtree voor de lopende
    tekst, Martian Mono voor de labels. Zelf gehost, geen externe verbinding.
    Ze staan hier en niet in Layout.astro: zolang alleen de voorpagina in deze
    stijl staat, hoeft de rest van de site ze niet te laden. */
 import '@fontsource-variable/anybody/standard.css';
-import '@fontsource-variable/instrument-sans/standard.css';
+import '@fontsource-variable/figtree/index.css';
 import '@fontsource-variable/martian-mono/standard.css';
 import {
   AMOUNT, euro, TEST_SAMPLE, reviewClaim, aftercare,
   LADDER, ladderRate, ladderFloor, vatLabel, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, plans,
-  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES, videoPrijsLabel,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES, videoPrijsLabel, completeSaving,
 } from '../data/pricing.js';
 import { countedShort, setSize } from '../data/lexicon.js';
 import { ALLE_DEUREN } from '../data/eigenproduct.js';
@@ -91,6 +91,10 @@ const KIND_PAGE: Record<string, string | null> = { complete: null, catalog: '/ca
 const vorm = (id: string) => LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
 for (const id of KINDS) if (vorm(id) !== vorm('complete')) throw new Error(`Voorpagina: staffel "${id}" breekt op andere aantallen dan "complete".`);
 const RUNGS = LADDER.complete.map(([lo, hi]) => ({ at: lo, label: hi === null ? `${lo}+` : `${lo}–${hi}` }));
+/* Wat allebei-op-één-product scheelt, bij één product. Uit completeSaving() en
+   niet getypt: /pricing rekent hem met dezelfde functie uit, en twee plekken die
+   hetzelfde bedrag met de hand noemen, lopen een keer uit elkaar. */
+const SAMEN = completeSaving(1);
 /* De bovenste trede: vanaf dit aantal geldt de laagste prijs. Uit de ladder
    zelf, niet getypt — dezelfde afleiding als TOP_RUNG_AT in faq.js. */
 const TOP_AT = LADDER.complete[LADDER.complete.length - 1][0];
@@ -157,6 +161,7 @@ const COPY = {
        categorie kiezen, en de categorie die vandaag voor de hand ligt is
        "AI-tool". Eén bijzin, op de plek waar iemand in tien seconden beslist
        wat dit is. */
+    scrollWenk: 'Scroll',
     lede: 'Catalog, lifestyle and video from the product photos you already have — we make them for you. No shoot, no tool to learn, no minimum: one product is fine.',
     ctaStart: 'Start an order',
     heroAlt: 'A VISUAILS campaign visual', heroChip: 'Campaign',
@@ -218,8 +223,22 @@ const COPY = {
        het is nu een BOVENGRENS ("tot") met de clip erbij genoemd, en de zin
        eronder zegt uitdrukkelijk dat elk deel ook los kan. Zelfde concreetheid,
        zonder de belofte dat dit het hele aanbod is. */
-    setH: `One product. Up to ${COMPLETE_IMAGES} images and a clip.`,
-    setLede: 'The catalog set for your shop, the lifestyle carousel for your socials, a clip for the feed — together in one order, or any one of them on its own.',
+    /* ── GEEN DERDE PRODUCT MEER — 20 september 2026 ──────────────────────
+       Lucas: *"One product. Up to 7 images and a clip klopt niet helemaal meer
+       omdat complete geen product meer is op de website."*
+
+       Dat klopte. "Tot 7 beelden" was het getal van de bundel, en wie dat las
+       zag één pakket waar er twee DIENSTEN staan. Er zijn er twee — een
+       catalogset en een lifestylecarrousel — en je kunt ze allebei op hetzelfde
+       product bestellen. Dat laatste is geen derde product maar een TARIEF, en
+       de kop zegt dat nu ook zo: drie zinnen, waarvan de derde de combinatie is.
+
+       De korting blijft en is voortaan zichtbaar in plaats van verstopt in een
+       kolomnaam: setCombi rekent hem uit met completeSaving(), dezelfde functie
+       die /pricing gebruikt, zodat er geen tweede getal kan ontstaan. */
+    setH: 'The catalog set. The carousel. Or both.',
+    setLede: 'Two services, priced per product. Take one, or both on the same product — then the combined rate applies, and a clip or your own brand model can come along.',
+    setCombi: (samen: string, los: string) => `Both on the same product: ${samen} instead of ${los} per product — about a quarter less, because one intake, one look and one check cover two sets.`,
     setGroups: [[`Catalog set · ${setSize('catalog', CATALOG_IMAGES, 'en')}`, '/catalog'], [`Lifestyle carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, '/lifestyle']],
     frames: FRAMES.en,
     /* Het opschrift boven de twee onderaan. Zonder dit lezen video en merkmodel
@@ -238,7 +257,7 @@ const COPY = {
       ['The studio runs', 'Catalog, lifestyle and video in your style, fully finished.'],
       ['A specialist checks', 'Every image, before it reaches you.'],
     ],
-    priceH: 'One rate per product. It drops as the count rises.',
+    priceH: 'One rate per product. It falls as you order more.',
     priceCount: 'Products',
     /* Op ID en niet op volgorde: een lijst die met de index van KINDS moet
        meelopen, is een lijst die bij de eerstvolgende herordening stilletjes de
@@ -246,7 +265,7 @@ const COPY = {
     priceKinds: {
       catalog: `Catalog · ${setSize('catalog', CATALOG_IMAGES, 'en')}`,
       lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`,
-      complete: `Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`,
+      complete: `Catalog + Lifestyle · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`,
     },
     priceVat: `Per product, ${vatLabel('excl', 'en')}.`,
     vanaf: 'from', perProduct: `per product, ${vatLabel('excl', 'en')}`, perMaand: 'a month',
@@ -286,6 +305,7 @@ const COPY = {
     posterLine: [MERK, 'Alle rechten voorbehouden · 2026'],
     h1: TAGLINE.nl.lines,
     /* Zie de Engelse tegenhanger. */
+    scrollWenk: 'Scroll',
     lede: 'Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je. Geen shoot, niets om zelf te leren, geen minimum: één product mag ook.',
     ctaStart: 'Start een bestelling',
     heroAlt: 'Een VISUAILS-campagnebeeld', heroChip: 'Campagne',
@@ -316,8 +336,9 @@ const COPY = {
     vnNotenLabel: 'Wat er om het kledingstuk heen wordt gebouwd',
     vnNoten: [['Licht', 22, 18], ['Achtergrond', 78, 30], ['Model', 30, 58], ['Uitsnede', 72, 86]],
     /* Zie de Engelse tegenhanger. */
-    setH: `Eén product. Tot ${COMPLETE_IMAGES} beelden en een clip.`,
-    setLede: 'De catalogset voor je shop, de lifestyle-carousel voor je socials, een clip voor de feed — samen in één bestelling, of elk apart.',
+    setH: 'De catalogset. De carrousel. Of allebei.',
+    setLede: 'Twee diensten, per product geprijsd. Neem er één, of allebei op hetzelfde product — dan geldt het gecombineerde tarief, en een clip of je eigen merkmodel kan mee.',
+    setCombi: (samen: string, los: string) => `Allebei op hetzelfde product: ${samen} in plaats van ${los} per product — ongeveer een kwart minder, omdat één intake, één look en één controle twee sets dekken.`,
     setGroups: [[`Catalogset · ${setSize('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
     frames: FRAMES.nl,
     /* Zie de Engelse tegenhanger. */
@@ -340,7 +361,7 @@ const COPY = {
     priceKinds: {
       catalog: `Catalog · ${setSize('catalog', CATALOG_IMAGES, 'nl')}`,
       lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`,
-      complete: `Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`,
+      complete: `Catalog + Lifestyle · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`,
     },
     priceVat: `Per product, ${vatLabel('excl', 'nl')}.`,
     vanaf: 'vanaf', perProduct: `per product, ${vatLabel('excl', 'nl')}`, perMaand: 'per maand',
@@ -548,7 +569,12 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
         om vroeg. `vorm="naast"` haalt de sectiepadding eraan weg en laat hem
         rechts de pagina uitlopen met een verloop; zie LaptopCarousel.astro. */}
     <div class="hero-beeld">
-      <LaptopCarousel lang={lang} vorm="naast" titel={c.h1.join(' ')} />
+      {/* `plain` en niet `h1.join(' ')`: die tweede bevat de <em> van het
+          accentwoord, en dit is een aria-label. Een schermlezer las daar
+          letterlijk "kleiner dan em groter dan" in. Stond er al sinds de kop
+          een accentwoord heeft; gezien bij het omzetten van de kop
+          (20 september 2026). */}
+      <LaptopCarousel lang={lang} vorm="naast" titel={TAGLINE[lang === 'nl' ? 'nl' : 'en'].plain} />
     </div>
 
     {/* ── DE ZIN STAAT OP DE TELEFOON BOVEN HET BEELD — 8 september 2026 ──
@@ -563,6 +589,17 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
         boven — met `order` in stijl22.css, en dat mag hier omdat er niets in
         dit blok is dat focus krijgt: drie <img> en een <p>. De tabvolgorde
         verandert dus niet, alleen wat je ziet. */}
+    {/* ── DE SCROLLWENK — 22 september 2026 ─────────────────────────────────
+        Lucas: *"scroll-icoon animatie"*. Rechtsonder in de opening, in de taal
+        van de rest van de site: een mono-etiket en een haarlijn waar een streep
+        langs naar beneden loopt — geen pijl, geen muisje, geen kleur. Een link
+        naar de band eronder, dus hij doet ook iets. Alleen op een breed scherm
+        (op een telefoon staat de opening al niet in één scherm) en stil bij
+        prefers-reduced-motion. Opmaak: .scroll-wenk in stijl22.css. */}
+    <a class="scroll-wenk" href="#lb-h" aria-label={c.scrollWenk}>
+      <span class="mono">{c.scrollWenk}</span>
+      <span class="scroll-wenk-lijn" aria-hidden="true"><i></i></span>
+    </a>
     <div class="hero-links">
       <ul class="koppen" role="list">
         {ROSTER.slice(0, 3).map((m) => <li><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></li>)}
@@ -708,6 +745,11 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
       <a class="groep" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a>
       <a class="groep" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a>
     </p>
+    {/* De combinatie staat er als ZIN en niet als derde kolom. Een kolom maakt
+        er een product van, en dat is precies wat het niet meer is; een zin zegt
+        wat het wél is: een tarief dat geldt zodra je allebei op hetzelfde
+        product neemt. Beide bedragen komen uit completeSaving(). */}
+    <p class="lopend set-combi">{c.setCombi(e(SAMEN.together), e(SAMEN.apart))}</p>
     <ol class="rij">
       {c.frames.map((naam, i) => (
         <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>

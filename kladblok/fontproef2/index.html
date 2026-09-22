@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fontproef VISUAILS — ronde 2</title>
+<style>
+/* De letters zelf. Allemaal variabel, allemaal gratis, allemaal zelf te hosten
+   via @fontsource — dus geen Google-verzoek vanaf de site van een klant. */
+@font-face{font-family:"WixDisplay";src:url("f/wixdisplay.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"WixText";src:url("f/wixtext.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Bricolage";src:url("f/bricolage.woff2") format("woff2-variations");font-weight:200 800;font-display:block}
+@font-face{font-family:"Golos";src:url("f/golos.woff2") format("woff2-variations");font-weight:400 900;font-display:block}
+@font-face{font-family:"Hanken";src:url("f/hanken.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Atkinson";src:url("f/atkinson.woff2") format("woff2-variations");font-weight:200 800;font-display:block}
+@font-face{font-family:"Gabarito";src:url("f/gabarito.woff2") format("woff2-variations");font-weight:400 900;font-display:block}
+@font-face{font-family:"Commissioner";src:url("f/commissioner.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Archivo";src:url("f/archivo.woff2") format("woff2-variations");font-weight:100 900;font-stretch:62% 125%;font-display:block}
+@font-face{font-family:"PublicSans";src:url("f/publicsans.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Fraunces";src:url("f/fraunces.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"Figtree";src:url("f/figtree.woff2") format("woff2-variations");font-weight:300 900;font-display:block}
+@font-face{font-family:"GeistMono";src:url("f/geistmono.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"ChivoMono";src:url("f/chivomono.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"SplineMono";src:url("f/splinemono.woff2") format("woff2-variations");font-weight:300 700;font-display:block}
+@font-face{font-family:"AzeretMono";src:url("f/azeretmono.woff2") format("woff2-variations");font-weight:100 900;font-display:block}
+@font-face{font-family:"JetBrains";src:url("f/jetbrains.woff2") format("woff2-variations");font-weight:100 800;font-display:block}
+@font-face{font-family:"Anybody";src:url("f/anybody.woff2") format("woff2-variations");font-weight:100 900;font-stretch:50% 150%;font-display:block}
+@font-face{font-family:"Instrument";src:url("f/instrument.woff2") format("woff2-variations");font-weight:400 700;font-stretch:75% 100%;font-display:block}
+@font-face{font-family:"Martian";src:url("f/martian.woff2") format("woff2-variations");font-weight:100 800;font-stretch:75% 112.5%;font-display:block}
+
+/* Het violet van 20 september, zodat je de letters op de ECHTE kleuren ziet en
+   niet op het geel van de vorige ronde. */
+:root{
+  --paper:#F2F3F5; --surface:#FFFFFF; --ink:#000000;
+  --ink-2:rgb(0 0 0/.66); --ink-3:rgb(0 0 0/.56);
+  --line:rgb(0 0 0/.20); --line-soft:rgb(0 0 0/.10);
+  --accent:#4A1FFF; --on-accent:#FFFFFF; --accent-text:#3D17D6; --accent-tint:#E4DFFF;
+  --panel:#000000; --on-panel:#F2F3F5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;
+     font-family:"PublicSans",system-ui,sans-serif}
+.wrap{max-width:1560px;margin:0 auto;padding:40px 24px 90px}
+.paginakop{font-weight:800;font-size:30px;letter-spacing:-.02em;margin:0 0 10px}
+.paginalead{color:var(--ink-3);max-width:80ch;margin:0 0 6px;line-height:1.6;font-size:15px}
+.hoe{color:var(--ink-3);max-width:80ch;margin:0 0 30px;line-height:1.6;font-size:14px}
+.raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:24px}
+
+.kaart{background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;
+       padding:28px;display:flex;flex-direction:column;gap:18px}
+.kaart.nu{border:1px solid var(--ink)}
+.badge{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.kaart.nu .badge{color:var(--ink)}
+.recept{font-size:12.5px;color:var(--ink-3);line-height:1.6;border-top:1px solid var(--line-soft);
+        padding-top:15px;margin-top:auto}
+.recept b{color:var(--ink);font-weight:700}
+.recept .waarom{display:block;margin-top:6px;color:var(--ink-2)}
+
+/* De proefregels. Zelfde maten als de site: h1 op 34px in deze kaart staat voor
+   de clamp(2.6rem, 6vw, 5.2rem) van de hero, de lopende tekst op 14,5px voor de
+   1rem van een paneel. Wat je hier vergelijkt is de VORM, niet de grootte. */
+.eyebrow{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.h{margin:0;font-size:35px;line-height:1.04;letter-spacing:-.025em}
+.h em{font-style:normal;font-weight:800}
+.lead{margin:0;font-size:16px;line-height:1.5;color:var(--ink-2)}
+.body{margin:0;font-size:14.5px;line-height:1.62;color:var(--ink-2);max-width:60ch}
+.rij{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.knop{display:inline-flex;align-items:center;background:var(--accent);color:var(--on-accent);
+      border-radius:999px;padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none}
+.knop-2{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;
+        padding:10px 20px;font-size:13px;font-weight:600;color:var(--ink)}
+.klein{font-size:11.5px;color:var(--ink-3)}
+.tabel{width:100%;border-collapse:collapse;font-size:13.5px}
+.tabel td{border-top:1px solid var(--line-soft);padding:8px 0;color:var(--ink-2)}
+.tabel td:last-child{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.stand{display:inline-flex;align-items:center;gap:.4rem;min-height:28px;padding:0 .7rem;
+       border-radius:999px;font-size:11px;line-height:1;font-weight:600;letter-spacing:.06em;
+       text-transform:uppercase;background:var(--accent-tint);color:var(--accent-text)}
+.stand::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mini{font-size:12px;color:var(--ink-3);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="paginakop">Fontproef — ronde 2</h1>
+  <p class="paginalead">Zeven recepten, elk met dezelfde inhoud van de site erin: de wenkbrauw, een kop met een accentwoord, de lede, lopende tekst, de knoppen, een tarieftabel en een statuspil. Alles staat op het violet van 20 september, dus je ziet de letters op de kleuren die de site echt draagt.</p>
+  <p class="hoe">Alle zeven zijn <b>gratis en zelf te hosten</b> via @fontsource — geen verzoek naar Google vanaf de pagina van een klant, en geen licentie die later kan omvallen. Alle zeven zijn variabel, dus één bestand draagt elk gewicht. A is wat er nu staat.</p>
+
+  <div class="raster">
+
+    <!-- A · NU -->
+    <section class="kaart nu">
+      <span class="badge">A · wat er nu staat</span>
+      <span class="eyebrow" style='font-family:"Martian";font-stretch:82%'>VISUAILS™ · ENSCHEDE, NL</span>
+      <h2 class="h" style='font-family:"Anybody";font-stretch:125%;font-weight:250'>Jij uploadt. Wij leveren de <em>campagne</em>.</h2>
+      <p class="lead" style='font-family:"Instrument"'>Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je.</p>
+      <p class="body" style='font-family:"Instrument"'>Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag bij elk product dat je erbij doet.</p>
+      <div class="rij">
+        <span class="knop" style='font-family:"Instrument"'>Start een bestelling</span>
+        <span class="knop-2" style='font-family:"Instrument"'>Probeer VISUAILS · €1</span>
+        <span class="stand" style='font-family:"Martian";font-stretch:82%'>In productie</span>
+      </div>
+      <table class="tabel" style='font-family:"Instrument"'>
+        <tr><td>1–4 producten</td><td>€89</td></tr>
+        <tr><td>5–9 producten</td><td>€65</td></tr>
+        <tr><td>20+ producten</td><td>€39</td></tr>
+      </table>
+      <p class="recept"><b>Anybody</b> kop · <b>Instrument Sans</b> tekst · <b>Martian Mono</b> etiket
+        <span class="waarom">De kop heeft een breedte-as en staat op 125%. Dat is het kenmerk van de site; het is ook de reden dat koppen soms te technisch lezen voor een dienst die op vertrouwen verkoopt.</span></p>
+    </section>
+
+    <!-- B · WIX MADEFOR -->
+    <section class="kaart">
+      <span class="badge">B · één familie, twee snitten</span>
+      <span class="eyebrow" style='font-family:"WixDisplay";font-weight:700'>VISUAILS™ · ENSCHEDE, NL</span>
+      <h2 class="h" style='font-family:"WixDisplay";font-weight:600'>Jij uploadt. Wij leveren de <em>campagne</em>.</h2>
+      <p class="lead" style='font-family:"WixText"'>Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je.</p>
+      <p class="body" style='font-family:"WixText"'>Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag bij elk product dat je erbij doet.</p>
+      <div class="rij">
+        <span class="knop" style='font-family:"WixText"'>Start een bestelling</span>
+        <span class="knop-2" style='font-family:"WixText"'>Probeer VISUAILS · €1</span>
+        <span class="stand" style='font-family:"WixDisplay";font-weight:700'>In productie</span>
+      </div>
+      <table class="tabel" style='font-family:"WixText"'>
+        <tr><td>1–4 producten</td><td>€89</td></tr>
+        <tr><td>5–9 producten</td><td>€65</td></tr>
+        <tr><td>20+ producten</td><td>€39</td></tr>
+      </table>
+      <p class="recept"><b>Wix Madefor Display</b> kop + etiket · <b>Wix Madefor Text</b> tekst
+        <span class="waarom">Twee snitten van één familie: Display heeft strakkere spaties voor grote maten, Text is getekend voor kleine. Daardoor klopt de verhouding vanzelf en hoef je nooit twee smaken op elkaar af te stemmen. Zakelijk zonder kil te worden, en je ziet hem zelden — dit is niet de standaardkeuze van elk SaaS-sjabloon.</span></p>
+    </section>
+
+    <!-- C · BRICOLAGE + GOLOS -->
+    <section class="kaart">
+      <span class="badge">C · karakter boven, rust onder</span>
+      <span class="eyebrow" style='font-family:"GeistMono"'>VISUAILS™ · ENSCHEDE, NL</span>
+      <h2 class="h" style='font-family:"Bricolage";font-weight:600'>Jij uploadt. Wij leveren de <em>campagne</em>.</h2>
+      <p class="lead" style='font-family:"Golos"'>Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je.</p>
+      <p class="body" style='font-family:"Golos"'>Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag bij elk product dat je erbij doet.</p>
+      <div class="rij">
+        <span class="knop" style='font-family:"Golos"'>Start een bestelling</span>
+        <span class="knop-2" style='font-family:"Golos"'>Probeer VISUAILS · €1</span>
+        <span class="stand" style='font-family:"GeistMono"'>In productie</span>
+      </div>
+      <table class="tabel" style='font-family:"Golos"'>
+        <tr><td>1–4 producten</td><td>€89</td></tr>
+        <tr><td>5–9 producten</td><td>€65</td></tr>
+        <tr><td>20+ producten</td><td>€39</td></tr>
+      </table>
+      <p class="recept"><b>Bricolage Grotesque</b> kop · <b>Golos Text</b> tekst · <b>Geist Mono</b> etiket
+        <span class="waarom">Bricolage is een moderne display-grotesk met eigenzinnige details (de a, de g, de staart van de R) en een optische-maat-as. Golos is het tegenovergestelde: volstrekt neutraal en gemaakt om lang te lezen. De kop mag opvallen omdat de rest dat niet doet.</span></p>
+    </section>
+
+    <!-- D · HANKEN + ATKINSON -->
+    <section class="kaart">
+      <span class="badge">D · leesbaarheid eerst</span>
+      <span class="eyebrow" style='font-family:"ChivoMono";font-weight:500'>VISUAILS™ · ENSCHEDE, NL</span>
+      <h2 class="h" style='font-family:"Hanken";font-weight:700'>Jij uploadt. Wij leveren de <em>campagne</em>.</h2>
+      <p class="lead" style='font-family:"Atkinson"'>Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je.</p>
+      <p class="body" style='font-family:"Atkinson"'>Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag bij elk product dat je erbij doet.</p>
+      <div class="rij">
+        <span class="knop" style='font-family:"Atkinson"'>Start een bestelling</span>
+        <span class="knop-2" style='font-family:"Atkinson"'>Probeer VISUAILS · €1</span>
+        <span class="stand" style='font-family:"ChivoMono";font-weight:500'>In productie</span>
+      </div>
+      <table class="tabel" style='font-family:"Atkinson"'>
+        <tr><td>1–4 producten</td><td>€89</td></tr>
+        <tr><td>5–9 producten</td><td>€65</td></tr>
+        <tr><td>20+ producten</td><td>€39</td></tr>
+      </table>
+      <p class="recept"><b>Hanken Grotesk</b> kop · <b>Atkinson Hyperlegible Next</b> tekst · <b>Chivo Mono</b> etiket
+        <span class="waarom">Atkinson is getekend door het Braille Institute om vormen die op elkaar lijken (I l 1, O 0, a o) uit elkaar te houden. Dit is letterlijk de meest leesbare gratis letter die er is. Hij is breed, dus dezelfde zin neemt meer ruimte — dat is de prijs.</span></p>
+    </section>
+
+    <!-- E · GABARITO + COMMISSIONER -->
+    <section class="kaart">
+      <span class="badge">E · warmer, minder tech</span>
+      <span class="eyebrow" style='font-family:"SplineMono";font-weight:500'>VISUAILS™ · ENSCHEDE, NL</span>
+      <h2 class="h" style='font-family:"Gabarito";font-weight:700'>Jij uploadt. Wij leveren de <em>campagne</em>.</h2>
+      <p class="lead" style='font-family:"Commissioner"'>Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je.</p>
+      <p class="body" style='font-family:"Commissioner"'>Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag bij elk product dat je erbij doet.</p>
+      <div class="rij">
+        <span class="knop" style='font-family:"Commissioner"'>Start een bestelling</span>
+        <span class="knop-2" style='font-family:"Commissioner"'>Probeer VISUAILS · €1</span>
+        <span class="stand" style='font-family:"SplineMono";font-weight:500'>In productie</span>
+      </div>
+      <table class="tabel" style='font-family:"Commissioner"'>
+        <tr><td>1–4 producten</td><td>€89</td></tr>
+        <tr><td>5–9 producten</td><td>€65</td></tr>
+        <tr><td>20+ producten</td><td>€39</td></tr>
+      </table>
+      <p class="recept"><b>Gabarito</b> kop · <b>Commissioner</b> tekst · <b>Spline Sans Mono</b> etiket
+        <span class="waarom">Gabarito heeft licht uitlopende staarten en een open g: vriendelijk zonder speels te worden. Commissioner is een humanistische letter met heel weinig contrast — die leest rustig door, ook op 13px in Studio. Dit recept zegt "mensen die je kunt bellen" in plaats van "software".</span></p>
+    </section>
+
+    <!-- F · ARCHIVO + PUBLIC SANS -->
+    <section class="kaart">
+      <span class="badge">F · institutioneel en onverdacht</span>
+      <span class="eyebrow" style='font-family:"AzeretMono";font-weight:500'>VISUAILS™ · ENSCHEDE, NL</span>
+      <h2 class="h" style='font-family:"Archivo";font-stretch:112%;font-weight:700'>Jij uploadt. Wij leveren de <em>campagne</em>.</h2>
+      <p class="lead" style='font-family:"PublicSans"'>Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je.</p>
+      <p class="body" style='font-family:"PublicSans"'>Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag bij elk product dat je erbij doet.</p>
+      <div class="rij">
+        <span class="knop" style='font-family:"PublicSans"'>Start een bestelling</span>
+        <span class="knop-2" style='font-family:"PublicSans"'>Probeer VISUAILS · €1</span>
+        <span class="stand" style='font-family:"AzeretMono";font-weight:500'>In productie</span>
+      </div>
+      <table class="tabel" style='font-family:"PublicSans"'>
+        <tr><td>1–4 producten</td><td>€89</td></tr>
+        <tr><td>5–9 producten</td><td>€65</td></tr>
+        <tr><td>20+ producten</td><td>€39</td></tr>
+      </table>
+      <p class="recept"><b>Archivo</b> (breed) kop · <b>Public Sans</b> tekst · <b>Azeret Mono</b> etiket
+        <span class="waarom">Public Sans is de huisletter van de Amerikaanse overheid — getekend om nuchter en controleerbaar te zijn, en dat is precies wat een dienst met levertijden en facturen wil uitstralen. Archivo op 112% breedte geeft de kop gewicht zonder de technische toon van de huidige stand.</span></p>
+    </section>
+
+    <!-- G · FRAUNCES + FIGTREE -->
+    <section class="kaart">
+      <span class="badge">G · atelier in plaats van software</span>
+      <span class="eyebrow" style='font-family:"JetBrains";font-weight:500'>VISUAILS™ · ENSCHEDE, NL</span>
+      <h2 class="h" style='font-family:"Fraunces";font-weight:600;font-variation-settings:"SOFT" 60,"WONK" 1,"opsz" 60'>Jij uploadt. Wij leveren de <em>campagne</em>.</h2>
+      <p class="lead" style='font-family:"Figtree"'>Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je.</p>
+      <p class="body" style='font-family:"Figtree"'>Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag bij elk product dat je erbij doet.</p>
+      <div class="rij">
+        <span class="knop" style='font-family:"Figtree"'>Start een bestelling</span>
+        <span class="knop-2" style='font-family:"Figtree"'>Probeer VISUAILS · €1</span>
+        <span class="stand" style='font-family:"JetBrains";font-weight:500'>In productie</span>
+      </div>
+      <table class="tabel" style='font-family:"Figtree"'>
+        <tr><td>1–4 producten</td><td>€89</td></tr>
+        <tr><td>5–9 producten</td><td>€65</td></tr>
+        <tr><td>20+ producten</td><td>€39</td></tr>
+      </table>
+      <p class="recept"><b>Fraunces</b> kop · <b>Figtree</b> tekst · <b>JetBrains Mono</b> etiket
+        <span class="waarom">De enige met een schreef in de kop, en daarmee de enige die niet als software leest. Fraunces heeft een "wonk"-as voor eigenzinnige details en een optische maat, dus hij blijft scherp op 5rem. Het risico: een schreef zegt ook "traditioneel", en dat is niet wat een AI-studio wil beloven. Daarom staat hij erbij — niet omdat hij wint.</span></p>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

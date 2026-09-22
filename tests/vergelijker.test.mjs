@@ -137,6 +137,12 @@ console.log('\nslepen met de muis snijdt de foto af');
      een andere breedte mag geen oude maat achterlaten. */
   await page.setViewportSize({ width: 900, height: 1000 });
   await page.waitForTimeout(250);
+  /* Op 900 breed staat de vergelijker onder de tekst in plaats van ernaast
+     (sinds /how-it-works op 22 september 5:4 toont en niet 3:2), dus na de
+     resize kan hij buiten beeld liggen. De toets gaat over de maat, niet over
+     de scrollpositie — dus eerst weer in beeld halen. */
+  await cmp.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(150);
   const box2 = await cmp.boundingBox();
   const kb2 = await page.locator('.cmp .cmp-knob').first().boundingBox();
   await page.mouse.move(kb2.x + kb2.width / 2, kb2.y + kb2.height / 2);

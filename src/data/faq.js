@@ -150,11 +150,11 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Is mijn eerste bestelling goedkoper?',
-        a: `Nee, en dat is met opzet. Er was een kennismakingskorting van 20% en die is eraf gehaald: een tarief noemen en er dan een vijfde vanaf halen zegt dat het tarief nooit de prijs was. De prijs per product ís de korting — het tarief per product daalt naarmate je er meer bestelt, en het geldt voor elk product in de bestelling. ${FIRST_EG_PRODUCTS} complete producten is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'nl')}, voor iedereen, altijd. Wil je het werk eerst zien, probeer VISUAILS dan eerst voor ${TEST_SAMPLE.nl.price}.`,
+        a: `Nee, en dat is met opzet. Er was een kennismakingskorting van 20% en die is eraf gehaald: een tarief noemen en er dan een vijfde vanaf halen zegt dat het tarief nooit de prijs was. De prijs per product ís de korting — het tarief per product daalt naarmate je er meer bestelt, en het geldt voor elk product in de bestelling. ${FIRST_EG_PRODUCTS} producten met catalog én lifestyle is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'nl')}, voor iedereen, altijd. Wil je het werk eerst zien, probeer VISUAILS dan eerst voor ${TEST_SAMPLE.nl.price}.`,
       },
       {
         q: 'Hoe daalt het tarief?',
-        a: `Elk product in de bestelling gaat tegen hetzelfde tarief, en dat tarief wordt bepaald door hoeveel producten erin zitten. Eén compleet product is ${ex(ladderRate('complete', 1), 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product ${ex(ladderFloor('complete'), 'nl')}. Omdat het tarief voor de hele bestelling geldt, verlaagt één product erbij de prijs van álle producten erin — niet alleen die voorbij de grens. Bij ${ENTRY_RUNG_LAST} producten betaal je ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}.`,
+        a: `Elk product in de bestelling gaat tegen hetzelfde tarief, en dat tarief wordt bepaald door hoeveel producten erin zitten. Eén product met catalog én lifestyle is ${ex(ladderRate('complete', 1), 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product ${ex(ladderFloor('complete'), 'nl')}. Omdat het tarief voor de hele bestelling geldt, verlaagt één product erbij de prijs van álle producten erin — niet alleen die voorbij de grens. Bij ${ENTRY_RUNG_LAST} producten betaal je ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}.`,
       },
       {
         q: 'Is een plan goedkoper dan bestellen wanneer ik het nodig heb?',
@@ -186,11 +186,11 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Is my first order cheaper?',
-      a: `No, and that is deliberate. There was a 20% first-order discount and it has been removed: quoting a rate and then taking a fifth off it says the rate was never the price. The price per product is the discount — the rate per product falls as the count rises, and it applies to every product in the order. ${FIRST_EG_PRODUCTS} complete products is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'en')}, for everyone, always. If you want to see the work first, that is what the test sample is for.`,
+      a: `No, and that is deliberate. There was a 20% first-order discount and it has been removed: quoting a rate and then taking a fifth off it says the rate was never the price. The price per product is the discount — the rate per product falls as the count rises, and it applies to every product in the order. ${FIRST_EG_PRODUCTS} products with catalog and lifestyle is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'en')}, for everyone, always. If you want to see the work first, that is what the test sample is for.`,
     },
     {
       q: 'How does the rate fall?',
-      a: `Every product in the order is charged at the same rate, and that rate is set by how many products are in it. One complete product is ${ex(ladderRate('complete', 1), 'en')}; from ${TOP_RUNG_AT} products the same product is ${ex(ladderFloor('complete'), 'en')}. Because the rate applies to the whole order, crossing onto one more product lowers the price of every product in it, not only the ones past the line: ${ENTRY_RUNG_LAST} products is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, and ${SECOND_RUNG_AT} is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each.`,
+      a: `Every product in the order is charged at the same rate, and that rate is set by how many products are in it. One product with catalog and lifestyle is ${ex(ladderRate('complete', 1), 'en')}; from ${TOP_RUNG_AT} products the same product is ${ex(ladderFloor('complete'), 'en')}. Because the rate applies to the whole order, crossing onto one more product lowers the price of every product in it, not only the ones past the line: ${ENTRY_RUNG_LAST} products is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, and ${SECOND_RUNG_AT} is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each.`,
     },
     {
       q: 'Is a plan cheaper than ordering when I need it?',
@@ -224,7 +224,15 @@ export function pricingFaqs(lang = 'en') {
  * also picks five questions by group and item INDEX, so moving a question
  * between groups moves it on the homepage too.
  */
-export function faqPageGroups(lang = 'en') {
+/*
+ * ── DE VIJF ALGEMENE GROEPEN, MET EEN ID PER GROEP — 22 september 2026 ──────
+ *
+ * De id's stonden als GROUP_ANCHORS in FaqPage.astro, met een telcontrole.
+ * Ze staan nu bij de groep zelf: een groep zonder id kan niet meer bestaan, en
+ * de dienstpagina's linken sinds vandaag naar #catalog, #lifestyle enzovoort —
+ * zie faqPageGroups() hieronder.
+ */
+function algemeneGroepen(lang = 'en') {
   const l = norm(lang);
   const cat = perProduct('catalog', l);
   const life = perProduct('lifestyle', l);
@@ -236,6 +244,7 @@ export function faqPageGroups(lang = 'en') {
   if (l === 'nl') {
     return [
       {
+        id: 'getting-started',
         title: 'Aan de slag',
         items: [
           {
@@ -247,7 +256,7 @@ export function faqPageGroups(lang = 'en') {
             // over de lancering van de KLANT — precies de botsing die het
             // prijsmodel heeft veranderd. Zie de kop van dit bestand.
             q: 'Wat is een bestelling?',
-            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} foto’s of meer, een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
+            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} foto’s of meer, een lifestyle-carrousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
           },
           {
             q: 'Wat moet ik opsturen?',
@@ -326,11 +335,12 @@ export function faqPageGroups(lang = 'en') {
         ],
       },
       {
+        id: 'ordering',
         title: 'Bestellen en omvang',
         items: [
           {
             q: 'Wat is het verschil tussen catalog en lifestyle?',
-            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je allebei op hetzelfde product, dan heet dat een compleet product: ${CATALOG_IMAGES + LIFESTYLE_IMAGES} foto’s tegen één tarief, voor elk product in de bestelling.`,
+            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je ze allebei op hetzelfde product, dan krijg je ${CATALOG_IMAGES + LIFESTYLE_IMAGES} foto’s voor één tarief per product — voor elk product in de bestelling.`,
             photos: [
               {
                 src: '/img/catalog-after.webp',
@@ -361,6 +371,7 @@ export function faqPageGroups(lang = 'en') {
         ],
       },
       {
+        id: 'delivery',
         title: 'Levering en de agenda',
         items: [
           {
@@ -401,11 +412,12 @@ export function faqPageGroups(lang = 'en') {
         ],
       },
       {
+        id: 'pricing',
         title: 'Prijzen en betaling',
         items: [
           {
             q: 'Wat kost het?',
-            html: `Geprijsd per product, en het tarief daalt naarmate het aantal stijgt. Eén compleet product — een catalogset én een lifestyle-carousel — is <strong>${euro(ladderRate('complete', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product <strong>${euro(ladderFloor('complete'), 'nl')}</strong> ${vatLabel('excl', 'nl')}. Wil je maar één van beide, dan heeft die zijn eigen prijs per aantal: catalog vanaf ${euro(ladderRate('catalog', 1), 'nl')} aflopend tot ${ex(ladderFloor('catalog'), 'nl')} per product, en lifestyle vanaf ${euro(ladderRate('lifestyle', 1), 'nl')} aflopend tot ${ex(ladderFloor('lifestyle'), 'nl')} per product. Video is ${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')} per clip. De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
+            html: `Geprijsd per product, en het tarief daalt naarmate het aantal stijgt. Catalog en lifestyle samen op één product is <strong>${euro(ladderRate('complete', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product <strong>${euro(ladderFloor('complete'), 'nl')}</strong> ${vatLabel('excl', 'nl')}. Wil je maar één van beide, dan heeft die zijn eigen prijs per aantal: catalog vanaf ${euro(ladderRate('catalog', 1), 'nl')} aflopend tot ${ex(ladderFloor('catalog'), 'nl')} per product, en lifestyle vanaf ${euro(ladderRate('lifestyle', 1), 'nl')} aflopend tot ${ex(ladderFloor('lifestyle'), 'nl')} per product. Video is ${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')} per clip. De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
           },
           {
             q: 'Zijn er volumekortingen?',
@@ -422,6 +434,7 @@ export function faqPageGroups(lang = 'en') {
         ],
       },
       {
+        id: 'rights',
         title: 'Rechten en gebruik',
         items: [
           {
@@ -475,6 +488,7 @@ export function faqPageGroups(lang = 'en') {
 
   return [
     {
+      id: 'getting-started',
       title: 'Getting started',
       items: [
         {
@@ -521,6 +535,7 @@ export function faqPageGroups(lang = 'en') {
       ],
     },
     {
+      id: 'ordering',
       title: 'Ordering and what you get',
       items: [
         {
@@ -538,7 +553,7 @@ export function faqPageGroups(lang = 'en') {
           // accessor, so they are the same strings /catalog and /lifestyle
           // render. Only the name and the line are read — never the price,
           // which is an entry rung now and belongs on the ladder, not here.
-          a: `${cat.name}. ${cat.line} Clean, consistent, built for shop listings and marketplaces. ${life.name}. ${life.line} A styled scene rather than a product on a background. Take both on the same product and that is a complete product: ${CATALOG_IMAGES + LIFESTYLE_IMAGES} photos at one rate, for every product in the order.`,
+          a: `${cat.name}. ${cat.line} Clean, consistent, built for shop listings and marketplaces. ${life.name}. ${life.line} A styled scene rather than a product on a background. Take both on the same product and you get ${CATALOG_IMAGES + LIFESTYLE_IMAGES} photos at one rate per product — for every product in the order.`,
           // The only answer on this page whose subject is literally "these two
           // things look different", so it is the only one where a pair of
           // photographs does the explaining better than the paragraph above
@@ -589,6 +604,7 @@ export function faqPageGroups(lang = 'en') {
       ],
     },
     {
+      id: 'delivery',
       title: 'Delivery and the calendar',
       items: [
         {
@@ -668,11 +684,12 @@ export function faqPageGroups(lang = 'en') {
       ],
     },
     {
+      id: 'pricing',
       title: 'Pricing and payment',
       items: [
         {
           q: 'What does it cost?',
-          html: `It is priced per product, and the rate falls as the count rises. One complete product — a catalog set and a lifestyle carousel — is <strong>${euro(ladderRate('complete', 1), 'en')}</strong> ${vatLabel('excl', 'en')}; from ${TOP_RUNG_AT} products the same product is <strong>${euro(ladderFloor('complete'), 'en')}</strong> ${vatLabel('excl', 'en')}. If you want only one of the two it has its own price by count: catalog from ${euro(ladderRate('catalog', 1), 'en')} falling to ${ex(ladderFloor('catalog'), 'en')} per product, and lifestyle from ${euro(ladderRate('lifestyle', 1), 'en')} falling to ${ex(ladderFloor('lifestyle'), 'en')} per product. Video is ${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')} a clip. Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
+          html: `It is priced per product, and the rate falls as the count rises. Catalog and lifestyle together on one product is <strong>${euro(ladderRate('complete', 1), 'en')}</strong> ${vatLabel('excl', 'en')}; from ${TOP_RUNG_AT} products the same product is <strong>${euro(ladderFloor('complete'), 'en')}</strong> ${vatLabel('excl', 'en')}. If you want only one of the two it has its own price by count: catalog from ${euro(ladderRate('catalog', 1), 'en')} falling to ${ex(ladderFloor('catalog'), 'en')} per product, and lifestyle from ${euro(ladderRate('lifestyle', 1), 'en')} falling to ${ex(ladderFloor('lifestyle'), 'en')} per product. Video is ${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')} a clip. Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
         },
         {
           q: 'Are there volume discounts?',
@@ -689,6 +706,7 @@ export function faqPageGroups(lang = 'en') {
       ],
     },
     {
+      id: 'rights',
       title: 'Rights and usage',
       items: [
         {
@@ -724,9 +742,49 @@ export function faqPageGroups(lang = 'en') {
   ];
 }
 
-/** Every /faq question, flattened out of its groups — what the schema needs. */
+/*
+ * ── DE DIENSTVRAGEN STAAN OOK OP /faq — 22 september 2026 ───────────────────
+ *
+ * De dienstpagina's toonden vijf vragen en een link "Nog 5 vragen over
+ * catalog →" naar /faq — waar die vijf niet stonden. Nul van de tien
+ * catalogvragen, nul van de elf lifestylevragen: de link beloofde iets wat de
+ * pagina niet had. Nu staat elke dienst als eigen groep achter de vijf algemene
+ * groepen, met de dienstnaam als anker, en linkt de dienstpagina naar precies
+ * die groep. Eén lijst (serviceFaqs), twee lezers.
+ */
+export const SERVICE_FAQ_GROUPS = ['catalog', 'lifestyle', 'video', 'hooks', 'editions'];
+export const SERVICE_FAQ_NAMES = {
+  catalog: { en: 'catalog', nl: 'catalog' },
+  lifestyle: { en: 'lifestyle', nl: 'lifestyle' },
+  video: { en: 'video', nl: 'video' },
+  hooks: { en: 'Hooks', nl: 'Hooks' },
+  editions: { en: 'Editions', nl: 'Editions' },
+};
+const hoofdletter = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+
+export function faqPageGroups(lang = 'en') {
+  const l = norm(lang);
+  return [
+    ...algemeneGroepen(l),
+    ...SERVICE_FAQ_GROUPS.map((id) => ({
+      id,
+      title: hoofdletter(SERVICE_FAQ_NAMES[id][l]),
+      items: serviceFaqs(id, l),
+    })),
+  ];
+}
+
+/** Every /faq question, flattened out of its groups — what the schema needs.
+ *  Eén vraag die in twee groepen staat (Hooks deelt er één met de algemene
+ *  groepen) telt één keer: een FAQPage-knoop met dezelfde vraag twee keer is
+ *  een fout, geen nadruk. */
 export function faqPageItems(lang = 'en') {
-  return faqPageGroups(lang).flatMap((g) => g.items);
+  const gezien = new Set();
+  return faqPageGroups(lang).flatMap((g) => g.items).filter((it) => {
+    if (gezien.has(it.q)) return false;
+    gezien.add(it.q);
+    return true;
+  });
 }
 
 /*
@@ -991,7 +1049,7 @@ const CATALOG_LIFESTYLE_FAQ = {
     ({ entry, floor, floorFrom, t0 }) => [
       {
         q: 'Wat kost een lifestyle-carousel?',
-        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een carousel drie foto’s van één product in één gestylede look.`,
+        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een carrousel drie foto’s van één product in één gestylede look.`,
       },
       {
         q: 'Welke drie foto’s zijn het?',

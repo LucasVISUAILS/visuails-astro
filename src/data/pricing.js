@@ -326,6 +326,225 @@ export const SLOT_KINDS = {
 };
 
 /* ══════════════════════════════════════════════════════════════════════════
+ * DE CREDITS — WAT EEN ABONNEE BETAALT IN PLAATS VAN SLOTS
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 19 september 2026: *"In visuails studio abonnementen kan de klant nog
+ * kiezen voor complete bundel terwijl deze niet meer bestaat (…) Ze mogen alles
+ * kiezen behalve editions en custom stylen behalve wanneer deze predefined
+ * stylen zijn (…) sommige stylen nemen meer slots/credits in (…) maar de klant
+ * moet wel gemiddeld goedkoper uit zijn dan wanneer iemand losse bestellingen
+ * plaatst."*
+ *
+ * ── WAAROM SLOTS-PER-SOORT HET NIET MEER DOEN ─────────────────────────────
+ *
+ * PLAN_SLOTS geeft `{ complete: 5 }`. Drie dingen zijn daar mis mee, en het
+ * derde is het ergste:
+ *
+ *   1 · `complete` bestaat niet meer als dienst. Alle drie de plannen draaien
+ *       erop en het plan-scherm biedt hem aan. Een klant bestelt dus iets wat
+ *       de site niet verkoopt.
+ *   2 · Een slot is niet deelbaar. Wie vijf completes heeft en alleen catalog
+ *       wil, kan de lifestyle-helft niet laten staan — die verdampt.
+ *   3 · Elke nieuwe dienst is een nieuwe sleutel in de bundel van ELKE klant.
+ *       Hooks, een eigen look, 4K: stuk voor stuk een migratie.
+ *
+ * Eén saldo met een prijs per dienst lost alle drie op.
+ *
+ * ── DE EENHEID, EN WAAROM HIJ NIET DE AGENDAPUNTEN IS ─────────────────────
+ *
+ * Een credit meet WAARDE en bewaakt een abonnement. Een agendapunt (KIND_PUNTEN
+ * hierboven) meet JOUW TIJD en bewaakt een dag. Dat zijn twee vragen, en ze
+ * mogen nooit één getal worden: dan verandert wat een klant krijgt zodra de
+ * studio sneller gaat werken, en dat is een prijswijziging die niemand heeft
+ * besloten.
+ *
+ * De schaal is daarom uit de LADDER afgeleid en niet uit KIND_PUNTEN:
+ *
+ *      credits(dienst) = losse prijs bij 10–19 producten / ± € 12,75
+ *
+ * De goedkoopste dienst op de ladder — een catalogset, € 51 op die trede — is
+ * vier credits, en de rest volgt. Waarom die trede: daar zit de doorsnee
+ * abonnee, en een schaal moet ergens vastzitten.
+ *
+ * ── DE CONTROLE DIE ERONDER LIGT ──────────────────────────────────────────
+ *
+ * Waarde per credit, bij tien tot twintig producten:
+ *
+ *      catalogset        € 51  / 4  = € 12,75
+ *      lifestylecarrousel€ 64  / 5  = € 12,80
+ *      motion-clip       € 69  / 5  = € 13,80
+ *      lifestyle-clip    € 149 / 12 = € 12,42
+ *      hook              € 119 / 10 = € 11,90
+ *
+ * Veertien procent spreiding tussen hoogste en laagste. Dat getal is de hele
+ * reden dat deze tabel niet gegokt is: staat er één dienst veertig procent
+ * gunstiger op, dan bestelt iedereen alleen nog dat — en dan is een
+ * creditsysteem een kortingsactie op je duurste dienst.
+ *
+ * MOTION STAAT ER MET OPZET NET IETS GUNSTIG OP (€ 13,80, de hoogste). Dat is
+ * de enige bewuste afwijking: motion is de videodienst die verkocht moet
+ * worden, en hij kost vier agendapunten tegen vijf credits — een betere
+ * verhouding voor de studio dan een catalogset, die er vier tegen vier doet.
+ *
+ * assertCredits() onderaan bewaakt de spreiding, zodat een toekomstige
+ * prijswijziging in LADDER deze tabel niet stil scheef trekt.
+ */
+export const SERVICE_CREDITS = {
+  catalog: 4,
+  lifestyle: 5,
+  'video-motion': 5,
+  'video-lifestyle': 12,
+  hooks: 10,
+};
+
+/*
+ * De twee toeslagen, en waarom ze buiten de spreiding hierboven vallen.
+ *
+ *   · EEN EXTRA BEELD is met 2 credits aan de gunstige kant (€ 29 op de trede
+ *     van tien tot twintig, dus € 14,50 per credit). Dat mag: het kost de
+ *     studio ongeveer één agendapunt tegen twee credits — de beste verhouding
+ *     in de hele tabel, voor de studio.
+ *   · 4K is met 1 credit aan de zuinige kant (€ 9, dus € 9,00 per credit). Dat
+ *     mag ook: het is een tweede render en geen tweede opdracht, en één credit
+ *     is het kleinste wat er bestaat.
+ */
+export const EXTRA_CREDITS = {
+  photo: 2,
+  hires: 1,
+};
+
+/*
+ * WAT EEN ABONNEE MAG KIEZEN. De sleutels van SERVICE_CREDITS zijn het
+ * antwoord, en `complete` staat er dus niet tussen — dat is de hele aanleiding.
+ *
+ * Wat er OOK niet in zit, en waarom:
+ *
+ *   · Editions — een maandset is een eigen product met een eenmalige opzet.
+ *   · Een custom look laten BOUWEN — de opzet is het werk en wordt per project
+ *     geoffreerd. Een look die al op het account staat, kost gewoon de credits
+ *     van de dienst eronder; zie eigenStijlCredits() in slots.js.
+ *   · Campagnevideo — geen tarief, dus geen creditprijs.
+ *   · Voorrang — een abonnee prikt zelf zijn datum. Voorrang kopen bovenop je
+ *     eigen datum is een lege belofte.
+ *   · Het merkmodel als gezicht — al betaald toen het gebouwd werd.
+ */
+export const PLAN_SERVICES = Object.keys(SERVICE_CREDITS);
+
+/**
+ * Wat elk plan per maand aan credits geeft.
+ *
+ * DIT IS EXACT WAT ELK PLAN VANDAAG AL WAARD IS, omgerekend — niemand krijgt
+ * minder. Starter gaf vijf complete producten; een compleet product is een
+ * catalogset (4) plus een carrousel (5), dus negen credits, dus 45. Studio gaf
+ * er twaalf plus twee motion-clips: 108 + 10 = 118, afgerond op 120. Brand gaf
+ * er dertig: 270.
+ *
+ * ── DE PRIJS PER CREDIT DAALT MET HET PLAN, EN DAT WAS NIET NETJES TE ZEGGEN ─
+ *
+ *      Starter  € 390  / 45  = € 8,67
+ *      Studio   € 790  / 120 = € 6,58
+ *      Brand    € 1690 / 270 = € 6,26
+ *
+ * Los kost een credit € 16,30 (bij vijf producten), € 12,75 (bij twaalf) of
+ * € 9,80 (bij dertig). Een abonnee is dus 47, 48 en 36 procent goedkoper uit,
+ * en assertCredits() weigert een plan dat die belofte breekt.
+ *
+ * ── HET ENE GETAL DAT LUCAS ZET ───────────────────────────────────────────
+ *
+ * Brand geeft € 6,26 per credit tegen Studio's € 6,58 — vijf procent beter voor
+ * meer dan het dubbele bedrag. Dat is vandaag al zo en het is een commerciële
+ * keuze, geen rekenfout. Brand op 290 maakt het € 5,83 (elf procent beter dan
+ * Studio); Brand op 250 tilt de slechtst mogelijke dagopbrengst van € 626 naar
+ * € 681. Allebei één regel hier, en allebei van hem.
+ */
+export const PLAN_CREDITS = { starter: 45, studio: 120, brand: 270 };
+
+/** Wat `count` stuks van een dienst kosten in credits, of null als hij niet in een plan mag. */
+export function creditsVoorDienst(kind, count = 1) {
+  const per = SERVICE_CREDITS[String(kind || '')];
+  if (per === undefined) return null;
+  return Math.max(0, Math.floor(Number(count) || 0)) * per;
+}
+
+function assertCredits() {
+  /* Elke dienst met een creditprijs moet ook een naam en een gewicht hebben,
+     anders staat hij wel in het plan-scherm maar kan de agenda hem niet wegen. */
+  for (const kind of Object.keys(SERVICE_CREDITS)) {
+    if (!Object.prototype.hasOwnProperty.call(SLOT_KINDS, kind)) {
+      throw new Error(`pricing.js: "${kind}" heeft een creditprijs maar staat niet in SLOT_KINDS.`);
+    }
+    const v = SERVICE_CREDITS[kind];
+    if (!Number.isInteger(v) || v < 1) {
+      throw new Error(`pricing.js: de creditprijs van "${kind}" is ${v}; dat moet een heel getal boven nul zijn.`);
+    }
+  }
+  /* `complete` mag hier nooit terugkomen. Dit is geen smaak maar de aanleiding
+     van het hele bestand: de dienst bestaat niet meer en een abonnee mag hem
+     dus niet kunnen kiezen. */
+  if ('complete' in SERVICE_CREDITS) {
+    throw new Error('pricing.js: `complete` staat weer in SERVICE_CREDITS. Die dienst bestaat niet meer — zie de kop.');
+  }
+  /* De spreiding. Waarde per credit op de trede van tien tot twintig producten,
+     met de vaste tarieven voor wat niet op de ladder staat. */
+  const losPrijs = {
+    catalog: ladderRate('catalog', 12),
+    lifestyle: ladderRate('lifestyle', 12),
+    'video-motion': AMOUNT.video,
+    'video-lifestyle': AMOUNT.videoLifestyle,
+    hooks: AMOUNT.hooks,
+  };
+  const perCredit = [];
+  for (const [kind, credits] of Object.entries(SERVICE_CREDITS)) {
+    const prijs = losPrijs[kind];
+    if (!prijs) {
+      throw new Error(`pricing.js: "${kind}" heeft een creditprijs maar geen losse prijs om hem aan te toetsen.`);
+    }
+    perCredit.push([kind, prijs / credits]);
+  }
+  const waarden = perCredit.map(([, v]) => v);
+  const hoog = Math.max(...waarden);
+  const laag = Math.min(...waarden);
+  if (hoog / laag > 1.25) {
+    throw new Error(
+      'pricing.js: de creditprijzen lopen te ver uiteen — '
+      + perCredit.map(([k, v]) => `${k} € ${v.toFixed(2)}`).join(', ')
+      + `. Hoogste gedeeld door laagste is ${(hoog / laag).toFixed(2)} en de grens is 1,25. `
+      + 'Eén dienst die veel gunstiger op de tabel staat, is de dienst die iedereen gaat bestellen.'
+    );
+  }
+  /* De belofte: een abonnee is per credit goedkoper uit dan los. Getoetst tegen
+     de trede waar dat plan ongeveer op zit, en met tien procent marge — een
+     plan dat er maar net onder komt, is geen abonnement maar een lening. */
+  const treden = { starter: 5, studio: 12, brand: 30 };
+  for (const [plan, credits] of Object.entries(PLAN_CREDITS)) {
+    const bedrag = PLAN_AMOUNT[plan];
+    if (!bedrag) throw new Error(`pricing.js: plan "${plan}" heeft credits maar geen bedrag in PLAN_AMOUNT.`);
+    const abo = bedrag / credits;
+    const los = ladderRate('catalog', treden[plan]) / SERVICE_CREDITS.catalog;
+    if (abo > los * 0.9) {
+      throw new Error(
+        `pricing.js: ${plan} kost € ${abo.toFixed(2)} per credit en los is het € ${los.toFixed(2)}. `
+        + 'Een abonnement dat niet duidelijk goedkoper is, is geen abonnement.'
+      );
+    }
+  }
+  /* En de prijs per credit moet DALEN naarmate het plan groter wordt, anders
+     is het grotere plan een slechtere deal dan het kleinere. */
+  const volgorde = ['starter', 'studio', 'brand'];
+  for (let i = 1; i < volgorde.length; i++) {
+    const vorige = PLAN_AMOUNT[volgorde[i - 1]] / PLAN_CREDITS[volgorde[i - 1]];
+    const deze = PLAN_AMOUNT[volgorde[i]] / PLAN_CREDITS[volgorde[i]];
+    if (deze >= vorige) {
+      throw new Error(
+        `pricing.js: ${volgorde[i]} kost € ${deze.toFixed(2)} per credit en ${volgorde[i - 1]} € ${vorige.toFixed(2)}. `
+        + 'Een groter plan hoort een lagere prijs per credit te hebben.'
+      );
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
  * DE PUNTEN — wat een bestelling van een studiodag opeet
  * ══════════════════════════════════════════════════════════════════════════
  *
@@ -1557,6 +1776,11 @@ export function extraPhotoRate(products = 1) {
     }
   });
 })();
+
+/* De credittabel kan pas getoetst worden als AMOUNT en de ladders er zijn —
+   assertCredits() leest ze allebei. Vandaar de aanroep hier en niet bij de
+   tabel zelf, net als assertExtraLadder() hierboven. */
+assertCredits();
 
 // Why it costs what it costs, written the way OUTFIT_COPY is: a statement of
 // the extra work, not a defence of the price.
@@ -2799,7 +3023,7 @@ export const PER_PRODUCT = {
   ],
   nl: [
     { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vanaf vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot. Per product bij te bestellen.' },
-    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle-carousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carousel klaar om te posten.' },
+    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle-carrousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carrousel klaar om te posten.' },
     { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een grotere bestelling.' },
   ],
 };

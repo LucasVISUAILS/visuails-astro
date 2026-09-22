@@ -125,8 +125,24 @@ export const ATTENDED_PER_WINDOW = ATTENDED_PER_DAY * WINDOW_DAYS;
  * de oude regel code. Vandaag maandag betekent dinsdag en woensdag wachten, en
  * donderdag is de eerste dag die aan te wijzen is — zie firstOfferableDay(),
  * dat nu de enige plek is waar deze optelling staat.
+ *
+ * ── TWEE WERD DRIE — 20 september 2026 ──────────────────────────────────────
+ *
+ * Lucas, bij de planning die de klant zelf invult: *"minimaal 3 dagen van
+ * tevoren moeten ze een order inplannen omdat ik dat makkelijker kan
+ * garanderen."*
+ *
+ * Eén getal, en het schuift alles mee: de kalender in Studio, de poort bij een
+ * losse bestelling, de figuur op /studio en de demo-agenda lezen allemaal
+ * firstOfferableDay(). Dat is precies waarom deze optelling op één plek staat.
+ *
+ * WAT HET KOST, zodat het een keuze blijft en geen aanname: de vroegste dag die
+ * een klant kan aanwijzen schuift één dag op. Bij een bestelling op maandag was
+ * dat donderdag en wordt het vrijdag. De belofte "binnen 2 tot 4 werkdagen" van
+ * de wachtrij staat hier los van — die gaat over hoe snel wij werken, niet over
+ * hoe ver vooruit je mag prikken.
  */
-export const LEAD_DAYS = 2;
+export const LEAD_DAYS = 3;
 
 /** How far ahead the gate will offer a window at all. */
 export const HORIZON_DAYS = 60;

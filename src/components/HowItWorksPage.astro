@@ -1,224 +1,98 @@
 ---
+/*
+ * VISUAILS — /how-it-works. OPNIEUW GEMAAKT, 22 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"/how-it-works mag overigens veel simpeler uitgelegd worden en voelt
+ * nu een beetje als een chaos terwijl het systeem heel simpel is. Deze pagina
+ * mag volledig opnieuw gemaakt worden, en dan met name het gedeelte waar
+ * uitgelegd word wat visuails doet van order tot levering."*
+ *
+ * Wat er stond, gemeten op 1440: 6.800 px, en het deel "van order tot
+ * levering" was daar 2.800 van — een dienstkiezer met drie radioknoppen,
+ * daaronder per dienst dezelfde drie fasen (drie keer in de HTML), lookkaartjes,
+ * gezichten, knoppen, een tekening van het portaal met een eigen haarlijn, en
+ * elk zinnetje met een vraagteken erachter. Alles waar. Alles uit te leggen.
+ * En precies dat is de chaos: een systeem van drie zinnen dat er vijftien
+ * bedieningen voor nodig heeft.
+ *
+ * ── WAT ER NU STAAT ────────────────────────────────────────────────────────
+ *
+ * De doorloop is DEZELFDE BAND als op de voorpagina (Stations.astro): drie
+ * kolommen, jij bestelt — wij maken — jij keurt goed, elk met het beeld dat
+ * de stap ís (dezelfde roze jeans, uit src/data/voorbeeldset.js). Wie van de
+ * voorpagina komt, herkent de tekening en leest hier wat er onder elke stap
+ * zit: drie of vier korte regels met een haarlijn ertussen. Geen kiezer, geen
+ * vraagtekens, geen tweede tekening.
+ *
+ *   · De regels van stap 01 zijn de KOPPEN van de zes stappen uit demo.js —
+ *     dezelfde woorden waar schema.js de HowTo-structuurdata van bouwt. Eén
+ *     bron, dus de pagina en de structuurdata kunnen niet uit elkaar lopen.
+ *   · De fasenamen (boven het beeld) en de duur (onder het woord) komen uit
+ *     WALK_COPY.fasen, om dezelfde reden.
+ *   · Het verschil tussen de drie diensten is één regel per dienst, onder de
+ *     band: hoeveel beelden, en wat je kiest. De rest staat op /catalog,
+ *     /lifestyle en /video en hoort daar.
+ *   · De belofte over de agenda blijft de ene grote zin — dat is de uitspraak
+ *     op deze site waarvoor we liever een bestelling verliezen dan hem breken.
+ *
+ * De rest van de pagina — met de hand afgewerkt, de details, waar de beelden
+ * landen, het slot — was al kort en blijft. De vergelijker toont nu een ECHT
+ * voor-en-na (catalog-before / catalog-after, het gewassen T-shirt) in plaats
+ * van één foto die links ontkleurd werd.
+ *
+ * Wat eruit ging en niet terugkomt: FigWalk (bestand blijft staan, net als de
+ * andere Fig-bestanden die niets meer importeert), FigApproval (de tekening
+ * van het portaal staat nu in de band), de lookkaartjes en de gezichten (die
+ * staan op de dienstpagina's en /models).
+ *
+ * Twee regels die blijven gelden:
+ *   · geen enkele duur wordt getypt — turnaround() in pricing.js;
+ *   · de agendaregel: nooit een leverdatum beloven die de agenda niet kan
+ *     dragen. Vandaar de zin onder de band, groot.
+ */
 import { waHref } from '../data/whatsapp.js';
-// VISUAILS — /how-it-works, rewritten. AUDIT-TASK-0.md §F: "REWRITE. 'One
-// photo in. A campaign out.' → drop-shaped. All ~24h claims corrected."
-//
-// §B·3 supplies the frame: "'One photo in' is the per-product story; the batch
-// story is 'one folder in'." So the page is shaped around a whole order moving
-// through the pipeline, not a single upload.
-//
-// ── WHAT THE AUGUST 2026 PRICING MODEL CHANGED ON THIS PAGE ────────────────
-//
-// Section 0 of src/data/pricing.js is the governing document. Two things here
-// were falsified by it, and both were structural rather than cosmetic:
-//
-//   1 · THE PAGE PRESENTED TWO PRODUCTS. "A drop" did one thing and "individual
-//       products" did another — a portal against a download link, a reserved
-//       window against a queue — and the reader was left to work out which of
-//       the two they were buying. That was accurate under the package model,
-//       where the buyer picked a size and a service level as two separate
-//       questions. It is wrong now. There is ONE thing to order, and the
-//       service level follows its size: from WINDOW_THRESHOLD products the
-//       order is in the capacity calendar with the reserved window, below it
-//       the standard queue. Every place this page used to name two products it
-//       now names one line, read from WINDOW_THRESHOLD rather than described,
-//       so /pricing and this page cannot give different accounts of the same
-//       gate.
-//   2 · The scope constant (a Full Drop's 25–30 products) is gone with the
-//       package it described. Where the page needed it — the consistency claim
-//       — it now says "every product in the order", which is true at any count
-//       and does not have to be re-edited when a band moves.
-//
-// The word "drop" itself is retired from the copy: it means a collection going
-// live to the brands we sell to, and this page used it for a work order in its
-// own H1. EN says an order or a batch; NL says een bestelling. It survives only
-// where a CLIENT's launch is meant, which on this page is nowhere.
-//
-// Two rules govern every timing claim below:
-//   • Task #190 — the ~24-hour promise is retired. Nothing here types a
-//     duration; the two sanctioned strings come from turnaround() in
-//     pricing.js, one per tier.
-//   • The brief's capacity rule — "never promise a delivery date the capacity
-//     gate hasn't cleared". The gate is not a footnote on this page, it is
-//     step 02 and then a block of its own, because it is the promise that
-//     makes every other promise here believable.
-//
-// The four steps deliberately echo /start rather than reinventing the account:
-// /start and /how-it-works describe one pipeline and must not drift apart.
-// Where the wording expands here, it expands — it never contradicts.
-//
-// A CORRECTION TO THAT PARAGRAPH, which used to name "StartPage.astro's `flow`
-// array". There is no `flow` array in StartPage.astro. What is there is
-// FORM.rail — ['Scope', 'Material', 'Brief', 'Timing', 'Confirm'] — and those
-// are the ORDER FORM's five steps, not the service's four. The two lists are
-// adjacent, not the same: rail 1–3 all happen inside "you send the products",
-// rail 4 is the capacity gate, and rail 5 comes before any production starts.
-// So the rule this comment states was pointing at a name that could not be
-// checked, which is the same as not pointing anywhere. It names the real thing
-// now, and the rule itself is unchanged and still binding.
-//
-// ─────────────────────────────────────────────────────────────────────────────
-// THE FIGURES (task #246). Lucas: the sections lack variation, the page reads
-// long, and the site explains its services in words where it should be showing
-// them.
-//
-// This paragraph used to open "measured before this change: 8 sections, 4 of
-// them structurally identical to a neighbour, 505 words against 2 images — one
-// of which is a hero background". One of those claims is false and it is
-// corrected here rather than dropped, because a comment quietly losing a claim
-// reads the same as a claim that was always true:
-//
-//   • "4 structurally identical to a neighbour" — FALSE, and it flattered the
-//     change. Signing each section by its layout, container shape then which
-//     devices it carries (heading band, card grid, two-column split, figure,
-//     CTA band), the page at HEAD had EIGHT distinct signatures and ZERO
-//     adjacent repeats. The sections were not repeating each other; they were
-//     all prose in a container, which is a different complaint and the one
-//     Lucas made. Writing "identical" was me reaching for the DESIGN.md phrase
-//     "identical card grids" because it was nearby, not because I had looked.
-//
-//   • "8 sections" and "2 images, one a hero background" — both true. HEAD
-//     referenced exactly two files: /img/banners-04.webp behind the hero, and
-//     /img/lifestyle-glow-06.webp, passed to <Compare> as both before AND
-//     after. That second one is not a copy-paste slip: the call passes `grade`,
-//     and Compare.astro's own header defines grade mode as one photo for both
-//     sides with the before auto-desaturated, "for the styles where we have one
-//     finished photo, not a separate raw one". /gallery uses it four more
-//     times. I had this drafted as a logged defect before reading the
-//     component.
-//
-//   • "505 words" — near enough. A recount gives 482, and the gap is method,
-//     not error: this one counts every string in COPY.en of twelve characters
-//     or more, a crude floor that keeps class names and hrefs out and takes a
-//     few short lines with them. Quoted as "words of visible copy" for that
-//     reason, and any comparison has to be run the same way on both sides.
-//
-// Correcting that one claim produced two more before it landed, and they
-// belong in the block whose whole subject is comments outliving the checking
-// behind them. I first wrote that HEAD "referenced no images at all", from a
-// probe reporting zero — it matched an allow-list of attribute spellings
-// (photo=, made=, src=, image=) and HEAD's two references are a CSS url() and
-// props called before=/after=, so both read as absence. Then I wrote the
-// duplicate before/after up as a defect, which took twelve lines of
-// Compare.astro to disprove — twelve lines I had not read when I wrote it.
-//
-// One shape under all three: a claim about the code, written from something
-// adjacent to the code — a phrase from DESIGN.md, a tool's silence, an
-// asymmetry that looked wrong. The silence is the dangerous one and the fix is
-// filed in rhythm_probe.py: match the DESTINATION, /img/, not the syntax
-// around it, because a checker enumerating the spellings it knows reports
-// every unknown one as nothing-there, and nothing-there is the answer nobody
-// goes back to verify.
-//
-// What was true and stays true: the page had no explanatory figure of any
-// kind. It has five now, and two of them REPLACE prose rather than sitting
-// beside it — FigPipeline takes over the four numbered step cards (which also
-// retires the 01/02/03/04 scaffolding DESIGN.md rejects), and FigApproval
-// takes over the portal's four-item checklist. That is 57 words of prose
-// deleted. Section count 8 → 9, adjacent repeats 0 → 0, image files 2 → 4.
-//
-// The sentence that followed — "adding pictures while keeping every word would
-// have made the page longer, which is the opposite of what was asked for" —
-// implied the page ended up shorter. It did not, and the same count says so.
-// EN, HEAD → now: visible copy 482 → 639. Split by what a reader actually
-// meets: alt text 16 → 49, figcaptions 0 → 101, body prose 466 → 489. NL moves
-// the same way, 501 → 671, with alt 19 → 46, figcaptions 0 → 109 and body
-// prose 482 → 516.
-//
-// FOUR OF THOSE EIGHT NUMBERS ARE CORRECTIONS, and the correction is worth more
-// than the numbers. The first version of this paragraph read "alt text 16 → 56,
-// figcaptions 8 → 109, body prose 458 → 474", straight off copy_census.py,
-// which at the time sorted a string into a bucket by the SHAPE OF ITS KEY —
-// anything matching (alt|aria|label) was accessibility surface, anything
-// matching (note|caption) was a figure's note. That is a vocabulary rule
-// wearing a heuristic's clothes, and it broke on the next page it met:
-// /compare reported 50 words of alt text on a page with no alt text on it, and
-// 42 of those 50 are the matrix's visible row headers and a figure's visible
-// lane labels, both called `label`. Here it was milder and in the same
-// direction — "figcaptions 8" at HEAD, on a revision with no figures in it at
-// all, is `portalNote`, a paragraph under the portal section that a suffix
-// mistook for a drawing's caption. The census now asks the TEMPLATE which
-// attribute a key is bound to, so the buckets follow use rather than naming.
-//
-// The direction is the part to keep: every one of those errors moved words OUT
-// of body prose, which is the column #246 is judged on, so the page read as
-// leaner than it was. A tool that is wrong in the flattering direction is one
-// nobody has a reason to go back and check.
-//
-// So the honest position on the half of #246 that says "too much text": body
-// prose is close to flat, +23 words EN and +34 NL, and the growth is +101 words
-// of figcaption. +33 of the rest is alt text, which no sighted reader meets and
-// which five new figures necessarily add.
-//
-// The +101 is already the trimmed number. The first drafts of these captions
-// came to 188 words — a picture, then a paragraph explaining the picture,
-// which is the reflex this task exists to answer — and that 188 is the one
-// figure on this page nobody can re-measure, because the drafts were never
-// committed. Take it as the note it is, not as a number like the others. What
-// survives the trim is only what a drawing cannot say about itself, and the
-// reasoning for each cut sits above its caption in COPY, where it can be
-// argued with.
-//
-// Anyone re-measuring should split the same three ways before comparing, or a
-// page will look like it grew when what grew was its accessibility surface.
-//
-// All figure copy lives in the COPY table below, in both branches, so
-// check_lang_parity holds EN/NL parity on it exactly as it does for prose.
-// Drawing constants — ratios, block widths, tile patterns, glyph paths — live
-// inside the figure components, because they are the same in every language.
 import Compare from './Compare.astro';
-// FigApproval IS ER OP 30 AUGUSTUS 2026 WEER BIJ GEKOMEN, en dat is de enige
-// van de zes die terugkeert. Zie de noot bij de portaalsectie: die stap in de
-// doorloop is samengevoegd, en de tekening hoort bij de sectie die de belofte
-// doet in plaats van bij een stap die er niet meer is.
-import FigApproval from './FigApproval.astro';
-// FigFanOut, FigPipeline, FigCapacity and FigFormats used to be imported here,
-// and then FigFlow was, for about a day. Those five are gone and all five files
-// still exist, imported by nothing; deleting them is a separate, reversible
-// decision and this page is not the place to make it.
-//
-// FigFlow put all three services on screen at once, as switches you could
-// combine, with a product-count slider and the capacity gate. Lucas asked for
-// the opposite — ONE service followed from the phone photo to the files, the
-// other two not on screen at all ("Ieder apart van elkaar") — and for the
-// slider and the gate to go: the gate is stated in prose below and the prices
-// live on /pricing. FigWalk is that, and /demo shows the same component, so
-// there is one walkthrough and one set of photographs to shoot for it.
-import FigWalk from './FigWalk.astro';
+import Stations from './Stations.astro';
+import Uitleg from './Uitleg.astro';
+import Note from './Note.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
   WINDOW_THRESHOLD, vatLabel, vatLead, vatDetail, TEST_SAMPLE, clause,
-  CATALOG_IMAGES, LIFESTYLE_IMAGES,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, VIDEO_OP_AANVRAAG,
 } from '../data/pricing.js';
+import { WALK_COPY, WALK_SERVICES, DEMO_BACKGROUNDS } from '../data/demo.js';
 import { localizedPath } from '../i18n/ui.js';
-
-import Uitleg from './Uitleg.astro';
-import Note from './Note.astro';
 import '../styles/stijl22.css';
+
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
+const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
+const t = WALK_COPY[lang] || WALK_COPY.en;
 
-// The test sample is the only price this page prints, and it now prints with a
-// VAT label attached — BRIEF-14's rule, and it was being broken here quietly:
-// a bare €1 next to "no commitment" reads as the whole of what leaves the
-// account, and it is not. Both figures are built here rather than in the copy
-// table so neither branch can print one without the other.
+/* De ene prijs op deze pagina, mét btw-label — BRIEF-14. */
 const sample = `${euro(AMOUNT.testSample, lang)} ${vatLabel('excl', lang)}`;
 
-// "WAAR DE BEELDEN LANDEN" — verhuisd van de homepage, augustus 2026.
-// Elk getal hier is AFGELEID en niet getypt. De twee die een lezer kan
-// natellen — 4 catalogbeelden, 3 lifestylebeelden — zijn CATALOG_IMAGES en
-// LIFESTYLE_IMAGES, dezelfde twee constanten die /catalog en /lifestyle stuk
-// voor stuk printen. Zo kan de som in de lede nooit ruzie krijgen met de
-// aantallen die daar staan. Het voorbeeldseizoen van 30 producten is het
-// getal dat op de homepage al werd gebruikt; het is een voorbeeld en geen
-// belofte, en het staat daarom in de zin en niet in een tegel.
+/* "Waar de beelden landen": elk getal afgeleid, niets getypt. */
 const PER_PRODUCT_VISUALS = CATALOG_IMAGES + LIFESTYLE_IMAGES;
 const EX_FULL = 30;
 const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 
-// No `as const` — see PricingPage.astro for why (union-of-tuples breaks .map).
+/* De regels van stap 01: de koppen van de vier bestelstappen uit demo.js. */
+const bestelRegels = ['upload', 'look', 'window', 'pay'].map((id) => t.steps[id].h);
+const fase = (id: string) => t.fasen[id] || { n: '', duur: '', h: '' };
+const kopregel = (nr: string, id: string) => [nr, fase(id).n].filter(Boolean).join(' · ');
+
+/* Eén regel per dienst: wat je krijgt en wat je kiest. De namen van de
+   achtergronden komen uit demo.js/backgrounds.js, dus ze kunnen hier niet
+   anders heten dan op /catalog. */
+const achtergronden = DEMO_BACKGROUNDS.map((b) => t.backgroundNames[b.id] || b.id);
+const lijst = (xs: string[]) => nl
+  ? xs.slice(0, -1).join(', ') + ' of ' + xs[xs.length - 1]
+  : xs.slice(0, -1).join(', ') + ' or ' + xs[xs.length - 1];
+const DIENST_PAD: Record<string, string> = { catalog: '/catalog', lifestyle: '/lifestyle', video: '/video' };
+
 const COPY = {
   en: {
     h1a: 'One folder in.',
@@ -229,90 +103,55 @@ const COPY = {
     ctaStart: 'Start an order',
     ctaSample: TEST_SAMPLE.en.cta,
 
-    // ── FIGWALK ──────────────────────────────────────────────────────────
-    // Two keys, where FigFlow needed eighteen. Everything the walkthrough says
-    // — step headings, style names, the model line, the caption admitting the
-    // images are stand-ins — lives in WALK_COPY in src/data/demo.js, because
-    // /demo renders the same component and copy kept in two page files is copy
-    // that drifts. These two are this page's own framing of it.
     flowH: 'Your order, end to end.',
-    /* ── DE ZIN OVER HET KADER IS WEG — 12 september 2026 ────────────────
-       Hier stond *"the frame holds still and shows what exists at that
-       moment"* / *"het beeld bovenaan verandert mee met de stap waar je bent"*.
-       Dat kader bestaat sinds 9 september niet meer — zie de kop van
-       FigWalk.astro, waar het vervangen werd door een genummerde lijst. De zin
-       beschreef dus drie dagen lang een element dat er niet was, op de pagina
-       die uitlegt hoe het werkt. */
-    flowLede: 'One service at a time, from the phone photo you send to the files that come back. Pick the one you need.',
-    /* 19 september 2026: betalen is direct (besluit 1) en de datum kies je
-       zelf uit dagkaarten (besluit 3) — de belofte is nu dat je alleen dagen
-       ziet die de agenda nog kan dragen. */
+    flowLede: 'Three steps, and that is all of it: you order, we make, you approve. The same road for catalog, lifestyle and video.',
+    stations: [
+      {
+        woord: fase('bestellen').h,
+        zin: 'One form: your photos, the look, how many products and when you need them. You pay at the end — production starts after that.',
+        etiket: 'Sent in', etiketNoot: '3 of 5 · phone',
+      },
+      {
+        woord: fase('maken').h,
+        zin: 'Every product runs as one series, so light, angle and grade match across the whole order. A specialist checks every image.',
+        regels: ['One series per product', 'A face from the shared roster, at no extra cost', 'Every image checked by a specialist'],
+        etiket: 'Delivered', etiketNoot: `${CATALOG_IMAGES} images · 2048 px`,
+        link: 'See more work',
+      },
+      {
+        woord: 'You approve',
+        zin: 'Approve each image on its own, or send it back with a note. What is good, you download straight away.',
+        regels: ['One revision round per order', 'Download at 2048 px, as jpg, png and webp', 'Full commercial rights'],
+        noot: `Smaller orders work more simply still. ${clause(TIERS.unattended.delivery.en)}.`,
+        link: 'Look inside the portal',
+      },
+    ],
     gateLead: 'You only see dates the calendar can still hold.',
     gateBody: `From ${WINDOW_THRESHOLD} products you pick a delivery date in the form, and the calendar only offers days with room left. That date is held the moment your order is in, and you pay straight away. Should a day fill up between choosing and ordering, you hear that at once and pick again — no date is invented to keep an order. It is the one promise on this site we would rather lose an order over than break.`,
-    craftH: 'More than AI. Finished by hand.',
-    /* ── DE VOLGORDE ZEI HET VERKEERDE — 17 september 2026 ──────────────────
-       Hier stond: *"The images are generated first, and then every one goes
-       through a pair of hands."* Dat is waar en het leest als: de machine maakt
-       het, wij kijken het na. Over de hele site stond dat patroon — zie de noot
-       bij REVIEW_CLAIM in pricing.js.
-       Dezelfde stappen, dezelfde eerlijkheid over de techniek, maar met de
-       maker vooraan: wij bouwen het beeld, en generatie is een van de dingen
-       die we daarbij gebruiken. */
-    craftBody: "We build every image ourselves. Generating is one of the steps — then it goes through a pair of hands: finished in professional editing software, colour graded to your brand. Then a specialist checks three things: does the product match your own photo, do all the images look the same, and is the framing right.",
-    chips: ['Professional editing & retouch', 'Colour grading to your brand', reviewClaim('attended', 'en')],
-    beforeAlt: 'A flat, ungraded product scene before VISUAILS finishing',
-    afterAlt: 'The same scene, finished and carefully checked by VISUAILS',
-
-    portalH: 'You approve it, image by image.',
-    portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${clause(TIERS.attended.delivery.en)}.`,
-    portalNote: `Smaller orders work differently and more simply. ${clause(TIERS.unattended.delivery.en)}.`,
-    /* ── DE TEKENING VAN HET PORTAAL STAAT SINDS 30 AUGUSTUS 2026 HIER ────────
-       Ze zat in de doorloop hierboven, als de laag bij de portaalstap. Die stap
-       is samengevoegd met de downloadstap om de pagina in te korten, en één
-       stap toont één laag — dus de tekening had geen plek meer.
-       Deze sectie was de plek waar ze hoort: hij DOET de goedkeuringsbelofte en
-       had nul beelden. Wat een lijst het slechtst kan laten zien is dat er
-       dingen NAAST elkaar gebeuren, en dat is nu juist de belofte. Zelfde
-       component als op de homepage, met eigen woorden. */
-    portalFigH: 'Your order, image by image',
-    portalFigOk: 'Approved by you',
-    portalFigRev: 'Sent back with a note',
-    portalFigWait: 'Still coming',
-    portalFigNote: 'A drawing of the review screen, not a screenshot. One image going back does not hold up the rest.',
-
+    dienstenH: 'Per service',
+    kiest: {
+      catalog: `Background: ${lijst(achtergronden)}`,
+      lifestyle: 'A look from the range',
+      video: VIDEO_OP_AANVRAAG ? 'On request' : 'A style from the range',
+    },
     verderH: 'Want to see more of the inner workings?',
-    verderDemo: 'Walk through an order',
     verderStudio: 'The studio day and the calendar',
     verderAbout: 'Who is behind it',
+
+    craftH: 'More than AI. Finished by hand.',
+    craftBody: "We build every image ourselves. Generating is one of the steps — then it goes through a pair of hands: finished in professional editing software, colour graded to your brand. Then a specialist checks three things: does the product match your own photo, do all the images look the same, and is the framing right.",
+    chips: ['Professional editing & retouch', 'Colour grading to your brand', reviewClaim('attended', 'en')],
+    beforeAlt: 'The T-shirt as it was sent in: a phone photo on a wooden table',
+    afterAlt: 'The same T-shirt, finished on off-white and checked by hand',
+
     detailsH: 'The details that matter',
     details: [
       { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that: ${clause(turnaround('unattended', 'en')).toLowerCase()}, ${clause(TIERS.unattended.queue.en).toLowerCase()}.` },
-      /* ── DEZE REGEL BELOOFDE EEN VERSCHIL DAT NIET BESTAAT — 25 aug 2026 ──
-         Er stond: "From N products: {aftercare(attended)}. Below that:
-         {aftercare(unattended)}." Twee dingen mis.
-
-         EEN: aftercare() geeft ÉÉN gedeeld object voor beide treden terug —
-         aftercare('attended') en aftercare('unattended') zijn letterlijk
-         dezelfde string. De regel zette dus twee keer exact hetzelfde neer met
-         "boven" en "onder" ertussen, alsof het een tegenstelling was.
-
-         TWEE: die string eindigt op een punt en er stond er nog een achter, dus
-         het las als "…adjust any details.. Below that: …details.."
-
-         Nu één keer, zonder omvangsclausule, want de ronde geldt voor elke
-         bestelling. Zie clause() in pricing.js. */
       { t: 'If something is off', b: `${aftercare('attended', 'en')}` },
-      // No product band any more: the count is whatever you ordered, and the
-      // claim is true at every count, so naming one would only date the page.
-      /* 19 september 2026: "Consistency" en "Two ways in" zijn eruit —
-         het eerste zegt stap 05 van de doorloop al, het tweede staat als
-         WhatsApp-knop in het slot. Drie regels, drie kolommen. */
       { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
     ],
     landH: 'One order, every place it has to go.',
     landLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} images each — ${EX_VISUALS} finished images, cut for where they have to sit.`,
-    // Eight destinations, one line each. The second line was a sentence per
-    // channel until this pass; a list a reader scans does not need one.
     land: [
       ['Product page hero', 'On white or in scene'],
       ['Product page grid', 'Front, back and a fabric detail'],
@@ -323,18 +162,10 @@ const COPY = {
       ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
       ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
     ],
-    /* Zie de noot bij dashPortalN in HomeV2.astro: er wordt niets per kanaal
-       gesneden. Je kiest de verhouding bij het bestellen — deze lijst met
-       kanalen is precies waar die keuze over gaat — en krijgt alle formaten. */
     landNote: 'You pick the aspect ratio for these when you order, and every image arrives as jpg, png and webp.',
 
-    faqH: 'Still have a question?',
-    // The second inbound link to /guides (brief §1 — it had none in any page
-    // body). It sits under the FAQ heading because that is where someone with
-    // a question already is, and it says which questions the FAQ does not take.
     faqGuides: `The FAQ answers the practical ones; the longer reads — how to shoot the photo you send us, what a shoot day actually costs — are in the <a href="${lp('/guides')}">guides</a>.`,
     faqCta: 'Read the FAQ',
-
     ctaH: 'One of your own products, as a catalog set or a carousel.',
     ctaBody: `One test sample per business — ${sample}, no commitment. It runs through the same production as a paid order.`,
     ctaSampleBtn: TEST_SAMPLE.en.cta,
@@ -352,34 +183,49 @@ const COPY = {
     ctaSample: TEST_SAMPLE.nl.cta,
 
     flowH: 'Je bestelling, van begin tot eind.',
-    flowLede: 'Eén dienst tegelijk, van de telefoonfoto die je stuurt tot de bestanden die terugkomen. Kies degene die je nodig hebt.',
+    flowLede: 'Drie stappen, en meer is het niet: jij bestelt, wij maken, jij keurt goed. Dezelfde weg voor catalog, lifestyle en video.',
+    stations: [
+      {
+        woord: fase('bestellen').h,
+        zin: 'Eén formulier: je foto’s, de look, hoeveel producten en wanneer je ze nodig hebt. Je betaalt aan het eind — daarna start de productie.',
+        etiket: 'Ingestuurd', etiketNoot: '3 van 5 · telefoon',
+      },
+      {
+        woord: fase('maken').h,
+        zin: 'Elk product gaat als één serie door de productie, dus licht, hoek en kleur kloppen over de hele bestelling. Een specialist kijkt elk beeld na.',
+        regels: ['Eén serie per product', 'Een gezicht uit de gedeelde bibliotheek, zonder meerprijs', 'Elk beeld nagekeken door een specialist'],
+        etiket: 'Geleverd', etiketNoot: `${CATALOG_IMAGES} beelden · 2048 px`,
+        link: 'Meer werk zien',
+      },
+      {
+        woord: 'Je keurt goed',
+        zin: 'Elk beeld apart goedkeuren, of terugsturen met een notitie. Wat goed is, download je meteen.',
+        regels: ['Eén revisieronde per bestelling', 'Downloaden op 2048 px, als jpg, png en webp', 'Volledige commerciële rechten'],
+        noot: `Kleinere bestellingen werken nog simpeler. ${clause(TIERS.unattended.delivery.nl)}.`,
+        link: 'Het portaal van binnen',
+      },
+    ],
     gateLead: 'Je ziet alleen dagen die de agenda nog kan vasthouden.',
     gateBody: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum, en de agenda biedt alleen dagen aan waar nog ruimte is. Die datum ligt vast zodra je bestelling binnen is, en je betaalt meteen. Is een dag net vol geraakt tussen kiezen en bestellen, dan hoor je dat direct en kies je opnieuw — er wordt geen datum verzonnen om een bestelling binnen te houden. Het is de enige belofte op deze site waarvoor we liever een bestelling verliezen dan dat we hem breken.`,
-    craftH: 'Meer dan AI. Met de hand afgewerkt.',
-    /* Zie de Engelse tegenhanger voor waarom de volgorde is omgedraaid. */
-    craftBody: 'Wij bouwen elk beeld zelf op. Genereren is daarin één stap — daarna gaat het beeld door de hand: afgewerkt in professionele editingsoftware, kleur gecorrigeerd naar je merk. Daarna kijkt een specialist naar drie dingen: klopt het product met je eigen foto, zien alle beelden er hetzelfde uit, en zit de uitsnede goed.',
-    chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
-    beforeAlt: 'Een platte, ongecorrigeerde productscène vóór de afwerking van VISUAILS',
-    afterAlt: 'Dezelfde scène, afgewerkt en met de hand gecontroleerd door VISUAILS',
-
-    portalH: 'Jij keurt goed, beeld voor beeld.',
-    portalBody: `Een bestelling van ${WINDOW_THRESHOLD} producten of meer komt niet aan als een zipbestand en een goede hoop. ${clause(TIERS.attended.delivery.nl)}.`,
-    portalNote: `Kleinere bestellingen werken anders en simpeler. ${clause(TIERS.unattended.delivery.nl)}.`,
-    portalFigH: 'Jouw bestelling, beeld voor beeld',
-    portalFigOk: 'Door jou goedgekeurd',
-    portalFigRev: 'Teruggestuurd met een notitie',
-    portalFigWait: 'Nog onderweg',
-    portalFigNote: 'Een tekening van het beoordeelscherm, geen schermafdruk. Eén beeld dat teruggaat, houdt de rest niet op.',
-
+    dienstenH: 'Per dienst',
+    kiest: {
+      catalog: `Achtergrond: ${lijst(achtergronden)}`,
+      lifestyle: 'Een look uit de reeks',
+      video: VIDEO_OP_AANVRAAG ? 'Op aanvraag' : 'Een stijl uit de reeks',
+    },
     verderH: 'Wil je meer van het binnenwerk zien?',
-    verderDemo: 'Loop een bestelling door',
     verderStudio: 'De studiodag en de kalender',
     verderAbout: 'Wie erachter zit',
+
+    craftH: 'Meer dan AI. Met de hand afgewerkt.',
+    craftBody: 'Wij bouwen elk beeld zelf op. Genereren is daarin één stap — daarna gaat het beeld door de hand: afgewerkt in professionele editingsoftware, kleur gecorrigeerd naar je merk. Daarna kijkt een specialist naar drie dingen: klopt het product met je eigen foto, zien alle beelden er hetzelfde uit, en zit de uitsnede goed.',
+    chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
+    beforeAlt: 'Het T-shirt zoals het werd ingestuurd: een telefoonfoto op een houten tafel',
+    afterAlt: 'Hetzelfde T-shirt, afgewerkt op gebroken wit en met de hand gecontroleerd',
+
     detailsH: 'De details die ertoe doen',
     details: [
       { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, ${clause(TIERS.unattended.queue.nl).toLowerCase()}.` },
-      /* Zie de noot bij de Engelse tegenhanger: dezelfde dubbele punt en
-         hetzelfde verzonnen verschil tussen de twee treden. */
       { t: 'Als iets niet klopt', b: `${aftercare('attended', 'nl')}` },
       { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
     ],
@@ -395,13 +241,10 @@ const COPY = {
       ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
       ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
     ],
-    // Zie de noot bij de Engelse landNote.
     landNote: 'De beeldverhouding hiervoor kies je bij het bestellen, en elk beeld komt als jpg, png en webp.',
 
-    faqH: 'Nog een vraag?',
     faqGuides: `De FAQ beantwoordt de praktische vragen; de langere stukken — hoe je de foto maakt die je ons stuurt, wat een shootdag echt kost — staan bij de <a href="${lp('/guides')}">gidsen</a>.`,
     faqCta: 'Lees de FAQ',
-
     ctaH: 'Eén product van jezelf, als catalogset of carousel.',
     ctaBody: `Eén proef per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde productie als een betaalde bestelling.`,
     ctaSampleBtn: TEST_SAMPLE.nl.cta,
@@ -412,22 +255,14 @@ const COPY = {
 
 const c = COPY[lang];
 
+/* De drie stations, met de tekening per stap en de regels eronder. */
+const STATIONS = [
+  { nr: '01', n: kopregel('01', 'bestellen'), duur: fase('bestellen').duur, beeld: 'in' as const, ...c.stations[0], regels: bestelRegels },
+  { nr: '02', n: kopregel('02', 'maken'), duur: fase('maken').duur, beeld: 'uit' as const, ...c.stations[1], link: { href: lp('/gallery'), tekst: c.stations[1].link } },
+  { nr: '03', n: kopregel('03', 'goedkeuren'), duur: fase('goedkeuren').duur, beeld: 'dash' as const, ...c.stations[2], etiket: '', link: { href: lp('/portal'), tekst: c.stations[2].link } },
+];
 ---
 
-{/* ═══ /how-it-works IN DE STIJL VAN SECTIE 22 — 7 september 2026 ═══════════
-    Tiende pagina in de stijl. De inhoud is onaangeraakt: dezelfde COPY in
-    beide talen, dezelfde <FigWalk>, <Compare grade> en <FigApproval>, dezelfde
-    <Note> over de btw. Alleen de opmaak verandert.
-
-    DE HERO WAS EEN FULL-BLEED FOTO MET TEKST EROVERHEEN. Die vorm — een beeld
-    onder een sluier met een kop erop — is precies wat deze stijl niet doet: het
-    beeld staat ernaast en niet eronder, zodat het beeld beeld blijft. De foto
-    (banners-04) staat er dus nog, in een kaart naast de kop.
-
-    DE BELOFTE OVER DE POORT BLIJFT PROZA. Het is de ene bewering op deze pagina
-    waarvoor we liever een bestelling verliezen dan hem breken, en die hoort in
-    een zin te staan waar een lezer niet langs kan scrollen — niet in een knoop
-    van een tekening die hij misschien overslaat. */}
 <div class="s22">
 
   {/* ── 1 · DE OPENING ───────────────────────────────────────────────────── */}
@@ -447,41 +282,48 @@ const c = COPY[lang];
     </div>
   </section>
 
-  {/* ── 2 · ÉÉN BESTELLING, VAN BEGIN TOT EIND ──────────────────────────────
-      Deze sectie is wat er zes waren. <FigWalk> volgt ÉÉN dienst, en zolang je
-      daarin zit staan de andere twee niet op de pagina. Lucas: *"Ieder apart
-      van elkaar."* */}
+  {/* ── 2 · JE BESTELLING, VAN BEGIN TOT EIND ───────────────────────────────
+      De band van de voorpagina, met drie stations en de regels eronder. */}
   <section class="paneel" aria-labelledby="hiw-flow">
-    <header class="paneel-kop">
+    <header class="paneel-kop hiw-flow-kop">
       <h2 id="hiw-flow" class="hoog hoog-2">{c.flowH}</h2>
       <p class="lopend">{c.flowLede}</p>
     </header>
-    {/* ── DE BELOFTE BLIJFT, DE TOELICHTING GAAT ERACHTER — 12 sept 2026 ───
-        `gateBody` zei in drie zinnen wat stap 03 van de lijst eronder ook al
-        zegt: je kiest uit dagen die nog vrij zijn, en anders hoor je dat. Twee alinea's
-        met dezelfde inhoud, vier centimeter uit elkaar.
+    <Stations lang={lang} stations={STATIONS} />
 
-        Wat hier hoort te staan is de BELOFTE — één zin, groot — en niet de
-        onderbouwing ervan; wie die wil, klikt of hovert. De zin over liever een
-        bestelling verliezen dan hem breken is het sterkste wat op deze pagina
-        staat, en die staat nu niet meer weggestopt in een derde alinea. */}
+    {/* De belofte: één zin, groot, met de onderbouwing achter het vraagteken. */}
     <div class="hiw-poort">
-      <p class="hoog hoog-3 hiw-poort-kop">{c.gateLead}<Uitleg tekst={c.gateBody} over={lang === 'nl' ? 'de leverdatum' : 'the delivery date'} lang={lang} /></p>
+      <p class="hoog hoog-3 hiw-poort-kop">{c.gateLead}<Uitleg tekst={c.gateBody} over={nl ? 'de leverdatum' : 'the delivery date'} lang={lang} /></p>
     </div>
-    <FigWalk lang={lang} />
+
+    {/* Per dienst één regel: wat je krijgt, wat je kiest. */}
+    <ul class="hiw-diensten" role="list" aria-label={c.dienstenH}>
+      {WALK_SERVICES.map((svc: any) => (
+        <li>
+          <a class="hiw-dienst-naam" href={lp(DIENST_PAD[svc.id])}>{t.services[svc.id].name}</a>
+          <span class="mono">{t.services[svc.id].line}</span>
+          <span class="lopend hiw-dienst-kiest">{(c.kiest as any)[svc.id]}</span>
+        </li>
+      ))}
+    </ul>
+
+    <p class="mono hiw-verder">
+      {c.verderH}{' '}
+      <a href={lp('/studio')}>{c.verderStudio}</a>{' · '}
+      <a href={lp('/about')}>{c.verderAbout}</a>
+    </p>
   </section>
 
   {/* ── 3 · MET DE HAND AFGEMAAKT ────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="hiw-hand">
     <div class="hiw-twee">
-      {/* `ratio` liggend, om dezelfde reden als .hiw-beeld hierboven: gemeten
-          stond dit paar op 608×761 per helft, dus 1522 pixels hoog voor twee
-          beelden die naast elkaar staan. Zie de noot bij .hiw-beeld. */}
+      {/* Een echt voor-en-na: het gewassen T-shirt, ingestuurd op een houten
+          tafel en afgewerkt op gebroken wit. 5:4 en niet 1:1, zodat het paar
+          naast de tekst past zonder dat de kraag of de zoom eraf valt. */}
       <Compare
-        grade
-        ratio="3 / 2"
-        before="/img/lifestyle-glow-06.webp"
-        after="/img/lifestyle-glow-06.webp"
+        ratio="5 / 4"
+        before="/img/catalog-before-1x1.webp"
+        after="/img/catalog-after.webp"
         beforeAlt={c.beforeAlt}
         afterAlt={c.afterAlt}
       />
@@ -495,37 +337,7 @@ const c = COPY[lang];
     </div>
   </section>
 
-  {/* ── 4 · HET PORTAAL ────────────────────────────────────────────────────
-      De enige plek op de pagina die over goedkeuren gaat. De drie pagina's
-      onderaan waren nergens vandaan bereikbaar (gemeten op de gebouwde site,
-      21 aug 2026); dit is waar iemand staat die wil weten hoe het werkt, dus
-      hier horen ze. */}
-  <section class="paneel" aria-labelledby="hiw-portaal">
-    <div class="hiw-twee">
-      <div class="hiw-portaal">
-        <h2 id="hiw-portaal" class="hoog hoog-2">{c.portalH}</h2>
-        <p class="lopend">{c.portalBody}</p>
-        <p class="lopend hiw-portaal-noot">{c.portalNote}</p>
-        <p class="mono hiw-verder">
-          {c.verderH}{' '}
-          {/* De /demo-link stond hier en /demo bestaat niet — 26 augustus 2026,
-              gevonden door audit-links.mjs. `verderDemo` blijft als tekst
-              bestaan zodat de regel terug kan zodra de pagina er is. */}
-          <a href={lp('/studio')}>{c.verderStudio}</a>{' · '}
-          <a href={lp('/about')}>{c.verderAbout}</a>
-        </p>
-      </div>
-      <FigApproval
-        head={c.portalFigH}
-        okLabel={c.portalFigOk}
-        revLabel={c.portalFigRev}
-        waitLabel={c.portalFigWait}
-        note={c.portalFigNote}
-      />
-    </div>
-  </section>
-
-  {/* ── 5 · DE DETAILS ───────────────────────────────────────────────────── */}
+  {/* ── 4 · DE DETAILS ───────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="hiw-details">
     <header class="paneel-kop">
       <h2 id="hiw-details" class="hoog hoog-2">{c.detailsH}</h2>
@@ -540,34 +352,22 @@ const c = COPY[lang];
     </ul>
   </section>
 
-  {/* ── 6 · WAAR DE BEELDEN LANDEN ──────────────────────────────────────────
-      Verhuisd van de homepage. Het rekent de prijs om naar stukskosten zonder
-      korting te geven: een seizoenstotaal is geen bedrag meer maar een bedrag
-      gedeeld door ruwweg tweehonderd plaatsingen. Er staat met opzet geen enkel
-      eurobedrag in — dat is het werk van de prijspagina. */}
+  {/* ── 5 · WAAR DE BEELDEN LANDEN ──────────────────────────────────────────
+      Geen eurobedrag hier — dat is het werk van de prijspagina. */}
   <section class="kamer hiw-kamer" aria-labelledby="hiw-land">
     <header class="kamer-kop">
       <h2 id="hiw-land" class="hoog hoog-2">{c.landH}</h2>
       <p class="lopend">{c.landLede}</p>
     </header>
-    {/* Acht kanalen als acht regels in twee kolommen (naam links, wat erheen
-        gaat rechts) in plaats van acht blokjes van kop-plus-regel in vier
-        kolommen — 873 → ±520 px, zelfde woorden. 19 september 2026. */}
     <ul class="hiw-land" role="list">
-      {c.land.map(([t, b]) => (
-        <li><span class="hiw-land-t">{t}</span><span class="mono">{b}</span></li>
+      {c.land.map(([t2, b]) => (
+        <li><span class="hiw-land-t">{t2}</span><span class="mono">{b}</span></li>
       ))}
     </ul>
     <p class="lopend hiw-land-noot">{c.landNote}</p>
   </section>
 
-  {/* ── 7 · "NOG EEN VRAAG?" IS EEN REGEL IN HET SLOT — 19 september 2026 ──
-      Dit was een eigen paneel van 382 px met één knop. Lucas: *"How it works
-      snoeien naar wat je zou aanraden."* De verwijzing naar de FAQ en de
-      gidsen staat nu onder de knoppen van het slot; de tweede inkomende link
-      naar /guides (zie de noot bij faqGuides) blijft daarmee bestaan. */}
-
-  {/* ── 8 · HET SLOT ────────────────────────────────────────────────────── */}
+  {/* ── 6 · HET SLOT ────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="hiw-slot">
     <h2 id="hiw-slot" class="hoog">{c.ctaH}</h2>
     <p class="lopend">{c.ctaBody}</p>
@@ -577,67 +377,47 @@ const c = COPY[lang];
       <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">WhatsApp</a>
     </p>
     <p class="lopend hiw-gidsen"><a href={lp('/faq')}>{c.faqCta}</a> · <span set:html={c.faqGuides} /></p>
-    {/* vatNote() één keer per pagina. Elk bedrag hier draagt zijn eigen
-        excl.-btw-label; dit is de ene regel die zegt hoe de btw echt werkt. Hij
-        staat hier en niet onder de doorloop, want hier staat de enige prijs van
-        de pagina — een btw-regel onder een figuur zonder bedrag is een voetnoot
-        bij niets. */}
+    {/* vatNote() één keer per pagina, bij de enige prijs die erop staat. */}
     <p class="hiw-btw">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
   </section>
 </div>
 
 <style>
-  /* ── DE KOP BEGINT BOVENAAN, HET BEELD MAG ZWEVEN — 8 september 2026 ──────
-     Lucas over /portal: *"bij deze pagina ook niet eerste sectie volledig
-     gevuld."* Gemeten: de tekstkolom is daar 418 hoog naast een figuur van 954,
-     en met `align-items: center` zweeft die tekst in het midden — 268 pixels
-     wit bóven de kop. Een kop die op een derde van het paneel begint, leest als
-     een fout en niet als lucht.
-     Alle tien de openingsrasters op de site zijn nagemeten (kladblok/_open):
-     vier stonden op 145 tot 268 pixels scheef. De regel is nu overal dezelfde:
-     alles begint BOVEN. Daar begin je met lezen, daar staat de kop, en daar
-     hoort het beeld ernaast te beginnen. Een uitzondering voor het beeld is
-     geprobeerd en weer weggehaald: de plaatshouderfiguren komen uit een ander
-     component en krijgen in Astro een eigen scope-attribuut, dus die regel
-     raakte de helft van de gevallen niet — en een consistentieregel die op de
-     helft van de pagina's iets anders doet, is geen regel. Eén uitlijning,
-     tien pagina's, geen uitzonderingen. */
+  /* Alles begint BOVEN: de kop, en het beeld ernaast op dezelfde hoogte. De
+     regel geldt voor alle openingsrasters op de site (8 september 2026). */
   .hiw-open { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: start; }
   .hiw-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
-  /* ── HORIZONTAAL, NIET VERTICAAL — 9 september 2026 ───────────────────────
-     Lucas: *"Ik wou ook dat de afbeeldingen in 1 scherm paste maar dat is nog
-     steeds niet zo. Dit soort afbeeldingen werken niet zo fijn op een website.
-     Maak al dit soort afbeeldingen horizontaal lang en niet verticaal."*
-
-     Gemeten op 1440 breed: dit beeld stond op 536×670. Een staand beeld naast een
-     kolom tekst duwt de sectie hoger dan het scherm, en dan lees je de tekst
-     ernaast nooit in één blik. 3/2 is liggend zonder een filmstrook te worden;
-     `object-position` houdt het onderwerp in beeld nu er van boven en onder
-     wordt bijgesneden.
-
-     DE KLEINE TEGELS BLIJVEN STAAND. Een producttegel in een raster (de
-     galerij, de modellen, de voorbeelden) is een FOTO die je bekijkt, geen
-     sectiebeeld dat naast tekst moet passen — en staand is de vorm waarin die
-     beelden gemaakt zijn. */
+  /* Liggend, niet staand — Lucas, 9 september 2026: een sectiebeeld naast
+     tekst moet in één scherm passen. object-position houdt het onderwerp in
+     beeld nu er boven en onder wordt bijgesneden. */
   .hiw-beeld { aspect-ratio: 3 / 2; }
-  .hiw-beeld img { object-position: 50% 34%; }
-  .hiw-beeld img { width: 100%; height: 100%; object-fit: cover; }
+  .hiw-beeld img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 34%; }
 
-  /* De belofte over de poort. Een blok met een gele lijn ernaast en niet een
-     kaart: het is een uitspraak in de lopende tekst en geen los ding. */
-  .hiw-poort { display: grid; gap: .8rem; max-width: 44rem; margin-bottom: clamp(2.5rem, 5vw, 4rem); padding-left: clamp(1rem, 2.5vw, 1.8rem); border-left: 2px solid var(--geel); }
+  .hiw-flow-kop { max-width: 46rem; }
+
+  /* De belofte over de agenda: een uitspraak in de lopende tekst met een
+     accentlijn ernaast, geen kaart. Ná de band, met lucht ervoor. */
+  .hiw-poort { display: grid; gap: .8rem; max-width: 44rem; margin-top: clamp(2.2rem, 4.5vw, 3.6rem); padding-left: clamp(1rem, 2.5vw, 1.8rem); border-left: 2px solid var(--geel); }
   .hiw-poort-kop { max-width: 24em; }
 
-  .hiw-twee { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
-  .hiw-hand, .hiw-portaal { display: grid; gap: 1rem; align-content: center; }
-  .hiw-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
-  .hiw-chips li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); border: 1px solid var(--lijn); border-radius: 999px; padding: .4rem .85rem; }
-  .hiw-portaal-noot { font-size: .92rem; }
-  .hiw-verder { color: var(--inkt-2); }
+  /* Per dienst één regel, drie naast elkaar: naam, wat je krijgt, wat je
+     kiest. Haarlijn erboven zoals de details verderop. */
+  .hiw-diensten { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); margin-top: clamp(2rem, 4vw, 3rem); }
+  .hiw-diensten li { display: grid; gap: .3rem; align-content: start; padding: clamp(.9rem, 2vw, 1.3rem) 0; border-top: 1px solid var(--lijn); }
+  .hiw-dienst-naam { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em; color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
+  .hiw-diensten .mono { color: var(--inkt-2); }
+  .hiw-dienst-kiest { font-size: .92rem; }
+
+  .hiw-verder { margin-top: clamp(1.4rem, 3vw, 2.2rem); color: var(--inkt-2); }
   .hiw-verder a { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
 
-  /* De details als regels en niet als kaartjes: het zijn korte antwoorden op
-     losse vragen, en twaalf kaders zetten twaalf keer een rand om één zin. */
+  .hiw-twee { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .hiw-hand { display: grid; gap: 1rem; align-content: center; }
+  .hiw-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
+  .hiw-chips li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); border: 1px solid var(--lijn); border-radius: 999px; padding: .4rem .85rem; }
+
+  /* De details als regels en niet als kaartjes: korte antwoorden op losse
+     vragen, en twaalf kaders zetten twaalf keer een rand om één zin. */
   .hiw-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); }
   .hiw-details li { display: grid; gap: .4rem; align-content: start; padding: clamp(1rem, 2.2vw, 1.5rem) 0; border-top: 1px solid var(--lijn); }
   .hiw-details b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em; }
@@ -651,24 +431,18 @@ const c = COPY[lang];
   .hiw-land-noot { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); font-size: .92rem; }
 
   .hiw-gidsen { margin-top: 1.2rem; font-size: .92rem; color: var(--inkt-2); max-width: 70ch; }
-  .hiw-gidsen a, .hiw-gidsen :global(a) { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
+  /* `inherit` en geen vaste kleur: deze alinea staat op het donkere slot, en
+     de link hoort de kant van de alinea mee te nemen (20 september 2026:
+     "Lees de FAQ" stond in donkere inkt op het donkere vlak, 1,08:1). */
+  .hiw-gidsen a, .hiw-gidsen :global(a) { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
   .hiw-btw { margin-top: 1.6rem; font-size: .84rem; line-height: 1.6; max-width: 70ch; }
 
   @media (max-width: 900px) {
-    .hiw-open, .hiw-twee, .hiw-details { grid-template-columns: 1fr; }
+    .hiw-open, .hiw-twee, .hiw-details, .hiw-diensten { grid-template-columns: 1fr; }
     .hiw-land { grid-template-columns: 1fr; }
   }
-
-  /* ── EN ONDER 560 PIXELS ÉÉN KOLOM — 12 september 2026 ──────────────────
-     Gemeten op 390 pixels: twee kolommen van 154 pixels, met koppen als
-     "MARKTPLAATSEN" in hoofdletters op font-stretch 125%. Die woorden zijn
-     172 tot 177 pixels breed en ze breken niet, dus ze liepen 18 tot 23 pixels
-     buiten hun kolom — over de kop van de buur heen.
-
-     Eén kolom en niet afbreken of kleiner zetten: dit zijn vier bestemmingen
-     en geen lopende tekst. Een afgebroken "MARKT-PLAATSEN" leest slechter dan
-     vier regels onder elkaar, en kleiner zetten haalt de nadruk weg die deze
-     hele sectie draagt. */
+  /* Onder 560 px één kolom: "MARKTPLAATSEN" op 125 % breedte breekt niet en
+     liep over de buurkolom (12 september 2026). */
   @media (max-width: 560px) {
     .hiw-land { grid-template-columns: 1fr; }
   }

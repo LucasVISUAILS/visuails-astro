@@ -61,7 +61,7 @@
  * bestand is alleen de vorm; wat er staat, is niet opnieuw geschreven.
  */
 import {
-  WALK_SERVICES, WALK_STEPS, WALK_COPY,
+  WALK_SERVICES, WALK_STEPS, WALK_FASEN, WALK_COPY,
   DEMO_MODEL, DEMO_LOCKED_MODELS, DEMO_BACKGROUNDS, walkResult,
 } from '../data/demo.js';
 import { styles } from '../data/styles.js';
@@ -125,6 +125,36 @@ const START = SERVICES[0].id;
 const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
   return { id: id, nr: String(i + 1).padStart(2, '0'), ...t.steps[id] };
 });
+const OP_ID: Record<string, any> = {};
+for (const st of STAPPEN) OP_ID[st.id] = st;
+
+/* ── DE DRIE FASEN, MET HUN STAPPEN ERIN ───────────────────────────────────
+   Zie de lange noot bij WALK_FASEN in demo.js voor waarom deze laag er is. De
+   nummering die een fase toont is die van de stap zelf (01 t/m 06), niet een
+   eigen telling: wie deze pagina naast het bestelformulier legt, moet dezelfde
+   volgorde zien. Een fase met één stap toont die stap niet apart — dan is de
+   fase de stap, en zou je dezelfde zin twee keer lezen. */
+const FASEN = WALK_FASEN.map(function bouw(f: any, i: number) {
+  const kop = (t.fasen || {})[f.id] || {};
+  const stappen = f.stappen.map(function pak(id: string) { return OP_ID[id]; }).filter(Boolean);
+  return {
+    id: f.id,
+    nr: String(i + 1).padStart(2, '0'),
+    n: kop.n || '',
+    duur: kop.duur || '',
+    h: kop.h || '',
+    b: kop.b || '',
+    /* De regels onder de alinea: alleen als er meer dan één stap in deze fase
+       zit. Zie hierboven. */
+    regels: stappen.length > 1 ? stappen : [],
+    /* Welke extra's deze fase draagt — de looks, de gezichten, de knoppen.
+       Ze hingen eerst aan een stap; nu aan de fase waarin die stap valt, zodat
+       ze niet verdwijnen als een stap een regel wordt. */
+    heeftLooks: f.stappen.indexOf('look') !== -1,
+    heeftModellen: f.stappen.indexOf('model') !== -1,
+    heeftCta: f.stappen.indexOf('result') !== -1,
+  };
+});
 ---
 
 <section class="wk" aria-label={t.label}>
@@ -151,58 +181,63 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
   </div>
 
   {SERVICES.map((svc) => (
-    <ol class="wk-steps" data-wk-body={svc.id}>
-      {STAPPEN.map((stap) => (
-        <li class="wk-step">
-          <p class="wk-nr" aria-hidden="true">{stap.nr}</p>
-          <div class="wk-step-in">
-            <p class="wk-step-n">{stap.n}</p>
-            <h3 class="wk-step-h">{stap.h}</h3>
-            {/* ── DE KORTE TEKST OP HET SCHERM, DE REST ACHTER HET VRAAGTEKEN ──
-                12 september 2026. Lucas: *"Focus echt op een logische en rustige
-                indeling met grote koppen en weinig extra tekst maar houd het
-                duidelijk en wanneer er ergens extra informatie voor nodig is,
-                pas dan het hover vraagteken toe."*
+    <ol class="wk-fasen" data-wk-body={svc.id}>
+      {FASEN.map((fase) => (
+        <li class="wk-fase">
+          <div class="wk-fase-kop">
+            <p class="wk-nr" aria-hidden="true">{fase.nr}</p>
+            <div class="wk-fase-woord">
+              <p class="wk-fase-n">{fase.n}{fase.duur ? <span class="wk-duur">{fase.duur}</span> : null}</p>
+              <h3 class="wk-fase-h">{fase.h}</h3>
+              <p class="wk-fase-b">{fase.b}</p>
+            </div>
+          </div>
 
-                Gemeten: deze sectie droeg 768 van de 1.296 zichtbare woorden op
-                /how-it-works — zestig procent van de hele pagina in één blok van
-                zes alinea's van tachtig tot honderdtien woorden. Een stappenlijst
-                waar je doorheen bladert tot je de stap vindt waar je over
-                twijfelt, is precies het verkeerde meubel voor alinea's van die
-                lengte: je moet ze alle zes lezen om te weten welke je nodig had.
-
-                De splitsing zit in demo.js en niet hier: `b` is wat er staat, en
-                `meer` is wat er achter zit. Geen woord is weggegooid — wat niet
-                op het scherm staat, staat één hover verderop.
-
-                `over` is het stapnummer en niet de kop: een schermlezer leest
-                anders "Uitleg over Je vult het formulier in en stuurt je foto's",
-                en die kop heeft hij net al gehoord. */}
-            <p class="wk-step-b">{stap.b}{stap.meer ? <Uitleg tekst={stap.meer} over={`${nl ? 'stap' : 'step'} ${stap.nr}`} lang={lang} /> : null}</p>
-
-            {/* ── DE LOOKS, BIJ DE STAP DIE EROVER GAAT ────────────────────
-                Geen radio's meer. In de vorige versie stuurden ze een laag in
-                het kader aan; zonder kader sturen ze niets, en een keuzeknop
-                die niets doet is erger dan een plaatje. Het zijn nu wat ze
-                altijd al waren: de lijst met looks die deze dienst kent. */}
-            {stap.id === 'look' ? (
-              <ul class="wk-looks" role="list">
-                {svc.looks.map((look) => (
-                  <li class="wk-look">
-                    {look.hex
-                      ? <span class="wk-look-swatch" style={`background:${look.hex}`} aria-hidden="true"></span>
-                      : <img class="wk-look-thumb" src={look.preview.src} alt="" width="200" height="200" loading="lazy" decoding="async" />}
-                    <span class="wk-look-name">{look.name}</span>
+          <div class="wk-fase-in">
+            {/* ── DE MOMENTEN BINNEN ÉÉN FASE ─────────────────────────────
+                Vier regels in plaats van vier blokken. Elke regel is de kop
+                van de stap zoals hij in demo.js staat, met zijn nummer ervoor
+                en zijn volledige tekst achter het vraagteken — dus je ziet de
+                volgorde (de leverdatum staat vóór het betalen) en je kunt
+                elke regel openklappen zonder de andere drie te lezen. */}
+            {fase.regels.length > 0 && (
+              <ol class="wk-regels">
+                {fase.regels.map((stap: any) => (
+                  <li class="wk-regel">
+                    <span class="wk-regel-nr" aria-hidden="true">{stap.nr}</span>
+                    <span class="wk-regel-t">
+                      {stap.h}
+                      <Uitleg tekst={stap.meer ? `${stap.b} ${stap.meer}` : stap.b} over={`${nl ? 'stap' : 'step'} ${stap.nr}`} lang={lang} />
+                    </span>
                   </li>
                 ))}
-              </ul>
-            ) : null}
-            {stap.id === 'look' && svc.look !== 'background'
-              ? <p class="wk-note">{t.lookCustom}</p>
-              : null}
+              </ol>
+            )}
 
-            {stap.id === 'model' ? (
-              <div class="wk-models">
+            {/* ── DE LOOKS, BIJ DE FASE WAARIN JE ZE KIEST ────────────────
+                Geen radio's: in de vorige versie stuurden ze een laag in een
+                kader aan, en dat kader bestaat niet meer. Het is wat het altijd
+                al was — de lijst met looks die deze dienst kent. */}
+            {fase.heeftLooks ? (
+              <div class="wk-extra">
+                <p class="wk-extra-k">{t.pickLooksH || (nl ? 'De looks van deze dienst' : 'The looks in this service')}</p>
+                <ul class="wk-looks" role="list">
+                  {svc.looks.map((look) => (
+                    <li class="wk-look">
+                      {look.hex
+                        ? <span class="wk-look-swatch" style={`background:${look.hex}`} aria-hidden="true"></span>
+                        : <img class="wk-look-thumb" src={look.preview.src} alt="" width="200" height="200" loading="lazy" decoding="async" />}
+                      <span class="wk-look-name">{look.name}</span>
+                    </li>
+                  ))}
+                </ul>
+                {svc.look !== 'background' ? <p class="wk-note">{t.lookCustom}</p> : null}
+              </div>
+            ) : null}
+
+            {fase.heeftModellen ? (
+              <div class="wk-extra">
+                <p class="wk-extra-k">{t.pickModelH || (nl ? 'De gedeelde bibliotheek' : 'The shared roster')}</p>
                 <ul class="wk-roster" role="list">
                   <li class="wk-face">
                     <img src={DEMO_MODEL.photo} alt={`Model ${DEMO_MODEL.name}`} width="200" height="250" loading="lazy" decoding="async" />
@@ -219,7 +254,7 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
               </div>
             ) : null}
 
-            {stap.id === 'result' ? (
+            {fase.heeftCta ? (
               <p class="wk-cta">
                 <a href={sampleHref} class="knop knop-inkt">{t.ctaPrimary}</a>
                 <a href={startHref} class="knop knop-lijn">{t.ctaGhost}</a>
@@ -244,7 +279,17 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
      komen hier niet meer voor; zie de kop van dit bestand.
      ═══════════════════════════════════════════════════════════════════════ */
 
-  .wk { margin: 0; }
+  /* ── 316 PIXELS DIE NIEMAND BESTELD HEEFT — 20 september 2026 ───────────
+     global.css zet `section { padding-block: clamp(4.5rem, 9vw, 9rem) }`, en
+     dat is bedoeld voor de secties die een PAGINA opbouwen. Dit onderdeel is
+     ook een <section> — terecht, want het is een afgebakend stuk met een eigen
+     toelichting — maar het staat BINNEN zo'n paginasectie. Gemeten op 1440:
+     158,4 px lucht boven de dienstkeuze en nog eens 158,4 eronder, zonder dat
+     er iets staat.
+
+     Vandaar de nul. De ruimte die dit blok van de tekst erboven moet scheiden,
+     staat waar hij hoort: als marge op .hiw-poort in HowItWorksPage.astro. */
+  .wk { margin: 0; padding-block: 0; }
 
   /* ── de keuze ─────────────────────────────────────────────────────────── */
   .wk-pick { max-width: 40rem; margin: 0 0 clamp(2.2rem, 4.5vw, 3.4rem); }
@@ -280,65 +325,99 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
      zusterselector kan niet rekenen — dezelfde constructie en dezelfde noot als
      bij de bestemmingen op /start.
 
-     `:has()` is met opzet NIET gebruikt: de radio's staan in .wk-pick en de
-     lijsten zijn daar broers van, dus een gewone `~` volstaat en die werkt
-     overal. */
-  .wk-steps { display: none; }
+     `:has()` is met opzet NIET gebruikt op de lijsten zelf: de radio's staan in
+     .wk-pick en de lijsten zijn daar broers van, dus een gewone `~` volstaat en
+     die werkt overal. */
+  .wk-fasen { display: none; }
   .wk-pick:has(input[value="catalog"]:checked) ~ [data-wk-body="catalog"],
   .wk-pick:has(input[value="lifestyle"]:checked) ~ [data-wk-body="lifestyle"],
   .wk-pick:has(input[value="video"]:checked) ~ [data-wk-body="video"] { display: grid; }
 
-  /* ── de stappen ───────────────────────────────────────────────────────── */
-  .wk-steps {
+  /* ══ DE DRIE FASEN ══════════════════════════════════════════════════════
+     Zie de lange noot bij WALK_FASEN in demo.js. Wat de vorm moet dragen:
+
+       · ÉÉN KOLOM, ALTIJD. De vorige versie zette zes stappen op breed in twee
+         kolommen van drie, en dan staat 01 naast 04 op dezelfde regel. Een
+         volgorde die je moet uitleggen is geen volgorde meer. Drie blokken
+         passen onder elkaar zonder dat de pagina lang wordt.
+       · DE KOP EN DE INHOUD IN ÉÉN RASTER, zodat de alinea, de regels, de
+         lookkaartjes en de knoppen allemaal op dezelfde linkerkantlijn
+         beginnen — die van de tekst, niet die van het nummer.
+       · EEN HAARLIJN TUSSEN DE FASEN EN GEEN KADER EROMHEEN. Een kaart per fase
+         maakt er drie losse dingen van; dit is één weg met drie stukken. */
+  .wk-fasen {
     grid-template-columns: 1fr;
-    gap: clamp(2.2rem, 4.5vw, 3.4rem);
+    gap: clamp(2rem, 4vw, 3rem);
     margin: 0; padding: 0; list-style: none;
-    counter-reset: none;
   }
-  /* Het nummer in een eigen kolom, met een haarlijn tussen de stappen: dat is
-     de vorm van een liniaal en niet van een kaart. Een kaart per stap zou zes
-     losse dingen maken van wat één volgorde is. */
-  .wk-step {
-    display: grid;
-    grid-template-columns: 3.2rem minmax(0, 1fr);
-    gap: 0 clamp(1rem, 2.5vw, 1.8rem);
-    padding-top: clamp(1.2rem, 2.4vw, 1.6rem);
+  .wk-fase {
+    display: grid; gap: 0;
+    padding-top: clamp(1.4rem, 2.6vw, 2rem);
     border-top: 1px solid var(--line);
   }
-  .wk-step:first-child { border-top: 0; padding-top: 0; }
+  .wk-fase:first-child { border-top: 0; padding-top: 0; }
+
+  .wk-fase-kop { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 0 clamp(1rem, 2.5vw, 1.8rem); }
+  .wk-fase-woord { min-width: 0; max-width: min(62ch, 100%); }
   .wk-nr {
     margin: 0;
     font-family: var(--font-mono); font-size: .8rem; font-variant-numeric: tabular-nums;
     color: var(--ink-3); letter-spacing: .04em;
-    padding-top: .15rem;
+    padding-top: .2rem;
   }
-  /* ── min(58ch, 100%) EN NIET 58ch — 17 september 2026 ────────────────────
-     Lucas, met een schermafdruk van zijn telefoon: *"Check elke pagina of de
-     tekst op telefoon wel goed staat. Hier word het afgeknipt."* Deze stappen
-     waren er één van.
-
-     58ch is 339 pixels. Dit blok is een roostercel, en een roostercel zonder
-     `min-width: 0` draagt zijn eigen wensmaat door naar de kolom erboven — ook
-     als het scherm maar 320 of 360 pixels breed is. De kolom werd dus 339 en de
-     hele stap liep 43 pixels het scherm uit, waar `overflow-x: clip` hem
-     afsneed: geen schuifbalk, tekst die ophoudt midden in een woord.
-
-     `min(58ch, 100%)` houdt de leesbreedte op een breed scherm en geeft op een
-     smal scherm gewoon de ruimte die er is. */
-  .wk-step-in { max-width: min(58ch, 100%); min-width: 0; }
-  .wk-step-n { margin: 0; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
-  .wk-step-h {
-    margin: .35rem 0 0;
+  /* Wie het doet, en hoe lang het duurt, op één regel. De duur staat achter een
+     punt en niet in een eigen pil: een pil naast een pil naast een kop is drie
+     dingen op de plek waar er één hoort te staan. */
+  .wk-fase-n { margin: 0; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .wk-duur { color: var(--ink-3); font-weight: 500; }
+  .wk-duur::before { content: ' · '; }
+  .wk-fase-h {
+    /* .7rem en niet .45: gemeten stond het etiket 7 px boven de kop, en dat
+       leest als één blok. Zie de noot bij .sr-k-kop in StyleRows.astro; dit is
+       dezelfde ondergrens. */
+    margin: .7rem 0 0;
     font-family: var(--font-heading, var(--font-body));
-    font-size: clamp(1.25rem, 2.2vw, 1.7rem); line-height: 1.15; letter-spacing: -.01em;
+    font-size: clamp(1.5rem, 2.8vw, 2.2rem); line-height: 1.08; letter-spacing: -.015em;
     color: var(--ink); text-wrap: balance;
   }
-  .wk-step-b { margin: .7rem 0 0; font-size: .98rem; line-height: 1.7; color: var(--ink-2); text-wrap: pretty; }
+  .wk-fase-b { margin: .8rem 0 0; font-size: .98rem; line-height: 1.7; color: var(--ink-2); text-wrap: pretty; }
+
+  /* Alles onder de alinea begint op de kantlijn van de tekst, dus met dezelfde
+     inspringing als de kop — vandaar dezelfde twee kolommen met een lege
+     eerste. Op smal vervalt die kolom, zie de mediaquery onderaan. */
+  .wk-fase-in { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 0 clamp(1rem, 2.5vw, 1.8rem); }
+  .wk-fase-in > * { grid-column: 2; min-width: 0; }
+
+  /* ── DE VIER MOMENTEN BINNEN FASE ÉÉN ──────────────────────────────────
+     Regels en geen blokken. Het nummer is hetzelfde nummer als in de
+     structuurdata (01 t/m 06), de kop is de kop van de stap, en de volledige
+     tekst zit achter het vraagteken — zie Uitleg.astro. Daarmee staat de
+     volgorde er nog voluit (de leverdatum vóór het betalen) zonder dat er vier
+     alinea's onder elkaar staan. */
+  .wk-regels {
+    list-style: none; margin: clamp(1.1rem, 2.2vw, 1.5rem) 0 0; padding: 0;
+    display: grid; gap: 0; max-width: min(62ch, 100%);
+  }
+  .wk-regel {
+    display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: .6rem;
+    align-items: baseline;
+    padding: .7rem 0; border-top: 1px solid var(--line);
+  }
+  .wk-regel:first-child { border-top: 0; padding-top: 0; }
+  .wk-regel-nr { font-family: var(--font-mono); font-size: .72rem; font-variant-numeric: tabular-nums; color: var(--ink-3); letter-spacing: .04em; }
+  .wk-regel-t { font-size: .96rem; line-height: 1.5; color: var(--ink); text-wrap: pretty; }
+
+  /* ── DE EXTRA'S ────────────────────────────────────────────────────────
+     De looks en de gezichten. Ze hangen aan de FASE en niet meer aan een stap,
+     want die stap is een regel geworden. Elk blok krijgt een eigen kopje in
+     mono zodat het niet als een vervolg op de alinea leest. */
+  .wk-extra { margin: clamp(1.2rem, 2.4vw, 1.7rem) 0 0; }
+  .wk-extra-k { margin: 0 0 .7rem; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
 
   /* ── de looks ─────────────────────────────────────────────────────────── */
   .wk-looks {
     display: flex; flex-wrap: wrap; gap: .8rem 1rem;
-    margin: 1.2rem 0 0; padding: 0; list-style: none;
+    margin: 0; padding: 0; list-style: none;
   }
   .wk-look { display: flex; align-items: center; gap: .5rem; font-size: .86rem; color: var(--ink-2); }
   /* VIERKANT EN NIET ROND, en dat is geen smaak: drie ronde vlakjes van 22px in
@@ -362,28 +441,25 @@ const STAPPEN = WALK_STEPS.map(function nummer(id: string, i: number) {
 
   .wk-honest { margin: clamp(2rem, 4vw, 3rem) 0 0; font-size: .78rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }
 
-  /* ── ZES STAPPEN IN TWEE KOLOMMEN — 19 september 2026 ─────────────────────
-     Onder elkaar was deze lijst 2.777 px op 1440 (een derde van /how-it-works).
-     Lucas: *"/how-it-works … doorvoeren."* Op breed staan de zes nu in twee
-     kolommen van drie: de volgorde loopt per kolom (01–03 links, 04–06
-     rechts), wat `grid-auto-flow: column` met drie rijen regelt, zodat je nog
-     steeds van boven naar beneden leest. Elke stap houdt zijn haarlijn, ook de
-     eerste — in een raster is "de eerste" er twee. */
-  @media (min-width: 900px) {
-    .wk-steps[data-wk-body] {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(3, auto);
-      grid-auto-flow: column;
-      gap: clamp(1.4rem, 2.6vw, 2.2rem) clamp(2.4rem, 5vw, 4.5rem);
-    }
-    .wk-step:first-child { border-top: 1px solid var(--line); padding-top: clamp(1.2rem, 2.4vw, 1.6rem); }
-    .wk-step-in { max-width: none; }
-  }
+  /* ── DE TWEEKOLOMS OPZET IS WEG — 20 september 2026 ──────────────────────
+     Hier stond een mediaquery die de zes stappen op breed in twee kolommen van
+     drie zette, om de sectie korter te maken. Dat werkte voor de hoogte en niet
+     voor het lezen: op de bovenste regel stond 01 naast 04, en de rijen waren
+     zo hoog als hun hoogste blok, dus naast de korte stappen bleven gaten van
+     vierhonderd pixels staan. De hoogte is nu op de goede manier opgelost — vier
+     van de zes stappen zijn regels geworden in plaats van blokken — dus de
+     kolommen zijn niet meer nodig en de volgorde loopt weer gewoon van boven
+     naar beneden. Zie de noot bij WALK_FASEN in demo.js. */
   @media (max-width: 720px) {
     .wk-pick-row { grid-template-columns: 1fr; }
-    /* Het nummer boven de stap in plaats van ernaast: een kolom van 3,2rem naast
-       een tekstkolom van 300px kost tien procent van de leesbreedte. */
-    .wk-step { grid-template-columns: 1fr; gap: .3rem; }
-    .wk-step-b { font-size: .95rem; }
+    /* Het nummer boven de fase in plaats van ernaast: een kolom van 3,2rem naast
+       een tekstkolom van 300px kost tien procent van de leesbreedte. En de
+       inhoud eronder verliest dan dezelfde inspringing, anders staat hij als
+       enige nog ingesprongen. */
+    .wk-fase-kop,
+    .wk-fase-in { grid-template-columns: 1fr; gap: .3rem; }
+    .wk-fase-in > * { grid-column: 1; }
+    .wk-fase-b { font-size: .95rem; }
+    .wk-regel { grid-template-columns: 2rem minmax(0, 1fr); align-items: start; }
   }
 </style>

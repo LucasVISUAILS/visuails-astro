@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>De kop van de voorpagina — woorden en vormen</title>
+<style>
+@font-face{font-family:"Anybody";src:url("f/anybody.woff2") format("woff2-variations");font-weight:100 900;font-stretch:50% 150%;font-display:swap}
+@font-face{font-family:"Instrument";src:url("f/instrument.woff2") format("woff2-variations");font-weight:400 700;font-stretch:75% 100%;font-display:swap}
+@font-face{font-family:"Martian";src:url("f/martian.woff2") format("woff2-variations");font-weight:100 800;font-stretch:75% 112.5%;font-display:swap}
+
+:root{
+  --vel:#F5F5F5; --wit:#FFFFFF; --inkt:#111111; --inkt-2:#454545; --inkt-3:#6E6E6E;
+  --lijn:#DFDFDF; --lijn-sterk:#BDBDBD; --gif:#D2E04A; --ronding:28px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--vel);color:var(--inkt);font-family:"Instrument",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1500px;margin:0 auto;padding:40px 24px 100px}
+
+.mono{font-family:"Martian";font-stretch:82%;font-size:.75rem;letter-spacing:.04em;text-transform:uppercase;color:var(--inkt-3);line-height:1.45}
+.paginakop{font-family:"Anybody";font-stretch:125%;font-weight:500;text-transform:uppercase;letter-spacing:-.03em;font-size:34px;line-height:.98;margin:0 0 14px}
+.paginalead{color:var(--inkt-2);max-width:74ch;margin:0 0 10px;font-size:15px}
+.hoe{color:var(--inkt-3);max-width:74ch;margin:0 0 6px;font-size:14px}
+
+h2.deel{font-family:"Anybody";font-stretch:118%;font-weight:500;text-transform:uppercase;letter-spacing:-.02em;font-size:22px;margin:56px 0 6px;padding-top:26px;border-top:1px solid var(--lijn)}
+.deel-uit{color:var(--inkt-3);font-size:14px;max-width:74ch;margin:10px 0 26px}
+
+/* ══ DEEL 1 · DE WOORDEN ═══════════════════════════════════════════════ */
+.woorden{display:grid;gap:14px}
+.w{background:var(--wit);border:1px solid var(--lijn);border-radius:16px;padding:26px 28px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:26px 34px;align-items:start}
+.w.nu{border-color:var(--lijn-sterk);background:#EFEFEF}
+.w.tip{border-color:var(--inkt)}
+.w-nr{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:-6px}
+.w-nr b{font-family:"Martian";font-stretch:82%;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.kop{font-family:"Anybody";font-stretch:125%;font-weight:300;text-transform:uppercase;letter-spacing:-.03em;font-size:clamp(1.8rem,3.2vw,3.1rem);line-height:.94;margin:0;max-width:16ch}
+.kop em{font-style:normal;font-weight:700}
+.w-en{margin:16px 0 0;font-family:"Anybody";font-stretch:125%;font-weight:300;text-transform:uppercase;letter-spacing:-.03em;font-size:1.25rem;line-height:.98;color:var(--inkt-3);max-width:20ch}
+.w-en em{font-style:normal;font-weight:700;color:var(--inkt-2)}
+.w-oor{font-size:14px;color:var(--inkt-2);margin:0}
+.w-oor b{color:var(--inkt)}
+.w-tegen{font-size:13.5px;color:var(--inkt-3);margin:10px 0 0}
+.w-code{margin:14px 0 0;font-family:"Martian";font-stretch:82%;font-size:11.5px;color:var(--inkt-3);background:var(--vel);border:1px solid var(--lijn);border-radius:8px;padding:9px 11px;overflow-x:auto;white-space:pre}
+
+/* ══ DEEL 2 · DE VORMEN ════════════════════════════════════════════════ */
+.vorm{margin:0 0 42px}
+.vorm-kop{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.vorm-kop h3{font-family:"Anybody";font-stretch:118%;font-weight:500;text-transform:uppercase;letter-spacing:-.02em;font-size:19px;margin:0}
+.vorm-waarom{color:var(--inkt-3);font-size:13.5px;max-width:78ch;margin:0 0 16px}
+.doek{border:1px solid var(--lijn);border-radius:var(--ronding);overflow:hidden;background:
+  radial-gradient(70% 50% at 50% 96%, rgba(210,224,74,.16), transparent 70%),
+  linear-gradient(180deg,#E9EDEE 0%,#F7F8F8 48%,var(--wit) 100%)}
+.etiket{font-family:"Martian";font-stretch:82%;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--inkt-2);margin:0}
+.lede{color:var(--inkt-2);font-size:.95rem;margin:0;max-width:48ch}
+.acties{display:flex;gap:10px;flex-wrap:wrap;margin:0}
+.knop{display:inline-flex;align-items:center;min-height:44px;padding:0 1.4rem;border-radius:999px;border:1px solid var(--inkt);background:var(--inkt);color:var(--vel);font-family:"Martian";font-stretch:82%;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;text-decoration:none}
+.knop.wit{background:var(--wit);border-color:var(--wit);color:var(--inkt)}
+.laptop{display:block;width:100%;height:auto}
+
+/* A · de huidige opzet, opgeruimd */
+.va{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:34px;align-items:center;padding:52px 0 52px 52px}
+.va-woord{display:grid;gap:20px;justify-items:start;max-width:34rem}
+.va .kop{max-width:14ch}
+.va-beeld{min-width:0}
+.va-strip{grid-column:1 / -1;display:flex;gap:28px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--lijn);margin:34px 52px 0 0;padding-top:16px}
+
+/* B · de kop over de volle breedte */
+.vb{display:grid;gap:26px;padding:52px 52px 0;justify-items:center;text-align:center}
+.vb .kop{max-width:22ch;font-size:clamp(2rem,5.4vw,4.6rem)}
+.vb-onder{display:flex;gap:26px;align-items:center;justify-content:center;flex-wrap:wrap}
+.vb .lede{text-align:center;max-width:56ch}
+.vb-beeld{width:min(100%,900px);margin-bottom:-2px}
+
+/* C · drie diensten als het frame */
+.vc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:40px;align-items:center;padding:52px 0 52px 52px}
+.vc-woord{display:grid;gap:18px;justify-items:start;max-width:32rem}
+.vc .kop{max-width:15ch;font-size:clamp(1.7rem,2.9vw,2.8rem)}
+.vc-lijst{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:0;width:100%;max-width:26rem}
+.vc-lijst li{display:flex;justify-content:space-between;gap:14px;border-top:1px solid var(--lijn);padding:9px 0;font-size:.9rem;color:var(--inkt-2)}
+.vc-lijst li span:last-child{font-family:"Martian";font-stretch:82%;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--inkt-3);align-self:center}
+
+@media(max-width:1000px){
+  .w{grid-template-columns:1fr}
+  .va,.vc{grid-template-columns:1fr;padding:34px 24px}
+  .va-strip{margin-right:0}
+  .vb{padding:34px 24px 0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1 class="paginakop">De kop van de voorpagina</h1>
+  <p class="paginalead">Twee vragen los van elkaar: <b>welke woorden</b> er staan, en <b>welke vorm</b> het blok heeft. Ze hangen samen — een kop van twee korte regels vraagt een andere opzet dan een kop van zeven woorden — maar je kunt ze apart kiezen. Zeg één nummer uit deel 1 en één letter uit deel 2, en ik bouw die combinatie.</p>
+  <p class="hoe">Alles hieronder staat in de letters en de kleuren van de site zelf, op de maat waarop het op een laptopscherm staat. De laptop in deel 2 is een echte opname van de voorpagina van vandaag.</p>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 class="deel">Deel 1 · De woorden</h2>
+  <p class="deel-uit">Wat de kop moet doen, in deze volgorde: in één blik duidelijk maken <b>waar het over gaat</b>, en daarna <b>wat het voor jou betekent</b>. De huidige kop doet het eerste half en het tweede niet — "campagne" is één ding dat we maken, en jij levert er vijf. Het dikke woord is het woord dat zwart en zwaar wordt, zoals "CAMPAGNE" dat nu is.</p>
+
+  <div class="woorden">
+
+    <section class="w nu">
+      <div class="w-nr"><b>Nu</b><span class="mono">staat er vandaag</span></div>
+      <div>
+        <h3 class="kop">Jij uploadt.<br><em>Wij leveren de campagne.</em></h3>
+        <p class="w-en">You upload.<br><em>We deliver the campaign.</em></p>
+      </div>
+      <div>
+        <p class="w-oor"><b>Wat hij goed doet:</b> hij zet de rolverdeling neer in vier woorden. Jij doet één ding, wij doen de rest — dat is de kern van een managed dienst en dat komt aan.</p>
+        <p class="w-tegen">Wat er niet klopt: een campagne is één van de dingen die je koopt, en niet de grootste. Wie catalogfoto's voor zeventig producten nodig heeft, leest "campagne" en denkt dat hij op de verkeerde site is. En "uploadt" beschrijft een handeling op een website, geen uitkomst.</p>
+      </div>
+    </section>
+
+    <section class="w tip">
+      <div class="w-nr"><b>1 · Mijn eerste keuze</b><span class="mono">de breedte + het verschil</span></div>
+      <div>
+        <h3 class="kop">Alle beelden voor je merk.<br><em>Zonder shoot.</em></h3>
+        <p class="w-en">Every image your brand needs.<br><em>Without a shoot.</em></p>
+      </div>
+      <div>
+        <p class="w-oor"><b>Waarom deze:</b> de eerste regel zegt dat het om <b>alles</b> gaat — catalog, lifestyle, video, elke maand opnieuw — en de tweede zegt in twee woorden waarom het anders is dan wat je gewend bent. Samen is dat precies "managed full content service" zonder dat er één Engels vakwoord in staat.</p>
+        <p class="w-tegen">Het risico: "alle beelden" is een grote belofte. Die moet de pagina eronder waarmaken, en dat doet hij — de laptop toont de drie diensten achter elkaar. Let op dat het dus geen <em>campagne</em>belofte meer is maar een <em>voorraad</em>belofte; dat is eerlijker en makkelijker na te komen.</p>
+        <p class="w-code">lines: ['Alle beelden voor je merk.', '&lt;em&gt;Zonder shoot.&lt;/em&gt;']</p>
+      </div>
+    </section>
+
+    <section class="w">
+      <div class="w-nr"><b>2</b><span class="mono">de dienst in vier woorden</span></div>
+      <div>
+        <h3 class="kop">De <em>beeldafdeling</em> van je merk.</h3>
+        <p class="w-en">Your brand's <em>image department</em>.</p>
+      </div>
+      <div>
+        <p class="w-oor"><b>Waarom deze:</b> dit is letterlijk wat je bent — een afdeling die een merk niet zelf hoeft te hebben. Eén regel, geen constructie, en het verklaart in één klap waarom er abonnementen zijn en waarom er een planning is.</p>
+        <p class="w-tegen">Het risico: hij zegt niet wat je krijgt. Iemand die nog nooit van AI-productbeeld gehoord heeft, leest "afdeling" en weet nog steeds niet of het om foto's, video of advies gaat. Deze kop heeft de regel eronder harder nodig dan de andere.</p>
+        <p class="w-code">lines: ['De &lt;em&gt;beeldafdeling&lt;/em&gt;', 'van je merk.']</p>
+      </div>
+    </section>
+
+    <section class="w">
+      <div class="w-nr"><b>3</b><span class="mono">het duidelijkst voor een vreemde</span></div>
+      <div>
+        <h3 class="kop">Productfotografie<br><em>zonder fotoshoot.</em></h3>
+        <p class="w-en">Product photography<br><em>without the photoshoot</em>.</p>
+      </div>
+      <div>
+        <p class="w-oor"><b>Waarom deze:</b> niemand hoeft na te denken. Het noemt de categorie waar een merk zelf al in zoekt ("productfotografie") en zet er meteen de tegenstelling achter. Van alle opties is dit degene die het beste werkt op een advertentie of in een zoekresultaat.</p>
+        <p class="w-tegen">Het risico: het woord <em>fotografie</em> sluit de clips buiten, en video is juist het deel dat groeit. En het is de veiligste van de zes — het klinkt als een dienstverlener en niet als iets nieuws.</p>
+        <p class="w-code">lines: ['Productfotografie', '&lt;em&gt;zonder fotoshoot.&lt;/em&gt;']</p>
+      </div>
+    </section>
+
+    <section class="w">
+      <div class="w-nr"><b>4</b><span class="mono">de snelheid</span></div>
+      <div>
+        <h3 class="kop">Je nieuwe beelden staan er<br><em>deze week.</em></h3>
+        <p class="w-en">Your new images are live<br><em>this week</em>.</p>
+      </div>
+      <div>
+        <p class="w-oor"><b>Waarom deze:</b> snelheid is het enige waarop een shoot je nooit kan verslaan, en het is meetbaar — je levert binnen drie werkdagen en de planning laat dat zien. Een kop die een <b>datum</b> belooft in plaats van een gevoel, is zeldzaam.</p>
+        <p class="w-tegen">Het risico: je maakt hem elke dag waar of je maakt hem nooit waar. Eén drukke week en deze kop werkt tegen je. En hij zegt niet <em>wat</em> er dan staat.</p>
+        <p class="w-code">lines: ['Je nieuwe beelden staan er', '&lt;em&gt;deze week.&lt;/em&gt;']</p>
+      </div>
+    </section>
+
+    <section class="w">
+      <div class="w-nr"><b>5</b><span class="mono">de rolverdeling, opnieuw</span></div>
+      <div>
+        <h3 class="kop">Wij maken het beeld.<br><em>Jij runt je merk.</em></h3>
+        <p class="w-en">We make the images.<br><em>You run the brand</em>.</p>
+      </div>
+      <div>
+        <p class="w-oor"><b>Waarom deze:</b> dezelfde vorm als de kop van nu — twee korte zinnen die elkaar spiegelen — maar met een uitkomst in plaats van een handeling. "Jij runt je merk" is wat een eigenaar van een klein merk het liefste zou doen en waar hij het minst aan toekomt.</p>
+        <p class="w-tegen">Het risico: het is een belofte over je leven en niet over een product. Mooi op een bus, dun op een pagina waar iemand een prijs zoekt.</p>
+        <p class="w-code">lines: ['Wij maken het beeld.', '&lt;em&gt;Jij runt je merk.&lt;/em&gt;']</p>
+      </div>
+    </section>
+
+    <section class="w">
+      <div class="w-nr"><b>6</b><span class="mono">de hele maand, niet één bestelling</span></div>
+      <div>
+        <h3 class="kop">Een maand content,<br><em>elke maand.</em></h3>
+        <p class="w-en">A month of content,<br><em>every month</em>.</p>
+      </div>
+      <div>
+        <p class="w-oor"><b>Waarom deze:</b> dit is de enige die het <b>abonnement</b> vooraan zet in plaats van de losse bestelling, en dat is waar je het meeste aan verdient en waar de planning voor gebouwd is. Hij maakt van VISUAILS iets doorlopends in plaats van een klus.</p>
+        <p class="w-tegen">Het risico: wie één keer twintig producten wil laten doen, denkt dat hij een abonnement moet nemen. Dat is precies de drempel die je er op andere plekken uit hebt gehaald.</p>
+        <p class="w-code">lines: ['Een maand content,', '&lt;em&gt;elke maand.&lt;/em&gt;']</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <h2 class="deel">Deel 2 · De vorm</h2>
+  <p class="deel-uit">Drie opzetten voor hetzelfde blok, alle drie met kop 1 erin zodat je de <b>vorm</b> vergelijkt en niet de woorden. Wat in alle drie verandert ten opzichte van nu: <b>de regel die zegt wat je verkoopt staat direct onder de kop</b> in plaats van linksonder in de hoek, waar hij nu op een telefoon onder de vouw valt en op een laptop in een leeg kwart hangt.</p>
+
+  <!-- A -->
+  <div class="vorm">
+    <div class="vorm-kop"><h3>A · Dezelfde opzet, opgeruimd</h3><span class="mono">het kleinste verschil</span></div>
+    <p class="vorm-waarom">Links de woorden, rechts het scherm — zoals nu. Wat verandert: de kop krijgt een vaste maximumbreedte zodat hij nooit meer op vier regels valt met "DE" alleen op regel drie; de zin over wat je levert schuift van onderin naar direct onder de kop; en de strook onder de hero (dienst, streep, "wat jij stuurt") loopt door over de volle breedte in plaats van alleen onder de laptop. Het lege kwart linksonder verdwijnt daarmee vanzelf.</p>
+    <div class="doek">
+      <div class="va">
+        <div class="va-woord">
+          <p class="etiket">VISUAILS™ · Enschede, NL</p>
+          <h3 class="kop">Alle beelden voor je merk. <em>Zonder shoot.</em></h3>
+          <p class="lede">Catalog, lifestyle en video van de productfoto's die je al hebt. Geen shoot, niets om zelf te leren, geen minimum — één product mag ook.</p>
+          <p class="acties"><a class="knop" href="#">Start een bestelling</a><a class="knop wit" href="#">Probeer VISUAILS · €1</a></p>
+        </div>
+        <div class="va-beeld"><img class="laptop" src="f/laptop.png" alt="Een laptop met een productpagina erin"></div>
+        <div class="va-strip">
+          <span class="mono">Catalogset · 4 beelden</span>
+          <span class="mono">Lifestyle · 3 beelden</span>
+          <span class="mono">Clip · verticaal</span>
+          <span class="mono" style="margin-left:auto">↑ wat jij stuurt</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="vorm">
+    <div class="vorm-kop"><h3>B · De kop over de volle breedte</h3><span class="mono">de kop is het beeld</span></div>
+    <p class="vorm-waarom">De kop staat gecentreerd over de hele breedte en is daardoor een stuk groter — op een laptop ongeveer anderhalf keer zo groot als nu. Eronder in één rij de zin en de twee knoppen, en dáár weer onder het scherm, dat over de onderrand heen loopt. Je leest van boven naar beneden in plaats van van links naar rechts, en de kop krijgt de ruimte die een kop van vier of vijf woorden verdient. Dit is de opzet die het meest op een merk lijkt en het minst op een dienstenpagina.</p>
+    <div class="doek">
+      <div class="vb">
+        <p class="etiket">VISUAILS™ · Enschede, NL</p>
+        <h3 class="kop">Alle beelden voor je merk. <em>Zonder shoot.</em></h3>
+        <div class="vb-onder">
+          <p class="lede">Catalog, lifestyle en video van de productfoto's die je al hebt.</p>
+          <p class="acties"><a class="knop" href="#">Start een bestelling</a><a class="knop wit" href="#">Probeer VISUAILS · €1</a></p>
+        </div>
+        <img class="laptop vb-beeld" src="f/laptop.png" alt="Een laptop met een productpagina erin">
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="vorm">
+    <div class="vorm-kop"><h3>C · Met de drie diensten erin</h3><span class="mono">de belofte wordt meteen bewezen</span></div>
+    <p class="vorm-waarom">Zelfde indeling als A, maar onder de kop staan de drie diensten als drie regels met wat je per stuk krijgt. Wie "alle beelden" leest, ziet één regel lager wélke beelden — de belofte en het bewijs staan dan binnen één oogopslag van elkaar. Nadeel: het is de drukste van de drie, en de laptop doet dit eigenlijk al door van catalogset naar carrousel naar clip te draaien. Kies deze als je merkt dat mensen niet doorhebben dat video er ook bij zit.</p>
+    <div class="doek">
+      <div class="vc">
+        <div class="vc-woord">
+          <p class="etiket">VISUAILS™ · Enschede, NL</p>
+          <h3 class="kop">Alle beelden voor je merk. <em>Zonder shoot.</em></h3>
+          <ul class="vc-lijst">
+            <li><span>Catalogset</span><span>4 beelden per product</span></li>
+            <li><span>Lifestylecarrousel</span><span>3 beelden per product</span></li>
+            <li><span>Videoclip</span><span>verticaal, 8 seconden</span></li>
+          </ul>
+          <p class="acties"><a class="knop" href="#">Start een bestelling</a><a class="knop wit" href="#">Probeer VISUAILS · €1</a></p>
+        </div>
+        <div class="va-beeld"><img class="laptop" src="f/laptop.png" alt="Een laptop met een productpagina erin"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

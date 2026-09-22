@@ -83,18 +83,29 @@ console.log('\nde routes staan in de padtabel, aan de goede kant van de poort');
   const bron = await (await import('node:fs/promises')).readFile(
     new URL('../src/lib/admin.js', import.meta.url), 'utf8'
   );
-  const iGet = bron.indexOf('export async function adminGet');
-  const iPost = bron.indexOf('export async function adminPost');
+  /* ── DE ANKERS ZIJN DE BINNENKANTEN — 20 september 2026 ──────────────────
+     Ze stonden op `export async function adminGet` / `…adminPost`. Sinds het
+     donkere scherm zijn die twee exports vier regels lang: ze lezen het
+     thema-cookie en geven de rest door aan adminGetInner()/adminPostInner()
+     (zie de noot bij metThema() in admin.js). Daarmee staan de twee EXPORTS
+     naast elkaar bovenaan en zegt hun onderlinge volgorde niets meer over
+     waar een route staat.
+
+     Wat deze toets bewaakt, verandert niet: de leesroute hoort in de
+     GET-helft en de proberoute in de POST-helft, achter de originIsSelf-poort.
+     Alleen de namen van de twee helften zijn veranderd. */
+  const iGet = bron.indexOf('async function adminGetInner');
+  const iPost = bron.indexOf('async function adminPostInner');
   const iPoort = bron.indexOf('if (!originIsSelf(request, env))');
   const iLees = bron.indexOf("if (path === '/admin/diagnose') return renderDiagnose");
   const iProbe = bron.indexOf("if (path === '/admin/diagnose/probe') return handleDiagnoseProbe");
 
-  ok('de leesroute staat in adminGet', iLees > iGet && iLees < iPost);
-  ok('de proberoute staat in adminPost', iProbe > iPost);
+  ok('de leesroute staat in adminGetInner', iLees > iGet && iLees < iPost);
+  ok('de proberoute staat in adminPostInner', iProbe > iPost);
   ok('en NA de originIsSelf-poort', iProbe > iPoort);
   /* De volgorde is het hele punt: staat hij ervóór, dan is hij even onbeschermd
      als het losse bestand was. */
-  ok('de poort staat dus tussen adminPost en de proberoute', iPost < iPoort && iPoort < iProbe);
+  ok('de poort staat dus tussen adminPostInner en de proberoute', iPost < iPoort && iPoort < iProbe);
 }
 
 /* ══ 3 · EN HET GEDRAG, DOOR DE ECHTE HANDLERS HEEN ════════════════════════ */

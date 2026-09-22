@@ -553,6 +553,15 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-rail-item[data-bm-done] .bm-rail-n { border-color: var(--accent-line); }
 
   /* Alleen wegstoppen als het script het formulier heeft overgenomen. */
+  /* ── DE STAPPEN ZIJN <section>, EN ERFDEN DAARDOOR PAGINAPADDING ────────
+     20 september 2026. global.css zet `section { padding-block: clamp(4.5rem,
+     9vw, 9rem) }` voor de secties die een pagina opbouwen; deze vijf staan
+     binnen het formulier en kregen er elk 158,4 px boven en onder bij. Met één
+     stap tegelijk in beeld is dat 316 px lucht rond een paar velden, en met
+     JavaScript uit (alle vijf zichtbaar) ruim 1.500 px over het hele
+     formulier. De ruimte tussen twee stappen staat hieronder als marge, en die
+     is wél gekozen. */
+  .bm-step { padding-block: 0; }
   .bm-form.is-live .bm-step { display: none; }
   .bm-form.is-live .bm-step.is-on { display: block; }
   .bm-step + .bm-step { margin-top: 2.6rem; }

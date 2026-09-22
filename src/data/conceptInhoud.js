@@ -121,7 +121,7 @@ export function inhoud(lang) {
       ],
       priceH: 'One rate per product. It drops as the count rises.',
       priceCount: 'Products',
-      priceKinds: [`Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, `Complete · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`],
+      priceKinds: [`Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'en')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, `Catalog + Lifestyle · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`],
       priceVat: `Per product, ${vatLabel('excl', 'en')}.`,
       priceCta: 'Start an order', priceCta2: 'Full price list',
       planH: 'Or every month.',
@@ -166,7 +166,7 @@ export function inhoud(lang) {
       svcLede: 'Vier diensten, allemaal uit de foto’s die je al hebt.',
       svc: [
         ['Catalogset', `${countedShort('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/catalog'],
-        ['Lifestyle-carousel', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
+        ['Lifestyle-carrousel', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/lifestyle'],
         ['Videoclip', 'Eén verticale clip, gesneden voor Reels en TikTok', `${e(AMOUNT.video)} per clip`, '/video'],
         ['Je merkmodel', 'Eén gezicht, alleen van jou, in elke bestelling', `eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
       ],
@@ -180,7 +180,7 @@ export function inhoud(lang) {
       /* Zie de Engelse tegenhanger. */
       setH: `Eén product. Tot ${COMPLETE_IMAGES} beelden en een clip.`,
       setLede: 'De catalogset voor je shop, de lifestyle-carousel voor je socials, een clip voor de feed — samen in één bestelling, of elk apart.',
-      setGroups: [[`Catalogset · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
+      setGroups: [[`Catalogset · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carrousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
       frames: FRAMES.nl,
       extrasLabel: 'Bij hetzelfde product',
       extras: [
@@ -197,7 +197,7 @@ export function inhoud(lang) {
       ],
       priceH: 'Eén tarief per product. Daalt met het aantal.',
       priceCount: 'Producten',
-      priceKinds: [`Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, `Compleet · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`],
+      priceKinds: [`Catalog · ${countedShort('catalog', CATALOG_IMAGES, 'nl')}`, `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, `Catalog + Lifestyle · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`],
       priceVat: `Per product, ${vatLabel('excl', 'nl')}.`,
       priceCta: 'Start een bestelling', priceCta2: 'De volledige prijslijst',
       planH: 'Of elke maand.',

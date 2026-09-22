@@ -341,7 +341,7 @@ const CTX_BY_GARMENT = {
   trousers: ['shoes', 'top'],
   shorts: ['shoes', 'top'],
   skirt: ['shoes', 'top'],
-  top: ['bottom'],
+  top: ['underlayer', 'bottom'],
   outerwear: ['shoes', 'bottom', 'top'],
   dress: ['shoes'],
   shoes: ['bottom'],
@@ -466,7 +466,7 @@ function init(el) {
   bindGate();
   bindSubmit();
   bindPrefill();
-  bindGarment();
+  bindStyling();
   bindMissing();
   missingOk = false;
 
@@ -475,26 +475,55 @@ function init(el) {
 }
 
 
-function bindGarment() {
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE STYLING PER PRODUCT — 22 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Onderaan stap 2 staat één rij per product (Styling.astro levert de schil en
+ * de <template>s; dit bouwt de rijen uit dezelfde `cards` als de uploader).
+ * Per rij: het kleine poppetje, wat er van het product binnen is, de plekken
+ * die bij dit type ERBIJ kunnen — gewone uploadvakjes uit buildSlot(), met
+ * `shot: ctx-<plek>` zodat ze in R2 en in de werkmap naast het product landen
+ * — en de regel "wij kiezen".
+ *
+ * ── HET TYPE: ÉÉN KEER VOOR ALLES, EN PER RIJ ANDERS ──────────────────────
+ *
+ * `garment` (de keuzelijst bovenaan) geldt voor de hele bestelling en is al
+ * toegepast; `garment_p3` in een rij wijkt ervan af. Leeg in een rij betekent
+ * "zelfde als de bestelling". De server leest het precies zo — zie de noot bij
+ * het producttype in functions/api/order.js.
+ *
+ * ── DE KEUZE PER PLEK IS EEN VERBORGEN VELD DAT DE VAKJES VOLGT ───────────
+ *
+ * `context_shoes_p3` staat op `own` zodra het vakje ctx-shoes op kaart 3 een
+ * bestand heeft, en anders op `ours`. Niet een keuzelijst die de klant zelf
+ * omzet: het bestand IS de keuze. Een MutationObserver op `data-state` van het
+ * vakje houdt het veld bij — paintSlot() zet dat attribuut, en er hoeft dus
+ * niets in paintSlot() zelf te weten van deze rijen.
+ *
+ * ── ZONDER RIJEN: DE OUDE KEUZELIJSTEN ────────────────────────────────────
+ *
+ * `data-pl-ctx` (de drie keuzelijsten voor de hele bestelling) is de vorm
+ * zonder JavaScript. Zodra hier rijen staan, gaat hij uit én disabled, anders
+ * post hij naast de velden per product — en de server zou dan twee antwoorden
+ * krijgen voor dezelfde vraag.
+ */
+function bindStyling() {
   const keuze = form.querySelector('[data-pl-garment]');
+  if (!keuze) return;
   const blok = form.querySelector('[data-pl-ctx]');
-  if (!keuze || !blok) return;
+  const sectie = form.querySelector('[data-pl-styling]');
 
-  const teken = () => {
+  /* Zonder de rijen (geen kaarten, geen sectie): het oude gedrag, de drie
+     keuzelijsten volgen het type. */
+  const tekenOud = () => {
+    if (!blok) return;
     const slots = CTX_BY_GARMENT[keuze.value] || null;
-    /* Geen type gekozen: het hele blok blijft dicht. Een lijst met drie vragen
-       tonen voordat er iets gekozen is, vraagt om antwoorden op een beeld dat
-       nog niet bestaat. */
     if (!slots) { blok.hidden = true; return; }
     let zichtbaar = 0;
     for (const rij of blok.querySelectorAll('[data-pl-ctx-slot]')) {
       const past = slots.includes(rij.getAttribute('data-pl-ctx-slot'));
       rij.hidden = !past;
-      /* UITGESCHAKELD ÉN VERBORGEN. `hidden` alleen houdt het veld in het
-         formulier, dus een verborgen keuzelijst post nog steeds zijn waarde —
-         en dan komt er een contextstuk mee dat bij dit type niet kan. De server
-         gooit dat weg, maar een veld dat post wat de klant niet ziet, hoort
-         niet te bestaan. `disabled` haalt hem uit de verzending. */
       const sel = rij.querySelector('select');
       if (sel) sel.disabled = !past;
       if (past) zichtbaar += 1;
@@ -502,8 +531,217 @@ function bindGarment() {
     blok.hidden = zichtbaar === 0;
   };
 
-  keuze.addEventListener('change', teken);
-  teken();
+  keuze.addEventListener('change', () => {
+    if (stylingAan()) { syncStyling(); } else { tekenOud(); }
+  });
+  if (!stylingAan()) { tekenOud(); return; }
+
+  /* Rijen: de oude keuzelijsten uit, en uit de verzending. */
+  if (blok) {
+    blok.hidden = true;
+    for (const sel of blok.querySelectorAll('select')) sel.disabled = true;
+  }
+  const skip = sectie.querySelector('[data-pl-styling-skip]');
+  if (skip) {
+    skip.hidden = false;
+    skip.addEventListener('click', () => {
+      const next = form.querySelector('[data-pl-step="2"] [data-pl-next]');
+      if (next) { next.scrollIntoView({ block: 'center' }); next.focus({ preventScroll: true }); }
+    });
+  }
+  syncStyling();
+}
+
+function stylingAan() {
+  return Boolean(form.querySelector('[data-pl-styling-rows]') && cfg && cfg.styling && q('[data-pl-cards]'));
+}
+
+/** Het type dat voor deze kaart geldt: de eigen keuze, anders die van de bestelling. */
+function stylingType(card) {
+  const eigen = card.styling && card.styling.typeEl ? card.styling.typeEl.value : '';
+  if (eigen) return eigen;
+  const alles = form.querySelector('[data-pl-garment]');
+  return alles ? alles.value : '';
+}
+
+/** De uitsnede bij een type, uit de config. */
+function cropVoor(type) {
+  const g = (cfg.styling.garments || []).find((x) => x.id === type);
+  return g ? g.crop : 'full';
+}
+
+/**
+ * Het poppetje op een uitsnede, een product en de plekken van de klant zetten.
+ * Eén tekening voor alles — zie Poppetje.astro. Het kader per uitsnede staat
+ * als JSON op de svg zelf (`data-kaders`), zodat dit script geen eigen tabel
+ * heeft die uit de pas kan lopen.
+ */
+function paintPop(svg, { crop, product, own }) {
+  if (!svg) return;
+  let kaders = null;
+  try { kaders = JSON.parse(svg.getAttribute('data-kaders') || 'null'); } catch { kaders = null; }
+  const k = (kaders && kaders[crop]) || (kaders && kaders.full) || [8, 292];
+  svg.setAttribute('data-crop', crop);
+  if (product) svg.setAttribute('data-product', product); else svg.removeAttribute('data-product');
+  if (own && own.length) svg.setAttribute('data-own', own.join(',')); else svg.removeAttribute('data-own');
+  const buiten = svg.querySelector('.pop-buiten');
+  const kader = svg.querySelector('.pop-kader');
+  if (buiten) buiten.setAttribute('d', `M0 0 H140 V300 H0 Z M14 ${k[0]} H126 V${k[1]} H14 Z`);
+  if (kader) { kader.setAttribute('y', String(k[0])); kader.setAttribute('height', String(k[1] - k[0])); }
+}
+
+/** Alle rijen in lijn brengen met de kaarten; na elke syncCards(). */
+function syncStyling() {
+  if (!stylingAan()) return;
+  const host = form.querySelector('[data-pl-styling-rows]');
+  const tpl = form.querySelector('[data-pl-styling-row]');
+  const popTpl = form.querySelector('[data-pl-pop]');
+  if (!host || !tpl || !popTpl) return;
+
+  /* Rijen van kaarten die weg zijn: weg. */
+  for (const li of [...host.children]) {
+    if (!cards.some((c2) => c2.styling && c2.styling.rowEl === li)) li.remove();
+  }
+  /* Een rij per kaart, op volgorde. */
+  cards.forEach((card) => {
+    if (!card.styling) buildStylingRow(card, tpl, popTpl);
+    host.appendChild(card.styling.rowEl);
+    paintStylingRow(card);
+  });
+
+  /* De regel achter de keuzelijst bovenaan, en de grote uitleg. */
+  const alles = form.querySelector('[data-pl-garment]');
+  const gedaan = form.querySelector('[data-pl-garment-alles]');
+  const T = stylingCopy();
+  if (gedaan && T) {
+    const n = cards.length;
+    gedaan.hidden = !alles.value;
+    gedaan.textContent = n === 1 ? T.allesEen : T.allesGedaan.replace('{n}', String(n));
+  }
+  const groot = form.querySelector('[data-pl-styling] .st-pop-groot [data-pop]');
+  const crop = alles && alles.value ? cropVoor(alles.value) : 'full';
+  paintPop(groot, { crop, product: alles ? alles.value : '', own: [] });
+  const uh = form.querySelector('[data-pl-styling-uitleg-h]');
+  const up = form.querySelector('[data-pl-styling-uitleg-p]');
+  if (T && uh && up) { uh.textContent = T.uitlegH[crop] || T.uitlegH.full; up.textContent = T.uitlegP[crop] || T.uitlegP.full; }
+}
+
+function stylingCopy() {
+  const sectie = form.querySelector('[data-pl-styling]');
+  if (!sectie) return null;
+  try { return JSON.parse(sectie.getAttribute('data-st-copy') || 'null'); } catch { return null; }
+}
+
+function buildStylingRow(card, tpl, popTpl) {
+  const li = tpl.content.firstElementChild.cloneNode(true);
+  const T = stylingCopy() || {};
+  const pop = popTpl.content.querySelector('svg').cloneNode(true);
+  li.querySelector('.st-rij-pop').appendChild(pop);
+
+  const typeEl = li.querySelector('.st-rij-type');
+  typeEl.name = `garment_${card.key}`;
+  const leeg = document.createElement('option');
+  leeg.value = '';
+  leeg.textContent = T.rijType || '';
+  typeEl.appendChild(leeg);
+  for (const g of cfg.styling.garments || []) {
+    const o = document.createElement('option');
+    o.value = g.id; o.textContent = g.naam;
+    typeEl.appendChild(o);
+  }
+  typeEl.addEventListener('change', () => paintStylingRow(card));
+
+  card.styling = { rowEl: li, popEl: pop, typeEl, slotIds: [], velden: {}, waarnemers: [] };
+}
+
+function paintStylingRow(card) {
+  const st = card.styling;
+  if (!st) return;
+  const T = stylingCopy() || {};
+  const type = stylingType(card);
+  const slots = CTX_BY_GARMENT[type] || [];
+  const li = st.rowEl;
+
+  li.querySelector('.st-rij-n').textContent = String(card.n);
+  const naam = card.input && card.input.value.trim();
+  li.querySelector('.st-rij-naam').textContent = naam || c('pu.product', { n: card.n });
+
+  /* Wat er van het product binnen is: geteld over de vaste vakjes. */
+  const vast = SHOT_IDS.filter((id) => card.slots[id]);
+  const binnen = vast.filter((id) => card.slots[id].file && card.slots[id].status !== 'failed').length;
+  li.querySelector('.st-jouw').textContent = (T.fotos || '{n} / {m}').replace('{n}', String(binnen)).replace('{m}', String(vast.length));
+
+  /* De plekken: een uploadvakje per plek die bij dit type hoort. Vakjes van
+     een plek die er niet meer bij hoort, gaan weg — met het bestand terug in
+     de bak, net als bij een hoek die uit gaat (paintAngles). */
+  const rij = li.querySelector('.st-erbij-rij');
+  const wil = slots.map((slot) => cfg.styling.slots[slot] && cfg.styling.slots[slot].shot).filter(Boolean);
+  for (const id of [...st.slotIds]) {
+    if (wil.includes(id)) continue;
+    const sl = card.slots[id];
+    if (sl) {
+      if (sl.file && sl.status !== 'failed') trayAdd(sl.file);
+      clearSlot(card, id);
+      if (sl.el && sl.el.wrap) sl.el.wrap.remove();
+      delete card.slots[id];
+    }
+    if (st.velden[id]) { st.velden[id].remove(); delete st.velden[id]; }
+    st.slotIds = st.slotIds.filter((x) => x !== id);
+  }
+  let geen = li.querySelector('.st-geen');
+  if (!slots.length) {
+    if (!geen) { geen = document.createElement('p'); geen.className = 'st-geen'; geen.textContent = T.geenPlek || ''; rij.appendChild(geen); }
+  } else if (geen) { geen.remove(); }
+  const gratis = li.querySelector('.st-gratis');
+  if (gratis) gratis.hidden = !slots.length;
+
+  for (const slot of slots) {
+    const spec = cfg.styling.slots[slot];
+    if (!spec) continue;
+    const id = spec.shot;
+    if (st.slotIds.includes(id) && card.slots[id] && card.slots[id].el) continue;
+    if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
+    const wrap = buildSlot(card, id);
+    rij.appendChild(wrap);
+    st.slotIds.push(id);
+    paintSlot(card, id);
+
+    /* Het verborgen veld dat de keuze draagt, en de waarnemer die het bijhoudt. */
+    const veld = document.createElement('input');
+    veld.type = 'hidden';
+    veld.name = `context_${slot}_${card.key}`;
+    veld.value = 'ours';
+    li.appendChild(veld);
+    st.velden[id] = veld;
+    const mo = new MutationObserver(() => {
+      const heeft = wrap.dataset.state === 'filled';
+      const nieuw = heeft ? 'own' : 'ours';
+      if (veld.value !== nieuw) { veld.value = nieuw; paintStylingRow(card); }
+    });
+    mo.observe(wrap, { attributes: true, attributeFilter: ['data-state'] });
+    st.waarnemers.push(mo);
+  }
+  /* Vakjes op volgorde van de plekken houden (een type-wissel kan ze anders
+     achteraan zetten). */
+  for (const slot of slots) {
+    const spec = cfg.styling.slots[slot];
+    const sl = spec && card.slots[spec.shot];
+    if (sl && sl.el && sl.el.wrap) rij.appendChild(sl.el.wrap);
+  }
+
+  /* De regel "wij kiezen", en het poppetje. */
+  const eigen = [];
+  const delen = [];
+  for (const slot of slots) {
+    const spec = cfg.styling.slots[slot];
+    if (!spec) continue;
+    const sl = card.slots[spec.shot];
+    const own = Boolean(sl && sl.file && sl.status !== 'failed');
+    if (own) eigen.push(slot); else if (spec.standaard) delen.push(spec.standaard);
+  }
+  const ons = li.querySelector('.st-ons');
+  ons.textContent = delen.length ? delen.join(' · ') : (slots.length ? '—' : '');
+  paintPop(st.popEl, { crop: cropVoor(type), product: type, own: eigen });
 }
 
 /** Parse the server-rendered config. Returns null rather than throwing. */
@@ -2991,6 +3229,13 @@ function shotLabel(id) {
   // "Referentie 2" is precies de verwarring waar de eigen prefix voor bestaat.
   const r = refShotNumber(id);
   if (r) return c('pu.refSlot', { n: r });
+  /* Een contextvakje draagt de naam van zijn plek ("Schoenen", "Eronder"): uit
+     de config, want die naam komt uit garments.js. */
+  if (cfg && cfg.styling && String(id).startsWith('ctx-')) {
+    const slot = String(id).slice(4);
+    const spec = cfg.styling.slots && cfg.styling.slots[slot];
+    if (spec && spec.naam) return spec.naam;
+  }
   return c(`pu.shot.${id}`) || id;
 }
 
@@ -3645,7 +3890,7 @@ function buildCard(card) {
   input.placeholder = c('pu.productName');
   input.setAttribute('aria-label', `${c('pu.productName')} — ${c('pu.product', { n: card.n })}`);
   input.autocomplete = 'off';
-  input.addEventListener('change', () => { renderTray(); paintCard(card); });
+  input.addEventListener('change', () => { renderTray(); paintCard(card); if (card.styling) paintStylingRow(card); });
 
   const toggle = document.createElement('button');
   toggle.type = 'button';
@@ -5366,6 +5611,8 @@ function paintCard(card) {
      bij een verandering ín de lade: het gezicht van de BESTELLING kan wijzigen
      (paintModelDefaults) en dan verandert wat "volgt de bestelling" betekent. */
   paintMeer(card);
+  /* En de stylingrij onderaan de stap: die telt de foto's van deze kaart. */
+  if (card.styling) paintStylingRow(card);
 }
 
 /**
@@ -5400,6 +5647,7 @@ function progressText() {
 
 function refreshUploader() {
   cards.forEach(paintCard);
+  syncStyling();
   // The card count moves with the count on step 1, and the copy-down has
   // nothing to say while there is one card.
   syncCopyDown(cards[0]);
@@ -6819,7 +7067,7 @@ function addOwnStyles(me) {
    naam in het accent. Alleen tekens die in een SVG-tekstknoop mogen. */
 function ownLookPlaceholder(name) {
   const tekst = escHtml(String(name || '').slice(0, 24));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1C1D18"/><text x="24" y="264" font-family="Hanken Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="#D2E04A">${tekst}</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1C1D18"/><text x="24" y="264" font-family="Hanken Grotesk, Arial, sans-serif" font-size="22" font-weight="700" fill="#4A1FFF">${tekst}</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 

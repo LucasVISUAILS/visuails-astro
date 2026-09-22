@@ -94,49 +94,74 @@
      Die twee wensen samen betekenen dat een blok niet meer als DOOS mag lezen
      maar als CEL: gescheiden door een haarlijn, niet omsloten door een kader.
      Zie .statrow verderop, waar dat als eerste is uitgevoerd. */
-  --paper:      #F5F5F5;               /* body ground                       */
-  --paper-2:    #EDEDED;               /* recessed / banded                 */
-  --paper-lift: #FFFFFF;               /* raised — a card off the ground    */
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     KLEURENSCHEMA.md — 20 SEPTEMBER 2026 (lichte stand)
+     ═══════════════════════════════════════════════════════════════════════
+     Handkopie, net als de rest van dit blad: een Worker kan de gebouwde
+     stylesheet van de site niet bereiken. De waarden zijn letterlijk die uit
+     KLEURENSCHEMA.md — verandert daar iets, dan hier ook.
+     ═══════════════════════════════════════════════════════════════════════ */
+  --accent:          #4A1FFF;
+  --on-accent:       #FFFFFF;
+  --accent-text:     #3D17D6;
+  --accent-tint:     #E4DFFF;
+  --on-accent-tint:  #2A0E8F;
+  --accent-dim:      #3D17D6;
+  --panel:           #000000;
+  --on-panel:        #F2F3F5;
+  --sunken:          #DADEE5;
+  --line-soft:       rgb(0 0 0 / .10);
+
+  --st-wait-fill: transparent;  --st-wait-edge: #7C8096;              --st-wait-ink: #4A4E6B;
+  --st-work-fill: #E4DFFF;      --st-work-edge: rgb(61 23 214 / .30);  --st-work-ink: #3D17D6;
+  --st-done-fill: #1F0B66;      --st-done-edge: #1F0B66;               --st-done-ink: #FFFFFF;
+  --st-rev-fill:  #F6E7D1;      --st-rev-edge:  rgb(138 77 6 / .30);   --st-rev-ink:  #8A4D06;
+  --st-can-fill:  #E4E7EC;      --st-can-edge:  #83868A;               --st-can-ink:  #3E4145;
+
+  --paper:      #F2F3F5;               /* body ground                       */
+  --paper-2:    #E4E7EC;               /* recessed / banded                 */
+  --paper-lift: #E4E7EC;               /* raised — a card off the ground    */
 
   /* Espresso's two names, kept as aliases so .btn-dark and the raised panels
      keep resolving. There is no espresso any more; these are the two surface
      steps above the ground. */
-  --ink-850:  #1A1A1A;
-  --ink-800:  #242424;
+  --ink-850:  #0C0D10;
+  --ink-800:  #14161A;
 
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
      same way on every one of the three surfaces above. */
-  --ink-900:  #0A0A0A;
-  --ink-700:  #454545;
+  --ink-900:  #000000;
+  --ink-700:  rgb(0 0 0 / .66);
   /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
      met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
      blijven staan op de oudere, lichtere waarde. Op wit haalde die het nog
      (5,1:1), op de tweede grond #EDEDED niet: 4,36:1, en daar staat de meta-regel
      van elke aandachtkaart in. Precies de afdrijving waar de kop van dit blok
      voor waarschuwt, gevonden door te meten. */
-  --ink-500:  #686868;
-  --ink-300:  rgb(10 10 10 / 0.26);  /* rules, never text */
-  --ink-200:  #DFDFDF;  /* hairlines */
-  --ink-100:  #0A0A0A;
+  --ink-500:  rgb(0 0 0 / .56);
+  --ink-300:  rgb(0 0 0 / .34);  /* rules, never text */
+  --ink-200:  rgb(0 0 0 / .20);  /* hairlines */
+  --ink-100:  #000000;
 
   /* The three "on dark" names are now the same values as the ink ramp, because
      every ground is dark. They stay as separate names rather than being
      collapsed: the rules that read them are the rules that would break first
      if a light ground ever came back. */
-  --paper-on-dark:       #FFFFFF;
-  --paper-soft-on-dark:  rgb(255 255 255 / 0.80);
-  --paper-muted-on-dark: rgb(255 255 255 / 0.66);
+  --paper-on-dark:       #F2F3F5;
+  --paper-soft-on-dark:  rgb(242 243 245 / .72);
+  --paper-muted-on-dark: rgb(242 243 245 / .55);
 
   /* ---- mist tints ----
      Four warm/cool separator tints under the old scheme. On a near-black
      ground a tint is a lighter surface, and four of them would be four
      surfaces nobody can tell apart, so all four resolve to the one raised
      step. Kept as four names because the markup reads them by meaning. */
-  --mist-teal:  #EDEDED;
-  --mist-clay:  #EDEDED;
-  --mist-slate: #EDEDED;
-  --mist-stone: #EDEDED;
+  --mist-teal:  #E4E7EC;
+  --mist-clay:  var(--st-rev-fill);
+  --mist-slate: #E4E7EC;
+  --mist-stone: #E4E7EC;
 
   /* ---- accent ----
      #C6F100 since August 2026, moved with the site — see the accent note in
@@ -150,11 +175,11 @@
      hue. --teal-grad and --teal-hover are the one step DOWN a hover may take;
      on a dark ground the text-safe cut is the accent itself, which is why
      they are not five darkening steps the way they were on paper. */
-  --teal:       #D2E04A;
-  --teal-grad:  #B8CC46;
-  --teal-hover: #B8CC46;
-  --teal-text:  #0A0A0A;
-  --teal-deep:  #0A0A0A;
+  --teal:       var(--accent);
+  --teal-grad:  var(--accent-dim);
+  --teal-hover: var(--accent-dim);
+  --teal-text:  var(--accent-text);
+  --teal-deep:  var(--accent-text);
 
   /* THE ATTENTION COLOUR. Was a pink left over from the decorative palette;
      #E9963B since August 2026 — see the --clay note in src/styles/global.css
@@ -162,32 +187,32 @@
      ground, 7.44:1 on the raised surface, so it is safe as text. --warn and
      --flag below both read it, which is what makes "pay attention" one colour
      on this site instead of three. */
-  --clay:       #E9963B;
-  --clay-text:  #8A4F06;
+  --clay:       var(--st-rev-ink);
+  --clay-text:  var(--st-rev-ink);
 
   /* Ghost fill for secondary and small buttons — a paper alpha now, not an
      ink alpha. An ink alpha on a near-black ground is invisible. */
-  --ghost:      rgb(10 10 10 / 0.06);
+  --ghost:      rgb(0 0 0 / .06);
 
   /* Button surfaces as TOKENS, not as descendant rules — see global.css. */
   --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(10 10 10 / 0.12);
+  --btn-ghost-fill-hover:  rgb(0 0 0 / .12);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(10 10 10 / 0.06);
-  --btn-2nd-ink:           #0A0A0A;
-  --btn-2nd-border:        rgb(10 10 10 / 0.24);
-  --btn-2nd-border-hover:  rgb(10 10 10 / 0.60);
+  --btn-2nd-fill-hover:    rgb(0 0 0 / .06);
+  --btn-2nd-ink:           #000000;
+  --btn-2nd-border:        rgb(0 0 0 / .24);
+  --btn-2nd-border-hover:  rgb(0 0 0 / .60);
 
   /* ---- system colour ----
      Still two hues, still never the sole carrier of state — every status
      carries a word. The -ink variants are the ones allowed to set body text,
      and on this ground both cuts clear 4.5:1, so they equal their fills. */
-  --signal:      var(--teal);
-  --signal-ink:  var(--teal-text);
-  --warn:        var(--clay);
-  --warn-ink:    var(--clay-text);
-  --verify:      var(--signal);
-  --verify-ink:  var(--signal-ink);
+  --signal:      var(--st-work-fill);
+  --signal-ink:  var(--st-work-ink);
+  --warn:        var(--st-rev-fill);
+  --warn-ink:    var(--st-rev-ink);
+  --verify:      var(--st-done-fill);
+  --verify-ink:  var(--st-done-ink);
   --flag:        var(--warn);
   --flag-ink:    var(--warn-ink);
 
@@ -197,7 +222,7 @@
      darkest ink and, by coincidence of value, the dark ground — and every
      rule that used it as a ground went white the moment the ramp flipped.
      The deep ground is stated as a ground. */
-  --bg-deep:    #111111;
+  --bg-deep:    var(--panel);
   --bg-raise:   var(--paper-2);
   --surface:    var(--paper-lift);
   --surface-2:  var(--paper-2);
@@ -215,30 +240,49 @@
   --line-strong: var(--ink-300);
   /* The border a focused field takes: strong enough to read as "this one",
      which on a dark ground means brighter, not darker. */
-  --line-ui:     rgb(10 10 10 / 0.45);
+  --line-ui:     rgb(0 0 0 / .45);
 
   --brand:         var(--ink-900);
-  --accent:        var(--teal);
+  /* ── `--accent: var(--teal)` STOND HIER, EN HET WAS EEN KRINGETJE ────────
+     20 september 2026. Sinds de kleurwissel staat bovenin `--accent: #4A1FFF`
+     en even verderop `--teal: var(--accent)`. Deze regel, die ouder is dan
+     allebei, maakte er `--accent -> --teal -> --accent` van.
+
+     EEN CSS-VARIABELE DIE NAAR ZICHZELF WIJST IS ONGELDIG OP BEREKENINGSTIJD.
+     Niet "valt terug op de vorige waarde": de declaratie bestaat niet meer, en
+     elke regel die hem leest erft in plaats daarvan. Gevolg hier: `.btn-primary`
+     had GEEN vulling meer — witte letters op de paginagrond, 1,24:1 — en dat op
+     elke primaire knop in dit paneel. Het viel niemand op omdat een knop zonder
+     vulling er nog steeds uitziet als tekst die er hoort te staan.
+
+     Dit is de TWEEDE keer dat deze val toeslaat; de eerste was --ink/--ink-1 in
+     global.css en toen verdween de kop van de voorpagina. Vandaar
+     kladblok/_tokencheck.mjs, dat elk token in dit bestand opzoekt en meldt
+     welke niet oplossen. Draai hem na elke kleurronde.
+
+     `--teal` blijft bestaan als alias naar `--accent` (regel hierboven): hij
+     staat in dit bestand op tientallen plekken en die hernoemen is een eigen
+     ronde. */
   /* The label ON the accent. It was paper-on-dark, because the accent was a
      dark teal; the accent is a light blue now, so the label is the ground.
      10.43:1. */
-  --accent-on:     #0A0A0A;
-  --accent-ink:    #0A0A0A;
+  --accent-on:     var(--on-accent);
+  --accent-ink:    var(--on-accent);
   --accent-2:      var(--teal-text);
   --accent-word:   var(--teal-text);
   --accent-bright: var(--teal-text);
-  --accent-soft:   rgb(210 224 74 / 0.22);
+  --accent-soft:   #E4E7EC;
   --accent-line:   var(--ink-300);
 
-  --focus-ring:    #0A0A0A;
+  --focus-ring:    #000000;
 
   /* The <select> caret, as a data URL rather than a token the SVG can read —
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
      ramp's top step; when that moves, this moves with it or the caret stops
      matching. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230A0A0A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-  --font: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
+  --font: "Figtree Variable", "Helvetica Neue", Arial, sans-serif;
 
   /* ---- radius ----
      There IS a scale now, and there is exactly one place it is written. The
@@ -251,9 +295,12 @@
      and the three values have to move in step with it: this stylesheet is
      served to a page that links back into the same site, and a dashboard with
      tighter corners than the page it came from reads as a different product. */
-  --r-lg: 4px;   /* cards, panels, tiles */
-  --r-md: 4px;   /* buttons, fields, pills */
-  --r-sm: 2px;    /* the small stuff inside them */
+  /* De drie vormen uit KLEURENSCHEMA.md, 20 september 2026. */
+  --r-card: 12px;
+  --r-field: 10px;
+  --r-lg: var(--r-card);
+  --r-md: var(--r-field);
+  --r-sm: var(--r-field);
   --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
 
@@ -274,10 +321,10 @@
 /* ══ SECTIE 22 — DE LETTER VAN DE SITE — 7 september 2026 ═══════════════════
    GETELD, NIET GEGOKT. Hier stond Hubot Sans voor de koppen, Satoshi voor de
    lopende tekst en Sometype Mono voor nummers. /fonts/gedeeld.css levert er
-   geen van drieën: het schrijft Anybody, Instrument Sans en Martian Mono, en
-   Satoshi alleen als de twee woff2's in public/fonts/satoshi/ staan — daar
-   ligt nu alleen een LEES-MIJ. Alle drie de werkschermen stonden dus in
-   Arial te renderen terwijl de site in Instrument Sans staat.
+   geen van drieën: het schrijft Anybody, Figtree en Martian Mono. Alle drie de
+   werkschermen stonden dus in Arial te renderen terwijl de site dat niet deed.
+   (De Satoshi-tak die hier ook beschreven stond is op 21 september 2026
+   verdwenen — zie de noot bij --font-body in global.css.)
 
    De namen hieronder zijn nu de snitten die de build ECHT kopieert; zie
    scripts/fonts-voor-worker.mjs, dat de enige waarheid is over wat er staat.
@@ -891,3 +938,36 @@ body {
 /* DRIE. .note stond op --paper-2, dezelfde tint als de map eromheen, dus binnen
    die sectie was hij onzichtbaar. Buiten die sectie blijft hij zoals hij was. */
 .note { border-radius: var(--r-md); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   .stand — DE STATUSPIL. HANDKOPIE — 20 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   Woordelijk dezelfde regels als in src/styles/global.css. Dit bestand wordt
+   los geladen (geen build, geen import), dus hij staat hier nog een keer; de
+   waarden zelf komen uit de vijftien --st-*-tokens bovenin dit bestand, dus een
+   kleur verandert nog steeds op één plek. Verandert de VORM, dan verandert hij
+   hier mee — zie de noot in global.css voor waarom dit component bestaat.
+
+   Maat uit KLEURENSCHEMA.md: pil, 28px hoog, mono, hoofdletters, 11px, stip van
+   6px in currentColor, altijd het woord ernaast. De stand komt uit
+   src/data/status.js; in de klassenaam staat nooit meer een ruwe statuswaarde. */
+.stand {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  min-height: 28px; padding: 0 .7rem;
+  border: 0; border-radius: var(--r-pill);
+  font-family: var(--font-mono); font-stretch: var(--stretch-mono);
+  font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  background: var(--st-wait-fill); color: var(--st-wait-ink);
+  box-shadow: inset 0 0 0 1px var(--st-wait-edge);
+}
+.stand::before {
+  content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+}
+.stand.is-wait { background: var(--st-wait-fill); color: var(--st-wait-ink); box-shadow: inset 0 0 0 1px var(--st-wait-edge); }
+.stand.is-work { background: var(--st-work-fill); color: var(--st-work-ink); box-shadow: inset 0 0 0 1px var(--st-work-edge); }
+.stand.is-done { background: var(--st-done-fill); color: var(--st-done-ink); box-shadow: inset 0 0 0 1px var(--st-done-edge); }
+.stand.is-rev  { background: var(--st-rev-fill);  color: var(--st-rev-ink);  box-shadow: inset 0 0 0 1px var(--st-rev-edge); }
+.stand.is-can  { background: var(--st-can-fill);  color: var(--st-can-ink);  box-shadow: inset 0 0 0 1px var(--st-can-edge); }
+a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }

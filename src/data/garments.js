@@ -97,8 +97,9 @@
 export const CROPS = {
   /** Van de taille naar beneden. Broek, rok, short. */
   lower: { id: 'lower', face: false, inFrame: ['shoes', 'bottom', 'top'] },
-  /** Van de heup naar boven. Top, shirt, trui. */
-  upper: { id: 'upper', face: true, inFrame: ['top', 'bottom'] },
+  /** Van de heup naar boven. Top, shirt, trui. `underlayer` staat hier ook in:
+      de kraag en de zoom van wat ERONDER zit — zie de noot bij die plek. */
+  upper: { id: 'upper', face: true, inFrame: ['underlayer', 'top', 'bottom'] },
   /** Hele figuur. Jas, jurk, jumpsuit, tas. */
   full: { id: 'full', face: true, inFrame: ['shoes', 'bottom', 'top'] },
   /** Voeten en onderbeen. Schoenen, sokken. */
@@ -151,6 +152,19 @@ export const CONTEXT_SLOTS = {
     name: { en: 'Trousers or skirt', nl: 'Broek of rok' },
     seen: { en: 'the waistband, at the edge of the frame', nl: 'de tailleband, aan de rand van het beeld' },
   },
+  /* ── DE LAAG ERONDER — 22 september 2026 ───────────────────────────────────
+     Lucas, bij het uittekenen van het bestelformulier: *"t-shirt onder de
+     hoodie"*. Dat is een ander soort plek dan de drie hierboven: geen buurman
+     in het beeld maar een LAAG onder het product, zichtbaar aan de kraag en
+     langs de zoom. Hij bestaat alleen als het product zelf een bovenstuk is
+     waar iets onder past — zie `layered` bij GARMENTS en de filter in
+     contextSlots(). Bij een jas is de "top" al de laag eronder, dus daar hoort
+     hij niet nog een keer. */
+  underlayer: {
+    id: 'underlayer',
+    name: { en: 'Underneath', nl: 'Eronder' },
+    seen: { en: 'the collar and the hem', nl: 'de kraag en de zoom' },
+  },
 };
 
 export const CONTEXT_SLOT_IDS = Object.keys(CONTEXT_SLOTS);
@@ -170,7 +184,9 @@ export const GARMENTS = [
   { id: 'trousers', crop: 'lower', occupies: ['bottom'], name: { en: 'Trousers or jeans', nl: 'Broek of jeans' } },
   { id: 'shorts', crop: 'lower', occupies: ['bottom'], name: { en: 'Shorts', nl: 'Short' } },
   { id: 'skirt', crop: 'lower', occupies: ['bottom'], name: { en: 'Skirt', nl: 'Rok' } },
-  { id: 'top', crop: 'upper', occupies: ['top'], name: { en: 'Top, shirt or sweater', nl: 'Top, shirt of trui' } },
+  /* `layered`: onder dit product past nog een laag (kraag en zoom in beeld).
+     Alleen hier — een jas heeft zijn laag al als de plek `top`. */
+  { id: 'top', crop: 'upper', occupies: ['top'], layered: true, name: { en: 'Top, shirt or sweater', nl: 'Top, shirt of trui' } },
   /* Een jas bezet GEEN plek: hij is een laag over de top, en de top eronder is dus
      nog een keuze. Alle drie staan open. */
   { id: 'outerwear', crop: 'full', occupies: [], name: { en: 'Jacket or coat', nl: 'Jas of mantel' } },
@@ -254,9 +270,12 @@ export function modelQuestion(id) {
  * bovenaan het beeld" op twee plekken.
  */
 export function contextSlots(id) {
-  const bezet = garment(id).occupies || [];
+  const g = garment(id);
+  const bezet = g.occupies || [];
   return cropFor(id).inFrame
     .filter((s) => !bezet.includes(s))
+    /* De laag eronder bestaat alleen onder een product dat er een heeft. */
+    .filter((s) => s !== 'underlayer' || g.layered === true)
     .map((s) => CONTEXT_SLOTS[s])
     .filter(Boolean);
 }
@@ -333,6 +352,74 @@ export function copy(lang = 'en') {
 }
 
 /*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE STYLING ZIT ERBIJ — 22 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"alsof wij echt een fotografiestudio zijn maar we brengen in dit geval
+ * niet extra kosten in rekening, het gaat om het aangeleverde product en dat word
+ * dan ook center of attention, de extra producten die het model dan draagt zijn
+ * puur toevoeging om de outfit wat meer gevoel te geven."*
+ *
+ * Bij een echte studio kiest de klant de tegenhanger niet; de stylist trekt iets
+ * van het rek dat het stuk goed laat staan. Dat is hier ook zo, en het staat
+ * OPGESCHREVEN, want een keuze die je vooraf kunt lezen is geen mening meer maar
+ * een specificatie waar de klant ja of nee tegen zegt.
+ *
+ * ── DE HUISREGEL ───────────────────────────────────────────────────────────
+ *
+ * Wat wij erbij zetten is nooit ontworpen kleding: effen, één kleur, geen print,
+ * geen logo, geen beslag — en altijd een andere toon dan het product, zodat het
+ * silhouet loskomt. Dat laatste is regel één van het vak (zie
+ * kladblok/VOORSTEL-CONTEXTKLEDING.md §3) en het is de reden dat een vaste
+ * merkvoorkeur ("altijd zwart") niet kan: onder een zwarte hoodie komt geen
+ * zwarte broek. De TOON wordt dus in de productie per stuk bepaald; wat hier
+ * staat is de VORM die de klant vooraf leest.
+ *
+ * ── WAAROM DIT HIER STAAT ──────────────────────────────────────────────────
+ *
+ * Dezelfde reden als CONTEXT_RULES: het is een belofte, en een belofte die op twee
+ * plekken staat (formulier én /admin) staat er op een dag twee keer anders.
+ * Formulier, bevestiging en werkmap lezen allemaal deze ene tabel.
+ */
+export const STYLING_STANDAARD = {
+  shoes:      { nl: 'blanco sneaker of lage schoen',       en: 'plain sneaker or low shoe' },
+  top:        { nl: 'effen T-shirt',                       en: 'plain T-shirt' },
+  bottom:     { nl: 'effen broek, recht model',            en: 'plain trousers, straight cut' },
+  underlayer: { nl: 'effen T-shirt eronder',               en: 'plain T-shirt underneath' },
+};
+
+export const STYLING_HUISREGEL = {
+  nl: 'Effen, ongemerkt, nooit met een logo — en altijd een andere toon dan jouw product, zodat het loskomt.',
+  en: 'Plain, unbranded, never with a logo — and always a different tone from your product, so it stands out.',
+};
+
+/** Wat de klant leest als hij een eigen stuk erbij zet. */
+export const STYLING_EIGEN = { nl: 'jouw eigen stuk', en: 'your own piece' };
+
+/**
+ * Eén regel per product: wat er naast het product in beeld komt.
+ *
+ * `keuzes` is { shoes: 'ours'|'own', … } — alleen de plekken die bij dit type
+ * horen tellen; de rest wordt genegeerd, net als op de server. Geeft een lijst
+ * van { slot, naam, tekst, eigen } terug zodat het formulier en /admin hem elk
+ * op hun eigen manier kunnen zetten, en `regel` als kant-en-klare zin.
+ */
+export function stylingVoor(garmentId, keuzes = {}, lang = 'en') {
+  const l = lang === 'nl' ? 'nl' : 'en';
+  const delen = contextSlots(garmentId).map((s) => {
+    const eigen = String(keuzes[s.id] || '') === 'own';
+    return {
+      slot: s.id,
+      naam: s.name[l],
+      tekst: eigen ? STYLING_EIGEN[l] : (STYLING_STANDAARD[s.id]?.[l] || ''),
+      eigen,
+    };
+  });
+  return { delen, regel: delen.map((d) => d.tekst).filter(Boolean).join(' · ') };
+}
+
+/*
  * ── DE WERKMAP MOET HET VERSCHIL WETEN ─────────────────────────────────────
  *
  * De klant levert foto’s van een contextstuk aan, en die komen in dezelfde upload
@@ -386,6 +473,17 @@ function assertGarments() {
   const gebruikt = new Set(Object.values(CROPS).flatMap((c) => c.inFrame));
   for (const slot of CONTEXT_SLOT_IDS) {
     if (!gebruikt.has(slot)) throw new Error(`garments.js: plek '${slot}' komt in geen enkele uitsnede voor`);
+    /* Elke plek heeft een standaard, anders leest de klant een lege regel. */
+    if (!STYLING_STANDAARD[slot]?.nl || !STYLING_STANDAARD[slot]?.en) {
+      throw new Error(`garments.js: plek '${slot}' heeft geen standaardstyling`);
+    }
+  }
+  /* De laag eronder kan alleen bestaan bij een type waarvan de uitsnede hem ook
+     toont; anders is `layered` een vlag die niets doet. */
+  for (const g of GARMENTS) {
+    if (g.layered && !CROPS[g.crop].inFrame.includes('underlayer')) {
+      throw new Error(`garments.js: type '${g.id}' is layered maar uitsnede '${g.crop}' toont geen laag eronder`);
+    }
   }
 }
 assertGarments();

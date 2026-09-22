@@ -1109,7 +1109,10 @@ const nl = lang === 'nl';
      Op dezelfde regel als de dienstnaam, want het is een eigenschap van die
      dienst en geen tweede kop. `flex-wrap` omdat het in het Nederlands langer
      is dan in het Engels en op een smal scherm moet kunnen zakken. */
-  .st-kopregel { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; margin: 0 0 .2rem; }
+  /* .55rem onder in plaats van .2rem: gemeten stond deze regel 8 px boven
+     .st-waar en las hij als de eerste regel van die kop. Zie de noot bij
+     .sr-k-kop in StyleRows.astro. */
+  .st-kopregel { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; margin: 0 0 .55rem; }
   .st-eigen {
     font-family: var(--mono, ui-monospace, monospace);
     /* .72rem en niet .62: de leesbaarheidsvloer van deze site (11,5 px). */
@@ -1117,7 +1120,7 @@ const nl = lang === 'nl';
     padding: .12rem .45rem; white-space: nowrap;
     border: 1px solid var(--inkt);
   }
-  .st-eigen.is-met { background: var(--accent); color: var(--inkt); }
+  .st-eigen.is-met { background: var(--accent); color: var(--on-accent); }
   .st-eigen.is-zonder { border-color: var(--lijn-sterk); color: var(--inkt-3); }
   /* De derde stand ligt tussen de twee in, en de vorm zegt dat ook: de omlijning
      van "zonder" met de inkt van "met". Niet half-accent — een kleur op halve

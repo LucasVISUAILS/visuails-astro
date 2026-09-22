@@ -1,0 +1,294 @@
+---
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE STYLING — WAT JE OPSTUURT, EN WAT ER NOG BIJ KAN
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Onderaan stap 2, ná de productkaarten en vóór "Verder". Lucas, 22 september
+ * 2026: *"Ik wil het scherm (dat overigens ook simpelweg overgeslagen kan
+ * worden) als een soort overzicht maken van wat de klant allemaal heeft
+ * opgestuurd, en hij kan per product dus nog producten toevoegen die gedragen
+ * moeten worden met het hoofdproduct (het verschil tussen hoofdproduct en extra
+ * kleding moet dan ook heel duidelijk zichtbaar zijn). Ik denk dat ik ook de
+ * klant zijn productsoort wil laten kiezen."*
+ *
+ * ── WAT HIER STAAT, EN WAAROM IN DEZE VOLGORDE ─────────────────────────────
+ *
+ *   1. De uitleg, ÉÉN KEER: het poppetje groot, met het kader dat de foto is,
+ *      en de zin "de styling zit erbij". Dezelfde afspraak als de gids bovenaan
+ *      de uploader — de uitleg één keer, in een rij alleen een verwijzing.
+ *   2. Het producttype voor de HELE bestelling, al toegepast. Een merk stuurt
+ *      meestal twaalf keer hetzelfde soort; een knop "toepassen op alles" zou
+ *      van het normale geval een handeling maken.
+ *   3. Eén rij per product (pipeline.js bouwt ze uit dezelfde kaarten): het
+ *      kleine poppetje, wat er van het product binnen is, de plekken die bij
+ *      dit type ERBIJ kunnen, en de regel "wij kiezen". Elke rij heeft zijn
+ *      eigen typekeuze om van de bestelling af te wijken.
+ *
+ * ── ZONDER JAVASCRIPT ──────────────────────────────────────────────────────
+ *
+ * Dan zijn er geen kaarten en dus geen rijen. Wat er dan staat is de oude vorm:
+ * het type voor de bestelling en per plek een keuzelijst "wij kiezen / ik
+ * lever aan". Dat is `data-pl-ctx` hieronder; pipeline.js zet het uit zodra de
+ * rijen er zijn (disabled, zodat het niets post). De server kent beide vormen —
+ * zie de noot bij het producttype in functions/api/order.js.
+ *
+ * ── HET VERSCHIL TUSSEN PRODUCT EN BIJKLEDING ──────────────────────────────
+ *
+ * Vier signalen, geen ervan is kleur: de vulling in de tekening (zwart · half ·
+ * licht), de vorm van het vakje (vierkant met zwarte rand tegenover rond met
+ * halve rand), het opschrift links van elk blokje, en wat het kost (het tarief
+ * tegenover niets). Zie kladblok/VOORSTEL-CONTEXTKLEDING.md §13.
+ */
+import Poppetje from './Poppetje.astro';
+import {
+  GARMENTS, CONTEXT_SLOTS, CONTEXT_SLOT_IDS, CONTEXT_OURS, copy as contextCopy,
+  STYLING_HUISREGEL,
+} from '../../data/garments.js';
+
+interface Props { lang: 'en' | 'nl' }
+const { lang } = Astro.props;
+const gc = contextCopy(lang);
+
+const T = {
+  en: {
+    etiket: 'Last part of the material',
+    h: 'What you are sending — and what can go with it.',
+    lede: 'Every product gets one photo on a model, and that frame always shows a little more than the product itself. We choose that, unless you add something of your own here.',
+    skip: 'Skip · you choose',
+    uitlegH: { lower: 'Trousers are photographed from the waist down.', upper: 'A top is photographed from the hips up.', full: 'This is photographed as a full figure.', feet: 'Shoes are photographed at the feet.', waist: 'A belt is photographed at the waist.', head: 'This is photographed at the head.', detail: 'This is photographed close up.', figure: 'This is photographed on the body alone.' },
+    uitlegP: { lower: 'So the frame also shows the shoes and the hem of a top. The face is outside it — nothing to decide there.', upper: 'So the frame also shows the collar and hem of what is underneath, and the waistband of the trousers. Legs and shoes are outside it — nothing to decide there.', full: 'So the frame shows shoes, trousers and a top around your product.', feet: 'So the frame shows the hem of the trousers, and nothing else.', waist: 'So the frame shows the top above it and the trousers below it.', head: 'So the frame shows the top of a shirt, and nothing else.', detail: 'So the frame shows the collar of a top, and nothing else.', figure: 'Nothing else is in the frame.' },
+    legJouw: 'Your product — photographed', legErbij: 'Added by you — in frame only', legOns: 'Chosen by us',
+    kader: 'The frame is the photo',
+    stylingH: 'Styling is included.',
+    stylingP: 'What the model wears beside your product we choose, per piece, so that your product stands out. A photo studio bills a stylist by the day; here it is in the price.',
+    allesLabel: 'What kind of products are these?',
+    allesBlank: 'Pick a type',
+    allesGedaan: 'applied to all {n} · adjustable per product',
+    allesEen: 'applied to this product',
+    rijType: 'Same as the order',
+    jouw: 'Your product', erbij: 'Add alongside', ons: 'We choose',
+    fotos: '{n} of {m} photos in',
+    gratis: 'Not photographed as a product, and free. Has a logo on it? We remove it.',
+    geenPlek: 'Nothing to add here: with this type nothing else is in the frame.',
+    eigen: 'your own piece',
+    voegToe: '+ {naam}',
+  },
+  nl: {
+    etiket: 'Laatste deel van het materiaal',
+    h: 'Wat je opstuurt — en wat er nog bij kan.',
+    lede: 'Van elk product komt één foto op een model, en daarop staat altijd iets meer dan je product alleen. Dat kiezen wij, tenzij je hier zelf iets meegeeft.',
+    skip: 'Overslaan · wij kiezen',
+    uitlegH: { lower: 'Een broek wordt van de taille naar beneden gefotografeerd.', upper: 'Een bovenstuk wordt van de heup naar boven gefotografeerd.', full: 'Dit wordt als hele figuur gefotografeerd.', feet: 'Schoenen worden bij de voeten gefotografeerd.', waist: 'Een riem wordt bij de taille gefotografeerd.', head: 'Dit wordt bij het hoofd gefotografeerd.', detail: 'Dit wordt van dichtbij gefotografeerd.', figure: 'Dit wordt op het lichaam alleen gefotografeerd.' },
+    uitlegP: { lower: 'Daardoor zie je ook de schoenen en de zoom van een top. Het gezicht valt erbuiten — daar hoef je niets over te beslissen.', upper: 'Daardoor zie je ook de kraag en zoom van wat eronder zit, en de tailleband van de broek. Benen en schoenen vallen erbuiten — daar hoef je niets over te beslissen.', full: 'Daardoor zie je schoenen, broek en een top rond je product.', feet: 'Daardoor zie je de zoom van de broek, en verder niets.', waist: 'Daardoor zie je de top erboven en de broek eronder.', head: 'Daardoor zie je de bovenkant van een shirt, en verder niets.', detail: 'Daardoor zie je de kraag van een top, en verder niets.', figure: 'Er staat verder niets in beeld.' },
+    legJouw: 'Jouw product — wordt gefotografeerd', legErbij: 'Door jou erbij gezet — alleen in beeld', legOns: 'Door ons gekozen',
+    kader: 'Het kader is de foto',
+    stylingH: 'De styling zit erbij.',
+    stylingP: 'Wat het model verder draagt kiezen wij, per stuk, zó dat jouw product loskomt. Een fotostudio rekent hiervoor een stylist per dag; bij ons staat het in de prijs.',
+    allesLabel: 'Wat voor producten zijn dit?',
+    allesBlank: 'Kies een soort',
+    allesGedaan: 'toegepast op alle {n} · per product aan te passen',
+    allesEen: 'toegepast op dit product',
+    rijType: 'Zelfde als de bestelling',
+    jouw: 'Jouw product', erbij: 'Erbij zetten', ons: 'Wij kiezen',
+    fotos: '{n} van {m} foto’s binnen',
+    gratis: 'Wordt niet als product gefotografeerd en kost niets. Zit er een logo op? Dat halen we weg.',
+    geenPlek: 'Hier valt niets toe te voegen: bij dit type staat er verder niets in beeld.',
+    eigen: 'jouw eigen stuk',
+    voegToe: '+ {naam}',
+  },
+}[lang];
+---
+<section class="st" data-pl-styling aria-labelledby="st-h" data-st-copy={JSON.stringify(T)}>
+  <div class="st-kop">
+    <div>
+      <p class="st-etiket">{T.etiket}</p>
+      <h3 class="st-h" id="st-h">{T.h}</h3>
+    </div>
+    <button type="button" class="st-over" data-pl-styling-skip hidden>{T.skip}</button>
+  </div>
+  <p class="st-lede">{T.lede}</p>
+
+  {/* ── 1 · DE UITLEG, ÉÉN KEER ────────────────────────────────────────── */}
+  <div class="st-uitleg">
+    <div class="st-pop-groot">
+      <Poppetje crop="full" label={T.kader} />
+      <p class="st-pop-bij">{T.kader}</p>
+    </div>
+    <div>
+      <ul class="st-legenda" role="list">
+        <li><span class="st-lb st-lb-jouw"></span> {T.legJouw}</li>
+        <li><span class="st-lb st-lb-erbij"></span> {T.legErbij}</li>
+        <li><span class="st-lb st-lb-ons"></span> {T.legOns}</li>
+      </ul>
+      <p class="st-uitleg-h" data-pl-styling-uitleg-h>{T.uitlegH.full}</p>
+      <p class="st-uitleg-p" data-pl-styling-uitleg-p>{T.uitlegP.full}</p>
+      <p class="st-uitleg-h">{T.stylingH}</p>
+      <p class="st-uitleg-p">{T.stylingP} <span class="st-huisregel">{STYLING_HUISREGEL[lang]}</span></p>
+    </div>
+  </div>
+
+  {/* ── 2 · HET TYPE VOOR DE HELE BESTELLING ───────────────────────────── */}
+  <div class="st-alles field">
+    <label for="pl-garment">{T.allesLabel}</label>
+    <div class="st-alles-rij">
+      <select class="select" id="pl-garment" name="garment" data-pl-garment>
+        <option value="">{T.allesBlank}</option>
+        {GARMENTS.map((g) => (<option value={g.id}>{g.name[lang]}</option>))}
+      </select>
+      <span class="hint st-alles-gedaan" data-pl-garment-alles hidden></span>
+    </div>
+  </div>
+
+  {/* ── ZONDER JAVASCRIPT: de keuze per plek voor de hele bestelling ────── */}
+  <div class="pl-ctx st-ctx" data-pl-ctx hidden>
+    <p class="pl-ctx-lead">{gc.lead}</p>
+    {CONTEXT_SLOT_IDS.map((slot) => (
+      <div class="pl-ctx-row" data-pl-ctx-slot={slot} hidden>
+        <label for={`pl-ctx-${slot}`}>
+          {CONTEXT_SLOTS[slot].name[lang]}
+          <span class="pl-ctx-seen">{CONTEXT_SLOTS[slot].seen[lang]}</span>
+        </label>
+        <select class="select" id={`pl-ctx-${slot}`} name={`context_${slot}`}>
+          <option value={CONTEXT_OURS}>{T.ons}</option>
+          <option value="own">{T.eigen}</option>
+        </select>
+      </div>
+    ))}
+    <p class="hint">{gc.free}</p>
+    <p class="hint">{gc.full}</p>
+  </div>
+
+  {/* ── 3 · ÉÉN RIJ PER PRODUCT — pipeline.js vult dit ──────────────────── */}
+  <ol class="st-rijen" data-pl-styling-rows role="list"></ol>
+
+  <template data-pl-styling-row>
+    <li class="st-rij">
+      <div class="st-rij-pop"></div>
+      <div class="st-rij-body">
+        <div class="st-rij-kop">
+          <span class="st-rij-n"></span>
+          <span class="st-rij-naam"></span>
+          <select class="select st-rij-type" aria-label={T.allesLabel}></select>
+        </div>
+        <div class="st-blokje">
+          <span class="st-blokje-kop">{T.jouw}</span>
+          <p class="st-jouw"></p>
+        </div>
+        <div class="st-blokje st-blokje-erbij">
+          <span class="st-blokje-kop">{T.erbij}</span>
+          <div>
+            <div class="st-erbij-rij"></div>
+            <p class="st-gratis hint">{T.gratis}</p>
+          </div>
+        </div>
+        <div class="st-blokje">
+          <span class="st-blokje-kop">{T.ons}</span>
+          <p class="st-ons"></p>
+        </div>
+      </div>
+    </li>
+  </template>
+  <template data-pl-pop>
+    <Poppetje crop="full" klein={true} />
+  </template>
+</section>
+
+<style>
+  .st { margin-top: 2.6rem; padding-top: 1.8rem; border-top: 1px solid var(--line); }
+  .st-kop { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+  .st-etiket { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 .4rem; }
+  .st-h { font-family: var(--font-heading); font-stretch: var(--stretch-kop); font-weight: 500; font-size: clamp(1.25rem, 2.2vw, 1.5rem); line-height: 1.05; letter-spacing: -.03em; margin: 0; }
+  .st-over { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); background: none; border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: .55rem 1rem; cursor: pointer; white-space: nowrap; }
+  .st-over:hover { border-color: var(--ink); color: var(--ink); }
+  .st-lede { color: var(--ink-2); max-width: 62ch; margin: .6rem 0 1.4rem; font-size: .95rem; }
+
+  .st-uitleg { display: grid; grid-template-columns: 200px 1fr; gap: 30px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 22px 24px; }
+  .st-pop-bij { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: .4rem 0 0; text-align: center; }
+  .st-legenda { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-wrap: wrap; gap: .4rem 1.3rem; }
+  .st-legenda li { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--ink-2); }
+  .st-lb { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+  .st-lb-jouw { background: var(--ink); }
+  .st-lb-erbij { background: rgb(0 0 0 / .45); }
+  .st-lb-ons { background: rgb(0 0 0 / .13); box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+  .st-uitleg-h { font-weight: 700; font-size: 1rem; letter-spacing: -.012em; margin: 0 0 .3rem; color: var(--ink); }
+  .st-uitleg-p { color: var(--ink-2); font-size: .92rem; margin: 0 0 1rem; max-width: 60ch; }
+  .st-uitleg-p:last-child { margin-bottom: 0; }
+  .st-huisregel { display: block; margin-top: .4rem; color: var(--ink-3); font-size: .86rem; }
+
+  .st-alles { margin-top: 1.2rem; }
+  .st-alles-rij { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .st-alles-gedaan { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .66rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+  .st-ctx { margin-top: 1rem; }
+
+  .st-rijen { list-style: none; margin: 1.2rem 0 0; padding: 0; }
+  /* De rijen worden door pipeline.js gebouwd; vandaar :global(). */
+  .st-rijen :global(.st-rij) { border-top: 1px solid var(--line); padding: 16px 0 14px; display: grid; grid-template-columns: 60px 1fr; gap: 16px; align-items: start; }
+  .st-rijen :global(.st-rij-pop) { width: 60px; }
+  .st-rijen :global(.st-rij-kop) { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-bottom: 8px; }
+  .st-rijen :global(.st-rij-n) { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .68rem; letter-spacing: .07em; color: var(--ink-3); }
+  .st-rijen :global(.st-rij-naam) { font-weight: 700; font-size: .96rem; }
+  .st-rijen :global(.st-rij-type) { margin-left: auto; font-size: .82rem; padding: .3rem .5rem; border-radius: var(--r-pill); max-width: 16rem; }
+  .st-rijen :global(.st-blokje) { display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: start; padding: 6px 0; }
+  .st-rijen :global(.st-blokje + .st-blokje) { border-top: 1px dashed var(--line); }
+  .st-rijen :global(.st-blokje-kop) { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .62rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); padding-top: .45rem; }
+  .st-rijen :global(.st-jouw), .st-rijen :global(.st-ons) { margin: 0; font-size: .88rem; color: var(--ink-2); padding-top: .35rem; }
+  .st-rijen :global(.st-ons b) { color: var(--ink); font-weight: 600; }
+  .st-rijen :global(.st-erbij-rij) { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+  .st-rijen :global(.st-gratis) { margin: .4rem 0 0; font-size: .76rem; }
+  .st-rijen :global(.st-geen) { margin: 0; font-size: .82rem; color: var(--ink-3); padding-top: .35rem; }
+
+  @media (max-width: 760px) {
+    .st-uitleg { grid-template-columns: 1fr; }
+    .st-pop-groot { max-width: 180px; }
+    .st-rijen :global(.st-rij) { grid-template-columns: 48px 1fr; gap: 12px; }
+    .st-rijen :global(.st-rij-pop) { width: 48px; }
+    .st-rijen :global(.st-blokje) { grid-template-columns: 1fr; gap: 4px; }
+    .st-rijen :global(.st-rij-type) { margin-left: 0; }
+  }
+</style>
+
+<style is:global>
+  /* ── DE CONTEXTVAKJES — 22 september 2026 ──────────────────────────────────
+     Ze komen uit buildSlot() in pipeline.js, dezelfde functie als de vier
+     productvakjes op een kaart. Hun opmaak staat in ProductUploader.astro
+     onder `.pu-cards :global(...)`, en die scope reikt niet tot hier: dit is
+     een ander component met een ander scope-attribuut, en de vakjes staan
+     buiten `.pu-cards`. Vandaar een eigen, kleine set regels — bewust globaal
+     (de vakjes zijn door script gemaakt) en bewust ANDERS: rond, met een halve
+     rand, en het woord eronder. Dat is het vierde signaal dat dit geen product
+     is (zie de kop van dit bestand). */
+  .st-rijen .pu-slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: .3rem; width: 78px; }
+  .st-rijen .pu-slot-btn {
+    position: relative; display: grid; place-items: center;
+    width: 64px; height: 64px; padding: 0;
+    border: 1.5px dashed rgb(0 0 0 / .45); border-radius: 999px;
+    background: none; color: var(--ink-3); font: inherit; cursor: pointer; overflow: hidden;
+  }
+  .st-rijen .pu-slot-btn:hover { border-color: var(--ink); color: var(--ink-2); }
+  .st-rijen .pu-slot-btn:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 2px; }
+  .st-rijen .pu-slot.is-over .pu-slot-btn { border-color: var(--accent); }
+  .st-rijen .pu-slot[data-state="filled"] .pu-slot-btn,
+  .st-rijen .pu-slot[data-state="sending"] .pu-slot-btn { border-style: solid; }
+  .st-rijen .pu-slot[data-state="failed"] .pu-slot-btn { border-color: var(--warn-ink, #8A4D06); border-style: solid; }
+  .st-rijen .pu-slot-dia { display: block; width: 18px; height: 18px; }
+  .st-rijen .pu-slot-dia svg { width: 100%; height: 100%; display: block; }
+  .st-rijen .pu-slot-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 999px; }
+  .st-rijen .pu-slot-vink { display: none; }
+  .st-rijen .pu-slot[data-state="filled"]:not(.is-thumb) .pu-slot-vink { display: grid; place-items: center; position: absolute; inset: 0; color: var(--ink); }
+  .st-rijen .pu-slot[data-state="filled"]:not(.is-thumb) .pu-slot-dia { opacity: .25; }
+  .st-rijen .pu-slot-woord { display: block; text-align: center; line-height: 1.2; }
+  .st-rijen .pu-slot-name { display: block; font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .62rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+  .st-rijen .pu-slot-eis { display: none; }
+  .st-rijen .pu-slot-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+  .st-rijen .pu-slot-bar { display: block; width: 64px; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .st-rijen .pu-slot-bar > i { display: block; height: 100%; width: 100%; transform-origin: left; background: var(--ink); }
+  .st-rijen .pu-slot-msg { font-size: .68rem; color: var(--ink-3); line-height: 1.35; text-align: center; max-width: 78px; overflow-wrap: anywhere; }
+  .st-rijen .pu-slot-msg:empty { display: none; }
+  /* Alleen Vervangen en Verwijderen; "Sla deze over" heeft hier geen betekenis
+     (een leeg contextvakje IS al "wij kiezen"), en dat is de vierde knop. */
+  .st-rijen .pu-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: .1rem .5rem; }
+  .st-rijen .pu-act { background: none; border: 0; padding: 0; font: inherit; font-size: .68rem; color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .st-rijen .pu-act:nth-child(4), .st-rijen .pu-act:nth-child(5) { display: none; }
+  .st-rijen .pu-slot[data-state="skipped"] .pu-slot-btn { opacity: 1; border-style: dashed; }
+</style>

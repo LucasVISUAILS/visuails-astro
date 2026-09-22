@@ -46,9 +46,9 @@ import {
   createSubscriptionRow, activateSubscription, pauseSubscription, cancelSubscription,
   queueAdd, queueLock, monthKey,
 } from '../src/lib/subscription.js';
-import { slotBalans, vensterVoor, monthMinus, subMaandBruto, subEersteBetalingBruto } from '../src/lib/slots.js';
+import { slotBalans, vensterVoor, monthMinus, subMaandBruto, subEersteBetalingBruto, creditsPerSoort } from '../src/lib/slots.js';
 import { startPlanWindow } from '../src/lib/planStart.js';
-import { PLAN_SLOTS } from '../src/data/pricing.js';
+import { PLAN_SLOTS, PLAN_CREDITS } from '../src/data/pricing.js';
 
 let goed = 0; let totaal = 0;
 function ok(naam, kreeg, verwacht = true) {
@@ -72,6 +72,11 @@ const DEZE = monthKey();
 const VORIGE = monthMinus(DEZE, 1);
 const BUNDEL = PLAN_SLOTS.studio;
 const SOORTEN = Object.keys(BUNDEL);
+/* Sinds 19 september 2026 is de toekenning één creditrij per maand in plaats van
+   een rij per soort — zie de kop bij CREDIT_KIND in slots.js. Wat deze keten
+   bewaakt is onveranderd: dat de webhook de maand toekent, dat hij dat maar één
+   keer doet, en dat de oudste maand er als eerste af gaat. */
+const CREDITS = PLAN_CREDITS.studio;
 
 /* ── DE WEBHOOK, MET ALLEEN DE BUITENWERELD GESTUBD ───────────────────────────
    Mollie's API geeft de betaling terug; alles daarna is onze eigen code op onze
@@ -115,7 +120,7 @@ async function incasso(id, maand, status = 'paid') {
   });
 }
 
-const saldo = async (kind = 'complete', venster = 1) =>
+const saldo = async (kind = 'credits', venster = 1) =>
   (await slotBalans(env, sub.id, venster)).find((b) => b.kind === kind) || { saldo: 0, verbruikt: 0, toegekend: 0, ouder: 0 };
 
 console.log('1 · Mollie schrijft af');
@@ -128,11 +133,9 @@ console.log('1 · Mollie schrijft af');
     db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub.id).n, 1);
   /* En dit is de schakel die er sinds migratie 0035 bij zit. Hij liep tot vandaag
      in geen enkele toets over de ECHTE webhook — alleen over grantSlots() los. */
-  ok('er staat een slotrij per soort uit het plan',
-    db.prepare('SELECT COUNT(*) AS n FROM subscription_slots WHERE subscription_id = ?').get(sub.id).n, SOORTEN.length);
-  for (const k of SOORTEN) {
-    ok(`  ${k}: ${BUNDEL[k]} toegekend`, (await saldo(k)).toegekend, BUNDEL[k]);
-  }
+  ok('er staat één creditrij voor deze maand',
+    db.prepare('SELECT COUNT(*) AS n FROM subscription_slots WHERE subscription_id = ?').get(sub.id).n, 1);
+  ok(`  ${CREDITS} credits toegekend`, (await saldo()).toegekend, CREDITS);
 }
 
 console.log('\n2 · Mollie levert dezelfde betaling nog een keer');
@@ -141,7 +144,7 @@ console.log('\n2 · Mollie levert dezelfde betaling nog een keer');
   ok('nog steeds 200 — Mollie moet stoppen met proberen', res.status, 200);
   ok('en er is geen tweede maand bijgekomen',
     db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub.id).n, 1);
-  ok('en geen tweede slotrij', (await saldo()).toegekend, BUNDEL.complete);
+  ok('en geen tweede slotrij', (await saldo()).toegekend, CREDITS);
   ok('en geen tweede betaalrij',
     db.prepare('SELECT COUNT(*) AS n FROM subscription_payments WHERE subscription_id = ?').get(sub.id).n, 1);
 }
@@ -158,7 +161,7 @@ console.log('\n2b · en als de slots ontbraken, zet een herhaling ze alsnog neer
   db.prepare('DELETE FROM subscription_slots WHERE subscription_id = ?').run(sub.id);
   ok('de slots zijn weg', (await saldo()).toegekend, 0);
   await incasso('tr_MAAND1', DEZE);
-  ok('de herhaling zet ze terug', (await saldo()).toegekend, BUNDEL.complete);
+  ok('de herhaling zet ze terug', (await saldo()).toegekend, CREDITS);
   ok('en nog steeds precies één maandrij',
     db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub.id).n, 1);
 }
@@ -172,10 +175,11 @@ let a1; let a2;
 
   ok('een concept kost nog niets', (await saldo()).verbruikt, 0);
   ok('vastzetten lukt', [(await queueLock(env, 1, a1.id)).ok, (await queueLock(env, 1, a2.id)).ok], [true, true]);
-  ok('en kost twee slots', (await saldo()).verbruikt, 2);
+  ok('en kost twee keer de prijs van een catalogset', (await saldo()).verbruikt, creditsPerSoort('catalog') * 2);
   ok('zonder foto’s kan het niet', (await queueLock(env, 1, c.id)).reden, 'geen-fotos');
-  ok('een soort die het plan niet geeft ook niet',
-    (await queueLock(env, 1, (await queueAdd(env, 1, { name: 'Hook', uploadBatch: 'b-h', kind: 'hooks' })).id)).reden, 'geen-slot');
+  /* De poort "te weinig credits" hoort niet in deze keten thuis: die zou het
+     saldo leegmaken dat de rest van de keten nodig heeft. Hij staat in
+     tests/slots.test.mjs, met de prijs van een hook erbij. */
 }
 
 console.log('\n4 · Lucas start de week');
@@ -188,9 +192,9 @@ let week;
     { total_cents: 0, payment_status: 'plan' });
   /* DE NAAD DIE HET DUURST IS. Ging hier ook nog een slot af, dan betaalt de
      klant twee keer voor hetzelfde product en ziet niemand het. */
-  ok('en er gaat NIETS extra af', (await saldo()).verbruikt, 2);
-  ok('de concepten staan er nog',
-    db.prepare('SELECT COUNT(*) AS n FROM plan_queue WHERE taken_at IS NULL').get().n, 2);
+  ok('en er gaat NIETS extra af', (await saldo()).verbruikt, creditsPerSoort('catalog') * 2);
+  ok('het concept zonder foto’s staat er nog',
+    db.prepare('SELECT COUNT(*) AS n FROM plan_queue WHERE taken_at IS NULL').get().n, 1);
 }
 
 console.log('\n5 · Lucas annuleert die week weer');
@@ -219,7 +223,12 @@ console.log('\n5 · Lucas annuleert die week weer');
   const paneel = await adminGet({
     request: new Request('https://visuails.com/admin/customers/1', { headers: kop }), env, waitUntil() {},
   }).then((r) => r.text());
-  ok('het adminpaneel toont het saldo per soort', /Complete bundel/.test(paneel), true);
+  /* Sinds 19 september 2026 staat daar één creditsaldo in plaats van een regel
+     per soort — zie de kop van migratie 0051. Wat de toets bewaakt is niet het
+     woord maar de KETEN: wat de klant op zijn eigen scherm ziet, ziet Lucas in
+     /admin, uit dezelfde planState(). */
+  ok('het adminpaneel toont het creditsaldo', /credits over/.test(paneel), true);
+  ok('  en noemt de complete bundel niet meer', !/Complete bundel/.test(paneel), true);
   globalThis.__kop = kop;
 }
 
@@ -233,17 +242,17 @@ console.log('\n6 · een maand later komt er een nieuwe termijn bij');
   await incasso('tr_MAAND2', DEZE);
 
   const b = await saldo();
-  ok('deze maand en vorige tellen samen', b.toegekend, BUNDEL.complete * 2);
-  ok('en de helft daarvan is doorgeschoven', b.ouder, BUNDEL.complete);
-  ok('twee maanden is ook het dak', b.saldo, BUNDEL.complete * 2);
+  ok('deze maand en vorige tellen samen', b.toegekend, CREDITS * 2);
+  ok('en de helft daarvan is doorgeschoven', b.ouder, CREDITS);
+  ok('twee maanden is ook het dak', b.saldo, CREDITS * 2);
 
   /* En het afschrijven begint bij de OUDSTE maand. Zou het bij de nieuwste
      beginnen, dan lijkt alles te werken tot er slots vervallen die de klant nog
      had kunnen gebruiken — en dat merk je pas als hij belt. */
   await queueLock(env, 1, a1.id);
   const vorigeMaand = db.prepare('SELECT used FROM subscription_slots WHERE subscription_id = ? AND month = ? AND kind = ?')
-    .get(sub.id, VORIGE, 'complete').used;
-  ok('en de oudste maand gaat er als eerste af', vorigeMaand, 1);
+    .get(sub.id, VORIGE, 'credits').used;
+  ok('en de oudste maand gaat er als eerste af', vorigeMaand, creditsPerSoort(a1.kind));
 }
 
 console.log('\n7 · de incasso mislukt');
@@ -254,7 +263,7 @@ console.log('\n7 · de incasso mislukt');
     { status: 'paused', pause_reason: 'payment_failed' });
   ok('vastzetten kan niet meer', (await queueLock(env, 1, a2.id)).reden, 'abonnement-paused');
   ok('en de week starten ook niet', (await startPlanWindow(env, 1)).reden, 'abonnement-paused');
-  ok('het saldo blijft ongemoeid staan voor als hij terugkomt', (await saldo()).verbruikt, 1);
+  ok('het saldo blijft ongemoeid staan voor als hij terugkomt', (await saldo()).verbruikt, creditsPerSoort('catalog'));
 }
 
 console.log('\n8 · en lukt daarna alsnog');
@@ -274,8 +283,8 @@ console.log('\n9 · de klant zegt op');
   /* Lucas' eigen regel: de betaalde maand mag hij nog opmaken, maar er is geen
      volgende maand om iets naar door te schuiven. */
   ok('het doorschuifvenster is nul', vensterVoor(opgezegd), 0);
-  const bAlleenDeze = await saldo('complete', 0);
-  ok('alleen deze maand telt nog mee', bAlleenDeze.toegekend, BUNDEL.complete);
+  const bAlleenDeze = await saldo('credits', 0);
+  ok('alleen deze maand telt nog mee', bAlleenDeze.toegekend, CREDITS);
   ok('en er staat niets doorgeschovens meer bij', bAlleenDeze.ouder, 0);
 
   const q = await queueAdd(env, 1, { name: 'Laatste jas', uploadBatch: 'b-op' });
@@ -317,7 +326,7 @@ console.log('\n10 · de eerste maand telt meteen');
   ok('  en de maand is toegekend',
     db.prepare('SELECT month FROM subscription_months WHERE subscription_id = ?').get(sub2.id)?.month, DEZE);
   ok('  met de slots uit het plan',
-    db.prepare('SELECT COUNT(*) AS n FROM subscription_slots WHERE subscription_id = ?').get(sub2.id).n, SOORTEN.length);
+    db.prepare('SELECT COUNT(*) AS n FROM subscription_slots WHERE subscription_id = ?').get(sub2.id).n, 1);
   ok('  en het abonnement staat op actief', db.prepare('SELECT status FROM subscriptions WHERE id = ?').get(sub2.id).status, 'active');
   ok('  het eerste abonnement is er niet door geraakt',
     db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = ?').get(sub.id).n,

@@ -49,9 +49,9 @@ import {
   createSubscriptionRow, activateSubscription,
   queueAdd, queueLock, queueUnlock, queueRemove, queueTakeIds, queueUntakeIds, loadQueue,
 } from '../src/lib/subscription.js';
-import { grantSlots, slotBalans, verbruikSlot, geefSlotTerug } from '../src/lib/slots.js';
+import { grantSlots, slotBalans, verbruikSlot, geefSlotTerug, creditsPerSoort } from '../src/lib/slots.js';
 import { startPlanWindow } from '../src/lib/planStart.js';
-import { PLAN_PRODUCTS } from '../src/data/pricing.js';
+import { PLAN_PRODUCTS, PLAN_CREDITS } from '../src/data/pricing.js';
 import { onRequestPost } from '../functions/api/webhook/mollie.js';
 
 let goed = 0; let totaal = 0;
@@ -74,38 +74,42 @@ await activateSubscription(env, sub.id);
 const maand = new Date().toISOString().slice(0, 7);
 await grantSlots(env, sub.id, maand, 'starter');
 
-const saldo = async () => (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete');
+/* Sinds 19 september 2026 is er één creditsaldo en niet meer een rij per soort
+   — zie de kop bij CREDIT_KIND in slots.js. De misbruikvragen die deze toets
+   stelt zijn woordelijk dezelfde gebleven; alleen de eenheid is fijner. */
+const saldo = async () => (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits');
+const CAT = creditsPerSoort('catalog');
 
 console.log('de klant kan het aantal niet zelf opdrijven');
 {
   const start = (await saldo()).toegekend;
   /* Nul en negatief. `verbruikSlot(-3)` zou, als het aantal niet werd afgekapt,
      `used = used + -3` doen en dus SLOTS TERUGGEVEN via de verbruikkant. */
-  ok('nul verbruiken doet niets', await verbruikSlot(env, sub.id, 1, 'complete', 0), 0);
-  ok('een negatief aantal ook niet', await verbruikSlot(env, sub.id, 1, 'complete', -3), 0);
+  ok('nul verbruiken doet niets', await verbruikSlot(env, sub.id, 1, 'credits', 0), 0);
+  ok('een negatief aantal ook niet', await verbruikSlot(env, sub.id, 1, 'credits', -3), 0);
   ok('en het saldo staat er ongewijzigd bij', (await saldo()).verbruikt, 0);
 
   /* En de andere kant: teruggeven wat nooit is uitgegeven. De UPDATE draagt
      `used >= ?4`, dus dit kan het verbruik niet onder nul duwen. */
-  ok('teruggeven zonder verbruik geeft niets terug', await geefSlotTerug(env, sub.id, 1, 'complete', 5), 0);
+  ok('teruggeven zonder verbruik geeft niets terug', await geefSlotTerug(env, sub.id, 1, 'credits', 5), 0);
   ok('het verbruik blijft nul', (await saldo()).verbruikt, 0);
   ok('en het toegekende is niet gegroeid', (await saldo()).toegekend, start);
 
   /* Meer vastzetten dan er is. De UPDATE draagt `used + ?4 <= granted`. */
   ok('meer verbruiken dan er is, boekt alleen wat er is',
-    await verbruikSlot(env, sub.id, 1, 'complete', PLAN_PRODUCTS.starter + 5), PLAN_PRODUCTS.starter);
+    await verbruikSlot(env, sub.id, 1, 'credits', PLAN_CREDITS.starter + 5), PLAN_CREDITS.starter);
   ok('en daarna is er niets meer', (await saldo()).saldo, 0);
-  await geefSlotTerug(env, sub.id, 1, 'complete', PLAN_PRODUCTS.starter);
+  await geefSlotTerug(env, sub.id, 1, 'credits', PLAN_CREDITS.starter);
 }
 
 console.log('\nlosmaken kan niet twee keer worden verzilverd');
 {
   const q = await queueAdd(env, 1, { name: 'Jas', uploadBatch: 'b-1' });
   await queueLock(env, 1, q.id);
-  ok('één slot verbruikt', (await saldo()).verbruikt, 1);
+  ok('één catalogset verbruikt', (await saldo()).verbruikt, CAT);
 
   ok('losmaken lukt', (await queueUnlock(env, 1, q.id)).ok, true);
-  ok('en het slot is terug', (await saldo()).verbruikt, 0);
+  ok('en de credits zijn terug', (await saldo()).verbruikt, 0);
   /* Twee tabbladen die allebei op losmaken drukken. De UPDATE draagt
      `locked_at IS NOT NULL`, dus de tweede raakt niets en boekt niets terug. */
   ok('nog een keer losmaken meldt dat het al los stond', (await queueUnlock(env, 1, q.id)).reden, 'stond-al-los');
@@ -118,7 +122,7 @@ console.log('\nweghalen geeft precies één slot terug, en alleen wat echt weg i
   const q = await queueAdd(env, 1, { name: 'Broek', uploadBatch: 'b-2' });
   await queueLock(env, 1, q.id);
   ok('weghalen lukt', await queueRemove(env, 1, q.id), true);
-  ok('en het slot is terug', (await saldo()).verbruikt, 0);
+  ok('en de credits zijn terug', (await saldo()).verbruikt, 0);
   ok('nog een keer weghalen lukt niet', await queueRemove(env, 1, q.id), false);
   ok('en geeft dus ook geen slot terug', (await saldo()).verbruikt, 0);
 
@@ -144,7 +148,7 @@ console.log('\nde race tussen losmaken en de week starten');
   const week = await startPlanWindow(env, 1);
   ok('de week is gestart', week.ok, true);
   const na = (await saldo()).verbruikt;
-  ok('en het slot staat op verbruikt', na, 1);
+  ok('en de credits staan op verbruikt', na, CAT);
 
   ok('losmaken van een opgepakt item lukt niet', (await queueUnlock(env, 1, a.id)).ok, false);
   ok('het slot blijft dus verbruikt', (await saldo()).verbruikt, na);

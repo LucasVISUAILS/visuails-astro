@@ -1,6 +1,10 @@
 ---
-/* De statuspil: het woord draagt de status, de kleur onderstreept. */
+/* De statuspil: het woord draagt de status, de kleur onderstreept.
+   De vorm staat in .stat in global.css en wordt gedeeld met site, portaal,
+   admin en de mail; welke stand bij welke statuswaarde hoort, staat in
+   src/data/status.js. Hier staat dus geen kleur meer. */
 import { statusLabel } from '../../lib/account.js';
+import { standKlasse } from '../../data/status.js';
 const { status, lang } = Astro.props;
 ---
-<span class={`st-pil is-${status}`}>{statusLabel(status, lang) || status}</span>
+<span class={standKlasse(status)}>{statusLabel(status, lang) || status}</span>

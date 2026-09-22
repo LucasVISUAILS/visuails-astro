@@ -39,6 +39,8 @@
  * product vastzet; wanneer het gemaakt wordt is daarna onze planning.
  */
 import { PLAN_SLOTS, SLOT_KINDS, CUSTOM_MONTH_ID, slotProducts, VAT_RATE } from '../data/pricing.js';
+/* De creditkant — zie de kop van SERVICE_CREDITS in pricing.js. */
+import { SERVICE_CREDITS, PLAN_CREDITS, PLAN_SERVICES, EXTRA_CREDITS, creditsVoorDienst } from '../data/pricing.js';
 /* Alleen de namen van de drie behandelingen — geen beslissing, geen VIES. Zie
    de kop van subBrutoCents(). */
 import { VAT_TREATMENT } from '../data/vat.js';
@@ -259,6 +261,140 @@ async function stil(fn, terug = null) {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CREDITS — ÉÉN SALDO IN PLAATS VAN EEN SLOT PER SOORT
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 19 september 2026. De aanleiding en de tabel staan in pricing.js bij
+ * SERVICE_CREDITS; hier staat alleen hoe je ze uitgeeft.
+ *
+ * ── WAAROM DIT GEEN NIEUWE TABEL IS ───────────────────────────────────────
+ *
+ * `subscription_slots` heeft precies de vorm die een creditsaldo nodig heeft:
+ * een rij per maand met `granted` en `used`, een unieke sleutel die dubbele
+ * toekenning onmogelijk maakt, en een UPDATE die zijn eigen voorwaarde draagt
+ * (`used + n <= granted`) zodat twee tabbladen niet dubbel kunnen afschrijven.
+ * Dat is maanden geleden goed doordacht en het is nog steeds goed.
+ *
+ * Wat verandert, is wat er in `kind` staat: niet meer 'complete' of
+ * 'video-motion', maar altijd 'credits'. Eén rij per maand in plaats van één
+ * per soort. De hele machinerie eronder — oudste maand eerst afschrijven,
+ * nieuwste eerst teruggeven, het doorschuifvenster — blijft woordelijk staan.
+ *
+ * Een kolom die altijd dezelfde waarde draagt is normaal een luchtje. Hier is
+ * het een BEWUST EINDPUNT: de soort is verhuisd naar de rij in `plan_queue`,
+ * waar hij thuishoort, en het saldo weet niet meer waar hij aan opgaat. Dat is
+ * exact wat een credit is.
+ *
+ * Migratie 0051 rekent de bestaande rijen om en laat ze staan als geschiedenis.
+ */
+
+/** Wat er in `subscription_slots.kind` staat sinds credits. Zie de kop hierboven. */
+export const CREDIT_KIND = 'credits';
+
+/**
+ * Wat DIT abonnement per maand aan credits geeft.
+ *
+ * De rij wint van de tabel, net als bij bundelVoor(): een maand op maat draagt
+ * zijn eigen bundel in `slots_json`, en die wordt met SERVICE_CREDITS omgerekend
+ * naar credits. Een pakket leest gewoon PLAN_CREDITS.
+ *
+ * `complete` in een oude `slots_json` wordt netjes vertaald naar catalog plus
+ * lifestyle. Dat is geen uitzondering maar de definitie: een compleet product
+ * was altijd precies die twee, en zo staat het ook in de assertie in pricing.js.
+ */
+export function creditsVoor(sub) {
+  const eigen = String(sub?.slots_json || '').trim();
+  if (eigen) {
+    try {
+      const uit = JSON.parse(eigen);
+      let som = 0;
+      for (const [kind, aantal] of Object.entries(uit || {})) {
+        const n = Math.max(0, Math.floor(Number(aantal) || 0));
+        if (!n) continue;
+        som += n * creditsPerSoort(kind);
+      }
+      if (som > 0) return som;
+    } catch {
+      /* Zelfde afweging als in bundelVoor(): een onleesbare rij valt terug op
+         het plan, en bij een maand op maat is dat zichtbaar nul in plaats van
+         een gegokt saldo. De fout hoort in het log en niet in het tegoed. */
+      console.error('[slots] slots_json is onleesbaar op abonnement', sub?.id);
+    }
+  }
+  return Math.max(0, Math.floor(Number(PLAN_CREDITS[String(sub?.plan || '')]) || 0));
+}
+
+/**
+ * Wat één stuk van een soort kost in credits, inclusief de soorten die alleen
+ * nog in oude gegevens voorkomen.
+ *
+ * `complete` staat NIET in SERVICE_CREDITS — een abonnee mag hem niet kiezen —
+ * maar hij staat wel in rijen die er al zijn, en die moeten leesbaar blijven.
+ * Vandaar deze ene vertaling op precies één plek.
+ */
+export function creditsPerSoort(kind) {
+  const k = String(kind || '');
+  if (k === 'complete') return SERVICE_CREDITS.catalog + SERVICE_CREDITS.lifestyle;
+  return Math.max(0, Math.floor(Number(SERVICE_CREDITS[k]) || 0));
+}
+
+/** Wat een rij uit de wachtrij kost: de soort, plus wat er los bij besteld is. */
+export function creditsVoorRij(rij) {
+  const basis = creditsPerSoort(rij?.kind);
+  const extra = Math.max(0, Math.floor(Number(rij?.extra_photos) || 0)) * EXTRA_CREDITS.photo;
+  const hires = rij?.hires ? EXTRA_CREDITS.hires : 0;
+  return basis + extra + hires;
+}
+
+/**
+ * De diensten die deze abonnee mag kiezen.
+ *
+ * Standaard alles uit PLAN_SERVICES. Een abonnement op maat kan beperkt zijn
+ * tot wat er in zijn eigen bundel staat — dat is hoe een gericht abonnement
+ * ("alleen video") gemaakt wordt, en het was de bedoeling achter slots per
+ * soort die met credits anders overeind blijft: niet door het saldo te
+ * verdelen, maar door de keuzelijst in te korten.
+ */
+export function dienstenVoorAbo(sub) {
+  const eigen = String(sub?.slots_json || '').trim();
+  if (eigen) {
+    try {
+      const uit = JSON.parse(eigen);
+      const lijst = [];
+      for (const kind of Object.keys(uit || {})) {
+        if (kind === 'complete') { lijst.push('catalog', 'lifestyle'); continue; }
+        if (PLAN_SERVICES.includes(kind)) lijst.push(kind);
+      }
+      const schoon = [...new Set(lijst)];
+      if (schoon.length) return PLAN_SERVICES.filter((k) => schoon.includes(k));
+    } catch { /* zie creditsVoor() */ }
+  }
+  return [...PLAN_SERVICES];
+}
+
+/** Credits afschrijven, oudste maand eerst. Spiegelt verbruikSlot(). */
+export async function verbruikCredits(env, subId, venster, aantal = 1, nu = new Date()) {
+  return verbruikSlot(env, subId, venster, CREDIT_KIND, aantal, nu);
+}
+
+/** Credits teruggeven, nieuwste maand eerst. Spiegelt geefSlotTerug(). */
+export async function geefCreditsTerug(env, subId, venster, aantal = 1, nu = new Date()) {
+  return geefSlotTerug(env, subId, venster, CREDIT_KIND, aantal, nu);
+}
+
+/**
+ * Het creditsaldo als één regel, in de vorm die het scherm nodig heeft.
+ *
+ * Altijd een object en nooit undefined: een abonnee zonder enkele toekenning
+ * heeft een saldo van nul, en dat is een antwoord en geen ontbrekend gegeven.
+ */
+export async function creditBalans(env, subId, venster, nu = new Date(), tot = '') {
+  const alles = await slotBalans(env, subId, venster, nu, tot);
+  const b = alles.find((x) => x.kind === CREDIT_KIND);
+  return b || { kind: CREDIT_KIND, toegekend: 0, verbruikt: 0, saldo: 0, dezeMaand: 0, ouder: 0, vervalt: [] };
+}
+
 /**
  * De toekenning van één maand wegschrijven, per soort.
  *
@@ -271,18 +407,21 @@ export async function grantSlots(env, subId, maand, abo, paymentId = null) {
   /* `abo` is de RIJ en niet de plan-id, sinds migratie 0038. Een maand op maat
      draagt zijn bundel zelf; wie hier een string doorgeeft krijgt nog steeds het
      goede antwoord voor een pakket, want bundelVoor() valt daarop terug. */
-  const bundel = typeof abo === 'string' ? slotsFor(abo) : bundelVoor(abo);
-  let gezet = 0;
-  for (const [kind, aantal] of Object.entries(bundel)) {
-    const n = Math.max(0, Math.floor(Number(aantal) || 0));
-    if (!n) continue;   // een soort met nul hoort geen rij te krijgen
-    const r = await stil(() => env.DB.prepare(
-      `INSERT OR IGNORE INTO subscription_slots (subscription_id, month, kind, granted, used, payment_id)
-       VALUES (?1, ?2, ?3, ?4, 0, ?5)`
-    ).bind(subId, maand, kind, n, paymentId).run());
-    if (Number(r?.meta?.changes || 0) > 0) gezet += 1;
-  }
-  return gezet;
+  /* ── ÉÉN RIJ MET CREDITS, 19 september 2026 ─────────────────────────────
+     Hier stond een lus over de soorten in de bundel, met een rij per soort.
+     Sinds credits is er één saldo, dus één rij — zie de kop bij CREDIT_KIND.
+     Het `OR IGNORE` en de reden eronder blijven ongewijzigd: Mollie levert
+     dezelfde melding desnoods drie keer af, en de tweede keer hoort om te
+     vallen op de unieke sleutel en niet de klant dubbel te betalen. */
+  const credits = typeof abo === 'string'
+    ? Math.max(0, Math.floor(Number(PLAN_CREDITS[abo]) || 0))
+    : creditsVoor(abo);
+  if (!credits) return 0;
+  const r = await stil(() => env.DB.prepare(
+    `INSERT OR IGNORE INTO subscription_slots (subscription_id, month, kind, granted, used, payment_id)
+     VALUES (?1, ?2, ?3, ?4, 0, ?5)`
+  ).bind(subId, maand, CREDIT_KIND, credits, paymentId).run());
+  return Number(r?.meta?.changes || 0) > 0 ? 1 : 0;
 }
 
 /**

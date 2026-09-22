@@ -93,15 +93,14 @@ console.log('\nhet weekend is open tenzij de studio hem dichtzet');
 /* ══ 2 · DE AANLOOP IS TWEE VOLLE DAGEN ═══════════════════════════════════ */
 console.log('\nde eerste twee dagen zijn niet aan te wijzen');
 {
-  check(`LEAD_DAYS is ${LEAD_DAYS}`, LEAD_DAYS, 2);
-  /* De docstring zei "days BETWEEN today and the earliest window" en de code
-     rekende addWorkingDays(today, LEAD_DAYS) — de tweede dag ná vandaag, met maar
-     één hele dag ertussen. Lucas' regel ("minimum 2 dagen wachten") is de lezing
-     van de docstring. Vanaf maandag is dat donderdag. */
-  check('vanaf maandag is de eerste aanwijsbare dag donderdag',
-    firstOfferableDay(MAANDAG), '2026-09-03');
+  /* DRIE SINDS 20 SEPTEMBER 2026. Lucas, bij de planning die de klant zelf
+     invult: *"minimaal 3 dagen van tevoren moeten ze een order inplannen omdat
+     ik dat makkelijker kan garanderen."* Vanaf maandag is dat dus vrijdag. */
+  check(`LEAD_DAYS is ${LEAD_DAYS}`, LEAD_DAYS, 3);
+  check('vanaf maandag is de eerste aanwijsbare dag vrijdag',
+    firstOfferableDay(MAANDAG), '2026-09-04');
   check('en er liggen precies LEAD_DAYS hele dagen tussen',
-    ['2026-09-01', '2026-09-02'].every((d) => d > MAANDAG && d < firstOfferableDay(MAANDAG)), true);
+    ['2026-09-01', '2026-09-02', '2026-09-03'].every((d) => d > MAANDAG && d < firstOfferableDay(MAANDAG)), true);
 
   /* DE WACHTRIJ MAG EERDER LANDEN DAN DE VROEGSTE AANWIJSBARE DAG, en dat is het
      hele argument voor "zo snel mogelijk". Zou de wachtrij later beginnen, dan is

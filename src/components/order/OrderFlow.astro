@@ -68,6 +68,7 @@ import {
   PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
 } from '../../data/attributes.js';
 import ProductUploader from './ProductUploader.astro';
+import Styling from './Styling.astro';
 /* Het vraagteken: uitleg die geen verticale ruimte kost. Zie de kop van
    Uitleg.astro voor de regel wanneer een zin er wél en niet in mag. */
 import Uitleg from '../Uitleg.astro';
@@ -91,9 +92,10 @@ import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
    volgt uit de uitsnede. Er wordt hier niets van die logica overgetypt —
    contextSlots() is de bron, ook voor de vraag óf een plek getoond wordt. */
 import {
-  GARMENTS, CONTEXT_SLOTS, CONTEXT_SLOT_IDS, contextSlots, CONTEXT_OURS,
-  copy as garmentCopy,
+  GARMENTS, CONTEXT_SLOTS, cropFor,
+  STYLING_STANDAARD, STYLING_EIGEN,
 } from '../../data/garments.js';
+import { contextShotId } from '../../data/shots.js';
 import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
 import { VOORKEUREN, VOORKEUR_STANDAARD, VOORKEUR_COPY } from '../../data/contactvoorkeur.js';
 
@@ -1503,9 +1505,6 @@ const RAIL_WORD: Record<string, Record<number, string>> = {
   nl: { 4: 'vier', 5: 'vijf' },
 };
 const railWord = RAIL_WORD[lang][RAIL.length] || String(RAIL.length);
-// De vier regels die de € 50-grens uitleggen, uit garments.js. Zie CONTEXT_RULES
-// daar: een belofte hoort op één plek te staan.
-const gc = garmentCopy(lang);
 
 const countLabel = (n: number) => `${n} ${n === 1 ? 'product' : lang === 'nl' ? 'producten' : 'products'}`;
 
@@ -1651,6 +1650,22 @@ const config = {
      daar omdat ze geld kosten, deze staan daar omdat ze alleen een vakje zijn dat
      het formulier tekent. Zie de kop bij REF_SHOT_PREFIX. */
   maxRefPerProduct: MAX_REF_PER_PRODUCT,
+  /* ── DE STYLING PER PRODUCT — 22 september 2026 ──────────────────────────
+     Wat pipeline.js nodig heeft om onderaan stap 2 één rij per product te
+     bouwen (zie Styling.astro): de typen met hun uitsnede, de namen van de
+     plekken, wat "wij kiezen" per plek betekent, en de vakje-id per plek voor
+     /api/upload. Alles uit garments.js en shots.js; niets hier overgetypt.
+     Welke plekken bij welk type horen, staat al in CTX_BY_GARMENT in het
+     script zelf (bewaakt door tests/garments.test.mjs). */
+  styling: {
+    garments: GARMENTS.map((g) => ({ id: g.id, naam: g.name[lang], crop: cropFor(g.id).id })),
+    slots: Object.fromEntries(Object.keys(CONTEXT_SLOTS).map((id) => [id, {
+      naam: CONTEXT_SLOTS[id].name[lang],
+      standaard: STYLING_STANDAARD[id]?.[lang] || '',
+      shot: contextShotId(id),
+    }])),
+    eigen: STYLING_EIGEN[lang],
+  },
   maxOutfit: MAX_OUTFIT_PRODUCTS,
   bg: { customId: CUSTOM_ID, lightThreshold: LIGHT_THRESHOLD },
   /*
@@ -2396,6 +2411,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
       <ProductUploader lang={lang} />
 
+      {!isSample && <Styling lang={lang} />}
+
       <p class="hint pl-skip">{f.s2.skip}</p>
 
       <p class="pl-step-err" id="pl-err-2" data-pl-step-error hidden></p>
@@ -2697,47 +2714,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           regels komen uit CONTEXT_RULES in garments.js, waar ze staan omdat het
           een belofte is en een belofte die op twee plekken staat, staat er op een
           dag twee keer anders. */}
-      {/* ── EN OP DE PROEF HELEMAAL NIET — 10 september 2026 ─────────────────
-          Lucas: *"Ik wil dat de sample zo min mogelijk moeite is om in te vullen
-          voor de klant."*
-
-          Deze vragen (welk type kledingstuk, en daarna welke schoenen, welke top
-          of welke broek erbij) beslissen de uitsnede van een lifestyle-beeld, en
-          op een echte bestelling zijn ze hun plek waard. Op een proef van één
-          product zijn het vier keuzelijsten voor iets wat de studio op de foto
-          ziet liggen — en ze stonden er zelfs als de klant CATALOG koos, want de
-          proefpagina draait op `service="lifestyle"` en erft daarmee de
-          lifestyle-vragen.
-
-          Wie na de proef bestelt, krijgt ze alsnog: daar bepalen ze wél iets. */}
-      {!isCatalog && !isSample && (
-      <div class="field pl-garment">
-        <label for="pl-garment">{f.garment.label}</label>
-        <select class="select" id="pl-garment" name="garment" data-pl-garment>
-          <option value="">{f.garment.blank}</option>
-          {GARMENTS.map((g) => (<option value={g.id}>{g.name[lang]}</option>))}
-        </select>
-        <span class="hint">{f.garment.hint}</span>
-
-        <div class="pl-ctx" data-pl-ctx hidden>
-          <p class="pl-ctx-lead">{gc.lead}</p>
-          {CONTEXT_SLOT_IDS.map((slot) => (
-            <div class="pl-ctx-row" data-pl-ctx-slot={slot} hidden>
-              <label for={`pl-ctx-${slot}`}>
-                {CONTEXT_SLOTS[slot].name[lang]}
-                <span class="pl-ctx-seen">{CONTEXT_SLOTS[slot].seen[lang]}</span>
-              </label>
-              <select class="select" id={`pl-ctx-${slot}`} name={`context_${slot}`}>
-                <option value={CONTEXT_OURS}>{f.garment.ours}</option>
-                <option value="own">{f.garment.own}</option>
-              </select>
-            </div>
-          ))}
-          <p class="hint">{gc.free}</p>
-          <p class="hint">{gc.full}</p>
-        </div>
-      </div>
-      )}
+      {/* ── HET PRODUCTTYPE EN DE BIJKLEDING STAAN NU IN STAP 2 — 22 sept 2026
+          Hier stond de typekeuze met de drie contextvragen, alleen bij lifestyle.
+          Twee dingen waren daar mis mee: catalog kreeg de vraag niet terwijl juist
+          de catalog-draagfoto er een is (een broek met een shirt en schoenen), en
+          één type voor de hele bestelling klopt niet zodra er hoodies én broeken
+          in zitten. Het staat nu onderaan stap 2, per product, mét het poppetje —
+          zie Styling.astro. De proef blijft zonder, om de reden die daar stond:
+          *"Ik wil dat de sample zo min mogelijk moeite is om in te vullen."* */}
 
       {(isCatalog ? [] : ORDER_QUESTIONS).map((qn) => (
         <div class="field">
@@ -3855,7 +3839,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     border-color: var(--ink);
     box-shadow: inset 0 0 0 1px var(--ink);
     background: var(--accent);
-    color: var(--accent-ink, #0A0A0A);
+    color: var(--accent-ink, #FFFFFF);
   }
   .pl-windows :global(.pl-dag-wd),
   .pl-windows :global(.pl-dag-mnd),
@@ -4511,7 +4495,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0;
     padding: .9rem 1rem .9rem 1.1rem;
     background: var(--ghost, rgb(17 17 17 / .04));
-    border-left: 3px solid var(--accent, #9EB42F);
+    border-left: 3px solid var(--accent, #4A1FFF);
     border-radius: 0 var(--r-sm, 8px) var(--r-sm, 8px) 0;
     max-width: var(--pl-measure);
   }

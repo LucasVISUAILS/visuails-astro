@@ -151,11 +151,11 @@ const aria = nl ? `Uitleg over ${over}` : `More about ${over}`;
   /* Zolang het paneel openstaat blijft het teken opgelicht. Zonder deze regel
      lijkt een paneel dat met het toetsenbord is geopend bij niets te horen. */
   .uitleg-mark:has(+ .uitleg-paneel:popover-open) {
-    color: var(--ink, #0A0A0A);
-    border-color: var(--ink, #0A0A0A);
+    color: var(--ink, #000000);
+    border-color: var(--ink, #000000);
   }
   .uitleg-mark:focus-visible {
-    outline: 2px solid var(--accent-bright, #0A0A0A);
+    outline: 2px solid var(--accent-bright, #3D17D6);
     outline-offset: 2px;
   }
 
@@ -196,7 +196,10 @@ const aria = nl ? `Uitleg over ${over}` : `More about ${over}`;
     font-size: .86rem;
     line-height: 1.5;
     text-align: start;
-    box-shadow: 0 8px 28px rgb(0 0 0 / .12);
+    /* Zelfde vorm als `.nt-pop` en `.nav-menu`: een verschoven vlak in plaats
+       van een wolk. KLEURENSCHEMA "Altijd 5" — diepte uit een lijn of een
+       tweede vlak, nooit uit een schaduw. 20 september 2026. */
+    box-shadow: 5px 5px 0 0 rgb(var(--scrim, 0 0 0) / 0.16);
     /* Een paneel dat in beeld valt in plaats van verschijnt is makkelijker te
        volgen met je ogen. Twaalf honderdsten, want langer voelt traag bij iets
        wat je met de muis aanwijst. */

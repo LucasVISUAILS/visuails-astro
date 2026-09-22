@@ -44,7 +44,7 @@
  */
 
 import { sendMail } from './mail.js';
-import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote } from './mailTemplate.js';
+import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote, statusPil } from './mailTemplate.js';
 
 /** De bestelling erbij halen, zodat een mail bruikbaar is zonder eerst te zoeken. */
 async function orderFor(env, orderId) {
@@ -188,6 +188,52 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
     ].join(''));
   } catch (err) {
     console.error('[notify] bericht over tweede proefvisual niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/**
+ * Een abonnee heeft een ingeplande dag NAAR VOREN gehaald.
+ *
+ * Lucas, 19 september 2026: *"ze kunnen orders in de planning ook vooruit
+ * slepen naar een andere datum (…) Zorg ervoor dat als dit gebeurt ik een
+ * melding krijg en dat deze order ook in mijn planning is verplaatst."*
+ *
+ * Het tweede deel van die zin regelt zichzelf en het is goed om te weten
+ * waarom: de dagen van een vastgezet item staan op `plan_queue.window_start`,
+ * en src/lib/agenda.js leest diezelfde kolom voor de bezetting. Jouw planning
+ * IS dus dezelfde rij — er valt niets te synchroniseren, alleen te melden.
+ *
+ * Waarom die melding er toch toe doet: de dag schuift naar VOREN en nooit naar
+ * achteren, dus er komt werk dichter bij je toe dan je gisteren dacht. Dat is
+ * precies het soort verandering waarvan je niet wilt dat hij alleen in een
+ * kalender staat.
+ */
+export async function notifyPlanMoved(env, { subRef, brand, email, product, van, naar, vrijgekomen }) {
+  try {
+    const ref = subRef || '(zonder kenmerk)';
+    await toStudio(
+      env,
+      `Dag naar voren · ${ref} · ${product} · ${van} → ${naar}`,
+      [
+        h1('Een abonnee haalde een dag naar voren', ref),
+        mailRows([
+          ['Abonnement', ref],
+          ['Klant', brand || email || '—'],
+          ['E-mail', email || ''],
+          ['Product', product || '—'],
+          ['Stond op', van || '—'],
+          ['Staat nu op', naar || '—'],
+          ['Komt vrij', vrijgekomen || '—'],
+        ]),
+        mailP('De klant deed dit zelf in Studio, en het kon alleen naar voren — '
+          + 'een datum naar achteren schuiven kan hij niet. De planning is hiermee '
+          + 'al bijgewerkt: een vastgezet item draagt zijn dagen zelf, en de agenda '
+          + 'leest diezelfde rij. Er hoeft niets van jou, behalve weten dat dit werk '
+          + 'eerder klaar moet zijn dan het gisteren stond.'),
+      ].join('')
+    );
+  } catch (err) {
+    console.error('[notify] verzetbericht niet verstuurd voor', subRef, '—', err?.message || err);
   }
 }
 
@@ -358,7 +404,7 @@ export async function notifySubscriptionFailed(env, {
           ['Plan', plan || ''],
           ['Bedrag', cents(bedragCents)],
           ['Wat Mollie zei', reason || 'onbekend'],
-          ['Status bij Mollie', molliestatus || 'onbekend'],
+          ['Status bij Mollie', molliestatus ? statusPil(molliestatus, molliestatus) : statusPil('unknown', 'onbekend')],
         ]),
         gestopt
           ? mailP('Mollie probeert het niet meer, dus het abonnement is hier op pauze gezet. '
@@ -414,7 +460,7 @@ export async function notifySubscriptionRefunded(env, {
           ['Termijn', maand || '—'],
           ['Afgeschreven', cents(bedragCents)],
           ['Terugbetaald', cents(terugCents)],
-          ['Status bij Mollie', molliestatus || 'onbekend'],
+          ['Status bij Mollie', molliestatus ? statusPil(molliestatus, molliestatus) : statusPil('unknown', 'onbekend')],
         ]),
         mailP(volledig
           ? 'De hele termijn is terug. Het abonnement staat op pauze, dus er komt geen '

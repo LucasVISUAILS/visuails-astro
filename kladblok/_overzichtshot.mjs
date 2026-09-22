@@ -1,0 +1,16 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const ctx = await b.newContext({ viewport: { width: 1120, height: 1000 }, deviceScaleFactor: 2 });
+const p = await ctx.newPage();
+await p.goto('file:///home/claude/repo/kladblok/kledingproef/overzicht.html', { waitUntil: 'load' });
+await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(600);
+await p.screenshot({ path: 'kladblok/kledingproef/ov-alles.png', fullPage: true });
+await (await p.$('.scherm')).screenshot({ path: 'kladblok/kledingproef/ov-scherm.png' });
+const s = await p.$$('.sectie');
+await s[0].screenshot({ path: 'kladblok/kledingproef/ov-kleur.png' });
+const m = await b.newContext({ viewport: { width: 390, height: 900 }, deviceScaleFactor: 3 });
+const pm = await m.newPage();
+await pm.goto('file:///home/claude/repo/kladblok/kledingproef/overzicht.html', { waitUntil: 'load' });
+await pm.evaluate(() => document.fonts.ready); await pm.waitForTimeout(500);
+await (await pm.$('.scherm')).screenshot({ path: 'kladblok/kledingproef/ov-mobiel.png' });
+await b.close(); console.log('ok');

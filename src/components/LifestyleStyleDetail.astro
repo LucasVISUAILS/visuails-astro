@@ -249,7 +249,20 @@ const vink = 'M20 6L9 17l-5-5';
   .ls-kop .etiket a:hover { color: var(--inkt); }
   .ls-tagline {
     font-family: var(--kop2); font-weight: 500; font-stretch: 125%;
-    font-size: clamp(1.2rem, 2.1vw, 1.7rem); line-height: 1.2;
+    font-size: clamp(1.2rem, 2.1vw, 1.7rem);
+    /* ── DE REGELAFSTAND SCHAALT MEE — 21 september 2026 ───────────────────
+       Hier stond `line-height: 1.2`, een factor. Een factor schaalt MET de
+       letter, en dat is precies verkeerd om: hoe kleiner de letter, hoe MEER
+       lucht een regel nodig heeft. Op een breed scherm (27px) klopte 1,2; op
+       een telefoon zakt de clamp naar 19px en dan is 1,2 nog maar 23px
+       regelafstand voor een zin met staarten. De spatiescan
+       (kladblok/spatie-alles.mjs) vond dit op vier stijlpagina's tegelijk.
+
+       `calc(1em + .42rem)` houdt de LOODRUIMTE constant in plaats van de
+       factor: 6,7px tussen de regels, wat de letter ook doet. Uitkomst 1,35
+       op 19px en 1,25 op 27px — allebei de stand die bij die maat hoort, uit
+       één regel die niet per breekpunt bijgehouden hoeft te worden. */
+    line-height: calc(1em + .42rem);
     letter-spacing: -.01em; color: var(--inkt); max-width: 20em;
   }
   .ls-feiten { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }

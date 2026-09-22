@@ -128,9 +128,15 @@ const {
     position: absolute;
     right: 0;
     top: -0.1em;
-    color: var(--ink-3);
-    font-family: var(--font-display);
-    font-size: 1.2rem;
+    /* ── GROTER EN DONKERDER — 22 september 2026 ──────────────────────────
+       Gemeten op /catalog: het plusje in de koptekst-familie op 1,2rem tekende
+       op ±8 px, in de lichtste inkt. Het is het enige teken dat zegt dat een
+       rij openklapt, en het viel weg. Nu de tekstletter (waar '+' een normale
+       breedte heeft), een trede groter en de tweede inkt. */
+    color: var(--ink-2);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 1.45rem;
     line-height: 1;
     transition: color var(--dur-1) var(--ease);
   }

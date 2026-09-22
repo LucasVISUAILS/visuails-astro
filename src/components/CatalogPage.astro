@@ -55,7 +55,7 @@ import {
    een component niet lezen — zie de kop boven serviceFaqs(). */
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
-import Disclose from './Disclose.astro';
+import Vragen from './Vragen.astro';
 import Compare from './Compare.astro';
 import Placeholder from './Placeholder.astro';
 import StyleRows from './StyleRows.astro';
@@ -266,7 +266,6 @@ const COPY = {
        als het beginpunt. Zie de noot bij de sectie. */
     stepsCap: 'What a client sent in — step 01',
     heroCap: 'Catalog · a delivered image',
-    faqH: 'Catalog questions, answered',
     faqs: serviceFaqs('catalog', 'en'),
     ctaH: 'Build a catalog that <br>looks like one brand.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
@@ -343,7 +342,6 @@ const COPY = {
     stepsAlt: 'De ruwe telefoonfoto die een klant instuurde: een gewassen shirt plat op een kantoortafel',
     stepsCap: 'Wat een klant instuurde — stap 01',
     heroCap: 'Catalog · een geleverd beeld',
-    faqH: 'Catalog-vragen, beantwoord',
     faqs: serviceFaqs('catalog', 'nl'),
     ctaH: 'Bouw een catalogus die <br>eruitziet als één merk.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
@@ -374,7 +372,7 @@ const naarRij = (s: (typeof styles)[number]) => ({
        { label: nl ? 'Achterkant' : 'Back' }, { label: 'Detail' }, { label: nl ? 'Op een model' : 'On a model' }]
     : [{ icon: s.cardIcon, width: s.cardWidth, badge: `Catalog · ${s.name}` }],
   before: s.slug === 'classic' ? { src: '/img/catalog-before-1x1.webp', alt: '' } : undefined,
-  tint: s.slug === 'classic' ? '#d9d9d2' : '#D2E04A',
+  tint: s.slug === 'classic' ? '#d9d9d2' : '#c8c9cd',
   detailHref: lp(`/catalog/${s.slug}`),
   detailLabel: c.exploreLabel(s.name),
   orderHref: s.orderHref,
@@ -610,15 +608,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
       al in queueNote in de opening; het hele blok blijft op /pricing. */}
 
   {/* ── 9 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
-  <section class="paneel" aria-labelledby="cat-faq">
-    <header class="paneel-kop">
-      <h2 id="cat-faq" class="hoog hoog-2">{c.faqH}</h2>
-    </header>
-    <div class="cat-vragen">
-      {c.faqs.slice(0, 5).map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
-    </div>
-    {c.faqs.length > 5 && <p class="cat-vragen-meer"><a class="pijl" href={lp('/faq')}>{nl ? `Nog ${c.faqs.length - 5} vragen over catalog` : `${c.faqs.length - 5} more catalog questions`}</a></p>}
-  </section>
+  <Vragen lang={lang} id="cat-faq" dienst="catalog" faqs={c.faqs} />
 
   {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="cat-slot">
@@ -715,11 +705,10 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
   .cat-stappen-check .cat-stappen li .lopend { grid-column: 2; }
   .cat-grond-regel { margin-top: 1.2rem; font-size: .92rem; color: var(--inkt-2); }
   .cat-grond-regel .etiket { display: inline; margin-right: .5rem; }
-  .cat-vragen-meer { margin-top: 1rem; }
   @media (max-width: 760px) { .cat-stappen-check { grid-template-columns: minmax(0, 1fr); } }
   .cat-check { display: grid; gap: .6rem; margin-top: 1.4rem; }
   .cat-check li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); }
-  .cat-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .cat-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, currentColor); }
   .cat-grond { display: grid; gap: .8rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
   .cat-grond-lijst { display: grid; gap: .6rem; }
   .cat-grond-lijst li { display: flex; align-items: baseline; gap: .6rem; color: var(--inkt-2); }
@@ -730,7 +719,6 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
   .cat-review-lijst { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
   .cat-review-lijst li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); border: 1px solid var(--lijn); border-radius: 999px; padding: .4rem .85rem; }
 
-  .cat-vragen { display: grid; gap: .7rem; }
 
   @media (max-width: 900px) {
     .cat-open, .cat-twee-licht, .cat-bewijs { grid-template-columns: 1fr; }

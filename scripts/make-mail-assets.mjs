@@ -41,7 +41,10 @@ const OUT = path.join(ROOT, 'public/img/mail');
 const H = 96;
 
 const COLOURS = {
-  groen: '#D2E04A',   // on the dark header band — Komma's geel sinds sectie 20
+  /* Op de donkere kopband van de mail. Uit KLEURENSCHEMA.md, 20 september
+     2026: op zwart is het accent het LICHTE violet (8,30:1); het violet van de
+     vulling haalt daar 2,93:1. */
+  groen: '#A694FF',
   wit: '#FFFFFF',     // spare, for a light-on-dark variant of any future template
 };
 

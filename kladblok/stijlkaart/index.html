@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stijlkaart — drie ontwerpen</title>
+<style>
+@font-face{font-family:"Anybody";src:url("b/anybody.woff2") format("woff2-variations");font-weight:100 900;font-stretch:50% 150%;font-display:swap}
+@font-face{font-family:"Instrument";src:url("b/instrument.woff2") format("woff2-variations");font-weight:400 700;font-stretch:75% 100%;font-display:swap}
+@font-face{font-family:"Geist Mono";src:url("b/geistmono.woff2") format("woff2-variations");font-weight:100 900;font-display:swap}
+
+:root{--bg:#F5F5F5;--surface:#FFF;--ink:#0A0A0A;--ink-2:#454545;--ink-3:#686868;--line:#DFDFDF;--line-sterk:#BDBDBD;--accent:#D2E04A}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Instrument",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:36px 24px 80px}
+h1{font-family:"Anybody";font-stretch:118%;font-weight:600;font-size:30px;letter-spacing:-.02em;margin:0 0 8px}
+.lead{color:var(--ink-3);max-width:70ch;line-height:1.6;margin:0 0 10px;font-size:15px}
+.mono{font-family:"Geist Mono";font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+section{margin-top:52px;padding-top:28px;border-top:1px solid var(--line)}
+.kop{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+h2{font-family:"Anybody";font-stretch:110%;font-weight:600;font-size:21px;letter-spacing:-.01em;margin:0}
+.waarom{color:var(--ink-3);font-size:13.5px;line-height:1.55;max-width:72ch;margin:0 0 20px}
+img{display:block;width:100%;height:100%;object-fit:cover}
+.naam{font-family:"Anybody";font-stretch:110%;font-weight:600;font-size:24px;letter-spacing:-.01em;margin:0}
+.tag{color:var(--ink-3);font-size:13.5px;margin:2px 0 0}
+.knop{display:inline-block;background:var(--accent);color:#0A0A0A;border-radius:999px;padding:9px 18px;font-size:13px;font-weight:700;text-decoration:none}
+.link{font-size:13px;color:var(--ink);text-decoration:underline;text-underline-offset:.2em}
+.voor-info{display:flex;flex-direction:column;gap:2px}
+
+/* ══ A · VOOR EN NA, GELIJKWAARDIG ══════════════════════════════════════ */
+.a{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.a-kop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:20px 22px 14px;flex-wrap:wrap}
+.a-paar{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.a-vak{position:relative;background:var(--surface)}
+.a-vak .beeld{aspect-ratio:1;background:var(--bg)}
+.a-etiket{position:absolute;top:10px;left:10px;font-family:"Geist Mono";font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:rgba(255,255,255,.92);padding:4px 8px;border-radius:4px}
+.a-vak.is-na .a-etiket{background:var(--accent)}
+.a-rest{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)}
+.a-rest .beeld{aspect-ratio:1;background:var(--bg);position:relative}
+.a-voet{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 22px;flex-wrap:wrap}
+.a-best{color:var(--ink-3);font-size:13px}
+
+/* ══ B · HET VEL ═══════════════════════════════════════════════════════ */
+.b{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px}
+.b-kop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.b-vel{display:grid;grid-template-columns:.8fr 1fr 1fr 1fr 1fr;gap:10px}
+.b-tegel{position:relative}
+.b-tegel .beeld{aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--bg);border:1px solid var(--line)}
+.b-tegel.is-voor .beeld{border:1px dashed var(--line-sterk)}
+.b-nr{font-family:"Geist Mono";font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-top:7px;display:block}
+.b-tegel.is-voor .b-nr{color:var(--ink)}
+.b-voet{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+/* ══ C · DE STAPEL ═════════════════════════════════════════════════════ */
+.c{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:34px;align-items:center}
+.c-beeld{position:relative;padding:0 104px 34px 0;overflow:visible}
+.c-hoofd{aspect-ratio:4/5;border-radius:12px;overflow:hidden;position:relative;z-index:3;box-shadow:0 12px 28px rgba(0,0,0,.14)}
+.c-achter{position:absolute;border-radius:12px;overflow:hidden;background:var(--bg);border:1px solid var(--line)}
+.c-achter.n1{top:22px;right:46px;bottom:22px;width:46%;z-index:2;transform:rotate(4deg)}
+.c-achter.n2{top:44px;right:14px;bottom:2px;width:46%;z-index:1;transform:rotate(8.5deg)}
+.c-voor{position:absolute;left:-14px;bottom:-18px;width:168px;z-index:4;background:#fff;padding:7px 7px 24px;border-radius:4px;box-shadow:0 8px 20px rgba(0,0,0,.18);transform:rotate(-4deg)}
+.c-voor .beeld{aspect-ratio:1;overflow:hidden;background:var(--bg)}
+.c-voor span{position:absolute;left:0;right:0;bottom:7px;text-align:center;font-family:"Geist Mono";font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.c-tekst{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.c-lijst{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--ink-2);width:100%}
+.c-lijst li{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:6px}
+.c-lijst li:first-child{border-top:0}
+
+@media(max-width:780px){
+  .a-rest{grid-template-columns:repeat(3,1fr)}
+  .b-vel{grid-template-columns:repeat(2,1fr)}
+  .c{grid-template-columns:1fr;gap:34px}
+  .c-beeld{padding:0 22px 22px 0}
+}
+@media(max-width:420px){ .a-paar{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>De stijlkaart, drie keer opnieuw</h1>
+  <p class="lead">Zelfde stijl, zelfde beelden, zelfde tekst — drie volstrekt verschillende indelingen. Wat ze alle drie oplossen: de ingestuurde klantfoto is niet langer een postzegel naast een groot resultaat, en je ziet in één blik hoeveel beelden je krijgt. Kijk op je telefoon ook even mee; ze zijn alle drie op 390 pixels nagekeken.</p>
+  <p class="mono">Nu: klantfoto ≈ 80 px naast een beeld van ≈ 700 px, en drie lege vakken met alleen een woord erin</p>
+
+  <!-- ══ A ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="kop"><h2>A · Voor en na, even groot</h2><span class="mono">de belofte is de verandering</span></div>
+    <p class="waarom">De dienst is een transformatie, dus staan de twee kanten ervan even groot naast elkaar — dat is de enige indeling waarin je ze echt kunt vergelijken. De overige geleverde beelden staan als strook eronder, want die zijn het bewijs van het aantal en niet van de verandering.</p>
+    <div class="a">
+      <div class="a-kop">
+        <div><p class="naam">Classic</p><p class="tag">Schoon. Consistent. Altijd hetzelfde.</p></div>
+        <div class="voor-info"><span class="mono">4 beelden per product</span><span class="mono">vanaf € 39 p/p</span></div>
+      </div>
+      <div class="a-paar">
+        <div class="a-vak"><div class="beeld"><img src="b/ba2-voor-front.webp" alt="De ingestuurde telefoonfoto"></div><span class="a-etiket">Jouw foto</span></div>
+        <div class="a-vak is-na"><div class="beeld"><img src="b/ba2-na-front.webp" alt="Het geleverde beeld"></div><span class="a-etiket">Geleverd</span></div>
+      </div>
+      <div class="a-rest">
+        <div class="beeld"><img src="b/ba2-na-achter.webp" alt="Achterkant"></div>
+        <div class="beeld"><img src="b/ba2-na-detail.webp" alt="Detail"></div>
+        <div class="beeld"><img src="b/ba2-na-model.webp" alt="Op model"></div>
+      </div>
+      <div class="a-voet">
+        <span class="a-best">Achterkant · Detail · Op model</span>
+        <span><a class="knop" href="#">Kies deze look</a> &nbsp; <a class="link" href="#">Bekijk voorbeelden</a></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ B ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="kop"><h2>B · Het vel</h2><span class="mono">de belofte is het aantal</span></div>
+    <p class="waarom">Alle vier de geleverde beelden als gelijke tegels, als een contactvel: dit is letterlijk wat er in je map komt. De ingestuurde foto staat er als eerste tegel voor, iets smaller en met een stippellijn — hij hoort erbij en hij is iets anders. Dit is de rustigste van de drie en de makkelijkste om vol te houden als er ooit een vijfde beeld bij komt.</p>
+    <div class="b">
+      <div class="b-kop">
+        <div><p class="naam">Classic</p><p class="tag">Schoon. Consistent. Altijd hetzelfde.</p></div>
+        <div class="voor-info"><span class="mono">4 beelden per product</span><span class="mono">vanaf € 39 p/p</span></div>
+      </div>
+      <div class="b-vel">
+        <div class="b-tegel is-voor"><div class="beeld"><img src="b/ba2-voor-front.webp" alt="De ingestuurde telefoonfoto"></div><span class="b-nr">Jouw foto</span></div>
+        <div class="b-tegel"><div class="beeld"><img src="b/ba2-na-front.webp" alt="Voorkant"></div><span class="b-nr">01 · Voorkant</span></div>
+        <div class="b-tegel"><div class="beeld"><img src="b/ba2-na-achter.webp" alt="Achterkant"></div><span class="b-nr">02 · Achterkant</span></div>
+        <div class="b-tegel"><div class="beeld"><img src="b/ba2-na-detail.webp" alt="Detail"></div><span class="b-nr">03 · Detail</span></div>
+        <div class="b-tegel"><div class="beeld"><img src="b/ba2-na-model.webp" alt="Op model"></div><span class="b-nr">04 · Op model</span></div>
+      </div>
+      <div class="b-voet">
+        <span class="a-best">Precies wat er in je map komt — niet meer en niet minder</span>
+        <span><a class="knop" href="#">Kies deze look</a> &nbsp; <a class="link" href="#">Bekijk voorbeelden</a></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ C ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="kop"><h2>C · De stapel</h2><span class="mono">de belofte is de look</span></div>
+    <p class="waarom">Eén beeld groot, de andere drie eronderuit als een stapel afdrukken, en de telefoonfoto als polaroid in de hoek geklemd. Dit is de enige van de drie waar de STIJL het onderwerp is en niet de telling — en dus de enige die zich laat lezen als mode in plaats van als dienst. Prijs: hij is het minst rustig en het lastigst consistent te houden over zeven looks.</p>
+    <div class="c">
+      <div class="c-beeld">
+        <div class="c-achter n2"><img src="b/ba2-na-detail.webp" alt=""></div>
+        <div class="c-achter n1"><img src="b/ba2-na-model.webp" alt=""></div>
+        <div class="c-hoofd"><img src="b/ba2-na-front.webp" alt="Het geleverde beeld"></div>
+        <div class="c-voor"><div class="beeld"><img src="b/ba2-voor-front.webp" alt="De ingestuurde telefoonfoto"></div><span>Jouw foto</span></div>
+      </div>
+      <div class="c-tekst">
+        <div><p class="naam">Classic</p><p class="tag">Schoon. Consistent. Altijd hetzelfde.</p></div>
+        <ul class="c-lijst">
+          <li><span>Wat je krijgt</span><span>4 beelden per product</span></li>
+          <li><span>Waar het voor is</span><span>Webshop &amp; marktplaats</span></li>
+          <li><span>Vanaf</span><span>€ 39 per product</span></li>
+        </ul>
+        <span><a class="knop" href="#">Kies deze look</a> &nbsp; <a class="link" href="#">Bekijk voorbeelden</a></span>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

@@ -9,7 +9,7 @@
  * 5 september 2026 stond daar `--font: "Archivo Variable"` zonder dat er ooit
  * een Archivo geladen werd: elke klant zag Segoe UI of Helvetica. Dat is precies
  * twee keer gebeurd: tot 7 september noemden de drie stylesheets Hubot Sans,
- * Satoshi en Sometype Mono, terwijl dit script Anybody, Instrument Sans en
+ * Satoshi en Sometype Mono, terwijl dit script Anybody, de tekstletter en
  * Martian Mono kopieerde. Weer Arial dus, en weer onzichtbaar.
  *
  * DE LES STAAT IN DE VOLGORDE. Dit script is de enige waarheid over WELKE letter
@@ -40,12 +40,17 @@ const require = createRequire(import.meta.url);
 
 /* Sectie 22, 7 september 2026: Hubot Sans en Sometype Mono eruit, de drie
    nieuwe families erin — Anybody (kop), Instrument Sans (tekst), Martian Mono
-   (labels). Alle drie variabel mét breedte-as, dus één bestand per snit. */
+   (labels). Alle drie variabel mét breedte-as, dus één bestand per snit.
+
+   21 september 2026: Instrument Sans eruit, Figtree erin — zie de noot bij
+   --font-body in global.css. Figtree heeft géén breedte-as, alleen gewicht
+   300–900, dus zijn @font-face hieronder noemt geen `font-stretch`; een as die
+   niet bestaat opgeven laat de browser de hele declaratie negeren. */
 const BESTANDEN = [
   ['@fontsource-variable/anybody/files/anybody-latin-standard-normal.woff2', 'anybody-latin-standard-normal.woff2'],
   ['@fontsource-variable/anybody/files/anybody-latin-standard-italic.woff2', 'anybody-latin-standard-italic.woff2'],
-  ['@fontsource-variable/instrument-sans/files/instrument-sans-latin-standard-normal.woff2', 'instrument-sans-latin-standard-normal.woff2'],
-  ['@fontsource-variable/instrument-sans/files/instrument-sans-latin-standard-italic.woff2', 'instrument-sans-latin-standard-italic.woff2'],
+  ['@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2', 'figtree-latin-wght-normal.woff2'],
+  ['@fontsource-variable/figtree/files/figtree-latin-wght-italic.woff2', 'figtree-latin-wght-italic.woff2'],
   ['@fontsource-variable/martian-mono/files/martian-mono-latin-standard-normal.woff2', 'martian-mono-latin-standard-normal.woff2'],
 ];
 
@@ -54,8 +59,8 @@ export function fontFaces() {
     '/* Gegenereerd door scripts/fonts-voor-worker.mjs bij de build — niet met de hand bewerken. */',
     '@font-face { font-family: "Anybody Variable"; font-style: normal; font-weight: 100 900; font-stretch: 50% 150%; font-display: swap; src: url("/fonts/gedeeld/anybody-latin-standard-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
     '@font-face { font-family: "Anybody Variable"; font-style: italic; font-weight: 100 900; font-stretch: 50% 150%; font-display: swap; src: url("/fonts/gedeeld/anybody-latin-standard-italic.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
-    '@font-face { font-family: "Instrument Sans Variable"; font-style: normal; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url("/fonts/gedeeld/instrument-sans-latin-standard-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
-    '@font-face { font-family: "Instrument Sans Variable"; font-style: italic; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url("/fonts/gedeeld/instrument-sans-latin-standard-italic.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
+    '@font-face { font-family: "Figtree Variable"; font-style: normal; font-weight: 300 900; font-display: swap; src: url("/fonts/gedeeld/figtree-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
+    '@font-face { font-family: "Figtree Variable"; font-style: italic; font-weight: 300 900; font-display: swap; src: url("/fonts/gedeeld/figtree-latin-wght-italic.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
     '@font-face { font-family: "Martian Mono Variable"; font-style: normal; font-weight: 100 800; font-stretch: 75% 112.5%; font-display: swap; src: url("/fonts/gedeeld/martian-mono-latin-standard-normal.woff2") format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
   ];
   return regels.join('\n') + '\n';

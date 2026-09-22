@@ -53,8 +53,9 @@ import { EXPIRED_FILES_SQL, UPLOAD_DAYS, DELIVERY_DAYS } from '../src/lib/retent
 import { planState, termijnMaand } from '../src/lib/subscription.js';
 /* Voor grantPrepaidMonths(): de bundel van een abonnement en hoeveel producten
    er per maand bij horen. Zie de kop van die taak. */
-import { grantSlots, subProducten } from '../src/lib/slots.js';
+import { grantSlots, subProducten, loadSlots, vensterVoor, kindLabel, CREDIT_KIND } from '../src/lib/slots.js';
 import { TERMS } from '../src/data/plans.js';
+import { SERVICE_CREDITS } from '../src/data/pricing.js';
 
 /* Hoeveel maanden een vooruitbetaald jaar draagt. Uit de termijn zelf, zodat
    een jaar van veertien maanden hier niet hoeft te worden bijgewerkt. */
@@ -105,7 +106,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, checkPlanQueues, weekTeStarten, checkBackupAge]) {
+    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, checkPlanQueues, herinnerCredits, weekTeStarten, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -1236,7 +1237,156 @@ async function grantPrepaidMonths(env, nu = new Date()) {
     if (bestaat) continue;
 
     const producten = subProducten(sub);
-    /* `payment_id` blijft leeg: er hoort geen betaling bij deze maand, hij is
+    /*
+ * ── DE CREDITHERINNERING — 20 september 2026 ────────────────────────────────
+ *
+ * Lucas, gevraagd of het leverweek-venster als vangnet moest blijven nu de klant
+ * zelf inplant: *"Het zou als vangnet kunnen blijven maar hoe kunnen wij weten
+ * wat de klant voor content wilt, daar zit ik een beetje mee. Ik denk dat mails
+ * van dat de klant nog slots/credits over heeft en we tips daarin geven hoe ze
+ * deze het beste uit kan besteden zodat ze ze niet verspilt."*
+ *
+ * Dat bezwaar klopt en het is de reden dat er NIET automatisch iets wordt
+ * ingepland. Wij weten niet welk product hij wil laten maken; een set die wij
+ * verzinnen is een set die hij niet besteld heeft. Wat we wél weten is dat er
+ * credits op het punt staan te vervallen, en dat hij dat misschien niet weet.
+ *
+ * ── TWEE MAILS EN NIET MEER ─────────────────────────────────────────────────
+ *
+ * Zeven dagen vóór de vervaldatum, en twee dagen ervoor. Niet elke nacht: een
+ * herinnering die elke dag komt, is een herinnering die je wegklikt. Niet één:
+ * zeven dagen is genoeg tijd om iets te bedenken en te weinig om het te
+ * vergeten, dus hoort er een tweede vlak voor de deadline bij.
+ *
+ * De vervaldatum komt uit vervaltOp() — dezelfde som die het dashboard toont.
+ * Zou deze taak zijn eigen datum uitrekenen, dan staat er een dag in de mail
+ * die niet op het scherm staat, en dan gelooft niemand meer welke van de twee
+ * klopt.
+ *
+ * ── EN DE TIP IS EEN REKENSOM EN GEEN ADVIES ────────────────────────────────
+ *
+ * "Besteed ze goed" is geen tip. Wat wél helpt is: wat KAN ik hier nog voor
+ * krijgen. Dat is te rekenen uit SERVICE_CREDITS, en het antwoord is per klant
+ * anders. Vandaar drie concrete regels in plaats van een aansporing.
+ */
+const CREDIT_WAARSCHUWING_DAGEN = [7, 2];
+
+/** Hoeveel hele dagen er tussen twee datums liggen. */
+function dagenTot(vanIso, totIso) {
+  const a = Date.parse(`${vanIso}T00:00:00Z`);
+  const b = Date.parse(`${totIso}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return NaN;
+  return Math.round((b - a) / 864e5);
+}
+
+/**
+ * Wat je voor `n` credits nog kunt krijgen, als hooguit drie regels.
+ *
+ * Alleen HELE aantallen van één dienst, en alleen diensten waar er minstens één
+ * van in past. Een combinatie ("twee catalogsets en een carrousel") zou
+ * preciezer zijn en is precies wat een klant niet wil lezen als hij haast heeft.
+ *
+ * DE VOLGORDE IS MINSTE VERSPILLING EERST, en dat is niet hetzelfde als de
+ * duurste dienst eerst. Bij negen credits is één lifestylecarrousel (5) de
+ * grootste eenheid die past, maar dan blijven er vier liggen; twee catalogsets
+ * (8) laten er één over. Een tip die je credits laat verdampen, is precies de
+ * verkeerde tip in een mail die daarover gaat.
+ */
+function creditTips(n, lang = 'nl') {
+  const nl = lang !== 'en';
+  const uit = [];
+  const diensten = Object.entries(SERVICE_CREDITS)
+    .map(([kind, prijs]) => ({ kind, prijs, aantal: Math.floor(n / prijs), rest: n % prijs }))
+    .filter((d) => d.aantal > 0)
+    .sort((a, b) => a.rest - b.rest || b.prijs - a.prijs);
+  for (const d of diensten.slice(0, 3)) {
+    const naam = kindLabel(d.kind, nl ? 'nl' : 'en');
+    uit.push(`${d.aantal} × ${naam.toLowerCase()}`);
+  }
+  return uit;
+}
+
+/**
+ * Klanten met credits die binnenkort vervallen, en die het misschien niet weten.
+ */
+async function herinnerCredits(env) {
+  if (!env.DB) return '';
+  const nu = new Date();
+  const vandaag = nu.toISOString().slice(0, 10);
+
+  const abos = await env.DB.prepare(
+    `SELECT s.id, s.ref, s.term, s.status, c.email, c.brand
+       FROM subscriptions s
+       JOIN customers c ON c.id = s.customer_id
+      WHERE s.status = 'active'`
+  ).all().then((r) => r?.results || []).catch(() => []);
+  if (!abos.length) return '';
+
+  let gemaild = 0;
+  const namen = [];
+
+  for (const abo of abos) {
+    const venster = vensterVoor(abo);
+    if (!venster) continue;
+    const rijen = await loadSlots(env, abo.id, venster, nu).catch(() => []);
+    /* Alleen de OUDSTE toekenning die nog iets over heeft: dat is de enige die
+       binnenkort vervalt. De nieuwere hebben nog een maand te gaan. */
+    const oudste = rijen.filter((r) => r.kind === CREDIT_KIND && r.granted > r.used)[0];
+    if (!oudste) continue;
+    const over = oudste.granted - oudste.used;
+    const dagen = dagenTot(vandaag, oudste.vervalt);
+    if (!CREDIT_WAARSCHUWING_DAGEN.includes(dagen)) continue;
+    /* Minder dan de goedkoopste dienst is geen herinnering waard: daar valt
+       niets meer voor te bestellen, en een mail die zegt "je verliest twee
+       credits waar je niets voor krijgt" is alleen maar vervelend. */
+    const goedkoopste = Math.min(...Object.values(SERVICE_CREDITS));
+    if (over < goedkoopste) continue;
+
+    if (await mailCreditsVervallen(env, { ...abo, over, vervalt: oudste.vervalt, dagen })) {
+      gemaild += 1;
+      namen.push(`${abo.ref} (${over})`);
+    }
+  }
+
+  if (!gemaild) return '';
+  return `Credits die vervallen: ${gemaild} klant(en) gemaild — ${namen.join(', ')}.`;
+}
+
+async function mailCreditsVervallen(env, o) {
+  if (!env.RESEND_API_KEY || !o.email) return false;
+  const nl = true;                     // de taal van de klant staat niet op de rij; zie mailVensterVrij
+  const tips = creditTips(o.over, 'nl');
+  try {
+    await sendMail(env, {
+      to: o.email,
+      subject: `Je hebt nog ${o.over} credits — ze vervallen over ${o.dagen} dagen`,
+      html: mailShell({
+        lang: 'nl',
+        preheader: `Nog ${o.over} credits, geldig tot en met ${o.vervalt}.`,
+        body: [
+          mailH1('Er staan nog credits open'),
+          mailP(`Van je abonnement <strong>${o.ref}</strong> staan er nog <strong>${o.over} credits</strong> open. `
+            + `Ze zijn geldig tot en met <strong>${o.vervalt}</strong> — daarna vervallen ze, en dat is `
+            + `het enige wat aan een abonnement verloren kan gaan.`),
+          tips.length
+            ? mailP(`Wat je er nog voor kunt laten maken: ${tips.join(', of ')}. `
+              + `Je plant het zelf in onder Planning in VISUAILS Studio; klik op een dag en het staat erop.`)
+            : '',
+          mailP('Weet je niet wat je zou laten maken? Het product dat je het vaakst verkoopt, is bijna altijd '
+            + 'het goede antwoord — een tweede set beelden van je bestverkopende artikel doet meer dan een '
+            + 'eerste set van iets wat blijft liggen. Twijfel je, app ons even; dan denken we mee.'),
+          mailSpamNote('nl'),
+        ].join(''),
+      }),
+    });
+    return true;
+  } catch (err) {
+    console.error('[cron] creditherinnering voor', o.ref, 'niet verstuurd —', err?.message || err);
+    return false;
+  }
+}
+
+/* `payment_id` blijft leeg: er hoort geen betaling bij deze maand, hij is
        vorig jaar al betaald. Dat is ook precies wat de factuurroute nodig heeft
        om deze maand NIET nog een keer te factureren — die gaat over
        subscription_payments en niet over deze tabel. */

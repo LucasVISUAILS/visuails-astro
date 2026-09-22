@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 })).newPage();
+await p.goto('http://127.0.0.1:4399/nl/gallery/', { waitUntil: 'load' });
+await p.evaluate(() => document.fonts.ready);
+await p.evaluate(() => document.querySelectorAll('.cc,[class*="cookie"]').forEach(e => e.remove()));
+await p.waitForTimeout(500);
+const el = await p.$('.gal-pil'); await el.scrollIntoViewIfNeeded(); await p.waitForTimeout(300);
+const rij = await p.$(await p.evaluate(() => { const e = document.querySelector('.gal-pil').parentElement; e.id = e.id || 'galrij'; return '#' + e.id; }));
+await rij.screenshot({ path: 'kladblok/spatie-galpil.png' });
+console.log(await p.evaluate(() => { const e = document.querySelector('.gal-pil'); const r = e.getBoundingClientRect(); const s = getComputedStyle(e.parentElement);
+  return { hoogte: Math.round(r.height), breedte: Math.round(r.width), gap: s.gap, rowGap: s.rowGap, columnGap: s.columnGap }; }));
+await b.close();

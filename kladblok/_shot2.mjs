@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await (await b.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+const [pad, sel, uit] = process.argv.slice(2);
+await p.goto('http://127.0.0.1:4399' + pad, { waitUntil: 'load' });
+await p.evaluate(() => document.fonts.ready);
+await p.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); } window.scrollTo(0,0); });
+await p.waitForTimeout(800);
+const el = await p.$(sel);
+await el.scrollIntoViewIfNeeded(); await p.waitForTimeout(500);
+await el.screenshot({ path: uit });
+await b.close(); console.log('ok', uit);

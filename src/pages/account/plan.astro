@@ -100,41 +100,57 @@ const { t, lang, customer, thema, navDicht } = st;
                 <div><span class="st-eyebrow">{t.planBalanceH}</span><h2>{v.saldo.naam}</h2></div>
                 {v.saldo.volgende && <div class="st-saldo-volgende"><span class="st-eyebrow">{t.planNextCharge}</span><strong>{v.saldo.volgende}</strong></div>}
               </div>
-              <div class="st-saldo-rij">
-                <div class="st-saldo-uitleg">
-                  <span class="st-eyebrow">{t.planSlotsH}</span>
-                  <p class="st-meta">{t.planSlotsLede}</p>
+              {/* ── DE CREDITBALK — 19 september 2026 ────────────────────────
+                  Lucas: "maak het mooi overzichtelijk en strak/minimalistisch."
+                  Hier stonden tot vijf meters naast elkaar, elk met een eigen
+                  teller en vervaldatum. Eén saldo is één balk, en het getal dat
+                  ertoe doet (wat er nog over is) staat er in woorden naast. */}
+              <div class="st-credit">
+                <div class="st-credit-kop">
+                  <div>
+                    <span class="st-eyebrow">{t.planCreditsH}</span>
+                    <p class="st-credit-tel"><b>{v.saldo.credit.saldo}</b> <span>{t.planOfN} {v.saldo.credit.toegekend}</span></p>
+                  </div>
+                  <div class="st-knoppen">
+                    <a class="btn btn-primary btn-sm" href="/account/plan?tab=bestellen">{t.planSlotFill}</a>
+                    <a class="btn btn-ghost btn-sm" href={v.saldo.startComplete}>{t.planRequest}</a>
+                  </div>
                 </div>
-                <div class="st-knoppen">
-                  <a class="btn btn-primary btn-sm" href="/account/plan?tab=bestellen">{t.planSlotFill}</a>
-                  <a class="btn btn-ghost btn-sm" href={v.saldo.startComplete}>{t.planRequest}</a>
+                <div class="st-credit-balk" role="img" aria-label={`${v.saldo.credit.verbruikt} ${t.planOfN} ${v.saldo.credit.toegekend}`}>
+                  <span class={`st-credit-vul is-p${v.saldo.credit.pctStap}`}></span>
                 </div>
+                <p class="st-meta st-credit-regel">
+                  {t.planCreditsLede}
+                  {v.saldo.credit.verval && <Fragment> · <b>{v.saldo.credit.verval}</b></Fragment>}
+                </p>
+                {v.saldo.credit.leeg && <p class="st-melding is-warn">{t.planCreditEmpty}</p>}
+                {v.saldo.credit.frames.length > 0 && (
+                  <div class="st-frames">
+                    {v.saldo.credit.frames.map((fr) => (
+                      <span class={`st-frame is-${fr.kind}`} aria-label={fr.label}>{fr.img ? <img src={fr.img} alt="" loading="lazy" decoding="async" /> : <Plaatshouder klein donker ratio="4/5" />}</span>
+                    ))}
+                  </div>
+                )}
               </div>
-              {v.saldo.slots.length > 0 && (
-                <div class="st-slots">
-                  {v.saldo.slots.map((s) => (
-                    <div class={`st-slot${s.vol ? ' is-vol' : ''}`}>
-                      <div class="st-slot-kop">
-                        <span class="st-slot-naam"><span class="n">{s.naam}</span><span class="u">{s.per}</span>{s.verval && <span class="st-slot-verval">{s.verval}</span>}</span>
-                        <span class="st-slot-tel"><b>{s.tel}</b> {s.telLabel}</span>
-                      </div>
-                      <div class="st-frames">
-                        {s.frames.slice(0, 24).map((fr) => (
-                          <span class={`st-frame is-${fr.kind}`} aria-label={fr.label}>{fr.img ? <img src={fr.img} alt="" loading="lazy" decoding="async" /> : <Plaatshouder klein donker={fr.kind === 'vast'} ratio="4/5" />}</span>
-                        ))}
-                        {s.frames.length > 24 && <span class="st-frame is-meer">+{s.frames.length - 24}</span>}
-                        {s.vrij > 0 && <a class="st-frame is-vrij is-tel" href="/account/plan?tab=bestellen"><span class="st-frame-leeg">{t.planVrijTegel(s.vrij)}</span></a>}
-                      </div>
-                      {(s.frames.length > 0 || s.oud) && (
-                        <div class="st-frame-legenda">
-                          {s.frames.some((fr) => fr.kind === 'gemaakt') && <span><i class="is-gemaakt"></i>{t.planVisFrameMade}</span>}
-                          {s.frames.some((fr) => fr.kind === 'vast') && <span><i class="is-vast"></i>{t.planVisFrameLocked}</span>}
-                          {s.oud && <span class="st-slot-oud"><Slotmeter g={s.oud} alsBalk={s.alsBalk} /> {s.oud.label}</span>}
-                        </div>
-                      )}
-                    </div>
+
+              {/* ── DE DIENSTEN, ALS KAARTEN ────────────────────────────────
+                  Eén kaart per dienst die dit abonnement mag bestellen, met de
+                  prijs in credits erop. Wat je niet kunt betalen is zichtbaar
+                  maar uitgeschakeld, mét hoeveel je tekortkomt — een grijze knop
+                  zonder reden is de ergste knop die er is. */}
+              {v.saldo.dienstKaarten.length > 0 && (
+                <ul class="st-diensten">
+                  {v.saldo.dienstKaarten.map((d) => (
+                    <li class={`st-dienst${d.betaalbaar ? '' : ' is-uit'}`}>
+                      <span class="st-dienst-prijs">{d.credits}</span>
+                      <span class="st-dienst-naam">{d.naam}</span>
+                      <span class="st-dienst-per">{d.per}</span>
+                      {d.betaalbaar
+                        ? <a class="st-dienst-knop" href={`/account/plan?tab=bestellen&dienst=${d.value}`}>{t.planCreditPick}</a>
+                        : <span class="st-dienst-kort">{t.planCreditShort(d.tekort)}</span>}
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
               <p class="st-meta">{v.saldo.elkProduct && <Fragment>{t.planEachProduct} · </Fragment>}{t.planExtraNote}</p>
               {!v.saldo.betaald && <p class="st-melding is-warn">{t.planUnpaid}</p>}
@@ -390,6 +406,168 @@ const { t, lang, customer, thema, navDicht } = st;
                   {v.kalender.kanNiets && <p class="st-melding is-warn">{t.planWhenNone}</p>}
                 </Fragment>
               )}
+          </div>
+        </section>
+      )}
+
+      {/* ── DE PLANNING — 20 september 2026 ──────────────────────────────────
+          De hele maand in één blik. Elke dag is een knop of een vak, met zijn
+          bezetting als balk en met wat er van deze klant op ligt. In
+          verzet-stand zijn alleen de dagen vóór de huidige aanwijsbaar; zie
+          planningKalender() in account.js voor waarom er niet gesleept wordt. */}
+      {v.nu === 'planning' && v.planning && (
+        <section class="st-blok" aria-label={t.planPlanH}>
+          <div class="st-kaart-vlak st-vlak">
+            <div class="st-kop-rij">
+              <div>
+                <h2>{v.planning.verzet ? t.planPlanVerzetH : t.planPlanH}</h2>
+                <p class="st-meta">
+                  {v.planning.verzet
+                    ? t.planVerzetStand(v.planning.verzet.naam, v.planning.verzet.van)
+                    : t.planPlanLede}
+                </p>
+              </div>
+              {v.planning.verzet && <a class="st-link" href="/account/plan?tab=planning">{t.planPlanVerzetUit}</a>}
+            </div>
+
+            {v.planning.geenGewicht && <p class="st-melding is-warn">{t.planVerzetGeenGewicht}</p>}
+
+            {/* De bevestiging staat vóór de kalender en niet in een venster:
+                zonder script is er geen venster, en een vraag die je moet
+                zoeken is geen vraag. */}
+            {v.planning.bevestig && (
+              <form class="st-bevestig" method="post" action="/account/plan/queue">
+                <input type="hidden" name="do" value="verzet" />
+                <input type="hidden" name="id" value={v.planning.bevestig.id} />
+                <input type="hidden" name="dag" value={v.planning.bevestig.naarIso} />
+                <input type="hidden" name="bevestig" value="ja" />
+                <p class="st-bevestig-h"><strong>{v.planning.bevestig.naam}</strong> · {v.planning.bevestig.van} → {v.planning.bevestig.naar}</p>
+                <p class="st-meta">{v.planning.bevestig.waarschuwing}</p>
+                <div class="st-knoppen">
+                  <button class="btn btn-primary btn-sm" type="submit">{t.planVerzetBevestig}</button>
+                  <a class="btn btn-ghost btn-sm" href={`/account/plan?tab=planning&verzet=${v.planning.bevestig.id}`}>{t.planPlanVerzetUit}</a>
+                </div>
+              </form>
+            )}
+
+            {/* ── EEN PRODUCT INPLANNEN OP DE AANGEKLIKTE DAG ──────────────
+                Hetzelfde productvak als op de productentab, met twee verborgen
+                velden erbij: de dag, en "meteen vastzetten". Eén verzending
+                doet dus toevoegen, vastzetten en inplannen. Wat er NIET in
+                staat is de look — die komt uit je merkkit en gaat vanzelf mee;
+                zie vasteLook.js. Dat staat er met zoveel woorden bij, want een
+                formulier dat minder vraagt dan je verwacht, roept de vraag op
+                of het wel compleet is. */}
+            {v.planning.nieuweDag && (
+              <form method="post" action="/account/plan/queue" class="st-formulier is-in-vlak" enctype="multipart/form-data">
+                <input type="hidden" name="do" value="add" />
+                <input type="hidden" name="meteen" value="1" />
+                <input type="hidden" name="dag" value={v.planning.nieuweDag.iso} />
+                <div class="st-kop-rij">
+                  <div>
+                    <span class="st-eyebrow">{t.planPlanNieuwH}</span>
+                    <p class="st-groot">{v.planning.nieuweDag.label}</p>
+                  </div>
+                  <a class="st-link" href="/account/plan?tab=planning">{t.planPlanVerzetUit}</a>
+                </div>
+                <p class="st-meta">{t.planPlanNieuwUit}</p>
+                <div class="st-rij">
+                  <div class="st-veldgroep">
+                    <label for="p-name">{t.planQueueName}</label>
+                    <input id="p-name" class="st-veld" name="name" type="text" maxlength="120" required data-melding={t.planQueueNameMissing} placeholder={t.planQueueNamePh} />
+                  </div>
+                  <div class="st-veldgroep">
+                    <label for="p-type">{t.planQType}</label>
+                    <select id="p-type" class="st-veld" name="soort">{v.soortProduct.map((o) => <option value={o.value}>{o.label}</option>)}</select>
+                  </div>
+                  {v.soortKeuze
+                    ? (
+                      <div class="st-veldgroep">
+                        <label for="p-soort">{t.planQueueKind}</label>
+                        <select id="p-soort" class="st-veld" name="kind">{v.soortKeuze.map((o) => <option value={o.value}>{o.label}</option>)}</select>
+                      </div>
+                    )
+                    : <input type="hidden" name="kind" value={v.soortEnkel} />}
+                </div>
+                <div class="st-rij">
+                  <div class="st-veldgroep is-breed">
+                    <label for="p-note">{t.planQueueNote}</label>
+                    <input id="p-note" class="st-veld" name="note" type="text" maxlength="500" />
+                  </div>
+                  {v.gezichten.length > 0 && (
+                    <div class="st-veldgroep">
+                      <label for="p-model">{t.planQFace}</label>
+                      <select id="p-model" class="st-veld" name="model">
+                        <option value="">{t.planQFaceFollow}</option>
+                        {v.gezichtGroepen.map((g) => <optgroup label={g}>{v.gezichten.filter((x) => x.groep === g).map((x) => <option value={x.value}>{x.label}</option>)}</optgroup>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div class="st-rij">
+                  <div class="st-veldgroep is-breed">
+                    <label for="p-fotos">{t.planQSlotExtra}</label>
+                    <input id="p-fotos" class="st-veld st-veld-bestand" name="fotos" type="file" accept="image/*" multiple />
+                    <span class="st-hint">{t.planQueuePhotosHint}</span>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-sm" type="submit">{t.planPlanNieuwKnop}</button>
+              </form>
+            )}
+
+            <p class="st-meta">{t.planPlanEerste(v.planning.eerste)}</p>
+
+            <div class="st-kal st-kal-groot">
+              {v.planning.kopjes.map((k) => <span class="st-kal-kop">{k}</span>)}
+              {v.planning.dagen.map((d) => (
+                d.kiesbaar && v.planning.verzet
+                  ? <a class={`st-kal-dag is-vrij is-kies${d.vandaag ? ' is-nu' : ''}`}
+                       href={`/account/plan?tab=planning&verzet=${v.planning.verzet.id}&naar=${d.iso}`}
+                       aria-label={d.aria}>
+                      <span class="st-kal-n">{d.nr}</span>
+                      <span class="st-kal-pct">{d.pct}%</span>
+                      <span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span>
+                    </a>
+                  : d.planHref
+                    ? <a class={`st-kal-dag is-vrij is-kies${d.vandaag ? ' is-nu' : ''}${d.items.length ? ' is-mijn' : ''}`} href={d.planHref} aria-label={d.aria}>
+                        <span class="st-kal-n">{d.nr}</span>
+                        <span class="st-kal-pct">{d.pct}%</span>
+                        {d.items.filter((it) => it.eerste).map((it) => (
+                          <span class="st-kal-item" title={it.name}>{it.name}</span>
+                        ))}
+                        <span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span>
+                      </a>
+                    : <div class={`st-kal-dag is-${d.staat}${d.vandaag ? ' is-nu' : ''}${d.items.length ? ' is-mijn' : ''}`} aria-label={d.aria}>
+                        <span class="st-kal-n">{d.nr}</span>
+                        <span class="st-kal-pct">{d.pct}%</span>
+                        {d.items.filter((it) => it.eerste).map((it) => (
+                          <span class="st-kal-item" title={it.name}>{it.name}</span>
+                        ))}
+                        <span class="st-kal-vul"><i class={`is-${d.vul}`}></i></span>
+                      </div>
+              ))}
+            </div>
+
+            {!v.planning.verzet && (
+              <div class="st-plan-lijsten">
+                <div>
+                  <span class="st-eyebrow">{t.planPlanOpen}</span>
+                  {v.planning.open.length
+                    ? <ul class="st-plan-open">{v.planning.open.map((q) => (
+                        <li><span>{q.name}</span><a class="st-link" href={`/account/plan?tab=bestellen&kies=${q.id}`}>{t.planWhenH}</a></li>
+                      ))}</ul>
+                    : <p class="st-meta">{v.planning.ingepland.length ? t.planPlanOpenLeeg : t.planPlanNiets}</p>}
+                </div>
+                {v.planning.ingepland.length > 0 && (
+                  <div>
+                    <span class="st-eyebrow">{t.planQLocked}</span>
+                    <ul class="st-plan-open">{v.planning.ingepland.map((q) => (
+                      <li><span>{q.name} · <em>{q.wanneer}</em></span><a class="st-link" href={q.verzetHref}>{t.planVerzet}</a></li>
+                    ))}</ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       )}

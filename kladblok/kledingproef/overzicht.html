@@ -1,0 +1,310 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8">
+<title>Overzichtscherm — wat je opstuurt, en wat erbij mag</title>
+<style>
+@font-face{font-family:Kop;src:url(f/anybody.woff2)format('woff2');font-weight:100 900;font-stretch:50% 150%;font-display:block}
+@font-face{font-family:Tekst;src:url(f/figtree.woff2)format('woff2');font-weight:300 900;font-display:block}
+@font-face{font-family:Mono;src:url(f/mono.woff2)format('woff2');font-weight:100 800;font-stretch:75% 112.5%;font-display:block}
+:root{--paper:#F2F3F5;--surface:#E4E7EC;--sunken:#DADEE5;--ink:#000;--ink-2:rgb(0 0 0/.66);
+ --ink-3:rgb(0 0 0/.56);--line:rgb(0 0 0/.20);--line-strong:rgb(0 0 0/.34);
+ --accent:#4A1FFF;--r-pill:999px;--r-card:12px;--r-field:10px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Tekst,system-ui,sans-serif;
+     font-size:16px;line-height:1.62;padding:40px 36px 70px}
+.wrap{max-width:1040px;margin:0 auto}
+.etiket{font-family:Mono;font-stretch:82%;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 .7rem}
+h1{font-family:Kop;font-weight:900;font-stretch:78%;text-transform:uppercase;line-height:.9;letter-spacing:-.04em;font-size:2.4rem;margin:0 0 .5rem}
+h1 em{color:var(--accent);font-style:normal}
+h2{font-family:Kop;font-weight:500;font-stretch:118%;font-size:1.35rem;line-height:1.05;letter-spacing:-.03em;margin:0 0 .4rem}
+p{margin:0 0 .9rem;color:var(--ink-2);max-width:66ch}
+.klein{font-size:.82rem;line-height:1.5;color:var(--ink-3)}
+.sectie{border-top:1px solid var(--line);padding-top:26px;margin-top:40px}
+
+/* ── het scherm zelf ─────────────────────────────────────────── */
+.scherm{background:#fff;border:1px solid var(--line);border-radius:var(--r-card);padding:24px 26px 26px}
+.scherm-kop{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:6px}
+.scherm-kop h2{margin:0}
+.over{font-family:Mono;font-stretch:82%;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--ink-2);background:none;border:1px solid var(--line-strong);border-radius:var(--r-pill);
+      padding:.5rem 1rem;cursor:pointer;white-space:nowrap}
+.scherm-lede{max-width:62ch;margin:.2rem 0 18px}
+
+.alles{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-field);
+       padding:14px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.alles label{font-size:.9rem;color:var(--ink-2)}
+.kies{font-family:Tekst;font-size:.9rem;padding:.5rem .8rem;border:1px solid var(--line-strong);
+      border-radius:var(--r-field);background:#fff;color:var(--ink)}
+.alles .gedaan{font-family:Mono;font-stretch:82%;font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+
+.legenda{list-style:none;padding:0;margin:16px 0 18px;display:flex;flex-wrap:wrap;gap:.4rem 1.5rem}
+.legenda li{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--ink-2)}
+.lb{width:15px;height:15px;border-radius:3px;flex:none}
+.lb-jouw{background:#000}
+.lb-erbij{background:rgb(0 0 0/.45)}
+.lb-ons{background:rgb(0 0 0/.13);box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+
+/* ── een productregel ───────────────────────────────────────── */
+.rij{border-top:1px solid var(--line);padding:18px 0 16px;display:grid;
+     grid-template-columns:64px 1fr;gap:18px;align-items:start}
+.rij-pop{width:64px}
+/* ── OP RIJGROOTTE GEEN DOEZELLAAG — 22 september 2026 ───────────────────
+   De grote tekening bovenaan doezelt alles buiten de uitsnede weg; dat is
+   daar de uitleg. Op 64px doet diezelfde laag het tegenovergestelde: hij
+   trekt zwart, half en licht allemaal naar dezelfde lichte waarde en dan is
+   er geen onderscheid meer te zien — precies waar deze tekening voor staat.
+   In een rij blijft het kader dus als LIJN staan en verdwijnt de vulling. */
+.rij-pop .buiten{display:none}
+.rij-pop .lijn{stroke:rgb(0 0 0/.18)}
+.rij-pop .kader{stroke-width:3}
+.rij-kop{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;margin-bottom:10px}
+.rij-n{font-family:Mono;font-stretch:82%;font-size:.68rem;letter-spacing:.07em;color:var(--ink-3)}
+.rij-naam{font-weight:700;font-size:.98rem}
+.rij-soort{font-family:Tekst;font-size:.8rem;padding:.3rem .55rem;border:1px solid var(--line);
+           border-radius:var(--r-pill);background:var(--paper);color:var(--ink-2);margin-left:auto}
+
+.blokje{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start;padding:7px 0}
+.blokje + .blokje{border-top:1px dashed var(--line)}
+.blokje-kop{font-family:Mono;font-stretch:82%;font-size:.63rem;letter-spacing:.07em;text-transform:uppercase;
+            color:var(--ink-3);padding-top:.5rem}
+.duimen{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.duim{width:48px;height:48px;border-radius:7px;background:var(--sunken);border:2px solid var(--ink);
+      display:grid;place-items:center}
+.duim span{font-family:Mono;font-stretch:82%;font-size:.46rem;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase}
+.duim.is-erbij{border:1.5px solid rgb(0 0 0/.45);background:#fff;width:38px;height:38px;border-radius:999px}
+.duim.is-leeg{border:1px dashed var(--line-strong);background:var(--paper)}
+.toevoeg{font-family:Mono;font-stretch:82%;font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;
+         border:1px dashed var(--line-strong);border-radius:var(--r-pill);background:transparent;
+         color:var(--ink-2);padding:.46rem .8rem;cursor:pointer}
+.weg{border:0;background:none;color:var(--ink-3);font-size:.9rem;cursor:pointer;padding:0 .3rem}
+.onslijn{font-size:.86rem;color:var(--ink-2);padding-top:.45rem}
+.onslijn b{color:var(--ink);font-weight:600}
+.gratis{font-size:.76rem;color:var(--ink-3);margin:.35rem 0 0}
+
+.scherm-voet{border-top:1px solid var(--line-strong);margin-top:18px;padding-top:16px;
+             display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.knop{font-family:Mono;font-stretch:82%;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;
+      background:var(--accent);color:#fff;border:0;border-radius:var(--r-pill);padding:.75rem 1.4rem;cursor:pointer}
+
+/* ── poppetje ───────────────────────────────────────────────── */
+.pop{display:block;width:100%;height:auto}
+.pop .lijn{fill:none;stroke:var(--line-strong);stroke-width:2;stroke-linejoin:round}
+.pop .v-ons{fill:rgb(0 0 0/.13);stroke:var(--line-strong);stroke-width:1.5}
+.pop .v-erbij{fill:rgb(0 0 0/.45);stroke:none}
+.pop .v-jouw{fill:#000;stroke:none}
+.pop .hoofd{fill:#fff;stroke:var(--line-strong);stroke-width:2}
+.pop .buiten{fill:#fff;fill-opacity:.82}
+.pop .kader{fill:none;stroke:var(--ink);stroke-width:2}
+
+.noot{background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-field);padding:14px 16px;margin-top:16px}
+.noot p{margin:0;font-size:.85rem;color:var(--ink-2);max-width:none}
+.noot p + p{margin-top:.6rem}
+.kleurproef{display:flex;gap:26px;align-items:flex-start;margin-top:14px;flex-wrap:wrap}
+.kleurproef figure{margin:0;width:110px;text-align:center}
+.kleurproef figcaption{font-family:Mono;font-stretch:82%;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-top:.4rem}
+.groen .v-erbij{fill:#2E9E5B}
+@media (max-width:820px){.rij{grid-template-columns:52px 1fr;gap:12px}.rij-pop{width:52px}.blokje{grid-template-columns:1fr;gap:4px}}
+</style></head><body><div class="wrap">
+
+<p class="etiket">Proef · 22 september 2026</p>
+<h1>Het <em>overzichtscherm</em>.</h1>
+<p style="max-width:72ch">Alles wat je hebt opgestuurd op één scherm, met per product wat er nog bij kan. Overslaan kan bovenaan, met één klik — wie doorklikt krijgt gewoon wat wij kiezen.</p>
+
+<!-- ══ HET SCHERM ══════════════════════════════════════════════════════════ -->
+<div class="scherm">
+  <div class="scherm-kop">
+    <div>
+      <p class="etiket" style="margin-bottom:.3rem">Laatste stap van het materiaal</p>
+      <h2>Wat je opstuurt — en wat er nog bij kan.</h2>
+    </div>
+    <button class="over">Overslaan · wij kiezen</button>
+  </div>
+  <p class="scherm-lede klein">Van elk product maken we één foto op een model. Daarop staat altijd iets meer dan je product alleen. Dat kiezen wij, tenzij je hier zelf iets meegeeft.</p>
+
+  <div class="alles">
+    <label for="soort-alles">Wat voor producten zijn dit?</label>
+    <select class="kies" id="soort-alles"><option>Broek of jeans</option></select>
+    <span class="gedaan">✓ toegepast op alle 12 · per product aan te passen</span>
+  </div>
+
+  <ul class="legenda">
+    <li><span class="lb lb-jouw"></span> Jouw product — wordt gefotografeerd</li>
+    <li><span class="lb lb-erbij"></span> Door jou erbij gezet — alleen in beeld</li>
+    <li><span class="lb lb-ons"></span> Door ons gekozen</li>
+  </ul>
+
+  <!-- ── rij 1: niets toegevoegd ───────────────────────────────────────── -->
+  <div class="rij">
+    <div class="rij-pop">
+      <svg class="pop" viewBox="0 0 140 300" aria-hidden="true">
+        <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/><path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+        <path class="v-ons" d="M40 64 L54 57 Q70 80 86 57 L100 64 L100 153 L40 153 Z"/>
+        <circle class="hoofd" cx="70" cy="34" r="19"/>
+        <path class="v-jouw" d="M41 148 L99 148 L97 262 L73 262 L70 198 L67 262 L43 262 Z"/>
+        <path class="v-ons" d="M43 262 L67 262 L69 282 L36 282 Z"/><path class="v-ons" d="M73 262 L97 262 L104 282 L71 282 Z"/>
+        <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 126 H126 V292 H14 Z"/>
+        <rect class="kader" x="14" y="126" width="112" height="166" rx="3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="rij-kop"><span class="rij-n">1</span><span class="rij-naam">Wide-leg jeans · washed</span><span class="rij-soort">Broek of jeans ▾</span></div>
+      <div class="blokje">
+        <span class="blokje-kop">Jouw product</span>
+        <div class="duimen">
+          <span class="duim"><span>Voor</span></span><span class="duim"><span>Achter</span></span>
+          <span class="duim"><span>Detail</span></span><span class="duim is-leeg"><span>Draagfoto</span></span>
+        </div>
+      </div>
+      <div class="blokje">
+        <span class="blokje-kop">Erbij zetten</span>
+        <div>
+          <div class="duimen">
+            <button class="toevoeg">+ top</button><button class="toevoeg">+ schoen</button>
+          </div>
+          <p class="gratis">Wordt niet als product gefotografeerd en kost niets.</p>
+        </div>
+      </div>
+      <div class="blokje">
+        <span class="blokje-kop">Wij kiezen</span>
+        <p class="onslijn">Aansluitend <b>wit</b> T-shirt · lage zwarte schoen</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── rij 2: top toegevoegd ─────────────────────────────────────────── -->
+  <div class="rij">
+    <div class="rij-pop">
+      <svg class="pop" viewBox="0 0 140 300" aria-hidden="true">
+        <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/><path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+        <path class="v-erbij" d="M40 64 L54 57 Q70 80 86 57 L100 64 L100 153 L40 153 Z"/>
+        <circle class="hoofd" cx="70" cy="34" r="19"/>
+        <path class="v-jouw" d="M41 148 L99 148 L97 262 L73 262 L70 198 L67 262 L43 262 Z"/>
+        <path class="v-ons" d="M43 262 L67 262 L69 282 L36 282 Z"/><path class="v-ons" d="M73 262 L97 262 L104 282 L71 282 Z"/>
+        <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 126 H126 V292 H14 Z"/>
+        <rect class="kader" x="14" y="126" width="112" height="166" rx="3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="rij-kop"><span class="rij-n">2</span><span class="rij-naam">Straight jeans · ecru</span><span class="rij-soort">Broek of jeans ▾</span></div>
+      <div class="blokje">
+        <span class="blokje-kop">Jouw product</span>
+        <div class="duimen">
+          <span class="duim"><span>Voor</span></span><span class="duim"><span>Achter</span></span>
+          <span class="duim"><span>Detail</span></span><span class="duim is-leeg"><span>Draagfoto</span></span>
+        </div>
+      </div>
+      <div class="blokje">
+        <span class="blokje-kop">Erbij zetten</span>
+        <div>
+          <div class="duimen">
+            <span class="duim is-erbij"><span>Top</span></span>
+            <span class="klein" style="color:var(--ink-2)">jouw huisshirt<button class="weg" title="weghalen">✕</button></span>
+            <button class="toevoeg">+ schoen</button>
+          </div>
+          <p class="gratis">Wordt niet als product gefotografeerd en kost niets. Zit er een logo op? Dat halen we weg.</p>
+        </div>
+      </div>
+      <div class="blokje">
+        <span class="blokje-kop">Wij kiezen</span>
+        <p class="onslijn">Lage zwarte schoen</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── rij 3: ander producttype ──────────────────────────────────────── -->
+  <div class="rij">
+    <div class="rij-pop">
+      <svg class="pop" viewBox="0 0 140 300" aria-hidden="true">
+        <path class="lijn" d="M44 170 L44 260 L39 276 L68 276 L68 260 L68 170"/><path class="lijn" d="M72 170 L72 260 L72 276 L101 276 L96 260 L96 170"/>
+        <path class="v-ons" d="M42 150 L98 150 L98 190 L42 190 Z"/>
+        <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/><path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+        <circle class="hoofd" cx="70" cy="34" r="19"/>
+        <path class="v-erbij" d="M52 56 L88 56 L88 90 L52 90 Z"/><path class="v-erbij" d="M42 148 L98 148 L98 162 L42 162 Z"/>
+        <path class="v-jouw" d="M40 64 L54 57 Q70 80 86 57 L100 64 L100 153 L40 153 Z"/>
+        <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 8 H126 V196 H14 Z"/>
+        <rect class="kader" x="14" y="8" width="112" height="188" rx="3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="rij-kop"><span class="rij-n">7</span><span class="rij-naam">Boxy hoodie · zwart</span><span class="rij-soort">Top, shirt of trui ▾</span></div>
+      <div class="blokje">
+        <span class="blokje-kop">Jouw product</span>
+        <div class="duimen">
+          <span class="duim"><span>Voor</span></span><span class="duim"><span>Achter</span></span>
+          <span class="duim"><span>Detail</span></span><span class="duim"><span>Draagfoto</span></span>
+        </div>
+      </div>
+      <div class="blokje">
+        <span class="blokje-kop">Erbij zetten</span>
+        <div>
+          <div class="duimen">
+            <span class="duim is-erbij"><span>Onder</span></span>
+            <span class="klein" style="color:var(--ink-2)">wit basisshirt<button class="weg" title="weghalen">✕</button></span>
+            <button class="toevoeg">+ broek</button>
+          </div>
+          <p class="gratis">Geen schoenvakje: bij een hoodie staan de schoenen niet in beeld.</p>
+        </div>
+      </div>
+      <div class="blokje">
+        <span class="blokje-kop">Wij kiezen</span>
+        <p class="onslijn"><b>Licht grijze</b> broek, recht model</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scherm-voet">
+    <p class="klein" style="margin:0;max-width:52ch">Op <b>2 van de 12</b> producten houden we onze eigen keuze aan: bij “Hoodie · wit” zou je witte shirt tegen het product wegvallen.</p>
+    <button class="knop">Verder naar je gegevens</button>
+  </div>
+</div>
+
+<!-- ══ DE KLEURVRAAG ═══════════════════════════════════════════════════════ -->
+<div class="sectie">
+  <p class="etiket">De kleurvraag</p>
+  <h2>Groen zou ik niet doen.</h2>
+  <p>Je stelde voor het toegevoegde stuk groen te maken. Het idee erachter klopt — er moet onmiskenbaar verschil zijn — maar groen lost het minder goed op dan grijs, en wel om twee redenen.</p>
+
+  <div class="kleurproef">
+    <figure>
+      <svg class="pop" viewBox="0 0 140 300" aria-hidden="true">
+        <path class="lijn" d="M44 170 L44 260 L39 276 L68 276 L68 260 L68 170"/><path class="lijn" d="M72 170 L72 260 L72 276 L101 276 L96 260 L96 170"/>
+        <path class="v-ons" d="M42 150 L98 150 L98 190 L42 190 Z"/>
+        <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/><path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+        <circle class="hoofd" cx="70" cy="34" r="19"/>
+        <path class="v-erbij" d="M52 56 L88 56 L88 90 L52 90 Z"/><path class="v-erbij" d="M42 148 L98 148 L98 162 L42 162 Z"/>
+        <path class="v-jouw" d="M40 64 L54 57 Q70 80 86 57 L100 64 L100 153 L40 153 Z"/>
+        <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 8 H126 V196 H14 Z"/>
+        <rect class="kader" x="14" y="8" width="112" height="188" rx="3"/>
+      </svg>
+      <figcaption>Drie tinten inkt</figcaption>
+    </figure>
+    <figure class="groen">
+      <svg class="pop" viewBox="0 0 140 300" aria-hidden="true">
+        <path class="lijn" d="M44 170 L44 260 L39 276 L68 276 L68 260 L68 170"/><path class="lijn" d="M72 170 L72 260 L72 276 L101 276 L96 260 L96 170"/>
+        <path class="v-ons" d="M42 150 L98 150 L98 190 L42 190 Z"/>
+        <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/><path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+        <circle class="hoofd" cx="70" cy="34" r="19"/>
+        <path class="v-erbij" d="M52 56 L88 56 L88 90 L52 90 Z"/><path class="v-erbij" d="M42 148 L98 148 L98 162 L42 162 Z"/>
+        <path class="v-jouw" d="M40 64 L54 57 Q70 80 86 57 L100 64 L100 153 L40 153 Z"/>
+        <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 8 H126 V196 H14 Z"/>
+        <rect class="kader" x="14" y="8" width="112" height="188" rx="3"/>
+      </svg>
+      <figcaption>Met groen</figcaption>
+    </figure>
+    <div style="flex:1;min-width:280px">
+      <p class="klein" style="margin-bottom:.7rem"><b>1 · De drie waarden staan in een volgorde, niet naast elkaar.</b> Hoofdproduct → door jou erbij → door ons. Dat is een rangorde, en een rangorde lees je aan gewicht af, niet aan kleur. Zwart, half en licht zeggen die volgorde vanzelf; groen zegt alleen “anders” en laat je zoeken waar het in de rij thuishoort.</p>
+      <p class="klein" style="margin-bottom:0"><b>2 · Groen is een zesde kleur.</b> Het schema heeft violet voor actie en vijf statuskleuren. Een groen dat alleen in deze tekening voorkomt, is een kleur die verder niets betekent — en op het scherm hiernaast staat hij twaalf keer, wat meer violet-op-scherm is dan de knop zelf.</p>
+    </div>
+  </div>
+
+  <div class="noot"><p><b>Wat het verschil wél draagt:</b> vier signalen tegelijk, en geen ervan is kleur. De vulling (zwart · half · licht), de omkadering van de duimen (dichte rand om jouw product, halfzware om wat je erbij zet), het formaat (48 tegen 38 px, vierkant tegen rond) en het opschrift links van elke rij. Wie snel kijkt ziet het aan de vulling; wie twijfelt leest het opschrift.</p></div>
+</div>
+
+<!-- ══ WAT ER OP DIT SCHERM GEBEURT ════════════════════════════════════════ -->
+<div class="sectie">
+  <p class="etiket">De werking</p>
+  <h2>Wat er verandert als je iets toevoegt.</h2>
+  <p class="klein" style="max-width:70ch">Rij 1 en rij 2 zijn hetzelfde producttype. In rij 2 is een top toegevoegd, en er veranderen drie dingen tegelijk: de top op het poppetje gaat van licht naar half (van ons naar van jou), het vakje “+ top” wordt een duimpje met een kruisje, en de regel “wij kiezen” wordt korter — het T-shirt staat er niet meer in, want dat regel jij nu zelf.</p>
+  <p class="klein" style="max-width:70ch">Rij 3 is een hoodie, en daar is het schoenvakje er niet. Niet uitgegrijsd maar afwezig, met één regel eronder die zegt waarom. Dat is wat het producttype doet: het bepaalt de uitsnede, en de uitsnede bepaalt welke vakjes bestaan.</p>
+  <p class="klein" style="max-width:70ch">Bovenaan staat het producttype één keer voor de hele bestelling, want een merk stuurt meestal twaalf keer hetzelfde soort. Het is al toegepast — geen knop die je nog moet indrukken — en elke rij heeft zijn eigen keuzelijst om ervan af te wijken. Dat is één handeling in het normale geval en twee in het uitzonderlijke.</p>
+</div>
+
+</div></body></html>

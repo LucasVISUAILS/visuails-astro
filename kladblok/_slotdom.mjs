@@ -1,0 +1,11 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
+await p.goto('http://127.0.0.1:4399/nl/start/catalog/', { waitUntil: 'load' });
+await p.waitForTimeout(800);
+await p.evaluate(() => { const i = document.querySelector('[data-pl-qty-input]'); i.value = '2'; i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); });
+await p.waitForTimeout(300);
+await p.evaluate(() => { const e = document.querySelector('[data-pl-garment]'); e.value = 'top'; e.dispatchEvent(new Event('change', { bubbles: true })); });
+await p.waitForTimeout(300);
+console.log(await p.evaluate(() => document.querySelector('[data-pl-styling-rows] .pu-slot').outerHTML.replace(/<svg[\s\S]*?<\/svg>/g, '<svg/>')));
+await b.close();

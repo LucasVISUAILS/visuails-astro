@@ -64,7 +64,7 @@ import {
    een component niet lezen — zie de kop boven serviceFaqs(). */
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
-import Disclose from './Disclose.astro';
+import Vragen from './Vragen.astro';
 import '../styles/stijl22.css';
 import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
@@ -268,7 +268,6 @@ const COPY = {
       phone: 'Phone-made-style lifestyle image',
       dunes: 'Dunes-style lifestyle image',
     },
-    faqH: 'Video questions, answered',
     faqs: serviceFaqs('video', 'en'),
     ctaH: 'Give your product <br>a little movement.',
     ctaP: opAanvraag
@@ -352,7 +351,6 @@ const COPY = {
       phone: 'Lifestylefoto in Phone-made-stijl',
       dunes: 'Lifestylefoto in Dunes-stijl',
     },
-    faqH: 'Video-vragen, beantwoord',
     faqs: serviceFaqs('video', 'nl'),
     ctaH: 'Geef je product <br>een beetje beweging.',
     ctaP: opAanvraag
@@ -387,7 +385,7 @@ const WAAIER: Record<string, string[]> = {
   campaign: ['/img/banners-08.webp', '/img/banners-01.webp'],
   custom: ['/img/banners-13.webp'],
 };
-const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#D2E04A' };
+const TINT: Record<string, string> = { motion: '#8fa3b8', lifestyle: '#a86bd6', campaign: '#c9a06a', custom: '#c8c9cd' };
 const naarRij = (s: (typeof kinds)[number]) => ({
   slug: s.slug,
   name: s.name,
@@ -556,15 +554,7 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
       leverdatum-regel staat in queueNote in de opening, het blok op /pricing. */}
 
   {/* ── 7 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
-  <section class="paneel" aria-labelledby="vid-faq">
-    <header class="paneel-kop">
-      <h2 id="vid-faq" class="hoog hoog-2">{c.faqH}</h2>
-    </header>
-    <div class="vid-vragen">
-      {c.faqs.slice(0, 5).map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
-    </div>
-    {c.faqs.length > 5 && <p class="vid-vragen-meer"><a class="pijl" href={lp('/faq')}>{nl ? `Nog ${c.faqs.length - 5} vragen over video` : `${c.faqs.length - 5} more video questions`}</a></p>}
-  </section>
+  <Vragen lang={lang} id="vid-faq" dienst="video" faqs={c.faqs} />
 
   {/* ── 8 · HET SLOT ─────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="vid-slot">
@@ -677,14 +667,12 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
   .vid-twee-licht { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
   .vid-check { display: grid; gap: .6rem; margin-top: 1.4rem; }
   .vid-check li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); }
-  .vid-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .vid-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, currentColor); }
   .vid-koop { display: grid; gap: .8rem; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
   .vid-vast { padding-top: 1rem; border-top: 1px solid var(--lijn); font-size: .92rem; }
   .vid-vast b { font-weight: 500; }
 
   .vid-tiernoot { color: var(--inkt-2); margin-bottom: 1.6rem; }
-  .vid-vragen-meer { margin-top: 1rem; }
-  .vid-vragen { display: grid; gap: .7rem; }
 
   @media (max-width: 900px) {
     .vid-open, .vid-twee-licht { grid-template-columns: 1fr; }

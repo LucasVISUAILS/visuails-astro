@@ -62,6 +62,12 @@ const TURN_ATT_NL_ = turnaround('attended', 'nl');
    de hele zin zou een merknaam of een afkorting slopen zodra er ooit een in
    komt te staan). */
 const midden = (z) => z.replace(/\.\s*$/, '').replace(/^(.)/, (m) => m.toLowerCase());
+/* En dezelfde zin zonder zijn tussenzin, voor een chip waar geen twee regels
+   in passen: "Zo snel mogelijk (vaak binnen een dag, soms een paar dagen)"
+   wordt "Zo snel mogelijk". De haakjes staan er in de volle zin nog steeds —
+   dit knipt ze alleen weg waar de ruimte ontbreekt, zodat er geen tweede,
+   kortere versie van die belofte in de code komt te staan. */
+const kort = (z) => z.replace(/\s*\([^)]*\)/g, '').replace(/[.,\s]+$/, '');
 const TURN_UNATT_NL_ = turnaround('unattended', 'nl');
 
 /** Het gezicht dat door alle drie de wegen loopt. Eén model voor drie diensten
@@ -169,6 +175,59 @@ export const WALK_SERVICES = [
  * DE VOLGORDE IS VERDER ONVERANDERD en mag dat blijven. Zie de noot hieronder.
  */
 export const WALK_STEPS = ['upload', 'look', 'window', 'pay', 'model', 'result'];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DRIE FASEN OVER DIE ZES STAPPEN HEEN — 20 SEPTEMBER 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Lucas: *"/how-it-works mag overigens veel simpeler uitgelegd worden en voelt
+   nu een beetje als een chaos terwijl het systeem heel simpel is. Deze pagina
+   mag volledig opnieuw gemaakt worden, en dan met name het gedeelte waar
+   uitgelegd word wat visuails doet van order tot levering."*
+
+   Hij heeft gelijk, en de diagnose is preciezer dan "te veel tekst". Gemeten op
+   20 september stond deze doorloop als zes gelijkwaardige blokken in twee
+   kolommen van drie — 01 t/m 03 links, 04 t/m 06 rechts. Drie dingen liepen
+   daar mis:
+
+     1 · JE LEEST EEN RASTER VAN LINKS NAAR RECHTS. Op de bovenste regel stond
+         01 naast 04. Een volgorde die je moet uitleggen is geen volgorde meer.
+
+     2 · DE RIJEN WAREN ZO HOOG ALS HUN HOOGSTE BLOK. Stap 02 draagt de
+         lookkaartjes en stap 05 de gezichten; naast stap 03 ("je kiest een
+         leverdatum", twee regels) bleef daardoor een gat van vierhonderd pixels
+         staan. Dat gat leest als een fout, niet als rust.
+
+     3 · VIER VAN DE ZES STAPPEN ZIJN ÉÉN SCHERM. Formulier, look, leverdatum en
+         betalen gebeuren alle vier in hetzelfde bestelformulier, in één zitting
+         van vijf minuten. Ze als vier stappen naast productie en goedkeuring
+         zetten, maakt het proces vier keer zo groot als het is — en dát is waar
+         "chaos" vandaan komt bij een systeem dat in drie zinnen past.
+
+   ── WAT ER NU STAAT ────────────────────────────────────────────────────────
+
+   Drie fasen, en het zijn de enige drie die er echt zijn: jij bestelt, wij
+   maken, jij keurt goed. Elke fase draagt één kop en één alinea. De zes stappen
+   zijn NIET weg — fase één toont ze als vier korte regels onder elkaar, elk met
+   zijn eigen vraagteken waar de volledige tekst achter zit. Wat je ziet is dus
+   korter; wat er staat is niets minder.
+
+   ── EN DE OUDE NOOT HIERBOVEN OVER `window` EN `pay` IS VERVALLEN ──────────
+
+   Die zei: die twee mogen niet samen, want de volgorde ertussen IS de belofte —
+   het venster wordt bevestigd vóór de betaling. Dat klopte toen wij de agenda
+   checkten en terugbelden. Sinds 19 september kiest de klant de dag zelf in het
+   formulier en betaalt hij twee schermen later, dus beide gebeuren nu binnen
+   dezelfde fase. De belofte is er niet minder om: hij staat als eigen regel in
+   fase één, mét het vraagteken, en de volgorde van die vier regels is nog
+   steeds de echte volgorde. WALK_STEPS zelf blijft ongewijzigd — schema.js
+   bouwt er de HowTo-structuurdata mee, en dat zijn en blijven zes stappen.
+*/
+export const WALK_FASEN = [
+  { id: 'bestellen', stappen: ['upload', 'look', 'window', 'pay'] },
+  { id: 'maken', stappen: ['model'] },
+  { id: 'goedkeuren', stappen: ['result'] },
+];
 
 /** De drie achtergronden uit src/data/backgrounds.js, hier alleen met hun kleur
  *  erbij zodat de walkthrough een staal kan tekenen. */
@@ -282,6 +341,32 @@ export const WALK_COPY = {
     label: 'A walkthrough of one VISUAILS order, from the form you fill in to the files you download',
     pickH: 'Pick one to follow',
     pickHint: 'One path at a time. Catalog, lifestyle and video do not share a process, and a diagram that lays them over each other is wrong about all three.',
+
+    /* ── THE THREE PHASES ────────────────────────────────────────────────
+       See the long note at WALK_FASEN. `h` is the whole heading of the phase;
+       `b` is the one paragraph under it. The six steps keep their own text —
+       phase one lists four of them as single lines with their explanation
+       behind the question mark. */
+    fasen: {
+      bestellen: {
+        n: 'You, on the site',
+        duur: 'About five minutes',
+        h: 'You order',
+        b: `One form: what you want made, your photos, the look, how many products and when you need them. You pick the delivery date yourself, and you pay at the end \u2014 production starts after that and not before.`,
+      },
+      maken: {
+        n: 'Us, in production',
+        duur: kort(TURN_UNATT_) + ', or on the day you picked',
+        h: 'We make it',
+        b: 'Every product runs through as one series, which is what makes the lighting, the angle and the grade match across the whole order. Where a person appears, a face from the shared roster is included at no extra cost. A specialist checks every image before it goes into your folder.',
+      },
+      goedkeuren: {
+        n: 'You, in your account',
+        duur: 'Image by image, as they land',
+        h: 'You approve and download',
+        b: 'Every paid order lands in your account grouped by product. Each image is approved on its own; what is not right goes back as the revision round the order carries. What you approve downloads at 2048\u202fpx on the long edge, with full commercial usage rights.',
+      },
+    },
     services: {
       catalog: { name: 'Catalog', line: 'Four images per product' },
       lifestyle: { name: 'Lifestyle', line: 'Three images, one styled look' },
@@ -345,6 +430,8 @@ export const WALK_COPY = {
       },
     },
 
+    pickLooksH: 'The looks in this service',
+    pickModelH: 'The shared roster',
     lookCustom: 'Something else in mind? A look of your own starts with a short intake at /start/custom-look; once designed, it sits as a tile of its own in this form.',
     modelLocked: 'Locked in this walkthrough',
     modelRoster: `See the ${rosterWoord('en')} models`,
@@ -373,6 +460,28 @@ export const WALK_COPY = {
     label: 'Een doorloop van één VISUAILS-bestelling, van het formulier dat je invult tot de bestanden die je downloadt',
     pickH: 'Kies er één om te volgen',
     pickHint: 'Eén weg tegelijk. Catalog, lifestyle en video delen geen proces, en een tekening die ze over elkaar heen legt heeft het over alle drie mis.',
+
+    /* Zie de Engelse tegenhanger en de noot bij WALK_FASEN. */
+    fasen: {
+      bestellen: {
+        n: 'Jij, op de site',
+        duur: 'Ongeveer vijf minuten',
+        h: 'Je bestelt',
+        b: `Eén formulier: wat je wilt laten maken, je foto\u2019s, de look, hoeveel producten en wanneer je ze nodig hebt. De leverdatum kies je zelf, en je betaalt aan het eind \u2014 daarna start de productie en niet eerder.`,
+      },
+      maken: {
+        n: 'Wij, in productie',
+        duur: kort(TURN_UNATT_NL_) + ', of op de dag die jij koos',
+        h: 'Wij maken het',
+        b: 'Elk product gaat als één serie door de productie, en dat is wat ervoor zorgt dat de belichting, de hoek en de kleur over de hele bestelling kloppen. Waar een persoon in beeld komt, zit er een gezicht uit de gedeelde bibliotheek bij, zonder extra kosten. Een specialist kijkt elk beeld na voordat het je map in gaat.',
+      },
+      goedkeuren: {
+        n: 'Jij, in je account',
+        duur: 'Beeld voor beeld, zodra ze binnen zijn',
+        h: 'Je keurt goed en downloadt',
+        b: 'Elke betaalde bestelling komt in je account binnen, gegroepeerd per product. Elk beeld keur je apart goed; wat niet klopt gaat terug als de revisieronde die bij de bestelling hoort. Wat je goedkeurt download je op 2048\u202fpx aan de lange zijde, met volledige commerciële gebruiksrechten.',
+      },
+    },
     services: {
       catalog: { name: 'Catalog', line: 'Vier beelden per product' },
       lifestyle: { name: 'Lifestyle', line: 'Drie beelden, één gestylede look' },
@@ -419,6 +528,8 @@ export const WALK_COPY = {
       },
     },
 
+    pickLooksH: 'De looks van deze dienst',
+    pickModelH: 'De gedeelde bibliotheek',
     lookCustom: 'Iets anders voor ogen? Een eigen look begint met een korte intake op /start/custom-look; eenmaal ontworpen staat hij als eigen tegel in dit formulier.',
     modelLocked: 'Vast in deze doorloop',
     modelRoster: `Bekijk de ${rosterWoord('nl')} modellen`,

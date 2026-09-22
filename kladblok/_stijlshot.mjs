@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1240, height: 1200 }, deviceScaleFactor: 2 });
+await p.goto('file:///home/claude/repo/kladblok/stijlkaart/index.html');
+await p.waitForTimeout(1500);
+await p.screenshot({ path: '/tmp/claude-0/stijlkaart.png', fullPage: true });
+const s = await b.newPage({ viewport: { width: 390, height: 900 }, deviceScaleFactor: 2 });
+await s.goto('file:///home/claude/repo/kladblok/stijlkaart/index.html');
+await s.waitForTimeout(1200);
+const over = await s.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+await s.screenshot({ path: '/tmp/claude-0/stijlkaart-390.png', fullPage: true });
+console.log('ok · horizontale overloop op 390:', over);
+await b.close();

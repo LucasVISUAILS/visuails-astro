@@ -16,7 +16,9 @@ const cx = w / 2, cy = h / 2;
    en op elke "foto volgt"-kaart in Studio. Dat merk is uit de roulatie. Wat
    overblijft is de stilste vorm die nog iets zegt: het vlak, de haarlijn en
    een dun kruis van hoek tot hoek — het teken voor "hier komt beeld". */
-const grond = donker ? '#242424' : '#EDEDED', lijn = donker ? '#3A3A3A' : '#BDBDBD', inkt = donker ? '#FFFFFF' : '#0A0A0A';
+/* Uit KLEURENSCHEMA.md, 20 september 2026: de tweede trede van elke modus,
+   met de lijn- en inktwaarden die daarbij horen. */
+const grond = donker ? '#1C1F25' : '#E4E7EC', lijn = donker ? '#3A3E46' : '#AFB4BC', inkt = donker ? '#F2F3F5' : '#000000';
 
 /* DE LETTER IN DIT PLAATSHOUDERTJE STAAT VOLUIT, NIET ALS var(--font-mono).
    Een SVG erft de tokens van zijn pagina wel, maar dit ding wordt ook los

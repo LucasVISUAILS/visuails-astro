@@ -34,7 +34,7 @@ import {
   createSubscriptionRow, activateSubscription, pauseSubscription,
   queueAdd, queueLock, planState, monthKey,
 } from '../src/lib/subscription.js';
-import { grantSlots, slotBalans } from '../src/lib/slots.js';
+import { grantSlots, slotBalans, creditsPerSoort, verbruikSlot, geefSlotTerug } from '../src/lib/slots.js';
 import { productsFor } from '../src/data/plans.js';
 import { adminGet, adminPost } from '../src/lib/admin.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
@@ -78,7 +78,10 @@ console.log('\nalleen wat VASTGEZET is telt mee');
  * startPlanWindow() NIETS meer afschrijft. Zou dat wél gebeuren, dan betaalt een
  * klant twee keer voor hetzelfde product — één keer bij het vastzetten en één
  * keer als wij het maken — en dat is onzichtbaar tot iemand zijn saldo natelt. */
-const a1 = await queueAdd(env, 1, { name: 'Winterjas, zwart', uploadBatch: 'b-001' });
+/* a1 is sinds 19 september een LIFESTYLE-product en niet meer een complete
+   bundel: die dienst bestaat niet meer, en de lifestylekant is precies wat het
+   lookblok hieronder wil toetsen. */
+const a1 = await queueAdd(env, 1, { name: 'Winterjas, zwart', uploadBatch: 'b-001', kind: 'lifestyle' });
 const a2 = await queueAdd(env, 1, { name: 'Gebreide trui', uploadBatch: '' });      // geen foto's
 /* Met een eigen gezicht (migratie 0050): 'ava' uit de bibliotheek. */
 const a3 = await queueAdd(env, 1, { name: 'Cargobroek, sand', uploadBatch: 'b-002', model: 'ava' });
@@ -86,15 +89,15 @@ const a3 = await queueAdd(env, 1, { name: 'Cargobroek, sand', uploadBatch: 'b-00
 console.log('\nzonder look geen vastzetten — ronde 4, 19 september 2026');
 {
   /* Lucas: "Toestaan als de look gezet is." De look van klant 1 staat (zetLook);
-     haal de lifestylekant weg en een complete bundel mag niet meer vast — met
+     haal de lifestylekant weg en een lifestyleproduct mag niet meer vast — met
      de dienst erbij, zodat het scherm naar de juiste kaart kan wijzen. */
   db.exec("DELETE FROM customer_style_locks WHERE customer_id = 1 AND style = 'lifestyle'");
   const dicht = await queueLock(env, 1, a1.id);
   ok('de poort is dicht', dicht.ok, false);
   ok('met de reden geen-look', dicht.reden, 'geen-look');
   ok('en zegt welke dienst open staat', dicht.ontbreekt, ['lifestyle']);
-  const balans0 = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete');
-  ok('en er is géén slot afgeschreven', balans0.verbruikt, 0);
+  const balans0 = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits');
+  ok('en er zijn géén credits afgeschreven', balans0.verbruikt, 0);
   /* Een look zonder huisstijl telt niet als gezet. */
   db.exec("INSERT INTO customer_style_locks (customer_id, style, ratio) VALUES (1, 'lifestyle', 'portrait45')");
   ok('een lifestyle-rij zonder look houdt de poort dicht', (await queueLock(env, 1, a1.id)).reden, 'geen-look');
@@ -109,8 +112,12 @@ ok('vastzetten van de eerste lukt', (await queueLock(env, 1, a1.id)).ok, true);
 ok('de tweede kan niet — geen foto\u2019s', (await queueLock(env, 1, a2.id)).reden, 'geen-fotos');
 ok('de derde lukt weer', (await queueLock(env, 1, a3.id)).ok, true);
 
-const naVast = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete');
-ok('er zijn twee slots afgeschreven bij het VASTZETTEN', naVast.verbruikt, 2);
+/* De twee vastgezette producten zijn a1 (lifestyle) en a3 (catalog, de
+   standaardsoort). Uitgerekend uit de tabel en niet als 9 ingetypt: een getal
+   hier zou de dag dat pricing.js verandert stil verkeerd worden. */
+const KOSTEN_VAST = creditsPerSoort('lifestyle') + creditsPerSoort('catalog');
+const naVast = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits');
+ok('er zijn credits afgeschreven bij het VASTZETTEN', naVast.verbruikt, KOSTEN_VAST);
 
 st = await planState(env, 1);
 const klaar = klaarOmTeStarten(st);
@@ -143,7 +150,7 @@ ok('met de id uit backgrounds.js', details.background, 'white');
 ok('de huisstijl van de lifestylekant als style', details.style, 'dunes');
 ok('het gezicht per product staat als model_pN', details.model_p2, 'ava');
 ok('en een product zonder eigen gezicht heeft er geen', 'model_p1' in details, false);
-ok('de soort slot staat per product', details.kind_p1, 'complete');
+ok('de soort staat per product', details.kind_p1, 'lifestyle');
 
 console.log('\nde lijst loopt mee, en het saldo wordt NIET nog een keer geraakt');
 const rijen = db.prepare('SELECT name, taken_at, order_id FROM plan_queue ORDER BY position').all();
@@ -154,39 +161,42 @@ ok('en hangen aan de bestelling',
 ok('het concept staat er nog',
   rijen.find((q) => q.name === 'Gebreide trui').taken_at, null);
 
-const naStart = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete');
-ok('nog steeds twee verbruikt en geen vier', naStart.verbruikt, 2);
+const naStart = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits');
+ok('nog steeds hetzelfde verbruikt en niet het dubbele', naStart.verbruikt, KOSTEN_VAST);
 
 console.log('\ntwee keer drukken pakt niets dubbel');
 const nog = await startPlanWindow(env, 1);
 ok('de tweede keer valt er niets te starten', nog.ok, false);
 ok('en dat is "niets klaar"', nog.reden, 'niets-klaar');
 ok('het saldo is niet geraakt',
-  (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete').verbruikt, 2);
+  (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits').verbruikt, KOSTEN_VAST);
 ok('en er is geen tweede bestelling',
   db.prepare('SELECT COUNT(*) AS n FROM orders').get().n, 1);
 
-console.log('\nvastzetten kan niet meer dan er slots zijn');
+console.log('\nvastzetten kan niet meer dan er credits zijn');
 {
-  /* Het saldo leegtrekken en dan nog één product proberen vast te zetten. */
-  const over = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete').saldo;
-  const ids = [];
-  for (let i = 0; i < over; i += 1) {
-    const q = await queueAdd(env, 1, { name: `Vulling ${i}`, uploadBatch: `v-${i}` });
-    ids.push(q.id);
-    await queueLock(env, 1, q.id);
-  }
+  /* ── HET SALDO LEEGTREKKEN — omgeschreven 19 september 2026 ──────────────
+     Hier stond een lus die één product per slot toevoegde. Met credits is een
+     product niet meer één eenheid maar vier, en een lus die 111 keer draait
+     loopt tegen QUEUE_MAX (veertig) aan — dan geeft queueAdd() null terug en
+     valt de toets om op iets wat niets met het saldo te maken heeft.
+     Nu: het saldo rechtstreeks leegschrijven, want wát het opmaakt is hierboven
+     al getoetst. Deze toets gaat over de POORT en niet over de boekhouding. */
+  const over = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits').saldo;
+  await verbruikSlot(env, sub.id, 1, 'credits', over);
   ok('het saldo staat op nul',
-    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete').saldo, 0);
+    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits').saldo, 0);
   const teveel = await queueAdd(env, 1, { name: 'Eentje te veel', uploadBatch: 'v-x' });
   const v = await queueLock(env, 1, teveel.id);
   ok('en dan weigert vastzetten', v.ok, false);
-  ok('met de reden erbij', v.reden, 'geen-slot');
+  ok('met de reden erbij', v.reden, 'geen-credits');
+  ok('en met de prijs, zodat het scherm kan zeggen hoeveel je tekortkomt',
+    v.kosten, creditsPerSoort('catalog'));
   ok('het item blijft een concept',
     db.prepare('SELECT locked_at FROM plan_queue WHERE id = ?').get(teveel.id).locked_at, null);
-  /* Opruimen: alles wat we net hebben vastgezet weer los, zodat het blok
-     hieronder van een schone lei begint. */
-  for (const id of ids) await (await import('../src/lib/subscription.js')).queueUnlock(env, 1, id);
+  /* Opruimen: het saldo terug en de lijst leeg, zodat het blok hieronder van
+     een schone lei begint. */
+  await geefSlotTerug(env, sub.id, 1, 'credits', over);
   db.exec("DELETE FROM plan_queue WHERE taken_at IS NULL");
 }
 
@@ -238,18 +248,20 @@ const voor = await adminGet({
 ok('de klantpagina toont het abonnementspaneel', voor.includes('Abonnementsweek'), true);
 ok('met de knop erin', voor.includes('/admin/customers/1/week'), true);
 ok('en de lijst van de klant erboven', voor.includes('Bodywarmer'), true);
-/* ── EN HET PANEEL SPREEKT DE TAAL VAN HET SLOTMODEL — 29 augustus 2026 ───────
+/* ── HET PANEEL SPREEKT DE TAAL VAN HET CREDITMODEL — 19 september 2026 ───────
  *
- * Hier stond "12 credits over", "wacht op saldo" en "schrijft evenveel credits
- * af". Alle drie waren ze waar in het oude model en geen van drieën daarna: het
- * saldo is niet één getal meer, `wachtend` is sindsdien altijd nul, en deze knop
- * schrijft niets meer af — dat gebeurde al toen de klant vastzette.
+ * Deze toets is twee keer omgedraaid en dat is precies waarom hij bestaat.
  *
- * Een adminpaneel dat over credits praat bij een knop die er geen aanraakt, is
- * hoe Lucas een verkeerde verwachting krijgt van zijn eigen systeem. Vandaar drie
- * regels die het vastleggen, en één die zegt wat er NIET meer mag staan. */
-ok('het paneel toont het saldo per soort en niet als credits',
-  /Complete bundel/.test(voor) && !/credits? over/.test(voor), true);
+ * Tot 29 augustus stond er "12 credits over" bij een knop die geen credits
+ * aanraakte — toen kwam het slotmodel en werd de toets: NIET over credits
+ * praten. Sinds 19 september is er weer één pot, en klopt het woord weer.
+ *
+ * Wat in alle drie de versies hetzelfde is gebleven, en het eigenlijke punt:
+ * deze knop schrijft NIETS af. Dat gebeurde al toen de klant vastzette. Een
+ * paneel dat anders suggereert, geeft Lucas een verkeerd beeld van zijn eigen
+ * systeem. Die regel staat er dus nog woordelijk onder. */
+ok('het paneel toont het saldo in credits',
+  /credits over/.test(voor), true);
 ok('de lijst noemt vastgezet en concept', /vastgezet &middot;|concept,/.test(voor), true);
 ok('en de knop belooft niet dat hij nog iets afschrijft',
   /schrijft evenveel credits af/.test(voor), false);
@@ -307,13 +319,13 @@ console.log('\ndie week annuleren geeft de slots \u00e9n de producten terug');
   const x2 = await queueAdd(env, 1, { name: 'Laarzen, bruin', uploadBatch: 'b-a2' });
   ok('twee vastzetten lukt',
     [(await queueLock(env, 1, x1.id)).ok, (await queueLock(env, 1, x2.id)).ok], [true, true]);
-  const verbruiktNaVast = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete').verbruikt;
-  ok('en er staan twee slots op verbruikt', verbruiktNaVast, 2);
+  const verbruiktNaVast = (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits').verbruikt;
+  ok('en er staan credits op verbruikt', verbruiktNaVast, creditsPerSoort('catalog') * 2);
 
   const week = await startPlanWindow(env, 1);
   ok('de week start met twee producten', [week.ok, week.aantal], [true, 2]);
   ok('het verbruik is daardoor niet opgelopen',
-    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete').verbruikt, 2);
+    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits').verbruikt, verbruiktNaVast);
 
   const res = await adminPost({
     request: new Request(`https://visuails.com/admin/orders/${week.orderId}/cancel`, {
@@ -327,7 +339,7 @@ console.log('\ndie week annuleren geeft de slots \u00e9n de producten terug');
     db.prepare('SELECT status FROM orders WHERE id = ?').get(week.orderId).status, 'cancelled');
 
   ok('de twee slots zijn teruggeboekt',
-    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete').verbruikt, 0);
+    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits').verbruikt, 0);
 
   const rijen = db.prepare('SELECT id, locked_at, taken_at, order_id FROM plan_queue WHERE id IN (?, ?)')
     .all(x1.id, x2.id);
@@ -359,7 +371,7 @@ console.log('\ndie week annuleren geeft de slots \u00e9n de producten terug');
     }), env, waitUntil() {},
   });
   ok('een tweede annulering boekt niets extra terug',
-    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete').verbruikt, 0);
+    (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits').verbruikt, 0);
   ok('en zet de producten niet nog een keer terug',
     db.prepare('SELECT COUNT(*) AS n FROM plan_queue').get().n, 2);
 }
@@ -382,23 +394,26 @@ console.log('\nslots met de hand bijstellen in /admin');
       body: new URLSearchParams(velden).toString(),
     }), env, waitUntil() {},
   });
-  const saldo = async () => (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'complete');
+  const saldo = async () => (await slotBalans(env, sub.id, 1)).find((b) => b.kind === 'credits');
 
   ok('de knop staat op de klantpagina', (await adminGet({
     request: new Request('https://visuails.com/admin/customers/1', { headers: kop }), env, waitUntil() {},
   }).then((r) => r.text())).includes('/admin/customers/1/slots'), true);
 
   const voor = await saldo();
-  ok('drie erbij lukt', (await post({ kind: 'complete', delta: '3', reason: 'incasso van juli kwam alsnog binnen' })).status, 303);
+  ok('drie erbij lukt', (await post({ kind: 'credits', delta: '3', reason: 'incasso van juli kwam alsnog binnen' })).status, 303);
   ok('en het saldo loopt mee', (await saldo()).saldo, voor.saldo + 3);
   ok('de bijstelling staat met reden en al in het logboek',
     db.prepare("SELECT detail FROM admin_log WHERE action = 'plan-slots-correctie' ORDER BY id DESC LIMIT 1")
       .get().detail.includes('incasso van juli'), true);
 
-  ok('zonder reden gaat het niet door', (await post({ kind: 'complete', delta: '3' })).status, 400);
-  ok('nul is geen bijstelling', (await post({ kind: 'complete', delta: '0', reason: 'x' })).status, 400);
-  ok('en meer dan het maximum ook niet', (await post({ kind: 'complete', delta: '999', reason: 'x' })).status, 400);
-  ok('een klant zonder soort evenmin', (await post({ delta: '1', reason: 'x' })).status, 400);
+  ok('zonder reden gaat het niet door', (await post({ kind: 'credits', delta: '3' })).status, 400);
+  ok('nul is geen bijstelling', (await post({ kind: 'credits', delta: '0', reason: 'x' })).status, 400);
+  ok('en meer dan het maximum ook niet', (await post({ kind: 'credits', delta: '9999', reason: 'x' })).status, 400);
+  /* Het formulier post `kind` sinds 19 september als verborgen veld met de
+     vaste waarde 'credits' — er valt niets meer te kiezen. Wat hier getoetst
+     wordt is dus dat de route zelf hem nog steeds eist en niet aanneemt. */
+  ok('zonder soort evenmin', (await post({ delta: '1', reason: 'x' })).status, 400);
   ok('het saldo is door al die weigeringen niet geraakt', (await saldo()).saldo, voor.saldo + 3);
 
   /* En de grens die er echt toe doet. Eerst iets vastzetten, dan proberen die
@@ -408,14 +423,14 @@ console.log('\nslots met de hand bijstellen in /admin');
   const vast = (await saldo()).verbruikt;
   ok('er staat iets vastgezet', vast > 0, true);
   const teVeel = -((await saldo()).toegekend);
-  ok('alles afnemen wordt geweigerd', (await post({ kind: 'complete', delta: String(teVeel), reason: 'te veel' })).status, 400);
+  ok('alles afnemen wordt geweigerd', (await post({ kind: 'credits', delta: String(teVeel), reason: 'te veel' })).status, 400);
   ok('en de weigering staat ook in het logboek',
     db.prepare("SELECT COUNT(*) AS n FROM admin_log WHERE action = 'plan-slots-correctie.geweigerd'").get().n, 1);
   ok('het saldo staat er nog ongeschonden bij', (await saldo()).verbruikt, vast);
 
   /* Wat wél mag: eraf halen tot precies aan wat vastgezet staat. */
   const over = (await saldo()).saldo;
-  ok('tot aan het vastgezette mag het wel', (await post({ kind: 'complete', delta: String(-over), reason: 'correctie te ruim gegeven' })).status, 303);
+  ok('tot aan het vastgezette mag het wel', (await post({ kind: 'credits', delta: String(-over), reason: 'correctie te ruim gegeven' })).status, 303);
   ok('en dan is er niets meer over', (await saldo()).saldo, 0);
   ok('maar staat er nog steeds vastgezet wat vastgezet was', (await saldo()).verbruikt, vast);
 }

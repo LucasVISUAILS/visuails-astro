@@ -68,7 +68,14 @@ console.log('\nde keuzes zijn de uitsnede MINUS wat het product zelf bezet');
   ok('sokken laten de schoenen open — die worden eróver gedragen', namen('socks'), ['shoes', 'bottom']);
 
   ok('een broek: schoenen en de zoom van de top', namen('trousers'), ['shoes', 'top']);
-  ok('een top: de tailleband eronder', namen('top'), ['bottom']);
+  /* ── DE LAAG ERONDER — 22 september 2026 ─────────────────────────────────
+     Lucas: *"t-shirt onder de hoodie"*. Een top is het enige type waar nog iets
+     ONDER past dat in beeld staat (kraag en zoom); daarom heeft hij één plek
+     meer dan de tailleband. Bij een jas is de plek `top` al de laag eronder,
+     dus die krijgt hem niet nog een keer — zie `layered` in garments.js. */
+  ok('een top: de laag eronder en de tailleband', namen('top'), ['underlayer', 'bottom']);
+  ok('een jas krijgt de laag eronder NIET dubbel', namen('outerwear').includes('underlayer'), false);
+  ok('en niets anders ook', GARMENT_IDS.filter((id) => namen(id).includes('underlayer')), ['top']);
   ok('een schoen: de broekzoom, en niet nog een schoen', namen('shoes'), ['bottom']);
   ok('een riem: beide helften, want die raakt ze beide', namen('belt'), ['bottom', 'top']);
   ok('een jas: alle drie, want een jas bezet geen plek maar ligt erover', namen('outerwear'), ['shoes', 'bottom', 'top']);

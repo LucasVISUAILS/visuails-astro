@@ -1,14 +1,19 @@
 /*
  * ═══════════════════════════════════════════════════════════════════════════════
- * SLOTS PER SOORT: DOORSCHUIVEN, OUDSTE EERST, EN TERUGGEVEN
+ * CREDITS: DOORSCHUIVEN, OUDSTE EERST, EN TERUGGEVEN
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Lucas' model, en de drie regels die het overeind houden. Deze toets bestaat
  * omdat twee ervan onzichtbaar falen:
  *
  *   · Wordt de NIEUWSTE maand eerst afgeschreven, dan lijkt alles te werken —
- *     tot er een maand voorbij is en er slots vervallen die de klant net had
+ *     tot er een maand voorbij is en er credits vervallen die de klant net had
  *     kunnen gebruiken. Dat merk je pas als hij belt.
+ *
+ * SINDS 19 SEPTEMBER 2026 IS DE EENHEID EEN CREDIT en niet meer een slot per
+ * soort — zie de kop bij CREDIT_KIND in slots.js. De drie regels die deze toets
+ * bewaakt zijn woordelijk dezelfde gebleven; alleen wat er afgeschreven wordt
+ * heeft een andere naam en een fijnere korrel.
  *   · Vervalt een toekenning niet, dan groeit het saldo eindeloos door en klopt
  *     het dak van twee maanden niet meer. Ook dat zie je pas maanden later.
  *
@@ -17,14 +22,18 @@
  */
 import { d1, verseDb, zetLook } from './lib/d1sqlite.mjs';
 import {
-  grantSlots, loadSlots, slotBalans, verbruikSlot, geefSlotTerug,
+  grantSlots, loadSlots, slotBalans, verbruikSlot, geefSlotTerug, creditsPerSoort, creditsVoor,
   slotsFor, kindsFor, vervaltOp, monthMinus, monthKey, vensterVoor,
 } from '../src/lib/slots.js';
 import {
   createSubscriptionRow, activateSubscription, cancelSubscription, pauseSubscription,
   queueAdd, queueLock, queueUnlock, queueRemove, loadQueue,
 } from '../src/lib/subscription.js';
-import { PLAN_PRODUCTS, PLAN_CLIPS } from '../src/data/pricing.js';
+import { PLAN_PRODUCTS, PLAN_CLIPS, PLAN_CREDITS } from '../src/data/pricing.js';
+
+/* De prijs van een catalogset, uit de tabel zelf — een 4 in deze toets zou de
+   dag dat pricing.js verandert stil verkeerd worden. */
+const CAT = creditsPerSoort('catalog');
 
 let goed = 0; let totaal = 0;
 function ok(naam, kreeg, verwacht = true) {
@@ -51,7 +60,11 @@ const inOkt = new Date('2026-10-15T12:00:00Z');
 
 console.log('\nde bundel komt uit het plan en niet uit een los getal');
 {
+  /* slotsFor() blijft de OUDE bundel teruggeven — die staat nog in PLAN_SLOTS en
+     wordt gelezen door /admin voor rijen van vóór de credits. Wat een abonnee
+     vandaag krijgt, is creditsVoor(). */
   ok('studio geeft completes', slotsFor('studio').complete, PLAN_PRODUCTS.studio);
+  ok('en in credits is dat het plan', creditsVoor({ plan: 'studio' }), PLAN_CREDITS.studio);
   ok('en motion-clips', slotsFor('studio')['video-motion'], PLAN_CLIPS.studio);
   ok('starter kent maar één soort', kindsFor('starter'), ['complete']);
   /* Een soort met nul hoort geen rij te krijgen — anders staat er "0 van 0" op
@@ -70,80 +83,90 @@ console.log('\nde vervaldatum volgt uit de maand, niet uit een kolom');
 
 console.log('\ntoekennen is idempotent');
 {
-  ok('augustus toekennen zet twee soorten', await grantSlots(env, sub.id, AUG, 'studio'), 2);
+  ok('augustus toekennen zet één creditrij', await grantSlots(env, sub.id, AUG, 'studio'), 1);
   ok('nog een keer verandert niets', await grantSlots(env, sub.id, AUG, 'studio'), 0);
   const r = await loadSlots(env, sub.id, 1, inAug);
-  ok('er staan twee rijen', r.length, 2);
+  ok('er staat één creditrij', r.length, 1);
   ok('en samen geven ze wat het plan belooft',
-    r.reduce((n, x) => n + x.granted, 0), PLAN_PRODUCTS.studio + PLAN_CLIPS.studio);
+    r.reduce((n, x) => n + x.granted, 0), PLAN_CREDITS.studio);
 }
 
 console.log('\nin september telt augustus nog mee, in oktober niet meer');
 {
   await grantSlots(env, sub.id, SEP, 'studio');
   const bSep = await slotBalans(env, sub.id, 1, inSep);
-  const compleet = bSep.find((b) => b.kind === 'complete');
-  ok('twee maanden completes bij elkaar', compleet.saldo, PLAN_PRODUCTS.studio * 2);
-  ok('waarvan de helft van vorige maand', compleet.ouder, PLAN_PRODUCTS.studio);
+  const compleet = bSep.find((b) => b.kind === 'credits');
+  ok('twee maanden credits bij elkaar', compleet.saldo, PLAN_CREDITS.studio * 2);
+  ok('waarvan de helft van vorige maand', compleet.ouder, PLAN_CREDITS.studio);
   ok('met de vervaldatum erbij', compleet.vervalt[0].op, '2026-09-30');
   /* Het dak van Lucas: nooit meer dan twee maanden tegelijk. */
   await grantSlots(env, sub.id, JUL, 'studio');
   const bNog = await slotBalans(env, sub.id, 1, inSep);
-  ok('juli telt in september niet mee', bNog.find((b) => b.kind === 'complete').saldo, PLAN_PRODUCTS.studio * 2);
+  ok('juli telt in september niet mee', bNog.find((b) => b.kind === 'credits').saldo, PLAN_CREDITS.studio * 2);
   const bOkt = await slotBalans(env, sub.id, 1, inOkt);
   ok('en in oktober is augustus ook vervallen',
-    (bOkt.find((b) => b.kind === 'complete') || { saldo: 0 }).saldo, PLAN_PRODUCTS.studio);
+    (bOkt.find((b) => b.kind === 'credits') || { saldo: 0 }).saldo, PLAN_CREDITS.studio);
 }
 
 console.log('\nde oudste maand gaat er als eerste af');
 {
-  ok('drie completes afschrijven lukt', await verbruikSlot(env, sub.id, 1, 'complete', 3, inSep), 3);
+  ok('drie credits afschrijven lukt', await verbruikSlot(env, sub.id, 1, 'credits', 3, inSep), 3);
   const r = await loadSlots(env, sub.id, 1, inSep);
-  const aug = r.find((x) => x.month === AUG && x.kind === 'complete');
-  const sep = r.find((x) => x.month === SEP && x.kind === 'complete');
+  const aug = r.find((x) => x.month === AUG && x.kind === 'credits');
+  const sep = r.find((x) => x.month === SEP && x.kind === 'credits');
   ok('ze komen van augustus', aug.used, 3);
   ok('en september is onaangeroerd', sep.used, 0);
 }
 
 console.log('\nover de maandgrens heen loopt hij door naar de volgende');
 {
-  const rest = PLAN_PRODUCTS.studio - 3;              // wat er van augustus over is
+  const rest = PLAN_CREDITS.studio - 3;              // wat er van augustus over is
   ok(`de rest van augustus plus twee uit september`,
-    await verbruikSlot(env, sub.id, 1, 'complete', rest + 2, inSep), rest + 2);
+    await verbruikSlot(env, sub.id, 1, 'credits', rest + 2, inSep), rest + 2);
   const r = await loadSlots(env, sub.id, 1, inSep);
-  ok('augustus is helemaal op', r.find((x) => x.month === AUG && x.kind === 'complete').used, PLAN_PRODUCTS.studio);
-  ok('en september draagt de rest', r.find((x) => x.month === SEP && x.kind === 'complete').used, 2);
+  ok('augustus is helemaal op', r.find((x) => x.month === AUG && x.kind === 'credits').used, PLAN_CREDITS.studio);
+  ok('en september draagt de rest', r.find((x) => x.month === SEP && x.kind === 'credits').used, 2);
 }
 
 console.log('\nmeer willen dan er is, boekt alleen wat er is');
 {
   const b = await slotBalans(env, sub.id, 1, inSep);
-  const over = b.find((x) => x.kind === 'complete').saldo;
-  ok('er staat nog wat', over, PLAN_PRODUCTS.studio - 2);
-  ok('honderd vragen levert alleen de rest op',
-    await verbruikSlot(env, sub.id, 1, 'complete', 100, inSep), over);
+  const over = b.find((x) => x.kind === 'credits').saldo;
+  ok('er staat nog wat', over, PLAN_CREDITS.studio - 2);
+  ok('duizend vragen levert alleen de rest op',
+    await verbruikSlot(env, sub.id, 1, 'credits', 1000, inSep), over);
   ok('en daarna is het saldo nul',
-    (await slotBalans(env, sub.id, 1, inSep)).find((x) => x.kind === 'complete').saldo, 0);
+    (await slotBalans(env, sub.id, 1, inSep)).find((x) => x.kind === 'credits').saldo, 0);
 }
 
 console.log('\nteruggeven gaat naar de nieuwste maand');
 {
-  ok('twee teruggeven lukt', await geefSlotTerug(env, sub.id, 1, 'complete', 2, inSep), 2);
+  ok('twee teruggeven lukt', await geefSlotTerug(env, sub.id, 1, 'credits', 2, inSep), 2);
   const r = await loadSlots(env, sub.id, 1, inSep);
-  ok('september kreeg ze terug', r.find((x) => x.month === SEP && x.kind === 'complete').used, PLAN_PRODUCTS.studio - 2);
-  ok('augustus staat nog vol', r.find((x) => x.month === AUG && x.kind === 'complete').used, PLAN_PRODUCTS.studio);
+  ok('september kreeg ze terug', r.find((x) => x.month === SEP && x.kind === 'credits').used, PLAN_CREDITS.studio - 2);
+  ok('augustus staat nog vol', r.find((x) => x.month === AUG && x.kind === 'credits').used, PLAN_CREDITS.studio);
   ok('en het saldo klopt weer',
-    (await slotBalans(env, sub.id, 1, inSep)).find((x) => x.kind === 'complete').saldo, 2);
+    (await slotBalans(env, sub.id, 1, inSep)).find((x) => x.kind === 'credits').saldo, 2);
 }
 
-console.log('\nde soorten raken elkaar niet');
+/* ── ÉÉN POT, EN EEN PRIJS PER DIENST ───────────────────────────────────────
+   Hier stond "de soorten raken elkaar niet": elke soort had zijn eigen saldo en
+   dat moest gescheiden blijven. Sinds 19 september is dat juist omgekeerd — er
+   IS maar één pot, en het verschil tussen de diensten zit in wat ze kosten.
+   Deze toets bewaakt dus precies de tegenovergestelde eigenschap. */
+console.log('\néén pot, en een prijs per dienst');
 {
-  const b = await slotBalans(env, sub.id, 1, inSep);
-  ok('motion is onaangeroerd door al het bovenstaande',
-    b.find((x) => x.kind === 'video-motion').verbruikt, 0);
-  ok('en heeft zijn eigen saldo', b.find((x) => x.kind === 'video-motion').saldo, PLAN_CLIPS.studio * 2);
-  ok('een soort die het plan niet kent, kan niets afschrijven',
-    await verbruikSlot(env, sub.id, 1, 'hooks', 1, inSep), 0);
+  ok('er is precies één saldoregel',
+    (await slotBalans(env, sub.id, 1, inSep)).length, 1);
+  ok('een catalogset kost vier credits', creditsPerSoort('catalog'), 4);
+  ok('een lifestylecarrousel vijf', creditsPerSoort('lifestyle'), 5);
+  ok('een lifestyle-clip twaalf', creditsPerSoort('video-lifestyle'), 12);
+  ok('en een compleet product is de som van zijn twee helften',
+    creditsPerSoort('complete'), creditsPerSoort('catalog') + creditsPerSoort('lifestyle'));
+  ok('een dienst die niet bestaat kost niets',
+    creditsPerSoort('bestaat-niet'), 0);
+  ok('en een soort die het saldo niet kent, schrijft niets af',
+    await verbruikSlot(env, sub.id, 1, 'video-motion', 1, inSep), 0);
 }
 
 /* ── EN DE WACHTRIJ: CONCEPT, VASTZETTEN, LOSMAKEN ────────────────────────── */
@@ -158,63 +181,73 @@ console.log('\ntoevoegen kost niets, vastzetten wel');
   db.exec("DELETE FROM subscription_slots");
   await grantSlots(env, sub.id, NU, 'studio');
 
-  const a = await queueAdd(env, 1, { name: 'Winterjas', uploadBatch: 'b-1', kind: 'complete' });
+  const a = await queueAdd(env, 1, { name: 'Winterjas', uploadBatch: 'b-1', kind: 'catalog' });
   ok('het item staat erop', Boolean(a), true);
   ok('als concept', a.locked_at, null);
-  ok('met een soort', a.kind, 'complete');
+  ok('met een soort', a.kind, 'catalog');
   ok('en het saldo is niet geraakt',
-    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo,
-    PLAN_PRODUCTS.studio);
+    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
+    PLAN_CREDITS.studio);
 
   const v = await queueLock(env, 1, a.id);
   ok('vastzetten lukt', v.ok, true);
-  ok('nu is er één slot af',
-    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo,
-    PLAN_PRODUCTS.studio - 1);
+  ok('nu zijn er vier credits af — de prijs van een catalogset',
+    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
+    PLAN_CREDITS.studio - CAT);
   const na = (await loadQueue(env, 1)).find((q) => q.id === a.id);
   ok('en het item draagt een tijdstip', Boolean(na.locked_at), true);
 
-  ok('nog een keer vastzetten kost geen tweede slot', (await queueLock(env, 1, a.id)).reden, 'stond-al-vast');
+  ok('nog een keer vastzetten kost geen tweede keer credits', (await queueLock(env, 1, a.id)).reden, 'stond-al-vast');
   ok('het saldo staat er nog steeds hetzelfde voor',
-    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo,
-    PLAN_PRODUCTS.studio - 1);
+    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
+    PLAN_CREDITS.studio - CAT);
 }
 
 console.log('\nzonder foto\u2019s kan er niets vastgezet worden');
 {
-  const b = await queueAdd(env, 1, { name: 'Cargobroek', uploadBatch: '', kind: 'complete' });
+  const b = await queueAdd(env, 1, { name: 'Cargobroek', uploadBatch: '', kind: 'catalog' });
   const v = await queueLock(env, 1, b.id);
   ok('vastzetten weigert', v.ok, false);
   ok('en zegt waarom', v.reden, 'geen-fotos');
-  ok('er is geen slot af',
-    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo,
-    PLAN_PRODUCTS.studio - 1);
+  ok('er zijn geen credits af',
+    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo,
+    PLAN_CREDITS.studio - CAT);
 }
 
 console.log('\nlosmaken geeft het slot terug, weghalen ook');
 {
-  const c = await queueAdd(env, 1, { name: 'Trui', uploadBatch: 'b-2', kind: 'complete' });
+  const c = await queueAdd(env, 1, { name: 'Trui', uploadBatch: 'b-2', kind: 'catalog' });
   await queueLock(env, 1, c.id);
-  ok('twee slots weg', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo, PLAN_PRODUCTS.studio - 2);
+  ok('twee catalogsets weg', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT * 2);
   ok('losmaken lukt', (await queueUnlock(env, 1, c.id)).ok, true);
-  ok('en het slot is terug', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo, PLAN_PRODUCTS.studio - 1);
+  ok('en de credits zijn terug', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT);
 
   /* En weghalen van een VASTGEZET item moet hetzelfde doen — anders betaalt de
      klant voor iets wat hij zelf heeft ingetrokken. */
   await queueLock(env, 1, c.id);
-  ok('weer vastgezet', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo, PLAN_PRODUCTS.studio - 2);
+  ok('weer vastgezet', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT * 2);
   await queueRemove(env, 1, c.id);
-  ok('weghalen geeft het slot ook terug', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'complete').saldo, PLAN_PRODUCTS.studio - 1);
+  ok('weghalen geeft de credits ook terug', (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, PLAN_CREDITS.studio - CAT);
   ok('en het item is weg', (await loadQueue(env, 1)).some((q) => q.id === c.id), false);
 }
 
-console.log('\neen soort die het plan niet geeft, kan niet vastgezet worden');
+/* ── TE WEINIG CREDITS ───────────────────────────────────────────────────────
+   Hier stond "een soort die het plan niet geeft": hooks zat niet in de bundel
+   van Studio en kon daarom niets afschrijven. Met één pot kan elke dienst uit
+   dat saldo betaald worden, en is de enige grens of er GENOEG in zit. Dat is de
+   toets geworden — het saldo eerst leegmaken, dan een hook proberen. */
+console.log('\nmet te weinig credits kan er niets vastgezet worden');
 {
+  const balans = (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits');
+  await verbruikSlot(env, sub.id, 1, 'credits', balans.saldo - 1);
   const d = await queueAdd(env, 1, { name: 'Hook-idee', uploadBatch: 'b-3', kind: 'hooks' });
   const v = await queueLock(env, 1, d.id);
   ok('vastzetten weigert', v.ok, false);
-  ok('en noemt de reden', v.reden, 'geen-slot');
+  ok('en noemt de reden', v.reden, 'geen-credits');
+  ok('met de prijs erbij, zodat het scherm kan zeggen hoeveel je tekortkomt', v.kosten, 10);
   ok('het item blijft een concept', (await loadQueue(env, 1)).find((q) => q.id === d.id).locked_at, null);
+  ok('en de ene credit die er was, staat er nog',
+    (await slotBalans(env, sub.id, 1)).find((x) => x.kind === 'credits').saldo, 1);
 }
 
 console.log('\nhet doorschuifvenster hangt aan de termijn EN aan de status');
@@ -255,19 +288,19 @@ console.log('\nopzeggen: de betaalde maand mag nog op, de vorige maand niet meer
 
   const lopend = await slotBalans(env, s2.id, vensterVoor({ term: 'monthly', status: 'active' }), inSep);
   ok('lopend telt augustus en september samen',
-    lopend.find((b) => b.kind === 'complete').saldo, PLAN_PRODUCTS.starter * 2);
+    lopend.find((b) => b.kind === 'credits').saldo, PLAN_CREDITS.starter * 2);
 
   await cancelSubscription(env, s2.id);
   const na = await slotBalans(env, s2.id, vensterVoor({ term: 'monthly', status: 'cancelled' }), inSep);
   ok('na opzeggen blijft alleen september staan',
-    na.find((b) => b.kind === 'complete').saldo, PLAN_PRODUCTS.starter);
-  ok('en er staat niets doorgeschovens meer bij', na.find((b) => b.kind === 'complete').ouder, 0);
+    na.find((b) => b.kind === 'credits').saldo, PLAN_CREDITS.starter);
+  ok('en er staat niets doorgeschovens meer bij', na.find((b) => b.kind === 'credits').ouder, 0);
 
   /* En het mag ook echt niet meer besteed worden: verbruikSlot leest hetzelfde
      venster, dus meer dan één maand vragen kan hij niet meer opmaken. */
   const kon = await verbruikSlot(env, s2.id, vensterVoor({ term: 'monthly', status: 'cancelled' }),
-    'complete', PLAN_PRODUCTS.starter + 1, inSep);
-  ok('en hij kan niet meer dan zijn laatste maand opmaken', kon, PLAN_PRODUCTS.starter);
+    'credits', PLAN_CREDITS.starter + 1, inSep);
+  ok('en hij kan niet meer dan zijn laatste maand opmaken', kon, PLAN_CREDITS.starter);
 
   /* De klantkant: vastzetten mag nog zolang de opgezegde maand loopt. Dat is de
      andere helft van Lucas' zin — hij heeft ervoor betaald.
@@ -281,7 +314,12 @@ console.log('\nopzeggen: de betaalde maand mag nog op, de vorige maand niet meer
   db.prepare('INSERT INTO subscription_months (subscription_id, month, granted, used) VALUES (?, ?, ?, 0)')
     .run(s2.id, monthKey(), PLAN_PRODUCTS.starter);
   await grantSlots(env, s2.id, monthKey(), 'starter');
-  await geefSlotTerug(env, s2.id, 0, 'complete', PLAN_PRODUCTS.starter, inSep);
+  /* De toekenning van deze maand is hierboven al opgemaakt (monthKey() IS SEP in
+     deze toets), en grantSlots is idempotent — hij zet dus niets nieuws neer.
+     Het saldo teruggeven is hier geen truc maar het herstellen van de toestand
+     die de toets wil onderzoeken: een opgezegde klant met een betaalde maand die
+     nog open staat. */
+  await geefSlotTerug(env, s2.id, 0, 'credits', PLAN_CREDITS.starter, inSep);
   const q = await queueAdd(env, 2, { name: 'Laatste jas', uploadBatch: 'b-op' });
   const v = await queueLock(env, 2, q.id);
   ok('vastzetten mag nog na opzeggen', v.ok, true);
@@ -299,8 +337,8 @@ console.log('\neen gepauzeerd abonnement kan niets vastzetten');
   const v = await queueLock(env, 3, q.id);
   ok('vastzetten weigert', v.ok, false);
   ok('met de status in de reden', v.reden, 'abonnement-paused');
-  ok('en het slot staat er nog',
-    (await slotBalans(env, s3.id, 1)).find((b) => b.kind === 'complete').saldo, PLAN_PRODUCTS.starter);
+  ok('en de credits staan er nog',
+    (await slotBalans(env, s3.id, 1)).find((b) => b.kind === 'credits').saldo, PLAN_CREDITS.starter);
 }
 
 console.log(`\n${goed}/${totaal} geslaagd`);

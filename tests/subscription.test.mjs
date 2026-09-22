@@ -353,15 +353,26 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      zichtbare afloopmaand was de keuze van 17 augustus; staat het door de rest
      heen, dan is het verschil tussen "van deze maand" en "vervalt volgende
      maand" onzichtbaar. Vandaar een eigen groepje met een eigen label. */
-  ok('en zet wat doorgeschoven is in een eigen groep',
-    /class="st-slot-oud"><Slotmeter g=\{s\.oud\}/.test(pagina) && /planSlotCarried/.test(acc), true);
-  /* En met de maand waarin het vervalt erbij — een maand en geen afteller op de
-     dag, want een afteller maakt de laatste dag de drukste. */
-  ok('en noemt de maand waarin het vervalt',
-    /st-slot-verval/.test(pagina) && /planSlotExpiryOne/.test(acc), true);
-  /* Boven een bovengrens is tellen niet meer wat iemand doet: Brand kan met
-     doorschuiven op 120 producten komen, en 120 vakjes zijn een muur. */
-  ok('en valt boven een bovengrens terug op getallen', /PIP_MAX/.test(acc), true);
+  /* ── DE VAKJES ZIJN EEN BALK GEWORDEN — 19 september 2026 ────────────────
+     De redenering hierboven ("vijf vakjes zijn vijf dingen die je kunt laten
+     maken") gold zolang een eenheid een PRODUCT was. Een credit is dat niet:
+     honderdtwintig vakjes beloven honderdtwintig beelden en dat is niet wat er
+     in zit. Wat een credit wél is, is een verhouding — en daar is een balk de
+     eerlijke vorm voor.
+
+     Wat overeind blijft, en hier dus nog steeds getoetst wordt: wat er dreigt
+     te VERVALLEN staat er met zoveel woorden bij. Dat is het enige getal op dit
+     scherm waar een klant iets aan kwijt kan raken. */
+  ok('en noemt de datum waarop credits vervallen',
+    /st-credit-regel/.test(pagina) && /planCreditExpiry/.test(acc), true);
+  /* DE BALK HEEFT GEEN style-ATTRIBUUT. Dezelfde CSP-val als hierboven, nu voor
+     de vierde keer: een breedte in `style=` wordt geweigerd en de balk staat
+     vol. Vandaar een vaste trap van vijf procent als klasse. */
+  ok('en draagt zijn stand als klasse en niet als inline stijl',
+    /st-credit-vul is-p\$\{/.test(pagina) && !/style=\{`--pct/.test(pagina), true);
+  ok('met een trap in de css',
+    /\.st-credit-vul\.is-p50 \{ width: 50%; \}/.test(
+      readFileSync(new URL('../src/styles/studio.css', import.meta.url), 'utf8')), true);
 
   /* De drie knoppen per regel zijn drie losse formulieren. In één formulier zou
      één submit alle drie de bedoelingen tegelijk versturen. */
@@ -400,8 +411,13 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
      half — de soorten die het toevallig kent wel, de rest niet. */
   /* Sinds 6 september 2026: planView() levert `slots` per soort uit de balans
      (state.slots), en plan.astro tekent er één regel per stuk. */
-  ok('het scherm tekent een regel per soort uit de balans',
-    /const slots = \(state\.slots \|\| \[\]\)\.map/.test(acc) && /v\.saldo\.slots\.map/.test(readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8')), true);
+  /* Sinds 19 september 2026 is dat één saldo en één kaart per DIENST. De
+     eigenschap die bewaakt wordt is dezelfde gebleven: het scherm kent geen
+     soort bij naam maar leest ze uit de gegevens, zodat een nieuw plan of een
+     nieuwe dienst er vanzelf op komt te staan. */
+  ok('het scherm tekent één creditbalk en een kaart per dienst',
+    /const dienstKaarten = \(state\.diensten \|\| \[\]\)\.map/.test(acc)
+    && /v\.saldo\.dienstKaarten\.map/.test(readFileSync(new URL('../src/pages/account/plan.astro', import.meta.url), 'utf8')), true);
   ok('en noemt geen enkele soort bij naam in de opmaak',
     /planClipsH|'video-motion'|"video-motion"/.test(acc), false);
   /* En de soort van een nieuw item komt uit het PLAN en niet uit het formulier:

@@ -32,8 +32,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'public/img');
 
 const W = 1200, H = 630;
-const GREEN = '#D2E04A';
-const INK = '#111111';
+/* Uit KLEURENSCHEMA.md, 20 september 2026. Het OG-beeld is een donker vlak
+   met een lichte kop; het accentwoord staat er als LETTER op, dus het is het
+   lichte violet uit de donkere modus (#A694FF, 8,30:1 op zwart) en niet het
+   violet van de vulling — dat haalt op zwart 2,93:1. */
+const GREEN = '#A694FF';
+const INK = '#000000';
 
 /** Een bestand als data-URL — Chromium mag geen file:// laden bij setContent. */
 const dataUrl = (abs, mime) =>

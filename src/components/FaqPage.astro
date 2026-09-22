@@ -113,25 +113,11 @@ const COPY = {
 
 const c = { ...COPY[lang], groups: faqPageGroups(lang) };
 
-// Stable, language-independent anchors for the group index. They live out here
-// rather than inside COPY on purpose: an anchor is a URL, not copy, and a pair
-// of them in two language branches is a pair that can drift. /faq#pricing has to
-// land in the same place whichever language sent the visitor. The index link and
-// the group it points at both read this one array, so the two cannot disagree
-// about a name — which matters, because a fragment built at runtime is the one
-// kind of href the link checkers can only report as unchecked, never verify.
-//
-// What they cannot cover is a group being added to COPY and not here: the extra
-// group would render id={undefined} and its index entry would point at a
-// "#undefined" that silently does nothing, on the page whose entire job is
-// answering questions. So that case is a build error rather than a live bug.
-// pricing.js throws on its own unknown-tier lookups for the same reason.
-const GROUP_ANCHORS = ['getting-started', 'ordering', 'delivery', 'pricing', 'rights'];
-if (GROUP_ANCHORS.length !== c.groups.length) {
-  throw new Error(
-    `FaqPage: ${c.groups.length} groups in the ${lang} COPY table but ` +
-    `${GROUP_ANCHORS.length} anchors in GROUP_ANCHORS. Add the anchor.`
-  );
+/* De ankers staan bij de groep zelf (faq.js, `id`) — de vijf algemene en de
+   vijf diensten. Een groep zonder id is een bouwfout en geen stille "#undefined"
+   op de pagina die vragen hoort te beantwoorden. */
+for (const g of c.groups) {
+  if (!g.id) throw new Error(`FaqPage: groep "${g.title}" (${lang}) heeft geen id in faq.js.`);
 }
 ---
 
@@ -159,9 +145,9 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
   <section class="paneel">
     <nav class="faq-index" aria-label={c.indexLabel}>
       <ul class="faq-index-lijst" role="list">
-        {c.groups.map((g, gi) => (
+        {c.groups.map((g) => (
           <li>
-            <a class="faq-index-link" href={`#${GROUP_ANCHORS[gi]}`}>
+            <a class="faq-index-link" href={`#${g.id}`}>
               <span class="faq-index-t">{g.title}</span>
               <span class="mono faq-index-n">{g.items.length}</span>
             </a>
@@ -171,8 +157,8 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
     </nav>
 
     <div class="faq-groepen">
-    {c.groups.map((g, gi) => (
-      <div class="faq-groep" id={GROUP_ANCHORS[gi]}>
+    {c.groups.map((g) => (
+      <div class="faq-groep" id={g.id}>
         <h2 class="hoog hoog-3">{g.title}</h2>
         <div class="acc">
           {/* Migrated to the shared Disclose, August 2026. The body is untouched
@@ -231,11 +217,32 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
      onder elkaar met dezelfde tussenruimte. */
   .acc-figs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-    gap: 1.2rem;
+    /* 13rem en niet 16: twee kolommen van 208 px passen ook op een tablet, en
+       op een breed scherm blijven de twee beelden samen onder de leesbreedte
+       van de tekst erboven in plaats van de volle paneelbreedte te vullen. */
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: 1rem;
     margin: 1.2rem 0 0;
+    max-width: 34rem;
   }
+  /* ── DIT ANTWOORD MAG NIET OPVALLEN — 20 september 2026 ──────────────────
+     Lucas: *"Ook zijn niet alle FAQ blokken consistent met elkaar."*
+
+     Nagemeten met kladblok/_faqshot.mjs: alle 27 blokken hebben exact dezelfde
+     binnenruimte, rand, ronding, grond en lettergrootte. De vorm klopte dus;
+     wat eruit sprong was de INHOUD van één antwoord. Bij "Wat is het verschil
+     tussen catalog en lifestyle?" stonden twee foto's van elk ~430 px hoog,
+     dus dat ene blok was vier keer zo hoog als zijn zesentwintig buren en las
+     als een galerij tussen een lijst met vragen.
+
+     De foto's blijven, want dit is de enige vraag waar tonen echt beter is dan
+     vertellen. Ze worden alleen wat ze horen te zijn: twee kleine voorbeelden
+     naast de tekst, met een vaste verhouding zodat ze allebei even hoog zijn.
+     Het blok is daarmee nog steeds het hoogste van de zevenentwintig, maar in
+     dezelfde orde van grootte als een antwoord van vier regels. */
   .acc-fig { margin: 0; display: grid; gap: .5rem; }
+  .acc-fig img { width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--ronding, 12px); display: block; }
+  .acc-fig figcaption { font-family: var(--mono2, var(--font-mono)); font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; color: var(--inkt-3, var(--ink-3)); }
   /* ── DE KOP BEGINT BOVENAAN, HET BEELD MAG ZWEVEN — 8 september 2026 ──────
      Lucas over /portal: *"bij deze pagina ook niet eerste sectie volledig
      gevuld."* Gemeten: de tekstkolom is daar 418 hoog naast een figuur van 954,

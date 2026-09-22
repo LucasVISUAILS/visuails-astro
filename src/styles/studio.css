@@ -9,7 +9,7 @@
    inlogkaart). Alles met een st-voorvoegsel, zodat het naast de honderden
    klassen van global.css kan bestaan zonder ze te raken.
 
-   REGISTER. Dit is een werkscherm, geen merkpagina: Instrument Sans in de
+   REGISTER. Dit is een werkscherm, geen merkpagina: de tekstletter in de
    bediening, Anybody alleen voor de paginatitel, de vier grote cijfers en de
    knoppen (die zijn al zo in global.css). Geel op precies drie plekken: de primaire
    knop, het actieve menu-item en het lopende punt in de tijdlijn. De rest
@@ -34,21 +34,32 @@
    grond dragen --st-accent-tekst en --st-accent-lijn dus de inkt, en het geel
    blijft voor de knop, het actieve menu-item en de stip in de tijdlijn. Op de
    donkere grond is geel als letter 11,4:1 en mag hij wél. */
+/* ── EN SINDS 20 SEPTEMBER MAG HET ACCENT WÉL EEN LETTER ZIJN ─────────────
+   De noot hierboven zegt: "het accent is een vlak, geen letter", omdat geel op
+   wit 1,5:1 haalt. Dat argument hoort bij het geel. KLEURENSCHEMA.md zet er
+   met zoveel woorden tegenover: *"Anders dan het geel is het violet wél een
+   letterkleur op licht. Waar vroeger 'het accent als tekst' terugviel op inkt,
+   mag het nu gewoon violet zijn."* — 8,25:1 op de grond.
+
+   Deze drie tokens vielen daarom terug op de inkt en doen dat niet meer. */
 :root {
-  --st-accent-tekst: var(--ink-1);
-  --st-accent-lijn: var(--ink-1);
-  --st-accent-tint: rgb(210 224 74 / 0.22);
-  --st-clay-tekst: var(--clay-text);
+  --st-accent-tekst: var(--accent-text);
+  --st-accent-lijn: var(--accent);
+  /* De accenttint is de tint uit het schema en geen eigen alfa meer. Eén vlak
+     per scherm — regel "Nooit 3": de tint is voor een statuslabel, niet voor
+     een oppervlak. */
+  --st-accent-tint: var(--accent-tint);
+  --st-clay-tekst: var(--st-rev-ink);
   --st-side-w: 264px;
   --st-side-dicht: 76px;
   --st-pad: clamp(1.1rem, 2.6vw, 2.4rem);
 }
 body.studio.on-ink {
   --bg-0: var(--bg);
-  --st-accent-tekst: var(--accent-text);   /* de lichte UI-lime (#E4F474) als letter op inkt */
+  --st-accent-tekst: var(--accent-text);
   --st-accent-lijn: var(--accent);
-  --st-accent-tint: rgb(210 224 74 / 0.12);
-  --st-clay-tekst: var(--clay);
+  --st-accent-tint: var(--accent-tint);
+  --st-clay-tekst: var(--st-rev-ink);
 }
 
 /* ── DE GROND ─────────────────────────────────────────────────────────────── */
@@ -61,8 +72,66 @@ body.studio a:not(.btn) { color: inherit; }
 .studio .st-link { color: var(--st-accent-tekst); text-decoration: underline; text-underline-offset: .18em; text-decoration-color: color-mix(in srgb, var(--st-accent-tekst) 45%, transparent); }
 .studio .st-link:hover { text-decoration-color: currentColor; }
 .studio .st-meta { color: var(--ink-3); font-size: .9rem; }
-.studio .btn-sm { min-height: 36px; padding-inline: 1.05rem; font-size: .9rem; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   DE KNOPPEN OP DE MAAT VAN DE SITE — 20 SEPTEMBER 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   Lucas: *"Waar ik nog steeds tegenaan loop in /admin en visuails studio is dat
+   sommige knoppen overdreven groot zijn en andere elementen ook uit proportie
+   zijn. Dit moet echt veel consistenter met de website worden."*
+
+   Gemeten met kladblok/_knopmaat.mjs, elke knop op beide schermen:
+
+     de site   .knop / .btn    46 px hoog · 11,5 px letter · 24 px zijruimte
+     Studio    .btn            42 px hoog · 13,1 px letter
+     Studio    .btn-sm         36 px hoog · 14,4 px letter  ← groter dan .btn
+
+   De oorzaak is precies aan te wijzen. stijl22.css zet op élke sitepagina
+   `.s22.s22 .btn { font-size: .72rem; min-height: 46px; … }` — dat is de
+   huisknop. Studio draagt die klasse niet, dus viel hij terug op de basis in
+   global.css (.82rem/42px), en `.btn-sm` zette daar nog eens .9rem overheen.
+   Zo werd de KLEINE knop de grootste letter van de drie.
+
+   Hieronder staat dezelfde normalisatie als in stijl22.css, en met opzet
+   letterlijk dezelfde waarden: Studio is een klantscherm en hoort op de knop na
+   niet van de site te verschillen. `-sm` is voortaan een kleiner KADER met
+   dezelfde letter (40 px), want een knop verkleinen door zijn label te
+   vergroten is hoe dit misging. 11,5 px is de ondergrens die dit project
+   aanhoudt en precies wat de site zelf gebruikt. */
+.studio .btn {
+  border-radius: 999px;
+  font-family: var(--font-mono); font-size: .72rem; font-stretch: 82%;
+  letter-spacing: .05em; text-transform: uppercase;
+  min-height: 46px; padding-inline: 1.5rem;
+}
+.studio .btn-sm { min-height: 40px; padding-inline: 1.1rem; font-size: .72rem; }
 .studio .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EEN KOP STAAT NIET TEGEN ZIJN ALINEA — 20 SEPTEMBER 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   Lucas: *"per element te kijken waar te weinig ruimte zit tussen teksten,
+   blokken en andere elementen (…) zoals tussenlijnen waar tekst gelijk onder
+   staat, en wenkbrauwen die gelijk op de kop staan. Alles moet rustig ogen dus
+   ook whitespace bevatten."*
+
+   Gemeten met kladblok/te-dicht-studio.mjs over tien Studio-schermen, breed en
+   op een telefoon: zevenendertig plekken, en bijna allemaal van hetzelfde
+   soort. Een kop met `margin: 0` en een alinea met `margin: 0` eronder komen op
+   nul tot vier pixels uit — de regelafstand doet dan de scheiding, en dat is
+   precies te weinig om nog als twee dingen te lezen. Voorbeelden:
+   "Leg je look vast" (3 px), "Nog geen eigen gezichten" (4 px), en een alinea
+   met zijn metaregel op nul.
+
+   Eén regel in plaats van twintig losse reparaties, en met opzet op de
+   OPVOLGER: zo hoeft geen enkel bestaand blok zijn eigen marges op te geven en
+   werkt het ook voor het blok dat er morgen bij komt. Marges klappen samen, dus
+   waar al meer ruimte staat, verandert er niets — dit is een bodem en geen
+   maat. */
+.studio :is(h1, h2, h3) + p,
+.studio :is(h1, h2, h3) + ul,
+.studio :is(h1, h2, h3) + ol,
+.studio p + .st-meta,
+.studio .st-meta + p { margin-top: .6rem; }
 
 /* ── DE SCHIL ─────────────────────────────────────────────────────────────── */
 .st-shell { display: grid; grid-template-columns: var(--st-side-w) minmax(0, 1fr); min-height: 100vh; }
@@ -127,18 +196,39 @@ body.studio a:not(.btn) { color: inherit; }
   border-bottom: 1px solid var(--line);
 }
 .st-top-tekst { flex: 1 1 18rem; min-width: 0; }
+/* ── DE KOPPEN IN DE STEM VAN DE SITE — 22 september 2026 ─────────────────
+   Lucas: "/admin + Studio verhoudingen". Gemeten met kladblok/_kopmaat.mjs:
+   de site zet elke kop in Anybody 500 op 125 % breedte, in kapitalen
+   (.hoog in stijl22.css); Studio zette zijn h1 in Anybody 800 op 100 % en
+   zijn sectiekoppen in Figtree 600 — dezelfde letter, drie stemmen. Nu één:
+   h1 en de grote koppen als .hoog, de sectiekoppen als het labelkopje van de
+   site (Anybody 500, 125 %, kapitalen, 1,05rem — .hiw-details b). De cijfers
+   houden hun maat en nemen alleen het gewicht en de breedte over. */
 .st-h1 {
-  font-family: var(--font-heading); font-weight: 800; font-size: clamp(1.9rem, 3.2vw, 2.6rem);
-  line-height: 1; letter-spacing: -.01em; color: var(--ink-1); margin: 0; text-wrap: balance;
+  font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+  line-height: .94; letter-spacing: -.03em; color: var(--ink-1); margin: 0; text-wrap: balance;
 }
-.st-lede { margin: .5rem 0 0; color: var(--ink-3); font-size: .95rem; max-width: 60ch; }
-.st-chip {
-  align-self: center; display: inline-flex; align-items: center; gap: .5rem;
-  padding: .3rem .8rem; border-radius: var(--r-pill); font-size: .78rem; font-weight: 700;
-  letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); border: 1px solid var(--line-strong);
-}
-.st-chip.is-signal { color: var(--st-accent-tekst); border-color: color-mix(in srgb, var(--st-accent-lijn) 55%, transparent); }
-.st-chip.is-signal::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--st-accent-lijn); }
+/* ── DE LOPENDE TEKST OP DE MAAT VAN DE SITE — 20 september 2026 ──────────
+   Gemeten met kladblok/_kopmaat.mjs, over vijf Studio-schermen en vier
+   sitepagina's: de site zet zijn lopende tekst op 17 px (--t-body) en Studio
+   zette de zijne op 14,4 tot 15,2. Dat is hetzelfde soort verschil als bij de
+   knoppen — niet gekozen, maar het gevolg van componentregels in .9rem en
+   .95rem die zich niets van de paginamaat aantrekken.
+
+   Wat hieronder op 1rem gaat is alleen de tekst die je LEEST: de lead onder een
+   kop, een melding, een leeg vlak, de betaalstand. Etiketten, meta-regels en
+   tabelkolommen blijven kleiner — die zijn geen lopende tekst en op de site
+   ook niet. 1rem en niet 1,0625: Studio staat dichter op elkaar dan een
+   verkooppagina, en de laatste halve pixel is het herindelen van zes schermen
+   niet waard. */
+.st-lede { margin: .5rem 0 0; color: var(--ink-3); font-size: 1rem; max-width: 60ch; }
+/* .st-chip IS WEG — 20 september 2026. Het was een eigen pil met een eigen
+   maat (12,5px, stip van 7px) en één toon die CSS had: `is-signal`. `is-warn`
+   werd wel gezet en bestond hier niet, dus een gepauzeerd abonnement kreeg de
+   neutrale chip. De kop draagt nu .stand uit global.css, met dezelfde vijf
+   standen als de rest. De uitlijning die hier stond, staat één regel lager. */
+.st-top .stand { align-self: center; }
 .st-top-actie { align-self: center; }
 
 .st-main { padding: var(--st-pad); display: flex; flex-direction: column; gap: clamp(1.6rem, 3vw, 2.4rem); max-width: 1180px; width: 100%; }
@@ -151,9 +241,9 @@ body.studio a:not(.btn) { color: inherit; }
 .studio section { padding: 0; margin: 0; }
 .st-blok { display: flex; flex-direction: column; gap: .8rem; min-width: 0; }
 .st-blok-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-.st-blok-kop h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-spacing: 0; line-height: 1.3; color: var(--ink-1); margin: 0; }
+.st-blok-kop h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; color: var(--ink-1); margin: 0; }
 .st-blok-kop .st-tel { color: var(--ink-3); font-weight: 500; margin-left: .35rem; }
-.st-leeg { margin: 0; padding: 1.2rem 1.25rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); color: var(--ink-3); font-size: .95rem; }
+.st-leeg { margin: 0; padding: 1.2rem 1.25rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); color: var(--ink-3); font-size: 1rem; }
 
 .st-kaart-vlak { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
 
@@ -168,24 +258,16 @@ body.studio a:not(.btn) { color: inherit; }
 a.st-cijfer:hover { background: var(--ghost); }
 .st-cijfer .i { width: 18px; height: 18px; color: var(--ink-3); }
 .st-cijfer-label { font-size: .8rem; color: var(--ink-3); line-height: 1.25; }
-.st-cijfer-n { font-family: var(--font-heading); font-weight: 800; font-size: 2.4rem; line-height: 1; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-cijfer-n { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; font-size: 2.4rem; line-height: 1; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-cijfer-n.is-nul { color: var(--ink-3); }
 
-/* De statuspil. Het woord draagt de status; de kleur onderstreept alleen. */
-.st-pil {
-  display: inline-flex; align-items: center; gap: .4rem; padding: .18rem .65rem;
-  border-radius: var(--r-pill); border: 1px solid var(--line-strong);
-  font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
-}
-.st-pil::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .7; }
-.st-pil.is-in_production { color: var(--st-accent-tekst); border-color: color-mix(in srgb, var(--st-accent-lijn) 55%, transparent); }
-.st-pil.is-human_check { color: var(--st-clay-tekst); border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
-.st-pil.is-delivered { color: var(--ink-1); border-color: var(--line-strong); }
-.st-pil.is-delivered::before { background: var(--st-accent-lijn); opacity: 1; }
-.st-pil.is-cancelled { color: var(--ink-3); }
-/* Wacht op betaling: dezelfde klei als "wordt nagekeken" — iets dat aandacht
-   vraagt, niet iets dat loopt (19 september 2026). */
-.st-pil.is-awaiting_payment { color: var(--st-clay-tekst); border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); }
+/* DE STATUSPIL STAAT NIET MEER HIER — 20 september 2026.
+   Hier stonden .st-pil en zes is-<status>-regels met eigen randkleuren. Ze zijn
+   vervangen door één component, .stand in src/styles/global.css, dat Studio,
+   site, klantportaal, admin en de mail delen. De statuswaarde wordt niet meer
+   in een klassenaam gezet: src/data/status.js zet hem op één van vijf standen
+   (wait/work/done/rev/can) en standKlasse() geeft de klasse terug. Een nieuwe
+   status erbij kost daardoor nul regels CSS. */
 
 /* De bestelkaart op het overzicht. */
 .st-order { padding: 1.2rem 1.35rem 1.3rem; display: flex; flex-direction: column; gap: 1rem; }
@@ -209,7 +291,12 @@ a.st-cijfer:hover { background: var(--ghost); }
 .st-stap:first-child:last-child::before { display: none; }
 .st-stip { position: relative; z-index: 1; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line-strong); box-sizing: border-box; }
 .st-stap.is-done .st-stip { background: var(--ink-3); border-color: var(--ink-3); }
-.st-stap.is-now .st-stip { background: var(--st-accent-lijn); border-color: var(--st-accent-lijn); box-shadow: 0 0 0 4px var(--st-accent-tint); }
+/* ── GEEN RING IN DE ACCENTKLEUR — 20 september 2026 ─────────────────────
+   `box-shadow: 0 0 0 4px var(--st-accent-tint)` is een gloed om de stip, en
+   regel "Nooit 2" verbiedt gloed en schaduw in de accentkleur. Wat de ring
+   deed — laten zien WELKE stap loopt — doet de stip nu met zijn eigen maat en
+   een lijn eromheen. */
+.st-stap.is-now .st-stip { background: var(--st-accent-lijn); border-color: var(--st-accent-lijn); box-shadow: inset 0 0 0 1px var(--st-accent-lijn); outline: 2px solid var(--accent-tint); outline-offset: 1px; }
 .st-stap-label { font-size: .8rem; color: var(--ink-3); line-height: 1.25; padding-right: .5rem; }
 .st-stap.is-done .st-stap-label { color: var(--ink-3); }
 .st-stap.is-now .st-stap-label { color: var(--ink-1); font-weight: 600; }
@@ -221,7 +308,7 @@ a.st-cijfer:hover { background: var(--ghost); }
 .st-details[open] > summary::before { transform: rotate(45deg); }
 .st-details > summary:hover { color: var(--ink-1); }
 .st-historie { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
-.st-historie li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.st-historie li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--line); font-size: .95rem; }
 .st-historie .st-wanneer { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .st-historie .st-wat { color: var(--ink-2); }
 .st-historie .st-notitie { display: block; color: var(--ink-3); margin-top: .15rem; }
@@ -239,7 +326,7 @@ a.st-cijfer:hover { background: var(--ghost); }
 .st-betaal-rij dt { color: var(--ink-3); }
 .st-betaal-rij dd { margin: 0; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-betaal-rij:last-child dd { font-weight: 700; }
-.st-betaal-staat { margin: 0; font-size: .9rem; color: var(--ink-2); grid-column: 1; }
+.st-betaal-staat { margin: 0; font-size: 1rem; color: var(--ink-2); grid-column: 1; }
 .st-betaal.is-unpaid .st-betaal-staat { color: var(--st-clay-tekst); }
 .st-betaal form { grid-column: 2; grid-row: 1 / span 2; }
 
@@ -266,7 +353,7 @@ a.st-cijfer:hover { background: var(--ghost); }
    het beeld (Beeld.astro). Dezelfde taal als het overzicht: één vlak met een
    haarlijn, cellen gescheiden door lijnen, geel alleen op de hoofdknop en de
    ene stip die "nu" zegt. */
-.st-melding { margin: 0; padding: .8rem 1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); font-size: .95rem; }
+.st-melding { margin: 0; padding: .8rem 1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); font-size: 1rem; }
 .st-melding.is-warn { border-color: color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); color: var(--st-clay-tekst); }
 .st-melding.is-ok { border-color: var(--ink-1); }
 
@@ -294,7 +381,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-mini { display: inline-flex; gap: 4px; align-items: center; }
 .st-mini-stip { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
 .st-mini-stip.is-done { background: var(--ink-3); }
-.st-mini-stip.is-now { background: var(--st-accent-lijn); box-shadow: 0 0 0 3px var(--st-accent-tint); }
+.st-mini-stip.is-now { background: var(--st-accent-lijn); outline: 2px solid var(--accent-tint); outline-offset: 1px; }
 .st-chevron { width: 8px; height: 8px; border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3); transform: rotate(45deg); margin: 0 .3rem 0 .2rem; transition: transform var(--dur-1) var(--ease); }
 .st-bestelling[open] .st-chevron { transform: rotate(-135deg); margin-top: .3rem; }
 .st-bestelling-kop:hover { background: var(--ghost); }
@@ -337,9 +424,12 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-beeld-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .st-beeld-media.is-bestand, .st-beeld-media.is-weg { display: grid; place-items: center; color: var(--ink-3); font-size: .8rem; }
 .st-beeld-ext { font-family: var(--font-mono); font-stretch: 82%; font-size: .8rem; letter-spacing: .06em; }
-.st-badge { position: absolute; left: 6px; bottom: 6px; padding: .18rem .5rem; border-radius: var(--r-pill); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: rgb(17 17 17 / .78); color: #FFFFFF; }
-.st-badge.is-approved { background: var(--accent); color: var(--accent-ink); }
-.st-badge.is-revision { background: var(--clay); color: #111111; }
+/* Het merkje op een geleverd beeld. Het IS de statuspil (.stand in global.css)
+   en draagt hier alleen nog zijn plek op de tegel — kleur, maat en stip komen
+   van het component, en de stand komt uit standKlasse() in data/status.js.
+   Hier stonden drie eigen kleuren, waaronder zwart-transparant met wit erop:
+   een vierde antwoord op dezelfde vraag (20 september 2026). */
+.st-badge { position: absolute; left: 6px; bottom: 6px; }
 .st-beeld-body { display: flex; flex-direction: column; gap: .45rem; }
 .st-beeld-cap { font-size: .82rem; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-beeld-noot { font-size: .8rem; }
@@ -392,7 +482,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-tabel-noot { margin: 0; font-size: .85rem; }
 
 .st-nudge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.35rem; }
-.st-nudge h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin: 0 0 .2rem; color: var(--ink-1); }
+.st-nudge h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; margin: 0 0 .2rem; color: var(--ink-1); }
 .st-nudge p { margin: 0; font-size: .92rem; color: var(--ink-2); }
 
 .st-formulier { padding: 1.35rem; display: flex; flex-direction: column; gap: 1.1rem; }
@@ -423,8 +513,8 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-blok-lede { margin: -.3rem 0 .2rem; max-width: 62ch; }
 .st-leegvlak { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding: 1.35rem; }
 .st-leegvlak > div { flex: 1 1 18rem; }
-.st-leegvlak h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin: 0 0 .25rem; color: var(--ink-1); }
-.st-leegvlak p { margin: 0; font-size: .92rem; color: var(--ink-2); }
+.st-leegvlak h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; margin: 0 0 .25rem; color: var(--ink-1); }
+.st-leegvlak p { margin: 0; font-size: 1rem; color: var(--ink-2); }
 .st-leegvlak-fig { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); color: var(--ink-3); }
 .st-leegvlak-fig .i, .st-model-img.is-leeg .i, .st-tegel-img.is-leeg .i, .st-vl-gezicht.is-leeg .i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; }
 
@@ -442,7 +532,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-eigenlook-fig { background: var(--surface-2); min-height: 100%; }
 .st-eigenlook-fig img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .st-eigenlook-body { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; }
-.st-eigenlook-body h3 { margin: 0; font-family: var(--font-body); font-size: 1rem; font-weight: 600; color: var(--ink-1); }
+.st-eigenlook-body h3 { margin: 0; font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; color: var(--ink-1); }
 .st-eigenlook-body .st-meta { margin: 0; font-size: .85rem; }
 .st-eigenlook-lijn { margin: 0; font-size: .9rem; color: var(--ink-2); }
 .st-eigenlook.is-voorstel { border-style: dashed; }
@@ -536,10 +626,10 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 /* ── ABONNEMENT & FACTURERING — Studio fase 2 ──────────────────────────────── */
 .st-eyebrow { display: block; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .st-vlak { padding: 1.35rem; display: flex; flex-direction: column; gap: .8rem; }
-.st-vlak h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; margin: 0; color: var(--ink-1); }
+.st-vlak h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.05rem; letter-spacing: -.01em; line-height: 1.15; margin: 0; color: var(--ink-1); }
 .st-vlak > p { margin: 0; color: var(--ink-2); }
 .st-h3 { font-family: var(--font-body); font-size: .85rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: .6rem 0 0; }
-.st-groot { font-family: var(--font-heading); font-weight: 700; font-size: 2rem; line-height: 1.1; letter-spacing: -.01em; color: var(--ink-1); }
+.st-groot { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; font-size: 2rem; line-height: 1.1; letter-spacing: -.01em; color: var(--ink-1); }
 .st-knoppen { display: flex; gap: .5rem; flex-wrap: wrap; }
 
 /* ── HET DONKERE BLOK DRAAGT ZIJN EIGEN TOKENS — 13 september 2026 ──────────
@@ -592,7 +682,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
    wat de tokens hierboven zeggen. Deze regel blijft staan als expliciete
    bevestiging van de rand — hij was tot vandaag het enige wat klopte. */
 .st-geenabo .st-eyebrow { color: var(--accent); }
-.st-geenabo h2 { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.05; letter-spacing: -.01em; color: #FFFFFF; margin: 0; max-width: 24ch; }
+.st-geenabo h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: clamp(1.5rem, 2.8vw, 2rem); line-height: .96; letter-spacing: -.03em; color: #FFFFFF; margin: 0; max-width: 24ch; }
 .st-geenabo p { margin: 0; max-width: 56ch; }
 .st-geenabo .st-knoppen { margin-top: .6rem; }
 .st-geenabo .btn-2nd { color: #FFFFFF; border-color: rgb(255 255 255 / .42); }
@@ -605,7 +695,7 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 
 .st-saldo { padding: 1.35rem; display: flex; flex-direction: column; gap: 1rem; }
 .st-saldo-kop { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
-.st-saldo-kop h2 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; letter-spacing: -.01em; margin: .2rem 0 0; color: var(--ink-1); }
+.st-saldo-kop h2 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.4rem; letter-spacing: -.02em; margin: .2rem 0 0; color: var(--ink-1); }
 .st-saldo-volgende { display: flex; flex-direction: column; gap: .2rem; text-align: right; }
 .st-saldo-volgende strong { color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-saldo-rij { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; padding-top: 1rem; border-top: 1px solid var(--line); }
@@ -652,7 +742,11 @@ select.st-veld { appearance: none; -webkit-appearance: none; background-image: v
 .st-q-merk.is-vast { color: var(--ink-1); border-color: var(--ink-1); }
 .st-q-wanneer { font-size: .85rem; color: var(--ink-3); text-decoration: underline; text-underline-offset: .18em; white-space: nowrap; }
 .st-q-wanneer.is-vast { color: var(--ink-1); }
-.st-q-knoppen { display: flex; gap: .35rem; flex-wrap: wrap; }
+/* .55rem en niet .35: gemeten 6 px tussen "Losmaken" en "Verwijderen" met
+   kladblok/te-dicht-studio.mjs. Twee knoppen met zes pixels ertussen lezen als
+   één balk met een streepje, en de tweede van de twee is hier juist de
+   onomkeerbare. */
+.st-q-knoppen { display: flex; gap: .55rem; flex-wrap: wrap; }
 .st-q-knoppen form { margin: 0; }
 .st-formulier.is-in-vlak { padding: 1rem 0 0; border-top: 1px solid var(--line); border-radius: 0; background: none; border-inline: 0; border-bottom: 0; }
 .st-veld-bestand { padding-block: .6rem; min-height: 0; }
@@ -670,10 +764,21 @@ button.st-kal-dag:hover { border-color: var(--ink-1); }
 .st-kal-l { font-size: .72rem; line-height: 1.2; }
 .st-kal-vul { position: absolute; left: .5rem; right: .5rem; bottom: .4rem; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .st-kal-vul i { display: block; height: 100%; background: var(--ink-3); }
-.st-kal-vul i.is-0 { width: 0; } .st-kal-vul i.is-1 { width: 10%; } .st-kal-vul i.is-2 { width: 20%; } .st-kal-vul i.is-3 { width: 30%; } .st-kal-vul i.is-4 { width: 40%; } .st-kal-vul i.is-5 { width: 50%; } .st-kal-vul i.is-6 { width: 60%; } .st-kal-vul i.is-7 { width: 70%; } .st-kal-vul i.is-8 { width: 80%; } .st-kal-vul i.is-9 { width: 90%; } .st-kal-vul i.is-10 { width: 100%; }
+/* ── DE DAGBALK IN PROCENTEN — 20 september 2026 ───────────────────────────
+   Tien stappen van tien procent werden twintig van vijf: de schaal is nu de
+   HELE dag (100 punten) en niet meer het deel dat een klant mag boeken (79),
+   dus dezelfde balk draagt nu een fijner verschil. En er staat een gearceerde
+   band aan het eind: de 21 procent die voor de wachtrij gereserveerd blijft en
+   waar een klant niet in kan boeken. Zonder die band leest "79 procent vol"
+   als "er kan nog 21 procent bij", en dat kan niet. */
+.st-kal-vul { position: relative; }
+.st-kal-vul::after {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 21%;
+  background: repeating-linear-gradient(135deg, var(--line) 0 2px, transparent 2px 4px);
+}
+.st-kal-vul i.is-0 { width: 0; } .st-kal-vul i.is-5 { width: 5%; } .st-kal-vul i.is-10 { width: 10%; } .st-kal-vul i.is-15 { width: 15%; } .st-kal-vul i.is-20 { width: 20%; } .st-kal-vul i.is-25 { width: 25%; } .st-kal-vul i.is-30 { width: 30%; } .st-kal-vul i.is-35 { width: 35%; } .st-kal-vul i.is-40 { width: 40%; } .st-kal-vul i.is-45 { width: 45%; } .st-kal-vul i.is-50 { width: 50%; } .st-kal-vul i.is-55 { width: 55%; } .st-kal-vul i.is-60 { width: 60%; } .st-kal-vul i.is-65 { width: 65%; } .st-kal-vul i.is-70 { width: 70%; } .st-kal-vul i.is-75 { width: 75%; } .st-kal-vul i.is-80 { width: 80%; } .st-kal-vul i.is-85 { width: 85%; } .st-kal-vul i.is-90 { width: 90%; } .st-kal-vul i.is-95 { width: 95%; } .st-kal-vul i.is-100 { width: 100%; }
 
 .st-ed-kop { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.st-pil.is-wacht { color: var(--ink-3); }
 .st-ed-lijst { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .st-ed-lijst li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1rem; padding: .7rem 0; border-top: 1px solid var(--line); font-size: .92rem; color: var(--ink-2); }
 .st-ed-lijst li:first-child { border-top: 0; }
@@ -722,7 +827,9 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 
 .st-weekstrip { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; max-width: 34rem; }
 .st-dag { display: grid; place-items: center; aspect-ratio: 1; border-radius: 3px; font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; color: var(--ink-2); background: var(--surface-2); }
-.st-dag.is-week { background: rgb(210 224 74 / .38); color: var(--ink-1); }
+/* De eigen week van de klant: een toestand, dus uit de statusset en niet uit
+   het accent — regel "Altijd 2". Het is de stand "in productie": getint. */
+.st-dag.is-week { background: var(--st-work-fill); color: var(--st-work-ink); }
 .st-dag.is-start { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .st-dag.is-vandaag { box-shadow: inset 0 0 0 1.5px var(--ink-1); color: var(--ink-1); }
 
@@ -760,9 +867,12 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-frame.is-tel .st-frame-leeg { font-family: var(--font-mono); font-stretch: 82%; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; font-weight: 500; }
 /* De week als zin, met de dag van de maand ernaast. */
 .st-week { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem 2rem; align-items: start; }
-.st-week .st-groot { font-size: 1.35rem; margin: .2rem 0 .6rem; }
+/* .6rem boven en niet .2: gemeten 3 px onder de kop "Jouw week". Deze regel
+   wint van de algemene bodem hierboven (twee klassen tegen één), dus hij moet
+   het zelf zeggen. */
+.st-week .st-groot { font-size: 1.35rem; margin: .6rem 0 .6rem; }
 .st-week-dag { margin: 0; display: grid; gap: .2rem; text-align: right; }
-.st-week-dag strong { font-family: var(--font-heading); font-size: 1.6rem; line-height: 1; }
+.st-week-dag strong { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; font-size: 1.6rem; line-height: 1; }
 @media (max-width: 640px) { .st-week { grid-template-columns: minmax(0, 1fr); } .st-week-dag { text-align: left; } }
 /* De vaste look als één regel feiten met een link. */
 .st-lookstrip-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
@@ -773,7 +883,9 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 /* Foto's toevoegen op een lijstregel: het bestandsveld zit onder de link. */
 .st-q-fotos { margin-top: .25rem; }
 /* ── Ronde 4, 19 september 2026: gezicht per product, look-poort, week verzetten ── */
-.st-q-gezicht { display: flex; align-items: center; gap: .5rem; margin-top: .35rem; }
+/* .6rem: gemeten 7 px onder het fotoformulier erboven, en dat zijn twee
+   losse formulieren met elk een eigen handeling. */
+.st-q-gezicht { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; }
 .st-q-gezicht .st-meta { margin: 0; }
 .st-veld.st-veld-kort { width: auto; min-width: 11rem; flex: 0 0 auto; padding: .35rem .6rem; font-size: .82rem; }
 .st-q-look-open { font-size: .78rem; color: var(--st-clay-tekst); }
@@ -802,7 +914,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-kaartveld { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; padding: clamp(1.2rem, 4vw, 3rem) 1rem; }
 .st-merk-los { width: 150px; height: 25px; }
 .st-kaart { width: min(100%, 440px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(1.5rem, 4vw, 2.4rem); display: flex; flex-direction: column; gap: 1.1rem; }
-.st-kaart h1 { font-family: var(--font-heading); font-weight: 800; font-size: 2.2rem; line-height: 1; letter-spacing: -.01em; color: var(--ink-1); margin: 0; }
+.st-kaart h1 { font-family: var(--font-heading); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: 1.9rem; line-height: .94; letter-spacing: -.03em; color: var(--ink-1); margin: 0; }
 .st-kaart .st-lede { margin: 0; font-size: 1rem; color: var(--ink-2); }
 .st-gelukt { margin: 0 0 .9rem; padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid var(--st-accent-lijn); background: var(--st-accent-tint); color: var(--ink-1); font-size: .92rem; line-height: 1.5; }
 .st-fout { margin: 0; padding: .75rem .9rem; border-radius: var(--r-sm); border: 1px solid color-mix(in srgb, var(--st-clay-tekst) 55%, transparent); color: var(--st-clay-tekst); font-size: .92rem; }
@@ -817,7 +929,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-veld::placeholder { color: var(--ink-3); }
 .st-veld:hover { border-color: var(--ink-3); }
 .st-veld:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-color: var(--ink-3); }
-.st-veld.is-code { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 700; letter-spacing: .18em; text-align: center; min-height: 58px; }
+.st-veld.is-code { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 500; font-stretch: 125%; letter-spacing: .18em; text-align: center; min-height: 58px; }
 .st-hint { margin: 0; font-size: .85rem; color: var(--ink-3); }
 .st-kaart .st-details { border-top: 1px solid var(--line); padding-top: .6rem; }
 .st-kaart .st-details .st-form { margin-top: .6rem; }
@@ -949,3 +1061,125 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
    afgeronde cel is het enige wat dan nog uit de toon valt. */
 .st-product-cover, .st-beeld-media, .st-strook a, .st-model-img, .st-vl-gezicht,
 .st-vast, .st-nota, .st-gezegd { border-radius: var(--st-ronding-in); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * DE CREDITBALK EN DE DIENSTKAARTEN — 19 september 2026
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"maak het mooi overzichtelijk en strak/minimalistisch."* Hier stonden
+ * tot vijf slotmeters onder elkaar, elk met een eigen teller, vervaldatum en
+ * framerij. Met één creditsaldo is het één balk met één getal ernaast, en
+ * daaronder de diensten als kaarten in plaats van een keuzelijst.
+ *
+ * DE BALK IS GEEN <progress> EN HEEFT GEEN style-ATTRIBUUT. Het CSP-beleid van
+ * Studio staat inline stijl niet toe, en <progress> stylen kost drie
+ * browserspecifieke regels voor iets wat een span met een breedte ook doet.
+ * Vandaar de vaste trap van vijf procent hieronder — dezelfde oplossing als
+ * .st-kal-vul, die hem al sinds de agenda gebruikt.
+ */
+.st-credit { display: flex; flex-direction: column; gap: .8rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.st-credit-kop { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
+.st-credit-tel { margin: .15rem 0 0; display: flex; align-items: baseline; gap: .45rem; }
+.st-credit-tel b { font-family: var(--font-heading); font-size: 2.2rem; line-height: 1; font-weight: 500; font-stretch: 125%; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-credit-tel span { font-size: .92rem; color: var(--ink-3); }
+.st-credit-balk { height: 10px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.st-credit-vul { display: block; height: 100%; background: var(--st-accent-lijn); border-radius: var(--r-pill); transition: width .35s ease; }
+@media (prefers-reduced-motion: reduce) { .st-credit-vul { transition: none; } }
+.st-credit-regel { margin: 0; }
+.st-credit-regel b { color: var(--ink-1); }
+.st-credit .st-frames { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
+
+.st-credit-vul.is-p0 { width: 0; }
+.st-credit-vul.is-p5 { width: 5%; }
+.st-credit-vul.is-p10 { width: 10%; }
+.st-credit-vul.is-p15 { width: 15%; }
+.st-credit-vul.is-p20 { width: 20%; }
+.st-credit-vul.is-p25 { width: 25%; }
+.st-credit-vul.is-p30 { width: 30%; }
+.st-credit-vul.is-p35 { width: 35%; }
+.st-credit-vul.is-p40 { width: 40%; }
+.st-credit-vul.is-p45 { width: 45%; }
+.st-credit-vul.is-p50 { width: 50%; }
+.st-credit-vul.is-p55 { width: 55%; }
+.st-credit-vul.is-p60 { width: 60%; }
+.st-credit-vul.is-p65 { width: 65%; }
+.st-credit-vul.is-p70 { width: 70%; }
+.st-credit-vul.is-p75 { width: 75%; }
+.st-credit-vul.is-p80 { width: 80%; }
+.st-credit-vul.is-p85 { width: 85%; }
+.st-credit-vul.is-p90 { width: 90%; }
+.st-credit-vul.is-p95 { width: 95%; }
+.st-credit-vul.is-p100 { width: 100%; }
+
+/* De dienstkaarten. Geen tegels met een rand eromheen maar kolommen met één
+   lijn ertussen: vijf omlijnde vakjes naast een omlijnde saldokaart is precies
+   het geneste-kaart-effect waar een minimalistisch scherm aan onderdoor gaat. */
+.st-diensten { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.st-dienst { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1rem 1rem 0; border-left: 1px solid var(--line); padding-left: 1rem; }
+.st-dienst:first-child { border-left: 0; padding-left: 0; }
+.st-dienst-prijs { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 500; font-stretch: 125%; line-height: 1; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.st-dienst-naam { font-weight: 600; color: var(--ink-1); font-size: .95rem; }
+.st-dienst-per { font-size: .8rem; color: var(--ink-3); line-height: 1.35; }
+.st-dienst-knop { margin-top: .35rem; align-self: flex-start; font-size: .82rem; color: var(--ink-1); text-decoration: underline; text-underline-offset: .2em; }
+.st-dienst-knop:hover { text-decoration-thickness: 2px; }
+.st-dienst-kort { margin-top: .35rem; font-size: .8rem; color: var(--st-clay-tekst); }
+.st-dienst.is-uit .st-dienst-prijs, .st-dienst.is-uit .st-dienst-naam { color: var(--ink-3); }
+
+@media (max-width: 40.625em) {
+  .st-diensten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .st-dienst { padding: .8rem 0 .8rem 1rem; }
+  .st-dienst:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .st-credit-tel b { font-size: 1.8rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * DE PLANNINGSTAB — 20 september 2026
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ik wil dat de klant een soort visuele planning tab krijgt waar ze
+ * handmatig een order in kunnen plaatsen door op de datum te klikken."*
+ *
+ * Dezelfde kalender als bij het inplannen van één item, maar groter: hier staat
+ * de hele maand met wat er op elke dag ligt, dus een dag moet ruimte hebben
+ * voor een percentage én een naam. Vandaar één klasse erbij in plaats van een
+ * tweede kalender — de rest (de dagstaten, de balk, de gearceerde reserve)
+ * geldt onverkort.
+ */
+.st-kal-groot .st-kal-dag { min-height: 92px; gap: .25rem; }
+.st-kal-pct { font-family: var(--font-mono); font-stretch: 82%; font-size: .68rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.st-kal-dag.is-vol .st-kal-pct, .st-kal-dag.is-dicht .st-kal-pct { color: var(--st-clay-tekst); }
+.st-kal-item {
+  display: block; font-size: .7rem; line-height: 1.25; color: var(--ink-1);
+  background: var(--st-accent-tint); border-radius: var(--r-sm);
+  padding: .1rem .3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Een aanwijsbare dag in verzet-stand. Hij is een <a> en geen <button>, want
+   hij navigeert naar de bevestiging in plaats van iets te doen — en een knop
+   die navigeert is een knop waarvan je de bestemming niet ziet. */
+a.st-kal-dag.is-kies { cursor: pointer; border-color: var(--st-accent-lijn); }
+a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: var(--ink-1); }
+
+.st-kop-rij { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+
+/* De bevestiging vóór het verzetten. Geen venster maar een blok in de bladspiegel:
+   zonder script is er geen venster, en een vraag die je moet zoeken is geen vraag.
+   De klei-rand is dezelfde die elders een onomkeerbare stap markeert. */
+.st-bevestig {
+  display: flex; flex-direction: column; gap: .5rem;
+  padding: 1rem; border: 1px solid var(--st-clay-lijn, var(--line-strong));
+  border-radius: var(--r-md); background: var(--surface-2);
+}
+.st-bevestig-h { margin: 0; color: var(--ink-1); }
+.st-bevestig .st-meta { margin: 0; }
+
+.st-plan-lijsten { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.st-plan-open { list-style: none; margin: .4rem 0 0; padding: 0; display: flex; flex-direction: column; }
+.st-plan-open li { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; padding: .5rem 0; border-top: 1px solid var(--line); font-size: .92rem; color: var(--ink-2); }
+.st-plan-open li:first-child { border-top: 0; }
+.st-plan-open em { font-style: normal; color: var(--ink-3); }
+
+@media (max-width: 40.625em) {
+  .st-kal-groot .st-kal-dag { min-height: 68px; }
+  .st-kal-item { display: none; }
+}

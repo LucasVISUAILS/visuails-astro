@@ -374,7 +374,11 @@ console.log('\nde admin-kant is bedraad');
      lezen. Het staat in de markup en niet in script, want /admin laadt geen script. */
   ok('er is een veld dat een hele map post', /webkitdirectory/.test(ADMIN), true);
   ok('met de directory-terugval erbij', /webkitdirectory directory multiple/.test(ADMIN), true);
-  ok('en een knop om de mappen te downloaden', /\/scaffold">Mappen downloaden/.test(ADMIN), true);
+  /* De knop heet sinds 20 september alleen nog "Downloaden (.zip)": wát er
+     gedownload wordt, staat in het label van stap 1 erboven ("De lege mappen").
+     De toets hangt daarom aan het PAD en niet aan het opschrift — dat is
+     tenslotte wat er kapot kan gaan. */
+  ok('en een knop om de mappen te downloaden', /\/scaffold" *>/.test(ADMIN), true);
   /* Het losse veld blijft bestaan: een browser die webkitdirectory niet kent, en een
      enkel bestand dat je snel wil vervangen. */
   ok('het losse uploadveld blijft ook staan',

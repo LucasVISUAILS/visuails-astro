@@ -27,15 +27,31 @@
 // dit bestand delen is de belofte, niet de bewoording.
 
 /** @type {Record<'en'|'nl', { lines: string[], plain: string }>} */
+/* ── DE KOP ZEGT DE CATEGORIE, NIET HET PROJECT — 20 september 2026 ─────────
+   Hier stond "Jij uploadt. Wij leveren de campagne." Lucas: *"visuails is meer
+   dan dat … we maken niet alleen campagnes maar we zijn een managed full
+   content service voor fashion merken."*
+
+   Wat er misging met de oude kop is precies dat woord: "campagne" is één
+   project met een begin en een eind, en de dienst is een doorlopende
+   beeldvoorziening voor een hele catalogus. Een merk met tweehonderd producten
+   herkende zich er niet in.
+
+   DE NIEUWE NOEMT DE CATEGORIE EN DE BELOFTE IN ÉÉN ADEM. "Al je
+   productbeelden" zegt dat het om de hele collectie gaat en niet om één setje;
+   "Zonder shoot" zegt wat het vervangt. Vier woorden, en je weet wat je koopt.
+
+   `<em>` markeert het zinsdeel dat het accent draagt. Sinds vandaag is dat een
+   violette LETTER en geen violet vlak meer — zie `.hero-h1 em` in
+   src/styles/stijl22.css voor waarom. */
 export const TAGLINE = {
   en: {
-    // <em> markeert het woord dat gifgroen wordt. De kop rendert met set:html.
-    lines: ['You upload.', 'We deliver the <em>campaign</em>.'],
-    plain: 'You upload. We deliver the campaign.',
+    lines: ['All your <em>product imagery</em>.', 'Without a shoot.'],
+    plain: 'All your product imagery. Without a shoot.',
   },
   nl: {
-    lines: ['Jij uploadt.', 'Wij leveren de <em>campagne</em>.'],
-    plain: 'Jij uploadt. Wij leveren de campagne.',
+    lines: ['Al je <em>productbeelden</em>.', 'Zonder shoot.'],
+    plain: 'Al je productbeelden. Zonder shoot.',
   },
 };
 

@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await (await b.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+await p.goto('http://127.0.0.1:4399/nl/how-it-works/', { waitUntil: 'load' });
+await p.evaluate(() => document.fonts.ready);
+await p.waitForTimeout(500);
+const knop = await p.$('.nt-btn');
+await knop.scrollIntoViewIfNeeded(); await p.waitForTimeout(300);
+await knop.hover(); await p.waitForTimeout(600);
+const doos = await p.evaluate(() => { const e = document.querySelector('.nt-pop'); const r = e.getBoundingClientRect(); return { x: r.x - 40, y: r.y - 60, width: r.width + 90, height: r.height + 110 }; });
+await p.screenshot({ path: 'kladblok/na-notitie-licht.png', clip: doos });
+await b.close(); console.log('ok');

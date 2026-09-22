@@ -640,7 +640,16 @@ const UPLOAD = '/img/catalog-before.webp';
   }
   .fd-step:last-child::before { display: none; }
   .fd-step.is-done .fd-dot { background: var(--ink-2); box-shadow: inset 0 0 0 2px var(--ink-2); }
-  .fd-step.is-now .fd-dot { background: var(--accent); box-shadow: 0 0 0 3px rgb(210 224 74 / .22); }
+  /* ── DE HUIDIGE STAP IS EEN STATUS, GEEN ACTIE — 20 september 2026 ────────
+     Hier stond de accentkleur met een ring van 22% accent eromheen. Twee
+     schemaregels tegelijk: *"violet is alleen voor actie; alles wat een
+     toestand is gebruikt de statusset"*, en *"geen gloed in de accentkleur"* —
+     een ring van 22% violet om een stip is precies die gloed, en zo'n ring
+     verder omlaag in dit bestand al eerder weggehaald.
+
+     "Waar je nu staat" is een toestand, dus komt hij uit de statusset: de
+     werkkleur, en de ring wordt de rand die diezelfde set aanwijst. */
+  .fd-step.is-now .fd-dot { background: var(--st-work-ink); box-shadow: inset 0 0 0 2px var(--st-work-ink); }
   .fd-step.is-now { color: var(--ink); font-weight: 700; }
   /* Vier namen naast elkaar vullen op een telefoon de regel exact: "Ontvangen In
      productie Wordt nagekeken Geleverd" liep aan elkaar vast zonder één pixel

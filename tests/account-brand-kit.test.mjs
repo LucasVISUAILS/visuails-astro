@@ -72,10 +72,13 @@ const SUB_MONTHS = [
   { month: _vorig, granted: 12, used: 9, clips_granted: 2, clips_used: 0 },
   { month: _deze,  granted: 12, used: 2, clips_granted: 2, clips_used: 1 },
 ];
+/* ── CREDITS IN PLAATS VAN SLOTS PER SOORT — 19 september 2026 ──────────────
+   Twee rijen en niet drie, want er is één saldo. Met opzet een plan dat
+   doorschuift: dan tekent het scherm én de stand van deze maand én wat er van
+   vorige maand nog open staat, en raakt de fixture de code die dat doet. */
 const SUB_SLOTS = [
-  { month: _vorig, kind: 'complete',     granted: 12, used: 9 },
-  { month: _deze,  kind: 'complete',     granted: 12, used: 2 },
-  { month: _deze,  kind: 'video-motion', granted: 2,  used: 1 },
+  { month: _vorig, kind: 'credits', granted: 120, used: 90 },
+  { month: _deze,  kind: 'credits', granted: 120, used: 20 },
 ];
 const QUEUE = [
   { id: 91, position: 0, name: 'Winterjas, zwart', note: null, upload_batch: 'b-1', kind: 'complete', locked_at: `${_deze}-02 10:00:00`, created_at: `${_deze}-01` },
@@ -774,10 +777,17 @@ console.log('\nde staat van elke sectie');
     check(`${pad} levert zijn staat`, r.status === 200 && r.view && typeof r.view === 'object', r.status);
   }
   const plan = await get('/account/plan');
-  check('/account/plan telt zijn slots per soort', plan.view.geen === false && plan.view.saldo.slots.length === 2);
-  /* Sinds 19 september 2026: de gemaakte en vastgezette slots als kaders, de
-     vrije als één getal — twaalf plus-tegels lazen als twaalf uploadvakken. */
-  check('en telt de vrije slots als één getal naast de kaders', plan.view.saldo.slots[0].frames.length + plan.view.saldo.slots[0].vrij === 12 && plan.view.saldo.slots[0].vrij > 0);
+  check('/account/plan draagt één creditsaldo',
+    plan.view.geen === false && plan.view.saldo.credit.toegekend === 240 && plan.view.saldo.credit.saldo === 130);
+  /* De balk draagt zijn stand als een trap van vijf procent, want inline stijl
+     mag niet van het CSP-beleid — zie de noot bij pctStap in account.js. */
+  check('en de balk staat op een veelvoud van vijf procent',
+    plan.view.saldo.credit.pctStap % 5 === 0 && plan.view.saldo.credit.pctStap === 45);
+  /* De diensten staan als kaarten, met de prijs in credits erop. */
+  check('en er staat een kaart per dienst met zijn creditprijs',
+    plan.view.saldo.dienstKaarten.length >= 4
+    && plan.view.saldo.dienstKaarten.every((d) => d.credits > 0 && d.naam)
+    && plan.view.saldo.dienstKaarten.every((d) => d.value !== 'complete'));
   const lijst = await get('/account/plan?tab=bestellen');
   check('de besteltab draagt de lijst met een vastzetknop per item', lijst.view.nu === 'bestellen' && lijst.view.wachtrij.length === 2 && lijst.view.wachtrij.every((q) => ['lock', 'unlock'].includes(q.lockDo)));
   const { AMOUNT: BEDRAG, euro: euroBedrag } = await import('../src/data/pricing.js');

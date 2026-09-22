@@ -486,6 +486,60 @@ export async function onRequestPost({ request, env, waitUntil }) {
         if (!details[sleutel]) details[sleutel] = contextDefault();
       }
     }
+
+    /* ── EN PER PRODUCT — 22 SEPTEMBER 2026 ───────────────────────────────────
+     *
+     * Lucas: *"Ik denk dat ik ook de klant zijn productsoort wil laten kiezen
+     * (misschien met een knop om alvast op alle producten toe te passen maar
+     * hij kan het wel per product daarna aanpassen)."*
+     *
+     * Het type hierboven (`garment`) is sinds vandaag de keuze VOOR ALLES, en
+     * elk product mag ervan afwijken met `garment_p3`. De contextkeuzes gaan
+     * dezelfde kant op: `context_shoes_p3` geldt voor product 3 en wordt
+     * gecontroleerd tegen het type van product 3 — dat van de bestelling als
+     * er geen eigen type is. Dezelfde regels als hierboven, alleen per kaart:
+     * wat niet bij het type hoort gaat weg (met een logregel), wat geen keuze
+     * is wordt de standaard, en elke plek die WEL bestaat krijgt een besluit.
+     *
+     * Het aantal producten komt uit `products`, niet uit de sleutels: een post
+     * met `garment_p40` op een bestelling van drie is een gesleuteld formulier
+     * en die sleutel valt hier gewoon buiten de lus. */
+    {
+      const aantal = countOf(get('products')) || 0;
+      for (let n = 1; n <= aantal; n++) {
+        const tsleutel = `garment_p${n}`;
+        const eigen = String(details[tsleutel] || '').trim();
+        if (eigen && !isGarmentId(eigen)) {
+          console.warn(`[order] onbekend producttype op product ${n} genegeerd:`, eigen);
+          delete details[tsleutel];
+        }
+        /* Gelijk aan de bestelling is geen afwijking; dan hoeft hij er niet in. */
+        if (details[tsleutel] && details[tsleutel] === geldigType) delete details[tsleutel];
+        const typeVanProduct = details[tsleutel] ? String(details[tsleutel]) : geldigType;
+
+        for (const slot of CONTEXT_SLOT_IDS) {
+          const sleutel = `context_${slot}_p${n}`;
+          const waarde = String(details[sleutel] || '').trim();
+          const mag = Boolean(typeVanProduct) && contextAllowed(typeVanProduct, slot);
+          if (waarde && !mag) {
+            console.warn(`[order] contextstuk '${slot}' op product ${n} hoort niet bij type '${typeVanProduct || '—'}', genegeerd`);
+            delete details[sleutel];
+            continue;
+          }
+          if (!mag) continue;
+          if (waarde && waarde !== CONTEXT_OURS && waarde !== 'own') {
+            console.warn(`[order] contextwaarde '${waarde}' op product ${n} is geen keuze, teruggezet op de standaard`);
+            details[sleutel] = contextDefault();
+          }
+          if (!details[sleutel]) details[sleutel] = contextDefault();
+        }
+      }
+      /* Sleutels boven het aantal: weg. Zie de noot hierboven. */
+      for (const k of Object.keys(details)) {
+        const m = /^(?:garment|context_[a-z]+)_p(\d+)$/.exec(k);
+        if (m && Number(m[1]) > aantal) delete details[k];
+      }
+    }
   }
 
   /*

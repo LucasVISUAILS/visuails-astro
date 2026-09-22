@@ -43,7 +43,7 @@ import {
    een component niet lezen — zie de kop boven serviceFaqs(). */
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
-import Disclose from './Disclose.astro';
+import Vragen from './Vragen.astro';
 import { styles as stylesEn } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
 
@@ -207,7 +207,6 @@ const COPY = {
     rangeCta: 'See the full gallery',
     exampleAlt: (n: string) => `${n} lifestyle example`,
     reviewNote: reviewClaim('unattended', 'en'),
-    faqH: 'Lifestyle questions, answered',
     faqs: serviceFaqs('lifestyle', 'en'),
     ctaH: 'Put your product <br>in a scene that sells.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
@@ -293,7 +292,6 @@ const COPY = {
     rangeCta: 'Bekijk de volledige galerij',
     exampleAlt: (n: string) => `${n} lifestyle-voorbeeld`,
     reviewNote: reviewClaim('unattended', 'nl'),
-    faqH: 'Lifestyle-vragen, beantwoord',
     faqs: serviceFaqs('lifestyle', 'nl'),
     ctaH: 'Zet je product <br>in een scène die verkoopt.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
@@ -313,7 +311,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
    van een telefoonhemel. Sinds de opmaakronde van 4 september is dat geen gloed
    meer achter de foto's maar een zwakke weerkaatsing eronder plus het streepje
    onder de naam — zie StyleRows.astro. */
-const TINT: Record<string, string> = { dunes: '#c9a06a', flash: '#9fb3c8', glow: '#a86bd6', 'phone-made': '#5f7fa8', custom: '#D2E04A' };
+const TINT: Record<string, string> = { dunes: '#c9a06a', flash: '#9fb3c8', glow: '#a86bd6', 'phone-made': '#5f7fa8', custom: '#c8c9cd' };
 const naarRij = (s: (typeof moods)[number]) => ({
   slug: s.slug,
   name: s.name,
@@ -533,15 +531,7 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
       in queueNote in de opening, het hele blok blijft op /pricing. */}
 
   {/* ── 9 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
-  <section class="paneel" aria-labelledby="ls-faq">
-    <header class="paneel-kop">
-      <h2 id="ls-faq" class="hoog hoog-2">{c.faqH}</h2>
-    </header>
-    <div class="ls-vragen">
-      {c.faqs.slice(0, 5).map((f) => <Disclose summary={f.q} tone="panel"><p>{f.a}</p></Disclose>)}
-    </div>
-    {c.faqs.length > 5 && <p class="ls-vragen-meer"><a class="pijl" href={lp('/faq')}>{nl ? `Nog ${c.faqs.length - 5} vragen over lifestyle` : `${c.faqs.length - 5} more lifestyle questions`}</a></p>}
-  </section>
+  <Vragen lang={lang} id="ls-faq" dienst="lifestyle" faqs={c.faqs} />
 
   {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="ls-slot">
@@ -643,11 +633,10 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
   .ls-stappen-check .paneel-kop { margin-bottom: .6rem; }
   .ls-stappen-check .ls-stappen li { grid-template-columns: auto minmax(0, 1fr); }
   .ls-stappen-check .ls-stappen li .lopend { grid-column: 2; }
-  .ls-vragen-meer { margin-top: 1rem; }
   @media (max-width: 760px) { .ls-stappen-check { grid-template-columns: minmax(0, 1fr); } }
   .ls-check { display: grid; gap: .6rem; margin-top: 1.4rem; }
   .ls-check li { position: relative; padding-left: 1.4rem; color: var(--inkt-2); }
-  .ls-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, #9EB42F); }
+  .ls-check li::before { content: "✓"; position: absolute; left: 0; color: var(--gloed, currentColor); }
   /* ── HORIZONTAAL, NIET VERTICAAL — 9 september 2026 ───────────────────────
      Lucas: *"Ik wou ook dat de afbeeldingen in 1 scherm paste maar dat is nog
      steeds niet zo. Dit soort afbeeldingen werken niet zo fijn op een website.
@@ -689,7 +678,6 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
   .ls-galerij-voet { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
   .ls-galerij-voet .pijl { color: var(--geel-letter); }
 
-  .ls-vragen { display: grid; gap: .7rem; }
 
   @media (max-width: 900px) {
     .ls-open, .ls-twee-licht { grid-template-columns: 1fr; }

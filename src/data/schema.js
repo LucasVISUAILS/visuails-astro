@@ -317,7 +317,13 @@ function organizationNode() {
 // NOTHING HERE IS A NUMBER, and nothing here is a delivery promise.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const COMPLETE_NAME = { en: 'Complete bundle', nl: 'Complete bundel' };
+/* ── DE NAAM IS DE SOM VAN ZIJN DELEN — 20 september 2026 ──────────────────
+   Lucas: *"complete is geen product meer op de website."* Hij bestaat nog wel
+   als TARIEF — allebei de diensten op hetzelfde product kost minder dan los,
+   omdat één intake, één look en één controle over twee sets worden verdeeld.
+   Wat verdwijnt is de naam van een derde product dat je zou kunnen kiezen.
+   De sleutel `complete` blijft: daar hangen bestaande bestellingen aan. */
+const COMPLETE_NAME = { en: 'Catalog + Lifestyle', nl: 'Catalog + Lifestyle' };
 
 const COMPLETE_LEAD = {
   en: 'A catalog set and a lifestyle carousel for every product in the order.',

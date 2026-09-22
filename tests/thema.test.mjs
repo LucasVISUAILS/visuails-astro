@@ -97,6 +97,14 @@ console.log('\nelk token met een kleur is bewust wel of niet omgekeerd');
    *   accent-on / accent-ink   de letter op een lime vlak. Zie hierboven.
    *   accent-soft              een limetint van 14%; nergens in gebruik. Blijft
    *                            staan omdat hij in de andere stylesheets bestaat.
+   *   panel / on-panel         het donkere paneel — de voet, de cta-band, de
+   *                            bovenbalk. KLEURENSCHEMA.md (20 september 2026)
+   *                            zet deze twee in BEIDE standen op #000000 en
+   *                            #F2F3F5: een zwarte band is in de donkere stand
+   *                            nog steeds een zwarte band, en de letter erop
+   *                            verandert dus ook niet. Zelfde soort uitzondering
+   *                            als teal en clay hierboven: een vulling, geen
+   *                            grond.
    */
   const mag = {
     '--ink-850': '.btn-dark blijft donker',
@@ -110,6 +118,8 @@ console.log('\nelk token met een kleur is bewust wel of niet omgekeerd');
     '--accent-on': 'de letter op een lime vlak',
     '--accent-ink': 'de letter op een lime vlak',
     '--accent-soft': 'ongebruikt, bestaat elders wel',
+    '--panel': 'de zwarte band, gelijk in beide standen (KLEURENSCHEMA.md)',
+    '--on-panel': 'de letter op die band, gelijk in beide standen',
   };
   const vergeten = Object.keys(rootv)
     .filter((k) => isKleur(rootv[k]) && !lichtv.has(k) && !(k in mag));

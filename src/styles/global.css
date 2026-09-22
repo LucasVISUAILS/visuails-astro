@@ -98,55 +98,67 @@
      plaats van schaduwen, en rechte hoeken op alles behalve de knoppen. De
      warme tint die hier eerst stond (#FAFAF8, olijf in de inkt) was precies het
      "vriendelijke". */
-  --bg-0:        #F5F5F5;   /* page ground — Komma's lichte grond (gemeten)  */
-  --bg-raise:    #EDEDED;   /* a band that lifts off the page               */
-  --surface:     #FFFFFF;   /* tiles and panels                             */
-  /* ── DE GROND VAN EEN ZWEVEND PANEEL — 18 augustus 2026 ──────────────────
-     Dezelfde waarde als --surface en met opzet een EIGEN naam. De koptekst
-     heeft een scope voor "balk boven een foto" die --surface op een scrim van
-     44% zet (Layout.astro), bedoeld voor de taalchip. Het uitklapmenu erfde die
-     en werd doorschijnend: gemeten rgba(8,9,11,0.44), met de hero-kop dwars door
-     het menu heen leesbaar. Dat gold al voor het bestaande menu en viel pas op
-     toen er een tweede, breder paneel bij kwam.
-     Een paneel dat over onbekende inhoud zweeft, is de ene plek die ondoorzichtig
-     MOET zijn. Vandaar een token dat door geen enkele scope wordt herschreven. */
-  --menu-surface: #FFFFFF;
-  --surface-2:   #EAEAEA;   /* an inset, or a tile on a tile                */
-  /* Het glas: de donkere panelen op de lichte grond. Drie treden, zoals de
-     grond er drie had, plus de kanalen voor een scrim. Gemeten: wit op
-     --glass 16,96:1. */
-  /* Sectie 21: nagemeten op ovyonlabs.com/works/komma (schermafdruk van Lucas,
-     5 september 2026): het donkere vlak is #111111 — geen zwart, en ook niet
-     het #212121 dat hier even stond. De lichte grond daar is #F5F5F5, met de
-     posters en foto's als witte kaarten (#FFFFFF) erop. Die drie zijn het. */
-  --glass:       #111111;
-  --glass-2:     #1A1A1A;
-  --glass-3:     #242424;
+  /* ═══════════════════════════════════════════════════════════════════════
+     DE GROND — 20 SEPTEMBER 2026, UIT KLEURENSCHEMA.md
+     ═══════════════════════════════════════════════════════════════════════
+     KLEURENSCHEMA.md is vanaf vandaag het ene bestand dat de kleuren draagt.
+     Wat hieronder staat is daaruit overgenomen; wijkt iets af, dan volgt dit
+     bestand dát bestand en niet andersom.
 
-  /* ---- ink: white at four alphas ---------------------------------------
-     Alphas rather than solids so the ramp composites correctly on any of the
-     four grounds AND on a photograph. Measured on --surface-2, the lightest
-     ground any of them lands on, so these are worst-case numbers:
-       --ink    #FFFFFF  15.92:1
-       --ink-2  .80      10.62:1
-       --ink-3  .66       7.67:1
-       --ink-4  .52       5.30:1
-     All four clear 4.5:1, which is the point of stopping at four. */
-  /* Gemeten op --bg-0 (#FAFAF8): 17,98 / 9,22 / 5,14 — en --ink-4 is een
-     lijnwaarde, geen tekst. Een zweem olijf in de inkt, zodat hij bij het geel
-     hoort en niet als een tweede, koudere kleur leest. */
-  --ink-1:       #0A0A0A;
-  --ink-2:       #454545;
-  /* 7 september 2026: van #6E6E6E naar #686868. Op wit haalde hij 5,3:1 en dat
-     was genoeg; op --bg-raise (#EDEDED), waar de kleine bijschriften op /plans
-     staan, kwam hij uit op 4,36:1 en dat is nét onder de eis van 4,5. Deze
-     waarde haalt 4,53:1 op #EDEDED en 5,6:1 op wit, en scheelt met het oog
-     niets. Gevonden met de leesbaarheidsmeting, niet met het oog. */
-  --ink-3:       #686868;   /* 5,6:1 op wit · 4,53:1 op #EDEDED */
-  --ink-4:       rgb(10 10 10 / 0.42);
-  --line:        #DFDFDF;
-  --line-strong: #BDBDBD;
-  --line-ui:     rgb(10 10 10 / 0.45);
+     WAT ER VERANDERT TEN OPZICHTE VAN DE KOMMA-PALET HIERBOVEN:
+       · de grond is KOEL (#F2F3F5) in plaats van neutraal (#F5F5F5). Een warme
+         of gebroken-witte grond leest naast violet als een beautymerk;
+       · de inkt is PUUR ZWART en geen #0A0A0A, en de lettertreden zijn
+         alfastappen van diezelfde inkt (66 % en 56 %) in plaats van drie losse
+         grijzen. 56 % en niet 45 %: op 45 % haalt microcopy 3,30:1 en dat is
+         onder de grens;
+       · het donkere paneel is zwart in plaats van #111111.
+
+     DE OUDE NAMEN BLIJVEN BESTAAN als alias. Ze staan in zestig componenten en
+     vijftien stylesheets; ze hier laten wijzen naar de nieuwe waarden wisselt
+     de kleur op één plek in plaats van op duizend, en houdt de geschiedenis
+     leesbaar. Wat NIET blijft is een oude WAARDE: elke alias hieronder wijst
+     naar een token uit het schema. */
+  --paper:       #F2F3F5;
+  --surface:     #E4E7EC;
+  --sunken:      #DADEE5;
+  --ink:         #000000;
+  --ink-2:       rgb(0 0 0 / .66);   /* lopende tekst · 6,95:1 */
+  --ink-3:       rgb(0 0 0 / .56);   /* labels en microcopy · 4,81:1 — de laatste trede die letter mag zijn */
+  --line:        rgb(0 0 0 / .20);
+  --line-soft:   rgb(0 0 0 / .10);
+  --panel:       #000000;
+  --on-panel:    #F2F3F5;
+
+  /* ── DRIE AANVULLINGEN OP HET SCHEMA, EN WAAROM ZE ER ZIJN ───────────────
+     Het schema kent twee lijnen en drie gronden. Deze codebase heeft er op
+     drie plekken één meer nodig, en het leek me eerlijker die hier te noemen
+     dan ze stilletjes uit een bestaande waarde te lenen:
+
+       --line-strong  een lijn die STERKER moet lezen dan een scheiding: de
+                      stippellijn om "jouw foto" in het stijlvel, de rand om een
+                      leeg uploadvlak, de omlijning van een uitgeschakelde knop.
+                      Op --line (20 %) verdwijnen die tegen de kaartrand ernaast.
+       --bg-raise     een band die van de pagina AF ligt zonder een kaart te
+                      zijn (de lopende band, de maatlijn). Gelijk aan --surface;
+                      hij houdt zijn eigen naam omdat zijn rol anders is en de
+                      volgende wijziging ze uit elkaar kan trekken.
+       --menu-surface een paneel dat over ONBEKENDE inhoud zweeft en dus
+                      ondoorzichtig MOET zijn — zie de noot die hier stond. Geen
+                      alfa, geen scope die hem kan herschrijven. */
+  --line-strong: rgb(0 0 0 / .34);
+  --bg-raise:    var(--surface);
+  --menu-surface: #FFFFFF;
+
+  /* ── DE OUDE NAMEN, NU ALLEMAAL ALIAS ────────────────────────────────── */
+  --bg-0:        var(--paper);
+  --surface-2:   var(--sunken);
+  --glass:       var(--panel);
+  --glass-2:     #0C0D10;
+  --glass-3:     #14161A;
+  --ink-1:       var(--ink);
+  --ink-4:       var(--line-strong);
+  --line-ui:     rgb(0 0 0 / .45);
 
   /* ---- the accent — #C6F100 -------------------------------------------
      Was #90BEFF, a light blue, until August 2026. Lucas: "ik wil denk ik af
@@ -193,15 +205,33 @@
      UI-lime (#E4F474) in, 13,7:1 met zwarte letter; #B8CC46 als hover en meter;
      #E4F474 als letter op inkt (in de .on-ink-scope); #9EB42F als gloeirand.
      Verving #C8F206 (verzadigder en groener dan alles in die beelden). */
-  --accent:      #D2E04A;
-  --accent-ink:  #0A0A0A;   /* what sits ON an accent fill                  */
-  --accent-dim:  #B8CC46;   /* hover / pressed, one step down — de ring     */
-  /* Het accent als LETTER op licht bestaat niet meer: bij Komma is het geel
-     materiaal en vulling, nooit tekst. Waar een regel het accent als tekst
-     vraagt (een woord in een kop, een link), komt gewoon inkt — dat is wat de
-     kop strak maakt. Op glas (de .on-ink-scope) is het wél het geel. */
-  --accent-text: var(--ink-1);
-  --glow:        #9EB42F;   /* de gloed om een glaspaneel — Komma's gloeirand  */
+  /* ═══════════════════════════════════════════════════════════════════════
+     HET VIOLET — ÉÉN FAMILIE, UIT KLEURENSCHEMA.md
+     ═══════════════════════════════════════════════════════════════════════
+     Anders dan het geel hierboven is het violet WÉL een letterkleur op licht.
+     Waar een regel vroeger "het accent als tekst" terug moest zetten naar inkt
+     (zie --accent-text, dat letterlijk var(--ink-1) was), mag het nu gewoon
+     violet zijn.
+
+     EN ANDERS DAN HET GEEL DRAAGT HET WITTE LETTERS. `--accent-ink` was
+     bijna-zwart, want zwart op lime is 15:1 en wit op lime 1,91:1. Op violet is
+     het omgekeerd: wit haalt 7,16:1 en zwart 2,93:1. Die ene omkering raakt
+     elke knop op de site, en hij gaat hier — niet per knop. */
+  --accent:          #4A1FFF;
+  --on-accent:       #FFFFFF;
+  --accent-text:     #3D17D6;   /* het violet als LETTER op de grond · 8,25:1 */
+  --accent-tint:     #E4DFFF;   /* zacht accentvlak — hoogstens één per scherm */
+  --on-accent-tint:  #2A0E8F;   /* · 10,46:1 */
+  /* Eén trede donkerder voor hover en ingedrukt. Staat niet in het schema
+     omdat het schema over kleuren gaat en niet over toestanden; hij is de
+     lettervariant, zodat er geen zesde violet bij komt. */
+  --accent-dim:      var(--accent-text);
+  --accent-ink:      var(--on-accent);
+  /* De gloed bestaat niet meer — regel "Nooit 2" in het schema: geen gloed en
+     geen schaduw in de accentkleur. De naam blijft even staan zodat een
+     vergeten verwijzing een kleur krijgt en geen leegte; hij wijst naar de
+     lijn, wat het enige is wat diepte nog mag maken. */
+  --glow:            var(--line);
 
   /* ---- decorative gradients ---------------------------------------------
      Panels and one or two tiles. NEVER under body copy: measured, every stop
@@ -219,7 +249,7 @@
      the near-black that .on-bright writes over an inverted ramp, it has eleven
      readers, and renaming it is churn. Read it as "the ink a bright surface
      uses". */
-  --grad-ink: #0A0A0A;
+  --grad-ink: #000000;
 
   /* ---- the bright tile fills --------------------------------------------
      Lucas: *"de tegels (met bijvoorbeeld headers en uitleg) vellere kleuren"*,
@@ -281,11 +311,32 @@
      cannot reach a hashed build asset — see each file's own header on why the
      duplication is honest rather than accidental. All four must move together
      or the dashboard stops matching the site it belongs to. */
-  /* Sectie 20: rechte hoeken op vlakken en kaarten — dat is wat Komma strak
-     maakt; alleen knoppen en chips blijven een pil (--r-pill). */
-  --r-lg: 4px;
-  --r-md: 4px;
-  --r-sm: 2px;
+  /* ── DRIE VORMEN, UIT KLEURENSCHEMA.md — 20 september 2026 ───────────────
+     Het schema kent er precies drie, en dit zijn ze:
+
+       --r-pill  999px   knoppen, chips, statuslabels, eenregelige velden
+       --r-card   12px   kaarten, panelen, beelden, modale vensters
+       --r-field  10px   tekstvakken, selects, uploadvlakken
+
+     Dat is een omkering van sectie 20, die juist RECHTE hoeken koos ("dat is
+     wat Komma strak maakt"). Die keuze hoorde bij het Komma-palet; het schema
+     van vandaag vraagt een zachte, vaste hoek op alles wat een vlak is. Twaalf
+     en tien liggen zo dicht bij elkaar dat het verschil alleen de FUNCTIE
+     markeert en niet het oog — precies wat een vormtoken hoort te doen.
+
+     DE OUDE NAMEN BLIJVEN als alias, om dezelfde reden als bij de kleuren: ze
+     staan in zestig componenten. --r-sm wijst naar --r-field en niet naar iets
+     kleiners; het schema kent geen vierde trede, en een staal van 34 px met
+     10 px ronding leest nog steeds als een staal.
+
+     VIER BESTANDEN DRAGEN DEZE SCHAAL — global.css, public/account.css,
+     public/portal.css en public/admin.css. Alle vier moeten mee, anders houdt
+     het dashboard op bij de site te horen. */
+  --r-card: 12px;
+  --r-field: 10px;
+  --r-lg: var(--r-card);
+  --r-md: var(--r-field);
+  --r-sm: var(--r-field);
 
   /* --r-pill is not a fourth step on the scale, it is the absence of one: a
      radius large enough that the shape is decided by the element's height. It
@@ -312,7 +363,17 @@
   --bg-deep:     var(--glass);
   /* --surface-3 (an alias of --surface-2) was here — nothing var()'d it. */
 
-  --ink:         var(--ink-1);
+  /* ── --ink STAAT HIERBOVEN AL — 20 september 2026 ─────────────────────
+     Hier stond `--ink: var(--ink-1)`. Sinds --ink zelf een token uit het
+     schema is en --ink-1 daar de ALIAS van, maakten die twee samen een kring:
+     --ink wees naar --ink-1 en --ink-1 naar --ink. Een kring is voor de
+     browser een ongeldige waarde, en dan valt de eigenschap terug op wat hij
+     erft — waardoor de kop van de voorpagina wit op wit kwam te staan en er
+     letterlijk niets meer stond.
+
+     Niet te zien op een schermafdruk zonder te meten, want je ziet niets staan
+     waar je niets verwacht. Dezelfde blinde vlek als de noot bij .on-dark
+     hieronder beschrijft, nu in de tokens zelf. */
   /* --ink-900 is the one legacy name that is NOT an ink. In harbor it was the
      darkest step of the ink ramp AND, because the two happened to be the same
      colour, the token every dark section used as its GROUND: .on-ink, the
@@ -337,12 +398,15 @@
      A gradient stop cannot take a colour token and apply its own alpha, so
      what is tokenised is the CHANNELS; every scrim reads
      `rgb(var(--scrim) / a)` and the whole family moves with the palette. */
-  --scrim:            17 17 17;
+  /* Zwart sinds 20 september: het donkere paneel is --panel (#000000) en een
+     sluier eroverheen hoort dezelfde inkt te zijn. */
+  --scrim:            0 0 0;
 
-  --paper:            var(--bg-0);
+  /* --paper staat hierboven al als eigen token uit het schema; hier alleen de
+     twee treden eromheen. */
   --paper-2:          var(--bg-raise);
   --paper-lift:       var(--surface);
-  --paper-on-dark:    #FFFFFF;
+  --paper-on-dark:    var(--on-panel);
   --paper-soft-on-dark:  rgb(255 255 255 / 0.80);
   --paper-muted-on-dark: rgb(255 255 255 / 0.66);
 
@@ -374,19 +438,60 @@
      variant of "go" rather than as its opposite. This one sits clearly in
      orange. 8.43:1 on the page ground and 7.44:1 on the raised surface, the
      worst ground it lands on, so it is safe as text and not only as a border. */
-  --clay:        #E9963B;
-  --clay-text:   #8A4F06;   /* klei als tekst op licht: 5,7:1                */
-  --mist-clay:   var(--bg-raise);
+  /* ── DE AANDACHTSKLEUR IS DE REVISIE-INKT GEWORDEN — 20 september 2026 ──
+     De noot hierboven koos #E9963B omdat amber tegen een GEELGROEN accent
+     duidelijk het tegenovergestelde van "go" leest. Dat argument hoort bij het
+     lime; naast violet is dat geen vraag meer.
+
+     Wat wél blijft: er is één aandachtskleur en niet twee. Hij is nu dezelfde
+     als de revisiestand in de statusset (zie hieronder), want dat is wat "let
+     op" op dit product betekent — er moet iets terug. Licht: #8A4D06 als
+     letter op #F6E7D1. Donker: #E9963B, precies de oude waarde. */
+  --clay:        var(--st-rev-ink);
+  --clay-text:   var(--st-rev-ink);
+  --mist-clay:   var(--st-rev-fill);
   --mist-stone:  var(--bg-raise);
 
-  --signal:      var(--accent);
-  --signal-ink:  var(--accent-text);
-  --warn:        var(--clay);
-  --warn-ink:    var(--clay);
-  --verify:      var(--accent);
-  --verify-ink:  var(--accent-text);
-  --flag:        var(--clay);
-  --flag-ink:    var(--clay-text);
+  /* ── VIER ROLNAMEN DIE NU NAAR DE STATUSSET WIJZEN ──────────────────────
+     Regel "Altijd 2" in het schema: violet is alleen voor ACTIE, alles wat een
+     TOESTAND is gebruikt de statusset, en die twee lopen nooit door elkaar.
+     Deze vier namen zijn toestanden en stonden op het accent. */
+  --signal:      var(--st-work-fill);
+  --signal-ink:  var(--st-work-ink);
+  --warn:        var(--st-rev-fill);
+  --warn-ink:    var(--st-rev-ink);
+  --verify:      var(--st-done-fill);
+  --verify-ink:  var(--st-done-ink);
+  --flag:        var(--st-rev-fill);
+  --flag-ink:    var(--st-rev-ink);
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DE STATUSSET — VIJF TOESTANDEN, UIT KLEURENSCHEMA.md
+     ═══════════════════════════════════════════════════════════════════════
+     Nieuw op 20 september 2026. Er bestond geen systeem voor bestelstatussen:
+     elk scherm had zijn eigen kleur, en site, Studio, klantportaal en admin
+     zeiden alle vier iets anders over dezelfde bestelling.
+
+     HET GELUKTE PAD LOOPT VOLLER naarmate de bestelling vordert: ontvangen is
+     alleen een omlijning, in productie krijgt een lichte tint, geleverd is
+     massief en diep. Omdat de reeks tegelijk van licht naar donker loopt, werkt
+     hij ook in grijswaarden en voor wie kleurenblind is — de vulling zegt
+     hetzelfde als de kleur.
+
+     DE TWEE UITZONDERINGEN verlaten de violetfamilie en blijven altijd getint,
+     nooit massief. Massief is gereserveerd voor "geleverd".
+
+     GEANNULEERD IS GRIJS EN NIET ROOD. Een geannuleerde bestelling is niet
+     gevaarlijk, hij is dood; de afwezigheid van kleur zegt dat preciezer.
+
+     De namen zijn neutraal gehouden zodat ze ook op facturen, abonnementen en
+     in admin kloppen — zie de tabel in KLEURENSCHEMA.md voor welke waarde waar
+     op slaat. */
+  --st-wait-fill: transparent;  --st-wait-edge: #7C8096;              --st-wait-ink: #4A4E6B;
+  --st-work-fill: #E4DFFF;      --st-work-edge: rgb(61 23 214 / .30);  --st-work-ink: #3D17D6;
+  --st-done-fill: #1F0B66;      --st-done-edge: #1F0B66;               --st-done-ink: #FFFFFF;
+  --st-rev-fill:  #F6E7D1;      --st-rev-edge:  rgb(138 77 6 / .30);   --st-rev-ink:  #8A4D06;
+  --st-can-fill:  #E4E7EC;      --st-can-edge:  #83868A;               --st-can-ink:  #3E4145;
 
   /* THE LOGOTYPE IS THE ACCENT NOW, August 2026. It was --ink-1 (flat white)
      for as long as the mark has been an SVG, which was the right value while
@@ -410,7 +515,11 @@
      var()'d it, in any of the three, so all three declarations are gone. */
   --accent-word: var(--accent-text);
   --accent-bright: var(--accent-text);   /* als tekst gebruikt, dus de tekstvariant */
-  --accent-soft: rgb(210 224 74 / 0.18);
+  /* Was rgb(210 224 74 / .18) — lime op 18 %. Regel "Nooit 3": geen lavendel
+     vlakken als achtergrond van een sectie of kaart; de tint is voor een
+     statuslabel. Wat dit token nog doet is een zachte VULLING markeren, en die
+     hoort neutraal te zijn. */
+  --accent-soft: var(--surface);
   --accent-line: var(--line-strong);
   --focus-ring:  var(--ink-1);
 
@@ -421,7 +530,7 @@
   --btn-2nd-fill-hover:    #F0F0F0;
   --btn-2nd-ink:           var(--ink-1);
   --btn-2nd-border:        #C2C2C2;
-  --btn-2nd-border-hover:  #0A0A0A;
+  --btn-2nd-border-hover:  #000000;
 
   --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%230A0A0A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
@@ -458,8 +567,8 @@
          vierkante rondingen, breedte 50–150%. Technischer dan Hubot Sans en
          dichter bij de futuristische snit van de nieuwe voorpagina. Stond al
          in dit bestand als accentletter; hij draagt nu de hele koppenrij.
-       Instrument Sans (Rodrigo Fuenzalida & Jordan Egstad, OFL) — de lopende
-         tekst en de UI. Rustige neo-grotesk, breedte 75–100%.
+       Figtree (Erik Kennedy, OFL) — de lopende tekst en de UI. Zie de noot
+         hieronder: hij verving Instrument Sans op 21 september 2026.
        Martian Mono (Evil Martians, OFL) — de labels. Een echte machineletter,
          breedte 75–112,5%. Hij is breder dan Sometype Mono, dus overal waar
          --font-mono wordt gebruikt staat `font-stretch: 82%` ernaast; dan neemt
@@ -467,14 +576,49 @@
 
      Alle drie zelf gehost via @fontsource-variable — geen enkele verbinding met
      een lettertypeserver, net als hiervoor. */
+  /* De hoogte van de topbalk, als token omdat drie plekken hem nodig hebben:
+     de opening die eronderdoor loopt (stijl22.css), de ankers die er niet
+     achter mogen verdwijnen (`scroll-margin-top`), en de lade op mobiel.
+     Nagemeten op 390, 600, 768, 1024, 1440 en 1920 pixels: overal 76. */
+  --kop-h: 76px;
   --font-heading: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
   --font-display: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
-  --font-body: "Instrument Sans Variable", "Helvetica Neue", Arial, sans-serif;
+  /* ── DE TEKSTLETTER IS FIGTREE — 21 september 2026 ────────────────────────
+     Lucas stuurde het woord "Satoshi" gezet in Satoshi: *"iets gratis als
+     Satoshi maar niet Satoshi want ik wil niet de bestanden in de map zetten,
+     zoek naar een goed alternatief."*
+
+     Dat is een terechte eis en niet alleen gemak. Satoshi staat op Fontshare
+     en niet op npm, dus hij moest met de hand in `public/fonts/satoshi/`
+     worden gelegd — een schakelaar die alleen werkt zolang iemand eraan denkt,
+     en die op 8 september de hele site op 500 zette zodra er voor het eerst
+     een bestand in die map lag. Die hele tak is vandaag weg (zie de noot in
+     Layout.astro).
+
+     ── WAAROM FIGTREE ─────────────────────────────────────────────────────
+     Vier kandidaten naast elkaar gezet in `kladblok/fontproef3/`, allemaal
+     variabel, open source en op npm — dus zelf gehost zoals de rest, zonder
+     één verbinding naar buiten:
+
+       Figtree            geometrische grotesk, hoge x-hoogte, ruime woordafstand
+       Onest              dichtbij, maar neutraler en technischer van toon
+       Plus Jakarta Sans  vormen kloppen, woordafstand te krap in lopende tekst
+       Schibsted Grotesk  meer Helvetica dan Satoshi, en `tabular-nums` zet een
+                          gat om de komma: "€ 79 , 95" op elke prijs
+
+     Figtree is van de vier het dichtst bij wat Satoshi doet — dezelfde ronde,
+     iets vierkante vormen en dezelfde warmte — en hij is de leesbaarste van de
+     vier op de maten die deze site gebruikt: de hoge x-hoogte en de open
+     binnenvormen zijn precies wat de ondergrens van 11,5px nodig heeft.
+
+     Geen breedte-as, anders dan Instrument Sans. Dat kost niets: die as stond
+     overal op 100% (zie --font-merk hieronder) en werd nergens gebruikt. */
+  --font-body: "Figtree Variable", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
   /* De merkletter: Anybody op zijn breedste stand (font-stretch 125%) — voor
-     de merknaam in een labelregel. De koppen staan op 118%, en de tekst
-     (Instrument Sans) heeft ook een breedte-as maar blijft op 100%: twee
-     breedtes in één alinea leest als twee lettertypes. */
+     de merknaam in een labelregel. De koppen staan op 118%; de tekstletter
+     heeft geen breedte-as en hoeft die ook niet te hebben — twee breedtes in
+     één alinea leest als twee lettertypes. */
   --font-merk: "Anybody Variable", "Helvetica Neue", Arial, sans-serif;
   --stretch-merk: 125%;
   /* Het merkteken, ook voor CSS. Bron: MERKTEKEN in src/data/brand.js. */
@@ -1127,9 +1271,29 @@ body.studio.on-ink {
      Elke rol die naar een andere rol wijst, moet in deze lijst dus OPNIEUW
      gezet worden en niet alleen zijn doel. Dat geldt hier voor --flag-ink en
      --warn-ink; de rest van deze lijst deed dat al. */
-  --clay-text:   var(--clay);
-  --flag-ink:    var(--clay);
-  --warn-ink:    var(--clay);
+  /* ── EN SINDS 20 SEPTEMBER KOMT DIE KLEUR UIT DE STATUSSET ──────────────
+     De redenering hierboven klopt nog woord voor woord; alleen de bron is
+     verhuisd. De amberkleur op donker is `--st-rev-ink` in de donkere modus
+     (#E9963B, precies de waarde die hier stond), en de hele statusset kantelt
+     mee in deze scope — zie het blok eronder. De val blijft dezelfde: elke rol
+     die naar een andere rol wijst, moet hier OPNIEUW gezet worden. */
+  --st-wait-fill: transparent;  --st-wait-edge: #5B5F7A;               --st-wait-ink: #A7ABC7;
+  --st-work-fill: #1E1840;      --st-work-edge: rgb(166 148 255 / .34);  --st-work-ink: #A694FF;
+  --st-done-fill: #A694FF;      --st-done-edge: #A694FF;                --st-done-ink: #000000;
+  --st-rev-fill:  #2B1D0A;      --st-rev-edge:  rgb(233 150 59 / .34);   --st-rev-ink:  #E9963B;
+  --st-can-fill:  #1B1E23;      --st-can-edge:  #5C6066;                --st-can-ink:  #A0A4AA;
+
+  --clay:        var(--st-rev-ink);
+  --clay-text:   var(--st-rev-ink);
+  --mist-clay:   var(--st-rev-fill);
+  --flag:        var(--st-rev-fill);
+  --flag-ink:    var(--st-rev-ink);
+  --warn:        var(--st-rev-fill);
+  --warn-ink:    var(--st-rev-ink);
+  --signal:      var(--st-work-fill);
+  --signal-ink:  var(--st-work-ink);
+  --verify:      var(--st-done-fill);
+  --verify-ink:  var(--st-done-ink);
 
   /* The primary action does NOT flip on a dark ground: one accent, one primary
      button, sitewide. What DID have to change here is the label on it.
@@ -1139,14 +1303,25 @@ body.studio.on-ink {
      .convbar opts into this scope by name. The label is the ground, in every
      scope, with no exception — which is why --accent-on and --accent-ink are
      now the same value everywhere and this block no longer overrides them. */
-  --accent:        var(--teal);
   --accent-on:     var(--accent-ink);
-  /* Als LETTER op inkt is het geel bij Komma lichter dan als vulling: de
-     mono-regel "FIBER SYNC" op de zwarte pil meet #E4F474 (16,5:1), de knop
-     #D2E04A. Gemeten op 6 september 2026 in de Komma-beelden. */
-  --accent-text:   #E4F474;
-  --accent-word:   #E4F474;
-  --accent-bright: #E4F474;
+  /* ── HET VIOLET KANTELT OP DONKER — 20 september 2026 ───────────────────
+     Precies zoals de noot hierboven het voor het geel beschreef, alleen met
+     andere waarden: op een donkere grond is #4A1FFF te donker om nog te
+     dragen, dus wordt de vulling #A694FF en staat er ZWART op in plaats van
+     wit. Dat is regel "Altijd 8" uit het schema: op violet staat wit (licht)
+     of zwart (donker), nooit andersom.
+
+     Als LETTER is het op donker dezelfde #A694FF — één violet per modus, geen
+     aparte tekstvariant zoals op licht. */
+  --accent:        #A694FF;
+  --on-accent:     #000000;
+  --accent-ink:    var(--on-accent);
+  --accent-dim:    #BFB2FF;
+  --accent-tint:   #1E1840;
+  --on-accent-tint: #A694FF;
+  --accent-text:   #A694FF;
+  --accent-word:   #A694FF;
+  --accent-bright: #A694FF;
   --accent-soft:   rgb(255 255 255 / 0.10);
   --accent-line:   rgb(255 255 255 / 0.28);
 
@@ -1195,6 +1370,67 @@ body.studio.on-ink {
    deze regel door zijn eigen, latere declaratie. */
 .on-ink, .site-footer, .cta-band, .photo-band, .cmp, .hero-cover, .hero-editorial, .sp-hero, .sp-close, .plan-band { background-color: var(--bg); }
 .on-ink { color: var(--ink-2); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   .stand — DE STATUSPIL, ÉÉN KEER GETEKEND — 20 september 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   Hoort bij de vijftien --st-*-tokens hierboven en bij src/data/status.js, dat
+   elke ruwe statuswaarde uit de database op één van de vijf standen zet. De
+   tokens zeggen WELKE kleur, status.js zegt WELKE stand, en dit blok zegt hoe
+   het ding eruitziet. Daardoor kan een nieuwe status erbij zonder dat er één
+   regel CSS bij hoeft.
+
+   WAAROM ÉÉN COMPONENT. Site, Studio, klantportaal en admin hadden alle vier
+   hun eigen pil: .st-pil met color-mix-randen, .pill met een gevulde
+   `is-delivered`, .st-badge met zwart-transparant op een foto, en in de mail
+   een vierde vorm. Dezelfde bestelling zag er op vier plekken anders uit. Dit
+   is de enige vorm; de andere klassen erven hem (zie de selectorlijst) of zijn
+   omgezet naar deze klasse.
+
+   DE MAAT KOMT UIT KLEURENSCHEMA.md: pil, 28px hoog, mono, hoofdletters, 11px,
+   een stip van 6px in currentColor en ALTIJD het woord ernaast. De stip is
+   decoratie boven op het woord, nooit de drager van de betekenis — kleur alleen
+   is geen status.
+
+   11px LIGT ONDER ONZE EIGEN ONDERGRENS van 11.5px voor lopende tekst. Dat is
+   hier bewust: dit is een label van één of twee woorden in mono met
+   letterafstand, geen tekst die je leest maar een ding dat je herkent. Het
+   staat zo in het kleurenschema en het is de enige plek waar het gebeurt.
+
+   HIJ HEET .stand EN NIET .stat. `.stat` bestond al — het is de tegel met een
+   groot getal op het admindashboard en in Studio (.stat-n, .stat-l). Een
+   component dat overal moet werken, mag geen naam lenen die ergens anders al
+   iets anders betekent; het kostte hier één schermafdruk om te zien wat er dan
+   gebeurt (een statuspil van 141 × 75 px).
+
+   GEEN SCHADUW, WEL EEN RAND. De rand is `inset 0 0 0 1px` in plaats van
+   `border`, zodat de hoogte niet verspringt tussen de gevulde en de omlijnde
+   stand — de dieptebeperking uit het schema laat juist deze vorm van
+   box-shadow toe. */
+.stand {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  min-height: 28px; padding: 0 .7rem;
+  border: 0; border-radius: var(--r-pill);
+  font-family: var(--font-mono); font-stretch: var(--stretch-mono);
+  font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  background: var(--st-wait-fill); color: var(--st-wait-ink);
+  box-shadow: inset 0 0 0 1px var(--st-wait-edge);
+}
+.stand::before {
+  content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+}
+.stand.is-wait { background: var(--st-wait-fill); color: var(--st-wait-ink); box-shadow: inset 0 0 0 1px var(--st-wait-edge); }
+.stand.is-work { background: var(--st-work-fill); color: var(--st-work-ink); box-shadow: inset 0 0 0 1px var(--st-work-edge); }
+.stand.is-done { background: var(--st-done-fill); color: var(--st-done-ink); box-shadow: inset 0 0 0 1px var(--st-done-edge); }
+.stand.is-rev  { background: var(--st-rev-fill);  color: var(--st-rev-ink);  box-shadow: inset 0 0 0 1px var(--st-rev-edge); }
+.stand.is-can  { background: var(--st-can-fill);  color: var(--st-can-ink);  box-shadow: inset 0 0 0 1px var(--st-can-edge); }
+
+/* Een pil die ook een link is, houdt zijn kleur en krijgt alleen een iets
+   sterkere rand bij hover — geen onderstreping, want die snijdt door de stip. */
+a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
+
 
 /* ── CORNERS — ONE PLACE, BECAUSE THEY WERE EVERYWHERE ───────────────────────
    HISTORY, so this block is not undone by someone reading an old comment. The
@@ -1312,6 +1548,29 @@ main:focus { outline: none; }
 
 /* ---- base ---- */
 * { box-sizing: border-box; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HIDDEN MOET VERBERGEN — 20 SEPTEMBER 2026
+   ═══════════════════════════════════════════════════════════════════════════
+   De browser zet zelf `[hidden] { display: none }`, maar met de laagste
+   soortelijkheid die er is: één attribuut. Élke klasseregel met twee klassen
+   erin wint daarvan. In dit project is dat geen theorie:
+
+     <a class="knop knop-wit" data-vis-in hidden>Sluit een abonnement af</a>
+
+   staat twee keer op de voorpagina en hoort ALLEEN te verschijnen voor iemand
+   die is ingelogd — dat was Lucas' vraag van 17 september: *"Ik wil wanneer
+   iemand is ingelogd (…) die knoppen/secties veranderen naar iets anders."*
+   `.s22 .knop { display: inline-flex }` is 0-2-0 en `[hidden]` is 0-1-0, dus
+   de knop stond er altijd. Gemeten op 20 september: een uitgelogde bezoeker
+   kreeg in de opening VIER knoppen in plaats van twee, en de vierde bood een
+   abonnement aan iemand die nog nooit iets besteld heeft.
+
+   Dit is precies waar `!important` voor bedoeld is: `hidden` is geen opmaak
+   maar een mededeling dat het element er niet is. Eén regel, en elke knop,
+   rij of paneel die dit attribuut krijgt verdwijnt ook echt — vandaag en bij
+   elke klasse die er morgen bij komt. */
+[hidden] { display: none !important; }
 /* scroll-behavior: smooth is deliberately NOT set here, and the omission is
    load-bearing enough to say so rather than leave as an absence.
 
@@ -1891,18 +2150,18 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    assumed near-black". It sets no background of its own — what colour the
    bright thing is, is the caller's business. */
 .on-bright {
-  color: rgb(17 18 16 / 0.82);
+  color: rgb(0 0 0 / 0.82);
 
   --bg:          transparent;
   --ink:         var(--grad-ink);
   --ink-1:       var(--grad-ink);
-  --ink-2:       rgb(17 18 16 / 0.82);
-  --ink-3:       rgb(17 18 16 / 0.68);
-  --ink-4:       rgb(17 18 16 / 0.55);
-  --ink-faint:   rgb(17 18 16 / 0.68);
+  --ink-2:       rgb(0 0 0 / 0.82);
+  --ink-3:       rgb(0 0 0 / 0.68);
+  --ink-4:       rgb(0 0 0 / 0.55);
+  --ink-faint:   rgb(0 0 0 / 0.68);
   --paper-on-dark:       var(--grad-ink);
-  --paper-soft-on-dark:  rgb(17 18 16 / 0.82);
-  --paper-muted-on-dark: rgb(17 18 16 / 0.68);
+  --paper-soft-on-dark:  rgb(0 0 0 / 0.82);
+  --paper-muted-on-dark: rgb(0 0 0 / 0.68);
   /* The logotype does NOT follow the accent here. :root moved --brand to
      #C6F100, which is 15.16:1 on the near-black ground and 1.31:1 on a bright
      one — the green and white are within a hair of the same luminance. This
@@ -1913,9 +2172,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      contrast checker reads text and this is an <svg>. */
   --brand:       var(--grad-ink);
 
-  --line:        rgb(17 18 16 / 0.16);
-  --line-strong: rgb(17 18 16 / 0.30);
-  --line-ui:     rgb(17 18 16 / 0.55);
+  --line:        rgb(0 0 0 / 0.16);
+  --line-strong: rgb(0 0 0 / 0.30);
+  --line-ui:     rgb(0 0 0 / 0.55);
 
   /* The accent cannot be itself here: #90BEFF on this plate is 1.6:1. The
      panel's own accent is the ink, and the CTA carries the colour by being
@@ -1924,20 +2183,20 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --accent-text: var(--grad-ink);
   --accent-ink:  #FFFFFF;
   --accent-on:   #FFFFFF;
-  --accent-dim:  rgb(17 18 16 / 0.84);
+  --accent-dim:  rgb(0 0 0 / 0.84);
   --accent-word: var(--grad-ink);
   --accent-bright: var(--grad-ink);
-  --accent-soft: rgb(17 18 16 / 0.10);
-  --accent-line: rgb(17 18 16 / 0.30);
+  --accent-soft: rgb(0 0 0 / 0.10);
+  --accent-line: rgb(0 0 0 / 0.30);
   --focus-ring:  var(--grad-ink);
 
-  --btn-ghost-fill:        rgb(17 18 16 / 0.08);
-  --btn-ghost-fill-hover:  rgb(17 18 16 / 0.16);
+  --btn-ghost-fill:        rgb(0 0 0 / 0.08);
+  --btn-ghost-fill-hover:  rgb(0 0 0 / 0.16);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(17 18 16 / 0.10);
+  --btn-2nd-fill-hover:    rgb(0 0 0 / 0.10);
   --btn-2nd-ink:           var(--grad-ink);
-  --btn-2nd-border:        rgb(17 18 16 / 0.42);
-  --btn-2nd-border-hover:  rgb(17 18 16 / 0.70);
+  --btn-2nd-border:        rgb(0 0 0 / 0.42);
+  --btn-2nd-border-hover:  rgb(0 0 0 / 0.70);
 }
 
 /* ---- .panel-tonal — the closing plate, August 2026 --------------------------
@@ -2134,17 +2393,25 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      droomband rechts van het midden valt en de lichtplas op de slotband links.
      Eén variabele per band, en de gloed hoort ineens bij de foto in plaats van
      bij het raster. */
+  /* ── DE GLOED IS WIT GEWORDEN — 20 september 2026 ───────────────────────
+     Deze twee plassen stonden in limoen (rgb 210 224 74): het accent van toen,
+     op 8,5% en 3,2%. Met violet als accent kan dat niet blijven — een violette
+     plas over een foto is precies het "violet als groot vlak" dat
+     KLEURENSCHEMA.md verbiedt, en de richtlijn van hooguit 2% per scherm haalt
+     hij in zijn eentje. Licht is hier bovendien LICHT en geen merkkleur: wat
+     de plas moet doen is de lichtbundel in de foto voortzetten, en dat doet
+     wit beter dan welke kleur ook. Dezelfde percentages, dezelfde vorm. */
   background:
     /* de plas */
     radial-gradient(var(--fl-w, 72%) var(--fl-h, 24%) at var(--fl-x, 50%) var(--fl-y, 76%),
-      rgb(210 224 74 / calc(var(--fl-o, 1) * 0.085)) 0%,
-      rgb(210 224 74 / calc(var(--fl-o, 1) * 0.032)) 40%,
+      rgb(255 255 255 / calc(var(--fl-o, 1) * 0.085)) 0%,
+      rgb(255 255 255 / calc(var(--fl-o, 1) * 0.032)) 40%,
       transparent 74%),
     /* de terugkaatsing — kleiner, zwakker, en met opzet uit het lood */
     radial-gradient(calc(var(--fl-w, 72%) * .58) calc(var(--fl-h, 24%) * .66)
       at var(--fl-x2, calc(var(--fl-x, 50%) + 16%)) var(--fl-y2, 24%),
-      rgb(210 224 74 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.040)) 0%,
-      rgb(210 224 74 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.014)) 44%,
+      rgb(255 255 255 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.040)) 0%,
+      rgb(255 255 255 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.014)) 44%,
       transparent 76%);
 }
 .foto-licht-enkel .foto-licht-laag { --fl-o2: 0; }
@@ -3244,7 +3511,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    en zou een witte lichtlijn een streep zijn die nergens vandaan komt. */
 .on-bright .card, .on-bright .tile, .on-paper .card, .on-paper .tile {
   box-shadow:
-    inset 0 1px 0 rgb(17 18 16 / 0.06),
+    inset 0 1px 0 rgb(0 0 0 / 0.06),
     0 18px 34px -26px rgb(0 0 0 / 0.22);
 }
 .card { background: var(--surface); border: 1px solid var(--line); padding: clamp(1.4rem, 2.5vw, 2rem); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); }
@@ -3725,9 +3992,29 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
     .reveal-scroll {
       animation: vis-rise linear both;
       animation-timeline: view();
-      /* Begint zodra het element de onderrand raakt, klaar op een derde van het
-         scherm. Korter dan Adobe's bereik, want deze secties zijn korter. */
-      animation-range: entry 0% cover 28%;
+      /* ── HET BEREIK IS RUIMER GEWORDEN — 20 september 2026 ────────────────
+         Lucas: *"de scroll animatie hapert en ziet er niet zo mooi uit."*
+
+         Gemeten was er niets mis met het TEMPO: 16,7 ms per frame gemiddeld
+         over vier pagina's, en met een vier keer afgeknepen processor geen
+         enkel frame boven de 50 ms. Er vallen dus geen frames.
+
+         Wat er wél gebeurde: dit bereik liep van de onderrand tot 28 procent
+         van het scherm. Bij een stevige veeg legt een element die afstand in
+         drie of vier frames af, en dan is een beweging van 10 pixels geen
+         beweging maar een sprong — je ziet hem aankomen en hij is er al. Dat
+         leest als haperen, ook al hapert er niets.
+
+         Ruimer bereik, zelfde beweging: hij begint iets eerder (het element
+         mag al 6 procent in beeld staan) en is pas klaar op 45 procent. Over
+         die afstand duurt dezelfde veeg drie keer zo lang, en dan ZIE je de
+         beweging in plaats van het resultaat.
+
+         `linear` blijft staan en dat is geen slordigheid. Bij een tijdlijn die
+         aan de scrollpositie hangt, is de easing de VINGER van de bezoeker; er
+         een curve overheen leggen betekent dat het beeld sneller of langzamer
+         beweegt dan de veeg, en precies dát voelt als achterlopen. */
+      animation-range: entry 6% cover 45%;
     }
 
     /* Een raster laat zijn kinderen ná elkaar binnenkomen door elk kind zijn
@@ -3738,7 +4025,10 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
       transform: none;
       animation: vis-rise-far linear both;
       animation-timeline: view();
-      animation-range: entry 0% cover 22%;
+      /* Een raster begint eerder en is eerder klaar dan een losse sectie: de
+         kinderen komen ná elkaar in beeld, dus hun bereiken overlappen al. Ook
+         hier ruimer dan voorheen, met dezelfde reden als hierboven. */
+      animation-range: entry 4% cover 38%;
     }
   }
 }
@@ -4578,10 +4868,18 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    boven een donkere ondergrond en geen doos met een streep erdoor. */
 .ed-vgl-col,
 .guide-card {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.055),
-    0 1px 2px rgb(0 0 0 / 0.55),
-    0 14px 30px -18px rgb(0 0 0 / 0.9);
+  /* ── DE VERHOGING IS EEN RAND GEWORDEN — 20 september 2026 ────────────────
+     Hier stonden drie lagen: een witte lichtlijn boven, een contactschaduw en
+     een wolk van 30px. Dat hoort bij de donkere site waar dit voor geschreven
+     is; op de lichte grond van het violette schema is het een wolk onder een
+     doos. KLEURENSCHEMA "Altijd 5": diepte uit een lijn of een tweede vlak,
+     nooit uit een schaduw.
+
+     `.card` en `.tile` verderop in dit bestand (sectie 22, punt 2) werden al
+     platgelegd; `.lift`, `.ed-vgl-col` en `.guide-card` stonden niet in die
+     opsomming en droegen de wolk dus nog. Nu dragen ze dezelfde haarlijn als
+     de rest. De verhoging bij hover blijft — dat is beweging, geen schaduw. */
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
@@ -4594,10 +4892,8 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
   .tile:hover,
   .guide-card:hover {
     transform: translateY(-3px) scale(1.012);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.09),
-      0 2px 4px rgb(0 0 0 / 0.6),
-      0 26px 48px -20px rgb(0 0 0 / 0.95);
+    /* De rand wordt sterker in plaats van dat er een wolk onder groeit. */
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
 }
 
@@ -4606,7 +4902,9 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    shadow layer. Only on hover — a green edge at rest would make every card
    look selected. */
 @media (hover: hover) {
-  a.lift:hover, .tile a:hover ~ .tile-media { box-shadow: inset 0 1px 0 rgb(210 224 74 / 0.5); }
+  /* Deze mag WEL het accent houden: het is een randje van 1px dat alleen bij
+     hover bestaat, en dat is actie — precies waar het violet voor is. */
+  a.lift:hover, .tile a:hover ~ .tile-media { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 50%, transparent); }
 }
 
 /* ============================================================
@@ -4876,9 +5174,9 @@ body { position: relative; }
   clip-path: polygon(100% 2%, 100% 30%, 0% 92%, 0% 58%);
   background: linear-gradient(
     255deg,
-    rgb(210 224 74 / 0.055) 0%,
-    rgb(210 224 74 / 0.030) 46%,
-    rgb(210 224 74 / 0.008) 78%,
+    rgb(255 255 255 / 0.055) 0%,
+    rgb(255 255 255 / 0.030) 46%,
+    rgb(255 255 255 / 0.008) 78%,
     transparent 100%);
   -webkit-mask-image: linear-gradient(255deg, #000 0%, #000 62%, transparent 100%);
   mask-image: linear-gradient(255deg, #000 0%, #000 62%, transparent 100%);
@@ -4887,9 +5185,9 @@ body { position: relative; }
   clip-path: polygon(0% 2%, 0% 30%, 100% 92%, 100% 58%);
   background: linear-gradient(
     105deg,
-    rgb(210 224 74 / 0.055) 0%,
-    rgb(210 224 74 / 0.030) 46%,
-    rgb(210 224 74 / 0.008) 78%,
+    rgb(255 255 255 / 0.055) 0%,
+    rgb(255 255 255 / 0.030) 46%,
+    rgb(255 255 255 / 0.008) 78%,
     transparent 100%);
   -webkit-mask-image: linear-gradient(105deg, #000 0%, #000 62%, transparent 100%);
   mask-image: linear-gradient(105deg, #000 0%, #000 62%, transparent 100%);
@@ -5411,7 +5709,7 @@ body { position: relative; }
      En het kost geen tweede download: dezelfde URL, dus dezelfde cache. */
   background-color: #2A3412;
   background-image:
-    radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(17 18 16 / 0.28) 62%, rgb(17 18 16 / 0.70) 100%),
+    radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(0 0 0 / 0.28) 62%, rgb(0 0 0 / 0.70) 100%),
     image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp')),
     image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp'));
   background-size: cover, cover, cover;
@@ -5427,7 +5725,9 @@ body { position: relative; }
      rand op de pagina zonder dat er nog een lap kleur voor nodig is. */
   /* Iets sterker dan de 0,22 die hier stond: de grond is nu lichter, dus een
      rand van 22 procent verdween erin. */
-  border: 1px solid rgb(210 224 74 / 0.30);
+  /* Wit en niet violet sinds 20 september: een rand om een foto is licht,
+     geen merkkleur — zie de noot bij de lichtplas hierboven. */
+  border: 1px solid rgb(255 255 255 / 0.30);
   padding: clamp(1.5rem, 3.2vw, 2.8rem);
   box-shadow: 0 30px 70px -34px rgb(0 0 0 / 0.55);
 }
@@ -5445,7 +5745,7 @@ body { position: relative; }
 @media (max-width: 900px) {
   .lime-panel {
     background-image:
-      radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(17 18 16 / 0.28) 62%, rgb(17 18 16 / 0.70) 100%),
+      radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(0 0 0 / 0.28) 62%, rgb(0 0 0 / 0.70) 100%),
       image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp')),
       image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp'));
   }
@@ -5485,7 +5785,7 @@ body { position: relative; }
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  background: linear-gradient(to bottom, rgb(210 224 74 / 0.10), transparent 34%);
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0.10), transparent 34%);
   mix-blend-mode: screen;
 }
 
@@ -5543,19 +5843,37 @@ body { position: relative; }
   --line: rgb(255 255 255 / 0.16);
   --line-strong: rgb(255 255 255 / 0.28);
   --ghost: rgb(255 255 255 / 0.08);
-  --accent: #D2E04A;
-  --accent-text: #D2E04A;
-  --accent-word: #D2E04A;
+  /* 20 september 2026: dezelfde rol, het nieuwe accent. Op een donkere plaat
+     is dat het LICHTE violet (#A694FF, 8,30:1); het violet van de vulling
+     haalt daar 2,93:1 — zie de afgekeurde combinaties in KLEURENSCHEMA.md. */
+  --accent: #A694FF;
+  --accent-text: #A694FF;
+  --accent-word: #A694FF;
   /* --accent-dim STOND HIER NIET, en dat was een knop die op hover verdween.
      `.btn-primary:hover` schildert `var(--accent-dim)`, en die kwam uit de
      .on-bright-scope van het paneel eromheen: daar is hij bijna zwart, want
      daar staat hij op een heldere grond. Op deze donkere plaat werd de
      limoenknop dus zwart-op-zwart zodra je hem aanwees. Elke plek die --accent
      terugdraait, moet zijn hele familie terugdraaien. */
-  --accent-dim: #B8CC46;
-  --accent-ink: #111210;
-  --accent-on: #111210;
-  --accent-bright: #D2E04A;
+  --accent-dim: #BFB2FF;
+  --accent-ink: #000000;
+  --accent-on: #000000;
+  --accent-bright: #A694FF;
+  /* ── SECTIE 22 LEEST ZIJN EIGEN NAMEN — 20 september 2026 ────────────────
+     stijl22.css zet `--inkt`, `--lijn` en `--geel-letter` op de LICHTE waarden,
+     want een .s22-pagina is licht papier met donkere panelen. Een component op
+     deze plaat schrijft `color: var(--inkt-2)` en kreeg daarmee zwarte tekst op
+     een zwarte plaat: 1,00:1, letterlijk onzichtbaar. Gevonden met
+     kladblok/leesbaar-alles.mjs op de twee akkoordregels van /start/plan.
+     Zolang de plaat LIMOEN was, klopte de zwarte inkt hier — dit is dezelfde
+     omkering als bij de voet en de deurtegel. */
+  --inkt: #FFFFFF;
+  --inkt-2: rgb(255 255 255 / 0.80);
+  --inkt-3: rgb(255 255 255 / 0.66);
+  --lijn: rgb(255 255 255 / 0.16);
+  --lijn-sterk: rgb(255 255 255 / 0.28);
+  --geel-letter: #A694FF;
+  --op-inkt: #000000;
   --btn-ghost-fill: rgb(255 255 255 / 0.08);
   --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
 }
@@ -5668,37 +5986,72 @@ body { position: relative; }
  * een achtergrond die `var(--accent)` leest, leest dan zijn eigen omkering en
  * wordt zwart. Dat is precies wat er bij `.lime-panel` staat beschreven, en het
  * is bij het bouwen van deze klasse nog een keer gebeurd. */
+/* ── DE VOLLE PLAAT IS NIET MEER HET ACCENT — 20 september 2026 ───────────
+   Hij was een schermvullend limoen vlak met bijna-zwarte letters. Twee regels
+   uit KLEURENSCHEMA.md raken hem tegelijk:
+     · "Nooit 4": violet nooit als grote vulling — geen violette band over de
+       breedte;
+     · en de meting: zwart op #4A1FFF is 2,93:1, dus de directe vertaling was
+       ook onleesbaar geweest.
+
+   Wat de plaat DEED — één blok dat eruit springt op de pagina — doet hij nu
+   met de diepste waarde die het schema kent: het zwarte paneel, met lichte
+   letters en het lichte violet als accent erin. Dat is dezelfde rol, in de
+   kleur die het schema daarvoor heeft. De naam blijft; hij staat in drie
+   componenten.
+
+   De slagschaduw is er ook af (regel "Altijd 5": diepte uit een lijn of een
+   tweede vlak, nooit uit een schaduw); wat overblijft is de lijn. */
 .plaat-vol.lime-plate {
-  background: #D2E04A;
-  border: 1px solid rgb(17 18 16 / 0.18);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 18px 40px -20px rgb(0 0 0 / 0.7);
-  color: #111210;
-  --ink: #111210;
-  --ink-1: #111210;
-  --ink-2: rgb(17 18 16 / 0.82);
-  --ink-3: rgb(17 18 16 / 0.66);
-  --ink-4: rgb(17 18 16 / 0.56);
-  --line: rgb(17 18 16 / 0.16);
-  --line-strong: rgb(17 18 16 / 0.30);
-  --line-ui: rgb(17 18 16 / 0.52);
+  background: var(--panel);
+  border: 1px solid rgb(242 243 245 / 0.18);
+  box-shadow: none;
+  color: var(--on-panel);
+  --ink: #F2F3F5;
+  --ink-1: #F2F3F5;
+  --ink-2: rgb(242 243 245 / 0.72);
+  --ink-3: rgb(242 243 245 / 0.55);
+  --ink-4: rgb(242 243 245 / 0.34);
+  --line: rgb(242 243 245 / 0.20);
+  --line-strong: rgb(242 243 245 / 0.34);
+  --line-ui: rgb(242 243 245 / 0.55);
   /* De hele accentfamilie draait om, niet alleen --accent — zie de noot bij
      .lime-plate hierboven: wie er één vergeet, krijgt een knop die op hover
      verdwijnt. */
-  --accent: #111210;
-  --accent-dim: #2E2F28;
-  --accent-ink: #D2E04A;
-  --accent-on: #D2E04A;
-  --accent-bright: #111210;
-  --accent-word: #111210;
-  --fill-blue: #111210;
-  --focus-ring: #111210;
-  --btn-ghost-fill: rgb(17 18 16 / 0.10);
-  --btn-ghost-fill-hover: rgb(17 18 16 / 0.20);
-  --btn-2nd-fill: rgb(17 18 16 / 0.08);
-  --btn-2nd-fill-hover: rgb(17 18 16 / 0.16);
-  --btn-2nd-ink: #111210;
-  --btn-2nd-border: rgb(17 18 16 / 0.42);
-  --btn-2nd-border-hover: rgb(17 18 16 / 0.70);
+  --accent: #A694FF;
+  --accent-dim: #BFB2FF;
+  --accent-ink: #000000;
+  --accent-on: #000000;
+  --accent-bright: #A694FF;
+  --accent-word: #A694FF;
+  --fill-blue: #A694FF;
+  --focus-ring: #F2F3F5;
+  --btn-ghost-fill: rgb(242 243 245 / 0.10);
+  --btn-ghost-fill-hover: rgb(242 243 245 / 0.20);
+  --btn-2nd-fill: rgb(242 243 245 / 0.08);
+  --btn-2nd-fill-hover: rgb(242 243 245 / 0.16);
+  --btn-2nd-ink: #F2F3F5;
+  /* De rand van de tweede knop stond in ZWART op 42%. Op een limoen plaat was
+     dat een zichtbare rand; op een zwarte plaat is het niets. Licht dus, in
+     dezelfde twee stappen. */
+  --btn-2nd-border: rgb(242 243 245 / 0.42);
+  --btn-2nd-border-hover: rgb(242 243 245 / 0.70);
+  --accent-text: #A694FF;
+  /* ── SECTIE 22 LEEST ZIJN EIGEN NAMEN — 20 september 2026 ────────────────
+     stijl22.css zet `--inkt`, `--lijn` en `--geel-letter` op de LICHTE waarden,
+     want een .s22-pagina is licht papier met donkere panelen. Een component op
+     deze plaat schrijft `color: var(--inkt-2)` en kreeg daarmee zwarte tekst op
+     een zwarte plaat: 1,00:1, letterlijk onzichtbaar. Gevonden met
+     kladblok/leesbaar-alles.mjs op de twee akkoordregels van /start/plan.
+     Zolang de plaat LIMOEN was, klopte de zwarte inkt hier — dit is dezelfde
+     omkering als bij de voet en de deurtegel. */
+  --inkt: #F2F3F5;
+  --inkt-2: rgb(242 243 245 / 0.72);
+  --inkt-3: rgb(242 243 245 / 0.55);
+  --lijn: rgb(242 243 245 / 0.20);
+  --lijn-sterk: rgb(242 243 245 / 0.34);
+  --geel-letter: #A694FF;
+  --op-inkt: #000000;
 }
 
 /* ═══ SECTIE 21 · GLAS ══════════════════════════════════════════════════════
@@ -5728,54 +6081,71 @@ body { position: relative; }
 .glas .btn-ghost { background: rgb(255 255 255 / .12); color: #FFFFFF; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .28); }
 .glas .btn-ghost:hover, .glas .btn-ghost:focus-visible { background: rgb(255 255 255 / .22); }
 
-/* ═══ SECTIE 21 · DE VOET ALS GEEL VLAK, OP ELKE PAGINA — 5 september 2026 ═══
-   Lucas, augustus: *"Ik wil de footer toxic green hebben."* Dat stond tot nu
-   alleen op de homepage, in de kantige huid (HuidKantig.astro, nu weg). Bij
-   Komma is de voet het enige vlak in de merkkleur over de volle breedte —
-   precies één keer per pagina — en met de panelen van sectie 21 is dat ook
-   hier de rol: wit, zwart, wit, zwart, en dan één keer geel.
+/* ═══ SECTIE 22 · DE VOET IS EEN ZWART VLAK — 20 september 2026 ════════════
+   Hier stond "DE VOET ALS GEEL VLAK, OP ELKE PAGINA" (5 september 2026), naar
+   aanleiding van Lucas' *"Ik wil de footer toxic green hebben."* Het gele vlak
+   over de volle breedte was het enige merkvlak per pagina, met zwarte letters
+   erop — en dat werkte, want geel heeft een luminantie van 0,68.
 
-   ZWART OP GEEL, NOOIT WIT: wit op #D2E04A is 1,3:1. De hele inkttrap kantelt
-   dus naar zwarte varianten; de alfa's zijn gemeten tegen #D2E04A
-   (luminantie 0,68): .74 → 5,0:1, dus ook de laagste trede haalt 4,5:1. */
+   VIOLET KAN DAT NIET, EN DAT IS GEEN SMAAK MAAR EEN GETAL. KLEURENSCHEMA.md
+   keurt zwart op violet met zoveel woorden af (2,93:1), en de voet zette de
+   hele inkttrap op zwarte alfa's: `tests/leesbaar.test.mjs` vond na het
+   omzetten van de tokens 115 pagina's met voetteksten tussen 2,09:1 en 2,27:1.
+   Wit op violet haalt wél 7,16:1 — maar dan is de voet een violet vlak van een
+   paar duizend vierkante pixels, en het schema zegt: violet is ALLEEN actie,
+   nooit een groot vlak, richtlijn hooguit 2% per scherm.
+
+   Dus is de voet het DONKERE PANEEL geworden — `--panel` uit het schema, dat
+   precies hiervoor bestaat (voet, cta-band, scrims). `.site-footer` stond al in
+   de `.on-ink`-lijst hierboven, die de hele inkttrap naar de lichte kant
+   kantelt; het enige wat die lijst deed, was door dit blok overschreven worden.
+   Door het weg te halen doet de voet weer wat de rest van de site al doet, en
+   staat de ENIGE violet in de voet op de knop — waar actie hoort.
+
+   Wat er niet verandert: geen woord tekst, geen enkele maat, geen volgorde. */
 .site-footer {
-  background: var(--accent);
-  color: var(--accent-ink);
-  --bg:         var(--accent);
-  --ink:        var(--accent-ink);
-  --ink-1:      var(--accent-ink);
-  --ink-2:      rgb(28 29 24 / .88);
-  --ink-3:      rgb(28 29 24 / .82);
-  --ink-4:      rgb(28 29 24 / .78);
-  --ink-faint:  rgb(28 29 24 / .74);
-  --paper:              var(--accent-ink);
-  --paper-on-dark:      var(--accent-ink);
-  --paper-soft-on-dark: rgb(28 29 24 / .82);
-  --paper-muted-on-dark: rgb(28 29 24 / .76);
-  --line:        rgb(28 29 24 / .18);
-  --line-strong: rgb(28 29 24 / .32);
-  --line-ui:     rgb(28 29 24 / .42);
-  --brand:       var(--accent-ink);
-  --mk-ink:      var(--accent-ink);
-  --accent-text: var(--accent-ink);
-  --ghost:       rgb(28 29 24 / .08);
-  --surface:     rgb(28 29 24 / .06);
-  --surface-2:   rgb(28 29 24 / .10);
+  background: var(--panel);
+  color: var(--on-panel);
+  /* Dezelfde rolverdeling als het gele blok had, maar dan omgekeerd: de alfa's
+     staan op de PAPIERKLEUR en niet op de inkt. Gemeten op zwart: .82 is
+     ongeveer 10:1, .70 is 7:1, .60 is 5,3:1 en .56 is 4,7:1 — de laagste trede
+     haalt dus nog steeds 4,5:1, net als de gele voet dat deed. */
+  --bg:          var(--panel);
+  --ink:         var(--on-panel);
+  --ink-1:       var(--on-panel);
+  --ink-2:       rgb(242 243 245 / .82);
+  --ink-3:       rgb(242 243 245 / .70);
+  --ink-4:       rgb(242 243 245 / .60);
+  --ink-faint:   rgb(242 243 245 / .56);
+  --paper:              var(--on-panel);
+  --paper-on-dark:      var(--on-panel);
+  --paper-soft-on-dark: rgb(242 243 245 / .82);
+  --paper-muted-on-dark: rgb(242 243 245 / .70);
+  --line:        rgb(242 243 245 / .18);
+  --line-strong: rgb(242 243 245 / .32);
+  --line-ui:     rgb(242 243 245 / .45);
+  --brand:       var(--on-panel);
+  --mk-ink:      var(--on-panel);
+  /* Het accent als LETTER kan op zwart niet het violet van papier zijn
+     (#3D17D6 op zwart is 2,4:1). Dit is dezelfde waarde als de donkere stand
+     van de site gebruikt — zie de donkere tokenblok hierboven. */
+  --accent-text: #A694FF;
+  --ghost:       rgb(242 243 245 / .08);
+  --surface:     rgb(242 243 245 / .06);
+  --surface-2:   rgb(242 243 245 / .10);
 }
 .site-footer a { color: inherit; }
-.site-footer :is(.brand-word, .brand-mark, .mk) { fill: var(--accent-ink); }
-/* De hoofdknop draait om: de vulling wordt de inkt en de letters geel. Zonder
-   dit staat er een gele knop op een geel vlak. */
-.site-footer .btn-primary { background: var(--accent-ink); color: var(--accent); }
-.site-footer .btn-primary:hover, .site-footer .btn-primary:focus-visible { background: #000000; color: var(--accent); }
-.site-footer .btn-ghost { background: rgb(28 29 24 / .08); color: var(--accent-ink); }
-/* Het grote woordmerk onderaan: zwart op 14%, geen wit. fill en niet color —
-   het is een <svg> met een <use>. */
+.site-footer :is(.brand-word, .brand-mark, .mk) { fill: var(--on-panel); }
+/* De hoofdknop hoeft niet meer om te draaien — hij staat niet meer op zijn
+   eigen kleur. Een gewone violette knop met witte letters, zoals overal. */
+.site-footer .btn-ghost { background: rgb(255 255 255 / .10); color: var(--on-panel); }
+/* Het grote woordmerk onderaan: licht op 14%, want de grond is nu donker.
+   fill en niet color — het is een <svg> met een <use>. */
 /* Drie klassen diep, want Layout.astro zet `fill: #FFFFFF` op een scoped
    selector van dezelfde sterkte en staat later in de cascade. */
 /* De sterkte staat als --merk-alpha op .foot-mark in Layout.astro, want de
    onthullingsanimatie moet hem als eindpunt kunnen lezen — zie de noot daar. */
-.site-footer .foot-mark .foot-mark-w { fill: var(--accent-ink); --mk-ink: var(--accent-ink); opacity: var(--merk-alpha, .14); }
+.site-footer .foot-mark .foot-mark-w { fill: var(--on-panel); --mk-ink: var(--on-panel); opacity: var(--merk-alpha, .14); }
 .site-footer .foot-mark { background: none; }
 .site-footer .foot-mark-light { display: none; }
 
@@ -5881,3 +6251,34 @@ section { padding-block: clamp(5rem, 11vw, 11rem); }
    blijft staan als geschiedenis (tests/korrel.test.mjs leest hem), maar hij
    tekent niet meer. */
 body::before { display: none; }
+
+/* ══ HET POPPETJE — 22 september 2026 ══════════════════════════════════════
+   De tekening van wat er op de draagfoto staat (Poppetje.astro, en /admin uit
+   dezelfde bron). Deze regels komen uit POP_CSS in src/lib/poppetje.js en staan
+   hier LETTERLIJK, omdat een inline <style> onder de CSP een hash zou vragen;
+   tests/poppetje-css.test.mjs houdt de twee gelijk. Drie tinten inkt, geen
+   kleur — zie de kop van Poppetje.astro. */
+.pop { display: block; width: 100%; height: auto; }
+.pop .r { fill: rgb(0 0 0 / .06); stroke: var(--line-strong, rgb(0 0 0 / .34)); stroke-width: 2; stroke-linejoin: round; }
+.pop .r-head { fill: var(--paper, #F2F3F5); }
+.pop .r-arms, .pop .r-legs { fill: none; }
+.pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(0 0 0 / .13); stroke-width: 1.5; }
+.pop[data-product="top"] .r-top,
+.pop[data-product="outerwear"] .r-top,
+.pop[data-product="underwear"] .r-top,
+.pop[data-product="trousers"] .r-bottom,
+.pop[data-product="shorts"] .r-bottom,
+.pop[data-product="skirt"] .r-bottom,
+.pop[data-product="dress"] .r-top,
+.pop[data-product="dress"] .r-bottom,
+.pop[data-product="shoes"] .r-shoes,
+.pop[data-product="socks"] .r-shoes { fill: var(--ink, #000); stroke: var(--ink, #000); }
+.pop[data-own*="shoes"] .r-shoes,
+.pop[data-own*="bottom"] .r-bottom,
+.pop[data-own*="top"] .r-top,
+.pop[data-own*="underlayer"] .r-underlayer { fill: rgb(0 0 0 / .45); stroke: none; }
+.pop .pop-buiten { fill: var(--paper, #F2F3F5); fill-opacity: .8; }
+.pop .pop-kader { fill: none; stroke: var(--ink, #000); stroke-width: 2; }
+.pop.pop-klein .pop-buiten { display: none; }
+.pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(0 0 0 / .2)); }
+.pop.pop-klein .pop-kader { stroke-width: 3; }

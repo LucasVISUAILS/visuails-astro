@@ -44,14 +44,44 @@
 export const KOMEND = {
   catalog: {
     nl: [
-      { naam: 'Ghost', regel: 'De gedragen vorm zonder model — voor- en achterkant, zoals fashion-webshops het tonen.' },
-      { naam: 'Kleurvlak', regel: 'Je merkkleur als achtergrond in plaats van wit, voor een productpagina die niet klinisch voelt.' },
-      { naam: 'Podium', regel: 'Het product op steen, beton of linnen — voor sieraden, skincare en alles wat premium moet lezen.' },
+      /* ── STILL — 21 september 2026 ──────────────────────────────────────
+         Lucas: *"een nieuwe catalog style (…) waar het model bijna levenloos
+         stil staat, wat je vaak ziet bij grote luxe merken."*
+
+         De naam beschrijft het BEELD en niet de koper. "Luxury" stond er eerst
+         in het voorstel en is afgevallen om twee redenen: het is een belofte
+         die het product van de klant waarmaakt en niet jouw licht, en twee
+         stijlen naast elkaar waarvan er één "luxe" heet, zeggen samen dat de
+         andere dat niet is. Elke stijlnaam op deze site beschrijft het beeld;
+         deze ook.
+
+         `Still` is in beide talen hetzelfde woord, en het is precies de
+         variabele: het model staat stil. Dat het in de fotografie ook
+         stilleven betekent, is geen toeval maar de hele gedachte — een mens
+         die met de rust van een stilleven behandeld wordt. De luxe-associatie
+         staat in de regel eronder, als waarneming en niet als claim.
+
+         ── EN HIJ IS DE ENIGE HIER — 22 september 2026 ──────────────────────
+         Onder deze regel stonden Ghost, Kleurvlak en Podium: drie namen die op
+         4 september bij het bouwen van dit blok zijn BEDACHT om de categorie
+         niet leeg te laten voelen. Lucas: *"kleurvlak, ghost en podium mogen
+         als komende stylen weg omdat ik deze niet zelf heb bedacht en
+         kleurvlak bijvoorbeeld sowieso al bij elke order zit omdat de klant de
+         achtergrondkleur naar elke kleur kan veranderen."*
+
+         Allebei de redenen zijn juist, en de tweede is de scherpste: Kleurvlak
+         was geen komende stijl maar een bestaande functie met een naam erop.
+         Zo'n regel belooft iets nieuws voor iets wat je al krijgt, en dat is
+         erger dan een lege lijst.
+
+         Regel 3 boven aan dit bestand zei het al — *"alleen wat er écht komt.
+         Een naam hier is een voornemen van de studio"* — en die regel gold ook
+         voor de namen die ik er zelf in had gezet. Wat overblijft is één stijl
+         waarvan de studio weet dat hij komt. Dat is precies genoeg. */
+      { naam: 'Still', regel: 'Het model staat stil en doet niets — geen pose, geen beweging. De houding die grote merken al jaren gebruiken.' },
     ],
     en: [
-      { naam: 'Ghost', regel: 'The worn shape without a model — front and back, the way fashion shops show it.' },
-      { naam: 'Colour field', regel: 'Your brand colour as the ground instead of white, for a product page that does not read clinical.' },
-      { naam: 'Plinth', regel: 'The product on stone, concrete or linen — for jewellery, skincare and anything that has to read premium.' },
+      { naam: 'Still', regel: 'The model stands still and does nothing — no pose, no motion. The stance the large houses have used for years.' },
     ],
   },
   lifestyle: {

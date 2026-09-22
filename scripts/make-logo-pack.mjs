@@ -30,8 +30,16 @@ import { browserPad } from './lib/browserpad.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'brand', 'visuails-logo');
 
-const GREEN = '#D2E04A';
-const DARK = '#111111';
+/* ── HET MERK IS VIOLET — 20 september 2026 ────────────────────────────────
+ * Stond op '#D2E04A' (gifgroen) en '#111111'. KLEURENSCHEMA.md zet het accent
+ * op #4A1FFF en het donker op puur zwart; favicon en tabicoon zijn al om, en
+ * een logopakket dat een andere kleur uitdeelt dan de site draagt, is precies
+ * het soort drift dat dit script moet voorkomen.
+ *
+ * De naam GREEN bestaat hier niet meer: hij is ACCENT geworden, want hij
+ * staat maar op vijf plekken in dit bestand. */
+const ACCENT = '#4A1FFF';
+const DARK = '#000000';
 const WHITE = '#FFFFFF';
 
 /* Shared with make-favicons.mjs, so the pack and the tab icon cannot disagree
@@ -106,7 +114,7 @@ async function jpg(svg, w, h, file) {
 fs.rmSync(OUT, { recursive: true, force: true });
 for (const d of ['svg', 'png-transparant', 'png-tegel', 'jpg']) fs.mkdirSync(path.join(OUT, d), { recursive: true });
 
-const INKS = [['groen', GREEN], ['wit', WHITE], ['zwart', DARK]];
+const INKS = [['violet', ACCENT], ['wit', WHITE], ['zwart', DARK]];
 /* Heights, not widths. The glyph is taller than it is wide (261×313), so a
  * height is the dimension that stays predictable across every colourway. */
 const SIZES = [512, 1024, 2048];
@@ -124,9 +132,13 @@ for (const [name, ink] of INKS) {
 /* The two tiles that are actually used: the live favicon colourway, and its
  * inverse for anywhere the green would be too loud. 20% radius matches the
  * favicon set; the square versions are for platforms that mask their own. */
+/* DE TWEEDE TEGEL IS OMGEDRAAID, 20 september 2026. Hij was 'groen-op-zwart',
+ * en dat werkte: limoen op zwart is 9,27:1. Violet op zwart is 2,93:1 — de
+ * combinatie die KLEURENSCHEMA.md met zoveel woorden afkeurt. Violet op wit is
+ * wél sterk (7,16:1), dus de rustige variant is nu de lichte. */
 const TILES = [
-  ['wit-op-groen', WHITE, GREEN],
-  ['groen-op-zwart', GREEN, DARK],
+  ['wit-op-violet', WHITE, ACCENT],
+  ['violet-op-wit', ACCENT, WHITE],
 ];
 for (const [name, ink, ground] of TILES) {
   for (const size of SIZES) {
@@ -150,8 +162,8 @@ Gegenereerd uit het merk dat de site zelf rendert (scripts/make-logo-pack.mjs).
 Draai "npm run logo:pack" opnieuw na elke wijziging aan het merk.
 
 KLEUREN
-  gifgroen   ${GREEN}
-  bijna-zwart ${DARK}
+  violet     ${ACCENT}
+  zwart      ${DARK}
   wit        ${WHITE}
 
 WELK BESTAND WANNEER
@@ -163,8 +175,8 @@ WELK BESTAND WANNEER
   png-transparant/    Het merk zonder achtergrond, in drie kleuren. Voor als je
                       het merk op iets anders zet: een foto, een gekleurd vlak,
                       een slide. Kies de kleur die contrasteert met wat eronder
-                      ligt — groen op wit is zwak (2,15:1), groen op zwart is
-                      sterk (9,27:1).
+                      ligt — violet op wit is sterk (7,16:1), violet op zwart
+                      is zwak (2,93:1) en hoort daar dus niet.
 
   png-tegel/          Het merk in een vierkant vlak. Dit is wat je uploadt als
                       profielfoto: Instagram, Facebook, WhatsApp Business,
@@ -180,6 +192,12 @@ WELK BESTAND WANNEER
                       vierkant.
 
 DE CONTOURVARIANT (visuails-*-contour-*)
+  LET OP — DEZE ZIJN NOG GROEN (20 september 2026). Het kleurenschema is naar
+  violet gegaan; deze vier bestanden zijn aangeleverde afbeeldingen en worden
+  NIET door dit script gemaakt, dus ze zijn niet meeverhuisd. Ze moeten opnieuw
+  worden aangeleverd of per pixel herkleurd worden, net als op 5 september
+  gebeurd is. Tot die tijd: niet gebruiken naast de violette varianten.
+
   Toegevoegd 19 augustus 2026. Dezelfde V, maar met een zwarte lijn die het merk
   op een afstandje volgt. Aangeleverd als afbeelding en hier alleen opgeschoond:
   de kleuren zijn vastgeklikt op het merkgroen en het bijna-zwart hierboven, en

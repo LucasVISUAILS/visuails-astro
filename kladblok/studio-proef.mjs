@@ -18,6 +18,8 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 import { browserPad } from '../scripts/lib/browserpad.mjs';
 import { startStudio, VOLT, NOORD } from '../tests/lib/studio-worker.mjs';
+/* Een dag die zeker voorbij de aanloop van drie dagen ligt. */
+const DAG = new Date(Date.now() + 6 * 864e5).toISOString().slice(0, 10);
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const OUT = path.join(ROOT, 'kladblok', 'studio');
@@ -35,6 +37,8 @@ const SHOTS_TO_TAKE = [
   ['gegevens', '/account/details', true],
   ['vastelook', '/account/brand-kit', true],
   ['abonnement', '/account/plan', true],
+  ['abonnement-planning', '/account/plan?tab=planning', true],
+  ['abonnement-planning-dag', '/account/plan?tab=planning&dag=' + DAG + '', true],
   ['abonnement-lijst', '/account/plan?tab=bestellen', true],
   ['abonnement-beheer', '/account/plan?tab=facturering', true],
   ['abonnement-look', '/account/plan?tab=look', true],

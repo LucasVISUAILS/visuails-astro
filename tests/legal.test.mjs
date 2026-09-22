@@ -602,7 +602,28 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
     const adminSrc = read('src/lib/admin.js');
     for (const m of adminSrc.matchAll(/(vis_[a-z_]+)=[^;'"`\s]*;\s*(Max-Age|Path|Expires|HttpOnly)/gi)) adminNamen.add(m[1]);
     for (const m of adminSrc.matchAll(/['"`](vis_[a-z_]+)['"`]/g)) adminNamen.add(m[1]);
-    ok('admin.js zet nog steeds alleen vis_admin', [...adminNamen].sort().join(' '), 'vis_admin');
+    /* ── EN SINDS 20 SEPTEMBER ZIJN HET ER TWEE ──────────────────────────
+       `vis_thema` kwam erbij met het donkere scherm van /admin. Dat breekt de
+       redenering hierboven NIET, en dat is de moeite van het opschrijven
+       waard, want anders wordt deze uitzondering bij de volgende cookie uit
+       gewoonte opgerekt.
+
+       De reden dat `vis_admin` buiten de verklaring mag blijven, is dat de
+       NAAM zelf iets verraadt: hij bestaat alleen aan de adminkant. `vis_thema`
+       staat al ÓP de cookieverklaring — VISUAILS Studio zet precies dezelfde
+       naam voor precies hetzelfde doel (zie themaCookie() in account.js), en
+       elke klant kan hem op zijn eigen apparaat zien staan. Een tweede plek
+       die dezelfde voorkeur onthoudt, voegt niets toe aan wat er al openbaar
+       is.
+
+       De grendel blijft dus een grendel: precies deze twee, verder niets. Een
+       derde naam maakt dit rood, en dan is het weer een afweging in plaats van
+       een gewoonte. */
+    ok('admin.js zet alleen vis_admin en vis_thema', [...adminNamen].sort().join(' '), 'vis_admin vis_thema');
+    /* En dat vis_thema inderdaad op de verklaring staat — anders leunt de
+       redenering hierboven op iets dat niet waar is. */
+    ok('  en vis_thema staat op de cookieverklaring',
+      read('src/pages/cookie-policy.astro').includes('vis_thema'));
   }
 
   const bronnen = ['src/lib/account.js', 'src/lib/portal.js', 'src/scripts/consent.js'];
@@ -822,29 +843,58 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
     ok(`${lang}: geleverd werk blijft van de klant, met verwijzing naar §8`,
       /(section 8|paragraaf 8)/.test(tekst));
 
-    /* ── 9 · HET SLOTMODEL — migratie 0035, 30 augustus 2026 ─────────────────
+    /* ── 9 · HET EENHEIDSMODEL ───────────────────────────────────────────
      *
-     * Deze paragraaf beschreef "een vast aantal complete producten" en
+     * ── EERST SLOTS — migratie 0035, 30 augustus 2026 ────────────────────
+     * Deze paragraaf beschreef ooit "een vast aantal complete producten" en
      * "wat je niet besteld hebt schuift door". Allebei waar tot 29 augustus en
-     * daarna niet meer: er zijn sindsdien slots per SOORT, en wat doorschuift
-     * is wat je niet hebt VASTGEZET.
+     * daarna niet meer: er kwamen slots per SOORT, en wat doorschuift is wat je
+     * niet hebt VASTGEZET.
      *
-     * Dat verschil is niet cosmetisch. Vastzetten is het moment waarop de klant
-     * zijn slot uitgeeft en wij de opdracht krijgen — het is de handeling waar
-     * geld aan hangt. Voorwaarden die dat niet noemen, beschrijven een dienst
-     * die niet meer bestaat, en dat is precies het soort verschil waar een
-     * geschil op draait. */
-    ok(`${lang}: de voorwaarden noemen slots en niet alleen producten`,
-      /(<strong>slots<\/strong>)/.test(tekst));
-    ok(`${lang}: en leggen uit dat vastzetten het slot kost`,
-      /(one slot of that kind is used|gaat er één slot van die soort af)/.test(tekst));
-    ok(`${lang}: en dat losmaken het slot terugbrengt tot de week begint`,
-      /(the slot comes straight back|dan komt het slot direct terug)/.test(tekst));
+     * ── EN NU CREDITS — migratie 0051, 20 september 2026 ─────────────────
+     * Slots per soort zijn vervangen door één creditsaldo dat aan elke dienst
+     * besteed mag worden, en "Compleet" bestaat als product niet meer. De
+     * voorwaarden beschreven daardoor tot vandaag een eenheid die niet bestaat
+     * ("een compleet product is een catalogset én een lifestyle-carousel") en
+     * een indeling per soort die er niet meer is.
+     *
+     * Deze vier toetsen zijn dus MEE VERHUISD en niet verwijderd: het punt dat
+     * ze bewaken is ongewijzigd, namelijk dat de voorwaarden de eenheid noemen
+     * waarin je koopt, dat ze zeggen wat vastzetten kost, dat losmaken het
+     * terugdraait, en dat er een dak op het doorschuiven zit. Alleen het woord
+     * verandert. Dat is de tweede keer dat deze regels van naam veranderen;
+     * verandert de eenheid nóg een keer, dan verhuizen ze weer mee.
+     *
+     * Vastzetten is nog steeds de handeling waar geld aan hangt — het moment
+     * waarop de klant zijn credits uitgeeft en wij de opdracht krijgen. */
+    ok(`${lang}: de voorwaarden noemen credits en niet alleen producten`,
+      /(<strong>credits<\/strong>)/.test(tekst));
+    ok(`${lang}: en leggen uit dat vastzetten de credits kost`,
+      /(the credits for that service come off your balance|gaan de credits van die dienst van je saldo af)/.test(tekst));
+    ok(`${lang}: en dat losmaken de credits terugbrengt tot de week begint`,
+      /(those credits come straight back|dan komen die credits direct terug)/.test(tekst));
     /* Het dak van twee maanden staat in de code als het venster van
        rolloverMonths(); het hoorde ook in de tekst te staan, want het is de
        enige grens die de klant kan verrassen. */
     ok(`${lang}: het dak van twee maanden staat er`,
-      /(two months of slots|twee maanden aan slots)/.test(tekst));
+      /(two months of credits|twee maanden aan credits)/.test(tekst));
+    /* En de oude eenheid mag NERGENS meer in de voorwaarden staan: een tekst
+       die allebei de modellen noemt, is erger dan een tekst die alleen het oude
+       noemt — dan weet niemand welke van de twee geldt.
+
+       ZONDER DE NOTEN, en dat is hier geen detail. Elke andere toets op dit
+       blad leest de bron en dat mag: hij zoekt iets wat er MOET staan, en een
+       noot die het toevallig ook zegt is geen valse goedkeuring waard om over
+       te struikelen. Deze toets zoekt iets wat er NIET mag staan, en dan is het
+       omgekeerd: de noot die uitlegt waarom de oude eenheid weg is, noemt die
+       eenheid per definitie. Wat de klant leest is de tekst zonder noten, dus
+       dat is wat hier gemeten wordt. */
+    const zonderNoten = tekst
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+      .replace(/<!--[\s\S]*?-->/g, ' ')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ');
+    ok(`${lang}: en de oude eenheid staat er niet meer in`,
+      !/(compleet product|complete product)/.test(zonderNoten));
     /* En Lucas' eigen regel van 29 augustus: opzeggen neemt het doorschuiven
        weg, want er is geen volgende maand meer. vensterVoor() doet dat. */
     ok(`${lang}: opzeggen neemt het doorschuiven weg`,
@@ -864,9 +914,13 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
   const slots = read('src/lib/slots.js');
   ok('en het doorschuifvenster is nul zodra er opgezegd is',
     /status \|\| ''\) === 'cancelled'\) return 0/.test(slots));
-  ok('vastzetten schrijft het slot af en losmaken geeft het terug',
-    /verbruikSlot\(env, sub\.id, vensterVoor\(sub\)/.test(subscription)
-    && /geefSlotTerug\(env, sub\.id, vensterVoor\(sub\)/.test(subscription));
+  /* Sinds 19 september 2026 gaat dat in credits en niet in slots per soort —
+     zie de kop bij CREDIT_KIND in slots.js. De juridische belofte eronder is
+     onveranderd: wat je vastzet wordt afgeschreven, wat je losmaakt komt terug,
+     en allebei binnen het doorschuifvenster dat bij je status hoort. */
+  ok('vastzetten schrijft de credits af en losmaken geeft ze terug',
+    /verbruikCredits\(env, sub\.id, vensterVoor\(sub\)/.test(subscription)
+    && /geefCreditsTerug\(env, sub\.id, vensterVoor\(sub\)/.test(subscription));
   ok('en dat saldo mag dan besteed worden',
     /state\?\.sub\?\.status === 'cancelled'/.test(subscription));
   ok('een gepauzeerd abonnement mag dat niet',

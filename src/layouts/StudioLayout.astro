@@ -27,37 +27,19 @@
  */
 import '../styles/global.css';
 import { WORDMARK_VIEWBOX, WORDMARK_TRANSFORM, WORDMARK_PATHS } from '../data/wordmarkPath.js';
+import { standKlasse } from '../data/status.js';
 import '../styles/studio.css';
-/* Sectie 22: Anybody voor de koppen, Instrument Sans voor de tekst, Martian
+/* Sectie 22: Anybody voor de koppen, Figtree voor de tekst, Martian
    Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
    noot bij --font-heading in global.css voor waarom deze drie. */
 import '@fontsource-variable/anybody/standard.css';
-import '@fontsource-variable/instrument-sans/standard.css';
+import '@fontsource-variable/figtree/index.css';
 import '@fontsource-variable/martian-mono/standard.css';
 
-/* ── SATOSHI, ALS HIJ ER LIGT — 8 september 2026 ──────────────────────────
-   Lucas wil Satoshi proberen als tekstletter. Hij staat niet op npm (Fontshare,
-   ITF Free Font License, gratis maar niet open source), dus de woff2's komen
-   met de hand in public/fonts/satoshi/ te liggen.
+/* De Satoshi-schakelaar is op 21 september 2026 weggehaald — zie de noot op
+   dezelfde plek in Layout.astro. */
 
-   Liggen ze er niet, dan wordt er niets gelinkt en verandert er niets: geen
-   404, en Instrument Sans blijft de tekstletter. Wat er gebeurt als ze er WEL
-   liggen, staat in public/fonts/satoshi/satoshi.css zelf.
-
-   ── EN WAAROM DIT GEEN VITE-ZOEKOPDRACHT MEER IS ─────────────────────────
-   Hier stond, uit de vorige ronde overgenomen, een statische mapzoekopdracht
-   van Vite over public/fonts/satoshi/. Die was NOOIT AAN GEWEEST: zolang de
-   map leeg was gaf hij een leeg object en leek alles in orde. Vandaag lag er
-   voor het eerst een bestand in, en de hele site gaf 500 met "i is not
-   defined" — Vite probeert elk gevonden pad als MODULE te laden, en een woff2
-   in public/ is geen module. De schakelaar werkte dus precies zolang hij niet
-   werd omgezet.
-
-   Nu leest astro.config.mjs de map met node:fs en zet het antwoord als
-   __SATOSHI__ in de build. Dat is één waarde, vervangen tijdens het bouwen, en
-   hij kan niets laden — de fout hierboven kán niet meer terugkomen. Onder
-   `astro dev` bestaat dezelfde vervanging, dus lokaal zie je hetzelfde. */
-const SATOSHI = __SATOSHI__;
+const CHIP_STAND = { signal: 'in_production', warn: 'past_due' };
 
 import { studioHeaders, studioNav, STUDIO_ICONS } from '../lib/account.js';
 
@@ -111,9 +93,6 @@ const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
   <link rel="stylesheet" href="/feedback.css">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  {/* Als laatste in de <head>: satoshi.css zet --font-body om, en staat
-      buiten @layer basis waar global.css in zit — zie de noot in dat bestand. */}
-  {SATOSHI && <link rel="stylesheet" href="/fonts/satoshi/satoshi.css" />}
 </head>
 <body class={`studio ${vorm === 'kaart' ? 'st-kaartvorm' : 'st-schilvorm'}${licht ? '' : ' on-ink'}`}>
   {vorm === 'kaart' ? (
@@ -167,7 +146,13 @@ const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
             <h1 class="st-h1">{kop}</h1>
             {lede && <p class="st-lede">{lede}</p>}
           </div>
-          {chip && chip.tekst && <span class={`st-chip${chip.toon ? ` is-${chip.toon}` : ''}`}>{chip.tekst}</span>}
+          {/* De kopchip zegt hoe de REKENING ervoor staat ("3 bestellingen lopen",
+              "abonnement gepauzeerd"). Dat is een status, dus hij draagt sinds
+              20 september het statuscomponent en niet zijn eigen vorm — anders
+              staat er twee centimeter naast een statuspil een bijna-identieke
+              pil met een andere maat en een andere stip. `toon` vertaalt hier
+              naar een stand; de tabel zelf kent alleen echte statuswaarden. */}
+          {chip && chip.tekst && <span class={standKlasse(CHIP_STAND[chip.toon] || 'received')}>{chip.tekst}</span>}
           {actie && <a class="btn btn-primary st-top-actie" href={actie.href}>{actie.label}</a>}
         </header>
         <main class="st-main" id="inhoud">

@@ -61,6 +61,7 @@ import {
 } from '../data/pricing.js';
 import { waHref } from '../data/whatsapp.js';
 import { serviceLabel } from '../data/services.js';
+import { statPil } from '../data/status.js';
 import {
   PORTAL_MAX_LIFE_DAYS, PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken, pastMaxLife,
 } from './token.js';
@@ -1261,7 +1262,7 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
     [t.fOrder, serviceLabel(order.service, lang) || '—'],
     order.product_count ? [t.fProducts, String(order.product_count)] : null,
     [t.fWindow, windowLine(t, lang, order)],
-    [t.fStatus, statusLabel(order.status, lang) || '—'],
+    [t.fStatus, statPil(order.status, statusLabel(order.status, lang) || order.status), true],
   ].filter(Boolean);
 
   const tally = files.length
@@ -1342,7 +1343,7 @@ function unattendedBody(t, lang, order, token, files, folder = '') {
     [t.fRef, order.ref],
     [t.fOrder, serviceLabel(order.service, lang) || '—'],
     order.product_count ? [t.fProducts, String(order.product_count)] : null,
-    [t.fStatus, statusLabel(order.status, lang) || '—'],
+    [t.fStatus, statPil(order.status, statusLabel(order.status, lang) || order.status), true],
   ].filter(Boolean);
 
   const timing = `${turnaround('unattended', lang)} — ${lower(TIERS.unattended.queue[lang])}`;
@@ -1475,9 +1476,12 @@ async function serveOrderFolder(context, order, lang) {
 
 // ---- shared pieces ----------------------------------------------------------
 
+/* Een derde waarde `rauw` zegt dat de waarde al HTML is. Dat is er precies
+   één: de statuspil, die uit statPil() komt en daar zelf al ontsmet wordt.
+   Alles zonder die vlag gaat nog steeds door esc(). */
 function factList(pairs) {
   return `<dl class="facts">${pairs
-    .map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`)
+    .map(([k, v, rauw]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${rauw ? v : esc(v)}</dd></div>`)
     .join('')}</dl>`;
 }
 

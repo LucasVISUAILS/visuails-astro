@@ -30,12 +30,60 @@
    geïmporteerd. Daarom staat de klasse er met de hand voor, en niet omdat het
    mooi staat.
    ═══════════════════════════════════════════════════════════════════════════ */
-:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: clamp(20px, 2.4vw, 34px); --s22-grond: #1B1C1E; }
+/* ── DE DRIE MATEN VAN SECTIE 22 — bijgewerkt 20 september 2026 ────────────
+   `--s22-ronding` was clamp(20px, 2.4vw, 34px): de grote, zachte hoek van de
+   panelen. KLEURENSCHEMA.md kent één kaartvorm, `--r-card: 12px`, voor
+   "kaarten, panelen, beelden, modale vensters", en Lucas' opdracht erbij:
+   *"Pas dit overal consistent toe — er staan nu nog vlakken met een afwijkende
+   hoek tussen."* Dat is de grootste zichtbare vormwijziging van deze ronde, en
+   het is er één die de hele site strakker maakt in plaats van zachter.
+
+   `--s22-grond` was #1B1C1E, met een eigen noot waarom het donkergrijs moest
+   zijn en geen zwart: *"naast een wit paneel leest bijna-zwart als een RAND en
+   niet als ruimte."* Dat argument hield stand zolang de panelen #FFFFFF waren.
+   Het schema zet het donkere paneel op puur zwart (`--panel`) en de panelen op
+   #F2F3F5, en dan is de ondergrond juist wél de diepste waarde. Hij volgt dus
+   `--panel`. */
+:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: var(--r-card, 12px); --s22-grond: var(--panel, #000000); }
 
   .s22 {
-    --vel: #F5F5F5; --wit: #FFFFFF; --inkt: #111111;
-    --inkt-2: #454545; --inkt-3: #6E6E6E; --lijn: #DFDFDF; --lijn-sterk: #BDBDBD;
-    --geel: #D2E04A; --geel-letter: #E4F474; --tint: rgb(210 224 74 / .14);
+    /* ── DE KLEUREN VAN SECTIE 22 KOMEN UIT global.css — 20 september 2026 ──
+       Ze stonden hier als eigen waarden, met dezelfde getallen als in
+       global.css. Twee lijsten met dezelfde kleuren lopen uit elkaar zodra er
+       één wijzigt, en dat is precies wat er vandaag gebeurde. Vanaf nu is dit
+       alleen nog een vertaling van de Nederlandse namen naar de tokens uit
+       KLEURENSCHEMA.md.
+
+       `--wit` is geen puur wit meer maar `--paper`. Het schema kent geen
+       #FFFFFF als vlak: de lichte grond is #F2F3F5 en de tweede trede
+       #E4E7EC. Een wit paneel op een koele grond leest als een gat.
+
+       `--geel` en `--geel-letter` HOUDEN HUN NAAM en dragen het violet. Dat is
+       lelijk om te lezen en eerlijk om te doen: de naam staat in zeventig
+       regels in dit bestand en in veertig componenten, en hem hier laten
+       wijzen is één plek in plaats van honderdtien. Wie hem hernoemt, doet dat
+       in één aparte ronde en niet tussen een kleurwissel door. */
+    --vel: var(--paper); --wit: var(--paper); --inkt: var(--ink);
+    /* `--op-inkt` is wat er ÓP de inktkleur staat. Normaal is dat het vel,
+       maar op een donkere plaat is `--inkt` zelf licht (zie de s22-namen in de
+       .lime-plate-scope in global.css) en dan is het vel juist fout: dan staat
+       er licht op licht, 1,00:1. Eén token in plaats van een uitzondering per
+       knop (20 september 2026). */
+    --op-inkt: var(--vel);
+    --inkt-2: var(--ink-2); --inkt-3: var(--ink-3); --lijn: var(--line); --lijn-sterk: var(--line-strong);
+    --geel: var(--accent); --op-geel: var(--on-accent); --geel-letter: var(--accent-text); --tint: var(--accent-tint);
+    /* ── TWEE ACCENTLETTERS, WANT ER ZIJN TWEE GRONDEN — 20 september 2026 ─
+       Sectie 22 is een DONKERE pagina met LICHTE panelen erop. `--accent-text`
+       (#3D17D6) is de accentletter voor papier: 9,0:1 daar, en 1,90:1 op de
+       zwarte grond. Zolang het accent limoen was viel dat niet op — die was
+       juist op donker sterk en op licht zwak, dus precies andersom.
+
+       `--geel-letter` wijst daarom op de grond van .s22 naar het LICHTE violet
+       en binnen een licht paneel weer terug. Componenten hoeven daardoor geen
+       van beide te kennen: ze schrijven `var(--geel-letter)` zoals ze altijd
+       deden en krijgen de goede. Gevonden met kladblok/leesbaar-alles.mjs:
+       veertig accentwoorden, zes pijllinks en een handvol etiketten. */
+    --geel-letter-donker: #A694FF;
     /* ── --gloed STOND ALLEEN NOG IN DE FALLBACKS — 7 september 2026 ────────
        Zeven componenten schrijven `var(--gloed, #9EB42F)` voor het vinkje
        voor een lijstregel, en de token zelf is nooit gedefinieerd geweest:
@@ -47,7 +95,13 @@
        1,6:1 en is als lijntje op vel niet te zien. Deze is bedoeld als
        ACCENT naast leesbare tekst, niet als tekstkleur — voor tekst blijft
        --inkt-2 de ondergrens. */
-    --gloed: #9EB42F;
+    /* ── EN SINDS HET VIOLET IS DE GLOED EEN LIJN — 20 september 2026 ─────
+       De noot hierboven klopt nog: dit token is een ACCENT naast leesbare
+       tekst, geen tekstkleur. Wat verandert is dat het schema geen gloed meer
+       kent (regel "Nooit 2") en het violet wél als letter op licht mag staan.
+       Een vinkje voor een lijstregel is een klein gekleurd teken naast tekst,
+       en dat is precies waar `--accent-text` voor is: 8,25:1 op de grond. */
+    --gloed: var(--accent-text);
     /* ── DE ONDERGROND IS DONKERGRIJS, NIET ZWART — 8 september 2026 ──────
        Lucas: *"Sommige secties kunnen wel wat dunner blijven met donker grijs
        eromheen om wat diepte te geven."* De ondergrond stond op --inkt
@@ -73,6 +127,8 @@
     --ronding: var(--s22-ronding);
     --x: clamp(1.25rem, 5.5vw, 6.5rem);
     background: var(--grond); color: var(--vel);
+    /* de grond van .s22 is donker — zie de noot hierboven */
+    --geel-letter: var(--geel-letter-donker);
     font-family: var(--tekst2); line-height: 1.55;
     padding-bottom: var(--rand);
   }
@@ -92,6 +148,20 @@
   .s22 :where(img) { display: block; max-width: 100%; height: auto; }
   .s22 :where(a) { text-decoration: none; }
   .s22 :where(h1, h2, h3, p, li, b, strong, span, a, th, td, figcaption, label, legend, em) { color: inherit; }
+  /* ── EN EEN KNOP IS GEEN LOPENDE TEKST — 20 september 2026 ──────────────
+     De regel hierboven telt als 0,1,1 (`.s22` plus het element `a`) en wint
+     het daarmee van `.btn-primary` in global.css, dat op 0,1,0 staat. Zolang
+     het accent LIMOEN was, viel dat niet op: de geërfde inkt was zwart en op
+     limoen is zwart precies goed. Met violet als vulling werd diezelfde regel
+     zwart op #4A1FFF — 2,93:1, en dat is de combinatie die KLEURENSCHEMA.md
+     met zoveel woorden afkeurt. `tests/leesbaar.test.mjs` vond hem op zes
+     stijlpagina's, op elke "Kies deze look".
+
+     Twee regels die de knoppen terugpakken, en niets anders: 0,2,0 met de
+     klasse erbij, dus ze winnen van de erfregel en verliezen nog steeds van
+     elke scope die de hele accentfamilie omdraait (de donkere plaat). */
+  .s22 :where(a, button, span).btn { color: var(--ink); }
+  .s22 :where(a, button, span).btn-primary { color: var(--accent-ink); }
   .s22 :where(table) { border-collapse: collapse; width: 100%; }
   .s22 :focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
 
@@ -108,9 +178,9 @@
   .s22 .mono, .s22 .etiket { font-family: var(--mono2); font-size: .75rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; line-height: 1.45; }
   .s22 .mini { font-size: .72rem; }
   .s22 .etiket { color: var(--inkt-2); }
-  .s22 .kamer .etiket, .s22 .poster .etiket { color: rgb(245 245 245 / .66); }
+  .s22 .kamer .etiket, .s22 .poster .etiket { color: rgb(242 243 245 / .66); }
   .s22 .lopend { max-width: 34em; text-wrap: pretty; color: var(--inkt-2); }
-  .s22 .kamer .lopend { color: rgb(245 245 245 / .68); }
+  .s22 .kamer .lopend { color: rgb(242 243 245 / .68); }
   /* ── NADRUK IS GEWICHT, NIET EEN VLAKJE — 8 september 2026 ────────────────
      Lucas over het gele blok achter een woord: *"Verzin iets anders voor de
      gearceerde teksten want het ziet er niet zo mooi uit."* Over de eerste
@@ -156,7 +226,16 @@
     margin: 0;
   }
   .s22.s22 :is(h1, h2):has(em) { font-weight: 250; }
-  .s22.s22 :is(.kamer, .poster, .paneel-slot) em { color: var(--geel-letter); }
+  /* ── EN OP INKT IS HET ACCENT HET LÍCHTE VIOLET — 20 september 2026 ──────
+     `--geel-letter` is sinds het violet `--accent-text` (#3D17D6), en dat is
+     de waarde voor een LICHTE grond: 9,0:1 op papier. Een donkere kamer is
+     #1A1A1A, en daar meet dezelfde kleur 1,90:1 — gevonden met
+     kladblok/leesbaar-alles.mjs, veertig accentwoorden op twintig pagina's.
+     Precies dezelfde val als de limoenknop die op hover zwart werd: wie het
+     accent naar een andere grond verhuist, verhuist de hele familie mee.
+     #A694FF is de waarde die KLEURENSCHEMA.md voor de donkere stand geeft:
+     8,3:1 op zwart. */
+  .s22.s22 :is(.kamer, .poster, .paneel-slot) em { color: var(--geel-letter-donker); }
 
   /* ── EEN <button> IS GEEN <a> — 7 september 2026 ──────────────────────────
      .knop zette nooit een `background`, en dat ging goed zolang elke knop op de
@@ -214,7 +293,7 @@
        links staan in plaats van over de volle breedte te rekken. */
     .s22 .acties > :not(.knop):not(.btn) { align-self: flex-start; }
   }
-  .s22 .knop-inkt { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
+  .s22 .knop-inkt { background: var(--inkt); border-color: var(--inkt); color: var(--op-inkt); }
   .s22 .knop-inkt:hover { background: transparent; color: var(--inkt); }
   .s22 .knop-wit { background: var(--wit); border-color: var(--wit); color: var(--inkt); }
   .s22 .knop-wit:hover { background: var(--inkt); border-color: var(--inkt); color: var(--vel); }
@@ -318,6 +397,10 @@
      vroeg om compactere pagina's ("30–40 % korter") en dit is de ruimte die
      geen informatie draagt. Horizontaal ongewijzigd. */
   .s22 .paneel { position: relative; padding: clamp(2rem, 4.6vw, 4rem) clamp(1.25rem, 4vw, 4rem); background: var(--vel); color: var(--inkt); }
+  /* Een licht vlak zet de accentletter terug op de papierwaarde. Alle vier de
+     lichte vlakken van sectie 22 staan hier; wie er een vijfde bij maakt, zet
+     hem erbij — of hij krijgt lichtviolet op wit (2,1:1). */
+  .s22 :is(.paneel, .maatlijn, .kaart-pil, .kaart-product, .opt) { --geel-letter: var(--accent-text); }
   /* Een anker (#looks, #binnenkort, #standard) landt anders onder de plakkende
      bovenbalk van 76px — sinds 19 september 2026 komt elke bestelknop op
      /catalog#looks of /lifestyle#looks uit, dus dit moet kloppen. */
@@ -391,7 +474,7 @@
      voelt nu alsof deze los van de pagina staat."*
 
      Hij stond los omdat hij een eigen kleur had. `.site-header::after` is licht
-     glas — rgb(245 245 245 / .88) — en dat is de kleur van de PANELEN, niet van
+     glas — rgb(242 243 245 / .88) — en dat is de kleur van de PANELEN, niet van
      de pagina. Boven een limoen voet, boven een donkere kamer, boven het donker
      tussen twee panelen: overal is die balk een vreemd voorwerp dat toevallig
      dezelfde kleur heeft als iets anders op het scherm.
@@ -421,10 +504,10 @@
      áchter de balk is in sectie 22 altijd donker — bovenaan de ondergrond
      zelf, daarna het glas hierboven — dus geldt de omslag ook altijd. */
   body:has(.s22) .site-header {
-    --ink: #F5F5F5;
-    --ink-900: #FFFFFF;
-    --ink-700: rgb(245 245 245 / .84);
-    --ink-500: rgb(245 245 245 / .68);
+    --ink: var(--on-panel);
+    --ink-900: var(--on-panel);
+    --ink-700: rgb(242 243 245 / .84);
+    --ink-500: rgb(242 243 245 / .68);
     /* ── --ink-2 EN --ink-3 STONDEN HIER NIET, EN DAT WAS DE HELE NAVIGATIE ──
        8 september 2026, gevonden bij het omkleuren van de balk. Dit blok klapt
        de inktschaal om voor een donkere balk, maar sloeg juist de twee waarden
@@ -438,15 +521,15 @@
        hero opdook. Dit is de tweede plek waar hij toesloeg.
        Een doorzichtigheid van #F5F5F5 en geen tweede vaste kleur: dan volgt de
        schaal de grond, ook als die grond ooit iets anders wordt. */
-    --ink-2: rgb(245 245 245 / .8);
-    --ink-3: rgb(245 245 245 / .64);
-    --brand: #F5F5F5;
-    --line: rgb(245 245 245 / .16);
-    --line-strong: rgb(245 245 245 / .28);
-    --ghost: rgb(245 245 245 / .14);
-    --btn-ghost-fill: rgb(245 245 245 / .14);
-    --btn-ghost-fill-hover: rgb(245 245 245 / .22);
-    --focus-ring: #F5F5F5;
+    --ink-2: rgb(242 243 245 / .8);
+    --ink-3: rgb(242 243 245 / .64);
+    --brand: var(--on-panel);
+    --line: rgb(242 243 245 / .20);
+    --line-strong: rgb(242 243 245 / .34);
+    --ghost: rgb(242 243 245 / .14);
+    --btn-ghost-fill: rgb(242 243 245 / .14);
+    --btn-ghost-fill-hover: rgb(242 243 245 / .22);
+    --focus-ring: var(--on-panel);
   }
   /* ── HET UITKLAPMENU IS EEN WIT VLAK EN ERFT DUS DE ZWARTE INKT ──────────
      Lucas: *"Bij sommige pagina's dropdowns slecht leesbaar."* Dezelfde fout
@@ -461,22 +544,22 @@
      `:root` in dit bestand, want dat is precies wat het menu is: een stuk
      pagina dat toevallig uit de balk hangt. */
   body:has(.s22) .site-header .nav-menu {
-    --ink: #111111;
-    --ink-900: #0A0A0A;
-    --ink-700: #333333;
-    --ink-500: #555555;
-    --ink-2: #454545;
-    --ink-3: #6E6E6E;
-    --brand: #111111;
-    --line: #DFDFDF;
-    --line-strong: #BDBDBD;
-    --ghost: rgb(17 17 17 / .08);
-    --btn-ghost-fill: rgb(17 17 17 / .08);
-    --focus-ring: #111111;
+    --ink: var(--inkt);
+    --ink-900: var(--inkt);
+    --ink-700: var(--ink-2);
+    --ink-500: var(--ink-3);
+    --ink-2: rgb(0 0 0 / .66);
+    --ink-3: rgb(0 0 0 / .56);
+    --brand: var(--inkt);
+    --line: rgb(0 0 0 / .20);
+    --line-strong: rgb(0 0 0 / .34);
+    --ghost: rgb(0 0 0 / .08);
+    --btn-ghost-fill: rgb(0 0 0 / .08);
+    --focus-ring: var(--inkt);
   }
 
   /* Het teken erft geen `fill`; die staat als attribuut. */
-  body:has(.s22) .site-header :is(.brand-word, .brand-mark, .mk) { fill: #F5F5F5; }
+  body:has(.s22) .site-header :is(.brand-word, .brand-mark, .mk) { fill: var(--on-panel); }
   /* ── DE BALK MENGT MET DE EERSTE SECTIE — OP ELKE PAGINA ─────────────────
      Lucas, 9 september 2026: *"Nogmaals, eerste sectie geen zwarte balken en
      top bar moet mengen met achtergrond van eerste sectie en veranderd na mate
@@ -501,15 +584,23 @@
      niet erover. "Mengen" is hier dus letterlijk dezelfde kleur hebben — en
      omdat de opening sinds vandaag van rand tot rand loopt (zie de noot bij
      :first-child hierboven), is de naad tussen die twee vlakken weg. */
-  body:has(.s22) .site-header { --kop-vlak: #F5F5F5; }
+  body:has(.s22) .site-header { --kop-vlak: var(--paper); }
   /* De voorpagina en /proef openen met de hero: een verloop dat bovenaan bij
      #E9EDEE begint. #F7F8F8 is de waarde die daar sinds gisteren staat en die
      Lucas heeft goedgekeurd; hij loopt onderin uit over de foto (zie verderop),
      dus de kleine sprong met het verloop erachter is niet te zien. */
-  body:has(.s22.thuis) .site-header { --kop-vlak: #F7F8F8; }
-  /* De bedankpagina opent met de limoen balk. Zwarte letters daarop meten
-     9,6:1 — dezelfde inkt als op --vel, dus het blok hieronder klopt ook hier. */
-  body:has(.s22.ty) .site-header { --kop-vlak: #D2E04A; }
+  /* De hero opent sinds 20 september op de koele grond zelf en niet meer op een
+     verloop (regel "Nooit 1": geen verloop, nergens). De balk mengt dus met
+     --paper, net als overal elders. */
+  body:has(.s22.thuis) .site-header { --kop-vlak: var(--paper); }
+  /* ── DE BEDANKPAGINA OPENT NIET MEER OP HET ACCENT — 20 september 2026 ───
+     Hier stond `--kop-vlak: #D2E04A`: de balk mengde met een limoen openingsvlak.
+     Regel "Nooit 4" in het schema verbiedt dat nu met zoveel woorden — violet
+     nooit als grote vulling, geen violette band over de breedte — en de meting
+     geeft hem gelijk: zwarte letters op lime meten 9,6:1, op #4A1FFF 2,93:1.
+     Dezelfde balk op violet zou dus niet alleen tegen de regel in gaan maar
+     ook onleesbaar zijn. De bedankpagina opent op de gewone grond. */
+  body:has(.s22.ty) .site-header { --kop-vlak: var(--paper); }
 
   /* ── WAAROM DIT MAG FADEN EN DE REST NIET ────────────────────────────────
      Elders in dit bestand staat `transition: none` op de letters van de balk,
@@ -543,11 +634,74 @@
      Dus: het glas staat altijd aan, en wat overvloeit is de KLEUR ervan in
      plaats van zijn dekking. Allebei de standen zijn dekkend, zodat er
      onderweg geen zwart doorheen komt kijken. */
-  body:has(.s22) .site-header::after { opacity: 1; }
+  /* ── EN BOVENAAN IS HIJ DOORZICHTIG — 20 september 2026 ─────────────────
+     Lucas: *"De topbalk mag een doorzichtige achtergrond krijgen wanneer hij
+     boven staat zodat de achtergrond er mooi achter loopt."*
+
+     Hier stond een DEKKEND vlak in `--kop-vlak`: de kleur van de sectie die als
+     eerste op de pagina staat, zodat de naad tussen balk en opening verdween.
+     Dat werkte zolang die opening een egaal paneel was. Zodra er een foto onder
+     staat — de betonnen wand op /lifestyle, de hero op de voorpagina — is een
+     egaal vlak van 76 pixels precies wat je niet wilt: een lichte band dwars
+     over het beeld.
+
+     Twee dingen maken dit mogelijk, en ze horen bij elkaar:
+
+       1 · DE OPENING LOOPT NU DOOR TOT ACHTER DE BALK. Zie de regel bij
+           `main > :first-child` verderop: de sectie wordt 76 pixels omhoog
+           getrokken en krijgt dezelfde 76 pixels als binnenmarge terug. Zijn
+           GROND begint daardoor op nul en zijn INHOUD staat waar hij stond.
+           Zonder die regel zou doorzichtig de bodygrond tonen (#111111) en dat
+           is precies het gat dat de noot hierboven beschrijft.
+       2 · `--kop-vlak` BLIJFT BESTAAN, maar nu als antwoord op de vraag wat er
+           áchter de balk zit in plaats van als verf. De inktschaal hieronder
+           leest hem, zodat een donkere opening lichte letters krijgt.
+
+     Gescrold verandert er niets: daar komt het glas uit Layout.astro, met zijn
+     vervaging en zijn lijn eronder. */
   body:has(.s22) .site-header:not(.scrolled)::after {
-    background: var(--kop-vlak, #F5F5F5);
+    background: transparent;
     backdrop-filter: none;
     box-shadow: none;
+    opacity: 1;
+  }
+  body:has(.s22) .site-header.scrolled::after { opacity: 1; }
+
+  /* De opening loopt door tot achter de balk. Eén regel, en hij hangt aan
+     `main > :first-child` en niet aan `.s22`: wat er ook als eerste op een
+     pagina staat, het is de grond die achter de balk hoort te lopen.
+
+     WAAROM NIET `position: fixed` OP DE BALK. Dat is de andere manier om
+     hetzelfde te krijgen, en hij is duurder: een vaste balk staat buiten de
+     bladspiegel, dus elke ankerlink, de lade op mobiel en elke `sticky`
+     subbalk moeten opnieuw uitgerekend worden. Een sectie die zichzelf omhoog
+     trekt raakt niets anders aan. */
+  /* ── DE OPENING LOOPT DOOR TOT ACHTER DE BALK ───────────────────────────
+     Twee regels, en de tweede is een truc die uitleg verdient.
+
+     `margin-top` trekt de openingssectie 76 pixels omhoog, zodat zijn grond —
+     de foto op /lifestyle, het verloop op de voorpagina, het egale paneel
+     elders — op nul begint en dus áchter de balk door loopt.
+
+     `border-top: transparent` zet die 76 pixels er binnenin weer bij. Waarom
+     een rand en geen binnenmarge: de openingen dragen hun eigen `padding-top`
+     (64 px op de meeste pagina's, 56 op de voorpagina, en responsief), en die
+     zou ik hier moeten OVERSCHRIJVEN met een vast getal om er iets bij op te
+     tellen — dan staat dezelfde maat op twee plekken en lopen ze een keer uit
+     elkaar. Een rand telt er gewoon bij op, wat de binnenmarge ook is.
+
+     En hij is doorzichtig, dus de ACHTERGROND loopt eronder door: dat is
+     standaardgedrag (`background-clip: border-box`) en precies wat hier nodig
+     is. De inhoud staat daarmee exact waar hij stond — nagemeten op zes
+     breedtes, de balk is op alle zes 76 pixels — en alleen de grond is
+     gegroeid.
+
+     ALS DE BALK OOIT VAN HOOGTE VERANDERT, verandert `--kop-h` mee en klopt
+     dit vanzelf. Daarom staat het getal in een token en niet drie keer in dit
+     bestand. */
+  body:has(.s22) main > .s22 > :first-child {
+    margin-top: calc(-1 * var(--kop-h));
+    border-top: var(--kop-h) solid transparent;
   }
   body:has(.s22.thuis) .site-header:not(.scrolled)::after {
     /* ── EN HIJ LOOPT ONDERIN UIT — 8 september 2026 ────────────────────────
@@ -568,30 +722,34 @@
        kleur als de balk, en dan is er geen naad om weg te vagen. Een verloop
        zou daar juist een lichte veeg over een egaal paneel leggen. */
     inset: 0 0 -34px 0;
+    /* Dit is geen verloop in de zin van het schema (regel "Nooit 1", die gaat
+       over kleurverlopen als DECORATIE) maar een uitvloeier van één kleur naar
+       doorzichtig, zodat er geen naad tussen balk en opening staat. Eén kleur,
+       vier stops, geen tweede tint. De kleur is sinds vandaag de grond zelf. */
     background: linear-gradient(180deg,
-      #F7F8F8 0%,
-      #F7F8F8 69%,
-      rgb(247 248 248 / .55) 84%,
-      rgb(247 248 248 / 0) 100%);
+      var(--paper) 0%,
+      var(--paper) 69%,
+      rgb(242 243 245 / .55) 84%,
+      rgb(242 243 245 / 0) 100%);
   }
   body:has(.s22) .site-header.scrolled::after { background: var(--s22-grond, #1B1C1E); }
   body:has(.s22) .site-header:not(.scrolled) {
-    --ink: #111111;
-    --ink-900: #0A0A0A;
-    --ink-700: rgb(17 17 17 / .78);
-    --ink-500: rgb(17 17 17 / .62);
+    --ink: var(--inkt);
+    --ink-900: var(--inkt);
+    --ink-700: rgb(0 0 0 / .78);
+    --ink-500: rgb(0 0 0 / .62);
     /* Zie de noot hierboven: dezelfde twee waarden, de andere kant op. */
-    --ink-2: rgb(17 17 17 / .74);
-    --ink-3: rgb(17 17 17 / .6);
-    --brand: #111111;
-    --line: rgb(17 17 17 / .14);
-    --line-strong: rgb(17 17 17 / .26);
-    --ghost: rgb(17 17 17 / .1);
-    --btn-ghost-fill: rgb(17 17 17 / .08);
-    --btn-ghost-fill-hover: rgb(17 17 17 / .14);
-    --focus-ring: #111111;
+    --ink-2: rgb(0 0 0 / .74);
+    --ink-3: rgb(0 0 0 / .6);
+    --brand: var(--inkt);
+    --line: rgb(0 0 0 / .20);
+    --line-strong: rgb(0 0 0 / .34);
+    --ghost: rgb(0 0 0 / .1);
+    --btn-ghost-fill: rgb(0 0 0 / .08);
+    --btn-ghost-fill-hover: rgb(0 0 0 / .14);
+    --focus-ring: var(--inkt);
   }
-  body:has(.s22) .site-header:not(.scrolled) :is(.brand-word, .brand-mark, .mk) { fill: #111111; }
+  body:has(.s22) .site-header:not(.scrolled) :is(.brand-word, .brand-mark, .mk) { fill: var(--ink); }
   /* ── DE LIMOEN BALK IS LICHTER DAN HET PAPIER — 9 september 2026 ─────────
      De bedankpagina opent met het limoen vlak, en dat heeft een lichtsterkte
      van 0,675 tegen de 0,90 van --vel. Dat klinkt als "donkerder", maar voor
@@ -603,27 +761,29 @@
      Dus staan de twee zwakste inkten hier steviger. Op .72 meet "Inloggen"
      6,3:1; de taalwissel gaat van 62% naar 74% van dezelfde inkt. */
   body:has(.s22.ty) .site-header:not(.scrolled) {
-    --ink-2: rgb(17 17 17 / .82);
-    --ink-3: rgb(17 17 17 / .72);
-    --ink-500: rgb(17 17 17 / .72);
+    --ink-2: rgb(0 0 0 / .82);
+    --ink-3: rgb(0 0 0 / .72);
+    --ink-500: rgb(0 0 0 / .72);
   }
   body:has(.s22.ty) .site-header:not(.scrolled) .lang-switch .ls {
     color: color-mix(in srgb, var(--ink) 74%, transparent);
   }
 
 
-  /* De bestelknop is de enige plek in de balk die kleur mág dragen, en op
-     donkergrijs is dat het limoen zelf — 9,6:1 met zwarte letters erop, tegen
-     de 1,9:1 die een doorzichtige spookknop hier haalde. */
+  /* De bestelknop is de enige plek in de balk die kleur mág dragen — één knop,
+     en daarmee blijft de balk onder de twee procent violet uit het schema.
+     De LETTER erop kantelde op 20 september mee: op lime stond zwart (9,6:1),
+     op violet staat wit (7,16:1); zwart op violet haalt 2,93:1 en is in het
+     schema met zoveel woorden afgekeurd. */
   body:has(.s22) .site-header .nav-cta {
-    background: var(--geel, #D2E04A);
-    color: #111111;
+    background: var(--accent);
+    color: var(--on-accent);
     border-color: transparent;
   }
   body:has(.s22) .site-header .nav-cta:hover,
   body:has(.s22) .site-header .nav-cta:focus-visible {
-    background: #E4F474;
-    color: #111111;
+    background: var(--accent-dim);
+    color: var(--on-accent);
   }
   .s22 .paneel-kop { display: grid; gap: .9rem; max-width: 46rem; margin-bottom: clamp(1.8rem, 4vw, 3.2rem); }
 
@@ -740,9 +900,18 @@
     position: relative; isolation: isolate; overflow: hidden;
     margin: 0;
     min-height: min(92svh, 940px); color: var(--inkt);
-    background:
-      radial-gradient(70% 50% at 50% 96%, var(--tint), transparent 70%),
-      linear-gradient(180deg, #E9EDEE 0%, #F7F8F8 48%, var(--wit) 100%);
+    /* ── HET VERLOOP IS ERUIT — 20 september 2026 ───────────────────────
+       Hier stonden er twee over elkaar: een radiale gloed in de accentkleur
+       onderaan, en een verticaal verloop van #E9EDEE via #F7F8F8 naar wit.
+       Regel "Nooit 1" uit KLEURENSCHEMA.md: geen verloop, nergens, ook niet
+       subtiel, ook niet in de hero — *"een verloop van violet naar blauw is de
+       sterkste tell die er is"*. En regel "Nooit 2": geen gloed in de
+       accentkleur.
+
+       Wat ervoor in de plaats komt is de grond zelf. De diepte die het verloop
+       maakte, komt nu van de lijn onder de sectie en van het tweede vlak
+       eronder — regel "Altijd 5". */
+    background: var(--paper);
     display: grid; grid-template-rows: auto 1fr; justify-items: center;
     padding: clamp(2rem, 5vw, 3.5rem) clamp(1.25rem, 5vw, 4rem) 0;
   }
@@ -756,7 +925,11 @@
   .s22 .hero-acties { justify-content: center; }
 
   .s22 .stralen { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-  .s22 .stralen span { position: absolute; top: 26%; left: 50%; width: 1px; height: 68%; transform-origin: top center; background: linear-gradient(rgb(17 17 17 / .13), transparent); }
+  /* Een haarlijn die uitdooft, in één inkt. Dit is een vorm en geen
+     kleurverloop; regel "Nooit 1" gaat over verlopen als decoratie tussen twee
+     kleuren. Wel op de nieuwe inkt en op .10 in plaats van .13, want puur
+     zwart weegt zwaarder dan #111111. */
+  .s22 .stralen span { position: absolute; top: 26%; left: 50%; width: 1px; height: 68%; transform-origin: top center; background: linear-gradient(rgb(0 0 0 / .10), transparent); }
   .s22 .stralen span:nth-child(1) { rotate: -27deg; }
   .s22 .stralen span:nth-child(2) { rotate: -13deg; }
   .s22 .stralen span:nth-child(3) { rotate: 13deg; }
@@ -791,7 +964,10 @@
      achtergrondje. Gemeten met kladblok/keuring.mjs na afloop. */
   .s22 .hero::before {
     content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background: linear-gradient(180deg, rgb(247 248 248 / .92) 0%, rgb(247 248 248 / .72) 34%, rgb(247 248 248 / .12) 62%, transparent 78%);
+    /* Een SLUIER van de eigen grond, niet een kleurverloop: één kleur die
+       uitdooft zodat de kop leesbaar blijft op de foto eronder. Die blijft
+       bestaan; wat eruit ging is het verloop dat de hero zijn GROND gaf. */
+    background: linear-gradient(180deg, rgb(242 243 245 / .92) 0%, rgb(242 243 245 / .72) 34%, rgb(242 243 245 / .12) 62%, transparent 78%);
   }
 
   /* De uitloop. z-index 1, dus boven de foto (0) en onder de tekst (2) — de zin
@@ -800,7 +976,7 @@
   .s22 .hero::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: 0; z-index: 1;
     height: clamp(6rem, 22%, 15rem); pointer-events: none;
-    background: linear-gradient(180deg, rgb(255 255 255 / 0) 0%, rgb(255 255 255 / .55) 46%, var(--wit) 100%);
+    background: linear-gradient(180deg, rgb(242 243 245 / 0) 0%, rgb(242 243 245 / .55) 46%, var(--paper) 100%);
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -912,6 +1088,66 @@
   .s22 .hero.hero-split .stralen { display: none; }
   .s22 .hero.hero-split .hero-kop { justify-items: start; text-align: left; max-width: none; }
   .s22 .hero.hero-split .hero-acties { justify-content: flex-start; }
+
+  /* ══ DE PERSKOP — 20 september 2026 ══════════════════════════════════════
+     Lucas stuurde een affiche: hoofdletters, zwaar, smal, regels die elkaar
+     bijna raken, en één zinsdeel in kleur. *"Ik wil zo iets qua font voor op de
+     startpagina maar dan niet de blauwe kleur uiteraard maar het kleurenschema
+     toepassen."*
+
+     ER KOMT GEEN LETTER BIJ. Anybody heeft een breedte-as van 50 tot 150% en de
+     site zet hem elders op 125% (breed). Op 78% met gewicht 900 is het exact de
+     perssnit uit dat voorbeeld — het is één as die de andere kant op gaat, geen
+     tweede bestand en geen extra verzoek.
+
+     DE VIER GETALLEN, EN WAT ZE DOEN:
+       · font-stretch 78%   de smalle snit; onder 70% wordt hij een affiche en
+                            loopt hij op een telefoon tegen de leesbaarheid aan
+       · font-weight 900    de bovengrens van de as
+       · line-height .88    de regels raken elkaar bijna; dit is wat het beeld
+                            maakt. `.kop-regel` heeft `overflow: hidden` en een
+                            `padding-bottom: .06em` voor de staarten, dus een
+                            waarde onder 1 knipt hier niets af
+       · letter-spacing -.04em   de woorden staan tegen elkaar aan
+
+     ALLEEN DEZE KOP. `.hero-h1` en niets anders: de rest van de site houdt de
+     brede snit, want een pagina vol perskoppen schreeuwt. */
+  .s22 .hero.hero-split .hero-h1 {
+    text-transform: uppercase;
+    font-weight: 900;
+    font-stretch: 78%;
+    line-height: .88;
+    letter-spacing: -.04em;
+    /* Groter dan de gewone `.hoog`: een smalle letter neemt per teken minder
+       breedte, dus op dezelfde puntgrootte leest hij kleiner. 4,9rem tegen de
+       3,9rem van de standaardkop houdt het optische gewicht gelijk. */
+    font-size: clamp(2.1rem, 5.4vw, 4.9rem);
+  }
+
+  /* ── HET ACCENTWOORD IS EEN LETTER GEWORDEN, GEEN VLAK ────────────────────
+     De site zette het accentwoord als violet vlak met witte letters. Dat is
+     toegestaan (`--accent` met `--on-accent`) maar het maakt er een sticker
+     van, en op een kop van vijf regels hoog is het een lap violet die tegen de
+     2%-richtlijn van KLEURENSCHEMA.md aan duwt. In het voorbeeld zit de kleur
+     ín de letter, en dat werkt net zo hard.
+
+     `--accent` (#4A1FFF) haalt 6,4:1 op de paginagrond. De norm voor tekst van
+     deze maat is 3:1, dus ruim. Op een donkere grond moet het lichte violet
+     komen — dat staat al in de .lime-plate- en .plaat-vol-scopes in global.css
+     en erft hier vanzelf, omdat deze regel `--accent` leest en geen vaste
+     waarde. */
+  .s22.s22 .hero-h1 em {
+    color: var(--accent);
+    background: none;
+    padding: 0;
+    margin: 0;
+    font-weight: 900;
+  }
+  /* De regel `:is(h1, h2):has(em) { font-weight: 250 }` hierboven zet een kop
+     mét accentwoord dun, zodat het accent op gewicht opvalt. Die afspraak geldt
+     niet voor de perskop: daar is de hele regel zwaar en doet de KLEUR het
+     werk. Zonder deze regel staat er een kop van 250 naast een woord van 900. */
+  .s22.s22 .hero.hero-split h1.hero-h1:has(em) { font-weight: 900; }
   /* De zin met de drie gezichten stond linksonder OVER de foto. Zonder foto
      hoort hij gewoon onder de knoppen te staan, als slot van de tekstkolom. */
   .s22 .hero.hero-split .hero-links {
@@ -960,7 +1196,7 @@
        binnen — en dooft daarna uit tot niets op de rand. Kern sterk, rand
        onzichtbaar, en de twee eisen bijten elkaar niet meer.
        Nagemeten met kladblok/beeldtekst.mjs: slechtste punt 8,6:1. */
-    background: rgb(255 255 255 / .93);
+    background: rgb(242 243 245 / .93);
     -webkit-mask-image: radial-gradient(closest-side at 46% 50%, #000 68%, transparent 100%);
     mask-image: radial-gradient(closest-side at 46% 50%, #000 68%, transparent 100%);
   }
@@ -991,7 +1227,26 @@
   .s22 .maatlijn li:first-child { border-left: 0; padding-left: 0; }
   .s22 .maatlijn .nr { color: var(--inkt-2); }
 
+  /* ── DE SCROLLWENK ──────────────────────────────────────────────────────
+     Zie de noot in Voorpagina.astro. Rechtsonder, op dezelfde hoogte als de
+     zin met de gezichten linksonder; een etiket en een lijn van 44 px waar een
+     streep van 12 px doorheen zakt. Inkt en de haarlijn, niets anders. */
+  /* `.hero.hero-split > *` zet elk kind op position: relative; vandaar de
+     specifiekere selector hier, anders staat de wenk in de gridstroom. */
+  .s22 .hero.hero-split .scroll-wenk {
+    position: absolute; z-index: 2; right: clamp(1.25rem, 5vw, 4rem); bottom: clamp(3rem, 8vw, 6rem);
+    display: grid; justify-items: center; gap: .55rem; color: var(--inkt-2); text-decoration: none;
+  }
+  .s22 .scroll-wenk:hover, .s22 .scroll-wenk:focus-visible { color: var(--inkt); }
+  .s22 .scroll-wenk .mono { font-size: .72rem; letter-spacing: .12em; }
+  .s22 .scroll-wenk-lijn { position: relative; width: 1px; height: 44px; background: var(--lijn); overflow: hidden; }
+  .s22 .scroll-wenk-lijn i { position: absolute; left: 0; top: 0; width: 1px; height: 12px; background: currentColor; }
+  @media (max-width: 900px) { .s22 .scroll-wenk { display: none; } }
+
   @media (prefers-reduced-motion: no-preference) {
+    .s22 .scroll-wenk { animation: vp-zacht .9s var(--uit) both .9s; }
+    .s22 .scroll-wenk-lijn i { animation: vp-wenk 1.8s cubic-bezier(.22, 1, .36, 1) infinite; }
+    @keyframes vp-wenk { 0% { transform: translateY(-12px); } 60%, 100% { transform: translateY(44px); } }
     /* De banden zijn weg met .strook; de foto komt in één keer op. */
     .s22 .kop-regel > * { animation: vp-op 1s var(--uit) both; animation-delay: calc(var(--i) * .09s + .1s); }
     @keyframes vp-op { from { transform: translateY(110%); } }
@@ -1026,7 +1281,7 @@
   .s22 .kaart { position: relative; display: block; border-radius: calc(var(--ronding) - 8px); overflow: hidden; background: var(--inkt); aspect-ratio: 4 / 5; }
   .s22 .kaart img { width: 100%; height: 100%; object-fit: cover; transition: scale .6s var(--uit); }
   .s22 .kaart:hover img { scale: 1.04; }
-  .s22 .kaart::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(17 17 17 / .55), transparent 42%); }
+  .s22 .kaart::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(var(--scrim, 0 0 0) / .55), transparent 42%); }
   /* ── DE NUMMERS OP DE KAARTEN ZIJN WEG — 8 september 2026 ─────────────────
      Lucas: *"Ik wil ook geen 01, 02, 03… cijfers per sectie hebben, verwijder
      deze, onnodig."* Op 8 september gingen de sectie-etiketten eruit; deze
@@ -1047,7 +1302,9 @@
   .s22 .kaart-tekst { display: grid; min-width: 0; }
   .s22 .kaart-tekst b { font-weight: 500; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .s22 .kaart-tekst .mono { font-size: .72rem; color: var(--inkt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .s22 .rond { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: var(--geel); color: var(--inkt); display: grid; place-items: center; font-size: .9rem; transition: transform .3s var(--uit); }
+  /* De pijl in de cirkel is WIT en niet zwart sinds 20 september: zwart op
+     violet is 2,93:1 en staat in KLEURENSCHEMA.md bij de afgekeurde paren. */
+  .s22 .rond { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: var(--geel); color: var(--op-geel); display: grid; place-items: center; font-size: .9rem; transition: transform .3s var(--uit); }
   .s22 .kaart:hover .rond { transform: translateX(3px); }
   .s22 .kaart-wat { font-size: .95rem; color: var(--inkt-2); }
 
@@ -1060,19 +1317,29 @@
 
      Geen `::after`-verloop: dat bestaat om witte foto's onder de pil leesbaar te
      houden, en hier ligt geen foto. */
-  .s22 .kaart-deur { background: var(--geel); display: grid; align-content: start; }
+  /* ── DE DEURTEGEL IS ZWART GEWORDEN — 20 september 2026 ─────────────────
+     Hij was een vlak in de merkkleur tussen de fototegels: "de kleur van de
+     site in plaats van een beeld". Met violet kan dat niet blijven. Twee
+     redenen, allebei uit KLEURENSCHEMA.md: een tegel van deze maat is violet
+     als GROOT VLAK, en de zwarte tekst erop haalde 2,93:1 en 2,64:1 — gemeten
+     met kladblok/leesbaar-alles.mjs op zes pagina's.
+
+     Wat hij moet uitdrukken verandert niet: geen foto, maar het vlak van de
+     site zelf. Dat vlak IS nu zwart (--panel). De pil onderin houdt zijn
+     violette cirkel, en dat is meteen de enige violet op de tegel — actie. */
+  .s22 .kaart-deur { background: var(--panel); display: grid; align-content: start; }
   .s22 .kaart-deur::after { content: none; }
-  .s22 .deur-binnen { display: grid; gap: .5rem; padding: clamp(1rem, 2vw, 1.4rem); color: var(--inkt); }
+  .s22 .deur-binnen { display: grid; gap: .5rem; padding: clamp(1rem, 2vw, 1.4rem); color: var(--on-panel); }
   .s22 .deur-kop { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; font-size: clamp(1.05rem, 1.9vw, 1.45rem); line-height: 1.05; }
   /* De andere deuren, als lijst met een haarlijn ertussen. Ze vullen het vlak
      niet op om het te vullen: ze zeggen wat er achter de tegel zit, wat precies
      de vraag is die "bekijk alle diensten" oproept. */
   .s22 .deur-lijst { display: grid; margin-top: .3rem; }
-  .s22 .deur-item { font-size: .92rem; line-height: 1; padding: .55rem 0; color: rgb(17 17 17 / .78); border-top: 1px solid rgb(17 17 17 / .16); }
+  .s22 .deur-item { font-size: .92rem; line-height: 1; padding: .55rem 0; color: rgb(242 243 245 / .78); border-top: 1px solid rgb(242 243 245 / .16); }
   .s22 .deur-item:first-child { border-top: 0; padding-top: .1rem; }
-  /* De pil op deze tegel is wit op lime; de ronde pijl daarin is dus lime op
-     wit in plaats van andersom, anders verdwijnt hij in zijn eigen grond. */
-  .s22 .kaart-deur .rond { background: var(--inkt); color: var(--geel); }
+  /* De pil op deze tegel is wit op zwart; de cirkel daarin doet gewoon mee met
+     de andere tegels — violet met een witte pijl. De omkering die hier stond
+     (inkt op geel) bestond omdat de tegel zélf geel was. */
 
   /* ── EEN BIJSCHRIFT OVER EEN FOTO IS EEN PIL, GEEN LOSSE TEKST ─────────────
      7 september 2026. Op /catalog stond "CATALOG · A DELIVERED IMAGE" in wit
@@ -1087,7 +1354,7 @@
      wegging omdat niemand hem nog gebruikte. */
   .s22 .foto-pil {
     position: absolute; z-index: 1; left: .7rem; bottom: .7rem;
-    background: rgb(17 17 17 / .82); color: var(--vel);
+    background: rgb(0 0 0 / .82); color: var(--vel);
     padding: .35rem .75rem; border-radius: 999px;
     backdrop-filter: blur(6px);
   }
@@ -1125,9 +1392,9 @@
   .s22 .draad b { color: var(--geel-letter); }
 
   /* ── DE STAPPEN ───────────────────────────────────────────────────────────*/
-  .s22 .stappen li { display: grid; grid-template-columns: auto minmax(0, 19rem) minmax(0, 34rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid rgb(245 245 245 / .14); }
-  .s22 .stappen li:last-child { border-bottom: 1px solid rgb(245 245 245 / .14); }
-  .s22 .stap-nr { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(2rem, 5vw, 4.2rem); line-height: .8; color: rgb(245 245 245 / .22); }
+  .s22 .stappen li { display: grid; grid-template-columns: auto minmax(0, 19rem) minmax(0, 34rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid rgb(242 243 245 / .14); }
+  .s22 .stappen li:last-child { border-bottom: 1px solid rgb(242 243 245 / .14); }
+  .s22 .stap-nr { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(2rem, 5vw, 4.2rem); line-height: .8; color: rgb(242 243 245 / .22); }
   .s22 .stappen b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(1.05rem, 1.8vw, 1.45rem); text-transform: uppercase; letter-spacing: -.01em; text-wrap: balance; }
 
   /* ── DE SET ───────────────────────────────────────────────────────────────*/
@@ -1175,7 +1442,10 @@
      leest het als wat het is: twee dingen die je bij hetzelfde product kunt
      bestellen. De bovenmarge verhuist van de lijst naar het opschrift, anders
      staat de kop tegen de fotorij en de lijst er ver onder. */
-  .s22 .set-extras-kop { margin: clamp(2rem, 4vw, 3rem) 0 .3rem; }
+  /* .6rem en niet .3: gemeten 5 px tussen dit etiket en de lijst eronder, en
+     een etiket dat tegen zijn lijst aan ligt leest als het eerste item ervan.
+     Zie de noot bij .sr-k-kop in StyleRows.astro. */
+  .s22 .set-extras-kop { margin: clamp(2rem, 4vw, 3rem) 0 .6rem; }
   .s22 .extras { display: grid; gap: .7rem; margin-top: clamp(2rem, 4vw, 3rem); }
   .s22 .set-extras-kop + .extras { margin-top: 0; }
   .s22 .extras li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.2rem; padding-top: .8rem; border-top: 1px solid var(--lijn); }
@@ -1202,7 +1472,10 @@
   .s22 a.tarief-soort { text-decoration: underline; text-underline-offset: .2em; text-decoration-color: var(--lijn-sterk); }
   .s22 .tarief-van { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem; }
   .s22 .tarief-van .tarief { font-size: clamp(1.6rem, 2.6vw, 2.2rem); }
-  .s22 .tarief-tot { margin: 0; color: var(--inkt-2); }
+  /* De tweede tariefregel stond 6 px onder de eerste en las daardoor als een
+     omgeslagen regel van hetzelfde zinnetje, terwijl het twee mededelingen
+     zijn: wat het kost, en waar het naartoe zakt. */
+  .s22 .tarief-tot { margin: .5rem 0 0; color: var(--inkt-2); }
   .s22 .tarief-abo { margin: clamp(1.2rem, 2.4vw, 2rem) 0 0; padding-top: 1.1rem; border-top: 1px solid var(--lijn); display: grid; gap: .5rem; }
   .s22 .tarief-abo-kop { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; font-size: clamp(1.05rem, 1.8vw, 1.3rem); }
   .s22 .tarief-abo-rij { display: flex; flex-wrap: wrap; gap: .6rem 1.8rem; }
@@ -1231,9 +1504,14 @@
 
   /* ── DE POSTER EN HET GELE PANEEL ─────────────────────────────────────────*/
   .s22 .kamer-poster { display: grid; justify-items: center; }
-  .s22 .poster { position: relative; width: min(100%, 30rem); border-radius: var(--ronding); overflow: hidden; background: var(--inkt); aspect-ratio: 3 / 4; box-shadow: 0 40px 90px rgb(0 0 0 / .5); }
+  /* ── DE SLAGSCHADUW IS ERUIT — 20 september 2026 ────────────────────────
+     `box-shadow: 0 40px 90px rgb(0 0 0 / .5)` maakte diepte onder de poster.
+     Regel "Altijd 5": diepte komt uit een lijn of een tweede vlak, nooit uit
+     een schaduw. De poster staat op de donkere ondergrond en heeft dus een
+     lijn nodig om zijn rand te tonen, niet een wolk eronder. */
+  .s22 .poster { position: relative; width: min(100%, 30rem); border-radius: var(--ronding); overflow: hidden; background: var(--inkt); aspect-ratio: 3 / 4; box-shadow: inset 0 0 0 1px rgb(242 243 245 / .14); }
   .s22 .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .s22 .poster-tekst { position: absolute; inset: auto 0 0; display: grid; gap: .7rem; padding: clamp(1.25rem, 3vw, 2rem); background: linear-gradient(to top, rgb(17 17 17 / .92), rgb(17 17 17 / .55) 60%, transparent); color: var(--vel); }
+  .s22 .poster-tekst { position: absolute; inset: auto 0 0; display: grid; gap: .7rem; padding: clamp(1.25rem, 3vw, 2rem); background: linear-gradient(to top, rgb(var(--scrim, 0 0 0) / .92), rgb(var(--scrim, 0 0 0) / .55) 60%, transparent); color: var(--vel); }
   /* ── HET SLOTPANEEL IS DONKER, EN HEET DAAROM NIET MEER GEEL — 7 sep 2026 ─
    *
    * Elke pagina eindigt op dit paneel, en het stond direct boven de gele voet
@@ -1256,11 +1534,11 @@
    * naast zit. Twintig componenten en tien pagina's zijn meegenomen. */
   .s22 .paneel-slot {
     background: #1A1A1A; color: var(--vel);
-    border: 1px solid rgb(245 245 245 / .14);
+    border: 1px solid rgb(242 243 245 / .14);
     display: grid; gap: 1.1rem; justify-items: start;
   }
-  .s22 .paneel-slot .etiket { color: rgb(245 245 245 / .66); }
-  .s22 .paneel-slot .lopend { color: rgb(245 245 245 / .72); }
+  .s22 .paneel-slot .etiket { color: rgb(242 243 245 / .66); }
+  .s22 .paneel-slot .lopend { color: rgb(242 243 245 / .72); }
   /* De knoppen die de pagina's al meegeven, omgedraaid voor deze ondergrond.
      Zo hoeft geen van de dertig aanroepplekken zijn klassen te wijzigen — en
      `.s22.s22` omdat .knop-inkt in dit bestand zelf ook twee klassen diep is. */
@@ -1304,7 +1582,17 @@
     font-family: var(--tekst2); font-size: .98rem; font-stretch: 100%;
     letter-spacing: 0; text-transform: none; font-weight: 400;
   }
-  .s22.s22 .req { color: var(--gloed); }
+  /* ── HET STERRETJE WAS 2,13:1 — 20 september 2026 ───────────────────────
+     Gemeten met kladblok/leesbaar-alles.mjs op alle contact- en
+     bestelformulieren: het sterretje achter een verplicht veld stond in de
+     accentkleur, en die is op een licht vlak 2,13:1. Dat is dezelfde reden
+     waarom `.btn-primary` in global.css noteert dat wit op het accent 1,91:1
+     is en "never correct": deze kleur werkt als VULLING en niet als letter.
+
+     Een sterretje is geen versiering maar de mededeling dat een veld verplicht
+     is — het hoort dus gewoon leesbaar te zijn. Vet in de inktkleur valt even
+     goed op en is 15:1. */
+  .s22.s22 .req { color: var(--inkt); font-weight: 700; }
   .s22.s22 .hint { font-size: .8rem; color: var(--inkt-2); }
   /* `background-color` en niet `background`. De verkorte vorm wist
      background-image, en dat is precies waar het pijltje van een <select> in
@@ -1317,17 +1605,25 @@
   .s22.s22 .select { padding-right: 2.4rem; }
   .s22.s22 .opt-title, .s22.s22 .opt-desc { font-family: var(--tekst2); text-transform: none; letter-spacing: normal; }
   .s22.s22 :where(.input, .textarea)::placeholder { color: var(--inkt-3); }
+  /* ── DE FOCUSRING IS EEN OUTLINE GEWORDEN — 20 september 2026 ───────────
+     Hij stond als `box-shadow: 0 0 0 3px var(--tint)`: een ring in de
+     accentkleur. Regel "Nooit 2" verbiedt gloed en schaduw in de accentkleur,
+     en een ring van drie pixels in een lavendeltint is precies dat. Een
+     `outline` doet hetzelfde werk, is géén schaduw, en volgt het vlak ook als
+     het veld ronde hoeken heeft. */
   .s22.s22 :where(.input, .textarea, .select):focus {
-    outline: none; border-color: var(--inkt); box-shadow: 0 0 0 3px var(--tint);
+    outline: 2px solid var(--accent); outline-offset: 2px; border-color: var(--inkt); box-shadow: none;
   }
   .s22.s22 .opt { border: 1px solid var(--lijn-sterk); border-radius: 10px; background: var(--wit); }
-  .s22.s22 .opt:has(input:checked) { border-color: var(--inkt); background: var(--tint); }
-  .s22.s22 .opt input { accent-color: var(--gloed); }
+  /* De gekozen optie krijgt een INKTRAND en geen lavendel vlak — regel
+     "Nooit 3": de tint is voor een statuslabel, niet voor een oppervlak. */
+  .s22.s22 .opt:has(input:checked) { border-color: var(--inkt); background: var(--surface); box-shadow: inset 0 0 0 1px var(--inkt); }
+  .s22.s22 .opt input { accent-color: var(--accent); }
   .s22.s22 .opt .opt-title { color: var(--inkt); font-weight: 600; }
   .s22.s22 .opt .opt-desc { color: var(--inkt-2); font-size: .82rem; }
 
   .s22 .trustlijn { display: flex; flex-wrap: wrap; gap: .5rem; padding: clamp(2rem, 4vw, 3rem) var(--x) 0; }
-  .s22 .trustlijn li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: rgb(245 245 245 / .6); padding: .4rem .85rem; border: 1px solid rgb(245 245 245 / .18); border-radius: 999px; }
+  .s22 .trustlijn li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: rgb(242 243 245 / .6); padding: .4rem .85rem; border: 1px solid rgb(242 243 245 / .18); border-radius: 999px; }
 
   /* ── SMALLE SCHERMEN ──────────────────────────────────────────────────────*/
   @media (max-width: 900px) {
@@ -1367,7 +1663,7 @@
        een staande uitsnede, en dat midden is bij deze foto de lege capsule. */
     .s22 .hero { min-height: min(88svh, 760px); padding-bottom: clamp(1.5rem, 5vw, 2.5rem); }
     .s22 .hero-foto { object-position: 58% 56%; }
-    .s22 .hero::before { background: linear-gradient(180deg, rgb(247 248 248 / .94) 0%, rgb(247 248 248 / .88) 30%, rgb(247 248 248 / .34) 48%, rgb(247 248 248 / .06) 68%, transparent 82%); }
+    .s22 .hero::before { background: linear-gradient(180deg, rgb(242 243 245 / .94) 0%, rgb(242 243 245 / .88) 30%, rgb(242 243 245 / .34) 48%, rgb(242 243 245 / .06) 68%, transparent 82%); }
     /* ── DE WAS WORDT EEN BAND, EN DE LETTER WORDT DONKERDER ────────────────
        Vier uitsnedes naast elkaar gezet en ze waren niet uit elkaar te houden:
        niet de uitsnede wiste het beeld maar de LAGEN erboven. De ovale was om
@@ -1389,10 +1685,10 @@
          waar de tekst staat. Gemeten: 1,24:1 zolang deze regel ontbrak. */
       -webkit-mask-image: none; mask-image: none;
       background: linear-gradient(180deg,
-        rgb(255 255 255 / 0) 0%,
-        rgb(255 255 255 / .74) 16%,
-        rgb(255 255 255 / .76) 84%,
-        rgb(255 255 255 / 0) 100%);
+        rgb(242 243 245 / 0) 0%,
+        rgb(242 243 245 / .74) 16%,
+        rgb(242 243 245 / .76) 84%,
+        rgb(242 243 245 / 0) 100%);
     }
     .s22 .hero-clip { aspect-ratio: 16 / 9; }
     .s22 .maatlijn { grid-auto-flow: row; gap: .9rem; }
@@ -1489,12 +1785,12 @@
    opmaak. Zonder deze regel zit er een strook oude grond tussen het laatste
    paneel en de voettekst. `:has` is hier precies het goede gereedschap: alleen
    een main die deze stijl draagt verandert mee. */
-main:has(> .s22) { padding-bottom: 0; background: #111111; }
+main:has(> .s22) { padding-bottom: 0; background: var(--panel); }
 /* De voettekst hield 158px lucht boven zich om zich van lichte inhoud los te
    maken. Hier hoeft dat niet: onder het laatste paneel ligt al de inktrand van
    de stijl zelf, en die 158px lieten de oude lichte grond zien. De grond van
    <body> gaat mee mee voor het geval er ergens toch een kier valt. */
-body:has(main > .s22) { background: #111111; }
+body:has(main > .s22) { background: var(--panel); }
 body:has(main > .s22) .site-footer { margin-top: 0; }
 
 /* ── DE BALK ALS TAB, OP DE VOORPAGINA ───────────────────────────────────────
@@ -1539,7 +1835,11 @@ body:has(main > .s22) .site-footer { margin-top: 0; }
    balk op de voorpagina wit was; die balk is er niet meer. Op de donkergrijze
    balk is --geel weer de juiste waarde: 9,6:1 op #1B1C1E, tegen 3,0:1 voor de
    donkere lime die voor een witte grond gekozen was. */
-body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); }
+/* ── DE STREEP IN HET MERKTEKEN — 20 september 2026 ──────────────────────
+   Hij stond op het accent. Regel "Nooit 5" en "Nooit 6" uit KLEURENSCHEMA.md:
+   geen violet in iconen, en geen glans of verloop in het logo — één kleur, één
+   vorm. Het merkteken op de donkere balk is dus wit, in zijn geheel. */
+body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 /* ── DE VOORPAGINA HEEFT GEEN EIGEN BALK MEER — 8 september 2026, tweede ronde
    Vanmorgen ging de witte ingezette balk eruit. Wat bleef staan was de INDELING
    ervan, in een `@media (min-width: 761px)`-blok: het merk absoluut in het
@@ -1668,16 +1968,16 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
 .s22.s22 .svcsw-a[aria-current="page"] { color: var(--inkt); text-decoration-color: var(--lijn-sterk); background: none; }
 .s22.s22 .svcsw-dot { width: auto; height: auto; border-radius: 0; background: none; color: var(--lijn-sterk); }
 /* In een donkere kamer draait de inkt om — zie 7 september, /plans. */
-.s22.s22 :where(.kamer) .svcsw-k { color: rgb(245 245 245 / .6); }
-.s22.s22 :where(.kamer) .svcsw-a { color: rgb(245 245 245 / .82); }
+.s22.s22 :where(.kamer) .svcsw-k { color: rgb(242 243 245 / .6); }
+.s22.s22 :where(.kamer) .svcsw-a { color: rgb(242 243 245 / .82); }
 .s22.s22 :where(.kamer) .svcsw-a:hover,
 .s22.s22 :where(.kamer) .svcsw-a:focus-visible,
-.s22.s22 :where(.kamer) .svcsw-a[aria-current="page"] { color: var(--vel); text-decoration-color: rgb(245 245 245 / .45); background: none; }
+.s22.s22 :where(.kamer) .svcsw-a[aria-current="page"] { color: var(--vel); text-decoration-color: rgb(242 243 245 / .45); background: none; }
 
 /* De schuifvergelijking: ronde hoeken en de greep in het accent. */
 .s22.s22 .cmp { border-radius: calc(var(--ronding) - 8px); overflow: hidden; }
 .s22.s22 .cmp-tag { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; }
-.s22.s22 .cmp-knob { background: var(--geel); color: var(--inkt); border: 0; }
+.s22.s22 .cmp-knob { background: var(--geel); color: var(--op-geel); border: 0; }
 .s22.s22 .cmp-divider { background: var(--vel); }
 
 /* De formaatvergelijking: haarlijnen in plaats van kaders. */
@@ -1703,6 +2003,14 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
 
 /* De stijlenrijen: kaarten met dezelfde ronding als elders, labels in mono. */
 .s22.s22 .sr img { border-radius: calc(var(--ronding) - 10px); }
+/* ── HET VEL ROND ZICH ZELF — 20 september 2026 ───────────────────────────
+   De regel hierboven rondt de FOTO af. In het vel (zie StyleRows.astro) staat
+   naast een foto ook een leeg vak voor een beeld dat nog gemaakt wordt, en dat
+   is geen <img> — die bleef dus scherp naast vier afgeronde buren. Nu draagt
+   de TEGEL de ronding en de foto erbinnen niet meer: leeg of vol, hetzelfde
+   kader. */
+.s22.s22 .sr-k-vak { border-radius: calc(var(--ronding) - 10px); }
+.s22.s22 .sr-k-vak img { border-radius: 0; }
 .s22.s22 .sr-alt-h { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; }
 .s22.s22 .sr-alt-sub { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); }
 /* ── "PAST BIJ" IS GEEN ETIKET MAAR EEN OPSOMMING — 8 september 2026 ────────
@@ -1783,3 +2091,9 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: var(--geel, #D2E04A); 
      "ABONNEM ENT") terwijl de tabel gewoon opzij kan. */
   .s22 .tabel-schuif :is(th, td, .mono, .etiket) { overflow-wrap: normal; hyphens: manual; white-space: nowrap; }
 }
+
+/* De zin die zegt wat allebei-op-één-product kost. Hij hangt onder de
+   groepenbalk en boven de beelden, want dat is precies waar de vraag opkomt:
+   je ziet twee groepen staan en wilt weten wat samen kost. Extra lucht erboven,
+   want hij hoort bij de balk en niet bij de rij eronder. */
+.set-combi { margin: .9rem 0 1.4rem; max-width: 74ch; }

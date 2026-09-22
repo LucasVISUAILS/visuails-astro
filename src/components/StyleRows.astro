@@ -153,44 +153,35 @@ const altVan = (naam: string, m: Media | null, i: number, voor?: boolean) =>
  * linksonder, kleiner, met een lichte rand: het formaat zegt al dat het de
  * invoer is en niet het resultaat.
  */
-type Vlak = { m: Media | null; naam: string; links: number; breed: number; draai: number };
+type Vlak = { m: Media | null; naam: string };
 
 /* De verhouding van een geleverd beeld per dienst. Een catalogbeeld is
    vierkant, een lifestylebeeld staand, een clip verticaal — dezelfde
    verhoudingen als komendRatio hierboven, en om dezelfde reden: een kader met
-   de verkeerde vorm belooft een ander bestand dan er komt. */
+   de verkeerde vorm belooft een ander bestand dan er komt.
+
+   DIT IS HET ENIGE WAT PER DIENST VERSCHILT aan het vel. De indeling, de
+   tussenruimte, de stippellijn om de ingestuurde foto, het bijschrift onder
+   elke tegel en de regel eronder zijn op alle drie de pagina's hetzelfde —
+   zie de noot bij .sr-k-vel in de stijl hieronder. */
 const VELRATIO: Record<string, string> = { catalog: '1 / 1', lifestyle: '3 / 4', video: '9 / 16' };
-/* ── EN DE VERHOUDING VAN HET VEL VOLGT DAARUIT — nagemeten 17 september ───
-   Eerst stond het vel voor alle drie op 4:5. Bij lifestyle klopte dat; bij
-   catalog stonden vier VIERKANTE kaarten in een vel van vijf hoog en bleef er
-   een gat van veertig procent onder de rij staan. Een vel is zo hoog als wat
-   erin hangt: vier vierkanten naast elkaar zijn laag, drie staande kaarten zijn
-   hoog, één clip is het hoogst. Dat de drie pagina's daardoor niet dezelfde
-   verhouding hebben is geen inconsistentie — de tegels van één pagina zijn
-   onderling gelijk, en dat is wat een raster vraagt. */
-const VELVORM: Record<string, string> = { catalog: '5 / 4', lifestyle: '4 / 5', video: '4 / 5' };
-/* Hoe breed één kaart is, als deel van de tegel. Meer kaarten is smaller, maar
-   niet evenredig: bij vier mogen ze elkaar een stukje raken. */
-const VELBREED: Record<number, number> = { 1: 46, 2: 42, 3: 40, 4: 34 };
+
+/* ── EEN REM OP DE BREEDTE, ALLEEN WAAR HIJ NODIG IS — 20 september 2026 ───
+   Het vel vult de kolom. Bij catalog (vier vierkanten) en lifestyle (drie
+   staande kaarten) is dat precies goed. Bij video staat er één clip van 9:16
+   naast de telefoonfoto: over de volle kolom wordt die tegel ~420 px breed en
+   dus 750 px hoog, hoger dan het scherm van de bezoeker. Vandaar één grens,
+   en alleen daar. `none` is geen ontbrekende waarde maar de bedoelde: geen
+   grens. */
+const VELMAX: Record<string, string> = { catalog: 'none', lifestyle: 'none', video: '22rem' };
 
 const velVan = (it: Item): { vlakken: Vlak[]; voor: Media | null } => {
   const namen = levervlakken(dienst, lang);
   const n = namen.length || 1;
   const bron = (it.photos && it.photos.length ? it.photos : [it.media]).slice(0, n);
-  const breed = VELBREED[n] || 30;
-  /* De laatste kaart eindigt op de rechterrand, de eerste begint links: de
-     tussenruimte volgt uit het aantal in plaats van uit een tabel per aantal. */
-  const stap = n > 1 ? (100 - breed) / (n - 1) : 0;
   const vlakken = namen.map((naam, i) => {
     const m = bron[i] || null;
-    return {
-      m: m && (m.src || m.icon) ? m : null,
-      naam,
-      links: n > 1 ? i * stap : (100 - breed) / 2,
-      breed,
-      /* Symmetrisch om het midden: de stapel helt niet één kant op. */
-      draai: Number(((i - (n - 1) / 2) * 2.4).toFixed(2)),
-    };
+    return { m: m && (m.src || m.icon) ? m : null, naam };
   });
   return { vlakken, voor: it.before && (it.before.src || it.before.icon) ? it.before : null };
 };
@@ -243,11 +234,26 @@ const c = nl ? {
      dat er iets gebeurd is. In de grote waaier blijft "Ingestuurd" staan; daar
      is de ruimte er wel en staat het naast "Geleverd" als een paar. */
   voorKort: 'Jouw foto',
+  /* ── DE REGEL ONDER HET VEL — 20 september 2026 ───────────────────────
+     Zie de lange noot bij de markup. Het vel toont de ONDERGRENS en niet het
+     plafond; deze zin is wat dat verschil draagt. Hij noemt eerst wat vastligt
+     (dit krijg je altijd, bij dit bedrag) en dan pas de ruimte, want andersom
+     leest het als een verkoopregel in plaats van als een belofte. */
+  altijd: dienst === 'video'
+    ? 'Dit krijg je altijd voor dit bedrag: één clip per product. Extra beelden bij dezelfde bestelling kan — dat kies je erbij in het bestelformulier.'
+    : 'Dit krijg je altijd voor dit bedrag. Meer beelden per product kan — dat kies je erbij in het bestelformulier.',
+  volgt: 'Foto volgt',
   eigenH: 'Jouw eigen look',
   eigenSub: 'Voor jouw merk gemaakt. Alleen jij ziet hem hier.',
   eigenKies: 'Kies deze look',
   komendH: 'In de maak',
   komendSub: 'Looks waar we aan werken. Nog niet te bestellen — zit die van jou ertussen, laat het weten.',
+  /* ── EN DEZELFDE ZIN VOOR ÉÉN — 22 september 2026 ──────────────────────
+     Catalog hield vandaag één komende look over. "Zit die van jou ertussen"
+     vraagt naar een lijst, en bij één regel is er niets om tussen te zitten;
+     de zin gaat dan over een lijst die de lezer niet ziet. Eén variant dus,
+     gekozen op `komend.length`. */
+  komendSubEen: 'Een look waar we aan werken. Nog niet te bestellen — wil je hem, laat het weten.',
   komendVoet: 'Binnenkort',
   maatEyebrow: 'Geen van deze?',
   maatSub: 'Dan maken we er een. Een look op maat wordt ontworpen in plaats van gekozen, dus hij begint met een gesprek en niet met een tarief.',
@@ -262,11 +268,17 @@ const c = nl ? {
   voor: 'Submitted', na: 'Delivered',
   /* Zie de Nederlandse tegenhanger. */
   voorKort: 'Your photo',
+  /* Zie de Nederlandse tegenhanger. */
+  altijd: dienst === 'video'
+    ? 'This is what you always get at this rate: one clip per product. Extra images on the same order are possible — you add those in the order form.'
+    : 'This is what you always get at this rate. More images per product is possible — you add that in the order form.',
+  volgt: 'Photo to come',
   eigenH: 'Your own look',
   eigenSub: 'Made for your brand. Nobody else sees it here.',
   eigenKies: 'Pick this look',
   komendH: 'In the works',
   komendSub: 'Looks we are building. Not orderable yet — if yours is among them, say so.',
+  komendSubEen: 'A look we are building. Not orderable yet — want it, say so.',
   komendVoet: 'Coming',
   maatEyebrow: 'None of these?',
   maatSub: 'Then we build one. A made-to-measure look is designed rather than picked, so it starts with a conversation instead of a rate.',
@@ -294,6 +306,14 @@ const c = nl ? {
           inleiding: zie de noot bij .sr-top in de stijl hieronder. */}
       <div class="sr-top-feit">
         <p class="sr-levert"><span>{c.levertL}</span> {levert}</p>
+        {/* ── DE ONDERGRENS, ÉÉN KEER ──────────────────────────────────────
+            Deze zin stond eerst onder elk vel. Bij zes looks op /video stond
+            hij dus zes keer woordelijk hetzelfde op één pagina — precies wat
+            een regel eerder al is aangepakt bij de prijs (zie prijsSamen). Hij
+            geldt voor alle looks, dus hoort hij bij de kop, en hij staat hier
+            direct onder de chip die het aantal noemt: dat aantal is waar hij
+            over gaat. */}
+        <p class="sr-levert-bij">{c.altijd}</p>
         {prijsSamen && <p class="sr-kopprijs">{prijsSamen}</p>}
       </div>
     </header>
@@ -390,46 +410,79 @@ const c = nl ? {
             <p class="sr-k-tag">{s.tagline}</p>
           </div>
 
-          {/* ── JOUW FOTO → WAT JE KRIJGT ──────────────────────────────────
-              De ingestuurde foto staat VOOR de set en niet erin. In de tegel
-              hing hij als klein kaartje over de resultaten heen en was hij een
-              vierde beeld dat toevallig kleiner was. Hier is hij het begin van
-              een zin: dit gaf je, dat krijg je. De pijl doet het werk dat
-              anders twee etiketten moesten doen. */}
+          {/* ═══ HET VEL — 20 SEPTEMBER 2026 ═══════════════════════════════
+              Lucas koos ontwerp B uit kladblok/stijlkaart/: *"Ik vind B 'het
+              vel' het beste (…) B mag daarnaast bij alle style categorieën
+              worden toegepast en maak het enorm consistent om rust te
+              bewaren."*
+
+              ── WAT ERVOOR STOND ────────────────────────────────────────────
+              Een baan van drie delen: de telefoonfoto klein links, een pijl,
+              en daarnaast een set waarin het eerste beeld de volle hoogte
+              droeg en de rest in een smalle kolom stond. Dat had een
+              rangorde die de dienst niet heeft — het openingsbeeld is niet
+              belangrijker dan het detail, je krijgt ze allemaal — en het gaf
+              drie verschillende indelingen op drie dienstpagina's, want bij
+              één clip viel de hele opzet weg.
+
+              ── WAT HET NU IS ───────────────────────────────────────────────
+              Eén rij gelijke tegels, als een contactvel. De ingestuurde foto
+              is de eerste tegel, iets smaller en met een stippellijn: hij
+              hoort bij de rij en hij is iets anders. Elke geleverde tegel
+              draagt zijn eigen naam ("01 · Voorkant"), dus je ziet het aantal
+              én wat elk beeld is zonder één woord extra.
+
+              Dezelfde opzet op alle drie de dienstpagina's. Wat verschilt is
+              alleen de VERHOUDING van een tegel — vierkant bij catalog,
+              staand bij lifestyle, verticaal bij een clip — en dat is geen
+              inconsistentie maar het formaat van het bestand dat je krijgt.
+
+              ── EN DE REGEL ERONDER ─────────────────────────────────────────
+              Lucas: *"het moet niet zo zijn dat de klant denkt dat hij alleen
+              die beelden krijgt omdat er meer beelden per order per product
+              toegevoegd kunnen worden. De beelden die er staan zijn wat de
+              klant altijd voor het bedrag mag verwachten."*
+
+              Een contactvel leest als een volledige opsomming — dat is
+              precies zijn kracht en precies het risico. De regel onder het
+              vel zegt daarom in één zin wat het vel WEL is (de ondergrens,
+              altijd, bij dit bedrag) en dat er meer bij kan. Zonder die regel
+              zou het vel een plafond beloven dat er niet is. */}
           <div class="sr-k-baan">
-            {voor && (
-              <figure class="sr-k-voor">
-                <span class="sr-p is-voor">
-                  {voor.src
-                    ? <img src={voor.src} alt={altVan(s.name, voor, 0, true)} loading="lazy" decoding="async" />
-                    : <ProductScene icon={voor.icon!} width="52%" wide />}
-                </span>
-                <figcaption class="sr-k-bij">{c.voorKort}</figcaption>
-              </figure>
-            )}
-            {voor && (
-              <span class="sr-k-pijl" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
-              </span>
-            )}
-            <figure class="sr-k-set" style={`--sr-n:${vlakken.length}; --sr-rest:${Math.max(vlakken.length - 1, 1)}; --sr-vr:${VELRATIO[dienst] || '3 / 4'}`}>
-              <div class="sr-k-vakken">
-                {vlakken.map((v, i) => (
+            <ol class={`sr-k-vel${voor ? ' heeft-voor' : ''}`} role="list"
+                style={`--sr-n:${vlakken.length}; --sr-vr:${VELRATIO[dienst] || '3 / 4'}; --sr-velmax:${VELMAX[dienst] || 'none'}`}>
+              {voor && (
+                <li class="sr-k-tegel is-voor">
+                  <span class="sr-k-vak">
+                    {voor.src
+                      ? <img src={voor.src} alt={altVan(s.name, voor, 0, true)} loading="lazy" decoding="async" />
+                      : <ProductScene icon={voor.icon!} width="52%" wide />}
+                  </span>
+                  <span class="sr-k-bij">{c.voorKort}</span>
+                </li>
+              )}
+              {vlakken.map((v, i) => (
+                <li class="sr-k-tegel">
                   <a class={`sr-k-vak${v.m ? '' : ' is-plaat'}`} href={s.detailHref}
                      aria-label={i === 0 ? s.detailLabel : undefined}
                      tabindex={i === 0 ? undefined : -1} aria-hidden={i === 0 ? undefined : 'true'}>
                     {v.m?.src
                       ? <img src={v.m.src} alt={i === 0 ? altVan(s.name, v.m, 0) : ''} loading="lazy" decoding="async" width={v.m.w} height={v.m.h} />
                       : v.m?.icon ? <ProductScene icon={v.m.icon} width={v.m.width || '52%'} badge={v.m.badge} wide />
-                      : <span class="sr-p-naam">{v.naam}</span>}
+                      /* ── GEEN NAAM MEER IN DE PLAAT — 20 september 2026 ──
+                         Hij stond er wél, en dat was juist zolang de tegel
+                         geen bijschrift had. Nu draagt elke tegel zijn naam
+                         eronder, dus stond "ACHTERKANT" twee keer boven
+                         elkaar in hetzelfde vak. Wat blijft is het vak zelf
+                         (papier met een haarlijn) en een bijschrift in het
+                         lichtere grijs; de zin hieronder is er voor wie de
+                         pagina niet ziet maar hoort. */
+                      : <span class="sr-verborgen">{c.volgt}</span>}
                   </a>
-                ))}
-              </div>
-              {/* Alleen wat dit beeld IS. Wat een look levert staat één keer op
-                  de pagina, in de chip naast de kop — hier erbij zetten gaf op
-                  /video letterlijk "CLIP · 8 SEC · ÉÉN CLIP VAN ACHT SECONDEN". */}
-              <figcaption class="sr-k-bij is-na">{s.naLabel || c.na}</figcaption>
-            </figure>
+                  <span class={`sr-k-bij is-na${v.m ? '' : ' is-volgt'}`}>{String(i + 1).padStart(2, '0')} · {v.naam}</span>
+                </li>
+              ))}
+            </ol>
           </div>
 
           <div class="sr-k-woord">
@@ -455,7 +508,7 @@ const c = nl ? {
       <div class="sr-komend reveal pending">
         <div class="sr-komend-kop">
           <h3 class="sr-alt-h">{c.komendH}</h3>
-          <p class="sr-alt-sub">{c.komendSub}</p>
+          <p class="sr-alt-sub">{komend.length === 1 ? c.komendSubEen : c.komendSub}</p>
         </div>
         {/* ── DRIE REGELS WERDEN DRIE KAARTEN — 12 september 2026 ───────────
             Lucas: *"Ik wil dat je bij video en hooks nu placeholder stylen gaat
@@ -627,6 +680,19 @@ const c = nl ? {
      plaats van eronder. De kop vult daarmee de breedte, de regel blijft even
      lang, en de prijs staat op de plek waar het oog na de kop naartoe gaat in
      plaats van drie regels lager. Onder 62rem staat alles weer onder elkaar. */
+  /* ── DEZELFDE 316 PIXELS ALS BIJ FigWalk — 20 september 2026 ─────────────
+     global.css zet `section { padding-block: clamp(4.5rem, 9vw, 9rem) }` voor
+     de secties die een PAGINA opbouwen. Dit blok is ook een <section>, maar het
+     staat binnen de <section class="paneel"> van /catalog, /lifestyle en
+     /video — en die heeft zijn eigen 64 px al. Gemeten op 1440: 64 + 158,4 =
+     222 px leegte boven "Stap 1 — kies je look", en nog eens 222 eronder.
+
+     Niemand heeft die 158,4 gekozen; ze lekken uit een regel die over iets
+     anders gaat. De ruimte die dit blok van zijn buren scheidt, komt van het
+     paneel (64 px) en van de marge boven .sr-kamers, en die twee zijn wél
+     gekozen. Zie dezelfde noot bij .wk in FigWalk.astro. */
+  .sr { padding-block: 0; }
+
   .sr-top { max-width: 62ch; }
   @media (min-width: 62rem) {
     .sr-top { display: grid; grid-template-columns: minmax(0, 62ch) minmax(0, auto); gap: clamp(1.6rem, 4vw, 3.5rem); align-items: end; max-width: none; }
@@ -649,6 +715,10 @@ const c = nl ? {
   }
   /* .75rem: zie de noot in HeroFacts.astro — niets onder 11,5px. */
   .sr-levert span { font-family: var(--font-mono); font-stretch: 82%; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); align-self: center; }
+  /* De zin die zegt dat het vel een ondergrens is en geen plafond. Zie de noot
+     bij de markup. 46ch omdat hij in de rechterkolom van de kop staat en daar
+     naast de inleiding moet passen zonder hem te verdringen. */
+  .sr-levert-bij { margin: .7rem 0 0; font-size: .84rem; line-height: 1.55; color: var(--ink-3); max-width: 46ch; }
 
   .sr-eyebrow { margin: 0 0 .5rem; font-family: var(--font-mono); font-stretch: 82%; font-size: .68rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
   .sr-alt-h { margin: 0; font-size: clamp(1.3rem, 2.2vw, 1.7rem); }
@@ -703,7 +773,17 @@ const c = nl ? {
      lijst van. */
   .sr-kamer + .sr-kamer { border-top: 1px solid var(--line); }
 
-  .sr-k-kop { grid-area: kop; display: grid; gap: .25rem; min-width: 0; margin-bottom: clamp(.4rem, 1.2vw, 1rem); }
+  /* ── .25rem WAS VIER PIXELS — 20 september 2026 ─────────────────────────
+     Gemeten met kladblok/te-dicht.mjs op alle drie de dienstpagina's: tussen
+     "Classic" (32 px) en "Strak. Consistent. Zonder concessies." zat 4 px. Bij
+     een kop van die maat lezen die twee dan als één blok tekst met een rare
+     regelafstand, en dat is precies waar Lucas op wees: *"wenkbrauwen die
+     gelijk op de kop staan (…) alles moet rustig ogen dus ook whitespace
+     bevatten."*
+
+     .55rem is 9 px. Dezelfde ondergrens die .sr-alt-sub hierboven op
+     17 september al kreeg, en om dezelfde reden genoteerd. */
+  .sr-k-kop { grid-area: kop; display: grid; gap: .55rem; min-width: 0; margin-bottom: clamp(.6rem, 1.4vw, 1.1rem); }
   /* Groot, en met ruimte eromheen: dit is de naam van een wereld. Het plafond
      van 3,2rem is gemeten op "PHONE-MADE" in de smalste kolom waarin een kamer
      nog naast zijn tekst staat. */
@@ -713,73 +793,85 @@ const c = nl ? {
   }
   .sr-k-tag { margin: 0; font-size: clamp(.98rem, 1.5vw, 1.15rem); color: var(--ink-2); max-width: 46ch; }
 
-  /* ── DE BAAN: JOUW FOTO → DE SET ───────────────────────────────────────── */
-  .sr-k-baan { grid-area: baan; display: flex; align-items: flex-start; gap: clamp(.8rem, 2vw, 1.6rem); min-width: 0; }
-  .sr-k-voor { margin: 0; flex: 0 0 auto; width: clamp(3.6rem, 7vw, 5rem); }
-  /* Rechtop en zonder schaduw. De vorige versie stond scheef met een witte rand
-     eromheen — dat is de opmaak van een plakboek, en dit is een productfoto. */
-  .sr-k-voor .sr-p.is-voor {
-    position: static; display: block; width: 100%; aspect-ratio: 3 / 4;
-    overflow: hidden; border-radius: 2px; background: var(--paper-2);
-    box-shadow: 0 0 0 1px var(--line) inset; rotate: none; border: 0;
-  }
-  /* De pijl hoort bij de TELEFOONFOTO en niet bij de set: hij staat op de halve
-     hoogte van dat kleine kaartje, niet op de halve hoogte van een vel dat vijf
-     keer zo hoog is. Met `align-self: center` zweefde hij op driehonderd pixels
-     onder een foto van honderd — twee losse dingen in plaats van één zin.
-     De rekensom is de breedte van de kaart maal 4/3 (zijn verhouding), gedeeld
-     door twee, min de halve pijl. */
-  .sr-k-pijl {
-    flex: 0 0 auto; align-self: flex-start;
-    margin-top: calc(clamp(3.6rem, 7vw, 5rem) * 2 / 3 - .65rem);
-    display: grid; place-items: center; width: clamp(.9rem, 1.8vw, 1.3rem); color: var(--ink-3);
-  }
-  .sr-k-pijl svg { width: 100%; height: auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .sr-k-set { margin: 0; flex: 1 1 auto; min-width: 0; }
+  /* ══ HET VEL ════════════════════════════════════════════════════════════
+     Eén rij gelijke tegels, als een contactvel. Zie de lange noot bij de
+     markup voor waarom dit ontwerp het geworden is; hier staat alleen hoe.
 
-  /* ── DE SET ────────────────────────────────────────────────────────────
-     Het openingsbeeld draagt de volle hoogte, de rest staat er in een kolom
-     naast en verdeelt diezelfde hoogte. Kleine gelijke tussenruimte, scherpe
-     hoeken, geen schaduw: een contactvel en geen stapel kaarten. */
-  .sr-k-vakken {
-    display: grid; gap: 8px;
-    grid-template-columns: 1.7fr minmax(0, 1fr);
-    grid-template-rows: repeat(var(--sr-rest, 2), minmax(0, 1fr));
-    height: clamp(14rem, 24vw, 21rem);
+     DE ENIGE VARIABELE IS --sr-vr, de verhouding van één tegel. Alles
+     daaromheen — de kolombreedtes, de tussenruimte, de stippellijn, het
+     bijschrift — is op alle drie de dienstpagina's identiek. Dat was de
+     opdracht: *"maak het enorm consistent om rust te bewaren."* */
+  .sr-k-baan { grid-area: baan; min-width: 0; }
+  .sr-k-vel {
+    list-style: none; margin: 0; padding: 0; min-width: 0;
+    display: grid; gap: clamp(.4rem, 1vw, .65rem);
+    grid-template-columns: repeat(var(--sr-n, 3), minmax(0, 1fr));
+    max-width: var(--sr-velmax, none);
   }
-  .sr-k-set:has(.sr-k-vak:only-child) .sr-k-vakken { grid-template-columns: minmax(0, 20rem); }
+  /* De ingestuurde foto is de eerste kolom en hij is SMALLER — .78 tegen 1.
+     Dat verschil doet het werk dat eerst een pijl en twee etiketten deden: je
+     ziet in één blik dat die ene tegel van een andere orde is, zonder dat er
+     een woord bij hoeft. Kleiner dan .78 en hij wordt een postzegel — precies
+     de klacht waar dit ontwerp uit voortkomt. */
+  .sr-k-vel.heeft-voor { grid-template-columns: .78fr repeat(var(--sr-n, 3), minmax(0, 1fr)); }
+  .sr-k-tegel { min-width: 0; display: flex; flex-direction: column; }
+  /* ── ALLE BIJSCHRIFTEN OP ÉÉN LIJN ──────────────────────────────────────
+     De ingestuurde foto is .78 zo breed als de rest en heeft dezelfde
+     verhouding, dus zou hij ook .78 zo hoog zijn — en dan staat "JOUW FOTO"
+     twintig procent hoger dan de bijschriften ernaast. Zeven tegels met hun
+     naam op twee verschillende hoogtes is precies de onrust die dit ontwerp
+     moest wegnemen. Dus rekt dat ene vak mee tot de hoogte van de rij (de
+     tegel staat toch al op stretch) en snijdt de telefoonfoto een fractie
+     smaller — wat hij toch al is. */
+  @media (min-width: 64.01rem) {
+    .sr-k-tegel.is-voor .sr-k-vak { aspect-ratio: auto; flex: 1 1 auto; min-height: 0; }
+  }
+
   .sr-k-vak {
     display: block; overflow: hidden; border-radius: 2px;
-    background: var(--paper-2); min-height: 0;
+    background: var(--paper-2); aspect-ratio: var(--sr-vr, 3 / 4); min-width: 0;
   }
   .sr-k-vak img, .sr-k-vak :global(.vis) { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .sr-k-vak:first-child { grid-row: 1 / -1; }
+  /* Stippellijn, en verder niets. Geen kleur, geen schaduw, geen draaiing —
+     zie de noot bij .sr-kamers over waarom decoratie hier eerder is weggehaald
+     dan toegevoegd. De stippel is het stilste teken dat "dit is invoer, geen
+     resultaat" zegt, en hij zegt het ook in zwart-wit. */
+  .sr-k-tegel.is-voor .sr-k-vak {
+    background: var(--paper);
+    box-shadow: none; border: 1px dashed var(--line-strong);
+  }
   /* ── EEN VAK WAAR DE FOTO NOG VOOR GEMAAKT WORDT ───────────────────────
-     Geen kleur en geen streepjespatroon meer — dat was precies het "goedkoop"
-     waar Lucas op wees. Wat overblijft is het stilste dat nog iets zegt: een
-     leeg vlak in de papierkleur, een haarlijn eromheen, en de naam van het
-     beeld dat er komt. Naast een echte foto leest dat als een gereserveerd
-     kader; het trekt geen aandacht weg van de beelden die er wél zijn. */
+     Geen kleur en geen streepjespatroon — dat was precies het "goedkoop" waar
+     Lucas op wees. Wat overblijft is het stilste dat nog iets zegt: een leeg
+     vlak in de papierkleur, een haarlijn eromheen, en de naam van het beeld
+     dat er komt. Naast een echte foto leest dat als een gereserveerd kader. */
   .sr-k-vak.is-plaat {
     display: grid; place-items: center; padding: .5rem;
     background: var(--paper);
     box-shadow: 0 0 0 1px var(--line) inset;
   }
-  /* 12px in --ink-3 op papier (4,9:1) — ruim boven de grens, en bewust lichter
-     dan de tekst eromheen: het is een aanduiding en geen mededeling. */
-  .sr-p-naam {
-    font-family: var(--font-mono); font-size: .75rem; line-height: 1.25; letter-spacing: .05em;
-    text-transform: uppercase; color: var(--ink-3); text-align: center; text-wrap: balance;
+  /* Alleen voor wie de pagina hoort: het vak is leeg en dat is te zien, maar
+     niet te horen. Zelfde truc als .sr-only elders; hier lokaal omdat deze
+     component zijn eigen stijl draagt. */
+  .sr-verborgen {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
   }
-  /* De twee bijschriften dragen de zin: JOUW FOTO links, GELEVERD rechts. */
-  /* .72rem en niet .68: gemeten 10,9 px, net onder de 11,5 die dit project
-     aanhoudt — en dit is het bijschrift dat zegt welk van de twee beelden JOUW
-     foto is en welk het geleverde. Dat is het hele punt van de rij. */
+  /* Het bijschrift onder elke tegel: "JOUW FOTO" en "01 · VOORKANT". Daarmee
+     draagt het vel het aantal én de inhoud, en hoeft er onder de rij geen
+     opsomming meer te staan die hetzelfde nog eens zegt.
+     .72rem en niet .68: gemeten 10,9 px, net onder de 11,5 die dit project
+     aanhoudt. */
   .sr-k-bij {
     margin: .5rem 0 0; font-family: var(--font-mono); font-size: .72rem;
     letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3;
+    text-wrap: balance;
   }
   .sr-k-bij.is-na { color: var(--ink-2); }
+  /* Een beeld dat nog gemaakt moet worden houdt zijn plek en zijn naam, maar
+     niet het gewicht van een beeld dat er al is. Eén tint lichter is genoeg —
+     en het is dezelfde tint als "JOUW FOTO", dus er komt geen derde kleur bij. */
+  .sr-k-bij.is-na.is-volgt { color: var(--ink-3); }
 
   /* ── HET WOORD ───────────────────────────────────────────────────────── */
   .sr-k-woord { grid-area: woord; display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
@@ -799,29 +891,39 @@ const c = nl ? {
      vooraan. Alle maten in procenten van het vak, dus op 390 px dezelfde stapel
      als op 1440.
 
-     ── DE GLOED IS EEN WEERKAATSING GEWORDEN, en dat is Lucas' opmerking:
-     *"niet die heftige glow achter de foto's, deze kan wat softer."* Wat er
-     stond was een halo van 30% dekking, hoog en rond, midden achter de stapel —
-     licht dat nergens vandaan kwam. Wat er staat is breed, laag en zwak (12%),
-     onder de kaarten in plaats van erachter: het leest als licht dat van de
-     ondergrond terugkaatst, en het geeft de look nog steeds zijn eigen kleur
-     zonder dat de foto's in een lichtbak liggen. */
-  .sr-fan { --sr-tint: var(--accent); display: block; position: relative; aspect-ratio: 4 / 3; isolation: isolate; }
-  .sr-fan::before {
-    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-    background: radial-gradient(64% 34% at 50% 72%,
-      color-mix(in oklab, var(--sr-tint) 13%, transparent) 0%,
-      color-mix(in oklab, var(--sr-tint) 5%, transparent) 52%,
-      transparent 100%);
-    filter: blur(34px);
-    transition: opacity var(--dur-2, .4s) var(--ease);
-  }
+     ── DE GLOED IS ERAF — 20 september 2026 ────────────────────────────────
+     Hier stond een weerkaatsing: een breed, laag radiaal verloop in de
+     accentkleur, 34px onscherp, onder de stapel. Dat was op de limoengrond een
+     verdedigbaar effect, maar het violette schema verbiedt het op drie punten
+     tegelijk — *"Nooit 1: geen verloop, nergens"*, *"Nooit 2: geen gloed en
+     geen schaduw in de accentkleur"* en *"Nooit 4: violet nooit als grote
+     vulling"*. Een onscherpe violette vlek van 4:3 onder elke stapel is precies
+     die grote vulling.
+
+     Wat het deed — de stapel zijn eigen kleur geven — doet het schema met de
+     foto's zelf: *"de foto's zijn het grootste gekleurde object op elke
+     pagina, niet de interface"*. Er gaat dus niets verloren; er gaat een laag
+     af die er niet had mogen zijn. Gemeten was hij op de lichte grond
+     bovendien nauwelijks zichtbaar (13% van violet, 34px uitgesmeerd).
+
+     `--sr-tint` stond hier ook, en is meegegaan: binnen de waaier gebruikte
+     alleen die gloed hem. `.sr-streep` verderop leest hem van `.sr-kamer` /
+     `.sr-maat`, waar de look zijn eigen tint zet — dat pad loopt niet via de
+     waaier en verandert dus niet. */
+  .sr-fan { display: block; position: relative; aspect-ratio: 4 / 3; isolation: isolate; }
   .sr-card {
     position: absolute; display: block; overflow: hidden; border-radius: 12px;
-    background: var(--paper-2); border: 1px solid rgb(255 255 255 / 0.09);
-    /* Zachter dan wat hier stond (44px op -18px): de stapel moet van de pagina
-       loskomen, niet zweven. */
-    box-shadow: 0 16px 34px -20px rgb(0 0 0 / 0.7), 0 1px 0 rgb(255 255 255 / 0.05) inset;
+    /* ── EEN LIJN, GEEN SLAGSCHADUW — 20 september 2026 ────────────────────
+       Hier stond `0 16px 34px -20px rgb(0 0 0 / .7)`: diepte uit onscherpte.
+       KLEURENSCHEMA "Altijd 5" zegt dat diepte uit een lijn of een tweede vlak
+       komt en nooit uit een schaduw, en de rand die ernaast stond was een
+       overblijfsel van de donkere site — wit op 9% is op deze grond niets.
+
+       De stapel overlapt zichzelf, dus de scheiding moet er WEL zijn: elke
+       kaart krijgt daarom een echte haarlijn in inkt. Die leest over een lichte
+       foto én over een donkere, waar een witte rand alleen over een donkere
+       leest en een schaduw alleen over een lichte. */
+    background: var(--paper-2); border: 1px solid rgb(0 0 0 / 0.17);
     transform: rotate(var(--r)) translate(0, 0);
     transition: transform .7s cubic-bezier(.16,1,.3,1);
   }
@@ -893,12 +995,12 @@ const c = nl ? {
   .sr-leeg { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); text-align: center; padding: .4rem; }
 
   /* Rustiger dan het uit elkaar waaieren dat hier stond: de stapel komt een
-     haar omhoog en de weerkaatsing wordt iets sterker. */
+     haar omhoog. (De regel die de weerkaatsing sterker maakte hoorde bij de
+     gloed en is met de gloed mee verdwenen.) */
   @media (hover: hover) {
     .sr-maat:hover .sr-card-2 { transform: rotate(1deg) translate(0, -1.5%); }
     .sr-maat:hover .sr-card-1 { transform: rotate(-6deg) translate(-1%, .5%); }
     .sr-maat:hover .sr-card-3 { transform: rotate(7deg) translate(1%, .5%); }
-    .sr-maat:hover .sr-fan::before { opacity: 1.35; }
   }
 
   .sr-fan.is-lead { align-self: center; }
@@ -1043,23 +1145,31 @@ const c = nl ? {
     .sr-etiket { padding: .18em .4em; letter-spacing: .04em; left: .3rem; bottom: .3rem; }
     .sr-etiket.is-na { top: .3rem; }
     /* ── DE KAMER OP EEN TELEFOON ────────────────────────────────────────
-       Eén kolom, en de baan gaat van links-naar-rechts naar boven-naar-onder:
-       jouw foto bovenaan, de pijl omlaag, de set eronder. De zin blijft
-       dezelfde zin, alleen gekanteld — dat is wat de pijl kan en een etiket
-       niet. Gemeten op 390 en 430px. */
+       Eén kolom: naam, vel, woord. Gemeten op 390 en 430px. */
     .sr-kamer {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas: "kop" "baan" "woord";
       gap: 1rem; padding: 1rem .9rem 1.2rem;
     }
-    /* Eén kolom en geen twee: naast een foto van 70 pixels bleef er een strook
-       van 250 over voor drie beelden, en het bijschrift brak in tweeën naast
-       een pijl die nergens heen wees. Nu staat de zin rechtop — foto, wat het
-       is, pijl omlaag, wat je terugkrijgt. */
-    .sr-k-baan { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: stretch; gap: .35rem; }
-    .sr-k-voor { width: 4.6rem; }
-    .sr-k-pijl { width: 1.4rem; rotate: 90deg; margin: .1rem 0 .1rem 1.6rem; justify-self: start; }
-    .sr-k-bij { white-space: nowrap; }
+    /* ── HET VEL OP EEN TELEFOON — 20 september 2026 ──────────────────────
+       Vijf tegels naast elkaar in 340 px is 60 px per beeld: dan is het geen
+       contactvel meer maar een strook postzegels. Het vel blijft dus hetzelfde
+       vel, alleen met omslag: de tegels vullen rijen van minstens 4,75rem
+       breed. Op 390 px zijn dat er drie per rij, op 560 vier of vijf.
+
+       De ingestuurde foto blijft de eerste tegel en dus linksboven, en hij
+       houdt zijn stippellijn — daaraan herken je hem, niet aan zijn plaats in
+       de rij. Vandaar dat de kolombreedte van .78fr hier vervalt en de
+       stippel niet: het teken dat blijft werken is het teken dat blijft. */
+    /* 7rem: op 390 px zijn dat twee kolommen van ~143 px, op een grotere
+       telefoon of een tablet drie of vier. Twee is het getal waarop lifestyle
+       (drie beelden plus de foto) precies uitkomt en waarop een tegel nog een
+       beeld is en geen postzegel. En de tegels rekken hier NIET mee met de
+       hoogste buur: een bijschrift dat op de ene tegel twee regels beslaat en
+       op de andere één mag de foto's niet ongelijk maken. */
+    .sr-k-vel,
+    .sr-k-vel.heeft-voor { grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); max-width: none; align-items: start; }
+    .sr-k-bij { white-space: normal; }
     .sr-k-cta { justify-items: stretch; }
     .sr-t-knop { text-align: center; }
     .sr-maat { grid-template-columns: 1fr; }
@@ -1073,8 +1183,9 @@ const c = nl ? {
      doorvoeren."* Vier looks onder elkaar op /lifestyle waren 2.800 px, de
      zes op /video 3.500: elke look een volle band van kop, baan en woord.
      Op breed staan ze nu twee naast elkaar, elk als één kolom (kop, baan,
-     woord) met een lagere set. Wat blijft: jouw foto → de set, de pijl, de
-     namen — alleen kleiner en met z'n tweeën in het beeld. Eén look (Catalog)
+     woord) met een smaller vel. Wat blijft: dezelfde rij tegels met dezelfde
+     bijschriften — alleen kleiner en met z'n tweeën in het beeld, want de
+     tegels schalen mee met de kolom. Eén look (Catalog)
      houdt de volle breedte: één kolom van de helft naast niets is geen raster
      maar een gat. */
   @media (min-width: 64.01rem) {
@@ -1091,7 +1202,6 @@ const c = nl ? {
     .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-kop { margin-bottom: 0; }
     .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-h { font-size: clamp(1.4rem, 2.2vw, 2rem); }
     .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-tag { font-size: .98rem; }
-    .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-vakken { height: clamp(12rem, 17vw, 15rem); }
     .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-woord {
       flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1.2rem;
     }

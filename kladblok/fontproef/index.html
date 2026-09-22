@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fontproef VISUAILS</title>
+<style>
+@font-face{font-family:"Anybody";src:url("f/anybody.woff2") format("woff2-variations");font-weight:100 900;font-stretch:50% 150%;font-display:swap}
+@font-face{font-family:"Instrument";src:url("f/instrument.woff2") format("woff2-variations");font-weight:400 700;font-stretch:75% 100%;font-display:swap}
+@font-face{font-family:"Martian";src:url("f/martian.woff2") format("woff2-variations");font-weight:100 800;font-stretch:75% 112.5%;font-display:swap}
+@font-face{font-family:"Archivo";src:url("f/archivo.woff2") format("woff2-variations");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
+@font-face{font-family:"Geist Mono";src:url("f/geistmono.woff2") format("woff2-variations");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Instrument Serif";src:url("f/iserif.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Schibsted";src:url("f/schibsted.woff2") format("woff2-variations");font-weight:400 900;font-display:swap}
+@font-face{font-family:"Public Sans";src:url("f/publicsans.woff2") format("woff2-variations");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Familjen";src:url("f/familjen.woff2") format("woff2-variations");font-weight:400 700;font-display:swap}
+@font-face{font-family:"Onest";src:url("f/onest.woff2") format("woff2-variations");font-weight:100 900;font-display:swap}
+
+:root{--bg:#F5F5F5;--surface:#FFF;--ink:#0A0A0A;--ink-2:#454545;--ink-3:#686868;--line:#DFDFDF;--accent:#D2E04A}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-family:"Public Sans",system-ui,sans-serif}
+.wrap{max-width:1500px;margin:0 auto;padding:36px 24px 80px}
+.paginakop{font-weight:800;font-size:30px;letter-spacing:-.02em;margin:0 0 8px}
+.paginalead{color:var(--ink-3);max-width:76ch;margin:0 0 6px;line-height:1.6;font-size:15px}
+.hoe{color:var(--ink-3);max-width:76ch;margin:0 0 28px;line-height:1.6;font-size:14px}
+.raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:22px}
+.kaart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:16px}
+.kaart.nu{border-color:var(--ink)}
+.badge{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.kaart.nu .badge{color:var(--ink)}
+.recept{font-size:12.5px;color:var(--ink-3);line-height:1.55;border-top:1px solid var(--line);padding-top:14px;margin-top:auto}
+.recept b{color:var(--ink);font-weight:700}
+
+.eyebrow{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.h{margin:0;font-size:34px;line-height:1.06;letter-spacing:-.025em}
+.h em{font-style:normal;font-weight:800}
+.lead{margin:0;font-size:16px;line-height:1.5;color:var(--ink-2)}
+.body{margin:0;font-size:14.5px;line-height:1.62;color:var(--ink-2)}
+.rij{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.prijs{font-size:13.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+.knop{display:inline-block;background:var(--accent);color:#0A0A0A;border-radius:999px;padding:9px 18px;font-size:13px;font-weight:700}
+.klein{font-size:11.5px;color:var(--ink-3)}
+.tabel{width:100%;border-collapse:collapse;font-size:13.5px}
+.tabel td{border-top:1px solid var(--line);padding:7px 0;color:var(--ink-2)}
+.tabel td:last-child{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* 0 · NU */
+.f0 .h{font-family:"Anybody";font-stretch:118%;font-weight:500}
+.f0 .lead,.f0 .body,.f0 .knop,.f0 .tabel{font-family:"Instrument"}
+.f0 .eyebrow,.f0 .klein,.f0 .prijs{font-family:"Martian";font-stretch:82%}
+/* 1 · SCHIBSTED, één familie */
+.f1 .h,.f1 .lead,.f1 .body,.f1 .knop,.f1 .tabel,.f1 .eyebrow,.f1 .klein,.f1 .prijs{font-family:"Schibsted"}
+.f1 .h{font-weight:800}.f1 .eyebrow{font-weight:600}
+/* 2 · PUBLIC SANS + GEIST MONO */
+.f2 .h,.f2 .lead,.f2 .body,.f2 .knop,.f2 .tabel{font-family:"Public Sans"}
+.f2 .h{font-weight:800}
+.f2 .eyebrow,.f2 .klein,.f2 .prijs{font-family:"Geist Mono";font-weight:500}
+/* 3 · FAMILJEN + INSTRUMENT */
+.f3 .h{font-family:"Familjen";font-weight:700}
+.f3 .lead,.f3 .body,.f3 .knop,.f3 .tabel{font-family:"Instrument"}
+.f3 .eyebrow,.f3 .klein,.f3 .prijs{font-family:"Familjen";font-weight:600}
+/* 4 · ONEST, één familie */
+.f4 .h,.f4 .lead,.f4 .body,.f4 .knop,.f4 .tabel,.f4 .eyebrow,.f4 .klein,.f4 .prijs{font-family:"Onest"}
+.f4 .h{font-weight:800}.f4 .eyebrow{font-weight:600}
+/* 5 · ARCHIVO, één familie, drie breedtes */
+.f5 .h{font-family:"Archivo";font-stretch:115%;font-weight:700}
+.f5 .lead,.f5 .body,.f5 .knop,.f5 .tabel{font-family:"Archivo";font-stretch:100%}
+.f5 .eyebrow,.f5 .klein,.f5 .prijs{font-family:"Archivo";font-stretch:88%;font-weight:600}
+/* 6 · INSTRUMENT SERIF + INSTRUMENT SANS */
+.f6 .h{font-family:"Instrument Serif";font-weight:400;font-size:38px;letter-spacing:-.01em}
+.f6 .h em{font-style:italic;font-weight:400}
+.f6 .lead,.f6 .body,.f6 .knop,.f6 .tabel{font-family:"Instrument"}
+.f6 .eyebrow,.f6 .klein,.f6 .prijs{font-family:"Instrument";font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="paginakop">Zeven keer dezelfde kaart, zeven keer andere letters</h1>
+  <p class="paginalead">Zelfde tekst, zelfde maten, zelfde kleuren. Alle zeven gratis, open source en vanaf onze eigen server geladen — er komt geen enkele verbinding met een lettertypedienst bij.</p>
+  <p class="hoe">Waar je op moet letten, in deze volgorde: <b>het wenkbrauwtje bovenaan</b> (dat is waar het nu misgaat — een brede mono in kapitalen op 11 px), <b>de regel onder de knop</b>, en pas daarna de kop. Een kop van 34 px is bijna altijd leesbaar; het kleine grijs is waar een letter zich bewijst.</p>
+
+  <div class="raster">
+
+    <section class="kaart nu f0">
+      <span class="badge">Nu · Anybody + Instrument Sans + Martian Mono</span>
+      <span class="eyebrow">( Lifestyle · vanaf € 49 )</span>
+      <h2 class="h">Jouw product, in <em>scènes die verkopen.</em></h2>
+      <p class="lead">Je stuurt vier telefoonfoto's. Wij leveren drie beelden in jouw vaste look, klaar voor je feed.</p>
+      <p class="body">Een specialist kijkt elk beeld na voordat het je map in gaat. Wat niet klopt, gaat terug de bewerking in — je krijgt geen map met vijftig varianten waar je zelf uit moet kiezen.</p>
+      <table class="tabel"><tr><td>Catalogset</td><td>4 credits</td></tr><tr><td>Lifestylecarrousel</td><td>5 credits</td></tr><tr><td>Lifestyle-clip</td><td>12 credits</td></tr></table>
+      <div class="rij"><span class="knop">Start een bestelling</span><span class="prijs">€ 82 p/p bij 5 stuks</span></div>
+      <span class="klein">Levering binnen 3 werkdagen · btw excl.</span>
+      <p class="recept"><b>Kop</b> Anybody · <b>Tekst</b> Instrument Sans · <b>Wenkbrauw</b> Martian Mono</p>
+    </section>
+
+    <section class="kaart f1">
+      <span class="badge">1 · Schibsted Grotesk, één familie</span>
+      <span class="eyebrow">( Lifestyle · vanaf € 49 )</span>
+      <h2 class="h">Jouw product, in <em>scènes die verkopen.</em></h2>
+      <p class="lead">Je stuurt vier telefoonfoto's. Wij leveren drie beelden in jouw vaste look, klaar voor je feed.</p>
+      <p class="body">Een specialist kijkt elk beeld na voordat het je map in gaat. Wat niet klopt, gaat terug de bewerking in — je krijgt geen map met vijftig varianten waar je zelf uit moet kiezen.</p>
+      <table class="tabel"><tr><td>Catalogset</td><td>4 credits</td></tr><tr><td>Lifestylecarrousel</td><td>5 credits</td></tr><tr><td>Lifestyle-clip</td><td>12 credits</td></tr></table>
+      <div class="rij"><span class="knop">Start een bestelling</span><span class="prijs">€ 82 p/p bij 5 stuks</span></div>
+      <span class="klein">Levering binnen 3 werkdagen · btw excl.</span>
+      <p class="recept"><b>Alles</b> Schibsted Grotesk<br>Getekend voor een Noors mediahuis: nieuws dat op een telefoon op 12 px moet kloppen. Serieus zonder stijf, en bijna niemand gebruikt hem commercieel — origineel zonder raar. <b>Mijn eerste keuze.</b></p>
+    </section>
+
+    <section class="kaart f2">
+      <span class="badge">2 · Public Sans + Geist Mono</span>
+      <span class="eyebrow">( Lifestyle · vanaf € 49 )</span>
+      <h2 class="h">Jouw product, in <em>scènes die verkopen.</em></h2>
+      <p class="lead">Je stuurt vier telefoonfoto's. Wij leveren drie beelden in jouw vaste look, klaar voor je feed.</p>
+      <p class="body">Een specialist kijkt elk beeld na voordat het je map in gaat. Wat niet klopt, gaat terug de bewerking in — je krijgt geen map met vijftig varianten waar je zelf uit moet kiezen.</p>
+      <table class="tabel"><tr><td>Catalogset</td><td>4 credits</td></tr><tr><td>Lifestylecarrousel</td><td>5 credits</td></tr><tr><td>Lifestyle-clip</td><td>12 credits</td></tr></table>
+      <div class="rij"><span class="knop">Start een bestelling</span><span class="prijs">€ 82 p/p bij 5 stuks</span></div>
+      <span class="klein">Levering binnen 3 werkdagen · btw excl.</span>
+      <p class="recept"><b>Kop + tekst</b> Public Sans · <b>Wenkbrauw</b> Geist Mono<br>Public Sans is de huisletter van de Amerikaanse overheid — ontworpen met leesbaarheid als eis en niet als wens. De mono blijft, maar een smalle in plaats van een brede.</p>
+    </section>
+
+    <section class="kaart f3">
+      <span class="badge">3 · Familjen Grotesk + Instrument Sans</span>
+      <span class="eyebrow">( Lifestyle · vanaf € 49 )</span>
+      <h2 class="h">Jouw product, in <em>scènes die verkopen.</em></h2>
+      <p class="lead">Je stuurt vier telefoonfoto's. Wij leveren drie beelden in jouw vaste look, klaar voor je feed.</p>
+      <p class="body">Een specialist kijkt elk beeld na voordat het je map in gaat. Wat niet klopt, gaat terug de bewerking in — je krijgt geen map met vijftig varianten waar je zelf uit moet kiezen.</p>
+      <table class="tabel"><tr><td>Catalogset</td><td>4 credits</td></tr><tr><td>Lifestylecarrousel</td><td>5 credits</td></tr><tr><td>Lifestyle-clip</td><td>12 credits</td></tr></table>
+      <div class="rij"><span class="knop">Start een bestelling</span><span class="prijs">€ 82 p/p bij 5 stuks</span></div>
+      <span class="klein">Levering binnen 3 werkdagen · btw excl.</span>
+      <p class="recept"><b>Kop + wenkbrauw</b> Familjen Grotesk · <b>Tekst</b> Instrument Sans<br>Zweeds, met net iets eigenzinnigs in de a en de g. Meer karakter dan 1 en 2, nog steeds rustig. Voor wie de kop wél wil laten opvallen.</p>
+    </section>
+
+    <section class="kaart f4">
+      <span class="badge">4 · Onest, één familie</span>
+      <span class="eyebrow">( Lifestyle · vanaf € 49 )</span>
+      <h2 class="h">Jouw product, in <em>scènes die verkopen.</em></h2>
+      <p class="lead">Je stuurt vier telefoonfoto's. Wij leveren drie beelden in jouw vaste look, klaar voor je feed.</p>
+      <p class="body">Een specialist kijkt elk beeld na voordat het je map in gaat. Wat niet klopt, gaat terug de bewerking in — je krijgt geen map met vijftig varianten waar je zelf uit moet kiezen.</p>
+      <table class="tabel"><tr><td>Catalogset</td><td>4 credits</td></tr><tr><td>Lifestylecarrousel</td><td>5 credits</td></tr><tr><td>Lifestyle-clip</td><td>12 credits</td></tr></table>
+      <div class="rij"><span class="knop">Start een bestelling</span><span class="prijs">€ 82 p/p bij 5 stuks</span></div>
+      <span class="klein">Levering binnen 3 werkdagen · btw excl.</span>
+      <p class="recept"><b>Alles</b> Onest<br>Gemaakt met één eis: zo min mogelijk twijfel tussen letters. De rustigste van alle zeven, en daarmee ook de minst uitgesproken — kies hem als je wilt dat de beelden het werk doen.</p>
+    </section>
+
+    <section class="kaart f5">
+      <span class="badge">5 · Archivo, één familie, drie breedtes</span>
+      <span class="eyebrow">( Lifestyle · vanaf € 49 )</span>
+      <h2 class="h">Jouw product, in <em>scènes die verkopen.</em></h2>
+      <p class="lead">Je stuurt vier telefoonfoto's. Wij leveren drie beelden in jouw vaste look, klaar voor je feed.</p>
+      <p class="body">Een specialist kijkt elk beeld na voordat het je map in gaat. Wat niet klopt, gaat terug de bewerking in — je krijgt geen map met vijftig varianten waar je zelf uit moet kiezen.</p>
+      <table class="tabel"><tr><td>Catalogset</td><td>4 credits</td></tr><tr><td>Lifestylecarrousel</td><td>5 credits</td></tr><tr><td>Lifestyle-clip</td><td>12 credits</td></tr></table>
+      <div class="rij"><span class="knop">Start een bestelling</span><span class="prijs">€ 82 p/p bij 5 stuks</span></div>
+      <span class="klein">Levering binnen 3 werkdagen · btw excl.</span>
+      <p class="recept"><b>Alles</b> Archivo, op drie breedtes<br>Houdt de huisregel "nadruk is breedte" overeind die de site nu al hanteert, met één familie in plaats van drie. De veiligste overstap.</p>
+    </section>
+
+    <section class="kaart f6">
+      <span class="badge">6 · Instrument Serif + Instrument Sans</span>
+      <span class="eyebrow">( Lifestyle · vanaf € 49 )</span>
+      <h2 class="h">Jouw product, in <em>scènes die verkopen.</em></h2>
+      <p class="lead">Je stuurt vier telefoonfoto's. Wij leveren drie beelden in jouw vaste look, klaar voor je feed.</p>
+      <p class="body">Een specialist kijkt elk beeld na voordat het je map in gaat. Wat niet klopt, gaat terug de bewerking in — je krijgt geen map met vijftig varianten waar je zelf uit moet kiezen.</p>
+      <table class="tabel"><tr><td>Catalogset</td><td>4 credits</td></tr><tr><td>Lifestylecarrousel</td><td>5 credits</td></tr><tr><td>Lifestyle-clip</td><td>12 credits</td></tr></table>
+      <div class="rij"><span class="knop">Start een bestelling</span><span class="prijs">€ 82 p/p bij 5 stuks</span></div>
+      <span class="klein">Levering binnen 3 werkdagen · btw excl.</span>
+      <p class="recept"><b>Kop</b> Instrument Serif · <b>Tekst + wenkbrauw</b> Instrument Sans<br>De enige met een schreefletter. Leest als mode in plaats van als techniek; van dezelfde ontwerpers, dus op elkaar getekend.</p>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>

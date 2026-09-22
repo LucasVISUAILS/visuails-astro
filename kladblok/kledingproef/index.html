@@ -1,0 +1,259 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8">
+<title>Bijkleding in het bestelformulier — proef</title>
+<style>
+@font-face{font-family:Kop;src:url(f/anybody.woff2)format('woff2');font-weight:100 900;font-stretch:50% 150%;font-display:block}
+@font-face{font-family:Tekst;src:url(f/figtree.woff2)format('woff2');font-weight:300 900;font-display:block}
+@font-face{font-family:Mono;src:url(f/mono.woff2)format('woff2');font-weight:100 800;font-stretch:75% 112.5%;font-display:block}
+:root{
+  --paper:#F2F3F5; --surface:#E4E7EC; --sunken:#DADEE5;
+  --ink:#000; --ink-2:rgb(0 0 0/.66); --ink-3:rgb(0 0 0/.56);
+  --line:rgb(0 0 0/.20); --line-strong:rgb(0 0 0/.34);
+  --accent:#4A1FFF; --accent-ink:#fff;
+  --r-pill:999px; --r-card:12px; --r-field:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Tekst,system-ui,sans-serif;
+     font-size:16px;line-height:1.62;padding:40px 36px 70px}
+.wrap{max-width:1100px;margin:0 auto}
+.etiket{font-family:Mono;font-stretch:82%;font-size:.72rem;font-weight:400;letter-spacing:.06em;
+        text-transform:uppercase;color:var(--ink-3);margin:0 0 .7rem}
+h1{font-family:Kop;font-weight:900;font-stretch:78%;text-transform:uppercase;line-height:.9;
+   letter-spacing:-.04em;font-size:2.6rem;margin:0 0 .5rem}
+h1 em{color:var(--accent);font-style:normal}
+h2{font-family:Kop;font-weight:500;font-stretch:118%;font-size:1.5rem;line-height:1.05;
+   letter-spacing:-.03em;margin:0 0 .5rem}
+h3{font-size:1.02rem;font-weight:700;letter-spacing:-.012em;line-height:1.2;margin:0 0 .4rem}
+p{margin:0 0 .9rem;color:var(--ink-2);max-width:64ch}
+.klein{font-size:.82rem;line-height:1.5;color:var(--ink-3)}
+.sectie{border-top:1px solid var(--line);padding-top:26px;margin-top:44px}
+.sectie:first-of-type{border-top:0;margin-top:26px}
+
+/* ── het poppetje ─────────────────────────────────────────────── */
+.pop-blok{display:grid;grid-template-columns:230px 1fr;gap:34px;align-items:start;
+          background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:26px 28px}
+.pop{display:block;width:100%;height:auto}
+.pop .lijn{fill:none;stroke:var(--line-strong);stroke-width:2;stroke-linejoin:round}
+.pop .vulling-ons{fill:rgb(0 0 0/.13);stroke:var(--line-strong);stroke-width:1.5}
+.pop .vulling-klant{fill:var(--ink);stroke:none}
+.pop .hoofd{fill:var(--surface);stroke:var(--line-strong);stroke-width:2}
+.kaart .pop .hoofd,.styling-pop .hoofd{fill:#fff}
+.pop .buiten{fill:var(--surface);fill-opacity:.80}
+.pop .kader{fill:none;stroke:var(--ink);stroke-width:2}
+.pop-bij{font-family:Mono;font-stretch:82%;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:.5rem 0 0;text-align:center}
+.pop .wijzer{stroke:var(--line-strong);stroke-width:1;stroke-dasharray:2 2;fill:none}
+
+.legenda{list-style:none;padding:0;margin:0 0 1.2rem;display:flex;flex-wrap:wrap;gap:.5rem 1.4rem}
+.legenda li{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--ink-2)}
+.leg-blok{width:15px;height:15px;border-radius:3px;flex:none}
+.leg-klant{background:var(--ink)}
+.leg-ons{background:rgb(0 0 0/.13);box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.leg-buiten{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line)}
+
+/* ── de productkaart ──────────────────────────────────────────── */
+.kaart{background:#fff;border:1px solid var(--line);border-radius:var(--r-card);padding:20px 22px;max-width:740px}
+.kaart + .kaart{margin-top:14px}
+.kaart-kop{display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap;margin-bottom:14px}
+.kaart-n{font-family:Mono;font-stretch:82%;font-size:.7rem;letter-spacing:.08em;color:var(--ink-3)}
+.kaart-naam{font-weight:700;font-size:1rem}
+.vakjes{display:flex;gap:8px;margin-bottom:16px}
+.vak{width:64px;height:64px;border:1px dashed var(--line-strong);border-radius:8px;display:grid;
+     place-items:center;background:var(--paper)}
+.vak.is-vol{border-style:solid;background:var(--sunken)}
+.vak span{font-family:Mono;font-stretch:82%;font-size:.55rem;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+
+.styling{border-top:1px solid var(--line);padding-top:13px;display:flex;gap:12px;align-items:flex-start}
+.styling-pop{width:34px;flex:none;margin-top:2px}
+.styling-pop .lijn{fill:none;stroke:var(--line-strong);stroke-width:2}
+.styling-pop .vulling-ons{fill:rgb(0 0 0/.13);stroke:var(--line-strong);stroke-width:1.5}
+.styling-pop .vulling-klant{fill:var(--ink);stroke:none}
+.styling-pop .hoofd{fill:#fff;stroke:var(--line-strong);stroke-width:2}
+.styling-pop .buiten{fill:#fff;fill-opacity:.82}
+.styling-pop .kader{fill:none;stroke:var(--ink);stroke-width:2}
+.styling-mid{flex:1;min-width:0}
+.styling-kop{font-family:Mono;font-stretch:82%;font-size:.66rem;letter-spacing:.08em;
+             text-transform:uppercase;color:var(--ink-3);margin:0 0 .25rem}
+.styling-regel{margin:0;font-size:.92rem;line-height:1.5;color:var(--ink-2)}
+.styling-regel b{color:var(--ink);font-weight:600}
+.knop-tekst{background:none;border:0;padding:0;font:inherit;font-size:.86rem;color:var(--accent);
+            font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;flex:none}
+
+/* ── aanpassen open ───────────────────────────────────────────── */
+.aanpas{margin-top:14px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-field);padding:16px 18px}
+.as{display:grid;grid-template-columns:118px 1fr;gap:12px;align-items:center;padding:7px 0}
+.as + .as{border-top:1px solid var(--line)}
+.as-naam{font-size:.86rem;color:var(--ink-2)}
+.keuzes{display:flex;gap:6px;flex-wrap:wrap}
+.keuze{font-family:Mono;font-stretch:82%;font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;
+       padding:.42rem .8rem;border-radius:var(--r-pill);border:1px solid var(--line-strong);
+       background:transparent;color:var(--ink-2);cursor:pointer}
+.keuze.is-aan{background:var(--ink);color:#fff;border-color:var(--ink)}
+.aanpas-voet{margin:14px 0 0;font-size:.8rem;color:var(--ink-3)}
+.aanpas-voet a{color:var(--ink-2)}
+
+.tweekolom{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+@media (max-width:900px){.tweekolom{grid-template-columns:1fr}.pop-blok{grid-template-columns:1fr}}
+.noot{background:var(--sunken);border-left:0;border:1px solid var(--line);border-radius:var(--r-field);
+      padding:14px 16px;margin-top:14px}
+.noot p{margin:0;font-size:.85rem;color:var(--ink-2)}
+</style></head><body><div class="wrap">
+
+<p class="etiket">Proef · 22 september 2026</p>
+<h1>Bijkleding in het <em>bestelformulier</em>.</h1>
+<p style="max-width:70ch">Zo zou het eruitzien. Drie dingen: het poppetje staat één keer bovenaan de stap, de productkaart toont de uitkomst als één regel, en “aanpassen” geeft assen in plaats van een garderobe. Geen enkel vakje is leeg — de styling is er al.</p>
+
+<!-- ══ 1 · BOVENAAN DE STAP ══════════════════════════════════════════════ -->
+<div class="sectie">
+  <p class="etiket">1 · Eén keer bovenaan stap 2</p>
+  <h2>Wat je op de foto ziet.</h2>
+
+  <div class="pop-blok">
+    <div>
+      <svg class="pop" viewBox="0 0 140 300" role="img" aria-label="Tekening van een model met een hoodie: hoofd, hoodie, T-shirt eronder en de tailleband van de broek staan in beeld; de benen en schoenen vallen buiten de uitsnede.">
+      <!-- benen en schoenen: bestaan wel, staan niet op de foto -->
+      <path class="lijn" d="M44 170 L44 260 L39 276 L68 276 L68 260 L68 170"/>
+      <path class="lijn" d="M72 170 L72 260 L72 276 L101 276 L96 260 L96 170"/>
+      <path class="lijn" d="M39 276 L68 276 L70 289 L34 289 Z"/>
+      <path class="lijn" d="M72 276 L101 276 L106 289 L70 289 Z"/>
+      <!-- broek: tailleband en bovenbeen -->
+      <path class="vulling-ons" d="M42 150 L98 150 L98 190 L42 190 Z"/>
+      <!-- armen -->
+      <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/>
+      <path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+      <circle class="hoofd" cx="70" cy="34" r="19"/>
+      <circle class="vulling-ons" cx="51.5" cy="39" r="3.2"/>
+      <!-- het t-shirt eronder ligt ERONDER: hij piept door de halsuitsnijding
+           en langs de zoom. Zo hoeft er niets doorzichtig te zijn. -->
+      <path class="vulling-ons" d="M52 56 L88 56 L88 90 L52 90 Z"/>
+      <path class="vulling-ons" d="M42 148 L98 148 L98 162 L42 162 Z"/>
+      <!-- de hoodie, met een echte halsuitsnijding -->
+      <path class="vulling-klant" d="M40 64 L54 57 Q70 80 86 57 L100 64 L100 153 L40 153 Z"/>
+      <!-- alles buiten de uitsnede wordt weggedoezeld -->
+      <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 8 H126 V196 H14 Z"/>
+      <rect class="kader" x="14" y="8" width="112" height="188" rx="3"/>
+    </svg>
+      <p class="pop-bij">Het kader is de foto</p>
+    </div>
+
+    <div>
+      <ul class="legenda">
+        <li><span class="leg-blok leg-klant"></span> Jouw product</li>
+        <li><span class="leg-blok leg-ons"></span> Wat wij erbij kiezen</li>
+        <li><span class="leg-blok leg-buiten"></span> Buiten beeld</li>
+      </ul>
+      <h3>Een hoodie wordt van de heup naar boven gefotografeerd.</h3>
+      <p>Daardoor zie je op het beeld ook de kraag en zoom van wat eronder zit, en de tailleband van de broek. De benen en de schoenen vallen erbuiten — daar hoef je dus niets over te beslissen, en wij vragen er ook niet naar.</p>
+      <h3 style="margin-top:1.1rem">De styling zit erbij.</h3>
+      <p style="margin-bottom:0">Wat het model verder draagt kiezen wij, per stuk, zó dat jouw product loskomt: effen, ongemerkt, nooit met een logo, en altijd een andere toon dan jouw kledingstuk. Een fotostudio rekent hiervoor een stylist per dag. Wil je iets anders, dan pas je het per product aan.</p>
+    </div>
+  </div>
+
+  <div class="noot"><p><b>Waarom er geen kleur in de tekening zit.</b> Zwart is “van jou”, grijs is “van ons”, leeg is “niet in beeld”. Drie waarden, nul kleuren — en violet blijft daarmee gereserveerd voor de enige knop op dit scherm.</p></div>
+</div>
+
+<!-- ══ 2 · DE PRODUCTKAART ═══════════════════════════════════════════════ -->
+<div class="sectie">
+  <p class="etiket">2 · Op de productkaart — één regel</p>
+  <h2>De uitkomst, niet de vraag.</h2>
+  <p>Zelfde kaart als nu, met de vier uploadvakjes. Eronder één regel die laat zien wat er met dit stuk mee gaat. Niets in te vullen.</p>
+
+  <div class="kaart">
+    <div class="kaart-kop"><span class="kaart-n">PRODUCT 3</span><span class="kaart-naam">Boxy hoodie · washed black</span></div>
+    <div class="vakjes">
+      <div class="vak is-vol"><span>Voor</span></div>
+      <div class="vak is-vol"><span>Achter</span></div>
+      <div class="vak is-vol"><span>Detail</span></div>
+      <div class="vak"><span>Draagfoto</span></div>
+    </div>
+    <div class="styling">
+      <svg class="styling-pop" viewBox="0 0 140 300" aria-hidden="true">
+        <path class="lijn" d="M44 170 L44 260 L39 276 L68 276 L68 260 L68 170"/>
+        <path class="lijn" d="M72 170 L72 260 L72 276 L101 276 L96 260 L96 170"/>
+        <path class="vulling-ons" d="M42 150 L98 150 L98 190 L42 190 Z"/>
+        <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/>
+        <path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+        <circle class="hoofd" cx="70" cy="34" r="19"/>
+        <path class="vulling-ons" d="M52 56 L88 56 L88 90 L52 90 Z"/>
+        <path class="vulling-ons" d="M42 148 L98 148 L98 162 L42 162 Z"/>
+        <path class="vulling-klant" d="M40 64 L54 57 Q70 80 86 57 L100 64 L100 153 L40 153 Z"/>
+        <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 8 H126 V196 H14 Z"/>
+        <rect class="kader" x="14" y="8" width="112" height="188" rx="3"/>
+      </svg>
+      <div class="styling-mid">
+        <p class="styling-kop">Styling</p>
+        <p class="styling-regel">Wit T-shirt eronder · <b>licht grijze</b> broek, recht model · geen pet · kleine oorbel</p>
+      </div>
+      <button class="knop-tekst">aanpassen</button>
+    </div>
+  </div>
+
+  <div class="noot"><p><b>Waarom niet één poppetje per kaart.</b> Bij dertig producten is dat dertig tekeningen met dertig keer dezelfde uitleg — precies wat <code>ProductUploader.astro</code> bovenaan zijn eigen noot al afwijst: <i>“four explanations printed a hundred times.”</i> Hier is het poppetje op 34px alleen nog de verwijzing naar de uitleg die je één keer bovenaan las.</p></div>
+</div>
+
+<!-- ══ 3 · AANPASSEN ═════════════════════════════════════════════════════ -->
+<div class="sectie">
+  <p class="etiket">3 · Wie toch iets wil</p>
+  <h2>Assen, geen garderobe.</h2>
+  <p>Niemand zegt tegen een stylist “geef me stuk nummer vier”. Iedereen zegt “kan het iets donkerder eronder”. Daarom drie assen — ze werken op élk product, ook op eentje dat we nog niet gezien hebben.</p>
+
+  <div class="kaart">
+    <div class="kaart-kop"><span class="kaart-n">PRODUCT 3</span><span class="kaart-naam">Boxy hoodie · washed black</span></div>
+    <div class="styling" style="border-top:0;padding-top:0">
+      <div class="styling-mid">
+        <p class="styling-kop">Styling</p>
+        <p class="styling-regel">Wit T-shirt eronder · <b>licht grijze</b> broek, recht model · geen pet · kleine oorbel</p>
+      </div>
+      <button class="knop-tekst">sluiten</button>
+    </div>
+    <div class="aanpas">
+      <div class="as"><span class="as-naam">Toon eronder</span><div class="keuzes">
+        <button class="keuze">Lichter</button><button class="keuze is-aan">Zo laten</button><button class="keuze">Donkerder</button></div></div>
+      <div class="as"><span class="as-naam">Pasvorm</span><div class="keuzes">
+        <button class="keuze">Strakker</button><button class="keuze is-aan">Zo laten</button><button class="keuze">Ruimer</button></div></div>
+      <div class="as"><span class="as-naam">Pet</span><div class="keuzes">
+        <button class="keuze is-aan">Geen</button><button class="keuze">Wel een pet</button></div></div>
+      <p class="aanpas-voet">Heb je zelf een stuk dat erbij moet? <a href="#">Stuur er een foto van mee</a> — hij wordt niet als product gefotografeerd en kost niets.</p>
+    </div>
+  </div>
+
+  <div class="noot"><p><b>Donkerder kan hier niet.</b> Kiest iemand bij een zwart product “donkerder”, dan weigert de as met een zin erbij: <i>“dan verdwijnt de vorm van je hoodie — we houden het op licht grijs.”</i> Eerlijk, kort, en het laat zien dat er een vakman achter zit.</p></div>
+</div>
+
+<!-- ══ 4 · ANDER PRODUCT, ANDERE UITSNEDE ════════════════════════════════ -->
+<div class="sectie">
+  <p class="etiket">4 · Een ander producttype</p>
+  <h2>De tekening volgt de uitsnede.</h2>
+  <p>Bij een broek kantelt het kader: de schoenen zijn er ineens wél, het gezicht niet. Dezelfde tekening, andere uitsnede — afgeleid uit de producttypetabel en niet acht keer met de hand getekend.</p>
+
+  <div class="tweekolom">
+    <div class="pop-blok" style="grid-template-columns:170px 1fr">
+      <svg class="pop" viewBox="0 0 140 300" role="img" aria-label="Tekening van een model met een broek: de zoom van de top, de broek en de schoenen staan in beeld; het hoofd valt buiten de uitsnede.">
+        <path class="lijn" d="M40 64 L24 71 L22 150 L38 152 Z"/>
+        <path class="lijn" d="M100 64 L116 71 L118 150 L102 152 Z"/>
+        <path class="vulling-ons" d="M40 64 L56 58 L84 58 L100 64 L100 152 L40 152 Z"/>
+        <circle class="hoofd" cx="70" cy="34" r="19"/>
+        <!-- de broek: het product -->
+        <path class="vulling-klant" d="M41 148 L99 148 L97 262 L73 262 L70 198 L67 262 L43 262 Z"/>
+        <!-- de schoenen -->
+        <path class="vulling-ons" d="M43 262 L67 262 L69 282 L36 282 Z"/>
+        <path class="vulling-ons" d="M73 262 L97 262 L104 282 L71 282 Z"/>
+        <path class="buiten" fill-rule="evenodd" d="M0 0 H140 V300 H0 Z M14 126 H126 V292 H14 Z"/>
+        <rect class="kader" x="14" y="126" width="112" height="166" rx="3"/>
+      </svg>
+      <div>
+        <h3>Wide-leg jeans</h3>
+        <p class="klein" style="margin-bottom:.8rem">Van de taille naar beneden. Geen gezicht in beeld, dus geen vraag over een pet of een oorbel — die zou je in het resultaat niet terugzien.</p>
+        <p class="styling-kop" style="margin-bottom:.25rem">Styling</p>
+        <p class="styling-regel" style="font-size:.86rem">Aansluitend <b>wit</b> T-shirt · lage zwarte schoen</p>
+      </div>
+    </div>
+
+    <div>
+      <h3>En waarom die regel per product anders is</h3>
+      <p class="klein">De hoodie is zwart en ruim, dus wordt de broek licht en recht — anders verdwijnt het silhouet. De jeans is licht en wijd, dus wordt de top wit en aansluitend, en de schoen donker. Hetzelfde merk, twee keer een andere keuze, allebei uit dezelfde zes regels.</p>
+      <p class="klein">Dat is precies wat een vaste merkvoorkeur niet kan: die zou hier twee keer hetzelfde antwoord geven en één van de twee beelden verpesten.</p>
+      <div class="noot" style="margin-top:16px"><p><b>Tassen en sieraden zijn de uitzondering.</b> Daar staat er geen kleding van de klant in beeld en kleden wij het model volledig aan. Dan is er wél één vraag, één keer bij het merkmodel, en die gaat over de wereld en niet over de kleur: <i>werk · stad · avond · weekend</i>.</p></div>
+    </div>
+  </div>
+</div>
+
+</div></body></html>

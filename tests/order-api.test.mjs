@@ -826,5 +826,92 @@ console.log('\nen de drie lezers gebruiken hetzelfde merkteken');
   }
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * HET PRODUCTTYPE EN DE BIJKLEDING PER PRODUCT — 22 SEPTEMBER 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ik denk dat ik ook de klant zijn productsoort wil laten kiezen
+ * (misschien met een knop om alvast op alle producten toe te passen maar hij kan
+ * het wel per product daarna aanpassen)."*
+ *
+ * `garment` is de keuze voor de bestelling, `garment_p2` wijkt af voor product 2,
+ * en `context_shoes_p2` is de keuze per plek per product. De server controleert
+ * per product tegen het type van DAT product, vult de standaard in voor elke plek
+ * die bestaat, en gooit weg wat niet bij het type hoort of buiten het aantal valt.
+ * Zelfde regels als voor de bestelling als geheel; hier wordt bewezen dat ze per
+ * kaart gelden.
+ */
+console.log('\nhet producttype en de bijkleding per product');
+{
+  const { onRequestPost } = await import('../functions/api/order.js');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ id: 'x' }), { status: 200, headers: { 'content-type': 'application/json' } });
+
+  const geplaatst = [];
+  const db = {
+    prepare(sql) {
+      const st = {
+        bind(...args) { if (sql.includes('INSERT INTO orders')) geplaatst.push({ sql, args }); return st; },
+        async first() { return null; },
+        async run() { return { success: true }; },
+        async all() { return { results: [] }; },
+      };
+      return st;
+    },
+  };
+  const stuur = async (extra) => {
+    geplaatst.length = 0;
+    const fd = new FormData();
+    const all = {
+      service: 'catalog', email: 'klant@merk.nl', name: 'Jan Jansen', brand: 'Merk',
+      products: '3', country: 'NL', back: '/thank-you', phone: '+31 6 12345678',
+      business_declaration: 'yes', business_version: 'business-v1-2026-08',
+      no_vat: '1', reg_number: '99742993', ...extra,
+    };
+    for (const [k, v] of Object.entries(all)) fd.append(k, v);
+    await onRequestPost({
+      request: new Request('https://visuails.com/api/order', {
+        method: 'POST', body: fd, headers: { 'CF-Connecting-IP': '203.0.113.45' },
+      }),
+      env: { DB: db, RESEND_API_KEY: 're_test', NOTIFY_EMAIL: 'hello@visuails.com',
+             FROM_EMAIL: 'VISUAILS <orders@visuails.com>' },
+      waitUntil: () => {},
+    });
+    const rij = geplaatst[0];
+    if (!rij) return null;
+    return rij.args
+      .filter((a) => typeof a === 'string' && a.startsWith('{'))
+      .map((a) => { try { return JSON.parse(a); } catch { return null; } })
+      .find((o) => o && typeof o === 'object') || null;
+  };
+
+  /* Eén type voor alles, één afwijking, één eigen stuk. */
+  const d = await stuur({ garment: 'top', garment_p2: 'trousers', context_shoes_p2: 'own', garment_p3: 'top' });
+  ok('catalog neemt het type aan (stond tot vandaag alleen bij lifestyle)', d && d.garment, 'top');
+  ok('product 2 wijkt af', d && d.garment_p2, 'trousers');
+  ok('een afwijking die gelijk is aan de bestelling wordt niet bewaard', d && d.garment_p3 === undefined, true, String(d && d.garment_p3));
+  ok('product 1 (een top): de laag eronder krijgt de standaard', d && d.context_underlayer_p1, 'ours');
+  ok('  en de broek ook', d && d.context_bottom_p1, 'ours');
+  ok('  maar geen schoenen — die staan bij een top niet in beeld', d && d.context_shoes_p1 === undefined, true, String(d && d.context_shoes_p1));
+  ok('product 2 (een broek): de eigen schoen blijft staan', d && d.context_shoes_p2, 'own');
+  ok('  en de top krijgt de standaard', d && d.context_top_p2, 'ours');
+  ok('  en geen laag eronder — die hoort bij een broek niet', d && d.context_underlayer_p2 === undefined, true, String(d && d.context_underlayer_p2));
+
+  /* Wat niet mag, gaat weg. */
+  const e = await stuur({ garment: 'top', context_shoes_p1: 'own', context_bottom_p1: 'misschien', garment_p9: 'top', context_top_p9: 'own' });
+  ok('een schoen bij een top wordt genegeerd', e && e.context_shoes_p1 === undefined, true, String(e && e.context_shoes_p1));
+  ok('een verzonnen waarde wordt de standaard', e && e.context_bottom_p1, 'ours');
+  ok('een product buiten het aantal bestaat niet', e && e.garment_p9 === undefined && e.context_top_p9 === undefined, true);
+
+  /* Zonder type voor de bestelling: alleen de producten met een eigen type krijgen plekken. */
+  const f = await stuur({ garment_p1: 'shoes' });
+  ok('zonder type voor de bestelling: product 1 (schoenen) krijgt de broek', f && f.context_bottom_p1, 'ours');
+  ok('  en product 2 zonder type krijgt niets', f && Object.keys(f).some((k) => /_p2$/.test(k) && /^context_/.test(k)), false);
+
+  globalThis.fetch = realFetch;
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);

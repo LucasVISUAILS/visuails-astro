@@ -1,0 +1,56 @@
+---
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * HET POPPETJE — WAT ER OP DE DRAAGFOTO STAAT, GETEKEND
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 22 september 2026: *"hier zie je dan ook een soort getekend poppetje
+ * van wat er op de foto zichtbaar wordt bij een on-model shot en wat je kan
+ * toevoegen als je dat wilt, anders bedenken wij kleding die erbij past."*
+ *
+ * ── ÉÉN TEKENING, GEEN ACHT ────────────────────────────────────────────────
+ *
+ * Er zijn acht uitsnedes in garments.js. Acht losse tekeningen zouden acht
+ * bestanden zijn die stil uit de pas gaan lopen met de data zodra er een
+ * producttype bij komt. Dit is één figuur met vaste regio's; welke regio's
+ * binnen het kader vallen komt uit CROPS, en welke regio het product is komt
+ * uit het type. De tekening VOLGT de tabel en staat er niet naast.
+ *
+ * ── DRIE TINTEN INKT, GEEN KLEUR ───────────────────────────────────────────
+ *
+ * Zwart is het product, half is wat de klant erbij zet, licht is wat wij
+ * kiezen. Dat zijn geordende waarden — onderwerp, bijrol, achtergrond — en een
+ * rangorde lees je aan gewicht af, niet aan tint. Groen (het eerste idee) zou
+ * een zesde kleur zijn die verder nergens iets betekent, en hij zou twaalf keer
+ * per scherm staan. Zie kladblok/VOORSTEL-CONTEXTKLEDING.md §13.
+ *
+ * ── TWEE MATEN, TWEE INSTELLINGEN ──────────────────────────────────────────
+ *
+ * Groot (de uitleg bovenaan) doezelt alles buiten het kader weg: dat IS de
+ * uitleg. Klein (op een rij van 64px) doet die laag het tegenovergestelde — hij
+ * trekt zwart, half en licht naar dezelfde lichte waarde. Op rijgrootte blijft
+ * het kader dus een lijn en gaat de doezel uit; dat regelt `.pop-klein`.
+ *
+ * ── WAT DE KLASSEN DOEN ────────────────────────────────────────────────────
+ *
+ *   data-crop="upper"        kader en doezel volgen deze uitsnede
+ *   data-product="top"       deze regio krijgt de zwarte vulling
+ *   data-own="underlayer,…"  deze regio's half (door de klant erbij gezet)
+ *
+ * De regio's zelf heten naar de plekken uit garments.js (shoes, bottom, top,
+ * underlayer) plus `head`, `arms`, `legs` die nooit een plek zijn. pipeline.js
+ * zet de attributen; de CSS hieronder doet de rest. Zonder JavaScript staat hij
+ * op wat de server erin zet.
+ */
+import { poppetjeSvg } from '../../lib/poppetje.js';
+
+interface Props { crop?: string; product?: string; own?: string; klein?: boolean; class?: string; label?: string }
+const { crop = 'full', product = '', own = '', klein = false, class: cls, label } = Astro.props;
+/* De tekening zelf staat in src/lib/poppetje.js, als tekst: /admin tekent hem
+   daar ook vandaan, en twee tekeningen zouden uit de pas lopen. */
+const svg = poppetjeSvg({ crop, product, own: own ? own.split(',') : [], klein, label, cls });
+---
+<Fragment set:html={svg} />
+{/* Geen <style> hier: de regels staan in global.css (de site) en admin.css
+    (het werkscherm), allebei uit POP_CSS in src/lib/poppetje.js. Een inline
+    <style> zou onder de CSP een hash per pagina vragen. */}
