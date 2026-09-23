@@ -189,6 +189,10 @@ const c = nl
     const el = document.querySelector('[data-proefkaart]');
     if (!el) return;
     const pad = location.pathname;
+    /* En niet op de voorpagina (23 september 2026): die zegt de proef al in
+       de opening én in het slot, en een derde keer in hetzelfde scherm leest
+       als aandringen. */
+    if (/^\/(nl\/?)?$/.test(pad)) return;
     if (/^\/(nl\/)?(test-sample|start|thank-you)(\/|$)|^\/(account|admin|o)(\/|$)/.test(pad)) return;
     try {
       const tot = Number(localStorage.getItem(SLEUTEL) || 0);

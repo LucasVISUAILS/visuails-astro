@@ -183,7 +183,10 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
         onbereikbaar: items.filter((b) => b.width < 20 || b.right > r.left + rail.scrollWidth + 2).length,
       };
     });
-    check(`${naam} — de rij heeft nog kaarten`, kaarten.aantal >= 4, true);
+    /* 23 september 2026: de vierde tegel (de deur naar /start) is weg volgens
+       VOORPAGINA-OPBOUW.md; "Ook: Hooks · Editions · werk op maat" staat nu als
+       één regel onder de drie. Drie kaarten is dus de bedoeling. */
+    check(`${naam} — de rij heeft nog kaarten`, kaarten.aantal >= 3, true);
     check(`${naam} — en geen enkele is afgeknipt of onbereikbaar`, kaarten.onbereikbaar, 0);
     check(`${naam} — schuiven of passen, nooit iets ertussenin`,
       kaarten.schuift > 100 || kaarten.schuift === 0, true);

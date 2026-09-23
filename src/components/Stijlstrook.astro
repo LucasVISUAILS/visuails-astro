@@ -1,0 +1,220 @@
+---
+/*
+ * VISUAILS — DE STIJLENSTROOK. 23 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ook staat er helemaal niks over de stylen die we verkopen … De klant
+ * krijgt nu pas stylen te zien wanneer ze hebben doorgeklikt naar de categorie
+ * service pagina's."*
+ *
+ * Eén strook die opzij scrolt: per look één staand beeld, de dienst, de naam
+ * en de ene zin uit het databestand. Elke kaart gaat naar de pagina van die
+ * look (/lifestyle/dunes, /catalog/classic) — dat is Lucas' vaste bestelregel
+ * ("eerst een look, dan het formulier") in één klik vanaf de voorpagina.
+ *
+ * GEEN DIAVOORSTELLING DIE ZELF DRAAIT. Een carrousel die doorloopt toont één
+ * look tegelijk en verbergt de rest; deze strook toont er vier naast elkaar en
+ * laat zien dat er meer is. De laptop bovenaan beweegt al; twee dingen die uit
+ * zichzelf bewegen vechten om aandacht.
+ *
+ * WAT EROP STAAT, en waar het vandaan komt — niets is hier getypt:
+ *   · catalogStyles(.nl).js  — de vaste catalog-looks (nu: Classic)
+ *   · styles(.nl).js         — de vaste lifestyle-looks (Dunes, Flash, Glow,
+ *                              Phone-made) en de look op maat
+ *   · Editions               — één kaart, beeld `editions-staand` (4:5). Ligt dat
+ *                              bestand nog niet in public/img, dan maakt
+ *                              scripts/plaatshouders.mjs er een plaatshouder
+ *                              met de naam en de maat van — zie beeld.js
+ *   · komendeStijlen.js      — wat eraan komt, gestippeld en zonder link
+ * Vervangt Lucas een look in die bestanden, dan volgt de strook vanzelf.
+ *
+ * ZONDER JAVASCRIPT is het een gewone horizontale schuifstrook (scroll-snap,
+ * vegen, shift-wiel, de pijltjestoetsen als de strook focus heeft). Het script
+ * onderaan voegt alleen de twee pijlknoppen en de voortgangslijn toe.
+ */
+import { styles as lifestyleEn } from '../data/styles.js';
+import { styles as lifestyleNl } from '../data/styles.nl.js';
+import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
+import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
+import { komendeStijlen } from '../data/komendeStijlen.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl' }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const lifestyle = nl ? lifestyleNl : lifestyleEn;
+const catalog = nl ? catalogNl : catalogEn;
+
+/* Het beeld per look. Catalog heeft geen `cardPhoto` in zijn databestand (Classic
+   is een set op wit, geen scène); het afgewerkte catalogbeeld is wat de look ÍS.
+   Voor lifestyle staat het beeld in het bestand zelf. */
+const CATALOG_BEELD: Record<string, string> = { classic: '/img/catalog-after.webp' };
+
+type Kaart = { dienst: string; naam: string; regel: string; beeld?: string; href?: string; komend?: boolean };
+
+const kaarten: Kaart[] = [
+  ...catalog.filter((s: any) => s.slug !== 'custom').map((s: any) => ({
+    dienst: 'Catalog', naam: s.name, regel: s.tagline, beeld: CATALOG_BEELD[s.slug], href: lp(`/catalog/${s.slug}`),
+  })),
+  ...lifestyle.filter((s: any) => s.slug !== 'custom').map((s: any) => ({
+    dienst: 'Lifestyle', naam: s.name, regel: s.tagline, beeld: s.cardPhoto, href: lp(`/lifestyle/${s.slug}`),
+  })),
+  ...lifestyle.filter((s: any) => s.slug === 'custom').map((s: any) => ({
+    dienst: nl ? 'Op maat' : 'Made to order', naam: s.name, regel: s.tagline, beeld: s.cardPhoto, href: lp(`/lifestyle/${s.slug}`),
+  })),
+  {
+    dienst: nl ? 'Editions · binnenkort' : 'Editions · coming soon',
+    naam: 'Editions',
+    regel: nl ? 'Elke maand nieuw beeld in jouw stijl.' : 'New imagery in your style, every month.',
+    beeld: '/img/editions-staand.webp',
+    href: lp('/plans#binnenkort'),
+  },
+  ...(['catalog', 'lifestyle'] as const).flatMap((d) => komendeStijlen(d, lang).map((k: any) => ({
+    dienst: d === 'catalog' ? 'Catalog' : 'Lifestyle', naam: k.naam, regel: k.regel, komend: true,
+  }))),
+];
+
+const t = nl
+  ? { label: 'Looks', vorige: 'Vorige looks', volgende: 'Volgende looks', komend: 'Binnenkort' }
+  : { label: 'Looks', vorige: 'Previous looks', volgende: 'Next looks', komend: 'Coming soon' };
+---
+<div class="ss" data-ss>
+  <ul class="ss-rij" role="list" aria-label={t.label} tabindex="0" data-ss-rij>
+    {kaarten.map((k) => (
+      <li class:list={['ss-kaart', k.komend && 'is-komend']}>
+        {k.href ? (
+          <a class="ss-link" href={k.href}>
+            <span class="ss-beeld">
+              <img src={k.beeld} width="800" height="1000" alt="" loading="lazy" decoding="async" />
+            </span>
+            <span class="mono ss-dienst">{k.dienst}</span>
+            <span class="ss-naam">{k.naam}</span>
+            <span class="ss-regel">{k.regel}</span>
+          </a>
+        ) : (
+          <div class="ss-link">
+            <span class="ss-beeld ss-leeg"><span class="mono">{t.komend}</span></span>
+            <span class="mono ss-dienst">{k.dienst}</span>
+            <span class="ss-naam">{k.naam}</span>
+            <span class="ss-regel">{k.regel}</span>
+          </div>
+        )}
+      </li>
+    ))}
+  </ul>
+  {/* De voet: een haarlijn met de stand van de strook erop, en twee pijlen.
+      `hidden` tot het script draait — zonder script zijn het knoppen die niets
+      doen, en een knop die niets doet is erger dan geen knop. */}
+  <div class="ss-voet" hidden data-ss-voet>
+    <span class="ss-stand" aria-hidden="true"><i data-ss-stand></i></span>
+    <span class="ss-pijlen">
+      <button class="ss-pijl" type="button" data-ss-stap="-1" aria-label={t.vorige}>←</button>
+      <button class="ss-pijl" type="button" data-ss-stap="1" aria-label={t.volgende}>→</button>
+    </span>
+  </div>
+</div>
+
+<style>
+  /* De strook loopt tot de rechterrand van het paneel door — de laatste kaart
+     die half in beeld staat IS het signaal dat er meer is. */
+  .ss { display: grid; gap: clamp(1.2rem, 2.4vw, 1.8rem); }
+  .ss-rij {
+    list-style: none; margin: 0; padding: 0 0 .2rem;
+    display: flex; gap: clamp(.8rem, 1.6vw, 1.25rem);
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    scrollbar-width: none;
+    /* `--ss-uit` zet de pagina: hoe ver de strook voorbij zijn kolom mag lopen,
+       tot de rand van het paneel. De padding erbij zorgt dat de laatste kaart
+       niet tegen die rand plakt als je helemaal naar rechts bent. */
+    margin-inline-end: calc(-1 * var(--ss-uit, 0px));
+    padding-inline-end: var(--ss-uit, 0px);
+  }
+  .ss-rij::-webkit-scrollbar { display: none; }
+  .ss-rij:focus-visible { outline: 2px solid var(--geel, var(--accent)); outline-offset: 6px; border-radius: 4px; }
+  .ss-kaart { flex: 0 0 clamp(14.5rem, 21vw, 18.5rem); scroll-snap-align: start; min-width: 0; }
+  .ss-link { display: grid; gap: .45rem; color: inherit; text-decoration: none; }
+  .ss-beeld {
+    display: block; aspect-ratio: 4 / 5; overflow: hidden; margin-bottom: .45rem;
+    border-radius: calc(var(--ronding, 12px) - 4px); background: var(--paper-2, #E4E7EC);
+  }
+  .ss-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--uit, cubic-bezier(.16,1,.3,1)); }
+  a.ss-link:hover .ss-beeld img { transform: scale(1.03); }
+  a.ss-link:focus-visible { outline: 2px solid var(--geel, var(--accent)); outline-offset: 4px; border-radius: 4px; }
+  .ss-dienst { font-size: .72rem; color: var(--inkt-2); }
+  .ss-naam {
+    font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase;
+    font-size: 1.15rem; line-height: 1.05; letter-spacing: -.01em;
+  }
+  .ss-regel { font-size: .92rem; line-height: 1.45; color: var(--inkt-2); max-width: 28ch; }
+
+  /* Wat eraan komt: hetzelfde kader, gestippeld en leeg. Geen beeld dat er nog
+     niet is, geen link naar een pagina die er nog niet is. */
+  .ss-leeg { display: grid; place-items: center; background: none; border: 1px dashed var(--lijn-sterk, rgb(0 0 0 / .34)); }
+  .ss-leeg .mono { font-size: .72rem; color: var(--inkt-2); }
+  .is-komend .ss-naam, .is-komend .ss-regel { color: var(--inkt-2); }
+
+  .ss-voet { display: flex; align-items: center; gap: clamp(1rem, 3vw, 2rem); }
+  .ss-voet[hidden] { display: none; }
+  .ss-stand { position: relative; flex: 1; height: 1px; background: var(--lijn); overflow: hidden; }
+  .ss-stand i { position: absolute; inset: 0 auto 0 0; width: var(--ss-deel, 25%); translate: var(--ss-plek, 0%) 0; background: var(--inkt); transition: translate .3s var(--uit, ease); }
+  .ss-pijlen { display: flex; gap: .5rem; }
+  .ss-pijl {
+    width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--lijn-sterk, rgb(0 0 0 / .34));
+    background: none; color: var(--inkt); font-size: 1rem; line-height: 1; cursor: pointer;
+    display: grid; place-items: center; transition: background-color .2s, color .2s, border-color .2s;
+  }
+  .ss-pijl:hover:not(:disabled) { background: var(--inkt); color: var(--vel); border-color: var(--inkt); }
+  .ss-pijl:focus-visible { outline: 2px solid var(--geel, var(--accent)); outline-offset: 3px; }
+  .ss-pijl:disabled { opacity: .35; cursor: default; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ss-rij { scroll-behavior: auto; }
+    .ss-beeld img, .ss-stand i { transition: none; }
+  }
+</style>
+
+<script>
+  /* De twee pijlen en de voortgangslijn. Een stap is de breedte van de kaarten
+     die er in beeld staan min één, zodat je altijd één kaart herkent van de
+     vorige stap. */
+  const zet = () => {
+    for (const ss of document.querySelectorAll<HTMLElement>('[data-ss]')) {
+      if (ss.dataset.ssKlaar) continue;
+      ss.dataset.ssKlaar = '1';
+      const rij = ss.querySelector<HTMLElement>('[data-ss-rij]');
+      const voet = ss.querySelector<HTMLElement>('[data-ss-voet]');
+      const stand = ss.querySelector<HTMLElement>('[data-ss-stand]');
+      if (!rij || !voet || !stand) continue;
+      const knoppen = [...ss.querySelectorAll<HTMLButtonElement>('[data-ss-stap]')];
+      const werk = () => {
+        const max = rij.scrollWidth - rij.clientWidth;
+        if (max <= 2) { voet.hidden = true; return; }
+        voet.hidden = false;
+        const deel = rij.clientWidth / rij.scrollWidth;
+        const plek = max ? rij.scrollLeft / max : 0;
+        stand.style.setProperty('--ss-deel', `${deel * 100}%`);
+        stand.style.setProperty('--ss-plek', `${plek * (1 / deel - 1) * 100}%`);
+        knoppen[0].disabled = rij.scrollLeft <= 2;
+        knoppen[1].disabled = rij.scrollLeft >= max - 2;
+      };
+      for (const k of knoppen) {
+        k.addEventListener('click', () => {
+          const kaart = rij.querySelector<HTMLElement>('li');
+          const stapBreed = kaart ? kaart.getBoundingClientRect().width + parseFloat(getComputedStyle(rij).columnGap || '0') : rij.clientWidth;
+          const inBeeld = Math.max(1, Math.floor(rij.clientWidth / stapBreed) - 1);
+          rij.scrollBy({ left: Number(k.dataset.ssStap) * stapBreed * inBeeld, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        });
+      }
+      rij.addEventListener('scroll', werk, { passive: true });
+      /* Geen resize-luisteraar op window: die blijft na een zachte navigatie
+         hangen (zachte-navigatie.test). De observer gaat mee met de rij. */
+      new ResizeObserver(werk).observe(rij);
+      werk();
+    }
+  };
+  zet();
+  document.addEventListener('astro:page-load', zet);
+</script>

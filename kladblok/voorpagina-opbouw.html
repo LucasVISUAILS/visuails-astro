@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voorpagina — opbouw</title>
+<style>
+  /* Een blauwdruk, geen ontwerp: grijze vlakken, haarlijnen, mono-etiketten.
+     Violet alleen waar een bannerbeeld komt, zodat je die in één blik ziet. */
+  :root { --vel:#F2F3F5; --wit:#FFFFFF; --inkt:#000; --inkt-2:rgb(0 0 0/.62); --lijn:rgb(0 0 0/.18); --vlak:#E4E7EC; --diep:#DADEE5; --accent:#4A1FFF; --tint:#E4DFFF; --zwart:#000; }
+  * { box-sizing:border-box }
+  body { margin:0; background:#CFD3DA; font-family:"Figtree","Helvetica Neue",Arial,sans-serif; color:var(--inkt); font-size:14px; line-height:1.45 }
+  .mono { font-family:"Martian Mono",ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--inkt-2) }
+  .pagina { width:min(100%,1180px); margin:32px auto; background:var(--vel); }
+  .kop { padding:22px 28px; background:var(--wit); border-bottom:1px solid var(--lijn); display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap }
+  .kop h1 { margin:0; font-size:20px; font-weight:700; letter-spacing:-.01em }
+  .kop p { margin:0; color:var(--inkt-2); font-size:13px; max-width:60ch }
+  .sectie { position:relative; padding:28px 28px 28px 60px; border-bottom:1px solid var(--lijn); background:var(--vel) }
+  .sectie.wit { background:var(--wit) }
+  .sectie.zwart { background:var(--zwart); color:var(--vel) }
+  .sectie.zwart .mono { color:rgb(242 243 245/.66) }
+  .sectie.zwart .doos { background:#1A1A1A; border-color:rgb(242 243 245/.18); color:rgb(242 243 245/.66) }
+  .nr { position:absolute; left:20px; top:28px; width:28px; height:28px; border-radius:999px; border:1px solid var(--inkt); display:grid; place-items:center; font-family:ui-monospace,Menlo,monospace; font-size:11px }
+  .sectie.zwart .nr { border-color:var(--vel) }
+  .etiket { display:flex; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap }
+  .etiket b { font-family:"Figtree",sans-serif; font-size:13px; font-weight:700; text-transform:none; letter-spacing:0; color:inherit }
+  .etiket .status { font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border:1px solid currentColor; border-radius:999px }
+  .status.nieuw { color:var(--accent); border-color:var(--accent) }
+  .status.blijft { color:var(--inkt-2) }
+  .status.kleiner { color:#8A4F06 }
+  .doos { background:var(--vlak); border:1px solid var(--lijn); border-radius:8px; display:grid; place-items:center; text-align:center; padding:10px; color:var(--inkt-2); font-size:12px; min-height:56px }
+  .doos.beeld { background:repeating-linear-gradient(135deg,#DADEE5 0 6px,#E4E7EC 6px 12px) }
+  .doos.banner { background:repeating-linear-gradient(135deg,#E4DFFF 0 6px,#EFEBFF 6px 12px); border:2px solid var(--accent); color:var(--accent); font-weight:600 }
+  .rij { display:grid; gap:10px }
+  .h { height:auto }
+  .tekst { font-size:13px; color:var(--inkt-2); margin:6px 0 0; max-width:70ch }
+  .sectie.zwart .tekst { color:rgb(242 243 245/.72) }
+  .knop { display:inline-block; padding:8px 16px; border-radius:999px; border:1px solid currentColor; font-family:ui-monospace,Menlo,monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; margin:6px 6px 0 0 }
+  .knop.vol { background:var(--inkt); color:var(--vel); border-color:var(--inkt) }
+  .kopmock { font-family:"Anybody","Helvetica Neue",Arial,sans-serif; font-weight:900; text-transform:uppercase; line-height:.92; letter-spacing:-.02em; font-size:30px }
+  .kopmock em { font-style:normal; color:var(--accent) }
+  .center { text-align:center }
+  .noot { margin:18px 0 0; padding:10px 12px; border-left:2px solid var(--accent); font-size:12px; color:var(--inkt-2); background:var(--wit) }
+  .sectie.zwart .noot { background:#1A1A1A; color:rgb(242 243 245/.72) }
+  .legenda { padding:18px 28px; background:var(--wit); display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--inkt-2); border-top:1px solid var(--lijn) }
+  .legenda i { display:inline-block; width:14px; height:14px; vertical-align:-2px; margin-right:6px; border-radius:3px; border:1px solid var(--lijn) }
+  .legenda i.b { background:repeating-linear-gradient(135deg,#DADEE5 0 4px,#E4E7EC 4px 8px) }
+  .legenda i.v { background:#EFEBFF; border:2px solid var(--accent) }
+  .staal { display:inline-block; width:22px; height:22px; border:1px solid var(--lijn); border-radius:4px; vertical-align:middle; margin-right:4px }
+  @media (max-width:700px) { .sectie { padding-left:48px } .kopmock { font-size:22px } }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+  <div class="kop">
+    <div><h1>Voorpagina — de nieuwe opbouw</h1><p>Blauwdruk op 1440, van boven naar beneden. Grijs = bestaand beeld, violet = nieuw bannerbeeld. Geen ontwerp; alleen wat waar staat en hoe groot.</p></div>
+    <span class="mono">23 september 2026 · 12 blokken · ±6.700 px</span>
+  </div>
+
+  <!-- 0 -->
+  <section class="sectie">
+    <span class="nr">0</span>
+    <div class="etiket"><span class="mono"><b>Opening</b> · wat is het</span><span class="status blijft">blijft — net gedaan</span></div>
+    <div class="center" style="max-width:640px;margin:0 auto">
+      <p class="mono" style="margin:0 0 8px">VISUAILS™ · Enschede, NL</p>
+      <p class="kopmock" style="margin:0">Al je<br><em>productbeelden.</em><br>Zonder shoot.</p>
+      <p class="mono" style="margin:4px 0 8px;text-transform:none;letter-spacing:0">wisselt: productbeelden → catalogfoto's → lifestylebeelden → productvideo's</p>
+      <p class="tekst" style="margin:0 auto 8px">Catalog, lifestyle en video van de productfoto's die je al hebt — wij maken ze voor je.</p>
+      <span class="knop vol">Start een bestelling</span><span class="knop">Probeer VISUAILS · €1</span>
+    </div>
+    <div class="doos beeld" style="margin:18px auto 0;max-width:900px;min-height:230px">De laptop (84rem) — catalogset · carrousel · clip, draait zelf</div>
+  </section>
+
+  <!-- 1 -->
+  <section class="sectie wit">
+    <span class="nr">1</span>
+    <div class="etiket"><span class="mono"><b>Maatlijn</b> · vier feiten</span><span class="status blijft">blijft — één feit anders</span></div>
+    <div class="rij" style="grid-template-columns:repeat(4,1fr)">
+      <div class="doos">Eén product mag,<br>geen shoot nodig</div>
+      <div class="doos">Vanaf €89<br>per product</div>
+      <div class="doos" style="border-color:var(--accent)">Klein: zo snel mogelijk ·<br>vanaf 10: jouw eigen week</div>
+      <div class="doos">Volledige commerciële<br>rechten inbegrepen</div>
+    </div>
+    <p class="noot">Het derde feit zei "Jouw eigen week op de kalender" — dat geldt vanaf 10 producten. Nu twee waarheden in één regel, uit pricing.js.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="sectie">
+    <span class="nr">2</span>
+    <div class="etiket"><span class="mono"><b>Dit stuur jij. Dit krijg je terug.</b> · is het goed</span><span class="status nieuw">nieuw</span></div>
+    <div class="rij" style="grid-template-columns:1fr 1fr;gap:0">
+      <div class="doos beeld" style="min-height:300px;border-radius:8px 0 0 8px">VOOR — telefoonfoto T-shirt<br>op de houten tafel</div>
+      <div class="doos beeld" style="min-height:300px;border-radius:0 8px 8px 0;border-left:2px solid var(--inkt)">NA — afgewerkt op gebroken wit<br>(schuifknop in het midden)</div>
+    </div>
+    <p class="mono" style="margin:10px 0 0">ingestuurd met een telefoon · 4 beelden terug · 2048 px · jpg, png, webp</p>
+    <p class="noot">Bewijs vóór uitleg. Het paar bestaat (catalog-before / catalog-after) en de schuifknop ook (Compare.astro). Later drie paren als tabs.</p>
+  </section>
+
+  <!-- 3 -->
+  <section class="sectie wit">
+    <span class="nr">3</span>
+    <div class="etiket"><span class="mono"><b>Van jouw foto naar je shop</b> · hoe werkt het</span><span class="status blijft">blijft</span></div>
+    <div class="rij" style="grid-template-columns:repeat(4,1fr)">
+      <div><div class="doos beeld" style="min-height:150px">01 · Ingestuurd<br>3 telefoonfoto's</div><p class="tekst"><b>Jij</b> — fotografeer je product zoals het erbij ligt.</p></div>
+      <div><div class="doos beeld" style="min-height:150px">02 · Geleverd<br>4 beelden</div><p class="tekst"><b>Wij</b> — wij bouwen de beelden; een specialist kijkt elk beeld na.</p></div>
+      <div><div class="doos beeld" style="min-height:150px">03 · Het portaal<br>(tekening)</div><p class="tekst"><b>Jouw beelden</b> — goedkeuren of revisie, alles in één keer downloaden.</p></div>
+      <div><div class="doos beeld" style="min-height:150px">04 · 1:1 · 4:5 · 9:16</div><p class="tekst"><b>Je shop</b> — vierkant, staand, verticaal. Uit dezelfde bestelling.</p></div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="sectie">
+    <span class="nr">4</span>
+    <div class="etiket"><span class="mono"><b>Wat we maken</b> · wat kan ik kiezen</span><span class="status blijft">blijft — deur-tegel weg, video krijgt een deur</span></div>
+    <div class="rij" style="grid-template-columns:repeat(3,1fr)">
+      <div><div class="doos beeld" style="min-height:220px">Productfoto's</div><p class="tekst"><b>Productfoto's</b> · vanaf €89 per product →</p></div>
+      <div><div class="doos beeld" style="min-height:220px">Lifestyle</div><p class="tekst"><b>Lifestyle beelden</b> · vanaf €109 per product →</p></div>
+      <div><div class="doos beeld" style="min-height:220px">Video</div><p class="tekst"><b>Productvideo's</b> · op aanvraag · <span style="color:var(--accent)">Aanvragen →</span></p></div>
+    </div>
+    <p class="mono" style="margin:14px 0 0">Ook: Hooks · Editions · werk op maat →</p>
+    <p class="noot">De vierde tegel ("8 deuren") wordt deze regel. Video: "op aanvraag" zonder knop was een gesloten deur met een bordje — nu een knop naar /contact met het onderwerp ingevuld.</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="sectie wit">
+    <span class="nr">5</span>
+    <div class="etiket"><span class="mono"><b>De stijlen</b> · past het bij mijn merk</span><span class="status nieuw">nieuw</span></div>
+    <p class="tekst" style="margin:0 0 12px">Een strook die opzij scrolt (scroll-snap, twee pijlen, toetsenbord). Elke kaart 4:5, naam, dienst, één zin over het moment. Klik = die look op zijn dienstpagina — jouw regel "eerst een look" in één klik.</p>
+    <div style="overflow:hidden">
+      <div class="rij" style="grid-template-columns:repeat(6,240px);gap:10px;width:max-content">
+        <div><div class="doos beeld" style="min-height:280px;width:240px">Lifestyle · stijl 1</div><p class="tekst"><b>Naam</b> · Lifestyle · het moment in één zin</p></div>
+        <div><div class="doos beeld" style="min-height:280px;width:240px">Lifestyle · stijl 2</div><p class="tekst"><b>Naam</b> · Lifestyle</p></div>
+        <div><div class="doos" style="min-height:280px;width:240px;display:block;text-align:left"><p class="mono" style="margin:0 0 8px">Catalog</p><span class="staal" style="background:#fff"></span><span class="staal" style="background:#F7F5F1"></span><span class="staal" style="background:#EDE4D8"></span><p class="tekst">Wit · gebroken wit · beige — jij kiest de achtergrond</p></div><p class="tekst"><b>Catalog</b> · drie achtergronden</p></div>
+        <div><div class="doos banner" style="min-height:280px;width:240px">BANNER 3<br>Editions · staand 4:5</div><p class="tekst"><b>Editions</b> · elke maand · <span style="color:var(--accent)">→ /plans</span></p></div>
+        <div><div class="doos beeld" style="min-height:280px;width:240px">Lifestyle · stijl 3</div><p class="tekst"><b>Naam</b> · Lifestyle</p></div>
+        <div><div class="doos" style="min-height:280px;width:240px;border-style:dashed">Still<br>binnenkort</div><p class="tekst"><b>Still</b> · Catalog · binnenkort</p></div>
+      </div>
+    </div>
+    <p class="mono" style="margin:10px 0 0">← · → &nbsp; 6 van 8</p>
+    <p class="noot">Leest uit styles.js, backgrounds.js, komendeStijlen.js — vervang jij de stijlen, dan volgt de strook. De Editions-kaart is het ene bannerbeeld dat hier meedoet: het is een stijl die je kunt krijgen, dus hoort hij tussen de stijlen. Vereist: een id per look op /lifestyle en /catalog (bestaat nog niet).</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="sectie">
+    <span class="nr">6</span>
+    <div class="etiket"><span class="mono"><b>Een gezicht zit erbij</b> · wat zit er nog meer in</span><span class="status kleiner">blijft — half zo hoog</span></div>
+    <div class="rij" style="grid-template-columns:1fr 1fr;align-items:center">
+      <div><p class="kopmock" style="font-size:20px;margin:0 0 6px;font-weight:500;letter-spacing:-.01em">Een gezicht uit de bibliotheek zit bij elke bestelling.</p><p class="tekst">Zonder meerprijs. Tien gezichten, of jouw eigen merkmodel.</p><span class="knop">Alle tien</span><span class="knop">Jouw merkmodel</span></div>
+      <div class="rij" style="grid-template-columns:repeat(5,1fr)"><div class="doos beeld" style="min-height:90px">Aaron</div><div class="doos beeld" style="min-height:90px">Ava</div><div class="doos beeld" style="min-height:90px">Elias</div><div class="doos beeld" style="min-height:90px">Lisa</div><div class="doos beeld" style="min-height:90px">Seme</div></div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="sectie zwart">
+    <span class="nr">7</span>
+    <div class="etiket"><span class="mono"><b>Editions</b> · elke maand nieuw beeld</span><span class="status nieuw" style="color:#A694FF;border-color:#A694FF">nieuw — bannerbeeld</span></div>
+    <div class="doos banner" style="min-height:260px;background:repeating-linear-gradient(135deg,#2A1E6B 0 6px,#1F1650 6px 12px);border-color:#A694FF;color:#A694FF">BANNER 1 · liggend 21:9 · volle breedte<br>een Editions-beeld: de plek in het palet, het violet als licht</div>
+    <div class="rij" style="grid-template-columns:1fr auto;align-items:baseline;margin-top:12px">
+      <p class="tekst" style="margin:0"><b style="color:var(--vel)">Editions.</b> Elke maand een set beelden in jouw stijl, zonder dat je iets instuurt — voor de kanalen die tussen twee collecties door moeten blijven lopen.</p>
+      <span class="knop" style="color:var(--vel)">Hoe Editions werkt →</span>
+    </div>
+    <p class="noot">Dit is de ene plek waar een groot beeld de pagina lucht geeft — en het is geen decoratie: het ís de dienst. Het beeld staat náást de tekst, niet eronder (jouw regel van 7 september). Op de telefoon: het beeld op 16:9, de tekst eronder.</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="sectie wit">
+    <span class="nr">8</span>
+    <div class="etiket"><span class="mono"><b>Voor wie</b> · is dit voor mij</span><span class="status nieuw">nieuw — drie regels</span></div>
+    <div class="rij" style="gap:0">
+      <div style="padding:10px 0;border-top:1px solid var(--lijn)"><b>Je begint een merk en hebt twaalf producten</b> <span class="mono">→ catalogset, vanaf één product</span></div>
+      <div style="padding:10px 0;border-top:1px solid var(--lijn)"><b>Je hebt een shop met honderden sku's</b> <span class="mono">→ vanaf 10 producten je eigen week op de kalender</span></div>
+      <div style="padding:10px 0;border-top:1px solid var(--lijn);border-bottom:1px solid var(--lijn)"><b>Je bestelt voor klanten (bureau, fotograaf)</b> <span class="mono">→ één account, per bestelling een ander merk</span></div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="sectie">
+    <span class="nr">9</span>
+    <div class="etiket"><span class="mono"><b>Direct antwoord</b> · wat als</span><span class="status blijft">blijft</span></div>
+    <div class="rij" style="grid-template-columns:1fr 1fr">
+      <div class="doos" style="min-height:50px">Wat als ze niet goed zijn? → Studio</div>
+      <div class="doos" style="min-height:50px">Ziet een klant dat het AI is? → AI Act</div>
+      <div class="doos" style="min-height:50px">Zijn mijn foto's goed genoeg? → gids</div>
+      <div class="doos" style="min-height:50px">Waarom niet zelf? → vergelijking</div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="sectie zwart">
+    <span class="nr">10</span>
+    <div class="etiket"><span class="mono"><b>Proef €1</b> · hoe begin ik</span><span class="status blijft">blijft</span></div>
+    <div class="rij" style="grid-template-columns:1fr .8fr;align-items:center">
+      <div><p class="kopmock" style="font-size:24px;margin:0 0 6px;color:var(--vel);font-weight:500;letter-spacing:-.01em">Eerst zien? Eén product voor €1.</p><p class="tekst">4 catalogfoto's of een lifestyle-carousel van 3 · gemaakt van jouw eigen foto · één per bedrijf.</p><span class="knop" style="background:var(--vel);color:var(--inkt);border-color:var(--vel)">Probeer VISUAILS · €1</span><span class="knop" style="color:var(--vel)">Of start een bestelling</span></div>
+      <div class="rij" style="grid-template-columns:1fr 1fr;gap:6px"><div class="doos beeld" style="min-height:90px"></div><div class="doos beeld" style="min-height:90px"></div><div class="doos beeld" style="min-height:90px"></div><div class="doos beeld" style="min-height:90px"></div></div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="sectie zwart" style="border-bottom:0">
+    <span class="nr">11</span>
+    <div class="etiket"><span class="mono"><b>Trustlijn</b></span><span class="status blijft" style="color:rgb(242 243 245/.66)">blijft — later één regel erbij</span></div>
+    <p class="mono">Gemaakt in Enschede · Ingeschreven bij de KvK · Elke visual door ons gemaakt en gecontroleerd · Directe lijn via WhatsApp</p>
+    <p class="tekst" style="margin-top:8px">Zodra Trustpilot drie echte reviews heeft: één regel hier met de score. Niet eerder. Optioneel, jouw keuze: één regel met je voornaam — "elk beeld gaat door mijn handen".</p>
+  </section>
+
+  <div class="legenda">
+    <span><i class="b"></i>bestaand beeld</span>
+    <span><i class="v"></i>nieuw bannerbeeld (Editions)</span>
+    <span>Weg: "De catalogset. De carrousel. Of allebei." · "Eén tarief per product." · de vierde deur-tegel · de proefkaart linksboven</span>
+  </div>
+</div>
+</body>
+</html>

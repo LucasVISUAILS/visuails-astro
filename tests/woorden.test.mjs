@@ -167,7 +167,11 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
   const home = codeOnly(lees('src/components/Voorpagina.astro'));
   const prijs = codeOnly(lees('src/components/PricingPage.astro'));
 
-  check('Voorpagina leest counted()/countedShort()', /counted(?:Short)?\('complete',/.test(home), true);
+  /* 23 september 2026: de set- en tarieventabel zijn van de voorpagina (zie de
+     kop van Voorpagina.astro). Daarmee verdween ook het ENIGE `complete`-getal
+     op die pagina; wat blijft is catalog en lifestyle, en die lezen de korte
+     vorm hieronder. */
+  check('Voorpagina noemt nergens een getypt aantal beelden', /\d\s+(?:beelden|images|foto’s|photos)\b/.test(home.replace(/\$\{[^}]*\}/g, '')), false);
   check('en nergens "beelden" naast een getypt aantal', /priceKinds:[\s\S]{0,400}\d beelden/.test(home), false);
   check('PricingPage leest counted()', /counted\('complete',/.test(prijs), true);
 
@@ -187,8 +191,8 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
      functies doen dat, dus tellen ze allebei mee. Het TOTAAL blijft staan: wie
      er een plek uithaalt, wordt hier nog steeds rood. */
   const uitLexicon = /(?:countedShort|setSize)\('(catalog|lifestyle)'/g;
-  check('Voorpagina gebruikt de korte vorm onder de kop (diensten, set én tabel, twee talen)',
-    (home.match(uitLexicon) || []).length, 12);
+  check('Voorpagina gebruikt de korte vorm (diensttegels en voor-en-na, twee talen)',
+    (home.match(uitLexicon) || []).length, 6);  /* 23 sep 2026: diensttegels (2) + voor-en-na (1), twee talen */
   check('PricingPage ook',
     (prijs.match(uitLexicon) || []).length, 4);
   check('en nergens meer de lange vorm onder een kop',

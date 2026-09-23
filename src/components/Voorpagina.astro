@@ -1,291 +1,140 @@
 ---
 /**
- * VISUAILS — de voorpagina. Sectie 21, 5 september 2026.
+ * VISUAILS — de voorpagina. Van de grond af opnieuw, 23 september 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * WAT DIT VERVANGT. HomeV2.astro: 5.150 regels, elf secties, een hero-carrousel
- * met zeven dia's en een copytabel van duizend regels. Lucas, na de eerste ronde
- * van het lichte palet: *"hoe het nu wordt voelt zo vriendelijk nog"* en, met
- * ovyonlabs.com/works/komma en de Lue-site als voorbeeld: *"Ik wil hetzelfde
- * strakke voelen."* En over de tekst: *"je mag tekst schrappen zolang de kern van
- * de boodschap helder blijft, ik wil voornamelijk visueel uitleggen wat visuails
- * doet."*
+ * Lucas: *"bedenk hoe de VISUAILS homepagina verbeterd kan worden met name door
+ * het zo te maken dat klanten snel begrijpen wat ze kunnen verwachten en hoe het
+ * systeem werkt"* — en bij het bouwen: *"Veel witruimte, rust en weinig maar
+ * directe en logische tekst."*
  *
- * WAT "STRAK" HIER CONCREET IS, nagemeten op die twee sites:
- *   · panelen van rand tot rand, voornamelijk wit, twee in Komma's donkergrijs
- *     (#212121 — Lucas: "de donkere kleur wordt donkergrijs … voornamelijk wit"),
- *     zonder ruimte ertussen;
- *   · een gesplitste hero: beeld links, wit paneel rechts, mono-labels erboven;
- *   · haarlijnen in plaats van kaarten en schaduwen;
- *   · kleinere, lichtere koppen met veel lucht eromheen;
- *   · kleine mono-labels in kapitalen als tweede stem naast de kop;
- *   · het geel alleen als vlak — knoppen, één woord in de kop, de voettekst —
- *     nooit als tekstkleur op wit (1,5:1).
+ * Het plan staat in kladblok/VOORPAGINA-OPBOUW.md en de blauwdruk in
+ * kladblok/voorpagina-opbouw.html. De kern: de oude pagina was opgebouwd als
+ * catalogus van wat wij hebben (diensten, sets, tarieven, gezichten). Deze volgt
+ * de vragen van de bezoeker, in de volgorde waarin hij ze stelt:
  *
- * DE PAGINA LEGT UIT MET BEELD. Acht panelen, en in zes daarvan is het beeld
- * het argument: de telefoonfoto naast de studioproductie, de zeven beelden die
- * één product oplevert, de vier stappen, de prijstabel, het beoordeelscherm, de
- * gezichten. Tekst is één kop en één regel per paneel.
+ *    0  Opening          wat is het
+ *    1  Maatlijn         in één blik
+ *    2  Voor en na       is het goed
+ *    3  De band          hoe werkt het
+ *    4  Wat we maken     wat kan ik kiezen
+ *    5  De looks         past het bij mijn merk
+ *    6  Gezichten        wat zit er nog meer in
+ *    7  Editions         en daarna
+ *    8  Voor wie         is dit voor mij
+ *    9  Direct antwoord  wat als
+ *   10  Proef            hoe begin ik
  *
- * GEEN ENKEL GETAL IS GETYPT. Aantallen komen uit pricing.js en lexicon.js,
- * prijzen uit euro()/ladderRate(), de proef uit TEST_SAMPLE, de belofte van één
- * revisieronde staat op slot tegen AFTERCARE — precies zoals HomeV2 dat deed.
+ * WEG, en waarom: "De catalogset. De carrousel. Of allebei." en "Eén tarief per
+ * product. Daalt met het aantal." herhaalden wat de tegels en de maatlijn al
+ * zeiden; de staffel is /pricing. De vierde tegel ("alle diensten") was een deur
+ * die op een dienst leek. De etiketten boven elke kop zijn weg: "WAT WE MAKEN"
+ * boven "Wat we maken." zegt twee keer hetzelfde.
  *
- * DE FOTO'S ZIJN NIEUW EN BESTAAN NOG NIET. Elk beeld hier heet voorpagina-*
- * en ligt niet in public/img; scripts/plaatshouders.mjs maakt er in de build een
- * plaatshouder van in de maat die het <img> vraagt (width/height). Lucas zet de
- * echte foto onder die naam in public/img en hij verschijnt vanzelf — zie
- * src/data/beeld.js.
+ * GEEN ENKEL GETAL IS GETYPT. Prijzen uit euro()/AMOUNT, aantallen uit
+ * pricing.js en lexicon.js, het aantal verplichte foto's uit shots.js, de grens
+ * van de eigen week uit WINDOW_THRESHOLD, het aantal gezichten uit ROSTER.
+ *
+ * BEELDEN DIE NOG NIET BESTAAN krijgen in de build een plaatshouder met naam en
+ * maat (scripts/plaatshouders.mjs): `editions-breed` (21:9, blok 7) en
+ * `editions-staand` (4:5, de Editions-kaart in de looks). Lucas zet het bestand
+ * onder die naam in public/img en het staat er.
  */
-/* DE LETTERS VAN DE NIEUWE STIJL. Drie variabele, open source families, alle
-   drie met een breedte-as zodat "nadruk is breedte" overal werkt: Anybody voor
-   de koppen (technischer dan Hubot Sans), Figtree voor de lopende
-   tekst, Martian Mono voor de labels. Zelf gehost, geen externe verbinding.
-   Ze staan hier en niet in Layout.astro: zolang alleen de voorpagina in deze
-   stijl staat, hoeft de rest van de site ze niet te laden. */
+/* De letters: Anybody (koppen), Figtree (tekst), Martian Mono (labels). Zelf
+   gehost, geen externe verbinding. */
 import '@fontsource-variable/anybody/standard.css';
 import '@fontsource-variable/figtree/index.css';
 import '@fontsource-variable/martian-mono/standard.css';
 import {
-  AMOUNT, euro, TEST_SAMPLE, reviewClaim, aftercare,
-  LADDER, ladderRate, ladderFloor, vatLabel, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, plans,
-  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES, videoPrijsLabel, completeSaving,
+  AMOUNT, euro, TEST_SAMPLE, reviewClaim, WINDOW_THRESHOLD,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, videoPrijsLabel,
 } from '../data/pricing.js';
 import { countedShort, setSize } from '../data/lexicon.js';
-import { ALLE_DEUREN } from '../data/eigenproduct.js';
-import { MERK } from '../data/brand.js';
+import { MERK, TAGLINE } from '../data/brand.js';
 import { binnenkortNamen } from '../data/binnenkort.js';
 import { localizedPath } from '../i18n/ui.js';
-import { TAGLINE } from '../data/brand.js';
 import { ROSTER, modelId, telwoord } from '../data/models.js';
 import { REQUIRED_SHOT_IDS } from '../data/shots.js';
+import { geleverd } from '../data/voorbeeldset.js';
 import '../styles/stijl22.css';
 import LaptopCarousel from './LaptopCarousel.astro';
 import LopendeBand from './LopendeBand.astro';
-import { geleverd } from '../data/voorbeeldset.js';
+import Compare from './Compare.astro';
+import Stijlstrook from './Stijlstrook.astro';
 
 const { lang } = Astro.props as { lang: 'en' | 'nl' };
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 const sample = TEST_SAMPLE[lang];
 const e = (n: number) => euro(n, lang);
-/* Hoeveel telefoonfoto's er nodig zijn komt uit shots.js, niet uit een getypt
-   woord — tests/uploadbelofte.test.mjs leest deze zin. */
+
+/* "Drie telefoonfoto's zijn genoeg om te beginnen." Het getal komt uit de
+   verplichte hoeken in shots.js — tests/uploadbelofte.test.mjs leest deze zin. */
 const FOTOS = telwoord(REQUIRED_SHOT_IDS.length, lang, true);
+const GEZICHTEN = telwoord(ROSTER.length, lang);
 
-/* De ladder als tabel: dezelfde drie kolommen en vijf treden als /pricing. De
-   rijlabels komen van één soort en gelden voor alle drie — dat klopt alleen als
-   ze op dezelfde aantallen breken, en dat wordt hier nagekeken zoals /pricing
-   dat doet. */
-/* ── DE INSTAP STAAT VOORAAN, OOK HIER — 8 september 2026 ──────────────────
-   /pricing kreeg deze volgorde op 8 september ('catalog', 'lifestyle',
-   'complete') met de reden dat het verhaal van de site bij €89 begint en de
-   prijzenpagina met €149 opende — drie framings op één pagina, en precies de
-   verwarring waar Lucas het over had. Zie de lange noot in PricingPage.astro.
-
-   DEZE TABEL BLEEF ACHTER. De noot hierboven zegt "dezelfde drie kolommen als
-   /pricing" en dat was sinds die ingreep niet meer waar: de voorpagina zette
-   nog steeds de bundel vooraan. Wie op de voorpagina naar beneden scrolde, las
-   dus €149 als eerste tarief, klikte door naar /pricing en zag daar €89.
-   Gevonden doordat Lucas de live pagina naast de nieuwe legde. */
-const KINDS = ['catalog', 'lifestyle', 'complete'] as const;
-const KIND_PAGE: Record<string, string | null> = { complete: null, catalog: '/catalog', lifestyle: '/lifestyle' };
-const vorm = (id: string) => LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
-for (const id of KINDS) if (vorm(id) !== vorm('complete')) throw new Error(`Voorpagina: staffel "${id}" breekt op andere aantallen dan "complete".`);
-const RUNGS = LADDER.complete.map(([lo, hi]) => ({ at: lo, label: hi === null ? `${lo}+` : `${lo}–${hi}` }));
-/* Wat allebei-op-één-product scheelt, bij één product. Uit completeSaving() en
-   niet getypt: /pricing rekent hem met dezelfde functie uit, en twee plekken die
-   hetzelfde bedrag met de hand noemen, lopen een keer uit elkaar. */
-const SAMEN = completeSaving(1);
-/* De bovenste trede: vanaf dit aantal geldt de laagste prijs. Uit de ladder
-   zelf, niet getypt — dezelfde afleiding als TOP_RUNG_AT in faq.js. */
-const TOP_AT = LADDER.complete[LADDER.complete.length - 1][0];
-
-const PLAN_CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
-const PLAN_FROM = PLAN_AMOUNT[PLAN_CHEAPEST];
-const PLAN_FROM_PRODUCTS = PLAN_PRODUCTS[PLAN_CHEAPEST];
-/* De drie abonnementen als rijen: naam, producten, clips, prijs — uit plans(). */
-const PLANS = plans(lang);
-
-/* Het slot op "één revisieronde" — zie de noot in HomeV2 van 27 augustus: de
-   belofte staat op de pagina, dus de controle blijft. */
-if (!/\b1 revision round\b/i.test(aftercare('attended', 'en'))) {
-  throw new Error(`Voorpagina: de Studio-regel belooft één revisieronde, AFTERCARE zegt nu: "${aftercare('attended', 'en')}"`);
-}
-
-/* De zeven beelden van één product: vier catalog, drie lifestyle. De namen van de
-   frames komen uit dezelfde zinnen als TEST_SAMPLE.catalogLine / lifestyleLine. */
-const FRAMES = {
-  en: ['Front', 'Back', 'Detail', 'On model', 'Scene', 'On model', 'Close-up'],
-  nl: ['Voor', 'Achter', 'Detail', 'Op model', 'Scène', 'Op model', 'Close-up'],
-};
-if (FRAMES.en.length !== COMPLETE_IMAGES) throw new Error(`Voorpagina: ${FRAMES.en.length} frames voor ${COMPLETE_IMAGES} beelden.`);
-
-/*
- * ── DE VIER PUNTEN ONDER DE HERO — 9 september 2026 ─────────────────────────
- *
- * Lucas: *"hier staat trouwens ook 4 catalog + 3 lifestyle maar dat is heel vaag
- * en is niet het enige wat wij verkopen en dat lijkt nu wel zo."*
- *
- * Dat klopte, en het was de eerste regel van de maatlijn: `4 catalog + 3
- * lifestyle per product`. Die zin beschrijft ÉÉN bundel — de complete-bestelling
- * — en stond op de plek waar een bezoeker leest wat VISUAILS is. Wie daar stopt,
- * denkt dat het aanbod één setje van zeven beelden is en niet vier diensten met
- * een eigen tarief. Bovendien is het een getal zonder eenheid: "4 + 3" zegt niets
- * over wat je ervoor betaalt of hoe snel het er is.
- *
- * Wat er nu staat zijn vier ANTWOORDEN op de twijfel van iemand die dit nog nooit
- * zo besteld heeft: mag het klein beginnen, wat kost het, wanneer is het er, en
- * van wie zijn de beelden daarna. Geen van vieren noemt een bundel, en geen van
- * vieren staat in de weg van de dienstenrij eronder.
- *
- * DE RECHTEN STAAN OP ÉÉN PLEK. `RECHTEN` wordt hieronder óók in `beloften`
- * gebruikt. Zonder die ene bron zouden er twee zinnen over dezelfde belofte op
- * dezelfde pagina staan, en dan verandert er op een dag één van de twee.
- */
-const RECHTEN = {
-  en: 'Full commercial rights included',
-  nl: 'Volledige commerciële rechten inbegrepen',
-};
+/* De beelden op de drie diensttegels. Catalog: het raster van twaalf stukken op
+   wit — dat is wat de dienst IS. De andere twee: een sfeerbeeld, want dat is het
+   verschil met catalog. */
+const CATALOG_BANNER = { klein: '/img/catalog-raster-w760.webp', w: 1600, h: 1207 };
+const sfeer = (n: number, w: number, h: number) => ({ klein: `/img/concept/sfeer-0${n}-w1000.webp`, w, h });
+const DIENST_BEELD = [CATALOG_BANNER, sfeer(2, 1248, 1872), sfeer(3, 2000, 1125)];
 
 const COPY = {
   en: {
-    labels: [MERK, 'Studio', 'Enschede, NL'],
-    secties: ['What we make', 'Studio production', 'The set', 'The process', 'Rates', 'Studio', 'Faces', 'Test sample'],
-    posterLine: [MERK, 'All rights reserved · 2026'],
+    plek: 'Enschede, NL',
     h1: TAGLINE.en.lines, h1plain: TAGLINE.en.plain, wissel: TAGLINE.en.wissel,
-    /* ── DE CATEGORIE WORDT NU UITGESPROKEN — 17 september 2026 ────────────
-       Hier stond alleen WAT er geleverd wordt en wat er niet voor nodig is.
-       Nagelezen over de hele site: "done-for-you" kwam twee keer voor, allebei
-       op /guides en allebei náást "AI tools", en "uit handen" nul keer. De site
-       BEWIJST dat hij het werk overneemt — de hele bestelstroom gaat erover —
-       en zegt het nergens met zoveel woorden. Dat laat de lezer zelf een
-       categorie kiezen, en de categorie die vandaag voor de hand ligt is
-       "AI-tool". Eén bijzin, op de plek waar iemand in tien seconden beslist
-       wat dit is. */
     lede: 'Catalog, lifestyle and video from the product photos you already have — we make them for you. No shoot, no tool to learn, no minimum: one product is fine.',
     ctaStart: 'Start an order',
-    heroAlt: 'A VISUAILS campaign visual', heroChip: 'Campaign',
-    /* De hero heeft een eigen alt: `heroAlt` staat ook onder een ander beeld
-       verderop, en een alt die twee foto's moet dekken beschrijft er geen. */
-    heroFotoAlt: 'Two models in a white capsule, in black, with lime green on their nails and sunglasses',
-    facts: ['One product is enough, no shoot', `From ${e(AMOUNT.catalog)} per product`, 'Your own week on the calendar', RECHTEN.en],
+    planCta: 'Start a plan',
+    facts: [
+      'One product is enough, no shoot',
+      `From ${e(AMOUNT.catalog)} per product`,
+      `As soon as possible · from ${WINDOW_THRESHOLD}: your own week`,
+      'Full commercial rights included',
+    ],
+
+    vnH: 'What you send. What you get back.',
+    vnZin: `${FOTOS} phone photos are all you need to start: front, back and a detail.`,
+    vnSpec: [
+      ['You send', 'Phone photos, no tripod'],
+      ['You get', `${setSize('catalog', CATALOG_IMAGES, 'en')} per product · 2048 px`],
+      ['Formats', 'jpg · png · webp'],
+    ],
+    vnVoorAlt: 'Sent in: a phone photo of a T-shirt on a wooden table',
+    vnNaAlt: 'Delivered: the same T-shirt, finished on off-white',
+    vnLink: 'More work in the gallery',
+
     svcH: 'What we make.',
-    svcLede: 'All of it from the photos you already have — a phone by a window is enough.',
-    /* ── DRIE SOORTEN BEELD, EN GEEN DRIE DIENSTNAMEN — 10 september 2026 ──
-       Lucas: *"ik wil op de homepage bij 'What we make' de service blokken
-       wisselen naar wat algemenere categorieën, dus bijvoorbeeld 'Productfoto's',
-       'Lifestyle beelden', en 'Productvideo's'."*
-
-       Er stonden drie PRODUCTNAMEN — Catalog, Lifestyle, Catalog + Lifestyle —
-       en die vragen van een bezoeker dat hij het jargon van deze studio al kent
-       voordat hij iets kan kiezen. "Catalog" is een woord dat wij gebruiken;
-       "productfoto's" is het woord waarmee hij hier binnenkomt.
-
-       En de derde was een optelsom van de eerste twee (zie de noot bij
-       `complete` in StartPage). Op zijn plek staat nu video — de derde SOORT
-       beeld die deze studio maakt, en de enige die op de voorpagina helemaal
-       ontbrak terwijl er vier van de acht deuren over gaan.
-
-       De link gaat naar /start met het filter er al in, en niet meer naar de
-       dienstpagina: wie hier klikt, kiest een richting en geen dienst. */
+    svcLede: 'Three kinds of image, priced per product.',
     svc: [
       ['Product photos', `${setSize('catalog', CATALOG_IMAGES, 'en')} · front, back, detail, on model`, `from ${e(AMOUNT.catalog)} per product`, '/start/?zie=foto'],
       ['Lifestyle imagery', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled scene, ready to post`, `from ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
       ['Product video', 'One clip per product — eight seconds, one clean move', videoPrijsLabel('en'), '/start/?zie=video'],
     ],
-    svcAllKop: 'See all services',
-    /* De namen van de andere deuren. De canonieke lijst staat in StartPage.astro
-       (`deuren`); dit is bewust een KORTE opsomming en geen tweede kopie ervan —
-       vier woorden die zeggen wat voor soort werk er nog meer is, zodat de tegel
-       iets zegt in plaats van alleen ergens heen te wijzen. */
-    svcAllLijst: ['Hooks', 'Editions', 'Lifestyle video', 'Made to order'],
-    svcAllPrijs: '{n} doors',
-    svcAll: 'Everything we make',
-    svcMore: 'See',
-    svcSoon: ['Coming:', `${binnenkortNamen('en').join(' & ')} — what they are`],
-    vnH: 'You send a phone photo. We turn it into a studio production.',
-    vnLede: 'The garment stays as it is. Light, background, model and crop are built around it.',
-    vnIn: ['Sent in', 'Phone photo'], vnOut: ['Delivered', `Catalog 01/${String(CATALOG_IMAGES).padStart(2, '0')}`],
-    vnInAlt: 'The phone photo a customer sent in', vnOutAlt: 'The finished catalog image made from it',
-    vnLink: 'See the gallery',
-    vnNotenLabel: 'What is built around the garment',
-    vnNoten: [['Light', 22, 18], ['Background', 78, 30], ['Model', 30, 58], ['Crop', 72, 86]],
-    /* ── DE SET IS EEN MAXIMUM, GEEN PAKKET — 9 september 2026 ──────────────
-       Dit is dezelfde reparatie als bij de vier punten onder de hero, en dezelfde
-       reden. Lucas over die punten: *"dat is heel erg vaag en is niet het enige
-       wat wij verkopen en dat lijkt nu wel zo."*
+    svcOok: 'Also',
+    svcOokRest: 'made to order',
 
-       De kop zei "Eén product. 7 beelden." — één getal, één configuratie, en wie
-       daar stopt denkt dat het aanbod dát is. Terwijl er drie regels lager twee
-       diensten staan (video, merkmodel) die er net zo goed bij horen.
+    looksH: 'Pick a look.',
+    looksLede: 'Every look is fixed in light, place and pose — so your whole collection looks like one shoot.',
 
-       Wat blijft: het getal, want dat is concreet en het is waar. Wat verandert:
-       het is nu een BOVENGRENS ("tot") met de clip erbij genoemd, en de zin
-       eronder zegt uitdrukkelijk dat elk deel ook los kan. Zelfde concreetheid,
-       zonder de belofte dat dit het hele aanbod is. */
-    /* ── GEEN DERDE PRODUCT MEER — 20 september 2026 ──────────────────────
-       Lucas: *"One product. Up to 7 images and a clip klopt niet helemaal meer
-       omdat complete geen product meer is op de website."*
+    facesH: 'A face comes with it.',
+    facesLede: `From a library of ${GEZICHTEN}, at no extra cost. Or a brand model that is yours alone.`,
+    facesAll: `All ${GEZICHTEN}`, facesMerk: 'Your brand model',
 
-       Dat klopte. "Tot 7 beelden" was het getal van de bundel, en wie dat las
-       zag één pakket waar er twee DIENSTEN staan. Er zijn er twee — een
-       catalogset en een lifestylecarrousel — en je kunt ze allebei op hetzelfde
-       product bestellen. Dat laatste is geen derde product maar een TARIEF, en
-       de kop zegt dat nu ook zo: drie zinnen, waarvan de derde de combinatie is.
+    edEtiket: 'Coming soon',
+    edH: 'Editions. New imagery every month.',
+    edZin: 'A set of images in your style every month — for the weeks between two collections.',
+    edLink: 'How Editions works',
+    edAlt: 'An Editions image: a scene in the style of one brand',
 
-       De korting blijft en is voortaan zichtbaar in plaats van verstopt in een
-       kolomnaam: setCombi rekent hem uit met completeSaving(), dezelfde functie
-       die /pricing gebruikt, zodat er geen tweede getal kan ontstaan. */
-    setH: 'The catalog set. The carousel. Or both.',
-    setLede: 'Two services, priced per product. Take one, or both on the same product — then the combined rate applies, and a clip or your own brand model can come along.',
-    setCombi: (samen: string, los: string) => `Both on the same product: ${samen} instead of ${los} per product — about a quarter less, because one intake, one look and one check cover two sets.`,
-    setGroups: [[`Catalog set · ${setSize('catalog', CATALOG_IMAGES, 'en')}`, '/catalog'], [`Lifestyle carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`, '/lifestyle']],
-    frames: FRAMES.en,
-    /* Het opschrift boven de twee onderaan. Zonder dit lezen video en merkmodel
-       als een voetnoot bij de set; met dit lezen ze als wat ze zijn — twee dingen
-       die je bij hetzelfde product kunt bestellen. */
-    extrasLabel: 'On the same product',
-    extras: [
-      ['Video clip', `One vertical clip for Reels and TikTok · ${videoPrijsLabel('en')}`, '/video'],
-      ['Your brand model', `One face, yours alone · once ${e(AMOUNT.brandModel)}`, '/custom-models'],
+    vwH: 'Who it is for.',
+    vw: [
+      ['You are starting a brand.', `One product is fine. A catalog set from ${e(AMOUNT.catalog)}, no minimum.`, 'Catalog', '/catalog'],
+      ['You run a shop full of products.', `From ${WINDOW_THRESHOLD} products you pick your own week, and the price per product drops.`, 'Pricing', '/pricing'],
+      ['You order for clients.', 'One account, a different brand and billing details on every order.', 'How that works', '/faq#getting-started'],
     ],
-    stepsH: 'From folder to launch.',
-    stepsLede: 'You do two things: send and approve.',
-    steps: [
-      ['You send a folder', `One folder per product. ${FOTOS} phone photos are all you need.`],
-      ['Your week is set', 'The calendar follows our real capacity.'],
-      ['The studio runs', 'Catalog, lifestyle and video in your style, fully finished.'],
-      ['A specialist checks', 'Every image, before it reaches you.'],
-    ],
-    priceH: 'One rate per product. It falls as you order more.',
-    priceCount: 'Products',
-    /* Op ID en niet op volgorde: een lijst die met de index van KINDS moet
-       meelopen, is een lijst die bij de eerstvolgende herordening stilletjes de
-       verkeerde kop boven de verkeerde kolom zet. */
-    priceKinds: {
-      catalog: `Catalog · ${setSize('catalog', CATALOG_IMAGES, 'en')}`,
-      lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')}`,
-      complete: `Catalog + Lifestyle · ${countedShort('complete', COMPLETE_IMAGES, 'en')}`,
-    },
-    priceVat: `Per product, ${vatLabel('excl', 'en')}.`,
-    vanaf: 'from', perProduct: `per product, ${vatLabel('excl', 'en')}`, perMaand: 'a month',
-    totVanaf: (laag: string, n: number) => `down to ${laag} from ${n} products`,
-    priceCta: 'Start an order', priceCta2: 'Full price list',
-    planH: 'Or every month.',
-    planLede: 'A fixed number of finished products a month, in a week on the calendar that is yours.',
-    planCols: ['Plan', 'Products a month', 'Video clips', 'Per month'],
-    planLink: 'Compare the plans', planCta: 'Start a plan', planVat: `Per month, ${vatLabel('excl', 'en')}.`,
-    studioH: 'Then: VISUAILS Studio.',
-    studioLede: 'Live status, approve image by image, one revision round, download as jpg, png and webp.',
-    studioFig: { head: 'Your delivered images, one by one', ok: 'Approved', rev: 'Sent back', wait: 'On its way' },
-    studioLink: 'See Studio', studioLink2: 'How an order runs',
-    beloften: [
-      ['No final delivery without your check', 'Something off? We go through it together until it is right.'],
-      [RECHTEN.en, 'Shop, marketplaces, ads and social — no extra licence fees.'],
-    ],
-    facesH: 'Pick a face — or claim one.',
-    facesLede: 'A model from the roster, or a brand model nobody else gets. The face, background and format you approve stay with your brand, so the next order starts where the last one ended.',
-    facesLink: 'How a brand model works', facesLink2: 'The roster',
+
     qH: 'Straight answers.',
     qs: [
       ['What if the visuals are not right?', 'See Studio', '/portal'],
@@ -294,93 +143,67 @@ const COPY = {
       ['Why not do it myself?', 'The honest comparison', '/compare'],
     ],
     qAll: 'All questions',
+
+    proef: 'Test sample',
     closeH: `See it first. One product for ${sample.price}.`,
     closeLede: `${sample.deliverable} · made from your own photo · ${sample.unit}.`,
     closeAlt: 'Or start an order',
     trust: ['Made in Enschede, NL', 'Registered with the KVK', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
   },
   nl: {
-    labels: [MERK, 'Studio', 'Enschede, NL'],
-    secties: ['Wat we maken', 'Studioproductie', 'De set', 'Het proces', 'Tarieven', 'Studio', 'Gezichten', 'Proef'],
-    posterLine: [MERK, 'Alle rechten voorbehouden · 2026'],
+    plek: 'Enschede, NL',
     h1: TAGLINE.nl.lines, h1plain: TAGLINE.nl.plain, wissel: TAGLINE.nl.wissel,
-    /* Zie de Engelse tegenhanger. */
     lede: 'Catalog, lifestyle en video van de productfoto’s die je al hebt — wij maken ze voor je. Geen shoot, niets om zelf te leren, geen minimum: één product mag ook.',
     ctaStart: 'Start een bestelling',
-    heroAlt: 'Een VISUAILS-campagnebeeld', heroChip: 'Campagne',
-    /* Zie de Engelse noot. */
-    heroFotoAlt: 'Twee modellen in een witte capsule, in het zwart, met limoengroen op hun nagels en zonnebril',
-    facts: ['Eén product mag, geen shoot nodig', `Vanaf ${e(AMOUNT.catalog)} per product`, 'Jouw eigen week op de kalender', RECHTEN.nl],
+    planCta: 'Sluit een abonnement af',
+    facts: [
+      'Eén product mag, geen shoot nodig',
+      `Vanaf ${e(AMOUNT.catalog)} per product`,
+      `Zo snel mogelijk · vanaf ${WINDOW_THRESHOLD}: je eigen week`,
+      'Volledige commerciële rechten inbegrepen',
+    ],
+
+    vnH: 'Dit stuur jij. Dit krijg je terug.',
+    vnZin: `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen: voorkant, achterkant en een detail.`,
+    vnSpec: [
+      ['Jij stuurt', 'Telefoonfoto’s, geen statief'],
+      ['Je krijgt', `${setSize('catalog', CATALOG_IMAGES, 'nl')} per product · 2048 px`],
+      ['Formaten', 'jpg · png · webp'],
+    ],
+    vnVoorAlt: 'Ingestuurd: een telefoonfoto van een T-shirt op een houten tafel',
+    vnNaAlt: 'Geleverd: hetzelfde T-shirt, afgewerkt op gebroken wit',
+    vnLink: 'Meer werk in de galerij',
+
     svcH: 'Wat we maken.',
-    svcLede: 'Allemaal uit de foto’s die je al hebt — een telefoon bij het raam is genoeg.',
-    /* Zie de Engelse noot hierboven voor waarom hier geen dienstnamen meer
-       staan. */
+    svcLede: 'Drie soorten beeld, per product geprijsd.',
     svc: [
       ['Productfoto’s', `${setSize('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/start/?zie=foto'],
       ['Lifestyle beelden', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
       ['Productvideo’s', 'Eén clip per product — acht seconden, één rustige beweging', videoPrijsLabel('nl'), '/start/?zie=video'],
     ],
-    svcAllKop: 'Bekijk alle diensten',
-    /* Zie de Engelse tegenhanger. */
-    svcAllLijst: ['Hooks', 'Editions', 'Lifestyle-video', 'Werk op maat'],
-    svcAllPrijs: '{n} deuren',
-    svcAll: 'Alles wat we maken',
-    svcMore: 'Bekijk',
-    svcSoon: ['Binnenkort:', `${binnenkortNamen('nl').join(' & ')} — wat het is`],
-    vnH: 'Jij stuurt een telefoonfoto. Wij maken er een studioproductie van.',
-    vnLede: 'Het kledingstuk blijft zoals het is. Licht, achtergrond, model en uitsnede bouwen wij eromheen.',
-    vnIn: ['Ingestuurd', 'Telefoonfoto'], vnOut: ['Geleverd', `Catalog 01/${String(CATALOG_IMAGES).padStart(2, '0')}`],
-    vnInAlt: 'De telefoonfoto die een klant instuurde', vnOutAlt: 'De afgewerkte catalogfoto die daaruit is gemaakt',
-    vnLink: 'Bekijk de galerij',
-    vnNotenLabel: 'Wat er om het kledingstuk heen wordt gebouwd',
-    vnNoten: [['Licht', 22, 18], ['Achtergrond', 78, 30], ['Model', 30, 58], ['Uitsnede', 72, 86]],
-    /* Zie de Engelse tegenhanger. */
-    setH: 'De catalogset. De carrousel. Of allebei.',
-    setLede: 'Twee diensten, per product geprijsd. Neem er één, of allebei op hetzelfde product — dan geldt het gecombineerde tarief, en een clip of je eigen merkmodel kan mee.',
-    setCombi: (samen: string, los: string) => `Allebei op hetzelfde product: ${samen} in plaats van ${los} per product — ongeveer een kwart minder, omdat één intake, één look en één controle twee sets dekken.`,
-    setGroups: [[`Catalogset · ${setSize('catalog', CATALOG_IMAGES, 'nl')}`, '/catalog'], [`Lifestyle-carousel · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`, '/lifestyle']],
-    frames: FRAMES.nl,
-    /* Zie de Engelse tegenhanger. */
-    extrasLabel: 'Bij hetzelfde product',
-    extras: [
-      ['Videoclip', `Eén verticale clip voor Reels en TikTok · ${videoPrijsLabel('nl')}`, '/video'],
-      ['Je merkmodel', `Eén gezicht, alleen van jou · eenmalig ${e(AMOUNT.brandModel)}`, '/custom-models'],
+    svcOok: 'Ook',
+    svcOokRest: 'werk op maat',
+
+    looksH: 'Kies een look.',
+    looksLede: 'Elke look ligt vast in licht, plek en pose — zo ziet je hele collectie eruit als één shoot.',
+
+    facesH: 'Een gezicht zit erbij.',
+    facesLede: `Uit een bibliotheek van ${GEZICHTEN}, zonder meerprijs. Of een merkmodel dat alleen van jou is.`,
+    facesAll: `Alle ${GEZICHTEN}`, facesMerk: 'Jouw merkmodel',
+
+    edEtiket: 'Binnenkort',
+    edH: 'Editions. Elke maand nieuw beeld.',
+    edZin: 'Een vaste set beelden in jouw stijl, elke maand — voor de weken tussen twee collecties.',
+    edLink: 'Hoe Editions werkt',
+    edAlt: 'Een Editions-beeld: een scène in de stijl van één merk',
+
+    vwH: 'Voor wie.',
+    vw: [
+      ['Je begint een merk.', `Eén product mag. Een catalogset vanaf ${e(AMOUNT.catalog)}, zonder minimum.`, 'Catalog', '/catalog'],
+      ['Je hebt een webshop vol producten.', `Vanaf ${WINDOW_THRESHOLD} producten kies je je eigen week, en de prijs per product zakt mee.`, 'Prijzen', '/pricing'],
+      ['Je bestelt voor klanten.', 'Eén account, per bestelling een ander merk en andere factuurgegevens.', 'Hoe dat werkt', '/faq#getting-started'],
     ],
-    stepsH: 'Van map tot lancering.',
-    stepsLede: 'Jij doet twee dingen: sturen en goedkeuren.',
-    steps: [
-      ['Jij stuurt een map', `Eén map per product. ${FOTOS} telefoonfoto’s zijn genoeg om te beginnen.`],
-      ['Je week staat vast', 'De kalender volgt onze echte capaciteit.'],
-      ['De studio draait', 'Catalog, lifestyle en video in jouw stijl, volledig afgewerkt.'],
-      ['Een specialist kijkt', 'Elk beeld, voordat het bij je staat.'],
-    ],
-    priceH: 'Eén tarief per product. Daalt met het aantal.',
-    priceCount: 'Producten',
-    /* Zie de Engelse noot. */
-    priceKinds: {
-      catalog: `Catalog · ${setSize('catalog', CATALOG_IMAGES, 'nl')}`,
-      lifestyle: `Lifestyle · ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')}`,
-      complete: `Catalog + Lifestyle · ${countedShort('complete', COMPLETE_IMAGES, 'nl')}`,
-    },
-    priceVat: `Per product, ${vatLabel('excl', 'nl')}.`,
-    vanaf: 'vanaf', perProduct: `per product, ${vatLabel('excl', 'nl')}`, perMaand: 'per maand',
-    totVanaf: (laag: string, n: number) => `zakt tot ${laag} vanaf ${n} producten`,
-    priceCta: 'Start een bestelling', priceCta2: 'De volledige prijslijst',
-    planH: 'Of elke maand.',
-    planLede: 'Een vast aantal afgewerkte producten per maand, in een week op de kalender die van jou is.',
-    planCols: ['Abonnement', 'Producten per maand', 'Videoclips', 'Per maand'],
-    planLink: 'Vergelijk de abonnementen', planCta: 'Sluit een abonnement af', planVat: `Per maand, ${vatLabel('excl', 'nl')}.`,
-    studioH: 'Daarna: VISUAILS Studio.',
-    studioLede: 'Live status, beeld voor beeld goedkeuren, één revisieronde, downloaden als jpg, png en webp.',
-    studioFig: { head: 'Je geleverde beelden, stuk voor stuk', ok: 'Goedgekeurd', rev: 'Teruggestuurd', wait: 'Nog onderweg' },
-    studioLink: 'Bekijk Studio', studioLink2: 'Hoe een bestelling draait',
-    beloften: [
-      ['Geen definitieve oplevering zonder jouw check', 'Klopt er iets niet? Dan gaan we er samen doorheen tot het klopt.'],
-      [RECHTEN.nl, 'Webshop, marktplaatsen, ads en social — zonder extra licentiekosten.'],
-    ],
-    facesH: 'Kies een gezicht — of claim er een.',
-    facesLede: 'Een model uit de roster, of een merkmodel dat niemand anders krijgt. Het gezicht, de achtergrond en het formaat die je goedkeurt blijven bij je merk, dus een volgende bestelling begint waar de vorige ophield.',
-    facesLink: 'Hoe een merkmodel werkt', facesLink2: 'De roster',
+
     qH: 'Direct antwoord.',
     qs: [
       ['Wat als ze niet goed zijn?', 'Bekijk Studio', '/portal'],
@@ -389,163 +212,29 @@ const COPY = {
       ['Waarom niet zelf?', 'De eerlijke vergelijking', '/compare'],
     ],
     qAll: 'Alle vragen',
+
+    proef: 'Proef',
     closeH: `Eerst zien? Eén product voor ${sample.price}.`,
     closeLede: `${sample.deliverable} · gemaakt van jouw eigen foto · ${sample.unit}.`,
     closeAlt: 'Of start een bestelling',
     trust: ['Gemaakt in Enschede, NL', 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
   },
 };
-/* ── HET AANTAL DEUREN KOMT UIT DE LIJST — 10 september 2026 ───────────────
-   In de vierde tegel stond "negen deuren", getypt, terwijl de lijst zelf in
-   StartPage.astro staat. Toen daar de negende weg ging, klopte dit getal niet
-   meer — en niets zou dat gemeld hebben.
-
-   ALLE_DEUREN in eigenproduct.js is de plek waar dat wél opvalt: die lijst
-   wordt door tests/eigenproduct.test.mjs regel voor regel vergeleken met de
-   deuren die StartPage echt rendert. Een deur erbij of eraf en die toets valt
-   om; het getal hier volgt vanzelf. */
-const c = { ...COPY[lang] };
-c.svcAllPrijs = c.svcAllPrijs.replace('{n}', String(ALLE_DEUREN.length));
-const nn = (i: number) => String(i).padStart(2, '0');
-/* ── DE BEELDEN ───────────────────────────────────────────────────────────────
-   De hero is de echte foto, vrijstaand gemaakt: de studiowand en de olijfgroene
-   slagschaduw zijn eruit, zodat de grond van de pagina er doorheen valt en er
-   nergens een rand van een foto te zien is. De rest zijn voorlopig de negen
-   sfeerbeelden met het groene licht uit Lucas' map — plaatshouders tot de echte
-   voorpagina-foto's er zijn, maar wel echte beelden en geen grijs vlak. */
-/* ── DE HERO IS EEN FOTO GEWORDEN — 8 september 2026 ────────────────────────
-   Lucas stuurde de foto en koos ervoor hem de hele hero te laten vullen. Wat
-   hier stond was `hero-model.webp`: één vrijstaande figuur, in zeven banden
-   uitgesneden met clip-path, die op zijn plaats schoof. Mooi gemaakt, maar het
-   was een SILHOUET op een verloop — de hero liet zien dat er iets bewoog, niet
-   wat de studio maakt.
-
-   Deze foto doet dat wel: kleding, licht, huid, een echte scène.
-
-   ── DE TWEEDE FOTO, 8 september 2026 's middags ──────────────────────────
-   Lucas stuurde er later op de dag een andere: twee modellen in een witte
-   capsule, zwarte kleding, en limoen op de nagels en op de bril. Dat laatste
-   is de reden dat hij hier hoort en niet alleen dat hij mooi is — het accent
-   van de site zit ín het beeld en niet eromheen, dus de hero draagt de kleur
-   in plaats van hem op te leggen. Bovendien: de bovenste veertig procent is
-   leeg wit, en dat is precies waar de kop en de knoppen staan.
-
-   2048×1152, en dus 16:9 — de vorm van een hero. Vier maten, want een hero is
-   het eerste wat laadt: 640, 960, 1560 en 2048. Niet opgeschaald naar 2560:
-   een groter bestand met dezelfde informatie erin is alleen maar trager. */
-/* De heropagina-foto is op 17 september uit de opening gehaald; zie de noot bij
-   <section class="hero hero-split">. De constante blijft staan omdat het bestand
-   er nog is en de galerij hem gebruikt — weghalen zou hier een dood pad zijn,
-   maar hem hier nog gebruiken zou een tweede beeld naast de laptop zetten. */
-const HERO = '/img/voorpagina/hero-moment.webp';
-const b = (n: number, w: number, h: number) => ({
-  src: `/img/concept/sfeer-0${n}.webp`, klein: `/img/concept/sfeer-0${n}-w1000.webp`, w, h,
-});
-const BEELD = [b(1, 2000, 1125), b(2, 1248, 1872), b(3, 2000, 1125), b(4, 1536, 1536), b(5, 2000, 1125), b(6, 1536, 1536), b(7, 1872, 1248), b(8, 2000, 1125), b(9, 2000, 1125)];
-const B = (n: number) => BEELD[n - 1];
-/* Welk beeld bij welke dienst hoort, en de zeven beelden van één set. */
-/* ── VIER TEGELS, EN SINDS 10 SEPTEMBER 2026 DE VIER JUISTE ────────────────
-   Lucas: *"Moet 'What we make.' sectie nog rechtgetrokken worden met wat er op
-   /start nu staat?"* Ja — de sectie zei "vier diensten" terwijl /start er negen
-   opent, hij noemde het merkmodel een dienst terwijl dat een toevoeging bínnen
-   een bestelling is (en drie blokken lager al in "Bij hetzelfde product" staat),
-   en de bundel — de deur met de laagste prijs per beeld — stond er niet op.
-
-   Wat er NIET gebeurt is alle negen erop zetten. Deze sectie en /start doen
-   ander werk: hier staat iemand die nog niet weet wat VISUAILS is, en negen
-   tegels is dan een muur. Vier is goed; het waren de verkeerde vier. De link
-   eronder brengt wie meer wil zien naar /start, waar ze alle negen staan.
-
-   De beelden: 1 en 2 blijven bij catalog en lifestyle, en de bundel krijgt 3 (de
-   trui van dichtbij — een kledingstuk, niet weer een auto-interieur zoals 4, dat
-   naast 1 als dezelfde foto zou lezen).
-
-   DRIE EN NIET VIER sinds 10 september 2026: de vierde tegel is de deur naar
-   /start geworden en draagt geen foto (zie de noot bij `kaart-deur` verderop).
-   De 9 die hier stond was die van de clip en hing nergens meer aan. */
-/* ── HET EERSTE BEELD IS EEN CATALOGUS EN GEEN SFEERFOTO — 10 september 2026
-   Lucas: *"Pas ook de product- en catalogfoto's foto aan naar de catalog banner
-   in de map."*
-
-   Op de tegel "Productfoto's" stond een sfeerbeeld: een model in groen licht.
-   Mooi, en het zegt het tegenovergestelde van wat eronder staat — een
-   catalogfoto is juist niet moody, hij is schoon, vlak en overal hetzelfde. De
-   tegel verkocht daarmee de buurdienst.
-
-   Wat er nu staat is het raster uit /img: twaalf kledingstukken op wit, in
-   hetzelfde kader en hetzelfde licht. Dat is letterlijk het product van deze
-   dienst, en het is meteen het argument — je ziet in één blik dat een hele
-   reeks als één lijn leest.
-
-   De andere twee houden hun sfeerbeeld, en dat is nu geen inconsistentie meer
-   maar het verschil zelf: platte productfoto's naast twee beelden met een
-   wereld eromheen. De rij toont drie soorten werk in plaats van drie keer
-   dezelfde toon. */
-const CATALOG_BANNER = {
-  src: '/img/catalog-raster.webp',
-  klein: '/img/catalog-raster-w760.webp',
-  w: 1600, h: 1207,
-};
-const DIENST_BEELD = [CATALOG_BANNER, B(2), B(3)];
-const SET = [1, 5, 4, 2, 3, 7, 6];
+const c = COPY[lang];
+/* "Ook: Hooks · Editions · werk op maat" — de namen uit binnenkort.js, zodat
+   een dienst die erbij komt of verdwijnt hier vanzelf meegaat. */
+const ook = [...binnenkortNamen(lang), c.svcOokRest].join(' · ');
+const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
 ---
-
-{/* ═══ DE VOORPAGINA IN DE NIEUWE STIJL ══════════════════════════════════════
-    Het document is inkt; de lichte secties liggen erop als panelen met een
-    flinke ronding en een rand inkt eromheen. Elke overgang licht → donker is
-    een hoofdstukwissel, en in het donker staat altijd een spookwoord: een kop
-    in dezelfde bijna-zwarte toon als de grond, schermvullend.
-
-    De koptekst van dit bestand legt uit waar het vandaan komt. */}
 <div class="s22 thuis">
 
-  {/* ── 1 · DE OPENING ───────────────────────────────────────────────────────
-      De opbouw van VEXO: kop gecentreerd met één accentwoord, twee pillen, het
-      model dat over de onderrand heen loopt, links drie gezichten met één zin,
-      rechts een donkere clipkaart. De animatie is teruggebracht tot zeven
-      banden — het aantal beelden van één complete set — die met 70 ms verschil
-      veertien pixels op hun plaats schuiven, en een kop die per regel opkomt.
-      Binnen één seconde staat alles stil. */}
-  {/* ── DE OPENING TOONT NU WAT ERUIT KOMT — 17 september 2026 ───────────────
-      Lucas: *"Ik wil de laptop op de voorpagina hebben omdat een klant dan in
-      1x kan zien wat we maken en leveren met de diaslides naar instagram slide
-      etc. Op dit moment is het gewoon een mode foto en is het nog best
-      onduidelijk waar visuails voor staat en wat ze doen."*
-
-      Dat klopte. De kop zei in woorden wat we doen, en eronder stond een
-      modefoto — mooi, maar het BEWIJS ontbrak: een klant zag nergens het ding
-      dat hij koopt. De laptop is dat ding: een echte productpagina met de
-      geleverde beelden erin, en de telefoonfoto ernaast waar ze uit komen. De
-      reeks draait door van catalogset naar de instagram-carrousel naar de
-      video, dus de drie diensten staan er in één blik.
-
-      ── DE FOTO IS UIT DE HERO ────────────────────────────────────────────────
-      Niet uit zuinigheid maar omdat twee beelden om dezelfde aandacht vechten:
-      een schermvullende foto ACHTER een laptop maakt allebei minder leesbaar, en
-      de sluiers die de kop op die foto leesbaar hielden (.hero::before, ::after)
-      zijn dan een waas over de plaat. De grond die eronder lag — het verloop en
-      de stralen — blijft staan; dat was altijd al de echte achtergrond.
-
-      Het merk verdwijnt er niet mee: de mode zit nu IN de laptop (de jeans, de
-      carrousel met het model) en verder op de pagina in de lopende band. */}
-  {/* ── DE KOP BOVEN, DE LAPTOP ERONDER IN HET MIDDEN — 22 september 2026 ──
-      Lucas: *"Ik denk dat ik de laptop in het midden onderaan wil hebben en
-      daarboven de kop."* `hero-stapel` zet het raster van twee kolommen om in
-      één: kop, zin en knoppen gecentreerd, daaronder de laptop op volle
-      breedte. Zie .hero-stapel in stijl22.css. */}
+  {/* ── 0 · OPENING ──────────────────────────────────────────────────────────
+      Eén middenas: etiket, kop met het wisselende accentwoord, één zin, twee
+      knoppen, en de laptop eronder. Zie .hero-stapel in stijl22.css. */}
   <section class="hero hero-split hero-stapel" aria-labelledby="vp-h1">
     <div class="stralen" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-
     <div class="hero-kop">
-      <p class="etiket">{c.labels[0]} · {c.labels[2]}</p>
-      {/* ── HET ACCENTWOORD WISSELT — 22 september 2026 ─────────────────────
-          Zie de noot bij TAGLINE in brand.js. De regel met <em> wordt hier
-          vervangen door een stapel woorden op dezelfde plek: het eerste staat
-          er zonder beweging (en is wat een schermlezer leest via aria-label),
-          de andere drie schuiven er om de beurt overheen — puur CSS, zie
-          .wissel in stijl22.css. Bij prefers-reduced-motion blijft het eerste
-          woord staan. De punt zit in elk woord, anders staat hij na het
-          breedste woord en niet na het woord dat je ziet. */}
+      <p class="etiket">{MERK} · {c.plek}</p>
       <h1 id="vp-h1" class="hoog hero-h1" aria-label={c.h1plain}>
         {c.h1.map((line, i) => (
           <span class="kop-regel" style={`--i:${i}`} aria-hidden="true">
@@ -557,155 +246,65 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
           </span>
         ))}
       </h1>
-      {/* ── ÉÉN AS, VIJF DINGEN ONDER ELKAAR — 22 september 2026 ────────────
-          Lucas: *"Ik vind de indeling van elementen niet mooi eruit zien, en
-          ook niet op telefoon."* Wat er misging: de zin stond LINKS uitgelijnd
-          naast drie gezichten, binnen een verder GECENTREERDE stapel. Drie
-          uitlijningen boven elkaar (etiket midden, kop midden, zin links met
-          een beeldje ervoor, knoppen midden) — en op een telefoon werd dat een
-          rommelig blok.
-          Nu staat alles op één middenas: etiket, kop, één zin, twee knoppen,
-          laptop. De drie gezichten zijn uit de opening gehaald; ze staan al in
-          de sectie "Kies een gezicht" verderop, en een rij koppen náást een
-          zin is precies het element dat de as brak. */}
       <p class="lopend hero-zin">{c.lede}</p>
+      {/* De tweede knop hangt af van wie er staat: een bestaande klant krijgt het
+          abonnement in plaats van de proef — zie pasKlantstandToe() in
+          interactions.js. Zonder JavaScript blijft de proefknop staan. */}
       <p class="acties hero-acties">
         <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
-        {/* ── DE TWEEDE KNOP HANGT AF VAN WIE ER STAAT — 17 september 2026 ──
-            Lucas: *"Ik wil wanneer iemand is ingelogd en dus al een order heeft
-            geplaatst de test sample niet meer dominant maken en die
-            knoppen/secties veranderen naar iets anders dat dan belangrijker is
-            en meer conversiegericht is."*
-
-            "Probeer VISUAILS voor € 1" naast iemand die er al honderden euro's
-            heeft uitgegeven, leest als een site die niet weet wie er staat — en
-            het geeft de op één na duurste plek van de voorpagina weg aan het
-            goedkoopste aanbod.
-
-            Wat er voor een bestaande klant voor in de plaats komt is het
-            ABONNEMENT en niet "bestel opnieuw". Opnieuw bestellen kan hij al met
-            de knop ernaast; het abonnement is het enige wat hij nog niet heeft
-            en het is het enige dat terugkerend is.
-
-            `data-vis-uit` / `data-vis-in`: zie pasKlantstandToe() in
-            interactions.js. Zonder JavaScript blijft de proefknop gewoon staan,
-            wat precies de oude situatie is. */}
         <a class="knop knop-wit" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
         <a class="knop knop-wit" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
       </p>
     </div>
-
-    {/* De laptop, met alle drie de reeksen: catalogset, de instagram-carrousel
-        en de videoclip. `laptopReeks()` levert ze in die volgorde en de
-        carrousel draait er vanzelf doorheen — dat is de "diaslides" waar Lucas
-        om vroeg. `vorm="naast"` haalt de sectiepadding eraan weg en laat hem
-        rechts de pagina uitlopen met een verloop; zie LaptopCarousel.astro. */}
     <div class="hero-beeld">
-      {/* `plain` en niet `h1.join(' ')`: die tweede bevat de <em> van het
-          accentwoord, en dit is een aria-label. Een schermlezer las daar
-          letterlijk "kleiner dan em groter dan" in. Stond er al sinds de kop
-          een accentwoord heeft; gezien bij het omzetten van de kop
-          (20 september 2026). */}
-      <LaptopCarousel lang={lang} vorm="onder" titel={TAGLINE[lang === 'nl' ? 'nl' : 'en'].plain} />
+      <LaptopCarousel lang={lang} vorm="onder" titel={c.h1plain} />
     </div>
-
-    {/* ── DE ZIN STAAT OP DE TELEFOON BOVEN HET BEELD — 8 september 2026 ──
-        Gemeten op 390px: de kop stond op 153px, de knoppen op 254px, en daarna
-        kwam 460 pixels beeld. Deze zin — de enige plek waar staat WAT er
-        verkocht wordt — begon op 900px, net onder de vouw. Wie de site op zijn
-        telefoon opende, zag een kop, twee knoppen en een foto van een hoodie,
-        en nergens het woord productfoto.
-
-        Op breed staat dit blok linksonder in de hero en is het gewoon in beeld;
-        daar verandert niets. Alleen in de stapel op smal schuift hij naar
-        boven — met `order` in stijl22.css, en dat mag hier omdat er niets in
-        dit blok is dat focus krijgt: drie <img> en een <p>. De tabvolgorde
-        verandert dus niet, alleen wat je ziet. */}
-
-    {/* HIER STOND DE CLIPKAART — een miniatuur rechtsonder die naar /video
-        linkte. Sinds de laptop er staat, is dat dubbelop: de derde slide ÍS de
-        videoclip, groter en in context. Twee dingen die hetzelfde beloven
-        naast elkaar maakt de opening drukker zonder één weg extra te openen —
-        dezelfde afweging als bij de WhatsApp-knop op de dienstpagina's. */}
-
   </section>
 
-  {/* De maatlijn: een haarlijn, een streepje per waarde, het nummer erboven. */}
-  {/* Vier punten, en ze komen alle vier uit `facts`. Hier stond er een vijfde
-      los onder: `trust[0]`, "Made in Enschede, NL". Die staat nog steeds op de
-      pagina — onderaan, in de trustlijn, waar de rest van dat rijtje ook staat —
-      maar hij hoorde niet als losse regel in de opmaak te hangen terwijl de
-      andere vier uit één lijst komen. */}
+  {/* ── 1 · MAATLIJN ───────────────────────────────────────────────────────── */}
   <ul class="maatlijn" role="list">
     {c.facts.map((f) => <li><span>{f}</span></li>)}
   </ul>
 
-  {/* ── 2 · DE LOPENDE BAND ──────────────────────────────────────────────────
-      12 september 2026, en het is de grootste ingreep op deze pagina sinds hij
-      bestaat. Lucas: *"Uiteindelijk moet het gewoon heel duidelijk worden voor
-      de klant dat hij of zij productfoto's opstuurt naar mij, ik de foto's/
-      videos maak die ze willen en ze het allemaal kunnen downloaden in hun
-      dashboard. Dat is het concept, en het voelt op de website wat rommelig
-      waardoor je dat niet snel eruit kan halen."*
+  {/* ── 2 · VOOR EN NA ───────────────────────────────────────────────────────
+      Bewijs vóór uitleg: wie hier gelooft dat het echt is, leest de rest. Eén
+      echt paar — het T-shirt dat een klant op een houten tafel fotografeerde,
+      en wat eruit kwam. Links de woorden, rechts de schuifknop. */}
+  <section class="paneel vn" aria-labelledby="vp-vn">
+    <div class="vn-woord">
+      <h2 id="vp-vn" class="hoog hoog-2">{c.vnH}</h2>
+      <p class="lopend">{c.vnZin}</p>
+      <dl class="vn-spec">
+        {c.vnSpec.map(([k, v]) => <div><dt class="mono">{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+      <p><a class="pijl" href={lp('/gallery')}>{c.vnLink}</a></p>
+    </div>
+    <div class="vn-beeld">
+      <Compare
+        ratio="1 / 1"
+        before="/img/catalog-before-1x1.webp"
+        after="/img/catalog-after.webp"
+        beforeAlt={c.vnVoorAlt}
+        afterAlt={c.vnNaAlt}
+      />
+    </div>
+  </section>
 
-      Uit vier gebouwde richtingen koos hij deze: vier stations — jij, wij, je
-      dashboard, je shop — met de beelden van één echte klus.
-
-      ── WAT HIERVOOR IS WEGGEHAALD, EN WAAROM DAT GEEN VERLIES IS ──────────
-      Drie secties en een poster, samen ruim een derde van deze pagina:
-
-        · "Jij stuurt een telefoonfoto. Wij maken er een studioproductie van"
-          — één voorbeeld, één nabeeld en een draad met vier termen ertussen.
-          Precies wat station 01 en 02 doen, met vijf foto's in plaats van één.
-        · "Van map tot lancering" — vier genummerde stappen als tekst. Dat is
-          de band, in woorden, zonder beeld.
-        · "Daarna: VISUAILS Studio" — het portaal uitgelegd naast een tekening.
-          Dat is station 03, en daar staan goedkeuren en revisie nu als twee
-          knoppen van gelijk gewicht — het tweede punt van Lucas' bezoeker.
-        · De posterkamer — een schermvullend vlak zonder inhoud.
-
-      De twee links die aan die secties hingen (de galerij en het portaal) zijn
-      meeverhuisd naar het station waar hun onderwerp staat. */}
+  {/* ── 3 · DE BAND ──────────────────────────────────────────────────────────
+      Van jouw foto naar je shop: vier stations, de tekening in Stations.astro. */}
   <LopendeBand lang={lang} />
 
-  {/* ── 2 · WAT WE MAKEN ─────────────────────────────────────────────────────
-      De pillenrij is echt: vier radioknoppen, nul regels JavaScript. De gekozen
-      dienst blijft vol, de andere drie zakken terug. */}
+  {/* ── 4 · WAT WE MAKEN ─────────────────────────────────────────────────────
+      Drie tegels, drie soorten beeld. De rest in één regel eronder. */}
   <section id="maken" class="paneel kiezer" aria-labelledby="vp-sv">
     <header class="paneel-kop">
-      <p class="etiket">{c.secties[0]}</p>
       <h2 id="vp-sv" class="hoog hoog-2">{c.svcH}</h2>
       <p class="lopend">{c.svcLede}</p>
     </header>
-    {/* ── DE FILTERRIJ IS WEG, EN DAT WAS MEER DAN EEN KNOPPENRIJ ─────────
-        8 september 2026. Lucas: *"De knoppen boven de services zijn overbodig
-        en mogen weg."*
-
-        Overbodig waren ze — vier pillen met dezelfde vier namen die twee
-        centimeter lager als kaart staan. Maar ze deden iets, en dat iets was
-        het echte probleem: elke pil was een <input type="radio">, en de regel
-        `.kiezer .kaarten .kaart { opacity: .42 }` zette DRIE VAN DE VIER
-        KAARTEN op 42 procent tot je er een aanklikte.
-
-        Netto: wie de voorpagina opende zag één dienst scherp en drie als
-        schimmen. Op een pagina waarvan de kop "Wat we maken" is, en waar die
-        vier de hele etalage zijn. Het is te zien op elke schermafdruk van de
-        live site — de catalogset staat er vol, de andere drie liggen eronder
-        in grijs.
-
-        Alles gaat weg: de radio's, de pillen, en de dimming. Vier kaarten,
-        alle vier even scherp, en de bezoeker kiest door te klikken in plaats
-        van eerst te moeten aanwijzen wat hij mag zien. */}
     <ul class="kaarten" role="list">
       {c.svc.map(([naam, wat, prijs, href], i) => (
         <li>
           <a class="kaart" href={lp(href)}>
-            {/* De maten komen van het bestand en niet uit de lucht: er stond
-                1000×1250 op elke tegel terwijl geen van de drie beelden die
-                verhouding heeft. De kaart snijdt toch bij (aspect-ratio 4/5 met
-                object-fit: cover), dus je zag er niets van — maar een browser
-                die een verkeerde verhouding krijgt, reserveert de verkeerde
-                ruimte en schuift de pagina op zodra het beeld binnen is. */}
             <img src={DIENST_BEELD[i].klein} width={DIENST_BEELD[i].w} height={DIENST_BEELD[i].h} alt="" loading="lazy" decoding="async">
             <span class="kaart-pil">
               <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
@@ -715,131 +314,85 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
           <p class="kaart-wat">{wat}</p>
         </li>
       ))}
-      {/* ── DE VIERDE TEGEL IS EEN DEUR EN GEEN DIENST — 10 september 2026 ───
-          Lucas: *"de what we make op de homepage zou 3 blokken moeten zijn en 4e
-          blok see all services."*
-
-          Waarom dat beter is dan vier diensten: wat er ook in die vierde tegel
-          staat, hij is de laatste van de rij en leest als "en dit is de rest".
-          Dat wás hij niet — er stond een dienst in, en dan belooft de rij
-          stilzwijgend dat dit alles is. Er zijn er negen.
-
-          Hij draagt daarom GEEN foto. Een foto zou hem tot een vierde dienst
-          maken en de vraag oproepen welke dienst dat dan is. Wat er staat is de
-          kleur van de site, één zin en dezelfde pijl als de drie ernaast — zelfde
-          vorm, andere belofte. */}
-      <li>
-        <a class="kaart kaart-deur" href={lp('/start')}>
-          <span class="deur-binnen">
-            <span class="deur-kop">{c.svcAllKop}</span>
-            <span class="deur-lijst">
-              {c.svcAllLijst.map((naam) => <span class="deur-item">{naam}</span>)}
-            </span>
-          </span>
-          <span class="kaart-pil">
-            <span class="kaart-tekst"><b>{c.svcAll}</b><span class="mono">{c.svcAllPrijs}</span></span>
-            <span class="rond" aria-hidden="true">→</span>
-          </span>
-        </a>
-      </li>
     </ul>
-    <p class="voetregel"><span class="mono">{c.svcSoon[0]}</span> <a class="pijl" href={lp('/plans#binnenkort')}>{c.svcSoon[1]}</a></p>
+    <p class="voetregel"><span class="mono">{c.svcOok}:</span> <a class="pijl" href={lp('/start')}>{ook}</a></p>
   </section>
 
-
-  {/* ── 4 · DE SET ───────────────────────────────────────────────────────────
-      Zeven kaarten op een rij; de splitsing tussen catalog en lifestyle is een
-      balk erboven in dezelfde verhouding als de beelden eronder. */}
-  <section class="paneel" aria-labelledby="vp-set">
+  {/* ── 5 · DE LOOKS ─────────────────────────────────────────────────────────
+      Wat een modemerk als eerste wil weten: past dit bij mij. Elke kaart gaat
+      naar de pagina van die look — zie Stijlstrook.astro. */}
+  <section class="paneel" aria-labelledby="vp-lk">
     <header class="paneel-kop">
-      <p class="etiket">{c.secties[2]}</p>
-      <h2 id="vp-set" class="hoog hoog-2">{c.setH}</h2>
-      <p class="lopend">{c.setLede}</p>
+      <h2 id="vp-lk" class="hoog hoog-2">{c.looksH}</h2>
+      <p class="lopend">{c.looksLede}</p>
     </header>
-    <p class="groepen" style={`--a:${CATALOG_IMAGES}fr;--b:${SET.length - CATALOG_IMAGES}fr`}>
-      <a class="groep" href={lp(c.setGroups[0][1])}>{c.setGroups[0][0]}</a>
-      <a class="groep" href={lp(c.setGroups[1][1])}>{c.setGroups[1][0]}</a>
-    </p>
-    {/* De combinatie staat er als ZIN en niet als derde kolom. Een kolom maakt
-        er een product van, en dat is precies wat het niet meer is; een zin zegt
-        wat het wél is: een tarief dat geldt zodra je allebei op hetzelfde
-        product neemt. Beide bedragen komen uit completeSaving(). */}
-    <p class="lopend set-combi">{c.setCombi(e(SAMEN.together), e(SAMEN.apart))}</p>
-    <ol class="rij">
-      {c.frames.map((naam, i) => (
-        <li class={i < CATALOG_IMAGES ? 'is-catalog' : 'is-lifestyle'}>
-          <span class="kaart kaart-stil">
-            <img src={B(SET[i]).klein} width="800" height="1000" alt="" loading="lazy" decoding="async">
-          </span>
-          <span class="mono">{naam}</span>
-        </li>
-      ))}
-    </ol>
-    <p class="etiket set-extras-kop">{c.extrasLabel}</p>
-    <ul class="extras" role="list">
-      {c.extras.map(([k, v, href]) => <li><a class="pijl" href={lp(href)}>{k}</a><span>{v}</span></li>)}
-    </ul>
+    <Stijlstrook lang={lang} />
   </section>
 
-
-  {/* ── 6 · TARIEVEN, IN HET KORT — 19 september 2026 ───────────────────────
-      Hier stonden twee tabellen naast elkaar: de hele prijsladder (vier treden
-      × drie soorten) en de drie abonnementen met kolommen — samen ruim 600 px,
-      en letterlijk dezelfde tabellen als op /pricing en /plans. Op een voorpagina
-      is de vraag niet "wat kost 10–19 lifestyle" maar "in welke orde ligt het".
-      Dus per soort één regel: vanaf-prijs, en tot waar hij zakt; en één regel
-      voor het abonnement. De tabellen blijven waar ze horen: /pricing en /plans.
-      Alle bedragen uit pricing.js. */}
-  <section id="tarieven" class="paneel" aria-labelledby="vp-pr">
-    <header class="paneel-kop">
-      <p class="etiket">{c.secties[4]}</p>
-      <h2 id="vp-pr" class="hoog hoog-2">{c.priceH}</h2>
-    </header>
-    <ul class="tarief-strip" role="list">
-      {KINDS.map((id) => (
-        <li>
-          {KIND_PAGE[id] ? <a class="tarief-soort" href={lp(KIND_PAGE[id])}>{c.priceKinds[id]}</a> : <span class="tarief-soort">{c.priceKinds[id]}</span>}
-          <p class="tarief-van"><span class="mono">{c.vanaf}</span> <b class="tarief">{e(ladderRate(id, 1))}</b> <span class="mono">{c.perProduct}</span></p>
-          <p class="mono tarief-tot">{c.totVanaf(e(ladderFloor(id)), TOP_AT)}</p>
-        </li>
-      ))}
-    </ul>
-    <p class="tarief-abo">
-      <span class="tarief-abo-kop">{c.planH}</span>
-      <span class="lopend">{c.planLede}</span>
-      <span class="tarief-abo-rij">{PLANS.map((pl) => <a href={`${lp('/plans')}#${pl.id}`}><b>{pl.name}</b> <span class="mono">{pl.price} {c.perMaand}</span></a>)}</span>
-    </p>
-    <p class="acties">
-      <a class="knop knop-inkt" href={lp('/start')}>{c.priceCta}</a>
-      <a class="knop knop-lijn" href={lp('/pricing')}>{c.priceCta2}</a>
-      <a class="pijl" href={lp('/plans')}>{c.planLink}</a>
-    </p>
-  </section>
-
-  {/* ── 5 · GEZICHTEN ────────────────────────────────────────────────────────*/}
-  <section id="gezichten" class="paneel" aria-labelledby="vp-gz">
-    <header class="paneel-kop">
-      <p class="etiket">{c.secties[6]}</p>
+  {/* ── 6 · EEN GEZICHT ZIT ERBIJ ────────────────────────────────────────────
+      De helft van wat hier stond: vijf gezichten in plaats van tien, en twee
+      deuren naar de rest. */}
+  <section id="gezichten" class="paneel gz" aria-labelledby="vp-gz">
+    <div class="gz-woord">
       <h2 id="vp-gz" class="hoog hoog-2">{c.facesH}</h2>
       <p class="lopend">{c.facesLede}</p>
-    </header>
-    <ul class="cast" role="list">
-      {ROSTER.map((m) => (
+      <p class="gz-links">
+        <a class="pijl" href={lp('/models')}>{c.facesAll}</a>
+        <a class="pijl" href={lp('/custom-models')}>{c.facesMerk}</a>
+      </p>
+    </div>
+    <ul class="gz-rij" role="list">
+      {GEZICHTEN_RIJ.map((m) => (
         <li>
           <a href={`${lp('/models')}#${modelId(m.name)}`}>
-            <span class="kaart kaart-stil"><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></span>
+            <span class="gz-foto"><img src={m.thumb} width={m.tw} height={m.th} alt={m.name} loading="lazy" decoding="async"></span>
             <span class="mono">{m.name}</span>
           </a>
         </li>
       ))}
     </ul>
-    <p class="acties"><a class="knop knop-lijn" href={lp('/custom-models')}>{c.facesLink}</a><a class="pijl" href={lp('/models')}>{c.facesLink2}</a></p>
   </section>
 
-  {/* ── 6 · DIRECT ANTWOORD ──────────────────────────────────────────────────*/}
+  {/* ── 7 · EDITIONS ─────────────────────────────────────────────────────────
+      De ene plek waar één groot beeld de pagina lucht geeft — en het is geen
+      decoratie: het is de dienst. Banner `editions-breed` (21:9); tot Lucas hem
+      maakt, staat er een plaatshouder met die naam en maat. Het violet zit in
+      het beeld als licht, niet als vlak (KLEURENSCHEMA.md). */}
+  <section class="kamer ed" aria-labelledby="vp-ed">
+    <figure class="ed-beeld">
+      <img src="/img/editions-breed.webp" width="2400" height="1030" alt={c.edAlt} loading="lazy" decoding="async" data-plaatshouder="donker" />
+    </figure>
+    <div class="ed-woord">
+      <div>
+        <p class="etiket">{c.edEtiket}</p>
+        <h2 id="vp-ed" class="hoog hoog-2">{c.edH}</h2>
+      </div>
+      <div class="ed-zin">
+        <p class="lopend">{c.edZin}</p>
+        <p><a class="pijl" href={lp('/plans#binnenkort')}>{c.edLink}</a></p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 8 · VOOR WIE ─────────────────────────────────────────────────────────
+      Drie situaties, drie antwoorden, drie deuren. Geen kaarten. */}
+  <section class="paneel vw" aria-labelledby="vp-vw">
+    <h2 id="vp-vw" class="hoog hoog-2">{c.vwH}</h2>
+    <ul class="vw-lijst" role="list">
+      {c.vw.map(([wie, wat, link, href]) => (
+        <li>
+          <span class="vw-wie">{wie}</span>
+          <span class="lopend vw-wat">{wat}</span>
+          <a class="pijl vw-link" href={lp(href)}>{link}</a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 9 · DIRECT ANTWOORD ──────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="vp-q">
     <header class="paneel-kop">
-            <h2 id="vp-q" class="hoog hoog-2">{c.qH}</h2>
+      <h2 id="vp-q" class="hoog hoog-2">{c.qH}</h2>
     </header>
     <ul class="vragen" role="list">
       {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="pijl" href={lp(href)}>{l}</a></li>)}
@@ -847,37 +400,25 @@ const SET = [1, 5, 4, 2, 3, 7, 6];
     </ul>
   </section>
 
-  {/* ── 7 · HET SLUITSTUK ────────────────────────────────────────────────────
-      De posterkamer die hier vóór stond — een schermvullend donker vlak met een
-      woord erin — is op 12 september weggehaald met de andere drie secties die
-      in de lopende band zijn opgegaan. Hij droeg geen inhoud en kostte een heel
-      scherm vlak vóór de enige vraag die deze pagina stelt.
-
-      Wat er nu gebeurt is beter: het slotpaneel IS het donker. Het is het enige
-      donkere blok in de onderste helft van de pagina, en daarmee is de
-      hoofdstukwissel er nog steeds — alleen draagt hij nu de knop in plaats van
-      een decor. */}
+  {/* ── 10 · DE PROEF ────────────────────────────────────────────────────────
+      Woorden links, de vier beelden die de proef oplevert rechts. Dezelfde
+      omwisseling als in de opening: een bestaande klant ziet het abonnement. */}
   <section class="paneel paneel-slot slot-proef" aria-labelledby="vp-sl">
     <div class="slot-woord">
-    <p class="etiket">{c.secties[7]}</p>
-    <h2 id="vp-sl" class="hoog">{c.closeH}</h2>
-    <p class="lopend">{c.closeLede}</p>
-    {/* Het slot van de pagina, met dezelfde omwisseling als in de opening: wie
-        al klant is krijgt het abonnement als eerste knop in plaats van de proef
-        van € 1. Zie de noot bij de heroknoppen hierboven. */}
-    <p class="acties">
-      <a class="knop knop-inkt" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
-      <a class="knop knop-inkt" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
-      <a class="knop knop-lijn" href={lp('/start')}>{c.closeAlt}</a>
-    </p>
+      <p class="etiket">{c.proef}</p>
+      <h2 id="vp-sl" class="hoog">{c.closeH}</h2>
+      <p class="lopend">{c.closeLede}</p>
+      <p class="acties">
+        <a class="knop knop-inkt" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+        <a class="knop knop-inkt" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
+        <a class="knop knop-lijn" href={lp('/start')}>{c.closeAlt}</a>
+      </p>
     </div>
-    {/* Wat de proef oplevert, als beeld naast de woorden: de vier van de
-        voorbeeldset (dezelfde als in de band bovenaan), twee-bij-twee. De
-        rechterhelft van dit paneel was leeg — 22 september 2026. */}
     <ul class="slot-beelden" role="list" aria-hidden="true">
       {geleverd(lang).map((b) => <li><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /></li>)}
     </ul>
   </section>
 
+  {/* ── 11 · VERTROUWEN ──────────────────────────────────────────────────── */}
   <ul class="trustlijn" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
 </div>
