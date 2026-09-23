@@ -302,9 +302,9 @@ console.log('\n5 · de gebouwde site');
       ok(`/nl/start/custom-look heeft het veld ${veld}`, new RegExp(`name="${veld}"`).test(h));
     }
     ok('  de wereld is verplicht, met een Nederlandse melding', /name="look_world"[^>]*required/.test(h) && /data-melding="Beschrijf de wereld/.test(h));
-    ok('  en zegt wat er na goedkeuring gebeurt (tegel in Studio, gewoon formulier)', /eigen tegel in je VISUAILS Studio/.test(h));
+    ok('  en zegt wat er na goedkeuring gebeurt (tegel in Studio, gewoon formulier)', /tegel in je VISUAILS Studio/.test(h));
     const en = readFileSync(new URL('../dist/start/custom-look/index.html', import.meta.url), 'utf8');
-    ok('  de Engelse pagina ook', /name="look_world"/.test(en) && /tile of its own/.test(en));
+    ok('  de Engelse pagina ook', /name="look_world"/.test(en) && /a tile in your VISUAILS Studio/.test(en));
     const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
     ok('global.css kent de tegels die pipeline.js pas na /account/me maakt', /\.look\.is-own/.test(css) && /\.own-look-opt/.test(css) && /\.look-own-badge/.test(css));
     const pipeline = readFileSync(new URL('../src/scripts/pipeline.js', import.meta.url), 'utf8');

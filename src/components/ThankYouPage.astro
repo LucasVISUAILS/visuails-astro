@@ -80,18 +80,18 @@ const TIMING = turnaround('unattended', lang);
 const PLAN_ID = 'studio';
 const PLAN_KAART = plans(lang).find((p) => p.id === PLAN_ID);
 const PLAN_LADDER = planSaving(PLAN_ID);
-const PLAN_DEKT = nl
-  ? `${PLAN_PRODUCTS[PLAN_ID]} producten en ${PLAN_CLIPS[PLAN_ID]} clips`
-  : `${PLAN_PRODUCTS[PLAN_ID]} products and ${PLAN_CLIPS[PLAN_ID]} clips`;
+/* In credits sinds 23 september 2026: wat het plan geeft, en wat dezelfde
+   credits als catalogsets los kosten. Geen Editions-belofte meer: die set
+   draait nog niet. */
 const PLAN_REGEL = nl ? {
   h: 'Elke maand hetzelfde nodig?',
-  compare: `Het ${PLAN_KAART.name}-abonnement dekt ${PLAN_DEKT} per maand voor ${euro(PLAN_AMOUNT[PLAN_ID], 'nl')} — dezelfde levering los besteld is ${euro(PLAN_LADDER.onLadder, 'nl')}.`,
-  steady: `Een abonnement legt het aantal vast en houdt een week in de planning voor je vrij, met ${STOCK_OFF_BRAND} Editions-beelden erbij.`,
+  compare: `Het ${PLAN_KAART.name}-abonnement geeft ${PLAN_KAART.credits} credits per maand voor ${euro(PLAN_AMOUNT[PLAN_ID], 'nl')}, te besteden aan catalog, lifestyle en video. ${PLAN_LADDER.sets} catalogsets los kosten ${euro(PLAN_LADDER.onLadder, 'nl')}.`,
+  steady: 'Een abonnement geeft je elke maand credits en vaste productiedagen.',
   cta: 'Bekijk de abonnementen',
 } : {
   h: 'Need the same every month?',
-  compare: `The ${PLAN_KAART.name} plan covers ${PLAN_DEKT} a month for ${euro(PLAN_AMOUNT[PLAN_ID], 'en')} — the same delivery ordered one at a time is ${euro(PLAN_LADDER.onLadder, 'en')}.`,
-  steady: `A plan fixes the count and holds a week in the calendar for you, with ${STOCK_OFF_BRAND} Editions visuals on top.`,
+  compare: `The ${PLAN_KAART.name} plan gives ${PLAN_KAART.credits} credits a month for ${euro(PLAN_AMOUNT[PLAN_ID], 'en')}, to spend on catalog, lifestyle and video. ${PLAN_LADDER.sets} catalog sets one-off cost ${euro(PLAN_LADDER.onLadder, 'en')}.`,
+  steady: 'A plan gives you credits and fixed production days every month.',
   cta: 'See the plans',
 };
 

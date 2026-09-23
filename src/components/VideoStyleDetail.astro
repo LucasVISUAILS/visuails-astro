@@ -22,7 +22,7 @@
  */
 import ServiceSwitch from './ServiceSwitch.astro';
 import VideoExamples from './VideoExamples.astro';
-import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
+import { reviewClaim, turnaround, TIERS, VIDEO_OP_AANVRAAG } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
 
@@ -86,7 +86,7 @@ const c = nl ? {
   kaderH: 'Wat er in elk kader gaat.',
   idealH: ['Ideaal ', 'voor'],
   krijgH: ['Wat je ', 'krijgt'],
-  modelNoot: ['Zit er iemand in een ', '-clip, dan kan dat hetzelfde gezicht zijn als op je foto’s — ', 'een merkmodel', ' wordt één keer gemaakt en gaat mee door stills én video.'],
+  modelNoot: ['Iemand in een ', '-clip kan ', 'je eigen merkmodel', ' zijn.'],
   slotH: ['Maak ', ' van jou.'],
   slotP: 'Probeer VISUAILS eerst, of plaats vandaag je bestelling.',
   proef: 'Probeer VISUAILS',
@@ -101,7 +101,7 @@ const c = nl ? {
   kaderH: 'What goes into every frame.',
   idealH: ['Best ', 'for'],
   krijgH: ['What you ', 'get'],
-  modelNoot: ['If a ', ' clip has someone in it, it can be the same face as your photos — ', 'a Brand Model', ' is built once and used across stills and video alike.'],
+  modelNoot: ['Someone in a ', ' clip can be ', 'your own Brand Model', '.'],
   slotH: ['Make ', ' yours.'],
   slotP: 'Test sample, or place your order today.',
   proef: 'Test sample',
@@ -132,7 +132,9 @@ const vink = 'M20 6L9 17l-5-5';
         <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
         <ServiceSwitch current={['video', 'complete']} lang={lang} />
         <ul class="vs-feiten" role="list">
-          <li>{style.priceTrust}{style.priceUnit}</li>
+          {/* Zolang video op aanvraag is, noemt ook de detailpagina geen bedrag per
+              clip: /video en /start zeggen "op aanvraag" (23 september 2026). */}
+          <li>{VIDEO_OP_AANVRAAG && style.priceUnit ? (nl ? 'Op aanvraag' : 'On request') : <Fragment>{style.priceTrust}{style.priceUnit}</Fragment>}</li>
           <li>{TIMING}</li>
           <li>{REVIEW}</li>
         </ul>
@@ -147,11 +149,11 @@ const vink = 'M20 6L9 17l-5-5';
   <section class="paneel vs-sfeer">
     <div class="paneel-kop">
       <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
-      {style.moodParagraphs.map((p: string) => <p class="lopend vs-sfeer-p">{p}</p>)}
+      {style.moodParagraphs.slice(0, 1).map((p: string) => <p class="lopend vs-sfeer-p">{p}</p>)}
       {/* "Ideaal voor" hoort bij hoe de stijl voelt — 23 september 2026. */}
       <h3 class="hoog hoog-3 vs-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
       <ul class="vs-vinkjes" role="list">
-        {style.bestFor.map((item: string) => (
+        {style.bestFor.slice(0, 3).map((item: string) => (
           <li><svg viewBox="0 0 24 24" class="vs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
         ))}
       </ul>
@@ -195,12 +197,12 @@ const vink = 'M20 6L9 17l-5-5';
       <h2 class="hoog hoog-2">{c.kaderH}</h2>
     </div>
     <ul class="vs-vakwerk" role="list">
-      {style.craft.map((k: any) => (
+      {style.craft.slice(0, 3).map((k: any) => (
         <li><b>{k.title}</b><p class="lopend">{k.body}</p></li>
       ))}
     </ul>
     <ul class="vs-waarom" role="list">
-      {style.why.map((w: any) => (
+      {style.why.slice(0, 1).map((w: any) => (
         <li><b>{w.title}</b><p class="lopend">{w.body}</p></li>
       ))}
     </ul>

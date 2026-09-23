@@ -80,7 +80,7 @@ const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } 
 /* Twee breedtes: op 390px is .wide twee van de twee kolommen, op 1440px twee van
    de vier. Een reservering die alleen op één breedte klopt, is geen reservering. */
 for (const [pad, w] of [['/gallery', 390], ['/gallery', 1440], ['/nl/gallery', 390]]) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: 900 }, reducedMotion: 'reduce' });
+  const ctx = await browser.newContext({ locale: 'en-US', viewport: { width: w, height: 900 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
   await page.goto(`http://127.0.0.1:8084${pad}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
   /* lazy eraf: een beeld dat nog niet aan de beurt is, zegt niets over

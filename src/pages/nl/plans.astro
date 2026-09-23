@@ -4,16 +4,16 @@
 // verschilt hier.
 import Layout from '../../layouts/Layout.astro';
 import PlansPage from '../../components/PlansPage.astro';
-import { euro, PLAN_AMOUNT, PLAN_PRODUCTS, vatLabel } from '../../data/pricing.js';
+import { euro, PLAN_AMOUNT, PLAN_CREDITS, vatLabel } from '../../data/pricing.js';
 
 const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
 
 const description =
-  `Elke maand een vast aantal producten, in een week die de planning voor je ` +
-  `vrijhoudt. Vanaf ${euro(PLAN_AMOUNT[CHEAPEST], 'nl')} per maand voor ` +
-  `${PLAN_PRODUCTS[CHEAPEST]} producten, ${vatLabel('excl', 'nl')}.`;
+  `Elke maand credits voor catalog, lifestyle en video. Vanaf ` +
+  `${euro(PLAN_AMOUNT[CHEAPEST], 'nl')} per maand voor ${PLAN_CREDITS[CHEAPEST]} credits, ` +
+  `of stel je eigen abonnement samen. ${vatLabel('excl', 'nl')}.`;
 ---
 
-<Layout title="Abonnementen — elke maand een vast aantal | VISUAILS" description={description}>
+<Layout title="Abonnementen — elke maand credits | VISUAILS" description={description}>
   <PlansPage lang="nl" />
 </Layout>

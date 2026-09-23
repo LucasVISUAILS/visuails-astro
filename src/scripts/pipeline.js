@@ -3078,11 +3078,9 @@ function syncTotal() {
  *       een vergelijking van twee verschillende dingen. Daar staat `plan.steady`
  *       — dezelfde uitnodiging, zonder de rekensom die niet klopt.
  *
- * HET PLAN DAT ERBIJ STAAT is dat met het aantal dat het DICHTST bij de
- * bestelling ligt, met de kleinste bij gelijkspel — niet het kleinste plan dat
- * het aantal dekt. Dat laatste springt boven de twaalf meteen naar Merk, en dan
- * krijgt iemand die dertien producten bestelt een maandbedrag van € 1.690
- * voorgeschoteld. Zie dezelfde noot in OrderFlow.astro.
+ * HET PLAN DAT ERBIJ STAAT is sinds 23 september 2026 het kleinste plan waarvan
+ * de CREDITS deze bestelling dekken (de sprong van producten naar Merk bestaat
+ * niet meer: Studio geeft 120 credits, genoeg voor dertien complete producten).
  */
 function paintPlan(kind, n) {
   const host = q('[data-pl-plan]');
@@ -3101,22 +3099,25 @@ function paintPlan(kind, n) {
   if (cfg.sample || !rijen.length || !kind || !Number.isInteger(n) || n < 1) return verberg();
   if (kind !== 'complete' && kind !== 'lifestyle' && kind !== 'catalog') return verberg();
 
-  const kleinste = rijen.reduce((a, b) => (b.products < a.products ? b : a), rijen[0]);
-  if (n < kleinste.products) return verberg();
-
-  // Dichtstbijzijnd op aantal; bij gelijkspel de kleinste, want `<` en niet `<=`
-  // laat de eerste (en de lijst staat oplopend) staan.
-  const plan = rijen.reduce((a, b) =>
-    (Math.abs(b.products - n) < Math.abs(a.products - n) ? b : a), rijen[0]);
-
-  if (kind === 'catalog' || !plan.ladder) {
+  /* ── IN CREDITS SINDS 23 SEPTEMBER 2026 ──────────────────────────────
+     Deze bestelling, elke maand, is n × de credits van de soort. Het plan dat
+     erbij staat is het kleinste dat dat dekt; past het in geen enkel plan, dan
+     de zin over een abonnement op maat. Onder het kleinste plan: geen regel,
+     want dan is los bestellen het eerlijke antwoord. */
+  const per = cfg.creditsPer && cfg.creditsPer[kind];
+  if (!per) return verberg();
+  const nodig = n * per;
+  const oplopend = rijen.slice().sort((a, b) => a.credits - b.credits);
+  if (nodig < oplopend[0].credits * 0.75) return verberg();
+  const plan = oplopend.find((r) => r.credits >= nodig);
+  if (!plan) {
     zin.textContent = c('plan.steady');
   } else {
     zin.textContent = c('plan.compare', {
+      need: String(nodig),
       name: plan.name,
-      covers: plan.covers,
+      credits: String(plan.credits),
       price: plan.price,
-      ladder: plan.ladder,
     });
   }
   if (cta) cta.textContent = c('plan.cta');

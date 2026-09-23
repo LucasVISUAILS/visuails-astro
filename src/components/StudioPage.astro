@@ -64,37 +64,37 @@ const lp = (p: string) => localizedPath(lang, p);
 const COPY = {
   en: {
     h1: ['How we arrive at a delivery date.', 'This is the calendar we work in.'],
-    lede: 'Anyone can put "48 hours" on a website. The question is what happens in the week it is not true. Here is the part of the studio that answers that, and the reason a date is never offered before it has been checked — and never as a promise we have not reserved the day for.',
+    lede: 'Every delivery date is checked against the calendar before you see it. This is how.',
     ctaStart: 'Start an order',
     ctaPortal: 'See a delivered order',
 
     gateH: 'We check the calendar before we offer you a date.',
     gateRegelsH: 'The four rules the planning runs on',
-    gateLede: 'The date picker on the order form does not show a list of dates. It asks the calendar what the studio has actually committed to on those days, removes every window the studio cannot hold, and offers the first one it can.',
+    gateLede: 'The order form only offers dates the studio can still hold.',
     gate: [
       // Zie de noot bovenaan dit bestand: dit zei "a week has room", en de poort
       // telt per dag. De cijfers komen nu uit capacity.js, dus de tekst kan niet
       // meer los gaan staan van het mechanisme dat hij beschrijft.
-      ['Counted in products, not orders', `A studio day holds ${PRODUCTS_PER_DAY} products, and a reserved window is ${WINDOW_DAYS} days. One order of thirty products asks for fifteen on each of those two days \u2014 not "thirty somewhere in there".`],
-      ['One ceiling, one place', `The limit is a single configurable number, and ${QUEUE_FLOOR_PER_DAY} of every ${PRODUCTS_PER_DAY} stay off it so a small order still runs in a normal turnaround. There is no second rule anywhere that can quietly disagree.`],
+      ['Counted in products, not orders', `A studio day holds ${PRODUCTS_PER_DAY} products; a reserved window is ${WINDOW_DAYS} days.`],
+      ['Room for small orders', `${QUEUE_FLOOR_PER_DAY} of every ${PRODUCTS_PER_DAY} stay free for small orders.`],
       // Size, not product type. See the header note: this used to say "drops
       // outrank loose products", which named two things a buyer picked between.
-      [`Size decides, at ${WINDOW_THRESHOLD} products`, `From ${WINDOW_THRESHOLD} products an order goes into the calendar and holds a committed date. Smaller orders run in a normal turnaround and yield to it, which is what makes the committed date committed.`],
-      ['Nothing is promised twice', 'A window that has been offered and taken is gone from the picker before the next person sees it.'],
+      [`Size decides, at ${WINDOW_THRESHOLD} products`, `From ${WINDOW_THRESHOLD} products an order holds a committed date. Smaller orders run in the normal turnaround.`],
+      ['Nothing is promised twice', 'A window that is taken disappears from the picker at once.'],
     ],
 
     boardH: 'One table, every order.',
     boardRegelsH: 'What sits in that table',
-    boardLede: 'Our side of it is deliberately boring: a list of orders, the state each one is in, and the calendar the picker reads from. There is no dashboard of graphs, because a graph has never told anyone which order is late.',
+    boardLede: 'Our side: a list of orders, the state each one is in, and the calendar.',
     board: [
-      ['Every order, one row', 'Reference, brand, product count, the window it holds and the state it is in.'],
-      ['Revisions come to the top', 'A revision request from a client portal lands in its own list, with the note the client wrote, in their words.'],
-      ['A state change writes both sides', 'Moving an order writes the studio record and the client-visible timeline in the same move — which is why the portal is never out of date with the studio.'],
+      ['Every order, one row', 'Reference, brand, products, window and state.'],
+      ['Revisions come to the top', 'With the note the client wrote.'],
+      ['One move, both sides', 'The studio and your portal update together.'],
     ],
 
     humanH: 'The last step is a person.',
-    humanLede: 'Nothing is auto-delivered. Every visual in every order is looked at before it goes out, and the looking is a state the order has to pass through rather than a claim on a page.',
-    humanNote: 'The log records that review. Every approval and every revision is saved with a date against the image it belongs to. The same record you use to approve the order is the one we can read back to you months later.',
+    humanLede: 'Nothing is delivered automatically. A specialist looks at every image before it goes out.',
+    humanNote: 'Every approval and revision is logged with a date.',
     humanCta: 'Read the AI Act page',
 
     // ── TERUGREKENEN VANAF DE LANCEERDATUM ──────────────────────────────
@@ -105,80 +105,80 @@ const COPY = {
     // dat de pagina niet kan natrekken tegen de D1-kalender, en een
     // schaarsteclaim die een bezoeker kan ontkrachten is erger dan geen.
     plH: 'Work back from your launch date.',
-    plLede: `From ${WINDOW_THRESHOLD} products we take that week out of the calendar for your order. That is why we can put the date in writing, and why a week that is full is offered as full.`,
+    plLede: `From ${WINDOW_THRESHOLD} products we reserve your days in the calendar, so the date goes in writing.`,
     pl: [
-      ['Your launch date', 'The day the collection has to be live. Everything else is counted backwards from here.'],
-      ['Your reserved date', `The delivery date we hold, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it. ${aim48('en')} That part is what we work towards, not what we promise. Below that count an order runs in the normal turnaround.`],
-      ['Minus one folder', 'The day you send the photos. That is your part finished, and the date is already locked.'],
+      ['Your launch date', 'The day the collection goes live. We count back from here.'],
+      ['Your reserved date', `Held from ${WINDOW_THRESHOLD} products; nothing moves it. ${aim48('en')} An aim, not a promise.`],
+      ['Minus one folder', 'The day you send the photos. Your part is done.'],
     ],
-    plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait.',
+    plNote: '',
     plCta: 'See which weeks are open',
 
     honestH: 'What this does not do.',
-    honestLede: 'Worth saying plainly, because a page about a mechanism that only lists what works is a brochure.',
+    honestLede: '',
     honest: [
-      ['It does not guarantee a window it has not cleared', 'If the calendar is full, you are offered the next window that is not. You will not be told yes and then rescheduled.'],
-      ['It does not rush an order past the review', 'The reserved delivery date is the date the work fits in, not a target the studio sprints at. An order that is not right does not ship on time; it ships right.'],
-      ['It does not scale by hiring', 'The ceiling is a real number and it stays a real number. When the studio is full it says so, which is the only version of this that is worth anything.'],
+      ['No date it has not cleared', 'A full calendar offers the next free window — never a yes and then a reschedule.'],
+      ['No rushing past the review', 'An order that is not right does not ship on time; it ships right.'],
+      ['No room that is not there', 'When the studio is full, it says so.'],
     ],
 
     closeH: 'Book a window the calendar has cleared.',
-    closeLede: 'The date you are offered is one the studio has already checked it can keep.',
+    closeLede: '',
     closeCta: 'Start an order',
     closeAlt: 'See it on your own product first',
   },
 
   nl: {
     h1: ['Zo komen we aan een leverdatum.', 'Dit is de agenda waar wij in werken.'],
-    lede: 'Iedereen kan "48 uur" op een website zetten. De vraag is wat er gebeurt in de week dat het niet waar is. Dit is het deel van de studio dat die vraag beantwoordt, en de reden dat een datum nooit wordt aangeboden voordat hij gecontroleerd is — en nooit als belofte waar we de dag niet voor hebben vrijgehouden.',
+    lede: 'Elke leverdatum wordt eerst in de agenda gecontroleerd voordat jij hem ziet. Zo werkt dat.',
     ctaStart: 'Start een bestelling',
     ctaPortal: 'Bekijk een geleverde bestelling',
 
     gateH: 'We kijken eerst in de agenda, en pas daarna noemen we een datum.',
     gateRegelsH: 'De vier regels waar de planning op draait',
-    gateLede: 'De datumkiezer in het bestelformulier toont geen lijstje datums. Hij vraagt de planning waar de studio zich op die dagen werkelijk aan verbonden heeft, haalt elk venster weg dat de studio niet kan vasthouden, en biedt het eerstvolgende venster aan dat wél vrij te houden is.',
+    gateLede: 'Het bestelformulier biedt alleen datums aan die de studio nog kan vasthouden.',
     gate: [
-      ['Werkdruk, geen beschikbaarheid', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten, en een vastgelegd venster is ${WINDOW_DAYS} dagen. Een bestelling van dertig vraagt vijftien op elk van die twee dagen — niet "dertig ergens daarin".`],
-      ['Eén plafond, één plek', `De limiet is één instelbaar getal, en ${QUEUE_FLOOR_PER_DAY} van elke ${PRODUCTS_PER_DAY} blijven eraf zodat een kleine bestelling nog steeds in een normale doorlooptijd draait. Er is nergens een tweede regel die er stilletjes van kan afwijken.`],
+      ['Geteld in producten, niet in orders', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten; een vastgelegd venster is ${WINDOW_DAYS} dagen.`],
+      ['Ruimte voor kleine bestellingen', `${QUEUE_FLOOR_PER_DAY} van elke ${PRODUCTS_PER_DAY} blijven vrij voor kleine bestellingen.`],
       // Zie de EN-tak: omvang beslist, niet het soort bestelling.
-      [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling de agenda in en houdt hij een vastgelegde datum. Kleinere bestellingen draaien in een normale doorlooptijd en wijken ervoor — precies dat maakt de vastgelegde datum vastgelegd.`],
-      ['Niets wordt twee keer beloofd', 'Een venster dat is aangeboden en gepakt, is uit de kiezer verdwenen voordat de volgende het ziet.'],
+      [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten houdt een bestelling een vastgelegde datum. Kleinere bestellingen volgen de normale doorlooptijd.`],
+      ['Niets wordt twee keer beloofd', 'Een venster dat gepakt is, verdwijnt meteen uit de kiezer.'],
     ],
 
     boardH: 'Eén tabel, elke order.',
     boardRegelsH: 'Wat er in die tabel staat',
-    boardLede: 'Onze kant is met opzet saai: een lijst orders, de staat waarin elke order zit, en de kalender waar de kiezer uit leest. Geen dashboard vol grafieken, want een grafiek heeft nog nooit iemand verteld welke bestelling te laat is.',
+    boardLede: 'Onze kant: een lijst orders, de staat van elke order, en de agenda.',
     board: [
-      ['Elke order, één regel', 'Kenmerk, merk, aantal producten, het venster dat hij vasthoudt en de staat waarin hij zit.'],
-      ['Revisies komen bovenaan', 'Een revisieverzoek uit VISUAILS Studio komt in een eigen lijst binnen, met de notitie die de klant schreef, in diens eigen woorden.'],
-      ['Een statuswissel schrijft beide kanten', 'Een order verplaatsen schrijft het studiodossier en de tijdlijn die de klant ziet in dezelfde beweging — daarom loopt het portaal nooit achter op de studio.'],
+      ['Elke order, één regel', 'Kenmerk, merk, producten, venster en staat.'],
+      ['Revisies komen bovenaan', 'Met de notitie die de klant schreef.'],
+      ['Eén beweging, beide kanten', 'De studio en jouw portaal lopen gelijk.'],
     ],
 
     humanH: 'De laatste stap is een specialist.',
-    humanLede: 'Er wordt niets automatisch geleverd. Elk beeld in elke bestelling wordt bekeken voordat het weggaat, en dat kijken is een staat waar de order doorheen moet — geen bewering op een pagina.',
-    humanNote: 'Die controle is ook wat het logboek vastlegt. Elke goedkeuring en revisie krijgt een tijdstempel en wordt bewaard bij het beeld waar hij bij hoort, dus wat jou de regie geeft over de bestelling is hetzelfde wat de reeks later terug te lezen maakt.',
+    humanLede: 'Er wordt niets automatisch geleverd. Een specialist bekijkt elk beeld voordat het weggaat.',
+    humanNote: 'Elke goedkeuring en revisie wordt met een datum vastgelegd.',
     humanCta: 'Lees de AI Act-pagina',
 
     plH: 'Reken terug vanaf de dag dat je live gaat.',
-    plLede: 'Bij een vastgezette leverdatum houden we die dagen in de studio voor je vrij. Daarom kunnen we die datum op papier zetten — en daarom kan een week ook vol zitten.',
+    plLede: `Vanaf ${WINDOW_THRESHOLD} producten houden we je dagen vrij in de agenda, dus de datum staat op papier.`,
     pl: [
-      ['De dag dat je live gaat', 'De dag waarop de collectie online moet staan. Vanaf daar rekenen we terug.'],
-      ['Je vastgezette datum', `De leverdatum die we vrijhouden, vanaf ${WINDOW_THRESHOLD} producten. Zodra die datum vaststaat, gaat geen ander werk in de studio er nog voor. ${aim48('nl')} Dat is waar we naartoe werken, niet wat we beloven. Bestel je minder producten, dan geldt de normale doorlooptijd.`],
-      ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar, en de datum staat al vast.'],
+      ['De dag dat je live gaat', 'De dag dat de collectie online staat. Daar rekenen we vanaf terug.'],
+      ['Je vastgezette datum', `Vanaf ${WINDOW_THRESHOLD} producten; niets schuift hem op. ${aim48('nl')} Een streven, geen belofte.`],
+      ['Min één map', 'De dag dat jij de foto’s stuurt. Jouw deel is klaar.'],
     ],
-    plNote: 'We boeken de weken één voor één vol. Zit een week vol, dan zeggen we dat gewoon, in plaats van je een langere wachttijd te geven.',
+    plNote: '',
     plCta: 'Kijk welke weken nog vrij zijn',
 
     honestH: 'Wat dit niet doet.',
-    honestLede: 'Dat is het waard om ronduit te zeggen, want een pagina over een werkwijze die alleen opsomt wat er goed gaat, is een folder.',
+    honestLede: '',
     honest: [
-      ['Het garandeert geen venster dat niet is vrijgegeven', 'Zit de planning vol, dan krijg je het eerstvolgende venster dat nog vrij is. Je krijgt geen ja om daarna verzet te worden.'],
-      ['Het jaagt een bestelling niet langs de controle', 'De vastgezette leverdatum is de leverdatum waarin het werk past, geen doel waar de studio naartoe sprint. Een bestelling die niet klopt gaat niet op tijd weg; die gaat goed weg.'],
-      ['We rekenen niet op ruimte die er nog niet is', 'Het plafond is een echt getal en blijft een echt getal. Zit de studio vol, dan zeggen we dat gewoon — anders is die datum niets waard.'],
+      ['Geen datum die niet is vrijgegeven', 'Zit de agenda vol, dan krijg je het eerstvolgende vrije venster — nooit een ja en daarna verzetten.'],
+      ['Geen haast langs de controle', 'Een bestelling die niet klopt gaat niet op tijd weg; die gaat goed weg.'],
+      ['Geen ruimte die er niet is', 'Zit de studio vol, dan zeggen we dat.'],
     ],
 
     closeH: 'Boek een venster dat de planning heeft vrijgegeven.',
-    closeLede: 'De datum die je krijgt aangeboden, is er een waarvan de studio al heeft gecontroleerd dat hij hem kan houden.',
+    closeLede: '',
     closeCta: 'Start een bestelling',
     /* Het bedrag uit pricing.js en niet overgetypt — zelfde reden als overal:
        de dag dat de proef iets anders kost, is dit de regel die blijft staan. */
@@ -303,7 +303,7 @@ const nl = lang === 'nl';
       ))}
     </ol>
     <div class="sp-plan-voet">
-      <p class="lopend">{c.plNote}</p>
+      {c.plNote && <p class="lopend">{c.plNote}</p>}
       <p class="acties"><a class="knop knop-lijn" href={lp('/start')}>{c.plCta}</a></p>
     </div>
   </section>
@@ -339,8 +339,7 @@ const nl = lang === 'nl';
     <div class="sp-hand">
       <h2 id="sp-hand" class="hoog hoog-3">{c.humanH}</h2>
       <div class="sp-hand-t">
-        <p class="lopend">{c.humanLede}</p>
-        <p class="lopend sp-noot">{c.humanNote}</p>
+        <p class="lopend">{c.humanLede} {c.humanNote}</p>
         <p><a class="pijl" href={lp('/ai-act')}>{c.humanCta}</a></p>
       </div>
     </div>
@@ -350,7 +349,7 @@ const nl = lang === 'nl';
   <section class="paneel" aria-labelledby="sp-eerlijk">
     <header class="paneel-kop">
       <h2 id="sp-eerlijk" class="hoog hoog-2">{c.honestH}</h2>
-      <p class="lopend">{c.honestLede}</p>
+      {c.honestLede && <p class="lopend">{c.honestLede}</p>}
     </header>
     <ul class="sp-eerlijk" role="list">
       {c.honest.map(([k, v]) => (
@@ -362,7 +361,7 @@ const nl = lang === 'nl';
   {/* ── 7 · HET SLOT ─────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="sp-slot">
     <h2 id="sp-slot" class="hoog">{c.closeH}</h2>
-    <p class="lopend">{c.closeLede}</p>
+    {c.closeLede && <p class="lopend">{c.closeLede}</p>}
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/start')}>{c.closeCta}</a>
       <a class="knop knop-lijn" href={lp('/test-sample')}>{c.closeAlt}</a>

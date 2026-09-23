@@ -165,7 +165,7 @@ const COPY = {
   en: {
     eyebrow: 'Start',
     h1: 'What are we making?',
-    lead: '{n} doors, no order of importance. Narrow them by what kind of images you need, or read all {n}. Nothing is charged until you press send.',
+    lead: 'Pick what you need. Nothing is charged until you pay.',
 
     /* ── DE VRAAG IS EEN BESTEMMING, GEEN MEDIUM ─────────────────────────
        Zie de noot bij `takken` in de Nederlandse tekst hieronder. */
@@ -342,27 +342,27 @@ const COPY = {
     ],
 
     from: 'from',
-    ladderLine: 'The rates above are where each one starts. On catalog, lifestyle and the two together it falls at every step up in count — every price by count, and what each one includes:',
+    ladderLine: 'Starting rates; the rate falls as your count rises.',
     ladderCta: 'See the full rate card',
 
     afterH: 'What happens after you press it',
-    afterLead: 'The five steps below are the photo order form, and you can go back through all of them. Video, Hooks and the two custom doors have no form yet: those take a short brief and the studio answers in writing, with a date and a price.',
+    afterLead: 'Video and custom work start with a short brief; we reply with a price and a date.',
     steps: ['Order', 'Material', 'Your details', 'Timing', 'Confirm'],
     facts: [
       /* 19 september 2026: het formulier eindigt in de checkout (besluit 1) en
          de datum kies je zelf uit dagkaarten (besluit 3). */
-      ['You pay at the end, in the checkout', 'The last step takes you straight to the payment page; no card details are asked in the form itself, and nothing is charged until you pay there.'],
-      ['You pick the delivery date yourself', `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, you choose a day the calendar can still hold, and it is fixed the moment you order.`],
-      ['Then you approve image by image', 'Every order lands in VISUAILS Studio, where you see each image, approve it or ask for a change, and download what is finished.'],
+      ['You pay at the end', 'Nothing is charged before the checkout.'],
+      ['You pick the delivery date yourself', `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: you pick a fixed date.`],
+      ['Then you approve image by image', 'Approve, ask for a change, download.'],
     ],
 
     withH: 'One thing that goes with an order',
-    withLead: 'Not a service you order instead of the doors above — it rides along with whatever you pick.',
+    withLead: '',
     withs: [
       {
         h: 'Your own face',
         name: 'Brand Model',
-        body: 'One model designed for your brand and booked by nobody else, carried across every order after this one — in the photos and in the clips. Without it, every order still includes a face from the ten shared models at no extra cost.',
+        body: 'A face designed for your brand only, in every order after this one. Without it, a standard face is included.',
         fig: euro(AMOUNT.brandModel, 'en'),
         unit: `one-time, ${vatLabel('excl', 'en')}`,
         cta: 'Fill in the brief',
@@ -373,12 +373,12 @@ const COPY = {
     ],
 
     payH: 'Or pay for it monthly instead',
-    payLine: `The same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you. ${STOCK_OFF_BRAND} Editions visuals come with it for the months you have nothing new to shoot, and what you do not use rolls over ${PLAN_ROLLOVER_MONTHS} month.`,
+    payLine: `Credits every month for catalog, lifestyle and video, with fixed production days. Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month.`,
     payCta: 'Start a plan',
     payCta2: 'Compare the plans',
 
     footH: 'Not sure which one yet?',
-    footBody: `Send one product and see it come back. ${sample.price}, ${sample.unit}, no commitment. It runs through the same production as a paid order, so what you see is what you would get.`,
+    footBody: `Send one product and see it come back. ${sample.price}, ${sample.unit}.`,
     footCta: sample.cta,
     footWa: 'Ask on WhatsApp',
     footWaText: "Hi VISUAILS, I'm not sure which service fits my products.",
@@ -387,7 +387,7 @@ const COPY = {
   nl: {
     eyebrow: 'Start',
     h1: 'Wat gaan we maken?',
-    lead: '{n} deuren, geen rangorde. Filter op wat voor beeld je nodig hebt, of lees ze alle {n}. Er wordt niets in rekening gebracht tot je op versturen drukt.',
+    lead: 'Kies wat je nodig hebt. Er wordt niets afgeschreven tot je betaalt.',
 
     /* ── DE VRAAG IS EEN BESTEMMING, GEEN MEDIUM — 9 september 2026 ───────
        Lucas: *"Het is nu alsof catalog en lifestyle prioriteit zijn maar ik wil
@@ -541,25 +541,25 @@ const COPY = {
     ],
 
     from: 'vanaf',
-    ladderLine: 'De tarieven hierboven zijn waar elk van de deuren begint. Bij catalog, lifestyle en de twee samen daalt het bij elke stap omhoog in aantal — alle prijzen per aantal, en wat je er bij elk aantal voor krijgt:',
+    ladderLine: 'Vanafprijzen; het tarief zakt naarmate je meer bestelt.',
     ladderCta: 'Bekijk de volledige prijslijst',
 
     afterH: 'Wat er gebeurt nadat je erop drukt',
-    afterLead: 'De vijf stappen hieronder zijn het bestelformulier voor foto’s, en je kunt overal in terug. Video, Hooks en de twee deuren op maat hebben nog geen formulier: die nemen een korte brief aan en de studio antwoordt op schrift, met een datum en een prijs.',
+    afterLead: 'Video en maatwerk beginnen met een korte brief; wij antwoorden met een prijs en een datum.',
     steps: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
     facts: [
-      ['Je betaalt aan het eind, in de checkout', 'De laatste stap brengt je meteen naar de betaalpagina; in het formulier zelf wordt niet om kaartgegevens gevraagd en er wordt niets afgeschreven voordat je daar betaalt.'],
-      ['De leverdatum kies je zelf', `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} kies je een dag die de agenda nog kan vasthouden, en die ligt vast zodra je bestelt.`],
-      ['Daarna keur je beeld voor beeld goed', 'Elke bestelling komt in VISUAILS Studio, waar je elk beeld ziet, het goedkeurt of een aanpassing vraagt, en downloadt wat af is.'],
+      ['Je betaalt aan het eind', 'Er wordt niets afgeschreven vóór de checkout.'],
+      ['De leverdatum kies je zelf', `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: je kiest een vaste datum.`],
+      ['Daarna keur je beeld voor beeld goed', 'Goedkeuren, een aanpassing vragen, downloaden.'],
     ],
 
     withH: 'Eén ding dat met een bestelling meegaat',
-    withLead: 'Geen dienst die je in plaats van de deuren hierboven bestelt — hij gaat mee met wat je ook kiest.',
+    withLead: '',
     withs: [
       {
         h: 'Je eigen gezicht',
         name: 'Merkmodel',
-        body: 'Eén model dat voor jouw merk ontworpen is en dat geen ander merk kan boeken, en dat meegaat in elke bestelling hierna — in de foto’s en in de clips. Ook zonder merkmodel zit er in elke bestelling een gezicht uit de tien gedeelde modellen, zonder meerprijs.',
+        body: 'Een gezicht alleen voor jouw merk, in elke bestelling hierna. Zonder merkmodel zit er een standaardgezicht bij.',
         fig: euro(AMOUNT.brandModel, 'nl'),
         unit: `eenmalig, ${vatLabel('excl', 'nl')}`,
         cta: 'Vul de brief in',
@@ -570,12 +570,12 @@ const COPY = {
     ],
 
     payH: 'Of betaal er maandelijks voor',
-    payLine: `Hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt. Er zitten ${STOCK_OFF_BRAND} Editions-beelden bij voor de maanden waarin je niets nieuws te fotograferen hebt, en wat je niet opmaakt schuift ${PLAN_ROLLOVER_MONTHS} maand door.`,
+    payLine: `Elke maand credits voor catalog, lifestyle en video, met vaste productiedagen. Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door.`,
     payCta: 'Sluit een abonnement af',
     payCta2: 'Vergelijk de abonnementen',
 
     footH: 'Nog niet zeker welke?',
-    footBody: `Stuur één product in en zie wat er terugkomt. ${sample.price}, ${sample.unit}, zonder verplichting. Het loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen.`,
+    footBody: `Stuur één product in en zie wat er terugkomt. ${sample.price}, ${sample.unit}.`,
     footCta: sample.cta,
     footWa: 'Vraag het via WhatsApp',
     footWaText: 'Hoi VISUAILS, ik weet niet zeker welke dienst bij mijn producten past.',

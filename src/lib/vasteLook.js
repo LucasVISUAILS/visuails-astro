@@ -43,6 +43,20 @@ import { ratioById } from '../data/ratios.js';
 import { styles as LOOKS } from '../data/styles.js';
 
 const LOOK_IDS = LOOKS.map((x) => x.slug);
+/* ── EEN EIGEN LOOK ALS VASTE LOOK — 23 september 2026 ─────────────────────
+   Lucas: *"custom stylen moeten eerst gemaakt worden voor ze via het abonnement
+   met credits gekocht kunnen worden."* Een eigen look van de klant
+   (customer_styles, migratie 0040) staat in de lock als `cs-<id>` — dezelfde
+   vorm als het bestelformulier post. Of hij van déze klant en ACTIEF is, toetst
+   lockSection() in account.js bij het opslaan; een voorgestelde look (offerte
+   nog open) komt daar niet doorheen. Hier hoeft alleen de vorm te kloppen. */
+const EIGEN_LOOK = /^cs-\d{1,9}$/;
+export function isEigenLook(look) { return EIGEN_LOOK.test(String(look || '')); }
+/** Een geldige vaste lifestyle-look: een huisstijl of een eigen look. */
+export function lookGeldig(look) {
+  const l = String(look || '');
+  return LOOK_IDS.includes(l) || isEigenLook(l);
+}
 /* Dezelfde drie als customer_style_locks.style (migratie 0003) en STYLES in
    account.js — de ids van PER_PRODUCT. Hier uitgeschreven omdat dit bestand ook
    vanuit subscription.js geladen wordt en pricing.js daar niet voor hoeft. */
@@ -77,7 +91,7 @@ export async function laadLocks(env, customerId) {
 export function lookGezet(lock, stijl) {
   if (!lock) return false;
   if (stijl === 'catalog') return /^#[0-9A-F]{6}$/i.test(String(lock.background_hex || ''));
-  if (stijl === 'lifestyle') return LOOK_IDS.includes(String(lock.look || ''));
+  if (stijl === 'lifestyle') return lookGeldig(lock.look);
   return true;
 }
 
@@ -124,7 +138,7 @@ export function lookDetails(locks, kinds) {
     const g = gezichtVan(cat); if (g) d.model_catalog = g;
   }
   if (diensten.has('lifestyle') && ls) {
-    if (LOOK_IDS.includes(String(ls.look || ''))) d.style = String(ls.look);
+    if (lookGeldig(ls.look)) d.style = String(ls.look);
     if (ls.ratio && ratioById(ls.ratio, 'lifestyle')) d.ratio_lifestyle = String(ls.ratio);
     const g = gezichtVan(ls); if (g) d.model_lifestyle = g;
   }

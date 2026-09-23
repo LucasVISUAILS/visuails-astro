@@ -5595,7 +5595,7 @@ async function handleCustomerCredit(context, customerId) {
 /* ── VERRUIMD MET DE CREDITS — 19 september 2026 ──────────────────────────
    Dit stond op 50 toen een eenheid één product was. Een credit is een vierde
    tot een twaalfde daarvan, dus dezelfde correctie in dezelfde werkelijkheid
-   vraagt een groter getal: een maand Brand is 270 credits. Driehonderd is nog
+   vraagt een groter getal: een maand Brand is 290 credits. Driehonderd is nog
    steeds een grens waar een typefout tegenaan loopt (een nul te veel wordt
    geweigerd) en waar een echte correctie binnen valt. */
 const SLOT_CORRECTIE_MAX = 300;
@@ -6445,6 +6445,12 @@ ${adminNav('customers')}
     </div>
     <label>Notitie bij de bestelling (ziet de klant in zijn dossier)
       <input name="message" type="text" maxlength="500" placeholder="bv. 'Zoals besproken via WhatsApp: vijf hoodies, dezelfde look als VIS-…'"></label>
+    <label>Taal van de bevestiging en de betaalmail
+      <select name="lang">
+        <option value="">Zoals zijn laatste bestelling (anders Nederlands)</option>
+        <option value="nl">Nederlands</option>
+        <option value="en">Engels</option>
+      </select></label>
     <label>Foto's die de klant via WhatsApp stuurde (optioneel — jpg, png, webp, heic; zelfde grenzen als het bestelformulier)
       <input type="file" name="fotos" multiple accept="image/*"></label>
     <button class="btn btn-primary" type="submit">Bestelling aanmaken en bevestiging mailen</button>
@@ -9749,7 +9755,12 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
 
   /* De taal van de klant: die van zijn laatste bestelling, anders Nederlands. */
   const laatste = await env.DB.prepare('SELECT lang FROM orders WHERE customer_id = ?1 ORDER BY id DESC LIMIT 1').bind(customerId).first().catch(() => null);
-  const lang = laatste?.lang === 'en' ? 'en' : 'nl';
+  /* De taal van de mail en het dossier. Sinds 23 september 2026 kies je hem in
+     het formulier: een klant die via WhatsApp bestelt, heeft vaak nog geen
+     eerdere bestelling, en dan werd het altijd Nederlands — ook voor een
+     Duitse of Engelse klant. Leeg = zoals het was. */
+  const gekozenTaal = String(form?.get('lang') || '');
+  const lang = ['nl', 'en'].includes(gekozenTaal) ? gekozenTaal : (laatste?.lang === 'en' ? 'en' : 'nl');
 
   const fd = new FormData();
   const zet = (k, v) => { if (v !== null && v !== undefined && String(v) !== '') fd.append(k, String(v)); };

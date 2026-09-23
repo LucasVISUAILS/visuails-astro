@@ -62,7 +62,6 @@ import { paymentMismatch } from '../../../src/data/vat.js';
 /* Hoeveel producten een plan per maand toekent. Uit plans.js en niet uit een
    getal hier: welk plan wat geeft, is een verkoopbesluit dat op één plek hoort te
    staan — zie de kop van dat bestand. */
-import { productsFor } from '../../../src/data/plans.js';
 import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
 import { mailCreditNote } from '../../../src/lib/cancelMail.js';
@@ -71,7 +70,7 @@ import { notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptio
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
 import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
-import { grantSlots, subMaandBruto, subEersteBetalingBruto } from '../../../src/lib/slots.js';
+import { grantSlots, subMaandBruto, subEersteBetalingBruto, subProducten } from '../../../src/lib/slots.js';
 
 /* Dezelfde twee cent als FACTUUR_SPELING_CENT in src/lib/invoice.js, en om
    dezelfde reden — zie de noot bij de dekkingscontrole in
@@ -512,7 +511,12 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
     return;
   }
 
-  const granted = productsFor(sub.plan);
+  /* subProducten() en niet productsFor(sub.plan) — 23 september 2026. Die
+     laatste WERPT bij een maand op maat ('maat' staat niet in PLAN_PRODUCTS),
+     vóór de INSERT hieronder: elke betaling van een maand op maat liep zo op een
+     500 uit, bij elke herhaling van Mollie opnieuw, en de klant kreeg nooit
+     credits. subProducten() leest de rij en werpt nooit. */
+  const granted = subProducten(sub);
 
   // De betaling zelf, in dezelfde tabel als elke andere. `order_id` blijft leeg:
   // deze betaling hoort bij een abonnement en niet bij een bestelling, en er een

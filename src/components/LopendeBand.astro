@@ -66,8 +66,8 @@ import Stations from './Stations.astro';
 const c = nl ? {
   h2: 'Van jouw foto naar je shop.',
   stations: [
-    ['01', 'Jij', 'Fotografeer je product zoals het erbij ligt. Magazijnvloer, telefoon, geen statief. Een voor- en achterkant nemen we al aan; zit er meer op te zien, stuur er dan meer mee.'],
-    ['02', 'Wij', 'Wij bouwen de beelden op jouw eigen product. Een specialist kijkt elk beeld na voordat het weggaat.'],
+    ['01', 'Jij', 'Je telefoon is genoeg. Geen statief, geen studio.'],
+    ['02', 'Wij', 'Wij maken de beelden. Een specialist controleert ze allemaal.'],
     /* ── "DASHBOARD" WAS HET MEEST TOOL-ACHTIGE WOORD OP DE VOORPAGINA ──────
        17 september 2026. Deze band is de plek waar een bezoeker in vier stappen
        leest wat er gebeurt, en stap 3 heette naar een SCHERM in plaats van naar
@@ -75,8 +75,8 @@ const c = nl ? {
        drie stappen van de klant tegenover één van ons. De inhoud verandert niet
        — het is nog steeds één link zonder account — alleen heet de stap nu naar
        de beelden en niet naar de bediening. */
-    ['03', 'Jouw beelden', 'Eén link, geen account. Beeld voor beeld goedkeuren of een revisie vragen, en alles in één keer downloaden.'],
-    ['04', 'Je shop', 'Vierkant voor je webshop, staand voor je advertenties, verticaal voor je reels. Uit dezelfde bestelling.'],
+    ['03', 'Jouw beelden', 'Goedkeuren of een revisie vragen, en alles in één keer downloaden.'],
+    ['04', 'Je shop', 'Vierkant, staand en verticaal: voor je shop, advertenties en reels.'],
   ],
   inLabel: 'Ingestuurd', inNoot: '3 van 5 · telefoon',
   uitLabel: 'Geleverd', uitNoot: '4 beelden · 2048 px',
@@ -90,11 +90,11 @@ const c = nl ? {
 } : {
   h2: 'From your photo to your shop.',
   stations: [
-    ['01', 'You', 'Photograph your product the way it lies. Warehouse floor, phone, no tripod. A front and a back is all we need to start; if there is more to see, send more.'],
-    ['02', 'Us', 'We build the visuals on your own product. A specialist checks every image before it ships.'],
+    ['01', 'You', 'Your phone is enough. No tripod, no studio.'],
+    ['02', 'Us', 'We make the images. A specialist checks every one.'],
     /* Zie de Nederlandse tegenhanger. */
-    ['03', 'Your images', 'One link, no account. Approve image by image or ask for a revision, and download it all at once.'],
-    ['04', 'Your shop', 'Square for your shop, upright for your ads, vertical for your reels. From the same order.'],
+    ['03', 'Your images', 'Approve or ask for a revision, and download it all at once.'],
+    ['04', 'Your shop', 'Square, upright and vertical: for your shop, ads and reels.'],
   ],
   inLabel: 'Sent in', inNoot: '3 of 5 · phone',
   uitLabel: 'Delivered', uitNoot: '4 images · 2048 px',
@@ -133,11 +133,4 @@ const c = nl ? {
      achtergrond als de andere panelen op de pagina; de indeling van de rij
      staat in Stations.astro. */
   .lb-kop { max-width: 46rem; }
-  /* Groter beeldvak dan op /how-it-works: hier staan vier kolommen en geen
-     regels eronder, dus het beeld mag de kolom vullen (22 september 2026).
-     De drie uitsnedes in station 04 volgen in verhouding mee. */
-  .lb :global(.lb-rij) { --lb-vak: clamp(11.6rem, 15vw, 15.5rem); }
-  .lb :global(.lb-vormen li:nth-child(1) .lb-vorm) { height: calc(var(--lb-vak) * .55); }
-  .lb :global(.lb-vormen li:nth-child(2) .lb-vorm) { height: calc(var(--lb-vak) * .68); }
-  .lb :global(.lb-vormen li:nth-child(3) .lb-vorm) { height: var(--lb-vak); }
 </style>

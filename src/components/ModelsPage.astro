@@ -51,7 +51,7 @@ const COPY = {
     eyebrow: 'The standard library',
     h1a: `${rosterWoord('en', true)} faces.`,
     h1b: 'Already included.',
-    lead: 'Shared across every brand we work with, and included in every order at no extra cost. Pick one yourself, or tell us the product and the customer and we match one for you.',
+    lead: 'Included in every order at no extra cost. Pick one, or let us match one to your product.',
     ctaPrimary: 'Start an order',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hi VISUAILS, I\'d like to ask about the standard models.',
@@ -67,14 +67,14 @@ const COPY = {
 
     rosterMeta: `( All ${rosterWoord('en')} )`,
     rosterH: 'The full roster',
-    rosterSub: 'At a size you can actually judge a face at — square plates, not sixty-pixel thumbnails.',
+    rosterSub: '',
     modelAlt: 'a VISUAILS standard model',
     chooseH: 'Let us match one',
-    chooseBody: 'Tell us the product and the customer when you start an order, and we pick the model that fits — then keep using it.',
+    chooseBody: 'Tell us the product when you order and we pick the face that fits.',
 
     incMeta: '( What it costs )',
     incH: 'Included, not upsold.',
-    incBody: 'Every order already includes a model from this roster. There is no per-model fee and no upgrade to unlock one — the price on /pricing is the whole price.',
+    incBody: 'No fee per model, no upgrade. The price per product is the whole price.',
     /* De Engelse tegenhanger van "Bekijk alle prijzen per aantal". Tot 24
        augustus 2026 stond hier hetzelfde als bij `ctaPricing` verderop — twee knoppen
        met dezelfde tekst naar dezelfde pagina — terwijl het Nederlands die twee
@@ -83,7 +83,7 @@ const COPY = {
     incCta: 'See all prices by quantity',
 
     doorH: 'Want a face that’s only yours?',
-    doorBody: `A Brand Model is designed once, exclusively for your brand, and never appears anywhere else — the ${rosterWoord('en')} above are shared; that one would not be.`,
+    doorBody: 'Designed once, for your brand only.',
     doorCta: 'Explore Your Brand Model',
 
     ctaH1: 'Pick a face,',
@@ -96,7 +96,7 @@ const COPY = {
     eyebrow: 'De standaardbibliotheek',
     h1a: `${rosterWoord('nl', true)} gezichten.`,
     h1b: 'Al inbegrepen.',
-    lead: `Deze ${rosterWoord('nl')} gebruiken we voor elk merk waarmee we werken, en ze zitten in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons wat je verkoopt en wie je klant is, dan kiezen wij er een dat past.`,
+    lead: 'Inbegrepen in elke bestelling, zonder meerprijs. Kies er een, of laat ons er een bij je product zoeken.',
     ctaPrimary: 'Start een bestelling',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi VISUAILS, ik wil graag iets vragen over de standaardmodellen.',
@@ -109,18 +109,18 @@ const COPY = {
 
     rosterMeta: `( Alle ${rosterWoord('nl')} )`,
     rosterH: 'De volledige bibliotheek',
-    rosterSub: 'Op een formaat waarop je een gezicht echt kunt beoordelen — grote vierkante foto’s, geen miniatuurtjes van zestig pixels.',
+    rosterSub: '',
     modelAlt: 'een VISUAILS-standaardmodel',
     chooseH: 'Laat ons matchen',
-    chooseBody: 'Vertel ons het product en de klant wanneer je een bestelling start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
+    chooseBody: 'Vertel ons bij het bestellen wat je verkoopt, dan kiezen wij het gezicht dat past.',
 
     incMeta: '( Wat het kost )',
     incH: 'Inbegrepen, niet iets wat je erbij moet kopen.',
-    incBody: 'Elke bestelling bevat al een model uit deze bibliotheek. Er zijn geen kosten per model en je hoeft niets bij te kopen om er een te mogen gebruiken — de prijs op de prijzenpagina is de hele prijs.',
+    incBody: 'Geen kosten per model, niets bij te kopen. De prijs per product is de hele prijs.',
     incCta: 'Bekijk alle prijzen per aantal',
 
     doorH: 'Wil je een gezicht dat alleen van jou is?',
-    doorBody: `Een merkmodel wordt één keer ontworpen, exclusief voor jouw merk, en verschijnt nergens anders — de ${rosterWoord('nl')} hierboven zijn gedeeld; dat model zou dat niet zijn.`,
+    doorBody: 'Eén keer ontworpen, alleen voor jouw merk.',
     doorCta: 'Ontdek jouw merkmodel',
 
     ctaH1: 'Kies een gezicht,',
@@ -177,7 +177,7 @@ const nn = (i: number) => String(i).padStart(2, '0');
     <header class="paneel-kop">
       <p class="etiket">{c.rosterMeta}</p>
       <h2 id="mp-roster" class="hoog hoog-2">{c.rosterH}</h2>
-      <p class="lopend">{c.rosterSub}</p>
+      {c.rosterSub && <p class="lopend">{c.rosterSub}</p>}
     </header>
     <ul class="rooster" role="list">
       {ROSTER.map((m, i) => (

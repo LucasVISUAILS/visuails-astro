@@ -222,7 +222,7 @@ const eigenVak = dienst !== 'video' && !!bestelBasis;
 
 const c = nl ? {
   stap: 'Stap 1 — kies je look',
-  intro: 'Kies de look waarin je product komt te staan. Daarna vul je in wat je stuurt; tot je bestelling de deur uit is, ligt niets vast.',
+  intro: '',
   levertL: 'Elke look levert',
   kies: 'Kies deze look',
   bekijk: 'Bekijk voorbeelden',
@@ -242,28 +242,26 @@ const c = nl ? {
      plafond; deze zin is wat dat verschil draagt. Hij noemt eerst wat vastligt
      (dit krijg je altijd, bij dit bedrag) en dan pas de ruimte, want andersom
      leest het als een verkoopregel in plaats van als een belofte. */
-  altijd: dienst === 'video'
-    ? 'Dit krijg je altijd voor dit bedrag: één clip per product. Extra beelden bij dezelfde bestelling kan — dat kies je erbij in het bestelformulier.'
-    : 'Dit krijg je altijd voor dit bedrag. Meer beelden per product kan — dat kies je erbij in het bestelformulier.',
+  altijd: 'Meer beelden kies je erbij in het bestelformulier.',
   volgt: 'Foto volgt',
   eigenH: 'Jouw eigen look',
   eigenSub: 'Voor jouw merk gemaakt. Alleen jij ziet hem hier.',
   eigenKies: 'Kies deze look',
   komendH: 'In de maak',
-  komendSub: 'Looks waar we aan werken. Nog niet te bestellen — zit die van jou ertussen, laat het weten.',
+  komendSub: 'Nog niet te bestellen.',
   /* ── EN DEZELFDE ZIN VOOR ÉÉN — 22 september 2026 ──────────────────────
      Catalog hield vandaag één komende look over. "Zit die van jou ertussen"
      vraagt naar een lijst, en bij één regel is er niets om tussen te zitten;
      de zin gaat dan over een lijst die de lezer niet ziet. Eén variant dus,
      gekozen op `komend.length`. */
-  komendSubEen: 'Een look waar we aan werken. Nog niet te bestellen — wil je hem, laat het weten.',
+  komendSubEen: 'Nog niet te bestellen.',
   komendVoet: 'Binnenkort',
   maatEyebrow: 'Geen van deze?',
-  maatSub: 'Dan maken we er een. Een look op maat wordt ontworpen in plaats van gekozen, dus hij begint met een gesprek en niet met een tarief.',
-  steps: leadSteps || ['Korte intake: wat wil je laten zien en waar', 'Wij zeggen of het met AI te maken is', 'Offerte — daarna bestel je hem als elke andere look'],
+  maatSub: '',
+  steps: leadSteps || ['Intake', 'Haalbaarheidscheck', 'Offerte'],
 } : {
   stap: 'Step 1 — pick your look',
-  intro: 'Pick the look your product goes into. After that you fill in what you are sending; nothing is fixed until your order goes out.',
+  intro: '',
   levertL: 'Every look delivers',
   kies: 'Pick this look',
   bekijk: 'See examples',
@@ -272,20 +270,18 @@ const c = nl ? {
   /* Zie de Nederlandse tegenhanger. */
   voorKort: 'Your photo',
   /* Zie de Nederlandse tegenhanger. */
-  altijd: dienst === 'video'
-    ? 'This is what you always get at this rate: one clip per product. Extra images on the same order are possible — you add those in the order form.'
-    : 'This is what you always get at this rate. More images per product is possible — you add that in the order form.',
+  altijd: 'More images can be added in the order form.',
   volgt: 'Photo to come',
   eigenH: 'Your own look',
   eigenSub: 'Made for your brand. Nobody else sees it here.',
   eigenKies: 'Pick this look',
   komendH: 'In the works',
-  komendSub: 'Looks we are building. Not orderable yet — if yours is among them, say so.',
-  komendSubEen: 'A look we are building. Not orderable yet — want it, say so.',
+  komendSub: 'Not orderable yet.',
+  komendSubEen: 'Not orderable yet.',
   komendVoet: 'Coming',
   maatEyebrow: 'None of these?',
-  maatSub: 'Then we build one. A made-to-measure look is designed rather than picked, so it starts with a conversation instead of a rate.',
-  steps: leadSteps || ['A short intake: what you want to show and where', 'We tell you whether it can be made with AI', 'A quote — then you order it like any other look'],
+  maatSub: '',
+  steps: leadSteps || ['Intake', 'Feasibility check', 'Quote'],
 };
 ---
 
@@ -303,7 +299,7 @@ const c = nl ? {
       <div class="sr-top-woord">
         <p class="sr-stap">{c.stap}</p>
         <h2 class="sr-h2" set:html={h} />
-        <p class="sr-intro">{c.intro}</p>
+        {c.intro && <p class="sr-intro">{c.intro}</p>}
       </div>
       {/* Wat de look LEVERT en wat hij KOST horen bij elkaar en niet onder de
           inleiding: zie de noot bij .sr-top in de stijl hieronder. */}
@@ -316,7 +312,7 @@ const c = nl ? {
             geldt voor alle looks, dus hoort hij bij de kop, en hij staat hier
             direct onder de chip die het aantal noemt: dat aantal is waar hij
             over gaat. */}
-        <p class="sr-levert-bij">{c.altijd}</p>
+        {c.altijd && <p class="sr-levert-bij">{c.altijd}</p>}
         {prijsSamen && <p class="sr-kopprijs">{prijsSamen}</p>}
       </div>
     </header>
@@ -490,7 +486,7 @@ const c = nl ? {
 
           <div class="sr-k-woord">
             {s.bestFor.length > 0 && (
-              <p class="sr-best sr-k-best"><span class="sr-best-l">{c.bestFor}</span> {s.bestFor.slice(0, 3).join(' · ')}</p>
+              <p class="sr-best sr-k-best"><span class="sr-best-l">{c.bestFor}</span> {s.bestFor.slice(0, 2).join(' · ')}</p>
             )}
             {!prijsSamen && s.price && <p class="sr-t-prijs">{s.price}</p>}
             <div class="sr-k-cta">
@@ -533,7 +529,7 @@ const c = nl ? {
       <div class="sr-maat-body">
         <p class="sr-eyebrow">{c.maatEyebrow}</p>
         <h3 class="sr-maat-h">{lead.name}</h3>
-        <p class="sr-desc">{lead.tagline} {c.maatSub}</p>
+        <p class="sr-desc">{lead.tagline}{c.maatSub ? ` ${c.maatSub}` : ''}</p>
         <p class="sr-maat-stappen">{c.steps.join(' → ')}</p>
       </div>
       <div class="sr-maat-zij">

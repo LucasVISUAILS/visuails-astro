@@ -53,7 +53,7 @@ const c = nl ? {
   etiket: 'De beste resultaten halen',
   h1: ['Zo maak je de foto die wij ', 'nodig hebben'],
   lead: 'Je hebt geen studio nodig. Een scherpe foto en een paar dingen waar je even op let, dat is het.',
-  hub: ['Van alles in de ', 'gidsen', ' is dit het stuk om te lezen vóór je bestelt — elke stap daarna werkt beter als de foto die erin gaat klopt.'],
+  hub: ['Lees dit vóór je bestelt. Meer in de ', 'gidsen', '.'],
   ctaProef: SAMPLE.cta,
   ctaStart: 'Start een bestelling',
   pdf: 'Download de fotogids (pdf)',
@@ -64,7 +64,7 @@ const c = nl ? {
     'Gebruik een neutrale, rustige achtergrond.',
     'Belicht het goed en gelijkmatig — daglicht werkt uitstekend.',
     'Toon het volledige product, plus een paar close-ups van belangrijke details.',
-    `Stuur de hoogste resolutie die je hebt — minstens ${MIN_LANGE_ZIJDE} pixels op de lange zijde, en dat haalt elke telefoon van de afgelopen tien jaar. Daaronder wordt de upload meteen geweigerd met de reden erbij, zodat je het weet terwijl je er nog achter zit en niet pas een dag later.`,
+    `Minstens ${MIN_LANGE_ZIJDE} pixels op de lange zijde; elke recente telefoon haalt dat.`,
   ],
   nietH: 'Vermijden',
   niet: [
@@ -84,19 +84,19 @@ const c = nl ? {
 
   setEtiket: 'De aanbevolen set',
   setH: ['De set die we aanraden — ', 'en waarom'],
-  setLead: 'We hebben je product bijna nooit in handen, dus hoe meer hoeken je stuurt, hoe nauwkeuriger we het kunnen nabouwen. Dat is het verschil tussen je product nábouwen en het benaderen.',
+  setLead: 'We hebben je product niet in handen: hoe meer hoeken, hoe nauwkeuriger.',
   set: [
-    ['Voor- en achterkant', 'Het hele product van beide kanten, zodat er niets aan de vorm wordt gegokt.'],
-    ['Een detail-close-up', 'Logo’s, stiksels, prints, hardware — de dingen die we met de hand nalopen.'],
-    ['De stof', 'Een close-up van het materiaal zodat textuur, weefselstructuur en glans natuurgetrouw overkomen.'],
-    ['Iemand die het aanheeft', 'Iemand die het daadwerkelijk draagt, zodat we de pasvorm en val uit de praktijk kunnen reproduceren.'],
+    ['Voor- en achterkant', 'Het hele product, van beide kanten.'],
+    ['Een detail-close-up', 'Logo, stiksels, print of sluiting.'],
+    ['De stof', 'Zodat textuur en glans kloppen.'],
+    ['Iemand die het aanheeft', 'Voor de echte pasvorm.'],
   ],
   /* ── DRIE VERPLICHT SINDS 17 SEPTEMBER 2026 ───────────────────────────────
      De close-up is verplicht geworden; zie de noot bij `detail` in
      src/data/shots.js. Deze regel zei nog "de close-up is optioneel" op de
      pagina die uitlegt wát je moet sturen — de gevaarlijkste plek om dat te
      laten staan, want hier maakt iemand zijn foto's. */
-  setNoot: ['De eerste drie zijn verplicht. De draagfoto is aan jou.', ' Voorkant, achterkant en close-up krijg je alle drie terug als geleverd beeld, dus vragen we ze alle drie in plaats van te verzinnen wat we niet zien — bij de close-up telt een gewone stoffoto net zo goed als een logo of een naad. De draagfoto is optioneel: hij maakt de pasvorm echt in plaats van ingeschat, en in het bestelformulier vragen we alleen of hij komt.'],
+  setNoot: ['De eerste drie zijn verplicht. De draagfoto is aan jou.', ''],
 
   slotEtiket: 'Klaar om te sturen',
   slotH: 'Foto klaar? Stuur hem in.',
@@ -112,7 +112,7 @@ const c = nl ? {
      alleen "de foto die wij nodig hebben". Zie PRODUCTTROUW in pricing.js. */
   h1: ['How to photograph your product so we can ', 'rebuild it faithfully'],
   lead: 'You don’t need a studio — just a clear photo and a few simple habits.',
-  hub: ['Of everything in the ', 'guides', ', this is the one to read before you order — every step after it works better when the photo going in is right.'],
+  hub: ['Read this before you order. More in the ', 'guides', '.'],
   ctaProef: SAMPLE.cta,
   ctaStart: 'Start an order',
   pdf: 'Download the photo guide (pdf)',
@@ -123,7 +123,7 @@ const c = nl ? {
     'Use a neutral, uncluttered background.',
     'Light it well and evenly — daylight works great.',
     'Show the full product, plus a few close-ups of key details.',
-    `Send the highest resolution you have — at least ${MIN_LANGE_ZIJDE} pixels on the long side, which any phone from the last decade clears. Below that the upload is refused on the spot and says so, so you find out while you are still at your desk rather than a day later.`,
+    `At least ${MIN_LANGE_ZIJDE} pixels on the long side; any recent phone clears that.`,
   ],
   nietH: 'Avoid',
   niet: [
@@ -143,15 +143,15 @@ const c = nl ? {
 
   setEtiket: 'The recommended set',
   setH: ['The set we recommend — ', 'and why'],
-  setLead: 'We almost never hold your product in our hands, so the more angles you send, the more closely we can rebuild it. That is what makes the difference between matching your product and approximating it.',
+  setLead: 'We do not hold your product: the more angles, the closer the match.',
   set: [
-    ['Front and back', 'The whole product from both sides, so nothing about its shape is guessed.'],
-    ['A detail close-up', 'Logos, stitching, prints, hardware — the things we match by hand.'],
-    ['The fabric', 'A close shot of the material so texture, weave and sheen read true.'],
-    ['Worn for fit', 'Someone actually wearing it, so we can reproduce the real-world fit and drape.'],
+    ['Front and back', 'The whole product, both sides.'],
+    ['A detail close-up', 'Logo, stitching, print or hardware.'],
+    ['The fabric', 'So texture and sheen read true.'],
+    ['Worn for fit', 'For the real fit.'],
   ],
   /* Zie de Nederlandse tegenhanger. */
-  setNoot: ['The first three are required. The worn shot is up to you.', ' Front, back and the close-up all come back to you as delivered images, so we ask for all three rather than invent what we cannot see — and for the close-up a plain fabric shot counts just as much as a logo or a seam. The worn shot is optional: it makes the fit real instead of estimated, and in the order form we only ask whether it is coming.'],
+  setNoot: ['The first three are required. The worn shot is up to you.', ''],
 
   slotEtiket: 'Ready to send',
   slotH: 'Got a photo ready? Let’s see it transformed.',
@@ -203,8 +203,8 @@ import '../styles/stijl22.css';
       <p class="etiket">{nl ? 'Van foto naar beeld' : 'From photo to image'}</p>
       <h2 id="ug-lc" class="hoog hoog-2">{nl ? 'Welke foto welk beeld wordt.' : 'Which photo becomes which image.'}</h2>
       <p class="lopend">{nl
-        ? 'Elke opname die je stuurt heeft een taak. Scroll door de set: bij elk geleverd beeld staat de telefoonfoto waar het uit gemaakt is.'
-        : 'Every shot you send has a job. Scroll through the set: each delivered image shows the phone photo it was made from.'}</p>
+        ? 'Bij elk geleverd beeld staat de telefoonfoto waar het uit gemaakt is.'
+        : 'Each delivered image shows the phone photo it was made from.'}</p>
     </div>
     <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]}
       titel={nl ? 'Welke foto welk beeld wordt' : 'Which photo becomes which image'} />

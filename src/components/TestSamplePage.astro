@@ -64,7 +64,7 @@ const TIMING = turnaround('unattended', lang);
 const c = nl ? {
   etiket: 'Probeer VISUAILS',
   h1: ['Test VISUAILS met ', '1 product'],
-  lead: `Je levert aan zoals bij een gewone bestelling — voorkant en achterkant in elk geval, plus een detail- of draagfoto als je die hebt — en je krijgt ${SAMPLE.deliverable} terug. Precies wat je bij een betaalde bestelling per product krijgt. Hoe meer je meestuurt, hoe beter we het kunnen maken.`,
+  lead: `Stuur een voor- en achterkant, en je krijgt ${SAMPLE.deliverable} terug. Precies wat een betaalde bestelling oplevert.`,
   pillen: [`${CATALOG_IMAGES} foto’s, of ${LIFESTYLE_IMAGES}`, `Slechts ${SAMPLE.price}`, 'Met de hand gecontroleerd'],
 
   /* ── ZES VINKJES WAREN ER DRIE — 10 september 2026 ─────────────────────────
@@ -84,8 +84,8 @@ const c = nl ? {
      en dat er een specialist naar kijkt. Dat zijn ook precies de drie waarop
      iemand besluit. */
   krijg: [
-    `Op ${RESOLUTIE.standaard} px aan de lange zijde, in VISUAILS Studio — met de rechtstreekse link in je mail.`,
-    'Een echte blik op onze belichting, kadrering en afwerking.',
+    `${RESOLUTIE.standaard} px, in VISUAILS Studio en per mail.`,
+    'Onze echte belichting en afwerking.',
     'Door een specialist gecontroleerd voordat het je bereikt.',
   ],
   beeldAlt: 'Voorbeeld van een VISUAILS-visual, Glow-stijl',
@@ -94,9 +94,9 @@ const c = nl ? {
   stapEtiket: 'Van foto naar set',
   stapKop: 'Hoe de proef werkt',
   stappen: [
-    ['Upload je productfoto’s', 'Voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt.'],
-    ['Kies een stijl', 'Kies de look en, als je wilt, een model — of laat ons kiezen.'],
-    ['Wij maken het', 'Geproduceerd in onze studio, daarna met de hand gecontroleerd.'],
+    ['Upload je productfoto’s', 'Voorkant en achterkant in elk geval.'],
+    ['Kies een stijl', 'Of laat ons kiezen.'],
+    ['Wij maken het', 'Gecontroleerd door een specialist.'],
     ['Keur goed en download', `Je afgewerkte foto’s staan in VISUAILS Studio, met de link in je mail — ${TIMING.toLowerCase()}.`],
   ],
 
@@ -131,20 +131,20 @@ const c = nl ? {
   /* De reactietijd en het aanbod om de bestelling samen te plaatsen stonden in
      de hulpregel onder de kleine lettertjes; die regel is samengevoegd met dit
      slot (zie de noot bij ts-fijndruk) en de belofte reist mee. */
-  slotP: 'Stuur ons je product op WhatsApp en we helpen je een stijl kiezen — meestal binnen een uur antwoord op werkdagen, en we plaatsen de bestelling met je.',
+  slotP: 'Stuur je product op WhatsApp en we helpen je een stijl kiezen.',
   slotWa: 'Hoi VISUAILS, ik wil VISUAILS graag eerst proberen.',
   slotCta: 'WhatsApp',
   slotCta2: 'Start een bestelling',
 } : {
   etiket: 'Test sample',
   h1: ['Test VISUAILS with ', '1 product'],
-  lead: `You send what a normal order needs — front and back at least, plus a detail or worn shot if you have them — and back come ${SAMPLE.deliverable}. Exactly what a paid order gets you per product. The more you send, the better we can make it.`,
+  lead: `Send a front and a back, and get ${SAMPLE.deliverable} back. Exactly what a paid order delivers.`,
   pillen: [`${CATALOG_IMAGES} photos, or ${LIFESTYLE_IMAGES}`, `Just ${SAMPLE.price}`, 'Human quality-checked'],
 
   /* Zie de Nederlandse tegenhanger. */
   krijg: [
-    `At ${RESOLUTIE.standaard} px on the long edge, in VISUAILS Studio — with the direct link in your email.`,
-    'A real look at our lighting, framing and finish.',
+    `${RESOLUTIE.standaard} px, in VISUAILS Studio and by email.`,
+    'Our real lighting and finish.',
     'Reviewed by a specialist before it reaches you.',
   ],
   beeldAlt: 'Example VISUAILS lifestyle image, Glow style',
@@ -153,9 +153,9 @@ const c = nl ? {
   stapEtiket: 'From photo to set',
   stapKop: 'How the sample works',
   stappen: [
-    ['Upload your product photos', 'Front and back at least, and a detail or worn shot if you have one.'],
-    ['Choose a style', 'Pick the look and, if you like, a model — or let us choose for you.'],
-    ['We create it', 'Produced in our studio, then quality-checked by hand.'],
+    ['Upload your product photos', 'Front and back at least.'],
+    ['Choose a style', 'Or let us choose.'],
+    ['We create it', 'Checked by a specialist.'],
     ['Approve and download', `Your finished images land in VISUAILS Studio, with the link in your email — ${TIMING.toLowerCase()}.`],
   ],
 
@@ -182,7 +182,7 @@ const c = nl ? {
   slotEtiket: 'Rather talk it through',
   slotH: 'Rather just talk it through?',
   /* Zie de Nederlandse tegenhanger. */
-  slotP: 'Send us your product on WhatsApp and we’ll help you pick a style — we usually reply within the hour on weekdays and can place the order with you.',
+  slotP: 'Send your product on WhatsApp and we help you pick a style.',
   slotWa: 'Hi VISUAILS, I’d like to try a test sample.',
   slotCta: 'WhatsApp',
   slotCta2: 'Place a full order',

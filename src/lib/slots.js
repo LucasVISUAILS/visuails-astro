@@ -38,7 +38,7 @@
  * agenda vol zat — zijn schuld niet. Het slot gaat er dus af zodra hij het
  * product vastzet; wanneer het gemaakt wordt is daarna onze planning.
  */
-import { PLAN_SLOTS, SLOT_KINDS, CUSTOM_MONTH_ID, slotProducts, VAT_RATE } from '../data/pricing.js';
+import { PLAN_SLOTS, SLOT_KINDS, CUSTOM_MONTH_ID, slotProducts, VAT_RATE, creditsProductEquivalent } from '../data/pricing.js';
 /* De creditkant — zie de kop van SERVICE_CREDITS in pricing.js. */
 import { SERVICE_CREDITS, PLAN_CREDITS, PLAN_SERVICES, EXTRA_CREDITS, creditsVoorDienst } from '../data/pricing.js';
 /* Alleen de namen van de drie behandelingen — geen beslissing, geen VIES. Zie
@@ -227,12 +227,31 @@ export function subMaandBruto(sub) {
   return subBrutoCents(sub, subMaandCents(sub));
 }
 
-/** Hoeveel producten DIT abonnement per maand vasthoudt — voor de capaciteitspoort. */
+/** Hoeveel producten DIT abonnement per maand vasthoudt — voor de capaciteitspoort.
+ *
+ *  Een maand op maat in CREDITS (sinds 23 september 2026, `{"credits": N}` op de
+ *  rij) houdt evenveel agenda vast als N credits aan catalog-plus-lifestyle: dat
+ *  is dezelfde omrekening waarmee Starter 45 credits en 5 producten is. Een
+ *  oudere maand op maat (per soort) telt zoals hij altijd telde. Een onbekend
+ *  plan geeft 0 en werpt niet: deze functie staat in de webhook en in de
+ *  nachtelijke taak, en daar mag één rare rij de rest niet tegenhouden. */
 export function subProducten(sub) {
-  if (String(sub?.plan || '') === CUSTOM_MONTH_ID || String(sub?.slots_json || '').trim()) {
+  const eigen = String(sub?.slots_json || '').trim();
+  if (String(sub?.plan || '') === CUSTOM_MONTH_ID || eigen) {
+    const creditsOpRij = creditsUitRij(eigen);
+    if (creditsOpRij > 0) return creditsProductEquivalent(creditsOpRij);
     return slotProducts(bundelVoor(sub));
   }
-  return productsFor(sub?.plan);
+  try { return productsFor(sub?.plan); } catch { return 0; }
+}
+
+/** De credits die een rij zelf draagt (`{"credits": N}`), of 0. */
+function creditsUitRij(eigen) {
+  if (!eigen) return 0;
+  try {
+    const uit = JSON.parse(eigen);
+    return Math.max(0, Math.floor(Number(uit?.[CREDIT_KIND]) || 0));
+  } catch { return 0; }
 }
 
 /** Alle soorten die dit plan kent, in de volgorde van de bundel. */
@@ -335,6 +354,8 @@ export function creditsVoor(sub) {
  */
 export function creditsPerSoort(kind) {
   const k = String(kind || '');
+  /* Een maand op maat in credits draagt `{"credits": N}`: één credit is één credit. */
+  if (k === CREDIT_KIND) return 1;
   if (k === 'complete') return SERVICE_CREDITS.catalog + SERVICE_CREDITS.lifestyle;
   return Math.max(0, Math.floor(Number(SERVICE_CREDITS[k]) || 0));
 }

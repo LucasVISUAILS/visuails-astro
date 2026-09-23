@@ -152,7 +152,7 @@ const COPY = {
     eyebrow: 'Catalog',
     lcEyebrow: 'Where they land',
     lcH: 'Four images, and the place they end up.',
-    lcP: 'On the phone what you send us. On the screen what comes back, sitting in a product page gallery. Scroll through the set — every result shows the shot it was made from.',
+    lcP: 'Left what you send. Right what comes back, on a product page.',
     // <em> added task #271b (Lucas's own request, editorial accent) — same
     // closing-word-emphasis convention already used on the other hero H1s
     // (homepage's "visualized.", custom-models' "Only yours.").
@@ -168,7 +168,7 @@ const COPY = {
 
        Wat de lead nog doet is het enige wat de strook niet kan: zeggen WAT er
        in die set zit. Dat is waar hij voor is. */
-    lead: `A full set per product, from 4 photos — front, back, a fabric or logo close-up and one on-model shot, with more available per product.`,
+    lead: `4 photos per product: front, back, a detail and one on a model.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
     // read the tier label verbatim ("Order individual products"), which put the
     // Tier 0 offer in the hero of all three service pages. It was also slightly
@@ -192,7 +192,7 @@ const COPY = {
     // must be VISIBLE, and it is a bigger difference now that size decides it
     // — so this line names the count as well as the promise. A visitor should
     // not be able to leave this page believing a date was promised.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
     kiesCta: 'Pick your look',
     levert: 'four photos per product.',
     packH: 'One product. Four images, or more. The rate falls as the count rises.',
@@ -205,7 +205,7 @@ const COPY = {
     // already raises it rather than parked in a block of its own. §1 of the
     // brief: every service page links to /custom-models.
     packOpen: 'One delivered image, three still being shot. The set is real; the photographs of it are not all here yet, and we would rather show you that than fill the gaps with something else.',
-    packP: `Every product comes back as a complete set — including a real on-model shot, not just flat-lays. That shot can use a face from the standard roster, or <a href="${lp('/custom-models')}">a Brand Model made only for you</a>, so the same person carries your whole range.`,
+    packP: `The on-model shot uses a face from the roster, or <a href="${lp('/custom-models')}">a Brand Model made only for you</a>.`,
     // The button used to carry the tier label and one flat rate — "Order
     // individual products · €89 / product". Both halves are retired: the tier
     // is a consequence of size now rather than a thing you pick, and one rate
@@ -224,7 +224,7 @@ const COPY = {
     whereH: 'Where it lives',
     where: [
       ['Your webshop', 'the product pages people decide on.'],
-      ['Marketplaces', 'bol, Amazon and listings that demand clean, consistent shots.'],
+      ['Marketplaces', 'bol, Amazon and other strict listings.'],
       ['Shopping feeds', 'Google Shopping and comparison sites.'],
       ['Wholesale & linesheets', 'where buyers need to see the product plainly.'],
     ],
@@ -248,12 +248,12 @@ const COPY = {
     ],
     chipsBg: ['White — standard', 'Custom colour — any hex code'],
     baH: 'One photo in. A clean catalog image out.',
-    baP: 'The exact raw phone photo a customer sent — and what came back.',
+    baP: '',
     baBefore: 'Your photo',
     baBeforeAlt: 'A raw phone photo of a t-shirt on a table before VISUAILS',
     baAfterAlt: 'The same t-shirt as a clean catalog image after VISUAILS',
     reviewH: "Fast means nothing if it isn’t right.",
-    reviewP: 'Every catalog image is generated, then reviewed by a specialist before it reaches you — colour and detail held true, not left to chance.',
+    reviewP: 'A specialist checks colour and detail on every image before you get it.',
     reviewChips: ['Consistent lighting & framing', 'Marketplace-ready', reviewClaim('unattended', 'en')],
     // The trust row carried the turnaround flag but not the review claim, while
     // /lifestyle and /video carried both. Three service pages making two
@@ -276,9 +276,9 @@ const COPY = {
     eyebrow: 'Catalog',
     lcEyebrow: 'Waar ze landen',
     lcH: 'Vier beelden, en de plek waar ze komen te staan.',
-    lcP: 'Op de telefoon wat jij opstuurt. Op het scherm wat je terugkrijgt, in de galerij van een productpagina. Scroll door de set — bij elk resultaat staat de opname waar het uit gemaakt is.',
+    lcP: 'Links wat jij stuurt. Rechts wat je terugkrijgt, op een productpagina.',
     h1: 'Strakke, consistente catalogfoto’s — <em>ook bij dertig producten.</em>',
-    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer catalogfoto’s per product kan altijd.`,
+    lead: `4 foto’s per product: voorkant, achterkant, een detail en één op een model.`,
     ctaPrimary: 'Bestel catalogfoto’s',
     ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag catalogfoto’s bestellen voor mijn producten."),
@@ -287,7 +287,7 @@ const COPY = {
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['Vanaf 4 foto’s', 'per product'],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
     kiesCta: 'Kies je look',
     levert: 'vier foto’s per product.',
     packH: 'Eén product. Vier foto’s of meer. Het tarief daalt naarmate het aantal stijgt.',
@@ -296,7 +296,7 @@ const COPY = {
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
     ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Meer dan ${FORM_MAX_PRODUCTS} in één keer kan ook: die verdelen we over leverdata, tegen hetzelfde tarief per product.`,
     packOpen: 'Eén geleverd beeld, drie die nog geschoten worden. De set bestaat; de foto\u2019s ervan staan er nog niet allemaal, en we laten dat liever zien dan dat we de gaten met iets anders vullen.',
-    packP: `Elk product komt terug als een complete set — met een echte foto op een model, niet alleen het product plat op een ondergrond. Op die foto staat een gezicht uit de standaardbibliotheek, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
+    packP: `De foto op model gebruikt een gezicht uit de bibliotheek, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou is</a>.`,
     packCta: 'Bestel catalogfoto’s',
     edMeta: '( Waar het past )',
     edH: 'Catalogfotografie: zo duidelijk dat er niets te vragen overblijft.',
@@ -310,7 +310,7 @@ const COPY = {
     whereH: 'Waar je het gebruikt',
     where: [
       ['Je webshop', 'de productpagina’s waar mensen beslissen.'],
-      ['Marktplaatsen', 'bol, Amazon en andere platforms die strakke, consistente foto’s eisen.'],
+      ['Marktplaatsen', 'bol, Amazon en andere strenge platforms.'],
       ['Shopping-feeds', 'Google Shopping en vergelijkingssites.'],
       ['Wholesale & linesheets', 'waar inkopers het product helder moeten zien.'],
     ],
@@ -332,12 +332,12 @@ const COPY = {
     ],
     chipsBg: ['Wit — standaard', 'Je eigen kleur — elke hexcode'],
     baH: 'Dit is een telefoonfoto. Dit is wat eruit kwam.',
-    baP: 'Precies de ruwe telefoonfoto die een klant stuurde — en wat er terugkwam.',
+    baP: '',
     baBefore: 'Jouw foto',
     baBeforeAlt: 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS',
     baAfterAlt: 'Hetzelfde t-shirt als een strakke catalogfoto na VISUAILS',
     reviewH: 'Snel betekent niets als het niet klopt.',
-    reviewP: 'We maken elke catalogfoto, en daarna controleert een specialist hem voordat je hem krijgt — kleur en detail moeten kloppen, en dat laten we niet aan het toeval over.',
+    reviewP: 'Een specialist controleert kleur en detail van elk beeld voordat jij het krijgt.',
     reviewChips: ['Consistente belichting & uitsnede', 'Klaar voor marktplaatsen', reviewClaim('unattended', 'nl')],
     reviewNote: reviewClaim('unattended', 'nl'),
     heroAlt: 'Een afgewerkte VISUAILS-catalogfoto: een product uitgesneden en belicht op wit',
@@ -490,7 +490,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
   <section class="paneel" aria-labelledby="cat-bewijs">
     <header class="paneel-kop">
       <h2 id="cat-bewijs" class="hoog hoog-2">{c.baH}</h2>
-      <p class="lopend">{c.baP}</p>
+      {c.baP && <p class="lopend">{c.baP}</p>}
     </header>
     <div class="cat-bewijs">
       <Compare

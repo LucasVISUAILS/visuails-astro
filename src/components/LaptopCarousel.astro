@@ -247,9 +247,9 @@ const t = nl
      Hij staat in dit bestand en niet op de voorpagina, want de laptop staat op
      zeven pagina's en op alle zeven geldt dezelfde zin. */
   ? { vorige: 'Vorig beeld', volgende: 'Volgend beeld', van: (a: number, b: number) => `Beeld ${a} van ${b}`, omlaag: 'Volgende foto', bron: '\u2191 Wat jij stuurt',
-      uitleg: 'Dit is één manier om de beelden te gebruiken, niet de enige. Je krijgt de losse bestanden \u2014 waar ze heen gaan, in welke volgorde, en of je ze allemaal gebruikt, bepaal jij.' }
+      uitleg: 'Een voorbeeld. Je krijgt de losse bestanden en gebruikt ze waar je wilt.' }
   : { vorige: 'Previous image', volgende: 'Next image', van: (a: number, b: number) => `Image ${a} of ${b}`, omlaag: 'Next photo', bron: '\u2191 What you send',
-      uitleg: 'This is one way to use the images, not the only one. You get the files themselves \u2014 where they go, in what order, and whether you use them all is yours to decide.' };
+      uitleg: 'An example. You get the files and use them wherever you like.' };
 ---
 <section
   class:list={['lc', stil && 'is-stil', vorm !== 'paneel' && 'is-naast', vorm === 'onder' && 'is-onder']}

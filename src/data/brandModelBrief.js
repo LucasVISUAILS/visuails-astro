@@ -142,7 +142,7 @@ export const COPY = {
   en: {
     eyebrow: 'Brand Model',
     h1: 'One face, made only for you.',
-    lead: 'A Brand Model is designed once, for your brand, and used nowhere else. Not picked off a list, not licensed from a library, not shared with the shop that sells beside you.',
+    lead: 'Designed once, for your brand, and used nowhere else.',
 
     /* ── HET BEWIJS BIJ DE PRIJS — 12 september 2026 ────────────────────────
        Dit formulier noemde een bedrag en toonde geen enkel beeld. Wie hier
@@ -151,7 +151,7 @@ export const COPY = {
        Drie echt geleverde merkmodellen, en één regel die zegt dat die van hem
        er juist NIET bij staat — want dat is precies wat hij koopt. */
     bewijsH: 'Brand models we made',
-    bewijsNoot: 'Three we delivered. Yours will not be among them — that is the point.',
+    bewijsNoot: 'Three we delivered.',
 
     stepsLabel: 'Steps',
     next: 'Continue',
@@ -163,7 +163,7 @@ export const COPY = {
     trackOwnB: 'You describe the face and we build it. Eight short questions.',
     trackOursH: 'Design it for me',
     trackOursB: 'You tell us who you sell to, we come back with directions. Four short questions.',
-    trackSame: 'Both cost the same. This is a choice about how much you want to decide, not about what you spend.',
+    trackSame: 'Both cost the same.',
     trackErr: 'Pick one of the two, and the rest of the form follows.',
 
     s2H: 'Your brand',
@@ -217,10 +217,10 @@ export const COPY = {
   nl: {
     eyebrow: 'Merkmodel',
     h1: 'Eén gezicht, alleen voor jou gemaakt.',
-    lead: 'Een merkmodel wordt één keer ontworpen, voor jouw merk, en nergens anders gebruikt. Niet uit een lijst gekozen, niet uit een bibliotheek gelicentieerd, niet gedeeld met de winkel die naast je verkoopt.',
+    lead: 'Eén keer ontworpen, voor jouw merk, en nergens anders gebruikt.',
 
     bewijsH: 'Merkmodellen die we maakten',
-    bewijsNoot: 'Drie die we leverden. Dat van jou staat er straks niet tussen — dat is het punt.',
+    bewijsNoot: 'Drie die we leverden.',
 
     stepsLabel: 'Stappen',
     next: 'Verder',
@@ -232,7 +232,7 @@ export const COPY = {
     trackOwnB: 'Jij beschrijft het gezicht en wij bouwen het. Acht korte vragen.',
     trackOursH: 'Bedenk het voor mij',
     trackOursB: 'Jij vertelt ons voor wie je verkoopt, wij komen met richtingen. Vier korte vragen.',
-    trackSame: 'Beide kosten hetzelfde. Dit is een keuze over hoeveel je zelf wilt bepalen, niet over wat je uitgeeft.',
+    trackSame: 'Beide kosten hetzelfde.',
     trackErr: 'Kies er een van de twee, dan volgt de rest van het formulier.',
 
     s2H: 'Je merk',

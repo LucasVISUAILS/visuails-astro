@@ -55,7 +55,7 @@ import { waHref } from '../data/whatsapp.js';
 // de enige dienst op deze pagina, en de keuzepagina opnieuw laten kiezen wat de
 // bezoeker net gekozen heeft, is een stap die niets oplevert.
 import {
-  TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD, PLAN_CLIPS, plans,
+  TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD,
   reviewClaim, turnaround,
   clause, VIDEO_OP_AANVRAAG,
 } from '../data/pricing.js';
@@ -97,7 +97,6 @@ const opAanvraagWoord = lang === 'nl' ? 'Op aanvraag' : 'On request';
 // The plan that includes clips, named rather than typed — /pricing says the
 // same thing off the same two constants, so the two pages cannot disagree
 // about how many clips a Studio month carries.
-const studioPlan = plans(lang).find((pl) => pl.id === 'studio');
 
 // Motion and Lifestyle Video are the two fixed-rate clips; Campaign and
 // Custom are scoped and quoted. Keeping the rule here rather than in
@@ -169,7 +168,7 @@ const COPY = {
        lager in de specificatiestrook, en een bedrag lees je niet in lopende
        tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
        krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
-    lead: `8 seconds of subtle motion, cut vertical for Reels and TikTok — made from the product photos you already sent.`,
+    lead: `8 seconds of motion, vertical for Reels and TikTok — from your product photos.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note. Used in the hero and the closing band; the buy block lower
     // down names the tier from TIERS.unattended.label instead.
@@ -195,7 +194,7 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Clips run in the ${clause(t0.queue.en).toLowerCase()}. A held delivery date comes with an order of ${WINDOW_THRESHOLD} products or more — clips can ride inside one, but a clip request on its own does not get a date.`,
+    queueNote: `Clips run in the ${clause(t0.queue.en).toLowerCase()}; a clip on its own gets no fixed date.`,
     // The qualifier above TierCompare. That component is shared with /catalog,
     // /lifestyle and /pricing and prints the ladder's two service levels; on
     // THIS page it needs one sentence of context, because neither column is
@@ -224,7 +223,7 @@ const COPY = {
     // Brief §1: every service page links to /custom-models. It goes here,
     // in the paragraph about what a clip is, because "who is in it" is a real
     // question a clip raises and the answer is the same face as the stills.
-    modelNote: `Where a person appears in the clip, that person can be <a href="${lp('/custom-models')}">a Brand Model made only for you</a> — the same face your catalog and lifestyle sets already run on.`,
+    modelNote: `A person in the clip can be <a href="${lp('/custom-models')}">your own Brand Model</a>.`,
     buyFlatH: 'Why the clip rate does not fall',
     whereH: 'Where it lives',
     where: [
@@ -253,10 +252,10 @@ const COPY = {
     // on a falling ladder; a clip is priced per clip and stays put, which is
     // the difference this block now has to state out loud rather than imply.
     buyFixed: opAanvraag
-      ? '<strong>Motion &amp; Lifestyle</strong> — on request while the video pipeline is being built. You send the form, on its own or on top of an order, and we reply in writing with a price and a date before anything runs. Nothing is charged until you say yes.'
+      ? '<strong>Motion &amp; Lifestyle</strong> — on request for now. We reply in writing with a price and a date; nothing is charged until you say yes.'
       : `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we confirm what and when in writing before anything runs.`,
     buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
-    buyFlat: `Catalog and lifestyle images are priced per product and the rate falls as the count rises. A clip does not work that way: it is one rate, whatever else is in the order. ${studioPlan ? `${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
+    buyFlat: `One rate per clip, whatever else is in the order.`,
     /* Deze knop wijst naar /start/video en heette "Start an order". Dat is
        precies de mismatch die op elke dienstpagina is rechtgezet: het label
        moet zeggen wat er achter de knop gebeurt, niet wat er in het algemeen
@@ -282,7 +281,7 @@ const COPY = {
        lager in de specificatiestrook, en een bedrag lees je niet in lopende
        tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
        krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
-    lead: `8 seconden subtiele beweging, verticaal gesneden voor Reels en TikTok — gemaakt van de productfoto’s die je al stuurde.`,
+    lead: `8 seconden beweging, verticaal voor Reels en TikTok — van je productfoto’s.`,
     ctaPrimary: 'Vraag een videoclip aan',
     wa: waHref("Hoi VISUAILS, ik wil graag praten over een productvideo."),
     waQuote: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
@@ -293,7 +292,7 @@ const COPY = {
       opAanvraag ? [opAanvraagWoord, 'we antwoorden schriftelijk met een prijs'] : [clip, `per clip · ${vatLabel('excl', 'nl')}`],
       ['8s', 'strakke productvideo’s'],
     ],
-    queueNote: `Clips lopen mee in de ${clause(t0.queue.nl).toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
+    queueNote: `Clips lopen mee in de ${clause(t0.queue.nl).toLowerCase()}; een losse clip krijgt geen vaste datum.`,
     // Zie de Engelse kant voor waarom deze regel er staat.
     tierNote: opAanvraag
       ? `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Clips zijn voorlopig op aanvraag en blijven in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`
@@ -315,7 +314,7 @@ const COPY = {
       'Een productvideo is een korte, strakke film met subtiele beweging — een langzame draai, stof die valt, licht dat over het materiaal trekt — gemaakt om een product te laten leven zonder een volledige productie. In een feed die op beweging is gebouwd, valt een paar seconden video op waar een stilstaand beeld voorbijgaat.',
       'Het vervangt je foto’s niet; het komt erbij. Hetzelfde product staat stil op je productpagina en beweegt in je advertenties en op je socials — de plekken waar kijktijd en doorklikken meetellen.',
     ],
-    modelNote: `Waar er een persoon in de clip verschijnt, kan dat <a href="${lp('/custom-models')}">een merkmodel zijn dat alleen voor jou gemaakt is</a> — hetzelfde gezicht waar je catalog- en lifestylesets al op draaien.`,
+    modelNote: `Een persoon in de clip kan <a href="${lp('/custom-models')}">je eigen merkmodel</a> zijn.`,
     buyFlatH: 'Waarom het cliptarief niet daalt',
     whereH: 'Waar je het gebruikt',
     where: [
@@ -340,10 +339,10 @@ const COPY = {
     ],
     buyH: 'Twee manieren om video te kopen',
     buyFixed: opAanvraag
-      ? '<strong>Motion &amp; Lifestyle</strong> — op aanvraag zolang de videopijplijn in aanbouw is. Je stuurt het formulier, los of bovenop een bestelling, en we antwoorden schriftelijk met een prijs en een datum voordat er iets draait. Er wordt niets afgeschreven voordat jij ja zegt.'
+      ? '<strong>Motion &amp; Lifestyle</strong> — voorlopig op aanvraag. We antwoorden schriftelijk met een prijs en een datum; er wordt niets afgeschreven voordat jij ja zegt.'
       : `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}. Video heeft nog geen afrekenstap: je vraagt het aan via het formulier, los of bovenop een bestelling, en we bevestigen op schrift wat en wanneer voordat er iets draait.`,
     buyQuote: '<strong>Campaign</strong> — groter, meerdere scènes, offerte per project.',
-    buyFlat: `Catalog- en lifestylefoto’s hebben een tarief per product, en dat daalt naarmate het aantal stijgt. Bij een clip werkt dat niet zo: het tarief blijft hetzelfde, wat er verder ook in de bestelling zit. ${studioPlan ? `${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
+    buyFlat: `Eén tarief per clip, wat er verder ook in de bestelling zit.`,
     buyCta: 'Vraag een videoclip aan',
     stripAlt: {
       campaign: 'Campagnefotografie',

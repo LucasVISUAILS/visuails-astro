@@ -34,7 +34,7 @@
  */
 
 import {
-  euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel,
+  euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel, VIDEO_OP_AANVRAAG,
 } from './pricing.js';
 
 const VOORVOEGSEL = { en: '', nl: '/nl' };
@@ -56,21 +56,25 @@ export function guides(lang = 'en') {
      is het tarief van Motion; lifestyle- en campagnevideo rekenen anders af en
      hooks helemaal niet. Eén bedrag "vast" noemen belooft dus een prijs die
      drie van de vier videosoorten niet hebben. */
+  /* 23 september 2026: video staat op aanvraag (VIDEO_OP_AANVRAAG), dus een
+     bedrag per clip belooft hier een prijs die de videopagina niet noemt. */
   const vid = euro(AMOUNT.video, l);
+  const videoNl = VIDEO_OP_AANVRAAG ? 'video op aanvraag' : `video vanaf ${vid} per clip`;
+  const videoEn = VIDEO_OP_AANVRAAG ? 'video on request' : `video from ${vid} a clip`;
   const vanaf = LADDER.catalog[LADDER.catalog.length - 1][0];
 
   const rijen = l === 'nl' ? [
-    ['Zo fotografeer je je product met je telefoon', 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', '/upload-guidelines', 'Checklist'],
-    ['Van foto naar publicatie — hoe het werkt', 'Wat er precies gebeurt tussen het sturen van één foto en het terugkrijgen van een afgewerkte, met de hand gecontroleerde visual.', '/how-it-works', 'Proces'],
-    ['AI-tools vs een done-for-you studio', 'Wanneer een AI-tool die je zelf bedient echt genoeg is — en waar hij je stilletjes uren kost aan overdoen en kleur die niet bij je merk past.', '/compare', 'Vergelijk'],
-    ['Wat productvisuals echt kosten', `Catalog vanaf ${catInstap} per set van vier foto’s en lifestyle vanaf ${lifeInstap}, dalend tot ${catVloer} en ${lifeVloer} vanaf ${vanaf} producten; video vanaf ${vid} per clip. Alles ${vatLabel('excl', 'nl')}.`, '/pricing', 'Prijzen'],
-    ['Vragen, beantwoord', 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', '/faq', 'FAQ'],
+    ['Zo fotografeer je je product met je telefoon', 'De hoeken, het licht en de achtergrond. Lees dit vóór je bestelt.', '/upload-guidelines', 'Checklist'],
+    ['Van foto naar publicatie — hoe het werkt', 'Van je foto tot het afgewerkte beeld.', '/how-it-works', 'Proces'],
+    ['AI-tools vs een done-for-you studio', 'Wanneer een AI-tool genoeg is, en wanneer niet.', '/compare', 'Vergelijk'],
+    ['Wat productvisuals echt kosten', `Catalog vanaf ${catInstap}, lifestyle vanaf ${lifeInstap}, dalend tot ${catVloer} en ${lifeVloer}; ${videoNl}. Alles ${vatLabel('excl', 'nl')}.`, '/pricing', 'Prijzen'],
+    ['Vragen, beantwoord', 'Betaling, btw, modellen, levering en revisies.', '/faq', 'FAQ'],
   ] : [
-    ['How to photograph your product with your phone', 'The four angles, the lighting, the background — everything that turns a phone photo into a campaign-ready result. The single most useful thing to read before you order.', '/upload-guidelines', 'Checklist'],
-    ['From photo to publish — how it works', 'What actually happens between sending one photo and getting a finished, carefully checked visual back.', '/how-it-works', 'Process'],
-    ['AI tools vs a done-for-you studio', 'When a self-serve AI tool is genuinely enough — and where it quietly costs you in redos, off-brand colour and hours.', '/compare', 'Compare'],
-    ['What product visuals actually cost', `Catalog from ${catInstap} for a four-photo set and lifestyle from ${lifeInstap}, falling to ${catVloer} and ${lifeVloer} from ${vanaf} products up; video from ${vid} a clip. All ${vatLabel('excl', 'en')}.`, '/pricing', 'Pricing'],
-    ['Questions, answered', 'Payment, VAT, models, delivery, what if something is off — the practical things brands ask before their first order.', '/faq', 'FAQ'],
+    ['How to photograph your product with your phone', 'The angles, the light and the background. Read this before you order.', '/upload-guidelines', 'Checklist'],
+    ['From photo to publish — how it works', 'From your photo to the finished image.', '/how-it-works', 'Process'],
+    ['AI tools vs a done-for-you studio', 'When an AI tool is enough, and when it is not.', '/compare', 'Compare'],
+    ['What product visuals actually cost', `Catalog from ${catInstap}, lifestyle from ${lifeInstap}, falling to ${catVloer} and ${lifeVloer}; ${videoEn}. All ${vatLabel('excl', 'en')}.`, '/pricing', 'Pricing'],
+    ['Questions, answered', 'Payment, VAT, models, delivery and revisions.', '/faq', 'FAQ'],
   ];
 
   return rijen.map(([title, desc, pad, tag]) => ({

@@ -100,7 +100,9 @@ for (const [dienst, pad, taal] of PAGINAS) {
   /* ── DE ONDERGRENS, PRECIES ÉÉN KEER ────────────────────────────────────
      Nul keer is de belofte die stilletjes een plafond wordt; twee keer of
      vaker is de herhaling waar hij juist uit de kamers voor weggehaald is. */
-  const zin = taal === 'nl' ? 'Dit krijg je altijd voor dit bedrag' : 'This is what you always get at this rate';
+  /* Korter sinds 23 september 2026 (minder tekst); de belofte is dezelfde:
+     meer beelden kan, en dat kies je in het bestelformulier. */
+  const zin = taal === 'nl' ? 'Meer beelden kies je erbij in het bestelformulier' : 'More images can be added in the order form';
   const keer = html.split(zin).length - 1;
   ok(`${pad} — "meer beelden kan" staat precies één keer`, keer === 1, 1, keer);
 

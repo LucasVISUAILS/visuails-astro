@@ -152,7 +152,7 @@ const COPY = {
     h1a: 'A shoot day, or ',
     h1b: 'an order',
     h1c: '.',
-    lead: 'Both get a season of product images made. They cost different money, different hours, and they fail in different ways. Here is the comparison with nothing hidden on either side.',
+    lead: 'Both get a season of product images made. Here they are side by side, nothing hidden.',
     ctaPrimary: 'Start an order',
     ctaGhost: 'See the price per product',
 
@@ -167,7 +167,7 @@ const COPY = {
         a: "One day of everyone’s time, and whatever fits inside it.",
         // The count is named because it has to be: the rate falls as the count
         // rises, so the column below is one worked example rather than a price.
-        b: `${ANCHOR_PRODUCTS} products — a catalog set and a lifestyle carousel for each. Any count works; this is the size the day on the left is being measured against.`,
+        b: `${ANCHOR_PRODUCTS} products, each with a catalog set and a lifestyle carousel.`,
       },
       {
         label: 'What it costs',
@@ -185,12 +185,12 @@ const COPY = {
         // meeting a rule, and a table cell repeating what the drawing states is
         // the exact reflex #246 is about. What stays is the part a picture
         // cannot say: how long, and that the retouching is after.
-        a: 'Weeks. A date has to be agreed before anyone shoots, and the retouching starts after the day ends.',
-        b: `${clause(turnaround(tier, 'en'))}. The delivery date is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
+        a: 'Weeks, plus retouching after the day.',
+        b: `${clause(turnaround(tier, 'en'))}, on a date checked against the calendar.`,
       },
       {
         label: 'Who checks it',
-        a: 'You, on the day. Then whoever retouches, on their own schedule.',
+        a: 'You, on the day. Then the retoucher.',
         b: `${reviewClaim(tier, 'en')} — then you, image by image, in the portal.`,
       },
       {
@@ -202,16 +202,16 @@ const COPY = {
         /* clause(): aftercare() eindigt op een punt, en een punt vlak voor
            een gedachtestreepje leest als een afgebroken zin. Zie de noot bij
            clause() in pricing.js. */
-        b: `${clause(aftercare(tier, 'en'))} — one image at a time, in the portal. Nobody has to be rebooked.`,
+        b: `${clause(aftercare(tier, 'en'))}, in the portal.`,
       },
       {
         label: 'What you organise',
         a: shoot.items.join(' · ') + '.',
-        b: 'A folder of product photos and a short note on the look.',
+        b: 'A folder of product photos.',
       },
     ],
     caveat: shoot.caveat,
-    caveatNote: 'That is a real range for a real day, not a strawman: it is what the whole day costs once every line above is counted, and the low end is a modest city studio where you do a lot of it yourself. Both figures in that row are net, so they are the same kind of number.',
+    caveatNote: 'A real range for a whole day, every line counted. Both figures are net.',
 
     // FigConverge (task #246). The matrix rows "When it lands" and "If
     // something is wrong" are one fact stated twice: a day needs four
@@ -225,7 +225,7 @@ const COPY = {
     // with a sentence and absorbs a diagram. "A studio, on a date" is what a
     // production day IS — a studio would write it the same way.
     convergeH: 'What has to line up',
-    convergeSub: 'Not a cost or a schedule — just what has to agree with what before an image exists.',
+    convergeSub: '',
     convTitle: 'A production day',
     convLanes: [
       { label: 'A studio, on a date' },
@@ -234,15 +234,15 @@ const COPY = {
       { label: 'The product, in the room, by then' },
     ],
     convMeet: 'One date',
-    convOut: 'Everything is made on that day. A reshoot is the same four things, agreeing again.',
+    convOut: 'A reshoot means lining up all four again.',
     seqTitle: 'A VISUAILS order',
     seqSteps: [
-      'You send a folder of product photos.',
-      'The week is checked against the calendar, and held or refused.',
-      'Images are made, and land as each one is ready.',
+      'You send your photos.',
+      'The date is checked and held.',
+      'Images land as they are ready.',
     ],
-    seqOut: 'Nothing has to be in one place at one time. A revision is one image, not another arrangement.',
-    convNote: 'The bars are uneven because four schedules do not naturally line up, and they are not to scale — there is nothing here to measure.',
+    seqOut: 'A revision is one image, not a new day.',
+    convNote: 'Not to scale.',
 
     /* ── DE SHOOTWEEK, 30 AUGUSTUS 2026 ────────────────────────────────────
        Deze opsomming stond op de HOMEPAGE en nergens anders: hij is daar op 18
@@ -259,46 +259,46 @@ const COPY = {
        van dezelfde vergelijking — de helft die niet op de factuur staat.
        tests/vergelijk-week.test.mjs bewaakt dat hij hier blijft. */
     weekHead: 'And the week around the day',
-    weekSub: 'A shoot is not one day on your calendar. It is the week that has to be cleared around it, and only one of those two shows up on the invoice.',
+    weekSub: 'Only the day shows up on the invoice.',
     weekList: [
-      'The casting, and the shortlist that comes back with someone unavailable.',
-      'The booking: a studio, a photographer, a date the three of you share.',
-      'Shipping the samples there, and getting them back.',
-      'The reschedule when it rains, or when the shipment is a day late.',
-      'The two evenings afterwards, culling frames.',
+      'Casting',
+      'Booking a studio and photographer',
+      'Shipping the samples there and back',
+      'The reschedule when something slips',
+      'Evenings culling frames',
     ],
-    weekOrder: 'An order takes twenty minutes of your time, whether it is one product or thirty: sort the photos by SKU, drop them in, and pick a week. Everything above is not done faster — it is not done at all.',
+    weekOrder: 'An order takes twenty minutes of your time, one product or thirty.',
 
     winsHead: 'Where a shoot day still wins',
-    winsSub: 'We would rather you knew. If any of these is the job, book the day — an order with us is the wrong tool for it.',
+    winsSub: 'If one of these is the job, book the day.',
     wins: [
-      { t: 'A material that has to be in the room', b: 'Some finishes only read right when a person lights them by eye — a weave that shifts as it moves, a coating that catches at one specific angle. If the whole sell is the hand-feel, put a camera on it.' },
-      { t: 'A campaign built around one real person', b: 'A founder, an athlete, a face your audience already follows by name. That is a person, not a model. Photograph them.' },
-      { t: 'Documentation, not depiction', b: 'Press images, provenance shots, anything where the point is that a camera was actually there and someone will be asked to prove it.' },
-      { t: 'You want the day itself', b: 'A shoot is also a team day, a behind-the-scenes reel, a launch moment. If that is worth the budget on its own, it is worth the budget.' },
+      { t: 'A material that has to be in the room', b: 'When the whole sell is the hand-feel, put a camera on it.' },
+      { t: 'A campaign around one real person', b: 'A founder or an athlete: photograph them.' },
+      { t: 'Documentation, not depiction', b: 'Press and provenance, where a camera has to have been there.' },
+      { t: 'You want the day itself', b: 'A team day, a behind-the-scenes reel, a launch moment.' },
     ],
 
     toolHead: 'And if you are weighing a self-serve tool',
-    toolSub: 'The other honest comparison, kept short. You can generate product images yourself. Sometimes that is the right call.',
+    toolSub: 'Sometimes generating images yourself is the right call.',
     enoughHead: 'A tool is genuinely enough when',
     enough: [
-      'You want a quick mock to test an idea or sketch a layout.',
-      'It is not going in front of a customer, so off-brand is fine.',
-      'You like the prompting, and you have the afternoon.',
+      'You need a quick mock for an idea or a layout.',
+      'No customer will see it.',
+      'You enjoy prompting and have the afternoon.',
     ],
     costsHead: 'It quietly costs you when',
     costs: [
-      'It takes ten generations to get one keeper. Cheap per try, expensive per usable image.',
-      'Your brand colour drifts a little on every run. Across a full catalog that is what makes a shop look amateur.',
-      'Nothing is checked. A tool ships warped hands and invented text straight to your storefront.',
-      'Prompting, retrying, upscaling, cropping and exporting is still your afternoon.',
+      'It takes ten tries to get one keeper.',
+      'Your brand colour drifts on every run.',
+      'Nothing is checked: warped hands go straight to your shop.',
+      'The prompting and exporting is still your afternoon.',
     ],
-    toolClose: 'If a tool is enough, use the tool. If it is not, the only test worth anything is your own product.',
+    toolClose: 'If a tool is enough, use the tool.',
     toolCta: 'Try it on your product',
 
     ctaHead: "Don’t take our word — ",
     ctaHeadEm: 'test it',
-    ctaBody: 'See VISUAILS on your own product first, then put it next to whatever else you were considering.',
+    ctaBody: 'See it on your own product first.',
     ctaSample: 'Test sample',
     ctaStart: 'Start an order',
     ctaWa: 'Ask us anything',
@@ -311,7 +311,7 @@ const COPY = {
     h1a: 'Een shootdag, of ',
     h1b: 'een bestelling',
     h1c: '.',
-    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Ze kosten niet hetzelfde, ze vragen niet dezelfde uren, en ze gaan op andere manieren mis. Hier staan ze naast elkaar, en aan geen van beide kanten is iets weggelaten.',
+    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Hier staan ze naast elkaar, niets weggelaten.',
     ctaPrimary: 'Start een bestelling',
     ctaGhost: 'Bekijk de prijs per product',
 
@@ -326,7 +326,7 @@ const COPY = {
         a: 'Eén dag van ieders tijd, en wat daar precies in past.',
         // Zie de EN-tak: het aantal staat erbij omdat het tarief met de omvang
         // meezakt, dus dit is één uitgewerkt voorbeeld en geen pakketprijs.
-        b: `${ANCHOR_PRODUCTS} producten — een catalogset en een lifestyle-carousel voor elk. Elk aantal kan; dit is het aantal waarmee we de dag hiernaast vergelijken.`,
+        b: `${ANCHOR_PRODUCTS} producten, elk met een catalogset en een lifestyle-carousel.`,
       },
       {
         label: 'Wat het kost',
@@ -335,28 +335,28 @@ const COPY = {
       },
       {
         label: 'Wanneer het er is',
-        a: 'Weken. Er moet eerst een datum vastliggen voordat er iemand fotografeert, en de retouche begint pas als de dag voorbij is.',
-        b: `${clause(turnaround(tier, 'nl'))}. We kijken eerst in de agenda of de week die je nodig hebt nog kan. Kan die niet, dan hoor je dat meteen, in plaats van dat je een datum krijgt.`,
+        a: 'Weken, plus retouche na de dag.',
+        b: `${clause(turnaround(tier, 'nl'))}, op een datum die in de agenda is gecontroleerd.`,
       },
       {
         label: 'Wie het controleert',
-        a: 'Jij, op de dag zelf. Daarna degene die retoucheert, in zijn eigen tempo.',
+        a: 'Jij, op de dag zelf. Daarna de retoucheur.',
         b: `${reviewClaim(tier, 'nl')} — en daarna jij, beeld voor beeld, in het portaal.`,
       },
       {
         label: 'Als er iets mis is',
         a: 'Opnieuw fotograferen is opnieuw een dag, en die boek je vanaf nul.',
         /* Zie de noot bij de Engelse tegenhanger. */
-        b: `${clause(aftercare(tier, 'nl'))} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
+        b: `${clause(aftercare(tier, 'nl'))}, in het portaal.`,
       },
       {
         label: 'Wat jij regelt',
         a: shoot.items.join(' · ') + '.',
-        b: 'Een map met productfoto’s en een korte notitie over de look.',
+        b: 'Een map met productfoto’s.',
       },
     ],
     caveat: shoot.caveat,
-    caveatNote: 'Dat is een echte bandbreedte voor een echte dag, niet het duurste geval om ons eigen bedrag mooier te laten lijken. Het is wat de hele dag kost zodra je elke regel hierboven meetelt. De onderkant is een bescheiden stadsstudio waar je veel zelf doet. Beide bedragen zijn netto, dus het zijn dezelfde soort getallen.',
+    caveatNote: 'Een echte bandbreedte voor een hele dag, elke regel meegeteld. Beide bedragen zijn netto.',
 
     // FigConverge (taak #246) — zie de EN-tak hierboven voor waarom de labels
     // naamwoordgroepen zijn en geen stellingen. convTitle en seqTitle zijn
@@ -364,7 +364,7 @@ const COPY = {
     // hetzelfde noemen; wijkt er één af, dan leest de figuur als een derde
     // partij in plaats van als dezelfde twee kolommen, getekend.
     convergeH: 'Wat op één lijn moet komen',
-    convergeSub: 'Even los van geld en planning: dit is wat er allemaal op één lijn moet komen voordat er één beeld bestaat.',
+    convergeSub: '',
     convTitle: 'Een productiedag',
     convLanes: [
       { label: 'Een studio, op een datum' },
@@ -373,58 +373,58 @@ const COPY = {
       { label: 'Het product, in de ruimte, tegen die tijd' },
     ],
     convMeet: 'Eén datum',
-    convOut: 'Alles wordt op die dag gemaakt. Wil je het opnieuw, dan moeten diezelfde vier dingen weer allemaal kloppen.',
+    convOut: 'Opnieuw fotograferen betekent alle vier weer op één lijn.',
     seqTitle: 'Een VISUAILS-bestelling',
     seqSteps: [
-      'Je stuurt een map met productfoto’s.',
-      'We kijken of die week nog kan, en zetten hem vast of zeggen nee.',
-      'Beelden worden gemaakt, en komen binnen zodra elk beeld klaar is.',
+      'Je stuurt je foto’s.',
+      'De datum wordt gecontroleerd en vastgezet.',
+      'Beelden komen binnen zodra ze klaar zijn.',
     ],
-    seqOut: 'Niets hoeft op één plek op één moment te zijn. Een revisie is één beeld, niet opnieuw die hele afstemming.',
-    convNote: 'De balken zijn ongelijk omdat vier planningen niet vanzelf op één lijn liggen, en ze staan niet op schaal — er valt hier niets te meten.',
+    seqOut: 'Een revisie is één beeld, geen nieuwe dag.',
+    convNote: 'Niet op schaal.',
 
     /* Zie de noot bij de Engelse tabel. */
     weekHead: 'En de week eromheen',
-    weekSub: 'Een shoot is niet één dag in je agenda. Het is de week die eromheen vrijgemaakt moet worden, en maar één van die twee staat op de factuur.',
+    weekSub: 'Alleen de dag staat op de factuur.',
     weekList: [
-      'De casting, en de shortlist die terugkomt met iemand die net niet kan.',
-      'De boeking: een studio, een fotograaf, en een datum die jullie drieën delen.',
-      'De samples ernaartoe sturen, en weer terug.',
-      'Het uitstel als het regent, of als de zending een dag te laat is.',
-      'De twee avonden erna, met het schiften van de frames.',
+      'Casting',
+      'De boeking van studio en fotograaf',
+      'De samples ernaartoe sturen en terug',
+      'Het uitstel als er iets misloopt',
+      'Avonden frames schiften',
     ],
-    weekOrder: 'Een bestelling kost je twintig minuten, of het nu één product is of dertig: foto’s op SKU sorteren, erin zetten, en een week kiezen. Alles hierboven gaat niet sneller — het gaat helemaal niet.',
+    weekOrder: 'Een bestelling kost je twintig minuten, één product of dertig.',
 
     winsHead: 'Waar een shootdag nog steeds wint',
-    winsSub: 'We vertellen het je liever eerlijk. Is dit de opdracht? Boek dan de dag — een bestelling bij ons is er het verkeerde gereedschap voor.',
+    winsSub: 'Is dit de opdracht, boek dan de dag.',
     wins: [
-      { t: 'Een materiaal dat in de ruimte moet liggen', b: 'Sommige afwerkingen kloppen alleen als iemand ze met het oog uitlicht — een weefsel dat meebeweegt, een coating die alleen onder één hoek oplicht. Draait de hele verkoop om het gevoel, zet er dan een camera op.' },
-      { t: 'Een campagne rond één echt persoon', b: 'Een oprichter, een sporter, een gezicht dat je publiek al bij naam volgt. Dat is een echt persoon, geen model. Die moet je fotograferen.' },
-      { t: 'Documentatie, geen verbeelding', b: 'Persbeelden, herkomstfoto’s, alles waarbij het punt is dat er echt een camera bij was en iemand daarnaar gaat vragen.' },
-      { t: 'Je wilt de dag zelf', b: 'Een shoot is ook een teamdag, materiaal voor achter de schermen, een lanceringsmoment. Is dat op zichzelf het budget waard, boek de dag dan.' },
+      { t: 'Een materiaal dat in de ruimte moet liggen', b: 'Draait de verkoop om het gevoel, zet er een camera op.' },
+      { t: 'Een campagne rond één echt persoon', b: 'Een oprichter of een sporter: fotografeer die.' },
+      { t: 'Documentatie, geen verbeelding', b: 'Pers en herkomst, waar echt een camera bij moet zijn geweest.' },
+      { t: 'Je wilt de dag zelf', b: 'Een teamdag, beelden achter de schermen, een lanceringsmoment.' },
     ],
 
     toolHead: 'En als je een self-serve tool overweegt',
-    toolSub: 'De andere eerlijke vergelijking, kort gehouden. Je kunt productbeelden zelf genereren. Soms is dat de juiste keuze.',
+    toolSub: 'Soms is zelf genereren de juiste keuze.',
     enoughHead: 'Een tool is echt genoeg als',
     enough: [
-      'Je een snelle mock wilt om een idee te testen of een layout te schetsen.',
-      'Niemand buiten je bedrijf het ziet, dus het hoeft niet bij je merk te passen.',
-      'Je het prompten leuk vindt, en de middag hebt.',
+      'Je een snelle mock nodig hebt voor een idee of layout.',
+      'Geen klant het ziet.',
+      'Je prompten leuk vindt en de middag hebt.',
     ],
     costsHead: 'Hij kost je stilletjes geld als',
     costs: [
-      'Je tien pogingen nodig hebt voor één bruikbaar beeld. Goedkoop per poging, duur per bruikbaar beeld.',
-      'Je merkkleur bij elke poging een beetje verschuift. Over een hele catalogus is dat precies wat een shop amateuristisch maakt.',
-      'Er niets gecontroleerd wordt. Een tool levert vervormde handen en verzonnen tekst rechtstreeks aan je shop.',
-      'Prompten, opnieuw proberen, upscalen, croppen en exporteren nog steeds jouw middag is.',
+      'Je tien pogingen nodig hebt voor één bruikbaar beeld.',
+      'Je merkkleur bij elke poging verschuift.',
+      'Niets gecontroleerd wordt: vervormde handen gaan zo je shop in.',
+      'Het prompten en exporteren nog steeds jouw middag is.',
     ],
-    toolClose: 'Is een tool genoeg, gebruik dan de tool. Is hij dat niet, dan is de enige test die iets waard is je eigen product.',
+    toolClose: 'Is een tool genoeg, gebruik dan de tool.',
     toolCta: 'Probeer het op je product',
 
     ctaHead: 'Geloof ons niet — ',
     ctaHeadEm: 'test het',
-    ctaBody: 'Laat ons het eerst op je eigen product zien, en leg dat daarna naast wat je verder overweegt.',
+    ctaBody: 'Zie het eerst op je eigen product.',
     ctaSample: 'Probeer VISUAILS',
     ctaStart: 'Start een bestelling',
     ctaWa: 'Vraag ons alles',
@@ -511,7 +511,7 @@ const t = COPY[lang];
   <section class="kamer cmp-kamer" aria-labelledby="cmp-conv">
     <header class="kamer-kop">
       <h2 id="cmp-conv" class="hoog hoog-2">{t.convergeH}</h2>
-      <p class="lopend">{t.convergeSub}</p>
+      {t.convergeSub && <p class="lopend">{t.convergeSub}</p>}
     </header>
     <FigConverge
       convergeTitle={t.convTitle}

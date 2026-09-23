@@ -118,7 +118,7 @@ const COPY = {
        lager in de specificatiestrook, en een bedrag lees je niet in lopende
        tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
        krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
-    lead: `Four signature looks. A 3-photo carousel per product: one scene shot, one on-model shot and a detail close-up, all matched.`,
+    lead: `A 3-photo carousel per product: scene, on-model and detail, all matched.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note — this button carried the tier label verbatim, in the hero,
     // on a link that lands on /start's two-way fork.
@@ -136,19 +136,19 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
     kiesCta: 'Pick your look',
     levert: 'three photos per product.',
     setH: 'One product. Three photos. <em>A carousel.</em>',
-    setP: 'Every lifestyle order is your product in one styled look, delivered as three shots that belong together — ready to post as a carousel on Instagram, your shop and ads.',
+    setP: 'Three shots that belong together, ready to post as a carousel.',
     // Numbered because a carousel genuinely is an ordered sequence: this is
     // the order the three photos are meant to be posted in.
     set: [
-      ['The scene', 'Your product styled in a real-world setting — the atmosphere shot that stops the scroll.'],
-      ['On-model', 'The same product worn or held, so people can picture it in their own life.'],
-      ['Logo close-up', 'A tight detail shot — same vibe, same colour grade — that proves the quality.'],
+      ['The scene', 'Your product in a styled setting.'],
+      ['On-model', 'Worn or held by a model.'],
+      ['Logo close-up', 'A detail in the same colour grade.'],
     ],
-    setNote: 'One styled look per order · same colour grading · a different scene is a separate order.',
+    setNote: 'One look per order · another scene is a separate order.',
     ladderH: 'What a carousel costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
@@ -195,7 +195,7 @@ const COPY = {
       ['Email & campaigns', 'seasonal drops and newsletters.'],
     ],
     modelH: 'Add a consistent <em>model.</em>',
-    modelP: 'Same face, across your whole collection — or let us choose one that fits.',
+    modelP: 'The same face across your whole collection.',
     modelAlt: 'A VISUAILS model, styled consistently across a campaign',
     modelCta: 'Explore models',
     gradeH: 'Four moods. Four transformations.',
@@ -220,7 +220,7 @@ const COPY = {
        lager in de specificatiestrook, en een bedrag lees je niet in lopende
        tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
        krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
-    lead: `Vier vaste looks. Een carousel van 3 foto’s per product: een sfeershot, een foto op model en een detail-close-up, met dezelfde grading.`,
+    lead: `Een carousel van 3 foto’s per product: sfeer, op model en detail, op elkaar afgestemd.`,
     ctaPrimary: 'Bestel lifestylefoto’s',
     ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag lifestylefoto’s bestellen voor mijn producten."),
@@ -230,17 +230,17 @@ const COPY = {
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['3 foto’s', 'per product'],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
     kiesCta: 'Kies je look',
     levert: 'drie foto’s per product.',
     setH: 'Eén product. Drie foto’s. <em>Een carousel.</em>',
-    setP: 'Elke lifestyle-bestelling is je product in één gestylede look, geleverd als drie foto’s die bij elkaar horen — klaar voor een carousel op Instagram, voor je shop en voor je advertenties.',
+    setP: 'Drie foto’s die bij elkaar horen, klaar om als carousel te posten.',
     set: [
-      ['De sfeer', 'Je product gestyled in een echte omgeving — de foto die de sfeer van je merk laat zien.'],
-      ['On-model', 'Hetzelfde product gedragen of vastgehouden, zodat mensen het in hun eigen leven zien.'],
-      ['Logo-close-up', 'Een strakke detailfoto — zelfde sfeer, zelfde kleurbewerking — die laat zien hoe het is afgewerkt.'],
+      ['De sfeer', 'Je product in een gestylede omgeving.'],
+      ['On-model', 'Gedragen of vastgehouden door een model.'],
+      ['Logo-close-up', 'Een detail in dezelfde kleurbewerking.'],
     ],
-    setNote: 'Eén gestylede look per bestelling · zelfde kleurbewerking · een andere scène is een aparte bestelling.',
+    setNote: 'Eén look per bestelling · een andere scène is een aparte bestelling.',
     ladderH: 'Wat een carousel kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
@@ -277,12 +277,12 @@ const COPY = {
     whereH: 'Waar je het gebruikt',
     where: [
       ['Instagram & TikTok', 'feedposts, carousels en Reels-covers.'],
-      ['Advertenties', 'lifestylefoto’s die in een advertentie werken, waar een catalogusfoto te kaal is.'],
+      ['Advertenties', 'beeld dat de scroll stopt.'],
       ['Je homepage', 'hero- en lookbook-momenten.'],
       ['E-mail & campagnes', 'seizoensdrops en nieuwsbrieven.'],
     ],
     modelH: 'Voeg een consistent <em>model</em> toe.',
-    modelP: 'Hetzelfde gezicht, door je hele collectie — of laat ons er een uitkiezen dat bij je past.',
+    modelP: 'Hetzelfde gezicht door je hele collectie.',
     modelAlt: 'Een VISUAILS-model, consistent gestyled door een hele campagne',
     modelCta: 'Ontdek modellen',
     gradeH: 'Vier sferen. Dezelfde foto, vier keer anders afgewerkt.',

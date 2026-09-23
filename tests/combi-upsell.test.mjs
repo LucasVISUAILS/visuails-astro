@@ -50,7 +50,7 @@ const server = createServer(async (req, res) => {
 const PORT = await new Promise((r) => server.listen(0, '127.0.0.1', () => r(server.address().port)));
 const EXE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } : {});
-const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 900 } });
 
 console.log('de combinatie noemt het bedrag vóór de klik');
 {

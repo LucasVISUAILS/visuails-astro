@@ -31,19 +31,15 @@
    tekst geen bedrag meer voor de machtiging; AMOUNT blijft voor de proefvisual. */
 import {
   plans, euro, vatLabel, AMOUNT, planSaving,
-  CUSTOM_MONTH_ID, CUSTOM_MONTH_MIN_PRODUCTS, CUSTOM_MONTH_MAX_PRODUCTS,
-  customMonthTotal, addOnRate, CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
+  CUSTOM_MONTH_ID, CUSTOM_CREDITS_MIN, CUSTOM_CREDITS_MAX, CUSTOM_CREDITS_STEP,
+  customCreditsTotal, creditSaving, creditsFit, PLAN_CREDITS, PLAN_AMOUNT, SERVICE_CREDITS,
 } from '../../data/pricing.js';
 import {
-  TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel, term as termOf,
+  TERMS, TERM_IDS, monthlyCents, hasBrandModel, term as termOf,
   isPrepaid, prepayFreeMonths, prepayPaidMonths, prepayTotalCents, prepaySaveCents, PLAN_IDS,
 } from '../../data/plans.js';
 import { VOORUIT_COPY } from '../../data/vooruit.js';
 import { planName } from '../../data/planNames.js';
-/* Het maandbudget en wat je ermee kunt. Zie de kop van budget.js: dit is Lucas'
-   creditsysteem, met de euro als eenheid omdat een vaste creditwaarde stukloopt op
-   de clip die op elk plan hetzelfde kost terwijl een catalogset dat niet doet. */
-import { planBudget } from '../../data/budget.js';
 import { localizedPath } from '../../i18n/ui.js';
 import { EU_COUNTRIES, OTHER_COUNTRIES, vatShape, vatFormatError } from '../../data/vat.js';
 import { VOORKEUREN, VOORKEUR_STANDAARD, VOORKEUR_COPY } from '../../data/contactvoorkeur.js';
@@ -104,7 +100,7 @@ const FOUTEN: Record<string, string> = nl ? {
   plan: 'Kies eerst een abonnement.',
   termijn: 'Kies eerst een termijn.',
   vol: 'Er is deze maand geen plek meer voor dit abonnement. Mail hello@visuails.com — dan zetten we je op de lijst voor de eerstvolgende plek.',
-  maat: `Kies bij een maand op maat minstens ${CUSTOM_MONTH_MIN_PRODUCTS} en hoogstens ${CUSTOM_MONTH_MAX_PRODUCTS} producten, en niet meer carrousels dan producten.`,
+  maat: `Kies bij een abonnement op maat ${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX} credits per maand.`,
   gegevens: 'Vul je naam, e-mailadres en adres in — die staan straks op de factuur.',
   btw: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of laat het veld leeg.',
   opslaan: 'We konden je aanvraag niet vastleggen. Probeer het opnieuw, of mail hello@visuails.com.',
@@ -114,7 +110,7 @@ const FOUTEN: Record<string, string> = nl ? {
   plan: 'Choose a plan first.',
   termijn: 'Choose a term first.',
   vol: 'There is no room for this plan this month. Email hello@visuails.com and we will put you on the list for the next opening.',
-  maat: `A custom month needs at least ${CUSTOM_MONTH_MIN_PRODUCTS} and at most ${CUSTOM_MONTH_MAX_PRODUCTS} products, and no more carousels than products.`,
+  maat: `A custom plan is ${CUSTOM_CREDITS_MIN} to ${CUSTOM_CREDITS_MAX} credits a month.`,
   gegevens: 'Fill in your name, email address and address — they go on the invoice.',
   btw: 'That VAT number does not have the right shape for the country you picked. Correct it, or leave the field empty.',
   opslaan: 'We could not record your request. Try again, or email hello@visuails.com.',
@@ -213,7 +209,7 @@ type Regel = { t: string; sub?: string };
 type Variant = {
   plan: string; term: string; naam: string; kop: string;
   bedrag: string; eenheid: string; per?: string;
-  regels: Regel[]; los?: string; bespaar?: string; budget: string;
+  regels: Regel[]; los?: string; bespaar?: string;
 };
 
 const kopVan = (id: string) => ({
@@ -235,26 +231,21 @@ const gratisMax = Math.max(...PLAN_IDS.map((id) => prepayFreeMonths(id)));
 const varianten: Variant[] = [];
 for (const p of planList) {
   for (const t of TERM_IDS) {
-    const n = productsFor(p.id);
-    const k = clipsFor(p.id);
+    /* In credits sinds 23 september 2026: het saldo, en wat het oplevert. */
+    const cr = PLAN_CREDITS[p.id];
+    const fit = creditsFit(cr);
     const cents = monthlyCents(p.id, t);
     const tt = termOf(t);
     const besp = planSaving(p.id);
-    const beelden = n * COMPLETE_IMAGES;
     const regels: Regel[] = [
-      { t: nl ? `${n} producten` : `${n} products`,
-        /* Korter sinds 23 september 2026 (Lucas: *"chaotisch en niet fijn
-           leesbaar"*): het totaal vooraan, de opbouw erachter. */
+      { t: nl ? `${cr} credits per maand` : `${cr} credits a month`,
         sub: nl
-          ? `${beelden} beelden — per product ${CATALOG_IMAGES} catalog en ${LIFESTYLE_IMAGES} lifestyle`
-          : `${beelden} images — ${CATALOG_IMAGES} catalog and ${LIFESTYLE_IMAGES} lifestyle per product` },
-      ...(k ? [{ t: nl ? `${k} motion-clips` : `${k} motion clips`, sub: nl ? 'het product in beweging, 8 seconden' : 'the product in motion, 8 seconds' }] : []),
+          ? `bijvoorbeeld ${fit.catalog} catalogsets of ${fit.lifestyle} carousels`
+          : `for example ${fit.catalog} catalog sets or ${fit.lifestyle} carousels` },
       ...(hasBrandModel(p.id, t) ? [{ t: nl ? 'Je eigen merkmodel' : 'Your own brand model', sub: nl ? 'één gezicht, alleen voor jouw merk' : 'one face, for your brand only' }] : []),
-      { t: nl ? 'Een vaste week' : 'A fixed week',
-        sub: nl
-          ? (tt.perks.includes('standingWindow') ? 'dezelfde dagen, elke maand, vóór iedereen vrijgehouden' : 'elke maand voor jou gereserveerd vóór andere bestellingen')
-          : (tt.perks.includes('standingWindow') ? 'the same days every month, held before anyone else' : 'reserved for you every month before other orders') },
-      { t: nl ? `Ongebruikt schuift ${tt.rollover} ${tt.rollover === 1 ? 'maand' : 'maanden'} door` : `Unused rolls over ${tt.rollover} month${tt.rollover === 1 ? '' : 's'}` },
+      { t: nl ? 'Vaste productiedagen' : 'Fixed production days',
+        sub: nl ? 'elke maand, vóór losse bestellingen' : 'every month, ahead of one-off orders' },
+      { t: nl ? `Ongebruikte credits schuiven ${tt.rollover} ${tt.rollover === 1 ? 'maand' : 'maanden'} door` : `Unused credits roll over ${tt.rollover} month${tt.rollover === 1 ? '' : 's'}` },
       ...(tt.perks.includes('priceLock') ? [{ t: nl ? 'Prijsslot' : 'Price lock', sub: nl ? 'gaat het tarief omhoog, dan blijft het jouwe staan' : 'if the rate goes up, yours stays' }] : []),
       { t: tt.fixed
           ? (nl ? `Looptijd ${tt.months} maanden` : `${tt.months}-month term`)
@@ -295,8 +286,7 @@ for (const p of planList) {
           ? (nl ? `op de jaartermijn — ${euro(monthlyCents(p.id, 'monthly') / 100, lang)} maandelijks` : `on the 12-month term — ${euro(monthlyCents(p.id, 'monthly') / 100, lang)} monthly`)
           : undefined),
       regels,
-      budget: euro(planBudget(p.id), lang),
-      los: besp ? (nl ? `Los besteld: ${euro(besp.onLadder, lang)} per maand.` : `Ordered one-off: ${euro(besp.onLadder, lang)} a month.`) : undefined,
+      los: besp ? (nl ? `${besp.sets} catalogsets los: ${euro(besp.onLadder, lang)}.` : `${besp.sets} catalog sets one-off: ${euro(besp.onLadder, lang)}.`) : undefined,
       /* ── HET VOORDEEL WORDT PER TERMIJN GEREKEND — 10 september 2026 ──────
          planSaving() zet de LOSSE prijs af tegen PLAN_AMOUNT, en dat is het
          maandbedrag. Op een vooruitbetaald jaar betaalt de klant minder per
@@ -314,14 +304,28 @@ for (const p of planList) {
   }
 }
 
-/* De maand op maat heeft geen vast bedrag; hij volgt het laddertarief over jouw
-   aantal. Drie voorbeelden zeggen meer dan de regel: wat vijf, tien en twintig
-   producten mét carrousel kosten, uitgerekend met dezelfde functie als de
-   server gebruikt. */
-const maatVanaf = euro(customMonthTotal({ products: CUSTOM_MONTH_MIN_PRODUCTS }).total, lang);
-const maatVoorbeelden = [CUSTOM_MONTH_MIN_PRODUCTS, 10, 20].map((n) => {
-  const r = customMonthTotal({ products: n, carousels: n });
-  return { n, bedrag: euro(r.total, lang), beelden: r.images };
+/* ── HET ABONNEMENT OP MAAT, IN CREDITS — 23 september 2026 ─────────────
+   Eén veld: credits per maand. De prijs komt van dezelfde lijn als de drie
+   plannen (customCreditsTotal() in pricing.js) en de server rekent hem opnieuw
+   uit. De tabel hieronder is voor het script op de plaat; zonder script staan
+   er drie voorbeelden. */
+const MAAT_STANDAARD = Math.round(((PLAN_CREDITS.starter + PLAN_CREDITS.studio) / 2) / CUSTOM_CREDITS_STEP) * CUSTOM_CREDITS_STEP;
+const maatVanaf = euro(customCreditsTotal(CUSTOM_CREDITS_MIN).total, lang);
+const maatVoorbeelden = [60, 90, 180].map((n) => {
+  const r = customCreditsTotal(n);
+  const f = creditsFit(n);
+  return { n, bedrag: euro(r.total, lang), fit: f };
+});
+const MAAT_TABEL: Record<number, [number, number]> = {};
+for (let n = CUSTOM_CREDITS_MIN; n <= CUSTOM_CREDITS_MAX; n += 1) {
+  const t = customCreditsTotal(n);
+  const b = creditSaving(n, t.total);
+  MAAT_TABEL[n] = [t.total, b ? b.los : 0];
+}
+const MAAT_DATA = JSON.stringify({
+  min: CUSTOM_CREDITS_MIN, max: CUSTOM_CREDITS_MAX, tabel: MAAT_TABEL,
+  cat: SERVICE_CREDITS.catalog, life: SERVICE_CREDITS.lifestyle,
+  sep: nl ? ['.', ','] : [',', '.'],
 });
 
 /* ── WAT EEN ABONNEMENT JE OPLEVERT, IN DRIE REGELS — 23 september 2026 ─────
@@ -329,8 +333,8 @@ const maatVoorbeelden = [CUSTOM_MONTH_MIN_PRODUCTS, 10, 20].map((n) => {
    zijn."* De voordelen stonden er wel, maar verspreid: de besparing onderaan de
    plaat, de vaste week in stap 3, het opzeggen in een termijnkaart. Nu staan ze
    bovenaan, vóór de eerste keuze, en elk getal is uitgerekend uit pricing.js. */
-const besparingen = PLAN_IDS.map((id) => planSaving(id)).filter(Boolean) as { onLadder: number; saving: number }[];
-const maxPct = Math.max(...besparingen.map((s) => Math.round((s.saving / s.onLadder) * 100)));
+const besparingen = PLAN_IDS.map((id) => planSaving(id)).filter(Boolean) as { onLadder: number; saving: number; pct: number }[];
+const maxPct = Math.max(...besparingen.map((s) => s.pct));
 const bespMin = euro(Math.min(...besparingen.map((s) => s.saving)), lang);
 const bespMax = euro(Math.max(...besparingen.map((s) => s.saving)), lang);
 const doorMaand = termOf('monthly').rollover;
@@ -343,11 +347,11 @@ const gratisTekst = (taal: 'nl' | 'en') => {
 
 const c = nl ? {
   h: 'Je abonnement',
-  lede: 'Kies hoeveel je elke maand wilt laten maken. Je ziet meteen wat je krijgt, wat het kost en wat je bespaart.',
+  lede: 'Kies hoeveel credits je elke maand wilt. Je besteedt ze aan catalog, lifestyle en video.',
   voordelen: [
-    { t: `Tot ${maxPct}% goedkoper`, s: `Je betaalt ${bespMin} tot ${bespMax} per maand minder dan voor dezelfde beelden los.` },
-    { t: 'Een vaste week', s: 'Elke maand staan jouw producten ingepland, vóór andere bestellingen.' },
-    { t: 'Maandelijks opzegbaar', s: `Zelf, in je dashboard. Wat je niet gebruikt, schuift ${doorMaand === 1 ? 'een maand' : `${doorMaand} maanden`} door.` },
+    { t: `Tot ${maxPct}% goedkoper`, s: `${bespMin} tot ${bespMax} per maand minder dan dezelfde catalogsets los.` },
+    { t: 'Vaste productiedagen', s: 'Elke maand, vóór losse bestellingen.' },
+    { t: 'Maandelijks opzegbaar', s: `Ongebruikte credits schuiven ${doorMaand === 1 ? 'een maand' : `${doorMaand} maanden`} door.` },
   ],
   stap5: 'Bevestigen',
   alKlant: 'Al eerder besteld?',
@@ -356,18 +360,18 @@ const c = nl ? {
   stap2: 'Welke termijn',
   stap3: 'Je vaste week',
   perMaand: '/ mnd',
-  producten: 'producten',
+  producten: 'credits',
   clips: 'clips',
   merkmodel: 'merkmodel',
-  maatNaam: 'Maand op maat',
-  maatLine: `Stel zelf samen, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten.`,
-  maatFacts: 'jij kiest het aantal · altijd maandelijks',
-  maatProducten: 'Producten per maand',
-  maatCarrousels: 'Daarvan met lifestyle-carrousel',
-  maatClips: 'Motion-clips per maand',
-  maatHint: `Je betaalt het gewone laddertarief over jouw aantal — dezelfde prijs per product als bij een losse bestelling van die omvang; een carrousel kost er ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'nl')} tot ${euro(addOnRate(20), 'nl')} bovenop. Nooit meer carrousels dan producten. Een maand op maat loopt altijd maandelijks.`,
+  maatNaam: 'Abonnement op maat',
+  maatLine: `${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX} credits, precies wat je nodig hebt.`,
+  maatFacts: 'jij kiest het aantal credits · altijd maandelijks',
+  maatCredits: 'Credits per maand',
+  maatFitH: 'Daar krijg je bijvoorbeeld',
+  maatOf: 'of',
+  maatHint: 'Hoe meer credits, hoe goedkoper elke credit — op dezelfde lijn als de drie abonnementen. Altijd maandelijks.',
   maatCustomH: 'Wil je een eigen look erin?',
-  maatCustomBody: 'Een eigen look of je eigen merkmodel kan wél in een abonnement — maar niet via dit formulier. Zo’n look moet eerst worden opgezet, anders betaal je vanaf de eerste maand voor iets dat nog niet bestaat. Vraag hem aan via /start/custom-look; zodra hij klaar is, staat hij als tegel in je account en in het bestelformulier, ook binnen je maand.',
+  maatCustomBody: 'Een eigen look kan wél in een abonnement, maar pas als hij gemaakt is — anders betaal je voor iets dat nog niet bestaat. Vraag hem aan via /start/custom-look; zodra hij klaar is, kies je hem in je account als vaste look en kost hij gewoon de credits van een carousel.',
   maatCustomCta: 'Neem contact op',
   termMaand: 'Maandelijks',
   termMaandSub: 'Elke maand opzegbaar, zelf in je dashboard.',
@@ -379,26 +383,26 @@ const c = nl ? {
   termJaarSub: `Zelfde maandbedrag, vaste looptijd. Extra: een staande week, ${doorJaar} maanden doorschuiven en een prijsslot.`,
   termVooruit: '12 maanden vooruit',
   termVooruitSub: `Alles van 12 maanden, plus ${gratisTekst('nl')}: je betaalt het jaar in één keer. Stop je eerder, dan komt er geen geld terug; het restant wordt tegoed.`,
-  termMaat: 'Een maand op maat loopt altijd maandelijks.',
+  termMaat: 'Een abonnement op maat loopt altijd maandelijks.',
   weekHint: 'De dag van de maand waarop wij aan jouw producten beginnen. Elke maand dezelfde; je kunt hem later wijzigen.',
-  weekNote: 'Wij reserveren die week in de planning voor jou, elke maand opnieuw, vóórdat er andere bestellingen in mogen. Heb je die maand niets klaarstaan, dan vervalt de week niet: je producten schuiven door. Je kunt de dag altijd wijzigen in je dashboard.',
+  weekNote: 'Die week houden we elke maand voor je vrij, vóór andere bestellingen. Heb je niets klaarstaan, dan schuiven je credits door. Je kunt de dag altijd wijzigen in je dashboard.',
   weekLabel: 'Dag van de maand',
   sumLabel: 'Jouw maand',
   /* De aantallen komen uit pricing.js en staan hier niet ingetypt: de dag dat
      een catalogset vijf beelden wordt, klopt deze regel nog. */
-  perProductRegel: `Eén product: vier van de ${COMPLETE_IMAGES} beelden.`,
+  perProductRegel: '',
   tegelNoot: ECHTE_BESTELLING.nl,
   sumElke: 'Elke maand',
-  sumMaatH: 'Wat een maand op maat kost',
-  sumMaatSub: `Het bedrag volgt jouw aantal en staat op het scherm na de machtiging. Drie voorbeelden, elk product met carrousel:`,
-  sumMaatBeelden: 'beelden',
+  sumMaatH: 'Wat je abonnement op maat kost',
+  sumMaatSub: 'Drie voorbeelden:',
+  sumMaatBeelden: 'catalogsets',
   nuH: 'Wat er nu gebeurt',
   nu: [
     'Je betaalt je eerste maand via Mollie. Met die betaling geeft je bank ook de machtiging af voor de maanden erna.',
-    'Je vaste week staat meteen gepland en je saldo staat klaar.',
+    'Je credits staan meteen klaar en je vaste week is gepland.',
     'Je uploadt je producten in VISUAILS Studio; wij maken ze in jouw week.',
   ],
-  mandateNote: 'Een machtiging is de toestemming die je bank nodig heeft om ons maandelijks te laten incasseren — een SEPA-incasso, dezelfde vorm als bij een energieleverancier. Je geeft hem één keer af en je kunt hem altijd intrekken. De betaling van je eerste maand is de transactie waarmee je bank hem uitgeeft.',
+  mandateNote: 'Een machtiging laat je bank ons maandelijks incasseren (SEPA), zoals bij een energieleverancier. Je geeft hem af met de betaling van je eerste maand en kunt hem altijd intrekken.',
   submit: 'Doorgaan naar de machtiging',
   cancelNote: 'Opzeggen kan zelf, in je dashboard. Wat je hebt laten maken, blijft van jou.',
   /* ── STAP 4 BESTAAT SINDS 9 SEPTEMBER 2026 ────────────────────────────────
@@ -454,7 +458,7 @@ const c = nl ? {
   /* "Zelf te verdelen · € 1.158" stond op elke kaart, en dat las als een tweede
      prijs (Lucas, 23 sep: *"te onduidelijk"*). Op de kaart staat nu de
      besparing; het verdelen staat als één zin op de plaat. */
-  budgetLine: 'Niet elk product een complete set nodig? De {bedrag} aan productie verdeel je zelf, in de Studio.',
+  budgetLine: '',
   los: 'Los',
   jeBespaart: 'je bespaart',
   beelden: 'beelden',
@@ -470,11 +474,11 @@ const c = nl ? {
   },
 } : {
   h: 'Your plan',
-  lede: 'Choose how much you want made every month. You see straight away what you get, what it costs and what you save.',
+  lede: 'Choose how many credits you want each month. Spend them on catalog, lifestyle and video.',
   voordelen: [
-    { t: `Up to ${maxPct}% less`, s: `You pay ${bespMin} to ${bespMax} a month less than for the same images ordered one-off.` },
-    { t: 'A fixed week', s: 'Every month your products are scheduled, ahead of other orders.' },
-    { t: 'Cancel any month', s: `Yourself, in your dashboard. Anything unused rolls over ${doorMaand === 1 ? 'a month' : `${doorMaand} months`}.` },
+    { t: `Up to ${maxPct}% less`, s: `${bespMin} to ${bespMax} a month less than the same catalog sets one-off.` },
+    { t: 'Fixed production days', s: 'Every month, ahead of one-off orders.' },
+    { t: 'Cancel any month', s: `Unused credits roll over ${doorMaand === 1 ? 'a month' : `${doorMaand} months`}.` },
   ],
   stap5: 'Confirm',
   alKlant: 'Ordered before?',
@@ -483,18 +487,18 @@ const c = nl ? {
   stap2: 'Which term',
   stap3: 'Your fixed week',
   perMaand: '/ mo',
-  producten: 'products',
+  producten: 'credits',
   clips: 'clips',
   merkmodel: 'brand model',
-  maatNaam: 'Custom month',
-  maatLine: `Compose it yourself, from ${CUSTOM_MONTH_MIN_PRODUCTS} products.`,
-  maatFacts: 'you choose the number · always monthly',
-  maatProducten: 'Products a month',
-  maatCarrousels: 'Of those, with a lifestyle carousel',
-  maatClips: 'Motion clips a month',
-  maatHint: `You pay the ordinary ladder rate for your volume — the same per-product price a one-off order of that size costs; a carousel adds ${euro(addOnRate(CUSTOM_MONTH_MIN_PRODUCTS), 'en')} to ${euro(addOnRate(20), 'en')} on top. Never more carousels than products. A custom month always runs monthly.`,
+  maatNaam: 'Custom plan',
+  maatLine: `${CUSTOM_CREDITS_MIN} to ${CUSTOM_CREDITS_MAX} credits, exactly what you need.`,
+  maatFacts: 'you choose the credits · always monthly',
+  maatCredits: 'Credits a month',
+  maatFitH: 'That is enough for',
+  maatOf: 'or',
+  maatHint: 'The more credits, the cheaper each one — on the same line as the three plans. Always monthly.',
   maatCustomH: 'Want your own look in it?',
-  maatCustomBody: 'A look of your own, or your own brand model, can go into a plan — but not through this form. That look has to be set up first, otherwise you are paying from month one for something that does not exist yet. Request it via /start/custom-look; once it is ready, it appears as a tile in your account and in the order form, also within your month.',
+  maatCustomBody: 'A look of your own can go into a plan, but only once it is built — otherwise you pay for something that does not exist yet. Request it via /start/custom-look; once it is ready, you pick it in your account as your fixed look and it costs the ordinary carousel credits.',
   maatCustomCta: 'Get in touch',
   termMaand: 'Monthly',
   termMaandSub: 'Cancel any month, in your dashboard.',
@@ -503,17 +507,17 @@ const c = nl ? {
   termJaarSub: `Same monthly price, fixed term. Extra: a standing week, ${doorJaar} months of rollover and a price lock.`,
   termVooruit: '12 months up front',
   termVooruitSub: `Everything of 12 months, plus ${gratisTekst('en')}: you pay the year in one go. Stop early and there is no refund; what is left becomes credit.`,
-  termMaat: 'A custom month always runs monthly.',
+  termMaat: 'A custom plan always runs monthly.',
   weekHint: 'The day of the month we start on your products. The same every month; you can change it later.',
-  weekNote: 'We reserve that week in the calendar for you, every month, before any other order can take it. If you have nothing ready that month the week is not lost: your products roll over. You can change the day at any time in your dashboard.',
+  weekNote: 'We hold that week for you every month, ahead of other orders. Nothing ready? Your credits roll over. You can change the day any time in your dashboard.',
   weekLabel: 'Day of the month',
   sumLabel: 'Your month',
-  perProductRegel: `One product: four of its ${COMPLETE_IMAGES} images.`,
+  perProductRegel: '',
   tegelNoot: ECHTE_BESTELLING.en,
   sumElke: 'Every month',
-  sumMaatH: 'What a custom month costs',
-  sumMaatSub: 'The amount follows your numbers and is shown after the mandate. Three examples, every product with a carousel:',
-  sumMaatBeelden: 'images',
+  sumMaatH: 'What your custom plan costs',
+  sumMaatSub: 'Three examples:',
+  sumMaatBeelden: 'catalog sets',
   nuH: 'What happens next',
   nu: [
     'You pay your first month through Mollie. That same payment makes your bank issue the mandate for the months after it.',
@@ -521,10 +525,10 @@ const c = nl ? {
        Nederlands zei al "saldo". Op het scherm waar de machtiging wordt
        afgegeven, is dat het laatste moment om te klinken als software.
        17 september 2026. */
-    'Your fixed week is planned straight away and your balance is ready.',
+    'Your credits are ready straight away and your fixed week is planned.',
     'You upload your products in VISUAILS Studio; we make them in your week.',
   ],
-  mandateNote: 'A mandate is the permission your bank needs to let us collect monthly — a SEPA direct debit, the same shape as an energy supplier uses. You give it once and you can withdraw it at any time. Paying your first month is the transaction that makes your bank issue it.',
+  mandateNote: 'A mandate lets your bank pay us monthly (SEPA direct debit), like an energy supplier. You give it with your first month’s payment and can withdraw it any time.',
   submit: 'Continue to the mandate',
   cancelNote: 'You can cancel yourself, in your dashboard. Whatever you had made stays yours.',
   /* Zie de Nederlandse tegenhanger. */
@@ -556,7 +560,7 @@ const c = nl ? {
   ingelogdAls: 'These come from your account. If something is not right, change it here — we keep the change.',
   ingelogdMail: 'This is your account address.',
   signIn: 'Sign in',
-  budgetLine: 'Not every product needs a complete set? You divide the {bedrag} of production yourself, in the Studio.',
+  budgetLine: '',
   los: 'One-off',
   jeBespaart: 'you save',
   beelden: 'images',
@@ -592,8 +596,6 @@ const termijnen = TERM_IDS.map((id) => {
    staat er alleen als hij afwijkt — bij precies één plan (zie discountMonths in
    plans.js); twee keer hetzelfde bedrag laat de jaartermijn zinloos lijken. */
 const kaarten = planList.map((p) => {
-  const n = productsFor(p.id);
-  const k = clipsFor(p.id);
   const maand = monthlyCents(p.id, 'monthly');
   const jaar = monthlyCents(p.id, 'yearly');
   const besp = planSaving(p.id);
@@ -603,23 +605,14 @@ const kaarten = planList.map((p) => {
     line: p.line,
     bedrag: euro(maand / 100, lang),
     jaar: jaar !== maand ? (nl ? `${euro(jaar / 100, lang)} op de jaartermijn` : `${euro(jaar / 100, lang)} on the 12-month term`) : null,
-    /* Eén feit per regel sinds 23 september 2026: "12 producten · 2 clips" op
-       één grijze regel was precies het soort regel dat je overslaat. */
+    /* In credits sinds 23 september 2026 — zie de kop van PlansPage.astro. */
     facts: [
-      `${n} ${c.producten} · ${n * COMPLETE_IMAGES} ${c.beelden}`,
-      ...(k ? [`${k} ${c.motion}`] : []),
+      `${p.credits} credits · ${p.perCredit} ${nl ? 'per credit' : 'per credit'}`,
+      nl ? `${p.fit.catalog} catalogsets of ${p.fit.lifestyle} carousels` : `${p.fit.catalog} catalog sets or ${p.fit.lifestyle} carousels`,
       ...(hasBrandModel(p.id, 'monthly') ? [c.eigenModel] : []),
     ],
     los: besp ? `${c.los} ${euro(besp.onLadder, lang)}` : null,
     bespaar: besp ? `${c.jeBespaart} ${euro(besp.saving, lang)}` : null,
-    /* ── HET MAANDBUDGET — 9 september 2026 ──────────────────────────────
-       Lucas: *"Zie het meer als credits die je zelf kan uitgeven op wat je nodig
-       hebt."* Dit is de eerste plek waar dat zichtbaar wordt: naast "12
-       producten" staat nu wat die twaalf waard zijn, en dus dat je er iets anders
-       voor mag kiezen. Het getal komt uit budget.js en is de PRODUCTIEWAARDE van
-       wat het plan belooft — niet de prijs, want de korting hoort in de prijs te
-       zitten en niet in het budget. Zie de kop van dat bestand. */
-    budget: euro(planBudget(p.id), lang),
   };
 });
 
@@ -726,22 +719,17 @@ const kaarten = planList.map((p) => {
               </label>
             </div>
 
+            {/* ── ÉÉN VELD: CREDITS PER MAAND — 23 september 2026 ───────────
+                Hier stonden drie velden (producten, carrousels, clips). Een
+                abonnement is een saldo credits; wat je ermee doet kies je elke
+                maand in de Studio. `min`/`max` zijn geen validatie — die staat
+                in handleSubscribeStart() en is de enige die telt. */}
             <div class="maat-velden">
               <span class="maat-veld">
-                <label for="maat-producten">{c.maatProducten}</label>
-                <input id="maat-producten" type="number" name="producten" inputmode="numeric"
-                       min={CUSTOM_MONTH_MIN_PRODUCTS} max={CUSTOM_MONTH_MAX_PRODUCTS}
-                       step="1" placeholder={String(CUSTOM_MONTH_MIN_PRODUCTS)} />
-              </span>
-              <span class="maat-veld">
-                <label for="maat-carrousels">{c.maatCarrousels}</label>
-                <input id="maat-carrousels" type="number" name="carrousels" inputmode="numeric"
-                       min="0" max={CUSTOM_MONTH_MAX_PRODUCTS} step="1" placeholder="0" />
-              </span>
-              <span class="maat-veld">
-                <label for="maat-clips">{c.maatClips}</label>
-                <input id="maat-clips" type="number" name="clips" inputmode="numeric"
-                       min="0" max={CUSTOM_MONTH_MAX_PRODUCTS} step="1" placeholder="0" />
+                <label for="maat-credits">{c.maatCredits}</label>
+                <input id="maat-credits" type="number" name="credits" inputmode="numeric"
+                       min={CUSTOM_CREDITS_MIN} max={CUSTOM_CREDITS_MAX}
+                       step="1" value={MAAT_STANDAARD} data-ps-credits />
               </span>
               <p class="maat-hint">{c.maatHint}</p>
             </div>
@@ -809,26 +797,39 @@ const kaarten = planList.map((p) => {
                   <li><span class="ps-sum-i" set:html={CHECK} /><span><b>{r.t}</b>{r.sub ? <span class="ps-sum-sub"> — {r.sub}</span> : null}</span></li>
                 ))}
               </ul>
-              <p class="ps-sum-budget">{c.budgetLine.replace('{bedrag}', v.budget)}</p>
             </div>
           ))}
 
           <div class="ps-sumv" data-plan={CUSTOM_MONTH_ID} data-term="monthly">
             <h2 class="ps-sum-naam">{c.maatNaam}</h2>
             <p class="ps-sum-kop">{c.maatLine}</p>
-            <p class="ps-sum-h">{c.sumMaatH}</p>
-            <p class="ps-sum-maatsub">{c.sumMaatSub}</p>
-            <ul class="ps-sum-vb">
-              {maatVoorbeelden.map((m) => (
-                <li>
-                  <span class="ps-vb-n">{m.n} {c.producten}</span>
-                  <span class="ps-vb-b">{m.bedrag}<small> {c.perMaand}</small></span>
-                  <span class="ps-vb-i">{m.beelden} {c.sumMaatBeelden}</span>
-                </li>
-              ))}
-            </ul>
+            {/* Met script: het bedrag voor het aantal in het veld (data-ps-maat).
+                Zonder script: drie voorbeelden. Beide uit customCreditsTotal(). */}
+            <div class="ps-maat-live" data-ps-maat hidden>
+              <div class="bedrag ps-bedrag">
+                <span class="bedrag-cijfer" data-ps-maat-out="prijs"></span>
+                <span class="bedrag-eenheid">{nl ? 'per maand' : 'per month'} · {vatLabel('excl', lang)}</span>
+              </div>
+              <p class="ps-sum-los"><span><span data-ps-maat-out="credits"></span> credits · <span data-ps-maat-out="per"></span> {nl ? 'per credit' : 'per credit'}</span></p>
+              <p class="ps-sum-h">{c.maatFitH}</p>
+              <p class="ps-sum-maatsub"><b data-ps-maat-out="cat"></b> {nl ? 'catalogsets' : 'catalog sets'} {c.maatOf} <b data-ps-maat-out="life"></b> {nl ? 'carousels' : 'carousels'}</p>
+            </div>
+            <div class="ps-maat-vb" data-ps-maat-vb>
+              <p class="ps-sum-h">{c.sumMaatH}</p>
+              <p class="ps-sum-maatsub">{c.sumMaatSub}</p>
+              <ul class="ps-sum-vb">
+                {maatVoorbeelden.map((m) => (
+                  <li>
+                    <span class="ps-vb-n">{m.n} credits</span>
+                    <span class="ps-vb-b">{m.bedrag}<small> {c.perMaand}</small></span>
+                    <span class="ps-vb-i">{m.fit.catalog} {c.sumMaatBeelden}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
             <p class="ps-sum-sub">{c.termMaat}</p>
           </div>
+          <script type="application/json" data-ps-maat-data is:inline set:html={MAAT_DATA}></script>
 
           {tegels.length > 0 && (
             <div class="ps-tegelblok">
@@ -837,7 +838,7 @@ const kaarten = planList.map((p) => {
                   <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
                 ))}
               </ul>
-              <p class="ps-tegels-noot">{c.perProductRegel}</p>
+              {c.perProductRegel && <p class="ps-tegels-noot">{c.perProductRegel}</p>}
               <p class="ps-tegels-noot ps-tegels-klein">{c.tegelNoot}</p>
             </div>
           )}
@@ -1279,6 +1280,48 @@ const kaarten = planList.map((p) => {
       );
       if (radio) radio.checked = true;
     });
+    /* Het aantal credits van het plan op maat, als /plans het meegeeft
+       (?plan=maat&credits=85). Alleen cijfers; het veld zelf bewaakt min en
+       max niet — dat doet de server. */
+    var credits = qs.get('credits');
+    var veld = document.querySelector('[data-ps-credits]');
+    if (veld && credits && /^\d{1,3}$/.test(credits)) veld.value = credits;
+  })();
+
+  /* ── DE PLAAT VAN HET PLAN OP MAAT — 23 september 2026 ────────────────────
+   * Leest de tabel die bij het bouwen uit customCreditsTotal() is gemaakt en
+   * zet bedrag, prijs per credit en wat je ervoor krijgt bij het getal in het
+   * veld. Rekent zelf niets; zonder script blijven de drie voorbeelden staan. */
+  (function () {
+    var bron = document.querySelector('[data-ps-maat-data]');
+    var veld = document.querySelector('[data-ps-credits]');
+    var live = document.querySelector('[data-ps-maat]');
+    var vb = document.querySelector('[data-ps-maat-vb]');
+    if (!bron || !veld || !live) return;
+    var D;
+    try { D = JSON.parse(bron.textContent || '{}'); } catch (e) { return; }
+    var euro = function (bedrag) {
+      var centen = Math.round(bedrag * 100) % 100 !== 0;
+      var delen = bedrag.toFixed(centen ? 2 : 0).split('.');
+      return '€' + delen[0].replace(/\B(?=(\d{3})+(?!\d))/g, D.sep[0]) + (delen[1] ? D.sep[1] + delen[1] : '');
+    };
+    var zet = function (k, v) { var el = live.querySelector('[data-ps-maat-out="' + k + '"]'); if (el) el.textContent = v; };
+    function teken() {
+      var n = parseInt(veld.value, 10);
+      if (isNaN(n)) n = D.min;
+      n = Math.min(D.max, Math.max(D.min, n));
+      var rij = D.tabel[n];
+      if (!rij) return;
+      zet('prijs', euro(rij[0]));
+      zet('credits', String(n));
+      zet('per', euro(Math.round((rij[0] / n) * 100) / 100));
+      zet('cat', String(Math.floor(n / D.cat)));
+      zet('life', String(Math.floor(n / D.life)));
+      live.hidden = false;
+      if (vb) vb.hidden = true;
+    }
+    veld.addEventListener('input', teken);
+    teken();
   })();
 </script>
 

@@ -34,8 +34,8 @@ import { hashToken } from '../src/lib/token.js';
 import { handleSubscribeStart, handleSubscribeReturn, eersteTermijn } from '../src/lib/subscribe.js';
 import { prepayTotalCents, monthlyCents } from '../src/data/plans.js';
 import { productsFor, planProductBudget } from '../src/data/plans.js';
-import { customMonthSlots, customMonthTotal } from '../src/data/pricing.js';
-import { bundelVoor, subMaandCents, subProducten, subBrutoCents } from '../src/lib/slots.js';
+import { customCreditsTotal, creditsProductEquivalent, CUSTOM_CREDITS_MIN, CUSTOM_CREDITS_MAX } from '../src/data/pricing.js';
+import { bundelVoor, subMaandCents, subProducten, subBrutoCents, creditsVoor } from '../src/lib/slots.js';
 import { subscriptionShape } from '../src/lib/subscription.js';
 
 let ok_ = 0; let totaal = 0;
@@ -612,13 +612,15 @@ console.log('\nde maand op maat');
   db.exec("INSERT INTO customers (id, email, brand) VALUES (9, 'maat@merk.test', 'MAAT')");
   const MAAT = { customer_id: 9, email: 'maat@merk.test', brand: 'MAAT' };
 
+  /* Sinds 23 september 2026 in credits: één veld, `credits`. */
   const grenzen = [
-    ['te weinig producten', { producten: '4' }],
-    ['te veel producten', { producten: '999' }],
-    ['geen aantal', { producten: '' }],
-    ['meer carrousels dan producten', { producten: '6', carrousels: '7' }],
-    ['een negatief aantal clips', { producten: '6', clips: '-2' }],
-    ['iets dat geen getal is', { producten: 'zes' }],
+    ['te weinig credits', { credits: String(CUSTOM_CREDITS_MIN - 1) }],
+    ['te veel credits', { credits: String(CUSTOM_CREDITS_MAX + 1) }],
+    ['geen aantal', { credits: '' }],
+    ['een negatief aantal', { credits: '-60' }],
+    ['een kommagetal', { credits: '60.5' }],
+    ['iets dat geen getal is', { credits: 'zestig' }],
+    ['alleen de oude velden', { producten: '9', carrousels: '3' }],
   ];
   const voorGrenzen = staat.aanroepen.length;
   for (const [naam, velden] of grenzen) {
@@ -632,7 +634,7 @@ console.log('\nde maand op maat');
   /* ── EEN GELDIGE MAAND ──────────────────────────────────────────────────── */
   const res = await start({
     plan: 'maat', term: 'monthly', window_day: '8', lang: 'nl',
-    producten: '9', carrousels: '3', clips: '2',
+    credits: '85',
     /* Meegestuurd en met opzet genegeerd: dit is het veld dat een klant zou
        verzinnen als de prijs uit de browser kwam. */
     amount_cents: '100', bedrag: '1', total: '1',
@@ -643,38 +645,32 @@ console.log('\nde maand op maat');
   ok('de rij draagt plan maat', r.plan, 'maat');
   ok('en loopt maandelijks', r.term, 'monthly');
 
-  /* HET BEDRAG IS OPNIEUW UITGEREKEND EN NIET OVERGENOMEN. 9 catalogsets op de
-     trede van negen plus 3 opslagen plus 2 clips — uit customMonthTotal(), hier
-     opnieuw uitgerekend zodat een wijziging in de ladder deze toets meeneemt in
-     plaats van hem te laten liegen. */
-  const verwacht = Math.round(customMonthTotal({ products: 9, carousels: 3, clips: 2 }).total * 100);
-  ok('het bedrag komt uit de ladder en niet uit het formulier', r.amount_cents, verwacht);
+  /* HET BEDRAG IS OPNIEUW UITGEREKEND EN NIET OVERGENOMEN — uit
+     customCreditsTotal(), dezelfde lijn als de drie plannen. */
+  const verwacht = Math.round(customCreditsTotal(85).total * 100);
+  ok('het bedrag komt uit de creditlijn en niet uit het formulier', r.amount_cents, verwacht);
+  ok('  en ligt tussen Starter en Studio in', verwacht > 39000 && verwacht < 79000, true);
   ok('  en zeker niet uit het veld dat de klant meestuurde', r.amount_cents === 100, false);
 
-  /* DE BUNDEL. Negen producten waarvan drie met carrousel is zes catalogslots en
-     drie completeslots — een complete slot IS een catalogset plus de carrousel. */
-  ok('de bundel staat op de rij', JSON.parse(r.slots_json),
-    { catalog: 6, complete: 3, 'video-motion': 2 });
-  ok('en customMonthSlots() zegt hetzelfde',
-    JSON.parse(r.slots_json), customMonthSlots({ products: 9, carousels: 3, clips: 2 }));
+  /* DE BUNDEL: het saldo in credits, op de rij. */
+  ok('de bundel staat op de rij', JSON.parse(r.slots_json), { credits: 85 });
 
   /* ── WAT HET SYSTEEM ERVAN MAAKT ────────────────────────────────────────── */
   const vol = db.prepare('SELECT * FROM subscriptions WHERE customer_id = 9').get();
-  ok('subProducten() telt negen en niet nul', subProducten(vol), 9);
+  ok('subProducten() telt de credits als producten, niet nul', subProducten(vol), creditsProductEquivalent(85));
   ok('subMaandCents() geeft het bevroren bedrag', subMaandCents(vol), verwacht);
-  ok('bundelVoor() geeft de eigen bundel', bundelVoor(vol), { catalog: 6, complete: 3, 'video-motion': 2 });
+  ok('creditsVoor() geeft 85 credits per maand', creditsVoor(vol), 85);
   /* En de vorm die het dashboard leest. Zonder de eigen tak in subscriptionShape()
      gooit planShape() hier op productsFor('maat') en geeft het dashboard een 500. */
   const vorm = subscriptionShape(vol);
   ok('subscriptionShape() valt niet om op een maand op maat', Boolean(vorm), true);
-  ok('  en noemt het juiste aantal producten', vorm.products, 9);
-  ok('  en het juiste aantal clips', vorm.clips, 2);
+  ok('  en noemt het juiste saldo', vorm.credits, 85);
   ok('  en toont geen verzonnen besparing', vorm.ladderCents, vorm.monthlyCents);
 
   /* ── DE JAARTERMIJN WORDT AFGEDWONGEN NAAR MAANDELIJKS ──────────────────── */
   db.exec("INSERT INTO customers (id, email, brand) VALUES (10, 'jaar@merk.test', 'JAAR')");
   await start({
-    plan: 'maat', term: 'yearly', window_day: '8', lang: 'nl', producten: '6',
+    plan: 'maat', term: 'yearly', window_day: '8', lang: 'nl', credits: '60',
   }, { customer_id: 10, email: 'jaar@merk.test', brand: 'JAAR' });
   const rj = db.prepare('SELECT * FROM subscriptions WHERE customer_id = 10').get();
   ok('een jaartermijn op een maand op maat wordt maandelijks', rj?.term, 'monthly');
@@ -710,8 +706,8 @@ console.log('\nde contactpoort voor alles wat eerst opgezet moet worden');
      betaalt de klant vanaf de eerste maand voor een stijl die nog niet bestaat. */
   const picker = readFileSync(new URL('../src/components/order/PlanPicker.astro', import.meta.url), 'utf8');
   ok('de vierde optie staat in het formulier', /value=\{CUSTOM_MONTH_ID\}/.test(picker), true);
-  ok('met drie velden en niet met een bedrag',
-    ['producten', 'carrousels', 'clips'].every((n) => new RegExp(`name="${n}"`).test(picker)), true);
+  ok('met één veld voor credits en niet met een bedrag', /name="credits"/.test(picker), true);
+  ok('  en zonder de oude drie velden', ['producten', 'carrousels', 'clips'].some((n) => new RegExp(`name="${n}"`).test(picker)), false);
   /* GEEN PRIJSVELD. Een <input> met een bedrag erin zou precies het veld zijn dat
      §1 hierboven negeert — en een veld dat genegeerd wordt, hoort er niet te staan. */
   ok('en zonder enig veld dat een bedrag meestuurt',

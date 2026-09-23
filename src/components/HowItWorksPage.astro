@@ -79,8 +79,6 @@ const PER_PRODUCT_VISUALS = CATALOG_IMAGES + LIFESTYLE_IMAGES;
 const EX_FULL = 30;
 const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 
-/* De regels van stap 01: de koppen van de vier bestelstappen uit demo.js. */
-const bestelRegels = ['upload', 'look', 'window', 'pay'].map((id) => t.steps[id].h);
 const fase = (id: string) => t.fasen[id] || { n: '', duur: '', h: '' };
 const kopregel = (nr: string, id: string) => [nr, fase(id).n].filter(Boolean).join(' · ');
 
@@ -93,53 +91,55 @@ const lijst = (xs: string[]) => nl
   : xs.slice(0, -1).join(', ') + ' or ' + xs[xs.length - 1];
 const DIENST_PAD: Record<string, string> = { catalog: '/catalog', lifestyle: '/lifestyle', video: '/video' };
 
+/* 23 september 2026 — Lucas: *"de tekst neemt veel ruimte in en is simpelweg
+   te veel voor iets dat niet ingewikkeld is."* Ingekort tot wat iemand nodig
+   heeft om te bestellen: de drie stappen in één zin elk, de leverdatum, de
+   rechten en de formaten. De regels en de noot onder de stations zijn weg;
+   2048 px en de bestandsformaten staan nu bij "Jouw rechten". */
 const COPY = {
   en: {
     h1a: 'One folder in.',
     h1b: 'A whole ',
     h1em: 'batch',
     h1c: ' out.',
-    lead: `You send a folder of product photos and a short note. We give the order a delivery date the calendar can actually hold, produce it, check it by hand, and hand it back image by image.`,
+    lead: `Send us your product photos. We make the images, a specialist checks them, and you approve them one by one.`,
     ctaStart: 'Start an order',
     ctaSample: TEST_SAMPLE.en.cta,
 
     flowH: 'Your order, end to end.',
-    flowLede: 'Three steps, and that is all of it: you order, we make, you approve. The same road for catalog, lifestyle and video.',
+    flowLede: '',
     stations: [
       {
         woord: fase('bestellen').h,
-        zin: 'One form: your photos, the look, how many products and when you need them. You pay at the end — production starts after that.',
+        zin: 'Your photos, the look and a delivery date, in one form.',
         etiket: 'Sent in', etiketNoot: '3 of 5 · phone',
       },
       {
         woord: fase('maken').h,
-        zin: 'Every product runs as one series, so light, angle and grade match across the whole order. A specialist checks every image.',
-        regels: ['One series per product', 'A face from the shared roster, at no extra cost', 'Every image checked by a specialist'],
+        zin: 'One matching series per product, checked by a specialist.',
         etiket: 'Delivered', etiketNoot: `${CATALOG_IMAGES} images · 2048 px`,
         link: 'See more work',
       },
       {
         woord: 'You approve',
-        zin: 'Approve each image on its own, or send it back with a note. What is good, you download straight away.',
-        regels: ['One revision round per order', 'Download at 2048 px, as jpg, png and webp', 'Full commercial rights'],
-        noot: `Smaller orders work more simply still. ${clause(TIERS.unattended.delivery.en)}.`,
+        zin: 'Approve each image or ask for a revision. Download straight away.',
         link: 'Look inside the portal',
       },
     ],
     gateLead: 'You only see dates the calendar can still hold.',
-    gateBody: `From ${WINDOW_THRESHOLD} products you pick a delivery date in the form, and the calendar only offers days with room left. That date is held the moment your order is in, and you pay straight away. Should a day fill up between choosing and ordering, you hear that at once and pick again — no date is invented to keep an order. It is the one promise on this site we would rather lose an order over than break.`,
+    gateBody: `From ${WINDOW_THRESHOLD} products you pick a delivery date in the form. The calendar only offers days with room left, and your date is held once the order is in.`,
     dienstenH: 'Per service',
     kiest: {
       catalog: `Background: ${lijst(achtergronden)}`,
       lifestyle: 'A look from the range',
       video: VIDEO_OP_AANVRAAG ? 'On request' : 'A style from the range',
     },
-    verderH: 'Want to see more of the inner workings?',
-    verderStudio: 'The studio day and the calendar',
+    verderH: 'Behind the scenes:',
+    verderStudio: 'The calendar',
     verderAbout: 'Who is behind it',
 
     craftH: 'More than AI. Finished by hand.',
-    craftBody: "We build every image ourselves. Generating is one of the steps — then it goes through a pair of hands: finished in professional editing software, colour graded to your brand. Then a specialist checks three things: does the product match your own photo, do all the images look the same, and is the framing right.",
+    craftBody: "Every image is finished by hand and checked by a specialist before you see it.",
     chips: ['Professional editing & retouch', 'Colour grading to your brand', reviewClaim('attended', 'en')],
     beforeAlt: 'The T-shirt as it was sent in: a phone photo on a wooden table',
     afterAlt: 'The same T-shirt, finished on off-white and checked by hand',
@@ -148,26 +148,23 @@ const COPY = {
     details: [
       { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that: ${clause(turnaround('unattended', 'en')).toLowerCase()}, ${clause(TIERS.unattended.queue.en).toLowerCase()}.` },
       { t: 'If something is off', b: `${aftercare('attended', 'en')}` },
-      { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
+      { t: 'Your rights', b: 'Full commercial rights. Every image at 2048 px, as jpg, png and webp.', linkText: 'Terms', linkHref: '/terms' },
     ],
     landH: 'One order, every place it has to go.',
-    landLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} images each — ${EX_VISUALS} finished images, cut for where they have to sit.`,
+    landLede: `${EX_FULL} products make ${EX_VISUALS} finished images, cut for every channel.`,
     land: [
-      ['Product page hero', 'On white or in scene'],
-      ['Product page grid', 'Front, back and a fabric detail'],
-      ['On-model shot', 'In every catalog set'],
-      ['Instagram carousel', 'Three styled frames per product'],
-      ['Reels and TikTok', 'Vertical clips, added per clip to any order'],
-      ['Paid social', 'The same look in ad crops'],
-      ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
-      ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
+      ['Product page', 'On white, on a model'],
+      ['Instagram', 'Carousel, three frames'],
+      ['Reels and TikTok', 'Vertical clips'],
+      ['Ads', 'Ad crops'],
+      ['Marketplaces', 'Zalando, Amazon, bol'],
     ],
-    landNote: 'You pick the aspect ratio for these when you order, and every image arrives as jpg, png and webp.',
+    landNote: '',
 
-    faqGuides: `The FAQ answers the practical ones; the longer reads — how to shoot the photo you send us, what a shoot day actually costs — are in the <a href="${lp('/guides')}">guides</a>.`,
+    faqGuides: `longer reads in the <a href="${lp('/guides')}">guides</a>.`,
     faqCta: 'Read the FAQ',
     ctaH: 'One of your own products, as a catalog set or a carousel.',
-    ctaBody: `One test sample per business — ${sample}, no commitment. It runs through the same production as a paid order.`,
+    ctaBody: `One test sample per business — ${sample}, no commitment.`,
     ctaSampleBtn: TEST_SAMPLE.en.cta,
     ctaStartBtn: 'Start an order',
     wa: waHref("Hi VISUAILS, I have a question about how an order works."),
@@ -178,47 +175,44 @@ const COPY = {
     h1b: 'Een hele ',
     h1em: 'bestelling',
     h1c: ' eruit.',
-    lead: 'Jij stuurt een map met productfoto’s en een korte notitie. Wij geven de bestelling een leverdatum die de agenda ook echt kan vasthouden, produceren hem, controleren met de hand, en geven hem beeld voor beeld terug.',
+    lead: 'Stuur je productfoto’s. Wij maken de beelden, een specialist controleert ze, en jij keurt ze beeld voor beeld goed.',
     ctaStart: 'Start een bestelling',
     ctaSample: TEST_SAMPLE.nl.cta,
 
     flowH: 'Je bestelling, van begin tot eind.',
-    flowLede: 'Drie stappen, en meer is het niet: jij bestelt, wij maken, jij keurt goed. Dezelfde weg voor catalog, lifestyle en video.',
+    flowLede: '',
     stations: [
       {
         woord: fase('bestellen').h,
-        zin: 'Eén formulier: je foto’s, de look, hoeveel producten en wanneer je ze nodig hebt. Je betaalt aan het eind — daarna start de productie.',
+        zin: 'Je foto’s, de look en een leverdatum, in één formulier.',
         etiket: 'Ingestuurd', etiketNoot: '3 van 5 · telefoon',
       },
       {
         woord: fase('maken').h,
-        zin: 'Elk product gaat als één serie door de productie, dus licht, hoek en kleur kloppen over de hele bestelling. Een specialist kijkt elk beeld na.',
-        regels: ['Eén serie per product', 'Een gezicht uit de gedeelde bibliotheek, zonder meerprijs', 'Elk beeld nagekeken door een specialist'],
+        zin: 'Eén kloppende serie per product, nagekeken door een specialist.',
         etiket: 'Geleverd', etiketNoot: `${CATALOG_IMAGES} beelden · 2048 px`,
         link: 'Meer werk zien',
       },
       {
         woord: 'Je keurt goed',
-        zin: 'Elk beeld apart goedkeuren, of terugsturen met een notitie. Wat goed is, download je meteen.',
-        regels: ['Eén revisieronde per bestelling', 'Downloaden op 2048 px, als jpg, png en webp', 'Volledige commerciële rechten'],
-        noot: `Kleinere bestellingen werken nog simpeler. ${clause(TIERS.unattended.delivery.nl)}.`,
+        zin: 'Keur elk beeld goed of vraag een revisie. Meteen downloaden.',
         link: 'Het portaal van binnen',
       },
     ],
     gateLead: 'Je ziet alleen dagen die de agenda nog kan vasthouden.',
-    gateBody: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum, en de agenda biedt alleen dagen aan waar nog ruimte is. Die datum ligt vast zodra je bestelling binnen is, en je betaalt meteen. Is een dag net vol geraakt tussen kiezen en bestellen, dan hoor je dat direct en kies je opnieuw — er wordt geen datum verzonnen om een bestelling binnen te houden. Het is de enige belofte op deze site waarvoor we liever een bestelling verliezen dan dat we hem breken.`,
+    gateBody: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum. De agenda toont alleen dagen met ruimte, en je datum ligt vast zodra de bestelling binnen is.`,
     dienstenH: 'Per dienst',
     kiest: {
       catalog: `Achtergrond: ${lijst(achtergronden)}`,
       lifestyle: 'Een look uit de reeks',
       video: VIDEO_OP_AANVRAAG ? 'Op aanvraag' : 'Een stijl uit de reeks',
     },
-    verderH: 'Wil je meer van het binnenwerk zien?',
-    verderStudio: 'De studiodag en de kalender',
+    verderH: 'Achter de schermen:',
+    verderStudio: 'De agenda',
     verderAbout: 'Wie erachter zit',
 
     craftH: 'Meer dan AI. Met de hand afgewerkt.',
-    craftBody: 'Wij bouwen elk beeld zelf op. Genereren is daarin één stap — daarna gaat het beeld door de hand: afgewerkt in professionele editingsoftware, kleur gecorrigeerd naar je merk. Daarna kijkt een specialist naar drie dingen: klopt het product met je eigen foto, zien alle beelden er hetzelfde uit, en zit de uitsnede goed.',
+    craftBody: 'Elk beeld wordt met de hand afgewerkt en door een specialist gecontroleerd voordat jij het ziet.',
     chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
     beforeAlt: 'Het T-shirt zoals het werd ingestuurd: een telefoonfoto op een houten tafel',
     afterAlt: 'Hetzelfde T-shirt, afgewerkt op gebroken wit en met de hand gecontroleerd',
@@ -227,26 +221,23 @@ const COPY = {
     details: [
       { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, ${clause(TIERS.unattended.queue.nl).toLowerCase()}.` },
       { t: 'Als iets niet klopt', b: `${aftercare('attended', 'nl')}` },
-      { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
+      { t: 'Jouw rechten', b: 'Volledige commerciële rechten. Elk beeld op 2048 px, als jpg, png en webp.', linkText: 'Voorwaarden', linkHref: '/terms' },
     ],
     landH: 'Eén bestelling, overal waar hij heen moet.',
-    landLede: `Een seizoen van ${EX_FULL} producten is ${PER_PRODUCT_VISUALS} foto’s per stuk — ${EX_VISUALS} afgewerkte foto’s, uitgesneden voor waar ze moeten staan.`,
+    landLede: `${EX_FULL} producten worden ${EX_VISUALS} afgewerkte beelden, uitgesneden voor elk kanaal.`,
     land: [
-      ['Hero op de productpagina', 'Op wit of in scène'],
-      ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail'],
-      ['Beeld op een model', 'In elke catalogset'],
-      ['Instagram-carousel', 'Drie gestylede beelden per product'],
-      ['Reels en TikTok', 'Verticale clips, per clip bij elke bestelling te voegen'],
-      ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes'],
-      ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
-      ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
+      ['Productpagina', 'Op wit, op een model'],
+      ['Instagram', 'Carousel, drie beelden'],
+      ['Reels en TikTok', 'Verticale clips'],
+      ['Advertenties', 'Advertentie-uitsnedes'],
+      ['Marktplaatsen', 'Zalando, Amazon, bol'],
     ],
-    landNote: 'De beeldverhouding hiervoor kies je bij het bestellen, en elk beeld komt als jpg, png en webp.',
+    landNote: '',
 
-    faqGuides: `De FAQ beantwoordt de praktische vragen; de langere stukken — hoe je de foto maakt die je ons stuurt, wat een shootdag echt kost — staan bij de <a href="${lp('/guides')}">gidsen</a>.`,
+    faqGuides: `langere stukken bij de <a href="${lp('/guides')}">gidsen</a>.`,
     faqCta: 'Lees de FAQ',
     ctaH: 'Eén product van jezelf, als catalogset of carousel.',
-    ctaBody: `Eén proef per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde productie als een betaalde bestelling.`,
+    ctaBody: `Eén proef per bedrijf — ${sample}, zonder verplichting.`,
     ctaSampleBtn: TEST_SAMPLE.nl.cta,
     ctaStartBtn: 'Start een bestelling',
     wa: waHref("Hoi VISUAILS, ik heb een vraag over hoe een bestelling werkt."),
@@ -257,7 +248,7 @@ const c = COPY[lang];
 
 /* De drie stations, met de tekening per stap en de regels eronder. */
 const STATIONS = [
-  { nr: '01', n: kopregel('01', 'bestellen'), duur: fase('bestellen').duur, beeld: 'in' as const, ...c.stations[0], regels: bestelRegels },
+  { nr: '01', n: kopregel('01', 'bestellen'), duur: fase('bestellen').duur, beeld: 'in' as const, ...c.stations[0] },
   { nr: '02', n: kopregel('02', 'maken'), duur: fase('maken').duur, beeld: 'uit' as const, ...c.stations[1], link: { href: lp('/gallery'), tekst: c.stations[1].link } },
   { nr: '03', n: kopregel('03', 'goedkeuren'), duur: fase('goedkeuren').duur, beeld: 'dash' as const, ...c.stations[2], etiket: '', link: { href: lp('/portal'), tekst: c.stations[2].link } },
 ];
@@ -290,7 +281,7 @@ const STATIONS = [
   <section class="paneel" aria-labelledby="hiw-flow">
     <header class="paneel-kop hiw-flow-kop">
       <h2 id="hiw-flow" class="hoog hoog-2">{c.flowH}</h2>
-      <p class="lopend">{c.flowLede}</p>
+      {c.flowLede && <p class="lopend">{c.flowLede}</p>}
     </header>
     <Stations lang={lang} stations={STATIONS} />
 
@@ -371,7 +362,7 @@ const STATIONS = [
             <li><span class="hiw-land-t">{t2}</span><span class="mono">{b}</span></li>
           ))}
         </ul>
-        <p class="lopend hiw-land-noot">{c.landNote}</p>
+        {c.landNote && <p class="lopend hiw-land-noot">{c.landNote}</p>}
       </div>
     </div>
   </section>

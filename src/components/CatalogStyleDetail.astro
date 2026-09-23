@@ -61,7 +61,7 @@ const c = nl ? {
   kaderH: 'Wat er in elk kader gaat.',
   idealH: ['Ideaal ', 'voor'],
   krijgH: ['Wat je ', 'krijgt'],
-  modelNoot: ['De on-model shot in elke ', '-set kan een gezicht uit de standaardbibliotheek gebruiken — of ', 'een merkmodel dat alleen voor jou gemaakt is', ', zodat dezelfde persoon je hele assortiment draagt.'],
+  modelNoot: ['De foto op model in elke ', '-set: een standaardgezicht, of ', 'je eigen merkmodel', '.'],
   slotH: ['Maak ', ' van jou.'],
   slotP: 'Probeer VISUAILS eerst, of plaats vandaag je bestelling.',
   proef: 'Probeer VISUAILS',
@@ -81,7 +81,7 @@ const c = nl ? {
   kaderH: 'What goes into every frame.',
   idealH: ['Best ', 'for'],
   krijgH: ['What you ', 'get'],
-  modelNoot: ['The on-model shot in every ', ' set can use a face from the standard roster — or ', 'a Brand Model made only for you', ', so the same person carries your whole range.'],
+  modelNoot: ['The on-model shot in every ', ' set: a standard face, or ', 'your own Brand Model', '.'],
   slotH: ['Make ', ' yours.'],
   slotP: 'Test sample, or place your order today.',
   proef: 'Test sample',
@@ -130,7 +130,7 @@ const badge = `Catalog · ${style.name}`;
       </div>
       <div>
         <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
-        {style.moodParagraphs.map((p: string) => <p class="lopend cs-sfeer-p">{p}</p>)}
+        {style.moodParagraphs.slice(0, 1).map((p: string) => <p class="lopend cs-sfeer-p">{p}</p>)}
         <ol class="cs-stappen" role="list">
           {style.steps.map((s: any, i: number) => (
             <li>
@@ -143,7 +143,7 @@ const badge = `Catalog · ${style.name}`;
         {/* "Ideaal voor" hoort bij hoe de stijl voelt — 23 september 2026. */}
         <h3 class="hoog hoog-3 cs-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
         <ul class="cs-vinkjes" role="list">
-          {style.bestFor.map((item: string) => (
+          {style.bestFor.slice(0, 3).map((item: string) => (
             <li><svg viewBox="0 0 24 24" class="cs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
           ))}
         </ul>
@@ -183,12 +183,12 @@ const badge = `Catalog · ${style.name}`;
       <h2 class="hoog hoog-2">{c.kaderH}</h2>
     </div>
     <ul class="cs-vakwerk" role="list">
-      {style.craft.map((k: any) => (
+      {style.craft.slice(0, 3).map((k: any) => (
         <li><b>{k.title}</b><p class="lopend">{k.body}</p></li>
       ))}
     </ul>
     <ul class="cs-waarom" role="list">
-      {style.why.map((w: any) => (
+      {style.why.slice(0, 1).map((w: any) => (
         <li><b>{w.title}</b><p class="lopend">{w.body}</p></li>
       ))}
     </ul>

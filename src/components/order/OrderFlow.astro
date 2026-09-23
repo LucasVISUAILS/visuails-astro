@@ -46,7 +46,7 @@ import {
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
   AMOUNT, clause,
-  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND,
+  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, SERVICE_CREDITS,
 } from '../../data/pricing.js';
 import { ATTENDED_PUNTEN_PER_VENSTER, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { puntenVoor, beeldenVoor, RESOLUTIE, HOOG_PER_PRODUCT, VOORRANG, VOORRANG_COPY, voorrangBedrag } from '../../data/pricing.js';
@@ -322,8 +322,8 @@ const PIPE = {
        los kost. Er staat nergens "goedkoper"; de klant trekt zelf af, en dat
        is precies waarom hij het gelooft. */
     plan: {
-      compare: 'Every month the same? The {name} plan covers {covers} a month for {price} — the same delivery ordered one at a time is {ladder}.',
-      steady: `Every month the same? A plan fixes the count and holds a week in the calendar for you, with ${STOCK_OFF_BRAND} Editions visuals on top.`,
+      compare: 'Every month the same? That is {need} credits — the {name} plan gives {credits} for {price} a month.',
+      steady: 'Every month more than that? A custom plan gives you exactly the credits you need.',
       cta: 'See the plans',
     },
     level: {
@@ -493,8 +493,8 @@ const PIPE = {
     },
     /* Zie de Engelse noot hierboven. */
     plan: {
-      compare: 'Elke maand hetzelfde? Het {name}-abonnement dekt {covers} per maand voor {price} — dezelfde levering los besteld is {ladder}.',
-      steady: `Elke maand hetzelfde? Een abonnement legt het aantal vast en houdt een week in de planning voor je vrij, met ${STOCK_OFF_BRAND} Editions-beelden erbij.`,
+      compare: 'Elke maand hetzelfde? Dat is {need} credits — het {name}-abonnement geeft er {credits} voor {price} per maand.',
+      steady: 'Elke maand meer dan dat? Een abonnement op maat geeft je precies de credits die je nodig hebt.',
       cta: 'Bekijk de abonnementen',
     },
     level: {
@@ -1020,7 +1020,7 @@ const FORM = {
       sampleKindLifestyle: 'Lifestyle carousel',
       sampleKindLifestyleGets: 'Three images, worn in a styled scene',
       sampleKindErr: 'Pick one of the two.',
-      sampleFlatNote: 'for one product, one per business. Everything else on this page is the same work a paid order gets.',
+      sampleFlatNote: 'for one product, one per business.',
       countErr: 'Choose how many products before you continue.',
       more: `More than ${maxProducts} products`,
       totalLabel: 'Running total',
@@ -1234,10 +1234,10 @@ const FORM = {
          zijn altijd 2k resolutie (…) lifestyle heeft echter wel de
          mogelijkheid op een 4k upsell per foto."* Zie RESOLUTIE in
          pricing.js: dat is de enige plek waar de twee getallen staan. */
-      ['The files', `${RESOLUTIE.standaard} px on the long edge, e-commerce-ready, with no per-use licence.`],
+      ['The files', `${RESOLUTIE.standaard} px, no per-use licence.`],
     ],
     footH: 'Not ready to order?',
-    footBody: `${sample.deliverable}, made from one of your own products — for ${sample.price}, ${sample.unit}. Made the same way as a paid order.`,
+    footBody: `${sample.deliverable} of one of your own products, for ${sample.price}.`,
     footCta: sample.cta,
     footWa: 'Ask on WhatsApp',
     // De knop stond op een kale wa.me-link: WhatsApp opende met een leeg
@@ -1248,7 +1248,7 @@ const FORM = {
     // The signed-out sign-in prompt at the head of the form. See the markup by
     // .pl-signin for why it exists and why it is [data-acct="out"].
     signInH: 'Ordered with us before?',
-    signInBody: 'Sign in and your name, brand, contact details, saved background and your own Brand Models are already filled in — including on every order after this one.',
+    signInBody: 'Sign in and your details are filled in for you.',
     signInCta: 'Sign in',
   },
   nl: {
@@ -1297,7 +1297,7 @@ const FORM = {
       sampleKindLifestyle: 'Lifestyle-carousel',
       sampleKindLifestyleGets: 'Drie beelden, gedragen in een gestileerde scène',
       sampleKindErr: 'Kies er één van de twee.',
-      sampleFlatNote: 'voor één product, één per bedrijf. Al het andere op deze pagina is hetzelfde werk als bij een betaalde bestelling.',
+      sampleFlatNote: 'voor één product, één per bedrijf.',
       countErr: 'Kies eerst hoeveel producten.',
       more: `Meer dan ${maxProducts} producten`,
       totalLabel: 'Totaal tot nu toe',
@@ -1465,15 +1465,15 @@ const FORM = {
       ['De productie', `Dezelfde productie bij één product en bij ${maxProducts}.`],
       ['De controle', `${clause(reviewClaim('unattended', 'nl'))}. Bij elk aantal.`],
       /* Zie de Engelse tegenhanger. */
-      ['De bestanden', `${RESOLUTIE.standaard} px aan de lange zijde, klaar voor je webshop, zonder licentie per gebruik.`],
+      ['De bestanden', `${RESOLUTIE.standaard} px, zonder licentie per gebruik.`],
     ],
     footH: 'Nog niet klaar om te bestellen?',
-    footBody: `${sample.deliverable}, gemaakt van je eigen product — voor ${sample.price}, ${sample.unit}. Dezelfde productie als een betaalde bestelling.`,
+    footBody: `${sample.deliverable} van een eigen product, voor ${sample.price}.`,
     footCta: sample.cta,
     footWa: 'Vraag het via WhatsApp',
     footWaText: 'Hoi VISUAILS, ik ben een bestelling aan het invullen en kom er niet uit.',
     signInH: 'Al eerder bij ons besteld?',
-    signInBody: 'Log in en je naam, merk, contactgegevens, opgeslagen achtergrond en je eigen merkmodellen staan er al in — ook bij elke bestelling hierna.',
+    signInBody: 'Log in en je gegevens staan er al in.',
     signInCta: 'Inloggen',
   },
 };
@@ -1560,20 +1560,14 @@ const levels = [
  * optelsom (de complete-ladder plus de clips tegen AMOUNT.video) die /plans en
  * de FAQ al afdrukken. Eén bron, drie pagina\u2019s.
  */
-const PLAN_ROWS = plans(lang).map((p) => {
-  const clips = PLAN_CLIPS[p.id];
-  const saving = planSaving(p.id);
-  return {
-    id: p.id,
-    name: p.name,
-    products: PLAN_PRODUCTS[p.id],
-    covers: lang === 'nl'
-      ? (clips ? `${PLAN_PRODUCTS[p.id]} producten en ${clips} clips` : `${PLAN_PRODUCTS[p.id]} producten`)
-      : (clips ? `${PLAN_PRODUCTS[p.id]} products and ${clips} clips` : `${PLAN_PRODUCTS[p.id]} products`),
-    price: euro(PLAN_AMOUNT[p.id], lang),
-    ladder: saving ? euro(saving.onLadder, lang) : null,
-  };
-});
+const PLAN_ROWS = plans(lang).map((p) => ({
+  /* In credits sinds 23 september 2026: pipeline.js rekent uit hoeveel credits
+     deze bestelling per maand zou zijn, en noemt het kleinste plan dat dat dekt. */
+  id: p.id,
+  name: p.name,
+  credits: p.credits,
+  price: euro(PLAN_AMOUNT[p.id], lang),
+}));
 
 // ── The config blob ────────────────────────────────────────────────────────
 // Every number the script needs, from the module that owns it. Nothing here is
@@ -1629,6 +1623,7 @@ const config = {
   /* De abonnementen — zie PLAN_ROWS hierboven voor waarom er twee vormen van
      deze regel zijn en waarom Merk hier nooit langskomt. */
   plans: PLAN_ROWS,
+  creditsPer: { catalog: SERVICE_CREDITS.catalog, lifestyle: SERVICE_CREDITS.lifestyle, complete: SERVICE_CREDITS.catalog + SERVICE_CREDITS.lifestyle },
   windowThreshold: WINDOW_THRESHOLD,
   maxProducts,
   maxFileBytes: MAX_FILE_BYTES,

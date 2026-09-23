@@ -82,7 +82,7 @@ const c = nl ? {
   stapH: ['Hoe ', ' tot stand komt.'],
   idealH: ['Ideaal ', 'voor'],
   krijgH: ['Wat je ', 'krijgt'],
-  modelNoot: ['Wordt een ', '-scène gedragen in plaats van geplaatst, dan kan het model uit de standaardbibliotheek komen — of ', 'een merkmodel dat alleen voor jou gemaakt is', ', zodat hetzelfde gezicht elke bestelling draagt.'],
+  modelNoot: ['Het model in een ', '-scène: een standaardgezicht, of ', 'je eigen merkmodel', '.'],
   slotH: ['Maak ', ' van jou.'],
   proef: 'Probeer VISUAILS',
 } : {
@@ -102,7 +102,7 @@ const c = nl ? {
   stapH: ['How ', ' comes together.'],
   idealH: ['Best ', 'for'],
   krijgH: ['What you ', 'get'],
-  modelNoot: ['When a ', ' scene is worn rather than placed, the model can come from the standard roster — or be ', 'a Brand Model made only for you', ', so the same face carries every order.'],
+  modelNoot: ['The model in a ', ' scene: a standard face, or ', 'your own Brand Model', '.'],
   slotH: ['Make ', ' yours.'],
   proef: 'Test sample',
 };
@@ -158,7 +158,7 @@ const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
             voelt — PAGINA-OPBOUW.md: die twee zijn één blok. */}
         <h3 class="hoog hoog-3 ls-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
         <ul class="ls-vinkjes" role="list">
-          {style.bestFor.map((item: string) => (
+          {style.bestFor.slice(0, 3).map((item: string) => (
             <li><svg viewBox="0 0 24 24" class="ls-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
           ))}
         </ul>

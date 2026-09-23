@@ -151,7 +151,7 @@ const METING = `(() => {
 })()`;
 
 const browser = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1440, height: 1000 } });
 
 const stuk = [];
 let blokken = 0;

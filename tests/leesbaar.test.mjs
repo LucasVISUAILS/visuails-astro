@@ -224,7 +224,7 @@ const METEN = () => {
 };
 
 const browser = await launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1440, height: 1000 } });
 const stuk = [];
 for (const pad of PAGINAS) {
   await page.goto(BASE + pad, { waitUntil: 'load' });

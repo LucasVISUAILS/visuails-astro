@@ -1237,7 +1237,31 @@ async function grantPrepaidMonths(env, nu = new Date()) {
     if (bestaat) continue;
 
     const producten = subProducten(sub);
-    /*
+    /* `payment_id` blijft leeg: er hoort geen betaling bij deze maand, hij is
+       vorig jaar al betaald. Dat is ook precies wat de factuurroute nodig heeft
+       om deze maand NIET nog een keer te factureren — die gaat over
+       subscription_payments en niet over deze tabel. */
+    const rij = await env.DB.prepare(
+      `INSERT INTO subscription_months (subscription_id, month, granted, payment_id)
+       VALUES (?1, ?2, ?3, NULL)
+       ON CONFLICT (subscription_id, month) DO NOTHING
+       RETURNING id`
+    ).bind(sub.id, maand, producten).first().catch((e) => {
+      console.error('[cron] vooruitbetaalde maand niet toegekend —', sub.ref, '—', e?.message || e);
+      return null;
+    });
+    if (!rij) continue;
+
+    await grantSlots(env, sub.id, maand, sub, null);
+    gezet += 1;
+    namen.push(`${sub.ref} (${maand})`);
+  }
+
+  if (!gezet) return '';
+  return `Vooruitbetaald: ${gezet} maand${gezet === 1 ? '' : 'en'} toegekend — ${namen.join(', ')}.`;
+}
+
+/*
  * ── DE CREDITHERINNERING — 20 september 2026 ────────────────────────────────
  *
  * Lucas, gevraagd of het leverweek-venster als vangnet moest blijven nu de klant
@@ -1384,30 +1408,6 @@ async function mailCreditsVervallen(env, o) {
     console.error('[cron] creditherinnering voor', o.ref, 'niet verstuurd —', err?.message || err);
     return false;
   }
-}
-
-/* `payment_id` blijft leeg: er hoort geen betaling bij deze maand, hij is
-       vorig jaar al betaald. Dat is ook precies wat de factuurroute nodig heeft
-       om deze maand NIET nog een keer te factureren — die gaat over
-       subscription_payments en niet over deze tabel. */
-    const rij = await env.DB.prepare(
-      `INSERT INTO subscription_months (subscription_id, month, granted, payment_id)
-       VALUES (?1, ?2, ?3, NULL)
-       ON CONFLICT (subscription_id, month) DO NOTHING
-       RETURNING id`
-    ).bind(sub.id, maand, producten).first().catch((e) => {
-      console.error('[cron] vooruitbetaalde maand niet toegekend —', sub.ref, '—', e?.message || e);
-      return null;
-    });
-    if (!rij) continue;
-
-    await grantSlots(env, sub.id, maand, sub, null);
-    gezet += 1;
-    namen.push(`${sub.ref} (${maand})`);
-  }
-
-  if (!gezet) return '';
-  return `Vooruitbetaald: ${gezet} maand${gezet === 1 ? '' : 'en'} toegekend — ${namen.join(', ')}.`;
 }
 
 async function checkPlanQueues(env) {

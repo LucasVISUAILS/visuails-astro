@@ -128,7 +128,7 @@ const meet = (vw) => {
 
 for (const breed of BREEDTES) {
   console.log(`\nop ${breed} pixels`);
-  const ctx = await browser.newContext({ ...devices['Pixel 5'], viewport: { width: breed, height: 850 } });
+  const ctx = await browser.newContext({ locale: 'en-US', ...devices['Pixel 5'], viewport: { width: breed, height: 850 } });
   const page = await ctx.newPage();
   for (const pad of PAGINAS) {
     await page.goto(BASIS + pad, { waitUntil: 'networkidle' });

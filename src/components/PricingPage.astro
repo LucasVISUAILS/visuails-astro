@@ -189,10 +189,10 @@ const COPY = {
   en: {
     eyebrow: 'Pricing',
     h1: 'Priced per product. The rate falls as the count rises.',
-    lead: `One unit: a product. One rate, and it only ever moves down a step. Every count has a price, so no order costs more per product than a smaller one — and there is no package to squeeze your line into.`,
+    lead: `One rate per product, and it drops as your count rises. No packages.`,
 
     ladderH: 'The price per product',
-    ladderSub: 'Pick catalog, lifestyle or both, count your products, read the rate. That rate applies to every product in the order — order 12 and all 12 cost the rate for 12.',
+    ladderSub: 'The rate applies to every product in the order.',
     ladderProductsCol: 'Products',
     ladderScrollHint: 'Swipe sideways for the catalog and lifestyle columns.',
     kinds: {
@@ -224,7 +224,7 @@ const COPY = {
     },
 
     workedH: 'What that comes to',
-    workedSub: 'Three order sizes with the sum already done for you — the catalog set, and the same order with lifestyle added.',
+    workedSub: '',
     workedBundle: 'with lifestyle added',
     workedUnit: 'products',
     perProduct: 'per product',
@@ -235,7 +235,7 @@ const COPY = {
     // answer, and the way to find out whether the work is any good is the test
     // sample, not a fifth off the first invoice.
     firstLead: 'The rate on this page is the rate.',
-    firstBody: `No first-order discount, no volume negotiation, no package you have to fit your line into. The price per product above is the whole of it, and it applies to every product in the order. If you want to see the work before you commit, that is what the ${TEST_SAMPLE.en.price} test sample is for.`,
+    firstBody: `No discounts, no packages. Want to see the work first? That is what the ${TEST_SAMPLE.en.price} test sample is for.`,
     ladderCta: 'Start an order',
     compareCta: 'A shoot day, priced against an order',
 
@@ -252,7 +252,7 @@ const COPY = {
        eindeloos aan werken zonder dat er ooit iets van op een pagina staat. */
 
     addOnH: 'What else has a rate',
-    addOnSub: 'Not everything is priced per product, so these are not on the ladder above. Each has a rate of its own: a brand model is built once and then travels with every order you place; a clip costs the same on its own as inside one.',
+    addOnSub: 'Not priced per product, so not on the ladder.',
     brandModelName: 'Your Brand Model',
     brandModelLine: 'One face. Every order. Only yours.',
     brandModelUnit: 'one-time setup',
@@ -265,15 +265,14 @@ const COPY = {
        punt. Een prijs die uitleg nodig heeft over hoe hij bij je terugkomt, is
        een prijs die zich verontschuldigt. Deze zegt wat voor soort bedrag het
        is en houdt op. */
-    brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once, when the model is designed. Not per visual, not per order, not per year — from then on every order you place with us carries the same face, at the normal per-product rate for its size.`,
+    brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once. After that every order carries the same face at the normal rate.`,
     videoName: 'Video clip',
-    videoLine: VIDEO_OP_AANVRAAG ? 'One short clip. On request while the video pipeline is being built — you ask, we reply with a price.' : 'One short clip. The same rate on its own or added to any order.',
+    videoLine: VIDEO_OP_AANVRAAG ? 'One short clip, on request for now: we reply with a price.' : 'One short clip. The same rate on its own or added to any order.',
     videoUnit: 'per clip',
     videoIncH: 'How it is priced:',
     videoList: [
-      'The same rate inside an order as on its own — it is the same work',
-      `${PLAN_CLIPS.studio} clips a month are included in the ${planById.studio.name} plan`,
-      'Made from the same product photos as the rest of the order',
+      'The same rate inside an order as on its own',
+      'Made from the same product photos',
     ],
     videoCta: 'See what a clip is',
 
@@ -282,13 +281,13 @@ const COPY = {
        hier ontbraken, terwijl die pagina's zeggen "zie de tarieven". Eén rustige
        lijst, geen kaarten: het zijn regels bij een bestelling, geen producten. */
     moreH: 'The smaller lines',
-    moreSub: 'Some add something to an order you are placing, others stand on their own. Each has its own page for the detail.',
+    moreSub: '',
     moreRows: [
-      ['Extra catalog angle', `${euro(extraPhotoRate(1), 'en')} to ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'en')} per photo, falling with your count`, 'A side, the inside, a second detail — added per product in the order form.', '/catalog'],
+      ['Extra catalog angle', `${euro(extraPhotoRate(1), 'en')} to ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'en')} per photo, falling with your count`, 'A side or a second detail, per product.', '/catalog'],
       ['Complete outfit', `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS} per order`, 'Several pieces worn together in one lifestyle shot.', '/lifestyle'],
-      ['A look of your own', 'On request', 'One design fee in writing; after that every product runs at the ordinary rate. Appears as a tile in your account.', '/start/custom-look'],
-      ['Hooks', `From ${euro(AMOUNT.hooks, 'en')} a hook, on request`, 'A short vertical video that runs on into the post below it. No order button yet — you ask, we confirm in writing.', '/hooks'],
-      ['Editions', `${euro(AMOUNT.editions, 'en')} a month after a one-time ${euro(AMOUNT.editionsSetup, 'en')} — not orderable yet`, 'On-brand visuals without your product in them, monthly, on top of a plan. The shared set of the month comes with every plan at no extra cost.', '/editions'],
+      ['A look of your own', 'On request', 'One design fee, then the ordinary rate.', '/start/custom-look'],
+      ['Hooks', `From ${euro(AMOUNT.hooks, 'en')} a hook, on request`, 'A short vertical video that runs into the post below.', '/hooks'],
+      ['Editions', `${euro(AMOUNT.editions, 'en')} a month after a one-time ${euro(AMOUNT.editionsSetup, 'en')} — not orderable yet`, 'Monthly on-brand visuals without your product, on top of a plan.', '/editions'],
     ],
 
     inclH: 'In every order',
@@ -302,11 +301,11 @@ const COPY = {
     // De plannen staan sinds 20 augustus 2026 op /plans; hier blijft één regel
     // die zegt dat de andere manier van kopen bestaat.
     toPlansH: 'Or the same work every month',
-    toPlansB: 'If the same output comes round every month, buying it by the month costs less than buying it order by order — provided it is that same output: a catalog set and a lifestyle carousel for every product. It also holds a week in the calendar for you.',
+    toPlansB: 'A plan gives you credits every month to spend on catalog, lifestyle and video, cheaper than ordering one by one.',
     toPlansCta: 'See the plans',
 
     sampleH: 'Before you place an order',
-    sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${sample.unit}. It runs through the same production as a paid order, so what comes back is what you would get.`,
+    sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${sample.unit}.`,
     sampleCta: sample.cta,
 
     faqH: 'Pricing questions',
@@ -322,10 +321,10 @@ const COPY = {
   nl: {
     eyebrow: 'Prijzen',
     h1: 'Je betaalt per product. Hoe meer producten, hoe lager het tarief.',
-    lead: `Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag — bij elk product dat je erbij doet. Elk aantal heeft zijn eigen prijs, dus je betaalt per product nooit meer dan iemand met een kleinere bestelling, en er is geen pakket waar je collectie in moet passen.`,
+    lead: `Eén tarief per product, en dat zakt naarmate je meer producten bestelt. Geen pakketten.`,
 
     ladderH: 'De prijs per product',
-    ladderSub: 'Kies wat je wilt laten maken, tel je producten, lees het tarief. Dat tarief betaal je voor élk product in de bestelling — bestel je er 12, dan kosten alle 12 het tarief van 12.',
+    ladderSub: 'Het tarief geldt voor elk product in de bestelling.',
     ladderProductsCol: 'Producten',
     ladderScrollHint: 'Schuif opzij voor de kolommen Catalogset en Lifestyle-carousel.',
     kinds: {
@@ -341,13 +340,13 @@ const COPY = {
     workedH: 'Wat dat wordt',
     /* "Compleet" is ook de naam van een product op deze pagina; als bijwoord
        liet het in het midden welk tarief er gerekend werd. Nu staat het er. */
-    workedSub: 'Drie aantallen uitgerekend, zodat je niet zelf hoeft te rekenen — de catalogset, en dezelfde bestelling met lifestyle erbij.',
+    workedSub: '',
     workedBundle: 'met lifestyle erbij',
     workedUnit: 'producten',
     perProduct: 'per product',
 
     firstLead: 'Het tarief op deze pagina is het tarief.',
-    firstBody: `Geen kennismakingskorting, geen onderhandeling over volume, geen pakket waar je collectie in moet passen. De prijs per product hierboven is het hele verhaal, en hij geldt voor elk product in de bestelling. Wil je het werk eerst zien, probeer VISUAILS dan eerst voor ${TEST_SAMPLE.nl.price}.`,
+    firstBody: `Geen kortingen, geen pakketten. Wil je het werk eerst zien? Daarvoor is de proef van ${TEST_SAMPLE.nl.price}.`,
     ladderCta: 'Start een bestelling',
     compareCta: 'Een shootdag, afgezet tegen een bestelling',
 
@@ -373,33 +372,32 @@ const COPY = {
        daarom niet op de staffel passen. Dat is een rekenverschil en geen
        waardeoordeel, en dat is wat de kop nu zegt. */
     addOnH: 'Wat er verder een tarief heeft',
-    addOnSub: 'Niet alles wordt per product afgerekend, dus deze staan niet in de staffel hierboven. Elk heeft een eigen tarief: een merkmodel wordt één keer gebouwd en gaat daarna mee in elke bestelling die je plaatst; een clip kost hetzelfde los als binnen een bestelling.',
+    addOnSub: 'Niet per product afgerekend, dus niet in de staffel.',
     brandModelName: 'Jouw merkmodel',
     brandModelLine: 'Eén gezicht. Elke bestelling. Alleen van jou.',
     brandModelUnit: 'eenmalige setup',
     brandModelCta: 'Bekijk Jouw merkmodel',
     // Zie de noot bij de Engelse brandModelNote.
-    brandModelNote: `${euro(AMOUNT.brandModel, 'nl')}, één keer, als het model ontworpen wordt. Niet per beeld, niet per bestelling, niet per jaar — vanaf dat moment draagt elke bestelling die je bij ons doet hetzelfde gezicht, tegen het gewone tarief per product voor die grootte.`,
+    brandModelNote: `${euro(AMOUNT.brandModel, 'nl')}, één keer. Daarna draagt elke bestelling hetzelfde gezicht, tegen het gewone tarief.`,
     videoName: 'Videoclip',
-    videoLine: VIDEO_OP_AANVRAAG ? 'Eén korte clip. Op aanvraag zolang de videopijplijn in aanbouw is — jij vraagt, wij antwoorden met een prijs.' : 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
+    videoLine: VIDEO_OP_AANVRAAG ? 'Eén korte clip, voorlopig op aanvraag: we antwoorden met een prijs.' : 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
     videoUnit: 'per clip',
     videoIncH: 'Hoe de prijs werkt:',
     videoList: [
-      'Binnen een bestelling hetzelfde tarief als los — het is hetzelfde werk',
-      `${PLAN_CLIPS.studio} clips per maand zitten in het ${planById.studio.name}-plan`,
-      'Gemaakt van dezelfde productfoto’s als de rest van de bestelling',
+      'Binnen een bestelling hetzelfde tarief als los',
+      'Gemaakt van dezelfde productfoto’s',
     ],
     videoCta: 'Bekijk wat een clip is',
 
     /* Zie de noot bij de Engelse moreH. */
     moreH: 'De kleinere posten',
-    moreSub: 'Sommige zetten iets bij een bestelling die je plaatst, andere staan er los van. Elk heeft een eigen pagina voor de details.',
+    moreSub: '',
     moreRows: [
-      ['Extra cataloghoek', `${euro(extraPhotoRate(1), 'nl')} tot ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'nl')} per foto, dalend met je aantal`, 'Een zijkant, de binnenkant, een tweede detail — per product bij te zetten in het bestelformulier.', '/catalog'],
+      ['Extra cataloghoek', `${euro(extraPhotoRate(1), 'nl')} tot ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'nl')} per foto, dalend met je aantal`, 'Een zijkant of tweede detail, per product.', '/catalog'],
       ['Compleet setje', `${euro(OUTFIT_SURCHARGE, 'nl')} per zo gestyled product, tot ${MAX_OUTFIT_PRODUCTS} per bestelling`, 'Meerdere stukken samen gedragen in één lifestyleshot.', '/lifestyle'],
-      ['Een eigen look', 'Op aanvraag', 'Eén ontwerpbedrag op schrift; daarna loopt elk product tegen het gewone tarief. Staat daarna als tegel in je account.', '/start/custom-look'],
-      ['Hooks', `Vanaf ${euro(AMOUNT.hooks, 'nl')} per hook, op aanvraag`, 'Een korte verticale video die doorloopt in de post eronder. Nog geen bestelknop — jij vraagt, wij bevestigen op schrift.', '/hooks'],
-      ['Editions', `${euro(AMOUNT.editions, 'nl')} per maand na een eenmalige ${euro(AMOUNT.editionsSetup, 'nl')} — nog niet te bestellen`, 'Merkbeeld zonder je product erin, maandelijks, bovenop een abonnement. De gedeelde set van de maand komt met elk abonnement zonder meerprijs.', '/editions'],
+      ['Een eigen look', 'Op aanvraag', 'Eén ontwerpbedrag, daarna het gewone tarief.', '/start/custom-look'],
+      ['Hooks', `Vanaf ${euro(AMOUNT.hooks, 'nl')} per hook, op aanvraag`, 'Een korte verticale video die doorloopt in de post eronder.', '/hooks'],
+      ['Editions', `${euro(AMOUNT.editions, 'nl')} per maand na een eenmalige ${euro(AMOUNT.editionsSetup, 'nl')} — nog niet te bestellen`, 'Maandelijks merkbeeld zonder je product, bovenop een abonnement.', '/editions'],
     ],
 
     inclH: 'In elke bestelling',
@@ -411,11 +409,11 @@ const COPY = {
     gateBody: 'De leverdatum kies je in het formulier, uit dagen waar nog ruimte is, en hij ligt vast zodra je bestelt. Raakt een dag tussendoor vol, dan hoor je dat meteen en kies je opnieuw. Geen optimistische gok.',
 
     toPlansH: 'Of hetzelfde werk elke maand',
-    toPlansB: 'Heb je elke maand hetzelfde nodig, dan is per maand kopen goedkoper dan bestelling voor bestelling — mits het om diezelfde levering gaat: een catalogset én een lifestyle-carousel per product. Er wordt ook een week in de planning voor je vrijgehouden.',
+    toPlansB: 'Een abonnement geeft je elke maand credits voor catalog, lifestyle en video, goedkoper dan los bestellen.',
     toPlansCta: 'Bekijk de abonnementen',
 
     sampleH: 'Voordat je een bestelling plaatst',
-    sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${sample.unit}. Het loopt door dezelfde productie als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
+    sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${sample.unit}.`,
     // NO VAT LABEL ON A BUTTON. A CTA is a label, not a price quotation, and
     // the site's rule — every printed PRICE carries excl. VAT — is about the
     // figures a customer compares, not about the word on a button. It also
@@ -563,7 +561,7 @@ const nn = (i: number) => String(i).padStart(2, '0');
     <div class="pr-uitgerekend">
       <header class="pr-uit-kop">
         <h3 class="hoog hoog-3">{c.workedH}</h3>
-        <p class="lopend">{c.workedSub}</p>
+        {c.workedSub && <p class="lopend">{c.workedSub}</p>}
       </header>
       <ul class="pr-som" role="list">
         {/* ── HET VOORBEELD REKENT MET DE CATALOGSET — 8 september 2026 ────
@@ -639,7 +637,7 @@ const nn = (i: number) => String(i).padStart(2, '0');
 
     <div class="pr-meer">
       <h3 class="hoog hoog-3">{c.moreH}</h3>
-      <p class="lopend">{c.moreSub}</p>
+      {c.moreSub && <p class="lopend">{c.moreSub}</p>}
       <dl class="pr-regels">
         {c.moreRows.map(([naam, prijs, uitleg, href]) => (
           <div class="pr-regel">
@@ -669,8 +667,8 @@ const nn = (i: number) => String(i).padStart(2, '0');
       <div>
         <h2 id="pr-band" class="hoog hoog-3">{nl ? 'Elke maand nieuwe beelden?' : 'New images every month?'}</h2>
         <p class="lopend">{nl
-          ? `Met een abonnement betaal je minder per product, in een week die voor jou vastligt — vanaf ${euro(PLAN_AMOUNT.starter, 'nl')} per maand.`
-          : `With a plan you pay less per product, in a week that is kept for you — from ${euro(PLAN_AMOUNT.starter, 'en')} a month.`}</p>
+          ? `Een abonnement geeft je elke maand credits voor catalog, lifestyle en video — vanaf ${euro(PLAN_AMOUNT.starter, 'nl')} per maand, of precies je eigen aantal.`
+          : `A plan gives you credits every month for catalog, lifestyle and video — from ${euro(PLAN_AMOUNT.starter, 'en')} a month, or exactly your own number.`}</p>
       </div>
       <a class="knop knop-lijn" href={lp('/plans')}>{nl ? 'Bekijk de abonnementen' : 'See the plans'}</a>
     </div>

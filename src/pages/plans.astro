@@ -6,16 +6,16 @@
 // de prijslijst — zie de lange noot bovenin PlansPage.astro.
 import Layout from '../layouts/Layout.astro';
 import PlansPage from '../components/PlansPage.astro';
-import { euro, PLAN_AMOUNT, PLAN_PRODUCTS, vatLabel } from '../data/pricing.js';
+import { euro, PLAN_AMOUNT, PLAN_CREDITS, vatLabel } from '../data/pricing.js';
 
 const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
 
 const description =
-  `A fixed number of products every month, in a week the calendar keeps free ` +
-  `for you. From ${euro(PLAN_AMOUNT[CHEAPEST], 'en')} a month for ` +
-  `${PLAN_PRODUCTS[CHEAPEST]} products, ${vatLabel('excl', 'en')}.`;
+  `Credits every month to spend on catalog, lifestyle and video. From ` +
+  `${euro(PLAN_AMOUNT[CHEAPEST], 'en')} a month for ${PLAN_CREDITS[CHEAPEST]} credits, ` +
+  `or build your own plan. ${vatLabel('excl', 'en')}.`;
 ---
 
-<Layout title="Monthly plans — a fixed number of products | VISUAILS" description={description}>
+<Layout title="Plans — credits every month | VISUAILS" description={description}>
   <PlansPage lang="en" />
 </Layout>

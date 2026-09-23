@@ -269,6 +269,17 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
        lezen (style, background_hex, background, ratio, model, channels) — voor
        de soorten die in DEZE bestelling zitten. */
     Object.assign(details, lookDetails(locks, rijen.map((q) => q.kind)));
+    /* Een eigen look (cs-<id>) draagt zijn naam mee, zoals order.js dat doet:
+       /admin en de werkmap lezen `style_name`. Alleen een ACTIEVE look van deze
+       klant — anders valt de sleutel weg en kiest de studio zoals bij een
+       losse bestelling. 23 september 2026. */
+    if (/^cs-\d{1,9}$/.test(String(details.style || ''))) {
+      const eigen = await env.DB.prepare(
+        `SELECT id, name FROM customer_styles WHERE id = ?1 AND customer_id = ?2 AND status = 'active'`
+      ).bind(Number(String(details.style).slice(3)), customerId).first().catch(() => null);
+      if (eigen) { details.style_name = eigen.name; details.own_style_id = eigen.id; }
+      else delete details.style;
+    }
     rijen.forEach((q, i) => {
       details[`product_p${i + 1}`] = String(q.name || '').slice(0, 120);
       const note = String(q.note || '').trim();

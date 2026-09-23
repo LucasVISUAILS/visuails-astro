@@ -68,7 +68,7 @@ const cur = (p) => p.evaluate(() => {
 });
 
 for (const [label, route, last] of [['vijf stappen (catalog, ongewijzigd)', '/five', 5], ['vier stappen (proefvisual)', '/four', 4]]) {
-  const p = await browser.newPage();
+  const p = await browser.newPage({ locale: 'en-US' });
   const errs = []; const gateCalls = [];
   p.on('pageerror', (e) => errs.push(String(e)));
   p.on('request', (r) => { if (r.url().includes('/api/capacity')) gateCalls.push(r.url()); });
@@ -113,7 +113,7 @@ for (const [label, route, last] of [['vijf stappen (catalog, ongewijzigd)', '/fi
 console.log('\nhet bedrag op het controlescherm');
 {
   const bedrag = async (route) => {
-    const p = await browser.newPage();
+    const p = await browser.newPage({ locale: 'en-US' });
     await p.goto(`http://127.0.0.1:8732${route}`, { waitUntil: 'networkidle' });
     const last = route === '/sample' ? 4 : 5;
     for (let i = 1; i < last; i += 1) {

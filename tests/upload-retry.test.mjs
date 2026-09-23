@@ -143,7 +143,7 @@ const JPEG = { name: 'voorkant.jpg', mimeType: 'image/jpeg', buffer: Buffer.from
    ════════════════════════════════════════════════════════════════════════════ */
 console.log('de bestelstroom start zonder opgegeten fout');
 for (const pad of ['/start/catalog/', '/start/lifestyle/', '/start/complete/', '/nl/start/catalog/']) {
-  const pg = await browser.newPage();
+  const pg = await browser.newPage({ locale: 'en-US' });
   const klachten = [];
   pg.on('console', (m) => { if (m.text().includes('[pipeline]')) klachten.push(m.text().split('\n')[0]); });
   pg.on('pageerror', (e) => klachten.push(`pageerror: ${e.message}`));
@@ -164,7 +164,7 @@ for (const pad of ['/start/catalog/', '/start/lifestyle/', '/start/complete/', '
    ════════════════════════════════════════════════════════════════════════════ */
 console.log('\neen weggevallen verbinding wordt opnieuw geprobeerd');
 {
-  const pg = await browser.newPage();
+  const pg = await browser.newPage({ locale: 'en-US' });
   let pogingen = 0;
   await pg.route('**/api/upload', async (route) => {
     if (route.request().method() !== 'POST') return route.fulfill({ status: 200, body: '{"ok":true}' });
@@ -222,7 +222,7 @@ console.log('\neen weggevallen verbinding wordt opnieuw geprobeerd');
  */
 console.log('\neen weigering die nooit verandert, wordt niet herhaald');
 {
-  const pg = await browser.newPage();
+  const pg = await browser.newPage({ locale: 'en-US' });
   let pogingen = 0;
   await pg.route('**/api/upload', async (route) => {
     if (route.request().method() !== 'POST') return route.fulfill({ status: 200, body: '{"ok":true}' });

@@ -137,7 +137,7 @@ import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT, REVIEW } from '../data/vat.js';
 import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '../data/address.js';
 import { createOrderMolliePayment } from './mollie.js';
-import { bundelVoor, kindLabel, kindPer, subMaandBruto } from './slots.js';
+import { bundelVoor, kindLabel, kindPer, subMaandBruto, subEersteBetalingBruto } from './slots.js';
 /* De creditkant — zie de kop bij CREDIT_KIND in slots.js en SERVICE_CREDITS in pricing.js. */
 import { creditsVoor, creditsPerSoort, dienstenVoorAbo } from './slots.js';
 /*
@@ -169,7 +169,7 @@ import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VA
 import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
 import { GARMENTS } from '../data/garments.js';
 /* De vaste look als poort en als feit per product — ronde 4, 19 sept 2026. */
-import { laadLocks, lookCompleet, lookGezet } from './vasteLook.js';
+import { laadLocks, lookCompleet, lookGezet, lookGeldig, isEigenLook } from './vasteLook.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 import { licenceText } from './scaffold.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
@@ -1069,9 +1069,11 @@ const COPY = {
     planBillingH: 'Billing',
     planBillingTerm: 'Term',
     planTermMonthly: 'billed monthly',
-    planTermYearly: 'billed yearly',
+    planTermYearly: '12-month term, billed monthly',
+    planTermPrepaid: '12 months, paid up front',
     planBillingMonthly: 'Monthly',
     planBillingYearly: '12 months',
+    planBillingPrepaid: '12 months, prepaid',
     planBillingAmount: 'Per month',
     planStatusLabel: 'Status',
     // Deze twee verschijnen alleen wanneer de incasso niet stilgezet of niet
@@ -1468,7 +1470,7 @@ const COPY = {
     planNoneBody: 'Een abonnement geeft je elke maand een vast aantal credits, tegen een lager tarief per product dan los bestellen, in een week die voor jou gereserveerd is. Wat je niet gebruikt, schuift door.',
     planNoneCta: 'Bekijk de abonnementen',
     planNoneAlt: 'Los bestellen',
-    planVisSlotsH: 'Een vast aantal producten per maand',
+    planVisSlotsH: 'Een vast aantal credits per maand',
     /* Zie de Engelse tegenhanger. */
     planVisSlotsP: `Elke dienst kost credits: een catalogset ${SERVICE_CREDITS.catalog}, een lifestyle-carrousel ${SERVICE_CREDITS.lifestyle}. Wat je niet gebruikt, schuift één maand door.`,
     planVisWeekH: 'Eén week die van jou is',
@@ -1602,9 +1604,11 @@ const COPY = {
     planBillingH: 'Facturering',
     planBillingTerm: 'Termijn',
     planTermMonthly: 'maandelijks afgeschreven',
-    planTermYearly: 'jaarlijks afgeschreven',
+    planTermYearly: '12 maanden, maandelijks afgeschreven',
+    planTermPrepaid: '12 maanden, vooruitbetaald',
     planBillingMonthly: 'Maandelijks',
     planBillingYearly: '12 maanden',
+    planBillingPrepaid: '12 maanden vooruitbetaald',
     planBillingAmount: 'Per maand',
     planStatusLabel: 'Status',
     planStopFail: 'Het stopzetten bij onze betaaldienst lukte zojuist niet, dus je abonnement loopt nog en is NIET opgezegd — dat zeggen we liever dan je te laten doorbetalen voor iets waarvan je denkt dat het klaar is. Probeer het over een paar minuten opnieuw, of mail hello@visuails.com en we zetten het met de hand stop.',
@@ -2983,7 +2987,7 @@ async function handleMe({ request, env }) {
            kanalen hierboven. */
         ratio: ratioById(l.ratio || '', l.style) ? String(l.ratio) : '',
         /* De vaste stijl, alleen bij lifestyle en alleen een bekende slug. */
-        look: l.style === 'lifestyle' && LOOK_IDS.includes(String(l.look || '')) ? String(l.look) : '',
+        look: l.style === 'lifestyle' && lookGeldig(l.look) ? String(l.look) : '',
       };
       /* Een achtergrond hoort alleen bij catalog; een eerder opgeslagen kleur
          bij lifestyle of video mag het formulier niet meer bereiken. */
@@ -3866,7 +3870,16 @@ async function handleLockUpdate({ request, env }, customer) {
   /* De vaste stijl (migratie 0039): alleen bij lifestyle, alleen een slug uit
      styles.js. Zelfde lidmaatschapstoets als de kanalen en de verhouding. */
   const lookRaw = String(form?.get('look') || '').trim().toLowerCase();
-  const look = style === 'lifestyle' && LOOK_IDS.includes(lookRaw) ? lookRaw : null;
+  /* Een eigen look (cs-<id>) telt alleen als hij van déze klant is, ACTIEF is
+     en bij lifestyle hoort — een voorgestelde look is nog niet gemaakt en kan
+     dus nog niet de vaste look zijn (Lucas, 23 september 2026). */
+  let look = style === 'lifestyle' && LOOK_IDS.includes(lookRaw) ? lookRaw : null;
+  if (style === 'lifestyle' && isEigenLook(lookRaw)) {
+    const eigen = await env.DB.prepare(
+      `SELECT id FROM customer_styles WHERE id = ?1 AND customer_id = ?2 AND status = 'active' AND service IN ('lifestyle', 'both')`
+    ).bind(Number(lookRaw.slice(3)), customer.customer_id).first().catch(() => null);
+    look = eigen ? lookRaw : null;
+  }
   /* De achtergrond bestaat alleen bij catalog; bij een andere dienst wordt hij
      niet meer opgeslagen — zie lockSection(). */
   const backgroundKept = style === 'catalog' ? background : null;
@@ -3995,7 +4008,7 @@ async function handleLockUpdate({ request, env }, customer) {
  * De naam draagt zijn bedoeling. Wie hem in productiecode ziet staan, weet dat
  * hij daar niet hoort. Zie tests/revisieronde.test.mjs.
  */
-export { handleRevisionRound as __testRevisionRound };
+export { handleRevisionRound as __testRevisionRound, handleLockUpdate as __testLockUpdate };
 
 async function handleRevisionRound({ form, env }, customer, home) {
   if (!form) return seeOther(home);
@@ -6509,7 +6522,10 @@ function fotoVelden(form) {
    voor de klant; 'locklook' is nieuw sinds ronde 4 (zie vasteLook.js). */
 function lockFout(uit) {
   return uit?.reden === 'geen-fotos' ? 'lockfoto'
-    : uit?.reden === 'geen-slot' ? 'lockslot'
+    /* 'geen-credits' sinds het creditsysteem (queueLock() in subscription.js);
+       'geen-slot' blijft voor oudere aanroepers. Zonder deze regel kreeg een
+       klant met te weinig credits "je abonnement loopt niet" te zien. */
+    : (uit?.reden === 'geen-credits' || uit?.reden === 'geen-slot') ? 'lockslot'
       : uit?.reden === 'geen-look' ? 'locklook'
         : 'lockplan';
 }
@@ -8580,7 +8596,7 @@ export async function brandKitView(env, t, lang, customer, models, lockByStyle, 
     const bgApplies = style === 'catalog';
     const bg = bgApplies ? (lock.background_hex || '').toUpperCase() : '';
     const lookApplies = style === 'lifestyle';
-    const lookNow = lookApplies && LOOK_IDS.includes(String(lock.look || '')) ? String(lock.look) : '';
+    const lookNow = lookApplies && lookGeldig(lock.look) ? String(lock.look) : '';
     const chApplies = style === 'catalog';
     const chOn = String(lock.channels || '').split(',').map((v) => v.trim()).filter((v) => CHANNEL_IDS.includes(v));
     const ratioApplies = style !== 'video';
@@ -8592,8 +8608,9 @@ export async function brandKitView(env, t, lang, customer, models, lockByStyle, 
     const faceName = chosenOwn ? chosenOwn.label : chosenRoster ? chosenRoster.name : t.bkAsk;
     const bgMatch = bg ? BACKGROUNDS.find((b) => b.hex.toUpperCase() === bg) : null;
     const bgName = bg ? (bgMatch?.name[lang] || bgMatch?.name.en || bg) : t.bkAsk;
-    const lookLabel = lookNow ? ((lookById(lookNow, lang) || {}).name || lookNow) : '';
-    const lookThumb = lookNow ? ((LOOKS_EN.find((x) => x.slug === lookNow) || {}).cardPhoto || '') : '';
+    const eigenNu = isEigenLook(lookNow) ? ownStyles.find((st) => `cs-${st.id}` === lookNow) : null;
+    const lookLabel = eigenNu ? eigenNu.name : lookNow ? ((lookById(lookNow, lang) || {}).name || lookNow) : '';
+    const lookThumb = eigenNu ? (eigenNu.preview_key ? `/account/styles/${eigenNu.id}/preview` : '') : lookNow ? ((LOOKS_EN.find((x) => x.slug === lookNow) || {}).cardPhoto || '') : '';
     const ratioLabel = ratioNow ? (ratioById(ratioNow, style)?.label || '') : '';
     const chNames = chApplies && chOn.length ? CHANNELS.filter((c) => chOn.includes(c.id)).map((c) => channelName(c, lang)).join(', ') : '';
     const chSamen = chNames || (chApplies ? t.bkChNone : '');
@@ -8609,8 +8626,16 @@ export async function brandKitView(env, t, lang, customer, models, lockByStyle, 
       { hex: '', name: t.bkNoPref, checked: bg === '' },
       ...BACKGROUNDS.map((b) => ({ hex: b.hex, name: b.name[lang] || b.name.en, checked: bg === b.hex.toUpperCase() })),
     ];
+    /* Eigen looks vooraan: die zijn van deze klant. Een look die nog gemaakt
+       wordt staat erbij, maar is niet te kiezen — zo ziet de klant dat hij
+       eraan komt zonder dat hij een maand betaalt voor iets dat er nog niet is. */
     const looks = !lookApplies ? null : [
       { slug: '', img: '', name: t.bkNoPref, what: t.bkLookNone, checked: !lookNow },
+      ...ownStyles.filter((st) => st.service !== 'catalog').map((st) => ({
+        slug: `cs-${st.id}`, img: st.preview_key ? `/account/styles/${st.id}/preview` : '', name: st.name,
+        what: st.status === 'proposed' ? t.bkOwnPending : t.bkOwnTag, checked: lookNow === `cs-${st.id}`,
+        uit: st.status !== 'active',
+      })),
       ...LOOKS_EN.map((lk) => { const loc = lookById(lk.slug, lang) || lk; return { slug: lk.slug, img: lk.cardPhoto || lk.heroPhoto || '', name: loc.name || lk.name, what: loc.tagline || lk.tagline || '', checked: lookNow === lk.slug }; }),
     ];
     const ratios = !ratioApplies ? null : [
@@ -8754,10 +8779,17 @@ export async function planView(env, request, t, lang, customer, models = [], loc
 
   /* De keuzelijst in het formulier blijft bestaan voor wie met het toetsenbord
      werkt; de kaarten zetten hem. Zie de radiogroep in plan.astro. */
-  const soortKeuze = dienstKaarten.length > 1 ? dienstKaarten.map((d) => ({
+  /* ?dienst= komt van de dienstkaarten op de maandtab ("Kies deze"): die dienst
+     staat dan bovenaan de keuzelijst, zodat hij geselecteerd is. Alleen een
+     waarde die in de lijst staat telt — de rest wordt genegeerd. 23 september 2026. */
+  const gekozenDienst = (() => { try { return new URL(request.url).searchParams.get('dienst') || ''; } catch { return ''; } })();
+  const soortKeuzeRuw = dienstKaarten.length > 1 ? dienstKaarten.map((d) => ({
     value: d.value,
     label: `${d.naam} — ${d.creditsLabel}`,
   })) : null;
+  const soortKeuze = soortKeuzeRuw && soortKeuzeRuw.some((o) => o.value === gekozenDienst)
+    ? [...soortKeuzeRuw.filter((o) => o.value === gekozenDienst), ...soortKeuzeRuw.filter((o) => o.value !== gekozenDienst)]
+    : soortKeuzeRuw;
   const soorten = state.diensten || [];
   const vastgezet = state.wachtrij.filter((q) => q.locked_at).length;
   /* Hoeveel foto's er per product staan, en de eerste als miniatuur. Eén
@@ -8984,7 +9016,10 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     tabs: PLAN_TABS.map((k) => ({ key: k, href: k === 'maand' ? '/account/plan' : `/account/plan?tab=${k}`, label: { maand: t.planTabMaand, planning: t.planTabPlanning, bestellen: t.planTabBestellen, edities: t.planTabEdities, look: t.planTabLook, facturering: t.planTabFacturering }[k], nu: k === nu })),
     nudge: bkOnaf.length ? { h: t.planBkNudgeH, p: t.planBkNudgeBody, which: `${t.planBkNudgeWhich} ${bkOnaf.map((r) => r.label).join(', ')}`, cta: t.planBkNudgeCta } : null,
     saldo: {
-      naam: `${planName(state.plan, lang)} · ${state.sub.term === 'yearly' ? t.planTermYearly : t.planTermMonthly}`,
+      /* Drie termijnen, drie woorden (23 september 2026): een vooruitbetaald jaar
+         las hier als "maandelijks afgeschreven", en een jaartermijn als "jaarlijks
+         afgeschreven" terwijl die gewoon per maand wordt geïncasseerd. */
+      naam: `${planName(state.plan, lang)} · ${({ yearly: t.planTermYearly, prepaid: t.planTermPrepaid }[state.sub.term] || t.planTermMonthly)}`,
       /* ── HET BEDRAG DAT HIER STAAT IS HET BEDRAG DAT WORDT AFGESCHREVEN ────
          17 september 2026. Hier stond `vorm.monthlyCents`, en dat is NETTO — de
          prijs zoals /plans hem toont, met "excl. btw" ernaast. Op het dashboard
@@ -8994,7 +9029,8 @@ export async function planView(env, request, t, lang, customer, models = [], loc
          slots.js), dus dit getal was vanaf nu ook feitelijk onjuist geweest.
          Het btw-etiket staat erbij zodat het niet leest als een prijsverhoging
          ten opzichte van de plannenpagina. */
-      volgende: state.volgendeAfschrijving ? `${maandNaam(state.volgendeAfschrijving, lang)} · ${money(subMaandBruto(state.sub), lang)} ${btwLabel('incl', lang)}` : '',
+      /* Een vooruitbetaald jaar heeft geen volgende afschrijving: het is betaald. */
+      volgende: state.volgendeAfschrijving && state.sub.term !== 'prepaid' ? `${maandNaam(state.volgendeAfschrijving, lang)} · ${money(subMaandBruto(state.sub), lang)} ${btwLabel('incl', lang)}` : '',
       credit: creditMeter, dienstKaarten, elkProduct, betaald: Boolean(state.betaald), startComplete,
     },
     week: state.sub.window_day ? dagVanDeMaand(state.sub.window_day, lang) : '',
@@ -9010,7 +9046,11 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     look: bk.map((r) => ({ label: r.label, waarde: r.waarde || '', stijl: r.stijl })),
     opgebouwd: { geleverd, beelden: files.length, sinds: state.sub.started_at ? `${maandNaam(String(state.sub.started_at).slice(0, 7), lang)} ${String(state.sub.started_at).slice(0, 4)}` : '', opgehaald: state.opgehaald.map((o) => ({ name: o.name, ref: o.order_ref || '' })) },
     beheer: {
-      term: state.sub.term === 'yearly' ? t.planBillingYearly : t.planBillingMonthly, bedrag: `${money(subMaandBruto(state.sub), lang)} ${btwLabel('incl', lang)}`, status: planStatus,
+      term: ({ yearly: t.planBillingYearly, prepaid: t.planBillingPrepaid }[state.sub.term] || t.planBillingMonthly),
+      bedrag: state.sub.term === 'prepaid'
+        ? `${money(subEersteBetalingBruto(state.sub), lang)} ${btwLabel('incl', lang)}`
+        : `${money(subMaandBruto(state.sub), lang)} ${btwLabel('incl', lang)}`,
+      status: planStatus,
       beeindigd: state.sub.status === 'cancelled' ? t.planCancelledNote(state.termijnTot ? datumKort(state.termijnTot, lang) : maandNaam(state.maand, lang)) : '',
       plansHref: lang === 'nl' ? '/nl/plans' : '/plans', gepauzeerd: state.sub.status === 'paused',
     },

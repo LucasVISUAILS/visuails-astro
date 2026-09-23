@@ -66,8 +66,8 @@ const { t, k } = Astro.props;
         <legend>{t.bkLookLede}</legend>
         <div class="st-looks">
           {k.looks.map((lk) => (
-            <label class={`st-look${lk.slug ? '' : ' is-none'}`}>
-              <input type="radio" name="look" value={lk.slug} checked={lk.checked} />
+            <label class={`st-look${lk.slug ? '' : ' is-none'}${lk.uit ? ' is-uit' : ''}`}>
+              <input type="radio" name="look" value={lk.slug} checked={lk.checked} disabled={lk.uit} />
               {lk.img ? <img class="st-look-img" src={lk.img} alt="" loading="lazy" decoding="async" width="240" height="300" /> : <span class="st-look-img is-leeg" aria-hidden="true"></span>}
               <span class="st-look-naam">{lk.name}</span>
               <span class="st-look-wat">{lk.what}</span>

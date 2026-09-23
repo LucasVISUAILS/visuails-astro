@@ -98,8 +98,8 @@ export const VIDEO_FORMAT = {
   codec: 'H.264',
   name: 'MP4',
   why: {
-    en: 'MP4/H.264 — the one format with no "except on" after it. Every browser, every platform, every editor.',
-    nl: 'MP4/H.264 — het enige formaat zonder "behalve op" erachter. Elke browser, elk platform, elke editor.',
+    en: 'MP4/H.264: plays in every browser, platform and editor.',
+    nl: 'MP4/H.264: speelt in elke browser, op elk platform en in elke editor.',
   },
 };
 

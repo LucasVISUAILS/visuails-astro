@@ -59,7 +59,15 @@ export function d1(db) {
     const st = {
       sql,
       _b: [],
-      bind(...a) { st._b = a.map((v) => (v === undefined ? null : v)); return st; },
+      /* Een NIEUW statement, zoals D1 zelf doet — 23 september 2026. Hier
+         stond `return st`: dan maakte `const s = prepare(); batch(rows.map((r) =>
+         s.bind(...r)))` van elke rij de laatste. attachUploads() in
+         functions/api/order.js doet precies dat; tests/whatsapp-bestelling
+         vond het (twee foto's, twee keer dezelfde bestandsnaam). In productie
+         klopte het al — daar geeft bind() een nieuw object terug. `st._b`
+         wordt ook gezet, voor code die bindt en daarna het oude object
+         gebruikt. */
+      bind(...a) { const nieuw = mk(sql); nieuw._b = a.map((v) => (v === undefined ? null : v)); st._b = nieuw._b; return nieuw; },
       async first() { return db.prepare(sql).get(...st._b) ?? null; },
       async all() { return { results: db.prepare(sql).all(...st._b) }; },
       async run() {

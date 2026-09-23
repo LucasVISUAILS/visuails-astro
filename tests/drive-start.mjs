@@ -31,7 +31,7 @@ const browser = await pw.chromium.launch({
 for (const locale of ['', '/nl']) {
   for (const route of ALL) {
     const url = BASE + locale + route + '/';
-    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const ctx = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 900 } });
     const page = await ctx.newPage();
     const errs = [];
     // /account/me is a Cloudflare Pages Function (functions/account/index.js).

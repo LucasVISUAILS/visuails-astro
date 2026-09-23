@@ -214,7 +214,7 @@ export const ANGLE_COPY = {
     fixedH: 'Always included',
     fixedLine: 'These four are the catalog set. Every product gets them, at the per-product rate.',
     extraH: 'Add an angle',
-    extraLine: 'Chosen once, for the whole order — every product gets the same angles, which is what makes a set read as a set. Up to {max} on top of the four.',
+    extraLine: 'Chosen once for the whole order. Up to {max} on top of the four.',
     note: 'Anything specific? (optional)',
     notePh: 'e.g. show the chest logo',
     /* ── DE HOEK DIE ER NIET TUSSEN STAAT — 17 september 2026 ──────────────
@@ -261,7 +261,7 @@ export const ANGLE_COPY = {
     fixedH: 'Zit er altijd bij',
     fixedLine: 'Deze vier zijn de catalogset. Elk product krijgt ze, voor het tarief per product.',
     extraH: 'Een hoek erbij',
-    extraLine: 'Eén keer gekozen, voor de hele bestelling — elk product krijgt dezelfde hoeken, en dat is wat een set als een set laat lezen. Tot {max} bovenop de vier.',
+    extraLine: 'Eén keer gekozen voor de hele bestelling. Tot {max} bovenop de vier.',
     note: 'Iets specifieks erbij? (optioneel)',
     notePh: 'bijv. laat het logo op de borst zien',
     /* Zie de noot bij de Engelse tegenhanger: de omschrijving is hier verplicht,

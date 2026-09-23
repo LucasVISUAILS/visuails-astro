@@ -59,7 +59,8 @@ const dash = nl
   {stations.map((s) => (
     <li class="lb-stap">
       <p class="mono lb-n">{s.n || s.nr}</p>
-      <div class:list={['lb-beeld', s.beeld === 'in' && 'lb-in']}>
+      <div class="lb-beeld">
+        <div class:list={['lb-kader', `lb-kader-${s.beeld}`]}>
         {s.beeld === 'in' && (
           <ul class="lb-vijf" role="list">
             {IN.slice(0, 3).map((b) => (
@@ -110,6 +111,7 @@ const dash = nl
             ))}
           </ul>
         )}
+        </div>
         <p class="mono lb-etiket">
           <span>{s.beeld === 'dash' ? dash.ref : s.etiket}</span>
           {s.beeld !== 'dash' && s.etiketNoot && <span>{s.etiketNoot}</span>}
@@ -141,9 +143,9 @@ const dash = nl
     counter-reset: none;
   }
   .lb-stap { min-width: 0; display: grid; align-content: start; gap: .55rem; }
-  .lb-n { margin: 0; color: var(--inkt-2, var(--ink-3)); font-size: .72rem; letter-spacing: .08em; }
+  .lb-n { margin: 0 0 .15rem; color: var(--inkt-2, var(--ink-3)); font-size: .72rem; letter-spacing: .08em; }
   .lb-woord {
-    margin: .3rem 0 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); line-height: 1; letter-spacing: -.01em;
+    margin: 0; font-size: clamp(1.35rem, 2.2vw, 1.9rem); line-height: 1; letter-spacing: -.01em;
   }
   .lb-duur { margin: -.15rem 0 0; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2, var(--ink-3)); }
   .lb-zin { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--inkt-2, var(--ink-2)); max-width: 30ch; }
@@ -162,14 +164,27 @@ const dash = nl
   .lb-regels li:last-child { border-bottom: 1px solid var(--lijn, rgb(0 0 0 / .12)); }
   .lb-noot { margin: .3rem 0 0; font-size: .8rem; line-height: 1.5; color: var(--inkt-2, var(--ink-3)); max-width: 30ch; }
 
-  /* ── HET VAK MET HET BEELD ───────────────────────────────────────────────
-     Eén vaste hoogte, zodat de woorden van de vier stappen op één lijn staan.
-     De inhoud vult de hoogte op zijn eigen manier. */
-  /* --lb-vak is de hoogte van het beeldvak; de voorpagina zet hem hoger
-     (22 september 2026: de vier beelden waren op 1440 kleiner dan de tekst
-     eronder breed was, en dat las als leeg). */
-  .lb-beeld { display: grid; gap: .5rem; align-content: end; height: calc(var(--lb-vak, 11.6rem) + 2.4rem); }
-  .lb-beeld > :first-child { max-height: var(--lb-vak, 11.6rem); }
+  /* ── HET KADER ───────────────────────────────────────────────────────────
+     23 september 2026. Lucas: *"de foto's (…) wat consistenter qua grote en
+     look (…) wat meer witruimte om foto's heen zodat de tekst ervan af
+     staat."* Elke stap had zijn eigen vorm: drie hoge stroken, een blok van
+     vier, een los scherm dat midden in de lucht hing en drie uitsnedes van
+     verschillende hoogte. Op 1024 liepen de knoppen van het scherm zelfs over
+     het bijschrift heen.
+
+     Nu staat elk beeld in HETZELFDE kader: 4:3, wit, één haarlijn, dezelfde
+     binnenrand. Wat erin staat vult het kader op zijn eigen manier, maar de
+     buitenmaat is overal gelijk, op elke breedte — dus de bijschriften, de
+     koppen en de zinnen staan vanzelf op één lijn. Het kader snijdt af wat
+     niet past (overflow: hidden): niets kan er meer overheen lopen. */
+  .lb-beeld { display: grid; gap: .7rem; margin-bottom: .6rem; }
+  .lb-kader {
+    aspect-ratio: 4 / 3; overflow: hidden; min-width: 0;
+    background: #FFF; border: 1px solid var(--line-soft, rgb(0 0 0 / .1));
+    padding: clamp(.45rem, .7vw, .7rem);
+  }
+  .lb-kader > * { height: 100%; }
+  .lb-kader-dash { padding: 0; }
   .lb-etiket {
     display: flex; justify-content: space-between; gap: .6rem; margin: 0; white-space: nowrap; overflow: hidden;
     font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--inkt-2, var(--ink-3));
@@ -177,30 +192,28 @@ const dash = nl
   .lb-vijf, .lb-vier {
     list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
   }
-  /* Drie staande foto's naast elkaar, vier vierkante beelden als twee-bij-twee.
-     Geen aspect-ratio op de cellen — de rijhoogte komt uit het vak en het
-     beeld snijdt bij. */
-  .lb-vijf { grid-template-columns: repeat(3, minmax(0, 1fr)); height: var(--lb-vak, 11.6rem); }
-  .lb-vier { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); height: var(--lb-vak, 11.6rem); }
-  .lb-vijf li, .lb-vier li { overflow: hidden; background: var(--paper-2, #EDEDED); min-height: 0; }
+  /* Drie staande foto's naast elkaar, vier beelden als twee-bij-twee. De
+     cellen krijgen hun maat van het kader en het beeld snijdt bij. */
+  .lb-vijf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lb-vier { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  .lb-vijf li, .lb-vier li { overflow: hidden; background: #F2F2F2; min-height: 0; }
   .lb-vijf img, .lb-vier img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lb-vier img { object-position: 50% 30%; }
 
-  /* Drie uitsnedes, aan de onderkant uitgelijnd en oplopend in hoogte: de
-     vierkante het laagst (en het breedst), de staande het hoogst — zo lezen ze
-     als drie uitsnedes en niet als drie tegels. */
-  .lb-vormen { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-end; justify-content: flex-start; gap: .5rem; height: var(--lb-vak, 11.6rem); overflow: hidden; }
-  .lb-vormen li { min-width: 0; flex: 0 0 auto; }
-  .lb-vormen li:nth-child(1) .lb-vorm { height: clamp(4.4rem, 6.4vw, 6.2rem); }
-  .lb-vormen li:nth-child(2) .lb-vorm { height: clamp(5.2rem, 7.6vw, 7.4rem); }
-  .lb-vormen li:nth-child(3) .lb-vorm { height: clamp(6rem, 8.8vw, 8.6rem); }
-  .lb-vorm { position: relative; display: block; aspect-ratio: var(--lb-ratio, 1); overflow: hidden; background: var(--paper-2, #EDEDED); }
+  /* Drie uitsnedes van gelijke breedte, aan de onderkant uitgelijnd: de
+     hoogte volgt uit de verhouding (1:1, 4:5, 9:16), dus ze lopen vanzelf op.
+     Gelijke breedte past in elk 4:3-kader — de hoogste komt op ¾. */
+  .lb-vormen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; }
+  .lb-vormen li { min-width: 0; }
+  .lb-vorm { position: relative; display: block; width: 100%; aspect-ratio: var(--lb-ratio, 1); overflow: hidden; background: #F2F2F2; }
   .lb-vorm img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .lb-vorm-maat { position: absolute; left: 4px; bottom: 4px; padding: .15rem .35rem; background: rgb(17 17 17 / .82); color: #F5F5F5; font-size: .72rem; letter-spacing: .04em; font-weight: 600; }
 
   /* ── HET PORTAAL ALS TEKENING ────────────────────────────────────────────
-     Wit met een haarlijn, ook op een donker paneel: het is een tekening van
-     een scherm, en een scherm is licht. */
-  .lb-dash { border: 1px solid rgb(0 0 0 / .12); background: #FFF; color: #111; }
+     Het kader is hier het scherm zelf: geen binnenrand, de balk bovenaan. Wit,
+     ook op een donker paneel: het is een tekening van een scherm, en een
+     scherm is licht. */
+  .lb-dash { background: #FFF; color: #111; display: grid; grid-template-rows: auto minmax(0, 1fr); }
   .lb-dash-balk { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem .6rem; border-bottom: 1px solid rgb(0 0 0 / .08); }
   .lb-dash-merk { font-family: var(--font-heading); font-weight: 700; font-size: .72rem; letter-spacing: .04em; }
   /* Gemeten met kladblok/leesbaar-alles.mjs: zwart op 50 % tegen wit komt uit
@@ -208,25 +221,22 @@ const dash = nl
      zijn: het is het etiket dat zegt dat dit paneel een TEKENING is en geen
      schermafdruk van een echte klant. 58 % is 5,3:1. */
   .lb-dash-voorbeeld { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: rgb(0 0 0 / .58); }
-  .lb-dash-body { padding: .6rem; display: grid; gap: .55rem; }
+  .lb-dash-body { padding: clamp(.45rem, .7vw, .7rem); display: flex; flex-direction: column; justify-content: center; gap: clamp(.6rem, 1vw, .9rem); min-height: 0; }
   .lb-dash-tegels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
-  .lb-dash-tegel { position: relative; aspect-ratio: 1; overflow: hidden; background: #F2F2F2; }
+  .lb-dash-tegel { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #F2F2F2; }
   .lb-dash-tegel img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* Het vinkje in de kleur van "geleverd" uit de statusset: massief en diep,
      met een lichte letter erop. Zie de noot bij --st-done-fill in global.css. */
   .lb-dash-vink { position: absolute; top: 3px; right: 3px; width: 14px; height: 14px; display: grid; place-items: center; background: var(--st-done-fill, #1F0B66); color: var(--st-done-ink, #FFFFFF); font-size: 10px; font-weight: 700; }
   .lb-dash-acties { margin: 0; display: flex; gap: .35rem; flex-wrap: wrap; }
-  .lb-dash-knop { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; padding: .3rem .55rem; border: 1px solid rgb(0 0 0 / .18); border-radius: 999px; }
+  .lb-dash-knop { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; padding: .3rem .55rem; border: 1px solid rgb(0 0 0 / .18); border-radius: 999px; white-space: nowrap; }
   .lb-dash-knop.is-ja { background: var(--accent, #4A1FFF); border-color: var(--accent, #4A1FFF); color: var(--on-accent, #FFFFFF); }
 
   @media (max-width: 900px) {
     .lb-rij { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 520px) {
-    .lb-rij { grid-template-columns: minmax(0, 1fr); }
+    .lb-rij { grid-template-columns: minmax(0, 1fr); gap: 2.4rem; }
     .lb-zin, .lb-regels, .lb-noot { max-width: none; }
-    .lb-vormen li:nth-child(1) .lb-vorm { height: 7rem; }
-    .lb-vormen li:nth-child(2) .lb-vorm { height: 8.6rem; }
-    .lb-vormen li:nth-child(3) .lb-vorm { height: 11.6rem; }
   }
 </style>

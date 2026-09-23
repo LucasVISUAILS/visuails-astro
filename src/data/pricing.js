@@ -444,21 +444,19 @@ export const PLAN_SERVICES = Object.keys(SERVICE_CREDITS);
  *
  *      Starter  € 390  / 45  = € 8,67
  *      Studio   € 790  / 120 = € 6,58
- *      Brand    € 1690 / 270 = € 6,26
+ *      Brand    € 1690 / 290 = € 5,83
  *
  * Los kost een credit € 16,30 (bij vijf producten), € 12,75 (bij twaalf) of
  * € 9,80 (bij dertig). Een abonnee is dus 47, 48 en 36 procent goedkoper uit,
  * en assertCredits() weigert een plan dat die belofte breekt.
  *
- * ── HET ENE GETAL DAT LUCAS ZET ───────────────────────────────────────────
+ * ── BRAND OP 290 — 23 september 2026 ───────────────────────────────────────
  *
- * Brand geeft € 6,26 per credit tegen Studio's € 6,58 — vijf procent beter voor
- * meer dan het dubbele bedrag. Dat is vandaag al zo en het is een commerciële
- * keuze, geen rekenfout. Brand op 290 maakt het € 5,83 (elf procent beter dan
- * Studio); Brand op 250 tilt de slechtst mogelijke dagopbrengst van € 626 naar
- * € 681. Allebei één regel hier, en allebei van hem.
+ * Op 270 gaf Brand € 6,26 per credit tegen Studio's € 6,58: vijf procent beter
+ * voor meer dan het dubbele bedrag. Lucas: *"290 in plaats van 270 credits."*
+ * Nu € 5,83, elf procent beter dan Studio, en het duurste plan loont zichtbaar.
  */
-export const PLAN_CREDITS = { starter: 45, studio: 120, brand: 270 };
+export const PLAN_CREDITS = { starter: 45, studio: 120, brand: 290 };
 
 /** Wat `count` stuks van een dienst kosten in credits, of null als hij niet in een plan mag. */
 export function creditsVoorDienst(kind, count = 1) {
@@ -2723,18 +2721,17 @@ export function shouldPromptUpgrade(products) {
  */
 export function upgradePrompt(products, lang = 'en') {
   if (!shouldPromptUpgrade(products)) return null;
-  // The plan that would have covered this quarter's rate of ordering, and what
-  // the same output costs on the ladder. Both figures are computed, and
-  // assertLadder() guarantees the plan is the cheaper of the two — so this is a
-  // subtraction the client can repeat, not a claim they have to believe.
   const perMonth = Math.ceil(products / 3);
-  const id = planFor(perMonth) || 'brand';
-  const s = planSaving(id);
+  /* In credits sinds 23 september 2026: wat die producten per maand als
+     catalogsets kosten aan credits, en het kleinste plan dat dat dekt. */
+  const nodig = perMonth * SERVICE_CREDITS.catalog;
+  const ids = Object.keys(PLAN_CREDITS).sort((a, b) => PLAN_CREDITS[a] - PLAN_CREDITS[b]);
+  const id = ids.find((x) => PLAN_CREDITS[x] >= nodig) || ids[ids.length - 1];
   const name = plans(lang).find((p) => p.id === id)?.name || id;
   const price = euro(PLAN_AMOUNT[id], lang);
   return lang === 'nl'
-    ? `Je hebt dit kwartaal ${products} producten besteld — ongeveer ${perMonth} per maand. Het ${name}-plan dekt ${PLAN_PRODUCTS[id]} producten per maand voor ${price}; op losse bestellingen is dat ${euro(s.onLadder, lang)}.`
-    : `You’ve ordered ${products} products this quarter — about ${perMonth} a month. The ${name} plan covers ${PLAN_PRODUCTS[id]} products a month for ${price}; the same output ordered one at a time is ${euro(s.onLadder, lang)}.`;
+    ? `Je hebt dit kwartaal ${products} producten besteld — ongeveer ${perMonth} per maand, ${nodig} credits als catalogsets. Het ${name}-abonnement geeft ${PLAN_CREDITS[id]} credits per maand voor ${price}, te besteden aan catalog, lifestyle en video.`
+    : `You’ve ordered ${products} products this quarter — about ${perMonth} a month, ${nodig} credits as catalog sets. The ${name} plan gives ${PLAN_CREDITS[id]} credits a month for ${price}, to spend on catalog, lifestyle and video.`;
 }
 
 /**
@@ -2778,9 +2775,14 @@ export function quote(kind, products) {
  */
 export function planSaving(id) {
   if (!(id in PLAN_AMOUNT)) throw new Error(`pricing.js: unknown plan "${id}"`);
-  const onLadder = ladderTotal('complete', PLAN_PRODUCTS[id]) + PLAN_CLIPS[id] * AMOUNT.video;
-  const saving = Math.round((onLadder - PLAN_AMOUNT[id]) * 100) / 100;
-  return saving > 0 ? { onLadder, price: PLAN_AMOUNT[id], saving } : null;
+  /* ── IN CREDITS SINDS 23 SEPTEMBER 2026 ────────────────────────────────
+     Hier stond de complete-ladder over PLAN_PRODUCTS: "12 producten met catalog
+     én lifestyle". Een abonnement is credits die je vrij besteedt, dus de
+     vergelijking is nu: dezelfde credits helemaal aan catalogsets, los besteld.
+     Catalog en niet lifestyle, omdat dat de goedkoopste dienst per credit is —
+     de besparing valt zo nooit hoger uit dan hij voor iedereen is. */
+  const r = creditSaving(PLAN_CREDITS[id], PLAN_AMOUNT[id], 'catalog');
+  return r ? { onLadder: r.los, price: PLAN_AMOUNT[id], saving: r.saving, pct: r.pct, sets: r.count } : null;
 }
 
 /** The cheapest plan that covers this many products a month, or null. */
@@ -2803,74 +2805,62 @@ export function planFor(productsPerMonth) {
 export function plans(lang = 'en', { jaarRollover = 3, jaarPrijzen = null } = {}) {
   const l = lang === 'nl' ? 'nl' : 'en';
   const nlx = l === 'nl';
+  /* ── IN CREDITS SINDS 23 SEPTEMBER 2026 ──────────────────────────────────
+     Lucas: *"ik zie nog steeds producten staan en dat 1 product catalog en
+     lifestyle in 1 zijn, terwijl de klant niet alleen hieraan vast zit."* Een
+     plan geeft credits, en die besteed je aan wat je die maand nodig hebt. De
+     kaart zegt dus hoeveel credits, wat een credit kost, wat je ermee kunt, en
+     wat je bespaart — geen "producten" meer. */
   const meta = {
     starter: {
       name: planName('starter', l),
-      line: nlx ? 'Genoeg om elke maand iets nieuws te laten zien.' : 'Enough to have something new to show every month.',
+      line: nlx ? 'Elke maand iets nieuws voor je shop.' : 'Something new for your shop every month.',
     },
     studio: {
       name: planName('studio', l),
-      line: nlx ? 'Voor merken die continu posten, niet alleen bij een lancering.' : 'For brands posting continuously, not only at a launch.',
+      line: nlx ? 'Voor merken die elke week posten.' : 'For brands posting every week.',
     },
     brand: {
       name: planName('brand', l),
-      line: nlx ? 'Een hele collectie per maand, met je eigen gezicht erbij.' : 'A whole collection a month, with your own face on it.',
+      line: nlx ? 'Een hele collectie per maand, met je eigen gezicht.' : 'A whole collection a month, with your own face.',
     },
   };
   return Object.keys(PLAN_AMOUNT).map((id) => {
     const saving = planSaving(id);
-    const products = PLAN_PRODUCTS[id];
-    const clips = PLAN_CLIPS[id];
+    const credits = PLAN_CREDITS[id];
+    const fit = creditsFit(credits);
     return {
       id,
       name: meta[id].name,
       line: meta[id].line,
       price: euro(PLAN_AMOUNT[id], l),
       unit: nlx ? 'per maand' : 'per month',
-      /* De prijs op de jaartermijn, ALLEEN als hij afwijkt. Bij Studio en Merk is
-         hij gelijk (zie discountMonths in plans.js: alleen Starter krijgt korting,
-         want bij de andere twee zakt elke korting onder de ladderbodem), en twee
-         keer hetzelfde bedrag naast elkaar laat de jaartermijn zinloos lijken
-         terwijl hij dat niet is. Dezelfde afweging als op /start/plan. */
       jaarPrijs: jaarPrijzen && jaarPrijzen[id] && jaarPrijzen[id] !== PLAN_AMOUNT[id]
         ? euro(jaarPrijzen[id], l)
         : null,
-      products,
+      credits,
+      perCredit: euro(Math.round((PLAN_AMOUNT[id] / credits) * 100) / 100, l),
+      fit,
+      /* Blijft bestaan voor de capaciteitspoort en de oude `granted`-kolom;
+         hij staat nergens meer op een pagina. */
+      products: PLAN_PRODUCTS[id],
+      brandModel: id === 'brand',
       includes: [
-        nlx ? `${products} producten per maand` : `${products} products a month`,
-        nlx ? 'Een complete catalogusset en een lifestyle-carrousel voor elk product.' : 'A complete catalog set and a lifestyle carousel for every product.',
-        ...(clips ? [nlx ? `${clips} videoclips per maand` : `${clips} video clips a month`] : []),
-        ...(id === 'brand' ? [nlx ? 'Inclusief jouw eigen dedicated Merkmodel — volledig afgestemd op jouw merkesthetiek.' : 'Includes a dedicated Brand Model tailored to your brand — no separate casting or usage fees.'] : []),
-        /* Een abonnement heeft geen leverdatum per bestelling maar een vaste
-           week per maand; de losse-bestelling-zin stond hier tot 19 september
-           2026 en klopte niet ("bevestigen voordat je betaalt" — een abonnee
-           betaalt vooraf). */
-        nlx ? 'Een vaste week per maand, voor jou vrijgehouden vóór losse bestellingen.' : 'A fixed week every month, held for you ahead of one-off orders.',
-        /* ── DEZE REGEL GOLD VOOR ÉÉN VAN DE TWEE TERMIJNEN — 1 september 2026 ──
-         *
-         * Er stond onvoorwaardelijk "Maandelijks opzegbaar, ongebruikte producten
-         * schuiven 1 maand door". Dat is de MAANDtermijn. De jaartermijn bestaat
-         * ook, is vanaf deze kaart te kiezen (de knop gaat naar /start/plan?plan=…
-         * waar je hem aanvinkt), en heeft de twee eigenschappen die deze zin
-         * ontkent: hij ligt twaalf termijnen vast en schuift drie maanden door.
-         * Zie TERMS in plans.js — `fixed: true`, `rollover: 3`.
-         *
-         * Een kaart die "cancel any month" belooft aan iemand die een jaar tekent,
-         * is de ene fout die je op een prijspagina niet wilt maken. De zin noemt nu
-         * allebei de termijnen. De getallen komen uit plans.js en staan hier niet
-         * overgeschreven: pricing.js kan plans.js niet importeren (dat zou een
-         * kringetje maken — zie de kop van planNames.js), dus ze komen als
-         * argument binnen, met dezelfde constante als terugval.
-         */
+        nlx ? `${credits} credits per maand` : `${credits} credits a month`,
+        nlx ? `Bijvoorbeeld ${fit.catalog} catalogsets, of ${fit.lifestyle} lifestyle-carousels` : `For example ${fit.catalog} catalog sets, or ${fit.lifestyle} lifestyle carousels`,
+        ...(id === 'brand' ? [nlx ? 'Je eigen merkmodel inbegrepen' : 'Your own Brand Model included'] : []),
+        nlx ? 'Vaste productiedagen, vóór losse bestellingen' : 'Fixed production days, ahead of one-off orders',
         nlx
-          ? `Maandelijks opzegbaar; ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door — op de jaartermijn ${jaarRollover} maanden, en die ligt twaalf maanden vast`
-          : `Cancel any month; unused products roll over ${PLAN_ROLLOVER_MONTHS} month — on the 12-month term ${jaarRollover} months, and that term is fixed`,
+          ? `Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door (${jaarRollover} op 12 maanden)`
+          : `Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month (${jaarRollover} on 12 months)`,
+        nlx ? 'Maandelijks opzegbaar' : 'Cancel any month',
       ],
       saving: saving
         ? (nlx
-            ? `Op de prijs per product zou dit ${euro(saving.onLadder, l)} kosten — ${euro(saving.saving, l)} per maand verschil.`
-            : `The same output on the price per product is ${euro(saving.onLadder, l)} — ${euro(saving.saving, l)} a month more.`)
+            ? `${saving.sets} catalogsets los: ${euro(saving.onLadder, l)}. Je bespaart ${euro(saving.saving, l)} per maand.`
+            : `${saving.sets} catalog sets one-off: ${euro(saving.onLadder, l)}. You save ${euro(saving.saving, l)} a month.`)
         : null,
+      savingPct: saving ? saving.pct : 0,
     };
   });
 }
@@ -3617,3 +3607,151 @@ function assertCustomMonth() {
   }
 }
 assertCustomMonth();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * HET ABONNEMENT IN CREDITS, OOK OP MAAT — 23 september 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"ik zie nog steeds producten staan en dat 1 product catalog en
+ * lifestyle in 1 zijn, terwijl de klant niet alleen hieraan vast zit (…) Ook
+ * moet de klant credits kunnen invoeren bij custom plan en dat hij dan ziet wat
+ * hij met die credits kan krijgen voor content per maand."*
+ *
+ * De achterkant rekende al sinds 19 september in credits (SERVICE_CREDITS,
+ * PLAN_CREDITS, slots.js); de voorkant zei nog "12 producten, elk een catalogset
+ * én een carrousel". En de maand op maat rekende het LOSSE laddertarief — een
+ * abonnement op maat was dus even duur als los bestellen, en daarmee zinloos.
+ *
+ * ── ÉÉN PRIJSLIJN VOOR ALLE ABONNEMENTEN ─────────────────────────────────
+ *
+ * De drie vaste plannen zijn drie punten op één lijn: Starter (45 credits),
+ * Studio (120) en Merk (290). Een abonnement op maat is een punt op diezelfde
+ * lijn, ertussen: de prijs per credit loopt recht tussen de twee plannen eromheen.
+ * Daardoor geldt altijd:
+ *   · meer credits kost meer, maar elke credit wordt goedkoper;
+ *   · een maat die precies een plan is, kost precies dat plan;
+ *   · een maat is nooit goedkoper dan het plan erboven per credit, en een plan
+ *     is dus nooit een slechte keuze — het is een populair punt op de lijn.
+ * Onder Starter loopt de lijn met dezelfde helling door (duurder per credit),
+ * boven Merk blijft hij vlak. assertCreditPlans() hieronder bewaakt dit alles.
+ */
+
+/** De kleinste en grootste maand op maat, in credits, en de stap in het formulier. */
+export const CUSTOM_CREDITS_MIN = 30;
+export const CUSTOM_CREDITS_MAX = 300;
+export const CUSTOM_CREDITS_STEP = 5;
+
+/** De drie vaste plannen als punten op de lijn: credits en centen, oplopend. */
+function creditAnkers() {
+  return Object.keys(PLAN_CREDITS)
+    .map((id) => ({ id, credits: PLAN_CREDITS[id], cents: Math.round(PLAN_AMOUNT[id] * 100) }))
+    .sort((a, b) => a.credits - b.credits);
+}
+
+/** Centen per credit op deze hoeveelheid, niet afgerond. */
+export function creditRateCents(credits) {
+  const n = Number(credits);
+  const a = creditAnkers();
+  const r = (x) => x.cents / x.credits;
+  if (n <= a[0].credits) {
+    const helling = (r(a[1]) - r(a[0])) / (a[1].credits - a[0].credits);
+    return r(a[0]) + helling * (n - a[0].credits);
+  }
+  for (let i = 0; i < a.length - 1; i += 1) {
+    if (n <= a[i + 1].credits) {
+      const t = (n - a[i].credits) / (a[i + 1].credits - a[i].credits);
+      return r(a[i]) + t * (r(a[i + 1]) - r(a[i]));
+    }
+  }
+  return r(a[a.length - 1]);
+}
+
+/** Is dit een geldige maand op maat? Een geheel getal binnen de grenzen. */
+export function isCustomCredits(credits) {
+  const n = Number(credits);
+  return Number.isInteger(n) && n >= CUSTOM_CREDITS_MIN && n <= CUSTOM_CREDITS_MAX;
+}
+
+/**
+ * Wat een maand van `credits` kost, netto, in hele euro's.
+ * Precies een plan? Dan precies dat plan (`preset` zegt welk).
+ */
+export function customCreditsTotal(credits) {
+  const n = Number(credits);
+  if (!isCustomCredits(n)) {
+    throw new Error(`pricing.js: een maand op maat is ${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX} credits, niet ${credits}.`);
+  }
+  const preset = Object.keys(PLAN_CREDITS).find((id) => PLAN_CREDITS[id] === n) || null;
+  const total = preset ? PLAN_AMOUNT[preset] : Math.round((n * creditRateCents(n)) / 100);
+  return { credits: n, total, perCredit: Math.round((total / n) * 100) / 100, preset };
+}
+
+/** Hoeveel producten-met-catalog-en-lifestyle een creditsaldo vasthoudt — voor de
+ *  capaciteitspoort en de oude `granted`-kolom. Starter 45 → 5, Merk 290 → 33. */
+export function creditsProductEquivalent(credits) {
+  const per = SERVICE_CREDITS.catalog + SERVICE_CREDITS.lifestyle;
+  return Math.ceil(Math.max(0, Number(credits) || 0) / per);
+}
+
+/** Hoeveel van elke dienst er in een saldo past, als je het er helemaal aan uitgeeft. */
+export function creditsFit(credits) {
+  const n = Math.max(0, Math.floor(Number(credits) || 0));
+  return Object.fromEntries(PLAN_SERVICES.map((k) => [k, Math.floor(n / SERVICE_CREDITS[k])]));
+}
+
+/**
+ * Wat dezelfde credits LOS kosten, als ze helemaal aan één dienst opgaan.
+ * Catalog is de standaard, en met opzet: dat is de goedkoopste dienst per credit
+ * op de ladder, dus de vergelijking valt nooit gunstiger uit dan hij is.
+ */
+export function creditsOneOffValue(credits, kind = 'catalog') {
+  const per = SERVICE_CREDITS[kind];
+  if (!per) return null;
+  const n = Math.floor(Math.max(0, Number(credits) || 0) / per);
+  if (LADDER[kind]) return ladderTotal(kind, n);
+  if (kind === 'video-motion') return n * AMOUNT.video;
+  return null;
+}
+
+/** Het verschil met los bestellen, voor een maand van `credits` tegen `totalEuros`. */
+export function creditSaving(credits, totalEuros, kind = 'catalog') {
+  const los = creditsOneOffValue(credits, kind);
+  if (!(los > 0)) return null;
+  const saving = Math.round((los - totalEuros) * 100) / 100;
+  return saving > 0
+    ? { los, saving, pct: Math.round((saving / los) * 100), count: Math.floor(credits / SERVICE_CREDITS[kind]), kind }
+    : null;
+}
+
+function assertCreditPlans() {
+  /* 1 · De plannen liggen op de lijn. */
+  for (const [id, c] of Object.entries(PLAN_CREDITS)) {
+    const t = customCreditsTotal(c).total;
+    if (t !== PLAN_AMOUNT[id]) throw new Error(`pricing.js: ${id} ligt niet op de creditlijn (${t} tegen ${PLAN_AMOUNT[id]}).`);
+  }
+  /* 2 · Meer credits kost meer, en elke credit wordt goedkoper. */
+  let vorige = null;
+  for (let n = CUSTOM_CREDITS_MIN; n <= CUSTOM_CREDITS_MAX; n += 1) {
+    const r = customCreditsTotal(n);
+    if (vorige) {
+      if (r.total < vorige.total) throw new Error(`pricing.js: ${n} credits kost minder dan ${n - 1}.`);
+      if (r.perCredit > vorige.perCredit + 0.02) throw new Error(`pricing.js: een credit wordt duurder bij ${n}.`);
+    }
+    vorige = r;
+  }
+  /* 3 · De duurste credit op maat is nog altijd goedkoper dan de goedkoopste
+     credit los — anders is een abonnement op maat geen abonnement. */
+  const duurst = creditRateCents(CUSTOM_CREDITS_MIN) / 100;
+  const losGoedkoopst = Math.min(
+    ladderFloor('catalog') / SERVICE_CREDITS.catalog,
+    ladderFloor('lifestyle') / SERVICE_CREDITS.lifestyle,
+  );
+  if (!(duurst < losGoedkoopst * 0.95)) {
+    throw new Error(`pricing.js: een credit op maat (${duurst.toFixed(2)}) is niet goedkoper dan los (${losGoedkoopst.toFixed(2)}).`);
+  }
+  /* 4 · Een grens die geen veelvoud van de stap is, kan het formulier niet kiezen. */
+  if (CUSTOM_CREDITS_MIN % CUSTOM_CREDITS_STEP || CUSTOM_CREDITS_MAX % CUSTOM_CREDITS_STEP) {
+    throw new Error('pricing.js: de grenzen van de maand op maat vallen niet op de stap.');
+  }
+}
+assertCreditPlans();

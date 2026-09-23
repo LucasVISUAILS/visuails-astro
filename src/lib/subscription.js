@@ -1433,5 +1433,8 @@ export function subscriptionShape(sub) {
     monthlyCents: subMaandCents(sub),
     products: subProducten(sub),
     clips: Number(bundelVoor(sub)['video-motion'] || 0),
+    /* Het maandsaldo in credits — de eenheid waarin een abonnement sinds 19
+       september 2026 werkelijk rekent. */
+    credits: creditsVoor(sub),
   };
 }

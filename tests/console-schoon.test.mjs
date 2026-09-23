@@ -82,7 +82,7 @@ const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } 
 
 const gevonden = [];
 for (const [w, h] of [[1440, 900], [390, 844]]) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+  const ctx = await browser.newContext({ locale: 'en-US', viewport: { width: w, height: h }, reducedMotion: 'reduce' });
   for (const pad of PAGINAS) {
     if (!existsSync(join(DIST, pad === '/' ? 'index.html' : pad.slice(1) + '/index.html'))) continue;
     const page = await ctx.newPage();

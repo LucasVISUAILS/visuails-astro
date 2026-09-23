@@ -103,7 +103,7 @@ const staat = (p) => p.evaluate(() => {
 
 for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gallery', true]]) {
   console.log(`\n── ${pad}${rustig ? '  (prefers-reduced-motion)' : ''}`);
-  const ctx = await b.newContext({ viewport:{width:1440,height:1200}, reducedMotion: rustig ? 'reduce' : 'no-preference' });
+  const ctx = await b.newContext({ locale: 'en-US', viewport:{width:1440,height:1200}, reducedMotion: rustig ? 'reduce' : 'no-preference' });
   const p = await ctx.newPage();
   await p.goto(`http://127.0.0.1:8092${pad}`, { waitUntil:'load' });
   await p.waitForTimeout(400);
@@ -160,7 +160,7 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
 
 /* Een gedeelde link naar #alle-beelden landt meteen op het raster. */
 {
-  const ctx = await b.newContext({ viewport:{width:1440,height:1200} });
+  const ctx = await b.newContext({ locale: 'en-US', viewport:{width:1440,height:1200} });
   const p = await ctx.newPage();
   await p.goto('http://127.0.0.1:8092/nl/gallery#alle-beelden', { waitUntil:'load' });
   await p.waitForTimeout(300);

@@ -69,7 +69,7 @@ import {
   AMOUNT, TIERS, TEST_SAMPLE, euro, reviewClaim, turnaround, aftercare, perProduct,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
   LADDER, ladderRate, ladderFloor, ladderTotal,
-  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
+  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, PLAN_CREDITS,
   /* 19 september 2026: video is "op aanvraag" zolang de pijplijn niet staat
      (besluit 5 van de doorlichting); de video-FAQ volgt dezelfde schakelaar
      als /video, /start en /pricing in plaats van een bedrag te noemen dat de
@@ -158,11 +158,11 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Is een plan goedkoper dan bestellen wanneer ik het nodig heb?',
-        a: `Alleen als je elke maand ongeveer evenveel nodig hebt. Het ${planName.studio}-plan is ${ex(PLAN_AMOUNT.studio, 'nl')} per maand voor ${PLAN_PRODUCTS.studio} producten en ${PLAN_CLIPS.studio} clips; op de prijs per product kost dezelfde hoeveelheid ${ex(studioSaving.onLadder, 'nl')}. Bestel je per seizoen in plaats van elke maand, dan ben je goedkoper uit met de prijs per product. Een plan waarvan je de producten niet opmaakt, bespaart je niets.`,
+        a: `Als je elke maand iets nodig hebt, ja. Het ${planName.studio}-abonnement geeft ${PLAN_CREDITS.studio} credits per maand voor ${ex(PLAN_AMOUNT.studio, 'nl')}; dezelfde credits als ${studioSaving.sets} catalogsets los kosten ${ex(studioSaving.onLadder, 'nl')}. Bestel je per seizoen in plaats van elke maand, dan ben je los goedkoper uit.`,
       },
       {
-        q: 'Wat gebeurt er met planproducten die ik niet gebruik?',
-        a: `Die schuiven ${PLAN_ROLLOVER_MONTHS} maand door op de maandtermijn en ${TERMS.yearly.rollover} maanden op de jaartermijn: wat je deze maand niet besteld hebt, kun je daarna alsnog bestellen. Verder stapelen ze niet op, want een plan is gereserveerde capaciteit in de agenda en niet-opgevraagde capaciteit is een maand die al voorbij is. Een maandabonnement kun je elke maand opzeggen; de jaartermijn ligt twaalf maanden vast.`,
+        q: 'Wat gebeurt er met credits die ik niet gebruik?',
+        a: `Die schuiven ${PLAN_ROLLOVER_MONTHS} maand door op de maandtermijn en ${TERMS.yearly.rollover} maanden op de jaartermijn. Daarna vervallen ze: een abonnement is gereserveerde ruimte in de agenda. Maandelijks opzegbaar; de jaartermijn ligt twaalf maanden vast.`,
       },
       {
         q: 'Waarom staat er geen leverdatum bij een kleine bestelling?',
@@ -170,7 +170,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Kost een video meer binnen een bestelling?',
-        a: `Nee. ${ex(AMOUNT.video, 'nl')} per clip, hoe dan ook — los of toegevoegd aan elke bestelling. Video kost hetzelfde omdat het hetzelfde werk is.`,
+        a: VIDEO_OP_AANVRAAG ? 'Nee. Video is voorlopig op aanvraag, en de prijs per clip is dezelfde, los of in een bestelling.' : `Nee. ${ex(AMOUNT.video, 'nl')} per clip, hoe dan ook — los of toegevoegd aan elke bestelling.`,
       },
       {
         q: 'Hoe wordt btw getoond?',
@@ -194,11 +194,11 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Is a plan cheaper than ordering when I need it?',
-      a: `Only if the same output comes round every month. The ${planName.studio} plan is ${ex(PLAN_AMOUNT.studio, 'en')} a month for ${PLAN_PRODUCTS.studio} products and ${PLAN_CLIPS.studio} clips; the same output on the price per product is ${ex(studioSaving.onLadder, 'en')}. If your ordering is seasonal rather than monthly, the price per product is the cheaper door — a plan you do not fill is not a saving.`,
+      a: `If you need something every month, yes. The ${planName.studio} plan gives ${PLAN_CREDITS.studio} credits a month for ${ex(PLAN_AMOUNT.studio, 'en')}; the same credits as ${studioSaving.sets} catalog sets one-off cost ${ex(studioSaving.onLadder, 'en')}. If you order per season rather than monthly, one-off is cheaper.`,
     },
     {
-      q: 'What happens to plan products I do not use?',
-      a: `They roll over ${PLAN_ROLLOVER_MONTHS} month on the monthly term and ${TERMS.yearly.rollover} months on the 12-month term — what you did not order this month can be ordered later. They do not stack up beyond that, because a plan is capacity reserved in the calendar and capacity nobody claimed is a month that has already gone by. A monthly plan can be cancelled any month; the 12-month term is fixed.`,
+      q: 'What happens to credits I do not use?',
+      a: `They roll over ${PLAN_ROLLOVER_MONTHS} month on the monthly term and ${TERMS.yearly.rollover} months on the 12-month term. After that they expire: a plan is reserved room in the calendar. Cancel any month; the 12-month term is fixed.`,
     },
     {
       q: 'Why is there no delivery date on a small order?',
@@ -206,7 +206,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Does a video cost more inside an order?',
-      a: `No. ${ex(AMOUNT.video, 'en')} a clip either way — on its own, or added to any order. Video is priced the same because it is the same work.`,
+      a: VIDEO_OP_AANVRAAG ? 'No. Video is on request for now, and the price per clip is the same on its own or in an order.' : `No. ${ex(AMOUNT.video, 'en')} a clip either way — on its own, or added to any order.`,
     },
     {
       q: 'How is VAT shown?',
@@ -417,7 +417,7 @@ function algemeneGroepen(lang = 'en') {
         items: [
           {
             q: 'Wat kost het?',
-            html: `Geprijsd per product, en het tarief daalt naarmate het aantal stijgt. Catalog en lifestyle samen op één product is <strong>${euro(ladderRate('complete', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product <strong>${euro(ladderFloor('complete'), 'nl')}</strong> ${vatLabel('excl', 'nl')}. Wil je maar één van beide, dan heeft die zijn eigen prijs per aantal: catalog vanaf ${euro(ladderRate('catalog', 1), 'nl')} aflopend tot ${ex(ladderFloor('catalog'), 'nl')} per product, en lifestyle vanaf ${euro(ladderRate('lifestyle', 1), 'nl')} aflopend tot ${ex(ladderFloor('lifestyle'), 'nl')} per product. Video is ${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')} per clip. De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
+            html: `Geprijsd per product, en het tarief daalt naarmate het aantal stijgt. Catalog en lifestyle samen op één product is <strong>${euro(ladderRate('complete', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product <strong>${euro(ladderFloor('complete'), 'nl')}</strong> ${vatLabel('excl', 'nl')}. Wil je maar één van beide, dan heeft die zijn eigen prijs per aantal: catalog vanaf ${euro(ladderRate('catalog', 1), 'nl')} aflopend tot ${ex(ladderFloor('catalog'), 'nl')} per product, en lifestyle vanaf ${euro(ladderRate('lifestyle', 1), 'nl')} aflopend tot ${ex(ladderFloor('lifestyle'), 'nl')} per product. ${VIDEO_OP_AANVRAAG ? 'Video is voorlopig op aanvraag.' : `Video is ${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')} per clip.`} De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
           },
           {
             q: 'Zijn er volumekortingen?',
@@ -425,7 +425,7 @@ function algemeneGroepen(lang = 'en') {
           },
           {
             q: 'Is er een abonnement?',
-            a: `Alleen als je elke maand ongeveer evenveel nodig hebt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Per product kost een plan minder dan dezelfde complete levering (catalogset én carrousel) los besteld — een bestelling van alleen catalogsets blijft los goedkoper. Daarbovenop krijg je een vaste week in de planning. Op de maandtermijn is hij maandelijks opzegbaar en schuiven ongebruikte producten ${PLAN_ROLLOVER_MONTHS} maand door; de jaartermijn ligt twaalf maanden vast en schuift ${TERMS.yearly.rollover} maanden door. Bestel je zonder plan, dan loopt er niets door.`,
+            a: `Ja. Een abonnement geeft je elke maand credits die je besteedt aan catalog, lifestyle en video: ${planNames}, van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_CREDITS.starter} credits tot ${ex(PLAN_AMOUNT.brand, 'nl')} voor ${PLAN_CREDITS.brand} credits met je merkmodel inbegrepen, of een eigen aantal credits op maat. Je krijgt vaste productiedagen, ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door (${TERMS.yearly.rollover} op de jaartermijn) en je zegt maandelijks op.`,
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
@@ -689,7 +689,7 @@ function algemeneGroepen(lang = 'en') {
       items: [
         {
           q: 'What does it cost?',
-          html: `It is priced per product, and the rate falls as the count rises. Catalog and lifestyle together on one product is <strong>${euro(ladderRate('complete', 1), 'en')}</strong> ${vatLabel('excl', 'en')}; from ${TOP_RUNG_AT} products the same product is <strong>${euro(ladderFloor('complete'), 'en')}</strong> ${vatLabel('excl', 'en')}. If you want only one of the two it has its own price by count: catalog from ${euro(ladderRate('catalog', 1), 'en')} falling to ${ex(ladderFloor('catalog'), 'en')} per product, and lifestyle from ${euro(ladderRate('lifestyle', 1), 'en')} falling to ${ex(ladderFloor('lifestyle'), 'en')} per product. Video is ${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')} a clip. Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
+          html: `It is priced per product, and the rate falls as the count rises. Catalog and lifestyle together on one product is <strong>${euro(ladderRate('complete', 1), 'en')}</strong> ${vatLabel('excl', 'en')}; from ${TOP_RUNG_AT} products the same product is <strong>${euro(ladderFloor('complete'), 'en')}</strong> ${vatLabel('excl', 'en')}. If you want only one of the two it has its own price by count: catalog from ${euro(ladderRate('catalog', 1), 'en')} falling to ${ex(ladderFloor('catalog'), 'en')} per product, and lifestyle from ${euro(ladderRate('lifestyle', 1), 'en')} falling to ${ex(ladderFloor('lifestyle'), 'en')} per product. ${VIDEO_OP_AANVRAAG ? 'Video is on request for now.' : `Video is ${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')} a clip.`} Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
         },
         {
           q: 'Are there volume discounts?',
@@ -697,7 +697,7 @@ function algemeneGroepen(lang = 'en') {
         },
         {
           q: 'Is there a subscription?',
-          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Per product a plan costs less than the same complete delivery (catalog set and carousel) ordered separately — an order of catalog sets alone stays cheaper on its own. On top of that you get a fixed week in the calendar. On the monthly term it can be cancelled any month and unused products roll over ${PLAN_ROLLOVER_MONTHS} month; the 12-month term is fixed for twelve months and rolls over ${TERMS.yearly.rollover} months. Order without one and nothing recurs.`,
+          a: `Yes. A plan gives you credits every month to spend on catalog, lifestyle and video: ${planNames}, from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_CREDITS.starter} credits up to ${ex(PLAN_AMOUNT.brand, 'en')} for ${PLAN_CREDITS.brand} credits with your Brand Model included, or your own number of credits. You get fixed production days, unused credits roll over ${PLAN_ROLLOVER_MONTHS} month (${TERMS.yearly.rollover} on the 12-month term) and you cancel any month.`,
         },
         {
           q: 'Can I add my VAT number?',
@@ -1269,8 +1269,8 @@ const VIDEO_FAQ = {
       {
         q: 'What does a clip cost?',
         a: VIDEO_OP_AANVRAAG
-          ? `On request for now: tell us what you sell and which photos you have, and we reply in writing with a price before anything starts — Motion and Lifestyle Video per clip, Campaign per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`
-          : `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
+          ? `On request for now: tell us what you sell and which photos you have, and we reply in writing with a price before anything starts — Motion and Lifestyle Video per clip, Campaign per project.${studioPlan ? ' With a plan, a Motion clip costs 5 credits.' : ''}`
+          : `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ' With a plan, a Motion clip costs 5 credits.' : ''}`,
       },
       {
         q: 'Why does the clip rate not fall with volume?',
@@ -1298,8 +1298,8 @@ const VIDEO_FAQ = {
       {
         q: 'Wat kost een clip?',
         a: VIDEO_OP_AANVRAAG
-          ? `Voorlopig op aanvraag: je vertelt wat je verkoopt en welke foto’s je hebt, en we antwoorden schriftelijk met een prijs voordat er iets begint — Motion en Lifestyle Video per clip, Campaign per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`
-          : `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
+          ? `Voorlopig op aanvraag: je vertelt wat je verkoopt en welke foto’s je hebt, en we antwoorden schriftelijk met een prijs voordat er iets begint — Motion en Lifestyle Video per clip, Campaign per project.${studioPlan ? ' Met een abonnement kost een Motion-clip 5 credits.' : ''}`
+          : `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ' Met een abonnement kost een Motion-clip 5 credits.' : ''}`,
       },
       {
         q: 'Waarom daalt het cliptarief niet bij grotere aantallen?',

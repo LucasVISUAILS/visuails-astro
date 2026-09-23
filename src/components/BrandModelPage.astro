@@ -110,16 +110,16 @@ const brandModel = {
   unit: lang === 'nl' ? 'per merk' : 'per brand',
   includes: lang === 'nl'
     ? [
-        'Eén gezicht per ontwerp, gebouwd voor jouw merk en door niemand anders gebruikt — wil je er meer, dan is elk gezicht een eigen ontwerp tegen hetzelfde bedrag',
-        'Hetzelfde gezicht door een hele bestelling heen — en jij kiest per bestelling welk gezicht erop staat',
-        'De uniekheidscontrole vóór levering: het gezicht gaat door gezichtszoekmachines en dat wordt op je bestelling vastgelegd. Blijkt het ooit toch op een bestaande persoon te lijken, dan ontwerpen we het opnieuw en maken we de bestelde beelden ermee over',
-        'Blijft meegaan als je collectie verandert, en blijft aan jouw merk gekoppeld — ook als je een tijd niet bestelt',
+        'Eén gezicht, alleen voor jouw merk (elk extra gezicht is een eigen ontwerp)',
+        'Per bestelling kies je welk gezicht erop staat',
+        'Uniekheidscontrole via gezichtszoekmachines vóór levering',
+        'Blijft aan jouw merk gekoppeld, ook als je even niet bestelt',
       ]
     : [
-        'One face per design, built for your brand and used by no one else — want more, then each face is its own design at the same amount',
-        'The same face across a whole order — and you pick per order which face runs',
-        'The uniqueness check before delivery: the face goes through face search engines and that is recorded on your order. Should it ever turn out to resemble a real person, we redesign it and remake the ordered images with it',
-        'Kept current as your line changes, and tied to your brand — even if you do not order for a while',
+        'One face, for your brand only (each extra face is its own design)',
+        'You pick per order which face runs',
+        'A uniqueness check through face search engines before delivery',
+        'Tied to your brand, even if you pause ordering',
       ],
 };
 
@@ -176,7 +176,7 @@ const COPY = {
     eyebrow: 'Your Brand Model',
     h1a: 'Faces of your own.',
     h1b: 'Only yours.',
-    lead: `A model designed once for your brand and booked by nobody else, ever. Have one, or build a small cast — and choose per order which of them runs, yours or one of the ${rosterWoord('en')} standard faces. What stays constant is that a face carries a whole order, so your range reads as one line instead of a folder of separate shoots.`,
+    lead: `A model designed for your brand alone. Per order you choose: yours, or one of the ${rosterWoord('en')} standard faces.`,
     ctaPrimary: 'Start your Brand Model',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hi VISUAILS, I\'d like to discuss a brand model.',
@@ -190,7 +190,7 @@ const COPY = {
        pagina verkoopt: zes gedeelde gezichten achter één dat van jou alleen is. */
     castShared: 'Shared library',
     castYours: 'Your brand model',
-    castNote: 'An example. Yours is a face that is not in this picture — that is the point.',
+    castNote: 'An example — yours is not in this picture.',
     trust: [
       ['One-time', 'setup, then it is yours'],
       ['Exclusive', 'to your brand, permanently'],
@@ -199,13 +199,13 @@ const COPY = {
 
     // NOT A MODEL
     notAH: 'Your model, not <em>a</em> model.',
-    notALead: 'The standard library is shared: a face you like is a face another brand can pick tomorrow. A Brand Model is designed for you alone and never appears anywhere else.',
+    notALead: 'The standard faces are shared. A Brand Model appears nowhere else.',
     notAAlt: 'A VISUAILS model portrait',
     props: [
-      ['Built from what you tell us', 'Age, styling, mood, and what you never want to see.'],
-      ['Exclusive by construction', 'No other brand can order this face. Not a promise — a property of how it is made.'],
-      ['Identical, order after order', 'The same person in the same skin, whether it is product four or product two hundred.'],
-      ['Yours to keep', 'Set up once. Every order after runs at the normal per-product rate for its size.'],
+      ['Built from your brief', 'Age, styling and mood.'],
+      ['Exclusive', 'No other brand can order this face.'],
+      ['Identical, every order', 'The same person on product four or two hundred.'],
+      ['Yours to keep', 'Pay once, then the normal rate per product.'],
     ],
 
     // COST
@@ -236,9 +236,9 @@ const COPY = {
     // setup or the credit moves and nobody would notice, because it reads as
     // prose rather than as a figure.
     costMath: 'Not per visual, not per order, not per year. From then on every order you place with us carries the same face, at the normal per-product rate for its size.',
-    costFree: `You do not need a Brand Model to place an order. Every order already includes a model from the standard library at no extra cost — this is a decision about owning a face, not about getting one.`,
+    costFree: `Not required: every order already includes a standard face at no extra cost.`,
     costCta: 'See the price per product',
-    costSequence: `The model is designed and locked before your first order is scheduled, so setup never eats into the reserved delivery date an order of ${WINDOW_THRESHOLD} products or more is given.`,
+    costSequence: `Designed and locked before your first order is scheduled.`,
 
     // WHERE IT FITS
     fitMeta: '( Where it fits )',
@@ -259,7 +259,7 @@ const COPY = {
 
     // DIRECTIONS
     dirH: 'Nine directions, to argue with.',
-    dirLead: 'Illustrative starting points, not a menu. Send us your references and we design two or three real directions against your line.',
+    dirLead: 'Starting points, not a menu. We design two or three directions from your references.',
 
     // OUTPUT
     outH: 'Real output, not a mockup.',
@@ -271,17 +271,14 @@ const COPY = {
     // PROVIDE / GET
     giveH: 'What you send us',
     give: [
-      ['references', 'A few <strong>references</strong> for the look you are after.'],
-      ['spec', 'The <strong>age, bearing and styling</strong> you want.'],
-      ['range', 'A sense of <strong>the range</strong> the model has to carry.'],
-      ['nevers', 'Your <strong>do’s and don’ts</strong> — especially the don’ts.'],
+      ['references', 'A few <strong>references</strong>.'],
+      ['spec', 'The <strong>age and styling</strong> you want.'],
+      ['nevers', 'Your <strong>do’s and don’ts</strong>.'],
     ],
     getH: 'What you get back',
     get: [
-      ['locked', 'A <strong>locked model</strong>, exclusive to you, reused at no extra cost.'],
-      ['every', `The same face across <strong>a whole order</strong> &mdash; and you choose per order which face runs, one of yours or one of the ${rosterWoord('en')}.`],
-      ['current', '<strong>Kept current</strong> as your line and your styling change.'],
-      ['credit', `<strong>${euro(AMOUNT.brandModel, 'en')} once</strong> ${vatLabel('excl', 'en')}, and nothing after that.`],
+      ['locked', 'A <strong>locked model</strong>, exclusive to you.'],
+      ['credit', `<strong>${euro(AMOUNT.brandModel, 'en')} once</strong> ${vatLabel('excl', 'en')}, nothing after.`],
     ],
 
     // STANDARD LIBRARY
@@ -294,7 +291,7 @@ const COPY = {
     libLead: `${rosterWoord('en', true)} models, shared across brands, included in every order at no extra cost. Pick one yourself, or tell us the product and the customer when you order and we match one — then keep using it.`,
     /* 19 september 2026: de drie portretten staan hier niet meer (ze staan op
        /models), dus de zin zegt niet meer "worden hier getoond". */
-    libNote: 'They cost nothing extra, and moving to a Brand Model later does not mean redoing anything.',
+    libNote: 'No extra cost, and you can switch to a Brand Model later.',
     libAllCta: `See all ${rosterWoord('en')}`,
     libOwnCta: 'Or have one made for you',
     traits: {
@@ -313,7 +310,7 @@ const COPY = {
     ],
     genCta: 'The longer comparison, tools included',
     /* De kamer "Why not just prompt a generator?" in één zin — 19 sept 2026. */
-    genKort: 'Why not prompt a generator? A prompt never gives you the same person twice; a Brand Model is that face, locked once and kept.',
+    genKort: 'A prompt never gives you the same person twice.',
 
     // CTA
     ctaH1: 'Design the face of',
@@ -330,7 +327,7 @@ const COPY = {
     eyebrow: 'Jouw merkmodel',
     h1a: 'Eigen gezichten.',
     h1b: 'Alleen van jou.',
-    lead: `Een model dat we één keer voor jouw merk ontwerpen, en dat geen ander merk kan boeken. Neem er één, of laat een klein groepje maken. Per bestelling kies je wie erop staat: je eigen gezicht, of een van de ${rosterWoord('nl')} standaardmodellen. Eén gezicht draagt de hele bestelling, dus je collectie ziet eruit als één geheel in plaats van als een map met losse fotoshoots.`,
+    lead: `Een model dat alleen voor jouw merk ontworpen is. Per bestelling kies je: dat van jou, of een van de ${rosterWoord('nl')} standaardgezichten.`,
     ctaPrimary: 'Start je merkmodel',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi VISUAILS, ik wil graag een merkmodel bespreken.',
@@ -338,7 +335,7 @@ const COPY = {
     /* Zie de Engelse tegenhanger. */
     castShared: 'Vaste reeks',
     castYours: 'Jouw merkmodel',
-    castNote: 'Een voorbeeld. Dat van jou staat niet op deze foto — dat is precies het punt.',
+    castNote: 'Een voorbeeld — dat van jou staat hier niet op.',
     trust: [
       ['Eén keer betalen', 'daarna is het gezicht van jou'],
       ['Exclusief', 'voor jouw merk, permanent'],
@@ -346,13 +343,13 @@ const COPY = {
     ],
 
     notAH: 'Jouw model, niet <em>een</em> model.',
-    notALead: 'De standaardbibliotheek is gedeeld: een gezicht dat jij mooi vindt, kan een ander merk morgen kiezen. Een merkmodel wordt alleen voor jou ontworpen en verschijnt nergens anders.',
+    notALead: 'De standaardgezichten zijn gedeeld. Een merkmodel verschijnt nergens anders.',
     notAAlt: 'Een VISUAILS-modelportret',
     props: [
-      ['Gebouwd op wat jij ons vertelt', 'Leeftijd, styling, sfeer, en wat je nooit wil zien.'],
-      ['Exclusief, en dat hoef je niet op ons woord te geloven', 'Geen ander merk kan dit gezicht bestellen. Dat is geen belofte, maar een gevolg van hoe het gemaakt is.'],
-      ['Identiek, bestelling na bestelling', 'Dezelfde persoon, met hetzelfde gezicht en dezelfde huidtint, of het nu product vier is of product tweehonderd.'],
-      ['Van jou, en het blijft van jou', 'Je betaalt één keer voor het ontwerp. Elke bestelling daarna kost gewoon de prijs per product die bij dat aantal hoort.'],
+      ['Gebouwd op jouw briefing', 'Leeftijd, styling en sfeer.'],
+      ['Exclusief', 'Geen ander merk kan dit gezicht bestellen.'],
+      ['Identiek, elke bestelling', 'Dezelfde persoon op product vier of tweehonderd.'],
+      ['Van jou', 'Eén keer betalen, daarna het gewone tarief per product.'],
     ],
 
     // Zie de noot bij het Engelse kostblok.
@@ -368,9 +365,9 @@ const COPY = {
     // dus een uitgeschreven rangtelwoord veroudert stil zodra de setup of het
     // krediet verandert.
     costMath: 'Niet per beeld, niet per bestelling, niet per jaar. Vanaf dat moment draagt elke bestelling die je bij ons doet hetzelfde gezicht, tegen het gewone tarief per product voor die grootte.',
-    costFree: `Je hebt geen merkmodel nodig om te bestellen. Elke bestelling bevat al een model uit de standaardbibliotheek, zonder extra kosten — je kiest hier of een gezicht alleen van jou is, niet of je er een krijgt.`,
+    costFree: `Niet verplicht: elke bestelling heeft al een standaardgezicht, zonder meerprijs.`,
     costCta: 'Bekijk alle prijzen per aantal',
-    costSequence: `We ontwerpen het model en zetten het vast voordat we je eerste bestelling inplannen. Zo gaat het ontwerp nooit ten koste van de leverdatum die we vrijhouden voor een bestelling vanaf ${WINDOW_THRESHOLD} producten.`,
+    costSequence: `Ontworpen en vastgezet voordat je eerste bestelling wordt ingepland.`,
 
     fitMeta: '( Waar het past )',
     fitH: 'Eén look, door alles wat je verkoopt.',
@@ -388,7 +385,7 @@ const COPY = {
     ],
 
     dirH: 'Negen richtingen om op te reageren.',
-    dirLead: 'Dit zijn voorbeelden om op te reageren, geen menu om uit te kiezen. Stuur ons je referenties, dan ontwerpen we twee of drie echte richtingen voor jouw collectie.',
+    dirLead: 'Vertrekpunten, geen menu. We ontwerpen twee of drie richtingen op basis van jouw referenties.',
 
     outH: 'Echt geleverd werk, geen voorbeeld.',
     outAlt: 'Een voorbeeld van een VISUAILS merkmodel',
@@ -397,17 +394,14 @@ const COPY = {
 
     giveH: 'Wat jij ons stuurt',
     give: [
-      ['references', 'Een paar <strong>referenties</strong> voor de look die je zoekt.'],
-      ['spec', 'De <strong>leeftijd, houding en styling</strong> die je wilt.'],
-      ['range', 'Een idee van <strong>het assortiment</strong> dat het model moet dragen.'],
-      ['nevers', 'Wat je <strong>wel en zeker niet</strong> wil zien — vooral dat laatste.'],
+      ['references', 'Een paar <strong>referenties</strong>.'],
+      ['spec', 'De <strong>leeftijd en styling</strong> die je wilt.'],
+      ['nevers', 'Wat je <strong>wel en niet</strong> wil zien.'],
     ],
     getH: 'Wat je terugkrijgt',
     get: [
-      ['locked', 'Een <strong>vastgezet model</strong>, exclusief van jou, hergebruikt zonder extra kosten.'],
-      ['every', `Hetzelfde gezicht door een hele bestelling heen &mdash; en <strong>jij kiest per bestelling</strong> welk gezicht erop staat, dat van jou of een van de ${rosterWoord('nl')}.`],
-      ['current', '<strong>Blijft meegaan</strong> als je collectie en je styling veranderen.'],
-      ['credit', `<strong>${euro(AMOUNT.brandModel, 'nl')} eenmalig</strong> ${vatLabel('excl', 'nl')}, en daarna niets meer.`],
+      ['locked', 'Een <strong>vastgezet model</strong>, alleen van jou.'],
+      ['credit', `<strong>${euro(AMOUNT.brandModel, 'nl')} eenmalig</strong> ${vatLabel('excl', 'nl')}, daarna niets meer.`],
     ],
 
     libMeta: '( Of begin hier )',
@@ -415,7 +409,7 @@ const COPY = {
     libAlt: 'een VISUAILS-standaardmodel',
     /* Zie de noot bij de Engelse tabel. */
     libLead: `${rosterWoord('nl', true)} modellen die we voor alle merken gebruiken, inbegrepen in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons bij het bestellen wat je verkoopt en wie je klant is — dan kiezen wij er een dat past en blijven we dat gebruiken.`,
-    libNote: 'Ze kosten niets extra, en later overstappen op een eigen merkmodel betekent niet dat je iets over moet doen.',
+    libNote: 'Geen meerprijs, en later overstappen op een merkmodel kan altijd.',
     libAllCta: `Bekijk alle ${rosterWoord('nl')}`,
     libOwnCta: 'Of laat er een voor je maken',
     traits: {
@@ -432,7 +426,7 @@ const COPY = {
       'Wij verkopen niet het maken van een beeld. Wij verkopen dat het vastligt: één identiteit die één keer wordt vastgezet, gestuurd door je eigen productfoto’s, en door een specialist bekeken voordat er iets naar je toe gaat. Dat is het deel dat een hele collectie meegaat.',
     ],
     genCta: 'De hele vergelijking, ook met AI-tools',
-    genKort: 'Waarom niet zelf iets met een generator maken? Een prompt geeft je nooit twee keer dezelfde persoon; een merkmodel is dat gezicht, één keer vastgezet en daarna bewaard.',
+    genKort: 'Een prompt geeft je nooit twee keer dezelfde persoon.',
 
     ctaH1: 'Ontwerp het gezicht van',
     ctaEm: 'jouw merk.',

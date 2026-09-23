@@ -631,7 +631,8 @@ function assertPlans() {
    * de afhankelijkheid mag.
    */
   const kaartZonderArgument = plans('nl')[0].includes.join(' | ');
-  if (!kaartZonderArgument.includes(`jaartermijn ${TERMS.yearly.rollover} maanden`)) {
+  /* Sinds 23 september 2026 zegt de kaart "(3 op 12 maanden)". */
+  if (!kaartZonderArgument.includes(`(${TERMS.yearly.rollover} op 12 maanden)`)) {
     throw new Error(
       `plans.js: de terugval van plans() in pricing.js noemt niet ${TERMS.yearly.rollover} maanden `
       + 'doorschuiven op de jaartermijn. Werk de standaardwaarde van `jaarRollover` daar bij.'

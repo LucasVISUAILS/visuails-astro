@@ -202,15 +202,15 @@ const COPY = {
 
     /* ── DE VERGELIJKING, DE RUGGENGRAAT VAN DE PAGINA ─────────────────── */
     vglH: 'Two sets, and only one of them costs anything.',
-    vglSub: 'Both are visuals without a product in them. What separates them is who else gets them.',
+    vglSub: 'Both without a product. The difference is who else gets them.',
     gedeeld: {
       naam: 'The shared set',
       tag: 'Comes with your plan',
       rijen: [
         ['What it is', `${STOCK_OFF_BRAND} ${noun('stock', 'en')} a month, brand-neutral: mood, texture and light that suit any clothing brand.`],
-        ['Who else gets it', 'Every brand on a plan. The same images go out to all of them — exactly like the shared model roster, and we say so for the same reason.'],
+        ['Who else gets it', 'Every brand on a plan.'],
         ['What it costs', `Nothing extra. It is part of every plan, from ${eerstePlan ? eerstePlan.name : 'the first'} up.`],
-        ['Your licence', 'Non-exclusive, perpetual, worldwide. You may edit, publish and use them commercially, and you keep them if you cancel.'],
+        ['Your licence', 'Non-exclusive, commercial use, yours to keep.'],
       ],
       cta: 'See the plans',
       href: '/plans',
@@ -219,15 +219,15 @@ const COPY = {
       naam: 'Editions',
       tag: 'The paid add-on',
       rijen: [
-        ['What it is', `${STOCK_ON_BRAND} visuals a month, set up on your style, your locations and your colour palette. Still no product in them.`],
-        ['Who else gets it', 'Nobody. This set is made for one brand and goes to one brand.'],
+        ['What it is', `${STOCK_ON_BRAND} visuals a month in your style and colours.`],
+        ['Who else gets it', 'Nobody.'],
         ['What it costs', `${maand} a month ${vatLabel('excl', 'en')} on top of your plan, after a one-time setup of ${opzet}.`],
-        ['Your licence', 'Exclusive, perpetual, worldwide — the same licence as any order you place. Nobody else may use these images.'],
+        ['Your licence', 'Exclusive, like any order.'],
       ],
       cta: 'Talk to us about Editions',
       href: '/contact',
     },
-    vglFoot: `You do not choose between them. The shared set is there either way; Editions is what you add when brand-neutral is not enough.`,
+    vglFoot: ``,
 
     /* ── WAT HET NIET IS ──────────────────────────────────────────────── */
     nietH: 'There is no product in any of it.',
@@ -265,14 +265,14 @@ const COPY = {
     /* ── PRIJS ─────────────────────────────────────────────────────────── */
     prijsH: 'What Editions costs',
     prijsMaand: `<strong>${maand} a month</strong> ${vatLabel('excl', 'en')}, on top of your plan.`,
-    prijsOpzet: `<strong>${opzet} once</strong> to set your brand up: the style, the locations and the colour palette that every month after it runs on.`,
+    prijsOpzet: `<strong>${opzet} once</strong> to set up your style.`,
     prijsWaaromH: 'Why two figures and not one',
     prijsWaarom: 'Because two different things happen. The setup is work done once per brand; the monthly run is the set itself. Folding the setup into the monthly price would spread it over months you have not committed to yet — which means the price would quietly depend on how long you stay.',
     zekerH: 'What you can count on.',
     zeker: [
-      `${STOCK_ON_BRAND} visuals every month, whether or not you had anything new to shoot`,
-      'Made for one brand and delivered to one brand — nobody else gets this set',
-      'In VISUAILS Studio with your orders, not in a separate library',
+      `${STOCK_ON_BRAND} visuals every month`,
+      'Made for your brand only',
+      'In VISUAILS Studio with your orders',
       reviewClaim('unattended', 'en'),
     ],
     prijsCta: 'Talk to us about Editions',
@@ -293,7 +293,7 @@ const COPY = {
     faqs: serviceFaqs('editions', 'en'),
     ctaH: 'Fill the month <br>you have nothing for.',
     ctaP: `${STOCK_OFF_BRAND} shared visuals come with every plan. ${STOCK_ON_BRAND} of your own are ${maand} a month after a ${opzet} setup.`,
-    belofte: 'Neither set is running yet, so there is nothing to buy today and nothing is charged. What this page is for is that you know which half is included and which half is not, before the first invoice rather than after it.',
+    belofte: 'Neither set is running yet; nothing is charged.',
   },
   nl: {
     eyebrow: '( Editions )',
@@ -312,15 +312,15 @@ const COPY = {
     queueNote: `Geen van beide sets loopt al, dus er wordt voor allebei nog niets afgeschreven.`,
 
     vglH: 'Twee sets, en maar één ervan kost iets.',
-    vglSub: 'Allebei zijn het beelden zonder product erin. Wat ze scheidt is wie ze verder krijgt.',
+    vglSub: 'Allebei zonder product. Het verschil is wie ze verder krijgt.',
     gedeeld: {
       naam: 'De gedeelde set',
       tag: 'Zit bij je abonnement',
       rijen: [
         ['Wat het is', `${STOCK_OFF_BRAND} ${noun('stock', 'nl')} per maand, merkneutraal: sfeer, textuur en licht die bij elk kledingmerk passen.`],
-        ['Wie hem verder krijgt', 'Elk merk met een abonnement. Dezelfde beelden gaan naar allemaal — precies zoals bij de gedeelde modellenbibliotheek, en we zeggen het er om dezelfde reden bij.'],
+        ['Wie hem verder krijgt', 'Elk merk met een abonnement.'],
         ['Wat het kost', `Niets extra. Hij hoort bij elk abonnement, vanaf ${eerstePlan ? eerstePlan.name : 'het eerste'}.`],
-        ['Je licentie', 'Niet-exclusief, eeuwigdurend, wereldwijd. Je mag ze bewerken, publiceren en commercieel gebruiken, en je houdt ze als je opzegt.'],
+        ['Je licentie', 'Niet-exclusief, commercieel te gebruiken, blijft van jou.'],
       ],
       cta: 'Bekijk de abonnementen',
       href: '/plans',
@@ -329,15 +329,15 @@ const COPY = {
       naam: 'Editions',
       tag: 'De betaalde add-on',
       rijen: [
-        ['Wat het is', `${STOCK_ON_BRAND} beelden per maand, opgezet op jouw stijl, jouw locaties en jouw kleurenpalet. Nog steeds zonder product erin.`],
-        ['Wie hem verder krijgt', 'Niemand. Deze set wordt voor één merk gemaakt en gaat naar één merk.'],
+        ['Wat het is', `${STOCK_ON_BRAND} beelden per maand in jouw stijl en kleuren.`],
+        ['Wie hem verder krijgt', 'Niemand.'],
         ['Wat het kost', `${maand} per maand ${vatLabel('excl', 'nl')} bovenop je abonnement, na een eenmalige opzet van ${opzet}.`],
-        ['Je licentie', 'Exclusief, eeuwigdurend, wereldwijd — dezelfde licentie als bij elke bestelling die je plaatst. Niemand anders mag deze beelden gebruiken.'],
+        ['Je licentie', 'Exclusief, zoals elke bestelling.'],
       ],
       cta: 'Praat met ons over Editions',
       href: '/contact',
     },
-    vglFoot: 'Je kiest niet tussen de twee. De gedeelde set is er sowieso; Editions is wat je erbij neemt als merkneutraal niet genoeg is.',
+    vglFoot: '',
 
     nietH: 'Er zit in geen van beide een product.',
     nietSub: 'Dat is de hele categorie, en het is wat de meeste mensen bij eerste lezing verkeerd begrijpen.',
@@ -371,14 +371,14 @@ const COPY = {
 
     prijsH: 'Wat Editions kost',
     prijsMaand: `<strong>${maand} per maand</strong> ${vatLabel('excl', 'nl')}, bovenop je abonnement.`,
-    prijsOpzet: `<strong>${opzet} eenmalig</strong> om je merk op te zetten: de stijl, de locaties en het kleurenpalet waar elke maand daarna op draait.`,
+    prijsOpzet: `<strong>${opzet} eenmalig</strong> om je stijl op te zetten.`,
     prijsWaaromH: 'Waarom twee bedragen en niet één',
     prijsWaarom: 'Omdat er twee verschillende dingen gebeuren. De opzet is werk dat één keer per merk gedaan wordt; de maand is de set zelf. De opzet in het maandbedrag vouwen zou hem uitsmeren over maanden waar je nog niet aan vastzit — en dan hangt de prijs stilletjes af van hoe lang je blijft.',
     zekerH: 'Waar je op kunt rekenen.',
     zeker: [
-      `${STOCK_ON_BRAND} beelden per maand, of je nu iets nieuws te fotograferen had of niet`,
-      'Voor één merk gemaakt en aan één merk geleverd — niemand anders krijgt deze set',
-      'In VISUAILS Studio bij je bestellingen, niet in een aparte bibliotheek',
+      `${STOCK_ON_BRAND} beelden per maand`,
+      'Alleen voor jouw merk gemaakt',
+      'In VISUAILS Studio bij je bestellingen',
       reviewClaim('unattended', 'nl'),
     ],
     prijsCta: 'Praat met ons over Editions',
@@ -398,7 +398,7 @@ const COPY = {
     faqs: serviceFaqs('editions', 'nl'),
     ctaH: 'Vul de maand waar <br>je niets voor hebt.',
     ctaP: `${STOCK_OFF_BRAND} gedeelde beelden zitten bij elk abonnement. ${STOCK_ON_BRAND} eigen beelden kosten ${maand} per maand, na een opzet van ${opzet}.`,
-    belofte: 'Geen van beide sets loopt al, dus er valt vandaag niets te kopen en er wordt niets afgeschreven. Waar deze pagina voor is: dat je weet welke helft inbegrepen is en welke niet, vóór de eerste factuur in plaats van erna.',
+    belofte: 'Geen van beide sets loopt al; er wordt niets afgeschreven.',
   },
 };
 const c = COPY[lang];
@@ -462,7 +462,7 @@ const c = COPY[lang];
         </li>
       ))}
     </ul>
-    <p class="lopend ed-voet">{c.vglFoot}</p>
+    {c.vglFoot && <p class="lopend ed-voet">{c.vglFoot}</p>}
   </section>
 
   {/* ── INGEKORT TOT VIJF BLOKKEN — 23 september 2026 ──────────────────────

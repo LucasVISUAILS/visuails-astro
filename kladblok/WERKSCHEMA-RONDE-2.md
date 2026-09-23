@@ -180,3 +180,11 @@ zijn map (bat nog niet gedraaid) — niet opnieuw leveren.
   studio 6.747 → 6.394 · custom-models 5.949 → 5.808.
 - F4: Editions heeft er al maar één (de tweede telling was een noot in de bron).
 - F5: verse build; volledige reeks groen; knoppenscan 0 (ook ingelogd); leesbaar 0; spatie 0; horizontale scroll 0; links 0.
+- G (terwijl Lucas weg was): de volledige reeks gedraaid met een Nederlandse
+  browsertaal (zoals op zijn pc). Gevonden: console-schoon en zachte-navigatie
+  vielen om op de doorverwijzing van / naar /nl/. Alle 18 browsertests openen
+  nu in en-US. tests/whatsapp-bestelling.test.mjs (test:whatsapp) draait de
+  WhatsApp-route echt (klant aanmaken, bestelling met foto's, .exe
+  overgeslagen, betaallink); vond een fout in de D1-nabootsing (bind() gaf
+  hetzelfde object terug — in productie niet). Namens-formulier: taalkeuze
+  voor de bevestiging. Reeks 152/152 groen in nl-NL.

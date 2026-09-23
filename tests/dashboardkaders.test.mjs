@@ -93,7 +93,7 @@ const fixture = `<!doctype html><html><head><style>${css}</style></head><body>
 </div></body></html>`;
 
 const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } : {});
-const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 900 } });
 await page.setContent(fixture, { waitUntil: 'load' });
 
 const stijl = await page.evaluate(() => {

@@ -45,22 +45,22 @@ const items = examplesFor(slug);
 
 const T = nl ? {
   h: `${name} in beweging`,
-  lead: 'Twee voorbeelden. Klik om te spelen — er wordt niets geladen zolang je dat niet doet.',
+  lead: 'Klik om af te spelen.',
   soonLabel: 'Nog niet opgenomen',
-  soonBody: 'Dit voorbeeld wordt gemaakt. Wat er komt te staan:',
+  soonBody: 'Komt eraan:',
   deliverH: 'Wat je krijgt, per clip',
-  deliverLead: `Elke clip komt in drie beeldverhoudingen, als ${VIDEO_FORMAT.name}. Eén opname, drie uitsnedes — je hoeft niets zelf te hersnijden.`,
+  deliverLead: `Elke clip in drie beeldverhoudingen, als ${VIDEO_FORMAT.name}.`,
   fileH: 'Bestand',
   forH: 'Waarvoor',
   formatNote: VIDEO_FORMAT.why.nl,
   folderNote: 'Ze zitten in de map van je bestelling, naast de foto’s, met een nummer vooraan zodat je verkenner ze in deze volgorde zet. De LEESMIJ in die map legt de rest uit.',
 } : {
   h: `${name} in motion`,
-  lead: 'Two examples. Click to play — nothing loads until you do.',
+  lead: 'Click to play.',
   soonLabel: 'Not filmed yet',
-  soonBody: 'This example is being made. What will be here:',
+  soonBody: 'Coming:',
   deliverH: 'What you get, per clip',
-  deliverLead: `Every clip comes in three aspect ratios, as ${VIDEO_FORMAT.name}. One take, three crops — you never have to recut it yourself.`,
+  deliverLead: `Every clip in three aspect ratios, as ${VIDEO_FORMAT.name}.`,
   fileH: 'File',
   forH: 'For',
   formatNote: VIDEO_FORMAT.why.en,
@@ -146,7 +146,6 @@ const metaLine = (e: { seconds: number; ratio: string }) =>
           </tbody>
         </table>
         <p class="vx-note">{T.formatNote}</p>
-        <p class="vx-note">{T.folderNote}</p>
       </div>
     </div>
   </section>

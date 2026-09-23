@@ -1,13 +1,15 @@
+// Hele pagina, verkleind: node kladblok/_vol.mjs pad naam [breedte]
 import { chromium } from 'playwright';
+const [pad, naam, w = '1440'] = process.argv.slice(2);
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
-for (const url of process.argv.slice(2)) {
-  const p = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 0.35 });
-  await p.goto('http://127.0.0.1:4399' + url, { waitUntil: 'networkidle' });
-  await p.addStyleTag({ content: '.js .reveal.pending,.reveal.pending{opacity:1!important;transform:none!important} .cc, [class*=cookie]{display:none!important}' });
-  await p.evaluate(() => new Promise(r => { let y = 0; const t = setInterval(() => { y += 900; window.scrollTo(0, y); if (y > document.body.scrollHeight) { clearInterval(t); window.scrollTo(0,0); r(); } }, 60); }));
-  await p.waitForTimeout(400);
-  const naam = url.replace(/\//g, '_').replace(/^_|_$/g, '') || 'home';
-  await p.screenshot({ path: `/tmp/claude-0/vol-${naam}.png`, fullPage: true });
-  await p.close();
-}
+const ctx = await b.newContext({ viewport: { width: +w, height: 900 }, locale: 'en-US' });
+await ctx.addCookies([{ name: 'vis_consent', value: 'essential', domain: '127.0.0.1', path: '/' }]);
+const p = await ctx.newPage();
+await p.goto('http://127.0.0.1:4399' + pad, { waitUntil: 'networkidle' });
+await p.addStyleTag({ content: '*{transition:none!important;animation:none!important} .reveal,.pending{opacity:1!important;transform:none!important} .site-header{position:static!important}' });
+await p.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; }));
+for (let y = 0; y < 20000; y += 800) { await p.evaluate((y) => window.scrollTo(0, y), y); await p.waitForTimeout(30); }
+await p.evaluate(() => window.scrollTo(0, 0));
+await p.waitForTimeout(400);
+await p.screenshot({ path: `/tmp/claude-0/${naam}.png`, fullPage: true });
 await b.close();
