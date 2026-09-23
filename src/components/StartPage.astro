@@ -599,6 +599,14 @@ const TELWOORD = {
 const telwoord = (n, taal) => TELWOORD[taal][n] || String(n);
 
 const c = { ...COPY[lang] };
+/* ── HOOKS EN EDITIONS UIT HET RASTER — 23 september 2026 ──────────────────
+   Dezelfde regel als het menu (ronde 1): wat je nog niet kunt bestellen,
+   staat niet tussen de deuren waar je iets kiest. Ze blijven in COPY (en in
+   eigenproduct.js, dat de acht deuren telt) en staan onder het raster als één
+   regel "Ook: Hooks · Editions". PAGINA-OPBOUW.md, door Lucas goedgekeurd. */
+const LATER_IDS = ['hooks', 'editions'];
+const laterDeuren = c.deuren.filter((d) => LATER_IDS.includes(d.id));
+c.deuren = c.deuren.filter((d) => !LATER_IDS.includes(d.id));
 c.lead = c.lead.replace(/\{n\}/g, telwoord(c.deuren.length, lang));
 /* Het telwoord staat vooraan de zin, dus daar hoort een hoofdletter. Hier en
    niet in de lijst: "acht" midden in een zin krijgt er geen. */
@@ -774,6 +782,9 @@ const nl = lang === 'nl';
 
     <div class="st-onder">
       <p class="lopend st-ladder">{c.ladderLine} <a class="st-link" href={lp('/pricing')}>{c.ladderCta}</a></p>
+      {laterDeuren.length > 0 && (
+        <p class="lopend st-ook">{nl ? 'Ook, nog niet te bestellen:' : 'Also, not orderable yet:'} {laterDeuren.map((d, i) => <>{i > 0 && ' · '}<a class="st-link" href={lp(d.read)}>{d.name}</a></>)}</p>
+      )}
       <p class="st-btw">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
     </div>
   </section>
@@ -846,28 +857,22 @@ const nl = lang === 'nl';
       van een bestelling — zie punt 4 van de kop. Ze staan hier ONDER de deuren
       en met een kop die zegt dat ze meegaan, zodat niemand ze leest als een
       vijfde en zesde keuze. */}
-  <section class="paneel" aria-labelledby="st-mee">
-    <header class="paneel-kop">
-      <h2 id="st-mee" class="hoog hoog-2">{c.withH}</h2>
-      <p class="lopend">{c.withLead}</p>
-    </header>
-    <ul class="st-mee" role="list">
-      {c.withs.map((w) => (
-        <li>
-          <p class="mono st-mee-etiket">{w.name}</p>
-          <h3 class="hoog hoog-3">{w.h}</h3>
+  {/* Eén regel sinds 23 september 2026 (was 719 px met een eigen kaart):
+      PAGINA-OPBOUW.md, /start — "merkmodel als één regel". */}
+  <section class="paneel prijsband" aria-labelledby="st-mee">
+    {c.withs.map((w) => (
+      <div class="prijsband-in">
+        <div class="prijsband-woord">
+          <h2 id="st-mee" class="hoog hoog-3">{w.name} — {w.h.toLowerCase()}</h2>
           <p class="lopend">{w.body}</p>
-          <p class="st-mee-bedrag">
-            <span class="tarief">{w.fig}</span>
-            <span class="mono">{w.unit}</span>
-          </p>
-          <p class="acties">
-            <a class="knop knop-inkt" href={lp(w.href)}>{w.cta}</a>
-            <a class="pijl" href={lp(w.href2)}>{w.cta2}</a>
-          </p>
-        </li>
-      ))}
-    </ul>
+          <p class="prijsband-bedrag">{w.fig} <span class="mono">{w.unit}</span></p>
+        </div>
+        <p class="acties">
+          <a class="knop knop-lijn" href={lp(w.href)}>{w.cta}</a>
+          <a class="pijl" href={lp(w.href2)}>{w.cta2}</a>
+        </p>
+      </div>
+    ))}
   </section>
 
   {/* ── 5 · NOG NIET ZEKER ──────────────────────────────────────────────── */}
@@ -883,6 +888,7 @@ const nl = lang === 'nl';
 
 <style>
   .st-kop { max-width: 46rem; }
+  .st-ook { margin-top: .6rem; font-size: .92rem; }
 
   /* ── DE EERSTE VRAAG: WAAR MOET HET BEELD TERECHT ─────────────────────────
      Vier knoppen, en de eerste ("alles") staat aan. Ze zijn kleiner dan de twee

@@ -108,6 +108,19 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
   await p.goto(`http://127.0.0.1:8092${pad}`, { waitUntil:'load' });
   await p.waitForTimeout(400);
 
+  /* ── EERST DE LEVERING, DAN PAS HET RASTER — 23 september 2026 ──────────
+     Lucas: "zo ziet een levering eruit" is de standaard, "alle beelden" een
+     keuze. Dus staat bij het openen de levering er en het raster niet, en
+     moet de proef eerst omschakelen voordat hij de filters kan toetsen. */
+  const zicht = (sel) => p.evaluate((q) => { const el = document.querySelector(q); return !!el && getComputedStyle(el).display !== 'none'; }, sel);
+  ok('bij het openen staat de levering er', await zicht('.gal-levering'), true);
+  ok('en het raster niet', await zicht('.gal-alles'), false);
+  await p.click('label[for="gw-alles"]');
+  await p.waitForTimeout(150);
+  ok('"alle beelden" toont het raster', await zicht('.gal-alles'), true);
+  ok('en verbergt de levering', await zicht('.gal-levering'), false);
+  ok('en zet het anker in de adresbalk', new URL(p.url()).hash, '#alle-beelden');
+
   let st = await staat(p);
   ok('alle foto’s staan bij het openen', st.zichtbaar, st.totaal);
   const sleutels = await p.evaluate(()=>[...document.querySelectorAll('button[data-filter-key]')].map(k=>k.dataset.filterKey));
@@ -142,6 +155,17 @@ for (const [pad, rustig] of [['/gallery', false], ['/nl/gallery', false], ['/gal
   ok('en wat er staat hoort bij de laatste klik', laatste === 'all' ? st.zichtbaar === st.totaal : st.tags, laatste === 'all' ? true : [laatste]);
   ok('en niets blijft doorzichtig hangen', st.doorzichtig, 0);
 
+  await ctx.close();
+}
+
+/* Een gedeelde link naar #alle-beelden landt meteen op het raster. */
+{
+  const ctx = await b.newContext({ viewport:{width:1440,height:1200} });
+  const p = await ctx.newPage();
+  await p.goto('http://127.0.0.1:8092/nl/gallery#alle-beelden', { waitUntil:'load' });
+  await p.waitForTimeout(300);
+  const open = await p.evaluate(() => getComputedStyle(document.querySelector('.gal-alles')).display !== 'none');
+  ok('#alle-beelden in de link opent het raster', open, true);
   await ctx.close();
 }
 await b.close(); s.close();

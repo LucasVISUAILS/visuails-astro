@@ -82,6 +82,7 @@ import { noun } from '../data/lexicon.js';
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Vragen from './Vragen.astro';
+import Studiobrief from './Studiobrief.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
 import Uitleg from './Uitleg.astro';
@@ -430,7 +431,6 @@ const c = COPY[lang];
         <p class="acties">
           <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
           <a class="knop knop-lijn" href={lp('/plans')}>{c.ctaPlans}</a>
-          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
         </p>
         <ServiceSwitch current={['complete']} lang={lang} />
         <HeroFacts eigen={c.trust} lang={lang} />
@@ -465,75 +465,15 @@ const c = COPY[lang];
     <p class="lopend ed-voet">{c.vglFoot}</p>
   </section>
 
-  {/* ── 3 · WAT HET NIET IS ─────────────────────────────────────────────────
-      Twee beelden naast elkaar, en allebei nodig: één ervan laten zien legt
-      niets uit. */}
-  <section class="kamer ed-kamer" aria-labelledby="ed-niet">
-    <header class="kamer-kop">
-      <h2 id="ed-niet" class="hoog hoog-2">{c.nietH}</h2>
-      <p class="lopend">{c.nietSub}</p>
-    </header>
-    <ul class="ed-niet" role="list">
-      <li>
-        <Placeholder lang={lang} ratio={r('welProduct')} caption={false} subject={p('welProduct', 'subject')} message={p('welProduct', 'message')} />
-        <b>{c.nietA[0]}</b>
-        <span class="lopend">{c.nietA[1]}</span>
-      </li>
-      <li>
-        <Placeholder lang={lang} ratio={r('geenProduct')} caption={false} subject={p('geenProduct', 'subject')} message={p('geenProduct', 'message')} />
-        <b>{c.nietB[0]}</b>
-        <span class="lopend">{c.nietB[1]}</span>
-      </li>
-    </ul>
-    <p class="lopend ed-voet">{c.nietFoot}</p>
-  </section>
-
-  {/* ── 4 · WAAR ZE VOOR ZIJN ────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="ed-waarvoor">
-    <header class="paneel-kop">
-      <p class="etiket">{c.gebruikMeta}</p>
-      <h2 id="ed-waarvoor" class="hoog hoog-2">{c.gebruikH}</h2>
-      <p class="lopend">{c.gebruikSub}</p>
-    </header>
-    <Placeholder lang={lang} ratio={r('feed')} caption={false} subject={p('feed', 'subject')} message={p('feed', 'message')} />
-    <div class="ed-twee">
-      <div class="ed-uitleg">
-        {c.gebruikP.map((alinea) => <p class="lopend">{alinea}</p>)}
-      </div>
-      <aside class="ed-waar">
-        <h3 class="hoog hoog-3">{c.gebruikH2}</h3>
-        <ul class="ed-waar-lijst" role="list">
-          {c.gebruik.map(([sterk, rest]) => <li><b>{sterk}</b><span class="lopend">{rest}</span></li>)}
-        </ul>
-      </aside>
-    </div>
-  </section>
-
-  {/* ── 5 · HOE ON-BRAND GEMAAKT WORDT ──────────────────────────────────────
-      Vanaf hier gaat de pagina alleen nog over de BETAALDE helft. De gedeelde
-      set heeft geen opzet, geen stappen en geen prijs — die is er gewoon. */}
-  <section class="paneel" aria-labelledby="ed-hoe">
-    <div class="ed-twee-licht">
-      <Placeholder lang={lang} ratio={r('opzet')} caption={false} subject={p('opzet', 'subject')} message={p('opzet', 'message')} />
-      <div>
-        <h2 id="ed-hoe" class="hoog hoog-2">{c.hoeH}</h2>
-        <ol class="ed-stappen">
-          {c.hoe.map(([kop, tekst], i) => (
-            <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{kop}</b><span class="lopend">{tekst}</span></li>
-          ))}
-        </ol>
-        <p class="lopend ed-voet">{c.hoeFoot}</p>
-      </div>
-    </div>
-  </section>
-
-  {/* ── 6 · DRIE MAANDEN NAAST ELKAAR ───────────────────────────────────────
-      Het antwoord op de enige echte bezwaarvraag bij een maandelijkse set: is
-      het na drie maanden niet twaalf keer hetzelfde? Eén beeld, geen tekst —
-      de vraag is visueel en het antwoord dus ook. */}
-  <section class="paneel ed-twaalf">
-    <Placeholder lang={lang} ratio={r('twaalf')} subject={p('twaalf', 'subject')} message={p('twaalf', 'message')} />
-  </section>
+  {/* ── INGEKORT TOT VIJF BLOKKEN — 23 september 2026 ──────────────────────
+      Lucas koos (c) *"Inkorten"*: zolang Editions niet te bestellen is, staat
+      hier wat het is · wat erin zit · wat het kost · vragen · slot. Weg: "wat
+      het niet is" (twee plaatshouders), "waar ze voor zijn" (plaatshouder),
+      "hoe on-brand gemaakt wordt" (plaatshouder), "drie maanden naast
+      elkaar" (plaatshouder) en "rechten en vermelding". Het argument van die
+      laatste — gedeeld is gedeeld — staat in de vergelijking hierboven (de
+      licentieregel) en in de vragen. Alles staat in git en in COPY; het komt
+      terug met echte beelden op de dag dat Editions opent. */}
 
   {/* ── 7 · DE PRIJS ────────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="ed-zeker">
@@ -555,45 +495,8 @@ const c = COPY[lang];
         <p class="lopend ed-prijs-waarom"><b>{c.prijsWaaromH}</b><Uitleg tekst={c.prijsWaarom} over={c.prijsWaaromH} lang={lang} /></p>
         <p class="acties">
           <a class="knop knop-inkt" href={lp('/contact')}>{c.prijsCta}</a>
-          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
         </p>
       </div>
-    </div>
-  </section>
-
-  {/* ── 8 · RECHTEN EN VERMELDING ───────────────────────────────────────────
-      Deze sectie staat op geen enkele andere dienstpagina, en dat is met reden:
-      geen enkele andere dienst levert iets dat ook naar een ánder merk gaat. */}
-  <section class="paneel" aria-labelledby="ed-recht">
-    <header class="paneel-kop">
-      <p class="etiket">{c.rechtMeta}</p>
-      <h2 id="ed-recht" class="hoog hoog-2">{c.rechtH}</h2>
-    </header>
-    <div class="ed-twee">
-      {/* ── ÉÉN ALINEA OP HET SCHERM, DE TWEEDE ERACHTER — 12 sept 2026 ────
-          Deze sectie was met 265 zichtbare woorden de zwaarste van de pagina,
-          en de tweede alinea (72 woorden over de twee licenties) staat vier
-          secties hoger al in de vergelijking: "Je licentie — niet-exclusief /
-          exclusief", met precies dezelfde inhoud in een vorm die je kunt
-          scannen.
-
-          Wat hier alleen hier staat, is het ARGUMENT: onze klanten zijn
-          elkaars concurrenten, dus gedeeld is geen detail. Dat is de kop en de
-          eerste alinea, en die blijven onaangeroerd staan. De onderbouwing
-          erachter zit één hover verderop en is geen woord korter geworden. */}
-      <div class="ed-uitleg">
-        {c.rechtP.map((alinea, i) => (
-          <p class="lopend">
-            {alinea}
-            {i === 0 && c.rechtP[1] ? <Uitleg tekst={c.rechtP[1]} over={lang === 'nl' ? 'de twee licenties' : 'the two licences'} lang={lang} /> : null}
-          </p>
-        )).slice(0, 1)}
-      </div>
-      <aside class="ed-waar">
-        <ul class="ed-waar-lijst" role="list">
-          {c.rechtLijst.map(([kop, body]) => <li><b>{kop}</b><span class="lopend" set:html={body} /></li>)}
-        </ul>
-      </aside>
     </div>
   </section>
 
@@ -607,9 +510,15 @@ const c = COPY[lang];
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
       <a class="knop knop-lijn" href={lp('/plans')}>{c.ctaPlans}</a>
-      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
     </p>
     <p class="mono ed-belofte">{c.belofte}</p>
+    {/* Wie nu niets hoeft te bestellen maar wil weten wanneer het kan: de
+        Studiobrief, met een kop die zegt waar het hier om gaat. 23 sep 2026. */}
+    <div class="ed-brief">
+      <Studiobrief lang={lang} bron="editions" vorm="donker"
+        kop={lang === 'nl' ? 'Hoor het als Editions opent' : 'Hear when Editions opens'}
+        zin={lang === 'nl' ? 'In de Studiobrief: hooguit één mail per maand, met nieuwe looks en wat er verandert. Geen acties.' : 'In the Studio letter: one email a month at most, with new looks and what changes. No promotions.'} />
+    </div>
   </section>
 </div>
 
@@ -629,6 +538,7 @@ const c = COPY[lang];
      raakte de helft van de gevallen niet — en een consistentieregel die op de
      helft van de pagina's iets anders doet, is geen regel. Eén uitlijning,
      tien pagina's, geen uitzonderingen. */
+  .ed-brief { width: 100%; margin-top: 1.4rem; padding-top: 1.6rem; border-top: 1px solid rgb(242 243 245 / .14); }
   .ed-open { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: start; }
   .ed-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   .ed-wacht { font-size: .92rem; color: var(--inkt-2); max-width: 42em; }

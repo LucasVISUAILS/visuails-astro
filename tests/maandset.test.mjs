@@ -121,7 +121,9 @@ console.log('\n3 · gepubliceerd');
   const plan = await abonnement('volt-token');
   ok('de abonnee ziet de set op de maand-tab', /Nazomer/.test(plan.maandset?.nu?.label || '') && plan.maandset.nu.n === '2 beelden');
   ok('  met de beelden via /account/set/<id>/f', plan.maandset.nu.beelden.every((b) => /^\/account\/set\/\d+\/f$/.test(b)) && plan.maandset.nu.beelden.length === 2);
-  ok('  en de zipknop', plan.maandset.nu.zip, `/account/set/${setId}/zip`);
+  /* ?lang= sinds 23 september 2026: de licentie in de zip volgt de taal van het
+     scherm waarop op de knop gedrukt is — zie downloadTaal() in delivery.js. */
+  ok('  en de zipknop', plan.maandset.nu.zip, `/account/set/${setId}/zip?lang=nl`);
   ok('  niet op de bestellen-tab', (await abonnement('volt-token', '/account/plan?tab=bestellen')).maandset, null);
 
   const f = db.prepare('SELECT id FROM shared_files WHERE set_id = ? ORDER BY id').get(setId);

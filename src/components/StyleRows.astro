@@ -54,7 +54,6 @@ import { komendeStijlen } from '../data/komendeStijlen.js';
 /* De namen van de geleverde beelden — zie de kop van LEVERVLAKKEN in
    pricing.js. Geen bedragen hier; alleen hoe de vakken heten. */
 import { levervlakken } from '../data/pricing.js';
-import Placeholder from './Placeholder.astro';
 
 export interface Media {
   src?: string; w?: number; h?: number; alt?: string;
@@ -173,7 +172,11 @@ const VELRATIO: Record<string, string> = { catalog: '1 / 1', lifestyle: '3 / 4',
    dus 750 px hoog, hoger dan het scherm van de bezoeker. Vandaar één grens,
    en alleen daar. `none` is geen ontbrekende waarde maar de bedoelde: geen
    grens. */
-const VELMAX: Record<string, string> = { catalog: 'none', lifestyle: 'none', video: '22rem' };
+/* 22rem → 15rem op 23 september 2026: de drie videosoorten staan nu naast
+   elkaar (zie .sr-kamers.is-video), en zolang de clips op aanvraag zijn is
+   het tweede vak een lege plaat — die hoort niet het hoogste op de pagina te
+   zijn. */
+const VELMAX: Record<string, string> = { catalog: 'none', lifestyle: 'none', video: '15rem' };
 
 const velVan = (it: Item): { vlakken: Vlak[]; voor: Media | null } => {
   const namen = levervlakken(dienst, lang);
@@ -400,7 +403,7 @@ const c = nl ? {
         bij past, wat hij levert, wat hij kost. Wie wil vergelijken leest die
         vier regels op vier plekken; wie wil kiezen ziet vier werelden. Dat is
         de goede volgorde — niemand vergelijkt looks op een spec. */}
-    <ol class="sr-kamers" role="list">
+    <ol class={`sr-kamers is-${dienst}`} role="list">
       {items.map((s, ki) => {
         const { vlakken, voor } = velVan(s);
         return (
@@ -503,74 +506,37 @@ const c = nl ? {
       })}
     </ol>
 
-    {/* ── WAT ER IN DE MAAK IS ────────────────────────────────────────────── */}
+    {/* ── WAT ER IN DE MAAK IS — IN ÉÉN REGEL SINDS 23 september 2026 ──────
+        Hier stonden kaarten met een gestippelde plaatshouder per komende look
+        (396 px op /catalog voor één look). Lucas keurde PAGINA-OPBOUW.md goed:
+        *"het blok dat de meeste ruimte pakt, zegt het minst."* Wat je nog niet
+        kunt bestellen, krijgt een naam en een zin — geen leeg beeld. */}
     {komend.length > 0 && (
-      <div class="sr-komend reveal pending">
-        <div class="sr-komend-kop">
-          <h3 class="sr-alt-h">{c.komendH}</h3>
-          <p class="sr-alt-sub">{komend.length === 1 ? c.komendSubEen : c.komendSub}</p>
+      <div class="sr-komend">
+        <h3 class="sr-alt-h">{c.komendH}</h3>
+        <div class="sr-komend-rechts">
+          <ul class="sr-komend-lijst" role="list">
+            {komend.map((k) => (
+              <li><span class="sr-komend-naam">{k.naam}</span> <span class="sr-komend-regel">{k.regel}</span></li>
+            ))}
+          </ul>
+          <p class="sr-komend-noot">{komend.length === 1 ? c.komendSubEen : c.komendSub}</p>
         </div>
-        {/* ── DRIE REGELS WERDEN DRIE KAARTEN — 12 september 2026 ───────────
-            Lucas: *"Ik wil dat je bij video en hooks nu placeholder stylen gaat
-            plaatsen."*
-
-            Wat hier stond waren drie tekstregels onder een haarlijn: naam,
-            zin, en het woord "Binnenkort". Boven diezelfde lijn stonden de
-            looks die er wél zijn als kaarten met een beeld erin. Het verschil
-            in gewicht was dus enorm — een bezoeker die scant ziet drie tegels
-            en daaronder wat kleine lettertjes, en concludeert dat de categorie
-            drie dingen heeft.
-
-            Nu zijn het kaarten van hetzelfde formaat, met een placeholder waar
-            het beeld komt. Wat NIET meekomt: een prijs en een knop. Die twee
-            zijn het verschil tussen "dit kun je kiezen" en "hier werken we
-            aan", en dat verschil hoort hard te blijven — vandaar de stippellijn
-            om de kaart en het etiket linksboven. Zie ook de drie regels in de
-            kop van komendeStijlen.js; die gelden onverkort. */}
-        <ul class="sr-komend-lijst">
-          {komend.map((k) => (
-            <li class="sr-komend-kaart">
-              <div class="sr-komend-beeld">
-                <Placeholder
-                  lang={lang}
-                  ratio={komendRatio}
-                  caption={false}
-                  kind={dienst === 'video' || dienst === 'hooks' ? 'video' : undefined}
-                  subject={`${k.naam} — ${dienst}`}
-                  message={k.regel}
-                />
-                <span class="sr-komend-voet">{c.komendVoet}</span>
-              </div>
-              <span class="sr-komend-naam">{k.naam}</span>
-              <span class="sr-komend-regel">{k.regel}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     )}
 
-    {/* ── EN ALS ER NIETS TUSSEN ZIT: OP MAAT ─────────────────────────────── */}
-    <article class="sr-maat reveal pending" style={lead.tint ? `--sr-tint:${lead.tint}` : undefined}>
-      <div class="sr-fan is-lead" data-n={waaier(lead).length}>
-        {waaier(lead).map(({ slot, m, voor }, i) => (
-          <div class={`sr-card sr-card-${slot}${isLeeg(m) ? ' is-leeg' : ''}${voor ? ' is-voor' : ''}`}>
-            {m?.src
-              ? <img src={m.src} alt={altVan(lead.name, m, i, voor)} loading="lazy" decoding="async" width={m.w} height={m.h} />
-              : m?.icon ? <ProductScene icon={m.icon} width={m.width || '40%'} badge={i === 0 ? m.badge : undefined} wide />
-              : <span class="sr-leeg">{m?.label || (nl ? 'Foto volgt' : 'Photo to come')}</span>}
-            {voor && <span class="sr-etiket">{c.voor}</span>}
-            {i === 0 && lead.before && <span class="sr-etiket is-na">{lead.naLabel || c.na}</span>}
-          </div>
-        ))}
-      </div>
+    {/* ── EN ALS ER NIETS TUSSEN ZIT: OP MAAT — ÉÉN BALK ────────────────────
+        23 september 2026: de waaier met lege kaarten is eruit (439 px). Wat
+        blijft: wat het is, hoe het gaat (de drie stappen als één regel), wat
+        het kost en de knop. */}
+    <article class="sr-maat" style={lead.tint ? `--sr-tint:${lead.tint}` : undefined}>
       <div class="sr-maat-body">
         <p class="sr-eyebrow">{c.maatEyebrow}</p>
         <h3 class="sr-maat-h">{lead.name}</h3>
-        <p class="sr-tag">{lead.tagline}</p>
-        <p class="sr-desc">{c.maatSub}</p>
-        <ol class="sr-steps">
-          {c.steps.map((s) => <li>{s}</li>)}
-        </ol>
+        <p class="sr-desc">{lead.tagline} {c.maatSub}</p>
+        <p class="sr-maat-stappen">{c.steps.join(' → ')}</p>
+      </div>
+      <div class="sr-maat-zij">
         <p class="sr-price">{lead.price}</p>
         <div class="sr-cta">
           <a class="btn btn-primary" href={lead.orderHref || lead.detailHref}>{lead.orderLabel || lead.detailLabel}</a>
@@ -1052,77 +1018,33 @@ const c = nl ? {
   .sr-eigen-regel { font-size: .86rem; color: var(--ink-3); line-height: 1.5; }
   .sr-eigen-kaart .btn { margin-top: .3rem; }
 
-  /* ── IN DE MAAK ─────────────────────────────────────────────────────────── */
-  .sr-komend { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.6rem, 3vw, 2.2rem); border-top: 1px solid var(--line); }
-  /* ── DE KOP GAAT ERNAAST — 13 september 2026 ────────────────────────────
-     Lucas: *"je propt vaak dingen bij elkaar of op een helft van de volledige
-     breedte."* Gemeten op 1440 stond dit blok er zo bij: drie kaarten van 208
-     breed tegen de linkerkant van een kolom van 1147, met 450 pixels leeg
-     rechts, en de kop erboven.
-
-     De kaarten zelf mogen NIET groter — de reden staat hieronder bij
-     .sr-komend-lijst en die geldt onverkort: wat je nog niet kunt bestellen
-     hoort niet het grootste op de pagina te zijn. Wat wel kan is de kop naast
-     de kaarten zetten in plaats van erboven. Dan vult het blok de breedte
-     zonder dat er iets groter wordt, en het leest sneller: links wát dit is,
-     rechts wat er komt. */
+  /* ── IN DE MAAK, IN ÉÉN REGEL — 23 september 2026 ──────────────────────
+     Kop links, de looks als tekst rechts. Geen beeld: wat er nog niet is,
+     hoort niet het grootste op de pagina te zijn. */
+  .sr-komend { margin-top: clamp(1.6rem, 3vw, 2.4rem); padding-top: clamp(1.2rem, 2.4vw, 1.6rem); border-top: 1px solid var(--line); display: grid; gap: .8rem; }
   @media (min-width: 62rem) {
-    .sr-komend { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3.2rem); align-items: start; }
-    .sr-komend-kop { grid-column: 1; }
-    .sr-komend-lijst { grid-column: 2; margin-top: 0; }
-    .sr-komend-kop .sr-alt-sub { max-width: none; }
+    .sr-komend { grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3.2rem); align-items: baseline; }
   }
-  .sr-komend-lijst {
-    list-style: none; margin: 1.4rem 0 0; padding: 0;
-    /* ── TWEE GRENZEN, EN ALLEBEI GEMETEN ─────────────────────────────────
-       ONDER: 8rem en niet 14. Op een telefoon van 390 paste 14rem maar één
-       keer, en dan is elke kaart even hoog als het halve scherm — voor looks
-       die je nog niet kunt bestellen. Met 8rem staan er twee naast elkaar.
+  .sr-komend-rechts { display: grid; gap: .5rem; min-width: 0; }
+  .sr-komend-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+  .sr-komend-naam { font-weight: 700; color: var(--ink); }
+  .sr-komend-regel { font-size: .92rem; color: var(--ink-2); line-height: 1.55; }
+  .sr-komend-noot { margin: 0; font-size: .86rem; color: var(--ink-2); }
 
-       BOVEN: 13rem, want zonder maximum vulden drie komende looks op een breed
-       scherm de hele kolom met kaarten van 363 pixels — bréder dan de echte
-       looks erboven, die op 340 staan. Wat nog niet bestaat hoorde daar het
-       grootste op de pagina te zijn, en dat was precies de omkering die dit
-       blok moet vermijden. `justify-content: start` zet ze links tegen de
-       kolom aan in plaats van ze uit te spreiden. */
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 13rem));
-    justify-content: start;
-    gap: clamp(.7rem, 2.2vw, 1.8rem);
-  }
-  .sr-komend-kaart { display: grid; gap: .45rem; align-content: start; }
-
-  /* De stippellijn is het hele verschil met de kaarten hierboven: die hebben
-     een volle rand en een knop, deze een onderbroken rand en geen. Wie de
-     pagina scant hoeft de etiketten niet te lezen om te zien welke twee soorten
-     hier staan. */
-  .sr-komend-beeld {
-    position: relative; overflow: hidden;
-    border: 1px dashed var(--line-strong); border-radius: var(--r-sm, 6px);
-  }
-  .sr-komend-voet {
-    position: absolute; inset-block-start: .5rem; inset-inline-start: .5rem;
-    padding: .18rem .5rem; border-radius: 999px;
-    background: var(--paper); border: 1px solid var(--line);
-    font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--ink-2); white-space: nowrap;
-  }
-  .sr-komend-naam { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--ink-2); }
-  /* --ink-4 is de lijnkleur en haalt als tekst 2,8:1; voor letters geldt
-     --ink-3 of donkerder (KLEURENSCHEMA.md). 7 september 2026. */
-  .sr-komend-regel { font-size: .9rem; color: var(--ink-3); line-height: 1.55; }
-
-  /* ── OP MAAT, ALS AFSLUITER ─────────────────────────────────────────────── */
+  /* ── OP MAAT, ALS SMALLE BALK ───────────────────────────────────────────── */
   .sr-maat {
-    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.4rem, 3vw, 3.6rem); align-items: center;
-    margin-top: clamp(2rem, 4vw, 3rem);
-    padding: clamp(1.4rem, 2.6vw, 2.2rem);
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(1.2rem, 3vw, 3rem); align-items: center;
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    padding: clamp(1.2rem, 2.4vw, 1.8rem);
     border: 1px solid var(--line-strong); border-radius: var(--r-lg);
     background: var(--paper-2);
   }
-  .sr-maat-body { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-  .sr-maat-h { margin: 0; font-size: clamp(1.7rem, 3vw, 2.4rem); line-height: 1.05; }
-  .sr-steps { margin: 1.1rem 0 0; padding: 0 0 0 1.3rem; display: grid; gap: .35rem; color: var(--ink-2); font-size: .95rem; line-height: 1.5; }
-  .sr-steps li::marker { color: var(--accent-text); font-weight: 800; }
+  .sr-maat-body { display: grid; gap: .1rem; min-width: 0; }
+  .sr-maat-h { margin: 0; font-size: clamp(1.4rem, 2.4vw, 1.9rem); line-height: 1.05; }
+  .sr-maat-stappen { margin: .6rem 0 0; font-size: .9rem; color: var(--ink-2); line-height: 1.5; }
+  .sr-maat-zij { display: grid; gap: .2rem; justify-items: start; }
+  .sr-maat-zij .sr-price { margin: 0; }
+  .sr-maat-zij .sr-cta { margin-top: .6rem; }
 
   /* ── HET BREEKPUNT STOND OP 52rem EN DAT WAS TE LAAG — 12 sept 2026 ─────
      Gemeten op een tablet van 834 pixels (iPad in portret): 52rem is 832, dus
@@ -1207,6 +1129,12 @@ const c = nl ? {
     }
     .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-best { flex: 1 1 16rem; }
     .sr-kamers:has(.sr-kamer + .sr-kamer) .sr-k-cta { margin-top: 0; grid-auto-flow: column; align-items: center; gap: .9rem; }
+    /* Video: drie soorten, drie kolommen — 23 september 2026. Twee naast
+       elkaar liet de derde (Campagne) alleen op een eigen rij staan, met een
+       halve breedte leeg ernaast (PAGINA-OPBOUW.md: 2.742 → ±750 px). */
+    .sr-kamers.is-video:has(.sr-kamer + .sr-kamer + .sr-kamer) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .sr-kamers.is-video .sr-k-woord { flex-direction: column; align-items: flex-start; }
+    .sr-kamers.is-video .sr-k-cta { grid-auto-flow: row; justify-items: start; }
   }
   @media (prefers-reduced-motion: reduce) {
     .sr-card { transition: none; }

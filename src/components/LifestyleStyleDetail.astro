@@ -30,10 +30,8 @@
  * detailpagina. En een look OP AANVRAAG heeft eerst een ONTWERP; daar geldt de
  * gewone doorlooptijd pas ná.
  */
-import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
-import { waHref } from '../data/whatsapp.js';
 import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
@@ -110,6 +108,8 @@ const c = nl ? {
 };
 
 const vink = 'M20 6L9 17l-5-5';
+/* Alleen de vakken van het raster met een echte foto — zie de noot bij het raster. */
+const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
 ---
 
 <div class="s22 ls">
@@ -121,7 +121,10 @@ const vink = 'M20 6L9 17l-5-5';
       <p class="lopend ls-tagline">{style.tagline}</p>
       <div class="acties">
         <a class="knop knop-inkt" href={style.orderHref ?? lp('/start')}>{c.bestel}</a>
-        <a class="knop knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener">{c.wa}</a>
+        {/* De proef en geen WhatsApp als tweede knop — 23 september 2026. Op de
+            dienstpagina's ging WhatsApp al uit de opening: rechtsonder zweeft
+            op elke pagina dezelfde knop. Voor wie ingelogd is, verdwijnt hij. */}
+        <a class="knop knop-lijn" href={lp('/test-sample')} data-vis-uit>{c.proef}</a>
       </div>
       <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
       <ServiceSwitch current="lifestyle" lang={lang} />
@@ -151,6 +154,14 @@ const vink = 'M20 6L9 17l-5-5';
       <div>
         <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
         <p class="lopend ls-sfeer-p">{style.moodParagraphs[0]}</p>
+        {/* "Ideaal voor" staat sinds 23 september 2026 hier, bij hoe de stijl
+            voelt — PAGINA-OPBOUW.md: die twee zijn één blok. */}
+        <h3 class="hoog hoog-3 ls-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
+        <ul class="ls-vinkjes" role="list">
+          {style.bestFor.map((item: string) => (
+            <li><svg viewBox="0 0 24 24" class="ls-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          ))}
+        </ul>
       </div>
     </div>
   </section>
@@ -188,33 +199,27 @@ const vink = 'M20 6L9 17l-5-5';
     </ol>
   </section>
 
-  <section class="paneel ls-raster">
-    <ul class="ls-negen" role="list">
-      {style.grid.map((g: any) => (
-        <li>
-          {g.photo ? (
+  {/* ── ALLEEN BEELDEN DIE ER ZIJN — 23 september 2026 ──────────────────────
+      Het raster van negen had getekende vakken (ProductScene) waar nog geen
+      foto was. PAGINA-OPBOUW.md: alleen echte beelden; vanaf drie een raster,
+      minder dan drie één rij, geen enkele — geen sectie. */}
+  {rasterFotos.length > 0 && (
+    <section class="paneel ls-raster">
+      <ul class:list={['ls-negen', rasterFotos.length < 3 && 'is-rij']} role="list">
+        {rasterFotos.map((g: any) => (
+          <li>
             <span class="kaart kaart-stil">
               <img src={g.photo} alt={`${style.name}`} loading="lazy" decoding="async" />
               <span class="foto-pil mono">{style.name}</span>
             </span>
-          ) : (
-            <ProductScene icon={g.icon} width={g.width} badge={style.name} />
-          )}
-        </li>
-      ))}
-    </ul>
-  </section>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
 
   <section class="paneel ls-lijsten">
-    <div class="ls-twee ls-twee-gelijk">
-      <div>
-        <h2 class="hoog hoog-3">{c.idealH[0]}<em>{c.idealH[1]}</em></h2>
-        <ul class="ls-vinkjes" role="list">
-          {style.bestFor.map((item: string) => (
-            <li><svg viewBox="0 0 24 24" class="ls-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
+    <div class="ls-een">
       <div>
         <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
         <ul class="ls-vinkjes" role="list">
@@ -244,6 +249,9 @@ const vink = 'M20 6L9 17l-5-5';
 </div>
 
 <style>
+  .ls-ideaal-h { margin-top: clamp(1.4rem, 3vw, 2rem); }
+  .ls-een { max-width: 44rem; }
+  .ls-negen.is-rij { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ls-kop { margin-bottom: 0; }
   .ls-kop .etiket a { color: inherit; }
   .ls-kop .etiket a:hover { color: var(--inkt); }

@@ -106,8 +106,6 @@ const maat = nl ? {
    30 augustus 2026 — zie de kop van src/data/binnenkort.js voor waarom ze hier
    zijn komen te staan en niet op twee eigen pagina's. */
 import { binnenkort } from '../data/binnenkort.js';
-import LaptopCarousel from './LaptopCarousel.astro';
-import { laptopSlides } from '../data/laptopSlides.js';
 
 const COPY = {
   en: {
@@ -287,83 +285,9 @@ const c = COPY[nl ? 'nl' : 'en'];
     </header>
   </section>
 
-  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
-      ── EN HIJ LOOPT, SINDS 18 SEPTEMBER 2026 ──────────────────────────────
-      Hier stond "stilstaand met opzet: dit is hier een illustratie en geen
-      attractie". Lucas, met een schermafdruk: *"Er staan hier en daar ook
-      laptop foto's die niet daar horen en niet eens werken."*
-
-      Hij heeft gelijk, en de redenering erachter klopte ook niet meer. De
-      stilstaande plaat leest niet als "rustig", hij leest als een plaatje dat
-      per ongeluk is blijven staan — zeker nu dezelfde plaat op de voorpagina en
-      de categoriepagina's wél doorloopt. Wat er te zien valt is juist de
-      volgorde: voorkant, achterkant, detail, op model. Die volgorde is het
-      product.
-
-      Stil blijft hij alleen waar hij geen aandacht mag vragen; die twee plekken
-      (/test-sample en /thank-you) hebben hem sinds vandaag helemaal niet meer.
-
-      Hij pauzeert zodra je muis erop staat en loopt weer als je weggaat — zie
-      LaptopCarousel.astro. */}
-  <section class="paneel" aria-labelledby="pl-lc">
-    <div class="paneel-kop">
-      <p class="etiket">{nl ? 'Wat er elke maand uitkomt' : 'What lands each month'}</p>
-      <h2 id="pl-lc" class="hoog hoog-2">{nl ? 'Elk product krijgt dit.' : 'Every product gets this.'}</h2>
-      <p class="lopend">{nl ? 'Je maandelijkse set gaat per product op deze manier de deur uit, klaar om te plaatsen.' : 'Your monthly set goes out per product like this, ready to place.'}</p>
-    </div>
-    <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]}
-      titel={nl ? 'Elk product krijgt dit.' : 'Every product gets this.'} />
-  </section>
-
-
-  {/* ── 2 · WAT EEN ABONNEMENT IS ──────────────────────────────────────────
-      De uitleg en het instapbedrag; de drie kaarten staan eronder in het licht.
-      Zo is de kamer de UITLEG en zijn de kaarten de KEUZE — zet je ze allebei
-      hier, dan is het weer één lange band met twee onderwerpen. */}
-  <section class="kamer pl-kamer" aria-labelledby="pl-wat">
-    {/* ── DE PLAAT STAAT EERST IN DE BRON — 7 september 2026 ────────────────
-        Gemeten op 390px: de eerste prijs stond op 1050px en de eerste knop op
-        1128px, van een pagina van 9622px. Iemand die op de abonnementenpagina
-        komt, komt voor het bedrag — en kreeg eerst 137 woorden.
-
-        De plaat staat daarom vóór de uitleg in de HTML, en de twee kolommen
-        hieronder worden op breed EXPLICIET geplaatst zodat de uitleg links
-        blijft en de plaat rechts. Niet met `order`: dat laat de leesvolgorde
-        (bron) en de kijkvolgorde (scherm) uit elkaar lopen, en op smal — waar
-        het probleem zat — lopen ze dan juist verkeerd om. Zo klopt het op
-        allebei: op smal is de bron de volgorde, op breed staan ze naast
-        elkaar en is "bedrag, dan uitleg" een geldige leesvolgorde. */}
-    <div class="pl-top">
-      <div class="pl-plaat">
-        <p class="pl-bedrag">
-          <span class="mono">{c.from}</span>
-          <span class="tarief pl-groot">{euro(FROM_AMOUNT, lang)}</span>
-          <span class="mono">{c.unit}, {vatLabel('excl', lang)}</span>
-        </p>
-        <p class="acties">
-          <a class="knop knop-wit" href={lp('/start/plan')}>{c.cta}</a>
-          <a class="knop pl-knop-lijn" href={lp('/pricing')}>{c.cta2}</a>
-        </p>
-      </div>
-
-      <div class="pl-uitleg">
-        <h2 id="pl-wat" class="hoog hoog-2">{c.panelH[0]} <em>{c.panelH[1]}</em></h2>
-        <p class="lopend">{c.panelLede}</p>
-        <ul class="pl-vink" role="list">
-          {c.facts.map((f) => <li>{f}</li>)}
-        </ul>
-        <ServiceSwitch current={['plan', 'complete']} lang={lang} class="pl-svcsw" />
-      </div>
-    </div>
-
-    {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
-    <div class="pl-credit">
-      <p class="lopend">{c.creditKort}</p>
-      <p class="lopend">{c.cycleKort}</p>
-    </div>
-  </section>
-
-  {/* ── 3 · DE DRIE ABONNEMENTEN ────────────────────────────────────────────
+  {/* ── 2 · DE DRIE ABONNEMENTEN — direct onder de opening sinds 24 sep 2026 ──
+      Wie op /plans komt, komt voor het bedrag. Hier stond eerst een laptop
+      (1.129 px) en een kamer met uitleg; nu de keuze eerst, de uitleg erna.
       De knop draagt ?plan= mee: zonder die parameter opent /start/plan altijd
       op Studio, en wie op de Merk-kaart klikte kwam op een machtiging voor het
       verkeerde bedrag. */}
@@ -431,6 +355,44 @@ const c = COPY[nl ? 'nl' : 'en'];
     </div>
   </section>
 
+  {/* ── 2 · WAT EEN ABONNEMENT IS ──────────────────────────────────────────
+      De uitleg en het instapbedrag; de drie kaarten staan eronder in het licht.
+      Zo is de kamer de UITLEG en zijn de kaarten de KEUZE — zet je ze allebei
+      hier, dan is het weer één lange band met twee onderwerpen. */}
+  <section class="kamer pl-kamer" aria-labelledby="pl-wat">
+    {/* ── DE PLAAT STAAT EERST IN DE BRON — 7 september 2026 ────────────────
+        Gemeten op 390px: de eerste prijs stond op 1050px en de eerste knop op
+        1128px, van een pagina van 9622px. Iemand die op de abonnementenpagina
+        komt, komt voor het bedrag — en kreeg eerst 137 woorden.
+
+        De plaat staat daarom vóór de uitleg in de HTML, en de twee kolommen
+        hieronder worden op breed EXPLICIET geplaatst zodat de uitleg links
+        blijft en de plaat rechts. Niet met `order`: dat laat de leesvolgorde
+        (bron) en de kijkvolgorde (scherm) uit elkaar lopen, en op smal — waar
+        het probleem zat — lopen ze dan juist verkeerd om. Zo klopt het op
+        allebei: op smal is de bron de volgorde, op breed staan ze naast
+        elkaar en is "bedrag, dan uitleg" een geldige leesvolgorde. */}
+    <div class="pl-top pl-top-een">
+      {/* De plaat ("vanaf €390" + twee knoppen) staat sinds 24 september 2026
+          niet meer hier: de drie kaarten staan er nu direct boven, met hun
+          eigen bedrag en knop. Twee keer dezelfde prijs is ruis. */}
+      <div class="pl-uitleg">
+        <h2 id="pl-wat" class="hoog hoog-2">{c.panelH[0]} <em>{c.panelH[1]}</em></h2>
+        <p class="lopend">{c.panelLede}</p>
+        <ul class="pl-vink" role="list">
+          {c.facts.map((f) => <li>{f}</li>)}
+        </ul>
+        <ServiceSwitch current={['plan', 'complete']} lang={lang} class="pl-svcsw" />
+      </div>
+    </div>
+
+    {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
+    <div class="pl-credit">
+      <p class="lopend">{c.creditKort}</p>
+      <p class="lopend">{c.cycleKort}</p>
+    </div>
+  </section>
+
   {/* ── 4 · WAT ERAAN KOMT ────────────────────────────────────────────────
       Tot 19 september 2026 twee secties: "En een maand die al gevuld is"
       (stockfoto's, nog niet actief, met een 4:3-plaatshouder) en "En twee
@@ -464,17 +426,6 @@ const c = COPY[nl ? 'nl' : 'en'];
     <p class="lopend pl-soon-voet">{c.soonFoot}</p>
   </section>
 
-  {/* ── 6 · DE UITGANG ───────────────────────────────────────────────────────
-      Eén regel naar de prijslijst, en dat is de hele verbinding tussen de twee
-      pagina's. Wie hier is en géén abonnement wil, hoort niet doodlopend te
-      eindigen — en wie de staffel zoekt, hoort hem niet op deze pagina te
-      vinden. */}
-  <section class="paneel pl-uit" aria-labelledby="pl-out">
-    <h2 id="pl-out" class="hoog hoog-3">{c.outH}</h2>
-    <p class="lopend">{c.outBody}</p>
-    <p class="acties"><a class="pijl" href={lp('/pricing')}>{c.outCta}</a></p>
-  </section>
-
   {/* ── 7 · HET SLOT ─────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="pl-slot">
     <h2 id="pl-slot" class="hoog">{c.ctaH} <br /><em>{c.ctaEm}</em></h2>
@@ -483,11 +434,16 @@ const c = COPY[nl ? 'nl' : 'en'];
       <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
       <a class="knop knop-lijn" href={lp('/start/plan')}>{c.ctaPlan}</a>
     </p>
+    {/* De uitgang naar de prijslijst — was een eigen blok, nu één regel. */}
+    <p class="lopend pl-slot-uit">{c.outH} <a class="pijl" href={lp('/pricing')}>{c.outCta}</a></p>
   </section>
 </div>
 
 <style>
   .pl-kop { max-width: 46rem; margin-bottom: 0; }
+  .pl-top.pl-top-een { grid-template-columns: minmax(0, 1fr); }
+  .pl-top-een .pl-uitleg { grid-column: 1; grid-row: auto; max-width: 52rem; }
+  .pl-slot-uit { font-size: .92rem; opacity: .85; }
 
   .pl-top { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; }
   /* Expliciet geplaatst, want in de bron staat de plaat eerst — zie de noot in

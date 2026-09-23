@@ -145,7 +145,26 @@ export function mollieKeyProblems(env) {
  * Mollie itself down) — the caller decides what a failed payment means for
  * the order, this function does not swallow it.
  */
-export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl, grossCents }) {
+/*
+ * ── DE PROEF: ALLEEN MIDDELEN DIE ZEGGEN WIE ER BETAALT — 23 september 2026 ──
+ *
+ * Lucas vroeg of je meerdere keren een proef kunt bestellen onder dezelfde
+ * persoon. De controle ná de betaling (payerHash() in src/lib/payer.js, de
+ * webhook) herkent een betaler aan zijn IBAN (iDEAL, Bancontact) of aan de
+ * vingerafdruk van zijn kaart. PayPal, Apple Pay en de rest geven geen van
+ * beide mee — wie een ander e-mailadres, een ander nummer én PayPal gebruikte,
+ * kwam er dus altijd doorheen.
+ *
+ * Dus biedt de proef alleen de middelen aan waarbij die controle werkt. Voor
+ * € 1 is dat geen drempel: iDEAL en een kaart dekken vrijwel iedereen, en
+ * Bancontact de Belgen. Staat de proef op 0 % btw (klant buiten Nederland),
+ * dan valt iDEAL af om dezelfde reden als bij een gewone bestelling (zie
+ * NON_NL_METHODS hieronder).
+ */
+export const SAMPLE_METHODS = ['ideal', 'bancontact', 'creditcard'];
+export const SAMPLE_METHODS_ZONDER_IDEAL = ['bancontact', 'creditcard'];
+
+export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl, grossCents, excludeIdeal = false }) {
   /* ── HET BRUTO KOMT UIT DE OFFERTE, NIET UIT AMOUNT — 19 september 2026 ──
      Tot vandaag stond hier AMOUNT.testSample.toFixed(2): precies € 1,00, wat
      de btw er per definitie IN zette. Sinds de proef € 1 exclusief btw is
@@ -164,6 +183,7 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
     webhookUrl,
     valueEuros: (asCents / 100).toFixed(2),
     description: lang === 'nl' ? 'VISUAILS proef' : 'VISUAILS test sample',
+    methods: excludeIdeal ? SAMPLE_METHODS_ZONDER_IDEAL : SAMPLE_METHODS,
   });
 }
 
@@ -510,7 +530,7 @@ async function mollieRequest(env, method, path, body) {
 }
 
 /** The one request both creators make. */
-async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal }) {
+async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal, methods }) {
   const key = mollieKey(env);
 
   const body = {
@@ -534,6 +554,8 @@ async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, val
   // middelen wegnemen bij gewone Nederlandse bestellingen, en dat is precies het
   // soort stille verslechtering waar niemand een melding van krijgt.
   if (excludeIdeal) body.method = NON_NL_METHODS;
+  /* Een eigen witte lijst wint: de proef geeft er een mee (SAMPLE_METHODS). */
+  if (Array.isArray(methods) && methods.length) body.method = methods;
 
   const res = await fetch(`${MOLLIE_API}/payments`, {
     method: 'POST',

@@ -25,7 +25,7 @@ import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from '../src/
 import { DELIVERY_DAYS } from '../src/lib/retention.js';
 import { readmeText as studioReadme } from '../src/lib/scaffold.js';
 import {
-  loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles,
+  loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, downloadTaal,
   deliveryReadme, productFolderName, orderProductNames, deliverySummary, humanBytes,
   FORMAT_DIR, SHOT_ORDER,
 } from '../src/lib/delivery.js';
@@ -574,6 +574,33 @@ console.log('\nde productnaam wordt geschoond en niet vertrouwd');
   check('lange namen worden afgekapt', productFolderName(1, 'x'.repeat(200)).length <= 53, true);
   check('en een punt aan het eind blijft niet staan', /[.\s]$/.test(productFolderName(1, 'naam...')), false);
   check('drie cijfers boven de negenennegentig', productFolderName(100, 'x', 3), '100 - x');
+}
+
+/*
+ * ── DE TAAL VAN HET SCHERM WINT VAN DIE VAN DE BESTELLING — 23 sep 2026 ─────
+ * Lucas: de licentie was altijd Nederlands, ook als hij in Studio op Engels
+ * stond. Nu kiest de aanroeper: 'nl', 'en', of 'beide' als hij het niet weet.
+ */
+console.log('\nde licentie volgt het scherm, en anders beide talen');
+{
+  const order = { id: 1, ref: 'R1', lang: 'nl', brand: 'ACME', details_json: '{}' };
+  const namen = (d) => d.map((x) => x.name.split('/').pop());
+  check('nl-bestelling, Engels scherm: README + LICENCE', namen(deliveryDocs({ order, entries: [], taal: 'en' })), ['README.txt', 'LICENCE.txt']);
+  const en = deliveryDocs({ order, entries: [], taal: 'en' });
+  check('en de licentie is echt Engels', /licence to the images/.test(en[1].text) && !/licentie/.test(en[1].text), true);
+  check('en-bestelling, Nederlands scherm: LEESMIJ + LICENTIE', namen(deliveryDocs({ order: { ...order, lang: 'en' }, entries: [], taal: 'nl' })), ['LEESMIJ.txt', 'LICENTIE.txt']);
+  check('onbekend scherm: allebei, in beide talen', namen(deliveryDocs({ order, entries: [], taal: 'beide' })), ['LEESMIJ.txt', 'README.txt', 'LICENTIE.txt', 'LICENCE.txt']);
+  check('zonder taal: de oude regel (bestelling)', namen(deliveryDocs({ order, entries: [] })), ['LEESMIJ.txt', 'LICENTIE.txt']);
+
+  const req = (url, cookie) => ({ url, headers: new Map(cookie ? [['cookie', cookie]] : []) });
+  check('?lang=en op de knop wint', downloadTaal(req('https://visuails.com/account/orders/1/zip?lang=en'), 'nl'), 'en');
+  check('zonder ?lang de keuze uit de cookie', downloadTaal(req('https://visuails.com/account/orders/1/zip'), 'nl'), 'nl');
+  check('rommel in ?lang telt niet', downloadTaal(req('https://visuails.com/x?lang=de'), null), 'beide');
+  check('niets bekend: beide', downloadTaal(req('https://visuails.com/account/orders/1/zip'), null), 'beide');
+
+  const account = read('src/lib/account.js');
+  check('de downloadknop in Studio draagt de schermtaal', /\/account\/orders\/\$\{o\.id\}\/zip\?lang=\$\{lang\}/.test(account), true);
+  check('en serveOrderZip geeft de taal door aan deliveryDocs', /deliveryDocs\(\{ order, entries, productNames, taal \}\)/.test(account), true);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

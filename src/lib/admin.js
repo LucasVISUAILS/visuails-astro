@@ -123,6 +123,8 @@ import { checkRate, clientIp } from './ratelimit.js';
 /* sendLoginLink() komt uit account.js en niet uit een eigen kopie hier — zie de noot
    daar. account.js importeert dit bestand niet, dus er is geen kringverwijzing. */
 import { sendLoginLink } from './account.js';
+/* Foto's die via WhatsApp binnenkomen, bij een bestelling namens de klant — 23 sep 2026. */
+import { mintBatch, batchPrefix, safeName, typeFor, MAX_FILE_BYTES, MAX_BATCH_FILES } from './uploads.js';
 import { zipStream, zipDisposition } from './zip.js';
 import {
   scaffoldFiles, scaffoldFilename, parseScaffoldPath, isSourcePath, isScaffoldDoc,
@@ -624,6 +626,9 @@ async function adminPostInner(context) {
   /* BESTELLING NAMENS EEN KLANT — 4 september 2026. De meest gemiste handeling
      uit de doorlichting: een klant appt "doe er nog vijf bij" en er was geen weg
      dan hem terug naar het formulier te sturen. Zie handleOrderForCustomer(). */
+  /* Een klant aanmaken zonder dat hij zelf een formulier invult — voor wie via
+     WhatsApp bestelt. 23 september 2026. */
+  if (path === '/admin/customers/new') return handleNewCustomer(context, admin);
   const namensMatch = path.match(/^\/admin\/customers\/(\d+)\/order$/);
   if (namensMatch) return handleOrderForCustomer(context, Number(namensMatch[1]), admin);
 
@@ -5120,6 +5125,7 @@ async function renderCustomers(context) {
 ${adminNav('customers')}
   <h1>Customers</h1>
   <p class="lede">${rows.length} brand${rows.length === 1 ? '' : 's'}</p>
+  ${nieuweKlantFormulier()}
   ${rows.length ? `<table class="files">
     <thead><tr><th>Merk</th><th>E-mail</th><th class="num">Bestellingen</th><th class="num">Betaald excl. btw</th><th>Laatste bestelling</th></tr></thead>
     <tbody>${rows.map((r) => `<tr>
@@ -6416,7 +6422,7 @@ ${adminNav('customers')}
 
   <h2 id="namens">Bestelling namens ${esc(customer.brand || customer.name || 'de klant')}</h2>
   <p class="meta">Voor de klant die appt "doe er nog vijf bij". Dezelfde route als het bestelformulier: de klant krijgt de gewone bevestiging met betaallink, de bestelling staat in zijn Studio en hier op het dashboard. Foto's uploadt hij daar zelf, of je zet ze bij de bestelling. Ontbreekt een btw- of KVK-nummer, dan komt de bestelling eerst op de btw-lijst en gaat de link na jouw akkoord.</p>
-  <form class="stack stylecard-edit card" method="post" action="/admin/customers/${customer.id}/order">
+  <form class="stack stylecard-edit card" method="post" action="/admin/customers/${customer.id}/order" enctype="multipart/form-data">
     <div class="row-2">
       <label>Dienst
         <select name="service">
@@ -6439,6 +6445,8 @@ ${adminNav('customers')}
     </div>
     <label>Notitie bij de bestelling (ziet de klant in zijn dossier)
       <input name="message" type="text" maxlength="500" placeholder="bv. 'Zoals besproken via WhatsApp: vijf hoodies, dezelfde look als VIS-…'"></label>
+    <label>Foto's die de klant via WhatsApp stuurde (optioneel — jpg, png, webp, heic; zelfde grenzen als het bestelformulier)
+      <input type="file" name="fotos" multiple accept="image/*"></label>
     <button class="btn btn-primary" type="submit">Bestelling aanmaken en bevestiging mailen</button>
   </form>
 
@@ -9593,6 +9601,90 @@ async function handleQuote({ request, env }, orderId, admin) {
 }
 
 /*
+ * ── EEN KLANT AANMAKEN VANUIT ADMIN — 23 september 2026 ────────────────────
+ *
+ * Lucas: *"een optie voor klanten om bij mij persoonlijk via whatsapp te
+ * bestellen en ik in /admin voor het desbetreffende bedrijf handmatig een order
+ * in zijn account kan zetten en een mail met betaling kan sturen"* — met oudere
+ * klanten in gedachten. De bestelling namens de klant bestond al (hieronder),
+ * maar alleen voor wie al in `customers` stond. Dit is de stap ervoor: dezelfde
+ * upsertCustomer() als het bestelformulier en /api/plan, dus dezelfde regel dat
+ * opgeslagen gegevens van een bestaande klant niet overschreven worden. Daarna
+ * door naar de klantpagina, waar het formulier "Bestelling namens" staat.
+ *
+ * Geen wachtwoord, geen mail bij het aanmaken: de klant krijgt pas iets als er
+ * een bestelling is, en dan de gewone bevestiging met betaallink.
+ */
+function nieuweKlantFormulier() {
+  return `<details class="card stack" id="nieuwe-klant">
+    <summary><b>Nieuwe klant</b> — voor wie via WhatsApp of telefoon bestelt</summary>
+    <form class="stack" method="post" action="/admin/customers/new">
+      <div class="row-2">
+        <label>Voornaam <input name="first_name" type="text" maxlength="60" required></label>
+        <label>Achternaam <input name="last_name" type="text" maxlength="60" required></label>
+      </div>
+      <div class="row-2">
+        <label>E-mailadres (hier komt de betaallink) <input name="email" type="email" maxlength="254" required></label>
+        <label>Telefoon of WhatsApp <input name="phone" type="tel" maxlength="40" required></label>
+      </div>
+      <div class="row-2">
+        <label>Bedrijf of merk <input name="brand" type="text" maxlength="120"></label>
+        <label>Btw-nummer of KVK-nummer <input name="vat_or_reg" type="text" maxlength="40" placeholder="NL…B01 of 8 cijfers"></label>
+      </div>
+      <label>Straat en huisnummer <input name="address_line1" type="text" maxlength="120" required></label>
+      <div class="row-2">
+        <label>Postcode <input name="postal_code" type="text" maxlength="24" required></label>
+        <label>Plaats <input name="city" type="text" maxlength="80" required></label>
+      </div>
+      <label>Land (twee letters) <input name="country" type="text" maxlength="2" value="NL" required></label>
+      <button class="btn btn-primary" type="submit">Klant aanmaken</button>
+    </form>
+    <p class="meta">Daarna sta je op de klantpagina. Onderaan: "Bestelling namens" — dienst, aantal, de foto's uit WhatsApp, en de klant krijgt de bevestiging met betaallink.</p>
+  </details>`;
+}
+
+async function handleNewCustomer({ request, env }, admin) {
+  const form = await request.formData().catch(() => null);
+  const get = (k, max = 120) => String(form?.get(k) || '').trim().slice(0, max);
+  const email = get('email', 254).toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return html(page({ title: 'Admin', body: errorBody('Vul een geldig e-mailadres in — daar gaat de betaallink naartoe.') }), 400);
+  }
+  const firstName = get('first_name', 60);
+  const lastName = get('last_name', 60);
+  const idNr = get('vat_or_reg', 40).toUpperCase().replace(/\s+/g, '');
+  /* Een btw-nummer begint met twee letters; acht cijfers is een KVK-nummer. */
+  const isVat = /^[A-Z]{2}[0-9A-Z]{8,12}$/.test(idNr);
+  const country = (get('country', 2) || 'NL').toUpperCase();
+  const line1 = get('address_line1');
+  const postal = get('postal_code', 24);
+  const city = get('city', 80);
+  const { upsertCustomer } = await import('../../functions/api/order.js');
+  const id = await upsertCustomer(env, {
+    email,
+    name: [firstName, lastName].filter(Boolean).join(' ') || null,
+    firstName: firstName || null,
+    lastName: lastName || null,
+    brand: get('brand') || null,
+    phone: get('phone', 40) || null,
+    vat: isVat ? idNr : null,
+    noVat: !isVat,
+    country,
+    line1: line1 || null,
+    postal: postal || null,
+    city: city || null,
+    address: [line1, [postal, city].filter(Boolean).join(' '), country].filter(Boolean).join('\n') || null,
+    contactPreference: 'whatsapp',
+  });
+  if (!id) return html(page({ title: 'Admin', body: errorBody('De klant is niet aangemaakt (geen database?).') }), 500);
+  if (!isVat && idNr) {
+    await env.DB.prepare('UPDATE customers SET reg_number = ?2 WHERE id = ?1 AND (reg_number IS NULL OR reg_number = \'\')').bind(id, idNr).run().catch(() => {});
+  }
+  await logAdmin(env, admin, 'customer.nieuw', { customerId: id, detail: `${email} aangemaakt vanuit admin` });
+  return seeOther(`/admin/customers/${id}#namens`);
+}
+
+/*
  * ── EEN BESTELLING NAMENS DE KLANT — 4 september 2026 ──────────────────────
  *
  * Geen tweede bestelroute. Dit bouwt precies het formulier dat de klant zelf zou
@@ -9626,6 +9718,35 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
   const regNumber = String(form?.get('reg_number') || '').trim().slice(0, 40) || String(c.reg_number || '');
   const message = String(form?.get('message') || '').trim().slice(0, 500);
 
+  /* ── DE FOTO'S UIT WHATSAPP — 23 september 2026 ─────────────────────────
+     Lucas: *"een optie voor klanten om bij mij persoonlijk via whatsapp te
+     bestellen (…) focus op wat oudere klanten."* Wie appt, stuurt zijn foto's
+     ook via de app. Die gaan hier in dezelfde klaarzetmap als bij het
+     bestelformulier (src/lib/uploads.js), en de bestelling neemt ze op via
+     `upload_batch` — precies zoals functions/api/order.js dat bij de klant
+     doet. Alleen wat een klant ook mag uploaden (type, grootte, aantal); de
+     rest wordt overgeslagen en genoemd. */
+  let uploadBatch = '';
+  const overgeslagen = [];
+  const fotos = (form?.getAll?.('fotos') || []).filter((f) => f && typeof f !== 'string' && typeof f.stream === 'function' && Number(f.size) > 0);
+  if (fotos.length && env.UPLOADS) {
+    uploadBatch = mintBatch();
+    let n = 0;
+    for (const f of fotos) {
+      const naam = safeName(f.name);
+      const type = typeFor(f.name);
+      if (!type || Number(f.size) > MAX_FILE_BYTES || n >= MAX_BATCH_FILES) { overgeslagen.push(naam); continue; }
+      n += 1;
+      const stukje = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b.toString(16).padStart(2, '0')).join('');
+      const key = `${batchPrefix(uploadBatch)}${String(n).padStart(3, '0')}-${stukje}-${naam}`;
+      await env.UPLOADS.put(key, f.stream(), {
+        httpMetadata: { contentType: type },
+        customMetadata: { staged: new Date().toISOString(), original: naam, via: 'admin' },
+      });
+    }
+    if (!n) uploadBatch = '';
+  }
+
   /* De taal van de klant: die van zijn laatste bestelling, anders Nederlands. */
   const laatste = await env.DB.prepare('SELECT lang FROM orders WHERE customer_id = ?1 ORDER BY id DESC LIMIT 1').bind(customerId).first().catch(() => null);
   const lang = laatste?.lang === 'en' ? 'en' : 'nl';
@@ -9653,6 +9774,7 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
   if (service !== 'catalog' && style) zet('style', style);
   for (let i = 1; i <= products; i++) zet(`product_p${i}`, `Product ${i}`);
   if (message) zet('message', message);
+  if (uploadBatch) zet('upload_batch', uploadBatch);
 
   const { onRequestPost: plaats } = await import('../../functions/api/order.js');
   const origin = new URL(request.url).origin;
@@ -9667,7 +9789,7 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
     return html(page({ title: 'Admin', body: errorBody(`De bestelling is niet aangemaakt (${res.status}${uit?.error ? `, ${esc(String(uit.error))}` : ''}).`) }), 500);
   }
   const rij = await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(uit.ref).first();
-  await logAdmin(env, admin, 'order.namens', { orderId: rij?.id || null, customerId, detail: `${uit.ref}: ${service} × ${products} namens ${c.email}` });
+  await logAdmin(env, admin, 'order.namens', { orderId: rij?.id || null, customerId, detail: `${uit.ref}: ${service} × ${products} namens ${c.email}${uploadBatch ? `, met foto's` : ''}${overgeslagen.length ? ` (overgeslagen: ${overgeslagen.join(', ')})` : ''}` });
   if (rij?.id) {
     await env.DB.prepare(`INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'received', ?2, 'studio')`)
       .bind(rij.id, lang === 'nl' ? 'Bestelling namens de klant geplaatst door de studio, zoals besproken.' : 'Order placed on the customer\u2019s behalf by the studio, as discussed.').run();

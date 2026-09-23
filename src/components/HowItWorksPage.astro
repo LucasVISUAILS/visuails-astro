@@ -269,6 +269,9 @@ const STATIONS = [
   <section class="paneel" aria-labelledby="hiw-h1">
     <div class="hiw-open">
       <div class="paneel-kop">
+        {/* Etiket erbij, 23 september 2026: elke andere pagina opent met een
+            etiket boven de kop (kladblok/_consistentie.mjs). */}
+        <p class="etiket">{lang === 'nl' ? 'Hoe het werkt' : 'How it works'}</p>
         <h1 id="hiw-h1" class="hoog">{c.h1a} <br />{c.h1b}<em>{c.h1em}</em>{c.h1c}</h1>
         <p class="lopend">{c.lead}</p>
         <p class="acties">
@@ -337,34 +340,40 @@ const STATIONS = [
     </div>
   </section>
 
-  {/* ── 4 · DE DETAILS ───────────────────────────────────────────────────── */}
+  {/* ── 4 · DE DETAILS, EN WAAR DE BEELDEN LANDEN — ÉÉN BLOK ──────────────
+      23 september 2026, PAGINA-OPBOUW.md (goedgekeurd): "De details die ertoe
+      doen" (454 px) en "Eén bestelling, overal waar hij heen moet" (828 px,
+      donkere kamer) werden één paneel. Links wat er aan de bestelling vastzit,
+      rechts waar de beelden landen. Geen eurobedrag hier — dat is het werk van
+      de prijspagina. */}
   <section class="paneel" aria-labelledby="hiw-details">
-    <header class="paneel-kop">
-      <h2 id="hiw-details" class="hoog hoog-2">{c.detailsH}</h2>
-    </header>
-    <ul class="hiw-details" role="list">
-      {c.details.map((d) => (
-        <li>
-          <b>{d.t}</b>
-          <span class="lopend">{d.b}{d.linkText ? <> <a href={lp(d.linkHref)}>{d.linkText}</a>.</> : null}</span>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  {/* ── 5 · WAAR DE BEELDEN LANDEN ──────────────────────────────────────────
-      Geen eurobedrag hier — dat is het werk van de prijspagina. */}
-  <section class="kamer hiw-kamer" aria-labelledby="hiw-land">
-    <header class="kamer-kop">
-      <h2 id="hiw-land" class="hoog hoog-2">{c.landH}</h2>
-      <p class="lopend">{c.landLede}</p>
-    </header>
-    <ul class="hiw-land" role="list">
-      {c.land.map(([t2, b]) => (
-        <li><span class="hiw-land-t">{t2}</span><span class="mono">{b}</span></li>
-      ))}
-    </ul>
-    <p class="lopend hiw-land-noot">{c.landNote}</p>
+    <div class="hiw-samen">
+      <div>
+        <header class="paneel-kop">
+          <h2 id="hiw-details" class="hoog hoog-2">{c.detailsH}</h2>
+        </header>
+        <ul class="hiw-details" role="list">
+          {c.details.map((d) => (
+            <li>
+              <b>{d.t}</b>
+              <span class="lopend">{d.b}{d.linkText ? <> <a href={lp(d.linkHref)}>{d.linkText}</a>.</> : null}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div aria-labelledby="hiw-land" role="group">
+        <header class="paneel-kop">
+          <h2 id="hiw-land" class="hoog hoog-3">{c.landH}</h2>
+          <p class="lopend">{c.landLede}</p>
+        </header>
+        <ul class="hiw-land" role="list">
+          {c.land.map(([t2, b]) => (
+            <li><span class="hiw-land-t">{t2}</span><span class="mono">{b}</span></li>
+          ))}
+        </ul>
+        <p class="lopend hiw-land-noot">{c.landNote}</p>
+      </div>
+    </div>
   </section>
 
   {/* ── 6 · HET SLOT ────────────────────────────────────────────────────── */}
@@ -374,7 +383,6 @@ const STATIONS = [
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/test-sample')} data-track="hiw-sample">{c.ctaSampleBtn}</a>
       <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStartBtn}</a>
-      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">WhatsApp</a>
     </p>
     <p class="lopend hiw-gidsen"><a href={lp('/faq')}>{c.faqCta}</a> · <span set:html={c.faqGuides} /></p>
     {/* vatNote() één keer per pagina, bij de enige prijs die erop staat. */}
@@ -418,16 +426,17 @@ const STATIONS = [
 
   /* De details als regels en niet als kaartjes: korte antwoorden op losse
      vragen, en twaalf kaders zetten twaalf keer een rand om één zin. */
-  .hiw-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); }
+  .hiw-samen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 4rem); align-items: start; }
+  .hiw-details { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
   .hiw-details li { display: grid; gap: .4rem; align-content: start; padding: clamp(1rem, 2.2vw, 1.5rem) 0; border-top: 1px solid var(--lijn); }
   .hiw-details b { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: 1.05rem; text-transform: uppercase; letter-spacing: -.01em; }
   .hiw-details .lopend { font-size: .92rem; }
   .hiw-details a { color: var(--inkt); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--geel); text-decoration-thickness: 2px; }
 
-  .hiw-land { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(1.5rem, 4vw, 3.5rem); }
-  .hiw-land li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: baseline; gap: .8rem; padding: .7rem 0; border-top: 1px solid rgb(245 245 245 / .18); }
+  .hiw-land { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .hiw-land li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: baseline; gap: .8rem; padding: .7rem 0; border-top: 1px solid var(--lijn); }
   .hiw-land-t { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; font-size: clamp(.95rem, 1.4vw, 1.1rem); text-transform: uppercase; letter-spacing: -.01em; }
-  .hiw-land li .mono { color: rgb(245 245 245 / .66); text-transform: none; letter-spacing: 0; font-size: .84rem; line-height: 1.5; }
+  .hiw-land li .mono { color: var(--inkt-2); text-transform: none; letter-spacing: 0; font-size: .84rem; line-height: 1.5; }
   .hiw-land-noot { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); font-size: .92rem; }
 
   .hiw-gidsen { margin-top: 1.2rem; font-size: .92rem; color: var(--inkt-2); max-width: 70ch; }
@@ -438,7 +447,7 @@ const STATIONS = [
   .hiw-btw { margin-top: 1.6rem; font-size: .84rem; line-height: 1.6; max-width: 70ch; }
 
   @media (max-width: 900px) {
-    .hiw-open, .hiw-twee, .hiw-details, .hiw-diensten { grid-template-columns: 1fr; }
+    .hiw-open, .hiw-twee, .hiw-details, .hiw-diensten, .hiw-samen { grid-template-columns: 1fr; }
     .hiw-land { grid-template-columns: 1fr; }
   }
   /* Onder 560 px één kolom: "MARKTPLAATSEN" op 125 % breedte breekt niet en

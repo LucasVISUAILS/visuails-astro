@@ -55,7 +55,6 @@ import FigGate from './FigGate.astro';
 import Disclose from './Disclose.astro';
 import FigBoard from './FigBoard.astro';
 import FigOverzicht from './FigOverzicht.astro';
-import Placeholder from './Placeholder.astro';
 import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -218,6 +217,8 @@ const nl = lang === 'nl';
   <section class="paneel" aria-labelledby="sp-h1">
     <div class="sp-open">
       <div class="paneel-kop">
+        {/* Etiket erbij, 23 september 2026 — zie /how-it-works. */}
+        <p class="etiket">{lang === 'nl' ? 'Planning' : 'Schedule'}</p>
         <h1 id="sp-h1" class="hoog">{c.h1[0]} <em>{c.h1[1]}</em></h1>
         <p class="lopend">{c.lede}</p>
         <p class="acties">
@@ -247,10 +248,7 @@ const nl = lang === 'nl';
       De agenda zelf, met de dag erin die geweigerd wordt. Het venster dat hij
       "aangeboden" noemt komt uit offerableWindows() — zie FigGate.astro. */}
   <section class="kamer sp-kamer" aria-labelledby="sp-poort">
-    <header class="kamer-kop">
-      <h2 id="sp-poort" class="hoog hoog-2">{c.gateH}</h2>
-      <p class="lopend">{c.gateLede}</p>
-    </header>
+
     {/* ── DE VIER REGELS ZIJN INGEKLAPT — 12 september 2026 ─────────────────
         Gemeten: deze sectie droeg 461 van de 1.363 zichtbare woorden op
         /studio, en 115 daarvan zaten in deze vier regels. Het zijn de REGELS
@@ -265,6 +263,13 @@ const nl = lang === 'nl';
         ze hier vindt. Dicht, want dit is de uitzondering niet. */}
     <div class="sp-twee">
       <div class="sp-regels-in">
+        {/* De kop staat sinds 23 september 2026 in deze kolom, naast de agenda
+            in plaats van erboven: hij stond op een eigen rij met een lege
+            rechterhelft, en de tekening begon pas daaronder. */}
+        <header class="kamer-kop">
+          <h2 id="sp-poort" class="hoog hoog-2">{c.gateH}</h2>
+          <p class="lopend">{c.gateLede}</p>
+        </header>
         <Disclose summary={c.gateRegelsH} tone="panel">
           <ul class="sp-regels" role="list">
             {c.gate.map(([k, v]) => (
@@ -277,58 +282,7 @@ const nl = lang === 'nl';
     </div>
   </section>
 
-  {/* ── 3 · HET BESTELBORD ──────────────────────────────────────────────────
-      De tabel, met het revisieverzoek open. */}
-  <section class="paneel" aria-labelledby="sp-bord">
-    <div class="sp-twee-licht">
-      <div class="sp-bord-t">
-        <h2 id="sp-bord" class="hoog hoog-2">{c.boardH}</h2>
-        <p class="lopend">{c.boardLede}</p>
-        {/* Dezelfde zet als bij de vier planningsregels hierboven, en om
-            dezelfde reden: dit zijn vijf definities over hoe ons eigen bord
-            werkt, samen 170 woorden, naast een schermafdruk die datzelfde bord
-            laat zien. Wie wil weten wat er in die tabel staat, kijkt ernaar;
-            wie wil weten hoe hij werkt, klapt dit open. */}
-        <Disclose summary={c.boardRegelsH} tone="panel">
-          <dl class="sp-def">
-            {c.board.map(([k, v]) => (<Fragment><dt>{k}</dt><dd class="lopend">{v}</dd></Fragment>))}
-          </dl>
-        </Disclose>
-      </div>
-      {/* Het scherm op zwart — zie `.op-nacht` in src/styles/global.css voor de
-          regel: beeld en interface staan op donker, tekst staat op papier. */}
-      <div class="op-nacht">
-        <FigBoard lang={lang} />
-      </div>
-    </div>
-  </section>
-
-  {/* ── 4 · DE STAP MET DE HAND ─────────────────────────────────────────────
-      "De laatste stap is een specialist" is de belangrijkste belofte op deze
-      pagina en stond er ooit als drie alinea's tekst. Een foto van iemand die
-      daadwerkelijk zit te kijken doet dat werk in een halve seconde — vandaar
-      de plaatshouder met de opdracht erin, en niet een lichtstudie: een
-      lichtkegel bewijst niet dat er met de hand gekeken wordt. */}
-  <section class="kamer sp-kamer-hand" aria-labelledby="sp-hand">
-    <header class="kamer-kop">
-      <h2 id="sp-hand" class="hoog hoog-2">{c.humanH}</h2>
-      <p class="lopend">{c.humanLede}</p>
-      <p class="lopend sp-noot">{c.humanNote}</p>
-      <p class="acties"><a class="knop sp-knop-lijn" href={lp('/ai-act')}>{c.humanCta}</a></p>
-    </header>
-    <Placeholder
-      lang={lang}
-      ratio="16 / 9"
-      caption={false}
-      subject={nl ? 'Iemand aan het werk: een beeld op het scherm, ernaast de originele telefoonfoto van de klant'
-                  : 'Someone at work: a finished visual on screen, the client’s original phone photo beside it'}
-      message={nl
-        ? 'Moet bewijzen dat "met de hand gecontroleerd" een handeling is en geen zinnetje. Het vergelijken moet te zien zijn — twee beelden naast elkaar, een blik erop. Geen poserend portret en geen stockfoto van een kantoor.'
-        : 'Must prove that "checked by hand" is an action, not a phrase. The comparing has to be visible — two images side by side, a person looking at them. Not a posed portrait, not a stock office shot.'}
-    />
-  </section>
-
-  {/* ── 5 · TERUGREKENEN VANAF DE LANCEERDATUM ──────────────────────────────
+  {/* ── 3 · TERUGREKENEN VANAF DE LANCEERDATUM — NAAR VOREN, 23 sep 2026 ──────────────────────────────
       Het leest als een dienst aan de lezer en niet als druk: een lanceerdatum
       is de ene datum die hij al in zijn hoofd heeft, en deze rij doet de
       aftrekking voor hem. Geen kleurladder over de drie stappen — zie de noot
@@ -351,6 +305,44 @@ const nl = lang === 'nl';
     <div class="sp-plan-voet">
       <p class="lopend">{c.plNote}</p>
       <p class="acties"><a class="knop knop-lijn" href={lp('/start')}>{c.plCta}</a></p>
+    </div>
+  </section>
+
+  {/* ── 4 · HET BESTELBORD, EN DE STAP MET DE HAND — 23 september 2026 ────
+      De tabel, met het revisieverzoek open. "De laatste stap is een
+      specialist" stond hieronder als donkere kamer van 1.344 px, waarvan het
+      grootste deel een lege 16:9-plaatshouder was (PAGINA-OPBOUW.md). De
+      tekst staat nu hier, onder het bord waar die stap in gebeurt. Komt de
+      foto van iemand aan het werk, dan kan hij terug naast deze tekst. */}
+  <section class="paneel" aria-labelledby="sp-bord">
+    <div class="sp-twee-licht">
+      <div class="sp-bord-t">
+        <h2 id="sp-bord" class="hoog hoog-2">{c.boardH}</h2>
+        <p class="lopend">{c.boardLede}</p>
+        {/* Dezelfde zet als bij de vier planningsregels hierboven, en om
+            dezelfde reden: dit zijn vijf definities over hoe ons eigen bord
+            werkt, samen 170 woorden, naast een schermafdruk die datzelfde bord
+            laat zien. Wie wil weten wat er in die tabel staat, kijkt ernaar;
+            wie wil weten hoe hij werkt, klapt dit open. */}
+        <Disclose summary={c.boardRegelsH} tone="panel">
+          <dl class="sp-def">
+            {c.board.map(([k, v]) => (<Fragment><dt>{k}</dt><dd class="lopend">{v}</dd></Fragment>))}
+          </dl>
+        </Disclose>
+      </div>
+      {/* Het scherm op zwart — zie `.op-nacht` in src/styles/global.css voor de
+          regel: beeld en interface staan op donker, tekst staat op papier. */}
+      <div class="op-nacht">
+        <FigBoard lang={lang} />
+      </div>
+    </div>
+    <div class="sp-hand">
+      <h2 id="sp-hand" class="hoog hoog-3">{c.humanH}</h2>
+      <div class="sp-hand-t">
+        <p class="lopend">{c.humanLede}</p>
+        <p class="lopend sp-noot">{c.humanNote}</p>
+        <p><a class="pijl" href={lp('/ai-act')}>{c.humanCta}</a></p>
+      </div>
     </div>
   </section>
 
@@ -397,7 +389,9 @@ const nl = lang === 'nl';
   .sp-open { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: start; }
   .sp-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
 
-  .sp-twee { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+  .sp-twee { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+  .sp-regels-in { display: grid; gap: clamp(1.2rem, 2.4vw, 1.8rem); align-content: start; }
+  .sp-regels-in .kamer-kop { margin-bottom: 0; }
   /* De drie regels van de poort: het etiket klein, de uitleg als lopende tekst.
      Geen tegels met een rand eromheen — het zijn drie feiten over één ding.
 
@@ -423,6 +417,11 @@ const nl = lang === 'nl';
   .sp-knop-lijn { color: var(--vel); }
   .sp-knop-lijn:hover { background: var(--vel); color: var(--inkt); }
 
+  .sp-hand { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(1rem, 4vw, 4rem); align-items: start; margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.6rem, 3vw, 2.2rem); border-top: 1px solid var(--lijn); }
+  .sp-hand .hoog { margin: 0; }
+  .sp-hand-t { display: grid; gap: .8rem; }
+  .sp-hand-t p { margin: 0; }
+  @media (max-width: 760px) { .sp-hand { grid-template-columns: 1fr; } }
   .sp-plan { display: grid; }
   .sp-plan li { display: grid; grid-template-columns: auto minmax(0, 20rem) minmax(0, 32rem); align-items: baseline; gap: clamp(1rem, 3vw, 2.5rem); padding: clamp(1.1rem, 2.4vw, 1.8rem) 0; border-top: 1px solid var(--lijn); }
   .sp-plan li:last-child { border-bottom: 1px solid var(--lijn); }

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alle pagina’s — opbouw</title>
+<style>
+  :root { --vel:#F2F3F5; --inkt:#000; --inkt-2:rgb(0 0 0/.62); --lijn:rgb(0 0 0/.16); --accent:#4A1FFF; }
+  * { box-sizing:border-box }
+  body { margin:0; background:#CFD3DA; font-family:"Figtree","Helvetica Neue",Arial,sans-serif; color:var(--inkt); font-size:14px; line-height:1.45 }
+  .mono { font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--inkt-2) }
+  .vel { width:min(100%,1180px); margin:28px auto; background:var(--vel) }
+  .kop { padding:22px 28px; background:#fff; border-bottom:1px solid var(--lijn) }
+  .kop h1 { margin:0 0 6px; font-size:20px }
+  .kop p { margin:0; color:var(--inkt-2); max-width:78ch }
+  .legenda { display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; font-size:12px; color:var(--inkt-2) }
+  .legenda i { display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:-2px; margin-right:6px; border:1px solid var(--lijn) }
+  .pg { padding:22px 28px; border-bottom:1px solid var(--lijn) }
+  .pg header h2 { margin:0; font-size:18px }
+  .pg header p { margin:2px 0 6px; font-style:italic; color:var(--inkt-2) }
+  .twee { display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:12px; align-items:start }
+  .b { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:3px; padding:0 10px; border-radius:4px; font-size:12px; overflow:hidden }
+  .b span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .b i { font-style:normal; font-family:ui-monospace,Menlo,monospace; font-size:10px; opacity:.7 }
+  .weg { color:#B42318 }
+  ul.weg { margin:4px 0 0; padding-left:18px; font-size:12px }
+  p.weg { margin:12px 0 0 }
+  @media (max-width:760px) { .twee { grid-template-columns:1fr } }
+</style></head><body><div class="vel">
+  <div class="kop">
+    <h1>Alle pagina’s — nu en voorstel</h1>
+    <p>Links wat er nu staat (gemeten op 1440, gebouwde site), rechts het voorstel, op dezelfde schaal. De uitleg per pagina staat in PAGINA-OPBOUW.md. Samen: nu 159.738 px → voorstel ±108.415 px (-32 %).</p>
+    <div class="legenda"><span><i style="background:#E4E7EC"></i>blijft</span><span><i style="background:#E4DFFF"></i>nieuw of naar voren</span><span><i style="background:#FFF1D6"></i>kleiner</span><span><i style="background:#DDF1E4"></i>samengevoegd</span><span><i style="background:#1A1A1A"></i>slot</span><span><i style="background:#FBE3E3;border:1px dashed #B42318"></i>weg</span></div>
+  </div>
+  
+  <section class="pg">
+    <header><h2>/catalog/</h2><p>“Wat krijg ik voor mijn product, en hoe ziet het eruit?”</p>
+      <span class="mono">nu 8.068 px · 7 blokken → voorstel ±4.780 px · 6 blokken (-41 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:66px;background:#E4E7EC;color:#000;"><span>Strakke, consistente catalogfoto’s — ook bij dertig producten.</span><i>1.192</i></div><div class="b" style="height:94px;background:#E4E7EC;color:#000;"><span>Kies je catalog-stijl.</span><i>1.710</i></div><div class="b" style="height:55px;background:#E4E7EC;color:#000;"><span>Eén product. vier foto’s of meer. het tarief daalt naarmate het aantal</span><i>998</i></div><div class="b" style="height:45px;background:#E4E7EC;color:#000;"><span>Drie stappen naar een strakke catalogus.</span><i>811</i></div><div class="b" style="height:50px;background:#E4E7EC;color:#000;"><span>Dit is een telefoonfoto. dit is wat eruit kwam.</span><i>905</i></div><div class="b" style="height:42px;background:#E4E7EC;color:#000;"><span>Vragen over catalog</span><i>766</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Bouw een catalogus die eruitziet als één merk.</span><i>384</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:65px;background:#E4E7EC;color:#000;"><span>Opening — laptop, feiten, twee knoppen</span><i>1.190</i></div><div class="b" style="height:44px;background:#E4DFFF;color:#000;"><span>Voor-en-na (was blok 5)</span><i>800</i></div><div class="b" style="height:36px;background:#FFF1D6;color:#000;"><span>Stijlen als strook — Classic, Op maat, wat eraan komt</span><i>650</i></div><div class="b" style="height:22px;background:#FFF1D6;color:#000;"><span>Prijs in één regel → Prijzen</span><i>250</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Vragen (4)</span><i>650</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot — twee knoppen</span><i>340</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Drie stappen naar een strakke catalogus (staat op /how-it-works)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/lifestyle/</h2><p>“Welke scène past bij mijn merk?”</p>
+      <span class="mono">nu 8.626 px · 7 blokken → voorstel ±4.890 px · 6 blokken (-43 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:58px;background:#E4E7EC;color:#000;"><span>Jouw product, in scènes die verkopen.</span><i>1.048</i></div><div class="b" style="height:125px;background:#E4E7EC;color:#000;"><span>Vier sferen — of je eigen.</span><i>2.280</i></div><div class="b" style="height:66px;background:#E4E7EC;color:#000;"><span>Eén product. drie foto’s. een carousel.</span><i>1.191</i></div><div class="b" style="height:52px;background:#E4E7EC;color:#000;"><span>Drie stappen naar een carousel.</span><i>939</i></div><div class="b" style="height:41px;background:#E4E7EC;color:#000;"><span>Het assortiment, in beweging</span><i>746</i></div><div class="b" style="height:42px;background:#E4E7EC;color:#000;"><span>Vragen over lifestyle</span><i>766</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Zet je product in een scène die verkoopt.</span><i>384</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:58px;background:#E4E7EC;color:#000;"><span>Opening</span><i>1.050</i></div><div class="b" style="height:41px;background:#E4DFFF;color:#000;"><span>Het assortiment, in beweging (was blok 5)</span><i>750</i></div><div class="b" style="height:38px;background:#FFF1D6;color:#000;"><span>Vier sferen als strook — één echte foto per sfeer</span><i>700</i></div><div class="b" style="height:28px;background:#DDF1E4;color:#000;"><span>Eén product, drie foto’s + prijs in één regel</span><i>500</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Vragen</span><i>650</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot — twee knoppen</span><i>340</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Drie stappen naar een carousel</li><li>de lege tegels in de sferen (4 per sfeer)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/video/</h2><p>“Kan ik dit krijgen, en hoe vraag ik het aan?”</p>
+      <span class="mono">nu 7.613 px · 6 blokken → voorstel ±4.150 px · 5 blokken (-45 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:55px;background:#E4E7EC;color:#000;"><span>Korte productvideo’s die bewegen.</span><i>992</i></div><div class="b" style="height:151px;background:#E4E7EC;color:#000;"><span>Manieren om beweging toe te voegen.</span><i>2.742</i></div><div class="b" style="height:48px;background:#E4E7EC;color:#000;"><span>Drie stappen naar een bewegend product.</span><i>865</i></div><div class="b" style="height:34px;background:#E4E7EC;color:#000;"><span>Strakke beweging, klaar om te publiceren.</span><i>627</i></div><div class="b" style="height:39px;background:#E4E7EC;color:#000;"><span>Vragen over video</span><i>715</i></div><div class="b" style="height:23px;background:#E4E7EC;color:#000;"><span>Geef je product een beetje beweging.</span><i>411</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:54px;background:#E4E7EC;color:#000;"><span>Opening — aanvragen als hoofdknop</span><i>990</i></div><div class="b" style="height:41px;background:#FFF1D6;color:#000;"><span>Drie soorten als kaarten, één “clip volgt” elk</span><i>750</i></div><div class="b" style="height:29px;background:#FFF1D6;color:#000;"><span>Strakke beweging + twee manieren om te kopen</span><i>520</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Vragen</span><i>650</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot — twee knoppen</span><i>340</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Drie stappen naar een bewegend product</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/how-it-works/</h2><p>“Wat gebeurt er van bestelling tot levering?”</p>
+      <span class="mono">nu 5.665 px · 6 blokken → voorstel ±4.870 px · 5 blokken (-14 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:33px;background:#E4E7EC;color:#000;"><span>Eén map erin. een hele bestelling eruit.</span><i>596</i></div><div class="b" style="height:76px;background:#E4E7EC;color:#000;"><span>Je bestelling, van begin tot eind.</span><i>1.376</i></div><div class="b" style="height:34px;background:#E4E7EC;color:#000;"><span>Meer dan ai. met de hand afgewerkt.</span><i>616</i></div><div class="b" style="height:25px;background:#E4E7EC;color:#000;"><span>De details die ertoe doen</span><i>454</i></div><div class="b" style="height:46px;background:#E4E7EC;color:#000;"><span>Eén bestelling, overal waar hij heen moet.</span><i>828</i></div><div class="b" style="height:31px;background:#E4E7EC;color:#000;"><span>Eén product van jezelf, als catalogset of carousel.</span><i>560</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:33px;background:#E4E7EC;color:#000;"><span>Opening</span><i>600</i></div><div class="b" style="height:76px;background:#E4E7EC;color:#000;"><span>Je bestelling, van begin tot eind (de stations)</span><i>1.380</i></div><div class="b" style="height:34px;background:#E4E7EC;color:#000;"><span>Meer dan AI. Met de hand afgewerkt.</span><i>620</i></div><div class="b" style="height:47px;background:#DDF1E4;color:#000;"><span>De details + overal waar hij heen moet — één blok</span><i>850</i></div><div class="b" style="height:29px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>520</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/pricing/</h2><p>“Wat kost het voor mijn aantal producten?”</p>
+      <span class="mono">nu 7.716 px · 7 blokken → voorstel ±4.440 px · 5 blokken (-42 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:39px;background:#E4E7EC;color:#000;"><span>Je betaalt per product. hoe meer producten, hoe lager het tarief.</span><i>707</i></div><div class="b" style="height:59px;background:#E4E7EC;color:#000;"><span>Dit is één product.</span><i>1.078</i></div><div class="b" style="height:78px;background:#E4E7EC;color:#000;"><span>De prijs per product</span><i>1.412</i></div><div class="b" style="height:95px;background:#E4E7EC;color:#000;"><span>Wat er verder een tarief heeft</span><i>1.722</i></div><div class="b" style="height:39px;background:#E4E7EC;color:#000;"><span>Elke maand nieuwe beelden</span><i>715</i></div><div class="b" style="height:27px;background:#E4E7EC;color:#000;"><span>Voordat je een bestelling plaatst</span><i>497</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Eén product van jezelf, als catalogset of carousel.</span><i>329</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:38px;background:#E4E7EC;color:#000;"><span>Opening</span><i>700</i></div><div class="b" style="height:72px;background:#E4DFFF;color:#000;"><span>De prijs per product — de tabel (was blok 3)</span><i>1.300</i></div><div class="b" style="height:50px;background:#FFF1D6;color:#000;"><span>Wat er verder een tarief heeft — twee kolommen</span><i>900</i></div><div class="b" style="height:22px;background:#FFF1D6;color:#000;"><span>Abonnementen als smalle band → /plans</span><i>280</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot met de proef</span><i>360</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Dit is één product (de laptop, 1.078 px) → één regel onder de tabel</li><li>Voordat je een bestelling plaatst (gaat op in het slot)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/plans/</h2><p>“Wat kost een abonnement en wat zit erin?”</p>
+      <span class="mono">nu 6.354 px · 7 blokken → voorstel ±4.350 px · 5 blokken (-32 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:25px;background:#E4E7EC;color:#000;"><span>Dezelfde studio, elke maand.</span><i>459</i></div><div class="b" style="height:62px;background:#E4E7EC;color:#000;"><span>Elk product krijgt dit.</span><i>1.129</i></div><div class="b" style="height:49px;background:#E4E7EC;color:#000;"><span>Wat een abonnement eigenlijk is.</span><i>887</i></div><div class="b" style="height:68px;background:#E4E7EC;color:#000;"><span>De drie abonnementen</span><i>1.240</i></div><div class="b" style="height:37px;background:#E4E7EC;color:#000;"><span>En wat eraan komt.</span><i>669</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Toch liever niet elke maand.</span><i>287</i></div><div class="b" style="height:23px;background:#E4E7EC;color:#000;"><span>Begin met één product voor €1.</span><i>411</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:25px;background:#E4E7EC;color:#000;"><span>Opening</span><i>460</i></div><div class="b" style="height:68px;background:#E4DFFF;color:#000;"><span>De drie abonnementen (was blok 4)</span><i>1.240</i></div><div class="b" style="height:33px;background:#FFF1D6;color:#000;"><span>Wat een abonnement eigenlijk is — ingekort</span><i>600</i></div><div class="b" style="height:37px;background:#E4E7EC;color:#000;"><span>En wat eraan komt (#binnenkort)</span><i>670</i></div><div class="b" style="height:26px;background:#DDF1E4;color:#000;"><span>Toch liever niet elke maand + slot</span><i>480</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Elk product krijgt dit (de laptop, 1.129 px)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/start/</h2><p>“Wat wil ik laten maken?”</p>
+      <span class="mono">nu 5.700 px · 5 blokken → voorstel ±4.460 px · 6 blokken (-22 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:127px;background:#E4E7EC;color:#000;"><span>Wat gaan we maken?</span><i>2.308</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Of betaal er maandelijks voor</span><i>314</i></div><div class="b" style="height:43px;background:#E4E7EC;color:#000;"><span>Wat er gebeurt nadat je erop drukt</span><i>785</i></div><div class="b" style="height:40px;background:#E4E7EC;color:#000;"><span>Eén ding dat met een bestelling meegaat</span><i>719</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Nog niet zeker welke?</span><i>378</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:104px;background:#FFF1D6;color:#000;"><span>Wat gaan we maken? — zonder de Hooks- en Editions-kaart</span><i>1.900</i></div><div class="b" style="height:22px;background:#E4DFFF;color:#000;"><span>Ook: Hooks · Editions — één regel</span><i>60</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Of betaal er maandelijks voor</span><i>310</i></div><div class="b" style="height:43px;background:#E4E7EC;color:#000;"><span>Wat er gebeurt nadat je erop drukt</span><i>790</i></div><div class="b" style="height:22px;background:#FFF1D6;color:#000;"><span>Merkmodel — één regel</span><i>120</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>380</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/test-sample/</h2><p>“Hoe probeer ik het voor €1?”</p>
+      <span class="mono">nu 4.454 px · 6 blokken → voorstel ±4.020 px · 5 blokken (-10 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:34px;background:#E4E7EC;color:#000;"><span>Test visuails met 1 product</span><i>627</i></div><div class="b" style="height:64px;background:#E4E7EC;color:#000;"><span>Wat maken we voor je?</span><i>1.172</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Ts-krijg</span><i>381</i></div><div class="b" style="height:28px;background:#E4E7EC;color:#000;"><span>Hoe de proef werkt</span><i>515</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Ts-fijndruk</span><i>145</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Liever gewoon even overleggen?</span><i>380</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:35px;background:#E4E7EC;color:#000;"><span>Opening</span><i>630</i></div><div class="b" style="height:64px;background:#E4E7EC;color:#000;"><span>Wat maken we voor je? (formulier)</span><i>1.170</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Wat je krijgt</span><i>380</i></div><div class="b" style="height:31px;background:#DDF1E4;color:#000;"><span>Hoe de proef werkt + kleine lettertjes</span><i>560</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>380</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/gallery/</h2><p>“Wat krijg ik, als ik mijn foto’s stuur?”</p>
+      <span class="mono">nu 3.591 px · 1 blokken → voorstel ±3.591 px · 1 blokken (+0 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:141px;background:#E4E7EC;color:#000;"><span>Zo ziet een levering eruit.</span><i>2.569</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:141px;background:#E4E7EC;color:#000;"><span>Vandaag herbouwd: “Zo ziet een levering eruit” + Alle beelden</span><i>2.570</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/about/</h2><p>“Wie zit hierachter?”</p>
+      <span class="mono">nu 6.366 px · 6 blokken → voorstel ±3.420 px · 4 blokken (-46 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Studiobeelden, zonder studio</span><i>653</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Ik ben lucas.</span><i>648</i></div><div class="b" style="height:49px;background:#E4E7EC;color:#000;"><span>Drie dingen waar we aan vasthouden.</span><i>888</i></div><div class="b" style="height:99px;background:#E4E7EC;color:#000;"><span>Paneel</span><i>1.809</i></div><div class="b" style="height:46px;background:#E4E7EC;color:#000;"><span>Voor merken met meer producten dan shootdagen.</span><i>837</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Laten we samen groeien.</span><i>326</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:38px;background:#E4DFFF;color:#000;"><span>Opening = “Ik ben Lucas.” (foto + twee alinea’s)</span><i>700</i></div><div class="b" style="height:49px;background:#E4E7EC;color:#000;"><span>Drie dingen waar we aan vasthouden</span><i>890</i></div><div class="b" style="height:33px;background:#FFF1D6;color:#000;"><span>Eén rij van drie beelden</span><i>600</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>330</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>De hero “Studiobeelden, zonder studio” (dat is de voorpagina)</li><li>Voor merken met meer producten dan shootdagen (staat op de voorpagina)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/contact/</h2><p>“Hoe bereik ik jullie het snelst?”</p>
+      <span class="mono">nu 3.606 px · 3 blokken → voorstel ±2.530 px · 2 blokken (-30 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:50px;background:#E4E7EC;color:#000;"><span>Laten we samen groeien</span><i>904</i></div><div class="b" style="height:62px;background:#E4E7EC;color:#000;"><span>De snelste manier om ons te bereiken</span><i>1.124</i></div><div class="b" style="height:24px;background:#E4E7EC;color:#000;"><span>Liever eerst één product van jezelf?</span><i>431</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:66px;background:#E4DFFF;color:#000;"><span>Direct contact (met “Je spreekt Lucas”) · bericht</span><i>1.200</i></div><div class="b" style="height:24px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>430</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>De opening met de grote modelfoto (904 px)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/faq/</h2><p>“Staat mijn vraag erbij?”</p>
+      <span class="mono">nu 9.392 px · 3 blokken → voorstel ±3.780 px · 3 blokken (-60 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:35px;background:#E4E7EC;color:#000;"><span>Vragen, beantwoord.</span><i>630</i></div><div class="b" style="height:399px;background:#E4E7EC;color:#000;"><span>Aan de slag</span><i>7.263</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Nog een vraag?</span><i>352</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:35px;background:#E4E7EC;color:#000;"><span>Opening</span><i>630</i></div><div class="b" style="height:104px;background:#FFF1D6;color:#000;"><span>Categorieën als tabs — één tegelijk, zonder JS alles</span><i>1.900</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>350</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/guides/</h2><p>“Wat moet ik weten vóór ik bestel?”</p>
+      <span class="mono">nu 2.849 px · 3 blokken → voorstel ±2.760 px · 3 blokken (-3 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:72px;background:#E4E7EC;color:#000;"><span>Alles wat de moeite waard is vóór je shoot</span><i>1.302</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Gd-brief</span><i>213</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Klaar wanneer jij dat bent.</span><i>353</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:72px;background:#E4E7EC;color:#000;"><span>Opening + vijf gidsen</span><i>1.300</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Studiobrief (vandaag)</span><i>210</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>350</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/models/</h2><p>“Welke gezichten kan ik kiezen?”</p>
+      <span class="mono">nu 3.973 px · 4 blokken → voorstel ±3.720 px · 4 blokken (-6 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:38px;background:#E4E7EC;color:#000;"><span>Tien gezichten. al inbegrepen.</span><i>696</i></div><div class="b" style="height:57px;background:#E4E7EC;color:#000;"><span>De volledige bibliotheek</span><i>1.030</i></div><div class="b" style="height:42px;background:#E4E7EC;color:#000;"><span>Inbegrepen, niet iets wat je erbij moet kopen.</span><i>762</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Kies een gezicht, start een bestelling.</span><i>329</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:38px;background:#E4E7EC;color:#000;"><span>Opening</span><i>700</i></div><div class="b" style="height:57px;background:#E4E7EC;color:#000;"><span>De volledige bibliotheek</span><i>1.030</i></div><div class="b" style="height:42px;background:#E4E7EC;color:#000;"><span>Inbegrepen, niet erbij kopen</span><i>760</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot — twee knoppen</span><i>330</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/custom-models/</h2><p>“Wat is een merkmodel en wat kost het?”</p>
+      <span class="mono">nu 7.374 px · 7 blokken → voorstel ±4.540 px · 6 blokken (-38 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:44px;background:#E4E7EC;color:#000;"><span>Eigen gezichten. alleen van jou.</span><i>809</i></div><div class="b" style="height:59px;background:#E4E7EC;color:#000;"><span>Jouw model, niet een model.</span><i>1.071</i></div><div class="b" style="height:40px;background:#E4E7EC;color:#000;"><span>Wat het kost</span><i>724</i></div><div class="b" style="height:81px;background:#E4E7EC;color:#000;"><span>Negen richtingen om op te reageren.</span><i>1.476</i></div><div class="b" style="height:62px;background:#E4E7EC;color:#000;"><span>Hoe een merkmodel tot stand komt</span><i>1.134</i></div><div class="b" style="height:29px;background:#E4E7EC;color:#000;"><span>De standaardbibliotheek</span><i>532</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Ontwerp het gezicht van jouw merk.</span><i>329</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:45px;background:#E4E7EC;color:#000;"><span>Opening</span><i>810</i></div><div class="b" style="height:33px;background:#E4DFFF;color:#000;"><span>Echt geleverd werk (was onderin blok 4)</span><i>600</i></div><div class="b" style="height:50px;background:#DDF1E4;color:#000;"><span>Jouw model, niet een model + wat het kost</span><i>900</i></div><div class="b" style="height:36px;background:#FFF1D6;color:#000;"><span>Hoe een merkmodel tot stand komt — één rij</span><i>650</i></div><div class="b" style="height:22px;background:#FFF1D6;color:#000;"><span>De negen richtingen — korte rij</span><i>350</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>330</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>De standaardbibliotheek als blok → één regel naar /models</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/compare/</h2><p>“Waarom niet gewoon een shootdag?”</p>
+      <span class="mono">nu 6.825 px · 7 blokken → voorstel ±5.030 px · 6 blokken (-26 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:30px;background:#E4E7EC;color:#000;"><span>Een shootdag, of een bestelling.</span><i>537</i></div><div class="b" style="height:82px;background:#E4E7EC;color:#000;"><span>Een productiedag vergeleken met een visuails-bestelling</span><i>1.482</i></div><div class="b" style="height:44px;background:#E4E7EC;color:#000;"><span>Wat op één lijn moet komen</span><i>804</i></div><div class="b" style="height:44px;background:#E4E7EC;color:#000;"><span>En de week eromheen</span><i>797</i></div><div class="b" style="height:39px;background:#E4E7EC;color:#000;"><span>Waar een shootdag nog steeds wint</span><i>707</i></div><div class="b" style="height:46px;background:#E4E7EC;color:#000;"><span>En als je een self-serve tool overweegt</span><i>840</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Geloof ons niet — test het.</span><i>387</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:30px;background:#E4E7EC;color:#000;"><span>Opening</span><i>540</i></div><div class="b" style="height:50px;background:#FFF1D6;color:#000;"><span>De tabel — zonder de twee lege beeldvakken</span><i>900</i></div><div class="b" style="height:50px;background:#DDF1E4;color:#000;"><span>Wat op één lijn moet komen + de week eromheen</span><i>900</i></div><div class="b" style="height:38px;background:#E4E7EC;color:#000;"><span>Waar een shootdag nog steeds wint</span><i>700</i></div><div class="b" style="height:38px;background:#FFF1D6;color:#000;"><span>Self-serve tool</span><i>700</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>390</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/studio/</h2><p>“Hoe komen jullie aan een datum?”</p>
+      <span class="mono">nu 7.762 px · 7 blokken → voorstel ±5.870 px · 6 blokken (-24 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:44px;background:#E4E7EC;color:#000;"><span>Zo komen we aan een leverdatum. dit is de agenda waar wij in werken.</span><i>798</i></div><div class="b" style="height:79px;background:#E4E7EC;color:#000;"><span>We kijken eerst in de agenda, en pas daarna noemen we een datum.</span><i>1.436</i></div><div class="b" style="height:52px;background:#E4E7EC;color:#000;"><span>Eén tabel, elke order.</span><i>938</i></div><div class="b" style="height:74px;background:#E4E7EC;color:#000;"><span>De laatste stap is een specialist.</span><i>1.344</i></div><div class="b" style="height:54px;background:#E4E7EC;color:#000;"><span>Reken terug vanaf de dag dat je live gaat.</span><i>981</i></div><div class="b" style="height:34px;background:#E4E7EC;color:#000;"><span>Wat dit niet doet.</span><i>610</i></div><div class="b" style="height:23px;background:#E4E7EC;color:#000;"><span>Boek een venster dat de planning heeft vrijgegeven.</span><i>411</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:44px;background:#E4E7EC;color:#000;"><span>Opening</span><i>800</i></div><div class="b" style="height:79px;background:#E4E7EC;color:#000;"><span>De agenda (kamer)</span><i>1.430</i></div><div class="b" style="height:54px;background:#E4DFFF;color:#000;"><span>Reken terug vanaf livegang (was blok 5)</span><i>980</i></div><div class="b" style="height:50px;background:#DDF1E4;color:#000;"><span>Eén tabel + de laatste stap is een specialist</span><i>900</i></div><div class="b" style="height:25px;background:#FFF1D6;color:#000;"><span>Wat dit niet doet</span><i>450</i></div><div class="b" style="height:23px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>410</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/per-product/</h2><p>“Wat krijg ik per product?”</p>
+      <span class="mono">nu 3.354 px · 4 blokken → voorstel ±3.354 px · 1 blokken (+0 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:24px;background:#E4E7EC;color:#000;"><span>Per product, wat je terugkrijgt.</span><i>440</i></div><div class="b" style="height:30px;background:#E4E7EC;color:#000;"><span>Zit er altijd bij · 4 foto’s</span><i>550</i></div><div class="b" style="height:55px;background:#E4E7EC;color:#000;"><span>Erbij te bestellen</span><i>1.003</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Pp-slot</span><i>176</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:121px;background:#E4E7EC;color:#000;"><span>Blijft zoals hij is</span><i>2.200</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/upload-guidelines/</h2><p>“Hoe maak ik de foto die jullie nodig hebben?”</p>
+      <span class="mono">nu 5.937 px · 5 blokken → voorstel ±5.640 px · 5 blokken (-5 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Zo maak je de foto die wij nodig hebben</span><i>650</i></div><div class="b" style="height:62px;background:#E4E7EC;color:#000;"><span>Welke foto welk beeld wordt.</span><i>1.129</i></div><div class="b" style="height:65px;background:#E4E7EC;color:#000;"><span>Wel doen</span><i>1.183</i></div><div class="b" style="height:78px;background:#E4E7EC;color:#000;"><span>De set die we aanraden — en waarom</span><i>1.427</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Foto klaar? stuur hem in.</span><i>353</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Opening</span><i>650</i></div><div class="b" style="height:62px;background:#E4E7EC;color:#000;"><span>Welke foto welk beeld wordt</span><i>1.130</i></div><div class="b" style="height:65px;background:#E4E7EC;color:#000;"><span>Wel doen / vermijden — met echte telefoonfoto’s</span><i>1.180</i></div><div class="b" style="height:79px;background:#E4E7EC;color:#000;"><span>De set die we aanraden</span><i>1.430</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>350</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/hooks/</h2><p>“Wat is een hook, en kan ik er een krijgen?”</p>
+      <span class="mono">nu 9.232 px · 9 blokken → voorstel ±4.720 px · 5 blokken (-49 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:52px;background:#E4E7EC;color:#000;"><span>Video die de scroll onderbreekt.</span><i>953</i></div><div class="b" style="height:64px;background:#E4E7EC;color:#000;"><span>Wat er in je map komt te staan.</span><i>1.165</i></div><div class="b" style="height:47px;background:#E4E7EC;color:#000;"><span>De formats.</span><i>848</i></div><div class="b" style="height:84px;background:#E4E7EC;color:#000;"><span>Een hook is een video die niet ophoudt waar de video ophoudt.</span><i>1.519</i></div><div class="b" style="height:49px;background:#E4E7EC;color:#000;"><span>Vier stappen, en je filmt er geen één.</span><i>891</i></div><div class="b" style="height:34px;background:#E4E7EC;color:#000;"><span>Waar je op kunt rekenen.</span><i>613</i></div><div class="b" style="height:39px;background:#E4E7EC;color:#000;"><span>Wat er verandert bij 10 producten</span><i>706</i></div><div class="b" style="height:39px;background:#E4E7EC;color:#000;"><span>Vragen over hooks</span><i>715</i></div><div class="b" style="height:26px;background:#E4E7EC;color:#000;"><span>Stuur de foto’s die je al hebt.</span><i>473</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:52px;background:#E4E7EC;color:#000;"><span>Opening</span><i>950</i></div><div class="b" style="height:50px;background:#FFF1D6;color:#000;"><span>Wat het is (kamer) — ingekort</span><i>900</i></div><div class="b" style="height:44px;background:#DDF1E4;color:#000;"><span>Wat er in je map komt + wat het kost</span><i>800</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Vragen</span><i>650</i></div><div class="b" style="height:29px;background:#1A1A1A;color:#F2F3F5;"><span>Slot — aanvragen + Studiobrief</span><i>520</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>De formats</li><li>Vier stappen</li><li>Wat er verandert bij 10 producten</li><li>Waar je op kunt rekenen (gaat op in het slot)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/editions/</h2><p>“Wat is Editions, en wanneer kan het?”</p>
+      <span class="mono">nu 10.438 px · 10 blokken → voorstel ±4.980 px · 5 blokken (-52 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:61px;background:#E4E7EC;color:#000;"><span>De maanden waarin je niets te fotograferen hebt.</span><i>1.113</i></div><div class="b" style="height:49px;background:#E4E7EC;color:#000;"><span>Twee sets, en maar één ervan kost iets.</span><i>896</i></div><div class="b" style="height:69px;background:#E4E7EC;color:#000;"><span>Er zit in geen van beide een product.</span><i>1.255</i></div><div class="b" style="height:73px;background:#E4E7EC;color:#000;"><span>De maand waarin niets nieuws zit.</span><i>1.326</i></div><div class="b" style="height:52px;background:#E4E7EC;color:#000;"><span>Eén keer opzetten, daarna loopt hij elke maand.</span><i>947</i></div><div class="b" style="height:54px;background:#E4E7EC;color:#000;"><span>Ed-twaalf</span><i>982</i></div><div class="b" style="height:26px;background:#E4E7EC;color:#000;"><span>Waar je op kunt rekenen.</span><i>470</i></div><div class="b" style="height:46px;background:#E4E7EC;color:#000;"><span>Gedeeld betekent gedeeld, en dat zeggen we liever hier dan in de klein</span><i>839</i></div><div class="b" style="height:42px;background:#E4E7EC;color:#000;"><span>Vragen over editions</span><i>766</i></div><div class="b" style="height:34px;background:#E4E7EC;color:#000;"><span>Vul de maand waar je niets voor hebt.</span><i>624</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:61px;background:#E4E7EC;color:#000;"><span>Opening</span><i>1.110</i></div><div class="b" style="height:50px;background:#E4E7EC;color:#000;"><span>Twee sets, en maar één ervan kost iets</span><i>900</i></div><div class="b" style="height:44px;background:#FFF1D6;color:#000;"><span>Er zit geen product in (kamer) — ingekort</span><i>800</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Vragen</span><i>650</i></div><div class="b" style="height:34px;background:#1A1A1A;color:#F2F3F5;"><span>Slot — aanvragen + Studiobrief</span><i>620</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>De maand waarin niets nieuws zit</li><li>Eén keer opzetten</li><li>Het twaalf-maandenblok</li><li>Waar je op kunt rekenen</li><li>Gedeeld betekent gedeeld (naar de FAQ)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/ai-act/</h2><p>“Wat zeggen jullie over AI?”</p>
+      <span class="mono">nu 4.900 px · 2 blokken → voorstel ±4.900 px · 1 blokken (+0 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:25px;background:#E4E7EC;color:#000;"><span>Ai act &amp; transparantie</span><i>447</i></div><div class="b" style="height:173px;background:#E4E7EC;color:#000;"><span>Waarom wij hier open over zijn</span><i>3.137</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:197px;background:#E4E7EC;color:#000;"><span>Juridisch — niet aanraken</span><i>3.580</i></div></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/lifestyle/dunes/</h2><p>“Hoe ziet Dunes eruit?”</p>
+      <span class="mono">nu 7.388 px · 8 blokken → voorstel ±4.980 px · 6 blokken (-33 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:42px;background:#E4E7EC;color:#000;"><span>Dunes</span><i>771</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Ls-band</span><i>663</i></div><div class="b" style="height:45px;background:#E4E7EC;color:#000;"><span>Hoe dunes voelt.</span><i>815</i></div><div class="b" style="height:54px;background:#E4E7EC;color:#000;"><span>Vlak vs. dunes.</span><i>985</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Hoe dunes tot stand komt.</span><i>402</i></div><div class="b" style="height:94px;background:#E4E7EC;color:#000;"><span>Ls-raster</span><i>1.715</i></div><div class="b" style="height:27px;background:#E4E7EC;color:#000;"><span>Ideaal voor</span><i>494</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Maak dunes van jou.</span><i>262</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:42px;background:#E4E7EC;color:#000;"><span>Opening</span><i>770</i></div><div class="b" style="height:36px;background:#E4E7EC;color:#000;"><span>Band</span><i>660</i></div><div class="b" style="height:54px;background:#E4E7EC;color:#000;"><span>Vlak vs. Dunes</span><i>990</i></div><div class="b" style="height:44px;background:#FFF1D6;color:#000;"><span>Raster — alleen de beelden die er zijn</span><i>800</i></div><div class="b" style="height:33px;background:#DDF1E4;color:#000;"><span>Hoe Dunes voelt + ideaal voor</span><i>600</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>260</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Hoe Dunes tot stand komt (staat op /how-it-works)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/catalog/classic/</h2><p>“Hoe ziet Classic eruit?”</p>
+      <span class="mono">nu 6.831 px · 7 blokken → voorstel ±4.400 px · 5 blokken (-36 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:41px;background:#E4E7EC;color:#000;"><span>Classic</span><i>753</i></div><div class="b" style="height:45px;background:#E4E7EC;color:#000;"><span>Hoe classic voelt.</span><i>815</i></div><div class="b" style="height:94px;background:#E4E7EC;color:#000;"><span>Cs-raster</span><i>1.715</i></div><div class="b" style="height:46px;background:#E4E7EC;color:#000;"><span>Wat classic met een echte foto doet.</span><i>829</i></div><div class="b" style="height:37px;background:#E4E7EC;color:#000;"><span>Wat er in elk kader gaat.</span><i>672</i></div><div class="b" style="height:25px;background:#E4E7EC;color:#000;"><span>Ideaal voor</span><i>456</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Maak classic van jou.</span><i>318</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:41px;background:#E4E7EC;color:#000;"><span>Opening</span><i>750</i></div><div class="b" style="height:46px;background:#E4DFFF;color:#000;"><span>Wat Classic met een echte foto doet (was blok 4)</span><i>830</i></div><div class="b" style="height:44px;background:#FFF1D6;color:#000;"><span>Raster — alleen de beelden die er zijn</span><i>800</i></div><div class="b" style="height:44px;background:#DDF1E4;color:#000;"><span>Wat er in elk kader gaat + ideaal voor</span><i>800</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>320</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Hoe Classic voelt (gaat op in de opening)</li></ul></div>
+    </div>
+  </section>
+  <section class="pg">
+    <header><h2>/video/motion/</h2><p>“Hoe ziet Motion eruit?”</p>
+      <span class="mono">nu 5.724 px · 7 blokken → voorstel ±4.240 px · 4 blokken (-26 %)</span></header>
+    <div class="twee">
+      <div><p class="mono">Nu (gemeten)</p><div class="b" style="height:50px;background:#E4E7EC;color:#000;"><span>Motion</span><i>918</i></div><div class="b" style="height:23px;background:#E4E7EC;color:#000;"><span>Hoe motion voelt.</span><i>412</i></div><div class="b" style="height:28px;background:#E4E7EC;color:#000;"><span>Vs-strook</span><i>511</i></div><div class="b" style="height:66px;background:#E4E7EC;color:#000;"><span>Motion in beweging</span><i>1.202</i></div><div class="b" style="height:35px;background:#E4E7EC;color:#000;"><span>Wat er in elk kader gaat.</span><i>630</i></div><div class="b" style="height:24px;background:#E4E7EC;color:#000;"><span>Ideaal voor</span><i>432</i></div><div class="b" style="height:22px;background:#E4E7EC;color:#000;"><span>Maak motion van jou.</span><i>318</i></div></div>
+      <div><p class="mono">Voorstel</p><div class="b" style="height:51px;background:#E4E7EC;color:#000;"><span>Opening</span><i>920</i></div><div class="b" style="height:72px;background:#DDF1E4;color:#000;"><span>Strook + Motion in beweging</span><i>1.300</i></div><div class="b" style="height:44px;background:#DDF1E4;color:#000;"><span>Wat er in elk kader gaat + ideaal voor</span><i>800</i></div><div class="b" style="height:22px;background:#1A1A1A;color:#F2F3F5;"><span>Slot</span><i>320</i></div><p class="mono weg">Weg of naar één regel</p><ul class="weg"><li>Hoe Motion voelt (gaat op in de opening)</li></ul></div>
+    </div>
+  </section>
+</div></body></html>

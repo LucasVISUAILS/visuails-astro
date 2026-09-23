@@ -95,7 +95,6 @@ import {
   vatLabel, clause} from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigConverge from './FigConverge.astro';
-import Placeholder from './Placeholder.astro';
 import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -478,29 +477,10 @@ const t = COPY[lang];
       proberen te doen; de tabel blijft, maar komt erná. */}
   <section class="paneel" aria-labelledby="cmp-matrix">
     <h2 id="cmp-matrix" class="visueel-verborgen">{t.matrixLabel}</h2>
-    <div class="cmp-werelden">
-      <Placeholder
-        lang={lang}
-        ratio="4 / 3"
-        caption={false}
-        subject={nl ? 'Een shootdag: statieven, lampen, rekken kleding, mensen die wachten'
-                    : 'A shoot day: tripods, lights, clothing rails, people waiting'}
-        message={nl
-          ? 'Moet de DAG laten zien en niet de foto die eruit komt: opbouw, spullen, wachten. De kijker moet denken "dit kost me een dag" voordat hij één woord van de tabel leest. Rommelig mag; geromantiseerd niet.'
-          : 'Must show the DAY, not the photo that comes out of it: setup, gear, waiting. The viewer should think "this costs me a day" before reading a word of the table. Messy is fine; romanticised is not.'}
-      />
-      <Placeholder
-        lang={lang}
-        ratio="4 / 3"
-        caption={false}
-        subject={nl ? 'Een laptop met VISUAILS Studio open, ernaast één kledingstuk en een telefoon'
-                    : 'A laptop with VISUAILS Studio open, one garment and a phone beside it'}
-        message={nl
-          ? 'Hetzelfde moment, andere wereld: alles wat je nodig hebt past op een tafel. Geen studio, geen team. Dezelfde uitsnede en hetzelfde licht als de foto ernaast, want het verschil moet in de INHOUD zitten en niet in de fotografie.'
-          : 'Same moment, other world: everything you need fits on a table. No studio, no crew. Same crop and same light as the photo beside it — the difference has to be in the content, not in the photography.'}
-      />
-    </div>
-
+    {/* De twee 4:3-plaatshouders ("een shootdag" / "een laptop met de
+        Studio") stonden hier tot 23 september 2026: 1.482 px met twee lege
+        vlakken bovenaan. PAGINA-OPBOUW.md (goedgekeurd): de tabel eerst. Zodra
+        de twee foto's er zijn, kunnen ze terug — de opdracht staat in git. */}
     <div class="cmp-tabel" role="table" aria-label={t.matrixLabel}>
       <div class="cmp-kopregel" role="row">
         <span class="mono" role="columnheader">{t.colLabel}</span>
@@ -543,18 +523,17 @@ const t = COPY[lang];
       seqOut={t.seqOut}
       note={t.convNote}
     />
-  </section>
-
-  {/* ── 4 · DE WEEK OM DE DAG HEEN ──────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="cmp-week">
-    <header class="paneel-kop">
-      <h2 id="cmp-week" class="hoog hoog-2">{t.weekHead}</h2>
+    {/* ── EN DE WEEK EROMHEEN, IN DEZELFDE KAMER — 23 september 2026 ───────
+        Stond als eigen paneel (797 px). Het is hetzelfde argument — wat er
+        rond één dag moet samenvallen — dus staat het nu onder de tekening. */}
+    <div class="cmp-week-blok" aria-labelledby="cmp-week">
+      <h3 id="cmp-week" class="hoog hoog-3">{t.weekHead}</h3>
       <p class="lopend">{t.weekSub}</p>
-    </header>
-    <ol class="cmp-week">
-      {t.weekList.map((r) => <li><span class="lopend">{r}</span></li>)}
-    </ol>
-    <p class="lopend cmp-week-voet">{t.weekOrder}</p>
+      <ol class="cmp-week">
+        {t.weekList.map((r) => <li><span class="lopend">{r}</span></li>)}
+      </ol>
+      <p class="lopend cmp-week-voet">{t.weekOrder}</p>
+    </div>
   </section>
 
   {/* ── 5 · WAAR EEN SHOOTDAG NOG STEEDS WINT ───────────────────────────────
@@ -607,7 +586,6 @@ const t = COPY[lang];
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/test-sample')} data-track="compare-test-bottom">{t.ctaSample}</a>
       <a class="knop knop-lijn" href={lp('/start')}>{t.ctaStart}</a>
-      <a class="knop knop-lijn" href={t.wa} target="_blank" rel="noopener">{t.ctaWa}</a>
     </p>
     <p class="mono cmp-antwoord">{t.ctaReply}</p>
   </section>
@@ -646,6 +624,8 @@ const t = COPY[lang];
   .cmp-week li:last-child { border-bottom: 1px solid var(--lijn); }
   .cmp-week { counter-reset: cmpweek; }
   .cmp-week-voet { margin-top: 1.4rem; font-size: .92rem; }
+  .cmp-week-blok { display: grid; gap: .8rem; max-width: 52rem; margin-top: clamp(2.4rem, 5vw, 3.6rem); padding-top: clamp(1.6rem, 3vw, 2.2rem); border-top: 1px solid var(--lijn); }
+  .cmp-week-blok .hoog, .cmp-week-blok .lopend { margin: 0; }
 
   .cmp-wint { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1.2rem, 3vw, 2.5rem); }
   .cmp-wint li { display: grid; gap: .5rem; align-content: start; padding-top: 1rem; border-top: 1px solid var(--lijn); }

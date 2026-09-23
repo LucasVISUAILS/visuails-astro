@@ -148,7 +148,7 @@ const COPY = {
     closeH: `See it first. One product for ${sample.price}.`,
     closeLede: `${sample.deliverable} · made from your own photo · ${sample.unit}.`,
     closeAlt: 'Or start an order',
-    trust: ['Made in Enschede, NL', 'Registered with the KVK', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
+    trust: [['Made by Lucas, in Enschede', '/about'], 'Registered with the KVK', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
   },
   nl: {
     plek: 'Enschede, NL',
@@ -217,7 +217,7 @@ const COPY = {
     closeH: `Eerst zien? Eén product voor ${sample.price}.`,
     closeLede: `${sample.deliverable} · gemaakt van jouw eigen foto · ${sample.unit}.`,
     closeAlt: 'Of start een bestelling',
-    trust: ['Gemaakt in Enschede, NL', 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
+    trust: [['Gemaakt door Lucas, in Enschede', '/about'], 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
   },
 };
 const c = COPY[lang];
@@ -252,8 +252,8 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
           interactions.js. Zonder JavaScript blijft de proefknop staan. */}
       <p class="acties hero-acties">
         <a class="knop knop-inkt" href={lp('/start')}>{c.ctaStart}</a>
-        <a class="knop knop-wit" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
-        <a class="knop knop-wit" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
+        <a class="knop knop-lijn" href={lp('/test-sample')} data-vis-uit>{sample.cta}</a>
+        <a class="knop knop-lijn" href={lp('/start/plan')} data-vis-in hidden>{c.planCta}</a>
       </p>
     </div>
     <div class="hero-beeld">
@@ -420,5 +420,7 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
   </section>
 
   {/* ── 11 · VERTROUWEN ──────────────────────────────────────────────────── */}
-  <ul class="trustlijn" role="list">{c.trust.map((t) => <li>{t}</li>)}</ul>
+  {/* De eerste regel heeft sinds 23 september 2026 een naam en een deur: wie
+      "wie zit hierachter?" denkt, komt op /about bij een gezicht uit. */}
+  <ul class="trustlijn" role="list">{c.trust.map((t) => <li>{Array.isArray(t) ? <a href={lp(t[1])}>{t[0]}</a> : t}</li>)}</ul>
 </div>

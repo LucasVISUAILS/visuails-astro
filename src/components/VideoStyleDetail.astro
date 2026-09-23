@@ -22,7 +22,6 @@
  */
 import ServiceSwitch from './ServiceSwitch.astro';
 import VideoExamples from './VideoExamples.astro';
-import { waHref } from '../data/whatsapp.js';
 import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
@@ -125,7 +124,10 @@ const vink = 'M20 6L9 17l-5-5';
           ) : (
             <a class="knop knop-inkt" href={style.ctaHref}>{style.ctaLabel}</a>
           )}
-          <a class="knop knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener">{c.wa}</a>
+          {/* De proef en geen WhatsApp als tweede knop — 23 september 2026. Op de
+            dienstpagina's ging WhatsApp al uit de opening: rechtsonder zweeft
+            op elke pagina dezelfde knop. Voor wie ingelogd is, verdwijnt hij. */}
+        <a class="knop knop-lijn" href={lp('/test-sample')} data-vis-uit>{c.proef}</a>
         </div>
         <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
         <ServiceSwitch current={['video', 'complete']} lang={lang} />
@@ -146,6 +148,13 @@ const vink = 'M20 6L9 17l-5-5';
     <div class="paneel-kop">
       <h2 class="hoog hoog-2">{c.voeltH[0]}<em>{style.name}</em>{c.voeltH[1]}.</h2>
       {style.moodParagraphs.map((p: string) => <p class="lopend vs-sfeer-p">{p}</p>)}
+      {/* "Ideaal voor" hoort bij hoe de stijl voelt — 23 september 2026. */}
+      <h3 class="hoog hoog-3 vs-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
+      <ul class="vs-vinkjes" role="list">
+        {style.bestFor.map((item: string) => (
+          <li><svg viewBox="0 0 24 24" class="vs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+        ))}
+      </ul>
     </div>
     <ol class="vs-stappen" role="list">
       {style.steps.map((s: any, i: number) => (
@@ -198,15 +207,7 @@ const vink = 'M20 6L9 17l-5-5';
   </section>
 
   <section class="paneel vs-lijsten">
-    <div class="vs-twee">
-      <div>
-        <h2 class="hoog hoog-3">{c.idealH[0]}<em>{c.idealH[1]}</em></h2>
-        <ul class="vs-vinkjes" role="list">
-          {style.bestFor.map((item: string) => (
-            <li><svg viewBox="0 0 24 24" class="vs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
+    <div class="vs-een">
       <div>
         <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
         <ul class="vs-vinkjes" role="list">
@@ -239,7 +240,12 @@ const vink = 'M20 6L9 17l-5-5';
 </div>
 
 <style>
+  .vs-ideaal-h { margin-top: clamp(1.4rem, 3vw, 2rem); }
+  .vs-een { max-width: 44rem; }
   .vs-open-grid, .vs-twee { display: grid; gap: clamp(1.8rem, 4.5vw, 3.5rem); align-items: center; }
+  /* De opening begint BOVEN, zoals overal (de noot "alles begint boven" in
+     CatalogPage.astro); gecentreerd stond de kop hier 80 px lager. */
+  .vs-open-grid { align-items: start; }
   @media (min-width: 900px) {
     .vs-open-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); }
     .vs-twee { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }

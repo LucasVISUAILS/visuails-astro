@@ -18,6 +18,7 @@
 import { TEST_SAMPLE } from '../data/pricing.js';
 import { guides as gidsen } from '../data/guides.js';
 import { localizedPath } from '../i18n/ui.js';
+import Studiobrief from './Studiobrief.astro';
 import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -69,6 +70,11 @@ const c = nl ? {
         </li>
       ))}
     </ul>
+  </section>
+
+  {/* De Studiobrief: wie hier leest, bestelt vandaag meestal niet. 23 sep 2026. */}
+  <section class="paneel gd-brief">
+    <Studiobrief lang={lang} bron="gidsen" />
   </section>
 
   <section class="paneel paneel-slot gd-slot">

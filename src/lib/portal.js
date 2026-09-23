@@ -1461,7 +1461,9 @@ async function serveOrderFolder(context, order, lang) {
      toegangsbewijs mee in een bestand dat niemand als geheim beschouwt.
      De leesmij verwijst dus naar /portal, waar de klant zelf om een verse link
      vraagt. Eén klik meer, en geen sleutel in een archief. */
-  const docs = deliveryDocs({ order: { ...order, lang }, entries, productNames });
+  /* Het portaal staat in de taal van de bestelling en heeft geen taalknop, dus
+     is dat hier ook de taal van het scherm — zie deliveryDocs(). */
+  const docs = deliveryDocs({ order: { ...order, lang }, entries, productNames, taal: lang });
 
   const stream = zipStream(deliveryZipFiles(entries, docs, async (key) => {
     const obj = await env.UPLOADS.get(key);

@@ -48,7 +48,7 @@ import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
   WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
   clause, FORM_MAX_PRODUCTS,
-  RESOLUTIE,
+  RESOLUTIE, TEST_SAMPLE,
 } from '../data/pricing.js';
 /* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
    schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
@@ -57,7 +57,6 @@ import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Vragen from './Vragen.astro';
 import Compare from './Compare.astro';
-import Placeholder from './Placeholder.astro';
 import StyleRows from './StyleRows.astro';
 import { catalogStyles as catalogStylesEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
@@ -65,6 +64,7 @@ import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
 import ServiceSwitch from './ServiceSwitch.astro';
 import '../styles/stijl22.css';
 import HeroFacts from './HeroFacts.astro';
+import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -269,6 +269,8 @@ const COPY = {
     faqs: serviceFaqs('catalog', 'en'),
     ctaH: 'Build a catalog that <br>looks like one brand.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
+    prijsRegel: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} products — ${vatLabel('excl', 'en')}. The rate applies to every product in the order.`,
+    staffelCta: 'The whole ladder on Pricing',
   },
   nl: {
     eyebrow: 'Catalog',
@@ -345,6 +347,8 @@ const COPY = {
     faqs: serviceFaqs('catalog', 'nl'),
     ctaH: 'Bouw een catalogus die <br>eruitziet als één merk.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
+    prijsRegel: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} producten — ${vatLabel('excl', 'nl')}. Het tarief geldt voor elk product in de bestelling.`,
+    staffelCta: 'De hele staffel op Prijzen',
   },
 };
 
@@ -367,11 +371,15 @@ const naarRij = (s: (typeof styles)[number]) => ({
      als "foto volgt"-kaart; Eigen merk de getekende scène. */
   /* Classic is een set van vier: de voorkant staat er; achterkant, detail en
      op-model komen als foto en staan tot dan met hun naam als "foto volgt". */
+  /* ── DE ECHTE SET SINDS 23 SEPTEMBER 2026 ────────────────────────────────
+     Hier stonden één geleverd beeld en drie lege vakken ("foto volgt"). De
+     set bestaat: de roze jeans uit src/data/voorbeeldset.js, dezelfde die de
+     galerij als levering toont — vier geleverde beelden in precies de volgorde
+     van levervlakken('catalog'), en de telefoonfoto waar ze van gemaakt zijn. */
   photos: s.slug === 'classic'
-    ? [{ src: '/img/catalog-after.webp', w: 1800, h: 1800, alt: c.exploreLabel(s.name) },
-       { label: nl ? 'Achterkant' : 'Back' }, { label: 'Detail' }, { label: nl ? 'Op een model' : 'On a model' }]
+    ? geleverd(lang).map((b, i) => ({ src: b.src, w: b.w, h: b.h, alt: i === 0 ? c.exploreLabel(s.name) : b.alt }))
     : [{ icon: s.cardIcon, width: s.cardWidth, badge: `Catalog · ${s.name}` }],
-  before: s.slug === 'classic' ? { src: '/img/catalog-before-1x1.webp', alt: '' } : undefined,
+  before: s.slug === 'classic' ? { src: ingestuurd(lang)[0].src, alt: '' } : undefined,
   tint: s.slug === 'classic' ? '#d9d9d2' : '#c8c9cd',
   detailHref: lp(`/catalog/${s.slug}`),
   detailLabel: c.exploreLabel(s.name),
@@ -474,109 +482,11 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
       hoorden (c.lcEyebrow / c.lcH / c.lcP) staan nog in de tekstentabel; ze
       worden nu gebruikt als titel van de carrousel in de opening. */}
 
-  {/* ── 2 · DE LOOKS ─────────────────────────────────────────────────────── */}
-  <section class="paneel" id="looks">
-    <StyleRows
-      lang={lang}
-      dienst="catalog"
-      h={c.stylesH}
-      lead={eigenLook}
-      items={vasteLooks}
-      levert={c.levert}
-      bestelBasis={lp('/start/catalog/')}
-    />
-  </section>
-
-  {/* ── 3 · DE SET, EN WAT HIJ KOST ──────────────────────────────────────────
-      Eén product, vier beelden, en de hele ladder eronder. De vier plekken
-      staan er nog precies zo: één foto en drie <Placeholder>s met de opdracht
-      in de bron. Zie de kop bij SHOTS voor waarom dat zo blijft. */}
-  <section class="paneel" aria-labelledby="cat-set">
-    <header class="paneel-kop">
-      <h2 id="cat-set" class="hoog hoog-2">{c.packH}</h2>
-      <p class="lopend cat-pack-p" set:html={c.packP} />
-    </header>
-
-    {/* De vier kaarten (voor, achter, detail, op model) stonden hier tot
-        19 september 2026 nog een keer; de Classic-look in #looks toont
-        dezelfde set al mét de telefoonfoto ervoor. Eén keer tonen, hier alleen
-        het tarief. De regel over de open plekken blijft. */}
-    <p class="cat-open-noot">{c.packOpen}</p>
-
-    <div class="cat-ladder">
-      <div class="cat-ladder-tabel">
-      <p class="etiket">{c.ladderH}</p>
-      <div class="tabel-schuif">
-        <table class="lijst">
-          <thead>
-            <tr>
-              <th scope="col">{c.ladderProductsCol}</th>
-              <th scope="col">{c.ladderRateCol}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rungRows.map((r) => (
-              <tr><th scope="row">{r.label}</th><td><span class="tarief">{r.rate}</span></td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      </div>
-      <div class="cat-ladder-naast">
-        <p class="lopend cat-ladder-noot">{c.ladderNote}</p>
-        <p class="acties">
-          <a class="knop knop-inkt" href="#looks">{c.packCta}</a>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  {/* ── 4 · DE DONKERE KAMER IS WEG — 19 september 2026 ───────────────────
-      Hier stond "Catalogfotografie: zo duidelijk dat er niets te vragen
-      overblijft" met een 3:1-plaatshouder (het productraster), "Wat het is"
-      in twee alinea's en "Waar je het gebruikt" in vier regels: 1.540 px.
-      Lucas na de eerste snoeironde: *"Diepere snoei op /catalog e.d. …
-      doorvoeren."* Wat de kamer zei, zegt de pagina al: de hero (wat het is),
-      de look-sectie (hoe het eruitziet) en het bewijs hieronder (het verschil
-      met een telefoonfoto). Het enige dat nergens anders stond — wáár je de
-      foto's gebruikt — staat nu als één regel onder de checklist bij de drie
-      stappen. De copy (edH, whatP, where) blijft in COPY staan voor wie hem
-      terug wil. */}
-
-  {/* ── 5 · DE DRIE STAPPEN, MET WAT EEN LISTING NODIG HEEFT ERNAAST ─────────
-      Tot 19 september 2026 twee secties (755 + 504 px op 1440): de stappen als
-      drie brede regels, en daaronder de checklist naast een kader met de twee
-      achtergrondkeuzes. De doorlichting mat /catalog op 12.300 px met dezelfde
-      boodschap drie tot vijf keer; Lucas: "mag 30–40 % korter". De stappen
-      staan nu als drie kolommen, de checklist ernaast als één lijst, en de
-      achtergrondkeuze is één regel eronder — die keuze staat in het formulier
-      al met kleurstalen. */}
-  <section class="paneel" aria-labelledby="cat-stappen">
-    <div class="cat-stappen-check">
-      <div>
-        <header class="paneel-kop">
-          <h2 id="cat-stappen" class="hoog hoog-2">{c.stepsH}</h2>
-        </header>
-        <ol class="cat-stappen">
-          {c.steps.map(([h, p], i) => (
-            <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{h}</b><span class="lopend">{p}</span></li>
-          ))}
-        </ol>
-      </div>
-      <aside aria-labelledby="cat-check">
-        <h3 id="cat-check" class="hoog hoog-3">{c.checkH}</h3>
-        <ul class="cat-check" role="list">
-          {c.check.map((li) => <li>{li}</li>)}
-        </ul>
-        <p class="cat-grond-regel"><span class="etiket">{nl ? 'Achtergrond' : 'Background'}</span> {c.chipsBg.join(' · ')}</p>
-        <p class="cat-grond-regel"><span class="etiket">{c.whereH}</span> {c.where.map(([w]) => w).join(' · ')}</p>
-      </aside>
-    </div>
-  </section>
-
-  {/* ── 7 · HET BEWIJS ───────────────────────────────────────────────────────
-      Het voor/na-paar en wat de specialist eraan doet, naast elkaar. Zie de
-      noot die hier stond: dit waren twee secties met hetzelfde beeld erin. */}
+  {/* ── 2 · HET BEWIJS — NAAR VOREN, 23 september 2026 ────────────────────
+      Het voor/na-paar en wat de specialist eraan doet, naast elkaar. Stond
+      als zevende blok; PAGINA-OPBOUW.md (door Lucas goedgekeurd): *"Dit is
+      een telefoonfoto. Dit is wat eruit kwam"* is het antwoord op de vraag
+      van deze pagina, dus komt het direct na de opening. */}
   <section class="paneel" aria-labelledby="cat-bewijs">
     <header class="paneel-kop">
       <h2 id="cat-bewijs" class="hoog hoog-2">{c.baH}</h2>
@@ -595,29 +505,59 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
       <div class="cat-review">
         <h3 class="hoog hoog-3">{c.reviewH}</h3>
         <p class="lopend">{c.reviewP}</p>
+        {/* De checklist "Alles wat een listing nodig heeft" stond tot 23
+            september 2026 bij de drie stappen (die zijn weg, zie hieronder).
+            Wat hij zegt, hoort bij het bewijs: dit is wat er aan de foto
+            gebeurt. Hij vervangt de drie chips, die er een deel van waren. */}
         <ul class="cat-review-lijst" role="list">
-          {c.reviewChips.map((chip) => <li>{chip}</li>)}
+          {c.check.map((chip) => <li>{chip}</li>)}
         </ul>
+        <p class="cat-grond-regel"><span class="etiket">{nl ? 'Achtergrond' : 'Background'}</span> {c.chipsBg.join(' · ')}</p>
+        <p class="cat-grond-regel"><span class="etiket">{c.whereH}</span> {c.where.map(([w]) => w).join(' · ')}</p>
       </div>
     </div>
   </section>
 
-  {/* ── 8 · (WEG) WAT ER VERANDERT BIJ EEN GROTERE BESTELLING ──────────────
-      TierCompare stond hier tot 19 september 2026 als eigen sectie van 676 px.
-      De ene zin die ertoe doet — vanaf tien producten een leverdatum — staat
-      al in queueNote in de opening; het hele blok blijft op /pricing. */}
+  {/* ── 3 · DE LOOKS ─────────────────────────────────────────────────────── */}
+  <section class="paneel" id="looks">
+    <StyleRows
+      lang={lang}
+      dienst="catalog"
+      h={c.stylesH}
+      lead={eigenLook}
+      items={vasteLooks}
+      levert={c.levert}
+      bestelBasis={lp('/start/catalog/')}
+    />
+  </section>
 
-  {/* ── 9 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
+  {/* ── 4 · DE PRIJS IN ÉÉN BAND — 23 september 2026 ───────────────────────
+      Hier stond de hele staffel als tabel (998 px), dezelfde tabel die op
+      /pricing staat. Nu: wat een product kost en vanaf wanneer het zakt, wat
+      je voor dat bedrag krijgt, en een link naar de hele staffel. De drie
+      stappen die hierna stonden (811 px) zijn weg: die staan op
+      /how-it-works. De checklist ervan staat nu bij het bewijs. */}
+  <section class="paneel prijsband" aria-labelledby="cat-prijs">
+    <div class="prijsband-in">
+      <div class="prijsband-woord">
+        <h2 id="cat-prijs" class="hoog hoog-3">{c.ladderH}</h2>
+        <p class="prijsband-bedrag">{c.prijsRegel}</p>
+        <p class="lopend cat-pack-p" set:html={c.packP} />
+      </div>
+      <a class="knop knop-lijn" href={lp('/pricing')}>{c.staffelCta}</a>
+    </div>
+  </section>
+
+  {/* ── 5 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
   <Vragen lang={lang} id="cat-faq" dienst="catalog" faqs={c.faqs} />
 
-  {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
+  {/* ── 6 · HET SLOT — twee knoppen (PAGINA-OPBOUW.md, regel 5) ────────── */}
   <section class="paneel paneel-slot" aria-labelledby="cat-slot">
     <h2 id="cat-slot" class="hoog" set:html={c.ctaH} />
     <p class="lopend">{c.ctaP}</p>
     <p class="acties">
       <a class="knop knop-inkt" href="#looks">{c.ctaPrimary}</a>
-      <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaSecondary}</a>
-      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
+      <a class="knop knop-lijn" href={lp('/test-sample')} data-vis-uit>{TEST_SAMPLE[lang].cta}</a>
     </p>
   </section>
 </div>

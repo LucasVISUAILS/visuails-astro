@@ -753,9 +753,17 @@ export async function onRequestPost({ request, env, waitUntil }) {
       if (!env.DB) return;
       const wantMail = normalizeEmail(email);
       const wantPhone = normalizePhone(phone);
+      /* ── HET REGISTRATIENUMMER TELT MEE — 23 september 2026 ──────────────
+         Lucas: *"volgens mij kan je gewoon een nep kvk neerzetten"*. Klopt: het
+         nummer wordt alleen op vorm gecontroleerd. Maar een ÉCHT nummer dat al
+         een betaalde proef had, is hier nu een derde herkenningspunt naast mail
+         en telefoon. Een verzonnen nummer omzeilt het nog steeds — dit vangt de
+         eerlijke herhaling met een nieuw adres; de harde controle blijft de
+         betaler in de webhook. Zie regKey() hieronder. */
+      const wantReg = regKey(get('reg_number'));
 
       const { results } = await env.DB
-        .prepare(`SELECT email, phone FROM orders
+        .prepare(`SELECT email, phone, details_json FROM orders
                    WHERE service = 'test-sample'
                      AND payment_status = 'paid'
                    LIMIT 20000`)
@@ -763,6 +771,11 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
       used = (results || []).filter((r) => {
         if (wantMail && normalizeEmail(r.email) === wantMail) return true;
+        if (wantReg) {
+          let eerder = '';
+          try { eerder = regKey(JSON.parse(r.details_json || '{}').business_reg); } catch { /* onleesbaar: telt niet */ }
+          if (eerder && eerder === wantReg) return true;
+        }
         // Alleen als BEIDE nummers bruikbaar zijn. normalizePhone() geeft leeg
         // terug bij minder dan acht cijfers, en twee lege waarden zijn gelijk —
         // zonder deze regel matcht een bestelling zonder nummer op elke andere
@@ -1845,6 +1858,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
       webhookUrl: requestOrigin(request) + '/api/webhook/mollie',
       /* Het bruto uit de offerte — € 1 + btw sinds 19 september 2026. */
       grossCents: quote?.grossCents,
+      /* Op 0 % geen iDEAL — dezelfde regel als bij een gewone bestelling. */
+      excludeIdeal: vatCall.rate === 0,
     }));
     const checkoutUrl = payment?._links?.checkout?.href;
     if (checkoutUrl) {
@@ -2749,6 +2764,17 @@ function makeRef() {
 }
 
 function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+
+/**
+ * Een registratienummer als vergelijkingssleutel, of '' als het te kort is om
+ * iets te betekenen. Alleen cijfers en letters, hoofdletters: "KvK 1234 5678"
+ * en "12345678" zijn hetzelfde nummer. Onder de zes tekens is het geen nummer
+ * maar een opvulling ("-", "nvt", "0"), en die mag niemand buitensluiten.
+ */
+export function regKey(raw) {
+  const k = String(raw || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^(KVK|KVKNR|NR)/, '');
+  return k.length >= 6 ? k : '';
+}
 
 /* ── DE SERVERCOPIE IS WEG — 23 augustus 2026 ────────────────────────────────
  *

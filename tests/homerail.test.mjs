@@ -134,7 +134,7 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
     ['tablet 768', { viewport: { width: 768, height: 1024 }, hasTouch: true }],
     ['desktop 1440', { viewport: { width: 1440, height: 900 } }],
   ]) {
-    const ctx = await browser.newContext(opties);
+    const ctx = await browser.newContext({ locale: 'en-US', ...opties });
     const page = await ctx.newPage();
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(500);
@@ -227,7 +227,7 @@ console.log('\nelke zwevende notitie op /pricing valt binnen het venster');
     ['telefoon 390', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }],
     ['desktop 1440', { viewport: { width: 1440, height: 900 } }],
   ]) {
-    const ctx = await browser.newContext(opties);
+    const ctx = await browser.newContext({ locale: 'en-US', ...opties });
     /* De cookiebanner ligt over de pagina heen en onderschept elke klik. */
     await ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-09-05T00:00:00.000Z' })), domain: '127.0.0.1', path: '/' }]);
     const page = await ctx.newPage();
@@ -297,7 +297,7 @@ console.log('\nelke zwevende notitie op /pricing valt binnen het venster');
  */
 console.log('\nook een notitie buiten de homepage staat op zijn eigen vraagteken');
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const ctx = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 900 } });
   await ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-09-05T00:00:00.000Z' })), domain: '127.0.0.1', path: '/' }]);
   const page = await ctx.newPage();
   await page.goto(`${BASE}/pricing/`, { waitUntil: 'load' });

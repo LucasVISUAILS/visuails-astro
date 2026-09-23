@@ -194,7 +194,7 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
   check('Voorpagina gebruikt de korte vorm (diensttegels en voor-en-na, twee talen)',
     (home.match(uitLexicon) || []).length, 6);  /* 23 sep 2026: diensttegels (2) + voor-en-na (1), twee talen */
   check('PricingPage ook',
-    (prijs.match(uitLexicon) || []).length, 4);
+    (prijs.match(uitLexicon) || []).length, 8);  /* 24 sep 2026: + "Eén product = …" boven de tabel (2), twee talen */
   check('en nergens meer de lange vorm onder een kop',
     /counted\('(catalog|lifestyle)'/.test(home + prijs), false);
 

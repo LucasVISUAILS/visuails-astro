@@ -39,7 +39,6 @@ import { TEST_SAMPLE, producttrouwDelen } from '../data/pricing.js';
  * terms.astro: dit is een getal dat de code afdwingt, en een pagina die er zijn
  * eigen versie van bijhoudt, belooft op een dag iets anders dan er gebeurt. */
 import { MIN_LANGE_ZIJDE } from '../data/shots.js';
-import Placeholder from './Placeholder.astro';
 import LaptopCarousel from './LaptopCarousel.astro';
 import { laptopSlides } from '../data/laptopSlides.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -184,7 +183,9 @@ import '../styles/stijl22.css';
           landt hij in de downloadmap in plaats van in een nieuw tabblad.
           Het bestand is voor beide talen hetzelfde pad-patroon; de inhoud volgt
           de taal van deze pagina. */}
-      <a class="knop knop-lijn" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.pdf}</a>
+      {/* Een pijllink en geen derde knop — 23 september 2026: elke opening
+          heeft er hooguit twee (PAGINA-OPBOUW.md, regel 5). */}
+      <a class="pijl" href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.pdf}</a>
     </div>
   </section>
 
@@ -260,16 +261,23 @@ import '../styles/stijl22.css';
         stond. Een echte foto van een slechte inzending mag je niet nabewerken —
         dan zegt het beeld niet meer "zo ziet een slechte foto eruit" maar "wij
         hebben deze foto slechter gemaakt". */}
-    <div class="ug-twee ug-kaders">
-      <figure class="ug-kader">
-        <figcaption class="etiket ug-bij ug-bij-uit">{c.slechtBij}</figcaption>
-        <Placeholder lang={lang} ratio="4 / 3" subject={c.slechtOnderwerp} message={c.slechtOpdracht} />
-      </figure>
-      <figure class="ug-kader">
-        <figcaption class="etiket ug-bij">{c.goedBij}</figcaption>
-        <Placeholder lang={lang} ratio="4 / 3" subject={c.goedOnderwerp} message={c.goedOpdracht} />
-      </figure>
-    </div>
+    {/* ── ECHTE INZENDINGEN IN PLAATS VAN TWEE LEGE KADERS — 23 sep 2026 ────
+        PAGINA-OPBOUW.md (goedgekeurd): de twee 4:3-plaatshouders werden
+        echte telefoonfoto's uit de voorbeeldset (de roze jeans). Alleen het
+        goede voorbeeld: een slechte foto bestaat nog niet, en een goede foto
+        slechter maken zou precies zijn wat de noot hierboven verbiedt. Wat
+        je níét moet doen, staat in de lijst ernaast. */}
+    <figure class="ug-echt">
+      <figcaption class="etiket ug-bij">{c.goedBij} — {nl ? 'drie telefoonfoto’s uit een echte inzending' : 'three phone photos from a real submission'}</figcaption>
+      <ul class="ug-echt-rij" role="list">
+        {[['front', nl ? 'Voorkant' : 'Front'], ['detail', 'Detail'], ['pasvorm', nl ? 'Gedragen' : 'Worn']].map(([n, l]) => (
+          <li>
+            <img src={`/img/ba2-voor-${n}.webp`} width="760" height="1013" alt={nl ? `Telefoonfoto van een roze jeans — ${l.toLowerCase()}` : `Phone photo of pink jeans — ${l.toLowerCase()}`} loading="lazy" decoding="async" />
+            <span class="mono">{l}</span>
+          </li>
+        ))}
+      </ul>
+    </figure>
   </section>
 
   <section class="kamer ug-set">
@@ -343,6 +351,11 @@ import '../styles/stijl22.css';
      foto die het hele vlak vult; hier zit er onder het beeld nog de opdracht van
      de plaatshouder, en dan ligt de pil op de tekst. Een bijschrift erboven zegt
      hetzelfde en kan nooit ergens overheen vallen. */
+  .ug-echt { display: grid; gap: .8rem; margin: clamp(1.8rem, 4vw, 3rem) 0 0; }
+  .ug-echt-rij { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.6rem, 1.6vw, 1.1rem); max-width: 44rem; }
+  .ug-echt-rij li { display: grid; gap: .45rem; }
+  .ug-echt-rij img { width: 100%; height: auto; aspect-ratio: 760 / 1013; object-fit: cover; border-radius: calc(var(--ronding) - 10px); }
+  .ug-echt-rij .mono { font-size: .72rem; color: var(--inkt-2); }
   .ug-kaders { margin-top: clamp(1.8rem, 4vw, 3rem); }
   .ug-kader { display: grid; gap: .7rem; margin: 0; }
   .ug-bij { color: var(--inkt); }

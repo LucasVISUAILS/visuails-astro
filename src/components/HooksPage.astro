@@ -74,7 +74,6 @@ import { serviceFaqs } from '../data/faq.js';
 import { doorCta, doorHref } from '../data/orderDoors.js';
 import { localizedPath } from '../i18n/ui.js';
 import Vragen from './Vragen.astro';
-import TierCompare from './TierCompare.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
 import HeroFacts from './HeroFacts.astro';
 import Placeholder from './Placeholder.astro';
@@ -406,7 +405,6 @@ const c = COPY[lang];
         <p class="acties">
           <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
           <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
-          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
         </p>
         <ServiceSwitch current={['complete']} lang={lang} />
         <HeroFacts eigen={c.trust} lang={lang} />
@@ -421,112 +419,30 @@ const c = COPY[lang];
     </div>
   </section>
 
-  {/* ── 2 · WAT JE KRIJGT ───────────────────────────────────────────────────
-      Hooks heeft geen soorten om uit te kiezen, dus staat hier wat je krijgt:
-      drie verticale vlakken naast elkaar, in de verhouding van het bestand
-      zelf. */}
+  {/* ── INGEKORT TOT VIJF BLOKKEN — 23 september 2026 ──────────────────────
+      Lucas koos (c) *"Inkorten"*: zolang Hooks niet te bestellen is, staat hier
+      wat het is · wat erin zit · wat het kost · vragen · slot. Weg: de drie
+      lege 9:16-vlakken bij "wat je krijgt", de format-kaarten met plaatshouders,
+      de donkere kamer (uitleg + een plaatshouder van de naad), de vier stappen
+      met plaatshouder en de tierband. De tekst staat in git en in COPY hierboven;
+      op de dag dat Hooks live gaat, komt het terug met echte clips. */}
+
+  {/* ── 2 · WAT ERIN ZIT ─────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="hk-krijg">
     <header class="paneel-kop">
       <h2 id="hk-krijg" class="hoog hoog-2">{c.krijgH}</h2>
+      <p class="lopend">{c.whatP[0]}</p>
     </header>
-    <ul class="hk-krijg" role="list">
-      {c.krijg.map(([titel, regel, plek]) => (
+    <ul class="hk-krijg hk-krijg-kort" role="list">
+      {c.krijg.map(([titel, regel]) => (
         <li>
-          <Placeholder lang={lang} ratio={r(plek)} caption={false} kind="video" subject={p(plek, 'subject')} message={p(plek, 'message')} />
           <b>{titel}</b>
           <span class="lopend">{regel}</span>
         </li>
       ))}
     </ul>
     <p class="lopend hk-voet">{c.krijgFoot}</p>
-  </section>
-
-  {/* ── 2b · DE FORMATS ──────────────────────────────────────────────────
-      12 september 2026. Lucas: *"Ik heb niet alleen de Instagram dubbele
-      overlopende posten hook bij hooks uiteindelijk, dat is 1 van de stylen die
-      ik wil toevoegen."*
-
-      Deze pagina beschreef één format van boven tot onder — de video die
-      doorloopt in het beeld eronder — en zei tegelijk bij stap 2 *"wij kiezen
-      het format, uit formats die we eerder gebouwd hebben"*. Meervoud in de
-      tekst, enkelvoud op het scherm; wie hier landt denkt dat Hooks één trucje
-      is.
-
-      De doorloper staat daarom als eerste kaart, met de volle rand van iets
-      dat bestaat. De rest komt uit komendeStijlen.js en draagt de stippellijn
-      en het etiket "Binnenkort" — geen prijs, geen knop. Dezelfde vorm en
-      dezelfde regels als het blok onder de looks op catalog, lifestyle en
-      video, zodat dit niet als een aparte uitvinding leest.
-
-      DRIE WOORDEN PER KAART EN NIET MEER. De uitleg van het format staat in de
-      donkere kamer hieronder; wie scant heeft hier alleen de namen nodig om te
-      zien dat het er meerdere zijn. */}
-  <section class="paneel" aria-labelledby="hk-formats">
-    <header class="paneel-kop">
-      <h2 id="hk-formats" class="hoog hoog-2">{c.formatsH}</h2>
-      <p class="lopend">{c.formatsSub}</p>
-    </header>
-    <ul class="hk-formats" role="list">
-      <li class="hk-format hk-format-nu">
-        <div class="hk-format-beeld">
-          <Placeholder lang={lang} ratio="9/16" caption={false} kind="video" subject={`${c.formatNuNaam} — hooks`} message={c.formatNuRegel} />
-          <span class="hk-format-vlag hk-format-vlag-nu">{c.formatNu}</span>
-        </div>
-        <b>{c.formatNuNaam}</b>
-        <span class="lopend">{c.formatNuRegel}</span>
-      </li>
-      {komendeStijlen('hooks', lang).map((k) => (
-        <li class="hk-format">
-          <div class="hk-format-beeld">
-            <Placeholder lang={lang} ratio="9/16" caption={false} kind="video" subject={`${k.naam} — hooks`} message={k.regel} />
-            <span class="hk-format-vlag">{c.formatStraks}</span>
-          </div>
-          <b>{k.naam}</b>
-          <span class="lopend">{k.regel}</span>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  {/* ── 3 · WAT HET IS EN WAAR HET STAAT ─────────────────────────────────── */}
-  <section class="kamer hk-kamer" aria-labelledby="hk-wat">
-    <header class="kamer-kop">
-      <p class="etiket">{c.edMeta}</p>
-      <h2 id="hk-wat" class="hoog hoog-2">{c.edH}</h2>
-      <p class="lopend">{c.edSub}</p>
-    </header>
-    <Placeholder lang={lang} ratio={r('naad')} caption={false} subject={p('naad', 'subject')} message={p('naad', 'message')} />
-    <div class="hk-twee">
-      <div class="hk-uitleg">
-        <h3 class="hoog hoog-3">{c.whatH}</h3>
-        {c.whatP.map((alinea) => <p class="lopend">{alinea}</p>)}
-        <p class="lopend hk-noot" set:html={c.modelNote} />
-      </div>
-      <aside class="hk-waar">
-        <h3 class="hoog hoog-3">{c.whereH}</h3>
-        <ul class="hk-waar-lijst" role="list">
-          {c.where.map(([sterk, rest]) => <li><b>{sterk}</b><span class="lopend">{rest}</span></li>)}
-        </ul>
-      </aside>
-    </div>
-  </section>
-
-  {/* ── 4 · DE STAPPEN ──────────────────────────────────────────────────────
-      Vier stappen in plaats van drie, want dat is wat er gebeurt — een stap
-      verzwijgen om de vorm te laten kloppen zou de controle door een
-      specialist zijn, en dat is juist de stap die het verschil maakt. */}
-  <section class="paneel" aria-labelledby="hk-stappen">
-    <div class="hk-twee-licht">
-      <Placeholder lang={lang} ratio={r('stappen')} caption={false} subject={p('stappen', 'subject')} message={p('stappen', 'message')} />
-      <div>
-        <h2 id="hk-stappen" class="hoog hoog-2">{c.stepsH}</h2>
-        <ol class="hk-stappen">
-          {c.steps.map(([kop, tekst], i) => (
-            <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{kop}</b><span class="lopend">{tekst}</span></li>
-          ))}
-        </ol>
-      </div>
-    </div>
+    <p class="hk-formats-regel"><span class="etiket">{c.formatsH}</span> <b>{c.formatNuNaam}</b> ({c.formatNu.toLowerCase()}){komendeStijlen('hooks', lang).map((k) => <> · {k.naam} ({c.formatStraks.toLowerCase()})</>)}</p>
   </section>
 
   {/* ── 5 · DE CHECKLIST EN DE PRIJS ────────────────────────────────────────
@@ -551,20 +467,9 @@ const c = COPY[lang];
         <p class="lopend hk-prijs-niet"><b>{c.prijsNietH}</b> {c.prijsNiet}</p>
         <p class="acties">
           <a class="knop knop-inkt" href={lp('/contact')}>{c.prijsCta}</a>
-          <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
         </p>
       </div>
     </div>
-  </section>
-
-  {/* ── 6 · DE TIERBAND ─────────────────────────────────────────────────────
-      Met dezelfde kwalificerende regel erboven als /video: TierCompare toont de
-      twee serviceniveaus van de prijs per aantal, en geen van beide is met
-      hooks te bereiken. `href0`/`label0` wijzen naar catalog en niet naar de
-      keuzepagina. */}
-  <section class="paneel">
-    <p class="mono hk-tiernoot">{c.tierNote}</p>
-    <TierCompare lang={lang} href0={catalogHref} label0={catalogCta} />
   </section>
 
   {/* ── 7 · VRAGEN ───────────────────────────────────────────────────────── */}
@@ -577,13 +482,16 @@ const c = COPY[lang];
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
       <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
-      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
     </p>
     <p class="mono hk-belofte">{c.beloofte}</p>
   </section>
 </div>
 
 <style>
+  .hk-krijg-kort li { padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .hk-formats-regel { margin-top: 1.2rem; font-size: .92rem; color: var(--inkt-2); }
+  .hk-formats-regel .etiket { display: inline; margin-right: .5rem; }
+  .hk-formats-regel b { color: var(--inkt); font-weight: 600; }
   /* ── DE FORMATS ─────────────────────────────────────────────────────────
      Eén raster, vijf kaarten, en het enige verschil tussen "draait" en
      "binnenkort" zit in de rand en de vlag. Dat is genoeg: wie scant leest de

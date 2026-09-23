@@ -213,7 +213,7 @@ type Regel = { t: string; sub?: string };
 type Variant = {
   plan: string; term: string; naam: string; kop: string;
   bedrag: string; eenheid: string; per?: string;
-  regels: Regel[]; los?: string; bespaar?: string;
+  regels: Regel[]; los?: string; bespaar?: string; budget: string;
 };
 
 const kopVan = (id: string) => ({
@@ -243,9 +243,11 @@ for (const p of planList) {
     const beelden = n * COMPLETE_IMAGES;
     const regels: Regel[] = [
       { t: nl ? `${n} producten` : `${n} products`,
+        /* Korter sinds 23 september 2026 (Lucas: *"chaotisch en niet fijn
+           leesbaar"*): het totaal vooraan, de opbouw erachter. */
         sub: nl
-          ? `elk een catalogset van ${CATALOG_IMAGES} en een lifestyle-carrousel van ${LIFESTYLE_IMAGES} — ${beelden} afgemaakte beelden`
-          : `each a ${CATALOG_IMAGES}-image catalog set and a ${LIFESTYLE_IMAGES}-image lifestyle carousel — ${beelden} finished images` },
+          ? `${beelden} beelden — per product ${CATALOG_IMAGES} catalog en ${LIFESTYLE_IMAGES} lifestyle`
+          : `${beelden} images — ${CATALOG_IMAGES} catalog and ${LIFESTYLE_IMAGES} lifestyle per product` },
       ...(k ? [{ t: nl ? `${k} motion-clips` : `${k} motion clips`, sub: nl ? 'het product in beweging, 8 seconden' : 'the product in motion, 8 seconds' }] : []),
       ...(hasBrandModel(p.id, t) ? [{ t: nl ? 'Je eigen merkmodel' : 'Your own brand model', sub: nl ? 'één gezicht, alleen voor jouw merk' : 'one face, for your brand only' }] : []),
       { t: nl ? 'Een vaste week' : 'A fixed week',
@@ -293,6 +295,7 @@ for (const p of planList) {
           ? (nl ? `op de jaartermijn — ${euro(monthlyCents(p.id, 'monthly') / 100, lang)} maandelijks` : `on the 12-month term — ${euro(monthlyCents(p.id, 'monthly') / 100, lang)} monthly`)
           : undefined),
       regels,
+      budget: euro(planBudget(p.id), lang),
       los: besp ? (nl ? `Los besteld: ${euro(besp.onLadder, lang)} per maand.` : `Ordered one-off: ${euro(besp.onLadder, lang)} a month.`) : undefined,
       /* ── HET VOORDEEL WORDT PER TERMIJN GEREKEND — 10 september 2026 ──────
          planSaving() zet de LOSSE prijs af tegen PLAN_AMOUNT, en dat is het
@@ -321,9 +324,34 @@ const maatVoorbeelden = [CUSTOM_MONTH_MIN_PRODUCTS, 10, 20].map((n) => {
   return { n, bedrag: euro(r.total, lang), beelden: r.images };
 });
 
+/* ── WAT EEN ABONNEMENT JE OPLEVERT, IN DRIE REGELS — 23 september 2026 ─────
+   Lucas: *"nog steeds veel te onduidelijk over wat je krijgt en wat de voordelen
+   zijn."* De voordelen stonden er wel, maar verspreid: de besparing onderaan de
+   plaat, de vaste week in stap 3, het opzeggen in een termijnkaart. Nu staan ze
+   bovenaan, vóór de eerste keuze, en elk getal is uitgerekend uit pricing.js. */
+const besparingen = PLAN_IDS.map((id) => planSaving(id)).filter(Boolean) as { onLadder: number; saving: number }[];
+const maxPct = Math.max(...besparingen.map((s) => Math.round((s.saving / s.onLadder) * 100)));
+const bespMin = euro(Math.min(...besparingen.map((s) => s.saving)), lang);
+const bespMax = euro(Math.max(...besparingen.map((s) => s.saving)), lang);
+const doorMaand = termOf('monthly').rollover;
+const doorJaar = termOf('yearly').rollover;
+const gratisTekst = (taal: 'nl' | 'en') => {
+  const bereik = gratisMin === gratisMax ? `${gratisMin}` : `${gratisMin}–${gratisMax}`;
+  const een = gratisMax === 1;
+  return taal === 'nl' ? `${bereik} ${een ? 'maand' : 'maanden'} gratis` : `${bereik} ${een ? 'month' : 'months'} free`;
+};
+
 const c = nl ? {
   h: 'Je abonnement',
-  lede: 'Kies hoeveel je elke maand wilt laten maken. Rechts zie je meteen wat die maand oplevert.',
+  lede: 'Kies hoeveel je elke maand wilt laten maken. Je ziet meteen wat je krijgt, wat het kost en wat je bespaart.',
+  voordelen: [
+    { t: `Tot ${maxPct}% goedkoper`, s: `Je betaalt ${bespMin} tot ${bespMax} per maand minder dan voor dezelfde beelden los.` },
+    { t: 'Een vaste week', s: 'Elke maand staan jouw producten ingepland, vóór andere bestellingen.' },
+    { t: 'Maandelijks opzegbaar', s: `Zelf, in je dashboard. Wat je niet gebruikt, schuift ${doorMaand === 1 ? 'een maand' : `${doorMaand} maanden`} door.` },
+  ],
+  stap5: 'Bevestigen',
+  alKlant: 'Al eerder besteld?',
+  alKlantLink: 'Log in, dan staat dit er al',
   stap1: 'Welk abonnement',
   stap2: 'Welke termijn',
   stap3: 'Je vaste week',
@@ -333,7 +361,7 @@ const c = nl ? {
   merkmodel: 'merkmodel',
   maatNaam: 'Maand op maat',
   maatLine: `Stel zelf samen, vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten.`,
-  maatFacts: 'laddertarief over jouw aantal',
+  maatFacts: 'jij kiest het aantal · altijd maandelijks',
   maatProducten: 'Producten per maand',
   maatCarrousels: 'Daarvan met lifestyle-carrousel',
   maatClips: 'Motion-clips per maand',
@@ -342,15 +370,15 @@ const c = nl ? {
   maatCustomBody: 'Een eigen look of je eigen merkmodel kan wél in een abonnement — maar niet via dit formulier. Zo’n look moet eerst worden opgezet, anders betaal je vanaf de eerste maand voor iets dat nog niet bestaat. Vraag hem aan via /start/custom-look; zodra hij klaar is, staat hij als tegel in je account en in het bestelformulier, ook binnen je maand.',
   maatCustomCta: 'Neem contact op',
   termMaand: 'Maandelijks',
-  termMaandSub: 'Elke maand opzegbaar, in je dashboard.',
+  termMaandSub: 'Elke maand opzegbaar, zelf in je dashboard.',
   termJaar: '12 maanden',
   /* De staartzin "Op Starter bovendien goedkoper per maand" is weg sinds 10
      september: die korting hoort nu bij het vooruitbetaalde jaar. Deze termijn
      koopt voorwaarden, de volgende koopt een prijs — zie de noot bij
      discountMonths in plans.js. */
-  termJaarSub: 'Vaste looptijd, hetzelfde maandbedrag. Daarvoor terug: een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio.',
+  termJaarSub: `Zelfde maandbedrag, vaste looptijd. Extra: een staande week, ${doorJaar} maanden doorschuiven en een prijsslot.`,
   termVooruit: '12 maanden vooruit',
-  termVooruitSub: `Alles van de twaalf maanden, en je betaalt het jaar in één keer — dat scheelt ${gratisMin === gratisMax ? `${gratisMin} maanden` : `${gratisMin} tot ${gratisMax} maanden`}, afhankelijk van je plan. Stop je tussentijds, dan komt er geen geld terug: wat er van je jaar overblijft, wordt tegoed dat per maand vrijkomt.`,
+  termVooruitSub: `Alles van 12 maanden, plus ${gratisTekst('nl')}: je betaalt het jaar in één keer. Stop je eerder, dan komt er geen geld terug; het restant wordt tegoed.`,
   termMaat: 'Een maand op maat loopt altijd maandelijks.',
   weekHint: 'De dag van de maand waarop wij aan jouw producten beginnen. Elke maand dezelfde; je kunt hem later wijzigen.',
   weekNote: 'Wij reserveren die week in de planning voor jou, elke maand opnieuw, vóórdat er andere bestellingen in mogen. Heb je die maand niets klaarstaan, dan vervalt de week niet: je producten schuiven door. Je kunt de dag altijd wijzigen in je dashboard.',
@@ -358,7 +386,7 @@ const c = nl ? {
   sumLabel: 'Jouw maand',
   /* De aantallen komen uit pricing.js en staan hier niet ingetypt: de dag dat
      een catalogset vijf beelden wordt, klopt deze regel nog. */
-  perProductRegel: `Elk product: ${CATALOG_IMAGES} catalogbeelden en ${LIFESTYLE_IMAGES} lifestylebeelden — hierboven vier ervan`,
+  perProductRegel: `Eén product: vier van de ${COMPLETE_IMAGES} beelden.`,
   tegelNoot: ECHTE_BESTELLING.nl,
   sumElke: 'Elke maand',
   sumMaatH: 'Wat een maand op maat kost',
@@ -381,7 +409,7 @@ const c = nl ? {
      bestelformulier, want ze gaan naar dezelfde kolommen en op dezelfde
      factuur. Zie functions/api/plan.js. */
   stap4: 'Jouw gegevens',
-  gegHint: 'Voor de factuur en je account. Wie al bij ons besteld heeft, hoeft dit niet nog een keer in te vullen — log dan even in.',
+  gegHint: 'Voor de factuur en je account.',
   gegTelefoon: 'Telefoon of WhatsApp',
   errTelefoon: 'Vul een nummer in waarop we je kunnen bereiken — we appen je als er iets onduidelijk is.',
   gegVoornaam: 'Voornaam',
@@ -423,8 +451,15 @@ const c = nl ? {
   ingelogdMail: 'Dit is het adres van je account.',
   signIn: 'Inloggen',
   /* Zie de Engelse tegenhanger. */
-  budgetKop: 'Zelf te verdelen',
-  budgetLine: 'Dat is wat de maand aan productie waard is. Geef het uit waaraan je wilt — het bedrag verandert er niet door.',
+  /* "Zelf te verdelen · € 1.158" stond op elke kaart, en dat las als een tweede
+     prijs (Lucas, 23 sep: *"te onduidelijk"*). Op de kaart staat nu de
+     besparing; het verdelen staat als één zin op de plaat. */
+  budgetLine: 'Niet elk product een complete set nodig? De {bedrag} aan productie verdeel je zelf, in de Studio.',
+  los: 'Los',
+  jeBespaart: 'je bespaart',
+  beelden: 'beelden',
+  motion: 'motion-clips',
+  eigenModel: 'eigen merkmodel',
   budgetMax: 'tot {n}',
   /* Zie de Engelse tegenhanger. */
   menu: {
@@ -435,7 +470,15 @@ const c = nl ? {
   },
 } : {
   h: 'Your plan',
-  lede: 'Choose how much you want made every month. On the right you see straight away what that month delivers.',
+  lede: 'Choose how much you want made every month. You see straight away what you get, what it costs and what you save.',
+  voordelen: [
+    { t: `Up to ${maxPct}% less`, s: `You pay ${bespMin} to ${bespMax} a month less than for the same images ordered one-off.` },
+    { t: 'A fixed week', s: 'Every month your products are scheduled, ahead of other orders.' },
+    { t: 'Cancel any month', s: `Yourself, in your dashboard. Anything unused rolls over ${doorMaand === 1 ? 'a month' : `${doorMaand} months`}.` },
+  ],
+  stap5: 'Confirm',
+  alKlant: 'Ordered before?',
+  alKlantLink: 'Sign in and this is filled in for you',
   stap1: 'Which plan',
   stap2: 'Which term',
   stap3: 'Your fixed week',
@@ -445,7 +488,7 @@ const c = nl ? {
   merkmodel: 'brand model',
   maatNaam: 'Custom month',
   maatLine: `Compose it yourself, from ${CUSTOM_MONTH_MIN_PRODUCTS} products.`,
-  maatFacts: 'ladder rate for your volume',
+  maatFacts: 'you choose the number · always monthly',
   maatProducten: 'Products a month',
   maatCarrousels: 'Of those, with a lifestyle carousel',
   maatClips: 'Motion clips a month',
@@ -457,15 +500,15 @@ const c = nl ? {
   termMaandSub: 'Cancel any month, in your dashboard.',
   termJaar: '12 months',
   /* Zie de Nederlandse tegenhanger. */
-  termJaarSub: 'A fixed term at the same monthly price. In return: a standing week, three months of rollover, a price lock, and the brand model on Studio too.',
+  termJaarSub: `Same monthly price, fixed term. Extra: a standing week, ${doorJaar} months of rollover and a price lock.`,
   termVooruit: '12 months up front',
-  termVooruitSub: `Everything the 12-month term has, and you pay the year in one go — that saves ${gratisMin === gratisMax ? `${gratisMin} months` : `${gratisMin} to ${gratisMax} months`}, depending on your plan. Stop partway and there is no refund: what is left of your year becomes credit that unlocks month by month.`,
+  termVooruitSub: `Everything of 12 months, plus ${gratisTekst('en')}: you pay the year in one go. Stop early and there is no refund; what is left becomes credit.`,
   termMaat: 'A custom month always runs monthly.',
   weekHint: 'The day of the month we start on your products. The same every month; you can change it later.',
   weekNote: 'We reserve that week in the calendar for you, every month, before any other order can take it. If you have nothing ready that month the week is not lost: your products roll over. You can change the day at any time in your dashboard.',
   weekLabel: 'Day of the month',
   sumLabel: 'Your month',
-  perProductRegel: `Every product: ${CATALOG_IMAGES} catalog images and ${LIFESTYLE_IMAGES} lifestyle images — four of them above`,
+  perProductRegel: `One product: four of its ${COMPLETE_IMAGES} images.`,
   tegelNoot: ECHTE_BESTELLING.en,
   sumElke: 'Every month',
   sumMaatH: 'What a custom month costs',
@@ -486,7 +529,7 @@ const c = nl ? {
   cancelNote: 'You can cancel yourself, in your dashboard. Whatever you had made stays yours.',
   /* Zie de Nederlandse tegenhanger. */
   stap4: 'Your details',
-  gegHint: 'For the invoice and your account. Ordered from us before? You do not have to type this again — sign in instead.',
+  gegHint: 'For the invoice and your account.',
   gegTelefoon: 'Phone or WhatsApp',
   errTelefoon: 'Fill in a number we can reach you on — we message you if anything is unclear.',
   gegVoornaam: 'First name',
@@ -513,8 +556,12 @@ const c = nl ? {
   ingelogdAls: 'These come from your account. If something is not right, change it here — we keep the change.',
   ingelogdMail: 'This is your account address.',
   signIn: 'Sign in',
-  budgetKop: 'Yours to spend',
-  budgetLine: 'That is what the month is worth in production. Spend it on whatever you need — the amount does not change.',
+  budgetLine: 'Not every product needs a complete set? You divide the {bedrag} of production yourself, in the Studio.',
+  los: 'One-off',
+  jeBespaart: 'you save',
+  beelden: 'images',
+  motion: 'motion clips',
+  eigenModel: 'own brand model',
   budgetMax: 'up to {n}',
   /* Deze namen zijn voor het verdeelscherm in de Studio; ze staan hier omdat de
      rest van de abonnementstaal hier ook staat. */
@@ -549,17 +596,22 @@ const kaarten = planList.map((p) => {
   const k = clipsFor(p.id);
   const maand = monthlyCents(p.id, 'monthly');
   const jaar = monthlyCents(p.id, 'yearly');
+  const besp = planSaving(p.id);
   return {
     id: p.id,
     naam: planName(p.id, lang),
     line: p.line,
     bedrag: euro(maand / 100, lang),
     jaar: jaar !== maand ? (nl ? `${euro(jaar / 100, lang)} op de jaartermijn` : `${euro(jaar / 100, lang)} on the 12-month term`) : null,
+    /* Eén feit per regel sinds 23 september 2026: "12 producten · 2 clips" op
+       één grijze regel was precies het soort regel dat je overslaat. */
     facts: [
-      `${n} ${c.producten}`,
-      ...(k ? [`${k} ${c.clips}`] : []),
-      ...(hasBrandModel(p.id, 'monthly') ? [c.merkmodel] : []),
-    ].join(' · '),
+      `${n} ${c.producten} · ${n * COMPLETE_IMAGES} ${c.beelden}`,
+      ...(k ? [`${k} ${c.motion}`] : []),
+      ...(hasBrandModel(p.id, 'monthly') ? [c.eigenModel] : []),
+    ],
+    los: besp ? `${c.los} ${euro(besp.onLadder, lang)}` : null,
+    bespaar: besp ? `${c.jeBespaart} ${euro(besp.saving, lang)}` : null,
     /* ── HET MAANDBUDGET — 9 september 2026 ──────────────────────────────
        Lucas: *"Zie het meer als credits die je zelf kan uitgeven op wat je nodig
        hebt."* Dit is de eerste plek waar dat zichtbaar wordt: naast "12
@@ -593,6 +645,11 @@ const kaarten = planList.map((p) => {
       <p class="etiket">{lang === 'nl' ? 'Abonnement' : 'Plan'}</p>
       <h1 class="hoog">{c.h}</h1>
       <p class="lopend ps-lede">{c.lede}</p>
+      <ul class="ps-voordelen" role="list">
+        {c.voordelen.map((v) => (
+          <li><b>{v.t}</b><span>{v.s}</span></li>
+        ))}
+      </ul>
     </header>
 
     {/* foutTekst blijft staan voor het geval deze pagina ooit wél per verzoek
@@ -641,11 +698,12 @@ const kaarten = planList.map((p) => {
                     <span class="ps-plan-prijs"><b>{k.bedrag}</b><small>{c.perMaand}</small></span>
                   </span>
                   <span class="ps-plan-line">{k.line}</span>
-                  <span class="ps-plan-facts">{k.facts}</span>
-                  {/* Wat die producten waard zijn, en dus dat je er iets anders
-                      voor mag kiezen. Eén regel, want de volledige keuze maak je
-                      later in de Studio en niet in dit formulier. */}
-                  <span class="ps-plan-budget">{c.budgetKop} · <b>{k.budget}</b></span>
+                  <span class="ps-plan-facts">
+                    {k.facts.map((f) => <span class="ps-plan-feit"><span class="ps-sum-i" set:html={CHECK} />{f}</span>)}
+                  </span>
+                  {/* De besparing op de kaart zelf, en niet pas op de plaat: dat
+                      is het voordeel waar je het plan op kiest. */}
+                  {k.bespaar && <span class="ps-plan-voordeel">{k.los} · <b>{k.bespaar}</b></span>}
                   {k.jaar && <span class="ps-plan-jaar">{k.jaar}</span>}
                 </label>
               ))}
@@ -664,7 +722,7 @@ const kaarten = planList.map((p) => {
                   <span class="ps-plan-prijs"><small>{nl ? 'vanaf' : 'from'}</small> <b>{maatVanaf}</b><small>{c.perMaand}</small></span>
                 </span>
                 <span class="ps-plan-line">{c.maatLine}</span>
-                <span class="ps-plan-facts">{c.maatFacts}</span>
+                <span class="ps-plan-facts"><span class="ps-plan-feit"><span class="ps-sum-i" set:html={CHECK} />{c.maatFacts}</span></span>
               </label>
             </div>
 
@@ -720,6 +778,75 @@ const kaarten = planList.map((p) => {
             </div>
             <p class="ps-term-maat">{c.termMaat}</p>
           </fieldset>
+        </div>
+
+        {/* ── DE PLAAT: WAT DEZE MAAND OPLEVERT ───────────────────────────────
+            Dezelfde `.lime-plate.plaat-vol` als op /plans en de homepage. Eén
+            variant per plan-en-termijn; CSS onderaan zet er één aan.
+
+            23 september 2026: de plaat staat nu naast stap 1 en 2 — de twee
+            keuzes waar hij op reageert — en niet meer naast de hele pagina. Wat
+            er nu gebeurt, de verklaringen en de knop staan in stap 5, naast de
+            gegevens. Volgorde op de plaat: wat het kost en wat je bespaart,
+            dan wat je elke maand krijgt, dan de beelden. */}
+        <aside class="ps-sum lime-plate plaat-vol">
+          <p class="ps-sum-label">{c.sumLabel}</p>
+
+          {varianten.map((v) => (
+            <div class="ps-sumv" data-plan={v.plan} data-term={v.term}>
+              <h2 class="ps-sum-naam">{v.naam}</h2>
+              <p class="ps-sum-kop">{v.kop}</p>
+              <div class="bedrag ps-bedrag">
+                <span class="bedrag-cijfer">{v.bedrag}</span>
+                <span class="bedrag-eenheid">{v.eenheid}{v.per ? ` — ${v.per}` : ''} · {vatLabel('excl', lang)}</span>
+              </div>
+              {v.los && (
+                <p class="ps-sum-los"><span>{v.los}</span> <b>{v.bespaar}</b></p>
+              )}
+              <p class="ps-sum-h">{c.sumElke}</p>
+              <ul class="ps-sum-list">
+                {v.regels.map((r) => (
+                  <li><span class="ps-sum-i" set:html={CHECK} /><span><b>{r.t}</b>{r.sub ? <span class="ps-sum-sub"> — {r.sub}</span> : null}</span></li>
+                ))}
+              </ul>
+              <p class="ps-sum-budget">{c.budgetLine.replace('{bedrag}', v.budget)}</p>
+            </div>
+          ))}
+
+          <div class="ps-sumv" data-plan={CUSTOM_MONTH_ID} data-term="monthly">
+            <h2 class="ps-sum-naam">{c.maatNaam}</h2>
+            <p class="ps-sum-kop">{c.maatLine}</p>
+            <p class="ps-sum-h">{c.sumMaatH}</p>
+            <p class="ps-sum-maatsub">{c.sumMaatSub}</p>
+            <ul class="ps-sum-vb">
+              {maatVoorbeelden.map((m) => (
+                <li>
+                  <span class="ps-vb-n">{m.n} {c.producten}</span>
+                  <span class="ps-vb-b">{m.bedrag}<small> {c.perMaand}</small></span>
+                  <span class="ps-vb-i">{m.beelden} {c.sumMaatBeelden}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="ps-sum-sub">{c.termMaat}</p>
+          </div>
+
+          {tegels.length > 0 && (
+            <div class="ps-tegelblok">
+              <ul class="ps-tegels" role="list">
+                {tegels.map((t) => (
+                  <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
+                ))}
+              </ul>
+              <p class="ps-tegels-noot">{c.perProductRegel}</p>
+              <p class="ps-tegels-noot ps-tegels-klein">{c.tegelNoot}</p>
+            </div>
+          )}
+        </aside>
+      </div>
+
+      {/* ── DE TWEEDE RIJ: WANNEER, VOOR WIE, EN AKKOORD ─────────────────── */}
+      <div class="ps-grid ps-grid-b">
+        <div class="ps-keuzes">
 
           {/* ── 3 · DE WEEK ────────────────────────────────────────────────── */}
           <fieldset class="ps-set">
@@ -771,6 +898,7 @@ const kaarten = planList.map((p) => {
           <fieldset class="ps-set ps-geg" data-ps-geg>
             <legend><span class="ps-n">4</span>{c.stap4}</legend>
             <p class="ps-hint">{c.gegHint}</p>
+            <p class="ps-hint plan-al-klant" data-acct="out">{c.alKlant} <a href={`/account/login?lang=${lang}`}>{c.alKlantLink}</a></p>
             {/* De regel die zegt waar de ingevulde waarden vandaan komen. Boven
                 de velden en niet eronder: hij gaat over wat je gaat lezen. */}
             <p class="ps-uitacct" data-acct="in" hidden>{c.ingelogdAls}</p>
@@ -894,88 +1022,41 @@ const kaarten = planList.map((p) => {
               ingevulde velden, in de fieldset zelf. */}
         </div>
 
-        {/* ── DE PLAAT: WAT DEZE MAAND OPLEVERT ───────────────────────────────
-            Dezelfde `.lime-plate.plaat-vol` als op /plans en de homepage. Eén
-            variant per plan-en-termijn; CSS onderaan zet er één aan. */}
-        <aside class="ps-sum lime-plate plaat-vol">
-          <p class="ps-sum-label">{c.sumLabel}</p>
-
-          {tegels.length > 0 && (
-            <div class="ps-tegelblok">
-              <ul class="ps-tegels" role="list">
-                {tegels.map((t) => (
-                  <li><img src={t.src} width="760" height="760" alt={t.alt} loading="lazy" decoding="async" /></li>
-                ))}
-              </ul>
-              <p class="ps-tegels-noot">{c.perProductRegel}</p>
-              <p class="ps-tegels-noot ps-tegels-klein">{c.tegelNoot}</p>
+        {/* ── 5 · BEVESTIGEN — 23 september 2026 ──────────────────────────
+            Stond onderaan de zwarte plaat, waardoor de knop op 1440 px pas
+            ná een lange plaat kwam en naast een leeg stuk formulier. Nu staat
+            hij naast stap 3 en 4, waar je hem nodig hebt: na het invullen. */}
+        <aside class="ps-af">
+          <fieldset class="ps-set ps-bevestig">
+            <legend><span class="ps-n">5</span>{c.stap5}</legend>
+            <div class="ps-nu">
+              <p class="ps-sum-h">{c.nuH} <Note lang={lang} term={nl ? 'machtiging' : 'mandate'}>{c.mandateNote}</Note></p>
+              <ol class="ps-nu-list">
+                {c.nu.map((z) => <li>{z}</li>)}
+              </ol>
             </div>
-          )}
 
-          {varianten.map((v) => (
-            <div class="ps-sumv" data-plan={v.plan} data-term={v.term}>
-              <h2 class="ps-sum-naam">{v.naam}</h2>
-              <p class="ps-sum-kop">{v.kop}</p>
-              <div class="bedrag ps-bedrag">
-                <span class="bedrag-cijfer">{v.bedrag}</span>
-                <span class="bedrag-eenheid">{v.eenheid}{v.per ? ` — ${v.per}` : ''} · {vatLabel('excl', lang)}</span>
-              </div>
-              <p class="ps-sum-h">{c.sumElke}</p>
-              <ul class="ps-sum-list">
-                {v.regels.map((r) => (
-                  <li><span class="ps-sum-i" set:html={CHECK} /><span><b>{r.t}</b>{r.sub ? <span class="ps-sum-sub"> — {r.sub}</span> : null}</span></li>
-                ))}
-              </ul>
-              {v.los && (
-                <p class="ps-sum-los"><span>{v.los}</span> <b>{v.bespaar}</b></p>
-              )}
+            {/* ── DEZELFDE TWEE VERKLARINGEN ALS OP HET BESTELFORMULIER — 19 sep 2026
+                Zie de lange noot bij .pl-consent in OrderFlow.astro: de zakelijke
+                verklaring (src/data/business.js) en de herroepingsverklaring
+                (src/data/consent.js), elk met de versie van de tekst in een
+                verborgen veld. Dit formulier eindigt in een machtiging en had ze
+                niet. functions/api/plan.js weigert zonder. */}
+            <div class="ps-verklaringen">
+              <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
+              <label class="ps-consent">
+                <input type="checkbox" name="business_declaration" value="yes" required data-melding={nl ? 'VISUAILS levert uitsluitend zakelijk. Vink dit aan om te bevestigen dat je voor je bedrijf afsluit.' : 'VISUAILS supplies businesses only. Please tick this to confirm you are subscribing for a business.'} />
+                <span>{currentBusiness(lang)}</span>
+              </label>
+              <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
+              <label class="ps-consent">
+                <input type="checkbox" name="withdrawal_consent" value="yes" required data-melding={nl ? 'Vink dit aan om te bevestigen dat we mogen beginnen voordat je bedenktijd voorbij is.' : 'Please tick this to confirm production may start before the withdrawal period ends.'} />
+                <span>{currentConsent(lang)}</span>
+              </label>
             </div>
-          ))}
-
-          <div class="ps-sumv" data-plan={CUSTOM_MONTH_ID} data-term="monthly">
-            <h2 class="ps-sum-naam">{c.maatNaam}</h2>
-            <p class="ps-sum-kop">{c.maatLine}</p>
-            <p class="ps-sum-h">{c.sumMaatH}</p>
-            <p class="ps-sum-maatsub">{c.sumMaatSub}</p>
-            <ul class="ps-sum-vb">
-              {maatVoorbeelden.map((m) => (
-                <li>
-                  <span class="ps-vb-n">{m.n} {c.producten}</span>
-                  <span class="ps-vb-b">{m.bedrag}<small> {c.perMaand}</small></span>
-                  <span class="ps-vb-i">{m.beelden} {c.sumMaatBeelden}</span>
-                </li>
-              ))}
-            </ul>
-            <p class="ps-sum-sub">{c.termMaat}</p>
-          </div>
-
-          <div class="ps-nu">
-            <p class="ps-sum-h">{c.nuH} <Note lang={lang} term={nl ? 'machtiging' : 'mandate'}>{c.mandateNote}</Note></p>
-            <ol class="ps-nu-list">
-              {c.nu.map((z) => <li>{z}</li>)}
-            </ol>
-          </div>
-
-          {/* ── DEZELFDE TWEE VERKLARINGEN ALS OP HET BESTELFORMULIER — 19 sep 2026
-              Zie de lange noot bij .pl-consent in OrderFlow.astro: de zakelijke
-              verklaring (src/data/business.js) en de herroepingsverklaring
-              (src/data/consent.js), elk met de versie van de tekst in een
-              verborgen veld. Dit formulier eindigt in een machtiging en had ze
-              niet. functions/api/plan.js weigert zonder. */}
-          <div class="ps-verklaringen">
-            <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
-            <label class="ps-consent">
-              <input type="checkbox" name="business_declaration" value="yes" required data-melding={nl ? 'VISUAILS levert uitsluitend zakelijk. Vink dit aan om te bevestigen dat je voor je bedrijf afsluit.' : 'VISUAILS supplies businesses only. Please tick this to confirm you are subscribing for a business.'} />
-              <span>{currentBusiness(lang)}</span>
-            </label>
-            <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
-            <label class="ps-consent">
-              <input type="checkbox" name="withdrawal_consent" value="yes" required data-melding={nl ? 'Vink dit aan om te bevestigen dat we mogen beginnen voordat je bedenktijd voorbij is.' : 'Please tick this to confirm production may start before the withdrawal period ends.'} />
-              <span>{currentConsent(lang)}</span>
-            </label>
-          </div>
-          <button class="knop knop-inkt ps-verzend" type="submit">{c.submit}</button>
-          <p class="ps-sum-meta">{c.cancelNote}</p>
+            <button class="knop knop-inkt ps-verzend" type="submit">{c.submit}</button>
+            <p class="ps-sum-meta">{c.cancelNote}</p>
+          </fieldset>
         </aside>
       </div>
     </form>
@@ -987,10 +1068,10 @@ const kaarten = planList.map((p) => {
         anders heen gingen dan waar hij heen wilde.
 
         Wat overblijft is één regel voor wie WEL een account heeft: inloggen
-        scheelt je het invullen van stap 4. Een aanbod, geen eis. */}
-    <p class="plan-al-klant" data-acct="out">
-      {c.gegHint} <a href={`/account/login?lang=${lang}`}>{c.signIn}</a>
-    </p>
+        scheelt je het invullen van stap 4. Een aanbod, geen eis.
+
+        23 september 2026: die regel staat nu IN stap 4, onder de uitleg. Hier
+        onderaan herhaalde hij de zin van stap 4 woord voor woord. */}
   </div>
 </section>
 </div>
@@ -1206,10 +1287,25 @@ const kaarten = planList.map((p) => {
   /* Sinds sectie 22 zet .hoog de kopmaat en draagt .paneel de binnenmarge, dus
      deze twee regels vechten er alleen nog mee. .plan-binnen vervangt
      .container: binnen een paneel hoort de leesbreedte bij het blok. */
-  .plan-binnen { max-width: 72rem; margin-inline: auto; }
+  /* 72rem → 82rem, 23 september 2026. Lucas: *"mag wat breder om wat meer
+     overzicht te creëren."* De extra breedte gaat naar de plaat, zodat een
+     regel op de plaat niet meer over drie regels breekt. */
+  .plan-binnen { max-width: 82rem; margin-inline: auto; }
   .ps-lede { margin-top: 1.2rem; }
   .ps-verzend { width: 100%; justify-content: center; }
   .ps-head .lede { max-width: 58ch; }
+
+  /* ── DE DRIE VOORDELEN ONDER DE KOP — 23 september 2026 ──────────────────
+     Geen kaarten: drie kolommen met een lijn erboven, zodat het leest als één
+     zin in drie delen en niet als nog drie dingen om te kiezen. */
+  .ps-voordelen {
+    list-style: none; margin: clamp(1.4rem, 2.6vw, 2rem) 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem clamp(1.2rem, 3vw, 2.6rem);
+  }
+  .ps-voordelen li { display: grid; gap: .3rem; align-content: start; padding-top: .8rem; border-top: 1px solid var(--line-strong); }
+  .ps-voordelen b { font-weight: 700; font-size: 1.02rem; color: var(--ink); }
+  .ps-voordelen span { font-size: .92rem; line-height: 1.5; color: var(--ink-2); max-width: 38ch; }
+  @media (max-width: 48rem) { .ps-voordelen { grid-template-columns: 1fr; } }
 
   /* ── HET RASTER: KEUZES LINKS, DE PLAAT RECHTS ─────────────────────────────
      De plaat plakt mee bij het scrollen zodat de keuze en het gevolg naast
@@ -1217,12 +1313,20 @@ const kaarten = planList.map((p) => {
      niet plakkend: op een telefoon zou een plakkende plaat het halve scherm
      opeten. */
   .plan-form { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
-  .ps-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(20rem, 5fr); gap: clamp(1.6rem, 3.5vw, 3.4rem); align-items: start; }
+  /* ── TWEE RIJEN SINDS 23 SEPTEMBER 2026 ────────────────────────────────────
+     Rij 1: het plan en de termijn, met de plaat ernaast die erop reageert.
+     Rij 2: de week en je gegevens, met stap 5 (akkoord en de knop) ernaast.
+     Zo staat er rechts altijd iets dat bij de linkerkant hoort, en geen lege
+     kolom naast een lang formulier. Dezelfde kolommen in beide rijen, zodat de
+     randen onder elkaar liggen. Op een telefoon: alles onder elkaar, in de
+     volgorde van het formulier. */
+  .ps-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 1fr); gap: clamp(1.6rem, 3.5vw, 3.4rem); align-items: start; }
+  .ps-grid-b { margin-top: clamp(2.4rem, 5vw, 4rem); padding-top: clamp(2rem, 4vw, 3rem); border-top: 1px solid var(--line); }
   .ps-keuzes { display: grid; gap: clamp(1.8rem, 3.2vw, 2.6rem); min-width: 0; }
-  .ps-sum { position: sticky; top: 5.5rem; }
+  .ps-sum, .ps-af { position: sticky; top: 5.5rem; }
   @media (max-width: 60rem) {
     .ps-grid { grid-template-columns: 1fr; }
-    .ps-sum { position: static; }
+    .ps-sum, .ps-af { position: static; }
   }
 
   .ps-set { border: 0; padding: 0; margin: 0; display: grid; gap: .8rem; min-width: 0; }
@@ -1236,7 +1340,7 @@ const kaarten = planList.map((p) => {
     border-radius: 50%; border: 1px solid var(--line-strong);
     font-family: var(--font-body, inherit); font-size: .8rem; font-weight: 700; color: var(--ink-3);
   }
-  .ps-hint { color: var(--ink-3); font-size: .9rem; margin: 0; max-width: 60ch; }
+  .ps-hint { color: var(--ink-2); font-size: .92rem; margin: 0; max-width: 60ch; }
 
   /* ── DE PLANKAARTEN: TWEE NAAST ELKAAR ─────────────────────────────────────
      De radio is er nog (toetsenbord, formulier) maar tekent niet mee; de kaart
@@ -1255,21 +1359,23 @@ const kaarten = planList.map((p) => {
   .ps-plan:hover { border-color: var(--line-strong); }
   .ps-plan:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
   .ps-plan:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .ps-plan-top { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+  .ps-plan-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .2rem .6rem; }
   .ps-plan-naam { font-family: var(--font-heading); font-weight: 800; font-size: 1.35rem; letter-spacing: -0.01em; color: var(--ink); }
   .ps-plan-prijs { white-space: nowrap; font-variant-numeric: tabular-nums; }
   .ps-plan-prijs b { font-weight: 800; font-size: 1.1rem; color: var(--ink); }
   .ps-plan-prijs small { margin-left: .2rem; font-size: .8rem; color: var(--ink-3); }
   .ps-plan-line { color: var(--ink-2); font-size: .93rem; line-height: 1.5; }
-  /* Het budget staat één trede lichter dan de feiten erboven: het is een
-     toelichting op "12 producten" en geen tweede lijst met feiten. De B is wél
-     inkt, want dat bedrag is het punt van de regel. */
-  /* --inkt-2 en niet --inkt-3: gemeten 4,36:1 op het vlak van deze kaart, net
-     onder de norm van 4,5. Zie kladblok/leesbaar-alles.mjs. */
-  .ps-plan-budget { display: block; margin-top: .35rem; font-size: .8rem; color: var(--inkt-2, #454545); }
-  .ps-plan-budget b { color: var(--inkt, #111); font-weight: 500; }
-  .ps-plan-facts { font-size: .82rem; color: var(--ink-3); }
-  .ps-plan-jaar { font-size: .78rem; color: var(--accent-bright, var(--accent)); }
+  /* ── WAT JE KRIJGT EN WAT JE BESPAART, OP DE KAART — 23 september 2026 ───
+     Was één grijze regel "12 producten · 2 clips" en daaronder "Zelf te
+     verdelen · € 1.158", wat las als een tweede prijs. Nu: elk feit op een
+     eigen regel met een vinkje, en de besparing onder een lijn. --ink-2 en
+     niet --ink-3: dit is wat je koopt, dat hoort gelezen te worden. */
+  .ps-plan-facts { display: grid; gap: .2rem; margin-top: .2rem; }
+  .ps-plan-feit { display: grid; grid-template-columns: 16px 1fr; gap: .5rem; align-items: start; font-size: .9rem; line-height: 1.45; color: var(--ink-2); }
+  .ps-plan-feit .ps-sum-i :global(svg) { margin-top: .2rem; width: 14px; height: 14px; }
+  .ps-plan-voordeel { margin-top: .45rem; padding-top: .6rem; border-top: 1px solid var(--line); font-size: .88rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .ps-plan-voordeel b { color: var(--ink); font-weight: 700; }
+  .ps-plan-jaar { font-size: .84rem; color: var(--accent-bright, var(--accent)); }
   /* Het vinkje van de gekozen kaart: een stip in de accentkleur, rechtsboven. */
   .ps-plan::after {
     content: ''; position: absolute; top: .9rem; right: .95rem; width: .55rem; height: .55rem;
@@ -1302,10 +1408,10 @@ const kaarten = planList.map((p) => {
   }
   .maat-veld input[type="number"]::placeholder { color: var(--ink-4); }
   .maat-veld input[type="number"]:focus-visible { border-color: var(--accent); outline: none; }
-  .maat-hint { flex: 1 1 100%; margin: .2rem 0 0; font-size: .84rem; line-height: 1.55; color: var(--ink-3); }
+  .maat-hint { flex: 1 1 100%; margin: .2rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); }
 
   .ps-look { margin-top: .2rem; }
-  .ps-look > summary { cursor: pointer; font-size: .9rem; color: var(--ink-3); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
+  .ps-look > summary { cursor: pointer; font-size: .92rem; color: var(--ink-2); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
   .ps-look > summary::-webkit-details-marker { display: none; }
   .ps-look > summary:hover { color: var(--ink); }
   .ps-look p { margin: .7rem 0 0; font-size: .92rem; line-height: 1.6; color: var(--ink-2); max-width: 64ch; }
@@ -1317,12 +1423,13 @@ const kaarten = planList.map((p) => {
      voorwaarde in die de klant vóór het betalen moet lezen). Daarom: twee naast
      elkaar en de derde over de volle breedte eronder, waar hij de ruimte heeft
      om die zin uit te schrijven. Onder 34rem staan ze alle drie onder elkaar. */
-  .ps-verklaringen { display: grid; gap: .6rem; margin: 1.2rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--lijn); }
+  .ps-verklaringen { display: grid; gap: .6rem; margin: 0; padding-top: 1rem; border-top: 1px solid var(--lijn); }
   .ps-consent { display: flex; gap: .6rem; align-items: flex-start; font-size: .84rem; line-height: 1.5; color: var(--inkt-2); cursor: pointer; }
   .ps-consent input { margin-top: .2rem; }
-  .ps-terms { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
-  .ps-terms > .ps-term:nth-child(3) { grid-column: 1 / -1; }
-  @media (max-width: 34rem) { .ps-terms { grid-template-columns: 1fr; } }
+  /* 23 september 2026: de teksten zijn korter, dus kunnen de drie weer naast
+     elkaar — drie gelijke keuzes lezen rustiger dan twee plus één. */
+  .ps-terms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
+  @media (max-width: 40rem) { .ps-terms { grid-template-columns: 1fr; } }
   .ps-term {
     position: relative; display: grid; gap: .3rem; align-content: start;
     padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2); cursor: pointer;
@@ -1342,7 +1449,7 @@ const kaarten = planList.map((p) => {
     padding: .12rem .5rem; border-radius: 999px; background: var(--accent); color: var(--on-accent, #FFFFFF);
     font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
   }
-  .ps-term-sub { font-size: .86rem; line-height: 1.5; color: var(--ink-3); }
+  .ps-term-sub { font-size: .88rem; line-height: 1.5; color: var(--ink-2); }
   .ps-term-maat { display: none; margin: 0; font-size: .86rem; color: var(--ink-3); }
   .plan-form:has(input[name="plan"][value="maat"]:checked) .ps-terms { opacity: .45; }
   .plan-form:has(input[name="plan"][value="maat"]:checked) .ps-term-maat { display: block; }
@@ -1386,7 +1493,8 @@ const kaarten = planList.map((p) => {
   /* --ink-2 en niet --ink-3: op limoen is 66% zwart al randje, en dit is de
      regel die zegt wat je per product krijgt — precies wat gelezen moet worden. */
   .ps-tegels-noot { margin: .6rem 0 0; font-size: .86rem; line-height: 1.45; color: var(--ink-2); }
-  .ps-tegels-klein { margin-top: .3rem; font-size: .78rem; color: var(--ink-2); opacity: .78; }
+  .ps-tegelblok { padding-top: 1rem; border-top: 1px solid var(--line); }
+  .ps-tegels-klein { margin-top: .3rem; font-size: .82rem; color: var(--ink-2); }
   .ps-sumv { display: grid; gap: .9rem; }
   @supports selector(:has(input)) {
     .ps-sumv { display: none; }
@@ -1410,9 +1518,17 @@ const kaarten = planList.map((p) => {
   .ps-sum-list li { display: grid; grid-template-columns: 18px 1fr; gap: .6rem; font-size: .93rem; line-height: 1.5; color: var(--ink-2); }
   .ps-sum-list b { color: var(--ink); font-weight: 700; }
   .ps-sum-sub { color: var(--ink-3); }
-  .ps-sum-i svg { width: 16px; height: 16px; margin-top: .25rem; fill: none; stroke: var(--ink); stroke-width: 2.4; }
-  .ps-sum-los { margin: 0; padding-top: .9rem; border-top: 1px solid var(--line); font-size: .92rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
-  .ps-sum-los b { color: var(--ink); font-size: 1rem; }
+  /* :global(svg) — het vinkje komt via set:html binnen en krijgt daardoor het
+     scope-kenmerk van Astro niet. `.ps-sum-i svg` raakte het dus nooit: het pad
+     werd een zwart gevuld vlak, onzichtbaar op de zwarte plaat. Gevonden 23
+     september 2026 bij het vergroten van de kaart. */
+  .ps-sum-i { display: block; line-height: 0; }
+  .ps-sum-i :global(svg) { width: 16px; height: 16px; margin-top: .25rem; fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  /* Direct onder het bedrag sinds 23 september 2026: wat het kost en wat het
+     scheelt horen bij elkaar, en niet een lange lijst uit elkaar. */
+  .ps-sum-los { margin: 0; padding: .75rem 0; border-block: 1px solid var(--line); font-size: .95rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+  .ps-sum-los b { color: var(--ink); font-size: 1.05rem; }
+  .ps-sum-budget { margin: 0; font-size: .88rem; line-height: 1.5; color: var(--ink-2); }
   .ps-sum-maatsub { margin: -.4rem 0 0; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
   .ps-sum-vb { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
   .ps-sum-vb li { display: grid; grid-template-columns: 1fr auto; gap: .1rem .8rem; padding: .55rem 0; border-top: 1px solid var(--line); font-size: .92rem; }
@@ -1420,11 +1536,17 @@ const kaarten = planList.map((p) => {
   .ps-vb-b { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
   .ps-vb-b small { font-weight: 400; color: var(--ink-3); }
   .ps-vb-i { grid-column: 1 / -1; font-size: .82rem; color: var(--ink-3); }
-  .ps-nu { padding-top: 1rem; border-top: 1px solid var(--line); display: grid; gap: .6rem; }
+  /* ── STAP 5 · BEVESTIGEN — 23 september 2026 ──────────────────────────────
+     Een licht vlak met een lijn, dezelfde grond als de kaarten links: het is
+     een stap van het formulier, en geen tweede plaat. De knop is inkt op
+     licht — de knoppenscan vond hem als donkere knop op de zwarte plaat. */
+  .ps-af { padding: clamp(1.3rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper-2); }
+  .ps-bevestig { gap: 1rem; }
+  .ps-nu { display: grid; gap: .6rem; }
   .ps-nu-list { margin: 0; padding: 0 0 0 1.2rem; display: grid; gap: .4rem; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
   .ps-nu-list li::marker { font-weight: 800; color: var(--ink); }
   .ps-sum .btn-block { width: 100%; margin-top: .2rem; }
-  .ps-sum-meta { margin: 0; font-size: .82rem; color: var(--ink-3); }
+  .ps-sum-meta { margin: 0; font-size: .86rem; line-height: 1.5; color: var(--ink-2); }
 
   /* ── STAP 4 · JOUW GEGEVENS — 9 september 2026 ────────────────────────────
      Dezelfde vorm als de drie stappen erboven — geen kader, geen eigen vlak —
@@ -1435,7 +1557,7 @@ const kaarten = planList.map((p) => {
   .ps-veld { display: grid; gap: .3rem; min-width: 0; }
   .ps-veld-breed { grid-column: 1 / -1; }
   .ps-veld > span { font-size: .84rem; font-weight: 600; color: var(--ink-2); }
-  .ps-veld small { font-size: .76rem; line-height: 1.45; color: var(--ink-3); }
+  .ps-veld small { font-size: .8rem; line-height: 1.45; color: var(--ink-2); }
   .ps-veld input, .ps-veld select {
     font: inherit; font-size: .95rem; color: var(--ink);
     background: var(--surface, #fff);
@@ -1443,7 +1565,7 @@ const kaarten = planList.map((p) => {
     padding: .55rem .7rem; min-height: 44px; width: 100%;
   }
   .ps-veld input:focus-visible, .ps-veld select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
-  .ps-geg-slot { margin: .4rem 0 0; font-size: .82rem; line-height: 1.6; color: var(--ink-3); }
+  .ps-geg-slot { margin: .4rem 0 0; font-size: .86rem; line-height: 1.6; color: var(--ink-2); }
   /* De honeypot: uit beeld, niet uit de boom weggehaald met display:none — een
      bot die het formulier parseert vindt hem dan alsnog, en dat is de bedoeling. */
   .ps-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -1485,8 +1607,7 @@ const kaarten = planList.map((p) => {
   .ps-voorkeur-optie:hover { border-color: var(--accent-line); }
   .ps-voorkeur-optie:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
   .ps-voorkeur-optie:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-  .plan-al-klant { margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line); font-size: .86rem; line-height: 1.6; color: var(--ink-3); max-width: 70ch; }
-  .plan-al-klant a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .plan-al-klant a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
   @media (max-width: 620px) {
     .ps-geg-rij, .ps-geg-drie { grid-template-columns: 1fr; }

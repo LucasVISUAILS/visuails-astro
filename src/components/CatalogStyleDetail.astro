@@ -30,7 +30,6 @@
 import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
 import ServiceSwitch from './ServiceSwitch.astro';
-import { waHref } from '../data/whatsapp.js';
 import { reviewClaim, turnaround, TIERS } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
@@ -102,7 +101,10 @@ const badge = `Catalog · ${style.name}`;
         <p class="lopend cs-tagline">{style.tagline}</p>
         <div class="acties">
           <a class="knop knop-inkt" href={style.orderHref}>{c.bestel}</a>
-          <a class="knop knop-lijn" href={waHref(c.waTekst)} target="_blank" rel="noopener">{c.wa}</a>
+          {/* De proef en geen WhatsApp als tweede knop — 23 september 2026. Op de
+            dienstpagina's ging WhatsApp al uit de opening: rechtsonder zweeft
+            op elke pagina dezelfde knop. Voor wie ingelogd is, verdwijnt hij. */}
+        <a class="knop knop-lijn" href={lp('/test-sample')} data-vis-uit>{c.proef}</a>
         </div>
         <ServiceSwitch lang={lang} label={c.andere} items={zusters} />
         <ServiceSwitch current="catalog" lang={lang} />
@@ -138,17 +140,22 @@ const badge = `Catalog · ${style.name}`;
             </li>
           ))}
         </ol>
+        {/* "Ideaal voor" hoort bij hoe de stijl voelt — 23 september 2026. */}
+        <h3 class="hoog hoog-3 cs-ideaal-h">{c.idealH[0]}<em>{c.idealH[1]}</em></h3>
+        <ul class="cs-vinkjes" role="list">
+          {style.bestFor.map((item: string) => (
+            <li><svg viewBox="0 0 24 24" class="cs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
+          ))}
+        </ul>
       </div>
     </div>
   </section>
 
-  <section class="paneel cs-raster">
-    <ul class="cs-negen" role="list">
-      {style.grid.map((g: any) => (
-        <li><ProductScene icon={g.icon} width={g.width} badge={badge} /></li>
-      ))}
-    </ul>
-  </section>
+  {/* ── HET RASTER VAN NEGEN IS WEG — 23 september 2026 ─────────────────────
+      Het waren negen getekende vakken (ProductScene) en geen foto. PAGINA-
+      OPBOUW.md: een raster toont alleen beelden die er zijn. Zodra er echte
+      Classic-beelden zijn, komt het terug met `photo` per vak, zoals op de
+      lifestylestijlen. */}
 
   {/* Het enige echte ruw-naar-catalogpaar in de beeldbibliotheek, in de
       trechterstap van deze stijl. Een illustratie kan laten zien hoe een look
@@ -188,15 +195,7 @@ const badge = `Catalog · ${style.name}`;
   </section>
 
   <section class="paneel cs-lijsten">
-    <div class="cs-twee cs-twee-gelijk">
-      <div>
-        <h2 class="hoog hoog-3">{c.idealH[0]}<em>{c.idealH[1]}</em></h2>
-        <ul class="cs-vinkjes" role="list">
-          {style.bestFor.map((item: string) => (
-            <li><svg viewBox="0 0 24 24" class="cs-i" aria-hidden="true"><path d={vink} /></svg><span>{item}</span></li>
-          ))}
-        </ul>
-      </div>
+    <div class="cs-een">
       <div>
         <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
         <ul class="cs-vinkjes" role="list">
@@ -227,7 +226,10 @@ const badge = `Catalog · ${style.name}`;
 </div>
 
 <style>
+  .cs-ideaal-h { margin-top: clamp(1.4rem, 3vw, 2rem); }
+  .cs-een { max-width: 44rem; }
   .cs-open-grid, .cs-twee { display: grid; gap: clamp(1.8rem, 4.5vw, 3.5rem); align-items: center; }
+  .cs-open-grid { align-items: start; }
   @media (min-width: 900px) {
     .cs-open-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); }
     .cs-twee { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }

@@ -522,7 +522,10 @@ const wa = waHref(c.waText);
         <p class="lopend">{c.lead}</p>
         <p class="acties">
           <a class="knop knop-inkt" href={lp('/start/brand-model')}>{c.ctaPrimary}</a>
-          <a class="knop knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWa}</a>
+          {/* WhatsApp uit de opening, 23 september 2026 — zelfde regel als op
+              /catalog: rechtsonder zweeft op elke pagina al een WhatsApp-knop.
+              De tweede weg is nu de bibliotheek die je al hebt. */}
+          <a class="knop knop-lijn" href={lp('/models')}>{c.libAllCta}</a>
         </p>
         <ServiceSwitch current={['brand-model', 'complete']} lang={lang} />
         <div class="trust-row bm-trust">
@@ -558,76 +561,14 @@ const wa = waHref(c.waText);
     </div>
   </section>
 
-  {/* ── 2 · JOUW MODEL, GEEN MODEL ───────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="bm-nota">
+  {/* ── 2 · ECHT GELEVERD WERK — NAAR VOREN, 23 september 2026 ────────────
+      PAGINA-OPBOUW.md (goedgekeurd): de gezichten die er echt uit kwamen
+      stonden onderin het richtingenblok. Wie wil weten wat een merkmodel is,
+      moet er eerst een zien. */}
+  <section class="paneel" aria-labelledby="bm-uit-h">
     <header class="paneel-kop">
-      <h2 id="bm-nota" class="hoog hoog-2" set:html={c.notAH} />
-      <p class="lopend">{c.notALead}</p>
+      <h2 id="bm-uit-h" class="hoog hoog-2">{c.outH}</h2>
     </header>
-    <ul class="bm-props" role="list">
-      {c.props.map((p) => (
-        <li><b>{p[0]}</b><span class="lopend">{p[1]}</span></li>
-      ))}
-    </ul>
-    {/* Twee regels die elk een eigen sectie hadden — 19 september 2026.
-        "Waar je het gebruikt" stond als donkere kamer (1.290 px) met een
-        9:2-plaatshouder; "Waarom niet zelf iets met een generator maken"
-        als tweede kamer (765 px) die /compare#ai-tools naspeelde. Lucas:
-        *"Diepere snoei … /custom-models … doorvoeren."* Het gebruik is nu één
-        regel, het generator-argument één zin met de link naar de pagina die
-        het echt draagt. De copy (fitWhat, genBody) blijft in COPY staan. */}
-    <p class="bm-regel"><span class="etiket">{c.fitWhereH}</span> {c.fitWhere.map((w) => w[0]).join(' · ')}</p>
-    <p class="bm-regel bm-gen-regel">{c.genKort} <a class="pijl" href={lp('/compare#ai-tools')}>{c.genCta}</a></p>
-  </section>
-
-  {/* ── 3 · WAT HET KOST ─────────────────────────────────────────────────────
-      Het getal staat vóór het argument ervoor en niet erna. Een merk dat op het
-      punt staat vier cijfers aan exclusiviteit uit te geven vindt de prijs
-      uiteindelijk toch; ze laten zoeken is het enige dat er een schrik van
-      maakt. */}
-  <section class="paneel" aria-labelledby="bm-kost">
-    <header class="paneel-kop">
-      <h2 id="bm-kost" class="hoog hoog-2">{c.costH}</h2>
-    </header>
-    <div class="bm-kost">
-      <p class="bm-bedrag">
-        <span class="etiket">{c.costSetupLabel}</span>
-        <span class="tarief bm-cijfer">{brandModel.price}</span>
-        <span class="mono">{brandModel.unit} · {c.costSetupVat}</span>
-      </p>
-      <div class="bm-inbegrepen">
-        <p class="etiket">{c.costIncludes}</p>
-        <ul class="bm-vink" role="list">
-          {brandModel.includes.map((f) => <li>{f}</li>)}
-        </ul>
-        <p class="lopend bm-volgorde">{c.costSequence}</p>
-      </div>
-    </div>
-    {/* De rekensom ("wat het per beeld kost") stond hier uitgeschreven en
-        staat al op /pricing — één regel en de link, 19 september 2026. */}
-    <p class="bm-regel bm-kost-regel">{c.costFree} <a class="pijl" href={lp('/pricing')}>{c.costCta}</a></p>
-  </section>
-
-  {/* ── 5 · DE RICHTINGEN, EN WAT ERUIT KOMT ────────────────────────────────
-      Dit waren twee secties onder elkaar. Ze beantwoorden dezelfde vraag — hoe
-      ziet zo'n gezicht eruit — dus delen ze één paneel: eerst waaruit je kunt
-      kiezen, dan wat er in het echt uit kwam. */}
-  <section class="paneel" aria-labelledby="bm-richting">
-    <header class="paneel-kop">
-      <h2 id="bm-richting" class="hoog hoog-2">{c.dirH}</h2>
-      <p class="lopend">{c.dirLead}</p>
-    </header>
-    <ul class="bm-richtingen" role="list">
-      {directions.map((d) => (
-        <li>
-          <span class="bm-letter" aria-hidden="true">{d[0]}</span>
-          <b>{d[1]}</b>
-          <span class="lopend">{d[2]}</span>
-        </li>
-      ))}
-    </ul>
-
-    <h3 class="hoog hoog-3 bm-uit-kop">{c.outH}</h3>
     <ul class="bm-uit" role="list">
       {EXAMPLES.map((photo, i) => (
         <li>
@@ -639,16 +580,63 @@ const wa = waHref(c.waText);
     </ul>
   </section>
 
-  {/* ── 6 · HOE HET TOT STAND KOMT ───────────────────────────────────────── */}
+  {/* ── 3 · WAT HET IS EN WAT HET KOST, NAAST ELKAAR — 23 september 2026 ───
+      Twee secties (1.071 + 724 px) werden één: links waarom een eigen gezicht,
+      rechts het bedrag en wat erin zit. De vraag van de pagina is "wat is het
+      en wat kost het", en die hoort in één blik beantwoord te worden. */}
+  <section class="paneel" aria-labelledby="bm-nota">
+    <div class="bm-wat-kost">
+      <div class="bm-wat">
+      <header class="paneel-kop">
+        <h2 id="bm-nota" class="hoog hoog-2" set:html={c.notAH} />
+        <p class="lopend">{c.notALead}</p>
+      </header>
+      <ul class="bm-props" role="list">
+        {c.props.map((p) => (
+          <li><b>{p[0]}</b><span class="lopend">{p[1]}</span></li>
+        ))}
+      </ul>
+      {/* Twee regels die elk een eigen sectie hadden — 19 september 2026.
+          "Waar je het gebruikt" stond als donkere kamer (1.290 px) met een
+          9:2-plaatshouder; "Waarom niet zelf iets met een generator maken"
+          als tweede kamer (765 px) die /compare#ai-tools naspeelde. Lucas:
+          *"Diepere snoei … /custom-models … doorvoeren."* Het gebruik is nu één
+          regel, het generator-argument één zin met de link naar de pagina die
+          het echt draagt. De copy (fitWhat, genBody) blijft in COPY staan. */}
+      <p class="bm-regel"><span class="etiket">{c.fitWhereH}</span> {c.fitWhere.map((w) => w[0]).join(' · ')}</p>
+      <p class="bm-regel bm-gen-regel">{c.genKort} <a class="pijl" href={lp('/compare#ai-tools')}>{c.genCta}</a></p>
+      </div>
+      <div class="bm-kost-kolom">
+      <header class="paneel-kop">
+        <h2 id="bm-kost" class="hoog hoog-2">{c.costH}</h2>
+      </header>
+      <div class="bm-kost">
+        <p class="bm-bedrag">
+          <span class="etiket">{c.costSetupLabel}</span>
+          <span class="tarief bm-cijfer">{brandModel.price}</span>
+          <span class="mono">{brandModel.unit} · {c.costSetupVat}</span>
+        </p>
+        <div class="bm-inbegrepen">
+          <p class="etiket">{c.costIncludes}</p>
+          <ul class="bm-vink" role="list">
+            {brandModel.includes.map((f) => <li>{f}</li>)}
+          </ul>
+          <p class="lopend bm-volgorde">{c.costSequence}</p>
+        </div>
+      </div>
+      {/* De rekensom ("wat het per beeld kost") stond hier uitgeschreven en
+          staat al op /pricing — één regel en de link, 19 september 2026. */}
+      <p class="bm-regel bm-kost-regel">{c.costFree} <a class="pijl" href={lp('/pricing')}>{c.costCta}</a></p>
+      </div>
+    </div>
+  </section>
+
+  {/* ── 4 · HOE HET TOT STAND KOMT — de vijf stappen op één rij ─────────── */}
   <section class="paneel" aria-labelledby="bm-proces">
     <header class="paneel-kop">
       <h2 id="bm-proces" class="hoog hoog-2">{c.procH}</h2>
     </header>
-    {/* Hier stond een 3:1-plaatshouder (het richtingenblad) vóór de stappen;
-        weg sinds 19 september 2026 — de vijf regels zijn het proces, en wat je
-        stuurt en terugkrijgt staat er nu meteen onder in dezelfde sectie in
-        plaats van als eigen paneel. */}
-    <ol class="bm-stappen">
+    <ol class="bm-stappen bm-stappen-rij">
       {steps.map((s, i) => (
         <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{s[0]}</b><span class="lopend">{s[1]}</span></li>
       ))}
@@ -669,42 +657,40 @@ const wa = waHref(c.waText);
     </div>
   </section>
 
-  {/* ── 8 · DE STANDAARDBIBLIOTHEEK ──────────────────────────────────────────
-      Een voorproefje van de tien en niet de tien: de volledige lijst staat op
-      /models, en ze hier nog een keer zetten geeft twee pagina's met dezelfde
-      tien portretten. Deze sectie staat ONDER het betoog over het eigen gezicht
-      en niet erboven: de bibliotheek is het alternatief dat je al hebt, en dat
-      hardop zeggen is wat het merkmodel een eerlijke upsell maakt.
-
-      Het aanbod "laat ons er een kiezen" is geen eigen tegel maar een regel in
-      de noot ernaast — het is een tweede antwoord op dezelfde vraag. */}
-  <section class="paneel" id="standard" aria-labelledby="bm-bieb">
+  {/* ── 5 · DE RICHTINGEN ALS KORTE RIJ — 23 september 2026 ───────────────
+      Negen blokken met elk een alinea (1.476 px) werden letter + naam. De
+      uitleg per richting krijg je in het gesprek; hier gaat het erom dat je
+      ziet dat er gekozen kan worden. */}
+  <section class="paneel" aria-labelledby="bm-richting">
     <header class="paneel-kop">
-      <p class="etiket">{c.libMeta}</p>
-      <h2 id="bm-bieb" class="hoog hoog-2">{c.libH}</h2>
-      <p class="lopend">{c.libLead}</p>
+      <h2 id="bm-richting" class="hoog hoog-2">{c.dirH}</h2>
+      <p class="lopend">{c.dirLead}</p>
     </header>
-    {/* De drie portretten die hier stonden zijn weg (19 september 2026): ze
-        stonden óók op /models, en twee pagina's met dezelfde gezichten was
-        precies wat de kop van ModelsPage.astro wilde voorkomen. Het anker
-        #standard blijft — /lifestyle en het menu wijzen erheen — en de sectie
-        is nu wat hij moet zijn: de naam, één zin, en de twee wegen. */}
-    <div class="bm-bieb-noot">
-      <p class="lopend">{c.libNote}</p>
-      <p class="bm-wegen">
-        <a class="pijl" href={lp('/models')}>{c.libAllCta}</a>
-        <a class="pijl" href={lp('/start/brand-model')}>{c.libOwnCta}</a>
-      </p>
+    <ul class="bm-richtingen bm-richtingen-kort" role="list">
+      {directions.map((d) => (
+        <li title={d[2]}><span class="bm-letter" aria-hidden="true">{d[0]}</span><b>{d[1]}</b></li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── 6 · DE STANDAARDBIBLIOTHEEK — ÉÉN BAND ─────────────────────────────
+      Het anker #standard blijft (/lifestyle en het menu wijzen erheen). */}
+  <section class="paneel prijsband" id="standard" aria-labelledby="bm-bieb">
+    <div class="prijsband-in">
+      <div class="prijsband-woord">
+        <h2 id="bm-bieb" class="hoog hoog-3">{c.libH}</h2>
+        <p class="lopend">{c.libNote}</p>
+      </div>
+      <a class="knop knop-lijn" href={lp('/models')}>{c.libAllCta}</a>
     </div>
   </section>
 
-  {/* ── 10 · HET SLOT ────────────────────────────────────────────────────── */}
+  {/* ── 7 · HET SLOT — twee knoppen (PAGINA-OPBOUW.md, regel 5) ────────── */}
   <section class="paneel paneel-slot" aria-labelledby="bm-slot">
     <h2 id="bm-slot" class="hoog">{c.ctaH1} <br /><em>{c.ctaEm}</em></h2>
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/start/brand-model')}>{c.ctaStart}</a>
       <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPricing}</a>
-      <a class="knop knop-lijn" href={wa} target="_blank" rel="noopener">{c.ctaWaShort}</a>
     </p>
   </section>
 </div>
@@ -776,7 +762,7 @@ const wa = waHref(c.waText);
   .bm-richtingen .lopend { font-size: .92rem; }
 
   .bm-uit-kop { margin-top: clamp(2.5rem, 5vw, 4rem); }
-  .bm-uit { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); margin-top: 1.4rem; }
+  .bm-uit { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.7rem, 1.6vw, 1.1rem); margin-top: 1.4rem; max-width: 60rem; }
   .bm-uit .kaart { aspect-ratio: 3 / 4; }
   .bm-uit img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -793,16 +779,34 @@ const wa = waHref(c.waText);
   .bm-bieb-noot { display: grid; gap: 1rem; max-width: 46rem; }
   .bm-wegen { display: flex; flex-wrap: wrap; gap: .8rem 1.6rem; }
 
+  /* ── 23 september 2026: wat het is en wat het kost naast elkaar ───────── */
+  .bm-wat-kost { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 4rem); align-items: start; }
+  .bm-wat-kost .bm-props li { grid-template-columns: minmax(0, 1fr); gap: .35rem; }
+  .bm-wat-kost .bm-kost { grid-template-columns: minmax(0, 1fr); gap: 1.4rem; }
+  .bm-kost-kolom { padding: clamp(1.3rem, 2.6vw, 2rem); border: 1px solid var(--lijn-sterk); border-radius: calc(var(--ronding) - 8px); }
+  .bm-kost-kolom .paneel-kop { margin-bottom: 1rem; }
+  /* De vijf stappen op één rij: nummer, naam, zin — onder elkaar per kolom. */
+  @media (min-width: 62rem) {
+    .bm-stappen-rij { grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: clamp(1rem, 2vw, 1.6rem); }
+    .bm-stappen-rij li { grid-template-columns: minmax(0, 1fr); gap: .5rem; align-content: start; border-bottom: 0; }
+    .bm-stappen-rij li:last-child { border-bottom: 0; }
+    .bm-stappen-rij b { font-size: clamp(1rem, 1.3vw, 1.15rem); }
+    .bm-stappen-rij .lopend { font-size: .92rem; }
+  }
+  .bm-richtingen-kort { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: .8rem clamp(1rem, 2.5vw, 2rem); }
+  .bm-richtingen-kort li { grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: .7rem; }
+  .bm-richtingen-kort .bm-letter { font-size: 1.2rem; }
+
   @media (max-width: 900px) {
-    .bm-open, .bm-kost, .bm-ruil { grid-template-columns: 1fr; }
+    .bm-open, .bm-kost, .bm-ruil, .bm-wat-kost { grid-template-columns: 1fr; }
     .bm-cast { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); }
     .bm-props li { grid-template-columns: 1fr; gap: .4rem; }
-    .bm-richtingen { grid-template-columns: repeat(2, 1fr); }
+    .bm-richtingen:not(.bm-richtingen-kort) { grid-template-columns: repeat(2, 1fr); }
     .bm-stappen li { grid-template-columns: auto 1fr; }
     .bm-stappen li .lopend { grid-column: 2; }
     .bm-uit { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 560px) {
-    .bm-richtingen { grid-template-columns: 1fr; }
+    .bm-richtingen:not(.bm-richtingen-kort) { grid-template-columns: 1fr; }
   }
 </style>

@@ -1,5 +1,4 @@
 ---
-import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /pricing, the page that decides what the studio sells.
 //
 // One component for both languages, same reason as StartPage.astro: the brief
@@ -75,13 +74,8 @@ import { pricingFaqs } from '../data/faq.js';
 import Disclose from './Disclose.astro';
 import '../styles/stijl22.css';
 import { localizedPath } from '../i18n/ui.js';
-import ProductScene from './ProductScene.astro';
-import Placeholder from './Placeholder.astro';
 
 import Note from './Note.astro';
-import PlanBand from './PlanBand.astro';
-import LaptopCarousel from './LaptopCarousel.astro';
-import { laptopSlides } from '../data/laptopSlides.js';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -515,34 +509,11 @@ const nn = (i: number) => String(i).padStart(2, '0');
     </div>
   </section>
 
-  {/* ── HET GELEVERDE BEELD, OP ZIJN PLEK ──────────────────────────────────
-      ── EN HIJ LOOPT, SINDS 18 SEPTEMBER 2026 ──────────────────────────────
-      Hier stond "stilstaand met opzet: dit is hier een illustratie en geen
-      attractie". Lucas, met een schermafdruk: *"Er staan hier en daar ook
-      laptop foto's die niet daar horen en niet eens werken."*
-
-      Hij heeft gelijk, en de redenering erachter klopte ook niet meer. De
-      stilstaande plaat leest niet als "rustig", hij leest als een plaatje dat
-      per ongeluk is blijven staan — zeker nu dezelfde plaat op de voorpagina en
-      de categoriepagina's wél doorloopt. Wat er te zien valt is juist de
-      volgorde: voorkant, achterkant, detail, op model. Die volgorde is het
-      product.
-
-      Stil blijft hij alleen waar hij geen aandacht mag vragen; die twee plekken
-      (/test-sample en /thank-you) hebben hem sinds vandaag helemaal niet meer.
-
-      Hij pauzeert zodra je muis erop staat en loopt weer als je weggaat — zie
-      LaptopCarousel.astro. */}
-  <section class="paneel" aria-labelledby="pr-lc">
-    <div class="paneel-kop">
-      <p class="etiket">{nl ? 'Wat je krijgt' : 'What you get'}</p>
-      <h2 id="pr-lc" class="hoog hoog-2">{nl ? 'Dit is één product.' : 'This is one product.'}</h2>
-      <p class="lopend">{nl ? 'De ladder hieronder rekent per product. Dit is er één, op de plek waar het straks staat.' : 'The ladder below prices per product. This is one, in the place it ends up.'}</p>
-    </div>
-    <LaptopCarousel lang={lang} slides={[laptopSlides(lang).catalog]}
-      titel={nl ? 'Dit is één product.' : 'This is one product.'} />
-  </section>
-
+  {/* ── DE LAPTOP IS HIER WEG — 23/24 september 2026 ───────────────────────
+      Hier stond "Dit is één product" met de laptop (1.078 px). De voorpagina en
+      /catalog tonen dezelfde plaat; wie op Prijzen klikt, wil de tabel. Wat
+      "één product" is, staat nu in één regel boven de tabel (pr-een). Zie
+      kladblok/PAGINA-OPBOUW.md. */}
 
   {/* ── 2 · DE STAFFEL ───────────────────────────────────────────────────── */}
   <section class="paneel" aria-labelledby="pr-ladder">
@@ -550,6 +521,9 @@ const nn = (i: number) => String(i).padStart(2, '0');
       <p class="etiket">{c.ladderProductsCol}</p>
       <h2 id="pr-ladder" class="hoog hoog-2">{c.ladderH}</h2>
       <p class="lopend">{c.ladderSub}</p>
+      <p class="mono pr-een">{nl
+        ? `Eén product = ${setSize('catalog', CATALOG_IMAGES, 'nl')} (catalog) of ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één scène (lifestyle)`
+        : `One product = ${setSize('catalog', CATALOG_IMAGES, 'en')} (catalog) or ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one scene (lifestyle)`}</p>
     </header>
 
     <div class="tabel-schuif">
@@ -688,20 +662,22 @@ const nn = (i: number) => String(i).padStart(2, '0');
       nu de sectie — een kamer van deze pagina, in dezelfde taal als de kamer
       erboven — dus er hoort geen paneel meer omheen. Hij draagt `id="plans"`
       voor oude links. */}
-  <PlanBand lang={lang} id="plans" />
-
-  {/* ── 5 · DE PROEF ─────────────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="pr-proef">
-    <div class="pr-proef">
-      <div class="paneel-kop">
-        <p class="etiket">{c.sampleH}</p>
-        <h2 id="pr-proef" class="hoog hoog-2">{c.sampleH}</h2>
-        <p class="lopend">{c.sampleBody}</p>
-        <p class="acties"><a class="knop knop-inkt" href={lp('/test-sample')}>{c.sampleCta}</a></p>
+  {/* De band is sinds 24 september 2026 één regel: wie hier is, rekent per
+      bestelling. Het abonnement staat op /plans; hier staat alleen de deur. */}
+  <section class="paneel pr-band" id="plans" aria-labelledby="pr-band">
+    <div class="pr-band-in">
+      <div>
+        <h2 id="pr-band" class="hoog hoog-3">{nl ? 'Elke maand nieuwe beelden?' : 'New images every month?'}</h2>
+        <p class="lopend">{nl
+          ? `Met een abonnement betaal je minder per product, in een week die voor jou vastligt — vanaf ${euro(PLAN_AMOUNT.starter, 'nl')} per maand.`
+          : `With a plan you pay less per product, in a week that is kept for you — from ${euro(PLAN_AMOUNT.starter, 'en')} a month.`}</p>
       </div>
-      <div class="pr-scene"><ProductScene icon="bottle" width="42%" badge={sample.unit} wide /></div>
+      <a class="knop knop-lijn" href={lp('/plans')}>{nl ? 'Bekijk de abonnementen' : 'See the plans'}</a>
     </div>
   </section>
+
+  {/* "Voordat je een bestelling plaatst" (de proef) stond hier als eigen blok
+      en staat sinds 24 september 2026 in het slot eronder. */}
 
   {/* ── 6 · HET SLOT ─────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="pr-slot">
@@ -709,14 +685,20 @@ const nn = (i: number) => String(i).padStart(2, '0');
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
       <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
-      <a class="knop knop-lijn" href={waHref(c.waText)} target="_blank" rel="noopener">{c.ctaWa}</a>
     </p>
+    <p class="lopend pr-slot-proef">{c.sampleBody}</p>
   </section>
 </div>
 
 <style>
   /* Alleen wat deze pagina eigen is; de rest komt uit stijl22.css. */
   .pr-open { max-width: 52rem; margin-bottom: 0; }
+  .pr-een { margin: .4rem 0 0; font-size: .74rem; letter-spacing: .04em; color: var(--inkt-2); }
+  .pr-band { padding-block: clamp(1.8rem, 3.5vw, 2.6rem); }
+  .pr-band-in { display: flex; align-items: center; justify-content: space-between; gap: clamp(1rem, 3vw, 3rem); flex-wrap: wrap; }
+  .pr-band-in .hoog { margin: 0 0 .35rem; }
+  .pr-band-in .lopend { margin: 0; max-width: 46rem; }
+  .pr-slot-proef { max-width: 44rem; font-size: .92rem; opacity: .8; }
 
   /* De staffel. Eén tabel, drie kolommen, en de bedragen in de brede snit —
      de enige plek op de pagina waar de letter opvalt. */
@@ -754,9 +736,11 @@ const nn = (i: number) => String(i).padStart(2, '0');
   .pr-lijst li::before { content: "—"; position: absolute; left: 0; color: var(--geel); }
 
   .pr-meer { margin-top: clamp(3rem, 7vw, 5rem); display: grid; gap: .8rem; }
-  .pr-regels { margin-top: 1rem; display: grid; }
-  .pr-regel { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr); gap: clamp(1rem, 3vw, 2.5rem); padding: 1.1rem 0; border-top: 1px solid rgb(245 245 245 / .14); }
-  .pr-regel:last-child { border-bottom: 1px solid rgb(245 245 245 / .14); }
+  /* Twee kolommen sinds 24 september 2026: vijf korte regels onder elkaar
+     waren 1.722 px kamer voor een lijst die je in één blik wilt zien. */
+  .pr-regels { margin-top: 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1.5rem, 4vw, 3.5rem); }
+  .pr-regel { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: clamp(.8rem, 2vw, 1.6rem); padding: 1.1rem 0; border-top: 1px solid rgb(245 245 245 / .14); }
+  @media (max-width: 1000px) { .pr-regels { grid-template-columns: minmax(0, 1fr); } }
   .pr-regel dd { display: grid; gap: .35rem; margin: 0; }
   .pr-regel dd b { font-weight: 500; }
 

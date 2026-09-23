@@ -475,6 +475,9 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
         <HeroFacts eigen={c.trust} lang={lang} />
         <p class="vid-wacht">{c.queueNote}</p>
         <p class="acties">
+          {/* PAGINA-OPBOUW.md stelde de aanvraag als hoofdknop voor. Niet
+              gedaan (23 september 2026): Lucas' vaste regel is "eerst een
+              look, dan het formulier", en tests/request-flow bewaakt die. */}
           <a class="knop knop-inkt" href="#looks">{c.kiesCta}</a>
           <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
         </p>
@@ -511,19 +514,10 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
       nergens anders stond — wáár je het gebruikt — staat nu als één regel
       onder de checklist bij de drie stappen. De copy blijft in COPY staan. */}
 
-  {/* ── 4 · DE DRIE STAPPEN ──────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="vid-stappen">
-    <header class="paneel-kop">
-      <h2 id="vid-stappen" class="hoog hoog-2">{c.stepsH}</h2>
-    </header>
-    <ol class="vid-stappen">
-      {c.steps.map(([h, p], i) => (
-        <li><span class="mono nr">{String(i + 1).padStart(2, '0')}</span><b>{h}</b><span class="lopend">{p}</span></li>
-      ))}
-    </ol>
-    <p class="vid-waar-regel"><span class="etiket">{c.whereH}</span> {c.where.map(([w]) => w).join(' · ')}</p>
-    <p class="lopend vid-noot" set:html={c.modelNote} />
-  </section>
+  {/* ── DE DRIE STAPPEN ZIJN WEG — 23 september 2026 ─────────────────────
+      "Drie stappen naar een bewegend product" (865 px) staat op
+      /how-it-works. Waar je het gebruikt en de modelregel staan nu in het
+      blok hieronder, onder de checklist. */}
 
   {/* ── 5 · WAT ER SCHOON MOET, EN WAT HET KOST ──────────────────────────── */}
   <section class="paneel">
@@ -533,6 +527,8 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
         <ul class="vid-check" role="list">
           {c.clean.map((li) => <li>{li}</li>)}
         </ul>
+        <p class="vid-waar-regel"><span class="etiket">{c.whereH}</span> {c.where.map(([w]) => w).join(' · ')}</p>
+        <p class="lopend vid-noot" set:html={c.modelNote} />
       </div>
       <div class="vid-koop">
         <h3 class="hoog hoog-3">{c.buyH}</h3>
@@ -556,14 +552,13 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
   {/* ── 7 · VRAGEN — de eerste vijf; de rest op /faq ───────────────────── */}
   <Vragen lang={lang} id="vid-faq" dienst="video" faqs={c.faqs} />
 
-  {/* ── 8 · HET SLOT ─────────────────────────────────────────────────────── */}
+  {/* ── 8 · HET SLOT — twee knoppen (PAGINA-OPBOUW.md, regel 5) ─────────────────────────────────────────────────────── */}
   <section class="paneel paneel-slot" aria-labelledby="vid-slot">
     <h2 id="vid-slot" class="hoog" set:html={c.ctaH} />
     <p class="lopend">{c.ctaP}</p>
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/start/video')}>{c.ctaPrimary}</a>
       <a class="knop knop-lijn" href={lp('/contact')}>{c.ctaSecondary}</a>
-      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">{c.waLabel}</a>
     </p>
   </section>
 </div>

@@ -82,7 +82,7 @@ const check = (name, got, expect) => {
 };
 
 async function session(fn) {
-  const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+  const ctx = await b.newContext({ locale: 'en-US', viewport: { width: 1440, height: 900 } });
   const p = await ctx.newPage();
   const beacon = [];
   p.on('request', (r) => { if (/cloudflareinsights/.test(r.url())) beacon.push(r.url()); });
@@ -189,7 +189,7 @@ await session(async (p) => {
 
 // 6 · no JavaScript at all
 {
-  const ctx = await b.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+  const ctx = await b.newContext({ locale: 'en-US', javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
   const p = await ctx.newPage();
   const beacon = [];
   p.on('request', (r) => { if (/cloudflareinsights/.test(r.url())) beacon.push(r.url()); });

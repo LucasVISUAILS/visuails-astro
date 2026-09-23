@@ -95,7 +95,7 @@ const AFSNIJDING = `(() => {
 /* ══ 1 · SLEPEN MET DE MUIS ════════════════════════════════════════════════ */
 console.log('\nslepen met de muis snijdt de foto af');
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+  const ctx = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/how-it-works/`, { waitUntil: 'networkidle' });
   const cmp = page.locator('.cmp').first();
@@ -159,7 +159,7 @@ console.log('\nslepen met de muis snijdt de foto af');
 /* ══ 2 · SLEPEN MET EEN VINGER ═════════════════════════════════════════════ */
 console.log('\nslepen met een vinger doet hetzelfde');
 {
-  const ctx = await browser.newContext({ ...devices['iPhone 13'], isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+  const ctx = await browser.newContext({ locale: 'en-US', ...devices['iPhone 13'], isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
   /* De cookiebanner ligt onderin over de pagina en vangt anders de vinger; de
      proefkaart (Proefkaart.astro) komt na de cookiekeuze op dezelfde plek en
      wordt hier vooraf als gesloten gemarkeerd. */
@@ -207,7 +207,7 @@ console.log('\nslepen met een vinger doet hetzelfde');
 /* ══ 3 · EN MET HET TOETSENBORD ════════════════════════════════════════════ */
 console.log('\nde knop is met de pijltjes te bedienen');
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+  const ctx = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
   await page.goto(`${BASE}/how-it-works/`, { waitUntil: 'networkidle' });
   await page.locator('.cmp').first().scrollIntoViewIfNeeded();

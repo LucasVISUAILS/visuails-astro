@@ -1823,6 +1823,10 @@
 
   .s22 .trustlijn { display: flex; flex-wrap: wrap; gap: .5rem; padding: clamp(2rem, 4vw, 3rem) var(--x) 0; }
   .s22 .trustlijn li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: rgb(242 243 245 / .6); padding: .4rem .85rem; border: 1px solid rgb(242 243 245 / .18); border-radius: 999px; }
+  /* Een regel met een deur (de naam → /about): dezelfde pil, iets feller, en
+     de onderstreping pas bij hover — het is een aanwijzing, geen knop. */
+  .s22 .trustlijn a { color: rgb(242 243 245 / .85); text-decoration: none; }
+  .s22 .trustlijn a:hover, .s22 .trustlijn a:focus-visible { color: #f2f3f5; text-decoration: underline; text-underline-offset: .2em; }
 
   /* ── SMALLE SCHERMEN ──────────────────────────────────────────────────────*/
   @media (max-width: 900px) {
@@ -2179,6 +2183,10 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 /* De schuifvergelijking: ronde hoeken en de greep in het accent. */
 .s22.s22 .cmp { border-radius: calc(var(--ronding) - 8px); overflow: hidden; }
 .s22.s22 .cmp-tag { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; }
+/* VOOR / NA: licht op donker, altijd — 23 september 2026. De pil nam `--scrim` (donker) met
+   `--ink` (ook donker) over en was onleesbaar (Lucas' schermafdruk). Het label ligt op een
+   foto, dus hangt het niet aan het thema maar aan zichzelf: bijna zwart, met vel erop. */
+.s22.s22 .cmp-tag { background: rgb(8 9 11 / .78); color: #F2F3F5; }
 .s22.s22 .cmp-knob { background: var(--geel); color: var(--op-geel); border: 0; }
 .s22.s22 .cmp-divider { background: var(--vel); }
 
@@ -2299,3 +2307,16 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
    je ziet twee groepen staan en wilt weten wat samen kost. Extra lucht erboven,
    want hij hoort bij de balk en niet bij de rij eronder. */
 .set-combi { margin: .9rem 0 1.4rem; max-width: 74ch; }
+
+/* ══ DE PRIJSBAND OP DE DIENSTPAGINA'S — 23 september 2026 ══════════════════
+   PAGINA-OPBOUW.md (door Lucas goedgekeurd), punt A: de staffel stond als
+   tabel op /pricing, /catalog én /lifestyle. Op de dienstpagina's staat nu één
+   band: wat het kost en vanaf wanneer het zakt, wat je ervoor krijgt, en een
+   link naar de hele staffel. Eén vorm voor alle drie, zodat hij op elke
+   dienstpagina op dezelfde plek hetzelfde doet. */
+.s22 .prijsband { padding-block: clamp(1.8rem, 3.5vw, 2.6rem); }
+.s22 .prijsband-in { display: flex; align-items: center; justify-content: space-between; gap: clamp(1rem, 3vw, 3rem); flex-wrap: wrap; }
+.s22 .prijsband-woord { display: grid; gap: .5rem; max-width: 50rem; }
+.s22 .prijsband-in .hoog { margin: 0; }
+.s22 .prijsband-in .lopend { margin: 0; }
+.s22 .prijsband-bedrag { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--inkt); font-variant-numeric: tabular-nums; }

@@ -45,6 +45,8 @@ const c = nl ? {
   beeldAlt: 'Een lifestylebeeld van VISUAILS in de stijl Glow',
 
   kanalenKop: 'De snelste manier om ons te bereiken',
+  wieH: 'Je spreekt Lucas',
+  wieP: 'Oprichter van VISUAILS. Elk bericht komt bij mij binnen.',
   waKop: 'WhatsApp',
   waP: 'Meestal antwoord binnen het uur.',
   waCta: 'Chat via WhatsApp',
@@ -105,6 +107,8 @@ const c = nl ? {
   beeldAlt: 'A VISUAILS lifestyle image in the Glow style',
 
   kanalenKop: 'The fastest way to reach us',
+  wieH: 'You talk to Lucas',
+  wieP: 'Founder of VISUAILS. Every message comes to me.',
   waKop: 'WhatsApp',
   waP: 'Usually replies within the hour.',
   waCta: 'Chat on WhatsApp',
@@ -157,23 +161,16 @@ const c = nl ? {
 
 <div class="s22 ct">
 
-  <section class="paneel ct-open">
-    <div class="ct-open-grid">
-      <div class="paneel-kop ct-open-kop">
-        <p class="etiket">{c.etiket}</p>
-        <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
-        <p class="lopend">{c.lead}</p>
-      </div>
-      {/* Eén beeld, en niet omdat er anders een gat valt: deze pagina is de
-          plek waar iemand belandt die nog twijfelt, en dan helpt het om te zien
-          waar het over gaat. Verder niets — een contactpagina is geen etalage. */}
-      <figure class="kaart kaart-stil ct-beeld">
-        <img src="/img/lifestyle-glow-03.webp" alt={c.beeldAlt} loading="lazy" decoding="async" width="768" height="1376" />
-      </figure>
-    </div>
-  </section>
-
-  <section class="paneel ct-body">
+  {/* ── ÉÉN PANEEL, GEEN MODELFOTO — 23/24 september 2026 ─────────────────
+      Hier stond een eigen opening van 904 px met een lifestylefoto. Wie op
+      Contact klikt, zoekt een nummer of een formulier; die staan nu in het
+      eerste scherm, met erboven wie je spreekt. */}
+  <section class="paneel ct-body" aria-labelledby="ct-h1">
+    <header class="paneel-kop ct-kop">
+      <p class="etiket">{c.etiket}</p>
+      <h1 id="ct-h1" class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
+      <p class="lopend">{c.lead}</p>
+    </header>
     <div class="ct-grid">
 
       {/* LINKS · de kanalen. Ze staan vóór het formulier omdat het antwoord op
@@ -181,6 +178,13 @@ const c = nl ? {
           liever typt, scrolt door naar rechts (of eronder, op een telefoon). */}
       <div class="ct-kanalen">
         <h2 class="hoog hoog-3">{c.kanalenKop}</h2>
+
+        {/* Wie je spreekt. Klein, en dezelfde foto als op /about (plaatshouder
+            tot /img/lucas.webp er is). */}
+        <div class="ct-wie">
+          <img src="/img/lucas.webp" alt="" width="1200" height="1500" loading="lazy" decoding="async" />
+          <p><b>{c.wieH}</b><span>{c.wieP}</span></p>
+        </div>
 
         <div class="ct-vak">
           <h3 class="etiket">{c.waKop}</h3>
@@ -290,6 +294,12 @@ const c = nl ? {
 </div>
 
 <style>
+  .ct-kop { max-width: 46rem; }
+  .ct-wie { display: flex; align-items: center; gap: .9rem; margin: 0 0 1.2rem; }
+  .ct-wie img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: 50% 30%; background: var(--lijn); flex: 0 0 auto; }
+  .ct-wie p { margin: 0; display: grid; gap: .1rem; }
+  .ct-wie b { font-weight: 600; }
+  .ct-wie span { font-size: .9rem; color: var(--inkt-2); }
   .ct-open-grid { display: grid; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
   @media (min-width: 900px) { .ct-open-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
   .ct-open-kop { margin-bottom: 0; }

@@ -29,6 +29,9 @@ import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { TEST_SAMPLE } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
+import Levering from './Levering.astro';
+import { LEVERINGEN, DIENSTEN, SOORTEN, gebruikteDiensten, gebruikteSoorten } from '../data/leveringen.js';
+import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
 import '../styles/stijl22.css';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -204,8 +207,22 @@ const filters = [
 
 const c = nl ? {
   eyebrow: 'Galerij',
-  h1: 'Een blik op de stijlen die we maken',
-  lead: 'De echte fotobibliotheek van de studio — geen voorbeelden van elders, geen gekochte beelden. Wat hier staat is gemaakt zoals jouw bestelling gemaakt wordt.',
+  h1: 'Zo ziet een levering eruit.',
+  lead: 'Echte bestellingen, van de foto’s die binnenkwamen tot de map die de klant downloadde. Klap een levering open voor het hele verloop. Daarnaast: alle beelden uit de studio, zonder toelichting.',
+  weergave: 'Weergave',
+  wLevering: 'Leveringen',
+  dienstLabel: 'Dienst',
+  alleDiensten: 'Alles',
+  soortLabel: 'Productsoort',
+  alleSoorten: 'Alle productsoorten',
+  beelden: 'beelden',
+  bekijk: 'Bekijk de levering',
+  sluit: 'Sluiten',
+  volgt: 'Beelden volgen',
+  geen: 'Geen levering met deze combinatie. Kies een andere dienst of productsoort.',
+  wAlles: 'Alle beelden',
+  allesH: 'Alle beelden uit de studio',
+  allesLead: 'De echte fotobibliotheek — geen voorbeelden van elders, geen gekochte beelden.',
   filterLabel: 'Stijlen filteren',
   ctaSample: SAMPLE.cta,
   ctaStart: 'Start een bestelling',
@@ -215,8 +232,22 @@ const c = nl ? {
   wa: waHref('Hoi VISUAILS, ik wil VISUAILS graag eerst proberen met mijn product.'),
 } : {
   eyebrow: 'Gallery',
-  h1: 'A look at the styles we produce',
-  lead: 'The studio’s real photo library — nothing borrowed, nothing bought in. What stands here was made the way your order will be.',
+  h1: 'This is what a delivery looks like.',
+  lead: 'Real orders, from the photos that came in to the folder the client downloaded. Open a delivery for the whole story. Next to it: every image from the studio, without the story.',
+  weergave: 'View',
+  wLevering: 'Deliveries',
+  dienstLabel: 'Service',
+  alleDiensten: 'All',
+  soortLabel: 'Product type',
+  alleSoorten: 'All product types',
+  beelden: 'images',
+  bekijk: 'See the delivery',
+  sluit: 'Close',
+  volgt: 'Images to follow',
+  geen: 'No delivery with this combination. Pick another service or product type.',
+  wAlles: 'All images',
+  allesH: 'Every image from the studio',
+  allesLead: 'The real photo library — nothing borrowed, nothing bought in.',
   filterLabel: 'Filter styles',
   ctaSample: SAMPLE.cta,
   ctaStart: 'Start an order',
@@ -225,6 +256,25 @@ const c = nl ? {
   slotBody: `Start with a test sample — one per business, just a ${SAMPLE.feeNote}.`,
   wa: waHref("Hi VISUAILS, I'd like to see a sample for my product."),
 };
+
+/* ── DE LEVERINGEN — 23 september 2026 ─────────────────────────────────────
+   Zie src/data/leveringen.js. Per kaart: één ingestuurde foto, drie geleverde
+   beelden als duim, en het hele verloop (Levering.astro) achter een <details>.
+   De beelden zijn voorlopig de voorbeeldset; waar dat een plaatshouder is,
+   staat het op de kaart. */
+const T = nl ? 'nl' : 'en';
+const duimIn = ingestuurd(lang)[0];
+const duimUit = geleverd(lang).slice(0, 3);
+const leveringen = LEVERINGEN.map((l) => ({
+  ...l,
+  naam: l.product[T],
+  dienstNaam: DIENSTEN[l.dienst][T],
+  soortNaam: SOORTEN[l.soort][T],
+  plaatshouder: l.beelden === 'volgt',
+  n: geleverd(lang).length,
+}));
+const dienstKnoppen = gebruikteDiensten();
+const soortKeuzes = gebruikteSoorten();
 ---
 
 <div class="s22">
@@ -242,40 +292,119 @@ const c = nl ? {
     </header>
   </section>
 
-  {/* ── 2 · DE BIBLIOTHEEK ──────────────────────────────────────────────────
-      Van rand tot rand op inkt: zie de noot bovenaan. De filterbalk staat in
-      src/scripts/galerij-filter.js — die stond ooit twee keer woord voor woord
-      gelijk in beide pagina's en begon met een import van GSAP: 68 kB voor één
-      crossfade. Nu doet de Web Animations API hetzelfde. */}
+  {/* ── 2 · DE KAMER: EEN LEVERING, OF ALLE BEELDEN — 23 september 2026 ─────
+      Lucas: *"Ik wil dat 'zo ziet een levering eruit' de standaard galerij look
+      is en dat de klant kan switchen naar bekijk alle beelden (…) waar alle
+      beelden door elkaar staan zonder workflow mock-up."*
+
+      De schakelaar is twee radioknoppen en geen script: de keuze werkt zonder
+      JavaScript, met :has() in de CSS hieronder. Het script onderaan doet er
+      twee dingen bij: #alle-beelden in de URL opent meteen het raster, en wie
+      schakelt, krijgt dat anker in de adresbalk, zodat een gedeelde link op
+      dezelfde plek landt.
+
+      De bibliotheek zelf is ongewijzigd: dezelfde fotolijst, dezelfde filters,
+      hetzelfde script (src/scripts/galerij-filter.js). Hij staat alleen niet
+      meer vooraan. */}
   <section class="kamer gal-kamer" aria-labelledby="gal-werk">
     <h2 id="gal-werk" class="visueel-verborgen">{c.h1}</h2>
-    <div class="gal-filters" role="group" aria-label={c.filterLabel}>
-      {filters.map((f) => (
-        <button type="button" class="gal-pil" data-filter-key={f.key} aria-pressed={f.key === 'all' ? 'true' : 'false'}>{f.label}</button>
-      ))}
+    <div class="gal-weergave" role="radiogroup" aria-label={c.weergave}>
+      <input class="gal-radio" type="radio" name="gal-weergave" id="gw-levering" value="levering" checked />
+      <label class="gal-seg" for="gw-levering">{c.wLevering}</label>
+      <input class="gal-radio" type="radio" name="gal-weergave" id="gw-alles" value="alles" />
+      <label class="gal-seg" for="gw-alles">{c.wAlles} <span class="gal-tal">{photos.length}</span></label>
     </div>
 
-    <div class="gal-raster" data-filterable>
-      {photos.map((p, i) => (
-        <img
-          src={p.src}
-          srcset={srcset(p.src, p.wide, p.w) || undefined}
-          sizes={srcset(p.src, p.wide, p.w) ? (p.wide ? SIZES_BREED : SIZES_GEWOON) : undefined}
-          alt={p.alt}
-          {/* De EERSTE foto is de grootste zichtbare van de pagina — hij is
-              `wide` (i % 7 === 0) en staat boven de vouw — en stond op
-              `loading="lazy"`. Een luie eerste foto is precies de foto waarop
-              een bezoeker wacht: de browser mag hem dan pas ophalen nadat de
-              opmaak klaar is. De rest blijft lui, want die staat eronder. */}
-          loading={i === 0 ? 'eager' : 'lazy'}
-          fetchpriority={i === 0 ? 'high' : undefined}
-          decoding="async"
-          width={p.w}
-          height={p.h}
-          class={p.wide ? 'is-breed' : ''}
-          data-tag={p.tag}
-        />
-      ))}
+    {/* ── MEERDERE LEVERINGEN, COMPACT, UITKLAPBAAR — 23 september 2026 ─────
+        Lucas: *"meerdere producten zodat het wel als een gallery aanvoelt met
+        goede whitespace tussen elk product (…) per product wat compacter,
+        wellicht een uitklapbare tab"*, en filteren op dienst en productsoort
+        zonder dat het druk wordt. Dus: de diensten als één rij pillen, de
+        productsoort als keuzemenu ernaast, twee kaarten naast elkaar, en een
+        kaart die openklapt over de volle breedte.
+
+        ZONDER JAVASCRIPT staan alle kaarten er en werkt openklappen gewoon
+        (<details>); alleen de filterbalk blijft verborgen, want filteren kan
+        dan niet. */}
+    <div class="gal-levering">
+      <div class="gl-filters" data-gl-filters hidden>
+        <div class="gl-diensten" role="group" aria-label={c.dienstLabel}>
+          <button type="button" class="gal-pil" data-gl-dienst="all" aria-pressed="true">{c.alleDiensten}</button>
+          {dienstKnoppen.map((d) => (
+            <button type="button" class="gal-pil" data-gl-dienst={d} aria-pressed="false">{DIENSTEN[d][T]}</button>
+          ))}
+        </div>
+        <label class="gl-soort">
+          <span class="visueel-verborgen">{c.soortLabel}</span>
+          <select data-gl-soort>
+            <option value="all">{c.alleSoorten}</option>
+            {soortKeuzes.map((s) => <option value={s}>{SOORTEN[s][T]}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <ul class="gl-lijst" role="list" data-gl-lijst>
+        {leveringen.map((l, i) => (
+          <li class="gl-item" data-dienst={l.dienst} data-soort={l.soort}>
+            <details class="gl-kaart" open={i === 0}>
+              <summary class="gl-kop">
+                <span class="gl-duimen" aria-hidden="true">
+                  <span class="gl-duim gl-duim-in"><img src={duimIn.src} width={duimIn.w} height={duimIn.h} alt="" loading="lazy" decoding="async" /></span>
+                  <span class="gl-pijl">→</span>
+                  {duimUit.map((b) => <span class="gl-duim"><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /></span>)}
+                </span>
+                <span class="gl-tekst">
+                  <span class="gl-naam">{l.naam}</span>
+                  <span class="mono gl-meta">{l.dienstNaam} · {l.soortNaam} · {l.n} {c.beelden}</span>
+                  {l.plaatshouder && <span class="mono gl-volgt">{c.volgt}</span>}
+                </span>
+                <span class="mono gl-open" aria-hidden="true"><span class="gl-open-dicht">{c.bekijk}</span><span class="gl-open-open">{c.sluit}</span></span>
+              </summary>
+              <div class="gl-vol">
+                <Levering lang={lang} nummer={l.ref} product={l.naam} dienst={l.dienst} plaatshouder={l.plaatshouder} id={`lv-${l.id}`} />
+              </div>
+            </details>
+          </li>
+        ))}
+      </ul>
+      <p class="lopend gl-geen" data-gl-geen hidden>{c.geen}</p>
+    </div>
+
+    <div class="gal-alles" id="alle-beelden">
+      <header class="gal-alles-kop">
+        <h2 class="hoog hoog-3">{c.allesH}</h2>
+        <p class="lopend">{c.allesLead}</p>
+      </header>
+      {/* De filterbalk staat in src/scripts/galerij-filter.js — die stond ooit
+          twee keer woord voor woord gelijk in beide pagina's en begon met een
+          import van GSAP: 68 kB voor één crossfade. Nu doet de Web Animations
+          API hetzelfde. */}
+      <div class="gal-filters" role="group" aria-label={c.filterLabel}>
+        {filters.map((f) => (
+          <button type="button" class="gal-pil" data-filter-key={f.key} aria-pressed={f.key === 'all' ? 'true' : 'false'}>{f.label}</button>
+        ))}
+      </div>
+
+      <div class="gal-raster" data-filterable>
+        {photos.map((p) => (
+          <img
+            src={p.src}
+            srcset={srcset(p.src, p.wide, p.w) || undefined}
+            sizes={srcset(p.src, p.wide, p.w) ? (p.wide ? SIZES_BREED : SIZES_GEWOON) : undefined}
+            alt={p.alt}
+            {/* Allemaal lui sinds 23 september 2026: het raster staat niet meer
+                boven de vouw en is bij het openen verborgen. De eerste foto die
+                eerst `eager` met hoge voorrang was, zou nu vooraan in de rij
+                staan voor iets wat niemand ziet. */}
+            loading="lazy"
+            decoding="async"
+            width={p.w}
+            height={p.h}
+            class={p.wide ? 'is-breed' : ''}
+            data-tag={p.tag}
+          />
+        ))}
+      </div>
     </div>
   </section>
 
@@ -312,17 +441,143 @@ const c = nl ? {
     <p class="acties">
       <a class="knop knop-inkt" href={lp('/test-sample')}>{c.ctaSample}</a>
       <a class="knop knop-lijn" href={lp('/start')}>{c.ctaStart}</a>
-      <a class="knop knop-lijn" href={c.wa} target="_blank" rel="noopener">WhatsApp</a>
     </p>
   </section>
 </div>
 
 <script>
   import '../scripts/galerij-filter.js';
+
+  /* ── DE FILTERS VAN DE LEVERINGEN — 23 september 2026 ────────────────────
+     Dienst (pillen) en productsoort (keuzemenu). Pas zichtbaar als dit script
+     draait; zonder script staan alle kaarten er. */
+  const zetLeveringen = () => {
+    const balk = document.querySelector<HTMLElement>('[data-gl-filters]');
+    const lijst = document.querySelector<HTMLElement>('[data-gl-lijst]');
+    if (!balk || !lijst || balk.dataset.klaar) return;
+    balk.dataset.klaar = '1';
+    balk.hidden = false;
+    const knoppen = [...balk.querySelectorAll<HTMLButtonElement>('[data-gl-dienst]')];
+    const soort = balk.querySelector<HTMLSelectElement>('[data-gl-soort]');
+    const geen = document.querySelector<HTMLElement>('[data-gl-geen]');
+    const items = [...lijst.querySelectorAll<HTMLElement>('li[data-dienst]')];
+    let dienst = 'all';
+    const werk = () => {
+      const s = soort?.value || 'all';
+      let zichtbaar = 0;
+      for (const li of items) {
+        const aan = (dienst === 'all' || li.dataset.dienst === dienst) && (s === 'all' || li.dataset.soort === s);
+        li.hidden = !aan;
+        if (aan) zichtbaar += 1;
+      }
+      if (geen) geen.hidden = zichtbaar > 0;
+      for (const k of knoppen) k.setAttribute('aria-pressed', String(k.dataset.glDienst === dienst));
+    };
+    for (const k of knoppen) k.addEventListener('click', () => { dienst = k.dataset.glDienst || 'all'; werk(); });
+    soort?.addEventListener('change', werk);
+    werk();
+  };
+  zetLeveringen();
+  document.addEventListener('astro:page-load', zetLeveringen);
+
+  /* De schakelaar en het anker. Zie de noot boven de kamer. */
+  const zet = () => {
+    const alles = document.getElementById('gw-alles') as HTMLInputElement | null;
+    const levering = document.getElementById('gw-levering') as HTMLInputElement | null;
+    if (!alles || !levering || alles.dataset.klaar) return;
+    alles.dataset.klaar = '1';
+    if (location.hash === '#alle-beelden') alles.checked = true;
+    const schrijf = () => {
+      const url = new URL(location.href);
+      url.hash = alles.checked ? 'alle-beelden' : '';
+      history.replaceState(history.state, '', url.pathname + url.search + (alles.checked ? '#alle-beelden' : ''));
+    };
+    alles.addEventListener('change', schrijf);
+    levering.addEventListener('change', schrijf);
+  };
+  zet();
+  document.addEventListener('astro:page-load', zet);
 </script>
 
 <style>
+  /* ── DE LEVERINGEN ─────────────────────────────────────────────────────── */
+  .gl-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem 1.4rem; margin-bottom: clamp(1.2rem, 2.4vw, 1.8rem); }
+  .gl-filters[hidden] { display: none; }
+  .gl-diensten { display: flex; flex-wrap: wrap; gap: .65rem; }
+  .gl-soort select {
+    min-height: 44px; padding: 0 2.2rem 0 1rem; border-radius: 999px;
+    border: 1px solid rgb(245 245 245 / .34); background: transparent; color: inherit; font: inherit; font-size: .92rem;
+  }
+  .gl-soort select option { color: #0b0c0e; }
+  .gl-soort select:focus-visible { outline: 2px solid var(--geel); outline-offset: 3px; }
+  /* Twee kaarten naast elkaar, met ruimte ertussen; een open kaart pakt de
+     volle breedte, zodat het hele verloop leesbaar blijft. */
+  .gl-lijst { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2.4vw, 1.8rem); }
+  .gl-item[hidden] { display: none; }
+  .gl-item:has(> .gl-kaart[open]) { grid-column: 1 / -1; }
+  .gl-kaart { background: var(--vel); color: var(--inkt); border-radius: calc(var(--ronding, 20px) - 6px); overflow: hidden; }
+  .gl-kop {
+    list-style: none; cursor: pointer;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "duim duim" "tekst open";
+    gap: .9rem 1rem; align-items: end; padding: clamp(1rem, 2vw, 1.3rem);
+  }
+  .gl-kop::-webkit-details-marker { display: none; }
+  .gl-kop:focus-visible { outline: 2px solid var(--geel); outline-offset: -2px; }
+  .gl-duimen { grid-area: duim; display: grid; grid-template-columns: .75fr auto 1fr 1fr 1fr; gap: .5rem; align-items: center; }
+  .gl-duim { display: block; overflow: hidden; border-radius: 6px; background: var(--lijn); }
+  .gl-duim img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+  .gl-duim-in img { aspect-ratio: 3 / 4; }
+  .gl-pijl { color: var(--inkt-2); font-size: 1rem; }
+  .gl-tekst { grid-area: tekst; display: grid; gap: .25rem; min-width: 0; }
+  .gl-naam { font-family: var(--kop2); font-weight: 500; font-stretch: 125%; text-transform: uppercase; font-size: clamp(1.05rem, 1.6vw, 1.3rem); letter-spacing: -.01em; }
+  .gl-meta { font-size: .72rem; letter-spacing: .05em; color: var(--inkt-2); }
+  .gl-volgt { justify-self: start; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; padding: .2rem .6rem; border: 1px dashed var(--lijn-sterk); border-radius: 999px; color: var(--inkt-2); }
+  .gl-open { grid-area: open; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; padding: .55rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px; white-space: nowrap; }
+  .gl-kop:hover .gl-open { background: var(--inkt); color: var(--vel); border-color: var(--inkt); }
+  .gl-open-open { display: none; }
+  .gl-kaart[open] .gl-open-dicht { display: none; }
+  .gl-kaart[open] .gl-open-open { display: inline; }
+  /* Open: de duimen hoeven niet meer, het verloop eronder toont alles. */
+  .gl-kaart[open] .gl-duimen { display: none; }
+  .gl-kaart[open] .gl-kop { grid-template-areas: "tekst open"; border-bottom: 1px solid var(--lijn); }
+  .gl-vol :global(.lv) { border-radius: 0; }
+  .gl-geen { margin: 1rem 0 0; }
+  @media (max-width: 760px) {
+    .gl-lijst { grid-template-columns: minmax(0, 1fr); }
+    /* Op een telefoon onder elkaar: anders knijpt de knop de naam tot twee
+       woorden per regel. */
+    .gl-kop { grid-template-columns: minmax(0, 1fr); grid-template-areas: "duim" "tekst" "open"; align-items: start; }
+    .gl-kaart[open] .gl-kop { grid-template-areas: "tekst" "open"; }
+    .gl-open { justify-self: start; }
+    .gl-soort, .gl-soort select { width: 100%; }
+  }
   .gal-kop { max-width: 46rem; margin-bottom: 0; }
+
+  /* ── DE SCHAKELAAR ───────────────────────────────────────────────────────
+     Twee radioknoppen, visueel verborgen maar bereikbaar met het toetsenbord;
+     het label is de pil. De focus zit op de radio, dus de ring gaat op het
+     label ernaast. */
+  .gal-weergave {
+    display: inline-flex; gap: 0; padding: 4px; margin-bottom: clamp(1.5rem, 3vw, 2.4rem);
+    border: 1px solid rgb(245 245 245 / .3); border-radius: 999px;
+  }
+  .gal-radio { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  /* Een gesegmenteerde knop en geen twee losse pillen: de filters eronder zijn
+     pillen, en twee rijen pillen boven elkaar lezen als één rij te veel. */
+  .gal-seg {
+    font-family: var(--mono2); font-size: .74rem; font-stretch: 82%; letter-spacing: .05em; text-transform: uppercase;
+    padding: .62rem 1.2rem; border-radius: 999px; color: var(--vel); cursor: pointer;
+    transition: background-color .25s var(--uit), color .25s var(--uit);
+  }
+  .gal-seg:hover { background: rgb(245 245 245 / .08); }
+  .gal-radio:checked + .gal-seg { background: var(--vel); color: var(--inkt); }
+  .gal-radio:focus-visible + .gal-seg { outline: 2px solid var(--geel); outline-offset: 3px; }
+  .gal-tal { opacity: .6; margin-left: .35rem; }
+  .gal-kamer:has(#gw-alles:checked) .gal-levering { display: none; }
+  .gal-kamer:has(#gw-levering:checked) .gal-alles { display: none; }
+  .gal-alles-kop { display: grid; gap: .6rem; margin-bottom: clamp(1.2rem, 2.4vw, 1.8rem); max-width: 44rem; }
+  .gal-alles-kop .hoog { margin: 0; color: var(--vel); }
+  .gal-alles-kop .lopend { margin: 0; color: rgb(242 243 245 / .7); }
 
   /* ── DE FILTERKNOPPEN ────────────────────────────────────────────────────
      Op inkt, dus de lijn en de letter zijn het vel. De ingedrukte knop keert om

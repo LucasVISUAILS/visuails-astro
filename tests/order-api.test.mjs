@@ -515,6 +515,29 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   ok('een half nummer komt de deur niet door', shortPhone.payments, 0);
   ok('  en er wordt niets weggeschreven', shortPhone.ordersWritten, 0);
 
+  /* ── HET REGISTRATIENUMMER ALS DERDE HERKENNING — 23 september 2026 ──────
+     Een nieuw adres en een nieuw nummer, maar hetzelfde KVK-nummer als een
+     eerdere, betaalde proef: dat is hetzelfde bedrijf. Schrijfwijze doet er
+     niet toe ("KvK 1234 5678" = "12345678"); een opvulling als "nvt" sluit
+     niemand buiten. */
+  const kvkPerson = [{ email: 'eerder@merk.nl', phone: '+31 6 99999999', details_json: JSON.stringify({ business_reg: '12345678' }) }];
+  const zelfdeKvk = await post({ ...sample, email: 'nieuw3@ander.nl', phone: '+31 6 11112222', reg_number: 'KvK 1234 5678' }, { samplePeople: kvkPerson });
+  ok('hetzelfde KVK-nummer, ander adres en nummer: geweigerd', zelfdeKvk.payments, 0);
+  ok('  met dezelfde nette reden', zelfdeKvk.location.includes('error=sample-used'), true, zelfdeKvk.location);
+  const andereKvk = await post({ ...sample, email: 'nieuw4@ander.nl', phone: '+31 6 33334444', reg_number: '87654321' }, { samplePeople: kvkPerson });
+  ok('een ander KVK-nummer gaat door', andereKvk.payments, 1);
+  const opvulling = await post({ ...sample, email: 'nieuw5@ander.nl', phone: '+31 6 55556666', reg_number: 'nvt' },
+    { samplePeople: [{ email: 'x@y.nl', phone: null, details_json: JSON.stringify({ business_reg: 'nvt' }) }] });
+  ok('"nvt" bij allebei telt niet als hetzelfde bedrijf', opvulling.payments, 1);
+
+  /* ── ALLEEN MIDDELEN DIE ZEGGEN WIE ER BETAALT — 23 september 2026 ───────
+     De controle ná de betaling herkent een IBAN of een kaart. PayPal en de
+     rest geven geen van beide; dus biedt de proef ze niet aan. */
+  await post({ ...sample, email: 'methode@ander.nl', phone: '+31 6 77778888' }, { samplePeople: [] });
+  const mollie = seen.find((x) => x.url.includes('mollie') && x.url.includes('/payments'));
+  const methode = mollie ? JSON.parse(mollie.body).method : null;
+  ok('de proef biedt alleen iDEAL, Bancontact en kaart', (methode || []).join(','), 'ideal,bancontact,creditcard');
+
   /*
    * ── OOK EEN PROEFVISUAL VAN € 1 MAG NIET ZONDER RIJ BETAALD WORDEN ─────────
    *

@@ -28,7 +28,10 @@ interface Props {
   dienst: keyof typeof SERVICE_FAQ_NAMES;
   faqs: { q: string; a: string }[];
 }
-const TOON = 5;
+/* 4 en niet 5 sinds 23 september 2026 (PAGINA-OPBOUW.md: "Vragen — 4 in
+   plaats van 5"). Op alle dienstpagina's hetzelfde, zodat het blok overal even
+   lang is; de rest staat één klik verder op /faq. */
+const TOON = 4;
 const { lang, id, dienst, faqs } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);

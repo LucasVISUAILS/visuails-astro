@@ -213,7 +213,7 @@ const browser = await launch();
 /* ══ 1 · DE MOBIELE LADE HOUDT DE FOCUS VAST ════════════════════════════════ */
 console.log('\nde mobiele lade laat de focus niet ontsnappen');
 {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 390, height: 844 } });
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   // De vaste balken weg: die staan bovenop en hebben hun eigen tabstops, wat de
   // meting vertroebelt zonder iets over de lade te zeggen.
@@ -266,7 +266,7 @@ console.log('\nde mobiele lade laat de focus niet ontsnappen');
 /* ══ 2 · ESCAPE SLUIT HET DIENSTENMENU ══════════════════════════════════════ */
 console.log('\nEscape sluit het dienstenmenu, ook visueel');
 {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 900 } });
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   const opened = await openMenu(page) && await settles(page, PANEL_VISIBLE);
   check('het menu gaat open, en het script heeft hem geopend', opened, true);
@@ -301,7 +301,7 @@ console.log('\nEscape sluit het dienstenmenu, ook visueel');
  */
 console.log('\ngeen pagina slaat een kopniveau over');
 {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 900 } });
   /* ── /demo → /how-it-works, 24 augustus 2026 ────────────────────────────────
      /demo stond hier omdat FigWalk daarop de eerste kop na de <h1> zette — zie de
      noot bij .wk-pick-h in FigWalk.astro, waar precies dat kopniveau om die reden
@@ -391,7 +391,7 @@ console.log('\ngeen pagina slaat een kopniveau over');
  */
 console.log('\nelke svg is of decoratief gemarkeerd of heeft een naam');
 {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 900 } });
   const bad = [];
   for (const path of ['/', '/pricing/', '/catalog/', '/compare/', '/faq/', '/test-sample/', '/studio/', '/nl/', '/nl/pricing/']) {
     await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
@@ -435,7 +435,7 @@ console.log('\nelke svg is of decoratief gemarkeerd of heeft een naam');
 /* ══ 5 · color-scheme ═══════════════════════════════════════════════════════ */
 console.log('\nde browser weet dat de site donker is');
 {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, colorScheme: 'light' });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1280, height: 900 }, colorScheme: 'light' });
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   const scheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
   check('color-scheme staat op dark, ook bij een lichte systeemvoorkeur', scheme, 'dark');
@@ -484,7 +484,7 @@ console.log('\ngeen tekst ligt over andere tekst heen');
      deze sectie voor bestaat: de overlap op /ai-act zat in de opmaak zelf en
      stond er ook stil. Een animatie die onderweg twee dingen kruist, is een
      andere vraag — en een die je niet met een rechthoekvergelijking stelt. */
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const stuk = [];
   for (const path of ['/', '/ai-act/', '/privacy/', '/terms/', '/cookie-policy/',
                       '/data-processing-agreement/', '/pricing/', '/about/', '/portal/',

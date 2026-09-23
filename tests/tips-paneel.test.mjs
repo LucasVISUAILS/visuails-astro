@@ -124,9 +124,12 @@ console.log('\ntipsVoor() levert wat het scherm nodig heeft');
   });
 }
 
-console.log('\nde conceptpagina en het formulier delen die ene bron');
+/* ── DE CONCEPTPAGINA IS WEG — 23 september 2026 ─────────────────────────────
+   Lucas heeft de twintig conceptpagina's laten opruimen (git bewaart ze). Wat
+   deze paragraaf bewaakte, blijft staan: het formulier haalt zijn tips uit de
+   module, en importeert niets uit een prototype. */
+console.log('\nhet formulier haalt de tips uit de ene bron');
 {
-  const concept = read('src/pages/concept/bestelrij.astro');
   const uploader = read('src/components/order/ProductUploader.astro');
 
   ok('het formulier haalt de tips uit de module',
@@ -143,7 +146,6 @@ console.log('\nde conceptpagina en het formulier delen die ene bron');
      een IMPORT: dan hangt het formulier aan een prototype. */
   ok('en het formulier importeert niets uit de conceptpagina',
     /from '[^']*concept\//.test(uploader), false);
-  ok('de conceptpagina bestaat nog om naast te leggen', concept.length > 0, true);
 }
 
 console.log('\nhet paneel staat in de markup en niet in het script');

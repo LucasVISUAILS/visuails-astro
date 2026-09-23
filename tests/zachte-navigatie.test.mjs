@@ -87,7 +87,7 @@ const browser = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath:
 
 console.log('\nhet plan uit de URL wordt aangevinkt, ook na een sprong');
 {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1440, height: 900 } });
   const gekozen = () => page.evaluate(() => {
     const r = document.querySelector('input[name="plan"]:checked');
     return r ? r.value : null;
@@ -123,7 +123,7 @@ console.log('\nhet plan uit de URL wordt aangevinkt, ook na een sprong');
  */
 console.log('\nde zwevende notitie overleeft een zachte navigatie');
 {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1440, height: 900 } });
   const meet = async () => page.evaluate(() => {
     const b = document.querySelector('[data-note-btn]');
     if (!b) return null;
@@ -187,7 +187,7 @@ console.log('\nde zwevende notitie overleeft een zachte navigatie');
 /* ══ 4 · GEEN LUISTERAARS DIE ZICH OPSTAPELEN ══════════════════════════════ */
 console.log('\nde luisteraars op window en document stapelen zich niet op');
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const ctx = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 900 } });
   /* Tellen bij de bron. `getEventListeners()` bestaat alleen in de devtools-console,
      dus wordt addEventListener zelf geteld — vóór er ook maar iets van de site
      draait, anders mist de telling precies de eerste ronde. */

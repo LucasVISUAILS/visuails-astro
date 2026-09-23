@@ -1,0 +1,2706 @@
+{
+ "/nl/catalog/": {
+  "390": {
+   "titel": "Catalogfoto’s zonder fotoshoot | VISUAILS",
+   "hoogte": 10479,
+   "woorden": 744,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 1572,
+     "kop": "STRAKKE, CONSISTENTE CATALOGFOTO’S — OOK BIJ DERTIG PRODUCTEN.",
+     "woorden": 149,
+     "knoppen": 2,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2671,
+     "kop": "Kies je Catalog-stijl.",
+     "woorden": 231,
+     "knoppen": 2,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1032,
+     "kop": "EÉN PRODUCT. VIER FOTO’S OF MEER. HET TARIEF DAALT NAARMATE HET AANTAL STIJGT.",
+     "woorden": 144,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1047,
+     "kop": "DRIE STAPPEN NAAR EEN STRAKKE CATALOGUS.",
+     "woorden": 91,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 938,
+     "kop": "DIT IS EEN TELEFOONFOTO. DIT IS WAT ERUIT KWAM.",
+     "woorden": 74,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel",
+     "h": 667,
+     "kop": "VRAGEN OVER CATALOG",
+     "woorden": 33,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 452,
+     "kop": "BOUW EEN CATALOGUS DIE ERUITZIET ALS ÉÉN MERK.",
+     "woorden": 22,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Catalogfoto’s zonder fotoshoot | VISUAILS",
+   "hoogte": 8068,
+   "woorden": 744,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 1192,
+     "kop": "STRAKKE, CONSISTENTE CATALOGFOTO’S — OOK BIJ DERTIG PRODUCTEN.",
+     "woorden": 149,
+     "knoppen": 2,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1710,
+     "kop": "Kies je Catalog-stijl.",
+     "woorden": 231,
+     "knoppen": 2,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel",
+     "h": 998,
+     "kop": "EÉN PRODUCT. VIER FOTO’S OF MEER. HET TARIEF DAALT NAARMATE HET AANTAL STIJGT.",
+     "woorden": 144,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 811,
+     "kop": "DRIE STAPPEN NAAR EEN STRAKKE CATALOGUS.",
+     "woorden": 91,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 905,
+     "kop": "DIT IS EEN TELEFOONFOTO. DIT IS WAT ERUIT KWAM.",
+     "woorden": 74,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel",
+     "h": 766,
+     "kop": "VRAGEN OVER CATALOG",
+     "woorden": 33,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 384,
+     "kop": "BOUW EEN CATALOGUS DIE ERUITZIET ALS ÉÉN MERK.",
+     "woorden": 22,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/lifestyle/": {
+  "390": {
+   "titel": "Lifestylebeelden die je product verkopen | VISUAILS",
+   "hoogte": 13010,
+   "woorden": 846,
+   "secties": [
+    {
+     "tag": "section.paneel.ls-grond",
+     "h": 1492,
+     "kop": "JOUW PRODUCT, IN SCÈNES DIE VERKOPEN.",
+     "woorden": 153,
+     "knoppen": 2,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel",
+     "h": 5187,
+     "kop": "Vier sferen — of je eigen.",
+     "woorden": 349,
+     "knoppen": 5,
+     "beelden": 19
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1369,
+     "kop": "EÉN PRODUCT. DRIE FOTO’S. EEN CAROUSEL.",
+     "woorden": 147,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1257,
+     "kop": "DRIE STAPPEN NAAR EEN CAROUSEL.",
+     "woorden": 121,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.kamer.ls-galerij",
+     "h": 507,
+     "kop": "HET ASSORTIMENT, IN BEWEGING",
+     "woorden": 13,
+     "knoppen": 0,
+     "beelden": 5
+    },
+    {
+     "tag": "section.paneel",
+     "h": 689,
+     "kop": "VRAGEN OVER LIFESTYLE",
+     "woorden": 44,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 425,
+     "kop": "ZET JE PRODUCT IN EEN SCÈNE DIE VERKOOPT.",
+     "woorden": 19,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Lifestylebeelden die je product verkopen | VISUAILS",
+   "hoogte": 8626,
+   "woorden": 846,
+   "secties": [
+    {
+     "tag": "section.paneel.ls-grond",
+     "h": 1048,
+     "kop": "JOUW PRODUCT, IN SCÈNES DIE VERKOPEN.",
+     "woorden": 153,
+     "knoppen": 2,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2280,
+     "kop": "Vier sferen — of je eigen.",
+     "woorden": 349,
+     "knoppen": 5,
+     "beelden": 19
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1191,
+     "kop": "EÉN PRODUCT. DRIE FOTO’S. EEN CAROUSEL.",
+     "woorden": 147,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 939,
+     "kop": "DRIE STAPPEN NAAR EEN CAROUSEL.",
+     "woorden": 121,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.kamer.ls-galerij",
+     "h": 746,
+     "kop": "HET ASSORTIMENT, IN BEWEGING",
+     "woorden": 13,
+     "knoppen": 0,
+     "beelden": 5
+    },
+    {
+     "tag": "section.paneel",
+     "h": 766,
+     "kop": "VRAGEN OVER LIFESTYLE",
+     "woorden": 44,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 384,
+     "kop": "ZET JE PRODUCT IN EEN SCÈNE DIE VERKOOPT.",
+     "woorden": 19,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/video/": {
+  "390": {
+   "titel": "Korte productvideo’s uit je eigen foto’s | VISUAILS",
+   "hoogte": 11479,
+   "woorden": 761,
+   "secties": [
+    {
+     "tag": "section.paneel.vid-grond",
+     "h": 1537,
+     "kop": "KORTE PRODUCTVIDEO’S DIE BEWEGEN.",
+     "woorden": 128,
+     "knoppen": 2,
+     "beelden": 4
+    },
+    {
+     "tag": "section.paneel",
+     "h": 4781,
+     "kop": "Manieren om beweging toe te voegen.",
+     "woorden": 321,
+     "knoppen": 4,
+     "beelden": 5
+    },
+    {
+     "tag": "section.paneel",
+     "h": 854,
+     "kop": "DRIE STAPPEN NAAR EEN BEWEGEND PRODUCT.",
+     "woorden": 95,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1128,
+     "kop": "STRAKKE BEWEGING, KLAAR OM TE PUBLICEREN.",
+     "woorden": 142,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 622,
+     "kop": "VRAGEN OVER VIDEO",
+     "woorden": 39,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 478,
+     "kop": "GEEF JE PRODUCT EEN BEETJE BEWEGING.",
+     "woorden": 36,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Korte productvideo’s uit je eigen foto’s | VISUAILS",
+   "hoogte": 7613,
+   "woorden": 761,
+   "secties": [
+    {
+     "tag": "section.paneel.vid-grond",
+     "h": 992,
+     "kop": "KORTE PRODUCTVIDEO’S DIE BEWEGEN.",
+     "woorden": 128,
+     "knoppen": 2,
+     "beelden": 4
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2742,
+     "kop": "Manieren om beweging toe te voegen.",
+     "woorden": 321,
+     "knoppen": 4,
+     "beelden": 5
+    },
+    {
+     "tag": "section.paneel",
+     "h": 865,
+     "kop": "DRIE STAPPEN NAAR EEN BEWEGEND PRODUCT.",
+     "woorden": 95,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 627,
+     "kop": "STRAKKE BEWEGING, KLAAR OM TE PUBLICEREN.",
+     "woorden": 142,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 715,
+     "kop": "VRAGEN OVER VIDEO",
+     "woorden": 39,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 411,
+     "kop": "GEEF JE PRODUCT EEN BEETJE BEWEGING.",
+     "woorden": 36,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/how-it-works/": {
+  "390": {
+   "titel": "Hoe het werkt — VISUAILS",
+   "hoogte": 8474,
+   "woorden": 648,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 805,
+     "kop": "EÉN MAP ERIN. EEN HELE BESTELLING ERUIT.",
+     "woorden": 48,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2485,
+     "kop": "JE BESTELLING, VAN BEGIN TOT EIND.",
+     "woorden": 283,
+     "knoppen": 0,
+     "beelden": 11
+    },
+    {
+     "tag": "section.paneel",
+     "h": 787,
+     "kop": "MEER DAN AI. MET DE HAND AFGEWERKT.",
+     "woorden": 77,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel",
+     "h": 562,
+     "kop": "DE DETAILS DIE ERTOE DOEN",
+     "woorden": 65,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.hiw-kamer",
+     "h": 1070,
+     "kop": "EÉN BESTELLING, OVERAL WAAR HIJ HEEN MOET.",
+     "woorden": 106,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 700,
+     "kop": "EÉN PRODUCT VAN JEZELF, ALS CATALOGSET OF CAROUSEL.",
+     "woorden": 69,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Hoe het werkt — VISUAILS",
+   "hoogte": 5665,
+   "woorden": 648,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 596,
+     "kop": "EÉN MAP ERIN. EEN HELE BESTELLING ERUIT.",
+     "woorden": 48,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1376,
+     "kop": "JE BESTELLING, VAN BEGIN TOT EIND.",
+     "woorden": 283,
+     "knoppen": 0,
+     "beelden": 11
+    },
+    {
+     "tag": "section.paneel",
+     "h": 616,
+     "kop": "MEER DAN AI. MET DE HAND AFGEWERKT.",
+     "woorden": 77,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel",
+     "h": 454,
+     "kop": "DE DETAILS DIE ERTOE DOEN",
+     "woorden": 65,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.hiw-kamer",
+     "h": 828,
+     "kop": "EÉN BESTELLING, OVERAL WAAR HIJ HEEN MOET.",
+     "woorden": 106,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 560,
+     "kop": "EÉN PRODUCT VAN JEZELF, ALS CATALOGSET OF CAROUSEL.",
+     "woorden": 69,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/pricing/": {
+  "390": {
+   "titel": "Prijzen — de prijs per product, volledig | VISUAILS",
+   "hoogte": 9073,
+   "woorden": 776,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 626,
+     "kop": "JE BETAALT PER PRODUCT. HOE MEER PRODUCTEN, HOE LAGER HET TARIEF.",
+     "woorden": 76,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 590,
+     "kop": "DIT IS ÉÉN PRODUCT.",
+     "woorden": 79,
+     "knoppen": 0,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1678,
+     "kop": "DE PRIJS PER PRODUCT",
+     "woorden": 171,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.pr-kamer",
+     "h": 2268,
+     "kop": "WAT ER VERDER EEN TARIEF HEEFT",
+     "woorden": 278,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.plan-band",
+     "h": 864,
+     "kop": "ELKE MAAND NIEUWE BEELDEN",
+     "woorden": 117,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 600,
+     "kop": "VOORDAT JE EEN BESTELLING PLAATST",
+     "woorden": 39,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 370,
+     "kop": "EÉN PRODUCT VAN JEZELF, ALS CATALOGSET OF CAROUSEL.",
+     "woorden": 16,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Prijzen — de prijs per product, volledig | VISUAILS",
+   "hoogte": 7716,
+   "woorden": 778,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 707,
+     "kop": "JE BETAALT PER PRODUCT. HOE MEER PRODUCTEN, HOE LAGER HET TARIEF.",
+     "woorden": 76,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1078,
+     "kop": "DIT IS ÉÉN PRODUCT.",
+     "woorden": 79,
+     "knoppen": 0,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1412,
+     "kop": "DE PRIJS PER PRODUCT",
+     "woorden": 173,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.pr-kamer",
+     "h": 1722,
+     "kop": "WAT ER VERDER EEN TARIEF HEEFT",
+     "woorden": 278,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.plan-band",
+     "h": 715,
+     "kop": "ELKE MAAND NIEUWE BEELDEN",
+     "woorden": 117,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 497,
+     "kop": "VOORDAT JE EEN BESTELLING PLAATST",
+     "woorden": 39,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 329,
+     "kop": "EÉN PRODUCT VAN JEZELF, ALS CATALOGSET OF CAROUSEL.",
+     "woorden": 16,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/plans/": {
+  "390": {
+   "titel": "Abonnementen — elke maand een vast aantal | VISUAILS",
+   "hoogte": 8560,
+   "woorden": 812,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 384,
+     "kop": "DEZELFDE STUDIO, ELKE MAAND.",
+     "woorden": 44,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 638,
+     "kop": "ELK PRODUCT KRIJGT DIT.",
+     "woorden": 80,
+     "knoppen": 0,
+     "beelden": 9
+    },
+    {
+     "tag": "section.kamer.pl-kamer",
+     "h": 1206,
+     "kop": "WAT EEN ABONNEMENT EIGENLIJK IS.",
+     "woorden": 156,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2559,
+     "kop": "DE DRIE ABONNEMENTEN",
+     "woorden": 291,
+     "knoppen": 4,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1012,
+     "kop": "EN WAT ERAAN KOMT.",
+     "woorden": 181,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.pl-uit",
+     "h": 282,
+     "kop": "TOCH LIEVER NIET ELKE MAAND.",
+     "woorden": 32,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 394,
+     "kop": "BEGIN MET ÉÉN PRODUCT VOOR €1.",
+     "woorden": 28,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Abonnementen — elke maand een vast aantal | VISUAILS",
+   "hoogte": 6354,
+   "woorden": 812,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 459,
+     "kop": "DEZELFDE STUDIO, ELKE MAAND.",
+     "woorden": 44,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1129,
+     "kop": "ELK PRODUCT KRIJGT DIT.",
+     "woorden": 80,
+     "knoppen": 0,
+     "beelden": 9
+    },
+    {
+     "tag": "section.kamer.pl-kamer",
+     "h": 887,
+     "kop": "WAT EEN ABONNEMENT EIGENLIJK IS.",
+     "woorden": 156,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1240,
+     "kop": "DE DRIE ABONNEMENTEN",
+     "woorden": 291,
+     "knoppen": 4,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 669,
+     "kop": "EN WAT ERAAN KOMT.",
+     "woorden": 181,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.pl-uit",
+     "h": 287,
+     "kop": "TOCH LIEVER NIET ELKE MAAND.",
+     "woorden": 32,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 411,
+     "kop": "BEGIN MET ÉÉN PRODUCT VOOR €1.",
+     "woorden": 28,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/start/": {
+  "390": {
+   "titel": "Start een bestelling — VISUAILS",
+   "hoogte": 9733,
+   "woorden": 716,
+   "secties": [
+    {
+     "tag": "section.paneel.st-kies",
+     "h": 4832,
+     "kop": "WAT GAAN WE MAKEN?",
+     "woorden": 374,
+     "knoppen": 8,
+     "beelden": 7
+    },
+    {
+     "tag": "section.paneel.st-abo",
+     "h": 507,
+     "kop": "OF BETAAL ER MAANDELIJKS VOOR",
+     "woorden": 60,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.st-kamer",
+     "h": 1274,
+     "kop": "WAT ER GEBEURT NADAT JE EROP DRUKT",
+     "woorden": 152,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 655,
+     "kop": "EÉN DING DAT MET EEN BESTELLING MEEGAAT",
+     "woorden": 88,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 420,
+     "kop": "NOG NIET ZEKER WELKE?",
+     "woorden": 42,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Start een bestelling — VISUAILS",
+   "hoogte": 5700,
+   "woorden": 716,
+   "secties": [
+    {
+     "tag": "section.paneel.st-kies",
+     "h": 2308,
+     "kop": "WAT GAAN WE MAKEN?",
+     "woorden": 374,
+     "knoppen": 8,
+     "beelden": 7
+    },
+    {
+     "tag": "section.paneel.st-abo",
+     "h": 314,
+     "kop": "OF BETAAL ER MAANDELIJKS VOOR",
+     "woorden": 60,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.st-kamer",
+     "h": 785,
+     "kop": "WAT ER GEBEURT NADAT JE EROP DRUKT",
+     "woorden": 152,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 719,
+     "kop": "EÉN DING DAT MET EEN BESTELLING MEEGAAT",
+     "woorden": 88,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 378,
+     "kop": "NOG NIET ZEKER WELKE?",
+     "woorden": 42,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/test-sample/": {
+  "390": {
+   "titel": "Test VISUAILS met 1 product — Probeer VISUAILS · €1",
+   "hoogte": 6234,
+   "woorden": 359,
+   "secties": [
+    {
+     "tag": "section.paneel.ts-open",
+     "h": 585,
+     "kop": "TEST VISUAILS MET 1 PRODUCT",
+     "woorden": 66,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "div.s22.of",
+     "h": 1590,
+     "kop": "WAT MAKEN WE VOOR JE?",
+     "woorden": 110,
+     "knoppen": 11,
+     "beelden": 27
+    },
+    {
+     "tag": "section.paneel.ts-krijg",
+     "h": 538,
+     "kop": "",
+     "woorden": 39,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ts-stappen-paneel",
+     "h": 872,
+     "kop": "HOE DE PROEF WERKT",
+     "woorden": 82,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.ts-fijndruk",
+     "h": 165,
+     "kop": "",
+     "woorden": 24,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ts-slot",
+     "h": 419,
+     "kop": "LIEVER GEWOON EVEN OVERLEGGEN?",
+     "woorden": 38,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Test VISUAILS met 1 product — Probeer VISUAILS · €1",
+   "hoogte": 4454,
+   "woorden": 363,
+   "secties": [
+    {
+     "tag": "section.paneel.ts-open",
+     "h": 627,
+     "kop": "TEST VISUAILS MET 1 PRODUCT",
+     "woorden": 66,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "div.s22.of",
+     "h": 1172,
+     "kop": "WAT MAKEN WE VOOR JE?",
+     "woorden": 114,
+     "knoppen": 11,
+     "beelden": 27
+    },
+    {
+     "tag": "section.paneel.ts-krijg",
+     "h": 381,
+     "kop": "",
+     "woorden": 39,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ts-stappen-paneel",
+     "h": 515,
+     "kop": "HOE DE PROEF WERKT",
+     "woorden": 82,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.ts-fijndruk",
+     "h": 145,
+     "kop": "",
+     "woorden": 24,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ts-slot",
+     "h": 380,
+     "kop": "LIEVER GEWOON EVEN OVERLEGGEN?",
+     "woorden": 38,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/gallery/": {
+  "390": {
+   "titel": "VISUAILS — Een blik op de stijlen die we maken",
+   "hoogte": 5227,
+   "woorden": 189,
+   "secties": [
+    {
+     "tag": "div.s22",
+     "h": 3267,
+     "kop": "ZO ZIET EEN LEVERING ERUIT.",
+     "woorden": 189,
+     "knoppen": 5,
+     "beelden": 56
+    }
+   ]
+  },
+  "1440": {
+   "titel": "VISUAILS — Een blik op de stijlen die we maken",
+   "hoogte": 3591,
+   "woorden": 189,
+   "secties": [
+    {
+     "tag": "div.s22",
+     "h": 2569,
+     "kop": "ZO ZIET EEN LEVERING ERUIT.",
+     "woorden": 189,
+     "knoppen": 5,
+     "beelden": 56
+    }
+   ]
+  }
+ },
+ "/nl/about/": {
+  "390": {
+   "titel": "Over VISUAILS — de studio achter de beelden",
+   "hoogte": 6745,
+   "woorden": 351,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 753,
+     "kop": "STUDIOBEELDEN, ZONDER STUDIO",
+     "woorden": 24,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1046,
+     "kop": "IK BEN LUCAS.",
+     "woorden": 115,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.kamer.ab-kamer",
+     "h": 791,
+     "kop": "DRIE DINGEN WAAR WE AAN VASTHOUDEN.",
+     "woorden": 73,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 797,
+     "kop": "",
+     "woorden": 0,
+     "knoppen": 0,
+     "beelden": 5
+    },
+    {
+     "tag": "section.kamer.wif-kamer",
+     "h": 967,
+     "kop": "VOOR MERKEN MET MEER PRODUCTEN DAN SHOOTDAGEN.",
+     "woorden": 122,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 341,
+     "kop": "LATEN WE SAMEN GROEIEN.",
+     "woorden": 17,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Over VISUAILS — de studio achter de beelden",
+   "hoogte": 6366,
+   "woorden": 351,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 653,
+     "kop": "STUDIOBEELDEN, ZONDER STUDIO",
+     "woorden": 24,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 648,
+     "kop": "IK BEN LUCAS.",
+     "woorden": 115,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.kamer.ab-kamer",
+     "h": 888,
+     "kop": "DRIE DINGEN WAAR WE AAN VASTHOUDEN.",
+     "woorden": 73,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1809,
+     "kop": "",
+     "woorden": 0,
+     "knoppen": 0,
+     "beelden": 5
+    },
+    {
+     "tag": "section.kamer.wif-kamer",
+     "h": 837,
+     "kop": "VOOR MERKEN MET MEER PRODUCTEN DAN SHOOTDAGEN.",
+     "woorden": 122,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 326,
+     "kop": "LATEN WE SAMEN GROEIEN.",
+     "woorden": 17,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/contact/": {
+  "390": {
+   "titel": "VISUAILS — Neem contact op",
+   "hoogte": 5140,
+   "woorden": 157,
+   "secties": [
+    {
+     "tag": "section.paneel.ct-open",
+     "h": 801,
+     "kop": "LATEN WE SAMEN GROEIEN",
+     "woorden": 24,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ct-body",
+     "h": 1897,
+     "kop": "DE SNELSTE MANIER OM ONS TE BEREIKEN",
+     "woorden": 99,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ct-slot",
+     "h": 419,
+     "kop": "LIEVER EERST ÉÉN PRODUCT VAN JEZELF?",
+     "woorden": 34,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "VISUAILS — Neem contact op",
+   "hoogte": 3606,
+   "woorden": 157,
+   "secties": [
+    {
+     "tag": "section.paneel.ct-open",
+     "h": 904,
+     "kop": "LATEN WE SAMEN GROEIEN",
+     "woorden": 24,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ct-body",
+     "h": 1124,
+     "kop": "DE SNELSTE MANIER OM ONS TE BEREIKEN",
+     "woorden": 99,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ct-slot",
+     "h": 431,
+     "kop": "LIEVER EERST ÉÉN PRODUCT VAN JEZELF?",
+     "woorden": 34,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/faq/": {
+  "390": {
+   "titel": "Veelgestelde vragen — VISUAILS",
+   "hoogte": 10724,
+   "woorden": 545,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 644,
+     "kop": "VRAGEN, BEANTWOORD.",
+     "woorden": 39,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 7660,
+     "kop": "AAN DE SLAG",
+     "woorden": 484,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 397,
+     "kop": "NOG EEN VRAAG?",
+     "woorden": 22,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Veelgestelde vragen — VISUAILS",
+   "hoogte": 9392,
+   "woorden": 545,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 630,
+     "kop": "VRAGEN, BEANTWOORD.",
+     "woorden": 39,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 7263,
+     "kop": "AAN DE SLAG",
+     "woorden": 484,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 352,
+     "kop": "NOG EEN VRAAG?",
+     "woorden": 22,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/guides/": {
+  "390": {
+   "titel": "Gidsen — productfotografie voor kledingmerken | VISUAILS",
+   "hoogte": 4216,
+   "woorden": 236,
+   "secties": [
+    {
+     "tag": "section.paneel.gd-open",
+     "h": 1845,
+     "kop": "ALLES WAT DE MOEITE WAARD IS VÓÓR JE SHOOT",
+     "woorden": 178,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.gd-brief",
+     "h": 287,
+     "kop": "",
+     "woorden": 27,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.gd-slot",
+     "h": 367,
+     "kop": "KLAAR WANNEER JIJ DAT BENT.",
+     "woorden": 31,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Gidsen — productfotografie voor kledingmerken | VISUAILS",
+   "hoogte": 2849,
+   "woorden": 236,
+   "secties": [
+    {
+     "tag": "section.paneel.gd-open",
+     "h": 1302,
+     "kop": "ALLES WAT DE MOEITE WAARD IS VÓÓR JE SHOOT",
+     "woorden": 178,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.gd-brief",
+     "h": 213,
+     "kop": "",
+     "woorden": 27,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.gd-slot",
+     "h": 353,
+     "kop": "KLAAR WANNEER JIJ DAT BENT.",
+     "woorden": 31,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/models/": {
+  "390": {
+   "titel": "Tien standaardmodellen, in elke bestelling | VISUAILS",
+   "hoogte": 5859,
+   "woorden": 261,
+   "secties": [
+    {
+     "tag": "section.paneel.mp-open",
+     "h": 942,
+     "kop": "TIEN GEZICHTEN. AL INBEGREPEN.",
+     "woorden": 73,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1827,
+     "kop": "DE VOLLEDIGE BIBLIOTHEEK",
+     "woorden": 83,
+     "knoppen": 0,
+     "beelden": 10
+    },
+    {
+     "tag": "section.kamer.mp-kamer",
+     "h": 721,
+     "kop": "INBEGREPEN, NIET IETS WAT JE ERBIJ MOET KOPEN.",
+     "woorden": 90,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 343,
+     "kop": "KIES EEN GEZICHT, START EEN BESTELLING.",
+     "woorden": 15,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Tien standaardmodellen, in elke bestelling | VISUAILS",
+   "hoogte": 3973,
+   "woorden": 261,
+   "secties": [
+    {
+     "tag": "section.paneel.mp-open",
+     "h": 696,
+     "kop": "TIEN GEZICHTEN. AL INBEGREPEN.",
+     "woorden": 73,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1030,
+     "kop": "DE VOLLEDIGE BIBLIOTHEEK",
+     "woorden": 83,
+     "knoppen": 0,
+     "beelden": 10
+    },
+    {
+     "tag": "section.kamer.mp-kamer",
+     "h": 762,
+     "kop": "INBEGREPEN, NIET IETS WAT JE ERBIJ MOET KOPEN.",
+     "woorden": 90,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 329,
+     "kop": "KIES EEN GEZICHT, START EEN BESTELLING.",
+     "woorden": 15,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/custom-models/": {
+  "390": {
+   "titel": "Jouw merkmodel — één gezicht, elke bestelling | VISUAILS",
+   "hoogte": 10144,
+   "woorden": 866,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 1305,
+     "kop": "EIGEN GEZICHTEN. ALLEEN VAN JOU.",
+     "woorden": 124,
+     "knoppen": 2,
+     "beelden": 7
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1185,
+     "kop": "JOUW MODEL, NIET EEN MODEL.",
+     "woorden": 169,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1108,
+     "kop": "WAT HET KOST",
+     "woorden": 186,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2013,
+     "kop": "NEGEN RICHTINGEN OM OP TE REAGEREN.",
+     "woorden": 133,
+     "knoppen": 0,
+     "beelden": 3
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1571,
+     "kop": "HOE EEN MERKMODEL TOT STAND KOMT",
+     "woorden": 160,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 520,
+     "kop": "DE STANDAARDBIBLIOTHEEK",
+     "woorden": 79,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 343,
+     "kop": "ONTWERP HET GEZICHT VAN JOUW MERK.",
+     "woorden": 15,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Jouw merkmodel — één gezicht, elke bestelling | VISUAILS",
+   "hoogte": 7374,
+   "woorden": 866,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 809,
+     "kop": "EIGEN GEZICHTEN. ALLEEN VAN JOU.",
+     "woorden": 124,
+     "knoppen": 2,
+     "beelden": 7
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1071,
+     "kop": "JOUW MODEL, NIET EEN MODEL.",
+     "woorden": 169,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 724,
+     "kop": "WAT HET KOST",
+     "woorden": 186,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1476,
+     "kop": "NEGEN RICHTINGEN OM OP TE REAGEREN.",
+     "woorden": 133,
+     "knoppen": 0,
+     "beelden": 3
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1134,
+     "kop": "HOE EEN MERKMODEL TOT STAND KOMT",
+     "woorden": 160,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 532,
+     "kop": "DE STANDAARDBIBLIOTHEEK",
+     "woorden": 79,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 329,
+     "kop": "ONTWERP HET GEZICHT VAN JOUW MERK.",
+     "woorden": 15,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/compare/": {
+  "390": {
+   "titel": "Shootdag vs VISUAILS — de eerlijke vergelijking",
+   "hoogte": 9209,
+   "woorden": 987,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 546,
+     "kop": "EEN SHOOTDAG, OF EEN BESTELLING.",
+     "woorden": 52,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2256,
+     "kop": "Een productiedag vergeleken met een VISUAILS-bestelling",
+     "woorden": 301,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.cmp-kamer",
+     "h": 1058,
+     "kop": "WAT OP ÉÉN LIJN MOET KOMEN",
+     "woorden": 151,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 823,
+     "kop": "EN DE WEEK EROMHEEN",
+     "woorden": 122,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 952,
+     "kop": "WAAR EEN SHOOTDAG NOG STEEDS WINT",
+     "woorden": 155,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1013,
+     "kop": "EN ALS JE EEN SELF-SERVE TOOL OVERWEEGT",
+     "woorden": 168,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 477,
+     "kop": "GELOOF ONS NIET — TEST HET.",
+     "woorden": 38,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Shootdag vs VISUAILS — de eerlijke vergelijking",
+   "hoogte": 6825,
+   "woorden": 992,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 537,
+     "kop": "EEN SHOOTDAG, OF EEN BESTELLING.",
+     "woorden": 52,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1482,
+     "kop": "Een productiedag vergeleken met een VISUAILS-bestelling",
+     "woorden": 306,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.cmp-kamer",
+     "h": 804,
+     "kop": "WAT OP ÉÉN LIJN MOET KOMEN",
+     "woorden": 151,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 797,
+     "kop": "EN DE WEEK EROMHEEN",
+     "woorden": 122,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 707,
+     "kop": "WAAR EEN SHOOTDAG NOG STEEDS WINT",
+     "woorden": 155,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 840,
+     "kop": "EN ALS JE EEN SELF-SERVE TOOL OVERWEEGT",
+     "woorden": 168,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 387,
+     "kop": "GELOOF ONS NIET — TEST HET.",
+     "woorden": 38,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/studio/": {
+  "390": {
+   "titel": "Het bestelproces — de capaciteitskalender | VISUAILS",
+   "hoogte": 9930,
+   "woorden": 1046,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 1587,
+     "kop": "ZO KOMEN WE AAN EEN LEVERDATUM. DIT IS DE AGENDA WAAR WIJ IN WERKEN.",
+     "woorden": 162,
+     "knoppen": 2,
+     "beelden": 4
+    },
+    {
+     "tag": "section.kamer.sp-kamer",
+     "h": 1712,
+     "kop": "WE KIJKEN EERST IN DE AGENDA, EN PAS DAARNA NOEMEN WE EEN DATUM.",
+     "woorden": 271,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1529,
+     "kop": "EÉN TABEL, ELKE ORDER.",
+     "woorden": 189,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.sp-kamer-hand",
+     "h": 739,
+     "kop": "DE LAATSTE STAP IS EEN SPECIALIST.",
+     "woorden": 87,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1100,
+     "kop": "REKEN TERUG VANAF DE DAG DAT JE LIVE GAAT.",
+     "woorden": 168,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 771,
+     "kop": "WAT DIT NIET DOET.",
+     "woorden": 134,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 421,
+     "kop": "BOEK EEN VENSTER DAT DE PLANNING HEEFT VRIJGEGEVEN.",
+     "woorden": 35,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Het bestelproces — de capaciteitskalender | VISUAILS",
+   "hoogte": 7762,
+   "woorden": 1046,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 798,
+     "kop": "ZO KOMEN WE AAN EEN LEVERDATUM. DIT IS DE AGENDA WAAR WIJ IN WERKEN.",
+     "woorden": 162,
+     "knoppen": 2,
+     "beelden": 4
+    },
+    {
+     "tag": "section.kamer.sp-kamer",
+     "h": 1436,
+     "kop": "WE KIJKEN EERST IN DE AGENDA, EN PAS DAARNA NOEMEN WE EEN DATUM.",
+     "woorden": 271,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 938,
+     "kop": "EÉN TABEL, ELKE ORDER.",
+     "woorden": 189,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.sp-kamer-hand",
+     "h": 1344,
+     "kop": "DE LAATSTE STAP IS EEN SPECIALIST.",
+     "woorden": 87,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 981,
+     "kop": "REKEN TERUG VANAF DE DAG DAT JE LIVE GAAT.",
+     "woorden": 168,
+     "knoppen": 1,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 610,
+     "kop": "WAT DIT NIET DOET.",
+     "woorden": 134,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 411,
+     "kop": "BOEK EEN VENSTER DAT DE PLANNING HEEFT VRIJGEGEVEN.",
+     "woorden": 35,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/per-product/": {
+  "390": {
+   "titel": "Wat je per product krijgt — VISUAILS",
+   "hoogte": 4572,
+   "woorden": 241,
+   "secties": [
+    {
+     "tag": "section.paneel.pp-open",
+     "h": 393,
+     "kop": "PER PRODUCT, WAT JE TERUGKRIJGT.",
+     "woorden": 44,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.pp-blok",
+     "h": 701,
+     "kop": "Zit er altijd bij · 4 foto’s",
+     "woorden": 73,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.pp-blok",
+     "h": 1290,
+     "kop": "Erbij te bestellen",
+     "woorden": 115,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.pp-slot",
+     "h": 146,
+     "kop": "",
+     "woorden": 9,
+     "knoppen": 1,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Wat je per product krijgt — VISUAILS",
+   "hoogte": 3354,
+   "woorden": 241,
+   "secties": [
+    {
+     "tag": "section.paneel.pp-open",
+     "h": 440,
+     "kop": "PER PRODUCT, WAT JE TERUGKRIJGT.",
+     "woorden": 44,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.pp-blok",
+     "h": 550,
+     "kop": "Zit er altijd bij · 4 foto’s",
+     "woorden": 73,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.pp-blok",
+     "h": 1003,
+     "kop": "Erbij te bestellen",
+     "woorden": 115,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.pp-slot",
+     "h": 176,
+     "kop": "",
+     "woorden": 9,
+     "knoppen": 1,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/upload-guidelines/": {
+  "390": {
+   "titel": "Uploadrichtlijnen — VISUAILS",
+   "hoogte": 7387,
+   "woorden": 653,
+   "secties": [
+    {
+     "tag": "section.paneel.ug-open",
+     "h": 633,
+     "kop": "ZO MAAK JE DE FOTO DIE WIJ NODIG HEBBEN",
+     "woorden": 69,
+     "knoppen": 3,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 665,
+     "kop": "WELKE FOTO WELK BEELD WORDT.",
+     "woorden": 88,
+     "knoppen": 0,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel.ug-regels",
+     "h": 2030,
+     "kop": "WEL DOEN",
+     "woorden": 248,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.ug-set",
+     "h": 1620,
+     "kop": "DE SET DIE WE AANRADEN — EN WAAROM",
+     "woorden": 222,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ug-slot",
+     "h": 393,
+     "kop": "FOTO KLAAR? STUUR HEM IN.",
+     "woorden": 26,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Uploadrichtlijnen — VISUAILS",
+   "hoogte": 5937,
+   "woorden": 653,
+   "secties": [
+    {
+     "tag": "section.paneel.ug-open",
+     "h": 650,
+     "kop": "ZO MAAK JE DE FOTO DIE WIJ NODIG HEBBEN",
+     "woorden": 69,
+     "knoppen": 3,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1129,
+     "kop": "WELKE FOTO WELK BEELD WORDT.",
+     "woorden": 88,
+     "knoppen": 0,
+     "beelden": 9
+    },
+    {
+     "tag": "section.paneel.ug-regels",
+     "h": 1183,
+     "kop": "WEL DOEN",
+     "woorden": 248,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.ug-set",
+     "h": 1427,
+     "kop": "DE SET DIE WE AANRADEN — EN WAAROM",
+     "woorden": 222,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ug-slot",
+     "h": 353,
+     "kop": "FOTO KLAAR? STUUR HEM IN.",
+     "woorden": 26,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/hooks/": {
+  "390": {
+   "titel": "Hookvideo’s — je product in een bewezen format | VISUAILS",
+   "hoogte": 13757,
+   "woorden": 1083,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 1618,
+     "kop": "VIDEO DIE DE SCROLL ONDERBREEKT.",
+     "woorden": 83,
+     "knoppen": 3,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 2271,
+     "kop": "WAT ER IN JE MAP KOMT TE STAAN.",
+     "woorden": 56,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1455,
+     "kop": "DE FORMATS.",
+     "woorden": 132,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.hk-kamer",
+     "h": 1383,
+     "kop": "EEN HOOK IS EEN VIDEO DIE NIET OPHOUDT WAAR DE VIDEO OPHOUDT.",
+     "woorden": 207,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1275,
+     "kop": "VIER STAPPEN, EN JE FILMT ER GEEN ÉÉN.",
+     "woorden": 148,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1106,
+     "kop": "WAAR JE OP KUNT REKENEN.",
+     "woorden": 163,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1309,
+     "kop": "WAT ER VERANDERT BIJ 10 PRODUCTEN",
+     "woorden": 182,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 644,
+     "kop": "VRAGEN OVER HOOKS",
+     "woorden": 38,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 573,
+     "kop": "STUUR DE FOTO’S DIE JE AL HEBT.",
+     "woorden": 74,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Hookvideo’s — je product in een bewezen format | VISUAILS",
+   "hoogte": 9232,
+   "woorden": 1076,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 953,
+     "kop": "VIDEO DIE DE SCROLL ONDERBREEKT.",
+     "woorden": 83,
+     "knoppen": 3,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1165,
+     "kop": "WAT ER IN JE MAP KOMT TE STAAN.",
+     "woorden": 56,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 848,
+     "kop": "DE FORMATS.",
+     "woorden": 132,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.hk-kamer",
+     "h": 1519,
+     "kop": "EEN HOOK IS EEN VIDEO DIE NIET OPHOUDT WAAR DE VIDEO OPHOUDT.",
+     "woorden": 207,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 891,
+     "kop": "VIER STAPPEN, EN JE FILMT ER GEEN ÉÉN.",
+     "woorden": 148,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 613,
+     "kop": "WAAR JE OP KUNT REKENEN.",
+     "woorden": 163,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 706,
+     "kop": "WAT ER VERANDERT BIJ 10 PRODUCTEN",
+     "woorden": 175,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 715,
+     "kop": "VRAGEN OVER HOOKS",
+     "woorden": 38,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 473,
+     "kop": "STUUR DE FOTO’S DIE JE AL HEBT.",
+     "woorden": 74,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/editions/": {
+  "390": {
+   "titel": "Editions — maandelijks merkbeeld zonder product | VISUAILS",
+   "hoogte": 12687,
+   "woorden": 1216,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 1645,
+     "kop": "DE MAANDEN WAARIN JE NIETS TE FOTOGRAFEREN HEBT.",
+     "woorden": 90,
+     "knoppen": 3,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1367,
+     "kop": "TWEE SETS, EN MAAR ÉÉN ERVAN KOST IETS.",
+     "woorden": 214,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.ed-kamer",
+     "h": 1430,
+     "kop": "ER ZIT IN GEEN VAN BEIDE EEN PRODUCT.",
+     "woorden": 117,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1217,
+     "kop": "DE MAAND WAARIN NIETS NIEUWS ZIT.",
+     "woorden": 165,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1304,
+     "kop": "EÉN KEER OPZETTEN, DAARNA LOOPT HIJ ELKE MAAND.",
+     "woorden": 140,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.ed-twaalf",
+     "h": 445,
+     "kop": "",
+     "woorden": 62,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 871,
+     "kop": "WAAR JE OP KUNT REKENEN.",
+     "woorden": 94,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 960,
+     "kop": "GEDEELD BETEKENT GEDEELD, EN DAT ZEGGEN WE LIEVER HIER DAN IN DE KLEINE LETTERTJ",
+     "woorden": 189,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 689,
+     "kop": "VRAGEN OVER EDITIONS",
+     "woorden": 40,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 923,
+     "kop": "VUL DE MAAND WAAR JE NIETS VOOR HEBT.",
+     "woorden": 105,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Editions — maandelijks merkbeeld zonder product | VISUAILS",
+   "hoogte": 10438,
+   "woorden": 1216,
+   "secties": [
+    {
+     "tag": "section.paneel",
+     "h": 1113,
+     "kop": "DE MAANDEN WAARIN JE NIETS TE FOTOGRAFEREN HEBT.",
+     "woorden": 90,
+     "knoppen": 3,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 896,
+     "kop": "TWEE SETS, EN MAAR ÉÉN ERVAN KOST IETS.",
+     "woorden": 214,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.ed-kamer",
+     "h": 1255,
+     "kop": "ER ZIT IN GEEN VAN BEIDE EEN PRODUCT.",
+     "woorden": 117,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 1326,
+     "kop": "DE MAAND WAARIN NIETS NIEUWS ZIT.",
+     "woorden": 165,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 947,
+     "kop": "EÉN KEER OPZETTEN, DAARNA LOOPT HIJ ELKE MAAND.",
+     "woorden": 140,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.ed-twaalf",
+     "h": 982,
+     "kop": "",
+     "woorden": 62,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 470,
+     "kop": "WAAR JE OP KUNT REKENEN.",
+     "woorden": 94,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 839,
+     "kop": "GEDEELD BETEKENT GEDEELD, EN DAT ZEGGEN WE LIEVER HIER DAN IN DE KLEINE LETTERTJ",
+     "woorden": 189,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel",
+     "h": 766,
+     "kop": "VRAGEN OVER EDITIONS",
+     "woorden": 40,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot",
+     "h": 624,
+     "kop": "VUL DE MAAND WAAR JE NIETS VOOR HEBT.",
+     "woorden": 105,
+     "knoppen": 3,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/ai-act/": {
+  "390": {
+   "titel": "AI Act & transparantie — VISUAILS",
+   "hoogte": 7747,
+   "woorden": 1001,
+   "secties": [
+    {
+     "tag": "header.paneel-kop.jur-kop",
+     "h": 527,
+     "kop": "AI ACT & TRANSPARANTIE",
+     "woorden": 106,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "div.legal.jur-tekst",
+     "h": 5055,
+     "kop": "WAAROM WIJ HIER OPEN OVER ZIJN",
+     "woorden": 895,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "AI Act & transparantie — VISUAILS",
+   "hoogte": 4900,
+   "woorden": 1001,
+   "secties": [
+    {
+     "tag": "header.paneel-kop.jur-kop",
+     "h": 447,
+     "kop": "AI ACT & TRANSPARANTIE",
+     "woorden": 106,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "div.legal.jur-tekst",
+     "h": 3137,
+     "kop": "WAAROM WIJ HIER OPEN OVER ZIJN",
+     "woorden": 895,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/lifestyle/dunes/": {
+  "390": {
+   "titel": "Dunes — Lifestyle-stijl | VISUAILS",
+   "hoogte": 7003,
+   "woorden": 238,
+   "secties": [
+    {
+     "tag": "section.paneel.ls-open",
+     "h": 838,
+     "kop": "DUNES",
+     "woorden": 54,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "figure.ls-band",
+     "h": 174,
+     "kop": "",
+     "woorden": 0,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ls-sfeer",
+     "h": 619,
+     "kop": "HOE DUNES VOELT.",
+     "woorden": 15,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.kamer.ls-bewijs",
+     "h": 604,
+     "kop": "VLAK VS. DUNES.",
+     "woorden": 10,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel.ls-stap",
+     "h": 537,
+     "kop": "HOE DUNES TOT STAND KOMT.",
+     "woorden": 41,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.ls-raster",
+     "h": 1093,
+     "kop": "",
+     "woorden": 9,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ls-lijsten",
+     "h": 821,
+     "kop": "IDEAAL VOOR",
+     "woorden": 101,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ls-slot",
+     "h": 227,
+     "kop": "MAAK DUNES VAN JOU.",
+     "woorden": 8,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Dunes — Lifestyle-stijl | VISUAILS",
+   "hoogte": 7388,
+   "woorden": 238,
+   "secties": [
+    {
+     "tag": "section.paneel.ls-open",
+     "h": 771,
+     "kop": "DUNES",
+     "woorden": 54,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "figure.ls-band",
+     "h": 663,
+     "kop": "",
+     "woorden": 0,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ls-sfeer",
+     "h": 815,
+     "kop": "HOE DUNES VOELT.",
+     "woorden": 15,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.kamer.ls-bewijs",
+     "h": 985,
+     "kop": "VLAK VS. DUNES.",
+     "woorden": 10,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel.ls-stap",
+     "h": 402,
+     "kop": "HOE DUNES TOT STAND KOMT.",
+     "woorden": 41,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.ls-raster",
+     "h": 1715,
+     "kop": "",
+     "woorden": 9,
+     "knoppen": 0,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.ls-lijsten",
+     "h": 494,
+     "kop": "IDEAAL VOOR",
+     "woorden": 101,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.ls-slot",
+     "h": 262,
+     "kop": "MAAK DUNES VAN JOU.",
+     "woorden": 8,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/catalog/classic/": {
+  "390": {
+   "titel": "Classic — Catalog-stijl | VISUAILS",
+   "hoogte": 8177,
+   "woorden": 369,
+   "secties": [
+    {
+     "tag": "section.paneel.cs-open",
+     "h": 1065,
+     "kop": "CLASSIC",
+     "woorden": 43,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.cs-sfeer",
+     "h": 1043,
+     "kop": "HOE CLASSIC VOELT.",
+     "woorden": 49,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.cs-raster",
+     "h": 1093,
+     "kop": "",
+     "woorden": 18,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.cs-bewijs",
+     "h": 572,
+     "kop": "WAT CLASSIC MET EEN ECHTE FOTO DOET.",
+     "woorden": 18,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel.cs-vak",
+     "h": 1133,
+     "kop": "WAT ER IN ELK KADER GAAT.",
+     "woorden": 119,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.cs-lijsten",
+     "h": 855,
+     "kop": "IDEAAL VOOR",
+     "woorden": 106,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.cs-slot",
+     "h": 332,
+     "kop": "MAAK CLASSIC VAN JOU.",
+     "woorden": 16,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Classic — Catalog-stijl | VISUAILS",
+   "hoogte": 6831,
+   "woorden": 369,
+   "secties": [
+    {
+     "tag": "section.paneel.cs-open",
+     "h": 753,
+     "kop": "CLASSIC",
+     "woorden": 43,
+     "knoppen": 2,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.cs-sfeer",
+     "h": 815,
+     "kop": "HOE CLASSIC VOELT.",
+     "woorden": 49,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.cs-raster",
+     "h": 1715,
+     "kop": "",
+     "woorden": 18,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.kamer.cs-bewijs",
+     "h": 829,
+     "kop": "WAT CLASSIC MET EEN ECHTE FOTO DOET.",
+     "woorden": 18,
+     "knoppen": 0,
+     "beelden": 2
+    },
+    {
+     "tag": "section.paneel.cs-vak",
+     "h": 672,
+     "kop": "WAT ER IN ELK KADER GAAT.",
+     "woorden": 119,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.cs-lijsten",
+     "h": 456,
+     "kop": "IDEAAL VOOR",
+     "woorden": 106,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.cs-slot",
+     "h": 318,
+     "kop": "MAAK CLASSIC VAN JOU.",
+     "woorden": 16,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ },
+ "/nl/video/motion/": {
+  "390": {
+   "titel": "Motion — Video-stijl | VISUAILS",
+   "hoogte": 8531,
+   "woorden": 504,
+   "secties": [
+    {
+     "tag": "section.paneel.vs-open",
+     "h": 1325,
+     "kop": "MOTION",
+     "woorden": 49,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.vs-sfeer",
+     "h": 557,
+     "kop": "HOE MOTION VOELT.",
+     "woorden": 55,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.vs-strook",
+     "h": 469,
+     "kop": "",
+     "woorden": 0,
+     "knoppen": 0,
+     "beelden": 4
+    },
+    {
+     "tag": "div.paneel.vs-vb",
+     "h": 1971,
+     "kop": "Motion in beweging",
+     "woorden": 192,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.vs-vak",
+     "h": 1117,
+     "kop": "WAT ER IN ELK KADER GAAT.",
+     "woorden": 107,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.vs-lijsten",
+     "h": 661,
+     "kop": "IDEAAL VOOR",
+     "woorden": 84,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.vs-slot",
+     "h": 332,
+     "kop": "MAAK MOTION VAN JOU.",
+     "woorden": 17,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  },
+  "1440": {
+   "titel": "Motion — Video-stijl | VISUAILS",
+   "hoogte": 5724,
+   "woorden": 504,
+   "secties": [
+    {
+     "tag": "section.paneel.vs-open",
+     "h": 918,
+     "kop": "MOTION",
+     "woorden": 49,
+     "knoppen": 2,
+     "beelden": 1
+    },
+    {
+     "tag": "section.paneel.vs-sfeer",
+     "h": 412,
+     "kop": "HOE MOTION VOELT.",
+     "woorden": 55,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.vs-strook",
+     "h": 511,
+     "kop": "",
+     "woorden": 0,
+     "knoppen": 0,
+     "beelden": 4
+    },
+    {
+     "tag": "div.paneel.vs-vb",
+     "h": 1202,
+     "kop": "Motion in beweging",
+     "woorden": 192,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.vs-vak",
+     "h": 630,
+     "kop": "WAT ER IN ELK KADER GAAT.",
+     "woorden": 107,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.vs-lijsten",
+     "h": 432,
+     "kop": "IDEAAL VOOR",
+     "woorden": 84,
+     "knoppen": 0,
+     "beelden": 0
+    },
+    {
+     "tag": "section.paneel.paneel-slot.vs-slot",
+     "h": 318,
+     "kop": "MAAK MOTION VAN JOU.",
+     "woorden": 17,
+     "knoppen": 2,
+     "beelden": 0
+    }
+   ]
+  }
+ }
+}

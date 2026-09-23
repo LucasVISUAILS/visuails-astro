@@ -1350,5 +1350,35 @@ console.log('\n/account wordt nooit gelokaliseerd');
   check('er zijn genoeg pagina\'s doorzocht om iets te betekenen', paginas.length > 80, true);
 }
 
+/*
+ * ── WAT NOG NIET TE BESTELLEN IS, STAAT NIET IN DE BALK — 23 september 2026 ──
+ *
+ * Lucas: Hooks en Editions *"uit het hoofdmenu tot ze te bestellen zijn"*. De
+ * regel hangt aan `soon` (zie `menuDrops` in Layout.astro): het item blijft in
+ * `drops`, de voettekst toont het met label, de balk en de telefoonlade niet.
+ * Gemeten op de gebouwde voorpagina, want daar zie je of de lus echt de
+ * gefilterde lijst leest.
+ */
+console.log('\nwat nog niet te bestellen is, staat niet in de balk');
+{
+  const layout = read('src/layouts/Layout.astro');
+  check('Layout filtert op soon', /const menuDrops = drops\.filter\(\(d\) => !d\.soon\)/.test(layout), true);
+  for (const pagina of ['dist/index.html', 'dist/nl/index.html']) {
+    const u = new URL(`../${pagina}`, import.meta.url);
+    if (!existsSync(u)) continue;
+    const html = readFileSync(u, 'utf8');
+    const balk = (html.match(/<div class="nav-menu" role="menu"[^>]*>[\s\S]*?<\/div>\s*<\/li>/) || [''])[0];
+    const lade = (html.match(/<div class="mobile-lijst"[^>]*>[\s\S]*?<\/div>/) || [''])[0];
+    const voet = (html.match(/<footer class="site-footer"[^>]*>[\s\S]*?<\/footer>/) || [''])[0];
+    for (const [naam, pad] of [['Hooks', 'hooks'], ['Editions', 'editions']]) {
+      const re = new RegExp(`href="(/nl)?/${pad}/"`);
+      check(`${pagina}: ${naam} niet in de balk`, re.test(balk), false);
+      check(`${pagina}: ${naam} niet in de telefoonlade`, re.test(lade), false);
+      check(`${pagina}: ${naam} wél in de voettekst`, re.test(voet), true);
+    }
+    check(`${pagina}: de balk heeft nog diensten`, /href="(\/nl)?\/catalog\/"/.test(balk), true);
+  }
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);

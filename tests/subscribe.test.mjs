@@ -382,11 +382,10 @@ console.log('\nen de weg bestaat echt — geen knop zonder draad');
      om te kopen vindbaar blijven vanaf elkaar. */
   const prijs = readFileSync(new URL('../src/components/PricingPage.astro', import.meta.url), 'utf8')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
-  /* Sinds 3 september 2026 via de abonnementsband (PlanBand.astro), die zelf
-     naar /plans wijst; de prijspagina zet die band neer. */
-  const band = readFileSync(new URL('../src/components/PlanBand.astro', import.meta.url), 'utf8');
+  /* Sinds 24 september 2026 met een eigen smalle band (pr-band) in plaats van
+     PlanBand.astro — zie PAGINA-OPBOUW.md. De deur naar /plans blijft. */
   ok('en de prijspagina wijst naar de abonnementen',
-    /<PlanBand /.test(prijs) && /lp\('\/plans'\)/.test(band), true);
+    /lp\('\/plans'\)/.test(prijs), true);
 }
 
 /* ══ OPZEGGEN EN PAUZEREN STOPPEN DE INCASSO ══════════════════════════════

@@ -175,7 +175,7 @@ import { licenceText } from './scaffold.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
 // deze twee schermen hadden elk hun eigen query over dezelfde levering en die
 // waren al uit elkaar gelopen.
-import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, orderProductNames, leveringIngetrokken, TOEGANG_KOLOMMEN } from './delivery.js';
+import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, downloadTaal, orderProductNames, leveringIngetrokken, TOEGANG_KOLOMMEN } from './delivery.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
 // for the mail. Two `p`s in one module is a bug waiting for whichever one gets
@@ -4740,7 +4740,12 @@ async function serveOrderZip(context, customer, orderId) {
 
   if (!files.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
-  const lang = order.lang === 'en' ? 'en' : 'nl';
+  /* De taal van het SCHERM waarop op "download" geklikt is, niet die van de
+     bestelling — zie deliveryDocs() in delivery.js (23 september 2026). De
+     mapnamen volgen mee; weten we het niet, dan krijgen de mappen de taal van
+     de bestelling en de twee tekstbestanden allebei de talen. */
+  const taal = downloadTaal(context.request, langCookie(context.request));
+  const lang = taal === 'beide' ? (order.lang === 'en' ? 'en' : 'nl') : taal;
   const productNames = orderProductNames(order.details_json);
   const entries = deliveryEntries(files, lang, { ref: order.ref, productNames });
   if (!entries.length) return new Response(null, { status: 404, headers: fileHeaders() });
@@ -4749,7 +4754,7 @@ async function serveOrderZip(context, customer, orderId) {
      zijn ze een paar kilobyte, en ze buiten de telling houden betekent dat een
      bestelling die precies op de grens zit niet ineens een 413 geeft omdat er een
      leesmij bij is gekomen. */
-  const docs = deliveryDocs({ order, entries, productNames });
+  const docs = deliveryDocs({ order, entries, productNames, taal });
 
   // De grens van zip.js, hier gehandhaafd omdat hier de maten bekend zijn. Een
   // 413 met een lege body is eerlijker dan een archief dat pas bij de klant
@@ -6318,7 +6323,9 @@ async function serveMaandsetZip({ env, request }, customer, setId) {
   const total = files.reduce((n, f) => n + (Number(f.bytes) || 0), 0);
   if (files.length > ZIP_MAX_FILES || total > ZIP_MAX_BYTES) return new Response(null, { status: 413, headers: fileHeaders() });
 
-  const lang = langCookie(request) || negotiate(request);
+  /* ?lang= van de knop eerst — de taal van het scherm, zie downloadTaal() in
+     delivery.js — dan de keuze, dan de browser. */
+  const lang = (() => { const t = downloadTaal(request, langCookie(request)); return t === 'beide' ? negotiate(request) : t; })();
   const nl = lang !== 'en';
   const merk = customer.brand || customer.name || customer.email;
   /* De licentie voor GEDEELD beeld en niet de exclusieve van een levering —
@@ -8476,7 +8483,7 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
       uploaded: { h: t.sideUploaded, empty: t.emptyUploads, shots: uploaded.map((f) => shotView(t, f, o)) },
     },
     ronde,
-    folder: delivered.length ? { h: t.folderH, body: t.folderBody, note: t.folderReview, href: `/account/orders/${o.id}/zip`, cta: t.bDownloadAll } : null,
+    folder: delivered.length ? { h: t.folderH, body: t.folderBody, note: t.folderReview, href: `/account/orders/${o.id}/zip?lang=${lang}`, cta: t.bDownloadAll } : null,
   };
 }
 
@@ -8906,7 +8913,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   const [msNu, ...msEerder] = maandsets;
   const msKaart = (st, groot) => ({
     id: st.id, label: `${maandsetLabel(st.month, lang)}${st.title ? ` · ${st.title}` : ''}`, n: t.msCount(st.files.length), groot,
-    beelden: st.files.slice(0, groot ? 40 : 8).map((fl) => `/account/set/${fl.id}/f`), zip: `/account/set/${st.id}/zip`,
+    beelden: st.files.slice(0, groot ? 40 : 8).map((fl) => `/account/set/${fl.id}/f`), zip: `/account/set/${st.id}/zip?lang=${lang}`,
   });
   const maandset = (nu === 'maand' && maandsetToegang(state)) ? { nu: msNu ? msKaart(msNu, true) : null, eerder: msEerder.map((st) => msKaart(st, false)) } : null;
 

@@ -786,19 +786,60 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
  * download gemaakt uit de bestelling die voor je staat. Zie deliveryZipFiles()
  * hieronder voor waarom dat één plek is en niet twee.
  */
-export function deliveryDocs({ order, entries, productNames = {}, portalUrl } = {}) {
-  const nl = order?.lang !== 'en';
+export function deliveryDocs({ order, entries, productNames = {}, portalUrl, taal } = {}) {
+  /* ── DE TAAL VAN HET SCHERM, NIET DIE VAN DE BESTELLING — 23 sep 2026 ─────
+     Lucas: *"De license die de klant ontvangt is altijd Nederlands. Ik wil dat
+     dit Engels wordt wanneer de klant de bestanden downloadt en de pagina op
+     Engels staat, of beide talen wanneer dat niet mogelijk is."*
+
+     Hier stond alleen `order.lang`: de taal van de pagina waarop ooit besteld
+     is. Wie in het Nederlands bestelde en in Studio op Engels staat, kreeg een
+     Nederlandse licentie — en die licentie gaat door naar een bureau of een
+     marktplaats die geen Nederlands leest.
+
+     `taal` is nu wat de aanroeper wéét: 'nl' of 'en' als het scherm bekend is,
+     'beide' als dat niet zo is (een kale link zonder keuze). Bij 'beide' komen
+     de twee bestanden in allebei de talen mee, naast elkaar, met hun eigen naam
+     — dat leest beter dan één bestand waarin de talen door elkaar staan, en het
+     zijn dezelfde teksten die al bestonden. Geen `taal`: de oude regel. */
+  const talen = taal === 'beide' ? ['nl', 'en']
+    : taal === 'nl' || taal === 'en' ? [taal]
+    : [order?.lang === 'en' ? 'en' : 'nl'];
   const root = order?.ref ? `${ZIP_ROOT_PREFIX}${order.ref}/` : '';
-  return [
-    {
+  const uit = [];
+  for (const t of talen) {
+    const nl = t === 'nl';
+    const o = { ...order, lang: t };
+    uit.push({
       name: `${root}${nl ? 'LEESMIJ.txt' : 'README.txt'}`,
-      text: deliveryReadme({ order, entries, productNames, portalUrl }),
-    },
-    {
+      text: deliveryReadme({ order: o, entries, productNames, portalUrl }),
+    });
+  }
+  for (const t of talen) {
+    const nl = t === 'nl';
+    uit.push({
       name: `${root}${nl ? 'LICENTIE.txt' : 'LICENCE.txt'}`,
-      text: licenceText({ order, lang: nl ? 'nl' : 'en' }),
-    },
-  ];
+      text: licenceText({ order: { ...order, lang: t }, lang: t }),
+    });
+  }
+  return uit;
+}
+
+/**
+ * De taal van het scherm waar een download vandaan komt, of 'beide'.
+ *
+ * `?lang=` op de downloadlink is de taal van de pagina waarop de knop stond —
+ * die zetten /account en het portaal er zelf op. Daarna de keuze van de klant
+ * (de cookie vis_lang, gezet door de taalknop op de site of in Studio). Is er
+ * geen van beide, dan weten we het niet, en dan niet gokken: 'beide'.
+ */
+export function downloadTaal(request, cookieTaal = null) {
+  try {
+    const q = new URL(request.url).searchParams.get('lang');
+    if (q === 'nl' || q === 'en') return q;
+  } catch { /* geen bruikbare URL: door naar de cookie */ }
+  if (cookieTaal === 'nl' || cookieTaal === 'en') return cookieTaal;
+  return 'beide';
 }
 
 /**
