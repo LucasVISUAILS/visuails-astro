@@ -63,8 +63,9 @@ console.log('\nde categorieën zeggen wat Lucas heeft afgesproken');
   check('lifestyle draagt zijn categorie, Nederlands', noun('lifestyle', 'nl'), 'lifestylefoto’s');
   check('het kale woord, Engels', noun('photo', 'en'), 'images');
   check('het kale woord, Nederlands', noun('photo', 'nl'), 'foto’s');
-  check('voorraadbeeld, Engels', noun('stock', 'en'), 'stock photos');
-  check('voorraadbeeld, Nederlands', noun('stock', 'nl'), 'stockfoto’s');
+  /* Sinds 29 september 2026 heet de gedeelde set "maandset" (Lucas). */
+  check('voorraadbeeld, Engels', noun('stock', 'en'), 'monthly-set images');
+  check('voorraadbeeld, Nederlands', noun('stock', 'nl'), 'maandsetbeelden');
   check('video en hooks, Engels', noun('video', 'en'), 'videos');
   check('video en hooks, Nederlands', noun('video', 'nl'), 'video’s');
 }
@@ -111,7 +112,7 @@ console.log('\nenkelvoud bestaat, zodat "1 foto’s" nooit kan ontstaan');
   check('één beeld', noun('visual', 'nl', 1), 'beeld');
   check('één foto', noun('photo', 'nl', 1), 'foto');
   check('één catalog foto', noun('catalog', 'nl', 1), 'catalogfoto');
-  check('één stockfoto', noun('stock', 'nl', 1), 'stockfoto');
+  check('één maandsetbeeld', noun('stock', 'nl', 1), 'maandsetbeeld');
   check('counted() telt mee', counted('catalog', 1, 'nl'), '1 catalogfoto');
   check('en boven de één ook', counted('catalog', 4, 'nl'), '4 catalogfoto’s');
   check('countedShort() laat de categorie weg', countedShort('catalog', 4, 'nl'), '4 foto’s');
@@ -127,18 +128,18 @@ console.log('\nelke dienst hangt aan de goede categorie');
   check('compleet is geen van beide, dus kaal', serviceNoun('complete', 'nl'), 'foto’s');
   check('video is video', serviceNoun('video', 'nl'), 'video’s');
   check('hooks is ook video', serviceNoun('hooks', 'nl'), 'video’s');
-  check('editions is voorraadbeeld', serviceNoun('editions', 'nl'), 'stockfoto’s');
+  check('editions is de maandset', serviceNoun('editions', 'nl'), 'maandsetbeelden');
   check('en de Engelse kant', [
     serviceNoun('catalog', 'en'), serviceNoun('lifestyle', 'en'),
     serviceNoun('complete', 'en'), serviceNoun('hooks', 'en'), serviceNoun('editions', 'en'),
-  ], ['catalog images', 'lifestyle images', 'images', 'videos', 'stock photos']);
+  ], ['catalog images', 'lifestyle images', 'images', 'videos', 'monthly-set images']);
 
   /* De korte vorm bestaat alleen voor catalog en lifestyle. Video en stock
      dragen hun categorie in één woord en worden er niet korter op. */
   check('kort: catalog valt terug op het kale woord', serviceNounShort('catalog', 'en'), 'images');
   check('kort: lifestyle ook', serviceNounShort('lifestyle', 'nl'), 'foto’s');
   check('kort: video verandert niet', serviceNounShort('video', 'nl'), 'video’s');
-  check('kort: editions verandert niet', serviceNounShort('editions', 'nl'), 'stockfoto’s');
+  check('kort: editions verandert niet', serviceNounShort('editions', 'nl'), 'maandsetbeelden');
 }
 
 console.log('\neen onbekende naam gaat stuk in plaats van stil iets te verzinnen');
@@ -192,7 +193,7 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
      er een plek uithaalt, wordt hier nog steeds rood. */
   const uitLexicon = /(?:countedShort|setSize)\('(catalog|lifestyle)'/g;
   check('Voorpagina gebruikt de korte vorm (diensttegels en voor-en-na, twee talen)',
-    (home.match(uitLexicon) || []).length, 6);  /* 23 sep 2026: diensttegels (2) + voor-en-na (1), twee talen */
+    (home.match(uitLexicon) || []).length, 8);  /* 1 okt 2026: diensttegels (2) + de dienstwissel (catalog en lifestyle, 2), twee talen */
   check('PricingPage ook',
     (prijs.match(uitLexicon) || []).length, 8);  /* 24 sep 2026: + "Eén product = …" boven de tabel (2), twee talen */
   check('en nergens meer de lange vorm onder een kop',
@@ -232,10 +233,11 @@ console.log('\nde voorraadregels zeggen stockfoto’s en niet visuals');
     /* DE GEDEELDE SET IS ECHT VOORRAADBEELD. Merk-neutraal, bruikbaar door elk
        merk, niet exclusief — dat is de definitie van stock en de site zegt het
        zelf in dezelfde zin ("usable by any brand"). Hier hoort het woord. */
-    check(`${naam}: de gedeelde set leest noun('stock')`,
-      gedeeld.every((r) => /noun\('stock'/.test(r)), true);
-    check(`${naam}: en zegt niet "visuals" of "beelden" los`,
-      gedeeld.some((r) => /\bvisuals\b|\bstockbeelden\b|\bbeelden\b/.test(r)), false);
+    /* Sinds 29 september 2026 heet hij "de maandset" / "the monthly set". */
+    check(`${naam}: de gedeelde set heet de maandset`,
+      /De maandset: \$\{STOCK_OFF_BRAND\}/.test(tekst) && /The monthly set: \$\{STOCK_OFF_BRAND\}/.test(tekst), true);
+    check(`${naam}: en zegt niet "visuals" of "stock"`,
+      gedeeld.some((r) => /\bvisuals\b|\bstockbeelden\b|\bstock\b/i.test(r)), false);
 
     /* ── EN DE ON-BRAND SET JUIST NIET — 25 augustus 2026 ────────────────────
        Dit is de plek waar Lucas' woordafspraak botst met een merkbeslissing die

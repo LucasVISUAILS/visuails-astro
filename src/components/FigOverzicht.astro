@@ -46,7 +46,9 @@
  * niets doet is een leugen met een cursor — dezelfde regel als in FigBoard.
  */
 import { DEMO_ORDER, demoWindow, windowLabel } from '../data/figdemo.js';
-import { COMPLETE_IMAGES } from '../data/pricing.js';
+/* Catalog, net als FigDash en FigGallery: dezelfde referentie is dezelfde
+   bestelling (30 september 2026). Hier stond "catalog en lifestyle". */
+import { CATALOG_IMAGES } from '../data/pricing.js';
 
 interface Props { lang?: 'en' | 'nl' }
 const { lang = 'en' } = Astro.props;
@@ -66,7 +68,7 @@ const WACHT = TEGELS.filter((t) => t === 'wacht').length;
    ingetypt: het aantal producten komt uit de fixture, het aantal beelden per
    product uit pricing.js. Zo kan deze figuur niet gaan afwijken van de rest van
    de site zodra een set groter of kleiner wordt. */
-const TOTAAL = DEMO_ORDER.products * COMPLETE_IMAGES;
+const TOTAAL = DEMO_ORDER.products * CATALOG_IMAGES;
 
 /* De beelden onder de tegels. Dezelfde reeks als FigGallery gebruikt, zodat er
    geen tweede lijst bestaat die stilletjes naar een verwijderd bestand wijst. */
@@ -82,35 +84,35 @@ const C = nl
       kant: 'Studio',
       badge: 'Voorbeeld met verzonnen gegevens',
       ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
-      wat: `${DEMO_ORDER.products} producten · catalog en lifestyle`,
+      wat: `${DEMO_ORDER.products} producten · catalog`,
       stroom: ['Ontvangen', 'In productie', 'Nagekeken', 'Geleverd'],
       stroomNu: 1,
       datumL: 'Jouw leverweek',
-      datumFijn: 'vastgezet voordat je betaalde',
+      datumFijn: 'vast sinds je betaalde',
       wachtH: 'De eerste beelden staan er',
       wachtSub: `${WACHT} wachten op jouw goedkeuring · 1 terug voor revisie`,
       staat: { ok: 'Goedgekeurd', wacht: 'Wacht op jou', rev: 'Revisie' },
       cap: ['Product 1 · voorkant', 'Product 1 · achterkant', 'Product 2 · voorkant', 'Product 2 · detail'],
       knop1: 'Bekijk en keur goed',
       knop2: 'Alles downloaden',
-      fijn: `Zo komen alle ${TOTAAL} beelden van deze bestelling binnen — ${COMPLETE_IMAGES} per product. Je keurt ze stuk voor stuk goed, en de rest van de levering loopt gewoon door.`,
+      fijn: `Zo komen alle ${TOTAAL} beelden van deze bestelling binnen — ${CATALOG_IMAGES} per product. Je keurt ze stuk voor stuk goed, en de rest van de levering loopt gewoon door.`,
     }
   : {
       kant: 'Studio',
       badge: 'Example with made-up data',
       ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
-      wat: `${DEMO_ORDER.products} products · catalog and lifestyle`,
+      wat: `${DEMO_ORDER.products} products · catalog`,
       stroom: ['Received', 'In production', 'Checked', 'Delivered'],
       stroomNu: 1,
       datumL: 'Your delivery week',
-      datumFijn: 'fixed before you paid',
+      datumFijn: 'fixed since you paid',
       wachtH: 'The first images are in',
       wachtSub: `${WACHT} waiting for your approval · 1 back for revision`,
       staat: { ok: 'Approved', wacht: 'Waiting for you', rev: 'Revision' },
       cap: ['Product 1 · front', 'Product 1 · back', 'Product 2 · front', 'Product 2 · detail'],
       knop1: 'Open and approve',
       knop2: 'Download everything',
-      fijn: `All ${TOTAAL} images of this order arrive the same way — ${COMPLETE_IMAGES} per product. You approve them one at a time and the rest of the delivery keeps moving.`,
+      fijn: `All ${TOTAAL} images of this order arrive the same way — ${CATALOG_IMAGES} per product. You approve them one at a time and the rest of the delivery keeps moving.`,
     };
 ---
 

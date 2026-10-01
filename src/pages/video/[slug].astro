@@ -5,7 +5,7 @@
 import Layout from '../../layouts/Layout.astro';
 import VideoStyleDetail from '../../components/VideoStyleDetail.astro';
 import { videoStyles } from '../../data/videoStyles.js';
-import { reviewClaim, turnaround } from '../../data/pricing.js';
+import { reviewClaim } from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
 
 export function getStaticPaths() {
@@ -23,7 +23,8 @@ const zusters = videoStyles
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/video/${s.slug}`, naam: s.name }));
 
-const TIMING = turnaround('unattended', 'en');
+/* Video is op aanvraag: de levertijd staat in de offerte (30 september 2026). */
+const TIMING = 'Format and delivery time agreed in the quote';
 const REVIEW = reviewClaim('unattended', 'en');
 ---
 

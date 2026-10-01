@@ -44,7 +44,7 @@
  * dat je het zelf kunt inrichten — en stuurt door.
  */
 import { localizedPath } from '../i18n/ui.js';
-import { euro, PLAN_AMOUNT, CUSTOM_MONTH_MIN_PRODUCTS } from '../data/pricing.js';
+import { euro, PLAN_AMOUNT, CUSTOM_CREDITS_MIN } from '../data/pricing.js';
 import { planName } from '../data/planNames.js';
 
 interface Props { lang: 'en' | 'nl'; id?: string }
@@ -60,11 +60,11 @@ const laagste = Math.min(...Object.values(PLAN_AMOUNT));
 const c = nl ? {
   etiket: 'Abonnement',
   h: 'Elke maand nieuwe beelden',
-  lede: 'Zonder elke maand te bestellen. Een abonnement is de rustigste manier om te blijven posten: een vast aantal producten per maand, een lager tarief dan per bestelling, en een week in onze agenda die van jou is. En je richt de maand zelf in — precies wat je nodig hebt, niet meer.',
+  lede: 'Zonder elke maand te bestellen. Een abonnement is de rustigste manier om te blijven posten: een vast aantal credits per maand, een lager tarief dan per bestelling, en een week in onze agenda die van jou is. En je richt de maand zelf in — precies wat je nodig hebt, niet meer.',
   facts: [
-    [`Vanaf ${euro(laagste, 'nl')} per maand`, `${planName('starter', 'nl')}, ${planName('studio', 'nl')} of ${planName('brand', 'nl')} — een vast aantal producten, elke maand.`],
-    [`Of jouw ${planName('maat', 'nl').toLowerCase()}`, `Vanaf ${CUSTOM_MONTH_MIN_PRODUCTS} producten: jij kiest per maand exact hoeveel catalogsets, carrousels en clips.`],
-    ['Een week die van jou is', 'Je leverweek staat elke maand vast in onze agenda. Geen wachtrij, geen agendacheck.'],
+    [`Vanaf ${euro(laagste, 'nl')} per maand`, `${planName('starter', 'nl')}, ${planName('studio', 'nl')} of ${planName('brand', 'nl')} — een vast aantal credits, elke maand.`],
+    [`Of jouw ${planName('maat', 'nl').toLowerCase()}`, `Vanaf ${CUSTOM_CREDITS_MIN} credits per maand: jij kiest hoeveel, en besteedt ze aan catalogsets, carrousels en clips.`],
+    ['Een week die van jou is', 'Elke maand een vaste week in onze agenda, vanaf de dag van de maand die jij kiest. Bij elk abonnement, ook maandelijks.'],
   ],
   cta: 'Bekijk de abonnementen',
   cta2: 'Stel je maand zelf samen',
@@ -72,11 +72,11 @@ const c = nl ? {
 } : {
   etiket: 'Plan',
   h: 'New images every month',
-  lede: 'Without ordering every month. A plan is the calmest way to keep posting: a fixed number of products a month, a lower rate than order by order, and a week in our calendar that is yours. And you shape the month yourself — exactly what you need, nothing more.',
+  lede: 'Without ordering every month. A plan is the calmest way to keep posting: a fixed number of credits a month, a lower rate than order by order, and a week in our calendar that is yours. And you shape the month yourself — exactly what you need, nothing more.',
   facts: [
-    [`From ${euro(laagste, 'en')} a month`, `${planName('starter', 'en')}, ${planName('studio', 'en')} or ${planName('brand', 'en')} — a fixed number of products, every month.`],
-    [`Or your ${planName('maat', 'en').toLowerCase()}`, `From ${CUSTOM_MONTH_MIN_PRODUCTS} products: you decide each month exactly how many catalog sets, carousels and clips.`],
-    ['A week that is yours', 'Your delivery week is held in our calendar every month. No queue, no calendar check.'],
+    [`From ${euro(laagste, 'en')} a month`, `${planName('starter', 'en')}, ${planName('studio', 'en')} or ${planName('brand', 'en')} — a fixed number of credits, every month.`],
+    [`Or your ${planName('maat', 'en').toLowerCase()}`, `From ${CUSTOM_CREDITS_MIN} credits a month: you choose how many, and spend them on catalog sets, carousels and clips.`],
+    ['A week that is yours', 'A fixed week in our calendar every month, starting on the day of the month you pick. On every plan, monthly too.'],
   ],
   cta: 'See the plans',
   cta2: 'Build your own month',

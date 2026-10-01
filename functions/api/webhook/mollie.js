@@ -57,20 +57,25 @@
 // normal path, not an edge case.
 
 import { betalingGedekt } from '../../../src/lib/invoice.js';
+import { boekTegoedAf, tegoedTeruggeboekt } from '../../../src/lib/tegoedVerrekening.js';
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents, refundMolliePayment } from '../../../src/lib/mollie.js';
 import { paymentMismatch } from '../../../src/data/vat.js';
 /* Hoeveel producten een plan per maand toekent. Uit plans.js en niet uit een
    getal hier: welk plan wat geeft, is een verkoopbesluit dat op één plek hoort te
    staan — zie de kop van dat bestand. */
 import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../../src/lib/invoice.js';
-import { mailInvoice } from '../../../src/lib/invoiceMail.js';
+import { mailInvoice, mailSubscriptionInvoice } from '../../../src/lib/invoiceMail.js';
+/* De direct-inlogknop in de welkomstmail van een abonnement (24 september 2026). */
+import { welkomLink } from '../../../src/lib/account.js';
 import { mailCreditNote } from '../../../src/lib/cancelMail.js';
-import { notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded } from '../../../src/lib/notify.js';
+import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
 import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
-import { grantSlots, subMaandBruto, subEersteBetalingBruto, subProducten } from '../../../src/lib/slots.js';
+import { grantSlots, subMaandBruto, subEersteBetalingBruto, subProducten, creditsVoor } from '../../../src/lib/slots.js';
+import { planName } from '../../../src/data/planNames.js';
+import { bedrag as mailBedrag } from '../../../src/lib/mailTemplate.js';
 
 /* Dezelfde twee cent als FACTUUR_SPELING_CENT in src/lib/invoice.js, en om
    dezelfde reden — zie de noot bij de dekkingscontrole in
@@ -260,12 +265,47 @@ export async function onRequestPost({ request, env }) {
        * De terugval op description is weg. Hij kon nooit werken, en een terugval die
        * nooit werkt maskeert alleen dat de eerste sleutel fout is.
        */
+      /* ── DE EERSTE BETALING VAN EEN ABONNEMENT DIE NIET DOORGING — 24 sep 2026 ──
+         Die liet de rij op 'pending' staan: geen mandaat, geen maand, en toch
+         "al een abonnement" voor wie het opnieuw probeerde (zie subscribe.js).
+         Mollie zegt hier definitief dat deze betaling niets wordt, dus is dit
+         geen abonnement maar een afgebroken aanmelding. Alleen een rij die nog
+         nooit een betaalde maand had. */
+      const subMeta = typeof payment.metadata === 'string'
+        ? (() => { try { return JSON.parse(payment.metadata); } catch { return {}; } })()
+        : (payment.metadata || {});
+      if (!subMeta.order_ref && subMeta.sub_ref) {
+        try {
+          await env.DB.prepare(
+            `UPDATE subscriptions SET status = 'cancelled', cancelled_at = datetime('now'),
+                    cancel_reason = ?2, updated_at = datetime('now')
+              WHERE ref = ?1 AND status = 'pending' AND mollie_subscription_id IS NULL
+                AND NOT EXISTS (SELECT 1 FROM subscription_months m WHERE m.subscription_id = subscriptions.id)`
+          ).bind(String(subMeta.sub_ref), `eerste betaling ${({ failed: 'mislukt', canceled: 'afgebroken', expired: 'verlopen' })[payment.status] || payment.status}`).run();
+          console.log('[mollie-webhook] eerste betaling abonnement', String(subMeta.sub_ref), payment.status, '— aanmelding afgesloten');
+        } catch (err) {
+          console.error('[mollie-webhook] afgebroken aanmelding niet afgesloten —', err?.message || err);
+        }
+        return new Response('ok', { status: 200 });
+      }
+
       const ref = payment?.metadata?.order_ref || '';
       try {
         const row = ref
           ? await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first()
           : null;
-        if (row?.id) await notifyPaymentFailed(env, row.id, payment.status);
+        if (row?.id) {
+          /* Ook een mislukte betaling komt in `payments` (status letterlijk, zoals
+             de tabel belooft): dan kan /api/order-status meteen zeggen dat de
+             betaling niet doorging, in plaats van tien seconden "even kijken".
+             Elke lezer van deze tabel filtert op paid/refunded. */
+          await env.DB.prepare(
+            `INSERT OR IGNORE INTO payments (order_id, provider, external_id, status, amount_cents, currency)
+             VALUES (?1, 'mollie', ?2, ?3, ?4, ?5)`
+          ).bind(row.id, payment.id, payment.status, mollieAmountToCents(payment.amount) ?? 0,
+            (payment.amount?.currency || 'EUR').toUpperCase()).run().catch(() => {});
+          await notifyPaymentFailed(env, row.id, payment.status);
+        }
       } catch (err) {
         console.error('[mollie-webhook] kon geen bericht sturen over', payment.status, '—', err?.message || err);
       }
@@ -642,13 +682,56 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
      lukt mag de webhook geen 500 laten geven, want dan komt Mollie terug en wordt
      alles hierboven opnieuw geprobeerd. De factuur is te herstellen, een dubbele
      toekenning niet. */
+  let factuur = null;
   try {
     const rijId = await betalingId(env, payment.id);
-    const factuur = rijId ? await issueSubscriptionInvoice(env, rijId) : null;
+    factuur = rijId ? await issueSubscriptionInvoice(env, rijId) : null;
     if (factuur) console.log(`[mollie-webhook] factuur ${factuur.number} voor abonnement ${sub.ref || sub.id} (${mode})`);
   } catch (e) {
     console.error('[mollie-webhook] abonnementsfactuur voor', sub.ref || sub.id, 'niet uitgegeven —',
       e && e.message ? e.message : e);
+  }
+
+  /* ── EN DAN DE MAIL — 23 september 2026 ───────────────────────────────────
+     Tot vandaag hield het hier écht op: factuur in Studio, en verder stilte.
+     De klant hoort dat zijn maand betaald is en krijgt de factuur; bij de
+     eerste maand hoort de studio het ook. In een try om dezelfde reden als
+     de factuur: een mail die niet weggaat mag de webhook geen 500 laten geven. */
+  try {
+    const wie = await env.DB.prepare(
+      `SELECT c.email, c.brand, s.customer_id, s.ref, s.plan, s.term, s.window_day, s.slots_json, s.vat_treatment, s.vat_country,
+              (SELECT COUNT(*) FROM subscription_months m WHERE m.subscription_id = s.id) AS maanden
+         FROM subscriptions s JOIN customers c ON c.id = s.customer_id WHERE s.id = ?1`
+    ).bind(sub.id).first();
+    if (wie?.email) {
+      const eerste = Number(wie.maanden) <= 1;
+      const lang = String(payment.locale || '').startsWith('en') ? 'en' : 'nl';
+      const credits = creditsVoor({ plan: wie.plan, slots_json: wie.slots_json });
+      const naam = planName(wie.plan, lang);
+      /* De eerste maand is de welkomstmail (24 september 2026), met een knop
+         die direct inlogt — ook als de factuur even niet lukte. Elke maand
+         daarna alleen als er een factuur is. Zie mailSubscriptionInvoice(). */
+      if (factuur || eerste) {
+        const loginLink = eerste ? await welkomLink(env, wie.customer_id, lang, env.PUBLIC_ORIGIN || 'https://visuails.com') : '';
+        await mailSubscriptionInvoice(env, { sub: wie, customer: { email: wie.email, lang }, invoice: factuur, planNaam: naam, credits, eerste, loginLink });
+      }
+      if (eerste) {
+        /* 0% buiten de EU zonder beoordeling vooraf (29 september 2026): het
+           betaalmiddel zegt of dat klopt, en dat hoort in dit bericht. */
+        const twijfel = wie.vat_treatment === 'outside_scope'
+          ? paymentMismatch({
+            method: payment.method, country: wie.vat_country, treatment: wie.vat_treatment,
+            cardCountry: payment?.details?.cardCountryCode || '',
+          })
+          : null;
+        await notifySubscriptionStarted(env, {
+          subRef: wie.ref, plan: naam, term: wie.term, brand: wie.brand, email: wie.email,
+          credits, bedragCents: cents, windowDay: wie.window_day, twijfel,
+        });
+      }
+    }
+  } catch (e) {
+    console.error('[mollie-webhook] abonnementsmail voor', sub.ref || sub.id, 'niet verstuurd —', e && e.message ? e.message : e);
   }
 }
 
@@ -869,11 +952,11 @@ async function recordPaid(env, payment, mode, origin = '') {
      orderGrossCents(). Migratie 0015 bracht de kolom; draait die niet, dan geeft
      D1 hier "no such column" en valt de query terug op de oude set. */
   const order = await env.DB.prepare(
-    'SELECT id, customer_id, service, status, payment_status, total_cents, vat_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1'
+    'SELECT id, ref, customer_id, service, status, payment_status, total_cents, vat_cents, refunded_cents, lang, cancel_reason, details_json FROM orders WHERE ref = ?1'
   ).bind(ref).first().catch(async (err) => {
     if (!/no such column/i.test(String(err?.message || err))) throw err;
     return env.DB.prepare(
-      'SELECT id, service, status, payment_status, total_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1'
+      'SELECT id, service, status, payment_status, total_cents, refunded_cents, lang, cancel_reason FROM orders WHERE ref = ?1'
     ).bind(ref).first();
   });
   if (!order) {
@@ -1045,7 +1128,11 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
      * studio vertellen te stoppen met een bestelling die nog loopt.
      */
     const bruto = orderGrossCents(order);
-    const full = bruto !== null ? orderRefunded >= bruto : (cents !== null && refunded >= cents);
+    /* Wat er als TEGOED terugging (een bestelling die deels met tegoed betaald
+       was, 29 september 2026) hoort mee op de creditnota en telt mee voor
+       "volledig terug". Zie handleOrderCancel() in src/lib/admin.js. */
+    const tegoedTerug = await tegoedTeruggeboekt(env, order.id).catch(() => 0);
+    const full = bruto !== null ? orderRefunded + tegoedTerug >= bruto : (cents !== null && refunded >= cents);
     await env.DB.prepare(
       `UPDATE orders SET refunded_cents = ?1, payment_status = ?2 WHERE id = ?3`
     ).bind(orderRefunded, full ? 'refunded' : order.payment_status || 'paid', order.id).run();
@@ -1055,8 +1142,18 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
     ).bind(
       order.id,
       order.status,
-      `Refund recorded: ${(orderRefunded / 100).toFixed(2)} EUR of ${bruto === null ? '?' : (bruto / 100).toFixed(2)} (Mollie ${payment.id}, this payment ${(refunded / 100).toFixed(2)})`
+      order.lang === 'nl'
+        /* Bevestigd door Mollie. "Het volledige bedrag komt terug" klopte niet als
+           een deel als tegoed terugkwam (29 september 2026). */
+        ? `Mollie heeft de terugbetaling van ${mailBedrag(refunded, 'nl')} bevestigd.${full && tegoedTerug > 0 ? ` Samen met het tegoed van ${mailBedrag(tegoedTerug, 'nl')} is alles terug.` : full ? ' Het volledige bedrag komt terug.' : ''}`
+        : `Mollie has confirmed the refund of ${mailBedrag(refunded, 'en')}.${full && tegoedTerug > 0 ? ` Together with the ${mailBedrag(tegoedTerug, 'en')} of credit, everything is back.` : full ? ' The full amount comes back.' : ''}`
     ).run().catch(() => {});
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+       VALUES (NULL, NULL, 'payment.refund', ?1, ?2, ?3)`
+    ).bind(order.id, order.customer_id || null,
+      `Refund recorded: ${(orderRefunded / 100).toFixed(2)} EUR of ${bruto === null ? '?' : (bruto / 100).toFixed(2)} (Mollie ${payment.id}, this payment ${(refunded / 100).toFixed(2)})`)
+      .run().catch(() => {});
 
     console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): order ${known} -> ${orderRefunded} cents, ${full ? 'full' : 'partial'}`);
 
@@ -1090,7 +1187,7 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
         // issueCreditNote() telt zelf op wat er al gecrediteerd is en geeft
         // alleen het verschil uit, dus dit moet het lopende totaal zijn waar de
         // factuur tegenover staat.
-        refundedGrossCents: orderRefunded,
+        refundedGrossCents: orderRefunded + tegoedTerug,
         reason: order.cancel_reason || null,
       });
       if (note) console.log(`[mollie-webhook] creditnota ${note.number} voor ${ref} (${note.status})`);
@@ -1260,6 +1357,10 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   )
     .bind(payment.id, order.id)
     .run();
+  /* Het verrekende tegoed afboeken, nu de rest betaald is (29 september 2026).
+     Zie src/lib/tegoedVerrekening.js. Mislukt het, dan staat het in het log en
+     is de betaling niet minder verwerkt. */
+  await boekTegoedAf(env, order).catch((e) => console.error('[mollie-webhook] tegoed niet afgeboekt voor', ref, '—', e?.message || e));
 
   // order_events.status carries the order's PIPELINE status, not a payment
   // status — see schema.sql. A payment does not move the pipeline, so this
@@ -1269,14 +1370,25 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   // a real `paid` into whichever database the deployment is pointed at, and
   // six weeks from now the only thing distinguishing it from a real €1 in
   // the admin timeline is this word.
+  /* Sinds 23 september 2026 in de taal van de klant: order_events is óók zijn
+     tijdlijn. De betaal-id en de testmodus staan in admin_log, en de testmodus
+     bovendien in payments.mode — daar is hij over zes weken nog even hard. */
   await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
     .bind(
       order.id,
       order.status,
-      `Payment received via Mollie (${payment.id})${mode === 'test' ? ' — TEST MODE, no money moved' : ''}`,
+      order.lang === 'nl'
+        ? `Betaling ontvangen${mode === 'test' ? ' (testbetaling)' : ''}`
+        : `Payment received${mode === 'test' ? ' (test payment)' : ''}`,
       'system'
     )
     .run();
+  await env.DB.prepare(
+    `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+     VALUES (NULL, NULL, 'payment.paid', ?1, ?2, ?3)`
+  ).bind(order.id, order.customer_id || null,
+    `Payment received via Mollie (${payment.id})${mode === 'test' ? ' — TEST MODE, no money moved' : ''}`)
+    .run().catch(() => {});
 
   /*
    * ═══════════════════════════════════════════════════════════════════════════
@@ -1568,8 +1680,23 @@ async function recordPaymentMethod(env, orderId, payment, ref, mode) {
     method,
     country: row.country,
     treatment: row.vat_treatment,
+    /* Het land van de kaart (29 september 2026) — zie paymentMismatch(). */
+    cardCountry: payment?.details?.cardCountryCode || '',
   });
   if (!mismatch) return;
+
+  /* ── BUITEN DE EU: NIET ALLEEN LOGGEN, MAAR MELDEN — 29 september 2026 ──
+     Die bestellingen gaan sinds vandaag zonder beoordeling vooraf naar Mollie
+     (zie vatGate() in src/data/vat.js). Deze melding is de controle die daarvoor
+     in de plaats kwam, dus die hoort bij jou te landen en niet in een log. */
+  if (row.vat_treatment === 'outside_scope') {
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, order_id, detail)
+       VALUES (NULL, NULL, 'payment.btw-twijfel', ?1, ?2)`
+    ).bind(orderId, `${ref}: ${mismatch}`).run().catch(() => {});
+    await notifyBtwTwijfel(env, orderId, mismatch);
+    return;
+  }
 
   // ── WAAROM DIT LOGT EN NIET MARKEERT ───────────────────────────────────────
   //

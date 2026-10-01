@@ -143,10 +143,10 @@ export const videoExamples = {
       ...leeg,
       ratio: 'vertical',
       seconds: 8,
-      title: { en: 'A bottle, one slow turn', nl: 'Een flacon, één langzame draai' },
+      title: { en: 'A handbag, one slow turn', nl: 'Een handtas, één langzame draai' },
       alt: {
-        en: 'A bottle on a plain ground, turning slowly once from left to right.',
-        nl: 'Een flacon op een egale ondergrond die één keer langzaam van links naar rechts draait.',
+        en: 'A handbag on a plain background, turning slowly once from left to right.',
+        nl: 'Een handtas op een egale ondergrond die één keer langzaam van links naar rechts draait.',
       },
     },
     {

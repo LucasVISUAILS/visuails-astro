@@ -241,6 +241,8 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
   }
   .sr1-keuze:hover { border-color: var(--ink); }
   .sr1-keuze:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
+  @media (max-width: 760px), (pointer: coarse) { .sr1-keuze { font-size: 16px; } }
 
   /* ── HET VOORBEELD BIJ DE KEUZE ─────────────────────────────────────────
      Klein: dit is een regel in een formulier en niet de stijlpagina. Wat het
@@ -275,6 +277,9 @@ const leespagina = categorie === 'catalog' ? '/catalog' : '/lifestyle';
   .sr1-r { margin-left: auto; font-size: .85rem; color: var(--ink-3); }
   .sr1-r a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
   .sr1-r a:hover { color: var(--ink); }
+  /* Raakvlak 24 px hoog in plaats van 16 (1 oktober 2026); onzichtbaar, zie .pijl in stijl22.css. */
+  .sr1-r a { position: relative; }
+  .sr1-r a::before { content: ""; position: absolute; inset: -4px 0; }
   .sr1-of { padding: 0 .15rem; }
 
   /* Op een telefoon staat de rechterkolom onder de keuze in plaats van ernaast:

@@ -109,9 +109,12 @@ console.log('het eindpunt antwoordt, en zegt precies twee dingen');
      referentie heeft — en een referentie is geen geheim. */
   /* Sinds 19 september 2026 twee vlaggen erbij: `paid` (alleen de webhook
      schrijft payment_status) en `payable` (mag er een verse betaallink komen).
-     Nog steeds geen bedrag, adres of naam — zie de noot in order-status.js. */
+     Nog steeds geen bedrag, adres of naam — zie de noot in order-status.js.
+     Sinds 24 september 2026 nog één: `failed` (de laatste betaalpoging werd
+     geweigerd of afgebroken), zodat de bedankpagina niet tien seconden op de
+     bank wacht. Ook dat zegt niets over wie er betaalde of hoeveel. */
   ok('en het antwoord heeft niets anders in zich',
-    Object.keys(dubbel.body).sort().join(','), 'cancelled,kind,paid,payable');
+    Object.keys(dubbel.body).sort().join(','), 'cancelled,failed,kind,paid,payable');
   ok('  een onbetaalde bestelling is niet paid', gewoon.body.paid, false);
   ok('  en zonder bedrag ook niet payable', gewoon.body.payable, false);
   ok('  een geannuleerde is nooit payable', dubbel.body.payable, false);
@@ -349,21 +352,26 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
      toets was verhuisd van het bestand naar het antwoord, maar bleef de
      SPELLING van dat antwoord vastpinnen. Wat een clipbesteller moet lezen is
      dat er geen datum aan vastzit — niet met welk woord we dat zeggen. */
-  ok('het antwoord zegt dat een clip geen vaste leverdatum krijgt (EN)',
-    /no fixed delivery date/.test(videoVragenEn), true);
+  /* ── 30 SEPTEMBER 2026: VIDEO IS OP AANVRAAG ──────────────────────────────
+     Lucas: formaat en levertijd van video staan in de schriftelijke offerte. De
+     belofte die deze toets bewaakt blijft dezelfde — een clip koopt geen
+     gereserveerde leverdatum — maar het antwoord zegt nu waar de levertijd dan
+     wél vandaan komt, in plaats van naar de normale doorlooptijd te wijzen. */
+  ok('het antwoord zegt dat de levertijd in de offerte staat (EN)',
+    /delivery time is agreed in the written quote/.test(videoVragenEn), true);
   ok('  en in het Nederlands hetzelfde',
-    /zonder vaste leverdatum/.test(videoVragenNl), true);
-  ok('het zegt waar het venster dan wél bij hoort (EN)',
-    /the order carries the date/.test(videoVragenEn), true);
-  ok('en (NL)', /draagt de bestelling de datum/.test(videoVragenNl), true);
+    /levertijd spreken we af in de schriftelijke offerte/.test(videoVragenNl), true);
+  ok('het zegt dat meer clips geen datum opleveren (EN)',
+    /ordering more clips does not get you one/.test(videoVragenEn), true);
+  ok('en (NL)', /méér clips bestellen levert dus geen datum op/.test(videoVragenNl), true);
 
   /* En dat ze ook echt op de gebouwde pagina staan. De regel hierboven bewijst
      dat de tekst bestaat; deze bewijst dat de pagina hem afdrukt. Zonder dit
      paar zou een component die serviceFaqs() niet meer aanroept, groen blijven. */
   ok('en de gebouwde /video drukt ze af',
-    /no fixed delivery date/.test(read('dist/video/index.html')), true);
+    /agreed in the written quote/.test(read('dist/video/index.html')), true);
   ok('  ook in het Nederlands',
-    /zonder vaste leverdatum/.test(read('dist/nl/video/index.html')), true);
+    /in de schriftelijke offerte/.test(read('dist/nl/video/index.html')), true);
 
   /* TierCompare stond op deze pagina tot 19 september 2026, met een noot erboven
      die uitlegde dat geen van beide kolommen over clips ging. Uit de doorlichting

@@ -107,7 +107,7 @@ console.log('de verwerkersovereenkomst bestaat in beide talen en dekt art. 28 li
     ['f · datalek wordt aan de KLANT gemeld', /Art\. 33\(2\)/, /art\. 33 lid 2/],
     ['f · bijstand bij art. 32 tot en met 36', /Art\. 32 to 36/i, /art\. 32 tot en met 36/i],
     ['g · aan het einde wissen of teruggeven', /delete everything it covers/i, /verwijderen wij alles wat onder deze/i],
-    ['h · informatie en een audit door een deskundige', /independent expert/i, /onafhankelijke deskundige/i],
+    ['h · informatie en een audit, ook door een deskundige die de klant aanwijst', /an expert you appoint/i, /deskundige die jij aanwijst/i],
   ];
   for (const [naam, reEn, reNl] of EISEN) {
     ok(`EN ${naam}`, reEn.test(DPA.en), true);
@@ -388,7 +388,7 @@ console.log('\nde licentie in §8 somt op, en belooft niets wat de wet niet toes
     /we would be infringing your rights by showing our own work/i.test(TERMS.en), true);
   ok('NL idem', /zouden wij inbreuk maken op jouw rechten door ons eigen werk te laten zien/i.test(TERMS.nl), true);
   ok('EN en het is smal: niet verkopen, niet doorlicentiëren',
-    /may not sell them, licence them to anyone else/i.test(TERMS.en), true);
+    /may not sell them, license them to anyone else/i.test(TERMS.en), true);
   ok('NL idem', /mogen ze niet verkopen, niet aan iemand anders in licentie geven/i.test(TERMS.nl), true);
   ok('EN het niet-uitgebrachte product blijft opt-in', /we publish nothing/i.test(TERMS.en), true);
   ok('NL idem', /dan publiceren wij niets/i.test(TERMS.nl), true);
@@ -561,8 +561,11 @@ console.log('\nen er staat geen modelnaam op een juridische pagina');
   ok('geen enkele modelnaam op de juridische pagina’s', gevonden.length, 0, gevonden.join(' | '));
 
   /* En de reden staat er wél, want een weigering zonder uitleg leest als iets verbergen. */
-  ok('EN legt uit waarom er geen model genoemd wordt', /Which model, we do not say/i.test(PRIV.en), true);
-  ok('NL idem', /Welk model, dat zeggen we niet/i.test(PRIV.nl), true);
+  /* 29 september 2026: "welk model, dat zeggen we niet" werd "dat wisselt, en je
+     kunt de aanbieders opvragen" — de modelaanbieder is een subverwerker van Freepik,
+     en de keten mag een verantwoordelijke kennen. Nog steeds geen naam op de pagina. */
+  ok('EN legt uit waarom er geen model genoemd wordt', /Which model: that changes[\s\S]{0,600}five working days/i.test(PRIV.en), true);
+  ok('NL idem', /Welk model, dat wisselt[\s\S]{0,600}vijf werkdagen/i.test(PRIV.nl), true);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -794,16 +797,22 @@ console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
       /(issues the mandate|de machtiging afgeeft)/.test(tekst));
 
     /* 1b · DE VOORUITBETAALDE TERMIJN. Drie bedingen, en alle drie staan ze in
-     *      de code: PREPAY_REFUNDABLE = false, restantTranches() dat per maand
-     *      vrijgeeft, en TERMS.prepaid dat in TERM_IDS zit. Een korting die de
+     *      de code: PREPAY_REFUNDABLE = false, grantPrepaidMonths() dat per maand
+     *      toekent (ook na opzeggen), en TERMS.prepaid dat in TERM_IDS zit. Een korting die de
      *      klant koopt met "geen geld terug" hoort met zoveel woorden in de
      *      voorwaarden te staan en niet alleen op de prijspagina. */
     ok(`${lang}: de derde termijn staat erin`,
       /(Three terms|Drie termijnen)/.test(tekst));
     ok(`${lang}: een vooruitbetaald jaar wordt niet terugbetaald`,
       /(not refundable|niet terugbetaald)/.test(tekst));
-    ok(`${lang}: en het restant komt per maand vrij, niet in één keer`,
+    ok(`${lang}: en de maanden komen per maand, niet in één keer`,
       /(one month at a time|per maand)/.test(tekst) && /(not released as one balance|niet in één keer als één saldo)/.test(tekst));
+    /* 24 september 2026: opzeggen laat het jaar doorlopen; het omzetten in
+       tegoed is weg (zie de kop van vooruit.js). */
+    ok(`${lang}: opzeggen laat het vooruitbetaalde jaar doorlopen`,
+      /(your year simply runs on to the end|loopt je jaar gewoon door tot het einde)/.test(tekst));
+    ok(`${lang}: en belooft geen omzetting in tegoed meer`,
+      !/(converted into <strong>credit|omgezet in <strong>tegoed)/.test(tekst));
 
     // 2 · GEEN MINIMALE LOOPTIJD op de maandtermijn. De code dwingt er geen af:
     //     handlePlanCancel() zegt direct op. Zie de noot bij PLAN_COMPARE_MONTHS.

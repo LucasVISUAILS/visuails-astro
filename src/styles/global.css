@@ -4539,6 +4539,10 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 }
 .select option { background: var(--surface); color: var(--ink); }
 .textarea { min-height: 120px; resize: vertical; }
+/* iOS zoomt in op velden onder 16 px; zie de noot in stijl22.css (1 oktober 2026). */
+@media (max-width: 760px), (pointer: coarse) {
+  .input, .textarea, .select { font-size: 16px; }
+}
 
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
 @media (max-width: 620px) { .row-2 { grid-template-columns: 1fr; } }

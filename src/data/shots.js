@@ -515,7 +515,7 @@ export const COPY = {
        stond op "front and back"; dat was twee versies van de waarheid zodra
        de close-up verplicht werd. */
     leadShort: 'Front, back and a close-up are required; the worn shot is yours to send or skip.',
-    lead: 'One product at a time. The front, the back and one close-up are required — all three come back to you as delivered images, so none of them is ours to guess. The worn shot is optional, and the only thing we ask is that you say whether it is coming.',
+    lead: 'One product at a time. The front, the back and one close-up are required — every image we make is built from them, so none of it is ours to guess. The worn shot is optional, and the only thing we ask is that you say whether it is coming.',
     bulkH: 'Have them all ready?',
     bulkLead: 'Drop the whole lot in and we will sort them. A folder per product works best — we read the folder name as the product.',
     bulkCta: 'Drop files or folders',
@@ -537,7 +537,7 @@ export const COPY = {
     // — maar hij kost een gesprek achteraf, en dat hoort iemand te weten vóórdat
     // hij hem kiest en niet erna.
     toFolder: 'Rather send one whole folder?',
-    toFolderWhy: 'Faster, less precise: we read the folder name as the product, and we usually have to come back to you to ask what is what.',
+    toFolderWhy: 'Faster, less precise: we read the folder name as the product, and we usually have to get back to you to ask what is what.',
     toCards: 'Fill them in per product instead',
     toCardsWhy: 'Takes longer and needs nothing from us afterwards — every photo is already against the right product and the right angle.',
     /* ── KORT, WANT HET STAAT NAAST DE NAAM — 17 september 2026 ────────────
@@ -566,7 +566,7 @@ export const COPY = {
     replace: 'Replace',
     remove: 'Remove',
     productName: 'Product name or SKU',
-    productNameHint: 'Whatever you call it in your own shop. It comes back on the files with the same name.',
+    productNameHint: 'Give each product the name it has in your own shop; the files come back under that name.',
     ready: 'Ready',
     // Names what is missing rather than restating the rule. A card that says
     // "needs a front photo" to a customer who sent one and skipped the back is
@@ -635,7 +635,7 @@ export const COPY = {
   nl: {
     h: 'Je productfoto’s',
     leadShort: 'Voorkant, achterkant en één close-up zijn verplicht; de draagfoto stuur je mee of sla je over.',
-    lead: 'Eén product tegelijk. De voorkant, de achterkant en één close-up zijn verplicht — je krijgt ze alle drie terug als geleverde foto, dus geen ervan is aan ons om te raden. De draagfoto is optioneel; het enige wat we vragen is dat je zegt of hij komt.',
+    lead: 'Eén product tegelijk. De voorkant, de achterkant en één close-up zijn verplicht — elk beeld dat we maken is erop gebouwd, dus niets ervan is aan ons om te raden. De draagfoto is optioneel; het enige wat we vragen is dat je zegt of hij komt.',
     bulkH: 'Heb je ze allemaal klaar?',
     bulkLead: 'Sleep de hele hoop erin, dan sorteren wij. Een map per product werkt het best — we lezen de mapnaam als het product.',
     bulkCta: 'Sleep bestanden of mappen',
@@ -662,7 +662,7 @@ export const COPY = {
     replace: 'Vervangen',
     remove: 'Verwijderen',
     productName: 'Productnaam of SKU',
-    productNameHint: 'Hoe je het zelf in je shop noemt. Het komt met dezelfde naam terug op de bestanden.',
+    productNameHint: 'Geef elk product de naam die het in je eigen shop heeft; de bestanden komen onder die naam terug.',
     ready: 'Klaar',
     needsShots: 'Mist {list}',
     /* Zie de Engelse tegenhanger. */

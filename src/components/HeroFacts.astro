@@ -53,13 +53,16 @@ interface Props {
   /** De twee feiten die per dienst verschillen: [wat dik staat, het label]. */
   eigen: [string, string][];
   lang?: string;
+  /** Vervangt de levertijd. Video en hooks zijn op aanvraag: hun levertijd
+   *  staat in de offerte en niet in de normale doorlooptijd (30 september 2026). */
+  levertijd?: [string, string];
 }
-const { eigen, lang = 'en' } = Astro.props;
+const { eigen, lang = 'en', levertijd } = Astro.props;
 const nl = lang === 'nl';
 
 /* De twee die op elke dienstpagina hetzelfde zijn, uit één bron. */
 const gedeeld: [string, string][] = [
-  [turnaroundShort('unattended', lang), nl ? 'geschatte levering' : 'estimated delivery'],
+  levertijd || [turnaroundShort('unattended', lang), nl ? 'geschatte levering' : 'estimated delivery'],
   [reviewClaimShort('unattended', lang), nl ? 'elke visual' : 'every visual'],
 ];
 const feiten = [...eigen, ...gedeeld];

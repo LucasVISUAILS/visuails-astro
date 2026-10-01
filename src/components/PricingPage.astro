@@ -61,7 +61,8 @@ import {
   CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
   /* De kleine posten die elders wél genoemd worden en hier niet — 4 sept 2026. */
   extraPhotoRate, EXTRA_PHOTO_LADDER, OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS,
-  RESOLUTIE, VIDEO_OP_AANVRAAG,
+  RESOLUTIE, VIDEO_OP_AANVRAAG, HOOG_PER_PRODUCT, VOORRANG,
+  CUSTOM_CREDITS_MIN, customCreditsTotal,
 } from '../data/pricing.js';
 // Het juiste woord per dienst — zie de kop van lexicon.js.
 import { counted, countedShort, setSize } from '../data/lexicon.js';
@@ -71,6 +72,8 @@ import { counted, countedShort, setSize } from '../data/lexicon.js';
 // eventually be updated once. `faqH` — the heading above them — stays here: it
 // is page furniture, not a question.
 import { pricingFaqs } from '../data/faq.js';
+/* Waar het merkmodel inbegrepen is — zie hasBrandModel() in plans.js. */
+import { planName } from '../data/planNames.js';
 import Disclose from './Disclose.astro';
 import '../styles/stijl22.css';
 import { localizedPath } from '../i18n/ui.js';
@@ -211,7 +214,7 @@ const COPY = {
          tabellen over hetzelfde horen niet in twee schrijfwijzen te staan.
 
          counted() zet er meteen het juiste woord achter — zie lexicon.js. */
-      saveUnit: 'less than the two apart',
+      saveUnit: 'vs. the two apart',
       complete: { name: 'Catalog + Lifestyle', sub: `Both services on the same product, one rate — ${counted('complete', COMPLETE_IMAGES, 'en')}` },
       /* countedShort() en niet counted(): de kop ernaast NOEMT de categorie al.
          "Catalog set — 4 catalog images" zet het woord twee keer neer. Zie de
@@ -254,7 +257,7 @@ const COPY = {
     addOnH: 'What else has a rate',
     addOnSub: 'Not priced per product, so not on the ladder.',
     brandModelName: 'Your Brand Model',
-    brandModelLine: 'One face. Every order. Only yours.',
+    brandModelLine: 'One face, the same in every order you use it in. Only yours.',
     brandModelUnit: 'one-time setup',
     brandModelCta: 'See Your Brand Model',
     /* De drie FigPayback-labels stonden hier, en zijn weg met de terugverdien-
@@ -265,7 +268,7 @@ const COPY = {
        punt. Een prijs die uitleg nodig heeft over hoe hij bij je terugkomt, is
        een prijs die zich verontschuldigt. Deze zegt wat voor soort bedrag het
        is en houdt op. */
-    brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once. After that every order carries the same face at the normal rate.`,
+    brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once, with one correction round on the design before it is locked. After that the face stays the same between orders; per order you choose whether to use it, at the normal rate. Included in ${planName('brand', 'en')}, and in ${planName('studio', 'en')} on the 12-month terms.`,
     videoName: 'Video clip',
     videoLine: VIDEO_OP_AANVRAAG ? 'One short clip, on request for now: we reply with a price.' : 'One short clip. The same rate on its own or added to any order.',
     videoUnit: 'per clip',
@@ -285,9 +288,13 @@ const COPY = {
     moreRows: [
       ['Extra catalog angle', `${euro(extraPhotoRate(1), 'en')} to ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'en')} per photo, falling with your count`, 'A side or a second detail, per product.', '/catalog'],
       ['Complete outfit', `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS} per order`, 'Several pieces worn together in one lifestyle shot.', '/lifestyle'],
-      ['A look of your own', 'On request', 'One design fee, then the ordinary rate.', '/start/custom-look'],
+      ['A look of your own', 'On request', 'One design fee and one correction round, then the ordinary rate.', '/start/custom-look'],
+      /* De twee opties uit het bestelformulier stonden tot 29 september 2026
+         alleen daar en in de voorwaarden. Wie voorrang nodig heeft, zoekt hier. */
+      ['Priority delivery', `${Math.round(VOORRANG.deel * 100)}% of the order, ${euro(VOORRANG.bodem, 'en')} to ${euro(VOORRANG.plafond, 'en')}`, `Paid on a working day before ${VOORRANG.bestelVoorUur}:00, delivered by ${VOORRANG.klaarUur}:00 the next working day — or the surcharge comes back. Up to ${VOORRANG.maxProducten} products or ${VOORRANG.maxClips} clips.`, '/start'],
+      ['Higher resolution', `${euro(HOOG_PER_PRODUCT, 'en')} per lifestyle product`, `All three lifestyle images at ${RESOLUTIE.hoog} px on the long edge instead of ${RESOLUTIE.standaard}, for print or a large screen.`, '/lifestyle'],
       ['Hooks', `From ${euro(AMOUNT.hooks, 'en')} a hook, on request`, 'A short vertical video that runs into the post below.', '/hooks'],
-      ['Editions', `${euro(AMOUNT.editions, 'en')} a month after a one-time ${euro(AMOUNT.editionsSetup, 'en')} — not orderable yet`, 'Monthly on-brand visuals without your product, on top of a plan.', '/editions'],
+      ['Editions', `${euro(AMOUNT.editions, 'en')} a month after a one-time ${euro(AMOUNT.editionsSetup, 'en')} — coming soon`, 'Monthly on-brand visuals without your product, on top of a plan.', '/editions'],
     ],
 
     inclH: 'In every order',
@@ -296,7 +303,7 @@ const COPY = {
     svcFromTag: `From ${WINDOW_THRESHOLD} products`,
     svcUnderTag: `Under ${WINDOW_THRESHOLD} products`,
     gateLead: 'You only see dates the calendar can still hold.',
-    gateBody: 'You pick the delivery date in the form, from days with room left, and it is fixed the moment you order. If a day fills up in between, you are told at once and pick again — no optimistic guess.',
+    gateBody: 'You pick the delivery date in the form, from days with room left. It is reserved the moment you order and fixed once you have paid. If a day fills up in between, you are told at once and pick again — no optimistic guess.',
 
     // De plannen staan sinds 20 augustus 2026 op /plans; hier blijft één regel
     // die zegt dat de andere manier van kopen bestaat.
@@ -326,15 +333,15 @@ const COPY = {
     ladderH: 'De prijs per product',
     ladderSub: 'Het tarief geldt voor elk product in de bestelling.',
     ladderProductsCol: 'Producten',
-    ladderScrollHint: 'Schuif opzij voor de kolommen Catalogset en Lifestyle-carousel.',
+    ladderScrollHint: 'Schuif opzij voor de kolommen Catalogset en Lifestylecarrousel.',
     kinds: {
       // Zie de EN-tabel: 'per product' werd twee keer geprint.
       /* Zie de noot bij de Engelse tabel. Hier stond bovendien "beelden" waar
          het over catalog en lifestyle gaat; dat hoort "foto's" te zijn. */
-      saveUnit: 'minder dan de twee los',
+      saveUnit: 't.o.v. de twee los',
       complete: { name: 'Catalog + Lifestyle', sub: `Allebei op hetzelfde product, één tarief — ${counted('complete', COMPLETE_IMAGES, 'nl')}` },
       catalog: { name: 'Catalogset', sub: setSize('catalog', CATALOG_IMAGES, 'nl') },
-      lifestyle: { name: 'Lifestyle-carousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl') },
+      lifestyle: { name: 'Lifestylecarrousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl') },
     },
 
     workedH: 'Wat dat wordt',
@@ -374,11 +381,11 @@ const COPY = {
     addOnH: 'Wat er verder een tarief heeft',
     addOnSub: 'Niet per product afgerekend, dus niet in de staffel.',
     brandModelName: 'Jouw merkmodel',
-    brandModelLine: 'Eén gezicht. Elke bestelling. Alleen van jou.',
+    brandModelLine: 'Eén gezicht, hetzelfde in elke bestelling waarin je het gebruikt. Alleen van jou.',
     brandModelUnit: 'eenmalige setup',
     brandModelCta: 'Bekijk Jouw merkmodel',
     // Zie de noot bij de Engelse brandModelNote.
-    brandModelNote: `${euro(AMOUNT.brandModel, 'nl')}, één keer. Daarna draagt elke bestelling hetzelfde gezicht, tegen het gewone tarief.`,
+    brandModelNote: `${euro(AMOUNT.brandModel, 'nl')}, één keer, met één correctieronde op het ontwerp voordat het vastligt. Daarna blijft het gezicht hetzelfde tussen bestellingen; per bestelling kies je of je het gebruikt, tegen het gewone tarief. Inbegrepen bij ${planName('brand', 'nl')}, en bij ${planName('studio', 'nl')} op de termijnen van 12 maanden.`,
     videoName: 'Videoclip',
     videoLine: VIDEO_OP_AANVRAAG ? 'Eén korte clip, voorlopig op aanvraag: we antwoorden met een prijs.' : 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
     videoUnit: 'per clip',
@@ -395,18 +402,20 @@ const COPY = {
     moreRows: [
       ['Extra cataloghoek', `${euro(extraPhotoRate(1), 'nl')} tot ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'nl')} per foto, dalend met je aantal`, 'Een zijkant of tweede detail, per product.', '/catalog'],
       ['Compleet setje', `${euro(OUTFIT_SURCHARGE, 'nl')} per zo gestyled product, tot ${MAX_OUTFIT_PRODUCTS} per bestelling`, 'Meerdere stukken samen gedragen in één lifestyleshot.', '/lifestyle'],
-      ['Een eigen look', 'Op aanvraag', 'Eén ontwerpbedrag, daarna het gewone tarief.', '/start/custom-look'],
+      ['Een eigen look', 'Op aanvraag', 'Eén ontwerpbedrag en één correctieronde, daarna het gewone tarief.', '/start/custom-look'],
+      ['Voorrang bij levering', `${Math.round(VOORRANG.deel * 100)}% van de bestelling, ${euro(VOORRANG.bodem, 'nl')} tot ${euro(VOORRANG.plafond, 'nl')}`, `Betaald op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 — of de toeslag komt terug. Tot ${VOORRANG.maxProducten} producten of ${VOORRANG.maxClips} clips.`, '/start'],
+      ['Hogere resolutie', `${euro(HOOG_PER_PRODUCT, 'nl')} per lifestyleproduct`, `Alle drie de lifestylebeelden op ${RESOLUTIE.hoog} px aan de lange zijde in plaats van ${RESOLUTIE.standaard}, voor print of een groot scherm.`, '/lifestyle'],
       ['Hooks', `Vanaf ${euro(AMOUNT.hooks, 'nl')} per hook, op aanvraag`, 'Een korte verticale video die doorloopt in de post eronder.', '/hooks'],
-      ['Editions', `${euro(AMOUNT.editions, 'nl')} per maand na een eenmalige ${euro(AMOUNT.editionsSetup, 'nl')} — nog niet te bestellen`, 'Maandelijks merkbeeld zonder je product, bovenop een abonnement.', '/editions'],
+      ['Editions', `${euro(AMOUNT.editions, 'nl')} per maand na een eenmalige ${euro(AMOUNT.editionsSetup, 'nl')} — binnenkort`, 'Maandelijks merkbeeld zonder je product, bovenop een abonnement.', '/editions'],
     ],
 
     inclH: 'In elke bestelling',
     svcLead: 'Hoe groot je bestelling is, bepaalt hoe we hem inplannen.',
-    svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij een vastgezette leverdatum. Daaronder loopt hij in de normale doorlooptijd. Eén grens, en verder niets wat je hoeft te kiezen.`,
+    svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij een gereserveerde leverdatum. Daaronder loopt hij in de normale doorlooptijd. Eén grens, en verder niets wat je hoeft te kiezen.`,
     svcFromTag: `Vanaf ${WINDOW_THRESHOLD} producten`,
     svcUnderTag: `Onder ${WINDOW_THRESHOLD} producten`,
     gateLead: 'Je ziet alleen dagen die de agenda nog kan vasthouden.',
-    gateBody: 'De leverdatum kies je in het formulier, uit dagen waar nog ruimte is, en hij ligt vast zodra je bestelt. Raakt een dag tussendoor vol, dan hoor je dat meteen en kies je opnieuw. Geen optimistische gok.',
+    gateBody: 'De leverdatum kies je in het formulier, uit dagen waar nog ruimte is. Hij is gereserveerd zodra je bestelt en ligt vast zodra je hebt betaald. Raakt een dag tussendoor vol, dan hoor je dat meteen en kies je opnieuw. Geen optimistische gok.',
 
     toPlansH: 'Of hetzelfde werk elke maand',
     toPlansB: 'Een abonnement geeft je elke maand credits voor catalog, lifestyle en video, goedkoper dan los bestellen.',
@@ -425,7 +434,7 @@ const COPY = {
     faqH: 'Vragen over prijzen',
 
     ctaH1: 'Eén product van jezelf,',
-    ctaEm: 'als catalogset of carousel.',
+    ctaEm: 'als catalogset of carrousel.',
     ctaSample: `${sample.cta} ${vatLabel('excl', 'nl')}`,
     ctaStart: 'Start een bestelling',
     ctaWa: 'WhatsApp',
@@ -667,8 +676,8 @@ const nn = (i: number) => String(i).padStart(2, '0');
       <div>
         <h2 id="pr-band" class="hoog hoog-3">{nl ? 'Elke maand nieuwe beelden?' : 'New images every month?'}</h2>
         <p class="lopend">{nl
-          ? `Een abonnement geeft je elke maand credits voor catalog, lifestyle en video — vanaf ${euro(PLAN_AMOUNT.starter, 'nl')} per maand, of precies je eigen aantal.`
-          : `A plan gives you credits every month for catalog, lifestyle and video — from ${euro(PLAN_AMOUNT.starter, 'en')} a month, or exactly your own number.`}</p>
+          ? `Een abonnement geeft je elke maand credits voor catalog, lifestyle en video — drie vaste abonnementen vanaf ${euro(PLAN_AMOUNT.starter, 'nl')} per maand, of precies je eigen aantal credits vanaf ${euro(customCreditsTotal(CUSTOM_CREDITS_MIN).total, 'nl')}.`
+          : `A plan gives you credits every month for catalog, lifestyle and video — three set plans from ${euro(PLAN_AMOUNT.starter, 'en')} a month, or exactly your own number of credits from ${euro(customCreditsTotal(CUSTOM_CREDITS_MIN).total, 'en')}.`}</p>
       </div>
       <a class="knop knop-lijn" href={lp('/plans')}>{nl ? 'Bekijk de abonnementen' : 'See the plans'}</a>
     </div>

@@ -74,16 +74,16 @@ const t = nl ? {
   lead: `Elk product krijgt dezelfde set. Dit zit er altijd in, en dit kun je erbij kiezen.`,
   vastKop: `Zit er altijd bij · ${CATALOG_IMAGES} foto’s`,
   extraKop: 'Erbij te bestellen',
-  extraTarief: `vanaf ${tarief} per foto, per product · ${vatLabel('excl', lang)}`,
+  extraTarief: `${tarief} per foto bij één product, lager naarmate je meer producten bestelt · ${vatLabel('excl', lang)}`,
   naarBestellen: 'Kies je look en bestel',
   naarGids: 'Wat je zelf opstuurt',
 } : {
   etiket: 'What you get',
   h1: ['Per product,', 'what comes back.'],
-  lead: `Every product gets the same set. This is always in it, and this you can add.`,
+  lead: `Every product gets the same set. Here is what is always included, and what you can add.`,
   vastKop: `Always included · ${CATALOG_IMAGES} photos`,
   extraKop: 'Available to add',
-  extraTarief: `from ${tarief} per photo, per product · ${vatLabel('excl', lang)}`,
+  extraTarief: `${tarief} per photo at one product, less the more products you order · ${vatLabel('excl', lang)}`,
   naarBestellen: 'Choose your look and order',
   naarGids: 'What you send us',
 };
@@ -131,7 +131,7 @@ const t = nl ? {
       met opzet het enige onderscheid — twee verschillende rasters zouden
       suggereren dat het twee verschillende soorten beeld zijn, en dat is niet
       zo. Het is dezelfde set, alleen langer. */}
-  <section class="paneel pp-blok">
+  <section class="paneel vervolg pp-blok">
     <div class="pp-blokkop">
       <h2 class="pp-h">{t.extraKop}</h2>
       <p class="pp-tarief">{t.extraTarief}</p>

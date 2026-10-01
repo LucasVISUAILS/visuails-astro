@@ -325,7 +325,7 @@ function orderEnv({ status = 'received' } = {}) {
   check('en de tweede dag is erbij gerekend', upd[0]?.binds[2] === dag(10), upd[0]?.binds);
 
   check('de klant ziet het op zijn tijdlijn',
-    schrijf(env, /INSERT INTO order_events/).some((w) => /Venster verzet naar/.test(String(w.binds[2] || ''))));
+    schrijf(env, /INSERT INTO order_events/).some((w) => /Leverdatum verzet naar/.test(String(w.binds[2] || ''))));
   check('en het logboek noemt het oude én het nieuwe venster',
     schrijf(env, /INSERT INTO admin_log/).some((w) => w.binds.some((b) => new RegExp(`${dag(2)}.*${dag(9)}`).test(String(b)))));
 }

@@ -46,7 +46,14 @@
 // qualified before it carries any weight in a dispute.
 
 /** The version stored on the order. Add a new one; never edit an old one. */
-export const CONSENT_VERSION = 'withdrawal-v1-2026-08';
+/* ── v2, 30 september 2026: de herroepingsverklaring is samengevoegd met de
+   zakelijke verklaring tot één vinkje (zie BUSINESS_VERSION in business.js).
+   Er is geen apart vinkje meer: de server legt deze versie vast als de
+   zakelijke verklaring van versie business-v2 is aangevinkt. De tekst is
+   dezelfde zin, zodat het bewijs zegt waar de klant ja tegen zei. */
+export const CONSENT_VERSION = 'withdrawal-v2-2026-09';
+/** De zakelijke versie die deze verklaring in zich draagt. */
+export const MERGED_BUSINESS_VERSION = 'business-v2-2026-09';
 
 /*
  * ── EEN TWEEDE VERSIE, VOOR HET MERKMODEL — 23 AUGUSTUS 2026 ────────────────
@@ -81,9 +88,14 @@ export const CONSENT_VERSION = 'withdrawal-v1-2026-08';
  * achterlaten dat niemand ooit heeft gezien. Vanaf de eerste deploy geldt de
  * gewone regel weer: toevoegen, nooit wijzigen.
  */
-export const CONSENT_VERSION_BRAND_MODEL = 'withdrawal-brandmodel-v1-2026-08';
+/* Het merkmodel gebruikt sinds v2 dezelfde samengevoegde verklaring. */
+export const CONSENT_VERSION_BRAND_MODEL = 'withdrawal-v2-2026-09';
 
 export const CONSENT_TEXT = {
+  'withdrawal-v2-2026-09': {
+    en: 'I am ordering for a business or profession and not as a consumer; VISUAILS supplies businesses only. Should consumer law apply to me after all, I expressly ask VISUAILS to begin work on this order now and understand that I lose my right of withdrawal once it has been delivered.',
+    nl: 'Ik bestel voor mijn bedrijf of beroep en niet als particulier; VISUAILS levert uitsluitend zakelijk. Mocht het consumentenrecht toch op mij van toepassing zijn, dan vraag ik VISUAILS uitdrukkelijk om nu met deze bestelling te beginnen en begrijp ik dat ik mijn herroepingsrecht verlies zodra ze geleverd is.',
+  },
   'withdrawal-v1-2026-08': {
     en: 'I expressly ask VISUAILS to begin work on this order now, and I understand '
       + 'that once it has been delivered I lose my right of withdrawal. Visuals are '
@@ -116,4 +128,19 @@ export function currentConsent(lang = 'en') {
 /** What the Brand Model form shows today. */
 export function currentBrandModelConsent(lang = 'en') {
   return consentText(CONSENT_VERSION_BRAND_MODEL, lang);
+}
+
+/**
+ * Wat er op de bestelling als herroepingsverklaring wordt vastgelegd.
+ *
+ * Een los vinkje `withdrawal_consent` (oude formulieren, of een formulier dat
+ * nog in een open tabblad staat) telt zoals altijd. Sinds v2 is er geen los
+ * vinkje meer: dan telt de zakelijke verklaring van versie business-v2, want
+ * die zin draagt de herroepingsverklaring in zich. Anders 'MISSING' — nooit
+ * een stille toestemming.
+ */
+export function withdrawalRecord({ withdrawal, consentVersion, business, businessVersion }) {
+  if (withdrawal === 'yes') return consentVersion || 'unversioned';
+  if (business === 'yes' && businessVersion === MERGED_BUSINESS_VERSION) return CONSENT_VERSION;
+  return 'MISSING';
 }

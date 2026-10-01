@@ -463,6 +463,7 @@ export async function planSaldo(env, customerId, nu = new Date()) {
       clips: { saldo: 0, toegekend: 0, verbruikt: 0 },
       maanden: [],
       maand: monthKey(), betaald: false, volgendeAfschrijving: '', termijnTot: '',
+      jaarTot: '', jaarOpgezegd: false,
     };
   }
 
@@ -499,6 +500,19 @@ export async function planSaldo(env, customerId, nu = new Date()) {
       (Math.floor(Number(m?.clips_granted) || 0)) - (Math.floor(Number(m?.clips_used) || 0))), 0);
   const clipsVerbruikt = Math.max(0, Math.floor(Number(deze?.clips_used) || 0));
 
+  /* ── HET VOORUITBETAALDE JAAR: TOT WANNEER, EN OF HET IS OPGEZEGD ─────────
+     24 september 2026. Eén query extra, en alleen op een vooruitbetaald jaar:
+     `maanden` hierboven is afgekapt op monthsNeeded() en telt dus niet alle
+     twaalf. Zie markeerJaarOpgezegd() en jaarLooptTot() onderaan. */
+  let jaarTot = '';
+  if (sub.term === 'prepaid') {
+    const telling = await stil(() => env.DB.prepare(
+      'SELECT COUNT(*) AS aantal, MAX(month) AS laatste FROM subscription_months WHERE subscription_id = ?1'
+    ).bind(sub.id).first());
+    jaarTot = jaarLooptTot(sub, telling || {});
+  }
+  const jaarOpgezegd = sub.term === 'prepaid' && sub.status !== 'cancelled' && !!sub.cancelled_at;
+
   return {
     actief: sub.status === 'active',
     sub,
@@ -526,6 +540,10 @@ export async function planSaldo(env, customerId, nu = new Date()) {
        waarop het dashboard verdwijnt, en die hoort op het scherm te staan in
        plaats van dat hij iemand overvalt. */
     termijnTot: termijnEinde(sub, maand),
+    /* Alleen bij een vooruitbetaald jaar gevuld: de dag waarop de twaalfde
+       termijn afloopt, en of de klant heeft laten weten dat hij daarna stopt. */
+    jaarTot,
+    jaarOpgezegd,
     maanden,
     maand,
     /* Is er voor DEZE maand betaald? De webhook maakt de maandrij aan op het
@@ -1119,7 +1137,7 @@ export async function vatVoorAbonnement(env, customerId) {
 }
 
 export async function createSubscriptionRow(env, {
-  customerId, planId, termId, windowDay = null, slots = null, amountCents = null,
+  customerId, planId, termId, windowDay = null, slots = null, amountCents = null, btw: gegeven = null,
 }) {
   /* SUB_PLAN_IDS en niet PLAN_IDS: de maand op maat mag hier wel in de kolom en
      staat niet in de lijst met pakketten. Zie de noot bij die twee in plans.js. */
@@ -1135,7 +1153,11 @@ export async function createSubscriptionRow(env, {
   const ref = makeSubRef();
   const dag = Number.isFinite(Number(windowDay)) ? Math.min(28, Math.max(1, Math.floor(Number(windowDay)))) : null;
   try {
-    const btw = await vatVoorAbonnement(env, customerId);
+    /* Sinds 29 september 2026 bepaalt handleSubscribeStart() het tarief uit wat
+       de klant op het formulier opgaf (bepaalBedrijfEnBtw() in subscribe.js).
+       vatVoorAbonnement() blijft de terugval voor wie deze functie anders
+       aanroept. */
+    const btw = gegeven && gegeven.treatment ? gegeven : await vatVoorAbonnement(env, customerId);
     const row = await env.DB.prepare(
       `INSERT INTO subscriptions (customer_id, ref, plan, term, status, window_day,
                                   amount_cents, slots_json,
@@ -1259,6 +1281,55 @@ export async function cancelSubscription(env, subId, reason = 'customer') {
 }
 
 /**
+ * ── EEN VOORUITBETAALD JAAR OPZEGGEN — 24 september 2026 ────────────────────
+ *
+ * Lucas: *"Tegoed van jaarabonnement moet niet in 1x op het account gezet
+ * worden omdat ik anders teveel werk krijg. Het abonnement moet gewoon
+ * simpelweg doorlopen tot einde van het jaar."*
+ *
+ * Dus GEEN cancelSubscription(): dat zou de maandtoekenning stoppen (die draait
+ * alleen op 'active', zie grantPrepaidMonths() in cron/index.js) en het
+ * dashboard na de lopende termijn laten verdwijnen. De status blijft 'active',
+ * met alles wat daarbij hoort — credits per maand, de vaste week, de wachtrij —
+ * en de opzegging staat alleen als datum en reden op de rij. Dat is de
+ * boekhouding van het besluit; het einde komt vanzelf, als de twaalfde maand
+ * voorbij is (zie sluitAfgelopenJaren() in de cron).
+ *
+ * Een GEPAUZEERD jaar gaat hierbij weer lopen. Pauzeren houdt de maanden vast
+ * tot je hervat; wie opzegt, hervat nooit meer, en zonder dit zouden de maanden
+ * die hij al betaald heeft nooit meer komen.
+ *
+ * Idempotent: twee keer opzeggen verandert de eerste datum niet.
+ */
+export async function markeerJaarOpgezegd(env, subId) {
+  return stil(() => env.DB.prepare(
+    `UPDATE subscriptions
+        SET status = CASE WHEN status = 'paused' THEN 'active' ELSE status END,
+            paused_at = NULL, pause_reason = NULL,
+            cancelled_at = COALESCE(cancelled_at, datetime('now')),
+            cancel_reason = COALESCE(cancel_reason, 'customer'),
+            updated_at = datetime('now')
+      WHERE id = ?1 AND term = 'prepaid' AND status IN ('active', 'paused')
+      RETURNING id, status, cancelled_at`
+  ).bind(subId).first());
+}
+
+/**
+ * Tot welke dag een vooruitbetaald jaar loopt, als YYYY-MM-DD (de dag waarop de
+ * twaalfde termijn afloopt). Leeg als er nog geen maand is toegekend.
+ *
+ * Gerekend vanaf de LAATST toegekende maand plus wat er nog komt, en niet vanaf
+ * started_at plus twaalf: een pauze schuift de maanden op, en dan klopt die
+ * tweede som niet meer.
+ */
+export function jaarLooptTot(sub, { aantal = 0, laatste = '' } = {}) {
+  const n = Math.max(0, Math.floor(Number(aantal) || 0));
+  if (!n || !/^\d{4}-\d{2}$/.test(String(laatste || ''))) return '';
+  const over = Math.max(0, term('prepaid').months - n);
+  return termijnEinde(sub, monthPlus(String(laatste), over));
+}
+
+/**
  * Hoeveel plekken er nog vrij zijn — geteld over de database en niet over een
  * getal in een bestand.
  *
@@ -1272,14 +1343,24 @@ export async function bezetting(env) {
     /* Per RIJ en niet per plan, sinds migratie 0038: twee maanden op maat zijn
        niet even groot, dus een GROUP BY plan met een vermenigvuldiging zou het
        aantal van de eerste op allebei plakken. */
-    `SELECT plan, slots_json, 1 AS n
+    /* 'pending' telt alleen het eerste etmaal mee: daarna is het een eerste
+       betaling die nooit afgerond werd, en die hoort geen plek vast te houden
+       (24 september 2026). Dit is sinds die dag de ENIGE telling: de poort in
+       handleSubscribeStart() en de beschikbaarheid op /start/plan
+       (functions/api/plan-plek.js) lezen allebei deze functie, zodat wat de
+       pagina vooraf zegt en wat de poort daarna beslist niet uit elkaar kunnen
+       lopen. */
+    `SELECT plan, slots_json
        FROM subscriptions
-      WHERE status IN ('active', 'pending', 'paused')`
+      WHERE status IN ('active', 'paused')
+         OR (status = 'pending' AND created_at > datetime('now', '-1 day'))`
   ).all(), { results: [] });
   const per = {};
   let producten = 0;
   for (const r of rows?.results || []) {
-    per[r.plan] = Number(r.n) || 0;
+    /* Tellen, niet overschrijven: hier stond `= 1`, dus zeiden tien Starters
+       samen dat er één was. Er las nog niemand `per`, en daarom viel het niet op. */
+    per[r.plan] = (per[r.plan] || 0) + 1;
     /* subProducten() en niet productsFor(): een maand op maat heeft geen vast
        aantal en draagt zijn bundel op de rij. Vandaar ook dat de query hierboven
        slots_json meeneemt en niet alleen op plan groepeert — voor 'maat' zegt de

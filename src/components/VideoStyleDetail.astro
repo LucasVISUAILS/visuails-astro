@@ -22,7 +22,7 @@
  */
 import ServiceSwitch from './ServiceSwitch.astro';
 import VideoExamples from './VideoExamples.astro';
-import { reviewClaim, turnaround, TIERS, VIDEO_OP_AANVRAAG } from '../data/pricing.js';
+import { reviewClaim, VIDEO_OP_AANVRAAG } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import '../styles/stijl22.css';
 
@@ -31,9 +31,13 @@ const { lang, style, zusters } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 
-const TIMING = turnaround('unattended', lang);
+/* 30 september 2026: video is op aanvraag. Formaat en levertijd staan in de
+   schriftelijke offerte; de normale doorlooptijd van foto's geldt hier niet. */
+const TIMING = nl ? 'Formaat en levertijd afgesproken in de offerte' : 'Format and delivery time agreed in the quote';
 const REVIEW = reviewClaim('unattended', lang);
-const QUEUE = TIERS.unattended.queue[lang];
+const QUEUE = nl
+  ? 'Video is op aanvraag: standaard verticaal 9:16, andere verhoudingen op aanvraag.'
+  : 'Video is on request: vertical 9:16 as standard, other ratios on request.';
 
 const media: Record<string, { hero: string; strip: Array<{ src: string; w: number; h: number }> }> = {
   motion: {
@@ -88,7 +92,9 @@ const c = nl ? {
   krijgH: ['Wat je ', 'krijgt'],
   modelNoot: ['Iemand in een ', '-clip kan ', 'je eigen merkmodel', ' zijn.'],
   slotH: ['Maak ', ' van jou.'],
-  slotP: 'Probeer VISUAILS eerst, of plaats vandaag je bestelling.',
+  /* Video is op aanvraag, en de proef van €1 is een beeld en geen clip
+     (24 september 2026): hier stond "plaats vandaag je bestelling". */
+  slotP: 'Op aanvraag: je krijgt eerst schriftelijk een prijs. Eerst zien hoe we werken? Dat kan met één product in beeld, voor €1.',
   proef: 'Probeer VISUAILS',
 } : {
   terug: 'Video styles',
@@ -103,7 +109,7 @@ const c = nl ? {
   krijgH: ['What you ', 'get'],
   modelNoot: ['Someone in a ', ' clip can be ', 'your own Brand Model', '.'],
   slotH: ['Make ', ' yours.'],
-  slotP: 'Test sample, or place your order today.',
+  slotP: 'On request: you get a written price first. Want to see how we work before that? Try one product in images, for €1.',
   proef: 'Test sample',
 };
 
@@ -169,7 +175,7 @@ const vink = 'M20 6L9 17l-5-5';
     </ol>
   </section>
 
-  <section class="paneel vs-strook">
+  <section class="paneel vervolg vs-strook">
     <ul class="vs-stills" role="list">
       {m.strip.map((s, i) => (
         <li class={i === 0 || i === m.strip.length - 1 ? 'breed' : undefined}>
@@ -208,7 +214,7 @@ const vink = 'M20 6L9 17l-5-5';
     </ul>
   </section>
 
-  <section class="paneel vs-lijsten">
+  <section class="paneel vervolg vs-lijsten">
     <div class="vs-een">
       <div>
         <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
@@ -227,7 +233,11 @@ const vink = 'M20 6L9 17l-5-5';
   </section>
 
   <section class="paneel paneel-slot vs-slot">
-    <h2 class="hoog hoog-2">{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</h2>
+    {/* De eigen look heet "Eigen look" / "Custom", en dat gaf "Maak Eigen look van jou."
+        Voor die ene look staat er daarom "Maak je eigen look." */}
+    <h2 class="hoog hoog-2">{style.slug === 'custom'
+      ? <>{c.slotH[0]}<em>{lang === 'nl' ? 'je eigen look' : 'your own look'}</em>.</>
+      : <>{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</>}</h2>
     <p class="lopend">{c.slotP}</p>
     <div class="acties">
       {style.ctaExternal ? (

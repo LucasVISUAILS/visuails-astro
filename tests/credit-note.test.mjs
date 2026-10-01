@@ -385,7 +385,9 @@ console.log('\nen de afspraken tussen bestanden');
      wat er is afgeschreven. Tegen `cents` toetsen is tegen het bedrag van één betaling
      toetsen, en dat is dezelfde fout één regel hoger. */
   ok('  "volledig" meet tegen het brutobedrag van de bestelling',
-    /const full = bruto !== null \? orderRefunded >= bruto/.test(webhook), true);
+    /* + tegoedTerug (29 september 2026): het deel dat met tegoed was betaald, komt
+       terug als tegoed en telt mee voor "volledig". */
+    /const full = bruto !== null \? orderRefunded \+ tegoedTerug >= bruto/.test(webhook), true);
   /* cancel_reason moet in de SELECT staan, anders is de reden op de nota altijd leeg. */
   ok('en leest cancel_reason uit de bestelling', /SELECT id, service.*cancel_reason FROM orders/.test(webhook), true);
 

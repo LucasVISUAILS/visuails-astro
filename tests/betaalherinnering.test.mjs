@@ -69,11 +69,13 @@ console.log('1 · de herinnering');
   const regel = await tasks.remindUnpaid(env);
   ok('de taak meldt twee herinneringen', /2 betaalherinneringen/.test(regel || ''), true);
   ok('  voor precies de twee die eraan toe zijn', /VIS-HERIN-0001/.test(regel) && /VIS-GOEDGE-005/.test(regel) && !/VIS-VERS/.test(regel) && !/VIS-BEOORD/.test(regel) && !/VIS-BETAALD/.test(regel) && !/VIS-AANVR/.test(regel), true);
-  ok('  er zijn twee Mollie-betalingen aangemaakt', betalingen().length, 2);
+  /* Sinds 24 september 2026 geen Mollie-betaling bij het versturen: de mail linkt
+     naar /api/order-pay, dat bij elke klik een verse betaling maakt. */
+  ok('  er is nog geen Mollie-betaling aangemaakt (die komt pas bij de klik)', betalingen().length, 0);
   const m = mails();
   ok('  en twee mails', m.length, 2);
   ok('  met "wacht nog op betaling" in het onderwerp', m.every((x) => /wacht nog op betaling/.test(x.subject)), true);
-  ok('  en de betaallink erin', m.every((x) => /mollie\.com\/checkout/.test(x.html)), true);
+  ok('  en de betaallink erin', m.every((x) => /\/api\/order-pay\?ref=VIS-/.test(x.html)), true);
   ok('  zonder "vervallen" of dreigende taal', m.every((x) => !/vervallen|verlopen/i.test(x.html)), true);
   ok('de stempel staat op beide', db.prepare('SELECT COUNT(*) AS n FROM orders WHERE payment_reminder_at IS NOT NULL AND id IN (1, 5)').get().n, 2);
   ok('  en niet op de anderen', db.prepare('SELECT COUNT(*) AS n FROM orders WHERE payment_reminder_at IS NOT NULL AND id IN (2, 3, 4, 6)').get().n, 0);
@@ -95,7 +97,7 @@ console.log('\n2 · het vrijgavebericht');
   const m = mails().slice(voor);
   ok('de klant krijgt één mail', m.length, 1);
   ok('  met de vrijgave in het onderwerp', /vrijgegeven/.test(m[0]?.subject || ''), true);
-  ok('  en de dagen erin', /2026-09-20/.test(m[0]?.html || ''), true);
+  ok('  en de dagen erin', /20 september 2026/.test(m[0]?.html || ''), true);
   ok('  en dat de bestelling blijft staan', /blijft gewoon staan/.test(m[0]?.html || ''), true);
   ok('  de taakregel telt de mail', /1 klant gemaild/.test(regel), true);
 }

@@ -1,0 +1,35 @@
+// Eigen look voor CATALOG: admin maakt hem actief, klant bestelt catalog ermee.
+import { start, foto, tekst, sql, SITE, proefbeeld } from './_dl.mjs';
+import { adminLogin } from './_admin.mjs';
+import { studioLogin } from './_studio.mjs';
+import { bestel, betaal } from './_bestel.mjs';
+const email = 'lslook@merk.test';
+const k = await start();
+const [bestaat] = await sql("SELECT id FROM customers WHERE email='lslook@merk.test'"); if (!bestaat) await bestel(k.page, { pad: '/nl/start/lifestyle', aantal: 1, klant: { email, first_name: 'Cato', brand: 'Cato BV' }, land: 'NL', vat: null });
+if (k.page.url().startsWith('https://nep-mollie')) await betaal(k.page);
+const [c] = await sql(`SELECT id FROM customers WHERE email='${email}'`);
+const a = await start(); await adminLogin(a.page);
+await a.page.goto(SITE + `/admin/customers/${c.id}`, { waitUntil: 'load' });
+const f = a.page.locator(`form[action="/admin/customers/${c.id}/styles"]`);
+await f.locator('[name="name"]').fill('Cato Betonvloer');
+await f.locator('[name="service"]').selectOption('lifestyle');
+await f.locator('[name="description"]').fill('Grijze betonvloer, harde schaduw');
+await f.locator('[name="surcharge"]').fill('10');
+await f.locator('[name="status"]').selectOption('active');
+try { await f.locator('[name="preview"]').setInputFiles(proefbeeld('catlook.webp')); } catch {}
+await Promise.all([a.page.waitForNavigation({ waitUntil: 'load' }), f.locator('button[type="submit"]').click()]);
+console.log(JSON.stringify(await sql(`SELECT id, name, service, status, surcharge_cents FROM customer_styles WHERE customer_id=${c.id}`)));
+await studioLogin(k.page, email);
+await k.page.goto(SITE + '/account/brand-kit/', { waitUntil: 'load' });
+const href = await k.page.locator('a:has-text("Bestel in deze look")').first().getAttribute('href');
+console.log('href', href);
+await k.page.goto(SITE + href, { waitUntil: 'load' }); await k.page.waitForSelector('#pl-form.is-live');
+await k.page.waitForTimeout(1500);
+const keuze = await k.page.evaluate(() => [...document.querySelectorAll('input[name="catalog_style"], input[name="style"]')].map((r) => `${r.name}=${r.value}${r.checked ? '*' : ''}`));
+console.log('keuzes:', keuze);
+await foto(k.page, 'catlook-stap1', { vol: true });
+const r = await bestel(k.page, { pad: href, aantal: 2, klant: { email, first_name: 'Cato', brand: 'Cato BV' }, land: 'NL', vat: null });
+console.log(r.log.join('\n')); console.log('OVERZICHT:\n' + r.overzicht.slice(0, 700));
+if (k.page.url().startsWith('https://nep-mollie')) await betaal(k.page);
+console.log(JSON.stringify(await sql("SELECT ref, service, total_cents, json_extract(details_json,'$.catalog_style') cs, json_extract(details_json,'$.style') st, json_extract(details_json,'$.style_name') sn FROM orders ORDER BY id DESC LIMIT 1")));
+console.log(a.fouten, k.fouten.filter((x) => !/account\/me/.test(x))); await a.stop(); await k.stop();

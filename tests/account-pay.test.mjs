@@ -307,7 +307,7 @@ console.log('\nde betaalomschrijving noemt de dienst bij naam, ook op de wire-wa
     ['drop', 'catalog + lifestyle'],
     ['complete', 'catalog + lifestyle'],
     ['catalog', 'catalogsets'],
-    ['lifestyle', 'lifestyle-carousels'],
+    ['lifestyle', 'lifestylecarrousels'],
   ]) {
     const nl = paymentDescription({ service: svc, products: 30 }, 'nl');
     const en = paymentDescription({ service: svc, products: 30 }, 'en');

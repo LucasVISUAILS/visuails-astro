@@ -13,12 +13,17 @@
  * ene plek "Brand" heten. Vandaar een derde bestand dat zelf niets importeert en
  * dus door allebei gelezen kan worden.
  *
- * `Brand` heet in het Nederlands `Merk` en Starter en Studio niet: die twee zijn
+ * `Brand` heet in het Nederlands `Merk` en Starter en Pro niet: die twee zijn
  * in het Nederlands even gewoon en een vertaling zou ze vreemder maken.
  */
 export const PLAN_NAMES = {
   starter: { en: 'Starter', nl: 'Starter' },
-  studio: { en: 'Studio', nl: 'Studio' },
+  /* "Pro" en niet meer "Studio" (30 september 2026, Lucas: "abonnement
+     hernoemen"). "Studio" betekende ook VISUAILS Studio, de klantomgeving —
+     "je Studio-abonnement staat in VISUAILS Studio" las als één ding. Het id
+     blijft 'studio': dat staat in de database, in Mollie-metadata en in
+     facturen, en een id is geen tekst. */
+  studio: { en: 'Pro', nl: 'Pro' },
   brand: { en: 'Brand', nl: 'Merk' },
   /* De maand op maat. Hij staat hier en niet in PLAN_IDS — zie CUSTOM_MONTH_ID
      in pricing.js — maar hij heeft wel een naam nodig: hij komt terug op een

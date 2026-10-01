@@ -353,7 +353,7 @@ console.log('\ndie week annuleren geeft de slots \u00e9n de producten terug');
   const tijdlijn = db.prepare("SELECT note FROM order_events WHERE order_id = ? AND status = 'cancelled'")
     .all(week.orderId).map((r) => r.note).join(' | ');
   ok('de tijdlijn zegt niet dat er niets betaald is', /Nothing was paid/.test(tijdlijn), false);
-  ok('maar dat het uit het abonnement kwam', /subscription/i.test(tijdlijn), true);
+  ok('maar dat het uit het abonnement kwam', /subscription|abonnement/i.test(tijdlijn), true);
   ok('en dat zijn producten terugstaan', /op je lijst/.test(tijdlijn), true);
 
   ok('de handeling staat in het logboek',

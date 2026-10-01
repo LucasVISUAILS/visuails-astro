@@ -135,7 +135,7 @@ console.log('\n3 · gepubliceerd');
   ok(`  onder de naam VISUAILS-set-${maand}.zip`, new RegExp(`VISUAILS-set-${maand}\\.zip`).test(zip.headers.get('content-disposition') || ''));
   const bytes = Buffer.from(await zip.arrayBuffer());
   const tekst = bytes.toString('latin1');
-  ok('  met de licentie voor GEDEELD beeld erin', /GEBRUIKSRECHTEN\.txt/.test(tekst) && /gedeelde set/i.test(tekst) && /niet-exclusieve/.test(tekst));
+  ok('  met de licentie voor GEDEELD beeld erin', /GEBRUIKSRECHTEN\.txt/.test(tekst) && /maandset/i.test(tekst) && /niet-exclusieve/.test(tekst));
   ok('  en niet de exclusieve van een levering', !/exclusieve, eeuwigdurende/.test(tekst) || /niet-exclusieve/.test(tekst));
   ok('  met de twee beelden, genummerd', /VISUAILS-set-\d{4}-\d{2}-01-a\.png/.test(tekst) && /-02-c\.png/.test(tekst));
   ok('  en de merknaam van de klant', /VOLT/.test(tekst));

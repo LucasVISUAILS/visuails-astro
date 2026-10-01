@@ -159,7 +159,7 @@ const COPY = {
     ladderCta: 'Order lifestyle images',
     stepsH: 'Three steps to a carousel.',
     steps: [
-      ['Send your photos', 'Front and back at least — more is always welcome.'],
+      ['Send your photos', 'A front, a back and one close-up — more is always welcome.'],
       ['Pick a mood', 'Dunes, Flash, Glow, Phone-made — or your own.'],
       [turnaround('unattended', 'en'), 'Three matched shots, ready to post.'],
     ],
@@ -220,7 +220,7 @@ const COPY = {
        lager in de specificatiestrook, en een bedrag lees je niet in lopende
        tekst. Wat de lead nog doet is wat de strook niet kan — zeggen wat je
        krijgt. Zie de noot bij `lead` in CatalogPage.astro. */
-    lead: `Een carousel van 3 foto’s per product: sfeer, op model en detail, op elkaar afgestemd.`,
+    lead: `Een carrousel van 3 foto’s per product: sfeer, op model en detail, op elkaar afgestemd.`,
     ctaPrimary: 'Bestel lifestylefoto’s',
     ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag lifestylefoto’s bestellen voor mijn producten."),
@@ -233,22 +233,22 @@ const COPY = {
     queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
     kiesCta: 'Kies je look',
     levert: 'drie foto’s per product.',
-    setH: 'Eén product. Drie foto’s. <em>Een carousel.</em>',
-    setP: 'Drie foto’s die bij elkaar horen, klaar om als carousel te posten.',
+    setH: 'Eén product. Drie foto’s. <em>Een carrousel.</em>',
+    setP: 'Drie foto’s die bij elkaar horen, klaar om als carrousel te posten.',
     set: [
       ['De sfeer', 'Je product in een gestylede omgeving.'],
       ['On-model', 'Gedragen of vastgehouden door een model.'],
       ['Logo-close-up', 'Een detail in dezelfde kleurbewerking.'],
     ],
     setNote: 'Eén look per bestelling · een andere scène is een aparte bestelling.',
-    ladderH: 'Wat een carousel kost',
+    ladderH: 'Wat een carrousel kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
     ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Meer dan ${FORM_MAX_PRODUCTS} in één keer kan ook: die verdelen we over leverdata, tegen hetzelfde tarief per product.`,
     ladderCta: 'Bestel lifestylefoto’s',
-    stepsH: 'Drie stappen naar een carousel.',
+    stepsH: 'Drie stappen naar een carrousel.',
     steps: [
-      ['Stuur je foto’s', 'Voorkant en achterkant in elk geval — meer mag altijd.'],
+      ['Stuur je foto’s', 'Een voorkant, een achterkant en één close-up — meer mag altijd.'],
       ['Kies een sfeer', 'Dunes, Flash, Glow, Phone-made — of je eigen.'],
       [turnaround('unattended', 'nl'), 'Drie shots die matchen, klaar om te posten.'],
     ],
@@ -258,11 +258,11 @@ const COPY = {
     check: [
       'Drie foto’s, één gestylede look',
       'Dezelfde kleurbewerking door de hele set',
-      'Eén foto op een model in elke carousel',
-      'Op maat voor feed, carousel en advertenties',
+      'Eén foto op een model in elke carrousel',
+      'Op maat voor feed, carrousel en advertenties',
       reviewClaim('unattended', 'nl'),
     ],
-    checkAlt: 'Een lifestylefoto van VISUAILS voor een carousel, gestyled en kleurbewerkt',
+    checkAlt: 'Een lifestylefoto van VISUAILS voor een carrousel, gestyled en kleurbewerkt',
     moodsH: 'Vier sferen — of <em>je eigen.</em>',
     onRequest: 'Op aanvraag',
     unitLabel: `${euro(entry, 'nl')} – ${euro(floor, 'nl')} / product · ${vatLabel('excl', 'nl')}`,
@@ -271,12 +271,12 @@ const COPY = {
     edSub: 'Lifestylefoto’s voor je feed en je advertenties, niet voor je productpagina.',
     whatH: 'Wat het is',
     whatP: [
-      'Catalogfotografie laat het product helder zien; lifestylefotografie zet het in een scène — gestyled, belicht en opgebouwd als een omgeving die bij je merk past. Een VISUAILS lifestyle-bestelling is drie foto’s van één product in één look: een sfeershot, een on-model shot en een detail-close-up, met dezelfde grade, zodat ze bij elkaar horen en je ze meteen als carousel kunt posten.',
+      'Catalogfotografie laat het product helder zien; lifestylefotografie zet het in een scène — gestyled, belicht en opgebouwd als een omgeving die bij je merk past. Een VISUAILS lifestyle-bestelling is drie foto’s van één product in één look: een sfeershot, een on-model shot en een detail-close-up, met dezelfde grade, zodat ze bij elkaar horen en je ze meteen als carrousel kunt posten.',
       'Een catalogusfoto laat zien wat het product is. Een lifestylebeeld laat zien hoe het eruitziet als iemand het draagt. Dat is wat je nodig hebt op de plekken waar mensen niet naar specificaties komen kijken.',
     ],
     whereH: 'Waar je het gebruikt',
     where: [
-      ['Instagram & TikTok', 'feedposts, carousels en Reels-covers.'],
+      ['Instagram & TikTok', 'feedposts, carrousels en Reels-covers.'],
       ['Advertenties', 'beeld dat de scroll stopt.'],
       ['Je homepage', 'hero- en lookbook-momenten.'],
       ['E-mail & campagnes', 'seizoensdrops en nieuwsbrieven.'],
@@ -449,7 +449,7 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
       /pricing) en de drie stappen (die op /how-it-works staan) zijn weg; de
       checklist zei wat de drie foto's hierboven al zeggen. Waar je het
       gebruikt blijft als één regel, het merkmodel als link eronder. */}
-  <section class="paneel" aria-labelledby="ls-set">
+  <section class="paneel vervolg" aria-labelledby="ls-set">
     <header class="paneel-kop">
       <h2 id="ls-set" class="hoog hoog-2" set:html={c.setH} />
       <p class="lopend">{c.setP}</p>
@@ -537,13 +537,9 @@ const vasteLooks = moods.filter((s) => s.slug !== 'custom').map(naarRij);
      rechterkant, waar de plaat eroverheen valt, en laat de tekstkolom op de
      rustige helft staan. */
   .ls-grond { position: relative; isolation: isolate; }
-  .ls-grond::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: url('/img/band-lifestyle.webp') no-repeat right center / cover;
-    pointer-events: none;
-    z-index: -1;
-  }
+  /* Weg sinds 24 september 2026 — Lucas: de achtergronden op home, lifestyle
+     en video mogen eruit. De opening staat nu op schoon `--vel`. */
+  .ls-grond::before { content: none; }
   .ls-open { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.2rem, 3.5vw, 2.6rem); align-items: start; }
   .ls-open .paneel-kop { margin-bottom: 0; gap: 1.1rem; }
   .ls-beeld { position: relative; }

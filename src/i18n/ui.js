@@ -120,7 +120,7 @@ export const ui = {
        * Wat het oplevert: twee items minder in de balk, en één plek waar de
        * vraag "wat kan ik hier bestellen" volledig beantwoord wordt. */
       { href: '/custom-models', title: 'Your Brand Model', desc: 'One face, made for your brand and used by nobody else', groep: 'erbij' },
-      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of products every month, below the per-product rate', groep: 'maand' },
+      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of credits every month, below the per-product rate', groep: 'maand' },
       /*
        * HOOKS HEEFT GEEN href, EN DAT IS HET HELE PUNT — 9 augustus 2026.
        *
@@ -168,7 +168,7 @@ export const ui = {
       /* Editions wijst sinds 2 september 2026 naar zijn eigen pagina, om
          dezelfde reden als Hooks: daar staat de uitleg, en het ankerblok op
          /plans is de samenvatting. Het merkje blijft — bestellen kan nog niet. */
-      { href: '/editions', title: 'Editions', desc: 'Not ready to order — monthly brand imagery with no product in it', soon: true, groep: 'maand' },
+      { href: '/editions', title: 'Editions', desc: 'Monthly brand imagery with no product in it', soon: true, groep: 'maand' },
     ],
     /*
      * ── DE TWEEDE LAAG, 18 AUGUSTUS 2026 ──────────────────────────────────
@@ -195,7 +195,7 @@ export const ui = {
      */
     nav_how: 'How it works',
     how: [
-      { href: '/how-it-works', title: 'From order to delivery', desc: 'The four steps, and the two you are in' },
+      { href: '/how-it-works', title: 'From order to delivery', desc: 'The three steps, and the two you are in' },
       /* ── HET DEMO-ITEM IS WEG — 8 september 2026 ──────────────────────────
        * Hier stond "See an order run", zonder href, en Layout.astro tekende hem
        * als grijs item met "binnenkort". Er is nooit een /demo gekomen.
@@ -237,7 +237,7 @@ export const ui = {
        * verhuizen naar de plek waar iemand ze zoekt in plaats van naar de plek
        * waar ze toevallig pasten. */
     ],
-    nav_soon: 'Soon',
+    nav_soon: 'Coming soon',
     mob_chat: 'Chat on WhatsApp',
     mob_notsure: 'Not sure yet?',
     mob_try: TEST_SAMPLE.en.cta,
@@ -386,15 +386,15 @@ export const ui = {
       /* Zie de noot bij de Engelse lijst hierboven: alles wat je koopt, staat
          in het menu waar staat wat we maken. */
       { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt', groep: 'erbij' },
-      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, onder het tarief per product', groep: 'maand' },
+      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal credits, onder het tarief per product', groep: 'maand' },
       /* Zie de noot bij de Engelse tegenhanger. */
       { href: '/hooks', title: 'Hooks', desc: 'Op aanvraag — een korte video op een bewezen format', soon: 'Op aanvraag', groep: 'video' },
       /* Zie de noot bij de Engelse tegenhanger. */
-      { href: '/editions', title: 'Editions', desc: 'Nog niet te bestellen — elke maand merkbeeld zonder product erin', soon: true, groep: 'maand' },
+      { href: '/editions', title: 'Editions', desc: 'Elke maand merkbeeld zonder product erin', soon: true, groep: 'maand' },
     ],
     nav_how: 'Hoe het werkt',
     how: [
-      { href: '/how-it-works', title: 'Van bestelling tot levering', desc: 'De vier stappen, en de twee waar jij in zit' },
+      { href: '/how-it-works', title: 'Van bestelling tot levering', desc: 'De drie stappen, en de twee waar jij in zit' },
       /* Zelfde reden als bij de Engelse lijst hierboven: het demo-item is weg,
          en /studio heet nu naar wat er staat in plaats van naar iets wat bijna
          hetzelfde is als de regel erboven. */

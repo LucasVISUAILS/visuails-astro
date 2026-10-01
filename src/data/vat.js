@@ -332,9 +332,21 @@ export function vatGate({ country, treatment, vatValid, vatError, confirmed, had
   // 1 · Buiten de EU. Er is geen register waarin we dit kunnen nakijken — VIES
   //     dekt alleen lidstaten — dus is dit de enige claim op de site die
   //     helemaal op het woord van de klant rust. En hij is 21% waard.
+  //
+  //     ── NIET MEER VÓÓR DE BETALING, MAAR ERNA — 29 september 2026 ────────
+  //     Lucas: een bedrijf in bijvoorbeeld Amerika moet gewoon kunnen bestellen.
+  //     Tot vandaag ging elke bestelling van buiten de EU eerst op de
+  //     beoordelingslijst: geen betaallink, wachten op een mens, en pas daarna
+  //     betalen. Voor de klant die het eerlijk invult — vrijwel iedereen — is dat
+  //     een dag vertraging om de enkeling te vangen die het niet doet.
+  //     Die enkeling valt nu op het BETAALMIDDEL op: bij 0% wordt iDEAL niet
+  //     aangeboden, en een kaart of rekening uit Nederland of de EU bij een
+  //     "Amerikaans" bedrijf komt na de betaling bij jou binnen (zie
+  //     paymentMismatch() hieronder en recordPaymentMethod() in de webhook).
+  //     Het tarief blijft wat het was: 0%, buiten de heffing, op grond van het
+  //     land (art. 44 btw-richtlijn) en de zakelijke verklaring.
   if (up && up !== HOME_COUNTRY && !isEu(up)) {
-    reasons.push('niet-EU: 0% rust alleen op wat de klant zelf opgeeft');
-    payableNow = false;
+    /* bewust leeg: zie hierboven */
   }
 
   // 2 · Een EU-nummer dat we niet hebben kúnnen controleren. Het tarief is al
@@ -378,12 +390,34 @@ export function vatGate({ country, treatment, vatValid, vatError, confirmed, had
  * bestaat niet. Zie ook src/lib/mollie.js, waar iDEAL niet wordt aangeboden bij
  * een order die op verlegging staat — voorkomen is beter dan achteraf zien.
  */
-export function paymentMismatch({ method, country, treatment }) {
+/* Betaalmiddelen die alleen met een rekening bij een bank IN de EU werken. */
+const EU_LOKALE_MIDDELEN = new Set([
+  'ideal', 'bancontact', 'eps', 'giropay', 'kbc', 'belfius', 'przelewy24',
+  'sofort', 'mybank', 'blik', 'trustly', 'satispay', 'twint',
+]);
+
+/**
+ * Sinds 29 september 2026 ook het LAND VAN DE KAART (`cardCountry`, uit
+ * Mollie's `details.cardCountryCode`) en de EU-eigen betaalmiddelen, voor
+ * bestellingen van buiten de EU. Die mogen sinds die dag meteen betalen (zie
+ * vatGate() hierboven); dit is de controle die daarvoor in de plaats kwam. Een
+ * Amerikaans bedrijf betaalt met een Amerikaanse kaart. Een Nederlandse kaart
+ * op "Verenigde Staten" is geen bewijs van fraude, maar wel iets om te zien
+ * voordat er geproduceerd wordt.
+ */
+export function paymentMismatch({ method, country, treatment, cardCountry = '' }) {
   const m = String(method || '').toLowerCase();
   const up = String(country || '').trim().toUpperCase();
-  if (m !== 'ideal') return null;
+  const kaart = String(cardCountry || '').trim().toUpperCase();
+  if (!m) return null;
   if (!up || up === HOME_COUNTRY) return null;
   if (treatment === VAT_TREATMENT.standard) return null;
+  if (treatment === VAT_TREATMENT.outsideScope) {
+    if (EU_LOKALE_MIDDELEN.has(m)) return `betaald met ${m} (een Europese bank) terwijl het land ${up} is en er 0% is gerekend`;
+    if (kaart && (kaart === HOME_COUNTRY || isEu(kaart))) return `betaald met een kaart uit ${kaart} terwijl het land ${up} is en er 0% is gerekend`;
+    return null;
+  }
+  if (m !== 'ideal') return null;
   return `betaald met iDEAL terwijl het land ${up} is en er 0% is gerekend`;
 }
 

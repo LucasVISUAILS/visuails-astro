@@ -20,12 +20,15 @@
 // in the trust row, and only true under WINDOW_THRESHOLD products.
 import Layout from '../../layouts/Layout.astro';
 import VideoPage from '../../components/VideoPage.astro';
-import { euro, AMOUNT, vatLabel } from '../../data/pricing.js';
+import { euro, AMOUNT, vatLabel, VIDEO_OP_AANVRAAG } from '../../data/pricing.js';
 
-const description =
-  `Eight seconds of subtle motion, for product pages, social and simple ads. ` +
-  `${euro(AMOUNT.video, 'en')} a clip ${vatLabel('excl', 'en')} — the same ` +
-  `rate on its own or inside an order.`;
+/* Zolang video op aanvraag is (VIDEO_OP_AANVRAAG, 24 september 2026), noemt de
+   omschrijving geen tarief: de pagina zelf zegt "op aanvraag". */
+const description = VIDEO_OP_AANVRAAG
+  ? `Eight seconds of subtle motion, for product pages, social and simple ads. On request — we reply in writing with a price.`
+  : `Eight seconds of subtle motion, for product pages, social and simple ads. ` +
+    `${euro(AMOUNT.video, 'en')} a clip ${vatLabel('excl', 'en')} — the same ` +
+    `rate on its own or inside an order.`;
 ---
 
 <Layout

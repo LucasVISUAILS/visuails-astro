@@ -135,7 +135,9 @@ const vasteRegel = lang === 'nl'
       product"), dus wie hier nooit klikt mist niets. */}
   <p class="pl-hoeken-h pl-hoeken-h2">
     <span class="pl-hoeken-tarief" data-pl-angle-rate>{c.per.replace('{price}', euro(startTarief, lang))} · {vatLabel('excl', lang)}</span>
-    <a class="pijl pl-hoeken-uit" href={lp('/per-product')}>{c.seeAll}</a>
+    {/* In een nieuw tabblad (29 september 2026): midden in het formulier wegklikken
+        kostte de klant zijn plek. */}
+    <a class="pijl pl-hoeken-uit" href={lp('/per-product')} target="_blank" rel="noopener">{c.seeAll}</a>
   </p>
 
   {perGroep.map((g) => (
@@ -348,6 +350,8 @@ const vasteRegel = lang === 'nl'
 
   .pl-hoek-note { display: block; }
   .pl-hoek-note .input { width: 100%; font-size: .84rem; }
+  /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
+  @media (max-width: 760px), (pointer: coarse) { .pl-hoek-note .input { font-size: 16px; } }
 
   .pl-hoeken-som {
     margin: clamp(1rem, 2vw, 1.4rem) 0 0; padding-top: .8rem;

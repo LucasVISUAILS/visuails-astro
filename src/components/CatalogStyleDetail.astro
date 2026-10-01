@@ -39,11 +39,11 @@ const { lang, style, zusters } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 
-const TIMING = style.priceTrust
+const TIMING = style.slug === 'custom'
   ? (nl ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : 'Design first, then the ordinary turnaround per order.')
   : turnaround('unattended', lang);
 const REVIEW = reviewClaim('unattended', lang);
-const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue[lang];
+const QUEUE = style.slug === 'custom' ? '' : TIERS.unattended.queue[lang];
 
 const c = nl ? {
   terug: 'Catalog-stijlen',
@@ -64,6 +64,7 @@ const c = nl ? {
   modelNoot: ['De foto op model in elke ', '-set: een standaardgezicht, of ', 'je eigen merkmodel', '.'],
   slotH: ['Maak ', ' van jou.'],
   slotP: 'Probeer VISUAILS eerst, of plaats vandaag je bestelling.',
+  slotPCustom: 'Vertel wat je voor ogen hebt: je krijgt eerst schriftelijk een voorstel en een prijs.',
   proef: 'Probeer VISUAILS',
 } : {
   terug: 'Catalog styles',
@@ -84,6 +85,7 @@ const c = nl ? {
   modelNoot: ['The on-model shot in every ', ' set: a standard face, or ', 'your own Brand Model', '.'],
   slotH: ['Make ', ' yours.'],
   slotP: 'Test sample, or place your order today.',
+  slotPCustom: 'Tell us what you have in mind: you get a written proposal and a price first.',
   proef: 'Test sample',
 };
 
@@ -110,7 +112,7 @@ const badge = `Catalog · ${style.name}`;
         <ServiceSwitch current="catalog" lang={lang} />
         {/* De drie feiten die op elke stijlpagina staan. Twee ervan komen uit
             pricing.js — zie de kop: het zijn tier-feiten, geen stijlteksten. */}
-        <ul class="cs-feiten" role="list">
+        <ul class="cs-feiten feiten" role="list">
           <li><b>{style.priceTrust}</b>{style.priceUnit ?? (nl ? ' / visual' : ' / visual')}</li>
           <li><b>{TIMING}</b></li>
           <li><b>{REVIEW}</b></li>
@@ -194,7 +196,7 @@ const badge = `Catalog · ${style.name}`;
     </ul>
   </section>
 
-  <section class="paneel cs-lijsten">
+  <section class="paneel vervolg cs-lijsten">
     <div class="cs-een">
       <div>
         <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
@@ -215,8 +217,12 @@ const badge = `Catalog · ${style.name}`;
   </section>
 
   <section class="paneel paneel-slot cs-slot">
-    <h2 class="hoog hoog-2">{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</h2>
-    <p class="lopend">{c.slotP}</p>
+    {/* De eigen look heet "Eigen look" / "Custom", en dat gaf "Maak Eigen look van jou."
+        Voor die ene look staat er daarom "Maak je eigen look." */}
+    <h2 class="hoog hoog-2">{style.slug === 'custom'
+      ? <>{c.slotH[0]}<em>{lang === 'nl' ? 'je eigen look' : 'your own look'}</em>.</>
+      : <>{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</>}</h2>
+    <p class="lopend">{style.slug === 'custom' ? c.slotPCustom : c.slotP}</p>
     <div class="acties">
       <a class="knop knop-inkt" href={style.orderHref}>{c.bestel}</a>
       <a class="knop knop-lijn" href={lp('/test-sample')}>{c.proef}</a>
@@ -257,13 +263,8 @@ const badge = `Catalog · ${style.name}`;
     letter-spacing: -.01em; color: var(--inkt); max-width: 20em;
   }
 
-  .cs-feiten { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }
-  .cs-feiten li {
-    font-family: var(--mono2); font-size: .72rem; font-stretch: 82%;
-    letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2);
-    padding: .42rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px;
-  }
-  .cs-feiten b { color: var(--inkt); font-weight: 400; }
+  /* De pillen zijn een lijst geworden (1 oktober 2026): zie .feiten in stijl22.css. */
+  .cs-feiten { margin-top: 1.6rem; }
   .cs-queue { margin-top: .9rem; font-size: .88rem; line-height: 1.6; color: var(--inkt-2); }
 
   .cs-sfeer-p + .cs-sfeer-p, .cs-sfeer-p { margin-top: 1.1rem; }

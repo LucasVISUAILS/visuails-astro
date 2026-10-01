@@ -194,14 +194,16 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Clips run in the ${clause(t0.queue.en).toLowerCase()}; a clip on its own gets no fixed date.`,
+    /* 30 september 2026: video is op aanvraag; formaat en levertijd staan in de
+       offerte. Hier stond dat clips in de normale doorlooptijd meelopen. */
+    queueNote: 'Video is on request: the format and the delivery time are agreed in the written quote.',
     // The qualifier above TierCompare. That component is shared with /catalog,
     // /lifestyle and /pricing and prints the ladder's two service levels; on
     // THIS page it needs one sentence of context, because neither column is
     // reachable by ordering clips. Removing the component instead would take
     // away information a buyer who also orders photos does want.
     tierNote: opAanvraag
-      ? `The two columns below describe the price per quantity for catalog and lifestyle products. Clips are on request for now and run at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`
+      ? 'The two columns below describe the price per quantity for catalog and lifestyle products. Clips are on request for now, and their delivery time is agreed in the quote rather than set by either column.'
       : `The two columns below describe the price per quantity for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request runs at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
     reviewNote: reviewClaim('unattended', 'en'),
     heroAlt: 'A still from a short VISUAILS product clip',
@@ -236,13 +238,13 @@ const COPY = {
     steps: [
       ['Send a product photo', 'One clean still is enough to start.'],
       ['We add the motion', 'A slow turn, a drape, a catch of light — held subtle.'],
-      [turnaround('unattended', 'en'), 'Sized for pages, social and ads.'],
+      ['Delivered as agreed', 'Vertical 9:16 as standard, on the delivery time in your quote.'],
     ],
     stepsAlt: 'A product photo of the kind a clip starts from',
     cleanH: 'Clean motion, ready to publish.',
     clean: [
       '8-second video with subtle motion',
-      'Sized for pages, social and ads',
+      'Vertical 9:16 as standard, other ratios on request',
       'Consistent style across your range',
       reviewClaim('unattended', 'en'),
     ],
@@ -253,7 +255,7 @@ const COPY = {
     // the difference this block now has to state out loud rather than imply.
     buyFixed: opAanvraag
       ? '<strong>Motion &amp; Lifestyle</strong> — on request for now. We reply in writing with a price and a date; nothing is charged until you say yes.'
-      : `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we confirm what and when in writing before anything runs.`,
+      : `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}. There is no checkout for video yet: you request it through the form, on its own or on top of an order, and we will confirm what and when in writing before anything runs.`,
     buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
     buyFlat: `One rate per clip, whatever else is in the order.`,
     /* Deze knop wijst naar /start/video en heette "Start an order". Dat is
@@ -270,7 +272,7 @@ const COPY = {
     faqs: serviceFaqs('video', 'en'),
     ctaH: 'Give your product <br>a little movement.',
     ctaP: opAanvraag
-      ? `On request — ${turnaround('unattended', 'en').toLowerCase()} once we have said yes in writing, no fixed delivery date.`
+      ? 'On request — the format and the delivery time are agreed in the written quote.'
       : `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()}, no fixed delivery date.`,
     ctaSecondary: 'Contact us',
   },
@@ -292,10 +294,10 @@ const COPY = {
       opAanvraag ? [opAanvraagWoord, 'we antwoorden schriftelijk met een prijs'] : [clip, `per clip · ${vatLabel('excl', 'nl')}`],
       ['8s', 'strakke productvideo’s'],
     ],
-    queueNote: `Clips lopen mee in de ${clause(t0.queue.nl).toLowerCase()}; een losse clip krijgt geen vaste datum.`,
+    queueNote: 'Video is op aanvraag: het formaat en de levertijd spreken we af in de schriftelijke offerte.',
     // Zie de Engelse kant voor waarom deze regel er staat.
     tierNote: opAanvraag
-      ? `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Clips zijn voorlopig op aanvraag en blijven in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`
+      ? 'De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Clips zijn voorlopig op aanvraag, en hun levertijd spreken we af in de offerte; geen van beide kolommen bepaalt die.'
       : `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
     reviewNote: reviewClaim('unattended', 'nl'),
     heroAlt: 'Een stilstaand beeld uit een korte productclip van VISUAILS',
@@ -327,13 +329,13 @@ const COPY = {
     steps: [
       ['Stuur een productfoto', 'Eén strakke still is genoeg om te beginnen.'],
       ['Wij brengen het in beweging', 'Een langzame draai, stof die valt, licht dat over het materiaal trekt — subtiel gehouden.'],
-      [turnaround('unattended', 'nl'), 'Op maat voor pagina’s, social en advertenties.'],
+      ['Geleverd zoals afgesproken', 'Standaard verticaal 9:16, op de levertijd uit je offerte.'],
     ],
     stepsAlt: 'Een productfoto zoals een clip er een als vertrekpunt neemt',
     cleanH: 'Strakke beweging, klaar om te publiceren.',
     clean: [
       'Video van 8 seconden met subtiele beweging',
-      'Op maat voor pagina’s, social en advertenties',
+      'Standaard verticaal 9:16, andere verhoudingen op aanvraag',
       'Consistente stijl door je hele assortiment',
       reviewClaim('unattended', 'nl'),
     ],
@@ -353,7 +355,7 @@ const COPY = {
     faqs: serviceFaqs('video', 'nl'),
     ctaH: 'Geef je product <br>een beetje beweging.',
     ctaP: opAanvraag
-      ? `Op aanvraag — ${turnaround('unattended', 'nl').toLowerCase()} zodra we schriftelijk ja hebben gezegd, geen vaste leverdatum.`
+      ? 'Op aanvraag — het formaat en de levertijd spreken we af in de schriftelijke offerte.'
       : `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()}, geen vaste leverdatum.`,
     ctaSecondary: 'Neem contact op',
   },
@@ -471,7 +473,7 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
         <p class="etiket">{c.eyebrow}</p>
         <h1 id="vid-h1" class="hoog" set:html={c.h1} />
         <p class="lopend">{c.lead}</p>
-        <HeroFacts eigen={c.trust} lang={lang} />
+        <HeroFacts eigen={c.trust} lang={lang} levertijd={nl ? ['In de offerte', 'levertijd'] : ['In the quote', 'delivery time']} />
         <p class="vid-wacht">{c.queueNote}</p>
         <p class="acties">
           {/* PAGINA-OPBOUW.md stelde de aanvraag als hoofdknop voor. Niet
@@ -519,7 +521,7 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
       blok hieronder, onder de checklist. */}
 
   {/* ── 5 · WAT ER SCHOON MOET, EN WAT HET KOST ──────────────────────────── */}
-  <section class="paneel">
+  <section class="paneel vervolg">
     <div class="vid-twee-licht">
       <div>
         <h2 class="hoog hoog-2">{c.cleanH}</h2>
@@ -605,35 +607,9 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
      rechterkant, waar de plaat eroverheen valt, en laat de tekstkolom op de
      rustige helft staan. */
   .vid-grond { position: relative; isolation: isolate; }
-  .vid-grond::before {
-    content: '';
-    /* ── ALLEEN DE RECHTERHELFT ──────────────────────────────────────────────
-       Over de hele breedte gemeten viel de schaduwband precies over de kop:
-       inkt op middengrijs, en dat is de enige plek op deze pagina waar de tekst
-       niet mag vechten. Deze band begint daarom op 38% en loopt met een masker
-       in vanaf links, zodat hij achter de laptop staat — daar waar hij hoort,
-       want dat is het donker waarin een clip leeft — en de tekstkolom op schoon
-       `--vel` blijft staan.
-
-       Hetzelfde masker als op de plaat zelf (zie `.lc.is-naast`): een verloop
-       dat op nul begint en niet op een rand, anders zie je een naad. */
-    position: absolute; inset: 0 0 0 38%;
-    background: url('/img/band-video.webp') no-repeat right center / cover;
-    /* Twee verlopen die elkaar SNIJDEN: links invaren, en onderaan weer
-       uitvaren. Dat tweede is er voor de regel onder de plaat ("↑ wat jij
-       stuurt") en de dienstenrij eronder — inkt op een donkere band is precies
-       het soort onleesbaarheid dat een sfeerbeeld niet waard is. */
-    -webkit-mask-image:
-      linear-gradient(to right, transparent 0%, #000 22%, #000 100%),
-      linear-gradient(to bottom, #000 0%, #000 44%, transparent 68%);
-    mask-image:
-      linear-gradient(to right, transparent 0%, #000 22%, #000 100%),
-      linear-gradient(to bottom, #000 0%, #000 44%, transparent 68%);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
-    pointer-events: none;
-    z-index: -1;
-  }
+  /* Weg sinds 24 september 2026 — Lucas: de achtergronden op home, lifestyle
+     en video mogen eruit. De opening staat nu op schoon `--vel`. */
+  .vid-grond::before { content: none; }
   /* Op een smal scherm staat de laptop ONDER de tekst en is er geen rechterhelft
      meer; dan zou de band dwars over de kop vallen. Daar blijft hij weg. */
   @media (max-width: 900px) {

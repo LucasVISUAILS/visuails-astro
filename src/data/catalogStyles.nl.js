@@ -2,7 +2,7 @@
 // src/data/catalogStyles.js — same shape and exports, only the
 // human-readable strings are translated. Order paths are prefixed with /nl.
 
-import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
+import { perProduct, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -17,8 +17,8 @@ const CAT = perProduct('catalog', 'nl');
 // disagree.
 const CAT_FROM = `vanaf ${euro(ladderRate('catalog', 1), 'nl')}`;
 const CAT_VAT = vatLabel('excl', 'nl');
-const TIMING = turnaround('unattended', 'nl');
-const REVIEW = reviewClaim('unattended', 'nl');
+/* Levertijd en controle staan in de feitenrij van de detailpagina, niet
+   meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
 function grid(photos, icons) {
   const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
@@ -62,10 +62,10 @@ export const catalogStyles = [
       { title: 'Een vastgezet lichtrecept', body: 'Eén softbox-opstelling, vastgelegd — geen keuze die per shot opnieuw wordt gemaakt.' },
       { title: 'Een hoeksysteem, geen losse hoek', body: 'Vaste camerageometrie, zodat een nieuw product precies naast een oud past.' },
       { title: 'Kleur trouw aan het product', body: 'Wit blijft wit, je merkkleur blijft kloppen.' },
-      { title: 'Eén verhouding, elk kanaal', body: 'Je kiest één beeldverhouding per bestelling; marktplaatsen krijgen de set als jpg op hun eigen specificatie.' },
+      { title: 'Eén verhouding per bestelling', body: 'Je kiest één beeldverhouding per bestelling. Je krijgt JPG, PNG en WebP; een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt.' },
     ],
     why: [
-      { title: 'Marktplaats-proof', body: 'Packshots voldoen aan de beeldregels van Amazon, bol en Zalando. Zalando vraagt daarnaast echte modelfoto\u2019s — onze on-model shot gaat daar als extra beeld.' },
+      { title: 'Marktplaats-proof', body: 'Packshots voldoen aan de beeldregels van Amazon, bol en Zalando. Zalando vraagt daarnaast echte modelfoto\u2019s, dus we kunnen niet beloven dat Zalando onze on-model shot accepteert.' },
       { title: 'Klaar voor bijbestellen', body: 'Een nieuw product schuift zo in de bestaande set, zonder zichtbare naad.' },
       { title: 'Geen art direction nodig', body: 'Stuur een foto, ontvang hetzelfde doordachte kader terug.' },
     ],
@@ -79,14 +79,12 @@ export const catalogStyles = [
       'Vanaf vier foto’s per product: voorkant, achterkant, detail & on-model',
       'Consistente belichting, hoek en achtergrond',
       `Bestanden op ${RESOLUTIE.standaard} px, klaar voor de marktplaatsen`,
-      TIMING,
-      REVIEW,
     ],
   },
   {
     slug: 'custom',
     name: 'Eigen look',
-    tagline: 'Een catalogus-look die onmiskenbaar van jou is.',
+    tagline: 'Een catalog-look die onmiskenbaar van jou is.',
     priceTrust: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
     priceUnit: '',
     metaPrice: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
@@ -97,13 +95,13 @@ export const catalogStyles = [
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
-    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product ${CAT_FROM} per set van vier foto’s.`,
+    cardDesc: `Een catalog-look ontworpen rond jouw merk — daarna elk product ${CAT_FROM} per set van vier foto’s.`,
     moodTitle: 'Hoe een eigen look eruitziet.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',
     ],
     steps: [
-      { title: 'Bepaal', body: 'Je palet, props en kadering, vastgelegd als één gedocumenteerde stijl.' },
+      { title: 'Bepaal', body: 'Je palet, props en kadrering, vastgelegd als één gedocumenteerde stijl.' },
       { title: 'Bewijs', body: 'Eerste producten gefotografeerd volgens die stijl, samen met jou gecontroleerd.' },
       { title: 'Herhaal', body: 'Elk nieuw product volgt automatisch dezelfde regels.' },
     ],
@@ -112,13 +110,13 @@ export const catalogStyles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Een ontwerpsessie, geen template', body: 'Je merk, referenties en concurrenten om te vermijden — één ronde, daarna vastgezet.' },
+      { title: 'Een ontwerpsessie, geen template', body: 'Je merk, referenties en concurrenten om te vermijden — één correctieronde op het ontwerp, daarna ligt het vast.' },
       { title: 'Een uitgeschreven stijlsysteem', body: 'Regels voor achtergrond, schaduw en props, gedocumenteerd zodat product 100 bij product 1 past.' },
       { title: 'In eigendom, niet gehuurd', body: 'De stijl die we bouwen is van jou — we verkopen hem niet door.' },
       { title: 'Daarna voor altijd snel', body: 'Nieuwe producten lopen er doorheen tegen normale catalogus-snelheid en -prijs.' },
     ],
     why: [
-      { title: 'Onmiskenbaar van jou', body: 'Props, kleur en kadering die concurrenten niet kunnen kopiëren.' },
+      { title: 'Onmiskenbaar van jou', body: 'Props, kleur en kadrering die concurrenten niet kunnen kopiëren.' },
       { title: 'Gedocumenteerd, niet onthouden', body: 'Vastgelegd, zodat het nooit afwijkt tussen bestellingen.' },
       { title: 'Snel na de eerste bestelling', body: 'Ontwerpen gebeurt één keer; elke bestelling daarna loopt op normale snelheid.' },
     ],
@@ -129,10 +127,10 @@ export const catalogStyles = [
       'Teams die jaren aan productdrops plannen',
     ],
     whatYouGet: [
-      'Een catalogusstijl op maat, samen met jou ontworpen',
+      'Een catalogstijl op maat, samen met jou ontworpen',
       'Gedocumenteerde regels voor perfecte herhaalbaarheid',
       'Exclusiviteit — jouw look blijft van jou',
-      'Normale prijs per product na de eerste bestelling',
+      'Eén ontwerpbedrag, daarna het gewone tarief per product',
     ],
   },
 ];

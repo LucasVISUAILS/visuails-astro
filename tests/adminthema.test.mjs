@@ -77,18 +77,18 @@ console.log('\nmet de cookie draagt elke pagina het attribuut');
   for (const pad of ['/admin', '/admin/planning', '/admin/customers', '/admin/vat', '/admin/onbekend']) {
     const donker = await haal(pad, `vis_admin=${token}; vis_thema=donker`);
     const h = await donker.text();
-    ok(`${pad} draagt data-thema="donker"`, /<html lang="en" data-thema="donker">/.test(h));
+    ok(`${pad} draagt data-thema="donker"`, /<html lang="nl" data-thema="donker">/.test(h));
   }
   /* En het inlogscherm, dat vóór de sessie komt en dus langs een heel ander
      stuk van adminGet() loopt. Als metThema() ooit naar binnen verhuist, is
      dit de pagina die als eerste omvalt. */
   const login = await haal('/admin/login', 'vis_thema=donker');
-  ok('/admin/login draagt het ook', /<html lang="en" data-thema="donker">/.test(await login.text()));
+  ok('/admin/login draagt het ook', /<html lang="nl" data-thema="donker">/.test(await login.text()));
 
   const licht = await haal('/admin');
   const h = await licht.text();
   ok('zonder cookie staat het attribuut er niet', /data-thema/.test(h), false);
-  ok('  en de pagina is verder dezelfde', /<html lang="en">/.test(h));
+  ok('  en de pagina is verder dezelfde', /<html lang="nl">/.test(h));
 }
 
 console.log('\nde schakelaar staat in de balk, en is geen JavaScript');

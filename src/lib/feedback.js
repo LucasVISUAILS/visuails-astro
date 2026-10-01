@@ -44,6 +44,7 @@
  * functie niet per ongeluk te bouwen.
  */
 
+import { serviceLabel } from '../data/services.js';
 import { REVIEW_PLATFORMS, parsePlatforms, SCORE_HIGH, SCORE_MAX } from '../data/reviews.js';
 import { sendMail } from './mail.js';
 import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote, note as mailNote } from './mailTemplate.js';
@@ -526,7 +527,7 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
         ['Bestelling', ref],
         ['Klant', who],
         ['E-mail', order?.email || ''],
-        ['Dienst', order?.service || ''],
+        ['Dienst', serviceLabel(order?.service, 'nl') || order?.service || ''],
       ]),
       note ? mailQuote(String(note).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(/\n/g, '<br>')) : '',
       mailP(kind === 'note'

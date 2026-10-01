@@ -27,8 +27,8 @@ import { VOORBEELD_REF } from './voorbeeldset.js';
 /** De diensten waarop gefilterd wordt, in de volgorde van het menu. */
 export const DIENSTEN = {
   catalog: { nl: 'Catalog', en: 'Catalog', meta: { nl: 'Catalogset', en: 'Catalog set' } },
-  lifestyle: { nl: 'Lifestyle', en: 'Lifestyle', meta: { nl: 'Lifestyle-carousel', en: 'Lifestyle carousel' } },
-  complete: { nl: 'Catalog + lifestyle', en: 'Catalog + lifestyle', meta: { nl: 'Catalogset en carousel', en: 'Catalog set and carousel' } },
+  lifestyle: { nl: 'Lifestyle', en: 'Lifestyle', meta: { nl: 'Lifestylecarrousel', en: 'Lifestyle carousel' } },
+  complete: { nl: 'Catalog + lifestyle', en: 'Catalog + lifestyle', meta: { nl: 'Catalogset en carrousel', en: 'Catalog set and carousel' } },
 };
 
 /** De productsoorten. Het tweede filter; staat als keuzemenu zodat de rij rustig blijft. */
@@ -47,7 +47,7 @@ export const LEVERINGEN = [
   { id: 'wollen-jas', ref: 'VIS-2609-2035', dienst: 'complete', soort: 'jassen', product: { nl: 'Wollen jas', en: 'Wool coat' }, beelden: 'volgt' },
   { id: 'hoodie', ref: 'VIS-2609-2410', dienst: 'catalog', soort: 'truien', product: { nl: 'Hoodie', en: 'Hoodie' }, beelden: 'volgt' },
   { id: 'plooirok', ref: 'VIS-2609-3307', dienst: 'lifestyle', soort: 'rokken', product: { nl: 'Plooirok', en: 'Pleated skirt' }, beelden: 'volgt' },
-  { id: 'canvas-tas', ref: 'VIS-2609-3981', dienst: 'catalog', soort: 'accessoires', product: { nl: 'Canvas tas', en: 'Canvas tote' }, beelden: 'volgt' },
+  { id: 'canvas-tas', ref: 'VIS-2609-3981', dienst: 'catalog', soort: 'accessoires', product: { nl: 'Canvastas', en: 'Canvas tote' }, beelden: 'volgt' },
   { id: 'linnen-blouse', ref: 'VIS-2609-4526', dienst: 'complete', soort: 'shirts', product: { nl: 'Linnen blouse', en: 'Linen blouse' }, beelden: 'volgt' },
 ];
 

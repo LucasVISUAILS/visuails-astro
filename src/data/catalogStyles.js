@@ -9,7 +9,7 @@
 // unlike the lifestyle styles — there is no `heroPhoto` / `cardPhoto` here.
 // Icon fields drive ProductScene's placeholder rendering directly.
 
-import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
+import { perProduct, ladderRate, euro, vatLabel, RESOLUTIE } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -24,8 +24,8 @@ const CAT = perProduct('catalog', 'en');
 // disagree.
 const CAT_FROM = `from ${euro(ladderRate('catalog', 1), 'en')}`;
 const CAT_VAT = vatLabel('excl', 'en');
-const TIMING = turnaround('unattended', 'en');
-const REVIEW = reviewClaim('unattended', 'en');
+/* Levertijd en controle staan in de feitenrij van de detailpagina, niet
+   meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
 // grid: the 3x3 product-scene grid on each style page. Mirrors the helper in
 // src/data/styles.js — `photos` stays empty for catalog since the source
@@ -72,10 +72,10 @@ export const catalogStyles = [
       { title: 'A locked lighting recipe', body: 'One softbox setup, codified — not a call made shot by shot.' },
       { title: 'An angle system, not an angle', body: 'Fixed camera geometry, so new products sit flush beside old ones.' },
       { title: 'Colour held to the product', body: 'Whites stay white, your brand colour stays true.' },
-      { title: 'One ratio, every channel', body: 'You pick one aspect ratio per order; marketplaces get the set as jpg to their own spec.' },
+      { title: 'One ratio per order', body: 'You pick one aspect ratio per order. Files come as JPG, PNG and WebP; a marketplace order gets the formats that marketplace accepts.' },
     ],
     why: [
-      { title: 'Marketplace-proof', body: 'Packshots meet the image rules of Amazon, bol and Zalando. Zalando also asks for real model photos — our on-model shot goes there as an extra image.' },
+      { title: 'Marketplace-proof', body: 'Packshots meet the image rules of Amazon, bol.com and Zalando. Zalando also asks for real model photos, so we cannot promise it will accept our on-model shot.' },
       { title: 'Restock-ready', body: 'New products slot into the set without a visible seam.' },
       { title: 'Zero art direction needed', body: 'Send a photo, get back the same considered frame.' },
     ],
@@ -89,8 +89,6 @@ export const catalogStyles = [
       'From four photos per product: front, back, detail & on-model',
       'Consistent lighting, angle and background',
       `${RESOLUTIE.standaard} px, marketplace-ready files`,
-      TIMING,
-      REVIEW,
     ],
   },
   {
@@ -126,7 +124,7 @@ export const catalogStyles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'A design session, not a template', body: 'Your brand, references and competitors to avoid — one round, then locked.' },
+      { title: 'A design session, not a template', body: 'Your brand, references and competitors to avoid — one correction round on the design, then it is locked.' },
       { title: 'A written style system', body: 'Backdrop, shadow and prop rules, documented so product 100 matches product 1.' },
       { title: 'Owned, not rented', body: "The style we build is yours — we don’t resell it." },
       { title: 'Fast forever after', body: 'New products flow through it at normal catalog speed and price.' },
@@ -146,7 +144,7 @@ export const catalogStyles = [
       'A custom catalog style, designed with you',
       'Documented rules for perfect repeatability',
       'Exclusivity — your look stays yours',
-      'Normal per-product pricing after the first order',
+      'One design fee, then the normal per-product rate',
     ],
   },
 ];

@@ -95,9 +95,11 @@ console.log('\n3 · verlengen vanaf de planning');
   check('het venster is verzet naar de gekozen dag', rij.window_start, nieuw);
   const h = await (await get('/admin/planning?verzet=1')).text();
   check('de contactkaart staat bovenaan met de nieuwe datum', new RegExp(`pl-verzet[\\s\\S]*?${nieuw} – ${rij.window_end}`).test(h), true);
-  check('en de WhatsApp-tekst draagt de nieuwe datum', h.includes(encodeURIComponent(`${nieuw} – ${rij.window_end}`)), true);
+  /* Leesbaar sinds 29 september 2026: "30 september 2026 of 1 oktober 2026". */
+  const { datum: leesbaar } = await import('../src/lib/mailTemplate.js');
+  check('en de WhatsApp-tekst draagt de nieuwe datum', h.includes(encodeURIComponent(leesbaar(nieuw, 'nl'))) || h.includes(encodeURIComponent(leesbaar(nieuw, 'en'))), true);
   const gebeurtenis = db.prepare("SELECT note FROM order_events WHERE order_id = 1 ORDER BY id DESC LIMIT 1").get();
-  check('de tijdlijn van de klant noemt het verzetten', /Venster verzet naar/.test(gebeurtenis?.note || ''), true);
+  check('de tijdlijn van de klant noemt het verzetten', /Leverdatum verzet naar/.test(gebeurtenis?.note || ''), true);
   const zonder = await post('/admin/orders/1/window', { do: 'verzet', dag: addDays(nieuw, 3), reason: 'x' });
   check('zonder back=planning landt het nog steeds op de bestandenpagina', zonder.headers.get('location'), '/admin/orders/1/files');
 }
@@ -107,7 +109,10 @@ console.log('\n4 · het dashboard: één regel per bestelling');
   const h = await (await get('/admin')).text();
   check('elke bestelling is een klapje met de regel als summary', (h.match(/<details class="or" id="order-\d+">/g) || []).length, 4);
   check('het statusformulier staat er nog, per bestelling', (h.match(/action="\/admin\/orders\/\d+\/status"/g) || []).length, 4);
-  check('annuleren, verbergen en het merkmodel ook', /orders\/1\/cancel/.test(h) && /orders\/1\/hide/.test(h) && /orders\/1\/models/.test(h), true);
+  /* Het merkmodelformulier staat sinds 29 september 2026 alleen nog op de
+     klantpagina; onder elke bestelling was het dubbel. */
+  check('annuleren en verbergen ook', /orders\/1\/cancel/.test(h) && /orders\/1\/hide/.test(h), true);
+  check('  en het merkmodelformulier niet meer per bestelling', /orders\/1\/models/.test(h), false);
   check('de zijkolom toont wat eerst af moet', /db-aflopend/.test(h) && /Eerst af/.test(h), true);
   check('en linkt naar de planning', /href="\/admin\/planning"/.test(h), true);
   check('de kolomkoppen staan boven de lijst', /or-kop/.test(h), true);
@@ -117,7 +122,7 @@ console.log('\n5 · de bovenbalk');
 {
   /* '/admin/agenda' stond hier tot 19 september 2026; die is in de planning
      opgegaan en stuurt nu door. */
-  for (const [pad, key] of [['/admin', 'Dashboard'], ['/admin/planning', 'Planning'], ['/admin/customers', 'Klanten'], ['/admin/log', 'Log'], ['/admin/vat', 'Btw']]) {
+  for (const [pad, key] of [['/admin', 'Dashboard'], ['/admin/planning', 'Planning'], ['/admin/customers', 'Klanten'], ['/admin/log', 'Logboek'], ['/admin/vat', 'Btw']]) {
     const h = await (await get(pad)).text();
     check(`${pad} draagt de balk en wijst "${key}" aan`, new RegExp(`bar-link is-active" aria-current="page">${key}<`).test(h), true);
   }
@@ -207,7 +212,7 @@ console.log('\n5 · een bestelling oppakken en neerzetten');
     check('  de tweede dag van het paar komt uit de agenda', !!na.window_end && na.window_end >= na.window_start, true);
     check('  en je landt terug op de planning', res.headers.get('location'), '/admin/planning?verzet=1');
     const ev = db.prepare("SELECT note FROM order_events WHERE order_id = 1 ORDER BY id DESC LIMIT 1").get();
-    check('  met een regel op de tijdlijn van de klant', /Venster verzet naar/.test(ev?.note || ''), true);
+    check('  met een regel op de tijdlijn van de klant', /Leverdatum verzet naar/.test(ev?.note || ''), true);
   }
 }
 

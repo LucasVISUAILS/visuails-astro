@@ -68,7 +68,7 @@ const DIENSTEN = PLAN_SERVICES.map((k) => ({
   credits: SERVICE_CREDITS[k],
   /* Meervoud voor "daar krijg je 21 catalogsets": SLOT_KINDS kent alleen het enkelvoud. */
   meer: (nl
-    ? { catalog: 'catalogsets', lifestyle: 'lifestyle-carousels', 'video-motion': 'motion-clips', 'video-lifestyle': 'lifestyle-clips', hooks: 'hooks' }
+    ? { catalog: 'catalogsets', lifestyle: 'lifestylecarrousels', 'video-motion': 'motion-clips', 'video-lifestyle': 'lifestyle-clips', hooks: 'hooks' }
     : { catalog: 'catalog sets', lifestyle: 'lifestyle carousels', 'video-motion': 'motion clips', 'video-lifestyle': 'lifestyle clips', hooks: 'hooks' })[k] || (nl ? SLOT_KINDS[k].nl : SLOT_KINDS[k].en),
 }));
 
@@ -112,7 +112,7 @@ const COPY = {
     eyebrow: 'Plans',
     h1a: 'Credits every month.',
     h1b: 'Spend them on anything.',
-    lead: `One monthly budget for catalog, lifestyle and video — ${pctMin}–${pctMax}% cheaper than ordering one by one.`,
+    lead: `One monthly budget for catalog, lifestyle and video. On the three fixed plans that is ${pctMin}–${pctMax}% cheaper than ordering one by one.`,
     ctaPlans: 'Choose a plan',
     ctaMaat: 'Build your own',
     menuH: 'What a credit buys',
@@ -128,6 +128,7 @@ const COPY = {
     hooks: 'hooks',
     bespaar: (s, n, los) => `Save ${s} a month — ${n} catalog sets one-off cost ${los}.`,
     merkmodel: 'Your own Brand Model included',
+    merkmodelJaar: 'Your own Brand Model included on the 12-month terms',
     jaar: (p) => `or ${p} on the 12-month term`,
     kiesPlan: (n) => `Choose ${n}`,
     maatKaartNaam: planName(CUSTOM_MONTH_ID, 'en'),
@@ -135,9 +136,9 @@ const COPY = {
     maatKaartVanaf: 'from',
     maatKaartCta: 'Build your own',
     samen: [
-      'Fixed production days every month',
-      `Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month`,
-      'Cancel any month',
+      'A fixed week every month, starting on the day you pick',
+      `Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month (${TERMS.yearly.rollover} on the 12-month term)`,
+      'Monthly: cancel any month',
     ],
 
     maatH: 'Build your own plan.',
@@ -167,28 +168,28 @@ const COPY = {
 
     waaromH: 'Why a plan.',
     waarom: [
-      [`${pctMin}–${pctMax}%`, 'cheaper', 'than the same catalog sets ordered one-off.'],
+      [`${pctMin}–${pctMax}%`, 'cheaper', 'than the same catalog sets ordered one-off — on the three fixed plans.'],
       [`${PLAN_SERVICES.length}`, 'services, one balance', 'Catalog, lifestyle, motion, hooks and lifestyle clips — you choose each month. A look of your own too, once it is built.'],
-      ['Fixed', 'production days', 'Every month, ahead of one-off orders — even for one product.'],
+      ['Fixed', 'week every month', 'It starts on the day of the month you pick. Every plan has one, monthly too.'],
       [`${TERMS.yearly.rollover}`, `months rollover`, `On the 12-month term; ${PLAN_ROLLOVER_MONTHS} on monthly. Nothing is lost in a quiet month.`],
     ],
 
     termH: 'Monthly, yearly or prepaid.',
     termen: [
       ['Monthly', 'Cancel any month.', `Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month.`],
-      ['12 months', 'Same price, fixed term.', `${TERMS.yearly.rollover} months rollover, a price lock, and on Studio your own Brand Model.`],
-      ['12 months prepaid', `Pay 10, get 12: ${vrijMaanden} months free.`, 'Paid in one go. No refund if you stop early; the rest becomes credit.'],
+      ['12 months', 'Same price, fixed term.', `${TERMS.yearly.rollover} months rollover, a price lock, and on ${planName('studio', 'en')} your own Brand Model.`],
+      ['12 months prepaid', `Pay 10, get 12: ${vrijMaanden} months free.`, 'Paid in one go. No refund if you stop early; your year simply runs on to the end.'],
     ],
 
     soonAllH: 'And what is on the way.',
     soonAllLede: 'What is on request, and what is not orderable yet.',
     hooksTag: 'On request',
     hooksPlan: `With a plan, a hook costs ${SERVICE_CREDITS.hooks} credits.`,
-    stockNow: [`${STOCK_OFF_BRAND} new ${noun('stock', 'en')} every month`, 'with every plan, usable by any brand.'],
+    stockNow: [`The monthly set: ${STOCK_OFF_BRAND} new images every month`, 'with every plan, shared and non-exclusive.'],
     stockSoon: [`${STOCK_ON_BRAND} on-brand ${noun('visual', 'en')} a month`, 'in your own style, with Editions.'],
-    stockNowTag: 'Not running yet',
-    soonFoot: 'Pricing and ordering details are still being finalized, which is why booking is currently inactive.',
-    soonTag: 'Not ready yet',
+    stockNowTag: 'Coming soon',
+    soonFoot: 'Pricing and ordering details are still being finalised, which is why it cannot be booked yet.',
+    soonTag: 'Coming soon',
 
     ctaH: 'Start with one product',
     ctaEm: `for ${euro(AMOUNT.testSample, 'en')}.`,
@@ -202,7 +203,7 @@ const COPY = {
     eyebrow: 'Abonnementen',
     h1a: 'Elke maand credits.',
     h1b: 'Besteed ze aan wat je nodig hebt.',
-    lead: `Eén maandbudget voor catalog, lifestyle en video — ${pctMin}–${pctMax}% goedkoper dan los bestellen.`,
+    lead: `Eén maandbudget voor catalog, lifestyle en video. Bij de drie vaste abonnementen is dat ${pctMin}–${pctMax}% goedkoper dan los bestellen.`,
     ctaPlans: 'Kies een abonnement',
     ctaMaat: 'Stel je eigen samen',
     menuH: 'Wat een credit oplevert',
@@ -218,6 +219,7 @@ const COPY = {
     hooks: 'hooks',
     bespaar: (s, n, los) => `Je bespaart ${s} per maand — ${n} catalogsets los kosten ${los}.`,
     merkmodel: 'Je eigen merkmodel inbegrepen',
+    merkmodelJaar: 'Je eigen merkmodel inbegrepen op de termijnen van 12 maanden',
     jaar: (p) => `of ${p} op de jaartermijn`,
     kiesPlan: (n) => `Kies ${n}`,
     maatKaartNaam: planName(CUSTOM_MONTH_ID, 'nl'),
@@ -225,9 +227,9 @@ const COPY = {
     maatKaartVanaf: 'vanaf',
     maatKaartCta: 'Stel je eigen samen',
     samen: [
-      'Elke maand vaste productiedagen',
-      `Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door`,
-      'Maandelijks opzegbaar',
+      'Elke maand een vaste week, vanaf de dag die jij kiest',
+      `Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door (${TERMS.yearly.rollover} op de termijnen van twaalf maanden)`,
+      'Maandabonnement: elke maand opzegbaar',
     ],
 
     maatH: 'Stel je eigen abonnement samen.',
@@ -257,28 +259,28 @@ const COPY = {
 
     waaromH: 'Waarom een abonnement.',
     waarom: [
-      [`${pctMin}–${pctMax}%`, 'goedkoper', 'dan dezelfde catalogsets los besteld.'],
+      [`${pctMin}–${pctMax}%`, 'goedkoper', 'dan dezelfde catalogsets los besteld — bij de drie vaste abonnementen.'],
       [`${PLAN_SERVICES.length}`, 'diensten, één saldo', 'Catalog, lifestyle, motion, hooks en lifestyleclips — jij kiest elke maand. Ook je eigen look, zodra hij gemaakt is.'],
-      ['Vaste', 'productiedagen', 'Elke maand, vóór losse bestellingen — ook voor één product.'],
+      ['Vaste', 'week per maand', 'Hij begint op de dag van de maand die jij kiest. Elk abonnement heeft er een, ook het maandelijkse.'],
       [`${TERMS.yearly.rollover}`, 'maanden doorschuiven', `Op de jaartermijn; ${PLAN_ROLLOVER_MONTHS} op maandbasis. Een rustige maand kost je niets.`],
     ],
 
     termH: 'Per maand, per jaar of vooruit.',
     termen: [
       ['Maandelijks', 'Elke maand opzegbaar.', `Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door.`],
-      ['12 maanden', 'Zelfde prijs, vaste looptijd.', `${TERMS.yearly.rollover} maanden doorschuiven, een prijsslot, en op Studio je eigen merkmodel.`],
-      ['12 maanden vooruit', `Betaal 10, krijg 12: ${vrijMaanden} maanden gratis.`, 'In één keer betaald. Stop je eerder, dan komt er geen geld terug; het restant wordt tegoed.'],
+      ['12 maanden', 'Zelfde prijs, vaste looptijd.', `${TERMS.yearly.rollover} maanden doorschuiven, een prijsgarantie, en bij ${planName('studio', 'nl')} je eigen merkmodel.`],
+      ['12 maanden vooruit', `Betaal 10, krijg 12: ${vrijMaanden} maanden gratis.`, 'In één keer betaald. Stop je eerder, dan komt er geen geld terug; je jaar loopt gewoon door tot het einde.'],
     ],
 
     soonAllH: 'En wat eraan komt.',
     soonAllLede: 'Wat op aanvraag is, en wat nog niet te bestellen is.',
     hooksTag: 'Op aanvraag',
     hooksPlan: `Met een abonnement kost een hook ${SERVICE_CREDITS.hooks} credits.`,
-    stockNow: [`${STOCK_OFF_BRAND} nieuwe ${noun('stock', 'nl')} per maand`, 'bij elk abonnement, bruikbaar voor elk merk.'],
-    stockSoon: [`${STOCK_ON_BRAND} on-brand ${noun('visual', 'nl')} per maand`, 'in je eigen stijl, met Editions.'],
-    stockNowTag: 'Nog niet actief',
-    soonFoot: 'Omdat we de tarieven en het bestelproces nog afronden, is deze service tijdelijk niet actief.',
-    soonTag: 'Nog niet klaar',
+    stockNow: [`De maandset: ${STOCK_OFF_BRAND} nieuwe beelden per maand`, 'bij elk abonnement, gedeeld en niet exclusief.'],
+    stockSoon: [`${STOCK_ON_BRAND} ${noun('visual', 'nl')} per maand in je eigen merkstijl`, 'met Editions.'],
+    stockNowTag: 'Binnenkort',
+    soonFoot: 'Omdat we de tarieven en het bestelproces nog afronden, is deze service nog niet te boeken.',
+    soonTag: 'Binnenkort',
 
     ctaH: 'Begin met één product',
     ctaEm: `voor ${euro(AMOUNT.testSample, 'nl')}.`,
@@ -351,6 +353,7 @@ const volgendPreset = PRESETS.find((p) => p.credits > STANDAARD) || null;
             <li><span class="pk-of">{c.of}</span> <b>{p.fit.hooks}</b> {c.hooks}</li>
           </ul>
           {p.brandModel && <p class="pk-extra">{c.merkmodel}</p>}
+          {p.id === 'studio' && <p class="pk-extra">{c.merkmodelJaar}</p>}
           {(() => {
             const b = creditSaving(p.credits, PLAN_AMOUNT[p.id]);
             return b ? <p class="pk-besp">{c.bespaar(euro(b.saving, lang), b.count, euro(b.los, lang))}</p> : null;
@@ -384,7 +387,7 @@ const volgendPreset = PRESETS.find((p) => p.credits > STANDAARD) || null;
       Een gewoon formulier naar /start/plan met plan=maat en credits=N: zonder
       script werkt het ook, en de server rekent de prijs toch opnieuw uit. Het
       script eronder houdt de samenvatting rechts bij en telt de hulp op. */}
-  <section class="paneel" id="op-maat" aria-labelledby="pl-maat">
+  <section class="paneel vervolg" id="op-maat" aria-labelledby="pl-maat">
     <header class="paneel-kop">
       <h2 id="pl-maat" class="hoog hoog-2">{c.maatH}</h2>
       <p class="lopend">{c.maatLede}</p>
@@ -488,7 +491,7 @@ const volgendPreset = PRESETS.find((p) => p.credits > STANDAARD) || null;
   {/* ── 6 · WAT ERAAN KOMT ─────────────────────────────────────────────────
       HET ANKER IS EEN AFSPRAAK: het menu wijst naar #binnenkort, #hooks en
       #editions (tests/nav.test.mjs). Geen knop in deze sectie. */}
-  <section class="paneel" id="binnenkort" aria-labelledby="pl-soon">
+  <section class="paneel vervolg" id="binnenkort" aria-labelledby="pl-soon">
     <header class="paneel-kop">
       <h2 id="pl-soon" class="hoog hoog-2">{c.soonAllH}</h2>
       <p class="lopend">{c.soonAllLede}</p>

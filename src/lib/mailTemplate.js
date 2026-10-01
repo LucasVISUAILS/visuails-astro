@@ -103,6 +103,33 @@ import { stand } from '../data/status.js';
 
 const FONT = 'Arial,Helvetica,sans-serif';
 
+/* Een bedrag in centen, met duizendtallen, in de tekens van de taal:
+   nl € 1.512,50 · en € 1,512.50. Hier stond in vier bestanden
+   `toFixed(2).replace('.', ',')`, wat "€ 1512,50" gaf — ook in een Engelse mail.
+   Dezelfde rekenregel als formatEuro() in invoicePdf.js (die trekt pdf-lib mee,
+   daarom niet vanaf daar geïmporteerd). 24 september 2026. */
+export function bedrag(cents, lang = 'nl') {
+  const n = Number.isFinite(Number(cents)) ? Math.round(Number(cents)) : 0;
+  const abs = Math.abs(n);
+  const nl = lang !== 'en';
+  const heel = String(Math.floor(abs / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, nl ? '.' : ',');
+  return `${n < 0 ? '-' : ''}€ ${heel}${nl ? ',' : '.'}${String(abs % 100).padStart(2, '0')}`;
+}
+
+/* Een datum voor in een mail: "10 oktober 2026" / "10 October 2026" in plaats
+   van de ruwe "2026-10-10" uit de database. Met de hand en niet via Intl, om
+   dezelfde reden als bedrag() hierboven. Iets wat geen datum is, komt ongewijzigd
+   terug. 24 september 2026. */
+const MAANDEN = {
+  nl: ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+};
+export function datum(iso, lang = 'nl') {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  if (!m) return String(iso || '');
+  return `${Number(m[3])} ${(MAANDEN[lang === 'en' ? 'en' : 'nl'])[Number(m[2]) - 1]} ${m[1]}`;
+}
+
 export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, ch => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
@@ -292,7 +319,7 @@ const footer = lang => {
       <a href="${base}/terms" style="color:${C.faint}">${terms}</a> &middot;
       <a href="${base}/privacy" style="color:${C.faint}">${privacy}</a>
     </p>
-    <p style="margin:0 0 4px;font-size:12px;color:${C.faint}">VISUAILS &middot; Enschede, NL &middot; hello@visuails.com</p>
+    <p style="margin:0 0 4px;font-size:12px;color:${C.faint}">VISUAILS &middot; Enschede, NL &middot; KVK 99742993 &middot; hello@visuails.com</p>
     <!-- DE BELOFTE STAAT IN DE VOET, NIET IN DE ONDERWERPREGEL. Een onderwerp
          moet zeggen wat er in de mail staat — "Je bestelling staat genoteerd —
          VIS-2608-4471" is scanbaar in een volle inbox en een slogan ervoor

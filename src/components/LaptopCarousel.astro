@@ -255,7 +255,7 @@ const t = nl
   class:list={['lc', stil && 'is-stil', vorm !== 'paneel' && 'is-naast', vorm === 'onder' && 'is-onder']}
   data-lc={stil ? undefined : true}
   aria-roledescription="carousel"
-  aria-label={titel}
+  aria-label={String(titel).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()}
   tabindex="0"
   style={`--lc-plaat:${PLAAT};--lc-l:${VLAK.links}%;--lc-t:${VLAK.boven}%;--lc-w:${VLAK.breed}%;--lc-h:${VLAK.hoog}%;--lc-fl:${FON.links}%;--lc-ft:${FON.boven}%;--lc-fw:${FON.breed}%;--lc-fh:${FON.hoog}%;--lc-n:${totaal}`}
 >
@@ -952,6 +952,11 @@ const t = nl
   }
   .lc-omlaag { transition: opacity .25s ease, scale .25s cubic-bezier(.16, 1, .3, 1); }
   .lc-omlaag:hover { scale: 1.14; }
+  /* ── EEN VINGER IS GROTER DAN HET PIJLTJE — 1 oktober 2026 ──────────────
+     Op een telefoon is 7cqh twaalf bij elf pixels: zichtbaar, maar bijna niet
+     te raken. Het pijltje blijft even klein; het vlak waarop je kunt tikken is
+     44 × 44 (Web Interface Guidelines), onzichtbaar, om het midden heen. */
+  .lc-omlaag::before { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%; }
   .lc-omlaag svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: square; }
   .lc-omlaag:hover { opacity: 1; animation: none; }
   /* Wie beweging heeft uitgezet, krijgt geen wenkend pijltje maar wel een

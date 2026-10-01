@@ -27,7 +27,7 @@ import { waHref } from '../data/whatsapp.js';
  * ═══════════════════════════════════════════════════════════════════════════ */
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
-import { TEST_SAMPLE } from '../data/pricing.js';
+import { TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Levering from './Levering.astro';
 import { LEVERINGEN, DIENSTEN, SOORTEN, gebruikteDiensten, gebruikteSoorten } from '../data/leveringen.js';
@@ -271,7 +271,12 @@ const leveringen = LEVERINGEN.map((l) => ({
   dienstNaam: DIENSTEN[l.dienst][T],
   soortNaam: SOORTEN[l.soort][T],
   plaatshouder: l.beelden === 'volgt',
-  n: geleverd(lang).length,
+  /* Het aantal beelden van DE DIENST en niet van de plaatshouder (24 september
+     2026): een lifestylekaart zei "4 beelden" omdat de voorbeeldset een
+     catalogset is. Een carrousel is drie beelden, catalog + lifestyle zeven. */
+  n: l.beelden === 'volgt'
+    ? ({ catalog: CATALOG_IMAGES, lifestyle: LIFESTYLE_IMAGES, complete: COMPLETE_IMAGES })[l.dienst] || geleverd(lang).length
+    : geleverd(lang).length,
 }));
 const dienstKnoppen = gebruikteDiensten();
 const soortKeuzes = gebruikteSoorten();

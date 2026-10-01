@@ -565,7 +565,7 @@ export function paymentDescription(quote, lang = 'en') {
       : `VISUAILS — ${k} video ${k === 1 ? 'clip' : 'clips'}`;
   }
   const what = nl
-    ? { catalog: 'catalogsets', lifestyle: 'lifestyle-carousels', complete: 'catalog + lifestyle' }
+    ? { catalog: 'catalogsets', lifestyle: 'lifestylecarrousels', complete: 'catalog + lifestyle' }
     : { catalog: 'catalog sets', lifestyle: 'lifestyle carousels', complete: 'catalog + lifestyle' };
   /*
    * ── DEZELFDE VAL, VOOR DE DERDE KEER — 14 AUGUSTUS 2026 ────────────────────

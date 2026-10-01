@@ -69,13 +69,16 @@
 
 import {
   createSubscriptionRow, loadSubscription, subscriptionByRef,
-  setMollieIds, activateSubscription,
+  setMollieIds, activateSubscription, bezetting,
 } from './subscription.js';
 import {
   PLAN_IDS, SUB_PLAN_IDS, TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor,
   planProductBudget, fitsBudget, fitsProducts, isPrepaid,
 } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
+import { regKindFor, REG_KIND, looksLikeKvk } from '../data/business.js';
+import { vatDecision, normaliseVat, viesCode, HOME_COUNTRY, vatFormatOk } from '../data/vat.js';
+import { checkVat } from './vies.js';
 import {
   MANDATE_AMOUNT, CUSTOM_MONTH_ID,
   isCustomCredits, customCreditsTotal, creditsProductEquivalent,
@@ -185,10 +188,47 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
 
   if (!TERM_IDS.includes(termId)) return seeOtherLocal(terug('termijn', lang));
 
+  /* ── BEDRIJF EN BTW, PER LAND — 29 september 2026 ──────────────────────────
+     Zie bepaalBedrijfEnBtw() onderaan. Hier wordt het afgedwongen (het formulier
+     doet het ook, maar een formulier is niet de waarheid) en het tarief bepaald
+     dat op de rij komt. Tot vandaag rekende een abonnement altijd 21%, tenzij de
+     klant eerder een bestelling met een bij VIES bevestigd nummer had betaald —
+     ook voor een bedrijf in de Verenigde Staten, dat helemaal geen btw hoort te
+     betalen, terwijl het formulier "met een geldig nummer verleggen we de btw"
+     beloofde. */
+  const bedrijf = await bepaalBedrijfEnBtw(env, form, customer.customer_id);
+  if (bedrijf.fout) return seeOtherLocal(terug(bedrijf.fout, lang));
+
   /* AL EEN ABONNEMENT? Dan niet nog een. De partiële UNIQUE index vangt dit ook,
      maar een klant die per ongeluk twee tabbladen open heeft, hoort een uitleg te
      zien en geen databasefout. */
-  const bestaand = await loadSubscription(env, customer.customer_id);
+  let bestaand = await loadSubscription(env, customer.customer_id);
+  /* ── EEN NOOIT BETAALDE AANMELDING STAAT EEN NIEUWE POGING NIET IN DE WEG ──
+     24 september 2026. Een eerste betaling die mislukte, werd afgebroken of
+     verliep, liet een rij op 'pending' achter zonder mandaat, zonder Mollie-
+     subscription en zonder één betaalde maand. Wie het opnieuw probeerde, werd
+     naar /account/plan gestuurd — waar geen betaalknop staat — en zat vast.
+     Zo'n rij is geen abonnement maar een afgebroken aanmelding: hij gaat op
+     'cancelled' met een reden, en de nieuwe poging loopt gewoon door. */
+  if (bestaand && bestaand.status === 'pending' && !bestaand.mollie_mandate_id && !bestaand.mollie_subscription_id) {
+    /* Pas na een half uur: daarvoor kan de eerste betaling nog lopen (iDEAL
+       verloopt na 15 minuten, een kaart na 30), en twee tabbladen mogen geen
+       twee abonnementen opleveren. Een betaling die Mollie als mislukt meldt,
+       sluit de webhook meteen af — zie functions/api/webhook/mollie.js. */
+    const betaald = await env.DB.prepare(
+      `SELECT 1 AS er FROM subscription_months WHERE subscription_id = ?1
+       UNION ALL SELECT 1 FROM subscriptions WHERE id = ?1 AND created_at > datetime('now', '-30 minutes')
+       LIMIT 1`
+    ).bind(bestaand.id).first().catch(() => ({ er: 1 }));
+    if (!betaald) {
+      await env.DB.prepare(
+        `UPDATE subscriptions SET status = 'cancelled', cancelled_at = datetime('now'),
+                cancel_reason = 'eerste betaling niet afgerond — opnieuw aangemeld'
+          WHERE id = ?1 AND status = 'pending'`
+      ).bind(bestaand.id).run();
+      bestaand = null;
+    }
+  }
   if (bestaand) return seeOtherLocal('/account/plan');
 
   /*
@@ -201,12 +241,11 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
    * een volle agenda, en dat hoort de klant te lezen voordat hij een machtiging
    * afgeeft en niet erna.
    */
-  const bezet = await env.DB.prepare(
-    /* slots_json erbij sinds migratie 0038: bij een maand op maat zegt de plan-id
-       niets over hoeveel agenda er vastligt. Zie subProducten() in slots.js. */
-    `SELECT plan, slots_json FROM subscriptions WHERE status IN ('active', 'pending', 'paused')`
-  ).all().catch(() => ({ results: [] }));
-  const vastgelegd = (bezet?.results || []).reduce((n, r) => n + subProducten(r), 0);
+  /* De telling staat in bezetting() (subscription.js), en /start/plan leest
+     dezelfde functie om VOORAF te zeggen wat er nog past — zie
+     functions/api/plan-plek.js. Eén telling, dus de pagina en de poort kunnen
+     het niet oneens zijn. */
+  const { producten: vastgelegd } = await bezetting(env);
   const past = planId === CUSTOM_MONTH_ID
     ? fitsProducts(maatProducten, vastgelegd)
     : fitsBudget(planId, vastgelegd);
@@ -219,7 +258,7 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
   try {
     const gemaakt = await createSubscriptionRow(env, {
       customerId: customer.customer_id, planId, termId, windowDay,
-      slots: maatSlots, amountCents: maatCents,
+      slots: maatSlots, amountCents: maatCents, btw: bedrijf.btw,
     });
     if (gemaakt.bestaat) return seeOtherLocal('/account/plan');
     rij = gemaakt.row;
@@ -586,3 +625,74 @@ export async function hervatIncasso(env, sub, origin) {
 }
 
 export { PLAN_SERVICE, MANDATE_EUROS };
+
+/**
+ * ── BEDRIJF EN BTW BIJ HET AFSLUITEN — 29 september 2026 ────────────────────
+ *
+ * Lucas: *"Het ding bij btw nummer is voornamelijk dat een bedrijf in amerika
+ * als voorbeeld alsnog kan bestellen omdat deze geen btw nummer kennen. Bedenk
+ * hoe dit systeem simpel blijft voor de klant maar wel op de juiste manier
+ * werkt."*
+ *
+ * Dezelfde regels als het bestelformulier (src/data/business.js):
+ *   · Bedrijfsnaam altijd verplicht.
+ *   · Nederland: KVK-nummer (acht cijfers), of — voor een oude pagina zonder
+ *     dat veld — een btw-nummer. 21%.
+ *   · Ander EU-land: btw-nummer, bij VIES gecontroleerd; geldig én door de
+ *     klant bevestigd is 0% verlegd, anders 21%. Geen btw-nummer: dan een
+ *     registratienummer, en 21%.
+ *   · Buiten de EU: geen nummer nodig (de zakelijke verklaring draagt het),
+ *     0% buiten de heffing.
+ *
+ * Geeft `{ fout }` (een reden voor ?fout=) of `{ btw }` in de vorm die
+ * createSubscriptionRow() op de rij zet. Leest het formulier, en valt voor wat
+ * ontbreekt terug op de klantrij — een oude pagina post misschien geen land.
+ */
+export async function bepaalBedrijfEnBtw(env, form, customerId) {
+  const t = (k, max) => String(form?.get(k) || '').trim().slice(0, max);
+  let land = t('country', 2).toUpperCase();
+  let merk = t('brand', 120);
+  let btw = t('vat', 32);
+  let reg = t('reg_number', 40);
+  const geenBtw = !btw && ['1', 'on', 'true', 'yes'].includes(t('no_vat', 5).toLowerCase());
+  const bevestigd = t('vat_confirmed', 5) === 'yes';
+
+  if ((!land || !merk) && customerId && env?.DB) {
+    const rij = await env.DB.prepare('SELECT country, brand, vat_number, reg_number FROM customers WHERE id = ?1')
+      .bind(customerId).first().catch(() => null);
+    if (rij) {
+      if (!land && rij.country) land = String(rij.country).toUpperCase().slice(0, 2);
+      if (!merk && rij.brand) merk = String(rij.brand);
+      if (!btw && !geenBtw && rij.vat_number) btw = String(rij.vat_number);
+      if (!reg && rij.reg_number) reg = String(rij.reg_number);
+    }
+  }
+
+  if (!merk) return { fout: 'bedrijf' };
+  if (vatFormatOk(land, btw) === false) return { fout: 'btw' };
+  const soort = regKindFor(land);
+  if (soort === REG_KIND.kvk && !looksLikeKvk(reg) && !btw) return { fout: 'bedrijf' };
+  if (soort === REG_KIND.euVat && !btw && !(geenBtw && reg)) return { fout: 'bedrijf' };
+
+  /* VIES alleen in een ander EU-land en alleen met een nummer. Onbereikbaar is
+     21% — de strenge kant, zoals bij een bestelling (functions/api/order.js). */
+  let vies = null;
+  const delen = normaliseVat(btw);
+  const cc = viesCode(land);
+  if (soort === REG_KIND.euVat && cc && land !== HOME_COUNTRY && delen.number) {
+    const eigen = env?.VISUAILS_VAT ? normaliseVat(env.VISUAILS_VAT) : null;
+    vies = await checkVat(cc, delen.number,
+      eigen && eigen.number ? { country: eigen.country || HOME_COUNTRY, number: eigen.number } : null)
+      .catch(() => null);
+  }
+  const besluit = vatDecision({ country: land, vatValid: !!(vies && vies.valid && bevestigd) });
+  return {
+    btw: {
+      treatment: besluit.treatment,
+      rate: besluit.rate,
+      country: land || null,
+      number: btw || null,
+      consultation: vies?.consultation || null,
+    },
+  };
+}

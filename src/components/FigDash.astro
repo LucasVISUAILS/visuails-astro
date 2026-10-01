@@ -51,7 +51,7 @@
  * zodat de mock en de renders van het échte dashboard over hetzelfde merk gaan.
  */
 import { euro, quote } from '../data/pricing.js';
-import { DEMO_ORDER, demoWindow, windowLabel } from '../data/figdemo.js';
+import { DEMO_ORDER, DEMO_TODAY, demoWindow, windowLabel, dayLabel } from '../data/figdemo.js';
 
 interface Props { lang?: 'en' | 'nl' }
 const { lang = 'en' } = Astro.props;
@@ -84,14 +84,17 @@ const C = nl
       ],
       ovH: 'Wat er nu loopt',
       ovTiles: [['1', 'in productie'], ['1', 'wordt nagekeken'], ['2', 'geleverd'], ['1', 'onbetaald']],
-      ovOrder: 'VIS-2608-4471 · Catalog · 30 producten',
+      ovOrder: `${DEMO_ORDER.ref} · Catalog · ${DEMO_ORDER.products} producten`,
       ovNow: 'Onze studio maakt je beelden.',
       ovWindow: `Leverdatum ${win}`,
       flow: ['Ontvangen', 'In productie', 'Wordt nagekeken', 'Geleverd'],
       ovRecent: 'Laatst geleverd',
       payNet: 'Excl. btw', payVat: 'Btw', payTotal: 'Totaal',
-      payState: 'Nog niet betaald — je plek staat vast tot 8 aug.',
-      payBtn: 'Nu betalen',
+      /* 30 september 2026: deze bestelling staat in productie, en productie
+         begint pas na betaling. Hier stond "nog niet betaald — je plek staat
+         vast tot 8 aug": onbetaald én in productie, en "vast" vóór betaling. */
+      payState: `Betaald op ${dayLabel(DEMO_TODAY, 'nl')} — je leverdatum ${win} ligt vast.`,
+      payBtn: 'Factuur downloaden',
       ordH: 'Product 1',
       ordFacts: '4 foto’s geleverd · 4 goedgekeurd',
       ordMade: 'Wat wij leverden', ordSent: 'Wat jij stuurde',
@@ -131,19 +134,19 @@ const C = nl
       tabs: [
         ['Overview', 'Where your orders stand'],
         ['Orders', 'Every image, next to the photo you sent'],
-        ['Your look', 'Who wears your product, what it sits on, and its shape'],
+        ['Your look', 'Who wears your product, its background, and its shape'],
         ['Your details', 'Fill in once, then prefilled'],
       ],
       ovH: 'What is running now',
       ovTiles: [['1', 'in production'], ['1', 'being checked'], ['2', 'delivered'], ['1', 'unpaid']],
-      ovOrder: 'VIS-2608-4471 · Catalog · 30 products',
+      ovOrder: `${DEMO_ORDER.ref} · Catalog · ${DEMO_ORDER.products} products`,
       ovNow: 'Our studio is making your visuals.',
       ovWindow: `Delivery ${win}`,
       flow: ['Received', 'In production', 'Being checked', 'Delivered'],
       ovRecent: 'Delivered most recently',
       payNet: 'Excl. VAT', payVat: 'VAT', payTotal: 'Total',
-      payState: 'Not paid yet — your slot is held until 8 Aug.',
-      payBtn: 'Pay now',
+      payState: `Paid on ${dayLabel(DEMO_TODAY, 'en')} — your delivery date ${win} is fixed.`,
+      payBtn: 'Download invoice',
       ordH: 'Product 1',
       ordFacts: '4 images delivered · 4 approved',
       ordMade: 'What we delivered', ordSent: 'What you sent',
@@ -154,7 +157,7 @@ const C = nl
       rrBtn: 'Send this revision round',
       ordNote: 'You approve image by image. You tick image by image too — but you send them together, as the one revision round that comes with the order. After that a WhatsApp link takes the button\u2019s place.',
       bkH: 'Default per service',
-      bkFace: 'Who wears it', bkBg: 'What it stands on', bkCh: 'Where you sell it',
+      bkFace: 'Who wears it', bkBg: 'Its background', bkCh: 'Where you sell it',
       bkAsk: 'No preference', bkAskSub: 'Ask me per order',
       bkOwn: 'Yours only',
       bkFaces: [
@@ -163,7 +166,7 @@ const C = nl
         { name: 'Ava', sub: 'Editorial · Elegant' },
       ],
       bkColours: [['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white'], ['#EDE4D8', 'Beige']],
-      bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Our own webshop', null], ['Social and ads', null]],
+      bkChannels: [['Amazon', '#FFFFFF'], ['bol.com', '#FFFFFF'], ['Our own webshop', null], ['Social and ads', null]],
       bkChNote: 'Pick a marketplace that requires a pure white main image and every order starts on white.',
       bkNote: 'Whatever is set here arrives prefilled on your next order.',
       detH: 'Your details',

@@ -108,7 +108,10 @@ const nr = (globalThis.__vNoteTeller = (globalThis.__vNoteTeller || 0) + 1);
 const id = `nt-${nr}`;
 const label = lang === 'nl'
   ? (term ? `Uitleg: ${term}` : 'Uitleg')
-  : (term ? `What ${term} means` : 'What this means');
+  /* "About …" en niet "What … means" (24 september 2026): een meervoud als
+     'the requirements' of 'complete looks' werd "What the requirements means".
+     "About" past op elk zelfstandig naamwoord, enkelvoud of meervoud. */
+  : (term ? `About ${term}` : 'About this');
 ---
 
 <span class={`nt ${wide ? 'nt-wide' : ''} ${extra}`.trim()} data-note-up={up ? '' : undefined}>
@@ -151,6 +154,12 @@ const label = lang === 'nl'
     color: inherit;
     cursor: help;                /* en niet `pointer`: er gebeurt niets, je leest */
     -webkit-tap-highlight-color: transparent;
+  }
+  /* Op een aanraakscherm 44 × 44 tikvlak (1 oktober 2026, Web Interface
+     Guidelines). Het rondje blijft 24; het vlak eromheen is onzichtbaar. */
+  @media (pointer: coarse) {
+    .nt-btn { position: relative; }
+    .nt-btn::before { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; translate: -50% -50%; }
   }
   .nt-mark {
     display: inline-grid;

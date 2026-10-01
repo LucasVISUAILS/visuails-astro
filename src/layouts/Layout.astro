@@ -363,11 +363,11 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
     </script>
   )}
   <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />
-  <!-- The heading face IS the LCP element on most pages — same measured
+  {/* The heading face IS the LCP element on most pages — same measured
        reasoning as the Archivo preload above. Anybody is deliberately NOT
        preloaded: it draws one word, below the fold on every page but the
        homepage, and a preload for a font the page may never paint costs the
-       same bandwidth as one it does. -->
+       same bandwidth as one it does. */}
   <link rel="preload" as="font" type="font/woff2" href={bigShoulders} crossorigin="anonymous" />
   {/* Favicons. All five files are rendered from the SAME traced path as
       <symbol id="markglyph"> further down this file — the V mark in white on
@@ -422,7 +422,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImageAbs} />
   <script type="application/ld+json" set:html={jsonLd} />
-  <!-- The reveal gate.
+  {/* The reveal gate.
 
        203 elements across this site ship `class="reveal pending"` from the
        server, and global.css only hides them when <html> carries `js`. This
@@ -443,7 +443,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
        attribute from <html> on a soft navigation and copies the incoming
        document's attributes over — class included — so without that line the
        reveals would work on the first page and silently stop on every page
-       after it. -->
+       after it. */}
   <script is:inline>
     (function () {
       if (window.__vRevealGate) return;
@@ -500,7 +500,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       hidden until focused, which is the only state it needs to exist in. */}
 <a class="skip-link" href="#main">{t('nav_skip')}</a>
 
-  <!-- SVG sprite — product-scene placeholder symbols, the chrome gradients and
+  {/* SVG sprite — product-scene placeholder symbols, the chrome gradients and
        the outlined logotype. The six greys below (three gObj stops, two gGlass
        stops, one flat #B9B7B4 used for caps and soles) are cut from the SAME
        ink ramp as the interface, so the placeholder object reads as an unlit
@@ -521,7 +521,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
        untouched — the largest luminance move across all six is +0.0012, which
        is below one 8-bit step. The white fills are specular highlights on the
        object and stay white — that is how a lit surface behaves, not a
-       palette leak. -->
+       palette leak. */}
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <linearGradient id="gObj" x1="0" y1="0" x2="1" y2="1">
@@ -530,7 +530,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       <linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#D5D4D2" stop-opacity="0.97"/><stop offset="1" stop-color="#7C7A77" stop-opacity="0.9"/>
       </linearGradient>
-      <!-- Four <linearGradient>s used to sit here: chromeInk / chromePaper and
+      {/* Four <linearGradient>s used to sit here: chromeInk / chromePaper and
            their near-square chromeInkMark / chromePaperMark twins, the twelve
            spec stops remapped per ground and solved to 3.25:1 so a 17px word
            did not develop holes in its letterforms. They are gone with the
@@ -538,7 +538,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
            family — gObj and gGlass light the placeholder product shapes and
            have nothing to do with the wordmark. If a chrome logotype is ever
            reinstated, chrome_ramp.py still emits all four; it was the ramp's
-           single source and was never deleted. -->
+           single source and was never deleted. */}
     </defs>
     <symbol id="p-bottle" viewBox="0 0 120 150">
       <rect x="50" y="8" width="20" height="16" rx="3" fill="url(#gObj)"/>
@@ -566,7 +566,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       <rect x="26" y="44" width="68" height="8" fill="#ffffff" opacity="0.25"/>
       <circle cx="60" cy="82" r="7" fill="#fff" opacity="0.4"/>
     </symbol>
-    <!-- The two brand marks, outlined.
+    {/* The two brand marks, outlined.
 
          Source: the two PNGs Lucas supplied (the V glyph and the VISUAILS
          logotype). Both arrived as flat two-colour rasters on a transparent
@@ -648,7 +648,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
          whatever `color` happened to be.
 
          The marks are never placed together — see the brand lockup guard in
-         scripts/brand-lockup-guard.mjs, which fails the build if they are. -->
+         scripts/brand-lockup-guard.mjs, which fails the build if they are. */}
     <symbol id="wordmark" viewBox="0 0 1650 278">
       {/* `stroke="none"` stond hier uit de export. Het is een presentatie-attribuut
           op de <g> en die wint van een geërfde `stroke` uit de gebruikende <use>,
@@ -1327,7 +1327,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         <Studiobrief lang={lang} bron="voet" vorm="donker" />
       </div>
       <div class="footer-bottom">
-        <span>&copy; {year} VISUAILS &middot; KVK 99742993 &middot; VAT NL005407575B96</span>
+        <span>&copy; {year} VISUAILS &middot; KVK 99742993 &middot; {lang === 'nl' ? 'btw' : 'VAT'} NL005407575B96</span>
         <span style="display:flex;gap:1.2rem;flex-wrap:wrap">
           <a href={lp('/privacy')}>{t('foot_privacy')}</a>
           <a href={lp('/terms')}>{t('foot_terms')}</a>

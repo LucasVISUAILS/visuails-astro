@@ -92,10 +92,10 @@ ok('de zoekterm herkent de oude vorm wél', UITGETYPT.test('Last updated: August
 ok('en de Nederlandse ook', UITGETYPT.test('Laatst bijgewerkt: augustus 2026'), true);
 
 console.log('\n2 · de vorm van de regel');
-ok('Engels', bijgewerktOp('terms', 'en'), 'Last updated: September 2026');
-ok('Nederlands, met een kleine maand', bijgewerktOp('terms', 'nl'), 'Laatst bijgewerkt: september 2026');
+ok('Engels', bijgewerktOp('terms', 'en'), 'Last updated: October 2026');
+ok('Nederlands, met een kleine maand', bijgewerktOp('terms', 'nl'), 'Laatst bijgewerkt: oktober 2026');
 ok('met een achtervoegsel', bijgewerktOp('data-processing-agreement', 'en', 'Article 28 GDPR'),
-  'Last updated: September 2026 · Article 28 GDPR');
+  'Last updated: October 2026 · Article 28 GDPR');
 let wierp = false;
 try { bijgewerktOp('bestaat-niet', 'en'); } catch { wierp = true; }
 ok('een onbekend document werpt in plaats van iets leegs te tonen', wierp, true);

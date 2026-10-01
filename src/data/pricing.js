@@ -318,10 +318,10 @@ export const PLAN_SLOTS = {
    typefout in een plan bij de bouw omvalt en niet bij een klant. */
 export const SLOT_KINDS = {
   complete:        { en: 'Complete bundle',  nl: 'Complete bundel',    per: { en: '4 catalog images and a 3-image lifestyle carousel', nl: '4 catalogbeelden en een lifestylecarrousel van 3' } },
-  catalog:         { en: 'Catalog set',      nl: 'Catalogset',         per: { en: 'from 4 images — front, back, detail, on model',     nl: 'vanaf 4 beelden — front, back, detail, op model' } },
+  catalog:         { en: 'Catalog set',      nl: 'Catalogset',         per: { en: 'from 4 images — front, back, detail, on model',     nl: 'vanaf 4 beelden — voorkant, achterkant, detail, op model' } },
   lifestyle:       { en: 'Lifestyle carousel', nl: 'Lifestylecarrousel', per: { en: '3 images in your fixed look',                     nl: '3 beelden in jouw vaste look' } },
   'video-motion':  { en: 'Motion clip',      nl: 'Motion-clip',        per: { en: 'the product in motion, 8 seconds',                  nl: 'het product in beweging, 8 seconden' } },
-  'video-lifestyle': { en: 'Lifestyle clip', nl: 'Lifestyle-clip',     per: { en: 'a clip in a styled scene',                          nl: 'een clip in een gestileerde scène' } },
+  'video-lifestyle': { en: 'Lifestyle clip', nl: 'Lifestyleclip',     per: { en: 'a clip in a styled scene',                          nl: 'een clip in een gestylede scène' } },
   hooks:           { en: 'Hook',             nl: 'Hook',               per: { en: 'a short vertical clip, 6 to 8 seconds',             nl: 'een korte verticale clip, 6 tot 8 seconden' } },
 };
 
@@ -1531,15 +1531,15 @@ export const HOOG_PER_PRODUCT = 9;
 
 export const RESOLUTIE_COPY = {
   en: {
-    standaard: `Every image is delivered at ${2048} px on the long edge — the size a webshop, a marketplace and a feed all use.`,
-    catalog: `Catalog images are always ${2048} px. Four times that for a tile shown at 600 px is storage, not quality. If you do need a catalog image larger — a shop front, a trade-show banner — ask on WhatsApp and we look at what is possible.`,
-    lifestyle: `Lifestyle images are ${2048} px as standard. Per product you can have all three delivered at ${4096} px instead, for €${9} — for a full-bleed banner, a print, or a screen you stand in front of.`,
+    standaard: `Every image is delivered at ${RESOLUTIE.standaard} px on the long edge — the size a webshop, a marketplace and a feed all use.`,
+    catalog: `Catalog images are always ${RESOLUTIE.standaard} px. Four times that for a tile shown at 600 px is storage, not quality. If you do need a catalog image larger — a shop front, a trade-show banner — ask on WhatsApp and we look at what is possible.`,
+    lifestyle: `Lifestyle images are ${RESOLUTIE.standaard} px as standard. Per product you can have all three delivered at ${RESOLUTIE.hoog} px instead, for €${HOOG_PER_PRODUCT} — for a full-bleed banner, a print, or a screen you stand in front of.`,
     video: 'Clip resolution depends on the model a clip is made with, and that is being worked out. Until it is written here, it is agreed in writing before a clip runs.',
   },
   nl: {
-    standaard: `Elk beeld wordt geleverd op ${2048} px aan de lange zijde — de maat waar een webshop, een marktplaats en een feed alle drie mee werken.`,
-    catalog: `Catalogbeelden zijn altijd ${2048} px. Vier keer zoveel voor een tegel die op 600 px staat, is opslag en geen kwaliteit. Heb je een catalogbeeld tóch groter nodig — een winkelpui, een beursdoek — vraag het dan via WhatsApp, dan kijken we wat er mogelijk is.`,
-    lifestyle: `Lifestylebeelden zijn standaard ${2048} px. Per product kun je alle drie op ${4096} px laten leveren voor €${9} — voor een schermvullende banner, een druk, of een scherm waar je voor staat.`,
+    standaard: `Elk beeld wordt geleverd op ${RESOLUTIE.standaard} px aan de lange zijde — de maat waar een webshop, een marktplaats en een feed alle drie mee werken.`,
+    catalog: `Catalogbeelden zijn altijd ${RESOLUTIE.standaard} px. Vier keer zoveel voor een tegel die op 600 px staat, is opslag en geen kwaliteit. Heb je een catalogbeeld tóch groter nodig — een winkelpui, een beursdoek — vraag het dan via WhatsApp, dan kijken we wat er mogelijk is.`,
+    lifestyle: `Lifestylebeelden zijn standaard ${RESOLUTIE.standaard} px. Per product kun je alle drie op ${RESOLUTIE.hoog} px laten leveren voor €${HOOG_PER_PRODUCT} — voor een schermvullende banner, een druk, of een scherm waar je voor staat.`,
     video: 'Welke resolutie een clip kan halen, hangt af van het model waarmee hij gemaakt wordt, en dat wordt nog uitgezocht. Zolang het hier niet staat, wordt het op schrift afgesproken voordat een clip draait.',
   },
 };
@@ -1579,10 +1579,74 @@ export const VOORRANG = {
   deel: 0.20,            // 20% van het orderbedrag, excl. btw
   bodem: 49,
   plafond: 249,
-  uren: 24,
+  uren: 24,              // alleen nog voor oude teksten; de belofte staat hieronder
   maxProducten: 20,      // catalog/lifestyle/complete — 20 producten
   maxClips: 10,          // video en hooks
+  /* ── EEN HARDE TERMIJN — 29 september 2026 ─────────────────────────────────
+     Lucas: *"Bedenk een harde, waardevolle maar wel haalbare termijn voor de
+     voorrang add-on."* "We mikken op 24 uur" was geen termijn: de gewone levering
+     is al "vaak binnen een dag", en een streven over een weekend heen betekent
+     niets. Nu een tijdstip dat je op de klok kunt nakijken:
+       betaald op een werkdag vóór 15:00 → geleverd de volgende werkdag vóór 17:00;
+       later betaald → de werkdag daarna, ook vóór 17:00.
+     Werkdag = maandag tot en met vrijdag, behalve Nederlandse feestdagen;
+     Nederlandse tijd. Halen we het niet, dan komt de toeslag terug. Haalbaar
+     omdat voorrang al begrensd is (20 producten of 10 clips, een bestaande
+     stijl) en niet wordt aangeboden als de agenda vol zit. */
+  bestelVoorUur: 15,
+  klaarUur: 17,
 };
+
+/**
+ * De Nederlandse feestdagen waarop niet geleverd hoeft te worden, als
+ * 'YYYY-MM-DD'. De voorwaarden beloven "werkdagen zijn maandag tot en met
+ * vrijdag, behalve Nederlandse feestdagen" — tot 29 september 2026 rekende de
+ * functie hieronder alleen met weekenden, en dan staat in /admin een termijn
+ * die strenger is dan de belofte. De lijst van de Algemene termijnenwet
+ * (art. 3 lid 1): nieuwjaarsdag, tweede paasdag, Koningsdag, 5 mei,
+ * Hemelvaartsdag, tweede pinksterdag en beide kerstdagen. Goede Vrijdag staat
+ * daar niet in, dus hier ook niet. (Pasen en Pinksteren zelf vallen op zondag.)
+ */
+export function feestdagenNL(jaar) {
+  // Pasen volgens de anonieme Gregoriaanse rekenwijze (Meeus/Jones/Butcher).
+  const a = jaar % 19, b = Math.floor(jaar / 100), c = jaar % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const maand = Math.floor((h + l - 7 * m + 114) / 31);
+  const dagP = ((h + l - 7 * m + 114) % 31) + 1;
+  const pasen = Date.UTC(jaar, maand - 1, dagP, 12);
+  const plus = (n) => new Date(pasen + n * 86400000).toISOString().slice(0, 10);
+  const koning = new Date(Date.UTC(jaar, 3, 27, 12));
+  const koningsdag = koning.getUTCDay() === 0 ? `${jaar}-04-26` : `${jaar}-04-27`;
+  return new Set([
+    `${jaar}-01-01`, plus(1), koningsdag, `${jaar}-05-05`, plus(39), plus(50), `${jaar}-12-25`, `${jaar}-12-26`,
+  ]);
+}
+
+/**
+ * De uiterste levertijd van een voorrangsbestelling, als { datum: 'YYYY-MM-DD',
+ * uur: 17 } in Nederlandse tijd. Rekent met weekenden en Nederlandse
+ * feestdagen, zoals de voorwaarden het beloven.
+ */
+export function voorrangDeadline(betaaldIso) {
+  const t = new Date(betaaldIso ? String(betaaldIso).replace(' ', 'T') + (/Z|[+-]\d\d:?\d\d$/.test(String(betaaldIso)) ? '' : 'Z') : Date.now());
+  if (Number.isNaN(t.getTime())) return null;
+  const delen = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Amsterdam', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23', weekday: 'short',
+  }).formatToParts(t).map((d) => [d.type, d.value]));
+  let dag = new Date(`${delen.year}-${delen.month}-${delen.day}T12:00:00Z`);
+  const werkdag = (d) => d.getUTCDay() !== 0 && d.getUTCDay() !== 6
+    && !feestdagenNL(d.getUTCFullYear()).has(d.toISOString().slice(0, 10));
+  const volgende = (d) => { const n = new Date(d.getTime() + 86400000); return werkdag(n) ? n : volgende(n); };
+  /* De dag waarop het werk "binnen" is: vandaag als het een werkdag is en vóór
+     15:00, anders de eerstvolgende werkdag. Geleverd wordt de werkdag daarna. */
+  const vandaagTelt = werkdag(dag) && Number(delen.hour) < VOORRANG.bestelVoorUur;
+  if (!vandaagTelt) dag = volgende(dag);
+  const klaar = volgende(dag);
+  return { datum: klaar.toISOString().slice(0, 10), uur: VOORRANG.klaarUur };
+}
 
 /**
  * Wat voorrang kost bij een orderbedrag in HELE EURO'S, excl. btw.
@@ -1623,8 +1687,8 @@ export function heeftVoorrang(bron) {
 /** De zin die overal staat als een bestelling voorrang heeft. */
 export function voorrangZin(lang) {
   return lang === 'nl'
-    ? `Voorrang — we mikken op levering binnen ${VOORRANG.uren} uur, of de toeslag komt terug`
-    : `Priority — we aim for ${VOORRANG.uren} hours, or the surcharge comes back`;
+    ? `Voorrang — geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00, of de toeslag komt terug`
+    : `Priority — delivered by ${VOORRANG.klaarUur}:00 the next working day, or the surcharge comes back`;
 }
 
 /** Mag deze bestelling voorrang kopen? Buiten de grenzen wordt hij niet getoond. */
@@ -1638,14 +1702,14 @@ export function voorrangKan({ kind, products, clips }) {
 export const VOORRANG_COPY = {
   en: {
     label: 'Priority delivery',
-    line: `Your order goes to the top of the list and we aim to deliver within ${24} hours. If we do not make it, the surcharge comes back and your order runs on as normal.`,
+    line: `Your order goes to the top of the list. Pay on a working day before ${VOORRANG.bestelVoorUur}:00 and it is delivered by ${VOORRANG.klaarUur}:00 the next working day (Dutch time); pay later and it is the working day after that. If we do not make it, the surcharge comes back and your order runs on as normal.`,
     limits: `Available up to ${20} products, or ${10} clips, on a style that already exists — a house style or a custom look that has been built. A style still being designed cannot be rushed, because designing it is the work.`,
     busy: 'Priority is not available for this week — the calendar is full. Saying so here is better than taking the surcharge and giving it back.',
   },
   nl: {
     label: 'Voorrang bij levering',
-    line: `Je bestelling gaat bovenaan de lijst en we mikken op levering binnen ${24} uur. Halen we dat niet, dan komt de toeslag terug en loopt je bestelling gewoon door.`,
-    limits: `Mogelijk tot ${20} producten, of ${10} clips, op een stijl die al bestaat — een huisstijl of een eigen look die al gebouwd is. Een stijl die nog ontworpen wordt, kan niet sneller: dat ontwerpen ís het werk.`,
+    line: `Je bestelling gaat bovenaan de lijst. Betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan leveren we uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 (Nederlandse tijd); betaal je later, dan de werkdag daarna. Halen we dat niet, dan komt de toeslag terug en loopt je bestelling gewoon door.`,
+    limits: `Mogelijk tot ${20} producten, of ${10} clips, op een stijl die al bestaat — een vaste look of een eigen look die al gebouwd is. Een stijl die nog ontworpen wordt, kan niet sneller: dat ontwerpen ís het werk.`,
     busy: 'Voorrang kan deze week niet — de agenda zit vol. Dat hier zeggen is beter dan de toeslag aannemen en hem daarna terugstorten.',
   },
 };
@@ -2101,13 +2165,13 @@ export const REVISIEBELEID = {
     ['Eén ronde zit erbij', `Bij elke bestelling hoort één revisieronde. Je vraagt hem aan binnen ${REVISIE_DAGEN} dagen na levering; daarin verwerken we je aanpassingen, per beeld, in VISUAILS Studio.`],
     ['Is het onze fout, dan lossen we het op', 'Verkeerd product, verkeerde kleur, iets mis in de afwerking — als het aan onze kant ligt, maken we het kosteloos goed. Ook na die ene ronde.'],
     ['Wil je daarna iets anders, dan kan dat', 'Aanpassingen die geen fout van ons zijn, doen we ook na de eerste ronde nog. Daar kunnen kosten aan verbonden zijn, en die spreken we vooraf af.'],
-    ['Kan het niet, dan krijg je je geld terug', 'Blijkt bij het maken dat jouw product met AI en onze eigen gereedschappen niet goed na te maken is, dan kijken we naar een passende of volledige terugbetaling.'],
+    ['Kan het niet, dan bekijken we een terugbetaling', 'Blijkt bij het maken dat jouw product met AI en onze eigen gereedschappen niet goed na te maken is, dan kijken we naar een passende of volledige terugbetaling.'],
   ],
   en: [
     ['One round is included', `Every order comes with one revision round. You request it within ${REVISIE_DAGEN} days of delivery; that is where your adjustments go, image by image, in VISUAILS Studio.`],
-    ['If it is our mistake, we fix it', 'Wrong product, wrong colour, something off in the finishing — if it is on our side we put it right at no cost. Also after that one round.'],
-    ['Want something else after that? Possible', 'Changes that are not a mistake of ours can still be made after the first round. There may be a cost, and we agree it beforehand.'],
-    ['If it cannot be made, you get your money back', 'If it turns out your product cannot be reproduced properly with AI and our own tools, we look at a full or appropriate refund.'],
+    ['If it is our mistake, we fix it', 'Wrong product, wrong colour, something off in the finishing — if it is on our side we put it right at no cost, even after the included round.'],
+    ['Want other changes after that? We can make them', 'Changes that are not a mistake of ours can still be made after the first round. There may be a cost, and we agree it beforehand.'],
+    ['If it cannot be made, we look at a refund', 'If it turns out your product cannot be reproduced properly with AI and our own tools, we look at a full or partial refund.'],
   ],
 };
 
@@ -2425,9 +2489,12 @@ export const TIERS = {
        het deel dat waar te maken is te blijven staan — niet het deel dat een
        verwachting is. Zie de noot bij REVIEW_CLAIM_SHORT voor waarom de korte
        vorm hier staat en niet elders. */
+    /* 30 september 2026, Lucas: de datum wordt gereserveerd bij het bestellen,
+       staat zeven dagen vast terwijl de betaling openstaat, en ligt na betaling
+       definitief vast. "Vast zodra je bestelt" sloeg de betaalstap over. */
     turnaroundShort: {
-      en: 'A delivery date, fixed the moment you order',
-      nl: 'Een leverdatum, vast zodra je bestelt',
+      en: 'A delivery date, reserved when you order',
+      nl: 'Een leverdatum, gereserveerd zodra je bestelt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
@@ -2435,7 +2502,7 @@ export const TIERS = {
       // its slot against anything smaller arriving after it. Same guarantee,
       // stated in the terms the ladder actually uses.
       en: 'Priority processing — your booked delivery date is locked in and never bumped for other orders.',
-      nl: 'Prioriteit boven andere bestellingen — een bevestigde opleverdatum verschuift nooit.',
+      nl: 'Prioriteit boven andere bestellingen — een bevestigde opleverdatum schuift nooit op voor andere bestellingen.',
     },
     // NIET MEER "plus per-image approve or request-revision" — dat kan de trede
     // hieronder sinds 7 augustus ook. Wat hier wél overblijft en nergens anders
@@ -2557,6 +2624,12 @@ export function turnaround(tierId, lang = 'en') {
  * KIND_PUNTEN, en horen deze zin daarom nergens te zien. Zet hem alleen op een
  * pagina die over een vooraf bepaalde stijl gaat.
  */
+/* ── NIET MEER OP DE SITE — 30 september 2026 ─────────────────────────────
+   Lucas: een betaalde leverdatum ligt vast en schuift niet, behalve bij
+   overmacht (voorwaarden §6). Een streven van 48 uur naast een vaste datum
+   las als een slag om de arm; /studio toont hem niet meer. De constante blijft
+   staan voor tests/promises.test.mjs, die bewaakt dat hij nooit een belofte
+   wordt als iemand hem ooit terugzet. */
 export const AIM_48 = {
   en: 'We aim to deliver inside 48 hours of that date, and usually do.',
   nl: 'We streven ernaar binnen 48 uur na die datum te leveren, en meestal lukt dat.',
@@ -2847,9 +2920,13 @@ export function plans(lang = 'en', { jaarRollover = 3, jaarPrijzen = null } = {}
       brandModel: id === 'brand',
       includes: [
         nlx ? `${credits} credits per maand` : `${credits} credits a month`,
-        nlx ? `Bijvoorbeeld ${fit.catalog} catalogsets, of ${fit.lifestyle} lifestyle-carousels` : `For example ${fit.catalog} catalog sets, or ${fit.lifestyle} lifestyle carousels`,
+        nlx ? `Bijvoorbeeld ${fit.catalog} catalogsets, of ${fit.lifestyle} lifestylecarrousels` : `For example ${fit.catalog} catalog sets, or ${fit.lifestyle} lifestyle carousels`,
         ...(id === 'brand' ? [nlx ? 'Je eigen merkmodel inbegrepen' : 'Your own Brand Model included'] : []),
-        nlx ? 'Vaste productiedagen, vóór losse bestellingen' : 'Fixed production days, ahead of one-off orders',
+        /* hasBrandModel() in plans.js: Pro krijgt het merkmodel op de termijnen
+           van twaalf maanden. Hier geen import van plans.js (kringetje), dus de
+           regel staat bij het plan zelf. */
+        ...(id === 'studio' ? [nlx ? 'Je eigen merkmodel inbegrepen op 12 maanden' : 'Your own Brand Model included on 12 months'] : []),
+        nlx ? 'Elke maand een vaste week, vanaf de dag die jij kiest' : 'A fixed week every month, from the day you pick',
         nlx
           ? `Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door (${jaarRollover} op 12 maanden)`
           : `Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month (${jaarRollover} on 12 months)`,
@@ -3013,7 +3090,7 @@ export const PER_PRODUCT = {
   ],
   nl: [
     { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vanaf vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot. Per product bij te bestellen.' },
-    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle-carrousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carrousel klaar om te posten.' },
+    { id: 'lifestyle', tier: 'unattended', name: 'Lifestylecarrousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carrousel klaar om te posten.' },
     { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een grotere bestelling.' },
   ],
 };
@@ -3273,10 +3350,10 @@ export const TEST_SAMPLE = {
     // mooier maakt dan het is, en dan ben je terug bij het probleem met
     // "verificatie". Je betaalt €1, en dat houdt misbruik tegen. Meer is het niet.
     feeNote: `${euro(AMOUNT.testSample, 'nl')} om misbruik te voorkomen`,
-    deliverable: `${CATALOG_IMAGES} catalogfoto’s of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s`,
+    deliverable: `${CATALOG_IMAGES} catalogfoto’s of een lifestylecarrousel van ${LIFESTYLE_IMAGES} foto’s`,
     // Zie de noot bij de Engelse deliverableShort.
-    deliverableShort: `${CATALOG_IMAGES} catalogfoto’s of een carousel van ${LIFESTYLE_IMAGES}`,
-    line: `${CATALOG_IMAGES} catalogfoto’s of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest, afgewerkt zoals bij een betaalde bestelling.`,
+    deliverableShort: `${CATALOG_IMAGES} catalogfoto’s of een carrousel van ${LIFESTYLE_IMAGES}`,
+    line: `${CATALOG_IMAGES} catalogfoto’s of een lifestylecarrousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest, afgewerkt zoals bij een betaalde bestelling.`,
     catalogLine: `${CATALOG_IMAGES} foto’s — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
     lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
   },
@@ -3303,7 +3380,7 @@ export const SHOOT_DAY = {
     range: euroRange(AMOUNT.shootDayLow, AMOUNT.shootDayHigh, 'nl'),
     basis: 'Een volledige productiedag, alles meegerekend',
     items: ['Fotograaf', 'Studio of locatie', 'Model', 'Styling', 'Retouche', 'Je eigen dag'],
-    caveat: 'Loopt sterk uiteen per stad, per studio en per hoeveel je zelf doet.',
+    caveat: 'Loopt sterk uiteen per stad, per studio en naar hoeveel je zelf doet.',
   },
 };
 

@@ -119,7 +119,7 @@ console.log('\neen verzoek verandert nog niets');
 {
   const res = await post('/account/email', { new_email: 'nieuw@voltbrand.test' });
   ok('het formulier stuurt terug naar de gegevenspagina', res.status, 303);
-  ok('met een melding in de url', res.headers.get('location'), '/account/details?email=gevraagd');
+  ok('met een melding in de url', res.headers.get('location'), '/account/details?email=gevraagd#email');
 
   const rij = laatsteRij();
   ok('er staat een verzoek', Boolean(rij), true);
@@ -143,7 +143,7 @@ console.log('\nwat er niet door de voordeur komt');
   const voor = adresVan(7);
   ok('een adres dat geen adres is, wordt geweigerd',
     (await post('/account/email', { new_email: 'geen adres' })).headers.get('location'),
-    '/account/details?email=gevraagd');
+    '/account/details?email=gevraagd#email');
   ok('en verandert niets', adresVan(7), voor);
 
   /* HETZELFDE ADRES. Dit lijkt onschuldig en is het niet: het zou een geldige
@@ -157,7 +157,7 @@ console.log('\nwat er niet door de voordeur komt');
      of iemand klant is bij VISUAILS. */
   const res = await post('/account/email', { new_email: 'iemand@anders.test' });
   ok('een bezet adres geeft dezelfde uitkomst als een vrij',
-    res.headers.get('location'), '/account/details?email=gevraagd');
+    res.headers.get('location'), '/account/details?email=gevraagd#email');
   ok('maar levert geen verzoek op', telling(db, 'SELECT COUNT(*) FROM email_changes'), 1);
 
   /* Zonder sessie is er geen klant om iets te wijzigen. */

@@ -617,7 +617,7 @@ console.log('\nde hookspagina bestaat, en verkoopt niets');
     /* Sinds 4 september 2026 zegt /hooks "Op aanvraag": wel te laten maken, geen
        bestelknop — Lucas' keuze. /editions blijft "nog niet actief". */
     check(`${pagina}: zegt zelf dat het niet zomaar te bestellen is`,
-      /(Not orderable yet|Nog niet te bestellen|Not running yet|Nog niet actief|On request|Op aanvraag)/.test(romp), true);
+      /(Coming soon|Binnenkort|Not orderable yet|Nog niet te bestellen|Not running yet|Nog niet actief|On request|Op aanvraag)/.test(romp), true);
   }
 }
 
@@ -804,7 +804,7 @@ console.log('\nhet vraagteken naast hooks');
     }
     // De term staat tussen de vaste omhulsels; die halen we eraf.
     const termen = [...labels]
-      .map((l) => l.replace(/^What /, '').replace(/ means$/, '').replace(/^Uitleg: ?/, ''))
+      .map((l) => l.replace(/^What /, '').replace(/ means$/, '').replace(/^About /, '').replace(/^Uitleg: ?/, ''))
       .filter((t) => t && t !== 'this' && t !== 'Uitleg');
 
     /* ALLEEN ONDERWERPSVOORNAAMWOORDEN, en met opzet niet je/jouw/your/uw.
@@ -883,7 +883,12 @@ console.log('\nhet vraagteken naast hooks');
        Allebei lezen hetzelfde getal uit src/data/pricing.js, dus de belofte die
        deze toets bewaakt is onveranderd: geen getypt getal. Het patroon staat
        er nu naar die belofte en niet naar één functienaam. */
-    check(`${lang}: de levertijd komt uit turnaround()`, /turnaround(Short)?\('unattended'/.test(b), true);
+    /* ── 30 SEPTEMBER 2026: EEN HOOK IS VIDEO OP AANVRAAG ──────────────────
+       Lucas: bij video staan formaat en levertijd in de schriftelijke offerte.
+       De belofte die deze toets bewaakt — geen getypt getal als levertijd —
+       blijft; de bron van de levertijd is nu de offerte in plaats van
+       turnaround(). */
+    check(`${lang}: de levertijd komt uit de offerte`, /(quote|offerte)/.test(b), true);
     check(`${lang}: en staat er niet als getypt getal`, /24 (to|tot) 48/.test(b), false);
     check(`${lang}: het scherm heet VISUAILS Studio`, /VISUAILS Studio/.test(b), true);
 

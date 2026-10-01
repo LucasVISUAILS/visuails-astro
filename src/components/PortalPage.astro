@@ -23,6 +23,11 @@ import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
    die staat in token.js. Hij stond hier twee keer als tekst — één keer per taal —
    wat betekent dat een wijziging aan de token de pagina stil onwaar maakt. */
 import { PORTAL_TTL_DAYS } from '../lib/token.js';
+/* 30 september 2026: de bestanden en de link hebben elk hun eigen klok. Wat je
+   kunt downloaden telt vanaf de LEVERING (DELIVERY_DAYS), de link vanaf het
+   AFSLUITEN (PORTAL_TTL_DAYS), het bronmateriaal ook vanaf het afsluiten
+   (UPLOAD_DAYS). Hier stond "de bestanden blijven PORTAL_TTL_DAYS beschikbaar". */
+import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
 /*
  * TWEE ECHTE FIGUREN, WAAR TWEE GRIJZE VLAKKEN STONDEN — 9 augustus 2026.
  *
@@ -50,7 +55,7 @@ const lp = (p: string) => localizedPath(lang, p);
 const COPY = {
   en: {
     h1: ['One link.', 'Your whole order.'],
-    lede: `Every order comes with a private link. No account to make, no password to lose. Everything about that order lives behind it: where it stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it that we hold for you.`,
+    lede: `Every order comes with a private link. No password to lose, and no sign-in needed. Everything about that order lives behind it: where it stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it: reserved when you order, fixed once you have paid. All your orders together are in VISUAILS Studio, where you sign in with your email address — we email you a code and a link.`,
     ctaStart: 'Start an order',
     ctaHow: 'How an order is run',
 
@@ -80,17 +85,17 @@ const COPY = {
      */
     stateLede: 'The portal opens on the state of your order. Four steps it moves through, plus two things that can happen along the way — and where you are is the first thing on the page.',
     states: [
-      ['Received', 'The order is in and the delivery date is held.'],
+      ['Received', `The order is in. From ${WINDOW_THRESHOLD} products the delivery date is reserved, and fixed once you have paid.`],
       ['In production', 'The studio is working through the folder.'],
-      ['Being checked', 'A person is looking at every visual before it goes out.'],
+      ['Being checked', 'A specialist looks at every visual before it goes out.'],
       ['Delivered', 'The gallery is open and the downloads are live.'],
       ['Revision — per image', 'You asked for a change on one visual and it is being made. It is a state of that image, not of the order: the rest keeps moving.'],
-      ['Closed', `Every image approved. Nothing left to decide, and the files stay available for ${PORTAL_TTL_DAYS} days.`],
+      ['Closed', `Every image approved. Nothing left to decide. The files stay downloadable for ${DELIVERY_DAYS} days after delivery, and this link works for ${PORTAL_TTL_DAYS} days after the order closes.`],
     ],
     stateNote: 'Each change is written into a timeline you can read, with the date it happened. Nothing about your order is only in our heads.',
 
     galleryH: 'Approve it image by image.',
-    galleryLede: 'On delivery the whole order opens as a gallery. Every visual has two buttons and there is no accept-all — an order you approved in one click is an order nobody looked at. Ask for a revision on one image and the rest of the order keeps moving.',
+    galleryLede: 'On delivery the whole order opens as a gallery. You approve each image on its own, or a whole product at once once you have looked at its images and everything is right. Ask for a revision on one image and the rest of the order keeps moving.',
     galleryList: [
       ['Approve', 'Marks that image done. The count at the top moves.'],
       ['Request a revision', 'Opens a note field. Say what is wrong in your own words — it goes straight to the person who made it.'],
@@ -101,7 +106,7 @@ const COPY = {
     ],
 
     dlH: 'One folder, and everything is in it.',
-    dlLede: 'When the order is approved you download one folder. Inside it is a folder per product, and in each of those the same image three times: PNG, JPG and WebP. So a print shop, a product page and a feed each get the file they want, and nobody has to convert anything.',
+    dlLede: 'When the order is approved you download one folder. Inside it is a folder per product, and in each of those the same image, in the aspect ratio you chose, three times: PNG, JPG and WebP. So a print shop, a product page and a feed each get the file they want, and nobody has to convert anything. A marketplace order holds only the formats that marketplace accepts.',
     dl: [
       ['PNG', 'Lossless, the biggest file. This is the one for print and for anything that gets edited again.'],
       ['JPG', 'The format every system accepts. For a product page, a lookbook, an email.'],
@@ -127,7 +132,7 @@ const COPY = {
       ['256 bits of randomness', 'Generated by the browser-grade crypto in the runtime, not by a counter. It cannot be guessed and it cannot be walked.'],
       ['Never stored in the clear', 'Only a hash of it is kept, so the link cannot be read back out of the database.'],
       ['Rate-limited', 'Repeated attempts against the endpoint are refused before they reach the record.'],
-      ['It expires', 'Ninety days after the order closes the link stops working, and the source files you sent are deleted on the same clock.'],
+      ['It expires', `The link stops working ${PORTAL_TTL_DAYS} days after the order closes. The source files you sent are deleted ${UPLOAD_DAYS} days after it closes.`],
     ],
     secNote: 'Treat the link the way you would treat a key: anyone who has it can see the order. Send it on if a colleague needs it, and ask us for a new one if it goes somewhere it should not.',
 
@@ -139,7 +144,7 @@ const COPY = {
 
   nl: {
     h1: ['Eén link.', 'Je hele bestelling.'],
-    lede: `Bij elke bestelling krijg je een privélink. Geen account om aan te maken, geen wachtwoord om kwijt te raken. Alles over die bestelling zit erachter: waar hij staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om hem goed te keuren of te zeggen wat er niet klopt. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast die we voor je vrijhouden.`,
+    lede: `Bij elke bestelling krijg je een privélink. Geen wachtwoord om kwijt te raken, en je hoeft er niet voor in te loggen. Alles over die bestelling zit erachter: waar hij staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om het goed te keuren of te zeggen wat er niet klopt. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast: gereserveerd zodra je bestelt, vast zodra je hebt betaald. Al je bestellingen samen staan in VISUAILS Studio, waar je inlogt met je e-mailadres — we mailen je een code en een link.`,
     ctaStart: 'Start een bestelling',
     ctaHow: 'Hoe een bestelling loopt',
 
@@ -147,17 +152,17 @@ const COPY = {
     // Zie de noot bij de Engelse stateLede.
     stateLede: 'Het portaal begint bij de status van je bestelling. Vier stappen die hij doorloopt, plus twee dingen die onderweg kunnen gebeuren — en waar jij staat is het eerste dat je ziet.',
     states: [
-      ['Ontvangen', 'Je bestelling is binnen en de leverdatum staat vast.'],
+      ['Ontvangen', `Je bestelling is binnen. Vanaf ${WINDOW_THRESHOLD} producten is de leverdatum gereserveerd, en na betaling ligt hij vast.`],
       ['In productie', 'De studio werkt de map door.'],
-      ['Wordt nagekeken', 'Een mens bekijkt elk beeld voordat het weggaat.'],
+      ['Wordt nagekeken', 'Een specialist bekijkt elk beeld voordat het weggaat.'],
       ['Geleverd', 'De galerij is open en de downloads staan klaar.'],
       ['Revisie — per beeld', 'Je vroeg op één beeld om een wijziging en die wordt gemaakt. Het is een toestand van dat beeld en niet van de bestelling: de rest loopt gewoon door.'],
-      ['Afgesloten', `Elk beeld goedgekeurd. Er valt niets meer te beslissen, en de bestanden blijven ${PORTAL_TTL_DAYS} dagen beschikbaar.`],
+      ['Afgesloten', `Elk beeld goedgekeurd. Er valt niets meer te beslissen. De bestanden blijven ${DELIVERY_DAYS} dagen na levering te downloaden, en deze link werkt tot ${PORTAL_TTL_DAYS} dagen nadat de bestelling is afgesloten.`],
     ],
     stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je order zit alleen in ons hoofd.',
 
     galleryH: 'Beeld voor beeld goedkeuren.',
-    galleryLede: 'Bij levering opent de hele bestelling als galerij. Elk beeld heeft twee knoppen en er is geen alles-accepteren — een bestelling die je in één klik goedkeurde, is een bestelling waar niemand naar gekeken heeft. Vraag je op één beeld een revisie aan, dan loopt de rest van de bestelling gewoon door.',
+    galleryLede: 'Bij levering opent de hele bestelling als galerij. Je keurt elk beeld apart goed, of per product in één keer als je alle beelden ervan hebt bekeken en alles klopt. Vraag je op één beeld een revisie aan, dan loopt de rest van de bestelling gewoon door.',
     galleryList: [
       ['Goedkeuren', 'Daarmee staat dat beeld op afgerond. De teller bovenaan loopt mee.'],
       ['Revisie aanvragen', 'Opent een notitieveld. Zeg in je eigen woorden wat er niet klopt — het gaat rechtstreeks naar degene die het gemaakt heeft.'],
@@ -165,9 +170,9 @@ const COPY = {
     ],
 
     dlH: 'Eén map, en alles zit erin.',
-    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan dezelfde foto drie keer: PNG, JPG en WebP. Zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, en hoeft niemand nog iets om te zetten.',
+    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan dezelfde foto, in de beeldverhouding die je koos, drie keer: PNG, JPG en WebP. Zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, en hoeft niemand nog iets om te zetten. Een marktplaatsbestelling bevat alleen de formaten die die marktplaats aanneemt.',
     dl: [
-      ['PNG', 'Lossless, het grootste bestand. Dit is degene voor druk en voor alles wat nog bewerkt wordt.'],
+      ['PNG', 'Lossless, het grootste bestand. Dit is het bestand voor drukwerk en voor alles wat nog bewerkt wordt.'],
       ['JPG', 'Het formaat dat elk systeem aanneemt. Voor een productpagina, een lookbook, een mail.'],
       ['WebP', 'Een derde van de grootte bij dezelfde kwaliteit. Voor je eigen site, zodat een pagina snel laadt.'],
     ],
@@ -186,11 +191,11 @@ const COPY = {
       ['Niet te raden', 'De link bestaat uit 256 willekeurige bits — geen volgnummer dat je kunt ophogen om bij de bestelling van iemand anders te komen.'],
       ['Nooit leesbaar opgeslagen', 'Alleen een hash wordt bewaard, dus de link is niet uit de database terug te lezen.'],
       ['Snelheidsbegrensd', 'Herhaalde pogingen op het endpoint worden geweigerd voordat ze het record bereiken.'],
-      ['Hij verloopt', 'Negentig dagen nadat de order sluit werkt de link niet meer, en op dezelfde klok worden de bronbestanden die je stuurde verwijderd.'],
+      ['Hij verloopt', `De link werkt niet meer vanaf ${PORTAL_TTL_DAYS} dagen nadat de bestelling is afgesloten. De bronbestanden die je stuurde worden ${UPLOAD_DAYS} dagen na het afsluiten verwijderd.`],
     ],
     secNote: 'Behandel de link zoals je een sleutel behandelt: wie hem heeft, kan de bestelling zien. Stuur hem gerust door als een collega hem nodig heeft, en vraag ons om een nieuwe als hij ergens belandt waar hij niet hoort.',
 
-    closeH: 'Eerst één product van jezelf, als catalogset of carousel.',
+    closeH: 'Eerst één product van jezelf, als catalogset of carrousel.',
     closeLede: `${TEST_SAMPLE.nl.deliverable}, gemaakt van je eigen foto en door een specialist nagekeken. Het portaal krijg je bij elke betaalde bestelling.`,
     closeCta: TEST_SAMPLE.nl.cta,
     closeAlt: 'Start een bestelling',
@@ -284,7 +289,7 @@ const c = COPY[lang];
       Het pad zelf staat erbij. De drie regels zeggen WELKE formaten er zijn;
       die ene regel zegt hoe het in de map staat, en dat is de vraag die iemand
       overhoudt. */}
-  <section class="paneel" aria-labelledby="pp-dl">
+  <section class="paneel vervolg" aria-labelledby="pp-dl">
     <header class="paneel-kop">
       <h2 id="pp-dl" class="hoog hoog-2">{c.dlH}</h2>
       <p class="lopend">{c.dlLede}</p>
@@ -297,7 +302,7 @@ const c = COPY[lang];
   </section>
 
   {/* ── 5 · HET LOGBOEK ─────────────────────────────────────────────────── */}
-  <section class="paneel pp-log" aria-labelledby="pp-logboek">
+  <section class="paneel vervolg pp-log" aria-labelledby="pp-logboek">
     <h2 id="pp-logboek" class="hoog hoog-3">{c.logH}</h2>
     <p class="lopend">{c.logLede}</p>
     <p class="acties"><a class="knop knop-lijn" href={lp('/ai-act')}>{c.logCta}</a></p>

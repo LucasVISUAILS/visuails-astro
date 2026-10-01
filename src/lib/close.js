@@ -32,7 +32,7 @@
  * ander.
  */
 
-import { stampUploadRetention } from './retention.js';
+import { stampUploadRetention, DELIVERY_DAYS } from './retention.js';
 
 /**
  * Rond de bestelling af als élk levend leveringsbeeld is goedgekeurd.
@@ -73,7 +73,7 @@ export async function maybeCloseOrder(env, orderId) {
              AND f.superseded_at IS NULL
              AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
              AND f.review_state = 'approved') AS approved,
-         o.status, o.closed_at
+         o.status, o.closed_at, o.lang
        FROM orders o WHERE o.id = ?1`
     ).bind(orderId).first();
     if (!row || row.closed_at || row.status !== 'delivered') return false;
@@ -89,7 +89,9 @@ export async function maybeCloseOrder(env, orderId) {
       env.DB.prepare(
         `INSERT INTO order_events (order_id, status, note, actor)
          VALUES (?1, 'delivered', ?2, 'system')`
-      ).bind(orderId, 'Alle beelden goedgekeurd — bestelling afgerond. Downloaden blijft mogelijk.'),
+      ).bind(orderId, row.lang === 'en'
+        ? `All images approved — order complete. Downloads stay available for ${DELIVERY_DAYS} days after delivery.`
+        : `Alle beelden goedgekeurd — bestelling afgerond. Downloaden blijft mogelijk tot ${DELIVERY_DAYS} dagen na levering.`),
     ]);
 
     /*

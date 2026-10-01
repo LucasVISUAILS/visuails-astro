@@ -136,7 +136,8 @@ export const NOUN = {
    * tests/woorden.test.mjs houdt de twee uit elkaar en faalt zodra "stock"
    * terugkomt in het Editions-paneel.
    */
-  stock: { en: ['stock photo', 'stock photos'], nl: ['stockfoto', 'stockfoto’s'] },
+  /* 29 september 2026, Lucas: "stockfoto's naar maandset aanpassen". */
+  stock: { en: ['monthly-set image', 'monthly-set images'], nl: ['maandsetbeeld', 'maandsetbeelden'] },
 
   /** Videoclips en hooks. De categorie zit al in het woord. */
   video: { en: ['video', 'videos'], nl: ['video', 'video’s'] },

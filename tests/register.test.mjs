@@ -113,7 +113,7 @@ console.log('\nde lijst subverwerkers is dezelfde als in de verwerkersovereenkom
   ok('de SUBS-array is gevonden', blok.length > 50, true, `${blok.length} tekens`);
 
   const namen = [...blok.matchAll(/naam: '([^']+)'/g)].map((m) => m[1]);
-  ok('er staan drie subverwerkers in de overeenkomst', namen.length, 3, namen.join(' | '));
+  ok('er staan vier subverwerkers in de overeenkomst', namen.length, 4, namen.join(' | '));
 
   /*
    * ── IN DE JUISTE TABEL, EN NIET ERGENS IN HET DOCUMENT ─────────────────────

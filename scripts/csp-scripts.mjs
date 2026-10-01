@@ -183,9 +183,12 @@ export function cspWaarde(hashes, stijlHashes = []) {
      *             bestanden. Vandaag staat er nog geen clip in de build; de
      *             regel staat er wél, zodat de eerste clip niet stilvalt.
      *   form-action 'self' — de 204 formulieren in de build posten naar
-     *             /account/logout, /api/order en /account/plan/start. Een
-     *             betaling verlaat de site via een SERVER-redirect en niet via
-     *             een formulier, dus Mollie hoort hier niet.
+     *             /account/logout, /api/order en /account/plan/start. Mollie
+     *             hoort hier niet, maar let op: Chrome past form-action ook toe
+     *             op de REDIRECT na een post. Een formulier dat naar de kassa
+     *             moet, krijgt dus een tussenpagina (offsitePage() in
+     *             src/lib/offsite.js) en nooit een 303 naar Mollie — zie
+     *             naarKassa() in functions/api/order.js (24 september 2026).
      *   frame-src 'none' — er staat geen enkele iframe in de build.
      *   worker-src 'none' — geen Worker, geen serviceWorker.
      *

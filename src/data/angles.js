@@ -120,7 +120,7 @@ export const ANGLES = [
     id: 'back-on-model',
     group: 'model',
     shot: '/img/hoek-back-on-model.webp',
-    name: { en: 'From behind', nl: 'Van achter' },
+    name: { en: 'From behind', nl: 'Van achteren' },
     line: {
       en: 'The back, worn — how it sits and where it falls.',
       nl: 'De achterkant, gedragen — hoe hij zit en waar hij valt.',
@@ -170,6 +170,14 @@ export const ANGLES = [
   },
 ];
 
+/* Het aantal opnames als woord, voor de linktekst naar /per-product — vier
+   vaste plus de extra hoeken hieronder (24 september 2026: er stond "twaalf",
+   terwijl het er tien zijn). */
+const WOORDEN_NL = ['nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen', 'tien', 'elf', 'twaalf', 'dertien', 'veertien'];
+const WOORDEN_EN = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'];
+function telwoordNl(n) { return WOORDEN_NL[n] || String(n); }
+function telwoordEn(n) { return WOORDEN_EN[n] || String(n); }
+
 export const ANGLE_IDS = ANGLES.map((a) => a.id);
 
 /*
@@ -210,7 +218,7 @@ export function angleById(id) {
 
 export const ANGLE_COPY = {
   en: {
-    groups: { model: 'On a model', ground: 'On the ground' },
+    groups: { model: 'On a model', ground: 'On a background' },
     fixedH: 'Always included',
     fixedLine: 'These four are the catalog set. Every product gets them, at the per-product rate.',
     extraH: 'Add an angle',
@@ -245,7 +253,7 @@ export const ANGLE_COPY = {
        is SHOTS.length + ANGLES.length — maar het staat hier als woord omdat een
        linktekst met een berekening erin niet te lezen valt. Verandert een van de
        twee lijsten, dan zegt tests/hoeken.test.mjs het. */
-    seeAll: 'See all twelve',
+    seeAll: `See all ${telwoordEn(4 + ANGLES.length)} shots`,
     chosen: '{n} chosen',
     full: 'That is the maximum of {max}.',
     /* De rekensom uitgeschreven en niet alleen de uitkomst. Dit bedrag is het
@@ -280,7 +288,7 @@ export const ANGLE_COPY = {
        is SHOTS.length + ANGLES.length — maar het staat hier als woord omdat een
        linktekst met een berekening erin niet te lezen valt. Verandert een van de
        twee lijsten, dan zegt tests/hoeken.test.mjs het. */
-    seeAll: 'Bekijk alle twaalf',
+    seeAll: `Bekijk alle ${telwoordNl(4 + ANGLES.length)} opnames`,
     chosen: '{n} gekozen',
     full: 'Dat is het maximum van {max}.',
     /* Zie de Engelse tegenhanger. */

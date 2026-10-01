@@ -166,9 +166,9 @@ console.log('\n4 · de bestelling namens de klant, met de foto\'s uit WhatsApp')
      wat hier telt is dat er in het tweede geval echt een link in de mail zit. */
   const naarKlant = mails().filter((m) => JSON.stringify(m.to || '').includes(KLANT.email));
   if (o.review_state === 'pending') {
-    ok('zonder btw-nummer staat hij eerst op de btw-lijst (geen link vóór akkoord)', naarKlant.some((m) => /mollie\.com\/checkout/.test(m.html || '')), false);
+    ok('zonder btw-nummer staat hij eerst op de btw-lijst (geen link vóór akkoord)', naarKlant.some((m) => /mollie\.com\/checkout|\/api\/order-pay/.test(m.html || '')), false);
   } else {
-    ok('de klant krijgt de bevestiging met een betaallink', naarKlant.some((m) => /mollie\.com\/checkout/.test(m.html || '')), true);
+    ok('de klant krijgt de bevestiging met een betaallink', naarKlant.some((m) => /\/api\/order-pay\?ref=VIS-/.test(m.html || '')), true);
   }
 }
 

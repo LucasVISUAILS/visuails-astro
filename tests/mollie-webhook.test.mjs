@@ -331,7 +331,8 @@ calls = []; mute();
   const ev = d.writes.find((w) => w[0] === 'event')[1];
   results.push({ name: 'amount recorded as 99 cents, not 0.99', expected: 99, got: pay[3], pass: pay[3] === 99 });
   results.push({ name: 'provider column is "mollie"', expected: 'in SQL', got: 'in SQL', pass: true });
-  results.push({ name: 'test payment is labelled TEST MODE in the timeline', expected: true, got: /TEST MODE/.test(ev[2]), pass: /TEST MODE/.test(ev[2]) });
+  /* Sinds 24 september 2026 in de taal van de klant: de tijdlijn is óók zijn scherm. "TEST MODE" staat in admin_log. */
+  results.push({ name: 'test payment is labelled as a test in the timeline', expected: true, got: /testbetaling|test payment/.test(ev[2]), pass: /testbetaling|test payment/.test(ev[2]) });
   results.push({ name: 'event re-states the pipeline status, does not invent one', expected: 'received', got: ev[1], pass: ev[1] === 'received' });
 }
 mute();

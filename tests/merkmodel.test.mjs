@@ -108,15 +108,16 @@ console.log('\nde herroepingsverklaring is een eigen versie');
   /* v1 eindigt op "uit foto's die ik aanlever", en bij een merkmodel levert de
      klant niets aan. Een verklaring ondertekenen over iets wat niet gebeurd is,
      is een bewijsstuk dat in een geschil tégen je werkt. */
-  ok('het merkmodel gebruikt een andere versie dan de bestelstroom',
-    CONSENT_VERSION_BRAND_MODEL !== CONSENT_VERSION, true);
+  /* Sinds v2 (30 september 2026) noemt ook de verklaring van de bestelstroom
+     geen aangeleverde foto's meer; beide versies mogen dus dezelfde zijn. */
+  ok('de merkmodelversie heeft een tekst', typeof consentText(CONSENT_VERSION_BRAND_MODEL, 'nl'), 'string');
   const bm = consentText(CONSENT_VERSION_BRAND_MODEL, 'nl');
   ok('en die tekst noemt geen aangeleverde foto’s', /aanlever/.test(bm), false);
   /* De twee dragende elementen van art. 6:230p sub f moeten er wél in staan:
      uitdrukkelijk vragen te beginnen, én weten dat het recht daarmee vervalt. */
   ok('  maar vraagt wel uitdrukkelijk om te beginnen', /uitdrukkelijk/.test(bm), true);
   ok('  en noemt het herroepingsrecht', /herroepingsrecht/.test(bm), true);
-  ok('de oude versie blijft opzoekbaar', typeof consentText(CONSENT_VERSION, 'nl'), 'string');
+  ok('de oude versie blijft opzoekbaar', typeof consentText('withdrawal-v1-2026-08', 'nl'), 'string');
 }
 
 console.log('\nhet uniciteitslogboek draagt de garantie');
@@ -183,13 +184,14 @@ for (const [pad, taal] of [['dist/start/brand-model/index.html', 'en'], ['dist/n
   ok('  het bedrag staat op de pagina', h.includes(`€${AMOUNT.brandModel}`), true);
   ok('  en het oude bedrag nergens', /1[.,]250/.test(h), false);
 
-  /* De twee verklaringen. Zonder de zakelijke verklaring komt elke bestelling op
+  /* De verklaring. Zonder de zakelijke verklaring komt elke bestelling op
      de beoordelingslijst en krijgt níemand een betaallink; zonder de
      herroepingsverklaring is de uitzondering van 6:230p niet ingeroepen. */
   ok('  de zakelijke verklaring staat erin', h.includes('name="business_declaration"'), true);
-  ok('  de herroepingsverklaring ook', h.includes('name="withdrawal_consent"'), true);
-  ok('  en het is de merkmodelversie', h.includes(CONSENT_VERSION_BRAND_MODEL), true);
-  ok('  niet die van de bestelstroom', h.includes(`value="${CONSENT_VERSION}"`), false);
+  /* Eén vinkje sinds 30 september 2026: de zakelijke verklaring draagt de
+     herroepingsverklaring; de versie rijdt verborgen mee. */
+  ok('  geen tweede vinkje voor de herroeping', h.includes('name="withdrawal_consent"'), false);
+  ok('  maar de versie rijdt mee', h.includes(`name="consent_version" value="${CONSENT_VERSION_BRAND_MODEL}"`), true);
 
   /* HET FACTUURBLOK. Een bestelling van € 450 levert een factuur op, en zonder
      land is er geen btw-beslissing en zonder adres geen factuur. Ontbreekt er

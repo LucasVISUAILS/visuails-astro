@@ -86,7 +86,7 @@ import {
 
 import Disclose from '../Disclose.astro';
 
-import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
+import { CONSENT_VERSION } from '../../data/consent.js';
 /* Het producttype en de gratis contextstukken. Zie de kop van garments.js: de
    uitsnede volgt uit het type, en welke plekken er in dat beeld nog vrij zijn
    volgt uit de uitsnede. Er wordt hier niets van die logica overgetypt —
@@ -274,7 +274,7 @@ const SERVICE = {
   },
   nl: {
     complete: {
-      title: 'Catalogsets en lifestyle-carousels',
+      title: 'Catalogsets en lifestylecarrousels',
       gets: '7 beelden per product — 4 catalog, 3 lifestyle',
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('complete', 1), 'nl')} naar ${euro(ladderFloor('complete'), 'nl')} per product.`,
     },
@@ -284,7 +284,7 @@ const SERVICE = {
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('catalog', 1), 'nl')} naar ${euro(ladderFloor('catalog'), 'nl')} per product.`,
     },
     lifestyle: {
-      title: 'Lifestyle-carousels',
+      title: 'Lifestylecarrousels',
       gets: '3 beelden per product — één gestylede look, klaar om te posten',
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('lifestyle', 1), 'nl')} naar ${euro(ladderFloor('lifestyle'), 'nl')} per product.`,
     },
@@ -309,6 +309,9 @@ const PIPE = {
       extra: ' Plus {price} × {n} for extra photos.',
       hoogRes: ' Plus {price} × {n} for lifestyle images at {px} px.',
       voorrang: ' Plus {price} for priority delivery.',
+      /* Een eigen look met toeslag: zonder deze regel zei de zin "€109 per product × 2"
+         boven een totaal van €238. 24 september 2026. */
+      eigenLook: ' Plus {price} × {n} for your own look.',
     },
     // NOT "{then} instead of {now}" — see the note this line kept in the old
     // file: what falls is the per-product rate, so that is what is compared.
@@ -378,19 +381,21 @@ const PIPE = {
            NIET hebt afgeweken. */
       channels: 'Selling on',
       channelsNone: 'Not said — we deliver on pure white',
+      channelsNoneKort: 'Not said',
       bg: 'Background',
       bgLocked: 'fixed by where you sell',
       format: 'File format',
-      formatJpg: 'jpg (a marketplace order is not delivered as webp)',
+      formatJpg: 'the formats that marketplace accepts (JPG and PNG for Amazon and bol, JPG only for Zalando; no WebP)',
       model: 'The on-model photo',
       modelAny: 'We pick a face that suits your brand',
       /* "Look" heet sinds 9 september "Style"; zie StijlRegel.astro. De twee
          regels eronder staan er alleen bij een complete-bestelling, waar er
          één per helft is. */
       hoogRes: 'Resolution',
-      hoogResN: '{px} px on {n} product(s)',
+      hoogResN: '{px} px on {n} products',
+      hoogRes1: '{px} px on 1 product',
       voorrang: 'Delivery',
-      voorrangJa: `Priority — we aim for {uren} hours, or the surcharge comes back`,
+      voorrangJa: `Priority — delivered by 17:00 the next working day, or the surcharge comes back`,
       /* De bijbestelde hoeken, met hun NAMEN en niet als getal: "4 extra photos"
          zegt wat het kost, "Flat-lay, Side, Inside, One detail" zegt wat je krijgt,
          en dit scherm is het laatste moment waarop dat nog te veranderen is. */
@@ -404,7 +409,7 @@ const PIPE = {
       outfitN: '{price} extra × {n}',
       net: `Order value (${vatLabel('excl', 'en')})`,
       files: 'Reference material',
-      noFiles: 'Nothing sent yet — we will come to you',
+      noFiles: 'Nothing sent yet — we will get back to you',
       window: 'Delivery',
       windowLater: 'Delivery date still to be reserved',
       queue: TIERS.unattended.queue.en,
@@ -486,6 +491,7 @@ const PIPE = {
       extra: ' Plus {price} × {n} voor extra foto’s.',
       hoogRes: ' Plus {price} × {n} voor lifestylebeelden op {px} px.',
       voorrang: ' Plus {price} voor voorrang bij levering.',
+      eigenLook: ' Plus {price} × {n} voor je eigen look.',
     },
     rung: {
       one: `Nog één product en het tarief zakt van {now} naar {rate} per product — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
@@ -502,9 +508,9 @@ const PIPE = {
       unattended: `${clause(TIERS.unattended.queue.nl)}. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling in plaats daarvan een vastgezette leverdatum.`,
     },
     kind: {
-      complete: 'Catalogset en lifestyle-carousel',
+      complete: 'Catalogset en lifestylecarrousel',
       catalog: 'Catalogset',
-      lifestyle: 'Lifestyle-carousel',
+      lifestyle: 'Lifestylecarrousel',
     },
     err: { generic: 'Hier moet nog een antwoord staan voordat je verder kunt.' },
     /* Zie de Engelse tegenhanger. */
@@ -521,17 +527,19 @@ const PIPE = {
       /* Zie de noot bij de Engelse tegenhanger. */
       channels: 'Waar je verkoopt',
       channelsNone: 'Niet gezegd — we leveren op zuiver wit',
+      channelsNoneKort: 'Niet gezegd',
       bg: 'Achtergrond',
       bgLocked: 'vastgezet door waar je verkoopt',
       format: 'Bestandsformaat',
-      formatJpg: 'jpg (een marktplaatsbestelling wordt niet als webp geleverd)',
+      formatJpg: 'de formaten die die marktplaats aanneemt (JPG en PNG bij Amazon en bol, alleen JPG bij Zalando; geen WebP)',
       model: 'De foto op een model',
       modelAny: 'Wij kiezen een gezicht dat bij je merk past',
       /* Zie de Engelse tegenhanger. */
       hoogRes: 'Resolutie',
-      hoogResN: '{px} px bij {n} product(en)',
+      hoogResN: '{px} px bij {n} producten',
+      hoogRes1: '{px} px bij 1 product',
       voorrang: 'Levering',
-      voorrangJa: `Voorrang — we mikken op {uren} uur, of de toeslag komt terug`,
+      voorrangJa: `Voorrang — geleverd uiterlijk de volgende werkdag om 17:00, of de toeslag komt terug`,
       /* Zie de Engelse tegenhanger. */
       angles: 'Extra hoeken',
       anglesN: '{list} — bij elk product',
@@ -804,8 +812,8 @@ for (const l of ['en', 'nl'] as const) {
        dat onderscheid leest "meer beelden" als "meer uploaden". Het aantal komt
        uit pricing.js via de config en wordt niet overgetypt. */
     refTerug: l === 'nl'
-      ? 'Meer beelden terug? Dat bestel je in stap 1 — tot {max} extra per product. Die foto’s hierboven stuur jij ons; die beelden krijg je van ons.'
-      : 'More images back? You order those in step 1 — up to {max} extra per product. The photos above you send us; those images you get from us.',
+      ? 'Meer beelden terug? Kies in stap 1 bij “Een hoek erbij” tot {max} extra hoeken per product. Die foto’s hierboven stuur jij ons; die beelden krijg je van ons.'
+      : 'More images back? In step 1, under “Add an angle”, pick up to {max} extra angles per product. The photos above you send us; those images you get from us.',
 
     // ── The per-product questions ────────────────────────────────────────
     // Words only. src/data/attributes.js owns them the way shots.js owns the
@@ -873,7 +881,7 @@ const REQUIRED_COPY = [
   'kind.complete', 'kind.catalog', 'kind.lifestyle',
   'err.generic',
   'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.styleCatalog', 'sum.styleLifestyle',
-  'sum.hoogRes', 'sum.hoogResN', 'sum.voorrang', 'sum.voorrangJa',
+  'sum.hoogRes', 'sum.hoogResN', 'sum.hoogRes1', 'sum.voorrang', 'sum.voorrangJa',
   'sum.angles', 'sum.anglesN',
   'sum.ratio', 'sum.outfit', 'sum.outfitN',
   'sum.channels', 'sum.channelsNone', 'sum.bgLocked', 'sum.format', 'sum.formatJpg',
@@ -973,7 +981,7 @@ const FORM = {
        veel is, maar omdat het meer is dan aangekondigd. De rail is een
        belofte over wat er nog komt, en hij moet op alle drie de diensten
        kloppen. */
-    rail: ['Order', 'Material', 'Your details', 'Timing', 'Pay'],
+    rail: ['Order', 'Your photos', 'Your details', 'Timing', 'Pay'],
     next: 'Continue',
     back: 'Back',
     optional: 'optional',
@@ -990,6 +998,9 @@ const FORM = {
          standaardvorm komt uit ratios.js en niet uit deze regel: de vouw mag
          nooit iets anders zeggen dan wat er aangevinkt staat. */
       ratioLabel: 'Image shape',
+      meerOpties: 'More options',
+      meerOptiesSub: 'an extra angle, the image shape (1:1 by default) and priority delivery',
+      meerOptiesSubZonderHoek: 'the image shape (1:1 by default) and priority delivery',
       ratioStart: `${ratioById(DEFAULT_RATIO_ID).label} · ${ratioById(DEFAULT_RATIO_ID).name.en}`,
       h: 'How many, and what for?',
       countLabel: 'How many products?',
@@ -1001,8 +1012,8 @@ const FORM = {
       moreBtn: `More than ${maxProducts} products?`,
       moreH: `More than ${maxProducts} products — we plan that with you`,
       moreBody: ladderVloer
-        ? `That is more than one order holds, so we split it over delivery dates together. The rate does not change: from ${vloerVanaf} products up it is ${euro(ladderVloer, 'en')} per product, however many there are. Send us the number and a link to your shop; we usually answer the same day.`
-        : `That is more than one order holds, so we split it over delivery dates together and you get one quote. Send us the number and a link to your shop; we usually answer the same day.`,
+        ? `That is more than one order holds, so we split it over delivery dates together. The rate does not change: from ${vloerVanaf} products up it is ${euro(ladderVloer, 'en')} per product, however many there are. Send us the number and a link to your shop; we usually answer within the hour; outside opening hours, the next morning.`
+        : `That is more than one order holds, so we split it over delivery dates together and you get one quote. Send us the number and a link to your shop; we usually answer within the hour; outside opening hours, the next morning.`,
       moreWa: 'Send a WhatsApp',
       moreWaText: `Hi VISUAILS, I want more than ${maxProducts} products photographed. `,
       moreMail: 'Send an email',
@@ -1016,7 +1027,7 @@ const FORM = {
          van de site — vier catalogbeelden, een carousel van drie. */
       sampleKindLabel: 'What should we make?',
       sampleKindCatalog: 'Catalog set',
-      sampleKindCatalogGets: 'Four images, product on a clean ground',
+      sampleKindCatalogGets: 'Four images, product on a clean background',
       sampleKindLifestyle: 'Lifestyle carousel',
       sampleKindLifestyleGets: 'Three images, worn in a styled scene',
       sampleKindErr: 'Pick one of the two.',
@@ -1085,11 +1096,11 @@ const FORM = {
     s2: {
       h: 'Send the product photos',
       // Zie de NL-tabel voor waarom deze regel niet meer uitnodigt tot achteraf mailen.
-      skip: 'Sending everything now means we can start straight away. If we need more for the quality, we will come to you.',
+      skip: 'Sending everything now means we can start straight away. If we need more to get the quality right, we will get back to you.',
     },
     s3: {
       h: 'Who is this for?',
-      lead: 'Enough to invoice it and come back to you.',
+      lead: 'Enough to invoice it and get back to you.',
       savedH: 'Using your saved details',
       savedEdit: 'Change for this order',
       savedHint: 'This order only. To change them for good, edit them in your account.',
@@ -1125,12 +1136,12 @@ const FORM = {
       // en het stond in het grijs onder elk bestelformulier dat iemand opende.
       // Een placeholder hoort de VORM te laten zien, niet een plek. Zie ook de
       // noot in FigDash.astro, waar hetzelfde adres in de mockup stond.
-      streetPh: 'Voorbeeldstraat 12',
+      streetPh: '12 Example Street',
       streetErr: 'An invoice needs an address on it.',
-      street2: 'Addition',
+      street2: 'Address line 2',
       street2Ph: 'Unit, floor, c/o',
       postal: 'Postcode',
-      postalPh: '1234 AB',
+      postalPh: 'AB1 2CD',
       postalErr: 'The postcode is missing.',
       city: 'City',
       cityErr: 'The town or city is missing.',
@@ -1147,8 +1158,12 @@ const FORM = {
       vatConfirmHint: 'Required before we can invoice at 0%. The tax authority holds us liable for a reverse charge that turns out to be wrong, so this is the one thing we cannot decide for you.',
       vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
       reg: 'Registration number',
+      regKvk: 'KVK number',
+      regKvkErr: 'A KVK number has 8 digits — you find it on your KVK extract or your invoices.',
       regErr: 'Fill in a registration number — a KVK number in the Netherlands, or your local equivalent.',
-      regHint: 'Only needed because you have no VAT number. In the Netherlands that is your 8-digit KVK number; elsewhere it is whatever your own register calls it. We record it as given.',
+      regHint: 'Only needed because you have no VAT number: the number from your country’s company register (in Germany, for example, your Handelsregister number). Without a VAT number we charge 21% VAT and check your details before you pay — usually within one working day.',
+      regHintNl: 'Your 8-digit number from the Dutch Chamber of Commerce (KVK). It is how we confirm you order as a business.',
+      regHintOther: 'For example your EIN in the United States or your company number in the UK. No number? Then the business confirmation below is enough.',
       message: 'Anything we should know',
       // SHARPENED, AND THE SHARPENING IS THE POINT. attributes.js's
       // ORDER_QUESTIONS comment argues there is ONE new order-level field and
@@ -1163,13 +1178,13 @@ const FORM = {
       lead: 'Checked against the real calendar rather than promised.',
       checking: 'Checking the calendar…',
       queueH: 'This order does not need a reserved delivery date',
-      queueBody: `Orders of up to ${WINDOW_THRESHOLD - 1} products are produced in the order they arrive — usually ${turnaround('unattended', 'en')}.`,
+      queueBody: `Orders of up to ${WINDOW_THRESHOLD - 1} products are produced in the order they arrive — ${turnaround('unattended', 'en').charAt(0).toLowerCase()}${turnaround('unattended', 'en').slice(1)}.`,
       okH: 'These delivery dates can be held for you',
       okBody: 'Pick one. Nothing is reserved by looking at it — the delivery date is held the moment your order and payment are in, and stays held for seven days if you pay later through the link in your email.',
       okMax: 'Per date we hold room for up to',
       okMaxTail: 'products.',
       fullH: 'The next few weeks are full',
-      fullBody: 'Send the order anyway: we come back in writing with the first delivery date that opens. Pay straight away through the link in your email, or wait until you have the date — production starts after payment either way.',
+      fullBody: 'Send the order anyway: we get back to you in writing with the first delivery date that opens. Pay straight away through the link in your email, or wait until you have the date — production starts after payment either way.',
       tooLargeH: 'Larger than one date can hold',
       tooLargeBody: 'Per date we hold room for up to',
       tooLargeTail: 'products. More than that we split over two weeks, and we plan that with you. Send this and we will come back with the dates.',
@@ -1178,9 +1193,15 @@ const FORM = {
       unavailableH: 'The calendar did not answer',
       unavailableBody: 'That is our problem, not yours. Try again, or send the order and we will confirm a delivery date by email.',
       retry: 'Check again',
-      lostH: 'That delivery date went while you were filling this in',
+      lostH: 'That delivery date was taken while you were filling this in',
       lostBody: 'Nothing was created and nothing was charged. Pick another delivery date below and send again.',
       nojs: 'Without JavaScript the calendar cannot be checked from this page. Send the form and we will come back with a delivery date in writing — no date is assumed in the meantime.',
+    },
+    open: {
+      h: 'This order is already placed',
+      body: 'You pressed back on the payment page. Your order exists and has not been paid yet — pay it here without filling anything in again. Reference:',
+      pay: 'Pay this order',
+      new: 'Start a new order instead',
     },
     s5: {
       h: 'Check and pay',
@@ -1188,20 +1209,21 @@ const FORM = {
       afterH: 'What happens after you press the button',
       after: [
         'You go straight to the payment page (Mollie). Production starts once the payment is in; a reserved delivery date is held for seven days while you pay.',
-        'Your confirmation with the reference and the same payment link arrives by email — pay later if you prefer. An address outside the EU gets a short check first, and the link follows by email within 24 hours.',
+        'Your confirmation with the reference and the same payment link arrives by email — pay later if you prefer. Ordering from elsewhere in the EU without a VAT number? Then we check your details first, and the link follows by email within one working day.',
         'Every order lands in VISUAILS Studio, where you approve and download image by image — a standard order too. The direct link is in your email as well.',
       ],
-      payNote: 'No card details here — you pay on the next page through Mollie (iDEAL or card).',
+      payNote: 'No card details here — you pay on the next page through Mollie (iDEAL, Bancontact or card).',
       submit: 'Order and pay',
       legal: ['By sending this order you agree to our ', ' and ', '.'],
       legalTerms: 'terms',
       legalPrivacy: 'privacy policy',
       lostH: 'Your order is in — the delivery date is not',
-      lostBody: 'It arrived a moment after that delivery date filled. Nothing is lost and nothing is invoiced: the order is recorded under its reference, and we come back with the first delivery date that fits, in writing.',
+      lostBody: 'It arrived a moment after that delivery date filled. Nothing is lost and nothing is invoiced: the order is recorded under its reference, and we get back to you with the first delivery date that fits, in writing.',
       lostGo: 'Go to the confirmation',
       saveLabel: 'Save these details to my account for next time',
       saveHint: 'Your name, brand and contact details — not this order or the notes you wrote about it.',
       saveHintOut: 'Your name, brand and contact details — not this order or the notes you wrote about it. They are kept the moment you first sign in; the link is in your confirmation email.',
+      tegoed: 'You have {bedrag} of credit. It comes off the total (incl. VAT) automatically: at checkout you only pay the rest, and if it covers everything, there is nothing to pay and we start straight away.',
     },
     /* ── "ALL FIVE STEPS" WAS NOT TRUE ON THE SAMPLE ──────────────────────
        18 augustus 2026. Deze zin stond als vaste tekst, en /test-sample heeft
@@ -1222,8 +1244,8 @@ const FORM = {
        driekwart gelijk zijn, lopen bij de eerste wijziging uit elkaar — zie
        dezelfde afweging bij de rail. */
     noscript: (n: string, sample: boolean) => sample
-      ? `JavaScript is off, so this page shows all ${n} steps at once. Two things it cannot do that way: take your files, and show you what you picked as you go. Send the form and we will ask for the material by email — the sample is one product and one euro either way.`
-      : `JavaScript is off, so this page shows all ${n} steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for the material by email, confirm a delivery date in writing, and invoice the per-product rate for the count you pick.`,
+      ? `JavaScript is off, so this page shows all ${n} steps at once. Two things it cannot do that way: take your files, and show you what you picked as you go. Send the form and we will ask for your photos by email — the sample is one product and one euro either way.`
+      : `JavaScript is off, so this page shows all ${n} steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for your photos by email, confirm a delivery date in writing, and invoice the per-product rate for the count you pick.`,
     sharedH: 'What is identical at every count',
     shared: [
       ['The production', `The same production run at one product and at ${maxProducts}.`],
@@ -1271,6 +1293,9 @@ const FORM = {
     s1: {
       /* Zie de Engelse tegenhanger. */
       ratioLabel: 'Beeldvorm',
+      meerOpties: 'Meer opties',
+      meerOptiesSub: 'een extra hoek, de beeldvorm (standaard 1:1) en voorrang bij levering',
+      meerOptiesSubZonderHoek: 'de beeldvorm (standaard 1:1) en voorrang bij levering',
       ratioStart: `${ratioById(DEFAULT_RATIO_ID).label} · ${ratioById(DEFAULT_RATIO_ID).name.nl}`,
       h: 'Hoeveel, en waarvoor?',
       countLabel: 'Hoeveel producten?',
@@ -1282,8 +1307,8 @@ const FORM = {
       moreBtn: `Meer dan ${maxProducts} producten?`,
       moreH: `Meer dan ${maxProducts} producten — dat plannen we samen`,
       moreBody: ladderVloer
-        ? `Dat is meer dan er in één bestelling past, dus verdelen we het samen over leverdata. Aan de prijs verandert dat niets: vanaf ${vloerVanaf} producten is het ${euro(ladderVloer, 'nl')} per product, hoeveel het er ook worden. Stuur ons het aantal en een link naar je shop; we antwoorden meestal dezelfde dag.`
-        : `Dat is meer dan er in één bestelling past, dus we verdelen het samen over leverdata en je krijgt één offerte. Stuur ons het aantal en een link naar je shop; we antwoorden meestal dezelfde dag.`,
+        ? `Dat is meer dan er in één bestelling past, dus verdelen we het samen over leverdata. Aan de prijs verandert dat niets: vanaf ${vloerVanaf} producten is het ${euro(ladderVloer, 'nl')} per product, hoeveel het er ook worden. Stuur ons het aantal en een link naar je shop; we antwoorden meestal binnen het uur, buiten openingstijden de volgende ochtend.`
+        : `Dat is meer dan er in één bestelling past, dus we verdelen het samen over leverdata en je krijgt één offerte. Stuur ons het aantal en een link naar je shop; we antwoorden meestal binnen het uur, buiten openingstijden de volgende ochtend.`,
       moreWa: 'Stuur een WhatsApp',
       moreWaText: `Hoi VISUAILS, ik wil meer dan ${maxProducts} producten laten fotograferen. `,
       moreMail: 'Stuur een mail',
@@ -1294,8 +1319,8 @@ const FORM = {
       sampleKindLabel: 'Wat maken we voor je?',
       sampleKindCatalog: 'Catalogset',
       sampleKindCatalogGets: 'Vier beelden, je product op een schone ondergrond',
-      sampleKindLifestyle: 'Lifestyle-carousel',
-      sampleKindLifestyleGets: 'Drie beelden, gedragen in een gestileerde scène',
+      sampleKindLifestyle: 'Lifestylecarrousel',
+      sampleKindLifestyleGets: 'Drie beelden, gedragen in een gestylede scène',
       sampleKindErr: 'Kies er één van de twee.',
       sampleFlatNote: 'voor één product, één per bedrijf.',
       countErr: 'Kies eerst hoeveel producten.',
@@ -1402,10 +1427,14 @@ const FORM = {
       noVat: 'Ik heb geen btw-nummer',
       vatConfirm: 'Ik verklaar dat mijn bedrijf buiten Nederland is gevestigd en dat dit btw-nummer van dat bedrijf is.',
       vatConfirmHint: 'Nodig voordat we 0% op je factuur kunnen zetten. Blijkt de btw-verlegging later onjuist, dan krijgen wij de aanslag. Daarom moet je dit zelf aanvinken.',
-      vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij dan rekenen we geen Nederlandse btw.',
+      vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij, dan rekenen we geen Nederlandse btw.',
       reg: 'Registratienummer',
+      regKvk: 'KVK-nummer',
+      regKvkErr: 'Een KVK-nummer heeft 8 cijfers — je vindt het op je KVK-uittreksel of je facturen.',
       regErr: 'Vul een registratienummer in — in Nederland je KVK-nummer, daarbuiten het nummer van je eigen register.',
-      regHint: 'Alleen nodig omdat je geen btw-nummer hebt. In Nederland is dat je KVK-nummer van acht cijfers; daarbuiten wat je eigen register ervoor gebruikt. We leggen het vast zoals je het opgeeft.',
+      regHint: 'Alleen nodig omdat je geen btw-nummer hebt: het nummer uit het handelsregister van je land (in Duitsland bijvoorbeeld je Handelsregisternummer). Zonder btw-nummer rekenen we 21% btw en kijken we je gegevens na voordat je betaalt — meestal binnen een werkdag.',
+      regHintNl: 'Je KVK-nummer van acht cijfers. Daarmee bevestigen we dat je zakelijk bestelt.',
+      regHintOther: 'Bijvoorbeeld je EIN in de Verenigde Staten of je company number in het Verenigd Koninkrijk. Geen nummer? Dan is de zakelijke bevestiging hieronder genoeg.',
       message: 'Wat we moeten weten',
       // Zie de Engelse noot hierboven.
       messageHint: 'De look die je zoekt, de datum waarop het echt live moet, een voorbeeld dat je mooi vindt, en wat je merk juist nooit doet.',
@@ -1416,7 +1445,7 @@ const FORM = {
       checking: 'Agenda checken…',
       queueH: 'Deze bestelling heeft geen vastgezette leverdatum nodig',
       /* 'onder dat aantal' verwees naar niets op dit scherm — 3 sep 2026. */
-      queueBody: `Bestellingen tot en met ${WINDOW_THRESHOLD - 1} producten maken we in de volgorde waarin ze binnenkomen — meestal ${turnaround('unattended', 'nl')}.`,
+      queueBody: `Bestellingen tot en met ${WINDOW_THRESHOLD - 1} producten maken we in de volgorde waarin ze binnenkomen — ${turnaround('unattended', 'nl').charAt(0).toLowerCase()}${turnaround('unattended', 'nl').slice(1)}.`,
       okH: 'Deze leverdata kunnen voor je worden vastgehouden',
       okBody: 'Kies er één. Door te kijken reserveer je niets — de leverdatum staat vast zodra je bestelling en betaling binnen zijn, en blijft zeven dagen voor je staan als je later betaalt via de link in je mail.',
       okMax: 'Per leverdatum houden we ruimte voor maximaal',
@@ -1435,16 +1464,22 @@ const FORM = {
       lostBody: 'Er is niets aangemaakt en niets in rekening gebracht. Kies hieronder een andere datum en verstuur opnieuw.',
       nojs: 'Zonder JavaScript kunnen we de agenda niet vanaf deze pagina checken. Verstuur het formulier, dan komen we op schrift met een leverdatum terug — tot die tijd staat er geen datum vast.',
     },
+    open: {
+      h: 'Deze bestelling staat al klaar',
+      body: 'Je ging terug vanaf de betaalpagina. Je bestelling bestaat al en is nog niet betaald — reken hem hier af zonder alles opnieuw in te vullen. Kenmerk:',
+      pay: 'Deze bestelling betalen',
+      new: 'Toch een nieuwe bestelling beginnen',
+    },
     s5: {
       h: 'Controleer en betaal',
       lead: 'Lees het terug. Er is nog niets aangemaakt en er is nog niets in rekening gebracht.',
       afterH: 'Wat er gebeurt nadat je op de knop drukt',
       after: [
         'Je gaat meteen door naar de betaalpagina (Mollie). We beginnen zodra de betaling binnen is; een vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
-        'Je bevestiging met de referentie en dezelfde betaallink komt per mail — later betalen kan dus ook. Bij een adres buiten de EU kijken we eerst kort naar de gegevens; de link volgt dan per mail, binnen 24 uur.',
+        'Je bevestiging met de referentie en dezelfde betaallink komt per mail — later betalen kan dus ook. Bestel je elders in de EU zonder btw-nummer, dan kijken we eerst kort naar je gegevens; de link volgt dan per mail, binnen een werkdag.',
         'Elke bestelling komt in VISUAILS Studio, waar je beeld voor beeld goedkeurt en downloadt — ook een standaardbestelling. De rechtstreekse link staat ook in je mail.',
       ],
-      payNote: 'Hier vul je geen kaartgegevens in — betalen doe je op de volgende pagina via Mollie (iDEAL of kaart).',
+      payNote: 'Hier vul je geen kaartgegevens in — betalen doe je op de volgende pagina via Mollie (iDEAL, Bancontact of creditcard).',
       submit: 'Bestellen en betalen',
       legal: ['Door deze bestelling te versturen ga je akkoord met onze ', ' en ', '.'],
       legalTerms: 'algemene voorwaarden',
@@ -1455,6 +1490,7 @@ const FORM = {
       saveLabel: 'Bewaar deze gegevens in mijn account voor de volgende keer',
       saveHint: 'Je naam, merk en contactgegevens — niet deze bestelling of wat je ons erover vertelde.',
       saveHintOut: 'Je naam, merk en contactgegevens — niet deze bestelling of wat je ons erover vertelde. Ze worden bewaard zodra je voor het eerst inlogt; de link staat in je bevestigingsmail.',
+      tegoed: 'Je hebt {bedrag} tegoed. Dat gaat automatisch van het totaal (incl. btw) af: bij het afrekenen betaal je alleen de rest, en dekt het alles, dan hoef je niets te betalen en beginnen we meteen.',
     },
     /* Zie de noot bij de Engelse tegenhanger. */
     noscript: (n: string, sample: boolean) => sample
@@ -1822,6 +1858,20 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         langs het formulier heen post, en voor de dag dat een script niet laadt. */}
     <div class="pl-weigering" data-form-refusal="phone" role="status" tabindex="-1" hidden>{f.s3.refusePhone}</div>
     <div class="pl-weigering" data-form-refusal="vat" role="status" tabindex="-1" hidden>{f.s3.refuseVat}</div>
+    {/* ── AL BESTELD, NOG NIET BETAALD — 24 september 2026 ─────────────────
+        Wie op de betaalpagina van Mollie op "terug" drukte, kwam op een leeg
+        formulier uit, terwijl zijn bestelling al bestond. Opnieuw invullen gaf
+        een tweede bestelling, en de eerste kreeg drie dagen later een
+        betaalherinnering. pipeline.js (checkOpenOrder) laat dit blok zien als
+        er in dit tabblad net een bestelling is geplaatst die nog open staat. */}
+    <div class="pl-lost pl-open" data-pl-open hidden role="status">
+      <h2 class="pl-lost-h">{f.open.h}</h2>
+      <p class="pl-lost-body">{f.open.body} <b data-pl-open-ref></b></p>
+      <div class="pl-open-acts">
+        <a class="knop knop-inkt" data-pl-open-pay href="#">{f.open.pay}</a>
+        <button type="button" class="knop" data-pl-open-new>{f.open.new}</button>
+      </div>
+    </div>
 
     <input type="hidden" name="service" value={wire} />
     <input type="hidden" name="tier" value="unattended" />
@@ -2159,21 +2209,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           HET BEDRAG STAAT ERBIJ EN BEWEEGT MEE. Het is een deel van het
           orderbedrag, dus zonder aantal is er nog geen getal — dan staat er een
           streepje, net als bij het totaal erboven. */}
-      {!isSample && VOORRANG_DIENSTEN.has(service) && (
-      <div class="field pl-voorrang" data-pl-voorrang>
-        <label class="pl-voorrang-rij">
-          <input type="checkbox" name="voorrang" value="1" />
-          <span class="pl-voorrang-t">
-            <b>{f.s1.voorrangLabel}</b>
-            <span class="pl-voorrang-bedrag" data-pl-voorrang-bedrag>{f.s1.voorrangGeen}</span>
-          </span>
-        </label>
-        <span class="hint">{f.s1.voorrangLine}</span>
-        <Disclose summary={f.s1.voorrangWhen} tone="plain">
-          <p>{f.s1.voorrangLimits}</p>
-        </Disclose>
-      </div>
-      )}
+      {/* Voorrang staat sinds 30 september 2026 onder "Meer opties", hieronder. */}
 
       {/* THE RUNNING TOTAL.
           Three things about this block are answers to an accessibility audit
@@ -2246,7 +2282,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             waar hij hoort: het is een antwoord op een vraag die alleen een
             klant buiten de eurozone stelt, en die klant klikt. Wat blijft is
             de wettelijke helft, op één regel. */}
-        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail} {f.s1.displayNote} {f.s1.euroNote}</Note></p>
+        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={lang === 'nl' ? vatLabel('excl', lang) : 'VAT'} wide>{`${f.s1.vatDetail} ${f.s1.displayNote} ${f.s1.euroNote}`}</Note></p>
       </div>
       )}
 
@@ -2299,17 +2335,45 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           kwaliteit, niet naar de uitsnede. Het vierkant staat al voor en past
           overal, en het gaat als verborgen veld mee zodat het record dezelfde
           vorm houdt als bij een gewone bestelling. */}
+      {/* ── "MEER OPTIES" — 30 september 2026 ──────────────────────────────
+          Lucas: "hoek, beeldvorm en voorrang achter 'Meer opties' zetten." Alle
+          drie hebben een veilige standaard (geen extra hoek, 1:1, geen
+          voorrang), dus wie voor het eerst bestelt, hoeft ze niet te zien om
+          verder te kunnen. De velden staan in de vouw en posten gewoon mee, ook
+          als hij dicht blijft. De samenvatting noemt wat erin zit, zodat niemand
+          een keuze mist die hij zocht. */}
       {isSample
         ? <input type="hidden" name="ratio" value={DEFAULT_RATIO_ID} />
         : (
-      <Disclose
-        summary={f.s1.ratioLabel}
-        name="s1"
-        liveAttr="data-pl-sum-ratio"
-        liveText={f.s1.ratioStart}
-      >
-        <RatioPicker lang={lang} />
-      </Disclose>
+      <details class="pl-meeropties" data-pl-meeropties>
+        <summary class="pl-meeropties-kop">
+          <span class="pl-meeropties-t">{f.s1.meerOpties}</span>
+          <span class="pl-meeropties-sub">{isCatalog || service === 'complete' || service === 'drop' ? f.s1.meerOptiesSub : f.s1.meerOptiesSubZonderHoek}</span>
+        </summary>
+        <div class="pl-meeropties-body">
+          <slot name="extra" />
+          {/* Geen eigen kop: RatioPicker draagt "Beeldverhouding" al, en de
+              gekozen vorm staat rechts in "Wat je krijgt" onder Formaat. */}
+          <div class="field pl-meeropties-vorm">
+            <RatioPicker lang={lang} />
+          </div>
+          {!isSample && VOORRANG_DIENSTEN.has(service) && (
+          <div class="field pl-voorrang" data-pl-voorrang>
+            <label class="pl-voorrang-rij">
+              <input type="checkbox" name="voorrang" value="1" />
+              <span class="pl-voorrang-t">
+                <b>{f.s1.voorrangLabel}</b>
+                <span class="pl-voorrang-bedrag" data-pl-voorrang-bedrag>{f.s1.voorrangGeen}</span>
+              </span>
+            </label>
+            <span class="hint">{f.s1.voorrangLine}</span>
+            <Disclose summary={f.s1.voorrangWhen} tone="plain">
+              <p>{f.s1.voorrangLimits}</p>
+            </Disclose>
+          </div>
+          )}
+        </div>
+      </details>
         )}
 
       {/* What the count earns. Not a control: the level FOLLOWS the count
@@ -2597,13 +2661,26 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             een required-attribuut dat door een vinkje aan en uit gaat is een
             tweede plek waar de regel staat. data-pl-req-unless wijst naar het
             vinkje, en validate() in pipeline.js leest die ene bron. */}
+        {/* ── PER LAND WAT ER GEVRAAGD WORDT — 29 september 2026 ──────────────
+            Lucas: *"een bedrijf in amerika [moet] alsnog kan bestellen omdat deze
+            geen btw nummer kennen. Bedenk hoe dit systeem simpel blijft voor de
+            klant."* syncLand() in pipeline.js zet dit blok per land:
+              · Nederland: KVK-nummer verplicht, btw-nummer optioneel.
+              · Ander EU-land: btw-nummer (VIES → 0% verlegd), of "geen
+                btw-nummer" en dan een registratienummer (21%).
+              · Buiten de EU: geen btw-veld; registratienummer optioneel. De
+                zakelijke verklaring onderaan is genoeg.
+            Zonder script staat alles zichtbaar, zoals voorheen, en beslist de
+            server (businessCheck() in src/data/business.js). */}
         <div class="field">
-          <label for="pl-vat">{f.s3.vat} <span class="req">*</span><Uitleg tekst={f.s3.vatHint} over={f.s3.vat} lang={lang} /></label>
+          <div data-pl-vatveld>
+          <label for="pl-vat">{f.s3.vat} <span class="req" data-pl-vat-req>*</span><span class="pl-opt" data-pl-vat-opt hidden>{f.optional}</span><Uitleg tekst={f.s3.vatHint} over={f.s3.vat} lang={lang} /></label>
           <input class="input" type="text" id="pl-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" data-pl-req="1" data-pl-req-unless="no_vat" data-pl-err-msg={f.s3.vatErr} />
-          <label class="pl-check" for="pl-no-vat">
+          <label class="pl-check" for="pl-no-vat" data-pl-novat>
             <input type="checkbox" id="pl-no-vat" name="no_vat" value="1" />
             <span>{f.s3.noVat}</span>
           </label>
+          </div>
 
           {/* ── DE VERKLARING BIJ 0% ────────────────────────────────────────
               Uit btwverleggingspecificatie.md §4. Verborgen tot er werkelijk 0%
@@ -2659,12 +2736,18 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
               een validatie die alleen voor één land klopt keurt de rest af. De
               vorm wordt op de server beoordeeld en de uitkomst is een
               beoordeling, geen weigering. */}
+          {/* ── IN NEDERLAND HEET HIJ KVK-NUMMER — 24 september 2026 ─────────────
+              Uit de doorloop: Henk (58, eigen zaak, geen btw-nummer) las
+              "Registratienummer", typte iets, en zijn bestelling ging stil in
+              de controle omdat de server acht cijfers verwacht. Bij land NL
+              wisselt syncReg() het label, de melding en een patroon van acht
+              cijfers in; daarbuiten blijft het vrij, zie de noot hierboven. */}
           <div class="field pl-reg" data-pl-reg hidden>
-            <label for="pl-reg">{f.s3.reg} <span class="req">*</span></label>
+            <label for="pl-reg"><span data-pl-reg-label data-reg={f.s3.reg} data-kvk={f.s3.regKvk}>{f.s3.reg}</span> <span class="req" data-pl-reg-req>*</span><span class="pl-opt" data-pl-reg-opt hidden>{f.optional}</span></label>
             <input class="input" type="text" id="pl-reg" name="reg_number" autocomplete="off"
                    maxlength="40" data-pl-req="1" data-pl-req-when="no_vat"
-                   data-pl-err-msg={f.s3.regErr} />
-            <span class="hint">{f.s3.regHint}</span>
+                   data-pl-err-msg={f.s3.regErr} data-err-reg={f.s3.regErr} data-err-kvk={f.s3.regKvkErr} />
+            <span class="hint" data-pl-reg-hint data-eu={f.s3.regHint} data-nl={f.s3.regHintNl} data-other={f.s3.regHintOther}>{f.s3.regHint}</span>
           </div>
         </div>
       </div>
@@ -2882,6 +2965,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             van art. 6:230p sub f in werking zet. Twee sloten op één deur, en het
             tweede kost één regel. §10a van de voorwaarden zegt hetzelfde.
 
+            30 SEPTEMBER 2026: de twee sloten zitten nu in één zin en één vinkje
+            (business-v2, Lucas: "samenvoegen"). De terugval staat in de tekst
+            zelf; zie withdrawalRecord() in src/data/consent.js.
+
             De versie rijdt mee in een verborgen veld, net als bij de
             herroepingsverklaring: het bewijs is niet "er is een vinkje gezet",
             het is "er is een vinkje gezet bij DEZE tekst". Zie
@@ -2893,12 +2980,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <span>{currentBusiness(lang)}</span>
         </label>
 
+        {/* Eén vinkje sinds 30 september 2026: de zakelijke verklaring (business-v2)
+              draagt de herroepingsverklaring in zich. consent_version rijdt mee als
+              bewijs van de zin; zie withdrawalRecord() in src/data/consent.js. */}
         <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
-        <label class="pl-consent">
-          <input type="checkbox" name="withdrawal_consent" value="yes" required
-                 data-pl-err-msg={lang === 'nl' ? "Vink dit aan om te bevestigen dat we mogen beginnen voordat je bedenktijd voorbij is." : "Please tick this to confirm you agree production may start before the withdrawal period ends."} />
-          <span>{currentConsent(lang)}</span>
-        </label>
       </div>
 
       {/* Shown by pipeline.js to a signed-in customer who has NOT saved before,
@@ -2922,6 +3007,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             /account/details opslaan, want daar is een sessie voor nodig. */}
         <input type="hidden" name="save_details" value="" data-pl-save-flag />
       </div>
+
+      {/* Tegoed van een ingelogde klant (29 september 2026) — pipeline.js vult
+          het bedrag uit /account/me. Zie src/lib/tegoedVerrekening.js. */}
+      <p class="pl-tegoed" data-pl-tegoed data-tekst={f.s5.tegoed} hidden></p>
 
       <div class="pl-submit-row">
         <button type="button" class="knop knop-lijn pl-back-inline" data-pl-back>{f.back}</button>
@@ -3462,6 +3551,11 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      Een streep erboven in plaats van een doos eromheen: dat zegt "hier begint
      iets anders" zonder te zeggen "hier moet je tekenen". Dezelfde breedte als
      de twee erboven, zodat de linkerkant van alle drie op één lijn ligt. */
+  .pl-tegoed {
+    margin: 1.2rem 0 0; padding: .75rem 1rem; max-width: 64ch;
+    border: 1px solid var(--line); border-radius: var(--r-md, 8px);
+    font-size: .94rem; line-height: 1.5; color: var(--ink);
+  }
   .pl-save-offer {
     margin: 1.4rem 0 0; padding: .9rem 0 0;
     border-top: 1px solid var(--line);
@@ -3943,6 +4037,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-weigering[hidden] { display: none; }
 
   .pl-error {
+    scroll-margin-top: 6rem;
     margin-top: 1.2rem;
     padding: .95rem 1.15rem;
     border: 1px solid var(--warn);
@@ -3961,6 +4056,9 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-lost-h { font-size: 1.1rem; line-height: 1.3; color: var(--signal-ink); }
   .pl-lost-body { margin-top: .7rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
   .pl-lost .knop { margin-top: 1.2rem; }
+  .pl-open { margin: 0 0 1.4rem; }
+  .pl-open-acts { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.2rem; }
+  .pl-open-acts .knop { margin-top: 0; }
 
   .pl-after { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); }
   /* Rules, not numerals. What happens after an order is a list of facts, and
@@ -4213,6 +4311,13 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   }
   .pl-qty-chip:hover { border-color: transparent; color: var(--ink); text-decoration-color: var(--line-strong); }
   .pl-qty-chip.is-on { color: var(--ink); font-weight: 700; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+  /* Tikvlak (1 oktober 2026, Web Interface Guidelines): "1" was 20 × 27 px.
+     Minstens 24 breed overal, en op een aanraakscherm 44 hoog en 40 breed. De
+     tekst blijft even klein; alleen het vlak eromheen groeit. */
+  .pl-qty-chip { min-width: 24px; min-height: 28px; }
+  @media (pointer: coarse) {
+    .pl-qty-chip { min-width: 40px; min-height: 44px; }
+  }
   .pl-qty-more, .pl-qty-back {
     display: block;
     width: max-content;
@@ -4456,6 +4561,17 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      rechts in mono zoals in het totaal, de uitleg één maat kleiner, en de
      vraag "Wanneer kan het sneller?" als kleine regel eronder. De override op
      de veldkop staat in stijl22.css (bij `.field > label`). */
+  /* "Meer opties" — zie de noot bij de vouw in stap 1 (30 september 2026). */
+  .pl-meeropties { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); border: 1px solid var(--line); border-radius: var(--r-md); }
+  .pl-meeropties-kop { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .8rem; row-gap: .2rem; padding: 1rem 1.1rem; cursor: pointer; list-style: none; }
+  .pl-meeropties-kop::-webkit-details-marker { display: none; }
+  .pl-meeropties-t, .pl-meeropties-sub { grid-column: 1; }
+  .pl-meeropties-kop::after { content: "+"; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; font-size: 1.15rem; }
+  .pl-meeropties[open] > .pl-meeropties-kop::after { content: "−"; }
+  .pl-meeropties-t { font-weight: 600; }
+  .pl-meeropties-sub { color: var(--ink-3, currentColor); font-size: .92rem; }
+  .pl-meeropties-body { padding: 0 1.1rem 1.1rem; display: grid; gap: clamp(1rem, 2vw, 1.4rem); }
+  .pl-meeropties-body > :global(*) { margin-top: 0; }
   .pl-voorrang { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-md); }
   .pl-voorrang-rij { display: flex; align-items: flex-start; gap: .7rem; cursor: pointer; }
   .pl-voorrang-rij input { margin-top: .25rem; flex: 0 0 auto; }

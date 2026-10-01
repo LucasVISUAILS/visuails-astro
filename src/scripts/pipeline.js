@@ -458,6 +458,7 @@ function init(el) {
   });
 
   form.classList.add('is-live');
+  checkOpenOrder();
 
   bindNav();
   bindErrors();
@@ -1141,11 +1142,58 @@ function demanded(f) {
 function syncReg() {
   const block = q('[data-pl-reg]');
   if (!block) return;
-  const noVat = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
-  block.hidden = !noVat;
-  if (!noVat) {
-    const veld = q('input[name=reg_number]');
-    if (veld) veld.value = '';
+  const veld = q('input[name=reg_number]');
+  const btw = q('input[name=vat]');
+  const noVatBox = q('input[type="checkbox"][name="no_vat"]');
+  const land = String((q('select[name="country"]') || {}).value || '').trim().toUpperCase();
+
+  /* ── PER LAND — 29 september 2026 ──────────────────────────────────────────
+     Zie de noot bij [data-pl-vatveld] in OrderFlow.astro.
+       nl     KVK-nummer verplicht, btw-nummer optioneel, geen vinkje nodig.
+       eu     zoals het was: btw-nummer, of "geen btw-nummer" + registratienummer.
+       other  geen btw-veld; registratienummer optioneel.
+       ''     nog geen land: zoals het was, niets verbergen. */
+  const soort = !land ? '' : land === HOME_COUNTRY ? 'nl' : isEu(land) ? 'eu' : 'other';
+
+  const vatVeld = q('[data-pl-vatveld]');
+  if (vatVeld) vatVeld.hidden = soort === 'other';
+  const noVatRij = q('[data-pl-novat]');
+  if (noVatRij) noVatRij.hidden = soort === 'nl' || soort === 'other';
+  if (noVatBox && (soort === 'nl' || soort === 'other')) noVatBox.checked = false;
+  if (btw) {
+    /* Btw verplicht alleen in een ander EU-land; in NL mag hij erbij, buiten de
+       EU bestaat hij niet en gaat een oude waarde niet mee naar de server. */
+    btw.dataset.plReq = (soort === 'eu' || soort === '') ? '1' : '0';
+    if (soort === 'other') btw.value = '';
+    const req = q('[data-pl-vat-req]');
+    const opt = q('[data-pl-vat-opt]');
+    if (req) req.hidden = btw.dataset.plReq !== '1';
+    if (opt) opt.hidden = btw.dataset.plReq === '1';
+  }
+
+  const noVat = !!(noVatBox && noVatBox.checked);
+  const toon = soort === 'nl' || soort === 'other' || noVat;
+  block.hidden = !toon;
+  if (!toon && veld) veld.value = '';
+
+  const nl = soort === 'nl';
+  const label = q('[data-pl-reg-label]', block);
+  if (label) label.textContent = nl ? label.dataset.kvk : label.dataset.reg;
+  const hint = q('[data-pl-reg-hint]', block);
+  if (hint) hint.textContent = (nl ? hint.dataset.nl : soort === 'other' ? hint.dataset.other : hint.dataset.eu) || hint.textContent;
+  if (veld) {
+    /* Verplicht in NL (altijd) en in de EU (als er geen btw-nummer is); buiten
+       de EU nooit. `plReqWhen` hangt het in de EU aan het vinkje. */
+    veld.dataset.plReq = soort === 'other' ? '0' : '1';
+    if (nl) delete veld.dataset.plReqWhen; else veld.dataset.plReqWhen = 'no_vat';
+    if (soort === 'other') delete veld.dataset.plReqWhen;
+    const rq = q('[data-pl-reg-req]', block);
+    const op = q('[data-pl-reg-opt]', block);
+    if (rq) rq.hidden = soort === 'other';
+    if (op) op.hidden = soort !== 'other';
+    if (nl) { veld.setAttribute('pattern', '[\\s.]*(\\d[\\s.]*){8}'); veld.setAttribute('inputmode', 'numeric'); }
+    else { veld.removeAttribute('pattern'); veld.removeAttribute('inputmode'); }
+    veld.dataset.plErrMsg = nl ? (veld.dataset.errKvk || veld.dataset.plErrMsg) : (veld.dataset.errReg || veld.dataset.plErrMsg);
   }
   syncRequired();
 }
@@ -1189,7 +1237,7 @@ function bindErrors() {
     if (n === 'country' || n === 'vat') syncVatFormat();
     // Het registratienummer hangt alleen aan het vinkje, niet aan het land: de
     // eis is "geen btw-nummer, dus iets anders", en die geldt overal.
-    if (n === 'no_vat') syncReg();
+    if (n === 'no_vat' || n === 'country') syncReg();
   };
   form.addEventListener('input', watch);
   form.addEventListener('change', watch);
@@ -2945,6 +2993,7 @@ function syncTotal() {
     if (outfits > 0) noteText += c('total.outfit', { price: euro(cfg.outfitSurcharge), n: outfits });
     if (extras > 0) noteText += c('total.extra', { price: euro(quote.extraRate), n: extras });
     if (hoog > 0) noteText += c('total.hoogRes', { price: euro(quote.hoogPrijs), n: hoog, px: String((cfg.hoogRes && cfg.hoogRes.hoog) || '') });
+    if (stijlToeslagNu() > 0 && Number.isInteger(n)) noteText += c('total.eigenLook', { price: euro(stijlToeslagNu()), n });
     if (voorrang !== null) noteText += c('total.voorrang', { price: euro(voorrang) });
   } else if (kind && !Number.isInteger(n) && q('select[name="products"]')?.value) {
     // The escape hatch. Not a failure to price — a count this form is not
@@ -6623,11 +6672,32 @@ const REQUIRED_DETAILS = [
   'first_name', 'last_name', 'brand', 'email', 'country', 'address_line1', 'postal_code', 'city',
 ];
 
+/* Is er een ingelogde klant? Dan gaat de bestelling via /account/order — zie
+   submit hieronder. Blijft false bij een uitgelogde bezoeker of een mislukte
+   /account/me: dan gewoon /api/order, zoals altijd. */
+let ingelogdBestellen = false;
+
+function toonTegoed(me) {
+  const el = q('[data-pl-tegoed]');
+  const cents = Math.round(Number(me && me.tegoedCents) || 0);
+  if (!el || !(cents > 0)) return;
+  const nl = document.documentElement.lang === 'nl';
+  const bedrag = '€ ' + new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);
+  el.textContent = String(el.dataset.tekst || '').replace('{bedrag}', bedrag);
+  el.hidden = false;
+}
+
 function bindPrefill() {
   accountMe()
     .then((me) => {
       if (!form) return;
-      if (me) { applyAccount(me); return; }
+      if (me) {
+        ingelogdBestellen = !!me.email;
+        if (ingelogdBestellen) form.setAttribute('action', '/account/order');
+        toonTegoed(me);
+        applyAccount(me);
+        return;
+      }
       /*
        * ── OOK VOOR WIE NIET IS INGELOGD — 7 augustus 2026 ───────────────────
        *
@@ -7818,7 +7888,12 @@ function renderSummary() {
       const n = b.closest('.ch-opt') && b.closest('.ch-opt').querySelector('.ch-name');
       return n ? n.textContent.trim() : b.value;
     });
-    rows.push([c('sum.channels'), namen.length ? namen.join(', ') : c('sum.channelsNone')]);
+    /* "we leveren op zuiver wit" klopt alleen als de achtergrond ook wit is. Bij
+       een eigen kleur stond er "Niet gezegd — we leveren op zuiver wit" boven
+       "Achtergrond: Je eigen kleur — #1E3A5F". 24 september 2026. */
+    const bgNu = String(value('background_hex') || '').toUpperCase();
+    const geenKanaal = (!bgNu || bgNu === '#FFFFFF') ? c('sum.channelsNone') : c('sum.channelsNoneKort');
+    rows.push([c('sum.channels'), namen.length ? namen.join(', ') : geenKanaal]);
   }
 
   // The background, read back as the name AND the value — the two things a
@@ -7872,9 +7947,18 @@ function renderSummary() {
      /start/complete. Bij een bestelling met allebei krijgen ze een eigen
      etiket, want "Stijl · Classic" en "Stijl · Dunes" onder elkaar zegt niet
      welke helft welke is. */
-  const heeftBeide = !!q('[name="catalog_style"]') && !!q('[name="style"]');
-  stijlRij('catalog_style', heeftBeide ? 'sum.styleCatalog' : 'sum.style');
-  stijlRij('style', heeftBeide ? 'sum.styleLifestyle' : 'sum.style');
+  /* EEN EIGEN CATALOGLOOK (24 september 2026). Op /start/catalog komen de eigen
+     looks van de klant als `style=cs-…` naast de catalogstijl. Het overzicht
+     zei dan "Stijl · catalog: Classic" én "Stijl · lifestyle: <eigen look>" bij
+     een bestelling zonder lifestyle. Bij catalog is de eigen look DE stijl. */
+  const eigen = q('input[name="style"]:checked');
+  if (kindOf() === 'catalog' && eigen && !eigen.matches(':disabled') && /^cs-/.test(eigen.value)) {
+    stijlRij('style', 'sum.style');
+  } else {
+    const heeftBeide = !!q('[name="catalog_style"]') && !!q('[name="style"]');
+    stijlRij('catalog_style', heeftBeide ? 'sum.styleCatalog' : 'sum.style');
+    stijlRij('style', heeftBeide ? 'sum.styleLifestyle' : 'sum.style');
+  }
 
   // De verhouding. Altijd, want elke bestelling heeft er een — er is geen
   // stroom waar deze vraag niet wordt gesteld, en dus geen leeg antwoord dat
@@ -7893,7 +7977,7 @@ function renderSummary() {
      product bij komt. Wie ze niet koos, ziet ze niet — een regel "0 producten
      in 4K" is ruis. */
   const hoogN = hoogResCount();
-  if (hoogN > 0) rows.push([c('sum.hoogRes'), c('sum.hoogResN', { n: hoogN, px: String((cfg.hoogRes && cfg.hoogRes.hoog) || '') })]);
+  if (hoogN > 0) rows.push([c('sum.hoogRes'), c(hoogN === 1 ? 'sum.hoogRes1' : 'sum.hoogResN', { n: hoogN, px: String((cfg.hoogRes && cfg.hoogRes.hoog) || '') })]);
   if (voorrangAan()) rows.push([c('sum.voorrang'), c('sum.voorrangJa', { uren: String((cfg.voorrang && cfg.voorrang.uren) || 24) })]);
 
   /* De hoeken bij NAAM. Het bedrag staat al in de totaalregel; wat hier hoort is
@@ -7964,9 +8048,11 @@ function renderSummary() {
   // it there. Everything else says what actually happens next instead.
   const ws = value('window_start');
   const we = value('window_end');
+  /* Met voorrang staat de leverregel al hierboven ("we mikken op 24 uur") —
+     een tweede regel "Standaard levertijd" eronder spreekt hem tegen. */
   if (attended && ws) rows.push([c('sum.window'), we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws)]);
   else if (attended) rows.push([c('sum.window'), c('sum.windowLater')]);
-  else rows.push([c('sum.window'), c('sum.queue')]);
+  else if (!voorrangAan()) rows.push([c('sum.window'), c('sum.queue')]);
 
   /*
    * HET GEZICHT. Ook als het "wij kiezen er een" is, en dat is met opzet:
@@ -8122,7 +8208,9 @@ function onSubmit(e) {
   // hand the client a JSON body where a page should be.
   fd.set('mode', 'json');
 
-  fetch('/api/order', { method: 'POST', body: fd, headers: { accept: 'application/json' } })
+  /* Een ingelogde klant bestelt via /account/order (29 september 2026): alleen
+     daar ziet de server de sessie, en dus het tegoed. Zie account.js. */
+  fetch(ingelogdBestellen ? '/account/order' : '/api/order', { method: 'POST', body: fd, headers: { accept: 'application/json' } })
     .then((r) => r.json().then((b) => ({ status: r.status, body: b })).catch(() => ({ status: r.status, body: null })))
     .then(({ status, body }) => finishSubmit(status, body))
     .catch(() => finishSubmit(0, null));
@@ -8187,6 +8275,9 @@ function finishSubmit(status, body) {
       }
       return;
     }
+    /* Onthouden welke bestelling er in dit tabblad net is geplaatst, voor als
+       de klant op de betaalpagina op "terug" drukt — zie checkOpenOrder(). */
+    try { if (body.ref) sessionStorage.setItem('vis-open-order', JSON.stringify({ ref: body.ref, t: Date.now() })); } catch { /* geen opslag */ }
     // Deliberately not release()d — the page is leaving, and re-enabling the
     // button during the navigation is an invitation to press it twice.
     location.assign(body.redirect);
@@ -8231,6 +8322,22 @@ function finishSubmit(status, body) {
     return;
   }
 
+  /* ── DE WEIGERING DIE DE PAGINA AL KENT — 23 september 2026 ──────────────
+     /test-sample heeft voor 'sample-used' (één proef per bedrijf) een eigen
+     kader met uitleg en twee uitwegen, maar dat kader werd alleen getoond op
+     de omleiding ?error=… van een gewone POST. Deze fetch kreeg dezelfde
+     weigering als JSON en zette er "je bestelling kwam niet aan op onze
+     server" onder — onwaar, en zonder de reden. Staat er voor deze code een
+     [data-form-refusal], dan is dát het antwoord. */
+  if (status >= 400 && body && body.error && typeof document.querySelector === 'function') {
+    const kader = document.querySelector(`[data-form-refusal="${String(body.error).replace(/[^a-z0-9-]/gi, '')}"]`);
+    if (kader) {
+      kader.hidden = false;
+      try { kader.focus({ preventScroll: false }); } catch { kader.scrollIntoView({ block: 'center' }); }
+      return;
+    }
+  }
+
   if (status === 400 && body && body.error === 'email') {
     setError(c('submit.email'));
     show(3);
@@ -8254,6 +8361,10 @@ function setError(text) {
   if (!box) return;
   box.textContent = text || '';
   box.hidden = !text;
+  /* In beeld, en niet achter de vaste balk: de melding stond na een
+     geweigerde verzending half onder de navigatie. scroll-margin-top staat
+     in de css van .pl-error. */
+  if (text) { try { box.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); } catch { /* ok */ } }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8330,4 +8441,40 @@ function bytes(n) {
   const v = Number(n) || 0;
   if (v >= 1024 * 1024) return `${(v / (1024 * 1024)).toFixed(v >= 10 * 1024 * 1024 ? 0 : 1).replace('.', cfg.lang === 'nl' ? ',' : '.')} MB`;
   return `${Math.max(1, Math.round(v / 1024))} kB`;
+}
+
+/**
+ * ── TERUG VAN DE BETAALPAGINA — 24 september 2026 ──────────────────────────
+ *
+ * Staat er in dit tabblad een bestelling van het afgelopen uur die nog niet
+ * betaald is, dan zegt het formulier dat bovenaan, met een knop die er een
+ * verse betaling voor maakt (/api/order-pay) en een knop om toch opnieuw te
+ * beginnen. Betaald, geannuleerd of niet te lezen: het blok blijft weg en de
+ * sleutel verdwijnt. Alleen sessionStorage — één tabblad, weg bij sluiten.
+ */
+function checkOpenOrder() {
+  let open = null;
+  try { open = JSON.parse(sessionStorage.getItem('vis-open-order') || 'null'); } catch { open = null; }
+  const blok = q('[data-pl-open]');
+  if (!open || !open.ref || !blok) return;
+  const vergeet = () => { try { sessionStorage.removeItem('vis-open-order'); } catch { /* geen opslag */ } };
+  if (!(Date.now() - Number(open.t || 0) < 60 * 60 * 1000)) { vergeet(); return; }
+  if (!/^VIS-[A-Z0-9-]{3,20}$/i.test(open.ref)) { vergeet(); return; }
+  const taal = (q('input[name="lang"]') || {}).value === 'nl' ? 'nl' : 'en';
+  fetch(`/api/order-status?ref=${encodeURIComponent(open.ref)}`, { headers: { accept: 'application/json' } })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((st) => {
+      if (!st || st.paid || st.cancelled || !st.payable) { vergeet(); return; }
+      const ref = q('[data-pl-open-ref]', blok);
+      if (ref) ref.textContent = open.ref;
+      const pay = q('[data-pl-open-pay]', blok);
+      if (pay) pay.href = `/api/order-pay?ref=${encodeURIComponent(open.ref)}&lang=${taal}`;
+      const nieuw = q('[data-pl-open-new]', blok);
+      if (nieuw) nieuw.addEventListener('click', () => { vergeet(); blok.hidden = true; }, { once: true });
+      blok.hidden = false;
+      /* De browser zet de scrollpositie terug op waar de verstuurknop stond —
+         op een formulier dat nu weer op stap 1 staat is dat de footer. */
+      try { blok.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch { /* oude browser */ }
+    })
+    .catch(() => { /* niets te melden: het formulier werkt gewoon */ });
 }

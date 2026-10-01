@@ -32,7 +32,16 @@
  *
  * ── VIJF REGELS DIE IN DE CODE HOREN EN NIET IN EEN AFSPRAAK ───────────────
  *
- * 1 · TEGOED IS EXCLUSIEF BTW, en dat is geen boekhoudkundige smaak maar een
+ * ── 29 SEPTEMBER 2026: REGEL 1 IS HERZIEN ──────────────────────────────────
+ * Zie de kop van src/lib/tegoedVerrekening.js. Het tegoed is GELD: het bedrag
+ * dat de klant betaalde en na een annulering liet staan (bruto, want de
+ * creditnota draait de btw van de oude factuur volledig terug). Het wordt
+ * verrekend met het te betalen bedrag INCLUSIEF btw; de nieuwe factuur blijft
+ * volledig. Wat hieronder bij regel 1 staat, is de oorspronkelijke redenering
+ * en laat zien waarom hij niet klopte met wat de annulering al boekte. De
+ * regels 2 tot en met 5 gelden onverkort.
+ *
+ * 1 · (HERZIEN, zie hierboven) TEGOED IS EXCLUSIEF BTW, en dat is geen boekhoudkundige smaak maar een
  *     gevolg van wat dit tegoed IS. Een tegoed dat aan catalog, lifestyle én
  *     video besteed kan worden bij klanten in Nederland (21%), de EU met een
  *     btw-nummer (verlegd) en daarbuiten (niet belast), is een tegoedbon voor

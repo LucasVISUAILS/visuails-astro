@@ -119,6 +119,9 @@ const COPY = {
     label: 'The on-model shot',
     labelNote: 'One photo of the product being worn, so a shopper can see the fit and the drape instead of guessing at them. It is part of every catalog set at no extra cost, and it is the reason the set is four photos and not three.',
     lead: 'Every catalog set includes one on-model photo at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
+    /* De lifestylevorm (24 september 2026): daar stond de catalogtekst over
+       "vier foto's en niet drie". */
+    labelNoteLifestyle: 'One photo of the product being worn, so a shopper can see the fit and the drape instead of guessing at them. It is one of the three images in every carousel, at no extra cost.',
     leadLifestyle: 'Every carousel includes one photo of the product being worn, at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
     /* ── DE PROEF KENT ZIJN SOORT NOG NIET — 10 september 2026 ──────────────
        Op /test-sample staat de soort in dezelfde stap als deze keuze: een
@@ -155,7 +158,7 @@ const COPY = {
     kiesErr: 'Pick who wears it — or pick the first tile and we choose one.',
     why: 'About these faces',
     whyP: [
-      `These ${rosterWoord('en')} are our standard roster and it is shared. A face you pick here can appear on another brand next month, in the same way a stock model can. For most catalogues that is fine — a shopper is judging the garment.`,
+      `These ${rosterWoord('en')} are our standard roster and it is shared. A face you pick here can appear on another brand next month, in the same way a stock model can. For most catalogs that is fine — a shopper is judging the garment.`,
       'If you would rather the face were yours alone, a Brand Model is designed once, for you, and is used nowhere else. That is a separate product with its own price, and you do not have to decide it now: a standard face today does not stop you moving to your own later.',
     ],
     brandCta: 'What a Brand Model is',
@@ -171,7 +174,8 @@ const COPY = {
     label: 'De foto op een model',
     labelNote: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij zit zonder meerprijs in elke catalogset, en hij is de reden dat die set uit vier foto\u2019s bestaat en niet uit drie.',
     lead: 'Bij elke catalogset zit één foto op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
-    leadLifestyle: 'In elke carousel zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
+    labelNoteLifestyle: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij is een van de drie beelden in elke carrousel, zonder meerprijs.',
+    leadLifestyle: 'In elke carrousel zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     /* Zie de Engelse tegenhanger. */
     leadProef: 'In je proef zit één foto waarop het product gedragen wordt, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     /* Zie de Engelse tegenhanger. */
@@ -201,7 +205,7 @@ const nl = lang === 'nl';
   {/* "On-model" is vakjargon dat op deze site alleen op /catalog wordt
       uitgelegd, en dan nog binnen een dichtgeklapte vraag. Hier staat het als
       kop boven een keuze die de klant moet maken. */}
-  <h3 class="pl-sub-h" id="pl-model-h">{c.label} <Note lang={lang} term={nl ? 'de foto op een model' : 'the on-model shot'}>{c.labelNote}</Note></h3>
+  <h3 class="pl-sub-h" id="pl-model-h">{c.label} <Note lang={lang} term={nl ? 'de foto op een model' : 'the on-model shot'}>{soort === 'lifestyle' ? c.labelNoteLifestyle : c.labelNote}</Note></h3>
   {/* In de strook staat de leadzin niet: die legt uit WAAR de modelfoto in je
       bestelling zit, en dat is een pagina-uitleg. Naast de productkaarten is de
       vraag "wie draagt het" al beantwoord door de kop erboven. */}

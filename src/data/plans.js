@@ -151,8 +151,8 @@ export const TERMS = {
      * twaalf maanden die per maand wordt geïncasseerd, laat de studio nog steeds
      * het incassorisico en de mislukte betalingen dragen en ze kan er niets mee
      * doen; vooruitbetaald geld staat op de rekening. Deze termijn koopt daarom
-     * VOORWAARDEN — een staande week, drie maanden doorschuiven, een prijsslot,
-     * het merkmodel op Studio — en `prepaid` koopt daar een PRIJS bij.
+     * VOORWAARDEN — drie maanden doorschuiven, een prijsslot, het merkmodel op
+     * Studio (de vaste week heeft sinds 29 september 2026 elk abonnement) — en `prepaid` koopt daar een PRIJS bij.
      *
      * WAT HET KOST: Starter op de jaartermijn gaat van € 325 terug naar € 390 per
      * maand. Dat is een prijsverhoging op een bestaand aanbod, en het kan vandaag
@@ -160,7 +160,10 @@ export const TERMS = {
      * gesprek met klanten geweest. */
     discountMonths: {},
     rollover: 3,
-    perks: ['standingWindow', 'priceLock', 'brandModel'],
+    /* 'standingWindow' is weg (29 september 2026): elk abonnement heeft een vaste
+       week, ook het maandelijkse — Lucas: "Goed" op het voorstel om de tekst
+       aan te passen in plaats van de week bij maandelijks weg te halen. */
+    perks: ['priceLock', 'brandModel'],
     name: { en: '12 months', nl: '12 maanden' },
   },
   /* ── HET VOORUITBETAALDE JAAR — 10 september 2026 ─────────────────────────
@@ -182,8 +185,8 @@ export const TERMS = {
    * verbintenis van twaalf maanden die per maand wordt afgeschreven, laat de
    * studio nog steeds het incassorisico en de mislukte betalingen dragen en ze
    * kan er niets mee doen. Vooruitbetaald geld staat op de rekening. Daarom
-   * koopt `yearly` VOORWAARDEN (een staande week, drie maanden doorschuiven, een
-   * prijsslot, het merkmodel op Studio) en koopt `prepaid` daar een PRIJS bij.
+   * koopt `yearly` VOORWAARDEN (drie maanden doorschuiven, een prijsslot, het
+   * merkmodel op Studio) en koopt `prepaid` daar een PRIJS bij.
    */
   prepaid: {
     id: 'prepaid',
@@ -220,7 +223,7 @@ export const TERMS = {
        meting. Zie PREPAY_FLOOR_SHARE. */
     floorShare: PREPAY_FLOOR_SHARE,
     rollover: 3,
-    perks: ['standingWindow', 'priceLock', 'brandModel', 'prepaid'],
+    perks: ['priceLock', 'brandModel', 'prepaid'],
     name: { en: '12 months up front', nl: '12 maanden vooruit' },
   },
 };

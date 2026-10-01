@@ -1,0 +1,8 @@
+/* De balk boven de voorvertoning van het klantportaal (/admin/orders/<id>/portaal).
+   Eigen bestand, want het portaal heeft zijn eigen css en de CSP van het
+   adminscherm laat geen style="…" toe. */
+.vv-balk { position: fixed; inset-inline: 0; inset-block-start: 0; z-index: 99; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .5rem .9rem; background: #111210; color: #fff; font: 600 13px/1.3 system-ui, sans-serif; }
+.vv-kop { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.vv-uitleg { opacity: .75; font-weight: 400; }
+.vv-terug { margin-inline-start: auto; color: #C9BDFF; }
+.vv-ruimte { height: 44px; }

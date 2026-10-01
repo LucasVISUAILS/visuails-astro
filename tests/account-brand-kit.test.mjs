@@ -781,8 +781,10 @@ console.log('\nde staat van elke sectie');
     plan.view.geen === false && plan.view.saldo.credit.toegekend === 240 && plan.view.saldo.credit.saldo === 130);
   /* De balk draagt zijn stand als een trap van vijf procent, want inline stijl
      mag niet van het CSP-beleid — zie de noot bij pctStap in account.js. */
-  check('en de balk staat op een veelvoud van vijf procent',
-    plan.view.saldo.credit.pctStap % 5 === 0 && plan.view.saldo.credit.pctStap === 45);
+  /* Sinds 24 september 2026 toont de balk wat er OVER is (130 van 240 = 54%,
+     afgerond op de trap: 55), en niet wat er op is. */
+  check('en de balk staat op een veelvoud van vijf procent, op wat er over is',
+    plan.view.saldo.credit.pctStap % 5 === 0 && plan.view.saldo.credit.pctStap === 55);
   /* De diensten staan als kaarten, met de prijs in credits erop. */
   check('en er staat een kaart per dienst met zijn creditprijs',
     plan.view.saldo.dienstKaarten.length >= 4

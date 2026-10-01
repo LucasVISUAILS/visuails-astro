@@ -40,9 +40,9 @@ import { waHref } from '../data/whatsapp.js';
 /* AMOUNT erbij: de annuleringstekst noemt het teruggestorte bedrag van de
    proefvisual, en dat is een prijs — die hoort uit pricing.js te komen. */
 import {
-  TIERS, turnaround, AMOUNT, euro,
+  turnaround, AMOUNT, euro,
   /* Voor de abonnementsregel onderaan — zie PLAN_REGEL hieronder. */
-  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND,
+  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, creditSaving,
   UPGRADE_TRIGGER_PRODUCTS,
 } from '../data/pricing.js';
 import { mailNote } from '../data/mailNote.js';
@@ -54,7 +54,6 @@ const { lang } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 
-const T0 = TIERS.unattended;
 const TIMING = turnaround('unattended', lang);
 
 /*
@@ -80,18 +79,24 @@ const TIMING = turnaround('unattended', lang);
 const PLAN_ID = 'studio';
 const PLAN_KAART = plans(lang).find((p) => p.id === PLAN_ID);
 const PLAN_LADDER = planSaving(PLAN_ID);
+/* Voor wie net LIFESTYLE bestelde (24 september 2026): die las "30 catalogsets
+   los kosten €1.170" — een vergelijking met iets wat hij niet bestelt. Dezelfde
+   credits als lifestylecarrousels, los besteld. */
+const PLAN_LADDER_LS = creditSaving(PLAN_KAART.credits, PLAN_AMOUNT[PLAN_ID], 'lifestyle');
 /* In credits sinds 23 september 2026: wat het plan geeft, en wat dezelfde
    credits als catalogsets los kosten. Geen Editions-belofte meer: die set
    draait nog niet. */
 const PLAN_REGEL = nl ? {
   h: 'Elke maand hetzelfde nodig?',
   compare: `Het ${PLAN_KAART.name}-abonnement geeft ${PLAN_KAART.credits} credits per maand voor ${euro(PLAN_AMOUNT[PLAN_ID], 'nl')}, te besteden aan catalog, lifestyle en video. ${PLAN_LADDER.sets} catalogsets los kosten ${euro(PLAN_LADDER.onLadder, 'nl')}.`,
-  steady: 'Een abonnement geeft je elke maand credits en vaste productiedagen.',
+  compareLs: `Het ${PLAN_KAART.name}-abonnement geeft ${PLAN_KAART.credits} credits per maand voor ${euro(PLAN_AMOUNT[PLAN_ID], 'nl')}, te besteden aan catalog, lifestyle en video. ${PLAN_LADDER_LS.count} lifestylecarrousels los kosten ${euro(PLAN_LADDER_LS.los, 'nl')}.`,
+  steady: 'Een abonnement geeft je elke maand credits en een vaste week.',
   cta: 'Bekijk de abonnementen',
 } : {
   h: 'Need the same every month?',
   compare: `The ${PLAN_KAART.name} plan gives ${PLAN_KAART.credits} credits a month for ${euro(PLAN_AMOUNT[PLAN_ID], 'en')}, to spend on catalog, lifestyle and video. ${PLAN_LADDER.sets} catalog sets one-off cost ${euro(PLAN_LADDER.onLadder, 'en')}.`,
-  steady: 'A plan gives you credits and fixed production days every month.',
+  compareLs: `The ${PLAN_KAART.name} plan gives ${PLAN_KAART.credits} credits a month for ${euro(PLAN_AMOUNT[PLAN_ID], 'en')}, to spend on catalog, lifestyle and video. ${PLAN_LADDER_LS.count} lifestyle carousels one-off cost ${euro(PLAN_LADDER_LS.los, 'en')}.`,
+  steady: 'A plan gives you credits and a fixed week every month.',
   cta: 'See the plans',
 };
 
@@ -111,26 +116,32 @@ const c = nl ? {
   nowH: 'Wat er nu gebeurt',
   payQ: 'Staat er een betaallink in je bevestigingsmail?',
   payA: 'Rond die betaling af — je bestelling staat genoteerd, maar de productie start pas als de betaling binnen is.',
-  flow: 'Daarna lezen we wat je hebt gestuurd, maken we je visuals, en kijkt een specialist elk resultaat na voordat het bij jou komt.',
+  flow: 'We lezen wat je hebt gestuurd, maken je visuals, en een specialist kijkt elk resultaat na voordat het bij jou komt.',
   /* Een AANVRAAG (video, hooks, editions, eigen look) is geen bestelling: er
      wordt niets gemaakt en er is geen levertijd. Tot 19 september 2026 kreeg
      die dezelfde tekst als een bestelling — "we maken je visuals", "Levertijd:
      zo snel mogelijk". interactions.js wisselt op ?soort=aanvraag. */
-  flowRequest: 'We lezen je aanvraag en antwoorden schriftelijk met een voorstel en een prijs — meestal binnen 24 uur. Pas als jij daar ja op zegt, wordt het een bestelling.',
+  flowRequest: 'We lezen je aanvraag en antwoorden schriftelijk met een voorstel en een prijs — meestal binnen een werkdag. Pas als jij daar ja op zegt, wordt het een bestelling.',
+  /* Eerst de controle (btw-bewijs, adres buiten de EU): geen betaalknop nu,
+     de link volgt per mail. Zonder deze regel las de klant "we maken je
+     visuals" terwijl er nog niets loopt. */
+  flowReview: 'Er staat nog geen betaalknop: we kijken je gegevens eerst even na, meestal binnen een werkdag. Daarna krijg je de betaallink per mail, en we beginnen zodra de betaling binnen is.',
+  titleContact: 'Bedankt — we hebben je bericht.',
+  flowContact: 'Lucas leest het zelf en antwoordt via het kanaal dat je koos — meestal binnen het uur, buiten de openingstijden de volgende ochtend.',
   cta: 'Bekijk je bestelling',
-  signin: 'Log in met het e-mailadres van deze bestelling — we sturen je een link, er is geen wachtwoord.',
+  signin: 'De privélink in je bevestigingsmail opent deze bestelling zonder inloggen. In VISUAILS Studio log je in met het e-mailadres van deze bestelling — we mailen je een code en een link, er is geen wachtwoord.',
   sumH: 'Samenvatting',
   sumRef: 'Kenmerk',
   sumMail: 'Bevestiging verstuurd naar',
+  sumMailNone: 'Bevestiging per mail',
   sumTiming: 'Levertijd',
-  sumQueue: T0.queue.nl,
   askH: 'Vragen?',
   wa: 'Stuur een WhatsApp',
   mail: 'Mail hello@visuails.com',
   guide: 'Lees hoe je aanlevert',
   guidePdf: 'Fotogids als pdf',
   extraH: 'Meer hoeken, nauwkeuriger resultaat',
-  extraB: 'Hoe meer foto’s we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Een detailopname, de stof en een gedragen foto — gratis toe te voegen.',
+  extraB: 'Hoe meer foto’s we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Extra close-ups van de stof en een gedragen foto — gratis toe te voegen.',
   extraCta: 'Extra foto’s sturen',
   sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
   cancelP1: `Uit onze administratie blijkt dat er al een proef naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en het betaalde bedrag is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
@@ -147,22 +158,25 @@ const c = nl ? {
   nowH: 'What happens now',
   payQ: 'Is there a payment link in your confirmation email?',
   payA: 'Complete that payment — your order is noted, but production only starts once the payment has come through.',
-  flow: 'After that we read what you sent, prepare your visuals, and a specialist checks every result before it reaches you.',
-  flowRequest: 'We read your request and reply in writing with a proposal and a price — usually within 24 hours. It only becomes an order once you say yes.',
+  flow: 'We read what you sent, prepare your visuals, and a specialist checks every result before it reaches you.',
+  flowRequest: 'We read your request and reply in writing with a proposal and a price — usually within one working day. It only becomes an order once you say yes.',
+  flowReview: 'There is no payment button yet: we check your details first, usually within one working day. Then we send you the payment link by email, and we start as soon as the payment is in.',
+  titleContact: 'Thanks — we have your message.',
+  flowContact: 'Lucas reads it himself and replies through the channel you chose — usually within the hour, outside opening hours the next morning.',
   cta: 'See your order',
-  signin: 'Sign in with the email address on this order — we send you a link, there is no password.',
+  signin: 'The private link in your confirmation email opens this order without signing in. In VISUAILS Studio you sign in with the email address on this order — we email you a code and a link, there is no password.',
   sumH: 'Summary',
   sumRef: 'Reference',
   sumMail: 'Confirmation sent to',
+  sumMailNone: 'Confirmation by email',
   sumTiming: 'Turnaround',
-  sumQueue: T0.queue.en,
   askH: 'Questions?',
   wa: 'Message us on WhatsApp',
   mail: 'Email hello@visuails.com',
   guide: 'Read the upload guidelines',
   guidePdf: 'Photo guide as pdf',
   extraH: 'More angles, a closer match',
-  extraB: 'The more we have, the more accurately we match fit, colour and detail first time. A detail close-up, the fabric and an on-body shot — free to add.',
+  extraB: 'The more we have, the more accurately we match fit, colour and detail first time. Extra close-ups of the fabric and a worn shot — free to add.',
   extraCta: 'Send extra photos',
   sourceQ: 'One quick thing — how did you find us?',
   cancelP1: `Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the amount you paid is on its way back to the account you paid from. That usually takes a few working days.`,
@@ -191,7 +205,7 @@ const bronnen = nl
   <div class="ty-bar" data-ty-bar>
     <div class="ty-bar-in">
       <svg class="ty-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid}>{c.title}</h1>
+      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact}>{c.title}</h1>
     </div>
   </div>
 
@@ -218,14 +232,14 @@ const bronnen = nl
               zet hem aan bij ?pay=. Zonder link (contactformulier, checklist,
               terugkeer van Mollie) stond hier een vraag zonder antwoord. */}
           <p class="ty-pay" data-ty-payq hidden><strong>{c.payQ}</strong> {c.payA}</p>
-          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest}>{c.flow}</p>
+          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest} data-ty-flow-review={c.flowReview} data-ty-flow-contact={c.flowContact}>{c.flow}</p>
           <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt">{c.cta}</a></p>
           <p class="ty-signin" data-ty-signin>{c.signin}</p>
         </div>
       </div>
 
       <aside class="ty-side ty-hide-when-cancelled">
-        <h2 class="etiket ty-side-h">{c.sumH}</h2>
+        <h2 class="etiket ty-side-h" data-ty-niet-bij-contact>{c.sumH}</h2>
         {/* Gevuld door initThankYou() met het kenmerk uit ?ref. Blijft leeg en
             onzichtbaar als er geen geldig kenmerk is — wie hier op een andere manier
             belandt, krijgt gewoon geen kenmerkregel. */}
@@ -244,7 +258,10 @@ const bronnen = nl
           <dt>{c.sumRef}</dt><dd data-ty-ref></dd>
         </div>
         <div class="ty-row">
-          <dt>{c.sumMail}</dt>
+          {/* Zonder bekend adres (klant kwam via een betaallink uit de mail, of een
+              ander apparaat) stond hier "Bevestiging verstuurd naar" met niets
+              erachter. Dan wordt het kopje data-zonder. 24 september 2026. */}
+          <dt data-ty-mail-dt data-zonder={c.sumMailNone}>{c.sumMail}</dt>
           {/* Het adres komt uit sessionStorage (pipeline.js zet het vlak voor de
               doorstuur); de spamnotitie stond hier ALLEEN, onder een kopje dat een
               adres beloofde. 3 september 2026. */}
@@ -252,19 +269,19 @@ const bronnen = nl
         </div>
         <div class="ty-row">
           <dt data-ty-timing>{c.sumTiming}</dt>
-          <dd data-ty-timing>{TIMING}. {c.sumQueue}</dd>
+          <dd data-ty-timing>{TIMING}</dd>
         </div>
         <div class="ty-row ty-row-ask">
           <dt>{c.askH}</dt>
           <dd>
             <a href={waHref(nl ? 'Hoi VISUAILS, ik heb net een aanvraag gedaan via de site.' : 'Hi VISUAILS, I just sent a request through the site.')} target="_blank" rel="noopener">{c.wa}</a><br />
             <a href="mailto:hello@visuails.com">{c.mail}</a><br />
-            <a href={lp('/upload-guidelines')}>{c.guide}</a><br />
+            <a href={lp('/upload-guidelines')} data-ty-alleen-bestelling>{c.guide}</a><br data-ty-alleen-bestelling />
             {/* Het moment waarop iemand opstaat om de foto's te maken. De
                 pagina lees je hier; de pdf gaat mee naar waar het product
                 ligt. Zelfde bestand als op /upload-guidelines, /test-sample en
                 de uploadstap. 7 september 2026. */}
-            <a href={`/downloads/visuails-fotogids-${lang}.pdf`} download>{c.guidePdf}</a>
+            <a href={`/downloads/visuails-fotogids-${lang}.pdf`} download data-ty-alleen-bestelling>{c.guidePdf}</a>
           </dd>
         </div>
         </dl>
@@ -293,7 +310,7 @@ const bronnen = nl
       ervoor. */}
   <section class="paneel ty-foot ty-hide-when-cancelled">
     <div class="ty-grid ty-grid-voet">
-      <div class="ty-extra">
+      <div class="ty-extra" data-ty-alleen-bestelling>
         <div>
           <h2 class="hoog hoog-3">{c.extraH}</h2>
           <p class="lopend">{c.extraB}</p>
@@ -317,6 +334,7 @@ const bronnen = nl
     <p class="ty-plan" data-ty-plan data-ty-plan-min={String(UPGRADE_TRIGGER_PRODUCTS)} hidden>
       <b>{PLAN_REGEL.h}</b>
       <span data-ty-plan-compare hidden>{PLAN_REGEL.compare}</span>
+      <span data-ty-plan-compare-ls hidden>{PLAN_REGEL.compareLs}</span>
       <span data-ty-plan-steady hidden>{PLAN_REGEL.steady}</span>
       <a class="ty-plan-a" href={lp('/plans')}>{PLAN_REGEL.cta}</a>
     </p>

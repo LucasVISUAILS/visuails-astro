@@ -1,0 +1,15 @@
+import { start, tekst, sql, SITE } from './_dl.mjs';
+import { adminLogin } from './_admin.mjs';
+const email = process.argv[2];
+const [c] = await sql(`SELECT id, brand, name, email FROM customers WHERE email='${email}'`);
+console.log('klant', c, 'orders', (await sql(`SELECT COUNT(*) n FROM orders WHERE customer_id=${c.id}`))[0].n, 'facturen', (await sql(`SELECT COUNT(*) n FROM invoices i JOIN orders o ON o.id=i.order_id WHERE o.customer_id=${c.id}`))[0].n);
+const s = await start(); await adminLogin(s.page);
+await s.page.goto(SITE + `/admin/customers/${c.id}`, { waitUntil: 'load' });
+const wf = s.page.locator(`form[action="/admin/customers/${c.id}/wipe"]`);
+await wf.evaluate((f) => { let d = f.closest('details'); while (d) { d.open = true; d = d.parentElement.closest('details'); } });
+console.log('BLOK:', (await wf.evaluate((f) => (f.closest('details') || f).innerText)).replace(/\s+/g, ' ').slice(0, 700));
+await wf.locator('input[name="confirm"]').fill(c.brand || c.name || c.email);
+await Promise.all([s.page.waitForNavigation({ waitUntil: 'load' }), wf.locator('button[type="submit"]').click()]);
+console.log('→', s.page.url(), (await tekst(s.page, 'main, body')).replace(/\s+/g, ' ').slice(0, 500));
+console.log('na: klant', JSON.stringify(await sql(`SELECT id, email, brand, name, phone FROM customers WHERE id=${c.id}`)), 'orders', JSON.stringify(await sql(`SELECT id, email, name, brand, status FROM orders WHERE customer_id=${c.id} OR email='${email}'`)), 'facturen', (await sql(`SELECT COUNT(*) n FROM invoices`))[0].n);
+console.log(s.fouten); await s.stop();

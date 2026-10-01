@@ -66,7 +66,7 @@ export function guides(lang = 'en') {
   const rijen = l === 'nl' ? [
     ['Zo fotografeer je je product met je telefoon', 'De hoeken, het licht en de achtergrond. Lees dit vóór je bestelt.', '/upload-guidelines', 'Checklist'],
     ['Van foto naar publicatie — hoe het werkt', 'Van je foto tot het afgewerkte beeld.', '/how-it-works', 'Proces'],
-    ['AI-tools vs een done-for-you studio', 'Wanneer een AI-tool genoeg is, en wanneer niet.', '/compare', 'Vergelijk'],
+    ['AI-tools of een studio die het voor je doet', 'Wanneer een AI-tool genoeg is, en wanneer niet.', '/compare', 'Vergelijk'],
     ['Wat productvisuals echt kosten', `Catalog vanaf ${catInstap}, lifestyle vanaf ${lifeInstap}, dalend tot ${catVloer} en ${lifeVloer}; ${videoNl}. Alles ${vatLabel('excl', 'nl')}.`, '/pricing', 'Prijzen'],
     ['Vragen, beantwoord', 'Betaling, btw, modellen, levering en revisies.', '/faq', 'FAQ'],
   ] : [

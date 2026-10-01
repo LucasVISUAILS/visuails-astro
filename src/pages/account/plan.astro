@@ -45,6 +45,15 @@ const { t, lang, customer, thema, navDicht } = st;
           </div>
         </div>
       </section>
+      {v.tegoed && (
+        <section class="st-blok" aria-label={v.tegoed.h}>
+          <div class="st-kaart-vlak st-vlak st-saldo-tegel is-tegoed is-los">
+            <span class="st-eyebrow">{v.tegoed.h}</span>
+            <p class="st-credit-tel"><b>{v.tegoed.bedrag}</b></p>
+            <p class="st-meta">{v.tegoed.uitleg}</p>
+          </div>
+        </section>
+      )}
       {/* Drie dingen die een abonnement is, als beeld: de slots, de week, de look. */}
       <section class="st-blok" aria-label={t.planVisSlotsH}>
         <div class="st-uitleg">
@@ -105,25 +114,43 @@ const { t, lang, customer, thema, navDicht } = st;
                   Hier stonden tot vijf meters naast elkaar, elk met een eigen
                   teller en vervaldatum. Eén saldo is één balk, en het getal dat
                   ertoe doet (wat er nog over is) staat er in woorden naast. */}
+              {/* ── HET SALDO, ALS TEGELS — 24 september 2026 ─────────────────
+                  Lucas: "visueel duidelijk en goed zichtbaar … net als credits
+                  bij andere bedrijven, maar mooier en overzichtelijker." Wat je
+                  nog hebt staat groot, de balk loopt leeg in plaats van vol, en
+                  wanneer er nieuwe credits bijkomen staat eronder. Het tegoed
+                  (geld van een eerdere bestelling) staat ernaast als tweede
+                  tegel, alleen als er iets is. */}
               <div class="st-credit">
-                <div class="st-credit-kop">
-                  <div>
-                    <span class="st-eyebrow">{t.planCreditsH}</span>
+                <div class={`st-saldotegels${v.tegoed ? ' is-twee' : ''}`}>
+                  <div class="st-saldo-tegel">
+                    <span class="st-eyebrow">{t.planCreditsLeft}</span>
                     <p class="st-credit-tel"><b>{v.saldo.credit.saldo}</b> <span>{t.planOfN} {v.saldo.credit.toegekend}</span></p>
+                    <div class="st-credit-balk" role="img" aria-label={`${v.saldo.credit.saldo} ${t.planOfN} ${v.saldo.credit.toegekend}`}>
+                      <span class={`st-credit-vul is-p${v.saldo.credit.pctStap}`}></span>
+                    </div>
+                    {(v.saldo.credit.nieuw || v.saldo.credit.verval) && (
+                      <p class="st-meta st-credit-regel">
+                        {v.saldo.credit.nieuw}
+                        {v.saldo.credit.nieuw && v.saldo.credit.verval && ' · '}
+                        {v.saldo.credit.verval && <b>{v.saldo.credit.verval}</b>}
+                      </p>
+                    )}
                   </div>
-                  <div class="st-knoppen">
-                    <a class="btn btn-primary btn-sm" href="/account/plan?tab=bestellen">{t.planSlotFill}</a>
-                    <a class="btn btn-ghost btn-sm" href={v.saldo.startComplete}>{t.planRequest}</a>
-                  </div>
+                  {v.tegoed && (
+                    <div class="st-saldo-tegel is-tegoed">
+                      <span class="st-eyebrow">{v.tegoed.h}</span>
+                      <p class="st-credit-tel"><b>{v.tegoed.bedrag}</b></p>
+                      <p class="st-meta">{v.tegoed.uitleg}</p>
+                    </div>
+                  )}
                 </div>
-                <div class="st-credit-balk" role="img" aria-label={`${v.saldo.credit.verbruikt} ${t.planOfN} ${v.saldo.credit.toegekend}`}>
-                  <span class={`st-credit-vul is-p${v.saldo.credit.pctStap}`}></span>
+                <div class="st-knoppen">
+                  <a class="btn btn-primary btn-sm" href="/account/plan?tab=bestellen">{t.planSlotFill}</a>
+                  <a class="btn btn-ghost btn-sm" href={v.saldo.startComplete}>{t.planRequest}</a>
                 </div>
-                <p class="st-meta st-credit-regel">
-                  {t.planCreditsLede}
-                  {v.saldo.credit.verval && <Fragment> · <b>{v.saldo.credit.verval}</b></Fragment>}
-                </p>
-                {v.saldo.credit.leeg && <p class="st-melding is-warn">{t.planCreditEmpty}</p>}
+                <p class="st-meta st-credit-regel">{v.saldo.credit.lede}</p>
+                {v.saldo.credit.leeg && v.saldo.betaald && <p class="st-melding is-warn">{t.planCreditEmpty}</p>}
                 {v.saldo.credit.frames.length > 0 && (
                   <div class="st-frames">
                     {v.saldo.credit.frames.map((fr) => (
@@ -153,7 +180,7 @@ const { t, lang, customer, thema, navDicht } = st;
                 </ul>
               )}
               <p class="st-meta">{v.saldo.elkProduct && <Fragment>{t.planEachProduct} · </Fragment>}{t.planExtraNote}</p>
-              {!v.saldo.betaald && <p class="st-melding is-warn">{t.planUnpaid}</p>}
+              {!v.saldo.betaald && <p class="st-melding is-warn">{v.saldo.nooitBetaald ? <Fragment>{t.planFirstUnpaid} <a href={v.saldo.opnieuw}>{t.planFirstRetry}</a></Fragment> : t.planUnpaid}</p>}
             </div>
           </section>
           <section class="st-blok" aria-label={t.planWindowH}>
@@ -172,7 +199,7 @@ const { t, lang, customer, thema, navDicht } = st;
                     <div class="st-week-kies">
                       <span class="st-meta">{t.planWeekDag}</span>
                       <select id="week-dag" class="st-veld st-veld-kort" name="dag">
-                        {v.weekDagen.map((d) => <option value={d} selected={d === v.weekDag}>{d}e</option>)}
+                        {v.weekDagen.map((d) => <option value={d} selected={d === v.weekDag}>{lang === 'nl' ? `${d}e` : `${d}${[11, 12, 13].includes(d % 100) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[d % 10] || 'th'}`}</option>)}
                       </select>
                       <button class="btn btn-ghost btn-sm" type="submit">{t.planWeekVerzet}</button>
                     </div>
@@ -592,18 +619,25 @@ const { t, lang, customer, thema, navDicht } = st;
               <h2>{t.planBillingH}</h2>
               <dl class="st-feiten">
                 <div class="st-feit"><dt>{t.planBillingTerm}</dt><dd>{v.beheer.term}</dd></div>
-                <div class="st-feit"><dt>{t.planBillingAmount}</dt><dd>{v.beheer.bedrag}</dd></div>
+                <div class="st-feit"><dt>{v.beheer.bedragLabel}</dt><dd>{v.beheer.bedrag}</dd></div>
                 <div class="st-feit"><dt>{t.planStatusLabel}</dt><dd>{v.beheer.status}</dd></div>
+                {v.beheer.jaarTot && <div class="st-feit"><dt>{t.planYearUntil}</dt><dd>{v.beheer.jaarTot}</dd></div>}
               </dl>
               {v.beheer.beeindigd
                 ? <Fragment><p class="st-melding">{v.beheer.beeindigd}</p><p class="st-meta"><a class="st-link" href={v.beheer.plansHref}>{t.planNoneCta}</a></p></Fragment>
+                : v.beheer.jaarOpgezegd
+                ? <p class="st-melding">{v.beheer.jaarOpgezegd}</p>
                 : (
                   <Fragment>
                     <form method="post" action="/account/plan/pause">
                       <input type="hidden" name="do" value={v.beheer.gepauzeerd ? 'resume' : 'pause'} />
                       <button class="btn btn-ghost" type="submit">{v.beheer.gepauzeerd ? t.planResume : t.planPause}</button>
                     </form>
-                    <p class="st-meta">{t.planPauseNote}</p>
+                    <p class="st-meta">{v.beheer.pauzeNoot}</p>
+                    {/* Opzeggen achter één klik (29 september 2026): het is de zeldzaamste
+                        handeling op deze pagina, en hij stond even groot als pauzeren. */}
+                    <details class="st-opzeggen">
+                    <summary class="st-link">{t.planCancel}</summary>
                     <form method="post" action="/account/plan/cancel" class="st-rij is-mail">
                       <div class="st-veldgroep">
                         <label for="opz">{t.planCancelConfirm}</label>
@@ -611,7 +645,8 @@ const { t, lang, customer, thema, navDicht } = st;
                       </div>
                       <div class="st-veldgroep is-knop"><button class="btn btn-ghost" type="submit">{t.planCancel}</button></div>
                     </form>
-                    <p class="st-meta">{t.planCancelNote}</p>
+                    <p class="st-meta">{v.beheer.opzegNoot}</p>
+                    </details>
                   </Fragment>
                 )}
             </div>
@@ -622,15 +657,8 @@ const { t, lang, customer, thema, navDicht } = st;
   )}
 
   {(v.geen || v.nu === 'facturering') && (
-    <section class="st-blok" aria-label={v.account.h}>
-      <div class="st-kaart-vlak st-vlak">
-        <h2>{v.account.h}</h2>
-        <dl class="st-feiten">
-          <div class="st-feit"><dt>{v.account.emailLabel}</dt><dd>{v.account.email}</dd></div>
-          {v.account.brand && <div class="st-feit"><dt>{v.account.brandLabel}</dt><dd>{v.account.brand}</dd></div>}
-        </dl>
-        <p class="st-meta">{v.account.note}</p>
-      </div>
-    </section>
+    /* Alleen de vraagregel (29 september 2026): e-mailadres en merk stonden hier
+       nog een keer, terwijl ze onder "Je gegevens" staan en daar te wijzigen zijn. */
+    <p class="st-meta">{v.account.note}</p>
   )}
 </StudioLayout>

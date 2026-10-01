@@ -1,0 +1,51 @@
+import { start, foto, tekst, velden, mails, mailtekst, sql, SITE } from './_dl.mjs';
+import { studioLogin } from './_studio.mjs';
+const s = await start(); const { page } = s;
+await studioLogin(page, 'yara@merk.test');
+const klik = (sel) => page.evaluate((sel) => { const r = document.querySelector(sel); (r?.closest('label') || r)?.click(); return !!r; }, sel);
+// look catalog
+await page.goto(SITE + '/account/brand-kit', { waitUntil: 'load' });
+const forms = page.locator('main form[action="/account/lock"]');
+console.log('lock-forms:', await forms.count(), await forms.evaluateAll((fs) => fs.map((f) => f.querySelector('input[name="style"]')?.value)));
+const f0 = forms.nth(0);
+await f0.locator('input[name="face"][value="rava"]').evaluate((r) => r.closest('label').click());
+await f0.locator('input[name="background_hex"][value="#FFFFFF"]').evaluate((r) => r.closest('label').click());
+await f0.locator('input[name="ratio"][value="square"]').evaluate((r) => r.closest('label').click());
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), f0.locator('button[type="submit"]').click()]);
+console.log('na catalog-look:', page.url());
+const t1 = await tekst(page, 'main'); console.log(t1.slice(t1.indexOf('STANDAARD PER DIENST'), t1.indexOf('STANDAARD PER DIENST') + 300).replace(/\n+/g, ' | '));
+// look lifestyle
+const f1 = page.locator('main form[action="/account/lock"]').nth(1);
+await f1.evaluate((f) => { f.closest('details')?.setAttribute('open', ''); });
+await f1.locator('input[name="face"][value="rava"]').evaluate((r) => r.closest('label').click());
+await f1.locator('input[name="look"][value="flash"]').evaluate((r) => r.closest('label').click());
+await f1.locator('input[name="ratio"][value="portrait45"]').evaluate((r) => r.closest('label').click());
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), f1.locator('button[type="submit"]').click()]);
+const t2 = await tekst(page, 'main'); console.log('na lifestyle-look:', t2.slice(t2.indexOf('STANDAARD PER DIENST'), t2.indexOf('STANDAARD PER DIENST') + 400).replace(/\n+/g, ' | '));
+await foto(page, 'brand-kit-gezet', { vol: true });
+// wachtrij: product toevoegen met foto's, meteen vastzetten
+await page.goto(SITE + '/account/plan?tab=bestellen', { waitUntil: 'load' });
+const q = page.locator('main form[action="/account/plan/queue"]').first();
+console.log('queue-form:', await q.count());
+await q.locator('input[name="name"]').fill('Blauwe hoodie');
+await q.locator('select[name="soort"]').selectOption({ index: 4 });
+await q.locator('select[name="kind"]').selectOption('catalog');
+await q.locator('input[name="fotos_voorkant"]').setInputFiles('/tmp/claude-0/dl/voor.jpg');
+await q.locator('input[name="fotos_achterkant"]').setInputFiles('/tmp/claude-0/dl/achter.jpg');
+await q.locator('input[name="fotos_detail"]').setInputFiles('/tmp/claude-0/dl/detail.jpg');
+await q.locator('input[name="meteen"]').evaluate((r) => r.closest('label').click());
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), q.locator('button[type="submit"]').click()]);
+console.log('na toevoegen:', page.url());
+console.log((await tekst(page, 'main')).replace(/\n{2,}/g, '\n').slice(0, 2500));
+await foto(page, 'plan-lijst-1', { vol: true });
+// tweede product zonder foto's (concept), lifestyle
+const q2 = page.locator('main form[action="/account/plan/queue"]').last();
+await q2.locator('input[name="name"]').fill('Rode rok');
+await q2.locator('select[name="kind"]').selectOption('lifestyle');
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), q2.locator('button[type="submit"]').click()]);
+console.log((await tekst(page, 'main')).replace(/\n{2,}/g, '\n').slice(0, 2500));
+await foto(page, 'plan-lijst-2', { vol: true });
+console.log(await sql("SELECT id, position, name, kind, locked_at, upload_batch, note, model, wanted_day FROM plan_queue ORDER BY id"));
+console.log(await sql("SELECT * FROM subscription_slots WHERE subscription_id=(SELECT MAX(id) FROM subscriptions)"));
+console.log(s.fouten);
+await s.stop();

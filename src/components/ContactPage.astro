@@ -54,7 +54,7 @@ const c = nl ? {
   mailKop: 'E-mail',
   mailP: 'Voor uitgebreide briefings, facturen of bijlagen.',
   urenKop: 'Openingstijden',
-  uren: ['Ma–vr 08:00–20:00 CET', 'Za–zo 09:00–20:00 CET'],
+  uren: ['Ma–vr 08:00–20:00 (Nederlandse tijd)', 'Za–zo 09:00–20:00 (Nederlandse tijd)'],
   plaatsKop: 'Locatie',
   plaats: ['Enschede, Nederland', 'KVK 99742993'],
   plaatsLink: 'Volledige bedrijfsgegevens',
@@ -90,7 +90,7 @@ const c = nl ? {
   vBerichtMelding: 'Schrijf even waar het over gaat, dan kunnen we meteen inhoudelijk reageren.',
   vBerichtHouder: 'Hoe kunnen we helpen?',
   vKanaal: 'Voorkeurskanaal',
-  kMail: ['E-mail', 'We reageren op je hello@visuails.com-thread'],
+  kMail: ['E-mail', 'Je krijgt antwoord op het adres hierboven'],
   kWa: ['WhatsApp', 'Snelst — meestal binnen het uur'],
   vVerstuur: 'Verstuur bericht',
   vFaq: ['Snel een antwoord nodig? Bekijk eerst de ', 'FAQ', '.'],
@@ -116,7 +116,7 @@ const c = nl ? {
   mailKop: 'Email',
   mailP: 'For a long request, an invoice question or files you want to attach.',
   urenKop: 'Opening hours',
-  uren: ['Mon–Fri 08:00–20:00 CET', 'Sat–Sun 09:00–20:00 CET'],
+  uren: ['Mon–Fri 08:00–20:00 (Dutch time)', 'Sat–Sun 09:00–20:00 (Dutch time)'],
   plaatsKop: 'Location',
   plaats: ['Enschede, the Netherlands', 'KVK 99742993'],
   plaatsLink: 'Full company details',
@@ -133,7 +133,7 @@ const c = nl ? {
   /* Zie de Nederlandse noot. */
   vTelefoon: 'Phone or WhatsApp',
   vTelefoonHouder: '+31 6 …',
-  vTelefoonHint: 'Only needed if you would rather have a message.',
+  vTelefoonHint: 'Only needed if you would rather get a reply on WhatsApp.',
   vOptioneel: 'optional',
   vOnderwerp: 'Topic',
   onderwerpen: [
@@ -146,7 +146,7 @@ const c = nl ? {
   vBerichtMelding: 'Tell us what it is about, so we can answer properly the first time.',
   vBerichtHouder: 'How can we help?',
   vKanaal: 'Preferred contact method',
-  kMail: ['Email', 'We reply to hello@visuails.com threads'],
+  kMail: ['Email', 'You get a reply at the address above'],
   kWa: ['WhatsApp', 'Fastest — usually within the hour'],
   vVerstuur: 'Send message',
   vFaq: ['Looking for quick answers? Check the ', 'FAQ', ' first.'],
@@ -221,7 +221,10 @@ const c = nl ? {
 
         <form action="/api/order" method="post">
           <input type="hidden" name="service" value="contact" />
-          <input type="hidden" name="redirect" value="/thank-you" />
+          {/* Taalbewust én met ?soort=contact: tot 23 september 2026 kwam een
+              Nederlandse vraag op de Engelse bedankpagina uit, met "we hebben je
+              aanvraag" en een leeg kenmerk. */}
+          <input type="hidden" name="redirect" value={`${lp('/thank-you')}?soort=contact`} />
           <input type="hidden" name="lang" value={lang} />
           {/* Het honeypotveld. Buiten beeld en buiten de tabvolgorde: een mens
               komt er nooit langs, een bot vult hem. */}
@@ -313,10 +316,12 @@ const c = nl ? {
   .ct-kanalen { display: grid; gap: 1.1rem; align-content: start; }
   .ct-kanalen h2, .ct-vorm h2 { margin: 0 0 .4rem; }
 
+  /* Geen omkaderde vakken meer (1 oktober 2026): de contactgegevens zijn
+     informatie, geen dingen om aan te klikken als geheel. Een haarlijn erboven,
+     de linkerlijn van de kop — zie .feiten en de hoofdstukregel in stijl22.css. */
   .ct-vak {
-    padding: clamp(1.2rem, 2.5vw, 1.6rem);
-    border: 1px solid var(--lijn); border-radius: calc(var(--ronding) - 14px);
-    background: var(--wit);
+    padding: clamp(.9rem, 2vw, 1.2rem) 0 0;
+    border-top: 1px solid var(--lijn);
     display: grid; gap: .5rem; align-content: start;
   }
   .ct-vak h3 { margin: 0; color: var(--inkt-2); }

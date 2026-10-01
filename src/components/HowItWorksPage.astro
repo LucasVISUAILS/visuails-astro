@@ -60,6 +60,8 @@ import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
   WINDOW_THRESHOLD, vatLabel, vatLead, vatDetail, TEST_SAMPLE, clause,
   CATALOG_IMAGES, LIFESTYLE_IMAGES, VIDEO_OP_AANVRAAG,
+  /* De maat van een geleverd beeld, niet overgetypt (30 september 2026). */
+  RESOLUTIE,
 } from '../data/pricing.js';
 import { WALK_COPY, WALK_SERVICES, DEMO_BACKGROUNDS } from '../data/demo.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -117,7 +119,7 @@ const COPY = {
       {
         woord: fase('maken').h,
         zin: 'One matching series per product, checked by a specialist.',
-        etiket: 'Delivered', etiketNoot: `${CATALOG_IMAGES} images · 2048 px`,
+        etiket: 'Delivered', etiketNoot: `${CATALOG_IMAGES} images · ${RESOLUTIE.standaard} px`,
         link: 'See more work',
       },
       {
@@ -127,7 +129,7 @@ const COPY = {
       },
     ],
     gateLead: 'You only see dates the calendar can still hold.',
-    gateBody: `From ${WINDOW_THRESHOLD} products you pick a delivery date in the form. The calendar only offers days with room left, and your date is held once the order is in.`,
+    gateBody: `From ${WINDOW_THRESHOLD} products you pick a delivery date in the form. The calendar only offers days with room left. Your date is reserved once the order is in, and fixed once you have paid.`,
     dienstenH: 'Per service',
     kiest: {
       catalog: `Background: ${lijst(achtergronden)}`,
@@ -148,16 +150,16 @@ const COPY = {
     details: [
       { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that: ${clause(turnaround('unattended', 'en')).toLowerCase()}, ${clause(TIERS.unattended.queue.en).toLowerCase()}.` },
       { t: 'If something is off', b: `${aftercare('attended', 'en')}` },
-      { t: 'Your rights', b: 'Full commercial rights. Every image at 2048 px, as jpg, png and webp.', linkText: 'Terms', linkHref: '/terms' },
+      { t: 'Your rights', b: `Full commercial rights. Every image at ${RESOLUTIE.standaard} px, in the aspect ratio you choose (one per catalog order, per image for lifestyle), as JPG, PNG and WebP. A marketplace order gets the formats that marketplace accepts.`, linkText: 'Terms', linkHref: '/terms' },
     ],
     landH: 'One order, every place it has to go.',
-    landLede: `${EX_FULL} products make ${EX_VISUALS} finished images, cut for every channel.`,
+    landLede: `${EX_FULL} products make ${EX_VISUALS} finished images, in the aspect ratio you pick in the order form.`,
     land: [
       ['Product page', 'On white, on a model'],
       ['Instagram', 'Carousel, three frames'],
-      ['Reels and TikTok', 'Vertical clips'],
-      ['Ads', 'Ad crops'],
-      ['Marketplaces', 'Zalando, Amazon, bol'],
+      ['Reels and TikTok', 'Vertical clips, on request'],
+      ['Ads', 'Square or portrait'],
+      ['Marketplaces', 'Zalando, Amazon, bol.com'],
     ],
     landNote: '',
 
@@ -190,7 +192,7 @@ const COPY = {
       {
         woord: fase('maken').h,
         zin: 'Eén kloppende serie per product, nagekeken door een specialist.',
-        etiket: 'Geleverd', etiketNoot: `${CATALOG_IMAGES} beelden · 2048 px`,
+        etiket: 'Geleverd', etiketNoot: `${CATALOG_IMAGES} beelden · ${RESOLUTIE.standaard} px`,
         link: 'Meer werk zien',
       },
       {
@@ -200,7 +202,7 @@ const COPY = {
       },
     ],
     gateLead: 'Je ziet alleen dagen die de agenda nog kan vasthouden.',
-    gateBody: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum. De agenda toont alleen dagen met ruimte, en je datum ligt vast zodra de bestelling binnen is.`,
+    gateBody: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum. De agenda toont alleen dagen met ruimte. Je datum is gereserveerd zodra de bestelling binnen is, en ligt vast zodra je hebt betaald.`,
     dienstenH: 'Per dienst',
     kiest: {
       catalog: `Achtergrond: ${lijst(achtergronden)}`,
@@ -221,22 +223,22 @@ const COPY = {
     details: [
       { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, ${clause(TIERS.unattended.queue.nl).toLowerCase()}.` },
       { t: 'Als iets niet klopt', b: `${aftercare('attended', 'nl')}` },
-      { t: 'Jouw rechten', b: 'Volledige commerciële rechten. Elk beeld op 2048 px, als jpg, png en webp.', linkText: 'Voorwaarden', linkHref: '/terms' },
+      { t: 'Jouw rechten', b: `Volledige commerciële rechten. Elk beeld op ${RESOLUTIE.standaard} px, in de beeldverhouding die je kiest (één per catalogbestelling, per beeld bij lifestyle), als JPG, PNG en WebP. Een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt.`, linkText: 'Voorwaarden', linkHref: '/terms' },
     ],
     landH: 'Eén bestelling, overal waar hij heen moet.',
-    landLede: `${EX_FULL} producten worden ${EX_VISUALS} afgewerkte beelden, uitgesneden voor elk kanaal.`,
+    landLede: `${EX_FULL} producten worden ${EX_VISUALS} afgewerkte beelden, in de beeldverhouding die je in het bestelformulier kiest.`,
     land: [
       ['Productpagina', 'Op wit, op een model'],
-      ['Instagram', 'Carousel, drie beelden'],
-      ['Reels en TikTok', 'Verticale clips'],
-      ['Advertenties', 'Advertentie-uitsnedes'],
+      ['Instagram', 'Carrousel, drie beelden'],
+      ['Reels en TikTok', 'Verticale clips, op aanvraag'],
+      ['Advertenties', 'Vierkant of staand'],
       ['Marktplaatsen', 'Zalando, Amazon, bol'],
     ],
     landNote: '',
 
     faqGuides: `langere stukken bij de <a href="${lp('/guides')}">gidsen</a>.`,
     faqCta: 'Lees de FAQ',
-    ctaH: 'Eén product van jezelf, als catalogset of carousel.',
+    ctaH: 'Eén product van jezelf, als catalogset of carrousel.',
     ctaBody: `Eén proef per bedrijf — ${sample}, zonder verplichting.`,
     ctaSampleBtn: TEST_SAMPLE.nl.cta,
     ctaStartBtn: 'Start een bestelling',
@@ -324,7 +326,7 @@ const STATIONS = [
       <div class="hiw-hand">
         <h2 id="hiw-hand" class="hoog hoog-2">{c.craftH}</h2>
         <p class="lopend">{c.craftBody}</p>
-        <ul class="hiw-chips" role="list">
+        <ul class="hiw-chips feiten" role="list">
           {c.chips.map((chip) => <li>{chip}</li>)}
         </ul>
       </div>
@@ -337,7 +339,7 @@ const STATIONS = [
       donkere kamer) werden één paneel. Links wat er aan de bestelling vastzit,
       rechts waar de beelden landen. Geen eurobedrag hier — dat is het werk van
       de prijspagina. */}
-  <section class="paneel" aria-labelledby="hiw-details">
+  <section class="paneel vervolg" aria-labelledby="hiw-details">
     <div class="hiw-samen">
       <div>
         <header class="paneel-kop">
@@ -377,7 +379,7 @@ const STATIONS = [
     </p>
     <p class="lopend hiw-gidsen"><a href={lp('/faq')}>{c.faqCta}</a> · <span set:html={c.faqGuides} /></p>
     {/* vatNote() één keer per pagina, bij de enige prijs die erop staat. */}
-    <p class="hiw-btw">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
+    <p class="hiw-btw">{vatLead(lang)} <Note lang={lang} term={lang === 'nl' ? vatLabel('excl', lang) : 'VAT'} wide>{vatDetail(lang)}</Note></p>
   </section>
 </div>
 
@@ -412,8 +414,7 @@ const STATIONS = [
 
   .hiw-twee { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
   .hiw-hand { display: grid; gap: 1rem; align-content: center; }
-  .hiw-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
-  .hiw-chips li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); border: 1px solid var(--lijn); border-radius: 999px; padding: .4rem .85rem; }
+  /* De pillen zijn een lijst geworden (1 oktober 2026): zie .feiten in stijl22.css. */
 
   /* De details als regels en niet als kaartjes: korte antwoorden op losse
      vragen, en twaalf kaders zetten twaalf keer een rand om één zin. */

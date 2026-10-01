@@ -52,7 +52,7 @@ const gc = contextCopy(lang);
 
 const T = {
   en: {
-    etiket: 'Last part of the material',
+    etiket: 'Your photos — last part',
     h: 'What you are sending — and what can go with it.',
     lede: 'Every product gets one photo on a model, and that frame always shows a little more than the product itself. We choose that, unless you add something of your own here.',
     skip: 'Skip · you choose',
@@ -229,6 +229,8 @@ const T = {
   .st-rijen :global(.st-rij-n) { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .68rem; letter-spacing: .07em; color: var(--ink-3); }
   .st-rijen :global(.st-rij-naam) { font-weight: 700; font-size: .96rem; }
   .st-rijen :global(.st-rij-type) { margin-left: auto; font-size: .82rem; padding: .3rem .5rem; border-radius: var(--r-pill); max-width: 16rem; }
+  /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
+  @media (max-width: 760px), (pointer: coarse) { .st-rijen :global(.st-rij-type) { font-size: 16px; } }
   .st-rijen :global(.st-blokje) { display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: start; padding: 6px 0; }
   .st-rijen :global(.st-blokje + .st-blokje) { border-top: 1px dashed var(--line); }
   .st-rijen :global(.st-blokje-kop) { font-family: var(--font-mono); font-stretch: var(--stretch-mono, 82%); font-size: .62rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); padding-top: .45rem; }

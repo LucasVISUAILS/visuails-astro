@@ -41,11 +41,11 @@ const { lang, style, zusters, priceLine } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 
-const TIMING = style.priceTrust
+const TIMING = style.slug === 'custom'
   ? (nl ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : 'Design first, then the ordinary turnaround per order.')
   : turnaround('unattended', lang);
 const REVIEW = reviewClaim('unattended', lang);
-const QUEUE = style.priceTrust ? '' : TIERS.unattended.queue[lang];
+const QUEUE = style.slug === 'custom' ? '' : TIERS.unattended.queue[lang];
 
 /* De intrinsieke pixelmaten van de ene foto die dit sjabloon als <img> rendert.
    Het vak pint de verhouding en het beeld dekt hem, dus deze attributen
@@ -131,7 +131,7 @@ const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
       {/* Eén bron voor het tarief op deze pagina: priceLine bevat al de eigen
           priceTrust van de stijl of de twee uiteinden van de staffel, dus de
           feitenrij kan geen ander bedrag noemen dan de meta. */}
-      <ul class="ls-feiten" role="list">
+      <ul class="ls-feiten feiten" role="list">
         <li>{priceLine}</li>
         <li>{TIMING}</li>
         <li>{REVIEW}</li>
@@ -204,7 +204,7 @@ const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
       foto was. PAGINA-OPBOUW.md: alleen echte beelden; vanaf drie een raster,
       minder dan drie één rij, geen enkele — geen sectie. */}
   {rasterFotos.length > 0 && (
-    <section class="paneel ls-raster">
+    <section class="paneel vervolg ls-raster">
       <ul class:list={['ls-negen', rasterFotos.length < 3 && 'is-rij']} role="list">
         {rasterFotos.map((g: any) => (
           <li>
@@ -218,7 +218,7 @@ const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
     </section>
   )}
 
-  <section class="paneel ls-lijsten">
+  <section class="paneel vervolg ls-lijsten">
     <div class="ls-een">
       <div>
         <h2 class="hoog hoog-3">{c.krijgH[0]}<em>{c.krijgH[1]}</em></h2>
@@ -239,7 +239,11 @@ const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
   </section>
 
   <section class="paneel paneel-slot ls-slot">
-    <h2 class="hoog hoog-2">{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</h2>
+    {/* De eigen look heet "Eigen look" / "Custom", en dat gaf "Maak Eigen look van jou."
+        Voor die ene look staat er daarom "Maak je eigen look." */}
+    <h2 class="hoog hoog-2">{style.slug === 'custom'
+      ? <>{c.slotH[0]}<em>{lang === 'nl' ? 'je eigen look' : 'your own look'}</em>.</>
+      : <>{c.slotH[0]}<em>{style.name}</em>{c.slotH[1]}</>}</h2>
     <div class="acties">
       <a class="knop knop-inkt" href={style.orderHref ?? lp('/start')}>{c.bestel}</a>
       <a class="knop knop-lijn" href={lp('/test-sample')}>{c.proef}</a>
@@ -273,12 +277,8 @@ const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
     line-height: calc(1em + .42rem);
     letter-spacing: -.01em; color: var(--inkt); max-width: 20em;
   }
-  .ls-feiten { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 1.6rem 0 0; }
-  .ls-feiten li {
-    font-family: var(--mono2); font-size: .72rem; font-stretch: 82%;
-    letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2);
-    padding: .42rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px;
-  }
+  /* De pillen zijn een lijst geworden (1 oktober 2026): zie .feiten in stijl22.css. */
+  .ls-feiten { margin-top: 1.6rem; }
   .ls-queue { margin-top: .9rem; font-size: .88rem; line-height: 1.6; color: var(--inkt-2); }
 
   /* Over de volle breedte, binnen de marge van de stijl — dezelfde vorm als een

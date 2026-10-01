@@ -1,6 +1,6 @@
 # Verwerkingsregister — VISUAILS
 
-**Artikel 30 AVG. Laatst bijgewerkt: 12 augustus 2026.**
+**Artikel 30 AVG. Laatst bijgewerkt: 29 september 2026.**
 
 Dit is een intern document. Het staat niet op de site en hoort daar ook niet:
 een register is verantwoordingsdocumentatie voor de toezichthouder en niet
@@ -163,11 +163,11 @@ compleet.
 | Veld | Inhoud |
 |---|---|
 | **Verwerkingsverantwoordelijke** | de klant. Per bestelling vastgelegd in `orders` |
-| **Categorieën verwerking** | ontvangen, opslaan, uitsnijden, bewerken en aanpassen van aangeleverd beeldmateriaal; het aanbieden ervan aan de subverwerker die de visual genereert; het opleveren van het resultaat aan de klant; het verwijderen ervan na de termijn |
+| **Categorieën verwerking** | ontvangen en opslaan van aangeleverd beeldmateriaal (het wordt niet bewerkt); het aanbieden ervan aan de subverwerker die de visual genereert; het opleveren van het resultaat aan de klant; het verwijderen ervan na de termijn |
 | **Betrokkenen** | de personen die op het aangeleverde materiaal staan: doorgaans een model, een medewerker, of de klant zelf |
 | **Gegevens** | beeltenis. **Geen** bijzondere categorieën (art. 9): daar wordt niet om gevraagd, en een gezicht op een foto is geen biometrisch gegeven zolang de verwerking niet op unieke identificatie is gericht — en dat is zij niet |
 | **Waar** | Cloudflare R2 (het materiaal), D1 (`files`, `file_assets`, de verwijzingen) |
-| **Bewaartermijn** | bronmateriaal `UPLOAD_DAYS` dagen na afsluiten van de bestelling; geleverde beelden `DELIVERY_DAYS` dagen na levering (sinds 4 september 2026 dezelfde termijn als het bronmateriaal: in Studio, daarna verwijderd; een kopie in het eigen archief van VISUAILS is mogelijk maar geen garantie). **De getallen staan hier niet ingetypt** — ze staan in `src/lib/retention.js` en `tests/register.test.mjs` controleert dat dit document en die constante niet uit elkaar lopen |
+| **Bewaartermijn** | bronmateriaal `UPLOAD_DAYS` dagen na afsluiten van de bestelling; geleverde beelden `DELIVERY_DAYS` dagen na levering (sinds 4 september 2026 dezelfde termijn als het bronmateriaal: in Studio, daarna verwijderd; een kopie in het eigen archief van VISUAILS kan daarna nog **ten hoogste twaalf maanden** blijven, zonder garantie, en de klant kan dat weigeren — sinds 29 september 2026 een termijn in plaats van een open einde). Kopieën in de mailbox, op de werkmachine en op het platform van Freepik worden binnen dezelfde termijn met de hand verwijderd. **De getallen staan hier niet ingetypt** — ze staan in `src/lib/retention.js` en `tests/register.test.mjs` controleert dat dit document en die constante niet uit elkaar lopen |
 | **Uitvoering** | een nachtelijke taak (`cron/index.js`) verwijdert wat verlopen is, uit R2 én uit D1, en schrijft op de tijdlijn van de bestelling wat er weg is |
 | **Subverwerkers** | zie §5 |
 | **Doorgifte** | zie §6 |
@@ -183,25 +183,30 @@ de verwerkersovereenkomst, en dat moet zo blijven:
 
 | Wie | Waar | Waarvoor |
 |---|---|---|
-| Freepik Company, S.L.U. | Málaga, Spanje (EU) | het genereren van de visuals |
-| Cloudflare, Inc. | Verenigde Staten, met opslag in de EU | opslag en het draaien van de site |
-| Resend | Verenigde Staten | e-mail; de bestelmelding aan de studio draagt het materiaal als bijlage |
+| Freepik Company, S.L.U. | Málaga, Spanje (EU) | het genereren van de visuals; de modelaanbieder daarachter is subverwerker van Freepik en bewaart het beeld ten hoogste 30 dagen |
+| Cloudflare, Inc. | Verenigde Staten (wereldwijd netwerk) | opslag en het draaien van de site |
+| Plus Five Five, Inc. (Resend) | San Francisco, Verenigde Staten | e-mail; de bestelmelding aan de studio draagt het materiaal als bijlage; Resend bewaart verzonden mail 30 dagen |
+| Google Ireland Ltd. (Google Workspace) | Dublin, Ierland (EU); Google LLC in de VS | de mailbox hello@visuails.com, waarin die bestelmelding binnenkomt (MX-records wijzen naar Google, nagekeken 29 september 2026) |
 
 **Verwerkers voor de gegevens waarvoor wij zelf verantwoordelijke zijn:**
 
 | Wie | Waarvoor |
 |---|---|
-| Mollie B.V. (Amsterdam) | betalingen |
+| Mollie B.V. (Amsterdam) | betalingen — voor de betaling zelf is Mollie een eigen verwerkingsverantwoordelijke (bankregels, fraudecontrole), niet onze verwerker |
 | Cloudflare, Inc. | database en hosting |
-| Resend | transactionele e-mail |
+| Plus Five Five, Inc. (Resend) | transactionele e-mail |
+| Google Ireland Ltd. (Google Workspace) | de mailbox hello@visuails.com |
 | Google (Business Profile) en Trustpilot | uitsluitend wanneer de klant zelf op een reviewknop klikt; wij sturen daar geen gegevens naartoe |
 
 **Welk AI-model er binnen het platform van de subverwerker wordt gebruikt, staat
-hier niet, en dat is een bewuste keuze** — zie de noot in §8 van de
-verwerkersovereenkomst. Art. 30 vraagt de *categorieën ontvangers*, en de
-ontvanger is het platform. Het model is gereedschap van die ontvanger.
+hier niet** — het wisselt. Art. 30 vraagt de *categorieën ontvangers*, en onze
+ontvanger is het platform. De modelaanbieder is wel een subverwerker van Freepik
+en dus een schakel in de keten: op verzoek krijgt een klant binnen vijf werkdagen
+naam en vestigingsplaats van de aanbieders die voor zijn bestellingen zijn
+gebruikt (§8 van de verwerkersovereenkomst, 29 september 2026). Houd daarom per
+bestelling bij welk model je gebruikte.
 
-**Wat géén ontvanger is:** de nabewerking gebeurt lokaal in Photoshop en DaVinci
+**Wat géén ontvanger is:** aangeleverde foto's worden nooit in bewerkingssoftware geopend (Lucas, 30 september 2026); alleen de gemaakte beelden worden nabewerkt, lokaal in Photoshop en DaVinci
 Resolve, op een eigen machine. Adobe en Blackmagic Design ontvangen het
 materiaal dus niet en staan daarom niet in deze lijst.
 Software die op de eigen machine draait verwerkt niets namens ons; een dienst die
@@ -211,8 +216,9 @@ het bestand ontvangt doet dat wel.
 
 | Naar wie | Grondslag |
 |---|---|
-| Cloudflare, Inc. (VS) | verwerkersovereenkomst met standaardcontractbepalingen (art. 46 lid 2 sub c). Opslag is ingesteld op de EU |
-| Resend (VS) | verwerkersovereenkomst met standaardcontractbepalingen |
+| Cloudflare, Inc. (VS) | EU-VS Data Privacy Framework (art. 45, gecertificeerd); standaardcontractbepalingen in de verwerkersovereenkomst als terugval. **R2 en D1 staan niet in een EU-jurisdictie** — een locatiehint is "best effort", dus wij beweren nergens meer dat de opslag in de EU staat |
+| Plus Five Five, Inc. (Resend) (VS) | EU-VS Data Privacy Framework; standaardcontractbepalingen (module 2/3) in de DPA van Resend. Resend slaat alle data in de VS op, ook bij een EU-verzendregio |
+| Google LLC (VS), via Google Ireland | EU-VS Data Privacy Framework; standaardcontractbepalingen in Google's Cloud Data Processing Addendum |
 | modelaanbieders buiten de EER, via Freepik | Freepik sluit daarvoor zelf standaardcontractbepalingen; wij dragen niet zelf over |
 
 Freepik zelf is in Spanje gevestigd, dus op dat niveau is er geen doorgifte.

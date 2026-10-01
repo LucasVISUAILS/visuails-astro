@@ -17,7 +17,7 @@ const zusters = catalogStyles
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/catalog/${s.slug}`, naam: s.name }));
 
-const TIMING = style.priceTrust ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : turnaround('unattended', 'nl');
+const TIMING = style.slug === 'custom' ? 'Eerst het ontwerp, daarna de gewone doorlooptijd per bestelling.' : turnaround('unattended', 'nl');
 const REVIEW = reviewClaim('unattended', 'nl');
 ---
 

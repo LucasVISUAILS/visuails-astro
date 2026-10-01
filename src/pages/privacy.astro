@@ -119,7 +119,7 @@ import '../styles/stijl22.css';
       <p><strong>VISUAILS is the trading name of Lucas Snuverink.</strong><br>
       Vaarwerkhorst 17, 7531 HK Enschede, the Netherlands<br>
       KVK 99742993 &middot; VAT NL005407575B96 &middot; <a href="mailto:hello@visuails.com">hello@visuails.com</a></p>
-      <p>This is our registered and postal address. It is <strong>not a visiting address</strong>: there is no reception and we do not receive visitors there. All contact goes through email, and post arrives.</p>
+      <p>This is our registered and postal address. It is <strong>not a visiting address</strong>: there is no reception and we do not receive visitors there. Contact goes through email or WhatsApp, though post does arrive there.</p>
 
       <ul>
         <li>Trading name: VISUAILS</li>
@@ -167,12 +167,13 @@ import '../styles/stijl22.css';
       <p>To run VISUAILS we work with a small number of service providers who process data on our behalf, under agreements that require them to protect it. Named, because "an AI provider" tells you nothing you can check:</p>
       <ul>
         <li><strong>Freepik Company, S.L.U.</strong> (Málaga, Spain) — the platform on which your visuals are generated.</li>
-        <li><strong>Mollie B.V.</strong> (Amsterdam, the Netherlands) — payments. We never see or store full card details.</li>
-        <li><strong>Cloudflare, Inc.</strong> (United States, with storage in the EU) — hosting the site, storing files and order data.</li>
-        <li><strong>Resend</strong> (United States) — sending email.</li>
+        <li><strong>Cloudflare, Inc.</strong> (United States) — hosting the site, storing files and order data.</li>
+        <li><strong>Plus Five Five, Inc.</strong>, trading as Resend (San Francisco, United States) — sending email. Resend keeps sent email for 30 days.</li>
+        <li><strong>Google Ireland Ltd.</strong> (Dublin, Ireland) — our mailbox, through Google Workspace.</li>
       </ul>
-      <p><strong>Your material is not used to train AI models.</strong> That is not our hope, it is what the platform we generate on undertakes in its own terms: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em> — and that images you upload are deleted immediately after the visual has been generated from them. We do not use your material for our own portfolio or for advertising either, unless you give us separate permission per order.</p>
-      <p><strong>Which model, we do not say.</strong> The platform above offers a large number of models from different makers and we use whatever gives the best result at the time — as the AI model industry improves, so does what we can deliver. Which one that is, is part of how we do our work. What matters for your data is <em>who receives it</em>, and that is named above and does not change when we switch models.</p>
+      <p><strong>Mollie B.V.</strong> (Amsterdam, the Netherlands) handles payments. For the payment itself Mollie is a controller in its own right and not our processor: as a payment institution it has legal duties of its own, such as fraud checks, and it explains what it does with your data in <a href="https://www.mollie.com/legal/privacy" rel="noopener">its own privacy statement</a>. We never see or store full card details.</p>
+      <p><strong>Your material is not used to train AI models.</strong> That is not our hope, it is what the platform we generate on undertakes in its own terms: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em> — and that the images you upload are deleted from their platform immediately after the visual has been generated from them. That is about their copy; what we keep ourselves, and for how long, is in §6. We do not use the material you supply for our own portfolio or for advertising either, unless you give us separate permission per order. For the visuals we deliver, the arrangement about our portfolio is in §8 of the <a href="/terms/">Terms</a>.</p>
+      <p><strong>Which model: that changes.</strong> The platform above offers a large number of models from different makers and we use whatever gives the best result at the time — as the AI model industry improves, so does what we can deliver. Our recipient stays the platform above. The provider of the chosen model processes your image on that platform’s behalf and keeps it for no more than 30 days. If you want to know which providers we used for your orders, ask us: you get their name and location within five working days.</p>
       <p>We do not sell your personal data, and we do not share it for third-party advertising.</p>
       <p>Reviews are a separate matter: if you choose to leave one on Google or Trustpilot, you are dealing with that platform under its own terms, and we only see what you publish there.</p>
 
@@ -180,11 +181,11 @@ import '../styles/stijl22.css';
       <p>We keep your data only as long as it is needed. Three of those periods are fixed, because they are the three that affect you directly:</p>
       <ul>
         <li><strong>Source material</strong> — the product photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask us in writing before then and we will agree it with you.</li>
-        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We may keep a copy in our own archive, but that is not a guarantee, so keep your own copy. Still need older images, get in touch and we check whether they are still with us.</li>
-        <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. The same {DELIVERY_DAYS} days as the visuals themselves: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
+        <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. A copy may then stay in our own archive for no more than twelve months, but that is not a guarantee, so keep your own copy. If you do not want us to keep that copy, say so and we delete it straight after those {DELIVERY_DAYS} days. Still need older images? Get in touch and we check whether they are still with us.</li>
+        <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. That clock starts when the order closes, not at delivery like the one above: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
       </ul>
       <p>If you signed up for the Studio letter, we keep your address until you unsubscribe; after that we delete it, or keep only the address with a note that you want no more mail — so you are not signed up again by accident.</p>
-      <p>Correspondence about an order is kept for as long as it is useful for that order and any follow-up. Invoicing and tax records are kept for as long as Dutch and EU law requires. When data is no longer needed, we delete or anonymise it.</p>
+      <p>Correspondence about an order is kept for as long as it is useful for that order and any follow-up. Invoices and the data on them are kept for seven years, because Dutch tax law requires it. When data is no longer needed, we delete or anonymise it.</p>
 
       <h2>7. Your GDPR rights</h2>
       <p>As a data subject in the EU, you have the right to:</p>
@@ -199,12 +200,12 @@ import '../styles/stijl22.css';
       <p>To exercise any of these rights, email us at <a href="mailto:hello@visuails.com">hello@visuails.com</a>. You also have the right to lodge a complaint with the Dutch supervisory authority, the Autoriteit Persoonsgegevens (autoriteitpersoonsgegevens.nl).</p>
 
       <h2>8. International transfers</h2>
-      <p>Most of it stays inside the European Economic Area. Generation happens with a party in Spain, and payments with a party in the Netherlands. Two providers are established in the United States — Cloudflare and Resend — and for those the transfer rests on the European Commission’s <strong>Standard Contractual Clauses</strong> (Art. 46(2)(c) GDPR), which we have in place with both. Cloudflare stores our files and order data in the EU.</p>
+      <p>Most of it stays inside the European Economic Area. Generation happens with a party in Spain, and payments with a party in the Netherlands. Cloudflare and Resend are established in the United States, and Google Ireland works with Google LLC in the United States. All three are certified under the <strong>EU-U.S. Data Privacy Framework</strong>, for which the European Commission has adopted an adequacy decision (Art. 45 GDPR); on top of that we have the European Commission’s <strong>Standard Contractual Clauses</strong> (Art. 46(2)(c) GDPR) with each of them, as a fallback should that framework lapse. Our files and order data may therefore also be stored outside the EU.</p>
       <p>Where the generation platform passes material on to a model provider outside the EEA, that platform concludes Standard Contractual Clauses of its own. The full chain, with each party’s country and basis, is in §8 of the <a href="/data-processing-agreement/">Data Processing Agreement</a> — one list, kept current, because that is what the GDPR asks of us when we change providers.</p>
 
       <h2>9. Security</h2>
       <p>We use appropriate technical and organisational measures to protect your data, including access controls, encrypted connections and limiting who can access your files. No system is completely secure, but we work to keep your data safe and to respond quickly if anything goes wrong.</p>
-      <p>Your order lives at a private web address we email you. There is no account and no password — the address itself is the key. That means anyone you forward it to can open your files, so treat it the way you would treat a key. Here is exactly how it is protected:</p>
+      <p>Your orders live in VISUAILS Studio, which you sign in to with your email address: we email you a code and a sign-in link, and there is no password. Each order also has a private web address we email you; that address needs no sign-in: the address itself is the key. That means anyone you forward it to can open your files, so treat it the way you would treat a key. Here is exactly how it is protected:</p>
       <ul>
         <li><strong>It cannot be guessed.</strong> The address carries 256 bits of randomness from a cryptographic random number generator. It is not a sequence, not your order number, and nothing derived from your details, so there is no next one to count up to.</li>
         <li><strong>We do not store it.</strong> Our database holds only a one-way SHA-256 fingerprint of the address, never the address itself. It cannot be read back out of our systems — not by us, and not by anyone who obtained a copy of the database.</li>

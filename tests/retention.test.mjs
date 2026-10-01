@@ -89,7 +89,9 @@ function addOrder(db, { status = 'delivered' } = {}) {
   const closed_at = null;
   const ref = `VIS-TEST-${String(++refs).padStart(3, '0')}`;
   db.prepare(
-    `INSERT INTO orders (ref, email, service, status, closed_at) VALUES (?, ?, 'catalog', ?, ?)`
+    /* lang 'nl': de tijdlijnregel is sinds 29 september 2026 in de taal van de
+       bestelling, en de regels hieronder lezen de Nederlandse. */
+    `INSERT INTO orders (ref, email, service, status, closed_at, lang) VALUES (?, ?, 'catalog', ?, ?, 'nl')`
   ).run(ref, 'klant@example.com', status, closed_at);
   return db.prepare('SELECT id FROM orders WHERE ref = ?').get(ref).id;
 }

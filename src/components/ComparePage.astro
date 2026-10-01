@@ -175,7 +175,7 @@ const COPY = {
         // one row where an unlabelled figure would make the whole page a
         // comparison of two things that were never the same kind of number.
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product${opDeBodem ? ', the lowest rate there is' : `, falling to ${floorRate} at the highest product count`}.`,
+        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product${opDeBodem ? ', the lowest rate for catalog and lifestyle together' : `, falling to ${floorRate} at the highest product count`}.`,
       },
       {
         label: 'When it lands',
@@ -191,7 +191,7 @@ const COPY = {
       {
         label: 'Who checks it',
         a: 'You, on the day. Then the retoucher.',
-        b: `${reviewClaim(tier, 'en')} — then you, image by image, in the portal.`,
+        b: `${clause(reviewClaim(tier, 'en'))} — then you, image by image, in the portal.`,
       },
       {
         label: 'If something is wrong',
@@ -238,7 +238,7 @@ const COPY = {
     seqTitle: 'A VISUAILS order',
     seqSteps: [
       'You send your photos.',
-      'The date is checked and held.',
+      'The date is checked and reserved, then fixed once you pay.',
       'Images land as they are ready.',
     ],
     seqOut: 'A revision is one image, not a new day.',
@@ -267,7 +267,7 @@ const COPY = {
       'The reschedule when something slips',
       'Evenings culling frames',
     ],
-    weekOrder: 'An order takes twenty minutes of your time, one product or thirty.',
+    weekOrder: 'An order takes minutes of your time, not days — one product or thirty.',
 
     winsHead: 'Where a shoot day still wins',
     winsSub: 'If one of these is the job, book the day.',
@@ -282,7 +282,7 @@ const COPY = {
     toolSub: 'Sometimes generating images yourself is the right call.',
     enoughHead: 'A tool is genuinely enough when',
     enough: [
-      'You need a quick mock for an idea or a layout.',
+      'You need a quick mock-up for an idea or a layout.',
       'No customer will see it.',
       'You enjoy prompting and have the afternoon.',
     ],
@@ -296,13 +296,13 @@ const COPY = {
     toolClose: 'If a tool is enough, use the tool.',
     toolCta: 'Try it on your product',
 
-    ctaHead: "Don’t take our word — ",
+    ctaHead: "Don’t take our word for it — ",
     ctaHeadEm: 'test it',
     ctaBody: 'See it on your own product first.',
     ctaSample: 'Test sample',
     ctaStart: 'Start an order',
     ctaWa: 'Ask us anything',
-    ctaReply: 'Usually a reply within an hour on weekdays.',
+    ctaReply: 'Usually a reply within the hour; outside opening hours, the next morning.',
     wa: waHref("Hi VISUAILS, I'm comparing a shoot day to an order."),
   },
 
@@ -326,12 +326,12 @@ const COPY = {
         a: 'Eén dag van ieders tijd, en wat daar precies in past.',
         // Zie de EN-tak: het aantal staat erbij omdat het tarief met de omvang
         // meezakt, dus dit is één uitgewerkt voorbeeld en geen pakketprijs.
-        b: `${ANCHOR_PRODUCTS} producten, elk met een catalogset en een lifestyle-carousel.`,
+        b: `${ANCHOR_PRODUCTS} producten, elk met een catalogset en een lifestylecarrousel.`,
       },
       {
         label: 'Wat het kost',
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product${opDeBodem ? ', het laagste tarief dat er is' : `, aflopend tot ${floorRate} bij het hoogste aantal producten`}.`,
+        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product${opDeBodem ? ', het laagste tarief voor catalog en lifestyle samen' : `, aflopend tot ${floorRate} bij het hoogste aantal producten`}.`,
       },
       {
         label: 'Wanneer het er is',
@@ -341,7 +341,7 @@ const COPY = {
       {
         label: 'Wie het controleert',
         a: 'Jij, op de dag zelf. Daarna de retoucheur.',
-        b: `${reviewClaim(tier, 'nl')} — en daarna jij, beeld voor beeld, in het portaal.`,
+        b: `${clause(reviewClaim(tier, 'nl'))} — en daarna jij, beeld voor beeld, in het portaal.`,
       },
       {
         label: 'Als er iets mis is',
@@ -377,7 +377,7 @@ const COPY = {
     seqTitle: 'Een VISUAILS-bestelling',
     seqSteps: [
       'Je stuurt je foto’s.',
-      'De datum wordt gecontroleerd en vastgezet.',
+      'De datum wordt gecontroleerd en gereserveerd, en na betaling vastgezet.',
       'Beelden komen binnen zodra ze klaar zijn.',
     ],
     seqOut: 'Een revisie is één beeld, geen nieuwe dag.',
@@ -393,7 +393,7 @@ const COPY = {
       'Het uitstel als er iets misloopt',
       'Avonden frames schiften',
     ],
-    weekOrder: 'Een bestelling kost je twintig minuten, één product of dertig.',
+    weekOrder: 'Een bestelling kost je minuten, geen dagen — één product of dertig.',
 
     winsHead: 'Waar een shootdag nog steeds wint',
     winsSub: 'Is dit de opdracht, boek dan de dag.',
@@ -408,7 +408,7 @@ const COPY = {
     toolSub: 'Soms is zelf genereren de juiste keuze.',
     enoughHead: 'Een tool is echt genoeg als',
     enough: [
-      'Je een snelle mock nodig hebt voor een idee of layout.',
+      'Je een snelle mock-up nodig hebt voor een idee of layout.',
       'Geen klant het ziet.',
       'Je prompten leuk vindt en de middag hebt.',
     ],
@@ -428,7 +428,7 @@ const COPY = {
     ctaSample: 'Probeer VISUAILS',
     ctaStart: 'Start een bestelling',
     ctaWa: 'Vraag ons alles',
-    ctaReply: 'Meestal binnen een uur antwoord op werkdagen.',
+    ctaReply: 'Meestal antwoord binnen het uur, buiten openingstijden de volgende ochtend.',
     wa: waHref("Hoi VISUAILS, ik vergelijk een shootdag met een bestelling."),
   },
 };
@@ -554,7 +554,7 @@ const t = COPY[lang];
       Twee lijsten en geen zeven kaarten: het is een echt argument dat de pagina
       moet houden, maar het is niet langer het onderwerp van de pagina.
       `#ai-tools` wordt vanaf /custom-models gelinkt. */}
-  <section class="paneel" id="ai-tools" aria-labelledby="cmp-tools">
+  <section class="paneel vervolg" id="ai-tools" aria-labelledby="cmp-tools">
     <header class="paneel-kop">
       <h2 id="cmp-tools" class="hoog hoog-2">{t.toolHead}</h2>
       <p class="lopend">{t.toolSub}</p>

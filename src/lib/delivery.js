@@ -636,7 +636,7 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       'bestandsnamen blijven leesbaar, dus je ziet in je shop nog terug welk',
       'beeld bij welk product hoort.',
       '',
-      ...kop('4 · TOT WANNEER JE HIERBIJ KAN'),
+      ...kop('4 · TOT WANNEER JE HIERBIJ KUNT'),
       '',
       `De map blijft ${DELIVERY_DAYS} dagen te downloaden vanuit je dashboard op`,
       'visuails.com. Daarna wordt hij opgeruimd — dat is een afspraak uit onze',
@@ -678,7 +678,7 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       'AI Act vraagt dat van wie publiceert, dus van jou. Op',
       'visuails.com/nl/ai-act staat een zin die je kunt overnemen.',
       '',
-      `Vragen? ${CONTACT} — je krijgt antwoord van een mens.`,
+      `Vragen? ${CONTACT} — je krijgt antwoord van een specialist.`,
       '',
     ]);
   }
@@ -771,7 +771,7 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     'with them — the EU AI Act asks that of whoever publishes, so of you.',
     'visuails.com/ai-act has a sentence you can use.',
     '',
-    `Questions? ${CONTACT} — a person answers.`,
+    `Questions? ${CONTACT} — a specialist answers.`,
     '',
   ]);
 }

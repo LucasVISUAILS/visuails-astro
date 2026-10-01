@@ -179,10 +179,12 @@ console.log('\nde velden die de factuur nodig heeft, worden gevraagd');
      op het bestelformulier en in het accountscherm. De server bouwt `name`
      ervan met composeName(); zie de noot in PlanPicker.astro voor waarom het
      andersom (splitsen) niet kan. */
-  for (const veld of ['first_name', 'last_name', 'email', 'address_line1', 'postal_code', 'city', 'country']) {
+  /* brand is sinds 29 september 2026 verplicht: VISUAILS levert alleen zakelijk,
+     en het bestelformulier eiste de bedrijfsnaam al — het abonnement niet. */
+  for (const veld of ['first_name', 'last_name', 'email', 'address_line1', 'postal_code', 'city', 'country', 'brand']) {
     ok(`  ${veld} is verplicht`, new RegExp(`name="${veld}"[^>]*required|required[^>]*name="${veld}"`).test(form));
   }
-  for (const veld of ['brand', 'vat']) {
+  for (const veld of ['vat']) {
     ok(`  ${veld} is optioneel`, new RegExp(`name="${veld}"[^>]*required`).test(form), false);
   }
   const api = lees('functions/api/plan.js');

@@ -193,7 +193,7 @@ console.log('\nde proberoute hangt achter sessie én origin');
   const vreemd = await verzoek('POST', '/admin/diagnose/probe', { origin: 'https://kwaadaardig.example' });
   ok('met sessie maar een vreemde origin: 403', vreemd.status, 403);
   const tekst = await vreemd.text();
-  ok('en er is niets uitgevoerd', /Request origin did not match/.test(tekst));
+  ok('en er is niets uitgevoerd', /Het verzoek kwam niet van dit paneel/.test(tekst));
 
   const geen = await verzoek('POST', '/admin/diagnose/probe', { origin: null });
   ok('zonder origin-kop: ook 403', geen.status, 403);

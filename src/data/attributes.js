@@ -170,7 +170,7 @@ export const ORDER_QUESTION_IDS = ORDER_QUESTIONS.map((q) => q.id);
 export const COPY = {
   en: {
     aboutH: 'About the product',
-    aboutLead: 'One optional question. It says what answering buys — skip it if it does not apply.',
+    aboutLead: 'Two optional questions. Each says what answering buys — skip them if they do not apply.',
     whatItBuys: 'What this buys',
     optional: 'Optional',
     sameForAll: 'Same for every product?',
@@ -181,7 +181,7 @@ export const COPY = {
   },
   nl: {
     aboutH: 'Over het product',
-    aboutLead: 'Eén optionele vraag. Erbij staat wat invullen oplevert — sla ’m over als het niet van toepassing is.',
+    aboutLead: 'Twee optionele vragen. Erbij staat wat invullen oplevert — sla ze over als ze niet van toepassing zijn.',
     whatItBuys: 'Wat dit oplevert',
     optional: 'Optioneel',
     sameForAll: 'Voor elk product hetzelfde?',

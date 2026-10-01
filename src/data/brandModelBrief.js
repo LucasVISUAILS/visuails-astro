@@ -103,7 +103,7 @@ export const BUILDS = [
   { id: 'slim', label: { en: 'Slim', nl: 'Slank' } },
   { id: 'average', label: { en: 'Average', nl: 'Gemiddeld' } },
   { id: 'athletic', label: { en: 'Athletic', nl: 'Atletisch' } },
-  { id: 'curve', label: { en: 'Curve', nl: 'Curve' } },
+  { id: 'curve', label: { en: 'Curvy', nl: 'Curvy' } },
   { id: 'open', label: { en: 'Open', nl: 'Open' } },
 ];
 
@@ -159,7 +159,7 @@ export const COPY = {
 
     s1H: 'How would you like to work?',
     s1Lead: 'This is the only choice that changes the rest of the form.',
-    trackOwnH: 'I know who I see',
+    trackOwnH: 'I have someone in mind',
     trackOwnB: 'You describe the face and we build it. Eight short questions.',
     trackOursH: 'Design it for me',
     trackOursB: 'You tell us who you sell to, we come back with directions. Four short questions.',
@@ -202,8 +202,8 @@ export const COPY = {
     afterH: 'What happens after you pay',
     after: [
       'As soon as they are ready you get directions — not one face, a few, so you have something to react to.',
-      'You say what is close and what is wrong. That round is the point of doing it this way; a face nobody argued about is a face nobody chose.',
-      'Then we build it, put it through the uniqueness check, and lock it to your brand. It stays yours, and it gets kept current as your line changes.',
+      'You say what is close and what is wrong. That one correction round is the point of doing it this way; a face nobody argued about is a face nobody chose.',
+      'Then we build it, put it through the uniqueness check, and lock it to your brand. It stays yours, and the face stays the same from order to order; per order you choose whether to use it.',
     ],
     legal: ['By paying you agree to our ', ' and ', '.'],
     legalTerms: 'terms',
@@ -271,8 +271,8 @@ export const COPY = {
     afterH: 'Wat er na het betalen gebeurt',
     after: [
       'Zodra ze klaar zijn krijg je richtingen — niet één gezicht maar een paar, zodat je iets hebt om op te reageren.',
-      'Jij zegt wat in de buurt komt en wat niet klopt. Die ronde is precies waarom we het zo doen; een gezicht waar niemand over gediscussieerd heeft, is een gezicht dat niemand gekozen heeft.',
-      'Daarna bouwen we het, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Het blijft van jou, en het gaat mee als je collectie verandert.',
+      'Jij zegt wat in de buurt komt en wat niet klopt. Die ene correctieronde is precies waarom we het zo doen; een gezicht waar niemand over gediscussieerd heeft, is een gezicht dat niemand gekozen heeft.',
+      'Daarna bouwen we het, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Het blijft van jou, en het gezicht blijft hetzelfde van bestelling tot bestelling; per bestelling kies je of je het gebruikt.',
     ],
     legal: ['Door te betalen ga je akkoord met onze ', ' en ', '.'],
     legalTerms: 'algemene voorwaarden',

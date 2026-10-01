@@ -43,8 +43,19 @@
  * notifyStudio() in feedback.js, en om dezelfde reden.
  */
 
+import { serviceLabel } from '../data/services.js';
 import { sendMail } from './mail.js';
-import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote, statusPil } from './mailTemplate.js';
+import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil, bedrag as mailBedrag, datum, esc } from './mailTemplate.js';
+
+/* ── WAARDEN IN DE STUDIOMAIL WORDEN ONTSNAPT — 29 september 2026 ──────────
+   rows() en quote() uit mailTemplate.js nemen HTML aan. Hier gingen merknamen,
+   e-mailadressen, telefoonnummers, productnamen en de toelichting van de klant
+   er rauw in: een merk dat "<b>" heet, of een toelichting met een link erin,
+   kwam als opmaak in jouw mailbox. Nu is elke waarde tekst, tenzij hij als
+   { html } wordt meegegeven (de statuspil). */
+const mailRows = (pairs) => rijenHtml(pairs.map(([k, v]) => [k,
+  v && typeof v === 'object' && 'html' in v ? v.html : (v === null || v === undefined || v === '' ? v : esc(v))]));
+const mailQuote = (tekst) => quoteHtml(esc(tekst));
 
 /** De bestelling erbij halen, zodat een mail bruikbaar is zonder eerst te zoeken. */
 async function orderFor(env, orderId) {
@@ -67,7 +78,9 @@ const who = (o) => o?.brand
   || [o?.first_name, o?.last_name].filter(Boolean).join(' ')
   || o?.name || o?.email || '—';
 
-const cents = (v) => `€ ${((Number(v) || 0) / 100).toFixed(2).replace('.', ',')}`;
+const cents = (v) => mailBedrag(v, 'nl');
+/* Mollie's statuswoorden in het Nederlands, voor de studiomail. */
+const mollieWoord = (w) => ({ expired: 'verlopen', canceled: 'afgebroken', cancelled: 'afgebroken', failed: 'mislukt', open: 'open', pending: 'in behandeling', paid: 'betaald', authorized: 'geautoriseerd' })[String(w || '').toLowerCase()] || w;
 
 /** Eén plek voor de vraag "kan en mag ik mailen". */
 function canMail(env) {
@@ -104,12 +117,12 @@ export async function notifyPaid(env, orderId) {
         ['Bestelling', ref],
         ['Klant', who(o)],
         ['E-mail', o?.email || ''],
-        ['Dienst', o?.service || ''],
+        ['Dienst', serviceLabel(o?.service, 'nl') || o?.service || ''],
         ['Producten', String(o?.product_count ?? '')],
         ['Bedrag', `${cents(o?.total_cents)} excl. btw · ${cents(gross)} totaal`],
         ['Venster', o?.window_start ? `${o.window_start}${o.window_end ? ` – ${o.window_end}` : ''}` : 'geen vastgelegde datum'],
       ]),
-      mailP('De factuur is al naar de klant. Het werk kan beginnen.'),
+      mailP('De factuur is al naar de klant gestuurd. Het werk kan beginnen.'),
     ].join(''));
   } catch (err) {
     console.error('[notify] betaald-bericht niet verstuurd voor', orderId, '—', err?.message || err);
@@ -137,7 +150,7 @@ export async function notifyPaymentFailed(env, orderId, reason = '') {
         ['Bestelling', ref],
         ['Klant', who(o)],
         ['E-mail', o?.email || ''],
-        ['Wat Mollie zei', reason || 'onbekend'],
+        ['Wat Mollie zei', mollieWoord(reason) || 'onbekend'],
         ['Bedrag', cents((Number(o?.total_cents) || 0) + (Number(o?.vat_cents) || 0))],
       ]),
       mailP('De bestelling staat nog op onbetaald en de klant kan het opnieuw proberen '
@@ -146,6 +159,36 @@ export async function notifyPaymentFailed(env, orderId, reason = '') {
     ].join(''));
   } catch (err) {
     console.error('[notify] mislukte-betaling-bericht niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/*
+ * ── 0% BUITEN DE EU, BETAALD MET IETS UIT DE EU — 29 september 2026 ─────────
+ *
+ * Bestellingen van buiten de EU betalen sinds vandaag meteen, zonder
+ * beoordeling vooraf (zie vatGate() in src/data/vat.js). Dit bericht is wat
+ * daarvoor in de plaats kwam: past het betaalmiddel niet bij het land, dan hoor
+ * je het vóór je gaat produceren. Het is geen bewijs van fraude — een
+ * Nederlander kan een Amerikaans bedrijf hebben — dus er wordt niets geblokkeerd.
+ */
+export async function notifyBtwTwijfel(env, orderId, reden) {
+  try {
+    const o = await orderFor(env, orderId);
+    const ref = o?.ref || `#${orderId}`;
+    await toStudio(env, `Even nakijken: btw · ${ref}`, [
+      h1('Betaald op 0%, maar het betaalmiddel komt uit de EU', ref),
+      mailRows([
+        ['Bestelling', ref],
+        ['Klant', who(o)],
+        ['E-mail', o?.email || ''],
+        ['Wat er niet klopt', reden || ''],
+      ]),
+      mailP('De bestelling is betaald en staat gewoon in de rij. Kijk vóór je begint of het een bedrijf buiten de EU is — '
+        + 'een adres, een website of een kort mailtje is genoeg. Klopt het niet, dan hoort er Nederlandse btw op: '
+        + 'annuleer met terugbetalen en laat de klant opnieuw bestellen met het juiste land.'),
+    ].join(''));
+  } catch (err) {
+    console.error('[notify] btw-twijfelbericht niet verstuurd voor', orderId, '—', err?.message || err);
   }
 }
 
@@ -177,7 +220,7 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
         ['Telefoon', o?.phone || ''],
         ['Eerdere proef', earlierRef || 'onbekend'],
         ['Toen', earlierAt || 'onbekend'],
-        ['De euro', refunded ? 'automatisch teruggestort' : 'NIET teruggestort — met de hand doen'],
+        ['Proefbedrag (€ 1)', refunded ? 'automatisch teruggestort' : 'NIET teruggestort — met de hand doen'],
       ]),
       mailP('Dezelfde bankrekening als bij de eerdere proefvisual, dus dit is hetzelfde '
         + 'bedrijf onder een ander e-mailadres. De bestelling staat op geannuleerd en er '
@@ -403,12 +446,12 @@ export async function notifySubscriptionFailed(env, {
           ['E-mail', email || ''],
           ['Plan', plan || ''],
           ['Bedrag', cents(bedragCents)],
-          ['Wat Mollie zei', reason || 'onbekend'],
-          ['Status bij Mollie', molliestatus ? statusPil(molliestatus, molliestatus) : statusPil('unknown', 'onbekend')],
+          ['Wat Mollie zei', mollieWoord(reason) || 'onbekend'],
+          ['Status bij Mollie', { html: molliestatus ? statusPil(molliestatus, mollieWoord(molliestatus)) : statusPil('unknown', 'onbekend') }],
         ]),
         gestopt
           ? mailP('Mollie probeert het niet meer, dus het abonnement is hier op pauze gezet. '
-            + 'De klant kan zolang niets van zijn saldo besteden. Zodra er wél een afschrijving '
+            + 'De klant kan intussen niets van zijn saldo besteden. Zodra er wél een afschrijving '
             + 'lukt, loopt het vanzelf weer — daar hoef jij niets voor te doen. Wat wél helpt: '
             + 'één bericht aan de klant dat zijn rekening het niet deed.')
           : mailP('Mollie probeert het binnenkort opnieuw. Het abonnement loopt gewoon door en '
@@ -460,7 +503,7 @@ export async function notifySubscriptionRefunded(env, {
           ['Termijn', maand || '—'],
           ['Afgeschreven', cents(bedragCents)],
           ['Terugbetaald', cents(terugCents)],
-          ['Status bij Mollie', molliestatus ? statusPil(molliestatus, molliestatus) : statusPil('unknown', 'onbekend')],
+          ['Status bij Mollie', { html: molliestatus ? statusPil(molliestatus, mollieWoord(molliestatus)) : statusPil('unknown', 'onbekend') }],
         ]),
         mailP(volledig
           ? 'De hele termijn is terug. Het abonnement staat op pauze, dus er komt geen '
@@ -494,7 +537,7 @@ export async function notifyPlanWeekMoved(env, { subRef, brand, email, van, naar
     const ref = subRef || '(zonder kenmerk)';
     await toStudio(
       env,
-      `Week verzet · ${ref} · van de ${van}e naar de ${naar}e`,
+      (van ? `Week verzet · ${ref} · van de ${van}e naar de ${naar}e` : `Week gekozen · ${ref} · vanaf de ${naar}e`),
       [
         h1('Een abonnee verzette zijn week', ref),
         mailRows([
@@ -511,5 +554,69 @@ export async function notifyPlanWeekMoved(env, { subRef, brand, email, van, naar
     );
   } catch (err) {
     console.error('[notify] weekverzetbericht niet verstuurd voor', subRef, '—', err?.message || err);
+  }
+}
+
+/* ── EEN NIEUW ABONNEMENT — 23 september 2026 ──────────────────────────────
+   Uit de doorloop: de studio hoorde niets van een nieuwe machtiging. Eén
+   bericht, bij de EERSTE betaalde maand; de termijnen daarna zijn routine en
+   staan in het abonnementspaneel. */
+export async function notifySubscriptionStarted(env, { subRef, plan, term, brand, email, credits, bedragCents = 0, windowDay, twijfel = null }) {
+  try {
+    const ref = subRef || '(zonder kenmerk)';
+    await toStudio(env, `Nieuw abonnement · ${ref} · ${plan || ''}`, [
+      h1('Een abonnement is gestart', ref),
+      mailRows([
+        ['Abonnement', ref],
+        ['Klant', brand || email || '—'],
+        ['E-mail', email || ''],
+        ['Plan', `${plan || ''}${term ? ` · ${({ monthly: 'maandelijks', yearly: '12 maanden', prepaid: '12 maanden vooruit' })[term] || term}` : ''}`],
+        ['Credits per maand', String(credits ?? '')],
+        ['Eerste afschrijving', cents(bedragCents)],
+        ['Vaste week rond dag', windowDay ? String(windowDay) : '—'],
+      ]),
+      mailP((term === 'prepaid'
+        ? 'Het hele jaar is vooruitbetaald en de credits van de eerste maand staan op het account; elke volgende maand zet de nachtelijke taak erbij. '
+        : 'De eerste maand is betaald en de credits staan op het account. ')
+        + 'De klant kreeg een welkomstmail met een inlogknop. Hij vult zijn lijst in Studio; '
+        + 'de week start jij vanuit /admin/customers zodra er genoeg op staat.'),
+      twijfel
+        ? mailP(`<strong>Even nakijken:</strong> dit abonnement staat op 0% (buiten de EU), maar ${esc(twijfel)}. `
+          + 'Kijk of het echt een bedrijf buiten de EU is; klopt het niet, zeg het abonnement op en laat de klant opnieuw afsluiten met het juiste land.')
+        : '',
+    ].join(''));
+  } catch (err) {
+    console.error('[notify] abonnementsbericht niet verstuurd voor', subRef, '—', err?.message || err);
+  }
+}
+
+/* ── PAUZEREN, HERVATTEN, OPZEGGEN — 24 september 2026 ──────────────────────
+   Een klant die zijn abonnement stopt, is precies de klant waar je als studio
+   iets over wilt horen — tot vandaag gebeurde het zonder bericht. */
+export async function notifyAboWijziging(env, { soort, subRef, plan, brand, email, jaarDoor = null, prepaid = false }) {
+  const woord = { pauze: 'gepauzeerd', hervat: 'hervat', opgezegd: 'opgezegd' }[soort] || soort;
+  try {
+    await toStudio(env, `Abonnement ${woord} · ${subRef || ''} · ${brand || email || ''}`, [
+      h1(`Een abonnement is ${woord}`, subRef || ''),
+      mailRows([
+        ['Abonnement', subRef || ''],
+        ['Klant', brand || email || '—'],
+        ['E-mail', email || ''],
+        ['Plan', plan || ''],
+      ]),
+      mailP(soort === 'opgezegd' && jaarDoor !== null
+        ? `De klant heeft zelf opgezegd in Studio. Het is een <strong>vooruitbetaald jaar</strong>: dat loopt gewoon door${jaarDoor && jaarDoor !== 'onbekend' ? ` tot ${datum(jaarDoor, 'nl')}` : ' tot het einde'}, met elke maand de credits en de vaste week, en stopt daarna vanzelf. Er hoeft niets met de hand te gebeuren — geen tegoed, geen terugbetaling. Even vragen waarom is nu het meest waard.`
+        : soort === 'opgezegd'
+        ? 'De klant heeft zelf opgezegd in Studio. De incasso bij Mollie is gestopt; betaalde credits blijven tot het einde van de termijn te besteden. Even vragen waarom is nu het meest waard.'
+        : soort === 'pauze'
+          ? (prepaid
+            ? 'De klant heeft zelf gepauzeerd in Studio. Het is een vooruitbetaald jaar, dus er is geen incasso: de nachtelijke taak kent geen nieuwe maanden toe tot hij hervat. Het saldo blijft staan.'
+            : 'De klant heeft zelf gepauzeerd in Studio. De incasso bij Mollie is gestopt; het saldo blijft staan.')
+          : (prepaid
+            ? 'De klant heeft zelf hervat in Studio. Het is een vooruitbetaald jaar: de nachtelijke taak kent vanaf nu weer elke maand de credits toe.'
+            : 'De klant heeft zelf hervat in Studio. Mollie incasseert weer volgens het gewone ritme.')),
+    ].join(''));
+  } catch (err) {
+    console.error('[notify] abonnementswijziging niet gemeld voor', subRef, '—', err?.message || err);
   }
 }

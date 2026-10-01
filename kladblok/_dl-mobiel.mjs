@@ -1,0 +1,13 @@
+import { start, foto, tekst, SITE } from './_dl.mjs';
+const s = await start({ mobiel: true }); const { page } = s;
+await page.goto(SITE + '/nl/start/catalog', { waitUntil: 'load' });
+await page.waitForSelector('#pl-form.is-live');
+await foto(page, 'mob-stap1-top');
+await page.fill('[data-pl-qty-input]', '3'); await page.dispatchEvent('[data-pl-qty-input]', 'input');
+await foto(page, 'mob-stap1', { vol: true });
+await page.evaluate(() => document.querySelector('.pl-step.is-current [data-pl-next]').click()); await page.waitForTimeout(600);
+await foto(page, 'mob-stap2', { vol: true });
+console.log('hoogte stap 2:', await page.evaluate(() => document.body.scrollHeight));
+console.log('overflow:', await page.evaluate(() => document.documentElement.scrollWidth));
+console.log(s.fouten.filter(f => !/account\/me/.test(f)));
+await s.stop();

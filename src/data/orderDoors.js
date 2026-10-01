@@ -79,7 +79,7 @@ export const DOORS = [
     bestel: '/start/complete',
     naam: { en: 'Catalog + Lifestyle', nl: 'Catalog + Lifestyle' },
     cta: { en: 'Order catalog + lifestyle', nl: 'Bestel catalog + lifestyle' },
-    kort: { en: 'A catalog set and a carousel per product', nl: 'Een catalogset en een carousel per product' },
+    kort: { en: 'A catalog set and a carousel per product', nl: 'Een catalogset en een carrousel per product' },
   },
   {
     id: 'video',
@@ -103,7 +103,7 @@ export const DOORS = [
     bestel: '/start/plan',
     naam: { en: 'Monthly plan', nl: 'Abonnement' },
     cta: { en: 'Start a plan', nl: 'Start een abonnement' },
-    kort: { en: 'A fixed number of products each month', nl: 'Elke maand een vast aantal producten' },
+    kort: { en: 'A fixed number of credits each month', nl: 'Elke maand een vast aantal credits' },
   },
 ];
 

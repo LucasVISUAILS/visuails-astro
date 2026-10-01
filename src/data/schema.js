@@ -327,7 +327,7 @@ const COMPLETE_NAME = { en: 'Catalog + Lifestyle', nl: 'Catalog + Lifestyle' };
 
 const COMPLETE_LEAD = {
   en: 'A catalog set and a lifestyle carousel for every product in the order.',
-  nl: 'Elk product in de bestelling krijgt een catalogset en een lifestyle-carousel.',
+  nl: 'Elk product in de bestelling krijgt een catalogset en een lifestylecarrousel.',
 };
 
 const VIDEO_LINE = {
@@ -831,7 +831,7 @@ const CRUMBS = {
   '/start/brand-model': { en: 'Brand Model', nl: 'Merkmodel' },
   '/start/catalog': { en: 'Catalog sets', nl: 'Catalogsets' },
   '/start/complete': { en: 'Catalog and lifestyle', nl: 'Catalog en lifestyle' },
-  '/start/lifestyle': { en: 'Lifestyle carousels', nl: 'Lifestyle-carousels' },
+  '/start/lifestyle': { en: 'Lifestyle carousels', nl: 'Lifestylecarrousels' },
   '/start/plan': { en: 'Plan', nl: 'Plan' },
   '/start/video': { en: 'Video', nl: 'Video' },
   '/terms': { en: 'Terms', nl: 'Voorwaarden' },

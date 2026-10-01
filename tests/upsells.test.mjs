@@ -93,5 +93,21 @@ console.log('\nde twee samen, en in de goede volgorde');
   ok('bruto is netto plus btw', r.grossCents, r.netCents + r.vatCents);
 }
 
+console.log('\nvoorrang: de harde termijn (29 september 2026)');
+{
+  const { voorrangDeadline, feestdagenNL } = await import('../src/data/pricing.js');
+  const d = (t) => voorrangDeadline(t)?.datum;
+  ok('dinsdag 12:00 NL → woensdag', d('2026-09-29T10:00:00Z'), '2026-09-30');
+  ok('dinsdag 16:00 NL → donderdag', d('2026-09-29T14:00:00Z'), '2026-10-01');
+  ok('vrijdag 12:00 → maandag', d('2026-10-02T10:00:00Z'), '2026-10-05');
+  ok('zaterdag → dinsdag', d('2026-10-03T10:00:00Z'), '2026-10-06');
+  ok('kerstavond → maandag 28 december (twee kerstdagen)', d('2026-12-24T10:00:00Z'), '2026-12-28');
+  ok('woensdag vóór Hemelvaart → vrijdag', d('2026-05-13T10:00:00Z'), '2026-05-15');
+  ok('klaar om 17:00', voorrangDeadline('2026-09-29T10:00:00Z')?.uur, 17);
+  ok('Koningsdag op zondag schuift naar 26 april (2025)', feestdagenNL(2025).has('2025-04-26'), true);
+  ok('tweede paasdag 2027 is 29 maart', feestdagenNL(2027).has('2027-03-29'), true);
+  ok('5 mei telt mee (Algemene termijnenwet)', feestdagenNL(2026).has('2026-05-05'), true);
+}
+
 console.log(`\n${goed}/${totaal} geslaagd`);
 if (goed !== totaal) process.exit(1);

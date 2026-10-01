@@ -48,7 +48,9 @@
 // nergens in dat bestand. De regel is daarom aangepast naar de eenheid die de
 // poort werkelijk gebruikt — anders zou de figuur ernaast de tekst tegenspreken,
 // en dan is een mock-up erger dan een grijs vlak.
-import { WINDOW_THRESHOLD, aim48, TEST_SAMPLE } from '../data/pricing.js';
+/* aim48 is weg (30 september 2026): een betaalde datum ligt vast; zie de noot
+   bij AIM_48 in pricing.js. */
+import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
 import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capacity.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigGate from './FigGate.astro';
@@ -75,7 +77,7 @@ const COPY = {
       // Zie de noot bovenaan dit bestand: dit zei "a week has room", en de poort
       // telt per dag. De cijfers komen nu uit capacity.js, dus de tekst kan niet
       // meer los gaan staan van het mechanisme dat hij beschrijft.
-      ['Counted in products, not orders', `A studio day holds ${PRODUCTS_PER_DAY} products; a reserved window is ${WINDOW_DAYS} days.`],
+      ['Counted in products, not orders', `A studio day holds ${PRODUCTS_PER_DAY} products; a reserved window is ${WINDOW_DAYS} consecutive open studio days.`],
       ['Room for small orders', `${QUEUE_FLOOR_PER_DAY} of every ${PRODUCTS_PER_DAY} stay free for small orders.`],
       // Size, not product type. See the header note: this used to say "drops
       // outrank loose products", which named two things a buyer picked between.
@@ -92,7 +94,7 @@ const COPY = {
       ['One move, both sides', 'The studio and your portal update together.'],
     ],
 
-    humanH: 'The last step is a person.',
+    humanH: 'The last step is a specialist.',
     humanLede: 'Nothing is delivered automatically. A specialist looks at every image before it goes out.',
     humanNote: 'Every approval and revision is logged with a date.',
     humanCta: 'Read the AI Act page',
@@ -108,8 +110,8 @@ const COPY = {
     plLede: `From ${WINDOW_THRESHOLD} products we reserve your days in the calendar, so the date goes in writing.`,
     pl: [
       ['Your launch date', 'The day the collection goes live. We count back from here.'],
-      ['Your reserved date', `Held from ${WINDOW_THRESHOLD} products; nothing moves it. ${aim48('en')} An aim, not a promise.`],
-      ['Minus one folder', 'The day you send the photos. Your part is done.'],
+      ['Your reserved date', `From ${WINDOW_THRESHOLD} products, reserved when you order and fixed once you have paid. Only force majeure can move it.`],
+      ['Your upload day', 'The day you send the photos. Your part is done.'],
     ],
     plNote: '',
     plCta: 'See which weeks are open',
@@ -138,7 +140,7 @@ const COPY = {
     gateRegelsH: 'De vier regels waar de planning op draait',
     gateLede: 'Het bestelformulier biedt alleen datums aan die de studio nog kan vasthouden.',
     gate: [
-      ['Geteld in producten, niet in orders', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten; een vastgelegd venster is ${WINDOW_DAYS} dagen.`],
+      ['Geteld in producten, niet in orders', `Een studiodag houdt ${PRODUCTS_PER_DAY} producten; een vastgelegd venster is ${WINDOW_DAYS} open studiodagen achter elkaar.`],
       ['Ruimte voor kleine bestellingen', `${QUEUE_FLOOR_PER_DAY} van elke ${PRODUCTS_PER_DAY} blijven vrij voor kleine bestellingen.`],
       // Zie de EN-tak: omvang beslist, niet het soort bestelling.
       [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten houdt een bestelling een vastgelegde datum. Kleinere bestellingen volgen de normale doorlooptijd.`],
@@ -163,8 +165,8 @@ const COPY = {
     plLede: `Vanaf ${WINDOW_THRESHOLD} producten houden we je dagen vrij in de agenda, dus de datum staat op papier.`,
     pl: [
       ['De dag dat je live gaat', 'De dag dat de collectie online staat. Daar rekenen we vanaf terug.'],
-      ['Je vastgezette datum', `Vanaf ${WINDOW_THRESHOLD} producten; niets schuift hem op. ${aim48('nl')} Een streven, geen belofte.`],
-      ['Min één map', 'De dag dat jij de foto’s stuurt. Jouw deel is klaar.'],
+      ['Je vastgezette datum', `Vanaf ${WINDOW_THRESHOLD} producten, gereserveerd zodra je bestelt en vast zodra je hebt betaald. Alleen overmacht kan hem nog verzetten.`],
+      ['Je uploaddag', 'De dag dat jij de foto’s stuurt. Jouw deel is klaar.'],
     ],
     plNote: '',
     plCta: 'Kijk welke weken nog vrij zijn',
@@ -314,7 +316,7 @@ const nl = lang === 'nl';
       grootste deel een lege 16:9-plaatshouder was (PAGINA-OPBOUW.md). De
       tekst staat nu hier, onder het bord waar die stap in gebeurt. Komt de
       foto van iemand aan het werk, dan kan hij terug naast deze tekst. */}
-  <section class="paneel" aria-labelledby="sp-bord">
+  <section class="paneel vervolg" aria-labelledby="sp-bord">
     <div class="sp-twee-licht">
       <div class="sp-bord-t">
         <h2 id="sp-bord" class="hoog hoog-2">{c.boardH}</h2>
@@ -346,7 +348,7 @@ const nl = lang === 'nl';
   </section>
 
   {/* ── 6 · WAT HET NIET DOET ────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="sp-eerlijk">
+  <section class="paneel vervolg" aria-labelledby="sp-eerlijk">
     <header class="paneel-kop">
       <h2 id="sp-eerlijk" class="hoog hoog-2">{c.honestH}</h2>
       {c.honestLede && <p class="lopend">{c.honestLede}</p>}

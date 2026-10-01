@@ -7,7 +7,7 @@ import { serviceLabel } from '../../data/services.js';
 import Pil from './Pil.astro';
 import Voortgang from './Voortgang.astro';
 import Betaling from './Betaling.astro';
-const { t, lang, order: o, events = [] } = Astro.props;
+const { t, lang, order: o, events = [], files = [] } = Astro.props;
 const onbetaald = String(o.payment_status || 'unpaid') !== 'paid' && o.status === 'received';
 ---
 <article class="st-kaart-vlak st-order">
@@ -18,7 +18,7 @@ const onbetaald = String(o.payment_status || 'unpaid') !== 'paid' && o.status ==
     <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
   </div>
   {onbetaald && <Betaling t={t} lang={lang} order={o} />}
-  <Voortgang t={t} lang={lang} order={o} events={events} />
+  <Voortgang t={t} lang={lang} order={o} events={events} files={files} />
   {o.customer_note && (
     <div class="st-nota">
       <span class="st-nota-wie">{t.noteFrom}</span>

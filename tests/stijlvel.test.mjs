@@ -102,7 +102,11 @@ for (const [dienst, pad, taal] of PAGINAS) {
      vaker is de herhaling waar hij juist uit de kamers voor weggehaald is. */
   /* Korter sinds 23 september 2026 (minder tekst); de belofte is dezelfde:
      meer beelden kan, en dat kies je in het bestelformulier. */
-  const zin = taal === 'nl' ? 'Meer beelden kies je erbij in het bestelformulier' : 'More images can be added in the order form';
+  /* Video heeft geen bestelformulier en levert clips: daar staat dezelfde
+     ondergrens met het aanvraagformulier (30 september 2026). */
+  const zin = dienst === 'video'
+    ? (taal === 'nl' ? 'Meer clips vraag je aan via het aanvraagformulier' : 'More clips can be requested through the request form')
+    : (taal === 'nl' ? 'Meer beelden kies je erbij in het bestelformulier' : 'More images can be added in the order form');
   const keer = html.split(zin).length - 1;
   ok(`${pad} — "meer beelden kan" staat precies één keer`, keer === 1, 1, keer);
 

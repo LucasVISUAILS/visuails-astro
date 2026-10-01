@@ -20,7 +20,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 import Bestelkaart from '../../components/studio/Bestelkaart.astro';
 import Pil from '../../components/studio/Pil.astro';
 import { pagesContext } from '../../lib/route.js';
-import { studioScreen, progressView, STUDIO_ICONS } from '../../lib/account.js';
+import { studioScreen, progressView, STUDIO_ICONS, invoiceDate } from '../../lib/account.js';
 import { serviceLabel } from '../../data/services.js';
 
 export const prerender = false;
@@ -34,8 +34,8 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
 <StudioLayout
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="overview" customer={customer}
   title={t.navOverview}
-  kop={`${t.ovWelcome}, ${v.name}`} lede={t.ovLede} chip={v.chip}
-  actie={{ href: '/start/', label: t.ovNewCta }}
+  kop={`${orders.length > 1 ? t.ovWelcome : t.ovWelcomeFirst}, ${v.name}`} lede={t.ovLede} chip={v.chip}
+  actie={{ href: lang === 'nl' ? '/nl/start/' : '/start/', label: t.ovNewCta }}
 >
   <section class="st-blok" aria-label={t.navOverview}>
     <div class="st-kaart-vlak st-cijfers">
@@ -53,15 +53,27 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
     </div>
   </section>
 
+  {/* Het tegoed (24 september 2026): alleen als er iets staat. Zie tegoedView()
+      in account.js. */}
+  {v.tegoed && (
+    <section class="st-blok" aria-label={v.tegoed.h}>
+      <div class="st-kaart-vlak st-vlak st-saldo-tegel is-tegoed is-los">
+        <span class="st-eyebrow">{v.tegoed.h}</span>
+        <p class="st-credit-tel"><b>{v.tegoed.bedrag}</b></p>
+        <p class="st-meta">{v.tegoed.uitleg}</p>
+      </div>
+    </section>
+  )}
+
   {v.featured && (
     <section class="st-blok">
       <div class="st-blok-kop"><h2>{t.ovNowTitle}</h2></div>
-      <Bestelkaart t={t} lang={lang} order={v.featured} events={eventsByOrder.get(v.featured.id) || []} />
+      <Bestelkaart t={t} lang={lang} order={v.featured} events={eventsByOrder.get(v.featured.id) || []} files={filesByOrder.get(v.featured.id) || []} />
       {v.rest.length > 0 && (
         <div class="st-kaart-vlak">
           <ul class="st-lopend" aria-label={t.ovOthers(v.rest.length)}>
             {v.rest.slice(0, 6).map((o) => {
-              const p = progressView(t, lang, o, eventsByOrder.get(o.id) || []);
+              const p = progressView(t, lang, o, eventsByOrder.get(o.id) || [], filesByOrder.get(o.id) || []);
               return (
                 <li>
                   <span class="st-ref">{o.ref}</span>
@@ -98,6 +110,8 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
     )}
   </section>
 
+  {/* Leeg omdat alles al bovenaan staat? Dan geen blok (29 september 2026). */}
+  {(v.recent.length > 0 || orders.length === 0) && (
   <section class="st-blok">
     <div class="st-blok-kop">
       <h2>{t.ovRecent}</h2>
@@ -110,7 +124,7 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
             <li>
               <a href={`/account/orders?order=${o.id}#order-${o.id}`}>
                 <span class="st-ref">{o.ref}</span>
-                <span class="st-meta">{serviceLabel(o.service, lang) || o.service}{o.created_at ? ` · ${String(o.created_at).slice(0, 10)}` : ''}</span>
+                <span class="st-meta">{serviceLabel(o.service, lang) || o.service}{o.created_at ? ` · ${invoiceDate(String(o.created_at).slice(0, 10), lang)}` : ''}</span>
               </a>
               <Pil status={o.status} lang={lang} />
             </li>
@@ -121,4 +135,5 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
       <p class="st-leeg">{t.emptyOrders}</p>
     )}
   </section>
+  )}
 </StudioLayout>

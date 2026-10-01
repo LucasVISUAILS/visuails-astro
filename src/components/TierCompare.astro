@@ -124,7 +124,7 @@ const t = lang === 'nl'
          eens uitlegt. Wat er ECHT toe doet is de eerste zin — je kiest niets, de
          omvang beslist. De rest is voor wie zich afvraagt waarom. */
       p: 'Je kiest geen serviceniveau — de omvang van je bestelling bepaalt het.',
-      pNote: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij de vastgezette leverdatum; daaronder loopt hij in de normale doorlooptijd. Dat is ook precies het aantal waarbij het tarief per product een stap zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
+      pNote: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij een leverdatum die gereserveerd is zodra je bestelt en vastligt zodra je betaalt; daaronder loopt hij in de normale doorlooptijd. Dat is ook precies het aantal waarbij het tarief per product een stap zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
       pTerm: 'serviceniveau',
       cta0: 'Start een bestelling',
       cta1: `Bekijk het tarief vanaf ${WINDOW_THRESHOLD} producten`,
@@ -132,7 +132,7 @@ const t = lang === 'nl'
   : {
       h: `What changes at ${WINDOW_THRESHOLD} products`,
       p: 'You do not pick a service level — the size of your order sets it.',
-      pNote: `From ${WINDOW_THRESHOLD} products we hold a delivery date for the order and confirm it in writing; below that count the normal turnaround applies. That is also the count at which the rate per product drops a step, so there is one line to cross rather than two. Both run through the same production and the same check.`,
+      pNote: `From ${WINDOW_THRESHOLD} products we reserve a delivery date for the order when you place it, and it is fixed once you pay; below that count the normal turnaround applies. That is also the count at which the rate per product drops a step, so there is one line to cross rather than two. Both run through the same production and the same check.`,
       pTerm: 'service level',
       cta0: 'Start an order',
       cta1: `See the rate from ${WINDOW_THRESHOLD} products`,

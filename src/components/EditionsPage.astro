@@ -191,7 +191,7 @@ const COPY = {
       [`${STOCK_OFF_BRAND} + ${STOCK_ON_BRAND}`, 'visuals a month'],
       [`${maand} / mo`, `on top of your plan · ${vatLabel('excl', 'en')}`],
     ],
-    soonTag: 'Not running yet',
+    soonTag: 'Coming soon',
     /* ── DEZELFDE MEDEDELING STOND TWEE KEER — 12 september 2026 ──────────
        Deze noot en `belofte` onderaan zeiden allebei, in bijna dezelfde
        woorden, dat geen van beide sets al loopt en waar deze pagina dan voor
@@ -204,10 +204,10 @@ const COPY = {
     vglH: 'Two sets, and only one of them costs anything.',
     vglSub: 'Both without a product. The difference is who else gets them.',
     gedeeld: {
-      naam: 'The shared set',
+      naam: 'The monthly set',
       tag: 'Comes with your plan',
       rijen: [
-        ['What it is', `${STOCK_OFF_BRAND} ${noun('stock', 'en')} a month, brand-neutral: mood, texture and light that suit any clothing brand.`],
+        ['What it is', `The monthly set: ${STOCK_OFF_BRAND} images a month, brand-neutral: mood, texture and light that suit any clothing brand.`],
         ['Who else gets it', 'Every brand on a plan.'],
         ['What it costs', `Nothing extra. It is part of every plan, from ${eerstePlan ? eerstePlan.name : 'the first'} up.`],
         ['Your licence', 'Non-exclusive, commercial use, yours to keep.'],
@@ -232,7 +232,7 @@ const COPY = {
     /* ── WAT HET NIET IS ──────────────────────────────────────────────── */
     nietH: 'There is no product in any of it.',
     nietSub: 'That is the whole category, and it is the thing most people get wrong on first reading.',
-    nietA: ['A catalog image', 'sells the garment. It is sharp, it is on a plain ground, and a shopper is judging the product in it. That is what you order per product, and it is not this.'],
+    nietA: ['A catalog image', 'sells the garment. It is sharp, it is on a plain background, and a shopper is judging the product in it. That is what you order per product, and it is not this.'],
     nietB: ['A brand image', 'sells nothing. It is the fabric close up, the wall in late light, the hand on the strap. A shopper is not judging a product — they are deciding whether this is a brand they recognise.'],
     nietFoot: 'Both are made to the same standard and go through the same check. What differs is the job.',
 
@@ -281,11 +281,11 @@ const COPY = {
     rechtMeta: '( Rights and disclosure )',
     rechtH: 'Shared means shared, and we would rather say it here than in the small print.',
     rechtP: [
-      'Our clients are clothing brands, which makes them each other’s competitors. Two brands posting the same image are in the same feed for the same buyer, so a shared set is not a detail to bury — it is the first thing you should know about the half that costs nothing.',
-      'So the two sets carry two different licences, and the file that ships with them says which one you got. The shared set is non-exclusive: yours to edit, publish and use commercially, and yours to keep if you cancel, but the same image can appear on another brand. Editions is exclusive, like any order you place — nobody else may use those images at all.',
+      'Our clients are clothing brands, which makes them each other’s competitors. Two brands posting the same image are in the same feed for the same buyer, so a shared monthly set is not a detail to bury — it is the first thing you should know about the half that costs nothing.',
+      'So the two sets carry two different licences, and the file that ships with them says which one you got. The monthly set is non-exclusive: yours to edit, publish and use commercially, and yours to keep if you cancel, but the same image can appear on another brand. Editions is exclusive, like any order you place — nobody else may use those images at all.',
     ],
     rechtLijst: [
-      ['Both are made with AI, and both say so in the file', `Every file carries a machine-readable provenance tag. Because there is no photograph of yours in these, they carry the stronger of the two values — “made by a model” rather than “partly made by a model”. The visible disclosure on your own post is still yours to place; <a href="${lp('/ai-act')}">the AI Act page</a> has the sentence.`],
+      ['Both are made with AI, and both say so in the file', `Every file carries a machine-readable provenance tag. Because there is no photograph of yours in these, they carry the stronger of the two values — “made by an AI model” rather than “partly made by an AI model”. The visible disclosure on your own post is still yours to place; <a href="${lp('/ai-act')}">the AI Act page</a> has the sentence.`],
       ['No faces in either set', 'Choosing models per set would turn a monthly run into a review round each time, and that is what would make it expensive. If that changes, it will be said here first.'],
       ['Cancel and you keep what you downloaded', 'Both licences survive the plan. Nothing has to come down; you simply stop receiving new sets.'],
     ],
@@ -308,19 +308,19 @@ const COPY = {
       [`${STOCK_OFF_BRAND} + ${STOCK_ON_BRAND}`, 'beelden per maand'],
       [`${maand} p/m`, `bovenop je abonnement · ${vatLabel('excl', 'nl')}`],
     ],
-    soonTag: 'Nog niet actief',
+    soonTag: 'Binnenkort',
     queueNote: `Geen van beide sets loopt al, dus er wordt voor allebei nog niets afgeschreven.`,
 
     vglH: 'Twee sets, en maar één ervan kost iets.',
     vglSub: 'Allebei zonder product. Het verschil is wie ze verder krijgt.',
     gedeeld: {
-      naam: 'De gedeelde set',
+      naam: 'De maandset',
       tag: 'Zit bij je abonnement',
       rijen: [
-        ['Wat het is', `${STOCK_OFF_BRAND} ${noun('stock', 'nl')} per maand, merkneutraal: sfeer, textuur en licht die bij elk kledingmerk passen.`],
+        ['Wat het is', `De maandset: ${STOCK_OFF_BRAND} beelden per maand, merkneutraal: sfeer, textuur en licht die bij elk kledingmerk passen.`],
         ['Wie hem verder krijgt', 'Elk merk met een abonnement.'],
         ['Wat het kost', `Niets extra. Hij hoort bij elk abonnement, vanaf ${eerstePlan ? eerstePlan.name : 'het eerste'}.`],
-        ['Je licentie', 'Niet-exclusief, commercieel te gebruiken, blijft van jou.'],
+        ['Je licentie', 'Niet-exclusief, commercieel te gebruiken, blijft geldig, ook na opzeggen.'],
       ],
       cta: 'Bekijk de abonnementen',
       href: '/plans',
@@ -386,11 +386,11 @@ const COPY = {
     rechtMeta: '( Rechten en vermelding )',
     rechtH: 'Gedeeld betekent gedeeld, en dat zeggen we liever hier dan in de kleine lettertjes.',
     rechtP: [
-      'Onze klanten zijn kledingmerken, en dus elkaars concurrenten. Twee merken die hetzelfde beeld plaatsen staan in dezelfde feed voor dezelfde koper, dus een gedeelde set is geen detail om weg te stoppen — het is het eerste wat je moet weten over de helft die niets kost.',
-      'De twee sets dragen daarom twee verschillende licenties, en in het bestand dat meekomt staat welke van de twee je hebt. De gedeelde set is niet-exclusief: van jou om te bewerken, te publiceren en commercieel te gebruiken, en van jou om te houden als je opzegt, maar hetzelfde beeld kan bij een ander merk opduiken. Editions is exclusief, net als elke bestelling die je plaatst — niemand anders mag die beelden gebruiken.',
+      'Onze klanten zijn kledingmerken, en dus elkaars concurrenten. Twee merken die hetzelfde beeld plaatsen staan in dezelfde feed voor dezelfde koper, dus een gedeelde maandset is geen detail om weg te stoppen — het is het eerste wat je moet weten over de helft die niets kost.',
+      'De twee sets dragen daarom twee verschillende licenties, en in het bestand dat meekomt staat welke van de twee je hebt. De maandset is niet-exclusief: van jou om te bewerken, te publiceren en commercieel te gebruiken, en van jou om te houden als je opzegt, maar hetzelfde beeld kan bij een ander merk opduiken. Editions is exclusief, net als elke bestelling die je plaatst — niemand anders mag die beelden gebruiken.',
     ],
     rechtLijst: [
-      ['Allebei met AI gemaakt, en dat staat in het bestand', `Elk bestand draagt een machineleesbare herkomsttag. Omdat er geen foto van jou in zit, dragen deze de sterkste van de twee waardes — “door een model gemaakt” en niet “deels door een model gemaakt”. De zichtbare vermelding op je eigen post plaats je nog steeds zelf; op <a href="${lp('/ai-act')}">de AI-verordeningspagina</a> staat de zin.`],
+      ['Allebei met AI gemaakt, en dat staat in het bestand', `Elk bestand draagt een machineleesbare herkomsttag. Omdat er geen foto van jou in zit, dragen deze de sterkste van de twee waardes — “door een AI-model gemaakt” en niet “deels door een AI-model gemaakt”. De zichtbare vermelding op je eigen post plaats je nog steeds zelf; op <a href="${lp('/ai-act')}">de AI-verordeningspagina</a> staat de zin.`],
       ['Geen gezichten, in geen van beide sets', 'Modellen per set kiezen maakt van een maandelijkse ronde elke keer een controleronde, en dát is wat het duur zou maken. Verandert dat, dan staat het hier als eerste.'],
       ['Zeg je op, dan hou je wat je hebt opgehaald', 'Allebei de licenties blijven na het abonnement staan. Er hoeft niets offline; je krijgt alleen geen nieuwe sets meer.'],
     ],
@@ -476,7 +476,7 @@ const c = COPY[lang];
       terug met echte beelden op de dag dat Editions opent. */}
 
   {/* ── 7 · DE PRIJS ────────────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="ed-zeker">
+  <section class="paneel vervolg" aria-labelledby="ed-zeker">
     <div class="ed-twee-licht">
       <div>
         <h2 id="ed-zeker" class="hoog hoog-2">{c.zekerH}</h2>

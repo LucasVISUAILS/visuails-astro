@@ -160,7 +160,7 @@ try {
     ok('de week is een zin met echte datums, geen strook', tel(h, /class="st-dag[ "]/g) === 0 && /loopt van|runs from/.test(h));
     ok('de vaste look staat als regel op het overzicht, met een link', /st-lookstrip/.test(h) && /href="\/account\/brand-kit"/.test(h));
     ok('en Editions als één regel', /st-editions-regel/.test(h));
-    ok('de maandset-kaart staat op de maandtab', /st-maandset|De gedeelde set|shared set/i.test(h));
+    ok('de maandset-kaart staat op de maandtab', /st-maandset|De maandset|monthly set/i.test(h));
 
     const lijst = main(html['/account/plan?tab=bestellen']);
     ok('de lijst noemt beide items', /Grijze hoodie/.test(lijst) && /Zwarte cargo/.test(lijst));

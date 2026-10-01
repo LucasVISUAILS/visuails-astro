@@ -38,10 +38,10 @@
 
 /** Per document de maand van de laatste inhoudelijke wijziging, als 'JJJJ-MM'. */
 export const LAATST_BIJGEWERKT = {
-  terms: '2026-09',
-  privacy: '2026-09',
-  'cookie-policy': '2026-09',
-  'data-processing-agreement': '2026-09',
+  terms: '2026-10',
+  privacy: '2026-10',
+  'cookie-policy': '2026-10',
+  'data-processing-agreement': '2026-10',
   'ai-act': '2026-09',
 };
 

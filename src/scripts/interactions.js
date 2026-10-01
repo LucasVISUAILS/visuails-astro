@@ -1071,6 +1071,23 @@ function initThankYou() {
    * `ref` gaat voor: die staat op de doorstuur ná het formulier, met de
    * betaallink erbij. `paid` is de terugkeer daarna, en dan hoort er geen
    * betaalknop meer te staan maar een bevestiging. */
+  /* Een bericht via het contactformulier (?soort=contact): geen bestelling,
+     geen kenmerk, geen Studio-knop — alleen dat het bericht er is en hoe het
+     antwoord komt. */
+  /* Vóór de kenmerk-poort hieronder: een contactbericht heeft geen kenmerk,
+     en dan liep deze functie al terug voordat de tekst kon wisselen. */
+  if (params.get('soort') === 'contact') {
+    const kop0 = document.querySelector('[data-ty-title]');
+    if (kop0 && kop0.dataset.tyTitleContact) kop0.textContent = kop0.dataset.tyTitleContact;
+    const flow = document.querySelector('[data-ty-flow]');
+    if (flow && flow.dataset.tyFlowContact) flow.textContent = flow.dataset.tyFlowContact;
+    document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
+    document.querySelectorAll('[data-ty-alleen-bestelling]').forEach((el) => { el.hidden = true; });
+    const mailCel = document.querySelector('[data-ty-mail]');
+    if (mailCel && !mailCel.textContent.trim()) (mailCel.closest('.ty-row') || mailCel).hidden = true;
+    document.querySelectorAll('.ty-now .ty-act, .ty-now [data-ty-signin], [data-ty-niet-bij-contact]').forEach((el) => { el.hidden = true; });
+    return;
+  }
   const betaald = (params.get('paid') || '').trim();
   const ref = ((params.get('ref') || '').trim() || betaald);
   if (!/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) return;
@@ -1095,6 +1112,11 @@ function initThankYou() {
     const cel = document.querySelector('[data-ty-mail]');
     if (cel && mail) cel.textContent = mail;
   } catch { /* geen opslag */ }
+  {
+    const cel = document.querySelector('[data-ty-mail]');
+    const dt = document.querySelector('[data-ty-mail-dt]');
+    if (cel && dt && !cel.textContent.trim() && dt.dataset.zonder) dt.textContent = dt.dataset.zonder;
+  }
 
   /* ── DE ABONNEMENTSREGEL — 8 september 2026 ──────────────────────────────
      Het aantal en de soort komen uit sessionStorage, waar pipeline.js ze na een
@@ -1117,7 +1139,7 @@ function initThankYou() {
         /* Bij catalog geen bedragen: een abonnement levert `complete` en is
            tegen een catalogbestelling van hetzelfde aantal duurder. Dezelfde
            poort als paintPlan() in pipeline.js. */
-        const welke = soort === 'catalog' ? '[data-ty-plan-steady]' : '[data-ty-plan-compare]';
+        const welke = soort === 'catalog' ? '[data-ty-plan-steady]' : soort === 'lifestyle' ? '[data-ty-plan-compare-ls]' : '[data-ty-plan-compare]';
         const span = abo.querySelector(welke);
         if (span) { span.hidden = false; abo.hidden = false; }
       }
@@ -1137,6 +1159,20 @@ function initThankYou() {
     const flow = document.querySelector('[data-ty-flow]');
     if (flow && flow.dataset.tyFlowRequest) flow.textContent = flow.dataset.tyFlowRequest;
     document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
+    /* Geen foto's, geen aanleverpagina, geen "extra foto's sturen": bij een
+       aanvraag is er nog niets aangeleverd. En de regel "bevestiging verstuurd
+       naar" alleen als er een adres bekend is (de aanvraagformulieren posten
+       gewoon en laten niets in sessionStorage achter). */
+    document.querySelectorAll('[data-ty-alleen-bestelling]').forEach((el) => { el.hidden = true; });
+    const mailCel = document.querySelector('[data-ty-mail]');
+    if (mailCel && !mailCel.textContent.trim()) (mailCel.closest('.ty-row') || mailCel).hidden = true;
+  }
+  /* Eerst de controle (order.js stuurt ?nakijk=1 mee): de betaallink komt per
+     mail. Zonder deze tak stond hier "we maken je visuals" bij een bestelling
+     waar nog niets voor loopt. */
+  if (params.get('nakijk') === '1' && !pay) {
+    const flow = document.querySelector('[data-ty-flow]');
+    if (flow && flow.dataset.tyFlowReview) flow.textContent = flow.dataset.tyFlowReview;
   }
 
   const kop = document.querySelector('[data-ty-title]');
@@ -1185,7 +1221,11 @@ function initThankYou() {
        element landt in een paneel van sectie 22 en moet er uitzien als elke
        andere knop daar. De klassen staan in stijl22.css. */
     knop.className = 'knop knop-inkt';
-    knop.href = pay;
+    /* Een verse betaling bij elke klik (24 september 2026), zoals de mails: de
+       Mollie-link in de adresbalk hoort bij één betaling en verloopt binnen een
+       kwartier tot een paar uur. Wie deze pagina later weer opent, landde op
+       een dode link. `pay` blijft het signaal dát er betaald kan worden. */
+    knop.href = `/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${pageLang() === 'nl' ? 'nl' : 'en'}`;
     knop.rel = 'noopener';
     knop.textContent = d.tyPayCta;
     wrap.append(note, knop);
@@ -1253,7 +1293,9 @@ function verifyPaid(ref, noot, d, attempt = 0) {
           return;
         }
         if (s.cancelled) return; /* checkCancelled() neemt het over */
-        if (attempt + 1 < DELAYS.length) { verifyPaid(ref, noot, d, attempt + 1); return; }
+        /* De bank heeft al nee gezegd (failed/canceled/expired): niet verder
+           wachten, meteen de knop om opnieuw te betalen. */
+        if (!s.failed && attempt + 1 < DELAYS.length) { verifyPaid(ref, noot, d, attempt + 1); return; }
         if (!s.payable) return;
         noot.textContent = d.tyUnpaidNote;
         if (kop && kop.dataset.tyTitleUnpaid) kop.textContent = kop.dataset.tyTitleUnpaid;

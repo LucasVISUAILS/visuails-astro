@@ -751,6 +751,8 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: .6rem; margin: 1.2rem 0 1.6rem; }
 .stat { display: flex; flex-direction: column; gap: .15rem; padding: .8rem .9rem; border: 1px solid var(--line); background: var(--paper-lift); }
 .stat.is-warn { border-color: var(--warn, #b8860b); }
+a.stat { color: inherit; text-decoration: none; }
+a.stat:hover, a.stat:focus-visible { background: var(--ghost); }
 .stat-n { font-size: 1.6rem; font-weight: 700; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 .stat-l { font-size: .72rem; color: var(--ink-3); }
 
@@ -832,6 +834,13 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .stack input[type="file"] { max-width: 100%; }
 .checkline { display: flex; align-items: flex-start; gap: .45rem; font-size: .82rem; color: var(--ink-2); }
 .checkline input { margin: .15rem 0 0; -webkit-appearance: checkbox; appearance: checkbox; }
+/* Volledig of aanbetaling bij een offerte (24 september 2026). De algemene
+   `appearance: none` hierboven haalt ook het rondje van een radio weg; hier komt
+   het terug, met de accentkleur van de knoppen ernaast. */
+.quote-soort { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; align-items: center; margin: 0; padding: .45rem .75rem; border: 1px solid var(--line-strong); font-size: .86rem; }
+.quote-soort legend { padding: 0 .3rem; font-size: .78rem; color: var(--ink-2); }
+.quote-soort label { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+.quote-soort input[type="radio"] { -webkit-appearance: radio; appearance: radio; margin: 0; width: 1rem; height: 1rem; accent-color: var(--accent, currentColor); }
 @media (max-width: 560px) { .modelcard-body { flex-direction: column; } }
 
 /* Buttons are tracked capitals since August 2026 — see the .btn note in
@@ -1278,6 +1287,17 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 /* Een wachtrij-order heeft geen vastgelegde dagen; de stippellijn zegt dat
    zonder een tweede kleur nodig te hebben. */
 .pill.is-asap { border-style: dashed; color: var(--ink-3); }
+/* ── VIJF KLASSEN DIE IN admin.js STONDEN EN HIER NIET — 29 september 2026 ──
+   .pill.is-warn ("UIT", "niet gezet"), .pill.danger ("wijkt af" op de
+   btw-controle), .pill.is-attention (revisie op hetzelfde beeld), .meta.is-warn
+   (Mollie-sleutel) en .panel.is-warn (gedeactiveerd account) zagen er allemaal
+   uit als hun gewone versie: de waarschuwing stond er, maar niets liet hem zien.
+   Eén waarschuwingskleur, dezelfde als .card.is-attention. */
+.pill.is-warn,
+.pill.is-attention { border-color: var(--warn-ink); color: var(--warn-ink); }
+.pill.danger { border-color: var(--gevaar); color: var(--gevaar); }
+.meta.is-warn { color: var(--warn-ink); }
+.panel.is-warn { border: 1px solid var(--warn-ink); background: var(--mist-clay); padding: 1rem 1.2rem; }
 /* ── DAGEN DICHTZETTEN ─────────────────────────────────────────────────────
    Eén regel op een breed scherm, gestapeld op een smal. Dezelfde vorm als
    `.slotfix`, want het is hetzelfde soort formulier: een handeling die Lucas een
@@ -1359,6 +1379,13 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 }
 .bar-link:hover, .bar-link:focus-visible { color: var(--ink); background: var(--ghost); }
 .bar-link.is-active { color: var(--teal-text); border-color: var(--teal); font-weight: 700; }
+/* "Meer" — zie NAV_MEER in admin.js. Open staat hij in de regel, dicht is het één pil. */
+.bar-meer { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .15rem .2rem; }
+.bar-meer > summary { cursor: pointer; list-style: none; }
+.bar-meer > summary::-webkit-details-marker { display: none; }
+.bar-meer > summary::after { content: " ▾"; font-size: .72rem; margin-left: .25rem; }
+.bar-meer[open] > summary::after { content: " ▴"; }
+.bar-meer-lijst { display: inline-flex; flex-wrap: wrap; gap: .15rem .2rem; }
 
 /* ── DE SCHAKELAAR — 20 september 2026 ──────────────────────────────────────
    Dezelfde pil als een navigatielink, maar stiller: hij hoort bij het scherm en
@@ -1614,6 +1641,8 @@ h1 { margin-bottom: .9rem; }
 /* Het kleurvierkantje voor de achtergrond van een catalogbestelling. Een rand
    eromheen, anders is wit op wit geen vierkantje maar niets. */
 .kleurstaal { display: inline-block; width: .9em; height: .9em; margin-right: .45em; vertical-align: -.1em; border: 1px solid var(--line-strong, #BDBDBD); border-radius: 3px; }
+/* Een lijn tussen twee formulieren. Als klasse, want style="…" mag niet van de CSP (style-src 'self'). */
+.hr-los { border: 0; border-top: 1px solid var(--line); margin: 1.4rem 0; }
 @media (max-width: 560px) { .aanvraag-intake .hold-fact, .keuze-intake .hold-fact { grid-template-columns: 1fr; gap: .25rem; } }
 .controls > label:not(.sr-only):not(.checkline) { display: grid; gap: .3rem; font-size: .82rem; color: var(--ink-2); }
 
@@ -2110,3 +2139,16 @@ details.uitleg[open] > summary { color: var(--ink); margin-bottom: .4rem; }
 :root[data-thema="donker"] .pop[data-own*="top"] .r-top, :root[data-thema="donker"] .pop[data-own*="underlayer"] .r-underlayer { fill: rgb(255 255 255 / .5); }
 :root[data-thema="donker"] .brief-duim.is-rond { border-color: rgb(255 255 255 / .5); }
 :root[data-thema="donker"] .board-idx.is-af { color: #000; }
+
+/* Ingeklapte formulieren op de klantpagina (29 september 2026): de knop is de
+   samenvatting; open staat het formulier eronder. */
+details.ingeklapt { margin: .6rem 0 1rem; }
+details.ingeklapt > summary { list-style: none; display: inline-flex; cursor: pointer; }
+details.ingeklapt > summary::-webkit-details-marker { display: none; }
+details.ingeklapt[open] > summary { margin-bottom: .8rem; }
+details.admin-extra { margin-top: 1.6rem; }
+details.admin-extra > summary { display: flex; align-items: baseline; gap: .8rem; cursor: pointer; list-style: none; }
+details.admin-extra > summary::-webkit-details-marker { display: none; }
+details.admin-extra > summary h2 { margin: 0; }
+details.admin-extra > summary::after { content: "▾"; color: var(--ink-3); }
+details.admin-extra[open] > summary::after { content: "▴"; }

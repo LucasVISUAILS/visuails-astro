@@ -12,9 +12,18 @@
 import StudioLayout from '../../layouts/StudioLayout.astro';
 import Veld from '../../components/studio/Veld.astro';
 import { pagesContext } from '../../lib/route.js';
-import { studioScreen } from '../../lib/account.js';
+import { studioScreen, accountPost } from '../../lib/account.js';
 
 export const prerender = false;
+
+/* ── OPSLAAN — 24 september 2026 ─────────────────────────────────────────────
+   Het formulier hieronder (en het vinkje "bewaar mijn gegevens" op /start)
+   post naar /account/details. Die POST hoort bij accountPost() → handleDetails()
+   in de vangroute [...path].js — maar Astro kiest deze pagina vóór de vangroute,
+   ook bij een POST. Sinds de verhuizing naar Astro (5 september) werd er dus
+   niets opgeslagen: de pagina werd gewoon opnieuw getekend, zonder melding.
+   Een POST gaat nu naar dezelfde handler als voorheen. */
+if (Astro.request.method === 'POST') return accountPost(pagesContext(Astro));
 
 const s = await studioScreen(pagesContext(Astro), 'details');
 if (s instanceof Response) return s;
@@ -78,7 +87,10 @@ const opt = t.detOptional;
     </form>
   </section>
 
-  <section class="st-blok" aria-label={v.mail.h}>
+  {/* id="email": de omleiding na het versturen springt hierheen, want de
+      bevestiging staat in dit blok — onderaan de pagina, waar niemand hem zag
+      die bovenaan terugkwam. 24 september 2026. */}
+  <section class="st-blok" id="email" aria-label={v.mail.h}>
     <div class="st-blok-kop"><h2>{v.mail.h}</h2></div>
     <div class="st-kaart-vlak st-formulier">
       {v.mail.sent && <p class="st-melding" role="status">{v.mail.sent}</p>}

@@ -1,0 +1,10 @@
+import { start, foto, SITE } from './_dl.mjs';
+const [pad, naam, w] = process.argv.slice(2);
+const s = await start({ mobiel: w === 'm' });
+await s.page.goto(SITE + pad, { waitUntil: 'load' });
+await s.page.waitForTimeout(1500);
+await s.page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); } window.scrollTo(0, 0); });
+await s.page.waitForTimeout(600);
+console.log(await foto(s.page, naam, { vol: true }));
+console.log(s.fouten.filter(f => !/account\/me/.test(f)));
+await s.stop();

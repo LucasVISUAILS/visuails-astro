@@ -395,7 +395,7 @@ export const WALK_COPY = {
       window: {
         n: 'You, in the form',
         h: 'You pick a delivery date',
-        b: `From ${WINDOW_THRESHOLD_} products you choose a day the calendar can still hold — a delivery date that is fixed the moment you order.`,
+        b: `From ${WINDOW_THRESHOLD_} products you choose a day the calendar can still hold — a delivery date that is reserved the moment you order and fixed once you pay.`,
         meer: `The calendar only offers days with room left. Should a day fill up between choosing and ordering, you are told at once and pick again; no date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround: ${midden(TURN_UNATT_)}.`,
       },
       pay: {
@@ -504,7 +504,7 @@ export const WALK_COPY = {
       window: {
         n: 'Jij, in het formulier',
         h: 'Je kiest een leverdatum',
-        b: `Vanaf ${WINDOW_THRESHOLD_} producten kies je een dag die de agenda nog kan vasthouden — een leverdatum die vastligt zodra je bestelt.`,
+        b: `Vanaf ${WINDOW_THRESHOLD_} producten kies je een dag die de agenda nog kan vasthouden — een leverdatum die gereserveerd is zodra je bestelt en vastligt zodra je betaalt.`,
         meer: `De agenda biedt alleen dagen aan waar nog ruimte is. Raakt een dag vol tussen kiezen en bestellen, dan hoor je dat meteen en kies je opnieuw; er wordt geen datum verzonnen om een bestelling binnen te houden. Onder ${WINDOW_THRESHOLD_} producten valt er geen leverdatum te reserveren: die bestelling loopt in de normale doorlooptijd, ${midden(TURN_UNATT_NL_)}.`,
       },
       pay: {

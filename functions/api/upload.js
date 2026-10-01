@@ -124,6 +124,18 @@ export async function onRequestPost(context) {
   if (bytes <= 0) return json({ ok: false, error: 'empty' }, 400);
   if (bytes > MAX_FILE_BYTES) return json({ ok: false, error: 'too-large', max: MAX_FILE_BYTES }, 400);
 
+  // ── IS HET ÉCHT EEN BEELD? — 24 september 2026 ──────────────────────────────
+  // Tot vandaag keek dit eindpunt alleen naar de extensie. Een tekstbestand dat
+  // op .jpg eindigde (of een download die halverwege afbrak) kwam als "Verstuurd"
+  // in het vak te staan, en de studio vond het pas bij het maken. De eerste
+  // bytes zeggen het: elk formaat in UPLOAD_TYPES heeft een vaste handtekening.
+  // Een .jpg die eigenlijk een png is, is gewoon een beeld en gaat door — de
+  // vraag is alleen of het een beeld IS, niet of de extensie klopt.
+  try {
+    const kop = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    if (!isBeeldHandtekening(kop)) return json({ ok: false, error: 'bad-type', accepted: Object.keys(UPLOAD_TYPES) }, 400);
+  } catch { /* niet te lezen: laat de rest van de keten beslissen */ }
+
   // The count comes from R2 rather than from the client, and it also supplies
   // the ordering number below.
   //
@@ -231,4 +243,17 @@ function json(body, status = 200, extra = {}) {
       ...extra,
     },
   });
+}
+
+/** De handtekening van jpeg, png, gif, webp, tiff en de ISO-BMFF-familie (heic, heif, avif). */
+export function isBeeldHandtekening(b) {
+  if (!b || b.length < 12) return false;
+  const is = (off, ...xs) => xs.every((x, i) => b[off + i] === x);
+  if (is(0, 0xff, 0xd8, 0xff)) return true;                            // jpeg
+  if (is(0, 0x89, 0x50, 0x4e, 0x47)) return true;                      // png
+  if (is(0, 0x47, 0x49, 0x46, 0x38)) return true;                      // gif
+  if (is(0, 0x52, 0x49, 0x46, 0x46) && is(8, 0x57, 0x45, 0x42, 0x50)) return true; // webp
+  if (is(0, 0x49, 0x49, 0x2a, 0x00) || is(0, 0x4d, 0x4d, 0x00, 0x2a)) return true; // tiff
+  if (is(4, 0x66, 0x74, 0x79, 0x70)) return true;                      // ftyp: heic, heif, avif
+  return false;
 }

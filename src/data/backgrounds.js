@@ -106,11 +106,11 @@ export function isLight(hex) {
 export const COPY = {
   en: {
     label: 'Background',
-    hint: 'Pick the ground your products sit on. If you already have product photos, match what they use — that is the whole point: the new ones have to look like they belong beside the old ones.',
+    hint: 'Pick the background your products sit on. If you already have product photos, match what they use — that is the whole point: the new ones have to look like they belong beside the old ones.',
     recommendedH: 'What we recommend',
     customH: 'Your own colour',
     customHint: 'Paste the hex your current photos use, or pick it. We render against exactly this value.',
-    warn: 'Darker than we would recommend. It will look good, with two consequences worth knowing: Amazon will not take it as a main image, and a dark ground hides the shadow that tells a shopper the product is a real object. Say the word and we will run it anyway.',
+    warn: 'Darker than we would recommend. It will look good, with two consequences worth knowing: Amazon will not take it as a main image, and a dark background hides the shadow that tells a shopper the product is a real object. Say the word and we will run it anyway.',
     matchNote: 'Not sure what yours is? Send one existing product photo with your order and we will read the value off it.',
   },
   nl: {

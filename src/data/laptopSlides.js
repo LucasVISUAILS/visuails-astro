@@ -76,7 +76,7 @@ export function laptopSlides(lang = 'nl') {
     fon: HELE, duur: 2600,
     fonAlt: nl ? 'Telefoonfoto van de klant: de hele broek plat op een betonnen magazijnvloer'
                : "The customer’s phone photo: the whole garment flat on a concrete floor",
-    naam: nl ? 'Lifestyle-carrousel · 3 beelden' : 'Lifestyle carousel · 3 images',
+    naam: nl ? 'Lifestylecarrousel · 3 beelden' : 'Lifestyle carousel · 3 images',
     href: lp('/lifestyle'),
     alt: nl ? 'Drie lifestyle-beelden als carrousel in een nagebouwd social-bericht'
             : 'Three lifestyle images as a carousel in a mocked-up social post',

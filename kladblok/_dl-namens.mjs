@@ -1,0 +1,21 @@
+import { start, foto, tekst, sql, mails, mailtekst, paneel, SITE } from './_dl.mjs';
+import { adminLogin } from './_admin.mjs';
+const s = await start(); const { page } = s;
+await adminLogin(page);
+await page.goto(SITE + '/admin/customers/7011', { waitUntil: 'load' });
+const f = page.locator('form[action="/admin/customers/7011/order"]');
+console.log('look-opties:', await f.locator('select[name="style"] option').allInnerTexts());
+await f.locator('select[name="service"]').selectOption('lifestyle');
+await f.locator('input[name="products"]').fill('5');
+const opts = await f.locator('select[name="style"] option').evaluateAll((o) => o.map((x) => x.value));
+await f.locator('select[name="style"]').selectOption(opts.find((v) => v.startsWith('cs-')) || 'glow');
+await f.locator('input[name="message"]').fill('Vijf extra zoals besproken via WhatsApp');
+await f.locator('input[name="fotos"]').setInputFiles(['/tmp/claude-0/dl/voor.jpg', '/tmp/claude-0/dl/achter.jpg']);
+const voor = (await mails()).length;
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), f.locator('button[type="submit"]').click()]);
+console.log('na →', page.url());
+const t = (await tekst(page, 'main, body')).replace(/\n{2,}/g, '\n');
+console.log(t.slice(0, 600));
+console.log(JSON.stringify(await sql("SELECT id, ref, service, product_count, total_cents, vat_cents, vat_treatment, review_state, lang, json_extract(details_json,'$.style') st, customer_note FROM orders ORDER BY id DESC LIMIT 1")));
+for (const m of (await mails()).slice(voor)) { console.log(`\nMAIL #${m.n} → ${JSON.stringify(m.to)} "${m.subject}"`); console.log(String(await mailtekst(m.n)).slice(0, 1500)); const h = String(await paneel('/mail/' + m.n)); console.log('links', [...h.matchAll(/href="([^"]+)"/g)].map((x) => x[1]).filter((x) => /pay|checkout|\/o\//.test(x))); }
+console.log(s.fouten); await s.stop();

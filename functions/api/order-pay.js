@@ -35,6 +35,7 @@ import { createOrderMolliePayment } from '../../src/lib/mollie.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey } from '../../src/lib/quote.js';
 import { SAMPLE_SERVICE } from '../../src/data/pricing.js';
 import { REVIEW } from '../../src/data/vat.js';
+import { teBetalenCents } from '../../src/lib/tegoedVerrekening.js';
 
 const REF_SHAPE = /^VIS-[0-9A-Z-]{3,20}$/i;
 const LIMIT = 10;
@@ -55,7 +56,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (!env?.DB || !env.MOLLIE_API_KEY) return naarBedankpagina;
 
   let o = null;
-  const KOLOMMEN = 'id, ref, lang, service, product_count, total_cents, vat_cents, vat_rate, payment_status, status';
+  const KOLOMMEN = 'id, ref, lang, service, product_count, total_cents, vat_cents, vat_rate, payment_status, status, details_json';
   try {
     try {
       o = await env.DB.prepare(`SELECT ${KOLOMMEN}, review_state FROM orders WHERE ref = ?1`).bind(ref).first();
@@ -71,9 +72,15 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (o.status === 'cancelled') return naarBedankpagina;
   if (String(o.payment_status || 'unpaid') !== 'unpaid') return naarBedankpagina;
   if (!PAYABLE_REVIEW.has(String(o.review_state || ''))) return naarBedankpagina;
-  if (!(isPayableService(o.service) || o.service === SAMPLE_SERVICE)) return naarBedankpagina;
+  /* Een eigen look ('custom') heeft geen vaste prijs, maar na een offerte uit
+     admin wél een bedrag en review_state 'approved'. De offertemail linkt
+     hierheen (zie src/lib/betaallink.js), dus die moet hier ook door. */
+  const offerte = o.service === 'custom' && String(o.review_state || '') === REVIEW.approved;
+  if (!(isPayableService(o.service) || o.service === SAMPLE_SERVICE || offerte)) return naarBedankpagina;
 
-  const bruto = (Number(o.total_cents) || 0) + (Number(o.vat_cents) || 0);
+  /* Minus het verrekende tegoed (29 september 2026): zie
+     src/lib/tegoedVerrekening.js. */
+  const bruto = teBetalenCents(o);
   if (!(bruto > 0)) return naarBedankpagina;
 
   const taal = o.lang === 'nl' ? 'nl' : 'en';

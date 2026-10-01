@@ -85,6 +85,9 @@ const TEXT = {
     vatRowOutside: 'Btw 0% - buiten de Europese btw',
     grossPayable: 'Totaal te betalen',
     grossPaid: 'Totaal',
+    tegoedRow: 'Verrekend tegoed',
+    restPaid: 'Betaald',
+    restPayable: 'Nog te betalen',
     reverseShort: 'Btw verlegd',
     reverseArticle: 'artikel 196 Richtlijn 2006/112/EG',
     reverseBody: 'De btw wordt aangegeven door de afnemer in zijn eigen lidstaat.',
@@ -118,6 +121,9 @@ const TEXT = {
     vatRowOutside: 'VAT 0% - outside the scope of European VAT',
     grossPayable: 'Total due',
     grossPaid: 'Total',
+    tegoedRow: 'Credit applied',
+    restPaid: 'Paid',
+    restPayable: 'Still to pay',
     reverseShort: 'VAT reverse charged',
     reverseArticle: 'Article 196 Directive 2006/112/EC',
     reverseBody: 'VAT is to be accounted for by the customer in their own member state.',
@@ -540,6 +546,9 @@ function prepare(invoice) {
     netCents, vatCents, vatRate, treatment,
     // The total on the paper is the sum of the two figures printed above it.
     grossCents: netCents + vatCents,
+    /* Verrekend tegoed (29 september 2026): nooit meer dan het totaal, en niet
+       op een creditnota. Zie src/lib/tegoedVerrekening.js. */
+    tegoedCents: credit ? 0 : Math.max(0, Math.min(Math.round(Number(inv.tegoedCents) || 0), netCents + vatCents)),
     reverse: treatment === 'eu_reverse_charge',
     outside: treatment === 'outside_scope',
   };
@@ -877,13 +886,20 @@ function drawTable(sheet, d, fonts) {
 
   for (const line of d.lines) {
     const parts = sheet.wrap(line.description, fonts.regular, SIZE.body, COL.descW);
-    const height = Math.max(parts.length * LEAD.body, LEAD.body) + 5;
+    /* Een tweede regel onder de omschrijving, kleiner en grijs — sinds
+       24 september 2026 voor de naam van een eigen look (zie
+       snapshotFromOrder() in invoice.js). Geen detail, geen extra hoogte. */
+    const detail = line.detail ? sheet.wrap(String(line.detail), fonts.regular, SIZE.small, COL.descW) : [];
+    const height = Math.max(parts.length * LEAD.body, LEAD.body) + detail.length * LEAD.small + 5;
 
     if (sheet.y - height < M.bottom) continuationHead(sheet, d, fonts);
 
     const y = sheet.y;
     parts.forEach((part, i) => {
       sheet.draw(part, { x: COL.desc, y: y - i * LEAD.body, size: SIZE.body });
+    });
+    detail.forEach((part, i) => {
+      sheet.draw(part, { x: COL.desc, y: y - parts.length * LEAD.body - i * LEAD.small + 1, size: SIZE.small, color: MUTED });
     });
     sheet.draw(formatQty(line.qty, d.lang), { x: COL.qtyRight, y, size: SIZE.body, align: 'right' });
     sheet.draw(formatEuro(line.unitCents, d.lang), { x: COL.unitRight, y, size: SIZE.body, align: 'right' });
@@ -901,7 +917,7 @@ function drawTotals(sheet, d, fonts) {
   // Net, VAT-with-its-rate and total have to stay together, and they have to
   // stay together with the sentence that explains the VAT line. So the space
   // for all of it is claimed in one go.
-  const needed = 3 * (LEAD.body + 4) + 40;
+  const needed = (d.tegoedCents > 0 ? 5 : 3) * (LEAD.body + 4) + 40;
   if (sheet.y - needed < M.bottom) continuationHead(sheet, d, fonts);
 
   sheet.rule(sheet.y + 6);
@@ -942,6 +958,12 @@ function drawTotals(sheet, d, fonts) {
      hangt de totaalregel daar niet meer af van of er een betaaldatum bekend is. Bij een
      factuur blijft dat verschil bestaan en betekent het wat het altijd betekende. */
   row(d.inv.paidAt ? t.grossPaid : t.grossPayable, formatEuro(d.grossCents, d.lang), true);
+  /* Met tegoed betaald (29 september 2026): het totaal blijft het totaal, en
+     daaronder wat het tegoed dekte en wat er (nog) via de bank ging. */
+  if (d.tegoedCents > 0) {
+    row(t.tegoedRow, `- ${formatEuro(d.tegoedCents, d.lang)}`, false);
+    row(d.inv.paidAt ? t.restPaid : t.restPayable, formatEuro(d.grossCents - d.tegoedCents, d.lang), true);
+  }
 
   sheet.y = y - 6;
 }

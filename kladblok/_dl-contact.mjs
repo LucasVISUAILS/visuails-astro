@@ -1,0 +1,20 @@
+import { start, foto, tekst, mails, mailtekst, sql, SITE } from './_dl.mjs';
+const s = await start(); const { page } = s;
+const voor = (await mails()).length;
+await page.goto(SITE + '/nl/contact/', { waitUntil: 'load' });
+const form = page.locator('form[action="/api/order"]');
+await form.locator('[name="name"]').fill('Henk Kledingzaak');
+await form.locator('[name="email"]').fill('henk@kledingzaak.test');
+await form.locator('[name="phone"]').fill('0633333333');
+await form.locator('select[name="topic"]').selectOption({ index: 2 });
+await form.locator('[name="message"]').fill('Kunnen jullie ook schoenen doen? Ik heb 40 paar.');
+await page.evaluate(() => document.querySelector('input[name="contact_preference"][value="whatsapp"]')?.closest('label')?.click());
+await form.locator('button[type="submit"]').click(); await page.waitForTimeout(3000);
+console.log('na:', page.url());
+console.log((await tekst(page, 'main')).replace(/\n{2,}/g, '\n').slice(0, 900));
+await foto(page, 'contact-na', { vol: true });
+for (const m of (await mails()).slice(voor)) { console.log(`MAIL #${m.n} → ${JSON.stringify(m.to)} "${m.subject}"`); console.log((await mailtekst(m.n)).slice(0, 1200)); }
+console.log(await sql("SELECT id, ref, service, status, details_json FROM orders ORDER BY id DESC LIMIT 1"));
+console.log(await sql("SELECT * FROM messages ORDER BY id DESC LIMIT 1").catch(() => 'geen messages-tabel'));
+console.log(s.fouten.filter(f => !/account\/me/.test(f)));
+await s.stop();

@@ -162,8 +162,9 @@ export async function bouncesFor(env, emails) {
 /** Eén korte regel voor /admin. */
 export function bounceLine(r) {
   if (!r) return '';
-  const wat = r.kind === 'complained' ? 'marked our mail as spam' : 'bounced';
+  /* Nederlands (29 september 2026): dit staat alleen in /admin, en /admin is Nederlands. */
+  const wat = r.kind === 'complained' ? 'is als spam gemarkeerd' : 'kwam niet aan';
   const wanneer = String(r.occurred_at || '').slice(0, 10);
   const reden = r.bounce_type ? ` (${r.bounce_type})` : '';
-  return `Mail to ${r.email} ${wat}${wanneer ? ` on ${wanneer}` : ''}${reden}. Check the address before relying on email — the customer may have seen nothing.`;
+  return `Mail aan ${r.email} ${wat}${wanneer ? ` op ${wanneer}` : ''}${reden}. Controleer het adres voor je op mail rekent — de klant heeft mogelijk niets gezien.`;
 }

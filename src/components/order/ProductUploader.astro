@@ -91,7 +91,7 @@ const COPY = {
   en: {
     folder: 'Choose a folder instead',
     folderHint: 'One folder per product. We read the folder name as the product.',
-    off: 'Files cannot be taken at the moment. Carry on — we will ask for them by email, and nothing about your order depends on this step.',
+    off: 'Uploads are not available right now. Carry on — we will ask for them by email, and nothing about your order depends on this step.',
     guideH: 'What we ask for, and what each one is for',
     pdf: 'Take the photo guide with you (pdf)',
   },
@@ -1047,6 +1047,8 @@ const lcStijl = [
   .pu-cards :global(.pu-ratio-q) { display: grid; gap: .2rem; }
   .pu-cards :global(.pu-ratio-label) { font-size: .76rem; color: var(--ink-3); }
   .pu-cards :global(.pu-ratio-field) { padding: .45rem .6rem; font-size: .86rem; border-radius: var(--r-md); }
+  /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
+  @media (max-width: 760px), (pointer: coarse) { .pu-cards :global(.pu-ratio-field) { font-size: 16px; } }
   .pu-cards :global(.pu-card.is-ready) { border-color: var(--signal); }
 
   /* ── DE KOP IS ÉÉN REGEL — 17 september 2026 ──────────────────────────────
@@ -1537,6 +1539,8 @@ const lcStijl = [
   /* The gap global.css leaves for the caret. The shorthand above would drop it,
      which is the same trap .select itself has to re-state its way out of. */
   .pu-cards :global(select.pu-q-field) { padding-right: 2.4rem; }
+  /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
+  @media (max-width: 760px), (pointer: coarse) { .pu-cards :global(.pu-q-field) { font-size: 16px; } }
 
   /* The colour swatch, for the question that carries one. Positioned rather
      than added to the flex column: the field is label-over-control, and a third

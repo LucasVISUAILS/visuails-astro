@@ -65,7 +65,7 @@ console.log('\n2 · wat er uit een gebeurtenis komt');
   ok('een afgeleverde mail is niets voor ons', parseBounce({ type: 'email.delivered', data: { to: ['a@b.nl'] } }), null);
   ok('zonder adres ook niets', parseBounce({ type: 'email.bounced', data: {} }), null);
   ok('de regel voor /admin noemt adres en datum',
-    bounceLine({ email: 'a@b.nl', kind: 'bounced', occurred_at: '2026-09-04 10:15:00', bounce_type: 'Permanent/General' }).startsWith('Mail to a@b.nl bounced on 2026-09-04 (Permanent/General).'), true);
+    bounceLine({ email: 'a@b.nl', kind: 'bounced', occurred_at: '2026-09-04 10:15:00', bounce_type: 'Permanent/General' }).startsWith('Mail aan a@b.nl kwam niet aan op 2026-09-04 (Permanent/General).'), true);
 }
 
 /* ── Een echte database ──────────────────────────────────────────────────── */
@@ -130,9 +130,9 @@ console.log('\n4 · de vlag in /admin');
 
   const lijst = await get('/admin');
   const kaart = (id) => (lijst.split(`id="order-${id}"`)[1] || '').split('<details class="or"')[0];
-  ok('de lijst markeert de bestelling met het gebouncete adres', /mail bounced/.test(kaart(11)), true);
+  ok('de lijst markeert de bestelling met het gebouncete adres', /mail kwam niet aan/.test(kaart(11)), true);
   ok('  en de rode regel staat in de kaart', /warnline is-rood/.test(kaart(11)), true);
-  ok('de andere bestelling krijgt niets', /mail bounced|is-rood/.test(kaart(12)), false);
+  ok('de andere bestelling krijgt niets', /mail kwam niet aan|is-rood/.test(kaart(12)), false);
 
   const bestelling = await get('/admin/orders/11/files');
   ok('de bestandenpagina van 11 draagt de rode regel', /warnline is-rood/.test(bestelling), true);

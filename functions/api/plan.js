@@ -57,6 +57,7 @@
  * Zoals iedereen: /account/login, een e-mail met een link, geen wachtwoord. De
  * rij bestaat vanaf nu, dus die link werkt. De bevestigingspagina zegt het.
  */
+import { withdrawalRecord } from '../../src/data/consent.js';
 import { upsertCustomer } from './order.js';
 import { currentCustomer } from '../../src/lib/account.js';
 import { handleSubscribeStart } from '../../src/lib/subscribe.js';
@@ -116,7 +117,14 @@ export async function onRequestPost(context) {
      doorlopende machtiging eindigt. Ontbreekt er een, dan terug met een reden
      die het formulier bij de vinkjes toont. De versie gaat mee naar de rij
      (migratie 0049) via handleSubscribeStart(). */
-  if (tekst(form.get('business_declaration')) !== 'yes' || tekst(form.get('withdrawal_consent')) !== 'yes') {
+  /* Sinds 30 september 2026 één vinkje (business-v2 draagt de
+     herroepingsverklaring in zich) — zie withdrawalRecord() in consent.js. */
+  if (tekst(form.get('business_declaration')) !== 'yes' || withdrawalRecord({
+    withdrawal: tekst(form.get('withdrawal_consent')),
+    consentVersion: tekst(form.get('consent_version')),
+    business: tekst(form.get('business_declaration')),
+    businessVersion: tekst(form.get('business_version')),
+  }) === 'MISSING') {
     return terug('verklaring', lang);
   }
 
@@ -216,6 +224,19 @@ export async function onRequestPost(context) {
       return terug('opslaan', lang);
     }
     if (!id) return terug('opslaan', lang);
+
+    /* Het KVK- of registratienummer en "geen btw-nummer" (29 september 2026),
+       zoals functions/api/order.js ze na upsertCustomer() apart bijwerkt. */
+    {
+      const reg = tekst(form.get('reg_number'), 40);
+      const geenBtw = !btw && ['1', 'on', 'true', 'yes'].includes(tekst(form.get('no_vat'), 5).toLowerCase());
+      await env.DB.prepare(
+        `UPDATE customers SET reg_number = CASE WHEN ?2 IS NOT NULL AND (reg_number IS NULL OR reg_number = '' OR details_saved_at IS NULL) THEN ?2 ELSE reg_number END,
+                no_vat_number = CASE WHEN ?3 = 1 THEN 1 ELSE no_vat_number END
+          WHERE id = ?1`
+      ).bind(id, reg || null, geenBtw ? 1 : 0).run()
+        .catch((e) => console.error('[abonnement] registratienummer niet opgeslagen —', e?.message || e));
+    }
 
     /* De vorm die handleSubscribeStart() verwacht: dezelfde velden die
        currentCustomer() teruggeeft, en niet meer dan dat. */

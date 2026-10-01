@@ -15,8 +15,8 @@
  *
  *    0  Opening          wat is het
  *    1  Maatlijn         in één blik
- *    2  Voor en na       is het goed
- *    3  De band          hoe werkt het
+ *    2  Dit stuur jij    is het goed, en hoe werkt het (sinds 1 oktober 2026
+ *                        één hoofdstuk: een dia per dienst en de vier stappen)
  *    4  Wat we maken     wat kan ik kiezen
  *    5  De looks         past het bij mijn merk
  *    6  Gezichten        wat zit er nog meer in
@@ -24,6 +24,10 @@
  *    8  Voor wie         is dit voor mij
  *    9  Direct antwoord  wat als
  *   10  Proef            hoe begin ik
+ *
+ * HOOFDSTUKKEN (1 oktober 2026): 4-5-6 en 8-9 zijn elk één licht vel —
+ * `.vervolg` op de tweede en derde sectie, zie de noot in stijl22.css. Zwart
+ * staat alleen nog tussen hoofdstukken.
  *
  * WEG, en waarom: "De catalogset. De carrousel. Of allebei." en "Eén tarief per
  * product. Daalt met het aantal." herhaalden wat de tegels en de maatlijn al
@@ -48,6 +52,8 @@ import '@fontsource-variable/martian-mono/standard.css';
 import {
   AMOUNT, euro, TEST_SAMPLE, reviewClaim, WINDOW_THRESHOLD,
   CATALOG_IMAGES, LIFESTYLE_IMAGES, videoPrijsLabel,
+  /* De maat van een geleverd beeld, niet overgetypt (30 september 2026). */
+  RESOLUTIE,
 } from '../data/pricing.js';
 import { countedShort, setSize } from '../data/lexicon.js';
 import { MERK, TAGLINE } from '../data/brand.js';
@@ -58,8 +64,6 @@ import { REQUIRED_SHOT_IDS } from '../data/shots.js';
 import { geleverd } from '../data/voorbeeldset.js';
 import '../styles/stijl22.css';
 import LaptopCarousel from './LaptopCarousel.astro';
-import LopendeBand from './LopendeBand.astro';
-import Compare from './Compare.astro';
 import Stijlstrook from './Stijlstrook.astro';
 
 const { lang } = Astro.props as { lang: 'en' | 'nl' };
@@ -80,6 +84,36 @@ const CATALOG_BANNER = { klein: '/img/catalog-raster-w760.webp', w: 1600, h: 120
 const sfeer = (n: number, w: number, h: number) => ({ klein: `/img/concept/sfeer-0${n}-w1000.webp`, w, h });
 const DIENST_BEELD = [CATALOG_BANNER, sfeer(2, 1248, 1872), sfeer(3, 2000, 1125)];
 
+/* ── EÉN FOTO, DRIE DIENSTEN — 1 oktober 2026 ─────────────────────────────────
+   Lucas: *"Ik wil dat 2 meerdere services laat zien in plaats van alleen
+   catalog. Wel moet elke service soort goed in beeld komen maar niet de andere
+   service in de weg zitten. Ik zat zelf te denken aan een soort dia slide die
+   van service naar service gaat."*
+
+   Wat er links staat, verandert niet: de telefoonfoto van het gewassen zwarte
+   T-shirt op de houten tafel. Rechts wisselt wat we ervan maken. Dat is het
+   argument in één beeld — dezelfde foto, drie soorten beeld — en het is ook
+   waarom alleen de rechterkant beweegt: wat vaststaat, staat stil.
+
+   Het zijn echte leveringen van hetzelfde shirt: het catalogbeeld op gebroken
+   wit en drie phone-made lifestylebeelden met dat shirt aan. De video bestaat
+   nog niet. Daar staat geen still uit een andere reeks in (zie de kop van
+   VideoExamples.astro: een poster is de eerste frame van de clip), maar de
+   plaatshouder `dienst-video-shirt` (9:16, 1080 × 1920). Zet Lucas die still
+   (of de clip, zie VN_CLIP) in public/img, dan staat hij er. */
+const VN_IN = { src: '/img/catalog-before-1x1.webp', w: 1350, h: 1350 };
+const VN_BEELD: Record<string, { src: string; srcset?: string; w: number; h: number }[]> = {
+  catalog: [{ src: '/img/catalog-after.webp', srcset: '/img/catalog-after-w420.webp 420w, /img/catalog-after.webp 1800w', w: 1800, h: 1800 }],
+  lifestyle: [5, 9, 10].map((n) => {
+    const b = `/img/lifestyle-phone-made-${String(n).padStart(2, '0')}`;
+    return { src: `${b}-w760.webp`, srcset: `${b}-w760.webp 760w, ${b}-w1560.webp 1560w`, w: 2400, h: 1792 };
+  }),
+  video: [{ src: '/img/dienst-video-shirt.webp', w: 1080, h: 1920 }],
+};
+/* Het pad van de echte clip, zodra hij er is (mp4, verticaal). Zolang dit null
+   is, staat de still of de plaatshouder er. */
+const VN_CLIP: string | null = null;
+
 const COPY = {
   en: {
     plek: 'Enschede, NL',
@@ -90,19 +124,35 @@ const COPY = {
     facts: [
       'One product is enough, no shoot',
       `From ${e(AMOUNT.catalog)} per product`,
-      `As soon as possible · from ${WINDOW_THRESHOLD}: your own week`,
+      `As soon as possible · from ${WINDOW_THRESHOLD}: a fixed delivery date`,
       'Full commercial rights included',
     ],
 
     vnH: 'What you send. What you get back.',
     vnZin: `${FOTOS} phone photos are all you need to start: front, back and a detail.`,
-    vnSpec: [
-      ['You get', `${setSize('catalog', CATALOG_IMAGES, 'en')} per product · 2048 px`],
-      ['Formats', 'jpg · png · webp'],
-    ],
+    vnIn: 'Sent in', vnInNoot: 'one of your phone photos',
     vnVoorAlt: 'Sent in: a phone photo of a T-shirt on a wooden table',
-    vnNaAlt: 'Delivered: the same T-shirt, finished on off-white',
-    vnLink: 'More work in the gallery',
+    vnTabs: 'What we make from it',
+    vnKrijg: 'You get',
+    vnPauze: 'Pause the slides', vnSpeel: 'Play the slides',
+    vnDia: [
+      { id: 'catalog', naam: 'Catalog', prijs: `from ${e(AMOUNT.catalog)}`, href: '/catalog', link: 'See catalog',
+        krijg: `${setSize('catalog', CATALOG_IMAGES, 'en')} per product · front, back, detail, on model · ${RESOLUTIE.standaard} px`,
+        alt: ['Delivered: the same T-shirt, finished on off-white'] },
+      { id: 'lifestyle', naam: 'Lifestyle', prijs: `from ${e(AMOUNT.lifestyle)}`, href: '/lifestyle', link: 'See lifestyle',
+        krijg: `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one look · a carousel, ready to post`,
+        alt: ['The same T-shirt on a model, leaning against a concrete wall', 'Closer in: a hand at the collar', 'Head to toe in a concrete passage'] },
+      { id: 'video', naam: 'Video', prijs: videoPrijsLabel('en'), href: '/video', link: 'See video',
+        krijg: 'One clip per product · eight seconds, one clean move · vertical 9:16',
+        alt: ['The video clip of this T-shirt'] },
+    ],
+    vnStappenH: 'From your photo to your shop.',
+    vnStappen: [
+      ['You', 'Your phone is enough. No tripod, no studio.', null],
+      ['Us', 'We make the images. A specialist checks every one.', ['See more work', '/gallery']],
+      ['Your images', 'Approve or ask for a revision, and download it all at once.', ['Look inside the portal', '/portal']],
+      ['Your shop', 'Square, upright and vertical: for your shop, ads and reels.', null],
+    ],
 
     svcH: 'What we make.',
     svcLede: 'Three kinds of image, priced per product.',
@@ -130,13 +180,13 @@ const COPY = {
     vwH: 'Who it is for.',
     vw: [
       ['You are starting a brand.', `One product is fine, from ${e(AMOUNT.catalog)}.`, 'Catalog', '/catalog'],
-      ['You run a shop full of products.', `From ${WINDOW_THRESHOLD} products: your own week, a lower price.`, 'Pricing', '/pricing'],
+      ['You run a shop full of products.', `From ${WINDOW_THRESHOLD} products: a fixed delivery date, a lower price.`, 'Pricing', '/pricing'],
       ['You order for clients.', 'One account, a different brand per order.', 'How that works', '/faq#getting-started'],
     ],
 
     qH: 'Straight answers.',
     qs: [
-      ['What if the visuals are not right?', 'See Studio', '/portal'],
+      ['What if the visuals are not right?', 'See the order page', '/portal'],
       ['Will a customer see it is AI?', 'Read the AI Act page', '/ai-act'],
       ['Are my photos good enough?', 'What makes a photo usable', '/upload-guidelines'],
       ['Why not do it myself?', 'The honest comparison', '/compare'],
@@ -158,25 +208,41 @@ const COPY = {
     facts: [
       'Eén product mag, geen shoot nodig',
       `Vanaf ${e(AMOUNT.catalog)} per product`,
-      `Zo snel mogelijk · vanaf ${WINDOW_THRESHOLD}: je eigen week`,
+      `Zo snel mogelijk · vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum`,
       'Volledige commerciële rechten inbegrepen',
     ],
 
     vnH: 'Dit stuur jij. Dit krijg je terug.',
     vnZin: `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen: voorkant, achterkant en een detail.`,
-    vnSpec: [
-      ['Je krijgt', `${setSize('catalog', CATALOG_IMAGES, 'nl')} per product · 2048 px`],
-      ['Formaten', 'jpg · png · webp'],
-    ],
+    vnIn: 'Ingestuurd', vnInNoot: 'een van je telefoonfoto’s',
     vnVoorAlt: 'Ingestuurd: een telefoonfoto van een T-shirt op een houten tafel',
-    vnNaAlt: 'Geleverd: hetzelfde T-shirt, afgewerkt op gebroken wit',
-    vnLink: 'Meer werk in de galerij',
+    vnTabs: 'Wat we ervan maken',
+    vnKrijg: 'Je krijgt',
+    vnPauze: 'Zet de wissel stil', vnSpeel: 'Laat de wissel lopen',
+    vnDia: [
+      { id: 'catalog', naam: 'Catalog', prijs: `vanaf ${e(AMOUNT.catalog)}`, href: '/catalog', link: 'Bekijk catalog',
+        krijg: `${setSize('catalog', CATALOG_IMAGES, 'nl')} per product · voor, achter, detail, op model · ${RESOLUTIE.standaard} px`,
+        alt: ['Geleverd: hetzelfde T-shirt, afgewerkt op gebroken wit'] },
+      { id: 'lifestyle', naam: 'Lifestyle', prijs: `vanaf ${e(AMOUNT.lifestyle)}`, href: '/lifestyle', link: 'Bekijk lifestyle',
+        krijg: `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één look · een carrousel, klaar om te posten`,
+        alt: ['Hetzelfde T-shirt op een model, leunend tegen een betonnen muur', 'Dichterbij: een hand aan de kraag', 'Ten voeten uit in een betonnen doorgang'] },
+      { id: 'video', naam: 'Video', prijs: videoPrijsLabel('nl'), href: '/video', link: 'Bekijk video',
+        krijg: 'Eén clip per product · acht seconden, één rustige beweging · verticaal 9:16',
+        alt: ['De videoclip van dit T-shirt'] },
+    ],
+    vnStappenH: 'Van jouw foto naar je shop.',
+    vnStappen: [
+      ['Jij', 'Je telefoon is genoeg. Geen statief, geen studio.', null],
+      ['Wij', 'Wij maken de beelden. Een specialist controleert ze allemaal.', ['Meer werk zien', '/gallery']],
+      ['Jouw beelden', 'Goedkeuren of een revisie vragen, en alles in één keer downloaden.', ['Het portaal van binnen', '/portal']],
+      ['Je shop', 'Vierkant, staand en verticaal: voor je shop, advertenties en reels.', null],
+    ],
 
     svcH: 'Wat we maken.',
     svcLede: 'Drie soorten beeld, per product geprijsd.',
     svc: [
       ['Productfoto’s', `${setSize('catalog', CATALOG_IMAGES, 'nl')} · voor, achter, detail, op model`, `vanaf ${e(AMOUNT.catalog)} per product`, '/start/?zie=foto'],
-      ['Lifestyle beelden', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
+      ['Lifestyle-beelden', `${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede scène, klaar om te posten`, `vanaf ${e(AMOUNT.lifestyle)} per product`, '/start/?zie=sfeer'],
       ['Productvideo’s', 'Eén clip per product — acht seconden, één rustige beweging', videoPrijsLabel('nl'), '/start/?zie=video'],
     ],
     svcOok: 'Ook',
@@ -198,13 +264,13 @@ const COPY = {
     vwH: 'Voor wie.',
     vw: [
       ['Je begint een merk.', `Eén product mag, vanaf ${e(AMOUNT.catalog)}.`, 'Catalog', '/catalog'],
-      ['Je hebt een webshop vol producten.', `Vanaf ${WINDOW_THRESHOLD} producten: je eigen week, een lagere prijs.`, 'Prijzen', '/pricing'],
+      ['Je hebt een webshop vol producten.', `Vanaf ${WINDOW_THRESHOLD} producten: een vaste leverdatum, een lagere prijs.`, 'Prijzen', '/pricing'],
       ['Je bestelt voor klanten.', 'Eén account, per bestelling een ander merk.', 'Hoe dat werkt', '/faq#getting-started'],
     ],
 
     qH: 'Direct antwoord.',
     qs: [
-      ['Wat als ze niet goed zijn?', 'Bekijk Studio', '/portal'],
+      ['Wat als ze niet goed zijn?', 'Bekijk de bestelpagina', '/portal'],
       ['Ziet een klant dat het AI is?', 'Lees de AI Act-pagina', '/ai-act'],
       ['Zijn mijn foto’s goed genoeg?', 'Wat maakt een foto bruikbaar', '/upload-guidelines'],
       ['Waarom niet zelf?', 'De eerlijke vergelijking', '/compare'],
@@ -264,33 +330,65 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
     {c.facts.map((f) => <li><span>{f}</span></li>)}
   </ul>
 
-  {/* ── 2 · VOOR EN NA ───────────────────────────────────────────────────────
-      Bewijs vóór uitleg: wie hier gelooft dat het echt is, leest de rest. Eén
-      echt paar — het T-shirt dat een klant op een houten tafel fotografeerde,
-      en wat eruit kwam. Links de woorden, rechts de schuifknop. */}
-  <section class="paneel vn" aria-labelledby="vp-vn">
-    <div class="vn-woord">
+  {/* ── 2 · DIT STUUR JIJ, DIT KRIJG JE TERUG ───────────────────────────────
+      Eén hoofdstuk met wat hiervoor twee panelen waren ("voor en na" en de
+      band van vier stations). Links de woorden en de foto die de klant stuurt,
+      rechts per dienst wat eruit komt — een dia per dienst, met de namen als
+      tabbladen erboven. Onder de streep de vier stappen, zonder beelden: het
+      verloop is voor elke dienst hetzelfde. Zonder script is het een rij die
+      je opzij veegt; het script maakt er tabbladen van en laat hem wisselen. */}
+  <section class="paneel dd" aria-labelledby="vp-vn" data-dd>
+    <div class="dd-woord">
       <h2 id="vp-vn" class="hoog hoog-2">{c.vnH}</h2>
       <p class="lopend">{c.vnZin}</p>
-      <dl class="vn-spec">
-        {c.vnSpec.map(([k, v]) => <div><dt class="mono">{k}</dt><dd>{v}</dd></div>)}
-      </dl>
-      <p><a class="pijl" href={lp('/gallery')}>{c.vnLink}</a></p>
+      <figure class="dd-in">
+        <img src={VN_IN.src} width={VN_IN.w} height={VN_IN.h} alt={c.vnVoorAlt} loading="lazy" decoding="async" />
+        <figcaption><span class="etiket">{c.vnIn}</span> {c.vnInNoot}</figcaption>
+      </figure>
     </div>
-    <div class="vn-beeld">
-      <Compare
-        ratio="1 / 1"
-        before="/img/catalog-before-1x1.webp"
-        after="/img/catalog-after.webp"
-        beforeAlt={c.vnVoorAlt}
-        afterAlt={c.vnNaAlt}
-      />
+    <div class="dd-uit">
+      <div class="dd-balk">
+        <nav class="dd-tabs" aria-label={c.vnTabs} data-dd-tabs>
+          {c.vnDia.map((d, i) => (
+            <a class={`dd-tab${i === 0 ? ' is-nu' : ''}`} id={`dd-tab-${d.id}`} href={`#dd-${d.id}`} data-dd-tab>
+              <span class="dd-tab-naam">{d.naam}</span>
+              <span class="dd-tab-prijs">{d.prijs}</span>
+              <span class="dd-tab-loop" aria-hidden="true"></span>
+            </a>
+          ))}
+        </nav>
+        <button type="button" class="dd-pauze" data-dd-pauze hidden aria-pressed="false" aria-label={c.vnPauze} data-uit={c.vnPauze} data-aan={c.vnSpeel}><span aria-hidden="true"></span></button>
+      </div>
+      <div class="dd-spoor" data-dd-spoor>
+        {c.vnDia.map((d) => (
+          <article class={`dd-dia dd-dia-${d.id}`} id={`dd-${d.id}`} data-dd-dia>
+            <div class="dd-beeld">
+              {d.id === 'video' && VN_CLIP
+                ? <video src={VN_CLIP} poster={VN_BEELD.video[0].src} muted loop playsinline preload="none" aria-label={d.alt[0]}></video>
+                : VN_BEELD[d.id].map((b, j) => (
+                  <img src={b.src} srcset={b.srcset} sizes="(max-width: 900px) 92vw, 44vw" width={b.w} height={b.h} alt={d.alt[j]} loading="lazy" decoding="async" data-plaatshouder={d.id === 'video' ? 'donker' : undefined} />
+                ))}
+            </div>
+            <p class="dd-krijg"><span class="etiket">{c.vnKrijg}</span> {d.krijg}</p>
+            <p class="dd-link"><a class="pijl" href={lp(d.href)}>{d.link}</a></p>
+          </article>
+        ))}
+      </div>
+    </div>
+    <div class="dd-stappen">
+      <h3 class="hoog hoog-3 dd-stappen-h">{c.vnStappenH}</h3>
+      <ol role="list">
+        {c.vnStappen.map(([woord, zin, link], i) => (
+          <li>
+            <span class="mono dd-nr">{String(i + 1).padStart(2, '0')}</span>
+            <b>{woord}</b>
+            <span>{zin}</span>
+            {link && <a class="pijl" href={lp(link[1])}>{link[0]}</a>}
+          </li>
+        ))}
+      </ol>
     </div>
   </section>
-
-  {/* ── 3 · DE BAND ──────────────────────────────────────────────────────────
-      Van jouw foto naar je shop: vier stations, de tekening in Stations.astro. */}
-  <LopendeBand lang={lang} />
 
   {/* ── 4 · WAT WE MAKEN ─────────────────────────────────────────────────────
       Drie tegels, drie soorten beeld. De rest in één regel eronder. */}
@@ -319,7 +417,7 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
   {/* ── 5 · DE LOOKS ─────────────────────────────────────────────────────────
       Wat een modemerk als eerste wil weten: past dit bij mij. Elke kaart gaat
       naar de pagina van die look — zie Stijlstrook.astro. */}
-  <section class="paneel" aria-labelledby="vp-lk">
+  <section class="paneel vervolg" aria-labelledby="vp-lk">
     <header class="paneel-kop">
       <h2 id="vp-lk" class="hoog hoog-2">{c.looksH}</h2>
       <p class="lopend">{c.looksLede}</p>
@@ -330,7 +428,7 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
   {/* ── 6 · EEN GEZICHT ZIT ERBIJ ────────────────────────────────────────────
       De helft van wat hier stond: vijf gezichten in plaats van tien, en twee
       deuren naar de rest. */}
-  <section id="gezichten" class="paneel gz" aria-labelledby="vp-gz">
+  <section id="gezichten" class="paneel gz vervolg" aria-labelledby="vp-gz">
     <div class="gz-woord">
       <h2 id="vp-gz" class="hoog hoog-2">{c.facesH}</h2>
       <p class="lopend">{c.facesLede}</p>
@@ -388,7 +486,7 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
   </section>
 
   {/* ── 9 · DIRECT ANTWOORD ──────────────────────────────────────────────── */}
-  <section class="paneel" aria-labelledby="vp-q">
+  <section class="paneel vervolg" aria-labelledby="vp-q">
     <header class="paneel-kop">
       <h2 id="vp-q" class="hoog hoog-2">{c.qH}</h2>
     </header>
@@ -422,3 +520,145 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
       "wie zit hierachter?" denkt, komt op /about bij een gezicht uit. */}
   <ul class="trustlijn" role="list">{c.trust.map((t) => <li>{Array.isArray(t) ? <a href={lp(t[1])}>{t[0]}</a> : t}</li>)}</ul>
 </div>
+
+<script>
+  /* ── DE DIENSTWISSEL — 1 oktober 2026 ───────────────────────────────────────
+     Zonder dit script is de wissel een rij die je opzij veegt en zijn de
+     tabbladen ankers. Dit maakt er echte tabbladen van (pijltjestoetsen,
+     aria-selected), houdt het actieve tabblad bij terwijl iemand veegt, en laat
+     de dia's vanzelf doorlopen zolang het blok in beeld is.
+
+     DE KLOK IS DE STREEP. Er loopt geen timer: de streep onder het actieve
+     tabblad is een CSS-animatie, en als die af is gaat de wissel een dia
+     verder. Pauzeren is dus de animatie stilzetten (animation-play-state), en
+     de streep laat precies zien hoeveel er nog over was. Eén bron voor wat je
+     ziet en wat er gebeurt.
+
+     WANNEER HIJ STILSTAAT: buiten beeld, onder de muis of de focus, als de
+     bezoeker minder beweging vraagt, en voorgoed zodra iemand zelf kiest of
+     veegt — of op de pauzeknop drukt. Geen luisteraar op window: die blijft na
+     een zachte navigatie hangen (zie tests/zachte-navigatie.test.mjs). */
+  const zet = () => {
+    for (const root of document.querySelectorAll<HTMLElement>('[data-dd]')) {
+      if (root.dataset.ddKlaar) continue;
+      root.dataset.ddKlaar = '1';
+      const spoor = root.querySelector<HTMLElement>('[data-dd-spoor]');
+      const lijst = root.querySelector<HTMLElement>('[data-dd-tabs]');
+      const pauze = root.querySelector<HTMLButtonElement>('[data-dd-pauze]');
+      const tabs = [...root.querySelectorAll<HTMLAnchorElement>('[data-dd-tab]')];
+      const dias = [...root.querySelectorAll<HTMLElement>('[data-dd-dia]')];
+      if (!spoor || !lijst || !pauze || tabs.length !== dias.length || !tabs.length) continue;
+
+      const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      lijst.setAttribute('role', 'tablist');
+      for (const [i, t] of tabs.entries()) {
+        t.setAttribute('role', 'tab');
+        t.setAttribute('aria-controls', dias[i].id);
+        dias[i].setAttribute('role', 'tabpanel');
+        dias[i].setAttribute('aria-labelledby', t.id);
+      }
+
+      let nu = 0;
+      let loopt = !rustig;      // de keuze van de bezoeker (of van de pauzeknop)
+      let zicht = false;        // staat het blok in beeld
+      let erboven = false;      // muis of focus in de dia's
+      let zelf = false;         // het script schuift, niet de bezoeker
+
+      const stand = () => {
+        root.classList.toggle('dd-auto', loopt);
+        root.classList.toggle('dd-loopt', loopt && zicht && !erboven);
+        pauze.setAttribute('aria-pressed', String(!loopt));
+        pauze.setAttribute('aria-label', (loopt ? pauze.dataset.uit : pauze.dataset.aan) || '');
+        const clip = dias[nu].querySelector('video');
+        for (const v of root.querySelectorAll('video')) if (v !== clip) v.pause();
+        if (clip) { if (zicht) clip.play().catch(() => {}); else clip.pause(); }
+      };
+      const kies = (i: number) => {
+        nu = i;
+        for (const [j, t] of tabs.entries()) {
+          const aan = j === i;
+          t.setAttribute('aria-selected', String(aan));
+          t.tabIndex = aan ? 0 : -1;
+          /* De streep opnieuw laten beginnen: klasse eraf, één keer layout, erop. */
+          t.classList.remove('is-nu');
+          if (aan) { void t.offsetWidth; t.classList.add('is-nu'); }
+        }
+        for (const [j, d] of dias.entries()) d.inert = j !== i;
+        stand();
+      };
+      const ga = (i: number) => {
+        const doel = (i + dias.length) % dias.length;
+        zelf = true;
+        spoor.scrollTo({ left: dias[doel].offsetLeft - dias[0].offsetLeft, behavior: rustig ? 'auto' : 'smooth' });
+        kies(doel);
+        /* Klaar met schuiven: `scrollend` waar de browser hem kent, anders na
+           een ruime seconde. Tot dan telt geen enkele scroll als een veeg. */
+        window.clearTimeout(los);
+        los = window.setTimeout(() => { zelf = false; }, 1200);
+      };
+      let los = 0;
+      spoor.addEventListener('scrollend', () => { window.clearTimeout(los); los = window.setTimeout(() => { zelf = false; }, 60); });
+      const stop = () => { loopt = false; stand(); };
+
+      /* `for … of` en niet de arraymethode: tests/promises.test.mjs zoekt in dit
+         bestand naar het Engelse woord voor bereik, en vond het in die naam. */
+      for (const [i, t] of tabs.entries()) {
+        t.addEventListener('click', (ev) => { ev.preventDefault(); stop(); ga(i); });
+        t.addEventListener('keydown', (ev) => {
+          const stap = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+          if (!stap) return;
+          ev.preventDefault(); stop();
+          const doel = (i + stap + tabs.length) % tabs.length;
+          ga(doel); tabs[doel].focus();
+        });
+        t.querySelector('.dd-tab-loop')?.addEventListener('animationend', () => {
+          if (loopt && i === nu) ga(nu + 1);
+        });
+      }
+
+      /* Vegen: het tabblad volgt de dia die het meest in beeld staat. Een veeg
+         van de bezoeker zet de wissel stil; een schuif van het script niet. */
+      let wacht = 0;
+      spoor.addEventListener('scroll', () => {
+        window.clearTimeout(wacht);
+        wacht = window.setTimeout(() => {
+          if (zelf) return;
+          /* De dia waarvan het begin het dichtst bij de schuifstand ligt. */
+          let doel = 0, best = Infinity;
+          for (const [j, d] of dias.entries()) {
+            const af = Math.abs(d.offsetLeft - dias[0].offsetLeft - spoor.scrollLeft);
+            if (af < best) { best = af; doel = j; }
+          }
+          if (doel !== nu) { stop(); kies(doel); }
+        }, 120);
+      }, { passive: true });
+
+      const uit = root.querySelector<HTMLElement>('.dd-uit');
+      uit?.addEventListener('pointerenter', () => { erboven = true; stand(); });
+      uit?.addEventListener('pointerleave', () => { erboven = false; stand(); });
+      uit?.addEventListener('focusin', () => { erboven = true; stand(); });
+      uit?.addEventListener('focusout', () => { erboven = false; stand(); });
+
+      pauze.hidden = rustig;
+      pauze.addEventListener('click', () => { loopt = !loopt; stand(); });
+
+      /* In beeld is: de dia's zelf, voor de helft. Niet het hele blok — dat is
+         op een telefoon hoger dan het scherm en haalt dan nooit 40%. */
+      if (uit) new IntersectionObserver(([e]) => { zicht = e.isIntersecting; stand(); }, { threshold: 0.5 }).observe(uit);
+      /* Verandert de breedte (draaien, venster), dan blijft dezelfde dia staan
+         en telt het verspringen niet als een veeg. */
+      new ResizeObserver(() => {
+        zelf = true;
+        spoor.scrollTo({ left: dias[nu].offsetLeft - dias[0].offsetLeft, behavior: 'auto' });
+        window.clearTimeout(los);
+        los = window.setTimeout(() => { zelf = false; }, 500);
+      }).observe(spoor);
+      /* Een anker in de adresbalk (#dd-video) opent die dia. */
+      const vooraf = dias.findIndex((d) => `#${d.id}` === location.hash);
+      kies(vooraf > 0 ? vooraf : 0);
+      if (vooraf > 0) { loopt = false; ga(vooraf); }
+    }
+  };
+  zet();
+  document.addEventListener('astro:page-load', zet);
+</script>

@@ -132,8 +132,8 @@ const t0 = TIERS.unattended;
 const SHOTS = {
   en: [
     { n: '1', label: 'Front', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Front catalog shot of the product' },
-    { n: '2', label: 'Back', brief: 'The same garment photographed from the back, on the same white ground, same light, same framing as shot 1 — so the two sit next to each other on a product page without a jump.' },
-    { n: '3', label: 'Detail', brief: 'A close-up of the logo or the fabric of that same garment, cut out on the same ground. Close enough to read the stitching; the point is texture, not the whole product.' },
+    { n: '2', label: 'Back', brief: 'The same garment photographed from the back, on the same white background, same light, same framing as shot 1 — so the two sit next to each other on a product page without a jump.' },
+    { n: '3', label: 'Detail', brief: 'A close-up of the logo or the fabric of that same garment, cut out on the same background. Close enough to read the stitching; the point is texture, not the whole product.' },
     { n: '4', label: 'On a model', brief: 'That same garment worn by one of the roster models, full or three-quarter length, so a shopper can judge fit and scale. The PRODUCT is the subject — a portrait with no product in it is not this shot.' },
   ],
   nl: [
@@ -224,9 +224,9 @@ const COPY = {
     whereH: 'Where it lives',
     where: [
       ['Your webshop', 'the product pages people decide on.'],
-      ['Marketplaces', 'bol, Amazon and other strict listings.'],
+      ['Marketplaces', 'bol.com, Amazon and other strict listings.'],
       ['Shopping feeds', 'Google Shopping and comparison sites.'],
-      ['Wholesale & linesheets', 'where buyers need to see the product plainly.'],
+      ['Wholesale & line sheets', 'where buyers need to see the product plainly.'],
     ],
     stylesH: 'Pick your catalog style.',
     exploreLabel: (n: string) => `Explore ${n}`,
@@ -509,7 +509,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
             september 2026 bij de drie stappen (die zijn weg, zie hieronder).
             Wat hij zegt, hoort bij het bewijs: dit is wat er aan de foto
             gebeurt. Hij vervangt de drie chips, die er een deel van waren. */}
-        <ul class="cat-review-lijst" role="list">
+        <ul class="cat-review-lijst feiten" role="list">
           {c.check.map((chip) => <li>{chip}</li>)}
         </ul>
         <p class="cat-grond-regel"><span class="etiket">{nl ? 'Achtergrond' : 'Background'}</span> {c.chipsBg.join(' · ')}</p>
@@ -519,7 +519,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
   </section>
 
   {/* ── 3 · DE LOOKS ─────────────────────────────────────────────────────── */}
-  <section class="paneel" id="looks">
+  <section class="paneel vervolg" id="looks">
     <StyleRows
       lang={lang}
       dienst="catalog"
@@ -537,7 +537,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
       je voor dat bedrag krijgt, en een link naar de hele staffel. De drie
       stappen die hierna stonden (811 px) zijn weg: die staan op
       /how-it-works. De checklist ervan staat nu bij het bewijs. */}
-  <section class="paneel prijsband" aria-labelledby="cat-prijs">
+  <section class="paneel vervolg prijsband" aria-labelledby="cat-prijs">
     <div class="prijsband-in">
       <div class="prijsband-woord">
         <h2 id="cat-prijs" class="hoog hoog-3">{c.ladderH}</h2>
@@ -656,8 +656,7 @@ const vasteLooks = styles.filter((s) => s.slug !== 'custom').map(naarRij);
 
   .cat-bewijs { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: clamp(1.6rem, 4vw, 3rem); align-items: center; }
   .cat-review { display: grid; gap: .8rem; }
-  .cat-review-lijst { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
-  .cat-review-lijst li { font-family: var(--mono2); font-size: .72rem; font-stretch: 82%; letter-spacing: .04em; text-transform: uppercase; color: var(--inkt-2); border: 1px solid var(--lijn); border-radius: 999px; padding: .4rem .85rem; }
+  /* De pillen zijn een lijst geworden (1 oktober 2026): zie .feiten in stijl22.css. */
 
 
   @media (max-width: 900px) {

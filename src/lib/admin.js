@@ -49,6 +49,7 @@ import {
    komen als de nachtelijke opruiming en de juridische pagina's. */
 import { stampDeliveryRetention, DELIVERY_DAYS } from './retention.js';
 import { serviceLabel } from '../data/services.js';
+import { planName } from '../data/planNames.js';
 import { statPil } from '../data/status.js';
 /* De fotosoorten met hun Nederlandse naam — zie SHOT_LABEL verderop voor waarom
    dit geen eigen lijstje meer is. */
@@ -145,6 +146,7 @@ import { sendMail } from './mail.js';
 import { stuurBetaallink as stuurBetaallinkMail } from './betaallink.js';
 import { createOrderMolliePayment, refundMolliePayment, mollieKey, mollieKeyProblems, describeHeaders } from './mollie.js';
 import { issueInvoice, issueCreditNote } from './invoice.js';
+import { boekTegoedTerug, tegoedAfgeboekt, tegoedOpBestelling } from './tegoedVerrekening.js';
 import { mailInvoice } from './invoiceMail.js';
 import { mailCancellation } from './cancelMail.js';
 import { bouncesFor, bounceLine } from './bounces.js';
@@ -156,7 +158,7 @@ import { AMOUNT, VAT_RATE, vatPercent, ladderTotal, STOCK_OFF_BRAND } from '../d
    ingetypt: functions/api/order.js zet dezelfde klok bij het bestellen, en
    tests/promises.test.mjs weigert een tweede getal in dit bestand. */
 import { PAYMENT_DAYS } from '../data/vat.js';
-import { puntenVoor, heeftVoorrang } from '../data/pricing.js';
+import { puntenVoor, heeftVoorrang, voorrangDeadline } from '../data/pricing.js';
 /* rowPunten() weegt een opgeslagen rij, video inbegrepen; videoVelden() haalt de
    stijl en het aantal clips uit details_json. Zie de noten daar — het beheerscherm
    moet dezelfde vertaling gebruiken als de poort, anders zegt de planning iets
@@ -167,6 +169,7 @@ import {
   addDays, addOpenDays, daysInRange, firstOfferableDay, windowFor,
 } from '../data/capacity.js';
 import { readCalendar, videoVelden } from './agenda.js';
+import { videoStyles as VIDEO_STIJLEN_NL } from '../data/videoStyles.nl.js';
 /* Zodat het annuleerregeltje kan zeggen of de klant de bestanden nog heeft. Eén
    waarheid over die vraag; zie de kop van delivery.js. */
 import { leveringIngetrokken } from './delivery.js';
@@ -183,7 +186,18 @@ import {
   payPanel as mailPayPanel,
   linkLine as mailLinkLine,
   greeting as mailGreeting,
+  bedrag as mailBedrag,
+  datum as mailDatum,
 } from './mailTemplate.js';
+
+/* Tot wanneer een voorrangsbestelling uiterlijk geleverd moet zijn (29 september
+   2026) — zie VOORRANG en voorrangDeadline() in src/data/pricing.js. Leeg als er
+   nog niet betaald is: de termijn loopt vanaf de betaling. */
+function voorrangTot(order) {
+  if (!order?.paid_at) return ' — de termijn loopt vanaf de betaling';
+  const d = voorrangDeadline(order.paid_at);
+  return d ? ` — uiterlijk <strong>${esc(mailDatum(d.datum, 'nl'))} om ${d.uur}:00</strong>, anders gaat de toeslag terug` : '';
+}
 
 const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'cancelled'];
 /* De vijf statussen zoals ze op dit scherm staan. Nederlands sinds 7 september
@@ -200,7 +214,7 @@ const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'canc
 const STATUS_LABEL = {
   received: 'Binnen',
   in_production: 'In productie',
-  human_check: 'Nagekeken',
+  human_check: 'In controle',
   delivered: 'Geleverd',
   cancelled: 'Geannuleerd',
 };
@@ -267,7 +281,7 @@ function themaOmleiding(url) {
 /* Zet `data-thema="donker"` op <html> in elk HTML-antwoord. Alleen HTML: een
    omleiding, een zipbestand of een afbeelding gaat ongemoeid door.
 
-   `<html lang="en">` staat letterlijk in page() en nergens anders, dus één
+   `<html lang="nl">` staat letterlijk in page() en nergens anders, dus één
    vervanging is genoeg en hij kan niets anders raken. Faalt de vervanging (er
    is geen <html> in dit antwoord), dan verandert er niets — een verkeerd
    thema mag nooit een leeg scherm worden. */
@@ -276,7 +290,7 @@ async function metThema(request, response) {
   const type = response.headers.get('content-type') || '';
   if (!type.includes('text/html')) return response;
   const body = await response.text();
-  const uit = body.replace('<html lang="en">', '<html lang="en" data-thema="donker">');
+  const uit = body.replace('<html lang="nl">', '<html lang="nl" data-thema="donker">');
   return new Response(uit, { status: response.status, headers: response.headers });
 }
 
@@ -295,12 +309,12 @@ async function adminGetInner(context) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/admin';
 
-  if (!env?.DB) return html(page({ title: 'Admin', body: errorBody('The database is not reachable. Check the DB binding.') }), 503);
+  if (!env?.DB) return html(page({ title: 'Admin', body: errorBody('De database is niet bereikbaar. Controleer de DB-binding.') }), 503);
 
   if (path === '/admin/login') {
     const admin = await currentAdmin(context);
     if (admin) return seeOther('/admin');
-    return html(page({ title: 'Sign in', body: loginBody() }));
+    return html(page({ title: 'Inloggen', body: loginBody() }));
   }
 
   /* ── DE TWEEDE STAP STAAT VÓÓR DE WACHT — migratie 0037 ────────────────────
@@ -430,7 +444,7 @@ async function adminGetInner(context) {
     }));
   }
 
-  return html(page({ title: 'Not found', body: errorBody('Not found.') }), 404);
+  return html(page({ title: 'Niet gevonden', body: errorBody('Niet gevonden.') }), 404);
 }
 
 async function adminPostInner(context) {
@@ -438,7 +452,7 @@ async function adminPostInner(context) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '');
 
-  if (!env?.DB) return html(page({ title: 'Admin', body: errorBody('The database is not reachable.') }), 503);
+  if (!env?.DB) return html(page({ title: 'Admin', body: errorBody('De database is niet bereikbaar.') }), 503);
 
   if (path === '/admin/login') return handleLogin(context);
   if (path === '/admin/code') return handleCodePost(context);
@@ -454,7 +468,7 @@ async function adminPostInner(context) {
     // was. Only Lucas, already authenticated, ever sees this page, so the
     // raw values are safe to print — see originMismatchDetail()'s header.
     return html(page({ title: 'Admin', body: errorBody(
-      `Request origin did not match. Try again from the dashboard itself. ${originMismatchDetail(request)}`
+      `Het verzoek kwam niet van dit paneel. Probeer het opnieuw vanuit het dashboard zelf. ${originMismatchDetail(request)}`
     ) }), 403);
   }
   /* De tweede factor. Elke handeling hier vraagt bovendien een KLOPPENDE CODE,
@@ -638,7 +652,7 @@ async function adminPostInner(context) {
   const setMatch = path.match(/^\/admin\/maandset\/(\d+)$/);
   if (setMatch) return handleMaandsetManage(context, Number(setMatch[1]), admin);
 
-  return html(page({ title: 'Not found', body: errorBody('Not found.') }), 404);
+  return html(page({ title: 'Niet gevonden', body: errorBody('Niet gevonden.') }), 404);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -648,7 +662,7 @@ async function adminPostInner(context) {
 async function handleLogin({ request, env }) {
   const gate = await checkRate(env, { ip: clientIp(request), action: 'admin-login', limit: LOGIN_LIMIT });
   if (!gate.allowed) {
-    return html(page({ title: 'Sign in', body: loginBody('Too many attempts. Wait a minute and try again.') }), 429);
+    return html(page({ title: 'Inloggen', body: loginBody('Te veel pogingen. Wacht een minuut en probeer het opnieuw.') }), 429);
   }
 
   const form = await request.formData().catch(() => null);
@@ -669,7 +683,7 @@ async function handleLogin({ request, env }) {
     : await verifyPassword(password, await dummyHash());
 
   if (!ok || !row) {
-    return html(page({ title: 'Sign in', body: loginBody('Wrong email or password.') }), 401);
+    return html(page({ title: 'Inloggen', body: loginBody('E-mailadres of wachtwoord klopt niet.') }), 401);
   }
 
   /* ── EN DAN PAS DE TWEEDE FACTOR — migratie 0037, 1 september 2026 ────────
@@ -1053,7 +1067,7 @@ async function handleRevisionResolve({ request, env }, fileId) {
   const fixed = String(form?.get('fixed') || '').trim().slice(0, ANNOUNCE_NOTE_MAX);
   if (!fixed) {
     return html(page({ title: 'Admin', body: errorBody(
-      'Say in one line what you changed. The customer wrote down what was wrong; "resolved" on its own is not an answer to that, and in three months it is the gap where nobody remembers why there was an extra round.'
+      'Zeg in één regel wat je hebt aangepast. De klant schreef op wat er mis was; alleen "opgelost" is daar geen antwoord op, en over drie maanden weet niemand meer waarom er een extra ronde was.'
     ) }), 400);
   }
 
@@ -1186,9 +1200,9 @@ async function handleOrderCancel(context, orderId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
   const order = await env.DB.prepare(
-    'SELECT id, ref, status, payment_status, total_cents, vat_cents, refunded_cents, payment_ref, customer_id, email, name, lang FROM orders WHERE id = ?1'
+    'SELECT id, ref, status, payment_status, total_cents, vat_cents, refunded_cents, payment_ref, customer_id, email, name, lang, details_json FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const reason = String(form?.get('reason') || '').trim().slice(0, 500);
@@ -1196,7 +1210,7 @@ async function handleOrderCancel(context, orderId) {
 
   if (!reason) {
     return html(page({ title: 'Admin', body: errorBody(
-      'A cancellation needs a reason. It goes on the customer&rsquo;s timeline and it is the first thing anyone asks in three months.'
+      'Een annulering heeft een reden nodig. Die komt op de tijdlijn van de klant en is over drie maanden de eerste vraag.'
     ) }), 400);
   }
   // Betaald? Dan moet er iets over het geld gezegd zijn. Onbetaald? Dan is er
@@ -1216,19 +1230,24 @@ async function handleOrderCancel(context, orderId) {
   const uitAbonnement = order.payment_status === 'plan';
   if (paid && !payment) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This order is paid, so say what happens with the money: refund, credit, or nothing. Leaving it implicit is how a refund gets forgotten.'
+      'Deze bestelling is betaald, dus zeg wat er met het geld gebeurt: terugbetalen, tegoed of niets. Als dat niet gezegd wordt, wordt een terugbetaling vergeten.'
     ) }), 400);
   }
 
+  /* In de taal van de bestelling (29 september 2026): de klant leest deze regel
+     op zijn tijdlijn, en hij stond altijd in het Engels. */
+  const nlBest = order.lang === 'nl';
   const moneyLine = paid
-    ? { refund: 'Refund to be issued', credit: 'Credit for a future order', none: 'No refund' }[payment]
+    ? (nlBest
+      ? { refund: 'Het bedrag wordt terugbetaald', credit: 'Het bedrag blijft staan als tegoed voor een volgende bestelling', none: 'Er wordt niets terugbetaald' }
+      : { refund: 'Refund to be issued', credit: 'Credit for a future order', none: 'No refund' })[payment]
     : uitAbonnement
-      ? 'Paid from your subscription \u2014 the slots go back to your plan'
+      ? (nlBest ? 'Betaald uit je abonnement \u2014 de credits gaan terug naar je abonnement' : 'Paid from your subscription \u2014 the credits go back to your plan')
       /* Deze regel leest de KLANT op zijn tijdlijn, niet de studio. Hij stond
          als enige van de drie in het Engels op een Nederlandse bestelling —
          zie de noot een paar regels hierboven, die precies dit al beschreef en
          de helft ervan repareerde. 13 september 2026. */
-      : 'Er is niets betaald';
+      : (nlBest ? 'Er is niets betaald' : 'Nothing was paid');
 
   /*
    * GEEN STILLE MISLUKKING — 7 augustus 2026. Hier stond `.catch(() => {})`,
@@ -1260,7 +1279,7 @@ async function handleOrderCancel(context, orderId) {
   ]);
   } catch (err) {
     return html(page({ title: 'Admin', body: errorBody(
-      `The cancellation did not go through: ${esc(err?.message || String(err))}. Nothing was changed.`
+      `De annulering is niet gelukt: ${esc(err?.message || String(err))}. Er is niets gewijzigd.`
     ) }), 500);
   }
 
@@ -1320,7 +1339,7 @@ async function handleOrderCancel(context, orderId) {
       await env.DB.prepare(
         "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
       ).bind(orderId, terug.abonnement
-        ? `${nProduct} staan weer op je lijst en de slots zijn teruggezet op je abonnement. Je kunt ze opnieuw vastzetten wanneer je wilt.`
+        ? `${nProduct} staan weer op je lijst en de credits staan weer op je saldo. Je kunt ze opnieuw vastzetten wanneer je wilt.`
         : `${nProduct} staan weer op je lijst. Je abonnement liep al af, dus er zijn geen slots teruggezet.`
       ).run().catch(() => {});
       await logAdmin(env, admin, terug.abonnement && terug.slots === terug.items
@@ -1362,7 +1381,7 @@ async function handleOrderCancel(context, orderId) {
       const geboekt = await env.DB.prepare(
         `INSERT INTO customer_credits (customer_id, delta_cents, reason, order_id, admin_id)
          VALUES (?1, ?2, ?3, ?4, ?5)`
-      ).bind(order.customer_id, openstaand, `Tegoed na annulering van ${order.ref}`, orderId, admin?.id || null)
+      ).bind(order.customer_id, openstaand, `Tegoed na annulering van ${order.ref}`, orderId, admin?.admin_id ?? admin?.id ?? null)
         .run().then(() => true).catch((e) => {
           console.error('[admin] tegoed na annulering niet geboekt —', e?.message || e);
           return false;
@@ -1407,16 +1426,48 @@ async function handleOrderCancel(context, orderId) {
        tijdlijn dat er niets te starten viel. */
     const betaald = (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0);
     const alTerug = Math.max(0, Number(order.refunded_cents) || 0);
-    const bruto = Math.max(0, betaald - alTerug);
+    /* ── MET TEGOED BETAALD — 29 september 2026 ────────────────────────────
+       Het deel dat met tegoed betaald is, gaat terug als TEGOED en nooit als
+       geld (regel 2 in src/data/tegoed.js); alleen wat via Mollie binnenkwam,
+       gaat via Mollie terug. Dekte het tegoed alles, dan is er geen Mollie-
+       betaling en komt de creditnota hier meteen. Zie src/lib/tegoedVerrekening.js. */
+    const tegoedAf = await tegoedAfgeboekt(env, orderId).catch(() => 0);
+    const tegoedTerug = await boekTegoedTerug(env, order).catch((e) => {
+      console.error('[admin] tegoed na annulering niet teruggeboekt —', e?.message || e);
+      return 0;
+    });
+    if (tegoedTerug > 0) {
+      await env.DB.prepare(
+        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+      ).bind(orderId, order.lang === 'nl'
+        ? `${mailBedrag(tegoedTerug, 'nl')} staat weer als tegoed op je account.`
+        : `${mailBedrag(tegoedTerug, 'en')} is back on your account as credit.`).run().catch(() => {});
+      await logAdmin(env, admin, 'order.tegoed-terug', { orderId, detail: `${order.ref}: ${tegoedTerug} cent tegoed teruggeboekt` });
+    }
+    const bruto = Math.max(0, betaald - alTerug - tegoedAf);
+    if (!(bruto > 0) && tegoedTerug > 0) {
+      try {
+        const nota = await issueCreditNote(env, orderId, {
+          refundedGrossCents: alTerug + tegoedTerug,
+          reason: order.lang === 'nl' ? 'Bestelling geannuleerd — het tegoed staat weer op je account' : 'Order cancelled — the credit is back on your account',
+        });
+        if (nota) await logAdmin(env, admin, 'credit-note.issued', { orderId, detail: `${order.ref}: ${nota.number} (tegoed terug)` });
+      } catch (e) {
+        console.error('[admin] creditnota na tegoed-terug niet uitgegeven —', e?.message || e);
+      }
+    }
     const betaalId = order.payment_ref || (await env.DB.prepare(
       `SELECT external_id FROM payments
         WHERE order_id = ?1 AND status IN ('paid', 'refunded') AND provider = 'mollie'
         ORDER BY id DESC LIMIT 1`
     ).bind(orderId).first().catch(() => null))?.external_id || null;
 
-    if (!betaalId || !env.MOLLIE_API_KEY || !(bruto > 0)) {
+    if (!(bruto > 0) && tegoedTerug > 0) {
+      /* Niets via Mollie te doen: alles was tegoed, en dat staat al terug. */
+    } else if (!betaalId || !env.MOLLIE_API_KEY || !(bruto > 0)) {
       await env.DB.prepare(
-        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'intern')"
+      /* actor 'intern': een werkregel voor de studio, niet voor de tijdlijn van de klant. */
       ).bind(orderId, 'De terugbetaling kon hier niet gestart worden — die moet met de hand in Mollie.').run().catch(() => {});
       console.error('[admin] restitutie voor', order.ref, 'niet gestart — geen betaal-id of geen sleutel');
     } else {
@@ -1427,13 +1478,15 @@ async function handleOrderCancel(context, orderId) {
         });
         await env.DB.prepare(
           "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
-        ).bind(orderId, `Terugbetaling van € ${(bruto / 100).toFixed(2).replace('.', ',')} in gang gezet bij Mollie. De creditnota volgt zodra die bevestigd is.`).run().catch(() => {});
+        ).bind(orderId, order.lang === 'en'
+          ? `We are refunding ${mailBedrag(bruto, 'en')}. The credit note follows once the refund is confirmed.`
+          : `We betalen ${mailBedrag(bruto, 'nl')} terug. De creditnota volgt zodra de terugbetaling bevestigd is.`).run().catch(() => {});
         await logAdmin(env, admin, 'order.refund', { orderId, detail: `${order.ref}: ${bruto} cent teruggestort` });
         console.log('[admin] restitutie gestart voor', order.ref, bruto, 'cent');
       } catch (e) {
         await env.DB.prepare(
-          "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
-        ).bind(orderId, 'De terugbetaling is niet gelukt en moet met de hand in Mollie gedaan worden.').run().catch(() => {});
+          "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'intern')"
+        ).bind(orderId, 'De terugbetaling is niet gelukt en moet met de hand in Mollie gedaan worden.').run().catch(() => {}); // intern
         console.error('[admin] restitutie voor', order.ref, 'mislukt —', e && e.message ? e.message : e);
       }
     }
@@ -1447,10 +1500,13 @@ async function handleOrderCancel(context, orderId) {
      mailCreditNote in de webhook). Best effort, na alles hierboven: een mail die
      niet weggaat mag een vastgelegde annulering niet ongedaan lijken te maken. */
   {
+    /* Bij terugbetalen: alleen wat via Mollie terugkomt, met het tegoeddeel
+       apart (29 september 2026). */
+    const tegoedDeel = paid && payment === 'refund' ? await tegoedAfgeboekt(env, orderId).catch(() => 0) : 0;
     const bruto = Math.max(0,
-      (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0) - Math.max(0, Number(order.refunded_cents) || 0));
+      (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0) - Math.max(0, Number(order.refunded_cents) || 0) - tegoedDeel);
     const money = paid ? payment : (uitAbonnement ? 'plan' : 'unpaid');
-    const verstuurd = await mailCancellation(env, { order, reason, money, grossCents: bruto });
+    const verstuurd = await mailCancellation(env, { order, reason, money, grossCents: bruto, tegoedCents: tegoedDeel });
     if (!verstuurd) {
       await logAdmin(env, admin, 'order.cancel.mail-mislukt', {
         orderId, detail: `${order.ref}: annuleringsmail niet verstuurd — laat het de klant zelf weten`,
@@ -1468,7 +1524,7 @@ async function handleOrderHide(context, orderId) {
   const show = String(form?.get('action') || '') === 'show';
 
   const order = await env.DB.prepare('SELECT id, ref FROM orders WHERE id = ?1').bind(orderId).first().catch(() => null);
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   await env.DB.prepare(
     `UPDATE orders SET hidden_at = ${show ? 'NULL' : "datetime('now')"} WHERE id = ?1`
@@ -1537,18 +1593,18 @@ async function handleOrderDelete(context, orderId) {
   const order = await env.DB.prepare(
     'SELECT id, ref, payment_status, total_cents FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   if (order.payment_status === 'paid' && Number(order.total_cents || 0) > 0) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This order was paid, so it is not deletable — a paid order has to stay on file. Cancel it (with a reason) or hide it from your lists instead.'
+      'Deze bestelling is betaald, dus hij kan niet verwijderd worden — een betaalde bestelling moet bewaard blijven. Annuleer hem (met een reden) of verberg hem uit je lijsten.'
     ) }), 400);
   }
 
   const form = await request.formData().catch(() => null);
   if (String(form?.get('confirm') || '').trim() !== order.ref) {
     return html(page({ title: 'Admin', body: errorBody(
-      `To delete this order, type its reference exactly: <strong>${esc(order.ref)}</strong>.`
+      `Om deze bestelling te verwijderen, typ je het kenmerk precies over: <strong>${esc(order.ref)}</strong>.`
     ) }), 400);
   }
 
@@ -1580,7 +1636,7 @@ async function handleOrderDelete(context, orderId) {
     ]);
   } catch (err) {
     return html(page({ title: 'Admin', body: errorBody(
-      `Nothing was deleted: ${esc(err?.message || String(err))}. The order and its files are untouched.`
+      `Er is niets verwijderd: ${esc(err?.message || String(err))}. De bestelling en de bestanden zijn onaangeraakt.`
     ) }), 500);
   }
 
@@ -1670,13 +1726,13 @@ async function handleCustomerWipe(context, customerId) {
   const customer = await env.DB.prepare(
     'SELECT id, email, brand, name FROM customers WHERE id = ?1'
   ).bind(customerId).first().catch(() => null);
-  if (!customer) return html(page({ title: 'Admin', body: errorBody('That customer does not exist.') }), 404);
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const expected = (customer.brand || customer.name || customer.email || '').trim();
   const form = await request.formData().catch(() => null);
   if (String(form?.get('confirm') || '').trim() !== expected) {
     return html(page({ title: 'Admin', body: errorBody(
-      `To erase everything for this customer, type <strong>${esc(expected)}</strong> exactly. There is no undo, so there is no easy button either.`
+      `Om alles van deze klant te wissen, typ je <strong>${esc(expected)}</strong> precies over. Terugdraaien kan niet, dus er is ook geen snelle knop.`
     ) }), 400);
   }
 
@@ -1964,14 +2020,25 @@ async function handleStatusUpdate(context, orderId) {
   const note = String(form?.get('note') || '').slice(0, 2000).trim() || null;
 
   if (!STATUSES.includes(status)) {
-    return html(page({ title: 'Admin', body: errorBody(`"${esc(status)}" is not a known status.`) }), 400);
+    return html(page({ title: 'Admin', body: errorBody(`"${esc(status)}" is geen bekende status.`) }), 400);
   }
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
 
-  const exists = await env.DB.prepare('SELECT id, ref FROM orders WHERE id = ?1').bind(orderId).first();
-  if (!exists) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  const exists = await env.DB.prepare('SELECT id, ref, status FROM orders WHERE id = ?1').bind(orderId).first();
+  if (!exists) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
+
+  /* ── ANNULEREN LOOPT NIET VIA HET STATUSLIJSTJE — 29 september 2026 ──────
+     "Geannuleerd" kiezen in het lijstje zette alleen de status om: geen
+     terugbetaling, geen tegoed, geen creditnota, geen mail aan de klant, en een
+     gereserveerd tegoed bleef vastzitten. Annuleren heeft zijn eigen knop met
+     die afwikkeling (handleOrderCancel); hier wordt ernaar verwezen. */
+  if (status === 'cancelled' && exists.status !== 'cancelled') {
+    return html(page({ title: 'Admin', body: errorBody(
+      `Annuleren gaat via <a href="/admin/orders/${orderId}/files">de bestelpagina</a>, onder "Annuleren, verbergen of verwijderen": daar kies je wat er met het geld gebeurt en krijgt de klant bericht. Het statuslijstje zet alleen een status om.`
+    ) }), 400);
+  }
 
   // Two writes, not one — orders.status is what every other query in the
   // codebase reads (the capacity gate's idx_orders_status, the notify mail),
@@ -2014,6 +2081,7 @@ async function handleStatusUpdate(context, orderId) {
   });
 
   const back = String(form?.get('back') || '');
+  if (back === 'files') return seeOther(`/admin/orders/${orderId}/files`);
   return seeOther(STATUSES.includes(back) ? `/admin?status=${encodeURIComponent(back)}` : '/admin');
 }
 
@@ -2077,7 +2145,7 @@ async function loadOrderFiles(env, orderId) {
                        customer_note, customer_note_at,
                        country, vat_number, vat_treatment, vat_rate, vat_cents, total_cents,
                        vat_valid, vat_checked_at, vat_consultation, vat_check_name,
-                       icp_reported_at, customer_id, payment_status, review_state
+                       icp_reported_at, customer_id, payment_status, review_state, review_reason, paid_at
                   FROM orders WHERE id = ?1`;
   const narrow = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
                          tier, window_start, window_end,
@@ -2238,17 +2306,28 @@ async function servePortaalKijk(context, orderId) {
 
      De balk wordt vóór </body> ingevoegd en niet in de HTML van het portaal
      zelf: portal.js hoort niet te weten dat dit bestaat. */
-  const balk = `<div style="position:fixed;inset-inline:0;inset-block-start:0;z-index:99;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem;padding:.5rem .9rem;background:#111210;color:#fff;font:600 13px/1.3 system-ui,sans-serif">
-    <span style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.7">Voorvertoning</span>
+  /* ── GEEN style="…" MEER — 23 september 2026 ─────────────────────────────
+     Dit scherm gaat de deur uit met de CSP van elk adminscherm (style-src
+     'self'), en die weigert een inline stijl. De balk stond daardoor als
+     zwarte tekst op de zwarte portaalachtergrond: onzichtbaar. De regels
+     staan nu in public/admin-voorvertoning.css, ingehaakt in <head>. En de
+     beelden: het portaal tekent ze als /o/<token>/f/<id>, met hier een LEEG
+     token — acht 404's en een voorvertoning zonder beelden. Dezelfde rijen
+     zijn voor de beheerder bereikbaar via /admin/files/<id>. */
+  const balk = `<div class="vv-balk">
+    <span class="vv-kop">Voorvertoning</span>
     <strong>${esc(order.ref)}</strong>
-    <span style="opacity:.75;font-weight:400">Dit is wat de klant ziet. De knoppen hier doen niets.</span>
-    <a href="/admin/orders/${order.id}/files" style="margin-inline-start:auto;color:var(--accent-text,#3D17D6)">&larr; terug naar de bestelling</a>
+    <span class="vv-uitleg">Dit is wat de klant ziet. De knoppen hier doen niets.</span>
+    <a class="vv-terug" href="/admin/orders/${order.id}/files">&larr; terug naar de bestelling</a>
   </div>
-  <div style="height:44px"></div>`;
+  <div class="vv-ruimte"></div>`;
+  const css = '<link rel="stylesheet" href="/admin-voorvertoning.css">';
 
-  const metBalk = body.includes('<body')
+  const metBalk = (body.includes('<body')
     ? body.replace(/(<body[^>]*>)/i, `$1${balk}`)
-    : balk + body;
+    : balk + body)
+    .replace(/<\/head>/i, `${css}</head>`)
+    .replace(/\/o\/\/f\//g, '/admin/files/');
 
   /* Dezelfde headers als elk ander adminscherm: no-store, noindex, en de CSP
      zonder script. Het portaal draait zelf ook zonder script, dus er gaat
@@ -2259,13 +2338,13 @@ async function servePortaalKijk(context, orderId) {
 async function serveScaffold(context, orderId) {
   const { env } = context;
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const order = await env.DB.prepare(
     `SELECT id, ref, brand, name, service, lang, product_count, window_end, details_json
        FROM orders WHERE id = ?1`
   ).bind(orderId).first();
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   let details = {};
   try { details = JSON.parse(order.details_json || '{}') || {}; } catch { details = {}; }
@@ -2389,14 +2468,32 @@ async function serveScaffold(context, orderId) {
 async function renderFiles(context, orderId) {
   const { env, request } = context;
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const data = await loadOrderFiles(env, orderId);
-  if (!data) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!data) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   const { order, files, migrated, notes, assets = new Map() } = data;
   const orderBounce = (await bouncesFor(env, [order.email])).get(String(order.email || '').toLowerCase()) || null;
   const bounceBlok = orderBounce ? `<p class="warnline is-rood">${esc(bounceLine(orderBounce))}</p>` : '';
+  /* ── STAAT ER TEGOED? — 24 september 2026 ────────────────────────────────
+     Studio laat de klant zijn tegoed nu zien, met de zin "noem het bij je
+     volgende bestelling — dan verrekenen we het". Verrekenen gaat met de hand
+     (zie de kop van src/data/tegoed.js), dus hier staat het bij elke
+     bestelling van die klant, zodat het niet vergeten wordt. */
+  let tegoedBlok = '';
+  if (order.customer_id) {
+    const tg = await env.DB.prepare('SELECT COALESCE(SUM(delta_cents), 0) AS c FROM customer_credits WHERE customer_id = ?1')
+      .bind(order.customer_id).first().catch(() => null);
+    const c = Math.round(Number(tg?.c) || 0);
+    /* Op deze bestelling zelf verrekend (29 september 2026). */
+    const hier = tegoedOpBestelling(order);
+    if (hier > 0) {
+      const bruto = (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0);
+      tegoedBlok += `<p class="okline">Verrekend met tegoed: <strong>${esc(mailBedrag(hier, 'nl'))}</strong> van ${esc(mailBedrag(bruto, 'nl'))}${hier < bruto ? ` — via Mollie ${esc(mailBedrag(bruto - hier, 'nl'))}` : ' — helemaal met tegoed betaald'}.</p>`;
+    }
+    if (c > 0) tegoedBlok += `<p class="warnline">Deze klant heeft <strong>${esc(mailBedrag(c, 'nl'))}</strong> tegoed staan. Dat gaat automatisch van zijn volgende bestelling af als hij ingelogd bestelt; bestelt hij zonder in te loggen, verreken het dan met de hand onder <a href="/admin/customers/${order.customer_id}#tegoed">Klant &rsaquo; Tegoed</a>.</p>`;
+  }
 
   /* ── DE FACTUUR, MET TWEE KNOPPEN ─────────────────────────────────────────
      Staat er geen factuur, dan staat hier ook niets: een factuur hoort bij de
@@ -2408,8 +2505,8 @@ async function renderFiles(context, orderId) {
   const factuurBlok = !factuur ? '' : `
   <h2>Factuur</h2>
   <p class="muted">
-    <strong>${esc(factuur.number)}</strong> ${statPil(factuur.status, factuur.status)}${
-      factuur.issued_at ? ` on ${esc(when(factuur.issued_at))}` : ''
+    <strong>${esc(factuur.number)}</strong> ${statPil(factuur.status, { issued: 'uitgereikt', draft: 'concept', void: 'vervallen', credited: 'gecrediteerd' }[factuur.status] || factuur.status)}${
+      factuur.issued_at ? ` op ${esc(when(factuur.issued_at))}` : ''
     }${factuur.pdf_bytes ? ` &middot; ${Math.round(factuur.pdf_bytes / 1024)} kB` : ''}
   </p>
   ${factuur.status === 'issued'
@@ -2421,7 +2518,7 @@ async function renderFiles(context, orderId) {
     : `<form class="controls" method="post" action="/admin/orders/${order.id}/invoice">
          <input type="hidden" name="action" value="render">
          <button class="btn btn-primary btn-sm" type="submit">Deze factuur afmaken</button>
-         <span class="meta">The number exists, the pdf does not. This renders it from the stored snapshot &mdash; same number, no gap in the series.</span>
+         <span class="meta">Het nummer bestaat, de pdf nog niet. Dit maakt hem uit de bewaarde momentopname &mdash; zelfde nummer, geen gat in de reeks.</span>
        </form>`}`;
 
   /* ── HET UNICITEITSLOGBOEK ────────────────────────────────────────────────
@@ -2452,23 +2549,24 @@ async function renderFiles(context, orderId) {
        twee heel verschillende dingen om als eerste te lezen, en een gedeelde
        formulering met een vinkje ernaast zou ze op elkaar laten lijken. */
     const stand = !controle.model_check_at
-      ? '<p class="muted">Not checked yet. Nothing here has been run against the search engines, '
-        + 'and the guarantee on /custom-models has nothing behind it until it has.</p>'
-      : `<p class="${treffer ? 'okline' : 'muted'}">
-           Checked ${esc(controle.model_check_at)} by ${esc(controle.model_check_by || '&mdash;')}
-           &middot; ${gedaan.length} ${gedaan.length === 1 ? 'search' : 'searches'}
-           &middot; <strong>${treffer ? 'a match was found' : 'no match'}</strong>${
-             compleet ? '' : ' &middot; <strong>incomplete</strong> &mdash; not every face search was run'}
+      ? '<p class="muted">Nog niet gecontroleerd. Er is hier nog niets door de zoekmachines gehaald, '
+        + 'en de garantie op /custom-models heeft niets achter zich tot dat wel is gebeurd.</p>'
+      /* Een treffer is het SLECHTE nieuws: die stond hier als groene okline. */
+      : `<p class="${treffer ? 'warnline' : 'muted'}">
+           Gecontroleerd op ${esc(controle.model_check_at)} door ${controle.model_check_by ? esc(controle.model_check_by) : '&mdash;'}
+           &middot; ${gedaan.length} ${gedaan.length === 1 ? 'zoekopdracht' : 'zoekopdrachten'}
+           &middot; <strong>${treffer ? 'er is een gelijkenis gevonden' : 'geen gelijkenis'}</strong>${
+             compleet ? '' : ' &middot; <strong>onvolledig</strong> &mdash; niet elke gezichtszoekmachine is gedraaid'}
          </p>${controle.model_check_note
            ? `<p class="muted">${esc(controle.model_check_note)}</p>` : ''}`;
 
     return `
-  <h2>Uniqueness check</h2>
-  ${opgeslagen ? '<p class="okline">Recorded.</p>' : ''}
+  <h2>Uniekheidscontrole</h2>
+  ${opgeslagen ? '<p class="okline">Vastgelegd.</p>' : ''}
   ${stand}
-  <p class="muted">Run the searches on the source file at full resolution, not on a thumbnail.
-    The face searches answer the question; the file searches catch a generator that handed back
-    an existing photograph. See <code>src/data/modelChecks.js</code>.</p>
+  <p class="muted">Draai de zoekopdrachten op het bronbestand in volle resolutie, niet op een miniatuur.
+    De gezichtszoekmachines beantwoorden de vraag; de bestandszoekmachines vangen een generator die
+    een bestaande foto teruggaf. Zie <code>src/data/modelChecks.js</code>.</p>
   <form method="post" action="/admin/orders/${order.id}/model-check">
     <label>Datum waarop het is gedraaid
       <input type="date" name="checked_at" value="${esc(controle.model_check_at || '')}" required />
@@ -2561,7 +2659,7 @@ async function renderFiles(context, orderId) {
    */
   const vatRow = migrated && order.vat_treatment ? (() => {
     const t = order.vat_treatment;
-    const money = (c) => `€${((Number(c) || 0) / 100).toFixed(2)}`;
+    const money = (c) => mailBedrag(c, 'nl');
     const label = t === 'eu_reverse_charge' ? 'Btw verlegd (art. 196)'
       : t === 'outside_scope' ? 'Niet belastbaar in NL'
       : `Nederlandse btw ${Math.round((Number(order.vat_rate) || 0) * 100)}%`;
@@ -2631,7 +2729,7 @@ async function renderFiles(context, orderId) {
     const dead = !!f.superseded_at;
     const cls = [revising ? 'is-revising' : '', dead ? 'is-superseded' : ''].filter(Boolean).join(' ');
     return `<tr class="${cls}">
-      <td class="thumbcell"><a href="/admin/files/${f.id}" aria-label="Open ${esc(f.filename || `file ${f.id}`)} full size"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
+      <td class="thumbcell"><a href="/admin/files/${f.id}" aria-label="${esc(f.filename || `bestand ${f.id}`)} op volle grootte openen"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
       <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— niet gezet —', `Product voor ${f.filename || `bestand ${f.id}`}`)}</td>
       <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, SHOT_LABEL[k] || k]), '— niet gezet —', `Foto voor ${f.filename || `bestand ${f.id}`}`)}</td>
       <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a>
@@ -2849,7 +2947,7 @@ async function renderFiles(context, orderId) {
     ? `<p class="muted">${filledSlots} van ${totalSlots} vakjes gevuld. Bestanden worden meteen opgeslagen — de klant ziet niets tot je op versturen drukt. Een product dat af én gemeld is, klapt dicht.</p>
        ${index}
        ${boardProducts.map(productRow).join('')}`
-    : '<p class="muted">This order has no product count on it, so there is no grid to fill. Upload below and map the files by hand.</p>';
+    : '<p class="muted">Op deze bestelling staat geen aantal producten, dus er is geen bord om te vullen. Upload hieronder en deel de bestanden met de hand in.</p>';
 
   const unmapped = delivery.filter((f) => !f.superseded_at && (!f.product_key || !f.shot)).length;
   const mapForm = delivery.length
@@ -2885,12 +2983,17 @@ async function renderFiles(context, orderId) {
   const namensFlag = (() => {
     try { return new URL(request.url).searchParams.get('namens') === '1'; } catch { return false; }
   })();
+  /* ?link=sent kwam van "nieuwe link mailen" en werd nergens gelezen: de knop
+     gaf geen enkele bevestiging (29 september 2026). */
+  const linkFlag = (() => {
+    try { return new URL(request.url).searchParams.get('link') === 'sent'; } catch { return false; }
+  })();
   const flash = flag === 'none'
     ? '<p class="muted">Niets nieuws te melden — elk geleverd bestand van deze bestelling is al gemaild.</p>'
     : Number(flag) > 0
-      ? `<p class="okline">Mailed. ${Number(flag)} ${Number(flag) === 1 ? 'image' : 'images'} announced to ${esc(order.email || 'the customer')}.</p>`
+      ? `<p class="okline">Gemaild. ${Number(flag)} ${Number(flag) === 1 ? 'beeld' : 'beelden'} gemeld aan ${esc(order.email || 'de klant')}.</p>`
       : mappedFlag
-        ? `<p class="okline">Mapping saved for ${mappedFlag} ${mappedFlag === 1 ? 'file' : 'files'}. The customer&rsquo;s dashboard now groups them per product.</p>`
+        ? `<p class="okline">Koppeling opgeslagen voor ${mappedFlag} ${mappedFlag === 1 ? 'bestand' : 'bestanden'}. Het dashboard van de klant groepeert ze nu per product.</p>`
         : notedFlag
           ? '<p class="okline">Notitie opgeslagen.</p>'
           : quoteFlag === 'sent'
@@ -2898,8 +3001,10 @@ async function renderFiles(context, orderId) {
             : quoteFlag === 'nolink'
               ? '<p class="warnline">Bedrag vastgelegd, maar er ging geen betaallink uit (geen Mollie-sleutel, geen e-mailadres, of al betaald). Zie het logboek.</p>'
               : namensFlag
-                ? `<p class="okline">Bestelling namens de klant aangemaakt. ${order.review_state === 'pending' ? 'Zonder btw- of KVK-nummer staat hij eerst op de btw-lijst; na jouw akkoord gaat de betaallink.' : `De bevestiging met betaallink is naar ${esc(order.email || 'de klant')} gemaild.`}</p>`
-                : '';
+                ? `<p class="okline">Bestelling namens de klant aangemaakt. ${order.review_state === 'pending' ? `Hij staat eerst op de btw-lijst${order.review_reason ? ` (${esc(order.review_reason)})` : ''}; na jouw akkoord gaat de betaallink.` : `De bevestiging met betaallink is naar ${esc(order.email || 'de klant')} gemaild.`}</p>`
+                : linkFlag
+                  ? `<p class="okline">Nieuwe link gemaild naar ${esc(order.email || 'de klant')}. De vorige werkt niet meer.</p>`
+                  : '';
 
   /* ── DE AANVRAAG VOOR EEN EIGEN LOOK — 4 september 2026 ──────────────────
      Lucas: "korte intake voor belangrijke informatie waarna ik kijk wat de
@@ -2938,9 +3043,14 @@ async function renderFiles(context, orderId) {
       : `<form class="controls" method="post" action="/admin/orders/${order.id}/quote">
       <label>Offerte, &euro; excl. btw
         <input name="amount" type="number" min="1" max="25000" step="0.01" inputmode="decimal" required value="${esc(bedrag)}"></label>
+      <fieldset class="quote-soort">
+        <legend>Wat is dit bedrag?</legend>
+        <label><input type="radio" name="soort" value="volledig"${d.quote_kind === 'aanbetaling' ? '' : ' checked'}> De volledige prijs</label>
+        <label><input type="radio" name="soort" value="aanbetaling"${d.quote_kind === 'aanbetaling' ? ' checked' : ''}> Een aanbetaling &mdash; het restant volgt later</label>
+      </fieldset>
       <button class="btn btn-primary" type="submit">${bedrag ? 'Bedrag aanpassen en link opnieuw mailen' : 'Offerte vastleggen en betaallink mailen'}</button>
     </form>
-    <p class="meta">Offerte of aanbetaling — zeg eerst of het idee met AI en onze tools te maken is; kan het niet, dan gaat de aanbetaling terug. Zet het bedrag op deze bestelling${Number(order.vat_rate) === 0 ? ' (0% btw, verlegd of buiten de EU)' : ` (+ ${vatPercent()} btw)`} en mailt de klant dezelfde betaallink als na een btw-controle. Pas als de klant betaald heeft, staat hij op &ldquo;betaald&rdquo; &mdash; de webhook van Mollie doet dat, niet deze knop.</p>`;
+    <p class="meta">Offerte of aanbetaling — zeg eerst of het idee met AI en onze tools te maken is; kan het niet, dan gaat de aanbetaling terug. De mail vertelt de klant wat het bedrag is (volledig of aanbetaling)${d.business_declaration === 'MISSING' ? ', en omdat deze aanvraag nog geen zakelijke verklaring heeft, ook dat hij met betalen bevestigt dat hij als bedrijf bestelt' : ''}. Het bedrag komt op deze bestelling${Number(order.vat_rate) === 0 ? ' (0% btw, verlegd of buiten de EU)' : ` (+ ${vatPercent()} btw)`} De knop zet het bedrag vast en mailt de klant dezelfde betaallink als na een btw-controle. Pas als de klant betaald heeft, staat hij op &ldquo;betaald&rdquo; &mdash; de webhook van Mollie doet dat, niet deze knop.</p>`;
     const klaarzetten = eigenLook && order.customer_id
       ? `<p><a class="btn" href="/admin/customers/${order.customer_id}?look=${order.id}#nieuwe-look">De look klaarzetten in het account van ${esc(order.brand || order.name || 'de klant')}</a></p>
       <p class="meta">Maak hem eerst aan als <em>in ontwerp</em> &mdash; de klant ziet dan in Studio dat er aan gewerkt wordt &mdash; en zet hem op <em>actief</em> zodra het ontwerp betaald en goedgekeurd is. Daarna staat hij als tegel in zijn bestelformulier.</p>`
@@ -2982,7 +3092,14 @@ async function renderFiles(context, orderId) {
   const announce = !migrated
     ? ''
     : !order.delivery_mailed_at
-      ? `<p class="muted">Deze bestelling is nog nooit gemeld. Zet de status op <strong>geleverd</strong> op het dashboard — dat verstuurt de mail dat de bestelling klaar is.</p>`
+      /* Een knop in plaats van "ga naar het dashboard" (29 september 2026): terug,
+         zoeken, uitklappen, kiezen en bijwerken was vijf stappen voor één klik. */
+      ? `<form class="controls" method="post" action="/admin/orders/${order.id}/status">
+           <input type="hidden" name="status" value="delivered">
+           <input type="hidden" name="back" value="files">
+           <p class="muted in-grow">Deze bestelling is nog nooit gemeld. Op geleverd zetten stuurt de klant de mail dat zijn bestelling klaarstaat.</p>
+           <button class="btn btn-primary" type="submit">Op geleverd zetten en klant mailen</button>
+         </form>`
       : `
   <p class="muted">
     Voor het eerst gemeld ${esc(when(order.delivery_mailed_at))}${
@@ -2999,7 +3116,7 @@ async function renderFiles(context, orderId) {
        <p class="muted">Eén mail voor alles wat nog niet gemeld is &mdash; upload eerst alles, druk daarna één keer.</p>`
     : '<p class="muted">Alles wat hier geleverd is, is gemeld.</p>'}
   ${order.delivery_mailed_at ? `
-  <hr style="border:0;border-top:1px solid var(--line);margin:1.4rem 0">
+  <hr class="hr-los">
   <form method="post" action="/admin/orders/${order.id}/fresh-link" class="controls">
     <button class="btn" type="submit">Nieuwe portaallink mailen</button>
     <span class="muted">Voor &ldquo;mijn link doet het niet meer&rdquo; &mdash; /terms en /privacy beloven dit. Er komt een nieuwe link,
@@ -3023,12 +3140,12 @@ async function renderFiles(context, orderId) {
   <h2>Notities</h2>
   <div class="notepanel is-shared">
     <h3>Dit leest de klant</h3>
-    <p class="muted">One standing message on their order page. Not a chat — what is true now, not what was true last week.${
-      order.customer_note_at ? ` Last changed ${esc(when(order.customer_note_at))}.` : ''}</p>
+    <p class="muted">Eén vast bericht op zijn bestelpagina. Geen chat — wat nu waar is, niet wat vorige week waar was.${
+      order.customer_note_at ? ` Laatst gewijzigd ${esc(when(order.customer_note_at))}.` : ''}</p>
     <form method="post" action="/admin/orders/${order.id}/note">
-      <textarea name="note" rows="3" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="e.g. The fabric on product 4 came out darker than your photo, so we lifted the exposure a touch.">${esc(order.customer_note || '')}</textarea>
+      <textarea name="note" rows="3" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="bijv. De stof van product 4 kwam donkerder uit dan op je foto, dus we hebben de belichting iets opgetild.">${esc(order.customer_note || '')}</textarea>
       <div class="controls is-under">
-        <button class="btn btn-primary btn-sm" type="submit">Save${order.customer_note ? ' / clear' : ''}</button>
+        <button class="btn btn-primary btn-sm" type="submit">Opslaan${order.customer_note ? ' / wissen' : ''}</button>
         <span class="muted">Leeg opslaan betekent geen bericht.</span>
       </div>
     </form>
@@ -3037,7 +3154,7 @@ async function renderFiles(context, orderId) {
   <div class="notepanel is-internal">
     <h3>Dit zie alleen jij</h3>
     <form method="post" action="/admin/orders/${order.id}/internal">
-      <textarea name="body" rows="2" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="Why this order took an extra round, what to watch for next time, what you agreed on the phone." required></textarea>
+      <textarea name="body" rows="2" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="Waarom deze bestelling een extra ronde kostte, waar je de volgende keer op let, wat je aan de telefoon afsprak." required></textarea>
       <div class="controls is-under">
         <button class="btn btn-ghost btn-sm" type="submit">Notitie toevoegen</button>
       </div>
@@ -3124,8 +3241,12 @@ async function renderFiles(context, orderId) {
          eerst als `bg.name` en zette dan "[object Object]" op het scherm. */
       const bg = id ? achtergrondVan(id) : null;
       const naam = bg ? (bg.name?.nl || bg.name?.en || id) : (id || '');
+      /* Als svg met een fill-ATTRIBUUT en niet als style="background:…": de
+         CSP van dit scherm (style-src 'self') weigert een inline stijl, en de
+         klantkleur stond hier als leeg vakje. Een presentatieattribuut valt
+         buiten style-src. */
       const staal = /^#[0-9a-fA-F]{6}$/.test(hex)
-        ? `<span class="kleurstaal" style="background:${esc(hex)}"></span>`
+        ? `<svg class="kleurstaal" viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" fill="${esc(hex)}"/></svg>`
         : '';
       return `${staal}${esc(naam || hex)}${naam && hex ? ` <span class="meta">— ${esc(hex)}</span>` : ''}`;
     };
@@ -3188,7 +3309,7 @@ async function renderFiles(context, orderId) {
          staat dat op het bord, in de brief van het product zelf — daar hoort
          het, naast de foto's waar het over gaat. Hier alleen nog wat voor de
          hele bestelling geldt. */
-      rij('Levering', heeftVoorrang(order) ? '<strong class="or-voorrang">Voorrang</strong> — toeslag betaald, streef: binnen 24 uur na betaling' : ''),
+      rij('Levering', heeftVoorrang(order) ? `<strong class="or-voorrang">Voorrang</strong> — toeslag betaald${voorrangTot(order)}` : ''),
       rij('Kanalen', d.channels ? esc(String(d.channels)) : ''),
       rij('Kledingsoort', d.garment ? esc(garmentVan(String(d.garment)).name.nl) : ''),
       rij('Bericht van de klant', berichtRegel),
@@ -3204,6 +3325,13 @@ async function renderFiles(context, orderId) {
     let d = {};
     try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
     const stukjes = [];
+    /* De videostijl (24 september 2026) — Lucas, 7 september: "zorg ervoor dat
+       ik kan zien welke style het is." Hij werd tot vandaag niet eens bewaard;
+       zie functions/api/order.js. */
+    if (order.service === 'video' && d.style) {
+      const vs = VIDEO_STIJLEN_NL.find((x) => x.slug === String(d.style));
+      stukjes.push(`stijl <strong>${esc(vs ? vs.name : String(d.style))}</strong>`);
+    }
     if (d.clips) stukjes.push(`${esc(String(d.clips))} clips`);
     if (d.plan) stukjes.push(`abonnement ${esc(String(d.plan))}`);
     if (d.request && d.request !== 'video') stukjes.push(`aanvraag: ${esc(String(d.request))}`);
@@ -3234,7 +3362,7 @@ async function renderFiles(context, orderId) {
   <p class="muted">${heeftVenster
     ? `Vastgelegd op <strong>${esc(order.window_start)}</strong> of <strong>${esc(order.window_end || order.window_start)}</strong>.`
     : heeftVoorrang(order)
-      ? '<strong class="or-voorrang">Voorrang</strong> — de klant betaalde de toeslag; streef: binnen 24 uur na betaling. Geen vastgelegde dagen.'
+      ? `<strong class="or-voorrang">Voorrang</strong> — de klant betaalde de toeslag${voorrangTot(order)}. Geen vastgelegde dagen.`
       : 'Geen vastgelegde dagen — deze bestelling telt in de agenda mee als &ldquo;zo snel mogelijk&rdquo;.'}</p>
   <form class="ag-dagform" method="post" action="/admin/orders/${order.id}/window">
     <input type="hidden" name="do" value="verzet">
@@ -3261,8 +3389,9 @@ async function renderFiles(context, orderId) {
   const body = `
 ${adminNav('')}
   <h1>${esc(order.ref)}</h1>
-  <p class="muted">${esc(order.brand || order.name || '')} &middot; ${esc(order.service)} &middot; ${esc(order.status)}${order.product_count ? ` &middot; ${order.product_count} products` : ''}${aanvraagRegel}</p>
+  <p class="muted">${esc(order.brand || order.name || '')} &middot; ${esc(serviceLabel(order.service, 'nl') || order.service)} &middot; ${esc(STATUS_LABEL[order.status] || order.status)}${order.product_count ? ` &middot; ${order.product_count} product${order.product_count === 1 ? '' : 'en'}` : ''}${aanvraagRegel}</p>
   ${bounceBlok}
+  ${tegoedBlok}
   ${flash}
   ${aanvraagBlok}
   ${keuzeBlok}
@@ -3364,12 +3493,12 @@ ${adminNav('')}
 
   <details class="uitleg">
     <summary>Aangeleverd door de klant (${intake.length})</summary>
-    ${table(intake, 'Nothing was uploaded with this order.')}
+    ${table(intake, 'Er is bij deze bestelling niets aangeleverd.')}
   </details>
 
   <details class="uitleg">
     <summary>Alle geleverde bestanden (${delivery.length}) &mdash; indeling bijstellen</summary>
-    ${migrated ? mapForm : table(delivery, 'Nothing delivered yet.', showAnnounced, true)}
+    ${migrated ? mapForm : table(delivery, 'Nog niets geleverd.', showAnnounced, true)}
   </details>
 
   <h2 id="wanneer">Wanneer</h2>
@@ -3384,11 +3513,18 @@ ${adminNav('')}
 
   ${noteBlocks}
 
+  ${/* Btw, factuur en uniciteitscontrole samen, ingeklapt (29 september 2026):
+       vier open blokken onderaan elke bestelling, terwijl je ze zelden nodig hebt.
+       Open als er iets te doen is: een factuur die nog af moet, of een merkmodel
+       dat nog niet gecontroleerd is. */ ''}
+  ${(vatRow || factuurBlok || controleBlok) ? `<details class="admin-extra"${/afmaken|Nog niet gecontroleerd|warnline/.test(`${factuurBlok}${controleBlok}`) ? ' open' : ''}>
+  <summary><h2>Administratie</h2><span class="meta">btw, factuur${controleBlok ? ', uniciteitscontrole' : ''}</span></summary>
   ${vatRow}
 
   ${factuurBlok}
 
   ${controleBlok}
+  </details>` : ''}
   `;
   return html(page({ title: order.ref, body }));
 }
@@ -3409,7 +3545,7 @@ const CUSTOMER_NOTE_MAX = 1200;
  */
 async function handleCustomerNote({ request, env }, orderId) {
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const form = await request.formData().catch(() => null);
   const note = String(form?.get('note') || '').trim().slice(0, CUSTOMER_NOTE_MAX);
@@ -3421,7 +3557,7 @@ async function handleCustomerNote({ request, env }, orderId) {
     ).bind(orderId, note || null).run();
   } catch (err) {
     return html(page({ title: 'Admin', body: errorBody(
-      `Could not save the note: ${esc(err?.message || String(err))}. Migration 0013 may not have run yet.`
+      `De notitie is niet opgeslagen: ${esc(err?.message || String(err))}. Misschien is migratie 0013 nog niet gedraaid.`
     ) }), 500);
   }
   await logAdmin(env, await currentAdmin({ request, env }), 'order.note', {
@@ -3439,7 +3575,7 @@ async function handleCustomerNote({ request, env }, orderId) {
  */
 async function handleInternalNote({ request, env }, orderId) {
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const form = await request.formData().catch(() => null);
   const body = String(form?.get('body') || '').trim().slice(0, CUSTOMER_NOTE_MAX);
@@ -3450,7 +3586,7 @@ async function handleInternalNote({ request, env }, orderId) {
     ).bind(orderId, body).run();
   } catch (err) {
     return html(page({ title: 'Admin', body: errorBody(
-      `Could not save the note: ${esc(err?.message || String(err))}. Migration 0013 may not have run yet.`
+      `De notitie is niet opgeslagen: ${esc(err?.message || String(err))}. Misschien is migratie 0013 nog niet gedraaid.`
     ) }), 500);
   }
   return seeOther(`/admin/orders/${orderId}/files?noted=1`);
@@ -3472,7 +3608,7 @@ const SHOTS = ['front', 'back', 'detail', 'worn'];
 
 async function handleFileMapping({ request, env }, orderId) {
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const form = await request.formData().catch(() => null);
   if (!form) return seeOther(`/admin/orders/${orderId}/files`);
@@ -3558,15 +3694,15 @@ async function resupersede(env, orderId) {
  */
 async function serveAdminFile(context, fileId) {
   const { env } = context;
-  if (!Number.isInteger(fileId)) return new Response('Bad id', { status: 400 });
+  if (!Number.isInteger(fileId)) return new Response('Ongeldig nummer', { status: 400 });
   const row = await env.DB.prepare(
     'SELECT r2_key, filename FROM files WHERE id = ?1'
   ).bind(fileId).first();
   if (!row) return new Response('Not found', { status: 404 });
-  if (!env.UPLOADS) return new Response('No bucket binding', { status: 503 });
+  if (!env.UPLOADS) return new Response('Geen opslag gekoppeld (UPLOADS)', { status: 503 });
 
   const obj = await env.UPLOADS.get(row.r2_key);
-  if (!obj) return new Response('The object is not in the bucket', { status: 404 });
+  if (!obj) return new Response('Dit bestand staat niet (meer) in de opslag', { status: 404 });
 
   const headers = new Headers();
   if (typeof obj.writeHttpMetadata === 'function') obj.writeHttpMetadata(headers);
@@ -3650,11 +3786,11 @@ export function guessProductShot(filename) {
 
 async function handleDeliveryUpload({ request, env }, orderId) {
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const order = await env.DB.prepare('SELECT id, ref FROM orders WHERE id = ?1').bind(orderId).first();
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
-  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('No R2 binding — cannot store files.') }), 503);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
+  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('Geen R2-binding — bestanden kunnen niet opgeslagen worden.') }), 503);
 
   const form = await request.formData().catch(() => null);
   const incoming = form ? form.getAll('files').filter((f) => f && typeof f === 'object' && f.size >= 0) : [];
@@ -3829,7 +3965,7 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   if (failed.length) {
     return html(page({
       title: 'Upload',
-      body: errorBody(`${stored} stored, ${failed.length} failed: <br>${failed.map(esc).join(', <br>')}`),
+      body: errorBody(`${stored} opgeslagen, ${failed.length} mislukt: <br>${failed.map(esc).join(', <br>')}`),
     }), 500);
   }
   /*
@@ -4214,7 +4350,7 @@ async function handleModelCheck(context, orderId) {
   const order = await env.DB.prepare(
     'SELECT id, ref, service, status FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   /* Alleen op een merkmodel. Op een catalogusbestelling zou dit veld iets
      vastleggen over een gezicht dat uit de vaste roster komt en daar zijn eigen
@@ -4222,8 +4358,8 @@ async function handleModelCheck(context, orderId) {
      later twee verschillende antwoorden op één vraag bestaan. */
   if (order.service !== 'brand-model') {
     return html(page({ title: 'Admin', body: errorBody(
-      'This is not a Brand Model order. The uniqueness log for the standard roster lives in '
-      + '<code>src/data/modelChecks.js</code>, not on an order.'
+      'Dit is geen merkmodelbestelling. Het uniciteitslogboek van de vaste gezichten staat in '
+      + '<code>src/data/modelChecks.js</code>, niet op een bestelling.'
     ) }), 400);
   }
 
@@ -4240,24 +4376,24 @@ async function handleModelCheck(context, orderId) {
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) {
     return html(page({ title: 'Admin', body: errorBody(
-      'A check needs the date it was run on, as YYYY-MM-DD. Without a date there is no moment to point at.'
+      'Een controle heeft de datum nodig waarop hij is gedaan, als JJJJ-MM-DD. Zonder datum is er geen moment om naar te wijzen.'
     ) }), 400);
   }
   if (!UITKOMSTEN.includes(uitkomst)) {
-    return html(page({ title: 'Admin', body: errorBody('Pick an outcome: no match, or a match.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Kies een uitkomst: geen overeenkomst, of wel een overeenkomst.') }), 400);
   }
   if (!door) {
     return html(page({ title: 'Admin', body: errorBody(
-      'Put a name on it. A log without a name is hearsay &mdash; the wording is from '
-      + '<code>src/data/modelChecks.js</code> and it means it.'
+      'Zet er een naam bij. Een logregel zonder naam is van horen zeggen &mdash; de formulering komt uit '
+      + '<code>src/data/modelChecks.js</code> en die meent het.'
     ) }), 400);
   }
   const ontbreekt = GEZICHTSZOEKERS.filter((e) => !gekozen.includes(e.id));
   if (ontbreekt.length) {
     return html(page({ title: 'Admin', body: errorBody(
-      `Every face search has to be run before this can be recorded: ${
-        esc(ontbreekt.map((e) => e.naam).join(', '))} ${ontbreekt.length === 1 ? 'is' : 'are'} missing. `
-      + 'The file searches are optional; the face searches are the question.'
+      `Elke gezichtszoekopdracht moet gedaan zijn voordat dit vastgelegd kan worden: ${
+        esc(ontbreekt.map((e) => e.naam).join(', '))} ${ontbreekt.length === 1 ? 'ontbreekt' : 'ontbreken'}. `
+      + 'De bestandszoekopdrachten zijn optioneel; de gezichtszoekopdrachten zijn de vraag.'
     ) }), 400);
   }
 
@@ -4277,7 +4413,7 @@ async function handleModelCheck(context, orderId) {
      bestand op 7 augustus op drie andere plekken heeft rechtgezet. */
   if (!geschreven) {
     return html(page({ title: 'Admin', body: errorBody(
-      'That did not save. If this database has not had migration 0033 yet, the columns do not exist here.'
+      'Dat is niet opgeslagen. Heeft deze database migratie 0033 nog niet gehad, dan bestaan de kolommen hier niet.'
     ) }), 500);
   }
 
@@ -4287,7 +4423,7 @@ async function handleModelCheck(context, orderId) {
      controle niets te verbergen, en dit is precies wat er beloofd is. */
   await env.DB.prepare(
     "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
-  ).bind(orderId, order.status || 'in-progress',
+  ).bind(orderId, order.status || 'in_production',
     uitkomst === 'treffer'
       ? tijdlijn(order.lang,
         `Uniekheidscontrole gedraaid op ${datum}: er is een gelijkenis gevonden. Zie de notitie bij de bestelling.`,
@@ -4308,11 +4444,11 @@ async function handleFreshLink(context, orderId) {
   const order = await env.DB.prepare(
     'SELECT id, ref, email, name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   if (!order.email) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This order has no email address on it, so there is nowhere to send a link.'
+      'Op deze bestelling staat geen e-mailadres, dus er is geen adres om een link naartoe te sturen.'
     ) }), 400);
   }
 
@@ -4323,8 +4459,8 @@ async function handleFreshLink(context, orderId) {
      bij de herleveringsknop. */
   if (!order.delivery_mailed_at) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This order has never been announced, so its portal is empty. Set its status to '
-      + '<strong>delivered</strong> first — that sends the "your order is ready" mail and its link.'
+      'Deze bestelling is nog nooit gemeld, dus het portaal is leeg. Zet de status eerst op '
+      + '<strong>geleverd</strong> — dat stuurt de mail "je bestelling staat klaar" met de link.'
     ) }), 400);
   }
 
@@ -4354,8 +4490,8 @@ async function handleFreshLink(context, orderId) {
        is rondgestuurd die niet aankwam. Nog een keer drukken maakt gewoon een
        nieuwe. */
     return html(page({ title: 'Admin', body: errorBody(
-      `The link was issued but the mail did not go out: ${esc(err && err.message ? err.message : String(err))}. `
-      + 'The previous link is no longer valid. Press again to issue and send another.'
+      `De link is aangemaakt, maar de mail ging niet weg: ${esc(err && err.message ? err.message : String(err))}. `
+      + 'De vorige link werkt niet meer. Druk nog eens om een nieuwe te maken en te versturen.'
     ) }), 502);
   }
 
@@ -4643,14 +4779,14 @@ async function handleInvoiceRepair(context, orderId) {
   const order = await env.DB.prepare(
     'SELECT id, ref, email, lang FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   const bestaand = await env.DB.prepare(
     'SELECT * FROM invoices WHERE order_id = ?1'
   ).bind(orderId).first().catch(() => null);
   if (!bestaand) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This order has no invoice yet. An invoice is issued when the payment comes in — there is deliberately no button that makes one out of nothing.'
+      'Deze bestelling heeft nog geen factuur. Een factuur ontstaat als de betaling binnenkomt — er is met opzet geen knop die er een uit het niets maakt.'
     ) }), 400);
   }
 
@@ -4660,7 +4796,7 @@ async function handleInvoiceRepair(context, orderId) {
       await logAdmin(env, admin, 'invoice.render', { orderId, detail: `${order.ref}: ${factuur?.number || bestaand.number}` });
     } catch (e) {
       return html(page({ title: 'Admin', body: errorBody(
-        `Rendering that invoice failed: ${esc(e?.message || String(e))}. The number is unchanged.`
+        `Die factuur maken is mislukt: ${esc(e?.message || String(e))}. Het nummer is ongewijzigd.`
       ) }), 500);
     }
     return seeOther(back);
@@ -4669,7 +4805,7 @@ async function handleInvoiceRepair(context, orderId) {
   if (actie === 'resend') {
     if (bestaand.status !== 'issued') {
       return html(page({ title: 'Admin', body: errorBody(
-        'That invoice has no pdf yet — finish it first, then send it.'
+        'Die factuur heeft nog geen pdf — maak hem eerst af en verstuur hem dan.'
       ) }), 400);
     }
     const ok = await mailInvoice(env, { order, invoice: bestaand });
@@ -4678,7 +4814,7 @@ async function handleInvoiceRepair(context, orderId) {
     });
     if (!ok) {
       return html(page({ title: 'Admin', body: errorBody(
-        'Sending that invoice failed. Check the mail key and try again.'
+        'Die factuur versturen is mislukt. Controleer de mailsleutel en probeer het opnieuw.'
       ) }), 500);
     }
     return seeOther(back);
@@ -4690,13 +4826,13 @@ async function handleInvoiceRepair(context, orderId) {
 async function handleAnnounceRedelivery(context, orderId) {
   const { request, env } = context;
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const order = await env.DB.prepare(
     `SELECT id, ref, email, name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1`
   ).bind(orderId).first();
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
-  if (!order.email) return html(page({ title: 'Admin', body: errorBody('This order has no email address on it.') }), 400);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
+  if (!order.email) return html(page({ title: 'Admin', body: errorBody('Op deze bestelling staat geen e-mailadres.') }), 400);
 
   // DE EERSTE AANKONDIGING IS NIET DEZE KNOP. Is er nooit een leveringsmail
   // geweest, dan hoort die eerst — met de tekst "je bestelling staat klaar", en
@@ -4705,7 +4841,7 @@ async function handleAnnounceRedelivery(context, orderId) {
   // mail die naar iets verwijst wat de klant nog nooit gezien heeft.
   if (!order.delivery_mailed_at) {
     return html(page({ title: 'Admin', body: errorBody(
-      'Deze bestelling is nog nooit gemeld. Zet de status op <strong>delivered</strong> first — that sends the "your order is ready" mail. This button is for what comes after.'
+      `Deze bestelling is nog nooit gemeld. Zet hem eerst op <strong>geleverd</strong> via <a href="/admin/orders/${orderId}/files">de bestelpagina</a> — dat stuurt de mail "je bestelling staat klaar". Deze knop is voor wat daarna komt.`
     ) }), 400);
   }
 
@@ -4748,7 +4884,7 @@ async function handleAnnounceRedelivery(context, orderId) {
     });
   } catch (err) {
     return html(page({ title: 'Admin', body: errorBody(
-      `The mail did not go out: ${esc(err?.message || String(err))}. Nothing was marked as announced, so you can press the button again.`
+      `De mail ging niet weg: ${esc(err?.message || String(err))}. Er is niets als gemeld gemarkeerd, dus je kunt de knop nog eens indrukken.`
     ) }), 502);
   }
 
@@ -5083,17 +5219,22 @@ async function loadTodayCounts(env) {
  * terugverdient. De klantkant heeft er wél een; die staat in COPY in account.js
  * en portal.js en is niet aangeraakt. */
 function todayStrip(c) {
-  const cell = (n, label, warn) =>
-    `<div class="stat${warn && n ? ' is-warn' : ''}"><span class="stat-n">${n}</span><span class="stat-l">${esc(label)}</span></div>`;
+  /* Klikbaar naar het filter dat hetzelfde telt (29 september 2026): dit waren
+     acht dode tegels boven een lijst die precies die filters al kende. */
+  const cell = (n, label, warn, href = '') => {
+    const cls = `stat${warn && n ? ' is-warn' : ''}`;
+    const inhoud = `<span class="stat-n">${n}</span><span class="stat-l">${esc(label)}</span>`;
+    return href ? `<a class="${cls}" href="${href}">${inhoud}</a>` : `<div class="${cls}">${inhoud}</div>`;
+  };
   return `<div class="stats">
     ${cell(c.newToday, 'vandaag binnen')}
-    ${cell(c.inProduction, 'in productie')}
-    ${cell(c.checking, 'wordt nagekeken')}
+    ${cell(c.inProduction, 'in productie', false, '/admin?status=in_production')}
+    ${cell(c.checking, 'wordt nagekeken', false, '/admin?status=human_check')}
     ${cell(c.undelivered, 'open')}
-    ${cell(c.unpaid, 'onbetaald', true)}
-    ${cell(c.revisions, 'revisies', true)}
-    ${cell(c.toAnnounce, 'nog te melden', true)}
-    ${cell(c.owed, 'geleverd, niet betaald', true)}
+    ${cell(c.unpaid, 'onbetaald', true, '/admin?f=unpaid')}
+    ${cell(c.revisions, 'revisies', true, '/admin?f=revisions')}
+    ${cell(c.toAnnounce, 'nog te melden', true, '/admin?f=unannounced')}
+    ${cell(c.owed, 'geleverd, niet betaald', true, '/admin?f=delivered_unpaid')}
   </div>`;
 }
 
@@ -5121,10 +5262,14 @@ async function loadCustomers(env) {
 async function renderCustomers(context) {
   const { env } = context;
   const rows = await loadCustomers(env);
+  /* Na het wissen kwam je hier zonder één woord (24 september 2026). */
+  let gewist = false;
+  try { gewist = new URL(context.request.url).searchParams.get('wiped') === '1'; } catch { gewist = false; }
   const body = `
 ${adminNav('customers')}
-  <h1>Customers</h1>
-  <p class="lede">${rows.length} brand${rows.length === 1 ? '' : 's'}</p>
+  <h1>Klanten</h1>
+  ${gewist ? '<p class="okline">De klant is gewist. Bestellingen met een factuur of creditnota zijn bewaard zonder persoonsgegevens; de rest is weg.</p>' : ''}
+  <p class="lede">${rows.length} merk${rows.length === 1 ? '' : 'en'}</p>
   ${nieuweKlantFormulier()}
   ${rows.length ? `<table class="files">
     <thead><tr><th>Merk</th><th>E-mail</th><th class="num">Bestellingen</th><th class="num">Betaald excl. btw</th><th>Laatste bestelling</th></tr></thead>
@@ -5132,11 +5277,11 @@ ${adminNav('customers')}
       <td><a href="/admin/customers/${r.id}">${esc(r.brand || r.name || '—')}</a></td>
       <td>${esc(r.email)}</td>
       <td class="num">${r.orders}</td>
-      <td class="num">${r.paid_cents ? '€' + (r.paid_cents / 100).toFixed(2) : '—'}</td>
+      <td class="num">${r.paid_cents ? mailBedrag(r.paid_cents, 'nl') : '—'}</td>
       <td>${esc((r.last_order || '').slice(0, 10) || '—')}</td>
     </tr>`).join('')}</tbody></table>` : '<p class="empty">Nog geen klanten.</p>'}
   `;
-  return html(page({ title: 'Customers', body }));
+  return html(page({ title: 'Klanten', body }));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -5170,12 +5315,12 @@ async function handleModelManage(context, modelId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
   if (!Number.isInteger(modelId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad model id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig modelnummer.') }), 400);
   }
   const model = await env.DB.prepare(
     'SELECT id, customer_id, label, preview_key, hidden_at FROM custom_models WHERE id = ?1'
   ).bind(modelId).first();
-  if (!model) return html(page({ title: 'Admin', body: errorBody('No such model.') }), 404);
+  if (!model) return html(page({ title: 'Admin', body: errorBody('Dat model bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const action = String(form?.get('action') || '');
@@ -5186,7 +5331,7 @@ async function handleModelManage(context, modelId) {
        kaart met een gezicht en geen woord eronder, en dat is erger dan de oude naam. */
     const label = String(form?.get('label') || '').trim().slice(0, 80);
     if (!label) {
-      return html(page({ title: 'Admin', body: errorBody('A model needs a name. Nothing was changed.') }), 400);
+      return html(page({ title: 'Admin', body: errorBody('Een model heeft een naam nodig. Er is niets gewijzigd.') }), 400);
     }
     await env.DB.prepare('UPDATE custom_models SET label = ?1 WHERE id = ?2').bind(label, modelId).run();
     await logAdmin(env, admin, 'model.rename', {
@@ -5204,7 +5349,7 @@ async function handleModelManage(context, modelId) {
     const reason = String(form?.get('reason') || '').trim().slice(0, 300);
     if (verbergen && !reason) {
       return html(page({ title: 'Admin', body: errorBody(
-        'Say why it is being hidden — that line is the only thing that explains it in three months. Nothing was changed.'
+        'Zeg waarom hij verborgen wordt — die regel is over drie maanden de enige uitleg. Er is niets gewijzigd.'
       ) }), 400);
     }
     await env.DB.prepare(
@@ -5220,7 +5365,7 @@ async function handleModelManage(context, modelId) {
   if (action === 'delete') {
     if (String(form?.get('confirm') || '').trim() !== String(model.label || '').trim()) {
       return html(page({ title: 'Admin', body: errorBody(
-        `To delete this model, type <strong>${esc(model.label || '')}</strong> exactly. Hiding it is reversible; this is not.`
+        `Om dit model te verwijderen, typ je <strong>${esc(model.label || '')}</strong> precies over. Verbergen is omkeerbaar, dit niet.`
       ) }), 400);
     }
     /*
@@ -5268,12 +5413,12 @@ async function handleCustomerDetails(context, customerId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
   if (!Number.isInteger(customerId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const before = await env.DB.prepare(
     'SELECT id, email, brand, name, phone, website, vat_number FROM customers WHERE id = ?1'
   ).bind(customerId).first();
-  if (!before) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!before) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const veld = (naam, max) => {
@@ -5284,7 +5429,7 @@ async function handleCustomerDetails(context, customerId) {
   const email = veld('email', 200);
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return html(page({ title: 'Admin', body: errorBody(
-      'That is not an email address, and the email address is what this account signs in with. Nothing was changed.'
+      'Dat is geen e-mailadres, en met het e-mailadres logt dit account in. Er is niets gewijzigd.'
     ) }), 400);
   }
   /*
@@ -5298,7 +5443,7 @@ async function handleCustomerDetails(context, customerId) {
   ).bind(email, customerId).first().catch(() => null);
   if (bezet) {
     return html(page({ title: 'Admin', body: errorBody(
-      `That address already belongs to <a href="/admin/customers/${bezet.id}">customer #${bezet.id}${bezet.brand ? ` (${esc(bezet.brand)})` : ''}</a>. Nothing was changed — two accounts cannot share a sign-in address.`
+      `Dat adres hoort al bij <a href="/admin/customers/${bezet.id}">klant #${bezet.id}${bezet.brand ? ` (${esc(bezet.brand)})` : ''}</a>. Er is niets gewijzigd — twee accounts kunnen geen inlogadres delen.`
     ) }), 400);
   }
 
@@ -5333,7 +5478,7 @@ async function handleCustomerDetails(context, customerId) {
     });
   if (!geschreven) {
     return html(page({ title: 'Admin', body: errorBody(
-      'Saving failed — most likely that email address was just taken by another account. Nothing was changed.'
+      'Opslaan is mislukt — waarschijnlijk is dat e-mailadres net door een ander account genomen. Er is niets gewijzigd.'
     ) }), 409);
   }
 
@@ -5378,12 +5523,12 @@ async function handleCustomerStatus(context, customerId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
   if (!Number.isInteger(customerId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const customer = await env.DB.prepare(
     'SELECT id, brand, name, email, deactivated_at FROM customers WHERE id = ?1'
   ).bind(customerId).first();
-  if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const action = String(form?.get('action') || '');
@@ -5403,7 +5548,7 @@ async function handleCustomerStatus(context, customerId) {
   const reason = String(form?.get('reason') || '').trim().slice(0, 300);
   if (!reason) {
     return html(page({ title: 'Admin', body: errorBody(
-      'Say why. This is the line the customer will be told, so it has to be a sentence you would say out loud. Nothing was changed.'
+      'Zeg waarom. Dit is de regel die de klant te horen krijgt, dus het moet een zin zijn die je hardop zou zeggen. Er is niets gewijzigd.'
     ) }), 400);
   }
   /* Een verwijzing naar het account dat wél gebruikt wordt, als het om een dubbele
@@ -5414,11 +5559,11 @@ async function handleCustomerStatus(context, customerId) {
   if (rauwMerge) {
     const kandidaat = Number.parseInt(rauwMerge, 10);
     if (!Number.isInteger(kandidaat) || kandidaat === customerId) {
-      return html(page({ title: 'Admin', body: errorBody('That is not another customer id. Nothing was changed.') }), 400);
+      return html(page({ title: 'Admin', body: errorBody('Dat is geen ander klantnummer. Er is niets gewijzigd.') }), 400);
     }
     const bestaat = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(kandidaat).first().catch(() => null);
     if (!bestaat) {
-      return html(page({ title: 'Admin', body: errorBody(`Customer #${kandidaat} does not exist. Nothing was changed.`) }), 400);
+      return html(page({ title: 'Admin', body: errorBody(`Klant #${kandidaat} bestaat niet. Er is niets gewijzigd.`) }), 400);
     }
     mergedInto = kandidaat;
   }
@@ -5458,10 +5603,10 @@ async function handleCustomerCredit(context, customerId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
   if (!Number.isInteger(customerId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const customer = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(customerId).first();
-  if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const back = `/admin/customers/${customerId}#tegoed`;
@@ -5476,7 +5621,7 @@ async function handleCustomerCredit(context, customerId) {
   const euro = Number(rauw);
   if (!rauw || !Number.isFinite(euro) || euro === 0) {
     return html(page({ title: 'Admin', body: errorBody(
-      'Fill in an amount other than zero. A negative amount books it off; a positive one books it on.'
+      'Vul een bedrag in dat niet nul is. Negatief boekt af, positief boekt bij.'
     ) }), 400);
   }
   const cents = Math.round(euro * 100);
@@ -5484,14 +5629,14 @@ async function handleCustomerCredit(context, customerId) {
      boeking is ruim voor goodwill en houdt een typefout van drie nullen tegen. */
   if (Math.abs(cents) > 100000) {
     return html(page({ title: 'Admin', body: errorBody(
-      'That is more than € 1.000 in one booking. If it really has to be that much, book it in parts — the cap is there to catch a typo.'
+      'Dat is meer dan € 1.000 in één boeking. Moet het echt zoveel zijn, boek het dan in delen — de grens is er om een typefout te vangen. Er is niets geboekt.'
     ) }), 400);
   }
 
   const reason = String(form?.get('reason') || '').trim().slice(0, 300);
   if (!reason) {
     return html(page({ title: 'Admin', body: errorBody(
-      'A booking without a reason is an amount nobody remembers in three months, and then you will not dare to settle it. Nothing was booked.'
+      'Een boeking zonder reden is een bedrag dat over drie maanden niemand meer kent, en dan durf je het niet te verrekenen. Er is niets geboekt.'
     ) }), 400);
   }
 
@@ -5508,7 +5653,7 @@ async function handleCustomerCredit(context, customerId) {
       : null;
     if (!rij) {
       return html(page({ title: 'Admin', body: errorBody(
-        'That order does not belong to this customer. Nothing was booked.'
+        'Die bestelling hoort niet bij deze klant. Er is niets geboekt.'
       ) }), 400);
     }
     orderId = kandidaat;
@@ -5613,20 +5758,20 @@ async function handleSlotCorrectie(context, customerId, admin) {
   /* Drie weigeringen met drie verschillende meldingen. Eén algemene zou Lucas
      laten gokken wat er mis was — en dit is een formulier dat hij misschien twee
      keer per jaar gebruikt, dus hij weet het niet uit zijn hoofd. */
-  if (!soort) return html(page({ title: 'Admin', body: errorBody('Pick which kind of slot to adjust.') }), 400);
+  if (!soort) return html(page({ title: 'Admin', body: errorBody('Kies welk soort slot je wilt bijstellen.') }), 400);
   if (!Number.isInteger(ruw) || ruw === 0 || Math.abs(ruw) > SLOT_CORRECTIE_MAX) {
     return html(page({ title: 'Admin', body: errorBody(
-      `The adjustment has to be a whole number between -${SLOT_CORRECTIE_MAX} and ${SLOT_CORRECTIE_MAX}, and not zero.`
+      `De correctie moet een heel getal zijn tussen -${SLOT_CORRECTIE_MAX} en ${SLOT_CORRECTIE_MAX}, en niet nul.`
     ) }), 400);
   }
   if (!reden) {
     return html(page({ title: 'Admin', body: errorBody(
-      'A slot adjustment needs a reason. It is the only record of why this customer has more or fewer slots than his plan gives, and in three months it is the first thing anyone asks.'
+      'Een slotcorrectie heeft een reden nodig. Het is het enige spoor van waarom deze klant meer of minder heeft dan zijn abonnement geeft, en over drie maanden de eerste vraag.'
     ) }), 400);
   }
 
   const sub = await loadSubscription(env, customerId);
-  if (!sub) return html(page({ title: 'Admin', body: errorBody('This customer has no subscription to adjust.') }), 400);
+  if (!sub) return html(page({ title: 'Admin', body: errorBody('Deze klant heeft geen abonnement om bij te stellen.') }), 400);
 
   /* De maand van de LOPENDE TERMIJN en niet de kalendermaand — zie
      termijnMaand() in subscription.js. Anders schrijft een handmatige correctie
@@ -5659,7 +5804,7 @@ async function handleSlotCorrectie(context, customerId, admin) {
       customerId, detail: `${sub.ref}: ${ruw > 0 ? '+' : ''}${ruw} ${soort} — geweigerd (er staat al meer vastgezet dan dit toelaat)`,
     }).catch(() => {});
     return html(page({ title: 'Admin', body: errorBody(
-      'That would put the balance below what is already locked. Slots that are locked have work promised against them, so they cannot be taken away.'
+      'Dan komt het saldo onder wat al vastgezet is. Voor vastgezette items is werk beloofd, dus die kunnen niet weggehaald worden.'
     ) }), 400);
   }
 
@@ -5676,33 +5821,35 @@ async function handleStartWeek(context, customerId, admin) {
   if (!Number.isInteger(customerId)) return seeOther('/admin/customers');
 
   const r = await startPlanWindow(env, customerId);
+  /* De uitkomst als ?week=… op de klantpagina (29 september 2026): een week die
+     NIET startte, stuurde je zonder één woord terug. */
   if (r.ok) {
     await logAdmin(env, admin, 'plan-week-start', {
       customerId, orderId: r.orderId,
-      detail: `${r.aantal} product(en) → ${r.ref}`,
+      detail: `${r.aantal} ${r.aantal === 1 ? 'product' : 'producten'} → ${r.ref}`,
     });
-    return seeOther(terug);
+    return seeOther(`/admin/customers/${customerId}?week=gestart&ref=${encodeURIComponent(r.ref || '')}#week`);
   }
   await logAdmin(env, admin, 'plan-week-geen-start', { customerId, detail: r.reden || 'onbekend' });
-  return seeOther(terug);
+  return seeOther(`/admin/customers/${customerId}?week=${encodeURIComponent(r.reden || 'onbekend')}#week`);
 }
 
 async function handleCustomerSigninLink(context, customerId) {
   const { env } = context;
   const admin = await currentAdmin(context);
   if (!Number.isInteger(customerId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const customer = await env.DB.prepare(
     'SELECT id, email, brand, name, deactivated_at FROM customers WHERE id = ?1'
   ).bind(customerId).first();
-  if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
   if (!customer.email) {
-    return html(page({ title: 'Admin', body: errorBody('This customer has no email address on it.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Bij deze klant staat geen e-mailadres.') }), 400);
   }
   if (customer.deactivated_at) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This account is deactivated, so a sign-in link would let them straight back in. Reactivate it first if that is what you want.'
+      'Dit account is gedeactiveerd, dus een inloglink laat hem meteen weer binnen. Activeer het eerst als dat de bedoeling is.'
     ) }), 400);
   }
 
@@ -5723,7 +5870,7 @@ async function handleCustomerSigninLink(context, customerId) {
 
   if (!verstuurd) {
     return html(page({ title: 'Admin', body: errorBody(
-      `The sign-in link did not go out${fout ? `: ${esc(fout)}` : ''}. Nothing is broken on the customer's side — they can still use the sign-in form themselves.`
+      `De inloglink ging niet weg${fout ? `: ${esc(fout)}` : ''}. Aan de kant van de klant is niets kapot — hij kan het inlogformulier nog gewoon zelf gebruiken.`
     ) }), 502);
   }
   return seeOther(`/admin/customers/${customerId}?signin=1`);
@@ -5732,7 +5879,7 @@ async function handleCustomerSigninLink(context, customerId) {
 async function renderCustomer(context, customerId) {
   const { env } = context;
   if (!Number.isInteger(customerId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const customer = await env.DB.prepare(
     `SELECT id, email, brand, name, phone, website, vat_number, created_at,
@@ -5743,7 +5890,7 @@ async function renderCustomer(context, customerId) {
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id AND rr.resolved_at IS NULL) AS revisions_open
        FROM customers WHERE id = ?1`
   ).bind(customerId).first();
-  if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const [orders, models, locks, credits, styles] = await Promise.all([
     /* `has_invoice` erbij, 12 augustus 2026: het AVG-paneel onderaan moet kunnen
@@ -5805,7 +5952,7 @@ async function renderCustomer(context, customerId) {
      gemaakt. Wat de klant heeft vastgezet, moet hier compleet te lezen zijn:
      dit is het scherm dat je opent vóór je begint te produceren. */
   const lockRows = locks.length
-    ? `<table class="files"><thead><tr><th>Service</th><th>Face</th><th>Background</th><th>Look</th><th>Ratio</th><th>Channels</th></tr></thead><tbody>
+    ? `<table class="files"><thead><tr><th>Dienst</th><th>Gezicht</th><th>Achtergrond</th><th>Look</th><th>Verhouding</th><th>Kanalen</th></tr></thead><tbody>
        ${locks.map((l) => `<tr><td>${esc(l.style)}</td>
          <td>${esc(l.custom_label || l.roster_model || '—')}</td>
          <td>${esc(l.style === 'catalog' ? (l.background_hex || '—') : '—')}</td>
@@ -5820,6 +5967,7 @@ async function renderCustomer(context, customerId) {
   // filter, so a model failing either one is invisible to the customer — and a
   // studio that cannot see WHY is a studio that files a bug.
   const MODEL_STATUSES = ['in_design', 'approved', 'locked'];
+  const MODEL_STATUS_NL = { in_design: 'in ontwerp', approved: 'goedgekeurd', locked: 'vastgelegd' };
   const modelRows = models.length
     ? models.map((m) => {
       /* VERBORGEN GAAT VOOR ALLES. Een model dat verborgen is, is voor de klant weg —
@@ -5830,12 +5978,12 @@ async function renderCustomer(context, customerId) {
       const missing = hidden
         ? 'Verborgen — de klant ziet dit model niet. Alles blijft bewaard.'
         : !m.preview_key
-          ? 'No picture yet — the customer cannot pick it.'
+          ? 'Nog geen foto — de klant kan hem nog niet kiezen.'
           : m.status === 'in_design'
-            ? 'Still in design — the customer cannot pick it.'
-            : 'Live: the customer sees this as a tile when they order.';
+            ? 'Nog in ontwerp — de klant kan hem nog niet kiezen.'
+            : 'Live: de klant ziet hem als tegel bij het bestellen.';
       return `<div class="card modelcard${hidden ? ' is-superseded' : ''}" id="model-${m.id}">
-        <div class="row-head"><span class="ref">${esc(m.label)}</span>${hidden ? statPil('archived', 'verborgen') : statPil(m.status, m.status)}</div>
+        <div class="row-head"><span class="ref">${esc(m.label)}</span>${hidden ? statPil('archived', 'verborgen') : statPil(m.status, MODEL_STATUS_NL[m.status] || m.status)}</div>
         <div class="modelcard-body">
           <!-- THE PICTURE ITSELF, not just the fact that a key exists. Before
                this the studio uploaded a file and got back a sentence saying a
@@ -5861,15 +6009,15 @@ async function renderCustomer(context, customerId) {
                    that is not ready to be seen. -->
               <label class="checkline">
                 <input type="checkbox" name="publish" value="1" checked>
-                <span>Show it in the customer's account straight away${m.status === 'in_design' ? '' : ' (already visible)'}</span>
+                <span>Meteen zichtbaar maken in het account van de klant${m.status === 'in_design' ? '' : ' (is al zichtbaar)'}</span>
               </label>
-              <button class="btn btn-ghost" type="submit">${m.preview_key ? 'Replace picture' : 'Add picture'}</button>
+              <button class="btn btn-ghost" type="submit">${m.preview_key ? 'Foto vervangen' : 'Foto toevoegen'}</button>
             </form>
           </div>
         </div>
         <form class="controls" method="post" action="/admin/models/${m.id}/status">
           <select name="status">${MODEL_STATUSES.map((st) =>
-            `<option value="${st}"${st === m.status ? ' selected' : ''}>${st}</option>`).join('')}</select>
+            `<option value="${st}"${st === m.status ? ' selected' : ''}>${esc(MODEL_STATUS_NL[st] || st)}</option>`).join('')}</select>
           <button class="btn btn-ghost" type="submit">Status zetten</button>
         </form>
 
@@ -5906,14 +6054,14 @@ async function renderCustomer(context, customerId) {
             look die naar dit model wees, wordt losgelaten.</p>
             <form method="post" action="/admin/models/${m.id}/manage">
               <input type="text" name="confirm" required autocomplete="off"
-                     placeholder="Type ${esc(m.label || '')} to confirm">
+                     placeholder="Typ ${esc(m.label || '')} ter bevestiging">
               <button class="btn btn-ghost btn-sm" type="submit" name="action" value="delete">Verwijderen</button>
             </form>
           </div>
         </details>
       </div>`;
     }).join('')
-    : `<p class="empty">No models of their own yet. Every order still includes one of the ${rosterWoord('en')} standard faces.</p>`;
+    : `<p class="empty">Nog geen eigen modellen. Elke bestelling krijgt nog een van de ${rosterWoord('nl')} vaste gezichten.</p>`;
 
   /* ── DE EIGEN LOOKS — 4 september 2026 ──────────────────────────────────────
      Lucas: "De custom stylen worden dan in het account van de klant geplaatst
@@ -5938,14 +6086,14 @@ async function renderCustomer(context, customerId) {
           ? 'In ontwerp: staat in Studio als "in ontwerp", nog niet bestelbaar.'
           : 'Archief: de klant ziet deze look nergens meer. Alles blijft bewaard.';
       return `<div class="card modelcard stylecard${s.status === 'archived' ? ' is-superseded' : ''}" id="style-${s.id}">
-        <div class="row-head"><span class="ref">${esc(s.name)}</span>${statPil(s.status, s.status)}</div>
+        <div class="row-head"><span class="ref">${esc(s.name)}</span>${statPil(s.status, ({ proposed: 'in ontwerp', active: 'actief', archived: 'archief' })[s.status] || s.status)}</div>
         <div class="modelcard-body">
           ${s.preview_key
             ? `<img class="modelcard-img stylecard-img" src="/admin/styles/${s.id}/image" alt="${esc(s.name)}" width="400" height="300" loading="lazy" decoding="async">`
             : '<span class="modelcard-img stylecard-img is-blank">nog geen beeld</span>'}
           <div class="modelcard-side">
             <p class="meta">${esc(stand)}</p>
-            <p class="meta">${esc(STYLE_SERVICES.find((x) => x[0] === s.service)?.[1] || s.service)}${Number(s.surcharge_cents) > 0 ? ` &middot; +&euro;${esc(eurField(s.surcharge_cents))} per product` : ' &middot; gewoon tarief'}${s.request_ref ? ` &middot; aanvraag <a href="/admin/orders/${s.request_order_id}/files">${esc(s.request_ref)}</a>` : ''}${s.design_ref ? ` &middot; ontwerp <a href="/admin/orders/${s.design_order_id}/files">${esc(s.design_ref)}</a> (${esc(s.design_paid || 'onbetaald')})` : ''}</p>
+            <p class="meta">${esc(STYLE_SERVICES.find((x) => x[0] === s.service)?.[1] || s.service)}${Number(s.surcharge_cents) > 0 ? ` &middot; +${esc(mailBedrag(s.surcharge_cents, 'nl'))} per product` : ' &middot; gewoon tarief'}${s.request_ref ? ` &middot; aanvraag <a href="/admin/orders/${s.request_order_id}/files">${esc(s.request_ref)}</a>` : ''}${s.design_ref ? ` &middot; ontwerp <a href="/admin/orders/${s.design_order_id}/files">${esc(s.design_ref)}</a> (${esc(s.design_paid || 'onbetaald')})` : ''}</p>
             <form class="stack" method="post" action="/admin/styles/${s.id}/preview" enctype="multipart/form-data">
               <input type="file" name="preview" accept="image/*" required />
               <label class="checkline">
@@ -6002,10 +6150,10 @@ async function renderCustomer(context, customerId) {
     ? `<table class="files"><thead><tr><th>Kenmerk</th><th>Dienst</th><th>Status</th><th>Betaling</th><th class="num">Netto</th><th>Geplaatst</th></tr></thead><tbody>
        ${orders.map((o) => `<tr>
          <td><a href="/admin/orders/${o.id}/files">${esc(o.ref)}</a></td>
-         <td>${esc(o.service)}${o.product_count ? ` · ${o.product_count}` : ''}</td>
+         <td>${esc(({ drop: 'compleet', custom: 'eigen look', 'brand-model': 'merkmodel', 'test-sample': 'proefbeeld' })[o.service] || o.service)}${o.product_count ? ` · ${o.product_count}` : ''}</td>
          <td>${statPil(o.status, STATUS_LABEL[o.status] || o.status)}</td>
-         <td>${statPil(o.payment_status, o.payment_status)}</td>
-         <td class="num">${o.total_cents ? '€' + (o.total_cents / 100).toFixed(2) : '—'}</td>
+         <td>${statPil(o.payment_status, ({ paid: 'betaald', unpaid: 'onbetaald', plan: 'abonnement', failed: 'mislukt', refunded: 'terugbetaald' })[o.payment_status] || o.payment_status)}</td>
+         <td class="num">${o.total_cents ? mailBedrag(o.total_cents, 'nl') : '—'}</td>
          <td>${esc((o.created_at || '').slice(0, 10))}</td>
        </tr>`).join('')}</tbody></table>`
     : '<p class="empty">Nog geen bestellingen.</p>';
@@ -6076,7 +6224,9 @@ async function renderCustomer(context, customerId) {
       ? `<strong>${cr.saldo}</strong> van ${cr.toegekend} credits over${cr.ouder ? ` (${cr.ouder} doorgeschoven)` : ''}`
         + (oudeRijen.length ? ` <span class="meta">&middot; historie: ${oudeRijen.map((b) => `${b.saldo} &times; ${esc(kindLabel(b.kind, 'nl').toLowerCase())}`).join(', ')}</span>` : '')
       : 'geen credits deze maand';
-    const kan = abo.sub.status === 'active' && klaar.items.length > 0;
+    /* Opgezegd telt mee zolang de betaalde termijn loopt — zie de noot in
+       startPlanWindow() (planStart.js). */
+    const kan = (abo.sub.status === 'active' || abo.sub.status === 'cancelled') && klaar.items.length > 0;
 
     /* ── DE CORRECTIEKNOP, DICHTGEKLAPT ────────────────────────────────────────
      *
@@ -6113,9 +6263,11 @@ async function renderCustomer(context, customerId) {
     return `
   <div class="card" id="week">
     <div class="row-head">
-      <span class="ref">Abonnement &middot; ${esc(abo.sub.plan)}</span>
-      <span class="meta">${statPil(abo.sub.status, abo.sub.status)}${abo.sub.window_day ? ` &middot; week vanaf de ${abo.sub.window_day}e` : ''}
-        &middot; ${saldoRegel} over</span>
+      <span class="ref">Abonnement &middot; ${esc(planName(abo.sub.plan, 'nl'))}</span>
+      <span class="meta">${statPil(abo.sub.status, { active: 'loopt', pending: 'wacht op machtiging', paused: 'gepauzeerd', cancelled: 'opgezegd', canceled: 'opgezegd', ended: 'afgelopen' }[abo.sub.status] || abo.sub.status)}${
+        abo.sub.term === 'prepaid' ? ` &middot; vooruitbetaald jaar${abo.jaarTot ? `, loopt tot ${esc(mailDatum(abo.jaarTot, 'nl'))}` : ''}${abo.jaarOpgezegd ? ' &middot; <strong>opgezegd — loopt door tot het einde, daarna stopt het</strong>' : ''}` : ''}${
+        abo.sub.status === 'cancelled' && abo.termijnTot ? ` &middot; betaald tot ${esc(mailDatum(abo.termijnTot, 'nl'))}` : ''}${abo.sub.window_day ? ` &middot; week vanaf de ${abo.sub.window_day}e` : ''}
+        &middot; ${saldoRegel}</span>
     </div>
     ${rijen}
     <p class="meta">${klaar.items.length} vastgezet en klaar om te starten${
@@ -6124,10 +6276,10 @@ async function renderCustomer(context, customerId) {
       ? `<form method="post" action="/admin/customers/${customer.id}/week">
            <button class="btn btn-primary" type="submit">Start deze week &middot; ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}</button>
          </form>
-         <p class="meta">Maakt &eacute;&eacute;n bestelling met ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}. De slots zijn al afgeschreven toen de klant ze vastzette, dus hier gaat er niets meer af. Twee keer drukken pakt niets dubbel.</p>`
+         <p class="meta">Maakt &eacute;&eacute;n bestelling met ${klaar.items.length} product${klaar.items.length === 1 ? '' : 'en'}. De credits zijn al afgeschreven toen de klant ze vastzette, dus hier gaat er niets meer af. Twee keer drukken pakt niets dubbel.</p>`
       : `<p class="meta">Er valt nu niets te starten.${
-          abo.sub.status !== 'active' ? ' Het abonnement staat niet op actief.' : ''}${
-          abo.sub.status === 'active' && klaar.concepten ? ` Er staan ${klaar.concepten} concept${klaar.concepten === 1 ? '' : 'en'} op de lijst die de klant nog niet heeft vastgezet.` : ''}</p>`}
+          abo.sub.status === 'paused' || abo.sub.status === 'pending' ? ' Het abonnement staat niet op actief.' : ''}${
+          abo.sub.status === 'active' && klaar.concepten ? ` Er ${klaar.concepten === 1 ? 'staat 1 concept' : `staan ${klaar.concepten} concepten`} op de lijst die de klant nog niet heeft vastgezet.` : ''}</p>`}
     ${slotCorrectie}
   </div>`;
   })();
@@ -6203,7 +6355,7 @@ async function renderCustomer(context, customerId) {
       </p>
       <p class="meta">Er is geen ongedaan maken.</p>
       <form method="post" action="/admin/customers/${customer.id}/wipe">
-        <input type="text" name="confirm" required autocomplete="off" placeholder="Type ${esc(wipeName)} to confirm">
+        <input type="text" name="confirm" required autocomplete="off" placeholder="Typ ${esc(wipeName)} ter bevestiging">
         <button class="btn btn-ghost btn-sm" type="submit">Alles wissen</button>
       </form>
     </div>
@@ -6310,7 +6462,7 @@ async function renderCustomer(context, customerId) {
   /* Geen `eur()` in dit bestand — de bedragen worden per plek geformatteerd (zie
      `money()` in renderFiles en de kolommen in de klantenlijst). Hier dus dezelfde
      vorm, één keer benoemd, in plaats van vier keer dezelfde uitdrukking. */
-  const eur = (c) => `€${((Number(c) || 0) / 100).toFixed(2)}`;
+  const eur = (c) => mailBedrag(c, 'nl');
   const creditTotal = (credits || []).reduce((n, c) => n + Number(c.delta_cents || 0), 0);
   const creditRows = (credits || []).length
     ? `<table class="tbl">
@@ -6320,7 +6472,7 @@ async function renderCustomer(context, customerId) {
              <td>${esc(when(c.created_at))}</td>
              <td class="num">${Number(c.delta_cents) > 0 ? '+' : ''}${eur(c.delta_cents)}</td>
              <td>${esc(c.reason || '')}</td>
-             <td>${c.order_ref ? `<a href="/admin/orders/${c.order_id}">${esc(c.order_ref)}</a>` : ''}</td>
+             <td>${c.order_ref ? `<a href="/admin/orders/${c.order_id}/files">${esc(c.order_ref)}</a>` : ''}</td>
              <td class="meta">${esc(c.admin_email || '')}</td>
            </tr>`).join('')}
          </tbody>
@@ -6330,8 +6482,9 @@ async function renderCustomer(context, customerId) {
   const creditPanel = `
 <div id="tegoed">
   <p class="lede">Saldo: <strong>${eur(creditTotal)}</strong></p>
-  <p class="meta">Dit wordt <strong>niet</strong> automatisch verrekend bij het afrekenen. Het is een boekhouding van wat
-  je hebt toegezegd; verrekenen doe je met de hand op de factuur, zoals nu bij een annulering. Een verkeerde boeking
+  <p class="meta">Sinds 29 september 2026 wordt dit <strong>automatisch verrekend</strong> zodra de klant ingelogd bestelt:
+  het gaat van het te betalen bedrag af (incl. btw), wordt afgeboekt als de bestelling betaald is, en komt bij een
+  annulering terug als tegoed. Een bedrag is geld, dus inclusief wat er aan btw in zat. Een verkeerde boeking
   corrigeer je met een tegenboeking — er is met opzet geen wijzigen en geen verwijderen, zodat het spoor blijft.</p>
   ${creditRows}
   <form class="controls" method="post" action="/admin/customers/${customer.id}/credits">
@@ -6348,13 +6501,38 @@ async function renderCustomer(context, customerId) {
   <p class="meta">Positief is bijboeken, negatief is afboeken. Maximaal € 1.000 per boeking — die grens houdt een
   typefout van drie nullen tegen.</p>
 </div>`;
+  /* ?signin=1 kwam van de knop "inloglink sturen" en werd nergens gelezen. */
+  let inlogGestuurd = false;
+  try { inlogGestuurd = new URL(context.request.url).searchParams.get('signin') === '1'; } catch { inlogGestuurd = false; }
+  const regLabel = /^NL/i.test(String(customer.country || 'NL')) ? 'KVK' : 'reg.';
+  const weekMelding = (() => {
+    let w = '', ref = '';
+    try { const q = new URL(context.request.url).searchParams; w = q.get('week') || ''; ref = q.get('ref') || ''; } catch { /* geen melding */ }
+    if (!w) return '';
+    if (w === 'gestart') return `<p class="okline">Week gestart${ref ? ` — bestelling ${esc(ref)}` : ''}.</p>`;
+    const uitleg = {
+      'niets-klaar': 'er staat niets vastgezet met foto’s op de lijst van de klant',
+      'geen-abonnement': 'deze klant heeft geen lopend abonnement',
+      'geen-klant': 'de klant heeft geen e-mailadres',
+      'bestelling-mislukt': 'de bestelling kon niet worden aangemaakt; zie het logboek',
+      'geen-db': 'de database is niet bereikbaar',
+    }[w] || esc(w);
+    return `<p class="warnline">De week is niet gestart: ${uitleg}.</p>`;
+  })();
   const body = `
 ${adminNav('customers')}
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
-  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · VAT ${esc(customer.vat_number)}` : ''}${!customer.vat_number && customer.reg_number ? ` · KVK ${esc(customer.reg_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
+  ${inlogGestuurd ? `<p class="okline">Inloglink gemaild naar ${esc(customer.email)}.</p>` : ''}
+  ${weekMelding}
+  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · btw ${esc(customer.vat_number)}` : ''}${!customer.vat_number && customer.reg_number ? ` · ${regLabel} ${esc(customer.reg_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
   ${klantBounce ? `<p class="warnline is-rood">${esc(bounceLine(klantBounce))}</p>` : ''}
 
   ${statusPanel}
+
+  ${/* Bestellingen bovenaan (29 september 2026): het ding waarvoor je deze
+       pagina meestal opent, stond onder tien andere koppen. */ ''}
+  <h2>Bestellingen</h2>
+  ${orderRows}
 
   <h2>Gegevens</h2>
   ${detailsPanel}
@@ -6376,26 +6554,28 @@ ${adminNav('customers')}
   ${revisionsPanel}
 
   <h2>Vaste look</h2>
-  <p class="meta">Set by the customer in their own portal — the section they see as "Je vaste look". Read-only here, deliberately.</p>
+  <p class="meta">Door de klant zelf gezet in Studio, onder &ldquo;Je vaste look&rdquo;. Hier met opzet alleen te lezen.</p>
   ${lockRows}
 
-  <h2>Custom models</h2>
+  <h2>Eigen modellen</h2>
   ${modelRows}
   <!-- ONE FORM, NOT TWO. Lucas: "hier voeg ik dan de foto toe" — adding a
        model and giving it a face is one action in his head and it should be one
        action here. The photo is optional so a model can still be created before
        there is anything to show, but the common path is both at once. -->
   <form class="controls" method="post" action="/admin/customers/${customer.id}/models" enctype="multipart/form-data">
-    <input type="text" name="label" placeholder="New brand model name (e.g. 'Nora')" class="in-grow" required>
+    <input type="text" name="label" placeholder="Naam van het merkmodel (bijv. 'Nora')" class="in-grow" required>
     <input type="file" name="preview" accept="image/*">
-    <button class="btn btn-primary" type="submit">Add brand model</button>
+    <button class="btn btn-primary" type="submit">Merkmodel toevoegen</button>
   </form>
-  <p class="meta">Dit zie alleen jij. Zodra een model een foto heeft, verschijnt hij als tegel die de klant bij een bestelling kan kiezen.</p>
+  <p class="meta">Zodra een model een foto heeft, verschijnt hij als tegel die de klant bij een bestelling kan kiezen; zonder foto ziet alleen jij hem.</p>
 
   <h2 id="eigen-looks">Eigen looks</h2>
   <p class="meta">Een look op maat, na intake en offerte. Wat hier op <em>actief</em> staat, ziet de klant in Studio onder &ldquo;Je eigen looks&rdquo; en als tegel in het gewone bestelformulier &mdash; bij lifestyle tussen de vier huisstijlen, bij catalog als keuze na de achtergrond.</p>
   ${styleRows}
-  <form class="stack stylecard-edit card" method="post" action="/admin/customers/${customer.id}/styles" enctype="multipart/form-data" id="nieuwe-look">
+  <details class="ingeklapt" id="nieuwe-look"${vanAanvraag ? ' open' : ''}>
+  <summary class="btn btn-ghost">Nieuwe eigen look toevoegen</summary>
+  <form class="stack stylecard-edit card" method="post" action="/admin/customers/${customer.id}/styles" enctype="multipart/form-data">
     <input type="hidden" name="request_order_id" value="${vanAanvraag || ''}">
     ${aanvraagOrder ? `<p class="meta">Uit aanvraag <a href="/admin/orders/${aanvraagOrder.id}/files">${esc(aanvraagOrder.ref)}</a>.</p>` : ''}
     <div class="row-2">
@@ -6419,9 +6599,12 @@ ${adminNav('customers')}
     <button class="btn btn-primary" type="submit">Look toevoegen</button>
   </form>
   <p class="meta">Zet hem op <em>in ontwerp</em> zolang de offerte loopt: de klant ziet dan in Studio dat er aan gewerkt wordt. Op <em>actief</em> zodra het ontwerp betaald en goedgekeurd is.</p>
+  </details>
 
   <h2 id="namens">Bestelling namens ${esc(customer.brand || customer.name || 'de klant')}</h2>
-  <p class="meta">Voor de klant die appt "doe er nog vijf bij". Dezelfde route als het bestelformulier: de klant krijgt de gewone bevestiging met betaallink, de bestelling staat in zijn Studio en hier op het dashboard. Foto's uploadt hij daar zelf, of je zet ze bij de bestelling. Ontbreekt een btw- of KVK-nummer, dan komt de bestelling eerst op de btw-lijst en gaat de link na jouw akkoord.</p>
+  <details class="ingeklapt"${orders.length ? '' : ' open'}>
+  <summary class="btn btn-ghost">Formulier openen</summary>
+  <p class="meta">Voor de klant die appt "doe er nog vijf bij". Dezelfde route als het bestelformulier: de klant krijgt de gewone bevestiging met betaallink, de bestelling staat in zijn Studio en hier op het dashboard. Foto's uploadt hij daar zelf, of je zet ze bij de bestelling. Ontbreekt in de EU een btw- of KVK-nummer, dan komt de bestelling eerst op de btw-lijst en gaat de link na jouw akkoord; buiten de EU gaat hij meteen door.</p>
   <form class="stack stylecard-edit card" method="post" action="/admin/customers/${customer.id}/order" enctype="multipart/form-data">
     <div class="row-2">
       <label>Dienst
@@ -6440,9 +6623,13 @@ ${adminNav('customers')}
           ${STYLE_LOOKS.map((l) => `<option value="${esc(l.slug)}">${esc(l.name)}</option>`).join('')}
           ${styles.filter((st) => st.status === 'active' && st.service !== 'catalog').map((st) => `<option value="cs-${st.id}">${esc(st.name)} (eigen look)</option>`).join('')}
         </select></label>
-      <label>KVK-nummer (als er geen btw-nummer is)
+      <label>KVK- of registratienummer (als er geen btw-nummer is)
         <input name="reg_number" type="text" maxlength="40" value="${esc(customer.reg_number || '')}" placeholder="alleen bij een eenmanszaak zonder btw-nummer"></label>
     </div>
+    ${customer.vat_number && !/^NL/i.test(String(customer.country || customer.vat_number || '').trim())
+      ? `<label class="checkline"><input type="checkbox" name="vat_confirmed" value="yes">
+          <span>De klant bevestigde zelf (bv. in WhatsApp of per mail) dat ${esc(customer.vat_number)} klopt en dat hij zakelijk bestelt — dan gaat de 0% verlegde btw meteen door en krijgt hij direct de betaallink. Niet aangevinkt: eerst op de btw-lijst.</span></label>`
+      : ''}
     <label>Notitie bij de bestelling (ziet de klant in zijn dossier)
       <input name="message" type="text" maxlength="500" placeholder="bv. 'Zoals besproken via WhatsApp: vijf hoodies, dezelfde look als VIS-…'"></label>
     <label>Taal van de bevestiging en de betaalmail
@@ -6455,11 +6642,9 @@ ${adminNav('customers')}
       <input type="file" name="fotos" multiple accept="image/*"></label>
     <button class="btn btn-primary" type="submit">Bestelling aanmaken en bevestiging mailen</button>
   </form>
+  </details>
 
-  <h2>Orders</h2>
-  ${orderRows}
-  
-  <h2>Danger zone</h2>
+  <h2>Onomkeerbaar</h2>
   ${wipePanel}
   `;
   return html(page({ title: customer.brand || customer.email, body }));
@@ -6483,10 +6668,10 @@ ${adminNav('customers')}
  */
 async function handleAddCustomModelForCustomer({ request, env }, customerId) {
   if (!Number.isInteger(customerId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const exists = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(customerId).first();
-  if (!exists) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!exists) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const label = String(form?.get('label') || '').trim().slice(0, 80);
@@ -6560,10 +6745,10 @@ async function handleAddCustomModelForCustomer({ request, env }, customerId) {
         .split('/').pop()
         .slice(0, 100) || 'preview';
       if (!PREVIEW_TYPES.includes(String(file.type || '').toLowerCase())) {
-        return html(page({ title: 'Admin', body: errorBody('Preview must be a jpeg, png, webp or avif.') }), 415);
+        return html(page({ title: 'Admin', body: errorBody('Het voorbeeld moet een jpeg, png, webp of avif zijn.') }), 415);
       }
       if (file.size > PREVIEW_MAX_BYTES) {
-        return html(page({ title: 'Admin', body: errorBody('Preview is too large.') }), 413);
+        return html(page({ title: 'Admin', body: errorBody('Het voorbeeld is te groot.') }), 413);
       }
       const key = `models/${customerId}/${row.id}-${clean}`;
       await env.UPLOADS.put(key, file.stream(), {
@@ -6587,12 +6772,12 @@ async function handleAddCustomModelForCustomer({ request, env }, customerId) {
  */
 async function handleModelStatus({ request, env }, modelId) {
   if (!Number.isInteger(modelId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad model id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig modelnummer.') }), 400);
   }
   const model = await env.DB.prepare(
     'SELECT id, customer_id FROM custom_models WHERE id = ?1'
   ).bind(modelId).first();
-  if (!model) return html(page({ title: 'Admin', body: errorBody('No such model.') }), 404);
+  if (!model) return html(page({ title: 'Admin', body: errorBody('Dat model bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const status = String(form?.get('status') || '');
@@ -6629,13 +6814,13 @@ const PREVIEW_MAX_BYTES = 12 * 1024 * 1024;
 
 async function handleModelPreview({ request, env }, modelId) {
   if (!Number.isInteger(modelId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad model id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig modelnummer.') }), 400);
   }
   const model = await env.DB.prepare(
     'SELECT id, customer_id, status FROM custom_models WHERE id = ?1'
   ).bind(modelId).first();
-  if (!model) return html(page({ title: 'Admin', body: errorBody('No such model.') }), 404);
-  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('No R2 binding.') }), 503);
+  if (!model) return html(page({ title: 'Admin', body: errorBody('Dat model bestaat niet.') }), 404);
+  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('Geen R2-binding.') }), 503);
 
   const form = await request.formData().catch(() => null);
   const file = form && form.get('preview');
@@ -6659,8 +6844,8 @@ async function handleModelPreview({ request, env }, modelId) {
     return html(page({
       title: 'Admin',
       body: errorBody(
-        `"${esc(String(file.name || 'that file'))}" is ${esc(type || 'of an unknown type')}. `
-        + 'A brand model preview has to be a JPEG, PNG, WebP or AVIF — it is shown to the customer as a photograph.'
+        `"${esc(String(file.name || 'dat bestand'))}" is ${esc(type || 'van een onbekend type')}. `
+        + 'Een voorbeeld van een merkmodel moet een JPEG, PNG, WebP of AVIF zijn — de klant ziet het als foto.'
       ),
     }), 415);
   }
@@ -6668,8 +6853,8 @@ async function handleModelPreview({ request, env }, modelId) {
     return html(page({
       title: 'Admin',
       body: errorBody(
-        `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The preview is drawn at about 400px wide in `
-        + 'the customer\'s brand kit, so anything over 12 MB is bytes they wait for and never see.'
+        `Dat bestand is ${(file.size / 1024 / 1024).toFixed(1).replace('.', ',')} MB. Het voorbeeld staat ongeveer 400px breed in `
+        + 'het merkenpakket van de klant, dus alles boven 12 MB is wachten op pixels die hij nooit ziet.'
       ),
     }), 413);
   }
@@ -6719,15 +6904,15 @@ async function handleModelPreview({ request, env }, modelId) {
  * broken here rather than looking like a design decision.
  */
 async function serveModelPreview({ env }, modelId) {
-  if (!Number.isInteger(modelId)) return new Response('Bad id', { status: 400 });
+  if (!Number.isInteger(modelId)) return new Response('Ongeldig nummer', { status: 400 });
   const row = await env.DB.prepare(
     'SELECT preview_key FROM custom_models WHERE id = ?1'
   ).bind(modelId).first();
   if (!row?.preview_key) return new Response('Not found', { status: 404 });
-  if (!env.UPLOADS) return new Response('No bucket binding', { status: 503 });
+  if (!env.UPLOADS) return new Response('Geen opslag gekoppeld (UPLOADS)', { status: 503 });
 
   const obj = await env.UPLOADS.get(row.preview_key);
-  if (!obj) return new Response('The object is not in the bucket', { status: 404 });
+  if (!obj) return new Response('Dit bestand staat niet (meer) in de opslag', { status: 404 });
 
   return new Response(obj.body, {
     headers: {
@@ -6775,7 +6960,7 @@ function readStyleForm(form) {
 /* Het beeld in R2, met dezelfde controle als handleModelPreview(). Geeft de
    sleutel terug, of een Response met de reden — de aanroeper geeft die door. */
 async function putStylePreview(env, customerId, styleId, file) {
-  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('No R2 binding.') }), 503);
+  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('Geen R2-binding.') }), 503);
   const type = String(file.type || '').toLowerCase();
   if (!PREVIEW_TYPES.includes(type)) {
     return html(page({ title: 'Admin', body: errorBody(
@@ -6798,10 +6983,10 @@ async function putStylePreview(env, customerId, styleId, file) {
 
 async function handleAddCustomerStyle({ request, env }, customerId) {
   if (!Number.isInteger(customerId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const exists = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(customerId).first();
-  if (!exists) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!exists) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const f = readStyleForm(form);
@@ -6833,12 +7018,12 @@ async function handleAddCustomerStyle({ request, env }, customerId) {
 
 async function handleStyleManage({ request, env }, styleId) {
   if (!Number.isInteger(styleId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad style id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig looknummer.') }), 400);
   }
   const style = await env.DB.prepare(
     'SELECT id, customer_id, name, preview_key FROM customer_styles WHERE id = ?1'
   ).bind(styleId).first();
-  if (!style) return html(page({ title: 'Admin', body: errorBody('No such style.') }), 404);
+  if (!style) return html(page({ title: 'Admin', body: errorBody('Die look bestaat niet.') }), 404);
   const back = `/admin/customers/${style.customer_id}#style-${styleId}`;
 
   const form = await request.formData().catch(() => null);
@@ -6867,12 +7052,12 @@ async function handleStyleManage({ request, env }, styleId) {
 
 async function handleStylePreview({ request, env }, styleId) {
   if (!Number.isInteger(styleId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad style id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig looknummer.') }), 400);
   }
   const style = await env.DB.prepare(
     'SELECT id, customer_id, status FROM customer_styles WHERE id = ?1'
   ).bind(styleId).first();
-  if (!style) return html(page({ title: 'Admin', body: errorBody('No such style.') }), 404);
+  if (!style) return html(page({ title: 'Admin', body: errorBody('Die look bestaat niet.') }), 404);
   const back = `/admin/customers/${style.customer_id}#style-${styleId}`;
 
   const form = await request.formData().catch(() => null);
@@ -6894,12 +7079,12 @@ async function handleStylePreview({ request, env }, styleId) {
 }
 
 async function serveStylePreview({ env }, styleId) {
-  if (!Number.isInteger(styleId)) return new Response('Bad id', { status: 400 });
+  if (!Number.isInteger(styleId)) return new Response('Ongeldig nummer', { status: 400 });
   const row = await env.DB.prepare('SELECT preview_key FROM customer_styles WHERE id = ?1').bind(styleId).first();
   if (!row?.preview_key) return new Response('Not found', { status: 404 });
-  if (!env.UPLOADS) return new Response('No bucket binding', { status: 503 });
+  if (!env.UPLOADS) return new Response('Geen opslag gekoppeld (UPLOADS)', { status: 503 });
   const obj = await env.UPLOADS.get(row.preview_key);
-  if (!obj) return new Response('The object is not in the bucket', { status: 404 });
+  if (!obj) return new Response('Dit bestand staat niet (meer) in de opslag', { status: 404 });
   return new Response(obj.body, {
     headers: {
       'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
@@ -7001,7 +7186,7 @@ ${adminNav('maandset')}
 }
 
 async function handleMaandsetUpload({ request, env }, admin) {
-  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('No R2 binding.') }), 503);
+  if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('Geen R2-binding.') }), 503);
   const form = await request.formData().catch(() => null);
   const month = String(form?.get('month') || '').trim();
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return seeOther('/admin/maandset');
@@ -7063,12 +7248,12 @@ async function handleMaandsetManage({ request, env }, setId, admin) {
 }
 
 async function serveSharedFile({ env }, fileId) {
-  if (!Number.isInteger(fileId)) return new Response('Bad id', { status: 400 });
+  if (!Number.isInteger(fileId)) return new Response('Ongeldig nummer', { status: 400 });
   const row = await env.DB.prepare('SELECT r2_key, content_type FROM shared_files WHERE id = ?1').bind(fileId).first().catch(() => null);
   if (!row?.r2_key) return new Response('Not found', { status: 404 });
-  if (!env.UPLOADS) return new Response('No bucket binding', { status: 503 });
+  if (!env.UPLOADS) return new Response('Geen opslag gekoppeld (UPLOADS)', { status: 503 });
   const obj = await env.UPLOADS.get(row.r2_key);
-  if (!obj) return new Response('The object is not in the bucket', { status: 404 });
+  if (!obj) return new Response('Dit bestand staat niet (meer) in de opslag', { status: 404 });
   return new Response(obj.body, {
     headers: {
       'content-type': PREVIEW_TYPES.includes(String(row.content_type || '')) ? row.content_type : 'application/octet-stream',
@@ -7103,20 +7288,20 @@ async function handleAddCustomModel({ request, env }, orderId) {
   const label = String(form?.get('label') || '').trim().slice(0, 200);
 
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   if (!label) {
-    return html(page({ title: 'Admin', body: errorBody('A label is required to add a custom model.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Een merkmodel toevoegen kan alleen met een naam.') }), 400);
   }
 
   const order = await env.DB.prepare('SELECT customer_id FROM orders WHERE id = ?1').bind(orderId).first();
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
   if (!order.customer_id) {
     // Real, if rare: upsertCustomer() in functions/api/order.js runs inside a
     // safe() wrapper, so a DB hiccup at order time can leave orders.customer_id
     // NULL without failing the order itself. Nothing to attach a model to
     // until that’s fixed by hand — surfacing it beats a foreign-key 500.
-    return html(page({ title: 'Admin', body: errorBody('This order has no linked customer account (customer_id is empty), so there is no brand to attach a custom model to.') }), 409);
+    return html(page({ title: 'Admin', body: errorBody('Deze bestelling hangt aan geen klantaccount (customer_id is leeg), dus er is geen merk om een merkmodel aan te koppelen.') }), 409);
   }
 
   await env.DB.prepare(
@@ -7305,7 +7490,8 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
     clauses.push("status = 'delivered' AND payment_status != 'paid' AND total_cents > 0");
   } else if (filter === 'unannounced') {
     clauses.push(`delivery_mailed_at IS NOT NULL AND EXISTS (
-      SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.kind = 'delivery' AND f.announced_at IS NULL)`);
+      SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.kind = 'delivery' AND f.announced_at IS NULL
+         AND f.superseded_at IS NULL)`);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
@@ -7321,7 +7507,7 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
     // announced" can and do come apart.
     `SELECT id, customer_id, ref, service, status, tier, brand, email, product_count,
             window_start, window_end, payment_status, total_cents, created_at,
-            delivered_at, delivery_mailed_at, hidden_at, cancel_reason, cancel_payment,
+            delivered_at, delivery_mailed_at, hidden_at, cancel_reason, cancel_payment, lang,
             /* COALESCE, want deze kolom komt uit migratie 0046 en een database die
                daarop achterloopt hoort een lege lijst te tonen en geen fout. */
             COALESCE(testmodus, 0) AS testmodus,
@@ -7369,6 +7555,7 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
         `SELECT f.order_id AS order_id, COUNT(*) AS n
            FROM files f JOIN orders o ON o.id = f.order_id
           WHERE f.kind = 'delivery' AND f.announced_at IS NULL
+            AND f.superseded_at IS NULL
             AND o.delivery_mailed_at IS NOT NULL
           GROUP BY f.order_id`
       ).all();
@@ -7658,6 +7845,7 @@ async function renderDiagnose(context) {
   };
 
   const body = `
+${adminNav('diagnose')}
     <h1>Diagnose</h1>
     <p class="meta">De vorm van elk secret &mdash; nooit de waarde. Lengte, of elk teken afdrukbaar is, en
     het voorvoegsel alleen waar dat een openbaar merkteken is (<code>test_</code>, <code>live_</code>,
@@ -7979,10 +8167,10 @@ function originIsSelf(request, env) {
 /** The two values behind an origin-mismatch 403 — same shape both call sites
  * need to build a message a human can act on instead of a dead end. */
 function originMismatchDetail(request) {
-  const origin = request.headers.get('Origin') || '(no Origin header sent)';
+  const origin = request.headers.get('Origin') || '(geen Origin meegestuurd)';
   let host = '(unreadable)';
   try { host = new URL(request.url).host; } catch { /* leave the placeholder */ }
-  return `Seen Origin: ${origin}. Expected host: ${host}.`;
+  return `Gezien: ${origin}. Verwacht: ${host}.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7994,9 +8182,9 @@ function loginBody(error = null) {
 <div class="bar"><a class="mark" href="/">VISUAILS</a></div>
 <form class="login" method="post" action="/admin/login">
   ${error ? `<p class="error">${esc(error)}</p>` : ''}
-  <input type="email" name="email" placeholder="Email" autocomplete="username" required>
-  <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
-  <button class="btn btn-primary" type="submit">Sign in</button>
+  <input type="email" name="email" placeholder="E-mailadres" aria-label="E-mailadres" autocomplete="username" required>
+  <input type="password" name="password" placeholder="Wachtwoord" aria-label="Wachtwoord" autocomplete="current-password" required>
+  <button class="btn btn-primary" type="submit">Inloggen</button>
 </form>`;
 }
 
@@ -8121,21 +8309,21 @@ async function renderLog({ env }) {
 
   const body = `
 ${adminNav('log')}
-<h1>Activity log</h1>
-<p class="lede">Every change made from this dashboard. The customer never sees this — their own timeline lives on the order.</p>
+<h1>Logboek</h1>
+<p class="lede">Elke wijziging vanuit dit beheer. De klant ziet dit nooit — zijn eigen tijdlijn staat bij de bestelling.</p>
 ${missing
   ? '<p class="warnline">De logtabel bestaat nog niet. Draai migratie 0014.</p>'
   : rows.length
-    ? `<table class="files"><thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead><tbody>
+    ? `<table class="files"><thead><tr><th>Wanneer</th><th>Wie</th><th>Wat</th><th>Details</th></tr></thead><tbody>
         ${rows.map((r) => `<tr>
           <td class="muted">${esc(when(r.created_at))}</td>
           <td class="muted">${esc(r.admin_email || '—')}</td>
           <td><code>${esc(r.action)}</code></td>
-          <td>${esc(r.detail || '')}${r.order_id ? ` <a href="/admin/orders/${r.order_id}/files">order &rarr;</a>` : ''}${r.customer_id ? ` <a href="/admin/customers/${r.customer_id}">klant &rarr;</a>` : ''}</td>
+          <td>${esc(r.detail || '')}${r.order_id ? ` <a href="/admin/orders/${r.order_id}/files">bestelling &rarr;</a>` : ''}${r.customer_id ? ` <a href="/admin/customers/${r.customer_id}">klant &rarr;</a>` : ''}</td>
         </tr>`).join('')}
       </tbody></table>`
     : '<p class="empty">Nog niets gelogd.</p>'}`;
-  return html(page({ title: 'Activity log', body }));
+  return html(page({ title: 'Logboek', body }));
 }
 
 /*
@@ -8295,7 +8483,7 @@ async function handleBlackoutDay(context, admin) {
   const bevestigd = String(form?.get('confirm') || '') === 'ja';
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dag) || Number.isNaN(Date.parse(`${dag}T00:00:00Z`))) {
-    return html(page({ title: 'Admin', body: errorBody('That is not a date. Pick a day with the date field.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Dat is geen datum. Kies een dag met het datumveld.') }), 400);
   }
 
   if (doen === 'open') {
@@ -8311,17 +8499,17 @@ async function handleBlackoutDay(context, admin) {
      zet alleen een rij in de weg die voor altijd bovenaan de lijst blijft staan. */
   if (dag < vandaag) {
     return html(page({ title: 'Admin', body: errorBody(
-      'That day has already passed. Closing it changes nothing that is still schedulable.'
+      'Die dag is al voorbij. Hem sluiten verandert niets aan wat nog in te plannen is.'
     ) }), 400);
   }
   if (dag > addDays(vandaag, BLACKOUT_MAX_DAYS)) {
     return html(page({ title: 'Admin', body: errorBody(
-      `That is more than ${BLACKOUT_MAX_DAYS} days out. Check the year — a typo there leaves a closed day nobody ever finds again.`
+      `Dat is meer dan ${BLACKOUT_MAX_DAYS} dagen vooruit. Kijk het jaar na — een typefout daar laat een gesloten dag achter die niemand meer terugvindt.`
     ) }), 400);
   }
   if (!reden) {
     return html(page({ title: 'Admin', body: errorBody(
-      'A closed day needs a reason. In three months "why was 12 December closed" is the first question, and the answer should not live in your head.'
+      'Een gesloten dag heeft een reden nodig. Over drie maanden is "waarom was 12 december dicht" de eerste vraag, en het antwoord hoort niet alleen in je hoofd te zitten.'
     ) }), 400);
   }
 
@@ -8438,17 +8626,17 @@ async function handleWindowMove(context, orderId, admin) {
   const terug = naarPlanning ? `/admin/planning?verzet=${orderId}` : `/admin/orders/${orderId}/files`;
 
   const order = await env.DB.prepare(
-    `SELECT id, ref, service, tier, status, product_count, window_start, window_end, details_json
+    `SELECT id, ref, service, tier, status, product_count, window_start, window_end, details_json, lang
        FROM orders WHERE id = ?1`
   ).bind(orderId).first().catch(() => null);
-  if (!order) return html(page({ title: 'Admin', body: errorBody('No such order.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   /* Een bestelling die al geleverd of geannuleerd is, heeft geen venster meer dat
      iets betekent. Verzetten zou een datum in de agenda zetten voor werk dat niet
      meer gaat gebeuren. */
   if (['delivered', 'cancelled'].includes(String(order.status))) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This order is already finished or cancelled. Moving its window would put a day in the calendar for work that is not going to happen.'
+      'Deze bestelling is al afgerond of geannuleerd. Het venster verzetten zou een dag in de agenda zetten voor werk dat niet gaat gebeuren.'
     ) }), 400);
   }
 
@@ -8456,7 +8644,7 @@ async function handleWindowMove(context, orderId, admin) {
     await env.DB.batch([
       env.DB.prepare('UPDATE orders SET window_start = NULL, window_end = NULL WHERE id = ?1').bind(orderId),
       env.DB.prepare(
-        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
+        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'intern')"
       ).bind(orderId, String(order.status), `Venster losgelaten${reden ? ` — ${reden}` : ''}`),
     ]);
     await logAdmin(env, admin, 'agenda-venster-los', {
@@ -8469,7 +8657,7 @@ async function handleWindowMove(context, orderId, admin) {
 
   const dag = String(form?.get('dag') || '').trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dag)) {
-    return html(page({ title: 'Admin', body: errorBody('That is not a date. Pick a day with the date field.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Dat is geen datum. Kies een dag met het datumveld.') }), 400);
   }
 
   /* Een soort zonder gewicht houdt geen dagen bezet — zie KIND_PUNTEN in pricing.js.
@@ -8478,7 +8666,7 @@ async function handleWindowMove(context, orderId, admin) {
   const punten = rowPunten(videoVelden(order));
   if (!punten) {
     return html(page({ title: 'Admin', body: errorBody(
-      'This service has no weight in the calendar yet, so it cannot hold a pair of days. See KIND_PUNTEN and STYLE_PUNTEN in pricing.js.'
+      'Deze dienst heeft nog geen gewicht in de agenda, dus hij kan geen dagenpaar vasthouden. Zie KIND_PUNTEN en STYLE_PUNTEN in pricing.js.'
     ) }), 400);
   }
 
@@ -8494,18 +8682,18 @@ async function handleWindowMove(context, orderId, admin) {
        weigering die account.js aanhoudt, en om dezelfde reden: een venster dat is
        gekozen terwijl de bezetting onbekend was, is de dubbele boeking zelf. */
     return html(page({ title: 'Admin', body: errorBody(
-      `The calendar could not be read (${esc(String(e?.message || e))}), so no window was written.`
+      `De agenda kon niet gelezen worden (${esc(String(e?.message || e))}), dus er is geen venster weggeschreven.`
     ) }), 503);
   }
 
   if (dag < eerste) {
     return html(page({ title: 'Admin', body: errorBody(
-      `The first day that can be promised is ${eerste}. The two lead days are why the window holds; a window that starts sooner is a promise the system already knows it cannot keep.`
+      `De eerste dag die beloofd kan worden is ${eerste}. De twee aanloopdagen zijn waarom het venster houdt; een venster dat eerder begint, is een belofte waarvan het systeem al weet dat hij niet te houden is.`
     ) }), 400);
   }
   if (paar.length !== WINDOW_DAYS) {
     return html(page({ title: 'Admin', body: errorBody(
-      `There is no room for ${beelden} images starting ${dag}. Close a day or pick another start — the calendar was read with this order taken out of it, so this is genuinely full.`
+      `Er is geen plek voor deze bestelling (${Number(order.product_count) || 1} product${Number(order.product_count) === 1 ? '' : 'en'}) vanaf ${dag}. Sluit een dag of kies een andere start — de agenda is gelezen zonder deze bestelling, dus hij zit echt vol.`
     ) }), 409);
   }
 
@@ -8517,8 +8705,9 @@ async function handleWindowMove(context, orderId, admin) {
     env.DB.prepare(
       "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
     ).bind(orderId, String(order.status), tijdlijn(order.lang,
-      `Venster verzet naar ${start} of ${eind}${reden ? ` — ${reden}` : ''}`,
-      `Window moved to ${start} or ${eind}${reden ? ` — ${reden}` : ''}`)),
+      /* Leesbare datums, en de reden niet: die typte jij voor jezelf. */
+      `Leverdatum verzet naar ${mailDatum(start, 'nl')} of ${mailDatum(eind, 'nl')}.`,
+      `Delivery date moved to ${mailDatum(start, 'en')} or ${mailDatum(eind, 'en')}.`)),
   ]);
   await logAdmin(env, admin, 'agenda-venster-verzet', {
     orderId,
@@ -8650,7 +8839,12 @@ function contactTekst(o, vandaag) {
   const naam = o.name ? String(o.name).split(' ')[0] : '';
   const nl = (o.lang || 'nl') !== 'en';
   const wat = aantalLabel(videoVelden(o), nl ? 'nl' : 'en');
-  const venster = o.window_start ? `${o.window_start} – ${o.window_end || o.window_start}` : '';
+  const taal = nl ? 'nl' : 'en';
+  const venster = o.window_start
+    ? (o.window_end && o.window_end !== o.window_start
+      ? `${mailDatum(o.window_start, taal)} ${nl ? 'of' : 'or'} ${mailDatum(o.window_end, taal)}`
+      : mailDatum(o.window_start, taal))
+    : '';
   if (nl) {
     return `Hoi${naam ? ` ${naam}` : ''}, over ${o.ref} (${wat}): we hebben iets meer tijd nodig dan gepland. `
       + (venster ? `De nieuwe leverdatum is ${venster}. ` : 'We verwachten het binnen een paar dagen af te hebben. ')
@@ -8920,7 +9114,7 @@ ${pakBalk}
   <div class="pl-item-wat">
     <a class="ref" href="/admin/orders/${o.id}/files">${esc(o.ref)}</a>
     <span class="meta">${esc(o.brand || o.name || '—')} · ${wat(o)}${o.punten ? ` · ${o.punten} ${o.punten === 1 ? 'punt' : 'punten'}` : ''}</span>
-    <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `${o.manier === 'voorrang' ? '<strong class="or-voorrang">voorrang · 24 u</strong>' : 'zo snel mogelijk'}, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
+    <span class="meta">${o.manier === 'datum' ? `vastgelegd ${esc(o.window_start)} – ${esc(o.window_end)}` : `${o.manier === 'voorrang' ? '<strong class="or-voorrang">voorrang · volgende werkdag</strong>' : 'zo snel mogelijk'}, binnen sinds ${esc(normalizeStamp(o.created_at || '').slice(0, 10))}`}${o.payment_status === 'plan' ? ' · abonnement' : o.payment_status !== 'paid' ? ' · <strong class="pl-onbetaald">onbetaald</strong>' : ''}</span>
     ${statPil(o.status, STATUS_LABEL[o.status] || o.status)}
     ${['delivered', 'cancelled'].includes(String(o.status)) ? '' : `<a class="pl-pak-link" href="/admin/planning?van=${esc(van)}&amp;pak=${o.id}#raster">Verplaatsen in het raster &uarr;</a>`}
   </div>
@@ -9254,7 +9448,7 @@ async function renderTestimonials({ env }) {
   <blockquote class="tm-text">${esc(r.testimonial_text)}</blockquote>
   <form method="post" action="/admin/testimonials/${encodeURIComponent(String(r.order_id))}">
     <input type="hidden" name="action" value="${aan ? 'unapprove' : 'approve'}">
-    <button type="submit" class="${aan ? '' : 'primary'}">${aan ? 'Goedkeuring intrekken' : 'Goedkeuren'}</button>
+    <button type="submit" class="btn ${aan ? 'btn-ghost' : 'btn-primary'}">${aan ? 'Goedkeuring intrekken' : 'Goedkeuren'}</button>
     ${aan ? '<span class="pill">goedgekeurd</span>' : ''}
   </form>
 </div>`;
@@ -9271,7 +9465,7 @@ ${missing
   ? `<p class="warnline">Dit scherm kan de aanbevelingen niet lezen (${esc(missing)}). Draai migratie 0020.</p>`
   : rows.length
     ? `
-${wachtend.length ? `<h2>Wacht op je (${wachtend.length})</h2>${wachtend.map(kaart).join('')}` : '<p class="empty">Niets wat op je wacht.</p>'}
+${wachtend.length ? `<h2>Wacht op jou (${wachtend.length})</h2>${wachtend.map(kaart).join('')}` : '<p class="empty">Niets wat op jou wacht.</p>'}
 ${goedgekeurd.length ? `<h2>Goedgekeurd (${goedgekeurd.length})</h2>${goedgekeurd.map(kaart).join('')}` : ''}`
     : `<p class="empty">Nog geen aanbevelingen met toestemming. Ze verschijnen hier zodra een klant
        na een afgeronde bestelling iets schrijft <em>en</em> het vinkje zet. Zonder dat vinkje
@@ -9345,15 +9539,16 @@ async function renderVatReview({ env }) {
     missing = String(err?.message || '');
   }
 
-  const cents = (v) => `€ ${((Number(v) || 0) / 100).toFixed(2).replace('.', ',')}`;
+  const cents = (v) => mailBedrag(v, 'nl');
 
   const body = `
 ${adminNav('vat')}
 <h1>Btw-controle</h1>
-<p class="lede">Bestellingen die op een btw-opgave wachten die wij niet kunnen nakijken.
-Voor landen buiten de EU bestaat geen register — VIES dekt alleen lidstaten — dus rust
-0% daar volledig op wat de klant zelf opgeeft. Zolang een bestelling hier staat, kan
-er niet betaald worden: niet via een link van ons en niet via VISUAILS Studio.</p>
+<p class="lede">Bestellingen uit de EU zonder btw-nummer dat VIES bevestigt. Zolang een
+bestelling hier staat, kan er niet betaald worden: niet via een link van ons en niet via
+VISUAILS Studio. Bestellingen van buiten de EU staan hier niet meer: die betalen meteen,
+en past het land van de kaart of bank niet bij het opgegeven land, dan krijg je daar
+na de betaling een melding van.</p>
 ${missing
   ? `<p class="warnline">Dit scherm kan de bestellingen niet lezen (${esc(missing)}). Draai migratie 0018 en 0023.</p>`
   : rows.length
@@ -9368,6 +9563,12 @@ ${missing
         /* VAT_RATE en niet 0.21: dit scherm rekende het tarief zelf uit en zou
            bij een tariefwijziging als enige op het oude blijven staan. */
         const withVat = Math.round(net * VAT_RATE);
+        /* ── AL MET BTW — 24 september 2026 ─────────────────────────────────
+           Een Nederlandse klant zonder KVK-nummer betaalt al 21%: de vraag is
+           hier alleen of het een bedrijf is. De knoppen zeiden toch "0% blijft
+           staan" en "€ 107,10 erbij" — allebei onwaar. Staat er al btw op, dan
+           is er één goedkeurknop en geen tweede btw-knop. */
+        const alBtw = (Number(o.vat_cents) || 0) > 0;
         return `
 <div class="card">
   <div class="row-head">
@@ -9390,18 +9591,20 @@ ${missing
   <div class="rev-actions">
     <form method="post" action="/admin/orders/${o.id}/vat">
       <input type="hidden" name="action" value="approve">
-      <button class="btn btn-primary" type="submit">Opgave klopt — 0% blijft staan</button>
+      <button class="btn btn-primary" type="submit">${alBtw ? `Gegevens kloppen — betaallink sturen (${cents(net + (Number(o.vat_cents) || 0))} incl. btw)` : 'Opgave klopt — 0% blijft staan'}</button>
     </form>
-    <form method="post" action="/admin/orders/${o.id}/vat">
+    ${alBtw ? '' : `<form method="post" action="/admin/orders/${o.id}/vat">
       <input type="hidden" name="action" value="charge_vat">
       <button class="btn" type="submit">Btw alsnog rekenen — ${cents(withVat)} erbij</button>
-    </form>
+    </form>`}
     <form method="post" action="/admin/orders/${o.id}/vat">
       <input type="hidden" name="action" value="reject">
       <button class="btn btn-ghost" type="submit">Afwijzen, ik neem contact op</button>
     </form>
   </div>
-  <p class="meta">De nettoprijs verandert bij geen van de drie. "Btw alsnog rekenen" zet er ${vatPercent()} bovenop en laat ${esc(cents(net))} staan.</p>
+  <p class="meta">${alBtw
+    ? `Op deze bestelling staat al ${vatPercent()} btw. De vraag is alleen of de klant een bedrijf is; controleer het KVK-nummer en keur goed of neem contact op.`
+    : `De nettoprijs verandert bij geen van de drie. "Btw alsnog rekenen" zet er ${vatPercent()} bovenop en laat ${esc(cents(net))} staan.`}</p>
 </div>`;
       }).join('')
     : '<p class="empty">Niets in behandeling. Elke bestelling met een btw-opgave die we konden nakijken, is gewoon doorgegaan.</p>'}`;
@@ -9458,7 +9661,9 @@ async function handleVatDecision({ request, env }, orderId, admin) {
                 THEN datetime('now', ?3) ELSE window_expires_at END
         WHERE id = ?1 AND review_state = 'pending'`
     ).bind(orderId, admin?.email || 'admin', `+${PAYMENT_DAYS} days`));
-    note = 'Btw-gegevens nagekeken en in orde. De bestelling kan betaald worden.';
+    note = (Number(order.vat_cents) || 0) > 0
+      ? 'Bedrijfsgegevens nagekeken en in orde. De bestelling kan betaald worden.'
+      : 'Btw-gegevens nagekeken en in orde. De bestelling kan betaald worden.';
     detail = `${order.ref}: opgave goedgekeurd, tarief ongewijzigd`;
   } else if (action === 'charge_vat') {
     /*
@@ -9537,7 +9742,10 @@ async function handleVatDecision({ request, env }, orderId, admin) {
        De uitkomst gaat nu naar `admin_log` en niet naar `order_events`: dit is
        een mededeling voor de beheerder over een verzending die niet lukte, en
        order_events is wat de KLANT te zien krijgt. */
-    const uitkomst = await stuurBetaallink({ request, env }, orderId)
+    /* btwErbij (24 september 2026): na 'btw alsnog rekenen' stond in de mail
+       "Alles klopt" boven een hoger bedrag dan de klant bij het bestellen zag.
+       De mail zegt nu dat er btw bij kwam, en hoeveel. */
+    const uitkomst = await stuurBetaallink({ request, env }, orderId, { btwErbij: action === 'charge_vat' && !((Number(order.vat_cents) || 0) > 0) })
       .catch((e) => ({ mislukt: e && e.message ? e.message : String(e) }));
     if (!uitkomst || uitkomst.mislukt) {
       await logAdmin(env, admin, 'payment-link.failed', {
@@ -9565,13 +9773,13 @@ async function handleVatDecision({ request, env }, orderId, admin) {
  */
 async function handleQuote({ request, env }, orderId, admin) {
   if (!Number.isInteger(orderId)) {
-    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+    return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const back = `/admin/orders/${orderId}/files`;
   const order = await env.DB.prepare(
     'SELECT id, ref, service, payment_status, status, vat_rate, vat_treatment FROM orders WHERE id = ?1'
   ).bind(orderId).first();
-  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
   if (!['custom', 'video'].includes(String(order.service))) return seeOther(back);
   if (String(order.payment_status || '') === 'paid') return seeOther(back);
 
@@ -9582,19 +9790,27 @@ async function handleQuote({ request, env }, orderId, admin) {
   const net = Math.round(eur * 100);
   const rate = Number.isFinite(Number(order.vat_rate)) && order.vat_rate !== null ? Number(order.vat_rate) : VAT_RATE;
   const vat = Math.round(net * rate);
+  /* Volledig of aanbetaling (24 september 2026). Lucas: de offertemail zegt
+     welke van de twee het is. Het staat op de bestelling (details_json), zodat
+     een tweede mail na een bedragwijziging hetzelfde zegt en de tijdlijn het
+     ook weet. Alles wat niet 'aanbetaling' is, is de volledige prijs. */
+  const soort = String(form?.get('soort') || '') === 'aanbetaling' ? 'aanbetaling' : 'volledig';
 
   await env.DB.batch([
     env.DB.prepare(
       `UPDATE orders SET total_cents = ?2, vat_cents = ?3, vat_rate = ?4,
-              review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?5
+              review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?5,
+              details_json = json_set(CASE WHEN json_valid(details_json) THEN details_json ELSE '{}' END, '$.quote_kind', ?6)
         WHERE id = ?1`
-    ).bind(orderId, net, vat, rate, admin?.email || 'admin'),
+    ).bind(orderId, net, vat, rate, admin?.email || 'admin', soort),
     env.DB.prepare(
       /* Zie de noot bij dezelfde reparatie in src/lib/betaallink.js. */
       `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?3, ?2, 'studio')`
-    ).bind(orderId, `Offerte vastgelegd: € ${(net / 100).toFixed(2).replace('.', ',')} excl. btw.`, order.status || 'received'),
+    ).bind(orderId, soort === 'aanbetaling'
+      ? `Offerte vastgelegd: aanbetaling van ${mailBedrag(net, 'nl')} excl. btw.`
+      : `Offerte vastgelegd: ${mailBedrag(net, 'nl')} excl. btw.`, order.status || 'received'),
   ]);
-  await logAdmin(env, admin, 'quote', { orderId, detail: `${order.ref}: offerte ${net} cent netto, btw ${vat} cent` });
+  await logAdmin(env, admin, 'quote', { orderId, detail: `${order.ref}: offerte ${net} cent netto, btw ${vat} cent (${soort})` });
 
   const url = await stuurBetaallink({ request, env }, orderId, { offerte: true }).catch((e) => ({ mislukt: e?.message || String(e) }));
   if (!url || url.mislukt) {
@@ -9708,13 +9924,13 @@ async function handleNewCustomer({ request, env }, admin) {
  * die er al is, en dan is de betaallink één klik verder.
  */
 async function handleOrderForCustomer({ request, env, waitUntil }, customerId, admin) {
-  if (!Number.isInteger(customerId)) return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+  if (!Number.isInteger(customerId)) return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   const c = await env.DB.prepare(
     `SELECT id, email, brand, name, phone, website, vat_number, country, first_name, last_name,
             address_line1, address_line2, postal_code, city, region, no_vat_number, reg_number
        FROM customers WHERE id = ?1`
   ).bind(customerId).first();
-  if (!c) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!c) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
   const form = await request.formData().catch(() => null);
   const service = ['catalog', 'lifestyle', 'drop'].includes(String(form?.get('service'))) ? String(form.get('service')) : 'catalog';
@@ -9782,6 +9998,9 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
   else { zet('no_vat_number', '1'); zet('reg_number', regNumber); }
   zet('business_declaration', 'yes');
   zet('business_version', 'admin-namens-klant');
+  /* Alleen als jij aanvinkt dat de klant het zelf bevestigde — zie de regel in
+     src/data/vat.js (verlegging zonder bevestiging gaat naar de btw-lijst). */
+  if (form?.get('vat_confirmed') === 'yes' && c.vat_number) zet('vat_confirmed', 'yes');
   if (service !== 'catalog' && style) zet('style', style);
   for (let i = 1; i <= products; i++) zet(`product_p${i}`, `Product ${i}`);
   if (message) zet('message', message);
@@ -9823,10 +10042,10 @@ async function handleOrderForCustomer({ request, env, waitUntil }, customerId, a
  * die `payment_status` aanraakt (zie de noot daar), en een tweede plek die dat
  * doet is precies hoe een betaalde bestelling onbetaald blijft staan.
  */
-async function stuurBetaallink({ request, env }, orderId, { offerte = false } = {}) {
+async function stuurBetaallink({ request, env }, orderId, { offerte = false, btwErbij = false } = {}) {
   /* Verhuisd naar src/lib/betaallink.js op 4 september 2026 — de nachtelijke
      herinnering gebruikt dezelfde mail. Zie de kop van dat bestand. */
-  return stuurBetaallinkMail(env, orderId, { origin: new URL(request.url).origin, offerte });
+  return stuurBetaallinkMail(env, orderId, { origin: new URL(request.url).origin, offerte, btwErbij });
 }
 
 /**
@@ -9925,7 +10144,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
   ${chip('unannounced', 'Geleverd, niet gemeld')}
   ${chip('paid_undelivered', 'Betaald, niet geleverd')}
   ${chip('delivered_unpaid', 'Geleverd, niet betaald')}
-  <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Verborgen weer weg' : 'Ook verborgen'}</a>
+  <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Verborgen niet tonen' : 'Ook verborgen'}</a>
   ${proefZichtbaar ? `<form class="fl-form" method="post" action="/admin/proef/opruimen"><button class="fl-chip fl-chip-doe" type="submit">Verberg ${proefZichtbaar} proefbestelling${proefZichtbaar === 1 ? '' : 'en'}</button></form>` : ''}
 </div>`;
 
@@ -9934,7 +10153,9 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
     if (iso < vandaag) return 'te laat';
     if (iso === vandaag) return 'vandaag';
     if (iso === addDays(vandaag, 1)) return 'morgen';
-    return iso.slice(5).replace('-', '/');
+    /* "14 okt" en niet "10/14": een datum in maand/dag-volgorde leest in
+       Nederland als 10 veertien. */
+    return `${Number(iso.slice(8, 10))} ${['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][Number(iso.slice(5, 7)) - 1]}`;
   };
   const aflopendBlok = aflopend?.stuk
     ? `<p class="warnline">De agenda is niet te lezen (${esc(aflopend.stuk)}).</p>`
@@ -9955,10 +10176,10 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
     watch ? watchChip(WATCH.backup, watch.backup) : '',
   ].filter(Boolean);
 
+  /* Eén regel en geen tweede lijst (29 september 2026): dezelfde revisies stonden
+     hier als lijstje én links als volle kaarten. De regel springt naar de kaarten. */
   const revisieKort = revisions.length
-    ? `<ul class="db-revs">${revisions.slice(0, 6).map((r) => `
-<li><a href="#rev-${r.file_id}"><img src="/admin/files/${r.file_id}" alt="" loading="lazy" decoding="async" width="40" height="40"></a>
-  <span><a class="ref" href="#rev-${r.file_id}">${esc(r.ref)}</a><br><span class="meta">${esc(r.brand || r.email)}${r.product_key ? ` · product ${esc(r.product_key.replace(/^p/, ''))}` : ''}${r.shot ? ` · ${esc(r.shot)}` : ''}</span></span></li>`).join('')}</ul>`
+    ? `<p><a class="pijl" href="#revisies">${revisions.length} ${revisions.length === 1 ? 'revisieverzoek' : 'revisieverzoeken'} open &rarr;</a></p>`
     : '<p class="meta">Geen revisieverzoeken. Wat een klant in zijn portaal aanmerkt, komt hier.</p>';
 
   const zij = `
@@ -9977,7 +10198,7 @@ ${counts ? todayStrip(counts) : ''}
 <div class="db-vlakken">
 <section class="db-hoofd">
 ${revisions.length ? `
-<h2>Revisieverzoeken <span class="fl-n">${revisions.length}</span></h2>
+<h2 id="revisies">Revisieverzoeken <span class="fl-n">${revisions.length}</span></h2>
 ${revisions.map(revisionCard).join('')}` : ''}
 
 <h2>Bestellingen${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
@@ -10015,7 +10236,7 @@ function statusFilterRow(statusCounts, statusFilter) {
     ? `<span class="fl-chip is-active" aria-current="true">${esc(label)} <span class="fl-n">${n}</span></span>`
     : `<a class="fl-chip" href="${esc(href)}">${esc(label)} <span class="fl-n">${n}</span></a>`;
 
-  return `<nav class="fl" aria-label="Filter orders by status">
+  return `<nav class="fl" aria-label="Bestellingen filteren op status">
     ${chip('/admin', 'Alles', total, !statusFilter)}
     ${STATUSES.map((s) => chip(
       `/admin?status=${encodeURIComponent(s)}`,
@@ -10113,14 +10334,16 @@ function revisionCard(r) {
 }
 
 function orderCard(o, models, statusFilter = '') {
-  const options = STATUSES.map(
+  /* "Geannuleerd" alleen als hij het al IS: annuleren heeft een eigen knop met de
+     afwikkeling erbij (zie handleStatusUpdate). */
+  const options = STATUSES.filter((s) => s !== 'cancelled' || o.status === 'cancelled').map(
     (s) => `<option value="${s}"${s === o.status ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
   ).join('');
   // Task #271e: custom_models for this order’s customer, read-only, so Lucas
   // can see what a brand already has before adding another with the same
   // name by accident — see loadCustomModelsByCustomer()'s header.
   const modelList = models.length
-    ? `<p class="meta">Custom models: ${models.map((m) => `${esc(m.label)} (${esc(m.status)})`).join(', ')}</p>`
+    ? `<p class="meta">Eigen modellen: ${models.map((m) => `${esc(m.label)} (${esc(({ in_design: 'in ontwerp', approved: 'goedgekeurd', locked: 'vastgelegd' })[m.status] || m.status)})`).join(', ')}</p>`
     : '';
 
   // DELIVERED, BUT WAS THEY TOLD? The mail is deliberately not awaited into the
@@ -10142,7 +10365,7 @@ function orderCard(o, models, statusFilter = '') {
   // zien door elke geleverde bestelling één voor één open te klikken, en dus in
   // de praktijk niet.
   const pendingAnnounce = o.delivery_mailed_at && o.unannounced
-    ? `<p class="warnline">${o.unannounced} delivered ${o.unannounced === 1 ? 'file has' : 'files have'} not been announced.
+    ? `<p class="warnline">${o.unannounced} ${o.unannounced === 1 ? 'geleverd bestand is' : 'geleverde bestanden zijn'} nog niet gemeld.
         <a href="/admin/orders/${o.id}/files">De klant op de hoogte brengen &rarr;</a></p>`
     : '';
   /* EN DE DERDE STILTE — 4 september 2026 (doorlichting §3.7). Resend zei 200,
@@ -10165,7 +10388,7 @@ function orderCard(o, models, statusFilter = '') {
   const waar = o.window_start
     ? `${esc(o.window_start)} → ${esc(o.window_end)}`
     : voorrang
-      ? '<strong class="or-voorrang">voorrang · binnen 24 u</strong>'
+      ? '<strong class="or-voorrang">voorrang · volgende werkdag</strong>'
       : '<span class="muted">zo snel mogelijk</span>';
   /* ── HET PROEFMERK STAAT NAAST DE ANDERE MERKTEKENS, NIET IN PLAATS ERVAN ──
      De keten hieronder kiest er precies één, want die merktekens zijn allemaal
@@ -10177,7 +10400,7 @@ function orderCard(o, models, statusFilter = '') {
     ? '<span class="or-let is-proef" title="Aangenomen met een test_-sleutel: geen echt geld, en de factuur komt uit de PROEF-reeks">proef</span>'
     : '';
   const merkteken = o.bounce
-    ? `<span class="or-let is-rood" title="${esc(bounceLine(o.bounce))}">mail bounced</span>`
+    ? `<span class="or-let is-rood" title="${esc(bounceLine(o.bounce))}">mail kwam niet aan</span>`
     : (o.status === 'delivered' && !o.delivery_mailed_at)
     ? '<span class="or-let" title="Geleverd, klant niet gemaild">niet gemeld</span>'
     : (o.delivery_mailed_at && o.unannounced)
@@ -10191,7 +10414,7 @@ function orderCard(o, models, statusFilter = '') {
     <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : voorrang ? 'voorrang' : 'wachtrij')}</span></span>
     <span class="or-wanneer">${waar}<span class="meta">binnen ${esc(when(o.created_at).slice(0, 10))}</span></span>
     <span class="or-status">${statPil(o.status, STATUS_LABEL[o.status] || o.status)}</span>
-    <span class="or-betaal${o.payment_status === 'paid' ? '' : ' is-open'}">${esc(o.payment_status === 'paid' ? 'betaald' : o.payment_status === 'unpaid' ? 'onbetaald' : o.payment_status)}</span>
+    <span class="or-betaal${o.payment_status === 'paid' || o.payment_status === 'plan' ? '' : ' is-open'}">${esc(o.payment_status === 'paid' ? 'betaald' : o.payment_status === 'unpaid' ? 'onbetaald' : o.payment_status === 'plan' ? 'abonnement' : o.payment_status)}</span>
     <span class="or-files"><a class="files-link" href="/admin/orders/${o.id}/files">Bestanden${o.file_count ? ` (${o.file_count})` : ''}</a></span>
   </summary>
   <div class="or-body">
@@ -10202,21 +10425,20 @@ function orderCard(o, models, statusFilter = '') {
          session, not an edge case. handleStatusUpdate re-validates it against
          STATUSES rather than trusting the round trip. -->
     ${statusFilter ? `<input type="hidden" name="back" value="${esc(statusFilter)}">` : ''}
-    <select name="status" aria-label="Status for ${esc(o.ref)}">${options}</select>
-    <input type="text" name="note" placeholder="Note (optional, goes on the client’s timeline too)" class="in-grow">
-    <button class="btn btn-primary" type="submit">Update</button>
+    <select name="status" aria-label="Status van ${esc(o.ref)}">${options}</select>
+    <input type="text" name="note" placeholder="Notitie (optioneel, komt ook op de tijdlijn van de klant)" class="in-grow">
+    <button class="btn btn-primary" type="submit">Bijwerken</button>
   </form>
   ${bounced}
   ${unannounced}
   ${pendingAnnounce}
-  ${o.hidden_at ? `<p class="meta">Hidden since ${esc(when(o.hidden_at))} — it stays out of the lists and the counts.</p>` : ''}
+  ${o.hidden_at ? `<p class="meta">Verborgen sinds ${esc(when(o.hidden_at))} — hij staat buiten de lijsten en de tellingen.</p>` : ''}
   ${o.cancel_reason ? `<p class="warnline">Geannuleerd: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc({ refund: 'geld terug', credit: 'tegoed gegeven', none: 'geen restitutie' }[o.cancel_payment] || o.cancel_payment)}` : ''}${leveringIngetrokken(o) ? ' · de bestanden zijn niet meer voor de klant zichtbaar' : ''}</p>` : ''}
   ${modelList}
   ${orderDanger(o)}
-  <form class="controls" method="post" action="/admin/orders/${o.id}/models">
-    <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" class="in-grow" required>
-    <button class="btn btn-ghost" type="submit">Merkmodel toevoegen</button>
-  </form>
+  ${/* "Merkmodel toevoegen" stond hier onder élke bestelling (29 september 2026
+       weg): de klantpagina heeft hetzelfde formulier, met foto. De route
+       /admin/orders/:id/models blijft bestaan. */ ''}
   </div>
 </details>`;
 }
@@ -10245,17 +10467,17 @@ function orderDanger(o) {
       : `<form method="post" action="/admin/orders/${o.id}/cancel" class="danger-block">
            <h4>Annuleren</h4>
            <p class="meta">De bestelling blijft bewaard; de klant ziet &ldquo;geannuleerd&rdquo; en jouw reden op zijn tijdlijn.</p>
-           <input type="text" name="reason" required maxlength="500" placeholder="Waarom gaat dit niet door? Dit leest de klant.">
+           <input type="text" name="reason" required maxlength="500" placeholder="Waarom gaat dit niet door? Dit leest de klant${o.lang === 'en' ? ' — in het Engels schrijven, de klant leest Engels' : ''}.">
            ${paid
              ? `<label class="danger-money">Wat gebeurt er met het geld?
                   <select name="payment" required>
                     <option value="">— kies —</option>
                     <option value="refund">Terugbetalen</option>
                     <option value="credit">Tegoed voor een volgende bestelling</option>
-                    <option value="none">Niets, houden zo</option>
+                    <option value="none">Niets — het bedrag blijft bij ons</option>
                   </select>
                 </label>
-                <p class="meta"><strong>Terugbetalen</strong> stuurt het geld hier meteen terug via Mollie. De creditfactuur volgt vanzelf zodra Mollie bevestigt.</p>`
+                <p class="meta"><strong>Terugbetalen</strong> stuurt het geld hier meteen terug via Mollie. De creditnota volgt vanzelf zodra Mollie bevestigt.</p>`
              : '<p class="meta">Er is niets betaald, dus er valt niets over geld te beslissen.</p>'}
            <button class="btn btn-ghost btn-sm" type="submit">Deze bestelling annuleren</button>
          </form>`}
@@ -10263,8 +10485,8 @@ function orderDanger(o) {
     <form method="post" action="/admin/orders/${o.id}/hide" class="danger-block">
       <h4>${o.hidden_at ? 'Weer tonen' : 'Verbergen'}</h4>
       <p class="meta">${o.hidden_at
-        ? 'Put it back in the lists and the counts.'
-        : 'Your own test orders and accidental doubles. Out of the lists and the counts, still in the database.'}</p>
+        ? 'Zet hem terug in de lijsten en de tellingen.'
+        : 'Je eigen proefbestellingen en dubbele bestellingen. Uit de lijsten en de tellingen, wel nog in de database.'}</p>
       <input type="hidden" name="action" value="${o.hidden_at ? 'show' : 'hide'}">
       <button class="btn btn-ghost btn-sm" type="submit">${o.hidden_at ? 'Weer tonen' : 'Verbergen uit mijn lijsten'}</button>
     </form>
@@ -10292,7 +10514,9 @@ function orderDanger(o) {
  * is nagelopen), dus de opmaak mag hier door.
  */
 function errorBody(message) {
-  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error is-page">${message}</p>`;
+  /* Met een weg terug (24 september 2026): een foutmelding was een doodlopende
+     pagina met alleen het logo, dat naar de publieke site linkt. */
+  return `<div class="bar"><a class="mark" href="/admin">VISUAILS</a></div><p class="error is-page">${message}</p><p class="meta"><a href="/admin">&larr; Terug naar het dashboard</a> &middot; gebruik de terugknop van je browser om je invoer te houden.</p>`;
 }
 
 /**
@@ -10313,17 +10537,28 @@ const NAV = [
   ['vat', '/admin/vat', 'Btw'],
   ['funnel', '/admin/funnel', 'Trechter'],
   ['berichten', '/admin/berichten', 'Berichten'],
-  ['log', '/admin/log', 'Log'],
+  ['log', '/admin/log', 'Logboek'],
   ['security', '/admin/security', 'Twee stappen'],
+  ['diagnose', '/admin/diagnose', 'Diagnose'],
 ];
+/* ── ZES IN DE BALK, DE REST ONDER "MEER" — 29 september 2026 ──────────────
+   Tien items passen niet op één regel, en Diagnose stond er niet eens in. Wat
+   je elke dag gebruikt staat vooraan; wat je af en toe opzoekt achter één klik.
+   Staat de pagina waar je bent onder Meer, dan staat Meer open. */
+const NAV_MEER = new Set(['funnel', 'berichten', 'log', 'security', 'diagnose']);
 function adminNav(actief = '') {
   return `
 <div class="bar">
   <a class="mark" href="/">VISUAILS</a>
   <nav class="bar-nav" aria-label="Adminportaal">
-    ${NAV.map(([k, href, label]) => (k === actief
-      ? `<span class="bar-link is-active" aria-current="page">${esc(label)}</span>`
-      : `<a class="bar-link" href="${href}">${esc(label)}</a>`)).join('')}
+    ${(() => {
+      const item = ([k, href, label]) => (k === actief
+        ? `<span class="bar-link is-active" aria-current="page">${esc(label)}</span>`
+        : `<a class="bar-link" href="${href}">${esc(label)}</a>`);
+      const vast = NAV.filter(([k]) => !NAV_MEER.has(k)).map(item).join('');
+      const meer = NAV.filter(([k]) => NAV_MEER.has(k)).map(item).join('');
+      return `${vast}<details class="bar-meer"${NAV_MEER.has(actief) ? ' open' : ''}><summary class="bar-link">Meer</summary><div class="bar-meer-lijst">${meer}</div></details>`;
+    })()}
   </nav>
   <div class="bar-right">
     ${/* Allebei de standen staan er; CSS verbergt de stand waar je al in zit.
@@ -10338,7 +10573,7 @@ function adminNav(actief = '') {
 
 function page({ title, body }) {
   return `<!doctype html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10432,9 +10667,15 @@ function normalizeStamp(value) {
   return /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(value) ? `${value.replace(' ', 'T')}Z` : value;
 }
 
+/* In Nederlandse tijd (29 september 2026): dit gaf UTC, dus een betaling van
+   10:05 stond er als 08:05 — twee uur verschil met je eigen klok en je mail. */
 function when(stamp) {
   if (!stamp) return '—';
   const t = Date.parse(normalizeStamp(stamp));
   if (Number.isNaN(t)) return '—';
-  return new Date(t).toISOString().slice(0, 16).replace('T', ' ');
+  const d = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Amsterdam', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(t)).map((x) => [x.type, x.value]));
+  return `${d.year}-${d.month}-${d.day} ${d.hour}:${d.minute}`;
 }

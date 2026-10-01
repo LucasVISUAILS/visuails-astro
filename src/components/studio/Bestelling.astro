@@ -13,7 +13,7 @@ import Voortgang from './Voortgang.astro';
 import Betaling from './Betaling.astro';
 import Product from './Product.astro';
 import Beeld from './Beeld.astro';
-const { t, lang, v, order, events = [] } = Astro.props;
+const { t, lang, v, order, events = [], files = [] } = Astro.props;
 ---
 <details class="st-kaart-vlak st-bestelling" id={`order-${v.id}`} open={v.openNow}>
   <summary class="st-bestelling-kop">
@@ -26,14 +26,34 @@ const { t, lang, v, order, events = [] } = Astro.props;
     <span class="st-chevron" aria-hidden="true"></span>
   </summary>
   <div class="st-bestelling-body">
-    <p class="st-meta">{v.windowLine}</p>
+    {v.windowLine && <p class="st-meta">{v.windowLine}</p>}
     <Betaling t={t} lang={lang} order={order} />
-    <Voortgang t={t} lang={lang} order={order} events={events} />
+    <Voortgang t={t} lang={lang} order={order} events={events} files={files} />
     {v.note && (
       <div class="st-nota"><span class="st-nota-wie">{t.noteFrom}</span><p>{v.note}</p></div>
     )}
     {v.closedNote && <p class="st-meta st-gesloten">{v.closedNote}</p>}
     {v.feedbackHtml && <div class="st-tevreden" set:html={v.feedbackHtml} />}
+
+    {/* De map bovenaan en niet onder twintig productkaarten (29 september 2026):
+        downloaden is wat de klant hier het vaakst komt doen. */}
+    {v.products && v.folder && (
+      <section class="st-map">
+        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p><p class="st-meta">{v.folder.note}</p></div>
+        <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>
+      </section>
+    )}
+
+    {/* Alles in één keer goedkeuren (30 september 2026). Staat boven de
+        productkaarten: wie tevreden is, hoeft ze niet één voor één open te
+        klappen. Gegevens en de regel wanneer hij verschijnt: orderView(). */}
+    {v.allesGoed && (
+      <form class="st-keur-bestelling" method="post" action="/account/review">
+        <input type="hidden" name="order" value={v.id} />
+        <button class="btn btn-2nd btn-sm" type="submit" name="action" value="approve-order" formnovalidate>{v.allesGoed.label}</button>
+        <p class="st-meta">{v.allesGoed.note}</p>
+      </form>
+    )}
 
     {/* ── TWINTIG LEGE RIJEN ZIJN ÉÉN REGEL — 19 september 2026 ──────────
         Zolang er voor geen enkel product iets geleverd is, zegt elke rij
@@ -88,11 +108,5 @@ const { t, lang, v, order, events = [] } = Astro.props;
       </form>
     )}
 
-    {v.products && v.folder && (
-      <section class="st-map">
-        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p><p class="st-meta">{v.folder.note}</p></div>
-        <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>
-      </section>
-    )}
   </div>
 </details>

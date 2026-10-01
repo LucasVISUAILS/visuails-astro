@@ -93,7 +93,7 @@ console.log('\nde bewaartermijn doet wat /privacy §6 belooft');
        Haal je hem hier weg, dan valt de opruimquery om op "no such column".
        Of de nabouw hieronder nog op het échte schema past, test tests/retention.test.mjs
        — die draait tegen schema.sql zelf. */
-    CREATE TABLE orders (id INTEGER PRIMARY KEY, closed_at TEXT, status TEXT NOT NULL DEFAULT 'received');
+    CREATE TABLE orders (id INTEGER PRIMARY KEY, closed_at TEXT, status TEXT NOT NULL DEFAULT 'received', lang TEXT NOT NULL DEFAULT 'en');
     CREATE TABLE files (
       id INTEGER PRIMARY KEY, order_id INTEGER, kind TEXT, r2_key TEXT, preview_key TEXT,
       announced_at TEXT, superseded_at TEXT, expires_at TEXT,
@@ -213,8 +213,11 @@ console.log('\nde getallen op de pagina komen overeen met de code');
        /privacy, en dat het getal uit PORTAL_TTL_DAYS komt. Dus: het getal met
        "days" erachter, in de buurt van het woord waar het over gaat. Dezelfde
        correctie als in planning.test.mjs en legal.test.mjs eerder deze maand. */
+    /* 30 september 2026: het portaal noemt de twee klokken nu apart — de
+       bestanden vanaf levering, de link vanaf afsluiten. Deze check houdt de
+       link-klok vast, in dezelfde woorden als /privacy. */
     check('en het portaal noemt dezelfde looptijd',
-      new RegExp(`(available|beschikbaar)[^<]{0,40}${PORTAL_TTL_DAYS} days`).test(read('dist/portal/index.html')), true);
+      new RegExp(`works for[^<]{0,40}${PORTAL_TTL_DAYS} days`).test(read('dist/portal/index.html')), true);
     /* De cookietermijnen horen bij hetzelfde principe: het cookiebeleid is de
        plek waar wij opschrijven hoe lang een cookie leeft. */
     check(`het cookiebeleid toont de sessieduur (${SESSION_COOKIE_DAYS} dagen)`,
@@ -739,8 +742,11 @@ console.log('\nde korte belofte zegt hetzelfde als de lange, met minder woorden'
      verwachting is. */
   check('kort en noemt geen uurgetal', /\d+\s*(hour|hr)/i.test(turnaroundShort('attended', 'en')), false);
   check('kort nl noemt geen uurgetal', /\d+\s*uur/i.test(turnaroundShort('attended', 'nl')), false);
-  check('kort en zegt dat het vastligt', /fixed the moment you order/i.test(turnaroundShort('attended', 'en')), true);
-  check('kort nl zegt dat het vastligt', /vast zodra je bestelt/i.test(turnaroundShort('attended', 'nl')), true);
+  /* 30 september 2026: bij het bestellen wordt de datum GERESERVEERD; hij ligt
+     pas vast na betaling. De korte vorm noemt het moment van bestellen, dus het
+     woord dat daar hoort is "gereserveerd". */
+  check('kort en zegt dat het vastligt', /reserved when you order/i.test(turnaroundShort('attended', 'en')), true);
+  check('kort nl zegt dat het vastligt', /gereserveerd zodra je bestelt/i.test(turnaroundShort('attended', 'nl')), true);
   /* ── DIT BEWAAKTE HET WOORD "HUMAN" — 17 SEPTEMBER 2026 ────────────────────
      Er stond: de korte controlebelofte moet over MENSEN gaan (/human/ en /hand/).
      Dat was juist zolang de belofte "human-checked" heette. Lucas koos op 25
@@ -826,7 +832,7 @@ console.log('\ngetypte aantallen kloppen nog met de lijsten waar ze over gaan');
   const start = readFileSync(new URL('../src/components/StartPage.astro', import.meta.url), 'utf8');
   if (enS) {
     check(`StartPage zegt "${enS} house styles"`, start.includes(`${enS} house styles`), true);
-    check(`en "${nlS} huisstijlen"`, start.includes(`${nlS} huisstijlen`), true);
+    check(`en "${nlS} vaste looks"`, start.includes(`${nlS} vaste looks`), true);
   }
 }
 

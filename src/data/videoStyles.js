@@ -8,7 +8,7 @@ import { waHref } from './whatsapp.js';
 // grid; the hero/strip photography for each style is real and is wired up
 // directly in the [slug] page template.
 
-import { perProduct, reviewClaim, turnaround, vatLabel } from './pricing.js';
+import { perProduct, vatLabel } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -21,8 +21,8 @@ const VID = perProduct('video', 'en');
 // a flat figure; it just no longer prints it without saying which side of VAT
 // it sits on.
 const VID_VAT = vatLabel('excl', 'en');
-const TIMING = turnaround('unattended', 'en');
-const REVIEW = reviewClaim('unattended', 'en');
+/* Levertijd en controle staan in de feitenrij van de detailpagina, niet
+   meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
 // grid: the 3x3 product-scene grid on each style page.
 function grid(photos, icons) {
@@ -59,7 +59,7 @@ export const videoStyles = [
       'Eight seconds, one product, one clean move — enough to hold the eye, never enough to distract.',
     ],
     steps: [
-      { title: 'Lock the frame', body: 'One clean composition, camera perfectly still.' },
+      { title: 'Lock the frame', body: 'One clean composition, held steady from start to end.' },
       { title: 'Add subtle motion', body: 'Light drift, gentle rotation or reveal.' },
       { title: 'Loop it seamlessly', body: 'The last frame ties back to the first.' },
     ],
@@ -75,7 +75,7 @@ export const videoStyles = [
     ],
     why: [
       { title: 'Movement, nothing more', body: 'A slow pan or a small turn. No music, no cuts, no text on screen.' },
-      { title: 'Every format, one shoot', body: 'Cut for square, portrait and wide from one file.' },
+      { title: 'Vertical as standard', body: '9:16 as standard. Another aspect ratio is on request, agreed in the quote.' },
       { title: 'The right length for a feed', body: '8 seconds, delivered in the aspect ratio Instagram and TikTok use.' },
     ],
     bestFor: [
@@ -87,9 +87,7 @@ export const videoStyles = [
     whatYouGet: [
       '8-second clean product film',
       'Seamless loop, subtle motion',
-      'Format cut for your channel',
-      TIMING,
-      REVIEW,
+      'Vertical 9:16; other ratios on request',
     ],
   },
   {
@@ -109,12 +107,12 @@ export const videoStyles = [
     cardDesc: 'A styled scene, in motion — for social and ads. Fixed price.',
     moodTitle: 'What Lifestyle Video feels like.',
     moodParagraphs: [
-      'A styled scene, let loose: steam rising, light shifting, a model turning toward the lens.',
+      'A styled scene, let loose: steam rising, light shifting, a model turning towards the lens.',
     ],
     steps: [
       { title: 'Build the scene', body: 'Your lifestyle-stills world, brought into motion.' },
       { title: 'Direct light movement', body: 'Natural gesture and light that feels observed.' },
-      { title: 'Cut for the channel', body: "Formatted for wherever it’s going to run." },
+      { title: 'Vertical 9:16', body: 'The standard format. Another ratio on request, agreed in the quote.' },
     ],
     grid: grid(
       [],
@@ -123,7 +121,7 @@ export const videoStyles = [
     craft: [
       { title: 'Story in a breath', body: 'One beat — reveal, use, or mood — in a few seconds.' },
       { title: 'Scene continuity', body: 'Sets, light and models match your lifestyle stills.' },
-      { title: 'Vertical-first direction', body: 'Paced for 9:16 first, 1:1 and 16:9 cuts available.' },
+      { title: 'Vertical-first direction', body: 'Paced for 9:16. 1:1, 16:9 or another ratio on request.' },
       { title: 'Motion with manners', body: 'Smooth and intentional — expensive, not busy.' },
     ],
     why: [
@@ -141,8 +139,6 @@ export const videoStyles = [
       'Short-form styled scene in motion',
       'Continuity with your lifestyle stills',
       'Consistent models available',
-      TIMING,
-      REVIEW,
     ],
   },
   {
@@ -167,7 +163,7 @@ export const videoStyles = [
     steps: [
       { title: 'Agree what the campaign covers', body: 'Shots and files agreed on WhatsApp.' },
       { title: 'Shoot the sequence', body: 'A multi-shot film, graded as one story.' },
-      { title: 'Deliver every cut', body: "Every channel’s format, from one campaign." },
+      { title: 'Deliver', body: 'Vertical 9:16 as standard. Other ratios and the delivery time are agreed in the quote.' },
     ],
     grid: grid(
       [],
@@ -176,12 +172,12 @@ export const videoStyles = [
     craft: [
       { title: 'Your idea, taken seriously', body: 'Shot list and story built to your launch, not a template.' },
       { title: 'Multi-shot construction', body: 'Openers, details, hero moments, end cards — sequenced.' },
-      { title: 'Edit, grade, deliver', body: 'Cuts for feed, stories and site, one shared grade.' },
+      { title: 'Edit, grade, deliver', body: 'One shared grade, in the formats agreed in the quote.' },
       { title: 'A fixed price, up front', body: 'Agreed on WhatsApp. You approve before we start.' },
     ],
     why: [
       { title: 'One partner for the whole campaign', body: 'Stills, motion and every cut, from one conversation.' },
-      { title: 'One grade, every channel', body: 'Consistent colour and mood across every format.' },
+      { title: 'One grade', body: 'Consistent colour and mood across the whole campaign.' },
       { title: 'Priced before you commit', body: 'A clear quote, agreed before any work starts.' },
     ],
     bestFor: [
@@ -192,7 +188,7 @@ export const videoStyles = [
     ],
     whatYouGet: [
       'A scoped, multi-shot campaign film',
-      "Cuts for every channel you’re on",
+      'Vertical 9:16; other ratios agreed in the quote',
       'One grade across your whole campaign',
       'A clear, agreed price before work starts',
     ],
@@ -219,12 +215,12 @@ export const videoStyles = [
     steps: [
       { title: 'You tell us', body: 'Tell us the idea and where it needs to run.' },
       { title: 'Concept', body: 'We design a custom motion concept and agree it with you.' },
-      { title: 'Deliver', body: 'Every cut you need, graded as one.' },
+      { title: 'Deliver', body: 'In the format and the time agreed in the quote, graded as one.' },
     ],
     craft: [
       { title: 'Built from your idea', body: 'No template — the concept starts from what you tell us and the references you send.' },
       { title: 'Agreed before we start', body: 'Shots, length and files agreed up front, priced clearly.' },
-      { title: 'Any format, one grade', body: 'Feed, stories and site cuts, all sharing one look.' },
+      { title: 'One grade', body: 'Vertical 9:16 as standard, other ratios on request — all sharing one look.' },
       { title: 'Consistent with your stills', body: 'Colour and mood matched to your catalog and lifestyle set.' },
     ],
     why: [
@@ -240,7 +236,7 @@ export const videoStyles = [
     ],
     whatYouGet: [
       'A bespoke video concept, designed with you',
-      'Every cut your channels need',
+      'Format and delivery time agreed in the quote',
       'One grade across the whole piece',
       'A clear, agreed price before work starts',
     ],

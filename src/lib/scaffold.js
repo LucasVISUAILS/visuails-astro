@@ -340,9 +340,10 @@ export function briefingText({ order, product }) {
   if (order.voorrang) {
     regels.push('VOORRANG BIJ LEVERING - BETAALD');
     regels.push('-'.repeat(60));
-    regels.push(`Deze bestelling gaat bovenaan de lijst. Streeftijd ${VOORRANG.uren} uur na`);
-    regels.push('bevestiging. Wordt dat niet gehaald, dan gaat de toeslag terug naar');
-    regels.push('de klant en loopt de bestelling gewoon door.');
+    regels.push('Deze bestelling gaat bovenaan de lijst. Betaald op een werkdag voor');
+    regels.push(`${VOORRANG.bestelVoorUur}:00: geleverd de volgende werkdag voor ${VOORRANG.klaarUur}:00. Later betaald: de`);
+    regels.push('werkdag daarna. Niet gehaald, dan gaat de toeslag terug naar de klant');
+    regels.push('en loopt de bestelling gewoon door.');
     regels.push('');
   }
   if (order.notes) {
@@ -485,7 +486,7 @@ function gedeeldeLicentie({ order, lang }) {
   const merk = order.brand || order.name || (nl ? 'de klant' : 'the client');
   const periode = order.ref || (nl ? 'deze maand' : 'this month');
   return nl ? CRLF([
-    'VISUAILS - gebruiksrechten, gedeelde set',
+    'VISUAILS - gebruiksrechten, maandset',
     '='.repeat(60),
     '',
     `Set         ${periode}`,
@@ -525,7 +526,7 @@ function gedeeldeLicentie({ order, lang }) {
     'De volledige voorwaarden: visuails.com/nl/terms (paragraaf 8)',
     '',
   ]) : CRLF([
-    'VISUAILS - usage rights, shared set',
+    'VISUAILS - usage rights, monthly set',
     '='.repeat(60),
     '',
     `Set         ${periode}`,

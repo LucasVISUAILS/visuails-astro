@@ -29,6 +29,7 @@
  * factuur meer maar een rapport.
  */
 
+import { tegoedOpBestelling } from './tegoedVerrekening.js';
 import { renderInvoicePdf } from './invoicePdf.js';
 import { composeAddress } from '../data/address.js';
 import { VAT_TREATMENT } from '../data/vat.js';
@@ -267,9 +268,23 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
    */
   const svc = serviceLabel(order.service, lang) || order.service;
   const n = order.product_count || 1;
-  const label = lang === 'nl'
+  /* ── DE EIGEN LOOK EN DE AANBETALING OP DE FACTUURREGEL — 24 september 2026
+     Lucas: *"Factuurregel met de naam van de eigen look als tweede regel."* De
+     naam staat sinds 4 september in details_json (style_name, gezet door
+     functions/api/order.js als de look van déze klant is), dus hij hoeft hier
+     niet opnieuw opgezocht te worden — en een look die later hernoemd wordt,
+     verandert een uitgegeven factuur niet. Een aanbetaling op een offerte zegt
+     dat in de omschrijving zelf: een factuur die "Eigen look — 1 product" zegt
+     bij een deel van de prijs, leest als de hele. */
+  let d = {};
+  try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
+  const lookNaam = /^cs-\d+$/.test(String(d.style || '')) && d.style_name ? String(d.style_name).slice(0, 80) : '';
+  const aanbetaling = d.quote_kind === 'aanbetaling';
+  const basis = lang === 'nl'
     ? `${svc} — ${n} product${n === 1 ? '' : 'en'}`
     : `${svc} — ${n} product${n === 1 ? '' : 's'}`;
+  const label = aanbetaling ? `${lang === 'nl' ? 'Aanbetaling' : 'Deposit'} · ${basis}` : basis;
+  const detail = lookNaam ? `${lang === 'nl' ? 'Eigen look' : 'Own look'}: ${lookNaam}` : '';
 
   return {
     number,
@@ -284,11 +299,13 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
       country: order.country || null,
       vat: order.vat_number || null,
     },
-    lines: [{ description: label, qty: 1, unitCents: net, totalCents: net }],
+    lines: [{ description: label, ...(detail ? { detail } : {}), qty: 1, unitCents: net, totalCents: net }],
     netCents: net,
     vatRate: Number(order.vat_rate) || 0,
     vatCents: vat,
     grossCents: net + vat,
+    /* Verrekend tegoed (29 september 2026) — zie src/lib/tegoedVerrekening.js. */
+    tegoedCents: tegoedOpBestelling(order),
     treatment: order.vat_treatment || VAT_TREATMENT.standard,
     reference: order.ref,
     paidAt: order.paid_at ? String(order.paid_at).slice(0, 10) : null,
@@ -379,6 +396,10 @@ const FACTUUR_SPELING_CENT = 2;
 
 export async function betalingGedekt(env, order) {
   const bruto = Number(order.total_cents || 0) + Number(order.vat_cents || 0);
+  /* Het tegoed dat op de bestelling is verrekend (29 september 2026) telt als
+     betaald: het is geld dat de klant eerder al betaalde. Zie
+     src/lib/tegoedVerrekening.js. */
+  const tegoed = tegoedOpBestelling(order);
   const rij = await env.DB.prepare(
     `SELECT COALESCE(SUM(amount_cents), 0) AS binnen
        FROM payments
@@ -386,7 +407,7 @@ export async function betalingGedekt(env, order) {
         AND UPPER(COALESCE(currency, 'EUR')) = 'EUR'
         AND status IN ('paid', 'refunded')`
   ).bind(order.id).first();
-  const binnen = Number((rij && rij.binnen) || 0);
+  const binnen = Number((rij && rij.binnen) || 0) + tegoed;
   return { bruto, binnen, gedekt: binnen + FACTUUR_SPELING_CENT >= bruto };
 }
 

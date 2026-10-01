@@ -88,6 +88,12 @@ const post = (path, velden, multipart = false) => {
 };
 const get = (path) => adminGet({ request: new Request(`https://visuails.com${path}`, { headers: { cookie: `vis_admin=${adminToken}` } }), env, waitUntil() {} });
 
+/* "Gaat door": een omleiding, of sinds 24 september 2026 de tussenpagina naar
+   Mollie (naarKassa() in functions/api/order.js) — een 200 met een meta-refresh,
+   omdat form-action 'self' in Chrome ook de redirect na een post blokkeert. */
+const gaatDoor = (res) => (res.status >= 300 && res.status < 400)
+  || (res.status === 200 && /text\/html/.test(res.headers.get('content-type') || ''));
+
 async function bestel(velden, ip = '10.0.0.1') {
   const { onRequestPost } = await import('../functions/api/order.js');
   const fd = new FormData();
@@ -154,12 +160,12 @@ console.log('\n2 · de bestelpagina toont de intake, de offerte gaat de deur uit
   ok('  het nettobedrag staat op de bestelling', o.total_cents, 125000);
   ok('  met btw erover, niet eruit', o.vat_cents, Math.round(125000 * VAT_RATE));
   ok('  en de btw-controle is daarmee gedaan', o.review_state, 'approved');
-  ok('  er is één Mollie-betaling aangemaakt', betalingen.size - voor, 1);
-  const betaling = [...betalingen.values()].pop();
-  ok('  voor het brutobedrag', betaling.amount.value, ((125000 + Math.round(125000 * VAT_RATE)) / 100).toFixed(2));
+  /* Sinds 24 september 2026: de mail linkt naar /api/order-pay (verse betaling
+     per klik), dus bij het versturen wordt er nog niets bij Mollie aangemaakt. */
+  ok('  er is nog geen Mollie-betaling (die komt bij de klik)', betalingen.size - voor, 0);
   const mail = mails().filter((m) => /voorbeeld-volt/.test(JSON.stringify(m.to || ''))).pop();
   ok('  de klant krijgt een mail met "offerte" in het onderwerp', /offerte/i.test(mail?.subject || ''));
-  ok('  en de betaallink erin', /mollie\.com\/checkout/.test(mail?.html || ''));
+  ok('  en de betaallink erin', /\/api\/order-pay\?ref=VIS-[^"&]+&amp;lang=nl|\/api\/order-pay\?ref=VIS-[^"&]+&lang=nl/.test(mail?.html || ''));
   const ev = db.prepare(`SELECT note FROM order_events WHERE order_id = ? ORDER BY id DESC LIMIT 2`).all(aanvraag.id).map((r) => r.note).join(' ');
   ok('  en de tijdlijn zegt het', /Offerte vastgelegd/.test(ev));
 
@@ -225,7 +231,7 @@ console.log('\n4 · bestellen met de eigen look');
 {
   const basis = { ...KLANT, service: 'lifestyle', products: 3, background: 'studio-white' };
   const res = await bestel({ ...basis, style: `cs-${stijl.id}` }, '10.0.0.2');
-  ok('de bestelling gaat door', res.status >= 300 && res.status < 400);
+  ok('de bestelling gaat door', gaatDoor(res));
   const o = db.prepare(`SELECT total_cents, details_json FROM orders ORDER BY id DESC LIMIT 1`).get();
   const d = JSON.parse(o.details_json || '{}');
   ok('  de look staat in het dossier, met naam', [d.style, d.style_name, d.own_style_id], [`cs-${stijl.id}`, 'Rooftop', stijl.id]);
@@ -239,7 +245,7 @@ console.log('\n4 · bestellen met de eigen look');
 
   /* Iemand anders zijn look. */
   const ander = await bestel({ ...basis, email: 'inkoop@voorbeeld-noord.nl', brand: 'NOORD', name: 'Joris Bakker', style: `cs-${stijl.id}` }, '10.0.0.3');
-  ok('met de look van een ander gaat de bestelling door', ander.status >= 300 && ander.status < 400);
+  ok('met de look van een ander gaat de bestelling door', gaatDoor(ander));
   const o2 = db.prepare(`SELECT total_cents, details_json FROM orders ORDER BY id DESC LIMIT 1`).get();
   const d2 = JSON.parse(o2.details_json || '{}');
   ok('  maar zonder die look en zonder toeslag', [d2.style || '', d2.own_style_id || null, o2.total_cents], ['', null, zonder.netCents]);
@@ -247,7 +253,7 @@ console.log('\n4 · bestellen met de eigen look');
   /* Alleen catalog, dan niet bij lifestyle. */
   db.prepare(`UPDATE customer_styles SET service = 'catalog' WHERE id = ?`).run(stijl.id);
   const verkeerd = await bestel({ ...basis, style: `cs-${stijl.id}` }, '10.0.0.4');
-  ok('een catalog-look op een lifestylebestelling gaat door', verkeerd.status >= 300 && verkeerd.status < 400);
+  ok('een catalog-look op een lifestylebestelling gaat door', gaatDoor(verkeerd));
   const d3 = JSON.parse(db.prepare(`SELECT details_json FROM orders ORDER BY id DESC LIMIT 1`).get().details_json || '{}');
   ok('  zonder de look', d3.style || '', '');
 

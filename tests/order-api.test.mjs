@@ -249,9 +249,16 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
       },
       waitUntil: () => {},
     });
+    /* Sinds 24 september 2026 gaat een formulier-post naar Mollie via de
+       tussenpagina (naarKassa() in functions/api/order.js): een 200 met een
+       meta-refresh in plaats van een 303, omdat form-action 'self' in Chrome
+       ook de redirect na een post blokkeert. Het doel staat dan in die refresh. */
+    const ct = res?.headers?.get?.('content-type') || '';
+    const pagina = res?.status === 200 && /text\/html/.test(ct) ? await res.clone().text() : '';
+    const kassa = ((pagina.match(/content="0; url=([^"]+)"/) || [])[1] || '').replace(/&amp;/g, '&');
     return {
       status: res?.status ?? 0,
-      location: res?.headers?.get?.('Location') || '',
+      location: res?.headers?.get?.('Location') || kassa,
       ordersWritten: lastDb._inserted.length,
       payments: seen.filter((c) => c.url.includes('mollie')).length,
       /* Het BEDRAG dat Mollie te zien krijgt, als getal. Dit stond er niet, en
@@ -312,8 +319,9 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
   const klein = await post({ ...base, products: '5' });
   ok('  een bestelling onder de datumdrempel gaat direct naar de Mollie-checkout', klein.location, 'https://pay.mollie.test/tr_TEST');
   const buitenEu = await post({ ...base, country: 'US', email: 'us@merk.com' });
-  ok('een niet-EU-claim krijgt géén betaling (btw-poort, een specialist kijkt eerst)', buitenEu.payments, 0);
-  ok('  en landt op de bedankpagina, niet bij Mollie', /thank-you\?ref=VIS-/.test(buitenEu.location), true, buitenEu.location);
+  /* Sinds 29 september 2026: buiten de EU meteen betalen (0%, zonder iDEAL);
+     de controle zit op het betaalmiddel ná de betaling. */
+  ok('een niet-EU-bestelling krijgt meteen een betaling', buitenEu.payments, 1);
 
   /*
    * ── DE HOEKEN TELLEN ALLEEN ALS ZE AANGEVINKT ZIJN — 9 september 2026 ──────

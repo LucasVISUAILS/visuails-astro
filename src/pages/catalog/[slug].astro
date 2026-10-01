@@ -30,7 +30,7 @@ const zusters = catalogStyles
 /* De beschrijving was één template literal, dus zijn lengte was wat de data er
    toevallig van maakte. metaDescription laat de tier-clausules achterwege in
    plaats van over de 160 te lopen — zie src/data/meta.js. */
-const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
+const TIMING = style.slug === 'custom' ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
 const REVIEW = reviewClaim('unattended', 'en');
 ---
 

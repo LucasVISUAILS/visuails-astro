@@ -2,7 +2,7 @@
 // src/data/styles.js — same shape and exports, only the human-readable
 // strings are translated. Order paths are prefixed with /nl.
 
-import { reviewClaim, turnaround, LIFESTYLE_IMAGES } from './pricing.js';
+import { LIFESTYLE_IMAGES } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -12,8 +12,8 @@ import { reviewClaim, turnaround, LIFESTYLE_IMAGES } from './pricing.js';
 /* Wat een carousel IS, als eerste regel op elke stijlpagina — 4 september 2026.
    Geen van de vier zei hoeveel foto's je krijgt; dat stond alleen op de hub. */
 const SET = `${LIFESTYLE_IMAGES} foto’s per product — sfeer, op een model en detail`;
-const TIMING = turnaround('unattended', 'nl');
-const REVIEW = reviewClaim('unattended', 'nl');
+/* Levertijd en controle staan in de feitenrij van de detailpagina, niet
+   meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
 function grid(photos, icons) {
   const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
@@ -65,8 +65,8 @@ export const styles = [
       { title: 'Gebouwd voor rust', body: 'Een sfeer die het product ondersteunt in plaats van ermee te concurreren.' },
       { title: 'Campagne-flexibel', body: 'Negatieve ruimte die werkt voor advertenties, banners en verpakking.' },
     ],
-    bestFor: ['Premium skincare, sieraden en lederwaren', 'Merken die rust verkopen, geen ruis', 'Campagnes met een ingehouden stem', 'Producten die een galeriebehandeling verdienen'],
-    whatYouGet: [SET, 'Zonovergoten, aardse minimalistische scènes', 'Premium belichting met lange schaduwen', 'Composities met ruimte voor je boodschap', TIMING, REVIEW],
+    bestFor: ['Premium breiwerk, linnen en lederwaren', 'Merken die rust verkopen, geen ruis', 'Campagnes met een ingehouden stem', 'Producten die een galeriebehandeling verdienen'],
+    whatYouGet: [SET, 'Zonovergoten, aardse minimalistische scènes', 'Premium belichting met lange schaduwen', 'Composities met ruimte voor je boodschap'],
   },
   {
     slug: 'flash',
@@ -104,7 +104,7 @@ export const styles = [
       { title: 'Gemaakt voor een lancering', body: 'De look past bij een release, een bijbestelling of een beperkte oplage.' },
     ],
     bestFor: ['Streetwear, sneakers en accessoires', 'Lanceringen en beperkte oplages', 'Merken met een harde, herkenbare stijl', 'Social-advertenties die tussen de rest moeten opvallen'],
-    whatYouGet: [SET, 'Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Consistente modellen, vastgezet op je merk', TIMING, REVIEW],
+    whatYouGet: [SET, 'Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Hetzelfde model door je hele set'],
   },
   {
     slug: 'glow',
@@ -129,9 +129,9 @@ export const styles = [
       'Editorial-merken gebruiken dit licht omdat het alles flatteert wat het raakt. Nu is het een instelling, geen locatieshoot van twee weken.',
     ],
     steps: [
-      { title: 'Jaag op golden hour', body: 'Warm, laaghoekig licht op elk kader, zonder uitzondering.' },
-      { title: 'Style de scène', body: 'Kleding, props en setting die aantrekkelijk aanvoelen, niet in scène gezet.' },
-      { title: 'Grade voor warmte', body: 'Een consistente, editorial kleurafwerking over de hele set.' },
+      { title: 'Het gouden uur', body: 'Warm, laaghoekig licht op elk kader, zonder uitzondering.' },
+      { title: 'Een gestylede set', body: 'Kleding, props en setting die aantrekkelijk aanvoelen, zonder geposeerd te ogen.' },
+      { title: 'Warme kleurafwerking', body: 'Een consistente, editorial kleurafwerking over de hele set.' },
     ],
     grid: grid(
       ['/img/lifestyle-glow-01.webp', '/img/lifestyle-glow-02.webp', '/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp', '/img/lifestyle-glow-05.webp', '/img/lifestyle-glow-06.webp'],
@@ -148,8 +148,8 @@ export const styles = [
       { title: 'Campagnekwaliteit, elke bestelling', body: 'Geen aparte \'hero shot\'-laag — deze afwerking is de standaard.' },
       { title: 'Eén consistente gloed', body: 'Dezelfde warmte over je hele feed, launch na launch.' },
     ],
-    bestFor: ['Beauty, skincare en parfum', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een feed bouwen waar mensen bij willen horen'],
-    whatYouGet: [SET, 'Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elke lifestylefoto', TIMING, REVIEW],
+    bestFor: ['Avondkleding, badmode en statementstukken', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een feed bouwen waar mensen bij willen horen'],
+    whatYouGet: [SET, 'Warme, editorial golden-hour scènes', 'Hetzelfde model door je hele set', 'Campagnekwaliteit-afwerking op elke lifestylefoto'],
   },
   {
     slug: 'phone-made',
@@ -179,15 +179,15 @@ export const styles = [
       { title: 'Geëngineerde imperfectie', body: 'Lichte kanteling, natuurlijke lichtafval, eerlijke schaduwen — elk \'ongelukje\' is bewust geplaatst, zodat het gevonden aanvoelt in plaats van geënsceneerd.' },
       { title: 'Daglichtlogica', body: 'Elke scène houdt zich aan één lichtbron en één tijdstip van de dag. Dat scheidt geloofwaardig van griezelig.' },
       { title: 'Aankleding die fluistert', body: 'Props zijn zo gekozen dat ze niets dateren en van niets afleiden. Het product blijft het luidste in beeld.' },
-      { title: 'Feed-first kadering', body: 'Vooraf gecomponeerd voor 4:5 en 9:16, zodat niets belangrijks sneuvelt in de uitsnede.' },
+      { title: 'Kadrering voor de feed', body: 'Vooraf gecomponeerd voor 4:5 en 9:16, zodat niets belangrijks sneuvelt in de uitsnede.' },
     ],
     why: [
       { title: 'Leest als echt', body: 'Geen studioverklikker — gemaakt om naast UGC te staan zonder ooit op te vallen.' },
       { title: 'Vertrouwen vóór glans', body: 'De look die presteert wanneer een publiek wantrouwig is tegenover alles wat te gestyled is.' },
       { title: 'Meteen goed voor je feed', body: 'Je hoeft er niets meer uit te snijden — de verhouding klopt al zoals je hem krijgt.' },
     ],
-    bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die eerst vertrouwen opbouwen en dan glans', 'Organische content die er niet als advertentie uit mag zien'],
-    whatYouGet: [SET, 'Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', TIMING, REVIEW],
+    bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die eerst vertrouwen willen opbouwen, en pas daarna glans', 'Organische content die er niet als advertentie uit mag zien'],
+    whatYouGet: [SET, 'Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één'],
   },
   {
     slug: 'custom',
@@ -213,7 +213,7 @@ export const styles = [
     ],
     steps: [
       { title: 'Brief', body: 'Deel referenties en de wereld waarin je je product wilt laten leven.' },
-      { title: 'Ontwerp', body: 'We vormen een scène op maat en een stylingrichting, samen met jou gecontroleerd.' },
+      { title: 'Ontwerp', body: 'We vormen een scène op maat en een stylingrichting. Je krijgt één correctieronde, daarna ligt hij vast.' },
       { title: 'Produceer', body: 'Je lifestylefoto’s op maat, consistent van bestelling tot bestelling.' },
     ],
     grid: grid(
@@ -231,7 +231,7 @@ export const styles = [
       'Scène, styling en licht afgestemd op je merk',
       'Consistent bij elke toekomstige bestelling',
       'Een heldere prijs, afgesproken voordat we beginnen',
-      'Eén ontwerpbedrag op schrift; elke carousel daarna tegen het gewone lifestyle-tarief voor dat aantal',
+      'Eén ontwerpbedrag op schrift; elke carrousel daarna tegen het gewone lifestyle-tarief voor dat aantal',
       'Van jou: we gebruiken de look niet voor een ander merk',
       'Daarna een eigen tegel in je account en in het bestelformulier',
     ],

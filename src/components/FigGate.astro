@@ -84,6 +84,10 @@ const nl = lang === 'nl';
 const rows = demoRows(DEMO_ORDER.products, lang);
 const win = demoWindow(DEMO_ORDER.products);
 const small = demoWindow(DEMO_SMALL_PRODUCTS);
+/* Een venster is WINDOW_DAYS OPEN dagen, maar het label toont de eerste en de
+   laatste kalenderdag. Valt er een dichte dag tussen (het weekend in deze
+   demo), dan leest "7 – 10 aug" als vier dagen; de regel zegt dan waarom. */
+const smallDicht = !!small && (Date.parse(small.end) - Date.parse(small.start)) / 86400000 + 1 > WINDOW_DAYS;
 
 /* De eerste en de laatste dag van het venster, zodat de accentrand links één
    doorlopend blok wordt in plaats van twee losse strepen. Berekend en niet
@@ -102,7 +106,7 @@ const C = nl
       side: 'Studiokant',
       badge: 'Voorbeeld met verzonnen gegevens',
       h: 'Wat de datumkiezer vraagt',
-      sub: `${PRODUCTS_PER_DAY} producten per studiodag, waarvan ${QUEUE_FLOOR_PER_DAY} vrij blijven voor kleine bestellingen. Een venster is ${WINDOW_DAYS} open dagen.`,
+      sub: `${PRODUCTS_PER_DAY} producten per studiodag, waarvan ${QUEUE_FLOOR_PER_DAY} vrij blijven voor kleine bestellingen. Een venster is ${WINDOW_DAYS} open studiodagen achter elkaar.`,
       askL: 'De aanvraag',
       askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} producten`,
       unit: (u, c) => `${u} / ${c}`,
@@ -111,11 +115,11 @@ const C = nl
       sOpen: 'Ruimte',
       sWin: 'Venster',
       floorNote: `De laatste ${QUEUE_FLOOR_PER_DAY} van elke dag zijn niet te boeken als venster. Die blijven voor bestellingen die in de normale doorlooptijd draaien.`,
-      leadNote: `De eerste ${LEAD_DAYS} dagen zijn geen productietijd: de producten moeten aankomen en bekeken worden voordat een datum iets betekent.`,
+      leadNote: `Vandaag en de ${LEAD_DAYS} dagen daarna zijn geen productietijd: de foto’s moeten binnen zijn en bekeken worden voordat een datum iets betekent.`,
       verdictL: 'Aangeboden',
-      verdictWhy: `${DEMO_ORDER.products} producten vragen ${perDay} op elke dag van het venster, dus twee dagen die helemaal vrij zijn. Donderdag en vrijdag hebben ruimte, maar niet genoeg — en dan wordt dat venster niet aangeboden.`,
+      verdictWhy: `${DEMO_ORDER.products} producten vragen ${perDay} op elke dag van het venster, dus twee dagen die helemaal vrij zijn. Vrijdag 7 heeft ruimte, maar niet genoeg — en dan wordt dat venster niet aangeboden.`,
       cmpL: 'Zelfde agenda, kleinere bestelling',
-      cmpV: `${DEMO_SMALL_PRODUCTS} producten · ${windowLabel(small, lang)}`,
+      cmpV: `${DEMO_SMALL_PRODUCTS} producten · ${windowLabel(small, lang)}${smallDicht ? ` (${WINDOW_DAYS} open studiodagen achter elkaar; de dagen ertussen zijn dicht)` : ''}`,
       cmpWhy: 'Daarom wordt er in producten geteld en niet in bestellingen: het antwoord hangt af van wat er gemaakt moet worden, niet van hoeveel regels er in de tabel staan.',
       noneNote: 'Past er binnen de horizon niets? Dan krijg je geen datum. Er is met opzet geen "dichtst mogelijke" uitkomst, want dat is de datum die later verzet moet worden.',
     }
@@ -123,7 +127,7 @@ const C = nl
       side: 'Studio side',
       badge: 'Example with made-up data',
       h: 'What the date picker asks',
-      sub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of which stay free for small orders. A window is ${WINDOW_DAYS} open days.`,
+      sub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of which stay free for small orders. A window is ${WINDOW_DAYS} consecutive open studio days.`,
       askL: 'The request',
       askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} products`,
       unit: (u, c) => `${u} / ${c}`,
@@ -132,11 +136,11 @@ const C = nl
       sOpen: 'Room',
       sWin: 'Window',
       floorNote: `The last ${QUEUE_FLOOR_PER_DAY} of every day cannot be booked as a window. They stay for orders running in the normal turnaround.`,
-      leadNote: `The first ${LEAD_DAYS} days are not production time: the products have to arrive and be looked at before a date means anything.`,
+      leadNote: `Today and the ${LEAD_DAYS} days after it are not production time: the photos have to be in and looked at before a date means anything.`,
       verdictL: 'Offered',
-      verdictWhy: `${DEMO_ORDER.products} products ask for ${perDay} on each day of the window, so it needs two days that are completely free. Thursday and Friday have room, but not enough — so that window is not offered.`,
+      verdictWhy: `${DEMO_ORDER.products} products ask for ${perDay} on each day of the window, so it needs two days that are completely free. Friday 7 has room, but not enough — so that window is not offered.`,
       cmpL: 'Same calendar, smaller order',
-      cmpV: `${DEMO_SMALL_PRODUCTS} products · ${windowLabel(small, lang)}`,
+      cmpV: `${DEMO_SMALL_PRODUCTS} products · ${windowLabel(small, lang)}${smallDicht ? ` (${WINDOW_DAYS} open studio days in a row; the days between are closed)` : ''}`,
       cmpWhy: 'This is why it is counted in products and not in orders: the answer depends on what has to be made, not on how many rows are in the table.',
       noneNote: 'If nothing fits inside the horizon, you get no date. There is deliberately no "closest we can do", because that is the date that has to be moved later.',
     };

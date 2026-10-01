@@ -156,7 +156,7 @@ export function stampDeliveryRetention(env, orderId) {
  * status apart moeten opvragen, per bestelling, midden in een verwijderlus.
  */
 export const EXPIRED_FILES_SQL = `
-  SELECT f.id, f.r2_key, f.preview_key, f.kind, f.order_id, o.status AS order_status
+  SELECT f.id, f.r2_key, f.preview_key, f.kind, f.order_id, o.status AS order_status, o.lang AS order_lang
     FROM files f
     JOIN orders o ON o.id = f.order_id
    WHERE (

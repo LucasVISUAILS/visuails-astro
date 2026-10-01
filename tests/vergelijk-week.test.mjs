@@ -70,8 +70,10 @@ for (const w of EN) ok(`en: "${w}"`, compareEn.toLowerCase().includes(w), true);
 for (const w of NL) ok(`nl: "${w}"`, compareNl.toLowerCase().includes(w), true);
 
 console.log('\nen het antwoord erop staat erbij');
-ok('en: wat een bestelling kost aan tijd', /twenty minutes/i.test(compareEn), true);
-ok('nl: idem', /twintig minuten/i.test(compareNl), true);
+/* 24 september 2026: "twintig minuten" sprak de FAQ tegen ("vijf minuten");
+   het antwoord is nu minuten, geen dagen. */
+ok('en: wat een bestelling kost aan tijd', /takes minutes of your time, not days/i.test(compareEn), true);
+ok('nl: idem', /kost je minuten, geen dagen/i.test(compareNl), true);
 
 /* ── EN DE HOMEPAGE ZEGT HET NIET NOG EEN KEER ─────────────────────────────
  *

@@ -63,9 +63,20 @@
 import { isEu, HOME_COUNTRY } from './vat.js';
 
 /** De versie die op de bestelling wordt vastgelegd. Voeg toe; wijzig nooit. */
-export const BUSINESS_VERSION = 'business-v1-2026-08';
+/* ── v2: ÉÉN VINKJE IN PLAATS VAN TWEE — 30 september 2026 ──────────────────
+   Lucas: "samenvoegen". De zakelijke verklaring draagt nu ook de terugval van
+   de herroepingsverklaring (art. 6:230p sub f BW): blijkt de klant toch een
+   consument, dan vraagt hij met dezelfde zin uitdrukkelijk om te beginnen en
+   weet hij dat zijn herroepingsrecht bij levering vervalt. De twee elementen
+   die de wet vraagt staan er woordelijk in. v1 blijft staan voor oude
+   bestellingen. Zie MERGED_WITHDRAWAL_VERSION in consent.js. */
+export const BUSINESS_VERSION = 'business-v2-2026-09';
 
 export const BUSINESS_TEXT = {
+  'business-v2-2026-09': {
+    en: 'I am ordering for a business or profession and not as a consumer; VISUAILS supplies businesses only. Should consumer law apply to me after all, I expressly ask VISUAILS to begin work on this order now and understand that I lose my right of withdrawal once it has been delivered.',
+    nl: 'Ik bestel voor mijn bedrijf of beroep en niet als particulier; VISUAILS levert uitsluitend zakelijk. Mocht het consumentenrecht toch op mij van toepassing zijn, dan vraag ik VISUAILS uitdrukkelijk om nu met deze bestelling te beginnen en begrijp ik dat ik mijn herroepingsrecht verlies zodra ze geleverd is.',
+  },
   'business-v1-2026-08': {
     en: 'I am ordering on behalf of a business or profession, and not as a consumer. '
       + 'VISUAILS supplies businesses only.',
@@ -162,8 +173,18 @@ export function businessCheck({
   } else {
     // Buiten de EU. Wij kunnen niets controleren, dus is het registratienummer
     // vastlegging en geen verificatie. Zonder nummer draagt de verklaring alles.
-    bewijs = heeftReg;
-    if (!heeftReg) reasons.push('klant buiten de EU zonder registratienummer');
+    //
+    // ── DE VERKLARING IS HIER HET BEWIJS — 29 september 2026 ────────────────
+    // Lucas: *"een bedrijf in amerika als voorbeeld [moet] alsnog kan bestellen
+    // omdat deze geen btw nummer kennen."* Hier stond `bewijs = heeftReg`, en
+    // een Amerikaans bedrijf zonder nummer ging daardoor op de beoordelingslijst
+    // en kon niet meteen betalen. Dat was ook nooit de afspraak: "hard in de EU,
+    // VERKLARING WERELDWIJD" (12 augustus). Het nummer blijft welkom en wordt
+    // vastgelegd; het ontbreken ervan is geen reden meer. Wat buiten de EU wél
+    // gecontroleerd wordt — een Nederlandse klant die "Verenigde Staten" kiest om
+    // 21% te ontlopen — gebeurt na de betaling, op het land van de kaart of de
+    // bank (zie paymentMismatch() in src/data/vat.js).
+    bewijs = true;
   }
 
   if (!declared) reasons.push('de zakelijke verklaring is niet aangevinkt');
@@ -171,7 +192,7 @@ export function businessCheck({
   // `noVat` alleen is geen reden: het vinkje betekent "ik heb er geen", en dat
   // is een geldig antwoord voor een eenmanszaak en voor iedereen buiten de EU.
   // Het staat hier omdat het WEL uitmaakt of er dan iets anders is ingevuld.
-  if (noVat && !heeftReg && !kvkOk) {
+  if (noVat && !heeftReg && !kvkOk && kind !== REG_KIND.other) {
     reasons.push('geen btw-nummer en geen registratienummer');
   }
 

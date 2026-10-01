@@ -96,7 +96,7 @@ const c = nl ? {
      src/data/shots.js. Deze regel zei nog "de close-up is optioneel" op de
      pagina die uitlegt wát je moet sturen — de gevaarlijkste plek om dat te
      laten staan, want hier maakt iemand zijn foto's. */
-  setNoot: ['De eerste drie zijn verplicht. De draagfoto is aan jou.', ''],
+  setNoot: ['Verplicht zijn de voorkant, de achterkant en één close-up. Een aparte stoffoto en de draagfoto zijn aan jou.', ''],
 
   slotEtiket: 'Klaar om te sturen',
   slotH: 'Foto klaar? Stuur hem in.',
@@ -151,7 +151,7 @@ const c = nl ? {
     ['Worn for fit', 'For the real fit.'],
   ],
   /* Zie de Nederlandse tegenhanger. */
-  setNoot: ['The first three are required. The worn shot is up to you.', ''],
+  setNoot: ['Required: the front, the back and one close-up. A separate fabric shot and the worn shot are up to you.', ''],
 
   slotEtiket: 'Ready to send',
   slotH: 'Got a photo ready? Let’s see it transformed.',
@@ -210,7 +210,7 @@ import '../styles/stijl22.css';
       titel={nl ? 'Welke foto welk beeld wordt' : 'Which photo becomes which image'} />
   </section>
 
-  <section class="paneel ug-regels">
+  <section class="paneel vervolg ug-regels">
     <div class="ug-twee">
       <div class="ug-vak">
         <h2 class="hoog hoog-3">{c.welH}</h2>
@@ -326,14 +326,11 @@ import '../styles/stijl22.css';
   .ug-twee { display: grid; gap: clamp(1.2rem, 3vw, 2.2rem); }
   @media (min-width: 820px) { .ug-twee { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-  .ug-vak {
-    padding: clamp(1.4rem, 3vw, 2.2rem);
-    border: 1px solid var(--lijn);
-    border-radius: calc(var(--ronding) - 12px);
-    background: var(--wit);
-  }
-  /* "Minder" is een lagere ondergrond, geen andere kleur. */
-  .ug-vak-uit { background: transparent; }
+  /* ── TWEE KOLOMMEN, GEEN TWEE KAARTEN — 1 oktober 2026 ─────────────────
+     Wel doen / vermijden stonden in twee omkaderde vakken binnen het paneel:
+     informatie in een kaart in een kaart. Nu twee kolommen onder een haarlijn,
+     met dezelfde linkerlijn als de kop van het paneel. */
+  .ug-vak { padding-top: clamp(1.2rem, 2.4vw, 1.6rem); border-top: 1px solid var(--lijn); }
   .ug-vak h2 { margin: 0 0 1.2rem; }
 
   .ug-lijst { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 0; }

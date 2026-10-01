@@ -102,7 +102,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
   // Vormfout: nooit de database aanraken. Zelfde afspraak als
   // isWellFormedToken() voor de portal — de goedkoopste afwijzing is de eerste.
-  if (!REF_SHAPE.test(raw)) return json({ cancelled: false, kind: null, paid: false, payable: false });
+  if (!REF_SHAPE.test(raw)) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false });
 
   const ref = raw.toUpperCase();
 
@@ -113,7 +113,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const gate = await checkRate(env, { ip: clientIp(request), action: 'order-status', limit: LIMIT });
   if (typeof waitUntil === 'function' && shouldSweep()) waitUntil(sweepRateLimits(env));
   if (!gate.allowed) {
-    return json({ cancelled: false, kind: null, paid: false, payable: false }, 429, {
+    return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false }, 429, {
       'retry-after': String(Math.max(1, gate.retryAfter || 1)),
     });
   }
@@ -125,7 +125,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   // — checkCancelled() behandelt elke niet-ok als "niets tonen" — maar het
   // verschil tussen "niet geannuleerd" en "ik kon niet kijken" blijft bestaan,
   // en dat verschil staat in de logs.
-  if (!env?.DB) return json({ cancelled: false, kind: null, paid: false, payable: false }, 503, { 'cache-control': 'no-store' });
+  if (!env?.DB) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false }, 503, { 'cache-control': 'no-store' });
 
   /* ── OOK `paid` EN `payable` — 19 september 2026 ───────────────────────────
    *
@@ -156,12 +156,22 @@ export async function onRequestGet({ request, env, waitUntil }) {
     }
   } catch (err) {
     console.error('[order-status]', err && err.message ? err.message : err);
-    return json({ cancelled: false, kind: null, paid: false, payable: false }, 503, { 'cache-control': 'no-store' });
+    return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false }, 503, { 'cache-control': 'no-store' });
   }
 
   // Onbekende referentie: hetzelfde antwoord als een niet-geannuleerde. Zie de
   // noot over het orakel hierboven.
-  if (!row) return json({ cancelled: false, kind: null, paid: false, payable: false });
+  if (!row) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false });
+
+  /* De laatste betaalpoging, als die er is. Mislukt/afgebroken/verlopen: dan
+     hoeft de bedankpagina niet tien seconden op de bank te wachten. */
+  let failed = false;
+  try {
+    const last = await env.DB.prepare(
+      'SELECT p.status FROM payments p JOIN orders o ON o.id = p.order_id WHERE o.ref = ?1 ORDER BY p.id DESC LIMIT 1'
+    ).bind(ref).first();
+    failed = !!last && ['failed', 'canceled', 'expired'].includes(String(last.status));
+  } catch { /* geen payments-tabel: dan weten we het niet */ }
 
   const cancelled = row.status === 'cancelled';
   const reason = typeof row.cancel_reason === 'string' ? row.cancel_reason : '';
@@ -175,6 +185,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     kind: cancelled && PUBLIC_REASONS.has(reason) ? reason : null,
     paid,
     payable,
+    failed: !paid && failed,
   });
 }
 

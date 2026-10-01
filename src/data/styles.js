@@ -3,7 +3,7 @@
 // the /lifestyle/[slug] template (src/pages/lifestyle/[slug].astro) so
 // every style page is one shared data source.
 
-import { reviewClaim, turnaround, LIFESTYLE_IMAGES } from './pricing.js';
+import { LIFESTYLE_IMAGES } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -13,8 +13,8 @@ import { reviewClaim, turnaround, LIFESTYLE_IMAGES } from './pricing.js';
 /* Wat een carousel IS, als eerste regel op elke stijlpagina — 4 september 2026.
    Geen van de vier zei hoeveel foto's je krijgt; dat stond alleen op de hub. */
 const SET = `${LIFESTYLE_IMAGES} photos per product — scene, on-model and detail`;
-const TIMING = turnaround('unattended', 'en');
-const REVIEW = reviewClaim('unattended', 'en');
+/* Levertijd en controle staan in de feitenrij van de detailpagina, niet
+   meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
 // grid: the 3x3 product-scene grid on each style page. `photo` is a real
 // asset path when the source page used one, otherwise null (renders the
@@ -69,8 +69,8 @@ export const styles = [
       { title: 'Built for stillness', body: 'A mood that supports the product instead of competing with it.' },
       { title: 'Campaign-flexible', body: 'Negative space that works for ads, banners and packaging alike.' },
     ],
-    bestFor: ['Premium skincare, jewellery and leather goods', 'Brands selling calm, not noise', 'Campaigns with an understated voice', 'Products that deserve gallery treatment'],
-    whatYouGet: [SET, 'Sun-washed, earthy minimalist scenes', 'Long-shadow premium lighting', 'Compositions with space for messaging', TIMING, REVIEW],
+    bestFor: ['Premium knitwear, linen and leather goods', 'Brands selling calm, not noise', 'Campaigns with an understated voice', 'Products that deserve gallery treatment'],
+    whatYouGet: [SET, 'Sun-washed, earthy minimalist scenes', 'Long-shadow premium lighting', 'Compositions with space for messaging'],
   },
   {
     slug: 'flash',
@@ -108,7 +108,7 @@ export const styles = [
       { title: 'Made for a launch', body: 'The look suits a release, a restock or a limited run.' },
     ],
     bestFor: ['Streetwear, sneakers and accessories', 'Drops, launches and hype moments', 'Brands with an edge to keep', 'Social ads that need to stop thumbs'],
-    whatYouGet: [SET, 'High-energy flash-lit scenes', 'Deep, deliberate shadow work', 'Consistent models, locked to your brand', TIMING, REVIEW],
+    whatYouGet: [SET, 'High-energy flash-lit scenes', 'Deep, deliberate shadow work', 'The same model through your whole set'],
   },
   {
     slug: 'glow',
@@ -146,8 +146,8 @@ export const styles = [
       { title: 'Campaign-grade, every order', body: "There is no upgrade to buy for a hero shot — this finishing is the standard." },
       { title: 'One consistent glow', body: 'The same warmth across your whole feed, launch after launch.' },
     ],
-    bestFor: ['Beauty, skincare and fragrance', 'Fashion that sells a feeling', 'Campaigns and launches that need atmosphere', 'Brands building an aspirational feed'],
-    whatYouGet: [SET, 'Warm, editorial golden-hour scenes', 'Consistent models, locked to your brand', 'Campaign-grade finishing on every image', TIMING, REVIEW],
+    bestFor: ['Eveningwear, swimwear and statement pieces', 'Fashion that sells a feeling', 'Campaigns and launches that need atmosphere', 'Brands building an aspirational feed'],
+    whatYouGet: [SET, 'Warm, editorial golden-hour scenes', 'The same model through your whole set', 'Campaign-grade finishing on every image'],
   },
   {
     slug: 'phone-made',
@@ -185,7 +185,7 @@ export const styles = [
       { title: 'Already the right shape for a feed', body: 'Delivered in the aspect ratio Instagram uses, so you do not have to crop it yourself.' },
     ],
     bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn’t look like ads"],
-    whatYouGet: [SET, 'Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one', TIMING, REVIEW],
+    whatYouGet: [SET, 'Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one'],
   },
   {
     slug: 'custom',
@@ -211,7 +211,7 @@ export const styles = [
     ],
     steps: [
       { title: 'Brief', body: 'Share references and the world you want your product to live in.' },
-      { title: 'Design', body: 'We shape a bespoke scene and styling direction, checked with you.' },
+      { title: 'Design', body: 'We shape a bespoke scene and styling direction. You get one correction round, then it is locked.' },
       { title: 'Produce', body: 'Your custom lifestyle images, consistent from order to order.' },
     ],
     grid: grid(

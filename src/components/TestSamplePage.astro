@@ -56,7 +56,7 @@ interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const nl = lang === 'nl';
 /* De namen van de betaalmethoden van de proef, zoals Mollie ze zelf noemt. */
-const METHODE_NAAM: Record<string, string> = { ideal: 'iDEAL', bancontact: 'Bancontact', creditcard: nl ? 'creditcard' : 'credit card' };
+const METHODE_NAAM: Record<string, string> = { ideal: 'iDEAL', bancontact: 'Bancontact', creditcard: nl ? 'creditcard' : 'card' };
 const lp = (p: string) => localizedPath(lang, p);
 const SAMPLE = nl ? TEST_SAMPLE.nl : TEST_SAMPLE.en;
 const TIMING = turnaround('unattended', lang);
@@ -64,8 +64,8 @@ const TIMING = turnaround('unattended', lang);
 const c = nl ? {
   etiket: 'Probeer VISUAILS',
   h1: ['Test VISUAILS met ', '1 product'],
-  lead: `Stuur een voor- en achterkant, en je krijgt ${SAMPLE.deliverable} terug. Precies wat een betaalde bestelling oplevert.`,
-  pillen: [`${CATALOG_IMAGES} foto’s, of ${LIFESTYLE_IMAGES}`, `Slechts ${SAMPLE.price}`, 'Met de hand gecontroleerd'],
+  lead: `Stuur een voorkant, een achterkant en één close-up, en je krijgt ${SAMPLE.deliverable} terug. Precies wat een betaalde bestelling oplevert.`,
+  pillen: [`${CATALOG_IMAGES} foto’s, of ${LIFESTYLE_IMAGES}`, `Slechts ${SAMPLE.price}`, 'Gecontroleerd door een specialist'],
 
   /* ── ZES VINKJES WAREN ER DRIE — 10 september 2026 ─────────────────────────
      Lucas: *"ik wil de test sample zo kort mogelijk en compact mogelijk
@@ -94,7 +94,7 @@ const c = nl ? {
   stapEtiket: 'Van foto naar set',
   stapKop: 'Hoe de proef werkt',
   stappen: [
-    ['Upload je productfoto’s', 'Voorkant en achterkant in elk geval.'],
+    ['Upload je productfoto’s', 'Een voorkant, een achterkant en één close-up.'],
     ['Kies een stijl', 'Of laat ons kiezen.'],
     ['Wij maken het', 'Gecontroleerd door een specialist.'],
     ['Keur goed en download', `Je afgewerkte foto’s staan in VISUAILS Studio, met de link in je mail — ${TIMING.toLowerCase()}.`],
@@ -116,7 +116,7 @@ const c = nl ? {
      de radio is verplicht, dus dit haalt alleen iemand die met de hand post —
      maar dan hoort er een zin te staan en geen stilte. */
   weigerSoortKop: 'Kies eerst wat we gaan maken.',
-  weigerSoort: 'Een catalogset of een lifestyle-carousel — dat is ander werk, dus we kunnen er niet één van kiezen. Zet het hieronder aan en stuur het opnieuw.',
+  weigerSoort: 'Een catalogset of een lifestylecarrousel — dat is ander werk, dus we kunnen er niet één van kiezen. Zet het hieronder aan en stuur het opnieuw.',
 
   modelVouw: 'De foto op een model',
   modelStand: 'wij kiezen er een',
@@ -138,8 +138,8 @@ const c = nl ? {
 } : {
   etiket: 'Test sample',
   h1: ['Test VISUAILS with ', '1 product'],
-  lead: `Send a front and a back, and get ${SAMPLE.deliverable} back. Exactly what a paid order delivers.`,
-  pillen: [`${CATALOG_IMAGES} photos, or ${LIFESTYLE_IMAGES}`, `Just ${SAMPLE.price}`, 'Human quality-checked'],
+  lead: `Send a front, a back and one close-up, and get ${SAMPLE.deliverable} back. Exactly what a paid order delivers.`,
+  pillen: [`${CATALOG_IMAGES} photos, or ${LIFESTYLE_IMAGES}`, `Just ${SAMPLE.price}`, 'Checked by a specialist'],
 
   /* Zie de Nederlandse tegenhanger. */
   krijg: [
@@ -153,7 +153,7 @@ const c = nl ? {
   stapEtiket: 'From photo to set',
   stapKop: 'How the sample works',
   stappen: [
-    ['Upload your product photos', 'Front and back at least.'],
+    ['Upload your product photos', 'A front, a back and one close-up.'],
     ['Choose a style', 'Or let us choose.'],
     ['We create it', 'Checked by a specialist.'],
     ['Approve and download', `Your finished images land in VISUAILS Studio, with the link in your email — ${TIMING.toLowerCase()}.`],
@@ -219,8 +219,8 @@ const vink = 'M20 6L9 17l-5-5';
       <h1 class="hoog">{c.h1[0]}<em>{c.h1[1]}</em></h1>
       <p class="lopend">{c.lead}</p>
     </div>
-    <ul class="ts-pillen" role="list">
-      {c.pillen.map((p) => <li class="mono">{p}</li>)}
+    <ul class="ts-pillen feiten" role="list">
+      {c.pillen.map((p) => <li>{p}</li>)}
     </ul>
   </section>
 
@@ -432,11 +432,8 @@ const vink = 'M20 6L9 17l-5-5';
 
 <style>
   .ts-open { padding-block: clamp(2.5rem, 6vw, 5rem); }
-  .ts-pillen { display: flex; flex-wrap: wrap; gap: .6rem; list-style: none; padding: 0; margin: 2rem 0 0; }
-  .ts-pillen li {
-    padding: .4rem .9rem; border: 1px solid var(--lijn-sterk); border-radius: 999px;
-    color: var(--inkt-2); font-size: .75rem;
-  }
+  /* De pillen zijn een lijst geworden (1 oktober 2026): zie .feiten in stijl22.css. */
+  .ts-pillen { margin-top: 2rem; }
 
   .ts-twee { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: center; }
   /* ── HET BEELD BEPAALT DE HOOGTE NIET MEER — 10 september 2026 ──────────
@@ -542,6 +539,7 @@ const vink = 'M20 6L9 17l-5-5';
   .ts-weigeringen:not(:has(.ts-refused:not([hidden]))) { display: none; }
   .ts-weigeringen { padding-inline: var(--rand, 0); }
   .ts-refused:not([hidden]) {
+    scroll-margin-top: 6rem;
     display: grid; gap: .5rem;
     margin-top: 1.6rem;
     padding: clamp(1.2rem, 2.5vw, 1.8rem);

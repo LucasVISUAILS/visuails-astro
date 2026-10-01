@@ -92,7 +92,9 @@ import {
   WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause,
   CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
   STOCK_OFF_BRAND, STOCK_ON_BRAND, PLAN_ROLLOVER_MONTHS, VIDEO_OP_AANVRAAG,
+  PLAN_AMOUNT, CUSTOM_CREDITS_MIN, customCreditsTotal,
 } from '../data/pricing.js';
+import { TERMS } from '../data/plans.js';
 /* ── HET ETIKET DAT ZEGT OF JE IETS MOET OPSTUREN — 10 september 2026 ────────
    Lucas' idee, en het is de eerste vraag die een bezoeker op deze pagina heeft
    zonder dat hij ergens staat. Eén bron voor het feit én voor het woord, in
@@ -109,7 +111,13 @@ const lp = (p: string) => localizedPath(lang, p);
 
 const sample = TEST_SAMPLE[lang];
 const planList = plans(lang);
-const planFrom = planList[0];
+/* "Vanaf" is het laagste bedrag dat je voor een abonnement kunt betalen
+   (24 september 2026). Dat is het kleinste plan op maat en niet Starter: hier
+   stond "vanaf €390" terwijl een eigen aantal credits lager begint. */
+const maatVanafBedrag = customCreditsTotal(CUSTOM_CREDITS_MIN).total;
+const planFrom = maatVanafBedrag < PLAN_AMOUNT.starter
+  ? { ...planList[0], price: euro(maatVanafBedrag, lang) }
+  : planList[0];
 const t0 = TIERS.unattended;
 
 /* De foto op elke deur, met de ECHTE afmeting van het bestand op schijf — niet
@@ -212,7 +220,7 @@ const COPY = {
         name: 'Catalog',
         where: 'On your product page',
         gets: `From ${CATALOG_IMAGES} images per product — front, back, a detail and one on model`,
-        line: 'Clean ground, same framing and light on every product, so a whole range reads as one line.',
+        line: 'Clean background, same framing and light on every product, so a whole range reads as one line.',
         unit: `a product, ${vatLabel('excl', 'en')}`,
         cta: 'Start this order',
         read: '/catalog',
@@ -272,7 +280,7 @@ const COPY = {
         gets: 'A short vertical clip built on a format that already works',
         line: 'Two frames that read as one, cut to stop a thumb. Built on a format we have used before rather than invented per order.',
         fig: euro(AMOUNT.hooks, 'en'),
-        unit: `a product, ${vatLabel('excl', 'en')}`,
+        unit: `a hook, ${vatLabel('excl', 'en')}`,
         vanaf: true,
         cta: 'Talk about Hooks',
         read: '/hooks',
@@ -347,12 +355,12 @@ const COPY = {
 
     afterH: 'What happens after you press it',
     afterLead: 'Video and custom work start with a short brief; we reply with a price and a date.',
-    steps: ['Order', 'Material', 'Your details', 'Timing', 'Confirm'],
+    steps: ['Order', 'Your photos', 'Your details', 'Timing', 'Confirm'],
     facts: [
       /* 19 september 2026: het formulier eindigt in de checkout (besluit 1) en
          de datum kies je zelf uit dagkaarten (besluit 3). */
       ['You pay at the end', 'Nothing is charged before the checkout.'],
-      ['You pick the delivery date yourself', `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: you pick a fixed date.`],
+      [`From ${WINDOW_THRESHOLD} products, you pick the date`, `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: you pick a date, reserved when you order and fixed once you pay.`],
       ['Then you approve image by image', 'Approve, ask for a change, download.'],
     ],
 
@@ -362,7 +370,7 @@ const COPY = {
       {
         h: 'Your own face',
         name: 'Brand Model',
-        body: 'A face designed for your brand only, in every order after this one. Without it, a standard face is included.',
+        body: 'A face designed for your brand only, the same from order to order; per order you choose whether to use it. Without it, a standard face is included.',
         fig: euro(AMOUNT.brandModel, 'en'),
         unit: `one-time, ${vatLabel('excl', 'en')}`,
         cta: 'Fill in the brief',
@@ -373,7 +381,7 @@ const COPY = {
     ],
 
     payH: 'Or pay for it monthly instead',
-    payLine: `Credits every month for catalog, lifestyle and video, with fixed production days. Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month.`,
+    payLine: `Credits every month for catalog, lifestyle and video, in a fixed week that starts on the day you pick. Unused credits roll over ${PLAN_ROLLOVER_MONTHS} month (${TERMS.yearly.rollover} on the 12-month term).`,
     payCta: 'Start a plan',
     payCta2: 'Compare the plans',
 
@@ -413,7 +421,7 @@ const COPY = {
       /* Zie de Engelse variant hierboven voor waarom deze as veranderde. */
       { id: 'alles', naam: 'Alle diensten', kort: 'Alles wat we maken' },
       { id: 'foto', naam: 'Productfoto’s', kort: 'Op je productpagina' },
-      { id: 'sfeer', naam: 'Lifestyle beelden', kort: 'In je feed en je advertenties' },
+      { id: 'sfeer', naam: 'Lifestyle-beelden', kort: 'In je feed en je advertenties' },
       { id: 'video', naam: 'Productvideo’s', kort: 'Hetzelfde, maar bewegend' },
     ],
 
@@ -455,8 +463,8 @@ const COPY = {
         href: '/lifestyle#looks',
         name: 'Lifestyle',
         where: 'In je feed en je advertenties',
-        gets: `${LIFESTYLE_IMAGES} foto’s per product — één gestylede look, als carousel te plaatsen`,
-        line: 'Hetzelfde product in een scène waar iemand in wil stappen, in een van vier huisstijlen, of in je eigen.',
+        gets: `${LIFESTYLE_IMAGES} foto’s per product — één gestylede look, als carrousel te plaatsen`,
+        line: 'Hetzelfde product in een scène waar iemand in wil stappen, in een van vier vaste looks, of in je eigen.',
         unit: `per product, ${vatLabel('excl', 'nl')}`,
         cta: 'Start deze bestelling',
         read: '/lifestyle',
@@ -471,7 +479,7 @@ const COPY = {
         gets: 'Een korte verticale clip op een format dat al werkt',
         line: 'Twee beelden die als één lezen, gemonteerd om een duim te stoppen. Gebouwd op een format dat we eerder gebruikt hebben in plaats van per bestelling bedacht.',
         fig: euro(AMOUNT.hooks, 'nl'),
-        unit: `per product, ${vatLabel('excl', 'nl')}`,
+        unit: `per hook, ${vatLabel('excl', 'nl')}`,
         vanaf: true,
         cta: 'Praat over Hooks',
         read: '/hooks',
@@ -514,14 +522,14 @@ const COPY = {
         href: '/start/custom-look',
         name: 'Foto’s op maat',
         where: 'Een look die er nog niet is',
-        gets: 'Een look die om jouw product heen gebouwd wordt in plaats van gekozen uit de huisstijlen',
-        line: 'Heb je iets in gedachten dat hier niet staat? Het wordt ontworpen en niet gekozen, dus het begint met een korte brief en een antwoord op schrift.',
+        gets: 'Een look die om jouw product heen gebouwd wordt in plaats van gekozen uit de vaste looks',
+        line: 'Heb je iets in gedachten dat hier niet staat? Het wordt ontworpen en niet gekozen, dus het begint met een korte briefing en een antwoord op schrift.',
         fig: 'Op aanvraag',
         unit: 'geen standaardtarief',
         later: true,
         cta: 'Zeg wat je wilt laten maken',
         read: '/lifestyle',
-        readCta: 'Bekijk de huisstijlen',
+        readCta: 'Bekijk de vaste looks',
       },
       {
         id: 'video-custom',
@@ -545,11 +553,11 @@ const COPY = {
     ladderCta: 'Bekijk de volledige prijslijst',
 
     afterH: 'Wat er gebeurt nadat je erop drukt',
-    afterLead: 'Video en maatwerk beginnen met een korte brief; wij antwoorden met een prijs en een datum.',
+    afterLead: 'Video en maatwerk beginnen met een korte briefing; wij antwoorden met een prijs en een datum.',
     steps: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
     facts: [
       ['Je betaalt aan het eind', 'Er wordt niets afgeschreven vóór de checkout.'],
-      ['De leverdatum kies je zelf', `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: je kiest een vaste datum.`],
+      [`Vanaf ${WINDOW_THRESHOLD} producten kies je de datum`, `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: je kiest een datum, gereserveerd zodra je bestelt en vast zodra je betaalt.`],
       ['Daarna keur je beeld voor beeld goed', 'Goedkeuren, een aanpassing vragen, downloaden.'],
     ],
 
@@ -559,10 +567,10 @@ const COPY = {
       {
         h: 'Je eigen gezicht',
         name: 'Merkmodel',
-        body: 'Een gezicht alleen voor jouw merk, in elke bestelling hierna. Zonder merkmodel zit er een standaardgezicht bij.',
+        body: 'Een gezicht alleen voor jouw merk, hetzelfde van bestelling tot bestelling; per bestelling kies je of je het gebruikt. Zonder merkmodel zit er een standaardgezicht bij.',
         fig: euro(AMOUNT.brandModel, 'nl'),
         unit: `eenmalig, ${vatLabel('excl', 'nl')}`,
-        cta: 'Vul de brief in',
+        cta: 'Vul de briefing in',
         cta2: 'Bekijk wat een merkmodel is',
         href: '/start/brand-model',
         href2: '/custom-models',
@@ -570,7 +578,7 @@ const COPY = {
     ],
 
     payH: 'Of betaal er maandelijks voor',
-    payLine: `Elke maand credits voor catalog, lifestyle en video, met vaste productiedagen. Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door.`,
+    payLine: `Elke maand credits voor catalog, lifestyle en video, in een vaste week die begint op de dag die jij kiest. Ongebruikte credits schuiven ${PLAN_ROLLOVER_MONTHS} maand door (${TERMS.yearly.rollover} op de termijnen van twaalf maanden).`,
     payCta: 'Sluit een abonnement af',
     payCta2: 'Vergelijk de abonnementen',
 
@@ -783,9 +791,9 @@ const nl = lang === 'nl';
     <div class="st-onder">
       <p class="lopend st-ladder">{c.ladderLine} <a class="st-link" href={lp('/pricing')}>{c.ladderCta}</a></p>
       {laterDeuren.length > 0 && (
-        <p class="lopend st-ook">{nl ? 'Ook, nog niet te bestellen:' : 'Also, not orderable yet:'} {laterDeuren.map((d, i) => <>{i > 0 && ' · '}<a class="st-link" href={lp(d.read)}>{d.name}</a></>)}</p>
+        <p class="lopend st-ook">{laterDeuren.map((d, i) => <>{i > 0 && ' · '}<a class="st-link" href={lp(d.read)}>{d.name}</a> {d.id === 'hooks' ? (nl ? '(op aanvraag)' : '(on request)') : (nl ? '(binnenkort)' : '(coming soon)')}</>)}</p>
       )}
-      <p class="st-btw">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
+      <p class="st-btw">{vatLead(lang)} <Note lang={lang} term={lang === 'nl' ? vatLabel('excl', lang) : 'VAT'} wide>{vatDetail(lang)}</Note></p>
     </div>
   </section>
 

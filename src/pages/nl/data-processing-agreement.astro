@@ -51,10 +51,13 @@ import '../../styles/stijl22.css';
 //
 // ── WAT ER MET OPZET NIET IN STAAT ──────────────────────────────────────────
 //
-// Geen enkel modelnaam. De AVG gaat over WIE de gegevens ontvangt, niet over welk
-// gereedschap die partij gebruikt. De ontvanger is Freepik Company S.L.U.; welk
-// van de tientallen modellen op dat platform de kwaliteit maakt, is een
-// bedrijfsgeheim en staat in geen enkel wetsartikel.
+// Geen modelnaam op de pagina: het model wisselt, en onze ontvanger is Freepik
+// Company S.L.U. Maar de AANBIEDER van dat model is wél een subverwerker van
+// Freepik (Freepik zegt zelf dat die het beeld tot 30 dagen bewaart), en art. 28
+// lid 2 en 4 gaan over de hele keten. Daarom sinds 29 september 2026: op verzoek
+// binnen vijf werkdagen naam en vestiging van de aanbieders die voor jouw
+// bestellingen zijn gebruikt. Het "welk model, dat zeggen we niet" van eerder
+// hield dat tegen, en dat is precies de vraag die een verantwoordelijke mag stellen.
 //
 // Geen ISO-certificering, geen pentest, geen ISMS. §7 noemt alleen maatregelen
 // die in deze repository aan te wijzen zijn. Een beveiligingsparagraaf die iets
@@ -70,28 +73,42 @@ import '../../styles/stijl22.css';
 //
 // ── DIT IS GEEN JURIDISCH ADVIES ────────────────────────────────────────────
 //
-// Deze tekst is opgesteld tegen de letter van art. 28 AVG en dekt alle onderdelen
-// van lid 3 sub a tot en met h. Hij is niet door een advocaat gezien. Twee dingen
-// horen dat wél te worden voordat er een klant op tekent: de aansprakelijkheids-
-// verdeling in §13 en de vraag of de rolverdeling in §1 voor elk geval standhoudt.
+// Deze tekst is opgesteld aan de hand van art. 28 AVG en dekt alle onderdelen van
+// lid 3 sub a tot en met h. Op 29 september 2026 nagelopen tegen art. 28, 32, 33
+// en 44–46 AVG, de richtlijnen 07/2020 van de EDPB, de standaardcontractbepalingen
+// voor art. 28 (Uitvoeringsbesluit (EU) 2021/915) en de eigen voorwaarden van de
+// subverwerkers; de zin "nog niet door een jurist beoordeeld" is op Lucas' verzoek
+// weg — hij leest hem zelf na. Twee dingen blijven een keuze en geen verplichting:
+// de onbeperkte aansprakelijkheid in §13 en de archieftermijn in §12.
 const SUBS = [
   {
     naam: 'Freepik Company, S.L.U.',
     waar: 'Málaga, Spanje (EU)',
-    waarvoor: 'het genereren van de visuals uit jouw materiaal',
-    grond: 'binnen de EU; geen doorgifte op dit niveau',
+    waarvoor: 'het genereren van de visuals uit jouw materiaal (zie hieronder over de modelaanbieders)',
+    grond: 'binnen de EU; voor modelaanbieders buiten de EER sluit Freepik standaardcontractbepalingen',
   },
+  /* "Met opslag in de EU" stond hier, en dat is niet gegarandeerd: R2 en D1
+     staan niet in een EU-jurisdictie (wrangler.toml), en een locatiehint is
+     volgens Cloudflare "best effort" (29 september 2026). */
   {
     naam: 'Cloudflare, Inc.',
-    waar: 'Verenigde Staten, met opslag in de EU',
+    waar: 'Verenigde Staten (wereldwijd netwerk)',
     waarvoor: 'opslag van het aangeleverde materiaal en de geleverde beelden, en het draaien van de site',
-    grond: 'verwerkersovereenkomst met standaardcontractbepalingen (SCC)',
+    grond: 'EU-VS Data Privacy Framework (gecertificeerd); standaardcontractbepalingen als terugval',
   },
   {
-    naam: 'Resend',
-    waar: 'Verenigde Staten',
-    waarvoor: 'e-mail; de bestelmelding aan de studio draagt het aangeleverde materiaal als bijlage',
-    grond: 'verwerkersovereenkomst met standaardcontractbepalingen (SCC)',
+    naam: 'Plus Five Five, Inc. (Resend)',
+    waar: 'San Francisco, Verenigde Staten',
+    waarvoor: 'e-mail; de bestelmelding aan de studio draagt het aangeleverde materiaal als bijlage. Resend bewaart verzonden mail 30 dagen',
+    grond: 'EU-VS Data Privacy Framework (gecertificeerd); standaardcontractbepalingen als terugval',
+  },
+  /* De mailbox waarin die bestelmelding binnenkomt, ontvangt het materiaal ook —
+     en ontbrak (29 september 2026). */
+  {
+    naam: 'Google Ireland Ltd. (Google Workspace)',
+    waar: 'Dublin, Ierland (EU); Google LLC in de Verenigde Staten',
+    waarvoor: 'de mailbox hello@visuails.com, waarin de bestelmelding met het aangeleverde materiaal binnenkomt',
+    grond: 'EU-VS Data Privacy Framework (gecertificeerd); standaardcontractbepalingen als terugval',
   },
 ];
 ---
@@ -123,7 +140,7 @@ const SUBS = [
     <header class="paneel-kop jur-kop">
       <p class="etiket">Juridisch</p>
       <h1 class="hoog">Verwerkersovereenkomst</h1>
-      <p class="lopend jur-lead">Staat er een persoon op het beeld dat je aanlevert, dan verwerken wij persoonsgegevens van jóu — en dan schrijft de AVG voor dat wij daar een overeenkomst over hebben. Dit is die overeenkomst.</p>
+      <p class="lopend jur-lead">Staat er een persoon op het beeld dat je aanlevert, dan verwerken wij persoonsgegevens waarvoor jíj verantwoordelijk bent — en dan schrijft de AVG voor dat wij daar een overeenkomst over hebben. Dit is die overeenkomst.</p>
       <p class="legal-meta">{bijgewerktOp('data-processing-agreement', 'nl', 'artikel 28 AVG')}</p>
     </header>
 
@@ -133,8 +150,9 @@ const SUBS = [
       <p>Bij één bestelling verwerken wij twee soorten gegevens, en de AVG geeft ons daarbij twee verschillende rollen. Dat klinkt als een formaliteit en is het niet: het bepaalt wie beslist, wie een datalek aan de toezichthouder meldt, en bij wie een betrokkene terechtkan.</p>
       <ul>
         <li><strong>Jouw eigen gegevens</strong> — je naam, je bedrijfsgegevens, je e-mailadres, je btw-nummer, je berichten. Daarvoor zijn wij <strong>verwerkingsverantwoordelijke</strong>: wij bepalen zelf waarom we ze nodig hebben en hoe lang we ze houden. Dat staat in ons <a href="/nl/privacy/">privacybeleid</a> en niet in dit document.</li>
-        <li><strong>Het beeldmateriaal dat jij aanlevert, voor zover daar personen op staan</strong> — in de praktijk vooral de draagfoto die wij vragen voor de pasvorm. De persoon op die foto is een betrokkene van <em>jou</em>: jij hebt hem gefotografeerd, jij hebt de afspraak met hem, jij bepaalt waarvoor het beeld dient. Wij verwerken het uitsluitend op jouw opdracht. Daarvoor zijn wij <strong>verwerker</strong> en ben jij verwerkingsverantwoordelijke — en dáárover gaat dit document.</li>
+        <li><strong>Het beeldmateriaal dat jij aanlevert, voor zover daar personen op staan</strong> — in de praktijk vooral de draagfoto die je kunt meesturen voor de pasvorm. De persoon op die foto is een betrokkene van <em>jou</em>: jij hebt hem gefotografeerd, jij hebt de afspraak met hem, jij bepaalt waarvoor het beeld dient. Wij verwerken het uitsluitend op jouw opdracht. Daarvoor zijn wij <strong>verwerker</strong> en ben jij verwerkingsverantwoordelijke — en dáárover gaat dit document.</li>
       </ul>
+      <p>Jij bent er als verwerkingsverantwoordelijke voor verantwoordelijk dat je een grondslag hebt om het beeld van de personen op je materiaal door ons te laten verwerken, en dat zij daarover zijn geïnformeerd.</p>
       <p>Deze overeenkomst geldt automatisch zodra je een bestelling plaatst, als onlosmakelijk onderdeel van de <a href="/nl/terms/">algemene voorwaarden</a>. Je hoeft niets te ondertekenen. Wil je een ondertekend exemplaar voor je eigen administratie, dan mail je <a href="mailto:hello@visuails.com">hello@visuails.com</a> en krijg je het.</p>
 
       <h2>2. Partijen</h2>
@@ -142,22 +160,22 @@ const SUBS = [
       <p><strong>Verwerkingsverantwoordelijke:</strong> jij — de onderneming die de bestelling plaatst, zoals opgegeven bij het bestellen.</p>
 
       <h2>3. Onderwerp, aard, doel en duur</h2>
-      <p><strong>Onderwerp en doel.</strong> Het maken van productbeelden en video uit het materiaal dat jij aanlevert, en het leveren daarvan aan jou. Er is geen ander doel. Wij gebruiken jouw materiaal niet voor onze eigen portfolio, niet voor advertenties en niet om er iets van te leren, tenzij je ons daar per bestelling afzonderlijk en aantoonbaar toestemming voor geeft.</p>
-      <p><strong>Aard van de verwerking.</strong> Ontvangen, opslaan, doorgeven aan de subverwerkers in §8, bekijken en beoordelen door een mens, en verwijderen. Er wordt niets geprofileerd en er wordt niets geautomatiseerd besloten.</p>
+      <p><strong>Onderwerp en doel.</strong> Het maken van productbeelden en video uit het materiaal dat jij aanlevert, en het leveren daarvan aan jou. Er is geen ander doel. Wij gebruiken jouw materiaal niet voor ons eigen portfolio, niet voor advertenties en niet om er iets van te leren, tenzij je ons daar per bestelling afzonderlijk en aantoonbaar toestemming voor geeft. Staat er een persoon op, dan zijn wij voor dat gebruik zelf verwerkingsverantwoordelijke en doen wij het alleen als die persoon daar zelf mee heeft ingestemd.</p>
+      <p><strong>Aard van de verwerking.</strong> Ontvangen, opslaan, doorgeven aan de subverwerkers in §8, bekijken en beoordelen door een specialist, en verwijderen. Er wordt niets geprofileerd en er wordt niets geautomatiseerd besloten.</p>
       <p><strong>Duur.</strong> Deze overeenkomst begint bij je eerste bestelling en eindigt zodra het laatste gegeven waarop zij betrekking heeft is verwijderd — zie §12. Zij eindigt dus later dan de opdracht zelf, en dat is de bedoeling.</p>
 
       <h2>4. Soort persoonsgegevens en categorieën betrokkenen</h2>
       <p><strong>Soort persoonsgegevens.</strong> Afbeeldingen van natuurlijke personen in het door jou aangeleverde materiaal, plus wat daar zichtbaar of in de bestandsgegevens bij zit — een gezicht, een lichaam, soms een naam op een label of een locatie in de EXIF-gegevens.</p>
       <p><strong>Categorieën betrokkenen.</strong> De personen die op dat materiaal staan: doorgaans een model, een medewerker, of jij zelf.</p>
-      <p><strong>Wat er niet in hoort.</strong> Wij vragen nooit om bijzondere persoonsgegevens in de zin van art. 9 AVG, en niet om beeld van kinderen. Lever je materiaal aan waarop dat toch voorkomt, dan verwerken wij het niet op grond van deze overeenkomst en nemen wij contact met je op. Een gezicht op een foto is trouwens niet automatisch een biometrisch gegeven: dat wordt het pas bij verwerking die gericht is op unieke identificatie, en dat doen wij niet.</p>
+      <p><strong>Wat er niet in hoort.</strong> Wij vragen nooit om bijzondere persoonsgegevens in de zin van art. 9 AVG, en niet om beeld van kinderen. Lever je materiaal aan waarop dat toch voorkomt, dan verwerken wij het alleen voor zover nodig om contact met je op te nemen en het, naar jouw keuze, te verwijderen of aan je terug te geven; ook dan geldt deze overeenkomst. Een gezicht op een foto is trouwens niet automatisch een biometrisch gegeven: dat wordt het pas bij verwerking die gericht is op unieke identificatie, en dat doen wij niet.</p>
 
       <h2>5. Wij verwerken alleen op jouw instructie</h2>
       <p>Wij verwerken de persoonsgegevens uitsluitend op jouw gedocumenteerde instructie, en niet voor eigen doeleinden. Jouw bestelling — het formulier, de briefing en de correspondentie erover — is die instructie. Er is geen andere.</p>
       <p>Dat geldt ook voor doorgifte naar landen buiten de Europese Economische Ruimte: wij geven niets door buiten wat in §8 en §11 staat, tenzij jij het ons opdraagt of het Unierecht of Nederlands recht het van ons eist. Moeten wij van de wet iets doen wat hiervan afwijkt, dan laten wij je dat weten vóórdat wij het doen, tenzij die wet dat verbiedt.</p>
-      <p>Denken wij dat een instructie van jou in strijd is met de AVG, dan zeggen wij dat en voeren wij hem niet uit voordat het is opgehelderd. Dat is geen dienstweigering maar art. 28 lid 3, laatste alinea.</p>
+      <p>Denken wij dat een instructie van jou in strijd is met de AVG of met andere Unie- of Nederlandse regels over gegevensbescherming, dan zeggen wij dat onmiddellijk en voeren wij hem niet uit voordat het is opgehelderd. Dat is geen dienstweigering maar art. 28 lid 3, laatste alinea.</p>
 
       <h2>6. Geheimhouding</h2>
-      <p>VISUAILS is een eenmanszaak. In de praktijk betekent dat: er is één persoon met toegang, en dat is Lucas Snuverink. Schakelen wij ooit iemand in — een vaste medewerker, een freelancer voor de nabewerking — dan gebeurt dat pas nadat die persoon zich schriftelijk tot geheimhouding heeft verbonden, en die verbintenis loopt door na het einde van de samenwerking. Wij houden de geheimhouding aan ook zonder dat je erom vraagt en ook zonder aparte NDA.</p>
+      <p>VISUAILS is een eenmanszaak. In de praktijk betekent dat: er is één persoon met toegang, en dat is Lucas Snuverink. Schakelen wij ooit iemand in — een vaste medewerker, een freelancer voor de nabewerking — dan gebeurt dat pas nadat die persoon zich schriftelijk tot geheimhouding heeft verbonden, en die verbintenis loopt door na het einde van de samenwerking. Een freelancer is bovendien een subverwerker: die komt eerst in de lijst van §8, met de melding van 30 dagen vooraf. Wij houden de geheimhouding aan ook zonder dat je erom vraagt en ook zonder aparte NDA.</p>
 
       <h2>7. Beveiliging</h2>
       <p>Hieronder staat wat er werkelijk is, en niets meer. Wij zijn niet ISO-gecertificeerd, er is geen pentest uitgevoerd en er is geen managementsysteem voor informatiebeveiliging. Een beveiligingsparagraaf die meer belooft dan er staat, is de paragraaf die bij een incident tegen ons wordt gebruikt.</p>
@@ -174,7 +192,7 @@ const SUBS = [
       <p>Wij beoordelen deze maatregelen opnieuw wanneer er iets wezenlijk verandert in wat wij verwerken, en in ieder geval één keer per jaar.</p>
 
       <h2>8. Subverwerkers</h2>
-      <p>Wij schakelen andere partijen in. Je geeft ons hierbij een <strong>algemene schriftelijke toestemming</strong> daarvoor, in de zin van art. 28 lid 2 AVG, onder drie voorwaarden: deze lijst is actueel, wij melden een toevoeging of vervanging <strong>minstens 30 dagen vooraf</strong> per e-mail, en je mag er in die periode bezwaar tegen maken. Doe je dat, dan zoeken wij een alternatief of mag je de opdracht kosteloos beëindigen voor het deel dat nog niet is uitgevoerd.</p>
+      <p>Wij schakelen andere partijen in. Je geeft ons hierbij een <strong>algemene schriftelijke toestemming</strong> daarvoor, in de zin van art. 28 lid 2 AVG, onder drie voorwaarden: deze lijst is actueel, wij melden een toevoeging of vervanging <strong>minstens 30 dagen vooraf</strong> per e-mail, en je mag er in die periode bezwaar tegen maken. Doe je dat, dan zoeken wij een alternatief of mag je de opdracht kosteloos beëindigen voor het deel dat nog niet is uitgevoerd. De termijn van 30 dagen geldt voor partijen die wij zelf inschakelen; wijzigingen die een subverwerker ons in zijn eigen keten meldt, geven wij door zodra wij ze ontvangen.</p>
       <p>Met elke partij hieronder hebben wij een verwerkersovereenkomst die dezelfde verplichtingen doorlegt die wij aan jou hebben (art. 28 lid 4). Wij blijven jegens jou aansprakelijk voor wat zij doen.</p>
       {/* tabindex + role: zie de noot bij .fb-tblwrap in FigBoard.astro.
           Deze tabel schuift horizontaal en was zonder muis niet te lezen. */}
@@ -193,33 +211,33 @@ const SUBS = [
         </tbody>
       </table>
       </div>
-      <p><strong>Over het genereren zelf.</strong> Freepik biedt op zijn platform een groot aantal modellen aan van verschillende makers. Welke wij op een bepaald moment gebruiken, wisselt — wij werken met wat op dat moment het beste resultaat geeft, en dat is onderdeel van hoe wij ons werk doen. De partij die jouw materiaal <em>ontvangt</em> blijft dezelfde en staat hierboven; dat is wat deze paragraaf moet vastleggen. Freepik verklaart in zijn eigen voorwaarden uitdrukkelijk: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>, en dat het aangeleverde beeld direct na het genereren wordt verwijderd. Voor doorgifte naar modelaanbieders buiten de EER sluit Freepik standaardcontractbepalingen (art. 46 lid 2 sub c AVG).</p>
-      <p><strong>De nabewerking gebeurt op onze eigen machine.</strong> Retoucheren en monteren doen wij in Photoshop en in DaVinci Resolve, lokaal. Die programma’s sturen jouw beeld niet naar een clouddienst: het bestand staat op de schijf, wordt daar bewerkt en gaat daar weer weg volgens de termijnen van §3. Adobe en Blackmagic Design staan daarom <strong>niet</strong> in de lijst hierboven — zij ontvangen jouw materiaal niet. Adobe schrijft over lokaal opgeslagen materiaal in zijn eigen voorwaarden: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software die op onze machine draait verwerkt niets namens ons; een dienst die het bestand ontvangt doet dat wel. Dat onderscheid bepaalt wie er in de lijst hoort. Zouden wij ooit naar een clouddienst gaan voor de nabewerking — Adobe’s eigen cloudopslag daaronder begrepen — dan is dat een toevoeging aan die lijst, met de melding van 30 dagen vooraf die hierboven staat.</p>
-      <p><strong>Wat hier niet staat, en waarom.</strong> Onze betaalprovider en de partijen rond reviews staan niet in deze lijst. Zij raken jouw beeldmateriaal niet; zij verwerken alleen gegevens waarvoor wij zelf verwerkingsverantwoordelijke zijn. Die staan in het <a href="/nl/privacy/">privacybeleid</a>.</p>
+      <p><strong>Over het genereren zelf.</strong> Freepik biedt op zijn platform een groot aantal modellen aan van verschillende makers. Welke wij op een bepaald moment gebruiken, wisselt — wij werken met wat op dat moment het beste resultaat geeft, en dat is onderdeel van hoe wij ons werk doen. De aanbieder van het gekozen model verwerkt jouw beeld als subverwerker van Freepik en bewaart het volgens Freepik ten hoogste 30 dagen na het genereren; Freepik zelf verwijdert het aangeleverde beeld direct na het genereren. Staat die aanbieder buiten de EER in een land zonder adequaatheidsbesluit, dan sluit Freepik daarvoor standaardcontractbepalingen (art. 46 lid 2 sub c AVG). Op verzoek sturen wij je binnen vijf werkdagen de naam en vestigingsplaats van elke modelaanbieder die wij voor jouw bestellingen gebruiken. Freepik verklaart in zijn eigen voorwaarden uitdrukkelijk: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>.</p>
+      <p><strong>De nabewerking gebeurt op onze eigen machine, en nooit op jouw foto’s.</strong> De foto’s die jij aanlevert worden niet geopend in Photoshop, DaVinci Resolve of andere bewerkingssoftware; ze worden alleen gebruikt om de beelden te laten genereren. Alleen de beelden die wij met jouw product maken, retoucheren en monteren wij, lokaal. Die programma’s sturen het bestand niet naar een clouddienst: het staat op de schijf, wordt daar bewerkt en gaat daar weer weg volgens de termijnen van §12. Adobe en Blackmagic Design staan daarom <strong>niet</strong> in de lijst hierboven — zij ontvangen jouw materiaal niet. Adobe schrijft over lokaal opgeslagen materiaal in zijn eigen voorwaarden: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software die op onze machine draait verwerkt niets namens ons; een dienst die het bestand ontvangt doet dat wel. Dat onderscheid bepaalt wie er in de lijst hoort. Zouden wij ooit naar een clouddienst gaan voor de nabewerking — Adobe’s eigen cloudopslag daaronder begrepen — dan is dat een toevoeging aan die lijst, met de melding van 30 dagen vooraf die hierboven staat.</p>
+      <p><strong>Wat hier niet staat, en waarom.</strong> Onze betaalprovider en de partijen rond reviews staan niet in deze lijst. Zij raken jouw beeldmateriaal niet. Mollie verwerkt de betaalgegevens als eigen verwerkingsverantwoordelijke, en de reviewplatforms zien alleen wat je daar zelf publiceert. Die staan in het <a href="/nl/privacy/">privacybeleid</a>.</p>
 
       <h2>9. Rechten van betrokkenen</h2>
       <p>Wendt de persoon op het beeld zich tot ons met een verzoek — inzage, verwijdering, bezwaar — dan beantwoorden wij dat niet zelf. Dat verzoek hoort bij jou, want jij bent de verantwoordelijke. Wij sturen het binnen <strong>drie werkdagen</strong> naar je door en helpen je vervolgens met wat er technisch voor nodig is: wij zoeken op waar het beeld zit, leveren het aan of verwijderen het, en bevestigen schriftelijk wat er is gebeurd. Die hulp is bij het normale gebruik van de dienst gratis.</p>
 
       <h2>10. Datalekken</h2>
       <p>Ontdekken wij een inbreuk op de beveiliging die jouw persoonsgegevens raakt, dan melden wij dat <strong>aan jou</strong> en niet aan de Autoriteit Persoonsgegevens. Dat is geen keuze: als verwerker is dat precies onze rol (art. 33 lid 2 AVG). Jij beslist daarna of er gemeld moet worden — en de klok van 72 uur voor jouw melding begint te lopen zodra wij het bij jou hebben neergelegd. Daarom leggen wij het snel neer: <strong>binnen 24 uur</strong> nadat wij het weten, ook als het beeld dan nog niet compleet is.</p>
-      <p>Wat er in die melding staat: wat er is gebeurd, wanneer, welk soort gegevens en welke betrokkenen het waarschijnlijk raakt, wat wij al hebben gedaan om het te beperken, en wat wij nog niet weten. Dat laatste staat er ook. Wij vullen het aan zodra wij meer weten, en wij houden een eigen registratie van elk incident bij — ook van de incidenten die niet gemeld hoeven te worden.</p>
+      <p>Wat er in die melding staat: wat er is gebeurd, wanneer, welk soort gegevens en welke betrokkenen het waarschijnlijk raakt en om ongeveer hoeveel personen en bestanden het gaat, wat de waarschijnlijke gevolgen zijn, wat wij al hebben gedaan om het te beperken, wat wij nog niet weten, en wie je contactpersoon is. Wat wij nog niet weten, staat er ook. Wij vullen het aan zodra wij meer weten, en wij houden een eigen registratie van elk incident bij — ook van de incidenten die niet gemeld hoeven te worden.</p>
       <p>Wij helpen je verder met wat art. 32 tot en met 36 AVG van je vraagt, waaronder een gegevensbeschermingseffectbeoordeling als je die voor jouw gebruik nodig hebt.</p>
 
       <h2>11. Doorgifte buiten de Europese Economische Ruimte</h2>
-      <p>Het genereren gebeurt bij een partij in Spanje, dus binnen de EU. Waar een subverwerker uit §8 buiten de EER is gevestigd, rust de doorgifte op standaardcontractbepalingen van de Europese Commissie (art. 46 lid 2 sub c AVG). Wij geven persoonsgegevens niet door aan een land of partij buiten die lijst zonder je vooraf te informeren.</p>
-      <p>Eén ding dat wij eerlijker opschrijven dan gebruikelijk: bij het maken van de beelden wordt materiaal door een mens vanuit onze omgeving in het gereedschap van de subverwerker geplaatst. Dat is dus geen automatische koppeling maar een handeling, en zij valt onder dezelfde afspraken als de rest van deze overeenkomst.</p>
+      <p>Ons contract voor het genereren is met een partij in Spanje; de modelaanbieder daarachter kan buiten de EER zitten (zie §8). Waar een subverwerker uit §8 buiten de EER is gevestigd, rust de doorgifte op het EU-VS Data Privacy Framework (art. 45 AVG), met standaardcontractbepalingen van de Europese Commissie (art. 46 lid 2 sub c AVG) als terugval mocht dat kader vervallen; bij de modelaanbieders van Freepik op die standaardcontractbepalingen. Wij geven persoonsgegevens niet door aan een land of partij buiten die lijst zonder je vooraf te informeren.</p>
+      <p>Eén ding dat wij eerlijker opschrijven dan gebruikelijk: bij het maken van de beelden wordt materiaal door een specialist vanuit onze omgeving in het gereedschap van de subverwerker geplaatst. Dat is dus geen automatische koppeling maar een handeling, en zij valt onder dezelfde afspraken als de rest van deze overeenkomst.</p>
 
       <h2>12. Teruggave en verwijdering</h2>
-      <p>De termijnen hieronder zijn dezelfde als in §7 van de <a href="/nl/terms/">voorwaarden</a> en §6 van het <a href="/nl/privacy/">privacybeleid</a>. Ze worden uitgevoerd door een nachtelijke taak en niet met de hand.</p>
+      <p>De termijnen hieronder zijn dezelfde als in §7 van de <a href="/nl/terms/">voorwaarden</a> en §6 van het <a href="/nl/privacy/">privacybeleid</a>. Opslag en database worden door een nachtelijke taak opgeschoond. Kopieën in onze mailbox en op onze werkmachine, en wat wij op het platform van Freepik hebben gegenereerd, verwijderen wij binnen dezelfde termijn met de hand; Resend bewaart verzonden mail 30 dagen.</p>
       <ul>
-        <li><strong>Het materiaal dat jij aanlevert:</strong> {UPLOAD_DAYS} dagen na de bestelling, daarna verwijderd.</li>
-        <li><strong>De beelden die wij leveren:</strong> {DELIVERY_DAYS} dagen in VISUAILS Studio, zodat je ze in die tijd opnieuw kunt ophalen; een kopie kan zonder garantie in ons eigen archief blijven.</li>
+        <li><strong>Het materiaal dat jij aanlevert:</strong> {UPLOAD_DAYS} dagen nadat je bestelling is afgesloten, daarna verwijderd.</li>
+        <li><strong>De beelden die wij leveren:</strong> {DELIVERY_DAYS} dagen in VISUAILS Studio, zodat je ze in die tijd opnieuw kunt ophalen. Een kopie kan daarna nog ten hoogste twaalf maanden in ons eigen archief staan, zonder garantie, en wordt dan verwijderd. Wil je dat niet, zeg het, dan verwijderen wij hem na {DELIVERY_DAYS} dagen.</li>
       </ul>
       <p>Wil je het eerder weg, dan mail je ons en verwijderen wij het — tenzij een wettelijke bewaarplicht in de weg staat, en dan zeggen wij welke. Bij het einde van de overeenkomst verwijderen wij alles wat onder deze overeenkomst valt, inclusief kopieën, of geven wij het aan je terug als je dat liever hebt. Wat om die reden moet blijven staan, blijft alleen daarvoor staan en wordt niet meer gebruikt.</p>
-      <p>De gegevens die wij als verwerkingsverantwoordelijke hebben — je factuur, je bedrijfsgegevens — vallen hier niet onder. Daarvoor geldt de fiscale bewaarplicht van zeven jaar, en dat staat in het privacybeleid.</p>
+      <p>De gegevens die wij als verwerkingsverantwoordelijke hebben — je factuur, je bedrijfsgegevens — vallen hier niet onder. Daarvoor geldt de fiscale bewaarplicht van zeven jaar; zie het <a href="/nl/privacy/">privacybeleid</a>.</p>
 
       <h2>13. Audit, aansprakelijkheid en slot</h2>
-      <p><strong>Audit.</strong> Je mag één keer per jaar, en verder na een datalek dat jouw gegevens raakt, opvragen wat je nodig hebt om vast te stellen dat wij ons aan deze overeenkomst houden. Wij antwoorden binnen twee weken. Wil je een controle door een onafhankelijke deskundige, dan werken wij daaraan mee; de kosten daarvan zijn voor jou, tenzij er iets uitkomt wat wij hadden moeten oplossen.</p>
+      <p><strong>Audit.</strong> Je mag op redelijke tijdstippen, en altijd bij aanwijzingen dat wij ons niet aan deze overeenkomst houden, opvragen wat je nodig hebt om dat vast te stellen, en een audit laten doen door jezelf of door een deskundige die jij aanwijst. Wij antwoorden binnen twee weken en werken aan een audit mee. Omdat wij geen kantoor hebben, doen wij een inspectie bij voorkeur op afstand; een inspectie ter plaatse spreken wij vooraf met je af. Deze informatie stellen wij op verzoek ook aan de toezichthouder beschikbaar. De kosten van een audit zijn voor jou, tenzij er iets uitkomt wat wij hadden moeten oplossen.</p>
       <p><strong>Aansprakelijkheid.</strong> Voor schade die voortkomt uit een verwerking in strijd met de AVG geldt art. 82 AVG. De aansprakelijkheidsbeperking in §11 van de voorwaarden geldt <strong>niet</strong> voor boetes of schade op grond van de AVG die het gevolg zijn van iets wat aan ons is toe te rekenen. Dat is een bewuste keuze: een privacyclausule die de eigen aansprakelijkheid tot het orderbedrag beperkt, is geen afspraak maar een uitweg.</p>
       <p><strong>Slot.</strong> Wijkt deze overeenkomst af van de algemene voorwaarden, dan gaat deze overeenkomst voor, maar alleen voor de verwerking van persoonsgegevens. Nederlands recht is van toepassing; de rechtbank Overijssel is bevoegd. Wijzigt de AVG of komt er dwingende regelgeving bij, dan passen wij deze tekst aan en melden wij dat langs dezelfde weg als een wijziging in §8.</p>
 
@@ -233,7 +251,7 @@ const SUBS = [
           vormen voor één soort mededeling is hoe een lezer moet raden wat het
           gewicht ervan is. En de marge komt nu uit de klasse in plaats van uit dit
           bestand. */}
-      <p class="legal-note">Deze pagina is opgesteld tegen de tekst van artikel 28 AVG en dekt de onderdelen van lid 3 sub a tot en met h. Hij is nog niet door een jurist beoordeeld. Voor jouw eigen situatie — zeker als je zelf in een keten met meerdere verantwoordelijken zit — laat je dit door je eigen adviseur nakijken.</p>
+      <p class="legal-note">Deze pagina is opgesteld aan de hand van artikel 28 AVG en dekt de onderdelen van lid 3 sub a tot en met h. Voor jouw eigen situatie — zeker als je zelf in een keten met meerdere verantwoordelijken zit — laat je dit door je eigen adviseur nakijken.</p>
     </div>
   </section>
 </div>

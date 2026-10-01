@@ -37,7 +37,7 @@ const zusters = styles
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/lifestyle/${s.slug}`, naam: s.name }));
 
-const TIMING = style.priceTrust ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
+const TIMING = style.slug === 'custom' ? 'Design first, then the ordinary turnaround per order.' : turnaround('unattended', 'en');
 const REVIEW = reviewClaim('unattended', 'en');
 ---
 

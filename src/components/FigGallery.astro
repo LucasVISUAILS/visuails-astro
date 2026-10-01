@@ -54,9 +54,25 @@
  * formulier op een marketingpagina dat nergens naartoe post, is een knop die
  * niets doet.
  */
+import { DEMO_ORDER, demoWindow, dayLabel } from '../data/figdemo.js';
+import { CATALOG_IMAGES } from '../data/pricing.js';
+
 interface Props { lang?: 'en' | 'nl' }
 const { lang = 'en' } = Astro.props;
 const nl = lang === 'nl';
+
+/* ── DEZELFDE BESTELLING ALS IN FIGDASH, FIGOVERZICHT EN FIGBOARD — 30 sep 2026
+   De referentie stond hier uitgetypt, de goedkeuringen op 8 aug terwijl het
+   venster van die bestelling 10 – 11 aug is, en "24 bestanden" bij twintig
+   producten. Nu komt alles uit dezelfde fixture: catalog, de dag na het venster,
+   en het aantal bestanden uit producten × beelden × drie formaten. */
+const venster = demoWindow(DEMO_ORDER.products);
+const naLevering = dayLabel(new Date(Date.parse(`${venster.end}T00:00:00Z`) + 86400000).toISOString().slice(0, 10), lang);
+const TOTAAL = DEMO_ORDER.products * CATALOG_IMAGES;
+const BESTANDEN = TOTAAL * 3;
+const MB_PER_BESTAND = 186.4 / 24;
+const omvang = (BESTANDEN * MB_PER_BESTAND / 1000).toFixed(1);
+const omvangLabel = nl ? `${omvang.replace('.', ',')} GB` : `${omvang} GB`;
 
 const PHOTOS = [
   '/img/lifestyle-flash-01.webp',
@@ -68,14 +84,14 @@ const PHOTOS = [
 const C = nl
   ? {
       badge: 'Voorbeeld met verzonnen gegevens',
-      ref: 'VIS-2608-4471 · VOLT',
+      ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
       h: 'Wat wij leverden',
-      tally: '2 van 4 goedgekeurd · 1 terug',
+      tally: `2 van ${TOTAAL} goedgekeurd · 1 terug`,
       tiles: [
-        { cap: 'Product 1 · voorkant', state: 'ok', label: 'Goedgekeurd op 8 aug' },
-        { cap: 'Product 1 · achterkant', state: 'rev', label: 'Revisie gevraagd op 8 aug', said: 'De mouw valt links anders dan rechts.' },
+        { cap: 'Product 1 · voorkant', state: 'ok', label: `Goedgekeurd op ${naLevering}` },
+        { cap: 'Product 1 · achterkant', state: 'rev', label: `Revisie gevraagd op ${naLevering}`, said: 'De mouw valt links anders dan rechts.' },
         { cap: 'Product 2 · voorkant', state: 'open' },
-        { cap: 'Product 2 · achterkant', state: 'ok', label: 'Goedgekeurd op 8 aug' },
+        { cap: 'Product 2 · achterkant', state: 'ok', label: `Goedgekeurd op ${naLevering}` },
       ],
       bApprove: 'Goedkeuren',
       bAsk: 'Er klopt iets niet',
@@ -85,7 +101,7 @@ const C = nl
       reviewNote: 'Deze beelden zijn op schermformaat. Ze staan er om te beoordelen.',
       folderH: 'Jouw bestanden',
       folderBody: 'Eén map per product, en daarin dezelfde foto als PNG, JPG en WebP.',
-      folderMeta: '24 bestanden · 186,4 MB',
+      folderMeta: `${BESTANDEN} bestanden · ${omvangLabel}`,
       bFolder: 'Download de map',
       tree: [
         ['product-1/', 'dir'],
@@ -97,14 +113,14 @@ const C = nl
     }
   : {
       badge: 'Example with made-up data',
-      ref: 'VIS-2608-4471 · VOLT',
+      ref: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand}`,
       h: 'What we delivered',
-      tally: '2 of 4 approved · 1 back',
+      tally: `2 of ${TOTAAL} approved · 1 back`,
       tiles: [
-        { cap: 'Product 1 · front', state: 'ok', label: 'Approved 8 Aug' },
-        { cap: 'Product 1 · back', state: 'rev', label: 'Revision asked 8 Aug', said: 'The sleeve sits differently on the left than on the right.' },
+        { cap: 'Product 1 · front', state: 'ok', label: `Approved ${naLevering}` },
+        { cap: 'Product 1 · back', state: 'rev', label: `Revision requested ${naLevering}`, said: 'The sleeve sits differently on the left than on the right.' },
         { cap: 'Product 2 · front', state: 'open' },
-        { cap: 'Product 2 · back', state: 'ok', label: 'Approved 8 Aug' },
+        { cap: 'Product 2 · back', state: 'ok', label: `Approved ${naLevering}` },
       ],
       bApprove: 'Approve',
       bAsk: 'Something is off',
@@ -114,7 +130,7 @@ const C = nl
       reviewNote: 'These are at screen size. They are here to be judged.',
       folderH: 'Your files',
       folderBody: 'One folder per product, and in it the same image as PNG, JPG and WebP.',
-      folderMeta: '24 files · 186.4 MB',
+      folderMeta: `${BESTANDEN} files · ${omvangLabel}`,
       bFolder: 'Download the folder',
       tree: [
         ['product-1/', 'dir'],

@@ -230,7 +230,7 @@ const COPY = {
     orderLede: 'Alles wat we tot nu toe af hebben. Keur goed wat klopt, en markeer wat niet klopt.',
     filesTitle: 'Je bestanden',
     filesLede: 'Alles uit deze bestelling. Download wat je nodig hebt, keur goed wat klopt, en markeer wat niet klopt.',
-    sampleLede: 'Je proef. Download de beelden, en laat weten wat je ervan vindt — we reageren op elke reactie.',
+    sampleLede: 'Je proef. Download de beelden, en laat weten wat je ervan vindt — we lezen en beantwoorden alles.',
 
     fRef: 'Referentie',
     fOrder: 'Bestelling',
@@ -256,8 +256,8 @@ const COPY = {
     bApprove: 'Goedkeuren',
     bDownload: 'Download de map',
     folderH: 'Jouw bestanden',
-    folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgt een drukker, een productpagina en een feed elk het bestand dat hij wil, zonder dat iemand nog iets bijschaalt.',
-    folderReview: 'De foto\'s hierboven zijn beoordeelbeelden op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
+    folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, zonder dat iemand nog iets bijschaalt.',
+    folderReview: 'De foto\'s hierboven zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
     folderMeta: (n, size) => `${n} bestanden · ${size}`,
     bUndo: 'Ongedaan maken',
     bCancel: 'Aanvraag intrekken',
@@ -587,7 +587,7 @@ export async function portalPost(context) {
           env.DB.prepare(
             `INSERT INTO order_events (order_id, status, note, actor)
              VALUES (?1, 'delivered', ?2, 'system')`
-          ).bind(order.order_id, 'Een goedkeuring is teruggedraaid — bestelling weer open.')
+          ).bind(order.order_id, order.lang === 'en' ? 'An approval was undone — the order is open again.' : 'Een goedkeuring is teruggedraaid — bestelling weer open.')
         );
       }
       await env.DB.batch(undo);
@@ -716,7 +716,9 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
     stappen.push(env.DB.prepare(
       `INSERT INTO order_events (order_id, status, note, actor)
        VALUES (?1, 'delivered', ?2, 'customer')`
-    ).bind(order.order_id, `Revisieronde ingediend — ${eigen.length} beeld(en).`));
+    ).bind(order.order_id, order.lang === 'en'
+      ? `Revision round submitted — ${eigen.length} image${eigen.length === 1 ? '' : 's'}.`
+      : `Revisieronde ingediend — ${eigen.length} ${eigen.length === 1 ? 'beeld' : 'beelden'}.`));
 
     await env.DB.batch(stappen);
   } catch {
@@ -906,7 +908,7 @@ const ORDER_SQL =
 
 async function loadEvents(env, orderId) {
   const res = await env.DB.prepare(
-    `SELECT status, note, created_at FROM order_events WHERE order_id = ?1 ORDER BY id`
+    `SELECT status, note, created_at FROM order_events WHERE order_id = ?1 AND COALESCE(actor, '') <> 'intern' ORDER BY id`
   )
     .bind(orderId)
     .all();
@@ -1110,7 +1112,15 @@ async function renderOrder(env, order, token, lang) {
    * en geeft dan null — een ontbrekende tabel (migratie 0020 niet gedraaid) hoort
    * de beelden op deze pagina niet te kosten.
    */
-  const fb = attended && order.closed_at ? await loadFeedback(env, order.order_id) : null;
+  /* ── OOK BIJ EEN GEWONE BESTELLING — 24 september 2026 ─────────────────────
+     Dit stond op `attended &&`: alleen een bestelling met een gereserveerde
+     week kreeg de tevredenheidsvraag in het portaal. Maar het portaal is de
+     link uit élke levermail, en de meeste bestellingen (onder 10 producten)
+     zijn niet 'attended'. Wie via die link alles goedkeurde, kreeg de vraag dus
+     nooit — alleen in Studio. Nu bij elke afgeronde bestelling, behalve de
+     proefvisual (die heeft geen beoordeling, zelfde regel als Studio). */
+  const vraagFeedback = !!order.closed_at && order.service !== SAMPLE_SERVICE;
+  const fb = vraagFeedback ? await loadFeedback(env, order.order_id) : null;
 
   /*
    * De map wordt uit dezelfde rijen berekend als de tegels — zie loadDeliveryFiles.
@@ -1123,7 +1133,7 @@ async function renderOrder(env, order, token, lang) {
 
   const body = attended
     ? attendedBody(t, lang, order, token, files, events, fb, folder)
-    : unattendedBody(t, lang, order, token, files, folder);
+    : unattendedBody(t, lang, order, token, files, folder, vraagFeedback ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb }) : '');
 
   return html(
     page({
@@ -1220,29 +1230,13 @@ function roundBlock(t, lang, order, files) {
   <form method="post" action="" id="rr">
     <label class="sr-only" for="rrnote">${esc(t.rrLabel)}</label>
     <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}" required></textarea>
-    <p class="rr-count" data-rr-count hidden></p>
     <div class="acts"><button class="btn btn-primary" type="submit" name="action" value="round">${esc(t.rrSend)}</button></div>
   </form>
-</section>
-<script>
-  /* Alleen de teller. Zie de noot boven roundBlock(): zonder dit script werkt
-     het formulier ongewijzigd, en de server telt zelf. */
-  (function () {
-    var f = document.getElementById('rr');
-    if (!f) return;
-    var uit = f.querySelector('[data-rr-count]');
-    var woord = ${JSON.stringify(lang === 'nl' ? ['1 beeld aangevinkt', ' beelden aangevinkt'] : ['1 image ticked', ' images ticked'])};
-    function tel() {
-      var n = document.querySelectorAll('input[name="bad"]:checked').length;
-      uit.hidden = n === 0;
-      uit.textContent = n === 1 ? woord[0] : n + woord[1];
-    }
-    document.addEventListener('change', function (e) {
-      if (e.target && e.target.name === 'bad') tel();
-    });
-    tel();
-  })();
-</script>`;
+</section>`;
+  /* Hier stond een inline scriptblok met een teller ("2 beelden aangevinkt").
+     Deze pagina heeft met opzet geen script-src (zie de kop van dit bestand),
+     dus de browser weigerde hem altijd, met een CSP-fout in de console. Weg:
+     het formulier werkte er al zonder, en de server telt zelf. 24 sep 2026. */
 }
 
 // ---- Tier 1 · the portal ----------------------------------------------------
@@ -1335,7 +1329,7 @@ function windowLine(t, lang, order) {
 
 // ---- Tier 0 · the delivery page ---------------------------------------------
 
-function unattendedBody(t, lang, order, token, files, folder = '') {
+function unattendedBody(t, lang, order, token, files, folder = '', feedback = '') {
   // No window, no date, no countdown — not because there is no room for one, but
   // because Tier 0 has a queue span rather than a delivery date, and section 13
   // is unambiguous: "NO named delivery date [...] never a date."
@@ -1346,7 +1340,9 @@ function unattendedBody(t, lang, order, token, files, folder = '') {
     [t.fStatus, statPil(order.status, statusLabel(order.status, lang) || order.status), true],
   ].filter(Boolean);
 
-  const timing = `${turnaround('unattended', lang)} — ${lower(TIERS.unattended.queue[lang])}`;
+  /* clause(): de Engelse wachtrijzin eindigt op een punt, en de tekst eromheen zet
+     er nog een — dat gaf "no fixed date.." (29 september 2026). */
+  const timing = `${clause(turnaround('unattended', lang))} — ${clause(lower(TIERS.unattended.queue[lang]))}`;
 
   // BEOORDELEN HOORT OOK HIER, sinds 7 augustus 2026. Deze pagina zette
   // `review: false, history: false` hard, uit de tijd dat per-beeld goedkeuren
@@ -1378,13 +1374,15 @@ function unattendedBody(t, lang, order, token, files, folder = '') {
   <p class="lede">${esc(order.service === SAMPLE_SERVICE ? t.sampleLede : t.filesLede)}</p>
 </div>
 ${factList(facts)}
-<p class="note">${esc(t.howUnattended(clause(aftercare('unattended', lang))))}</p>
+${/* Staat het rondeformulier hieronder, dan is "stuur een reactie op de
+   levermail" de verkeerde weg: die ronde doe je op deze pagina (24 sep 2026). */ ''}<p class="note">${esc(rr ? t.howAttended(clause(aftercare('unattended', lang))) : t.howUnattended(clause(aftercare('unattended', lang))))}</p>
 <section class="work">
   <h2>${esc(t.filesHeading)}</h2>
   ${work}
 </section>
 ${rr}
 ${folder}
+${feedback}
 </main>`;
 }
 

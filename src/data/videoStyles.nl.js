@@ -4,7 +4,7 @@ import { waHref } from './whatsapp.js';
 // strings are translated. Internal CTA paths are prefixed with /nl; external
 // wa.me links keep their domain, their ?text= message is translated.
 
-import { perProduct, reviewClaim, turnaround, vatLabel } from './pricing.js';
+import { perProduct, vatLabel } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -17,8 +17,8 @@ const VID = perProduct('video', 'nl');
 // a flat figure; it just no longer prints it without saying which side of VAT
 // it sits on.
 const VID_VAT = vatLabel('excl', 'nl');
-const TIMING = turnaround('unattended', 'nl');
-const REVIEW = reviewClaim('unattended', 'nl');
+/* Levertijd en controle staan in de feitenrij van de detailpagina, niet
+   meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
 function grid(photos, icons) {
   const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
@@ -54,7 +54,7 @@ export const videoStyles = [
       'Acht seconden, één product, één strakke beweging — genoeg om het oog vast te houden, nooit genoeg om af te leiden.',
     ],
     steps: [
-      { title: 'Zet het kader vast', body: 'Eén strakke compositie, camera volkomen stil.' },
+      { title: 'Zet het kader vast', body: 'Eén strakke compositie, van begin tot eind rustig in beeld.' },
       { title: 'Voeg subtiele beweging toe', body: 'Lichte drift, zachte rotatie of onthulling.' },
       { title: 'De loop sluit rond', body: 'Het laatste kader sluit aan op het eerste.' },
     ],
@@ -70,7 +70,7 @@ export const videoStyles = [
     ],
     why: [
       { title: 'Beweging, en niets meer', body: 'Een langzame pan of een kleine draai. Geen muziek, geen cuts, geen tekst in beeld.' },
-      { title: 'Elk formaat, één shoot', body: 'Gemonteerd voor vierkant, portret en breed vanuit één bestand.' },
+      { title: 'Standaard verticaal', body: 'Standaard 9:16. Een andere beeldverhouding kan op aanvraag, afgesproken in de offerte.' },
       { title: 'De juiste lengte voor een feed', body: '8 seconden, in de verhouding die Instagram en TikTok gebruiken.' },
     ],
     bestFor: [
@@ -82,9 +82,7 @@ export const videoStyles = [
     whatYouGet: [
       'Strakke productfilm van 8 seconden',
       'Naadloze loop, subtiele beweging',
-      'Formaat gemonteerd voor jouw kanaal',
-      TIMING,
-      REVIEW,
+      'Verticaal 9:16; andere verhoudingen op aanvraag',
     ],
   },
   {
@@ -109,16 +107,16 @@ export const videoStyles = [
     steps: [
       { title: 'Bouw de scène', body: 'Je wereld van lifestyle-stills, in beweging gebracht.' },
       { title: 'Beweging en licht geregisseerd', body: 'Een natuurlijk gebaar, en licht dat niet gezet lijkt.' },
-      { title: 'Monteer voor het kanaal', body: 'Opgemaakt voor waar het ook draait.' },
+      { title: 'Verticaal 9:16', body: 'Het standaardformaat. Een andere verhouding op aanvraag, afgesproken in de offerte.' },
     ],
     grid: grid(
       [],
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Verhaal in één adem', body: 'Eén beat — onthulling, gebruik of sfeer — in enkele seconden.' },
+      { title: 'Verhaal in één adem', body: 'Eén moment — onthulling, gebruik of sfeer — in enkele seconden.' },
       { title: 'Scène-continuïteit', body: 'Sets, licht en modellen matchen je lifestyle-stills.' },
-      { title: 'Verticaal-eerst regie', body: 'Getimed voor 9:16 als eerste, 1:1- en 16:9-versies beschikbaar.' },
+      { title: 'Geregisseerd voor 9:16', body: 'Getimed voor 9:16. 1:1, 16:9 of een andere verhouding op aanvraag.' },
       { title: 'Beweging met manieren', body: 'Vloeiend en doelbewust — duur, niet druk.' },
     ],
     why: [
@@ -133,11 +131,9 @@ export const videoStyles = [
       'Merken die een herkenbare wereld bouwen',
     ],
     whatYouGet: [
-      'Gestylede short-form scène in beweging',
+      'Korte gestylede scène in beweging',
       'Continuïteit met je lifestyle-stills',
       'Consistente modellen beschikbaar',
-      TIMING,
-      REVIEW,
     ],
   },
   {
@@ -154,7 +150,7 @@ export const videoStyles = [
     cardIcon: 'sneaker',
     cardWidth: '56%',
     cardPrice: 'Offerte op maat',
-    cardDesc: 'Campagnestukken met meerdere shots, gebouwd rond jouw brief. Prijs per project.',
+    cardDesc: 'Campagnestukken met meerdere shots, gebouwd rond jouw briefing. Prijs per project.',
     moodTitle: 'Hoe Campaign eruitziet.',
     moodParagraphs: [
       'De volledige productie: meerdere shots, een verhaallijn, montages gesneden om een launch te laten landen.',
@@ -162,7 +158,7 @@ export const videoStyles = [
     steps: [
       { title: 'Bepaal wat de campagne omvat', body: 'Shots en bestanden afgesproken via WhatsApp.' },
       { title: 'Film de hele reeks', body: 'Meerdere shots in één film, met dezelfde kleurzetting, zodat het één verhaal is.' },
-      { title: 'Lever elke versie', body: 'Het formaat van elk kanaal, uit één campagne.' },
+      { title: 'Lever', body: 'Standaard verticaal 9:16. Andere verhoudingen en de levertijd spreken we af in de offerte.' },
     ],
     grid: grid(
       [],
@@ -170,24 +166,24 @@ export const videoStyles = [
     ),
     craft: [
       { title: 'Jouw idee, serieus genomen', body: 'Shotlijst en verhaal gebouwd op jouw launch, geen template.' },
-      { title: 'Opbouw met meerdere shots', body: 'Openers, details, heromomenten, eindkaarten — in volgorde gezet.' },
-      { title: 'Monteren, graden, leveren', body: 'Versies voor feed, stories en site, één gedeelde grade.' },
+      { title: 'Opbouw met meerdere shots', body: 'Openers, details, hoofdmomenten, eindkaarten — in volgorde gezet.' },
+      { title: 'Monteren, kleurcorrectie, leveren', body: 'Eén gedeelde kleurafwerking, in de formaten uit de offerte.' },
       { title: 'Een vaste prijs, vooraf', body: 'Afgesproken via WhatsApp. Jij keurt goed voordat we beginnen.' },
     ],
     why: [
       { title: 'Eén partner voor de hele campagne', body: 'Stills, beweging en elke versie, uit één gesprek.' },
-      { title: 'Eén grade, elk kanaal', body: 'Consistente kleur en sfeer over elk formaat.' },
+      { title: 'Eén grade', body: 'Consistente kleur en sfeer over de hele campagne.' },
       { title: 'Geprijsd voordat je je vastlegt', body: 'Een heldere offerte, afgesproken voordat er werk begint.' },
     ],
     bestFor: [
       'Productlaunches en seizoensdrops',
-      'Merkfilms en store-takeovers',
+      'Merkfilms en winkelcampagnes',
       'Campagnes die stills en film omvatten',
       'Teams die één partner voor alles nodig hebben',
     ],
     whatYouGet: [
       'Een campagnefilm met meerdere shots, van tevoren helemaal afgesproken',
-      'Versies voor elk kanaal waarop je zit',
+      'Verticaal 9:16; andere verhoudingen afgesproken in de offerte',
       'Eén grade over je hele campagne',
       'Een heldere, afgesproken prijs voordat het werk begint',
     ],
@@ -214,12 +210,12 @@ export const videoStyles = [
     steps: [
       { title: 'Jij vertelt', body: 'Vertel ons het idee en waar het moet draaien.' },
       { title: 'Concept', body: 'We ontwerpen een motion-concept op maat en kaderen het samen met jou af.' },
-      { title: 'Lever', body: 'Elke versie die je nodig hebt, gegraded als één.' },
+      { title: 'Lever', body: 'In het formaat en de levertijd uit de offerte, met één en dezelfde kleurafwerking.' },
     ],
     craft: [
       { title: 'Gebouwd op jouw idee', body: 'Geen template — het concept begint bij wat jij vertelt en de referenties die je stuurt.' },
-      { title: 'Afgekaderd voordat we beginnen', body: 'Shots, lengte en deliverables vooraf afgesproken, helder geprijsd.' },
-      { title: 'Elk formaat, één grade', body: 'Versies voor feed, stories en site, allemaal met één look.' },
+      { title: 'Afgekaderd voordat we beginnen', body: 'Shots, lengte en opleverformaten vooraf afgesproken, helder geprijsd.' },
+      { title: 'Eén grade', body: 'Standaard verticaal 9:16, andere verhoudingen op aanvraag — allemaal met één look.' },
       { title: 'Consistent met je stills', body: 'Kleur en sfeer afgestemd op je catalogus- en lifestyle-set.' },
     ],
     why: [
@@ -235,7 +231,7 @@ export const videoStyles = [
     ],
     whatYouGet: [
       'Een videoconcept op maat, samen met jou ontworpen',
-      'Elke versie die je kanalen nodig hebben',
+      'Formaat en levertijd afgesproken in de offerte',
       'Eén grade over het hele stuk',
       'Een heldere, afgesproken prijs voordat het werk begint',
     ],

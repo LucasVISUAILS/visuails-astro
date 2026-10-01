@@ -33,7 +33,14 @@ function ok(naam, kreeg, verwacht = true) {
 
 const { db, mislukt } = verseDb(new URL('../schema.sql', import.meta.url));
 if (mislukt.length) { console.error('schema kon niet geladen worden:', mislukt); process.exit(1); }
-const env = { DB: d1(db) };
+/* Een nep-Resend: de laatste-maandmail (24 september 2026) moet uitgaan. */
+const mails = [];
+const echteFetch = globalThis.fetch;
+globalThis.fetch = async (url, opts = {}) => {
+  if (String(url).includes('resend')) mails.push(JSON.parse(String(opts.body || '{}')));
+  return new Response('{"id":"msg"}', { status: 200, headers: { 'content-type': 'application/json' } });
+};
+const env = { DB: d1(db), RESEND_API_KEY: 're_test', FROM_EMAIL: 'VISUAILS <orders@visuails.com>' };
 
 /* Eén klant, één vooruitbetaald jaar op Brand, begonnen op 20 januari 2026 —
    een dag in de maand die niet de eerste is, want juist daar ging het mis: de
@@ -44,6 +51,15 @@ db.exec(`INSERT INTO subscriptions (id, customer_id, ref, plan, term, status, wi
 /* Maand één komt van de eerste betaling, net als in werkelijkheid: de webhook
    schrijft die rij als het geld binnen is. De taak begint dus bij maand twee. */
 db.exec(`INSERT INTO subscription_months (subscription_id, month, granted) VALUES (1, '2026-01', ${PLAN_PRODUCTS.brand});`);
+
+/* ── EEN OPGEZEGD VOORUITBETAALD JAAR LOOPT DOOR — 24 september 2026 ──────
+   Lucas: *"Het abonnement moet gewoon simpelweg doorlopen tot einde van het
+   jaar."* Opzeggen zet alleen cancelled_at; de status blijft 'active' en de
+   maanden komen gewoon binnen. */
+db.exec(`INSERT INTO customers (id, email, name) VALUES (3, 'opgezegd@example.com', 'Opgezegd BV');`);
+db.exec(`INSERT INTO subscriptions (id, customer_id, ref, plan, term, status, window_day, started_at, cancelled_at, cancel_reason)
+         VALUES (3, 3, 'SUB-OPGEZEGD', 'studio', 'prepaid', 'active', 20, '2026-01-20', '2026-03-02', 'customer');`);
+db.exec(`INSERT INTO subscription_months (subscription_id, month, granted) VALUES (3, '2026-01', ${PLAN_PRODUCTS.studio});`);
 
 /* En een maandabonnement ernaast, dat met rust gelaten moet worden. */
 db.exec(`INSERT INTO customers (id, email, name) VALUES (2, 'maand@example.com', 'Maand BV');`);
@@ -86,10 +102,52 @@ console.log('\ntwee keer draaien op één dag verandert niets');
   ok('nog steeds twaalf', maanden().length, voor);
 }
 
-console.log('\nen na een jaar stopt hij uit zichzelf');
+console.log('\nhet opgezegde jaar kreeg precies hetzelfde');
+{
+  const n = db.prepare('SELECT COUNT(*) AS n FROM subscription_months WHERE subscription_id = 3').get().n;
+  ok('ook twaalf maanden, ondanks de opzegging in maart', n, TERMS.prepaid.months);
+}
+
+console.log('\nde twaalfde maand kondigt zich aan');
+{
+  const laatste = mails.filter((m) => /laatste maand/i.test(m.subject || ''));
+  ok('één mail per jaar, voor allebei de jaren', laatste.length, 2);
+  const niet = laatste.find((m) => [].concat(m.to).includes('vooruit@example.com'));
+  const wel = laatste.find((m) => [].concat(m.to).includes('opgezegd@example.com'));
+  ok('met de einddatum erin', /20 januari 2027/.test(niet?.html || ''), true);
+  ok('wie niet opzegde, hoort waar hij verder kan', /nieuw abonnement/.test(niet?.html || ''), true);
+  ok('wie opzegde, hoort dat hij niets hoeft te doen', /niets te doen/.test(wel?.html || ''), true);
+}
+
+console.log('\nen na een jaar stopt hij uit zichzelf — en sluit hij af');
 {
   for (let m = 1; m <= 6; m += 1) await draaiOp(opDe21e(2027, m));
   ok('geen dertiende maand', maanden().length, TERMS.prepaid.months);
+  /* Tot 24 september 2026 bleef de rij voor altijd op 'active' staan: "Loopt"
+     in Studio zonder nieuwe credits, en geen nieuw abonnement mogelijk. */
+  const r1 = db.prepare('SELECT status, cancel_reason FROM subscriptions WHERE id = 1').get();
+  ok('het afgelopen jaar is afgesloten', r1.status, 'cancelled');
+  ok('  met "jaar afgelopen" als reden', r1.cancel_reason, 'jaar afgelopen');
+  const r3 = db.prepare('SELECT status, cancel_reason FROM subscriptions WHERE id = 3').get();
+  ok('het opgezegde jaar ook', r3.status, 'cancelled');
+  ok('  en het houdt de reden van de klant', r3.cancel_reason, 'customer');
+  ok('er ging geen tweede laatste-maandmail uit', mails.filter((m) => /laatste maand/i.test(m.subject || '')).length, 2);
+}
+
+console.log('\nop de laatste dag van het jaar is het nog niet dicht');
+{
+  db.exec(`INSERT INTO customers (id, email, name) VALUES (4, 'bijna@example.com', 'Bijna BV');`);
+  db.exec(`INSERT INTO subscriptions (id, customer_id, ref, plan, term, status, window_day, started_at)
+           VALUES (4, 4, 'SUB-BIJNA', 'starter', 'prepaid', 'active', 20, '2025-10-20');`);
+  for (let i = 0; i < 12; i += 1) {
+    const d = new Date(Date.UTC(2025, 9 + i, 1));
+    db.exec(`INSERT INTO subscription_months (subscription_id, month, granted) VALUES (4, '${d.toISOString().slice(0, 7)}', 1);`);
+  }
+  /* Laatste maand is 2026-09; die termijn loopt tot 20 oktober 2026. */
+  await draaiOp(new Date(Date.UTC(2026, 9, 19, 3)));
+  ok('op 19 oktober loopt hij nog', db.prepare('SELECT status FROM subscriptions WHERE id = 4').get().status, 'active');
+  await draaiOp(new Date(Date.UTC(2026, 9, 20, 3)));
+  ok('op 20 oktober is hij dicht', db.prepare('SELECT status FROM subscriptions WHERE id = 4').get().status, 'cancelled');
 }
 
 console.log('\neen maandabonnement wordt niet aangeraakt');
@@ -103,5 +161,6 @@ console.log('\nen de taak staat in de nachtelijke lijst');
   ok('grantPrepaidMonths is uitgevoerd door de scheduler', typeof tasks.grantPrepaidMonths, 'function');
 }
 
+globalThis.fetch = echteFetch;
 console.log(`\n${goed}/${totaal} geslaagd`);
 if (goed !== totaal) process.exit(1);

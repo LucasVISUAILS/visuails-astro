@@ -42,11 +42,14 @@ import { formatDate } from './invoicePdf.js';
 const SITE = 'https://visuails.com';
 
 /** €1.101,10 — dezelfde vorm als invoiceMail.js, niet Intl (workerd-ICU verschilt per regio). */
-function euro(cents) {
+/* In de tekens van de taal van de mail (24 september 2026): een Engelse mail
+   zei "€ 1.101,10" terwijl de bijgevoegde pdf "€1,101.10" zegt. */
+function euro(cents, lang = 'nl') {
   const n = Math.round(Number(cents) || 0);
   const a = Math.abs(n);
-  const whole = String(Math.floor(a / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return `${n < 0 ? '-' : ''}€ ${whole},${String(a % 100).padStart(2, '0')}`;
+  const en = lang === 'en';
+  const whole = String(Math.floor(a / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, en ? ',' : '.');
+  return `${n < 0 ? '-' : ''}€ ${whole}${en ? '.' : ','}${String(a % 100).padStart(2, '0')}`;
 }
 
 /**
@@ -68,13 +71,13 @@ const COPY = {
     lede: 'We hebben je bestelling geannuleerd. Dit is de reden:',
     money: {
       refund: (bedrag) => `Je hebt ${bedrag} betaald. Dat bedrag storten we terug op de rekening waarmee je betaald hebt; afhankelijk van je bank staat het binnen een paar werkdagen op je rekening. De creditnota mailen we je zodra de terugbetaling bevestigd is.`,
-      credit: (bedrag) => `Je hebt ${bedrag} betaald. Dat bedrag blijft staan als tegoed op je account en wordt verrekend met je volgende bestelling. Je ziet het terug in VISUAILS Studio.`,
+      credit: (bedrag) => `Je hebt ${bedrag} betaald. Dat bedrag blijft staan als tegoed op je account. Bestel je de volgende keer terwijl je bent ingelogd in VISUAILS Studio, dan gaat het automatisch van het te betalen bedrag af.`,
       none: () => 'Er wordt niets terugbetaald. Heb je daar vragen over, dan beantwoorden we die graag — beantwoord deze mail.',
-      plan: () => 'Deze bestelling kwam uit je abonnement. De producten staan weer op je lijst en de slots zijn teruggezet; je kunt ze opnieuw vastzetten wanneer je wilt.',
+      plan: () => 'Deze bestelling kwam uit je abonnement. De producten staan weer op je lijst en de credits staan weer op je saldo; je kunt ze opnieuw vastzetten wanneer je wilt.',
       unpaid: () => 'Er was nog niets betaald, dus er hoeft niets terug.',
     },
     portal: 'Naar VISUAILS Studio',
-    tail: 'Wil je alsnog iets laten maken, of klopt er iets niet aan deze annulering? Beantwoord deze mail — we lezen mee.',
+    tail: 'Wil je alsnog iets laten maken, of klopt er iets niet aan deze annulering? Beantwoord deze mail — we lezen elke reactie.',
   },
   en: {
     subject: (ref) => `Your order ${ref} has been cancelled`,
@@ -84,13 +87,13 @@ const COPY = {
     lede: 'We have cancelled your order. This is the reason:',
     money: {
       refund: (bedrag) => `You paid ${bedrag}. We are refunding that amount to the account you paid with; depending on your bank it shows up within a few working days. We will email you the credit note as soon as the refund is confirmed.`,
-      credit: (bedrag) => `You paid ${bedrag}. That amount stays on your account as credit and is set off against your next order. You can see it in VISUAILS Studio.`,
+      credit: (bedrag) => `You paid ${bedrag}. That amount stays on your account as credit. Next time you order while signed in to VISUAILS Studio, it comes off the amount to pay automatically.`,
       none: () => 'Nothing is being refunded. If you have questions about that, reply to this email — we are happy to answer them.',
-      plan: () => 'This order came out of your subscription. The products are back on your list and the slots have been returned; you can lock them in again whenever you like.',
+      plan: () => 'This order came out of your subscription. The products are back on your list and the credits are back on your balance; you can lock them in again whenever you like.',
       unpaid: () => 'Nothing had been paid yet, so there is nothing to return.',
     },
     portal: 'Go to VISUAILS Studio',
-    tail: 'Would you still like something made, or does something about this cancellation look wrong? Reply to this email — we read along.',
+    tail: 'Would you still like something made, or does something about this cancellation look wrong? Reply to this email — we read every reply.',
   },
 };
 
@@ -103,10 +106,19 @@ const COPY = {
  * @param {string} o.money    één van CANCEL_MONEY
  * @param {number} [o.grossCents]  wat er betaald was (voor 'refund' en 'credit')
  */
-export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCents = 0 }) {
+export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCents = 0, tegoedCents = 0 }) {
   const lang = order.lang === 'en' ? 'en' : 'nl';
   const t = COPY[lang];
-  const geld = t.money[CANCEL_MONEY.includes(money) ? money : 'unpaid'](euro(grossCents));
+  let geld = t.money[CANCEL_MONEY.includes(money) ? money : 'unpaid'](euro(grossCents, lang));
+  /* Deels of helemaal met tegoed betaald (29 september 2026): dat deel komt
+     terug als tegoed, en dat hoort de klant te lezen. */
+  if (money === 'refund' && tegoedCents > 0) {
+    geld = grossCents > 0
+      ? `${geld} ${lang === 'nl' ? `Daarnaast staat ${euro(tegoedCents, lang)} weer als tegoed op je account.` : `In addition, ${euro(tegoedCents, lang)} is back on your account as credit.`}`
+      : (lang === 'nl'
+        ? `Je betaalde deze bestelling met ${euro(tegoedCents, lang)} tegoed. Dat staat weer op je account.`
+        : `You paid for this order with ${euro(tegoedCents, lang)} of credit. It is back on your account.`);
+  }
   const body = [
     h1(t.head, esc(t.sub(order.ref || ''))),
     p(greeting(order.name, lang)),
@@ -129,10 +141,10 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
  * mag niet omvallen op een mailserver die hikt — zie de noot bij handleOrderCancel().
  * @returns {Promise<boolean>} of er iets is verstuurd.
  */
-export async function mailCancellation(env, { order, reason, money, grossCents }) {
+export async function mailCancellation(env, { order, reason, money, grossCents, tegoedCents = 0 }) {
   try {
     if (!order?.email) return false;
-    const { subject, html } = cancelEmail({ order, reason, money, grossCents });
+    const { subject, html } = cancelEmail({ order, reason, money, grossCents, tegoedCents });
     await sendMail(env, { to: order.email, subject, html });
     return true;
   } catch (err) {
@@ -170,7 +182,7 @@ const CREDIT = {
     rRef: 'Order',
     rAmount: 'Credited',
     attached: 'The credit note is attached as a PDF. You can also find it in VISUAILS Studio, under <b>Invoices</b>.',
-    noAttach: 'The credit note is waiting in VISUAILS Studio, under <b>Invoices</b>. If the download will not work, send us a line.',
+    noAttach: 'The credit note is waiting in VISUAILS Studio, under <b>Invoices</b>. If the download will not work, email us.',
     portal: 'Go to VISUAILS Studio',
     keep: 'Keep this credit note together with the invoice it belongs to.',
   },
@@ -196,7 +208,7 @@ export function creditNoteEmail({ lang = 'nl', order = {}, note: nota, snap = {}
       // `creditsNumber` is de factuur waar deze nota tegenover staat — zie creditSnapshotFrom().
       [t.rInvoice, esc(snap.creditsNumber || '')],
       [t.rRef, esc(order.ref || '')],
-      [t.rAmount, esc(euro(gross))],
+      [t.rAmount, esc(euro(gross, lang))],
     ]),
     p(attached ? t.attached : t.noAttach, { top: 4 }),
     linkLine(`${SITE}${lang === 'nl' ? '/nl' : ''}/account`, t.portal),

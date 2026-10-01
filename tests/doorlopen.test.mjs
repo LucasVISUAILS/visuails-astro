@@ -151,6 +151,8 @@ console.log('\nhet bestelformulier loopt van de eerste stap tot de laatste');
       f.value = f.type === 'email' ? 'klant@voorbeeldmerk.nl'
         : f.type === 'tel' ? '+31612345678'
         : f.name === 'vat' ? 'NL005407575B96'
+        /* KVK is in Nederland verplicht sinds 29 september 2026: acht cijfers. */
+        : f.name === 'reg_number' ? '12345678'
         : f.name === 'postal_code' ? '1234 AB'
         : f.type === 'number' ? '3' : 'Voorbeeld';
       f.dispatchEvent(new Event('input', { bubbles: true }));

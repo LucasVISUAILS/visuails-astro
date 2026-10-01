@@ -53,7 +53,7 @@ import { billingCopy } from '../data/billing.js';
 import { countryOptions } from '../data/vat.js';
 import { AMOUNT, euro, vatLabel, vatLead } from '../data/pricing.js';
 import { BUSINESS_VERSION, currentBusiness } from '../data/business.js';
-import { CONSENT_VERSION_BRAND_MODEL, currentBrandModelConsent } from '../data/consent.js';
+import { CONSENT_VERSION_BRAND_MODEL } from '../data/consent.js';
 import { localizedPath } from '../i18n/ui.js';
 /* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
 import '../styles/stijl22.css';
@@ -167,7 +167,14 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
       ))}
     </ol>
 
-    <form action="/api/order" method="post" class="bm-form" data-bm-form novalidate>
+    {/* ── data-astro-reload — 23 september 2026 ──────────────────────────────
+        Zonder dit onderschept de ClientRouter van Layout.astro de verzending:
+        hij fetcht /api/order, volgt de 302 naar Mollie, en dáár zegt de CSP
+        (connect-src 'self') nee. De router valt dan terug op een kale GET van
+        /api/order — en die stuurt naar /start. Gemeten in de doorloop: de
+        bestelling stond in de database, de klant stond op de startpagina en
+        heeft Mollie nooit gezien. Een gewone verzending volgt de 302 wél. */}
+    <form action="/api/order" method="post" class="bm-form" data-bm-form novalidate data-astro-reload>
       <input type="hidden" name="service" value="brand-model" />
       <input type="hidden" name="redirect" value={lp('/thank-you')} />
       <input type="hidden" name="lang" value={lang} />
@@ -452,11 +459,11 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           </ol>
         </div>
 
-        {/* De twee verklaringen, allebei versioneerd, allebei verplicht. De
-            herroepingsverklaring is hier een ANDERE versie dan in de
-            bestelstroom: die van de bestelstroom eindigt op "uit foto's die ik
-            aanlever", en bij een merkmodel levert de klant geen foto's aan. Zie
-            de noot bij CONSENT_VERSION_BRAND_MODEL in src/data/consent.js. */}
+        {/* De verklaring, versioneerd en verplicht. Sinds 30 september 2026 één
+            vinkje: de zakelijke verklaring (business-v2) draagt de
+            herroepingsverklaring in zich, en die noemt geen aangeleverde foto's
+            meer — hij past dus ook bij een merkmodel. Zie withdrawalRecord() in
+            src/data/consent.js. */}
         <div class="bm-consents">
           <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
           <label class="bm-check">
@@ -464,11 +471,10 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
             <span>{currentBusiness(lang)}</span>
           </label>
 
+          {/* Eén vinkje sinds 30 september 2026: de zakelijke verklaring (business-v2)
+              draagt de herroepingsverklaring in zich. consent_version rijdt mee als
+              bewijs van de zin; zie withdrawalRecord() in src/data/consent.js. */}
           <input type="hidden" name="consent_version" value={CONSENT_VERSION_BRAND_MODEL} />
-          <label class="bm-check">
-            <input type="checkbox" name="withdrawal_consent" value="yes" required data-melding={c.consentErr} />
-            <span>{currentBrandModelConsent(lang)}</span>
-          </label>
         </div>
 
         <button type="submit" class="knop knop-inkt bm-submit">{c.submit}</button>
@@ -939,6 +945,10 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
         const lg = set.querySelector('legend');
         if (lg) return lg.textContent.trim();
       }
+      /* De routekeuze staat in een radiogroup met aria-label, niet in een
+         fieldset — anders stond er "bm_track" in de samenvatting. */
+      const groep = veld.type === 'radio' ? veld.closest('[role="radiogroup"][aria-label]') : null;
+      if (groep) return groep.getAttribute('aria-label');
       if (veld.id) {
         const l = form.querySelector(`label[for="${veld.id}"]`);
         if (l) return l.textContent.replace('*', '').trim();

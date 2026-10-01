@@ -76,7 +76,11 @@ export const DEMO_ORDER = { ref: 'VIS-2608-4471', brand: 'VOLT', products: 20 };
  * agenda op dezelfde dag: 30 producten krijgt 10 – 11 augustus, 12 producten
  * krijgt 6 – 7 augustus. Zelfde poort, zelfde moment, andere uitkomst.
  */
-export const DEMO_SMALL_PRODUCTS = 8;
+/* Tien en niet acht (24 september 2026): een vaste leverdatum begint bij
+   WINDOW_THRESHOLD producten, en een voorbeeld met acht producten en een
+   venster sprak de rest van de site tegen. De uitkomst is dezelfde: 7 – 10
+   augustus (vrijdag en maandag, het weekend is dicht). */
+export const DEMO_SMALL_PRODUCTS = 10;
 
 /**
  * Wat er in de verzonnen agenda al staat: bezette BEELDEN per dag.
@@ -175,7 +179,7 @@ export const DEMO_DAYS = Object.keys(DEMO_BOOKED);
  */
 export const DEMO_OTHERS = [
   { ref: 'VIS-2608-4468', brand: 'Nord Label', products: 12, start: '2026-08-03' },
-  { ref: 'VIS-2608-4462', brand: 'Studio Halte', products: 8, start: '2026-08-04' },
+  { ref: 'VIS-2608-4462', brand: 'Studio Halte', products: 10, start: '2026-08-04' },
   { ref: 'VIS-2607-9920', brand: 'Kade 4', products: 4, start: null },
 ];
 

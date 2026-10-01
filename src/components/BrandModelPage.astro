@@ -80,6 +80,8 @@ import {
   WINDOW_THRESHOLD,
 } from '../data/pricing.js';
 import { ROSTER, rosterWoord, telwoord } from '../data/models.js';
+/* Waar het merkmodel in een abonnement zit — zie hasBrandModel() in plans.js. */
+import { planName } from '../data/planNames.js';
 import { localizedPath } from '../i18n/ui.js';
 import Placeholder from './Placeholder.astro';
 
@@ -111,12 +113,14 @@ const brandModel = {
   includes: lang === 'nl'
     ? [
         'Eén gezicht, alleen voor jouw merk (elk extra gezicht is een eigen ontwerp)',
+        'Eén correctieronde op het ontwerp, daarna ligt het vast',
         'Per bestelling kies je welk gezicht erop staat',
-        'Uniekheidscontrole via gezichtszoekmachines vóór levering',
+        'Uniciteitscontrole via gezichtszoekmachines vóór levering',
         'Blijft aan jouw merk gekoppeld, ook als je even niet bestelt',
       ]
     : [
         'One face, for your brand only (each extra face is its own design)',
+        'One correction round on the design, then it is locked',
         'You pick per order which face runs',
         'A uniqueness check through face search engines before delivery',
         'Tied to your brand, even if you pause ordering',
@@ -235,8 +239,8 @@ const COPY = {
     // from pricing.js, so a written-out ordinal would go stale the moment the
     // setup or the credit moves and nobody would notice, because it reads as
     // prose rather than as a figure.
-    costMath: 'Not per visual, not per order, not per year. From then on every order you place with us carries the same face, at the normal per-product rate for its size.',
-    costFree: `Not required: every order already includes a standard face at no extra cost.`,
+    costMath: 'Not per visual, not per order, not per year. From then on the face stays the same between orders; per order you choose whether to use it, at the normal per-product rate for its size.',
+    costFree: `Not required: every order already includes a standard face at no extra cost. Included in ${planName('brand', 'en')}, and in ${planName('studio', 'en')} on the 12-month terms.`,
     costCta: 'See the price per product',
     costSequence: `Designed and locked before your first order is scheduled.`,
 
@@ -248,7 +252,7 @@ const COPY = {
     /* Eén alinea, doorlichting 4 september 2026: wat een merkmodel ís staat al
        in de vier feiten bovenaan; hier alleen nog wat het dóét. */
     fitWhat: [
-      'Once it is locked, every visual in every order is made with the same face, so your catalog and your feed hang together instead of looking assembled from separate sessions — and shoppers start recognising your images before they read your name.',
+      'Once it is locked, the face stays the same in every order you use it in — per order you choose whether it appears, and on which products — so your catalog and your feed hang together instead of looking assembled from separate sessions — and shoppers start recognising your images before they read your name.',
     ],
     fitWhereH: 'Where it lives',
     fitWhere: [
@@ -258,11 +262,11 @@ const COPY = {
     ],
 
     // DIRECTIONS
-    dirH: 'Nine directions, to argue with.',
+    dirH: 'Nine starting points, to argue with.',
     dirLead: 'Starting points, not a menu. We design two or three directions from your references.',
 
     // OUTPUT
-    outH: 'Real output, not a mockup.',
+    outH: 'Real output, not a mock-up.',
     outAlt: 'A VISUAILS brand model example',
 
     // PROCESS
@@ -273,7 +277,7 @@ const COPY = {
     give: [
       ['references', 'A few <strong>references</strong>.'],
       ['spec', 'The <strong>age and styling</strong> you want.'],
-      ['nevers', 'Your <strong>do’s and don’ts</strong>.'],
+      ['nevers', 'Your <strong>dos and don’ts</strong>.'],
     ],
     getH: 'What you get back',
     get: [
@@ -364,18 +368,18 @@ const COPY = {
     // Geen rangtelwoord ("bij de vijfde bestelling"): het aantal komt uit pricing.js,
     // dus een uitgeschreven rangtelwoord veroudert stil zodra de setup of het
     // krediet verandert.
-    costMath: 'Niet per beeld, niet per bestelling, niet per jaar. Vanaf dat moment draagt elke bestelling die je bij ons doet hetzelfde gezicht, tegen het gewone tarief per product voor die grootte.',
-    costFree: `Niet verplicht: elke bestelling heeft al een standaardgezicht, zonder meerprijs.`,
+    costMath: 'Niet per beeld, niet per bestelling, niet per jaar. Vanaf dat moment blijft het gezicht hetzelfde tussen bestellingen; per bestelling kies je of je het gebruikt, tegen het gewone tarief per product voor die grootte.',
+    costFree: `Niet verplicht: elke bestelling heeft al een standaardgezicht, zonder meerprijs. Inbegrepen bij ${planName('brand', 'nl')}, en bij ${planName('studio', 'nl')} op de termijnen van 12 maanden.`,
     costCta: 'Bekijk alle prijzen per aantal',
     costSequence: `Ontworpen en vastgezet voordat je eerste bestelling wordt ingepland.`,
 
     fitMeta: '( Waar het past )',
     fitH: 'Eén look, door alles wat je verkoopt.',
-    fitSub: 'Hetzelfde gezicht op elk product dat je verkoopt.',
+    fitSub: 'Wat een assortiment als één merk laat lezen.',
     fitWhatH: 'Wat het is',
     // Eén alinea, doorlichting 4 september 2026: wat het ís staat al bovenaan.
     fitWhat: [
-      'Zodra het vastligt, maken we elke visual in elke bestelling met dat gezicht. Zo horen je catalogus en je feed bij elkaar in plaats van dat het losse shoots blijven — en mensen herkennen je beelden nog voordat ze je naam lezen.',
+      'Zodra het vastligt, blijft het gezicht hetzelfde in elke bestelling waarin je het gebruikt — per bestelling kies je of het erin komt, en op welke producten. Zo horen je catalogus en je feed bij elkaar in plaats van dat het losse shoots blijven — en mensen herkennen je beelden nog voordat ze je naam lezen.',
     ],
     fitWhereH: 'Waar je het gebruikt',
     fitWhere: [
@@ -384,10 +388,10 @@ const COPY = {
       ['Hele collecties', `${WINDOW_THRESHOLD} producten of tweehonderd, in één bestelling die als één geheel moet overkomen.`],
     ],
 
-    dirH: 'Negen richtingen om op te reageren.',
+    dirH: 'Negen vertrekpunten om op te reageren.',
     dirLead: 'Vertrekpunten, geen menu. We ontwerpen twee of drie richtingen op basis van jouw referenties.',
 
-    outH: 'Echt geleverd werk, geen voorbeeld.',
+    outH: 'Echt geleverd werk, geen mock-up.',
     outAlt: 'Een voorbeeld van een VISUAILS merkmodel',
 
     procH: 'Hoe een merkmodel tot stand komt',
@@ -396,7 +400,7 @@ const COPY = {
     give: [
       ['references', 'Een paar <strong>referenties</strong>.'],
       ['spec', 'De <strong>leeftijd en styling</strong> die je wilt.'],
-      ['nevers', 'Wat je <strong>wel en niet</strong> wil zien.'],
+      ['nevers', 'Wat je <strong>wel en niet</strong> wilt zien.'],
     ],
     getH: 'Wat je terugkrijgt',
     get: [
@@ -471,16 +475,16 @@ const STEPS = {
   en: [
     ['You send', 'You send references and tell us the look you want.'],
     ['Directions', 'We design two or three directions for you to react to.'],
-    ['You choose', 'Pick the face that fits, with one round of refinement.'],
+    ['You choose', 'Pick the face that fits. You get one correction round on it.'],
     ['Locked', 'The model is fixed so it cannot drift between orders.'],
-    ['In every order', 'From then on your model carries every visual we make.'],
+    ['Per order', 'From then on you choose per order whether to use it, and on which products.'],
   ],
   nl: [
     ['Jij stuurt', 'Je stuurt referenties en vertelt welke look je wilt.'],
     ['Richtingen', 'We ontwerpen twee of drie richtingen waarop je kunt reageren.'],
-    ['Jij kiest', 'Kies het gezicht dat past, met één ronde verfijning.'],
+    ['Jij kiest', 'Kies het gezicht dat past. Daarop krijg je één correctieronde.'],
     ['Vastgezet', 'We leggen het model vast, zodat het niet per bestelling gaat verschuiven.'],
-    ['In elke bestelling', 'Vanaf dan draagt jouw model elke visual die we maken.'],
+    ['Per bestelling', 'Vanaf dan kies je per bestelling of je het gebruikt, en op welke producten.'],
   ],
 };
 
@@ -578,7 +582,7 @@ const wa = waHref(c.waText);
       Twee secties (1.071 + 724 px) werden één: links waarom een eigen gezicht,
       rechts het bedrag en wat erin zit. De vraag van de pagina is "wat is het
       en wat kost het", en die hoort in één blik beantwoord te worden. */}
-  <section class="paneel" aria-labelledby="bm-nota">
+  <section class="paneel vervolg" aria-labelledby="bm-nota">
     <div class="bm-wat-kost">
       <div class="bm-wat">
       <header class="paneel-kop">
@@ -655,7 +659,7 @@ const wa = waHref(c.waText);
       Negen blokken met elk een alinea (1.476 px) werden letter + naam. De
       uitleg per richting krijg je in het gesprek; hier gaat het erom dat je
       ziet dat er gekozen kan worden. */}
-  <section class="paneel" aria-labelledby="bm-richting">
+  <section class="paneel vervolg" aria-labelledby="bm-richting">
     <header class="paneel-kop">
       <h2 id="bm-richting" class="hoog hoog-2">{c.dirH}</h2>
       <p class="lopend">{c.dirLead}</p>
@@ -669,7 +673,7 @@ const wa = waHref(c.waText);
 
   {/* ── 6 · DE STANDAARDBIBLIOTHEEK — ÉÉN BAND ─────────────────────────────
       Het anker #standard blijft (/lifestyle en het menu wijzen erheen). */}
-  <section class="paneel prijsband" id="standard" aria-labelledby="bm-bieb">
+  <section class="paneel vervolg prijsband" id="standard" aria-labelledby="bm-bieb">
     <div class="prijsband-in">
       <div class="prijsband-woord">
         <h2 id="bm-bieb" class="hoog hoog-3">{c.libH}</h2>

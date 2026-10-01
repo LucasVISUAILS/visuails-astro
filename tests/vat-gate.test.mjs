@@ -100,11 +100,12 @@ console.log('\n── hetzelfde nummer, zónder het vinkje ──');
 
 console.log('\n── de Verenigde Staten ──');
 {
+  /* Sinds 29 september 2026 (Lucas: een Amerikaans bedrijf moet gewoon kunnen
+     bestellen) zonder beoordeling vooraf; de controle zit op het betaalmiddel
+     ná de betaling — zie hieronder. */
   const g = gate({ country: 'US' });
-  truthy('wordt gemarkeerd', g.needsReview);
-  falsy('en mag niet meteen betaald worden', g.payableNow);
-  truthy('de reden zegt dat het op het woord van de klant rust',
-    g.reasons.join(' ').includes('klant zelf opgeeft'));
+  falsy('wordt niet meer vooraf gemarkeerd', g.needsReview);
+  truthy('en mag meteen betaald worden', g.payableNow);
 
   // En toch is het tarief al bekend. Dit is het punt waarop de specificatie
   // "GEEN_BTW_BEREKENING_NU" zegt en waarop wij dat niet doen: het tarief volgt
@@ -119,8 +120,8 @@ console.log('\n── een niet-EU-klant die óók een nummer invult ──');
 {
   // Er is geen register om het in na te kijken, dus het verandert niets.
   const g = gate({ country: 'CH', hadNumber: true, vatValid: null });
-  truthy('nog steeds gemarkeerd', g.needsReview);
-  falsy('nog steeds niet meteen betaalbaar', g.payableNow);
+  falsy('ook niet gemarkeerd', g.needsReview);
+  truthy('en meteen betaalbaar', g.payableNow);
   check('en geen ICP-regel',
     (await import('../src/data/vat.js')).needsIcp(
       vatDecision({ country: 'CH', vatValid: true }).treatment), false);
@@ -142,6 +143,18 @@ console.log('\n── het betaalmiddel achteraf ──');
     'string');
   check('geen betaalmiddel is geen samenloop',
     paymentMismatch({ method: '', country: 'US', treatment: VAT_TREATMENT.outsideScope }), null);
+  check('een Nederlandse kaart op een Amerikaanse bestelling is een samenloop',
+    typeof paymentMismatch({ method: 'creditcard', country: 'US', treatment: VAT_TREATMENT.outsideScope, cardCountry: 'NL' }),
+    'string');
+  check('een Duitse kaart ook (EU)',
+    typeof paymentMismatch({ method: 'creditcard', country: 'US', treatment: VAT_TREATMENT.outsideScope, cardCountry: 'DE' }),
+    'string');
+  check('een Amerikaanse kaart niet',
+    paymentMismatch({ method: 'creditcard', country: 'US', treatment: VAT_TREATMENT.outsideScope, cardCountry: 'US' }), null);
+  check('Bancontact bij buiten de EU wel',
+    typeof paymentMismatch({ method: 'bancontact', country: 'US', treatment: VAT_TREATMENT.outsideScope }), 'string');
+  check('PayPal zonder kaartland niet',
+    paymentMismatch({ method: 'paypal', country: 'US', treatment: VAT_TREATMENT.outsideScope }), null);
 }
 
 console.log('\n── de termijnen staan in de code, niet in een pagina ──');
@@ -173,7 +186,9 @@ console.log('\nelk betaalpad sluit iDEAL uit op een bestelling zonder btw');
   const zonderNoten = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
   for (const [bestand, patroon] of [
     ['functions/api/order.js', /excludeIdeal:\s*vatCall\.rate === 0/],
-    ['src/lib/betaallink.js', /excludeIdeal:\s*Number\(o\.vat_rate\) === 0/],
+    /* betaallink.js maakt sinds 24 september 2026 zelf geen betaling meer: de
+       mail linkt naar /api/order-pay, en dáár moet de regel staan. */
+    ['functions/api/order-pay.js', /excludeIdeal:\s*Number\(o\.vat_rate\) === 0/],
     ['src/lib/account.js', /excludeIdeal:\s*Number\(order\.vat_rate\) === 0/],
   ]) {
     const bron = zonderNoten(lezen(new URL(`../${bestand}`, import.meta.url), 'utf8'));

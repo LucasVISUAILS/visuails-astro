@@ -32,7 +32,7 @@ const { kaarten, rondeTekst } = v;
   title={t.ordersHeading}
   kop={t.ordersHeading} lede={t.ordersLede}
   chip={statusFilter && v.shown.length ? { tekst: t.flActive, toon: 'signal' } : null}
-  actie={{ href: '/start/', label: t.ovNewCta }}
+  actie={{ href: lang === 'nl' ? '/nl/start/' : '/start/', label: t.ovNewCta }}
 >
   {payFailed && <p class="st-melding is-warn" role="status">{t.payFailed}</p>}
   {rondeTekst && <p class={`st-melding${rondeFlag === 'verstuurd' ? '' : ' is-warn'}`} role="status">{rondeTekst}</p>}
@@ -49,7 +49,7 @@ const { kaarten, rondeTekst } = v;
   <section class="st-blok" aria-label={t.ordersHeading}>
     <div class="st-blok-kop"><h2>{t.ordersHeading}{v.shown.length ? <span class="st-tel">({v.shown.length})</span> : null}</h2></div>
     {kaarten.length
-      ? <div class="st-bestellingen">{kaarten.map((k) => <Bestelling t={t} lang={lang} v={k.view} order={k.o} events={k.events} />)}</div>
+      ? <div class="st-bestellingen">{kaarten.map((k) => <Bestelling t={t} lang={lang} v={k.view} order={k.o} events={k.events} files={k.files} />)}</div>
       : <p class="st-leeg">{v.empty.text} {v.empty.clear && <a class="st-link" href="/account/orders">{v.empty.clear}</a>}</p>}
   </section>
 </StudioLayout>

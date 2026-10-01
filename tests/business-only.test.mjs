@@ -135,7 +135,9 @@ console.log('\nde beslissing per geval');
     g({ country: 'US', regNumber: '88-1234567', noVat: true }).ok, true);
   ok('een Braziliaans CNPJ ook, in zijn eigen vorm',
     g({ country: 'BR', regNumber: '12.345.678/0001-95', noVat: true }).ok, true);
-  ok('US zonder nummer niet', g({ country: 'US', noVat: true }).ok, false);
+  /* Sinds 29 september 2026 ook zonder nummer: "verklaring wereldwijd". */
+  ok('US zonder nummer ook, met de verklaring', g({ country: 'US', noVat: true }).ok, true);
+  ok('  en zonder reden op de lijst', g({ country: 'US', noVat: true }).reasons.length, 0);
 }
 
 console.log('\nde verklaring is nooit optioneel');
@@ -199,12 +201,13 @@ console.log('\nhet formulier vraagt het, en op de juiste plek');
   ok('met de versie ernaast', /name="business_version"/.test(FORM), true);
   ok('en hij is verplicht', /name="business_declaration" value="yes" required/.test(FORM), true);
 
-  /* DE HERROEPINGSVERKLARING BLIJFT, en staat ERONDER. De hoedanigheid komt eerst:
-     een zakelijke klant heeft de bedenktijd nooit gehad, dus die vraag komt logisch
-     voor de vraag of hij haar opgeeft. */
-  ok('de herroepingsverklaring staat er nog', /name="withdrawal_consent"/.test(FORM), true);
-  ok('en de zakelijke verklaring staat erboven',
-    FORM.indexOf('name="business_declaration"') < FORM.indexOf('name="withdrawal_consent"'), true);
+  /* ÉÉN VINKJE SINDS 30 SEPTEMBER 2026 (Lucas: "samenvoegen"). De zakelijke
+     verklaring v2 draagt de herroepingsverklaring in zich; een tweede vinkje
+     mag er dus niet meer staan, en de versie van de zin rijdt verborgen mee. */
+  ok('er is geen tweede vinkje voor de herroeping meer', /name="withdrawal_consent"/.test(FORM), false);
+  ok('maar de versie van de verklaring rijdt mee', /name="consent_version"/.test(FORM), true);
+  ok('en de zakelijke tekst noemt het herroepingsrecht', /herroepingsrecht/.test(currentBusiness('nl')), true);
+  ok('ook in het Engels', /right of withdrawal/.test(currentBusiness('en')), true);
 }
 
 console.log('\nen het formulier van de proefvisual vraagt het ook — dat deed het niet');
@@ -284,8 +287,8 @@ console.log('\nen het formulier van de proefvisual vraagt het ook — dat deed h
       /name="business_declaration"[^>]*required/.test(html), true);
     ok(`${lang}: met de versie ernaast`,
       new RegExp(`name="business_version" value="${BUSINESS_VERSION}"`).test(html), true);
-    ok(`${lang}: en de herroepingsverklaring`,
-      /name="withdrawal_consent"[^>]*required/.test(html), true);
+    ok(`${lang}: en geen apart herroepingsvinkje meer (samengevoegd)`,
+      /name="withdrawal_consent"/.test(html), false);
     ok(`${lang}: met die versie ernaast`, /name="consent_version" value="/.test(html), true);
     /* UIT DE GEDEELDE BRON en niet als eigen tekst op de pagina. Een tweede kopie
        van een juridische verklaring is hoe de twee uit elkaar gaan lopen — en dan
@@ -355,8 +358,12 @@ console.log('\nde voorwaarden zeggen het, in beide talen, met 10a als terugval')
   /* DE UITLEG WAAROM HET GEEN KVK-EIS IS hoort op de pagina en niet alleen in een
      codecommentaar. Een klant buiten Nederland leest hier waarom hij niet wordt
      weggestuurd, en dat is precies de zorg waar deze opdracht mee begon. */
-  ok('EN legt uit waarom het geen KVK-eis is', /only exists in the Netherlands/i.test(T.en), true);
-  ok('NL idem', /alleen in Nederland bestaat/i.test(T.nl), true);
+  /* 29 september 2026: "alleen in Nederland een KVK-nummer, omdat dat nummer alleen
+     daar bestaat" — en buiten de EU is de bevestiging genoeg. */
+  ok('EN legt uit waarom het geen KVK-eis is', /only ask for a KVK number in the Netherlands, because that number only exists there/i.test(T.en), true);
+  ok('NL idem', /alleen in Nederland om een KVK-nummer, omdat dat nummer alleen daar bestaat/i.test(T.nl), true);
+  ok('EN buiten de EU is de bevestiging genoeg', /Outside the EU your confirmation is enough/.test(T.en), true);
+  ok('NL idem', /Buiten de EU is je bevestiging genoeg/.test(T.nl), true);
   /* EN HET WEIGERT NIET. De pagina belooft hetzelfde als de code doet: stilzetten,
      zeggen wat er nodig is, en beginnen zodra het er is. */
   ok('EN belooft stilzetten en niet weigeren', /we do not refuse the order/i.test(T.en), true);

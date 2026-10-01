@@ -6,7 +6,7 @@
  * zodat wat de test bekijkt ook is wat Lucas op de afdrukken ziet.
  *
  *   VOLT  (klant 7007, Nederlands) — vier bestellingen in vier standen, een
- *          lopend Studio-abonnement met twaalf slots waarvan drie gebruikt,
+ *          lopend Pro-abonnement met twaalf slots waarvan drie gebruikt,
  *          twee items op de lijst (één vastgezet, met foto's), geleverde
  *          beelden in R2.
  *   NOORD (klant 7008, Engels)     — niets: geen bestelling, geen abonnement.
@@ -51,7 +51,7 @@ export function studioSeed({ hash, hash2, img }) {
     `INSERT INTO orders (id, ref, customer_id, service, status, name, brand, email, total_cents, lang, created_at, tier, product_count, payment_status, payment_provider, paid_at, vat_cents, vat_rate, vat_treatment, delivered_at)
      VALUES (${ORDERS.sample}, 'VIS-2607-1180', ${VOLT.id}, 'test-sample', 'delivered', 'Mara', 'VOLT', '${VOLT.email}', 100, 'nl', '2026-07-19', 'unattended', 1, 'paid', 'mollie', '2026-07-19', 0, 0, 'nl_standard', '2026-07-21')`,
     `INSERT INTO order_events (order_id, status, note, created_at) VALUES (${ORDERS.catalog}, 'received', NULL, '2026-09-01 10:12'), (${ORDERS.catalog}, 'in_production', 'Gestart: 30 producten, catalogusset', '2026-09-03 09:00'), (${ORDERS.check}, 'received', NULL, '2026-08-28'), (${ORDERS.check}, 'in_production', NULL, '2026-08-30'), (${ORDERS.check}, 'human_check', NULL, '2026-09-02'), (${ORDERS.delivered}, 'received', NULL, '2026-08-18'), (${ORDERS.delivered}, 'in_production', NULL, '2026-08-19'), (${ORDERS.delivered}, 'human_check', NULL, '2026-08-21'), (${ORDERS.delivered}, 'delivered', NULL, '2026-08-22'), (${ORDERS.lifestyle}, 'received', NULL, '2026-09-04 16:40')`,
-    /* Een lopend Studio-abonnement met twee items op de lijst, zodat /account/plan
+    /* Een lopend Pro-abonnement met twee items op de lijst, zodat /account/plan
        de volle pagina toont en niet alleen het lege scherm. */
     `DELETE FROM plan_queue WHERE customer_id=${VOLT.id}`,
     `DELETE FROM subscription_slots WHERE subscription_id=${SUB_ID}`,

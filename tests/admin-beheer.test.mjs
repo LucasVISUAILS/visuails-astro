@@ -430,11 +430,12 @@ console.log('\nde klantpagina laat het allemaal zien');
   ok('er is een formulier om gegevens te corrigeren', h.includes('/admin/customers/7/details'), true);
   ok('een knop voor een nieuwe inloglink', h.includes('/admin/customers/7/signin-link'), true);
   ok('een tegoedpaneel', h.includes('/admin/customers/7/credits'), true);
-  ok('met het saldo erin', /€37\.50/.test(h), true);
+  ok('met het saldo erin', /€ 37,50/.test(h), true);
   ok('en de reden van een boeking', /goodwill, revisie duurde te lang/.test(h), true);
-  /* De belofte die er NIET mag staan: dit verrekent niets automatisch. Zou die zin
-     verdwijnen, dan gaat iemand ervan uit dat het bij het afrekenen wordt afgetrokken. */
-  ok('en de waarschuwing dat het niet automatisch verrekend wordt', /niet<\/strong> automatisch/.test(h), true);
+  /* Sinds 29 september 2026 WORDT het automatisch verrekend, maar alleen als de
+     klant ingelogd bestelt. Dat voorbehoud moet er staan: zonder die zin denk je
+     dat elke bestelling het tegoed al meeneemt. */
+  ok('en dat het alleen automatisch gaat als de klant ingelogd bestelt', /automatisch verrekend<\/strong> zodra de klant ingelogd bestelt/.test(h), true);
   ok('er is een deactiveerpaneel', h.includes('/admin/customers/7/status'), true);
   ok('en de modelkaart heeft hernoemen en verbergen', h.includes('/admin/models/1/manage'), true);
 }

@@ -1,0 +1,33 @@
+// Ronde 4, vervolg: stap 4 t/m 7 van _dl-ronde4.mjs op een al opgezegd jaar.
+import { start, foto, tekst, mails, sql, sqlw, SITE } from './_dl.mjs';
+import { adminLogin } from './_admin.mjs';
+import { studioLogin } from './_studio.mjs';
+const email = process.argv[2] || 'ronde4@merk.test';
+await sqlw('DELETE FROM rate_limits');
+const k = await sql(`SELECT id FROM customers WHERE email = '${email}'`);
+const s = await start(); const { page } = s;
+await studioLogin(page, email);
+const n2 = (await mails()).length;
+const r = await page.request.post(SITE + '/account/plan/cancel', { form: { confirm: 'OPZEGGEN' }, maxRedirects: 0 });
+console.log('4 · tweede opzegging:', r.status(), r.headers().location, '— nieuwe mails:', (await mails()).length - n2);
+const r2 = await page.request.post(SITE + '/account/plan/pause', { form: { do: 'pause' }, maxRedirects: 0 });
+console.log('   pauzeren na opzeggen:', r2.status(), r2.headers().location, JSON.stringify(await sql(`SELECT status FROM subscriptions WHERE customer_id = ${k[0].id} ORDER BY id DESC LIMIT 1`)));
+await page.goto(SITE + '/account', { waitUntil: 'load' });
+console.log('5 · overzicht:', (await tekst(page, 'main')).replace(/\s+/g, ' ').match(/TEGOED OP JE ACCOUNT.{0,80}/i)?.[0]);
+await foto(page, 'r4-overzicht', { vol: true });
+await page.goto(SITE + '/account/plan', { waitUntil: 'load' });
+console.log('   chip:', (await tekst(page, 'header, .st-kop, body')).replace(/\s+/g, ' ').match(/(STOPT NA DIT JAAR|Stopt na dit jaar|LOOPT)/)?.[0]);
+await adminLogin(page);
+await page.goto(SITE + `/admin/customers/${k[0].id}`, { waitUntil: 'load' });
+console.log('6 · admin:', (await tekst(page, 'main, body')).replace(/\s+/g, ' ').match(/Abonnement · .{0,300}/)?.[0]);
+await foto(page, 'r4-admin-klant', { vol: true });
+const o = await sql(`SELECT id FROM orders WHERE customer_id = ${k[0].id} ORDER BY id DESC LIMIT 1`);
+if (o[0]) { await page.goto(SITE + `/admin/orders/${o[0].id}/files`, { waitUntil: 'load' }); console.log('   orderpagina:', (await tekst(page, 'main, body')).replace(/\s+/g, ' ').match(/Deze klant heeft.{0,120}/)?.[0] || '(geen bestelling of geen melding)'); }
+console.log('fouten:', s.fouten.filter((f) => !/account\/me/.test(f)));
+await s.stop();
+const m = await start({ mobiel: true });
+await studioLogin(m.page, email);
+await m.page.goto(SITE + '/account/plan', { waitUntil: 'load' });
+await foto(m.page, 'r4-saldo-mob', { vol: true });
+console.log('7 · telefoon, horizontaal scrollen:', await m.page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth));
+await m.stop();

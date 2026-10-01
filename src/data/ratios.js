@@ -86,7 +86,7 @@ export const CATALOG_RATIOS = [
       nl: 'Marktplaatsen en advertenties. De veilige.',
     },
     what: {
-      en: 'Works everywhere. Amazon, bol and Zalando all accept it on a main image, and it is the safest choice if you are not sure.',
+      en: 'Works everywhere. Amazon, bol.com and Zalando all accept it on a main image, and it is the safest choice if you are not sure.',
       nl: 'Werkt overal. Amazon, bol en Zalando accepteren hem op een hoofdafbeelding, en het is de veiligste keuze als je twijfelt.',
     },
   },

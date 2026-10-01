@@ -1,0 +1,31 @@
+import { start, foto, tekst, sql, mails, mailtekst, SITE } from './_dl.mjs';
+import { adminLogin } from './_admin.mjs';
+import { studioLogin } from './_studio.mjs';
+const id = process.argv[2] || '7093';
+const s = await start(); const { page } = s;
+await adminLogin(page);
+await page.goto(SITE + `/admin`, { waitUntil: 'load' });
+await page.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; }));
+const vorm = page.locator(`form[action="/admin/orders/${id}/cancel"]`);
+console.log('annuleerformulier:', await vorm.count());
+console.log(await vorm.first().evaluate((f) => f.outerHTML.replace(/\s+/g, ' ').slice(0, 1800)).catch(() => '-'));
+const voor = (await mails()).length;
+await vorm.locator('[name="reason"]').fill('Je gaf aan dat de collectie niet doorgaat.');
+if (await vorm.locator('select[name="payment"]').count()) await vorm.locator('select[name="payment"]').selectOption(process.argv[3] || 'refund');
+for (const cb of await vorm.locator('input[type="checkbox"]').all()) { console.log('checkbox', await cb.getAttribute('name'), await cb.isChecked()); }
+page.on('dialog', (d) => d.accept());
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), vorm.locator('button[type="submit"]').first().click()]);
+console.log('na annuleren →', page.url());
+console.log((await tekst(page, 'main, body')).replace(/\n{2,}/g, '\n').slice(0, 800));
+await page.waitForTimeout(4000);
+console.log(JSON.stringify(await sql(`SELECT status, payment_status, refunded_cents, cancel_reason FROM orders WHERE id=${id}`)));
+console.log(JSON.stringify(await sql(`SELECT number, kind, order_id FROM invoices WHERE order_id=${id}`)));
+for (const m of (await mails()).slice(voor)) { console.log(`\nMAIL #${m.n} → ${JSON.stringify(m.to)} "${m.subject}"`); console.log(String(await mailtekst(m.n)).slice(0, 1400)); }
+const [o] = await sql(`SELECT email FROM orders WHERE id=${id}`);
+const s2 = await start(); await studioLogin(s2.page, o.email);
+await s2.page.goto(SITE + '/account/invoices/', { waitUntil: 'load' });
+console.log('\nSTUDIO FACTUREN:\n' + (await tekst(s2.page, 'main')).replace(/\n{2,}/g, '\n').slice(0, 1500));
+await foto(s2.page, 'studio-facturen-na-annulering', { vol: true });
+await s2.page.goto(SITE + '/account/orders/', { waitUntil: 'load' });
+console.log('\nSTUDIO BESTELLINGEN:\n' + (await tekst(s2.page, 'main')).replace(/\n{2,}/g, '\n').slice(0, 1000));
+console.log(s.fouten, s2.fouten.filter((x) => !/account\/me/.test(x))); await s2.stop(); await s.stop();

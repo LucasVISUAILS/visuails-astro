@@ -435,6 +435,8 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-beeld-noot { font-size: .8rem; }
 .st-keur { margin: 0; }
 .st-keur-alles { margin-top: .9rem; }
+.st-keur-bestelling { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0 0 1rem; }
+.st-keur-bestelling .st-meta { margin: 0; flex: 1 1 18rem; }
 .st-aanmerk { display: flex; flex-direction: column; gap: .4rem; }
 .st-vink { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--ink-2); cursor: pointer; }
 .st-vink input { width: 16px; height: 16px; margin: 0; accent-color: var(--ink-1); }
@@ -1087,11 +1089,22 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
 .st-credit-tel b { font-family: var(--font-heading); font-size: 2.2rem; line-height: 1; font-weight: 500; font-stretch: 125%; letter-spacing: -.02em; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 .st-credit-tel span { font-size: .92rem; color: var(--ink-3); }
 .st-credit-balk { height: 10px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
-.st-credit-vul { display: block; height: 100%; background: var(--st-accent-lijn); border-radius: var(--r-pill); transition: width .35s ease; }
+.st-credit-vul { display: block; height: 100%; background: var(--ink-2); border-radius: var(--r-pill); transition: width .35s ease; }
 @media (prefers-reduced-motion: reduce) { .st-credit-vul { transition: none; } }
 .st-credit-regel { margin: 0; }
 .st-credit-regel b { color: var(--ink-1); }
 .st-credit .st-frames { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
+
+/* ── HET SALDO ALS TEGELS — 24 september 2026 ─────────────────────────────
+   Credits over (met een balk die leegloopt) en, als er iets staat, het tegoed
+   ernaast. Twee kolommen vanaf tabletbreedte, onder elkaar op een telefoon.
+   Geen violet: dit is een stand, geen actie. */
+.st-saldotegels { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 720px) { .st-saldotegels.is-twee { grid-template-columns: 3fr 2fr; } }
+.st-saldo-tegel { display: flex; flex-direction: column; gap: .55rem; min-width: 0; }
+.st-saldo-tegel.is-tegoed { padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--st-ronding-in); background: var(--surface-2); }
+.st-saldo-tegel.is-los { padding: 1.25rem 1.4rem; }
+.st-saldo-tegel .st-meta { margin: 0; }
 
 .st-credit-vul.is-p0 { width: 0; }
 .st-credit-vul.is-p5 { width: 5%; }
@@ -1185,4 +1198,17 @@ a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: va
 @media (max-width: 40.625em) {
   .st-kal-groot .st-kal-dag { min-height: 68px; }
   .st-kal-item { display: none; }
+}
+
+/* Opzeggen ingeklapt — zie plan.astro, 29 september 2026. */
+.st-opzeggen { margin-top: 1rem; }
+.st-opzeggen > summary { cursor: pointer; list-style: none; display: inline-block; }
+.st-opzeggen > summary::-webkit-details-marker { display: none; }
+.st-opzeggen[open] > summary { margin-bottom: .6rem; }
+
+/* ── 16 PX OP EEN TELEFOON — 1 oktober 2026 ─────────────────────────────────
+   iOS Safari zoomt in op elk veld onder 16 px zodra je erin tikt. De dagkeuze op
+   Abonnement stond op 13 px. Het codeveld (.is-code) is groter en blijft dat. */
+@media (max-width: 760px), (pointer: coarse) {
+  .st-veld:not(.is-code), .st-veld.st-veld-kort, .st-veld-klein { font-size: 16px; }
 }

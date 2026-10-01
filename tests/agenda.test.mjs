@@ -347,6 +347,13 @@ console.log('\nde site zegt "dagen" waar de agenda dagen bedoelt');
       /data-processing-agreement/,   // een wettelijke termijn, geen studiodag
       /thank-you/,                   // de doorlooptijd van een terugbetaling
       /faq/, /compare/, /test-sample/, // wanneer er iemand op WhatsApp zit
+      /* 29 september 2026: VOORRANG heeft een harde termijn in werkdagen ("vóór
+         15:00 betaald, de volgende werkdag om 17:00") — dat is een betaalde optie
+         met geld terug, geen studiodag voor de gewone levering. Hij staat in het
+         bestelformulier, op /pricing en in de voorwaarden. En /privacy noemt de
+         vijf werkdagen waarbinnen je de modelaanbieders krijgt: een termijn voor
+         een verzoek, net als in de verwerkersovereenkomst. */
+      /\/start\/(catalog|lifestyle|complete)\//, /\/pricing\//, /\/terms\//, /\/privacy\//,
     ];
     const paginas = globSync('dist/**/*.html').map((p) => p.replace(/\\/g, '/'));
     check('er zijn genoeg pagina’s doorzocht', paginas.length > 50, true);

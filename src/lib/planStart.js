@@ -133,9 +133,19 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
 
   const state = await planState(env, customerId);
   if (!state.sub) return { ok: false, reden: 'geen-abonnement' };
-  /* Een gepauzeerd of opgezegd abonnement mag geen werk starten. verbruikToestaan()
-     dekt dat al af, maar een aparte melding is bruikbaarder dan "geen saldo". */
-  if (state.sub.status !== 'active') return { ok: false, reden: `abonnement-${state.sub.status}` };
+  /* Een gepauzeerd abonnement mag geen werk starten. verbruikToestaan() dekt
+     dat al af, maar een aparte melding is bruikbaarder dan "geen saldo".
+
+     ── EEN OPGEZEGD ABONNEMENT WEL, ZOLANG DE BETAALDE TERMIJN LOOPT ────────
+     24 september 2026, uit de doorloop. Hier stond `!== 'active'`, en dat
+     sloot opgezegd ook uit. Maar queueLock() laat een opgezegd abonnement in
+     zijn laatste betaalde termijn nog vastzetten — de credits gaan er dan al
+     af — en de voorwaarden beloven dat die credits tot het einde van de
+     termijn te besteden zijn. Het gevolg: vastgezet, afgeschreven, en nooit
+     te starten. loadSubscription() geeft een opgezegd abonnement alleen terug
+     zolang er voor de lopende termijn betaald is, dus deze toets hoeft dat
+     niet opnieuw te doen. */
+  if (state.sub.status !== 'active' && state.sub.status !== 'cancelled') return { ok: false, reden: `abonnement-${state.sub.status}` };
 
   const klaar = klaarOmTeStarten(state);
   let items = klaar.items;
@@ -295,18 +305,28 @@ export async function startPlanWindow(env, customerId, { max = null } = {}) {
       if (soort) details[`kind_p${i + 1}`] = soort;
     });
 
+    /* ── DE DIENST VOLGT WAT ER IN ZIT — 24 september 2026 ──────────────────
+       Hier stond altijd 'drop' (catalog + lifestyle). Uit de doorloop: één
+       vastgezette catalogset werd in Studio "Catalog + Lifestyle · 1 product",
+       en de agenda woog hem als een complete set (7 beelden in plaats van 4).
+       Is alles in deze bestelling catalog, of alles lifestyle, dan heet de
+       bestelling zo. Gemengd of video blijft 'drop': de soort per product staat
+       in kind_pN, en daar leest het bord van. */
+    const soorten = [...new Set(rijen.map((q) => String(q.kind || '').trim()))];
+    const dienst = soorten.length === 1 && (soorten[0] === 'catalog' || soorten[0] === 'lifestyle') ? soorten[0] : 'drop';
+
     const ref = maakRef();
     const rij = await env.DB.prepare(
       `INSERT INTO orders (ref, customer_id, service, name, brand, email, details_json,
                            total_cents, lang, tier, product_count, payment_status,
                            window_start, window_end)
-       VALUES (?1, ?2, 'drop', ?3, ?4, ?5, ?6, 0, ?7, ?8, ?9, 'plan', ?10, ?11)
+       VALUES (?1, ?2, ?12, ?3, ?4, ?5, ?6, 0, ?7, ?8, ?9, 'plan', ?10, ?11)
        RETURNING id`
     ).bind(
       ref, customerId, klant.name || null, klant.brand || null, klant.email,
       JSON.stringify(details), taal,
       vensterStart ? 'attended' : 'unattended',
-      rijen.length, vensterStart, vensterEind,
+      rijen.length, vensterStart, vensterEind, dienst,
     ).first().catch((e) => { console.error('[abonnement] bestelling maken mislukt:', e?.message || e); return null; });
 
     if (!rij?.id) {

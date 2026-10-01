@@ -8,12 +8,13 @@
 // tarief, los of binnen een bestelling. Dat staat er nu bij, met de btw-vlag.
 import Layout from '../../../layouts/Layout.astro';
 import VideoPage from '../../../components/VideoPage.astro';
-import { euro, AMOUNT, vatLabel } from '../../../data/pricing.js';
+import { euro, AMOUNT, vatLabel, VIDEO_OP_AANVRAAG } from '../../../data/pricing.js';
 
-const description =
-  `Acht seconden subtiele beweging, voor productpagina’s, social en ads. ` +
-  `${euro(AMOUNT.video, 'nl')} per clip ${vatLabel('excl', 'nl')} — hetzelfde ` +
-  `tarief los of binnen een bestelling.`;
+const description = VIDEO_OP_AANVRAAG
+  ? `Acht seconden subtiele beweging, voor productpagina’s, social en advertenties. Op aanvraag — je krijgt de prijs schriftelijk.`
+  : `Acht seconden subtiele beweging, voor productpagina’s, social en ads. ` +
+    `${euro(AMOUNT.video, 'nl')} per clip ${vatLabel('excl', 'nl')} — hetzelfde ` +
+    `tarief los of binnen een bestelling.`;
 ---
 
 <Layout

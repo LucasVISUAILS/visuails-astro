@@ -21,6 +21,7 @@
  */
 import { d1, verseDb } from './lib/d1sqlite.mjs';
 import { tasks, QUEUE_WATCH } from '../cron/index.js';
+import { termijnMaand } from '../src/lib/subscription.js';
 
 let ok_ = 0; let totaal = 0;
 function ok(naam, kreeg, verwacht = true) {
@@ -61,6 +62,24 @@ abo(3, 3, 'SUB-VER', 'active', ANDERE_DAG);                     // week nog lang
 abo(4, 4, 'SUB-STUK', 'paused', WEEKDAG, 'payment_failed');     // gepauzeerd op incasso
 abo(5, 5, 'SUB-CONCEPT', 'active', WEEKDAG);                    // week komt eraan, alleen concepten
 
+/* ── E6: EEN INCASSO DIE NIET EENS KWAM — 24 september 2026 ──────────────────
+   Klant 6 en 7 zijn allebei al twee maanden bezig; hun termijn begon vijf dagen
+   geleden. Bij 6 kwam er deze termijn niets binnen (verlopen machtiging: Mollie
+   stuurt dan geen webhook), bij 7 wel. Alleen 6 hoort in het nachtverslag. */
+{
+  const vijfTerug = new Date(nu.getTime() - 5 * 86400000);
+  const dag = Math.min(28, vijfTerug.getUTCDate());
+  const start = new Date(Date.UTC(vijfTerug.getUTCFullYear(), vijfTerug.getUTCMonth() - 2, dag)).toISOString().slice(0, 10);
+  db.prepare("INSERT INTO customers (id, email, brand) VALUES (6, 'ria@zesde.test', 'ZESDE')").run();
+  db.prepare("INSERT INTO customers (id, email, brand) VALUES (7, 'bo@zevende.test', 'ZEVENDE')").run();
+  for (const [id, ref] of [[6, 'SUB-STIL'], [7, 'SUB-BETAALD']]) {
+    db.prepare(`INSERT INTO subscriptions (id, customer_id, ref, plan, term, status, window_day, started_at, mollie_subscription_id)
+                VALUES (?, ?, ?, 'studio', 'monthly', 'active', ?, ?, ?)`).run(id, id, ref, ANDERE_DAG, start, `sub_${id}`);
+  }
+  const maand = termijnMaand({ started_at: start }, nu);
+  db.prepare('INSERT INTO subscription_months (subscription_id, month, granted) VALUES (7, ?, 12)').run(maand);
+}
+
 /* ── "KLAAR" IS SINDS 0035 VASTGEZET EN NIET ALLEEN "MET FOTO'S" ─────────────
  *
  * Klant 2 heeft één item mét foto's dat hij ook heeft VASTGEZET — dat is wat er
@@ -85,7 +104,10 @@ db.prepare("INSERT INTO plan_queue (customer_id, position, name, upload_batch) V
 const gemaild = [];
 const echteFetch = globalThis.fetch;
 globalThis.fetch = (url, init) => {
-  gemaild.push(JSON.parse(init.body).to[0]);
+  /* sendMail() (sinds 24 september 2026 ook voor deze mail) stuurt `to` als
+     tekst; de oude fetch stuurde een lijst. Beide lezen. */
+  const aan = JSON.parse(init.body).to;
+  gemaild.push(Array.isArray(aan) ? aan[0] : aan);
   return Promise.resolve(new Response('{"id":"m"}', { status: 200 }));
 };
 const env = { DB: d1(db), RESEND_API_KEY: 're_nep', FROM_EMAIL: 'VISUAILS <o@visuails.com>', NOTIFY_EMAIL: 'hello@visuails.com' };
@@ -109,6 +131,8 @@ ok('de lege wachtrij staat erin', /SUB-LEEG/.test(regel));
 ok('de mislukte incasso ook', /SUB-STUK/.test(regel));
 ok('en de gezonde abonnementen niet', /SUB-VOL|SUB-VER/.test(regel), false);
 ok('de lijst met alleen concepten telt als leeg', /SUB-CONCEPT/.test(regel));
+ok('een termijn zonder incasso staat erin (E6)', /SUB-STIL/.test(regel) && /machtiging verlopen of ingetrokken/.test(regel));
+ok('  en de termijn die wél betaald is niet', /SUB-BETAALD/.test(regel), false);
 
 console.log('\néén mail per maand, ook als de taak elke nacht draait');
 {

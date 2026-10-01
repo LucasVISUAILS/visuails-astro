@@ -28,7 +28,7 @@
 // every order after it, and the plans are a minimum-term commitment. Both are
 // conversations. A card form here would be the studio pretending a decision has
 // been made that has not.
-import { AMOUNT, euro, vatLabel, vatLead, vatDetail, turnaround, VIDEO_OP_AANVRAAG } from '../../data/pricing.js';
+import { AMOUNT, euro, vatLabel, vatLead, vatDetail, VIDEO_OP_AANVRAAG } from '../../data/pricing.js';
 /* ── DE VIDEOSTIJLEN, VOOR DE VRAAG WELKE SOORT CLIP — 7 september 2026 ──────
    Lucas: *"ook een soort keuze scherm welke style de klant wilt of custom"*, en
    *"zorg er wel voor dat als iemand een order op een specifieke style invoert
@@ -159,11 +159,11 @@ const KIND = {
       h1: 'Video clips',
       lead: 'Product clips for feed, story and paid social.',
       status: 'In build',
-      statusBody: 'Video has no order form yet. Send this request and we confirm what and when, in writing, before anything runs.',
+      statusBody: 'Video has no order form yet. Send this request and we will confirm what and when, in writing, before anything runs.',
       facts: [
         ['Price', VIDEO_OP_AANVRAAG ? 'On request: we reply in writing with a price.' : `${euro(AMOUNT.video, 'en')} a clip, ${vatLabel('excl', 'en')}.`],
         ['What you get', 'One product, one look, one vertical clip.'],
-        ['Timing', `${turnaround('unattended', 'en')} once we know what you need.`],
+        ['Timing', 'Agreed in the written quote, like the format (vertical 9:16 as standard).'],
       ],
       askLabel: 'How many clips?',
       askHint: 'A rough number is fine — it is a request, not an order.',
@@ -203,12 +203,12 @@ const KIND = {
       status: 'Priced per request',
       statusBody: 'No standard rate: we price it once we know the world you want, in writing, before anything runs.',
       facts: [
-        ['Price', 'On request. Once designed, every product runs at the normal rate.'],
+        ['Price', 'One design fee, on request. After that every product runs at the normal rate.'],
         ['What you get', 'A setting and light only your brand uses, on every order after.'],
         ['How it starts', 'Send references; we reply with a direction and a price.'],
         ['Two ways in', 'Bring your concept, or let us think it up (extra design work).'],
-        ['Feasibility first', 'We say whether it can be made before you pay. If not, your deposit comes back.'],
-        ['Deposit and revisions', 'A deposit, then revision rounds until it is right. Our mistakes are fixed free.'],
+        ['Feasibility first', 'We tell you whether it can be made before you pay anything. If you have paid a deposit and it still turns out it cannot be made, the deposit comes back.'],
+        ['Deposit and correction round', 'A deposit, then one correction round on the design; after that it is locked. Our mistakes are fixed free.'],
         ['Yours', 'We never use it for another brand.'],
       ],
       askLabel: null,
@@ -253,7 +253,7 @@ const KIND = {
       facts: [
         ['Prijs', VIDEO_OP_AANVRAAG ? 'Op aanvraag: we antwoorden schriftelijk met een prijs.' : `${euro(AMOUNT.video, 'nl')} per clip, ${vatLabel('excl', 'nl')}.`],
         ['Wat je krijgt', 'Eén product, één look, één verticale clip.'],
-        ['Levertijd', `${turnaround('unattended', 'nl')} zodra we weten wat je nodig hebt.`],
+        ['Levertijd', 'Afgesproken in de schriftelijke offerte, net als het formaat (standaard verticaal 9:16).'],
       ],
       askLabel: 'Hoeveel clips?',
       askHint: 'Een ruwe schatting is prima — het is een aanvraag, geen bestelling.',
@@ -263,16 +263,16 @@ const KIND = {
     /* Zie de noot bij de Engelse tegenhanger. */
     'custom-look': {
       h1: 'Een eigen look',
-      lead: 'Een wereld die om jouw product heen ontworpen is, in plaats van een huisstijl — voor een catalogset, een lifestylescène, of allebei.',
+      lead: 'Een wereld die om jouw product heen ontworpen is, in plaats van een vaste look — voor een catalogset, een lifestylescène, of allebei.',
       status: 'Prijs op aanvraag',
-      statusBody: 'Geen standaardtarief: we prijzen hem zodra we weten welke wereld je wilt, op schrift, voordat er iets draait.',
+      statusBody: 'Geen standaardtarief: we bepalen de prijs zodra we weten welke wereld je wilt, op schrift, voordat er iets draait.',
       facts: [
-        ['Prijs', 'Op aanvraag. Eenmaal ontworpen loopt elk product tegen het gewone tarief.'],
+        ['Prijs', 'Eén ontwerpbedrag, op aanvraag. Daarna loopt elk product tegen het gewone tarief.'],
         ['Wat je krijgt', 'Een setting en licht die alleen jouw merk gebruikt, in elke bestelling erna.'],
         ['Hoe het begint', 'Stuur referenties; wij komen terug met een richting en een prijs.'],
         ['Twee ingangen', 'Breng je eigen concept, of laat ons het bedenken (extra denkwerk).'],
-        ['Haalbaarheid eerst', 'We zeggen of het kan voordat je betaalt. Kan het niet, dan krijg je je aanbetaling terug.'],
-        ['Aanbetaling en revisies', 'Een aanbetaling, dan revisierondes tot het klopt. Onze fouten lossen we kosteloos op.'],
+        ['Haalbaarheid eerst', 'We zeggen of het kan voordat je iets betaalt. Heb je al een aanbetaling gedaan en blijkt het toch niet te maken, dan krijg je die terug.'],
+        ['Aanbetaling en correctieronde', 'Een aanbetaling, dan één correctieronde op het ontwerp; daarna ligt het vast. Onze fouten lossen we kosteloos op.'],
         ['Van jou', 'We gebruiken hem nooit voor een ander merk.'],
       ],
       askLabel: null,

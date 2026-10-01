@@ -243,6 +243,7 @@ const c = nl ? {
      (dit krijg je altijd, bij dit bedrag) en dan pas de ruimte, want andersom
      leest het als een verkoopregel in plaats van als een belofte. */
   altijd: 'Meer beelden kies je erbij in het bestelformulier.',
+  altijdVideo: 'Meer clips vraag je aan via het aanvraagformulier.',
   volgt: 'Foto volgt',
   eigenH: 'Jouw eigen look',
   eigenSub: 'Voor jouw merk gemaakt. Alleen jij ziet hem hier.',
@@ -271,9 +272,10 @@ const c = nl ? {
   voorKort: 'Your photo',
   /* Zie de Nederlandse tegenhanger. */
   altijd: 'More images can be added in the order form.',
+  altijdVideo: 'More clips can be requested through the request form.',
   volgt: 'Photo to come',
   eigenH: 'Your own look',
-  eigenSub: 'Made for your brand. Nobody else sees it here.',
+  eigenSub: 'Made for your brand. Only you can see it here.',
   eigenKies: 'Pick this look',
   komendH: 'In the works',
   komendSub: 'Not orderable yet.',
@@ -312,7 +314,9 @@ const c = nl ? {
             geldt voor alle looks, dus hoort hij bij de kop, en hij staat hier
             direct onder de chip die het aantal noemt: dat aantal is waar hij
             over gaat. */}
-        {c.altijd && <p class="sr-levert-bij">{c.altijd}</p>}
+        {/* Video heeft geen bestelformulier en levert clips, geen beelden: daar
+            zegt dezelfde ondergrens-zin het met het aanvraagformulier. */}
+        {(dienst === 'video' ? c.altijdVideo : c.altijd) && <p class="sr-levert-bij">{dienst === 'video' ? c.altijdVideo : c.altijd}</p>}
         {prijsSamen && <p class="sr-kopprijs">{prijsSamen}</p>}
       </div>
     </header>
@@ -654,6 +658,11 @@ const c = nl ? {
      paneel (64 px) en van de marge boven .sr-kamers, en die twee zijn wél
      gekozen. Zie dezelfde noot bij .wk in FigWalk.astro. */
   .sr { padding-block: 0; }
+  /* ── EÉN LINKERLIJN — 1 oktober 2026 ───────────────────────────────────
+     De .container hieronder gaf binnen het paneel nóg een zijmarge van 58 px:
+     "Kies je look" begon verder naar binnen dan elke andere kop op de pagina.
+     Het paneel geeft de marge al; de container hoeft hier alleen te begrenzen. */
+  .sr > :global(.container) { padding-inline: 0; max-width: none; }
 
   .sr-top { max-width: 62ch; }
   @media (min-width: 62rem) {
@@ -670,10 +679,11 @@ const c = nl ? {
   }
   .sr-h2 { margin: 0; font-size: var(--t-page-h2, clamp(1.9rem, 4vw, 3rem)); line-height: 1.04; }
   .sr-intro { margin: .8rem 0 0; color: var(--ink-2); font-size: 1rem; line-height: 1.6; }
+  /* Geen pil meer (1 oktober 2026): een etiket met zijn waarde, zoals de
+     andere feitregels op de site. Een pil is een knop, een keuze of een status. */
   .sr-levert {
-    margin: 1rem 0 0; display: inline-flex; flex-wrap: wrap; gap: .4rem;
-    padding: .4rem .75rem; border: 1px solid var(--line-strong); border-radius: 999px;
-    font-size: .86rem; color: var(--ink-2);
+    margin: 1rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem;
+    font-size: .92rem; color: var(--ink-2);
   }
   /* .75rem: zie de noot in HeroFacts.astro — niets onder 11,5px. */
   .sr-levert span { font-family: var(--font-mono); font-stretch: 82%; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); align-self: center; }
@@ -1031,9 +1041,14 @@ const c = nl ? {
   .sr-maat {
     display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(1.2rem, 3vw, 3rem); align-items: center;
     margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    padding: clamp(1.2rem, 2.4vw, 1.8rem);
-    border: 1px solid var(--line-strong); border-radius: var(--r-lg);
-    background: var(--paper-2);
+    /* ── GEEN KAART IN EEN KAART — 1 oktober 2026 ──────────────────────────
+       Hier stond een grijs vlak met rand, binnen het lichte paneel: een kaart
+       in een kaart, en de enige rij in deze lijst die er zo uitzag. De looks
+       erboven zijn rijen met een haarlijn; de eigen look is er één van, alleen
+       de laatste. Zelfde vorm, zelfde linkerlijn. */
+    padding: clamp(1.4rem, 2.6vw, 2rem) 0 0;
+    border: 0; border-top: 1px solid var(--line); border-radius: 0;
+    background: none;
   }
   .sr-maat-body { display: grid; gap: .1rem; min-width: 0; }
   .sr-maat-h { margin: 0; font-size: clamp(1.4rem, 2.4vw, 1.9rem); line-height: 1.05; }
