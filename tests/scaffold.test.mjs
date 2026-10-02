@@ -359,8 +359,13 @@ console.log('\nde admin-kant is bedraad');
   ok('de upload leest het pad', /parseScaffoldPath\(relPath\)/.test(code), true);
   ok('met het vakje van het bord vóór het pad',
     /slotProduct \|\| fromPath\.product \|\| guessed\.product/.test(code), true);
+  /* Ronde 9 (F17): de gok wordt nu eerst tegen de vakjes van DEZE bestelling
+     gehouden (een lifestylecarrousel heeft geen "worn"), maar de rangorde is
+     dezelfde: vakje van het bord, dan het pad, dan de bestandsnaam. */
   ok('en hetzelfde voor de shot',
-    /slotShot \|\| fromPath\.shot \|\| guessed\.shot/.test(code), true);
+    /slotShot \|\| fromPath\.shot \|\| guessed\.shot/.test(code)
+    || (/const gok = fromPath\.shot \|\| guessed\.shot/.test(code)
+      && /slotShot \|\| \(VAK_IDS\.includes\(gok\)/.test(code)), true);
   ok('het bronmateriaal wordt overgeslagen', /isSourcePath\(relPath\)/.test(code), true);
   ok('en dat wordt geteld en gemeld', /skippedSource/.test(code), true);
   ok('de eigen werkbestanden worden ook overgeslagen', /isScaffoldDoc\(relPath\)/.test(code), true);

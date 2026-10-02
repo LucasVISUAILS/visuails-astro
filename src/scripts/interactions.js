@@ -1106,6 +1106,12 @@ function initThankYou() {
   if (refCel) refCel.textContent = ref.toUpperCase();
   box.hidden = false;
 
+  /* De vastgezette leverdata, als pipeline.js ze achterliet (ronde 9, F29). */
+  try {
+    const venster = sessionStorage.getItem('vis-ty-venster') || '';
+    if (venster) document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { el.textContent = venster; });
+  } catch { /* geen opslag */ }
+
   /* Het adres waar de bevestiging heen ging, als pipeline.js het achterliet. */
   try {
     const mail = sessionStorage.getItem('vis-ty-mail') || '';
@@ -1192,8 +1198,21 @@ function initThankYou() {
   /* Wie al is ingelogd, hoeft geen inloglink: dan zegt de regel dat. */
   const signin = document.querySelector('[data-ty-signin]');
   if (signin && typeof fetch === 'function') {
+    /* ── ALLEEN ALS HET DEZELFDE KLANT IS — 2 oktober 2026 (ronde 9, F28) ──────
+       "Je bent ingelogd — de bestelling staat al in Studio" stond er ook als er
+       een ANDER account ingelogd was dan het adres van deze bestelling (een
+       gedeelde computer, of iemand die voor twee merken bestelt). Die bestelling
+       staat dan niet in dat Studio. Nu alleen als het adres gelijk is; anders
+       blijft de gewone regel over de inloglink staan. */
+    let bestelAdres = '';
+    try { bestelAdres = String(sessionStorage.getItem('vis-ty-mail') || '').trim().toLowerCase(); } catch { /* geen opslag */ }
     fetch('/account/me', { credentials: 'same-origin', headers: { accept: 'application/json' } })
-      .then((r) => { if (r.ok) signin.textContent = d.tySignedIn; })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (!me) return;
+        const ik = String(me.email || '').trim().toLowerCase();
+        if (ik && (!bestelAdres || ik === bestelAdres)) signin.textContent = d.tySignedIn;
+      })
       .catch(() => {});
   }
 

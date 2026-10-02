@@ -173,7 +173,7 @@
 //
 //   step 4  [data-pl-gate="queue|ok|full|too-large|invalid|unavailable|checking"]
 //           [data-pl-windows]                    inside the "ok" panel
-//           [data-max]                           filled with the server's number
+//           [data-pl-cap-max]                    filled with the server's number
 //
 //   step 5  [data-pl-summary]                    review rows land here
 //           [data-pl-error]                      submit failures
@@ -219,6 +219,7 @@ import { keurBeeld } from '../data/shots.js';
 // formulier en de server het ooit oneens worden over of een land in de EU zit,
 // en dan biedt het formulier 0% aan waar de server 21% rekent.
 import { isEu, HOME_COUNTRY, vatShape, vatFormatError } from '../data/vat.js';
+import { VAT_RATE } from '../data/pricing.js';
 
 /*
  * ── HOEVEEL STAPPEN, EN WELKE IS DE POORT — 11 AUGUSTUS 2026 ─────────────────
@@ -1316,10 +1317,22 @@ function askMissing() {
   const box = q('[data-pl-missing]');
   if (!box) return true;
   const short = cards.filter((card) => !cardReady(card));
-  if (!short.length || missingOk) { box.hidden = true; return true; }
+  const inBak = tray.length;
+  if ((!short.length && !inBak) || missingOk) { box.hidden = true; return true; }
   const n = short.length;
   const h = q('[data-pl-missing-h]', box);
-  if (h) h.textContent = n === 1 ? c('pu.missingHOne') : c('pu.missingH', { n });
+  if (h) h.textContent = !n ? c('pu.trayH') : n === 1 ? c('pu.missingHOne') : c('pu.missingH', { n });
+  /* De bak telt mee (ronde 9, F27): wat daar ligt, gaat niet mee. */
+  let bakRegel = q('[data-pl-missing-tray]', box);
+  if (!bakRegel) {
+    bakRegel = document.createElement('p');
+    bakRegel.className = 'pu-mis-bak';
+    bakRegel.dataset.plMissingTray = '';
+    const lijst = q('[data-pl-missing-list]', box);
+    if (lijst) lijst.before(bakRegel); else box.appendChild(bakRegel);
+  }
+  bakRegel.hidden = !inBak;
+  bakRegel.textContent = inBak ? c('pu.trayNotSent', { n: inBak }) : '';
   const list = q('[data-pl-missing-list]', box);
   if (list) {
     /* ── ALLE PRODUCTEN EN NIET DE EERSTE ZES ──────────────────────────────
@@ -2475,6 +2488,7 @@ function syncChannels() {
 
   const show = (sel, on) => { const el = q(sel); if (el) el.hidden = !on; };
   show('[data-pl-ch-lock]', white);
+  show('[data-pl-bg-lock]', white);
   show('[data-pl-ch-split]', white && wantsOwn);
   show('[data-pl-ch-order]', mainModel);
   show('[data-pl-ch-risk]', risk);
@@ -3155,7 +3169,11 @@ function paintPlan(kind, n) {
      want dan is los bestellen het eerlijke antwoord. */
   const per = cfg.creditsPer && cfg.creditsPer[kind];
   if (!per) return verberg();
-  const nodig = n * per;
+  /* RONDE 9, O5 — de extra hoeken en 4K telden niet mee: de webshop (12
+     producten + 2 hoeken) las "48 credits" voor wat er 96 zijn. Zelfde
+     toeslagen als pricing.js (EXTRA_CREDITS): een extra beeld, een 4K-product. */
+  const ex = cfg.extraCredits || {};
+  const nodig = n * per + extrasCount() * (Number(ex.photo) || 0) + hoogResCount() * (Number(ex.hires) || 0);
   const oplopend = rijen.slice().sort((a, b) => a.credits - b.credits);
   if (nodig < oplopend[0].credits * 0.75) return verberg();
   const plan = oplopend.find((r) => r.credits >= nodig);
@@ -3799,6 +3817,22 @@ function walkEntry(entry, prefix, out, depth) {
  */
 const stemOf = (name) => productStem(name);
 
+/** Wat er van een bestandsnaam overblijft zonder het woord van een gekozen hoek. */
+function hoekStem(name) {
+  let base = String(name || '').replace(/\.[a-z0-9]{1,5}$/i, '');
+  for (const v of hoekVakken()) {
+    for (const w of [v.naam, v.hoek]) {
+      const woord = String(w || '').trim();
+      if (woord.length < 4) continue;
+      const re = new RegExp(woord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[-_\s]+/g, '[-_\\s]*'), 'i');
+      base = base.replace(re, ' ');
+    }
+  }
+  return base.replace(/[-_\s]+/g, ' ').trim().replace(/\s+/g, '-');
+}
+
+
+
 /**
  * A drop, distributed. Folders first, then loose files that name their angle,
  * then the tray for everything that said nothing.
@@ -3818,7 +3852,7 @@ function intake(entries) {
     }
     // No folder. The filename gets one chance to say what it is; a name that
     // says nothing is not evidence and is not guessed at.
-    const stem = guessShot(en.file.name) ? stemOf(en.file.name) : '';
+    const stem = guessShot(en.file.name) ? stemOf(en.file.name) : (guessHoekVak(en.file.name) ? hoekStem(en.file.name) : '');
     if (stem) {
       if (!groups.has(stem)) groups.set(stem, []);
       groups.get(stem).push(en);
@@ -3847,6 +3881,21 @@ function cardForGroup(label) {
   return null;
 }
 
+/**
+ * Een bijbestelde hoek uit een bestandsnaam: "hoodie-driekwart.jpg" → het vak
+ * van de hoek Driekwart (extra1, extra2, … — welk nummer hangt af van de keuze
+ * in stap 1, zie hoekVakken()). Herkent de getoonde naam én de id van de hoek,
+ * dus ook "three-quarter" en "flat_lay". Null als er geen gekozen hoek in de
+ * naam staat. Ronde 9, F23.
+ */
+function guessHoekVak(name) {
+  const plat = (x) => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+  const naam = plat(String(name || '').replace(/\.[a-z0-9]{1,5}$/i, ''));
+  if (!naam) return null;
+  const vak = hoekVakken().find((v) => [v.naam, v.hoek].some((w) => { const p = plat(w); return p.length >= 4 && naam.includes(p); }));
+  return vak ? vak.id : null;
+}
+
 function placeGroup(label, items) {
   const card = cardForGroup(label);
   if (!card) {
@@ -3858,8 +3907,25 @@ function placeGroup(label, items) {
   if (card.input && !card.input.value.trim()) card.input.value = label;
 
   items.forEach((en) => {
-    const guess = guessShot(en.file.name);
-    const id = guess && slotOpen(card, guess) ? guess : firstOpenSlot(card);
+    /* ── EEN NAAM DIE EEN HOEK NOEMT, GAAT NAAR DIE HOEK OF NAAR DE BAK ────────
+       2 oktober 2026 (ronde 9, F23/F26). Twee fouten op één regel:
+       · "cargo-olijf-driekwart.jpg" werd niet herkend als de bijbestelde hoek
+         Driekwart — guessShot() kent alleen de vaste vier — en belandde in de
+         bak, waar het menu die hoek niet eens aanbood;
+       · stond het geraden vak al vol, dan ging het bestand stil naar het
+         eerste LEGE vak. Live kwam zo een achterkant als voorkant binnen en een
+         voorkant als "gedragen". Een naam die zegt welke hoek het is, gaat nu
+         naar die hoek of naar de bak; alleen een naam die niets zegt, vult het
+         eerste lege vak. */
+    const guess = guessShot(en.file.name) || guessHoekVak(en.file.name);
+    /* Een bestand met DEZELFDE naam als wat er al in het geraden vak zit, is een
+       nieuwe versie van die foto (live: eerst een map met te kleine foto's, dan
+       dezelfde map opnieuw op volle grootte). Dat vervangt; alles anders dat op
+       een vol vak landt, gaat naar de bak in plaats van stil een ander vak te
+       vullen. Nagespeeld met kladblok/_r9-f26.mjs. */
+    const zelfdeNaam = guess && card.slots[guess] && card.slots[guess].file
+      && card.slots[guess].file.name === en.file.name;
+    const id = guess ? ((slotOpen(card, guess) || zelfdeNaam) ? guess : null) : firstOpenSlot(card);
     if (!id) { trayAdd(en.file); return; }
     placeFile(card, id, en.file);
   });
@@ -4885,8 +4951,16 @@ function buildRefs(card) {
      Alleen als er iets bij te bestellen ís: staat de bovengrens op nul, dan is
      de zin een verwijzing naar een keuze die niet bestaat. */
   const extraMax = Math.max(0, Math.floor(Number(cfg.maxExtraPerProduct) || 0));
+  /* ── EN ALLEEN WAAR "EEN HOEK ERBIJ" BESTAAT — 2 oktober 2026 (ronde 9, F2) ──
+     De zin stond ook op de €1-proef en bij lifestyle, waar stap 1 geen "Een hoek
+     erbij" heeft: een verwijzing naar een knop die er niet is. De hoekkiezer
+     moet op de pagina staan, de dienst moet een catalogset hebben, en een proef
+     (vaste prijs) bestelt niets bij. */
+  const hoekBox = angleBoxEl();
+  const hoekKan = !!hoekBox && !hoekBox.closest('[hidden]') && cfg.samplePrice == null
+    && ['catalog', 'complete'].includes(String(kindOf() || ''));
   const terug = document.createElement('p');
-  if (extraMax) {
+  if (extraMax && hoekKan) {
     terug.className = 'pu-ref-terug hint';
     terug.textContent = c('pu.refTerug', { max: extraMax });
     if (card.n !== 1) terug.classList.add('is-stil');
@@ -4948,7 +5022,7 @@ function buildRefs(card) {
      die niemand leest. */
   vakken.append(add);
   strip.append(hint, vakken);
-  if (extraMax) strip.append(terug);
+  if (extraMax && hoekKan) strip.append(terug);
   /* Naar buiten, want de weghaalknop op een vakje moet de knop en de uitleg weer
      terug kunnen zetten — die zit in buildSlot() en kan hier niet bij. */
   card.paintRefs = paintAll;
@@ -5991,7 +6065,8 @@ function placeFromTray(trayKey, cardKey, shotId) {
 }
 
 function isShot(id) {
-  return SHOT_IDS.indexOf(id) !== -1;
+  /* Ook het vak van een bijbestelde hoek (ronde 9, F23). */
+  return SHOT_IDS.indexOf(id) !== -1 || hoekVakIds().indexOf(id) !== -1;
 }
 
 /**
@@ -6048,6 +6123,15 @@ function renderTray() {
     const pick = document.createElement('select');
     pick.className = 'select pu-tray-pick';
     pick.setAttribute('aria-label', c('pu.placeIn'));
+    /* GEEN STILLE VOORKEUZE (ronde 9, F23). Zonder deze lege eerste optie stond
+       elk menu op "product 1 · Voorkant", en één klik op Plaats deze verving dus
+       de voorkant van product 1. Nu kies je eerst; leeg doet niets. */
+    const leeg = document.createElement('option');
+    leeg.value = '';
+    leeg.textContent = c('pu.placeIn');
+    leeg.selected = true;
+    leeg.disabled = true;
+    pick.appendChild(leeg);
     cards.forEach((card) => {
       const group = document.createElement('optgroup');
       group.label = cardLabel(card);
@@ -6068,7 +6152,9 @@ function renderTray() {
         const rid = refShotId(i);
         if (card.slots[rid]) refIds.push(rid);
       }
-      SHOT_IDS.concat(refIds).forEach((id) => {
+      /* De vakken van de bijbestelde hoeken horen erbij: ze zijn verplicht, en
+         wie ze uit de bak wilde plaatsen kon dat niet (ronde 9, F23). */
+      SHOT_IDS.concat(hoekVakIds(), refIds).forEach((id) => {
         const opt = document.createElement('option');
         opt.value = `${card.key}|${id}`;
         // The product is in the option TEXT as well as in the optgroup label,
@@ -7628,7 +7714,7 @@ function runGate(from = null) {
     // quotes, rather than being told to go back and pick a number it already
     // deliberately declined to pick.
     if (select && select.value) {
-      qa('[data-max]').forEach((el) => { el.textContent = String(cfg.maxProducts); });
+      qa('[data-pl-cap-max]').forEach((el) => { el.textContent = String(cfg.maxProducts); });
       gateShow('too-large');
     } else {
       gateShow('invalid');
@@ -7673,8 +7759,16 @@ function renderGate(body) {
 
   // The max only means something on the two panels that quote it, and it is the
   // server's number in both — never ATTENDED_PER_WINDOW copied into this file.
+  /* ── EIGEN HAAK, NIET `[data-max]` — 2 oktober 2026 (ronde 9, F25) ─────────
+     Hier stond een selector op elk [data-max]. De hoekkiezer (AnglePicker.astro) draagt óók
+     `data-max` — het maximum aantal hoeken per product — en dus zette elke
+     bestelling vanaf 10 producten, op het moment dat stap 4 de agenda ophaalde,
+     de textContent van de hele hoekkiezer op "39". Alle aangevinkte hoeken
+     verdwenen uit het formulier, het overzicht en de post: live bestelde
+     VIS-VS4X-BRJ 12 producten met 2 hoeken (€ 1.308 in de zijbalk) en betaalde
+     € 612. De twee getallen hebben nu elk hun eigen naam. */
   if (Number.isFinite(Number(body.max))) {
-    qa('[data-max]').forEach((n) => {
+    qa('[data-pl-cap-max]').forEach((n) => {
       n.textContent = String(body.max);
     });
   }
@@ -7975,6 +8069,19 @@ function renderSummary() {
   // meer, en de afwijking staat op de kaart waar hij gezet is.
   const ratioId = ratioNow();
   if (ratioId) rows.push([c('sum.ratio'), c(`ratio.name.${ratioId}`)]);
+  /* RONDE 9, F11 — de boetiek zette beeld 3 van product 1 op 16:9 en zag hier
+     alleen "4:5". Geen dertig regels (zie hierboven), wel één: tot drie
+     afwijkingen bij naam, daarboven het aantal en waar ze staan. */
+  const afwijk = qa('select[data-pl-ratio-each]').filter((sel) => sel.value && !sel.disabled && sel.isConnected);
+  if (afwijk.length) {
+    const naam = (sel) => {
+      const m = /^ratio_p(\d+)_(\d+)$/.exec(sel.name || '');
+      return m ? `${c('pu.product', { n: m[1] })} · ${c('pu.ratioImage', { n: m[2] }).toLowerCase()}: ${c(`ratio.name.${sel.value}`)}` : c(`ratio.name.${sel.value}`);
+    };
+    rows.push([c('sum.ratioAfwijk'), afwijk.length <= 3
+      ? afwijk.map(naam).join('; ')
+      : c('sum.ratioAfwijkVeel', { n: afwijk.length })]);
+  }
 
   // Task #271f.
   if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);
@@ -8040,6 +8147,31 @@ function renderSummary() {
       const voorrang = voorrangAan() ? voorrangBedragNu(quote.net) : null;
       const net = voorrang !== null ? round2(quote.net + voorrang) : quote.net;
       rows.push([c('sum.net'), euro(net)]);
+      /* ── WAT MOLLIE ZO meteen VRAAGT — 2 oktober 2026 (ronde 9, F7) ──────
+         Tot vandaag stond hier alleen het bedrag excl. btw, en vroeg Mollie
+         één klik later € 107,69 voor een bestelling die hier € 89 heette. De
+         regel in de lijst hierboven ("geen bruto bedrag, want het tarief hangt
+         van het land af") klopte in stap 1, waar het land nog niet bekend is.
+         In stap 5 IS het land bekend, en dan is het tarief op drie van de vier
+         paden zeker. Het vierde — EU met btw-nummer — hangt aan VIES op de
+         server, dus daar noemen we beide uitkomsten in plaats van te raden.
+         Zelfde regel als vatDecision(): twijfel is 21%. */
+      /* NIET value('country'): die leest alleen <input>, en het land is een
+         <select>. De eerste versie van deze regel bleef daardoor altijd leeg. */
+      const land = String((q('select[name="country"]') || {}).value || '').trim().toUpperCase();
+      const btwNr = String(value('vat') || '').trim();
+      const geenNr = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
+      if (land) {
+        const bruto = round2(net * (1 + VAT_RATE));
+        const pct = String(Math.round(VAT_RATE * 100));
+        if (!isEu(land) && land !== HOME_COUNTRY) {
+          rows.push([c('sum.pay'), c('sum.payOutside', { net: euro(net) })]);
+        } else if (land !== HOME_COUNTRY && btwNr && !geenNr) {
+          rows.push([c('sum.pay'), c('sum.payReverse', { net: euro(net), gross: euro(bruto), pct })]);
+        } else {
+          rows.push([c('sum.pay'), c('sum.payGross', { gross: euro(bruto), pct })]);
+        }
+      }
     }
   }
 
@@ -8058,6 +8190,10 @@ function renderSummary() {
   const we = value('window_end');
   /* Met voorrang staat de leverregel al hierboven ("we mikken op 24 uur") —
      een tweede regel "Standaard levertijd" eronder spreekt hem tegen. */
+  /* De zin "een vastgezette leverdatum blijft zeven dagen voor je staan" in het
+     blok eronder hoort alleen bij een bestelling MET een leverdatum (ronde 9, F3). */
+  const naVenster = q('[data-pl-after-window]');
+  if (naVenster) naVenster.hidden = !(attended && ws);
   if (attended && ws) rows.push([c('sum.window'), we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws)]);
   else if (attended) rows.push([c('sum.window'), c('sum.windowLater')]);
   else if (!voorrangAan()) rows.push([c('sum.window'), c('sum.queue')]);
@@ -8151,24 +8287,23 @@ function renderStrip({ bgHex, bgName, ratioId, mp }) {
   if (bgHex) {
     const t = item(bgName ? `${bgName} · ${bgHex}` : bgHex, 'is-bg');
     t.style.background = bgHex;
-    const eg = q('.bg-eg');
-    if (eg) {
-      const im = document.createElement('img');
-      im.alt = '';
-      im.src = eg.getAttribute('src');
-      t.appendChild(im);
-    }
+    /* RONDE 9, F6 — hier stond het voorbeeldbeeld van de achtergrondkiezer op
+       (een zwart T-shirt). Naast de roze jeans van de klant las dat als "jullie
+       maken het verkeerde product". De kleur zegt genoeg; een staal is een staal. */
   }
   if (ratioId) {
     const tile = q(`[data-pl-ratio-tile="${ratioId}"] .ratio-shape`);
     const t = item(c(`ratio.name.${ratioId}`), 'is-ratio');
     t.style.aspectRatio = tile && tile.style.aspectRatio ? tile.style.aspectRatio : '1 / 1';
     t.style.height = '84px';
-    const eg = tile && tile.querySelector('img');
-    if (eg) {
+    /* Het kader met de EIGEN voorkant erin (F6), niet het voorbeeldshirt: zo
+       zie je je eigen product in de verhouding die je koos. Geen foto (nog):
+       dan een leeg kader in de juiste vorm. */
+    const eigen = shown[0] && shown[0].slots[front].url;
+    if (eigen) {
       const im = document.createElement('img');
       im.alt = '';
-      im.src = eg.getAttribute('src');
+      im.src = eigen;
       t.appendChild(im);
     }
   }
@@ -8262,6 +8397,12 @@ function finishSubmit(status, body) {
       if (Number.isInteger(aantal) && aantal > 0) sessionStorage.setItem('vis-ty-n', String(aantal));
       const soort = kindOf();
       if (soort) sessionStorage.setItem('vis-ty-kind', soort);
+      /* De vastgezette leverdata, zodat de bedankpagina niet "zo snel mogelijk"
+         zegt bij een bestelling met een venster (ronde 9, F29). Leeg = wachtrij. */
+      const ws = value('window_start');
+      const we = value('window_end');
+      if (ws) sessionStorage.setItem('vis-ty-venster', we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws));
+      else sessionStorage.removeItem('vis-ty-venster');
     } catch { /* geen opslag is geen fout */ }
 
     if (body.windowLost) {

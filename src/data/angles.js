@@ -245,6 +245,9 @@ export const ANGLE_COPY = {
        een lijstje past, is de eerste vraag "en als jullie het verkeerd
        begrijpen?". Het antwoord daarop hoort niet in een veelgestelde vraag
        drie pagina's verderop te staan. */
+    /* Ronde 9, F22: stap 2 vraagt per gekozen hoek één foto per product, en dat
+       stond hier alleen bij "Zelf bedenken". */
+    fotoNoot: 'For every angle you choose, you add one photo of that angle per product in step 2 — a phone photo is fine. That is how we know exactly what you mean.',
     twijfelNoot: 'If we are unsure what you mean, we get in touch before we start. Better one message up front than an image you did not ask for.',
     per: '{price} per photo, per product',
     /* De weg naar /per-product, vanuit het formulier. "alle twaalf" en niet "de
@@ -280,6 +283,7 @@ export const ANGLE_COPY = {
     eigenHint: 'Zelfde prijs. Je stuurt er bij elk product een foto van mee, zodat we precies weten wat je bedoelt.',
     /* Zijn eigen woorden van /concept/bestelrij; zie de noot bij de Engelse
        tegenhanger voor waarom ze hier staan en niet in een FAQ. */
+    fotoNoot: 'Voor elke hoek die je kiest, stuur je in stap 2 per product één foto van die hoek mee — een telefoonfoto is genoeg. Zo weten we precies wat je bedoelt.',
     twijfelNoot: 'Twijfelen wij over wat je bedoelt, dan nemen we contact met je op vóórdat we beginnen. Liever één berichtje vooraf dan een beeld dat je niet bedoelde.',
     per: '{price} per foto, per product',
     /* De weg naar /per-product, vanuit het formulier. "alle twaalf" en niet "de

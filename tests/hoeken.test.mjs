@@ -142,5 +142,21 @@ console.log('\nde hoeken gelden waar een catalogset is, en nergens anders');
     ladderRate('complete', 10) * 10 + 20 * extraPhotoRate(10));
 }
 
+console.log('\nde agenda van stap 4 raakt de hoekkiezer niet (ronde 9, F25)');
+{
+  /* Op 2 oktober 2026 betaalde een live bestelling van 12 producten met twee
+     hoeken € 612 in plaats van € 1.308: renderGate() zette de textContent van
+     ELK `[data-max]` op het maximum uit /api/capacity, en de hoekkiezer droeg
+     zelf `data-max`. Vanaf 10 producten (dan haalt stap 4 de agenda op) was de
+     kiezer daarna leeg, en gingen de hoeken niet meer mee. */
+  const { readFileSync } = await import('node:fs');
+  const pipe = readFileSync(new URL('../src/scripts/pipeline.js', import.meta.url), 'utf8');
+  const flow = readFileSync(new URL('../src/components/order/OrderFlow.astro', import.meta.url), 'utf8');
+  ok('pipeline.js schrijft nergens meer in [data-max]', /qa\(\s*'\[data-max\]'\s*\)/.test(pipe), false);
+  ok('de agenda schrijft in [data-pl-cap-max]', (pipe.match(/qa\('\[data-pl-cap-max\]'\)/g) || []).length, 2);
+  ok('de twee panelen in stap 4 dragen data-pl-cap-max', (flow.match(/<span data-pl-cap-max>/g) || []).length, 2);
+  ok('geen <span data-max> meer in OrderFlow', /<span data-max>/.test(flow), false);
+}
+
 console.log(`\n${goed}/${totaal} geslaagd`);
 if (goed !== totaal) process.exit(1);

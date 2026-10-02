@@ -638,11 +638,34 @@ section('§6 · het werkbord: eerst invullen, dan pushen');
      van uit een eigen Engels lijstje in admin.js — zie de noot bij SHOT_LABEL
      daar. Ze zijn daarmee Nederlands, en dat is precies wat deze regel hoort
      te bewaken: dat er een vakje per fotosoort staat, mét naam. */
+  /* Ronde 9 (F17): bestelling 90 is een LIFESTYLEcarrousel, en die levert drie
+     beelden — niet de vier vakjes van een catalogset. Deze regels eisten eerder
+     "Gedragen" en "1/4" op een lifestylebord, en bewaakten daarmee precies de
+     fout: Studio noemde drie sfeerbeelden "Voorkant · Achterkant · Detail". */
   check('the board draws a slot per shot, labelled',
-    /VOORKANT|Voorkant/.test(body) && body.includes('Gedragen') && body.includes('Detail'));
+    body.includes('Beeld 1') && body.includes('Beeld 3') && !body.includes('Gedragen') && !body.includes('Op een model'));
   check('an empty slot carries the product and shot it stands for',
     /name="product" value="p1"[\s\S]{0,200}name="shot" value="back"/.test(body));
-  check('and it counts what is filled', /1\/4/.test(body));
+  check('and it counts what is filled', /1\/3/.test(body));
+}
+
+// Een catalogbestelling houdt haar vier vakjes, plus een vak per bijbestelde hoek.
+{
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = { service: order.service, details_json: order.details_json };
+  order.service = 'catalog';
+  order.details_json = JSON.stringify({ extra_slots: 'extra1:three-quarter' });
+  const env = makeEnv({
+    files: [
+      { id: 501, kind: 'delivery', filename: 'a.webp', bytes: 1, product_key: 'p1', shot: 'front', created_at: '2026-08-01', review_state: 'pending', announced_at: null, superseded_at: null },
+    ],
+  });
+  const body = await (await adminReq('GET', '/admin/orders/90/files', { env })).text();
+  check('a catalog board shows the four shots',
+    /Voorkant/.test(body) && body.includes('Op een model') && body.includes('Detail'));
+  check('plus a slot per extra angle that was paid for', /name="shot" value="extra1"/.test(body));
+  check('and counts all of them', /1\/5/.test(body));
+  Object.assign(order, prev);
 }
 
 // De upload uit een vakje raadt niets: het vakje weet het al.
@@ -650,12 +673,12 @@ section('§6 · het werkbord: eerst invullen, dan pushen');
   const env = makeEnv();
   const fd = new FormData();
   fd.set('product', 'p2');
-  fd.set('shot', 'worn');
+  fd.set('shot', 'detail');
   fd.append('files', new File([new Uint8Array(1024)], 'export-final-v3.webp', { type: 'image/webp' }));
   await adminReq('POST', '/admin/orders/90/deliver', { env, body: fd });
   const w = env.DB.writes.find((x) => /INSERT INTO files/.test(x.sql));
   check('a slot upload lands on that exact product and shot',
-    w?.binds?.includes('p2') && w?.binds?.includes('worn'), JSON.stringify(w?.binds || []));
+    w?.binds?.includes('p2') && w?.binds?.includes('detail'), JSON.stringify(w?.binds || []));
   // Een upload in een gevuld vakje is een vervanging, dus de vervangregel moet
   // meteen draaien — anders staan er twee beelden voor dezelfde plek.
   check('and the replace rule runs straight away',

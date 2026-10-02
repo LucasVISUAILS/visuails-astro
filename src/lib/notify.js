@@ -432,7 +432,7 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
            via WhatsApp of e-mail binnen en niet als verzoek. */
         mailP('Dit was de revisieronde van deze bestelling. Verdere opmerkingen komen via WhatsApp of e-mail binnen.'),
         regels,
-        mailP('De verzoeken staan bovenaan in het adminportaal, bij de bestelling.'),
+        mailP('De verzoeken staan bovenaan op het admin-dashboard, en per beeld op het werkbord van de bestelling.'),
       ].join(''),
       o?.email || '',
     );

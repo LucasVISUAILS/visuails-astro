@@ -65,7 +65,8 @@ import { background as backgroundById, CUSTOM_ID } from '../../src/data/backgrou
    lijst en dus de volledige verzameling geldige id's — welke daarvan bij welke
    dienst hoort, is een vraag met een dienst erbij, en die staat bij
    effectiveRatio(). Zie vetAnswer() voor het volledige argument. */
-import { LIFESTYLE_RATIOS, parseRatioField } from '../../src/data/ratios.js';
+import { LIFESTYLE_RATIOS, parseRatioField, ratioById } from '../../src/data/ratios.js';
+import { extraVakken } from '../../src/data/levervakken.js';
 /* De stijlen, om te controleren welke er BESTELD mag worden. Zie vetAnswer(). */
 import { styles as STYLES } from '../../src/data/styles.js';
 /* De acht hoeken die bij een catalogset bijbesteld kunnen worden. De LIJST staat
@@ -1864,7 +1865,9 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         /* Zonder prijs is het een aanvraag (video op aanvraag, eigen look,
            merkmodel): dan belooft de mail een voorstel, geen levertijd en geen
            betaallink-na-controle. */
-        aanvraag: !quote }),
+        aanvraag: !quote,
+        /* Wat er besteld is, zodat de klant het kan nalezen (ronde 9, F12). */
+        details }),
   }));
 
   /*
@@ -3262,7 +3265,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  */
 export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
-    inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false } = {}) {
+    inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false, details = null } = {}) {
   const nl = lang === 'nl';
   const hi = greeting(name, lang);
   const attended = tier === 'attended';
@@ -3397,7 +3400,7 @@ export function customerEmail(lang, ref, service, name,
   // The URL is printed as well as linked. Mail clients that strip anchors, and
   // people who read on a phone and continue on a desktop, both need the text.
   const portalNote = portal
-    ? linkLine(portal, aanvraag ? (nl ? 'Volg je aanvraag in VISUAILS Studio' : 'Follow your request in VISUAILS Studio') : (nl ? 'Volg je bestelling in VISUAILS Studio' : 'Follow your order in VISUAILS Studio'))
+    ? linkLine(portal, aanvraag ? (nl ? 'Bekijk je aanvraag' : 'View your request') : (nl ? 'Bekijk je bestelling' : 'View your order'))
       + note(nl
         ? `Deze link is de sleutel tot je bestelling — iedereen die hem heeft, kan meekijken. Deel hem alleen met wie mee moet kijken.<br><span style="color:#8A8F98">${esc(portal)}</span>`
         : `This link is the key to your order — anyone who has it can see it. Only share it with people who need to look.<br><span style="color:#8A8F98">${esc(portal)}</span>`)
@@ -3469,7 +3472,12 @@ export function customerEmail(lang, ref, service, name,
     ? payPanel({
       label: nl ? 'Te betalen' : 'To pay',
       amount: money(Math.max(0, quote.grossCents - (tegoed || 0))),
-      sub: vatSub() + tegoedRegel,
+      /* RONDE 9, O1 — wie meteen na het bestellen betaalt, krijgt deze mail
+         een halve minuut vóór "Betaling ontvangen", met "Te betalen" erop. Eén
+         regel haalt de schrik weg. */
+      sub: vatSub() + tegoedRegel + (nl
+        ? '<br>Net al betaald? Dan is de bevestiging onderweg en hoef je niets meer te doen.'
+        : '<br>Already paid? Then the confirmation is on its way and there is nothing left to do.'),
       href: pay,
       cta: nl ? 'Betaal je bestelling' : 'Pay for your order',
     })
@@ -3491,9 +3499,37 @@ export function customerEmail(lang, ref, service, name,
   // pricing.js does not have one — TIERS[].label is a scope ("Under 30
   // products"), not a name, and printing it against a row headed "Tier" would
   // read as a promise about size that nobody made.
+  /* ── WAT ER BESTELD IS, OM NA TE LEZEN — 2 oktober 2026 (ronde 9, F12) ──────
+     Hier stonden alleen dienst en aantal. Een boetiek die drie blouses in Dunes
+     bestelde, met Dana, op 4:5 en één product in 4K, kon in haar bevestiging
+     niets daarvan terugvinden. Alleen wat er werkelijk gekozen is, en geen
+     regel voor wat leeg bleef. */
+  const d = details && typeof details === 'object' ? details : {};
+  const keuzeRijen = (quote && !aanvraag && !proef && service !== 'brand-model') ? (() => {
+    const uit = [];
+    const stijl = String(d.style || '').trim();
+    const st = stijl ? STYLES.find((x) => (x.slug || x.id) === stijl || String(x.name || '').toLowerCase() === stijl.toLowerCase()) : null;
+    if (st) uit.push([nl ? 'Look' : 'Look', esc(st.name)]);
+    const model = String(d.model || '').trim();
+    if (model) uit.push([nl ? 'Gezicht' : 'Face', esc(model === 'any' ? (nl ? 'Wij kiezen er een' : 'We choose one') : /^c\d+$/.test(model) ? (nl ? 'Je eigen merkmodel' : 'Your own brand model') : model.charAt(0).toUpperCase() + model.slice(1))]);
+    const bg = String(d.background || '').trim();
+    if (bg) {
+      const b = backgroundById(bg);
+      const hex = String(d.background_hex || d.background_custom || '').trim();
+      uit.push([nl ? 'Achtergrond' : 'Background', esc(b ? `${b.name[nl ? 'nl' : 'en']} · ${b.hex}` : (hex || bg))]);
+    }
+    const r = ratioById(String(d.ratio || ''), service);
+    if (r) uit.push([nl ? 'Beeldverhouding' : 'Image shape', esc(r.name[nl ? 'nl' : 'en'])]);
+    const hoeken = extraVakken(d);
+    if (hoeken.length) uit.push([nl ? 'Extra hoeken' : 'Extra angles', esc(`${hoeken.map((v) => (nl ? v.nl : v.en)).join(', ')} — ${nl ? 'bij elk product' : 'on every product'}`)]);
+    const hoog = Object.keys(d).filter((k) => /^hi_p\d+$/.test(k) && d[k]).length;
+    if (hoog) uit.push(['4K', esc(nl ? `${hoog} ${hoog === 1 ? 'product' : 'producten'} op 4096 px` : `${hoog} ${hoog === 1 ? 'product' : 'products'} at 4096 px`)]);
+    return uit;
+  })() : [];
   const summary = rows([
     [nl ? 'Dienst' : 'Service', esc(svcName)],
     quote && service !== 'brand-model' ? [nl ? 'Producten' : 'Products', String(quote.products)] : null,
+    ...keuzeRijen,
   ].filter(Boolean));
 
   return shell({

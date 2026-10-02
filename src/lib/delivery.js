@@ -123,6 +123,7 @@
    leesmij noemt hetzelfde getal dat de database aanhoudt in plaats van een tweede
    belofte. licenceText() stond in scaffold.js en is bilinguaal; hij verhuist niet,
    want de werkmap gebruikt hem ook. */
+import { leverVakken } from '../data/levervakken.js';
 import { DELIVERY_DAYS } from './retention.js';
 import { licenceText } from './scaffold.js';
 
@@ -351,7 +352,13 @@ function productNumber(key) {
  * volgorde waarin wij toevallig geüpload hebben.
  */
 export function deliveryEntries(files, lang = 'nl', opts = {}) {
-  const shotName = SHOT_NAME[lang === 'en' ? 'en' : 'nl'];
+  /* Per dienst (ronde 9, F17): met `opts.service` heten de lifestylebeelden
+     1-beeld-1 … 3-beeld-3 en krijgt een bijbestelde hoek zijn eigen naam en een
+     plek ná de vier vaste. Zonder `service` blijft alles zoals het was. */
+  const taal = lang === 'en' ? 'en' : 'nl';
+  const vakken = opts.service ? leverVakken(opts.service, opts.details) : null;
+  const shotName = vakken ? Object.fromEntries(vakken.map((v) => [v.id, v.woord[taal]])) : SHOT_NAME[taal];
+  const volgorde = vakken ? vakken.map((v) => v.id) : SHOT_ORDER;
   const root = opts.ref ? `${ZIP_ROOT_PREFIX}${opts.ref}/` : '';
   const namen = opts.productNames || {};
 
@@ -369,8 +376,8 @@ export function deliveryEntries(files, lang = 'nl', opts = {}) {
     const pa = productNumber(a.product_key);
     const pb = productNumber(b.product_key);
     if (pa !== pb) return pa - pb;
-    const sa = SHOT_ORDER.indexOf(a.shot);
-    const sb = SHOT_ORDER.indexOf(b.shot);
+    const sa = volgorde.indexOf(a.shot);
+    const sb = volgorde.indexOf(b.shot);
     if (sa !== sb) return (sa < 0 ? 99 : sa) - (sb < 0 ? 99 : sb);
     return a.id - b.id;
   });
@@ -395,7 +402,7 @@ export function deliveryEntries(files, lang = 'nl', opts = {}) {
     const dir = Number.isFinite(product)
       ? productFolderName(product, namen[`p${product}`], breedte)
       : (lang === 'en' ? 'other' : 'overig');
-    const base = shotFilebase(f.shot, shotName, f.id);
+    const base = shotFilebase(f.shot, shotName, f.id, volgorde);
 
     const order = Object.keys(FORMAT_DIR);
     const assets = [...f.assets].sort(
@@ -476,8 +483,8 @@ export function productFolderName(n, naam, breedte = 2) {
  * foto waar iemand naar zoekt. Dezelfde nummering als de vakjes in de werkmap
  * (SLOT_FOLDER in scaffold.js), zodat er één telling is in het hele traject.
  */
-export function shotFilebase(shot, shotName, fileId) {
-  const i = SHOT_ORDER.indexOf(shot);
+export function shotFilebase(shot, shotName, fileId, volgorde = SHOT_ORDER) {
+  const i = volgorde.indexOf(shot);
   if (i < 0 || !shotName[shot]) return `beeld-${fileId}`;
   return `${i + 1}-${shotName[shot]}`;
 }
@@ -605,9 +612,19 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     formaatRegels.push('');
   }
 
-  const shotWoorden = SHOT_ORDER
-    .map((k, i) => `${i + 1}-${SHOT_NAME[nl ? 'nl' : 'en'][k]}`)
+  /* Per dienst (ronde 9, F17): een lifestylezip heeft "1-beeld-1" en geen
+     "1-voorkant", en een catalogset met bijbestelde hoeken ook "5-driekwart".
+     De leesmij noemt dus de namen die écht in de map staan. order.service en
+     order.details_json komen mee als de aanroeper ze heeft; anders de vier. */
+  const vakkenHier = order && order.service ? leverVakken(order.service, order.details_json) : null;
+  const shotWoorden = (vakkenHier
+    ? vakkenHier.map((v, i) => `${i + 1}-${v.woord[nl ? 'nl' : 'en']}`)
+    : SHOT_ORDER.map((k, i) => `${i + 1}-${SHOT_NAME[nl ? 'nl' : 'en'][k]}`))
     .join(', ');
+  /* De twee voorbeeldregels in de boom komen uit dezelfde lijst (ronde 9). */
+  const vb = (vakkenHier
+    ? vakkenHier.slice(0, 2).map((v, i) => `${i + 1}-${v.woord[nl ? 'nl' : 'en']}`)
+    : SHOT_ORDER.slice(0, 2).map((k, i) => `${i + 1}-${SHOT_NAME[nl ? 'nl' : 'en'][k]}`));
 
   const kop = (t) => [t, '-'.repeat(Math.min(68, Math.max(20, t.length)))];
 
@@ -631,15 +648,15 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       '',
       `    ${mappen[0] || '01 - je product'}/`,
       '        JPG/',
-      '            1-voorkant.jpg',
-      '            2-achterkant.jpg',
+      `            ${vb[0]}.jpg`,
+      `            ${vb[1]}.jpg`,
       '        PNG/',
       '        WEBP/',
       '',
       'De mapnaam is jouw eigen productnaam, met een nummer ervoor zodat je',
       'verkenner ze in de goede volgorde zet. De nummers in de bestandsnamen',
-      'doen hetzelfde binnen een product: zonder nummer zou de voorkant',
-      'onderaan staan, want alfabetisch komt "achterkant" eerst.',
+      'doen hetzelfde binnen een product: zo staan ze in de volgorde',
+      'waarin we ze maakten, en niet alfabetisch door elkaar.',
       '',
       `De namen die je tegenkomt: ${shotWoorden}.`,
       '',
@@ -726,15 +743,15 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     '',
     `    ${mappen[0] || '01 - your product'}/`,
     '        JPG/',
-    '            1-front.jpg',
-    '            2-back.jpg',
+    `            ${vb[0]}.jpg`,
+    `            ${vb[1]}.jpg`,
     '        PNG/',
     '        WEBP/',
     '',
     'The folder name is your own product name, with a number in front so',
     'your file browser puts them in the right order. The numbers in the',
-    'filenames do the same inside a product: without them the front shot',
-    'would sit at the bottom, because "back" comes first alphabetically.',
+    'filenames do the same inside a product: they stay in the order we',
+    'made them in, not shuffled alphabetically.',
     '',
     `The names you will see: ${shotWoorden}.`,
     '',

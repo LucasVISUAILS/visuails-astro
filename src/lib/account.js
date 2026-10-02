@@ -178,6 +178,7 @@ import { licenceText } from './scaffold.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
 // deze twee schermen hadden elk hun eigen query over dezelfde levering en die
 // waren al uit elkaar gelopen.
+import { vakNaam } from '../data/levervakken.js';
 import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, downloadTaal, orderProductNames, leveringIngetrokken, TOEGANG_KOLOMMEN, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
@@ -503,7 +504,10 @@ const COPY = {
     // want een knop met "download" erop en niets eromheen laat de klant gokken of
     // hij het goede formaat krijgt.
     folderH: 'Your files',
-    folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP — so a print shop, a shop page and a feed each get the file they want without anyone resizing anything.',
+    /* Ronde 9, F16: geen formaatbelofte meer hier — Studio weet op dit scherm
+       niet welke formaten er voor deze levering klaarstaan (de privélink wel, en
+       noemt ze daar). */
+    folderBody: 'One folder per product with every visual of this order, in the shape you chose.',
     folderReview: 'The photos below are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
     contactH: 'Ask a specialist',
     contactWa: 'WhatsApp',
@@ -727,7 +731,7 @@ const COPY = {
     ovWelcome: 'Welcome back',
     ovWelcomeFirst: 'Welcome',
     ovLede: 'A quick look at your orders and files.',
-    ovInProduction: 'In production',
+    ovInProduction: 'With us',
     ovHumanCheck: 'Being checked',
     ovDelivered: 'Delivered',
     ovTotal: 'Orders total',
@@ -809,6 +813,7 @@ const COPY = {
       in_production: 'Our studio is making your images.',
       human_check: 'A specialist goes through every image before it reaches you.',
       delivered: 'Your images are ready. Look them over and tell us if anything is off.',
+      closed: 'This order is complete. Your images are below, ready to download.',
       revising: 'Your revision round is in. We are working on the images you marked and will let you know when they are back.',
       cancelled: 'This order was cancelled. Nothing is being made for it.',
     },
@@ -838,6 +843,8 @@ const COPY = {
     stFixed: 'Changed:',
     stNew: 'New',
     stReplacedFor: 'Redone after your note:',
+    rdDoneH: 'Your revision round has been handled',
+    rdDoneB: 'The new versions are in place. That was this order\'s revision round — if something is still off, WhatsApp or email us.',
     rdReadyH: 'Your revision is ready',
     rdReadyB: 'The images marked “new” replace the ones you flagged. Have a look and approve them — or let us know on WhatsApp if something is still off.',
     bCancelShort: 'Cancel',
@@ -1179,6 +1186,7 @@ const COPY = {
     footAsk: 'Anything else,',
     dbDown: 'We cannot reach your account right now. This is our end, not yours — try again in a few minutes.',
     notFound: 'This page does not exist. Go back to your overview.',
+    notFoundTitle: 'Page not found',
   },
 
   nl: {
@@ -1226,7 +1234,7 @@ const COPY = {
     emptyUploads: 'Geen foto’s bij deze bestelling.',
     bDownloadAll: 'Download de map',
     folderH: 'Jouw bestanden',
-    folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, zonder dat iemand nog iets bijschaalt.',
+    folderBody: 'Eén map per product met alle beelden van deze bestelling, in de beeldverhouding die je koos.',
     folderReview: 'De foto\'s hieronder zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
     contactH: 'Vraag een specialist',
     contactWa: 'WhatsApp',
@@ -1366,7 +1374,7 @@ const COPY = {
     ovWelcome: 'Welkom terug',
     ovWelcomeFirst: 'Welkom',
     ovLede: 'Een snel overzicht van je bestellingen en bestanden.',
-    ovInProduction: 'In productie',
+    ovInProduction: 'Bij ons in de maak',
     ovHumanCheck: 'Wordt nagekeken',
     ovDelivered: 'Geleverd',
     ovTotal: 'Bestellingen totaal',
@@ -1434,6 +1442,7 @@ const COPY = {
       in_production: 'Onze studio maakt je beelden.',
       human_check: 'Een specialist loopt elk beeld na voordat het naar je toe gaat.',
       delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
+      closed: 'Deze bestelling is afgerond. Je beelden staan hieronder klaar om te downloaden.',
       revising: 'Je revisieronde is binnen. We werken aan de beelden die je aanmerkte en laten weten wanneer ze terug zijn.',
       cancelled: 'Deze bestelling is geannuleerd. Er wordt niets voor gemaakt.',
     },
@@ -1457,6 +1466,8 @@ const COPY = {
     stFixed: 'Aangepast:',
     stNew: 'Nieuw',
     stReplacedFor: 'Opnieuw gemaakt na je opmerking:',
+    rdDoneH: 'Je revisieronde is verwerkt',
+    rdDoneB: 'De nieuwe versies staan erin. Daarmee is de revisieronde van deze bestelling gebruikt — klopt er toch nog iets niet, app of mail ons.',
     rdReadyH: 'Je revisie staat klaar',
     rdReadyB: 'De beelden met “nieuw” vervangen de beelden die je aanmerkte. Bekijk ze en keur ze goed — of app ons als er nog iets niet klopt.',
     bCancelShort: 'Intrekken',
@@ -1734,6 +1745,7 @@ const COPY = {
     footAsk: 'Verder iets,',
     dbDown: 'We kunnen je account nu niet bereiken. Dit ligt aan ons, niet aan jou — probeer het over een paar minuten opnieuw.',
     notFound: 'Deze pagina bestaat niet. Ga terug naar je overzicht.',
+    notFoundTitle: 'Pagina niet gevonden',
   },
 };
 
@@ -1951,9 +1963,14 @@ export async function accountGet(context) {
   if (!url.pathname.endsWith('/') && SCHERMEN.has(url.pathname)) {
     return seeOther(`${url.pathname}/${url.search}`);
   }
+  /* Ronde 9, O4: de adressen die mensen gokken voor "mijn gegevens" en "mijn
+     facturen" — /account/profile gaf een kale 404 zonder menu. */
+  const GOK = { '/account/profile': '/account/details/', '/account/settings': '/account/details/', '/account/billing': '/account/invoices/' };
+  const gok = GOK[url.pathname.replace(/\/$/, '')];
+  if (gok) return seeOther(`${gok}${url.search}`);
 
   const lang = negotiate(request);
-  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
+  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
 }
 
 export async function accountPost(context) {
@@ -2101,7 +2118,7 @@ export async function accountPost(context) {
 
   const lang = negotiate(request);
   if (asJson) return json({ error: 'not-found' }, 404);
-  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
+  return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
 }
 
 /**
@@ -2919,7 +2936,7 @@ export async function sectionState(context, customer) {
        verbruikt aan een lege verzending. */
     rondeFlag = String(params.get('ronde') || '');
     const wanted = String(params.get('status') || '');
-    if (Object.prototype.hasOwnProperty.call(STATUS, wanted)) statusFilter = wanted;
+    if (wanted === BIJ_ONS || Object.prototype.hasOwnProperty.call(STATUS, wanted)) statusFilter = wanted;
   } catch { /* keep the defaults */ }
 
   return {
@@ -3747,7 +3764,9 @@ async function loadCustomerFiles(env, customerId) {
      de voorkant als derde. Nu de volgorde van shots.js: voor, achter, detail,
      gedragen; onbekende shots erachter. */
   const order = `ORDER BY f.order_id,
-                          f.product_key IS NULL, f.product_key,
+                          f.product_key IS NULL,
+                          -- p10 na p9 en niet na p1 (ronde 9: 12 producten van de webshop)
+                          CAST(SUBSTR(f.product_key, 2) AS INTEGER), f.product_key,
                           f.kind DESC, f.shot IS NULL,
                           CASE f.shot WHEN 'front' THEN 0 WHEN 'back' THEN 1 WHEN 'detail' THEN 2 WHEN 'worn' THEN 3 ELSE 9 END,
                           f.shot, f.id`;
@@ -4669,7 +4688,7 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
     const gaten = uniek.map((_, i) => `?${i + 4}`).join(', ');
     const res = await env.DB.prepare(
       `SELECT f.id, f.filename, f.product_key, f.shot,
-              o.closed_at, o.service, o.revision_round_at, o.lang, c.revisions_revoked_at
+              o.closed_at, o.service, o.details_json, o.revision_round_at, o.lang, c.revisions_revoked_at
          FROM files f
          JOIN orders o ON o.id = f.order_id
          JOIN customers c ON c.id = o.customer_id
@@ -4708,7 +4727,7 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
        van de kaart, niet van VIS-XXXX-p2-voorkant.jpg. */
     const pn = /^p(\d+)$/.exec(String(f.product_key || ''));
     const naam = pn
-      ? `${t.prodLabel(pn[1])}${f.shot && t.shotNames[f.shot] ? ` · ${t.shotNames[f.shot]}` : ''}`
+      ? `${t.prodLabel(pn[1])}${f.shot && (vakNaam(f.service, f.details_json, f.shot, lang) || t.shotNames[f.shot]) ? ` · ${vakNaam(f.service, f.details_json, f.shot, lang) || t.shotNames[f.shot]}` : ''}`
       : (f.filename || `#${f.id}`);
     const notitie = String(form.get(`note-${f.id}`) || '').slice(0, NOTE_MAX);
     return `
@@ -5002,7 +5021,7 @@ async function serveOrderZip(context, customer, orderId) {
        deze drie kolommen heten de mappen weer `01` in plaats van
        `01 - Zwarte hoodie`. */
     order = await env.DB.prepare(
-      `SELECT id, ref, lang, brand, name, details_json, ${TOEGANG_KOLOMMEN} FROM orders WHERE id = ?1 AND customer_id = ?2`
+      `SELECT id, ref, lang, service, brand, name, details_json, ${TOEGANG_KOLOMMEN} FROM orders WHERE id = ?1 AND customer_id = ?2`
     ).bind(orderId, customer.customer_id).first();
     if (!order) return new Response(null, { status: 404, headers: fileHeaders() });
     /* Dezelfde regel als bij een los beeld hierboven — zie delivery.js. Het
@@ -5039,7 +5058,7 @@ async function serveOrderZip(context, customer, orderId) {
   const taal = downloadTaal(context.request, langCookie(context.request));
   const lang = taal === 'beide' ? (order.lang === 'en' ? 'en' : 'nl') : taal;
   const productNames = orderProductNames(order.details_json);
-  const entries = deliveryEntries(files, lang, { ref: order.ref, productNames });
+  const entries = deliveryEntries(files, lang, { ref: order.ref, productNames, service: order.service, details: order.details_json });
   if (!entries.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
   /* De twee tekstbestanden. Ze tellen niet mee in de maatcontrole hieronder: samen
@@ -5817,7 +5836,11 @@ export function overviewView(t, lang, customer, orders, filesByOrder, eventsByOr
   const stats = [
     [ICON_ORDERS, lang === 'nl' ? 'Te betalen' : 'To pay', orders.filter((o) => weergaveStatus(o) === 'awaiting_payment').length, 'awaiting_payment'],
     [ICON_CHECK, lang === 'nl' ? 'Te beoordelen' : 'To review', teBeoordelen, 'delivered'],
-    [ICON_PROD, t.ovInProduction, orders.filter((o) => ['in_production', 'human_check'].includes(o.status) || (o.status === 'received' && weergaveStatus(o) !== 'awaiting_payment')).length, 'in_production'],
+    /* RONDE 9, F10 — deze tegel heette "In productie" en telde ook een betaalde
+       bestelling die zelf "Ontvangen" zei; de link erachter (?status=in_production)
+       gaf dan een lege lijst. Nu heet hij naar wat hij telt, en gaat hij naar een
+       filter dat precies die bestellingen toont. */
+    [ICON_PROD, t.ovInProduction, orders.filter(bijOns).length, BIJ_ONS],
     [ICON_DELIVERED, t.ovDelivered, orders.filter((o) => o.status === 'delivered').length, 'delivered'],
   ];
   const recent = orders.slice(0, 5);
@@ -7731,7 +7754,10 @@ export function progressView(t, lang, o, events = [], files = []) {
   const revising = status === 'delivered'
     && (files || []).some((f) => f.kind === 'delivery' && !f.superseded_at && f.review_state === 'revision_requested');
   const betaald = String(o.payment_status || '') === 'paid';
-  const now = unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (t.flowNow[status] || t.flowNow.received);
+  /* RONDE 9, F19 — na afronden (alles goedgekeurd, score gegeven) bleef hier
+     "Bekijk ze en laat het weten" staan. Een afgesloten bestelling is klaar. */
+  const afgerond = status === 'delivered' && !!o.closed_at && !revising;
+  const now = afgerond ? t.flowNow.closed : unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (t.flowNow[status] || t.flowNow.received);
   const when = !cancelled && status !== 'delivered' && o.window_start
     ? ` ${t.flowWindow(shortDate(o.window_start, lang), shortDate(o.window_end || o.window_start, lang))}`
     : '';
@@ -8863,13 +8889,25 @@ export function weergaveStatus(o) {
   return onbetaald ? 'awaiting_payment' : o.status;
 }
 
+/* "Bij ons in de maak": betaald en nog niet geleverd. Eén definitie voor de
+   tegel op het overzicht én het filter waar die tegel naartoe linkt (F10). */
+const BIJ_ONS = 'bij_ons';
+function bijOns(o) {
+  const st = weergaveStatus(o);
+  return st === 'received' || st === 'in_production' || st === 'human_check';
+}
+
 export function ordersView(t, lang, orders, statusFilter = '') {
-  const shown = statusFilter ? orders.filter((o) => weergaveStatus(o) === statusFilter) : orders;
+  const shown = statusFilter === BIJ_ONS ? orders.filter(bijOns)
+    : statusFilter ? orders.filter((o) => weergaveStatus(o) === statusFilter) : orders;
   const counts = [];
   for (const key of Object.keys(STATUS)) {
     const n = orders.filter((o) => weergaveStatus(o) === key).length;
     if (n) counts.push({ key, n, label: statusLabel(key, lang) || key, href: `/account/orders?status=${encodeURIComponent(key)}`, active: statusFilter === key });
   }
+  /* Kwam je via de tegel "Bij ons in de maak", dan staat dat filter ook als
+     knop in de rij — anders is er niets aangevinkt en lijkt "Alle" weg. */
+  if (statusFilter === BIJ_ONS) counts.unshift({ key: BIJ_ONS, n: shown.length, label: t.ovInProduction, href: `/account/orders?status=${BIJ_ONS}`, active: true });
   return {
     shown,
     filters: counts.length > 1 ? [{ key: '', n: orders.length, label: t.flAll, href: '/account/orders', active: !statusFilter }, ...counts] : [],
@@ -8880,7 +8918,11 @@ export function ordersView(t, lang, orders, statusFilter = '') {
 export function shotView(t, f, o, inProduct = false) {
   const gone = Boolean(f.expires_at && isExpired(f.expires_at, null));
   const isUpload = f.kind === 'upload';
-  const shotName = f.shot && t.shotNames[f.shot] ? t.shotNames[f.shot] : null;
+  /* Per dienst (ronde 9, F17): bij lifestyle "Beeld 1" en geen "Voorkant", en
+     een bijbestelde hoek bij zijn naam. Een klantfoto (upload) houdt de
+     catalogusnaam: die heeft de klant zelf zo aangeleverd. */
+  const perDienst = (!isUpload && o && f.shot) ? vakNaam(o.service, o.details_json, f.shot, t === COPY.en ? 'en' : 'nl') : null;
+  const shotName = perDienst || (f.shot && t.shotNames[f.shot] ? t.shotNames[f.shot] : null);
   const product = (!inProduct && f.product_key) ? f.product_key.replace(/^p/, '#') : null;
   const caption = [product, shotName].filter(Boolean).join(' · ') || f.filename || `#${f.id}`;
   let badge = null; const said = [];
@@ -9023,7 +9065,10 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     const openNog = delivered.some((f) => !f.superseded_at && f.review_state === 'revision_requested');
     const nieuw = delivered.some((f) => !f.superseded_at && f.replaced_for && f.review_state === 'pending');
     const klaar = !openNog && nieuw;
-    ronde = { kind: klaar ? 'ready' : 'done', h: klaar ? t.rdReadyH : t.rdUsedH, p: klaar ? t.rdReadyB : t.rdUsedB };
+    /* RONDE 9, F15 — niets meer open en niets nieuws te keuren: de ronde is
+       verwerkt. Hier stond dan weer "We zijn ermee bezig". */
+    if (!openNog && !nieuw) ronde = { kind: 'done', h: t.rdDoneH, p: t.rdDoneB };
+    else ronde = { kind: klaar ? 'ready' : 'done', h: klaar ? t.rdReadyH : t.rdUsedH, p: klaar ? t.rdReadyB : t.rdUsedB };
   } else if (stand === 'beschikbaar') {
     const levend = delivered.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
     if (levend.length) ronde = { kind: 'form', action: `/account/orders/${o.id}/ronde`, h: t.rdHead, warn: t.rdWarn, after: t.rdAfter, send: t.rdSend, beleidHtml: beleidBlok(t, lang) };

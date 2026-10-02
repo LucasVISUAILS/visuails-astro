@@ -83,6 +83,7 @@ import { offsitePage } from './offsite.js';
 // uit elkaar gelopen op superseded_at.
 import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames, leveringIngetrokken, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
+import { vakIds } from '../data/levervakken.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
 
@@ -160,6 +161,7 @@ const COPY = {
     bDownload: 'Download the folder',
     folderH: 'Your files',
     folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP — so a print shop, a shop page and a feed each get the file they want without anyone resizing anything.',
+    folderBodyKaal: (fmt) => `One folder per product, with every visual as we delivered it (${fmt}).`,
     folderReview: 'The photos above are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
     folderMeta: (n, size) => `${n} files · ${size}`,
     bUndo: 'Undo',
@@ -179,6 +181,8 @@ const COPY = {
     rrIntro: 'Tick every image that is not right, tell us what is wrong, and send it as one round. We look at all of them together and put them right.',
     rrLabel: 'What is wrong with the ones you ticked?',
     rrHint: 'One note for the whole round. Mention which image if it differs per image.',
+    /* Ronde 9, F13: zonder vinkje of zonder notitie laadde de pagina stil opnieuw. */
+    rrNone: 'Nothing was sent: no image was ticked. Tick “Not right” under each image that needs work, then write your note again.',
     rrPick: 'Not right',
     /* Wat de tegel zegt zodra het vinkje aanstaat. Zie de noot bij `tik`
        verderop: zonder deze regel gebeurde er bij het aanvinken niets zichtbaars. */
@@ -187,6 +191,8 @@ const COPY = {
     rrNoneChosen: 'Tick at least one image first.',
     rrChosen: (n) => (n === 1 ? '1 image ticked' : `${n} images ticked`),
     rrUsedTitle: 'Your revision round is with us',
+    rrDoneTitle: 'Your revision round has been handled',
+    rrDoneBody: (day, n) => `On ${day} you flagged ${n === 1 ? '1 image' : `${n} images`}; the new version is below. That was this order's revision round. If something is still not right, send us a message.`,
     rrUsedBody: (day, n) => `You sent ${n === 1 ? '1 image' : `${n} images`} on ${day}. That is the round that comes with this order, so the form is closed — but we are not. Anything else about this order, message us and we will sort it out.`,
     rrUsedWa: 'Message us on WhatsApp',
     rrWaText: (ref) => `Hi VISUAILS, about order ${ref} — I have a question after my revision round.`,
@@ -257,6 +263,7 @@ const COPY = {
     bApprove: 'Goedkeuren',
     bDownload: 'Download de map',
     folderH: 'Jouw bestanden',
+    folderBodyKaal: (fmt) => `Eén map per product, met elk beeld zoals we het leverden (${fmt}).`,
     folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, zonder dat iemand nog iets bijschaalt.',
     folderReview: 'De foto\'s hierboven zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
     folderMeta: (n, size) => `${n} bestanden · ${size}`,
@@ -272,12 +279,15 @@ const COPY = {
     rrIntro: 'Vink elk beeld aan dat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde. We kijken er in één keer naar en zetten het recht.',
     rrLabel: 'Wat klopt er niet aan wat je hebt aangevinkt?',
     rrHint: 'Eén notitie voor de hele ronde. Noem het beeld erbij als het per beeld verschilt.',
+    rrNone: 'Er is niets verstuurd: je had geen beeld aangevinkt. Vink onder elk beeld dat anders moet “Niet goed” aan en schrijf je opmerking dan opnieuw.',
     rrPick: 'Niet goed',
     rrPicked: 'Staat in je revisieronde',
     rrSend: 'Verstuur deze revisieronde',
     rrNoneChosen: 'Vink eerst minstens één beeld aan.',
     rrChosen: (n) => (n === 1 ? '1 beeld aangevinkt' : `${n} beelden aangevinkt`),
     rrUsedTitle: 'Je revisieronde ligt bij ons',
+    rrDoneTitle: 'Je revisieronde is verwerkt',
+    rrDoneBody: (day, n) => `Je gaf op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} door; de nieuwe versie staat hieronder. De revisieronde van deze bestelling is daarmee gebruikt. Klopt er toch nog iets niet, stuur ons een bericht.`,
     rrUsedBody: (day, n) => `Je hebt op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} doorgegeven. Dat is de ronde die bij deze bestelling hoort, dus het formulier is dicht — wij niet. Is er verder iets met deze bestelling, stuur ons een bericht en we lossen het op.`,
     rrUsedWa: 'Stuur een WhatsApp-bericht',
     rrWaText: (ref) => `Hoi VISUAILS, over bestelling ${ref} — ik heb een vraag na mijn revisieronde.`,
@@ -400,6 +410,9 @@ export async function portalGet(context) {
   if (route.kind === 'zip') return serveOrderFolder(context, order, lang);
 
   later(context, bumpUse(env, order.token_id));
+  /* De melding van een lege revisieronde (ronde 9, F13). Alleen dit ene woord
+     wordt gelezen; de rest van de query string doet niets. */
+  order.rrMelding = new URL(request.url).searchParams.get('rr') === 'geen';
   return renderOrder(env, order, route.token, lang);
 }
 
@@ -644,6 +657,13 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
   if (!canRequestRevisionRound(order)) return seeOther(terug);
 
   const note = String(form.get('note') || '').trim().slice(0, NOTE_MAX);
+  /* ── NIET STIL TERUG — 2 oktober 2026 (ronde 9, F13) ──────────────────────
+     Een ronde zonder aangevinkt beeld kwam terug op dezelfde pagina zonder één
+     woord uitleg, en de getypte notitie was weg. `?rr=geen` laat roundBlock()
+     zeggen wat er misging. De notitie gaat NIET mee in de URL: een query string
+     belandt in logs en geschiedenis, en dit is wat een klant over zijn werk
+     schrijft. */
+  const leeg = `${home}?rr=geen#rr`;
   if (!note) return seeOther(terug);
 
   /*
@@ -657,7 +677,7 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
       .map((v) => Number.parseInt(String(v), 10))
       .filter((n) => Number.isInteger(n) && n > 0)
   )];
-  if (!gekozen.length) return seeOther(terug);
+  if (!gekozen.length) return seeOther(leeg);
 
   /*
    * ── ELK NUMMER MOET BIJ DÍT BESTELLING HOREN ──────────────────────────────
@@ -693,7 +713,7 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
   } catch {
     return plainPage(env, request, 'down', 503, lang);
   }
-  if (!eigen.length) return seeOther(terug);
+  if (!eigen.length) return seeOther(leeg);
 
   try {
     /*
@@ -1111,6 +1131,14 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
   let events = [];
   try {
     files = await loadDeliveryFiles(env, order.order_id, { ookOngemeld: voorvertoning });
+    /* RONDE 9, F15 — de rijen komen op id binnen, dus een herlevering (nieuwe
+       rij, hoger id) schoof naar het eind: de voorkant van product 1 stond na de
+       herlevering als laatste. Nu op product, dan op de plek van het vakje
+       binnen dat product, dan pas op id. */
+    const volgorde = vakIds(order.service, order.details_json);
+    const plek = (f) => { const i = volgorde.indexOf(f.shot); return i < 0 ? 99 : i; };
+    const prod = (f) => { const m = /^p(\d+)$/.exec(String(f.product_key || '')); return m ? Number(m[1]) : 9999; };
+    files.sort((a, b) => prod(a) - prod(b) || plek(a) - plek(b) || a.id - b.id);
     if (attended) events = await loadEvents(env, order.order_id);
   } catch {
     // The order exists and the client is authenticated; a failed second query is
@@ -1140,7 +1168,7 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
    * zijn zuivere functies over de rijen die er al zijn: geen tweede query, en per
    * constructie hetzelfde archief als de route straks bouwt.
    */
-  const folder = folderBlock(t, token, deliverySummary(deliveryEntries(files, lang)));
+  const folder = folderBlock(t, token, deliverySummary(deliveryEntries(files, lang, { service: order.service, details: order.details_json })));
 
   const body = attended
     ? attendedBody(t, lang, order, token, files, events, fb, folder)
@@ -1199,6 +1227,17 @@ function roundBlock(t, lang, order, files) {
   if (staat === 'gebruikt') {
     const n = order.revision_round_count || files.filter((f) => f.review_state === 'revision_requested').length;
     const dag = formatDay(String(order.revision_round_at).slice(0, 10), lang);
+    /* RONDE 9, F15 — "Je revisieronde ligt bij ons" bleef staan nadat de nieuwe
+       versie er was en goedgekeurd. Staat er geen beeld meer op "revisie
+       gevraagd", dan is de ronde terug bij de klant: dat zegt het blok dan ook. */
+    const nogOpen = files.some((f) => f.review_state === 'revision_requested' && !f.superseded_at);
+    if (!nogOpen) {
+      return `<section class="rr rr-used">
+  <h2>${esc(t.rrDoneTitle)}</h2>
+  <p>${esc(t.rrDoneBody(dag, n))}</p>
+  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}</a></p>
+</section>`;
+    }
     /*
      * DE WHATSAPP-LINK IS HET HELE PUNT VAN DIT BLOK. Lucas: *"kan de klant
      * wanneer ze problemen ervaren op een link klikken die naar whatsapp
@@ -1238,6 +1277,7 @@ function roundBlock(t, lang, order, files) {
   return `<section class="rr">
   <h2>${esc(t.rrTitle)}</h2>
   <p>${esc(t.rrIntro)}</p>
+  ${order.rrMelding ? `<p class="rr-fout" role="alert">${esc(t.rrNone)}</p>` : ''}
   <form method="post" action="" id="rr">
     <label class="sr-only" for="rrnote">${esc(t.rrLabel)}</label>
     <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}" required></textarea>
@@ -1417,13 +1457,19 @@ ${feedback}
  */
 function folderBlock(t, token, summary) {
   if (!summary || !summary.files) return '';
+  /* RONDE 9, F16 — de zin beloofde PNG, JPG én WebP, ook bij een levering via
+     de browser waar alleen het geüploade bestand bestaat (admin waarschuwde er
+     zelf voor). Nu zegt hij wat er in de map zit. */
+  const fmts = (summary.formats || []).map((f) => (f === 'jpeg' ? 'jpg' : f));
+  const drieFormaten = ['jpg', 'png', 'webp'].every((f) => fmts.includes(f));
+  const fmtLijst = fmts.map((f) => (f === 'webp' ? 'WebP' : f.toUpperCase())).join(', ') || '—';
   const meta = summary.bytes
     ? `<p class="folder-meta">${esc(t.folderMeta(summary.files, humanBytes(summary.bytes)))}</p>`
     : '';
   return `<section class="folder">
   <div class="folder-body">
     <h2>${esc(t.folderH)}</h2>
-    <p class="folder-n">${esc(t.folderBody)}</p>
+    <p class="folder-n">${esc(drieFormaten ? t.folderBody : t.folderBodyKaal(fmtLijst))}</p>
     ${meta}
     <p class="note folder-note">${esc(t.folderReview)}</p>
   </div>
@@ -1454,7 +1500,7 @@ async function serveOrderFolder(context, order, lang) {
   if (!files.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
   const productNames = orderProductNames(order.details_json);
-  const entries = deliveryEntries(files, lang, { ref: order.ref, productNames });
+  const entries = deliveryEntries(files, lang, { ref: order.ref, productNames, service: order.service, details: order.details_json });
   if (!entries.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
   const total = entries.reduce((n, e) => n + (e.bytes || 0), 0);

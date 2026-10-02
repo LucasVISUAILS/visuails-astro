@@ -25,6 +25,10 @@
  * uploads, and an empty array is a new key on every message that doesn’t
  * carry one — a wire-format difference that buys nothing.
  */
+function stripComments(h) {
+  return String(h || '').replace(/<!--(?!\[if|<!\[endif)[\s\S]*?-->/g, '');
+}
+
 export async function sendMail(env, { to, bcc, subject, html, text, attachments, replyTo }) {
   /* ── EEN MISLUKTE MAIL WAS ONZICHTBAAR — 23 augustus 2026 ─────────────────
    *
@@ -75,7 +79,13 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments,
     from,
     to,
     subject,
-    html,
+    /* ── GEEN WERKNOTITIES IN DE MAIL — 2 oktober 2026 (ronde 9, F8) ──────────
+       De sjablonen dragen HTML-commentaar met uitleg voor ons ("DE BELOFTE STAAT
+       IN DE VOET…", "#CCCCCC is --line…"). Dat kwam gewoon mee naar de klant en
+       stond daar te lezen onder "Origineel weergeven". Eerst de platte tekst
+       maken (die leest de <!--tekst:…--> markeringen), dán het commentaar eruit.
+       Voorwaardelijk commentaar voor Outlook (<!--[if …]>) blijft staan. */
+    html: stripComments(html),
     text: text || htmlToText(html),
     /* Per mail in te stellen (ronde 8, M-B4): een studiomail over één klant
        kreeg hello@ als antwoordadres, dus "beantwoorden" mailde jezelf. Alleen

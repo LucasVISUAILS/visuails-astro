@@ -198,6 +198,15 @@ const COPY = {
 };
 const c = COPY[lang];
 const nl = lang === 'nl';
+/* RONDE 9, O2 — de strook toont tegels van ±64 px, maar laadde het portret van
+   800 px: tien keer 50 kB op een telefoon voor tien postzegels, en de tegels
+   bleven eerst grijs. Nu kiest de browser uit 160/380/800 (gemaakt door
+   kladblok/_r9-w160.mjs naast scripts/make-thumbs.mjs). */
+const thumbSet = (m) => {
+  const basis = String(m.photo || '').replace(/\.webp$/, '');
+  if (!basis) return undefined;
+  return [`${basis}-w160.webp 160w`, `${basis}-w380.webp 380w`, `${m.thumb} ${m.tw}w`].join(', ');
+};
 ---
 
 <fieldset class="pl-fieldset pl-model">
@@ -264,6 +273,8 @@ const nl = lang === 'nl';
         <img
           class="mp-thumb"
           src={m.thumb}
+          srcset={thumbSet(m)}
+          sizes={strook ? '80px' : '(max-width: 640px) 45vw, 390px'}
           width={m.tw}
           height={m.th}
           alt={m.name}
@@ -423,6 +434,14 @@ const nl = lang === 'nl';
      tegel eronder ook, dus je ziet er niets van. Het bestand blijft daarmee
      onaangeroerd — geen bijgesneden logo, geen tweede versie om bij te houden. */
   .mp-thumb-merk { box-shadow: none; background: var(--accent); object-fit: contain; }
+  /* RONDE 9, F5 — het groene vlak las als "al aangevinkt". De starter zag een
+     gekleurde tegel tussen grijze portretten, klikte op Verder en kreeg pas dan
+     "Kies wie het draagt". Lucas wil hier bewust géén voorkeuze (zie `verplicht`
+     hierboven), dus de tegel krijgt zijn kleur pas als hij gekozen ís: tot dan
+     grijs, net als een portret dat je nog niet koos. Het logobestand zelf blijft
+     onaangeroerd; alleen de weergave verandert. */
+  .mp-opt-any:not(:has(input:checked)) .mp-thumb-merk { filter: grayscale(1); opacity: .55; }
+  .mp-opt-any:hover .mp-thumb-merk, .mp-opt-any:focus-within .mp-thumb-merk { filter: none; opacity: 1; }
   .mp-row { display: flex; align-items: center; gap: .4rem; }
   .mp-row input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
   .mp-name { font-size: .8rem; color: var(--ink); line-height: 1.25; }

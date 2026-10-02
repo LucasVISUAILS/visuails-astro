@@ -1,0 +1,25 @@
+---
+// VISUAILS — de Nederlandse 404 voor elk onbekend adres onder /nl/.
+// 2 oktober 2026 (ronde 9, F1).
+//
+// sitemap-and-404.mjs zet dist/nl/404.html plat "zodat Pages hem vindt", maar de
+// site draait sinds de overstap als Worker met assets, en die zoekt niet naar de
+// dichtstbijzijnde 404.html: live gaf /nl/bestaat-niet de ENGELSE 404 ("Page not
+// found") aan een Nederlandse bezoeker.
+//
+// Deze route vangt alles onder /nl/ wat geen pagina, geen andere route en geen
+// bestand is. Astro geeft een rest-parameter de laagste voorrang, dus hij komt
+// pas aan de beurt als niets anders past; bestanden uit dist/ serveert Cloudflare
+// zelf, vóór de Worker. Status 404, noindex, en dezelfde inhoud als /nl/404.
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import NotFoundPage from '../../components/NotFoundPage.astro';
+
+Astro.response.status = 404;
+const description =
+  'Deze pagina bestaat niet. De link is verouderd of het adres verkeerd getypt — ga terug naar de homepage of bekijk Catalog, Lifestyle en Video.';
+---
+
+<Layout title="Pagina niet gevonden — VISUAILS" description={description} noindex>
+  <NotFoundPage lang="nl" />
+</Layout>

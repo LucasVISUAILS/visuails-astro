@@ -72,6 +72,13 @@ const fl = FIELD[lang];
 <fieldset class="pl-fieldset pl-bg" data-pl-bg aria-labelledby="pl-bg-h">
   <h3 class="pl-sub-h" id="pl-bg-h">{bgc.label}</h3>
 
+  {/* Ronde 9, F20: met bol of Amazon aangevinkt staan de andere kleuren uit,
+      maar de uitleg stond alleen bij "Waar ga je deze verkopen?" — dicht, en
+      boven deze vouw. Hier staat waarom, op de plek waar je klikt. */}
+  <p class="bg-lock" data-pl-bg-lock hidden>{lang === 'nl'
+    ? 'Wit staat vast: je verkoopt op een marktplaats die een witte hoofdafbeelding eist. Wil je een andere kleur, haal die marktplaats dan weg bij “Waar ga je deze verkopen?”.'
+    : 'White is fixed: you sell on a marketplace that requires a white main image. For another colour, untick that marketplace under “Where will you sell these?”.'}</p>
+
   <div class="bg-grid" role="radiogroup" aria-labelledby="pl-bg-h">
     {BACKGROUNDS.map((b) => (
       <label class="bg-opt">
@@ -127,6 +134,7 @@ const fl = FIELD[lang];
           data-pl-bg-text
           placeholder="#RRGGBB"
           pattern="#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"
+          data-pl-err-msg={lang === 'nl' ? 'Vul een hexwaarde in, zoals #E8F0EA — of kies de kleur met het kleurvak ernaast.' : 'Enter a hex value such as #E8F0EA — or pick the colour with the swatch next to it.'}
           maxlength="7"
           autocomplete="off"
           autocapitalize="off"
@@ -180,6 +188,10 @@ const fl = FIELD[lang];
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .bg-opt:hover { border-color: var(--accent-line); }
+  /* Ronde 9, F20: een uitgeschakelde kleur moet er ook zo uitzien. */
+  .bg-opt:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+  .bg-opt:has(input:disabled):hover { border-color: var(--line-strong); }
+  .bg-lock { margin: .2rem 0 .6rem; max-width: 66ch; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
   .bg-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   .bg-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   /* The swatch IS the value, so it gets the largest area on the tile and a

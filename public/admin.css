@@ -1000,6 +1000,8 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .brief-feiten b { color: var(--ink); }
 .brief-sep { color: var(--ink-3); }
 .brief-leeg { color: var(--ink-3); font-style: italic; }
+/* Ronde 9, F17b: wat de studio niet mag missen (4K, afwijkende verhouding). */
+.brief-let { color: var(--st-rev-ink); font-weight: 700; }
 .brief-rij { display: grid; grid-template-columns: 86px 1fr; gap: .6rem; align-items: start; padding: .3rem 0; }
 .brief-rij + .brief-rij { border-top: 1px dotted var(--line); }
 .brief-kop { font-size: .68rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; padding-top: .3rem; }
@@ -1073,6 +1075,8 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .slot.is-fresh .slot-state { color: var(--ink); }
 .slot.is-revising { border-color: var(--st-rev-edge); }
 .slot.is-revising .slot-state { color: var(--st-rev-ink); font-weight: 700; }
+/* Ronde 9, F14: de woorden van de klant onder een vakje met een revisie. */
+.slot-note { margin: .2rem 0 .3rem; font-size: .78rem; line-height: 1.4; color: var(--ink-2); font-style: italic; overflow-wrap: anywhere; }
 
 /* De vervangknop is een noodgeval, geen hoofdhandeling: bij een compleet
    product staan er vier naast elkaar en dan schreeuwen vier gevulde knoppen
@@ -2168,3 +2172,8 @@ details.admin-extra[open] > summary::after { content: "▴"; }
 .tijdlijn-admin li.is-intern .notelog-body { color: var(--ink-3); font-style: italic; }
 .db-abo { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .35rem; }
 .db-abo li { display: flex; justify-content: space-between; gap: .6rem; font-size: .9rem; }
+
+/* Ronde 9, O3: een zin die in een formulierrij de ruimte vult, zonder de rand en
+   achtergrond van .in-grow — die maakten "Deze bestelling is nog nooit gemeld"
+   tot iets wat eruitzag als een invoerveld. */
+.in-tekst { flex: 1; min-width: 12rem; margin: 0; }

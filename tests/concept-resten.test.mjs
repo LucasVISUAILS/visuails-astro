@@ -110,8 +110,10 @@ console.log('\n2 · waar je wél meer beelden bestelt');
     /cfg\.maxExtraPerProduct/.test(pl), true);
   /* Staat de bovengrens op nul, dan wijst de zin naar een keuze die niet
      bestaat. */
+  /* Ronde 9 (F2): ook weg als er op dit formulier geen hoeken bij te bestellen
+     zijn (lifestyle, de €1-proef) — anders wijst hij naar een keuze die niet bestaat. */
   ok('en hij blijft weg als er niets bij te bestellen is',
-    /if \(extraMax\) strip\.append\(terug\);/.test(pl), true);
+    /if \(extraMax( && hoekKan)?\) strip\.append\(terug\);/.test(pl), true);
   ok('hij noemt stap 1', /stap 1/.test(flow) && /step 1/.test(flow), true);
   /* De richting is de hele zin: die stuur je ons, deze krijg je van ons. */
   ok('en het verschil tussen sturen en krijgen',

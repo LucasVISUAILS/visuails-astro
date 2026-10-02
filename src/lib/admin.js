@@ -173,6 +173,8 @@ import { readCalendar, videoVelden } from './agenda.js';
 import { videoStyles as VIDEO_STIJLEN_NL } from '../data/videoStyles.nl.js';
 /* Zodat het annuleerregeltje kan zeggen of de klant de bestanden nog heeft. Eén
    waarheid over die vraag; zie de kop van delivery.js. */
+import { leverVakken, vakIds, vakWoord, vakNaam, extraVakken } from '../data/levervakken.js';
+import { CHANNELS as KANALEN, channelName } from '../data/channels.js';
 import { leveringIngetrokken } from './delivery.js';
 import { maybeCloseOrder } from './close.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
@@ -2292,8 +2294,8 @@ async function loadOrderFiles(env, orderId) {
   if (!order) return null;
 
   const fileCols = migrated
-    ? 'id, kind, filename, bytes, product_key, shot, created_at, review_state, announced_at, superseded_at'
-    : 'id, kind, filename, bytes, product_key, shot, created_at, review_state';
+    ? 'id, kind, filename, bytes, product_key, shot, created_at, review_state, review_note, announced_at, superseded_at'
+    : 'id, kind, filename, bytes, product_key, shot, created_at, review_state, review_note';
   let results = [];
   try {
     ({ results } = await env.DB.prepare(
@@ -2584,6 +2586,7 @@ async function serveScaffold(context, orderId) {
   };
   const files = scaffoldFiles(orderForText, products, {
     origin: new URL(context.request.url).origin,
+    vakken: leverVakken(order.service, order.details_json),
   });
 
   return new Response(zipStream(files), {
@@ -2760,7 +2763,7 @@ async function renderFiles(context, orderId) {
 
   const row = (f, showAnnounced, toonFormaat = false) => `<tr>
     <td>${esc(f.product_key || '')}</td>
-    <td>${esc(SHOT_LABEL[f.shot] || f.shot || '')}</td>
+    <td>${esc((f.shot && vakNaam(order.service, order.details_json, f.shot)) || SHOT_LABEL[f.shot] || f.shot || '')}</td>
     <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a></td>
     <td class="num">${f.bytes ? Math.round(f.bytes / 1024) + ' kB' : ''}</td>
     ${toonFormaat ? `<td>${formaatCel(f)}</td>` : ''}
@@ -2837,7 +2840,15 @@ async function renderFiles(context, orderId) {
    * vroeg: de gloed gaat weg omdat het werk gedaan is, niet omdat iemand een
    * vinkje heeft gezet.
    */
-  const SHOT_KEYS = ['front', 'back', 'detail', 'worn'];
+  /* ── DE VAKJES HANGEN AAN DE DIENST — 2 oktober 2026 (ronde 9, F17) ──────────
+     Hier stond een vaste lijst van vier catalogushoeken. Lifestyle levert er
+     drie (Beeld 1–3) en een catalogset met bijbestelde hoeken meer dan vier;
+     zie src/data/levervakken.js. De sleutels in de database blijven dezelfde. */
+  const VAKKEN = leverVakken(order.service, order.details_json);
+  const SHOT_KEYS = VAKKEN.map((v) => v.id);
+  const VAK_LABEL = Object.fromEntries(VAKKEN.map((v) => [v.id, v.nl]));
+  const vakLabel = (k) => VAK_LABEL[k] || SHOT_LABEL[k] || k;
+  const VAK_ALLE = Object.fromEntries(leverVakken('catalog', order.details_json).map((v) => [v.id, v.nl]));
   const productOptions = (() => {
     const keys = new Set();
     for (const f of files) if (f.product_key) keys.add(f.product_key);
@@ -2866,7 +2877,7 @@ async function renderFiles(context, orderId) {
     return `<tr class="${cls}">
       <td class="thumbcell"><a href="/admin/files/${f.id}" aria-label="${esc(f.filename || `bestand ${f.id}`)} op volle grootte openen"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
       <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— niet gezet —', `Product voor ${f.filename || `bestand ${f.id}`}`)}</td>
-      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, SHOT_LABEL[k] || k]), '— niet gezet —', `Foto voor ${f.filename || `bestand ${f.id}`}`)}</td>
+      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, vakLabel(k)]), '— niet gezet —', `Foto voor ${f.filename || `bestand ${f.id}`}`)}</td>
       <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a>
         ${dead ? '<br><span class="muted">vervangen</span>' : ''}
         ${revising ? '<br><strong>revisie gevraagd</strong>' : ''}</td>
@@ -2922,11 +2933,11 @@ async function renderFiles(context, orderId) {
          te zeggen bij welk product en welke hoek. Op het scherm verandert er
          niets; het label staat op het veld in plaats van ernaast. */
       return `<div class="slot is-empty">
-        <span class="slot-label">${esc(SHOT_LABEL[shotKey] || shotKey)}</span>
+        <span class="slot-label">${esc(vakLabel(shotKey))}</span>
         <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
           <input type="hidden" name="product" value="${esc(productKey)}">
           <input type="hidden" name="shot" value="${esc(shotKey)}">
-          <input type="file" name="files" required aria-label="${esc(SHOT_LABEL[shotKey] || shotKey)} uploaden voor product ${esc(productKey.slice(1))}">
+          <input type="file" name="files" required aria-label="${esc(vakLabel(shotKey))} uploaden voor product ${esc(productKey.slice(1))}">
           <button class="btn btn-ghost btn-sm" type="submit">Uploaden</button>
         </form>
       </div>`;
@@ -2934,20 +2945,25 @@ async function renderFiles(context, orderId) {
     const revising = f.review_state === 'revision_requested';
     const fresh = migrated && !f.announced_at;
     return `<div class="slot${revising ? ' is-revising' : ''}${fresh ? ' is-fresh' : ''}">
-      <span class="slot-label">${esc(SHOT_LABEL[shotKey] || shotKey)}</span>
+      <span class="slot-label">${esc(vakLabel(shotKey))}</span>
       ${/* De link had geen enkele tekst: een <img alt=""> erin en verder niets,
            dus axe-core las "Links must have discernible text" — twaalf keer.
            Het alt blijft leeg, want het beeld zelf is decoratie in deze rij; de
            LINK krijgt de naam, want dat is wat er aangeklikt wordt. */ ''}
-      <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(SHOT_LABEL[shotKey] || shotKey)} van product ${esc(productKey.slice(1))} op ware grootte openen"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
+      <a href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(vakLabel(shotKey))} van product ${esc(productKey.slice(1))} op ware grootte openen"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
       <span class="slot-state">${revising ? 'revisie gevraagd' : fresh ? 'niet gemeld' : 'gemeld'}</span>
+      ${/* ── WAT DE KLANT ZEI, OP HET VAKJE ZELF — 2 oktober 2026 (ronde 9, F14) ──
+           De revisiemail zegt "de verzoeken staan bij de bestelling", maar de
+           woorden van de klant stonden alleen op het dashboard. Wie vanaf het bord
+           vervangt, zag "revisie gevraagd" zonder te weten wat er anders moest. */ ''}
+      ${revising && f.review_note ? `<p class="slot-note">“${esc(f.review_note)}”</p>` : ''}
       <!-- Vervangen gaat via hetzelfde vakje: een nieuw bestand op dezelfde
            product+shot maakt het vorige automatisch vervangen (resupersede),
            dus "opnieuw" is hier één handeling en geen opruimklus. -->
       <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
         <input type="hidden" name="product" value="${esc(productKey)}">
         <input type="hidden" name="shot" value="${esc(shotKey)}">
-        <input type="file" name="files" required aria-label="${esc(SHOT_LABEL[shotKey] || shotKey)} vervangen voor product ${esc(productKey.slice(1))}">
+        <input type="file" name="files" required aria-label="${esc(vakLabel(shotKey))} vervangen voor product ${esc(productKey.slice(1))}">
         <button class="btn btn-quiet btn-sm" type="submit">Vervangen</button>
       </form>
     </div>`;
@@ -3008,11 +3024,28 @@ async function renderFiles(context, orderId) {
       crop ? `${esc(({ lower: 'taille en lager', upper: 'heup en hoger', full: 'hele figuur', feet: 'voeten', waist: 'taille', head: 'hoofd', detail: 'detail', figure: 'lichaam' })[crop.id] || crop.id)}` : '',
       (() => { const gz = gezichtKort(dPer('model', n) || details.model); return gz ? `gezicht: ${esc(gz)}` : ''; })(),
       ...PRODUCT_QUESTIONS.map((qn) => { const v = dPer(qn.id, n); return v ? `${esc(qn.name.nl.replace(/\?$/, '').toLowerCase())}: ${esc(v)}` : ''; }),
+      /* ── 4K EN DE VERHOUDING PER BEELD, OP HET BORD — ronde 9, F17b ─────────
+         Ze stonden alleen in de werkmap en de adminmail. Wie vanaf het bord
+         werkt, leverde een €9-4K-product dus gewoon op 2048 px. */
+      dPer('hi', n) ? '<b class="brief-let">4K · 4096 px</b>' : '',
+      (() => {
+        const basis = ratioById(String(details.ratio || ''), order.service);
+        const afw = [];
+        for (let k = 1; k <= RATIO_IMAGES_MAX; k++) {
+          const r = ratioById(String(details[ratioField(key, k)] || ''), order.service);
+          if (r && (!basis || r.id !== basis.id)) afw.push(`beeld ${k}: ${esc(r.label)}`);
+        }
+        return afw.length ? `<b class="brief-let">${afw.join(' · ')}</b>` : '';
+      })()
     ].filter(Boolean);
 
     /* De foto's van de klant, per hoek: eerst de vier vaste, dan de referenties,
        en de contextstukken apart (rond) — dat is het verschil dat het geld raakt. */
-    const perHoek = SHOT_KEYS.map((sh) => uploadsVan(key).filter((f) => f.shot === sh).map((f) => `<span class="brief-vak"><span class="brief-vak-l">${esc(SHOT_LABEL[sh] || sh)}</span>${duim(f)}</span>`).join('')).join('');
+    /* Wat de KLANT stuurde, en niet wat wij leveren: de klant uploadt bij elke
+       dienst voorkant/achterkant/detail/gedragen plus een foto per bijbestelde
+       hoek. Vandaar de catalogusset als lijst, ook bij lifestyle (ronde 9). */
+    const AANGELEVERD = vakIds('catalog', order.details_json);
+    const perHoek = AANGELEVERD.map((sh) => uploadsVan(key).filter((f) => f.shot === sh).map((f) => `<span class="brief-vak"><span class="brief-vak-l">${esc(SHOT_LABEL[sh] || VAK_ALLE[sh] || sh)}</span>${duim(f)}</span>`).join('')).join('');
     const refs = uploadsVan(key).filter((f) => isRefShotId(f.shot)).map((f) => `<span class="brief-vak"><span class="brief-vak-l">ref</span>${duim(f)}</span>`).join('');
     const los = uploadsVan(key).filter((f) => !f.shot).map((f) => `<span class="brief-vak"><span class="brief-vak-l">?</span>${duim(f)}</span>`).join('');
     const erbij = eigen.map((f) => { const sl = contextShotSlot(f.shot); return `<span class="brief-vak is-erbij"><span class="brief-vak-l">${esc(CONTEXT_SLOTS[sl] ? CONTEXT_SLOTS[sl].name.nl : sl)}</span>${duim(f, true)}</span>`; }).join('');
@@ -3281,7 +3314,7 @@ async function renderFiles(context, orderId) {
          <form class="controls" method="post" action="/admin/orders/${order.id}/status">
            <input type="hidden" name="status" value="delivered">
            <input type="hidden" name="back" value="files">
-           <p class="muted in-grow">Deze bestelling is nog nooit gemeld &mdash; ${delivery.filter((f) => !f.superseded_at).length} beeld${delivery.filter((f) => !f.superseded_at).length === 1 ? '' : 'en'} klaar. De klant ziet ze pas na deze klik, samen met de mail dat zijn bestelling klaarstaat.</p>
+           <p class="muted in-tekst">Deze bestelling is nog nooit gemeld &mdash; ${delivery.filter((f) => !f.superseded_at).length} beeld${delivery.filter((f) => !f.superseded_at).length === 1 ? '' : 'en'} klaar. De klant ziet ze pas na deze klik, samen met de mail dat zijn bestelling klaarstaat.</p>
            <button class="btn btn-primary" type="submit">Op geleverd zetten en klant mailen</button>
          </form>`)
       : `
@@ -3517,7 +3550,11 @@ async function renderFiles(context, orderId) {
          het, naast de foto's waar het over gaat. Hier alleen nog wat voor de
          hele bestelling geldt. */
       rij('Levering', heeftVoorrang(order) ? `<strong class="or-voorrang">Voorrang</strong> — toeslag betaald${voorrangTot(order)}` : ''),
-      rij('Kanalen', d.channels ? esc(String(d.channels)) : ''),
+      /* Namen in plaats van ids ("own" → "Onze eigen webshop") — ronde 9, O5. */
+      rij('Kanalen', d.channels ? String(d.channels).split(',').map((c) => { const k = KANALEN.find((x) => x.id === c.trim()); return esc(k ? channelName(k, 'nl') : c.trim()); }).join(', ') : ''),
+      /* De bijbestelde hoeken: betaald per foto, dus ze horen in dit overzicht
+         en niet alleen in de werkmap (ronde 9, F17b). */
+      rij('Extra hoeken', (() => { const x = extraVakken(d); return x.length ? `<strong>${x.map((v) => esc(v.nl)).join(', ')}</strong> — bij elk product` : ''; })()),
       rij('Kledingsoort', d.garment ? esc(garmentVan(String(d.garment)).name.nl) : ''),
       rij('Bericht van de klant', berichtRegel),
     ].filter(Boolean);
@@ -3858,6 +3895,10 @@ async function handleFileMapping({ request, env }, orderId) {
     "SELECT id FROM files WHERE order_id = ?1 AND kind = 'delivery'"
   ).bind(orderId).all();
   const mine = new Set((results || []).map((r) => r.id));
+  /* De toegestane vakjes hangen aan de dienst (ronde 9, F17): lifestyle kent er
+     drie, een catalogset met bijbestelde hoeken ook extra1…extraN. */
+  const ord = await env.DB.prepare('SELECT service, details_json FROM orders WHERE id = ?1').bind(orderId).first();
+  const TOEGESTAAN = ord ? vakIds(ord.service, ord.details_json) : SHOTS;
 
   const updates = [];
   for (const [name, raw] of form.entries()) {
@@ -3871,7 +3912,7 @@ async function handleFileMapping({ request, env }, orderId) {
 
     const product = /^p\d{1,3}$/.test(String(raw)) ? String(raw) : null;
     const shotRaw = String(form.get(`s${fileId}`) || '');
-    const shot = SHOTS.includes(shotRaw) ? shotRaw : null;
+    const shot = TOEGESTAAN.includes(shotRaw) ? shotRaw : null;
     updates.push(
       env.DB.prepare('UPDATE files SET product_key = ?2, shot = ?3 WHERE id = ?1 AND order_id = ?4')
         .bind(fileId, product, shot, orderId)
@@ -4031,7 +4072,7 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   if (!Number.isInteger(orderId)) {
     return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
-  const order = await env.DB.prepare('SELECT id, ref, delivery_mailed_at FROM orders WHERE id = ?1').bind(orderId).first();
+  const order = await env.DB.prepare('SELECT id, ref, lang, service, details_json, delivery_mailed_at FROM orders WHERE id = ?1').bind(orderId).first();
   if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
   if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('Geen R2-binding — bestanden kunnen niet opgeslagen worden.') }), 503);
 
@@ -4053,7 +4094,8 @@ async function handleDeliveryUpload({ request, env }, orderId) {
    * corrigeer je hem in de indeeltabel.
    */
   const slotProduct = /^p\d{1,3}$/.test(String(form.get('product') || '')) ? String(form.get('product')) : null;
-  const slotShot = SHOTS.includes(String(form.get('shot') || '')) ? String(form.get('shot')) : null;
+  const VAK_IDS = vakIds(order.service, order.details_json);
+  const slotShot = VAK_IDS.includes(String(form.get('shot') || '')) ? String(form.get('shot')) : null;
 
   let stored = 0;
   const failed = [];
@@ -4113,7 +4155,10 @@ async function handleDeliveryUpload({ request, env }, orderId) {
     // upload uit een vakje van het bord, dan is er niets te raden.
     const guessed = guessProductShot(clean);
     const product = slotProduct || fromPath.product || guessed.product;
-    const shot = slotShot || fromPath.shot || guessed.shot;
+    /* Een gok die bij deze dienst geen vakje is (op-model bij lifestyle) wordt
+       niets, zodat hij in de indeeltabel als "niet gezet" opvalt (ronde 9). */
+    const gok = fromPath.shot || guessed.shot;
+    const shot = slotShot || (VAK_IDS.includes(gok) ? gok : null);
     /* En de naam die de KLANT straks ziet. Weten we product en shot, dan maken wij
        er `VIS-2608-4471-p1-voorkant.png` van in plaats van `upscaled_v3(2).png`.
        Dat is het tweede stuk van "hernoemen helemaal weg": niet alleen hoeft de
@@ -4121,7 +4166,7 @@ async function handleDeliveryUpload({ request, env }, orderId) {
        hand had gedaan. Zonder product of shot blijft de aangeleverde naam staan --
        verzinnen wij er dan een, dan liegt hij. */
     const shown = (product && shot)
-      ? deliveryFilename(order.ref, product, shot, clean, order.lang)
+      ? deliveryFilename(order.ref, product, shot, clean, order.lang, vakWoord(order.service, order.details_json, shot, order.lang))
       : clean;
     // Under delivery/<ref>/ rather than intake/: the two directions are never
     // mixed in the bucket, so a lifecycle rule or a manual clean-up can tell
@@ -4974,8 +5019,8 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
       ? `Je proef is klaar. In VISUAILS Studio kun je de beelden bekijken en downloaden. Bevalt het? Bestel de rest van je producten in dezelfde look &mdash; vanaf ${esc(mailBedrag(ladderRate(proefSoort, 1) * 100, 'nl'))} per product.`
       : `Your trial is ready. You can view and download the images in VISUAILS Studio. Like it? Order the rest of your products in the same look &mdash; from ${esc(mailBedrag(ladderRate(proefSoort, 1) * 100, 'en'))} per product.`)
     : (nl
-      ? `Je bestelling is klaar${n ? ` &mdash; ${n} ${n === 1 ? 'beeld' : 'beelden'}` : ''}. In VISUAILS Studio bekijk en download je alles, en keur je per beeld goed. Klopt er iets niet? Je hebt één gratis correctieronde, tot en met <strong>${esc(termijn)}</strong>: vink de beelden aan en zeg wat er anders moet.`
-      : `Your order is ready${n ? ` &mdash; ${n} ${n === 1 ? 'image' : 'images'}` : ''}. In VISUAILS Studio you can view, download and approve everything image by image. Something not right? You have one free correction round, until <strong>${esc(termijn)}</strong>: tick the images and say what should change.`);
+      ? `Je bestelling is klaar${n ? ` &mdash; ${n} ${n === 1 ? 'beeld' : 'beelden'}` : ''}. In VISUAILS Studio bekijk en download je alles, en keur je per beeld goed. Klopt er iets niet? Je hebt één gratis revisieronde, tot en met <strong>${esc(termijn)}</strong>: vink de beelden aan en zeg wat er anders moet.`
+      : `Your order is ready${n ? ` &mdash; ${n} ${n === 1 ? 'image' : 'images'}` : ''}. In VISUAILS Studio you can view, download and approve everything image by image. Something not right? You have one free revision round, until <strong>${esc(termijn)}</strong>: tick the images and say what should change.`);
   return mailShell({
     lang: nl ? 'nl' : 'en',
     preheader: nl
@@ -7753,7 +7798,7 @@ async function loadRevisionInbox(env) {
     // weten welk bestand vervangen moet worden.
     `SELECT f.id AS file_id, f.filename, f.review_note, f.reviewed_at, f.preview_key,
             f.product_key, f.shot,
-            o.id AS order_id, o.ref, o.brand, o.email, o.lang,
+            o.id AS order_id, o.ref, o.brand, o.email, o.lang, o.service, o.details_json,
             o.customer_id,
             c.revisions_revoked_at,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = o.customer_id) AS asked,
@@ -10884,7 +10929,7 @@ function revisionCard(r) {
            bestandsnaam of niets, en dat is precies het gat dat de indeeltabel
            op de bestandenpagina dicht. -->
       <p class="rev-what">${r.product_key
-        ? `<strong>Product ${esc(r.product_key.replace(/^p/, ''))}${r.shot ? ` &middot; ${esc(SHOT_LABEL[r.shot] || r.shot)}` : ''}</strong>`
+        ? `<strong>Product ${esc(r.product_key.replace(/^p/, ''))}${r.shot ? ` &middot; ${esc(vakNaam(r.service, r.details_json, r.shot) || SHOT_LABEL[r.shot] || r.shot)}` : ''}</strong>`
         : '<strong class="muted">niet aan een product gekoppeld</strong>'}</p>
       <p class="meta">${esc(r.filename || 'file #' + r.file_id)} ${repeat} ${often} ${revoked}</p>
       ${r.review_note ? `<div class="note">${esc(r.review_note)}</div>` : '<p class="meta">Geen notitie achtergelaten.</p>'}

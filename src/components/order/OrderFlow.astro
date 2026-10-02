@@ -46,7 +46,7 @@ import {
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
   AMOUNT, clause,
-  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, SERVICE_CREDITS,
+  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, SERVICE_CREDITS, EXTRA_CREDITS,
 } from '../../data/pricing.js';
 import { ATTENDED_PUNTEN_PER_VENSTER, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { puntenVoor, beeldenVoor, RESOLUTIE, HOOG_PER_PRODUCT, VOORRANG, VOORRANG_COPY, voorrangBedrag } from '../../data/pricing.js';
@@ -405,9 +405,15 @@ const PIPE = {
       styleCatalog: 'Style · catalog',
       styleLifestyle: 'Style · lifestyle',
       ratio: 'Image shape',
+      ratioAfwijk: 'Different shape per image',
+      ratioAfwijkVeel: '{n} images — see the product cards in step 2',
       outfit: 'Complete look',
       outfitN: '{price} extra × {n}',
       net: `Order value (${vatLabel('excl', 'en')})`,
+      pay: 'You pay at Mollie',
+      payGross: '{gross} incl. {pct}% VAT',
+      payOutside: '{net} — no Dutch VAT outside the EU',
+      payReverse: '{net} excl. VAT if your VAT number checks out (reverse charge); otherwise {gross} incl. {pct}% VAT',
       files: 'Reference material',
       noFiles: 'Nothing sent yet — we will get back to you',
       window: 'Delivery',
@@ -547,9 +553,15 @@ const PIPE = {
       styleCatalog: 'Stijl · catalog',
       styleLifestyle: 'Stijl · lifestyle',
       ratio: 'Beeldverhouding',
+      ratioAfwijk: 'Afwijkend per beeld',
+      ratioAfwijkVeel: '{n} beelden — zie de productkaarten in stap 2',
       outfit: 'Outfit',
       outfitN: '{price} extra × {n}',
       net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
+      pay: 'Je betaalt bij Mollie',
+      payGross: '{gross} incl. {pct}% btw',
+      payOutside: '{net} — geen Nederlandse btw buiten de EU',
+      payReverse: '{net} excl. btw als je btw-nummer klopt (btw verlegd); anders {gross} incl. {pct}% btw',
       files: 'Referentiemateriaal',
       noFiles: 'Nog niets gestuurd — we nemen contact met je op',
       window: 'Levering',
@@ -694,6 +706,12 @@ for (const l of ['en', 'nl'] as const) {
     // learns to distrust.
     toggle: l === 'nl' ? 'Toon de foto’s en de vraag' : 'Show the photos and the question',
     placeIn: l === 'nl' ? 'Plaats bij' : 'Place in',
+    /* Ronde 9, F27: bestanden in "Nog niet geplaatst" gaan niet mee, en dat
+       stond nergens. Nu zegt de tussenstap het, met het aantal. */
+    trayNotSent: l === 'nl'
+      ? '{n} bestand(en) staan nog bij “Nog niet geplaatst”. Die gaan niet mee met je bestelling — plaats ze eerst bij een product, of haal ze weg.'
+      : '{n} file(s) are still under “Not placed yet”. They will not be sent with your order — place them on a product first, or remove them.',
+    trayH: l === 'nl' ? 'Nog niet alles is geplaatst' : 'Not everything is placed yet',
     shot: Object.fromEntries(SHOTS.map((x) => [x.id, x.name[l]])),
     /* Eén regel per vakje, uit shots.js `how` — de uitleg staat sinds 3 september
        onder de kaarten ingeklapt, dus het vakje moet zelf zeggen wat erin hoort. */
@@ -854,7 +872,9 @@ for (const l of ['en', 'nl'] as const) {
      samenvattingsregel mee; ratios.js blijft de enige plek waar staat hoe een
      verhouding heet. Zelfde afspraak als bij `pu.shot` hierboven. */
   (PIPE[l] as Record<string, unknown>).ratio = {
-    name: Object.fromEntries(LIFESTYLE_RATIOS.map((r) => [r.id, `${r.label} · ${r.name[l]}`])),
+    /* Ronde 9: "16:9 · Breed 16:9" — de naam noemt de verhouding soms zelf al.
+       Dan alleen de naam. */
+    name: Object.fromEntries(LIFESTYLE_RATIOS.map((r) => [r.id, String(r.name[l]).includes(r.label) ? r.name[l] : `${r.label} · ${r.name[l]}`])),
   };
 }
 
@@ -883,13 +903,16 @@ const REQUIRED_COPY = [
   'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.styleCatalog', 'sum.styleLifestyle',
   'sum.hoogRes', 'sum.hoogResN', 'sum.hoogRes1', 'sum.voorrang', 'sum.voorrangJa',
   'sum.angles', 'sum.anglesN',
-  'sum.ratio', 'sum.outfit', 'sum.outfitN',
+  'sum.ratio', 'sum.ratioAfwijk', 'sum.ratioAfwijkVeel', 'sum.outfit', 'sum.outfitN',
   'sum.channels', 'sum.channelsNone', 'sum.bgLocked', 'sum.format', 'sum.formatJpg',
   'sum.model', 'sum.modelAny',
   // sum.net and NOTHING ELSE about money — VAT is charged at the rate of the
   // customer's own country, so a gross figure here would be a Dutch rate shown
   // to whoever reads. vatNote() says once how VAT is handled.
   'sum.net',
+  // …behalve in stap 5, waar het land bekend is: zie de noot bij sum.pay in
+  // renderSummary() (ronde 9, F7).
+  'sum.pay', 'sum.payGross', 'sum.payOutside', 'sum.payReverse',
   'sum.files', 'sum.noFiles', 'sum.window', 'sum.windowLater', 'sum.queue', 'sum.email',
   'upload.sending', 'upload.done', 'upload.retry', 'upload.retrying', 'upload.remove', 'upload.count',
   'upload.err.too-large', 'upload.err.batch-full', 'upload.err.rate',
@@ -908,7 +931,7 @@ const REQUIRED_COPY = [
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
   'pu.missingH', 'pu.missingHOne', 'pu.missingMore', 'pu.missingTap',
   'pu.allDone', 'pu.allDoneOne',
-  'pu.product', 'pu.add', 'pu.dropCard', 'pu.toggle', 'pu.placeIn',
+  'pu.product', 'pu.add', 'pu.dropCard', 'pu.toggle', 'pu.placeIn', 'pu.trayNotSent', 'pu.trayH',
   ...SHOT_IDS.map((id) => `pu.shot.${id}`),
   ...SHOT_IDS.map((id) => `pu.how.${id}`),
   // Ook als deze stroom geen afwijking per beeld heeft. De sleutels staan altijd
@@ -1207,8 +1230,9 @@ const FORM = {
       h: 'Check and pay',
       lead: 'Read it back. Nothing has been created yet, and nothing has been charged.',
       afterH: 'What happens after you press the button',
+      afterWindow: 'Your reserved delivery date is held for seven days while you pay.',
       after: [
-        'You go straight to the payment page (Mollie). Production starts once the payment is in; a reserved delivery date is held for seven days while you pay.',
+        'You go straight to the payment page (Mollie). Production starts once the payment is in.',
         'Your confirmation with the reference and the same payment link arrives by email — pay later if you prefer. Ordering from elsewhere in the EU without a VAT number? Then we check your details first, and the link follows by email within one working day.',
         'Every order lands in VISUAILS Studio, where you approve and download image by image — a standard order too. The direct link is in your email as well.',
       ],
@@ -1474,8 +1498,9 @@ const FORM = {
       h: 'Controleer en betaal',
       lead: 'Lees het terug. Er is nog niets aangemaakt en er is nog niets in rekening gebracht.',
       afterH: 'Wat er gebeurt nadat je op de knop drukt',
+      afterWindow: 'Je vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
       after: [
-        'Je gaat meteen door naar de betaalpagina (Mollie). We beginnen zodra de betaling binnen is; een vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
+        'Je gaat meteen door naar de betaalpagina (Mollie). We beginnen zodra de betaling binnen is.',
         'Je bevestiging met de referentie en dezelfde betaallink komt per mail — later betalen kan dus ook. Bestel je elders in de EU zonder btw-nummer, dan kijken we eerst kort naar je gegevens; de link volgt dan per mail, binnen een werkdag.',
         'Elke bestelling komt in VISUAILS Studio, waar je beeld voor beeld goedkeurt en downloadt — ook een standaardbestelling. De rechtstreekse link staat ook in je mail.',
       ],
@@ -1660,6 +1685,7 @@ const config = {
      deze regel zijn en waarom Merk hier nooit langskomt. */
   plans: PLAN_ROWS,
   creditsPer: { catalog: SERVICE_CREDITS.catalog, lifestyle: SERVICE_CREDITS.lifestyle, complete: SERVICE_CREDITS.catalog + SERVICE_CREDITS.lifestyle },
+  extraCredits: { photo: EXTRA_CREDITS.photo, hires: EXTRA_CREDITS.hires },
   windowThreshold: WINDOW_THRESHOLD,
   maxProducts,
   maxFileBytes: MAX_FILE_BYTES,
@@ -2863,7 +2889,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <h3 class="pl-gate-h">{f.s4.okH}</h3>
           <p class="pl-gate-body">{f.s4.okBody}</p>
           <div class="pl-windows" data-pl-windows></div>
-          <p class="pl-gate-foot">{f.s4.okMax} <span data-max>{maxProducts}</span> {f.s4.okMaxTail}</p>
+          <p class="pl-gate-foot">{f.s4.okMax} <span data-pl-cap-max>{maxProducts}</span> {f.s4.okMaxTail}</p>
         </div>
 
         <div class="pl-gate-panel" data-pl-gate="full" hidden>
@@ -2873,7 +2899,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
         <div class="pl-gate-panel" data-pl-gate="too-large" hidden>
           <h3 class="pl-gate-h">{f.s4.tooLargeH}</h3>
-          <p class="pl-gate-body">{f.s4.tooLargeBody} <span data-max>{maxProducts}</span> {f.s4.tooLargeTail}</p>
+          <p class="pl-gate-body">{f.s4.tooLargeBody} <span data-pl-cap-max>{maxProducts}</span> {f.s4.tooLargeTail}</p>
         </div>
 
         <div class="pl-gate-panel" data-pl-gate="invalid" hidden>
@@ -2928,7 +2954,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <div class="pl-after">
         <h3 class="pl-sub-h">{f.s5.afterH}</h3>
         <ul class="pl-after-list">
-          {f.s5.after.map((t) => <li>{t}</li>)}
+          {f.s5.after.map((t, i) => <li>{t}{i === 0 && <span data-pl-after-window hidden> {f.s5.afterWindow}</span>}</li>)}
         </ul>
         <p class="pl-pay-note">{f.s5.payNote}</p>
 

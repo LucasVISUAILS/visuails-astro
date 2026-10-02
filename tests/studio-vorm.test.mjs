@@ -71,7 +71,7 @@ try {
     /* Ronde 8: de voornaam, niet het merk — "Welkom, VOLT" sprak het bedrijf aan. */
     ok('begint met de voornaam', /<h1[^>]*>Welkom terug, Mara<\/h1>/.test(html['/account']));
     /* En de tellers beginnen bij wat de klant moet doen: te betalen, te beoordelen. */
-    ok('telt wat er loopt', /1<\/span>/.test(h) && /status=awaiting_payment/.test(h) && /status=in_production/.test(h) && /status=delivered/.test(h));
+    ok('telt wat er loopt', /1<\/span>/.test(h) && /status=awaiting_payment/.test(h) && /status=bij_ons/.test(h) && /status=delivered/.test(h));  // ronde 9, F10: de tegel 'Bij ons in de maak' telt betaald-en-nog-niet-geleverd en linkt naar dat filter
     ok('zet de lopende bestelling voorop, met haar tijdlijn', /VIS-2609-4471/.test(h) && /st-flow|is-now/.test(h));
     ok('en de laatst geleverde beelden als strook, via /account/files', tel(h, /\/account\/files\/\d+\/f/g) >= 4);
   }

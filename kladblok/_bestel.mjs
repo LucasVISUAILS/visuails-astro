@@ -59,7 +59,7 @@ export async function bestel(page, o) {
     if (await naam.count()) await naam.fill(`${o.naam || 'Proefproduct'} ${p}`);
     const inputs = page.locator('.pu-card:not([hidden]) .pu-slot-input');
     const k = o.fotos ?? 3;
-    for (let i = 0; i < k; i++) { await inputs.nth(i).setInputFiles(FOTOS[i % FOTOS.length]); await page.waitForTimeout(600); }
+    for (let i = 0; i < k; i++) { await inputs.nth(i).setInputFiles(FOTOS[i % FOTOS.length]); await page.waitForTimeout(o.wacht ?? 600); }
     if (o.extra) {
       const sel = page.locator('.pu-card:not([hidden]) .pu-extra select');
       if (await sel.count()) await sel.first().selectOption(String(o.extra)); else log.push('extra-beelden vak niet gevonden');
@@ -97,6 +97,7 @@ export async function bestel(page, o) {
     s = await verder(page);
   }
   /* laatste stap */
+  if (o.stap5) await o.stap5(page);
   const overzicht = (await tekst(page, '.pl-step.is-current')).replace(/\n{2,}/g, '\n');
   for (const nm of ['business_declaration', 'withdrawal_consent']) { const c = page.locator(`.pl-step.is-current label:has(input[name="${nm}"])`); if (await c.count()) await c.first().click(); }
   if (o.bewaar) { const c = page.locator('.pl-step.is-current label:has(input[type="checkbox"]:not([name]))'); if (await c.count()) await c.first().click(); }

@@ -151,6 +151,13 @@ export function parseScaffoldPath(relPath) {
     // iemand die map per ongeluk meesturen, dan is dat geen shot en geen los
     // beeld maar iets wat overgeslagen moet worden -- zie SOURCE_FOLDER.
     if (seg === SOURCE_FOLDER) { loose = true; continue; }
+    /* Ronde 9, F17: een bijbestelde hoek heet `5 driekwart [extra1]` en een
+       lifestylebeeld `1 beeld-1`. De sleutel tussen haken is wat telt; het woord
+       ervoor is voor de mens. */
+    const extra = seg.match(/\[(extra[1-9][0-9]?)\]\s*$/i);
+    if (extra) { shot = extra[1].toLowerCase(); continue; }
+    const ls = seg.match(/^(?:\d+\s*)?(?:beeld|image)-([123])$/i);
+    if (ls) { shot = ['front', 'back', 'detail'][Number(ls[1]) - 1]; continue; }
     for (const [key, folder] of Object.entries(SLOT_FOLDER)) {
       if (seg === folder) { shot = key; break; }
       // Ook zonder het cijfer ervoor, want iemand hernoemt een map en dan hoort
@@ -202,12 +209,15 @@ export function isSourcePath(relPath) {
  * wij niet verzinnen. Ontbreekt hij, dan blijft de naam zonder extensie in plaats
  * van dat er een `.jpg` bij wordt gefantaseerd op een bestand dat een webp is.
  */
-export function deliveryFilename(ref, product, shot, originalName, lang = 'nl') {
+export function deliveryFilename(ref, product, shot, originalName, lang = 'nl', woord = null) {
   const ext = (String(originalName || '').match(/\.([a-z0-9]{1,8})$/i) || [, ''])[1].toLowerCase();
   const SHOT_WORD = lang === 'en'
     ? { front: 'front', back: 'back', detail: 'detail', worn: 'on-model' }
     : { front: 'voorkant', back: 'achterkant', detail: 'detail', worn: 'op-model' };
-  const parts = [ref, product, SHOT_WORD[shot] || shot].filter(Boolean);
+  /* `woord` komt uit src/data/levervakken.js en wint: bij lifestyle heet het
+     eerste beeld `beeld-1` en geen `voorkant`, en een bijbestelde hoek heet
+     naar die hoek in plaats van `extra1` (ronde 9, F17). */
+  const parts = [ref, product, woord || SHOT_WORD[shot] || shot].filter(Boolean);
   const base = parts.join('-').replace(/[^A-Za-z0-9._-]+/g, '-');
   return ext ? `${base}.${ext}` : base;
 }
@@ -599,8 +609,20 @@ export function scaffoldFiles(order, products, opts = {}) {
       name: `${root}/${folder}/_briefing.txt`,
       ...txt(briefingText({ order, product: { ...p, folder } })),
     });
-    for (const shot of shots) {
-      files.push({ name: `${root}/${folder}/${SLOT_FOLDER[shot] || shot}/`, dir: true });
+    if (Array.isArray(opts.vakken) && opts.vakken.length) {
+      /* Per dienst (ronde 9, F17): lifestyle krijgt `1 beeld-1` … `3 beeld-3`,
+         een bijbestelde hoek `5 driekwart [extra1]`. parseScaffoldPath() leest
+         beide terug. */
+      opts.vakken.forEach((v, i) => {
+        const naam = /^extra/.test(v.id)
+          ? `${i + 1} ${v.woord.nl} [${v.id}]`
+          : (SLOT_FOLDER[v.id] && v.woord.nl === SLOT_FOLDER[v.id].replace(/^\d+\s*/, '') ? SLOT_FOLDER[v.id] : `${i + 1} ${v.woord.nl}`);
+        files.push({ name: `${root}/${folder}/${naam}/`, dir: true });
+      });
+    } else {
+      for (const shot of shots) {
+        files.push({ name: `${root}/${folder}/${SLOT_FOLDER[shot] || shot}/`, dir: true });
+      }
     }
   }
 

@@ -163,7 +163,7 @@ console.log('\nhet plusje staat er, naast de vier');
   /* De bak met losse bestanden moet ze ook kunnen bereiken, anders werkt het
      plusje alleen voor wie één bestand tegelijk kiest. */
   ok('de verdeelbak kan een bestand in een referentievak leggen',
-    /SHOT_IDS\.concat\(refIds\)/.test(pl), true);
+    /SHOT_IDS\.concat\((hoekVakIds\(\), )?refIds\)/.test(pl), true);
   ok('  maar alleen in vakjes die op die kaart bestaan',
     /if \(card\.slots\[rid\]\) refIds\.push\(rid\);/.test(pl), true);
 }
