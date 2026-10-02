@@ -129,7 +129,7 @@ const COPY = {
     ],
 
     vnH: 'What you send. What you get back.',
-    vnZin: `${FOTOS} phone photos are all you need to start: front, back and a detail.`,
+    vnZin: 'One order, three steps: your phone photo goes in, finished images come out.',
     vnIn: 'You send', vnInNoot: 'one of your phone photos',
     vnInZin: 'Shot on a table, with a phone. No studio, no tripod.',
     vnVoorAlt: 'Sent in: a phone photo of a T-shirt on a wooden table',
@@ -148,12 +148,14 @@ const COPY = {
         alt: ['The video clip of this T-shirt'] },
     ],
     vnStappenH: 'From your photo to your shop.',
-    vnStappen: [
-      ['You', 'Your phone is enough. No tripod, no studio.', null],
-      ['Us', `We make the images: ${levertijdDelen('unattended', 'en').join(', ').toLowerCase()}. A specialist checks every one.`, ['See more work', '/gallery']],
-      ['Your images', 'Approve or ask for a revision, and download it all at once.', ['Look inside the portal', '/portal']],
-      ['Your shop', 'In the shape you pick: square, upright, or vertical for lifestyle. Ready for your shop, ads and reels.', null],
+    /* Ronde 9: de drie rijen van de pijplijn, zoals de levering op /gallery.
+       [nummer, woord, zin, link?] */
+    vnRijen: [
+      ['01', 'You send', `${FOTOS} phone photos are all you need: front, back and a detail. Shot on a table — no studio, no tripod.`, null],
+      ['02', 'We make', `Catalog, lifestyle or video, in the look you pick: ${levertijdDelen('unattended', 'en').join(', ').toLowerCase()}. A specialist checks every image.`, ['See more work', '/gallery']],
+      ['03', 'You approve', 'Approve each image or ask for a revision, then download everything at once — in the shape you picked, for your shop, ads and reels.', ['Look inside the portal', '/portal']],
     ],
+    vnVormen: [['1:1', 'shop'], ['4:5', 'ad'], ['9:16', 'reel · lifestyle']],
 
     svcH: 'What we make.',
     svcLede: 'Three kinds of image, priced per product.',
@@ -216,7 +218,7 @@ const COPY = {
     ],
 
     vnH: 'Dit stuur jij. Dit krijg je terug.',
-    vnZin: `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen: voorkant, achterkant en een detail.`,
+    vnZin: 'Eén bestelling, drie stappen: jouw telefoonfoto erin, afgewerkte beelden eruit.',
     vnIn: 'Jij stuurt', vnInNoot: 'een van je telefoonfoto’s',
     vnInZin: 'Op een tafel gemaakt, met een telefoon. Geen studio, geen statief.',
     vnVoorAlt: 'Ingestuurd: een telefoonfoto van een T-shirt op een houten tafel',
@@ -235,12 +237,12 @@ const COPY = {
         alt: ['De videoclip van dit T-shirt'] },
     ],
     vnStappenH: 'Van jouw foto naar je shop.',
-    vnStappen: [
-      ['Jij', 'Je telefoon is genoeg. Geen statief, geen studio.', null],
-      ['Wij', `Wij maken de beelden: ${levertijdDelen('unattended', 'nl').join(', ').toLowerCase()}. Een specialist controleert ze allemaal.`, ['Meer werk zien', '/gallery']],
-      ['Jouw beelden', 'Goedkeuren of een revisie vragen, en alles in één keer downloaden.', ['Het portaal van binnen', '/portal']],
-      ['Je shop', 'In de vorm die je kiest: vierkant, staand, of verticaal bij lifestyle. Klaar voor je shop, advertenties en reels.', null],
+    vnRijen: [
+      ['01', 'Jij stuurt', `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen: voorkant, achterkant en een detail. Op een tafel gemaakt — geen studio, geen statief.`, null],
+      ['02', 'Wij maken', `Catalog, lifestyle of video, in de look die je kiest: ${levertijdDelen('unattended', 'nl').join(', ').toLowerCase()}. Een specialist controleert elk beeld.`, ['Meer werk zien', '/gallery']],
+      ['03', 'Jij keurt goed', 'Per beeld goedkeuren of een revisie vragen, en alles in één keer downloaden — in de vorm die je koos, voor je shop, advertenties en reels.', ['Het portaal van binnen', '/portal']],
     ],
+    vnVormen: [['1:1', 'shop'], ['4:5', 'advertentie'], ['9:16', 'reel · lifestyle']],
 
     svcH: 'Wat we maken.',
     svcLede: 'Drie soorten beeld, per product geprijsd.',
@@ -294,7 +296,7 @@ const c = COPY[lang];
 const ook = [...binnenkortNamen(lang), c.svcOokRest].join(' · ');
 const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
 ---
-<div class="s22 thuis zonder-grond">
+<div class="s22 thuis">
 
   {/* ── 0 · OPENING ──────────────────────────────────────────────────────────
       Eén middenas: etiket, kop met het wisselende accentwoord, één zin, twee
@@ -341,79 +343,114 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
       verloop is voor elke dienst hetzelfde. Zonder script is het een rij die
       je opzij veegt; het script maakt er tabbladen van en laat hem wisselen. */}
   <section class="paneel dd" aria-labelledby="vp-vn" data-dd>
-    {/* Ronde 8 (1 oktober 2026): Lucas — *"de sectie 'What you send. What you
-        get back.' mooier indelen, er is een groot stuk niks"*. De kop stond
-        links boven een kleine invoerfoto, rechts een vierkant van 36rem: de
-        linkerkolom was 25rem hoog en de rechter 45, en daaronder gaapte het
-        gat. Nu staat de kop over de volle breedte, en daaronder twee even
-        brede kolommen met dezelfde balk erboven — wat jij stuurt, en met een pijl
-        op de rand ernaast, wat je terugkrijgt. Twee vierkanten van dezelfde maat: de vergelijking IS
-        de sectie, dus ze staan naast elkaar op ooghoogte. */}
+    {/* ── DE PIJPLIJN — ronde 9, 2 oktober 2026 ─────────────────────────────
+        Lucas: *"de foto's zijn veel te groot en de sectie mag een stuk mooier en
+        overzichtelijker, als de product pipeline op gallery maar dan voor de
+        homepage."* Dus drie rijen zoals Levering.astro: links het nummer, het
+        woord en één zin; rechts wat er op dat moment ligt. 01 de telefoonfoto,
+        02 wat we ervan maken (de dienstwissel met tabbladen), 03 waar het
+        heengaat. De vier losse stappen die hieronder stonden, zitten nu in deze
+        drie rijen; twee keer hetzelfde verloop is één keer te veel. */}
     <header class="dd-kop">
       <h2 id="vp-vn" class="hoog hoog-2">{c.vnH}</h2>
       <p class="lopend">{c.vnZin}</p>
     </header>
-    <div class="dd-inkant">
-      <p class="dd-balk dd-balk-in"><span class="dd-tab-naam">{c.vnIn}</span><span class="dd-tab-prijs">{c.vnInNoot}</span></p>
-      <figure class="dd-in">
-        <span class="dd-in-beeld">
+    <ol class="dd-rijen" role="list">
+      {/* 01 · Jij stuurt */}
+      <li class="dd-rij">
+        <div class="dd-uitleg">
+          <p class="mono dd-nr">{c.vnRijen[0][0]}</p>
+          <h3 class="dd-woord">{c.vnRijen[0][1]}</h3>
+          <p class="dd-zin">{c.vnRijen[0][2]}</p>
+        </div>
+        <figure class="dd-in">
           <img src={VN_IN.src} width={VN_IN.w} height={VN_IN.h} alt={c.vnVoorAlt} loading="lazy" decoding="async" />
-          <span class="dd-pijl" aria-hidden="true">→</span>
-        </span>
-        <figcaption>{c.vnInZin}</figcaption>
-      </figure>
-    </div>
-    <div class="dd-uit">
-      <div class="dd-balk">
-        <nav class="dd-tabs" aria-label={c.vnTabs} data-dd-tabs>
-          {c.vnDia.map((d, i) => (
-            <a class={`dd-tab${i === 0 ? ' is-nu' : ''}`} id={`dd-tab-${d.id}`} href={`#dd-${d.id}`} data-dd-tab>
-              <span class="dd-tab-naam">{d.naam}</span>
-              <span class="dd-tab-prijs">{d.prijs}</span>
-              <span class="dd-tab-loop" aria-hidden="true"></span>
-            </a>
+          <figcaption class="mono">{c.vnInNoot}</figcaption>
+        </figure>
+      </li>
+      {/* 02 · Wij maken — de dienstwissel */}
+      <li class="dd-rij">
+        <div class="dd-uitleg">
+          <p class="mono dd-nr">{c.vnRijen[1][0]}</p>
+          <h3 class="dd-woord">{c.vnRijen[1][1]}</h3>
+          <p class="dd-zin">{c.vnRijen[1][2]}</p>
+          {c.vnRijen[1][3] && <a class="pijl" href={lp(c.vnRijen[1][3][1])}>{c.vnRijen[1][3][0]}</a>}
+        </div>
+        <div class="dd-uit">
+          <div class="dd-balk">
+            <nav class="dd-tabs" aria-label={c.vnTabs} data-dd-tabs>
+              {c.vnDia.map((d, i) => (
+                <a class={`dd-tab${i === 0 ? ' is-nu' : ''}`} id={`dd-tab-${d.id}`} href={`#dd-${d.id}`} data-dd-tab>
+                  <span class="dd-tab-naam">{d.naam}</span>
+                  <span class="dd-tab-prijs">{d.prijs}</span>
+                  <span class="dd-tab-loop" aria-hidden="true"></span>
+                </a>
+              ))}
+            </nav>
+            <button type="button" class="dd-pauze" data-dd-pauze hidden aria-pressed="false" aria-label={c.vnPauze} data-uit={c.vnPauze} data-aan={c.vnSpeel}><span aria-hidden="true"></span></button>
+          </div>
+          <div class="dd-spoor" data-dd-spoor>
+            {c.vnDia.map((d) => (
+              <article class={`dd-dia dd-dia-${d.id}`} id={`dd-${d.id}`} data-dd-dia>
+                <div class="dd-beeld">
+                  {d.id === 'video' && VN_CLIP
+                    ? <video src={VN_CLIP} poster={VN_BEELD.video[0].src} muted loop playsinline preload="none" aria-label={d.alt[0]}></video>
+                    : VN_BEELD[d.id].map((b, j) => (
+                      <img src={b.src} srcset={b.srcset} sizes="(max-width: 760px) 40vw, 18rem" width={b.w} height={b.h} alt={d.alt[j]} loading="lazy" decoding="async" data-plaatshouder={d.id === 'video' ? 'donker' : undefined} />
+                    ))}
+                </div>
+                <p class="dd-krijg"><span class="etiket">{c.vnKrijg}</span> {d.krijg}</p>
+                <p class="dd-link"><a class="pijl" href={lp(d.href)}>{d.link}</a></p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </li>
+      {/* 03 · Jij keurt goed — waar het heengaat */}
+      <li class="dd-rij">
+        <div class="dd-uitleg">
+          <p class="mono dd-nr">{c.vnRijen[2][0]}</p>
+          <h3 class="dd-woord">{c.vnRijen[2][1]}</h3>
+          <p class="dd-zin">{c.vnRijen[2][2]}</p>
+          {c.vnRijen[2][3] && <a class="pijl" href={lp(c.vnRijen[2][3][1])}>{c.vnRijen[2][3][0]}</a>}
+        </div>
+        <ul class="dd-vormen" role="list">
+          {c.vnVormen.map(([maat, waar]) => (
+            <li style={`--dd-flex:${(Number(maat.split(':')[0]) / Number(maat.split(':')[1])).toFixed(3)}`}>
+              <span class="dd-vorm" style={`--dd-ratio:${maat.replace(':', ' / ')}`}>
+                <img src="/img/catalog-after-w420.webp" width="420" height="420" alt="" loading="lazy" decoding="async" />
+              </span>
+              <span class="mono dd-vorm-maat">{maat} · {waar}</span>
+            </li>
           ))}
-        </nav>
-        <button type="button" class="dd-pauze" data-dd-pauze hidden aria-pressed="false" aria-label={c.vnPauze} data-uit={c.vnPauze} data-aan={c.vnSpeel}><span aria-hidden="true"></span></button>
-      </div>
-      <div class="dd-spoor" data-dd-spoor>
-        {c.vnDia.map((d) => (
-          <article class={`dd-dia dd-dia-${d.id}`} id={`dd-${d.id}`} data-dd-dia>
-            <div class="dd-beeld">
-              {d.id === 'video' && VN_CLIP
-                ? <video src={VN_CLIP} poster={VN_BEELD.video[0].src} muted loop playsinline preload="none" aria-label={d.alt[0]}></video>
-                : VN_BEELD[d.id].map((b, j) => (
-                  <img src={b.src} srcset={b.srcset} sizes="(max-width: 900px) 92vw, 44vw" width={b.w} height={b.h} alt={d.alt[j]} loading="lazy" decoding="async" data-plaatshouder={d.id === 'video' ? 'donker' : undefined} />
-                ))}
-            </div>
-            <p class="dd-krijg"><span class="etiket">{c.vnKrijg}</span> {d.krijg}</p>
-            <p class="dd-link"><a class="pijl" href={lp(d.href)}>{d.link}</a></p>
-          </article>
-        ))}
-      </div>
-    </div>
-    <div class="dd-stappen">
-      <h3 class="hoog hoog-3 dd-stappen-h">{c.vnStappenH}</h3>
-      <ol role="list">
-        {c.vnStappen.map(([woord, zin, link], i) => (
-          <li>
-            <span class="mono dd-nr">{String(i + 1).padStart(2, '0')}</span>
-            <b>{woord}</b>
-            <span>{zin}</span>
-            {link && <a class="pijl" href={lp(link[1])}>{link[0]}</a>}
-          </li>
-        ))}
-      </ol>
-      <p class="voetregel dd-ook"><span class="mono">{c.svcOok}:</span> <a class="pijl" href={lp('/start')}>{ook}</a></p>
-    </div>
+        </ul>
+      </li>
+    </ol>
   </section>
 
-  {/* ── 4 · WAT WE MAKEN IS WEG — ronde 8, 1 oktober 2026 ─────────────────
-      Drie tegels met catalog, lifestyle en video stonden hier, één scherm
-      onder de dienstwissel van hoofdstuk 2 die precies dezelfde drie toont,
-      met dezelfde prijzen en dezelfde links. Twee keer hetzelfde menu is één
-      keer te veel; de "ook"-regel (op maat, binnenkort) staat nu onder de
-      stappen in hoofdstuk 2. */}
+  {/* ── 4 · WAT WE MAKEN ─────────────────────────────────────────────────────
+      Drie tegels, drie soorten beeld. De rest in één regel eronder. */}
+  <section id="maken" class="paneel kiezer" aria-labelledby="vp-sv">
+    <header class="paneel-kop">
+      <h2 id="vp-sv" class="hoog hoog-2">{c.svcH}</h2>
+      <p class="lopend">{c.svcLede}</p>
+    </header>
+    <ul class="kaarten" role="list">
+      {c.svc.map(([naam, wat, prijs, href], i) => (
+        <li>
+          <a class="kaart" href={lp(href)}>
+            <img src={DIENST_BEELD[i].klein} width={DIENST_BEELD[i].w} height={DIENST_BEELD[i].h} alt="" loading="lazy" decoding="async">
+            <span class="kaart-pil">
+              <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
+              <span class="rond" aria-hidden="true">→</span>
+            </span>
+          </a>
+          <p class="kaart-wat">{wat}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="voetregel"><span class="mono">{c.svcOok}:</span> <a class="pijl" href={lp('/start')}>{ook}</a></p>
+  </section>
 
   {/* ── 5 · DE LOOKS ─────────────────────────────────────────────────────────
       Wat een modemerk als eerste wil weten: past dit bij mij. Elke kaart gaat

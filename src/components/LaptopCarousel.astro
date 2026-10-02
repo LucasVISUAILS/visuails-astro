@@ -869,24 +869,30 @@ const t = nl
      Alles staat achter twee sloten: `@supports` voor browsers die deze
      tijdlijn nog niet kennen (daar gebeurt gewoon niets, de foto's staan er
      dan normaal), en `prefers-reduced-motion` voor wie er niet om vraagt. */
+  /* Ronde 9 (2 oktober 2026): de keyframes droegen `entry 0%` en `exit 100%`
+     als selector. Dat is geldige CSS, maar de minifier van de build kent het
+     niet en gaf er vier waarschuwingen op. Nu dezelfde beweging als twee
+     animaties per element, elk met zijn eigen `animation-range`: binnenkomen
+     (both, zodat hij vóór de start al klein en licht staat) en weggaan
+     (forwards, zodat hij pas meedoet zodra het vertrek begint). */
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
-      .lc-beeld { animation: lc-adem linear both; animation-timeline: view(block); }
-      .lc-merkje { animation: lc-etiket linear both; animation-timeline: view(block); }
+      .lc-beeld {
+        animation: lc-adem-in linear both, lc-adem-uit linear forwards;
+        animation-timeline: view(block), view(block);
+        animation-range: entry 0% entry 100%, exit 0% exit 100%;
+      }
+      .lc-merkje {
+        animation: lc-etiket-in linear both, lc-etiket-uit linear forwards;
+        animation-timeline: view(block), view(block);
+        animation-range: entry 0% entry 92%, exit 30% exit 100%;
+      }
     }
   }
-  @keyframes lc-adem {
-    entry 0%   { opacity: .18; scale: .93; }
-    entry 100% { opacity: 1;   scale: 1; }
-    exit 0%    { opacity: 1;   scale: 1; }
-    exit 100%  { opacity: .18; scale: .97; }
-  }
-  @keyframes lc-etiket {
-    entry 0%   { opacity: 0; translate: 0 .9rem; }
-    entry 92%  { opacity: 1; translate: 0 0; }
-    exit 30%   { opacity: 1; translate: 0 0; }
-    exit 100%  { opacity: 0; translate: 0 -.6rem; }
-  }
+  @keyframes lc-adem-in { from { opacity: .18; scale: .93; } to { opacity: 1; scale: 1; } }
+  @keyframes lc-adem-uit { from { opacity: 1; scale: 1; } to { opacity: .18; scale: .97; } }
+  @keyframes lc-etiket-in { from { opacity: 0; translate: 0 .9rem; } to { opacity: 1; translate: 0 0; } }
+  @keyframes lc-etiket-uit { from { opacity: 1; translate: 0 0; } to { opacity: 0; translate: 0 -.6rem; } }
 
   /* ── DE VERBLEEKTE WINKEL ─────────────────────────────────────────────────
      Dit is geen ontwerp en mag er ook niet als één uitzien. Het staat op 30%
