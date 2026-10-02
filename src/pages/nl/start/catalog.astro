@@ -7,7 +7,6 @@ import Layout from '../../../layouts/Layout.astro';
 import OrderFlow from '../../../components/order/OrderFlow.astro';
 import Step1Options from '../../../components/order/Step1Options.astro';
 import AnglePicker from '../../../components/order/AnglePicker.astro';
-import CombiKeuze from '../../../components/order/CombiKeuze.astro';
 import StijlRegel from '../../../components/order/StijlRegel.astro';
 import ModelKeuze from '../../../components/order/ModelKeuze.astro';
 ---
@@ -18,10 +17,9 @@ import ModelKeuze from '../../../components/order/ModelKeuze.astro';
         heet "model" en staat in OrderFlow bij stap 2; waar dit blok in
         deze bron staat maakt dus niet uit voor waar het terechtkomt. */}
     <ModelKeuze slot="model" lang="nl" soort="catalog" />
-    {/* De combinatie staat als eerste in de slot, dus direct onder het
-        meelopende totaal: daar heeft de klant net gezien wat zijn aantal
-        kost, en dat is het moment waarop een lager tarief per beeld iets
-        betekent. Zie CombiKeuze.astro. */}
+    {/* De combi-vraag ("lifestyle erbij?") is weg — ronde 8, 1 oktober 2026.
+        Lucas verkoopt catalog + lifestyle niet meer als één dienst: wie
+        allebei wil, plaatst twee bestellingen, elk tegen zijn eigen prijs. */}
     {/* ── DE STIJL STOND HIER NIET — 13 september 2026 ─────────────────
         /start/complete toont twee stijlregels, /start/lifestyle een
         beeldenraster, en deze pagina toonde niets: wie hier bestelde kreeg
@@ -32,7 +30,6 @@ import ModelKeuze from '../../../components/order/ModelKeuze.astro';
         keuzelijst — StijlRegel telt de lijst en beslist dat zelf. Komt er
         een tweede bij in catalogStyles.js, dan staat de keuze er vanzelf. */}
     <StijlRegel slot="look" lang="nl" categorie="catalog" />
-    <CombiKeuze slot="combi" lang="nl" richting="erbij" />
     <Step1Options lang="nl" />
     {/* De hoeken staan NA de drie vouwen en niet ertussen: het is de enige vraag
         in stap 1 die geld kost, en een blok met een prijskaartje hoort niet

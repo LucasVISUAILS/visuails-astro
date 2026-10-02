@@ -538,6 +538,7 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
     ].join('');
 
     await sendMail(env, {
+      replyTo: order?.email || '',
       to,
       subject,
       html: shell({ lang: 'nl', preheader: `${who} gaf ${score} van ${SCORE_MAX} op ${ref}.`, body }),

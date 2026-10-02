@@ -44,7 +44,7 @@
  * passes one.
  */
 
-import { mailNote } from '../data/mailNote.js';
+import { mailNote, mailNoteInMail } from '../data/mailNote.js';
 import { tagline } from '../data/brand.js';
 
 const SITE = 'https://visuails.com';
@@ -162,9 +162,23 @@ export function esc(s) {
  */
 export const greeting = (name, lang = 'en') => {
   const hoi = lang === 'nl' ? 'Hoi' : 'Hi';
-  const naam = String(name ?? '').trim();
+  const naam = voornaam(name);
   return naam ? `${hoi} ${esc(naam)},` : `${hoi},`;
 };
+
+/* ── DE VOORNAAM — 1 oktober 2026 (ronde 8) ───────────────────────────────
+   "Hoi Sanne Keten," leest als een formulier dat terugpraat. Een mens zegt
+   "Hoi Sanne,". Het eerste woord van de naam, tenzij dat een losse letter of
+   een voorvoegsel is ("J. de Vries", "van Dam"): dan de hele naam, want een
+   gok die verkeerd uitvalt is erger dan een volledige naam. */
+const VOORVOEGSELS = new Set(['van', 'de', 'den', 'der', 'het', "'t", 'ten', 'ter', 'te', 'la', 'le', 'du', 'von', 'mr', 'mevr', 'dhr', 'mw']);
+export function voornaam(name) {
+  const naam = String(name ?? '').trim().replace(/\s+/g, ' ');
+  if (!naam) return '';
+  const eerste = naam.split(' ')[0];
+  if (eerste.length < 2 || /\.$/.test(eerste) || VOORVOEGSELS.has(eerste.toLowerCase())) return naam;
+  return eerste;
+}
 
 /* ── blocks ──────────────────────────────────────────────────────────────── */
 
@@ -283,7 +297,7 @@ export const quote = html =>
   </tr></table>`;
 
 /** The "check your spam" line, from the one place that sentence is written. */
-export const spamNote = lang => note(esc(mailNote(lang)));
+export const spamNote = lang => note(esc(mailNoteInMail(lang)));
 
 /** A prominent text link on its own line, the way the portal link is offered. */
 export const linkLine = (href, label) =>
@@ -351,11 +365,11 @@ export function shell({ lang = 'en', preheader = '', body = '' }) {
 <meta name="supported-color-schemes" content="light">
 </head>
 <body style="margin:0;padding:0;background:${C.page};-webkit-font-smoothing:antialiased">
-<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${esc(preheader)}</div>
+<!--tekst:uit--><div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${esc(preheader)}</div><!--/tekst:uit-->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="background:${C.page}">
   <tr><td align="center" style="padding:0">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.paper}" style="width:600px;max-width:600px;background:${C.paper}">
-      <tr><td>${letterhead()}</td></tr>
+      <tr><td><!--tekst:uit-->${letterhead()}<!--/tekst:uit--></td></tr>
       <tr><td style="padding:34px 32px 26px">${body}</td></tr>
       <tr><td>${footer(lang)}</td></tr>
     </table>

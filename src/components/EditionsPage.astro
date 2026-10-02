@@ -432,8 +432,8 @@ const c = COPY[lang];
           <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
           <a class="knop knop-lijn" href={lp('/plans')}>{c.ctaPlans}</a>
         </p>
-        <ServiceSwitch current={['complete']} lang={lang} />
-        <HeroFacts eigen={c.trust} lang={lang} />
+        <ServiceSwitch current={[]} lang={lang} />
+        <HeroFacts eigen={c.trust} lang={lang} levertijd={nl ? ['Elke maand', 'zodra Editions loopt'] : ['Every month', 'once Editions runs']} />
         <p class="ed-wacht"><span class="mono ed-tag">{c.soonTag}</span> {c.queueNote}</p>
       </div>
       <Placeholder lang={lang} ratio={r('maandgrid')} caption={false} subject={p('maandgrid', 'subject')} message={p('maandgrid', 'message')} />

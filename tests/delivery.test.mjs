@@ -64,7 +64,7 @@ function d1(db) {
  */
 function fresh() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE orders (id INTEGER PRIMARY KEY, ref TEXT, lang TEXT);`);
+  db.exec(`CREATE TABLE orders (id INTEGER PRIMARY KEY, ref TEXT, lang TEXT, delivery_mailed_at TEXT, status TEXT DEFAULT 'received');`);
   db.exec(`CREATE TABLE files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     order_id INTEGER NOT NULL,
@@ -84,7 +84,9 @@ function fresh() {
     superseded_at TEXT
   );`);
   db.exec(readFileSync(new URL('../migrations/0022-delivery-assets.sql', import.meta.url), 'utf8'));
-  db.prepare("INSERT INTO orders (id, ref, lang) VALUES (1, 'VIS-2608-4471', 'nl')").run();
+  /* Al een keer geleverd gemeld: dan ziet de klant alles wat er staat. Zie het
+     blok "uploaden is nog niet leveren" onderaan voor de andere kant. */
+  db.prepare("INSERT INTO orders (id, ref, lang, delivery_mailed_at) VALUES (1, 'VIS-2608-4471', 'nl', '2026-08-26 10:00:00')").run();
   return db;
 }
 
@@ -601,6 +603,21 @@ console.log('\nde licentie volgt het scherm, en anders beide talen');
   const account = read('src/lib/account.js');
   check('de downloadknop in Studio draagt de schermtaal', /\/account\/orders\/\$\{o\.id\}\/zip\?lang=\$\{lang\}/.test(account), true);
   check('en serveOrderZip geeft de taal door aan deliveryDocs', /deliveryDocs\(\{ order, entries, productNames, taal \}\)/.test(account), true);
+}
+
+console.log('\nuploaden is nog niet leveren (ronde 8)');
+{
+  const db = fresh();
+  db.prepare("INSERT INTO orders (id, ref, lang, delivery_mailed_at) VALUES (2, 'VIS-NIEUW', 'nl', NULL)").run();
+  db.prepare("INSERT INTO files (id, order_id, kind, r2_key, product_key, shot) VALUES (50, 2, 'delivery', 'delivery/50.png', 'p1', 'front')").run();
+  db.prepare("INSERT INTO files (id, order_id, kind, r2_key, product_key, shot, announced_at) VALUES (51, 2, 'delivery', 'delivery/51.png', 'p1', 'back', '2026-10-01 10:00:00')").run();
+  const zicht = await loadDeliveryFiles({ DB: d1(db) }, 2);
+  check('nog nooit gemeld: alleen wat gemeld is, is zichtbaar', zicht.map((f) => f.id), [51]);
+  const admin = await loadDeliveryFiles({ DB: d1(db) }, 2, { ookOngemeld: true });
+  check('de voorvertoning in /admin ziet alles', admin.map((f) => f.id), [50, 51]);
+  db.prepare("UPDATE orders SET delivery_mailed_at = '2026-10-01 11:00:00' WHERE id = 2").run();
+  const na = await loadDeliveryFiles({ DB: d1(db) }, 2);
+  check('na de levermail: ook een nog niet gemelde vervanging', na.map((f) => f.id), [50, 51]);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

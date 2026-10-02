@@ -87,10 +87,11 @@ function canMail(env) {
   return Boolean(env?.RESEND_API_KEY && (env.NOTIFY_EMAIL || 'hello@visuails.com'));
 }
 
-async function toStudio(env, subject, body) {
+async function toStudio(env, subject, body, replyTo = '') {
   if (!canMail(env)) return;
   await sendMail(env, {
     to: env.NOTIFY_EMAIL || 'hello@visuails.com',
+    replyTo,
     subject,
     /* Altijd Nederlands: deze drie berichten gaan naar één lezer en die is
        Nederlands. De taal van de KLANT hoort bij de mails aan de klant. */
@@ -122,8 +123,8 @@ export async function notifyPaid(env, orderId) {
         ['Bedrag', `${cents(o?.total_cents)} excl. btw · ${cents(gross)} totaal`],
         ['Venster', o?.window_start ? `${o.window_start}${o.window_end ? ` – ${o.window_end}` : ''}` : 'geen vastgelegde datum'],
       ]),
-      mailP('De factuur is al naar de klant gestuurd. Het werk kan beginnen.'),
-    ].join(''));
+      mailP('Het werk kan beginnen. De klant krijgt de betaalbevestiging met factuur (of zonder, als die nog niet klaar is) apart.'),
+    ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] betaald-bericht niet verstuurd voor', orderId, '—', err?.message || err);
   }
@@ -156,9 +157,42 @@ export async function notifyPaymentFailed(env, orderId, reason = '') {
       mailP('De bestelling staat nog op onbetaald en de klant kan het opnieuw proberen '
         + 'in VISUAILS Studio. Meestal is dit geen afhaker maar iemand die zijn '
         + 'zakelijke rekening niet bij de hand had — één bericht lost het vaak op.'),
-    ].join(''));
+    ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] mislukte-betaling-bericht niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/*
+ * ── EEN BETALING DIE ER NIET HAD MOETEN ZIJN — 1 oktober 2026 (ronde 8) ──────
+ *
+ * Twee gevallen die de webhook tot vandaag stil liet gaan: een tweede betaling
+ * op een bestelling die al betaald was (een open kaarttab plus de link uit de
+ * mail), en een betaling op een bestelling die al geannuleerd was. Het geld is
+ * binnen en wordt automatisch teruggestort; dit bericht zegt dat, of dat het
+ * met de hand moet.
+ */
+export async function notifyOngewensteBetaling(env, { orderId, soort, betaalId, bedragCents, teruggestort }) {
+  try {
+    const o = await orderFor(env, orderId);
+    const ref = o?.ref || `#${orderId}`;
+    const wat = soort === 'geannuleerd' ? 'Betaling op een geannuleerde bestelling' : 'Dubbel betaald';
+    await toStudio(env, `${wat} · ${ref} · ${cents(bedragCents)}`, [
+      h1(wat, ref),
+      mailRows([
+        ['Bestelling', ref],
+        ['Klant', who(o)],
+        ['E-mail', o?.email || ''],
+        ['Betaling', betaalId || ''],
+        ['Bedrag', cents(bedragCents)],
+        ['Terugstorting', teruggestort ? 'automatisch gestart' : 'NIET gelukt — doe het met de hand in Mollie'],
+      ]),
+      mailP(soort === 'geannuleerd'
+        ? 'De bestelling blijft geannuleerd en staat niet op betaald. De klant heeft een mail gekregen dat het geld teruggaat.'
+        : 'De bestelling was al betaald; deze tweede betaling hoort er niet bij. De klant heeft een mail gekregen dat het geld teruggaat.'),
+    ].join(''), o?.email || '');
+  } catch (err) {
+    console.error('[notify] bericht over ongewenste betaling niet verstuurd voor', orderId, '—', err?.message || err);
   }
 }
 
@@ -186,7 +220,7 @@ export async function notifyBtwTwijfel(env, orderId, reden) {
       mailP('De bestelling is betaald en staat gewoon in de rij. Kijk vóór je begint of het een bedrijf buiten de EU is — '
         + 'een adres, een website of een kort mailtje is genoeg. Klopt het niet, dan hoort er Nederlandse btw op: '
         + 'annuleer met terugbetalen en laat de klant opnieuw bestellen met het juiste land.'),
-    ].join(''));
+    ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] btw-twijfelbericht niet verstuurd voor', orderId, '—', err?.message || err);
   }
@@ -228,7 +262,7 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
       mailP('De moeite waard om zelf even contact op te nemen. Iemand die voor de tweede '
         + 'keer een proef aanvraagt is aan het twijfelen over een echte bestelling, en dat '
         + 'is een gesprek dat je met een mailtje kunt openen in plaats van af te wachten.'),
-    ].join(''));
+    ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] bericht over tweede proefvisual niet verstuurd voor', orderId, '—', err?.message || err);
   }
@@ -325,7 +359,7 @@ export async function notifyRevision(env, { orderId, fileId, note }) {
       ]),
       note ? mailQuote(note) : mailP('De klant heeft er geen toelichting bij gezet.'),
       mailP('Het verzoek staat bovenaan in het adminportaal, bij de bestelling.'),
-    ].join(''));
+    ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] revisiebericht niet verstuurd voor', orderId, '—', err?.message || err);
   }
@@ -400,6 +434,7 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
         regels,
         mailP('De verzoeken staan bovenaan in het adminportaal, bij de bestelling.'),
       ].join(''),
+      o?.email || '',
     );
   } catch (err) {
     console.error('[notify] revisieronde niet verstuurd voor', orderId, '—', err?.message || err);
@@ -451,12 +486,11 @@ export async function notifySubscriptionFailed(env, {
         ]),
         gestopt
           ? mailP('Mollie probeert het niet meer, dus het abonnement is hier op pauze gezet. '
-            + 'De klant kan intussen niets van zijn saldo besteden. Zodra er wél een afschrijving '
-            + 'lukt, loopt het vanzelf weer — daar hoef jij niets voor te doen. Wat wél helpt: '
-            + 'één bericht aan de klant dat zijn rekening het niet deed.')
-          : mailP('Mollie probeert het binnenkort opnieuw. Het abonnement loopt gewoon door en '
-            + 'de klant merkt hier niets van. Dit bericht is er zodat je het ziet aankomen — '
-            + 'komt hij nog een keer, dan is er iets met de rekening van de klant.'),
+            + 'De klant kan intussen niets van zijn saldo besteden en heeft daar een mail over gekregen. '
+            + 'Zodra er wél een afschrijving lukt, loopt het vanzelf weer — daar hoef jij niets voor te doen.')
+          : mailP('Mollie probeert het binnenkort opnieuw. Het abonnement loopt gewoon door; de klant '
+            + 'heeft een mail gekregen dat de afschrijving niet lukte. Komt dit bericht nog een keer, '
+            + 'dan is er iets met de rekening van de klant.'),
       ].join('')
     );
   } catch (err) {

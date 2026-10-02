@@ -366,8 +366,8 @@ const COPY = {
     prijsH: 'Wat het kost',
     prijsVanaf: `<strong>Vanaf ${vanaf} per hook</strong>, ${vatLabel('excl', 'nl')}. Eén hook is één korte clip. Met een abonnement kost een hook ${SERVICE_CREDITS.hooks} credits.`,
     prijsVariant: `<strong>Vanaf ${variant} voor een extra variant</strong> op hetzelfde product: hetzelfde format, een andere invulling.`,
-    prijsNietH: 'Waarom er geen staffel op zit',
-    prijsNiet: 'Elke hook is een eigen opzet, dus het bedrag is een ondergrens en geen staffel.',
+    prijsNietH: 'Waarom de prijs niet per aantal zakt',
+    prijsNiet: 'Elke hook is een eigen opzet, dus het bedrag is een ondergrens en zakt niet als je er meer bestelt.',
     prijsCta: 'Praat met ons over Hooks',
     formatH: 'Hoe een hook eruitziet.',
     formatSub: 'Hier staat niets nagemaakt van andermans werk. Dit zijn de plekken waar onze eigen eerste hooks komen te staan.',
@@ -408,7 +408,7 @@ const c = COPY[lang];
           <a class="knop knop-inkt" href={lp('/contact')}>{c.ctaPrimary}</a>
           <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
         </p>
-        <ServiceSwitch current={['complete']} lang={lang} />
+        <ServiceSwitch current={[]} lang={lang} />
         <HeroFacts eigen={c.trust} lang={lang} levertijd={nl ? ['In de offerte', 'levertijd'] : ['In the quote', 'delivery time']} />
         {/* Van 58 woorden naar één zin. Wat er moet staan op het scherm waar
             iemand net een bedrag heeft gezien, is dat er geen bestelknop is en

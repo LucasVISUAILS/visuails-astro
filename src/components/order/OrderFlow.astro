@@ -487,7 +487,7 @@ const PIPE = {
       more: 'Dat is meer dan er in één week past, dus dit plannen we samen in plaats van het door een formulier te laten uitrekenen.',
       quote: 'Kies hoeveel producten en het totaal verschijnt hier.',
       onRequest: '—',
-      outfit: ' Plus {price} × {n} voor een compleet setje — broek, top en schoenen in één foto.',
+      outfit: ' Plus {price} × {n} voor een outfit — broek, top en schoenen samen in één foto.',
       extra: ' Plus {price} × {n} voor extra foto’s.',
       hoogRes: ' Plus {price} × {n} voor lifestylebeelden op {px} px.',
       voorrang: ' Plus {price} voor voorrang bij levering.',
@@ -547,7 +547,7 @@ const PIPE = {
       styleCatalog: 'Stijl · catalog',
       styleLifestyle: 'Stijl · lifestyle',
       ratio: 'Beeldverhouding',
-      outfit: 'Compleet setje',
+      outfit: 'Outfit',
       outfitN: '{price} extra × {n}',
       net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
       files: 'Referentiemateriaal',
@@ -1332,10 +1332,10 @@ const FORM = {
       displayNote: 'Dit rekent je browser uit. Op de factuur rekenen wij het opnieuw uit, met dezelfde prijs per product.',
       /* Zie de Engelse tegenhanger. */
       euroNote: 'Alle bedragen zijn in euro’s. Staat je kaart of rekening in een andere munt, dan rekent je bank om tegen zijn eigen koers — meestal met een kleine toeslag voor vreemde valuta.',
-      outfitLabel: 'Zitten er complete setjes bij? (broek, top en schoenen samen)',
+      outfitLabel: 'Zitten er outfits bij? (broek, top en schoenen samen)',
       outfitCatalogShort: 'Eén product per catalogset.',
-      outfitCatalogTerm: 'complete setjes',
-      outfitCatalogNote: 'Bij een catalogset betaal je per product, dus een compleet setje — broek, top en schoenen samen — kan in deze bestelling niet. Toch nodig voor je merk? Vraag het ons, dan kijken we er samen naar.',
+      outfitCatalogTerm: 'outfits',
+      outfitCatalogNote: 'Bij een catalogset betaal je per product, dus een outfit — broek, top en schoenen samen — kan in deze bestelling niet. Toch nodig voor je merk? Vraag het ons, dan kijken we er samen naar.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}.`,
       /* Zie de Engelse tegenhanger. */
       voorrangLabel: VOORRANG_COPY.nl.label,
@@ -1351,13 +1351,13 @@ const FORM = {
       kitCh: 'Verkoopt op',
       kitRatio: 'Verhouding',
       kitLook: 'Stijl',
-      outfitWhy: 'Waarom een compleet setje meer kost',
+      outfitWhy: 'Waarom een outfit meer kost',
       outfitWhyBody: OUTFIT_COPY.nl,
       outfitNone: 'Geen — los product',
       // "compleete" — het bijvoeglijk naamwoord is `complete`, met één e, en dat
       // valt niet af te leiden uit `compleet` + `e`. Daarom staan beide vormen er
       // voluit, in plaats van dat er een uitgang achter een stam wordt geplakt.
-      outfitCount: (n: number) => `${n} ${n === 1 ? 'compleet setje' : 'complete setjes'}`,
+      outfitCount: (n: number) => `${n} ${n === 1 ? 'outfit' : 'outfits'}`,
       levelsH: 'Normale doorlooptijd en vaste leverdatum, naast elkaar',
       levelAttended: ['Vaste leverdatum', `Vanaf ${WINDOW_THRESHOLD} producten`],
       levelUnattended: ['Normale doorlooptijd', `Tot en met ${WINDOW_THRESHOLD - 1} producten`],

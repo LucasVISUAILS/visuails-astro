@@ -321,7 +321,9 @@ console.log('\nde volgorde van de inhaalslag');
   // Wél betaald en tóch geen factuur: dan is de inhaalslag net gelopen en heeft
   // hij niets opgeleverd. De klant verwacht iets, dus de tekst is een andere.
   const waiting = await pagina({ db: makeDb({ invoices: [] }) });
-  check('mét een betaalde bestelling: "krijgt er een zodra"', waiting.rows.length === 0 && waiting.v.emptyText.includes('zodra de betaling binnen is'));
+  /* Ronde 8: betaald is betaald — dan zegt de tekst dat de factuur gemaakt wordt,
+     niet "zodra de betaling binnen is". */
+  check('mét een betaalde bestelling: "wordt gemaakt"', waiting.rows.length === 0 && waiting.v.emptyText.includes('wordt gemaakt'));
 }
 
 /* ── pending: nummer wel, document nog niet ───────────────────────────────── */

@@ -21,9 +21,8 @@ import Layout from '../layouts/Layout.astro';
 import Voorpagina from '../components/Voorpagina.astro';
 import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
 
-// `complete` is the scope the homepage sells — a catalog set and a lifestyle
-// carousel per product — so it is the ladder this description quotes.
-const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
+// Catalog + Lifestyle (`complete`) is no longer sold (ronde 8, 1 oktober 2026):
+// the description quotes the two services that are, each from its own ladder.
 
 // Kept under 152 characters — META_LIMIT, and below Google's snippet cut
 // rather than level with it. This is the one description that has to survive
@@ -31,8 +30,7 @@ const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
 // clause a cut would take.
 const description =
   `Catalog and lifestyle images for clothing brands, from your own photos. ` +
-  `No shoot. ${euro(ladderRate('complete', 1), 'en')} a product, ` +
-  `${euro(ladderFloor('complete'), 'en')} from ${FLOOR_FROM} up, ` +
+  `No shoot. From ${euro(ladderRate('catalog', 1), 'en')} a product, ` +
   `${vatLabel('excl', 'en')}. Try one for ${euro(AMOUNT.testSample, 'en')}.`;
 ---
 

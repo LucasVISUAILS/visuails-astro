@@ -1212,3 +1212,35 @@ a.st-kal-dag.is-kies:hover { background: var(--st-accent-tint); border-color: va
 @media (max-width: 760px), (pointer: coarse) {
   .st-veld:not(.is-code), .st-veld.st-veld-kort, .st-veld-klein { font-size: 16px; }
 }
+
+/* ── HET NOTITIEVELD PAS NA HET VINKJE — 1 oktober 2026 (ronde 8, S-B3) ────
+   Op 4 september werd het tekstvak pas getoond na het vinkje; die regel stond
+   alleen in het oude public/account.css en verdween met de overstap naar
+   studio.css. Bij twaalf producten waren dat weer tientallen open vakken. Zonder
+   :has-ondersteuning blijft het vak gewoon staan (de server telt een notitie
+   zonder vinkje nu ook als aangevinkt). */
+@supports selector(:has(*)) {
+  .st-aanmerk:not(:has(input:checked)) textarea { display: none; }
+}
+.st-aanmerk:has(input:checked) .st-vink { color: var(--ink-1); }
+
+/* Eén vaste weg naar een mens, onder elke bestelling (ronde 8, S-B17). */
+.st-contact { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1rem; margin: 1.1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); font-size: .9rem; }
+.st-contact-h { font-weight: 600; color: var(--ink-1); }
+.st-contact a { color: var(--ink-1); text-decoration: underline; text-underline-offset: 3px; min-height: 24px; display: inline-flex; align-items: center; }
+.st-contact .st-meta { margin: 0; flex: 1 1 100%; }
+@media (min-width: 640px) { .st-contact .st-meta { flex: 0 1 auto; } }
+.st-ronde.is-revoked { border-color: var(--line-strong); }
+
+/* Abonnement › product: foto's en gezicht met een eigen knop (ronde 8, S-K3),
+   en verwijderen met een bevestiging (S-N9). */
+.st-q-actie { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
+.st-q-fotos-kies { font-size: .82rem; max-width: 100%; color: var(--ink-2); }
+.st-q-fotos-kies::file-selector-button { font: inherit; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-1); border-radius: 999px; padding: .35rem .8rem; margin-right: .6rem; cursor: pointer; }
+.st-q-weg { position: relative; }
+.st-q-weg > summary { list-style: none; }
+.st-q-weg > summary::-webkit-details-marker { display: none; }
+.st-q-weg[open] > summary { opacity: .6; }
+.st-q-weg form { margin-top: .4rem; }
+.st-q-weg-ja { background: var(--danger, #B42318); color: #fff; border-color: transparent; }
+@media (max-width: 760px) { .st-q-fotos-kies { font-size: 16px; } }

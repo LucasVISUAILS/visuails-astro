@@ -232,7 +232,29 @@ export function leveringIngetrokken(order) {
 /** De twee kolommen die leveringIngetrokken() nodig heeft, voor in een SELECT. */
 export const TOEGANG_KOLOMMEN = 'status, cancel_payment';
 
-export async function loadDeliveryFiles(env, orderId) {
+/* ── UPLOADEN IS NOG NIET LEVEREN — 1 oktober 2026 (ronde 8, A-K3) ─────────
+ *
+ * Het bord in /admin zegt: "de klant ziet niets tot je op versturen drukt".
+ * Dat klopte niet: elk geüpload beeld stond meteen in het portaal en in Studio,
+ * ook halve en foute, en ook bij een onbetaalde bestelling. De klant kon WIP
+ * goedkeuren of er een revisie op vragen.
+ *
+ * De regel nu: een leveringsbeeld is zichtbaar voor de klant zodra het gemeld
+ * is (`announced_at`), of zodra de bestelling één keer geleverd is gemeld
+ * (`delivery_mailed_at`) of op geleverd staat (ook als de mail mislukte: dan is
+ * leveren wel de bedoeling, en de klant komt via Studio). Dat tweede deel is bewust: een vervanging na een
+ * revisie zet het oude beeld meteen op "vervangen", en zonder die uitzondering
+ * zou er tot het melden een gat in de levering van de klant vallen.
+ *
+ * Eén fragment, op elke plek waar de klant een levering leest of opent. */
+export const ZICHTBAAR_VOOR_KLANT = `(f.kind <> 'delivery' OR f.announced_at IS NOT NULL
+  OR EXISTS (SELECT 1 FROM orders zo WHERE zo.id = f.order_id
+              AND (zo.delivery_mailed_at IS NOT NULL OR zo.status IN ('delivered', 'cancelled'))))`;
+
+export async function loadDeliveryFiles(env, orderId, { ookOngemeld = false } = {}) {
+  /* De voorvertoning in /admin ("bekijken zoals de klant het ziet") toont ook
+     wat nog niet gemeld is: daar kijk je juist vóór het versturen. */
+  const zicht = ookOngemeld ? '' : `AND ${ZICHTBAAR_VOOR_KLANT}`;
   const withSuperseded = `
     SELECT f.id, f.r2_key, f.preview_key, f.filename, f.bytes, f.expires_at,
            f.product_key, f.shot,
@@ -244,6 +266,7 @@ export async function loadDeliveryFiles(env, orderId) {
        AND f.kind = 'delivery'
        AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
        AND f.superseded_at IS NULL
+       ${zicht}
      ORDER BY f.id, a.format`;
   const withoutSuperseded = withSuperseded.replace('AND f.superseded_at IS NULL', '');
 
@@ -269,6 +292,7 @@ export async function loadDeliveryFiles(env, orderId) {
            AND f.kind = 'delivery'
            AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
            AND f.superseded_at IS NULL
+           ${zicht}
          ORDER BY f.id`;
       rows = (await env.DB.prepare(noAssets).bind(orderId).all())?.results || [];
     } else if (/no such column/i.test(message)) {

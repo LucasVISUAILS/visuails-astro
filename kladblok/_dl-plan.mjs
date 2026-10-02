@@ -11,6 +11,8 @@ if (plan === 'maat') { await form.locator('input[name="credits"]').fill('120'); 
 await klik(`input[name="term"][value="${term}"]`);
 await form.locator('select[name="window_day"]').selectOption('10');
 for (const [k, v] of Object.entries({ first_name: 'Yara', last_name: 'Merk', email, phone: '0611111111', brand: 'Merk BV', address_line1: 'Teststraat 3', postal_code: '1234 AB', city: 'Teststad' })) await form.locator(`[name="${k}"]`).fill(v);
+if (await form.locator('select[name="country"]').count()) { await form.locator('select[name="country"]').selectOption('NL'); await page.waitForTimeout(300); }
+if (await form.locator('input[name="reg_number"]').isVisible()) await form.locator('input[name="reg_number"]').fill('12345678');
 await klik('input[name="business_declaration"]'); await klik('input[name="withdrawal_consent"]');
 console.log('SAMENVATTING:', (await page.evaluate(() => document.querySelector('[data-ps-maat], .ps-plaat, .ps-som, [data-ps-summary]')?.innerText || '')).replace(/\s+/g, ' ').slice(0, 400));
 await foto(page, `plan-${plan}-${term}-voor`, { vol: true });

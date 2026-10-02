@@ -36,7 +36,7 @@
  */
 
 import { sendMail, toBase64 } from './mail.js';
-import { shell, h1, p, rows, note, linkLine, greeting, esc } from './mailTemplate.js';
+import { shell, h1, p, rows, note, linkLine, greeting, esc, button, spamNote } from './mailTemplate.js';
 import { formatDate } from './invoicePdf.js';
 
 const SITE = 'https://visuails.com';
@@ -259,6 +259,143 @@ export async function mailCreditNote(env, { order, note: nota }) {
     return true;
   } catch (err) {
     console.error('[credit-mail] versturen mislukt voor', nota?.number, '—', err?.message || err);
+    return false;
+  }
+}
+
+/* ── HET GELD GAAT TERUG — 1 oktober 2026 (ronde 8) ──────────────────────────
+   Een tweede betaling op een al betaalde bestelling, of een betaling op een
+   geannuleerde: de webhook stort automatisch terug (zie mollie.js). De klant
+   hoort dat meteen, anders ziet hij alleen een afschrijving zonder uitleg. */
+export async function mailOngewensteBetaling(env, orderId, soort, bedragCents) {
+  try {
+    const o = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(orderId).first();
+    if (!o?.email) return false;
+    const nl = o.lang === 'nl';
+    const eur = (c) => new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { style: 'currency', currency: 'EUR' }).format((Number(c) || 0) / 100);
+    await sendMail(env, {
+      to: o.email,
+      subject: nl ? `We storten ${eur(bedragCents)} terug — ${o.ref}` : `We are refunding ${eur(bedragCents)} — ${o.ref}`,
+      html: shell({
+        lang: nl ? 'nl' : 'en',
+        preheader: nl ? 'Je hebt niets te doen.' : 'There is nothing you need to do.',
+        body: [
+          h1(nl ? 'Je geld komt terug' : 'Your money is coming back', nl ? `Referentie ${esc(o.ref)}` : `Reference ${esc(o.ref)}`),
+          p(greeting(o.name, nl ? 'nl' : 'en')),
+          p(soort === 'geannuleerd'
+            ? (nl
+              ? `Er kwam een betaling van <strong>${esc(eur(bedragCents))}</strong> binnen voor <strong>${esc(o.ref)}</strong>, maar die bestelling was al geannuleerd. We storten het bedrag terug; het staat binnen een paar werkdagen weer op je rekening.`
+              : `A payment of <strong>${esc(eur(bedragCents))}</strong> came in for <strong>${esc(o.ref)}</strong>, but that order had already been cancelled. We are refunding it; it is back in your account within a few working days.`)
+            : (nl
+              ? `Je bestelling <strong>${esc(o.ref)}</strong> was al betaald, en er kwam nog een betaling van <strong>${esc(eur(bedragCents))}</strong> binnen. Die storten we terug; hij staat binnen een paar werkdagen weer op je rekening. Je bestelling loopt gewoon door.`
+              : `Your order <strong>${esc(o.ref)}</strong> was already paid, and a second payment of <strong>${esc(eur(bedragCents))}</strong> came in. We are refunding it; it is back in your account within a few working days. Your order carries on as normal.`)),
+          note(nl ? 'Vragen? Beantwoord deze mail.' : 'Questions? Just reply to this email.'),
+        ].join(''),
+      }),
+    });
+    return true;
+  } catch (e) {
+    console.error('[mail] terugstortbericht niet verstuurd —', e?.message || e);
+    return false;
+  }
+}
+
+/* ── EEN MISLUKTE INCASSO: DE KLANT HOORT HET — 1 oktober 2026 (ronde 8, M-K2) ──
+   Tot vandaag kreeg alleen de studio een bericht. De studiomail zei zelf "wat wél
+   helpt: één bericht aan de klant" — dit is dat bericht. Bij een stilgezet
+   abonnement: de credits zijn bewaard maar staan stil tot de betaling lukt. */
+export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragCents = 0, gestopt = false, origin = 'https://visuails.com' }) {
+  if (!email) return false;
+  try {
+    const rij = await env.DB.prepare('SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1').bind(subId).first().catch(() => null);
+    const nl = (rij?.lang || 'nl') !== 'en';
+    const eur = new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { style: 'currency', currency: 'EUR' }).format((Number(bedragCents) || 0) / 100);
+    const href = `${origin}/account/plan?tab=facturering&lang=${nl ? 'nl' : 'en'}`;
+    await sendMail(env, {
+      to: email,
+      subject: gestopt
+        ? (nl ? `Je abonnement staat stil — ${ref}` : `Your plan is on hold — ${ref}`)
+        : (nl ? `Je betaling van ${eur} is niet gelukt — ${ref}` : `Your payment of ${eur} did not go through — ${ref}`),
+      html: shell({
+        lang: nl ? 'nl' : 'en',
+        preheader: gestopt ? (nl ? 'Je credits zijn bewaard.' : 'Your credits are kept.') : (nl ? 'We proberen het opnieuw.' : 'We will try again.'),
+        body: [
+          h1(gestopt ? (nl ? 'Je abonnement staat stil' : 'Your plan is on hold') : (nl ? 'De afschrijving is niet gelukt' : 'The payment did not go through'), esc(ref)),
+          p(greeting(name, nl ? 'nl' : 'en')),
+          p(gestopt
+            ? (nl
+              ? `De afschrijving van <strong>${esc(eur)}</strong> is een paar keer niet gelukt, en de bank heeft de machtiging gestopt. Je abonnement staat daarom stil. Je credits zijn bewaard, maar je kunt ze pas weer gebruiken als de betaling rond is.`
+              : `The payment of <strong>${esc(eur)}</strong> failed a few times and the bank stopped the mandate, so your plan is on hold. Your credits are kept, but you can only use them again once the payment is settled.`)
+            : (nl
+              ? `De afschrijving van <strong>${esc(eur)}</strong> voor je abonnement is niet gelukt. Meestal is dat een tijdelijk saldoprobleem; we proberen het binnen een paar dagen opnieuw. Klopt je rekening niet meer, vernieuw dan je machtiging.`
+              : `The payment of <strong>${esc(eur)}</strong> for your plan did not go through. Usually that is a temporary balance issue; we try again within a few days. If your account has changed, renew your mandate.`)),
+          button(href, nl ? 'Naar mijn abonnement' : 'Go to my plan'),
+          '<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>',
+          note(nl ? 'Vragen? Beantwoord deze mail of app ons.' : 'Questions? Reply to this email or message us on WhatsApp.'),
+        ].join(''),
+      }),
+    });
+    return true;
+  } catch (e) {
+    console.error('[mail] bericht over mislukte incasso niet verstuurd —', e?.message || e);
+    return false;
+  }
+}
+
+/* De betaalbevestiging zonder factuur (ronde 8, M-B6): mislukt het uitgeven van
+   de factuur, dan kreeg de klant niets. Kort, en met de belofte dat de factuur
+   in Studio komt. */
+export async function mailBetalingOntvangen(env, orderId) {
+  try {
+    const o = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(orderId).first();
+    if (!o?.email) return false;
+    const nl = o.lang === 'nl';
+    await sendMail(env, {
+      to: o.email,
+      subject: nl ? `Betaling ontvangen — ${o.ref}` : `Payment received — ${o.ref}`,
+      html: shell({
+        lang: nl ? 'nl' : 'en',
+        preheader: nl ? 'We zijn aan de slag.' : 'We have started.',
+        body: [
+          h1(nl ? 'Je betaling is binnen' : 'We have your payment', esc(o.ref)),
+          p(greeting(o.name, nl ? 'nl' : 'en')),
+          p(nl
+            ? 'Bedankt. Een specialist maakt je beelden en loopt elk beeld na; je krijgt een mail zodra ze klaarstaan (vaak binnen een dag, soms een paar dagen). Je factuur komt in VISUAILS Studio, onder Facturen.'
+            : 'Thank you. A specialist makes your images and checks every one; you get an email as soon as they are ready (often within a day, sometimes a few days). Your invoice will be in VISUAILS Studio, under Invoices.'),
+        ].join(''),
+      }),
+    });
+    return true;
+  } catch (e) {
+    console.error('[mail] betaalbevestiging niet verstuurd —', e?.message || e);
+    return false;
+  }
+}
+
+/* De ontvangstbevestiging van een revisieronde. Ook gebruikt door het portaal. */
+export async function mailRondeOntvangen(env, o, n) {
+  if (!o?.email) return false;
+  const nl = o.lang !== 'en';
+  try {
+    await sendMail(env, {
+      to: o.email,
+      subject: nl ? `We hebben je revisieronde — ${o.ref}` : `We have your revision round — ${o.ref}`,
+      html: shell({
+        lang: nl ? 'nl' : 'en',
+        preheader: nl ? `${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd.` : `${n} ${n === 1 ? 'image' : 'images'} noted.`,
+        body: [
+          h1(nl ? 'Je revisieronde is binnen' : 'Your revision round is in', nl ? `Referentie ${esc(o.ref)}` : `Reference ${esc(o.ref)}`),
+          p(greeting(o.name, nl ? 'nl' : 'en')),
+          p(nl
+            ? `We hebben ${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd met je opmerkingen. Een specialist past ze aan; je krijgt een mail zodra de nieuwe versies klaarstaan (vaak binnen een dag, soms een paar dagen).`
+            : `We noted ${n} ${n === 1 ? 'image' : 'images'} with your comments. A specialist adjusts them; you get an email as soon as the new versions are ready (often within a day, sometimes a few days).`),
+          spamNote(nl ? 'nl' : 'en'),
+        ].join(''),
+      }),
+    });
+    return true;
+  } catch (e) {
+    console.error('[account] ontvangst revisieronde niet gemaild —', e?.message || e);
     return false;
   }
 }

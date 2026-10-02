@@ -38,3 +38,17 @@ const NOTE = {
 export function mailNote(lang) {
   return NOTE[lang] || NOTE.en;
 }
+
+/* ── EN IN DE MAIL ZELF EEN ANDERE ZIN — 1 oktober 2026 (ronde 8, M-N1) ─────
+   "Na een paar minuten nog niets? Kijk in je spam" stond onderaan de mails
+   zelf — in een bericht dat de lezer al heeft. Op het scherm blijft de zin
+   hierboven staan (Lucas vroeg erom); in de mail staat wat daar wél helpt. */
+const NOTE_IN_MAIL = {
+  en: 'Add orders@visuails.com to your contacts, so our next email always lands in your inbox.',
+  nl: 'Zet orders@visuails.com in je contacten, dan komt onze volgende mail altijd in je inbox.',
+};
+
+/** @param {'en'|'nl'} lang */
+export function mailNoteInMail(lang) {
+  return NOTE_IN_MAIL[lang] || NOTE_IN_MAIL.en;
+}

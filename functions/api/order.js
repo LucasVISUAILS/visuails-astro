@@ -54,7 +54,7 @@
 
 import { offsitePage } from '../../src/lib/offsite.js';
 import { readCalendar } from '../../src/lib/agenda.js';
-import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG, SAMPLE_SERVICE } from '../../src/data/pricing.js';
 import { videoStyles as VIDEO_STYLES } from '../../src/data/videoStyles.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
@@ -107,7 +107,7 @@ import { businessCheck } from '../../src/data/business.js';
 import { withdrawalRecord } from '../../src/data/consent.js';
 import {
   vatDecision, VAT_TREATMENT, normaliseVat, viesCode, vatShort, HOME_COUNTRY,
-  vatGate, REVIEW, REVIEW_HOURS, vatFormatOk,
+  vatGate, REVIEW, REVIEW_HOURS, vatFormatOk, PAYMENT_DAYS,
 } from '../../src/data/vat.js';
 import { checkVat, viesEvidence } from '../../src/lib/vies.js';
 import { tegoedBeschikbaar, teVerrekenen } from '../../src/lib/tegoedVerrekening.js';
@@ -635,6 +635,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       .bind(customerId, email, name || null, onderwerp, body || null).run());
     await safe(() => sendMail(env, {
       to: env.NOTIFY_EMAIL || 'hello@visuails.com',
+      /* Beantwoorden gaat naar de bezoeker, niet naar jezelf (ronde 8, M-B4). */
+      replyTo: email,
       subject: `Contact — ${name || email} · ${onderwerp}`,
       html: shell({
         lang: 'nl',
@@ -648,6 +650,23 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
             ['Antwoord via', esc(kanaal)],
           ])
           + (body ? mailQuote(esc(body).replace(/\n/g, '<br>')) : p('Er stond geen bericht bij.', { muted: true })),
+      }),
+    }));
+    /* ── EN DE BEZOEKER KRIJGT EEN KOPIE — 1 oktober 2026 (ronde 8, M-C9) ────
+       De bedankpagina belooft "meestal binnen het uur", maar in zijn mailbox
+       stond niets. Een korte bevestiging met zijn eigen bericht erin. */
+    const nlC = lang === 'nl';
+    await safe(() => sendMail(env, {
+      to: email,
+      subject: nlC ? 'We hebben je bericht' : 'We have your message',
+      html: shell({
+        lang: nlC ? 'nl' : 'en',
+        preheader: nlC ? 'Je hoort snel van ons.' : 'You will hear from us soon.',
+        body: h1(nlC ? 'Je bericht is binnen' : 'Your message is in', esc(onderwerp))
+          + p(nlC
+            ? `Bedankt${name ? `, ${esc(String(name).split(' ')[0])}` : ''}. We antwoorden ${kanaal === 'WhatsApp' ? 'via WhatsApp' : 'per mail'}, meestal binnen het uur; buiten openingstijden de volgende ochtend. Dit stuurde je:`
+            : `Thank you${name ? `, ${esc(String(name).split(' ')[0])}` : ''}. We reply ${kanaal === 'WhatsApp' ? 'on WhatsApp' : 'by email'}, usually within the hour; outside opening hours the next morning. This is what you sent:`)
+          + (body ? mailQuote(esc(body).replace(/\n/g, '<br>')) : ''),
       }),
     }));
     const okUrl = back + (back.includes('?') ? '&' : '?') + 'ok=1';
@@ -919,6 +938,13 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   if (wantsJson && gate.reason === 'gone') {
     return json({ ok: false, error: 'window-gone', windows: gate.windows, reason: gate.listReason }, 409);
   }
+
+  /* ── DE VORM VAN HET BTW-NUMMER VÓÓR HET OPSLAAN — 1 oktober 2026 (B-B1) ──
+     De controle verderop (vatFormatOk) stond ná upsertCustomer(): NL000 kwam
+     dus nog steeds in customers.vat_number terecht, en de bestelling werd pas
+     daarna geweigerd. Met het land uit het formulier hier al; zonder land in het
+     formulier volgt de controle verderop met het opgeslagen land. */
+  if (vat && country && vatFormatOk(country, vat) === false) return terugMet('vat');
 
   let customerId = null;
   await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }); });
@@ -1296,6 +1322,15 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
           styleSurchargeCents: ownStyle ? Number(ownStyle.surcharge_cents) || 0 : 0,
         });
 
+  /* ── VOORRANG ZOALS GEREKEND, NIET ZOALS GEPOST — 1 oktober 2026 (B-N5) ──
+     details.voorrang kwam ongetoetst uit het formulier. Werd hij niet gerekend
+     (buiten de grenzen, of een dienst zonder voorrang), dan zeiden de mail,
+     Studio en /admin toch "voorrang". De rekensom beslist. */
+  if (details && typeof details === 'object') {
+    if (quote && quote.voorrang) details.voorrang = '1';
+    else delete details.voorrang;
+  }
+
   // ── THE WITHDRAWAL WAIVER, RECORDED ────────────────────────────────────────
   // A customer with no VAT number is a consumer, and a consumer buying at a
   // distance has fourteen days to withdraw while this studio delivers in
@@ -1660,7 +1695,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       vat: vatCall, vies, quote,
     });
     try {
-      await sendMail(env, { to, subject, html: body(packed.keys), attachments: packed.attachments });
+      await sendMail(env, { to, replyTo: email, subject, html: body(packed.keys), attachments: packed.attachments });
     } catch (e) {
       // A REFUSED ATTACHMENT MUST NOT COST THE NOTIFICATION. Resend can reject
       // the whole message for a reason that belongs to the files — total size,
@@ -1677,7 +1712,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       // safe() log it, which is what every other unattached send here does.
       if (!packed.attachments.length) throw e;
       console.error('[order] notify with attachments refused, retrying plain —', e && e.message ? e.message : e);
-      await sendMail(env, { to, subject, html: body([]) });
+      await sendMail(env, { to, replyTo: email, subject, html: body([]) });
     }
   });
   // ── THE PAYMENT LINK ───────────────────────────────────────────────────────
@@ -1824,7 +1859,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
         /* Niet de Mollie-link zelf: die verloopt binnen een kwartier tot een
            paar uur. /api/order-pay maakt bij elke klik een verse betaling. */
         pay: payUrl ? `${requestOrigin(request)}/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${lang}` : null, quote, vat: vatCall,
-        inReview: !!review.needsReview, voorrang: voorrangGevraagd,
+        inReview: !!review.needsReview, voorrang: !!(quote && quote.voorrang),
         tegoed: tegoedCents, betaaldMetTegoed,
         /* Zonder prijs is het een aanvraag (video op aanvraag, eigen look,
            merkmodel): dan belooft de mail een voorstel, geen levertijd en geen
@@ -2680,25 +2715,25 @@ export async function upsertCustomer(env, c) {
       `INSERT INTO customers (email, name, brand, phone, website, vat_number, country, billing_address)
        VALUES (?1,?2,?3,?4,?5,?6,?7,?8)
        ON CONFLICT(email) DO UPDATE SET
-         name=CASE WHEN customers.details_saved_at IS NULL
+         name=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                    THEN COALESCE(excluded.name, customers.name)
                    ELSE COALESCE(customers.name, excluded.name) END,
-         brand=CASE WHEN customers.details_saved_at IS NULL
+         brand=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                    THEN COALESCE(excluded.brand, customers.brand)
                    ELSE COALESCE(customers.brand, excluded.brand) END,
-         phone=CASE WHEN customers.details_saved_at IS NULL
+         phone=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                    THEN COALESCE(excluded.phone, customers.phone)
                    ELSE COALESCE(customers.phone, excluded.phone) END,
-         website=CASE WHEN customers.details_saved_at IS NULL
+         website=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                    THEN COALESCE(excluded.website, customers.website)
                    ELSE COALESCE(customers.website, excluded.website) END,
-         vat_number=CASE WHEN customers.details_saved_at IS NULL
+         vat_number=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                    THEN COALESCE(excluded.vat_number, customers.vat_number)
                    ELSE COALESCE(customers.vat_number, excluded.vat_number) END,
-         country=CASE WHEN customers.details_saved_at IS NULL
+         country=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                    THEN COALESCE(excluded.country, customers.country)
                    ELSE COALESCE(customers.country, excluded.country) END,
-         billing_address=CASE WHEN customers.details_saved_at IS NULL
+         billing_address=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                    THEN COALESCE(excluded.billing_address, customers.billing_address)
                    ELSE COALESCE(customers.billing_address, excluded.billing_address) END,
          updated_at=datetime('now')`
@@ -2710,6 +2745,13 @@ export async function upsertCustomer(env, c) {
 }
 
 /** De brede variant, met de kolommen uit migratie 0016. Zie upsertCustomer(). */
+/* ── EEN BEVESTIGD ACCOUNT WORDT NIET OVERSCHREVEN — 1 oktober 2026 (ronde 8, B-B2) ──
+   /api/order en /api/plan zijn niet ingelogd. Wie het e-mailadres van een
+   bestaande klant kende, kon via het formulier diens naam, btw-nummer en
+   factuuradres vervangen — en de volgende abonnementsfactuur las die. Een klant
+   die ooit heeft ingelogd (email_verified) telt nu als "gegevens opgeslagen":
+   een formulier kan bij hem alleen nog lege velden vullen. Wijzigen doet hij in
+   Studio › Je gegevens. */
 async function upsertWide(env, c) {
   await env.DB.prepare(
     // country and billing_address have existed on this table since the first
@@ -2728,25 +2770,25 @@ async function upsertWide(env, c) {
                             no_vat_number, save_requested_at, contact_preference)
      VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)
      ON CONFLICT(email) DO UPDATE SET
-       name=CASE WHEN customers.details_saved_at IS NULL
+       name=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.name, customers.name)
                  ELSE COALESCE(customers.name, excluded.name) END,
-       brand=CASE WHEN customers.details_saved_at IS NULL
+       brand=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.brand, customers.brand)
                  ELSE COALESCE(customers.brand, excluded.brand) END,
-       phone=CASE WHEN customers.details_saved_at IS NULL
+       phone=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.phone, customers.phone)
                  ELSE COALESCE(customers.phone, excluded.phone) END,
-       website=CASE WHEN customers.details_saved_at IS NULL
+       website=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.website, customers.website)
                  ELSE COALESCE(customers.website, excluded.website) END,
-       vat_number=CASE WHEN customers.details_saved_at IS NULL
+       vat_number=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.vat_number, customers.vat_number)
                  ELSE COALESCE(customers.vat_number, excluded.vat_number) END,
-       country=CASE WHEN customers.details_saved_at IS NULL
+       country=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.country, customers.country)
                  ELSE COALESCE(customers.country, excluded.country) END,
-       billing_address=CASE WHEN customers.details_saved_at IS NULL
+       billing_address=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.billing_address, customers.billing_address)
                  ELSE COALESCE(customers.billing_address, excluded.billing_address) END,
        -- ── DE LOSSE VELDEN VOLGEN DE SAMENGESTELDE, NIET ANDERSOM ──────────
@@ -2765,37 +2807,37 @@ async function upsertWide(env, c) {
        -- hele set staan zoals hij staat, en verandert hij alleen via
        -- /account/details — waar naam, losse velden en samenstelling in één
        -- keer worden geschreven.
-       first_name=CASE WHEN customers.details_saved_at IS NULL
+       first_name=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.first_name, customers.first_name)
                  WHEN customers.name IS NULL AND customers.first_name IS NULL
                  THEN excluded.first_name
                  ELSE customers.first_name END,
-       last_name=CASE WHEN customers.details_saved_at IS NULL
+       last_name=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.last_name, customers.last_name)
                  WHEN customers.name IS NULL AND customers.last_name IS NULL
                  THEN excluded.last_name
                  ELSE customers.last_name END,
-       address_line1=CASE WHEN customers.details_saved_at IS NULL
+       address_line1=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.address_line1, customers.address_line1)
                  WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
                  THEN excluded.address_line1
                  ELSE customers.address_line1 END,
-       address_line2=CASE WHEN customers.details_saved_at IS NULL
+       address_line2=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.address_line2, customers.address_line2)
                  WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
                  THEN excluded.address_line2
                  ELSE customers.address_line2 END,
-       postal_code=CASE WHEN customers.details_saved_at IS NULL
+       postal_code=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.postal_code, customers.postal_code)
                  WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
                  THEN excluded.postal_code
                  ELSE customers.postal_code END,
-       city=CASE WHEN customers.details_saved_at IS NULL
+       city=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.city, customers.city)
                  WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
                  THEN excluded.city
                  ELSE customers.city END,
-       region=CASE WHEN customers.details_saved_at IS NULL
+       region=CASE WHEN (customers.details_saved_at IS NULL AND COALESCE(customers.email_verified, 0) = 0)
                  THEN COALESCE(excluded.region, customers.region)
                  WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
                  THEN excluded.region
@@ -3239,8 +3281,16 @@ export function customerEmail(lang, ref, service, name,
     ? (nl ? `Bedankt — we hebben je aanvraag voor ${esc(svcName)} ontvangen.` : `Thanks — we've received your ${esc(svcName)} request.`)
     : (nl ? `Bedankt — we hebben je bestelling voor ${esc(svcName)} ontvangen.` : `Thanks — we've received your ${esc(svcName)} order.`);
 
+  const proef = service === SAMPLE_SERVICE;
   let timing;
-  if (service === 'brand-model') {
+  if (proef) {
+    /* ── DE PROEF HEEFT ZIJN EIGEN ZINNEN — 1 oktober 2026 (ronde 8, M-B3) ────
+       De bevestiging beloofde een revisieronde die de proef niet heeft, en zei
+       niets over de betaling van € 1, terwijl hij vóór de betaling uitgaat. */
+    timing = nl
+      ? 'Zodra je betaling van € 1 (plus btw) binnen is, maken we je proefbeeld. Je krijgt een mail zodra het klaarstaat (vaak binnen een dag, soms een paar dagen). Heb je de betaling afgebroken? Dan staat de knop hieronder.'
+      : 'As soon as your payment of €1 (plus VAT) is in, we make your trial image. You get an email as soon as it is ready (often within a day, sometimes a few days). Did you stop the payment? The button is below.';
+  } else if (service === 'brand-model') {
     /* Geen "vaak binnen een dag": een merkmodel begint met richtingen om op te
        reageren. Dezelfde belofte als stap 5 van het formulier. */
     timing = nl
@@ -3266,9 +3316,12 @@ export function customerEmail(lang, ref, service, name,
   } else if (dated) {
     const from = formatDay(window.start, lang);
     const to = formatDay(window.end, lang);
+    /* En de betaaltermijn erbij (ronde 8, M-C6): de klant hoorde pas op dag 3
+       dat de datum maar zeven dagen wordt vastgehouden. */
+    const uiterlijk = pay ? formatDay(new Date(Date.now() + PAYMENT_DAYS * 86400000).toISOString().slice(0, 10), lang) : '';
     timing = nl
-      ? `Je leverdatum staat gereserveerd: ${esc(from)} tot en met ${esc(to)}.`
-      : `Your delivery date is reserved: ${esc(from)} to ${esc(to)}.`;
+      ? `Je leverdatum staat gereserveerd: ${esc(from)} tot en met ${esc(to)}.${uiterlijk ? ` Betaal vóór ${esc(uiterlijk)}, dan blijft deze datum voor je vast.` : ''}`
+      : `Your delivery date is reserved: ${esc(from)} to ${esc(to)}.${uiterlijk ? ` Pay before ${esc(uiterlijk)} and the date stays yours.` : ''}`;
   } else if (attended) {
     /* clause(), niet de kale functie — zie tests/leestekens.test.mjs. `turnaround()`
        en `tierRow()` geven afgeronde zinnen terug, en een punt erachter maakt er
@@ -3307,7 +3360,9 @@ export function customerEmail(lang, ref, service, name,
    * ("...om aanpassingen door te voeren."), en hier werd er nog een `.` achter
    * geplakt. In beide talen, sinds de regel bestaat: "door te voeren.." en
    * "any details..". Eén punt is genoeg. */
-  const care = nl
+  const care = proef
+    ? (nl ? 'Een specialist controleert je proefbeeld voordat het bij je komt.' : 'A specialist checks your trial image before it reaches you.')
+    : nl
     ? `Een specialist controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}`
     : `A specialist checks every visual before it reaches you. ${aftercare(tier, 'en')}`;
 
@@ -3342,10 +3397,10 @@ export function customerEmail(lang, ref, service, name,
   // The URL is printed as well as linked. Mail clients that strip anchors, and
   // people who read on a phone and continue on a desktop, both need the text.
   const portalNote = portal
-    ? linkLine(portal, aanvraag ? (nl ? 'Volg je aanvraag in je portaal' : 'Follow your request in your portal') : (nl ? 'Volg je bestelling in je portaal' : 'Follow your order in your portal'))
+    ? linkLine(portal, aanvraag ? (nl ? 'Volg je aanvraag in VISUAILS Studio' : 'Follow your request in VISUAILS Studio') : (nl ? 'Volg je bestelling in VISUAILS Studio' : 'Follow your order in VISUAILS Studio'))
       + note(nl
-        ? `Deze link is de sleutel tot je order — iedereen die hem heeft, kan meekijken. Houd hem binnen je team.<br><span style="color:#8A8F98">${esc(portal)}</span>`
-        : `This link is the key to your order — anyone who has it can see it. Keep it inside your team.<br><span style="color:#8A8F98">${esc(portal)}</span>`)
+        ? `Deze link is de sleutel tot je bestelling — iedereen die hem heeft, kan meekijken. Deel hem alleen met wie mee moet kijken.<br><span style="color:#8A8F98">${esc(portal)}</span>`
+        : `This link is the key to your order — anyone who has it can see it. Only share it with people who need to look.<br><span style="color:#8A8F98">${esc(portal)}</span>`)
     : '';
 
   // THE AMOUNT AND THE LINK, in that order and never one without the other. A
@@ -3470,7 +3525,16 @@ export function customerEmail(lang, ref, service, name,
          Sinds vandaag stuurt het adminscherm de betaallink automatisch zodra de
          beoordeling rond is (zie stuurBetaallink in src/lib/admin.js), dus deze
          zin belooft niets wat er niet achter zit. */
-      (!payBlock && inReview && !aanvraag)
+      /* Geen betaallink en ook geen beoordeling (ronde 8, M-B10): het aanmaken
+         bij Mollie lukte niet. Dan zegt de mail dat de link volgt, in plaats van
+         te zwijgen tot de herinnering op dag 3. */
+      (!payBlock && !inReview && !aanvraag && !betaaldMetTegoed && quote && Number(quote.grossCents) > 0)
+        ? p(nl
+            ? 'Er staat nog geen betaalknop in deze mail: het aanmaken van de betaling lukte net niet. We sturen je de betaallink binnen een werkdag. Je hoeft zelf niets te doen.'
+            : 'There is no payment button in this email yet: creating the payment did not work just now. We send you the payment link within one working day. Nothing is needed from you.',
+            { top: 4 })
+        : '',
+      (!payBlock && inReview && !aanvraag && !proef)
         ? p(nl
             ? 'Er staat nog geen betaalknop in deze mail, en dat klopt: we kijken je gegevens eerst even na. Zodra dat rond is — meestal binnen een werkdag — sturen we je de betaallink. Je hoeft zelf niets te doen.'
             : 'There is no payment button in this email yet, and that is on purpose: we check your details first. As soon as that is done — usually within one working day — we send you the payment link. Nothing is needed from you.',

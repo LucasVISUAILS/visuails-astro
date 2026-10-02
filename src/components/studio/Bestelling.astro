@@ -39,8 +39,8 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
         downloaden is wat de klant hier het vaakst komt doen. */}
     {v.products && v.folder && (
       <section class="st-map">
-        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p><p class="st-meta">{v.folder.note}</p></div>
-        <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>
+        <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p>{v.folder.note && <p class="st-meta">{v.folder.note}</p>}</div>
+        {v.folder.href && <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>}
       </section>
     )}
 
@@ -80,8 +80,8 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
       <Fragment>
         {v.folder && (
           <section class="st-map">
-            <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p><p class="st-meta">{v.folder.note}</p></div>
-            <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>
+            <div class="st-map-tekst"><h3>{v.folder.h}</h3><p>{v.folder.body}</p>{v.folder.note && <p class="st-meta">{v.folder.note}</p>}</div>
+            {v.folder.href && <a class="btn btn-primary btn-sm" href={v.folder.href}>{v.folder.cta}</a>}
           </section>
         )}
         <div class="st-kanten">
@@ -108,5 +108,14 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
       </form>
     )}
 
+    {/* Eén vaste weg naar een mens, onder elke bestelling (ronde 8, S-B17). */}
+    {v.contact && (
+      <p class="st-contact">
+        <span class="st-contact-h">{v.contact.h}</span>
+        <a href={v.contact.wa.href} rel="noopener" target="_blank">{v.contact.wa.label}</a>
+        <a href={v.contact.mail.href}>{v.contact.mail.label}</a>
+        <span class="st-meta">{v.contact.note}</span>
+      </p>
+    )}
   </div>
 </details>

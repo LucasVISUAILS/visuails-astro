@@ -6,7 +6,7 @@
 import Beeld from './Beeld.astro';
 const { t, v, orderId } = Astro.props;
 ---
-<details class={`st-product${v.revising ? ' is-revisie' : ''}`} open={v.revising}>
+<details class={`st-product${v.revising ? ' is-revisie' : ''}`} open={v.open}>
   <summary class="st-product-kop">
     <span class="st-product-cover">{v.coverHref && <img src={v.coverHref} alt="" loading="lazy" decoding="async" />}</span>
     <span class="st-product-tekst">

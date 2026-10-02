@@ -74,6 +74,15 @@ const andereTaal = lang === 'nl' ? 'en' : 'nl';
 const andereTaalLabel = lang === 'nl' ? 'English' : 'Nederlands';
 const themaLabel = licht ? t.themaNaarDonker : t.themaNaarLicht;
 const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
+/* De schakelaars houden de huidige weergave vast (ronde 8, S-N6): een relatieve
+   `?lang=en` gooide `?tab=planning` of `?status=delivered` weg. sectionState()
+   haalt na het zetten van de cookie alleen de eigen parameter eruit. */
+const metParam = (k, v) => {
+  const q = new URLSearchParams(Astro.url.search);
+  for (const weg of ['lang', 'thema', 'nav']) q.delete(weg);
+  q.set(k, v);
+  return `?${q.toString()}`;
+};
 
 /* Het V-beeldmerk (MERK_V/MERK_VLAG) stond hier tot 19 september 2026. Dat
    merk is uit de roulatie; de zijbalk draagt nu het woordmerk uit
@@ -113,7 +122,7 @@ const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
             <svg class="st-woordmerk" viewBox={WORDMARK_VIEWBOX} aria-hidden="true" focusable="false"><g transform={WORDMARK_TRANSFORM}>{WORDMARK_PATHS.map((d) => <path d={d} />)}</g></svg>
           </a>
           <span class="st-sub">{t.dashSub}</span>
-          <a class="st-klap" href={`?nav=${navDicht ? 'open' : 'dicht'}`} title={navDicht ? t.navExpand : t.navCollapse}>
+          <a class="st-klap" href={metParam('nav', navDicht ? 'open' : 'dicht')} title={navDicht ? t.navExpand : t.navCollapse}>
             <Fragment set:html={navDicht ? STUDIO_ICONS.expand : STUDIO_ICONS.collapse} /><span>{t.navCollapse}</span>
           </a>
         </div>
@@ -131,8 +140,8 @@ const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
               <span class="st-wie-mail">{customer.email}</span>
             </div>
           )}
-          <a class="st-stand" href={`?lang=${andereTaal}`}>{andereTaalLabel}</a>
-          <a class="st-stand" href={`?thema=${licht ? 'donker' : 'licht'}`} title={themaLabel}>
+          <a class="st-stand" href={metParam('lang', andereTaal)}>{andereTaalLabel}</a>
+          <a class="st-stand" href={metParam('thema', licht ? 'donker' : 'licht')} title={themaLabel}>
             <Fragment set:html={themaIcon} /><span>{themaLabel}</span>
           </a>
           <form method="post" action="/account/logout"><button class="btn btn-ghost btn-block" type="submit">{t.signOut}</button></form>
@@ -159,8 +168,8 @@ const themaIcon = licht ? STUDIO_ICONS.maan : STUDIO_ICONS.zon;
           <slot />
         </main>
         <footer class="st-voet">
-          <a class="st-stand" href={`?lang=${andereTaal}`}>{andereTaalLabel}</a>
-          <a class="st-stand" href={`?thema=${licht ? 'donker' : 'licht'}`}><Fragment set:html={themaIcon} /><span>{themaLabel}</span></a>
+          <a class="st-stand" href={metParam('lang', andereTaal)}>{andereTaalLabel}</a>
+          <a class="st-stand" href={metParam('thema', licht ? 'donker' : 'licht')}><Fragment set:html={themaIcon} /><span>{themaLabel}</span></a>
           <form method="post" action="/account/logout"><button class="btn btn-ghost btn-sm" type="submit">{t.signOut}</button></form>
         </footer>
       </div>

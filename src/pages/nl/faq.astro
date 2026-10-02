@@ -9,13 +9,10 @@ import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pric
 // De band en de pakketprijs zijn samen met het pakket verdwenen. Wat ervoor in
 // de plaats komt zijn de twee uiteinden van de staffel — elk aantal ertussen
 // heeft nu een prijs.
-const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
-
 const description =
-  `Wat een bestelling kost (${euro(ladderRate('complete', 1), 'nl')} per product, ` +
-  `${euro(ladderFloor('complete'), 'nl')} vanaf ${FLOOR_FROM}, ` +
-  `${vatLabel('excl', 'nl')}), hoe de agenda werkt, rechten en betaling — ` +
-  `helder beantwoord.`;
+  `Wat een bestelling kost (catalog vanaf ${euro(ladderRate('catalog', 1), 'nl')}, lifestyle vanaf ` +
+  `${euro(ladderRate('lifestyle', 1), 'nl')} per product, ${vatLabel('excl', 'nl')}), levering, ` +
+  `correcties, rechten en betaling — helder beantwoord.`;
 ---
 
 <Layout title="Veelgestelde vragen — VISUAILS" description={description}>

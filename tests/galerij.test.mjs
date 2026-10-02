@@ -107,7 +107,10 @@ console.log('\nelke foto bestaat, en geen enkele gaat op volle grootte mee');
   ];
   const alle = [...new Set([...reeksen, ...losseUit(BRON)])];
 
-  const ontbreekt = alle.filter((n) => !existsSync(path.join(IMG, `${n}.webp`)));
+  /* Ronde 8: de still van de videokaart bestaat nog niet en is met opzet een
+     plaatshouder (scripts/plaatshouders.mjs, dezelfde als op de voorpagina). */
+  const PLAATSHOUDERS = new Set(['dienst-video-shirt']);
+  const ontbreekt = alle.filter((n) => !PLAATSHOUDERS.has(n) && !existsSync(path.join(IMG, `${n}.webp`)));
   ok('elk bestand ligt er', ontbreekt, []);
 
   /* ── DE REGEL DIE DE 3,12 MB TEGENHOUDT ──────────────────────────────────

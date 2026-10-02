@@ -129,7 +129,9 @@ function makeEnv(opts = {}) {
     writes,
     prepared,
     prepare: stmt,
-    async batch(list) { for (const st of list) record(st); return list.map(() => ({ success: true })); },
+    /* meta.changes zoals D1 het teruggeeft: annuleren toetst sinds ronde 8 of
+       de UPDATE echt een rij raakte (geen dubbele annulering). */
+    async batch(list) { for (const st of list) record(st); return list.map(() => ({ success: true, meta: { changes: 1 } })); },
   };
 
   const deletes = [];
@@ -209,7 +211,7 @@ section('§1 · setting an order to delivered actually emails the customer');
     env.DB.writes.filter((w) => /INSERT INTO order_tokens/.test(w.sql)).length === 1);
   check('the customer is emailed', sentMail.length === 1, `${sentMail.length} mail(s)`);
   check('at their own address', sentMail[0]?.to === 'hi@kade.nl', sentMail[0]?.to);
-  check('with a portal link in it', /\/p\/|portal/.test(sentMail[0]?.html || ''), 'link present');
+  check('with a portal link in it', /\/o\/|\/p\/|portal|VISUAILS Studio/.test(sentMail[0]?.html || ''), 'link present');
   check('and delivery_mailed_at is written so it cannot send twice',
     has(env.DB.writes, /UPDATE orders SET delivery_mailed_at/));
 }

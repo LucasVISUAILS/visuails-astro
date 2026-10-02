@@ -42,6 +42,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
   /* Al betaald? Dan is er niets te sturen. Kan gebeuren als iemand twee tabbladen
      open heeft, of als de klant in de tussentijd via een eerdere link betaald heeft. */
   if (String(o.payment_status || '') === 'paid') return null;
+  /* Geannuleerd is niet meer te betalen (ronde 8, A-K7). */
+  if (String(o.status || '') === 'cancelled') return null;
 
   const bruto = (Number(o.total_cents) || 0) + (Number(o.vat_cents) || 0);
   if (!(bruto > 0)) return null;
@@ -79,8 +81,13 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
   let d = {};
   try { d = JSON.parse(o.details_json || '{}') || {}; } catch { d = {}; }
   const aanbetaling = offerte && d.quote_kind === 'aanbetaling';
+  const restant = offerte && d.quote_kind === 'restant';
   const verklaringOntbreekt = offerte && d.business_declaration === 'MISSING';
-  const offerteSoort = !offerte ? '' : aanbetaling
+  const offerteSoort = !offerte ? '' : restant
+    ? (lang === 'nl'
+      ? `<strong>Dit is het restant</strong> van ${esc(d.restant_van || '')}, na je aanbetaling. Daarna is alles betaald.`
+      : `<strong>This is the remainder</strong> of ${esc(d.restant_van || '')}, after your deposit. After this everything is paid.`)
+    : aanbetaling
     ? (lang === 'nl'
       ? `<strong>Dit is een aanbetaling</strong>, niet de volledige prijs. Het restant spreken we met je af zodra we weten wat het wordt, en daarvoor krijg je een aparte betaallink. Blijkt je idee niet te maken met onze werkwijze, dan krijg je de aanbetaling terug.`
       : `<strong>This is a deposit</strong>, not the full price. We agree the rest with you once we know what it will be, and you get a separate payment link for it. If your idea turns out not to be possible with our way of working, the deposit is refunded.`)
@@ -129,7 +136,7 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
             : `We have checked the details on <strong>${esc(o.ref)}</strong>. Everything is in order, so you can pay now — production starts straight after.`)),
         verklaring ? mailP(verklaring) : '',
         mailPayPanel({
-          label: aanbetaling ? (lang === 'nl' ? 'Aanbetaling' : 'Deposit') : (lang === 'nl' ? 'Te betalen' : 'To pay'),
+          label: aanbetaling ? (lang === 'nl' ? 'Aanbetaling' : 'Deposit') : restant ? (lang === 'nl' ? 'Restant' : 'Remainder') : (lang === 'nl' ? 'Te betalen' : 'To pay'),
           amount: bedrag,
           /* Het bruto bedrag alleen zegt een zakelijke klant weinig; de btw erbij
              laat zien waarom het bedrag hoger is dan de nettoprijs op de site. */

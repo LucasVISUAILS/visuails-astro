@@ -65,7 +65,8 @@ import { statPil } from '../data/status.js';
 import {
   PORTAL_MAX_LIFE_DAYS, PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken, pastMaxLife,
 } from './token.js';
-import { notifyRevision } from './notify.js';
+import { notifyRevision, notifyRevisionRound } from './notify.js';
+import { mailRondeOntvangen } from './cancelMail.js';
 import { clearUploadRetention } from './retention.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { mailNote } from '../data/mailNote.js';
@@ -80,7 +81,7 @@ import { offsitePage } from './offsite.js';
 // Dezelfde bouwer als VISUAILS Studio gebruikt. Zie de kop van delivery.js: dit
 // portaal had helemaal geen archief, en de query's van de twee schermen waren al
 // uit elkaar gelopen op superseded_at.
-import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames, leveringIngetrokken } from './delivery.js';
+import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames, leveringIngetrokken, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
@@ -523,7 +524,11 @@ export async function portalPost(context) {
   let owned;
   try {
     owned = await env.DB.prepare(
-      `SELECT id FROM files WHERE id = ?1 AND order_id = ?2 AND kind = 'delivery'`
+      /* Alleen een levend beeld (ronde 8, S-B18): een terugdraai op een vervangen
+         beeld wiste closed_at, terwijl maybeCloseOrder dat beeld niet meer telt —
+         de bestelling raakte nooit meer afgerond. Dezelfde eis als in Studio. */
+      `SELECT id FROM files WHERE id = ?1 AND order_id = ?2 AND kind = 'delivery'
+          AND superseded_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))`
     )
       .bind(fileId, order.order_id)
       .first();
@@ -734,12 +739,13 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
    * binnen notifyRevision(): de ronde van de klant staat al in de database en mag
    * niet alsnog mislukken omdat de mail eruit niet weg kan.
    */
-  await notifyRevision(env, {
-    orderId: order.order_id,
-    fileIds: eigen,
-    note,
-    round: true,
-  });
+  /* De juiste meldfunctie (ronde 8, M-B1): notifyRevision() kent alleen één
+     `fileId`, dus het onderwerp werd "bestand undefined" met één beeld in plaats
+     van de ronde. Studio gebruikte al notifyRevisionRound(). En de klant krijgt
+     een ontvangstbevestiging, net als in Studio. */
+  await notifyRevisionRound(env, { orderId: order.order_id, items: eigen.map((fileId) => ({ fileId, note })) });
+  const best = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(order.order_id).first().catch(() => null);
+  if (best) await mailRondeOntvangen(env, best, eigen.length);
 
   later(context, bumpUse(env, order.token_id));
   return seeOther(terug);
@@ -830,6 +836,10 @@ const RONDE_KOLOMMEN = 'o.revision_round_at, o.revision_round_note, o.revision_r
  * bijgewerkt.
  */
 function tokenVerlopen(order) {
+  /* Een token met een eigen einddatum is met de hand uitgegeven (de knop
+     "nieuwe link" in /admin, ronde 8): dan telt alleen die datum, en niet de
+     90 dagen na afronding — anders was de nieuwe link meteen dood. */
+  if (order.expires_at) return isExpired(order.expires_at, null) || pastMaxLife(order.issued_at, PORTAL_MAX_LIFE_DAYS);
   return isExpired(order.expires_at, order.closed_at)
     || pastMaxLife(order.issued_at, PORTAL_MAX_LIFE_DAYS);
 }
@@ -948,9 +958,10 @@ async function serveFile(context, order, route) {
   let file;
   try {
     file = await env.DB.prepare(
-      `SELECT id, r2_key, preview_key, filename, expires_at
-         FROM files
-        WHERE id = ?1 AND order_id = ?2 AND kind = 'delivery'`
+      `SELECT f.id, f.r2_key, f.preview_key, f.filename, f.expires_at
+         FROM files f
+        WHERE f.id = ?1 AND f.order_id = ?2 AND f.kind = 'delivery'
+          AND ${ZICHTBAAR_VOOR_KLANT}`
     )
       .bind(route.fileId, order.order_id)
       .first();
@@ -1089,17 +1100,17 @@ function dispositionFilename(name) {
  * paneel zelf.
  */
 export async function portalVoorvertoning(env, order, lang = 'nl') {
-  return renderOrder(env, order, '', lang);
+  return renderOrder(env, order, '', lang, { voorvertoning: true });
 }
 
-async function renderOrder(env, order, token, lang) {
+async function renderOrder(env, order, token, lang, { voorvertoning = false } = {}) {
   const t = COPY[lang];
   const attended = order.tier === 'attended';
 
   let files = [];
   let events = [];
   try {
-    files = await loadDeliveryFiles(env, order.order_id);
+    files = await loadDeliveryFiles(env, order.order_id, { ookOngemeld: voorvertoning });
     if (attended) events = await loadEvents(env, order.order_id);
   } catch {
     // The order exists and the client is authenticated; a failed second query is

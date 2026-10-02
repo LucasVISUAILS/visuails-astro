@@ -302,7 +302,7 @@ console.log('\néén ronde wordt aangenomen en vastgelegd');
   /* De omleiding is `?ronde=verstuurd` geworden; hij was `#order-91`. Het scherm
      leest die parameter en zet er een bevestiging bij — zie de vier uitkomsten
      bij `ronde=` in account.js. */
-  check('hij stuurt terug met een bevestiging', r.location, '/account/orders?ronde=verstuurd');
+  check('hij stuurt terug met een bevestiging', r.location, '/account/orders?ronde=verstuurd&order=91#order-91');
   check('de aangevinkte beelden staan op revisie', staten(db),
     ['1:revision_requested', '2:pending', '3:revision_requested', '4:approved', '5:pending', '6:pending']);
   check('er staan twee verzoeken in het logboek', verzoeken(db).length, 2);
@@ -507,7 +507,7 @@ console.log('\nhet scherm wisselt van formulier naar WhatsApp');
 
   const dbAlles = bouwDb();
   const rAlles = await ronde(dbAlles, [['action', 'approve-product'], ['order', '91'], ['product', 'p1']]);
-  check('de POST keert terug naar de bestelling', rAlles.location, '/account/orders#order-91');
+  check('de POST keert terug naar de bestelling', rAlles.location, '/account/orders?order=91&p=p1#order-91');
   check('de drie open beelden van p1 zijn goedgekeurd, de rest niet geraakt', staten(dbAlles),
     ['1:approved', '2:approved', '3:approved', '4:approved', '5:pending', '6:pending']);
   check('en de bestelling is daarmee afgerond', Boolean(db91(dbAlles).closed_at), true);

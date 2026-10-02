@@ -42,7 +42,7 @@ interface Props {
   lang: 'en' | 'nl';
   nummer?: string;
   product?: string;
-  dienst?: 'catalog' | 'lifestyle' | 'complete';
+  dienst?: 'catalog' | 'lifestyle';
   plaatshouder?: boolean;
   id?: string;
 }
@@ -87,7 +87,7 @@ const c = nl ? {
     ['Maat', `${px} px`],
   ],
   stappen: [
-    { nr: '01', kop: 'Binnengekomen', zin: `${IN.length} telefoonfoto’s op de magazijnvloer.` },
+    { nr: '01', kop: 'Binnengekomen', zin: `${IN.length} telefoonfoto’s op de magazijnvloer: de drie verplichte (voor, achter, close-up) en ${IN.length - 3} extra.` },
     { nr: '02', kop: 'Gemaakt en nagekeken', zin: 'Nagekeken door een specialist. Jij keurt per beeld goed of vraagt een revisie.' },
     { nr: '03', kop: 'Gedownload', zin: `Eén map, ${bestanden} bestanden: elk beeld in ${formaten.length} formaten.` },
   ],
@@ -111,7 +111,7 @@ const c = nl ? {
     ['Size', `${px} px`],
   ],
   stappen: [
-    { nr: '01', kop: 'Came in', zin: `${IN.length} phone photos on a warehouse floor.` },
+    { nr: '01', kop: 'Came in', zin: `${IN.length} phone photos on a warehouse floor: the three required (front, back, close-up) and ${IN.length - 3} extra.` },
     { nr: '02', kop: 'Made and checked', zin: 'Checked by a specialist. You approve per image or ask for a revision.' },
     { nr: '03', kop: 'Downloaded', zin: `One folder, ${bestanden} files: every image in ${formaten.length} formats.` },
   ],
@@ -193,7 +193,7 @@ const c = nl ? {
       <div class="lv-uitkomst">
         <ul class="lv-vormen" role="list">
           {VORMEN.map((v) => (
-            <li>
+            <li class={v.gekozen ? 'is-gekozen' : undefined}>
               <span class="lv-vorm" style={`--lv-ratio:${v.ratio}`}>
                 <img src={v.src} width="760" height="760" alt={v.alt} loading="lazy" decoding="async" />
               </span>
@@ -297,7 +297,9 @@ const c = nl ? {
   .lv-knop.is-ja { background: var(--geel); color: var(--op-geel); border-color: var(--geel); }
 
   .lv-uitkomst { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1rem, 2.5vw, 2rem); align-items: start; }
-  .lv-vormen { display: grid; grid-template-columns: 1fr .8fr .5625fr; gap: .8rem; align-items: end; }
+  .lv-vormen { display: grid; grid-template-columns: 1fr .8fr .75fr; gap: .8rem; align-items: end; }
+  .lv-vormen li:not(.is-gekozen) .lv-vorm { opacity: .55; }
+  .lv-vormen li.is-gekozen .lv-vorm { outline: 2px solid var(--inkt); outline-offset: 2px; }
   .lv-vormen li { display: grid; gap: .45rem; }
   .lv-vorm { display: block; aspect-ratio: var(--lv-ratio); overflow: hidden; border-radius: 6px; }
   .lv-vorm-maat { font-size: .72rem; letter-spacing: .04em; color: var(--inkt-2); }

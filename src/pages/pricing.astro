@@ -15,12 +15,12 @@ import PricingPage from '../components/PricingPage.astro';
 // lose — the two rates cannot be.
 import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
 
-const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
+const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
 const description =
-  `Priced per product, and the rate falls as the count rises: ` +
-  `${euro(ladderRate('complete', 1), 'en')} down to ` +
-  `${euro(ladderFloor('complete'), 'en')} from ${FLOOR_FROM} products, ` +
+  `Priced per product, and the rate falls as the count rises: catalog ` +
+  `${euro(ladderRate('catalog', 1), 'en')} to ${euro(ladderFloor('catalog'), 'en')}, lifestyle ` +
+  `${euro(ladderRate('lifestyle', 1), 'en')} to ${euro(ladderFloor('lifestyle'), 'en')} from ${FLOOR_FROM} products, ` +
   `${vatLabel('excl', 'en')}.`;
 ---
 

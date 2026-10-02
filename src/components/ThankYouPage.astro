@@ -148,6 +148,11 @@ const c = nl ? {
   cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
   cancelP3: 'Klaar voor het echte werk? De diensten beginnen bij de prijs per product, zonder minimum.',
   cancelCta: 'Bekijk de diensten',
+  /* Ronde 8: een met de hand geannuleerde bestelling, bereikt via een oude
+     betaallink. De reden staat in de mail die de klant kreeg. */
+  handTitel: 'Deze bestelling is geannuleerd',
+  handP: 'Er valt niets meer te betalen en er wordt niets voor gemaakt. Waarom, staat in de mail die je van ons kreeg. Klopt dat niet, of wil je toch verder? Stuur ons een bericht, dan kijken we het samen na.',
+  handCta: 'Neem contact op',
 } : {
   title: 'Thanks — we have your request.',
   titlePay: 'One more step: payment.',
@@ -183,6 +188,9 @@ const c = nl ? {
   cancelP2: 'If that does not sound right — a colleague ordered without telling you, or the first sample never arrived — reply to the confirmation email and we will sort it out by hand.',
   cancelP3: 'Ready for the real thing? The services start at the per-product price, with no minimum order.',
   cancelCta: 'See the services',
+  handTitel: 'This order has been cancelled',
+  handP: 'There is nothing left to pay and nothing will be made for it. Why is in the email we sent you. If that is not right, or you want to go ahead after all, send us a message and we will look at it together.',
+  handCta: 'Get in touch',
 };
 
 const bronnen = nl
@@ -205,7 +213,7 @@ const bronnen = nl
   <div class="ty-bar" data-ty-bar>
     <div class="ty-bar-in">
       <svg class="ty-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact}>{c.title}</h1>
+      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-afgezegd={c.handTitel} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact}>{c.title}</h1>
     </div>
   </div>
 
@@ -219,6 +227,10 @@ const bronnen = nl
           <p class="lopend">{c.cancelP2}</p>
           <p class="lopend ty-cancelled-next">{c.cancelP3}</p>
           <p class="acties ty-act"><a class="knop knop-inkt" href={lp('/start')}>{c.cancelCta}</a></p>
+        </div>
+        <div class="ty-cancelled" data-ty-afgezegd role="status" tabindex="-1" hidden>
+          <p class="lopend">{c.handP}</p>
+          <p class="acties ty-act"><a class="knop knop-inkt" href={lp('/contact')}>{c.handCta}</a></p>
         </div>
 
         <div class="ty-now ty-hide-when-cancelled">

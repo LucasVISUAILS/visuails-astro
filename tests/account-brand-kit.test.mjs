@@ -321,9 +321,11 @@ const FULL = {
 }
 
 {
+  /* Ronde 8 (S-B15): de rest van het formulier wordt wél bewaard; alleen het
+     btw-deel blijft staan, en de melding zegt dat er gekozen moet worden. */
   const r = await post('/account/details', { ...FULL, vat: '' });
   check('an empty VAT number with no tick is refused',
-    r.location === '/account/details?missing=1#details', r.location);
+    r.location === '/account/details?vatkeuze=1#details', r.location);
 }
 
 {

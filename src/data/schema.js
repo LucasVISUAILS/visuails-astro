@@ -76,7 +76,7 @@ import {
   AMOUNT, TEST_SAMPLE, perProduct,
   LADDER, ladderRate,
   plans, PLAN_AMOUNT,
-  euro,
+  euro, VIDEO_OP_AANVRAAG,
 } from './pricing.js';
 import { pricingFaqs, faqPageItems, serviceFaqs, homeObjectionFaqs } from './faq.js';
 /* De gidsen en de doorloopstappen, allebei uit de lijst die de PAGINA ook rendert.
@@ -439,8 +439,11 @@ function serviceNode(path, lang, url) {
   const amount = entry.kind ? ladderRate(entry.kind, 1) : AMOUNT[entry.amount];
   const unit = entry.unit ? entry.unit[l] : (row ? row.unit : perProduct('video', l).unit);
   const description = entry.description ? entry.description[l] : row.line;
+  /* Video op aanvraag: een Service zonder Offer. Een bedrag in de graph dat de
+     pagina niet toont, is een tweede antwoord op één vraag. */
+  const zonderPrijs = entry.amount === 'video' && VIDEO_OP_AANVRAAG;
 
-  return {
+  const node = {
     '@type': 'Service',
     '@id': `${url}#service`,
     name: entry.name[l],
@@ -472,6 +475,8 @@ function serviceNode(path, lang, url) {
       },
     },
   };
+  if (zonderPrijs) delete node.offers;
+  return node;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -493,8 +498,9 @@ function serviceNode(path, lang, url) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** The three ladder scopes, in the order /pricing's rate table reads them. */
+/* Ronde 8 (1 oktober 2026): 'complete' is eruit. /pricing toont die ladder niet
+   meer, en dit bestand mag geen prijs noemen die de pagina niet toont. */
 const LADDER_SCOPES = [
-  { slug: 'complete', kind: 'complete' },
   { slug: 'catalog-set', kind: 'catalog' },
   { slug: 'lifestyle-carousel', kind: 'lifestyle' },
 ];
@@ -609,7 +615,10 @@ function pricingProductNodes(lang, url) {
     url,
     lang: l,
   }));
-  nodes.push(productNode({
+  /* Video is op aanvraag zolang VIDEO_OP_AANVRAAG aan staat: de pagina's noemen
+     dan geen bedrag, dus de graph ook niet. Gaat de vlag uit, dan staat het
+     aanbod er vanzelf weer in. */
+  if (!VIDEO_OP_AANVRAAG) nodes.push(productNode({
     slug: 'video-clip',
     name: perProduct('video', l).name,
     description: VIDEO_LINE[l],

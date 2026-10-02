@@ -31,6 +31,11 @@ const { t, lang, customer, thema, navDicht } = st;
 >
   {v.melding && <p class="st-melding is-warn" role="alert">{v.melding}</p>}
   {v.bevestiging && <p class="st-melding is-ok" role="status">{v.bevestiging}</p>}
+  {/* Gepauzeerd: bovenaan, vóór de bestelknoppen (ronde 8, S-N14). Pas bij het
+      vastzetten kwam "je abonnement loopt niet". */}
+  {v.beheer?.gepauzeerd && v.nu !== 'facturering' && (
+    <p class="st-melding is-warn">{lang === 'nl' ? 'Je abonnement staat op pauze. Je credits zijn bewaard; hervat om weer te bestellen.' : 'Your plan is paused. Your credits are kept; resume to order again.'} <a class="st-link" href="/account/plan?tab=facturering">{lang === 'nl' ? 'Hervatten' : 'Resume'} →</a></p>
+  )}
 
   {v.geen && (
     <Fragment>
@@ -283,19 +288,28 @@ const { t, lang, customer, thema, navDicht } = st;
                           {!q.vast && (
                             <form method="post" action="/account/plan/queue" enctype="multipart/form-data" class="st-q-fotos">
                               <input type="hidden" name="do" value="fotos" /><input type="hidden" name="id" value={q.id} />
-                              <label class="st-link st-q-fotos-label">{t.planQFotosAdd}<input class="st-q-fotos-veld" name="fotos" type="file" accept="image/*" multiple onchange="this.form.requestSubmit()" /></label>
-                              <noscript><button class="btn btn-ghost btn-sm" type="submit">{t.planQFotosAdd}</button></noscript>
+                              {/* Ronde 8 (S-K3): hier stond onchange="this.form.requestSubmit()" met
+                                  de knop in <noscript>. De CSP van Studio blokkeert inline-handlers,
+                                  en <noscript> toont niets als scripting aan staat: kiezen deed niets.
+                                  Nu een zichtbaar veld en een knop. */}
+                              <label class="st-meta" for={`q-fotos-${q.id}`}>{t.planQFotosAdd}</label>
+                              <span class="st-q-actie">
+                                <input id={`q-fotos-${q.id}`} class="st-q-fotos-kies" name="fotos" type="file" accept="image/*" multiple required data-melding={lang === 'nl' ? 'Kies eerst de foto’s van dit product; zonder foto’s kunnen we het niet maken.' : 'Choose the photos of this product first; without them we cannot make it.'} />
+                                <button class="btn btn-ghost btn-sm" type="submit">{lang === 'nl' ? 'Uploaden' : 'Upload'}</button>
+                              </span>
                             </form>
                           )}
                           {!q.vast && v.gezichten.length > 0 && (
                             <form method="post" action="/account/plan/queue" class="st-q-gezicht">
                               <input type="hidden" name="do" value="model" /><input type="hidden" name="id" value={q.id} />
                               <label class="st-meta" for={`q-gezicht-${q.id}`}>{t.planQFaceChange}</label>
-                              <select id={`q-gezicht-${q.id}`} class="st-veld st-veld-kort" name="model" onchange="this.form.requestSubmit()">
-                                <option value="" selected={!q.gezichtWaarde}>{t.planQFaceFollow}</option>
-                                {v.gezichtGroepen.map((g) => <optgroup label={g}>{v.gezichten.filter((x) => x.groep === g).map((x) => <option value={x.value} selected={x.value === q.gezichtWaarde}>{x.label}</option>)}</optgroup>)}
-                              </select>
-                              <noscript><button class="btn btn-ghost btn-sm" type="submit">{t.planQFaceSave}</button></noscript>
+                              <span class="st-q-actie">
+                                <select id={`q-gezicht-${q.id}`} class="st-veld st-veld-kort" name="model">
+                                  <option value="" selected={!q.gezichtWaarde}>{t.planQFaceFollow}</option>
+                                  {v.gezichtGroepen.map((g) => <optgroup label={g}>{v.gezichten.filter((x) => x.groep === g).map((x) => <option value={x.value} selected={x.value === q.gezichtWaarde}>{x.label}</option>)}</optgroup>)}
+                                </select>
+                                <button class="btn btn-ghost btn-sm" type="submit">{t.planQFaceSave}</button>
+                              </span>
                             </form>
                           )}
                         </div>
@@ -314,10 +328,15 @@ const { t, lang, customer, thema, navDicht } = st;
                             <input type="hidden" name="do" value="down" /><input type="hidden" name="id" value={q.id} />
                             <button class="btn btn-ghost btn-sm" type="submit" disabled={q.laatste} aria-label={`${t.planQueueDown}: ${q.name}`}>↓</button>
                           </form>
-                          <form method="post" action="/account/plan/queue">
-                            <input type="hidden" name="do" value="remove" /><input type="hidden" name="id" value={q.id} />
-                            <button class="btn btn-ghost btn-sm" type="submit">{t.planQueueRemove}</button>
-                          </form>
+                          {/* Eén tik naast ↑/↓ verwijderde een product met zijn foto's (ronde 8,
+                              S-N9). Nu eerst openklappen, dan bevestigen. */}
+                          <details class="st-q-weg">
+                            <summary class="btn btn-ghost btn-sm">{t.planQueueRemove}</summary>
+                            <form method="post" action="/account/plan/queue">
+                              <input type="hidden" name="do" value="remove" /><input type="hidden" name="id" value={q.id} />
+                              <button class="btn btn-sm st-q-weg-ja" type="submit">{lang === 'nl' ? 'Ja, met foto’s verwijderen' : 'Yes, remove with photos'}</button>
+                            </form>
+                          </details>
                         </div>
                       </li>
                     ))}
@@ -627,6 +646,8 @@ const { t, lang, customer, thema, navDicht } = st;
                 ? <Fragment><p class="st-melding">{v.beheer.beeindigd}</p><p class="st-meta"><a class="st-link" href={v.beheer.plansHref}>{t.planNoneCta}</a></p></Fragment>
                 : v.beheer.jaarOpgezegd
                 ? <p class="st-melding">{v.beheer.jaarOpgezegd}</p>
+                : v.beheer.nooitBetaald
+                ? <Fragment><p class="st-melding is-warn">{lang === 'nl' ? 'De eerste betaling van dit abonnement is niet afgerond. Er is niets afgeschreven.' : 'The first payment for this plan was not completed. Nothing has been charged.'}</p><p><a class="btn btn-primary btn-sm" href={v.beheer.opnieuwHref}>{lang === 'nl' ? 'Opnieuw afsluiten' : 'Start again'}</a></p></Fragment>
                 : (
                   <Fragment>
                     <form method="post" action="/account/plan/pause">

@@ -13,13 +13,10 @@ import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing
 // The band and the package price are gone with the package. What replaces them
 // is the two ends of the ladder — every count between has a price now, so a
 // range is the honest shape for this clause rather than a product name.
-const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
-
 const description =
-  `What an order costs (${euro(ladderRate('complete', 1), 'en')} a product, ` +
-  `${euro(ladderFloor('complete'), 'en')} from ${FLOOR_FROM} up, ` +
-  `${vatLabel('excl', 'en')}), how the calendar works, rights and payment — ` +
-  `answered plainly.`;
+  `What an order costs (catalog from ${euro(ladderRate('catalog', 1), 'en')}, lifestyle from ` +
+  `${euro(ladderRate('lifestyle', 1), 'en')} a product, ${vatLabel('excl', 'en')}), delivery, ` +
+  `corrections, rights and payment — answered plainly.`;
 ---
 
 <Layout title="Frequently asked questions — VISUAILS" description={description}>

@@ -81,11 +81,11 @@ export async function bestel(page, o) {
   /* stap 3 */
   for (const [k, v] of Object.entries({ ...KLANT, ...(o.klant || {}) })) { const f = page.locator(`.pl-step.is-current [name="${k}"]`); if (await f.count()) await f.fill(v); }
   await page.selectOption('.pl-step.is-current select[name="country"]', o.land || 'NL');
-  if (o.vat === null) { const nv = page.locator('.pl-step.is-current label:has(input[name="no_vat"])'); if (await nv.count() && !(await page.locator('.pl-step.is-current input[name="no_vat"]').first().isChecked())) await nv.first().click(); }
+  if (o.vat === null) { const nv = page.locator('.pl-step.is-current label:has(input[name="no_vat"])'); if (await nv.count() && await nv.first().isVisible() && !(await page.locator('.pl-step.is-current input[name="no_vat"]').first().isChecked())) await nv.first().click(); }
   else { const f = page.locator('.pl-step.is-current [name="vat"]'); if (await f.count() && await f.isVisible()) await f.fill(o.vat || 'NL123456789B01'); }
   await page.waitForTimeout(300);
   for (const nm of ['vat_confirmed', 'business_declaration']) { const c = page.locator(`.pl-step.is-current input[name="${nm}"]`); if (await c.count() && await c.first().isVisible() && !(await c.first().isChecked())) await c.first().click(); }
-  const reg = page.locator('.pl-step.is-current input[name="reg_number"]'); if (await reg.count() && await reg.first().isVisible()) await reg.first().fill((o.land || 'NL') === 'NL' ? '12345678' : 'REG-12345');
+  const reg = page.locator('.pl-step.is-current input[name="reg_number"]'); if (await reg.count() && await reg.first().isVisible()) await reg.first().fill(o.reg || ((o.land || 'NL') === 'NL' ? '12345678' : 'REG-12345'));
   if (o.stap3) await o.stap3(page);
   let s = await verder(page);
   /* stap 4: levertijd (alleen vanaf 10 producten) */

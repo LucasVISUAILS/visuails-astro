@@ -163,9 +163,10 @@ console.log('\nde schakelaar werkt zonder JavaScript');
      JavaScript — er staat geen script-src in de CSP, alleen default-src 'none'. */
   /* Sinds 6 september 2026 staat de schil in src/layouts/StudioLayout.astro. */
   const schil = lees('../src/layouts/StudioLayout.astro');
-  ok('de schakelaar is een link', /class="st-stand" href=\{`\?thema=/.test(schil));
+  /* Sinds ronde 8 via metParam(): de link houdt de rest van de query vast. */
+  ok('de schakelaar is een link', /class="st-stand" href=\{metParam\('thema'/.test(schil));
   ok('en hij wijst naar de andere stand',
-    /\?thema=\$\{licht \? 'donker' : 'licht'\}/.test(schil));
+    /metParam\('thema', licht \? 'donker' : 'licht'\)/.test(schil));
   ok('het wortelelement draagt de stand', /data-thema="licht"/.test(acc));
   /* color-scheme stond onvoorwaardelijk op light, op een donker dashboard. Dat
      vertelt de browser: teken je scrollbalk en je <progress> licht. */

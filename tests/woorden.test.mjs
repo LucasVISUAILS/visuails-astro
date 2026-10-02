@@ -174,7 +174,9 @@ console.log('\nde prijstabellen gebruiken de tabel en niet hun eigen woorden');
      vorm hieronder. */
   check('Voorpagina noemt nergens een getypt aantal beelden', /\d\s+(?:beelden|images|foto’s|photos)\b/.test(home.replace(/\$\{[^}]*\}/g, '')), false);
   check('en nergens "beelden" naast een getypt aantal', /priceKinds:[\s\S]{0,400}\d beelden/.test(home), false);
-  check('PricingPage leest counted()', /counted\('complete',/.test(prijs), true);
+  /* Ronde 8: de kolom catalog + lifestyle is weg, en daarmee counted('complete').
+     Wat blijft: de koppen tellen via de lexicon en niet met een getypt getal. */
+  check('PricingPage telt via de lexicon', /setSize\('catalog', CATALOG_IMAGES/.test(prijs) && /countedShort\('lifestyle', LIFESTYLE_IMAGES/.test(prijs), true);
 
   /* De kolomkoppen NOEMEN de categorie ("Catalog set", "Catalogset"), dus daar
      hoort de korte vorm. Stond hier counted(), dan las de kop "Catalog set —

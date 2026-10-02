@@ -5,16 +5,16 @@ const toonMails = async (voor) => { for (const m of (await mails()).slice(voor))
 const subs = await paneel('/subs'); const sub = subs[subs.length - 1];
 let voor = (await mails()).length;
 console.log('## maand 2 incasseren');
-console.log(JSON.stringify((await paneel(`/sub/${sub.id}/charge?op=2026-10-23`, { method: 'POST' })).webhook));
+console.log(JSON.stringify((await paneel(`/sub/${sub.id}/charge?op=2026-11-01`, { method: 'POST' })).webhook));
 await toonMails(voor);
 console.log(await sql('SELECT month, kind, granted, used FROM subscription_slots WHERE subscription_id=(SELECT MAX(id) FROM subscriptions)'));
 voor = (await mails()).length;
 console.log('## maand 3 mislukt');
-console.log(JSON.stringify((await paneel(`/sub/${sub.id}/charge?op=2026-11-23&status=failed`, { method: 'POST' })).webhook));
+console.log(JSON.stringify((await paneel(`/sub/${sub.id}/charge?op=2026-12-01&status=failed`, { method: 'POST' })).webhook));
 await toonMails(voor);
 console.log(await sql('SELECT status, paused_at, pause_reason FROM subscriptions WHERE id=(SELECT MAX(id) FROM subscriptions)'));
 const s = await start(); const { page } = s;
-await studioLogin(page, 'yara@merk.test');
+await studioLogin(page, process.argv[2] || 'yara@merk.test');
 await page.goto(SITE + '/account/plan?tab=facturering', { waitUntil: 'load' });
 voor = (await mails()).length;
 console.log('## pauzeren');
@@ -31,6 +31,7 @@ console.log(await sql('SELECT status, paused_at, mollie_subscription_id FROM sub
 console.log(await paneel('/subs').then((l) => l.map((x) => `${x.id}:${x.status}:${x.startDate}`)));
 console.log('## opzeggen');
 await page.goto(SITE + '/account/plan?tab=facturering', { waitUntil: 'load' });
+await page.evaluate(() => document.querySelectorAll('details.st-opzeggen').forEach((d) => { d.open = true; }));
 await page.fill('input[name="confirm"]', 'OPZEGGEN');
 await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.locator('button:has-text("OPZEGGEN"), button:has-text("opzeggen")').last().click()]);
 console.log(page.url()); console.log((await tekst(page, 'main')).replace(/\n{2,}/g, '\n').slice(0, 1400));

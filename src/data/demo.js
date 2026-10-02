@@ -402,7 +402,7 @@ export const WALK_COPY = {
         n: 'You, straight away',
         h: 'You pay, and production starts',
         b: 'The last step of the form takes you straight to the checkout. The order does not enter production until that payment is completed.',
-        meer: 'The confirmation email and the invoice follow automatically, and from that moment the order is visible in your account with its own timeline. Outside the EU we check the VAT details first and send the payment link by email.',
+        meer: 'The confirmation email and the invoice follow automatically, and from that moment the order is visible in your account with its own timeline. From another EU country without a VAT number we could confirm, we check the details first and send the payment link by email.',
       },
       model: {
         n: 'Us, in production',
@@ -511,7 +511,7 @@ export const WALK_COPY = {
         n: 'Jij, meteen',
         h: 'Je betaalt, en dan start de productie',
         b: 'De laatste stap van het formulier brengt je meteen naar de checkout. De bestelling gaat pas in productie zodra die betaling is voltooid.',
-        meer: 'De bevestigingsmail en de factuur volgen automatisch, en vanaf dat moment staat de bestelling in je account met een eigen tijdlijn. Buiten de EU controleren we eerst de btw-gegevens en sturen we de betaallink per mail.',
+        meer: 'De bevestigingsmail en de factuur volgen automatisch, en vanaf dat moment staat de bestelling in je account met een eigen tijdlijn. Uit een ander EU-land zonder btw-nummer dat we konden bevestigen, kijken we de gegevens eerst na en sturen we de betaallink per mail.',
       },
       model: {
         n: 'Wij, in productie',

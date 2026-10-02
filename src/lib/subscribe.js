@@ -67,6 +67,7 @@
  * ingetypt e-mailadres van iemand anders levert geen mandaat op.
  */
 
+import { withdrawalRecord } from '../data/consent.js';
 import {
   createSubscriptionRow, loadSubscription, subscriptionByRef,
   setMollieIds, activateSubscription, bezetting,
@@ -187,6 +188,19 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
   }
 
   if (!TERM_IDS.includes(termId)) return seeOtherLocal(terug('termijn', lang));
+
+  /* ── DE VERKLARING, OOK VOOR WIE INGELOGD IS — 1 oktober 2026 (ronde 8, B-B3) ──
+     /api/plan weigerde zonder de zakelijke verklaring; de ingelogde route
+     (/account/plan/start) kwam hier direct en sloeg hem over. De toets staat nu
+     hier, zodat beide ingangen hem doen. */
+  if (String(form?.get('business_declaration') || '').trim() !== 'yes' || withdrawalRecord({
+    withdrawal: String(form?.get('withdrawal_consent') || '').trim(),
+    consentVersion: String(form?.get('consent_version') || '').trim(),
+    business: String(form?.get('business_declaration') || '').trim(),
+    businessVersion: String(form?.get('business_version') || '').trim(),
+  }) === 'MISSING') {
+    return seeOtherLocal(terug('verklaring', lang));
+  }
 
   /* ── BEDRIJF EN BTW, PER LAND — 29 september 2026 ──────────────────────────
      Zie bepaalBedrijfEnBtw() onderaan. Hier wordt het afgedwongen (het formulier

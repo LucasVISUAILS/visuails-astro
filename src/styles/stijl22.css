@@ -829,6 +829,7 @@
      van schermbreedte met een woord links en een link rechts. */
   .s22.thuis .vragen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1.5rem, 4vw, 4rem); }
   .s22.thuis .vragen li { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .s22.thuis .vragen .vraag-antwoord { margin: 0; max-width: 44ch; color: var(--inkt-2); line-height: 1.5; text-wrap: pretty; }
   .s22.thuis .vragen li:last-child { grid-column: 1 / -1; align-items: flex-end; padding-top: .8rem; padding-bottom: 0; }
   @media (max-width: 700px) { .s22.thuis .vragen { grid-template-columns: minmax(0, 1fr); } }
   /* Het slot: woorden links, de vier beelden van de proef rechts. */
@@ -894,16 +895,34 @@
      DE PAUZEKNOP is er omdat inhoud die vanzelf wisselt stil te zetten moet
      zijn (WCAG 2.2.2). Wie zelf klikt of veegt, zet de wissel ook stil: wie
      kiest, wil niet dat er daarna iets anders voor hem gekozen wordt. */
-  .s22.thuis .dd { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(1.8rem, 5vw, 5rem); align-items: start; }
-  .s22.thuis .dd-woord { display: grid; gap: 1.1rem; justify-items: start; max-width: 30rem; }
-  .s22.thuis .dd-woord .hoog { margin: 0; }
-  .s22.thuis .dd-in { margin: .6rem 0 0; display: grid; gap: .6rem; width: min(100%, 15rem); }
+  /* Ronde 8: kop over de volle breedte, daaronder [jij stuurt] → [je krijgt],
+     twee gelijke kolommen met dezelfde balk erboven, en de stappen eronder. */
+  .s22.thuis .dd {
+    --dd-kolomgat: clamp(2.4rem, 5vw, 4.4rem);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "kop kop" "in uit" "stappen stappen";
+    column-gap: var(--dd-kolomgat); row-gap: clamp(1.6rem, 3.4vw, 2.8rem); align-items: start;
+  }
+  .s22.thuis .dd-kop { grid-area: kop; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--dd-kolomgat); row-gap: .8rem; align-items: end; }
+  .s22.thuis .dd-kop .hoog { margin: 0; }
+  .s22.thuis .dd-kop .lopend { margin: 0; max-width: 34rem; }
+  .s22.thuis .dd-inkant { grid-area: in; min-width: 0; display: grid; gap: 1rem; align-content: start; }
+  .s22.thuis .dd-balk.dd-balk-in { margin: 0; display: grid; gap: .15rem; padding: .5rem 0 .75rem; min-height: 44px; color: var(--inkt); }
+  .s22.thuis .dd-balk-in .dd-tab-prijs { color: var(--inkt-3); }
+  .s22.thuis .dd-in { margin: 0; display: grid; gap: .8rem; }
   .s22.thuis .dd-in :is(img, picture) { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: calc(var(--ronding, 12px) - 4px); overflow: hidden; }
   .s22.thuis .dd-in picture img { width: 100%; height: 100%; object-fit: cover; }
-  .s22.thuis .dd-in figcaption { font-size: .9rem; line-height: 1.45; color: var(--inkt-2); }
-  .s22.thuis .dd-in .etiket { margin-right: .3rem; }
-
-  .s22.thuis .dd-uit { min-width: 0; width: 100%; max-width: 36rem; justify-self: end; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .s22.thuis .dd-in figcaption { font-size: .95rem; line-height: 1.5; color: var(--inkt-2); }
+  /* De pijl zit op de rechterrand van het ingestuurde beeld, midden in de
+     tussenruimte naar het resultaat: zo staat hij altijd op halve hoogte van
+     beide vierkanten, zonder rekensom. */
+  .s22.thuis .dd-in-beeld { position: relative; display: block; }
+  .s22.thuis .dd-pijl {
+    position: absolute; top: 50%; right: calc(-1 * var(--dd-kolomgat) / 2); transform: translate(50%, -50%);
+    width: 2.6rem; height: 2.6rem; display: grid; place-items: center; border-radius: 50%;
+    background: var(--vel); border: 1px solid var(--lijn-sterk); color: var(--inkt); font-family: var(--mono2); font-size: 1.05rem; z-index: 1;
+  }
+  .s22.thuis .dd-uit { grid-area: uit; min-width: 0; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
   .s22.thuis .dd-balk { display: flex; align-items: center; gap: .8rem; border-bottom: 1px solid var(--lijn); }
   .s22.thuis .dd-tabs { display: flex; flex: 1 1 auto; min-width: 0; gap: clamp(1.1rem, 2.6vw, 2rem); overflow-x: auto; scrollbar-width: none; }
   .s22.thuis .dd-tabs::-webkit-scrollbar { display: none; }
@@ -955,7 +974,7 @@
   .s22.thuis .dd-krijg .etiket { margin-right: .3rem; }
   .s22.thuis .dd-link { margin: 0; }
 
-  .s22.thuis .dd-stappen { grid-column: 1 / -1; display: grid; gap: 1.2rem; padding-top: clamp(1.4rem, 3vw, 2.2rem); border-top: 1px solid var(--lijn); }
+  .s22.thuis .dd-stappen { grid-area: stappen; display: grid; gap: 1.2rem; padding-top: clamp(1.4rem, 3vw, 2.2rem); border-top: 1px solid var(--lijn); }
   .s22.thuis .dd-stappen-h { margin: 0; }
   .s22.thuis .dd-stappen ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4rem clamp(1.2rem, 3vw, 2.6rem); }
   .s22.thuis .dd-stappen li { display: grid; gap: .3rem; align-content: start; justify-items: start; }
@@ -965,10 +984,14 @@
   .s22.thuis .dd-stappen .pijl { margin-top: .35rem; }
 
   @media (max-width: 900px) {
-    .s22.thuis .dd { grid-template-columns: minmax(0, 1fr); }
-    .s22.thuis .dd-uit { max-width: none; justify-self: stretch; }
+    .s22.thuis .dd { grid-template-columns: minmax(0, 1fr); grid-template-areas: "kop" "in" "uit" "stappen"; row-gap: 1.6rem; }
+    .s22.thuis .dd-in-beeld { width: 5.5rem; }
+    .s22.thuis .dd-kop { grid-template-columns: minmax(0, 1fr); }
+    .s22.thuis .dd-pijl { display: none; }
     /* Op smal staat de ingestuurde foto klein naast zijn bijschrift: hij is het
-       vertrekpunt, niet het beeld. */
+       vertrekpunt, niet het beeld. De balk erboven vervalt; het etiket staat
+       dan in het bijschrift. */
+    .s22.thuis .dd-balk.dd-balk-in { min-height: 0; padding: 0 0 .5rem; border-bottom: 1px solid var(--lijn); }
     .s22.thuis .dd-in { width: 100%; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: .9rem; }
     .s22.thuis .dd-stappen ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
@@ -2466,3 +2489,40 @@ body:has(.s22) .site-header .brand-glyph { --mk-line-ink: currentColor; }
 .s22 .prijsband-in .hoog { margin: 0; }
 .s22 .prijsband-in .lopend { margin: 0; }
 .s22 .prijsband-bedrag { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--inkt); font-variant-numeric: tabular-nums; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ZONDER ZWARTE GROND — ronde 8, 1 oktober 2026
+   ══════════════════════════════════════════════════════════════════════════
+   Lucas: *"Je mag de achtergronden op de home en de lifestyle/video
+   stijlpagina's verwijderen."* Op die drie soorten pagina's ligt er geen zwarte
+   ondergrond meer onder de panelen: de pagina is één licht vel. Een nieuw
+   hoofdstuk krijgt een haarlijn over de volle breedte en zijn eigen lucht, en
+   geen zwarte naad. De donkere kamers (een vergelijker, een fotoband) en de
+   donkere slotkaart blijven wat ze zijn: dat is inhoud op donker, geen grond.
+
+   Een klasse op de pagina en geen wijziging van `--s22-grond`: de andere
+   pagina's (prijzen, galerij, de dienstpagina's) houden hun hoofdstukken op
+   zwart tot Lucas ze heeft gezien. */
+  .s22.zonder-grond { --grond: var(--vel); color: var(--inkt); border-radius: 0; }
+  .s22.zonder-grond :is(.paneel, .kamer):not(.paneel-slot) { margin-inline: 0; border-radius: 0; }
+  .s22.zonder-grond :is(.paneel, .kamer) + :is(.paneel, .kamer):not(.paneel-slot) { margin-top: 0; }
+  .s22.zonder-grond :is(.paneel, .kamer):not(.paneel-slot) { margin-block: 0; }
+  /* Een licht paneel na een licht paneel dat geen vervolg is: een haarlijn
+     binnen de marges van de tekst, zoals de naad binnen een hoofdstuk, maar
+     over de volle breedte — dit is een hoofdstukwissel. */
+  .s22.zonder-grond .paneel:not(.paneel-slot) + .paneel:not(.paneel-slot):not(.vervolg) { border-top: 1px solid var(--lijn-sterk, rgb(17 17 17 / .16)); }
+  /* De slotkaart loopt van rand tot rand en sluit aan op de donkere voet:
+     als kaart met lichte marge eromheen zweefde hij tussen vel en voet. */
+  .s22.zonder-grond .paneel-slot { margin: 0; border-radius: 0; border-inline: 0; border-bottom: 0; }
+  /* Een kamer had geen eigen vlak: hij was donker omdat de grond donker was.
+     Zonder grond wordt hij licht, net als de rest — dat is wat "de achtergrond
+     weg" betekent. Zijn letters stonden op licht-op-donker en gaan mee terug
+     naar inkt; een beeld erin (vergelijker, Editions-banner) houdt zijn eigen
+     donkere vlak. */
+  .s22.zonder-grond .kamer { background: var(--vel); color: var(--inkt); }
+  .s22.zonder-grond :is(.paneel, .kamer) + .kamer { border-top: 1px solid var(--lijn-sterk, rgb(17 17 17 / .16)); }
+  .s22.zonder-grond .kamer + .paneel:not(.paneel-slot) { border-top: 1px solid var(--lijn-sterk, rgb(17 17 17 / .16)); }
+  .s22.s22.zonder-grond .kamer .etiket { color: var(--inkt-3); }
+  .s22.s22.zonder-grond .kamer .lopend { color: var(--inkt-2); }
+  .s22.s22.zonder-grond .kamer em { color: var(--accent-text); }
+  .s22.s22.zonder-grond .kamer :is(.hoog, .pijl) { color: var(--inkt); }

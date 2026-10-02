@@ -77,9 +77,11 @@ const t = WALK_COPY[lang] || WALK_COPY.en;
 const sample = `${euro(AMOUNT.testSample, lang)} ${vatLabel('excl', lang)}`;
 
 /* "Waar de beelden landen": elk getal afgeleid, niets getypt. */
-const PER_PRODUCT_VISUALS = CATALOG_IMAGES + LIFESTYLE_IMAGES;
+/* Ronde 8: niet meer catalog + lifestyle opgeteld — dat wordt niet meer als
+   één dienst verkocht. Twee getallen, elk van zijn eigen dienst. */
 const EX_FULL = 30;
-const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
+const EX_CATALOG = CATALOG_IMAGES * EX_FULL;
+const EX_LIFESTYLE = LIFESTYLE_IMAGES * EX_FULL;
 
 const fase = (id: string) => t.fasen[id] || { n: '', duur: '', h: '' };
 const kopregel = (nr: string, id: string) => [nr, fase(id).n].filter(Boolean).join(' · ');
@@ -114,7 +116,7 @@ const COPY = {
       {
         woord: fase('bestellen').h,
         zin: 'Your photos, the look and a delivery date, in one form.',
-        etiket: 'Sent in', etiketNoot: '3 of 5 · phone',
+        etiket: 'Sent in', etiketNoot: '3 required · phone',
       },
       {
         woord: fase('maken').h,
@@ -153,7 +155,7 @@ const COPY = {
       { t: 'Your rights', b: `Full commercial rights. Every image at ${RESOLUTIE.standaard} px, in the aspect ratio you choose (one per catalog order, per image for lifestyle), as JPG, PNG and WebP. A marketplace order gets the formats that marketplace accepts.`, linkText: 'Terms', linkHref: '/terms' },
     ],
     landH: 'One order, every place it has to go.',
-    landLede: `${EX_FULL} products make ${EX_VISUALS} finished images, in the aspect ratio you pick in the order form.`,
+    landLede: `${EX_FULL} products make ${EX_CATALOG} catalog images, or ${EX_LIFESTYLE} lifestyle images — in the aspect ratio you pick in the order form.`,
     land: [
       ['Product page', 'On white, on a model'],
       ['Instagram', 'Carousel, three frames'],
@@ -187,7 +189,7 @@ const COPY = {
       {
         woord: fase('bestellen').h,
         zin: 'Je foto’s, de look en een leverdatum, in één formulier.',
-        etiket: 'Ingestuurd', etiketNoot: '3 van 5 · telefoon',
+        etiket: 'Ingestuurd', etiketNoot: '3 verplicht · telefoon',
       },
       {
         woord: fase('maken').h,
@@ -226,7 +228,7 @@ const COPY = {
       { t: 'Jouw rechten', b: `Volledige commerciële rechten. Elk beeld op ${RESOLUTIE.standaard} px, in de beeldverhouding die je kiest (één per catalogbestelling, per beeld bij lifestyle), als JPG, PNG en WebP. Een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt.`, linkText: 'Voorwaarden', linkHref: '/terms' },
     ],
     landH: 'Eén bestelling, overal waar hij heen moet.',
-    landLede: `${EX_FULL} producten worden ${EX_VISUALS} afgewerkte beelden, in de beeldverhouding die je in het bestelformulier kiest.`,
+    landLede: `${EX_FULL} producten worden ${EX_CATALOG} catalogbeelden, of ${EX_LIFESTYLE} lifestylebeelden — in de beeldverhouding die je in het bestelformulier kiest.`,
     land: [
       ['Productpagina', 'Op wit, op een model'],
       ['Instagram', 'Carrousel, drie beelden'],

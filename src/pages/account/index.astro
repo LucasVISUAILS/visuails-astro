@@ -20,7 +20,7 @@ import StudioLayout from '../../layouts/StudioLayout.astro';
 import Bestelkaart from '../../components/studio/Bestelkaart.astro';
 import Pil from '../../components/studio/Pil.astro';
 import { pagesContext } from '../../lib/route.js';
-import { studioScreen, progressView, STUDIO_ICONS, invoiceDate } from '../../lib/account.js';
+import { studioScreen, progressView, STUDIO_ICONS, invoiceDate, weergaveStatus } from '../../lib/account.js';
 import { serviceLabel } from '../../data/services.js';
 
 export const prerender = false;
@@ -35,7 +35,7 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="overview" customer={customer}
   title={t.navOverview}
   kop={`${orders.length > 1 ? t.ovWelcome : t.ovWelcomeFirst}, ${v.name}`} lede={t.ovLede} chip={v.chip}
-  actie={{ href: lang === 'nl' ? '/nl/start/' : '/start/', label: t.ovNewCta }}
+  actie={v.actie}
 >
   <section class="st-blok" aria-label={t.navOverview}>
     <div class="st-kaart-vlak st-cijfers">
@@ -77,7 +77,7 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
               return (
                 <li>
                   <span class="st-ref">{o.ref}</span>
-                  <Pil status={o.status} lang={lang} />
+                  <Pil status={weergaveStatus(o)} lang={lang} />
                   <span class="st-meta">{serviceLabel(o.service, lang) || o.service} · {p.now}{p.when}</span>
                   <a class="st-link" href={`/account/orders?order=${o.id}#order-${o.id}`}>{t.ovOpenOrder}</a>
                 </li>
@@ -126,7 +126,7 @@ const { t, lang, customer, orders, filesByOrder, eventsByOrder, thema, navDicht 
                 <span class="st-ref">{o.ref}</span>
                 <span class="st-meta">{serviceLabel(o.service, lang) || o.service}{o.created_at ? ` · ${invoiceDate(String(o.created_at).slice(0, 10), lang)}` : ''}</span>
               </a>
-              <Pil status={o.status} lang={lang} />
+              <Pil status={weergaveStatus(o)} lang={lang} />
             </li>
           ))}
         </ul>

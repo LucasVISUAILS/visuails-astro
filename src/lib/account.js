@@ -88,6 +88,7 @@ import {
 } from './uploads.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { sendMail } from './mail.js';
+import { mailRondeOntvangen } from './cancelMail.js';
 import {
   PER_PRODUCT,
   canReviewOrder,
@@ -177,7 +178,7 @@ import { licenceText } from './scaffold.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
 // deze twee schermen hadden elk hun eigen query over dezelfde levering en die
 // waren al uit elkaar gelopen.
-import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, downloadTaal, orderProductNames, leveringIngetrokken, TOEGANG_KOLOMMEN } from './delivery.js';
+import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, downloadTaal, orderProductNames, leveringIngetrokken, TOEGANG_KOLOMMEN, ZICHTBAAR_VOOR_KLANT } from './delivery.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
 // for the mail. Two `p`s in one module is a bug waiting for whichever one gets
@@ -189,8 +190,10 @@ import {
   button as mailButton,
   note as mailNote2,
   spamNote as mailSpamNote,
+  greeting as mailGreeting,
   linkLine as mailLinkLine,
   datum as mailDatum,
+  voornaam,
 } from './mailTemplate.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
@@ -501,7 +504,12 @@ const COPY = {
     // hij het goede formaat krijgt.
     folderH: 'Your files',
     folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP — so a print shop, a shop page and a feed each get the file they want without anyone resizing anything.',
-    folderReview: 'The photos above are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
+    folderReview: 'The photos below are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
+    contactH: 'Ask a specialist',
+    contactWa: 'WhatsApp',
+    contactMail: 'Email',
+    contactNote: 'Your order number is filled in already.',
+    folderExpired: (day) => `The download period ended on ${day}. Need the files again? Message us.`,
     revokedNote: 'Revision requests are paused on this account. Message us and we will sort it out.',
     // Waarom er onder een proefvisual geen knoppen staan. Zie canReviewOrder()
     // in pricing.js: dit is de enige bestelling zonder, en dan hoort er een zin
@@ -536,6 +544,8 @@ const COPY = {
     payPaidOn: (day) => `Paid on ${day}.`,
     payDue: 'Not paid yet.',
     payDueBy: (day) => `Not paid yet — your slot is held until ${day}.`,
+    payExpired: 'Not paid yet — the reserved date has passed. Pay now and we agree a new date with you.',
+    payCancelled: 'Cancelled — nothing to pay.',
     payNow: 'Pay now',
     payFailed: 'We could not open the payment screen. Try again in a minute, or message us.',
     /* De melding als de btw-poort de bestelling vasthoudt. Geen woord over fraude
@@ -647,14 +657,15 @@ const COPY = {
     detEmailSafety: 'We also tell your old address, with a link to undo it. That is what protects your account if someone else ever tries this.',
     detPhone: 'Phone or WhatsApp',
     detWebsite: 'Website or shop link',
-    detVat: 'VAT number',
+    detVat: 'VAT number (or tick that you have none)',
     detVatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
     detNoVat: 'I do not have a VAT number',
     detReg: 'Company registration number',
     detRegHint: 'For a business without a VAT number — a Dutch KVK number, for instance. Saved once, filled in on every order.',
     detMissing: 'One of the fields above is still empty. Everything except the ones marked optional has to be filled in — it all ends up on your invoice.',
     detFailed: 'We could not save that just now. Try again in a moment — nothing was changed.',
-    detVatForm: 'That VAT number does not match the country you chose — check the country code and the number of digits. Nothing was saved.',
+    detVatForm: 'That VAT number does not match the country you chose — check the country code and the number of digits. Everything else is saved; the VAT number stayed as it was.',
+    detVatChoice: 'Fill in a VAT number, or tick that you do not have one. Everything else is saved.',
     // Zelfde woorden als op het bestelformulier (OrderFlow.astro) — twee
     // schermen die naar hetzelfde vragen, vragen het hetzelfde.
     detCountry: 'Country',
@@ -765,7 +776,8 @@ const COPY = {
     rdEmptyErr: 'Nothing was marked, so nothing was sent. Your revision round is still open.',
     rdNoteErr: 'One of the marked images has no note yet. Nothing was sent and your revision round is still open.',
     rdFailErr: 'We could not save that just now. Nothing was sent and your revision round is still open — please try again.',
-    rdSentOk: 'Your revision round is in. We will come back to you about it.',
+    rdSentOk: 'Your revision round is in. You get a confirmation by email, and another one when the new versions are ready.',
+    rdClosedErr: 'This revision round can no longer be sent: it has been used, the order is closed, or the review period has ended. Message us and we will look at it together.',
     askSummary: 'Something is not right',
     askLabel: 'What should change?',
     askHint: 'In your own words. The more specific, the faster we get it right.',
@@ -780,7 +792,7 @@ const COPY = {
     prodApproved: (n) => `${n} approved`,
     prodApproveAll: (n) => `All ${n} are good — approve this product`,
     orderApproveAll: (n) => `Approve all ${n} remaining images`,
-    orderApproveAllNote: 'Only for images you have not judged yet. Anything with a revision request stays as it is.',
+    orderApproveAllNote: 'Only for images you have not judged yet; anything with a revision request stays as it is. Is everything approved, the order is complete and flagging is no longer possible.',
     prodNothingYet: 'Nothing delivered for this one yet.',
     prodWeMade: 'What we delivered',
     prodYouSent: 'What you sent',
@@ -1019,7 +1031,7 @@ const COPY = {
     planWhenFirst: 'Earliest you can point at:',
     planWhenBefore: 'Need it in by a particular day? Point at the day before \u2014 then your day is the second of the two.',
     planWhenOnlyLocked: 'These two days are held for you once you lock the product. A draft holds nothing.',
-    planWhenNone: 'No pair of open days left in this month. Try as soon as possible, or a later month.',
+    planWhenNone: 'No pair of open days left in this month. Choose "In your week", or a later month.',
     planWhenNoWeight: 'This kind cannot be planned on a day yet \u2014 it has no weight in the calendar. It runs as soon as possible.',
     planWhenBack: 'Back to the list',
     planWhenToday: 'today',
@@ -1141,6 +1153,7 @@ const COPY = {
     invLede: 'Every paid order has an invoice here. Download it as a PDF for your own records.',
     invEmpty: 'There is nothing here yet. An invoice appears as soon as an order is paid.',
     invEmptyUnpaid: 'No invoices yet. Your order has one as soon as the payment comes through.',
+    invEmptyPending: 'Your invoice is being made and appears here within a few minutes. Still not here tomorrow? Email us.',
     invNumber: 'Invoice',
     invDate: 'Date',
     invOrder: 'Order',
@@ -1214,7 +1227,12 @@ const COPY = {
     bDownloadAll: 'Download de map',
     folderH: 'Jouw bestanden',
     folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, zonder dat iemand nog iets bijschaalt.',
-    folderReview: 'De foto\'s hierboven zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
+    folderReview: 'De foto\'s hieronder zijn voorbeeldweergaven op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
+    contactH: 'Vraag een specialist',
+    contactWa: 'WhatsApp',
+    contactMail: 'Mail',
+    contactNote: 'Je bestelnummer staat er al in.',
+    folderExpired: (day) => `De downloadtermijn liep af op ${day}. Heb je de bestanden nog nodig? Stuur ons een bericht.`,
     revokedNote: 'Revisieaanvragen staan op dit account uit. Stuur ons een bericht, dan lossen we het samen op.',
     sampleNote: `Dit is de proef van ${TEST_SAMPLE.nl.price}, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.`,
     closedNote: 'Je hebt alles in deze bestelling goedgekeurd. Toch nog iets? Maak het hieronder ongedaan.',
@@ -1237,6 +1255,8 @@ const COPY = {
     payPaidOn: (day) => `Betaald op ${day}.`,
     payDue: 'Nog niet betaald.',
     payDueBy: (day) => `Nog niet betaald — je plek staat vast tot ${day}.`,
+    payExpired: 'Nog niet betaald — de gereserveerde datum is verlopen. Betaal je nu, dan spreken we een nieuwe datum met je af.',
+    payCancelled: 'Geannuleerd — er hoeft niets betaald te worden.',
     payNow: 'Nu betalen',
     payFailed: 'We konden het betaalscherm niet openen. Probeer het zo nog eens, of stuur ons een bericht.',
     payHeld: 'We kijken de btw-gegevens van deze bestelling na voordat er betaald kan worden. Dat is een handmatige stap als een bestelling uit een ander EU-land geen btw-nummer heeft dat we konden bevestigen. Je hoort binnen één werkdag van ons.',
@@ -1300,14 +1320,15 @@ const COPY = {
     detEmailSafety: 'We laten het ook weten op je oude adres, met een link om het terug te zetten. Dat is wat je account beschermt als iemand anders dit ooit probeert.',
     detPhone: 'Telefoon of WhatsApp',
     detWebsite: 'Website of winkellink',
-    detVat: 'Btw-nummer',
+    detVat: 'Btw-nummer (of vink aan dat je er geen hebt)',
     detVatHint: 'Een bedrijf in een ander EU-land: we controleren het bij VIES, en als het klopt rekenen we geen Nederlandse btw.',
     detNoVat: 'Ik heb geen btw-nummer',
     detReg: 'KVK-nummer',
     detRegHint: 'Voor een bedrijf zonder btw-nummer — bijvoorbeeld je KVK-nummer. Eén keer bewaard, bij elke bestelling ingevuld.',
     detMissing: 'Een van de velden hierboven is nog leeg. Alles behalve de velden met "optioneel" moet ingevuld zijn — het komt allemaal op je factuur.',
     detFailed: 'Opslaan lukte even niet. Probeer het zo nog eens — er is niets gewijzigd.',
-    detVatForm: 'Dat btw-nummer past niet bij het land dat je koos — kijk de landcode en het aantal cijfers na. Er is niets opgeslagen.',
+    detVatForm: 'Dat btw-nummer past niet bij het land dat je koos — kijk de landcode en het aantal cijfers na. De rest is opgeslagen; het btw-nummer bleef zoals het was.',
+    detVatChoice: 'Vul een btw-nummer in, of vink aan dat je er geen hebt. De rest is opgeslagen.',
     detCountry: 'Land',
     detCountryPick: 'Kies een land',
     detCountryEu: 'Europese Unie',
@@ -1381,7 +1402,8 @@ const COPY = {
     rdEmptyErr: 'Er was niets aangemerkt, dus er is niets verstuurd. Je revisieronde staat nog open.',
     rdNoteErr: 'Bij een van de aangemerkte beelden staat nog geen notitie. Er is niets verstuurd en je revisieronde staat nog open.',
     rdFailErr: 'Het opslaan lukte even niet. Er is niets verstuurd en je revisieronde staat nog open — probeer het opnieuw.',
-    rdSentOk: 'Je revisieronde staat er. We komen erop terug.',
+    rdSentOk: 'Je revisieronde is binnen. Je krijgt een bevestiging per mail, en nog een zodra de nieuwe versies klaarstaan.',
+    rdClosedErr: 'Deze revisieronde kan niet meer verstuurd worden: hij is al gebruikt, de bestelling is afgerond of de termijn is voorbij. Stuur ons een bericht, dan kijken we samen.',
     askSummary: 'Er klopt iets niet',
     askLabel: 'Wat moet er anders?',
     askHint: 'In je eigen woorden. Hoe specifieker, hoe sneller het klopt.',
@@ -1393,7 +1415,7 @@ const COPY = {
     prodApproved: (n) => `${n} goedgekeurd`,
     prodApproveAll: (n) => `Alle ${n} zijn goed — keur dit product goed`,
     orderApproveAll: (n) => `Keur alle ${n} resterende beelden goed`,
-    orderApproveAllNote: 'Alleen voor beelden die je nog niet beoordeeld hebt. Waar je een revisie op vroeg, blijft zoals het is.',
+    orderApproveAllNote: 'Alleen voor beelden die je nog niet beoordeeld hebt; waar je een revisie op vroeg, blijft zoals het is. Is daarna alles goedgekeurd, dan is de bestelling afgerond en kun je niets meer aanmerken.',
     prodNothingYet: 'Hier is nog niets voor geleverd.',
     prodWeMade: 'Wat wij leverden',
     prodYouSent: 'Wat jij stuurde',
@@ -1584,7 +1606,7 @@ const COPY = {
     planWhenFirst: 'Vroegst aan te wijzen:',
     planWhenBefore: 'Moet het uiterlijk op een bepaalde dag binnen zijn? Wijs dan de dag ervóór aan \u2014 dan is jouw dag de tweede van de twee.',
     planWhenOnlyLocked: 'Deze twee dagen worden voor je vrijgehouden zodra je het product vastzet. Een concept houdt niets vast.',
-    planWhenNone: 'Er is in deze maand geen paar open dagen meer. Kies zo snel mogelijk, of een latere maand.',
+    planWhenNone: 'Er is in deze maand geen paar open dagen meer. Kies "In je week", of een latere maand.',
     planWhenNoWeight: 'Deze soort is nog niet op een dag in te plannen \u2014 hij heeft nog geen gewicht in de agenda. Hij loopt zo snel mogelijk.',
     planWhenBack: 'Terug naar de lijst',
     planWhenToday: 'vandaag',
@@ -1692,6 +1714,7 @@ const COPY = {
     invLede: 'Bij elke betaalde bestelling staat hier de factuur. Download hem als pdf voor je eigen administratie.',
     invEmpty: 'Hier staat nog niets. Zodra een bestelling betaald is, komt de factuur erbij.',
     invEmptyUnpaid: 'Nog geen facturen. Je bestelling krijgt er een zodra de betaling binnen is.',
+    invEmptyPending: 'Je factuur wordt gemaakt en staat hier binnen een paar minuten. Staat hij er morgen nog niet, mail ons dan even.',
     invNumber: 'Factuur',
     invDate: 'Datum',
     invOrder: 'Bestelling',
@@ -1832,6 +1855,20 @@ export async function accountGet(context) {
     return serveInvoicePdf(context, customer, Number(invMatch[1]));
   }
 
+  /* ── DE FACTUUR VAN EEN ABONNEMENTSTERMIJN — 1 oktober 2026 (ronde 8, S-K2) ──
+     Die staat in subscription_invoices, met een eigen id. De lijst linkte naar
+     /account/invoices/<id>/pdf, en die route zocht in `invoices`: een lege 404,
+     of — als de klant ook een bestelfactuur met hetzelfde getal had — een ANDERE
+     factuur van dezelfde klant. Eigen pad, eigen tabel, eigen eigendomscontrole. */
+  const subInvMatch = path.match(/^\/account\/plan-invoices\/(\d+)\/pdf$/);
+  if (subInvMatch) {
+    const gate = await checkRate(env, { ip: clientIp(request), action: 'account-file', limit: FILE_LIMIT });
+    if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
+    const customer = await currentCustomer(env, request);
+    if (!customer) return naarInloggen(request);
+    return serveSubInvoicePdf(context, customer, Number(subInvMatch[1]));
+  }
+
   /* Een creditnota, langs precies dezelfde weg als een factuur: eigen pad omdat het een
      eigen tabel is, dezelfde limiet, dezelfde eigendomscontrole via `orders`. Eén route
      voor beide zou betekenen dat het id uit de URL bepaalt in WELKE tabel gezocht wordt,
@@ -1885,7 +1922,7 @@ export async function accountGet(context) {
   maybeSweep(context, env);
 
   const customer = await currentCustomer(env, request);
-  if (!customer) return seeOther('/account/login');
+  if (!customer) return naarInloggen(request);
 
   /* DE SCHERMEN STAAN HIER NIET MEER — 6 september 2026. /account, /orders,
      /brand-kit, /details, /invoices, /plan en /plan/return zijn Astro-pagina's
@@ -1979,10 +2016,29 @@ export async function accountPost(context) {
       : 'This page was opened from another site, so we did not run it. Go back to your account page and try again there. If it keeps happening, send us this line: ') + detail) }), 403);
   }
 
-  const gate = await checkRate(env, { ip: clientIp(request), action: 'account-post', limit: POST_LIMIT });
+  /* ── GOEDKEUREN HEEFT EEN EIGEN, RUIMERE EMMER — 1 oktober 2026 (ronde 8, S-B16) ──
+     Alle POST's deelden 20 per minuut per IP. Wie twintig beelden één voor één
+     goedkeurde, of met een team achter één kantoor-IP werkte, kreeg een witte
+     pagina. Beoordelen telt nu per klant, tot 90 per minuut; de rest blijft
+     zoals het was. En een 429 is een pagina met uitleg, geen leeg scherm. */
+  const isReview = path === '/account/review';
+  const gate = isReview
+    ? await checkRate(env, { key: `klant-${customer.customer_id}`, action: 'account-review', limit: 90 })
+    : await checkRate(env, { ip: clientIp(request), action: 'account-post', limit: POST_LIMIT });
   if (!gate.allowed) {
     if (asJson) return json({ error: 'rate' }, 429);
-    return new Response(null, { status: 429, headers: { 'retry-after': String(Math.max(1, gate.retryAfter || 60)), 'content-type': 'text/plain' } });
+    const wacht = Math.max(1, gate.retryAfter || 60);
+    const res = html(page({ thema: themaCookie(request), lang: negotiate(request), title: 'VISUAILS', body: `
+<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+<div class="authcard">
+  <h1>${negotiate(request) === 'nl' ? 'Even rustig aan' : 'One moment'}</h1>
+  <p class="lede">${negotiate(request) === 'nl'
+    ? `Er kwamen veel verzoeken achter elkaar binnen. Er is niets verloren gegaan. Wacht ${wacht} seconden en ga dan terug.`
+    : `A lot of requests came in at once. Nothing was lost. Wait ${wacht} seconds and go back.`}</p>
+  <p><a class="btn btn-primary" href="/account/orders">${negotiate(request) === 'nl' ? 'Terug naar je bestellingen' : 'Back to your orders'}</a></p>
+</div>` }), 429);
+    res.headers.set('retry-after', String(wacht));
+    return res;
   }
 
   if (path === '/account/logout') return handleLogout(context, customer);
@@ -2225,7 +2281,10 @@ export async function welkomLink(env, customerId, lang = 'nl', origin = 'https:/
     const { token, tokenHash } = await mintCredential();
     await env.DB.prepare(
       'INSERT INTO account_tokens (customer_id, token_hash, expires_at) VALUES (?1, ?2, ?3)'
-    ).bind(klant.id, tokenHash, loginTokenExpiry()).run();
+    /* 48 uur en niet één (ronde 8, M-N5): de welkomstmail komt ongevraagd na
+       de betaling, en wie hem de volgende ochtend opende, landde op een
+       verlopen link. Eenmalig te gebruiken blijft hij. */
+    ).bind(klant.id, tokenHash, new Date(Date.now() + 48 * 3600000).toISOString()).run();
     return `${String(origin || 'https://visuails.com').replace(/\/$/, '')}/account/verify/${token}?lang=${lang === 'en' ? 'en' : 'nl'}&naar=plan`;
   } catch (err) {
     console.error('[account] welkomstlink niet gemaakt —', err?.message || err);
@@ -2495,7 +2554,8 @@ async function handleCodePost(context) {
   /* De taal waarin iemand inlogt, is de taal van zijn Studio — als cookie, net
      als de taalknop in de zijbalk zet. Anders viel een klant zonder
      bestelling terug op de browser en de referer (zie negotiate()). */
-  return seeOther('/account', [setSessionCookie(sessionToken), langCookieHeader(lang)]);
+  const terug = readTerug(request);
+  return seeOther(terug || '/account', [setSessionCookie(sessionToken), langCookieHeader(lang), ...(terug ? [clearTerugCookie()] : [])]);
 }
 
 // env.DB is guaranteed here — accountGet checks it before this is ever reached,
@@ -2554,9 +2614,9 @@ async function handleVerify(context, token) {
      abonnement en niet op het overzicht. Een vaste lijst en geen vrij adres:
      een `naar` die elke URL aanneemt, is een open doorverwijzing achter een
      inloglink. */
-  let naar = '/account';
+  let naar = readTerug(request) || '/account';
   try { if (new URL(request.url).searchParams.get('naar') === 'plan') naar = '/account/plan'; } catch { /* dan het overzicht */ }
-  return seeOther(naar, [setSessionCookie(sessionToken), langCookieHeader(lang)]);
+  return seeOther(naar, [setSessionCookie(sessionToken), langCookieHeader(lang), clearTerugCookie()]);
 }
 
 async function handleLogout({ env }, customer) {
@@ -2837,10 +2897,13 @@ export async function sectionState(context, customer) {
    * voor nul javascript.
    */
   let openOrderId = 0;
+  let openProduct = '';
   let savedLock = '';
   try {
     const params = new URL(request.url).searchParams;
     openOrderId = Number(params.get('order')) || 0;
+    /* Het product dat openstond (ronde 8, S-B4): na goedkeuren klapte het dicht. */
+    openProduct = /^p\d{1,3}$/.test(String(params.get('p') || '')) ? String(params.get('p')) : '';
     justSaved = params.get('saved') === '1';
     /* ?saved=<dienst> zet handleLockUpdate(): de rij op de brand kit klapt dicht
        en toont één regel bevestiging — zie lockSection(). Alleen een echte
@@ -2848,7 +2911,7 @@ export async function sectionState(context, customer) {
     savedLock = STYLES.includes(params.get('saved')) ? params.get('saved') : '';
     payFailed = params.get('pay') === 'failed';
     payHeld = params.get('pay') === 'held';
-    detailsMissing = params.get('missing') === '1' ? 'missing' : (params.get('failed') === '1' ? 'failed' : (params.get('vatvorm') === '1' ? 'vatvorm' : false));
+    detailsMissing = params.get('missing') === '1' ? 'missing' : (params.get('failed') === '1' ? 'failed' : (params.get('vatvorm') === '1' ? 'vatvorm' : (params.get('vatkeuze') === '1' ? 'vatkeuze' : false)));
     /* `ronde=` zet handleRevisionRound(). Vier uitkomsten, en drie ervan zeggen
        hetzelfde belangrijke ding: er is NIETS verstuurd en de ronde staat nog
        open. Zonder die bevestiging komt de klant terug op een scherm dat er
@@ -2862,7 +2925,7 @@ export async function sectionState(context, customer) {
   return {
     lang, t, customer, orders, files, models, locks, details, events,
     filesByOrder, eventsByOrder, lockByStyle,
-    justSaved, statusFilter, payFailed, payHeld, detailsMissing, rondeFlag, openOrderId, savedLock,
+    justSaved, statusFilter, payFailed, payHeld, detailsMissing, rondeFlag, openOrderId, openProduct, savedLock,
     thema: themaCookie(request), navDicht: navCookie(request) === 'dicht',
   };
 }
@@ -3402,7 +3465,7 @@ async function handleDetails({ request, env }, customer, asJson) {
   const noVat = !vatNumber && ['1', 'on', 'true', 'yes'].includes(String(form.get('no_vat') || '').toLowerCase());
   const vatMissing = hasVat && !vatNumber && !noVat;
 
-  if (emptyRequired || vatMissing) {
+  if (emptyRequired || (vatMissing && asJson)) {
     // Niets schrijven. Half opslaan zou de helft van een factuuradres
     // achterlaten en dat is erger dan niet opslaan, want het ziet eruit alsof
     // het gelukt is.
@@ -3410,6 +3473,12 @@ async function handleDetails({ request, env }, customer, asJson) {
       ? json({ error: 'incomplete' }, 400)
       : seeOther(`${home}?missing=1#details`);
   }
+  /* ── ALLEEN HET BTW-VELD WEIGEREN, DE REST BEWAREN — 1 oktober 2026 (S-B15) ──
+     Eén fout in het btw-nummer en alles wat de klant net typte was weg: de
+     redirect toonde weer de oude waarden. Het adres is compleet (dat is
+     hierboven getoetst), dus dat wordt opgeslagen; alleen het btw-deel blijft
+     zoals het was, en de melding zegt dat. */
+  let btwGeweigerd = vatMissing ? 'vatkeuze' : '';
 
   /* ── DE VORM VAN HET BTW-NUMMER — 24 september 2026 ─────────────────────
      Het bestelformulier en /api/plan weigeren een nummer dat niet bij het land
@@ -3418,9 +3487,8 @@ async function handleDetails({ request, env }, customer, asJson) {
      geweigerd. Dezelfde toets, en alleen als het land bekend is. */
   const landVoorBtw = /^[A-Z]{2}$/.test(String(form.get('country') || '').trim().toUpperCase()) ? String(form.get('country')).trim().toUpperCase() : null;
   if (hasVat && vatNumber && landVoorBtw && vatFormatOk(landVoorBtw, vatNumber) === false) {
-    return asJson
-      ? json({ error: 'vat-format' }, 400)
-      : seeOther(`${home}?vatvorm=1#details`);
+    if (asJson) return json({ error: 'vat-format' }, 400);
+    btwGeweigerd = 'vatvorm';
   }
 
   const hasAddress = ADDRESS_FIELDS.some((k) => form.has(k));
@@ -3449,7 +3517,7 @@ async function handleDetails({ request, env }, customer, asJson) {
      een POST die het veld niet stuurt, laat de keuze staan. */
   if (form.has('contact_preference')) add('contact_preference', normaliseerVoorkeur(one('contact_preference')));
   if (form.has('website')) add('website', one('website'));
-  if (hasVat) { add('vat_number', vatNumber); add('no_vat_number', noVat ? 1 : 0); }
+  if (hasVat && !btwGeweigerd) { add('vat_number', vatNumber); add('no_vat_number', noVat ? 1 : 0); }
   if (form.has('reg_number')) add('reg_number', one('reg_number').slice(0, 40) || null);
   if (hasBg) { add('default_background', background); add('default_background_hex', hex); }
   if (hasCountry) add('country', country);
@@ -3494,6 +3562,7 @@ async function handleDetails({ request, env }, customer, asJson) {
   // rather than the brand kit it used to share. ?saved=1 is what draws the
   // confirmation line: a settings form that redirects to a page identical to
   // the one it left is a form the customer presses twice.
+  if (btwGeweigerd) return seeOther(`${home}?${btwGeweigerd}=1#details`);
   return asJson ? json({ ok: true }) : seeOther(`${home}?saved=1#details`);
 }
 
@@ -3688,6 +3757,7 @@ async function loadCustomerFiles(env, customerId) {
          FROM files f JOIN orders o ON o.id = f.order_id
         WHERE o.customer_id = ?1 AND f.kind IN ('upload', 'delivery')
           AND f.superseded_at IS NULL
+          AND ${ZICHTBAAR_VOOR_KLANT}
         ${order}`
     ).bind(customerId).all();
     return res.results || [];
@@ -4148,6 +4218,13 @@ async function handleRevisionRound({ form, env }, customer, home) {
   const ids = form.getAll('file')
     .map((v) => Number.parseInt(String(v), 10))
     .filter((n) => Number.isInteger(n) && n > 0);
+  /* ── EEN NOTITIE ZONDER VINKJE TELT OOK — 1 oktober 2026 (ronde 8, S-B3) ──
+     Wie een notitie typte en het vinkje vergat, kreeg "er is niets aangevinkt"
+     en was zijn tekst kwijt. Wat je opschrijft, bedoel je ook. */
+  for (const [k, v] of form.entries()) {
+    const m = /^note-(\d+)$/.exec(String(k));
+    if (m && String(v || '').trim()) ids.push(Number(m[1]));
+  }
 
   /* Dubbele id's eruit: een geknutselde POST kan hetzelfde beeld twintig keer
      meesturen, en dan zou de ronde twintig regels in revision_requests zetten
@@ -4178,13 +4255,14 @@ async function handleRevisionRound({ form, env }, customer, home) {
     const gaten = uniek.map((_, i) => `?${i + 3}`).join(', ');
     const res = await env.DB.prepare(
       `SELECT f.id, f.order_id, o.closed_at, o.service, o.revision_round_at,
-              c.revisions_revoked_at
+              o.lang, o.ref, o.email, o.name, c.revisions_revoked_at
          FROM files f
          JOIN orders o ON o.id = f.order_id
          JOIN customers c ON c.id = o.customer_id
         WHERE o.customer_id = ?1
           AND o.service <> ?2
           AND f.kind = 'delivery'
+          AND f.review_state = 'pending'
           AND f.superseded_at IS NULL
           AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
           AND f.id IN (${gaten})`
@@ -4201,21 +4279,24 @@ async function handleRevisionRound({ form, env }, customer, home) {
   /* Eén beeld dat niet van deze klant is, of niet meer leeft, maakt de hele
      verzending ongeldig. Niet "de rest wel even": de klant heeft vijf beelden
      aangewezen en verwacht dat er vijf worden bekeken. */
-  if (rijen.length !== uniek.length) return seeOther(home);
+  /* Met een melding (ronde 8, S-B20): hier stond een kale terugsprong, en de
+     klant wist niet of zijn ronde verstuurd was. Alleen beelden die nog te
+     beoordelen zijn tellen, net als in het portaal. */
+  if (rijen.length !== uniek.length) return seeOther(`${home}?ronde=mislukt`);
 
   /* Alles moet bij DEZELFDE bestelling horen. Een ronde hoort bij een order —
      dat is wat "één per bestelling" betekent — en een POST die beelden uit twee
      bestellingen mengt, zou met één stempel twee rondes afschrijven of één
      ontlopen. */
   const orderId = rijen[0].order_id;
-  if (rijen.some((r) => r.order_id !== orderId)) return seeOther(home);
+  if (rijen.some((r) => r.order_id !== orderId)) return seeOther(`${home}?ronde=mislukt`);
 
   /* ── DE POORT, EN DE ENIGE PLEK WAAR HIJ GELDT ───────────────────────────
      Het scherm toont de knop niet als de ronde op is, maar dat is presentatie.
      Dit is de regel. canRequestRevisionRound() leest dezelfde vier redenen als
      de tekst die de klant ziet, zodat "mag het" en "waarom niet" niet uit elkaar
      kunnen lopen — zie de noot bij revisionRoundState() in pricing.js. */
-  if (!canRequestRevisionRound(rijen[0])) return seeOther(home);
+  if (!canRequestRevisionRound(rijen[0])) return seeOther(`${home}?ronde=dicht`);
 
   /* ── ALLES IN ÉÉN TRANSACTIE ─────────────────────────────────────────────
      Per beeld twee schrijfacties, om dezelfde reden als bij een losse
@@ -4256,7 +4337,9 @@ async function handleRevisionRound({ form, env }, customer, home) {
   acties.push(
     env.DB.prepare(
       `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'delivered', ?2, 'system')`
-    ).bind(orderId, `Revisieronde ingediend — ${items.length} ${items.length === 1 ? 'beeld' : 'beelden'} aangemerkt.`),
+    ).bind(orderId, rijen[0].lang === 'en'
+      ? `Revision round sent — ${items.length} ${items.length === 1 ? 'image' : 'images'} flagged.`
+      : `Revisieronde ingediend — ${items.length} ${items.length === 1 ? 'beeld' : 'beelden'} aangemerkt.`),
   );
 
   try {
@@ -4270,9 +4353,13 @@ async function handleRevisionRound({ form, env }, customer, home) {
      van de klant staat er al, en dat mag niet omvallen omdat de mail eruit ligt.
      Zie dezelfde afspraak bij een losse aanmerking hieronder. */
   await notifyRevisionRound(env, { orderId, items });
+  /* En de klant krijgt een ontvangstbevestiging (ronde 8): na het versturen
+     was het stil tot de herlevering. */
+  await mailRondeOntvangen(env, rijen[0], items.length);
 
-  return seeOther(`${home}?ronde=verstuurd`);
+  return seeOther(`${home}?ronde=verstuurd&order=${orderId}#order-${orderId}`);
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PER-FILE REVIEW — approve / request a revision / undo either.
@@ -4358,23 +4445,23 @@ async function handleFileReview({ request, env }, customer) {
           AND superseded_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))`
     ).bind(orderId).run().catch(() => {});
     await maybeCloseOrder(env, orderId);
-    return seeOther(`${home}#order-${orderId}`);
+    return seeOther(`${home}?order=${orderId}#order-${orderId}`);
   }
   if (action === 'approve-product') {
     const orderId = Number.parseInt(String(form?.get('order') || ''), 10);
     const product = String(form?.get('product') || '').trim();
     if (!Number.isInteger(orderId) || !/^p\d{1,3}$/.test(product)) return seeOther(home);
     const eigen = await env.DB.prepare(
-      `SELECT id, closed_at FROM orders WHERE id = ?1 AND customer_id = ?2 AND service <> ?3`
+      `SELECT id, closed_at, status FROM orders WHERE id = ?1 AND customer_id = ?2 AND service <> ?3`
     ).bind(orderId, customer.customer_id, SAMPLE_SERVICE).first().catch(() => null);
-    if (!eigen || eigen.closed_at) return seeOther(home);
+    if (!eigen || eigen.closed_at || eigen.status === 'cancelled') return seeOther(home);
     await env.DB.prepare(
       `UPDATE files SET review_state = 'approved', review_note = NULL, reviewed_at = datetime('now')
         WHERE order_id = ?1 AND product_key = ?2 AND kind = 'delivery' AND review_state = 'pending'
           AND superseded_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))`
     ).bind(orderId, product).run().catch(() => {});
     await maybeCloseOrder(env, orderId);
-    return seeOther(`${home}#order-${orderId}`);
+    return seeOther(`${home}?order=${orderId}&p=${encodeURIComponent(product)}#order-${orderId}`);
   }
   if (!Number.isInteger(fileId) || !['approve', 'undo'].includes(action)) return seeOther(home);
 
@@ -4398,7 +4485,7 @@ async function handleFileReview({ request, env }, customer) {
       // een 'undo' op een vervangen of verlopen beeld wiste closed_at zonder dat
       // er ooit nog iets was dat de bestelling opnieuw kon afronden. Het scherm
       // toont die beelden trouwens ook niet — dit is de regel eronder.
-      `SELECT f.id, f.order_id, o.closed_at, c.revisions_revoked_at
+      `SELECT f.id, f.order_id, f.product_key, f.review_state, o.closed_at, o.lang, o.ref, c.revisions_revoked_at
          FROM files f
          JOIN orders o ON o.id = f.order_id
          JOIN customers c ON c.id = o.customer_id
@@ -4412,7 +4499,10 @@ async function handleFileReview({ request, env }, customer) {
   }
   if (!owned) return seeOther(home);
 
-  const anchor = `${home}#f${fileId}`;
+  /* Terug naar dezelfde bestelling en hetzelfde product, opengeklapt (ronde 8,
+     S-B4). Alleen `#f<id>` opende een oudere bestelling niet, en het product
+     klapte na elke goedkeuring dicht. */
+  const anchor = `${home}?order=${owned.order_id}${owned.product_key ? `&p=${encodeURIComponent(owned.product_key)}` : ''}#f${fileId}`;
 
   // Nieuwe besluiten op een afgeronde bestelling: stil terug. Het scherm biedt
   // ze niet aan, dus dit is een formulier uit een tab die al open stond.
@@ -4445,6 +4535,22 @@ async function handleFileReview({ request, env }, customer) {
           `UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1`
         ).bind(fileId),
       ];
+      /* ── EEN AANMERKING INTREKKEN SLUIT OOK DE VRAAG AAN DE STUDIO — ronde 8 ──
+         (S-B1) Alleen het beeld ging terug op "te beoordelen"; de aanvraag in
+         revision_requests bleef open en de studio werkte gewoon door. Nu wordt
+         hij gesloten, met de reden erbij, en ziet de studio dat in het logboek. */
+      if (owned.review_state === 'revision_requested') {
+        undo.push(
+          env.DB.prepare(
+            `UPDATE revision_requests SET resolved_at = datetime('now'), resolution_note = ?2
+              WHERE file_id = ?1 AND resolved_at IS NULL`
+          ).bind(fileId, owned.lang === 'en' ? 'Withdrawn by the customer.' : 'Ingetrokken door de klant.'),
+          env.DB.prepare(
+            `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+             VALUES (NULL, NULL, 'revision.withdrawn', ?1, ?2, ?3)`
+          ).bind(owned.order_id, customer.customer_id, `${owned.ref}: klant trok de aanmerking op beeld #${fileId} in`),
+        );
+      }
       if (owned.closed_at) {
         undo.push(
           env.DB.prepare('UPDATE orders SET closed_at = NULL WHERE id = ?1').bind(owned.order_id),
@@ -4464,7 +4570,7 @@ async function handleFileReview({ request, env }, customer) {
           env.DB.prepare(
             `INSERT INTO order_events (order_id, status, note, actor)
              VALUES (?1, 'delivered', ?2, 'system')`
-          ).bind(owned.order_id, 'Een goedkeuring is teruggedraaid — bestelling weer open.')
+          ).bind(owned.order_id, owned.lang === 'en' ? 'An approval was undone — order open again.' : 'Een goedkeuring is teruggedraaid — bestelling weer open.')
         );
       }
       await env.DB.batch(undo);
@@ -4545,7 +4651,13 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
 
   const getal = (v) => Number.parseInt(String(v), 10);
   const eruit = new Set(form.getAll('drop').map(getal).filter(Number.isInteger));
-  const uniek = [...new Set(form.getAll('file').map(getal).filter((n) => Number.isInteger(n) && n > 0))]
+  /* Een notitie zonder vinkje telt ook (ronde 8, S-B3) — zie handleRevisionRound. */
+  const metNotitie = [];
+  for (const [k, v] of form.entries()) {
+    const m = /^note-(\d+)$/.exec(String(k));
+    if (m && String(v || '').trim()) metNotitie.push(Number(m[1]));
+  }
+  const uniek = [...new Set([...form.getAll('file').map(getal), ...metNotitie].filter((n) => Number.isInteger(n) && n > 0))]
     .filter((id) => !eruit.has(id));
 
   /* Niets over is hetzelfde als niets aangevinkt: terug naar het overzicht met
@@ -4565,6 +4677,7 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
           AND o.id = ?2
           AND o.service <> ?3
           AND f.kind = 'delivery'
+          AND f.review_state = 'pending'
           AND f.superseded_at IS NULL
           AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
           AND f.id IN (${gaten})
@@ -4588,7 +4701,7 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
   /* De poort. Is de ronde op, ingetrokken of de bestelling gesloten, dan is er
      niets na te kijken — terug naar de kaart, waar in gewone woorden staat
      waarom (zie revisionRound()). */
-  if (!canRequestRevisionRound(rijen[0])) return seeOther(terugNaarKaart);
+  if (!canRequestRevisionRound(rijen[0])) return seeOther(`${home}?ronde=dicht&order=${orderId}#order-${orderId}`);
 
   const regels = rijen.map((f) => {
     /* "Product 2 · Voorkant" en niet de bestandsnaam: de klant kent zijn beeld
@@ -4600,6 +4713,7 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
     const notitie = String(form.get(`note-${f.id}`) || '').slice(0, NOTE_MAX);
     return `
     <li class="nakijk-item">
+      <img class="nakijk-duim" src="/account/files/${f.id}/f" alt="" loading="lazy" width="104" height="104">
       <p class="nakijk-naam">${esc(naam)}</p>
       <input type="hidden" name="file" value="${f.id}">
       <label class="sr-only" for="k${f.id}">${esc(t.rdNote)}</label>
@@ -4683,7 +4797,7 @@ async function handleOrderPay({ request, env }, customer, orderId) {
    * geen betaling. De terugval rekent met het standaardtarief, precies zoals
    * orderMoney() en om dezelfde reden.
    */
-  const COLS = 'id, ref, service, lang, product_count, total_cents, payment_status';
+  const COLS = 'id, ref, service, lang, product_count, total_cents, payment_status, status';
   const byId = (cols) => env.DB.prepare(
     `SELECT ${cols} FROM orders WHERE id = ?1 AND customer_id = ?2`
   ).bind(orderId, customer.customer_id).first();
@@ -4719,6 +4833,9 @@ async function handleOrderPay({ request, env }, customer, orderId) {
   }
 
   if (!order || String(order.payment_status || 'unpaid') !== 'unpaid') return seeOther(anchor);
+  /* Geannuleerd is niet meer te betalen (ronde 8, S-K1 / A-K7): de kaart bood
+     "Nu betalen" aan en de webhook zette hem daarna gewoon op betaald. */
+  if (order.status === 'cancelled') return seeOther(anchor);
   if (!(isPayableService(order.service) || order.service === SAMPLE_SERVICE)) return seeOther(anchor);
 
   /*
@@ -4963,7 +5080,8 @@ async function serveAccountFile(context, customer, fileId) {
       `SELECT f.id, f.kind, f.r2_key, f.preview_key, f.filename, f.expires_at,
               o.status, o.cancel_payment
          FROM files f JOIN orders o ON o.id = f.order_id
-        WHERE f.id = ?1 AND o.customer_id = ?2 AND f.kind IN ('upload', 'delivery')`
+        WHERE f.id = ?1 AND o.customer_id = ?2 AND f.kind IN ('upload', 'delivery')
+          AND ${ZICHTBAAR_VOOR_KLANT}`
     ).bind(fileId, customer.customer_id).first();
   } catch {
     return new Response(null, { status: 503, headers: fileHeaders() });
@@ -5082,6 +5200,33 @@ async function serveInvoicePdf(context, customer, invoiceId) {
   }
   if (!object || !object.body) return new Response(null, { status: 404, headers: fileHeaders() });
 
+  const headers = new Headers(fileHeaders());
+  headers.set('content-type', 'application/pdf');
+  headers.set('content-disposition', `attachment; ${dispositionFilename(`${inv.number}.pdf`)}`);
+  if (typeof object.size === 'number') headers.set('content-length', String(object.size));
+  return new Response(object.body, { status: 200, headers });
+}
+
+/* De pdf van een abonnementsfactuur. Eigendom via het abonnement én de kolom
+   op de factuur zelf: allebei moeten van deze klant zijn. */
+async function serveSubInvoicePdf(context, customer, invoiceId) {
+  const { env } = context;
+  if (!env.UPLOADS) return new Response(null, { status: 503, headers: fileHeaders() });
+  let inv;
+  try {
+    inv = await env.DB.prepare(
+      `SELECT s.number, s.status, s.pdf_key
+         FROM subscription_invoices s JOIN subscriptions a ON a.id = s.subscription_id
+        WHERE s.id = ?1 AND a.customer_id = ?2 AND (s.customer_id IS NULL OR s.customer_id = ?2)`
+    ).bind(invoiceId, customer.customer_id).first();
+  } catch {
+    return new Response(null, { status: 503, headers: fileHeaders() });
+  }
+  if (!inv) return new Response(null, { status: 404, headers: fileHeaders() });
+  if (inv.status !== 'issued' || !inv.pdf_key) return new Response(null, { status: 404, headers: fileHeaders() });
+  let object;
+  try { object = await env.UPLOADS.get(inv.pdf_key); } catch { return new Response(null, { status: 503, headers: fileHeaders() }); }
+  if (!object || !object.body) return new Response(null, { status: 404, headers: fileHeaders() });
   const headers = new Headers(fileHeaders());
   headers.set('content-type', 'application/pdf');
   headers.set('content-disposition', `attachment; ${dispositionFilename(`${inv.number}.pdf`)}`);
@@ -5233,6 +5378,47 @@ function clearSessionCookie() {
   return `${SESSION_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`;
 }
 
+/* ── NA HET INLOGGEN TERUG WAAR JE HEEN WILDE — 1 oktober 2026 (ronde 8, S-B13) ──
+   Een link naar /account/orders?order=91 (uit WhatsApp, een bladwijzer, een
+   collega) eindigde na het inloggen op het overzicht. Het doel gaat nu een half
+   uur mee in een cookie, en alleen een pad onder /account/ met een eenvoudige
+   query telt: geen open doorverwijzing achter een inloglink. */
+const TERUG_COOKIE = 'vs_terug';
+export function terugVeilig(pad) {
+  const p = String(pad || '');
+  if (!/^\/account(\/[A-Za-z0-9\-/]*)?(\?[A-Za-z0-9=&%\-_.]*)?$/.test(p)) return false;
+  return !/^\/account\/(login|code|verify|logout|email)/.test(p);
+}
+function setTerugCookie(pad) {
+  return `${TERUG_COOKIE}=${encodeURIComponent(pad)}; Max-Age=1800; ${COOKIE_FLAGS}`;
+}
+function clearTerugCookie() {
+  return `${TERUG_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`;
+}
+function readTerug(request) {
+  const header = request.headers.get('Cookie') || '';
+  for (const part of header.split(';')) {
+    const i = part.indexOf('=');
+    if (i === -1) continue;
+    if (part.slice(0, i).trim() === TERUG_COOKIE) {
+      let v = '';
+      try { v = decodeURIComponent(part.slice(i + 1).trim()); } catch { v = ''; }
+      return terugVeilig(v) ? v : '';
+    }
+  }
+  return '';
+}
+/* De redirect naar inloggen, met het doel erbij als dat de moeite waard is. */
+function naarInloggen(request, na = '') {
+  let doel = '';
+  try {
+    const u = new URL(request.url);
+    const pad = `${u.pathname.replace(/\/+$/, '') || '/account'}${u.search}`;
+    if (request.method === 'GET' && terugVeilig(pad) && pad !== '/account') doel = pad;
+  } catch { doel = ''; }
+  return seeOther('/account/login' + na, doel ? [setTerugCookie(doel)] : []);
+}
+
 /**
  * Same check, same reasoning, as admin.js's originIsSelf() — see that file's
  * header, including task #271e's 2026-07-29 widening (request.url's own host,
@@ -5347,6 +5533,9 @@ export async function studioAuth(context) {
   }
   if (path === '/account/login' && method === 'POST') return handleLoginPost(ctx);
   if (path === '/account/code' && method === 'POST') return handleCodePost(ctx);
+  /* Verversen of "terug" op het codescherm gaf een lege 405 (ronde 8, S-B14).
+     Het codescherm hoort bij één POST; zonder die POST begin je bij inloggen. */
+  if (path === '/account/code' && (method === 'GET' || method === 'HEAD')) return seeOther(`/account/login${url.search}`);
   const verifyMatch = path.match(/^\/account\/verify\/([^/]+)$/);
   if (verifyMatch && (method === 'GET' || method === 'HEAD')) {
     let token;
@@ -5607,7 +5796,9 @@ const ICON_TICK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d
  * nieuwe. Eén bron voor wat er op het overzicht staat, twee vormen.
  */
 export function overviewView(t, lang, customer, orders, filesByOrder, eventsByOrder = new Map()) {
-  const name = customer.brand || customer.name || customer.email;
+  /* De voornaam (ronde 8): "Welkom, Keten Studio" sprak het merk aan, alsof
+     het merk inlogde. Zonder naam het merk, en anders het adres. */
+  const name = voornaam(customer.name) || customer.brand || customer.email;
   // Each tile now goes somewhere — the same status filter the Orders page
   // gained in August 2026. A count a customer can see and not act on is a
   // number they have to go and re-find by hand; "3 in production" and "show me
@@ -5618,11 +5809,16 @@ export function overviewView(t, lang, customer, orders, filesByOrder, eventsByOr
   // lezen uit elkaar te houden zijn; de link erachter is dezelfde statusfilter
   // die de bestellingenpagina in augustus 2026 kreeg. "3 in productie" en "laat
   // me die 3 zien" zijn dezelfde bedoeling, één klik uit elkaar.
+  /* De twee toestanden waarin de KLANT iets moet doen staan nu voorop (ronde 8,
+     S-B19): te betalen en te beoordelen. "Wordt nagekeken" en het totaal waren
+     tellers waar hij niets mee kon. */
+  const teBeoordelen = orders.reduce((n, o) => n + (o.closed_at || o.status === 'cancelled' ? 0
+    : (filesByOrder.get(o.id) || []).filter((f) => f.kind === 'delivery' && f.review_state === 'pending' && !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null))).length), 0);
   const stats = [
-    [ICON_PROD, t.ovInProduction, orders.filter((o) => o.status === 'in_production').length, 'in_production'],
-    [ICON_CHECK, t.ovHumanCheck, orders.filter((o) => o.status === 'human_check').length, 'human_check'],
+    [ICON_ORDERS, lang === 'nl' ? 'Te betalen' : 'To pay', orders.filter((o) => weergaveStatus(o) === 'awaiting_payment').length, 'awaiting_payment'],
+    [ICON_CHECK, lang === 'nl' ? 'Te beoordelen' : 'To review', teBeoordelen, 'delivered'],
+    [ICON_PROD, t.ovInProduction, orders.filter((o) => ['in_production', 'human_check'].includes(o.status) || (o.status === 'received' && weergaveStatus(o) !== 'awaiting_payment')).length, 'in_production'],
     [ICON_DELIVERED, t.ovDelivered, orders.filter((o) => o.status === 'delivered').length, 'delivered'],
-    [ICON_ORDERS, t.ovTotal, orders.length, ''],
   ];
   const recent = orders.slice(0, 5);
 
@@ -6812,7 +7008,7 @@ async function handlePlanQueue({ request, env }, customer) {
         if (planDag < firstOfferableDay(vandaag, blackouts)) return seeOther(`${terug}&fout=vroeg`);
         paar = windowFor(planDag, punten, booked, blackouts);
       } catch { return seeOther(`${terug}&fout=agenda`); }
-      if (paar.length !== WINDOW_DAYS) return seeOther(`${terug}&fout=vol`);
+      if (paar.length !== WINDOW_DAYS) return seeOther(`${terug}&fout=dagvol`);
       await queueWindow(env, customer.customer_id, rij.id, paar[0], paar[paar.length - 1]);
       return seeOther(`${terug}&ok=gepland`);
     }
@@ -6900,7 +7096,7 @@ async function handlePlanQueue({ request, env }, customer) {
          waar src/lib/agenda.js tegen bestaat. */
       return seeOther(`${lijst}&kies=${id}&fout=agenda`);
     }
-    if (paar.length !== WINDOW_DAYS) return seeOther(`${lijst}&kies=${id}&fout=vol`);
+    if (paar.length !== WINDOW_DAYS) return seeOther(`${lijst}&kies=${id}&fout=dagvol`);
 
     await queueWindow(env, customer.customer_id, id, paar[0], paar[paar.length - 1]);
     return seeOther(lijst);
@@ -6951,7 +7147,7 @@ async function handlePlanQueue({ request, env }, customer) {
     } catch {
       return seeOther(`${terug}&verzet=${id}&fout=agenda`);
     }
-    if (paar.length !== WINDOW_DAYS) return seeOther(`${terug}&verzet=${id}&fout=vol`);
+    if (paar.length !== WINDOW_DAYS) return seeOther(`${terug}&verzet=${id}&fout=dagvol`);
 
     const uit = await queueVerzet(env, customer.customer_id, id, paar[0], paar[paar.length - 1]);
     if (!uit.ok) return seeOther(`${terug}&verzet=${id}&fout=${encodeURIComponent(uit.reden)}`);
@@ -7052,6 +7248,7 @@ async function handlePlanPause({ request, env }, customer) {
     await mailAboWijziging(env, { soort: 'hervat', sub: state.sub, customer, lang });
     return terugOk('hervat');
   } else if (doen === 'pause') {
+    if (state.sub.status === 'pending') return seeOther(`${home}?tab=facturering&fout=pending`);
     /* Een opgezegd vooruitbetaald jaar loopt door tot het einde; pauzeren zou
        de maanden vasthouden tot een hervatting die nooit komt. Het scherm biedt
        de knop dan ook niet aan. */
@@ -7187,7 +7384,7 @@ async function handlePlanCancel({ request, env }, customer) {
   const form = await request.formData().catch(() => null);
   const woord = String(form?.get('confirm') || '').trim().toUpperCase();
   const home = '/account/plan';
-  if (woord !== 'CANCEL' && woord !== 'OPZEGGEN') return seeOther(home);
+  if (woord !== 'CANCEL' && woord !== 'OPZEGGEN') return seeOther(`${home}?tab=facturering&fout=bevestig`);
 
   const state = await planState(env, customer.customer_id);
   if (!state.sub) return seeOther(home);
@@ -7340,21 +7537,31 @@ export function paymentView(t, lang, o) {
        want visueel is dit hetzelfde geval — er hoeft niets te gebeuren. */
     cls = 'is-paid';
     line = t.payPlan;
+  } else if (o.status === 'cancelled') {
+    /* Geannuleerd en nooit betaald (ronde 8, S-K1): geen openstaand bedrag,
+       geen knop. */
+    cls = 'is-refunded';
+    line = t.payCancelled;
   } else {
     cls = 'is-unpaid';
     // Het venster verloopt, en dat is de reden dat dit dringend is. Alleen
     // zeggen als er ook echt een datum staat — een dreiging zonder datum is
     // alleen maar onrust.
-    line = o.window_expires_at
-      ? t.payDueBy(shortDate(o.window_expires_at, lang))
-      : t.payDue;
+    /* En een datum in het verleden is geen "staat vast tot" meer (ronde 8,
+       S-K4): de agenda gaf die dagen al vrij. */
+    const verlopen = o.window_expires_at && Date.parse(String(o.window_expires_at).replace(' ', 'T') + 'Z') < Date.now();
+    line = verlopen
+      ? t.payExpired
+      : o.window_expires_at
+        ? t.payDueBy(shortDate(o.window_expires_at, lang))
+        : t.payDue;
   }
 
   // isPayableService() en niet PAYABLE_SERVICES: orders.service bewaart 'drop'
   // waar de ladder 'complete' heet, en dat rechtstreeks toetsen laat de duurste
   // bestelling op de site zonder betaalknop staan. Zie LADDER_KEY in quote.js.
   const payable = isPayableService(o.service) || o.service === SAMPLE_SERVICE;
-  const payHref = state === 'unpaid' && payable ? `/account/orders/${o.id}/pay` : '';
+  const payHref = state === 'unpaid' && payable && o.status !== 'cancelled' ? `/account/orders/${o.id}/pay` : '';
   return { cls, rows, line, payHref };
 }
 
@@ -8152,6 +8359,12 @@ async function handleEmailConfirm(context, token) {
     await env.DB.batch([
       env.DB.prepare('UPDATE customers SET email = ?2 WHERE id = ?1')
         .bind(row.customer_id, row.new_email),
+      /* Ook op de lopende bestellingen (ronde 8, M-B7): levering, factuur en
+         betaallink lezen orders.email, en gingen na een wijziging naar het oude
+         adres. Alleen wat nog loopt; een afgeronde bestelling houdt haar adres. */
+      env.DB.prepare(
+        `UPDATE orders SET email = ?2 WHERE customer_id = ?1 AND closed_at IS NULL AND status <> 'cancelled'`
+      ).bind(row.customer_id, row.new_email),
       env.DB.prepare(
         `UPDATE email_changes
             SET confirmed_at = datetime('now'), undo_hash = ?2, undo_expires = ?3
@@ -8233,6 +8446,9 @@ async function handleEmailUndo(context, token) {
     await env.DB.batch([
       env.DB.prepare('UPDATE customers SET email = ?2 WHERE id = ?1')
         .bind(row.customer_id, row.previous_email),
+      env.DB.prepare(
+        `UPDATE orders SET email = ?2 WHERE customer_id = ?1 AND closed_at IS NULL AND status <> 'cancelled' AND lower(email) = lower(?3)`
+      ).bind(row.customer_id, row.previous_email, row.new_email),
       env.DB.prepare("UPDATE email_changes SET undone_at = datetime('now') WHERE id = ?1").bind(row.id),
       env.DB.prepare('DELETE FROM account_sessions WHERE customer_id = ?1').bind(row.customer_id),
       env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(row.customer_id),
@@ -8603,7 +8819,7 @@ export async function studioSection(context) {
         na = loopt ? '?na=abonnement' : '?na=abonnement-open';
       }
     } catch { na = ''; }
-    return seeOther('/account/login' + na);
+    return naarInloggen(request, na);
   }
   return sectionState(context, customer);
 }
@@ -8637,11 +8853,21 @@ export function studioHeaders() {
  * blijven HTML: de tevredenheidsvraag (feedback.js, met zijn eigen stylesheet)
  * en het revisiebeleid (een lijst uit revisiebeleid()); die gaan via set:html.
  */
+/* ── ÉÉN WEERGAVESTATUS, OVERAL — 1 oktober 2026 (ronde 8, S-B19) ─────────
+   Een onbetaalde bestelling heette op het overzicht "Ontvangen", op de kaart
+   "Wacht op betaling", en het filter ?status=awaiting_payment gaf een lege
+   lijst. Eén afleiding, en elk scherm gebruikt die. */
+export function weergaveStatus(o) {
+  if (!o) return '';
+  const onbetaald = String(o.payment_status || 'unpaid') === 'unpaid' && o.status === 'received' && Number(o.total_cents) > 0;
+  return onbetaald ? 'awaiting_payment' : o.status;
+}
+
 export function ordersView(t, lang, orders, statusFilter = '') {
-  const shown = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
+  const shown = statusFilter ? orders.filter((o) => weergaveStatus(o) === statusFilter) : orders;
   const counts = [];
   for (const key of Object.keys(STATUS)) {
-    const n = orders.filter((o) => o.status === key).length;
+    const n = orders.filter((o) => weergaveStatus(o) === key).length;
     if (n) counts.push({ key, n, label: statusLabel(key, lang) || key, href: `/account/orders?status=${encodeURIComponent(key)}`, active: statusFilter === key });
   }
   return {
@@ -8682,10 +8908,12 @@ export function shotView(t, f, o, inProduct = false) {
         : { kind: 'undo', label: f.review_state === 'approved' ? t.bUndo : t.bCancelShort };
     } else if (!canReview(o)) review = { kind: 'settled', text: t.settledNote };
     else {
-      const rondeOpen = revisionRoundState(o) === 'beschikbaar';
+      const rondeOpen = revisionRoundState(o) === 'beschikbaar' && o.status !== 'cancelled';
       review = {
         kind: 'approve', label: t.bApprove,
-        ask: !rondeOpen ? null : o.revisions_revoked_at ? { revoked: t.revokedNote } : { tick: t.rdTick, note: t.rdNote, hint: t.rdHint, max: NOTE_MAX },
+        /* Ingetrokken eerst (ronde 8, S-B2): revisionRoundState() geeft dan
+           'ingetrokken', dus rondeOpen is onwaar en de uitleg kwam nooit. */
+        ask: o.revisions_revoked_at ? null : !rondeOpen ? null : { tick: t.rdTick, note: t.rdNote, hint: t.rdHint, max: NOTE_MAX },
       };
     }
   }
@@ -8698,7 +8926,7 @@ export function shotView(t, f, o, inProduct = false) {
   };
 }
 
-export function productView(t, lang, o, g) {
+export function productView(t, lang, o, g, open = false) {
   const typed = g.key ? (orderProductNames(o.details_json)[g.key] || '') : '';
   const label = typed || (g.key ? t.prodLabel(g.key.replace(/^p/, '')) : t.prodOther);
   const live = g.delivered.filter((f) => !(f.expires_at && isExpired(f.expires_at, null)));
@@ -8710,22 +8938,23 @@ export function productView(t, lang, o, g) {
     live.length && approved ? t.prodApproved(approved) : null,
   ].filter(Boolean).join(' · ');
   const teKeuren = live.filter((f) => f.review_state === 'pending' && !f.superseded_at);
-  const allesGoed = (teKeuren.length > 1 && !o.closed_at && g.key && o.service !== SAMPLE_SERVICE)
+  const allesGoed = (teKeuren.length > 1 && !o.closed_at && o.status !== 'cancelled' && g.key && o.service !== SAMPLE_SERVICE)
     ? { product: g.key, label: t.prodApproveAll(teKeuren.length) }
     : null;
   const waText = encodeURIComponent(lang === 'nl'
     ? `Hoi VISUAILS, over bestelling ${o.ref} (${label}):`
     : `Hi VISUAILS, about order ${o.ref} (${label}):`);
   return {
-    key: g.key, label, facts, revising, coverHref: cover ? `/account/files/${cover.id}/f` : '',
+    key: g.key, label, facts, revising, open: open || revising, coverHref: cover ? `/account/files/${cover.id}/f` : '',
     delivered: g.delivered.map((f) => shotView(t, f, o, true)),
-    uploaded: g.uploaded.map((f) => shotView(t, f, o)),
+    /* inProduct ook hier (ronde 8, S-N10): "#2 · Voorkant" binnen het paneel van product 2. */
+    uploaded: g.uploaded.map((f) => shotView(t, f, o, true)),
     allesGoed,
     waHref: `https://wa.me/${WHATSAPP_NUMBER}?text=${waText}`,
   };
 }
 
-export function orderView(t, lang, o, files, events = [], fb = null, index = 0, openOrderId = 0) {
+export function orderView(t, lang, o, files, events = [], fb = null, index = 0, openOrderId = 0, openProduct = '') {
   /* ── GEANNULEERD EN AFGEREKEND: GEEN BEELDEN MEER ─────────────────────────
      De kaart blijft staan — de bestelling heeft bestaan, de tijdlijn vertelt wat
      er gebeurd is, en de factuur plus de creditnota blijven onder Facturen. Wat
@@ -8740,19 +8969,26 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
   const ingetrokken = leveringIngetrokken(o);
   const delivered = ingetrokken ? [] : files.filter((f) => f.kind !== 'upload');
   const uploaded = files.filter((f) => f.kind === 'upload');
+  /* ── WAT ECHT OPENSTAAT — 1 oktober 2026 (ronde 8, S-K1, S-B7, S-B23) ───
+     `!== 'paid'` telde ook terugbetaald, uit-abonnement en geannuleerd als
+     openstaand: het bedrag stond in de kop en de kaart klapte altijd open. En
+     elke afgeronde bestelling zonder tevredenheidsantwoord bleef voor altijd
+     openstaan; nu alleen de eerste veertien dagen na het afronden. */
+  const echtOnbetaald = String(o.payment_status || 'unpaid') === 'unpaid' && o.status !== 'cancelled';
+  const nogVragen = o.closed_at && (Date.now() - Date.parse(String(o.closed_at).replace(' ', 'T') + 'Z')) < 14 * 86400000;
   const needsAttention = Boolean(
-    (String(o.payment_status || 'unpaid') !== 'paid' && orderMoney(o))
-    || files.some((f) => f.review_state === 'revision_requested')
-    || (o.closed_at && !isSample(o) && !fb)
+    (echtOnbetaald && orderMoney(o))
+    || files.some((f) => f.review_state === 'revision_requested' && !f.superseded_at)
+    || (nogVragen && !isSample(o) && !fb)
   );
   const openNow = index === 0 || needsAttention || Number(openOrderId) === Number(o.id);
-  const unpaidMoney = String(o.payment_status || 'unpaid') !== 'paid' ? orderMoney(o) : null;
+  const unpaidMoney = echtOnbetaald ? orderMoney(o) : null;
   /* Dezelfde toestand als de tijdlijn (zie flowView): ontvangen, met een
      bedrag, en nog niet betaald. */
   const unpaid = o.status !== 'cancelled' && o.status === 'received' && !!unpaidMoney;
   const items = o.product_count
     ? (lang === 'nl'
-      ? `${o.product_count} ${Number(o.product_count) === 1 ? 'product' : 'prod.'}`
+      ? `${o.product_count} ${Number(o.product_count) === 1 ? 'product' : 'producten'}`
       : `${o.product_count} ${Number(o.product_count) === 1 ? 'item' : 'items'}`)
     : null;
   const bits = [
@@ -8771,13 +9007,17 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
      doorlooptijd" tegen een klant die de toeslag betaald had. */
   /* Geannuleerd (24 september 2026): de kaart zei nog "Levering: Wordt
      ingepland" onder GEANNULEERD. Dan is er geen leverregel. */
-  const windowLine = o.status === 'cancelled' ? ''
+  /* En niet meer na de levering (ronde 8): "Normale doorlooptijd — zo snel
+     mogelijk" onder een bestelling die al klaarstaat, leest als een fout. */
+  const windowLine = (o.status === 'cancelled' || o.status === 'delivered' || o.closed_at) ? ''
     : (o.window_start || o.tier === 'attended')
     ? `${t.fWindow}: ${window}`
     : heeftVoorrang(o) ? `${voorrangZin(lang)}.` : t.fQueue;
 
   /* De revisieronde, als toestand — dezelfde drie takken als revisionRound(). */
-  const stand = revisionRoundState(o);
+  /* Geannuleerd (ook als de klant de beelden houdt) heeft geen revisieronde
+     (ronde 8, S-N16): revisionRoundState() kent die toestand niet. */
+  const stand = o.status === 'cancelled' ? 'gesloten' : revisionRoundState(o);
   let ronde = null;
   if (stand === 'gebruikt') {
     const openNog = delivered.some((f) => !f.superseded_at && f.review_state === 'revision_requested');
@@ -8787,6 +9027,11 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
   } else if (stand === 'beschikbaar') {
     const levend = delivered.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
     if (levend.length) ronde = { kind: 'form', action: `/account/orders/${o.id}/ronde`, h: t.rdHead, warn: t.rdWarn, after: t.rdAfter, send: t.rdSend, beleidHtml: beleidBlok(t, lang) };
+  } else if (stand === 'ingetrokken' && delivered.length) {
+    /* Ingetrokken revisierechten (ronde 8, S-B2): de uitleg stond in de
+       teksten maar werd nergens getoond; de klant zag alleen het aanmerken
+       verdwijnen. */
+    ronde = { kind: 'revoked', h: t.contactH, p: t.revokedNote };
   }
 
   /* Alles in één keer goedkeuren (30 september 2026): pas vanaf twee beelden,
@@ -8810,13 +9055,29 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     note: o.customer_note || '',
     closedNote: ingetrokken ? t.cancelledNote : ((o.closed_at && !isSample(o)) ? t.closedNote : ''),
     feedbackHtml: feedbackFor(t, lang, o, fb),
-    products: grouped ? grouped.map((g) => productView(t, lang, o, g)) : null,
+    products: grouped ? grouped.map((g) => productView(t, lang, o, g, Number(openOrderId) === Number(o.id) && openProduct === g.key)) : null,
     sides: grouped ? null : {
       delivered: { h: t.sideDelivered, empty: t.emptyFiles, shots: delivered.map((f) => shotView(t, f, o)) },
       uploaded: { h: t.sideUploaded, empty: t.emptyUploads, shots: uploaded.map((f) => shotView(t, f, o)) },
     },
     ronde,
-    folder: delivered.length ? { h: t.folderH, body: t.folderBody, note: t.folderReview, href: `/account/orders/${o.id}/zip?lang=${lang}`, cta: t.bDownloadAll } : null,
+    /* Alleen met levende beelden (ronde 8, S-B5): zijn ze allemaal verlopen,
+       dan gaf de knop een lege 404. Dan de datum en de weg naar ons. */
+    folder: (() => {
+      if (!delivered.length) return null;
+      const levend = delivered.filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
+      if (levend.length) return { h: t.folderH, body: t.folderBody, note: t.folderReview, href: `/account/orders/${o.id}/zip?lang=${lang}`, cta: t.bDownloadAll };
+      const laatste = delivered.map((f) => String(f.expires_at || '')).sort().pop();
+      return { h: t.folderH, body: t.folderExpired(laatste ? shortDate(laatste, lang) : '—'), note: '', href: '', cta: '' };
+    })(),
+    /* Eén vaste weg naar een mens (ronde 8, S-B17): "loopt via WhatsApp of
+       e-mail" stond er zonder link, en in de twee-kolommenweergave was er
+       nergens een. */
+    contact: {
+      h: t.contactH, note: t.contactNote,
+      wa: { label: t.contactWa, href: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === 'nl' ? `Hoi VISUAILS, een vraag over bestelling ${o.ref}:` : `Hi VISUAILS, a question about order ${o.ref}:`)}` },
+      mail: { label: t.contactMail, href: `mailto:hello@visuails.com?subject=${encodeURIComponent(o.ref)}` },
+    },
   };
 }
 
@@ -8837,14 +9098,21 @@ export async function invoicesView(env, t, lang, customer, orders) {
       date: invoiceDate(snap.date || inv.created_at, lang),
       ref: inv.ref || '',
       amount: money(gross, lang),
-      href: inv.status === 'issued' ? (inv.kind === 'credit' ? `/account/credit-notes/${inv.id}/pdf` : `/account/invoices/${inv.id}/pdf`) : '',
+      href: inv.status === 'issued'
+        ? (inv.kind === 'credit' ? `/account/credit-notes/${inv.id}/pdf`
+          : inv.isSubscription ? `/account/plan-invoices/${inv.id}/pdf`
+          : `/account/invoices/${inv.id}/pdf`)
+        : '',
       state: inv.status === 'issued' ? '' : (inv.status === 'void' ? t.invVoid : t.invPending),
     };
   });
   return {
     rows,
     anyPending: list.some((inv) => inv.status === 'pending'),
-    emptyText: orders.some((o) => o.payment_status === 'paid') ? t.invEmptyUnpaid : t.invEmpty,
+    /* Drie toestanden (ronde 8, S-N3): "zodra de betaling binnen is" stond bij
+       wie al betaald had. Betaald zonder factuur = hij wordt gemaakt. */
+    emptyText: orders.some((o) => o.payment_status === 'paid') ? t.invEmptyPending
+      : orders.length ? t.invEmptyUnpaid : t.invEmpty,
   };
 }
 
@@ -8858,7 +9126,7 @@ export function detailsView(t, lang, details, justSaved, missing = false, emailS
   return {
     max: DETAIL_MAX,
     saved: justSaved ? t.detSaved : '',
-    warn: missing ? (missing === 'failed' ? t.detFailed : missing === 'vatvorm' ? t.detVatForm : t.detMissing) : '',
+    warn: missing ? (missing === 'failed' ? t.detFailed : missing === 'vatvorm' ? t.detVatForm : missing === 'vatkeuze' ? t.detVatChoice : t.detMissing) : '',
     nudge: d.phone ? null : { h: t.waNudgeTitle, p: t.waNudgeBody, cta: t.waNudgeCta },
     rijen: [
       [veld('first_name', t.detFirst, d.first_name || (d.last_name ? '' : d.name), { auto: 'given-name' }), veld('last_name', t.detLast, d.last_name, { auto: 'family-name' })],
@@ -9002,10 +9270,49 @@ export async function planView(env, request, t, lang, customer, models = [], loc
           : t.planStatusPaused);
   let ok = '';
   try { ok = new URL(request.url).searchParams.get('ok') || ''; } catch { /* geen */ }
-  const melding = { stoppen: t.planStopFail, hervatten: t.planResumeFail, vol: t.planQueueFull, naam: t.planQueueNameMissing, lockfoto: t.planQLockNoPhotos, lockslot: t.planQLockNoSlot, lockplan: t.planQLockNoPlan, locklook: t.planQLockNoLook, weekdag: t.planWeekFoutDag, weekkort: t.planWeekFoutKort, weekplan: t.planWeekFoutPlan }[fout] || '';
+  /* ── ELKE CODE EEN ZIN — 1 oktober 2026 (ronde 8, S-B8, S-B9) ─────────────
+     Plannen en verzetten stuurden ok=gepland, ok=verzet en een handvol
+     fout-codes die hier niet bestonden: de klant zag niets. "Dag vol" kreeg de
+     zin van "lijst vol". En een verkeerd getypt opzegwoord stuurde stil terug. */
+  const extraFout = lang === 'nl' ? {
+    dagvol: 'Die dag zit vol. Kies een andere dag in de agenda.',
+    weegt: 'Dit product is nog niet compleet genoeg om in te plannen. Voeg eerst de foto\u2019s en de soort toe.',
+    vroeg: 'Die dag is te dichtbij. Kies een dag vanaf de eerste die de agenda aanbiedt.',
+    agenda: 'De agenda kon even niet gelezen worden. Probeer het over een minuut opnieuw.',
+    dag: 'Kies een dag uit de agenda.',
+    bevestig: 'Typ OPZEGGEN (of CANCEL) om op te zeggen. Er is niets veranderd.',
+    pending: 'Je abonnement is nog niet betaald. Rond eerst de betaling af; pauzeren kan daarna.',
+    onbekend: 'Dat product staat niet (meer) op je lijst.',
+    opgepakt: 'Dit product is al opgepakt door de studio en kan niet meer verzet worden.',
+    'niet-vast': 'Zet het product eerst vast; daarna kun je de dag verzetten.',
+    'geen-dag': 'Dit product heeft nog geen dag om te verzetten.',
+    'niet-eerder': 'Verzetten kan alleen naar een eerdere dag.',
+    ingehaald: 'Iemand was je net voor: die dag is intussen vergeven. Kies een andere.',
+  } : {
+    dagvol: 'That day is full. Pick another day in the calendar.',
+    weegt: 'This product is not complete enough to schedule yet. Add the photos and the type first.',
+    vroeg: 'That day is too close. Pick a day from the first one the calendar offers.',
+    agenda: 'The calendar could not be read just now. Try again in a minute.',
+    dag: 'Pick a day from the calendar.',
+    bevestig: 'Type CANCEL (or OPZEGGEN) to cancel. Nothing has changed.',
+    pending: 'Your plan has not been paid yet. Finish the payment first; pausing is possible after that.',
+    onbekend: 'That product is not (or no longer) on your list.',
+    opgepakt: 'The studio has already picked this product up, so it can no longer be moved.',
+    'niet-vast': 'Lock the product first; then you can move its day.',
+    'geen-dag': 'This product does not have a day to move yet.',
+    'niet-eerder': 'You can only move to an earlier day.',
+    ingehaald: 'Someone beat you to it: that day was just taken. Pick another one.',
+  };
+  const melding = { stoppen: t.planStopFail, hervatten: t.planResumeFail, vol: t.planQueueFull, naam: t.planQueueNameMissing, lockfoto: t.planQLockNoPhotos, lockslot: t.planQLockNoSlot, lockplan: t.planQLockNoPlan, locklook: t.planQLockNoLook, weekdag: t.planWeekFoutDag, weekkort: t.planWeekFoutKort, weekplan: t.planWeekFoutPlan, ...extraFout }[fout] || '';
   const jaar = state?.sub?.term === 'prepaid';
-  const bevestiging = { week: t.planWeekOk, pauze: jaar ? t.planPauseOkPrepaid : t.planPauseOk, hervat: jaar ? t.planResumeOkPrepaid : t.planResumeOk, opgezegd: t.planCancelOk, jaaropgezegd: t.planYearCancelOk }[ok] || '';
-  const startComplete = lang === 'nl' ? '/nl/start/complete' : '/start/complete';
+  const bevestiging = {
+    week: t.planWeekOk, pauze: jaar ? t.planPauseOkPrepaid : t.planPauseOk, hervat: jaar ? t.planResumeOkPrepaid : t.planResumeOk, opgezegd: t.planCancelOk, jaaropgezegd: t.planYearCancelOk,
+    gepland: lang === 'nl' ? 'Ingepland. De dag staat in je planning.' : 'Scheduled. The day is in your planning.',
+    verzet: lang === 'nl' ? 'Verzet. De nieuwe dag staat in je planning.' : 'Moved. The new day is in your planning.',
+  }[ok] || '';
+  /* "Los bestellen" ging naar /start/complete — Catalog + Lifestyle, die niet
+     meer verkocht wordt (ronde 8, C-1A-17). Nu de keuzepagina. */
+  const startComplete = lang === 'nl' ? '/nl/start' : '/start';
   const account = { h: t.planAccountLabel, email: customer.email, brand: customer.brand || '', note: t.planNote, emailLabel: t.planEmailLabel, brandLabel: t.planBrandLabel };
 
   if (!state?.sub) {
@@ -9293,9 +9600,16 @@ export async function planView(env, request, t, lang, customer, models = [], loc
      geleverde beelden van deze klant (echt werk, geen plaatje), de vastgezette
      een donker frame, de vrije een gestippeld frame dat naar de lijst wijst.
      En de maand als strook van 28 dagen met de week erin. */
-  const beeldjes = files
-    .filter((fl) => fl.kind !== 'upload' && !fl.superseded_at && isViewable(fl))
-    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+  /* Nieuwste eerst, en zonder verlopen of ingetrokken beelden (ronde 8, S-B11):
+     de sortering las created_at, dat niet in de query stond (dus oud eerst), en
+     verlopen beelden verschenen als gebroken plaatje. Het id is oplopend, dus
+     dat sorteert net zo goed op nieuwste. */
+  const ingetrokkenOrders = new Set(orders.filter((o) => leveringIngetrokken(o)).map((o) => o.id));
+  const levendeBeelden = files.filter((fl) => fl.kind !== 'upload' && !fl.superseded_at
+    && !(fl.expires_at && isExpired(fl.expires_at, null)) && !ingetrokkenOrders.has(fl.order_id));
+  const beeldjes = levendeBeelden
+    .filter((fl) => isViewable(fl))
+    .sort((a, b) => Number(b.id) - Number(a.id))
     .map((fl) => `/account/files/${fl.id}/f`);
   /* ── ÉÉN STROOK IN PLAATS VAN EEN RIJ PER SOORT — 19 september 2026 ──────
      De frames hingen aan een slotgroep, en die bestaan niet meer. Wat overeind
@@ -9341,7 +9655,9 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   return {
     geen: false, melding, nu, weekstrip, venster,
     chip: planStatus ? { tekst: planStatus, toon: state.sub.status === 'active' && !state.jaarOpgezegd ? 'signal' : 'warn' } : null,
-    actie: state?.actief && state.saldo > 0 ? { href: startComplete, label: t.planRequest } : null,
+    /* Met credits is de knop bovenaan "Product toevoegen", niet betaald
+       bestellen (ronde 8, S-B12): het was precies omgekeerd. */
+    actie: state?.actief && state.saldo > 0 ? { href: '/account/plan?tab=bestellen', label: t.planSlotFill } : null,
     tabs: PLAN_TABS.map((k) => ({ key: k, href: k === 'maand' ? '/account/plan' : `/account/plan?tab=${k}`, label: { maand: t.planTabMaand, planning: t.planTabPlanning, bestellen: t.planTabBestellen, edities: t.planTabEdities, look: t.planTabLook, facturering: t.planTabFacturering }[k], nu: k === nu })),
     nudge: bkOnaf.length ? { h: t.planBkNudgeH, p: t.planBkNudgeBody, which: `${t.planBkNudgeWhich} ${bkOnaf.map((r) => r.label).join(', ')}`, cta: t.planBkNudgeCta } : null,
     saldo: {
@@ -9379,7 +9695,7 @@ export async function planView(env, request, t, lang, customer, models = [], loc
     kalender, planning,
     edities: { beelden: EDITIE_BEELDEN.map(([naam, alt]) => ({ src: `/img/${naam}-w380.webp`, alt })), mailto: `mailto:hello@visuails.com?subject=${encodeURIComponent(t.edMailSubject)}` },
     look: bk.map((r) => ({ label: r.label, waarde: r.waarde || '', stijl: r.stijl })),
-    opgebouwd: { geleverd, beelden: files.length, sinds: state.sub.started_at ? `${maandNaam(String(state.sub.started_at).slice(0, 7), lang)} ${String(state.sub.started_at).slice(0, 4)}` : '', opgehaald: state.opgehaald.map((o) => ({ name: o.name, ref: o.order_ref || '' })) },
+    opgebouwd: { geleverd, beelden: levendeBeelden.length, sinds: state.sub.started_at ? `${maandNaam(String(state.sub.started_at).slice(0, 7), lang)} ${String(state.sub.started_at).slice(0, 4)}` : '', opgehaald: state.opgehaald.map((o) => ({ name: o.name, ref: o.order_ref || '' })) },
     beheer: {
       term: ({ yearly: t.planBillingYearly, prepaid: t.planBillingPrepaid }[state.sub.term] || t.planBillingMonthly),
       bedragLabel: state.sub.term === 'prepaid' ? t.planBillingAmountPrepaid : t.planBillingAmount,
@@ -9396,6 +9712,11 @@ export async function planView(env, request, t, lang, customer, models = [], loc
       jaarTot: state.jaarTot ? mailDatum(state.jaarTot, lang) : '',
       jaarOpgezegd: state.jaarOpgezegd ? t.planYearCancelledNote(state.jaarTot ? mailDatum(state.jaarTot, lang) : (lang === 'nl' ? 'het einde van je jaar' : 'the end of your year')) : '',
       plansHref: lang === 'nl' ? '/nl/plans' : '/plans', gepauzeerd: state.sub.status === 'paused',
+      /* Nooit betaald (ronde 8, S-B10): pauzeren zette de klant vast — hervatten
+         kon niet zonder mandaat, en opnieuw aanmelden stuurde terug naar hier.
+         Dan geen pauzeknop maar de weg naar opnieuw afsluiten. */
+      nooitBetaald: state.sub.status === 'pending',
+      opnieuwHref: lang === 'nl' ? '/nl/start/plan' : '/start/plan',
     },
     account,
   };
@@ -9444,6 +9765,18 @@ function tegoedView(t, lang, cents) {
   return { h: t.saldoTegoedH, bedrag: money(cents, lang), uitleg: t.saldoTegoedUitleg };
 }
 
+/* De knop rechtsboven op Overzicht en Bestellingen (ronde 8, S-B12). Een
+   abonnee met een lopend abonnement zet een product op zijn lijst (credits);
+   wie geen abonnement heeft, bestelt los. Eén lichte query, geen planState. */
+async function primaireActie(env, t, lang, customer) {
+  const abo = await env.DB.prepare(
+    "SELECT 1 AS x FROM subscriptions WHERE customer_id = ?1 AND status = 'active' LIMIT 1"
+  ).bind(customer.customer_id).first().catch(() => null);
+  return abo
+    ? { href: '/account/plan?tab=bestellen', label: t.planSlotFill }
+    : { href: lang === 'nl' ? '/nl/start/' : '/start/', label: t.ovNewCta };
+}
+
 export async function studioScreen(context, section) {
   const st = await studioSection(context);
   if (st instanceof Response) return st;
@@ -9452,18 +9785,20 @@ export async function studioScreen(context, section) {
   if (section === 'overview') {
     const v = overviewView(t, lang, customer, st.orders, st.filesByOrder, st.eventsByOrder);
     v.tegoed = tegoedView(t, lang, await tegoedCents(env, customer.customer_id));
+    v.actie = await primaireActie(env, t, lang, customer);
     return { st, v };
   }
   if (section === 'orders') {
     const v = ordersView(t, lang, st.orders, st.statusFilter);
+    v.actie = await primaireActie(env, t, lang, customer);
     const feedbackByOrder = await ordersExtra(env, st.orders);
     v.kaarten = v.shown.map((o, i) => ({
       o,
       events: st.eventsByOrder.get(o.id) || [],
       files: st.filesByOrder.get(o.id) || [],
-      view: orderView(t, lang, o, st.filesByOrder.get(o.id) || [], st.eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null, i, st.openOrderId),
+      view: orderView(t, lang, o, st.filesByOrder.get(o.id) || [], st.eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null, i, st.openOrderId, st.openProduct),
     }));
-    v.rondeTekst = { verstuurd: t.rdSentOk, leeg: t.rdEmptyErr, notitie: t.rdNoteErr, mislukt: t.rdFailErr }[st.rondeFlag] || '';
+    v.rondeTekst = { verstuurd: t.rdSentOk, leeg: t.rdEmptyErr, notitie: t.rdNoteErr, mislukt: t.rdFailErr, dicht: t.rdClosedErr }[st.rondeFlag] || '';
     return { st, v };
   }
   if (section === 'invoices') {
@@ -9601,6 +9936,9 @@ export async function werkKlantgegevensBij(env, klant, form) {
      zoals op het bestelformulier (migratie 0043 / no_vat_number). */
   const reg = tekst(form.get('reg_number'), 40);
   const geenBtw = !btw && ['1', 'on', 'true', 'yes'].includes(tekst(form.get('no_vat'), 5).toLowerCase());
+  /* Een btw-nummer dat niet bij het land past, komt er niet in (ronde 8,
+     B-B1): het werd opgeslagen en pas daarna weigerde bepaalBedrijfEnBtw. */
+  if (btw && vatFormatOk(land, btw) === false) return;
 
   try {
     await env.DB.prepare(

@@ -51,7 +51,7 @@ import '@fontsource-variable/figtree/index.css';
 import '@fontsource-variable/martian-mono/standard.css';
 import {
   AMOUNT, euro, TEST_SAMPLE, reviewClaim, WINDOW_THRESHOLD,
-  CATALOG_IMAGES, LIFESTYLE_IMAGES, videoPrijsLabel,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, videoPrijsLabel, levertijdDelen, REVISIE_DAGEN, SHOOT_DAY, vatLabel,
   /* De maat van een geleverd beeld, niet overgetypt (30 september 2026). */
   RESOLUTIE,
 } from '../data/pricing.js';
@@ -124,13 +124,14 @@ const COPY = {
     facts: [
       'One product is enough, no shoot',
       `From ${e(AMOUNT.catalog)} per product`,
-      `As soon as possible · from ${WINDOW_THRESHOLD}: a fixed delivery date`,
+      `${levertijdDelen('unattended', 'en').join(', ')} · from ${WINDOW_THRESHOLD} products: a fixed date`,
       'Full commercial rights included',
     ],
 
     vnH: 'What you send. What you get back.',
     vnZin: `${FOTOS} phone photos are all you need to start: front, back and a detail.`,
-    vnIn: 'Sent in', vnInNoot: 'one of your phone photos',
+    vnIn: 'You send', vnInNoot: 'one of your phone photos',
+    vnInZin: 'Shot on a table, with a phone. No studio, no tripod.',
     vnVoorAlt: 'Sent in: a phone photo of a T-shirt on a wooden table',
     vnTabs: 'What we make from it',
     vnKrijg: 'You get',
@@ -149,9 +150,9 @@ const COPY = {
     vnStappenH: 'From your photo to your shop.',
     vnStappen: [
       ['You', 'Your phone is enough. No tripod, no studio.', null],
-      ['Us', 'We make the images. A specialist checks every one.', ['See more work', '/gallery']],
+      ['Us', `We make the images: ${levertijdDelen('unattended', 'en').join(', ').toLowerCase()}. A specialist checks every one.`, ['See more work', '/gallery']],
       ['Your images', 'Approve or ask for a revision, and download it all at once.', ['Look inside the portal', '/portal']],
-      ['Your shop', 'Square, upright and vertical: for your shop, ads and reels.', null],
+      ['Your shop', 'In the shape you pick: square, upright, or vertical for lifestyle. Ready for your shop, ads and reels.', null],
     ],
 
     svcH: 'What we make.',
@@ -186,10 +187,12 @@ const COPY = {
 
     qH: 'Straight answers.',
     qs: [
-      ['What if the visuals are not right?', 'See the order page', '/portal'],
-      ['Will a customer see it is AI?', 'Read the AI Act page', '/ai-act'],
-      ['Are my photos good enough?', 'What makes a photo usable', '/upload-guidelines'],
-      ['Why not do it myself?', 'The honest comparison', '/compare'],
+      /* Ronde 8 (C-6): elke vraag krijgt zijn antwoord in één zin, en de link
+         is voor wie meer wil — niet de enige manier om het antwoord te lezen. */
+      ['What if the visuals are not right?', `You approve image by image. Whatever is off goes back to a specialist in one free correction round, within ${REVISIE_DAGEN} days.`, 'How approving works', '/portal'],
+      ['Will a customer see it is AI?', 'Every file carries an invisible AI label. Whether and how you mention it is on the AI Act page.', 'Read the AI Act page', '/ai-act'],
+      ['Are my photos good enough?', 'A phone is enough: front, back and one close-up, on a calm surface in daylight.', 'What makes a photo usable', '/upload-guidelines'],
+      ['Why not do it myself?', `A shoot day costs ${SHOOT_DAY.en.range} ${vatLabel('excl', 'en')}, everything counted. Here you send photos and approve.`, 'The honest comparison', '/compare'],
     ],
     qAll: 'All questions',
 
@@ -208,13 +211,14 @@ const COPY = {
     facts: [
       'Eén product mag, geen shoot nodig',
       `Vanaf ${e(AMOUNT.catalog)} per product`,
-      `Zo snel mogelijk · vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum`,
+      `${levertijdDelen('unattended', 'nl').join(', ')} · vanaf ${WINDOW_THRESHOLD} producten: een vaste datum`,
       'Volledige commerciële rechten inbegrepen',
     ],
 
     vnH: 'Dit stuur jij. Dit krijg je terug.',
     vnZin: `${FOTOS} telefoonfoto’s zijn genoeg om te beginnen: voorkant, achterkant en een detail.`,
-    vnIn: 'Ingestuurd', vnInNoot: 'een van je telefoonfoto’s',
+    vnIn: 'Jij stuurt', vnInNoot: 'een van je telefoonfoto’s',
+    vnInZin: 'Op een tafel gemaakt, met een telefoon. Geen studio, geen statief.',
     vnVoorAlt: 'Ingestuurd: een telefoonfoto van een T-shirt op een houten tafel',
     vnTabs: 'Wat we ervan maken',
     vnKrijg: 'Je krijgt',
@@ -233,9 +237,9 @@ const COPY = {
     vnStappenH: 'Van jouw foto naar je shop.',
     vnStappen: [
       ['Jij', 'Je telefoon is genoeg. Geen statief, geen studio.', null],
-      ['Wij', 'Wij maken de beelden. Een specialist controleert ze allemaal.', ['Meer werk zien', '/gallery']],
+      ['Wij', `Wij maken de beelden: ${levertijdDelen('unattended', 'nl').join(', ').toLowerCase()}. Een specialist controleert ze allemaal.`, ['Meer werk zien', '/gallery']],
       ['Jouw beelden', 'Goedkeuren of een revisie vragen, en alles in één keer downloaden.', ['Het portaal van binnen', '/portal']],
-      ['Je shop', 'Vierkant, staand en verticaal: voor je shop, advertenties en reels.', null],
+      ['Je shop', 'In de vorm die je kiest: vierkant, staand, of verticaal bij lifestyle. Klaar voor je shop, advertenties en reels.', null],
     ],
 
     svcH: 'Wat we maken.',
@@ -270,10 +274,10 @@ const COPY = {
 
     qH: 'Direct antwoord.',
     qs: [
-      ['Wat als ze niet goed zijn?', 'Bekijk de bestelpagina', '/portal'],
-      ['Ziet een klant dat het AI is?', 'Lees de AI Act-pagina', '/ai-act'],
-      ['Zijn mijn foto’s goed genoeg?', 'Wat maakt een foto bruikbaar', '/upload-guidelines'],
-      ['Waarom niet zelf?', 'De eerlijke vergelijking', '/compare'],
+      ['Wat als ze niet goed zijn?', `Je keurt per beeld goed. Wat niet klopt, gaat in één gratis correctieronde terug naar een specialist, binnen ${REVISIE_DAGEN} dagen.`, 'Zo werkt goedkeuren', '/portal'],
+      ['Ziet een klant dat het AI is?', 'Elk bestand draagt een onzichtbaar AI-label. Of en hoe je het vermeldt, staat op de AI Act-pagina.', 'Lees de AI Act-pagina', '/ai-act'],
+      ['Zijn mijn foto’s goed genoeg?', 'Een telefoon is genoeg: voorkant, achterkant en één close-up, op een rustige ondergrond bij daglicht.', 'Wat maakt een foto bruikbaar', '/upload-guidelines'],
+      ['Waarom niet zelf?', `Een shootdag kost ${SHOOT_DAY.nl.range} ${vatLabel('excl', 'nl')}, alles meegerekend. Hier stuur je foto’s en keur je goed.`, 'De eerlijke vergelijking', '/compare'],
     ],
     qAll: 'Alle vragen',
 
@@ -290,13 +294,12 @@ const c = COPY[lang];
 const ook = [...binnenkortNamen(lang), c.svcOokRest].join(' · ');
 const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
 ---
-<div class="s22 thuis">
+<div class="s22 thuis zonder-grond">
 
   {/* ── 0 · OPENING ──────────────────────────────────────────────────────────
       Eén middenas: etiket, kop met het wisselende accentwoord, één zin, twee
       knoppen, en de laptop eronder. Zie .hero-stapel in stijl22.css. */}
   <section class="hero hero-split hero-stapel" aria-labelledby="vp-h1">
-    <div class="stralen" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
     <div class="hero-kop">
       <p class="etiket">{MERK} · {c.plek}</p>
       <h1 id="vp-h1" class="hoog hero-h1" aria-label={c.h1plain}>
@@ -338,12 +341,26 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
       verloop is voor elke dienst hetzelfde. Zonder script is het een rij die
       je opzij veegt; het script maakt er tabbladen van en laat hem wisselen. */}
   <section class="paneel dd" aria-labelledby="vp-vn" data-dd>
-    <div class="dd-woord">
+    {/* Ronde 8 (1 oktober 2026): Lucas — *"de sectie 'What you send. What you
+        get back.' mooier indelen, er is een groot stuk niks"*. De kop stond
+        links boven een kleine invoerfoto, rechts een vierkant van 36rem: de
+        linkerkolom was 25rem hoog en de rechter 45, en daaronder gaapte het
+        gat. Nu staat de kop over de volle breedte, en daaronder twee even
+        brede kolommen met dezelfde balk erboven — wat jij stuurt, en met een pijl
+        op de rand ernaast, wat je terugkrijgt. Twee vierkanten van dezelfde maat: de vergelijking IS
+        de sectie, dus ze staan naast elkaar op ooghoogte. */}
+    <header class="dd-kop">
       <h2 id="vp-vn" class="hoog hoog-2">{c.vnH}</h2>
       <p class="lopend">{c.vnZin}</p>
+    </header>
+    <div class="dd-inkant">
+      <p class="dd-balk dd-balk-in"><span class="dd-tab-naam">{c.vnIn}</span><span class="dd-tab-prijs">{c.vnInNoot}</span></p>
       <figure class="dd-in">
-        <img src={VN_IN.src} width={VN_IN.w} height={VN_IN.h} alt={c.vnVoorAlt} loading="lazy" decoding="async" />
-        <figcaption><span class="etiket">{c.vnIn}</span> {c.vnInNoot}</figcaption>
+        <span class="dd-in-beeld">
+          <img src={VN_IN.src} width={VN_IN.w} height={VN_IN.h} alt={c.vnVoorAlt} loading="lazy" decoding="async" />
+          <span class="dd-pijl" aria-hidden="true">→</span>
+        </span>
+        <figcaption>{c.vnInZin}</figcaption>
       </figure>
     </div>
     <div class="dd-uit">
@@ -387,32 +404,16 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
           </li>
         ))}
       </ol>
+      <p class="voetregel dd-ook"><span class="mono">{c.svcOok}:</span> <a class="pijl" href={lp('/start')}>{ook}</a></p>
     </div>
   </section>
 
-  {/* ── 4 · WAT WE MAKEN ─────────────────────────────────────────────────────
-      Drie tegels, drie soorten beeld. De rest in één regel eronder. */}
-  <section id="maken" class="paneel kiezer" aria-labelledby="vp-sv">
-    <header class="paneel-kop">
-      <h2 id="vp-sv" class="hoog hoog-2">{c.svcH}</h2>
-      <p class="lopend">{c.svcLede}</p>
-    </header>
-    <ul class="kaarten" role="list">
-      {c.svc.map(([naam, wat, prijs, href], i) => (
-        <li>
-          <a class="kaart" href={lp(href)}>
-            <img src={DIENST_BEELD[i].klein} width={DIENST_BEELD[i].w} height={DIENST_BEELD[i].h} alt="" loading="lazy" decoding="async">
-            <span class="kaart-pil">
-              <span class="kaart-tekst"><b>{naam}</b><span class="mono">{prijs}</span></span>
-              <span class="rond" aria-hidden="true">→</span>
-            </span>
-          </a>
-          <p class="kaart-wat">{wat}</p>
-        </li>
-      ))}
-    </ul>
-    <p class="voetregel"><span class="mono">{c.svcOok}:</span> <a class="pijl" href={lp('/start')}>{ook}</a></p>
-  </section>
+  {/* ── 4 · WAT WE MAKEN IS WEG — ronde 8, 1 oktober 2026 ─────────────────
+      Drie tegels met catalog, lifestyle en video stonden hier, één scherm
+      onder de dienstwissel van hoofdstuk 2 die precies dezelfde drie toont,
+      met dezelfde prijzen en dezelfde links. Twee keer hetzelfde menu is één
+      keer te veel; de "ook"-regel (op maat, binnenkort) staat nu onder de
+      stappen in hoofdstuk 2. */}
 
   {/* ── 5 · DE LOOKS ─────────────────────────────────────────────────────────
       Wat een modemerk als eerste wil weten: past dit bij mij. Elke kaart gaat
@@ -491,7 +492,7 @@ const GEZICHTEN_RIJ = ROSTER.slice(0, 5);
       <h2 id="vp-q" class="hoog hoog-2">{c.qH}</h2>
     </header>
     <ul class="vragen" role="list">
-      {c.qs.map(([q, l, href]) => <li><span>{q}</span><a class="pijl" href={lp(href)}>{l}</a></li>)}
+      {c.qs.map(([q, a, l, href]) => <li><span>{q}</span><p class="vraag-antwoord">{a}</p><a class="pijl" href={lp(href)}>{l}</a></li>)}
       <li><span></span><a class="pijl" href={lp('/faq')}>{c.qAll}</a></li>
     </ul>
   </section>

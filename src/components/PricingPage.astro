@@ -115,7 +115,12 @@ const sample = TEST_SAMPLE[lang];
    als je weet wat erin zit. De besparingsregel staat er nog steeds bij, en die
    doet in de derde kolom meer werk dan in de eerste: daar is hij een korting
    op iets wat je al kent. */
-const KIND_IDS = ['catalog', 'lifestyle', 'complete'] as const;
+/* ── TWEE KOLOMMEN — 1 oktober 2026 (ronde 8) ───────────────────────────────
+   Catalog + Lifestyle wordt niet meer verkocht. De bundelkolom, de
+   besparingsregel en "met lifestyle erbij €545" in het rekenvoorbeeld zijn weg;
+   wie allebei wil, bestelt ze los, elk tegen zijn eigen prijs. LADDER.complete
+   blijft in pricing.js staan voor oude bestellingen. */
+const KIND_IDS = ['catalog', 'lifestyle'] as const;
 
 // Two of the three kinds are a pillar page under another name, so the column
 // heading is the link — the brief's internal-linking rule (§1) without a row
@@ -123,7 +128,7 @@ const KIND_IDS = ['catalog', 'lifestyle', 'complete'] as const;
 // both of the others bought together, so linking it anywhere would send a
 // reader to half of what the column describes.
 const KIND_PAGE: Record<string, string | null> = {
-  complete: null,
+
   catalog: '/catalog',
   lifestyle: '/lifestyle',
 };
@@ -135,7 +140,7 @@ const KIND_PAGE: Record<string, string | null> = {
 // three is exactly the kind of quiet lie that survives a price change. So it
 // is checked here rather than trusted, and the build stops if a future edit
 // gives one kind its own bands.
-const rungs = LADDER.complete.map(([lo, hi]) => ({
+const rungs = LADDER.catalog.map(([lo, hi]) => ({
   lo,
   hi,
   // The count to ask ladderRate() for. The bottom of the band, because that is
@@ -145,11 +150,11 @@ const rungs = LADDER.complete.map(([lo, hi]) => ({
 }));
 for (const id of KIND_IDS) {
   const shape = LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
-  const expected = LADDER.complete.map(([lo, hi]) => `${lo}:${hi}`).join(',');
+  const expected = LADDER.catalog.map(([lo, hi]) => `${lo}:${hi}`).join(',');
   if (shape !== expected) {
     throw new Error(
       `PricingPage.astro: the "${id}" ladder does not break at the same counts ` +
-      `as "complete" (${shape} vs ${expected}). The rate table prints one set ` +
+      `as "catalog" (${shape} vs ${expected}). The rate table prints one set ` +
       `of row labels across all three columns, so it would be quoting ${id} ` +
       `rates against the wrong product counts. Give the table its own labels ` +
       `per column, or put the ladders back in step.`
@@ -197,7 +202,6 @@ const COPY = {
     ladderH: 'The price per product',
     ladderSub: 'The rate applies to every product in the order.',
     ladderProductsCol: 'Products',
-    ladderScrollHint: 'Swipe sideways for the catalog and lifestyle columns.',
     kinds: {
       // 'per product' stond hier ÉN werd door de rendering nog een keer
       // aangeplakt, dus de kolomkoppen lazen "…per product / per product · excl.
@@ -215,7 +219,6 @@ const COPY = {
 
          counted() zet er meteen het juiste woord achter — zie lexicon.js. */
       saveUnit: 'vs. the two apart',
-      complete: { name: 'Catalog + Lifestyle', sub: `Both services on the same product, one rate — ${counted('complete', COMPLETE_IMAGES, 'en')}` },
       /* countedShort() en niet counted(): de kop ernaast NOEMT de categorie al.
          "Catalog set — 4 catalog images" zet het woord twee keer neer. Zie de
          noot bij SHORTER in lexicon.js. */
@@ -228,7 +231,7 @@ const COPY = {
 
     workedH: 'What that comes to',
     workedSub: '',
-    workedBundle: 'with lifestyle added',
+    workedBundle: 'as lifestyle carousels',
     workedUnit: 'products',
     perProduct: 'per product',
 
@@ -273,7 +276,12 @@ const COPY = {
     videoLine: VIDEO_OP_AANVRAAG ? 'One short clip, on request for now: we reply with a price.' : 'One short clip. The same rate on its own or added to any order.',
     videoUnit: 'per clip',
     videoIncH: 'How it is priced:',
-    videoList: [
+    /* Op aanvraag (ronde 8, C-T2): "hetzelfde tarief binnen een bestelling als
+       los" ging over een tarief dat nergens staat. */
+    videoList: VIDEO_OP_AANVRAAG ? [
+      'A price per request, within a working day',
+      'Made from the same product photos',
+    ] : [
       'The same rate inside an order as on its own',
       'Made from the same product photos',
     ],
@@ -287,7 +295,7 @@ const COPY = {
     moreSub: '',
     moreRows: [
       ['Extra catalog angle', `${euro(extraPhotoRate(1), 'en')} to ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'en')} per photo, falling with your count`, 'A side or a second detail, per product.', '/catalog'],
-      ['Complete outfit', `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS} per order`, 'Several pieces worn together in one lifestyle shot.', '/lifestyle'],
+      ['Outfit (several pieces together)', `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS} per order`, 'Several pieces worn together in one lifestyle shot.', '/lifestyle'],
       ['A look of your own', 'On request', 'One design fee and one correction round, then the ordinary rate.', '/start/custom-look'],
       /* De twee opties uit het bestelformulier stonden tot 29 september 2026
          alleen daar en in de voorwaarden. Wie voorrang nodig heeft, zoekt hier. */
@@ -333,13 +341,11 @@ const COPY = {
     ladderH: 'De prijs per product',
     ladderSub: 'Het tarief geldt voor elk product in de bestelling.',
     ladderProductsCol: 'Producten',
-    ladderScrollHint: 'Schuif opzij voor de kolommen Catalogset en Lifestylecarrousel.',
     kinds: {
       // Zie de EN-tabel: 'per product' werd twee keer geprint.
       /* Zie de noot bij de Engelse tabel. Hier stond bovendien "beelden" waar
          het over catalog en lifestyle gaat; dat hoort "foto's" te zijn. */
       saveUnit: 't.o.v. de twee los',
-      complete: { name: 'Catalog + Lifestyle', sub: `Allebei op hetzelfde product, één tarief — ${counted('complete', COMPLETE_IMAGES, 'nl')}` },
       catalog: { name: 'Catalogset', sub: setSize('catalog', CATALOG_IMAGES, 'nl') },
       lifestyle: { name: 'Lifestylecarrousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl') },
     },
@@ -348,7 +354,7 @@ const COPY = {
     /* "Compleet" is ook de naam van een product op deze pagina; als bijwoord
        liet het in het midden welk tarief er gerekend werd. Nu staat het er. */
     workedSub: '',
-    workedBundle: 'met lifestyle erbij',
+    workedBundle: 'als lifestylecarrousels',
     workedUnit: 'producten',
     perProduct: 'per product',
 
@@ -379,7 +385,7 @@ const COPY = {
        daarom niet op de staffel passen. Dat is een rekenverschil en geen
        waardeoordeel, en dat is wat de kop nu zegt. */
     addOnH: 'Wat er verder een tarief heeft',
-    addOnSub: 'Niet per product afgerekend, dus niet in de staffel.',
+    addOnSub: 'Niet per product afgerekend, dus niet in de prijs per aantal.',
     brandModelName: 'Jouw merkmodel',
     brandModelLine: 'Eén gezicht, hetzelfde in elke bestelling waarin je het gebruikt. Alleen van jou.',
     brandModelUnit: 'eenmalige setup',
@@ -390,7 +396,10 @@ const COPY = {
     videoLine: VIDEO_OP_AANVRAAG ? 'Eén korte clip, voorlopig op aanvraag: we antwoorden met een prijs.' : 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
     videoUnit: 'per clip',
     videoIncH: 'Hoe de prijs werkt:',
-    videoList: [
+    videoList: VIDEO_OP_AANVRAAG ? [
+      'Een prijs per aanvraag, binnen een werkdag',
+      'Gemaakt van dezelfde productfoto’s',
+    ] : [
       'Binnen een bestelling hetzelfde tarief als los',
       'Gemaakt van dezelfde productfoto’s',
     ],
@@ -401,7 +410,7 @@ const COPY = {
     moreSub: '',
     moreRows: [
       ['Extra cataloghoek', `${euro(extraPhotoRate(1), 'nl')} tot ${euro(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2], 'nl')} per foto, dalend met je aantal`, 'Een zijkant of tweede detail, per product.', '/catalog'],
-      ['Compleet setje', `${euro(OUTFIT_SURCHARGE, 'nl')} per zo gestyled product, tot ${MAX_OUTFIT_PRODUCTS} per bestelling`, 'Meerdere stukken samen gedragen in één lifestyleshot.', '/lifestyle'],
+      ['Outfit (meerdere stukken samen)', `${euro(OUTFIT_SURCHARGE, 'nl')} per zo gestyled product, tot ${MAX_OUTFIT_PRODUCTS} per bestelling`, 'Meerdere stukken samen gedragen in één lifestyleshot.', '/lifestyle'],
       ['Een eigen look', 'Op aanvraag', 'Eén ontwerpbedrag en één correctieronde, daarna het gewone tarief.', '/start/custom-look'],
       ['Voorrang bij levering', `${Math.round(VOORRANG.deel * 100)}% van de bestelling, ${euro(VOORRANG.bodem, 'nl')} tot ${euro(VOORRANG.plafond, 'nl')}`, `Betaald op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 — of de toeslag komt terug. Tot ${VOORRANG.maxProducten} producten of ${VOORRANG.maxClips} clips.`, '/start'],
       ['Hogere resolutie', `${euro(HOOG_PER_PRODUCT, 'nl')} per lifestyleproduct`, `Alle drie de lifestylebeelden op ${RESOLUTIE.hoog} px aan de lange zijde in plaats van ${RESOLUTIE.standaard}, voor print of een groot scherm.`, '/lifestyle'],
@@ -554,9 +563,6 @@ const nn = (i: number) => String(i).padStart(2, '0');
               {KIND_IDS.map((id) => (
                 <td class="tarief">
                   {euro(ladderRate(id, r.at), lang)}
-                  {id === 'complete' && (
-                    <span class="pr-besparing mono">−{euro(completeSaving(r.at).saved, lang)}{ri === 0 && <em> {c.kinds.saveUnit}</em>}</span>
-                  )}
                 </td>
               ))}
             </tr>
@@ -564,7 +570,6 @@ const nn = (i: number) => String(i).padStart(2, '0');
         </tbody>
       </table>
     </div>
-    <p class="mono pr-hint">{c.ladderScrollHint}</p>
 
     {/* De vermenigvuldiging, gedaan. Drie aantallen, helemaal uitgerekend. */}
     <div class="pr-uitgerekend">
@@ -585,13 +590,13 @@ const nn = (i: number) => String(i).padStart(2, '0');
             uitleg nodig heeft. */}
         {WORKED.map((n) => {
           const q = quote('catalog', n);
-          const qb = quote('complete', n);
+          const ql = quote('lifestyle', n);
           return (
             <li>
               <span class="mono">{n} {c.workedUnit}</span>
               <b class="hoog hoog-3">{euro(q.net, lang)}</b>
               <span class="mono pr-som-sub">{euro(q.rate, lang)} {c.perProduct} · {vatLabel('excl', lang)}</span>
-              <span class="mono pr-som-bundel">{c.workedBundle} {euro(qb.net, lang)}</span>
+              <span class="mono pr-som-bundel">{c.workedBundle} {euro(ql.net, lang)}</span>
             </li>
           );
         })}

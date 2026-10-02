@@ -233,12 +233,22 @@ await check('duplicate delivery → 200, order NOT touched again', async () => {
 }, { status: 200, writes: [] });
 
 // 7 · an order that is already paid
-await check('order already paid → 200, payments row only', async () => {
+/* Ronde 8: een tweede betaling op een betaalde bestelling wordt niet meer stil
+   geaccepteerd. Vastgelegd, teruggestort, en een regel op de tijdlijn — en de
+   bestelling zelf verandert niet (geen 'orders'-schrijfactie). */
+await check('order already paid → 200, payment recorded, refunded, noted', async () => {
   stubFetch({ body: PAID() });
   const d = db({ order: { id: 7, status: 'in_production', payment_status: 'paid' } });
   const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
-  return { status: r.status, writes: d.writes.map((w) => w[0]) };
-}, { status: 200, writes: ['payments'] });
+  return { status: r.status, writes: d.writes.map((w) => w[0]), terug: calls.some((c) => /\/refunds/.test(c.url)) };
+}, { status: 200, writes: ['payments', 'event'], terug: true });
+
+await check('a payment on a cancelled order → not marked paid, refunded', async () => {
+  stubFetch({ body: PAID() });
+  const d = db({ order: { id: 7, status: 'cancelled', payment_status: 'unpaid' } });
+  const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
+  return { status: r.status, writes: d.writes.map((w) => w[0]), terug: calls.some((c) => /\/refunds/.test(c.url)) };
+}, { status: 200, writes: ['payments', 'event'], terug: true });
 
 // 8 · wrong environment / no such order
 await check('ref not in this database → 200, no writes', async () => {

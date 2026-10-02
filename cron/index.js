@@ -65,6 +65,7 @@ import { klaarOmTeStarten } from '../src/lib/planStart.js';
    een offerte, hier als herinnering. En de mailschil voor het vervalbericht van
    een venster. */
 import { stuurBetaallink } from '../src/lib/betaallink.js';
+import { teBetalenCents, tegoedOpBestelling } from '../src/lib/tegoedVerrekening.js';
 import { sendMail } from '../src/lib/mail.js';
 import { shell as mailShell, h1 as mailH1, p as mailP, spamNote as mailSpamNote, datum as mailDatum, button as mailButton, greeting as mailGreeting } from '../src/lib/mailTemplate.js';
 
@@ -115,7 +116,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, checkPlanQueues, herinnerCredits, weekTeStarten, checkBackupAge]) {
+    for (const task of [remindUnpaid, releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, sweepAbandonedIntake, issuePendingInvoices, grantPrepaidMonths, checkPlanQueues, herinnerCredits, weekTeStarten, levermailBewaker, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -236,9 +237,12 @@ async function releaseAll(env, rows) {
   for (const o of rows) {
     await env.DB.batch([
       env.DB.prepare(
+        /* Alleen zolang er nog niet betaald is (ronde 8, B-B10): tussen de
+           SELECT en deze UPDATE kan de betaling binnen zijn gekomen, en dan
+           hoort de datum gewoon te blijven staan. */
         `UPDATE orders
             SET window_start = NULL, window_end = NULL, window_expires_at = NULL
-          WHERE id = ?1`
+          WHERE id = ?1 AND COALESCE(payment_status, 'unpaid') = 'unpaid'`
       ).bind(o.id),
       env.DB.prepare(
         `INSERT INTO order_events (order_id, status, note, actor)
@@ -250,8 +254,8 @@ async function releaseAll(env, rows) {
            tijdlijn van een Nederlandse klant terecht. */
         o.status || 'received',
         o.lang === 'en'
-          ? `Reservation ${mailDatum(o.window_start, 'en')}${o.window_end && o.window_end !== o.window_start ? ` – ${mailDatum(o.window_end, 'en')}` : ''} released: the payment period has passed. The order stays; you can pick a new date.`
-          : `Reservering ${mailDatum(o.window_start, 'nl')}${o.window_end && o.window_end !== o.window_start ? ` – ${mailDatum(o.window_end, 'nl')}` : ''} vrijgegeven: de betaaltermijn is verstreken. De bestelling blijft staan; een nieuwe datum kan opnieuw worden gekozen.`
+          ? `Reservation ${mailDatum(o.window_start, 'en')}${o.window_end && o.window_end !== o.window_start ? ` – ${mailDatum(o.window_end, 'en')}` : ''} released: the payment period has passed. The order stays; pay and we agree a new date with you.`
+          : `Reservering ${mailDatum(o.window_start, 'nl')}${o.window_end && o.window_end !== o.window_start ? ` – ${mailDatum(o.window_end, 'nl')}` : ''} vrijgegeven: de betaaltermijn is verstreken. De bestelling blijft staan; betaal je alsnog, dan spreken we een nieuwe datum met je af.`
       ),
     ]);
   }
@@ -285,8 +289,9 @@ async function mailVensterVrij(env, o) {
             ? `De dagen <strong>${venster}</strong> die voor <strong>${o.ref}</strong> waren gereserveerd, zijn weer vrijgegeven: er is binnen zeven dagen niet betaald. Er is niets in rekening gebracht en je bestelling blijft gewoon staan.`
             : `The days <strong>${venster}</strong> reserved for <strong>${o.ref}</strong> have been released: the order was not paid within seven days. Nothing has been charged and your order still stands.`),
           mailP(nl
-            ? 'Wil je hem nog? Betaal via de link in je bevestigingsmail; we plannen dan opnieuw en laten je weten wanneer. Wil je hem niet meer, dan hoef je niets te doen.'
-            : 'Still want it? Pay through the link in your confirmation email; we then plan it again and let you know when. If not, there is nothing you need to do.'),
+            ? 'Wil je hem nog? Betaal hieronder; we spreken dan een nieuwe datum met je af en laten je weten wanneer. Wil je hem niet meer, dan hoef je niets te doen.'
+            : 'Still want it? Pay below; we then agree a new date with you and let you know when. If not, there is nothing you need to do.'),
+          mailButton(`${env.PUBLIC_ORIGIN || 'https://visuails.com'}/api/order-pay?ref=${encodeURIComponent(o.ref)}&lang=${nl ? 'nl' : 'en'}`, nl ? 'Alsnog betalen' : 'Pay now'),
           mailSpamNote(nl ? 'nl' : 'en'),
         ].join(''),
       }),
@@ -310,6 +315,9 @@ async function mailVensterVrij(env, o) {
  * (migratie 0042).
  */
 const REMINDER_DAYS = 3;
+/* Na hoeveel dagen een gewone onbetaalde bestelling vervalt (ronde 8, B-B14).
+   Ruim na de herinnering (dag 3) en het vrijgeven van een datum (dag 7). */
+const ONBETAALD_VERVAL_DAGEN = 14;
 
 async function remindUnpaid(env) {
   if (!env.MOLLIE_API_KEY) return null;
@@ -322,6 +330,11 @@ async function remindUnpaid(env) {
           AND status NOT IN ('cancelled', 'delivered')
           AND payment_reminder_at IS NULL
           AND (review_state IS NULL OR review_state = 'approved')
+          /* Geen herinnering voor een proefvisual (ronde 8, M-N11): wie een
+             eerste poging liet liggen en later een nieuwe proef betaalde, kreeg
+             een herinnering voor de oude — en betalen annuleerde hem dan als
+             tweede proef. */
+          AND service <> 'test-sample'
           AND COALESCE(reviewed_at, created_at) <= datetime('now', '-${REMINDER_DAYS} days')
           AND created_at >= datetime('now', '-30 days')
         ORDER BY id LIMIT 50`
@@ -380,6 +393,23 @@ async function remindUnpaid(env) {
  * vraag "wat is er met VIS-XXXX gebeurd" moet over een half jaar nog een antwoord
  * hebben.
  */
+/* ── GELEVERD, MAAR DE KLANT WEET HET NIET — 1 oktober 2026 (ronde 8, M-B9) ──
+   Een mislukte levermail viel nergens op behalve op de bestelpagina zelf. Dit
+   zet hem in het nachtrapport, tot hij verstuurd is. */
+async function levermailBewaker(env) {
+  let rows = [];
+  try {
+    rows = (await env.DB.prepare(
+      `SELECT ref FROM orders
+        WHERE status = 'delivered' AND delivery_mailed_at IS NULL
+          AND COALESCE(hidden_at, '') = '' AND delivered_at >= datetime('now', '-30 days')
+        ORDER BY id LIMIT 20`
+    ).all())?.results || [];
+  } catch { return null; }
+  if (!rows.length) return null;
+  return `${rows.length} geleverde bestelling${rows.length === 1 ? '' : 'en'} zonder levermail: ${rows.map((r) => r.ref).join(', ')} — open de bestelpagina en druk op "Leveringsmail opnieuw proberen".`;
+}
+
 async function cancelStaleApprovals(env) {
   let results;
   try {
@@ -400,14 +430,20 @@ async function cancelStaleApprovals(env) {
          stuurBetaallink() stopt zelf al bij een brutobedrag van nul, dus er is
          ook nooit een link verstuurd. Een lead van € 1.250 die te horen krijgt
          dat hij een rekening heeft laten verlopen die niet bestond. */
-      `SELECT id, ref, email, lang, reviewed_at
+      /* ── EN OOK DE GEWONE ONBETAALDE BESTELLING — 1 oktober 2026 (B-B14) ──
+         Een onbetaalde bestelling zonder beoordeling bleef eeuwig op
+         "binnen": in de lijsten, in de tellers, en met haar tegoed
+         vastgehouden. Na ONBETAALD_VERVAL_DAGEN vervalt ze nu ook, met
+         dezelfde mail. Abonnementswerk (payment_status 'plan') valt erbuiten. */
+      `SELECT id, ref, email, lang, reviewed_at, total_cents, vat_cents, details_json, review_state, customer_id
          FROM orders
-        WHERE review_state = 'approved'
-          AND COALESCE(payment_status, 'unpaid') = 'unpaid'
+        WHERE COALESCE(payment_status, 'unpaid') = 'unpaid'
           AND COALESCE(total_cents, 0) > 0
-          AND reviewed_at IS NOT NULL
-          AND reviewed_at <= datetime('now', '-7 days')
           AND status NOT IN ('cancelled', 'delivered')
+          AND (
+            (review_state = 'approved' AND reviewed_at IS NOT NULL AND reviewed_at <= datetime('now', '-7 days'))
+            OR (review_state IS NULL AND created_at <= datetime('now', '-${ONBETAALD_VERVAL_DAGEN} days'))
+          )
         ORDER BY id
         LIMIT 50`
     ).all());
@@ -420,7 +456,9 @@ async function cancelStaleApprovals(env) {
     throw err;
   }
 
-  const rows = results || [];
+  /* Alleen wat echt via Mollie betaald moest worden (ronde 8, B-K2): dekte
+     het tegoed alles, dan viel er niets te betalen en is hij niet "vergeten". */
+  const rows = (results || []).filter((o) => teBetalenCents(o) > 0);
   if (!rows.length) return null;
 
   /* ── EERST DE UPDATE, EN PAS DAARNA DE TIJDLIJN EN DE MAIL ────────────────
@@ -442,7 +480,7 @@ async function cancelStaleApprovals(env) {
             SET status = 'cancelled', cancel_reason = ?2, window_start = NULL, window_end = NULL,
                 window_expires_at = NULL
           WHERE id = ?1 AND COALESCE(payment_status, 'unpaid') = 'unpaid'`
-      ).bind(o.id, 'niet betaald binnen zeven dagen na goedkeuring'),
+      ).bind(o.id, o.review_state === 'approved' ? 'niet betaald binnen zeven dagen na goedkeuring' : `niet betaald binnen ${ONBETAALD_VERVAL_DAGEN} dagen`),
     ]);
     if (!(Number(uit?.meta?.changes) > 0)) {
       console.log('[cron] bestelling', o.ref, 'is inmiddels betaald — niet vervallen');
@@ -453,9 +491,13 @@ async function cancelStaleApprovals(env) {
     await env.DB.prepare(
       `INSERT INTO order_events (order_id, status, note, actor)
        VALUES (?1, 'cancelled', ?2, 'system')`
-    ).bind(o.id, o.lang === 'en'
-      ? 'Expired: not paid within seven days after we checked it. The order stays readable; you can always order again.'
-      : 'Vervallen: zeven dagen nadat wij hem hadden nagekeken, was er niet betaald. De bestelling blijft leesbaar; opnieuw bestellen kan altijd.').run();
+    ).bind(o.id, o.review_state === 'approved'
+      ? (o.lang === 'en'
+        ? 'Expired: not paid within seven days after we checked it. The order stays readable; you can always order again.'
+        : 'Vervallen: zeven dagen nadat wij hem hadden nagekeken, was er niet betaald. De bestelling blijft leesbaar; opnieuw bestellen kan altijd.')
+      : (o.lang === 'en'
+        ? `Expired: not paid within ${ONBETAALD_VERVAL_DAGEN} days. The order stays readable; you can always order again.`
+        : `Vervallen: binnen ${ONBETAALD_VERVAL_DAGEN} dagen niet betaald. De bestelling blijft leesbaar; opnieuw bestellen kan altijd.`)).run();
 
     /* De mail is een mededeling en geen aansporing. Wie na zeven dagen niet betaald
        heeft, heeft meestal iets anders besloten; het enige wat hier hoort is dat hij
@@ -467,7 +509,7 @@ async function cancelStaleApprovals(env) {
   }
 
   if (!vervallen.length) return null;
-  return `${vervallen.length} goedgekeurde bestelling${vervallen.length === 1 ? '' : 'en'} vervallen wegens niet betalen: ${vervallen.map((o) => o.ref).join(', ')}.`;
+  return `${vervallen.length} onbetaalde bestelling${vervallen.length === 1 ? '' : 'en'} vervallen: ${vervallen.map((o) => o.ref).join(', ')}.`;
 }
 
 /* Zonder RESEND_API_KEY gaat de mail niet en gaat de taak wél door — dezelfde
@@ -489,8 +531,12 @@ async function mailVervallen(env, o, nl) {
         body: [
           mailH1(nl ? 'Je bestelling is vervallen' : 'Your order has expired', o.ref),
           mailP(nl
-            ? `Je bestelling ${o.ref} is vervallen omdat er niet betaald is binnen zeven dagen nadat wij hem hadden nagekeken. Er is niets in rekening gebracht.`
-            : `Your order ${o.ref} has expired because it was not paid within seven days after we checked it. Nothing has been charged.`),
+            ? (o.review_state === 'approved'
+              ? `Je bestelling ${o.ref} is vervallen omdat er niet betaald is binnen zeven dagen nadat wij hem hadden nagekeken. Er is niets in rekening gebracht.`
+              : `Je bestelling ${o.ref} is vervallen omdat er binnen ${ONBETAALD_VERVAL_DAGEN} dagen niet betaald is. Er is niets in rekening gebracht${tegoedOpBestelling(o) > 0 ? ', en het tegoed dat erop stond, is weer vrij' : ''}.`)
+            : (o.review_state === 'approved'
+              ? `Your order ${o.ref} has expired because it was not paid within seven days after we checked it. Nothing has been charged.`
+              : `Your order ${o.ref} has expired because it was not paid within ${ONBETAALD_VERVAL_DAGEN} days. Nothing has been charged${tegoedOpBestelling(o) > 0 ? ', and the credit on it is free again' : ''}.`)),
           mailP(nl
             ? 'Wil je het alsnog, dan kun je gewoon opnieuw bestellen — je gegevens staan er nog.'
             : 'If you still want it, you can simply order again — your details are still there.'),

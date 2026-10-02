@@ -86,7 +86,9 @@ const marqueeItems = [
   { src: '/img/lifestyle-glow-03.webp', label: 'Glow', w: 768, h: 1376 },
   { src: '/img/lifestyle-flash-05.webp', label: 'Flash', w: 2400, h: 1792 },
   { src: '/img/lifestyle-dunes-02.webp', label: 'Dunes', w: 928, h: 1152 },
-  { src: '/img/banners-02.webp', label: 'Campaign', w: 928, h: 1152 },
+  /* Ronde 8: hier stond een campagnebeeld met het label 'Campaign' — dat is
+     een videostijl en geen lifestylelook. Nu een tweede Phone-made-beeld. */
+  { src: '/img/lifestyle-phone-made-11.webp', label: 'Phone-made', w: 2400, h: 1792 },
 ];
 
 // The mood cards render `cardPhoto` straight off src/data/styles.js, which
@@ -298,7 +300,7 @@ const COPY = {
     ctaH: 'Zet je product <br>in een scène die verkoopt.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
     prijsRegel: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} producten — ${vatLabel('excl', 'nl')}. Het tarief geldt voor elk product in de bestelling.`,
-    staffelCta: 'De hele staffel op Prijzen',
+    staffelCta: 'Alle prijzen per aantal',
   },
 };
 

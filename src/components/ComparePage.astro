@@ -92,7 +92,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   SHOOT_DAY, euro, quote, ladderFloor, tierFor,
   reviewClaim, turnaround, aftercare,
-  vatLabel, clause} from '../data/pricing.js';
+  vatLabel, clause, CATALOG_IMAGES } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigConverge from './FigConverge.astro';
 import '../styles/stijl22.css';
@@ -119,7 +119,9 @@ const shoot = SHOOT_DAY[lang];
 // count, not a second thing the buyer picked, and deriving it here is what
 // keeps the two facts from being stated as independent.
 const ANCHOR_PRODUCTS = 30;
-const q = quote('complete', ANCHOR_PRODUCTS);
+/* Ronde 8: catalog, en niet meer catalog + lifestyle samen — dat wordt niet
+   meer als één dienst verkocht. Dezelfde 30 als de meta-omschrijving. */
+const q = quote('catalog', ANCHOR_PRODUCTS);
 const tier = tierFor(ANCHOR_PRODUCTS);
 
 // Every money string on this page is assembled once, here, so a cell cannot
@@ -127,7 +129,7 @@ const tier = tierFor(ANCHOR_PRODUCTS);
 const orderNet = `${euro(q.net, lang)} ${vatLabel('excl', lang)}`;
 const orderRate = euro(q.rate, lang);
 const shootNet = `${shoot.range} ${vatLabel('excl', lang)}`;
-const floorRate = euro(ladderFloor('complete'), lang);
+const floorRate = euro(ladderFloor('catalog'), lang);
 /* ── "AFLOPEND TOT €65" TERWIJL HET AL €65 IS ────────────────────────────────
    20 augustus 2026. De kostenrij zei: "€1.950 excl. btw bij 30 producten —
    €65 per product, aflopend tot €65 bij het hoogste aantal producten." Twee
@@ -167,7 +169,7 @@ const COPY = {
         a: "One day of everyone’s time, and whatever fits inside it.",
         // The count is named because it has to be: the rate falls as the count
         // rises, so the column below is one worked example rather than a price.
-        b: `${ANCHOR_PRODUCTS} products, each with a catalog set and a lifestyle carousel.`,
+        b: `${ANCHOR_PRODUCTS} products, each with a catalog set of ${CATALOG_IMAGES} images.`,
       },
       {
         label: 'What it costs',
@@ -175,7 +177,7 @@ const COPY = {
         // one row where an unlabelled figure would make the whole page a
         // comparison of two things that were never the same kind of number.
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product${opDeBodem ? ', the lowest rate for catalog and lifestyle together' : `, falling to ${floorRate} at the highest product count`}.`,
+        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product${opDeBodem ? ', the lowest catalog rate' : `, falling to ${floorRate} at the highest product count`}.`,
       },
       {
         label: 'When it lands',
@@ -326,12 +328,12 @@ const COPY = {
         a: 'Eén dag van ieders tijd, en wat daar precies in past.',
         // Zie de EN-tak: het aantal staat erbij omdat het tarief met de omvang
         // meezakt, dus dit is één uitgewerkt voorbeeld en geen pakketprijs.
-        b: `${ANCHOR_PRODUCTS} producten, elk met een catalogset en een lifestylecarrousel.`,
+        b: `${ANCHOR_PRODUCTS} producten, elk met een catalogset van ${CATALOG_IMAGES} beelden.`,
       },
       {
         label: 'Wat het kost',
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product${opDeBodem ? ', het laagste tarief voor catalog en lifestyle samen' : `, aflopend tot ${floorRate} bij het hoogste aantal producten`}.`,
+        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product${opDeBodem ? ', het laagste catalogtarief' : `, aflopend tot ${floorRate} bij het hoogste aantal producten`}.`,
       },
       {
         label: 'Wanneer het er is',

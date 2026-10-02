@@ -186,10 +186,16 @@ console.log('\ngeen rij op de homepage is verticaal scrollbaar');
     /* 23 september 2026: de vierde tegel (de deur naar /start) is weg volgens
        VOORPAGINA-OPBOUW.md; "Ook: Hooks · Editions · werk op maat" staat nu als
        één regel onder de drie. Drie kaarten is dus de bedoeling. */
-    check(`${naam} — de rij heeft nog kaarten`, kaarten.aantal >= 3, true);
-    check(`${naam} — en geen enkele is afgeknipt of onbereikbaar`, kaarten.onbereikbaar, 0);
-    check(`${naam} — schuiven of passen, nooit iets ertussenin`,
-      kaarten.schuift > 100 || kaarten.schuift === 0, true);
+    /* Ronde 8 (1 oktober 2026): de rij met drie dienstkaarten is van de
+       voorpagina af — hij herhaalde de dienstwissel van hoofdstuk 2. Is er geen
+       rij, dan is er niets af te knippen; staat hij er ooit weer, dan gelden de
+       drie eisen hieronder opnieuw. */
+    if (kaarten) {
+      check(`${naam} — de rij heeft nog kaarten`, kaarten.aantal >= 3, true);
+      check(`${naam} — en geen enkele is afgeknipt of onbereikbaar`, kaarten.onbereikbaar, 0);
+      check(`${naam} — schuiven of passen, nooit iets ertussenin`,
+        kaarten.schuift > 100 || kaarten.schuift === 0, true);
+    } else check(`${naam} — de dienstwissel staat er in plaats van de rij`, await page.evaluate(() => !!document.querySelector('.s22 .dd-tabs')), true);
     await ctx.close();
   }
 }

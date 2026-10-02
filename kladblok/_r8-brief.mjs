@@ -1,0 +1,11 @@
+import { start, mails, mailtekst, sql, SITE } from './_dl.mjs';
+const s = await start({ mobiel: true }); const { page } = s;
+const voor = (await mails()).length;
+await page.goto(SITE + '/nl/', { waitUntil: 'load' });
+await page.fill('#studiobrief-voet input[type=email]', 'lezer@merk.test');
+await page.locator('#studiobrief-voet button[type=submit]').click();
+await page.waitForTimeout(2500);
+console.log('url', page.url().replace(SITE, ''), (await page.evaluate(() => document.querySelector('#studiobrief-voet')?.closest('section,footer,div')?.innerText || '')).replace(/\s+/g, ' ').slice(0, 200));
+for (const m of (await mails()).slice(voor)) console.log('MAIL', m.subject, '→', JSON.stringify(m.to), String(await mailtekst(m.n)).replace(/\s+/g, ' ').slice(0, 250));
+console.log(JSON.stringify(await sql("SELECT * FROM studiobrief ORDER BY rowid DESC LIMIT 1").catch((e) => String(e))));
+await s.stop();

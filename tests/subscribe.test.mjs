@@ -95,7 +95,8 @@ const start = (velden, klant = KLANT) => handleSubscribeStart({
   request: new Request('https://visuails.com/account/plan/start', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(velden).toString(),
+    /* De zakelijke verklaring hoort bij elke aanmelding, ook ingelogd (ronde 8). */
+    body: new URLSearchParams({ business_declaration: 'yes', business_version: 'business-v2-2026-09', ...velden }).toString(),
   }),
 }, klant);
 

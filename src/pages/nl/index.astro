@@ -17,14 +17,14 @@ import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../../d
 
 // `complete` is de scope die de homepage verkoopt — per product een catalogset
 // én een lifestyle-carousel — dus dat is de staffel die hier staat.
-const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
+/* Catalog + Lifestyle wordt niet meer verkocht (ronde 8): de twee diensten
+   die wél te koop zijn, elk met hun eigen "vanaf". */
 
 // Onder de 152 tekens (META_LIMIT), zodat Google hem heel toont: dit is de
 // description die niet afgekapt mag worden, en de €1-haak staat achteraan.
 const description =
   `Catalogbeelden en lifestyle voor kledingmerken, van je eigen productfoto’s. ` +
-  `${euro(ladderRate('complete', 1), 'nl')} per product, ` +
-  `${euro(ladderFloor('complete'), 'nl')} vanaf ${FLOOR_FROM}, ` +
+  `Zonder shoot. Vanaf ${euro(ladderRate('catalog', 1), 'nl')} per product, ` +
   `${vatLabel('excl', 'nl')}. Eerst zien voor ${euro(AMOUNT.testSample, 'nl')}.`;
 ---
 

@@ -35,8 +35,8 @@
  * (`details_json.tegoed_cents`) en pas AFGEBOEKT als de bestelling betaald is
  * (de webhook, of meteen als het tegoed alles dekt). Een afgebroken betaling
  * kost dus geen tegoed. Hetzelfde tegoed kan niet twee keer tegelijk
- * gereserveerd worden: wat op een andere, nog onbetaalde bestelling van het
- * laatste etmaal staat, telt niet mee als beschikbaar.
+ * gereserveerd worden: wat op een andere, nog onbetaalde en niet geannuleerde
+ * bestelling staat, telt niet mee als beschikbaar.
  *
  * ── TERUG ───────────────────────────────────────────────────────────────────
  *
@@ -45,8 +45,14 @@
  * betaald, kan via Mollie terug.
  */
 
-/** Hoe lang een onbetaalde bestelling haar tegoed vasthoudt voor een volgende. */
-const RESERVERING_UREN = 24;
+/* ── GEEN 24 UUR MEER — 1 oktober 2026 (ronde 8, B-K1) ─────────────────────
+   Een onbetaalde bestelling hield haar tegoed maar een etmaal vast. Daarna kon
+   een tweede bestelling hetzelfde tegoed gebruiken, terwijl de eerste via de
+   herinneringslink nog steeds betaald kon worden tegen bruto min tegoed: de
+   klant betaalde twee keer te weinig en het saldo ging onder nul. Nu houdt een
+   bestelling haar tegoed vast zolang ze onbetaald en niet geannuleerd is. Een
+   vergeten bestelling vervalt na ONBETAALD_VERVAL_DAGEN (cron), en dan komt het
+   tegoed vanzelf weer vrij. */
 
 /** Het tegoed dat op deze bestelling is vastgelegd, in centen (≥ 0). */
 export function tegoedOpBestelling(order) {
@@ -80,7 +86,7 @@ export async function tegoedSaldo(env, customerId) {
 
 /**
  * Wat er nu te verrekenen valt: het saldo, min wat op een andere nog
- * onbetaalde bestelling van het laatste etmaal is vastgelegd.
+ * onbetaalde, niet geannuleerde bestelling is vastgelegd.
  */
 export async function tegoedBeschikbaar(env, customerId, { behalveOrderId = null } = {}) {
   const saldo = await tegoedSaldo(env, customerId);
@@ -91,10 +97,9 @@ export async function tegoedBeschikbaar(env, customerId, { behalveOrderId = null
       WHERE customer_id = ?1
         AND COALESCE(payment_status, 'unpaid') = 'unpaid'
         AND COALESCE(status, '') <> 'cancelled'
-        AND created_at > datetime('now', ?2)
-        AND id <> COALESCE(?3, -1)
+        AND id <> COALESCE(?2, -1)
         AND json_valid(details_json)`
-  ).bind(customerId, `-${RESERVERING_UREN} hours`, behalveOrderId).first().catch(() => null);
+  ).bind(customerId, behalveOrderId).first().catch(() => null);
   return Math.max(0, saldo - Math.max(0, Math.round(Number(r?.c) || 0)));
 }
 

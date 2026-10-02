@@ -59,7 +59,11 @@ console.log('het contactformulier');
   globalThis.fetch = echteFetch;
   ok('het antwoord is een omleiding', res.status, 303);
   ok('naar de Nederlandse bedankpagina voor een bericht', /\/nl\/thank-you\/\?soort=contact/.test(res.headers.get('location') || ''), true);
-  ok('er ging een mail naar de studio', verstuurd.length, 1);
+  /* Twee mails sinds ronde 8: de studio, en een ontvangstbevestiging aan de
+     bezoeker met een kopie van zijn bericht (M-C9). */
+  ok('er gingen twee mails: studio en bezoeker', verstuurd.length, 2);
+  ok('de tweede gaat naar de bezoeker, met zijn bericht', verstuurd[1]?.to === 'henk@zaak.test' && /Doen jullie ook schoenen/.test(verstuurd[1]?.html || ''), true);
+  ok('en antwoorden op de studiomail gaat naar de bezoeker', verstuurd[0]?.reply_to, 'henk@zaak.test');
   ok('met het onderwerp in de onderwerpregel', /Iets op maat/.test(verstuurd[0]?.subject || ''), true);
   ok('en het gekozen kanaal in de mail', /WhatsApp/.test(verstuurd[0]?.html || ''), true);
   const rij = db.prepare('SELECT subject FROM messages').get();

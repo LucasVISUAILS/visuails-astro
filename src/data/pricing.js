@@ -2540,6 +2540,22 @@ export function turnaroundShort(tierId, lang = 'en') {
   return kort[lang] || kort.en;
 }
 
+/** De levertijd als getal én zijn tegenhanger, in twee delen voor een
+ *  specificatiestrook: ['Vaak binnen een dag', 'soms een paar dagen'].
+ *  Ronde 8 (1 oktober 2026, C-T7): de hero-chips zeiden alleen "Zo snel
+ *  mogelijk", zonder getal. Lucas' regel is dat "vaak binnen een dag" nooit
+ *  zonder "soms een paar dagen" staat — dus allebei, gelezen uit de lange
+ *  belofte van het niveau en niet overgetypt. Geen haakjes in de lange vorm
+ *  (een niveau met een vaste datum), dan de korte vorm met een leeg tweede deel. */
+export function levertijdDelen(tierId = 'unattended', lang = 'en') {
+  const tier = TIERS[tierId];
+  if (!tier) throw new Error(`pricing.js: unknown tier "${tierId}"`);
+  const lang2 = (tier.turnaround[lang] || tier.turnaround.en);
+  const m = /\(([^,()]+),\s*([^()]+)\)/.exec(lang2);
+  if (!m) return [turnaroundShort(tierId, lang), ''];
+  return [m[1].charAt(0).toUpperCase() + m[1].slice(1), m[2]];
+}
+
 /** De korte vorm van reviewClaim(). Zelfde voorwaarde als hierboven. */
 export function reviewClaimShort(tierId, lang = 'en') {
   const tier = TIERS[tierId];

@@ -1336,7 +1336,20 @@ function checkCancelled(ref, attempt = 0) {
 
            En dan niet dóórvragen: de bestelling ís geannuleerd, dus het antwoord
            verandert niet meer binnen zes seconden. Er is alleen niets te tonen. */
-        if (d.kind !== 'sample-duplicate') return;
+        /* Ronde 8: met de hand geannuleerd (oude betaallink, of de klant komt
+           later terug). Dan geen bedankverhaal, maar één eerlijke zin en de weg
+           naar contact. De reden zelf staat in de annuleringsmail. */
+        if (d.kind !== 'sample-duplicate') {
+          const hand = document.querySelector('[data-ty-afgezegd]');
+          const kop = document.querySelector('[data-ty-title]');
+          if (!hand) return;
+          hand.hidden = false;
+          if (kop && kop.dataset.tyTitleAfgezegd) kop.textContent = kop.dataset.tyTitleAfgezegd;
+          const bar = document.querySelector('[data-ty-bar]');
+          if (bar) bar.setAttribute('data-ty-cancelled-state', '');
+          document.querySelectorAll('.ty-hide-when-cancelled').forEach((el) => { el.hidden = true; });
+          return;
+        }
 
         const box = document.querySelector('[data-ty-cancelled]');
         if (!box) return;

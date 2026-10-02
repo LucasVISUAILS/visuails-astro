@@ -1456,7 +1456,7 @@ export async function queueTerugNaAnnulering(env, orderId) {
     console.error('[abonnement] niet alle credits terug voor bestelling', orderId,
       '\u2014', slots, 'van', wil);
   }
-  return { items: terug.length, slots, credits: slots, perSoort, abonnement: true };
+  return { items: terug.length, slots, credits: slots, wil, perSoort, abonnement: true };
 }
 
 /**

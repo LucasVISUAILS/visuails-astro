@@ -73,6 +73,10 @@ const COPY = {
     reverse: 'Op deze factuur is de btw verlegd naar jou als afnemer. Je geeft hem zelf aan in je eigen land.',
     outside: 'Deze levering valt buiten de Europese btw.',
     keep: 'Bewaar deze factuur voor je eigen administratie.',
+    nextH: 'Wat nu',
+    next: (wanneer) => `Een specialist maakt je beelden en loopt elk beeld na. Je krijgt een mail zodra ze klaarstaan${wanneer}. Daarna keur je ze per beeld goed, of vraag je één gratis correctieronde aan.`,
+    asap: ' (vaak binnen een dag, soms een paar dagen)',
+    window: (van, tot) => ` — op de gereserveerde datum, ${van}${tot && tot !== van ? ` tot en met ${tot}` : ''}`,
   },
   en: {
     subject: (ref) => `Payment received — ${ref}`,
@@ -89,6 +93,10 @@ const COPY = {
     reverse: 'VAT on this invoice is reverse charged to you as the customer. You declare it yourself in your own country.',
     outside: 'This supply falls outside the scope of European VAT.',
     keep: 'Keep this invoice for your own records.',
+    nextH: 'What happens next',
+    next: (when) => `A specialist makes your images and checks every one. You get an email as soon as they are ready${when}. Then you approve them image by image, or ask for one free correction round.`,
+    asap: ' (often within a day, sometimes a few days)',
+    window: (from, to) => ` — on the reserved date, ${from}${to && to !== from ? ` to ${to}` : ''}`,
   },
 };
 
@@ -135,9 +143,18 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
     : treatment === VAT_TREATMENT.outsideScope ? t.outside
       : '';
 
+  /* ── WAT NU — 1 oktober 2026 (ronde 8, M-C1) ──────────────────────────────
+     Na het betalen was het stil tot de levering. Eén zin over wat er gebeurt en
+     wanneer — dezelfde tijdszin als op de site, nooit een belofte. Niet bij een
+     abonnementstermijn of een proef (daar geldt dit niet). */
+  const wanneer = order.window_start
+    ? t.window(dateLine(order.window_start, lang), order.window_end ? dateLine(order.window_end, lang) : '')
+    : t.asap;
+  const watNu = order.ref && !order.noNext ? p(`<b>${esc(t.nextH)}.</b> ${esc(t.next(wanneer))}`, { top: 4 }) : '';
   const body = [
     h1(t.head, esc(invoice.number)),
     p(esc(t.lede)),
+    watNu,
     rows([
       [t.rInvoice, esc(invoice.number)],
       [t.rDate, esc(dateLine(snap.date, lang))],
@@ -265,7 +282,7 @@ const SUB_COPY = {
     ],
     rollover: (n) => `Credits die je in een maand niet gebruikt, schuiven ${n === 1 ? 'één maand' : `${n} maanden`} door.`,
     loginBtn: 'Direct naar VISUAILS Studio',
-    loginNote: 'Deze knop logt je meteen in en werkt een uur. Later log je in via visuails.com/account met je e-mailadres.',
+    loginNote: 'Deze knop logt je meteen in en werkt twee dagen. Later log je in via visuails.com/account met je e-mailadres.',
     invoiceH: 'Je eerste factuur',
   },
   en: {
@@ -293,7 +310,7 @@ const SUB_COPY = {
     ],
     rollover: (n) => `Credits you do not use in a month roll over for ${n === 1 ? 'one month' : `${n} months`}.`,
     loginBtn: 'Go straight to VISUAILS Studio',
-    loginNote: 'This button signs you in straight away and works for an hour. Later you sign in at visuails.com/account with your email address.',
+    loginNote: 'This button signs you in straight away and works for two days. Later you sign in at visuails.com/account with your email address.',
     invoiceH: 'Your first invoice',
   },
 };

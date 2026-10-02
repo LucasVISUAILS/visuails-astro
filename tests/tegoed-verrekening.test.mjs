@@ -7,7 +7,8 @@
  *
  * Wat hier vast moet staan:
  *   · het tegoed dekt het TOTAAL incl. btw, nooit meer dan dat;
- *   · een onbetaalde bestelling van het laatste etmaal houdt haar tegoed vast,
+ *   · een onbetaalde, niet geannuleerde bestelling houdt haar tegoed vast (ook na een etmaal —
+ *     ronde 8: anders was hetzelfde tegoed twee keer uit te geven),
  *     een oudere niet;
  *   · afboeken en terugboeken zijn idempotent (de webhook levert dubbel af);
  *   · de factuur is gedekt als betaling + tegoed het totaal halen;
@@ -65,7 +66,9 @@ console.log('\nreserveren');
   ok('een onbetaalde bestelling van nu houdt haar tegoed vast', await tegoedBeschikbaar(env, 1), 6100);
   ok('  maar niet voor zichzelf', await tegoedBeschikbaar(env, 1, { behalveOrderId: 10 }), 12100);
   order(11, 'VIS-OUD2', 10000, 2100, 6000, '2026-01-01 10:00:00');
-  ok('een oude onbetaalde bestelling niet meer', await tegoedBeschikbaar(env, 1), 6100);
+  ok('een oude onbetaalde bestelling houdt het ook vast (geen dubbel gebruik)', await tegoedBeschikbaar(env, 1), 100);
+  db.prepare("UPDATE orders SET status = 'cancelled' WHERE id = 11").run();
+  ok('  tot ze geannuleerd is', await tegoedBeschikbaar(env, 1), 6100);
 }
 
 console.log('\nbetalen en afboeken');

@@ -2,7 +2,7 @@ import { start, foto, tekst, mails, mailtekst, sql, SITE } from './_dl.mjs';
 import { adminLogin } from './_admin.mjs';
 const s = await start(); const { page } = s;
 await adminLogin(page);
-const cid = (await sql("SELECT id FROM customers WHERE email='yara@merk.test'"))[0].id;
+const cid = (await sql(`SELECT id FROM customers WHERE email='${process.argv[2] || 'yara@merk.test'}'`))[0].id;
 const voor = (await mails()).length;
 await page.goto(SITE + `/admin/customers/${cid}`, { waitUntil: 'load' });
 const f = page.locator(`form[action="/admin/customers/${cid}/week"]`);

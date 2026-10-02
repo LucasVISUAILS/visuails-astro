@@ -1,7 +1,7 @@
 import { start, foto, tekst, velden, mails, mailtekst, sql, SITE } from './_dl.mjs';
 import { studioLogin } from './_studio.mjs';
 const s = await start(); const { page } = s;
-await studioLogin(page, 'yara@merk.test');
+await studioLogin(page, (process.argv[2] || 'yara@merk.test'));
 const klik = (sel) => page.evaluate((sel) => { const r = document.querySelector(sel); (r?.closest('label') || r)?.click(); return !!r; }, sel);
 // look catalog
 await page.goto(SITE + '/account/brand-kit', { waitUntil: 'load' });

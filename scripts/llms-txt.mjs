@@ -42,7 +42,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   AMOUNT, euro, vatLabel, ladderRate, ladderFloor, LADDER,
-  WINDOW_THRESHOLD, PLAN_AMOUNT, PLAN_PRODUCTS, STOCK_OFF_BRAND, STOCK_ON_BRAND,
+  WINDOW_THRESHOLD, PLAN_AMOUNT, VIDEO_OP_AANVRAAG, STOCK_OFF_BRAND, STOCK_ON_BRAND,
   turnaround, plans,
 } from '../src/data/pricing.js';
 
@@ -108,13 +108,13 @@ function paginaRegels(distDir) {
 }
 
 function tekst(distDir) {
-  const ladderRegels = ['catalog', 'lifestyle', 'complete'].map((k) => {
+  const ladderRegels = ['catalog', 'lifestyle'].map((k) => {
     const rijen = LADDER[k];
     const vanaf = rijen[rijen.length - 1][0];
     return `- ${k}: ${euro(ladderRate(k, 1), 'en')} per product at 1–${rijen[0][1]}, falling to ${euro(ladderFloor(k), 'en')} from ${vanaf} products`;
   });
   const planRegels = plans('en').map((pl) =>
-    `- ${pl.name}: ${euro(PLAN_AMOUNT[pl.id], 'en')} a month for ${PLAN_PRODUCTS[pl.id]} complete products`);
+    `- ${pl.name}: ${euro(PLAN_AMOUNT[pl.id], 'en')} a month for ${pl.includes[0]} (${pl.includes[1].replace(/^For example /, 'for example ')})`);
 
   return `# VISUAILS
 
@@ -138,13 +138,13 @@ machine-readable AI provenance tag.
 
 All amounts are net; ${vatLabel('excl', 'en')} is stated beside every figure on
 the site. The rate per product falls as the number of products in one order
-rises — quoting a single figure for these three would be wrong:
+rises — quoting a single figure for these two would be wrong:
 
 ${ladderRegels.join('\n')}
 
 Flat rates, which do not fall with volume:
 
-- video clip: ${euro(AMOUNT.video, 'en')} each, the same on its own or inside an order
+${VIDEO_OP_AANVRAAG ? '- video clip: on request for now — we reply in writing with a price before anything starts' : `- video clip: ${euro(AMOUNT.video, 'en')} each, the same on its own or inside an order`}
 - hook video: from ${euro(AMOUNT.hooks, 'en')} per product, ${euro(AMOUNT.hooksVariant, 'en')} for an extra variant
 - Brand Model: ${euro(AMOUNT.brandModel, 'en')} once
 - test sample: ${euro(AMOUNT.testSample, 'en')}, one per business

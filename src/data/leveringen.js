@@ -28,7 +28,11 @@ import { VOORBEELD_REF } from './voorbeeldset.js';
 export const DIENSTEN = {
   catalog: { nl: 'Catalog', en: 'Catalog', meta: { nl: 'Catalogset', en: 'Catalog set' } },
   lifestyle: { nl: 'Lifestyle', en: 'Lifestyle', meta: { nl: 'Lifestylecarrousel', en: 'Lifestyle carousel' } },
-  complete: { nl: 'Catalog + lifestyle', en: 'Catalog + lifestyle', meta: { nl: 'Catalogset en carrousel', en: 'Catalog set and carousel' } },
+  /* Ronde 8 (1 oktober 2026): "Catalog + lifestyle" is weg — Lucas verkoopt het
+     niet meer als één dienst (twee bestellingen, elk tegen zijn eigen prijs).
+     Video komt ervoor in de plaats. Een videorij is altijd een plaatshouder
+     zolang VIDEO_OP_AANVRAAG aan staat: er is nog geen geleverde clip. */
+  video: { nl: 'Video', en: 'Video', meta: { nl: 'Productclip', en: 'Product clip' } },
 };
 
 /** De productsoorten. Het tweede filter; staat als keuzemenu zodat de rij rustig blijft. */
@@ -44,11 +48,14 @@ export const SOORTEN = {
 export const LEVERINGEN = [
   { id: 'wijde-jeans', ref: VOORBEELD_REF, dienst: 'catalog', soort: 'broeken', product: { nl: 'Wijde jeans', en: 'Wide leg jeans' } },
   { id: 'overshirt', ref: 'VIS-2609-1182', dienst: 'lifestyle', soort: 'shirts', product: { nl: 'Overshirt', en: 'Overshirt' }, beelden: 'volgt' },
-  { id: 'wollen-jas', ref: 'VIS-2609-2035', dienst: 'complete', soort: 'jassen', product: { nl: 'Wollen jas', en: 'Wool coat' }, beelden: 'volgt' },
+  { id: 'wollen-jas', ref: 'VIS-2609-2035', dienst: 'catalog', soort: 'jassen', product: { nl: 'Wollen jas', en: 'Wool coat' }, beelden: 'volgt' },
   { id: 'hoodie', ref: 'VIS-2609-2410', dienst: 'catalog', soort: 'truien', product: { nl: 'Hoodie', en: 'Hoodie' }, beelden: 'volgt' },
   { id: 'plooirok', ref: 'VIS-2609-3307', dienst: 'lifestyle', soort: 'rokken', product: { nl: 'Plooirok', en: 'Pleated skirt' }, beelden: 'volgt' },
   { id: 'canvas-tas', ref: 'VIS-2609-3981', dienst: 'catalog', soort: 'accessoires', product: { nl: 'Canvastas', en: 'Canvas tote' }, beelden: 'volgt' },
-  { id: 'linnen-blouse', ref: 'VIS-2609-4526', dienst: 'complete', soort: 'shirts', product: { nl: 'Linnen blouse', en: 'Linen blouse' }, beelden: 'volgt' },
+  { id: 'linnen-blouse', ref: 'VIS-2609-4526', dienst: 'lifestyle', soort: 'shirts', product: { nl: 'Linnen blouse', en: 'Linen blouse' }, beelden: 'volgt' },
+  { id: 'gebreide-trui', ref: 'VIS-2609-4890', dienst: 'lifestyle', soort: 'truien', product: { nl: 'Gebreide trui', en: 'Knit sweater' }, beelden: 'volgt' },
+  { id: 'tshirt-clip', ref: 'VIS-2609-5104', dienst: 'video', soort: 'shirts', product: { nl: 'T-shirt', en: 'T-shirt' }, beelden: 'volgt', look: 'Motion' },
+  { id: 'jas-clip', ref: 'VIS-2609-5672', dienst: 'video', soort: 'jassen', product: { nl: 'Bomberjack', en: 'Bomber jacket' }, beelden: 'volgt', look: 'Motion' },
 ];
 
 /** De diensten en soorten die in de lijst echt voorkomen — een filterknop zonder

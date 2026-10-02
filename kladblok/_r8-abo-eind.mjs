@@ -1,0 +1,35 @@
+/* Abonnement: facturen-pdf openen, opzeggen, en wat admin ervan ziet. */
+import { start, sql, mails, mailtekst, SITE } from './_dl.mjs';
+import { studioLogin } from './_studio.mjs';
+import { adminLogin } from './_admin.mjs';
+const email = process.argv[2]; const log = (...a) => console.log('»', ...a);
+const s = await start(); const { page } = s;
+await studioLogin(page, email);
+await page.goto(SITE + '/account/invoices', { waitUntil: 'load' });
+const pdfs = await page.evaluate(() => [...document.querySelectorAll('a[href*="/pdf"]')].map((a) => a.getAttribute('href')));
+log('factuurlinks', JSON.stringify(pdfs));
+for (const h of pdfs.slice(0, 3)) { const r = await page.request.get(SITE + h); log('pdf', h, r.status(), r.headers()['content-type'], (await r.body()).length); }
+await page.goto(SITE + '/account/plan?tab=facturering', { waitUntil: 'load' });
+const voor = (await mails()).length;
+await page.evaluate(() => document.querySelectorAll('details.st-opzeggen').forEach((d) => { d.open = true; }));
+await page.fill('input[name="confirm"]', 'verkeerd');
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.locator('form[action="/account/plan/cancel"] button').click()]);
+log('verkeerd woord →', page.url().replace(SITE, ''), (await page.evaluate(() => document.querySelector('.st-melding, [role=alert], .st-fout')?.innerText || '')).slice(0, 150));
+await page.evaluate(() => document.querySelectorAll('details.st-opzeggen').forEach((d) => { d.open = true; }));
+const woord = await page.evaluate(() => document.querySelector('label[for=opz]')?.innerText || '');
+log('label', woord);
+const juist = (woord.match(/[A-Z]{5,}/) || ['OPZEGGEN'])[0];
+await page.fill('input[name="confirm"]', juist);
+await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.locator('form[action="/account/plan/cancel"] button').click()]);
+log('opgezegd →', page.url().replace(SITE, ''));
+await page.screenshot({ path: '/tmp/claude-0/r8/28-abo-opgezegd.png', fullPage: true });
+log('db', JSON.stringify(await sql(`SELECT status, cancelled_at IS NOT NULL AS opgezegd FROM subscriptions WHERE customer_id=(SELECT id FROM customers WHERE email='${email}')`)));
+for (const m of (await mails()).slice(voor)) log('MAIL', m.subject, '→', JSON.stringify(m.to), String(await mailtekst(m.n)).replace(/\s+/g, ' ').slice(0, 300));
+const a = await start(); await adminLogin(a.page);
+await a.page.goto(SITE + '/admin/plans', { waitUntil: 'load' }).catch(() => {});
+log('admin /admin/plans', a.page.url().replace(SITE, ''), (await a.page.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 300));
+await a.page.goto(SITE + '/admin/facturen', { waitUntil: 'load' });
+log('admin facturen', (await a.page.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 400));
+const csv = await a.page.request.get(SITE + '/admin/facturen?csv=1'); log('csv', csv.status(), csv.headers()['content-type'], String(await csv.text()).split('\n').slice(0, 3).join(' // '));
+await a.page.screenshot({ path: '/tmp/claude-0/r8/29-admin-facturen.png', fullPage: true });
+await s.stop(); await a.stop();

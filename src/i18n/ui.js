@@ -13,7 +13,7 @@
 
 // The €1 test-sample figure is read from the price ladder, never typed here.
 // src/data/pricing.js is the single source of truth for every euro on the site.
-import { TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
+import { TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES, VIDEO_OP_AANVRAAG } from '../data/pricing.js';
 
 export const languages = { en: 'English', nl: 'Nederlands' };
 export const localeNames = { en: 'EN', nl: 'NL' };
@@ -108,7 +108,7 @@ export const ui = {
     drops: [
       { href: '/catalog', title: 'Catalog', desc: 'Front, back, detail and on-model, for every product', groep: 'photos' },
       { href: '/lifestyle', title: 'Lifestyle', desc: 'Your product in a styled scene, ready to post', groep: 'photos' },
-      { href: '/video', title: 'Video', desc: 'Short clips that move, on any product in the order', groep: 'video' },
+      { href: '/video', title: 'Video', desc: VIDEO_OP_AANVRAAG ? 'Short clips that move — on request for now' : 'Short clips that move, on any product in the order', groep: 'video' },
       /* ── MERKMODEL EN ABONNEMENT STAAN NU HIER — 21 augustus 2026 ────────
        *
        * Allebei stonden ze als los item bovenin, naast Prijzen, Galerij en
@@ -382,7 +382,7 @@ export const ui = {
     drops: [
       { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en on-model, voor elk product', groep: 'photos' },
       { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten', groep: 'photos' },
-      { href: '/video', title: 'Video', desc: 'Korte clips met beweging, op elk product in de bestelling', groep: 'video' },
+      { href: '/video', title: 'Video', desc: VIDEO_OP_AANVRAAG ? 'Korte clips met beweging — voorlopig op aanvraag' : 'Korte clips met beweging, op elk product in de bestelling', groep: 'video' },
       /* Zie de noot bij de Engelse lijst hierboven: alles wat je koopt, staat
          in het menu waar staat wat we maken. */
       { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt', groep: 'erbij' },

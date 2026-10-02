@@ -47,7 +47,7 @@
  * moet worden" — twee markeringen in vier items is geen markering meer, en in
  * deze hero is het gemarkeerde ding het accentwoord in de <h1>, dat er al staat.
  */
-import { turnaroundShort, reviewClaimShort } from '../data/pricing.js';
+import { levertijdDelen, reviewClaimShort } from '../data/pricing.js';
 
 interface Props {
   /** De twee feiten die per dienst verschillen: [wat dik staat, het label]. */
@@ -62,7 +62,9 @@ const nl = lang === 'nl';
 
 /* De twee die op elke dienstpagina hetzelfde zijn, uit één bron. */
 const gedeeld: [string, string][] = [
-  levertijd || [turnaroundShort('unattended', lang), nl ? 'geschatte levering' : 'estimated delivery'],
+  /* Ronde 8: het getal staat erin ("Vaak binnen een dag"), met zijn tegenhanger
+     als label ("soms een paar dagen") — nooit het een zonder het ander. */
+  levertijd || levertijdDelen('unattended', lang),
   [reviewClaimShort('unattended', lang), nl ? 'elke visual' : 'every visual'],
 ];
 const feiten = [...eigen, ...gedeeld];

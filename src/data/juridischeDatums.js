@@ -42,7 +42,10 @@ export const LAATST_BIJGEWERKT = {
   privacy: '2026-10',
   'cookie-policy': '2026-10',
   'data-processing-agreement': '2026-10',
-  'ai-act': '2026-09',
+  /* Oktober 2026: paragraaf 4 (welke foto's verplicht zijn: voorkant, achterkant
+     én één close-up; de draagfoto optioneel) en paragraaf 6 ("controle door een
+     specialist", "AI-model" in de IPTC-uitleg) zijn inhoudelijk gewijzigd. */
+  'ai-act': '2026-10',
 };
 
 const MAANDEN = {

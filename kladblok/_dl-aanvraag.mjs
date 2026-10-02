@@ -5,7 +5,7 @@ const CASES = {
   videoCamp: { pad: '/start/video', vul: { name: 'Tom Brand', brand: 'Brand Ltd', email: 'tom@campaign.test', phone: '+441234567890', message: 'Campaign film for spring.' }, kies: { style: 'campaign', clips: 'Not sure yet' } },
   videoEigen: { pad: '/nl/start/video', vul: { name: 'Yara Merk', brand: 'Merk BV', email: 'yara@eigen.test', phone: '0611111111', message: 'Iets in onze eigen stijl.' }, kies: { style: 'custom', clips: '4' } },
   look: { pad: '/nl/start/custom-look', vul: { name: 'Tom Foto', brand: 'Tom Foto', email: 'tom@foto.test', phone: '0622222222' } },
-  model: { pad: '/nl/start/brand-model', vul: { name: 'Yara Merk', brand: 'Merk BV', email: 'yara@merk.test', phone: '0611111111' } },
+  model: { pad: '/nl/start/brand-model', vul: { first_name: 'Yara', last_name: 'Merk', brand: 'Merk BV', email: 'yara@model.test', phone: '0611111111', address_line1: 'Teststraat 1', postal_code: '1234 AB', city: 'Teststad', reg_number: '12345678' }, kies: { country: 'NL' }, voor: async (page) => { await page.evaluate(() => { const r = document.querySelector('input[name=bm_track][value=ours]'); if (r) r.click(); const v = document.querySelector('input[name=no_vat]'); if (v && !v.checked) v.click(); }); } },
 };
 for (const k of process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(CASES)) {
   const c = CASES[k]; const s = await start(); const { page } = s;
@@ -14,8 +14,9 @@ for (const k of process.argv.slice(2).length ? process.argv.slice(2) : Object.ke
   await page.goto(SITE + c.pad, { waitUntil: 'load' });
   const form = page.locator('form[action="/api/order"], form[action="/api/plan"], form[action^="/api/"]:not(#studiobrief-voet)').first();
   console.log('velden:', (await velden(page, 'main form') || []).filter(v => v.zichtbaar && v.tag !== 'button').map(v => `${v.tag}/${v.type} ${v.name}${v.required ? '*' : ''}`).join(', '));
-  for (const [n, v] of Object.entries(c.vul)) { const f = form.locator(`[name="${n}"]`); if (await f.count()) await f.first().fill(v); else console.log('geen veld', n); }
-  for (const [n, v] of Object.entries(c.kies || {})) { const f = form.locator(`select[name="${n}"]`); if (await f.count()) await f.selectOption(v); else console.log('geen select', n); }
+  if (c.voor) await c.voor(page);
+  for (const [n, v] of Object.entries(c.vul)) { const f = form.locator(`[name="${n}"]`); if (await f.count()) await f.first().fill(v, { timeout: 2000 }).catch(() => f.first().evaluate((e, v) => { e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, v)); else console.log('geen veld', n); }
+  for (const [n, v] of Object.entries(c.kies || {})) { const f = form.locator(`select[name="${n}"]`); if (await f.count()) await f.selectOption(v, { force: true }); else console.log("geen select", n); }
   // overige verplichte velden invullen
   const rest = await form.evaluate((f) => [...f.querySelectorAll('[required]')].filter(e => !e.value && !e.checked).map(e => `${e.tagName}/${e.type} ${e.name}`));
   console.log('nog leeg verplicht:', rest);

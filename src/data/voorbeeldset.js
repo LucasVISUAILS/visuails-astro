@@ -45,16 +45,21 @@ export function geleverd(lang = 'en') {
   ];
 }
 
-/** Hetzelfde product in drie vormen: shop, advertentie, reel. */
+/** De vormen waaruit je kiest voor een catalogbestelling — ÉÉN per bestelling.
+ *  Ronde 8 (1 oktober 2026): hier stond "hetzelfde product in drie vormen" met
+ *  1:1, 4:5 en 9:16, en een bezoeker las daaruit dat hij alle drie krijgt. Hij
+ *  krijgt er één (zie src/data/ratios.js), en 9:16 bestaat voor catalog niet
+ *  eens. Nu staan hier de drie vormen van CATALOG_RATIOS, met de eerste als
+ *  gekozen. */
 export function vormen(lang = 'en') {
   const nl = lang === 'nl';
   return [
-    { src: '/img/ba2-na-front.webp', ratio: '1 / 1', maat: '1:1', waar: nl ? 'je webshop' : 'your shop',
+    { src: '/img/ba2-na-front.webp', ratio: '1 / 1', maat: '1:1', gekozen: true, waar: nl ? 'gekozen · je webshop' : 'chosen · your shop',
       alt: nl ? 'Het vierkante catalogbeeld zoals het in een webshop staat' : 'The square catalog image as it sits in a shop' },
-    { src: '/img/ba2-na-model.webp', ratio: '4 / 5', maat: '4:5', waar: nl ? 'je advertentie' : 'your ad',
-      alt: nl ? 'Hetzelfde beeld bijgesneden op 4:5 voor een advertentie' : 'The same image cropped to 4:5 for an ad' },
-    { src: '/img/ba2-na-detail.webp', ratio: '9 / 16', maat: '9:16', waar: nl ? 'je reel' : 'your reel',
-      alt: nl ? 'Het detailbeeld bijgesneden op 9:16 voor een reel' : 'The detail image cropped to 9:16 for a reel' },
+    { src: '/img/ba2-na-model.webp', ratio: '4 / 5', maat: '4:5', waar: nl ? 'kan ook · advertentie' : 'also possible · ad',
+      alt: nl ? 'Hetzelfde beeld in 4:5, de andere keuze voor een advertentie' : 'The same image in 4:5, the other choice for an ad' },
+    { src: '/img/ba2-na-detail.webp', ratio: '3 / 4', maat: '3:4', waar: nl ? 'kan ook · staande pagina' : 'also possible · upright page',
+      alt: nl ? 'Het detailbeeld in 3:4, de staande keuze' : 'The detail image in 3:4, the upright choice' },
   ];
 }
 

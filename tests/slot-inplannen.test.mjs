@@ -84,7 +84,7 @@ console.log('\nde eerste dagen zijn niet aan te wijzen, ook niet met een eigen P
   const teVroeg = addDays(VANDAAG, 1);
   const res = await post({ do: 'plan', id: 7, dag: teVroeg });
   ok('de post gaat terug naar het inplanscherm met een reden',
-    res.headers.get('location'), '/account/plan?tab=bestellen&kies=7&fout=vol');
+    res.headers.get('location'), '/account/plan?tab=bestellen&kies=7&fout=dagvol');
   const q = await rij();
   ok('  en er is niets vastgelegd', [q.window_start, q.window_end], [null, null]);
 
@@ -150,7 +150,7 @@ console.log('\neen dag die vol zit, wordt niet aangeboden en niet aangenomen');
 
   const res = await post({ do: 'plan', id: 7, dag: EERSTE });
   ok('en de poort weigert hem als begindag',
-    res.headers.get('location'), '/account/plan?tab=bestellen&kies=7&fout=vol');
+    res.headers.get('location'), '/account/plan?tab=bestellen&kies=7&fout=dagvol');
   ok('  er staat nog steeds geen dag op het item', (await rij()).window_start, null);
 }
 

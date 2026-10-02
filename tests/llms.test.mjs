@@ -25,7 +25,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   AMOUNT, euro, LADDER, ladderRate, ladderFloor, PLAN_AMOUNT,
-  WINDOW_THRESHOLD, STOCK_OFF_BRAND, STOCK_ON_BRAND,
+  WINDOW_THRESHOLD, STOCK_OFF_BRAND, STOCK_ON_BRAND, VIDEO_OP_AANVRAAG,
 } from '../src/data/pricing.js';
 
 let goed = 0, totaal = 0;
@@ -97,7 +97,13 @@ console.log('\nde feiten die de site zelf ook draagt');
 ok('de drempel staat erin', t.includes(`under ${WINDOW_THRESHOLD} products`), true);
 ok('de gedeelde set staat erin met zijn aantal', t.includes(`${STOCK_OFF_BRAND} shared`), true);
 ok('en Editions met het zijne', t.includes(`Editions — ${STOCK_ON_BRAND} visuals`), true);
-ok('het cliptarief staat erin', t.includes(euro(AMOUNT.video, 'en')), true);
+/* Ronde 8: video is op aanvraag zolang VIDEO_OP_AANVRAAG aan staat — dan hoort
+   er geen cliptarief in te staan, want de site noemt er ook geen. */
+if (VIDEO_OP_AANVRAAG) {
+  ok('video staat erin als "on request"', /video clip: on request/.test(t), true);
+  ok('  zonder cliptarief', !t.slice(0, t.indexOf('## Pages')).includes(euro(AMOUNT.video, 'en')), true);
+} else ok('het cliptarief staat erin', t.includes(euro(AMOUNT.video, 'en')), true);
+ok('geen catalog + lifestyle-ladder meer', !/^- complete:/m.test(t), true);
 ok('en de opzet van Editions', t.includes(euro(AMOUNT.editionsSetup, 'en')), true);
 
 console.log('\nde paginalijst');

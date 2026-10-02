@@ -25,7 +25,7 @@
  * uploads, and an empty array is a new key on every message that doesn’t
  * carry one — a wire-format difference that buys nothing.
  */
-export async function sendMail(env, { to, bcc, subject, html, text, attachments }) {
+export async function sendMail(env, { to, bcc, subject, html, text, attachments, replyTo }) {
   /* ── EEN MISLUKTE MAIL WAS ONZICHTBAAR — 23 augustus 2026 ─────────────────
    *
    * Twee halve maatregelen die samen niets deden. Hierboven stond
@@ -77,7 +77,10 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments 
     subject,
     html,
     text: text || htmlToText(html),
-    reply_to: 'hello@visuails.com',
+    /* Per mail in te stellen (ronde 8, M-B4): een studiomail over één klant
+       kreeg hello@ als antwoordadres, dus "beantwoorden" mailde jezelf. Alleen
+       een geldig adres telt; anders het vaste adres. */
+    reply_to: (typeof replyTo === 'string' && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(replyTo.trim())) ? replyTo.trim() : 'hello@visuails.com',
   };
   /* BCC EN NIET CC. Een kopie voor de eigen administratie hoort de klant niet te
      zien: zijn factuur is een bericht aan hém, en een tweede adres in de kop
@@ -151,6 +154,13 @@ export function toBase64(buf) {
 export function htmlToText(html) {
   if (!html) return '';
   let s = String(html);
+
+  /* ── GEEN RUIS BOVENAAN — 1 oktober 2026 (ronde 8, M-N2) ──────────────────
+     De verborgen preheader en het briefhoofd (logo met woordmerklink) kwamen als
+     de eerste drie regels van de platte tekst mee: "…staat klaar — 4 beelden.
+     https://visuails.com VISUAILS (https://visuails.com)". Wat in het sjabloon
+     tussen <!--tekst:uit--> en <!--/tekst:uit--> staat, gaat er hier uit. */
+  s = s.replace(/<!--tekst:uit-->[\s\S]*?<!--\/tekst:uit-->/g, '');
 
   // Block boundaries first, while the tags are still there to find.
   s = s

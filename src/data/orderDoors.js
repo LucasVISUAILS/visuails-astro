@@ -60,34 +60,22 @@ export const DOORS = [
     cta: { en: 'Order lifestyle images', nl: 'Bestel lifestylefoto’s' },
     kort: { en: 'Your product in a styled scene', nl: 'Je product in een gestylede scène' },
   },
-  /* ── DE BUNDEL HEET NAAR WAT ERIN ZIT — 7 september 2026 ──────────────────
-     Hij heette "Complete" op /start en "Both together" hier. Lucas: *"ik vind
-     complete te onduidelijk"*, en over het alternatief Full Shoot: *"dat is
-     weer meer alsof je ook andere services erbij krijgt."* Allebei terecht —
-     "complete" zegt niet WAT er compleet is, "both together" zegt niet waarvan,
-     en een woord als shoot belooft de hele studio.
-
-     De naam noemt nu precies de twee dingen die je krijgt, met de namen die
-     overal elders op de site staan. Onmogelijk te lezen als iets anders.
-
-     ALLEEN DE WEERGAVENAAM. De route /start/complete, de sleutel `complete` in
-     LADDER en de waarde in ORDER_SERVICES blijven staan: daar hangen bestaande
-     bestellingen en betalingen aan. */
-  {
-    id: 'complete',
-    lees: null,
-    bestel: '/start/complete',
-    naam: { en: 'Catalog + Lifestyle', nl: 'Catalog + Lifestyle' },
-    cta: { en: 'Order catalog + lifestyle', nl: 'Bestel catalog + lifestyle' },
-    kort: { en: 'A catalog set and a carousel per product', nl: 'Een catalogset en een carrousel per product' },
-  },
+  /* ── CATALOG + LIFESTYLE IS ERUIT — 1 oktober 2026 (ronde 8) ───────────────
+     Lucas: *"bij Gallery een optie catalog + lifestyle terwijl ik deze helemaal
+     niet meer verkoop."* De deur stond via ServiceSwitch op achttien pagina's
+     ("Ook mogelijk: … Catalog + Lifestyle"). De route /start/complete, de
+     sleutel `complete` in LADDER en de waarde in ORDER_SERVICES blijven bestaan:
+     daar hangen oude bestellingen, betalingen en abonnementsslots aan. De
+     pagina staat op noindex en nergens linkt er nog iets naartoe. */
   {
     id: 'video',
     lees: '/video',
     bestel: '/start/video',
     naam: { en: 'Video', nl: 'Video' },
     cta: { en: 'Ask about a video clip', nl: 'Vraag een videoclip aan' },
-    kort: { en: 'A short clip on any product in the order', nl: 'Een korte clip op elk product uit de bestelling' },
+    /* "Op elk product in de bestelling" beloofde een bestelknop die er niet is
+       (ronde 8, C-T2): video is op aanvraag. */
+    kort: { en: 'Short clips with movement, on request', nl: 'Korte clips met beweging, op aanvraag' },
   },
   {
     id: 'brand-model',

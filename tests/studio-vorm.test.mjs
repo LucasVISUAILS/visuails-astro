@@ -68,8 +68,10 @@ try {
   console.log('\nhet overzicht');
   {
     const h = main(html['/account']);
-    ok('begint met de naam van het merk', /<h1[^>]*>Welkom terug, VOLT<\/h1>/.test(html['/account']));
-    ok('telt wat er loopt', /1<\/span>/.test(h) && /status=in_production/.test(h) && /status=human_check/.test(h));
+    /* Ronde 8: de voornaam, niet het merk — "Welkom, VOLT" sprak het bedrijf aan. */
+    ok('begint met de voornaam', /<h1[^>]*>Welkom terug, Mara<\/h1>/.test(html['/account']));
+    /* En de tellers beginnen bij wat de klant moet doen: te betalen, te beoordelen. */
+    ok('telt wat er loopt', /1<\/span>/.test(h) && /status=awaiting_payment/.test(h) && /status=in_production/.test(h) && /status=delivered/.test(h));
     ok('zet de lopende bestelling voorop, met haar tijdlijn', /VIS-2609-4471/.test(h) && /st-flow|is-now/.test(h));
     ok('en de laatst geleverde beelden als strook, via /account/files', tel(h, /\/account\/files\/\d+\/f/g) >= 4);
   }
@@ -78,7 +80,8 @@ try {
   {
     const h = main(html['/account/orders']);
     ok('elke bestelling staat op de lijst', ['VIS-2609-4471', 'VIS-2609-5102', 'VIS-2608-9920', 'VIS-2608-3312', 'VIS-2607-1180'].every((r) => h.includes(r)));
-    ok('er is een filterchip per status die deze klant heeft', /status=in_production/.test(h) && /status=delivered/.test(h) && /status=received/.test(h));
+    /* Een onbetaalde bestelling heet overal "wacht op betaling" (ronde 8). */
+    ok('er is een filterchip per status die deze klant heeft', /status=in_production/.test(h) && /status=delivered/.test(h) && /status=awaiting_payment/.test(h));
     ok('en geen chip voor een status die hij nooit had', !/status=cancelled/.test(h));
     ok('de onbetaalde bestelling biedt betalen aan', new RegExp(`/account/orders/${ORDERS.lifestyle}/pay`).test(h));
     ok('de geleverde bestelling groepeert per product', tel(h, /st-product\b|class="st-prod/g) >= 3);
@@ -208,7 +211,7 @@ try {
     ok('?lang= zet een cookie en stuurt terug zonder de parameter', [r.status, r.headers.get('location')], [303, '/account']);
     ok('en de cookie geldt voor het dashboard', /vis_lang=en/.test(r.headers.get('set-cookie') || '') && /Path=\/account/.test(r.headers.get('set-cookie') || ''));
     const en = (await pagina('/account', { cookie: 'vis_lang=en' })).html;
-    ok('de keuze wint van de taal van de laatste bestelling', /<h1[^>]*>Welcome back, VOLT<\/h1>/.test(en));
+    ok('de keuze wint van de taal van de laatste bestelling', /<h1[^>]*>Welcome back, Mara<\/h1>/.test(en));
     const nav = await studio.fetch('/account/orders?nav=dicht');
     ok('?nav=dicht doet hetzelfde voor de zijbalk', [nav.status, nav.headers.get('location'), /vis_nav=dicht/.test(nav.headers.get('set-cookie') || '')], [303, '/account/orders', true]);
     const thema = await studio.fetch('/account/plan?tab=look&thema=donker');

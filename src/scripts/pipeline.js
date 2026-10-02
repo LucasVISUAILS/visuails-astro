@@ -7437,6 +7437,14 @@ function collapseBrief(me) {
 
   fields.hidden = true;
   panel.hidden = false;
+  /* ── HET BTW-VINKJE BLIJFT ZICHTBAAR — 1 oktober 2026 (ronde 8, B-B9) ─────
+     De verklaring voor verlegde btw zat in de groep die hier dichtklapt. Een
+     terugkerende EU-klant kon hem dus niet aanvinken, en kwam elke keer in de
+     beoordeling terecht. Het blok verhuist naar onder de adreskaart; wanneer het
+     zichtbaar is, beslist syncVatConfirm() zoals altijd. */
+  const vatBlok = q('[data-pl-vatconfirm]');
+  if (vatBlok && fields.contains(vatBlok)) panel.insertAdjacentElement('afterend', vatBlok);
+  syncVatConfirm();
 
   const edit = q('[data-pl-saved-edit]');
   if (edit) {

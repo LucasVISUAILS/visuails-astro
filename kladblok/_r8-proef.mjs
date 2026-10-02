@@ -1,0 +1,31 @@
+/* €1-proef op een telefoon, als starter: bestellen, betalen, admin levert het
+   proefbeeld, mail en Studio. */
+import { start, sql, mails, mailtekst, SITE, proefbeeld } from './_dl.mjs';
+import { adminLogin } from './_admin.mjs';
+import { bestel, betaal } from './_bestel.mjs';
+const log = (...a) => console.log('»', ...a);
+const email = `starter${Date.now() % 100000}@merkje.test`;
+const k = await start({ mobiel: true });
+const r = await bestel(k.page, { pad: '/nl/test-sample', klant: { email, first_name: 'Mila', last_name: 'Start', brand: 'Merkje', phone: '06' + String(10000000 + Date.now() % 89999999) }, land: 'NL', reg: String(87654321 - Date.now() % 1000) });
+log('bestel', r.apiStatus, (r.log || []).join(' / '), r.apiBody);
+if (/nep-mollie/.test(k.page.url())) await betaal(k.page);
+await k.page.waitForTimeout(2500);
+await k.page.screenshot({ path: '/tmp/claude-0/r8/30-proef-bedankt-mobiel.png', fullPage: true });
+log('kop', await k.page.evaluate(() => document.querySelector('[data-ty-title]')?.textContent));
+const [o] = await sql(`SELECT id, ref, service, total_cents, payment_status FROM orders WHERE email='${email}' ORDER BY id DESC LIMIT 1`);
+log('order', JSON.stringify(o));
+const a = await start(); await adminLogin(a.page);
+await a.page.goto(SITE + `/admin/orders/${o.id}/files`, { waitUntil: 'load' });
+const vakken = await a.page.evaluate(() => [...document.querySelectorAll('form[action$="/deliver"]')].map((f) => ({ p: f.querySelector('[name=product]')?.value, s: f.querySelector('[name=shot]')?.value })));
+log('vakken', JSON.stringify(vakken));
+const f = a.page.locator('form[action$="/deliver"]:has(input[name=shot])').first();
+await f.locator('input[type=file]').setInputFiles(proefbeeld('proef-lever.webp'));
+const kn = f.locator('button[type=submit]');
+if (await kn.count()) await Promise.all([a.page.waitForNavigation({ waitUntil: 'load' }), kn.first().click()]);
+else await Promise.all([a.page.waitForNavigation({ waitUntil: 'load' }).catch(() => {}), f.evaluate((el) => el.requestSubmit())]);
+const g = a.page.locator('button:has-text("geleverd zetten")');
+if (await g.count()) await Promise.all([a.page.waitForNavigation({ waitUntil: 'load' }), g.first().click()]);
+const ms = (await mails()).filter((x) => JSON.stringify(x.to).includes(email));
+log('klantmails', ms.map((x) => x.subject).join(' | '));
+log('levermail', String(await mailtekst(ms[ms.length - 1].n)).replace(/\s+/g, ' ').slice(0, 500));
+await a.stop(); await k.stop();

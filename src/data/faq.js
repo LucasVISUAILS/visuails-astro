@@ -134,7 +134,7 @@ const ratioLabels = (lijst) => lijst.map((r) => r.label);
 // products" while pricing.js has re-cut the top rung to 40 is a wrong answer
 // that no build step can catch, because 35 would still be a perfectly valid
 // number. Reading the bound means re-cutting the ladder rewrites the sentence.
-const COMPLETE_RUNGS = LADDER.complete;
+const COMPLETE_RUNGS = LADDER.catalog;
 const TOP_RUNG_AT = COMPLETE_RUNGS[COMPLETE_RUNGS.length - 1][0];
 // The last count still on the entry rung, and the first count off it. Used to
 // show the rate falling with the smallest possible step — one more product.
@@ -181,11 +181,11 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Is mijn eerste bestelling goedkoper?',
-        a: `Nee, en dat is met opzet. Er was een kennismakingskorting van 20% en die is eraf gehaald: een tarief noemen en er dan een vijfde vanaf halen zegt dat het tarief nooit de prijs was. De prijs per product ís de korting — het tarief per product daalt naarmate je er meer bestelt, en het geldt voor elk product in de bestelling. ${FIRST_EG_PRODUCTS} producten met catalog én lifestyle is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'nl')}, voor iedereen, altijd. Wil je het werk eerst zien, probeer VISUAILS dan eerst voor ${TEST_SAMPLE.nl.price}.`,
+        a: `Nee, en dat is met opzet. Er was een kennismakingskorting van 20% en die is eraf gehaald: een tarief noemen en er dan een vijfde vanaf halen zegt dat het tarief nooit de prijs was. De prijs per product ís de korting — het tarief per product daalt naarmate je er meer bestelt, en het geldt voor elk product in de bestelling. ${FIRST_EG_PRODUCTS} catalogsets is ${ex(ladderTotal('catalog', FIRST_EG_PRODUCTS), 'nl')}, voor iedereen, altijd. Wil je het werk eerst zien, probeer VISUAILS dan eerst voor ${TEST_SAMPLE.nl.price}.`,
       },
       {
         q: 'Hoe daalt het tarief?',
-        a: `Elk product in de bestelling gaat tegen hetzelfde tarief, en dat tarief wordt bepaald door hoeveel producten erin zitten. Eén product met catalog én lifestyle is ${ex(ladderRate('complete', 1), 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product ${ex(ladderFloor('complete'), 'nl')}. Omdat het tarief voor de hele bestelling geldt, verlaagt één product erbij de prijs van álle producten erin — niet alleen die voorbij de grens. Bij ${ENTRY_RUNG_LAST} producten betaal je ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}.`,
+        a: `Elk product in de bestelling gaat tegen hetzelfde tarief, en dat tarief wordt bepaald door hoeveel producten erin zitten. Eén catalogset is ${ex(ladderRate('catalog', 1), 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product ${ex(ladderFloor('catalog'), 'nl')}. Omdat het tarief voor de hele bestelling geldt, verlaagt één product erbij de prijs van álle producten erin — niet alleen die voorbij de grens. Bij ${ENTRY_RUNG_LAST} producten betaal je ${ex(ladderRate('catalog', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('catalog', SECOND_RUNG_AT), 'nl')}. Lifestyle heeft zijn eigen, vergelijkbare trap.`,
       },
       {
         q: 'Is een plan goedkoper dan bestellen wanneer ik het nodig heb?',
@@ -217,11 +217,11 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Is my first order cheaper?',
-      a: `No, and that is deliberate. There was a 20% first-order discount and it has been removed: quoting a rate and then taking a fifth off it says the rate was never the price. The price per product is the discount — the rate per product falls as the count rises, and it applies to every product in the order. ${FIRST_EG_PRODUCTS} products with catalog and lifestyle is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'en')}, for everyone, always. If you want to see the work first, that is what the test sample is for.`,
+      a: `No, and that is deliberate. There was a 20% first-order discount and it has been removed: quoting a rate and then taking a fifth off it says the rate was never the price. The price per product is the discount — the rate per product falls as the count rises, and it applies to every product in the order. ${FIRST_EG_PRODUCTS} catalog sets is ${ex(ladderTotal('catalog', FIRST_EG_PRODUCTS), 'en')}, for everyone, always. If you want to see the work first, that is what the test sample is for.`,
     },
     {
       q: 'How does the rate fall?',
-      a: `Every product in the order is charged at the same rate, and that rate is set by how many products are in it. One product with catalog and lifestyle is ${ex(ladderRate('complete', 1), 'en')}; from ${TOP_RUNG_AT} products the same product is ${ex(ladderFloor('complete'), 'en')}. Because the rate applies to the whole order, crossing onto one more product lowers the price of every product in it, not only the ones past the line: ${ENTRY_RUNG_LAST} products is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, and ${SECOND_RUNG_AT} is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each.`,
+      a: `Every product in the order is charged at the same rate, and that rate is set by how many products are in it. One catalog set is ${ex(ladderRate('catalog', 1), 'en')}; from ${TOP_RUNG_AT} products the same product is ${ex(ladderFloor('catalog'), 'en')}. Because the rate applies to the whole order, crossing onto one more product lowers the price of every product in it, not only the ones past the line: ${ENTRY_RUNG_LAST} products is ${ex(ladderRate('catalog', ENTRY_RUNG_LAST), 'en')} each, and ${SECOND_RUNG_AT} is ${ex(ladderRate('catalog', SECOND_RUNG_AT), 'en')} each. Lifestyle has its own, similar ladder.`,
     },
     {
       q: 'Is a plan cheaper than ordering when I need it?',
@@ -287,7 +287,7 @@ function algemeneGroepen(lang = 'en') {
             // over de lancering van de KLANT — precies de botsing die het
             // prijsmodel heeft veranderd. Zie de kop van dit bestand.
             q: 'Wat is een bestelling?',
-            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} foto’s of meer, een lifestyle-carrousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
+            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per bestelling kies je catalog (${CATALOG_IMAGES} foto’s per product, extra hoeken mogelijk) of lifestyle (een carrousel van ${LIFESTYLE_IMAGES} foto’s per product). Allebei? Dan zijn het twee bestellingen, elk tegen zijn eigen prijs. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
           },
           {
             q: 'Wat moet ik opsturen?',
@@ -327,7 +327,7 @@ function algemeneGroepen(lang = 'en') {
              * adressen probeert, loopt tegen zijn eigen rekening aan, en dat kan
              * hij maar beter vooraf weten dan bij de terugbetaling. */
             q: 'Ik verkoop geen kleding. Kan dat ook?',
-            a: 'De studio is op dit moment op kleding ingericht: de vaste stijlen, de modellen en de vier gevraagde foto\u2019s per product gaan allemaal uit van iets wat gedragen wordt. Verkoop je iets anders, stuur ons dan een bericht via WhatsApp of e-mail met een foto van je product erbij. Dan zeggen we eerlijk of we er iets voor kunnen betekenen \u2014 soms wel, soms niet, en dat weten we binnen \u00e9\u00e9n blik.',
+            a: 'De studio is op dit moment op kleding ingericht: de vaste stijlen, de modellen en de drie verplichte foto\u2019s per product (plus een optionele draagfoto) gaan allemaal uit van iets wat gedragen wordt. Verkoop je iets anders, stuur ons dan een bericht via WhatsApp of e-mail met een foto van je product erbij. Dan zeggen we eerlijk of we er iets voor kunnen betekenen \u2014 soms wel, soms niet, en dat weten we binnen \u00e9\u00e9n blik.',
           },
           {
             q: 'Kan ik als bureau voor mijn klanten bestellen?',
@@ -371,7 +371,7 @@ function algemeneGroepen(lang = 'en') {
         items: [
           {
             q: 'Wat is het verschil tussen catalog en lifestyle?',
-            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je ze allebei op hetzelfde product, dan krijg je ${CATALOG_IMAGES + LIFESTYLE_IMAGES} foto’s voor één tarief per product — voor elk product in de bestelling.`,
+            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Wil je allebei, dan zijn het twee bestellingen, elk tegen zijn eigen prijs.`,
             photos: [
               {
                 src: '/img/catalog-after.webp',
@@ -434,11 +434,11 @@ function algemeneGroepen(lang = 'en') {
                interpolatie en dezelfde onterechte kwalificatie. */
             /* Zie de noot bij de Engelse tegenhanger: het beleid komt uit
                REVISIEBELEID in pricing.js en staat hier niet nog een keer. */
-            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt — je markeert het per beeld in het portaal, zodat één beeld dat terug moet de rest niet ophoudt. ${revisiebeleid('nl').map(([kop, regel]) => `${kop}: ${regel.charAt(0).toLowerCase()}${regel.slice(1)}`).join(' ')}`,
+            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt — je markeert het per beeld in VISUAILS Studio, zodat één beeld dat terug moet de rest niet ophoudt. ${revisiebeleid('nl').map(([kop, regel]) => `${kop}: ${regel.charAt(0).toLowerCase()}${regel.slice(1)}`).join(' ')}`,
           },
           {
             q: 'Hoe krijg ik de bestanden precies?',
-            a: `${clause(TIERS.unattended.delivery.nl)}. Vanaf ${WINDOW_THRESHOLD} producten komt daar een eigen bestelpagina bij die elke stap met bijbehorende datum toont. Hoe dan ook worden ze geleverd op ${RESOLUTIE.standaard} px aan de lange zijde, in de ene beeldverhouding die je in het bestelformulier kiest, als JPG, PNG en WebP. Een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt: ${marktFormaten('nl')}. Catalogbeelden zijn altijd die maat; bij lifestyle kun je per product alle drie de beelden op ${RESOLUTIE.hoog} px laten leveren voor ${euro(HOOG_PER_PRODUCT, 'nl')} extra.`,
+            a: `${clause(TIERS.unattended.delivery.nl)}. Vanaf ${WINDOW_THRESHOLD} producten komt daar een eigen bestelpagina bij die elke stap met bijbehorende datum toont. Hoe dan ook worden ze geleverd op ${RESOLUTIE.standaard} px aan de lange zijde, in de beeldverhouding die je in het bestelformulier kiest (één per catalogbestelling, per beeld bij lifestyle), als JPG, PNG en WebP. Een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt: ${marktFormaten('nl')}. Catalogbeelden zijn altijd die maat; bij lifestyle kun je per product alle drie de beelden op ${RESOLUTIE.hoog} px laten leveren voor ${euro(HOOG_PER_PRODUCT, 'nl')} extra.`,
           },
         ],
       },
@@ -448,11 +448,11 @@ function algemeneGroepen(lang = 'en') {
         items: [
           {
             q: 'Wat kost het?',
-            html: `Geprijsd per product, en het tarief daalt naarmate het aantal stijgt. Catalog en lifestyle samen op één product is <strong>${euro(ladderRate('complete', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product <strong>${euro(ladderFloor('complete'), 'nl')}</strong> ${vatLabel('excl', 'nl')}. Wil je maar één van beide, dan heeft die zijn eigen prijs per aantal: catalog vanaf ${euro(ladderRate('catalog', 1), 'nl')} aflopend tot ${ex(ladderFloor('catalog'), 'nl')} per product, en lifestyle vanaf ${euro(ladderRate('lifestyle', 1), 'nl')} aflopend tot ${ex(ladderFloor('lifestyle'), 'nl')} per product. ${VIDEO_OP_AANVRAAG ? 'Video is voorlopig op aanvraag.' : `Video is ${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')} per clip.`} De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
+            html: `Geprijsd per product, en de prijs daalt naarmate het aantal stijgt. Een catalogset is <strong>${euro(ladderRate('catalog', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')} per product, aflopend tot ${ex(ladderFloor('catalog'), 'nl')} vanaf ${TOP_RUNG_AT} producten. Een lifestylecarrousel is <strong>${euro(ladderRate('lifestyle', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')} per product, aflopend tot ${ex(ladderFloor('lifestyle'), 'nl')}. ${VIDEO_OP_AANVRAAG ? 'Video is voorlopig op aanvraag.' : `Video is ${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')} per clip.`} De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
           },
           {
             q: 'Zijn er volumekortingen?',
-            a: `De prijs per product ís het antwoord op volume — er komt niets bovenop en er valt niets te onderhandelen. Het tarief geldt voor elk product in de bestelling, dus één product erbij verlaagt de prijs van allemaal: bij ${ENTRY_RUNG_LAST} producten is dat ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}.`,
+            a: `De prijs per product ís het antwoord op volume — er komt niets bovenop en er valt niets te onderhandelen. Het tarief geldt voor elk product in de bestelling, dus één product erbij verlaagt de prijs van allemaal: bij ${ENTRY_RUNG_LAST} catalogsets is dat ${ex(ladderRate('catalog', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('catalog', SECOND_RUNG_AT), 'nl')}.`,
           },
           {
             q: 'Is er een abonnement?',
@@ -532,7 +532,7 @@ function algemeneGroepen(lang = 'en') {
           // model. See this file's header. Do not reintroduce it as a name for
           // what we sell; that is what "an order" and "a batch" are for.
           q: 'What is an order?',
-          a: `An order is everything you send in one go: one upload, one rate, one invoice. Per product you pick a catalog set of ${CATALOG_IMAGES} photos or more, a lifestyle carousel of ${LIFESTYLE_IMAGES} photos, or both. There is no minimum and no package to fit your line into — the more products, the lower the rate per product.`,
+          a: `An order is everything you send in one go: one upload, one rate, one invoice. Per order you pick catalog (${CATALOG_IMAGES} photos per product, extra angles possible) or lifestyle (a carousel of ${LIFESTYLE_IMAGES} photos per product). Both? Then it is two orders, each at its own price. There is no minimum and no package to fit your line into — the more products, the lower the rate per product.`,
         },
         {
           q: 'What do I need to send you?',
@@ -546,7 +546,7 @@ function algemeneGroepen(lang = 'en') {
           /* Zie de Nederlandse tegenhangers voor waarom deze twee vragen er zijn
              en waar de antwoorden vandaan komen. */
           q: 'I do not sell clothing. Is that possible too?',
-          a: 'The studio is set up for clothing at the moment: the fixed styles, the models and the four photos we ask for per product all assume something that is worn. If you sell something else, send us a message on WhatsApp or by email with a photo of your product. We will tell you honestly whether we can do anything for it \u2014 sometimes yes, sometimes no, and we know within one look.',
+          a: 'The studio is set up for clothing at the moment: the fixed styles, the models and the three required photos per product (plus an optional worn photo) all assume something that is worn. If you sell something else, send us a message on WhatsApp or by email with a photo of your product. We will tell you honestly whether we can do anything for it \u2014 sometimes yes, sometimes no, and we know within one look.',
         },
         {
           q: 'Can I order for my clients as an agency?',
@@ -584,7 +584,7 @@ function algemeneGroepen(lang = 'en') {
           // accessor, so they are the same strings /catalog and /lifestyle
           // render. Only the name and the line are read — never the price,
           // which is an entry rung now and belongs on the ladder, not here.
-          a: `${cat.name}. ${cat.line} Clean, consistent, built for shop listings and marketplaces. ${life.name}. ${life.line} A styled scene rather than a product on a background. Take both on the same product and you get ${CATALOG_IMAGES + LIFESTYLE_IMAGES} photos at one rate per product — for every product in the order.`,
+          a: `${cat.name}. ${cat.line} Clean, consistent, built for shop listings and marketplaces. ${life.name}. ${life.line} A styled scene rather than a product on a background. Want both? Then it is two orders, each at its own price.`,
           // The only answer on this page whose subject is literally "these two
           // things look different", so it is the only one where a pair of
           // photographs does the explaining better than the paragraph above
@@ -697,7 +697,7 @@ function algemeneGroepen(lang = 'en') {
              in de doorloop van die dag op afhaakten. Het beleid staat sinds
              vandaag als ladder in pricing.js (REVISIEBELEID); dit antwoord
              leest hem uit in plaats van hem over te typen. */
-          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you, per image in the portal — one image going back does not hold up the rest. ${revisiebeleid('en').map(([kop, regel]) => `${kop}: ${regel.charAt(0).toLowerCase()}${regel.slice(1)}`).join(' ')}`,
+          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you, per image in VISUAILS Studio — one image going back does not hold up the rest. ${revisiebeleid('en').map(([kop, regel]) => `${kop}: ${regel.charAt(0).toLowerCase()}${regel.slice(1)}`).join(' ')}`,
         },
         {
           q: 'How do I actually receive the files?',
@@ -710,7 +710,7 @@ function algemeneGroepen(lang = 'en') {
           // lezer het verkeerde pad op ("…or request-revision from 10 products").
           // En nog steeds NIET kleinschrijven: in een van deze strings staat
           // "WhatsApp", en .toLowerCase() maakt daar "whatsapp" van.
-          a: `${clause(TIERS.unattended.delivery.en)}. From ${WINDOW_THRESHOLD} products you also get a dedicated order page tracking every step with key dates. Either way they are delivered at ${RESOLUTIE.standaard} px on the long edge, in the one aspect ratio you choose in the order form, as JPG, PNG and WebP. A marketplace order gets the formats that marketplace accepts: ${marktFormaten('en')}. Catalog images are always that size; on lifestyle you can have all three images of a product delivered at ${RESOLUTIE.hoog} px instead, for ${euro(HOOG_PER_PRODUCT, 'en')} extra.`,
+          a: `${clause(TIERS.unattended.delivery.en)}. From ${WINDOW_THRESHOLD} products you also get a dedicated order page tracking every step with key dates. Either way they are delivered at ${RESOLUTIE.standaard} px on the long edge, in the aspect ratio you choose in the order form (one per catalog order, per image for lifestyle), as JPG, PNG and WebP. A marketplace order gets the formats that marketplace accepts: ${marktFormaten('en')}. Catalog images are always that size; on lifestyle you can have all three images of a product delivered at ${RESOLUTIE.hoog} px instead, for ${euro(HOOG_PER_PRODUCT, 'en')} extra.`,
         },
       ],
     },
@@ -720,11 +720,11 @@ function algemeneGroepen(lang = 'en') {
       items: [
         {
           q: 'What does it cost?',
-          html: `It is priced per product, and the rate falls as the count rises. Catalog and lifestyle together on one product is <strong>${euro(ladderRate('complete', 1), 'en')}</strong> ${vatLabel('excl', 'en')}; from ${TOP_RUNG_AT} products the same product is <strong>${euro(ladderFloor('complete'), 'en')}</strong> ${vatLabel('excl', 'en')}. If you want only one of the two it has its own price by count: catalog from ${euro(ladderRate('catalog', 1), 'en')} falling to ${ex(ladderFloor('catalog'), 'en')} per product, and lifestyle from ${euro(ladderRate('lifestyle', 1), 'en')} falling to ${ex(ladderFloor('lifestyle'), 'en')} per product. ${VIDEO_OP_AANVRAAG ? 'Video is on request for now.' : `Video is ${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')} a clip.`} Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
+          html: `It is priced per product, and the rate falls as the count rises. A catalog set is <strong>${euro(ladderRate('catalog', 1), 'en')}</strong> ${vatLabel('excl', 'en')} per product, falling to ${ex(ladderFloor('catalog'), 'en')} from ${TOP_RUNG_AT} products. A lifestyle carousel is <strong>${euro(ladderRate('lifestyle', 1), 'en')}</strong> ${vatLabel('excl', 'en')} per product, falling to ${ex(ladderFloor('lifestyle'), 'en')}. ${VIDEO_OP_AANVRAAG ? 'Video is on request for now.' : `Video is ${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')} a clip.`} Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
         },
         {
           q: 'Are there volume discounts?',
-          a: `The price per product is the volume answer — nothing is stacked on top of it and there is nothing to negotiate. The rate applies to every product in the order, so crossing onto one more product lowers the price of all of them: at ${ENTRY_RUNG_LAST} products it is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, at ${SECOND_RUNG_AT} it is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each.`,
+          a: `The price per product is the volume answer — nothing is stacked on top of it and there is nothing to negotiate. The rate applies to every product in the order, so crossing onto one more product lowers the price of all of them: at ${ENTRY_RUNG_LAST} catalog sets it is ${ex(ladderRate('catalog', ENTRY_RUNG_LAST), 'en')} each, at ${SECOND_RUNG_AT} it is ${ex(ladderRate('catalog', SECOND_RUNG_AT), 'en')} each.`,
         },
         {
           q: 'Is there a subscription?',
@@ -969,7 +969,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Which files do I get?',
-        a: `Every image in the one aspect ratio you choose in the order form (${reeks(ratioLabels(CATALOG_RATIOS), 'en').replace(' and ', ' or ')} for a catalog set), as JPG, PNG and WebP. A marketplace order gets the formats that marketplace accepts: ${marktFormaten('en')}. You download per image or the whole approved set as a zip, from your account.`,
+        a: `Every image in the aspect ratio you choose in the order form (${reeks(ratioLabels(CATALOG_RATIOS), 'en').replace(' and ', ' or ')} for a catalog set, one per order; for lifestyle you pick per image), as JPG, PNG and WebP. A marketplace order gets the formats that marketplace accepts: ${marktFormaten('en')}. You download per image or the whole approved set as a zip, from your account.`,
       },
       {
         q: 'What if I need changes?',
@@ -1018,7 +1018,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Welke bestanden krijg ik?',
-        a: `Elk beeld in de ene beeldverhouding die je in het bestelformulier kiest (${reeks(ratioLabels(CATALOG_RATIOS), 'nl').replace(' en ', ' of ')} voor een catalogset), als JPG, PNG en WebP. Een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt: ${marktFormaten('nl')}. Je downloadt per beeld of de hele goedgekeurde set als zip, vanuit je account.`,
+        a: `Elk beeld in de beeldverhouding die je in het bestelformulier kiest (${reeks(ratioLabels(CATALOG_RATIOS), 'nl').replace(' en ', ' of ')} voor een catalogset, één per bestelling; bij lifestyle kies je per beeld), als JPG, PNG en WebP. Een marktplaatsbestelling krijgt de formaten die die marktplaats aanneemt: ${marktFormaten('nl')}. Je downloadt per beeld of de hele goedgekeurde set als zip, vanuit je account.`,
       },
       {
         q: 'Wat als ik wijzigingen nodig heb?',

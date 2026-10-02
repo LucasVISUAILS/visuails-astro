@@ -67,14 +67,15 @@ import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../.
 import { mailInvoice, mailSubscriptionInvoice } from '../../../src/lib/invoiceMail.js';
 /* De direct-inlogknop in de welkomstmail van een abonnement (24 september 2026). */
 import { welkomLink } from '../../../src/lib/account.js';
-import { mailCreditNote } from '../../../src/lib/cancelMail.js';
-import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted } from '../../../src/lib/notify.js';
+import { mailCreditNote, mailOngewensteBetaling, mailIncassoMislukt, mailBetalingOntvangen } from '../../../src/lib/cancelMail.js';
+import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted, notifyOngewensteBetaling } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
 import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
 import { grantSlots, subMaandBruto, subEersteBetalingBruto, subProducten, creditsVoor } from '../../../src/lib/slots.js';
 import { planName } from '../../../src/data/planNames.js';
+import { SAMPLE_SERVICE } from '../../../src/data/pricing.js';
 import { bedrag as mailBedrag } from '../../../src/lib/mailTemplate.js';
 
 /* Dezelfde twee cent als FACTUUR_SPELING_CENT in src/lib/invoice.js, en om
@@ -292,7 +293,7 @@ export async function onRequestPost({ request, env }) {
       const ref = payment?.metadata?.order_ref || '';
       try {
         const row = ref
-          ? await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first()
+          ? await env.DB.prepare('SELECT id, payment_status, status FROM orders WHERE ref = ?1').bind(ref).first()
           : null;
         if (row?.id) {
           /* Ook een mislukte betaling komt in `payments` (status letterlijk, zoals
@@ -304,7 +305,18 @@ export async function onRequestPost({ request, env }) {
              VALUES (?1, 'mollie', ?2, ?3, ?4, ?5)`
           ).bind(row.id, payment.id, payment.status, mollieAmountToCents(payment.amount) ?? 0,
             (payment.amount?.currency || 'EUR').toUpperCase()).run().catch(() => {});
-          await notifyPaymentFailed(env, row.id, payment.status);
+          /* Niet melden als er al betaald is, of als de bestelling geannuleerd
+             is (ronde 8, M-B5): elke klik op /api/order-pay maakt een nieuwe
+             betaling, en elke die later verloopt gaf een "niet gelukt", ook
+             als een andere al geslaagd was. En hooguit één per bestelling per
+             etmaal. */
+          const al = await env.DB.prepare(
+            `SELECT COUNT(*) AS n FROM payments WHERE order_id = ?1 AND status IN ('failed', 'expired', 'canceled')
+               AND created_at > datetime('now', '-1 day') AND external_id <> ?2`
+          ).bind(row.id, payment.id).first().catch(() => null);
+          if (row.payment_status !== 'paid' && row.status !== 'cancelled' && !(Number(al?.n) > 0)) {
+            await notifyPaymentFailed(env, row.id, payment.status);
+          }
         }
       } catch (err) {
         console.error('[mollie-webhook] kon geen bericht sturen over', payment.status, '—', err?.message || err);
@@ -604,11 +616,22 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
      betaling, hoort weer te lopen zodra er wél betaald is — zonder dat Lucas
      ergens op hoeft te klikken. Een pauze die de klant zelf heeft gezet, wordt
      NIET opgeheven: dan is `pause_reason` 'customer' en is dit zijn keuze. */
-  await env.DB.prepare(
+  /* EN NOOIT EEN OPGEZEGD ABONNEMENT (ronde 8, B-B7): een incasso die al
+     onderweg was toen de klant opzei, of een late bankoverschrijving van een
+     vooruitbetaald jaar, zette hem terug op 'active' — zonder Mollie-
+     subscription en soms naast een nieuwe rij. De betaling staat hierboven al in
+     de boeken; de studio krijgt een regel in het logboek om het recht te zetten. */
+  const weerActief = await env.DB.prepare(
     `UPDATE subscriptions
         SET status = 'active', paused_at = NULL, pause_reason = NULL, updated_at = datetime('now')
-      WHERE id = ?1 AND (status <> 'paused' OR pause_reason = 'payment_failed')`
+      WHERE id = ?1 AND status <> 'cancelled' AND (status <> 'paused' OR pause_reason = 'payment_failed')`
   ).bind(sub.id).run();
+  if (sub.status === 'cancelled' && !(Number(weerActief?.meta?.changes) > 0)) {
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, customer_id, detail)
+       VALUES (NULL, NULL, 'plan.betaling-na-opzeggen', ?1, ?2)`
+    ).bind(sub.customer_id || null, `${sub.ref || `abonnement ${sub.id}`}: betaling ${payment.id} binnen na opzeggen — nagaan of dit terug moet`).run().catch(() => {});
+  }
 
   /* ── EN DE SLOTS PER SOORT — migratie 0035, 29 augustus 2026 ──────────────
    *
@@ -781,7 +804,7 @@ async function recordSubscriptionFailed(env, payment, mode) {
   try {
     sub = await env.DB.prepare(
       `SELECT s.id, s.ref, s.plan, s.status, s.mollie_customer_id, s.mollie_subscription_id,
-              c.email, c.brand
+              c.email, c.brand, c.name
          FROM subscriptions s
          LEFT JOIN customers c ON c.id = s.customer_id
         WHERE s.mollie_subscription_id = ?1`
@@ -861,6 +884,14 @@ async function recordSubscriptionFailed(env, payment, mode) {
     gestopt,
     molliestatus,
   });
+  /* En de klant (ronde 8, M-K2) — maar niet bij een abonnement dat al
+     opgezegd is: dan valt er niets te herstellen. */
+  if (sub.status !== 'cancelled') {
+    await mailIncassoMislukt(env, {
+      subId: sub.id, ref: sub.ref || '', email: sub.email, name: sub.name || sub.brand || '',
+      bedragCents: cents, gestopt, origin: env.PUBLIC_ORIGIN || 'https://visuails.com',
+    });
+  }
 }
 
 /* Het id van de zojuist weggeschreven betaalrij. Apart, omdat de INSERT hierboven
@@ -1256,6 +1287,46 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
     return;
   }
 
+  /* ── DUBBEL BETAALD, OF BETAALD NA ANNULEREN — 1 oktober 2026 (ronde 8) ────
+     (B-K3, M-K1, A-K7, S-K1) Een tweede geslaagde betaling op een betaalde
+     bestelling liep hier stil af: vastgelegd, verder niets. En een betaling op
+     een geannuleerde bestelling zette haar gewoon op betaald, met factuur. Nu:
+     niet op betaald, automatisch terugstorten, de studio en de klant horen het.
+     De terugstorting komt via deze webhook terug en wordt per betaling geboekt
+     (zie recordRefundOnPayment), dus de factuur van de echte betaling blijft
+     staan. */
+  if (payment.status === 'paid' && (order.payment_status === 'paid' || order.status === 'cancelled')) {
+    const soort = order.status === 'cancelled' && order.payment_status !== 'paid' ? 'geannuleerd' : 'dubbel';
+    const bedrag = cents ?? 0;
+    let teruggestort = false;
+    if (bedrag > 0) {
+      try {
+        await refundMolliePayment(env, payment.id, {
+          cents: bedrag,
+          description: `VISUAILS ${ref} — ${soort === 'geannuleerd' ? 'bestelling was geannuleerd' : 'dubbele betaling'}`,
+        });
+        teruggestort = true;
+      } catch (e) {
+        console.error('[mollie-webhook] terugstorten van', payment.id, 'mislukt —', e?.message || e);
+      }
+    }
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+       VALUES (NULL, NULL, ?1, ?2, ?3, ?4)`
+    ).bind(soort === 'geannuleerd' ? 'payment.op-geannuleerd' : 'payment.dubbel', order.id, order.customer_id || null,
+      `${ref}: ${payment.id} ${bedrag} cent — ${teruggestort ? 'automatisch teruggestort' : 'NIET teruggestort, doe het met de hand'}`).run().catch(() => {});
+    await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+      .bind(order.id, order.status || 'received', order.lang === 'nl'
+        ? (soort === 'geannuleerd'
+          ? `Er kwam een betaling binnen op deze geannuleerde bestelling. ${teruggestort ? 'We storten het bedrag terug.' : 'We storten het bedrag zo snel mogelijk terug.'}`
+          : `Er kwam een tweede betaling binnen op deze bestelling. ${teruggestort ? 'We storten die terug.' : 'We storten die zo snel mogelijk terug.'}`)
+        : (soort === 'geannuleerd'
+          ? `A payment came in on this cancelled order. ${teruggestort ? 'We are refunding it.' : 'We will refund it as soon as possible.'}`
+          : `A second payment came in on this order. ${teruggestort ? 'We are refunding it.' : 'We will refund it as soon as possible.'}`), 'system').run().catch(() => {});
+    await notifyOngewensteBetaling(env, { orderId: order.id, soort, betaalId: payment.id, bedragCents: bedrag, teruggestort });
+    await mailOngewensteBetaling(env, order.id, soort, bedrag);
+    return;
+  }
   if (order.payment_status === 'paid') return; // belt and braces alongside the INSERT guard
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -1507,14 +1578,22 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
                                cancelled_at = datetime('now')
               WHERE id = ?1`
           ).bind(order.id, refunded ? 'refund' : 'none').run();
+          /* Twee regels (ronde 8, S-B6): wat de klant leest, in zijn taal, en de
+             werkregel voor de studio als 'intern' — die zag de klant tot nu toe
+             letterlijk ("TERUGBETALING MISLUKT, met de hand doen"). */
           await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
             .bind(
               order.id,
               'cancelled',
-              `Tweede proefvisual op dezelfde ${mine.kind} als ${earlier.ref} — geannuleerd, `
-                + (refunded ? 'euro teruggestort' : 'TERUGBETALING MISLUKT, met de hand doen'),
+              order.lang === 'en'
+                ? `A trial image was already ordered for this business (${earlier.ref}), so this one was cancelled. ${refunded ? 'The euro has been refunded.' : 'We refund the euro by hand.'}`
+                : `Voor dit bedrijf is al een proefbeeld besteld (${earlier.ref}), dus deze is geannuleerd. ${refunded ? 'De euro is teruggestort.' : 'We storten de euro met de hand terug.'}`,
               'system'
             ).run();
+          await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+            .bind(order.id, 'cancelled',
+              `Tweede proefvisual op dezelfde ${mine.kind} als ${earlier.ref} — ${refunded ? 'euro teruggestort' : 'TERUGBETALING MISLUKT, met de hand doen'}`,
+              'intern').run().catch(() => {});
         } catch (err) {
           console.error('[mollie-webhook] annulering niet weggeschreven voor', ref, '—', err?.message || err);
         }
@@ -1617,13 +1696,19 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
     const invoice = await issueInvoice(env, order.id);
     if (invoice) {
       const full = await env.DB.prepare(
-        'SELECT ref, email, lang FROM orders WHERE id = ?1'
+        'SELECT ref, email, lang, service, window_start, window_end FROM orders WHERE id = ?1'
       ).bind(order.id).first();
+      if (full) full.noNext = full.service === SAMPLE_SERVICE;
       await mailInvoice(env, { order: full, invoice });
+    } else {
+      await mailBetalingOntvangen(env, order.id);
     }
   } catch (e) {
     console.error('[mollie-webhook] factuur voor', ref, 'niet uitgegeven —', e && e.message ? e.message : e,
       '— wordt hersteld zodra de klant VISUAILS Studio opent (/account/invoices).');
+    /* De betaling is wel binnen; de klant hoort het ook zonder factuur (ronde 8,
+       M-B6). De factuur volgt in Studio zodra hij er is. */
+    await mailBetalingOntvangen(env, order.id);
   }
 }
 

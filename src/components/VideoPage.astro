@@ -482,7 +482,7 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
           <a class="knop knop-inkt" href="#looks">{c.kiesCta}</a>
           <a class="knop knop-lijn" href={lp('/pricing')}>{c.ctaPrices}</a>
         </p>
-        <ServiceSwitch current={['video', 'complete']} lang={lang} />
+        <ServiceSwitch current={['video']} lang={lang} />
       </div>
       {/* ── DE LAPTOP IN DE OPENING — 17 september 2026 ──────────────────────
           Lucas: *"Ik wil de laptop ook bovenaan op de eerste sectie en rechts
@@ -535,7 +535,8 @@ const vasteLooks = kinds.filter((s) => s.slug !== 'custom').map(naarRij);
         <h3 class="hoog hoog-3">{c.buyH}</h3>
         <p class="lopend" set:html={c.buyFixed} />
         <p class="lopend" set:html={c.buyQuote} />
-        <p class="lopend vid-vast"><b>{c.buyFlatH}</b> {c.buyFlat}</p>
+        {/* Op aanvraag is er nog geen cliptarief om over te zeggen dat het niet daalt. */}
+        {!opAanvraag && <p class="lopend vid-vast"><b>{c.buyFlatH}</b> {c.buyFlat}</p>}
         <p class="acties">
           <a class="knop knop-inkt" href={lp('/start/video')}>{c.buyCta}</a>
           <a class="knop knop-lijn" href={c.waQuote} target="_blank" rel="noopener">{c.waQuoteLabel}</a>
