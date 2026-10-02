@@ -427,7 +427,12 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     const cleaned = (k === 'style' && service === 'video')
       ? (VIDEO_STYLES.some((x) => x.slug === v.trim()) ? v.trim() : '')
       : vetAnswer(k, v);
-    if (cleaned) details[k] = cleaned;
+    /* ── MEER DAN ÉÉN KANAAL — ronde 9, 2 oktober 2026 (F59) ─────────────
+       De kanalen zijn vinkjes met dezelfde naam (`channels`). Elke volgende
+       overschreef de vorige, dus wie Amazon, bol en Zalando aanvinkte, stond
+       in het dossier met alleen "Zalando" — en Amazon's eis van zuiver wit
+       viel stil weg. Nu een kommalijst, zoals admin.js hem al leest. */
+    if (cleaned) details[k] = (k === 'channels' && details[k]) ? `${details[k]},${cleaned}` : cleaned;
   }
 
   /*
@@ -1867,7 +1872,12 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
            betaallink-na-controle. */
         aanvraag: !quote,
         /* Wat er besteld is, zodat de klant het kan nalezen (ronde 9, F12). */
-        details }),
+        details,
+        /* Ronde 9, F55: zonder foto's (bestelling namens de klant via /admin)
+           zegt de mail waar ze heen kunnen. */
+        fotos: (!staged.length && ['catalog', 'lifestyle', 'drop'].includes(svc))
+          ? `${requestOrigin(request)}${lang === 'nl' ? '/nl' : ''}/account/orders`
+          : null }),
   }));
 
   /*
@@ -3158,7 +3168,9 @@ function notifyEmail(ref, service, top, details, gate = {}) {
       ? `<p style="margin:0 0 16px;color:#8F4023">Bestelling met leverdatum, maar <strong>zonder vastgelegd venster</strong>.</p>`
       : (details && (details.voorrang === '1' || details.voorrang === 1 || details.voorrang === true))
         ? `<p style="margin:0 0 16px;color:#8F4023"><strong>VOORRANG</strong> — de klant betaalt de toeslag: uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 geleverd (betaald na ${VOORRANG.bestelVoorUur}:00: de werkdag daarna), anders gaat de toeslag terug.</p>`
-        : `<p style="margin:0 0 16px;color:#666">Gewone wachtrij — geen venster, met opzet.</p>`;
+        : (details && details.request && (service === 'video' || service === 'custom'))
+          ? `<p style="margin:0 0 16px;color:#666">Aanvraag zonder prijs — zet de offerte op de bestelpagina.</p>`
+          : `<p style="margin:0 0 16px;color:#666">Gewone wachtrij — geen venster, met opzet.</p>`;
 
   // SECTION 13 · the upgrade path, from the studio's side. Deliberately its own
   // line rather than a fact buried in `meta`: a brand that has put 12+ products
@@ -3220,18 +3232,24 @@ function notifyEmail(ref, service, top, details, gate = {}) {
        }</table>`
     : '';
 
+  /* Ronde 9 (O23): een aanvraag (video, eigen look) heeft geen wachtrij en heet
+     geen bestelling — "Nieuwe Aanvraag op maat-bestelling · wachtrij". */
+  const isAanvraag = !!(details && details.request) && (service === 'video' || service === 'custom');
+  const kopNaam = isAanvraag
+    ? `Nieuwe aanvraag · ${details.request === 'custom-look' ? 'eigen look' : (serviceLabel(service, 'nl') || service)}`
+    : `Nieuwe ${serviceLabel(service, 'nl') || service}-bestelling`;
   const meta = [
-    tier ? `${tier === 'attended' ? 'met leverdatum' : 'wachtrij'}` : null,
+    tier && !isAanvraag ? `${tier === 'attended' ? 'met leverdatum' : 'wachtrij'}` : null,
     products ? `${esc(products)} producten` : null,
     uploads ? `${esc(uploads)} ${uploads === 1 ? 'bestand' : 'bestanden'} geüpload` : null,
   ].filter(Boolean).join(' · ');
 
   return shell({
     lang: 'nl',
-    preheader: `Nieuwe ${serviceLabel(service, 'nl') || service}-bestelling · ${ref}${meta ? ` · ${products || ''}` : ''}`.trim(),
+    preheader: `${kopNaam} · ${ref}${meta ? ` · ${products || ''}` : ''}`.trim(),
     body: `${banner}
     ${vatBlock}
-    ${h1(`Nieuwe ${esc(serviceLabel(service, 'nl') || service)}-bestelling`, `Referentie ${esc(ref)}`)}
+    ${h1(esc(kopNaam), `Referentie ${esc(ref)}`)}
     ${meta ? `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;color:#6B7078;font-size:13px">${meta}</p>` : ''}
     ${reserved}
     ${portalNote}
@@ -3265,7 +3283,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  */
 export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
-    inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false, details = null } = {}) {
+    inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false, details = null, fotos = null } = {}) {
   const nl = lang === 'nl';
   const hi = greeting(name, lang);
   const attended = tier === 'attended';
@@ -3280,8 +3298,25 @@ export function customerEmail(lang, ref, service, name,
   // "we hebben je catalog-aanvraag ontvangen" — in the first message a paying
   // customer gets. src/data/services.js has the words.
   const svcName = serviceLabel(service, lang) || service;
+  /* ── WAT HIJ AANVROEG, IN ZIJN WOORDEN — ronde 9, O23 ─────────────────────
+     "je aanvraag voor Aanvraag op maat" (eigen look) en "je aanvraag voor
+     Video" zonder de soort clip en het aantal dat hij net koos. */
+  const wat = (() => {
+    if (!aanvraag || !details) return null;
+    if (service === 'custom' && details.request === 'custom-look') return nl ? 'een eigen look' : 'custom look';
+    if (service === 'video') {
+      const stijl = (VIDEO_STYLES.find((v) => v.slug === details.style) || {}).name || '';
+      const n = Number(details.clips);
+      const clips = Number.isInteger(n) && n > 0 ? `${n} ${n === 1 ? 'clip' : 'clips'}` : '';
+      const extra = [stijl, clips].filter(Boolean).join(', ');
+      return `video${extra ? ` (${extra})` : ''}`;
+    }
+    return null;
+  })();
   const received = aanvraag
-    ? (nl ? `Bedankt — we hebben je aanvraag voor ${esc(svcName)} ontvangen.` : `Thanks — we've received your ${esc(svcName)} request.`)
+    ? (wat
+      ? (nl ? `Bedankt — we hebben je aanvraag voor ${esc(wat)} ontvangen.` : `Thanks — we've received your ${esc(wat)} request.`)
+      : (nl ? `Bedankt — we hebben je aanvraag voor ${esc(svcName)} ontvangen.` : `Thanks — we've received your ${esc(svcName)} request.`))
     : (nl ? `Bedankt — we hebben je bestelling voor ${esc(svcName)} ontvangen.` : `Thanks — we've received your ${esc(svcName)} order.`);
 
   const proef = service === SAMPLE_SERVICE;
@@ -3365,6 +3400,10 @@ export function customerEmail(lang, ref, service, name,
    * "any details..". Eén punt is genoeg. */
   const care = proef
     ? (nl ? 'Een specialist controleert je proefbeeld voordat het bij je komt.' : 'A specialist checks your trial image before it reaches you.')
+    /* Een merkmodel heeft één correctieronde op het ontwerp, geen
+       revisieronde per bestelling (ronde 9, O30). */
+    : service === 'brand-model'
+    ? (nl ? 'Een specialist bekijkt elke richting voordat hij bij je komt. Op het ontwerp heb je één correctieronde.' : 'A specialist checks every direction before it reaches you. You get one correction round on the design.')
     : nl
     ? `Een specialist controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}`
     : `A specialist checks every visual before it reaches you. ${aftercare(tier, 'en')}`;
@@ -3576,6 +3615,10 @@ export function customerEmail(lang, ref, service, name,
             : 'There is no payment button in this email yet, and that is on purpose: we check your details first. As soon as that is done — usually within one working day — we send you the payment link. Nothing is needed from you.',
             { top: 4 })
         : '',
+      fotos ? p(nl
+        ? 'We hebben nog geen foto\u2019s van je product. Zet ze bij deze bestelling in VISUAILS Studio \u2014 log in met dit e-mailadres, dan mailen we je een code. Per product een voorkant, een achterkant en een close-up; met je telefoon is goed.'
+        : 'We don\u2019t have photos of your product yet. Add them to this order in VISUAILS Studio \u2014 sign in with this email address and we email you a code. Per product a front, a back and a close-up; a phone is fine.',
+        { top: 16 }) + linkLine(fotos, nl ? 'Foto\u2019s toevoegen in Studio' : 'Add photos in Studio') : '',
       portalNote,
       aanvraag ? '' : p(care, { top: 20 }),
       upgradeNote,

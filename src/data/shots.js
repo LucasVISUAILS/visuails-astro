@@ -76,8 +76,10 @@ export const SHOTS = [
       nl: 'Het hele product, plat of hangend, recht van voren. Vul het beeld.',
     },
     buys: {
-      en: 'Everything is built from this one. It is the only shot we cannot work without.',
-      nl: 'Alles wordt hieruit opgebouwd. Dit is de enige foto waar we niet zonder kunnen.',
+      /* Ronde 9 (F61): "de enige foto waar we niet zonder kunnen" — terwijl
+         achterkant en close-up ook verplicht zijn. */
+      en: 'Everything is built from this one: it sets the shape, the colour and the proportions.',
+      nl: 'Alles wordt hieruit opgebouwd: hij bepaalt de vorm, de kleur en de verhoudingen.',
     },
   },
   {

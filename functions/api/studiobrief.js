@@ -69,6 +69,12 @@ export function terugNaar(request, lang, anker) {
   return `${pad}#${anker}`;
 }
 
+/** Een mail aan ons met het onderwerp ingevuld: één tik om je af te melden. */
+export function afmeldMailto(lang) {
+  const onderwerp = lang === 'nl' ? 'Afmelden Studiobrief' : 'Unsubscribe Studio letter';
+  return `mailto:hello@visuails.com?subject=${encodeURIComponent(onderwerp)}`;
+}
+
 /** De welkomstmail. Kort, zonder aanbieding: hij bevestigt wat je net deed. */
 export function welkomMail(lang) {
   const nl = lang === 'nl';
@@ -81,9 +87,15 @@ export function welkomMail(lang) {
       p(esc(nl
         ? 'Dank je. Je krijgt de Studiobrief van VISUAILS: hooguit één mail per maand, met de nieuwe looks en wat er bij ons verandert. Geen acties, geen kortingscodes.'
         : 'Thank you. You will get the VISUAILS Studio letter: one email a month at most, with the new looks and what changes on our side. No promotions, no discount codes.')),
-      p(esc(nl
-        ? 'Afmelden kan onderaan elke brief, met één klik. Heb je je niet zelf aangemeld, dan hoef je niets te doen: antwoord op deze mail en we halen je adres weg.'
-        : 'You can unsubscribe at the bottom of every letter, in one click. If you did not sign up yourself, you need not do anything: reply to this email and we remove your address.'), { muted: true }),
+      /* Ronde 9 (F34): ook in DEZE mail al een weg eruit, niet pas onderaan de
+         eerste brief. Een mailto, omdat afmelden bij Resend gebeurt en er hier
+         nog geen eigen afmeldadres is; Gmail en Apple Mail tonen dankzij de kop
+         List-Unsubscribe bovendien zelf een knop "Afmelden". */
+      p(`${esc(nl
+        ? 'Afmelden kan onderaan elke brief, met één klik — of nu meteen: '
+        : 'You can unsubscribe at the bottom of every letter, in one click — or right now: ')}<a href="${esc(afmeldMailto(lang))}">${esc(nl ? 'meld me af' : 'unsubscribe me')}</a>.${esc(nl
+        ? ' Heb je je niet zelf aangemeld, dan hoef je niets te doen.'
+        : ' If you did not sign up yourself, you need not do anything.')}`, { muted: true }),
       p(esc(nl ? '— Lucas, VISUAILS' : '— Lucas, VISUAILS')),
     ].join(''),
   });
@@ -145,6 +157,7 @@ export async function onRequestPost(context) {
       to: email,
       subject: lang === 'nl' ? 'Je staat op de lijst voor de Studiobrief' : 'You are on the list for the Studio letter',
       html: welkomMail(lang),
+      headers: { 'List-Unsubscribe': `<${afmeldMailto(lang)}>` },
     }));
     await safe(() => sendMail(env, {
       to: env.NOTIFY_EMAIL || 'hello@visuails.com',

@@ -109,7 +109,12 @@ const c = nl ? {
 
 const vink = 'M20 6L9 17l-5-5';
 /* Alleen de vakken van het raster met een echte foto — zie de noot bij het raster. */
-const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
+const alleRasterFotos = (style.grid || []).filter((g: any) => g.photo);
+/* Ronde 9 (O63): acht foto's in drie kolommen lieten rechtsonder een leeg vak
+   (Flash). Vanaf drie: een veelvoud van drie, zodat elke rij vol is. Op de
+   telefoon (twee kolommen) vult de eerste foto bij een oneven aantal de hele
+   breedte — zie .ls-negen hieronder. */
+const rasterFotos = alleRasterFotos.length >= 3 ? alleRasterFotos.slice(0, alleRasterFotos.length - (alleRasterFotos.length % 3)) : alleRasterFotos;
 ---
 
 <div class="s22 ls">
@@ -341,7 +346,11 @@ const rasterFotos = (style.grid || []).filter((g: any) => g.photo);
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: clamp(.7rem, 1.6vw, 1.1rem); list-style: none; padding: 0; margin: 0;
   }
-  @media (max-width: 700px) { .ls-negen { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 700px) {
+    .ls-negen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ls-negen:not(.is-rij) > li:first-child:nth-last-child(odd) { grid-column: span 2; }
+    .ls-negen:not(.is-rij) > li:first-child:nth-last-child(odd) .kaart { aspect-ratio: 8 / 5; }
+  }
   .ls-negen .kaart img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
   .ls-vinkjes { display: grid; gap: .9rem; list-style: none; padding: 0; margin: 1.4rem 0 0; }

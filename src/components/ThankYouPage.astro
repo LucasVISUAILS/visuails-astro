@@ -126,6 +126,10 @@ const c = nl ? {
      de link volgt per mail. Zonder deze regel las de klant "we maken je
      visuals" terwijl er nog niets loopt. */
   flowReview: 'Er staat nog geen betaalknop: we kijken je gegevens eerst even na, meestal binnen een werkdag. Daarna krijg je de betaallink per mail, en we beginnen zodra de betaling binnen is.',
+  /* Ronde 9 (O19): een bestelling die eerst nagekeken wordt, is geen aanvraag. */
+  titleReview: 'Bedankt — je bestelling staat erin.',
+  /* Ronde 9 (O30): een merkmodel is geen beeldenbestelling. */
+  flowModel: 'Je krijgt eerst een paar richtingen om op te reageren, met één correctieronde. Daarna bouwen we het gezicht, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Vanaf dan kies je het in elke bestelling.',
   titleContact: 'Bedankt — we hebben je bericht.',
   flowContact: 'Lucas leest het zelf en antwoordt via het kanaal dat je koos — meestal binnen het uur, buiten de openingstijden de volgende ochtend.',
   cta: 'Bekijk je bestelling',
@@ -152,6 +156,7 @@ const c = nl ? {
      betaallink. De reden staat in de mail die de klant kreeg. */
   handTitel: 'Deze bestelling is geannuleerd',
   handP: 'Er valt niets meer te betalen en er wordt niets voor gemaakt. Waarom, staat in de mail die je van ons kreeg. Klopt dat niet, of wil je toch verder? Stuur ons een bericht, dan kijken we het samen na.',
+  handPTerug: 'Je betaling kwam binnen nadat deze bestelling al geannuleerd was. We storten het bedrag automatisch terug op de rekening waarmee je betaalde — afhankelijk van je bank binnen een paar werkdagen — en je krijgt daar een mail over. Wil je toch verder? Stuur ons een bericht.',
   handCta: 'Neem contact op',
 } : {
   title: 'Thanks — we have your request.',
@@ -166,6 +171,8 @@ const c = nl ? {
   flow: 'We read what you sent, prepare your visuals, and a specialist checks every result before it reaches you.',
   flowRequest: 'We read your request and reply in writing with a proposal and a price — usually within one working day. It only becomes an order once you say yes.',
   flowReview: 'There is no payment button yet: we check your details first, usually within one working day. Then we send you the payment link by email, and we start as soon as the payment is in.',
+  titleReview: 'Thanks — your order is in.',
+  flowModel: 'First you get a few directions to react to, with one correction round. Then we build the face, run it through the uniqueness check and tie it to your brand. From then on you pick it in any order.',
   titleContact: 'Thanks — we have your message.',
   flowContact: 'Lucas reads it himself and replies through the channel you chose — usually within the hour, outside opening hours the next morning.',
   cta: 'See your order',
@@ -190,6 +197,7 @@ const c = nl ? {
   cancelCta: 'See the services',
   handTitel: 'This order has been cancelled',
   handP: 'There is nothing left to pay and nothing will be made for it. Why is in the email we sent you. If that is not right, or you want to go ahead after all, send us a message and we will look at it together.',
+  handPTerug: 'Your payment came in after this order had already been cancelled. We refund it automatically to the account you paid from — depending on your bank, within a few working days — and you will get an email about it. Want to go ahead after all? Send us a message.',
   handCta: 'Get in touch',
 };
 
@@ -213,7 +221,7 @@ const bronnen = nl
   <div class="ty-bar" data-ty-bar>
     <div class="ty-bar-in">
       <svg class="ty-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-afgezegd={c.handTitel} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact}>{c.title}</h1>
+      <h1 class="hoog hoog-2" data-ty-title data-ty-title-cancelled={c.cancelled} data-ty-title-afgezegd={c.handTitel} data-ty-title-pay={c.titlePay} data-ty-title-paid={c.titlePaid} data-ty-title-checking={c.titleChecking} data-ty-title-unpaid={c.titleUnpaid} data-ty-title-contact={c.titleContact} data-ty-title-review={c.titleReview}>{c.title}</h1>
     </div>
   </div>
 
@@ -229,7 +237,7 @@ const bronnen = nl
           <p class="acties ty-act"><a class="knop knop-inkt" href={lp('/start')}>{c.cancelCta}</a></p>
         </div>
         <div class="ty-cancelled" data-ty-afgezegd role="status" tabindex="-1" hidden>
-          <p class="lopend">{c.handP}</p>
+          <p class="lopend" data-ty-hand-p data-ty-hand-terug={c.handPTerug}>{c.handP}</p>
           <p class="acties ty-act"><a class="knop knop-inkt" href={lp('/contact')}>{c.handCta}</a></p>
         </div>
 
@@ -244,7 +252,7 @@ const bronnen = nl
               zet hem aan bij ?pay=. Zonder link (contactformulier, checklist,
               terugkeer van Mollie) stond hier een vraag zonder antwoord. */}
           <p class="ty-pay" data-ty-payq hidden><strong>{c.payQ}</strong> {c.payA}</p>
-          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest} data-ty-flow-review={c.flowReview} data-ty-flow-contact={c.flowContact}>{c.flow}</p>
+          <p class="lopend" data-ty-flow data-ty-flow-request={c.flowRequest} data-ty-flow-review={c.flowReview} data-ty-flow-contact={c.flowContact} data-ty-flow-model={c.flowModel}>{c.flow}</p>
           <p class="acties ty-act"><a href={`/account?lang=${lang}`} class="knop knop-inkt">{c.cta}</a></p>
           <p class="ty-signin" data-ty-signin>{c.signin}</p>
         </div>

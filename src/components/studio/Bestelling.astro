@@ -27,8 +27,34 @@ const { t, lang, v, order, events = [], files = [] } = Astro.props;
   </summary>
   <div class="st-bestelling-body">
     {v.windowLine && <p class="st-meta">{v.windowLine}</p>}
+    {Number(Astro.url.searchParams.get('order')) === Number(v.id) && Astro.url.searchParams.get('terug') === '1' && v.status === 'awaiting_payment' && (
+      <p class="st-melding" role="status">{t.payTerug}</p>
+    )}
     <Betaling t={t} lang={lang} order={order} />
     <Voortgang t={t} lang={lang} order={order} events={events} files={files} />
+    {/* Ronde 9, F55: foto's bij een bestaande bestelling zetten — de bestelling
+        die de studio namens de klant aanmaakt, heeft ze vaak nog niet. Gegevens
+        en wanneer hij verschijnt: fotosView() in account.js. */}
+    {(() => {
+      const q = Astro.url.searchParams;
+      if (Number(q.get('order')) !== Number(v.id) || !q.has('fotos')) return null;
+      const f = q.get('fotos');
+      const n = Number(f);
+      const tekst = f === 'dicht' ? t.fotosDicht : n > 0 ? t.fotosOk(n) : t.fotosNiets;
+      return <p class={`st-melding ${n > 0 ? 'is-ok' : 'is-warn'}`} role="status">{tekst}</p>;
+    })()}
+    {v.fotos && (
+      <form class={`st-ronde st-fotos${v.fotos.leeg ? ' is-ready' : ''}`} method="post" action={v.fotos.action} enctype="multipart/form-data">
+        <h3>{v.fotos.h}</h3>
+        <p>{v.fotos.p}</p>
+        <label class="st-fotos-kies">
+          <span class="sr-only">{v.fotos.cta}</span>
+          <input type="file" name="fotos" multiple required data-melding={lang === 'nl' ? 'Kies eerst een of meer foto’s van je product — daar maken we de beelden van.' : 'Choose one or more photos of your product first — that is what we make the images from.'} accept=".jpg,.jpeg,.png,.webp,.avif,.heic,.heif,image/jpeg,image/png,image/webp,image/avif,image/heic" />
+        </label>
+        <button class={`btn ${v.fotos.leeg ? 'btn-primary' : 'btn-2nd'} btn-sm`} type="submit">{v.fotos.cta}</button>
+        <p class="st-meta">{v.fotos.hint}</p>
+      </form>
+    )}
     {v.note && (
       <div class="st-nota"><span class="st-nota-wie">{t.noteFrom}</span><p>{v.note}</p></div>
     )}

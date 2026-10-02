@@ -1,0 +1,21 @@
+// Ronde 9 · F18: uploaden in een vakje van het werkbord maakt een beoordeelbeeld.
+import sharp from 'sharp';
+import fs from 'node:fs';
+import { start, SITE, sql } from './_dl.mjs';
+import { adminLogin } from './_admin.mjs';
+const f = '/tmp/claude-0/f18-groot.png';
+if (!fs.existsSync(f)) await sharp({ create: { width: 3200, height: 4000, channels: 3, background: '#b44' } }).png().toFile(f);
+const rij = (await sql("SELECT id, ref FROM orders WHERE service='catalog' AND payment_status='paid' ORDER BY id DESC LIMIT 1"));
+const o = (Array.isArray(rij) ? rij : rij.results || rij.rows)[0];
+const s = await start(); const { page } = s;
+await adminLogin(page);
+await page.goto(`${SITE}/admin/orders/${o.id}/files`, { waitUntil: 'load' });
+const csp = await page.evaluate(() => !!document.querySelector('script[src="/admin-voorvertoning.js"]'));
+const vak = page.locator('form:has(input[name="shot"][value="back"]) input[type=file][name=files]').first();
+await vak.setInputFiles(f);
+const knop = page.locator('form:has(input[name="shot"][value="back"]) button[type=submit]').first();
+await Promise.all([page.waitForNavigation({ timeout: 60000 }), knop.click()]);
+const r = await sql(`SELECT id, filename, bytes, preview_key FROM files WHERE order_id=${o.id} AND kind='delivery' ORDER BY id DESC LIMIT 1`);
+console.log('order', o.ref, '| script aanwezig:', csp, '| laatste levering:', JSON.stringify((Array.isArray(r) ? r : r.results || r.rows)[0]));
+console.log(s.fouten);
+await s.stop();

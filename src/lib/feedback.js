@@ -73,7 +73,7 @@ const COPY = {
     fixPlaceholder: 'Wat ging er mis?',
     fixSend: 'Versturen',
     fixSkip: 'Liever niet, bedankt',
-    fixThanks: 'Bedankt — we hebben het gelezen en nemen contact op.',
+    fixThanks: 'Bedankt — het staat bij ons in de inbox. Een specialist leest het en neemt contact met je op.',
 
     // Hoge score: de drie acties.
     shareH: 'Wil je dat ergens kwijt?',
@@ -109,7 +109,7 @@ const COPY = {
     fixPlaceholder: 'What went wrong?',
     fixSend: 'Send',
     fixSkip: 'No thanks',
-    fixThanks: 'Thank you — we have read it and we will be in touch.',
+    fixThanks: 'Thank you — it is in our inbox. A specialist reads it and gets in touch.',
 
     shareH: 'Want to say that somewhere?',
     shareLede: 'Everything below is optional. It helps us a lot.',
@@ -532,7 +532,8 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
       note ? mailQuote(String(note).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(/\n/g, '<br>')) : '',
       mailP(kind === 'note'
         ? 'Het scherm heeft beloofd dat we ernaar kijken. Reageer op deze mail of bel ze.'
-        : 'Er staat nog geen uitleg bij. Juist dan is bellen het snelst — wie een 1 of 2 geeft en niets typt, gaat je meestal ook niets schrijven.',
+        /* Ronde 9 (O54): de zin noemde "een 1 of 2" ook bij een 3. */
+        : `Er staat nog geen uitleg bij. Juist dan is bellen het snelst — wie een ${score} geeft en niets typt, gaat je meestal ook niets schrijven.`,
         { top: 16 }),
       mailNote('Dit antwoord is privé. Het staat nergens op de site en gaat naar geen enkel reviewplatform.'),
     ].join('');

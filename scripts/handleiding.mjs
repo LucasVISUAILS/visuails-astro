@@ -67,6 +67,12 @@ import { createRequire } from 'node:module';
 import { browserPad } from './lib/browserpad.mjs';
 
 import { SHOTS, MIN_LANGE_ZIJDE } from '../src/data/shots.js';
+/* De inleiding noemt het aantal verplichte opnamen in woorden ("de eerste
+   drie"). Verandert shots.js, dan moet die zin mee — anders zegt de gids iets
+   anders dan het formulier (ronde 9, F61). */
+if (SHOTS.filter((s) => s.required).length !== 3 || SHOTS.length !== 4) {
+  throw new Error('handleiding.mjs: shots.js heeft niet meer 3 verplichte opnamen van de 4 — pas setLead aan.');
+}
 import { WHATSAPP_DISPLAY } from '../src/data/whatsapp.js';
 
 const require = createRequire(import.meta.url);
@@ -213,7 +219,9 @@ const KOPIJ = {
     h1: ['Zo halen we het ', 'meeste', ' uit jouw foto’s'],
     intro: 'Je hoeft geen fotograaf te zijn en geen studio te hebben — een telefoon bij het raam is genoeg. Deze gids laat zien welke opnamen ons het meest helpen en wat elke opname aan je resultaat toevoegt. Bewaar hem; bij een volgende bestelling weet je dan meteen wat je klaarzet.',
     setKop: 'De vier opnamen',
-    setLead: 'De eerste twee hebben we altijd nodig. De andere twee maken het resultaat nauwkeuriger — stuur ze als je ze hebt, en anders gaan we er gewoon zonder verder.',
+    /* Ronde 9 (F61): stond op "de eerste twee", terwijl het formulier en
+       /upload-guidelines er drie verplicht stellen (shots.js: required). */
+    setLead: 'De eerste drie hebben we altijd nodig. De vierde maakt het resultaat nauwkeuriger — stuur hem als je hem hebt, en anders gaan we er gewoon zonder verder.',
     altijd: 'Altijd meesturen',
     helpt: 'Maakt het nauwkeuriger',
     hoeKop: 'Zo maak je hem',
@@ -294,7 +302,7 @@ const KOPIJ = {
     h1: ['Getting the ', 'most', ' out of your photos'],
     intro: 'You do not need to be a photographer and you do not need a studio — a phone by a window is enough. This guide shows which shots help us most and what each one adds to your result. Keep it; next time you order you will know what to have ready.',
     setKop: 'The four shots',
-    setLead: 'We always need the first two. The other two make the result more accurate — send them if you have them, and if not we carry on without.',
+    setLead: 'We always need the first three. The fourth makes the result more accurate — send it if you have it, and if not we carry on without.',
     altijd: 'Always send',
     helpt: 'Makes it more accurate',
     hoeKop: 'How to take it',
@@ -350,9 +358,9 @@ ${fonts}
      global.css, dus de waarden staan hier letterlijk. Verandert het schema,
      dan verandert dit blok mee — net als C in src/lib/mailTemplate.js.
 
-     De NAMEN blijven `--geel` en `--geel-letter`, om dezelfde reden als in
+     De NAMEN blijven '--geel' en '--geel-letter', om dezelfde reden als in
      stijl22.css: ze staan tientallen keren in dit bestand en hernoemen is een
-     eigen ronde. `--op-geel` is nieuw en noodzakelijk: op limoen stond zwarte
+     eigen ronde. '--op-geel' is nieuw en noodzakelijk: op limoen stond zwarte
      tekst (13,7:1), op violet is dat 2,93:1 en in het schema afgekeurd. Wit
      op violet is 7,16:1. */
   --inkt: #000000; --inkt-2: rgba(0,0,0,.66); --vel: #F2F3F5; --wit: #FFFFFF;

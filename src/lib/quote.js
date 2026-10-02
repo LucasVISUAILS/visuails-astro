@@ -558,6 +558,18 @@ export function paymentDescription(quote, lang = 'en') {
      regel stond er *"VISUAILS — 5 producten, undefined"* op het bankafschrift.
      Het telwoord is hier "clip" en niet "product": dát is wat er geleverd
      wordt, en de omschrijving moet los van de site te lezen zijn. 7 sept 2026. */
+  /* ── EEN OFFERTE: GEEN TELLING DIE WE NIET KENNEN — ronde 9, F39 ─────────
+     Na een offerte (video, eigen look) betaalt de klant via /api/order-pay of
+     Studio, en daar kwam `product_count` binnen — leeg bij een aanvraag, dus 1.
+     Mollie toonde "VISUAILS — 1 videoclip" bij een offerte voor twee clips, en
+     een eigen look gaf "VISUAILS — 1 product, undefined" op het bankafschrift.
+     Het aantal uit de aanvraag is een schatting ("Weet ik nog niet" mag); wat
+     er afgesproken is, staat in de offerte. Dus: wat het is, en het kenmerk. */
+  if (quote.offerte || quote.service === 'custom') {
+    const ref = quote.ref ? ` ${quote.ref}` : '';
+    if (quote.service === 'custom') return nl ? `VISUAILS eigen look${ref}` : `VISUAILS custom look${ref}`;
+    if (quote.service === 'video') return nl ? `VISUAILS videoclips${ref}` : `VISUAILS video clips${ref}`;
+  }
   if (quote.service === 'video') {
     const k = Number(quote.products) || 1;
     return nl
@@ -586,6 +598,9 @@ export function paymentDescription(quote, lang = 'en') {
    */
   const kind = ladderKey(quote.service);
   const n = quote.products;
+  /* Een dienst die hier niet in de tabel staat, mag nooit "undefined" op een
+     bankafschrift zetten (ronde 9, F39). */
+  if (!what[kind]) return quote.ref ? `VISUAILS ${quote.ref}` : 'VISUAILS';
   return nl
     ? `VISUAILS — ${n} ${n === 1 ? 'product' : 'producten'}, ${what[kind]}`
     : `VISUAILS — ${n} ${n === 1 ? 'product' : 'products'}, ${what[kind]}`;

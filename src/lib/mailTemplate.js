@@ -238,7 +238,7 @@ export const statusPil = (status, label) => {
   }[stand(status)];
   const [vul, rand, inkt] = k;
   return `<span style="display:inline-block;padding:5px 11px;border:1px solid ${rand};border-radius:999px;`
-    + `background:${vul === 'transparent' ? 'none' : vul};font-family:${FONT};font-size:11px;line-height:16px;`
+    + `background:${vul === 'transparent' ? 'none' : vul};font-family:${FONT};font-size:12px;line-height:16px;`
     + `font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${inkt};white-space:nowrap">`
     + `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${inkt};margin-right:6px;vertical-align:1px"></span>`
     + `${esc(label == null || label === '' ? status : label)}</span>`;

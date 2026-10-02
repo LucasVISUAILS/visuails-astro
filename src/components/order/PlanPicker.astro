@@ -106,6 +106,7 @@ const FOUTEN: Record<string, string> = nl ? {
   opslaan: 'We konden je aanvraag niet vastleggen. Probeer het opnieuw, of mail hello@visuails.com.',
   mollie: 'Het betaalscherm ging niet open. Er is niets afgeschreven. Probeer het opnieuw, of mail hello@visuails.com.',
   verklaring: 'Vink de verklaring onderaan aan — VISUAILS levert uitsluitend zakelijk.',
+  bestaat: 'Op dit e-mailadres loopt al een abonnement. Log in (rechtsboven, of via de link bij je gegevens) om het te bekijken of te wijzigen.',
   bedrijf: 'Vul je bedrijfsnaam in, en in Nederland je KVK-nummer (8 cijfers). In een ander EU-land: je btw-nummer, of je registratienummer als je geen btw-nummer hebt.',
 } : {
   plan: 'Choose a plan first.',
@@ -117,6 +118,7 @@ const FOUTEN: Record<string, string> = nl ? {
   opslaan: 'We could not record your request. Try again, or email hello@visuails.com.',
   mollie: 'The payment screen did not open. Nothing has been charged. Try again, or email hello@visuails.com.',
   verklaring: 'Tick the declaration at the bottom — VISUAILS supplies businesses only.',
+  bestaat: 'There is already a plan on this email address. Sign in (top right, or via the link by your details) to view or change it.',
   bedrijf: 'Fill in your company name, and in the Netherlands your KVK number (8 digits). In another EU country: your VAT number, or your registration number if you have no VAT number.',
 };
 const foutTekst = FOUTEN[fout] || '';

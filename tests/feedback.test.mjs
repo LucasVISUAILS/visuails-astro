@@ -142,7 +142,7 @@ console.log('\nde toestanden van het blok');
 
   const withNote = feedbackBlock({ lang: 'nl', action: '/x', feedback: { score: 2, private_note: 'de kleur klopt niet' } });
   check('notitie verstuurd: formulier weg', withNote.includes('name="note"'), false);
-  check('notitie verstuurd: bedankt', withNote.includes('we hebben het gelezen'), true);
+  check('notitie verstuurd: bedankt', withNote.includes('het staat bij ons in de inbox'), true);
   check('notitie verstuurd: platformen blijven', withNote.includes('value="google"'), true);
   check('de notitie zelf komt NIET terug op het scherm', withNote.includes('de kleur klopt niet'), false);
 

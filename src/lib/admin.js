@@ -158,7 +158,8 @@ import { AMOUNT, VAT_RATE, vatPercent, ladderTotal, STOCK_OFF_BRAND } from '../d
 /* De betaaltermijn na een goedgekeurde btw-beoordeling. Uit vat.js en niet
    ingetypt: functions/api/order.js zet dezelfde klok bij het bestellen, en
    tests/promises.test.mjs weigert een tweede getal in dit bestand. */
-import { PAYMENT_DAYS } from '../data/vat.js';
+import { PAYMENT_DAYS, countryOptions, EU_COUNTRIES, OTHER_COUNTRIES } from '../data/vat.js';
+import { composeAddress } from '../data/address.js';
 import { puntenVoor, heeftVoorrang, voorrangDeadline, SAMPLE_SERVICE, REVISIE_DAGEN, ladderRate, SERVICE_CREDITS } from '../data/pricing.js';
 /* rowPunten() weegt een opgeslagen rij, video inbegrepen; videoVelden() haalt de
    stijl en het aantal clips uit details_json. Zie de noten daar — het beheerscherm
@@ -340,6 +341,11 @@ async function adminGetInner(context) {
   // under this prefix rather than widening the cookie's path.
   const filesMatch = path.match(/^\/admin\/orders\/(\d+)\/files$/);
   if (filesMatch) return renderFiles(context, Number(filesMatch[1]));
+  /* Ronde 9 (O22): /admin/orders/<id> zonder /files gaf "Niet gevonden",
+     terwijl dat het adres is dat je typt of uit een notitie plakt. De
+     bestellingspagina IS de bestandenpagina; stuur er gewoon naartoe. */
+  const kaleOrder = path.match(/^\/admin\/orders\/(\d+)\/?$/);
+  if (kaleOrder) return seeOther(`/admin/orders/${kaleOrder[1]}/files`);
 
   /* DE WERKMAP — 12 augustus 2026. Een zip met alleen de mapstructuur van deze
      bestelling, zodat de studio de beelden in de goede vakjes zet en de server ze
@@ -449,6 +455,9 @@ async function adminGetInner(context) {
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
       body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld, watch, tmWaiting, aflopend, aandacht),
+      /* Een revisiekaart heeft een uploadvak voor de vervangende foto: dan ook
+         hier het beoordeelbeeld maken (ronde 9, F18). Zonder revisies geen script. */
+      voorvertoning: revisions.length > 0,
     }));
   }
 
@@ -2274,7 +2283,7 @@ async function loadOrderFiles(env, orderId) {
                        details_json,
                        delivery_mailed_at, redelivery_mailed_at, redelivery_count,
                        customer_note, customer_note_at,
-                       country, vat_number, vat_treatment, vat_rate, vat_cents, total_cents,
+                       country, vat_number, vat_treatment, vat_rate, vat_cents, total_cents, address_line1,
                        vat_valid, vat_checked_at, vat_consultation, vat_check_name,
                        icp_reported_at, customer_id, payment_status, review_state, review_reason, paid_at,
                        created_at, closed_at, delivered_at, refunded_cents, hidden_at, cancel_reason, cancel_payment
@@ -2607,8 +2616,20 @@ async function renderFiles(context, orderId) {
   if (!data) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
 
   const { order, files, migrated, notes, assets = new Map() } = data;
+  /* De eigen merkmodellen van deze klant, voor "Wat de klant koos": daar stond
+     "c5 — eigen merkmodel" zonder naam en zonder gezicht (ronde 9, F49). */
+  const eigenModellen = new Map();
+  if (order.customer_id) {
+    const rijen = await env.DB.prepare('SELECT id, label, preview_key FROM custom_models WHERE customer_id = ?1')
+      .bind(order.customer_id).all().then((r) => r.results || []).catch(() => []);
+    for (const m of rijen) eigenModellen.set(`c${m.id}`, m);
+  }
   const orderBounce = (await bouncesFor(env, [order.email])).get(String(order.email || '').toLowerCase()) || null;
   const bounceBlok = orderBounce ? `<p class="warnline is-rood">${esc(bounceLine(orderBounce))}</p>` : '';
+  /* Terugboeking (ronde 9, F62): de webhook legt hem vast in admin_log en mailt; hier staat hij bovenaan de bestelling. */
+  const chargebacks = await env.DB.prepare("SELECT detail, created_at FROM admin_log WHERE action = 'payment.chargeback' AND order_id = ?1 ORDER BY id")
+    .bind(order.id).all().then((r) => r.results || []).catch(() => []);
+  const chargebackBlok = chargebacks.map((c) => `<p class="warnline is-rood">Terugboeking (chargeback) op ${esc(String(c.created_at || '').slice(0, 10))}: ${esc(mailBedrag(Number(String(c.detail).match(/ (\d+) cent/)?.[1]) || 0, 'nl'))} — de bestelling staat nog op betaald. Zet hem stil als je nog niet geleverd hebt; betwisten kan in het Mollie-dashboard.</p>`).join('');
   /* ── STAAT ER TEGOED? — 24 september 2026 ────────────────────────────────
      Studio laat de klant zijn tegoed nu zien, met de zin "noem het bij je
      volgende bestelling — dan verrekenen we het". Verrekenen gaat met de hand
@@ -3001,7 +3022,10 @@ async function renderFiles(context, orderId) {
     if (!ruw) return '';
     if (ruw === MODEL_ANY) return 'wij kiezen';
     const bekend = ROSTER.find((m) => modelId(m.name) === ruw.toLowerCase());
-    return bekend ? bekend.name : `${ruw} (eigen)`;
+    if (bekend) return bekend.name;
+    /* Het eigen merkmodel bij naam (ronde 9, F49), niet "c5 (eigen)". */
+    const eigen = eigenModellen.get(ruw.toLowerCase());
+    return eigen ? `${eigen.label} (eigen merkmodel)` : `${ruw} (eigen)`;
   };
   const uploadsVan = (key) => intake.filter((f) => f.product_key === key && !f.superseded_at);
   const duim = (f, rond = false) => `<a class="brief-duim${rond ? ' is-rond' : ''}" href="/admin/files/${f.id}" target="_blank" rel="noopener" aria-label="${esc(f.filename || `bestand ${f.id}`)} openen"><img src="/admin/files/${f.id}" alt="" loading="lazy"></a>`;
@@ -3127,8 +3151,8 @@ async function renderFiles(context, orderId) {
         <span class="muted">Geraden uit de bestandsnamen &mdash; verbeter wat niet klopt en sla op. Twee bestanden op hetzelfde product en dezelfde foto: de nieuwste wint, de oudere komt op vervangen te staan.</span>
       </div>
     </form>
-    ${unmapped
-      ? `<p class="warnline">${unmapped} geleverd ${unmapped === 1 ? 'bestand heeft' : 'bestanden hebben'} nog geen product of foto. Zolang dat zo is, ziet de klant ze op een losse hoop in plaats van naast het product waar ze bij horen.</p>`
+    ${unmapped && !(order.service === 'video' && !Number(order.product_count))
+      ? `<p class="warnline">${unmapped} ${unmapped === 1 ? 'geleverd bestand heeft' : 'geleverde bestanden hebben'} nog geen product of foto. Zolang dat zo is, ziet de klant ze op een losse hoop in plaats van naast het product waar ze bij horen.</p>`
       : ''}`
     : '<p class="muted">Nog niets geleverd.</p>';
 
@@ -3214,6 +3238,41 @@ async function renderFiles(context, orderId) {
      bestelling + betaallink) en de look klaarzetten op de klantpagina. Een
      video-aanvraag krijgt dezelfde offerteknop; die had tot nu toe ook geen
      weg naar een bedrag. */
+  /* ── DE MERKMODELBRIEFING OP DE BESTELPAGINA — ronde 9, F47 ──────────────
+     Een betaalde merkmodelbestelling (€ 450) toonde hier niets van wat de klant
+     invulde: wie koopt het, de link, waar het gezicht komt te staan, de casting.
+     Die stond alleen in de adminmail. Nu hier, met de weg naar het klantaccount
+     waar het model wordt aangemaakt. */
+  const merkmodelBlok = (() => {
+    if (order.service !== 'brand-model') return '';
+    let d = {};
+    try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
+    const veld = (label, v) => (v ? `<div class="hold-fact"><dt>${esc(label)}</dt><dd>${esc(String(v)).replace(/\n/g, '<br>')}</dd></div>` : '');
+    const ROUTE = { own: 'De klant beschrijft het gezicht', ours: 'Wij bedenken het (richtingen)' };
+    const GEBRUIK = { catalog: 'Vooral productpagina’s', lifestyle: 'Vooral campagne en social', both: 'Allebei' };
+    const OVERKOMEN = { female: 'Vrouw', male: 'Man', nonbinary: 'Non-binair', open: 'Open — adviseer' };
+    const POSTUUR = { slim: 'Slank', average: 'Gemiddeld', athletic: 'Atletisch', curve: 'Curvy', open: 'Open' };
+    const naarKlant = order.customer_id
+      ? `<p><a class="btn" href="/admin/customers/${order.customer_id}#eigen-modellen">Het model aanmaken in het account van ${esc(order.brand || order.name || 'de klant')}</a></p>
+      <p class="meta">Maak het aan als <em>in ontwerp</em> (de klant ziet "in de maak" in Studio), stuur de richtingen, en zet het op <em>vastgelegd</em> na de correctieronde. Vastleggen rondt deze bestelling af en mailt de klant dat zijn merkmodel klaarstaat.</p>`
+      : '<p class="warnline">Deze bestelling hangt aan geen klant — het model kan pas aangemaakt worden als er een klantaccount is.</p>';
+    return `
+  <h2>Briefing merkmodel</h2>
+  <dl class="hold-fact-list aanvraag-intake">
+    ${veld('Route', ROUTE[d.bm_track] || d.bm_track)}
+    ${veld('Wie koopt het', d.bm_audience)}
+    ${veld('Merk te zien op', d.bm_link)}
+    ${veld('Komt vooral te staan', GEBRUIK[d.bm_usage] || d.bm_usage)}
+    ${veld('Overkomen als', OVERKOMEN[d.bm_presentation] || d.bm_presentation)}
+    ${veld('Leeftijd', d.bm_age === 'open' ? 'Open' : d.bm_age)}
+    ${veld('Postuur', POSTUUR[d.bm_build] || d.bm_build)}
+    ${veld('Kenmerkend', d.bm_features)}
+    ${veld('Juist niet', d.bm_avoid)}
+    ${veld('Bericht', d.message)}
+  </dl>
+  ${naarKlant}`;
+  })();
+
   const aanvraagBlok = (() => {
     let d = {};
     try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
@@ -3250,8 +3309,14 @@ async function renderFiles(context, orderId) {
         <button class="btn btn-primary" type="submit">Restant vragen en betaallink mailen</button>
       </form>
       <p class="meta">Wordt een eigen bestelling (${esc(order.ref)}-R…) met eigen factuur. De klant krijgt dezelfde offertemail, met "restant" erin.</p>` : '';
+    /* Ronde 9 (F44): een aanvraag vraagt geen adres, en dan gaat de factuur uit
+       met alleen een naam. Een Nederlandse factuur hoort het adres van de
+       afnemer te dragen. Tot daar een besluit over is: hier zeggen. */
+    const zonderAdres = !betaald && !String(order.address_line1 || '').trim()
+      ? `<p class="warnline">Geen factuuradres bij deze aanvraag. Betaalt de klant zo, dan staat op de factuur alleen ${esc(order.brand || order.name || 'de naam')}. Vraag de klant zijn adres in te vullen in VISUAILS Studio (Je gegevens) vóór hij betaalt; de factuur neemt het daarvandaan.</p>`
+      : '';
     const offerte = betaald
-      ? `<p class="okline">Betaald: &euro;${esc(bedrag)} excl. btw${d.quote_kind === 'aanbetaling' ? ' (aanbetaling)' : ''}.</p>${restantBlok}`
+      ? `<p class="okline">Betaald: ${esc(mailBedrag(Number(order.total_cents) || 0, 'nl'))} excl. btw${d.quote_kind === 'aanbetaling' ? ' (aanbetaling)' : ''}.</p>${restantBlok}`
       : `<form class="controls" method="post" action="/admin/orders/${order.id}/quote">
       <label>Offerte, &euro; excl. btw
         <input name="amount" type="number" min="1" max="25000" step="0.01" inputmode="decimal" required value="${esc(bedrag)}"></label>
@@ -3262,6 +3327,7 @@ async function renderFiles(context, orderId) {
       </fieldset>
       <button class="btn btn-primary" type="submit">${bedrag ? 'Bedrag aanpassen en link opnieuw mailen' : 'Offerte vastleggen en betaallink mailen'}</button>
     </form>
+    ${zonderAdres}
     <p class="meta">Offerte of aanbetaling — zeg eerst of het idee met AI en onze tools te maken is; kan het niet, dan gaat de aanbetaling terug. De mail vertelt de klant wat het bedrag is (volledig of aanbetaling)${d.business_declaration === 'MISSING' ? ', en omdat deze aanvraag nog geen zakelijke verklaring heeft, ook dat hij met betalen bevestigt dat hij als bedrijf bestelt' : ''}. Het bedrag komt op deze bestelling${Number(order.vat_rate) === 0 ? ' (0% btw, verlegd of buiten de EU)' : ` (+ ${vatPercent()} btw)`} De knop zet het bedrag vast en mailt de klant dezelfde betaallink als na een btw-controle. Pas als de klant betaald heeft, staat hij op &ldquo;betaald&rdquo; &mdash; de webhook van Mollie doet dat, niet deze knop.</p>`;
     const klaarzetten = eigenLook && order.customer_id
       ? `<p><a class="btn" href="/admin/customers/${order.customer_id}?look=${order.id}#nieuwe-look">De look klaarzetten in het account van ${esc(order.brand || order.name || 'de klant')}</a></p>
@@ -3467,8 +3533,11 @@ async function renderFiles(context, orderId) {
       }
       const lijst = LIJST[String(order.service)] || [];
       const hit = lijst.find((x) => x.slug === ruw);
+      /* Het slug erachter alleen als het iets toevoegt: "Phone-made — phone-made"
+         zei twee keer hetzelfde (ronde 9, O14). */
+      const zelfde = hit && String(hit.name).toLowerCase().replace(/\s+/g, '-') === ruw.toLowerCase();
       return hit
-        ? `${esc(hit.name)} <span class="meta">— ${esc(ruw)}</span>`
+        ? (zelfde ? esc(hit.name) : `${esc(hit.name)} <span class="meta">— ${esc(ruw)}</span>`)
         : `${esc(ruw)} <span class="meta">— onbekende stijl, staat in geen enkele lijst</span>`;
     };
 
@@ -3480,7 +3549,8 @@ async function renderFiles(context, orderId) {
          is Nederlands, dus .nl, met de Engelse als terugval. Dit stond hier
          eerst als `bg.name` en zette dan "[object Object]" op het scherm. */
       const bg = id ? achtergrondVan(id) : null;
-      const naam = bg ? (bg.name?.nl || bg.name?.en || id) : (id || '');
+      /* "custom" stond er als slug (ronde 9): de eigen kleur van de klant heet zo. */
+      const naam = bg ? (bg.name?.nl || bg.name?.en || id) : (id === 'custom' ? 'Eigen kleur' : (id || ''));
       /* Als svg met een fill-ATTRIBUUT en niet als style="background:…": de
          CSP van dit scherm (style-src 'self') weigert een inline stijl, en de
          klantkleur stond hier als leeg vakje. Een presentatieattribuut valt
@@ -3515,8 +3585,13 @@ async function renderFiles(context, orderId) {
       if (ruw === MODEL_ANY) return 'Wij kiezen er een';
       const bekend = ROSTER.find((m) => modelId(m.name) === ruw.toLowerCase());
       if (bekend) return esc(bekend.name);
-      /* Een eigen merkmodel (c4 …): het label staat op de klantregel, hier
-         alleen de id — beter dan niets, en eerlijk over wat het is. */
+      /* Een eigen merkmodel (c4 …): met zijn naam en zijn gezicht (ronde 9,
+         F49). Onbekend (verwijderd model): de id, eerlijk over wat het is. */
+      const eigen = eigenModellen.get(ruw.toLowerCase());
+      if (eigen) {
+        const foto = eigen.preview_key ? ` <img class="keuze-gezicht" src="/admin/models/${eigen.id}/image" alt="" width="48" height="64" loading="lazy">` : '';
+        return `${esc(eigen.label)} <span class="meta">— eigen merkmodel</span>${foto}`;
+      }
       return `${esc(ruw)} <span class="meta">— eigen merkmodel</span>`;
     };
     /* De keuze per product (model_pN, kind_pN) staat sinds 22 september op het
@@ -3556,7 +3631,9 @@ async function renderFiles(context, orderId) {
          en niet alleen in de werkmap (ronde 9, F17b). */
       rij('Extra hoeken', (() => { const x = extraVakken(d); return x.length ? `<strong>${x.map((v) => esc(v.nl)).join(', ')}</strong> — bij elk product` : ''; })()),
       rij('Kledingsoort', d.garment ? esc(garmentVan(String(d.garment)).name.nl) : ''),
-      rij('Bericht van de klant', berichtRegel),
+      /* Ronde 9, O39: bij een bestelling die jij namens de klant aanmaakte, is het
+         jouw notitie en niet zijn bericht. */
+      rij(d.placed_by ? 'Jouw notitie (ziet de klant)' : 'Bericht van de klant', berichtRegel),
     ].filter(Boolean);
 
     if (!rijen.length) return '';
@@ -3638,7 +3715,7 @@ async function renderFiles(context, orderId) {
   const brutoKop = (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0);
   const BETAAL = { paid: 'betaald', unpaid: 'onbetaald', plan: 'uit abonnement', refunded: 'terugbetaald', failed: 'mislukt' };
   const betaalKop = order.payment_status
-    ? `${statPil(order.payment_status === 'paid' || order.payment_status === 'plan' ? 'delivered' : order.payment_status === 'unpaid' ? 'received' : 'cancelled', BETAAL[order.payment_status] || order.payment_status)}${brutoKop > 0 ? ` <strong>${esc(mailBedrag(brutoKop, 'nl'))}</strong> <span class="meta">incl. btw</span>` : ''}${order.paid_at ? ` <span class="meta">op ${esc(when(order.paid_at))}</span>` : ''}`
+    ? `${statPil(order.payment_status === 'paid' || order.payment_status === 'plan' ? 'delivered' : order.payment_status === 'unpaid' ? 'received' : 'cancelled', BETAAL[order.payment_status] || order.payment_status)}${brutoKop > 0 ? ` <strong>${esc(mailBedrag(brutoKop, 'nl'))}</strong> <span class="meta">${(Number(order.vat_cents) || 0) > 0 ? 'incl. btw' : 'zonder btw'}</span>` : ''}${order.paid_at ? ` <span class="meta">op ${esc(when(order.paid_at))}</span>` : ''}`
     : '';
   const kanBetaallink = order.status !== 'cancelled' && order.payment_status === 'unpaid' && brutoKop > 0
     && (!order.review_state || order.review_state === 'approved');
@@ -3653,7 +3730,7 @@ async function renderFiles(context, orderId) {
   <div class="bestel-kop">
     <p class="meta">${order.customer_id ? `<a href="/admin/customers/${order.customer_id}">${esc(order.brand || order.name || order.email || 'Klant')}</a>` : esc(order.brand || order.name || '')} &middot; ${esc(serviceLabel(order.service, 'nl') || order.service)}${order.product_count ? ` &middot; ${order.product_count} product${order.product_count === 1 ? '' : 'en'}` : ''} &middot; binnen ${esc(when(order.created_at || '').slice(0, 10))}${aanvraagRegel}</p>
     <p class="bestel-kop-pillen">${statPil(order.status, STATUS_LABEL[order.status] || order.status)} ${betaalKop}</p>
-    ${order.status === 'cancelled' ? `<p class="warnline">Geannuleerd${order.cancel_reason ? `: ${esc(order.cancel_reason)}` : ''}${order.cancel_payment ? ` &middot; ${esc({ refund: 'geld terug', credit: 'tegoed gegeven', none: 'geen restitutie' }[order.cancel_payment] || order.cancel_payment)}` : ''}${leveringIngetrokken(order) ? ' &middot; de beelden zijn niet meer zichtbaar voor de klant' : ''}.</p>` : ''}
+    ${order.status === 'cancelled' ? `<p class="warnline">Geannuleerd${order.cancel_reason ? `: ${esc(order.cancel_reason)}` : ''}${order.cancel_payment ? ` &middot; ${esc(geldTerugStand(order))}` : ''}${leveringIngetrokken(order) ? ' &middot; de beelden zijn niet meer zichtbaar voor de klant' : ''}.</p>` : ''}
     ${order.status === 'delivered' && !order.delivery_mailed_at ? `<form class="controls" method="post" action="/admin/orders/${order.id}/delivery-mail"><p class="warnline in-grow">Op geleverd gezet, maar de klant heeft de leveringsmail niet gekregen.</p><button class="btn btn-primary" type="submit">Leveringsmail opnieuw proberen</button></form>` : ''}
     ${kanBetaallink ? `<form class="controls" method="post" action="/admin/orders/${order.id}/paylink"><p class="meta in-grow">Nog niet betaald. Kwijt of verlopen? Stuur de klant een nieuwe link.</p><button class="btn" type="submit">Betaallink opnieuw mailen</button></form>` : ''}
     ${statusKeuze}
@@ -3664,9 +3741,11 @@ ${adminNav('')}
   <h1>${esc(order.ref)}</h1>
   ${kop}
   ${bounceBlok}
+  ${chargebackBlok}
   ${tegoedBlok}
   ${flash}
   ${aanvraagBlok}
+  ${merkmodelBlok}
   ${keuzeBlok}
 
   <!-- ══════════════════════════════════════════════════════════════════════
@@ -3703,7 +3782,12 @@ ${adminNav('')}
        want de duurste fout op deze pagina is een bestelling die de deur uit gaat
        met de verkeerde beelden erin. -->
 
-  <h2>Het werk erin zetten</h2>
+  ${/* RONDE 9, O36 — op een geannuleerde bestelling stonden de mappen en de
+       uploadknoppen nog open, en de server nam een upload ook gewoon aan. Er
+       hoeft niets meer in; handleDeliveryUpload weigert het nu ook. */ ''}
+  ${order.status === 'cancelled' ? `<h2>Het werk erin zetten</h2>
+  <p class="muted">Deze bestelling is geannuleerd, dus hier hoeft niets meer in. Wil de klant
+  toch iets laten maken, maak dan een nieuwe bestelling aan.</p>` : `<h2>Het werk erin zetten</h2>
   <p class="muted">Download de mappen, zet je afgewerkte beelden erin &mdash; de bestandsnaam
   maakt niet uit &mdash; en kies de hele map terug. De server leest uit het pad welk product
   en welke shot het is en zet hem in het juiste vakje.</p>
@@ -3759,7 +3843,7 @@ ${adminNav('')}
     In de tabel onderaan zie je per beeld welke formaten er klaarstaan. Een Worker kan geen
     beeld omzetten, dus dit is geen keuze tussen twee wegen: uploaden is voor één beeld
     bijplaatsen of vervangen, het commando is hoe een bestelling de deur uit gaat.</p>
-  </details>
+  </details>`}
 
   <h2>Het bord</h2>
   ${migrated ? board : '<p class="muted">Draai migratie 0012 voor het bord per product.</p>'}
@@ -3804,7 +3888,7 @@ ${adminNav('')}
   <h2 id="annuleren">Onomkeerbaar</h2>
   ${orderDanger(order)}
   `;
-  return html(page({ title: order.ref, body }));
+  return html(page({ title: order.ref, body, voorvertoning: true }));
 }
 
 /** Langste notitie, aan beide kanten. Een alinea, geen dossier. */
@@ -4072,13 +4156,28 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   if (!Number.isInteger(orderId)) {
     return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
-  const order = await env.DB.prepare('SELECT id, ref, lang, service, details_json, delivery_mailed_at FROM orders WHERE id = ?1').bind(orderId).first();
+  const order = await env.DB.prepare('SELECT id, ref, lang, service, status, details_json, delivery_mailed_at FROM orders WHERE id = ?1').bind(orderId).first();
   if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.') }), 404);
+  /* Ronde 9, O36: een geannuleerde bestelling krijgt geen werk meer. */
+  if (order.status === 'cancelled') {
+    return html(page({ title: 'Admin', body: errorBody(`${order.ref} is geannuleerd \u2014 er is niets opgeslagen. Wil de klant toch iets laten maken, maak dan een nieuwe bestelling aan.`) }), 409);
+  }
   if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('Geen R2-binding — bestanden kunnen niet opgeslagen worden.') }), 503);
 
   const form = await request.formData().catch(() => null);
   const incoming = form ? form.getAll('files').filter((f) => f && typeof f === 'object' && f.size >= 0) : [];
   if (!incoming.length) return seeOther(`/admin/orders/${orderId}/files`);
+  /* De beoordeelbeelden die de browser meestuurt (ronde 9, F18 — zie
+     public/admin-voorvertoning.js), op de naam van hun origineel. Alleen webp
+     en niet groter dan 3 MB: alles anders wordt genegeerd, en dan valt het beeld
+     terug op het origineel zoals vóór vandaag. */
+  const VOORVERTONING_MAX = 3 * 1024 * 1024;
+  const voorvertoningen = new Map();
+  for (const pv of (form ? form.getAll('previews') : [])) {
+    if (!pv || typeof pv !== 'object' || !pv.size || pv.size > VOORVERTONING_MAX) continue;
+    if (!/^image\/webp$/i.test(String(pv.type || ''))) continue;
+    voorvertoningen.set(String(pv.name || ''), pv);
+  }
 
   /*
    * IN EEN VAKJE UPLOADEN — augustus 2026.
@@ -4236,14 +4335,25 @@ async function handleDeliveryUpload({ request, env }, orderId) {
         httpMetadata: { contentType: leveringMime(clean) },
       });
 
+      /* Het beoordeelbeeld ernaast, onder review/ zoals scripts/deliver.mjs dat
+         doet. Mislukt dit, dan is er geen beoordeelbeeld en verder niets. */
+      let previewKey = null;
+      const pv = voorvertoningen.get(relPath) || voorvertoningen.get(String(file.name || ''));
+      if (pv) {
+        try {
+          previewKey = `review/${order.ref}/${slotName ? `${slotName}-` : ''}${unique}.webp`;
+          await env.UPLOADS.put(previewKey, pv.stream(), { httpMetadata: { contentType: 'image/webp' } });
+        } catch { previewKey = null; }
+      }
+
       await env.DB.prepare(
-        `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot)
-         VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6)`
+        `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot, preview_key)
+         VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6, ?7)`
         /* `shown` en niet `clean`: dit is de naam die de klant in zijn portaal
            leest en in zijn download terugvindt. De R2-sleutel houdt de ruwe naam
            erin, dus het spoor terug naar het bestand op de machine van de studio
            blijft bestaan -- die twee dingen hebben verschillende lezers. */
-      ).bind(orderId, key, shown, file.size ?? null, product, shot).run();
+      ).bind(orderId, key, shown, file.size ?? null, product, shot, previewKey).run();
       stored++;
     } catch (err) {
       failed.push(`${clean}: ${err && err.message ? err.message : 'failed'}`);
@@ -5008,6 +5118,10 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
      beloofde allebei. Een gewone bestelling kreeg geen termijn: de klok van de
      ene revisieronde begint bij deze mail, en dat stond nergens. Nu met datum. */
   const proef = order.service === SAMPLE_SERVICE;
+  /* Een video levert clips, geen beelden (ronde 9, O28: "2 beelden"). */
+  const clip = order.service === 'video';
+  const telNl = (k) => `${k} ${clip ? (k === 1 ? 'clip' : 'clips') : (k === 1 ? 'beeld' : 'beelden')}`;
+  const telEn = (k) => `${k} ${clip ? (k === 1 ? 'clip' : 'clips') : (k === 1 ? 'image' : 'images')}`;
   /* Een proef is catalog (4 foto's) of lifestyle (3): het vervolgtarief hoort
      bij wat hij koos, niet altijd bij catalog (ronde 8). */
   let proefSoort = 'catalog';
@@ -5019,13 +5133,13 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
       ? `Je proef is klaar. In VISUAILS Studio kun je de beelden bekijken en downloaden. Bevalt het? Bestel de rest van je producten in dezelfde look &mdash; vanaf ${esc(mailBedrag(ladderRate(proefSoort, 1) * 100, 'nl'))} per product.`
       : `Your trial is ready. You can view and download the images in VISUAILS Studio. Like it? Order the rest of your products in the same look &mdash; from ${esc(mailBedrag(ladderRate(proefSoort, 1) * 100, 'en'))} per product.`)
     : (nl
-      ? `Je bestelling is klaar${n ? ` &mdash; ${n} ${n === 1 ? 'beeld' : 'beelden'}` : ''}. In VISUAILS Studio bekijk en download je alles, en keur je per beeld goed. Klopt er iets niet? Je hebt één gratis revisieronde, tot en met <strong>${esc(termijn)}</strong>: vink de beelden aan en zeg wat er anders moet.`
-      : `Your order is ready${n ? ` &mdash; ${n} ${n === 1 ? 'image' : 'images'}` : ''}. In VISUAILS Studio you can view, download and approve everything image by image. Something not right? You have one free revision round, until <strong>${esc(termijn)}</strong>: tick the images and say what should change.`);
+      ? `Je bestelling is klaar${n ? ` &mdash; ${telNl(n)}` : ''}. Via de knop hieronder bekijk en download je alles, en keur je per beeld goed (of alles in één keer); met een account staat het ook in VISUAILS Studio. Klopt er iets niet? Je hebt één gratis revisieronde, tot en met <strong>${esc(termijn)}</strong>: vink de beelden aan en zeg wat er anders moet.`
+      : `Your order is ready${n ? ` &mdash; ${telEn(n)}` : ''}. With the button below you view, download and approve everything, image by image or all at once; with an account it is in VISUAILS Studio too. Something not right? You have one free revision round, until <strong>${esc(termijn)}</strong>: tick the images and say what should change.`);
   return mailShell({
     lang: nl ? 'nl' : 'en',
     preheader: nl
-      ? `${order.ref} staat klaar in VISUAILS Studio${n ? ` — ${n} ${n === 1 ? 'beeld' : 'beelden'}` : ''}.`
-      : `${order.ref} is waiting in VISUAILS Studio${n ? ` — ${n} ${n === 1 ? 'image' : 'images'}` : ''}.`,
+      ? `${order.ref} staat klaar in VISUAILS Studio${n ? ` — ${telNl(n)}` : ''}.`
+      : `${order.ref} is waiting in VISUAILS Studio${n ? ` — ${telEn(n)}` : ''}.`,
     body: [
       mailH1(
         nl ? 'Je bestelling staat klaar' : 'Your order is ready',
@@ -5033,7 +5147,7 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
       ),
       mailP(hi),
       mailP(uitleg),
-      mailButton(link, nl ? 'Bekijk je beelden' : 'See your images'),
+      mailButton(link, clip ? (nl ? 'Bekijk je clips' : 'See your clips') : (nl ? 'Bekijk je beelden' : 'See your images')),
       '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
       // The URL in full under the button, for the same reason the sign-in mail
       // prints it: a client that strips anchors, or a phone-to-desktop hop.
@@ -5799,7 +5913,7 @@ async function handleCustomerDetails(context, customerId) {
     return html(page({ title: 'Admin', body: errorBody('Ongeldig klantnummer.') }), 400);
   }
   const before = await env.DB.prepare(
-    'SELECT id, email, brand, name, phone, website, vat_number FROM customers WHERE id = ?1'
+    'SELECT id, email, brand, name, phone, website, vat_number, address_line1, postal_code, city, country FROM customers WHERE id = ?1'
   ).bind(customerId).first();
   if (!before) return html(page({ title: 'Admin', body: errorBody('Die klant bestaat niet.') }), 404);
 
@@ -5838,6 +5952,18 @@ async function handleCustomerDetails(context, customerId) {
     website: veld('website', 200),
     vat_number: veld('vat_number', 40),
   };
+  /* Ronde 9, F54: adres en land, alleen als het formulier ze meestuurt. */
+  const metAdres = !!form?.has?.('country');
+  if (metAdres) {
+    const land = String(veld('country', 2) || '').toUpperCase();
+    if (!LANDEN_ADMIN.some((l) => l.id === land)) {
+      return html(page({ title: 'Admin', body: errorBody('Kies het land uit de lijst — bij een land dat er niet in staat: "Ergens anders". Er is niets gewijzigd.') }), 400);
+    }
+    na.address_line1 = veld('address_line1', 120);
+    na.postal_code = veld('postal_code', 24);
+    na.city = veld('city', 80);
+    na.country = land;
+  }
 
   /*
    * DE CATCH IS GEEN SIER. De controle hierboven kijkt of het adres bezet is, en tussen
@@ -5849,11 +5975,20 @@ async function handleCustomerDetails(context, customerId) {
    * het NUTTIGE bericht (met het klantnummer van de ander erin), deze geeft het
    * BEGRIJPELIJKE bericht als het toch misgaat.
    */
-  const geschreven = await env.DB.prepare(
-    `UPDATE customers SET email = ?1, brand = ?2, name = ?3, phone = ?4, website = ?5,
-            vat_number = ?6, updated_at = datetime('now')
-      WHERE id = ?7`
-  ).bind(na.email, na.brand, na.name, na.phone, na.website, na.vat_number, customerId).run()
+  const geschreven = await (metAdres
+    ? env.DB.prepare(
+      `UPDATE customers SET email = ?1, brand = ?2, name = ?3, phone = ?4, website = ?5,
+              vat_number = ?6, address_line1 = ?8, postal_code = ?9, city = ?10, country = ?11,
+              billing_address = ?12, updated_at = datetime('now')
+        WHERE id = ?7`
+    ).bind(na.email, na.brand, na.name, na.phone, na.website, na.vat_number, customerId,
+      na.address_line1, na.postal_code, na.city, na.country,
+      composeAddress({ line1: na.address_line1, postal: na.postal_code, city: na.city }))
+    : env.DB.prepare(
+      `UPDATE customers SET email = ?1, brand = ?2, name = ?3, phone = ?4, website = ?5,
+              vat_number = ?6, updated_at = datetime('now')
+        WHERE id = ?7`
+    ).bind(na.email, na.brand, na.name, na.phone, na.website, na.vat_number, customerId)).run()
     .then(() => true)
     .catch((err) => {
       console.error('[admin] klantgegevens niet opgeslagen:', err?.message || err);
@@ -6029,17 +6164,24 @@ async function handleCustomerCredit(context, customerId) {
   const rauwOrder = String(form?.get('order_id') || '').trim();
   let orderId = null;
   if (rauwOrder) {
+    /* Ronde 9 (F51): het kenmerk (VIS-GCT2-5QF) is wat je overal ziet en dus
+       intypt; dat werd geweigerd met "hoort niet bij deze klant", terwijl hij er
+       wél bij hoorde. Nu telt het kenmerk én het interne nummer. */
+    const isRef = /^VIS-[A-Z0-9-]{3,}$/i.test(rauwOrder);
     const kandidaat = Number.parseInt(rauwOrder, 10);
-    const rij = Number.isInteger(kandidaat)
-      ? await env.DB.prepare('SELECT id FROM orders WHERE id = ?1 AND customer_id = ?2')
-        .bind(kandidaat, customerId).first().catch(() => null)
-      : null;
+    const rij = isRef
+      ? await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1 AND customer_id = ?2')
+        .bind(rauwOrder.toUpperCase(), customerId).first().catch(() => null)
+      : /^\d+$/.test(rauwOrder) && Number.isInteger(kandidaat)
+        ? await env.DB.prepare('SELECT id FROM orders WHERE id = ?1 AND customer_id = ?2')
+          .bind(kandidaat, customerId).first().catch(() => null)
+        : null;
     if (!rij) {
       return html(page({ title: 'Admin', body: errorBody(
-        'Die bestelling hoort niet bij deze klant. Er is niets geboekt.'
+        `Geen bestelling "${esc(rauwOrder)}" bij deze klant. Gebruik het kenmerk (VIS-…) uit zijn lijst hierboven, of laat het veld leeg. Er is niets geboekt.`
       ) }), 400);
     }
-    orderId = kandidaat;
+    orderId = rij.id;
   }
 
   await env.DB.prepare(
@@ -6277,7 +6419,7 @@ async function renderCustomer(context, customerId) {
     `SELECT id, email, brand, name, phone, website, vat_number, created_at,
             deactivated_at, deactivated_reason, merged_into,
             revisions_revoked_at, revisions_revoked_note,
-            reg_number, country,
+            reg_number, country, address_line1, postal_code, city,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id) AS revisions_asked,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id AND rr.resolved_at IS NULL) AS revisions_open
        FROM customers WHERE id = ?1`
@@ -6835,7 +6977,17 @@ async function renderCustomer(context, customerId) {
       <input id="cd-website" name="website" type="text" maxlength="200" value="${esc(customer.website || '')}">
       <label for="cd-vat">Btw-nummer</label>
       <input id="cd-vat" name="vat_number" type="text" maxlength="40" value="${esc(customer.vat_number || '')}">
-      <span class="hint">Een fout btw-nummer staat op elke volgende factuur. Al uitgereikte facturen blijven zoals
+      ${/* Ronde 9, F54: adres en land waren hier niet te corrigeren — alleen de
+         klant zelf kon het, in Studio. Een verkeerd land is een verkeerde btw. */ ''}
+      <label for="cd-line1">Straat en huisnummer</label>
+      <input id="cd-line1" name="address_line1" type="text" maxlength="120" value="${esc(customer.address_line1 || '')}">
+      <label for="cd-postal">Postcode</label>
+      <input id="cd-postal" name="postal_code" type="text" maxlength="24" value="${esc(customer.postal_code || '')}">
+      <label for="cd-city">Plaats</label>
+      <input id="cd-city" name="city" type="text" maxlength="80" value="${esc(customer.city || '')}">
+      <label for="cd-country">Land</label>
+      ${landKeuze('cd-country', customer.country)}
+      <span class="hint">Een fout btw-nummer of land staat op elke volgende factuur. Al uitgereikte facturen blijven zoals
       ze zijn — die corrigeer je met een creditnota, niet door de klantgegevens te wijzigen.</span>
       <button class="btn btn-primary" type="submit">Opslaan</button>
     </form>
@@ -6886,8 +7038,8 @@ async function renderCustomer(context, customerId) {
     <label class="sr-only" for="cr-reason">Reden</label>
     <input id="cr-reason" name="reason" type="text" maxlength="300" required class="in-grow"
            placeholder="Reden — verplicht, en dit is wat je over drie maanden leest">
-    <label class="sr-only" for="cr-order">Bestellingnummer</label>
-    <input id="cr-order" name="order_id" type="text" inputmode="numeric" maxlength="9" placeholder="bestelling #" size="12">
+    <label class="sr-only" for="cr-order">Bestelling (kenmerk, optioneel)</label>
+    <input id="cr-order" name="order_id" type="text" maxlength="24" placeholder="VIS-…" size="14">
     <button class="btn btn-primary" type="submit">Boeken</button>
   </form>
   <p class="meta">Positief is bijboeken, negatief is afboeken. Maximaal € 1.000 per boeking — die grens houdt een
@@ -6916,7 +7068,7 @@ ${adminNav('customers')}
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
   ${inlogGestuurd ? `<p class="okline">Inloglink gemaild naar ${esc(customer.email)}.</p>` : ''}
   ${weekMelding}
-  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · btw ${esc(customer.vat_number)}` : ''}${!customer.vat_number && customer.reg_number ? ` · ${regLabel} ${esc(customer.reg_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
+  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · btw ${esc(customer.vat_number)}` : ''}${!customer.vat_number && customer.reg_number ? ` · ${regLabel} ${esc(customer.reg_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${customer.country ? ` · ${esc(landNaamAdmin(customer.country))}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
   ${klantBounce ? `<p class="warnline is-rood">${esc(bounceLine(klantBounce))}</p>` : ''}
 
   ${statusPanel}
@@ -6949,7 +7101,7 @@ ${adminNav('customers')}
   <p class="meta">Door de klant zelf gezet in Studio, onder &ldquo;Je vaste look&rdquo;. Hier met opzet alleen te lezen.</p>
   ${lockRows}
 
-  <h2>Eigen modellen</h2>
+  <h2 id="eigen-modellen">Eigen modellen</h2>
   ${modelRows}
   <!-- ONE FORM, NOT TWO. Lucas: "hier voeg ik dan de foto toe" — adding a
        model and giving it a face is one action in his head and it should be one
@@ -7167,7 +7319,7 @@ async function handleModelStatus({ request, env }, modelId) {
     return html(page({ title: 'Admin', body: errorBody('Ongeldig modelnummer.') }), 400);
   }
   const model = await env.DB.prepare(
-    'SELECT id, customer_id FROM custom_models WHERE id = ?1'
+    'SELECT id, customer_id, status, label FROM custom_models WHERE id = ?1'
   ).bind(modelId).first();
   if (!model) return html(page({ title: 'Admin', body: errorBody('Dat model bestaat niet.') }), 404);
 
@@ -7182,6 +7334,54 @@ async function handleModelStatus({ request, env }, modelId) {
 
   await env.DB.prepare('UPDATE custom_models SET status = ?1 WHERE id = ?2')
     .bind(status, modelId).run();
+
+  /* ── VASTGELEGD: DE KLANT HOORT HET, EN ZIJN BESTELLING IS AF — ronde 9, F48
+     Tot nu toe gebeurde er bij "vastgelegd" niets buiten deze tabel: geen mail,
+     en de betaalde merkmodelbestelling bleef in Studio op "We hebben je
+     bestelling en je bestanden binnen. We plannen hem in." staan. Nu, alleen bij
+     de overgang naar 'locked': de open merkmodelbestelling(en) van deze klant
+     gaan op geleverd en afgerond, met een regel op de tijdlijn, en de klant
+     krijgt één mail met de weg naar zijn model. */
+  if (status === 'locked' && model.status !== 'locked' && model.customer_id) {
+    const open = await env.DB.prepare(
+      `SELECT id, ref, lang, name, email, brand FROM orders
+        WHERE customer_id = ?1 AND service = 'brand-model' AND payment_status = 'paid'
+          AND COALESCE(status, '') NOT IN ('delivered', 'cancelled')
+        ORDER BY id DESC`
+    ).bind(model.customer_id).all().then((r) => r.results || []).catch(() => []);
+    for (const o of open) {
+      const nlO = o.lang === 'nl';
+      await env.DB.batch([
+        env.DB.prepare(`UPDATE orders SET status = 'delivered', delivered_at = COALESCE(delivered_at, datetime('now')), closed_at = COALESCE(closed_at, datetime('now')) WHERE id = ?1`).bind(o.id),
+        env.DB.prepare(`INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'delivered', ?2, 'studio')`)
+          .bind(o.id, nlO ? `Je merkmodel ${model.label || ''} staat klaar en is vastgelegd op je merk.`.replace('  ', ' ') : `Your brand model ${model.label || ''} is ready and tied to your brand.`.replace('  ', ' ')),
+      ]).catch((e) => console.error('[admin] merkmodelbestelling niet afgerond —', e?.message || e));
+    }
+    const klant = await env.DB.prepare('SELECT email, name, brand FROM customers WHERE id = ?1').bind(model.customer_id).first().catch(() => null);
+    const naar = (klant && klant.email) || (open[0] && open[0].email) || '';
+    if (naar) {
+      const lang = open[0] && open[0].lang === 'en' ? 'en' : 'nl';
+      const nl = lang === 'nl';
+      const origin = (() => { try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; } })();
+      const naam = String(model.label || '').trim();
+      await sendMail(env, {
+        to: naar,
+        subject: nl ? `Je merkmodel staat klaar${naam ? ` — ${naam}` : ''}` : `Your brand model is ready${naam ? ` — ${naam}` : ''}`,
+        html: mailShell({
+          lang,
+          preheader: nl ? 'Vanaf nu te kiezen in elke bestelling.' : 'From now on you can pick it in any order.',
+          body: [
+            mailH1(nl ? 'Je merkmodel staat klaar' : 'Your brand model is ready', naam ? esc(naam) : ''),
+            mailP(mailGreeting((klant && klant.name) || (open[0] && open[0].name) || '', lang)),
+            mailP(nl
+              ? `${naam ? `<strong>${esc(naam)}</strong>` : 'Je merkmodel'} is af en vastgelegd op ${esc((klant && klant.brand) || 'je merk')}. Vanaf nu staat het als tegel in het bestelformulier en in VISUAILS Studio onder “Je vaste look”: kies het per bestelling, of zet het als standaard voor een dienst. We gebruiken dit gezicht voor geen enkel ander merk.`
+              : `${naam ? `<strong>${esc(naam)}</strong>` : 'Your brand model'} is finished and tied to ${esc((klant && klant.brand) || 'your brand')}. From now on it is a tile in the order form and in VISUAILS Studio under “Your fixed look”: pick it per order, or set it as the default for a service. We never use this face for any other brand.`),
+            mailButton(`${origin}${nl ? '/nl' : ''}/account/brand-kit/`, nl ? 'Bekijk je merkmodel' : 'See your brand model'),
+          ].join(''),
+        }),
+      }).catch((e) => console.error('[admin] merkmodelmail niet verstuurd —', e?.message || e));
+    }
+  }
   return seeOther(`/admin/customers/${model.customer_id}`);
 }
 
@@ -7801,7 +8001,10 @@ async function loadRevisionInbox(env) {
             o.id AS order_id, o.ref, o.brand, o.email, o.lang, o.service, o.details_json,
             o.customer_id,
             c.revisions_revoked_at,
-            (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = o.customer_id) AS asked,
+            -- Ronde 9 (O7): alleen ANDERE bestellingen. Twee beelden in één ronde
+            -- stonden hier als "2× door dit merk" — dat las als een klant die
+            -- vaker klaagt, terwijl het één ronde was.
+            (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = o.customer_id AND rr.order_id <> o.id) AS asked,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.file_id = f.id) AS asked_here
        FROM files f
        JOIN orders o ON o.id = f.order_id
@@ -7898,7 +8101,7 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
     // path (see handleStatusUpdate's .catch), so "delivered" and "delivered and
     // announced" can and do come apart.
     `SELECT id, customer_id, ref, service, status, tier, brand, email, product_count,
-            window_start, window_end, payment_status, total_cents, created_at,
+            window_start, window_end, payment_status, total_cents, vat_cents, refunded_cents, created_at,
             delivered_at, delivery_mailed_at, hidden_at, cancel_reason, cancel_payment, lang,
             /* COALESCE, want deze kolom komt uit migratie 0046 en een database die
                daarop achterloopt hoort een lege lijst te tonen en geen fout. */
@@ -8697,7 +8900,7 @@ const LOG_LABEL = {
   'order.paylink': 'Betaallink opnieuw gemaild', 'order.paylink.niet': 'Betaallink niet verstuurd', 'order.delivery-mail': 'Levermail verstuurd',
   'order.delivery-mail.mislukt': 'Levermail mislukt', 'order.proef.hide': 'Proefbestellingen verborgen', 'order.created': 'Bestelling binnen',
   'payment.paid': 'Betaald', 'payment.tegoed': 'Betaald met tegoed', 'payment.refund': 'Terugbetaald', 'payment.short': 'Te weinig betaald',
-  'payment.dubbel': 'Dubbel betaald — teruggestort', 'payment.op-geannuleerd': 'Betaling op geannuleerde bestelling', 'payment.btw-twijfel': 'Btw nakijken',
+  'payment.dubbel': 'Dubbel betaald — teruggestort', 'payment.op-geannuleerd': 'Betaling op geannuleerde bestelling', 'payment.btw-twijfel': 'Btw nakijken', 'payment.chargeback': 'Terugboeking (chargeback)',
   'payment-link.failed': 'Betaallink niet verstuurd', 'quote': 'Offerte vastgelegd', 'quote.restant': 'Restant gevraagd',
   'invoice.render': 'Factuur afgemaakt', 'invoice.resend': 'Factuur opnieuw verstuurd', 'invoice.blocked': 'Factuur tegengehouden',
   'credit-note.issued': 'Creditnota uitgegeven', 'credit-note.failed': 'Creditnota mislukt',
@@ -9936,7 +10139,25 @@ async function handleTestimonialDecision({ request, env }, orderId, admin) {
   return seeOther(back);
 }
 
-async function renderVatReview({ env }) {
+/* Ronde 9 (O20): na "akkoord" of "afwijzen" verdween de bestelling van de lijst
+   zonder één woord — gelukt? mail weg? Nu zegt een regel bovenaan wat er
+   gebeurde. Alleen een ref en een vaste uitkomst in de URL; de tekst staat hier. */
+function vatTerugmelding(request) {
+  let q;
+  try { q = new URL(request.url).searchParams; } catch { return ''; }
+  const ref = String(q.get('ref') || '').replace(/[^A-Z0-9-]/gi, '').slice(0, 20);
+  const uit = String(q.get('uit') || '');
+  if (!ref || !uit) return '';
+  const zin = {
+    akkoord: `<strong>${esc(ref)}</strong> goedgekeurd — de betaallink is gemaild.`,
+    tegoed: `<strong>${esc(ref)}</strong> goedgekeurd en helemaal met tegoed betaald — er gaat geen betaallink uit.`,
+    afgewezen: `<strong>${esc(ref)}</strong> afgewezen — de klant kreeg de mail met de vraag om contact. Hij staat nu onderaan bij "Afgewezen".`,
+  }[uit];
+  if (uit === 'mislukt') return `<p class="warnline is-rood" role="status"><strong>${esc(ref)}</strong> goedgekeurd, maar de betaallink is NIET verstuurd. Zie het logboek; stuur hem opnieuw vanaf de bestelling.</p>`;
+  return zin ? `<p class="okline" role="status">${zin}</p>` : '';
+}
+
+async function renderVatReview({ env, request }) {
   let rows = [];
   let missing = false;
   try {
@@ -9969,6 +10190,7 @@ async function renderVatReview({ env }) {
   const body = `
 ${adminNav('vat')}
 <h1>Btw-controle</h1>
+${vatTerugmelding(request)}
 <p class="lede">Bestellingen uit de EU zonder btw-nummer dat VIES bevestigt. Zolang een
 bestelling hier staat, kan er niet betaald worden: niet via een link van ons en niet via
 VISUAILS Studio. Bestellingen van buiten de EU staan hier niet meer: die betalen meteen,
@@ -10158,6 +10380,8 @@ async function handleVatDecision({ request, env }, orderId, admin) {
 
   await env.DB.batch(statements);
   await logAdmin(env, admin, `vat:${action}`, { orderId, detail });
+  /* Ronde 9 (O20): terug naar de lijst mét wat er gebeurde. */
+  const terug = (uit) => `${back}?ref=${encodeURIComponent(order.ref || '')}&uit=${uit}`;
 
   /* ── EN DAN DE BETAALLINK — 20 AUGUSTUS 2026 ───────────────────────────────
      Tot vandaag hield het hier op. De poort in functions/api/order.js houdt een
@@ -10200,7 +10424,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
     const vers = await env.DB.prepare('SELECT * FROM orders WHERE id = ?1').bind(orderId).first().catch(() => null);
     if (vers && teBetalenCents(vers) === 0 && tegoedOpBestelling(vers) > 0) {
       await betaalVolledigMetTegoed(env, orderId).catch((e) => console.error('[admin] tegoedbetaling na akkoord mislukt —', e?.message || e));
-      return seeOther(back);
+      return seeOther(terug('tegoed'));
     }
     /* ── EN ALS DE LINK NIET WEGGAAT, MOET DAT ERGENS STAAN ─────────────────
        Dit was een `catch` met alleen een console.error erin, en stuurBetaallink()
@@ -10224,9 +10448,11 @@ async function handleVatDecision({ request, env }, orderId, admin) {
         detail: `${order.ref}: geen betaallink verstuurd — ${uitkomst?.mislukt || 'geen link aangemaakt (geen sleutel, geen e-mailadres, al betaald, of niets te betalen)'}`,
       }).catch(() => {});
       console.error('[admin] betaallink voor bestelling', orderId, 'niet verstuurd —', uitkomst?.mislukt || 'stille uitgang');
+      return seeOther(terug('mislukt'));
     }
+    return seeOther(terug('akkoord'));
   }
-  return seeOther(back);
+  return seeOther(terug('afgewezen'));
 }
 
 /*
@@ -10491,7 +10717,11 @@ function nieuweKlantFormulier() {
         <label>Postcode <input name="postal_code" type="text" maxlength="24" required></label>
         <label>Plaats <input name="city" type="text" maxlength="80" required></label>
       </div>
-      <label>Land (twee letters) <input name="country" type="text" maxlength="2" value="NL" required></label>
+      ${/* RONDE 9, F54 — hier stond een tekstveld "Land (twee letters)" van twee
+         tekens. Wie "Nederland" typte, hield "Ne" over: Niger, dus buiten de EU,
+         en de bestelling namens de klant ging zonder btw de deur uit. Nu dezelfde
+         lijst als het bestelformulier. */ ''}
+      <label>Land ${landKeuze('', 'NL')}</label>
       <button class="btn btn-primary" type="submit">Klant aanmaken</button>
     </form>
     <p class="meta">Daarna sta je op de klantpagina. Onderaan: "Bestelling namens" — dienst, aantal, de foto's uit WhatsApp, en de klant krijgt de bevestiging met betaallink.</p>
@@ -10511,6 +10741,11 @@ async function handleNewCustomer({ request, env }, admin) {
   /* Een btw-nummer begint met twee letters; acht cijfers is een KVK-nummer. */
   const isVat = /^[A-Z]{2}[0-9A-Z]{8,12}$/.test(idNr);
   const country = (get('country', 2) || 'NL').toUpperCase();
+  /* Ronde 9, F54: alleen een land uit de lijst. Een tikfout als "NE" (Niger)
+     maakt van een Nederlandse klant een klant buiten de EU, zonder btw. */
+  if (!LANDEN_ADMIN.some((c) => c.id === country)) {
+    return html(page({ title: 'Admin', body: errorBody(`"${country}" staat niet in de landenlijst. Ga terug en kies het land uit de lijst — bij een land dat er niet in staat: "Ergens anders".`) }), 400);
+  }
   const line1 = get('address_line1');
   const postal = get('postal_code', 24);
   const city = get('city', 80);
@@ -10907,7 +11142,7 @@ function statusFilterRow(statusCounts, statusFilter) {
 function revisionCard(r) {
   const repeat = r.asked_here > 1
     ? `<span class="pill is-attention">${r.asked_here}× dit beeld</span>` : '';
-  const often = r.asked > 1 ? `<span class="meta">${r.asked}× door dit merk</span>` : '';
+  const often = r.asked > 0 ? `<span class="meta">${r.asked}× eerder door dit merk, bij andere bestellingen</span>` : '';
   const revoked = r.revisions_revoked_at
     ? `<span class="pill">revisierechten ingetrokken</span>` : '';
 
@@ -11080,7 +11315,7 @@ function orderCard(o, models, statusFilter = '') {
   ${unannounced}
   ${pendingAnnounce}
   ${o.hidden_at ? `<p class="meta">Verborgen sinds ${esc(when(o.hidden_at))} — hij staat buiten de lijsten en de tellingen.</p>` : ''}
-  ${o.cancel_reason ? `<p class="warnline">Geannuleerd: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc({ refund: 'geld terug', credit: 'tegoed gegeven', none: 'geen restitutie' }[o.cancel_payment] || o.cancel_payment)}` : ''}${leveringIngetrokken(o) ? ' · de bestanden zijn niet meer voor de klant zichtbaar' : ''}</p>` : ''}
+  ${o.cancel_reason ? `<p class="warnline">Geannuleerd: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc(geldTerugStand(o))}` : ''}${leveringIngetrokken(o) ? ' · de bestanden zijn niet meer voor de klant zichtbaar' : ''}</p>` : ''}
   ${modelList}
   ${orderDanger(o)}
   ${/* "Merkmodel toevoegen" stond hier onder élke bestelling (29 september 2026
@@ -11160,6 +11395,36 @@ function orderDanger(o) {
  * iets verkeerd had gedaan. Elke aanroeper escapet zijn eigen variabelen (dat
  * is nagelopen), dus de opmaak mag hier door.
  */
+/* RONDE 9 — "geld terug" stond er al op het moment van annuleren, terwijl
+   Mollie het nog moest bevestigen en de creditnota pas daarna komt. Nu zegt de
+   regel in welke stand het geld is. */
+function geldTerugStand(o) {
+  if (o.cancel_payment !== 'refund') {
+    return { credit: 'tegoed gegeven', none: 'geen restitutie' }[o.cancel_payment] || String(o.cancel_payment || '');
+  }
+  const bruto = (Number(o.total_cents) || 0) + (Number(o.vat_cents) || 0);
+  const terug = Number(o.refunded_cents) || 0;
+  if (o.payment_status === 'refunded' || (bruto > 0 && terug >= bruto)) return 'terugbetaald, door Mollie bevestigd';
+  if (terug > 0) return `${mailBedrag(terug, 'nl')} van ${mailBedrag(bruto, 'nl')} terugbetaald`;
+  return 'terugbetaling aangevraagd bij Mollie \u2014 de creditnota volgt zodra Mollie hem bevestigt';
+}
+
+/* RONDE 9, F54 — het land als keuzelijst (dezelfde als het bestelformulier),
+   en een code die er niet in staat zichtbaar als code, zodat hij opvalt. */
+const LANDEN_ADMIN = [...EU_COUNTRIES, ...OTHER_COUNTRIES];
+function landNaamAdmin(code) {
+  const c = String(code || '').toUpperCase();
+  const hit = LANDEN_ADMIN.find((l) => l.id === c);
+  return hit ? hit.nl : `land ${c} (niet in de landenlijst)`;
+}
+function landKeuze(id, gekozen) {
+  const o = countryOptions('nl');
+  const g = String(gekozen || '').toUpperCase();
+  const bekend = LANDEN_ADMIN.some((l) => l.id === g);
+  const opt = (c) => `<option value="${esc(c.id)}"${c.id === g ? ' selected' : ''}>${esc(c.name)}</option>`;
+  return `<select${id ? ` id="${esc(id)}"` : ''} name="country" required>${bekend ? '' : `<option value="" selected>Kies een land${g ? ` (nu: ${esc(g)})` : ''}</option>`}${o.home.map(opt).join('')}<optgroup label="EU">${o.eu.map(opt).join('')}</optgroup><optgroup label="Buiten de EU">${o.other.map(opt).join('')}</optgroup></select>`;
+}
+
 function errorBody(message) {
   /* Met een weg terug (24 september 2026): een foutmelding was een doodlopende
      pagina met alleen het logo, dat naar de publieke site linkt. */
@@ -11219,7 +11484,10 @@ function adminNav(actief = '') {
 </div>`;
 }
 
-function page({ title, body }) {
+/* `voorvertoning` (ronde 9, F18): alleen de bestelpagina met het werkbord laadt
+   het ene script dat beoordeelbeelden maakt. Elk ander adminscherm blijft
+   zonder JavaScript, zoals het ontworpen is. */
+function page({ title, body, voorvertoning = false }) {
   return `<!doctype html>
 <html lang="nl">
 <head>
@@ -11236,7 +11504,7 @@ ${/* `light dark` en niet `light`: sinds het donkere scherm bestaat moet de
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/fonts/gedeeld.css">
 <link rel="stylesheet" href="/admin.css">
-</head>
+${voorvertoning ? '<script src="/admin-voorvertoning.js" defer></script>\n' : ''}</head>
 <body>
 ${/* ── <main> EN NIET <div> — 2 september 2026 ──────────────────────────────
      axe-core over het adminscherm (kladblok/axe-admin.mjs): "Document does not
@@ -11268,7 +11536,11 @@ function html(body, status = 200, extraSetCookies = []) {
     'x-robots-tag': 'noindex, nofollow',
     'x-content-type-options': 'nosniff',
     'content-security-policy':
-      "default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+      /* script-src 'self' sinds ronde 9 (F18): één eigen bestand,
+         /admin-voorvertoning.js, maakt bij het uploaden een beoordeelbeeld.
+         Geen inline-scripts en geen verbindingen (connect-src valt onder
+         default-src 'none'). */
+      "default-src 'none'; script-src 'self'; img-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
   });
   for (const c of extraSetCookies) headers.append('Set-Cookie', c);
   return new Response(body, { status, headers });

@@ -1,0 +1,46 @@
+// Ronde 9 · klanttype 11: betaald annuleren met terugbetalen (O36, O38/F53) en betalen na annuleren (O37).
+import { start, SITE, sql, sqlw } from './_dl.mjs';
+import { bestel, betaal } from './_bestel.mjs';
+import { adminLogin } from './_admin.mjs';
+import { studioLogin } from './_studio.mjs';
+const email = `annuleer${Date.now() % 100000}@merk.test`;
+const klant = { email, first_name: 'Anna', brand: 'Merk Annuleer' };
+const k = await start(); const { page, ctx: context } = k;
+await bestel(page, { pad: '/nl/start/catalog', aantal: 1, klant, land: 'NL', vat: null });
+if (page.url().includes('nep-mollie') || page.url().includes('4478')) await betaal(page);
+const [o] = await sql(`SELECT id, ref FROM orders WHERE email='${email}' ORDER BY id DESC LIMIT 1`);
+const admin = await context.newPage();
+await adminLogin(admin);
+await admin.goto(`${SITE}/admin/orders/${o.id}/files`);
+await admin.evaluate(() => { const f = [...document.querySelectorAll('form')].find((x) => x.elements.payment); f.elements.reason.value = 'TEST'; f.elements.payment.value = 'refund'; f.requestSubmit(f.querySelector('button')); });
+await admin.waitForLoadState('load'); await admin.waitForTimeout(1500);
+await admin.goto(`${SITE}/admin/orders/${o.id}/files`);
+const kop = await admin.evaluate(() => document.querySelector('main .warnline')?.textContent.trim());
+console.log('admin regel:', kop);
+console.log('upload zichtbaar:', await admin.evaluate(() => !!document.querySelector('input[webkitdirectory]')), '|', await admin.evaluate(() => [...document.querySelectorAll('main p.muted')].map((p) => p.textContent.trim()).find((t) => /geannuleerd/.test(t))));
+const r = await context.request.post(`${SITE}/admin/orders/${o.id}/deliver`, { headers: { origin: SITE }, multipart: { files: { name: 'a.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('x') } } }).then((x) => x.status());
+console.log('upload POST:', r);
+await studioLogin(page, email);
+const nu = async () => page.evaluate(() => (document.querySelector('main').innerText.match(/Nu: [^\n]*/) || [''])[0]);
+await page.goto(`${SITE}/account`); console.log('studio voor bevestiging:', await nu());
+const [rij] = await sql(`SELECT refunded_cents, payment_status, total_cents, vat_cents FROM orders WHERE id=${o.id}`);
+console.log('db na annuleren:', JSON.stringify(rij));
+await sqlw(`UPDATE orders SET refunded_cents = total_cents + vat_cents, payment_status='refunded' WHERE id=${o.id}`);
+await page.goto(`${SITE}/account`); console.log('studio na bevestiging:', await nu());
+await admin.goto(`${SITE}/admin/orders/${o.id}/files`);
+console.log('admin na bevestiging:', await admin.evaluate(() => document.querySelector('main .warnline')?.textContent.trim()));
+// O37: onbetaald annuleren, dan toch betalen
+await bestel(page, { pad: '/nl/start/catalog', aantal: 1, klant, land: 'NL', vat: null });
+const checkout = page.url();
+const [o2] = await sql(`SELECT id, ref FROM orders WHERE email='${email}' ORDER BY id DESC LIMIT 1`);
+await admin.goto(`${SITE}/admin/orders/${o2.id}/files`);
+await admin.evaluate(() => { const f = [...document.querySelectorAll('form')].find((x) => x.elements.reason && /annuleren/i.test(x.innerText + (x.closest('details')?.innerText || ''))); f.elements.reason.value = 'TEST'; if (f.elements.payment) f.elements.payment.value = 'none'; f.requestSubmit(f.querySelector('button')); });
+await admin.waitForLoadState('load'); await admin.waitForTimeout(1500);
+console.log('o2 status:', JSON.stringify(await sql(`SELECT status, cancel_payment FROM orders WHERE id=${o2.id}`)));
+if (/4478|nep-mollie/.test(checkout)) { await betaal(page); }
+await page.waitForTimeout(1500);
+console.log('na betalen url:', page.url());
+await page.waitForTimeout(9000);
+console.log('bedankpagina:', await page.evaluate(() => [...document.querySelectorAll('[data-ty-afgezegd] p')].map((p) => p.textContent.trim()).join(' | ')));
+console.log('payments o2:', JSON.stringify(await sql(`SELECT status FROM payments WHERE order_id=${o2.id}`)));
+process.exit(0);

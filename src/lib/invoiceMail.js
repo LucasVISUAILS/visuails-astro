@@ -35,7 +35,7 @@
  */
 
 import { sendMail, toBase64 } from './mail.js';
-import { shell, h1, p, rows, note, linkLine, esc, button } from './mailTemplate.js';
+import { shell, h1, p, rows, note, linkLine, esc, button, greeting } from './mailTemplate.js';
 import { rolloverMonths } from '../data/plans.js';
 import { VAT_TREATMENT } from '../data/vat.js';
 import { formatDate } from './invoicePdf.js';
@@ -75,6 +75,11 @@ const COPY = {
     keep: 'Bewaar deze factuur voor je eigen administratie.',
     nextH: 'Wat nu',
     next: (wanneer) => `Een specialist maakt je beelden en loopt elk beeld na. Je krijgt een mail zodra ze klaarstaan${wanneer}. Daarna keur je ze per beeld goed, of vraag je één gratis revisieronde aan.`,
+    /* Ronde 9 (F40): een offerte (video, eigen look) heeft geen uploadformulier
+       gehad. Zonder deze zin wist de klant na betalen niet hoe zijn foto's bij
+       ons komen. */
+    nextModel: 'Je krijgt eerst een paar richtingen om op te reageren, met één correctieronde. Daarna bouwen we het gezicht, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Je krijgt een mail zodra er iets te bekijken is.',
+    nextOfferte: 'We gaan aan de slag zoals in de offerte staat. Heb je je productfoto’s nog niet gestuurd? Beantwoord dan deze mail met de foto’s, of stuur ze via WhatsApp. Je krijgt een mail zodra er iets klaarstaat om te bekijken.',
     asap: ' (vaak binnen een dag, soms een paar dagen)',
     window: (van, tot) => ` — op de gereserveerde datum, ${van}${tot && tot !== van ? ` tot en met ${tot}` : ''}`,
   },
@@ -95,6 +100,8 @@ const COPY = {
     keep: 'Keep this invoice for your own records.',
     nextH: 'What happens next',
     next: (when) => `A specialist makes your images and checks every one. You get an email as soon as they are ready${when}. Then you approve them image by image, or ask for one free revision round.`,
+    nextModel: 'First you get a few directions to react to, with one correction round. Then we build the face, run it through the uniqueness check and tie it to your brand. You get an email as soon as there is something to look at.',
+    nextOfferte: 'We start as set out in the quote. Not sent your product photos yet? Reply to this email with the photos, or send them on WhatsApp. You get an email as soon as there is something to look at.',
     asap: ' (often within a day, sometimes a few days)',
     window: (from, to) => ` — on the reserved date, ${from}${to && to !== from ? ` to ${to}` : ''}`,
   },
@@ -150,9 +157,13 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
   const wanneer = order.window_start
     ? t.window(dateLine(order.window_start, lang), order.window_end ? dateLine(order.window_end, lang) : '')
     : t.asap;
-  const watNu = order.ref && !order.noNext ? p(`<b>${esc(t.nextH)}.</b> ${esc(t.next(wanneer))}`, { top: 4 }) : '';
+  const offerte = order.service === 'video' || order.service === 'custom';
+  const watNu = order.ref && !order.noNext ? p(`<b>${esc(t.nextH)}.</b> ${esc(order.service === 'brand-model' ? t.nextModel : offerte ? t.nextOfferte : t.next(wanneer))}`, { top: 4 }) : '';
   const body = [
     h1(t.head, esc(invoice.number)),
+    /* De aanhef, zoals in elke andere klantmail (ronde 9, O21). Alleen met een
+       naam: deze mail gaat ook uit voor een abonnementstermijn. */
+    order.name ? p(greeting(order.name, lang)) : '',
     p(esc(t.lede)),
     watNu,
     rows([

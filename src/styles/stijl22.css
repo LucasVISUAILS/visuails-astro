@@ -44,7 +44,14 @@
    Het schema zet het donkere paneel op puur zwart (`--panel`) en de panelen op
    #F2F3F5, en dan is de ondergrond juist wél de diepste waarde. Hij volgt dus
    `--panel`. */
-:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: var(--r-card, 12px); --s22-grond: var(--panel, #000000); --s22-donker: #14161A; }
+:root { --s22-rand: clamp(.75rem, 2vw, 1.5rem); --s22-ronding: var(--r-card, 12px); --s22-grond: var(--panel, #000000); --s22-donker: #14161A;
+    /* RONDE 9 — `--inkt` bestond alleen BINNEN .s22. De balk staat erbuiten en
+       zette `--ink: var(--inkt)` (zie .site-header:not(.scrolled) hieronder):
+       een verwijzing naar niets, dus `--ink` werd ongeldig. Tekst merkt dat niet
+       (color erft gewoon door), maar de drie streepjes van de menuknop zijn een
+       ACHTERGROND — en die werd doorzichtig. Op de telefoon stond er een leeg
+       vierkant waar het menu hoort. Hier krijgt de hele pagina dezelfde inkt. */
+    --inkt: var(--ink); }
 
   .s22 {
     /* ── DE KLEUREN VAN SECTIE 22 KOMEN UIT global.css — 20 september 2026 ──

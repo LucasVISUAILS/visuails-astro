@@ -156,3 +156,13 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   X-Frame-Options: DENY
   Content-Security-Policy: frame-ancestors 'none'
+
+# ── RONDE 9 (O61) — TEKSTBESTANDEN MET HUN TEKENSET ─────────────────────────
+# robots.txt en llms.txt gingen uit als "text/plain" zonder charset. Een browser
+# leest dan Windows-1252 en maakt van elk — een â€”. Voor crawlers maakt het niet
+# uit (die lezen geen commentaar), voor een mens die het opent wel.
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8

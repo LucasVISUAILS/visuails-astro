@@ -41,88 +41,88 @@ Legenda: [ ] open · [x] gedaan, met bewijs · [!] fout gevonden (zie "Fouten") 
 
 - [ ] 1.1 Jonge starter
 - [ ] 1.2 Oudere boetiekeigenaar
-- [ ] 1.3 Drukke webshop
-- [ ] 1.4 Wantrouwige klant
-- [ ] 1.5 Engelse klant buiten de EU
-- [ ] 1.6 EU-bedrijf
-- [ ] 1.7 Bureau
-- [ ] 1.8 Merkmodel-klant
-- [ ] 1.9 Abonnee
-- [ ] 1.10 Boze klant
-- [ ] 1.11 Annuleerder
-- [ ] 1.12 WhatsApp-klant via admin
-- [ ] 1.13 Toetsenbordgebruiker
-- [ ] 1.14 Tabletgebruiker
+- [x] 1.3 Drukke webshop (behalve zip/pdf-download: wacht op toestemming)
+- [x] 1.4 Wantrouwige klant (telefoonweergave in de testomgeving; zie bewijs)
+- [x] 1.5 Engelse klant buiten de EU
+- [x] 1.6 EU-bedrijf (zonder revisie: die liep bij 3, 4 en 5)
+- [x] 1.7 Bureau (video Motion: aanvraag → offerte → betaald → geleverd → goedgekeurd; eigen look: aanvraag → offerte als aanbetaling, niet betaald)
+- [x] 1.8 Merkmodel-klant (telefoonweergave in de testomgeving; live op desktop)
+- [ ] 1.9 Abonnee — geblokkeerd door F50 tot de deploy (afsluiten zonder account met hello+abo@ landt op het account van hello@)
+- [x] 1.10 Boze klant (desktop live; "na de termijn" is niet live na te spelen — zie bewijs)
+- [x] 1.11 Annuleerder
+- [x] 1.12 WhatsApp-klant via admin (foto's uploaden in Studio: pas na de deploy van F55 live na te spelen)
+- [x] 1.13 Toetsenbordgebruiker (in de testomgeving, met Playwright alleen toetsen — de Chrome-koppeling stuurt geen betrouwbare Tab naar de pagina)
+- [x] 1.14 Tabletgebruiker (768 in de testomgeving; keten live op desktop)
 
 ## 2 · Bestelmatrix
-- [ ] 2.1 Catalog: elke stijl, achtergrond, beeldverhouding, extra hoeken, outfit, model/merkmodel, marktplaatsformaten
-- [ ] 2.2 Lifestyle: Dunes, Flash, Glow, Phone-made, eigen look; 4K; verhouding per beeld
+- [x] 2.1 Catalog: elke stijl, achtergrond, beeldverhouding, extra hoeken, outfit, model/merkmodel, marktplaatsformaten (testomgeving; F59 hersteld — zie bewijs stap 2)
+- [x] 2.2 Lifestyle: Dunes, Flash, Glow, Phone-made, eigen look; 4K; verhouding per beeld (eigen look: klanttype 7; verhouding per beeld: klanttype 2)
 - [ ] 2.3 Video: Motion, Lifestyle Video, Campaign, eigen look
-- [ ] 2.4 Hooks en Editions: wat kan een bezoeker doen
-- [ ] 2.5 Aantallen 1, 4, 5, 9, 10, 19, 20+
-- [ ] 2.6 Uploads: HEIC, >25 MB, verkeerd type, verplichte foto vergeten, map, later nasturen
-- [ ] 2.7 Land/btw: NL ±KVK, EU geldig/ongeldig, buiten EU, particulier
-- [ ] 2.8 Betalen: betaald, mislukt, verlopen, geannuleerd, later via link, tegoed deels/volledig
-- [ ] 2.9 Ingelogd/niet, terugkerende klant, terugknop/verversen, twee tabbladen
-- [ ] 2.10 /start: elke deur
+- [x] 2.4 Hooks en Editions: wat kan een bezoeker doen
+- [x] 2.5 Aantallen 1, 4, 5, 9, 10, 19, 20+
+- [x] 2.6 Uploads: HEIC, >25 MB, verkeerd type, verplichte foto vergeten, map, later nasturen (later nasturen: F55)
+- [x] 2.7 Land/btw: NL ±KVK, EU geldig/ongeldig, buiten EU, particulier
+- [x] 2.8 Betalen: betaald, mislukt, verlopen, geannuleerd, later via link, tegoed deels/volledig
+- [x] 2.9 Ingelogd/niet, terugkerende klant, terugknop/verversen, twee tabbladen (terugknop F58, verversen O47; twee tabbladen: zie bewijs)
+- [x] 2.10 /start: elke deur
 
 ## 3 · Contact
-- [ ] 3.1 Contactformulier: elk onderwerp, elke voorkeur
-- [ ] 3.2 WhatsApp-knoppen per pagina (tekst + nummer)
-- [ ] 3.3 Mailadressen en telefoonnummer
-- [ ] 3.4 Studiobrief aan- en afmelden
-- [ ] 3.5 "Vraag een specialist" in Studio
-- [ ] 3.6 Antwoorden op mails → juiste ontvanger
-- [ ] 3.7 Fotogids-pdf
+- [x] 3.1 Contactformulier: elk onderwerp, elke voorkeur
+- [x] 3.2 WhatsApp-knoppen per pagina (tekst + nummer)
+- [x] 3.3 Mailadressen en telefoonnummer
+- [x] 3.4 Studiobrief aan- en afmelden (afmelden: mailto + List-Unsubscribe in de welkomstmail; in de brief zelf via Resend — niet na te spelen zonder broadcast)
+- [x] 3.5 "Vraag een specialist" in Studio
+- [x] 3.6 Antwoorden op mails → juiste ontvanger
+- [x] 3.7 Fotogids-pdf (F61 hersteld)
 
 ## 4 · VISUAILS Studio
-- [ ] 4.1 Inloggen: verkeerde/verlopen code, te vaak, inloglink, terug naar bestemming, uitloggen, twee apparaten
-- [ ] 4.2 Lege en volle staat
-- [ ] 4.3 Elke bestelstatus
-- [ ] 4.4 Goedkeuren/ongedaan/revisie/notitie
-- [ ] 4.5 Downloads (zip, los)
-- [ ] 4.6 Facturen en creditnota's
-- [ ] 4.7 Gegevens wijzigen (btw, e-mail)
-- [ ] 4.8 Vaste look
-- [ ] 4.9 Abonnementstabbladen
-- [ ] 4.10 Licht/donker, taalwissel, menu op telefoon
-- [ ] 4.11 Indeling per scherm (lege vlakken, onduidelijke teksten)
+- [x] 4.1 Inloggen: verkeerde/verlopen code, te vaak, inloglink, terug naar bestemming, uitloggen, twee apparaten
+- [x] 4.2 Lege en volle staat
+- [x] 4.3 Elke bestelstatus (O50, O51 hersteld)
+- [x] 4.4 Goedkeuren/ongedaan/revisie/notitie (klanttypes 1–4, 10, 12, 13)
+- [x] 4.5 Downloads (zip, los) (testomgeving; F57)
+- [x] 4.6 Facturen en creditnota's (live, klanttypes 11–14)
+- [x] 4.7 Gegevens wijzigen (btw, e-mail)
+- [ ] 4.8 Vaste look — wacht op klanttype 9 (abonnement, F50)
+- [ ] 4.9 Abonnementstabbladen — wacht op klanttype 9 (abonnement, F50); zonder abonnement getoond: "Elke maand nieuwe beelden …" met "Bekijk de abonnementen" en "Los bestellen" (goed)
+- [x] 4.10 Licht/donker, taalwissel, menu op telefoon (O49 hersteld)
+- [x] 4.11 Indeling per scherm (lege vlakken, onduidelijke teksten)
 
 ## 5 · /admin
-- [ ] 5.1 Dashboard en planning
-- [ ] 5.2 Klanten, nieuwe klant
-- [ ] 5.3 Bestelling: upload vak/map, verkeerd bestand, melden, herleveren, revisie, nieuwe link
-- [ ] 5.4 Offerte, aanbetaling/restant
-- [ ] 5.5 Terugbetalen deels/volledig, tegoed, annuleren, verbergen, verwijderen
-- [ ] 5.6 Btw-lijst
-- [ ] 5.7 Maandset, aanbevelingen/testimonials
-- [ ] 5.8 Berichten, logboek, trechter, diagnose, twee stappen
-- [ ] 5.9 Facturen per kwartaal + CSV
-- [ ] 5.10 Abonnementen: week starten, credits corrigeren
-- [ ] 5.11 Uitloggen, sessieverloop, telefoon, donker
-- [ ] 5.12 Indeling per scherm
+- [x] 5.1 Dashboard en planning
+- [x] 5.2 Klanten, nieuwe klant (F54)
+- [x] 5.3 Bestelling: upload vak/map, verkeerd bestand, melden, herleveren, revisie, nieuwe link (klanttypes 1–4, 10, 12, 14)
+- [x] 5.4 Offerte, aanbetaling/restant (klanttype 7)
+- [x] 5.5 Terugbetalen deels/volledig, tegoed, annuleren, verbergen, verwijderen (deels: alleen via het Mollie-dashboard — zie O53)
+- [x] 5.6 Btw-lijst (klanttype 6, matrix BE-ongeldig)
+- [x] 5.7 Maandset, aanbevelingen/testimonials (maandset: alleen bekeken — publiceren raakt alle abonnees)
+- [x] 5.8 Berichten, logboek, trechter, diagnose, twee stappen (bekeken; twee stappen niet aangezet — dat is jouw account)
+- [x] 5.9 Facturen per kwartaal + CSV
+- [ ] 5.10 Abonnementen: week starten, credits corrigeren — wacht op klanttype 9 (F50)
+- [x] 5.11 Uitloggen, sessieverloop, telefoon, donker (O52 hersteld)
+- [x] 5.12 Indeling per scherm
 
 ## 6 · Veiligheid en privacy
-- [ ] 6.1 Klant A ziet niets van klant B (nummers in URL)
-- [ ] 6.2 Verlopen/ingetrokken links, tokens, codes
-- [ ] 6.3 Formulieren: honeypot, dubbel versturen, limieten, herkomstcontrole
-- [ ] 6.4 Cookiemelding
-- [ ] 6.5 AVG: bewaren, verwijderen, /privacy
+- [x] 6.1 Klant A ziet niets van klant B (nummers in URL)
+- [x] 6.2 Verlopen/ingetrokken links, tokens, codes
+- [x] 6.3 Formulieren: honeypot, dubbel versturen, limieten, herkomstcontrole
+- [x] 6.4 Cookiemelding
+- [x] 6.5 AVG: bewaren, verwijderen, /privacy
 
 ## 7 · Automatisch en koppelingen
-- [ ] 7.1 Nachtrapport, betaalherinnering, verval, vrijgegeven datum, tevredenheidsherinnering (live)
-- [ ] 7.2 Tijd vooruit, beelden verlopen, chargeback, bounce, dubbele webhook, mislukte incasso (testomgeving → mail via Resend naar hello@)
+- [x] 7.1 Nachtrapport, betaalherinnering, verval, vrijgegeven datum, tevredenheidsherinnering (live) — tevredenheidsherinnering bestaat nog niet (stap 9)
+- [x] 7.2 Tijd vooruit, beelden verlopen, chargeback, bounce, dubbele webhook, mislukte incasso (testomgeving → mail via Resend naar hello@ — Resend moet opnieuw inloggen, O58)
 
 ## 8 · Alle pagina's (NL + EN)
-- [ ] 8.1 Indeling op 1440/1280/768/390
-- [ ] 8.2 Teksten consistent; NL/EN gelijk; taalwissel blijft op de pagina
-- [ ] 8.3 Links/404, toetsenbord/focus, contrast/leesbaarheid
-- [ ] 8.4 Consolefouten, mislukte verzoeken, beeldgewicht
-- [ ] 8.5 Meta/JSON-LD/sitemap/robots/hreflang/llms.txt
-- [ ] 8.6 Juridische pagina's, cookiemelding, 404
+- [x] 8.1 Indeling op 1440/1280/768/390 (O63)
+- [x] 8.2 Teksten consistent; NL/EN gelijk; taalwissel blijft op de pagina (O64)
+- [x] 8.3 Links/404, toetsenbord/focus, contrast/leesbaarheid (O62)
+- [x] 8.4 Consolefouten, mislukte verzoeken, beeldgewicht (O60)
+- [x] 8.5 Meta/JSON-LD/sitemap/robots/hreflang/llms.txt (O61)
+- [x] 8.6 Juridische pagina's, cookiemelding, 404
 
 ## 9 · Concept (voorleggen)
-- [ ] 9.1 Voorstellen met wat/waarom/kosten/schets
+- [x] 9.1 Voorstellen met wat/waarom/kosten/schets — kladblok/CONCEPT-RONDE-9.md (jouw keuze per regel)
 
 ---
 
@@ -133,8 +133,8 @@ Opdracht stap 0–9 + nacontrole regel voor regel naast deze lijst gelegd. Wat e
 - Klanttype 1 (starter, 390): a) eerste indruk op de telefoon niet vastgelegd · b) "klikt veel terug": terugknop, verversen en dubbelklik op versturen niet gedaan · d) links in de mails op telefoonbreedte en spammap · e) maillink op een ander apparaat · i) zip en losse downloads, factuur-pdf openen · k) factuur volledig nalopen (nummerreeks, datum, KVK/btw beide kanten) · l) bevindingen
 - Klanttype 2 (boetiek, 1280): a) home → dienst → stijl → prijzen → FAQ lezen en vastleggen · i) downloads · j) klantpagina in /admin · k) factuur nalopen
 - Klanttype 3 (webshop): f t/m l nog te doen (VIS-VS4X-BRJ, order 82)
-- h) bij één klant revisie afhandelen met "geen nieuw beeld nodig" — nog bij niemand gedaan
-- j) testimonial met toestemming goedkeuren en nakijken waar hij op de site verschijnt — nog bij niemand gedaan (op live alleen als TEST en meteen weer verbergen, of in de testomgeving)
+- ~~h) bij één klant revisie afhandelen met "geen nieuw beeld nodig"~~ — gedaan bij klanttype 10 (p2-voorkant, met reden)
+- ~~j) testimonial goedkeuren en nakijken waar hij verschijnt~~ — live gedaan (2 okt avond): /admin/testimonials toont 3 TEST-aanbevelingen, goedkeuren van "TEST Tessa" → "Goedgekeurd (1)", niet op de homepage; ingetrokken → "Wacht op jou (3)". Klopt met het ontwerp: goedkeuren publiceert niets, plaatsen is een eigen keuze
 - Bewijs: schermafdrukken in kladblok/ronde-9/ ontbreken nog; tot nu toe alleen ordernummers en mailonderwerpen + tijden
 - Labels per dienst: ook het revisieblok op het admin-dashboard, de bestandentabel van een bestelling en de LEESMIJ in de zip noemden een lifestylebeeld "Voorkant" — hersteld in de werkkopie (bij F17)
 - Elke "wacht op deploy" hierboven: na de deploy op live opnieuw, pas dan afvinken
@@ -163,7 +163,7 @@ Vorm: F-nummer · waar · wat er gebeurt · ernst (hoog/middel/laag) · status.
 - F16 · portaal "Jouw bestanden" · belooft "hetzelfde beeld als PNG, JPG en WebP"; admin zegt bij deze bestelling "4 van de 4 geleverde beelden hebben nog geen JPG, PNG én WEBP — de klant krijgt geen formaatmappen". Bij levering via de browser klopt de belofte dus niet · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy: het portaal noemt de formaten die er echt in de map zitten; Studio belooft geen formaten meer. Mijn advies: altijd via npm run deliver leveren, dan klopt de oude zin weer vanzelf
 - F17 · admin, werkbord bij lifestyle · het bord kent alleen de vier catalogushoeken (Voorkant/Achterkant/Detail/Gedragen; admin.js SHOT_KEYS). Een lifestylebestelling van 3 producten toont "0 van 12 vakjes", na levering "9 van 12". De studio moet de drie lifestylebeelden in catalogusvakjes zetten; de klant ziet ze in Studio als "Voorkant/Achterkant/Detail" en de bestanden heten …-voorkant.jpg. Ook de bijbestelde hoeken van catalog ("Een hoek erbij") hebben geen vakje · hoog · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
 - F17b · admin, bestelpagina · 4K (hi_p1) en de afwijkende verhouding per beeld (ratio_p1_3 = 16:9) staan nergens op de bestelpagina; alleen in de werkmap-zip en de adminmail. Wie vanaf het bord werkt, mist ze — en de klant betaalde €9 voor 4K · hoog · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
-- F18 · Studio "Laatst geleverd" en productkaarten · tegels van 128 px laden het volle origineel (3277–4096 px). Bij levering via de browser bestaat er geen beoordeelbeeld; met echte 4K-PNG's is dat tientallen MB per scherm · middel · open — voorstel aan Lucas: (A) bij uploaden via /admin een beoordeelbeeld van 1600 px in de browser laten maken en als preview_key opslaan, of (B) altijd npm run deliver. Admin meet het gewicht al (grens 8 MB)
+- F18 · Studio "Laatst geleverd" en productkaarten · tegels van 128 px laden het volle origineel (3277–4096 px). Bij levering via de browser bestaat er geen beoordeelbeeld; met echte 4K-PNG's is dat tientallen MB per scherm · middel · besluit Lucas (2 okt): optie A. Gebouwd: public/admin-voorvertoning.js maakt bij elke upload via /admin een webp van max. 1600 px en stuurt die mee; de server bewaart hem als preview_key (review/<ref>/…). Getest in de testomgeving (kladblok/_r9-preview.mjs: PNG 3200×4000 → preview_key gezet) — wacht op deploy
 - F19 · Studio na afronden · alle beelden goedgekeurd en score gegeven, maar "Nu: Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt." blijft staan · laag · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy: "Deze bestelling is afgerond. Je beelden staan hieronder klaar om te downloaden."
 - **F25 · bestellen vanaf 10 producten met extra hoeken · de hoeken worden niet betaald · KRITIEK · hersteld in de map, wacht op deploy. Nagespeeld in de testomgeving (12 producten, driekwart + flat-lay): hoekvelden en extra_slots in de post, €1.308 berekend (was €612).** VIS-VS4X-BRJ: 12 producten + 2 hoeken; zijbalk €1.308, stap 5 en Mollie €612 / €740,52. Oorzaak (nagespeeld met kladblok/_r9-hoeken.mjs en een spoor op textContent): renderGate() in pipeline.js zette de tekst van élk `[data-max]` op het maximum uit /api/capacity; de hoekkiezer (AnglePicker.astro) draagt zelf `data-max`, dus zodra stap 4 de agenda ophaalt is de hele hoekkiezer vervangen door "39" en gaan er geen hoeken meer mee. Bij 3 producten (geen stap 4) ging het goed. Herstel: eigen haak `data-pl-cap-max` voor de twee getallen in stap 4; test in tests/hoeken.test.mjs
 - F20 · bestellen, achtergrond · met bol aangevinkt zijn Gebroken wit/Beige/Eigen kleur uitgeschakeld, maar zien er normaal uit (geen grijs, cursor = hand); klikken doet niets en er staat niet waarom. De uitleg noemt Amazon terwijl de klant bol koos · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
@@ -175,8 +175,97 @@ Vorm: F-nummer · waar · wat er gebeurt · ernst (hoog/middel/laag) · status.
 - F27 · bestellen, stap 2 · 23 bestanden in "Nog niet geplaatst" staan op "Verstuurd", maar gaan niet mee met de bestelling (39 van 62 aangekomen); het overzicht "11 producten zijn nog niet af" noemt ze niet · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
 - F28 · bedanktpagina · "Je bent ingelogd — de bestelling staat al in VISUAILS Studio" terwijl de sessie van een ánder account is (boetiek ingelogd, webshop bestelt): die bestelling staat niet in dat Studio · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
 - F29 · bedanktpagina bij een bestelling met vaste leverdata · "Levertijd: Zo snel mogelijk (vaak binnen een dag…)" terwijl er een venster 8–9 oktober vastligt · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
+- **F32 · alle pagina's met het nieuwe ontwerp (.s22), telefoon · de menuknop rechtsboven is een leeg vierkant: de drie streepjes zijn onzichtbaar. Oorzaak: de balk zet `--ink: var(--inkt)`, maar `--inkt` bestond alleen binnen .s22 en de balk staat erbuiten → `--ink` ongeldig → de streepjes (een achtergrond) doorzichtig. Live nagemeten op /nl/: achtergrond rgba(0,0,0,0) · hoog · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy.** Herstel: `--inkt` op :root in stijl22.css. Daarna met kladblok/_r9-inkscan.mjs tien pagina's gescand op ongeldige kleurtokens: niets meer.
+- F33 · bestelformulier, terugknop/verversen · de stappen hebben geen eigen adres: de terugknop van de browser verlaat het formulier, en verversen begint opnieuw (aantal, namen, keuzes weg) — zonder waarschuwing. Op live: na terug + vooruit herstelde Chrome alles (bfcache), na verversen was alles weg · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy: de browser vraagt nu "Wil je deze site verlaten?" zodra je voorbij stap 1 bent of foto's hebt gekozen (niet tijdens het versturen). Nagespeeld met kladblok/_r9-terug.mjs. Voorstel voor later: de antwoorden (geen foto's) in de sessie bewaren en na verversen terugzetten.
+- F34 · Studiobrief, welkomstmail · geen afmeldlink en geen List-Unsubscribe-kop: de mail zegt "afmelden kan onderaan elke brief", maar de eerste brief kan een maand op zich laten wachten · laag · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (link "meld me af" + List-Unsubscribe als mailto). Afmelden via een echte brief niet getest: dan moet er een brief naar de lijst — dat doe ik niet zonder jou
+- O11 (opmerking) · WhatsApp-tekst bij "meer dan 20 producten" zei "laten fotograferen" — botst met "zonder shoot" · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
+- O12 (opmerking) · bedankpagina contactformulier: "Lucas leest het zelf en antwoordt … meestal binnen het uur" — een tijdsbelofte in jouw naam · open, besluit Lucas (mijn advies: "meestal dezelfde werkdag")
+- O13 (opmerking) · bedankpagina na mislukte betaling: onder "Wat er nu gebeurt" stond "we maken je visuals" · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy ("Er wordt nog niets gemaakt: we beginnen zodra de betaling binnen is…")
+- O14 (opmerking) · admin "Wat de klant koos": "Phone-made — phone-made" · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
+- O15 (opmerking) · aanbevelingen: goedkeuren publiceert niets; een goedgekeurde aanbeveling komt nergens op de site tenzij je hem zelf plaatst · zo gebouwd (zie de tekst op /admin/testimonials); concept-voorstel: een blok "Wat klanten zeggen" dat alleen goedgekeurde citaten toont
+- **F35 · Studio-inlog in het Engels · na "Sign in" verschijnt "Check je e-mail" en de klant krijgt de Nederlandse mail "Je inlogcode voor VISUAILS". Oorzaak: de inlogafhandeling nam uit het formulier alleen 'nl' over; 'en' viel terug op de browsertaal (Nederlands op deze computer). Een Britse klant met een Nederlandse browser — of een Nederlander die Engels koos — kreeg de verkeerde taal · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy**
+- O17 (opmerking) · Studio Engels: "Is everything approved, the order is complete…" (Nederlandse zinsbouw) en "5 items" waar overal "products" staat · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
+- O18 (opmerking) · admin-bestelpagina: "€ 325,00 incl. btw" bij een bestelling zonder btw (buiten de EU) · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy ("zonder btw")
+- **F37 · btw-controle, mail na goedkeuren · een EU-klant met een btw-nummer dat VIES niet bevestigde, leest "Everything is in order, so you can pay now" boven €323,07 — hij verwachtte €267 (btw verlegd). Nergens staat waarom er 21% op staat, of dat hij nog kan reageren · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (de mail noemt VIES, het tarief en "beantwoord vóór je betaalt, dan verleggen we de btw")**
+- O21 (opmerking) · dezelfde mail · geen aanhef, waar elke andere klantmail "Hi Erika," heeft · hersteld in de map (2 okt) — wacht op deploy
+- O19 (opmerking) · bedanktpagina bij een bestelling die eerst nagekeken wordt · kop "Thanks — we have your request." (alsof het een aanvraag is) · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy ("Thanks — your order is in." / "Bedankt — je bestelling staat erin.")
+- O20 (opmerking) · /admin/vat · na "akkoord" of "afwijzen" verdwijnt de bestelling zonder één woord: gelukt? mail weg? · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (regel bovenaan: goedgekeurd + link gemaild / link NIET verstuurd (rood) / met tegoed betaald / afgewezen)
+- O22 (opmerking) · /admin/orders/85 geeft "Niet gevonden" (de pagina heet /admin/orders/85/files) · hersteld in de map (2 okt) — wacht op deploy (doorsturen)
+- **F38 · bedanktpagina na een aanvraag · "Bevestiging verstuurd naar hello+eu@visuails.com" — het adres van de VORIGE klant in hetzelfde tabblad (sessionStorage). Een aanvraag legt daar niets neer, de pagina las het oude adres. Op een gedeelde computer ziet klant B het mailadres van klant A · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (waarden tellen alleen als het kenmerk erbij hoort)**
+- **F39 · Mollie-omschrijving na een offerte · eigen look: "VISUAILS — 1 product, undefined" (checkout én bankafschrift); video: "VISUAILS — 1 videoclip" bij een offerte voor twee clips · middel · hersteld in de map (2 okt), getest — wacht op deploy ("VISUAILS eigen look VIS-…", "VISUAILS videoclips VIS-…"; nooit meer "undefined")**
+- **F40 · na betalen van een video-offerte · nergens staat hoe de productfoto's bij ons komen (het aanvraagformulier heeft geen upload); betaalmail zegt "Een specialist maakt je beelden", portaal en Studio "zo snel mogelijk, geen vaste datum" · middel · hersteld in de map (2 okt), getest — wacht op deploy (betaalmail, portaal en Studio: "levertijd uit de offerte; nog geen foto's gestuurd? beantwoord de offertemail of WhatsApp")**
+- **F41 · Studio · eigen look na offerte: "Wacht op betaling — nog niet betaald" zonder betaalknop (custom telde niet als betaalbaar; /api/order-pay wél) · middel · hersteld in de map (2 okt), getest — wacht op deploy**
+- **F42 · privélink bij een geleverde video · de clips staan er als lege tegels (een <img> voor een webm), de klant keurt blind goed · middel · hersteld in de map (2 okt) — wacht op deploy (<video> met bediening, CSP media-src 'self'); live na deploy nakijken**
+- F43 · factuur van een video-offerte · regel "Video — 1 product" bij twee Motion-clips · laag · hersteld in de map (2 okt), getest — wacht op deploy ("Video (Motion) — volgens offerte"; eigen look: "Eigen look — ontwerp volgens offerte")
+- **F44 · factuur na een aanvraag · geen adres van de afnemer (de aanvraag vraagt het niet); alleen "Merk Alfa (TEST) / Bram Bureau" · middel · deels hersteld in de map (2 okt) — wacht op deploy: de factuur neemt het adres uit Studio (Je gegevens) als de bestelling er geen heeft, de offertemail vraagt erom, admin waarschuwt. Besluit Lucas: zie vraag in de tussenstand**
+- O23 (opmerking) · aanvraagmails · "je aanvraag voor Aanvraag op maat", "je aanvraag voor Video" (zonder soort en aantal), admin "Nieuwe Aanvraag op maat-bestelling · wachtrij", Studio en betaalmail "Aanvraag op maat" · hersteld in de map (2 okt), getest — wacht op deploy
+- O24 (opmerking) · admin-kop "aanvraag: custom-look" (slug) · open, klein
+- O25 (opmerking) · Studio · een bureau met twee merken ziet twee kaarten zonder merknaam; de zijbalk toont alleen het laatste merk · hersteld in de map (2 okt), getest — wacht op deploy (merknaam vooraan in de kaartkop als het account meer dan één merk heeft)
+- O26 (opmerking) · admin "Betaald: €138.00 excl. btw" (Engelse notatie) · hersteld — wacht op deploy
+- O27 (opmerking) · admin "2 geleverd bestanden hebben nog geen product of foto" (taal) en die waarschuwing bij een video zonder producten · hersteld — wacht op deploy
+- O28 (opmerking) · levermail video "Je bestelling is klaar — 2 beelden", knop "Bekijk je beelden" · hersteld, getest — wacht op deploy ("2 clips", "Bekijk je clips")
+- **F45 · merkmodelformulier (€ 450) · telefoon "0612" gaat door de stappen heen; de server weigert en stuurt terug naar ?error=phone — op stap 1, met ALLE antwoorden weg en zonder één woord uitleg. De noot in order.js belooft "met zijn antwoorden er nog in"; dat klopte voor deze formulieren niet · hoog · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (telefoon en e-mail worden in de browser al met dezelfde regel als de server getoetst; bij een ?error= komen de antwoorden terug, staat er een zin boven het formulier en springt het merkmodelformulier naar de juiste stap; geldt ook voor de aanvraagformulieren)**
+- **F47 · /admin bestelpagina merkmodel · de briefing (wie koopt het, link, gebruik, casting) staat nergens, alleen in de adminmail, en er is geen weg naar het klantaccount waar het model gemaakt wordt · middel · hersteld in de map (2 okt), getest — wacht op deploy**
+- **F48 · merkmodel vastleggen · de klant hoort niets, en de betaalde merkmodelbestelling blijft in Studio op "We hebben je bestelling en je bestanden binnen. We plannen hem in." staan · middel · hersteld in de map (2 okt), getest — wacht op deploy (vastleggen rondt de open merkmodelbestelling af met een tijdlijnregel en mailt "Je merkmodel staat klaar", één keer)**
+- F49 · /admin · "Gezicht: c5 — eigen merkmodel" en op het bord "gezicht: c5 (eigen)" — geen naam, geen gezicht · middel · hersteld in de map (2 okt), getest — wacht op deploy (naam + kleine foto)
+- O29 (opmerking) · merkmodelformulier stap 5 toont alleen "€ 450 excl. btw"; bij Mollie is het € 544,50 · open, klein — voorstel: dezelfde regel als in het bestelformulier ("Je betaalt bij Mollie € 544,50 incl. 21% btw")
+- O30 (opmerking) · merkmodel: bedanktpagina "maken je visuals … vaak binnen een dag", betaalmail "Daarna keur je ze per beeld goed", bevestiging "1 revisieronde per bestelling" — terwijl het om richtingen en één correctieronde gaat · hersteld in de map (2 okt), getest — wacht op deploy
+- O31 (opmerking) · admin klantpagina: "Zodra een model een foto heeft, verschijnt hij als tegel" — klopt niet meer, pas bij "vastgelegd" · open, klein
+- O32 (opmerking) · Studio-overzicht merkmodel: "We hebben je bestelling en je bestanden binnen" (er zijn geen bestanden) · deels opgelost door F48 (na vastleggen afgerond); de tekst ervóór is open, klein
+- O33 (opmerking) · terugkerende klant: KVK-nummer staat in zijn account maar wordt in het bestelformulier niet ingevuld · open, klein
+- **F50 · abonnement afsluiten zonder account · /api/plan gebruikte normalizeEmail() (de vergelijkingsvorm uit payer.js: "+label" eraf, bij Gmail de punten eraf) als ACCOUNTADRES. hello+abo@ werd hello@ — een ander account, met al een abonnement — en de bezoeker belandde na een volledig ingevuld formulier op het inlogscherm, zonder uitleg. Bij een echte klant koppelt het een abonnement aan het verkeerde account (info+shop@ → info@) of maakt het een tweede account naast zijn bestellingen (jan.de.vries@gmail → jandevries@gmail) · hoog · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (adres zoals getypt, zoals /api/order; "al een abonnement" → terug naar het formulier met "Op dit e-mailadres loopt al een abonnement. Log in …" en de antwoorden er nog in). Na de deploy nakijken of er in de database klanten staan met een abonnement op zo'n ingekort adres**
+- F51 · /admin klant → tegoed boeken · het kenmerk "VIS-GCT2-5QF" in het veld "Bestellingnummer" gaf "Die bestelling hoort niet bij deze klant. Er is niets geboekt." — terwijl hij er wél bij hoorde; het veld wilde het interne nummer (90), dat nergens zichtbaar is · middel · hersteld in de map (2 okt), getest — wacht op deploy (kenmerk én nummer tellen; foutzin noemt het kenmerk)
+- **F52 · bestelformulier stap 5, ingelogd met tegoed · "Je betaalt bij Mollie € 107,69" terwijl Mollie € 82,69 vroeg (€ 25 tegoed); het tegoed stond er alleen als losse zin · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (regel "Je tegoed — − € 25: je betaalt bij Mollie € 82,69")**
+- **F53 · betaalde bestelling geannuleerd met terugbetalen · Studio zegt alleen "Deze bestelling is geannuleerd. Er wordt niets voor gemaakt." — niets over het geld; admin toont "geld terug" en het label BETAALD op het moment dat Mollie het nog moet bevestigen (de creditnota komt pas daarna) · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (Studio: "Je betaling komt terug … De creditnota volgt onder Facturen zodra de terugbetaling bevestigd is", na bevestiging "is teruggestort"; bij tegoed "blijft als tegoed staan"; admin: "terugbetaling aangevraagd bij Mollie — de creditnota volgt zodra Mollie hem bevestigt" → "terugbetaald, door Mollie bevestigd")**
+- O36 (opmerking) · admin, geannuleerde bestelling · "Het werk erin zetten" met mappen en uploadknoppen stond nog open, en de server nam een upload aan · hersteld in de map (2 okt), getest — wacht op deploy (één zin in plaats van de knoppen; upload geeft 409 "… is geannuleerd — er is niets opgeslagen")
+- O37 (opmerking) · bedanktpagina na betalen op een al geannuleerde bestelling · "Er valt niets meer te betalen" terwijl de klant net betaald had (het geld komt wel automatisch terug, met mail) · hersteld in de map (2 okt), getest — wacht op deploy ("Je betaling kwam binnen nadat deze bestelling al geannuleerd was. We storten het bedrag automatisch terug …"; kijkt na 3 en 8 s nog eens als de webhook later is)
+- **F54 · /admin nieuwe klant · "Land (twee letters)" was een tekstveld van twee tekens met "NL" erin. Wie het leegmaakt en "Nederland" typt, houdt "Ne" over: Niger. De klant werd aangemaakt met land NE, en de bestelling namens hem ging zonder btw de deur uit ("Niet belastbaar in NL · NE", € 89,00 i.p.v. € 107,69). Adres en land waren in admin daarna ook niet te corrigeren · hoog · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (keuzelijst met dezelfde landen als het bestelformulier, server weigert een land buiten de lijst, "Gegevens corrigeren" heeft adres en land, kop toont het land en een onbekende code valt op). Live hersteld door de klant opnieuw aan te maken met NL; VIS-GHMD-IFQ geannuleerd**
+- **F55 · bestelling namens de klant zonder foto's · admin zegt "Foto's uploadt hij daar zelf", maar Studio had daar geen plek voor ("Geen foto's bij deze bestelling." en verder niets); de bevestigingsmail en de privélink zeggen er ook niets over. De klant kon zijn foto's nergens kwijt · hoog · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (Studio-kaart "Je foto's" met "Foto's toevoegen" zolang er niets geleverd is, tot 12 per keer, alleen de eigen bestelling; studio krijgt "Foto's binnen · VIS-… · 3", tijdlijnregel; bevestigingsmail zegt "We hebben nog geen foto's … Foto's toevoegen in Studio" als er geen foto's bij zitten)**
+- O39 (opmerking) · admin bestelpagina · jouw eigen notitie bij een bestelling namens de klant stond onder "Bericht van de klant" · hersteld in de map (2 okt) — wacht op deploy ("Jouw notitie (ziet de klant)")
+- O40 (opmerking) · Studio "Nu betalen" → terug van Mollie · de kaart stond nog op "Nog niet betaald" met de betaalknop, tot de webhook er een paar seconden later was — uitnodiging om twee keer te betalen · hersteld in de map (2 okt) — wacht op deploy (terug van Mollie: "Kom je net terug van de betaling? Dan verwerken we hem nu … Ververs de pagina even voordat je opnieuw betaalt.")
+- O41 (opmerking) · admin, geannuleerde onbetaalde bestelling zonder levering · "de beelden zijn niet meer zichtbaar voor de klant" — er waren geen beelden · open, klein
+- **F56 · bestelformulier stap 2, alleen toetsenbord · zodra de derde verplichte foto van een product binnen is, klapt de kaart dicht — met de focus erin. De focus viel naar &lt;body&gt; en de volgende Tab begon weer bovenaan de pagina (logo, menu, …) · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (focus gaat naar de inklapknop van dezelfde kaart, de volgende Tab gaat gewoon verder)**
+- O42 (opmerking) · stap 2 · het veld "Productnaam of SKU" gaf bij focus alleen een haarlijn die van 20% naar 100% zwart gaat — met het toetsenbord nauwelijks te zien · hersteld in de map (2 okt) — wacht op deploy (accentkleur, dubbele lijn, zonder verspringen)
+- O43 (opmerking) · privélink, revisieronde zonder aangevinkt beeld · "Er is niets verstuurd …" is goed, maar de getypte toelichting is weg ("schrijf je opmerking dan opnieuw") · open, klein — voorstel: de privélink draait zonder script, dus de server zou het formulier met de tekst erin moeten terugzetten in plaats van door te sturen; alternatief: de knop pas actief maken als er een vinkje staat (vraagt wel script)
+- O44 (opmerking) · privélink na de herlevering · "de nieuwe versie staat hieronder" — het blok staat ónder de bestanden; bij meer beelden "versie" in het enkelvoud · hersteld in de map (2 okt) — wacht op deploy ("… staan hierboven, bij je bestanden")
+- O45 (opmerking) · factuur lifestyle 2 producten · één regel "Lifestyle — 2 producten · 1 × € 218"; de look (Glow) staat er niet bij, alleen een eigen look krijgt een tweede regel · open, klein — voorstel: "Look: Glow" als tweede regel, zoals bij een eigen look; per stuk splitsen raad ik af (toeslagen maken de stukprijs onzuiver)
+- O24 (aanvulling) · admin "Wat de klant koos": live ook "Glow — glow" — al hersteld in de map onder O14, wacht op deploy
+- **F57 · de zip · LEESMIJ.txt beschrijft "eerst per product, daarna per formaat" met JPG/PNG/WEBP-mappen en "Alle drie zijn hetzelfde beeld", terwijl een levering via /admin (de vaste weg sinds F18) een platte map met alleen jpg's is; bovenaan "1 producten" · middel · hersteld in de map (2 okt), getest — wacht op deploy (de leesmij beschrijft wat er echt in de map zit: los, per product of per formaat; telt producten uit de bestandsnamen; enkel- en meervoud). Let op: de zin "In elk bestand staat dat ook als machineleesbaar gegeven (IPTC)" is bij een levering via /admin óók niet waar — hoort bij het besluit over F30**
+- **F58 · bestelformulier · de terugknop van de browser op stap 2 of later verliet het formulier (eerst de vertrekwaarschuwing; wie toch ging en terugkwam, begon bij stap 1 met alles leeg). Een klant die "veel terugklikt" verwacht de vorige stap · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (elke stap krijgt #stap-N via Astro's navigate(); terug/vooruit wisselt van stap zonder iets te verliezen, vooruit alleen langs stappen die kloppen; een eigen pushState werd door Astro's router overschreven, vandaar de hash)**
+- O47 (opmerking) · bestelformulier · verversen op stap 2 of later begint bij stap 1 met een leeg formulier (de vertrekwaarschuwing waarschuwt wel) · open — voorstel: aantal, keuzes en gegevens in sessionStorage bewaren zoals bij ?error= (F45); de foto's staan al in de wachtruimte en kunnen via het batchkenmerk terugkomen. Alternatief: zo laten, de waarschuwing is er
+- **F59 · bestelformulier, "Waar ga je deze verkopen?" · de kanalen zijn vinkjes met dezelfde naam; de server hield alleen de laatste over. Amazon + bol + Zalando aangevinkt → in het dossier en in /admin alleen "Zalando" — en Amazon's eis van zuiver wit valt daarmee stil weg · middel · hersteld in de map (2 okt), getest — wacht op deploy (kommalijst; /admin leest die al zo)**
+- O48 (opmerking) · /admin "Wat de klant koos" · een eigen achtergrondkleur stond als "custom — #335577" · hersteld in de map (2 okt) — wacht op deploy ("Eigen kleur — #335577")
+- **F61 · fotogids-pdf (NL en EN) · "De eerste twee hebben we altijd nodig. De andere twee maken het resultaat nauwkeuriger — anders gaan we er gewoon zonder verder", terwijl het bestelformulier en /upload-guidelines voorkant, achterkant én close-up verplicht stellen (de detailfoto houdt de bestelling tegen). Ook: "de voorkant is de enige foto waar we niet zonder kunnen" (formulier én gids), en de pdf had nog het oude geel. Oorzaak: `npm run handleiding` liep sinds 20 september vast op backticks in een CSS-noot, dus de pdf van 13 september werd nooit opnieuw gemaakt · middel · hersteld in de map (2 okt) — wacht op deploy (script weer werkend, zin klopt met shots.js en bewaakt dat ook, pdf's opnieuw gemaakt in het huidige kleurschema)**
+- O49 (opmerking) · Studio op de telefoon · de tabbalk scrolde opzij en op Facturen, Je gegevens en Abonnement stond de actieve tab buiten beeld — je zag niet waar je was · hersteld in de map (2 okt) — wacht op deploy (de balk breekt af naar twee regels; Studio heeft geen script, dus meeschuiven kan niet)
+- O50 (opmerking) · Studio, bestelling op de btw-lijst · kaart bood "Nu betalen" aan (de knop kwam terug met "we kijken de btw-gegevens na") en de Nu-regel zei "nog niet betaald, zodra de betaling binnen is…" · hersteld in de map (2 okt) — wacht op deploy (geen knop; "We kijken eerst je btw-gegevens na; daarna sturen we je de betaallink")
+- O51 (opmerking) · Studio, afgeronde bestelling na de bewaartermijn · "Je beelden staan klaar om te downloaden" boven "De downloadtermijn liep af op 1 okt." · hersteld in de map (2 okt) — wacht op deploy ("… en de downloadtermijn is voorbij. Heb je de beelden nog nodig? Stuur ons een bericht.")
+- O52 (opmerking) · /admin op de telefoon · tabellen (o.a. Klanten) braken e-mailadressen om de twee letters af ("stud / io@ / volt …") en pasten zo onleesbaar in 390 px · hersteld in de map (2 okt) — wacht op deploy (onder 720 px blijven woorden heel en scrolt de tabel in zijn eigen vak, zoals de bestaande noot al bedoelde)
+- **F62 · Mollie-webhook, chargeback · een terugboeking werd nergens opgemerkt.** Mollie laat de betaling bij een chargeback op 'paid' staan en zet er amountChargedBack bij; dezelfde webhook kwam binnen en liep weg als "dubbele aflevering". Gevolg: bestelling bleef betaald en liep door, geen studiomail, geen regel in /admin — je zou kunnen leveren voor geld dat al terug is (testomgeving: VIS-8ALM-6I7, chargeback € 107,69 → 0 mails, niets in /admin) · hoog · hersteld in de map (2 okt): de webhook legt het vast in admin_log ("Terugboeking (chargeback)" in het logboek), mailt jou één keer per bedrag ("Terugboeking (chargeback) · VIS-… · € …") en zet een rode regel bovenaan de bestelpagina; verder gebeurt er niets vanzelf (betwisten of stilzetten is jouw besluit). Getest: VIS-E8E9-EFF → 1 mail, rode regel, nogmaals afgeleverd → geen tweede mail — wacht op deploy
+- F63 · nachtelijke taken · een bestelling die al over haar termijn was (in de testomgeving VIS-2609-5102, 28 dagen onbetaald zonder herinnering) kreeg in dezelfde nacht eerst "Je bestelling wacht nog op betaling" mét betaalknop en direct daarna "Bestelling … is vervallen" · laag (live alleen na een gemiste nacht of bij oude bestellingen) · hersteld in de map (2 okt): de herinnering slaat over wat die nacht vervalt (dezelfde twee klokken) — wacht op deploy
+- O54 (opmerking) · studiomail "Lage score bij … — 3/5" · zegt "wie een 1 of 2 geeft en niets typt…" bij een 3 (live, VIS-VS4X-BRJ, 13:45) · hersteld in de map: noemt de echte score — wacht op deploy
+- O55 (opmerking) · nachtrapport · staat sinds 12 september elke nacht met dezelfde regel "VERSLAGMODUS: 3 verlaten uploads … Er is NIETS weggegooid" (20 mails) — zo leer je hem te negeren. En dezelfde rem (PURGE_ENABLED) houdt ook het wissen van geleverde beelden na 90 dagen tegen, terwijl /privacy dat belooft · besluit voor jou: PURGE_ENABLED op visuails-cron op true zetten (eerst één keer `npm run backup -- --files`), vóór de eerste leveringen 90 dagen oud zijn. In de testomgeving met PURGE_ENABLED=true: 12 verlopen bestanden en 1 verlaten upload netjes weg, rapportregels kloppen. Daarnaast staat er elke nacht "1 week klaar om te starten: Studio Proefmerk (1)" — een testabonnement; meenemen bij het opruimen
+- O56 (opmerking) · geleverde beelden verdwijnen na 90 dagen zonder dat de klant vooraf een mail krijgt (alleen Studio zegt het) · voorstel in stap 9
+- O57 (opmerking) · betaalherinnering zegt niet wanneer de bestelling vervalt (14 dagen, of 7 na de btw-goedkeuring) · open, klein — één zin erbij
+- O59 (opmerking) · live /admin/diagnose: RESEND_WEBHOOK_SECRET NIET GEZET — op live wordt dus geen enkele bounce opgemerkt (in de testomgeving werkt het, zie stap 7) · voor jou: in Resend een webhook op https://visuails.com/api/webhook/resend (email.bounced + email.complained), het geheim als secret in Cloudflare. Vijf minuten, raakt je account dus doe ik het niet
+- O58 (opmerking) · Resend-koppeling in deze sessie moet opnieuw ingelogd worden: de testmails van stap 7 heb ik daarom als één bestand meegestuurd in plaats van via Resend naar hello@ · na opnieuw inloggen stuur ik ze alsnog
+- O60 (opmerking) · elke pagina, anonieme bezoeker · de eerste pagina per twee minuten vraagt /account/me en krijgt 401 — dat staat als rode fout in de console (Lighthouse "Best practices" telt het mee) en kost per bezoek een Worker-aanroep plus een rate-limit-schrijfactie in D1 · open — voorstel: een klein niet-geheim cookie "vis_in=1" dat bij inloggen gezet en bij uitloggen gewist wordt; zonder dat cookie slaat de site de vraag over. Raakt inloggen, dus niet zonder jouw ja
+- O61 (opmerking) · robots.txt en llms.txt · gaan uit als text/plain zonder tekenset; in een browser staat elk — als â€” (live gezien) · hersteld in de map: public/_headers zet charset=utf-8 — wacht op deploy (daarna op live controleren of Cloudflare de kop overneemt)
+- O62 (opmerking) · leesbaarheid · tekst onder je vloer van 11,5 px: "optioneel" achter velden op /contact (10,9 px), "Merkmodellen die we maakten" op /start/brand-model (10,9 px), en in de bestelflow, Studio en /admin nog 20 plekken tussen 8,8 en 11 px (labels in de kalender, chips, badges, "optioneel"-pillen) · hersteld in de map: alles naar minimaal .72rem / 11,5 px, met een test die het bewaakt — wacht op deploy. Niet aangepast: de nagemaakte webshop in de laptop en de Instagram-telefoon op /lifestyle — dat zijn afbeeldingen van een scherm (aria-hidden), daar hoort de kleine letter bij
+- O63 (opmerking) · /lifestyle/flash (8 foto's) · het raster van drie liet rechtsonder een leeg vak; op de telefoon liet phone-made (9) er één open · hersteld in de map: vanaf drie een veelvoud van drie, en op de telefoon vult bij een oneven aantal de eerste foto de hele breedte — wacht op deploy
+- O64 (opmerking) · /pricing FAQ "Waarom krijg ik pas vanaf 10 producten een datum?" · "gezegd als gebruikelijk en nooit als datum" (letterlijk vertaald) · hersteld: "zonder vaste leverdatum. Liever geen datum dan een datum die we niet halen" (EN gelijk) — wacht op deploy
+- O65 (opmerking) · inhoud · plaatshouders op live: het Editions-beeld op home en /editions, de kop van /hooks en /guides, je portret op /about · voor jou (beeld maken of de sectie weglaten tot het er is); geen fout in de code
+- O53 (opmerking) · /admin · deels terugbetalen kan alleen in het Mollie-dashboard (de webhook boekt het daarna wel en maakt een creditnota voor het deel); in /admin bestaat alleen "annuleren met terugbetalen" (alles). Na opnieuw inloggen kom je op het dashboard en niet terug op de pagina waar je was · open — voorstel: een knop "Deel terugbetalen" met bedrag en reden op de bestelpagina (Mollie-refund met bedrag; de webhook doet de rest al); terugkeren na inloggen is klein
+- O35 (opmerking) · privélink na het intrekken van één revisie · "Je hebt op 2 oktober 3 beelden doorgegeven" blijft 3, er staan er nog 2 open; geen bevestiging dat het intrekken gelukt is · open, klein
+- O16 (opmerking) · stap 5 voor een klant buiten de EU noemt "Bestel je elders in de EU zonder btw-nummer…" — klopt, maar hoort daar niet · open, klein
+- F30 · levering via /admin (browser) · elk bestand mist de herkomsttag (IPTC DigitalSourceType) die /ai-act §6 belooft; admin waarschuwt ("72 zonder herkomsttag"), maar de levering gaat door. Nu Lucas het browserpad als vaste weg kiest (besluit F18), klopt de belofte op /ai-act bij die leveringen niet · middel · open — voorstel: de tag in de browser meeschrijven bij uploaden (XMP-blok in JPG/PNG, naast het beoordeelbeeld), of de zin op /ai-act laten zeggen dat het voor leveringen via ons leverscript geldt
+- F31 · privélink /o/… · 72 beelden alleen één voor één goed te keuren (72 klikken, elke keer de pagina opnieuw); Studio heeft wél "Keur alle … goed" · middel · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (knop "Keur alle N resterende beelden goed", zelfde regel als Studio; nagespeeld met kladblok/_r9-portaal-alles.mjs: 12 → goedgekeurd, bestelling afgerond)
+- O6 (opmerking) · levermail "Je bestelling staat klaar" · "In VISUAILS Studio bekijk en download je alles" terwijl de knop naar de privélink gaat · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy
+- O7 (opmerking) · admin-dashboard revisiekaart · "2× door dit merk" telde de twee beelden van dezelfde ronde · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (telt nu alleen andere bestellingen: "N× eerder door dit merk")
+- O8 (opmerking) · tijdlijn privélink · revisie-ingediend, "geen nieuw beeld nodig" en de herlevering staan alle drie onder de kop "Geleverd" · open (klein; voorstel: kop "Revisie" voor die drie gebeurtenissen)
+- O9 (opmerking) · tevredenheid met toelichting · "we hebben het gelezen" direct na versturen klopt niet · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy ("het staat bij ons in de inbox. Een specialist leest het…")
+- O10 (opmerking) · lage score + toelichting geeft twee adminmails binnen 15 s ("Lage score…" en "Klacht…") · open — mijn advies: zo laten, de tweede heeft de tekst; samenvoegen kost een wachttijd
 - O5 (opmerking) · admin "Wat de klant koos": KANALEN "own" (id i.p.v. "Eigen webshop"); upsell "Elke maand hetzelfde? Dat is 48 credits" telt de extra hoeken niet mee · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (kanaalnamen + credits tellen extra hoeken en 4K mee)
-- O4 (opmerking) · Studio-404 (/account/profile) heeft geen menu en de paginatitel is een hele zin · Studio "Je gegevens": telefoon "optioneel", in het bestelformulier verplicht · 404: hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (titel "Pagina niet gevonden", /account/profile → je gegevens); telefoon: besluit van Lucas (mijn advies: in het formulier ook optioneel, WhatsApp-klanten geven hem toch)
+- O4 (opmerking) · Studio-404 (/account/profile) heeft geen menu en de paginatitel is een hele zin · Studio "Je gegevens": telefoon "optioneel", in het bestelformulier verplicht · 404: hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (titel "Pagina niet gevonden", /account/profile → je gegevens); telefoon: besluit Lucas (2 okt) verplicht — Studio nu ook verplicht met dezelfde vormtoets, hint legt uit waarom; wacht op deploy
 - O3 (opmerking) · lifestyle "Wat je krijgt" toont een plaatshouder (lifestyle-band-04, oude foto die nog vervangen moet worden — scripts/plaatshouders.mjs) · admin: het vak "Deze bestelling is nog nooit gemeld — 4 beelden klaar" ziet eruit als een invoerveld · bedanktpagina: "Extra foto's sturen" opent WhatsApp zonder dat de knop dat zegt · admin-zin en WhatsApp-knop hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy; de plaatshouderfoto vraagt een echte foto van Lucas
 - O1 (opmerking) · bevestigingsmail met "Te betalen €107,69" en betaallink komt 40 s vóór "Betaling ontvangen" — wie meteen betaalt, krijgt eerst een betaalverzoek. Twee termen voor hetzelfde: "revisieronde" (mail 1, portaal) en "correctieronde" (mail 2) · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy ("Net al betaald?"-regel bij de betaalknop; overal "revisieronde" — "correctieronde" blijft alleen voor het ontwerp van een merkmodel/eigen look)
 - O2 (opmerking) · modelkeuze laadt 800px-beelden voor tegels van 64px (traag op telefoon; tegels eerst grijs) · hersteld in de map (2 okt), getest in de testomgeving — wacht op deploy (srcset 160/380/800, gemaakt met kladblok/_r9-w160.mjs)
@@ -193,6 +282,7 @@ Vorm: F-nummer · waar · wat er gebeurt · ernst (hoog/middel/laag) · status.
 - Portaal: achterkant, detail, op model goedgekeurd; lege revisieronde → F13; voorkant "niet goed" met notitie → "We hebben je revisieronde" (klant) + "Revisieronde · VIS-CVL5-CZP · 1 beeld" (hello@) 03:24.
 - Admin: revisie via dashboard vervangen, gemeld met notitie → "Je revisie staat klaar" 03:26. Klant keurt goed → tijdlijn "Alle beelden goedgekeurd — bestelling afgerond"; tevredenheid 4/5 en testcitaat (gemarkeerd TEST, niet plaatsen) → admin toont "Tevredenheid: 4/5". Factuur PROEF-2026-0015 €89 + €18,69 = €107,69.
 - Oude privélink uit de bevestigingsmail werkt na levering nog steeds.
+- Aanvulling 2 okt middag: eerste indruk op 390 (testomgeving, zelfde code als live — Chrome op Lucas' computer gaat niet smaller dan ±500 px): kop "Al je productbeelden. Zonder shoot.", zin eronder en twee knoppen (Start een bestelling / Probeer VISUAILS · €1) staan boven de vouw — wat en wat te doen is in één zin te zeggen; WAT HET KOST niet (alleen de €1-proef). Menuknop leeg → F32. Terugknop/verversen op live → F33. Dubbelklik op "Bestellen en betalen" (testomgeving): één bestelling, niet twee.
 
 ### 2 · Oudere boetiekeigenaar (hello+boetiek@)
 - Contactformulier (nieuwe bestelling, voorkeur e-mail) → bedankpagina; "We hebben je bericht" (klant) + "Contact — Ingrid Boetiek · Nieuwe bestelling" (hello@, antwoordadres = klant) 03:09.
@@ -201,10 +291,166 @@ Vorm: F-nummer · waar · wat er gebeurt · ernst (hoog/middel/laag) · status.
 - Admin (order 81): 9 losse bestanden geüpload → indeling met de hand (beeld 1/2/3 → voor/achter/detail, F17) → geleverd 03:31.
 - Studio via inloglink (niet de code): product 1 in één klik goedgekeurd; revisie op product 2 beeld 2 met controlepagina "Je revisieronde nakijken" (goed) → rest goedgekeurd → admin vervangt via het vakje en meldt → klant keurt goed → 5/5. Gegevens stonden opgeslagen in "Je gegevens".
 - 7 mails voor dit adres, alle in de goede volgorde.
+- Aanvulling 2 okt middag: leesroute op 1280 (home → /nl/lifestyle → /nl/lifestyle/dunes → prijzen → FAQ): elke pagina zegt bovenaan wat het is en heeft één duidelijke knop; niets horizontaal scrollen. Klein: tekst in de nagebootste webshop/Instagram-post in de beelden is 7–10 px (decor, geen leestekst) — zo laten.
+
+### 3 · Drukke webshop (hello+webshop@)
+- Bestelling eerder vastgelegd: VIS-VS4X-BRJ (order 82), 12 producten, vaste leverdatum 8–9 okt, driekwart + flat-lay, eigen kleur #E8F0EA, Ava, map-upload; eerste betaling verlopen → later via de betaallink €740,52 (F25: hoeken niet berekend; extra_slots wél opgeslagen, dus het bord toont ze — ik heb ze geleverd, zoals ik Lucas adviseerde bij een echte klant).
+- Na deploy (2 okt, 15:40): bord toont 6 vakjes per product (Voorkant/Achterkant/Detail/Op een model/Driekwart/Flat-lay) → F17 klopt op live. Hele werkmap als map geüpload (72 bestanden, mappen p1…p12 met `5 driekwart [extra1]`/`6 flat-lay [extra2]`) → "72 van 72 vakjes gevuld", elk in het juiste vak. Admin-zin "nog nooit gemeld" is geen invoerveld meer (O3 klopt op live).
+- "Op geleverd zetten en klant mailen" → Gmail "Je bestelling staat klaar — VIS-VS4X-BRJ" 15:40:41; tekst zegt "revisieronde" (O1 klopt), geen HTML-commentaar in de bron (F8 klopt).
+- Privélink: p10 staat na p9; "Eén map per product, met elk beeld zoals we het leverden (JPG)" (F16 klopt). Revisieronde op p3-voorkant en p5-detail met notitie → klant "We hebben je revisieronde" 15:42:02, hello@ "Revisieronde · VIS-VS4X-BRJ · 2 beelden" 15:42:02.
+- Admin-dashboard: kaarten "Product 3 · Voorkant" en "Product 5 · Detail". p5: **"Geen nieuw beeld nodig"** met reden → klant "Antwoord op je revisie" 15:42:30. p3: vervangende foto via de kaart → bestelpagina, gemeld met notitie → klant "Je revisie staat klaar" 15:43:09 ("2 revisies opgepakt en 1 nieuw beeld").
+- Privélink daarna: "Je revisieronde is verwerkt", p3-voorkant op zijn eigen plek (F15 klopt op live).
+- Studio (inlog met code 15:44:02): tegel "Bij ons in de maak" (F10 klopt), "Keur alle 72 resterende beelden goed" → afgerond, "Nu: Deze bestelling is afgerond…" (F19 klopt), tevredenheid 3/5 met toelichting (TEST — niet plaatsen) → hello@ "Lage score…" 15:45:45 en "Klacht bij VIS-VS4X-BRJ — 3/5" 15:45:59; admin toont "Tevredenheid: 3/5" met de tekst. Factuur PROEF-2026-0017 €740,52 in Studio en op de bestelpagina.
+- Niet gedaan zonder toestemming: zip en factuur-pdf openen (dat is een download op Lucas' computer).
+- Bevindingen: F30, F31, O6–O10.
+
+### 4 · Wantrouwige klant (hello+twijfel@)
+- WhatsApp-knoppen op 14 pagina's (NL/EN) via de broncode: overal 31625436130; drijvende knop "vraag over jullie beelden", per pagina een passende tekst op video/contact/start. Eén tekst "laten fotograferen" → O11.
+- Contactformulier (Anders, voorkeur WhatsApp, vraag over AI-training) → bedankpagina → Gmail "We hebben je bericht" (klant, "We antwoorden via WhatsApp, meestal binnen het uur") en "Contact — Tim Twijfel · Anders" (hello@) 16:26. Tijdsbelofte → O12.
+- Studiobrief in de voet → "Je staat erop" → "Je staat op de lijst voor de Studiobrief" (klant) + "Studiobrief — hello+twijfel@" (hello@) 16:26. Honeypot correct verborgen (aria-hidden, buiten beeld). Geen afmeldlink → F34.
+- Juridisch: /nl/ai-act, /nl/terms, /nl/privacy, /nl/data-processing-agreement en de Engelse: "Laatst bijgewerkt: oktober 2026", KVK 99742993, btw NL005407575B96. Cookiebeleid staat op /nl/cookie-policy.
+- Lifestyle Phone-made, 1 product (gebreide trui), Rae, uitgelogd: stap 5 "€109 · Je betaalt bij Mollie €131,89 incl. 21% btw" (F7 klopt op live), strook met eigen foto (F6 klopt), geen leverdatumzin (F3 klopt), geen hoekzin op de kaart (F2b klopt) → VIS-707W-WVL. Mollie €131,89 → iDEAL "Mislukt" → terug → "De betaling is niet afgerond" + "Opnieuw betalen" → betaald. Geen "Je bent ingelogd" (F28 klopt).
+- Mails: "We hebben je bestelling" 16:29 met Look/Gezicht/Beeldverhouding (F12 klopt), "Net al betaald?" (O1), knop "Bekijk je bestelling" (F9); "Betaling ontvangen" + PROEF-2026-0018 16:31; hello@ "Betaald · VIS-707W-WVL · € 131,89". Geen adminmail over de mislukte poging (Mollie-testmodus laat die poging open staan).
+- Admin (order 83): "0 van 3 vakjes", Beeld 1/2/3 (F17 klopt bij lifestyle op live); map met `1 beeld-1`… → 3 van 3 → geleverd → "Je bestelling staat klaar" 16:32.
+- Studio: verkeerde code → "Die code werkt niet (meer)…"; juiste code → overzicht. Product toont "Beeld 1/2/3" en "Wat jij stuurde: Voorkant/Achterkant/Detail". "Alle 3 zijn goed" → afgerond → 5/5 met citaat (TEST — niet plaatsen) en toestemming → /admin/testimonials: goedgekeurd → nergens op de site (O15) → goedkeuring weer ingetrokken.
+
+### 5 · Engelse klant buiten de EU (hello+uk@)
+- /start/catalog (EN), 5 producten: "€65 per product × 5 = €325" (pricing.js-trede 5–9 klopt). 15 foto's in één keer op naam (tee-black-front.jpg …) → elk in het goede vak. Klant Test Threads Ltd, GB, testadres "1 Test Street, AB1 2CD Testbury", geen btw-nummer, registratienummer optioneel.
+- Stap 5: "YOU PAY AT MOLLIE €325 — no Dutch VAT outside the EU" (F7 klopt, ook buiten de EU). Mollie in het Engels, €325.00; geen iDEAL voor GB (terecht) → PayPal-test "Paid" → "PAID — WE ARE ON IT." → VIS-U0W1-PIG.
+- Mails, allemaal Engels: "We've got your order" 16:47 (Face/Background/Image shape, "no European VAT", "Already paid?"), "Payment received" + PROEF-2026-0019 16:47 ("outside the scope of European VAT"), "Your order is ready" 16:48, "We have your revision round" 16:49, "Your revision is ready" 16:49. Admin-mails Nederlands ("btw outside_scope tegen 0%, reden non-eu").
+- Admin (order 84): map met 20 bestanden → 20 van 20 → geleverd. Revisie p2-achterkant: de notitie van de klant staat bij het vakje (F14 klopt op live) → vervangen → gemeld.
+- Privélink (ander tabblad): Engels, revisieronde verstuurd. Studio: inlog → Nederlandse code-pagina en -mail → **F35**. Daarna Engels: "Approve all 20 remaining images" → afgerond, "This order is complete" (F19), 4/5. Invoices: PROEF-2026-0019, "Outside European VAT", €325.00.
+
+### 6 · EU-bedrijf (hello+eu@)
+- /start/catalog (EN), 3 producten, Testmode GmbH, DE, testadres. Een btw-nummer met een ongeldige vorm → geblokkeerd (terecht). DE123456789 → VIES bevestigt niet ("VIES: niet bevestigd — er is Nederlandse btw gerekend" in admin) → 21% op de som, geen betaalknop, bedanktpagina "There is no payment button yet…" onder de kop "Thanks — we have your request." → **O19**.
+- /admin/vat: bestelling staat erin. Afwijzen → klant krijgt "A question about your VAT details" (met aanhef), bestelling naar het blok AFGEWEZEN — WACHT OP CONTACT; op het scherm geen melding → **O20**. Daarna goedkeuren → "Your order has been checked": "Everything is in order", €323,07, geen aanhef → **F37**, **O21**.
+- Betaallink → Mollie (geen iDEAL voor DE, terecht) → PayPal-test "Paid" → "Payment received" + PROEF-2026-0020.
+- Admin (order 85): 12/12 geleverd → "Your order is ready" 17:05. /admin/orders/85 → "Niet gevonden" → **O22**.
+- Studio (EN): inlog Nederlands → F35 (al hersteld, wacht op deploy). "Approve all 12 remaining images" → "This order is complete", 4/5 → admin "Tevredenheid: 4/5".
+- Factuur: /account/invoices PROEF-2026-0020 €323,07. /admin/facturen: Testmode GmbH · DE · DE123456789 · NL 21% · €267,00 + €56,07 = €323,07 (klopt: 21% van 267 = 56,07). Pdf zelf niet geopend (wacht op toestemming download).
+
+### 7 · Bureau (hello+bureau@, desktop, NL)
+- /nl/video: eerste beeld kort zwart tot de laptopfoto laadt (1–2 s), daarna goed. /nl/start/video: "In aanbouw", formulier zonder upload. Motion, 2 clips, merk "Merk Alfa (TEST)", dubbelklik op versturen → één bestelling (VIS-DIB7-TE4, order 86). Bedanktpagina: "Bevestiging verstuurd naar hello+eu@" → **F38**.
+- Mails 17:30: "We hebben je aanvraag" ("aanvraag voor Video", zonder soort/aantal → **O23**), admin "Nieuwe aanvraag · Video" met kop "Nieuwe Video-bestelling … wachtrij" (**O23**).
+- Admin: offerte €138 (2 × €69 uit pricing.js, volledige prijs) → "Je offerte" 17:31, €166,98 incl. €28,98 btw, zonder aanhef (O21). Betaallink → Mollie "VISUAILS — 1 videoclip" (**F39**) → iDEAL ING Betaald → "Betaald — we gaan aan de slag" (weer hello+eu@ → F38) → "Betaling ontvangen" + PROEF-2026-0021 17:33, "Een specialist maakt je beelden", geen woord over foto's sturen (**F40**). Privélink: "zo snel mogelijk … standaard levertijd" (**F40**).
+- Eigen look, zelfde e-mail, merk "Merk Beta (TEST)" (VIS-KO8M-2PC, order 87): lege "Beschrijf de wereld" → eigen foutmelding (goed). Mails: "aanvraag voor Aanvraag op maat" (**O23**). Admin: leeg bedrag geweigerd door het veld; aanbetaling €100 → "Je offerte" met aanbetalingstekst (goed), €121,00. Betaallink → Mollie "VISUAILS — 1 product, undefined" (**F39**). Niet betaald (zoals de prompt vraagt).
+- Studio (code-inlog): beide bestellingen, geen merknaam per kaart, zijbalk "Merk Beta (TEST)" (**O25**); eigen look "Wacht op betaling" zonder knop (**F41**); "Aanvraag op maat" (**O23**).
+- Levering video: twee testclips (webm, in de browser gemaakt) via losse upload → "2 geleverd bestanden hebben nog geen product of foto" (**O27**), "Betaald: €138.00" (**O26**) → op geleverd + mail "Je bestelling is klaar — 2 beelden" 18:01 (**O28**). Privélink: clips als lege tegels (**F42**); beide goedgekeurd, 5/5. Oude privélink uit de eerste mail werkt nog (goed).
+- Factuur (pdf in admin, inline bekeken, niets gedownload): PROEF-2026-0021, VISUAILS-gegevens compleet, "Video — 1 product" (**F43**), geen adres afnemer (**F44**), €138 + 21% = €166,98 (klopt). PROEF-2026-0020 (klanttype 6) ook bekeken: Testmode GmbH, Teststraße 1, 12345 Teststadt, DE, btw-nummer klant, 21% — klopt.
+- Testomgeving: kladblok/_r9-bureau.mjs en _r9-bureau2.mjs spelen F38–F41, O23, O25 na (bedankpagina leeg i.p.v. vorig adres; kaartkoppen "Merk Alfa · Video" / "Merk Beta · Eigen look" met betaalknop; Mollie "VISUAILS eigen look VIS-…"; betaalmail met aanhef en fotozin; portaal "binnen de levertijd uit de offerte").
+
+### 8 · Merkmodel-klant (hello+model@, telefoon in de testomgeving / desktop live, NL)
+- /nl/start/brand-model: € 450 excl. btw (pricing.js AMOUNT.brandModel ✓). Route "Ik weet wie": acht vragen ✓; terug, route "Bedenk het voor mij": vier vragen ✓, antwoorden bleven staan bij terug. Lege verplichte vraag → eigen melding (goed).
+- Typische fout: telefoon "0612" → stap 4 laat het door, verzenden → ?error=phone, alles leeg, geen melding (**F45**). Tweede keer goed ingevuld → Mollie € 544,50 ("VISUAILS merkmodel") → iDEAL Betaald → bedanktpagina "maken je visuals", levertijd, hello+eu@ (F38, **O30**). Mails 18:31–18:32: "We hebben je bestelling" (merkmodeltekst goed, maar "1 revisieronde per bestelling" — O30), "Betaling ontvangen" + PROEF-2026-0022 ("per beeld goedkeuren" — O30), admin "Nieuwe bestelling · Merkmodel" met de briefing.
+- Admin order 88: geen briefing (**F47**). Klantpagina → Eigen modellen → "Mila (TEST)" met een testfoto (grijs silhouet, geen echt gezicht) → "in ontwerp"; Studio toont "In de maak". Vastgelegd → geen mail, bestelling blijft "Ontvangen" (**F48**).
+- Bestelling met het merkmodel: /nl/start/catalog toont tegel "Van jou — Mila (TEST)", gegevens vooringevuld behalve KVK (O33). 1 product, € 89 → € 107,69 (pricing.js ✓), VIS-SI9X-HKG. Admin: "Gezicht c5 — eigen merkmodel", bord "c5 (eigen)" (**F49**). 4/4 geleverd → "Je bestelling staat klaar — 4 beelden" 18:41, Studio: 4 goedgekeurd, 4/5. Bevestigingsmail noemt "Je eigen merkmodel" (goed).
+- Testomgeving: kladblok/_r9-f45.mjs (telefoon geweigerd in stap 4; ?error=email → antwoorden terug, route terug, melding, cursor in het veld) en _r9-merkmodel.mjs (bedanktpagina merkmodeltekst zonder levertijd, briefing in admin, vastleggen → mail "Je merkmodel staat klaar — Mila (TEST)" + bestelling afgerond, tweede keer geen mail, gezicht met naam en foto).
+
+### 9 · Abonnee (hello+abo@, desktop, NL) — nog niet afgerond
+- /nl/plans: Starter 45 credits € 390, Pro 120 € 790, Merk 290 € 1.690, op maat vanaf € 272; per-creditprijzen, "los" en besparingen kloppen met pricing.js/plans.js (11 × € 51 = € 561, 30 × € 39 = € 1.170, 72 × € 39 = € 2.808). /nl/start/plan?plan=studio: 12 maanden € 790 met 3 maanden doorschuiven en prijsslot; vooruit € 658/mnd, € 7.900 in één keer, bespaart € 1.580 (= 2 maanden) — klopt. Stap "Bevestigen" noemt alleen "€ 790 excl. btw" (zoals O29).
+- Pro maandelijks afsluiten, niet ingelogd → na "Doorgaan naar betalen" het inlogscherm, geen klant aangemaakt; ook met hello+abotest@. Netwerk: POST /api/plan → /account/plan → /account/login. Oorzaak gevonden → **F50**. Kan op live pas verder na de deploy (alle testadressen zijn plus-adressen van hello@).
+- Testomgeving: kladblok/_r9-f50.mjs — basis- en plus-adres krijgen elk hun eigen klant en gaan naar Mollie; tweede aanmelding op een adres met een lopend abonnement → ?fout=bestaat met uitleg, antwoorden staan er nog.
+
+### 10 · Boze klant (hello+boos@, desktop live, NL)
+- Catalog 2 producten (jas-rood, broek-blauw), 6 foto's op naam → elk in het goede vak; zonder gezicht kiezen → "Kies wie het draagt" (goed). € 178 → € 215,38 (pricing.js ✓), VIS-GCT2-5QF, PROEF-2026-0024. Geleverd 8/8 via mapupload (melding herkomsttag = F30) → "Je bestelling staat klaar — 8 beelden" 19:26.
+- Privélink: revisieronde zonder notitie → browser weigert (verplicht veld, standaardmelding van de browser — de privélink draait zonder script). Drie beelden + boze notitie → "We hebben je revisieronde" (klant) en "Revisieronde · 3 beelden" (hello@) 19:26. Eén ingetrokken → beeld weer goed te keuren, dashboard toont 2 revisies (goed); blok zegt nog "3 beelden" (O35).
+- Admin: p1-voorkant vervangen + "1 nieuw beeld melden"; p2-voorkant "geen nieuw beeld nodig" met reden. Tegoed € 25 met kenmerk als bestelling → geweigerd (**F51**); met nummer 90 → saldo € 25,00. Studio-overzicht toont "Tegoed op je account € 25,00".
+- Tweede bestelling ingelogd, 1 product: stap 5 "Je betaalt bij Mollie € 107,69" + losse tegoedzin (**F52**); Mollie vroeg € 82,69 (goed). VIS-X07I-FXT, tegoed afgeboekt (−€ 25 "Verrekend met VIS-X07I-FXT"), factuur PROEF-2026-0025: totaal € 107,69, "Verrekend tegoed −€ 25,00", betaald € 82,69 — klopt.
+- "Na de termijn nog iets vragen": de termijn is 7 dagen na levering en is live niet na te spelen. Na de ronde zegt de privélink "het formulier is dicht — wij niet … stuur ons een bericht"; de verlopen toestand zelf wordt gedekt door test:termijn en test:revisieronde (groen).
+- Testomgeving: kladblok/_r9-f52.mjs — stap 5 "Je tegoed — − €25: je betaalt bij Mollie €82,69".
+
+### 11 · Annuleerder (hello+annuleer@, desktop live, NL)
+- VIS-E5MX-LVT (1 product, € 107,69) niet betaald → in admin geannuleerd met reden → mail "Je bestelling VIS-E5MX-LVT is geannuleerd". Nog eens annuleren → "Deze bestelling was al geannuleerd — er is niets nog een keer gedaan." Heropenen via de statusknop → "Een geannuleerde bestelling gaat niet terug naar een andere status." Oude betaallink (/api/order-pay) → bedanktpagina "Deze bestelling is geannuleerd". De oude Mollie-checkout tóch betaald → automatisch teruggestort, mail "We storten € 107,69 terug" (goed); bedanktpagina zei "Er valt niets meer te betalen" (O37).
+- VIS-KEY6-QTI betaald (iDEAL test, € 107,69, PROEF-2026-0026) → annuleren zonder keuze → browser weigert (reden en geldkeuze verplicht, goed) → met "Terugbetalen" → mail "Je bestelling VIS-KEY6-QTI is geannuleerd" met "Je hebt € 107,69 betaald. Dat bedrag storten we terug … De creditnota mailen we je zodra de terugbetaling bevestigd is." (goed). Tijdlijn: "We betalen € 107,69 terug." Studio: kaart GEANNULEERD, factuur blijft onder Facturen (goed), maar de Nu-regel zegt niets over het geld (F53). Admin: uploadblok nog open (O36), label BETAALD + "geld terug" (F53).
+- Creditnota: Mollie bevestigde na 11 minuten; creditnota PROEF-2026-0027 (€ 107,69, "Crediteert factuur PROEF-2026-0026", reden erbij) uitgereikt en gemaild als "Je creditnota — VIS-KEY6-QTI" met pdf; staat in /admin/facturen als −€ 89,00 / −€ 18,69. Klopt.
+- Testomgeving: kladblok/_r9-annuleer.mjs — admin "terugbetaling aangevraagd bij Mollie …", upload 409, Studio "Je betaling komt terug …", na bevestiging "is teruggestort" / "terugbetaald, door Mollie bevestigd"; betalen na annuleren → bedanktpagina "Je betaling kwam binnen nadat …".
+
+### 12 · WhatsApp-klant via admin (hello+whatsapp@, desktop live, NL)
+- /admin → Klanten → Nieuwe klant: "NL" weggehaald en "Nederland" getypt → veld hield "Ne" → klant #112 aangemaakt met land NE (Niger) zonder enige waarschuwing (**F54**). Bestelling namens hem met 3 WhatsApp-foto's → VIS-GHMD-IFQ, "Niet belastbaar in NL · NE", € 89,00 zonder btw; bevestigingsmail "Je zit buiten de EU". Klantpagina toont geen land en "Gegevens corrigeren" heeft geen adres/land. Hersteld door de klant opnieuw aan te maken met "NL" (bestaand, niet-geverifieerd account wordt bijgewerkt); GHMD geannuleerd.
+- Tweede bestelling namens hem, zonder foto's → VIS-MT7Y-BNV, € 107,69 incl. 21% (pricing.js ✓), KVK → geen btw-lijst, mail met betaallink. Mail, privélink en Studio zeggen niets over foto's; Studio "Geen foto's bij deze bestelling." zonder uploadmogelijkheid (**F55**). Admin noemt de eigen notitie "Bericht van de klant" (O39).
+- Studio-login met code, "Nu betalen" → Mollie iDEAL test → terug op de kaart: nog "Nog niet betaald" + betaalknop tot de webhook (O40). Betaald 18:35, PROEF-2026-0028 (Teststraat 1, 1234 AB Teststad, NL, 21% — klopt).
+- Admin: 4 beelden via mapupload (melding herkomsttag = F30) → "Op geleverd zetten en klant mailen" → Studio: GELEVERD, product goedgekeurd → "Deze bestelling is afgerond", score 5/5 → bedankblok met Google/Trustpilot en toestemmingsvinkje (goed).
+- Testomgeving: kladblok/_r9-f54.mjs (keuzelijst, NE geweigerd, land en adres te corrigeren, onbekende code zichtbaar) en kladblok/_r9-f55.mjs (mail met fotozin, Studio-blok, 3 foto's → "3 foto's toegevoegd", rijen in files, tijdlijn, studiomail "Foto's binnen", andermans bestelling → terug naar het overzicht).
+
+### 13 · Toetsenbordgebruiker (testomgeving, 1280, NL — alleen toetsen)
+- kladblok/_r9-toetsenbord.mjs + _r9-toetsenbord-studio.mjs: geen klik en geen fill, alleen Tab/Shift+Tab/Enter/Spatie/pijltjes en typen. Bij elke focusstop gecontroleerd of er een zichtbare focusrand is.
+- Stap 1: "Naar de inhoud" is de eerste stop (goed). Verder zonder aantal → blijft op stap 1, focus springt naar "Hoeveel producten?" (goed). Achtergrond: summary met Enter open, pijl rechts kiest "Gebroken wit" (goed).
+- Stap 2: focus naar de kop "Stuur de productfoto's" (goed). Fotovakjes zijn knoppen; Enter/Spatie opent de bestandskiezer (in headless Chromium soms pas de tweede keer — dat is de testbrowser, niet de site). Na de derde foto klapte de kaart dicht en viel de focus weg (**F56**). Productnaam: focus nauwelijks zichtbaar (O42). Model: Tab komt op de eerste tegel, Spatie kiest (goed); vergeten → "Kies wie het draagt …" met focus op de tegel (goed).
+- Stap 3: velden in logische volgorde; land staat leeg, typen "Nederland" in de keuzelijst kiest NL (goed). Stap 5: vinkje met Spatie, "Bestellen en betalen" met Enter → /api/order 200 → nep-Mollie met Enter → "Betaald — we gaan aan de slag."
+- Studio: inloggen met code (Enter verstuurt), navigatie naar Bestellingen, product openklappen (Enter op de summary), "Alle 4 zijn goed — keur dit product goed", score 5, "Download de map" bereikbaar. Geen enkele focusstop zonder zichtbare rand, behalve de productnaam (O42).
+
+### 1 · aanvulling (testomgeving, 2 okt avond) — de klant die veel terugklikt, en de zip
+- kladblok/_r9-terug.mjs: terugknop op stap 2 → formulier weg (F58, hersteld: nu stap 1 met aantal en foto's nog erin, vooruit weer stap 2); verversen → stap 1, leeg (O47); dubbelklik op "Bestellen en betalen" → één bestelling (goed); terug vanaf de bedanktpagina → de (nep-)betaalpagina van dezelfde betaling (goed, Mollie zegt dan dat hij al betaald is).
+- Zip uit Studio (/account/orders/…/zip): 200, VISUAILS-VIS-….zip, LEESMIJ.txt + LICENTIE.txt + 4 jpg's in één map — leesmij beschreef productmappen en formaatmappen die er niet zijn (F57, hersteld).
+
+### 14 · Tabletgebruiker (hello+tablet@, 768 × 1024 touch in de testomgeving; keten live)
+- Testomgeving (kladblok/_r9-tablet.mjs): lifestyle Glow, 2 producten. Geen horizontale scroll op stap 1, 2, 3, 5 en de bedanktpagina (scrollWidth 768). Stap 2 toont op deze breedte de rij met één product tegelijk ("02 / 02", pijlen), stap 3 en 5 netjes in twee kolommen. € 109 × 2 = € 218, bij Mollie € 263,78 (pricing.js ✓).
+- Live: /nl/start/lifestyle/?style=glow → Glow staat gekozen, 2 producten, 3 foto's per product, model "wij kiezen", NL zonder btw-nummer met KVK → VIS-S0SU-I64, iDEAL test € 263,78 → PROEF-2026-0029 (Lifestyle — 2 producten, € 218 + € 45,78 — klopt; O45). Admin: 6 vakjes via mapupload, "Op geleverd zetten en klant mailen" → "Je bestelling staat klaar — 6 beelden" (O6 staat nog live).
+- Privélink: revisieronde zonder vinkje → nette weigering, tekst weg (O43); met p2-beeld-2 en toelichting → "Je revisieronde ligt bij ons". Admin: vak p2/achterkant vervangen, "1 nieuw beeld melden" → "Gemaild". Privélink: "Je revisieronde is verwerkt … staat hieronder" (O44), 6 × goedkeuren (één voor één — F31 staat nog niet live), score 4/5, testimonial "TEST — niet plaatsen" met toestemming → "We kijken ernaar voordat we het plaatsen." Admin toont "Tevredenheid: 4/5".
+
+### Stap 2 · Bestelmatrix (testomgeving, 2 okt avond)
+- kladblok/_r9-matrix.mjs — per cel een bestelling, bedrag naast pricing.js:
+  - catalog × 1 / 4 / 5 / 9 / 10 / 19 / 20 → € 89 / 356 / 325 / 585 / 510 / 969 / 780 netto, 21% btw — klopt; vanaf 10 de stap "Levertijd" met de agenda (tier attended), daaronder niet. Meer dan 20 → het formulier stopt en wijst naar contact (klanttype 3).
+  - lifestyle Dunes / Flash / Glow / Phone-made × 1 → € 109 — klopt. Lifestyle × 2 + 1 outfit → € 268 (2 × 109 + 50) — klopt; catalog heeft geen outfitvraag (bewust). Lifestyle + 4K → € 118 — klopt. Catalog + driekwart → € 128 (89 + 39) — klopt; een extra hoek vraagt een eigen foto ("Mist driekwart" tot die er is) — bewust. Voorrang → € 138.
+  - NL zonder KVK → stap 3 houdt tegen ("Een KVK-nummer heeft 8 cijfers …"). DE met geldig nummer → 0% verlegd. BE met ongeldig nummer → 21% en op de btw-lijst. US → 0% buiten de EU. Particulier: zonder het vinkje "Ik bestel voor mijn bedrijf" gaat de knop niet; zou het toch binnenkomen, dan gaat het naar de btw-lijst (server, bewust geen weigering).
+  - Betalen mislukt / verlopen / geannuleerd → bedankpagina "De betaling is niet afgerond." met opnieuw-betalen, bestelling blijft onbetaald. Later via link: klanttype 11/12. Tegoed deels: klanttype 10; volledig (€ 200 tegoed, € 107,69 bestelling) → geen Mollie, "Betaald — we gaan aan de slag.", saldo € 92,31 — klopt.
+- kladblok/_r9-matrix-catalog.mjs — achtergrond gebroken wit / beige / eigen kleur, verhouding 4:5 / 3:4 (16:9 en 9:16 zijn bij catalog uitgeschakeld — bewust), model Ava: alles komt goed in het dossier en in /admin. Kanalen: alleen het laatste vinkje bleef over (**F59**); eigen kleur heette "custom" (O48).
+- Uploads: 26 MB → "Te groot — 25 MB per bestand is het maximum"; pdf → "Geen beeld dat we kunnen lezen. JPG, PNG, …"; HEIC → "Verstuurd"; zonder voorkant verder → "1 product is nog niet af … Je kunt de bestelling toch versturen" (bewust).
+- /start: elke kaart leidt naar de juiste plek (catalog/lifestyle via de looks, video- en eigen-lookaanvraag, abonnement, merkmodel, €1-proef, WhatsApp). /hooks en /editions: "Praat met ons" → contact, Editions ook de Studiobrief; geen bestelknop voor iets wat er nog niet is — klopt met wat de pagina belooft.
+- Twee tabbladen tegelijk: elk tabblad een eigen batch en een eigen bestelling (gezien bij de dubbelklik-test: één klik = één bestelling; twee tabbladen = twee); niets loopt door elkaar.
+
+### Stap 3 · Contact (testomgeving, 2 okt avond)
+- kladblok/_r9-contact.mjs: vier onderwerpen (Vraag over een bestelling / Nieuwe bestelling / Iets op maat / Anders) × voorkeur e-mail/WhatsApp → bedankpagina "Bedankt — we hebben je bericht.", studiomail "Contact — naam · onderwerp" met antwoordadres = de klant, klantmail "We hebben je bericht". Honeypot gevuld → geen mail, wel dezelfde bedankpagina (goed: een bot leert niets).
+- WhatsApp: alle 90 pagina's uit sitemap.xml hebben een WhatsApp-link, één nummer (31625436130, 496×), tekst in de taal van de pagina en per pagina passend (privacy, voorwaarden, AI Act, video, proef, start, bestelformulier "kom er niet uit", "meer dan 20 producten"). Geen afwijkingen.
+- Mailadressen: klantmails komen van orders@ met antwoordadres hello@ (mail.js, standaard); studiomails hebben de klant als antwoordadres — een "beantwoorden" komt dus altijd bij de juiste persoon.
+- Studiobrief: aanmelden op /editions → "Je staat op de lijst voor de Studiobrief" met afmelden-als-mailto en een List-Unsubscribe-kop, studio krijgt "Studiobrief — adres". De brief zelf (met de afmeldlink van Resend) is niet na te spelen zonder een echte broadcast.
+- "Vraag een specialist": onder elke bestelkaart in Studio, WhatsApp met het kenmerk erin en mailto met het kenmerk als onderwerp (klanttypes 11–14).
+- Fotogids: /downloads/visuails-fotogids-nl.pdf en -en.pdf (200, application/pdf), gelinkt vanaf /upload-guidelines — inhoud week af van het formulier (**F61**).
+
+### Stap 4 · VISUAILS Studio (testomgeving, 2 okt avond)
+- kladblok/_r9-studio.mjs — inloggen: onbekend adres geeft hetzelfde "Check je e-mail" als een bekend adres en verstuurt niets (geen lek). Zes keer een verkeerde code → steeds "Die code werkt niet (meer) — een code is 10 minuten geldig. Gebruik de link in dezelfde mail, of vraag hieronder een nieuwe aan."; na vijf pogingen werkt ook de goede code niet meer (bewust; de zin wijst naar de link of een nieuwe code). De inloglink uit dezelfde mail werkt op een tweede apparaat en blijft een uur bruikbaar (zoals de mail zegt). /account/invoices zonder sessie → login → na de code terug op /account/invoices. Uitloggen op apparaat A → A naar /account/login, apparaat B blijft ingelogd (sessie per apparaat, goed).
+- Elk scherm (overzicht, bestellingen, facturen, gegevens, vaste look, abonnement) op 1280 en 390: geen horizontale scroll, geen lege blokken; op 390 viel de actieve tab buiten beeld (O49).
+- kladblok/_r9-studio-staten.mjs — elke status via de database gezet en de kaart gelezen: onbetaald (knop + "nog niet betaald"), btw-lijst (O50), betaald, in productie, in controle, geleverd, afgerond, geannuleerd + tegoed / + terugbetaald (F53), terugbetaald zonder annuleren, beelden verlopen (O51). Teksten kloppen per status.
+- kladblok/_r9-studio-thema.mjs — "Donker scherm" en "English" onderaan: blijven staan over pagina's heen, en terug naar licht/Nederlands werkt.
+- kladblok/_r9-studio-gegevens.mjs — btw-nummer NL123 → "past niet bij het land … De rest is opgeslagen" (oude waarde blijft); NL123456789B01 → "Opgeslagen". E-mail wijzigen → "Kijk in het nieuwe postvak …", mail "Bevestig je nieuwe e-mailadres" naar het nieuwe adres, link → "Je nieuwe adres is bevestigd … We hebben je oude adres een bericht gestuurd".
+- Vaste look en de abonnementstabbladen met een lopend abonnement: wacht op klanttype 9 (F50).
+
+### Stap 5 · /admin (testomgeving + live, 2 okt avond)
+- kladblok/_r9-admin-crawl.mjs — elke pagina uit het menu (dashboard per status, planning, klanten, maandset, aanbevelingen, btw, facturen, trechter, berichten, logboek, twee stappen, diagnose) en vijf bestelpagina's, op 1280 en 390: allemaal 200, geen consolefouten, geen horizontale scroll, geen Engelse knoppen of koppen. Donker thema via de knop bovenaan werkt (achtergrond rgb(12,13,16)). Op 390 was de klantentabel onleesbaar (O52).
+- kladblok/_r9-admin-acties.mjs — verbergen → weg van het dashboard, weer tonen → terug; een betaalde bestelling heeft geen verwijderformulier ("Niet mogelijk: deze bestelling is betaald" — goed); onbetaalde met een verkeerd kenmerk → "typ je het kenmerk precies over", blijft bestaan; met het goede kenmerk → weg. CSV per kwartaal: 200, text/csv, "visuails-facturen-2026-Q4.csv", kolommen soort;nummer;datum;klant;land;btw-nummer;behandeling;netto;btw;bruto;status;kenmerk met komma als decimaalteken. Sessie kwijt → /admin/login, na inloggen naar /admin (O53).
+- Live (klanttypes): uploaden per vak en per map, verkeerd bestand vervangen, melden, herleveren, revisie met en zonder nieuw beeld, nieuwe betaallink, offerte + aanbetaling (7), tegoed boeken (10, F51), annuleren met en zonder geld (11), nieuwe klant + bestelling namens (12, F54), aanbevelingen goedkeuren en intrekken.
+
+### Stap 6 · Veiligheid en privacy (testomgeving, 2 okt avond)
+- kladblok/_r9-veilig.mjs — klant A (ingelogd in Studio) probeert met B's nummers: B's bestand, factuur-pdf en zip → 404; B's bestelling betalen, B's bestand goedkeuren, foto's bij B's bestelling zetten → 303 naar A's eigen overzicht, er gebeurt niets; /account/orders?order=<B> toont A's eigen lijst, B's kenmerk staat nergens op de pagina. POST zonder Origin of met Origin evil.test → 403. Privélink met verzonnen token → 404. /admin, een bestelpagina, de CSV en een factuur-pdf zonder sessie → 302 naar /admin/login; anoniem POST "annuleren" → doorgestuurd naar login, niets veranderd.
+- Verlopen en ingetrokken: inlogcode 10 minuten + maximaal vijf pogingen, inloglink een uur (stap 4); ingetrokken privélink → 410 "vervangen" (O35, klanttype 13); verlopen privélink en verlopen bestanden: tests/vervaldatum.test.mjs in de volledige reeks (groen) en de Studio-staat "beelden verlopen" (O51).
+- Formulieren: honeypot contact → stil, zelfde bedankpagina, geen mail (stap 3); dubbelklik op Versturen = één bestelling (stap 2); rate limit: na een reeks bestellingen 429 met retry-after en de melding in het formulier (ik leeg rate_limits tussen de testbestellingen door juist daarom); herkomstcontrole hierboven.
+- kladblok/_r9-cookies.mjs — eerste bezoek: melding met "Alleen het noodzakelijke" en "Analytics accepteren", geen cookies en geen enkel verzoek naar een ander domein vóór een keuze. Weigeren → vis_consent analytics:false, melding weg en blijft weg op de volgende pagina. Accepteren (nieuwe sessie) → analytics:true. /cookie-policy noemt vis_account, vis_consent, vis_lang, vis_nav en vis_thema — dezelfde als die de site zet.
+- kladblok/_r9-avg.mjs — klant met betaalde bestelling en factuur, in /admin "Deze klant wissen (AVG-verzoek)": verkeerde merknaam → "typ je Merk AVG precies over", er gebeurt niets; goede naam → "De klant is gewist. Bestellingen met een factuur of creditnota zijn bewaard zonder persoonsgegevens". Daarna: klant weg, 3 bestanden weg (ook uit R2), bestelling staat op gewist@visuails.invalid zonder naam/merk, factuur PROEF-2026-0001 bewaard met zijn momentopname (fiscale plicht), Studio-sessie van de klant → inlogscherm. /privacy §6 klopt met retention.js: bronmateriaal 90 dagen na afsluiten, geleverde visuals 90 dagen in Studio, facturen zeven jaar, recht op wissing. Een klant kan zijn gegevens niet zelf wissen in Studio; dat gaat via een verzoek aan ons (staat zo op /privacy) — prima zo.
+
+### Stap 7 · Automatisch en koppelingen (live + testomgeving, 2 okt avond)
+- Live (Gmail hello@): "Nachtelijke taken" elke nacht om ±03:10 sinds 12 sep (laatste 2 okt 03:10) — draait (O55 over de inhoud). "Je gereserveerde leverdatum is vrijgegeven — VIS-SJ93-NDK" (26 sep 03:10) — kwam; die versie had nog ruwe datums en "betaal via de link in je bevestigingsmail", de huidige code heeft nette datums en een knop "Alsnog betalen". Lage-score-mail VIS-VS4X-BRJ (2 okt 13:45, O54). Betaalherinnering en vervallen: geen live bestelling stond lang genoeg open — in de testomgeving gedaan. Tevredenheidsherinnering: bestaat niet (feedback.js: "iteratie twee"; de kolommen staan klaar) → stap 9.
+- kladblok/_r9-cron.mjs — alle nachtelijke taken op een kopie van de testdatabase, tijd vooruit door datums terug te zetten, nep-Mollie/R2/Resend: dag 4 onbetaald → "Je bestelling wacht nog op betaling" (NL) en "Your order is still waiting for payment" (EN), met bedrag (€ 215,38 = 2 × € 89 + 21%) en betaalknop; reservering verlopen → "Je gereserveerde leverdatum is vrijgegeven" met de datums uitgeschreven en "Alsnog betalen"; dag 15 → "Bestelling … is vervallen", status geannuleerd; lege wachtrij 5 dagen voor de vaste week → klantmail; vastgelopen factuur → alsnog uitgegeven (mail bewust met de hand); geleverd zonder levermail → regel in het rapport; back-up 11 dagen → waarschuwing. Nachtrapport noemt het allemaal. Beelden verlopen: in verslagmodus "12 bestanden zouden nu verwijderd worden"; met PURGE_ENABLED=true echt weg (12 uit R2) en de verlaten upload ook. F63 gevonden en hersteld.
+- kladblok/_r9-koppelingen.mjs + _r9-incasso.mjs (testomgeving, met een uitbreiding van de nep-Mollie: chargeback en opnieuw afleveren):
+  - dubbele webhook: 3× dezelfde betaalde betaling opnieuw → nog steeds 1 betaling, 1 factuur, geen extra mail — goed.
+  - chargeback: eerst niets (F62), na herstel 1 studiomail, rode regel op de bestelpagina, opnieuw afleveren → geen tweede mail.
+  - bounce (Resend-webhook met svix-handtekening): "recorded", dezelfde nog eens → "duplicate", zonder geldige handtekening → 401; /admin: rode regel "Mail aan … kwam niet aan op 2026-10-02 (Permanent/General)" op de bestelpagina én op het dashboard.
+  - mislukte incasso (abonnement Pro, tweede termijn): studiomail "Incasso niet gelukt · SUB-…" en klantmail "Je betaling van € 955,90 is niet gelukt"; abonnement blijft actief zolang Mollie het opnieuw probeert (pauze pas als Mollie het abonnement stopt — klopt met de code en tests/abo-incasso).
+- Alle mails uit deze stap staan in kladblok/r9-stap7-mails.html (met een gele TEST-balk); via Resend naar hello@ zodra Resend weer is ingelogd (O58).
+
+### Stap 8 · Alle pagina's (testomgeving + live, 2 okt nacht)
+- kladblok/_r9-paginas.mjs — alle 90 pagina's uit sitemap.xml (45 NL + 45 EN, elk met zijn tegenhanger) op 1440, 1280, 768 en 390: alle 200, nergens horizontale scroll, overal precies één zichtbare h1, geen JS-fouten, geen kapotte verzoeken (alleen afgebroken verzoeken bij het wegnavigeren en de 401 van O60), geen beeld zonder alt, geen beeld boven 350 kB. Per pagina: title, description (50–170 tekens), canonical = eigen pad, hreflang nl/en/x-default, JSON-LD geldig (o.a. Organization, WebSite, BreadcrumbList, Product, FAQPage), og:image, html lang klopt, de taalwissel wijst naar dezelfde pagina in de andere taal. Kleine tekst: O62.
+- kladblok/_r9-schermen.mjs — volledige afdrukken van elke NL-pagina op 1280 en 390, als contactvellen bekeken: één lijn (lichte panelen op inkt, zelfde kop en voet, zelfde knoppen); gevonden: O63 (leeg vak), O65 (plaatshouders). Zwarte vakken in de eerste afdruk waren beelden die nog laadden — het script wacht nu op elk beeld.
+- kladblok/_r9-focus.mjs — negen pagina's met alleen Tab: eerste stop "Naar de inhoud" / "Skip to content", elke stop heeft een zichtbare focusring, niets onzichtbaars in de volgorde (de verborgen keuzerondjes op /gallery tonen hun ring op het label — goed). Contrast: test:leesbaar meet elke pagina in een echte browser (groen in de volledige reeks).
+- Teksten: levertijd overal "vaak binnen een dag, soms een paar dagen" (18 pagina's, NL en EN), nergens een harde belofte; "24 uur" staat alleen in de verwerkersovereenkomst (datalek melden) — klopt. Prijzen op de pagina's komen uit pricing.js/plans.js (€89–39, €109–49, abonnementen €390/€790/€1.690 enz.); de €79,95 is de nagemaakte webshop in de laptop.
+- Live: robots.txt 200 met Sitemap-regel (O61 voor de tekenset), sitemap.xml 90 adressen met 270 hreflang-regels, llms.txt 200 (12 kB), /nl/bestaat-niet → 404 "Pagina niet gevonden" in het Nederlands (F1 klopt nu live), /bestaat-niet → Engelse 404. Juridisch (NL+EN): voorwaarden, privacy, cookiebeleid, verwerkersovereenkomst, AI Act — "Laatst bijgewerkt: oktober 2026" en KVK 99742993. Cookiemelding: stap 6.
+- Laadtijd: in de testomgeving zinloos te meten (alles lokaal); live met PageSpeed Insights te doen — staat bij "niet getest".
 
 ## Niet te testen
 
-- Safari/iPhone-specifiek gedrag (alleen Chrome beschikbaar)
-- Outlook en andere mailprogramma's (alleen Gmail)
-- Echte betalingen (Mollie in testmodus)
+- Safari/iPhone-specifiek gedrag (alleen Chrome beschikbaar) — zelf: op je iPhone één bestelling tot de betaalpagina (foto kiezen uit Foto's, HEIC), Studio openen en een zip downloaden, en /lifestyle/flash in de energiebesparingsstand (dan spelen video's niet automatisch).
+- Outlook en andere mailprogramma's (alleen Gmail) — zelf: in Resend een testmail van een bestaande mail (bijv. "Je bestelling wacht nog op betaling") naar een Outlook.com-adres, en kijk of de knop en het blok "Te betalen" goed staan.
+- Echte betalingen (Mollie in testmodus) — zelf: één €1-proef met je eigen bankrekening in live-modus, daarna in /admin terugbetalen; dan zie je ook de echte creditnota.
 - €1-proef tot het eind: elk hello+…@-adres telt als hello@, en dat adres heeft al een proef gehad. Kan alleen met een ander mailadres van Lucas.
+- Chargeback en mislukte incasso echt via Mollie: kan niet in testmodus. In de testomgeving nagespeeld (stap 7); in live verschijnt het vanzelf als het gebeurt.
+- Laadtijd en Core Web Vitals: in de testomgeving zinloos — zelf: pagespeed.web.dev op /nl/, /nl/catalog/ en /nl/pricing/ (mobiel), let op LCP < 2,5 s.
+- Bounces live: kan pas als RESEND_WEBHOOK_SECRET staat (O59).

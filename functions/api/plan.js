@@ -63,7 +63,7 @@ import { currentCustomer } from '../../src/lib/account.js';
 import { handleSubscribeStart } from '../../src/lib/subscribe.js';
 import { offsitePage } from '../../src/lib/offsite.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
-import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
+import { normalizePhone } from '../../src/lib/payer.js';
 import { composeName } from '../../src/data/address.js';
 import { voorkeurMet } from '../../src/data/contactvoorkeur.js';
 import { vatFormatOk } from '../../src/data/vat.js';
@@ -159,7 +159,16 @@ export async function onRequestPost(context) {
    */
 
   if (!klant) {
-    const email = normalizeEmail(tekst(form.get('email'), 254));
+    /* ── HET ADRES ZOALS GETYPT, NIET DE VERGELIJKINGSVORM — ronde 9, F50 ────
+       Hier stond normalizeEmail(): de vorm uit payer.js om twee betalers te
+       VERGELIJKEN, die "+label" eraf haalt en bij Gmail de punten. Als
+       accountadres maakte dat van hello+abo@… het account van hello@… — een
+       ander account, met al een abonnement, dus ging de klant naar /account/plan
+       en daarvandaan naar het inlogscherm, zonder uitleg. En "jan.de.vries@gmail
+       .com" werd "jandevries@gmail.com": hetzelfde postvak, maar niet het
+       account dat bij zijn bestellingen hoort. Zelfde regel als /api/order:
+       kleine letters, verder niets. */
+    const email = tekst(form.get('email'), 254).toLowerCase();
     /* Twee velden sinds 11 september, net als op het bestelformulier en in het
        accountscherm. `name` blijft bestaan als de SAMENGESTELDE weergave en
        wordt hier één keer opgebouwd — nergens anders afgeleid, zodat een mail
@@ -243,12 +252,21 @@ export async function onRequestPost(context) {
     klant = { customer_id: id, email, name: naam, brand: merk || null };
   }
 
-  return handleSubscribeStart(context, klant, (url, taal) => {
+  const antwoord = await handleSubscribeStart(context, klant, (url, taal) => {
     const p = offsitePage({ url, name: 'Mollie', lang: taal, css: '/account.css' });
     return p
       ? new Response(p, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } })
       : terug('mollie', taal);
   }, form);
+  /* ── AL EEN ABONNEMENT OP DIT ADRES — ronde 9, F50 ──────────────────────
+     handleSubscribeStart() stuurt dan naar /account/plan. Wie hier komt, is
+     niet ingelogd (zie de noot bij currentCustomer hierboven), dus daar volgde
+     het inlogscherm — na een volledig ingevuld formulier, zonder één woord.
+     Nu terug naar het formulier met de reden. */
+  if (antwoord && antwoord.status === 303 && antwoord.headers.get('Location') === '/account/plan') {
+    return terug('bestaat', lang);
+  }
+  return antwoord;
 }
 
 

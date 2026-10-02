@@ -167,7 +167,8 @@ console.log('\n── de betaling ──');
    * src/lib/account.js — daar staat ook waarom CSS dit niet kan oplossen.
    */
   check('and Mollie sends them back to the order they came from',
-    /\/account\/orders\?order=91#order-91$/.test(r.calls[0]?.body?.redirectUrl || ''),
+    /* Sinds ronde 9 (O40) met &terug=1: de kaart zegt dan dat de betaling verwerkt wordt. */
+    /\/account\/orders\?order=91&terug=1#order-91$/.test(r.calls[0]?.body?.redirectUrl || ''),
     r.calls[0]?.body?.redirectUrl);
   check('and the card they land on will be open, not collapsed',
     /[?&]order=91(&|#|$)/.test(r.calls[0]?.body?.redirectUrl || ''),

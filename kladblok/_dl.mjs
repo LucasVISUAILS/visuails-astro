@@ -8,13 +8,13 @@ export const PANEEL = 'http://localhost:4478';
 export const OUT = '/tmp/claude-0/dl';
 fs.mkdirSync(OUT, { recursive: true });
 
-export async function start({ mobiel = false, cookie = null } = {}) {
+export async function start({ mobiel = false, cookie = null, viewport = null, touch = null } = {}) {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
   const ctx = await browser.newContext({
-    viewport: mobiel ? { width: 390, height: 844 } : { width: 1280, height: 900 },
+    viewport: viewport || (mobiel ? { width: 390, height: 844 } : { width: 1280, height: 900 }),
     deviceScaleFactor: 1,
     locale: 'nl-NL',
-    isMobile: mobiel, hasTouch: mobiel,
+    isMobile: mobiel, hasTouch: touch ?? mobiel,
   });
   if (cookie) await ctx.addCookies([{ name: 'vis_account', value: cookie, url: SITE }]);
   await ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: new Date().toISOString() })), url: SITE }]).catch(() => {});

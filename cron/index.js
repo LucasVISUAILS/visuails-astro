@@ -337,6 +337,15 @@ async function remindUnpaid(env) {
           AND service <> 'test-sample'
           AND COALESCE(reviewed_at, created_at) <= datetime('now', '-${REMINDER_DAYS} days')
           AND created_at >= datetime('now', '-30 days')
+          /* Ronde 9 (F63): niet herinneren aan wat cancelStaleApprovals() verderop
+             in DEZELFDE nacht laat vervallen. Een bestelling die (door een gemiste
+             nacht, of van vóór de herinnering) al over haar termijn is, kreeg eerst
+             "betaal hier" en een paar seconden later "is vervallen". Dezelfde twee
+             klokken als daar. */
+          AND NOT (
+            (review_state = 'approved' AND reviewed_at IS NOT NULL AND reviewed_at <= datetime('now', '-7 days'))
+            OR (review_state IS NULL AND created_at <= datetime('now', '-${ONBETAALD_VERVAL_DAGEN} days'))
+          )
         ORDER BY id LIMIT 50`
     ).all());
   } catch (err) {

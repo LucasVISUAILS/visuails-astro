@@ -77,7 +77,7 @@
 // point; this file is where it turns into code.
 
 import { hashToken, isWellFormedToken, mintToken, isExpired, pastMaxLife } from './token.js';
-import { notifyRevisionRound, notifyPlanWeekMoved, notifyPlanMoved, notifyAboWijziging } from './notify.js';
+import { notifyRevisionRound, notifyPlanWeekMoved, notifyPlanMoved, notifyAboWijziging, notifyFotosToegevoegd } from './notify.js';
 import { clearUploadRetention, DELIVERY_DAYS } from './retention.js';
 /* De uploadgrenzen uit dezelfde module die /api/upload gebruikt. Zie de kop bij
    stageerFotos(): één lijst met toegestane types, niet twee die uit elkaar
@@ -330,6 +330,11 @@ const ZIP_LIMIT = 12;
 const FILE_LIMIT = 300;
 /** Logout, the lock form, and per-file review actions. */
 const POST_LIMIT = 20;
+/* Ronde 9, F55: foto's bij een bestaande bestelling. Per keer begrensd, zodat één
+   POST binnen de grens van een Worker-verzoek blijft (telefoonfoto's van een paar
+   MB); wie er meer heeft, doet het in twee keer. */
+const FOTOS_PER_KEER = 12;
+const FOTO_DIENSTEN = new Set(['catalog', 'lifestyle', 'drop']);
 
 /** Longest revision note this file accepts — same cap as portal.js's NOTE_MAX, so a client typing the same note in either place never hits a different wall. */
 const NOTE_MAX = 2000;
@@ -491,6 +496,7 @@ const COPY = {
     // voor deze trede. Dezelfde belofte als TIERS.unattended.turnaround in
     // pricing.js, in één regel op de kaart.
     fQueue: 'Standard turnaround — as soon as it is ready, no fixed date.',
+    fOfferte: 'Turnaround as agreed in the quote. Not sent your product photos yet? Reply to the quote email with the photos, or send them on WhatsApp.',
     fProducts: 'Products',
     windowPending: 'Being scheduled',
 
@@ -499,6 +505,16 @@ const COPY = {
     sideDelivered: 'What we delivered',
     sideUploaded: 'What you uploaded',
     emptyUploads: 'No photos on file for this order.',
+    /* Ronde 9, F55: foto's bij een bestaande bestelling zetten. */
+    fotosH: 'Your photos',
+    payTerug: 'Just back from paying? We are processing it now \u2014 that usually takes a few seconds. Refresh the page before you pay again.',
+    fotosGeen: 'We don\u2019t have photos of your product yet. Per product, send a front, a back and a close-up \u2014 a phone is fine.',
+    fotosMeer: 'Forgot one? Add it here.',
+    fotosCta: 'Add photos',
+    fotosHint: `Accepted: ${uploadFormatsSentence('en')}. Up to ${FOTOS_PER_KEER} at a time.`,
+    fotosOk: (n) => `${n} photo${n === 1 ? '' : 's'} added. We\u2019ll take it from here.`,
+    fotosNiets: `No photo was added \u2014 choose a ${uploadFormatsSentence('en')} file of at most 25 MB.`,
+    fotosDicht: 'Photos can no longer be added to this order. Send them to us on WhatsApp or by email.',
     bDownloadAll: 'Download the folder',
     // De kaart die de losse downloadknoppen vervangt. Wat erin zit staat erbij,
     // want een knop met "download" erop en niets eromheen laat de klant gokken of
@@ -666,7 +682,7 @@ const COPY = {
     detNoVat: 'I do not have a VAT number',
     detReg: 'Company registration number',
     detRegHint: 'For a business without a VAT number — a Dutch KVK number, for instance. Saved once, filled in on every order.',
-    detMissing: 'One of the fields above is still empty. Everything except the ones marked optional has to be filled in — it all ends up on your invoice.',
+    detMissing: 'One of the fields above is still empty or not filled in correctly (a phone number needs enough digits). Everything except the ones marked optional is required — most of it goes on your invoice, and the phone number lets us reach you.',
     detFailed: 'We could not save that just now. Try again in a moment — nothing was changed.',
     detVatForm: 'That VAT number does not match the country you chose — check the country code and the number of digits. Everything else is saved; the VAT number stayed as it was.',
     detVatChoice: 'Fill in a VAT number, or tick that you do not have one. Everything else is saved.',
@@ -796,7 +812,7 @@ const COPY = {
     prodApproved: (n) => `${n} approved`,
     prodApproveAll: (n) => `All ${n} are good — approve this product`,
     orderApproveAll: (n) => `Approve all ${n} remaining images`,
-    orderApproveAllNote: 'Only for images you have not judged yet; anything with a revision request stays as it is. Is everything approved, the order is complete and flagging is no longer possible.',
+    orderApproveAllNote: 'Only for images you have not reviewed yet; anything with a revision request stays as it is. Once everything is approved, the order is complete and you can no longer flag images.',
     prodNothingYet: 'Nothing delivered for this one yet.',
     prodWeMade: 'What we delivered',
     prodYouSent: 'What you sent',
@@ -807,15 +823,22 @@ const COPY = {
     flowNowLabel: 'Right now:',
     flowNow: {
       awaiting_payment: 'Your order is in, but not paid yet. Once the payment comes through we schedule it in.',
+      btwLijst: 'Your order is in. We first check your VAT details; then we send you the payment link — usually within one working day.',
       received: 'We have your order and your files. We are scheduling it in.',
       request: 'This is a request, not an order yet. We reply in writing with a proposal and a price — usually within a working day.',
       requestPaid: 'Your quote is paid. We are working out your request and will let you know as soon as there is something to look at.',
       in_production: 'Our studio is making your images.',
       human_check: 'A specialist goes through every image before it reaches you.',
       delivered: 'Your images are ready. Look them over and tell us if anything is off.',
-      closed: 'This order is complete. Your images are below, ready to download.',
+      closed: 'This order is complete. Your images are ready to download.',
+      closedExpired: 'This order is complete and the download period has ended. Still need the images? Send us a message.',
       revising: 'Your revision round is in. We are working on the images you marked and will let you know when they are back.',
       cancelled: 'This order was cancelled. Nothing is being made for it.',
+      /* Ronde 9: bij een betaalde bestelling die geannuleerd is, wil de klant
+         maar één ding weten — waar zijn geld is. */
+      cancelledRefunding: 'This order was cancelled. Your payment is on its way back to the account you paid from — depending on your bank, within a few working days. The credit note follows under Invoices once the refund is confirmed.',
+      cancelledRefunded: 'This order was cancelled and your payment has been refunded. The credit note is under Invoices.',
+      cancelledCredit: 'This order was cancelled. The amount stays with us as credit for your next order.',
     },
     flowStep: { awaiting_payment: 'Awaiting payment', received: 'Received', in_production: 'In production', human_check: 'Checked by a specialist', delivered: 'Delivered' },
     flowWindow: (from, to) => (from === to ? `Planned for ${from}.` : `Planned for ${from} – ${to}.`),
@@ -830,7 +853,7 @@ const COPY = {
     // Geen eigen "bekijk alles" naast ovViewAll: twee links naar dezelfde
     // pagina met verschillende bewoording leest als twee bestemmingen.
     ovLatestEmpty: 'Your delivered visuals will appear here.',
-    detPhoneHint: 'Add a WhatsApp number and we can reach you there about an order — a question about a photo answered in a minute instead of a mail thread.',
+    detPhoneHint: 'We use it to check who we are working with, and to reach you about an order — on WhatsApp a question about a photo takes a minute instead of a mail thread.',
     waNudgeTitle: 'Get updates on WhatsApp',
     waNudgeBody: 'Add your number and we can send order updates and quick questions straight to WhatsApp. Nothing changes if you leave it empty — email keeps working.',
     waNudgeCta: 'Add your number',
@@ -1224,6 +1247,7 @@ const COPY = {
     fPlaced: 'Geplaatst',
     fWindow: 'Levering',
     fQueue: 'Normale doorlooptijd — zo snel mogelijk, geen vaste datum.',
+    fOfferte: 'Levertijd zoals afgesproken in de offerte. Nog geen productfoto’s gestuurd? Beantwoord de offertemail met de foto’s, of stuur ze via WhatsApp.',
     fProducts: 'Producten',
     windowPending: 'Wordt ingepland',
 
@@ -1232,6 +1256,15 @@ const COPY = {
     sideDelivered: 'Wat wij leverden',
     sideUploaded: 'Wat jij uploadde',
     emptyUploads: 'Geen foto’s bij deze bestelling.',
+    fotosH: 'Je foto\u2019s',
+    payTerug: 'Kom je net terug van de betaling? Dan verwerken we hem nu \u2014 dat duurt meestal een paar seconden. Ververs de pagina even voordat je opnieuw betaalt.',
+    fotosGeen: 'We hebben nog geen foto\u2019s van je product. Stuur per product een voorkant, een achterkant en een close-up \u2014 met je telefoon is goed.',
+    fotosMeer: 'Nog een foto vergeten? Zet hem erbij.',
+    fotosCta: 'Foto\u2019s toevoegen',
+    fotosHint: `Toegestaan: ${uploadFormatsSentence('nl')}. Tot ${FOTOS_PER_KEER} per keer.`,
+    fotosOk: (n) => `${n} foto${n === 1 ? '' : '\u2019s'} toegevoegd. Wij gaan ermee aan de slag.`,
+    fotosNiets: `Er is geen foto toegevoegd \u2014 kies een bestand in ${uploadFormatsSentence('nl')} van hoogstens 25 MB.`,
+    fotosDicht: 'Bij deze bestelling kunnen geen foto\u2019s meer bij. Stuur ze ons via WhatsApp of mail.',
     bDownloadAll: 'Download de map',
     folderH: 'Jouw bestanden',
     folderBody: 'Eén map per product met alle beelden van deze bestelling, in de beeldverhouding die je koos.',
@@ -1333,7 +1366,7 @@ const COPY = {
     detNoVat: 'Ik heb geen btw-nummer',
     detReg: 'KVK-nummer',
     detRegHint: 'Voor een bedrijf zonder btw-nummer — bijvoorbeeld je KVK-nummer. Eén keer bewaard, bij elke bestelling ingevuld.',
-    detMissing: 'Een van de velden hierboven is nog leeg. Alles behalve de velden met "optioneel" moet ingevuld zijn — het komt allemaal op je factuur.',
+    detMissing: 'Een van de velden hierboven is nog leeg of niet goed ingevuld (een telefoonnummer heeft genoeg cijfers nodig). Alles behalve de velden met "optioneel" is verplicht — het meeste komt op je factuur, en met je telefoonnummer kunnen we je bereiken.',
     detFailed: 'Opslaan lukte even niet. Probeer het zo nog eens — er is niets gewijzigd.',
     detVatForm: 'Dat btw-nummer past niet bij het land dat je koos — kijk de landcode en het aantal cijfers na. De rest is opgeslagen; het btw-nummer bleef zoals het was.',
     detVatChoice: 'Vul een btw-nummer in, of vink aan dat je er geen hebt. De rest is opgeslagen.',
@@ -1432,6 +1465,7 @@ const COPY = {
     flowNowLabel: 'Nu:',
     flowNow: {
       awaiting_payment: 'Je bestelling is binnen, maar nog niet betaald. Zodra de betaling binnen is, plannen we hem in.',
+      btwLijst: 'Je bestelling is binnen. We kijken eerst je btw-gegevens na; daarna sturen we je de betaallink — meestal binnen een werkdag.',
       received: 'We hebben je bestelling en je bestanden binnen. We plannen hem in.',
       /* Een aanvraag (video, hooks, editions, eigen look) is nog geen bestelling
          — tot 19 september 2026 zei de kaart ook daar "we plannen hem in". */
@@ -1442,9 +1476,13 @@ const COPY = {
       in_production: 'Onze studio maakt je beelden.',
       human_check: 'Een specialist loopt elk beeld na voordat het naar je toe gaat.',
       delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
-      closed: 'Deze bestelling is afgerond. Je beelden staan hieronder klaar om te downloaden.',
+      closed: 'Deze bestelling is afgerond. Je beelden staan klaar om te downloaden.',
+      closedExpired: 'Deze bestelling is afgerond en de downloadtermijn is voorbij. Heb je de beelden nog nodig? Stuur ons een bericht.',
       revising: 'Je revisieronde is binnen. We werken aan de beelden die je aanmerkte en laten weten wanneer ze terug zijn.',
       cancelled: 'Deze bestelling is geannuleerd. Er wordt niets voor gemaakt.',
+      cancelledRefunding: 'Deze bestelling is geannuleerd. Je betaling komt terug op de rekening waarmee je betaalde — afhankelijk van je bank binnen een paar werkdagen. De creditnota volgt onder Facturen zodra de terugbetaling bevestigd is.',
+      cancelledRefunded: 'Deze bestelling is geannuleerd en je betaling is teruggestort. De creditnota staat onder Facturen.',
+      cancelledCredit: 'Deze bestelling is geannuleerd. Het bedrag blijft als tegoed staan voor je volgende bestelling.',
     },
     flowStep: { awaiting_payment: 'Wacht op betaling', received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door een specialist', delivered: 'Geleverd' },
     flowWindow: (from, to) => (from === to ? `Ingepland op ${from}.` : `Ingepland van ${from} tot ${to}.`),
@@ -1457,7 +1495,7 @@ const COPY = {
     prodHelpCta: 'app ons op WhatsApp',
     ovLatest: 'Laatst geleverd',
     ovLatestEmpty: 'Hier verschijnen je geleverde visuals zodra ze klaar zijn.',
-    detPhoneHint: 'Zet er een WhatsApp-nummer neer, dan kunnen we je daar bereiken over een bestelling — een vraag over een foto is dan in een minuut geregeld in plaats van in een mailwisseling.',
+    detPhoneHint: 'Hiermee weten we met wie we werken, en bereiken we je over een bestelling — via WhatsApp is een vraag over een foto in een minuut geregeld in plaats van in een mailwisseling.',
     waNudgeTitle: 'Updates via WhatsApp',
     waNudgeBody: 'Voeg je nummer toe, dan sturen we updates over je bestelling en korte vragen rechtstreeks via WhatsApp. Laat je het leeg, dan verandert er niets — mail blijft gewoon werken.',
     waNudgeCta: 'Nummer toevoegen',
@@ -2116,6 +2154,9 @@ export async function accountPost(context) {
   const pay = /^\/account\/orders\/(\d+)\/pay$/.exec(path);
   if (pay) return handleOrderPay(context, customer, Number(pay[1]));
 
+  const fotos = /^\/account\/orders\/(\d+)\/fotos$/.exec(path);
+  if (fotos) return handleOrderFotos(context, customer, Number(fotos[1]));
+
   const lang = negotiate(request);
   if (asJson) return json({ error: 'not-found' }, 404);
   return html(page({ thema: themaCookie(context.request), lang, title: COPY[lang].notFoundTitle, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
@@ -2147,7 +2188,13 @@ async function handleLoginPost(context) {
   const { request, env } = context;
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-login', limit: LOGIN_LIMIT });
   const form = await request.formData().catch(() => null);
-  const lang = form && String(form.get('lang') || '') === 'nl' ? 'nl' : negotiate(request);
+  /* Ronde 9 (F35): het formulier zegt welke taal de pagina had, en dat geldt
+     voor 'en' net zo goed als voor 'nl'. Hier stond alleen de 'nl'-tak; een
+     Engelse inlogpagina viel daardoor terug op de browsertaal, en een Britse
+     klant met een Nederlandse browser kreeg "Check je e-mail" en een
+     Nederlandse inlogmail. */
+  const formTaal = form ? String(form.get('lang') || '') : '';
+  const lang = formTaal === 'nl' || formTaal === 'en' ? formTaal : negotiate(request);
   const t = COPY[lang];
 
   if (!gate.allowed) {
@@ -2486,7 +2533,13 @@ async function handleCodePost(context) {
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-code', limit: CODE_LIMIT });
   const form = await request.formData().catch(() => null);
-  const lang = form && String(form.get('lang') || '') === 'nl' ? 'nl' : negotiate(request);
+  /* Ronde 9 (F35): het formulier zegt welke taal de pagina had, en dat geldt
+     voor 'en' net zo goed als voor 'nl'. Hier stond alleen de 'nl'-tak; een
+     Engelse inlogpagina viel daardoor terug op de browsertaal, en een Britse
+     klant met een Nederlandse browser kreeg "Check je e-mail" en een
+     Nederlandse inlogmail. */
+  const formTaal = form ? String(form.get('lang') || '') : '';
+  const lang = formTaal === 'nl' || formTaal === 'en' ? formTaal : negotiate(request);
   const t = COPY[lang];
 
   const email = String(form?.get('email') || '').trim().toLowerCase();
@@ -3458,8 +3511,13 @@ async function handleDetails({ request, env }, customer, asJson) {
    * Zo blijft /start's opslag-vinkje werken (dat stuurt de velden die de klant
    * net heeft ingevuld) zonder dat dit scherm zijn eigen eisen laat vallen.
    */
-  const REQUIRED = ['first_name', 'last_name', 'brand', 'country', 'address_line1', 'postal_code', 'city'];
-  const emptyRequired = REQUIRED.some((k) => form.has(k) && !one(k));
+  /* `phone` hoort erbij sinds ronde 9 (Lucas, 2 oktober 2026): "telefoonnummer
+     verplicht is het beste — zo kan ik beter controleren met wie ik te maken
+     heb". Het bestelformulier eiste hem al; dit scherm noemde hem optioneel en
+     liet hem leegmaken. Zelfde vormtoets als het abonnementsformulier. */
+  const REQUIRED = ['first_name', 'last_name', 'brand', 'country', 'address_line1', 'postal_code', 'city', 'phone'];
+  const emptyRequired = REQUIRED.some((k) => form.has(k) && !one(k))
+    || (form.has('phone') && !!one('phone') && !normalizePhone(one('phone')));
 
   /*
    * HET BTW-NUMMER, EN HET VINKJE ERNAAST.
@@ -3631,7 +3689,7 @@ async function loadOrders(env, customerId) {
               details_json, cancel_payment,
               customer_note, customer_note_at, revision_round_at,
               payment_status, payment_provider, paid_at, total_cents, currency, refunded_cents,
-              window_expires_at, vat_cents, vat_rate, vat_treatment,
+              window_expires_at, vat_cents, vat_rate, vat_treatment, review_state, brand,
               (SELECT revisions_revoked_at FROM customers c WHERE c.id = ?1) AS revisions_revoked_at
          FROM orders
         WHERE customer_id = ?1
@@ -4769,6 +4827,95 @@ async function handleRondeNakijken({ request, env }, customer, orderId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FOTO'S TOEVOEGEN — POST /account/orders/<id>/fotos
+// ─────────────────────────────────────────────────────────────────────────────
+
+/*
+ * ── RONDE 9, F55 — 2 oktober 2026 ───────────────────────────────────────────
+ *
+ * Een bestelling die de studio namens de klant aanmaakt (WhatsApp, telefoon)
+ * heeft vaak nog geen foto's. De adminpagina zei "Foto's uploadt hij daar zelf",
+ * maar Studio had daar geen plek voor: "Geen foto's bij deze bestelling." en
+ * verder niets. Nu kan de klant ze erbij zetten zolang er nog niets geleverd is.
+ *
+ * NIET IN intake/. Daar ruimt de nachtelijke taak batches op die aan geen
+ * bestelling hangen (sweepAbandonedIntake), en deze zou er zo eentje lijken. De
+ * sleutel krijgt het kenmerk van de bestelling; de rij in `files` is wat telt.
+ */
+function fotosView(t, o, delivered, uploaded) {
+  if (!FOTO_DIENSTEN.has(String(o.service || ''))) return null;
+  if (!['received', 'in_production'].includes(String(o.status || ''))) return null;
+  if (delivered.length) return null;
+  if (uploaded.length >= MAX_BATCH_FILES) return null;
+  return {
+    action: `/account/orders/${o.id}/fotos`,
+    h: t.fotosH,
+    p: uploaded.length ? t.fotosMeer : t.fotosGeen,
+    cta: t.fotosCta,
+    hint: t.fotosHint,
+    leeg: !uploaded.length,
+  };
+}
+
+async function handleOrderFotos({ request, env }, customer, orderId) {
+  const home = '/account/orders';
+  const anchor = (q) => `${home}?order=${orderId}${q ? `&${q}` : ''}#order-${orderId}`;
+  if (!Number.isInteger(orderId) || orderId <= 0) return seeOther(home);
+  const form = await request.formData().catch(() => null);
+  const o = await env.DB.prepare(
+    'SELECT id, ref, service, status FROM orders WHERE id = ?1 AND customer_id = ?2'
+  ).bind(orderId, customer.customer_id).first().catch(() => null);
+  if (!o) return seeOther(home);
+  const geleverd = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM files WHERE order_id = ?1 AND kind <> 'upload'"
+  ).bind(orderId).first().catch(() => ({ n: 0 }));
+  if (!FOTO_DIENSTEN.has(String(o.service || '')) || !['received', 'in_production'].includes(String(o.status || ''))
+    || Number(geleverd?.n) > 0 || !env?.UPLOADS) {
+    return seeOther(anchor('fotos=dicht'));
+  }
+  const al = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM files WHERE order_id = ?1 AND kind = 'upload'"
+  ).bind(orderId).first().catch(() => ({ n: 0 }));
+  const ruimte = Math.max(0, Math.min(FOTOS_PER_KEER, MAX_BATCH_FILES - (Number(al?.n) || 0)));
+  const bestanden = (form ? form.getAll('fotos') : [])
+    .filter((f) => f && typeof f === 'object' && typeof f.arrayBuffer === 'function' && f.size > 0)
+    .slice(0, ruimte);
+  const rijen = [];
+  for (const [i, f] of bestanden.entries()) {
+    if (f.size > MAX_FILE_BYTES) continue;
+    const naam = safeName(f.name || `foto-${i + 1}`);
+    const type = typeFor(naam);
+    if (!type) continue;
+    const stukje = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b.toString(16).padStart(2, '0')).join('');
+    const sleutel = `aangeleverd/${o.ref}/${String((Number(al?.n) || 0) + i + 1).padStart(3, '0')}-${stukje}-${naam}`;
+    try {
+      await env.UPLOADS.put(sleutel, await f.arrayBuffer(), {
+        httpMetadata: { contentType: type },
+        customMetadata: { bron: 'studio', original: naam },
+      });
+      rijen.push([orderId, sleutel, naam, f.size]);
+    } catch (e) {
+      console.error('[account] foto niet opgeslagen:', e?.message || e);
+    }
+  }
+  if (!rijen.length) return seeOther(anchor('fotos=0'));
+  const sql = "INSERT INTO files (order_id, kind, r2_key, filename, bytes) VALUES (?1, 'upload', ?2, ?3, ?4)";
+  try {
+    const stmt = env.DB.prepare(sql);
+    await env.DB.batch(rijen.map((r) => stmt.bind(...r)));
+  } catch (e) {
+    console.error('[account] fotorijen niet vastgelegd:', e?.message || e);
+    return seeOther(anchor('fotos=0'));
+  }
+  const n = rijen.length;
+  await env.DB.prepare(
+    "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'customer')"
+  ).bind(orderId, o.status, `${n} foto${n === 1 ? '' : '\u2019s'} toegevoegd in Studio`).run().catch(() => {});
+  await notifyFotosToegevoegd(env, { orderId, count: n });
+  return seeOther(anchor(`fotos=${n}`));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ALSNOG BETALEN — POST /account/orders/<id>/pay
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -4855,7 +5002,7 @@ async function handleOrderPay({ request, env }, customer, orderId) {
   /* Geannuleerd is niet meer te betalen (ronde 8, S-K1 / A-K7): de kaart bood
      "Nu betalen" aan en de webhook zette hem daarna gewoon op betaald. */
   if (order.status === 'cancelled') return seeOther(anchor);
-  if (!(isPayableService(order.service) || order.service === SAMPLE_SERVICE)) return seeOther(anchor);
+  if (!(isPayableService(order.service) || order.service === SAMPLE_SERVICE || offerteBetaalbaar(order))) return seeOther(anchor);
 
   /*
    * ── DE BTW-POORT GELDT OOK HIER, 9 AUGUSTUS 2026 ─────────────────────────────
@@ -4920,11 +5067,14 @@ async function handleOrderPay({ request, env }, customer, orderId) {
       // ladderKey(), want paymentDescription() kent alleen de laddernamen —
       // 'drop' zou daar "VISUAILS — 30 producten, undefined" van maken, en dat
       // is de omschrijving die de klant op zijn bankafschrift terugziet.
-      description: paymentDescription({ service: ladderKey(order.service), products: order.product_count || 1 }, lang),
+      description: paymentDescription({ service: ladderKey(order.service), products: order.product_count || 1, ref: order.ref, offerte: order.service === 'video' || order.service === 'custom' }, lang),
       // Terug naar de bestelling zelf en niet naar /thank-you: hij komt hier
       // vandaan, en de kaart waar hij op stond is precies waar hij wil zien dat
       // het gelukt is.
-      successUrl: `${origin}${anchor}`,
+      /* Ronde 9, O40: terug van Mollie stond de kaart nog op "Nog niet betaald"
+         met de betaalknop, tot de webhook er was. `terug=1` laat de kaart zeggen
+         dat de betaling verwerkt wordt. */
+      successUrl: `${origin}${home}?order=${orderId}&terug=1#order-${orderId}`,
       webhookUrl: `${origin}/api/webhook/mollie`,
       /* ── GEEN iDEAL OP EEN BESTELLING ZONDER BTW — 17 september 2026 ──────
          functions/api/order.js:1642 en src/lib/betaallink.js:67 doen dit al; dit
@@ -7583,8 +7733,15 @@ export function paymentView(t, lang, o) {
   // isPayableService() en niet PAYABLE_SERVICES: orders.service bewaart 'drop'
   // waar de ladder 'complete' heet, en dat rechtstreeks toetsen laat de duurste
   // bestelling op de site zonder betaalknop staan. Zie LADDER_KEY in quote.js.
-  const payable = isPayableService(o.service) || o.service === SAMPLE_SERVICE;
-  const payHref = state === 'unpaid' && payable && o.status !== 'cancelled' ? `/account/orders/${o.id}/pay` : '';
+  /* Een eigen look ('custom') heeft geen tarief, maar na een offerte uit admin wel
+     een bedrag en review_state 'approved' — dezelfde regel als /api/order-pay.
+     Zonder deze tak stond er "Wacht op betaling" zonder knop (ronde 9, F41). */
+  const payable = isPayableService(o.service) || o.service === SAMPLE_SERVICE || offerteBetaalbaar(o);
+  /* Ronde 9 (O50): op de btw-lijst bood de kaart "Nu betalen" aan, en die knop
+     kwam terug met "we kijken de btw-gegevens na". Dan geen knop, maar die zin. */
+  const opBtwLijst = String(o.review_state || '') === 'pending';
+  const payHref = state === 'unpaid' && payable && o.status !== 'cancelled' && !opBtwLijst ? `/account/orders/${o.id}/pay` : '';
+  if (state === 'unpaid' && opBtwLijst && o.status !== 'cancelled') line = t.payHeld;
   return { cls, rows, line, payHref };
 }
 
@@ -7757,7 +7914,21 @@ export function progressView(t, lang, o, events = [], files = []) {
   /* RONDE 9, F19 — na afronden (alles goedgekeurd, score gegeven) bleef hier
      "Bekijk ze en laat het weten" staan. Een afgesloten bestelling is klaar. */
   const afgerond = status === 'delivered' && !!o.closed_at && !revising;
-  const now = afgerond ? t.flowNow.closed : unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (t.flowNow[status] || t.flowNow.received);
+  /* Ronde 9: geannuleerd na betalen — zeg waar het geld is. */
+  const geannuleerdGeld = (() => {
+    if (!cancelled) return '';
+    const m = orderMoney(o);
+    const ps = String(o.payment_status || '');
+    if (o.cancel_payment === 'credit') return t.flowNow.cancelledCredit || '';
+    if (o.cancel_payment !== 'refund') return '';
+    if (ps === 'refunded' || (m && m.refunded >= m.gross)) return t.flowNow.cancelledRefunded || '';
+    return t.flowNow.cancelledRefunding || '';
+  })();
+  const opBtwLijst = unpaid && String(o.review_state || '') === 'pending';
+  /* Ronde 9 (O51): na de bewaartermijn zei de regel nog "staan klaar om te downloaden". */
+  const geleverdeBestanden = (files || []).filter((f) => f.kind === 'delivery' && !f.superseded_at);
+  const allesVerlopen = geleverdeBestanden.length > 0 && geleverdeBestanden.every((f) => f.expires_at && isExpired(f.expires_at, null));
+  const now = geannuleerdGeld ? geannuleerdGeld : afgerond ? (allesVerlopen ? (t.flowNow.closedExpired || t.flowNow.closed) : t.flowNow.closed) : opBtwLijst ? (t.flowNow.btwLijst || t.flowNow.awaiting_payment) : unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (t.flowNow[status] || t.flowNow.received);
   const when = !cancelled && status !== 'delivered' && o.window_start
     ? ` ${t.flowWindow(shortDate(o.window_start, lang), shortDate(o.window_end || o.window_start, lang))}`
     : '';
@@ -9031,10 +9202,14 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
   const items = o.product_count
     ? (lang === 'nl'
       ? `${o.product_count} ${Number(o.product_count) === 1 ? 'product' : 'producten'}`
-      : `${o.product_count} ${Number(o.product_count) === 1 ? 'item' : 'items'}`)
+      /* "products", zoals overal elders in het Engels (ronde 9, O17). */
+      : `${o.product_count} ${Number(o.product_count) === 1 ? 'product' : 'products'}`)
     : null;
   const bits = [
-    ['svc', serviceLabel(o.service, lang) || o.service],
+    /* Het merk, als dit account voor meer dan één merk bestelt (ronde 9, O25):
+       een bureau zag twee kaarten zonder te weten welke bij welk merk hoort. */
+    ['brand', o._toonMerk && o.brand ? o.brand : null],
+    ['svc', dienstNaam(o, lang)],
     ['num', items],
     ['date', o.created_at ? invoiceDate(String(o.created_at).slice(0, 10), lang) : null],
     ['money', unpaidMoney && unpaidMoney.gross > 0 ? money(unpaidMoney.gross, lang) : null],
@@ -9054,7 +9229,11 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
   const windowLine = (o.status === 'cancelled' || o.status === 'delivered' || o.closed_at) ? ''
     : (o.window_start || o.tier === 'attended')
     ? `${t.fWindow}: ${window}`
-    : heeftVoorrang(o) ? `${voorrangZin(lang)}.` : t.fQueue;
+    : heeftVoorrang(o) ? `${voorrangZin(lang)}.`
+    /* Video en eigen look lopen via een offerte; de wachtrijzin klopt daar niet
+       (ronde 9, F40). */
+    : (o.service === 'video' || o.service === 'custom') ? t.fOfferte
+    : t.fQueue;
 
   /* De revisieronde, als toestand — dezelfde drie takken als revisionRound(). */
   /* Geannuleerd (ook als de klant de beelden houdt) heeft geen revisieronde
@@ -9106,6 +9285,7 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
       uploaded: { h: t.sideUploaded, empty: t.emptyUploads, shots: uploaded.map((f) => shotView(t, f, o)) },
     },
     ronde,
+    fotos: fotosView(t, o, delivered, uploaded),
     /* Alleen met levende beelden (ronde 8, S-B5): zijn ze allemaal verlopen,
        dan gaf de knop een lege 404. Dan de datum en de weg naar ons. */
     folder: (() => {
@@ -9178,7 +9358,7 @@ export function detailsView(t, lang, details, justSaved, missing = false, emailS
       [veld('brand', t.detBrand, d.brand, { auto: 'organization' }), veld('website', t.detWebsite, d.website, { type: 'url', placeholder: 'https://', auto: 'url', optional: true })],
     ],
     email: { label: t.detEmail, value: d.email || '', note: t.detEmailNote },
-    phone: veld('phone', t.detPhone, d.phone, { type: 'tel', auto: 'tel', optional: true, hint: t.detPhoneHint }),
+    phone: veld('phone', t.detPhone, d.phone, { type: 'tel', auto: 'tel', hint: t.detPhoneHint }),
     adres: [
       [veld('address_line1', t.detStreet, d.address_line1, { placeholder: t.detStreetPh, auto: 'address-line1' }), veld('address_line2', t.detStreet2, d.address_line2, { placeholder: t.detStreet2Ph, optional: true, auto: 'address-line2' })],
       [veld('postal_code', t.detPostal, d.postal_code, { placeholder: t.detPostalPh, auto: 'postal-code' }), veld('city', t.detCity, d.city, { auto: 'address-level2' })],
@@ -9836,6 +10016,10 @@ export async function studioScreen(context, section) {
   if (section === 'orders') {
     const v = ordersView(t, lang, st.orders, st.statusFilter);
     v.actie = await primaireActie(env, t, lang, customer);
+    {
+      const merken = new Set(st.orders.map((o) => String(o.brand || '').trim().toLowerCase()).filter(Boolean));
+      if (merken.size > 1) st.orders.forEach((o) => { o._toonMerk = true; });
+    }
     const feedbackByOrder = await ordersExtra(env, st.orders);
     v.kaarten = v.shown.map((o, i) => ({
       o,
@@ -10011,4 +10195,22 @@ export async function werkKlantgegevensBij(env, klant, form) {
     /* Zoals de kop zegt: loggen en doorgaan. */
     console.error('[abonnement] gegevens van ingelogde klant niet bijgewerkt —', err?.message || err);
   }
+}
+
+/* Een eigen look na een offerte: betaalbaar zoals in functions/api/order-pay.js
+   (ronde 9, F41). Alleen met een bedrag en een goedgekeurde offerte. */
+function offerteBetaalbaar(o) {
+  return !!o && o.service === 'custom' && String(o.review_state || '') === REVIEW.approved && Number(o.total_cents) > 0;
+}
+
+/* "Aanvraag op maat" is de labelnaam van de wire-waarde 'custom'; een eigen look
+   noemt hij zelf zo (ronde 9, O23). */
+function dienstNaam(o, lang) {
+  if (o && o.service === 'custom') {
+    try {
+      const d = JSON.parse(o.details_json || '{}') || {};
+      if (d.request === 'custom-look') return lang === 'nl' ? 'Eigen look' : 'Custom look';
+    } catch { /* dan het label */ }
+  }
+  return serviceLabel(o.service, lang) || o.service;
 }

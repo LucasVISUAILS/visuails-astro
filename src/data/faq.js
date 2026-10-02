@@ -197,7 +197,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Waarom staat er geen leverdatum bij een kleine bestelling?',
-        a: `Omdat het serviceniveau de omvang volgt. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, gezegd als gebruikelijk en nooit als datum. Een datum noemen die we zouden moeten breken is erger dan geen datum noemen, en een bestelling die al in de agenda staat wijkt nooit voor een bestelling die er niet in staat.`,
+        a: `Omdat het serviceniveau de omvang volgt. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, zonder vaste leverdatum. Liever geen datum dan een datum die we niet halen — en een bestelling die al in de agenda staat wijkt nooit voor een bestelling die er niet in staat.`,
       },
       {
         q: 'Kost een video meer binnen een bestelling?',
@@ -233,7 +233,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Why is there no delivery date on a small order?',
-      a: `Because the service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that it runs in the normal turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, stated as typical and never as a date. Quoting a date we would have to break is worse than not quoting one, and an order already in the calendar is never pushed for one that is not.`,
+      a: `Because the service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that it runs in the normal turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, with no fixed delivery date. Better no date than one we would miss — and an order already in the calendar is never pushed for one that is not.`,
     },
     {
       q: 'Does a video cost more inside an order?',

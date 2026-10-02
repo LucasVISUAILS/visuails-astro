@@ -29,7 +29,7 @@ function stripComments(h) {
   return String(h || '').replace(/<!--(?!\[if|<!\[endif)[\s\S]*?-->/g, '');
 }
 
-export async function sendMail(env, { to, bcc, subject, html, text, attachments, replyTo }) {
+export async function sendMail(env, { to, bcc, subject, html, text, attachments, replyTo, headers }) {
   /* ── EEN MISLUKTE MAIL WAS ONZICHTBAAR — 23 augustus 2026 ─────────────────
    *
    * Twee halve maatregelen die samen niets deden. Hierboven stond
@@ -98,6 +98,12 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments,
      is — een lege bcc laat Resend de hele verzending weigeren. */
   if (bcc) payload.bcc = Array.isArray(bcc) ? bcc.filter(Boolean) : [bcc];
   if (attachments && attachments.length) payload.attachments = attachments;
+  /* Extra kopregels (ronde 9, F34): alleen List-Unsubscribe en -Post, zodat een
+     aanroeper hier geen afzender of onderwerp mee kan overschrijven. */
+  if (headers && typeof headers === 'object') {
+    const toegestaan = Object.fromEntries(Object.entries(headers).filter(([k, v]) => /^List-Unsubscribe(-Post)?$/.test(k) && typeof v === 'string' && v.length < 500));
+    if (Object.keys(toegestaan).length) payload.headers = toegestaan;
+  }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },

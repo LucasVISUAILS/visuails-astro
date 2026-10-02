@@ -1087,6 +1087,10 @@ const lcStijl = [
   }
   .pu-cards :global(.pu-name:focus-visible),
   .pu-cards :global(.pu-name:focus) { outline: none; border-bottom-color: var(--ink); }
+  /* Ronde 9, klanttype 13: van 20% naar 100% zwart in één haarlijn was met het
+     toetsenbord nauwelijks te zien. Een tweede lijn in de accentkleur, zonder
+     dat de regel verspringt. */
+  .pu-cards :global(.pu-name:focus-visible) { border-bottom-color: var(--accent); box-shadow: 0 1px 0 0 var(--accent); }
   .pu-cards :global(.pu-name::placeholder) { font-weight: 400; color: var(--ink-3); }
 
   .pu-cards :global(.pu-state) {

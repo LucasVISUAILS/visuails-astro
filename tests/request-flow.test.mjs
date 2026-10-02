@@ -112,9 +112,11 @@ console.log('het eindpunt antwoordt, en zegt precies twee dingen');
      Nog steeds geen bedrag, adres of naam — zie de noot in order-status.js.
      Sinds 24 september 2026 nog één: `failed` (de laatste betaalpoging werd
      geweigerd of afgebroken), zodat de bedankpagina niet tien seconden op de
-     bank wacht. Ook dat zegt niets over wie er betaalde of hoeveel. */
+     bank wacht. Ook dat zegt niets over wie er betaalde of hoeveel.
+     Sinds 2 oktober 2026 (ronde 9, O37) `refund`: geannuleerd en toch betaald,
+     dus het geld komt terug. Ook alleen een vlag. */
   ok('en het antwoord heeft niets anders in zich',
-    Object.keys(dubbel.body).sort().join(','), 'cancelled,failed,kind,paid,payable');
+    Object.keys(dubbel.body).sort().join(','), 'cancelled,failed,kind,paid,payable,refund');
   ok('  een onbetaalde bestelling is niet paid', gewoon.body.paid, false);
   ok('  en zonder bedrag ook niet payable', gewoon.body.payable, false);
   ok('  een geannuleerde is nooit payable', dubbel.body.payable, false);

@@ -477,6 +477,8 @@ h1 {
 .tally { font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem 1.6rem; list-style: none; margin: 0; padding: 0; }
 .shot img { width: 100%; background: var(--paper-2); }
+/* Een clip (ronde 9, F42): staand 9:16, dezelfde breedte en rand als een beeld. */
+.shot video { display: block; width: 100%; aspect-ratio: 9 / 16; background: #000; border-radius: var(--r-md); }
 .shot .name { display: block; margin: .7rem 0 .1rem; font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
 .shot .meta { font-size: .82rem; color: var(--ink-3); }
 
@@ -956,7 +958,7 @@ body {
   min-height: 28px; padding: 0 .7rem;
   border: 0; border-radius: var(--r-pill);
   font-family: var(--font-mono); font-stretch: var(--stretch-mono);
-  font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: .06em;
+  font-size: 11.5px; line-height: 1; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
   background: var(--st-wait-fill); color: var(--st-wait-ink);
   box-shadow: inset 0 0 0 1px var(--st-wait-edge);
@@ -976,3 +978,7 @@ a.stand:hover { box-shadow: inset 0 0 0 1px currentColor; }
    stil terug te komen. Zelfde paars als de rest van de pagina: dit is een
    aanwijzing, geen alarm. */
 .rr-fout { margin: .6rem 0 .8rem; padding: .7rem .9rem; border-radius: var(--r-md); background: var(--accent-tint); color: var(--accent-text); font-size: .95rem; }
+
+/* Ronde 9, F31: "Keur alle … resterende beelden goed" boven het raster. */
+.alles { display: grid; justify-items: start; gap: .4rem; margin: .4rem 0 1.2rem; }
+.alles .note { margin: 0; }

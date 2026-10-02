@@ -68,7 +68,7 @@ import { mailInvoice, mailSubscriptionInvoice } from '../../../src/lib/invoiceMa
 /* De direct-inlogknop in de welkomstmail van een abonnement (24 september 2026). */
 import { welkomLink } from '../../../src/lib/account.js';
 import { mailCreditNote, mailOngewensteBetaling, mailIncassoMislukt, mailBetalingOntvangen } from '../../../src/lib/cancelMail.js';
-import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted, notifyOngewensteBetaling } from '../../../src/lib/notify.js';
+import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted, notifyOngewensteBetaling, notifyChargeback } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
    Mollie te komen en niet uit een teller van mij. */
@@ -1095,6 +1095,13 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
   // — een oudere betaallink, of een order die met de hand is aangemaakt.
   await recordPaymentMethod(env, order.id, payment, ref, mode);
 
+  // ── TERUGBOEKING (CHARGEBACK) — ronde 9, F62 ───────────────────────────────
+  // Mollie laat de status op 'paid' staan en zet `amountChargedBack` op de
+  // betaling; dezelfde webhook komt opnieuw en liep hieronder als "dubbel" weg.
+  // Eén keer melden per bedrag (admin_log is het geheugen), niets automatisch
+  // terugdraaien — zie notifyChargeback().
+  await meldChargeback(env, order, payment, ref);
+
   // ── REFUNDS, AND WHY THIS SITS ABOVE THE IDEMPOTENCY GATE ──────────────────
   //
   // This is a real gap being closed, not a feature. Mollie fires THIS SAME
@@ -1696,7 +1703,7 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
     const invoice = await issueInvoice(env, order.id);
     if (invoice) {
       const full = await env.DB.prepare(
-        'SELECT ref, email, lang, service, window_start, window_end FROM orders WHERE id = ?1'
+        'SELECT ref, email, name, lang, service, window_start, window_end FROM orders WHERE id = ?1'
       ).bind(order.id).first();
       if (full) full.noNext = full.service === SAMPLE_SERVICE;
       await mailInvoice(env, { order: full, invoice });
@@ -1736,6 +1743,27 @@ export function onRequestGet() {
  * migratie, wat in de praktijk voorkomt — dan slaat dit stil over in plaats van
  * de betaling mee te sleuren.
  */
+async function meldChargeback(env, order, payment, ref) {
+  const terug = mollieAmountToCents(payment.amountChargedBack) ?? 0;
+  if (terug <= 0) return;
+  const detail = `${ref}: ${payment.id} ${terug} cent teruggeboekt`;
+  try {
+    const al = await env.DB.prepare(
+      "SELECT 1 AS er FROM admin_log WHERE action = 'payment.chargeback' AND order_id = ?1 AND detail = ?2 LIMIT 1"
+    ).bind(order.id, detail).first();
+    if (al) return;
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+       VALUES (NULL, NULL, 'payment.chargeback', ?1, ?2, ?3)`
+    ).bind(order.id, order.customer_id || null, detail).run();
+  } catch (err) {
+    console.error('[mollie-webhook] terugboeking op', payment.id, 'niet vastgelegd —', err?.message || err);
+    return;
+  }
+  console.warn(`[mollie-webhook] TERUGBOEKING ${ref} ${payment.id} ${terug} cent`);
+  await notifyChargeback(env, { orderId: order.id, betaalId: payment.id, bedragCents: terug, totaalCents: mollieAmountToCents(payment.amount) });
+}
+
 async function recordPaymentMethod(env, orderId, payment, ref, mode) {
   const method = typeof payment.method === 'string' ? payment.method : null;
   if (!method) return;

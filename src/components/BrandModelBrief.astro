@@ -176,7 +176,9 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
         heeft Mollie nooit gezien. Een gewone verzending volgt de 302 wél. */}
     <form action="/api/order" method="post" class="bm-form" data-bm-form novalidate data-astro-reload>
       <input type="hidden" name="service" value="brand-model" />
-      <input type="hidden" name="redirect" value={lp('/thank-you')} />
+      {/* ?soort=merkmodel: de bedankpagina vertelt dan wat er bij een merkmodel gebeurt
+          (richtingen, één correctieronde) en geen levertijd voor beelden (ronde 9, O30). */}
+      <input type="hidden" name="redirect" value={lp('/thank-you') + '?soort=merkmodel'} />
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="source" value="start-brand-model" />
       {/* Same honeypot every other form on this site carries. Off-screen rather
@@ -526,7 +528,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-bewijs { margin: 1.6rem 0 0; display: grid; gap: .5rem; justify-items: start; }
   .bm-bewijs-h {
     font-family: var(--font-mono);
-    font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
+    font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3);
   }
   .bm-bewijs-rij {
     display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
@@ -977,6 +979,13 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
       }
       doos.hidden = lijst.childElementCount === 0;
     }
+
+    /* Terug van de server met ?error= (ronde 9, F45): interactions.js zet de
+       antwoorden terug en vraagt om de stap van het veld dat het betreft. */
+    form.addEventListener('vis:toonveld', (e) => {
+      const blok = e.target instanceof HTMLElement ? e.target.closest('[data-bm-step]') : null;
+      if (blok) { toon(Number(blok.dataset.bmStep)); naarBoven(); }
+    });
 
     syncTak();
     syncBtw();

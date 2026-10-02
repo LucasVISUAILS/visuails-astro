@@ -217,7 +217,7 @@ section('§1 · /account/details — two callers, one endpoint');
 // The page's own form. It has no background control at all since August 2026,
 // so the request carries no such field and the columns must be left untouched.
 {
-  const r = await post('/account/details', { name: 'Mara', brand: 'VOLT', phone: '+31 6 1', vat: 'NL001234567B01' });
+  const r = await post('/account/details', { name: 'Mara', brand: 'VOLT', phone: '+31 6 12345678', vat: 'NL001234567B01' });
   const w = writeTo(r.writes, CUSTOMERS);
   check('a form with no background leaves the columns alone', !/default_background/.test(w.sql));
   check('and writes only the fields it was sent', !writes(w, 'country') && !writes(w, 'city'));
@@ -271,9 +271,10 @@ section('§1b · wat er verplicht is, en hoe het wordt samengesteld');
 
 const FULL = {
   first_name: 'Mara', last_name: 'de Groot', brand: 'VOLT',
-  country: 'NL', address_line1: 'Vaarwerkhorst 17', address_line2: '',
-  postal_code: '7531 HK', city: 'Enschede', region: '',
-  vat: 'NL001234567B01', phone: '', website: '',
+  country: 'NL', address_line1: 'Teststraat 1', address_line2: '',
+  postal_code: '1234 AB', city: 'Teststad', region: '',
+  // Telefoon is sinds ronde 9 verplicht (besluit Lucas, 2 oktober 2026).
+  vat: 'NL001234567B01', phone: '+31 6 12345678', website: '',
 };
 
 {
@@ -286,15 +287,15 @@ const FULL = {
   // vooraf samengesteld — zie migrations/0016.
   check('and `name` is the two of them joined', valueFor(w, 'name') === 'Mara de Groot', valueFor(w, 'name'));
   check('every address line lands in its own column',
-    valueFor(w, 'address_line1') === 'Vaarwerkhorst 17'
-    && valueFor(w, 'postal_code') === '7531 HK'
-    && valueFor(w, 'city') === 'Enschede');
+    valueFor(w, 'address_line1') === 'Teststraat 1'
+    && valueFor(w, 'postal_code') === '1234 AB'
+    && valueFor(w, 'city') === 'Teststad');
   check('an empty optional line is stored as nothing, not as ""',
     valueFor(w, 'address_line2') === null && valueFor(w, 'region') === null);
   // Postcode en plaats op één regel, straat erboven — de vorm die een envelop
   // aanhoudt. Het land staat er met opzet NIET bij; zie composeAddress().
   check('and the composed block reads like an address',
-    valueFor(w, 'billing_address') === 'Vaarwerkhorst 17\n7531 HK Enschede',
+    valueFor(w, 'billing_address') === 'Teststraat 1\n1234 AB Teststad',
     JSON.stringify(valueFor(w, 'billing_address')));
 }
 

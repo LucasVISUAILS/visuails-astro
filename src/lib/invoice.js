@@ -280,9 +280,20 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
   try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
   const lookNaam = /^cs-\d+$/.test(String(d.style || '')) && d.style_name ? String(d.style_name).slice(0, 80) : '';
   const aanbetaling = d.quote_kind === 'aanbetaling';
-  const basis = lang === 'nl'
-    ? `${svc} — ${n} product${n === 1 ? '' : 'en'}`
-    : `${svc} — ${n} product${n === 1 ? '' : 's'}`;
+  /* ── EEN OFFERTE TELT GEEN PRODUCTEN — ronde 9, F43 ───────────────────────
+     Een video- of eigen-lookofferte heeft geen product_count; de factuur zei
+     "Video — 1 product" bij twee Motion-clips. Wat er gefactureerd wordt, is de
+     offerte: dat staat er nu, met de soort clip als die bekend is. */
+  const videoSoort = { motion: 'Motion', lifestyle: 'Lifestyle Video', campaign: 'Campaign' }[String(d.style || '')] || '';
+  const basis = order.service === 'video'
+    ? (lang === 'nl'
+      ? `Video${videoSoort ? ` (${videoSoort})` : ''} — volgens offerte`
+      : `Video${videoSoort ? ` (${videoSoort})` : ''} — as quoted`)
+    : order.service === 'custom' && d.request === 'custom-look'
+      ? (lang === 'nl' ? 'Eigen look — ontwerp volgens offerte' : 'Custom look — design as quoted')
+      : lang === 'nl'
+        ? `${svc} — ${n} product${n === 1 ? '' : 'en'}`
+        : `${svc} — ${n} product${n === 1 ? '' : 's'}`;
   const label = aanbetaling ? `${lang === 'nl' ? 'Aanbetaling' : 'Deposit'} · ${basis}` : basis;
   const detail = lookNaam ? `${lang === 'nl' ? 'Eigen look' : 'Own look'}: ${lookNaam}` : '';
 
@@ -524,6 +535,19 @@ export async function issueInvoice(env, orderId, { today } = {}) {
     const seq = await nextNumber(env, year, proef);
     const number = formatNumber(year, seq, proef);
     const snap = snapshotFromOrder(order, env, { number, date });
+    /* ── GEEN ADRES OP DE BESTELLING? DAN DAT VAN DE KLANT — ronde 9, F44 ────
+       Een aanvraag (video, eigen look) vraagt geen adres, en dan ging de factuur
+       uit met alleen een naam. Heeft de klant zijn adres in VISUAILS Studio
+       (Je gegevens) staan, dan komt dat erop — en het land erbij. */
+    if (!snap.customer.address.length && order.customer_id) {
+      const klant = await env.DB.prepare('SELECT billing_address, country FROM customers WHERE id = ?1')
+        .bind(order.customer_id).first().catch(() => null);
+      const regels = String((klant && klant.billing_address) || '').split('\n').map((l) => l.trim()).filter(Boolean);
+      if (regels.length) {
+        snap.customer.address = regels;
+        if (!snap.customer.country && klant.country) snap.customer.country = klant.country;
+      }
+    }
     try {
       await env.DB.prepare(
         `INSERT INTO invoices (number, year, seq, order_id, customer_id, status, snapshot_json, lang, testmodus)

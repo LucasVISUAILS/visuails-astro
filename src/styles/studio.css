@@ -378,6 +378,7 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-bestelling-meta { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: .1rem .4rem; font-size: .9rem; color: var(--ink-3); min-width: 0; }
 .st-bit + .st-bit::before { content: "·"; margin-right: .4rem; color: var(--ink-4); }
 .st-bit-money { color: var(--st-clay-tekst); font-weight: 600; font-variant-numeric: tabular-nums; }
+.st-bit-brand { color: var(--ink-1); font-weight: 600; } /* ronde 9, O25: welk merk, bij een account met meer merken */
 .st-mini { display: inline-flex; gap: 4px; align-items: center; }
 .st-mini-stip { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
 .st-mini-stip.is-done { background: var(--ink-3); }
@@ -459,6 +460,8 @@ a.st-filter:hover { background: var(--ghost); color: var(--ink-1); }
 .st-ronde p { margin: 0; font-size: .92rem; color: var(--ink-2); }
 .st-ronde.is-ready { border-color: var(--st-accent-lijn); }
 .st-ronde.is-form .btn { align-self: flex-start; margin-top: .3rem; }
+.st-fotos .btn { align-self: flex-start; }
+.st-fotos-kies input[type="file"] { max-width: 100%; font-size: .95rem; color: var(--ink-2); }
 .st-ronde-waarschuwing { color: var(--ink-1) !important; font-weight: 500; }
 .st-beleid details { margin-top: .4rem; }
 .st-beleid summary { cursor: pointer; font-size: .85rem; color: var(--ink-3); }
@@ -962,9 +965,13 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
   .st-wie, .st-side-voet .st-stand { display: none; }
   .st-side-voet form { margin: 0; }
   .st-side-voet .btn { min-height: 34px; padding-inline: .9rem; font-size: .85rem; }
+  /* Ronde 9 (O49): de tabbalk scrolde opzij, en op Facturen, Je gegevens en
+     Abonnement stond de actieve tab buiten beeld — je zag niet waar je was.
+     Zonder script (CSP van Studio) kan hij niet naar de actieve tab schuiven,
+     dus breekt hij nu af naar een tweede regel: alles in beeld. */
   .st-nav {
-    flex-direction: row; gap: .1rem; overflow-x: auto; scrollbar-width: none;
-    margin-inline: -.9rem; padding-inline: .6rem; -webkit-overflow-scrolling: touch;
+    flex-direction: row; flex-wrap: wrap; gap: 0 .1rem; overflow-x: visible;
+    margin-inline: -.9rem; padding-inline: .6rem;
   }
   .st-nav::-webkit-scrollbar { display: none; }
   .st-navlink {
@@ -1163,7 +1170,7 @@ a.st-frame.is-vrij:hover { border-color: var(--ink-1); color: var(--ink-1); }
  * geldt onverkort.
  */
 .st-kal-groot .st-kal-dag { min-height: 92px; gap: .25rem; }
-.st-kal-pct { font-family: var(--font-mono); font-stretch: 82%; font-size: .68rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.st-kal-pct { font-family: var(--font-mono); font-stretch: 82%; font-size: .72rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .st-kal-dag.is-vol .st-kal-pct, .st-kal-dag.is-dicht .st-kal-pct { color: var(--st-clay-tekst); }
 .st-kal-item {
   display: block; font-size: .7rem; line-height: 1.25; color: var(--ink-1);

@@ -383,6 +383,15 @@ const CTX_BY_GARMENT = {
  * bij measure() staan, waar hij gelezen wordt.
  */
 const reached = new Set();
+/* Ronde 9, F58 — hier en niet bij show(), om dezelfde reden als `reached`:
+   init() roept show() aan vóór de module onderaan geëvalueerd is. Astro's
+   navigate() wordt dynamisch geladen; waar pipeline.js los draait (de tests)
+   is hij er niet en valt show() terug op een gewone pushState. */
+let astroNavigate = null;
+let eersteStapGetoond = false;
+try {
+  import('astro:transitions/client').then((m) => { astroNavigate = m && m.navigate; }).catch(() => {});
+} catch { /* geen dynamische import: dan zonder */ }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
@@ -467,6 +476,7 @@ function init(el) {
   bindUploads();
   bindGate();
   bindSubmit();
+  bindVertrekWaarschuwing();
   bindPrefill();
   bindStyling();
   bindMissing();
@@ -887,6 +897,34 @@ function show(n, opts) {
   const to = Math.min(STEPS, Math.max(1, n));
   current = to;
   measure(to);
+  /* ── DE TERUGKNOP VAN DE BROWSER IS DE VORIGE STAP — ronde 9, 2 oktober ──
+     De stappen stonden niet in de geschiedenis. Terug op stap 2 verliet het
+     formulier (met de vertrekwaarschuwing ervoor), en wie dan toch ging en
+     weer vooruit kwam, begon bij stap 1 met alles leeg. Nu krijgt elke stap
+     een eigen plek in de geschiedenis — op dezelfde URL — en zet popstate
+     (bindNav) de stap terug. */
+  /* HOE: elke stap na de eerste krijgt een #stap-N op dezelfde URL, en wel via
+     Astro's navigate(). Astro's router (ClientRouter) luistert zelf naar
+     popstate en laadt bij terug/vooruit naar dezelfde pagina alles opnieuw —
+     een leeg formulier — tenzij het om een hash gaat; dan schuift hij alleen.
+     Een eigen pushState zonder hash werd dus door Astro overschreven. */
+  if (!eersteStapGetoond) {
+    /* De eerste keer (bij het laden): een #stap-N uit een bladwijzer of na
+       verversen hoort niet te blijven staan — het formulier begint bij 1. */
+    eersteStapGetoond = true;
+    try {
+      if (/^#stap-\d+$/.test(location.hash)) history.replaceState(history.state, '', location.pathname + location.search);
+    } catch { /* geen geschiedenis: dan zoals voorheen */ }
+  } else if (!(opts && opts.uitHistorie)) {
+    const doel = `#stap-${to}`;
+    if (location.hash !== doel && !(to === 1 && !location.hash)) {
+      const naar = `${location.pathname}${location.search}${doel}`;
+      try {
+        if (astroNavigate) Promise.resolve(astroNavigate(naar, { state: { plStep: to } })).catch(() => {});
+        else history.pushState({ ...(history.state || {}), plStep: to }, '', naar);
+      } catch { /* geen geschiedenis: dan zoals voorheen */ }
+    }
+  }
 
   for (let i = 1; i <= STEPS; i += 1) {
     const node = stepNode(i);
@@ -1267,6 +1305,30 @@ function bindNav() {
       if (GATE_STEP !== null && to === GATE_STEP && !needsGate()) to -= 1;
       show(to);
     });
+  });
+  /* Terug en vooruit van de browser (zie show()). Vooruit mag alleen langs
+     stappen die nu nog kloppen — dezelfde toets als Verder; anders blijft de
+     klant staan op de stap die iets mist. */
+  /* Alleen zolang dít formulier in het document staat: terug naar deze pagina
+     vanaf een ándere pagina blijft van Astro. Astro's eigen popstate-luisteraar
+     draait eerst, maar doet bij een #stap-hash niets anders dan schuiven. */
+  window.addEventListener('popstate', () => {
+    if (!document.contains(form)) return;
+    const m = /^#stap-(\d+)$/.exec(location.hash);
+    const n = m ? Number(m[1]) : 1;
+    if (n === current) return;
+    if (n > current) {
+      for (let i = current; i < n; i += 1) {
+        if (GATE_STEP !== null && i === GATE_STEP && !needsGate()) continue;
+        if (!validateStep(i)) {
+          show(i, { uitHistorie: true });
+          try { history.replaceState(history.state, '', `${location.pathname}${location.search}${i > 1 ? `#stap-${i}` : ''}`); } catch { /* zie show() */ }
+          return;
+        }
+      }
+    }
+    show(n, { uitHistorie: true });
+    if (GATE_STEP !== null && n === GATE_STEP) runGate();
   });
   // The rail goes backwards only. Jumping forward past an unfilled step would
   // let someone reach the confirm screen without a scope, and the summary would
@@ -5682,7 +5744,14 @@ function paintCard(card) {
      opent de VOLGENDE, terwijl die volgende verborgen is — je ziet dan een
      dichtgeklapte kaart en een pijl die naar iets anders wijst. Twee dingen
      die allebei de navigatie doen, is één te veel. */
+  /* Ronde 9, klanttype 13: stond de toetsenbordfocus in de kaart die nu
+     dichtklapt (op het vakje van de laatste foto), dan viel hij weg naar
+     <body> en begon Tab weer bovenaan de pagina. Hij gaat naar de inklapknop
+     van dezelfde kaart; de volgende Tab gaat dan gewoon verder. */
+  let focusTerug = false;
   if (ready !== card.wasReady && !rijAan()) {
+    focusTerug = ready && card.el.contains(document.activeElement)
+      && document.activeElement !== card.toggleEl && document.activeElement !== card.input;
     card.collapsed = ready;
     card.wasReady = ready;
     // Hand the list on. A card that just became ready closes, so the next one
@@ -5711,6 +5780,10 @@ function paintCard(card) {
 
   card.el.classList.toggle('is-ready', ready);
   card.el.classList.toggle('is-collapsed', card.collapsed);
+  if (focusTerug) {
+    const doel = card.toggleEl && !rijAan() ? card.toggleEl : card.input;
+    if (doel) doel.focus({ preventScroll: true });
+  }
   /* De verwijderknop hoort bij de laatste kaart, en alleen boven het bestelde
      aantal. Hij wordt hier geschilderd en niet bij het bouwen, want beide
      voorwaarden veranderen terwijl de kaart al bestaat. */
@@ -6762,10 +6835,14 @@ const REQUIRED_DETAILS = [
    submit hieronder. Blijft false bij een uitgelogde bezoeker of een mislukte
    /account/me: dan gewoon /api/order, zoals altijd. */
 let ingelogdBestellen = false;
+/* Het tegoed van de ingelogde klant, in centen — ook voor de betaalregel in
+   stap 5 (ronde 9, F52). */
+let tegoedMeCents = 0;
 
 function toonTegoed(me) {
   const el = q('[data-pl-tegoed]');
   const cents = Math.round(Number(me && me.tegoedCents) || 0);
+  tegoedMeCents = cents > 0 ? cents : 0;
   if (!el || !(cents > 0)) return;
   const nl = document.documentElement.lang === 'nl';
   const bedrag = '€ ' + new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);
@@ -8164,12 +8241,30 @@ function renderSummary() {
       if (land) {
         const bruto = round2(net * (1 + VAT_RATE));
         const pct = String(Math.round(VAT_RATE * 100));
-        if (!isEu(land) && land !== HOME_COUNTRY) {
+        const buiten = !isEu(land) && land !== HOME_COUNTRY;
+        const verlegd = !buiten && land !== HOME_COUNTRY && btwNr && !geenNr;
+        if (buiten) {
           rows.push([c('sum.pay'), c('sum.payOutside', { net: euro(net) })]);
-        } else if (land !== HOME_COUNTRY && btwNr && !geenNr) {
+        } else if (verlegd) {
           rows.push([c('sum.pay'), c('sum.payReverse', { net: euro(net), gross: euro(bruto), pct })]);
         } else {
           rows.push([c('sum.pay'), c('sum.payGross', { gross: euro(bruto), pct })]);
+        }
+        /* ── EN HET TEGOED ERAF — ronde 9, F52 ────────────────────────────
+           De regel hierboven noemde € 107,69 terwijl Mollie € 82,69 vroeg: de
+           server haalt het tegoed van het bedrag incl. btw af (zie
+           src/lib/tegoedVerrekening.js). Bij verleggen hangt het bedrag aan
+           VIES, dus daar alleen dát het eraf gaat. */
+        if (tegoedMeCents > 0) {
+          const tegoed = tegoedMeCents / 100;
+          if (verlegd) {
+            rows.push([c('sum.tegoed'), c('sum.tegoedAf', { tegoed: euro(tegoed) })]);
+          } else {
+            const rest = Math.max(0, round2((buiten ? net : bruto) - tegoed));
+            rows.push([c('sum.tegoed'), rest > 0
+              ? c('sum.tegoedRest', { tegoed: euro(tegoed), rest: euro(rest) })
+              : c('sum.tegoedNul', { tegoed: euro(tegoed) })]);
+          }
         }
       }
     }
@@ -8310,6 +8405,29 @@ function renderStrip({ bgHex, bgName, ratioId, mp }) {
   strip.hidden = !strip.childElementCount;
 }
 
+/**
+ * ── NIET ZOMAAR WEG — 2 oktober 2026 (ronde 9, F33) ─────────────────────────
+ *
+ * De stappen van dit formulier hebben geen eigen adres. De terugknop van de
+ * browser gaat dus niet naar de vorige STAP maar weg van de pagina, en verversen
+ * begint helemaal opnieuw: aantal, productnamen, keuzes en de koppeling met de
+ * al geüploade foto's zijn weg. De starter die "veel terug klikt" verloor zo
+ * alles zonder één woord.
+ *
+ * Nu vraagt de browser het eerst ("Wil je deze site verlaten?"), maar alleen
+ * als er iets te verliezen is: voorbij stap 1, of met foto's in de bak. Tijdens
+ * het versturen niet — dan gaat de pagina met opzet naar Mollie of de
+ * bedankpagina.
+ */
+function bindVertrekWaarschuwing() {
+  window.addEventListener('beforeunload', (e) => {
+    if (busy) return;
+    if (current <= 1 && !staged.length) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+}
+
 function bindSubmit() {
   form.addEventListener('submit', onSubmit);
 }
@@ -8385,6 +8503,12 @@ function finishSubmit(status, body) {
     try {
       const em = (q('input[name="email"]') || {}).value || '';
       if (em) sessionStorage.setItem('vis-ty-mail', em.trim());
+      /* Het kenmerk erbij (ronde 9, F38): de bedankpagina gebruikt deze waarden
+         alleen als ze bij DEZE bestelling horen. Anders toonde een aanvraag
+         daarna in hetzelfde tabblad het adres van de vorige bestelling. */
+      let tyRef = String(body.ref || '');
+      if (!tyRef) { try { tyRef = new URL(body.redirect, location.href).searchParams.get('ref') || ''; } catch { tyRef = ''; } }
+      sessionStorage.setItem('vis-ty-ref', tyRef.toUpperCase());
       /* ── EN HET AANTAL EN DE SOORT — 8 september 2026 ───────────────────
          De bedankpagina wil één regel over het abonnement tonen, en alleen aan
          wie genoeg besteld heeft om er iets aan te hebben. Ze kan dat niet uit

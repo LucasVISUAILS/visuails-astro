@@ -93,7 +93,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
       grossCents: bruto,
       description: o.service === SAMPLE_SERVICE
         ? `VISUAILS ${o.ref}`
-        : paymentDescription({ service: ladderKey(o.service), products: o.product_count || 1 }, taal),
+        : paymentDescription({ service: ladderKey(o.service), products: o.product_count || 1, ref: o.ref, offerte: o.service === 'video' || o.service === 'custom' }, taal),
       successUrl: `${back}?paid=${encodeURIComponent(o.ref)}`,
       webhookUrl: `${url.origin}/api/webhook/mollie`,
       /* Bij 0% geen iDEAL — dezelfde regel als op de drie andere betaalpaden. */

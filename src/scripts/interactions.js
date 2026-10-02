@@ -17,6 +17,7 @@
 // — see tsPreflight(). /start reads the same three facts out of its config
 // blob; this page has no blob, so it reads them straight from the source.
 import { MAX_FILE_BYTES, MAX_BATCH_FILES, typeFor } from '../lib/uploads.js';
+import { normalizePhone } from '../lib/payer.js';
 
 // Safety net for reveal-gated content. `.reveal.pending` starts at opacity:0
 // and only becomes visible once `.in` is added. If the per-page Intersection
@@ -49,6 +50,7 @@ const I18N = {
     tyPayCta: 'Complete the payment',
     tyPaidNote: 'The payment came through. You will get a confirmation and the invoice by email.',
     tyCheckingNote: 'Checking with the bank whether the payment came through…',
+    tyUnpaidFlow: 'Nothing is being made yet: we start as soon as the payment is in. Your photos and choices are saved with the order.',
     tyUnpaidNote: 'The payment was not completed — cancelled, declined or the link expired. Nothing has been charged. The order is recorded under this reference; pay now, or later through the link in your confirmation email.',
     tyRetryCta: 'Pay again',
     tySignedIn: 'You are signed in — the order is already in VISUAILS Studio.',
@@ -89,6 +91,7 @@ const I18N = {
     tyPayCta: 'Rond de betaling af',
     tyPaidNote: 'De betaling is binnengekomen. Je krijgt de bevestiging en de factuur per mail.',
     tyCheckingNote: 'We kijken bij de bank of de betaling binnen is…',
+    tyUnpaidFlow: 'Er wordt nog niets gemaakt: we beginnen zodra de betaling binnen is. Je foto’s en keuzes staan bewaard bij de bestelling.',
     tyUnpaidNote: 'De betaling is niet afgerond — afgebroken, geweigerd of de link was verlopen. Er is niets afgeschreven. Je bestelling staat genoteerd onder dit kenmerk; betaal nu, of later via de link in je bevestigingsmail.',
     tyRetryCta: 'Opnieuw betalen',
     tySignedIn: 'Je bent ingelogd — de bestelling staat al in VISUAILS Studio.',
@@ -1106,15 +1109,27 @@ function initThankYou() {
   if (refCel) refCel.textContent = ref.toUpperCase();
   box.hidden = false;
 
+  /* ── ALLEEN WAT BIJ DIT KENMERK HOORT — ronde 9, F38 ───────────────────────
+     pipeline.js legt adres, aantal, soort en leverdata in sessionStorage. Een
+     aanvraag (video, eigen look) of een tweede bestelling in hetzelfde tabblad
+     legt daar niets neer — en dan stond hier het adres van de VORIGE klant
+     onder "Bevestiging verstuurd naar". Nu telt een waarde alleen als het
+     kenmerk dat pipeline.js erbij legde, dit kenmerk is. */
+  const eigen = (k) => {
+    try {
+      return String(sessionStorage.getItem('vis-ty-ref') || '') === ref.toUpperCase() ? (sessionStorage.getItem(k) || '') : '';
+    } catch { return ''; }
+  };
+
   /* De vastgezette leverdata, als pipeline.js ze achterliet (ronde 9, F29). */
   try {
-    const venster = sessionStorage.getItem('vis-ty-venster') || '';
+    const venster = eigen('vis-ty-venster');
     if (venster) document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { el.textContent = venster; });
   } catch { /* geen opslag */ }
 
   /* Het adres waar de bevestiging heen ging, als pipeline.js het achterliet. */
   try {
-    const mail = sessionStorage.getItem('vis-ty-mail') || '';
+    const mail = eigen('vis-ty-mail');
     const cel = document.querySelector('[data-ty-mail]');
     if (cel && mail) cel.textContent = mail;
   } catch { /* geen opslag */ }
@@ -1137,8 +1152,8 @@ function initThankYou() {
   const abo = document.querySelector('[data-ty-plan]');
   if (abo) {
     try {
-      const aantal = parseInt(sessionStorage.getItem('vis-ty-n') || '', 10);
-      const soort = sessionStorage.getItem('vis-ty-kind') || '';
+      const aantal = parseInt(eigen('vis-ty-n'), 10);
+      const soort = eigen('vis-ty-kind');
       const drempel = parseInt(abo.dataset.tyPlanMin || '', 10);
       if (Number.isInteger(aantal) && Number.isInteger(drempel) && aantal >= drempel
           && (soort === 'complete' || soort === 'lifestyle' || soort === 'catalog')) {
@@ -1176,9 +1191,21 @@ function initThankYou() {
   /* Eerst de controle (order.js stuurt ?nakijk=1 mee): de betaallink komt per
      mail. Zonder deze tak stond hier "we maken je visuals" bij een bestelling
      waar nog niets voor loopt. */
+  /* Een merkmodel (BrandModelBrief stuurt ?soort=merkmodel mee): richtingen en
+     een correctieronde, geen levertijd voor beelden en geen aanleverhulp
+     (ronde 9, O30). */
+  if (params.get('soort') === 'merkmodel') {
+    const flow = document.querySelector('[data-ty-flow]');
+    if (flow && flow.dataset.tyFlowModel) flow.textContent = flow.dataset.tyFlowModel;
+    document.querySelectorAll('dd[data-ty-timing]').forEach((el) => { (el.closest('.ty-row') || el).hidden = true; });
+    document.querySelectorAll('[data-ty-alleen-bestelling]').forEach((el) => { el.hidden = true; });
+  }
   if (params.get('nakijk') === '1' && !pay) {
     const flow = document.querySelector('[data-ty-flow]');
     if (flow && flow.dataset.tyFlowReview) flow.textContent = flow.dataset.tyFlowReview;
+    /* Ronde 9 (O19): de kop zei "we hebben je aanvraag" — het is een bestelling. */
+    const kopR = document.querySelector('[data-ty-title]');
+    if (kopR && kopR.dataset.tyTitleReview) kopR.textContent = kopR.dataset.tyTitleReview;
   }
 
   const kop = document.querySelector('[data-ty-title]');
@@ -1205,7 +1232,7 @@ function initThankYou() {
        staat dan niet in dat Studio. Nu alleen als het adres gelijk is; anders
        blijft de gewone regel over de inloglink staan. */
     let bestelAdres = '';
-    try { bestelAdres = String(sessionStorage.getItem('vis-ty-mail') || '').trim().toLowerCase(); } catch { /* geen opslag */ }
+    bestelAdres = eigen('vis-ty-mail').trim().toLowerCase();
     fetch('/account/me', { credentials: 'same-origin', headers: { accept: 'application/json' } })
       .then((r) => (r.ok ? r.json() : null))
       .then((me) => {
@@ -1318,6 +1345,10 @@ function verifyPaid(ref, noot, d, attempt = 0) {
         if (!s.payable) return;
         noot.textContent = d.tyUnpaidNote;
         if (kop && kop.dataset.tyTitleUnpaid) kop.textContent = kop.dataset.tyTitleUnpaid;
+        /* Ronde 9 (O13): onder "Wat er nu gebeurt" stond nog "we maken je
+           visuals" terwijl er niets loopt zolang er niet betaald is. */
+        const flowP = document.querySelector('[data-ty-flow]');
+        if (flowP) flowP.textContent = d.tyUnpaidFlow;
         if (balk) balk.setAttribute('data-ty-pay-state', '');
         const wrap = document.createElement('p');
         wrap.className = 'ty-pay-cta';
@@ -1362,6 +1393,20 @@ function checkCancelled(ref, attempt = 0) {
           const hand = document.querySelector('[data-ty-afgezegd]');
           const kop = document.querySelector('[data-ty-title]');
           if (!hand) return;
+          /* Ronde 9, O37: net betaald op een al geannuleerde bestelling. */
+          const handP = hand.querySelector('[data-ty-hand-p]');
+          if (d.refund && handP && handP.dataset.tyHandTerug) handP.textContent = handP.dataset.tyHandTerug;
+          /* Terug van Mollie kan de pagina er eerder zijn dan de webhook: dan
+             is de bestelling al geannuleerd maar de betaling nog niet geboekt.
+             Twee keer nakijken, alleen om de zin te wisselen. */
+          else if (handP && handP.dataset.tyHandTerug && /[?&]paid=/.test(window.location.search)) {
+            [3000, 8000].forEach((ms) => window.setTimeout(() => {
+              fetch(`/api/order-status?ref=${encodeURIComponent(ref)}`, { headers: { Accept: 'application/json' } })
+                .then((r) => (r.ok ? r.json() : null))
+                .then((e) => { if (e && e.refund) handP.textContent = handP.dataset.tyHandTerug; })
+                .catch(() => {});
+            }, ms));
+          }
           hand.hidden = false;
           if (kop && kop.dataset.tyTitleAfgezegd) kop.textContent = kop.dataset.tyTitleAfgezegd;
           const bar = document.querySelector('[data-ty-bar]');
@@ -1733,6 +1778,107 @@ function initTierToggle() {
  * vast op een volledig ingevuld formulier, en dat is erger dan een bubbel in de
  * verkeerde taal.
  */
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * TERUG VAN DE SERVER, MET JE ANTWOORDEN ER NOG IN — ronde 9, F45
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Het merkmodelformulier (€ 450) en de aanvraagformulieren posten gewoon naar
+ * /api/order. Keurt de server iets af (telefoon, btw-vorm, e-mail), dan stuurt
+ * hij terug naar dezelfde pagina met ?error=<code> — en die pagina begon leeg op
+ * stap 1, zonder één woord over wat er mis was. functions/api/order.js zegt in
+ * zijn noot dat de klant terugkomt "met zijn antwoorden er nog in"; dat was niet
+ * zo. Nu wel: vlak voor verzenden gaan de antwoorden in sessionStorage (alleen
+ * dit tabblad, weg bij sluiten), en een ?error= op dezelfde pagina zet ze terug,
+ * met een zin bovenaan en de cursor in het veld dat het betreft.
+ *
+ * Niet voor het bestelformulier (#pl-form): dat post met fetch en blijft staan.
+ * Geen bestanden, geen honeypot, geen verborgen velden.
+ */
+const TERUG_SLEUTEL = 'vis-form-terug';
+const TERUG_VELD = { phone: 'phone', vat: 'vat', email: 'email' };
+const TERUG_ZIN = {
+  nl: {
+    phone: 'Dat telefoonnummer klopt niet. Vul een nummer in waarop we je kunnen bereiken — je andere antwoorden staan er nog.',
+    vat: 'Dat btw-nummer heeft niet de vorm die bij het gekozen land hoort. Kijk het even na — je andere antwoorden staan er nog.',
+    email: 'Dat e-mailadres klopt niet. Kijk het even na — je andere antwoorden staan er nog.',
+    rate: 'Dat waren veel pogingen achter elkaar. Probeer het over een paar minuten opnieuw — je antwoorden staan er nog.',
+    anders: 'Dat lukte niet. Kijk je antwoorden even na en probeer het opnieuw — ze staan er nog.',
+  },
+  en: {
+    phone: 'That phone number does not work. Fill in a number we can reach you on — your other answers are still here.',
+    vat: 'That VAT number does not have the shape for the chosen country. Please check it — your other answers are still here.',
+    email: 'That email address does not work. Please check it — your other answers are still here.',
+    rate: 'That was a lot of attempts in a row. Try again in a few minutes — your answers are still here.',
+    anders: 'That did not work. Please check your answers and try again — they are still here.',
+  },
+};
+function bewaarbaar(el) {
+  if (!el.name || el.disabled) return false;
+  if (el.type === 'hidden' || el.type === 'file' || el.type === 'submit' || el.type === 'button' || el.type === 'password') return false;
+  if (el.name === 'company_hp') return false;
+  return true;
+}
+function initFormulierTerug() {
+  /* Ook het abonnementsformulier (/api/plan, ronde 9): dat stuurt terug met
+     ?fout=<reden> en toont zelf de zin erbij; hier alleen de antwoorden terug. */
+  const forms = [...document.querySelectorAll('form[action$="/api/order"], form[action$="/api/plan"]')].filter((f) => f.id !== 'pl-form' && !f.closest('#pl-form'));
+  if (!forms.length) return;
+  for (const f of forms) {
+    if (f.__terugGebonden) continue;
+    f.__terugGebonden = 1;
+    f.addEventListener('submit', () => {
+      try {
+        const velden = [...f.elements].filter(bewaarbaar).map((el) => [el.name, el.type, el.type === 'checkbox' || el.type === 'radio' ? (el.checked ? el.value : null) : el.value]);
+        sessionStorage.setItem(TERUG_SLEUTEL, JSON.stringify({ pad: location.pathname, t: Date.now(), velden }));
+      } catch { /* geen opslag: dan zoals vroeger */ }
+    });
+  }
+  let code = '';
+  let eigenZin = false;
+  try {
+    const q = new URLSearchParams(location.search);
+    code = q.get('error') || '';
+    if (!code && q.get('fout')) { code = q.get('fout'); eigenZin = true; }
+  } catch { return; }
+  if (!code) return;
+  let opgeslagen = null;
+  try { opgeslagen = JSON.parse(sessionStorage.getItem(TERUG_SLEUTEL) || 'null'); } catch { opgeslagen = null; }
+  const f = forms[0];
+  if (opgeslagen && opgeslagen.pad === location.pathname && Date.now() - Number(opgeslagen.t || 0) < 30 * 60 * 1000) {
+    for (const [naam, type, waarde] of opgeslagen.velden || []) {
+      const els = [...f.elements].filter((el) => el.name === naam && bewaarbaar(el));
+      for (const el of els) {
+        if (type === 'checkbox' || type === 'radio') {
+          if (waarde !== null && el.value === waarde && !el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+        } else if (el.type === type && !el.value) {
+          el.value = waarde;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    }
+  }
+  const taal = (document.documentElement.lang || 'en').slice(0, 2) === 'nl' ? 'nl' : 'en';
+  const zin = TERUG_ZIN[taal][code] || TERUG_ZIN[taal].anders;
+  if (!eigenZin && (!f.previousElementSibling || !f.previousElementSibling.classList.contains('form-terug'))) {
+    const p = document.createElement('p');
+    p.className = 'form-terug';
+    p.setAttribute('role', 'alert');
+    p.textContent = zin;
+    f.parentNode.insertBefore(p, f);
+  }
+  const veld = TERUG_VELD[code] ? f.querySelector(`[name="${TERUG_VELD[code]}"]`) : null;
+  if (veld && !eigenZin) {
+    /* Een formulier met stappen (merkmodel) zet de stap van dit veld in beeld. */
+    veld.dispatchEvent(new CustomEvent('vis:toonveld', { bubbles: true }));
+    try { veld.focus({ preventScroll: false }); } catch { /* oud */ }
+    /* De zin ook bij het veld zelf: de melding bovenaan staat buiten beeld
+       zodra het veld in beeld komt. Typen haalt hem weg (initVeldmeldingen). */
+    try { veld.setCustomValidity(zin); veld.reportValidity(); } catch { /* oud */ }
+  }
+}
+
 function initVeldmeldingen() {
   const velden = document.querySelectorAll('[data-melding]');
   for (const v of velden) {
@@ -1744,8 +1890,21 @@ function initVeldmeldingen() {
          onze eigen melding opnieuw zetten bovenop zichzelf. */
       if (!v.validity.customError) v.setCustomValidity(v.dataset.melding);
     });
-    v.addEventListener('input', () => v.setCustomValidity(''));
-    v.addEventListener('change', () => v.setCustomValidity(''));
+    /* ── EEN TELEFOONNUMMER MOET OOK EEN NUMMER ZIJN — ronde 9, F45 ─────────
+       Het merkmodelformulier liet "0612" door; de server weigerde het
+       (normalizePhone(): minstens acht cijfers) en stuurde terug naar
+       ?error=phone — op een pagina die alles kwijt was. Dezelfde regel hier,
+       zodat het veld al ongeldig is voordat er iets verstuurd wordt. */
+    const telCheck = () => {
+      v.setCustomValidity('');
+      if (v.type === 'tel' && v.required && v.value.trim() && !normalizePhone(v.value)) v.setCustomValidity(v.dataset.melding);
+      /* En een e-mailadres zoals de server het wil (isEmail() in order.js): de
+         browser vindt "naam@merk" goed, de server niet. */
+      if (v.type === 'email' && v.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.value.trim())) v.setCustomValidity(v.dataset.melding);
+    };
+    v.addEventListener('input', telCheck);
+    v.addEventListener('change', telCheck);
+    if ((v.type === 'tel' || v.type === 'email') && v.value) telCheck();
   }
 }
 
@@ -1830,6 +1989,8 @@ export function init() {
   initFormRefusal();
   initWizards();
   initVeldmeldingen();
+  /* Na de stapformulieren, die bij hetzelfde laadmoment hun stappen opbouwen. */
+  setTimeout(initFormulierTerug, 0);
 }
 
 // The reveal safety net is bound FIRST and unconditionally, so reveal-gated

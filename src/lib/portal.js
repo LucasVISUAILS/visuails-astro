@@ -139,6 +139,8 @@ const COPY = {
     windowPending: 'Being scheduled — we confirm the dates with you before anything is fixed',
 
     workTitle: 'The work',
+    approveAll: (n) => `Approve all ${n} remaining images`,
+    approveAllNote: 'Only images you have not reviewed yet; an image with a revision request stays as it is. Once everything is approved, the order is complete.',
     filesHeading: 'Files',
     timelineTitle: 'What has happened',
     tally: (approved, total) => `${approved} of ${total} approved`,
@@ -192,7 +194,8 @@ const COPY = {
     rrChosen: (n) => (n === 1 ? '1 image ticked' : `${n} images ticked`),
     rrUsedTitle: 'Your revision round is with us',
     rrDoneTitle: 'Your revision round has been handled',
-    rrDoneBody: (day, n) => `On ${day} you flagged ${n === 1 ? '1 image' : `${n} images`}; the new version is below. That was this order's revision round. If something is still not right, send us a message.`,
+    /* Ronde 9, O44: dit blok staat ONDER de bestanden, dus "below" wees de verkeerde kant op. */
+    rrDoneBody: (day, n) => `On ${day} you flagged ${n === 1 ? '1 image' : `${n} images`}; the new version${n === 1 ? ' is' : 's are'} above, with your files. That was this order's revision round. If something is still not right, send us a message.`,
     rrUsedBody: (day, n) => `You sent ${n === 1 ? '1 image' : `${n} images`} on ${day}. That is the round that comes with this order, so the form is closed — but we are not. Anything else about this order, message us and we will sort it out.`,
     rrUsedWa: 'Message us on WhatsApp',
     rrWaText: (ref) => `Hi VISUAILS, about order ${ref} — I have a question after my revision round.`,
@@ -201,6 +204,8 @@ const COPY = {
 
     emptyAttended: 'Nothing to review yet. The first visuals appear here the moment they are finished, and we email you when they do.',
     emptyUnattended: (timing) => `Your files are not ready yet. They appear here as soon as they are finished, and we email you when they do. ${timing}.`,
+    emptyRequest: 'This is a request. We reply in writing with a proposal and a price; nothing is made until you say yes.',
+    emptyOfferte: 'Your files are not ready yet. They appear here as soon as they are finished, and we email you when they do — within the turnaround in your quote. Not sent your product photos yet? Reply to the quote email with the photos, or send them on WhatsApp.',
     fileGone: 'No longer available here — ask us and we will send it again.',
     closed: 'This order is closed, so the review controls are gone. The files stay on this page until the link expires.',
 
@@ -247,6 +252,8 @@ const COPY = {
     windowPending: 'Wordt ingepland — we bevestigen de data met je voordat er iets vaststaat',
 
     workTitle: 'Het werk',
+    approveAll: (n) => `Keur alle ${n} resterende beelden goed`,
+    approveAllNote: 'Alleen beelden die je nog niet beoordeeld hebt; een beeld met een revisieverzoek blijft zoals het is. Is daarna alles goedgekeurd, dan is de bestelling afgerond.',
     filesHeading: 'Bestanden',
     timelineTitle: 'Wat er is gebeurd',
     tally: (approved, total) => `${approved} van ${total} goedgekeurd`,
@@ -287,7 +294,7 @@ const COPY = {
     rrChosen: (n) => (n === 1 ? '1 beeld aangevinkt' : `${n} beelden aangevinkt`),
     rrUsedTitle: 'Je revisieronde ligt bij ons',
     rrDoneTitle: 'Je revisieronde is verwerkt',
-    rrDoneBody: (day, n) => `Je gaf op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} door; de nieuwe versie staat hieronder. De revisieronde van deze bestelling is daarmee gebruikt. Klopt er toch nog iets niet, stuur ons een bericht.`,
+    rrDoneBody: (day, n) => `Je gaf op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} door; ${n === 1 ? 'de nieuwe versie staat' : 'de nieuwe versies staan'} hierboven, bij je bestanden. De revisieronde van deze bestelling is daarmee gebruikt. Klopt er toch nog iets niet, stuur ons een bericht.`,
     rrUsedBody: (day, n) => `Je hebt op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} doorgegeven. Dat is de ronde die bij deze bestelling hoort, dus het formulier is dicht — wij niet. Is er verder iets met deze bestelling, stuur ons een bericht en we lossen het op.`,
     rrUsedWa: 'Stuur een WhatsApp-bericht',
     rrWaText: (ref) => `Hoi VISUAILS, over bestelling ${ref} — ik heb een vraag na mijn revisieronde.`,
@@ -296,6 +303,8 @@ const COPY = {
 
     emptyAttended: 'Nog niets te beoordelen. De eerste visuals verschijnen hier zodra ze af zijn, en we mailen je als het zover is.',
     emptyUnattended: (timing) => `Je bestanden zijn nog niet klaar. Ze verschijnen hier zodra ze af zijn, en we mailen je als het zover is. ${timing}.`,
+    emptyRequest: 'Dit is een aanvraag. We antwoorden schriftelijk met een voorstel en een prijs; er wordt niets gemaakt voordat jij ja zegt.',
+    emptyOfferte: 'Je bestanden zijn nog niet klaar. Ze verschijnen hier zodra ze af zijn, en we mailen je als het zover is — binnen de levertijd uit de offerte. Nog geen productfoto’s gestuurd? Beantwoord de offertemail met de foto’s, of stuur ze via WhatsApp.',
     fileGone: 'Niet meer beschikbaar hier — vraag het ons en we sturen hem opnieuw.',
     closed: 'Deze bestelling is afgesloten, dus de beoordelingsknoppen zijn weg. De bestanden blijven op deze pagina staan tot de link verloopt.',
 
@@ -519,6 +528,29 @@ export async function portalPost(context) {
    * afwijzen op een veld dat hij niet hoort te hebben.
    */
   if (action === 'round') return handleRevisionRound(env, context, { order, form, home, lang, request });
+
+  /* ── ALLES IN ÉÉN KEER GOEDKEUREN — ronde 9 (F31) ─────────────────────────
+     De webshop kreeg 72 beelden in de privélink en kon ze alleen één voor één
+     goedkeuren: 72 klikken met 72 keer de pagina opnieuw. Studio heeft deze
+     knop sinds 30 september (approve-order in account.js); dezelfde regel hier:
+     elk levend beeld dat nog op 'pending' staat, en een beeld met een lopende
+     revisie blijft met rust. De bestelling hoort bij dit token — order.order_id
+     komt uit de tokencontrole, niet uit het formulier. */
+  if (action === 'approve-all') {
+    if (order.closed_at || order.service === SAMPLE_SERVICE) return seeOther(home);
+    try {
+      await env.DB.prepare(
+        `UPDATE files SET review_state = 'approved', review_note = NULL, reviewed_at = datetime('now')
+          WHERE order_id = ?1 AND kind = 'delivery' AND review_state = 'pending'
+            AND superseded_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))`
+      ).bind(order.order_id).run();
+      await maybeCloseOrder(env, order.order_id);
+    } catch {
+      return plainPage(env, request, 'down', 503);
+    }
+    later(context, bumpUse(env, order.token_id));
+    return seeOther(`${home}#werk`);
+  }
 
   const fileId = Number.parseInt(String(form.get('file') || ''), 10);
   /* 'revise' staat er niet meer bij: de per-beeld revisieknop is op 24 augustus
@@ -893,6 +925,9 @@ const ORDER_SQL =
             t.issued_at    AS issued_at,
             o.id           AS order_id,
             o.ref, o.service, o.status, o.tier, o.lang,
+            -- Ronde 9 (F40): een aanvraag (video, eigen look) zonder betaling is nog
+            -- geen opdracht; de lege staat zegt dan iets anders.
+            o.payment_status,
             -- cancel_payment hoort bij status: samen beslissen ze of deze levering
             -- nog van de klant is. Zie leveringIngetrokken() in delivery.js.
             o.cancel_payment,
@@ -1327,6 +1362,12 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
       })).join('')}</ul>`
     : `<p class="note">${esc(t.emptyAttended)}</p>`;
   const rr = files.length ? roundBlock(t, lang, order, files) : '';
+  /* Alles in één keer goedkeuren (ronde 9, F31): pas vanaf twee open beelden,
+     en niet op een afgeronde bestelling of een proef. */
+  const nogOpen = files.filter((f) => f.review_state === 'pending' && !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null))).length;
+  const allesKnop = (!readOnly && canReviewOrder(order) && order.service !== SAMPLE_SERVICE && nogOpen >= 2)
+    ? `<form method="post" action="" class="alles"><button class="btn btn-primary" type="submit" name="action" value="approve-all">${esc(t.approveAll(nogOpen))}</button><p class="note">${esc(t.approveAllNote)}</p></form>`
+    : '';
 
   /*
    * ── DE TEVREDENHEIDSVRAAG, EN WANNEER HIJ VERSCHIJNT ──────────────────────
@@ -1352,8 +1393,9 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
 </div>
 ${factList(facts)}
 <p class="note">${esc(readOnly ? t.closed : t.howAttended(clause(aftercare('attended', lang))))}</p>
-<section class="work">
+<section class="work" id="werk">
   <h2>${esc(t.workTitle)}${tally}</h2>
+  ${allesKnop}
   ${work}
 </section>
 ${rr}
@@ -1412,7 +1454,11 @@ function unattendedBody(t, lang, order, token, files, folder = '', feedback = ''
           round: ronde,
         }))
         .join('')}</ul>`
-    : `<p class="note">${esc(t.emptyUnattended(timing))}</p>`;
+    /* Ronde 9 (F40): video en eigen look lopen via een offerte. Daar geldt de
+       wachtrijzin niet, en de klant moet weten hoe zijn foto's bij ons komen. */
+    : (order.service === 'video' || order.service === 'custom')
+      ? `<p class="note">${esc(String(order.payment_status || '') === 'paid' ? t.emptyOfferte : t.emptyRequest)}</p>`
+      : `<p class="note">${esc(t.emptyUnattended(timing))}</p>`;
   const rr = files.length ? roundBlock(t, lang, order, files) : '';
 
   // De proefvisual heeft geen beoordeelknoppen (zie canReviewOrder), dus hij
@@ -1581,9 +1627,15 @@ function shot(t, lang, f, token, { review, history, round = false }) {
   // alt is empty on purpose: the filename below is the only description that
   // exists, it is already on the page as text, and repeating it would make a
   // screen reader say it twice.
+  /* Een clip is geen <img>: die bleef leeg, en de klant keurde zijn video's
+     blind goed (ronde 9, F42). Een <video> met bediening; media-src 'self'
+     staat daarvoor in de CSP van deze pagina. */
+  const isClip = /\.(mp4|webm|mov|m4v)$/i.test(name);
   const preview = gone
     ? ''
-    : `<img src="/o/${token}/f/${f.id}" alt="" loading="lazy" decoding="async">`;
+    : isClip
+      ? `<video src="/o/${token}/f/${f.id}" controls preload="metadata" playsinline></video>`
+      : `<img src="/o/${token}/f/${f.id}" alt="" loading="lazy" decoding="async">`;
 
   let state = '';
   if (!history) {
@@ -1827,7 +1879,7 @@ function html(body, status = 200) {
       'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',
       'content-security-policy':
-        "default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+        "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
     },
   });
 }

@@ -197,6 +197,37 @@ export async function notifyOngewensteBetaling(env, { orderId, soort, betaalId, 
 }
 
 /*
+ * ── TERUGBOEKING (CHARGEBACK) — ronde 9, F62 ────────────────────────────────
+ *
+ * Mollie zet een betaling bij een chargeback NIET op een andere status: hij
+ * blijft 'paid', met `amountChargedBack` erbij, en dezelfde webhook komt
+ * opnieuw. Die viel hier als "dubbele aflevering" weg: geen regel, geen mail,
+ * en een bestelling die gewoon doorliep. Nu hoor je het. Er gebeurt verder
+ * niets vanzelf — een terugboeking kan een vergissing van de bank zijn, een
+ * geschil dat je wint, of fraude; dat is een besluit, geen regel.
+ */
+export async function notifyChargeback(env, { orderId, betaalId, bedragCents, totaalCents }) {
+  try {
+    const o = await orderFor(env, orderId);
+    const ref = o?.ref || `#${orderId}`;
+    await toStudio(env, `Terugboeking (chargeback) · ${ref} · ${cents(bedragCents)}`, [
+      h1('De klant heeft de betaling laten terugboeken', ref),
+      mailRows([
+        ['Bestelling', ref],
+        ['Klant', who(o)],
+        ['E-mail', o?.email || ''],
+        ['Betaling', betaalId || ''],
+        ['Teruggeboekt', `${cents(bedragCents)}${totaalCents ? ` van ${cents(totaalCents)}` : ''}`],
+      ]),
+      mailP('Mollie heeft het bedrag van je saldo afgeschreven (plus hun kosten). De bestelling staat nog op betaald en loopt door: '
+        + 'zet hem stil als je nog niet geleverd hebt, en neem contact op met de klant. In het Mollie-dashboard kun je de terugboeking betwisten.'),
+    ].join(''), o?.email || '');
+  } catch (err) {
+    console.error('[notify] bericht over terugboeking niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/*
  * ── 0% BUITEN DE EU, BETAALD MET IETS UIT DE EU — 29 september 2026 ─────────
  *
  * Bestellingen van buiten de EU betalen sinds vandaag meteen, zonder
@@ -438,6 +469,37 @@ export async function notifyRevisionRound(env, { orderId, items = [] }) {
     );
   } catch (err) {
     console.error('[notify] revisieronde niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/**
+ * De klant zette foto's bij een bestaande bestelling, in Studio.
+ *
+ * Ronde 9 (F55): een bestelling die de studio namens de klant aanmaakt (WhatsApp,
+ * telefoon) heeft vaak nog geen foto's, en de klant had nergens een plek om ze
+ * neer te zetten. Nu wel — en dan hoort de studio dat ze er zijn, want daar
+ * wacht het werk op.
+ */
+export async function notifyFotosToegevoegd(env, { orderId, count }) {
+  try {
+    const o = await orderFor(env, orderId);
+    const ref = o?.ref || `#${orderId}`;
+    await toStudio(
+      env,
+      `Foto's binnen · ${ref} · ${count}`,
+      [
+        h1('De klant heeft foto\u2019s toegevoegd', ref),
+        mailRows([
+          ['Bestelling', ref],
+          ['Klant', who(o)],
+          ['Foto\u2019s', String(count)],
+        ]),
+        mailP('Ze staan bij de bestelling onder \u201cAangeleverd door de klant\u201d.'),
+      ].join(''),
+      o?.email || '',
+    );
+  } catch (err) {
+    console.error('[notify] foto-melding niet verstuurd voor', orderId, '\u2014', err?.message || err);
   }
 }
 

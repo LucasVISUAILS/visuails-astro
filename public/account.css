@@ -1544,7 +1544,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-ch input { accent-color: var(--teal); margin: 0; }
 .bk-ch-name { font-size: .92rem; }
 .bk-ch-flag {
-  font-size: .68rem; letter-spacing: .02em; padding: .1rem .3rem;
+  font-size: .72rem; letter-spacing: .02em; padding: .1rem .3rem;
   border: 1px solid var(--line-strong); border-radius: var(--r-sm);
   color: var(--ink-3);
 }
@@ -1647,7 +1647,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
   border-style: dashed;
 }
 .bk-sw-name { font-size: .78rem; font-weight: 600; color: var(--ink); }
-.bk-sw-hex { font-size: .68rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.bk-sw-hex { font-size: .72rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
 .bk-actions { display: flex; }
 .bk-actions .btn { flex: 0 0 auto; }
@@ -1660,7 +1660,7 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
   .bk-tiles { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
   .bk-tile-meta { padding: .35rem .4rem .45rem; }
   .bk-tile-name { font-size: .78rem; }
-  .bk-tile-sub { font-size: .68rem; }
+  .bk-tile-sub { font-size: .72rem; }
   .bk-sum { flex-wrap: wrap; }
   .bk-sum-cta { width: 100%; justify-content: flex-end; }
   .bk-empty { flex-direction: column; }
@@ -2362,7 +2362,7 @@ details.ask { margin-top: 0; }
 .shot-badge {
   position: absolute; left: .4rem; top: .4rem; z-index: 1;
   padding: .18rem .42rem; border-radius: var(--r-sm, 5px);
-  font-size: .62rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
+  font-size: .72rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
   background: rgb(8 9 11 / .78); backdrop-filter: blur(3px);
 }
 /* LIME EN NIET --accent-2, ook in het lichte scherm. Dit badge ligt op
@@ -2530,7 +2530,7 @@ details.ask { margin-top: 0; }
   border-radius: 0 var(--r-sm, 6px) var(--r-sm, 6px) 0;
 }
 .studionote-who {
-  display: block; font-size: .68rem; letter-spacing: .09em; text-transform: uppercase;
+  display: block; font-size: .72rem; letter-spacing: .09em; text-transform: uppercase;
   font-weight: 700; color: var(--ink-3);
 }
 .studionote p { margin: .3rem 0 0; font-size: .92rem; line-height: 1.6; color: var(--ink-2); }
@@ -3718,7 +3718,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 @media (max-width: 620px) { .slotbalk { width: 96px; } }
 
 .slot-groep .lab {
-  font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
   color: var(--ink-3);
 }
 .slot-groep.oud .lab { color: var(--accent-2); }
@@ -3743,7 +3743,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
    slot af ging. */
 .q-merk {
   flex: 0 0 auto;
-  font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
   padding: .3rem .6rem; border-radius: var(--r-pill, 99px);
   color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -3775,7 +3775,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 }
 .kal-kop {
   background: var(--paper-lift); padding: .4rem .3rem; text-align: center;
-  font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   color: var(--ink-3);
 }
 .kal-dag {
@@ -3784,7 +3784,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   display: flex; flex-direction: column; gap: .15rem; width: 100%;
 }
 .kal-n { font-size: .95rem; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; line-height: 1; }
-.kal-l { font-size: .62rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); line-height: 1.2; }
+.kal-l { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); line-height: 1.2; }
 
 .kal-dag.is-vrij { cursor: pointer; }
 .kal-dag.is-vrij:hover { background: var(--paper-lift); }
@@ -3818,7 +3818,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 @media (max-width: 560px) {
   .kal-dag { min-height: 3.4rem; padding: .35rem .3rem; }
   .kal-n { font-size: .85rem; }
-  .kal-l { font-size: .55rem; }
+  .kal-l { font-size: .72rem; }
   .q-wanneer { align-self: flex-start; }
 }
 /* De twee dagen die dit item nu vasthoudt. Dit is het ENE ding op dit scherm dat
@@ -3948,7 +3948,7 @@ main .lede, .main .lede { margin-bottom: 1.4rem; }
   min-height: 28px; padding: 0 .7rem;
   border: 0; border-radius: var(--r-pill);
   font-family: var(--font-mono); font-stretch: var(--stretch-mono);
-  font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: .06em;
+  font-size: 11.5px; line-height: 1; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
   background: var(--st-wait-fill); color: var(--st-wait-ink);
   box-shadow: inset 0 0 0 1px var(--st-wait-edge);

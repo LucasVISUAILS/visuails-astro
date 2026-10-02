@@ -628,22 +628,28 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
 
   const kop = (t) => [t, '-'.repeat(Math.min(68, Math.max(20, t.length)))];
 
-  if (nl) {
-    return CRLF([
-      `VISUAILS — je beelden`,
-      '='.repeat(68),
+  /* ── EEN PLATTE MAP IS OOK EEN MAP — ronde 9, 2 oktober 2026 ──────────────
+     Een levering die via /admin is geüpload (de vaste weg sinds besluit F18)
+     heeft geen productmappen en geen formaatmappen: de beelden staan los, met
+     het product in de naam (VIS-…-p1-voorkant.jpg). De leesmij beschreef toch
+     "eerst per product, daarna per formaat" met JPG/PNG/WEBP, en telde "1
+     producten". Nu beschrijft hij wat er echt in de map zit. */
+  const plat = mappen.length === 0;
+  const perFormaat = entries.some((e) => /\/(JPG|PNG|WEBP)\//.test(e.name));
+  const productTal = plat
+    ? Math.max(1, new Set(entries.map((e) => (/-p(\d+)-/.exec(e.name) || [])[1]).filter(Boolean)).size)
+    : mappen.length;
+  const voorbeeldNaam = (entries[0]?.name || '').split('/').pop() || `${order?.ref || 'VIS'}-p1-${vb[0].replace(/^\d+-/, '')}.jpg`;
+  const indelingNl = plat || !perFormaat
+    ? [
+      plat ? 'Alle beelden staan los in deze map. De bestandsnaam zegt welk' : 'Per product één map, met de beelden er los in. De bestandsnaam zegt welk',
+      'product en welke opname het is:',
       '',
-      `Bestelling   ${order?.ref || '-'}`,
-      `Voor         ${merk}`,
-      `In deze map  ${mappen.length || 1} ${mappen.length === 1 ? 'product' : 'producten'}, ${beelden} ${beelden === 1 ? 'beeld' : 'beelden'}, ${entries.length} bestanden (${humanBytes(s.bytes, 'nl')})`,
-      `Formaten     ${s.formats.map((f) => f.toUpperCase()).join(', ')}`,
+      `    ${voorbeeldNaam}`,
       '',
-      'Hieronder staat in vijf korte stukken alles wat je met deze map moet',
-      'kunnen. Je hebt het niet nodig om te beginnen — open een productmap en',
-      'pak de jpg, dan zit je goed.',
-      '',
-      ...kop('1 · HOE DE MAP IS INGEDEELD'),
-      '',
+      'p1 is het eerste product uit je bestelling, p2 het tweede, enzovoort.',
+    ]
+    : [
       'Eerst per product, daarna per formaat:',
       '',
       `    ${mappen[0] || '01 - je product'}/`,
@@ -657,14 +663,62 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
       'verkenner ze in de goede volgorde zet. De nummers in de bestandsnamen',
       'doen hetzelfde binnen een product: zo staan ze in de volgorde',
       'waarin we ze maakten, en niet alfabetisch door elkaar.',
+    ];
+  const indelingEn = plat || !perFormaat
+    ? [
+      plat ? 'All images sit loose in this folder. The filename tells you which' : 'One folder per product, with the images loose inside. The filename tells you which',
+      'product and which shot it is:',
       '',
-      `De namen die je tegenkomt: ${shotWoorden}.`,
+      `    ${voorbeeldNaam}`,
+      '',
+      'p1 is the first product in your order, p2 the second, and so on.',
+    ]
+    : [
+      'By product first, then by format:',
+      '',
+      `    ${mappen[0] || '01 - your product'}/`,
+      '        JPG/',
+      `            ${vb[0]}.jpg`,
+      `            ${vb[1]}.jpg`,
+      '        PNG/',
+      '        WEBP/',
+      '',
+      'The folder name is your own product name, with a number in front so',
+      'your file browser puts them in the right order. The numbers in the',
+      'filenames do the same inside a product: they stay in the order we',
+      'made them in, not shuffled alphabetically.',
+    ];
+  const meerFormaten = s.formats.length > 1;
+  /* In een platte map staat het nummer niet voor de opname (…-p1-voorkant.jpg). */
+  const namenHier = plat ? shotWoorden.split(', ').map((w) => w.replace(/^\d+-/, '')).join(', ') : shotWoorden;
+
+  if (nl) {
+    return CRLF([
+      `VISUAILS — je beelden`,
+      '='.repeat(68),
+      '',
+      `Bestelling   ${order?.ref || '-'}`,
+      `Voor         ${merk}`,
+      `In deze map  ${productTal} ${productTal === 1 ? 'product' : 'producten'}, ${beelden} ${beelden === 1 ? 'beeld' : 'beelden'}, ${entries.length} ${entries.length === 1 ? 'bestand' : 'bestanden'} (${humanBytes(s.bytes, 'nl')})`,
+      `Formaten     ${s.formats.map((f) => f.toUpperCase()).join(', ')}`,
+      '',
+      'Hieronder staat in vijf korte stukken alles wat je met deze map moet',
+      `kunnen. Je hebt het niet nodig om te beginnen — open ${plat ? 'de map' : 'een productmap'} en`,
+      'pak de jpg, dan zit je goed.',
+      '',
+      ...kop('1 · HOE DE MAP IS INGEDEELD'),
+      '',
+      ...indelingNl,
+      '',
+      `De namen die je tegenkomt: ${namenHier}.`,
       '',
       ...kop('2 · WELK FORMAAT PAK JE WAARVOOR'),
       '',
       ...formaatRegels,
-      'Alle drie zijn hetzelfde beeld. Je verliest niets door de kleinste te',
-      'nemen — dat is precies waarvoor hij er is.',
+      ...(meerFormaten ? [
+        'Het is steeds hetzelfde beeld. Je verliest niets door de kleinste te',
+        'nemen — dat is precies waarvoor hij er is.',
+      ] : []),
       '',
       ...kop("3 · ALLE JPG'S IN ÉÉN KEER"),
       '',
@@ -730,36 +784,26 @@ export function deliveryReadme({ order, entries, productNames = {}, portalUrl } 
     '',
     `Order          ${order?.ref || '-'}`,
     `For            ${merk}`,
-    `In this folder ${mappen.length || 1} ${mappen.length === 1 ? 'product' : 'products'}, ${beelden} ${beelden === 1 ? 'image' : 'images'}, ${entries.length} files (${humanBytes(s.bytes, 'en')})`,
+    `In this folder ${productTal} ${productTal === 1 ? 'product' : 'products'}, ${beelden} ${beelden === 1 ? 'image' : 'images'}, ${entries.length} ${entries.length === 1 ? 'file' : 'files'} (${humanBytes(s.bytes, 'en')})`,
     `Formats        ${s.formats.map((f) => f.toUpperCase()).join(', ')}`,
     '',
     'Below, in five short parts, is everything you should need. You do not',
-    'need it to get started — open a product folder and take the jpg, and',
+    `need it to get started — open ${plat ? 'the folder' : 'a product folder'} and take the jpg, and`,
     'you are fine.',
     '',
     ...kop('1 · HOW THE FOLDER IS ARRANGED'),
     '',
-    'By product first, then by format:',
+    ...indelingEn,
     '',
-    `    ${mappen[0] || '01 - your product'}/`,
-    '        JPG/',
-    `            ${vb[0]}.jpg`,
-    `            ${vb[1]}.jpg`,
-    '        PNG/',
-    '        WEBP/',
-    '',
-    'The folder name is your own product name, with a number in front so',
-    'your file browser puts them in the right order. The numbers in the',
-    'filenames do the same inside a product: they stay in the order we',
-    'made them in, not shuffled alphabetically.',
-    '',
-    `The names you will see: ${shotWoorden}.`,
+    `The names you will see: ${namenHier}.`,
     '',
     ...kop('2 · WHICH FORMAT FOR WHAT'),
     '',
     ...formaatRegels,
-    'All three are the same image. You lose nothing by taking the smallest —',
-    'that is exactly what it is there for.',
+    ...(meerFormaten ? [
+      'It is the same image each time. You lose nothing by taking the smallest —',
+      'that is exactly what it is there for.',
+    ] : []),
     '',
     ...kop('3 · ALL THE JPGS AT ONCE'),
     '',

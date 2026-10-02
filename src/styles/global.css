@@ -1412,7 +1412,7 @@ body.studio.on-ink {
   min-height: 28px; padding: 0 .7rem;
   border: 0; border-radius: var(--r-pill);
   font-family: var(--font-mono); font-stretch: var(--stretch-mono);
-  font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: .06em;
+  font-size: 11.5px; line-height: 1; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
   background: var(--st-wait-fill); color: var(--st-wait-ink);
   box-shadow: inset 0 0 0 1px var(--st-wait-edge);
@@ -5253,7 +5253,7 @@ body { position: relative; }
   padding: .1rem .45rem;
   vertical-align: middle;
   font-family: var(--font-body);
-  font-size: .66rem; font-weight: 700; letter-spacing: .02em;
+  font-size: .72rem; font-weight: 700; letter-spacing: .02em;
   color: var(--accent-bright);
   border: 1px solid var(--accent-line);
   border-radius: var(--r-sm, 4px);
@@ -6286,3 +6286,16 @@ body::before { display: none; }
 .pop.pop-klein .pop-buiten { display: none; }
 .pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(0 0 0 / .2)); }
 .pop.pop-klein .pop-kader { stroke-width: 3; }
+
+/* Terug van de server met ?error= (ronde 9, F45): één zin boven het formulier,
+   in de toestandskleur "aandacht", met de antwoorden er nog in. */
+.form-terug {
+  margin: 0 0 1.2rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--st-rev-edge);
+  border-radius: 10px;
+  background: var(--warn);
+  color: var(--warn-ink);
+  font-size: .95rem;
+  line-height: 1.45;
+}

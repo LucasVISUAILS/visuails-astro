@@ -564,7 +564,7 @@ h2 { margin: 2.4rem 0 .8rem; font-size: 1.05rem; font-weight: 500; letter-spacin
   min-height: 28px; padding: 0 .7rem;
   border: 0; border-radius: var(--r-pill);
   font-family: var(--font-mono); font-stretch: var(--stretch-mono);
-  font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: .06em;
+  font-size: 11.5px; line-height: 1; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
   background: var(--st-wait-fill); color: var(--st-wait-ink);
   box-shadow: inset 0 0 0 1px var(--st-wait-edge);
@@ -1004,10 +1004,10 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .brief-let { color: var(--st-rev-ink); font-weight: 700; }
 .brief-rij { display: grid; grid-template-columns: 86px 1fr; gap: .6rem; align-items: start; padding: .3rem 0; }
 .brief-rij + .brief-rij { border-top: 1px dotted var(--line); }
-.brief-kop { font-size: .68rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; padding-top: .3rem; }
+.brief-kop { font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; padding-top: .3rem; }
 .brief-vakken { display: flex; flex-wrap: wrap; gap: .5rem; }
 .brief-vak { display: flex; flex-direction: column; align-items: center; gap: .15rem; }
-.brief-vak-l { font-size: .6rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.brief-vak-l { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .brief-duim { display: block; width: 58px; height: 58px; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; background: var(--paper-2); }
 .brief-duim img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .brief-duim.is-rond { width: 48px; height: 48px; border: 1.5px solid rgb(0 0 0 / .45); border-radius: 999px; }
@@ -1897,6 +1897,14 @@ input, textarea, select { background-color: var(--paper-lift); }
 /* Een e-mailadres van veertig tekens is de andere helft van hetzelfde probleem:
    die brak nergens af en zette dus de minimumbreedte van zijn kolom. */
 table.files td, table.tbl td, table.ag-tabel td { overflow-wrap: anywhere; }
+/* Ronde 9 (O52): op de telefoon brak "anywhere" een e-mailadres om de twee
+   letters af ("stud / io@ / volt …") — de tabel paste daardoor zonder scrollen,
+   maar was onleesbaar. Daar de woorden heel laten: dan wordt de tabel breder en
+   scrolt hij in zijn eigen vak, zoals de noot hierboven bedoelt. */
+@media (max-width: 720px) {
+  table.files td, table.tbl td, table.ag-tabel td { overflow-wrap: normal; word-break: normal; }
+  table.files th, table.tbl th { white-space: nowrap; }
+}
 
 /* ── TWEE DINGEN DIE ZICHZELF BREDER MAKEN DAN HUN VAK ──────────────────────
    Wat er overbleef na de tabellen, op 390px gemeten:
@@ -2177,3 +2185,5 @@ details.admin-extra[open] > summary::after { content: "▴"; }
    achtergrond van .in-grow — die maakten "Deze bestelling is nog nooit gemeld"
    tot iets wat eruitzag als een invoerveld. */
 .in-tekst { flex: 1; min-width: 12rem; margin: 0; }
+/* Ronde 9 (F49): het gezicht van een eigen merkmodel bij "Wat de klant koos". */
+.keuze-gezicht { display: inline-block; vertical-align: middle; margin-left: .5rem; border-radius: 6px; object-fit: cover; }

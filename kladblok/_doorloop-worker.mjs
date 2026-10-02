@@ -81,6 +81,7 @@ function paymentView(p) {
     ...(p.customerId ? { customerId: p.customerId } : {}), ...(p.mandateId ? { mandateId: p.mandateId } : {}),
     ...(p.subscriptionId ? { subscriptionId: p.subscriptionId } : {}),
     ...(p.amountRefunded ? { amountRefunded: p.amountRefunded } : {}),
+    ...(p.amountChargedBack ? { amountChargedBack: p.amountChargedBack } : {}),
     /* https, want offsite.js laat alleen https door; de browser (Playwright) routeert nep-mollie.test naar dit paneel. */
     _links: { checkout: p.status === 'open' ? { href: `https://nep-mollie.test/checkout/${p.id}`, type: 'text/html' } : undefined },
   };
@@ -189,6 +190,8 @@ const worker = await unstable_startWorker({
     VISUAILS_VAT: bind('NL000000000B00'),
     VISUAILS_KVK: bind('00000000'),
     VISUAILS_IBAN: bind('NL00BANK0000000000'),
+    /* Ronde 9 · stap 7: bounces via /api/webhook/resend (svix-handtekening met dit geheim). */
+    RESEND_WEBHOOK_SECRET: bind('whsec_' + Buffer.from('proef-geheim-resend-webhook-32b!').toString('base64')),
   },
   dev: { persist: PERSIST, server: { port: PORT }, logLevel: 'warn', outboundService: outbound },
 });
@@ -280,6 +283,20 @@ http.createServer(async (req, res) => {
       if (sub.timesRemaining === 0) sub.status = 'completed';
       const wh = await webhook(pay);
       return send(200, { ok: true, webhook: wh, payment: paymentView(pay), sub });
+    }
+    /* Ronde 9 · stap 7: chargeback zoals Mollie hem doet — status blijft 'paid', amountChargedBack erbij, dezelfde webhook opnieuw. */
+    if ((x = url.pathname.match(/^\/chargeback\/(tr_[A-Za-z0-9]+)$/)) && req.method === 'POST') {
+      const pay = payments.get(x[1]);
+      if (!pay) return send(404, 'geen betaling', 'text/plain');
+      pay.amountChargedBack = { currency: 'EUR', value: url.searchParams.get('value') || pay.amount.value };
+      const wh = await webhook(pay);
+      return send(200, { ok: true, webhook: wh, payment: paymentView(pay) });
+    }
+    /* Dezelfde webhook nog eens afleveren (Mollie doet dat bij elke statuswijziging en bij retries). */
+    if ((x = url.pathname.match(/^\/rewebhook\/(tr_[A-Za-z0-9]+)$/)) && req.method === 'POST') {
+      const pay = payments.get(x[1]);
+      if (!pay) return send(404, 'geen betaling', 'text/plain');
+      return send(200, { ok: true, webhook: await webhook(pay) });
     }
     if (url.pathname === '/sql' && req.method === 'GET') return send(200, runSql(url.searchParams.get('q')));
     if (url.pathname === '/sql' && req.method === 'POST') return send(200, runSql(await readBody(req), true));

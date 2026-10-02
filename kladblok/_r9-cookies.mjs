@@ -1,0 +1,32 @@
+// Ronde 9 · stap 6: cookiemelding — zonder keuze niets aan, weigeren onthouden, accepteren laadt alleen dan de meting.
+import { chromium } from 'playwright';
+import { SITE } from './_dl.mjs';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const ctx = await b.newContext({ locale: 'nl-NL' });
+const p = await ctx.newPage();
+const verzoeken = [];
+p.on('request', (r) => { if (!r.url().startsWith(SITE)) verzoeken.push(r.url().slice(0, 80)); });
+await p.goto(SITE + '/nl'); await p.waitForTimeout(1500);
+const balk = () => p.evaluate(() => { const e = document.querySelector('[data-consent-bar], #consent, .consent, [aria-label*="ookie"]'); return e && e.offsetParent ? e.innerText.replace(/\s+/g, ' ').slice(0, 200) : null; });
+console.log('eerste bezoek, balk:', await balk());
+console.log('  cookies:', (await ctx.cookies()).map((c) => c.name).join(', ') || 'geen', '· verzoeken naar buiten:', verzoeken.length ? verzoeken.join(', ') : 'geen');
+const knoppen = await p.evaluate(() => [...document.querySelectorAll('button')].filter((x) => x.offsetParent && /weiger|accept|alleen|toestaan|nodig|akkoord/i.test(x.textContent)).map((x) => x.textContent.trim()));
+console.log('  knoppen:', knoppen.join(' | '));
+const weiger = p.locator('button').filter({ hasText: /Alleen het noodzakelijke/i }).first();
+if (await weiger.count()) await weiger.click();
+await p.waitForTimeout(500);
+console.log('na weigeren: cookie', JSON.stringify((await ctx.cookies()).find((c) => c.name === 'vis_consent')?.value), '· balk:', await balk());
+await p.goto(SITE + '/nl/pricing'); await p.waitForTimeout(800);
+console.log('volgende pagina, balk:', await balk(), '· verzoeken naar buiten:', verzoeken.length);
+/* Accepteren in een nieuwe context. */
+const ctx2 = await b.newContext({ locale: 'nl-NL' }); const p2 = await ctx2.newPage();
+const v2 = []; p2.on('request', (r) => { if (!r.url().startsWith(SITE)) v2.push(r.url().slice(0, 80)); });
+await p2.goto(SITE + '/nl'); await p2.waitForTimeout(1000);
+const ja = p2.locator('button').filter({ hasText: /Analytics accepteren/i }).first();
+if (await ja.count()) await ja.click();
+await p2.waitForTimeout(1500);
+console.log('na accepteren: cookie', JSON.stringify((await ctx2.cookies()).find((c) => c.name === 'vis_consent')?.value), '· verzoeken naar buiten:', v2.join(', ') || 'geen');
+await p2.goto(SITE + '/nl/cookie-policy'); await p2.waitForTimeout(600);
+console.log('cookiebeleid noemt:', (await p2.evaluate(() => document.querySelector('main').innerText.match(/vis_[a-z_]+|[a-z_]*session[a-z_]*/gi) || [])).filter((v, i, a) => a.indexOf(v) === i).join(', '));
+await b.close();
+process.exit(0);

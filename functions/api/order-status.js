@@ -102,7 +102,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
   // Vormfout: nooit de database aanraken. Zelfde afspraak als
   // isWellFormedToken() voor de portal — de goedkoopste afwijzing is de eerste.
-  if (!REF_SHAPE.test(raw)) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false });
+  if (!REF_SHAPE.test(raw)) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false, refund: false });
 
   const ref = raw.toUpperCase();
 
@@ -113,7 +113,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const gate = await checkRate(env, { ip: clientIp(request), action: 'order-status', limit: LIMIT });
   if (typeof waitUntil === 'function' && shouldSweep()) waitUntil(sweepRateLimits(env));
   if (!gate.allowed) {
-    return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false }, 429, {
+    return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false, refund: false }, 429, {
       'retry-after': String(Math.max(1, gate.retryAfter || 1)),
     });
   }
@@ -125,7 +125,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   // — checkCancelled() behandelt elke niet-ok als "niets tonen" — maar het
   // verschil tussen "niet geannuleerd" en "ik kon niet kijken" blijft bestaan,
   // en dat verschil staat in de logs.
-  if (!env?.DB) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false }, 503, { 'cache-control': 'no-store' });
+  if (!env?.DB) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false, refund: false }, 503, { 'cache-control': 'no-store' });
 
   /* ── OOK `paid` EN `payable` — 19 september 2026 ───────────────────────────
    *
@@ -144,7 +144,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
    * Niet meer dan dat: geen bedrag, geen adres, geen naam. Twee vlaggen op een
    * kenmerk dat toch al in de mail staat. */
   let row;
-  const WIDE = 'SELECT status, cancel_reason, payment_status, review_state, total_cents, vat_cents FROM orders WHERE ref = ?1';
+  const WIDE = 'SELECT status, cancel_reason, cancel_payment, payment_status, review_state, total_cents, vat_cents FROM orders WHERE ref = ?1';
   const NARROW = 'SELECT status, cancel_reason, payment_status, total_cents, vat_cents FROM orders WHERE ref = ?1';
   try {
     try {
@@ -156,21 +156,23 @@ export async function onRequestGet({ request, env, waitUntil }) {
     }
   } catch (err) {
     console.error('[order-status]', err && err.message ? err.message : err);
-    return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false }, 503, { 'cache-control': 'no-store' });
+    return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false, refund: false }, 503, { 'cache-control': 'no-store' });
   }
 
   // Onbekende referentie: hetzelfde antwoord als een niet-geannuleerde. Zie de
   // noot over het orakel hierboven.
-  if (!row) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false });
+  if (!row) return json({ cancelled: false, kind: null, paid: false, payable: false, failed: false, refund: false });
 
   /* De laatste betaalpoging, als die er is. Mislukt/afgebroken/verlopen: dan
      hoeft de bedankpagina niet tien seconden op de bank te wachten. */
   let failed = false;
+  let lastPaid = false;
   try {
     const last = await env.DB.prepare(
       'SELECT p.status FROM payments p JOIN orders o ON o.id = p.order_id WHERE o.ref = ?1 ORDER BY p.id DESC LIMIT 1'
     ).bind(ref).first();
     failed = !!last && ['failed', 'canceled', 'expired'].includes(String(last.status));
+    lastPaid = !!last && ['paid', 'refunded'].includes(String(last.status));
   } catch { /* geen payments-tabel: dan weten we het niet */ }
 
   const cancelled = row.status === 'cancelled';
@@ -180,12 +182,20 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const gross = (Number(row.total_cents) || 0) + (Number(row.vat_cents) || 0);
   const payable = !cancelled && !paid && (review === '' || review === 'approved') && gross > 0;
 
+  /* RONDE 9, O37 — wie een oude Mollie-link betaalt nadat de bestelling al
+     geannuleerd is, landde op "er valt niets meer te betalen" terwijl hij net
+     betaald hád. De webhook stort dat bedrag automatisch terug; `refund` laat
+     de bedankpagina dat zeggen. Ook alleen een vlag, geen bedrag. */
+  const refund = cancelled && lastPaid
+    && (row.cancel_payment === null || row.cancel_payment === undefined || row.cancel_payment === 'refund');
+
   return json({
     cancelled,
     kind: cancelled && PUBLIC_REASONS.has(reason) ? reason : null,
     paid,
     payable,
     failed: !paid && failed,
+    refund,
   });
 }
 
